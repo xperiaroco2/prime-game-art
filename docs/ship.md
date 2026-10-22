@@ -1,7 +1,8 @@
 # The ship
 
 The aliens' ship, a wide metal manta (art #263; prime-game `docs/design/estate-map.md` section 5a; the approved 2D in
-prime-game-design `ideas/ship-components/2d/`, whose top view `plan-3.jpg` is the source of truth). Step 1 is the
+prime-game-design `ideas/ship-components/2d/`; since version 2, the mirrored layout of 2026-10-22, 5a wins over
+`plan-3.jpg` for the geometry and the 2D sheets still set the look; see "Version 2" below). Step 1 is the
 **empty** ship: hull outside, the central hall, both wing corridors with their round tip rooms, one entrance (the
 mouth ramp), no stations of any kind, worked out to release quality. Every object is its own model (one GLB),
 placed by a placements file, so a piece the engineer dislikes is replaced alone.
@@ -26,9 +27,9 @@ arrangement, the numbers give the sizes. A gentle curve is fine only where the n
 | `tools/blender/ship_hull*.py` | the exterior builders | EXTERIOR lane |
 | `godot/ship/` | `ship.gd`: assembly, headless check and walk, night shots, the walk-through frames | EXTERIOR lane |
 | `tools/blender/ship_video.py` | encodes the walk-through MP4 under its size cap | EXTERIOR lane |
-| `tools/tests/test_ship_*.py` | fast: `test_ship_layout.py`, `test_ship_interior.py`, `test_ship_hull_skin.py`, `test_ship_hull_detail.py`, `test_ship_exterior.py`, `test_ship_clearing.py`; heavy (Blender): `test_ship_build.py` | either lane adds its own file |
+| `tools/tests/test_ship_*.py` | fast: `test_ship_layout.py`, `test_ship_interior.py`, `test_ship_hull_detail.py`, `test_ship_exterior.py`, `test_ship_clearing.py`; heavy (Blender): `test_ship_build.py` | either lane adds its own file |
 
-Raw output (never in git): `<raw>/ship/v1/` with `pieces/` (GLBs, `build_report.json`, validator `reports/`),
+Raw output (never in git): `<raw>/ship/v2/` (the layout's `raw_dir`; v1's in `<raw>/ship/v1/`) with `pieces/` (GLBs, `build_report.json`, validator `reports/`),
 `plan/` (`plan.txt`), `shots/` (the views, `compare_*.png` with the 2D left, among them `compare_top.png` against
 plan-3, `sheet.png`, `lights.json`), `walk/` (`check.json`, `walkthrough.mp4`), `logs/`, `notes/` (the workflow's
 handoff notes).
@@ -42,32 +43,34 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 
 | What | Number (ship.toml) | Why |
 |---|---|---|
-| Footprint | 27.5 m wide (the lens tips' blades at x +-13.75, `span_max_m` 27.5); two lengths (`ship_layout.lengths()`, as built): the hull body 12.9 m (lead edge y -6.5 to the trail 6.4: the swept tips and the pod housing; no ramp, no nozzle pods), 14.8 m with the nozzle pods (lead edge to the nozzle tips at 8.34), the one `ship --check` holds to 14, up to `length_max_m` 15; overall 15.7 m from the ramp's foot (-7.4) to the nozzle tips | 5a: about 26 x 14; manager update 2: the span up to about 27.5; the manager (art #263): the length counts the nozzles, up to 15 m, as how far they stick out is open (2D README) |
+| Footprint | the hull J: span 30.0 m (`width_m`, `span_max_m`), 18.91 m long with the nozzle pods (`length_m` 18.9, `length_max_m` 19.4; `ship_layout.lengths()`), 21.70 m from the ramp's foot (-9.9) to the nozzle tips; `ship --check` prints the current ones | the engineer's pick J (art #263 comment 6340589162; "Rebuild B") |
 | Deck | floor at h 0.6 on landing legs (launch 3; was 1.0), slabs 0.25, walls 0.2 | the ramp meets the ground; a thinner hull |
-| Hall | circle r 3.4 at (0, 0); 3.2 m to the ceiling's rim, 3.8 m to its apex (faceted, 16 sides; launch 3, was 3.4 / 4.0) | console (0, 1) with room round it |
-| Mouth | x -1.3..1.3, y -4.6..-3.3, 2.4 m high | the only way in or out (5a's side hatch is dropped, see below) |
-| Ramp | 2.6 m wide, hinge (0, -4.6) at the deck, foot (0, -7.4) on the ground: 12.1 deg, a long plane | north at the centre |
-| Corridors | y -1.25..1.25 (2.5 m), x 3.3..9.1 each side, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a: about 2.5 m wide |
-| Tip rooms | circles r 2.05 at (+-10.75, 0); 2.5 m to the rim, 2.8 m apex (launch 3, was 2.8 / 3.2); window +-65 deg outward, sill 1.0 (join 3, was 0.45), head 2.2 over the deck | panel (-10.5, 0), renewer (12, 0); the lens's window band starts 1.33 m over the deck |
-| Stations (not built) | console (0, 1); vents (+-5, -1), sockets (+-8, -1) at the north corridor wall; panel (-10.5, 0); renewer (12, 0) | 5a |
+| Hall | circle r 4.0 at (0, -0.4) (rebuild E; C (0, -1), v2 (0, 0), v1 r 3.4); 3.2 m to the ceiling's rim all round (rebuild E; C had 2.75 m round its front), 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
+| Throat (rebuild C; v2's mouth passage x -1.3..1.3, y -4.6..-3.9) | the funnel from the mouth (x +-1.65 at y -7.1, J's nose edge; 5a: y -8) to the hall's vertices (+-2.915, -3.252), 4.051 m walls in five modules of 0.810 (rebuild E); open to the sky forward of y -5.561 (the walls there are the hull's jambs, `skin_cheeks`), a 2.3 m ceiling aft of it | the only way in or out (5a's side hatch is dropped, see below) |
+| Ramp | 3.3 m wide (the mouth), hinge (0, -7.1) at the deck, foot (0, -9.9) on the ground: 12.1 deg, 2.86 m long (rebuild C; v2 2.6 m from (0, -4.6)) | north at the centre |
+| Corridors | `strip` rooms on the axes from the hall's centre (0, -0.4) to the tip rooms' (+-8.3, 3.6) (rebuild E): 9.214 m, 25.73 deg; floor 3.708..8.219 along the axis (4.51 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide; rebuild A: on the diagonal |
+| Tip rooms | circles r 1.8 at (+-8.3, 3.6) (rebuild E; C (+-8.3, 3.0)), the outer wall at +-10.1; 2.5 m to the rim, 2.8 m apex; no window since rebuild A (13 plain wall facets round the outer side) | 5a mirrored: 3.6 m across |
+| Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.409, -4.791; rebuild F); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.030, 0.841) on the corridors' front wall; renewers (+-9.922, 4.381) on the tip rooms' outer wall, the player at (+-8.751, 3.817) | 5a mirrored; as built in "Rebuild E", the vents in "Rebuild F" |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
 
-The check holds: the footprint within 0.5 m; corridors 2.5 +- 0.1 m wide and over 4 m long; the tip rooms spanning
-the width; clear heights over the capsule and margin; exactly one room with an exit, the ramp's hinge on its north
-edge, the ramp as wide as the mouth and under 30 deg; no window is an exit; every room reachable from the hall and
-linked rooms meeting; each station spot inside its room by its footprint (0.35 m; a wall unit 0.5 m deep stands
-against its wall, within 0.6 m), 1.2 m free beside the corridor stations; every room's outer wall and every placed
-piece inside the hull outline (the ramp may stand outside); no piece defined twice or never placed.
+The check holds: the footprint within 0.5 m; corridors `corridor_width_m` (3) +- 0.1 m wide and over 2.5 m long; the
+tip rooms' outer wall at `tip_outer_m` (10.1) +- 0.05; the station spots (`check_spots`, "Version 2" below); clear heights over the capsule and margin; exactly one room with an exit, the ramp's hinge on its north
+edge, the ramp as wide as the mouth and under 30 deg; every room reachable from the hall and linked rooms meeting;
+every poly room convex, its points with a positive signed area in plan (x, y) (`check_polys`); every capsule walk
+point on the deck on a room's floor with the capsule's radius round it (`check_walk`); every room's sampled outer
+surface inside the hull J with 0.15 m of skin (`hull_skin`: `ship_hull_shape.clearance` on the checked layout's own
+rooms, each sampled on its own); every room's outer wall and every placed piece inside the hull outline (the ramp may
+stand outside); no piece defined twice or never placed.
 
 **One entrance; the side hatch is dropped.** estate-map 5a lists a side hatch at (-12.5, 1) as a second way out. The
 engineer's step-1 rule (art#263: the mouth ramp is the only way in or out, no side hatch, no doors) wins over that text:
 ship.toml has no hatch, and `check` and `test_a_second_exit_is_refused` demand exactly one exit. If the hatch comes
 back, both change with it. The corridors also run straight (5a: "curve with the wing"): numbers, not curvature.
 
-**Wall stations and the corridor's slant.** The check places a vent or socket in plan only; the corridor wall is
-vertical to 1.45 m and then slants in (half width 0.9 m at the ceiling), so a station taller than about 1.5 m at
-u 1.0 meets the slant. The console at (0, 1) straddles the hall's plain disc (r 1.0) and its first grate ring (r 1.1).
-Step 2 accounts for both.
+**Wall stations and the corridor's slant.** The check places a breaker board in plan only; the corridor wall is
+vertical to 1.45 m and then slants in (v2: half width 1.15 m at the 2.4 m ceiling, from 1.5 at the wall), so a station
+taller than about 1.5 m at the wall meets the slant. The console at (0, 1) straddles the hall's plain disc (v2: r 1.176)
+and its first grate ring (r 1.294). Step 2 accounts for both.
 
 ## Pieces
 
@@ -89,21 +92,37 @@ numbers at the top of `tools/blender/ship_interior.py` (`--check` compares; the 
 use absolute heights (deck at ship.toml `floor_h`, 0.6), so a placement's h is an offset (the clips' heights); a piece built at plan
 angle 0 (its room toward -x) standing at angle a gets yaw -a; in a tip room turned by r, yaw r - a.
 
-The numbers (step 1, art #263):
-- hall: 16 facets, inner faces at apothem 3.4 (vertices at 3.467), rim 3.2 m, apex 3.8 m (ship.toml `clear_h`, `apex_h`); the three openings
-  (corridors east and west, the mouth north) are two facets wide, framed by a portal on their chord (x 3.203, half
-  width 1.327) 0.15 m deep; floor: plain disc r 1.0, eight radial grate sectors r 1.1 to 2.5 between wedge spokes,
-  the amber ring at r 2.58, solid plates to the walls; ceiling: 16 facet panels, ribs with cyan strips, the lamp
-  ring (eight lamps) at r 1.25.
-- corridors: one profile, 2.5 m wide, vertical to 1.45 m (cable channel 1.1 to 1.45 m), slanted in to 1.8 m wide at
-  the 2.4 m ceiling (`clear_h`); five modules of 1.117 m from x 3.353 (hall portal) to 8.936 (tip portal); arches at the first
-  three module joints only, none near the vent and socket spots (x 5 and 8). The mouth passage is one module of
-  1.247 m with an arch at the ramp hinge.
-- tip rooms: polygon on radius 2.1, eight window segments over +-65 deg (sill 1.0, head 2.2 since launch 3), three wall facets a
-  side, the corridor chord over +-37.6 deg (half width 1.281); rim 2.5 m, apex 2.8 m; radial grate floor with amber
-  spokes; ribbed ceiling with cyan strips and a six-lamp ring.
-- details: three crushed cup models (five placed, off every station spot), two scratch decal clusters (geometry
-  0.6 mm proud of flat panel faces, eight placed).
+The numbers (version 2 rebuilt for the hull variant J, rebuild A of 2026-10-22; `ship_interior.py` holds them):
+- hall: 16 facets' look, every vertex on the circle 4.078 (inner faces at about 4.0), rim 3.2 m, apex 3.8 m
+  (ship.toml `clear_h`, `apex_h`); the segments round the ring (`hall_segments`, counter-clockwise from the mouth):
+  the mouth's opening -112.5..-67.5 deg, the vent's flat chord -67.5..-22.5, one facet -22.5..3.23 (25.7 deg), the
+  corridor's opening 3.23..48.23 (centred on the corridor's axis, 25.73 deg), the socket's flat chord 48.23..77.5
+  (2.06 m, apothem 3.946, all plain: too narrow for the diamond side panels), two back facets 77.5..90..102.5
+  (12.5 deg each, the back's one cable trunk at 90), then the west half mirrored. Each opening is two facets' chord
+  (3.768, half width 1.561) framed by a portal 0.15 m deep; each flat a plain centre panel (`hall_panel_flat`, the
+  vents' 1.6 m between two diamond panels; `hall_panel_flat_socket`); a piece per facet width (`_side`, `_back`,
+  `_socket` for the wall panels, rim plates and ceiling panels; `phi_deg` their half angle). Floor: plain disc
+  r 1.176, eight radial grate sectors r 1.294 to 2.941 between wedge spokes, the amber ring at r 3.035 on the 16-gon's
+  old spacing (a 5 cm light in a 9 cm halo, 3 cm in 6 cm on the four arcs by the mouth), solid plates from r 3.129 to
+  the walls: a rim plate per facet, a threshold per opening, a flat plate per chord (a fast test holds one per
+  segment). Ceiling: one conical panel per (sub-)facet in a pale lit steel (`int_ceil_a`/`_b`, metallic 0.3), ribs
+  with cyan strips at every vertex, the lamp ring (eight lamps) at r 1.471.
+- corridors: one profile, 3 m wide, vertical to 1.45 m (cable bay 1.1 to 1.45 m), slanted in to 2.3 m wide at the
+  2.4 m ceiling (`clear_h`); straight along the axis from the hall's centre to the tip room's (25.73 deg off the x
+  axis, 9.214 m centre to centre); four modules of 1.026 m from u 3.918 (hall portal) to 8.024 (tip portal); the back
+  (south) wall a cable bay per module; the front (north) wall a bay from 3.918 to 5.071, the breaker board's plain
+  wall 5.071 to 6.871 (the spot's 1.6 m and 0.1 a side), a bay from 6.871 to 8.024; cyan arches at u 4.15 and 7.792,
+  ceiling ribs at 5.06, 5.97 and 6.88. A front-wall piece is turned by -25.73 deg in the east and +25.73 in the west
+  (the mirror image). The mouth passage is one module of 0.682 m with an arch at the ramp hinge.
+- tip rooms: polygon on radius 1.85 round (+-8.3, 4.0), turned so the door faces the hall along the axis (room yaw
+  -25.73 east, 180 + 25.73 west); 13 wall facets of 19.11 deg round the outer side (no window: the engineer,
+  2026-10-22), the corridor chord over +-55.8 deg from the back (1.04 from the centre, half width 1.53); rim 2.5 m,
+  apex 2.8 m; pilasters at the door's edges, cable trunks (flat, 0.09 m proud) at the two vertices nearest the door
+  each side, the outer side plain facets (the renewer's); radial grate floor with amber spokes, solid plates 0.3 m wide
+  to the walls (at the door two slivers and the portal's plate: `tip_rim_polys`, a test holds them simple); ribbed
+  ceiling with cyan strips and a six-lamp ring.
+- details: three crushed cup models (four placed, off every station spot; the hall's red cup on the grate inside
+  the amber ring, in from the mouth's threshold), a cable coil in the east corridor, two repair plates on the rim.
 
 Materials `int_*` (the library in `ship_interior.py` sets metallic 0.7 to 0.8; at night ship.toml `[light.mats]`
 overrides them in Godot: the silvers 0.45 so the lamps light them, the plate 0.3, the grate 0.6): two silver
@@ -114,7 +133,7 @@ scratches are geometry).
 The lane's own look check (no Godot): `ship_interior_render.py` in headless Blender through `runner.blender`
 imports each GLB once, instances it at every placement, lights it with `[light]` and a moon and writes Eevee views
 and `compare.png` (the 2D left, the render right). Interior pieces build with `ship --build --only <their ids>
---out <raw>/ship/v1/pieces_int`, then their GLBs and report entries are copied into `pieces/` (one build report for
+--out <raw>/ship/v2/pieces_int`, then their GLBs and report entries are copied into `pieces/` (one build report for
 the Godot run).
 
 The worked geometry (inside lane, step 2, from hall_in-3, corridor.jpg and materials-3): the hall's wall facets fold
@@ -124,7 +143,7 @@ with `trunk_cables`, five cables r 18..32 mm, and bolted `trunk_clip` frames); t
 into the corridor (2.14 m clear at the floor) with a stepped inner rim carrying the cyan strip; the cable bays at
 1.1..1.45 m are 0.24 m deep with four cables r 26..32 mm behind bolted clip frames; grate modules sit in a bevelled
 5 cm rim with hex bolts; the amber floor strips are 0.7 m (corridors) with a frosted halo (`int_halo`, glows, lights
-nothing), the hall's ring 0.12 m wide; the tip windows' mullions are 0.17 m bevelled frames, sill 0.2 m, header 0.2 m.
+nothing), the hall's ring 0.12 m wide. (v2's tip windows, their mullions and shutters are gone since rebuild A.)
 
 ## Running it
 
@@ -145,88 +164,21 @@ their compare sheets, 415..620 draw calls inside the tip rooms, 1740..2032 outsi
 
 ## The exterior (EXTERIOR lane)
 
-`tools/blender/ship_hull.py`, `ship_hull_skin.py` and `ship_hull_detail.py` build the outside as a kit, each piece
-its own GLB (`layouts/ship/exterior.toml`): the skin (body, three wing sections and the tip fairing per side, each with
-a darker underside), the cyan wing stripes, lead blades and seam lines, the inset hatches with their scratches, the
-tip windows' frames, the cockpit canopies (fairing, tinted glass, warm glow; outside only, the hall's ceiling closes
-them off), the mouth frame and its amber lights, the ramp and its edge strips, three long nozzle pods with their cyan
-rings and the middle pod's housing, six landing legs and twelve amber ground lamps; the clearing's ground, pines
-and rocks. Every skin face is cut into plates of about 1.5 m, each with a 2.2 cm chamfer sinking 1.4 cm into a dark
-seam (real bevels, not a texture).
+The outside is the hull J (`ship_hull_shape.py`, plain Python; only variant J is live) built by `ship_hull_j.py` as
+four pieces in the plan frame at the origin: `skin_top`, `skin_belly`, `skin_mouth` (the throat's notch: its cut side
+faces in dark plates) and `skin_cheeks` (the throat walls' outer faces under the rising belly, in the same dark plates,
+so each side of the mouth reads as one face up to the nose's slope). Every face is cut into plates in its own plane
+(a 2.2 cm chamfer sinking 1.4 cm into a dark under-skin). `ship_hull_detail.py` adds the cockpit canopies (fairing,
+glass, glow; outside only) and the three nozzle pods with their cyan rings; `ship_hull.py` the ramp, its lights and
+the six landing legs (`leg`: `rise` lifts a mount's top where the belly climbs over it, the front pair); the clearing
+is below. "Rebuild B" and "Rebuild C" at the end hold J's numbers and the notch.
 
-### The hull skin (hull lane; launch 3: the lower deck and the lens tips)
-
-One continuous faceted surface from the centre to the tips (`ship_hull_skin.py`). The half-span is lofted through
-sections across x, each the same loop of 14 (y, h) points (lead edge, two upper-front slope points, the eave, two ridge
-points, the rear eave, two upper-rear points, trail edge, lower rear, two belly points, lower front), so the facets run
-as long creases from the body to the tips; past the tip room's centre (x 10.75) the tip fairing is a lens revolved
-round the room's centre whose +-90 deg profiles equal the loft's last section. The heights come from ship.toml (the
-skin and `ship_interior.py` read `[deck]` and the rooms). `clearance()` lists room points outside a section (the hall's
-wall top and dome, the corridors' chamfered top corners and slab, the tip room's wall top and crown) and `steep()` the
-outside faces within 25 deg of vertical (manager update 2: none); the fast tests keep both empty.
-
-The silhouette grid (`tools/blender/ship_hull_grid.py`, headless Workbench with the rooms as an orange ghost): the
-variants in front, side, top and three-quarter views under the approved 2D and the Meshy silhouette reference (batch
-`2026-10-22-ship-hull-ref`, 20 credits, a multi-image-to-3D of turnaround.jpg's four views, scaled to the 27.5 m span;
-never shipped). Launch 3's grid: `<raw>/ship/v1/grid/hull31/grid.png` (rows 2D, ref, G, H, I, J); J is placed: the
-most swept tips (the turnaround top's) and the spine standing clearest over the wings from the front. The front of
-every variant is still a flat wide plate with the lens ends: the tip rooms (0.3 to 3.65 m) set the tips' depth.
-
-| What | Number (plan m), variant J | Why |
-|---|---|---|
-| Lead edge | (1.5, -6.5) -> (4.0, -5.4) -> (8.0, -3.9) -> (10.75, -3.0); blade h 0.9 -> 0.95 at x 4 -> 1.2 at x 8 -> 1.6 | low at the body, rising to the tips |
-| Trail edge | (0, 5.0) -> (3.0, 5.2) -> (8.0, 5.4) -> (10.75, 5.4); the stern's edge h 2.2 under the housing | the blades behind the corridors |
-| Crest | spine h 4.9 over the hall's middle (x < 0.9), 4.3 at the hall's rim (x 3.72), 3.75 at x 5.5, 3.62 at the tip | falls from the spine to the tips |
-| Eave | the hall's r 3.84 at h 4.1; the wing's 0.15 m outside the corridor walls (y 1.6) at max(3.08, crest - 0.45) | the rooms inside |
-| Belly | h 0.3 under every room (the slabs' bottoms 0.35), the lower facets rising to the blade | the belly rises toward the edges |
-| Lens tip | blade r 3.0 at h 1.7 in the window's direction (1.6 at +-90 deg), lower and upper faces 25 deg off vertical to (2.39, 0.45) and the eave (2.24, 3.2), crown (1.0, 3.62) to 3.65 | a sharp blade 0.7 m past the room's wall at about its mid-height; span 27.5 |
-| Swept tip | round the tip centre (dx, dy): (2.25, -2.05), (2.9, -0.9), (3.0, 0), (2.95, 1.0), (2.75, 3.0), (1.8, 6.4) | the turnaround top's swept tips |
-| Window | the band from 15 % to 85 % of the upper face (h 1.93..2.98) within 65 deg of the tip's axis left open | a slanted band; the inside's glass stands behind it |
-| Mouth | the opening (h 0.55..3.15 at y -4.6) under a brow 1.0 m forward at h 3.45, the brow's top leaning back to (−4.2, 4.3) | a notch cut into the low ray nose |
-| Footprint | 27.5 m wide; hull body 12.9 m long, 15.7 m from the ramp's foot to the nozzle tips (`ship --check` prints both); ship.toml [hull] rows from `ship_hull_skin.outline()`, `trail_y` and `pod_tail_m` held to the builders by `test_ship_hull_detail.py` | span_max_m 27.5, length_max_m 15 (with the nozzles) |
-
-**Winding.** Plan coordinates are left-handed (x east, y south, h up); the harness's (x, -y, h) mirrors them, which
-flips every winding set in plan coordinates with `ship_lib.orient`. `ship_hull.py` reverses its open (`solid=False`)
-parts once at the end (`_outward`); a lane that orients open parts must do the same, or they come out inside-out
-(Blender exports double-sided materials, so they still show, lit from the wrong side).
-
-**The night look** (`godot/ship/ship.gd`): a star sky with a moon (`night_sky.gdshader`), moonlight (ship.toml
-`[light]`) with a cool shadowed key from the north-west (`key_dir_deg` [-38, -140], `key_energy` 0.55, hull 3-2: the silver catches light from the hero, front and side cameras), one shared triplanar metal shader by glTF material name (`metal.gdshader`: grain, fine seams, scratches,
-grime), an OmniLight per 1.6 m cell of emissive surfaces (at most 96: the strips and lamps light the ship), a
-ReflectionProbe per room, AgX, SSAO 0.6 / 1.5 (look_presets High), SSIL, glow, a thin blue fog.
-
-**Review.** `ship --shoot DIR`: the views of exterior.toml `[shots]` (each with its 2D sheet, `compare_<view>.png`
-with the sheet left) and ship.toml's others, the plan view against plan-3, `sheet.png`; it shoots whatever pieces
-are built and names the missing ones. `ship --walk DIR`: the headless capsule walk (`check.json`), then the
-walk-through `DIR/walkthrough.mp4`: a camera at eye height (1.65 m over the floor) through exterior.toml `[video]`
-keys (cubic in time) from outside, up the ramp, the hall, both corridors and tip rooms and back out, 1280x720 at 24
-fps in the off-screen window (ship.gd mode `video`, one PNG per frame), encoded by `tools/blender/ship_video.py`
-(encode_clips.py's route at an average bit rate that fits `max_mb`, 15 MB: constant quality made 20 MB even at its lowest), then the frames are deleted;
-`--no-video` skips it.
-
-### The hull's details (hull lane, step 2)
-
-`ship_hull_detail.py`; every detail reads the skin's top (`skin_h`: the loop's upper points of the two loft stations
-round |x|, linear between them as the loft's faces are), so it follows the skin if the variant changes.
-`tools/blender/ship_hull_look.py` is the cheap check of shape: the exterior's built pieces in headless Workbench, the
-2D crops over front, side, back and top, then a three-quarter and close-ups of a canopy, the pods and a leg (one
-1280 px sheet; log `LOOK sheet`).
-
-| Detail | Numbers (plan metres) |
-|---|---|
-| Two tones | the skin loop's faces 9..13 (trail edge, belly, lower lead facet) in `ext_silver_c`/`leg_metal`; the tip's profile faces 0..2 likewise |
-| Canopies | flush in the forward hull (hull 3-2): faceted glass ellipse 1.15 x 1.5 at (+-2.3, -2.75), 14 sides, 3 rings, 0.85 high, its base on the skin (`skin_h` + 0.02); four frame ribs; a low teardrop plate 1.14x round it (0.03 over the skin); a lit floor, a seat and a desk under the glass (tops below 0.62) |
-| Nozzle pods | outer r 1.05 at (+-2.75, h 2.15) from y 3.5, 3.6 long; middle r 1.2 at h 2.45 from y 3.9, 4.0 long (0.8 longer, 0.3 higher); a 12-sided panelled barrel with two raised rib rings and six stringers (tube relief), a collar, the bell; per pod ten cyan segments, a cyan end ring 0.99 r (proud of the bell) and a second band 1.04 r 0.8 m ahead (`pod_ring`) |
-| Pod housing | from y 3.7 (top 4.75, the hall's eave) to 6.4 (top 3.9), half-width 1.55, sides into the skin or onto the pod's axis |
-| Lead blades | 0.24 x 0.12 cyan bars (hull 3-2; 0.13 x 0.07 read thin) on the lead edge (section point 0) from x 2.0 to the swept tip point |
-| Seam lines | 0.025 cyan bars on the front eave crease from x 4 to 9 and the rear eave from x 5 to 8 |
-| Hatches | six per side, a bevelled frame round a recessed plate; a latch at the outer end (a dark well, a chrome lever on two posts) and a hinge rod along the inner edge (the two slots read as a face); 40 seeded scratches per side (ext_chrome, 0.18..0.68 m) |
-| Legs | six (hull 3-2): `leg_front` at (+-5.0, -3.6), `leg_rear` at (+-6.5, 3.6), `leg_stern` at (+-1.8, 4.2), each mounted 0.12 into the skin's underside (top 0.74 / 0.75 / 1.21), feet out past the edges (reach 2.0 / 2.2 / 1.6); struts r 0.17 / 0.14, knee drum r 0.22, twin pistons, a foot plate r 0.5 with three toes. The 0.6 deck keeps them short |
-| Mouth portal | a chamfered frame from the inside's opening (half width 1.25, the mouth's clear_h, 0.3 x 0.35 chamfers) out to half width 1.62 and clear_h + 0.4, 0.3 deep, over the skin's hole; a chrome lip; amber strips on the jambs and the head |
-| Tip windows | `tip_window`: tinted glass on the lens's slanted band (profile points 4..5, h 1.93..2.98) within the window's half angle, sill and head bars along it, two jambs and three mullions up the slope (replaces the vertical ring) |
-| Stripes | twelve chunky cyan bars per wing from x 2.6 to 10.2, each wrapping the lead edge: down the lower facet (8..92 %) and a third of the way up the upper slope |
-| Ramp light | a continuous amber strip inside each rail and a cross strip at the foot |
-| Ground lamps | r 0.2 amber pucks 0.9 m out past each of the six legs' feet along the leg ((+-6.08, -6.29), (+-7.65, 6.48), (+-2.29, 6.65); hull 3-3) and at (+-1.75, -5.9 / -7.25) by the ramp |
+**History.** Before rebuild B the outside was a kit on other shapes, all retired and no longer built: launch 3's
+lofted lower deck with lens tips and cyan blades (`ship_hull_skin.py`), v2's smooth skin with stripes, seam lines,
+hatches, pod housings and the tip windows' glass and frames, and the tip windows' view and shutters (`--shutters`,
+removed in rebuild D). The blockout variants A to L stay in `ship_hull_shape.VARIANTS` for the blockout sheets
+(`ship_hull_blockout.py`); a Meshy hull (batch `2026-10-22-ship-hull-meshy`) was stopped. The PRs of art #263 and
+git history hold their numbers.
 
 ### The clearing and the outside light (hull lane, step 3)
 
@@ -444,3 +396,301 @@ Other open problems after the night:
 - 26 small strip cells unlit (`MAX_LIGHTS` 96); no interior UVs; the seam close-up's hatches read as faces; the legs
   small and hidden from the front.
 - No fresh-context review of launch 4's diff ran inside the workflow (no agent tool): the manager runs one.
+
+## Version 2: the mirrored layout (layout step, 2026-10-22)
+
+The engineer changed the geometry (prime-game `docs/design/estate-map.md` section 5a in xperiaroco2/prime-game#1293;
+prime-game-design `ideas/ship-components/2d/README.md`, "The layout mirrored"): a round hall 8 m across, two straight
+corridors 3 m wide, two round tip rooms 3.6 m across at x +-8.3 with the outer wall at +-10.1, and every station
+hanging flat on a plain wall. The look of v1's inside stays (materials, night light, ribs, cable bays, amber floor
+strips, cyan arches, the tip window, the closed hall ceiling with its lamp ring); the rooms are refitted. Raw output:
+`<raw>/ship/v2` (`raw_dir`; v1 stays in `<raw>/ship/v1`).
+
+**The plain wall spots** (`[stations]`, `ship_layout.check_spots`). A wall spot is the point `at` on the wall's face
+and the `normal` into the room. The check holds: the point on its room's wall; a band `plain_width_m` (1.6) wide and
+0.3 m deep in front of it free of every piece with a `foot` (a plan box in the piece's own frame, written by
+`ship_interior_place.py` for the trunks, trunk cables and clips, pilasters, the corridors' cable bays and clips and the
+arches); the player's stand (`depth_m` 0.5, the renewers' 0.9, plus the capsule's radius out from the wall) inside
+the room; and `pass_m` (1.6) of free floor behind the player, the capsule's width inside the rooms, crossing no floor
+spot. The console is a floor spot: 0.35 m of clear floor round (0, 1).
+
+**How the generator keeps them plain** (`ship_interior.py`, `ship_interior_place.py`):
+- The hall: the 16-gon keeps its facets and ribs, but at the four spots (45 deg, read from ship.toml as `FLATS`) the two
+  facets meet in one flat chord (`hall_panel_flat`, 3.12 m wide at apothem 3.768, with a soffit up to the ceiling's
+  rim, as an opening's), and the vertex between them gets no cable trunk. The spot sits on the chord at (+-2.66,
+  +-2.66) (5a: about (+-2.6, +-2.6)); a 16-gon vertex sits at 45 deg, so a facet there would put a trunk in the spot.
+- The corridors: 3 modules of 1.064 m portal to portal (`N_MOD` 3; x 3.918..7.111); on the front wall (y < 0) the
+  modules over a breaker board's span get `cor_wall_mid` (a plain strip) in place of the cable bay, the cables and
+  the clips; the cyan arches stand at x +-4.15 and +-6.4, off the board.
+- The tip rooms: R_TIP 1.85, the door chord 55.8 deg for the 3 m corridor, three wall facets of 19.7 deg each side;
+  the window side holds no trunk, so the renewer stands before the window (sill 1.0: the window is seen above it).
+
+**The lanes' files** (two builder lanes on one branch):
+- INSIDE: `tools/blender/ship_interior*.py`, `layouts/ship/interior.toml` (generated: its look and details),
+  `ship.toml` `[light]`, `godot/ship/`; the tip windows' shutter and button.
+- HULL: `tools/blender/ship_hull*.py`, `layouts/ship/exterior.toml`, `ship.toml` `[hull]`: the smooth skin and the new
+  silhouette (the tips at about +-13.75 past the tip rooms).
+- Shared, changed by either only with a note: `ship.toml` `[size]`, `[deck]`, `[[rooms]]`, `[stations]`, `[walk]`,
+  `[shots]`, `tools/runner/ship_layout.py`, `tools/runner/commands/ship.py`, the tests.
+
+The layout step moved the stern pods' noses 0.35 m back (y 3.85 and 4.25, lengths 3.25 and 3.65, the nozzle tips
+where they were): the r 4.0 hall's back wall reached into them.
+
+## The inside refit to version 2 (inside lane, step 1)
+
+- The hall's floor and lamp ring scale with the hall (`K_HALL` = 4.0 / 3.4): the lit grating disc r 1.176, the grate
+  ring 1.294..2.941, the amber ring 3.035, the rim plates from 3.129 (origin 3.529), the lamp ring and the ceiling's
+  inner edge 1.47. The tip floor: disc 0.55, grate from 0.62, the strips at 1.08.
+- Each vent and socket chord (`hall_panel_flat`, builder `flat_panel`): a plain centre panel 1.6 m wide (no relief, no
+  trunk; `[stations] plain_width_m`) between two 0.76 m diamond panels; no floor marking at the spots.
+- **The tip windows' shutter.** A blast shutter in the window's 20 cm reveal: one ribbed panel per window segment
+  (`tip_shutter`, 8 a room, each its own placement, origin on the segment's centre line, its mid-plane 0.1 m behind
+  the wall face), guides in `tip_shutter_track` (the head's rail, the sill's slot). Closed it fills the segment from
+  the sill to the head; open it is lowered `SHUTTER_DROP` (1.17 m) into the low wall, its cyan top edge in the
+  sill's slot. The move is a straight drop (Godot `position.y`). `interior.toml` places the panels open (`place`)
+  and lists the closed pose as `shutter_closed`; `ship --shutters closed` (`ship_layout.pose`) swaps them in. The
+  button `tip_shutter_button` (a plate, an amber push button in a cyan ring) sits on the first wall facet north of
+  each window, 1.15 m over the deck, 1.7 m off the window's axis: off the renewer's band. Not wired (the game
+  track). Neither the shutter nor the button stands in front of the wall face, so they carry no `foot`. A first
+  try with 24 turning louvre blades read as bars across the window when open.
+- Party cups: as before, plus one on the east window's sill (north end).
+
+## The inside, step 2 (inside lane, v2)
+
+- **The tip well on the smooth skin.** `_well_rows` reads `ship_hull_smooth` (the hull lane's skin): the band's
+  lower edge is the sill ring `pod_r(SILL - 0.05)`, its upper edge the head ring `pod_r(HEAD + 0.05)`, each at the
+  skin's own height (`heights()`) at the hull's own angles (`RAY` steps, plus the room's facet angles), so the well
+  meets the hole's edge on every rebuild. `test_the_window_well_meets_the_skin_band` holds it: the band outside the
+  room wall, open (head over sill by 0.3 m or more), its head over eye height, the sill rising outward.
+- **The closed shutter's tone** (`SHUTTER_TONES`, `SHUTTER_TONE`): one grid run (`SHIP_SHUTTER_GRID=1` regenerates
+  `interior.toml` with the east room's closed panels in four tones, two segments each; never committed;
+  `ship --shoot DIR --shutters closed`). Tone `d`, a dark grate-steel body under bright silver slats, reads as a
+  shutter; the old pale silver (`a`) read as a flat wall. The open pose is unchanged.
+- **The button** is 12 x 20 cm (a plate, a cyan ring r 4.2 cm round an amber push button r 3 cm, two dark label
+  bars): the 7 cm plate did not read from the room's middle.
+- **Render layers** (`godot/ship/ship.gd`): the outside lane's pieces draw on layer 2 (`OUTSIDE_LAYER`; the request's
+  `outside` list from `ship.py`), and every strip light made from an inside emissive cell lights only layer 1: the
+  smooth skin sits close over the ceilings and the strips' unshadowed lights made cyan blots on its top.
+- **The outside metals** (`METALS` in `ship.gd`, the engineer: smooth like a ray, a clean soft sheen): no seam grid,
+  no scratches, a trace of grime, a softer brush (grain 0.4) on `hull_silver`, `ext_silver_b`, `ext_silver_c`;
+  no seams or scratches on `hull_dark`, `ext_frame`, `leg_metal`.
+- `ship_layout.check` counts a piece placed only in the closed pose (`shutter_closed`) as placed.
+
+## Rebuild A: the diagonal corridors for the hull J (2026-10-22)
+
+The engineer picked the grey blockout J (`tools/blender/ship_hull_blockout.py`: F's outline, span 30 m, length
+18.9 m with the nozzles, wing tips rounded in plan with r 1.5 m; art#263 comment 6340589162) and changed the inside
+for it: the tip rooms at (+-8.3, 4.0), the corridors straight and diagonal from the hall's wall to each tip room's
+wall, no tip windows; the hall's look frozen. What rebuild A changed:
+
+| What | Number |
+|---|---|
+| Tip rooms | r 1.8 at (+-8.3, 4.0) (was (+-8.3, 0)), outer wall at x +-10.1, heights as before; no window |
+| Corridors | ship.toml shape `strip`: `axis` [[0, 0], [+-8.3, 4.0]] (25.73 deg, 9.214 m), floor `along` 3.708..8.219 (4.51 m; v2 3.6 m), `width` 3.0 |
+| Hall openings | the corridors' at +-25.73 deg from east (v2: 0 and 180); the mouth's unchanged |
+| Sockets | moved back off the corridor openings: (+-1.800, 3.512), normal (-+0.456, -0.890) (v2 (+-2.664, 2.664)): 1.21 m |
+| Breakers | on the front wall, u 5.971: (+-6.030, 1.241), normal (-+0.434, 0.901) (v2 (+-5.25, -1.5)) |
+| Renewers | before the plain outer wall on the axis: (+-9.922, 4.781), the player at (+-8.751, 4.217) (v2 (+-10.1, 0)) |
+| Vents, console | unchanged |
+| Size | `[size]` J's: width and span 30.0, length 18.9 with the nozzles (max 19.4) |
+
+(Undone by rebuild B, below.) `[hull] pending` (the hull lane's v2 skin still stood round the old tip rooms): `ship --check` skips the footprint
+and the rooms' and pieces' inside-the-hull tests and prints the skip; the tests that need J's skin (the footprint,
+a piece outside the hull, the walk-through's keys, the skin's span) skip with the same reason. The tip rooms keep a
+legacy `window` key that only the v2 hull skin reads (`ship_hull_skin`, `ship_hull_smooth`); `ship_hull_blockout.py`
+still reads the old corridor keys (`x`). Step B (the hull lane) builds J round the moved rooms, then drops `pending`
+and the legacy key. The inside's light: the corridor lamps at u 4.6, 5.97 and 7.35 on the axis, the tip lamp at the
+room's centre, the old window's cool moonlight kept as a fill 1.3 m out on the axis (2.0 m up). ship.toml's `in_`
+views win over the exterior's of the same name (`ship.py` `shot_views`), so the inside views follow the rooms.
+
+## Version 2 joined (join step, 2026-10-22)
+
+The two lanes' work, run as one whole on `feat/ship-mirror-263`:
+
+| What | Number |
+|---|---|
+| Hall | round, r 4.0 at (0, 0), about 50 m2; 16 facets, the four 45 deg pairs merged into flat chords 3.12 m wide (apothem 3.768); ceiling 3.2 at the wall, 3.8 at the lamp ring |
+| Mouth | y -4.6..-3.9, the ramp from the north: the only way in or out |
+| Corridors | straight, x +-3.7..+-7.3 (where the circles cross y +-1.5), y -1.5..1.5 (3 m), 2.4 m clear; 3 modules, arches at x +-4.15 and +-6.4 |
+| Tip rooms | round, r 1.8 (wall facets at 1.85) at (+-8.3, 0), outer wall +-10.1; 2.5 m at the wall, 2.8 m at the centre; the curved window on the outer side, sill 1.0 m |
+| Wing | low to x 11 (edge 1.0..1.1 m), curling up past x 12 to the tips at about +-13.75 (3.8 m high), 0.93 m thick at x 11.5, 0.67 m at 12.5 |
+| Wall spots | vents (+-2.664, -2.664), sockets (+-2.664, 2.664) on the hall's flat chords; breakers (+-5.25, -1.5) on each corridor's front wall; renewers on the window wall (+-10.1, 0), the player at (+-8.8, 0); each a 1.6 m plain band, 1.6 m pass behind the player; the console's clear floor round (0, 1) |
+| Heights | unchanged from v1 (deck 0.6; the 1.8 m capsule with 0.5 m or more over it everywhere) |
+| Pieces | 151 GLBs, 1089 placements, 97,444 triangles per piece set, glTF-Validator clean; extent 27.50 x 14.49 m |
+| Godot | sizes equal Blender's, 145 colliders; the capsule walk reaches all 14 points, both tip rooms included (16.6 s) |
+| Walk-through | 1280x720, 89.5 s, 2149 frames, 13.1 MB (rendered in 364 s) |
+| Draw calls | tip rooms about 1,120, corridors 1,390..1,590, hall 2,890, outside 3,020..3,430 (the pines) |
+
+**The shutter** (inside lane, step 1 and 2): eight slatted panels per tip window, each its own model
+(`tip_shutter`, tone `d`), dropping 1.17 m into the low wall when open; the closed pose in `interior.toml`'s
+`shutter_closed`, shot with `ship --shoot DIR --shutters closed`; a 12 x 20 cm wall button
+(`tip_shutter_button`) on the first facet north of each window, 1.7 m off the window's axis, off the renewer's band.
+Not wired: the game track wires the button.
+
+**The smooth skin** (hull lane): one continuous height field cut into a few large pieces (top, brow, belly, mouth),
+no seam grid, no scratches, no hatches; the seams stay only at the canopy rims, the mouth, the ramp and the nozzle
+housings; the outside metals in `godot/ship/ship.gd` `METALS` (seams 0, scratches 0, grime 0.05, grain 0.4). The join
+step lit the curled tips' outer faces, which read black in the side view (the moon from above and the hero-side key
+reach neither): two `flank` lamps in `ship.toml` `[light]` at (+-16.5, 1.0), 1.4 m up, range 9, `flank_lamp` 1.6,
+lighting only the outside layer (`light_cull_mask` = `OUTSIDE_LAYER` in `ship.gd`, so no light leaks through the tip
+rooms' walls onto their floors), and made `ext_silver_c` (belly, brow, mouth) take diffuse light (metallic 0.6 ->
+0.35, roughness 0.4 -> 0.5, grey 0.56 -> 0.62). The curl now reads as dark blue-grey metal.
+
+**Open problems** (worst first):
+- The skin reads like draped cloth up close: wavy shading streaks on the tip pods' fronts and the wings, folds from
+  the mouth's corners, a small horn on the spine between the canopies (the height field: the pods' sqrt fall-off, the
+  0.9 m edge fade, 0.18 m stations; not the shader). Options in "The view from the tip window" above.
+- Inside draw calls rose against v1 (tip rooms about 1,120, was 415..620; the hall 2,890): more, smaller pieces and
+  the outside drawn behind the walls. Batching or merging per room is the game's import question.
+- The tip pods still read as bulges from the top; the open window shows the curled wing tip as a pale triangle.
+- The closed shutter reads fairly light under the room's lamps; a darker slat material is the next knob.
+- Stale GLBs in `<raw>/ship/v2/pieces` (`tip_louvre*`, `tip_shutter_ta..td`): unplaced, harmless.
+
+## Rebuild B: the hull J (hull lane, 2026-10-22)
+
+The engineer's decisions: the hull is variant J of the blockouts (F's outline, span 30 m, length 18.9 m with the
+nozzles, the wing tips rounded in plan, radius 1.5 m, edge 0.3 m), built faithfully: flat wings, no upcurl, the rooms
+hidden (no domes, pods or bulges), no tip windows; the two canopies and the three nozzle pods as in J; the night
+build's plated, faceted brushed silver with no scratches ("smooth like a ray" meant the shape, not a glossy material);
+no outside light strips; the inside (rebuild A) frozen; the clearing only scaled.
+
+- **The shape** is `tools/blender/ship_hull_shape.py`, plain Python: the blockouts' variants and design points (moved
+  out of `ship_hull_blockout.py`, which imports them and now reads the corridors' `axis`/`along` keys), a convex hull
+  of them (`facets()`, 111 facets for J), the mouth recess cut as four convex pieces per facet plus the recess's own
+  faces (`surface()`, 126 faces), `skin(p)` (a point's distance to the outside), `clearance()` (every room's sampled
+  walls, roofs and slabs against SKIN 0.15 m), `heights(x, y)` and `outline_rows()` (ship.toml's `[hull]` rows,
+  checked by `test_ship_layout`). `[hull] shape = "J"` names the variant; `ship --check` runs `clearance` too
+  (`ship_layout.hull_skin`): least skin 0.16 m, no poke.
+- **The skin** is `ship_hull_j.py` (builder `j_skin`, pieces `skin_top`, `skin_belly`, `skin_mouth`): each face cut in
+  its own plane into plates (rows 1.3 m wide along the facet's span direction, cut every 1.8 m, staggered like
+  brickwork; slivers under 3 cm stay open as seams), each plate v1's `_plate` (inset 0.022, chamfer 0.014 deep) in
+  one of v1's silvers by a hash, the dark `ext_seam` under-skin 0.025 inside. Flat shaded. `ship.gd`'s METALS are the
+  night build's again (brush 0.6, grime), with no scratches and no shader seam grid (the seams are geometry).
+- **Gone:** the lead blades, the stripes, the tip windows' glass and frames, the pod housing (J's stern face holds the
+  pods), `skin_brow`. The canopies are J's (0.95 x 1.35 at (+-2.25, -3.6), 0.75 high) on `ship_hull_shape.heights`.
+  The pods keep their style, placed so their rear ends are J's (y 11.0 and 11.8: J's y less `pod_tail_m`).
+- **Legs** at J's spots off the corridors and the tip rooms: front (+-4.6, -3.4), wing (+-11.6, 4.4), stern
+  (+-5.0, 8.6); `top` = J's lowest belly under the mount + 0.1 (0.6, 0.63, 0.52); the six ground lamps 0.9 m past
+  their feet. The flank lamps moved to (+-17.0, 6.0) beyond J's tips.
+- **The clearing** is scaled by `ship_hull.CLEARING_K` 1.25 round the centre (the ground's radii and flat 20 m, the
+  dirt patch, the path past its first point, the gate posts, every clearing placement, its height again on the
+  ground's facets).
+- **Views:** the turnaround views backed off and widened for the 30 m span; `detail_seam` on the plated east wing,
+  `detail_floor` and `detail_cables` in the diagonal east corridor; the walk video's corridor and tip-room keys turned
+  onto the diagonal axes. The exterior's `in_*` rows stay overridden by ship.toml's.
+
+## Rebuild C: the inside 1 m forward and the throat (2026-10-22)
+
+The engineer's pick "A" (prime-game PR #1314; art#263 comments 6341012901, 6341202614, 6341553197). The hull J's
+silhouette, span, length and nose do not change: `ship_hull_shape.design_points` no longer reads the rooms (the hall's
+and tip rooms' belly rings, the old mouth corner and TIP_X are pinned numbers), so moving the rooms moves nothing
+outside but the mouth notch. Two things had to give, both measured with `ship_hull_shape.clearance`:
+- **The belly.** With J's belly pinned, the moved tip rooms' slabs poked 0.27 m out of the rising belly at their front.
+  J's rule is a flat belly under every room, so `belly_also` adds the belly rings at the moved rooms too (the old ones
+  stay): the plan outline rows, span, length, nose and top are unchanged (test_ship_layout holds the rows); only the
+  underside's front facets differ (117 facets, was 111).
+- **The hall's front rim.** J's lead edge leaves no 0.15 m skin over a 3.2 m rim 1 m further forward (at -30 deg the
+  hall wall's top had 0.02 m). The rim is 2.75 m (`front_clear_h`) from -15.11 deg round the front to -164.89
+  (`front_from_deg`): the throat's four sub-facets and the front sockets' flats; their ceiling panels run from the lamp
+  ring (unchanged) down to the low rim, with a fold (`hall_ceil_step`) at -15.11 / -164.89 where it meets the full rim.
+
+Superseded by rebuild E and F (below): the table holds C's numbers as built then (hall (0, -1), the low front rim,
+the throat's corners at y -3.852, four modules), kept as history.
+
+| What | Built (rebuild C) |
+|---|---|
+| Hall | (0, -1), r 4.0; the throat's opening -135.62..-44.38 deg from its centre (four sub-facets of 22.81 deg), the front sockets' flats -44.38..-15.11 (29.27 deg, the back sockets' width), one front facet -15.11..3.23 to each corridor |
+| Tip rooms, corridors | (+-8.3, 3.0); axes (0, -1) to (+-8.3, 3.0), the same 9.214 m and 25.73 deg; about 1 m of hull behind the tip rooms |
+| Throat | ship.toml room `throat` (shape `poly`): mouth x +-1.65 at y -7.1, the walls straight to the hall's vertices (+-2.915, -3.852), 3.485 m long, four modules of 0.871; walls vertical to 1.45 m, then 0.55 m in to the 2.3 m ceiling (2.9 m over the ground: the capsule and its margin); roof from y -5.476 aft (0.15 m of hull over it there; forward of it the nose is too low: an open notch) |
+| Notch | `ship_hull_shape.cutters`: "notch" (between the walls' outer faces, forward of y -5.476, all heights) and "belly" (between them, aft to the hall's corners, below the slab); the lintel over the roof line stays; `skin_cheeks` (`ship_hull_j.j_cheeks`) plates the walls' outer faces where the belly rises over the deck |
+| Ramp | hinge (0, -7.1), foot (0, -9.9), 3.3 m wide, 12.1 deg |
+| Spots | console (0, 0); vents on the throat's walls (+-2.175, -5.751), asked (+-2.3, -5.8), snapped 0.134 m; sockets (+-1.800, 2.512) and the front two (+-3.426, -2.958), asked (+-3.5, -3.0), snapped 0.085 m onto their flat; breakers (+-6.030, 0.241); renewers (+-9.922, 3.781) |
+
+The interior generator works round the hall's centre (`ship_interior.HALL_C`): the builders are unchanged in their
+frames, `ship_interior_place.put` adds HALL_C to every placement; the throat's floor (`throat_floor`: plates either
+side of a grate strip, the dark slab) and ceiling (`throat_ceil`: the flat ceiling between the chamfers and the header
+under the low rim) are built in hall-relative plan coordinates; its walls are the corridors' modules (`th_*`, prof
+`throat`): plain (`cor_wall_mid`) over the vent's 1.6 m band, a cable bay in the last module, chamfers under the roof.
+The v2 mouth passage's pieces, the mouth frame and lights are gone.
+
+
+## Rebuild D: the review's findings and the throat's look (2026-10-22)
+
+- **The skin check reads the layout it is given.** `ship_layout.hull_skin(layout)` passes the layout's rooms to
+  `ship_hull_shape.clearance(name, rooms)`; for J, `interior_points` samples the hall, the throat, both corridors and
+  both tip rooms each on its own (it read ship.toml once and mirrored the east rooms, so a west room could poke out
+  unseen). Round walls every 2.5 deg on the polygon circumscribed about them (a wall face between two samples lies
+  inside them), straight walls every 0.15 m with both ends; the tip walls at the slab, mid-wall and rim (the old
+  window's sill and head heights stay for the blockouts only). The hall's wall within 0.25 m of the throat's corners
+  is the throat wall's joint (its outer face is the notch's cut) and is not sampled. The least skin is 0.150 m.
+- **New checks.** `check_polys` (a poly room convex, its points with a positive signed area in plan (x, y), the order
+  `poly_edges` reads as inward on the left) and `check_walk` (every walk point on the deck on a room's floor with the
+  capsule's radius round it). `--shutters` and `ship_layout.pose` are gone; the reflection probes no longer read the
+  retired `window` key (every room but the throat stays an interior probe at `probe_intensity` 0.15, the tip rooms
+  too, as in step C's shots).
+- **The saw-toothed floor seam** by the throat was the throat's sub-facet half angle with the wrong sign
+  (`ship_interior_place.PHI_THROAT` -11.41): the hall's rim plates and low ceiling panels over the throat's four
+  sub-facets were built inside out. With +11.41 the rim plates run from the amber ring to the sub-facets' chords,
+  where the throat's floor plates start.
+- **The cheeks** (`skin_cheeks`) are in the mouth's dark plates (`skin_mouth`'s `hull_dark`), so each side of the
+  mouth reads as one dark face, cut face and cheek, up to the nose's slope.
+- **The throat's arch** (`th_arch`): the corridors' arch (band, stepped rim, cyan strips) at the roof line (its
+  mid-plane 0.1 m aft of y -5.476), over the ceiling and both chamfers only: the vents' plain walls stand below it.
+  The throat's cable bay is the module by the hall (C); it has no ceiling ribs.
+- **The front legs' mounts** rise 0.25 m more (`leg` arg `rise`): the belly over them climbs to 1.05 m, over the
+  mount's old top (1.02).
+- **The detail views** `detail_floor` and `detail_cables` look into the corridors from the hall's centre at (0, -1)
+  (superseded: rebuild E moved them 0.6 m forward with the inside, from (0, -0.4)).
+
+## Rebuild E: the hall's full rim and the inside 0.4 m forward (2026-10-22)
+The engineer kept the hall's ceiling at full height (art#263 comment 6342342554): C's 2.75 m front rim
+(`front_clear_h`, `front_from_deg`) and its fold piece `hall_ceil_step` are gone; the hall's rim is 3.2 m all round.
+- **The shift.** The inside moves forward of step A (hall (0, 0), tips (+-8.3, 4.0)) only as far as the hall's whole
+  wall top keeps 0.15 m of skin under J: s = 0.40 m (searched in 0.05 m steps, rounded down). At s 0.45 the hall's rim
+  over the throat's opening (where the hall's ceiling meets the throat's header) keeps 0.139 m, under the 0.15; at
+  0.40 it keeps 0.165 m and the wall top elsewhere 0.177 m (the least at the throat's corners).
+- **Built:** hall (0, -0.4); tip rooms (+-8.3, 3.6); corridor axes (0, -0.4) to (+-8.3, 3.6) (the same 9.214 m and
+  25.73 deg). The throat keeps its mouth at the nose edge (x +-1.65, y -7.1); its corners move to (+-2.915, -3.252) on
+  the hall's same vertices (-44.38 / -135.62 deg), so its walls are 4.051 m (C 3.485): five modules of 0.810. Its
+  roof starts at y -5.561, the first module line aft of y -5.77, where J's top first gives 0.15 m over the roof.
+- **Spots:** console (0, 0.6); sockets (+-1.800, 3.112) and (+-3.426, -2.358); breakers (+-6.030, 0.841); renewers
+  (+-9.922, 4.381); the vents' asked (+-2.3, -5.8) snapped 0.211 m onto the longer walls: (+-2.099, -5.734), normal
+  (-+0.950, 0.312) (superseded by rebuild F: (+-2.409, -4.791), off the jamb).
+- **J's underside.** C's belly ring under the hall is removed: on step A's ring the hall's slab keeps 0.18 m. The
+  tip rooms' ring stays, moved to (+-8.3, 3.6) (`belly_also` holds (x, y, r) rings): without it their slab fronts
+  keep 0.10 m. J's outline, span, length, nose and top are unchanged.
+- **The skin check** (`ship_hull_shape._room_points`) samples the hall's rim over the throat's opening ("hall rim")
+  and the wall's ends at the opening's corners. D's skip of hall wall samples by the throat's corners is narrowed to
+  the slab bottom: that point is the edge of the throat's open underside (the "belly" cutter's back plane runs
+  through the hall's corners, 0.014 m from it). The wall above it is checked (its top keeps 0.152 m there).
+  `ship --check` prints each room's least skin: hall 0.152, throat 0.150, corridors 0.180, tip rooms 0.180. Behind
+  the tip rooms 2.1 m of hull is left in plan (the least margin, 1.25 m, is on their lead side).
+- **The pale boards beside the mouth** were the throat's wall modules forward of the roof line (`th_wall_low`,
+  `th_wall_mid`: interior silver, flat tops at 2.05 m, standing free under the open notch), not the cheeks. Forward
+  of the roof line those modules are gone; `skin_cheeks` (`j_cheeks`) now also builds the jambs: each wall there is
+  a solid in the wall's thickness from the slab up to J's top over it, its inner face in the hull's plates
+  (`hull_silver`, `ext_silver_b/c`), its sloped top and front edge in `hull_silver`. The amber floor lights stay
+  (two a side, at 1/5 and 4/5 of the wall).
+
+## Rebuild F: the hole at the mouth's corners, the vents, the floor's bar (2026-10-22)
+- **The hole.** J's notch is cut `WALL` beyond the throat's walls up to J's top; at the roof line its back face (the
+  lintel) closes it only above the throat's roof (`TH_TOP`), and the covered part behind closes only its own profile.
+  Between that profile's chamfer and the notch's side, under the lintel, the hull's hollow stood open: sky and pines
+  showed through its one-sided skin at both upper corners of the mouth. `skin_cheeks` now carries `jamb_cap`
+  (`ship_hull_j.jamb_caps`, `hull_dark`, both windings): a cap per side 1 cm aft of the roof line (behind the arch's
+  face and the lintel), from the slab up under the lintel, from the walls' inner face out past the notch's side, its
+  inner edge on the throat's inner profile. Close-ups: the views `in_mouth_ne`, `in_mouth_nw` (from the ramp),
+  `in_mouth_ne_side`, `in_mouth_nw_side` (at an angle) and `out_mouth_top` (the notch from above).
+- **The dark band across the throat's floor** was J's belly: it rises over the deck forward of the hall (0.78 m at
+  the roof line), and its front facet crossed the throat's floor from the roof line to y -5.33 as a bar with sloped
+  ends (the side planes' cut). `ship_hull_shape._throat_surface` cuts every hull face inside the throat's covered part
+  (between the walls' outer faces, roof line to the hall's corners, slab to roof) with no faces of its own; the
+  room's floor slab is the underside there. View: `in_throat_floor`.
+- **The vents** stood on the jamb's hull plates (s 1.44 from the mouth; the wall modules start at s 1.62). They are on
+  the line between modules 2 and 3 (3/5 of the wall from the mouth): (+-2.409, -4.791), normal (-+0.950, 0.312), so
+  their 1.6 m plain band lies on two plain modules (`th_wall_mid`; module 3 lost its cable bay, module 4 keeps it).
+  Module 2's centre alone would leave 0.4 m of the band on the jamb.
+- **New checks.** A plain wall piece's face lies under every point of a wall spot's band (`plain` boxes in
+  interior.toml: `th_wall_mid`, `cor_wall_board`, `hall_panel_flat_socket`, `tip_panel_a/b`); `check_walk` samples
+  every deck segment of the walk every 0.25 m with the capsule's footprint on the rooms' floors. The throat joint's
+  slab skip is the thin zone's width (`WALL + 0.12`).

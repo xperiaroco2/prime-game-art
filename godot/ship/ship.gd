@@ -30,20 +30,24 @@ var _scenes: Dictionary = {}
 var _metals: Dictionary = {}
 
 ## The shared metal library (metal.gdshader) by glTF material name: base colour, metallic, roughness, grain, seams,
-## scratches, grime. Other materials keep their glTF look.
+## scratches, grime. Other materials keep their glTF look. The outside (rebuild B, the engineer: back to the night
+## build's plated, brushed silver): the night's colours, brush and grime; no scratches, and no seam grid in the shader
+## (the plates' seams are geometry, laid over the hull's facets by ship_hull_j.py).
 const METALS: Dictionary = {
-	"hull_silver": [Color(0.66, 0.68, 0.71), 0.6, 0.36, 0.6, 0.35, 0.55, 0.25],
-	"ext_silver_b": [Color(0.74, 0.76, 0.79), 0.6, 0.32, 0.6, 0.35, 0.5, 0.2],
-	"ext_silver_c": [Color(0.56, 0.58, 0.61), 0.6, 0.4, 0.6, 0.35, 0.6, 0.3],
-	"hull_dark": [Color(0.12, 0.125, 0.13), 0.8, 0.42, 0.4, 0.2, 0.4, 0.3],
-	"ext_frame": [Color(0.17, 0.18, 0.19), 0.85, 0.34, 0.35, 0.0, 0.35, 0.2],
-	"leg_metal": [Color(0.32, 0.33, 0.35), 0.9, 0.36, 0.5, 0.15, 0.6, 0.35],
+	"hull_silver": [Color(0.66, 0.68, 0.71), 0.6, 0.36, 0.6, 0.0, 0.0, 0.25],
+	"ext_silver_b": [Color(0.74, 0.76, 0.79), 0.6, 0.32, 0.6, 0.0, 0.0, 0.2],
+	"ext_silver_c": [Color(0.56, 0.58, 0.61), 0.6, 0.4, 0.6, 0.0, 0.0, 0.3],
+	"hull_dark": [Color(0.12, 0.125, 0.13), 0.8, 0.42, 0.4, 0.0, 0.0, 0.3],
+	"ext_frame": [Color(0.17, 0.18, 0.19), 0.85, 0.34, 0.35, 0.0, 0.0, 0.2],
+	"leg_metal": [Color(0.32, 0.33, 0.35), 0.9, 0.36, 0.5, 0.0, 0.0, 0.35],
 	"wall_panel": [Color(0.42, 0.44, 0.47), 0.75, 0.4, 0.4, 0.4, 0.3, 0.25],
 	"ceiling": [Color(0.36, 0.38, 0.41), 0.75, 0.42, 0.4, 0.4, 0.2, 0.2],
 	"ext_seam": [Color(0.035, 0.037, 0.04), 0.6, 0.6, 0.0, 0.0, 0.0, 0.0],
 }
 const METAL_KEYS: Array = ["metallic", "roughness", "grain", "seams", "scratches", "grime"]
 const LIGHT_CELL_M: float = 1.6
+const INSIDE_LAYER: int = 1   # render layer bits: the inside's pieces (default) and the outside's (inside-2)
+const OUTSIDE_LAYER: int = 2
 const MAX_LIGHTS: int = 96
 
 
@@ -96,6 +100,8 @@ func _build() -> Node3D:
 		node.position = _v(p[1])
 		node.rotation_degrees.y = float(p[2])
 		ship.add_child(node)
+		if p[0] in _req.get("outside", []):  # inside-2: the outside draws on layer 2, unlit by the inside's strips
+			_set_layers(node, OUTSIDE_LAYER)
 	var ground: StaticBody3D = StaticBody3D.new()
 	var shape: CollisionShape3D = CollisionShape3D.new()
 	shape.shape = WorldBoundaryShape3D.new()
@@ -272,6 +278,8 @@ func _environment() -> void:
 		omni.omni_attenuation = 1.4
 		omni.light_color = Color(float(l[5]), float(l[6]), float(l[7]))
 		omni.shadow_enabled = bool(l[9]) if l.size() > 9 else true
+		if l.size() > 8 and str(l[8]) == "flank":  # join: the wing tips' outer faces, outside pieces only
+			omni.light_cull_mask = OUTSIDE_LAYER
 		root.add_child(omni)
 
 
@@ -327,10 +335,12 @@ func _dress(ship: Node3D) -> int:
 				var box: AABB = _placed(mi) * mi.mesh.get_aabb()
 				var area: float = maxf(box.size.x * box.size.z, maxf(box.size.x * box.size.y, box.size.y * box.size.z))
 				var c: Vector3 = box.get_center()
-				var key: String = "%d_%d_%d_%s" % [floori(c.x / LIGHT_CELL_M), floori(c.y / LIGHT_CELL_M),
-					floori(c.z / LIGHT_CELL_M), bm.emission.to_html(false)]
+				var inside: bool = mi.layers != OUTSIDE_LAYER
+				var key: String = "%d_%d_%d_%s_%s" % [floori(c.x / LIGHT_CELL_M), floori(c.y / LIGHT_CELL_M),
+					floori(c.z / LIGHT_CELL_M), bm.emission.to_html(false), inside]
 				if not cells.has(key):
-					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0, float(mats.get(bm.resource_name, {}).get("rr", 1.0))]
+					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0, float(mats.get(bm.resource_name, {}).get("rr", 1.0)),
+						inside]
 				var cell: Array = cells[key]
 				cell[0] = (cell[0] as Vector3) + c * area
 				cell[1] = float(cell[1]) + area
@@ -346,11 +356,21 @@ func _dress(ship: Node3D) -> int:
 		omni.light_energy = clampf(sqrt(float(cell[1])) * 0.9 * float(cell[3]) / 3.0, 0.08, 1.6 * maxf(float(cell[3]) / 6.0, 1.0)) * _lk("strip_light_scale", 1.0)
 		omni.omni_range = clampf(2.2 + sqrt(float(cell[1])) * 2.0, 2.2, 5.0) * float(cell[4])
 		omni.omni_attenuation = 1.6
+		if bool(cell[5]):  # an inside strip lights only the inside (it shone through the smooth skin's top, inside-2)
+			omni.light_cull_mask = INSIDE_LAYER
 		root.add_child(omni)
 		dump.append([_r3(omni.position), snappedf(omni.light_energy, 0.001), snappedf(omni.omni_range, 0.001),
 			omni.light_color.to_html(false)])
 	_write("lights.json", {"cells": list.size(), "strip_lights": dump})  # where the emissive cells' lights stand (the hall disc's spot, inside-3)
 	return mini(list.size(), MAX_LIGHTS)
+
+
+## Every mesh under n on the render layers bits.
+func _set_layers(n: Node, bits: int) -> void:
+	if n is VisualInstance3D:
+		(n as VisualInstance3D).layers = bits
+	for c: Node in n.get_children():
+		_set_layers(c, bits)
 
 
 ## A mesh's transform in the scene, composed up its parents. mi.global_transform gave each piece's own frame here (every

@@ -38,18 +38,22 @@ def newell(p: list) -> tuple:
 
 class ShipExteriorTest(unittest.TestCase):
     def test_faces_point_outward_after_the_mirror(self) -> None:
-        """The harness writes (x, -y, h): after it, every face of a nozzle pod's under-skin points away from its axis
-        (the pod's barrel runs along local y, its axis at x 0, h 0)."""
-        parts = next(m for m in H.MODULES if hasattr(m, "nozzle_pod")).nozzle_pod({"r": 1.05, "length": 3.6}, LAYOUT)
-        skin = [p for p in parts if p["name"].endswith("_seam")][0]
+        """The harness writes (x, -y, h): after it, every face of the hull's top plates (an open part: the plates' faces
+        and chamfers) leans out along the facet it lies on."""
+        import ship_hull_shape as S
+        parts = next(m for m in H.MODULES if hasattr(m, "j_skin")).j_skin({"part": "top"}, LAYOUT)
+        skin = next(p for p in parts if p["name"] == "skin_top_hull_silver")
+        self.assertFalse(skin["solid"])
+        planes = [((n[0], -n[1], n[2]), d) for n, d, _p in S.facets()]
         verts = [(x, -y, h) for x, y, h in skin["verts"]]
         for face in skin["faces"]:
             p = [verts[i] for i in face]
             c = [sum(q[k] for q in p) / len(p) for k in range(3)]
             n = newell(p)
-            if abs(n[1]) > 0.9 * math.sqrt(sum(k * k for k in n)):
-                continue  # the flat rear cap faces along the axis
-            self.assertGreater(n[0] * c[0] + n[2] * c[2], 0.0, f"inward face at {c}")
+            if sum(k * k for k in n) < 1e-12:
+                continue
+            near = [fn for fn, d in planes if abs(sum(fn[k] * c[k] for k in range(3)) - d) < 0.05]  # its facet(s)
+            self.assertGreater(max(sum(n[k] * fn[k] for k in range(3)) for fn in near), -1e-3, f"inward face at {c}")
 
     def test_placements_and_views(self) -> None:
         pieces = {p["id"] for p in EXT["pieces"]}
@@ -90,6 +94,18 @@ class ShipExteriorTest(unittest.TestCase):
                 deck += 1
         self.assertGreater(deck, 0, "no key on the deck")
         self.assertGreater(on_ramp, 0, "no key on the ramp")
+
+
+    def test_the_flank_lamps_light_only_the_outside(self) -> None:
+        """The join's flank lamps: a mirrored pair outside the wing tips, culled to the outside layer in ship.gd."""
+        lamps = [lamp for lamp in LAYOUT["light"]["lamps"] if len(lamp) > 8 and lamp[8] == "flank"]
+        self.assertEqual(len(lamps), 2)
+        self.assertAlmostEqual(lamps[0][0], -lamps[1][0])
+        for lamp in lamps:  # J's wing tips at +-15.0
+            self.assertGreater(abs(lamp[0]), 15.0 + 1.0, "a flank lamp inside the wing")
+        self.assertIn("flank_lamp", LAYOUT["light"])
+        gd = (Path(__file__).resolve().parents[2] / "godot" / "ship" / "ship.gd").read_text(encoding="utf-8")
+        self.assertRegex(gd, r'== "flank":[^\n]*\n\t+omni\.light_cull_mask = OUTSIDE_LAYER')
 
 
 if __name__ == "__main__":

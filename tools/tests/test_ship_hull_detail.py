@@ -1,6 +1,6 @@
-"""The hull's details (art #263, hull lane step 2; docs/ship.md "The hull's details"): the canopies sit on the skin
-with a low collar and never reach into the hall, the nozzle pods and their housing stay out of the hall, the lead blade
-runs from the body to the swept tip. Pure Python (tools/blender/ship_hull_detail.py needs no Blender)."""
+"""The hull's details on the hull J (art #263 rebuild B; docs/ship.md "The hull's details"): the canopies sit on the
+hull with a low collar, the nozzle pods stay out of the hall and end where J's do, and no blade, stripe, tip window,
+pod housing, hatch, seam line or scratch is left. Plain Python, no Blender."""
 
 from __future__ import annotations
 
@@ -14,7 +14,8 @@ from runner import ship_layout as sl
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "blender"))
 import ship_hull  # noqa: E402,F401  (imports the skin and the details in their order)
 import ship_hull_detail as D  # noqa: E402
-import ship_hull_skin as S  # noqa: E402
+import ship_hull_j as J  # noqa: E402
+import ship_hull_shape as S  # noqa: E402
 
 LAYOUT = sl.load()
 HALL = next(r for r in LAYOUT["rooms"] if r["id"] == "hall")
@@ -25,49 +26,84 @@ def verts(parts):
 
 
 class ShipHullDetailTest(unittest.TestCase):
-    def test_the_canopies_sit_on_the_skin(self) -> None:
-        for side in (1.0, -1.0):
-            ts, rim, glass, deck, _outline = D._canopy_frame(side)
-            collar = [deck(x, y) - D.skin_h(x, y) for x, y in rim]
-            self.assertLess(sum(collar) / len(collar), 0.6, "the canopy's fairing stands tall over the skin")
-            for x, y in glass:
-                self.assertGreaterEqual(deck(x, y), D.skin_h(x, y), f"glass base under the skin at ({x:.2f}, {y:.2f})")
+    def test_the_canopies_sit_on_the_hull(self) -> None:
+        for side in (-1.0, 1.0):
             for part in ("glass", "fairing", "glow"):
                 for x, y, h in verts(D.canopy({"side": side, "part": part}, LAYOUT)):
-                    sh = D.skin_h(x, y)
-                    if sh is not None:
-                        self.assertGreater(h, sh - 0.1, f"canopy {part} reaches under the skin at ({x:.2f}, {y:.2f})")
+                    top = D.skin_h(x, y)
+                    if top is not None:
+                        self.assertGreater(h, top - 0.1, f"canopy {part} under the hull at ({x:.2f}, {y:.2f})")
+            glass = verts(D.canopy({"side": side, "part": "glass"}, LAYOUT))
+            self.assertLess(max(h for _x, _y, h in glass) - D.skin_h(side * D.CANOPY["x"], D.CANOPY["y"]), 0.95)
 
-    def test_the_pods_and_housing_stay_out_of_the_hall(self) -> None:
-        r_hall = float(HALL["radius"]) + 0.2
-        pods = {"nozzle_pod_outer": (2.75, 3.5, 2.15, 1.05, 3.6), "nozzle_pod_mid": (0.0, 3.9, 2.45, 1.2, 4.0)}
-        for _pid, (x0, y0, h0, r, ln) in pods.items():
-            for x, y, h in verts(D.nozzle_pod({"r": r, "length": ln}, LAYOUT)):
-                for sx in ((1, -1) if x0 else (1,)):
-                    self.assertGreater(math.hypot(sx * x0 + x, y0 + y), r_hall, "a pod reaches into the hall")
-        for x, y, h in verts(D.pod_housing({}, LAYOUT)):
-            sh = D.skin_h(x, y)
-            self.assertTrue(math.hypot(x, y) > r_hall or (sh is not None and h > sh - 0.1),
-                            f"the housing reaches into the hall at ({x:.2f}, {y:.2f}, {h:.2f})")
+    def test_the_pods_stay_out_of_the_hall_and_end_as_js(self) -> None:
+        pods = {p["id"]: p for p in LAYOUT["pieces"] if p["builder"] in ("nozzle_pod", "pod_ring")}
+        build = {"nozzle_pod": D.nozzle_pod, "pod_ring": D.pod_ring}
+        hx, hy = HALL["centre"]
+        ends = []
+        for pid, at, yaw in LAYOUT["place"]:
+            if pid in pods:
+                c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+                for x, y, _h in verts(build[pods[pid]["builder"]](pods[pid]["args"], LAYOUT)):
+                    px, py = at[0] + c * x - s * y, at[1] + s * x + c * y   # every vertex where it is placed
+                    self.assertGreater(math.hypot(px - hx, py - hy), HALL["radius"] + 0.2, f"{pid} in the hall")
+            if pid in pods and pods[pid]["builder"] == "nozzle_pod":
+                ends.append(at[1] + float(pods[pid]["args"]["length"]) + LAYOUT["hull"]["pod_tail_m"])
+        self.assertEqual(len(ends), 3)
+        self.assertAlmostEqual(max(ends), max(S.pod_ends()), delta=0.01)
+        self.assertAlmostEqual(min(ends), min(S.pod_ends()), delta=0.01)
 
-    def test_the_layouts_stern_numbers_are_the_builders(self) -> None:
-        """ship.toml hull.trail_y and pod_tail_m, which `ship --check` measures the length with, equal the geometry."""
-        hull = LAYOUT["hull"]
-        for ln in (3.6, 4.0):
-            tail = max(max(y for _x, y, _h in verts(build({"r": 1.1, "length": ln}, LAYOUT))) - ln
-                       for build in (D.nozzle_pod, D.pod_ring))
-            self.assertAlmostEqual(tail, hull["pod_tail_m"], places=3)
-        housing = max(y for _x, y, _h in verts(D.pod_housing({}, LAYOUT)))
-        swept = max(dy for _dx, dy in S.VARIANTS[S.DEFAULT]["tip"])
-        self.assertAlmostEqual(hull["trail_y"], max(housing, swept), places=3)
+    def test_the_pod_tail_is_the_builders(self) -> None:
+        ring = verts(D.pod_ring({"r": 1.05, "length": 3.25}, LAYOUT))
+        self.assertAlmostEqual(max(y for _x, y, _h in ring) - 3.25, LAYOUT["hull"]["pod_tail_m"], delta=0.01)
 
-    def test_the_lead_blade_runs_to_the_tip(self) -> None:
-        path = D._lead_path(1.0)
-        self.assertLess(path[0][0], 2.5)
-        self.assertAlmostEqual(path[-1][0], S.TIP_X + max(dx for dx, _dy in S.VARIANTS[S.DEFAULT]["tip"]), places=3)
-        xs = [p[0] for p in path]
-        self.assertEqual(xs, sorted(xs), "the blade turns back on itself")
+    def test_no_strips_windows_hatches_seams_or_scratches(self) -> None:
+        builders = {p["builder"] for p in LAYOUT["pieces"]}
+        for gone in ("lead_blade", "smooth_stripes", "smooth_window", "window_frame", "pod_housing", "hatches",
+                     "seam_lines", "hull_skin", "smooth_skin"):
+            self.assertNotIn(gone, builders)
+            self.assertFalse(hasattr(D, gone), gone)
 
+
+    def test_the_throats_covered_part_cuts_only_the_belly(self) -> None:
+        # rebuild F: the room cut takes J's belly out of the throat's covered part (between the walls' outer faces,
+        # roof line to the hall's corners) and leaves every top facet whole (a sliver of it once went: a hole)
+        cut = S.cutters()
+        sides, ky = cut["notch"][:2], S.TH_PTS[2][1]
+        surf = S.surface()
+        for poly, _n, kind in surf:
+            if kind != "belly":
+                continue
+            c = [sum(p[i] for p in poly) / len(poly) for i in range(3)]
+            inside = all(S._dot(n, c) <= d for n, d in sides) and S.TH_ROOF_Y <= c[1] <= ky and c[2] > S.SLAB
+            self.assertFalse(inside, f"a belly facet in the throat at ({c[0]:.2f}, {c[1]:.2f}, {c[2]:.2f})")
+        whole = 0.0
+        for n, _d, poly in S.facets():
+            if n[2] >= -0.05:
+                whole += sum(S.area(b) for a in S._subtract(poly, cut["notch"]) for b in S._subtract(a, cut["belly"]))
+        top = sum(S.area(p) for p, _n, kind in surf if kind == "top")
+        self.assertAlmostEqual(top, whole, delta=1e-6)
+
+    def test_the_jamb_caps(self) -> None:
+        caps = J.jamb_caps()
+        self.assertEqual(len(caps), 8)
+        (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
+        k = 1.0 / ((ky - my) / math.hypot(kx - mx, ky - my))
+        y = S.TH_ROOF_Y + J.CAP_BACK
+        xi = mx + (kx - mx) * (y - my) / (ky - my)
+        xo = xi + S.WALL * k + 0.02
+        x_ceil = xi - S.TH_CH[1] * k   # the upper cap's inner edge follows the chamfer in to the ceiling
+        for side in (1, -1):
+            mine = [(v, f) for v, f in caps if all(side * x > 0 for x, _y, _h in v)]
+            self.assertEqual(len(mine), 4)
+            normals = []
+            for v, faces in mine:
+                lo = xi if len(v) == 4 else x_ceil   # the lower cap: walls' inner face to past the notch's side
+                for x, _y, _h in v:
+                    self.assertGreaterEqual(side * x, lo - 1e-9)
+                    self.assertLessEqual(side * x, xo + 1e-9)
+                normals.append(S._newell([v[i] for i in faces[0]])[1])
+            self.assertEqual(sorted(n > 0 for n in normals), [False, False, True, True], "both windings per side")
 
 if __name__ == "__main__":
     unittest.main()

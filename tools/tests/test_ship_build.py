@@ -21,32 +21,32 @@ class ShipBuildTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         shutil.rmtree(OUT, ignore_errors=True)  # an --only build keeps an earlier report's other pieces
-        cls.code, cls.output = run_cli("ship", "--build", "--only", "ramp,skin_tip_e,skin_body_e", "--out", str(OUT))
+        cls.code, cls.output = run_cli("ship", "--build", "--only", "ramp,skin_top,skin_belly", "--out", str(OUT))
         cls.report = json.loads((OUT / "build_report.json").read_text(encoding="utf-8"))["pieces"]
 
     def test_the_build_passes(self) -> None:
         self.assertEqual(self.code, 0, self.output[-2000:])
-        self.assertEqual(set(self.report), {"ramp", "skin_tip_e", "skin_body_e"})
+        self.assertEqual(set(self.report), {"ramp", "skin_top", "skin_belly"})
         for pid in self.report:
             self.assertTrue((OUT / f"{pid}.glb").is_file())
 
     def test_bounds_hold_the_numbers(self) -> None:
         """The exterior's numbers survive the build (Godot's frame (x, h, y)): the ramp as wide as the mouth and as
-        long as its run, the tip fairing from the belly (h 0.6) to its 4.42 m crown inside the span, the body's keel at 0.35 and its
-        nose short of the ramp's foot."""
+        long as its run, the hull's tips at the span, its belly under the slabs and its nose short of the
+        ramp's foot."""
         layout = ship_layout.load()
         ramp = self.report["ramp"]["bounds"]
         run = layout["ramp"]["hinge"][1] - layout["ramp"]["foot"][1]
         self.assertAlmostEqual(ramp["max"][0] - ramp["min"][0], layout["ramp"]["width_m"], delta=0.01)
         self.assertAlmostEqual(ramp["min"][2], -run, delta=0.05)
-        tip = self.report["skin_tip_e"]["bounds"]
-        # launch 3 (deck 0.6): the belly 0.3 under the slabs, the lens's crown 3.65, its blade within the span
-        self.assertAlmostEqual(tip["min"][1], 0.3, delta=0.01)
-        self.assertAlmostEqual(tip["max"][1], 3.65, delta=0.02)
-        self.assertLessEqual(tip["max"][0], layout["size"]["span_max_m"] / 2 + 0.01)
-        body = self.report["skin_body_e"]["bounds"]
-        self.assertGreater(body["min"][2], layout["ramp"]["foot"][1])
-        self.assertAlmostEqual(body["min"][1], 0.3, delta=0.01)
+        top, belly = self.report["skin_top"]["bounds"], self.report["skin_belly"]["bounds"]
+        # rebuild B (the hull J): the tips at the span, the spine's peak 4.82, the belly 0.17 (its under-skin 0.025
+        # lower) under the slabs; the nose short of the ramp's foot
+        self.assertAlmostEqual(top["max"][0], layout["size"]["span_max_m"] / 2, delta=0.05)
+        self.assertAlmostEqual(-top["min"][0], layout["size"]["span_max_m"] / 2, delta=0.05)
+        self.assertTrue(4.78 <= top["max"][1] <= 4.85, top["max"][1])
+        self.assertTrue(0.14 <= belly["min"][1] <= 0.18, belly["min"][1])
+        self.assertGreater(top["min"][2], layout["ramp"]["foot"][1])
 
 if __name__ == "__main__":
     unittest.main()

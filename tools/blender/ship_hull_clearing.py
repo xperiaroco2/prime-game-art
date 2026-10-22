@@ -3,7 +3,8 @@ and the dirt path from the ramp's foot to the treeline, grass tufts, bushes, fal
 pines of the forest edge, and the string of warm party lights along the path (its posts are their own pieces). The
 EXTERIOR lane owns this file. Builders work in the plan frame (x east, y south, h up; metres); the dirt and the
 string are placed at the origin, the rest at their own spot (exterior.toml). Numbers:
-- dirt patch: an irregular blob about 15 x 11 m round the ship (radius capped at 15.6, inside the ground's flat 16 m),
+- dirt patch: an irregular blob about 15 x 11 m round the ship (radius capped at 15.6, inside the ground's flat 16 m; all
+  three times ship_hull.CLEARING_K since rebuild B),
   0.006 over the ground; the path: PATH's centre line from the ramp's foot (0, -9.6) north-west to the treeline at
   r ~ 41, 2.0 m wide at the ramp narrowing to 1.3 m, 0.012 over the ground (0.05 beyond r 16, over its coarse facets).
 - tufts: 9..14 blades 0.18..0.5 m; bushes: 5..8 lumps in a size-metre spread; logs: r 0.22..0.3, 3..4.5 m with cut
@@ -41,8 +42,8 @@ L.MATERIALS.update({
 })
 
 # the path's centre line from the ramp's foot (the ramp ends at y -9.4) north-west to the treeline
-PATH = [(0.0, -9.6), (-0.5, -13.0), (-2.6, -16.6), (-6.0, -19.8), (-10.4, -22.6), (-15.4, -25.4), (-21.0, -28.8),
-        (-26.5, -32.5)]
+PATH = [(0.0, -9.6)] + [(x * H.CLEARING_K, y * H.CLEARING_K) for x, y in (  # rebuild B: scaled with the clearing
+    (-0.5, -13.0), (-2.6, -16.6), (-6.0, -19.8), (-10.4, -22.6), (-15.4, -25.4), (-21.0, -28.8), (-26.5, -32.5))]
 POST_T = (0.2, 0.28, 0.36, 0.44, 0.52, 0.6, 0.68, 0.76)  # the posts' arc fractions (clear of the front shot)
 POST_OFF = 1.6  # metres off the path's centre, sides alternating
 POST_H = 2.7
@@ -54,7 +55,7 @@ _GROUND: list = []
 
 def ground_h(x: float, y: float) -> float:
     """The ground piece's height at (x, y): its triangle under the point, interpolated (0 inside r 16)."""
-    if math.hypot(x, y) <= 16.0:
+    if math.hypot(x, y) <= 16.0 * H.CLEARING_K:
         return 0.0
     if not _GROUND:
         part = H.ground({}, {})[0]
@@ -106,7 +107,7 @@ def _posts() -> list:
 
 # polish 4: the first post (-3.82, -15.51) stood alone, a stick in the front and hero shots; now a pair flanks the path
 # 5.5 m past the ramp's foot so the string crosses it (in the hall-out view through the mouth, as hall_out-2), then on
-GATE = [(2.6, -14.6), (-3.0, -15.0)]
+GATE = [(2.6 * H.CLEARING_K, -14.6 * H.CLEARING_K), (-3.0 * H.CLEARING_K, -15.0 * H.CLEARING_K)]
 POSTS = GATE + _posts()[1:]  # the party lights' posts along the path [(x, y)]
 
 
@@ -117,8 +118,8 @@ def dirt_patch(args: dict, layout: dict) -> list:
     outer, inner = [], []
     for i in range(n):
         a = 2 * math.pi * i / n
-        r = 1.0 / math.hypot(math.cos(a) / 15.0, math.sin(a) / 11.0)
-        r = min(r * (0.86 + 0.16 * H._hash(i, 7.0) + 0.06 * math.sin(3 * a + 1.0)), 15.6)
+        r = H.CLEARING_K / math.hypot(math.cos(a) / 15.0, math.sin(a) / 11.0)
+        r = min(r * (0.86 + 0.16 * H._hash(i, 7.0) + 0.06 * math.sin(3 * a + 1.0)), 15.6 * H.CLEARING_K)
         outer.append((r * math.cos(a), r * math.sin(a), 0.006))
         inner.append((0.55 * r * math.cos(a), 0.55 * r * math.sin(a), 0.006))
     v = [(0.0, 0.0, 0.006)] + inner + outer
