@@ -1008,6 +1008,17 @@ def p_fairings():
     return out
 
 
+def p_fair_face(poly, n, e=1e-4) -> bool:
+    """Details 3b: a surface face lies on a fairing's own facet (its plane and normal), not on a lens's: plated flat
+    like the fins (the lens zone shaded its faces smooth into the barrel: a dark smear with a zig-zag edge)."""
+    c = tuple(sum(p[k] for p in poly) / len(poly) for k in range(3))
+
+    def on(names):
+        return any(_dot(m, n) > 1 - 1e-6 and abs(_dot(m, c) - d) < e
+                   for nm, fac, _bb in p_facets() if nm.startswith(names) for m, d, _p in fac)
+    return VARIANTS[DEFAULT].get("parts") and on("fair_") and not on("lens_")
+
+
 def _bbox(polys):
     vs = [v for p in polys for v in p]
     return tuple(min(v[k] for v in vs) for k in range(3)), tuple(max(v[k] for v in vs) for k in range(3))

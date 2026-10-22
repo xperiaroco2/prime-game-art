@@ -191,7 +191,7 @@ def cells(poly, n):
     """A face's plates in its zone: [(cell key, piece)], the key shared by the pieces of one plate on other facets.
     The west lens is the east's mirror image."""
     sx = _lens_of(poly)
-    if sx == 0:
+    if sx == 0 or S.p_fair_face(poly, n):   # details 3b: the fairings are plated flat, like the fins
         return [(("plan",) + key, q) for key, q in _plan_cells(poly, n)]
     if sx > 0:
         return [(("lens", 1) + key, q) for key, q in _lens_cells(poly, n)]
@@ -264,7 +264,11 @@ def lay_seams(q, flags):
         d1, d2 = S._unit3(S._sub(b, a)), S._unit3(S._sub(c, b))
         m1, m2 = S._cross(n, d1), S._cross(n, d2)   # the edges' inward normals in the face
         den = S._dot(d1, m2)
-        if abs(den) < 1e-6:
+        if o1 and not o2:   # details 3b: a seam ending on a flush edge slides INSET along it, whatever the angle, so
+            x = tuple(d2[t] * o1 for t in range(3))   # the pieces on either side of a fold end at one point (the
+        elif o2 and not o1:  # exact inset's INSET / sin slide differed per facet: black wedges past the groove)
+            x = tuple(-d1[t] * o2 for t in range(3))
+        elif abs(den) < 1e-6:
             x = tuple(m1[t] * max(o1, o2) for t in range(3))
         else:
             beta = (o2 - o1 * S._dot(m1, m2)) / den
@@ -327,6 +331,7 @@ def j_skin(args: dict, layout: dict) -> list:
 j_skin = H._outward(j_skin)
 
 
+JAMB_OUT, JAMB_LIFT = 0.035, 0.004   # details 3b: the jamb's top strip past the wall's outer face, over the skin
 CHEEK_OUT = S.WALL + 0.03   # rebuild D: the cheeks 3 cm proud of the wall modules' backs (in their plane they z-fought:
 #                             the modules' pale backs showed through as boards beside the mouth)
 
@@ -365,22 +370,28 @@ def j_cheeks(args: dict, layout: dict) -> list:
     for sx in (1, -1):
         n = (sx * d[1], -d[0], 0.0)                     # outward
         inner, outer = [], []
-        for i in range(17):
-            s = 0.02 + (s_roof - 0.02) * i / 16   # 2 cm in from the nose edge (heights() is None on it)
+        for i in range(33):
+            s = 0.02 + (s_roof - 0.02) * i / 32   # 2 cm in from the nose edge (heights() is None on it)
             x, y = sx * (mx + d[0] * s), my + d[1] * s
-            xo, yo = x + n[0] * (S.WALL - 0.01), max(y + n[1] * (S.WALL - 0.01), my + 0.02)   # not past the nose edge
-            inner.append((x, y, S.heights(x, y)[0]))
-            outer.append((xo, yo, S.heights(xo, yo)[0]))
+            # details 3b: the top runs JAMB_OUT past the wall over the skin's seam chamfer (its groove read as a dark
+            # band under a chewed edge), JAMB_LIFT over the skin (no z-fighting)
+            xo, yo = x + n[0] * (S.WALL + JAMB_OUT), max(y + n[1] * (S.WALL + JAMB_OUT), my + 0.02)   # not past the nose
+            inner.append((x, y, S.heights(x, y)[0] + JAMB_LIFT))
+            outer.append((xo, yo, (S.heights(xo, yo) or S.heights(x, y))[0] + JAMB_LIFT))
         face = [(inner[0][0], inner[0][1], S.SLAB - 0.01), (inner[-1][0], inner[-1][1], S.SLAB - 0.01)]
         face += [inner[k] for k in range(len(inner) - 1, -1, -1)]
         inward = S._neg(n)
         if S._dot(S._newell(face), inward) < 0:
             face.reverse()
+        top = inner[::-1]
         for p in plates(face, inward):
+            # details 3b: a plate's edge on the jamb's top is laid flush (its insets chewed the edge against the sky)
+            flags = [not any(_off_segment(a, u, w) < 1e-4 and _off_segment(b, u, w) < 1e-4
+                             for u, w in zip(top, top[1:])) for a, b in zip(p, p[1:] + p[:1])]
             c = [sum(x[i] for x in p) / len(p) for i in range(3)]
             mat = MATS["top"][int(H._hash(round(c[0], 1), round(c[1], 1), round(c[2], 1)) * len(MATS["top"])) %
                               len(MATS["top"])]
-            groups.setdefault(mat, []).append(lay(p))
+            groups.setdefault(mat, []).append(lay_seams(p, flags))
         for (a0, b0), (a1, b1) in zip(zip(inner, outer), zip(inner[1:], outer[1:])):   # the top, along the slope
             q = [a0, a1, b1, b0]
             edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), S.H) > 0 else (3, 2, 1, 0)]))
