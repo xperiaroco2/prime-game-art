@@ -87,8 +87,9 @@ class ShipLayoutTest(unittest.TestCase):
             self.assertEqual((sx * t["centre"][0], t["centre"][1]), B.RAY_TIP)
             self.assertEqual(t["radius"], B.RAY_ROOM_R)
             self.assertEqual((t["clear_h"], t["clear_h_in"]), (B.RAY_CLEAR_OUT, B.RAY_CLEAR_IN))
-            self.assertEqual([tuple(w) for w in t["roof_windows"]], B.RAY_PANELS)
-            self.assertEqual(tuple(t["roof_window_m"]), B.RAY_PANEL[:2])
+            # details 1: one round roof window (the oculus, 1.4 m clear) replaced the blockout's three panels
+            self.assertEqual(t["oculus"], {"d": 1.4, "sides": 32})
+            self.assertNotIn("roof_windows", t)
             band = t["band"]
             self.assertAlmostEqual(LAYOUT["deck"]["floor_h"] + band["sill_h"], B.SILL)
             self.assertAlmostEqual(LAYOUT["deck"]["floor_h"] + band["head_h"], B.HEAD)
@@ -103,8 +104,15 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertEqual(S.P_TIP, tuple(t["centre"]))
         self.assertEqual(S.P_ROOM_R, t["radius"])
         self.assertEqual(S.P_CLEAR, (t["clear_h"], t["clear_h_in"]))
-        self.assertEqual(S.P_ROOF_WIN, [tuple(w) for w in t["roof_windows"]])
-        self.assertEqual(S.P_ROOF_WIN_M, tuple(t["roof_window_m"]))
+        self.assertEqual((S.P_OCULUS_D, S.P_OCULUS_N), (t["oculus"]["d"], t["oculus"]["sides"]))
+        roofs = [o for o in S.p_openings() if o[2] == "roof"]
+        self.assertEqual(len(roofs), 2)   # one oculus per lens
+        for planes, emit, _w in roofs:   # its sides: the cut 2.5 cm outside the clear radius (the well's lining)
+            self.assertEqual(len(emit), S.P_OCULUS_N)
+            for j in emit:
+                (nx, ny, _nz), d = planes[j]
+                c = (S.P_TIP[0] if planes[0][0][0] > 0 else -S.P_TIP[0], S.P_TIP[1])
+                self.assertAlmostEqual(d - nx * c[0] - ny * c[1], S.P_OCULUS_D / 2 + 0.025, places=6)
         self.assertEqual(S.P_VAULT, (v["x"][1], *v["y"], v["clear_h"], v["clear_h_back"]))
         self.assertEqual(v["x"][0], -v["x"][1])
         # the band's cut is the interior's band as built: the asked -65..45 snapped to the wall facets 3..7 (each end

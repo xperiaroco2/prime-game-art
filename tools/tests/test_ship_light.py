@@ -76,7 +76,10 @@ class ShipLightTest(unittest.TestCase):
             self.assertLess(math.hypot(spot[0] - x, spot[1] - y), 0.2)
             self.assertLess(spot[2], h - 0.09, "the spot is not under the lens")
             self.assertGreater(spot[10], 0.0, "not a spot")
-        self.assertFalse([q for q in LAMPS if "belly" in str(q)], "the old belly pools are back")
+        old = [(0.0, -1.5), (-5.0, 0.0), (5.0, 0.0)]   # details 1: the three orange belly pools' spots, at h 0.2
+        back = [q for q in group("pool") if abs(q[2] - 0.2) < 0.05 and any(math.hypot(q[0] - x, q[1] - y) < 0.1
+                                                                             for x, y in old)]
+        self.assertFalse(back, "the old belly pools are back")
 
     def test_edge_glow_lights_nothing_its_pools_are_spots(self) -> None:
         self.assertEqual(LAYOUT["light"]["mats"]["glow_edge"].get("cull"), "inside", "the edge glow lights the hull")
