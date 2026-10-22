@@ -261,3 +261,18 @@ the first look), $0.067 to $0.069 each; **$0.8782** of the $5 cap. Writing the a
 the model still slides back to a human face where the animal's feature can sit on one: a forehead hump becomes a quiff
 over pouting lips, a beetle's shell a visor over a human chin, a moth the classic big black alien eyes. Images:
 `D:/prime-art-raw/2026-10-22-alien-roster-r4/`; JPEGs, overview and handoff: `.../design/r4/`.
+
+## Batch 2026-10-22-alien-roster-r5 (art #196, roster round 5)
+
+Twelve heads (seven men, five women) from the design principles of animated alien and monster films: each a blend of
+two or three animals written as shapes, never as named animals; the men follow five rules (a soft skull with no
+keratin, horn or beak; one silhouette; one alien eye idea under heavy lids; a big closed mouth with lips; one male
+signal). Medium, 1024x1280, n = 3, and **two references** per edit: rf2 for the style (round 4's lead, framing sentence
+and style tail) and one kept head (h01, m5a, w42 or w10a) for the face language only, with "never its head shape or
+features" and a list of its shapes not to copy. The batch file is generated from
+`D:/prime-art-raw/research/2026-10-22-roster/design/r5/concepts_r5.src.json`. 17 requests (five revised prompts after
+the first look), $0.098 to $0.100 each (the second image adds about $0.03); **$1.6857** of the $5 cap. The face
+reference carries the eyes, lids and lips well, but it also drags its head along: every man given h01 took its frog
+mouth, m67 copied m5a's flat head, and the women all share one face. Ideas behind or beside the head (a streamer, a
+nape coil, brow fins) slid into hair (a ponytail, a bun, one crest). Images:
+`D:/prime-art-raw/2026-10-22-alien-roster-r5/`; JPEGs, overview and handoff: `.../design/r5/`.
