@@ -115,9 +115,9 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_sill_strip": ("tip_sill_strip", {}, False),
     "tip_portal": ("portal", {"half": S.TIP_CHORD_H, "height": S.H_TIP}, True),
     "tip_ceiling": ("tip_ceiling", {}, False),
-    # inside-1: the window's shutter (one blade per placement, pivot at its origin), its rails and its wall button
-    "tip_louvre": ("louvre_blade", {}, False),
-    "tip_louvre_track": ("louvre_track", {}, False),
+    # inside-1: the window's shutter (one panel per segment, dropped into the low wall when open), guides, button
+    "tip_shutter": ("shutter_panel", {}, False),
+    "tip_shutter_track": ("shutter_track", {}, False),
     "tip_shutter_button": ("shutter_button", {}, False),
     "tip_rib": ("rib", {"rv": S.R_TIP, "rim": F + S.H_TIP, "r_in": S.R_TIP_RING, "h_in": H_IN_TIP}, False),
     "tip_rib_strip": ("rib", {"rv": S.R_TIP, "rim": F + S.H_TIP, "r_in": S.R_TIP_RING, "h_in": H_IN_TIP,
@@ -169,16 +169,15 @@ def norm(yaw: float) -> float:
 
 
 def shutter(c, room: float, pose: str) -> list[tuple[str, list[float], float]]:
-    """A tip room's louvre blades (centre c, room yaw), open or closed: the same pivots, the yaw differs."""
+    """A tip room's shutter panels (centre c, room yaw), open (lowered into the low wall) or closed."""
     half = S.WIN_HALF / 8
-    apo, hw = S.R_TIP * math.cos(math.radians(half)), S.R_TIP * math.sin(math.radians(half))
+    apo = S.R_TIP * math.cos(math.radians(half))
+    h = -S.SHUTTER_DROP if pose == "open" else 0.0
     out = []
     for i in range(8):
         a = -S.WIN_HALF + half * (2 * i + 1)
-        for j in range(S.LOUVRE_N):
-            u = -hw + 2 * hw * (j + 0.5) / S.LOUVRE_N
-            xy = local(polar(apo + S.LOUVRE_W, a, c, room), room - a, 0.0, u)
-            out.append(("tip_louvre", [xy[0], xy[1], 0.0], norm(room - a + (S.LOUVRE_OPEN if pose == "open" else 0.0))))
+        xy = polar(apo + S.SHUTTER_W, a, c, room)
+        out.append(("tip_shutter", [xy[0], xy[1], round(h, 4)], norm(room - a)))
     return out
 
 
@@ -281,7 +280,7 @@ def placements() -> list[tuple[str, list[float], float]]:
     step = (180.0 - S.DOOR_HALF - S.WIN_HALF) / 3
     for s, room in ((1, 0.0), (-1, 180.0)):
         c = (s * S.TIP_X, 0.0)
-        for pid in ("tip_floor_base", "tip_floor_disc", "tip_floor_rim", "tip_window_frame", "tip_louvre_track",
+        for pid in ("tip_floor_base", "tip_floor_disc", "tip_floor_rim", "tip_window_frame", "tip_shutter_track",
                     "tip_ceiling", "tip_lamp_ring"):
             put(pid, list(c), room)
         # polish 4: one glass, the hull's tip window (the well's own pane doubled it: dim and tinted)
@@ -360,7 +359,7 @@ def render() -> str:
     lines += [f'  ["{pid}", [{fmt(p[0])}, {fmt(p[1])}, {fmt(p[2])}], {fmt(yaw)}],' for pid, p, yaw in placements()]
     lines.append("]")
     lines += ["", "# inside-1: the tip windows' shutters CLOSED (`ship --shutters closed` swaps these rows for the",
-              "# tip_louvre rows of `place`, the open pose): the same pivots, each blade turned back into its segment",
+              "# tip_shutter rows of `place`, the open pose): the same panels, raised from the low wall over the glass",
               "shutter_closed = ["]
     for s, room in ((1, 0.0), (-1, 180.0)):
         lines += [f'  ["{pid}", [{fmt(p[0])}, {fmt(p[1])}, {fmt(p[2])}], {fmt(yaw)}],'

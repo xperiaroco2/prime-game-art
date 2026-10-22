@@ -771,14 +771,16 @@ def tip_sill_strip(args, layout):
 
 
 # --- the tip window's shutter (inside-1; the engineer: a button that opens and closes the windows) --------------------
-# Vertical louvre blades in the window's reveal, three per window segment (24 a room), each its own placement with its
-# origin on its own vertical pivot (plan: LOUVRE_W behind the window wall's face): the game turns each blade about
-# its origin (Godot rotation y), closed = the segment's yaw, open = + LOUVRE_OPEN deg. interior.toml places them open
-# (`place`) and lists the closed pose apart (`shutter_closed`); `ship --shutters closed` swaps them. Not wired: the
-# game track wires the button (tip_shutter_button) later.
-LOUVRE_N = 3
-LOUVRE_W = 0.1                          # the pivots 10 cm behind the wall face, inside the 20 cm reveal
-LOUVRE_OPEN = 80.0
+# A blast shutter in the window's 20 cm reveal: one ribbed panel per window segment (8 a room), each its own placement
+# with its origin on the segment's centre line. CLOSED it fills the segment from the sill to the head; OPEN it is
+# lowered SHUTTER_DROP into the low wall under the sill (hidden, its cyan top edge glowing in the sill's slot), so the
+# window is clear. The move is a straight drop (Godot position.y). interior.toml places them open (`place`) and lists
+# the closed pose apart (`shutter_closed`); `ship --shutters closed` swaps them. The button (tip_shutter_button) is not
+# wired: the game track wires it later. (A first try with 24 turning louvre blades read as bars across the window.)
+SHUTTER_W = 0.1                         # the panel's mid-plane 10 cm behind the wall face, in the reveal
+SHUTTER_T = 0.015                       # its half thickness
+SHUTTER_TOP = 0.03                      # the gap under the head's rail
+SHUTTER_DROP = round(HEAD - SHUTTER_TOP - SILL, 4)   # the panel's height: open, its top sinks flush into the slot
 BTN_V = 1.15                            # the button's centre over the deck
 
 
@@ -786,30 +788,36 @@ def _round(r, cv, n=16):
     return [(r * math.cos(2 * math.pi * k / n), cv + r * math.sin(2 * math.pi * k / n)) for k in range(n)]
 
 
-def louvre_blade(args, layout):
-    """One louvre blade, closed in the plane x = 0 (the room toward -x), its pivot on the origin's vertical."""
-    hw = R_TIP * math.sin(D(WIN_HALF / 8))
-    b = 2 * hw / LOUVRE_N - 0.008
+def shutter_panel(args, layout):
+    """One window segment's shutter panel, CLOSED, in the plane x = 0 (the room toward -x), origin on its centre line:
+    a body, seven raised horizontal ribs, a cyan line along its top edge."""
+    hw = R_TIP * math.sin(D(WIN_HALF / 8)) - 0.004
     fr = G.wall_frame(FLOOR)
-    blade = G.slab(fr, G.rect(-b / 2, b / 2, SILL + 0.035, HEAD - 0.035), -0.008, 0.008, 0.003)
-    groove = G.slab(fr, G.rect(-0.005, 0.005, SILL + 0.1, HEAD - 0.1), 0.007, 0.0095)
-    pins = M(G.slab(fr, G.rect(-0.012, 0.012, SILL + 0.0, SILL + 0.035), -0.012, 0.012),
-             G.slab(fr, G.rect(-0.012, 0.012, HEAD - 0.035, HEAD), -0.012, 0.012))
-    return [P("blade", blade, "int_silver_a"), P("groove", groove, "int_dark"), P("pins", pins, "int_dark")]
+    top = HEAD - SHUTTER_TOP
+    body = G.slab(fr, G.rect(-hw, hw, SILL, top), -SHUTTER_T, SHUTTER_T, 0.004)
+    n, ribs = 7, []
+    pitch = (top - 0.05 - SILL) / n
+    for k in range(n):
+        v0 = SILL + 0.02 + k * pitch
+        ribs.append(G.slab(fr, G.rect(-hw + 0.03, hw - 0.03, v0, v0 + pitch - 0.035), SHUTTER_T, SHUTTER_T + 0.012,
+                           0.006))
+    line = G.slab(fr, G.rect(-hw + 0.01, hw - 0.01, top - 0.025, top - 0.01), SHUTTER_T, SHUTTER_T + 0.004)
+    return [P("body", body, "int_silver_b"), P("ribs", M(*ribs), "int_silver_a"), P("line", line, "int_cyan")]
 
 
-def louvre_track(args, layout):
-    """The blades' top and bottom rails in the window's reveal over the eight segments, a cyan line under the head."""
+def shutter_track(args, layout):
+    """The shutter's guides in the reveal over the eight segments: the head's rail and the sill's slot (two lips)."""
     half = WIN_HALF / 8
     apo, hw = R_TIP * math.cos(D(half)), R_TIP * math.sin(D(half))
     fr = G.wall_frame(FLOOR, apo)
-    rails, line = [], []
+    g = SHUTTER_T + 0.006
+    rails = []
     for i in range(8):
         c = -WIN_HALF + half * (2 * i + 1)
-        rails += [rot(G.slab(fr, G.rect(-hw, hw, SILL, SILL + 0.03), -0.2, 0.0), c),
-                  rot(G.slab(fr, G.rect(-hw, hw, HEAD - 0.03, HEAD), -0.2, 0.0), c)]
-        line.append(rot(G.slab(fr, G.rect(-hw, hw, HEAD - 0.024, HEAD - 0.012), 0.0, 0.004), c))
-    return [P("rails", M(*rails), "int_silver_c"), P("line", M(*line), "int_cyan")]
+        rails += [rot(G.slab(fr, G.rect(-hw, hw, HEAD - SHUTTER_TOP, HEAD), -0.2, 0.0), c),
+                  rot(G.slab(fr, G.rect(-hw, hw, SILL - 0.02, SILL + 0.012), -0.2, -SHUTTER_W - g), c),
+                  rot(G.slab(fr, G.rect(-hw, hw, SILL - 0.02, SILL + 0.012), -SHUTTER_W + g, 0.0), c)]
+    return [P("rails", M(*rails), "int_silver_c")]
 
 
 def shutter_button(args, layout):

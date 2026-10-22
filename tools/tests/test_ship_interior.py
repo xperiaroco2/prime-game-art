@@ -119,3 +119,55 @@ class ShipInteriorTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ShipShutterTest(unittest.TestCase):
+    """inside-1: the tip windows' shutters and their buttons."""
+
+    def panels(self, rows):
+        return [r for r in rows if r[0] == "tip_shutter"]
+
+    def test_both_poses_place_the_same_panels_one_drop_apart(self) -> None:
+        opened, closed = self.panels(INTERIOR["place"]), self.panels(INTERIOR["shutter_closed"])
+        self.assertEqual(len(opened), 2 * 8)
+        for o, c in zip(opened, closed):
+            self.assertEqual(o[1][:2], c[1][:2])
+            self.assertEqual(o[2], c[2])
+            self.assertAlmostEqual(c[1][2] - o[1][2], S.SHUTTER_DROP, places=4)
+            self.assertEqual(c[1][2], 0.0)
+
+    def test_the_panel_fills_the_window_closed_and_hides_open(self) -> None:
+        parts = S.shutter_panel({}, SHIP)
+        hs = [v[2] for p in parts for v in p["verts"]]
+        self.assertAlmostEqual(min(hs), S.FLOOR + S.SILL, places=4)
+        self.assertGreater(max(hs), S.FLOOR + S.HEAD - 0.05)
+        self.assertLessEqual(max(hs) - S.SHUTTER_DROP, S.FLOOR + S.SILL + 1e-6)   # open: its top in the sill's slot
+        ws = [-v[0] for p in parts for v in p["verts"]]                             # w (toward the room) = -plan x
+        self.assertGreater(S.SHUTTER_W - max(ws), 0.0)                              # never reaches into the room
+        self.assertLess(S.SHUTTER_W - min(ws), 0.2)                                 # inside the 20 cm reveal
+
+    def test_panels_stand_in_the_reveal_behind_the_wall_face(self) -> None:
+        apo = S.R_TIP * math.cos(math.radians(S.WIN_HALF / 8))
+        for _, (x, y, _h), _yaw in self.panels(INTERIOR["shutter_closed"]):
+            r = math.hypot(x - math.copysign(S.TIP_X, x), y)
+            self.assertAlmostEqual(r, apo + S.SHUTTER_W, places=3)   # off the renewer's band in front of the face
+        self.assertLess(S.SHUTTER_W + S.SHUTTER_T, 0.2)              # inside the 20 cm reveal
+
+    def test_buttons_beside_the_window_off_the_renewer_band(self) -> None:
+        buttons = [r for r in INTERIOR["place"] if r[0] == "tip_shutter_button"]
+        self.assertEqual(len(buttons), 2)
+        width = SHIP["stations"]["plain_width_m"]
+        for _, (x, y, _h), _yaw in buttons:
+            r = math.hypot(x - math.copysign(S.TIP_X, x), y)
+            self.assertAlmostEqual(r, S.R_TIP, delta=0.15)
+            self.assertGreater(abs(y), width / 2 + 0.3)
+            self.assertLess(y, 0.0)                        # north of the window, the mouth's side
+
+    def test_the_runner_swaps_the_closed_pose_in(self) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        from runner import ship_layout as sl
+        layout = sl.load()
+        closed = sl.pose(layout, "closed")
+        self.assertEqual(len(closed["place"]), len(layout["place"]))
+        self.assertEqual(self.panels(closed["place"]), layout["shutter_closed"])
+        self.assertIs(sl.pose(layout, "open"), layout)

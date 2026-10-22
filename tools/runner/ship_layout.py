@@ -37,7 +37,7 @@ def load(path: Path = SHIP) -> dict[str, Any]:
 
 def pose(layout: dict[str, Any], shutters: str) -> dict[str, Any]:
     """The layout with the tip windows' shutters "open" (as loaded) or "closed": the closed rows replace every
-    placement of a piece they place (the louvre blades)."""
+    placement of a piece they place (the shutter panels)."""
     if shutters == "open":
         return layout
     ids = {p[0] for p in layout["shutter_closed"]}
