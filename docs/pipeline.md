@@ -122,9 +122,10 @@ runs separately. Output: `<raw>/research/2026-10-22-roster/design/pilot3d/static
   with the bake's MikkTSpace frame; `alien_static_run.py` `fix_tangents` repairs the few zero tangents a no-area UV
   triangle gets); the lid rims rougher in the mask. New map: `<head>_detail.png` (cavity and inside occlusion baked
   from the dense original, the flush region, the limbal ring). The albedo is downsampled in linear light; the sclera
-  cleaned further toward white. Review: `$PYTHON_BIN tools/blender/alien_static_review.py <seams|grid|ladder|gate>`
-  (seams before and after under the full material and the three debug views, the "alive" levers' variant grid, the
-  cumulative ladder A..F with GPU ms, the whole-head gate against #288).
+  cleaned further toward white. Review: `$PYTHON_BIN tools/blender/alien_static_review.py <seams|grid|gate>` and,
+  in round 2 only, `ladder` (the cumulative levers A..F with GPU ms; round 3 replaced it with `final`): seams before
+  and after under the full material and the three debug views, the "alive" levers' variant grid, the whole-head gate
+  against #288.
 - **Round 3 (static_v3, 2026-10-22; output `<raw>/.../pilot3d/static_v3/<name>/`, `static/` and `static_v2/` kept).**
   The manager's verdict on round 2: an orange-peel grain over both heads, the axolotl's upper-lip spike, the
   chameleon's lids heavier and lower than #288's, and a material that barely moved (still vinyl), judged in a browser
@@ -132,9 +133,11 @@ runs separately. Output: `<raw>/research/2026-10-22-roster/design/pilot3d/static
   - **Orange peel:** the normal map and the cavity and thinness bakes come from a smoothed copy of the dense original
     (`DENSE_SMOOTH`, a Laplacian relax 0.5 x 24): the short rays of round 2 picked up its millimetre noise. The
     decimation still takes the original's shape. The shader's micro grain stays off.
-  - **Lip spike:** a convex vertex near the lips or lid rims that stands out of its neighbours' plane by more than
-    `DESPIKE` (0.3) of its mean edge length moves to its neighbours' mean (concave points, the lip slit, are never
-    touched; `build.json` `despiked`), and the lips' normal detail is fully flat (0.8 in round 2).
+  - **Lip spike:** a convex vertex near the lips or lid rims that is a local outlier, standing out of its
+    neighbours' plane by more than `DESPIKE[0]` (0.08) of its mean edge length and more than `DESPIKE[1]` (3) times
+    its neighbours' own median (so a smoothly rounded lip, whose neighbours stand out alike, is never touched), moves
+    to its neighbours' mean (concave points, the lip slit, are never touched; `build.json` `despiked`), and the lips'
+    normal detail is fully flat (0.8 in round 2).
   - **Chameleon lids:** `RIMS` per head; the chameleon's default decimates the lid rims plainly (#288's lids), and
     `--rims on` builds the named alternative `chameleon_heavylid` (the denser rims keep the dense original's heavier
     lids). `alien_static_compare.py lids` renders the dense original beside #288, round 2 and both builds in grey.
@@ -172,6 +175,28 @@ runs separately. Output: `<raw>/research/2026-10-22-roster/design/pilot3d/static
     original too (`build.json` `lip_snap`).
 
   Review as round 3; the seams sheet's middle row is round 3 (under its pick), `lids` shows round 3 beside this one.
+- **Round 5 (static_v5, 2026-10-22; output `<raw>/.../pilot3d/static_v5/<head>/`, the earlier folders kept).** The
+  review's major: since round 3 the shader has no `sss_mode_skin`, so its defaults are not the #288 material, and
+  every "#288" cell of rounds 3 and 4 showed the old heads under the changed shader. The merged #288 shader is kept
+  byte for byte as `godot/alien/alien_static_288.gdshader` (from `7c2bac4`); `alien_static_review.py` gives it to
+  every #288 cell in the full material (`head_entry(..., "288")`), with #288's own defaults, so every before/after and
+  gate is against #288's true look. Fixes:
+  - **Chameleon eye fringe:** with the long colour ray, texels on the eyeball just under the upper lid took the lid's
+    teal (round 4's gate, side view). `EYE_FRINGE` per head: a teal texel inside the eye sphere that lies on the
+    eyeball (its distance to the eye's centre within 0.03 eye radii of its clean eye neighbours' own) and near them
+    in the texture takes the eye's own colour from its nearest clean eye texels, so the eye keeps its white and iris
+    up to the lid line (`build.json` `eye_fringe`; the new `eyes` sheet: the eye from the side, its albedo, at 3/4).
+  - **Pure formulas tested:** `smoothstep`, the sRGB conversions, `eye_dist`, `ellipsoid_w`, `keep_weights`, the
+    alive layers' colour (`alive_colour`) and `fix_tangents` (now honouring `byteStride`) live in
+    `tools/blender/alien_static_geom.py` (standard library only; `xp=numpy` in Blender), tested by
+    `tools/tests/test_alien_static_geom.py` (with a GLB round trip, tight and interleaved).
+  - **Loud failures:** a build on the current shader without its detail or plain texture stops the review (it was a
+    silent white default).
+
+  **Run them in the background.** `alien_static_run.py` (Blender up to 2400 s a head), `alien_static_review.py`
+  (an off-screen Godot window up to 900 s) and `alien_static_compare.py` (Blender up to 3000 s) all pass the 180 s
+  a workflow agent's call may block: start each with its log in a file (`> <log> 2>&1; echo "exit=$?" >> <log>`)
+  and check it with `tools/run.sh wait <log>` (`CLAUDE.md`, "Shell").
 
 ## Since 2026-10-03: the character base and who decides
 
