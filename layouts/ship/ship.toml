@@ -1,20 +1,24 @@
-# The empty ship, a wide metal manta (art #263, step 1). The numbers win over the pictures' curvature (the engineer).
-# Sources: prime-game docs/design/estate-map.md section 5a; the approved 2D in prime-game-design
-# ideas/ship-components/2d/ (plan-3.jpg, the top view, is the source of truth for the arrangement).
+# The empty ship, a wide metal manta (art #263). The numbers win over the pictures' curvature (the engineer).
+# Version 2, the mirrored layout (2026-10-22): prime-game docs/design/estate-map.md section 5a (xperiaroco2/prime-game
+# #1293) and prime-game-design ideas/ship-components/2d/README.md "The layout mirrored": for the geometry 5a wins over
+# plan-3.jpg; the 2D sheets still set the look.
 # Plan coordinates from the ship's centre in metres: x east, y south, h up from the ground. Godot: (x, h, y).
 # `tools/run.py ship --check` checks every rule below (tools/runner/ship_layout.py, docs/ship.md).
-version = 1
-raw_dir = "ship/v1"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
+version = 3                                  # lens step 1 (art#263 c6344490367): the lens rooms, the vault
+raw_dir = "ship/v3"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
 interior = "layouts/ship/interior.toml"      # the INTERIOR lane's pieces and placements
 exterior = "layouts/ship/exterior.toml"      # the EXTERIOR lane's pieces and placements
 plan_ref = "D:/prime-game-design/ideas/ship-components/2d/plan-3.jpg"
 
-[size]                                       # estate-map 5a: about 26 m wide by 14 m long
-width_m = 26.0
-span_max_m = 27.5                            # manager update 2: the lens tips' blades may reach about 27.5 m
-length_m = 14.0                              # checked with the nozzle pods (the ship's length on the map), no ramp
-length_max_m = 15.0                          # the manager, art #263: how far the nozzles stick out is open (2D README); 14.84 m now
+[size]                                       # the lens-diamond hull P: the manager's pick under the engineer's standing
+                                             # instruction (art#263 c6344490367; <raw>/ship/v2/blockout6/report.json)
+width_m = 26.1                               # P: span 26.111 (J: 30.0)
+span_max_m = 26.1
+length_m = 22.1                              # P as built with the nozzle pods, no ramp (blockout6 22.15; J: 18.9)
+length_max_m = 22.65                         # P's 22.15 + the tolerance
 tolerance_m = 0.5
+corridor_width_m = 3.0                       # 5a mirrored: straight corridors 3 m wide (v1: 2.5)
+tip_outer_m = 12.5                           # lens step 1: the lens rooms' outer wall at x +-12.5 (r 2.0 at x 10.5; J 10.1)
 
 [deck]
 ground_h = 0.0
@@ -31,135 +35,230 @@ head_margin_m = 0.5
 [[rooms]]
 id = "hall"
 shape = "circle"
-centre = [0.0, 0.0]
-radius = 3.4
+centre = [0.0, -0.4]                          # rebuild E (art#263 c6342342554): 0.4 m forward of step A (C: 1 m)
+radius = 4.0                                  # 5a mirrored: 8 m across, about 50 m2 (v1: 3.4)
 clear_h = 3.2                                 # update 2 (was 3.4 / 4.0): the hull thins
 apex_h = 3.8
-links = ["mouth", "corridor_w", "corridor_e"]
+links = ["throat", "corridor_w", "corridor_e"]
+# lens step 1: the lens rooms ("tip_*") at (+-10.5, 1.2); the corridors straight from the hall's wall to each lens's
+# wall, 8.66 deg aft. A "strip" room: `axis` [from, to] its centre line (here from the hall's centre to the tip
+# room's), `along` [u0, u1] its floor's ends measured along the axis from `from` (where its walls cross the hall's
+# circle and the tip room's), `width` across.
 
 [[rooms]]
-id = "mouth"                                 # the short passage from the ramp's hinge into the hall
-shape = "rect"
-x = [-1.3, 1.3]
-y = [-4.6, -3.3]
-clear_h = 2.4
+id = "throat"                                # rebuild C: the funnel from the mouth at J's nose edge to the hall's wall
+shape = "poly"                               # a convex floor polygon [x, y], a positive signed area in plan (x, y):
+                                             # counter-clockwise in the (x, y) axes, clockwise seen from above with y
+                                             # running south
+points = [[-1.65, -7.1], [1.65, -7.1], [2.915, -3.252], [-2.915, -3.252]]
+clear_h = 2.3                                 # 2.9 over the ground: the capsule and its margin; walls vertical to
+chamfer = [1.45, 0.55]                        # 1.45, then slanted 0.55 in to the ceiling (the corridors' bend)
+roof_y = -5.5608                              # the ceiling from here aft (the front is J's open notch, no roof): the
+                                              # first module line (5 of 0.810) with 0.15 m of hull over the roof
 exit = "ramp"                                # the only way in or out (5a's side hatch is dropped: one entrance, art#263)
 
 [[rooms]]
 id = "corridor_w"
-shape = "rect"
-x = [-9.1, -3.3]
-y = [-1.25, 1.25]
+shape = "strip"
+axis = [[0.0, -0.4], [-10.5, 1.2]]              # 8.66 deg south of west, 10.621 m centre to centre
+along = [3.708, 9.2983]                       # lens step 1: the hall's circle to the lens's (r 2.0): 5.59 m of floor
+width = 3.0
 clear_h = 2.4                                 # update 2 (was 2.6)
 links = ["tip_w"]
 
 [[rooms]]
 id = "corridor_e"
-shape = "rect"
-x = [3.3, 9.1]
-y = [-1.25, 1.25]
+shape = "strip"
+axis = [[0.0, -0.4], [10.5, 1.2]]
+along = [3.708, 9.2983]
+width = 3.0
 clear_h = 2.4                                 # update 2 (was 2.6)
 links = ["tip_e"]
 
 [[rooms]]
-id = "tip_w"
+id = "tip_w"                                # lens step 1: the west lens room (P's lens; ids kept)
 shape = "circle"
-centre = [-10.75, 0.0]
-radius = 2.05
-clear_h = 2.5                                 # update 2 (was 2.8 / 3.2)
-apex_h = 2.8
-window = { dir = [-1.0, 0.0], half_angle_deg = 65.0, sill_h = 1.0, head_h = 2.2 }   # glass onto the clearing, not an exit
+centre = [-10.5, 1.2]
+radius = 2.0                                  # 4 m across, 0.2 m walls; the outer wall at x -12.5
+clear_h = 2.35                                # the least: the ceiling slants down outward (clear at the outer wall)
+clear_h_in = 2.45                             # at the corridor's side; clear(t) = clear_h + (clear_h_in - clear_h) *
+apex_h = 2.45                                 # (r + wall - t) / (2 (r + wall)), t along the axis from the centre (P's)
+ceiling = "slant"
+# the window band on the outer side: deg round the room's outward axis (the corridor's, from the hall), + aft;
+# -65..+45, biased forward: P's trail fin hides the band from +45.0 (blockout6 report.json hidden_deg)
+band = {from_deg = -65.0, to_deg = 45.0, sill_h = 1.0, head_h = 2.2}
+# details 1 (art#263 c6347287605, c6347388160): one round roof window, the oculus, centred on the room: d its clear
+# diameter inside the well's lining, sides its polygon (the hull's cut, the well, the glass, both frames); the well
+# follows the slanted ceiling (was three 0.9 x 0.7 roof windows, P's RAY_PANELS)
+oculus = { d = 1.4, sides = 32 }
 
 [[rooms]]
-id = "tip_e"
+id = "tip_e"                                # lens step 1: the east lens room (P's lens; ids kept)
 shape = "circle"
-centre = [10.75, 0.0]
-radius = 2.05
-clear_h = 2.5                                 # update 2 (was 2.8 / 3.2)
-apex_h = 2.8
-window = { dir = [1.0, 0.0], half_angle_deg = 65.0, sill_h = 1.0, head_h = 2.2 }    # join 3: sill 0.45 -> 1.0 (the lens band starts 1.33 m up)
+centre = [10.5, 1.2]
+radius = 2.0                                  # 4 m across, 0.2 m walls; the outer wall at x 12.5
+clear_h = 2.35                                # the least: the ceiling slants down outward (clear at the outer wall)
+clear_h_in = 2.45                             # at the corridor's side; clear(t) = clear_h + (clear_h_in - clear_h) *
+apex_h = 2.45                                 # (r + wall - t) / (2 (r + wall)), t along the axis from the centre (P's)
+ceiling = "slant"
+# the window band on the outer side: deg round the room's outward axis (the corridor's, from the hall), + aft;
+# -65..+45, biased forward: P's trail fin hides the band from +45.0 (blockout6 report.json hidden_deg)
+band = {from_deg = -65.0, to_deg = 45.0, sill_h = 1.0, head_h = 2.2}
+# details 1 (art#263 c6347287605, c6347388160): one round roof window, the oculus, centred on the room: d its clear
+# diameter inside the well's lining, sides its polygon (the hull's cut, the well, the glass, both frames); the well
+# follows the slanted ceiling (was three 0.9 x 0.7 roof windows, P's RAY_PANELS)
+oculus = { d = 1.4, sides = 32 }
 
-# The future stations (estate-map 5a): NOT built in step 1; only their spots stay clear. radius_m: the footprint kept
-# free; at_wall: stands at a corridor wall (within wall_reach_m of it).
+[[rooms]]
+id = "vault"                                  # lens step 1: a closet behind the hall's back wall, a shell only (no item,
+shape = "rect"                                # card or lock logic); not linked, the walk does not enter it
+x = [-0.9, 0.9]                               # 1.8 x 2.0 m clear
+y = [3.85, 5.85]
+clear_h = 2.3                                 # at the door; the ceiling slants down aft to clear_h_back
+clear_h_back = 1.6
+ceiling = "slant"
+closed = true                                 # its door is shut: no exit, no link, not walkable floor
+door = {at = [0.0, 3.6], width_m = 1.0, room = "hall"}   # the hall's back wall between the back sockets
+
+# The future stations (estate-map 5a mirrored): NOT built yet; only their spots stay plain and clear. A wall spot: `at`
+# the point on the wall's face where the unit hangs flat, `normal` into the room; the wall stays a flat panel
+# plain_width_m wide there (no niche, trunk, cable bay, arch or rib sticking out: the pieces with a `foot` in their
+# lane file keep off it); a player stands depth_m (the unit) + the capsule's radius in front of it with pass_m of free
+# floor behind. A floor spot (the console): `at` its centre, radius_m clear floor. `ship --check` holds all of it.
 [stations]
-radius_m = 0.35
-wall_depth_m = 0.5                            # a wall station's depth from its wall
-wall_reach_m = 0.6
-min_free_width_m = 1.2                       # walking width left beside a station in a corridor
+radius_m = 0.35                               # a floor station's footprint radius
+depth_m = 0.5                                 # a wall unit's depth from its wall
+plain_width_m = 1.6                           # the flat panel at a wall spot
+pass_m = 1.6                                  # free floor behind a player standing at a spot
 
 [[stations.spot]]
 id = "console"
-at = [0.0, 1.0]
+at = [0.0, 0.6]                               # 1 m aft of the hall's centre (step A: (0, 1))
 room = "hall"
 
 [[stations.spot]]
+id = "vent_e"                                 # rebuild C: on the throat's slanted east wall (asked (2.3, -5.8)).
+at = [2.4090, -4.7912]                        # rebuild F: on the line between wall modules 2 and 3 (3/5 of the wall
+normal = [-0.9500, 0.3123]                    # from the mouth (1.65, -7.1) to the hall's vertex (2.915, -3.252)), so
+                                              # its 1.6 m plain band lies on those two plain modules, off the jamb
+room = "throat"
+
+[[stations.spot]]
 id = "vent_w"
-at = [-5.0, -1.0]
-room = "corridor_w"
-at_wall = true
+at = [-2.4090, -4.7912]
+normal = [0.9500, 0.3123]
+room = "throat"
+
+[[stations.spot]]
+id = "socket_e"                               # the hall wall east of the back; rebuild A: the corridor's opening
+at = [1.800, 3.112]                           # (3.2..48.2 deg) took v2's chord at 45 deg (2.664, 2.664): the flat chord
+normal = [-0.4561, -0.8899]                   # moved back to 48.2..77.5 deg (2.06 m, apothem 3.946), the spot 1.21 m
+room = "hall"
 
 [[stations.spot]]
 id = "socket_w"
-at = [-8.0, -1.0]
+at = [-1.800, 3.112]
+normal = [0.4561, -0.8899]
+room = "hall"
+
+[[stations.spot]]
+id = "socket_fe"                              # rebuild C: the front sockets beside the throat (asked (3.5, -3.0)), on a
+at = [3.4261, -2.3578]                        # flat chord of the socket's width (29.27 deg, -44.38..-15.11 from the
+normal = [-0.8682, 0.4961]                    # hall's centre) snapped 0.085 m onto it; off the throat's walking line
+room = "hall"
+
+[[stations.spot]]
+id = "socket_fw"
+at = [-3.4261, -2.3578]
+normal = [0.8682, 0.4961]
+room = "hall"
+
+[[stations.spot]]
+id = "breaker_e"                              # the corridor's front (north) wall, centred between its arches
+at = [6.6638, -0.9019]                        # lens step 1: u 6.512, the middle between the portals (rebuild E (6.030,
+normal = [-0.1506, 0.9886]                    # 0.841))
+room = "corridor_e"
+
+[[stations.spot]]
+id = "breaker_w"
+at = [-6.6638, -0.9019]
+normal = [0.1506, 0.9886]
 room = "corridor_w"
-at_wall = true
 
 [[stations.spot]]
-id = "panel"
-at = [-10.5, 0.0]
-room = "tip_w"
-
-[[stations.spot]]
-id = "vent_e"
-at = [5.0, -1.0]
-room = "corridor_e"
-at_wall = true
-
-[[stations.spot]]
-id = "socket_e"
-at = [8.0, -1.0]
-room = "corridor_e"
-at_wall = true
-
-[[stations.spot]]
-id = "renewer"
-at = [12.0, 0.0]
+id = "renewer_e"                              # lens step 1: on the lens's aft wall at its vertex 87.82 deg round the
+at = [10.2686, 3.2369]                        # axis, clear of the window band (rebuild E: (9.922, 4.381) on the axis);
+normal = [0.1129, -0.9936]                    # the player stands 1.3 m in, the pass behind runs forward across the room
 room = "tip_e"
+depth_m = 0.9
+
+[[stations.spot]]
+id = "renewer_w"
+at = [-10.2686, 3.2369]
+normal = [-0.1129, -0.9936]
+room = "tip_w"
+depth_m = 0.9
 
 [ramp]                                       # the mouth ramp, north at the centre; it meets the ground
-width_m = 2.6
-hinge = [0.0, -4.6]                          # at floor_h, the mouth room's north edge
-foot = [0.0, -7.4]                           # at ground_h (launch 3: a long plane, 11 deg)
+width_m = 3.3                                # rebuild C: the mouth's width
+hinge = [0.0, -7.1]                          # at floor_h, the throat's front edge (J's nose edge; 5a: y -8)
+foot = [0.0, -9.9]                           # at ground_h (launch 3: a long plane, 11 deg)
 thickness_m = 0.15
 
-# The hull's footprint (the skin of tools/blender/ship_hull_skin.py, variant J of launch 3's grid; `ship --check` tests
-# the rooms and pieces inside it). Rows [x, lead y, trail y, blade h, ridge h, eave half-depth]: core rows up to the
-# tip room's centre, plate rows round the lens tip (its blade at r 3.0) to the swept tip point; mirrored for x < 0.
-# Regenerate the rows from ship_hull_skin.outline() when the variant changes.
+# The hull's footprint: the hull P (lens step 2; tools/blender/ship_hull_shape.py, the union of convex parts at its
+# end, plated by ship_hull_j.py; the manager's pick under the engineer's standing instruction, art#263 c6344879087). `ship --check` tests the rooms and pieces inside it and the least skin
+# round every room (ship_hull_shape.clearance). Rows [x, lead y, trail y, bottom h, top h, -1] at the plan outline's
+# corners from the centre line out, the last (the tip's outermost x) the plate row; mirrored for x < 0. Regenerate them
+# with ship_hull_shape.outline_rows() when the shape changes (test_ship_layout checks they match).
 [hull]
-bottom_h = 0.3                              # the belly under every room (it rises toward the edges)
-brow_h = 3.45                              # the brow over the mouth
-mouth_half_width_m = 1.3                     # the front face's opening over the mouth room
-trail_y = 6.4                                # the body's trail: the swept tips' (1.8, 6.4) and the pod housing's y1
+shape = "P"                                  # ship_hull_shape.VARIANTS key: lens step 2, the hull P (the union of convex parts)
+bottom_h = 0.17                              # P's belly, flat under every room's slab (0.35), rising toward the edges
+brow_h = 4.3                                 # the spine's front over the mouth
+mouth_half_width_m = 1.65                    # rebuild C: the mouth at the nose edge (the throat's front)
+trail_y = 12.7                               # P's stern face (ship_hull_shape.P_STERN_Y)
 pod_tail_m = 0.435                           # a nozzle pod's tip past its args length (pod_ring's inner ring)
-# (test_ship_hull_detail.py measures both from the builders; `ship --check` reads the nozzle tips from the pods'
+# (test_ship_hull_detail.py measures it from the builders; `ship --check` reads the nozzle tips from the pods'
 # placements and args)
-pod_radius_m = 3.0                           # the lens tip's blade (10.75 + 3.0 = 13.75: span 27.5 m)
+pod_radius_m = 2.0                           # the tip rooms' outer wall round their centre (J: no blade past them)
+# The footprint rows: ship_hull_shape.outline_rows("P") (test_ship_layout holds them equal; regenerate on a change)
 core = [
-  [0, -4.60, 5.00, 0.90, 4.90, 4.20],
-  [1.5, -6.50, 5.10, 0.90, 4.74, 3.52],
-  [3, -5.84, 5.20, 0.93, 4.42, 2.32],
-  [4, -5.40, 5.23, 0.95, 4.21, 1.60],
-  [6, -4.65, 5.30, 1.07, 3.74, 1.60],
-  [8, -3.90, 5.40, 1.20, 3.69, 1.60],
-  [9.1, -3.54, 5.40, 1.36, 3.66, 1.65],
+  [0, -7.1, 12.7, 0.17, 4.75, -1],
+  [2.2, -7.1, 12.7, 0.17, 4.67, -1],
+  [2.657, -6.809, 12.7, 0.17, 4.61, -1],
+  [2.75, -6.749, 12.7, 0.17, 4.6, -1],
+  [3.3, -6.399, 12.3, 0.17, 4.54, -1],
+  [5.369, -5.08, 10.135, 0.18, 3.27, -1],
+  [5.989, -4.684, 9.486, 0.17, 3.3, -1],
+  [6.2, -4.55, 9.265, 0.17, 3.3, -1],
+  [7.945, -3.437, 7.439, 0.17, 3.3, -1],
+  [7.966, -3.424, 7.417, 0.17, 3.3, -1],
+  [8.032, -3.382, 7.348, 0.17, 3.3, -1],
+  [8.139, -3.314, 7.236, 0.17, 3.3, -1],
+  [8.287, -3.219, 7.081, 0.17, 3.36, -1],
+  [8.473, -3.101, 6.887, 0.17, 3.36, -1],
+  [8.693, -2.96, 6.657, 0.17, 3.35, -1],
+  [8.944, -2.8, 6.394, 0.17, 3.35, -1],
+  [9.222, -2.623, 6.103, 0.17, 3.34, -1],
+  [9.522, -2.432, 5.789, 0.17, 3.34, -1],
+  [9.839, -2.23, 5.457, 0.17, 3.33, -1],
+  [10.166, -2.021, 5.115, 0.17, 3.32, -1],
+  [10.5, -1.808, 4.766, 0.17, 3.31, -1],
+  [10.834, -1.595, 4.416, 0.17, 3.31, -1],
+  [11.161, -1.387, 4.074, 0.17, 3.3, -1],
+  [11.478, -1.185, 3.742, 0.17, 3.29, -1],
+  [11.644, -1.079, 3.569, 0.17, 3.29, -1],
+  [11.778, -1.013, 3.428, 0.17, 3.29, -1],
+  [11.826, -0.981, 3.381, 0.17, 3.29, -1],
+  [12.056, -0.827, 3.227, 0.17, 3.28, -1],
+  [12.307, -0.607, 3.007, 0.17, 3.27, -1],
+  [12.527, -0.356, 2.756, 0.17, 3.27, -1],
+  [12.713, -0.078, 2.478, 0.17, 3.27, -1],
+  [12.861, 0.222, 2.178, 0.28, 3.25, -1],
+  [12.968, 0.537, 1.863, 0.48, 3.09, -1],
+  [13.034, 0.872, 1.528, 0.86, 2.99, -1],
 ]
 plate = [
-  [11.35, -2.79, 5.73, 1.70, 3.62, -1],
-  [12.15, -2.45, 6.12, 1.70, 3.62, -1],
-  [12.75, -2.17, 5.94, 1.70, 3.62, -1],
-  [13.25, -1.76, 4.19, 1.70, 3.62, -1],
-  [13.6, -1.12, 3.04, 1.70, 3.62, -1],
+  [13.055, 1.193, 1.207, 0.99, 2.96, -1],
 ]
 
 # Review light (the exterior lane tunes it). lamps: [x, y, h, energy, range, r, g, b].
@@ -181,7 +280,7 @@ emission_scale = 0.12                          # every emissive glTF material's 
 strip_light_scale = 1.5                        # the OmniLight per emissive cell (from the unscaled strength)
 strip_whiten = 0.0                             # those lights' colour lightened by this (was 0.15)
 lamp_scale = 0.25                              # the lamps below
-probe_intensity = 0.15                         # interior rooms' reflection probes (the tip rooms with windows keep 1.0)
+probe_intensity = 0.15                         # every room's reflection probe, the tip rooms too (no windows since rebuild A); the throat, open to the sky, keeps 1.0
 int_value = 0.55                               # the int_silver_* base colour x this
 int_rough_add = 0.25                           # + the int_silver_* roughness
 hull_rough_add = 0.12                          # + the hull silvers' roughness (was 0.22; hull 3-2: the key needs highlights)
@@ -189,28 +288,30 @@ hull_rough_add = 0.12                          # + the hull silvers' roughness (
 # L's corridor and tip lamps): rows [x, y, h, energy, range, r, g, b, group, shadow]; each group's energies scale by
 # its "<group>_lamp" number below (a row without a group by lamp_scale).
 lamps = [
-  [2.772, 1.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [1.148, 2.772, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [-1.148, 2.772, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [-2.772, 1.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [-2.772, -1.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [-1.148, -2.772, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [1.148, -2.772, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [2.772, -1.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [0.0, -3.9, 2.8, 0.6, 3.5, 1.0, 0.7, 0.42, "hall", true],  # the mouth
-  [0.0, 0.0, 4.2, 0.5, 1.3, 1.0, 0.7, 0.42, "hall", false],  # the hall cap's lamp: lights the faceted cone, not the floor
-  [-4.3, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
-  [-6.1, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
-  [-7.9, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
-  [-10.75, 0.0, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room
-  [-12.2, 0.0, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # west window: moonlight
+  [2.772, 0.748, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [1.148, 2.372, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-1.148, 2.372, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-2.772, 0.748, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-2.772, -1.548, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-1.148, -3.172, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [1.148, -3.172, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [2.772, -1.548, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [0.0, -4.300, 2.8, 0.6, 3.5, 1.0, 0.7, 0.42, "hall", true],  # the mouth
+  [0.0, -0.400, 4.2, 0.5, 1.3, 1.0, 0.7, 0.42, "hall", false],  # the hall cap's lamp: lights the faceted cone, not the floor
+  [-4.8441, 0.3381, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling (rebuild A: u 4.6/5.97/7.35 on the diagonal; v2 x 4.4/5.5/6.6)
+  [-6.4377, 0.5810, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
+  [-8.0273, 0.8232, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
+  [0.0, -5.0, 2.75, 0.45, 3.0, 1.0, 0.95, 0.88, "corr", false],  # rebuild C: the throat's ceiling (E: its covered part's middle)
+  [-10.5, 1.200, 2.85, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room (rebuild A: (8.3, 0) -> (8.3, 4.0))
+  [0.0, 4.75, 2.45, 0.1, 2.4, 1.0, 0.82, 0.62, "corr", true],  # lens step 2: the vault's dim lamp under its fixture
+  [-11.785, 1.396, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # west tip room's cool fill (was the window's moonlight; kept for the room's look, 1.3 m out on its axis)
   [-27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
   [-27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
-  [4.3, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
-  [6.1, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
-  [7.9, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
-  [10.75, 0.0, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # east tip room
-  [12.2, 0.0, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # east window: moonlight
+  [4.8441, 0.3381, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling (rebuild A, as the west's)
+  [6.4377, 0.5810, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
+  [8.0273, 0.8232, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
+  [10.5, 1.200, 2.85, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # east tip room (rebuild A: (8.3, 0) -> (8.3, 4.0))
+  [11.785, 1.396, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # east tip room's cool fill (was the window's moonlight)
   [27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   [27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   # inside 3-1 (grid_in31 C): moonlight on the pines the tip windows look at, kept off the wing tips (x 13.9)
@@ -232,9 +333,24 @@ lamps = [
   [1.75, -7.25, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
   [-1.75, -5.9, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
   [1.75, -5.9, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
-  [0.0, -1.5, 0.2, 1.2, 6.0, 1.0, 0.55, 0.22, "pool", true],  # the warm pool under the belly
-  [-5.0, 0.0, 0.2, 1.2, 6.0, 1.0, 0.55, 0.22, "pool", true],  # the warm pool under the belly
-  [5.0, 0.0, 0.2, 1.2, 6.0, 1.0, 0.55, 0.22, "pool", true],  # the warm pool under the belly
+  # light layer: the three orange belly pools became the six landing lights' spots (an 11th number: a spot's
+  # angle in deg, pointing down); the edge light's pools are six cool spots under the edge (its own glow lights
+  # nothing: its strip lights left hot spots on the fins); the nav lamps' tiny lights (ship.gd blinks them in game)
+  [-3.80, -3.40, 0.56, 1.0, 4.0, 1.0, 0.72, 0.42, "land", false, 70.0],  # landing light
+  [3.80, -3.40, 0.56, 1.0, 4.0, 1.0, 0.72, 0.42, "land", false, 70.0],  # landing light
+  [-8.20, 4.60, 0.32, 1.0, 4.0, 1.0, 0.72, 0.42, "land", false, 75.0],  # landing light
+  [8.20, 4.60, 0.32, 1.0, 4.0, 1.0, 0.72, 0.42, "land", false, 75.0],  # landing light
+  [-4.20, 8.60, 1.06, 1.0, 4.0, 1.0, 0.72, 0.42, "land", false, 65.0],  # landing light
+  [4.20, 8.60, 1.06, 1.0, 4.0, 1.0, 0.72, 0.42, "land", false, 65.0],  # landing light
+  [-7.35, -4.76, 1.45, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the lead edge (west)
+  [7.35, -4.76, 1.45, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the lead edge (east)
+  [-13.81, 1.70, 1.15, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the lens rim (west)
+  [13.81, 1.70, 1.15, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the lens rim (east)
+  [-8.14, 8.39, 1.45, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the trail edge (west)
+  [8.14, 8.39, 1.45, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the trail edge (east)
+  [-12.48, -1.06, 1.13, 1.0, 1.0, 1.0, 0.08, 0.05, "nav", false],  # port nav lamp, red (west)
+  [12.48, -1.06, 1.13, 1.0, 1.0, 0.1, 1.0, 0.3, "nav", false],  # starboard nav lamp, green (east)
+  [0.0, 11.2, 4.715, 1.0, 1.0, 1.0, 0.97, 0.92, "nav_tail", false],  # tail nav lamp, white (0.45 m out: details 1)
   [-3.60, -17.52, 2.24, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
   [-5.47, -19.22, 2.42, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
   [-7.93, -21.03, 2.59, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
@@ -246,6 +362,8 @@ lamps = [
   [-11.0, -13.0, 9.0, 1.0, 40.0, 0.72, 0.8, 1.0, "key", false],  # polish 4: the hero camera's side, a cool moon fill
   [-14.0, 22.0, 13.0, 1.0, 34.0, 0.62, 0.74, 1.0, "rim", false],  # cool rim from behind (south-west)
   [14.0, 22.0, 13.0, 1.0, 34.0, 0.62, 0.74, 1.0, "rim", false],  # cool rim from behind (south-east)
+  [17.0, 6.0, 2.6, 1.0, 9.0, 0.62, 0.74, 1.0, "flank", false],  # join: the east wing tip's outer face (outside layer only; rebuild B: J's tip at (15, 6.4))
+  [-17.0, 6.0, 2.6, 1.0, 9.0, 0.62, 0.74, 1.0, "flank", false],  # join: the west wing tip's outer face (outside layer only)
 ]
 hall_lamp = 0.7
 corr_lamp = 2.6                                # inside 3-1 (grid_in31 C; was 2.0): warm-white rows, no teal
@@ -255,6 +373,11 @@ out_lamp = 2.5
 pool_lamp = 1.6                                # the outside lamps' groups (hull step 3; the light grid)
 party_lamp = 1.3
 rim_lamp = 1.2
+flank_lamp = 1.6                               # join: the two flank lamps (the curled tips' outer faces)
+land_lamp = 1.6                                # light layer: the landing lights' spots
+edge_lamp = 0.8                                # the edge light's pools on the ground
+nav_lamp = 0.05                                # the nav lamps' tiny lights (red, green; 0.25 painted a green blob on the rim)
+nav_tail_lamp = 0.15                           # the white tail lamp's
 key_lamp = 1.0                                 # polish 4: the hero-side fill (its far side was a black pool)
 ssil_intensity = 0.4                           # screen-space bounce (1: the lamp ring's band lit a spot on the hall's disc)
 sky_horizon = 10.0                             # inside 3-1 (grid_in31 C; was 5): the sky's horizon colour x this (the windows' and the ramp's view)
@@ -276,6 +399,15 @@ glass_window = {a = 0.05, r = -0.03}                                # polish 4: 
 ext_ground = {s = 0.1}                                              # polish 4: low specular, the ground no longer mirrors
 ext_dirt = {s = 0.1}                                                # the bright horizon at grazing angles (snow-white
 ext_path = {s = 0.1}                                                # through the mouth)
+glow_edge = {c = [0.85, 0.92, 1.0], l = 0.6, rr = 1.0, cull = "inside"}  # light layer: its strip lights light only the inside
+# (through the lens windows, the lens rooms' look as approved); on the hull they left hot spots: the "edge" spots pool it
+glow_nav_red = {l = 0.0}                                             # light layer: the nav lamps and landing lenses glow;
+glow_nav_green = {l = 0.0}                                           # their lights are the "nav", "nav_tail" and "land"
+glow_nav_white = {l = 0.0}                                           # lamps above
+glow_landing = {l = 0.0}
+ext_window_glow = {l = 0.0}                                          # details 1: the lens band's warm pane (outside, one-sided)
+ext_screen = {l = 0.0, e = 2.0}                                             # details 1: the cockpit screens glow, light nothing
+glow_pod = {c = [0.2, 0.9, 1.0], e = 0.6, l = 0.15, rr = 0.6}        # lens step 2: the pods' rings, seen, not a lamp; light layer: e 0.6, the bands clipped pale in out_back
 int_silver_a = {v = 0.55, r = 0.25, m = 0.45}
 int_silver_b = {v = 0.55, r = 0.25, m = 0.45}
 int_silver_c = {v = 0.55, r = 0.25, m = 0.45}
@@ -283,16 +415,49 @@ int_silver_c = {v = 0.55, r = 0.25, m = 0.45}
 
 # The capsule walk: up the ramp, through the hall into both tip rooms and back out. Points [x, y, h].
 [walk]
-points = [[0.0, -9.0, 0.0], [0.0, -7.4, 0.0], [0.0, -4.4, 0.6], [0.0, -1.8, 0.6], [-3.0, 0.0, 1.0],
-          [-10.4, 0.0, 0.6], [-3.0, 0.0, 0.6], [3.0, 0.0, 0.6], [10.4, 0.0, 0.6], [3.0, 0.0, 1.0],
-          [0.0, -1.8, 0.6], [0.0, -4.4, 0.6], [0.0, -7.4, 0.0], [0.0, -9.0, 0.0]]
+# lens step 1: the corridor points on the axes (u 3.0 from the hall's centre), the lens rooms' 0.5 m past their centres
+points = [[0.0, -11.5, 0.0], [0.0, -9.9, 0.0], [0.0, -6.6, 0.6], [0.0, -2.2, 0.6], [-2.966, 0.052, 1.0],
+          [-10.994, 1.275, 0.6], [-2.966, 0.052, 0.6], [2.966, 0.052, 0.6], [10.994, 1.275, 0.6], [2.966, 0.052, 1.0],
+          [0.0, -2.2, 0.6], [0.0, -6.6, 0.6], [0.0, -9.9, 0.0], [0.0, -11.5, 0.0]]
 
 # Views: [name, title, eye [x, y, h], look [x, y, h], fov]; the plan view "top" (south up, as plan-3) is added by the
 # command and compared side by side with plan_ref.
 [shots]
 views = [
+  # light layer: the first sight, from the clearing's edge by the path (26 m from the ship's centre, eye height)
+  ["out_far", "outside: the first sight from the clearing's edge (26 m, eye height)", [-12.5, -22.0, 1.7], [0.0, 1.5, 1.6], 50.0],
   ["out_front", "outside: front, ramp down", [0.0, -19.0, 2.4], [0.0, 0.0, 2.2], 55.0],
   ["out_hero", "outside: three-quarter at night", [-17.0, -15.0, 6.0], [0.0, 0.0, 2.0], 50.0],
-  ["in_hall", "inside: the hall from the ramp", [0.0, -4.3, 2.2], [0.0, 2.0, 2.0], 75.0],
-  ["in_corridor_e", "inside: the east corridor", [3.0, 0.0, 2.2], [10.0, 0.0, 2.0], 70.0],
+  ["in_hall", "inside: the hall from the throat", [0, -4.7, 2.2], [0, 1.6, 2], 75.0],
+  # rebuild C: the throat from the ramp's foot and the hall toward the throat
+  ["in_throat", "inside: the throat from the ramp", [0, -9.6, 1.75], [0, -2.9, 2.0], 62.0],
+  ["in_hall_throat", "inside: the hall toward the throat", [0, 2.2, 2.1], [0, -7.0, 1.6], 75.0],
+  # rebuild F: the mouth's upper corners close up (the hole beside the lintel), from the ramp and at an angle, and
+  # the throat's floor at the roof line
+  ["in_mouth_ne", "inside: the mouth's upper east corner from the ramp", [0.6, -9.0, 1.9], [2.3, -5.6, 3.0], 45.0],
+  ["in_mouth_nw", "inside: the mouth's upper west corner from the ramp", [-0.6, -9.0, 1.9], [-2.3, -5.6, 3.0], 45.0],
+  ["in_mouth_ne_side", "inside: the mouth's upper east corner at an angle", [-1.3, -7.9, 1.5], [2.4, -5.5, 3.1], 50.0],
+  ["in_mouth_nw_side", "inside: the mouth's upper west corner at an angle", [1.3, -7.9, 1.5], [-2.4, -5.5, 3.1], 50.0],
+  ["out_mouth_top", "outside: the mouth's notch from above at an angle", [4.2, -11.0, 5.0], [0.8, -6.0, 2.4], 50.0],
+  ["in_throat_floor", "inside: the throat's floor at the roof line", [0, -7.6, 1.9], [0, -5.2, 0.6], 60.0],
+  ["in_corridor_e", "inside: the east corridor toward its lens", [2.373, -0.038, 2.2], [11.39, 1.336, 1.9], 70.0],
+  # rebuild A: the inside views on the moved rooms; an "in_" view here wins over exterior.toml's of the same name
+  # (ship.py shot_views; exterior's reference image stays)
+  ["in_corridor_w", "inside: the west corridor toward its lens", [-2.373, -0.038, 2.2], [-11.39, 1.336, 1.9], 70.0],
+  ["in_hall_cor_e", "inside: the hall toward the east corridor", [-2, -1.6, 2], [6, 0.6, 1.7], 70.0],
+  ["in_hall_cor_w", "inside: the hall toward the west corridor", [2, -1.6, 2], [-6, 0.6, 1.7], 70.0],
+  # lens step 1: each lens toward its window band, a lens's roof windows looking up, the vault's door from the hall
+  ["in_tip_e", "inside: the east lens toward its windows", [9.0, 1.7, 1.75], [12.6, 0.6, 1.6], 80.0],
+  ["in_tip_w", "inside: the west lens toward its windows", [-9.0, 1.7, 1.75], [-12.6, 0.6, 1.6], 80.0],
+  ["in_lens_roof_e", "inside: the east lens's roof windows looking up", [9.6, 1.3, 1.6], [11.2, 1.2, 3.2], 80.0],
+  ["in_vault_door", "inside: the vault's door from the hall", [0.0, 0.2, 1.7], [0.0, 3.6, 1.3], 70.0],
+  # details 1: the oculus from inside looking up and from outside, the east cockpit from above and in three-quarter
+  ["in_oculus_e", "inside: the east lens's oculus and its light ring, looking up", [9.7, 1.1, 1.5], [10.5, 1.2, 3.3], 75.0],
+  ["out_oculus_e", "outside: the east lens's oculus from above", [12.6, -1.0, 6.2], [10.5, 1.2, 3.3], 40.0],
+  ["out_canopy_top", "outside: the east cockpit from above at night", [2.6, -2.9, 7.6], [2.25, -3.6, 4.3], 40.0],
+  ["out_canopy_e", "outside: the east cockpit in three-quarter at night", [5.4, -0.2, 6.6], [2.25, -3.7, 4.4], 38.0],
+]
+# details 1: views shot by day after the night ones (ship.gd _day: the sun, a pale sky; the moon and key off)
+day_views = [
+  ["out_canopy_e_day", "outside: the east cockpit in three-quarter by day", [5.4, -0.2, 6.6], [2.25, -3.7, 4.4], 38.0],
 ]

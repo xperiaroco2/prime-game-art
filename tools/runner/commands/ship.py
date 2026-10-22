@@ -31,7 +31,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--check", action="store_true", help="only the layout check (the default when nothing else is asked)")
     parser.add_argument("--build", action="store_true", help="build one GLB per piece and run glTF-Validator on each")
     parser.add_argument("--only", default="", help="comma-separated piece ids to build (default every piece)")
-    parser.add_argument("--out", type=Path, help="the pieces folder (default <raw>/ship/v1/pieces)")
+    parser.add_argument("--out", type=Path, help="the pieces folder (default <raw>/<ship.toml raw_dir>/pieces, v2: <raw>/ship/v2/pieces)")
     parser.add_argument("--godot", action="store_true", help="headless import: sizes, colliders and the capsule walk")
     parser.add_argument("--walk", type=Path, metavar="DIR",
                         help="the capsule walk (headless) into DIR/check.json, then the eye-height walk-through video "
@@ -52,6 +52,9 @@ def run(args: argparse.Namespace) -> int:
     common.say(f"ship v{layout['version']}: {width:.2f} x {length:.2f} m (with the nozzles), {len(layout['rooms'])} rooms, "
                f"{len(layout['pieces'])} pieces, {len(layout['place'])} placements; length with the nozzles "
                f"{lens['nozzles']:.2f} m, ramp foot to nozzle tips {lens['overall']:.2f} m")
+    skins = ship_layout.room_skin(layout)
+    if skins:
+        common.say("  least skin: " + ", ".join(f"{r} {s:.3f} ({w})" for r, (s, w) in skins.items()))
     for p in problems:
         common.say(f"  {p}")
     if problems:
@@ -59,7 +62,8 @@ def run(args: argparse.Namespace) -> int:
     plan = raw(layout) / "plan" / "plan.txt"
     plan.parent.mkdir(parents=True, exist_ok=True)
     plan.write_text(ship_layout.ascii_plan(layout), encoding="utf-8", newline="\n")
-    common.ok(f"ship: footprint, corridors, stations, hull, head room and the one entrance hold; plan {plan.as_posix()}")
+    held = "footprint, corridors, stations, hull, skin, head room and the one entrance"
+    common.ok(f"ship: {held} hold; plan {plan.as_posix()}")
     out = (args.out or raw(layout) / "pieces").resolve()
     # Each stage stops the run on a failure: a later stage would work on pieces just reported bad.
     if args.build:
@@ -198,6 +202,13 @@ def godot_check(layout: dict, out: Path, folder: Path) -> int:
     return 0
 
 
+# The whole ship from straight above: nose (y -9.6 with the ramp's foot) to the nozzles (15.0) and both lenses (+-13.1)
+# in a 27 m high frame (1920x1080: 48 m wide), centred between them; south up as `top`.
+TOP_FULL = {"name": "top_full", "title": "top: the whole ship from straight above, at night", "size_m": 27.0,
+            "centre": [0.0, 2.7, 0.0], "day_name": "top_full_day",
+            "day_title": "top: the whole ship from straight above, by day"}
+
+
 def shot_views(layout: dict) -> tuple[list, list]:
     """The review views: the exterior lane's (exterior.toml [shots], each with its 2D sheet) replace ship.toml's of the
     same name; ship.toml's others follow. Returns (views [name, title, eye, look, fov] in plan coordinates, compares
@@ -206,24 +217,38 @@ def shot_views(layout: dict) -> tuple[list, list]:
     with (common.ROOT / layout["exterior"]).open("rb") as f:
         ext = tomllib.load(f).get("shots", {})
     mine = {v[0]: v for v in ext.get("views", [])}
+    # rebuild A: the inside lane's "in_" views in ship.toml win over the exterior's of the same name (the rooms moved;
+    # the exterior's reference image for the compare stays)
+    inner = {v[0]: v for v in layout["shots"]["views"] if v[0].startswith("in_")}
+    mine = {k: (inner[k][:5] + list(v[5:]) if k in inner else v) for k, v in mine.items()}
     views = list(mine.values()) + [v for v in layout["shots"]["views"] if v[0] not in mine]
     compares = [[v[0], f"{ext['ref_dir'].rstrip('/')}/{v[5]}"] for v in mine.values() if len(v) > 5]
     return [v[:5] for v in views], compares
 
 
 def room_boxes(layout: dict) -> list:
-    """A reflection probe box per room: [id, centre (Godot), size (Godot), interior]; the tip rooms see the sky."""
+    """A reflection probe box per room: [id, centre (Godot), size (Godot), interior]: every room an interior probe
+    (ship.toml probe_intensity, 0.15, the tip rooms too, as in the step C shots) but the exit room, the throat open to
+    the sky (1.0)."""
     deck = layout["deck"]
     out = []
     for r in layout["rooms"]:
         if r["shape"] == "circle":
             cx, cy, sx, sy = r["centre"][0], r["centre"][1], 2 * r["radius"], 2 * r["radius"]
+        elif r["shape"] == "strip":   # rebuild A: a diagonal corridor's probe is its plan's bounding box
+            _o, _u, u0, u1, half = ship_layout.strip_frame(r)
+            pts = [ship_layout.strip_point(r, u, v) for u in (u0, u1) for v in (-half, half)]
+            xs, ys = [q[0] for q in pts], [q[1] for q in pts]
+            cx, cy, sx, sy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, max(xs) - min(xs), max(ys) - min(ys)
+        elif r["shape"] == "poly":   # rebuild C: the throat's probe is its plan's bounding box
+            xs, ys = [q[0] for q in r["points"]], [q[1] for q in r["points"]]
+            cx, cy, sx, sy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, max(xs) - min(xs), max(ys) - min(ys)
         else:
             cx, cy = sum(r["x"]) / 2, sum(r["y"]) / 2
             sx, sy = r["x"][1] - r["x"][0], r["y"][1] - r["y"][0]
         hh = r.get("apex_h", r["clear_h"])
         out.append([r["id"], _g([cx, cy, deck["floor_h"] + hh / 2]), [sx + 0.4, hh + 0.2, sy + 0.4],
-                    "window" not in r and not r.get("exit")])
+                    not r.get("exit")])
     return out
 
 
@@ -236,7 +261,9 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
         common.say(f"  not built, left out: {', '.join(missing)}")
     req = {"pieces": {pid: f"res://import/ship_{pid}.glb" for pid in ids},
            "collide": [p["id"] for p in layout["pieces"] if p["collide"] and p["id"] in ids],
-           "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"] if pid in ids]}
+           "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"] if pid in ids],
+           # inside-2: the outside pieces draw on render layer 2, out of reach of the inside's strip lights
+           "outside": [p["id"] for p in layout["pieces"] if p["lane"] != "interior" and p["id"] in ids]}
     return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
 
 
@@ -245,7 +272,12 @@ def shoot(layout: dict, out: Path, folder: Path) -> int:
     views, compares = shot_views(layout)
     req.update({"mode": "shoot", "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in views],
-                "top": {"name": "top", "title": "top: plan view, south up (as plan-3)", "size_m": 30.0},
+                # details 1: views by day, after the night's (ship.toml [shots] day_views)
+                "day_views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in layout["shots"].get("day_views", [])],
+                "top": {"name": "top", "title": "top: plan view, south up (as plan-3)", "size_m": 36.0},
+                # light layer: the whole ship from straight above (the top view crops the stern and the pods), at night
+                # and by day; shots show the nav lamps' static glow (nav_blink off; on in game)
+                "top_full": {**TOP_FULL, "centre": _g(TOP_FULL["centre"])}, "nav_blink": False,
                 "compare": [["top", layout["plan_ref"]], *compares], "rooms": room_boxes(layout)})
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
@@ -287,7 +319,7 @@ def walk_video(layout: dict, out: Path, folder: Path) -> int:
     import shutil
     video = video_request(layout)
     req, staged = built_request(layout, out)
-    req.update({"mode": "video", "video": video, "watchdog_s": VIDEO_TIMEOUT - 60,
+    req.update({"mode": "video", "video": video, "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "rooms": room_boxes(layout)})
     errors = _stage(staged)

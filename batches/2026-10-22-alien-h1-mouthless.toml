@@ -1,0 +1,78 @@
+# art#196, hypothesis H1 (the engineer, art#196 comment 6343841227): Meshy builds the head WITHOUT a mouth (a smooth
+# muzzle) and one designed mouth module is fitted into that place. The 2D test of whether that can look as good as the
+# approved heads: per pilot head its turnaround with the mouth removed (what Meshy would get), one shared mouth module
+# sheet (soft rolled teal lips with a skin surround that blends out, front and 3/4, five states; mouth_module_r is its
+# one revised item: the first's smile and sad barely differed from rest, its lips read human, its patch glowed),
+# then per head the mouthless head with the module fitted at rest, smile, sad and O. Medium (exploration of a
+# route), n = 1 ("One image per concept"); the composites are edits of this batch's own mouthless and module images.
+# Standing permission art#196 comment 6291187194. No game, film, studio or character names; no real people.
+id = "2026-10-22-alien-h1-mouthless"
+service = "openai-images"
+purpose = "art#196 H1: mouthless pilot heads, one shared mouth module and the heads with the module fitted, to judge the mouthless-head route in 2D."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 3.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6343841227"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+[[items]]
+id = "ax_nomouth"
+kind = "edit"
+prompt = "The reference image is a finished character turnaround sheet of the axolotl woman: front view, side profile facing left, back view. Make the same sheet with exactly one change: remove the mouth completely. Where the mouth and lips were, the lower face is now a smooth, clean, gently rounded muzzle of plain skin, with no lips, no mouth line, no slit, no crease, no dimples and no hint of a mouth, in the same pale skin colour blending into the teal as before, the same rounded volume of the lower face and chin as the original. Everything else stays exactly the same: the same three views in the same places and sizes, the same head shape, eyes, nostrils, freckle dots, gills, neck and shoulders, the same colours, the same smooth soft-sheen designer vinyl toy finish, the same soft even studio light on the same plain flat neutral grey background. No text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-pilot-2d/ax_turn/image-0.png", provenance = "the axolotl woman's approved turnaround, our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ax_turn, image 0, art#196", sha256 = "f7d9916c4e887a84f3f36fdd1c489a126d20353d9a197d10ad6714f8e2481510" },
+]
+
+[[items]]
+id = "ch_nomouth"
+kind = "edit"
+prompt = "The reference image is a finished character turnaround sheet of the chameleon man: front view, side profile facing left, back view. Make the same sheet with exactly one change: remove the mouth completely. Where the thick lips were, the lower face is now a smooth, clean, gently rounded muzzle of plain skin, with no lips, no mouth line, no slit, no crease and no hint of a mouth, in the same pale mint skin colour as the chin, the muzzle's volume a little smaller than the lips were but the same jaw, chin and profile otherwise. Everything else stays exactly the same: the same three views in the same places and sizes, the same head shape and crest, the same large heavy-lidded eyes, nostrils, stripes, neck and shoulders, the same colours, the same smooth soft-sheen designer vinyl toy finish, the same soft even studio light on the same plain flat neutral grey background. No text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-pilot-2d/ch_turn/image-0.png", provenance = "the chameleon man's approved turnaround, our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ch_turn, image 0, art#196", sha256 = "ef77948c78aebc489fa10622c3d937d600a603526b34da5443e1101aa1283f32" },
+]
+
+[[items]]
+id = "mouth_module"
+kind = "edit"
+prompt = "The two reference images are turnaround sheets of two finished cartoon alien heads; use them only for the style, the colours and the material. Make a clean design sheet of one mouth module that could be fitted onto either head: a self-contained pair of soft, rounded, rolled cartoon lips in the same teal as the heads' lips, set in a small oval patch of pale mint skin that surrounds the lips and blends out softly to nothing at its edge, with no hard border. Moderate fullness, simple and appealing, not human, no teeth showing except where the mouth is open. Show it alone, floating, with no head, in a grid of five columns and two rows, every cell the same size and scale: the top row in a straight front view, the bottom row the same five in a three-quarter view turned to the left. The columns, left to right: at rest with the lips gently closed; a closed-mouth smile with the corners turned up; sad with the corners turned down; a round open O shape; talking, half open with a soft pink tongue visible inside a dark mouth. The same smooth soft-sheen designer vinyl toy finish, soft even studio light, a plain flat neutral grey background. No text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-pilot-2d/ax_turn/image-0.png", provenance = "the axolotl woman's approved turnaround, our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ax_turn, image 0, art#196", sha256 = "f7d9916c4e887a84f3f36fdd1c489a126d20353d9a197d10ad6714f8e2481510" },
+  { file = "raw:2026-10-22-alien-pilot-2d/ch_turn/image-0.png", provenance = "the chameleon man's approved turnaround, our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ch_turn, image 0, art#196", sha256 = "ef77948c78aebc489fa10622c3d937d600a603526b34da5443e1101aa1283f32" },
+]
+
+[[items]]
+id = "mouth_module_r"
+kind = "edit"
+prompt = "The two reference images are turnaround sheets of two finished cartoon alien heads; use them only for the style, the colours and the material. Make a clean design sheet of one cartoon mouth module that could be fitted onto either head: a pair of simple, slim, softly rolled lips like two smooth rounded tubes of the same teal as the heads, wide and gently curved, a cartoon mouth and not a human one, no pout, no cupid's bow, no wrinkles. The lips sit on a shallow rounded mound of pale mint skin, a solid matte 3D surface lit like the heads, whose outer edge thins and fades to transparent; no glow, no halo, no rim light, no outline. Show it alone, floating, with no head, in a grid of five columns and two rows, every cell the same size and scale: the top row in a straight front view, the bottom row the same five in a three-quarter view turned to the left. The columns, left to right, each state clearly different at a glance: at rest, the lips closed in a nearly straight line; a big happy closed-mouth smile, the whole mouth curved upward like a wide U with the corners pushed up into the cheeks; sad, the whole mouth curved downward like an upside-down U with the corners pulled down; a small round open O shape; talking, half open with a soft pink tongue visible inside a dark mouth. The same smooth soft-sheen designer vinyl toy finish, soft even studio light, a plain flat neutral grey background. No text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-pilot-2d/ax_turn/image-0.png", provenance = "the axolotl woman's approved turnaround, our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ax_turn, image 0, art#196", sha256 = "f7d9916c4e887a84f3f36fdd1c489a126d20353d9a197d10ad6714f8e2481510" },
+  { file = "raw:2026-10-22-alien-pilot-2d/ch_turn/image-0.png", provenance = "the chameleon man's approved turnaround, our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ch_turn, image 0, art#196", sha256 = "ef77948c78aebc489fa10622c3d937d600a603526b34da5443e1101aa1283f32" },
+]
+
+[[items]]
+id = "ax_comp"
+kind = "edit"
+size = "1536x1536"
+prompt = "The first reference image is a turnaround sheet of the axolotl woman with no mouth (a smooth muzzle). The second is a design sheet of a mouth module: soft rolled teal lips in a pale skin patch that blends out, in five states. Make a sheet of four cells in a two by two grid, each cell the same head-and-shoulders bust of this axolotl woman in the same slightly turned three-quarter view, the same size and scale: the mouth module fitted onto her smooth muzzle where a mouth belongs, its skin patch blended seamlessly into her skin so it reads as her own mouth. Top left at rest with the lips gently closed and a calm face; top right the closed-mouth smile with happy eyes; bottom left the sad mouth with sad eyes; bottom right the round open O with surprised eyes. Use the module's lip shapes, colour and size as shown, scaled to suit her face. Keep the head exactly as in the first reference: the same head shape, eyes, nostrils, freckle dots, gills, neck, shoulders and colours, the same smooth soft-sheen designer vinyl toy finish, the same soft even studio light on a plain flat neutral grey background. No text, no labels, no logos, no numbers."
+images = [
+  { from = "ax_nomouth", pick = 0 },
+  { from = "mouth_module_r", pick = 0 },
+]
+
+[[items]]
+id = "ch_comp"
+kind = "edit"
+size = "1536x1536"
+prompt = "The first reference image is a turnaround sheet of the chameleon man with no mouth (a smooth muzzle). The second is a design sheet of a mouth module: soft rolled teal lips in a pale skin patch that blends out, in five states. Make a sheet of four cells in a two by two grid, each cell the same head-and-shoulders bust of this chameleon man in the same slightly turned three-quarter view, the same size and scale: the mouth module fitted onto his smooth muzzle where a mouth belongs, its skin patch blended seamlessly into his skin so it reads as his own mouth. Top left at rest with the lips gently closed and his calm heavy-lidded look; top right the closed-mouth smile with pleased eyes; bottom left the sad mouth with sad eyes; bottom right the round open O with surprised eyes. Use the module's lip shapes, colour and size as shown, scaled to suit his face. Keep the head exactly as in the first reference: the same head shape and crest, eyes, nostrils, stripes, neck, shoulders and colours, the same smooth soft-sheen designer vinyl toy finish, the same soft even studio light on a plain flat neutral grey background. No text, no labels, no logos, no numbers."
+images = [
+  { from = "ch_nomouth", pick = 0 },
+  { from = "mouth_module_r", pick = 0 },
+]

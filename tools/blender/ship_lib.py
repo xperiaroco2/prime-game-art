@@ -29,6 +29,20 @@ MATERIALS = {
                   "strength": 6.0},
     "glow_amber": {"base": (1.0, 0.6, 0.2, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.6, 0.2),
                    "strength": 5.0},
+    # lens step 2: the hull's edge light (cool white, "like a flashlight") and the pods' rings (the 2D's cyan, dimmer)
+    "glow_edge": {"base": (0.85, 0.92, 1.0, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.85, 0.92, 1.0),
+                  "strength": 16.0},   # 4.0 read as a pale line in the moonlit silver (out_lens_e); 10 thin in out_hero
+    "glow_pod": {"base": (0.2, 0.9, 1.0, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.2, 0.9, 1.0),
+                 "strength": 4.0},
+    # light layer: the navigation lamps (port red, starboard green, tail white) and the warm landing lights' lenses
+    "glow_nav_red": {"base": (1.0, 0.06, 0.04, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.06, 0.04),
+                     "strength": 8.0},
+    "glow_nav_green": {"base": (0.05, 1.0, 0.25, 1.0), "metallic": 0.0, "roughness": 0.3,
+                       "emission": (0.05, 1.0, 0.25), "strength": 8.0},
+    "glow_nav_white": {"base": (1.0, 0.97, 0.92, 1.0), "metallic": 0.0, "roughness": 0.3,
+                       "emission": (1.0, 0.97, 0.92), "strength": 8.0},
+    "glow_landing": {"base": (1.0, 0.78, 0.5, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.78, 0.5),
+                     "strength": 6.0},
 }
 
 
@@ -48,6 +62,8 @@ def material(name: str):
     if spec.get("alpha"):
         bsdf.inputs["Alpha"].default_value = spec["base"][3]
         mat.surface_render_method = "BLENDED"
+    if spec.get("cull"):  # details 1: one-sided (the glTF's doubleSided false: Godot culls its back)
+        mat.use_backface_culling = True
     if spec.get("emission"):
         bsdf.inputs["Emission Color"].default_value = (*spec["emission"], 1.0)
         bsdf.inputs["Emission Strength"].default_value = spec["strength"]

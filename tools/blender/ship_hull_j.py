@@ -1,0 +1,428 @@
+"""The hull's plating (art #263 rebuild B, docs/ship.md "The hull"): the live hull of ship_hull_shape.py (DEFAULT: P
+since lens step 2, the union of convex parts with its window band and roof windows cut; J before it; the module keeps
+its name, its builders j_skin and j_cheeks plate whichever is live), in the night build's plated, faceted brushed silver (PR #267's skin; no scratches, no decals, no
+light strips). The HULL lane owns this file.
+
+Every outer face of the hull (its facets after the mouth cut and the openings, ship_hull_shape.surface) is cut into plates in its
+own plane: rows PLATE[1] wide along the facet's span direction (plan x projected into the facet; the mouth's sides use
+plan y), each row cut every PLATE[0], the rows staggered by half a plate like brickwork, so every seam lies on the
+facet and the facets' edges are seams too. A plate is ship_hull._plate (v1's: its face inset INSET at the surface,
+chamfered down to its outline sunk DEPTH), its silver drawn from the v1 silvers by a hash of its centre, the top and
+the belly alike; a cut plate thinner than SLIVER is laid flush (no inset), so it closes its strip and only its
+neighbours' chamfers draw the seam. Under the plates a dark under-skin DEPTH * 1.8 inside closes the seams. Three pieces, all in the plan frame at the origin: skin_top (the
+faces looking up or sideways), skin_belly (the faces looking down), skin_mouth (the recess's back, sides and ceiling).
+Flat shaded: the facets stay crisp. Lens step 3: the skin's plates follow one seam family per zone across the facets
+(the block before j_skin) and the lens is shaded smooth; `plates` and `lay` (per facet) are left to the cheeks."""
+
+from __future__ import annotations
+
+import math
+import zlib
+
+import ship_hull as H
+import ship_hull_shape as S
+import ship_lib as L
+
+PLATE = (1.8, 1.3)            # a plate's length along the facet's span direction and its row's width (metres)
+INSET, DEPTH = 0.022, 0.014   # v1's seam: the chamfer's inset at the surface and its depth
+SLIVER = 0.03                 # a cut plate's inradius-like width (2 area / perimeter) under which it is laid flush
+TINY = 1e-6                   # a cut piece's area (m2) under which it is no piece at all (a clipping crumb)
+# the outside in v1's silvers only, the belly as the top: the belly's every third plate was leg_metal once, and those
+# dark plates read as holes and camouflage patches in the side view (the engineer, 2026-10-22)
+MATS = {"top": H.SILVERS, "belly": H.SILVERS, "mouth": ("hull_dark",)}
+
+
+def _basis(n):
+    """Two unit axes in the plane of normal n: e1 plan x projected into it (plan y where the face looks along x)."""
+    a = S.X if abs(n[0]) < 0.9 else S.Y
+    e1 = S._unit3(S._sub(a, tuple(n[k] * S._dot(a, n) for k in range(3))))
+    return e1, S._cross(n, e1)
+
+
+def _clean(poly):
+    out = []
+    for p in poly:
+        if not out or math.dist(p, out[-1]) > 1e-4:
+            out.append(p)
+    if len(out) > 1 and math.dist(out[0], out[-1]) <= 1e-4:
+        out.pop()
+    return out
+
+
+def width(q) -> float:
+    """A convex polygon's inradius-like width, 2 area / perimeter."""
+    return 2 * S.area(q) / sum(math.dist(a, b) for a, b in zip(q, q[1:] + q[:1]))
+
+
+def lay(q) -> tuple:
+    """One plate: v1's inset and chamfer, or flush (no inset) where it is a sliver, too thin for the inset."""
+    return H._plate(q, INSET if width(q) > SLIVER else 0.0, DEPTH)
+
+
+def plates(poly, n, size=PLATE):
+    """A convex face cut into its plates (convex polygons wound as the face), every piece of it covered."""
+    e1, e2 = _basis(n)
+    us, vs = [S._dot(p, e1) for p in poly], [S._dot(p, e2) for p in poly]
+    out = []
+    for j in range(math.floor(min(vs) / size[1]), math.floor(max(vs) / size[1]) + 1):
+        row = S.clip(S.clip(poly, S._neg(e2), -j * size[1]), e2, (j + 1) * size[1])
+        if len(row) < 3:
+            continue
+        off = 0.5 * size[0] * (j % 2)
+        for i in range(math.floor((min(us) - off) / size[0]), math.floor((max(us) - off) / size[0]) + 1):
+            q = _clean(S.clip(S.clip(row, S._neg(e1), -(off + i * size[0])), e1, off + (i + 1) * size[0]))
+            if len(q) >= 3 and S.area(q) > TINY:
+                out.append(q)   # slivers too: left open, the dark under-skin showed through as black streaks
+    return out
+
+
+# --- lens polish (step 3): the plates laid in rows across the facets ------------------------------------------------
+# Step 2 plated every facet in its own frame, so the union's sliver facets fanned their seams out and the lens's 48 rim
+# facets read as slats (a corrugated tank). Now every face belongs to a zone with one seam family: global planes whose
+# rows run span-wise over the body and the fins (plan), horizontal bands and radial seams round each lens (its rim and
+# its under faces), a ring of sectors round rows on its top and bottom discs. A plate is a cell of its family, cut out
+# of every facet it covers: a piece's edge is a seam (inset) where a seam plane cut it, where the face ends (an opening,
+# a cut) or where its neighbour bends away by more than the zone's CREASE; across a shallower facet edge it is laid
+# flush, so the seams follow the rows, never a sliver. The lens's plates are shaded smooth up to CREASE["lens"] (wide
+# curved plates); the body and the fins stay faceted.
+CREASE = {"plan": 20.0, "lens": 30.0}   # degrees: a facet edge bending less than this is no seam in its zone
+LENS_BANDS = (1.35, 2.8)                # the rim's horizontal seams: under the edge light, the window band's head
+LENS_SECTOR = 36.0                      # the rim's vertical seams every this many degrees, staggered by half per band
+LENS_RING = 1.5                         # the discs' inner ten-gon's apothem: rows inside it, a ring of sectors outside
+LENS_R = S.P_RIM_R / math.cos(math.pi / S.P_LENS_N) + 0.02   # a face within this of a lens's centre is the lens's
+
+
+def _lens_of(poly) -> int:
+    for sx in (1, -1):
+        if all(math.hypot(p[0] - sx * S.P_TIP[0], p[1] - S.P_TIP[1]) <= LENS_R for p in poly):
+            return sx
+    return 0
+
+
+def _rows(poly, r, c, size=PLATE, r0=0.0, c0=0.0):
+    """A convex face cut by a global plane family: rows between the planes r . p = r0 + j W, each cut by the planes
+    c . p = c0 + off_j + i L (off_j half a plate on odd rows, brickwork). [((j, i), piece)]."""
+    out = []
+    rs = [S._dot(p, r) - r0 for p in poly]
+    for j in range(math.floor(min(rs) / size[1]), math.floor(max(rs) / size[1]) + 1):
+        row = S.clip(S.clip(poly, S._neg(r), -(r0 + j * size[1])), r, r0 + (j + 1) * size[1])
+        if len(row) < 3:
+            continue
+        off = c0 + 0.5 * size[0] * (j % 2)
+        cs = [S._dot(p, c) - off for p in row]
+        for i in range(math.floor(min(cs) / size[0]), math.floor(max(cs) / size[0]) + 1):
+            q = _clean(S.clip(S.clip(row, S._neg(c), -(off + i * size[0])), c, off + (i + 1) * size[0]))
+            if len(q) >= 3 and S.area(q) > TINY:
+                out.append(((j, i), q))
+    return out
+
+
+def _wedge(poly, centre, g0, g1):
+    """The part of a face between the vertical half-planes at plan angles g0 < g1 (radians) round centre."""
+    for n in ((math.sin(g0), -math.cos(g0), 0.0), (-math.sin(g1), math.cos(g1), 0.0)):
+        poly = S.clip(poly, n, n[0] * centre[0] + n[1] * centre[1])
+        if len(poly) < 3:
+            return []
+    return _clean(poly)
+
+
+def _sectors(poly, centre, a0, step):
+    """[(k, piece)]: a face cut into the sectors a0 + k step .. a0 + (k + 1) step (degrees) round centre."""
+    gm = math.degrees(math.atan2(sum(p[1] for p in poly) / len(poly) - centre[1],
+                                 sum(p[0] for p in poly) / len(poly) - centre[0]))
+    gs = [math.degrees(math.atan2(p[1] - centre[1], p[0] - centre[0])) for p in poly]
+    gs = [gm + (g - gm + 180.0) % 360.0 - 180.0 for g in gs]   # unwrapped about the face's own angle
+    out = []
+    for k in range(math.floor((min(gs) - a0) / step), math.floor((max(gs) - a0) / step) + 1):
+        q = _wedge(poly, centre, math.radians(a0 + k * step), math.radians(a0 + (k + 1) * step))
+        if len(q) >= 3 and S.area(q) > TINY:
+            out.append((k % round(360 / step), q))
+    return out
+
+
+def _lens_cells(poly, n):
+    """An east lens face's plates [(cell, piece)]: the rim and the under faces in three bands with radial seams every
+    LENS_SECTOR, staggered per band; the discs (and the band's sill and head) in a ring of sectors round rows."""
+    c = S.P_TIP
+    ax = S.p_axis_deg()
+    out = []
+    if abs(n[2]) < 0.75:
+        hs = (-10.0, *LENS_BANDS, 10.0)
+        for b, (h0, h1) in enumerate(zip(hs, hs[1:])):
+            band = _clean(S.clip(S.clip(poly, S._neg(S.H), -h0), S.H, h1))
+            if len(band) < 3 or S.area(band) <= TINY:
+                continue
+            out += [(("rim", b, k), q) for k, q in _sectors(band, c, ax + 0.5 * LENS_SECTOR * (b % 2), LENS_SECTOR)]
+        return out
+    lid = "top" if n[2] > 0 else "bot"
+    inner = poly
+    for k, q in _sectors(poly, c, ax, LENS_SECTOR):
+        gm = math.radians(ax + (k + 0.5) * LENS_SECTOR)
+        m = (math.cos(gm), math.sin(gm), 0.0)
+        d = LENS_RING + m[0] * c[0] + m[1] * c[1]
+        q = _clean(S.clip(q, S._neg(m), -d))   # the ring: beyond the ten-gon's edge
+        if len(q) >= 3 and S.area(q) > TINY:
+            out.append(((lid, "ring", k), q))
+        if len(inner) >= 3:
+            inner = S.clip(inner, m, d)
+    inner = _clean(inner)
+    if len(inner) >= 3 and S.area(inner) > TINY:
+        a = math.radians(ax)
+        u, v = (math.cos(a), math.sin(a), 0.0), (-math.sin(a), math.cos(a), 0.0)
+        cc = (c[0], c[1], 0.0)
+        out += [((lid, j, i), q) for (j, i), q in _rows(inner, v, u, r0=S._dot(cc, v) - 0.5 * PLATE[1],
+                                                         c0=S._dot(cc, u) - 0.5 * PLATE[0])]
+    return out
+
+
+def _plan_cells(poly, n):
+    """Rows span-wise (seams along plan x, between planes of constant y; a face looking fore or aft: horizontal
+    bands), the plates' ends on planes of constant x (a face looking sideways: constant h)."""
+    r = S.Y if abs(n[1]) < 0.7 else S.H
+    c = S.X if abs(n[0]) < 0.7 else (S.H if r == S.Y else S.Y)
+    return [((r, c, j, i), q) for (j, i), q in _rows(poly, r, c)]
+
+
+def _mirror(poly):
+    return [(-p[0], p[1], p[2]) for p in reversed(poly)]
+
+
+def cells(poly, n):
+    """A face's plates in its zone: [(cell key, piece)], the key shared by the pieces of one plate on other facets.
+    The west lens is the east's mirror image."""
+    sx = _lens_of(poly)
+    if sx == 0:
+        return [(("plan",) + key, q) for key, q in _plan_cells(poly, n)]
+    if sx > 0:
+        return [(("lens", 1) + key, q) for key, q in _lens_cells(poly, n)]
+    return [(("lens", -1) + key, _mirror(q)) for key, q in _lens_cells(_mirror(poly), (-n[0], n[1], n[2]))]
+
+
+def _off_segment(p, a, b) -> float:
+    ab = S._sub(b, a)
+    l2 = S._dot(ab, ab)
+    t = 0.0 if l2 < 1e-12 else max(0.0, min(1.0, S._dot(S._sub(p, a), ab) / l2))
+    return math.dist(p, tuple(a[k] + ab[k] * t for k in range(3)))
+
+
+class Edges:
+    """The surface's face edges in a grid: which faces meet a point on an edge, and at what angle."""
+    CELL = 0.5
+
+    def __init__(self, surf):
+        self.normals = [S._unit3(n) for _p, n, _k in surf]
+        self.grid: dict = {}
+        for i, (poly, _n, _k) in enumerate(surf):
+            for a, b in zip(poly, poly[1:] + poly[:1]):
+                steps = max(1, math.ceil(math.dist(a, b) / (0.5 * self.CELL)))
+                for key in {self._key([a[k] + (b[k] - a[k]) * t / steps for k in range(3)]) for t in range(steps + 1)}:
+                    self.grid.setdefault(key, []).append((i, a, b))
+
+    def _key(self, p):
+        return tuple(math.floor(p[k] / self.CELL) for k in range(3))
+
+    def bend(self, i, m):
+        """(m lies on face i's own outline, the largest angle in degrees to another face meeting it there or None)."""
+        own, best, seen = False, None, set()
+        kx, ky, kz = self._key(m)
+        for key in ((kx + a, ky + b, kz + c) for a in (-1, 0, 1) for b in (-1, 0, 1) for c in (-1, 0, 1)):
+            for j, a, b in self.grid.get(key, ()):
+                if (j, a, b) in seen or _off_segment(m, a, b) > 2e-4:
+                    continue
+                seen.add((j, a, b))
+                if j == i:
+                    own = True
+                    continue
+                ang = math.degrees(math.acos(max(-1.0, min(1.0, S._dot(self.normals[i], self.normals[j])))))
+                best = ang if best is None else max(best, ang)
+        return own, best
+
+
+def seams(q, i, edges, zone) -> list:
+    """Per edge of piece q (of surface face i): True where it is a seam (inset), False where it is laid flush."""
+    out = []
+    for a, b in zip(q, q[1:] + q[:1]):
+        own, bend = edges.bend(i, tuple(0.5 * (a[k] + b[k]) for k in range(3)))
+        out.append((not own) or bend is None or bend > CREASE[zone])
+    return out
+
+
+def lay_seams(q, flags):
+    """One plate piece: v1's inset and chamfer on its seam edges only; a flush edge keeps its outline and has no
+    chamfer (the plate goes on over the next facet). A sliver is laid flush all round."""
+    if width(q) <= SLIVER:
+        flags = [False] * len(q)
+    n = S._unit3(S._newell(q))
+    k = len(q)
+    top = []
+    for i in range(k):
+        a, b, c = q[i - 1], q[i], q[(i + 1) % k]
+        o1, o2 = (INSET if flags[i - 1] else 0.0), (INSET if flags[i] else 0.0)
+        if not o1 and not o2:
+            top.append(tuple(b))
+            continue
+        d1, d2 = S._unit3(S._sub(b, a)), S._unit3(S._sub(c, b))
+        m1, m2 = S._cross(n, d1), S._cross(n, d2)   # the edges' inward normals in the face
+        den = S._dot(d1, m2)
+        if abs(den) < 1e-6:
+            x = tuple(m1[t] * max(o1, o2) for t in range(3))
+        else:
+            beta = (o2 - o1 * S._dot(m1, m2)) / den
+            x = tuple(m1[t] * o1 + d1[t] * beta for t in range(3))
+        cap = 0.3 * min(math.dist(a, b), math.dist(b, c))
+        ln = math.sqrt(S._dot(x, x))
+        if ln > cap:
+            x = tuple(t * cap / ln for t in x)
+        top.append(tuple(b[t] + x[t] for t in range(3)))
+    verts = top + [H._add(p, n, -DEPTH) for p in q]
+    faces = [tuple(range(k))] + [((i + 1) % k, i, k + i, k + (i + 1) % k) for i in range(k) if flags[i]]
+    used = sorted({x for f in faces for x in f})
+    remap = {old: new for new, old in enumerate(used)}
+    return [verts[x] for x in used], [tuple(remap[x] for x in f) for f in faces]
+
+
+_SKIN: dict = {}
+
+
+def skin_pieces(name: str = S.DEFAULT) -> list:
+    """Every outer face's plate pieces: [(kind, zone, cell, face index, piece, seam flags)], cached per hull."""
+    if name not in _SKIN:
+        surf = S.surface(name)
+        edges = Edges(surf)
+        out = []
+        for i, (poly, n, kind) in enumerate(surf):
+            for cell, q in cells(poly, n):
+                zone = "lens" if cell[0] == "lens" else "plan"
+                out.append((kind, zone, cell, i, q, seams(q, i, edges, zone)))
+        _SKIN[name] = out
+    return _SKIN[name]
+
+
+def cell_mat(cell, mats) -> str:
+    """A plate's silver, one per cell (all its pieces alike, so a lens plate is one smooth mesh)."""
+    return mats[zlib.crc32(repr(cell).encode()) % len(mats)]
+
+
+def j_skin(args: dict, layout: dict) -> list:
+    """One part of the hull (args part: top, belly or mouth): its plates by material and zone (the lens's shaded
+    smooth up to CREASE["lens"]) and the dark under-skin."""
+    kind = args["part"]
+    mats = MATS[kind]
+    groups: dict = {}
+    for k, zone, cell, _i, q, flags in skin_pieces(S.DEFAULT):
+        if k == kind:
+            groups.setdefault((zone, cell_mat(cell, mats)), []).append(lay_seams(q, flags))
+    under = [([H._add(x, n, -DEPTH * 1.8) for x in poly], [tuple(range(len(poly)))])
+             for poly, n, k in S.surface(S.DEFAULT) if k == kind]
+    parts = []
+    for (zone, mat), g in sorted(groups.items()):
+        p = L.part(f"skin_{kind}_{mat}" + ("_lens" if zone == "lens" else ""), *L.merge(*g), mat, solid=False)
+        if zone == "lens":
+            p["smooth_deg"] = CREASE["lens"]
+        parts.append(p)
+    parts.append(L.part(f"skin_{kind}_seam", *L.merge(*under), "ext_seam", solid=False))
+    return parts
+
+
+j_skin = H._outward(j_skin)
+
+
+CHEEK_OUT = S.WALL + 0.03   # rebuild D: the cheeks 3 cm proud of the wall modules' backs (in their plane they z-fought:
+#                             the modules' pale backs showed through as boards beside the mouth)
+
+
+def j_cheeks(args: dict, layout: dict) -> list:
+    """rebuild C: the mouth's cheeks, the throat walls' outer faces where J's belly rises over the deck (under the nose,
+    forward of the hall): plates in the walls' outer planes from the slab's bottom up to the belly, so the throat
+    reads as a mouth cut into the nose and no wall stands bare under it. rebuild D: in the mouth's dark plates
+    (MATS["mouth"], skin_mouth's), so with the notch's cut faces above them each side reads as one dark face up to
+    the nose's sloped top (the pale silver read as a board standing beside the mouth)."""
+    (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
+    ln = math.hypot(kx - mx, ky - my)
+    d = ((kx - mx) / ln, (ky - my) / ln)
+    groups: dict = {}
+    for sx in (1, -1):
+        n = (sx * d[1], -d[0], 0.0)                     # outward
+        pts = []
+        for i in range(25):
+            s = ln * i / 24
+            x, y = sx * (mx + d[0] * s) + n[0] * CHEEK_OUT, my + d[1] * s + n[1] * CHEEK_OUT
+            hb = S.heights(x, y)
+            if hb and hb[1] > S.SLAB + 0.01:
+                pts.append((x, y, hb[1]))
+        for (x0, y0, b0), (x1, y1, b1) in zip(pts, pts[1:]):
+            q = [(x0, y0, S.SLAB - 0.01), (x1, y1, S.SLAB - 0.01), (x1, y1, b1), (x0, y0, b0)]
+            if S._dot(S._newell(q), n) < 0:
+                q.reverse()
+            for p in plates(q, n):
+                groups.setdefault(MATS["mouth"][0], []).append(lay(p))
+    # rebuild E: the jambs. Forward of the roof line the throat's walls stood as pale interior modules with flat tops
+    # at 2.05 m, free under the open notch (the "cheeks" of the D shots). Here each wall is the hull's own side of the
+    # cut instead: a solid in the wall's thickness from the slab up to J's top over it (one convex face, as every
+    # section of the convex hull), its inner face in the hull's plates, its top and front edge in hull_silver
+    s_roof = (S.TH_ROOF_Y - my) / d[1]
+    edge = []
+    for sx in (1, -1):
+        n = (sx * d[1], -d[0], 0.0)                     # outward
+        inner, outer = [], []
+        for i in range(17):
+            s = 0.02 + (s_roof - 0.02) * i / 16   # 2 cm in from the nose edge (heights() is None on it)
+            x, y = sx * (mx + d[0] * s), my + d[1] * s
+            xo, yo = x + n[0] * (S.WALL - 0.01), max(y + n[1] * (S.WALL - 0.01), my + 0.02)   # not past the nose edge
+            inner.append((x, y, S.heights(x, y)[0]))
+            outer.append((xo, yo, S.heights(xo, yo)[0]))
+        face = [(inner[0][0], inner[0][1], S.SLAB - 0.01), (inner[-1][0], inner[-1][1], S.SLAB - 0.01)]
+        face += [inner[k] for k in range(len(inner) - 1, -1, -1)]
+        inward = S._neg(n)
+        if S._dot(S._newell(face), inward) < 0:
+            face.reverse()
+        for p in plates(face, inward):
+            c = [sum(x[i] for x in p) / len(p) for i in range(3)]
+            mat = MATS["top"][int(H._hash(round(c[0], 1), round(c[1], 1), round(c[2], 1)) * len(MATS["top"])) %
+                              len(MATS["top"])]
+            groups.setdefault(mat, []).append(lay(p))
+        for (a0, b0), (a1, b1) in zip(zip(inner, outer), zip(inner[1:], outer[1:])):   # the top, along the slope
+            q = [a0, a1, b1, b0]
+            edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), S.H) > 0 else (3, 2, 1, 0)]))
+        q = [(inner[0][0], inner[0][1], S.SLAB - 0.01), (outer[0][0], outer[0][1], S.SLAB - 0.01), outer[0], inner[0]]
+        edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), (0.0, -1.0, 0.0)) > 0 else (3, 2, 1, 0)]))   # front
+    parts = [L.part(f"cheeks_{mat}", *L.merge(*g), mat, solid=False) for mat, g in sorted(groups.items())]
+    parts.append(L.part("jamb_edge", *L.merge(*edge), "hull_silver", solid=False))
+    parts.append(L.part("jamb_cap", *L.merge(*jamb_caps()), MATS["mouth"][0], solid=False))
+    return parts
+
+
+CAP_BACK = 0.01   # rebuild F: the jamb's aft cap this far aft of the roof line, behind the arch's face and the lintel
+
+
+def jamb_caps() -> list:
+    """rebuild F: the hole at the mouth's upper corners. The notch (cutters) is cut WALL beyond the throat's walls up
+    to J's top; at the roof line its back face (the lintel) closes it only above TH_TOP, and the throat's covered part
+    behind closes only its own profile (walls vertical to the chamfer, the chamfer in to the ceiling). Between that
+    profile's chamfer and the notch's side, under the lintel, the hull's hollow stood open: sky and pines through its
+    one-sided skin. Each side's cap closes it in the plane CAP_BACK aft of the roof line, from the slab up past
+    TH_TOP (under the lintel) and from the walls' inner face out past the notch's side (into the hull's hollow); its
+    inner edge follows the throat's inner profile, so the arch (its face on the roof line) hides the seam. Both
+    windings: no light through it either way. [(verts, faces)] in plan coordinates."""
+    (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
+    ln = math.hypot(kx - mx, ky - my)
+    d = ((kx - mx) / ln, (ky - my) / ln)
+    k = 1.0 / d[1]                                       # an across distance as a plan x offset at fixed y
+    y = S.TH_ROOF_Y + CAP_BACK
+    xi = mx + d[0] * (y - my) / d[1]                     # the walls' inner face
+    xo = xi + S.WALL * k + 0.02                          # past the notch's side plane
+    ch_h, ch_in = S.TH_CH
+    h_ch, h_ceil, h_top = S.FLOOR + ch_h, S.FLOOR + S.TH["clear_h"], S.TH_TOP + 0.03
+    x_ceil = xi - ch_in * k
+    out = []
+    for sx in (1, -1):
+        for poly in ([(xi, S.SLAB - 0.01), (xo, S.SLAB - 0.01), (xo, h_ch), (xi, h_ch)],
+                     [(xi, h_ch), (xo, h_ch), (xo, h_top), (x_ceil, h_top), (x_ceil, h_ceil)]):
+            q = [(sx * x, y, h) for x, h in poly]
+            n = len(q)
+            out.append((q, [tuple(range(n))]))
+            out.append(([(a, b + 0.002, c) for a, b, c in q], [tuple(range(n - 1, -1, -1))]))   # the back, 2 mm aft
+    return out
+
+
+j_cheeks = H._outward(j_cheeks)
