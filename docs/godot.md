@@ -2458,6 +2458,19 @@ a time, by visibility.
   - The pick is not in `alien.gd` or `look_presets.json`: the look needs the engineer's yes (the values are in the
     handoff and `TD/final/spec.json`).
 
+## The pilot's living gills and sheet (`godot/alien/pilot_gills.gd`, `pilot_sheet.gd`, art #196, step 2b-2)
+
+- `pilot_gills.gd` (`extends RefCounted`, preload it): `attach(skeleton, stiffness, drag)` adds one
+  `SpringBoneSimulator3D` under the skeleton with one setting per chain `<Left|Right>Gill<n>_1`..`_3` (the
+  axolotl's six stalks, three bones each): the end bone extended along its parent by one segment
+  (`BONE_DIRECTION_FROM_PARENT`, 6), no gravity (the stalks keep their fanned rest), radius 0.15 segments. The
+  simulator runs in the skeleton's modifier pass: no physics bodies, nothing to step by hand.
+- `pilot_sheet.gd <glb> <png> expr|gills` (off-screen window through `_godot.window()`): `expr` shoots rest, smile,
+  sad, angry, surprised, talk, blink and the `Head` bone turned 40 degrees (the weld) from 3/4 front; `gills` swings
+  the `Head` bone +-35 degrees (1.2 s period) and takes six frames per row, one row per spring setting (none, then
+  stiffness/drag 2.0/0.6, 1.0/0.4, 0.4/0.2). The defaults (1.0/0.4) are Godot's own; the grid did not separate
+  them yet (see the step 2c handoff: the right gills smear at import).
+
 ## Findings for later tasks
 
 - **Toe bones (art #25):** assembled characters have 64 bones since art #25 (`Toe.L`, `Toe.R`). The export and

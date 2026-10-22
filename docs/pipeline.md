@@ -134,7 +134,33 @@ into `<head>/v2/` (the sheet and Godot shot copied up as `<head>_rig_1280_v2.png
 - **Blink:** the closed eye is flattened along the gaze (chameleon 0.3, axolotl 0.6 of its front bulge; the eyeballs
   get `blink_L/R` too), so the closed lid sits close over the eye instead of reading as a ball.
 
-The neck weld to the shared body, spring bones in Godot and the cut at the neck are step 2b-2.
+### Step 2b-2: mouth leftovers, the shared body, living gills (art #196)
+
+`alien_pilot_run.py --src-dir <step2b> --out <step2c> --only-rig` rigs step 2b's head builds into a new folder;
+`--grid-mouth` writes `<head>_grid_mouth.png` (rows: GRID_MOUTH's variants; columns: rest and smile in 3/4, talk and
+surprised from the front); `--only-char --char <alien_body.blend>` welds the rig onto the body; `--sheet` adds the
+Godot sheets.
+- **Surprised O:** a corrective on the posed shape squeezes every point round the mouth toward the midline by `o` of
+  its distance (a Gaussian round the mouth, the face's front only) and puckers it forward: a small round O, corners
+  in. Picked from the grid: `o` 0.6 for both.
+- **Tongue:** lifted in talk by `tongue` mouth units (up, half as much forward; half of it in the O): chameleon 0.35,
+  axolotl 0.3. The axolotl's head build has no tongue; the rig adds hers (`add_tongue`) as the build makes his.
+- **Lips:** the axolotl gets her own swept band (`lips` radius 0.24, flush: `prot` 0, the skin drawn in from
+  `draw` 2.4 ellipse radii so her painted band hides under it). The flank away from the line runs out into the skin
+  as a tail (`blend`, chameleon 0.7, axolotl 0.5) and the lips take the skin's roughness: a soft crease instead of a
+  tube glued on. The chameleon's lip moves are smoothed along each tube (`tube_smooth` 30 passes) against the corner
+  kink; not for the axolotl (it pulled her tubes off her skin in the smile). The slit past the lip corners is
+  weighted as on the line, so the open mouth no longer parts it into flaps.
+- **The shared body** (`tools/blender/alien_pilot_char.py`): the parts kit's body (`M15/b/s/cage/build/
+  alien_body.blend`: `Body` on `CharacterArmature`, the contract skeleton and the clips, the open 48-vertex neck ring
+  at z 1.39). The head turns to -Y and scales so its eyes sit at the skeleton's eye joints (1.608 m); its neck's
+  waist (the narrowest slab below the face) sits on the ring's axis 8 mm above the ring; the skin below is cut off and
+  the 5 cm above the cut morphs onto the ring's ellipse; skin and body are joined (the skin active, its blend shapes
+  kept) and bridged (`bridge_loops`), custom normals cleared, all smooth. The face bones join the body's armature
+  under its `Head` (the body's `Jaw`, `LeftEye`, `RightEye` replaced by the head's); the head's skin takes `Neck`
+  weight from the ring's 0.7 at the cut to 0 at 7 cm. The body's plain material takes the neck's colour (the game
+  replaces it by name). One GLB per character, `<head>_char.glb`, with the body's clips; `char.json` holds the fit.
+- **Living gills:** `godot/alien/pilot_gills.gd` (`docs/godot.md`, "The pilot's living gills").
 
 ## Since 2026-10-03: the character base and who decides
 
