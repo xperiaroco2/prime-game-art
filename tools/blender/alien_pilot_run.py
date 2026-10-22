@@ -4,7 +4,12 @@ Godot window (godot/alien/pilot_shots.gd through the runner's _godot.window()). 
 (`tools/run.sh godot-check <glb>`). Inputs are read from the raw folder, never written.
 
     $PYTHON_BIN tools/blender/alien_pilot_run.py [--heads chameleon,axolotl] [--out DIR] [--no-build] [--no-shots]
-        [--tag v2]
+        [--tag v2] [--prev DIR] [--rig] [--only-rig]
+
+--prev: an earlier build's views for the comparison sheet's middle row, "{head}" standing for the head
+(e.g. .../step2a/{head}/v2/views). --rig (step 2b-1) runs alien_pilot_rig.py on the build: the face skeleton,
+weights, blink and expression blend shapes, <head>_rig.glb and its review sheet; the validator and the Godot shot
+then take the rigged GLB. --only-rig skips the head build and rigs the existing one.
 
 --tag builds into <out>/<head>/<tag>/ (a build without a tag, or with the same tag, is overwritten), puts the earlier build's views in the
 comparison sheet's middle row and copies the sheet and the Godot shot up as <head>_compare_1280_<tag>.png and
@@ -39,15 +44,20 @@ def main() -> int:
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--smooth", default=None, help="iterations,lambda for every head's smooth region")
     ap.add_argument("--tag", default="", help="build into <out>/<head>/<tag>/ and copy its sheets up with the tag")
+    ap.add_argument("--prev", default=None, help="an earlier build's views/ for the middle row, {head} for the head")
+    ap.add_argument("--rig", action="store_true", help="rig the build (step 2b-1)")
+    ap.add_argument("--only-rig", action="store_true", help="rig the existing build, no head build")
     args = ap.parse_args()
     summary = {}
     failed = False
     for head in args.heads.split(","):
         out = args.out / head / args.tag if args.tag else args.out / head
         out.mkdir(parents=True, exist_ok=True)
-        if not args.no_build:
+        if not args.no_build and not args.only_rig:
             extra = ["--smooth", args.smooth] if args.smooth else []
-            if args.tag and (args.out / head / "views").is_dir():
+            if args.prev:
+                extra += ["--prev-views", args.prev.format(head=head)]
+            elif args.tag and (args.out / head / "views").is_dir():
                 extra += ["--prev-views", str(args.out / head / "views")]
             result = blender.run_script("alien_pilot_head.py", ["--head", head, "--src", str(SRC[head]), "--view2d",
                                                         str(VIEWS[head]), "--expr", str(EXPR[head]), "--out", str(out),
@@ -55,13 +65,22 @@ def main() -> int:
             lines = [x for x in (result.stdout or "").splitlines() if x.startswith("PILOT ")]
             (out / "build.log").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
             print(f"built {head}", *lines[-3:], sep="\n", flush=True)
-        for glb in (out / f"{head}.glb", out / f"{head}_lod1.glb"):
+        glbs = [out / f"{head}.glb", out / f"{head}_lod1.glb"]
+        if args.rig or args.only_rig:
+            result = blender.run_script("alien_pilot_rig.py", ["--head", head, "--blend", str(out / f"{head}.blend"),
+                                                       "--build", str(out / "build.json"), "--expr", str(EXPR[head]),
+                                                       "--view2d", str(VIEWS[head]), "--out", str(out)], timeout=1500)
+            lines = [x for x in (result.stdout or "").splitlines() if x.startswith("RIG ")]
+            (out / "rig.log").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+            print(f"rigged {head} exit {result.returncode}", *lines[-4:], sep="\n", flush=True)
+            glbs = [out / f"{head}_rig.glb"]
+        for glb in glbs:
             report = _export.validate(glb, out / f"{glb.stem}.validator.json")
             ok, text = _export.verdict(report)
             summary[glb.name] = text
             print(f"validator {glb.name}: {text}", flush=True)
         if not args.no_shots:
-            res = _godot.stage(out / f"{head}.glb", f"pilot_{head}")
+            res = _godot.stage(glbs[0], f"pilot_{head}")
             _godot.import_project()
             shot = out / f"{head}_godot.png"
             code, _ = _godot.window(["--path", str(_godot.PROJECT), "-s", "res://alien/pilot_shots.gd", "--", res,
