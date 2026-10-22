@@ -54,14 +54,17 @@ def run(args: argparse.Namespace) -> int:
     common.say(f"ship v{layout['version']}: {width:.2f} x {length:.2f} m (with the nozzles), {len(layout['rooms'])} rooms, "
                f"{len(layout['pieces'])} pieces, {len(layout['place'])} placements; length with the nozzles "
                f"{lens['nozzles']:.2f} m, ramp foot to nozzle tips {lens['overall']:.2f} m")
-    for p in problems:
+    skipped = ship_layout.skipped(layout)
+    for p in problems + skipped:
         common.say(f"  {p}")
     if problems:
         raise common.Failure(f"ship: {len(problems)} layout problems")
     plan = raw(layout) / "plan" / "plan.txt"
     plan.parent.mkdir(parents=True, exist_ok=True)
     plan.write_text(ship_layout.ascii_plan(layout), encoding="utf-8", newline="\n")
-    common.ok(f"ship: footprint, corridors, stations, hull, head room and the one entrance hold; plan {plan.as_posix()}")
+    held = "corridors" if skipped else "footprint, corridors"
+    held += ", stations, head room and the one entrance" if skipped else ", stations, hull, head room and the one entrance"
+    common.ok(f"ship: {held} hold; plan {plan.as_posix()}")
     out = (args.out or raw(layout) / "pieces").resolve()
     # Each stage stops the run on a failure: a later stage would work on pieces just reported bad.
     if args.build:
@@ -208,6 +211,10 @@ def shot_views(layout: dict) -> tuple[list, list]:
     with (common.ROOT / layout["exterior"]).open("rb") as f:
         ext = tomllib.load(f).get("shots", {})
     mine = {v[0]: v for v in ext.get("views", [])}
+    # rebuild A: the inside lane's "in_" views in ship.toml win over the exterior's of the same name (the rooms moved;
+    # the exterior's reference image for the compare stays)
+    inner = {v[0]: v for v in layout["shots"]["views"] if v[0].startswith("in_")}
+    mine = {k: (inner[k][:5] + list(v[5:]) if k in inner else v) for k, v in mine.items()}
     views = list(mine.values()) + [v for v in layout["shots"]["views"] if v[0] not in mine]
     compares = [[v[0], f"{ext['ref_dir'].rstrip('/')}/{v[5]}"] for v in mine.values() if len(v) > 5]
     return [v[:5] for v in views], compares
@@ -220,6 +227,11 @@ def room_boxes(layout: dict) -> list:
     for r in layout["rooms"]:
         if r["shape"] == "circle":
             cx, cy, sx, sy = r["centre"][0], r["centre"][1], 2 * r["radius"], 2 * r["radius"]
+        elif r["shape"] == "strip":   # rebuild A: a diagonal corridor's probe is its plan's bounding box
+            _o, _u, u0, u1, half = ship_layout.strip_frame(r)
+            pts = [ship_layout.strip_point(r, u, v) for u in (u0, u1) for v in (-half, half)]
+            xs, ys = [q[0] for q in pts], [q[1] for q in pts]
+            cx, cy, sx, sy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, max(xs) - min(xs), max(ys) - min(ys)
         else:
             cx, cy = sum(r["x"]) / 2, sum(r["y"]) / 2
             sx, sy = r["x"][1] - r["x"][0], r["y"][1] - r["y"][0]

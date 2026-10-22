@@ -22,6 +22,11 @@ with (ROOT / "layouts" / "ship" / "ship.toml").open("rb") as _f:
     SHIP = tomllib.load(_f)
 
 
+def along(x: float, y: float) -> float:
+    """rebuild A: a plan point's distance along its corridor's axis from the hall's centre (east or west)."""
+    return abs(x) * S.COR_DIR[0] + y * S.COR_DIR[1]
+
+
 class ShipInteriorTest(unittest.TestCase):
     def test_the_file_is_generated(self) -> None:
         self.assertEqual((ROOT / "layouts" / "ship" / "interior.toml").read_text(encoding="utf-8"), SP.render())
@@ -47,18 +52,24 @@ class ShipInteriorTest(unittest.TestCase):
         self.assertEqual(S.R_HALL, rooms["hall"]["radius"])
         self.assertEqual((S.H_HALL, S.APEX_HALL), (rooms["hall"]["clear_h"], rooms["hall"]["apex_h"]))
         self.assertEqual((S.H_TIP, S.APEX_TIP), (rooms["tip_e"]["clear_h"], rooms["tip_e"]["apex_h"]))
-        self.assertEqual(S.TIP_X, rooms["tip_e"]["centre"][0])
+        self.assertEqual(S.TIP_C, tuple(rooms["tip_e"]["centre"]))
+        self.assertAlmostEqual(S.TIP_X, math.hypot(*rooms["tip_e"]["centre"]), places=9)
         self.assertEqual(S.H_COR, rooms["corridor_e"]["clear_h"])
-        win = rooms["tip_e"]["window"]
-        self.assertEqual((S.WIN_HALF, S.SILL, S.HEAD), (win["half_angle_deg"], win["sill_h"], win["head_h"]))
-        half = (rooms["corridor_e"]["y"][1] - rooms["corridor_e"]["y"][0]) / 2
-        self.assertEqual(max(u for u, _ in S.PROF), half)
+        # rebuild A: the corridor's axis runs from the hall's centre through the tip room's
+        (ax, ay), (bx, by) = rooms["corridor_e"]["axis"]
+        self.assertEqual((ax, ay), (0.0, 0.0))
+        self.assertAlmostEqual(S.COR_ANG, math.degrees(math.atan2(by, bx)), places=9)
+        self.assertAlmostEqual(math.degrees(math.atan2(*reversed(rooms["tip_e"]["centre"]))), S.COR_ANG, places=9)
+        self.assertEqual(max(u for u, _ in S.PROF), rooms["corridor_e"]["width"] / 2)
 
     def test_the_openings_take_the_corridor(self) -> None:
         self.assertGreater(S.HCH, S.COR_HALF)              # the hall's chords
         self.assertGreater(S.TIP_CHORD_H, S.COR_HALF)      # the tip rooms' chords
         self.assertAlmostEqual(S.COR_X0, 3.918, places=2)  # the corridor modules run portal to portal (v2)
-        self.assertAlmostEqual(S.COR_X1, 7.111, places=2)
+        self.assertAlmostEqual(S.COR_X1, 8.024, places=2)  # rebuild A: along the diagonal (v2 7.111)
+        self.assertEqual(S.N_MOD, 4)
+        self.assertAlmostEqual(S.MOD_L, 1.026, places=3)
+        self.assertEqual(S.OPENINGS["corridor_w"], 180.0 - S.OPENINGS["corridor_e"])
 
     def test_head_room(self) -> None:
         pl = SHIP["player"]
@@ -71,42 +82,30 @@ class ShipInteriorTest(unittest.TestCase):
         v_at = v0 + (v1 - v0) * (u0 - u_in) / (u0 - u1) if u_in > u1 else v1
         self.assertGreaterEqual(v_at, pl["capsule_height_m"])
 
-    def test_the_mouth_opens_wide_and_the_window_has_few_mullions(self) -> None:
-        # hall_out-2: the mouth's portal and arch take the mouth room's full width and height (inside 3-1)
-        mouth = {r["id"]: r for r in SHIP["rooms"]}["mouth"]
-        top = max(v for _, v in S.MOUTH_PROF)
-        self.assertAlmostEqual(top, mouth["clear_h"], places=3)
-        self.assertGreaterEqual(min(v for _, v in S.MOUTH_PROF if v > 0), top - 0.4)
-        self.assertGreaterEqual(2 * max(u for u, _ in S.MOUTH_PROF), mouth["x"][1] - mouth["x"][0] - 0.11)
-        ids = {p[0] for p in INTERIOR["place"]}
-        self.assertTrue({"mouth_portal", "mouth_arch"} <= ids)
-        # tip-3: a few thin mullions, the view nearly uninterrupted
-        self.assertLessEqual(len(S.MULLIONS), 4)
+    def test_the_mouth_opens_wide_and_the_tip_rooms_have_no_window(self) -> None:
+        self.assertGreaterEqual(2 * S.MOUTH_PROF[3][0], 1.9)   # the mouth's ceiling stays wide (inside 3-1)
+        # rebuild A (the engineer, 2026-10-22): no tip windows; the window's segments are wall facets
+        ids = {p["id"] for p in INTERIOR["pieces"]}
+        self.assertFalse({i for i in ids if any(w in i for w in ("window", "shutter", "well", "sill", "glass"))})
+        self.assertEqual(INTERIOR.get("shutter_closed", []), [])
+        for sx in (1, -1):
+            c = (sx * S.TIP_C[0], S.TIP_C[1])
+            panels = [1 for pid, (x, y, _), _ in INTERIOR["place"] if pid.startswith("tip_panel")
+                      and math.hypot(x - c[0], y - c[1]) < S.R_TIP]
+            self.assertEqual(len(panels), S.TIP_N)
 
-    def test_the_window_well_meets_the_skin_band(self) -> None:
-        # inside-2: the well lines the room wall's opening out to the smooth skin's window band (ship_hull_smooth: the
-        # open rings round the tip centre); it spans the whole window sector, starts at the room wall and ends on the
-        # band's edges as the skin's height field puts them, per side
-        import ship_hull  # noqa: F401  (first, as ship_interior._well_rows)
-        import ship_hull_smooth as HS
-        var = HS.VARIANTS[HS.DEFAULT]
-        ids = {p[0] for p in INTERIOR["place"]}
-        self.assertTrue({"tip_well_e", "tip_well_w"} <= ids)
-        self.assertFalse({"tip_glass_e", "tip_glass_w"} & ids)  # one glass: the hull's tip window
-        self.assertNotIn("tip_glass", ids)
-        rh, rs = HS.pod_r(HS.HEAD + 0.05), HS.pod_r(HS.SILL - 0.05)
-        for side in (1, -1):
-            rows = S._well_rows(side)
-            self.assertAlmostEqual(rows[0][0], -math.radians(S.WIN_HALF), places=4)
-            self.assertAlmostEqual(rows[-1][0], math.radians(S.WIN_HALF), places=4)
-            for b, r_in, lo, hi in rows:
-                a = side * b
-                self.assertEqual(lo, (rs, HS.heights(HS.TIP_X + rs * math.cos(a), rs * math.sin(a), var)[0]))
-                self.assertEqual(hi, (rh, HS.heights(HS.TIP_X + rh * math.cos(a), rh * math.sin(a), var)[0]))
-                self.assertGreater(hi[0], r_in)                       # the band lies outside the room wall
-                self.assertGreater(hi[1], lo[1] + 0.3)               # an open band, head over sill
-                self.assertGreater(hi[1], S.FLOOR + 1.65)            # its head over eye height
-                self.assertGreaterEqual(lo[1], S.FLOOR + S.SILL)    # the sill rises outward to the glass
+    def test_the_hall_openings_face_the_diagonal_corridors(self) -> None:
+        """rebuild A: each corridor's opening and portal centred on its axis, the openings two facets' chord wide."""
+        segs = S.hall_segments()
+        self.assertAlmostEqual(sum(a1 - a0 for a0, a1, _ in segs), 360.0, places=6)
+        for (a0, a1, _), (b0, _b1, _) in zip(segs, segs[1:] + segs[:1]):
+            self.assertAlmostEqual(a1 % 360.0, b0 % 360.0, places=6)
+        for a0, a1, k in segs:
+            if k == "opening":
+                self.assertAlmostEqual(a1 - a0, 45.0, places=6)
+        portals = [math.degrees(math.atan2(y, x)) for pid, (x, y, _), _ in INTERIOR["place"] if pid == "hall_portal"]
+        self.assertEqual(sorted(round(a, 3) for a in portals),
+                         sorted(round(S.OPENINGS[k], 3) for k in ("corridor_e", "corridor_w")))
 
     def test_arches_and_details_keep_off_the_station_spots(self) -> None:
         spots = SHIP["stations"]["spot"]
@@ -114,22 +113,28 @@ class ShipInteriorTest(unittest.TestCase):
         for pid, (x, y, _), _yaw in INTERIOR["place"]:
             for s in spots:
                 d = math.hypot(x - s["at"][0], y - s["at"][1])
-                if pid == "cor_arch" and s.get("normal") and s["room"].startswith("corridor"):
-                    self.assertGreater(abs(x - s["at"][0]), SHIP["stations"]["plain_width_m"] / 2 + 0.15,
+                if pid == "cor_arch" and s.get("normal") and s["room"].startswith("corridor") and x * s["at"][0] > 0:
+                    self.assertGreater(abs(along(x, y) - along(*s["at"])), SHIP["stations"]["plain_width_m"] / 2 + 0.15,
                                        (pid, x, s["id"]))
                 if pid.startswith(("cup", "spill", "cable_coil", "floor_patch")):  # the small details
                     self.assertGreater(d, r + 0.4, (pid, x, y, s["id"]))
 
-    def test_every_hall_wall_facet_has_a_floor_plate(self) -> None:
-        """inside-fix (code review major 1): no dark gap at the wall where a player stands; a rim plate covers one
-        facet, a threshold or a flat chord's plate two."""
-        cover = {"hall_floor_rim": 11.25, "hall_threshold": 22.5, "hall_flat_floor": 22.5}
-        plates = [(math.degrees(math.atan2(y, x)), cover[pid]) for pid, (x, y, _), _yaw in INTERIOR["place"]
-                  if pid in cover]
-        for k in range(16):
-            a = 11.25 + 22.5 * k
-            hits = [p for p, half in plates if abs(((a - p + 180) % 360) - 180) < half - 0.5]
-            self.assertEqual(len(hits), 1, (a, hits))
+    def test_every_wall_facet_or_chord_has_a_floor_plate(self) -> None:
+        """inside-fix (code review major 1): no dark gap at the wall where a player stands. rebuild A: every hall
+        segment (facet, flat chord, opening) has exactly one plate centred on it, of its kind; every tip-room edge
+        its rim plate (the door's three)."""
+        kinds = {"facet": "hall_floor_rim", "flat": "hall_flat_floor", "opening": "hall_threshold"}
+        plates = [(pid, math.degrees(math.atan2(y, x))) for pid, (x, y, _), _yaw in INTERIOR["place"]
+                  if pid.startswith(("hall_floor_rim", "hall_flat_floor", "hall_threshold"))]
+        segs = S.hall_segments()
+        self.assertEqual(len(plates), len(segs))
+        for a0, a1, k in segs:
+            mid = (a0 + a1) / 2
+            hits = [pid for pid, a in plates if abs(((a - mid + 180) % 360) - 180) < 1e-3]
+            self.assertEqual(len(hits), 1, (a0, a1, k, hits))
+            self.assertTrue(hits[0].startswith(kinds[k]), (a0, a1, k, hits))
+        self.assertEqual(len(S.tip_rim_polys()), len(S.tip_edges()) + 2)
+        self.assertEqual(len(S.tip_edges()), S.TIP_N + 1)
 
     def test_the_tip_floor_plates_are_simple_polygons(self) -> None:
         """inside-fix: the door plate crossed itself (the black shard by the tip room's door)."""
@@ -159,72 +164,21 @@ class ShipInteriorTest(unittest.TestCase):
             bays = [(pid, x, y) for pid, (x, y, _), _ in place if pid in ("cor_bay_in", "cor_bay_out")
                     and x * sgn > 0]
             self.assertEqual(len(bays), 2)
-            back = [p for p, (x, y, _), yaw in place if p == "cor_channel" and x * sgn > 3.0]
+            back = [p for p, (x, y, _), yaw in place if p == "cor_channel" and x * sgn > 0]
             self.assertEqual(len(back), S.N_MOD)   # the back wall's bays, one per module
             ribs = [x for p, (x, y, _), _ in place if p == "cor_ceil_rib" and x * sgn > 0]
             self.assertEqual(len(ribs), len(SP.COR_RIBS))
         foot = SP.FOOT
         for pid, (x, y, _), _yaw in place:
             if pid.startswith("cor_bay"):
-                x0, x1 = abs(x) + foot[pid][0], abs(x) + foot[pid][1]
+                x0, x1 = along(x, y) + foot[pid][0], along(x, y) + foot[pid][1]
                 self.assertTrue(x1 <= lo + 1e-3 or x0 >= hi - 1e-3, (pid, x))
-        for pid, (x, y, _), _yaw in place:
-            if pid == "hall_trunk":
-                a = math.degrees(math.atan2(y, x))
-                for f in S.FLATS:
-                    self.assertGreater(abs(abs(((a - f + 180) % 360) - 180) - 22.5), 1.0, (a, f))
-
-
-class ShipShutterTest(unittest.TestCase):
-    """inside-1: the tip windows' shutters and their buttons."""
-
-    def panels(self, rows):
-        return [r for r in rows if r[0] == "tip_shutter"]
-
-    def test_both_poses_place_the_same_panels_one_drop_apart(self) -> None:
-        opened, closed = self.panels(INTERIOR["place"]), self.panels(INTERIOR["shutter_closed"])
-        self.assertEqual(len(opened), 2 * 8)
-        for o, c in zip(opened, closed):
-            self.assertEqual(o[1][:2], c[1][:2])
-            self.assertEqual(o[2], c[2])
-            self.assertAlmostEqual(c[1][2] - o[1][2], S.SHUTTER_DROP, places=4)
-            self.assertEqual(c[1][2], 0.0)
-
-    def test_the_panel_fills_the_window_closed_and_hides_open(self) -> None:
-        parts = S.shutter_panel({}, SHIP)
-        hs = [v[2] for p in parts for v in p["verts"]]
-        self.assertAlmostEqual(min(hs), S.FLOOR + S.SILL, places=4)
-        self.assertGreater(max(hs), S.FLOOR + S.HEAD - 0.05)
-        self.assertLessEqual(max(hs) - S.SHUTTER_DROP, S.FLOOR + S.SILL + 1e-6)   # open: its top in the sill's slot
-        ws = [-v[0] for p in parts for v in p["verts"]]                             # w (toward the room) = -plan x
-        self.assertGreater(S.SHUTTER_W - max(ws), 0.0)                              # never reaches into the room
-        self.assertLess(S.SHUTTER_W - min(ws), 0.2)                                 # inside the 20 cm reveal
-
-    def test_panels_stand_in_the_reveal_behind_the_wall_face(self) -> None:
-        apo = S.R_TIP * math.cos(math.radians(S.WIN_HALF / 8))
-        for _, (x, y, _h), _yaw in self.panels(INTERIOR["shutter_closed"]):
-            r = math.hypot(x - math.copysign(S.TIP_X, x), y)
-            self.assertAlmostEqual(r, apo + S.SHUTTER_W, places=3)   # off the renewer's band in front of the face
-        self.assertLess(S.SHUTTER_W + S.SHUTTER_T, 0.2)              # inside the 20 cm reveal
-
-    def test_buttons_beside_the_window_off_the_renewer_band(self) -> None:
-        buttons = [r for r in INTERIOR["place"] if r[0] == "tip_shutter_button"]
-        self.assertEqual(len(buttons), 2)
-        width = SHIP["stations"]["plain_width_m"]
-        for _, (x, y, _h), _yaw in buttons:
-            r = math.hypot(x - math.copysign(S.TIP_X, x), y)
-            self.assertAlmostEqual(r, S.R_TIP, delta=0.15)
-            self.assertGreater(abs(y), width / 2 + 0.3)
-            self.assertLess(y, 0.0)                        # north of the window, the mouth's side
-
-    def test_the_runner_swaps_the_closed_pose_in(self) -> None:
-        sys.path.insert(0, str(ROOT / "tools"))
-        from runner import ship_layout as sl
-        layout = sl.load()
-        closed = sl.pose(layout, "closed")
-        self.assertEqual(len(closed["place"]), len(layout["place"]))
-        self.assertEqual(self.panels(closed["place"]), layout["shutter_closed"])
-        self.assertIs(sl.pose(layout, "open"), layout)
+        ends = [a for a0, a1, k in S.hall_segments() if k == "flat" for a in (a0, a1)]
+        trunks = [math.degrees(math.atan2(y, x)) for pid, (x, y, _), _yaw in place if pid == "hall_trunk"]
+        self.assertEqual([round(a, 3) for a in trunks], [90.0])   # the back's one trunk, as v2
+        for a in trunks:
+            for f in ends:
+                self.assertGreater(abs(((a - f + 180) % 360) - 180), 1.0, (a, f))
 
 
 if __name__ == "__main__":

@@ -5,14 +5,15 @@ heights absolute from the ground, so a placement's h is an offset). A placement 
 interior.toml, written by ship_interior_place.py) moves it; yaw turns a plan angle a into a - yaw. Wall-like pieces are
 built at plan angle 0 (their room toward -x) and placed with yaw = -(their angle).
 
-The numbers (version 2, the mirrored layout; heights from ship.toml: `floor_h`, each room's `clear_h` and `apex_h`): the
-hall a 16-sided room, inner faces at apothem 4.0 (vertices 4.078), rim 3.2 m, apex 3.8 m over the deck at h 0.6; three
-openings (mouth north, corridors east and west) two facets wide, framed by portals on the chords (3.768); the four
-diagonal facet pairs one flat chord each (the vents' and sockets' plain panels, each with its floor plate); the
-corridors one profile (3 m wide, vertical to 1.45 m, slanted in to 2.3 m wide at the 2.4 m ceiling) in three modules
-of 1.064 m from the hall portal (x 3.918) to the tip portal (7.11); the tip rooms polygons on radius 1.85 round
-(+-8.3, 0) (eight window segments over +-65 deg, three wall facets a side, the corridor chord over +-55.8 deg from the
-back), rim 2.5 m, apex 2.8 m. docs/ship.md, "The interior kit", has the full table."""
+The numbers (version 2, rebuilt for the hull variant J, art #263; heights from ship.toml: `floor_h`, each room's
+`clear_h` and `apex_h`): the hall a 16-sided room, vertices on 4.078 (inner faces at about 4.0), rim 3.2 m, apex
+3.8 m over the deck at h 0.6; three openings (mouth north, corridors on the diagonal at +-25.73 deg from east) two
+facets wide, framed by portals on the chords (3.768); the vents' and sockets' plain flat chords; the other facets
+re-spaced round the openings (hall_segments); the corridors one profile (3 m wide, vertical to 1.45 m, slanted in to
+2.3 m wide at the 2.4 m ceiling) straight along the axis from the hall's centre to the tip room's, four modules of
+1.026 m from the hall portal (u 3.918) to the tip portal (8.024); the tip rooms polygons on radius 1.85 round
+(+-8.3, 4.0) turned to face the hall (13 wall facets, no window, the corridor chord over +-55.8 deg from the back),
+rim 2.5 m, apex 2.8 m. docs/ship.md, "The interior kit", has the full table."""
 
 from __future__ import annotations
 
@@ -88,10 +89,37 @@ R_GRATE = (round(1.1 * K_HALL, 3), round(2.5 * K_HALL, 3))   # the grate ring be
 R_ARC = round(2.58 * K_HALL, 3)            # the amber floor ring (3.035)
 R_RIM0 = round(2.66 * K_HALL, 3)           # the solid rim plates' inner edge (3.129)
 R_RIM_REF = round(3.0 * K_HALL, 3)         # a rim plate's origin (3.529)
-OPENINGS = {"corridor_e": 0.0, "mouth": -90.0, "corridor_w": 180.0}   # opening centre angles (deg)
+# rebuild A (variant J, art #263 comment 6340589162): the corridors run straight along the diagonal from the hall's
+# centre to the tip rooms' (ship.toml `axis`), so the corridor openings sit on that angle (25.73 deg), off the 16-gon's
+# vertices; the hall keeps its 16 facets' look, re-spaced round the moved openings (hall_segments)
+_COR = _ROOM["corridor_e"]
+COR_ANG = math.degrees(math.atan2(_COR["axis"][1][1] - _COR["axis"][0][1], _COR["axis"][1][0] - _COR["axis"][0][0]))
+COR_DIR = (math.cos(D(COR_ANG)), math.sin(D(COR_ANG)))
+OPENINGS = {"corridor_e": COR_ANG, "mouth": -90.0, "corridor_w": 180.0 - COR_ANG}   # opening centre angles (deg)
+BACK_DEG = 12.5   # each of the two back facets either side of the back's trunk at 90 deg (was 22.5: the sockets' flats
+# moved back off the corridor openings and need 1.6 m of plain chord clear of the portal pilaster: 2.06 m)
+
+
+def hall_segments() -> list[tuple[float, float, str]]:
+    """The hall's wall round the ring, (a0, a1, kind) counter-clockwise from the mouth: kind "opening" (two facets'
+    chord, a portal: the mouth and the corridors), "flat" (a station's plain chord over two sub-facets: the vents and
+    sockets) or "facet" (one wall facet). Every vertex on the circle HV, so the openings keep their chord (HC, HCH)."""
+    e0, e1 = COR_ANG - 2 * math.degrees(PHI), COR_ANG + 2 * math.degrees(PHI)   # the east corridor's chord ends
+    east = [(-112.5, -67.5, "opening"), (-67.5, -22.5, "flat"), (-22.5, e0, "facet"), (e0, e1, "opening"),
+            (e1, 90.0 - BACK_DEG, "flat"), (90.0 - BACK_DEG, 90.0, "facet")]
+    west = [(180.0 - b, 180.0 - a, k) for a, b, k in reversed(east[1:])]
+    return east + west
+
+
+def hall_vertices() -> list[float]:
+    """Every vertex angle of the hall's wall (the segment ends and the openings' and flats' middle vertices)."""
+    out = set()
+    for a0, a1, k in hall_segments():
+        out |= {round(a0, 6), round(a1, 6)} | ({round((a0 + a1) / 2, 6)} if k != "facet" else set())
+    return sorted(((a + 180.0) % 360.0) - 180.0 for a in out)
 # the corridors: profile (u across, v up from the deck), the five modules between the portals
 H_COR = _ROOM["corridor_e"]["clear_h"]
-COR_HALF = (_ROOM["corridor_e"]["y"][1] - _ROOM["corridor_e"]["y"][0]) / 2   # v2: 1.5 (3 m wide; v1 1.25)
+COR_HALF = _ROOM["corridor_e"]["width"] / 2          # v2: 1.5 (3 m wide; v1 1.25)
 MOUTH_HALF = 1.25
 PROF = [(-COR_HALF, 0.0), (-COR_HALF, H_COR - 0.95), (-COR_HALF + 0.35, H_COR), (COR_HALF - 0.35, H_COR),
         (COR_HALF, H_COR - 0.95), (COR_HALF, 0.0)]
@@ -116,25 +144,26 @@ PORTAL_D = 0.15
 R_TIP, H_TIP, APEX_TIP, R_TIP_RING = (_ROOM["tip_e"]["radius"] + 0.05, _ROOM["tip_e"]["clear_h"],
                                       _ROOM["tip_e"]["apex_h"], 0.42)   # v2: room r 1.8 -> vertex radius 1.85
 # polish 4: R_TIP_RING 0.6 -> 0.42 (the tip ceiling's pale lamp cog read oversized from the room)
-TIP_X = _ROOM["tip_e"]["centre"][0]                  # v2: 8.3
-WIN_HALF = 65.0
+TIP_C = tuple(_ROOM["tip_e"]["centre"])              # rebuild A: (8.3, 4.0), on the corridor's axis
+TIP_X = math.hypot(*TIP_C)                           # the tip room's centre along the axis from the hall's (9.214)
 DOOR_HALF = math.degrees(math.asin((COR_HALF + 0.03) / R_TIP))   # v2: the 3 m corridor's chord, 55.8 (v1 37.6)
-TIP_STEP = (180.0 - DOOR_HALF - WIN_HALF) / 3        # a wall facet's angle between the window and the door
-SILL, HEAD = _ROOM["tip_e"]["window"]["sill_h"], _ROOM["tip_e"]["window"]["head_h"]
+TIP_N = 13                                           # rebuild A: no window, 13 wall facets round the room
+TIP_STEP = (360.0 - 2 * DOOR_HALF) / TIP_N           # a wall facet's angle (19.11; v2's wall facets 19.73)
 TIP_CHORD = -R_TIP * math.cos(D(DOOR_HALF))          # -1.039
 TIP_CHORD_H = R_TIP * math.sin(D(DOOR_HALF))         # 1.53
+# the corridor's modules along its axis (u from the hall's centre): hall portal to tip portal
 COR_X0 = HC + PORTAL_D                               # 3.918
-COR_X1 = TIP_X + TIP_CHORD - PORTAL_D                # 7.111
-N_MOD = 3
-MOD_L = (COR_X1 - COR_X0) / N_MOD                    # 1.064
+COR_X1 = TIP_X + TIP_CHORD - PORTAL_D                # 8.024 (v2 7.111 on the x axis)
+N_MOD = 4                                            # rebuild A: four modules of 1.026 (v2: three of 1.064)
+MOD_L = (COR_X1 - COR_X0) / N_MOD                    # 1.026
 MOUTH_L = 4.6 - COR_X0                               # the mouth passage, from the hall portal to the ramp hinge (0.68)
 
 
 def tip_vertices() -> list[float]:
-    """The tip room's vertex angles (deg, east room): window segments, wall facets, the corridor chord."""
-    win = [-WIN_HALF + 2 * WIN_HALF * i / 8 for i in range(9)]
-    walls = [WIN_HALF + TIP_STEP * i for i in range(1, 4)]
-    return win + walls + [-a for a in walls]
+    """The tip room's vertex angles (deg, in the room's frame, the door toward 180): TIP_N wall facets from one door
+    edge round the outer side to the other (rebuild A: no window), the corridor chord between them."""
+    a0 = -(180.0 - DOOR_HALF)
+    return [a0 + TIP_STEP * i for i in range(TIP_N + 1)]
 
 
 def tip_edges() -> list[tuple[float, float]]:
@@ -204,15 +233,18 @@ def flat_panel(args, layout):
     station hangs flat on it later: no relief, no trunk) between two narrow diamond panels, the soffit closing the
     ceiling's rim behind the chord."""
     hw, h, pl = args["half"], args.get("height", H_HALL), args.get("plain", 0.8)
+    apo = args.get("apo", HC)   # rebuild A: the chord's apothem (a socket's flat is narrower than two facets)
     fr = G.wall_frame(FLOOR)
     belt = h - 0.9
     side = (hw - pl) / 2
+    if side < 0.12:   # rebuild A: too narrow for a diamond panel: the plain panel takes the whole chord
+        pl, side = hw, 0.0
     out = []
-    for k, sgn in enumerate((-1, 1)):
+    for k, sgn in enumerate((-1, 1) if side else ()):
         for part in wall_panel({"half": side, "height": h, "tone": "ab"[k]}, layout):
             v = [(x, y + sgn * (pl + side), z) for x, y, z in part["verts"]]
             out.append(L.part(f"{part['name']}_{k}", v, part["faces"], part["mat"]))
-    tri = [(0.0, -hw), (HV - HC, 0.0), (0.0, hw)]
+    tri = [(0.0, -hw), (HV - apo, 0.0), (0.0, hw)]
     e = pl - 0.06
     return out + [P("soffit", G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08), "int_silver_b"),
                   P("body", G.slab(fr, G.rect(-pl, pl, 0.0, h), -0.2, 0.0), "int_silver_b"),
@@ -383,14 +415,22 @@ def amber_arc(args, layout):
             P("light", shift(light, -ref), "int_amber_ring")]
 
 
+def _facet(args):
+    """(half angle in radians, apothem, half width) of a hall facet or chord: `phi_deg` its half angle (default one
+    16-gon facet), every vertex on the circle HV (rebuild A: the facets re-spaced round the moved openings)."""
+    phi = D(args.get("phi_deg", math.degrees(PHI)))
+    return phi, HV * math.cos(phi), HV * math.sin(phi)
+
+
 def hall_floor_rim(args, layout):
     """The solid floor plates between the amber ring and a wall facet: two halves with a seam (origin at R_RIM_REF)."""
     g = 0.003
-    a = G.arc(R_RIM0, -PHI, -g / R_RIM0)
-    b = G.arc(R_RIM0, g / R_RIM0, PHI)
+    phi, apo, hw = _facet(args)
+    a = G.arc(R_RIM0, -phi, -g / R_RIM0)
+    b = G.arc(R_RIM0, g / R_RIM0, phi)
     fr = G.floor_frame(0.0)
-    halves = M(G.slab(fr, a + [(R_HALL, -g), (R_HALL, -HW)], FLOOR - 0.035, FLOOR, 0.006),
-               G.slab(fr, b + [(R_HALL, HW), (R_HALL, g)], FLOOR - 0.035, FLOOR, 0.006))
+    halves = M(G.slab(fr, a + [(apo, -g), (apo, -hw)], FLOOR - 0.035, FLOOR, 0.006),
+               G.slab(fr, b + [(apo, hw), (apo, g)], FLOOR - 0.035, FLOOR, 0.006))
     return [P("plates", shift(halves, -R_RIM_REF), "int_plate")]
 
 
@@ -403,8 +443,9 @@ def hall_threshold(args, layout):
 def hall_flat_floor(args, layout):
     """inside-fix: the floor plate of a station's flat chord (two facets), from the amber ring's rim edge to the chord,
     where a player stands at a vent or a socket (was the dark base 3.5 cm down; origin on the chord)."""
-    poly = G.arc(R_RIM0, -2 * PHI, 2 * PHI) + [(HC, HCH), (HC, -HCH)]
-    return [P("plate", shift(G.slab(G.floor_frame(0.0), poly, FLOOR - 0.035, FLOOR, 0.006), -HC), "int_plate")]
+    phi, apo, hw = _facet({"phi_deg": args.get("phi_deg", 2 * math.degrees(PHI))})
+    poly = G.arc(R_RIM0, -phi, phi) + [(apo, hw), (apo, -hw)]
+    return [P("plate", shift(G.slab(G.floor_frame(0.0), poly, FLOOR - 0.035, FLOOR, 0.006), -apo), "int_plate")]
 
 
 def ceiling_facet(apo, half, rim_h, r_in, h_in, phi):
@@ -427,10 +468,11 @@ def ceiling_panels(fr, poly, tone, mats=("int_silver_a", "int_silver_b")):
 
 def hall_ceil_panel(args, layout):
     h_in = FLOOR + H_HALL + (APEX_HALL - H_HALL) * (1 - R_RING / R_HALL)
-    fr, poly = ceiling_facet(R_HALL, HW, FLOOR + H_HALL, R_RING, h_in, PHI)
+    phi, apo, hw = _facet(args)
+    fr, poly = ceiling_facet(apo, hw, FLOOR + H_HALL, R_RING, h_in, phi)
     (body, t1, t2), (a, b) = ceiling_panels(fr, poly, args.get("tone", "a"), ("int_ceil_a", "int_ceil_b"))
-    return [P("body", shift(body, -R_HALL), "int_silver_b"), P("tri_a", shift(t1, -R_HALL), a),
-            P("tri_b", shift(t2, -R_HALL), b)]
+    return [P("body", shift(body, -apo), "int_silver_b"), P("tri_a", shift(t1, -apo), a),
+            P("tri_b", shift(t2, -apo), b)]
 
 
 def rib(args, layout):
@@ -681,211 +723,6 @@ def tip_floor_rim(args, layout):
     fr = G.floor_frame(0.0)
     plates = [G.slab(fr, poly, FLOOR - 0.035, FLOOR, 0.006) for poly in tip_rim_polys()]
     return [P("plates", M(*plates), "int_plate")]
-
-
-MULLIONS = (2, 4, 6)  # the window vertices (of 0..8) that carry a mullion
-
-
-def tip_window_frame(args, layout):
-    """The window wall of the tip room: low wall and sill, header, mullions, over the eight segments."""
-    half = WIN_HALF / 8
-    apo, hw = R_TIP * math.cos(D(half)), R_TIP * math.sin(D(half))
-    fr = G.wall_frame(FLOOR, apo)
-    body, panel, sill, trim, mull = [], [], [], [], []
-    for i in range(8):
-        c = -WIN_HALF + half * (2 * i + 1)
-        body += [rot(G.slab(fr, G.rect(-hw, hw, 0.0, SILL), -0.2, 0.0), c),
-                 rot(G.slab(fr, G.rect(-hw, hw, HEAD, H_TIP), -0.2, 0.0), c)]
-        panel.append(rot(G.slab(fr, G.rect(-hw + 0.04, hw - 0.04, 0.05, SILL - 0.09), 0.0, 0.03, 0.01), c))
-        sill.append(rot(G.slab(fr, G.rect(-hw - 0.01, hw + 0.01, SILL - 0.1, SILL), 0.0, 0.2, 0.035), c))
-        trim.append(rot(M(G.slab(fr, G.rect(-hw, hw, HEAD, HEAD + 0.2), 0.0, 0.14, 0.035),
-                          G.slab(fr, G.rect(-hw, hw, HEAD, HEAD + 0.07), 0.14, 0.17, 0.012)), c))
-    for i in MULLIONS:  # inside 3-1: three thin mullions, four panes of two facets each (tip-3; was seven, 17 cm)
-        a = -WIN_HALF + 2 * half * i
-        mull.append(rot(shift(M(G.slab(G.wall_frame(FLOOR), G.rect(-0.05, 0.05, SILL, HEAD), -0.08, 0.1, 0.02),
-                                 G.slab(G.wall_frame(FLOOR), G.rect(-0.022, 0.022, SILL, HEAD), 0.1, 0.12, 0.008)),
-                               R_TIP), a))
-    return [P("body", M(*body), "int_silver_b"), P("panels", M(*panel), "int_silver_a"),
-            P("sill", M(*sill), "int_silver_c"), P("trim", M(*trim), "int_silver_c"),
-            P("mullions", M(*mull), "int_silver_c")]
-
-
-def _well_rows(side):
-    """The tip window's well (inside-2): per local angle b (east room frame; the west room is turned 180, so its b
-    is the hull's -a) the room wall's face r_in and the smooth skin's window band round the tip centre (hull lane:
-    ship_hull_smooth, the open rings between pod_r(HEAD + 0.05) and pod_r(SILL - 0.05)): its lower edge (the sill
-    ring, (r, h)) and upper edge (the head ring), the heights read from the skin's own height field at the hull's own
-    angles, so the well meets the band's hole edge exactly."""
-    import ship_hull  # noqa: F401  (first: ship_hull -> ship_hull_detail -> ship_hull_smooth is the working order)
-    import ship_hull_smooth as HS
-    var = HS.VARIANTS[HS.DEFAULT]
-    half = D(WIN_HALF)
-    hull = [a for a in L.angles(-math.pi / 2, math.pi / 2, HS.RAY, (-half, half)) if -half - 1e-6 <= a <= half + 1e-6]
-    bs = sorted({round(side * a, 6) for a in hull} | {round(D(a), 6) for a in tip_vertices() if abs(a) <= WIN_HALF + 1e-6})
-    seg = D(WIN_HALF / 8)
-    apo = R_TIP * math.cos(seg)
-    rh, rs = HS.pod_r(HS.HEAD + 0.05), HS.pod_r(HS.SILL - 0.05)
-    rows = []
-    for b in bs:
-        k = min(7, max(0, int((b + half) / (2 * seg))))
-        c = -half + seg * (2 * k + 1)
-        a = side * b
-        lo = (rs, HS.heights(HS.TIP_X + rs * math.cos(a), rs * math.sin(a), var)[0])
-        hi = (rh, HS.heights(HS.TIP_X + rh * math.cos(a), rh * math.sin(a), var)[0])
-        rows.append((b, apo / math.cos(b - c), lo, hi))
-    return rows
-
-
-def _pt(b, r, h):
-    return (r * math.cos(b), r * math.sin(b), h)
-
-
-def _sheet(cols, both=True):
-    """A surface through columns of points (each column the same count); both: a back copy with reversed faces."""
-    verts, faces = [], []
-    n = len(cols[0])
-    for side in ((0, 1) if both else (0,)):
-        base = len(verts)
-        for col in cols:
-            verts += col
-        for i in range(len(cols) - 1):
-            for j in range(n - 1):
-                q = [base + i * n + j, base + (i + 1) * n + j, base + (i + 1) * n + j + 1, base + i * n + j + 1]
-                faces.append(tuple(q if side == 0 else q[::-1]))
-    return verts, faces
-
-
-def _band_in(rb, hb, rt, ht, d):
-    """The band's edges moved d into the lens (against its outward normal)."""
-    dr, dh = rt - rb, ht - hb
-    ln = math.hypot(dr, dh)
-    nr, nh = dh / ln, -dr / ln
-    return (rb - d * nr, hb - d * nh), (rt - d * nr, ht - d * nh)
-
-
-def tip_well(args, layout):
-    """The tip window's well (tip-3; inside 3-2): the room wall's opening (sill to head) lined out to the lens's
-    slanted window band, so the glass sits in the band and no lens face shows inside: a sill rising outward, a soffit,
-    two jambs, and slim frame bars along the glass's lower and upper edges."""
-    side = args["side"]
-    rows = _well_rows(side)
-    sill, head = FLOOR + SILL, FLOOR + HEAD
-    lin, top = [], []
-    for b, r_in, (rb, hb), (rt, ht) in rows:
-        lin.append([_pt(b, r_in, sill), _pt(b, (r_in + rb) / 2, (sill + hb) / 2 - 0.02), _pt(b, rb, hb)])
-        top.append([_pt(b, r_in, head), _pt(b, rt, ht)])
-    jambs = []
-    for b, r_in, (rb, hb), (rt, ht) in (rows[0], rows[-1]):
-        jambs.append(_sheet([[_pt(b, r_in, sill), _pt(b, rb, hb)], [_pt(b, r_in, head), _pt(b, rt, ht)]]))
-    lo, hi = [], []
-    for b, r_in, (rb, hb), (rt, ht) in rows:
-        (r0, h0), (r1, h1) = _band_in(rb, hb, rt, ht, 0.03)
-        lo.append(_pt(b, r0, h0 + 0.02))
-        hi.append(_pt(b, r1, h1 - 0.02))
-    # the mullions' frames go on round the well: up the sill, up the glass, back along the soffit (tip-3: one frame)
-    ribs, glow = [], []
-    marks = [D(-WIN_HALF + 2 * WIN_HALF / 8 * i) for i in MULLIONS]
-    for b, r_in, (rb, hb), (rt, ht) in rows:
-        (r0, h0), (r1, h1) = _band_in(rb, hb, rt, ht, 0.035)
-        if any(abs(b - m) < 1e-5 for m in marks):
-            ribs.append(G.tube([_pt(b, r_in + 0.03, sill + 0.02), _pt(b, r0, h0), _pt(b, r1, h1),
-                                _pt(b, r_in + 0.03, head - 0.02)], 0.022, 8))
-        (g0, gh), _ = _band_in(rb, hb, rt, ht, 0.06)
-        glow.append(_pt(b, g0, gh + 0.05))
-    return [L.part("sill", *_sheet(lin), "int_silver_c", solid=False),
-            L.part("soffit", *_sheet(top), "int_silver_b", solid=False),
-            L.part("jambs", *M(*jambs), "int_silver_b", solid=False),
-            P("bars", M(G.tube(lo, 0.03, 8), G.tube(hi, 0.03, 8), *ribs), "int_silver_c"),
-            P("glow", G.tube(glow, 0.011, 6), "int_cyan")]
-
-
-def tip_band_glass(args, layout):
-    """The glass in the lens's window band, 1.5 cm inside the band's hole (tip-3; inside 3-2)."""
-    cols = []
-    for b, r_in, (rb, hb), (rt, ht) in _well_rows(args["side"]):
-        (r0, h0), (r1, h1) = _band_in(rb, hb, rt, ht, 0.015)
-        cols.append([_pt(b, r0, h0), _pt(b, r1, h1)])
-    return [L.part("glass", *_sheet(cols), "int_glass", solid=False)]
-
-
-def tip_sill_strip(args, layout):
-    """The cyan strip along one window segment's sill (origin on the segment)."""
-    half = WIN_HALF / 8
-    hw = R_TIP * math.sin(D(half))
-    return [P("strip", G.slab(G.wall_frame(FLOOR), G.rect(-hw + 0.03, hw - 0.03, SILL - 0.075, SILL - 0.045), 0.2,
-                              0.21), "int_cyan")]
-
-
-# --- the tip window's shutter (inside-1; the engineer: a button that opens and closes the windows) --------------------
-# A blast shutter in the window's 20 cm reveal: one ribbed panel per window segment (8 a room), each its own placement
-# with its origin on the segment's centre line. CLOSED it fills the segment from the sill to the head; OPEN it is
-# lowered SHUTTER_DROP into the low wall under the sill (hidden, its cyan top edge glowing in the sill's slot), so the
-# window is clear. The move is a straight drop (Godot position.y). interior.toml places them open (`place`) and lists
-# the closed pose apart (`shutter_closed`); `ship --shutters closed` swaps them. The button (tip_shutter_button) is not
-# wired: the game track wires it later. (A first try with 24 turning louvre blades read as bars across the window.)
-SHUTTER_W = 0.1                         # the panel's mid-plane 10 cm behind the wall face, in the reveal
-SHUTTER_T = 0.015                       # its half thickness
-SHUTTER_TOP = 0.03                      # the gap under the head's rail
-SHUTTER_DROP = round(HEAD - SHUTTER_TOP - SILL, 4)   # the panel's height: open, its top sinks flush into the slot
-BTN_V = 1.15                            # the button's centre over the deck
-# the closed panel's (body, ribs) materials; inside-2's grid (v2/shots_in2_grid) chose SHUTTER_TONE
-SHUTTER_TONES = {"a": ("int_silver_b", "int_silver_a"), "b": ("int_silver_c", "int_silver_b"),
-                 "c": ("int_plate", "int_silver_c"), "d": ("int_grate", "int_silver_a")}
-SHUTTER_TONE = "b"   # inside-fix: the corridor's grey (d's bright slats read flat and too light in the warm room)
-SHUTTER_LINE_V = 0.62   # inside-fix: the cyan line across the closed shutter, this far up from the sill (of its height)
-
-
-def _round(r, cv, n=16):
-    return [(r * math.cos(2 * math.pi * k / n), cv + r * math.sin(2 * math.pi * k / n)) for k in range(n)]
-
-
-def shutter_panel(args, layout):
-    """One window segment's shutter panel, CLOSED, in the plane x = 0 (the room toward -x), origin on its centre line:
-    a body, seven raised horizontal ribs, a cyan line along its top edge and one across it (SHUTTER_LINE_V)."""
-    hw = R_TIP * math.sin(D(WIN_HALF / 8)) - 0.004
-    fr = G.wall_frame(FLOOR)
-    top = HEAD - SHUTTER_TOP
-    body = G.slab(fr, G.rect(-hw, hw, SILL, top), -SHUTTER_T, SHUTTER_T, 0.004)
-    n, ribs = 7, []
-    pitch = (top - 0.05 - SILL) / n
-    for k in range(n):
-        v0 = SILL + 0.02 + k * pitch
-        ribs.append(G.slab(fr, G.rect(-hw + 0.03, hw - 0.03, v0, v0 + pitch - 0.035), SHUTTER_T, SHUTTER_T + 0.012,
-                           0.006))
-    lv = SILL + SHUTTER_LINE_V * (top - SILL)
-    line = M(G.slab(fr, G.rect(-hw + 0.01, hw - 0.01, top - 0.025, top - 0.01), SHUTTER_T, SHUTTER_T + 0.004),
-             G.slab(fr, G.rect(-hw + 0.004, hw - 0.004, lv - 0.012, lv + 0.012), SHUTTER_T, SHUTTER_T + 0.005))
-    body_m, rib_m = SHUTTER_TONES[args.get("tone", SHUTTER_TONE)]
-    return [P("body", body, body_m), P("ribs", M(*ribs), rib_m), P("line", line, "int_cyan")]
-
-
-def shutter_track(args, layout):
-    """The shutter's guides in the reveal over the eight segments: the head's rail and the sill's slot (two lips)."""
-    half = WIN_HALF / 8
-    apo, hw = R_TIP * math.cos(D(half)), R_TIP * math.sin(D(half))
-    fr = G.wall_frame(FLOOR, apo)
-    g = SHUTTER_T + 0.006
-    rails = []
-    for i in range(8):
-        c = -WIN_HALF + half * (2 * i + 1)
-        rails += [rot(G.slab(fr, G.rect(-hw, hw, HEAD - SHUTTER_TOP, HEAD), -0.2, 0.0), c),
-                  rot(G.slab(fr, G.rect(-hw, hw, SILL - 0.02, SILL + 0.012), -0.2, -SHUTTER_W - g), c),
-                  rot(G.slab(fr, G.rect(-hw, hw, SILL - 0.02, SILL + 0.012), -SHUTTER_W + g, 0.0), c)]
-    return [P("rails", M(*rails), "int_silver_c")]
-
-
-def shutter_button(args, layout):
-    """The shutter's wall button (not wired; the game track wires it). inside-fix: a button on a small flat plate: a
-    dark 15 x 22 cm back plate 1 cm proud, a pale bevelled face plate on it, a cyan ring round a round amber push
-    button standing 3.5 cm out of it, one dark label bar under it (the 12 x 20 cm silver plate read as a wall stud)."""
-    fr = G.wall_frame(FLOOR)
-    back = G.slab(fr, G.rect(-0.075, 0.075, BTN_V - 0.14, BTN_V + 0.08), 0.0, 0.01, 0.003)
-    face = G.slab(fr, G.rect(-0.062, 0.062, BTN_V - 0.127, BTN_V + 0.067), 0.01, 0.018, 0.004)
-    ring = G.slab(fr, _round(0.044, BTN_V, 24), 0.018, 0.024, 0.002)
-    push = G.slab(fr, _round(0.032, BTN_V, 24), 0.018, 0.053, 0.008)
-    label = G.slab(fr, G.rect(-0.04, 0.04, BTN_V - 0.1, BTN_V - 0.084), 0.018, 0.021)
-    return [P("back", back, "int_dark"), P("plate", face, "int_silver_a"), P("ring", ring, "int_cyan"),
-            P("push", push, "int_amber"), P("label", label, "int_dark")]
 
 
 def tip_ceiling(args, layout):

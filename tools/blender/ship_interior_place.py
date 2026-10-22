@@ -10,7 +10,6 @@ room turned by r the yaw is r - a (the west room is the east one turned 180)."""
 from __future__ import annotations
 
 import math
-import os
 import sys
 from pathlib import Path
 
@@ -26,11 +25,39 @@ SPOKE_HALL, SPOKE_TIP = 3.07, 4.1
 REF_HALL = round(sum(S.R_GRATE) / 2, 3)    # inside-1: a hall grate sector's origin (v1 1.8)
 R_TIP_DISC, R_TIP_GRATE0, REF_TIP = 0.55, 0.62, 1.07   # inside-1: the tip floor scaled to the 1.85 m room (v1 2.1)
 
-# inside-fix: the breaker board's plain run on a corridor's front wall (plan |x|): the spot's plain width + 0.1 a side
-_BOARD = next(s["at"][0] for s in S._SHIP["stations"]["spot"] if s["room"] == "corridor_e")
+# inside-fix: the breaker board's plain run on a corridor's front wall (u along the corridor's axis from the hall's
+# centre): the spot's plain width + 0.1 a side
+_SPOT = next(s["at"] for s in S._SHIP["stations"]["spot"] if s["room"] == "corridor_e")
+_BOARD = _SPOT[0] * S.COR_DIR[0] + _SPOT[1] * S.COR_DIR[1]
 BOARD_X = (round(_BOARD - S._SHIP["stations"]["plain_width_m"] / 2 - 0.1, 4),
            round(_BOARD + S._SHIP["stations"]["plain_width_m"] / 2 + 0.1, 4))
-COR_RIBS = (4.85, 5.65)   # inside-fix: the ceiling ribs (plan |x|), between the arches at 4.15 and 6.4
+# v2: the corridors' cyan arches (u), 0.232 in from each portal, off the breaker board's span; rebuild A: three
+# ceiling ribs evenly between them (inside-fix: v2 had two between 4.15 and 6.4)
+ARCH_X = (round(S.COR_X0 + 0.232, 4), round(S.COR_X1 - 0.232, 4))
+COR_RIBS = tuple(round(ARCH_X[0] + (ARCH_X[1] - ARCH_X[0]) * k / 4, 4) for k in (1, 2, 3))
+
+# rebuild A: the hall's facets re-spaced round the diagonal corridors' openings (ship_interior.hall_segments): a
+# piece per half angle (deg); "" the 16-gon's own (the openings' and the vents' sub-facets)
+SEGS = S.hall_segments()
+_E0 = S.COR_ANG - 2 * math.degrees(S.PHI)
+PHI_STD = math.degrees(S.PHI)                                  # 11.25
+PHI_SIDE = round((_E0 + 22.5) / 2, 4)                          # the facet between a vent and a corridor (12.87)
+PHI_BACK = round(S.BACK_DEG / 2, 4)                            # a back facet (7.5)
+PHI_SOCK = round((90.0 - S.BACK_DEG - (S.COR_ANG + 2 * PHI_STD)) / 2, 4)   # a socket's flat chord (13.39)
+
+
+def facet_tag(a0: float, a1: float, kind: str) -> str:
+    """A hall segment's piece suffix: "" for the 16-gon's own facets, "_side", "_back", "_socket"."""
+    phi = (a1 - a0) / 2 if kind == "facet" else (a1 - a0) / 4
+    for tag, ref in (("", PHI_STD), ("_side", PHI_SIDE), ("_back", PHI_BACK), ("_socket", PHI_SOCK / 2)):
+        if abs(phi - ref) < 1e-3:
+            return tag
+    raise ValueError(f"hall segment {a0:.3f}..{a1:.3f} ({kind}): no piece for half angle {phi:.4f}")
+
+
+def _hv(phi: float) -> tuple[float, float]:
+    """(apothem, half width) of a hall facet or chord of half angle phi (deg), its vertices on HV."""
+    return S.HV * math.cos(math.radians(phi)), S.HV * math.sin(math.radians(phi))
 
 # id: (builder, args, collide)
 PIECES: dict[str, tuple[str, dict, bool]] = {
@@ -44,10 +71,8 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "hall_amber_arc": ("amber_arc", {"radius": S.R_ARC}, False),
     "hall_amber_arc_thin": ("amber_arc", {"radius": S.R_ARC, "thin": True}, False),  # inside-fix: the four by the mouth
     "hall_flat_floor": ("hall_flat_floor", {}, True),   # inside-fix: the floor at a vent's or socket's flat chord
-    "hall_floor_rim": ("hall_floor_rim", {}, True),
+    "hall_flat_floor_socket": ("hall_flat_floor", {"phi_deg": PHI_SOCK}, True),
     "hall_threshold": ("hall_threshold", {}, True),
-    "hall_panel_a": ("wall_panel", {"half": S.HW, "height": S.H_HALL, "tone": "a"}, True),
-    "hall_panel_b": ("wall_panel", {"half": S.HW, "height": S.H_HALL, "tone": "b"}, True),
     "hall_pilaster": ("pilaster", {"height": S.H_HALL}, True),
     "hall_pilaster_strip": ("pilaster_strip", {"height": S.H_HALL}, False),
     "hall_trunk": ("trunk", {"height": S.H_HALL}, True),
@@ -58,6 +83,14 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "portal_strip_r": ("portal_strip", {"side": 1}, False),
     "hall_ceil_panel_a": ("hall_ceil_panel", {"tone": "a"}, False),
     "hall_ceil_panel_b": ("hall_ceil_panel", {"tone": "b"}, False),
+    # rebuild A: the re-spaced facets' wall panels, floor rims and ceiling panels
+    **{f"hall_panel{tag}_{tone}": ("wall_panel", {"half": round(_hv(phi)[1], 5), "height": S.H_HALL, "tone": tone},
+                                   True) for tag, phi in (("_side", PHI_SIDE), ("_back", PHI_BACK)) for tone in "ab"},
+    **{f"hall_floor_rim{tag}": ("hall_floor_rim", {"phi_deg": phi}, True)
+       for tag, phi in (("_side", PHI_SIDE), ("_back", PHI_BACK))},
+    **{f"hall_ceil{tag}_{tone}": ("hall_ceil_panel", {"tone": tone, "phi_deg": phi}, False)
+       for tag, phi in (("_side", PHI_SIDE), ("_back", PHI_BACK), ("_socket", round(PHI_SOCK / 2, 4)))
+       for tone in "ab"},
     "hall_rib": ("rib", {"rv": S.HV, "rim": F + S.H_HALL, "r_in": S.R_RING, "h_in": H_IN_HALL}, False),
     "hall_rib_strip": ("rib", {"rv": S.HV, "rim": F + S.H_HALL, "r_in": S.R_RING, "h_in": H_IN_HALL, "strip": True},
                        False),
@@ -84,6 +117,10 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     # inside-1: a plain 1.6 m centre panel between two narrow diamond panels (was one 3.1 m diamond)
     "hall_panel_flat": ("flat_panel", {"half": S.HCH, "height": S.H_HALL,
                                        "plain": S._SHIP["stations"]["plain_width_m"] / 2}, True),
+    # rebuild A: a socket's flat chord, 1.89 m (the back between the corridor and the back facets): all plain
+    "hall_panel_flat_socket": ("flat_panel", {"half": round(_hv(PHI_SOCK)[1], 5), "apo": round(_hv(PHI_SOCK)[0], 5),
+                                              "height": S.H_HALL,
+                                              "plain": S._SHIP["stations"]["plain_width_m"] / 2}, True),
     "cor_wall_up_a": ("cor_wall_up", {"length": S.MOD_L, "tone": "a"}, True),
     "cor_wall_up_b": ("cor_wall_up", {"length": S.MOD_L, "tone": "b"}, True),
     "cor_ceil": ("cor_ceil", {"length": S.MOD_L}, False),
@@ -123,24 +160,9 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_trunk": ("trunk", {"height": S.H_TIP, "flat": True}, True),       # inside-fix: flat to the wall
     "tip_trunk_cables": ("trunk_cables", {"height": S.H_TIP, "flat": True}, False),
     "tip_trunk_clip": ("trunk_clip", {"flat": True}, False),
-    "tip_window_frame": ("tip_window_frame", {}, True),
-    # inside 3-2: the window's well out to the lens's slanted band and the glass in the band, one per side (the lens
-    # is not symmetric about the room's axis: the swept tip's rear side reaches farther)
-    "tip_well_e": ("tip_well", {"side": 1}, False),
-    "tip_well_w": ("tip_well", {"side": -1}, False),
-    "tip_sill_strip": ("tip_sill_strip", {}, False),
     "tip_portal": ("portal", {"half": S.TIP_CHORD_H, "height": S.H_TIP}, True),
     "tip_ceiling": ("tip_ceiling", {}, False),
-    # inside-1: the window's shutter (one panel per segment, dropped into the low wall when open), guides, button
-    "tip_shutter": ("shutter_panel", {}, False),
-    "tip_shutter_track": ("shutter_track", {}, False),
-    "tip_shutter_button": ("shutter_button", {}, False),
 }
-# inside-2's tone grid (SHIP_SHUTTER_GRID=1, never committed): the east room's closed panels in four tones, two
-# segments each (tones a..d of ship_interior.SHUTTER_TONES, north to south); the west room keeps SHUTTER_TONE
-GRID = os.environ.get("SHIP_SHUTTER_GRID") == "1"
-if GRID:
-    PIECES.update({f"tip_shutter_t{t}": ("shutter_panel", {"tone": t}, False) for t in "abcd"})
 PIECES |= {
     "tip_rib": ("rib", {"rv": S.R_TIP, "rim": F + S.H_TIP, "r_in": S.R_TIP_RING, "h_in": H_IN_TIP}, False),
     "tip_rib_strip": ("rib", {"rv": S.R_TIP, "rim": F + S.H_TIP, "r_in": S.R_TIP_RING, "h_in": H_IN_TIP,
@@ -174,8 +196,6 @@ FOOT: dict[str, list[float]] = {
     "arch_strip_l": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
     "arch_strip_r": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
 }
-# v2: the corridors' cyan arches (plan |x|), off the breaker boards' span 4.35..6.15
-ARCH_X = (4.15, 6.4)
 
 
 def polar(r: float, a: float, c=(0.0, 0.0), room: float = 0.0) -> list[float]:
@@ -192,20 +212,6 @@ def norm(yaw: float) -> float:
     return round((yaw + 180.0) % 360.0 - 180.0, 3)
 
 
-def shutter(c, room: float, pose: str) -> list[tuple[str, list[float], float]]:
-    """A tip room's shutter panels (centre c, room yaw), open (lowered into the low wall) or closed."""
-    half = S.WIN_HALF / 8
-    apo = S.R_TIP * math.cos(math.radians(half))
-    h = -S.SHUTTER_DROP if pose == "open" else 0.0
-    out = []
-    for i in range(8):
-        a = -S.WIN_HALF + half * (2 * i + 1)
-        xy = polar(apo + S.SHUTTER_W, a, c, room)
-        pid = f"tip_shutter_t{'abcd'[i // 2]}" if GRID and pose == "closed" and room == 0.0 else "tip_shutter"
-        out.append((pid, [xy[0], xy[1], round(h, 4)], norm(room - a)))
-    return out
-
-
 def placements() -> list[tuple[str, list[float], float]]:
     out: list[tuple[str, list[float], float]] = []
 
@@ -213,54 +219,59 @@ def placements() -> list[tuple[str, list[float], float]]:
         assert pid in PIECES, pid
         out.append((pid, [xy[0], xy[1], round(h, 4)], norm(yaw)))
 
-    # --- the hall
+    # --- the hall (rebuild A: hall_segments, the facets re-spaced round the diagonal corridors' openings)
     put("hall_floor_base", [0.0, 0.0])
     put("hall_floor_disc", [0.0, 0.0])
     put("hall_lamp_ring", [0.0, 0.0])
-    openings = list(S.OPENINGS.values())
-    facets = [11.25 + 22.5 * k for k in range(16)]
-    facets = [((a + 180) % 360) - 180 for a in facets]
-    door = [a for a in facets if any(abs(((a - o + 180) % 360) - 180) < 12 for o in openings)]
-    flats = S.FLATS
-    flat_f = [a for a in facets if any(abs(((a - f + 180) % 360) - 180) < 12 for f in flats)]
-    walls = [a for a in facets if a not in door and a not in flat_f]
-    verts = [((22.5 * k + 180) % 360) - 180 for k in range(16)]
-    edge = [v for v in verts if any(abs(abs(((v - o + 180) % 360) - 180) - 22.5) < 1 for o in openings)]
-    plain = [v for v in verts if v not in edge and all(abs(((v - o + 180) % 360) - 180) > 1 for o in openings + flats)]
-    # inside-fix: no trunk on a flat chord's end (the sockets' back wall read as three stations): only 90 keeps one
-    plain = [v for v in plain if all(abs(abs(((v - f + 180) % 360) - 180) - 22.5) > 1 for f in flats)]
+    mouth = S.OPENINGS["mouth"]
     for k in range(8):
         put("hall_grate", polar(REF_HALL, 22.5 + 45 * k), -(22.5 + 45 * k))
         put("hall_spoke", polar(REF_HALL, 45 * k), -45 * k)
         put("hall_lamp", polar(S.R_RING, 22.5 + 45 * k), -(22.5 + 45 * k))
-    for i, a in enumerate(facets):
-        near = abs(((a - S.OPENINGS["mouth"] + 180) % 360) - 180) < 40   # inside-fix: thin by the mouth
+    for a in [norm(11.25 + 22.5 * k) for k in range(16)]:   # the amber ring keeps the 16-gon's spacing
+        near = abs(norm(a - mouth)) < 40   # inside-fix: thin by the mouth
         put("hall_amber_arc_thin" if near else "hall_amber_arc", polar(S.R_ARC, a), -a)
-        put("hall_ceil_panel_a" if i % 2 else "hall_ceil_panel_b", polar(S.R_HALL, a), -a)
-    for i, a in enumerate(walls):
-        put("hall_floor_rim", polar(S.R_RIM_REF, a), -a)
-        put("rim_bolts", polar(S.R_RIM_REF, a), -a)
-        put("hall_panel_a" if i % 2 else "hall_panel_b", polar(S.R_HALL, a), -a)
-    for v in verts:
+    claimed: set[float] = set()   # vertices a station's flat or an opening keeps free of a cable trunk
+    edges: list[float] = []
+    n_ceil = n_wall = 0
+    for a0, a1, kind in SEGS:
+        mid, tag = (a0 + a1) / 2, facet_tag(a0, a1, kind)
+        subs = [(a0, mid), (mid, a1)] if kind != "facet" else [(a0, a1)]
+        for b0, b1 in subs:   # the ceiling: one conical panel per (sub-)facet
+            m = (b0 + b1) / 2
+            put(f"hall_ceil{tag or '_panel'}_{'ab'[n_ceil % 2]}", polar(_hv((b1 - b0) / 2)[0], m), -m)
+            n_ceil += 1
+        if kind == "facet":
+            apo = _hv((a1 - a0) / 2)[0]
+            put(f"hall_floor_rim{tag}", polar(S.R_RIM_REF, mid), -mid)
+            put("rim_bolts", polar(S.R_RIM_REF, mid), -mid)
+            put(f"hall_panel{tag}_{'ab'[n_wall % 2]}", polar(apo, mid), -mid)
+            n_wall += 1
+        elif kind == "flat":   # v2: one flat panel over two facets at each vent and socket spot
+            apo = _hv((a1 - a0) / 2)[0]
+            put("hall_panel_flat" + tag, polar(apo, mid), -mid)
+            put("hall_flat_floor" + tag, polar(apo, mid), -mid)   # inside-fix: its floor, where the player stands
+            claimed |= {round(norm(a0), 4), round(norm(a1), 4)}
+        else:
+            pre = "mouth_" if abs(norm(mid - mouth)) < 1e-6 else ""
+            put("hall_threshold", polar(S.HC, mid), -mid)
+            put("mouth_portal" if pre else "hall_portal", polar(S.HC, mid), -mid)
+            put(pre + "portal_strip_l", polar(S.HC, mid), -mid)
+            put(pre + "portal_strip_r", polar(S.HC, mid), -mid)
+            edges += [norm(a0), norm(a1)]
+        if kind != "facet":
+            claimed.add(round(norm(mid), 4))
+    for v in S.hall_vertices():
         put("hall_rib", polar(S.HV, v), -v)
         put("hall_rib_strip", polar(S.HV, v), -v)
-    for v in edge:
-        put("hall_pilaster", polar(S.HV, v), -v)
-        put("hall_pilaster_strip", polar(S.HV, v), -v)
-    for v in plain:  # hall_in-3's radial columns: cable trunks
-        put("hall_trunk", polar(S.HV, v), -v)
-        put("hall_trunk_cables", polar(S.HV, v), -v)
-        for h in (0.55, 1.25, 1.95, 2.65):
-            put("trunk_clip", polar(S.HV, v), -v, h)
-    for f in flats:  # v2: one flat panel over two facets at each vent and socket spot
-        put("hall_panel_flat", polar(S.HC, f), -f)
-        put("hall_flat_floor", polar(S.HC, f), -f)   # inside-fix: its floor, where the player stands
-    for o in openings:
-        pre = "mouth_" if o == S.OPENINGS["mouth"] else ""
-        put("hall_threshold", polar(S.HC, o), -o)
-        put("mouth_portal" if pre else "hall_portal", polar(S.HC, o), -o)
-        put(pre + "portal_strip_l", polar(S.HC, o), -o)
-        put(pre + "portal_strip_r", polar(S.HC, o), -o)
+        if any(abs(norm(v - e)) < 1e-4 for e in edges):
+            put("hall_pilaster", polar(S.HV, v), -v)
+            put("hall_pilaster_strip", polar(S.HV, v), -v)
+        elif round(norm(v), 4) not in claimed:   # hall_in-3's radial columns: cable trunks (the back's, at 90)
+            put("hall_trunk", polar(S.HV, v), -v)
+            put("hall_trunk_cables", polar(S.HV, v), -v)
+            for h in (0.55, 1.25, 1.95, 2.65):
+                put("trunk_clip", polar(S.HV, v), -v, h)
 
     # --- a passage: modules along its axis (yaw: its outward direction a gives yaw -a)
     def passage(prefix, x0, n, length, yaw, tones):
@@ -276,8 +287,8 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put(f"{prefix}_wall_low{t}", mc, yaw + side)
                 put(f"{prefix}_wall_up{t}", mc, yaw + side)
                 wall = local(mc, yaw + side, 0.0, -half)
-                if prefix == "cor" and wall[1] < 0:
-                    pass   # inside-fix: the front wall's three runs, below
+                if prefix == "cor" and wall[1] < mc[1]:
+                    pass   # inside-fix: the front (north) wall's three runs, below
                 else:
                     put(f"{prefix}_channel", mc, yaw + side)
                     put(f"{prefix}_cables", mc, yaw + side)
@@ -287,19 +298,22 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put("floor_light", local(mc, yaw, 0.0, -(half - 0.175) if side == 0 else half - 0.175), yaw)
         return c
 
-    for s, yaw in ((1, 0.0), (-1, 180.0)):
+    # rebuild A: the corridors along their diagonal axes (east at COR_ANG, west at 180 - COR_ANG); a front-wall piece
+    # (its wall at local -y) turned by -COR_ANG in the east and +COR_ANG in the west (the east's mirror image)
+    for s, yaw in ((1, -S.COR_ANG), (-1, S.COR_ANG - 180.0)):
+        front = -S.COR_ANG if s > 0 else S.COR_ANG
         c = passage("cor", S.COR_X0, S.N_MOD, S.MOD_L, yaw, ["_a", "_b"])
         put("cor_floor_base", c, yaw)
-        # inside-fix: the front wall (y < 0, yaw 0 in both corridors): bay, the board's plain wall, bay
-        for pid, x0, x1, clips in (("cor_bay_in", S.COR_X0, BOARD_X[0], (0.0,)),
+        # inside-fix: the front wall (north side): bay, the board's plain wall, bay
+        for pid, x0, x1, clips in (("cor_bay_in", S.COR_X0, BOARD_X[0], (-0.25, 0.25)),
                                    ("cor_wall_board", BOARD_X[0], BOARD_X[1], ()),
                                    ("cor_bay_out", BOARD_X[1], S.COR_X1, (-0.25, 0.25))):
-            xc = s * (x0 + x1) / 2
-            put(pid, [round(xc, 4), 0.0])
+            at = local((0.0, 0.0), yaw, (x0 + x1) / 2, 0.0)
+            put(pid, at, front)
             if clips:
-                put(pid + "_cables", [round(xc, 4), 0.0])
+                put(pid + "_cables", at, front)
             for dx in clips:
-                put("clip_h", [round(xc + dx, 4), 0.0])
+                put("clip_h", local(at, front, dx, 0.0), front)
         for x in COR_RIBS:
             put("cor_ceil_rib", local((0.0, 0.0), yaw, x, 0.0), yaw)
         for x in ARCH_X:  # v2: off the breaker board's plain wall
@@ -312,42 +326,31 @@ def placements() -> list[tuple[str, list[float], float]]:
     for pid in ("mouth_arch", "mouth_arch_strip_l", "mouth_arch_strip_r"):
         put(pid, p, 90.0)
 
-    # --- the tip rooms
-    half_w = S.WIN_HALF / 8
-    apo_w = S.R_TIP * math.cos(math.radians(half_w))
-    tv = sorted(S.tip_vertices())
-    wall_v = [a for a in tv if abs(a) > S.WIN_HALF + 1e-6]
-    step = (180.0 - S.DOOR_HALF - S.WIN_HALF) / 3
-    for s, room in ((1, 0.0), (-1, 180.0)):
-        c = (s * S.TIP_X, 0.0)
-        for pid in ("tip_floor_base", "tip_floor_disc", "tip_floor_rim", "tip_window_frame", "tip_shutter_track",
-                    "tip_ceiling", "tip_lamp_ring"):
+    # --- the tip rooms (rebuild A: at (+-8.3, 4.0), turned so the door faces the hall along the corridor's axis:
+    # room yaw -COR_ANG east, 180 + COR_ANG west; no window, TIP_N wall facets round the outer side)
+    tv = S.tip_vertices()
+    door = 180.0 - S.DOOR_HALF
+    for s, room in ((1, -S.COR_ANG), (-1, 180.0 + S.COR_ANG)):
+        c = (s * S.TIP_C[0], S.TIP_C[1])
+        for pid in ("tip_floor_base", "tip_floor_disc", "tip_floor_rim", "tip_ceiling", "tip_lamp_ring"):
             put(pid, list(c), room)
-        # polish 4: one glass, the hull's tip window (the well's own pane doubled it: dim and tinted)
-        put(f"tip_well_{'e' if s > 0 else 'w'}", list(c), room)
         for k in range(8):
             put("tip_grate", polar(REF_TIP, 22.5 + 45 * k, c, room), room - (22.5 + 45 * k))
             put("tip_spoke", polar(REF_TIP, 45 * k, c, room), room - 45 * k)
             put("tip_light", polar(REF_TIP + 0.01, 45 * k, c, room), room - 45 * k)
-            a = -S.WIN_HALF + half_w * (2 * k + 1)
-            put("tip_sill_strip", polar(apo_w, a, c, room), room - a)
         for k in range(6):
             put("tip_lamp", polar(S.R_TIP_RING, 30 + 60 * k, c, room), room - (30 + 60 * k))
-        i = 0
-        for sign in (1, -1):
-            for j in range(3):
-                a = sign * (S.WIN_HALF + step * (j + 0.5))
-                put("tip_panel_a" if i % 2 else "tip_panel_b", polar(S.R_TIP * math.cos(math.radians(step / 2)), a,
-                                                                      c, room), room - a)
-                i += 1
+        apo = S.R_TIP * math.cos(math.radians(S.TIP_STEP / 2))
+        for i, (a0, a1) in enumerate(zip(tv, tv[1:])):
+            a = (a0 + a1) / 2
+            put("tip_panel_a" if i % 2 else "tip_panel_b", polar(apo, a, c, room), room - a)
         for a in tv:
             put("tip_rib", polar(S.R_TIP, a, c, room), room - a)
             put("tip_rib_strip", polar(S.R_TIP, a, c, room), room - a)
-        for a in [-S.WIN_HALF, S.WIN_HALF] + wall_v:
-            if abs(abs(a) - S.WIN_HALF) < 1e-6 or abs(abs(a) - (180 - S.DOOR_HALF)) < 1e-6:
+            if abs(abs(a) - door) < 1e-6:
                 put("tip_pilaster", polar(S.R_TIP, a, c, room), room - a)
                 put("tip_pilaster_strip", polar(S.R_TIP, a, c, room), room - a)
-            else:  # the plain vertices: cable trunks, as the hall's
+            elif abs(a) > 70.0:  # the door's side: cable trunks, as the hall's; the outer side (the renewer's) plain
                 put("tip_trunk", polar(S.R_TIP, a, c, room), room - a)
                 put("tip_trunk_cables", polar(S.R_TIP, a, c, room), room - a)
                 for h in (0.55, 1.3, 2.05):
@@ -355,12 +358,6 @@ def placements() -> list[tuple[str, list[float], float]]:
         p = polar(-S.TIP_CHORD, 180.0, c, room)
         for pid in ("tip_portal", "portal_strip_l", "portal_strip_r"):
             put(pid, p, room - 180.0)
-        # inside-1: the shutter's button on the first wall facet north of the window (the mouth's side), 14 cm in
-        # from the window's pilaster on the facet's flat corner plate (off the renewer's 1.6 m band)
-        a = -S.WIN_HALF - step / 2 if s > 0 else S.WIN_HALF + step / 2
-        put("tip_shutter_button", local(polar(S.R_TIP * math.cos(math.radians(step / 2)), a, c, room), room - a,
-                                        0.0, 0.14 if a < 0 else -0.14), room - a)
-        out.extend(shutter(c, room, "open"))
 
     # --- details: a few crushed party cups, scratches on flat panels
     # (inside-3: three bigger cups where the party left them, two with a spill from the mouth, none near a station
@@ -368,15 +365,17 @@ def placements() -> list[tuple[str, list[float], float]]:
     # inside 3-1: the two hall cups moved onto the grate ring in sight of both hall views (were by the wall)
     # polish 4: cup_a in the hall-out view's foreground (fov 52: its floor shows from y -2.9 on), cup_c in hall-in's
     # inside-fix: cup_a a little in from the threshold, on the grate inside the amber ring (was [0.75, -3.0])
+    # rebuild A: the corridor's cup and coil at the same share of the longer corridors (u 7.37 and 7.11 of 3.92..8.02)
+    def cor_pt(s, u, v):   # a point (u along, v across, +v south) in the east corridor's frame, or its west mirror
+        x, y = local((0.0, 0.0), -S.COR_ANG, u, v)
+        return [round(s * x, 4), y]
     for pid, xy, yaw in (("cup_a", [0.85, -2.82], 145.0), ("spill_a", [0.85, -2.82], 145.0),
                          ("cup_c", [-1.05, -0.45], 200.0), ("spill_c", [-1.05, -0.45], 200.0),
-                         ("cup_b", [-6.6, 0.95], 80.0), ("cable_coil", [6.4, 1.0], 20.0),
-                         ("floor_patch_a", polar(S.R_RIM_REF - 0.08, 112.5), -112.5 + 8.0),
+                         ("cup_b", cor_pt(-1, 7.37, 0.95), 80.0 + S.COR_ANG),
+                         ("cable_coil", cor_pt(1, 7.11, 1.0), 20.0 - S.COR_ANG),
+                         ("floor_patch_a", polar(S.R_RIM_REF - 0.08, 96.0), -96.0 + 8.0),   # rebuild A: 112.5 is a socket flat now
                          ("floor_patch_b", polar(S.R_RIM_REF - 0.08, -62.0), 62.0 - 5.0)):
         put(pid, xy, yaw)
-    # inside-1: a cup left on the east window's sill, on the window's last north segment (off the renewer's band)
-    a = -S.WIN_HALF + S.WIN_HALF / 8
-    put("cup_b", polar(S.R_TIP * math.cos(math.radians(S.WIN_HALF / 8)) - 0.1, a, (S.TIP_X, 0.0)), 30.0 - a, S.SILL)
     return out
 
 
@@ -398,13 +397,6 @@ def render() -> str:
              "# heights), turned by yaw degrees about the vertical (Godot's rotation y; plan angle a -> a - yaw).",
              "", "place = ["]
     lines += [f'  ["{pid}", [{fmt(p[0])}, {fmt(p[1])}, {fmt(p[2])}], {fmt(yaw)}],' for pid, p, yaw in placements()]
-    lines.append("]")
-    lines += ["", "# inside-1: the tip windows' shutters CLOSED (`ship --shutters closed` swaps these rows for the",
-              "# tip_shutter rows of `place`, the open pose): the same panels, raised from the low wall over the glass",
-              "shutter_closed = ["]
-    for s, room in ((1, 0.0), (-1, 180.0)):
-        lines += [f'  ["{pid}", [{fmt(p[0])}, {fmt(p[1])}, {fmt(p[2])}], {fmt(yaw)}],'
-                  for pid, p, yaw in shutter((s * S.TIP_X, 0.0), room, "closed")]
     lines.append("]")
     for pid, (builder, args, collide) in PIECES.items():
         lines += ["", "[[pieces]]", f'id = "{pid}"', f'builder = "{builder}"', f"collide = {fmt(collide)}"]

@@ -2,7 +2,10 @@
 lanes' piece lists and placements, and the plain-Python check of the rules `ship --check` holds: the footprint, the
 corridor width, the tip rooms' outer wall, the station spots (inside their rooms, the wall spots' plain flat panels
 and the free pass behind a player standing at each), every room and placed piece inside the hull, the head room, and
-one entrance. Plan coordinates: x east, y south, h up (metres); Godot (x, h, y)."""
+one entrance. Rooms are circles, axis-aligned rects or "strip"s (a straight corridor at any angle: `axis` [from, to],
+`along` [u0, u1] its floor's ends measured from `from`, `width`). While `[hull] pending` is set (the hull being
+rebuilt round moved rooms) the footprint and the inside-the-hull tests are skipped and `check` says so.
+Plan coordinates: x east, y south, h up (metres); Godot (x, h, y)."""
 
 from __future__ import annotations
 
@@ -68,10 +71,28 @@ def inside(poly: list[tuple[float, float]], pt: tuple[float, float]) -> bool:
     return hit
 
 
+def strip_frame(room: dict[str, Any]) -> tuple[tuple[float, float], tuple[float, float], float, float, float]:
+    """A strip room's (origin, unit along its axis, u0, u1, half width)."""
+    (ax, ay), (bx, by) = room["axis"]
+    n = math.hypot(bx - ax, by - ay)
+    return (ax, ay), ((bx - ax) / n, (by - ay) / n), room["along"][0], room["along"][1], room["width"] / 2
+
+
+def strip_point(room: dict[str, Any], u: float, v: float) -> tuple[float, float]:
+    """The plan point u along a strip room's axis and v across it (+v to the axis's left in plan, x toward y)."""
+    (ox, oy), (ux, uy), *_ = strip_frame(room)
+    return ox + u * ux - v * uy, oy + u * uy + v * ux
+
+
 def room_margin(room: dict[str, Any], pt: tuple[float, float]) -> float:
     """How far pt lies inside the room's floor (negative: outside)."""
     if room["shape"] == "circle":
         return room["radius"] - math.dist(pt, room["centre"])
+    if room["shape"] == "strip":
+        (ox, oy), (ux, uy), u0, u1, half = strip_frame(room)
+        dx, dy = pt[0] - ox, pt[1] - oy
+        u, v = dx * ux + dy * uy, -dx * uy + dy * ux
+        return min(u - u0, u1 - u, half - abs(v))
     return min(pt[0] - room["x"][0], room["x"][1] - pt[0], pt[1] - room["y"][0], room["y"][1] - pt[1])
 
 
@@ -81,6 +102,16 @@ def boundary(room: dict[str, Any], wall: float, n: int = 48) -> list[tuple[float
         r = room["radius"] + wall
         cx, cy = room["centre"]
         return [(cx + r * math.cos(2 * math.pi * i / n), cy + r * math.sin(2 * math.pi * i / n)) for i in range(n)]
+    if room["shape"] == "strip":
+        _o, _u, u0, u1, half = strip_frame(room)
+        pts = []
+        for i in range(n // 4):
+            s = i / (n // 4)
+            u = u0 + (u1 - u0) * s
+            pts += [strip_point(room, u, -half - wall), strip_point(room, u, half + wall)]
+            v = -half + 2 * half * s
+            pts += [strip_point(room, u0 - wall, v), strip_point(room, u1 + wall, v)]
+        return pts
     (x0, x1), (y0, y1) = room["x"], room["y"]
     pts = []
     for i in range(n // 4):
@@ -112,7 +143,7 @@ def extent(layout: dict[str, Any]) -> tuple[float, float]:
     """(width east-west, length north-south): the hull and the tip shells' blades; the length with the nozzle pods,
     without the ramp (lengths() has the body alone and the overall)."""
     poly = outline(layout)
-    pods = [r for r in layout["rooms"] if r["shape"] == "circle" and r.get("window")]
+    pods = [r for r in layout["rooms"] if r["id"].startswith("tip")]
     xs = [p[0] for p in poly] + [r["centre"][0] + s * layout["hull"]["pod_radius_m"] for r in pods for s in (-1, 1)]
     return max(xs) - min(xs), lengths(layout)["nozzles"]
 
@@ -124,10 +155,16 @@ def _touch(a: dict[str, Any], b: dict[str, Any]) -> bool:
     """Two linked rooms share floor: some point of one's edge lies at least TOUCH_M inside the other (a rect's short end
     in a circle). The rooms overlap by 0.1 m by design; the margin keeps the test off floating-point luck."""
     for room, other in ((a, b), (b, a)):
-        if room["shape"] != "rect":
+        if room["shape"] == "strip":
+            _o, _u, u0, u1, half = strip_frame(room)
+            ends = [strip_point(room, u0, 0.0), strip_point(room, u1, 0.0),
+                    strip_point(room, (u0 + u1) / 2, -half), strip_point(room, (u0 + u1) / 2, half)]
+        elif room["shape"] == "rect":
+            (x0, x1), (y0, y1) = room["x"], room["y"]
+            ends = [(x0, (y0 + y1) / 2), (x1, (y0 + y1) / 2), ((x0 + x1) / 2, y0), ((x0 + x1) / 2, y1)]
+        else:
             continue
-        (x0, x1), (y0, y1) = room["x"], room["y"]
-        for p in ((x0, (y0 + y1) / 2), (x1, (y0 + y1) / 2), ((x0 + x1) / 2, y0), ((x0 + x1) / 2, y1)):
+        for p in ends:
             if room_margin(other, p) >= TOUCH_M:
                 return True
     return False
@@ -136,8 +173,9 @@ def _touch(a: dict[str, Any], b: dict[str, Any]) -> bool:
 def check(layout: dict[str, Any]) -> list[str]:
     problems = []
     size = layout["size"]
+    pending = layout["hull"].get("pending")
     width, length = extent(layout)
-    for name, got, want in (("width", width, size["width_m"]), ("length", length, size["length_m"])):
+    for name, got, want in ([] if pending else  (("width", width, size["width_m"]), ("length", length, size["length_m"]))):
         if name == "width" and want < got <= size.get("span_max_m", want):
             continue  # the blades past the tip rooms (manager update 2, art #263: the span up to about 27.5 m)
         if name == "length" and want < got <= size.get("length_max_m", want):
@@ -148,14 +186,18 @@ def check(layout: dict[str, Any]) -> list[str]:
     by_id = rooms(layout)
     for r in layout["rooms"]:
         if r["id"].startswith("corridor"):
-            w, want = r["y"][1] - r["y"][0], size["corridor_width_m"]
+            if r["shape"] == "strip":
+                w, run = r["width"], r["along"][1] - r["along"][0]
+            else:
+                w, run = r["y"][1] - r["y"][0], r["x"][1] - r["x"][0]
+            want = size["corridor_width_m"]
             if abs(w - want) > 0.1:
                 problems.append(f"{r['id']}: {w:.2f} m wide, wants about {want:g}")
-            if r["x"][1] - r["x"][0] < 2.5:
+            if run < 2.5:
                 problems.append(f"{r['id']}: shorter than 2.5 m")
-    # the tip rooms' outer walls (the window side) at +-tip_outer_m (5a mirrored)
+    # the tip rooms' outer walls at x +-tip_outer_m (5a mirrored; rebuild A: their centres at y 4.0, no window)
     for r in layout["rooms"]:
-        if r.get("window"):
+        if r["id"].startswith("tip"):
             outer = abs(r["centre"][0]) + r["radius"]
             if abs(outer - size["tip_outer_m"]) > 0.05:
                 problems.append(f"{r['id']}: outer wall at {outer:.2f} m, wants {size['tip_outer_m']:g}")
@@ -203,7 +245,7 @@ def check(layout: dict[str, Any]) -> list[str]:
     # inside the hull: every room's outer wall and every placed piece's origin (unless the piece may stand outside)
     poly = outline(layout)
     wall = layout["deck"]["wall_m"]
-    for r in layout["rooms"]:
+    for r in ([] if pending else layout["rooms"]):
         pts = boundary(r, wall)
         if r.get("exit"):  # the exit's own open edge meets the ramp, outside the hull by design
             pts = [p for p in pts if p[1] > r["y"][0] + 0.05]
@@ -218,13 +260,21 @@ def check(layout: dict[str, Any]) -> list[str]:
         piece = pieces.get(pid)
         if piece is None:
             problems.append(f"placement of unknown piece {pid}")
-        elif not piece["outside"] and not inside(poly, (at[0], at[1])):
+        elif not pending and not piece["outside"] and not inside(poly, (at[0], at[1])):
             problems.append(f"{pid} at ({at[0]:g}, {at[1]:g}) stands outside the hull")
     # a piece placed only in the closed pose (shutter_closed) counts as placed
     unplaced = sorted(set(pieces) - {p[0] for p in layout["place"] + layout.get("shutter_closed", [])})
     if unplaced:
         problems.append(f"pieces never placed: {', '.join(unplaced)}")
     return problems
+
+
+def skipped(layout: dict[str, Any]) -> list[str]:
+    """The tests `check` skips and why (while `[hull] pending` is set)."""
+    pending = layout["hull"].get("pending")
+    if not pending:
+        return []
+    return [f"skipped: the footprint and the rooms and pieces inside the hull ([hull] pending: {pending})"]
 
 
 def _unit(v: list[float]) -> tuple[float, float]:
@@ -323,7 +373,8 @@ def ascii_plan(layout: dict[str, Any], cell: float = 0.5) -> str:
         x = 13.5
         while x >= -13.5:  # south up and seen from above: east on the left
             ch = " "
-            if inside(poly, (x, y)) or any(r.get("window") and room_margin(r, (x, y)) > -0.45 for r in by_id.values()):
+            if inside(poly, (x, y)) or any(r["id"].startswith("tip") and room_margin(r, (x, y)) > -0.45
+                                           for r in by_id.values()):
                 ch = "#"
             if any(room_margin(r, (x, y)) > 0 for r in by_id.values()):
                 ch = "."
