@@ -50,7 +50,7 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 | Ramp | 3.3 m wide (the mouth), hinge (0, -7.1) at the deck, foot (0, -9.9) on the ground: 12.1 deg, 2.86 m long (rebuild C; v2 2.6 m from (0, -4.6)) | north at the centre |
 | Corridors | `strip` rooms on the axes from the hall's centre (0, -0.4) to the tip rooms' (+-8.3, 3.6) (rebuild E): 9.214 m, 25.73 deg; floor 3.708..8.219 along the axis (4.51 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide; rebuild A: on the diagonal |
 | Tip rooms | circles r 1.8 at (+-8.3, 3.6) (rebuild E; C (+-8.3, 3.0)), the outer wall at +-10.1; 2.5 m to the rim, 2.8 m apex; no window since rebuild A (13 plain wall facets round the outer side) | 5a mirrored: 3.6 m across |
-| Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.099, -5.734); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.030, 0.841) on the corridors' front wall; renewers (+-9.922, 4.381) on the tip rooms' outer wall, the player at (+-8.751, 3.817) | 5a mirrored; as built in "Rebuild E" |
+| Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.409, -4.791; rebuild F); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.030, 0.841) on the corridors' front wall; renewers (+-9.922, 4.381) on the tip rooms' outer wall, the player at (+-8.751, 3.817) | 5a mirrored; as built in "Rebuild E", the vents in "Rebuild F" |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
 
 The check holds: the footprint within 0.5 m; corridors `corridor_width_m` (3) +- 0.1 m wide and over 2.5 m long; the
@@ -594,7 +594,10 @@ outside but the mouth notch. Two things had to give, both measured with `ship_hu
   (`front_from_deg`): the throat's four sub-facets and the front sockets' flats; their ceiling panels run from the lamp
   ring (unchanged) down to the low rim, with a fold (`hall_ceil_step`) at -15.11 / -164.89 where it meets the full rim.
 
-| What | Built |
+Superseded by rebuild E and F (below): the table holds C's numbers as built then (hall (0, -1), the low front rim,
+the throat's corners at y -3.852, four modules), kept as history.
+
+| What | Built (rebuild C) |
 |---|---|
 | Hall | (0, -1), r 4.0; the throat's opening -135.62..-44.38 deg from its centre (four sub-facets of 22.81 deg), the front sockets' flats -44.38..-15.11 (29.27 deg, the back sockets' width), one front facet -15.11..3.23 to each corridor |
 | Tip rooms, corridors | (+-8.3, 3.0); axes (0, -1) to (+-8.3, 3.0), the same 9.214 m and 25.73 deg; about 1 m of hull behind the tip rooms |
@@ -636,7 +639,8 @@ The v2 mouth passage's pieces, the mouth frame and lights are gone.
   The throat's cable bay is the module by the hall (C); it has no ceiling ribs.
 - **The front legs' mounts** rise 0.25 m more (`leg` arg `rise`): the belly over them climbs to 1.05 m, over the
   mount's old top (1.02).
-- **The detail views** `detail_floor` and `detail_cables` look into the corridors from the hall's centre at (0, -1).
+- **The detail views** `detail_floor` and `detail_cables` look into the corridors from the hall's centre at (0, -1)
+  (superseded: rebuild E moved them 0.6 m forward with the inside, from (0, -0.4)).
 
 ## Rebuild E: the hall's full rim and the inside 0.4 m forward (2026-10-22)
 The engineer kept the hall's ceiling at full height (art#263 comment 6342342554): C's 2.75 m front rim
@@ -651,7 +655,7 @@ The engineer kept the hall's ceiling at full height (art#263 comment 6342342554)
   roof starts at y -5.561, the first module line aft of y -5.77, where J's top first gives 0.15 m over the roof.
 - **Spots:** console (0, 0.6); sockets (+-1.800, 3.112) and (+-3.426, -2.358); breakers (+-6.030, 0.841); renewers
   (+-9.922, 4.381); the vents' asked (+-2.3, -5.8) snapped 0.211 m onto the longer walls: (+-2.099, -5.734), normal
-  (-+0.950, 0.312).
+  (-+0.950, 0.312) (superseded by rebuild F: (+-2.409, -4.791), off the jamb).
 - **J's underside.** C's belly ring under the hall is removed: on step A's ring the hall's slab keeps 0.18 m. The
   tip rooms' ring stays, moved to (+-8.3, 3.6) (`belly_also` holds (x, y, r) rings): without it their slab fronts
   keep 0.10 m. J's outline, span, length, nose and top are unchanged.
@@ -667,3 +671,26 @@ The engineer kept the hall's ceiling at full height (art#263 comment 6342342554)
   a solid in the wall's thickness from the slab up to J's top over it, its inner face in the hull's plates
   (`hull_silver`, `ext_silver_b/c`), its sloped top and front edge in `hull_silver`. The amber floor lights stay
   (two a side, at 1/5 and 4/5 of the wall).
+
+## Rebuild F: the hole at the mouth's corners, the vents, the floor's bar (2026-10-22)
+- **The hole.** J's notch is cut `WALL` beyond the throat's walls up to J's top; at the roof line its back face (the
+  lintel) closes it only above the throat's roof (`TH_TOP`), and the covered part behind closes only its own profile.
+  Between that profile's chamfer and the notch's side, under the lintel, the hull's hollow stood open: sky and pines
+  showed through its one-sided skin at both upper corners of the mouth. `skin_cheeks` now carries `jamb_cap`
+  (`ship_hull_j.jamb_caps`, `hull_dark`, both windings): a cap per side 1 cm aft of the roof line (behind the arch's
+  face and the lintel), from the slab up under the lintel, from the walls' inner face out past the notch's side, its
+  inner edge on the throat's inner profile. Close-ups: the views `in_mouth_ne`, `in_mouth_nw` (from the ramp),
+  `in_mouth_ne_side`, `in_mouth_nw_side` (at an angle) and `out_mouth_top` (the notch from above).
+- **The dark band across the throat's floor** was J's belly: it rises over the deck forward of the hall (0.78 m at
+  the roof line), and its front facet crossed the throat's floor from the roof line to y -5.33 as a bar with sloped
+  ends (the side planes' cut). `ship_hull_shape._throat_surface` cuts every hull face inside the throat's covered part
+  (between the walls' outer faces, roof line to the hall's corners, slab to roof) with no faces of its own; the
+  room's floor slab is the underside there. View: `in_throat_floor`.
+- **The vents** stood on the jamb's hull plates (s 1.44 from the mouth; the wall modules start at s 1.62). They are on
+  the line between modules 2 and 3 (3/5 of the wall from the mouth): (+-2.409, -4.791), normal (-+0.950, 0.312), so
+  their 1.6 m plain band lies on two plain modules (`th_wall_mid`; module 3 lost its cable bay, module 4 keeps it).
+  Module 2's centre alone would leave 0.4 m of the band on the jamb.
+- **New checks.** A plain wall piece's face lies under every point of a wall spot's band (`plain` boxes in
+  interior.toml: `th_wall_mid`, `cor_wall_board`, `hall_panel_flat_socket`, `tip_panel_a/b`); `check_walk` samples
+  every deck segment of the walk every 0.25 m with the capsule's footprint on the rooms' floors. The throat joint's
+  slab skip is the thin zone's width (`WALL + 0.12`).
