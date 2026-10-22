@@ -119,7 +119,9 @@ Item kinds (merged: defaults, then the variant, then the item):
 - `image_to_image`: `prompt`, `images` (1 to 5 reference images); `params` as for `text_to_image`.
 - `image_to_3d`: `images` (exactly one); `params`: the text-to-3D style options `ai_model`, `model_type`,
   `should_remesh`, `topology`, `target_polycount`, `pose_mode`, `should_texture` (default true), `enable_pbr`,
-  `texture_prompt`, `texture_resolution`, `target_formats`, ... No `prompt`: the image is the prompt.
+  `texture_prompt`, `texture_resolution`, `target_formats`, ... No `prompt`: the image is the prompt. With
+  `meshy-6-lite` Meshy refuses `remove_lighting` (HTTP 400, "only supported for meshy-6") even when it is false, so the
+  batch check refuses the key there; a batch whose defaults set it gives it per item to the other models instead.
 - `multi_image_to_3d`: `images` (1 to 4; the first is the front view); `params` as for `image_to_3d` (no
   `meshy-t2`).
 - `remesh`: `source`, an earlier `text_to_3d`, `image_to_3d` or `multi_image_to_3d` item; `params`: `topology`,

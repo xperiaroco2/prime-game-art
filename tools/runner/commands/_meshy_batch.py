@@ -508,6 +508,10 @@ def _image_to_model(item: Item, raw: dict[str, Any], kdefaults: dict[str, Any], 
     _inputs(item, raw, seen, where, errors)
     if len(str(params.get("texture_prompt", ""))) > PROMPT_MAX:
         errors.append(f"{where}: texture_prompt is longer than {PROMPT_MAX} characters")
+    # Meshy answered 400 "remove_lighting is only supported for meshy-6" to a meshy-6-lite image_to_3d with
+    # remove_lighting = false (batch 2026-10-22-alien-t1-sockets-3d), as it does for a retexture.
+    if "remove_lighting" in params and params.get("ai_model") == LITE_MODEL:
+        errors.append(f"{where}: Meshy refuses remove_lighting with {LITE_MODEL} (HTTP 400), whatever its value")
     textured = params.get("should_texture", True)
     if not isinstance(textured, bool):
         errors.append(f"{where}: should_texture must be true or false")

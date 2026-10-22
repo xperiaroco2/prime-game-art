@@ -142,6 +142,8 @@ class ImageValidationTest(unittest.TestCase):
             ([CONCEPT, {"id": "m", "kind": "image_to_3d", "images": [pick]},
               {"id": "x", "kind": "remesh", "source": "m", "params": {"target_polycont": 5}}], "params.target_polycont"),
             ([CONCEPT, {"id": "x", "kind": "image_to_3d", "prompt": "p", "images": [pick]}], "has no key prompt"),
+            ([CONCEPT, {"id": "x", "kind": "image_to_3d", "images": [pick],
+                        "params": {"ai_model": "meshy-6-lite", "remove_lighting": False}}], "HTTP 400"),
             ([CONCEPT, {"id": "x", "kind": "image_to_3d", "images": [{"from": "c1", "pick": 3}]}],
              "pick 3 from 'c1', which makes 3 image"),
             ([CONCEPT, {"id": "x", "kind": "image_to_3d", "images": [{"from": "c1"}]}], "set 'pick'"),
