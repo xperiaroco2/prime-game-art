@@ -17,12 +17,35 @@ separate yes when it stays within its `cost_cap_usd`; its spend goes into the pl
 generation beyond the prepaid balance he funds, on another model, or above a batch's `cost_cap_usd` needs his own yes
 linked in `approval_ref` (and, for another model, a change to `MODELS` in `_openai_batch.py`).
 
+## One image per concept (the engineer, 2026-10-22, #276)
+
+The default way of working, for every batch run through this client (this repo's `batches/`, the UI track's batches
+in it included, and the design repo's `ideas/batches/`):
+
+1. **Explore with one image per concept**: `n = 1`. A new idea is a new item with its own prompt, never a second or
+   third output of the same prompt. A concept that missed gets one revised item (a changed prompt), not more draws.
+2. **Iterate only inside a concept he picked**: once the engineer picks an image, variants of it are `edit` items
+   with the picked image as the reference (`{ from = "<item>", pick = n }`, or the saved file pinned by its sha256),
+   each asking for the one change it explores. Only there may `n` be above 1, and even there one item per change
+   usually says more.
+
+Why: several outputs of one prompt come out as the same concept with small differences, so when he dislikes the
+concept all of them are wasted. Roster rounds r3 to r6 on #196 ran at `n = 3` and paid about three times for what one
+image per prompt would have shown; round r7 at `n = 1` made 15 images, ten concepts and five revisions, for $0.35.
+Whether one image at high quality is worth more than one at medium: batch 2026-10-22-openai-quality-compare below
+(medium for exploring concepts, high for the picked one).
+
+`estimate` (every item) and `run` (every item it will send: not done, not failed without `--retry-failed`) print a
+`WARNING <item>: n = <n> ...` line naming this rule for every item whose `n`, set on the item, its variant or the
+defaults, is above 1 (the batch cannot tell a picked concept's variants from blind draws, so each such item is named);
+they never refuse it: the rule asks for smarter work, not a cap.
+
 ## Commands
 
 | Command | Network | What it does |
 |---|---|---|
-| `openai-images estimate <batch>` | none | Per item the kind, quality, size, `n`, inputs and the estimated tokens (text in, image in, image out) and $; the total against the cap; whether the approval is complete; each input file's size and sha256 (or why it is not ready) |
-| `openai-images run <batch> [item ...] [--retry-failed]` | spends money | Refuses a batch without approval or over its cap; checks every input file; then one request per item, in file order, the dollar cap checked before each |
+| `openai-images estimate <batch>` | none | Per item the kind, quality, size, `n`, inputs and the estimated tokens (text in, image in, image out) and $; the total against the cap; whether the approval is complete; each input file's size and sha256 (or why it is not ready); a warning per item with `n` above 1 ("One image per concept") |
+| `openai-images run <batch> [item ...] [--retry-failed]` | spends money | Refuses a batch without approval or over its cap; checks every input file; then one request per item, in file order, the dollar cap checked before each; the same warning per item with `n` above 1 |
 | `openai-images status <batch>` | none | Each item's state and $ from its `generation.json`; flags saved images that went missing |
 
 OpenAI offers no balance endpoint for a project key (the costs API needs an admin key), so there is no `balance`:
@@ -54,7 +77,7 @@ missing key fails with the engineer's steps (top up, create a key, `[Environment
 | `approved_by`, `approved_at`, `approval_ref` | Who, the date, and a `https://github.com/` link (the decision's comment for the standing permission) |
 | `model` | `gpt-image-2.5-sunburst`, the model the standing permission names (`gpt-image-2.5-flare`, speed first at the same rates, is refused: another model needs the engineer's yes and a code change) |
 | `quality` | **Required, no default**: `"medium"` (exploration and many variants) or `"high"` (focused work on one piece); an item may set its own |
-| `[defaults]` | `size` (required somewhere), `n` (1 to 10, default 1), `background` (`auto`, `opaque`, `transparent`), `moderation` (`auto`, `low`; generations only) |
+| `[defaults]` | `size` (required somewhere), `n` (1 to 10, default 1; keep 1 for exploration, "One image per concept"), `background` (`auto`, `opaque`, `transparent`), `moderation` (`auto`, `low`; generations only) |
 | `[variants.<name>]` | A shared `prompt` and any of the `[defaults]` keys |
 | `[[items]]` | `id`, `kind`, `variant`, `prompt`, `images` and any of the `[defaults]` keys or `quality`; any other key is an error |
 
@@ -319,3 +342,67 @@ no smirk); the giant reads as one only with a bull neck and shoulders (m82b), wh
 man is closer (m89c's nose pad, thin lips and lobes behind the jaw) but still slightly androgynous. Lobes beside the
 cheeks read as hair whatever the prompt says. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r8/`; JPEGs, overview
 and handoff: `D:/prime-art-raw/research/2026-10-22-roster/design/r8/`.
+
+## Batch 2026-10-22-openai-quality-compare (art #276, medium vs high for one image)
+
+The engineer asked whether the one image per concept should be at a better quality (#276). Round 7's m83 (the sleazy
+salesman he kept), the same prompt and rf2 reference, edit, 1024x1280, n = 1, once per quality, under the standing
+permission. Medium: 759 text + 1,024 image input and 378 output tokens, **$0.0233**, 20.0 s; high: the same input
+and 1,510 output tokens, **$0.0573**, 33.2 s: 2.5 times the price (only the output grows, 4 times) and 1.7 times the
+time; $0.0806 of the $1 cap. The concept, pose, light and colour came out the same; high followed the prompt's small
+asks better (the rectangular slit pupils and the thin pencil-moustache line, which medium drew round and fused into
+the lip) and has crisper lid and brow edges and a finer sheen, a gap that shows mostly at 1:1. At 1024x1280 both
+paid more output tokens than the 1536x1024 measurements scaled by pixels predict (286 and 1,143), within the
+estimate's margin. Recommendation: explore at medium, n = 1; high for the picked concept's edits and final sheets.
+Sheets and notes: `D:/prime-art-raw/research/2026-10-22-roster/design/quality/` (`m83_medium_vs_high.jpg`,
+`m83_face_crop_1to1.jpg`, `compare.md`).
+
+## Batches 2026-10-22-alien-mantis-dots and 2026-10-22-alien-shark (art #196, two small asks)
+
+The engineer asked about the kept mantis head h06-2's three forehead dots (round 2's concept: the real mantis's three
+simple eyes; a real mantis also has antennae, its simple eyes two above and one below): two edits of h06-2's own PNG
+at **high** (focused work on a picked piece), n = 1: md1 removes the dots, md2 adds two thin antennae and the three
+simple eyes, two above and one below; $0.0562 and $0.0565, **$0.1127** of the $0.50 cap. He then asked for an
+ordinary shark beside the hammerhead, an aggressive man, perhaps with gills on the neck: one concept at medium, n = 1,
+an edit with rf2 for style only, sh1 with three gill slits a side and sh2 without; **$0.0462** of the $0.50 cap
+(about $0.023 each). Both read at once (a conical snout, a dorsal fin on the head, flat black eyes, a down-turned
+mouth with a tooth tip at its near corner, a pale belly line); both came out with a scowl (angled, frowning brows)
+though the prompts asked for no visible emotion, kept as the aggressive type he asked for. Images: `D:/prime-art-raw/2026-10-22-alien-mantis-dots/`,
+`D:/prime-art-raw/2026-10-22-alien-shark/`; sheets: `D:/prime-art-raw/research/2026-10-22-roster/design/mantis/`,
+`.../design/shark/`.
+
+## Batch 2026-10-22-alien-roster-r9 (art #196, roster round 9, ten women by character type)
+
+The roster is ten men and ten women; the men are done, eight women are kept and two are to go, and the engineer wants
+a choice. Ten new women, w91..w100, by round 7's method: a stern matriarch, a bookish nerd, a tomboy athlete, a
+glamorous diva, an old fortune-teller, a gloomy goth, a girl next door, a ruthless executive, a dreamy hippie and a
+tough biker, each carried by the head and face shapes alone, each with a growth that suggests a hairstyle (beehive,
+set curl, pigtails, ponytail, braids) as a smooth part of the skull. rf2 as the style reference only, round 7's lead,
+framing sentence and style tail; medium, 1024x1280, **n = 1**; a concept that missed got one revised item (w92r,
+w93r, w98r). The batch file is generated from
+`D:/prime-art-raw/research/2026-10-22-roster/design/r9/concepts_r9.src.json`. 13 requests, $0.023017 to $0.023457
+each; **$0.3012** of the $2 cap. Six of ten types read in a second (matriarch, diva, fortune-teller, goth, girl next door,
+biker); the tomboy and the hippie mostly (the hippie's lids lean stoned); the nerd and the executive only half. "Lashes" and "full lips" pull every woman toward
+glamour unless the prompt says no make-up look; a darker crown tone with a hard edge reads as a swim cap or helmet
+(w92, w98). Images: `D:/prime-art-raw/2026-10-22-alien-roster-r9/`; JPEGs, overview and handoff:
+`D:/prime-art-raw/research/2026-10-22-roster/design/r9/`.
+
+## Batches 2026-10-22-alien-rockgirl-hair, -orchid-cactus, -goth and -goth-bob (art #196, the roster's last picks)
+
+Small asks of the engineer, one image each at medium (n = 1, "One image per concept"), edits that keep a kept head's
+face (or rf2 for style only for a new concept). **Rock-star girl** (round 7's m85 first try): her face kept, nine head
+growths (four new shapes, two restyled lock versions, three undercuts described in words; his reference photo was not
+uploaded); he picked **ug3**; 9 requests, $0.02259 to $0.02287 each, **$0.2043**. **Orchid and cactus**: two cleaner
+backs for the kept orchid (he picked **or1**) and two cactus men (rejected); $0.0899. **Goth**: three reworks of round
+9's w96 ($0.0675), then w96's face with three new head growths and a new woman with g2's bob shape and three faces; he
+picked **gh2** and **b2** ($0.1367); orchid-cactus 4, goth 3 and goth-bob 6 requests at $0.022367 to $0.022865 each. Images under
+`D:/prime-art-raw/2026-10-22-alien-<rockgirl-hair|orchid-cactus|goth|goth-bob>/`; sheets under
+`D:/prime-art-raw/research/2026-10-22-roster/design/<rockgirl|orchid-cactus|goth>/`; the roster line-up in `.../final/`.
+
+## Batch 2026-10-22-alien-pilot-2d (art #196, the 3D pilot's 2D reference)
+
+The engineer picked the chameleon man and the axolotl woman for the 3D pilot. Per head a turnaround sheet (front, side
+profile, back in one row) and an expression sheet (neutral, happy, sad, angry, surprised, talking in a 3 x 2 grid),
+**high** (work inside a picked concept), 1536x1024, n = 1, edits of each head's kept image (the chameleon from its
+mirrored copy). 4 requests, **$0.2097** of the $1 cap. All four held the character; the axolotl's back view and the
+gill count stay consistent across views. Images: `D:/prime-art-raw/2026-10-22-alien-pilot-2d/`.

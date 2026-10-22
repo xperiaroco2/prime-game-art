@@ -454,6 +454,18 @@ the M2 look, then each item. `--fake` writes a fake item first (a UV checker wit
 flat PBR maps, a `generation.json` like the client's) and reviews it: the check that the maps land on the UV
 (`M3b/review-fake/sheet.png`, 2026-10-19: the checker follows the 15 islands, the marks unflipped).
 
+## Batch 2026-10-22-alien-pilot-3d (art #196, the alien 3D pilot, step 1)
+
+Two heads of the roster, the chameleon man (`chameleon`) and the axolotl woman (`axolotl`), `multi_image_to_3d` on
+`meshy-7.1` at 2k geometry, textured (4k, PBR), Meshy's remesh to 100,000 triangles with `save_pre_remeshed_model`,
+from the front, side and back cut out of each head's OpenAI turnaround (batch `2026-10-22-alien-pilot-2d`, items
+`ch_turn` and `ax_turn`). The engineer's go: art#196 comment 6339389911, cap 100. **Balance 2960 before, 2890 after:
+70 credits** (35 each, as estimated), about 3 to 4 minutes a task. Each item has `model.glb` (remeshed, textured; about
+103k triangles) and `pre_remeshed_model.glb`, the dense original **without a texture** (180k and 546k triangles, one
+closed shell): the downloads include it because the runner fetches every `model_urls` entry. Both heads came back
+as one fused shell (eyes, lips and the axolotl's gill stalks are part of the skin); the verdict and step 2's list are
+in the pilot's handoff (`D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/step1_handoff.md`).
+
 ## Batch 2026-10-21-alien-mouth-3d (art #196 M19, the AI mouth route test)
 
 The pout mp1's lips at rest (`rest3d`) and in the A shape (`a3d`) as isolated soft sculptures, `multi_image_to_3d` on

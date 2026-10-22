@@ -1,0 +1,41 @@
+# art#196: the kept mantis head h06-2 (round 3), two edits of its own image for the engineer to compare (2026-10-22).
+# He noticed the three forehead dots (round 2's concept: the real mantis's three simple eyes) and that a real mantis
+# has antennae, with the dots one below and two above; he is unsure whether the dots are needed. md1 removes the dots
+# and changes nothing else; md2 keeps the head and adds two thin antennae from the brow with the three small simple
+# eyes between them, two above and one below, as on the real insect. One image each (n 1, the engineer's rule, #276);
+# high quality, focused work on one chosen piece, under the standing permission art#196 comment 6291187194 (2026-10-20).
+# No game, film, studio or character names; no real people. Schema: docs/openai-images.md.
+id = "2026-10-22-alien-mantis-dots"
+service = "openai-images"
+purpose = "art#196: the kept mantis head h06-2 with its forehead dots removed (md1) or turned into the insect's antennae and three simple eyes (md2), for the engineer to compare."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 0.5
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "high"
+
+[defaults]
+size = "1024x1280"
+n = 1
+
+# md1: the dots removed, nothing else changed
+[[items]]
+id = "md1"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman's head, the same inverted-triangle head shape with its two upper corners, the same big glossy dark wrap-around eyes, the same small nostrils, the same lips, the same neck and shoulders, the same skin colours, finish, framing, view and light. Change only one thing: remove the three small darker dots on the forehead completely, so the forehead is one clean smooth surface of the same skin tone. Nothing else changes: no new marks, no new features, the same calm, mysterious expression."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r3/h06/image-1.png", provenance = "h06-2, the kept mantis head, our own OpenAI generation, batch 2026-10-22-alien-roster-r3 item h06, image 1, art#196", sha256 = "b571d895b0881363e3c57205b16abadd4d6521cd8258a06546384e21c56433ee" },
+]
+
+# md2: antennae and the insect's three simple eyes, two above and one below
+[[items]]
+id = "md2"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman's head, the same inverted-triangle head shape with its two upper corners, the same big glossy dark wrap-around eyes, the same small nostrils, the same lips, the same neck and shoulders, the same skin colours, finish, framing, view and light, the same calm, mysterious expression. Change only the forehead: from the middle of the brow, between the two big eyes, two long, very thin, smooth, slightly tapering antennae rise and arch gently up and outward above the head, the colour of the skin, elegant and fine like a dancer's lines. Between the bases of the antennae sit three tiny, smooth, glossy dark simple eyes in a small triangle: two side by side above and one below them, like little beads set into the skin. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r3/h06/image-1.png", provenance = "h06-2, the kept mantis head, our own OpenAI generation, batch 2026-10-22-alien-roster-r3 item h06, image 1, art#196", sha256 = "b571d895b0881363e3c57205b16abadd4d6521cd8258a06546384e21c56433ee" },
+]
