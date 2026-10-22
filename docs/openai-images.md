@@ -81,7 +81,9 @@ missing key fails with the engineer's steps (top up, create a key, `[Environment
 | `[variants.<name>]` | A shared `prompt` and any of the `[defaults]` keys |
 | `[[items]]` | `id`, `kind`, `variant`, `prompt`, `images` and any of the `[defaults]` keys or `quality`; any other key is an error |
 
-Merged: `[defaults]`, then the variant, then the item. Kinds:
+Merged: `[defaults]`, then the variant, then the item. An item's `prompt` **replaces** its variant's, it is not appended
+(a variant's prompt is for items that set none; batch 2026-10-22-alien-t2-partsbuilt sent six short prompts without the
+shared style this way). Kinds:
 
 - `generate`: `POST /v1/images/generations`, JSON `{model, prompt, size, quality, n, output_format = "png"}`. No
   `images`.
@@ -436,3 +438,23 @@ no item needed a revision. All five kept both characters; the pressed-on mouths 
 and the swap-only expressions read clearly; the surface reads more as smooth soft clay than as rough hand-worked
 plasticine (fingerprints faint). Images: `D:/prime-art-raw/2026-10-22-alien-h2-clayparts/`; JPEGs and the labelled
 sheet `h2_sheet.jpg`: `D:/prime-art-raw/research/2026-10-22-roster/design/h2/`.
+
+## Batch 2026-10-22-alien-t2-partsbuilt (art #196, test T2: aliens built of parts, from scratch)
+
+T2 (the engineer, art#196 comment 6344356802): new aliens designed as characters built of parts, a simple clay base
+form with separate stuck-on eyes (some on stalks), a rolled mouth and clay "sausage" brows, so swapping the pieces gives
+expressions. Six concepts, front three-quarter, head and shoulders, 1024x1536, medium, n = 1: a tall stick (m), a bean
+(f), a stack of stones (m), a cone (f), a ball on a stalk neck (f), a flat disc (m). The first six (`c1_stick_m` to
+`c6_disc_m`) went out with only the character text, because an item's `prompt` replaces its variant's (the doc line
+under "Batch files" now says so): they came back clothed, in rooms, the bean woman with human hair; kept as a record.
+The six `c*r_*` items carry the whole prompt (the shared style, then the character). `c2r_bean_f` was first refused by
+moderation (HTTP 400 `moderation_blocked`, "sexual", $0) for a bare female body; reworded as a display-bust form with
+no anatomical detail, it passed. The picks for the expression sheets are the stick man and the bean woman. Their parts
+are the most clearly separate pieces, both read at a glance, and the bean keeps a human neck for the shared skeleton,
+where the ball on a stalk does not. Each got a 3 x 2 swap sheet, 1536x1536, an edit of its concept: rest, smile, sad,
+surprised, angry, and the swapped pieces laid out on the table (`x1_stick_m`, `x2_bean_f`). 15 requests (one refused),
+**$0.2092** of the $1.50 cap. Both sheets kept the head and swapped only the pieces. The stick man's sheet drifted to a
+front view, and his smile is weak. The bean woman's smile cell winks (one lid closed). The palette came out a muted
+sage-teal, duller than the roster's teal. Images: `D:/prime-art-raw/2026-10-22-alien-t2-partsbuilt/`; one JPEG per
+image and the labelled sheet `t2_sheet.jpg` (the six revised concepts, then both swap sheets):
+`D:/prime-art-raw/research/2026-10-22-roster/design/t2/`.
