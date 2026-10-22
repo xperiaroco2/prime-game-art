@@ -2468,8 +2468,32 @@ a time, by visibility.
 - `pilot_sheet.gd <glb> <png> expr|gills` (off-screen window through `_godot.window()`): `expr` shoots rest, smile,
   sad, angry, surprised, talk, blink and the `Head` bone turned 40 degrees (the weld) from 3/4 front; `gills` swings
   the `Head` bone +-35 degrees (1.2 s period) and takes six frames per row, one row per spring setting (none, then
-  stiffness/drag 2.0/0.6, 1.0/0.4, 0.4/0.2). The defaults (1.0/0.4) are Godot's own; the grid did not separate
-  them yet (see the step 2c handoff: the right gills smear at import).
+  stiffness/drag 2.0/0.6, 1.0/0.4, 0.4/0.2). The defaults (1.0/0.4) are Godot's own. Both modes now render under
+  the approved look (`look_presets.json` with light D through `showroom/look_lights.gd`) with the viewport's mesh LOD
+  off (`lod` as a last argument keeps it). `colour <blender png>` (2b-3) puts the Blender review render beside the
+  bare albedo (unshaded) and the approved look with every albedo but the eyes' scaled 1.0, 0.7, 0.5 and 0.35, and
+  prints each cell's median head colour (`COLOUR` lines).
+- `pilot_skin_check.gd <glb>` (headless): skins every mesh on the CPU at rest (bind poses, the skeleton's poses,
+  `ARRAY_BONES`/`ARRAY_WEIGHTS`) and prints `SKIN <json>`, the largest move from the bind shape per mesh.
+
+### What 2b-3 found (art #196)
+- **The axolotl's smeared right gills were geometry, not the import.** The rest skinning in Godot moves no vertex
+  (`pilot_skin_check.gd`: at most 0.08 mm), the inverse binds equal the joints' global rests, the weights sum to 1,
+  turning LOD off and `meshes/force_disable_compression` changed nothing, and hiding the gills mesh left the smear:
+  it sat in the welded skin's own vertices, in Blender too (`axolotl_char.blend`: 1046 head vertices out to
+  x = -0.515 m against a mirror-side 0.27 m). `alien_pilot_char.py`'s neck morph read each vertex's
+  `BMVert.index` after `bmesh.ops.delete`, which renumbers the survivors, so head vertices took the deleted
+  shoulders' pull toward the ring. The morph now keeps the old index in an int layer. Lesson: after a bmesh delete,
+  never use `.index` to address arrays computed before it; and render a weld in Blender before blaming Godot.
+- **The washed-out colour is the look, not the import.** The albedo arrives intact (unshaded, the head's median
+  sRGB 0.44/0.77/0.76 against Blender's 0.41/0.71/0.71 for the chameleon; sRGB textures, no vertex colours, no
+  colour nodes). Under the approved look (AgX at 0.9, the key at 3.0) the skin goes to 0.67/0.81/0.81: the key
+  pushes the teal into AgX's shoulder, which desaturates it. Scaling the albedo brings the brightness back
+  (x0.5: 0.39/0.55/0.55) but not the hue's strength (G/R 1.41 against Blender's 1.72): matching Blender's Standard
+  view under AgX needs a look decision (a lower key for textured characters, the environment's saturation
+  adjustment, or a pre-graded albedo), not an import fix.
+- **The body's plain colour** was the neck's sRGB sample written as a linear Base Color (paler than the neck);
+  it is now converted to linear.
 
 ## Findings for later tasks
 
