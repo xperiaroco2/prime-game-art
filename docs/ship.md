@@ -42,7 +42,7 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 
 | What | Number (ship.toml) | Why |
 |---|---|---|
-| Footprint | 27.5 x 14.3 m (the lens tips' blades at x +-13.75, `span_max_m` 27.5; ramp foot -7.4 to nozzle tips 6.9 y) | 5a: about 26 x 14; manager update 2: the span up to about 27.5 |
+| Footprint | 27.5 m wide (the lens tips' blades at x +-13.75, `span_max_m` 27.5); two lengths (`ship_layout.lengths()`, as built): the hull body 12.9 m (lead edge y -6.5 to the trail 6.4: the swept tips and the pod housing; no ramp, no nozzle pods), the one `ship --check` holds to 14 +- 0.5; overall 15.7 m from the ramp's foot (-7.4) to the nozzle tips (8.34; 14.8 m from the lead edge) | 5a: about 26 x 14; manager update 2: the span up to about 27.5; how far the nozzles stick out is open (2D README); the body is short of 13.5 (open, art #263) |
 | Deck | floor at h 0.6 on landing legs (launch 3; was 1.0), slabs 0.25, walls 0.2 | the ramp meets the ground; a thinner hull |
 | Hall | circle r 3.4 at (0, 0); 3.2 m to the ceiling's rim, 3.8 m to its apex (faceted, 16 sides; launch 3, was 3.4 / 4.0) | console (0, 1) with room round it |
 | Mouth | x -1.3..1.3, y -4.6..-3.3, 2.4 m high | the only way in or out (5a's side hatch is dropped, see below) |
@@ -183,7 +183,7 @@ every variant is still a flat wide plate with the lens ends: the tip rooms (0.3 
 | Swept tip | round the tip centre (dx, dy): (2.25, -2.05), (2.9, -0.9), (3.0, 0), (2.95, 1.0), (2.75, 3.0), (1.8, 6.4) | the turnaround top's swept tips |
 | Window | the band from 15 % to 85 % of the upper face (h 1.93..2.98) within 65 deg of the tip's axis left open | a slanted band; the inside's glass stands behind it |
 | Mouth | the opening (h 0.55..3.15 at y -4.6) under a brow 1.0 m forward at h 3.45, the brow's top leaning back to (−4.2, 4.3) | a notch cut into the low ray nose |
-| Footprint | 27.5 x 14.3 m (`ship --check`); ship.toml [hull] rows from `ship_hull_skin.outline()` | span_max_m 27.5 |
+| Footprint | 27.5 m wide; hull body 12.9 m long, 15.7 m from the ramp's foot to the nozzle tips (`ship --check` prints both); ship.toml [hull] rows from `ship_hull_skin.outline()`, `trail_y` and `pod_tail_m` held to the builders by `test_ship_hull_detail.py` | span_max_m 27.5 |
 
 **Winding.** Plan coordinates are left-handed (x east, y south, h up); the harness's (x, -y, h) mirrors them, which
 flips every winding set in plan coordinates with `ship_lib.orient`. `ship_hull.py` reverses its open (`solid=False`)

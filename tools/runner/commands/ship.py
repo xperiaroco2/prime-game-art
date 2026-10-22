@@ -48,8 +48,10 @@ def run(args: argparse.Namespace) -> int:
     layout = ship_layout.load()
     problems = ship_layout.check(layout)
     width, length = ship_layout.extent(layout)
-    common.say(f"ship v{layout['version']}: {width:.2f} x {length:.2f} m, {len(layout['rooms'])} rooms, "
-               f"{len(layout['pieces'])} pieces, {len(layout['place'])} placements")
+    lens = ship_layout.lengths(layout)
+    common.say(f"ship v{layout['version']}: {width:.2f} x {length:.2f} m (hull body), {len(layout['rooms'])} rooms, "
+               f"{len(layout['pieces'])} pieces, {len(layout['place'])} placements; length with the nozzles "
+               f"{lens['nozzles']:.2f} m, ramp foot to nozzle tips {lens['overall']:.2f} m")
     for p in problems:
         common.say(f"  {p}")
     if problems:

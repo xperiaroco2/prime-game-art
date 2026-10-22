@@ -77,13 +77,31 @@ def boundary(room: dict[str, Any], wall: float, n: int = 48) -> list[tuple[float
     return pts
 
 
+def nozzle_tip_y(layout: dict[str, Any]) -> float:
+    """The farthest south a nozzle pod reaches: its placement's y + its args length + hull.pod_tail_m (pods point +y)."""
+    pods = {p["id"]: p for p in layout["pieces"] if p.get("builder") in ("nozzle_pod", "pod_ring")}
+    tips = [pl[1][1] + float(pods[pl[0]]["args"]["length"]) + layout["hull"]["pod_tail_m"]
+            for pl in layout["place"] if pl[0] in pods]
+    return max(tips, default=layout["hull"]["trail_y"])
+
+
+def lengths(layout: dict[str, Any]) -> dict[str, float]:
+    """North-south lengths: "body" the hull from its lead edge to its trail (no ramp, no nozzle pods; the one checked
+    against [size] length_m), "nozzles" the body with the pods sticking out behind, "overall" the ramp's foot to the
+    nozzles' tips."""
+    ys = [p[1] for p in outline(layout)]
+    lead, trail, foot = min(ys), max(max(ys), layout["hull"]["trail_y"]), layout["ramp"]["foot"][1]
+    tip = max(trail, nozzle_tip_y(layout))
+    return {"body": trail - lead, "nozzles": tip - lead, "overall": tip - min(lead, foot)}
+
+
 def extent(layout: dict[str, Any]) -> tuple[float, float]:
-    """(width east-west, length north-south): the hull, the tip shells, the ramp's foot and the nozzles' tips."""
+    """(width east-west, body length north-south): the hull and the tip shells' blades; the length without the ramp
+    and the nozzle pods (lengths() has those)."""
     poly = outline(layout)
     pods = [r for r in layout["rooms"] if r["shape"] == "circle" and r.get("window")]
     xs = [p[0] for p in poly] + [r["centre"][0] + s * layout["hull"]["pod_radius_m"] for r in pods for s in (-1, 1)]
-    ys = [p[1] for p in poly] + [layout["ramp"]["foot"][1], layout["hull"]["stern_y"]]
-    return max(xs) - min(xs), max(ys) - min(ys)
+    return max(xs) - min(xs), lengths(layout)["body"]
 
 
 TOUCH_M = 0.05  # how far a linked room's edge must reach into the other
@@ -110,7 +128,8 @@ def check(layout: dict[str, Any]) -> list[str]:
         if name == "width" and want < got <= size.get("span_max_m", want):
             continue  # the blades past the tip rooms (manager update 2, art #263: the span up to about 27.5 m)
         if abs(got - want) > size["tolerance_m"]:
-            problems.append(f"footprint {name} {got:.2f} m, wants {want:g} +- {size['tolerance_m']:g}")
+            what = "length (hull body, no ramp or nozzles)" if name == "length" else name
+            problems.append(f"footprint {what} {got:.2f} m, wants {want:g} +- {size['tolerance_m']:g}")
     by_id = rooms(layout)
     for r in layout["rooms"]:
         if r["id"].startswith("corridor"):

@@ -27,7 +27,10 @@ class ShipLayoutTest(unittest.TestCase):
         width, length = sl.extent(LAYOUT)
         size = LAYOUT["size"]  # the lens blades may reach span_max_m (manager update 2, art #263)
         self.assertTrue(26.0 - 0.5 <= width <= size.get("span_max_m", 26.5) + 1e-6, width)
-        self.assertAlmostEqual(length, 14.0, delta=0.5)
+        self.assertAlmostEqual(length, 14.0, delta=0.5)  # the hull body, no ramp or nozzle pods
+        lens = sl.lengths(LAYOUT)
+        self.assertGreater(lens["nozzles"], lens["body"])
+        self.assertGreater(lens["overall"], lens["nozzles"])
 
     def test_the_station_spots_are_the_design_docs(self) -> None:
         spots = {s["id"]: tuple(s["at"]) for s in LAYOUT["stations"]["spot"]}

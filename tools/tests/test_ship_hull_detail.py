@@ -50,6 +50,17 @@ class ShipHullDetailTest(unittest.TestCase):
             self.assertTrue(math.hypot(x, y) > r_hall or (sh is not None and h > sh - 0.1),
                             f"the housing reaches into the hall at ({x:.2f}, {y:.2f}, {h:.2f})")
 
+    def test_the_layouts_stern_numbers_are_the_builders(self) -> None:
+        """ship.toml hull.trail_y and pod_tail_m, which `ship --check` measures the length with, equal the geometry."""
+        hull = LAYOUT["hull"]
+        for ln in (3.6, 4.0):
+            tail = max(max(y for _x, y, _h in verts(build({"r": 1.1, "length": ln}, LAYOUT))) - ln
+                       for build in (D.nozzle_pod, D.pod_ring))
+            self.assertAlmostEqual(tail, hull["pod_tail_m"], places=3)
+        housing = max(y for _x, y, _h in verts(D.pod_housing({}, LAYOUT)))
+        swept = max(dy for _dx, dy in S.VARIANTS[S.DEFAULT]["tip"])
+        self.assertAlmostEqual(hull["trail_y"], max(housing, swept), places=3)
+
     def test_the_lead_blade_runs_to_the_tip(self) -> None:
         path = D._lead_path(1.0)
         self.assertLess(path[0][0], 2.5)
