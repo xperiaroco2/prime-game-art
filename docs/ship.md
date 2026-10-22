@@ -130,17 +130,19 @@ compare sheets. Full run of `--godot --walk DIR --shoot DIR`: about 15 min.
 
 ## The exterior (EXTERIOR lane)
 
-`tools/blender/ship_hull.py` and `ship_hull_skin.py` build the outside as a kit, each piece its own GLB
-(`layouts/ship/exterior.toml`): the skin (body, three wing sections and the tip fairing per side), the nozzle mount,
-the cyan wing stripes, the tip windows' frames, the cockpit bubbles (collar, tinted glass, warm glow; outside only, the
-hall's ceiling closes them off), the mouth frame and its amber lights, the ramp and its lights, three nozzles with
-their cyan rings, eight landing legs; the clearing's ground, pines and rocks. Every skin face is cut into plates of
-about 1.5 m, each with a 2.2 cm chamfer sinking 1.4 cm into a dark seam (real bevels, not a texture).
+`tools/blender/ship_hull.py`, `ship_hull_skin.py` and `ship_hull_detail.py` build the outside as a kit, each piece
+its own GLB (`layouts/ship/exterior.toml`): the skin (body, three wing sections and the tip fairing per side, each with
+a darker underside), the cyan wing stripes, lead blades and seam lines, the inset hatches with their scratches, the
+tip windows' frames, the cockpit canopies (fairing, tinted glass, warm glow; outside only, the hall's ceiling closes
+them off), the mouth frame and its amber lights, the ramp and its edge strips, three long nozzle pods with their cyan
+rings and the middle pod's housing, eight landing legs and twelve amber ground lamps; the clearing's ground, pines
+and rocks. Every skin face is cut into plates of about 1.5 m, each with a 2.2 cm chamfer sinking 1.4 cm into a dark
+seam (real bevels, not a texture).
 
 ### The hull skin (hull lane, step 1)
 
-One continuous faceted surface from the centre to the tips (`ship_hull_skin.py`; the old drum, nose, wing, pod and
-blade builders in `ship_hull.py` are no longer placed). The half-span is lofted through sections across x, each the
+One continuous faceted surface from the centre to the tips (`ship_hull_skin.py`; the old drum, nose, wing, pod,
+blade, nozzle-mount and bubble builders were retired in step 2). The half-span is lofted through sections across x, each the
 same loop of 14 (y, h) points (lead edge, two upper-front slope points, the eave, two ridge points, the rear eave, two
 upper-rear points, trail edge, lower rear, two belly points, lower front), so the facets run as long creases from the
 body to the tips; past the tip room's centre (x 10.75) the tip fairing is a revolve whose +-90 deg profiles equal the
@@ -188,6 +190,27 @@ keys (cubic in time) from outside, up the ramp, the hall, both corridors and tip
 fps in the off-screen window (ship.gd mode `video`, one PNG per frame), encoded by `tools/blender/ship_video.py`
 (encode_clips.py's route at an average bit rate that fits `max_mb`, 15 MB: constant quality made 20 MB even at its lowest), then the frames are deleted;
 `--no-video` skips it.
+
+### The hull's details (hull lane, step 2)
+
+`ship_hull_detail.py`; every detail reads the skin's top (`skin_h`: the loop's upper points of the two loft stations
+round |x|, linear between them as the loft's faces are), so it follows the skin if the variant changes.
+`tools/blender/ship_hull_look.py` is the cheap check of shape: the exterior's built pieces in headless Workbench, the
+2D crops over front, side, back and top, then a three-quarter and close-ups of a canopy, the pods and a leg (one
+1280 px sheet; log `LOOK sheet`).
+
+| Detail | Numbers (plan metres) |
+|---|---|
+| Two tones | the skin loop's faces 9..13 (trail edge, belly, lower lead facet) in `ext_silver_c`/`leg_metal`; the tip's profile faces 0..2 likewise |
+| Canopies | glass ellipse 1.1 x 1.4 at (+-2.5, -2.7), either side of the spine, 0.95 high, four frame ribs; a deck plane fitted to the skin (least squares in x and y, tilt cap 34 deg, raised 0.05 over the skin under the glass); the fairing's teardrop 1.14x, stretched 1.6x backward, collar 0.06 into the skin; mean collar 0.43 m (2.2 m with a deck flat across x: two barrels from the front) |
+| Nozzle pods | outer r 1.05 at (+-2.75, h 2.15) from y 3.5, 3.6 long; middle r 1.2 at h 2.45 from y 3.9, 4.0 long; a 12-sided panelled barrel, a collar, the bell, ten cyan segments and a band per pod (`pod_ring`) |
+| Pod housing | from y 3.7 (top 4.75, the hall's eave) to 6.4 (top 3.9), half-width 1.55, sides into the skin or onto the pod's axis |
+| Lead blades | 0.07 x 0.05 cyan bars on the lead edge (section point 0) from x 2.0 to the swept tip point (13.23, 5.9) |
+| Seam lines | 0.025 cyan bars on the front eave crease from x 4 to 9 and the rear eave from x 5 to 8 |
+| Hatches | six per side, 1.4..2.4 x 1.0..1.4, a bevelled frame round a recessed plate with two slots; 40 seeded scratches per side (ext_chrome, 0.18..0.68 m) |
+| Legs | mount 0.8 x 0.6, knee (0.75, h 0.36), struts r 0.15/0.12, twin pistons, a foot plate r 0.55 with three toes at x 1.0 |
+| Ramp light | a continuous amber strip inside each rail and a cross strip at the foot |
+| Ground lamps | r 0.2 amber pucks 1.75 m out from each leg's mount and at (+-1.75, -5.9 / -7.25) by the ramp |
 
 ## The night look's numbers (the join step)
 
@@ -245,6 +268,6 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
   rooms, would thin it; both change the numbers.
 - The hall is still the brightest room (its lamp ring's cells); the corridors and tip rooms read at night.
 - The pines are layered cones; the ground is flat and empty (no grass tint, needles, dirt by the ramp).
-- The nozzles sit flush in a box mount (out_back); the ramp reads dark from the hero view.
+- The ramp reads dark from the hero view; the ground lamps glow but light nothing yet (no Godot lights: step 3).
 - The interior has no UVs: the brushed grain is geometry and the triplanar shader only on the hull's metals.
 - Triangles: the grates are about 60% of the 126k placed inside; measure with `bench` before the game takes it.
