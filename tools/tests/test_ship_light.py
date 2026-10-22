@@ -1,0 +1,97 @@
+"""The ship's outside light layer (art #263, docs/ship.md "The light layer"): the navigation lamps' placement (port
+red on x < 0, starboard green on x > 0, white on the centre line aft), the landing lights on the belly with their
+spots, the edge light's own glow lighting nothing, and the blink flag. Pure Python: needs neither Blender, Godot
+nor the raw files."""
+
+from __future__ import annotations
+
+import math
+import sys
+import tomllib
+import unittest
+from pathlib import Path
+
+from runner import ship_layout as sl
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "blender"))
+import ship_hull_shape as S  # noqa: E402
+
+LAYOUT = sl.load()
+EXT = tomllib.loads((sl.common.ROOT / LAYOUT["exterior"]).read_text(encoding="utf-8"))
+LAMPS = LAYOUT["light"]["lamps"]
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def placed(pid: str) -> list:
+    return [(at, yaw) for p, at, yaw in EXT["place"] if p == pid]
+
+
+def group(name: str) -> list:
+    return [lamp for lamp in LAMPS if len(lamp) > 8 and lamp[8] == name]
+
+
+class ShipLightTest(unittest.TestCase):
+    def test_nav_lamps_port_red_starboard_green_white_aft(self) -> None:
+        (red, red_yaw), = placed("nav_red")
+        (green, green_yaw), = placed("nav_green")
+        (white, _), = placed("nav_white")
+        self.assertLess(red[0], 0.0, "the red (port) lamp is not on the west")
+        self.assertGreater(green[0], 0.0, "the green (starboard) lamp is not on the east")
+        self.assertAlmostEqual(red[0], -green[0], places=3)
+        self.assertAlmostEqual(red[1], green[1], places=3)
+        self.assertAlmostEqual(white[0], 0.0, places=6, msg="the white lamp is off the centre line")
+        self.assertGreater(white[1], max(red[1], green[1]) + 8.0, "the white lamp is not aft")
+        cx, cy = S.P_TIP
+        for (x, y, h), yaw in ((red, red_yaw), (green, green_yaw)):
+            self.assertAlmostEqual(math.hypot(abs(x) - cx, y - cy), S.P_RIM_R, delta=0.01, msg="off the lens rim")
+            self.assertLess(y, cy, "not on the lens rim's forward side")
+            self.assertLess(h + 0.085, S.P_LENS_EDGE[0] - 0.045, "the housing reaches the edge light's channel")
+            out = (math.cos(math.radians(yaw)), -math.sin(math.radians(yaw)))   # the lamp's +x in plan
+            n = ((abs(x) - cx) * math.copysign(1, x), y - cy)
+            self.assertGreater(out[0] * n[0] + out[1] * n[1], 0.99 * math.hypot(*n), "the lamp does not face out")
+        top, _bottom = S.heights(white[0], white[1])
+        self.assertAlmostEqual(white[2], top, delta=0.03, msg="the white lamp is not on the tail's top")
+
+    def test_nav_lamps_have_their_lights(self) -> None:
+        nav, tail = group("nav"), group("nav_tail")
+        self.assertEqual((len(nav), len(tail)), (2, 1))
+        for pid, lamp in (("nav_red", min(nav, key=lambda q: q[0])), ("nav_green", max(nav, key=lambda q: q[0])),
+                          ("nav_white", tail[0])):
+            (at, _), = placed(pid)
+            self.assertLess(math.dist(at, lamp[:3]), 0.6, f"{pid}'s light is not at its lamp")
+            self.assertLessEqual(lamp[4], 2.0, f"{pid}'s light is not a tiny one")
+        red, green = sorted(nav)
+        self.assertGreater(red[5], red[6], "the port light is not red")
+        self.assertGreater(green[6], green[5], "the starboard light is not green")
+
+    def test_landing_lights_on_the_belly_with_spots(self) -> None:
+        lamps = placed("landing_lamp")
+        spots = group("land")
+        self.assertEqual(len(lamps), 6)
+        self.assertEqual(len(spots), 6)
+        for (x, y, h), _ in lamps:
+            _top, bottom = S.heights(x, y)
+            self.assertAlmostEqual(h, bottom, delta=0.01, msg=f"landing lamp ({x}, {y}) not on the belly")
+            spot = min(spots, key=lambda q: math.hypot(q[0] - x, q[1] - y))
+            self.assertLess(math.hypot(spot[0] - x, spot[1] - y), 0.2)
+            self.assertLess(spot[2], h - 0.09, "the spot is not under the lens")
+            self.assertGreater(spot[10], 0.0, "not a spot")
+        self.assertFalse([q for q in LAMPS if "belly" in str(q)], "the old belly pools are back")
+
+    def test_edge_glow_lights_nothing_its_pools_are_spots(self) -> None:
+        self.assertEqual(LAYOUT["light"]["mats"]["glow_edge"].get("cull"), "inside", "the edge glow lights the hull")
+        edge = group("edge")
+        self.assertEqual(len(edge), 6)
+        for lamp in edge:
+            self.assertGreater(lamp[10], 0.0)
+            self.assertLess(lamp[2], 1.5, "an edge pool's spot above the edge (the fins' hot spots)")
+
+    def test_nav_blink_flag(self) -> None:
+        gd = (ROOT / "godot" / "ship" / "ship.gd").read_text(encoding="utf-8")
+        self.assertIn("var nav_blink: bool = true", gd)
+        py = (ROOT / "tools" / "runner" / "commands" / "ship.py").read_text(encoding="utf-8")
+        self.assertEqual(py.count('"nav_blink": False'), 2, "shots and the video show a static glow")
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -28,6 +28,12 @@ var _camera: Camera3D
 var _label: Label
 var _scenes: Dictionary = {}
 var _metals: Dictionary = {}
+## The navigation lamps blink (light layer): the white tail lamp flashes once a second, the red and green pulse softly.
+## On in game; the request's "nav_blink" (false for shots and the video) turns it off: a static glow.
+var nav_blink: bool = true
+var _nav: Array = []   # [light, energy, tail]; [material, emission energy, tail] for the lamps' lenses
+var _env: Environment
+var _sky_mat: ShaderMaterial
 
 ## The shared metal library (metal.gdshader) by glTF material name: base colour, metallic, roughness, grain, seams,
 ## scratches, grime. Other materials keep their glTF look. The outside (rebuild B, the engineer: back to the night
@@ -62,6 +68,7 @@ func _initialize() -> void:
 		return
 	_req = request
 	_out = args[1]
+	nav_blink = bool(_req.get("nav_blink", true))
 	DirAccess.make_dir_recursive_absolute(_out)
 	if _req["mode"] in ["shoot", "video"]:
 		if DisplayServer.get_name() == "headless":
@@ -219,8 +226,10 @@ func _walk(r: float, h: float, points: Array) -> Dictionary:
 func _environment() -> void:
 	var light: Dictionary = _req["light"]
 	var env: Environment = Environment.new()
+	_env = env
 	var sky: Sky = Sky.new()
 	var sm: ShaderMaterial = ShaderMaterial.new()
+	_sky_mat = sm
 	sm.shader = load("res://ship/night_sky.gdshader") as Shader
 	sky.sky_material = sm
 	sm.set_shader_parameter("horizon", Vector3(0.04, 0.06, 0.12) * _lk("sky_horizon", 1.0))
@@ -267,19 +276,32 @@ func _environment() -> void:
 		key.directional_shadow_max_distance = 90.0
 		key.rotation_degrees = Vector3(float(light["key_dir_deg"][0]), float(light["key_dir_deg"][1]), 0)
 		root.add_child(key)
-	for l: Array in light["lamps"]:  # [x, h, y, energy, range, r, g, b, (group), (shadow)]
-		var omni: OmniLight3D = OmniLight3D.new()
+	for l: Array in light["lamps"]:  # [x, h, y, energy, range, r, g, b, (group), (shadow), (spot angle)]
+		var omni: Light3D
+		if l.size() > 10 and float(l[10]) > 0.0:  # light layer: a spot pointing straight down (landing, edge pools)
+			var spot: SpotLight3D = SpotLight3D.new()
+			spot.spot_range = float(l[4])
+			spot.spot_angle = float(l[10])
+			spot.spot_angle_attenuation = 0.6
+			spot.spot_attenuation = 1.2
+			spot.rotation_degrees = Vector3(-90, 0, 0)
+			omni = spot
+		else:
+			var o: OmniLight3D = OmniLight3D.new()
+			o.omni_range = float(l[4])
+			o.omni_attenuation = 1.4
+			omni = o
 		omni.position = Vector3(float(l[0]), float(l[1]), float(l[2]))
 		var scale: float = _lk("lamp_scale", 1.0)
 		if l.size() > 8:  # a room's lamps scale by its own number, "<group>_lamp" (ship.toml [light])
 			scale = _lk(str(l[8]) + "_lamp", scale)
 		omni.light_energy = float(l[3]) * scale
-		omni.omni_range = float(l[4])
-		omni.omni_attenuation = 1.4
 		omni.light_color = Color(float(l[5]), float(l[6]), float(l[7]))
 		omni.shadow_enabled = bool(l[9]) if l.size() > 9 else true
 		if l.size() > 8 and str(l[8]) == "flank":  # join: the wing tips' outer faces, outside pieces only
 			omni.light_cull_mask = OUTSIDE_LAYER
+		if l.size() > 8 and str(l[8]) in ["nav", "nav_tail"]:
+			_nav.append([omni, omni.light_energy, str(l[8]) == "nav_tail"])
 		root.add_child(omni)
 
 
@@ -332,6 +354,8 @@ func _dress(ship: Node3D) -> int:
 					var look: Dictionary = mats.get(bm.resource_name, {})
 					seen[bm] = minf(bm.emission_energy_multiplier, 6.0) * float(look.get("l", 1.0))  # its lights' strength
 					_look(bm, look)
+					if bm.resource_name.begins_with("glow_nav_"):  # light layer: the nav lenses blink with their lights
+						_nav.append([bm, bm.emission_energy_multiplier, bm.resource_name == "glow_nav_white"])
 				var box: AABB = _placed(mi) * mi.mesh.get_aabb()
 				var area: float = maxf(box.size.x * box.size.z, maxf(box.size.x * box.size.y, box.size.y * box.size.z))
 				var c: Vector3 = box.get_center()
@@ -340,7 +364,7 @@ func _dress(ship: Node3D) -> int:
 					floori(c.z / LIGHT_CELL_M), bm.emission.to_html(false), inside]
 				if not cells.has(key):
 					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0, float(mats.get(bm.resource_name, {}).get("rr", 1.0)),
-						inside]
+						inside or mats.get(bm.resource_name, {}).get("cull", "") == "inside"]
 				var cell: Array = cells[key]
 				cell[0] = (cell[0] as Vector3) + c * area
 				cell[1] = float(cell[1]) + area
@@ -429,6 +453,8 @@ func _shoot() -> void:
 	var lights: int = _dress(_build())
 	_probes()
 	print("SHIP look: %d emissive lights" % lights)
+	if nav_blink:
+		process_frame.connect(_nav_tick)
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	_camera.far = 500.0
@@ -457,6 +483,16 @@ func _shoot() -> void:
 	# looking straight down with +z (south) up the picture: east falls on the left, as plan-3.jpg
 	_camera.look_at_from_position(Vector3(0, 60, 0), Vector3.ZERO, Vector3(0, 0, 1))
 	images[top["name"]] = await _shot(top["name"], top["title"], shots)
+	if _req.has("top_full"):  # the whole ship from straight above, nose to nozzles, framed by its height
+		var full: Dictionary = _req["top_full"]
+		_camera.size = float(full["size_m"])
+		_camera.keep_aspect = Camera3D.KEEP_HEIGHT
+		var c: Vector3 = _v(full["centre"])
+		_camera.look_at_from_position(c + Vector3(0, 60, 0), c, Vector3(0, 0, 1))
+		images[full["name"]] = await _shot(full["name"], full["title"], shots)
+		if full.has("day_name"):  # the same frame by day: a sun, a pale sky and daylight ambient
+			_day()
+			images[full["day_name"]] = await _shot(full["day_name"], full["day_title"], shots)
 	var rows: Array = []
 	for c: Array in _req["compare"]:
 		var ref: Image = Image.load_from_file(c[1])
@@ -473,6 +509,37 @@ func _shoot() -> void:
 	_write("shots.json", {"shots": shots})
 	print("SHIP saved %s" % _out)
 	quit(0)
+
+
+## The nav lamps' blink (light layer): the white tail lamp a short flash once a second (0.12 s), red and green a soft
+## pulse (0.55..1.0 over 2 s).
+func _nav_tick() -> void:
+	var t: float = Time.get_ticks_msec() / 1000.0
+	var flash: float = 1.0 if fmod(t, 1.0) < 0.12 else 0.04
+	var pulse: float = 0.775 + 0.225 * sin(t * PI)
+	for n: Array in _nav:
+		var k: float = flash if bool(n[2]) else pulse
+		if n[0] is Light3D:
+			(n[0] as Light3D).light_energy = float(n[1]) * k
+		else:
+			(n[0] as BaseMaterial3D).emission_energy_multiplier = float(n[1]) * k
+
+
+## Day for the top_full_day shot: a warm sun high in the south-west, a pale sky colour, daylight ambient.
+func _day() -> void:
+	_env.background_mode = Environment.BG_COLOR
+	_env.background_color = Color(0.55, 0.68, 0.85)
+	_env.ambient_light_color = Color(0.62, 0.68, 0.78)
+	_env.ambient_light_energy = 1.0
+	_env.fog_enabled = false
+	_env.tonemap_exposure = 1.0
+	var sun: DirectionalLight3D = DirectionalLight3D.new()
+	sun.light_color = Color(1.0, 0.96, 0.9)
+	sun.light_energy = 2.2
+	sun.shadow_enabled = true
+	sun.directional_shadow_max_distance = 90.0
+	sun.rotation_degrees = Vector3(-58, -35, 0)
+	root.add_child(sun)
 
 
 ## The walk-through: the night scene as shoot dresses it, the camera at eye height through the keys, every frame
