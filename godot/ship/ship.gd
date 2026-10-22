@@ -314,7 +314,7 @@ func _dress(ship: Node3D) -> int:
 					var look: Dictionary = mats.get(bm.resource_name, {})
 					seen[bm] = minf(bm.emission_energy_multiplier, 6.0) * float(look.get("l", 1.0))  # its lights' strength
 					_look(bm, look)
-				var box: AABB = mi.global_transform * mi.mesh.get_aabb()
+				var box: AABB = _placed(mi) * mi.mesh.get_aabb()
 				var area: float = maxf(box.size.x * box.size.z, maxf(box.size.x * box.size.y, box.size.y * box.size.z))
 				var c: Vector3 = box.get_center()
 				var key: String = "%d_%d_%d_%s" % [floori(c.x / LIGHT_CELL_M), floori(c.y / LIGHT_CELL_M),
@@ -328,6 +328,7 @@ func _dress(ship: Node3D) -> int:
 	var list: Array = cells.values()
 	list.sort_custom(func(a: Array, b: Array) -> bool: return float(a[1]) > float(b[1]))
 	list = list.filter(func(c: Array) -> bool: return float(c[3]) > 0.0)  # "l" 0: the surface glows, lights nothing
+	var dump: Array = []
 	for cell: Array in list.slice(0, MAX_LIGHTS):
 		var omni: OmniLight3D = OmniLight3D.new()
 		omni.position = (cell[0] as Vector3) / maxf(float(cell[1]), 1e-6) + Vector3(0, 0.12, 0)
@@ -336,7 +337,24 @@ func _dress(ship: Node3D) -> int:
 		omni.omni_range = clampf(2.2 + sqrt(float(cell[1])) * 2.0, 2.2, 5.0) * float(cell[4])
 		omni.omni_attenuation = 1.6
 		root.add_child(omni)
+		dump.append([_r3(omni.position), snappedf(omni.light_energy, 0.001), snappedf(omni.omni_range, 0.001),
+			omni.light_color.to_html(false)])
+	_write("lights.json", {"cells": list.size(), "strip_lights": dump})  # where the emissive cells' lights stand (the hall disc's spot, inside-3)
 	return mini(list.size(), MAX_LIGHTS)
+
+
+## A mesh's transform in the scene, composed up its parents. mi.global_transform gave each piece's own frame here (every
+## strip light of a kind stood at the hall's centre: the disc's warm spot and the dark corridors, inside-3).
+func _placed(n: Node) -> Transform3D:
+	var xf: Transform3D = Transform3D.IDENTITY
+	while n != null and n is Node3D:
+		xf = (n as Node3D).transform * xf
+		n = n.get_parent()
+	return xf
+
+
+func _r3(v: Vector3) -> Array:
+	return [snappedf(v.x, 0.001), snappedf(v.y, 0.001), snappedf(v.z, 0.001)]
 
 
 ## One glTF material's night look from ship.toml [light.mats] (the room-by-room light grid, inside-1): "v" base
