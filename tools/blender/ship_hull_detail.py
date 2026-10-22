@@ -200,6 +200,37 @@ def ground_lamp(args: dict, layout: dict) -> list:
     return [L.part("lamp_body", *body, "hull_dark"), L.part("lamp_lens", *lens, "glow_amber")]
 
 
+NAV_MATS = {"red": "glow_nav_red", "green": "glow_nav_green", "white": "glow_nav_white"}
+
+
+def _rod(r, n, a, b, axis):
+    """A closed n-sided rod of radius r from a to b along the local axis "x" (out of a wall) or "h" (up)."""
+    v, f = L.disc(r, n, a, b)
+    if axis == "x":
+        v = [(h, x, y) for x, y, h in v]
+    return v, f
+
+
+def nav_lamp(args: dict, layout: dict) -> list:
+    """light layer: a navigation lamp (args colour red/green/white, mount "wall" or "top"): a round housing in the
+    hull's silver, its foot 3 cm into the skin, a glowing lens and a smaller cap on it. Local origin on the skin at
+    the lamp's centre; a wall lamp looks along +x (the placement's yaw turns it outward), a top lamp up."""
+    axis = "x" if args.get("mount", "wall") == "wall" else "h"
+    mat = NAV_MATS[args.get("colour", "white")]
+    return [L.part("nav_housing", *_rod(0.085, 10, -0.03, 0.06, axis), "hull_silver"),
+            L.part("nav_bezel", *_rod(0.068, 10, 0.06, 0.075, axis), "ext_frame"),
+            L.part("nav_lens", *L.merge(_rod(0.055, 10, 0.075, 0.115, axis), _rod(0.035, 10, 0.115, 0.13, axis)),
+                   mat)]
+
+
+def landing_lamp(args: dict, layout: dict) -> list:
+    """light layer: a warm landing light under the belly (local origin on the belly's bottom): a round silver
+    housing hanging 7 cm, its top 8 cm into the skin, a dark bezel and a warm lens facing down."""
+    return [L.part("landing_housing", *L.disc(0.16, 12, -0.07, 0.08), "hull_silver"),
+            L.part("landing_bezel", *L.disc(0.125, 12, -0.08, -0.07), "ext_frame"),
+            L.part("landing_lens", *L.disc(0.105, 12, -0.09, -0.08), "glow_landing")]
+
+
 for _name in ("canopy", "nozzle_pod", "pod_ring", "ground_lamp"):
     globals()[_name] = H._outward(globals()[_name])
 

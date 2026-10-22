@@ -30,6 +30,17 @@ place = [
   # lens step 2: the edge light, the lens windows' frames
   ["edge_light", [0.00, 0.00, 0.00], 0.0],
   ["lens_frames", [0.00, 0.00, 0.00], 0.0],
+  # light layer: the navigation lamps (port red on the west lens rim's forward facet, starboard green on the east's,
+  # under the edge light; white on the tail's top centre) and a warm landing light under the belly by each leg
+  ["nav_red", [-12.181, -0.717, 1.130], 131.25],
+  ["nav_green", [12.181, -0.717, 1.130], 48.75],
+  ["nav_white", [0.000, 11.200, 4.265], 0.0],
+  ["landing_lamp", [-3.80, -3.40, 0.680], 0.0],
+  ["landing_lamp", [3.80, -3.40, 0.680], 0.0],
+  ["landing_lamp", [-8.20, 4.60, 0.440], 0.0],
+  ["landing_lamp", [8.20, 4.60, 0.440], 0.0],
+  ["landing_lamp", [-4.20, 8.60, 1.182], 0.0],
+  ["landing_lamp", [4.20, 8.60, 1.182], 0.0],
   # amber ground lamps beside the six legs' feet (hull 3-3) and the ramp
   ["ground_lamp", [-5.68, -6.09, 0.00], 0.0],
   ["ground_lamp", [5.68, -6.09, 0.00], 0.0],
@@ -925,6 +936,25 @@ outside = true
 [[pieces]]
 id = "edge_light"                            # lens step 2: the cool-white light line round the hull's outer edge
 builder = "edge_light"
+
+[[pieces]]
+id = "nav_red"                               # light layer: the navigation lamps (ship_hull_detail.nav_lamp)
+builder = "nav_lamp"
+args = { colour = "red", mount = "wall" }
+
+[[pieces]]
+id = "nav_green"
+builder = "nav_lamp"
+args = { colour = "green", mount = "wall" }
+
+[[pieces]]
+id = "nav_white"
+builder = "nav_lamp"
+args = { colour = "white", mount = "top" }
+
+[[pieces]]
+id = "landing_lamp"                          # light layer: the warm landing lights under the belly
+builder = "landing_lamp"
 
 [[pieces]]
 id = "lens_frames"                           # lens step 2: the band's and the roof windows' outer frames
