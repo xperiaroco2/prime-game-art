@@ -839,6 +839,8 @@ P_ROOF_CUT = 0.245                      # the roof window's reveal down to this 
 P_PODS = [(3.0, 2.0, 1.42, 2.0), (0.0, 2.55, 1.62, 2.3)]   # (x, h, r, out past the stern face): 2.84 / 3.24 across
 P_POD_IN = 1.6                          # a pod's full barrel starts this far forward of the stern face
 P_LENS_N = 48
+P_TOP_LIFT = 0.04                       # lens polish: the lens's top 4 cm up, over the fin's ridge (3.30 at the lens's
+#                                         centre stood 2.5 cm proud of the old top: a ledge across the lens's roof)
 P_PROFILE = [(0.2, ("top", 0.0)), (0.0, ("top", 0.3)), (0.0, ("abs", 1.0)), (0.08, ("abs", 0.5)),
              (0.25, ("abs", BELLY))]    # the lens rim: (inset from P_RIM_R, depth under the top plane or a height)
 POD_TAIL = SHIP["hull"]["pod_tail_m"]   # a pod's end past its builder's length
@@ -867,8 +869,8 @@ def p_ceiling(x, y, sx=1):
 
 
 def p_top(x, y, sx=1):
-    """The lens's top plane: the ceiling + ROOF + SKIN + 5 mm."""
-    return p_ceiling(x, y, sx) + ROOF + SKIN + 0.005
+    """The lens's top plane: the ceiling + ROOF + SKIN + 5 mm + P_TOP_LIFT."""
+    return p_ceiling(x, y, sx) + ROOF + SKIN + 0.005 + P_TOP_LIFT
 
 
 def p_rim(deg, sx=1, r=P_RIM_R):
