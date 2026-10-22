@@ -223,31 +223,70 @@ def window_frame(args: dict, layout: dict) -> list:
     return [L.part("window_frame", *L.merge(*out), "ext_frame")]
 
 
+def _ring_prism(inner, outer, y0, y1):
+    """A closed frame between two (x, h) outlines (same count, open at the bottom ends), from y0 to y1."""
+    n = len(inner)
+    v = ([(x, y0, h) for x, h in inner] + [(x, y0, h) for x, h in outer] + [(x, y1, h) for x, h in inner]
+         + [(x, y1, h) for x, h in outer])
+    f = []
+    for i in range(n - 1):
+        f.append((i, i + 1, n + i + 1, n + i))                      # front face
+        f.append((2 * n + i, 3 * n + i, 3 * n + i + 1, 2 * n + i + 1))  # back face
+        f.append((i, 2 * n + i, 2 * n + i + 1, i + 1))              # the opening's side
+        f.append((n + i, n + i + 1, 3 * n + i + 1, 3 * n + i))      # the outer side
+    for i in (0, n - 1):                                            # the two feet
+        f.append((i, n + i, 3 * n + i, 2 * n + i))
+    # outward: from the nearest point of the frame's mid line (between the outlines, mid depth; the feet's points
+    # lifted so a foot face sees its inside above it)
+    mids = []
+    for i in range(n):
+        lift = 0.03 if i in (0, n - 1) else 0.0
+        mids.append(((inner[i][0] + outer[i][0]) / 2, (inner[i][1] + outer[i][1]) / 2 + lift))
+    mids += [((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) for a, b in zip(mids, mids[1:])]
+    ym = (y0 + y1) / 2
+
+    def inside(c):
+        x, h = min(mids, key=lambda m: (m[0] - c[0]) ** 2 + (m[1] - c[2]) ** 2)
+        return (x, ym, h)
+    return v, L.orient(v, f, inside)
+
+
+def _mouth_outlines(layout):
+    """The mouth's opening (the inside's portal: half width 1.25, clear_h with 0.3 x 0.35 chamfers) and the frame's
+    outer outline, which covers the skin's rectangular hole (x +-1.3 up to the corridor's top + 0.15), as (x, h)."""
+    floor = layout["deck"]["floor_h"]
+    hm = next(r for r in layout["rooms"] if r["id"] == "mouth")["clear_h"]
+    inner = [(-1.25, floor - 0.02), (-1.25, floor + hm - 0.35), (-0.95, floor + hm), (0.95, floor + hm),
+             (1.25, floor + hm - 0.35), (1.25, floor - 0.02)]
+    outer = [(-1.62, floor - 0.25), (-1.62, floor + hm - 0.1), (-1.12, floor + hm + 0.4), (1.12, floor + hm + 0.4),
+             (1.62, floor + hm - 0.1), (1.62, floor - 0.25)]
+    return inner, outer
+
+
 def mouth_frame(args: dict, layout: dict) -> list:
-    """The portal round the mouth (local origin: the ramp's hinge): two jambs and the lintel, chamfered."""
-    out = []
-    for s in (-1, 1):
-        out.append(L.box(s * 1.3 if s > 0 else -1.78, 1.78 if s > 0 else -1.3, -0.3, 0.12, BELLY_H - 1.0, 2.95))
-    out.append(L.box(-1.78, 1.78, -0.32, 0.1, 2.55, 3.05))
-    boxes = []
-    for bv, bf in out:
-        c = tuple(sum(q[k] for q in bv) / len(bv) for k in range(3))
-        boxes.append((bv, L.orient(bv, bf, lambda _c, c=c: c)))
-    v, f = L.merge(*boxes)
-    return _skin("portal", [(x, y, h + 1.0) for x, y, h in v], f, size=1.2, inset=0.02, depth=0.012,
-                 mats=("ext_frame", "hull_silver"))
+    """The portal round the mouth (local origin: the ramp's hinge on the ground; hull 3-2): a chamfered frame from the
+    inside's opening out over the skin's hole, 0.3 m deep, panelled; a thin inner lip."""
+    inner, outer = _mouth_outlines(layout)
+    v, f = _ring_prism(inner, outer, -0.2, 0.1)
+    lip_o = [(x * 1.03, h + (0.04 if h > 2.0 else 0.0)) for x, h in inner]
+    lv, lf = _ring_prism(inner, lip_o, -0.26, -0.18)
+    return _skin("portal", v, f, size=0.9, inset=0.02, depth=0.012, mats=("ext_frame", "hull_silver")) + [
+        L.part("portal_lip", lv, lf, "ext_chrome")]
 
 
 def mouth_lights(args: dict, layout: dict) -> list:
-    """The amber strips on the portal's inner faces and under its lintel (local origin: the ramp's hinge)."""
+    """The amber strips on the portal's inner faces and along its head (local origin: the ramp's hinge, on the
+    ground)."""
+    floor = layout["deck"]["floor_h"]
+    hm = next(r for r in layout["rooms"] if r["id"] == "mouth")["clear_h"]
     out = []
     for s in (-1, 1):
-        for k in range(5):
-            h0 = 1.15 + k * 0.48
-            out.append(L.box(s * 1.285 - 0.02, s * 1.285 + 0.02, -0.22, -0.06, h0, h0 + 0.34))
-    for k in range(4):
-        x0 = -1.0 + k * 0.55
-        out.append(L.box(x0, x0 + 0.35, -0.24, -0.08, 3.53, 3.56))
+        for k in range(4):
+            h0 = floor + 0.2 + k * 0.48
+            out.append(L.box(s * 1.235 - 0.02, s * 1.235 + 0.02, -0.17, 0.03, h0, h0 + 0.34))
+    for k in range(3):
+        x0 = -0.8 + k * 0.6
+        out.append(L.box(x0, x0 + 0.4, -0.17, 0.03, floor + hm - 0.04, floor + hm - 0.01))
     return [L.part("mouth_lights", *L.merge(*out), "glow_amber")]
 
 
@@ -307,27 +346,31 @@ def ramp_lights(args: dict, layout: dict) -> list:
 
 
 def leg(args: dict, layout: dict) -> list:
-    """A chunky landing leg (splaying toward local +x; exterior.toml yaws it outward; step 2): a faceted mount box under
-    the belly, a thick upper strut out to the knee, a knee drum, the lower strut, a twin chrome piston pair and a broad
-    faceted foot plate with three toes and a dark rubber sole. Numbers: mount 0.8 x 0.6, knee at (0.75, 0.36), the
-    struts r 0.15/0.12, the foot plate r 0.55 at x 1.0."""
-    top = BELLY_H
-    knee, ankle, foot = (0.75, 0.0, 0.36), (0.98, 0.0, 0.17), (1.0, 0.0, 0.0)
-    mount = _obox((0.05, 0.0, top - 0.1), (0.4, 0, 0), (0, 0.3, 0), (0, 0, 0.1))
-    cheek = [_obox((0.25, s * 0.2, top - 0.22), (0.22, 0, 0), (0, 0.04, 0), (0, 0, 0.1)) for s in (-1, 1)]
-    upper = _rod((0.1, 0.0, top - 0.18), knee, 0.15, 8)
-    lower = _rod(knee, ankle, 0.12, 8)
-    joint = _rod((knee[0], -0.2, knee[2]), (knee[0], 0.2, knee[2]), 0.19, 12)
-    ajoint = _rod((ankle[0], -0.15, ankle[2]), (ankle[0], 0.15, ankle[2]), 0.12, 10)
-    pistons = [_rod((-0.15, s * 0.13, top - 0.2), (0.8, s * 0.13, 0.24), 0.045, 8) for s in (-1, 1)]
-    sleeves = [_rod((-0.15, s * 0.13, top - 0.2), (0.3, s * 0.13, 0.42), 0.07, 8) for s in (-1, 1)]
-    pad = L.disc(0.55, 8, 0.03, 0.12)
+    """A chunky landing leg splaying toward local +x (exterior.toml yaws it outward; hull 3-2): args top (the mount's
+    height: the skin's underside there + 0.12) and reach (mount to foot). A faceted mount box with cheeks, a thick
+    upper strut down to the knee drum at (0.62 reach, 0.45 top + 0.12), the lower strut to the ankle, a twin chrome
+    piston pair in dark sleeves, a broad faceted foot plate (r 0.5) with three toes and a dark sole."""
+    top, reach = float(args.get("top", 0.9)), float(args.get("reach", 1.5))
+    knee, ankle, foot = (0.62 * reach, 0.0, 0.45 * top + 0.12), (reach, 0.0, 0.2), (reach, 0.0, 0.0)
+    mount = _obox((0.0, 0.0, top - 0.05), (0.42, 0, 0), (0, 0.34, 0), (0, 0, 0.17))
+    cheek = [_obox((0.22, s * 0.25, top - 0.2), (0.26, 0, 0), (0, 0.05, 0), (0, 0, 0.13)) for s in (-1, 1)]
+    upper = _rod((0.08, 0.0, top - 0.2), knee, 0.17, 8)
+    lower = _rod(knee, ankle, 0.14, 8)
+    joint = _rod((knee[0], -0.25, knee[2]), (knee[0], 0.25, knee[2]), 0.22, 12)
+    ajoint = _rod((ankle[0], -0.17, ankle[2]), (ankle[0], 0.17, ankle[2]), 0.13, 10)
+    p1 = (0.85 * reach, 0.0, 0.3)
+    pistons = [_rod((-0.12, s * 0.16, top - 0.22), (p1[0], s * 0.16, p1[2]), 0.05, 8) for s in (-1, 1)]
+    mid = lambda t: (-0.12 + (p1[0] + 0.12) * t, 0.0, top - 0.22 + (p1[2] - top + 0.22) * t)  # noqa: E731
+    sleeves = [_rod((-0.12, s * 0.16, top - 0.22), (mid(0.45)[0], s * 0.16, mid(0.45)[2]), 0.08, 8) for s in (-1, 1)]
+    pad = L.disc(0.5, 8, 0.03, 0.13)
     padv = [(x + foot[0], y, hh) for x, y, hh in pad[0]]
-    cap_v, cap_f = L.disc(0.34, 8, 0.12, 0.2)
+    cap_v, cap_f = L.disc(0.3, 8, 0.13, 0.22)
     capv = [(x + foot[0], y, hh) for x, y, hh in cap_v]
-    toes = [_obox(_add((foot[0], 0.0, 0.06), (math.cos(a), math.sin(a), 0.0), 0.6), (0.12 * math.cos(a), 0.12 * math.sin(a), 0),
-                  (-0.08 * math.sin(a), 0.08 * math.cos(a), 0), (0, 0, 0.05)) for a in (-0.9, 0.0, 0.9)]
-    sole = L.disc(0.57, 8, 0.0, 0.03)
+    toes = [_obox(_add((foot[0], 0.0, 0.06), (math.cos(a), math.sin(a), 0.0), 0.55),
+                  (0.12 * math.cos(a), 0.12 * math.sin(a), 0), (-0.09 * math.sin(a), 0.09 * math.cos(a), 0),
+                  (0, 0, 0.05))
+            for a in (-0.9, 0.0, 0.9)]
+    sole = L.disc(0.52, 8, 0.0, 0.03)
     solev = [(x + foot[0], y, hh) for x, y, hh in sole[0]]
     return [L.part("leg_mount", *L.merge(mount, *cheek), "hull_dark"),
             L.part("leg_strut", *L.merge(upper, lower), "leg_metal"),

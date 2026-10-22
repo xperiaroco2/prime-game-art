@@ -256,23 +256,65 @@ def skin_stripes(args: dict, layout: dict) -> list:
     """The cyan diagonal light bars on a wing's lower lead facet (points 13..0 of the loft), one piece per side."""
     var = VARIANTS[args.get("variant", DEFAULT)]
     side = float(args.get("side", 1.0))
-    count, x0, x1 = int(args.get("count", 16)), 4.2, 9.8
+    count, x0, x1 = int(args.get("count", 12)), 2.6, 10.2   # hull 3-2: 12 chunky bars (16 thin ones read as hatching)
 
-    def at(x, t):
+    def at(x, t, k=13):
         s = section(x, var)
-        a, b = s[0], s[13]
+        a, b = s[0], s[k]
         return (side * x, a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
     out = []
     step = (x1 - x0) / count
     for k in range(count):
         xa = x0 + k * step
-        quad = [at(xa, 0.12), at(xa + 0.16, 0.12), at(xa + 0.16 + 0.3, 0.7), at(xa + 0.3, 0.7)]
-        n = H._norm(H._cross(H._sub(quad[1], quad[0]), H._sub(quad[3], quad[0])))
-        if n[1] > 0:
-            n = (-n[0], -n[1], -n[2])
-        v = [H._add(q, n, 0.014) for q in quad] + [H._add(q, n, -0.03) for q in quad]
-        out.append((v, [(0, 1, 2, 3), (7, 6, 5, 4), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]))
+        # hull 3-2: each bar wraps the lead edge, down the lower facet (toward point 13) and a third of the way up
+        # the upper slope (toward point 1), so it reads from the front and from above
+        for quad in ([at(xa, 0.08), at(xa + 0.3, 0.08), at(xa + 0.72, 0.92), at(xa + 0.42, 0.92)],
+                     [at(xa - 0.12, 0.35, 1), at(xa + 0.18, 0.35, 1), at(xa + 0.3, 0.02, 1), at(xa, 0.02, 1)]):
+            n = H._norm(H._cross(H._sub(quad[1], quad[0]), H._sub(quad[3], quad[0])))
+            if n[1] > 0:
+                n = (-n[0], -n[1], -n[2])
+            v = [H._add(q, n, 0.035) for q in quad] + [H._add(q, n, -0.03) for q in quad]
+            out.append((v, [(0, 1, 2, 3), (7, 6, 5, 4), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]))
     return [L.part("stripes", *L.merge(*out), "glow_cyan")]
+
+
+def tip_window(args: dict, layout: dict) -> list:
+    """The tip's big window on the lens's upper face (args side; plan frame, hull 3-2): tinted glass on the slanted band
+    between the profile's points 4 and 5 within the window's half angle, a sill and a head bar along the band's edges,
+    the two jambs and three mullions running up the slope, all 0.06 m proud. Replaces the old vertical ring."""
+    var = VARIANTS[args.get("variant", DEFAULT)]
+    side = float(args.get("side", 1.0))
+    room = next(r for r in layout["rooms"] if r["id"] == "tip_e")
+    half = math.radians(room["window"]["half_angle_deg"])
+    import ship_hull_detail as D  # late: it imports this module
+    angs = L.angles(-half, half, math.radians(5.0))
+
+    def pt(a, k, t=0.0, lift=0.0):
+        """The band at angle a: point k (4 the sill edge, 5 the head edge), t toward the other edge, lifted along
+        the band's outward normal."""
+        prof = tip_profile(var, a)
+        (r0, h0), (r1, h1) = prof[4], prof[5]
+        r, h = (r0 + (r1 - r0) * t, h0 + (h1 - h0) * t) if k == 4 else (r1 + (r0 - r1) * t, h1 + (h0 - h1) * t)
+        nr, nh = (h1 - h0), -(r1 - r0)
+        ln = math.hypot(nr, nh)
+        nr, nh = nr / ln, nh / ln
+        if nh < 0:
+            nr, nh = -nr, -nh
+        r, h = r + nr * lift, h + nh * lift
+        return (side * (TIP_X + r * math.cos(a)), r * math.sin(a), h)
+    gv = [pt(a, 4, 0.0, 0.01) for a in angs] + [pt(a, 5, 0.0, 0.01) for a in angs]
+    m = len(angs)
+    gf = [(i, i + 1, m + i + 1, m + i) for i in range(m - 1)]
+    gf = L.orient(gv, gf, lambda q: (side * TIP_X, 0.0, q[2] - 2.0))
+
+    def bar(path, w=0.09, t=0.07):
+        return D._bar(path, w, t)
+    frames = [bar([pt(a, k, 0.02, 0.03) for a in angs], 0.12, 0.08) for k in (4, 5)]
+    for a in (-half, -half / 2, 0.0, half / 2, half):
+        w = 0.12 if abs(a) == half else 0.07
+        frames.append(bar([pt(a, 4, t, 0.03) for t in (0.0, 0.5, 1.0)], w, 0.06))
+    return [L.part("window_glass", gv, gf, "glass_tint", solid=False),
+            L.part("window_frame", *L.merge(*frames), "ext_frame")]
 
 
 def clearance(var: dict) -> list[str]:
@@ -342,5 +384,5 @@ def outline(var: dict) -> list[tuple[float, float, float]]:
     return rows
 
 
-for _name in ("hull_skin", "skin_stripes"):
+for _name in ("hull_skin", "skin_stripes", "tip_window"):
     globals()[_name] = H._outward(globals()[_name])

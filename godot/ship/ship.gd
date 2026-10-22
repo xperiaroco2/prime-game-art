@@ -251,6 +251,16 @@ func _environment() -> void:
 	moon.directional_shadow_max_distance = 90.0
 	moon.rotation_degrees = Vector3(float(light["moon_dir_deg"][0]), float(light["moon_dir_deg"][1]), 0)
 	root.add_child(moon)
+	if light.has("key_dir_deg"):  # hull 3-2: a cool key from the cameras' side, so the silver facets catch light
+		var key: DirectionalLight3D = DirectionalLight3D.new()
+		var kc: Array = light.get("key_color", [0.78, 0.84, 1.0])
+		key.light_color = Color(float(kc[0]), float(kc[1]), float(kc[2]))
+		key.light_energy = float(light.get("key_energy", 0.6))
+		key.light_specular = float(light.get("key_specular", 1.0))
+		key.shadow_enabled = true
+		key.directional_shadow_max_distance = 90.0
+		key.rotation_degrees = Vector3(float(light["key_dir_deg"][0]), float(light["key_dir_deg"][1]), 0)
+		root.add_child(key)
 	for l: Array in light["lamps"]:  # [x, h, y, energy, range, r, g, b, (group), (shadow)]
 		var omni: OmniLight3D = OmniLight3D.new()
 		omni.position = Vector3(float(l[0]), float(l[1]), float(l[2]))

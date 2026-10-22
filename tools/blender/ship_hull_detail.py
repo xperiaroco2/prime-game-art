@@ -4,13 +4,12 @@ ground lamps, the inset hatches with cyan seam lines and the scratches. The EXTE
 
 Every builder reads the skin's top from ship_hull_skin.section (variant F), so a detail sits on the skin wherever the
 skin moves; pieces in the plan frame are placed at the origin. Numbers (plan metres):
-- canopies: glass ellipse 1.1 (x) by 1.4 (y) at (+-2.5, -2.7), either side of the spine, 0.95 m high over a deck
-  plane fitted to the skin under it (least squares in x and y, tilts capped at 34 deg, raised to clear the skin; the
-  collar above the skin averages 0.41 m, it was 2.2 m with a deck flat across x); the fairing's teardrop outline
-  1.14x round the glass, stretched 1.6x backward; its collar runs down 0.06 under the skin.
+- canopies (hull 3-2): flush in the forward hull, a faceted glass ellipse 1.15 (x) by 1.5 (y) at (+-2.3, -2.75), 0.85 m
+  high, its base on the skin (skin_h + 0.02); a low teardrop plate round it 0.03 over the skin; a lit floor, seat
+  and desk under the glass.
 - pods: the outer two r 1.05 at (+-2.75, h 2.15) from y 3.5, 3.6 long; the middle r 1.2 at h 2.45 from y 3.9, 4.0
   long, under a faceted housing from y 3.7 (top 4.75, the hall's eave) to y 6.4 (top 3.9).
-- lead blades: 0.13 x 0.07 bars (0.07 x 0.05 until step 3) on the lead edge (section point 0) from x 2.0 to
+- lead blades: 0.24 x 0.12 bars (hull 3-2) on the lead edge (section point 0) from x 2.0 to
   the swept tip point.
 - seam lines: 0.025 m cyan bars on the front eave crease (section point 3) from x 4.0 to 9.0."""
 
@@ -74,41 +73,32 @@ def _bar(path, w, t, lift=0.0, up=(0.0, 0.0, 1.0)):
 
 
 # --- the canopies --------------------------------------------------------------------------------------------------
-CANOPY = {"x": 2.5, "y": -2.7, "ax": 1.1, "ay": 1.4, "height": 0.95, "tilt_deg": 34.0, "segs": 20, "rings": 5}
+CANOPY = {"x": 2.3, "y": -2.75, "ax": 1.15, "ay": 1.5, "height": 0.85, "segs": 14, "rings": 3}
 
 
 def _canopy_frame(side):
+    """The canopy's outlines and its deck: the skin itself (hull 3-2: flush in the forward hull, no raised pod)."""
     c = CANOPY
     cx, cy = side * c["x"], c["y"]
-    ts = [2 * math.pi * k / c["segs"] for k in range(c["segs"])]
+    ts = [2 * math.pi * (k + 0.5) / c["segs"] for k in range(c["segs"])]
 
     def outline(t, k=1.14):
         s = math.sin(t)
         tail = max(0.0, s) ** 2
-        return (cx + c["ax"] * k * math.cos(t) * (1 - 0.35 * tail), cy + c["ay"] * k * s * (1 + 0.6 * tail))
+        return (cx + c["ax"] * k * math.cos(t) * (1 - 0.35 * tail), cy + c["ay"] * k * s * (1 + 0.35 * tail))
     rim = [outline(t) for t in ts]
     glass = [(cx + c["ax"] * math.cos(t), cy + c["ay"] * math.sin(t)) for t in ts]
-    # the deck plane: a least-squares fit of the skin under the glass and the fairing (tilts capped), raised to clear
-    # the skin everywhere under the glass
-    pts = [(x, y, skin_h(x, y)) for x, y in glass + rim + [(cx, cy)]]
-    k = len(pts)
-    mx, my, mh = (sum(q[i] for q in pts) / k for i in range(3))
-    sxx = sum((q[0] - mx) ** 2 for q in pts)
-    syy = sum((q[1] - my) ** 2 for q in pts)
-    sxy = sum((q[0] - mx) * (q[1] - my) for q in pts)
-    sxh = sum((q[0] - mx) * (q[2] - mh) for q in pts)
-    syh = sum((q[1] - my) * (q[2] - mh) for q in pts)
-    det = sxx * syy - sxy * sxy
-    cap = math.tan(math.radians(c["tilt_deg"]))
-    bx = max(-cap, min(cap, (sxh * syy - syh * sxy) / det))
-    by = max(-cap, min(cap, (syh * sxx - sxh * sxy) / det))
-    plane = lambda x, y: mh + bx * (x - mx) + by * (y - my)  # noqa: E731
-    lift = max(skin_h(x, y) - plane(x, y) for x, y in glass + [outline(t, 1.0) for t in ts]) + 0.05
-    return ts, rim, glass, (lambda x, y: plane(x, y) + lift), outline
+
+    def deck(x, y):
+        h = skin_h(x, y)
+        return (h if h is not None else skin_h(cx, cy)) + 0.02
+    return ts, rim, glass, deck, outline
 
 
 def canopy(args: dict, layout: dict) -> list:
-    """A cockpit canopy (args side; part glass|fairing|glow), outside only: the hall's ceiling closes it from inside."""
+    """A cockpit canopy (args side; part glass|fairing|glow), outside only: the hall's ceiling closes it from inside.
+    Hull 3-2: set flush in the forward hull (its base follows the skin), faceted (14 sides, 3 rings), a low plate
+    round it and a lit floor, seat and desk under the tinted glass."""
     side = float(args.get("side", 1.0))
     part = args.get("part", "glass")
     c = CANOPY
@@ -139,13 +129,11 @@ def canopy(args: dict, layout: dict) -> list:
                 L.part("canopy_ribs", *L.merge(*ribs), "ext_frame")]
     if part == "fairing":
         # the deck ring between the glass and the teardrop outline, the collar down into the skin, the rim lip
-        inner = [(x, y, deck(x, y)) for x, y in glass]
+        inner = [(x, y, deck(x, y) + 0.06) for x, y in glass]
         outer = []
         for t, (x, y) in zip(ts, rim):
-            tail = max(0.0, math.sin(t)) ** 2
-            sh = skin_h(x, y) or deck(x, y)
-            outer.append((x, y, max(sh + 0.04, deck(x, y) - 0.7 * tail)))
-        foot = [(x, y, (skin_h(x, y) or deck(x, y)) - 0.06) for x, y in rim]
+            outer.append((x, y, (skin_h(x, y) or deck(x, y)) + 0.03))
+        foot = [(x, y, (skin_h(x, y) or deck(x, y)) - 0.01) for x, y in rim]
         v = inner + outer + foot
         f = [(j, (j + 1) % n, n + (j + 1) % n, n + j) for j in range(n)]
         f += [(n + j, n + (j + 1) % n, 2 * n + (j + 1) % n, 2 * n + j) for j in range(n)]
@@ -169,10 +157,11 @@ def canopy(args: dict, layout: dict) -> list:
     ff = L.orient(fv, ff, lambda _c: (cx, cy, deck(cx, cy) - 1.0))
     def on(y, hx, hy):  # the highest deck point under a box's footprint
         return max(deck(cx + sx * hx, y + sy * hy) for sx in (-1, 1) for sy in (-1, 1))
-    seat = H._obox((cx, cy + 0.3, on(cy + 0.3, 0.26, 0.22) + 0.35), (0.26, 0, 0), (0, 0.22, 0), (0, 0, 0.3))
-    back = H._obox((cx, cy + 0.55, on(cy + 0.55, 0.26, 0.06) + 0.6), (0.26, 0, 0), (0, 0.06, 0), (0, 0, 0.32))
-    desk = H._obox((cx, cy - 0.7, on(cy - 0.7, 0.55, 0.18) + 0.3), (0.55, 0, 0), (0, 0.18, 0), (0, 0, 0.2))
-    screen = H._obox((cx, cy - 0.78, on(cy - 0.78, 0.42, 0.03) + 0.53), (0.42, 0, 0), (0, 0.03, 0), (0, 0, 0.05))
+    # hull 3-2: low enough to stay under the flush glass (0.85 high at the centre)
+    seat = H._obox((cx, cy + 0.25, on(cy + 0.25, 0.26, 0.22) + 0.2), (0.26, 0, 0), (0, 0.22, 0), (0, 0, 0.14))
+    back = H._obox((cx, cy + 0.5, on(cy + 0.5, 0.26, 0.06) + 0.4), (0.26, 0, 0), (0, 0.06, 0), (0, 0, 0.2))
+    desk = H._obox((cx, cy - 0.55, on(cy - 0.55, 0.5, 0.16) + 0.2), (0.5, 0, 0), (0, 0.16, 0), (0, 0, 0.12))
+    screen = H._obox((cx, cy - 0.62, on(cy - 0.62, 0.4, 0.03) + 0.36), (0.4, 0, 0), (0, 0.03, 0), (0, 0, 0.05))
     return [L.part("canopy_floor", fv, ff, "ext_glow_warm", solid=False),
             L.part("canopy_seat", *L.merge(seat, back, desk), "ext_frame"),
             L.part("canopy_screen", *screen, "ext_glow_cyan_dim")]
@@ -190,23 +179,37 @@ def nozzle_pod(args: dict, layout: dict) -> list:
                        (0.0, ln + 0.4)], 24)
     tv, tf = H._lathe_y([(0.82 * r, ln + 0.41), (0.62 * r, ln - 0.05), (0.0, ln - 0.25)], 24)
     throat = (tv, L.orient(tv, tf, lambda q: (0.0, q[1] - 1.0, 0.0)))
+    # tube relief (hull 3-2): two raised rib rings on the barrel and six stringers between the nose and the collar
+    ribs = [H._lathe_y([(0.0, y0), (1.035 * r, y0), (1.035 * r, y0 + 0.12), (0.0, y0 + 0.12)], 12, math.pi / 12)
+            for y0 in (1.55, 0.5 * (1.55 + ln - 1.5))]
+    stringers = []
+    for k in range(6):
+        a = math.pi / 6 + 2 * math.pi * k / 6
+        d = (math.cos(a), 0.0, math.sin(a))
+        c = (1.0 * r * d[0], 0.5 * (1.5 + ln - 1.5), 1.0 * r * d[2])
+        stringers.append(H._obox(c, (0.05 * -d[2], 0.0, 0.05 * d[0]), (0.0, 0.5 * (ln - 3.0), 0.0),
+                                 (0.04 * d[0], 0.0, 0.04 * d[2])))
     return (H._skin("pod", *shell, size=1.0, inset=0.016, depth=0.011, mats=("hull_silver", "ext_silver_b",
                                                                               "ext_silver_c"))
-            + [L.part("pod_collar", *collar, "hull_dark"), L.part("pod_bell", *bell, "ext_frame"),
+            + [L.part("pod_collar", *L.merge(collar, *ribs), "hull_dark"), L.part("pod_bell", *bell, "ext_frame"),
+               L.part("pod_stringers", *L.merge(*stringers), "ext_frame"),
                L.part("pod_throat", *throat, "ext_nozzle_inner")])
 
 
 def pod_ring(args: dict, layout: dict) -> list:
     """A pod's cyan lights (local frame as nozzle_pod): the band round the bell, the segmented ring in its rear face."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
-    band = H._lathe_y([(0.0, ln + 0.02), (0.935 * r, ln + 0.02), (0.935 * r, ln + 0.16), (0.0, ln + 0.16)], 24)
+    # hull 3-2: the end ring stands 0.05 r proud of the bell (it hid inside it), a second band on the barrel ahead
+    band = H._lathe_y([(0.0, ln + 0.02), (0.99 * r, ln + 0.02), (0.99 * r, ln + 0.24), (0.0, ln + 0.24)], 24)
+    band2 = H._lathe_y([(0.0, ln - 0.95), (1.04 * r, ln - 0.95), (1.04 * r, ln - 0.8), (0.0, ln - 0.8)], 24)
     segs = []
     for k in range(10):
         a0, a1 = 2 * math.pi * k / 10 + 0.06, 2 * math.pi * (k + 1) / 10 - 0.06
         v, f = L.sector(0.5 * r, 0.62 * r, a0, a1, ln + 0.0, ln + 0.05)
         segs.append(([(x, h, y) for x, y, h in v], f))
     core = H._lathe_y([(0.0, ln - 0.22), (0.2 * r, ln - 0.22), (0.0, ln - 0.18)], 12)
-    return [L.part("pod_band", *band, "glow_cyan"), L.part("pod_segments", *L.merge(*segs), "glow_cyan"),
+    return [L.part("pod_band", *L.merge(band, band2), "glow_cyan"),
+            L.part("pod_segments", *L.merge(*segs), "glow_cyan"),
             L.part("pod_core", *core, "ext_glow_cyan_dim")]
 
 
@@ -262,7 +265,7 @@ def lead_blade(args: dict, layout: dict) -> list:
     side = float(args.get("side", 1.0))
     path = _lead_path(side)
     out = [H._add(p, (0.0, -1.0, 0.0), 0.02) for p in path]
-    return [L.part("lead_blade", *_bar(out, 0.13, 0.07), "glow_cyan")]  # step 3: 0.07 x 0.05 read thin from the front
+    return [L.part("lead_blade", *_bar(out, 0.24, 0.12), "glow_cyan")]  # hull 3-2: 0.13 x 0.07 read thin
 
 
 def seam_lines(args: dict, layout: dict) -> list:
@@ -296,9 +299,9 @@ def _on_skin(x, y, ux, uy, lift):
 
 def hatches(args: dict, layout: dict) -> list:
     """Inset service hatches on a side's skin (args side): a bevelled frame round a recessed plate with two dark
-    handle slots, plus thin bright scratches over the upper skin (a seeded scatter)."""
+    latch and a hinge rod, plus thin bright scratches over the upper skin (a seeded scatter)."""
     side = float(args.get("side", 1.0))
-    frames, plates, slots, scratches = [], [], [], []
+    frames, plates, slots, latches, scratches = [], [], [], [], []
     for x, y, a, b in HATCHES:
         o, tx, ty, n = _on_skin(side * x, y, side, 1.0, 0.0)
         for (sa, sb, la, lb) in ((0, -1, a, 0.04), (0, 1, a, 0.04), (-1, 0, 0.04, b), (1, 0, 0.04, b)):
@@ -307,10 +310,18 @@ def hatches(args: dict, layout: dict) -> list:
                                   H._lerp((0, 0, 0), n, 0.03)))
         plates.append(H._obox(H._add(o, n, 0.004), H._lerp((0, 0, 0), tx, a - 0.08), H._lerp((0, 0, 0), ty, b - 0.08),
                               H._lerp((0, 0, 0), n, 0.012)))
+        # hull 3-2: one latch at the outer end (a dark well, a chrome lever across it on two posts) and a hinge rod
+        # along the inner edge; the two slots read as a face
+        well = H._add(H._add(o, tx, 0.62 * a), n, 0.017)
+        slots.append(H._obox(well, H._lerp((0, 0, 0), tx, 0.1), H._lerp((0, 0, 0), ty, 0.16),
+                             H._lerp((0, 0, 0), n, 0.004)))
         for s in (-1, 1):
-            c = H._add(H._add(o, tx, s * 0.45 * a), n, 0.018)
-            slots.append(H._obox(c, H._lerp((0, 0, 0), tx, 0.09), H._lerp((0, 0, 0), ty, 0.025),
-                                 H._lerp((0, 0, 0), n, 0.004)))
+            latches.append(H._obox(H._add(H._add(well, ty, s * 0.11), n, 0.025), H._lerp((0, 0, 0), tx, 0.025),
+                                   H._lerp((0, 0, 0), ty, 0.02), H._lerp((0, 0, 0), n, 0.025)))
+        latches.append(H._obox(H._add(well, n, 0.055), H._lerp((0, 0, 0), tx, 0.03), H._lerp((0, 0, 0), ty, 0.14),
+                               H._lerp((0, 0, 0), n, 0.012)))
+        h0 = H._add(H._add(o, tx, -(a - 0.1)), n, 0.03)
+        latches.append(H._rod(H._add(h0, ty, -(b - 0.15)), H._add(h0, ty, b - 0.15), 0.022, 8))
     for k in range(40):
         x = 2.2 + 7.6 * H._hash(side, k, 1)
         y = -3.6 + 7.4 * H._hash(side, k, 2)
@@ -329,6 +340,7 @@ def hatches(args: dict, layout: dict) -> list:
     return [L.part("hatch_frames", *L.merge(*frames), "ext_frame"),
             L.part("hatch_plates", *L.merge(*plates), "ext_silver_c"),
             L.part("hatch_slots", *L.merge(*slots), "ext_seam"),
+            L.part("hatch_latches", *L.merge(*latches), "ext_chrome"),
             L.part("scratches", sv, sf, "ext_chrome", solid=False)]
 
 

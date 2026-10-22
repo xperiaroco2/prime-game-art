@@ -19,9 +19,9 @@ place = [
   ["skin_tip_w", [0.00, 0.00, 0.00], 0.0],
   ["skin_stripes_e", [0.00, 0.00, 0.00], 0.0],
   ["skin_stripes_w", [0.00, 0.00, 0.00], 0.0],
-  # the tip windows' frames (built facing east; the west one at yaw 180)
-  ["window_frame", [-10.75, 0.00, 0.00], 180.0],
-  ["window_frame", [10.75, 0.00, 0.00], 0.0],
+  # the tip windows: glass and frame on the lens's slanted band (hull 3-2; plan frame)
+  ["window_frame_w", [0.00, 0.00, 0.00], 0.0],
+  ["window_frame_e", [0.00, 0.00, 0.00], 0.0],
   ["mouth_frame", [0.00, -4.60, 0.00], 0.0],
   ["mouth_lights", [0.00, -4.60, 0.00], 0.0],
   ["ramp", [0.00, -4.60, 0.00], 0.0],
@@ -59,15 +59,14 @@ place = [
   ["ground_lamp", [1.75, -7.25, 0.00], 0.0],
   ["ground_lamp", [-1.75, -5.90, 0.00], 0.0],
   ["ground_lamp", [1.75, -5.90, 0.00], 0.0],
-  # landing legs, yawed outward from the ship's centre
-  ["leg", [-2.00, -2.90, 0.00], 124.6],
-  ["leg", [2.00, -2.90, 0.00], 55.4],
-  ["leg", [-7.20, -1.20, 0.00], 176.2],
-  ["leg", [7.20, -1.20, 0.00], 3.8],
-  ["leg", [-7.20, 1.30, 0.00], -175.9],
-  ["leg", [7.20, 1.30, 0.00], -4.1],
-  ["leg", [-2.20, 3.90, 0.00], -119.4],
-  ["leg", [2.20, 3.90, 0.00], -60.6],
+  # landing legs (hull 3-2), yawed outward: mounts under the wings' rising lower faces and the stern (the skin's
+  # underside 0.62 / 0.63 / 1.09 m there; top = it + 0.12), feet out past the lead and trail edges
+  ["leg_front", [-5.00, -3.60, 0.00], 111.8],
+  ["leg_front", [5.00, -3.60, 0.00], 68.2],
+  ["leg_rear", [-6.50, 3.60, 0.00], -111.8],
+  ["leg_rear", [6.50, 3.60, 0.00], -68.2],
+  ["leg_stern", [-1.80, 4.20, 0.00], -101.3],
+  ["leg_stern", [1.80, 4.20, 0.00], -78.7],
   # the clearing (hull step 3; seeded once, plain data from here on, heights on the ground's facets): ground,
   # pines (old ring and pine2 pines), rocks, bushes, logs, stumps, grass tufts, the party lights' posts and
   # string, the dirt patch and path
@@ -522,8 +521,14 @@ builder = "skin_stripes"
 args = { side = -1.0, variant = "J" }
 
 [[pieces]]
-id = "window_frame"
-builder = "window_frame"
+id = "window_frame_e"
+builder = "tip_window"
+args = { side = 1.0, variant = "J" }
+
+[[pieces]]
+id = "window_frame_w"
+builder = "tip_window"
+args = { side = -1.0, variant = "J" }
 
 [[pieces]]
 id = "mouth_frame"
@@ -545,9 +550,25 @@ builder = "ramp_lights"
 outside = true
 
 [[pieces]]
-id = "leg"
+id = "leg_front"
 builder = "leg"
+args = { top = 0.74, reach = 2.0 }
 collide = true
+outside = true                               # the feet stand past the lead edge
+
+[[pieces]]
+id = "leg_rear"
+builder = "leg"
+args = { top = 0.75, reach = 2.2 }
+collide = true
+outside = true
+
+[[pieces]]
+id = "leg_stern"
+builder = "leg"
+args = { top = 1.21, reach = 1.6 }
+collide = true
+outside = true
 
 [[pieces]]
 id = "ground"
