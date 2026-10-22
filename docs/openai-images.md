@@ -32,7 +32,8 @@ in it included, and the design repo's `ideas/batches/`):
 Why: several outputs of one prompt come out as the same concept with small differences, so when he dislikes the
 concept all of them are wasted. Roster rounds r3 to r6 on #196 ran at `n = 3` and paid about three times for what one
 image per prompt would have shown; round r7 at `n = 1` made 15 images, ten concepts and five revisions, for $0.35.
-Whether one image at high quality is worth more than one at medium is measured in the quality comparison below.
+Whether one image at high quality is worth more than one at medium: batch 2026-10-22-openai-quality-compare below
+(medium for exploring concepts, high for the picked one).
 
 `estimate` and `run` print a `WARNING <item>: n = <n> ...` line naming this rule for every item with `n` above 1
 (the batch cannot tell a picked concept's variants from blind draws, so each such item is named); they never refuse
@@ -327,3 +328,17 @@ requests, $0.0231 to $0.0236 each; **$0.3495** of the $3 cap. Eight of ten types
 butler only half. Full lips, eyeliner or a mass hanging at the sides of the head turned two men into women (m85, m89);
 the types pull the faces toward human, so the alien lives in the head shape. Images:
 `D:/prime-art-raw/2026-10-22-alien-roster-r7/`; JPEGs, overview and handoff: `.../design/r7/`.
+
+## Batch 2026-10-22-openai-quality-compare (art #276, medium vs high for one image)
+
+The engineer asked whether the one image per concept should be at a better quality (#276). Round 7's m83 (the sleazy
+salesman he kept), the same prompt and rf2 reference, edit, 1024x1280, n = 1, once per quality, under the standing
+permission. Medium: 759 text + 1,024 image input and 378 output tokens, **$0.0233**, 20.0 s; high: the same input
+and 1,510 output tokens, **$0.0573**, 33.2 s: 2.5 times the price (only the output grows, 4 times) and 1.7 times the
+time; $0.0806 of the $1 cap. The concept, pose, light and colour came out the same; high followed the prompt's small
+asks better (the rectangular slit pupils and the thin pencil-moustache line, which medium drew round and fused into
+the lip) and has crisper lid and brow edges and a finer sheen, a gap that shows mostly at 1:1. At 1024x1280 both
+paid more output tokens than the 1536x1024 measurements scaled by pixels predict (286 and 1,143), within the
+estimate's margin. Recommendation: explore at medium, n = 1; high for the picked concept's edits and final sheets.
+Sheets and notes: `D:/prime-art-raw/research/2026-10-22-roster/design/quality/` (`m83_medium_vs_high.jpg`,
+`m83_face_crop_1to1.jpg`, `compare.md`).
