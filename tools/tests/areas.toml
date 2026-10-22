@@ -122,7 +122,7 @@ tests = ["test_openai_*"]
 
 [area.house]
 sources = [
-  "layouts/*", "kits/*", "props/*",
+  "layouts/house/*", "kits/*", "props/*",
   "tools/runner/house_*.py", "tools/runner/commands/_house_*.py", "tools/runner/commands/house.py",
   "tools/runner/commands/attic.py", "tools/runner/commands/garden.py", "tools/runner/commands/outdoor.py",
   "tools/runner/commands/zones.py", "tools/runner/commands/kit.py", "tools/runner/commands/_kit.py",
@@ -131,3 +131,10 @@ sources = [
   "godot/house/*", "godot/kit/*", "godot/props/*", "godot/garden/*", "godot/outdoor/*",
 ]
 tests = ["test_house_*", "test_kit_*", "test_props_*"]
+
+[area.ship]
+sources = [
+  "layouts/ship/*", "tools/runner/ship_*.py", "tools/runner/commands/ship.py", "tools/blender/ship_*",
+  "godot/ship/*",
+]
+tests = ["test_ship_*"]
