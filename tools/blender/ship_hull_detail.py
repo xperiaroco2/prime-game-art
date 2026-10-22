@@ -229,11 +229,12 @@ def pod_housing(args: dict, layout: dict) -> list:
 
 
 # --- the cyan lead blades and stripes ------------------------------------------------------------------------------
-BLADE = (2.7, SM.SPAN_X - 0.15, 0.25)   # x from, x to, step
+BLADE = (2.7, 0.15, 0.25)   # x from, short of the tip (SPAN_X) by, step (read late: ship_hull_smooth may still be loading)
 
 
 def _lead_path(side):
-    v, (x0, x1, dx) = _v(), BLADE
+    v, (x0, short, dx) = _v(), BLADE
+    x1 = SM.SPAN_X - short
     xs = [x0 + k * dx for k in range(int((x1 - x0) / dx) + 1)]
     if xs[-1] < x1 - 1e-6:
         xs.append(x1)
