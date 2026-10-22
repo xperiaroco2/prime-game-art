@@ -5,7 +5,7 @@ windows), no pod housing (J's stern face holds the pods); no hatches, seam lines
 
 Every builder reads the hull's top from ship_hull_shape.heights (variant J), so a detail sits on the hull wherever it
 moves; pieces in the plan frame are placed at the origin. Numbers (plan metres):
-- canopies: J's, a glass ellipse 0.95 (x) by 1.35 (y) at (+-2.25, -3.6), 0.75 m high, its base on the hull (+ 0.02);
+- canopies: J's, a glass ellipse 0.95 (x) by 1.35 (y) at (+-2.25, -3.6), 0.85 m high (details 1), its base on the hull (+ 0.02);
   a low collar round it; a dark rim lip; a lit floor, seat and desk under the glass.
 - pods: the outer two r 1.05 at (+-2.75, h 2.15), the middle r 1.2 at h 2.45, their rear ends at J's (y 11.0 and
   11.8: exterior.toml places each at J's y less hull.pod_tail_m); smooth 32-sided shells with a round nose, one dark
