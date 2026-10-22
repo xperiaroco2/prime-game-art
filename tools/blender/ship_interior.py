@@ -7,7 +7,7 @@ built at plan angle 0 (their room toward -x) and placed with yaw = -(their angle
 
 The numbers (version 2, rebuilt for the hull variant J, art #263; heights from ship.toml: `floor_h`, each room's
 `clear_h` and `apex_h`): the hall a 16-sided room, vertices on 4.078 (inner faces at about 4.0), rim 3.2 m, apex
-3.8 m over the deck at h 0.6; three openings (mouth north, corridors on the diagonal at +-25.73 deg from east) two
+3.8 m over the deck at h 0.6; three openings (mouth north, corridors on the diagonal at +-8.66 deg from east) two
 facets wide, framed by portals on the chords (3.768); the vents' and sockets' plain flat chords; the other facets
 re-spaced round the openings (hall_segments); the corridors one profile (3 m wide, vertical to 1.45 m, slanted in to
 2.3 m wide at the 2.4 m ceiling) straight along the axis from the hall's centre to the tip room's, four modules of
@@ -102,7 +102,8 @@ R_ARC = round(2.58 * K_HALL, 3)            # the amber floor ring (3.035)
 R_RIM0 = round(2.66 * K_HALL, 3)           # the solid rim plates' inner edge (3.129)
 R_RIM_REF = round(3.0 * K_HALL, 3)         # a rim plate's origin (3.529)
 # rebuild A (variant J, art #263 comment 6340589162): the corridors run straight along the diagonal from the hall's
-# centre to the tip rooms' (ship.toml `axis`), so the corridor openings sit on that angle (25.73 deg), off the 16-gon's
+# centre to the tip rooms' (ship.toml `axis`), so the corridor openings sit on that angle (8.66 deg since lens step 1;
+# rebuild A's 25.73), off the 16-gon's
 # vertices; the hall keeps its 16 facets' look, re-spaced round the moved openings (hall_segments)
 _COR = _ROOM["corridor_e"]
 COR_ANG = math.degrees(math.atan2(_COR["axis"][1][1] - _COR["axis"][0][1], _COR["axis"][1][0] - _COR["axis"][0][0]))
@@ -111,7 +112,7 @@ OPENINGS = {"corridor_e": COR_ANG, "mouth": -90.0, "corridor_w": 180.0 - COR_ANG
 BACK_DEG = 12.5   # each of the two back facets either side of the back's trunk at 90 deg (was 22.5: the sockets' flats
 # moved back off the corridor openings and need 1.6 m of plain chord clear of the portal pilaster: 2.06 m)
 # lens step 1: the back sockets' flat chord stays where rebuild A put it (48.23..77.5 deg, the old corridor chord's end
-# at 25.73 + 22.5), the sockets unchanged
+# at rebuild A's 25.73 + 22.5; the corridors are at 8.66 deg now), the sockets unchanged
 SOCK_A0 = 25.7299 + 2 * math.degrees(PHI)
 
 

@@ -55,7 +55,7 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
 
 The check holds: the footprint within 0.5 m; corridors `corridor_width_m` (3) +- 0.1 m wide and over 2.5 m long; the
-tip rooms' outer wall at `tip_outer_m` (10.1) +- 0.05; the station spots (`check_spots`, "Version 2" below); clear heights over the capsule and margin; exactly one room with an exit, the ramp's hinge on its north
+tip rooms' outer wall at `tip_outer_m` (12.5) +- 0.05; the station spots (`check_spots`, "Version 2" below); clear heights over the capsule and margin; exactly one room with an exit, the ramp's hinge on its north
 edge, the ramp as wide as the mouth and under 30 deg; every room reachable from the hall and linked rooms meeting;
 every poly room convex, its points with a positive signed area in plan (x, y) (`check_polys`); every capsule walk
 point on the deck on a room's floor with the capsule's radius round it (`check_walk`); every room's sampled outer
@@ -165,7 +165,8 @@ their compare sheets, 415..620 draw calls inside the tip rooms, 1740..2032 outsi
 
 ## The exterior (EXTERIOR lane)
 
-The outside is the hull J (`ship_hull_shape.py`, plain Python; only variant J is live) built by `ship_hull_j.py` as
+The outside is the hull P (`ship_hull_shape.py`, plain Python; variant P is live, J and the blockouts' variants stay
+for reference) built by `ship_hull_j.py` as
 four pieces in the plan frame at the origin: `skin_top`, `skin_belly`, `skin_mouth` (the throat's notch: its cut side
 faces in dark plates) and `skin_cheeks` (the throat walls' outer faces under the rising belly, in the same dark plates,
 so each side of the mouth reads as one face up to the nose's slope). Every face is cut into plates in its own plane
@@ -560,8 +561,8 @@ no outside light strips; the inside (rebuild A) frozen; the clearing only scaled
   of them (`facets()`, 111 facets for J), the mouth recess cut as four convex pieces per facet plus the recess's own
   faces (`surface()`, 126 faces), `skin(p)` (a point's distance to the outside), `clearance()` (every room's sampled
   walls, roofs and slabs against SKIN 0.15 m), `heights(x, y)` and `outline_rows()` (ship.toml's `[hull]` rows,
-  checked by `test_ship_layout`). `[hull] shape = "J"` names the variant; `ship --check` runs `clearance` too
-  (`ship_layout.hull_skin`): least skin 0.16 m, no poke.
+  checked by `test_ship_layout`). `[hull] shape = "P"` names the variant (J's numbers here are rebuild B's);
+  `ship --check` runs `clearance` too (`ship_layout.hull_skin`): least skin 0.150 m (the throat, hull P), no poke.
 - **The skin** is `ship_hull_j.py` (builder `j_skin`, pieces `skin_top`, `skin_belly`, `skin_mouth`): each face cut in
   its own plane into plates (rows 1.3 m wide along the facet's span direction, cut every 1.8 m, staggered like
   brickwork), each plate v1's `_plate` (inset 0.022, chamfer 0.014 deep) in one of v1's silvers by a hash, the top
@@ -740,7 +741,7 @@ footprint, skin and inside-the-hull tests again and no ship test skips.
   as wedges between the rim's vertices from r 2.13 (the room wall's outer face is 2.21) out, sill 1.596 to head 2.804,
   and three roof windows per lens (0.9 x 0.7, P's outlines) from 0.245 m over the ceiling up (the wells' tops 0.26);
   the cutters' own faces close every cut (the band's sill, head and ends, the roof windows' sides), plated like the
-  hull. Faces thinner than 0.1 mm (hull artefacts) are dropped. 507 facets, 1185 faces.
+  hull. Faces thinner than 0.1 mm (hull artefacts) are dropped. 507 facets, 1140 faces (lens step 3).
 - **The corrections.** The tail tapers to the pods: the stern face `P_STERN` is 2.75 m half wide at most and sloped
   (the blockout's stood 4.0 m with near-vertical sides behind the hall), the fins' trail corners come in to
   (+-3.3, 12.3). The fins' roots on the rim sit at -72 and +50 deg round the lens's axis, 6.1 deg past the band's
@@ -748,7 +749,7 @@ footprint, skin and inside-the-hull tests again and no ship test skips.
   just outside the band (sill to head, -72..+48 deg) lies inside the hull.
 - **The skin check** (`_room_points`) samples the lens rooms' slanted ceilings (`ceiling = "slant"`, along the axis
   from the hall's centre) and the closed vault (walls, its roof falling from 2.3 to 1.6, slab). Least skin: hall
-  0.152, throat 0.150, corridors 0.180, lens rooms 0.155, vault 0.180.
+  0.152, throat 0.150, corridors 0.180, lens rooms 0.171 (0.155 before lens step 3's 4 cm lift), vault 0.180.
 - **Plating:** `ship_hull_j.py` (name kept) plates P's faces as it plated J's: all silver, every sliver laid flush.
 - **The edge light** (`edge_light`, `ship_hull_shape.p_edge_line`): a dark channel (lips 14 mm proud, 8 cm high) with
   a cool-white glow 3.5 cm high set 8 mm in, along each fin's lead edge from the nose (not across the mouth), round
