@@ -266,8 +266,8 @@ def placements() -> list[tuple[str, list[float], float]]:
     # (inside-3: three bigger cups where the party left them, two with a spill from the mouth, none near a station
     # spot; a coil of spare cable by the east corridor's south bay; two bolted repair plates on the hall's rim floor)
     # inside 3-1: the two hall cups moved onto the grate ring in sight of both hall views (were by the wall)
-    # polish 4: cup_a in the hall-out view's foreground (its floor shows from y -2.45 on), cup_c in hall-in's
-    for pid, xy, yaw in (("cup_a", [0.85, -2.65], 145.0), ("spill_a", [0.85, -2.65], 145.0),
+    # polish 4: cup_a in the hall-out view's foreground (fov 52: its floor shows from y -2.9 on), cup_c in hall-in's
+    for pid, xy, yaw in (("cup_a", [0.75, -3.0], 145.0), ("spill_a", [0.75, -3.0], 145.0),
                          ("cup_c", [-1.05, -0.45], 200.0), ("spill_c", [-1.05, -0.45], 200.0),
                          ("cup_b", [-6.6, 0.7], 80.0), ("cable_coil", [6.5, 0.72], 20.0),
                          ("floor_patch_a", polar(2.92, 140.0), -140.0 + 8.0), ("floor_patch_b", polar(2.92, -50.0), 50.0 - 5.0)):
