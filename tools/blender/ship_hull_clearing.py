@@ -10,7 +10,7 @@ string are placed at the origin, the rest at their own spot (exterior.toml). Num
   ends and stubs; stumps r 0.3, 0.45 m.
 - pines (`pine2`): a bare trunk below `bare` x height, then 8..13 layers of 5..7 drooping branch clumps each, every
   clump its own angle, length and droop (the silhouette reads as branches, not stacked cones), a slight lean.
-- party lights: posts 2.7 m, 1.6 m off the path's centre on alternating sides at POST_T; the string sags 0.45 m between posts, a bulb every 0.6 m, one in four amber."""
+- party lights: posts 2.7 m, 1.6 m off the path's centre on alternating sides at POST_T (from 0.2: nearer, a post stood in the front shot); the string sags 0.45 m between posts, a bulb every 0.6 m, one in four amber."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ L.MATERIALS.update({
 # the path's centre line from the ramp's foot (the ramp ends at y -9.4) north-west to the treeline
 PATH = [(0.0, -9.6), (-0.5, -13.0), (-2.6, -16.6), (-6.0, -19.8), (-10.4, -22.6), (-15.4, -25.4), (-21.0, -28.8),
         (-26.5, -32.5)]
-POST_T = (0.015, 0.11, 0.2, 0.29, 0.38, 0.48, 0.58)  # the posts' arc fractions along the path
+POST_T = (0.2, 0.28, 0.36, 0.44, 0.52, 0.6, 0.68, 0.76)  # the posts' arc fractions (clear of the front shot)
 POST_OFF = 1.6  # metres off the path's centre, sides alternating
 POST_H = 2.7
 
@@ -93,7 +93,7 @@ def _posts() -> list:
     out = []
     for k, t in enumerate(POST_T):
         (x, y), (dx, dy) = path_point(t)
-        side = 1.0 if k % 2 == 0 else -1.0
+        side = -1.0 if k % 2 == 0 else 1.0  # the first on the west side, out of the front shot
         out.append((round(x - dy * POST_OFF * side, 2), round(y + dx * POST_OFF * side, 2)))
     return out
 

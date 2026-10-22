@@ -28,7 +28,7 @@ L.MATERIALS.update({
                       "strength": 1.6},
     "ext_glow_cyan_dim": {"base": (0.1, 0.6, 0.8, 1.0), "metallic": 0.0, "roughness": 0.4,
                           "emission": (0.15, 0.85, 1.0), "strength": 2.5},
-    "ext_ground": {"base": (0.075, 0.07, 0.05, 1.0), "metallic": 0.0, "roughness": 0.95},
+    "ext_ground": {"base": (0.05, 0.062, 0.035, 1.0), "metallic": 0.0, "roughness": 0.95},
     "ext_bark": {"base": (0.12, 0.075, 0.05, 1.0), "metallic": 0.0, "roughness": 0.9},
     "ext_needles": {"base": (0.03, 0.075, 0.045, 1.0), "metallic": 0.0, "roughness": 0.85},
     "ext_rock": {"base": (0.2, 0.2, 0.21, 1.0), "metallic": 0.0, "roughness": 0.85},

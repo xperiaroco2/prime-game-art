@@ -205,12 +205,39 @@ round |x|, linear between them as the loft's faces are), so it follows the skin 
 | Canopies | glass ellipse 1.1 x 1.4 at (+-2.5, -2.7), either side of the spine, 0.95 high, four frame ribs; a deck plane fitted to the skin (least squares in x and y, tilt cap 34 deg, raised 0.05 over the skin under the glass); the fairing's teardrop 1.14x, stretched 1.6x backward, collar 0.06 into the skin; mean collar 0.43 m (2.2 m with a deck flat across x: two barrels from the front) |
 | Nozzle pods | outer r 1.05 at (+-2.75, h 2.15) from y 3.5, 3.6 long; middle r 1.2 at h 2.45 from y 3.9, 4.0 long; a 12-sided panelled barrel, a collar, the bell, ten cyan segments and a band per pod (`pod_ring`) |
 | Pod housing | from y 3.7 (top 4.75, the hall's eave) to 6.4 (top 3.9), half-width 1.55, sides into the skin or onto the pod's axis |
-| Lead blades | 0.07 x 0.05 cyan bars on the lead edge (section point 0) from x 2.0 to the swept tip point (13.23, 5.9) |
+| Lead blades | 0.13 x 0.07 cyan bars (0.07 x 0.05 until step 3: thin from the front) on the lead edge (section point 0) from x 2.0 to the swept tip point (13.23, 5.9) |
 | Seam lines | 0.025 cyan bars on the front eave crease from x 4 to 9 and the rear eave from x 5 to 8 |
 | Hatches | six per side, 1.4..2.4 x 1.0..1.4, a bevelled frame round a recessed plate with two slots; 40 seeded scratches per side (ext_chrome, 0.18..0.68 m) |
 | Legs | mount 0.8 x 0.6, knee (0.75, h 0.36), struts r 0.15/0.12, twin pistons, a foot plate r 0.55 with three toes at x 1.0 |
 | Ramp light | a continuous amber strip inside each rail and a cross strip at the foot |
 | Ground lamps | r 0.2 amber pucks 1.75 m out from each leg's mount and at (+-1.75, -5.9 / -7.25) by the ramp |
+
+### The clearing and the outside light (hull lane, step 3)
+
+`ship_hull_clearing.py`; every clearing piece stands outside the hull and collides with nothing. The placements were
+seeded once (seed 263) and are plain data in `exterior.toml`; each stands on the ground piece's own facets
+(`ground_h`: the triangle under the point; 0 inside r 16). `tools/tests/test_ship_clearing.py` keeps the path clear,
+the party string over head height, the clearing on the ground and the walk's outside points free.
+
+| Piece | Numbers (plan metres) |
+|---|---|
+| Dirt patch | an irregular blob about 15 x 11 round the ship (radius capped at 15.6, inside the ground's flat 16 m), 0.006 over the ground |
+| Dirt path | `PATH`: from the ramp's foot (0, -9.6) north-west to the treeline (-26.5, -32.5), 2.0 wide at the ramp narrowing to 1.3; 0.012 over the ground (0.05 beyond r 16) |
+| Tufts | `tuft_a`, `tuft_b` (green), `tuft_dry`: 9..14 blades 0.18..0.5 high; 160 placed at r 3..30, none within 1.2 of the path or on the ramp |
+| Bushes | `bush_s/m/l` (spread 0.8, 1.3, 2.0): 5..8 lumps in two greens; 26 at r 14..30, outside the ship's ellipse |
+| Logs, stumps | `log_a` 3.5 x r 0.24, `log_b` 4.5 x r 0.3, cut ends and two stubs; 6 logs at r 12..22, 5 stumps at r 11..24 |
+| Pines | `pine2` for every kind: a leaning bare trunk below `bare` x height, 8..13 layers of 5..7 separate drooping clumps; `pine_a/b/c/s` (15, 11, 19, 5.5 m, the old ring) and `pine_d/e/f/g` (17, 23, 9, 13 m), 162 in all, none within 3 of the path |
+| Party lights | eight 2.7 m posts 1.6 off the path's centre on alternating sides (the first west) at arc fractions 0.2..0.76 (nearer, a post stood in the front shot); the string sags 0.45 per span, a bulb every 0.6 (one in four amber) |
+
+The outside light: lamp rows in `ship.toml` [light] by group (each scaled by `<group>_lamp`): `pool` (the twelve
+ground lamps at h 0.3, range 3.5, and three under the belly at h 0.35, range 6; amber, shadowed so they never light a
+room), `party` (one per span at 2.1 over the ground, range 5, warm), `rim` (two cool omnis behind the ship, (+-14, 22,
+h 13), range 34). The moon and the groups' numbers come from one grid (`<raw>/ship/v1/grid_out/grid.png`, script
+`<raw>/ship/v1/logs/hull3_grid.py`, the four outside views): A, the old moon (1.3 from the north-east, pitch -38),
+lit the top plates flat white; C (0.45, pitch -20) left the hull black from the front; D (0.9, pitch -48) whitened the
+top and the back again; B is kept: moon 0.6 at pitch -30, yaw 35 (from behind the ship, south-east), pool 1.6, party
+1.3, rim 1.2. The old `out` lamp in front of the ramp went from 2.5 at y -16 to 1.0 at y -12.5 (an orange blob in the
+front shot's foreground), and the ground is a dark green-brown (0.05, 0.062, 0.035).
 
 ## The night look's numbers (the join step)
 
@@ -267,7 +294,6 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
   wedge, not the turnaround's thin plate. Only a lower deck and rooms, or a wider span with blades beyond the tip
   rooms, would thin it; both change the numbers.
 - The hall is still the brightest room (its lamp ring's cells); the corridors and tip rooms read at night.
-- The pines are layered cones; the ground is flat and empty (no grass tint, needles, dirt by the ramp).
 - The ramp reads dark from the hero view; the ground lamps glow but light nothing yet (no Godot lights: step 3).
 - The interior has no UVs: the brushed grain is geometry and the triplanar shader only on the hull's metals.
 - Triangles: the grates are about 60% of the 126k placed inside; measure with `bench` before the game takes it.

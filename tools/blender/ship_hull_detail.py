@@ -10,7 +10,8 @@ skin moves; pieces in the plan frame are placed at the origin. Numbers (plan met
   1.14x round the glass, stretched 1.6x backward; its collar runs down 0.06 under the skin.
 - pods: the outer two r 1.05 at (+-2.75, h 2.15) from y 3.5, 3.6 long; the middle r 1.2 at h 2.45 from y 3.9, 4.0
   long, under a faceted housing from y 3.7 (top 4.75, the hall's eave) to y 6.4 (top 3.9).
-- lead blades: 0.07 x 0.05 bars on the lead edge (section point 0) from x 2.0 to the swept tip point.
+- lead blades: 0.13 x 0.07 bars (0.07 x 0.05 until step 3) on the lead edge (section point 0) from x 2.0 to
+  the swept tip point.
 - seam lines: 0.025 m cyan bars on the front eave crease (section point 3) from x 4.0 to 9.0."""
 
 from __future__ import annotations
@@ -261,7 +262,7 @@ def lead_blade(args: dict, layout: dict) -> list:
     side = float(args.get("side", 1.0))
     path = _lead_path(side)
     out = [H._add(p, (0.0, -1.0, 0.0), 0.02) for p in path]
-    return [L.part("lead_blade", *_bar(out, 0.07, 0.05), "glow_cyan")]
+    return [L.part("lead_blade", *_bar(out, 0.13, 0.07), "glow_cyan")]  # step 3: 0.07 x 0.05 read thin from the front
 
 
 def seam_lines(args: dict, layout: dict) -> list:

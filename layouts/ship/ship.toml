@@ -159,8 +159,8 @@ plate = [
 
 # Review light (the exterior lane tunes it). lamps: [x, y, h, energy, range, r, g, b].
 [light]
-moon_dir_deg = [-38.0, 140.0]                # pitch, yaw
-moon_energy = 1.3                           # tuned by the exterior lane (ext1: 0.55 left the silver black)
+moon_dir_deg = [-30.0, 35.0]                 # pitch, yaw: from behind the ship (hull 3 grid_out B; [-38, 140] lit flat plates)
+moon_energy = 0.6                           # hull 3 grid_out B (was 1.3 from the front: flat moonlit patches)
 # The night look, picked by the join step's look grid (<raw>/ship/v1/grid/grid2.png, variant H): the interior's metal
 # mirrored its strips and lamps (strength 8..12) through the room probes and washed out white; these keep it mid-to-dark
 # with saturated cyan and amber. Read by godot/ship/ship.gd (_lk); a missing key keeps the old value.
@@ -201,7 +201,7 @@ lamps = [
   [12.2, 0.0, 2.4, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # east window: moonlight
   [27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   [27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
-  [0.0, -16.0, 1.4, 2.5, 8.0, 1.0, 0.6, 0.3, "out", false],  # the clearing in front of the ramp
+  [0.0, -12.5, 1.4, 1.0, 7.0, 1.0, 0.6, 0.3, "out", false],  # the clearing in front of the ramp (hull 3: was 2.5 at y -16, a blob in the front shot)
   # the hull lane's outside light (step 3): ground lamps' and belly pools, the party string, the rim
   [-2.99, -4.34, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
   [2.99, -4.34, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
@@ -218,12 +218,13 @@ lamps = [
   [0.0, -1.5, 0.35, 1.2, 6.0, 1.0, 0.55, 0.22, "pool", true],  # the warm pool under the belly
   [-5.0, 0.0, 0.35, 1.2, 6.0, 1.0, 0.55, 0.22, "pool", true],  # the warm pool under the belly
   [5.0, 0.0, 0.35, 1.2, 6.0, 1.0, 0.55, 0.22, "pool", true],  # the warm pool under the belly
-  [-0.33, -11.52, 2.10, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
-  [-1.61, -14.90, 2.10, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
-  [-3.45, -17.30, 2.22, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
-  [-6.15, -19.73, 2.48, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
-  [-8.85, -21.61, 2.66, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
-  [-12.01, -23.50, 2.82, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-3.60, -17.52, 2.24, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-5.47, -19.22, 2.42, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-7.93, -21.03, 2.59, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-10.37, -22.54, 2.76, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-12.93, -24.02, 2.87, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-15.47, -25.48, 2.98, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-17.95, -26.95, 3.13, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
   [-14.0, 22.0, 13.0, 1.0, 34.0, 0.62, 0.74, 1.0, "rim", false],  # cool rim from behind (south-west)
   [14.0, 22.0, 13.0, 1.0, 34.0, 0.62, 0.74, 1.0, "rim", false],  # cool rim from behind (south-east)
 ]
@@ -231,9 +232,9 @@ hall_lamp = 0.7
 corr_lamp = 2.0
 tip_lamp = 2.4
 out_lamp = 2.5
-pool_lamp = 1.0                                # the outside lamps' groups (hull step 3; the light grid)
-party_lamp = 1.0
-rim_lamp = 1.0
+pool_lamp = 1.6                                # the outside lamps' groups (hull step 3; the light grid)
+party_lamp = 1.3
+rim_lamp = 1.2
 ssil_intensity = 0.4                           # screen-space bounce (1: the lamp ring's band lit a spot on the hall's disc)
 sky_horizon = 5.0                              # the sky's horizon colour x this (the windows' and the ramp's view)
 
