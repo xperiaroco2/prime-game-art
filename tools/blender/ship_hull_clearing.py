@@ -8,8 +8,11 @@ string are placed at the origin, the rest at their own spot (exterior.toml). Num
   r ~ 41, 2.0 m wide at the ramp narrowing to 1.3 m, 0.012 over the ground (0.05 beyond r 16, over its coarse facets).
 - tufts: 9..14 blades 0.18..0.5 m; bushes: 5..8 lumps in a size-metre spread; logs: r 0.22..0.3, 3..4.5 m with cut
   ends and stubs; stumps r 0.3, 0.45 m.
-- pines (`pine2`): a bare trunk below `bare` x height, then 8..13 layers of 5..7 drooping branch clumps each, every
-  clump its own angle, length and droop (the silhouette reads as branches, not stacked cones), a slight lean.
+- pines (`pine2`): a tapered trunk (r 0.024 x height + 0.12) with four root flares and dead stubs below `bare` x
+  height, then 9 + height/3.5 layers of 5..7 branches, each a bark stalk (over 0.9 m), a drooping needle spindle and
+  two side sprays at 35 and 55 % of its length (the silhouette reads as branches, not stacked cones), a slight lean.
+- ground cover (hull 3-3): ferns (7..10 arching fronds of leaflet pairs, 0.5..1.1 m), moss and needle-litter mounds
+  (1..3.5 m, crown 0.05..0.12 m), rock piles (one boulder and four smaller).
 - party lights: posts 2.7 m, 1.6 m off the path's centre on alternating sides at POST_T (from 0.2: nearer, a post stood in the front shot); the string sags 0.45 m between posts, a bulb every 0.6 m, one in four amber."""
 
 from __future__ import annotations
@@ -27,6 +30,9 @@ L.MATERIALS.update({
     "ext_leaf": {"base": (0.035, 0.07, 0.035, 1.0), "metallic": 0.0, "roughness": 0.8},
     "ext_leaf_b": {"base": (0.06, 0.085, 0.03, 1.0), "metallic": 0.0, "roughness": 0.85},
     "ext_wood_cut": {"base": (0.42, 0.3, 0.18, 1.0), "metallic": 0.0, "roughness": 0.8},
+    "ext_fern": {"base": (0.075, 0.14, 0.045, 1.0), "metallic": 0.0, "roughness": 0.75},
+    "ext_moss": {"base": (0.055, 0.085, 0.035, 1.0), "metallic": 0.0, "roughness": 0.95},
+    "ext_litter": {"base": (0.17, 0.1, 0.05, 1.0), "metallic": 0.0, "roughness": 0.95},
     "ext_wire": {"base": (0.02, 0.02, 0.02, 1.0), "metallic": 0.3, "roughness": 0.6},
     "ext_bulb": {"base": (1.0, 0.85, 0.6, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.78, 0.45),
                  "strength": 8.0},
@@ -214,42 +220,142 @@ def stump(args: dict, layout: dict) -> list:
             L.part("stump_cut", *_cap((0.0, 0.0, h), (0.0, 0.0, 1.0), r * 0.92, 10), "ext_wood_cut")]
 
 
+def _taper(p0, p1, r0, r1, n):
+    """A closed n-sided tapered rod from p0 (radius r0) to p1 (radius r1)."""
+    d = H._norm(H._sub(p1, p0))
+    u = H._norm(H._cross(d, (0.0, 0.0, 1.0) if abs(d[2]) < 0.9 else (1.0, 0.0, 0.0)))
+    w = H._cross(d, u)
+    v = []
+    for p, r in ((p0, r0), (p1, r1)):
+        v += [H._add(H._add(p, u, r * math.cos(2 * math.pi * i / n)), w, r * math.sin(2 * math.pi * i / n))
+              for i in range(n)]
+    f = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))] + [(i, (i + 1) % n, n + (i + 1) % n, n + i)
+                                                                    for i in range(n)]
+    return v, f
+
+
+def _spindle(root, d, ln, droop, wid, thick):
+    """A flat faceted needle spindle from root along the unit direction d, drooping at the tip."""
+    p = (-d[1], d[0], 0.0)
+    tip = H._add(H._add(root, d, ln), (0.0, 0.0, -droop))
+    mid = H._add(H._add(root, d, ln * 0.5), (0.0, 0.0, -droop * 0.3))
+    v = [root, tip, H._add(mid, p, wid), H._add(mid, (0, 0, 1), thick), H._add(mid, p, -wid),
+         H._add(mid, (0, 0, 1), -thick * 0.5)]
+    return v, [(0, 2, 3), (0, 3, 4), (0, 4, 5), (0, 5, 2), (1, 3, 2), (1, 4, 3), (1, 5, 4), (1, 2, 5)]
+
+
 def pine2(args: dict, layout: dict) -> list:
-    """An irregular pine (args height, seed, bare): a leaning bare trunk, then layers of separate drooping branch
-    clumps (each a flat faceted spindle with its own angle, length and droop) and a spike top."""
+    """An irregular pine (args height, seed, bare): a leaning tapered trunk with root flares and dead branch stubs
+    below `bare` x height, then layers of branches: each a bark stalk carrying a drooping needle spindle and two side
+    sprays (hull 3-3: the silhouette reads as branches, not stacked cones, and the trunk as a trunk, not a post)."""
     height, seed, bare = float(args.get("height", 16.0)), float(args.get("seed", 1.0)), float(args.get("bare", 0.3))
     lean = (0.015 * height * (H._hash(seed, 1.0) - 0.5), 0.015 * height * (H._hash(seed, 2.0) - 0.5))
 
     def axis(h):
         return (lean[0] * h / height, lean[1] * h / height, h)
 
-    r0 = 0.018 * height + 0.08
-    trunk = L.merge(H._rod(axis(-0.3), axis(height * 0.5), r0, 8), H._rod(axis(height * 0.5), axis(height * 0.93),
-                                                                            r0 * 0.55, 6))
-    n = 8 + int(height / 4)
-    clumps = []
+    r0 = 0.024 * height + 0.12
+    trunk = [_taper(axis(-0.3), axis(height * 0.3), r0, r0 * 0.78, 10),
+             _taper(axis(height * 0.3), axis(height * 0.65), r0 * 0.78, r0 * 0.5, 8),
+             _taper(axis(height * 0.65), axis(height * 0.95), r0 * 0.5, r0 * 0.12, 6)]
+    for k in range(4):  # root flares
+        a = 2 * math.pi * (k + 0.4 * H._hash(seed, k, 7.0)) / 4
+        trunk.append(_taper(axis(0.5), (r0 * 2.3 * math.cos(a), r0 * 2.3 * math.sin(a), -0.1), r0 * 0.42, r0 * 0.12,
+                            6))
+    for k in range(int(3 + 5 * bare)):  # dead stubs on the bare trunk
+        h = height * bare * (0.3 + 0.65 * H._hash(seed, k, 8.0))
+        a = 2 * math.pi * H._hash(seed, k, 9.0)
+        d = (math.cos(a), math.sin(a), -0.25)
+        ln = 0.4 + 0.9 * H._hash(seed, k, 10.0)
+        trunk.append(_taper(axis(h), H._add(axis(h), d, ln), r0 * 0.16, r0 * 0.04, 5))
+    n = 9 + int(height / 3.5)
+    needles = []
     for k in range(n):
         u = k / (n - 1)
-        hb = height * (bare + (0.9 - bare) * u)
-        reach = height * (0.26 * (1.0 - u) ** 0.85 + 0.035) * (0.8 + 0.4 * H._hash(seed, k))
+        hb = height * (bare + (0.9 - bare) * u) + height * 0.02 * (H._hash(seed, k, 11.0) - 0.5)
+        reach = height * (0.27 * (1.0 - u) ** 0.8 + 0.035) * (0.75 + 0.5 * H._hash(seed, k))
         m = 5 + int(3 * H._hash(seed, k, 1.0))
         for j in range(m):
-            a = 2 * math.pi * (j + 0.7 * H._hash(seed, k, j)) / m
-            ln = reach * (0.65 + 0.5 * H._hash(seed, j, k))
-            droop = ln * (0.3 + 0.3 * H._hash(k, j, seed))
-            wid, thick = ln * 0.36, ln * 0.13
-            d, p = (math.cos(a), math.sin(a), 0.0), (-math.sin(a), math.cos(a), 0.0)
-            root = H._add(axis(hb + 0.15 * ln), d, r0 * 0.6)
-            tip = H._add(H._add(root, d, ln), (0.0, 0.0, -droop))
-            mid = H._add(H._add(root, d, ln * 0.5), (0.0, 0.0, -droop * 0.3))
-            v = [root, tip, H._add(mid, p, wid), H._add(mid, (0, 0, 1), thick), H._add(mid, p, -wid),
-                 H._add(mid, (0, 0, 1), -thick * 0.5)]
-            f = [(0, 2, 3), (0, 3, 4), (0, 4, 5), (0, 5, 2), (1, 3, 2), (1, 4, 3), (1, 5, 4), (1, 2, 5)]
-            clumps.append((v, f))
-    top = axis(height)
-    spike = H._rod(axis(height * 0.86), top, height * 0.025, 6)
-    clumps.append(spike)
-    return [L.part("pine_trunk", *trunk, "ext_bark"), L.part("pine_needles", *L.merge(*clumps), "ext_needles")]
+            a = 2 * math.pi * (j + 0.8 * H._hash(seed, k, j)) / m
+            ln = reach * (0.6 + 0.55 * H._hash(seed, j, k))
+            droop = ln * (0.25 + 0.35 * H._hash(k, j, seed))
+            d = (math.cos(a), math.sin(a), 0.0)
+            root = H._add(axis(hb + 0.12 * ln), d, r0 * 0.5)
+            if ln > 0.9:  # a bark stalk under the bigger branches
+                trunk.append(_taper(root, H._add(H._add(root, d, ln * 0.7), (0.0, 0.0, -droop * 0.45)),
+                                    0.03 + 0.012 * ln, 0.015, 4))
+            needles.append(_spindle(root, d, ln, droop, ln * 0.24, ln * 0.11))
+            for t, sgn in ((0.35, 1.0), (0.55, -1.0)):  # two side sprays
+                s0 = H._add(H._add(root, d, ln * t), (0.0, 0.0, -droop * t * t))
+                b = a + sgn * (0.6 + 0.3 * H._hash(seed, k, j, t))
+                sl = ln * (0.42 + 0.2 * H._hash(j, k, t, seed))
+                needles.append(_spindle(s0, (math.cos(b), math.sin(b), 0.0), sl, sl * 0.4, sl * 0.26, sl * 0.1))
+    needles.append(_taper(axis(height * 0.86), axis(height), height * 0.03, 0.01, 6))
+    return [L.part("pine_trunk", *L.merge(*trunk), "ext_bark"),
+            L.part("pine_needles", *L.merge(*needles), "ext_needles")]
+
+
+def fern(args: dict, layout: dict) -> list:
+    """A fern (args size, seed): 7..10 arching fronds, each a curved rachis with leaflet pairs shrinking to the tip
+    (open leaflets, both windings: the ground cover in the clearing's shadow areas)."""
+    size, seed = float(args.get("size", 0.8)), float(args.get("seed", 1.0))
+    n = 7 + int(4 * H._hash(seed, 3.0))
+    fronds = []
+    for k in range(n):
+        a = 2 * math.pi * (k + 0.5 * H._hash(seed, k, 1.0)) / n
+        ln = size * (0.7 + 0.45 * H._hash(seed, k, 2.0))
+        rise = 0.55 + 0.35 * H._hash(seed, k, 3.0)
+        d, p = (math.cos(a), math.sin(a)), (-math.sin(a), math.cos(a))
+        pts = [(d[0] * ln * i / 7, d[1] * ln * i / 7, ln * rise * math.sin(math.pi * 0.75 * i / 7) * 0.75 - 0.02)
+               for i in range(8)]
+        v, f = [], []
+        for i in range(1, 7):
+            w = size * 0.2 * (1.0 - i / 7) ** 0.7 + 0.02
+            c = pts[i]
+            for sgn in (1.0, -1.0):
+                o = len(v)
+                v += [c, pts[i + 1], (c[0] + sgn * p[0] * w + d[0] * w * 0.6, c[1] + sgn * p[1] * w + d[1] * w * 0.6,
+                                      c[2] - w * 0.25)]
+                f += [(o, o + 1, o + 2), (o, o + 2, o + 1)]
+        o = len(v)  # the rachis's foot: a thin sliver from the base
+        v += [pts[0], pts[1], (pts[0][0] + p[0] * 0.012, pts[0][1] + p[1] * 0.012, pts[0][2])]
+        f += [(o, o + 1, o + 2), (o, o + 2, o + 1)]
+        fronds.append((v, f))
+    return [L.part("fern", *L.merge(*fronds), "ext_fern", solid=False)]
+
+
+def moss(args: dict, layout: dict) -> list:
+    """A low irregular mound of moss or needle litter (args size, seed, dry 0/1) that breaks the flat ground: a rim
+    sunk 0.03 under the ground, a lumpy ring and a crown 0.05..0.12 over it."""
+    size, seed = float(args.get("size", 2.0)), float(args.get("seed", 1.0))
+    m = 14
+    rim, ring = [], []
+    for i in range(m):
+        a = 2 * math.pi * i / m
+        r = size * (0.65 + 0.35 * H._hash(seed, i, 1.0))
+        rim.append((r * math.cos(a), 0.75 * r * math.sin(a), -0.03))
+        q = 0.6 + 0.15 * H._hash(seed, i, 2.0)
+        ring.append((r * q * math.cos(a), 0.75 * r * q * math.sin(a), 0.03 + 0.06 * H._hash(seed, i, 3.0)))
+    v = rim + ring + [(0.0, 0.0, 0.05 + 0.07 * H._hash(seed, 4.0)), (0.0, 0.0, -0.05)]
+    c, b = 2 * m, 2 * m + 1
+    f = [(i, (i + 1) % m, m + (i + 1) % m, m + i) for i in range(m)] + [(m + i, m + (i + 1) % m, c) for i in range(m)]
+    f += [((i + 1) % m, i, b) for i in range(m)]
+    mat = "ext_litter" if float(args.get("dry", 0.0)) > 0.5 else "ext_moss"
+    return [L.part("moss", v, f, mat)]
+
+
+def rock_pile(args: dict, layout: dict) -> list:
+    """A pile of boulders (args size, seed): one big and four smaller ones round it, all half sunk."""
+    size, seed = float(args.get("size", 1.5)), float(args.get("seed", 1.0))
+    rocks = []
+    for k in range(5):
+        s = size * (1.0 if k == 0 else 0.3 + 0.25 * H._hash(seed, k))
+        a = 2 * math.pi * (k + 0.4 * H._hash(seed, k, 1.0)) / 4
+        d = 0.0 if k == 0 else size * (0.9 + 0.3 * H._hash(seed, k, 2.0))
+        v = H.rock({"size": s, "seed": seed * 7 + k}, layout)[0]
+        rocks.append(([(x + d * math.cos(a), y + d * math.sin(a), h - 0.08 * s) for x, y, h in v["verts"]],
+                      v["faces"]))
+    return [L.part("rock", *L.merge(*rocks), "ext_rock")]
 
 
 def party_post(args: dict, layout: dict) -> list:
