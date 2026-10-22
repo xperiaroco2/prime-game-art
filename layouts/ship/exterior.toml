@@ -6,17 +6,11 @@
 # a seeded ring (pines 30..46 m from the centre, young pines and rocks nearer) and are plain data from here on.
 
 place = [
-  # the hull skin kit, variant J of launch 3's grid (tools/blender/ship_hull_skin.py; plan origin)
-  ["skin_body_e", [0.00, 0.00, 0.00], 0.0],
-  ["skin_body_w", [0.00, 0.00, 0.00], 0.0],
-  ["skin_wing1_e", [0.00, 0.00, 0.00], 0.0],
-  ["skin_wing2_e", [0.00, 0.00, 0.00], 0.0],
-  ["skin_wing3_e", [0.00, 0.00, 0.00], 0.0],
-  ["skin_tip_e", [0.00, 0.00, 0.00], 0.0],
-  ["skin_wing1_w", [0.00, 0.00, 0.00], 0.0],
-  ["skin_wing2_w", [0.00, 0.00, 0.00], 0.0],
-  ["skin_wing3_w", [0.00, 0.00, 0.00], 0.0],
-  ["skin_tip_w", [0.00, 0.00, 0.00], 0.0],
+  # the smooth skin (v2 hull lane, variant L of grid smooth2: tools/blender/ship_hull_smooth.py; plan origin)
+  ["skin_top", [0.00, 0.00, 0.00], 0.0],
+  ["skin_belly", [0.00, 0.00, 0.00], 0.0],
+  ["skin_brow", [0.00, 0.00, 0.00], 0.0],
+  ["skin_mouth", [0.00, 0.00, 0.00], 0.0],
   ["skin_stripes_e", [0.00, 0.00, 0.00], 0.0],
   ["skin_stripes_w", [0.00, 0.00, 0.00], 0.0],
   # the tip windows: glass and frame on the lens's slanted band (hull 3-2; plan frame)
@@ -598,59 +592,9 @@ place = [
 ]
 
 [[pieces]]
-id = "skin_body_e"
-builder = "hull_skin"
-args = { part = "body", side = 1.0, variant = "J" }
-
-[[pieces]]
-id = "skin_wing1_e"
-builder = "hull_skin"
-args = { part = "wing1", side = 1.0, variant = "J" }
-
-[[pieces]]
-id = "skin_wing2_e"
-builder = "hull_skin"
-args = { part = "wing2", side = 1.0, variant = "J" }
-
-[[pieces]]
-id = "skin_wing3_e"
-builder = "hull_skin"
-args = { part = "wing3", side = 1.0, variant = "J" }
-
-[[pieces]]
-id = "skin_tip_e"
-builder = "hull_skin"
-args = { part = "tip", side = 1.0, variant = "J" }
-
-[[pieces]]
 id = "skin_stripes_e"
 builder = "skin_stripes"
 args = { side = 1.0, variant = "J" }
-
-[[pieces]]
-id = "skin_body_w"
-builder = "hull_skin"
-args = { part = "body", side = -1.0, variant = "J" }
-
-[[pieces]]
-id = "skin_wing1_w"
-builder = "hull_skin"
-args = { part = "wing1", side = -1.0, variant = "J" }
-
-[[pieces]]
-id = "skin_wing2_w"
-builder = "hull_skin"
-args = { part = "wing2", side = -1.0, variant = "J" }
-
-[[pieces]]
-id = "skin_wing3_w"
-builder = "hull_skin"
-args = { part = "wing3", side = -1.0, variant = "J" }
-
-[[pieces]]
-id = "skin_tip_w"
-builder = "hull_skin"
-args = { part = "tip", side = -1.0, variant = "J" }
 
 [[pieces]]
 id = "skin_stripes_w"
@@ -1047,3 +991,23 @@ id = "log_c"
 builder = "log"
 args = { length = 7.0, r = 0.36, seed = 3.0 }
 outside = true
+
+[[pieces]]
+id = "skin_top"
+builder = "smooth_skin"
+args = { part = "top", variant = "L" }
+
+[[pieces]]
+id = "skin_belly"
+builder = "smooth_skin"
+args = { part = "belly", variant = "L" }
+
+[[pieces]]
+id = "skin_brow"
+builder = "smooth_skin"
+args = { part = "brow", variant = "L" }
+
+[[pieces]]
+id = "skin_mouth"
+builder = "smooth_skin"
+args = { part = "mouth", variant = "L" }

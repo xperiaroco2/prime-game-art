@@ -205,6 +205,39 @@ fps in the off-screen window (ship.gd mode `video`, one PNG per frame), encoded 
 (encode_clips.py's route at an average bit rate that fits `max_mb`, 15 MB: constant quality made 20 MB even at its lowest), then the frames are deleted;
 `--no-video` skips it.
 
+### The smooth skin (v2 hull lane, step 1)
+
+`tools/blender/ship_hull_smooth.py` replaces the faceted, plated skin outside (the engineer after the night build:
+smooth like a ray, no plate grid, no seams, no scratches). The skin is four large pieces, shaded smooth
+(`smooth: True` on a part, honoured by `ship_build.make`): `skin_top` (silver; the tip windows' bands open),
+`skin_belly` (the darker underside; open under the nose's recess), `skin_brow` (the nose's underside over the mouth)
+and `skin_mouth` (the recess's back wall with the opening and its two side walls). The top and the belly are height
+fields over one plan outline and meet at its blade edge: the wing (a camber from the lead edge's height to the trail
+edge's, plus and minus a half-thickness times a rounded chord profile) smooth-maxed with the rooms (the hall's dome and
+the spine, the corridors' round tube, the tip rooms' pods with a steep outer face in the window's sector, the nose over
+the mouth, the belly under every slab), the rooms fading to the camber within 0.9 m of the outline. The mesh: x
+stations across the body, a polar patch round each tip room's centre (rays every 5 deg; the window's band is the
+rings from the head to the sill within its 65 deg), 16.7k triangles in all.
+
+The grid (`ship_hull_smooth_grid.py`, `--solid` for the opaque shading; `<raw>/ship/v2/grid/smooth2/grid.png`,
+variants K, L, M, N under turnaround's views): L is placed, the highest curl (the tips at h 4.0) and the most swept
+tips, the closest to turnaround's front V and top. Its nose was cut from -8.4 to -6.15: the 14 +- 0.5 m length with
+the nozzles (`ship --check`; the nozzle tips sit at y 8.33). ship.toml `[hull]` rows come from `outline_rows()`
+(`test_ship_hull_smooth.py`).
+
+| What | Number (plan m), variant L |
+|---|---|
+| Lead edge | (0, -6.15) nose point -> (4, -5.15) -> (8.3, -3.75) -> (11, -1.5) -> tip (13.75, 1.8) |
+| Trail edge | (0, 5.8) -> (3.2, 5.1) -> (8.3, 4.3) -> (11, 3.4) -> tip (13.75, 2.2) |
+| Edge height (the curl) | 0.95 at the body, 1.2 at x 8.3, 1.55 at 10.1, 2.45 at 12, 4.0 at the tip; the stern's trail +1.4 |
+| Outer wing | 1.44 m thick at x 11.5, 0.51 at 12.5, 0 at the tip |
+| Pods | shoulder 3.3 at r 1.95 round (+-8.3, 0), crown 3.6; window band r 2.39..2.73 (h 2.85..1.55) |
+| Nose / mouth | the brow's edge h 3.45 over \|x\| < 1.62, back on the wing's line by 2.6; its underside >= 3.27 over the mouth |
+| Spine | 5.11 over the hall's middle |
+
+The old `ship_hull_skin.py` stays only for the details still seated on it (stripes, tip window, canopies, the inside's
+`tip_well`) until step 2 re-seats them on the smooth skin.
+
 ### The hull's details (hull lane, step 2)
 
 `ship_hull_detail.py`; every detail reads the skin's top (`skin_h`: the loop's upper points of the two loft stations

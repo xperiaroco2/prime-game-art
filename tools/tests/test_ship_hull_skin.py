@@ -99,12 +99,6 @@ class HullSkinTest(unittest.TestCase):
                 if abs(nz[2]) / size > 0.5:  # plan coordinates: the final outward normal (mirror and _outward cancel)
                     self.assertEqual(nz[2] > 0, face[0] % n in upper, f"face {face[0] % n} at {p[0]} turned")
 
-    def test_the_footprint_rows_follow_the_skin(self) -> None:
-        rows = {r[0]: r for r in LAYOUT["hull"]["core"]}
-        for x, lead, trail in S.outline(S.VARIANTS[S.DEFAULT]):
-            if x in rows:
-                self.assertAlmostEqual(rows[x][1], lead, delta=0.02, msg=f"lead at x {x}")
-                self.assertAlmostEqual(rows[x][2], trail, delta=0.02, msg=f"trail at x {x}")
 
 
 if __name__ == "__main__":
