@@ -120,9 +120,59 @@ class ShipInteriorTest(unittest.TestCase):
                 if pid.startswith(("cup", "spill", "cable_coil", "floor_patch")):  # the small details
                     self.assertGreater(d, r + 0.4, (pid, x, y, s["id"]))
 
+    def test_every_hall_wall_facet_has_a_floor_plate(self) -> None:
+        """inside-fix (code review major 1): no dark gap at the wall where a player stands; a rim plate covers one
+        facet, a threshold or a flat chord's plate two."""
+        cover = {"hall_floor_rim": 11.25, "hall_threshold": 22.5, "hall_flat_floor": 22.5}
+        plates = [(math.degrees(math.atan2(y, x)), cover[pid]) for pid, (x, y, _), _yaw in INTERIOR["place"]
+                  if pid in cover]
+        for k in range(16):
+            a = 11.25 + 22.5 * k
+            hits = [p for p, half in plates if abs(((a - p + 180) % 360) - 180) < half - 0.5]
+            self.assertEqual(len(hits), 1, (a, hits))
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_the_tip_floor_plates_are_simple_polygons(self) -> None:
+        """inside-fix: the door plate crossed itself (the black shard by the tip room's door)."""
+        def cross(p, q, r):
+            return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+        signs = set()
+        for poly in S.tip_rim_polys():
+            n = len(poly)
+            area = sum(poly[i][0] * poly[(i + 1) % n][1] - poly[(i + 1) % n][0] * poly[i][1] for i in range(n)) / 2
+            self.assertGreater(abs(area), 1e-3, poly)
+            signs.add(area > 0)
+            for i in range(n):
+                for j in range(i + 2, n):
+                    if (j + 1) % n == i:
+                        continue
+                    a, b, c, d = poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n]
+                    self.assertFalse(cross(a, b, c) * cross(a, b, d) < 0 and cross(c, d, a) * cross(c, d, b) < 0,
+                                     (i, j, poly))
+        self.assertEqual(len(signs), 1)   # one winding: no plate faces down
+
+    def test_corridor_cables_on_both_walls_off_the_breaker_board(self) -> None:
+        """inside-fix: both corridor walls carry a cable bay, the front wall's beside the board's plain wall; the
+        ceiling ribs only on the ceiling; no hall trunk at a station chord's end."""
+        place = INTERIOR["place"]
+        lo, hi = SP.BOARD_X
+        for sgn in (1, -1):
+            bays = [(pid, x, y) for pid, (x, y, _), _ in place if pid in ("cor_bay_in", "cor_bay_out")
+                    and x * sgn > 0]
+            self.assertEqual(len(bays), 2)
+            back = [p for p, (x, y, _), yaw in place if p == "cor_channel" and x * sgn > 3.0]
+            self.assertEqual(len(back), S.N_MOD)   # the back wall's bays, one per module
+            ribs = [x for p, (x, y, _), _ in place if p == "cor_ceil_rib" and x * sgn > 0]
+            self.assertEqual(len(ribs), len(SP.COR_RIBS))
+        foot = SP.FOOT
+        for pid, (x, y, _), _yaw in place:
+            if pid.startswith("cor_bay"):
+                x0, x1 = abs(x) + foot[pid][0], abs(x) + foot[pid][1]
+                self.assertTrue(x1 <= lo + 1e-3 or x0 >= hi - 1e-3, (pid, x))
+        for pid, (x, y, _), _yaw in place:
+            if pid == "hall_trunk":
+                a = math.degrees(math.atan2(y, x))
+                for f in S.FLATS:
+                    self.assertGreater(abs(abs(((a - f + 180) % 360) - 180) - 22.5), 1.0, (a, f))
 
 
 class ShipShutterTest(unittest.TestCase):
@@ -175,3 +225,7 @@ class ShipShutterTest(unittest.TestCase):
         self.assertEqual(len(closed["place"]), len(layout["place"]))
         self.assertEqual(self.panels(closed["place"]), layout["shutter_closed"])
         self.assertIs(sl.pose(layout, "open"), layout)
+
+
+if __name__ == "__main__":
+    unittest.main()

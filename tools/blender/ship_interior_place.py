@@ -26,6 +26,12 @@ SPOKE_HALL, SPOKE_TIP = 3.07, 4.1
 REF_HALL = round(sum(S.R_GRATE) / 2, 3)    # inside-1: a hall grate sector's origin (v1 1.8)
 R_TIP_DISC, R_TIP_GRATE0, REF_TIP = 0.55, 0.62, 1.07   # inside-1: the tip floor scaled to the 1.85 m room (v1 2.1)
 
+# inside-fix: the breaker board's plain run on a corridor's front wall (plan |x|): the spot's plain width + 0.1 a side
+_BOARD = next(s["at"][0] for s in S._SHIP["stations"]["spot"] if s["room"] == "corridor_e")
+BOARD_X = (round(_BOARD - S._SHIP["stations"]["plain_width_m"] / 2 - 0.1, 4),
+           round(_BOARD + S._SHIP["stations"]["plain_width_m"] / 2 + 0.1, 4))
+COR_RIBS = (4.85, 5.65)   # inside-fix: the ceiling ribs (plan |x|), between the arches at 4.15 and 6.4
+
 # id: (builder, args, collide)
 PIECES: dict[str, tuple[str, dict, bool]] = {
     # the hall
@@ -36,6 +42,8 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "hall_spoke": ("spoke", {"r0": S.R_GRATE[0] - 0.03, "r1": S.R_GRATE[1] + 0.03, "half_deg": SPOKE_HALL,
                              "ref": REF_HALL}, True),
     "hall_amber_arc": ("amber_arc", {"radius": S.R_ARC}, False),
+    "hall_amber_arc_thin": ("amber_arc", {"radius": S.R_ARC, "thin": True}, False),  # inside-fix: the four by the mouth
+    "hall_flat_floor": ("hall_flat_floor", {}, True),   # inside-fix: the floor at a vent's or socket's flat chord
     "hall_floor_rim": ("hall_floor_rim", {}, True),
     "hall_threshold": ("hall_threshold", {}, True),
     "hall_panel_a": ("wall_panel", {"half": S.HW, "height": S.H_HALL, "tone": "a"}, True),
@@ -66,7 +74,13 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "cor_cables": ("cor_cables", {"length": S.MOD_L}, False),
     "clip_h": ("clip_h", {}, False),
     "mouth_clip_h": ("clip_h", {"prof": "mouth"}, False),
-    "cor_wall_mid": ("cor_wall_mid", {"length": S.MOD_L}, True),     # v2: the plain wall at a breaker board's spot
+    # inside-fix: a corridor's front wall in three runs, a cable bay either side of the breaker board's plain wall
+    "cor_bay_in": ("cor_channel", {"length": BOARD_X[0] - S.COR_X0}, True),
+    "cor_bay_in_cables": ("cor_cables", {"length": BOARD_X[0] - S.COR_X0}, False),
+    "cor_wall_board": ("cor_wall_mid", {"length": BOARD_X[1] - BOARD_X[0]}, True),
+    "cor_bay_out": ("cor_channel", {"length": S.COR_X1 - BOARD_X[1]}, True),
+    "cor_bay_out_cables": ("cor_cables", {"length": S.COR_X1 - BOARD_X[1]}, False),
+    "cor_ceil_rib": ("cor_ceil_rib", {}, False),        # inside-fix: the ceiling's ribs between the arches
     # inside-1: a plain 1.6 m centre panel between two narrow diamond panels (was one 3.1 m diamond)
     "hall_panel_flat": ("flat_panel", {"half": S.HCH, "height": S.H_HALL,
                                        "plain": S._SHIP["stations"]["plain_width_m"] / 2}, True),
@@ -106,8 +120,9 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
                     True),
     "tip_pilaster": ("pilaster", {"height": S.H_TIP}, True),
     "tip_pilaster_strip": ("pilaster_strip", {"height": S.H_TIP}, False),
-    "tip_trunk": ("trunk", {"height": S.H_TIP}, True),
-    "tip_trunk_cables": ("trunk_cables", {"height": S.H_TIP}, False),
+    "tip_trunk": ("trunk", {"height": S.H_TIP, "flat": True}, True),       # inside-fix: flat to the wall
+    "tip_trunk_cables": ("trunk_cables", {"height": S.H_TIP, "flat": True}, False),
+    "tip_trunk_clip": ("trunk_clip", {"flat": True}, False),
     "tip_window_frame": ("tip_window_frame", {}, True),
     # inside 3-2: the window's well out to the lens's slanted band and the glass in the band, one per side (the lens
     # is not symmetric about the room's axis: the swept tip's rear side reaches farther)
@@ -149,15 +164,16 @@ _V = [-0.2, 0.2, -0.2, 0.2]
 _BAY = [-S.MOD_L / 2, S.MOD_L / 2, -S.COR_HALF - 0.05, -S.COR_HALF + 0.35]
 FOOT: dict[str, list[float]] = {
     "hall_trunk": _V, "hall_trunk_cables": _V, "trunk_clip": _V, "hall_pilaster": _V, "hall_pilaster_strip": _V,
-    "tip_trunk": _V, "tip_trunk_cables": _V, "tip_pilaster": _V, "tip_pilaster_strip": _V,
+    "tip_trunk": _V, "tip_trunk_cables": _V, "tip_trunk_clip": _V, "tip_pilaster": _V, "tip_pilaster_strip": _V,
+    "cor_bay_in": [(S.COR_X0 - BOARD_X[0]) / 2, (BOARD_X[0] - S.COR_X0) / 2] + _BAY[2:],
+    "cor_bay_in_cables": [(S.COR_X0 - BOARD_X[0]) / 2, (BOARD_X[0] - S.COR_X0) / 2] + _BAY[2:],
+    "cor_bay_out": [(BOARD_X[1] - S.COR_X1) / 2, (S.COR_X1 - BOARD_X[1]) / 2] + _BAY[2:],
+    "cor_bay_out_cables": [(BOARD_X[1] - S.COR_X1) / 2, (S.COR_X1 - BOARD_X[1]) / 2] + _BAY[2:],
     "cor_channel": _BAY, "cor_cables": _BAY, "clip_h": [-0.05, 0.05, -S.COR_HALF - 0.05, -S.COR_HALF + 0.35],
     "cor_arch": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
     "arch_strip_l": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
     "arch_strip_r": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
 }
-# v2: the breaker boards' plain wall: no cable bay over [x - half, x + half] on a corridor's front wall (y < 0)
-BREAKERS = [(s["at"][0], S._SHIP["stations"]["plain_width_m"] / 2 + 0.1) for s in S._SHIP["stations"]["spot"]
-            if s["room"].startswith("corridor")]
 # v2: the corridors' cyan arches (plan |x|), off the breaker boards' span 4.35..6.15
 ARCH_X = (4.15, 6.4)
 
@@ -211,12 +227,15 @@ def placements() -> list[tuple[str, list[float], float]]:
     verts = [((22.5 * k + 180) % 360) - 180 for k in range(16)]
     edge = [v for v in verts if any(abs(abs(((v - o + 180) % 360) - 180) - 22.5) < 1 for o in openings)]
     plain = [v for v in verts if v not in edge and all(abs(((v - o + 180) % 360) - 180) > 1 for o in openings + flats)]
+    # inside-fix: no trunk on a flat chord's end (the sockets' back wall read as three stations): only 90 keeps one
+    plain = [v for v in plain if all(abs(abs(((v - f + 180) % 360) - 180) - 22.5) > 1 for f in flats)]
     for k in range(8):
         put("hall_grate", polar(REF_HALL, 22.5 + 45 * k), -(22.5 + 45 * k))
         put("hall_spoke", polar(REF_HALL, 45 * k), -45 * k)
         put("hall_lamp", polar(S.R_RING, 22.5 + 45 * k), -(22.5 + 45 * k))
     for i, a in enumerate(facets):
-        put("hall_amber_arc", polar(S.R_ARC, a), -a)
+        near = abs(((a - S.OPENINGS["mouth"] + 180) % 360) - 180) < 40   # inside-fix: thin by the mouth
+        put("hall_amber_arc_thin" if near else "hall_amber_arc", polar(S.R_ARC, a), -a)
         put("hall_ceil_panel_a" if i % 2 else "hall_ceil_panel_b", polar(S.R_HALL, a), -a)
     for i, a in enumerate(walls):
         put("hall_floor_rim", polar(S.R_RIM_REF, a), -a)
@@ -235,6 +254,7 @@ def placements() -> list[tuple[str, list[float], float]]:
             put("trunk_clip", polar(S.HV, v), -v, h)
     for f in flats:  # v2: one flat panel over two facets at each vent and socket spot
         put("hall_panel_flat", polar(S.HC, f), -f)
+        put("hall_flat_floor", polar(S.HC, f), -f)   # inside-fix: its floor, where the player stands
     for o in openings:
         pre = "mouth_" if o == S.OPENINGS["mouth"] else ""
         put("hall_threshold", polar(S.HC, o), -o)
@@ -256,9 +276,8 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put(f"{prefix}_wall_low{t}", mc, yaw + side)
                 put(f"{prefix}_wall_up{t}", mc, yaw + side)
                 wall = local(mc, yaw + side, 0.0, -half)
-                if prefix == "cor" and wall[1] < 0 and any(abs(abs(wall[0]) - bx) < bh + length / 2
-                                                           for bx, bh in ((abs(x), h) for x, h in BREAKERS)):
-                    put("cor_wall_mid", mc, yaw + side)  # v2: a breaker board's plain wall, no cable bay
+                if prefix == "cor" and wall[1] < 0:
+                    pass   # inside-fix: the front wall's three runs, below
                 else:
                     put(f"{prefix}_channel", mc, yaw + side)
                     put(f"{prefix}_cables", mc, yaw + side)
@@ -271,6 +290,18 @@ def placements() -> list[tuple[str, list[float], float]]:
     for s, yaw in ((1, 0.0), (-1, 180.0)):
         c = passage("cor", S.COR_X0, S.N_MOD, S.MOD_L, yaw, ["_a", "_b"])
         put("cor_floor_base", c, yaw)
+        # inside-fix: the front wall (y < 0, yaw 0 in both corridors): bay, the board's plain wall, bay
+        for pid, x0, x1, clips in (("cor_bay_in", S.COR_X0, BOARD_X[0], (0.0,)),
+                                   ("cor_wall_board", BOARD_X[0], BOARD_X[1], ()),
+                                   ("cor_bay_out", BOARD_X[1], S.COR_X1, (-0.25, 0.25))):
+            xc = s * (x0 + x1) / 2
+            put(pid, [round(xc, 4), 0.0])
+            if clips:
+                put(pid + "_cables", [round(xc, 4), 0.0])
+            for dx in clips:
+                put("clip_h", [round(xc + dx, 4), 0.0])
+        for x in COR_RIBS:
+            put("cor_ceil_rib", local((0.0, 0.0), yaw, x, 0.0), yaw)
         for x in ARCH_X:  # v2: off the breaker board's plain wall
             p = local((0.0, 0.0), yaw, x, 0.0)
             for pid in ("cor_arch", "arch_strip_l", "arch_strip_r"):
@@ -320,7 +351,7 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put("tip_trunk", polar(S.R_TIP, a, c, room), room - a)
                 put("tip_trunk_cables", polar(S.R_TIP, a, c, room), room - a)
                 for h in (0.55, 1.3, 2.05):
-                    put("trunk_clip", polar(S.R_TIP, a, c, room), room - a, h)
+                    put("tip_trunk_clip", polar(S.R_TIP, a, c, room), room - a, h)
         p = polar(-S.TIP_CHORD, 180.0, c, room)
         for pid in ("tip_portal", "portal_strip_l", "portal_strip_r"):
             put(pid, p, room - 180.0)
@@ -336,7 +367,8 @@ def placements() -> list[tuple[str, list[float], float]]:
     # spot; a coil of spare cable by the east corridor's south bay; two bolted repair plates on the hall's rim floor)
     # inside 3-1: the two hall cups moved onto the grate ring in sight of both hall views (were by the wall)
     # polish 4: cup_a in the hall-out view's foreground (fov 52: its floor shows from y -2.9 on), cup_c in hall-in's
-    for pid, xy, yaw in (("cup_a", [0.75, -3.0], 145.0), ("spill_a", [0.75, -3.0], 145.0),
+    # inside-fix: cup_a a little in from the threshold, on the grate inside the amber ring (was [0.75, -3.0])
+    for pid, xy, yaw in (("cup_a", [0.85, -2.82], 145.0), ("spill_a", [0.85, -2.82], 145.0),
                          ("cup_c", [-1.05, -0.45], 200.0), ("spill_c", [-1.05, -0.45], 200.0),
                          ("cup_b", [-6.6, 0.95], 80.0), ("cable_coil", [6.4, 1.0], 20.0),
                          ("floor_patch_a", polar(S.R_RIM_REF - 0.08, 112.5), -112.5 + 8.0),
@@ -361,7 +393,7 @@ def fmt(v) -> str:
 def render() -> str:
     lines = ["# The INTERIOR lane's pieces and placements (art #263, docs/ship.md). GENERATED by",
              "# tools/blender/ship_interior_place.py from the numbers in tools/blender/ship_interior.py: edit those and",
-             "# re-run it, never this file by hand. A piece is one GLB (<raw>/ship/v1/pieces/<id>.glb) built in its own",
+             "# re-run it, never this file by hand. A piece is one GLB (<raw>/ship/v2/pieces/<id>.glb) built in its own",
              "# frame; a placement [piece, [x, y, h], yaw] puts it at plan (x, y), h an offset (the builders use absolute",
              "# heights), turned by yaw degrees about the vertical (Godot's rotation y; plan angle a -> a - yaw).",
              "", "place = ["]

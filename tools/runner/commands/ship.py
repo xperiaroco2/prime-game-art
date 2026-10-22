@@ -31,7 +31,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--check", action="store_true", help="only the layout check (the default when nothing else is asked)")
     parser.add_argument("--build", action="store_true", help="build one GLB per piece and run glTF-Validator on each")
     parser.add_argument("--only", default="", help="comma-separated piece ids to build (default every piece)")
-    parser.add_argument("--out", type=Path, help="the pieces folder (default <raw>/ship/v1/pieces)")
+    parser.add_argument("--out", type=Path, help="the pieces folder (default <raw>/<ship.toml raw_dir>/pieces, v2: <raw>/ship/v2/pieces)")
     parser.add_argument("--godot", action="store_true", help="headless import: sizes, colliders and the capsule walk")
     parser.add_argument("--walk", type=Path, metavar="DIR",
                         help="the capsule walk (headless) into DIR/check.json, then the eye-height walk-through video "
