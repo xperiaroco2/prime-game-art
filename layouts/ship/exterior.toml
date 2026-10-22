@@ -750,7 +750,7 @@ outside = true
 [shots]
 ref_dir = "D:/prime-game-design/ideas/ship-components/2d/"
 views = [
-  ["out_front", "outside: front, ramp down (turnaround front)", [0.0, -21.0, 2.6], [0.0, 0.0, 2.3], 50.0, "turnaround.jpg"],
+  ["out_front", "outside: front, ramp down (turnaround front)", [0.0, -21.0, 5.6], [0.0, 0.0, 1.5], 48.0, "turnaround.jpg"],  # join 3: raised as the turnaround's front (the upper slopes and the canopies read)
   ["out_hero", "outside: three-quarter at night (hero)", [-15.0, -17.0, 6.5], [0.8, 0.0, 1.8], 50.0, "hero.jpg"],
   ["out_side", "outside: side (turnaround side)", [-25.0, -3.0, 2.6], [0.0, 0.0, 2.2], 46.0, "turnaround.jpg"],
   ["out_back", "outside: back with the nozzles (turnaround back)", [4.0, 21.0, 3.4], [0.0, 0.0, 2.3], 50.0, "turnaround.jpg"],
