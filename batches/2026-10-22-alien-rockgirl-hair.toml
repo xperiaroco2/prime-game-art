@@ -1,0 +1,95 @@
+# art#196: the rock-star girl (round 7's m85 first try, kept as a woman). The engineer (2026-10-22, chat) loves her
+# face (the eyes and the cheekbones) but her mane is the same as the rock-star man's (m85r), so she reads too close to
+# him. Four other head growths and (his second thought, the same chat) two restyled versions of her locks,
+# then (his third note: a shaved side, the top swept to one side, distinct locks rather than one flat mass; described in
+# words only, no photo uploaded) three undercut styles ug1-ug3, each an edit of her own image that keeps the face exactly, one image each (n 1, the
+# one-image rule, #276), medium (new ideas). Standing permission art#196 comment 6291187194. No game, film, studio or
+# character names; no real people. Schema: docs/openai-images.md.
+id = "2026-10-22-alien-rockgirl-hair"
+service = "openai-images"
+purpose = "art#196: the rock-star girl's face kept and her mane replaced by four other head growths (a single tendril, a short side sweep, a tall swept-up crest, a buzz-cut cap) or restyled locks (a high tail of locks, locks swept over one shoulder), then three undercut styles (ug1-ug3), for the engineer to pick."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 0.5
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1024x1280"
+n = 1
+
+[[items]]
+id = "hg1"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, the same face exactly as it is: the same golden slit-pupil eyes, the same heavy sultry lids, the same high sharp cheekbones, the same nose, the same full lips, the same jaw and chin, the same calm, knowing look; the same neck, shoulders, skin colours, finish, framing, view and light. Change only what grows on her head: remove the long swept-back mane of thick tendrils completely, and instead the top of her head becomes a smooth, sleek, bare dome, and from the crown one single long, thick, smooth, softly tapering tendril, like one long braid, falls behind her head and down over her far shoulder. It is part of her skull and skin, the same smooth soft-matte skin and colour, never hair, never a wig, never a hat; nothing hangs beside her face. She stays clearly a woman. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r7/m85/image-0.png", provenance = "m85 (first try), kept by the engineer as a woman (the rock-star girl), our own OpenAI generation, batch 2026-10-22-alien-roster-r7 item m85, image 0, art#196", sha256 = "d2da629b848a9f8d21a9fb9a60faf6834facf44d12dcae21fe9b445fef26be44" },
+]
+
+[[items]]
+id = "hg2"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, the same face exactly as it is: the same golden slit-pupil eyes, the same heavy sultry lids, the same high sharp cheekbones, the same nose, the same full lips, the same jaw and chin, the same calm, knowing look; the same neck, shoulders, skin colours, finish, framing, view and light. Change only what grows on her head: remove the long swept-back mane of thick tendrils completely, and instead a short, smooth, sculpted wave of skin sweeps from her forehead across to one side and back over the crown, ending at the back of the skull above the ear line, asymmetric and sharp, like a short side-swept cut; the near temple and the side of the head stay bare and smooth. It is part of her skull and skin, the same smooth soft-matte skin and colour, never hair, never a wig, never a hat; nothing hangs beside her face. She stays clearly a woman. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r7/m85/image-0.png", provenance = "m85 (first try), kept by the engineer as a woman (the rock-star girl), our own OpenAI generation, batch 2026-10-22-alien-roster-r7 item m85, image 0, art#196", sha256 = "d2da629b848a9f8d21a9fb9a60faf6834facf44d12dcae21fe9b445fef26be44" },
+]
+
+[[items]]
+id = "hg3"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, the same face exactly as it is: the same golden slit-pupil eyes, the same heavy sultry lids, the same high sharp cheekbones, the same nose, the same full lips, the same jaw and chin, the same calm, knowing look; the same neck, shoulders, skin colours, finish, framing, view and light. Change only what grows on her head: remove the long swept-back mane of thick tendrils completely, and instead a tall, smooth, sculpted crest rises from her hairline straight up and back into one big soft rounded wave above the crown, like a tall swept-up hairdo shaped from the skull itself; the sides of the head stay bare and smooth. It is part of her skull and skin, the same smooth soft-matte skin and colour, never hair, never a wig, never a hat; nothing hangs beside her face. She stays clearly a woman. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r7/m85/image-0.png", provenance = "m85 (first try), kept by the engineer as a woman (the rock-star girl), our own OpenAI generation, batch 2026-10-22-alien-roster-r7 item m85, image 0, art#196", sha256 = "d2da629b848a9f8d21a9fb9a60faf6834facf44d12dcae21fe9b445fef26be44" },
+]
+
+[[items]]
+id = "hg4"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, the same face exactly as it is: the same golden slit-pupil eyes, the same heavy sultry lids, the same high sharp cheekbones, the same nose, the same full lips, the same jaw and chin, the same calm, knowing look; the same neck, shoulders, skin colours, finish, framing, view and light. Change only what grows on her head: remove the long swept-back mane of thick tendrils completely, and instead the whole crown is covered by a close cap of many very short, smooth, rounded little nubs, like a very short buzz-cut texture in the skin, the outline of the skull showing clean and round; the forehead, the temples and the sides of the face stay bare and smooth. It is part of her skull and skin, the same smooth soft-matte skin and colour, never hair, never a wig, never a hat; nothing hangs beside her face. She stays clearly a woman. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r7/m85/image-0.png", provenance = "m85 (first try), kept by the engineer as a woman (the rock-star girl), our own OpenAI generation, batch 2026-10-22-alien-roster-r7 item m85, image 0, art#196", sha256 = "d2da629b848a9f8d21a9fb9a60faf6834facf44d12dcae21fe9b445fef26be44" },
+]
+
+[[items]]
+id = "hg5"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, the same face exactly as it is: the same golden slit-pupil eyes, the same heavy sultry lids, the same high sharp cheekbones, the same nose, the same full lips, the same jaw and chin, the same calm, knowing look; the same neck, shoulders, skin colours, finish, framing, view and light. Keep the idea of thick tendril locks growing from her head, but make them clearly different from a man's long swept-back mane: the locks are thinner and more numerous, all gathered up high at the crown into one tall bunch that rises and then falls back behind her head like a high tail, the sides and the temples of the head smooth and bare. The locks are part of her, the same smooth soft-matte skin and colour, never real hair, no beads, no ties, no jewellery. She stays clearly a woman. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r7/m85/image-0.png", provenance = "m85 (first try), kept by the engineer as a woman (the rock-star girl), our own OpenAI generation, batch 2026-10-22-alien-roster-r7 item m85, image 0, art#196", sha256 = "d2da629b848a9f8d21a9fb9a60faf6834facf44d12dcae21fe9b445fef26be44" },
+]
+
+[[items]]
+id = "hg6"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, the same face exactly as it is: the same golden slit-pupil eyes, the same heavy sultry lids, the same high sharp cheekbones, the same nose, the same full lips, the same jaw and chin, the same calm, knowing look; the same neck, shoulders, skin colours, finish, framing, view and light. Keep the idea of thick tendril locks growing from her head, but make them clearly different from a man's long swept-back mane: the locks are shorter and finer, all swept to one side and falling forward over her near shoulder in one soft heavy cascade, the other side of the head smooth and bare, an asymmetric, elegant look. The locks are part of her, the same smooth soft-matte skin and colour, never real hair, no beads, no ties, no jewellery. She stays clearly a woman. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r7/m85/image-0.png", provenance = "m85 (first try), kept by the engineer as a woman (the rock-star girl), our own OpenAI generation, batch 2026-10-22-alien-roster-r7 item m85, image 0, art#196", sha256 = "d2da629b848a9f8d21a9fb9a60faf6834facf44d12dcae21fe9b445fef26be44" },
+]
+
+[[items]]
+id = "ug1"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, the same face exactly as it is: the same golden slit-pupil eyes, the same heavy sultry lids, the same high sharp cheekbones, the same nose, the same full lips, the same jaw and chin, the same calm, knowing look; the same neck, shoulders, skin colours, finish, framing, view and light. Replace the long swept-back mane completely with an undercut style grown from her own head: the near side of the head is shaved smooth and bare from the temple to the nape, with one fine carved line running along it; from the top of the head a long, voluminous mass of distinct sculpted locks sweeps over to the far side and falls in a long asymmetric fringe past the far cheek to the jaw; the locks are separate, layered and textured, with clear gaps and tapered tips, never one flat mass; the tips are a paler tone of the skin. It is part of her, the same smooth soft-matte vinyl finish and the skin's colours, stylised and sculpted, never realistic hair, no jewellery, no earrings. She stays clearly a woman. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r7/m85/image-0.png", provenance = "m85 (first try), kept by the engineer as a woman (the rock-star girl), our own OpenAI generation, batch 2026-10-22-alien-roster-r7 item m85, image 0, art#196", sha256 = "d2da629b848a9f8d21a9fb9a60faf6834facf44d12dcae21fe9b445fef26be44" },
+]
+
+[[items]]
+id = "ug2"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, the same face exactly as it is: the same golden slit-pupil eyes, the same heavy sultry lids, the same high sharp cheekbones, the same nose, the same full lips, the same jaw and chin, the same calm, knowing look; the same neck, shoulders, skin colours, finish, framing, view and light. Replace the long swept-back mane completely with an undercut style grown from her own head: the near side of the head is shaved smooth and bare with two fine parallel carved lines above the ear line; on top, a thick crest of short, separate, sculpted tendril locks rises and sweeps over to the far side like a tousled side-swept mohawk, ending above the far eye, the far side of the head bare as well, so the locks sit only on top. It is part of her, the same smooth soft-matte vinyl finish and the skin's colours, stylised and sculpted, never realistic hair, no jewellery, no earrings. She stays clearly a woman. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r7/m85/image-0.png", provenance = "m85 (first try), kept by the engineer as a woman (the rock-star girl), our own OpenAI generation, batch 2026-10-22-alien-roster-r7 item m85, image 0, art#196", sha256 = "d2da629b848a9f8d21a9fb9a60faf6834facf44d12dcae21fe9b445fef26be44" },
+]
+
+[[items]]
+id = "ug3"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, the same face exactly as it is: the same golden slit-pupil eyes, the same heavy sultry lids, the same high sharp cheekbones, the same nose, the same full lips, the same jaw and chin, the same calm, knowing look; the same neck, shoulders, skin colours, finish, framing, view and light. Replace the long swept-back mane completely with an undercut style grown from her own head: the near side and the back of the head are shaved smooth and bare; on top, longer sculpted layered locks are swept forward and across the brow to the far side into one long angled side fringe that ends at the far jaw line, the near eye fully visible; the locks are layered with clear separations and soft pointed tips, slightly paler at the ends; an edgy, asymmetric, cool cut. It is part of her, the same smooth soft-matte vinyl finish and the skin's colours, stylised and sculpted, never realistic hair, no jewellery, no earrings. She stays clearly a woman. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r7/m85/image-0.png", provenance = "m85 (first try), kept by the engineer as a woman (the rock-star girl), our own OpenAI generation, batch 2026-10-22-alien-roster-r7 item m85, image 0, art#196", sha256 = "d2da629b848a9f8d21a9fb9a60faf6834facf44d12dcae21fe9b445fef26be44" },
+]

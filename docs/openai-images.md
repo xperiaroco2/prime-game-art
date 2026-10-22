@@ -386,3 +386,15 @@ biker); the tomboy and the hippie mostly (the hippie's lids lean stoned); the ne
 glamour unless the prompt says no make-up look; a darker crown tone with a hard edge reads as a swim cap or helmet
 (w92, w98). Images: `D:/prime-art-raw/2026-10-22-alien-roster-r9/`; JPEGs, overview and handoff:
 `D:/prime-art-raw/research/2026-10-22-roster/design/r9/`.
+
+## Batches 2026-10-22-alien-rockgirl-hair, -orchid-cactus, -goth and -goth-bob (art #196, the roster's last picks)
+
+Small asks of the engineer, one image each at medium (n = 1, "One image per concept"), edits that keep a kept head's
+face (or rf2 for style only for a new concept). **Rock-star girl** (round 7's m85 first try): her face kept, nine head
+growths (four new shapes, two restyled lock versions, three undercuts described in words; his reference photo was not
+uploaded); he picked **ug3**; 9 requests, $0.02259 to $0.02287 each, **$0.2043**. **Orchid and cactus**: two cleaner
+backs for the kept orchid (he picked **or1**) and two cactus men (rejected); $0.0899. **Goth**: three reworks of round
+9's w96 ($0.0675), then w96's face with three new head growths and a new woman with g2's bob shape and three faces; he
+picked **gh2** and **b2** ($0.1367); 4 + 3 + 6 requests at $0.022367 to $0.022865 each. Images under
+`D:/prime-art-raw/2026-10-22-alien-<rockgirl-hair|orchid-cactus|goth|goth-bob>/`; sheets under
+`D:/prime-art-raw/research/2026-10-22-roster/design/<rockgirl|orchid-cactus|goth>/`; the roster line-up in `.../final/`.

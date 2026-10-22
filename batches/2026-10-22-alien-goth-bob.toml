@@ -1,0 +1,70 @@
+# art#196, two explorations the engineer asked for (2026-10-22, chat), one image each (n 1, the one-image rule, #276),
+# medium. The goth: he likes round 9's w96 face (eyes with whites, not the solid black of the reworks) but not the
+# braids or the pigtails, so gh1-gh3 keep her face and change only what grows on her head (edits of w96). The bob: he
+# likes the bob shape of the goth rework g2 but not its eyes for it, so b1-b3 keep the bob shape (edits of g2) with
+# three new faces, a new woman. Standing permission art#196 comment 6291187194. No game, film, studio or character
+# names; no real people. Schema: docs/openai-images.md.
+id = "2026-10-22-alien-goth-bob"
+service = "openai-images"
+purpose = "art#196: the goth's w96 face with three new head growths (gh1-gh3), and a new woman with the bob shape and three faces (b1-b3), for the engineer to pick."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 0.5
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1024x1280"
+n = 1
+
+[[items]]
+id = "gh1"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, her face exactly as it is: the same sharp widow's peak, the same heavy-lidded sultry dark-ringed eyes with their whites, dark irises and lashes, the same nose, the same dark lips, the same pale face, the same skin colours, finish, view and light; the bust ends in soft rounded shoulders and a slender neck like a normal bust, not a cut block. Change only what grows on her head: the two long side lobes that stick out like pigtails are removed completely; instead from the widow's peak and a sharp centre parting, long, straight, sleek, smooth curtains fall straight down on both sides of the face behind the cheekbones to the collarbones, with a few clean separations near the ends, the face framed like an old portrait. Part of her skull, the same smooth soft-matte skin in its darkest tone, sculpted, never real hair, never a hat or a helmet; no collar, no clothes, no jewellery. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r9/w96/image-0.png", provenance = "w96, the round-9 gloomy goth (the engineer likes her face), our own OpenAI generation, batch 2026-10-22-alien-roster-r9 item w96, image 0, art#196", sha256 = "be71851065159af3f58005b390e46c1bfbf0cc969a610fef2f17729a3dd24f6b" },
+]
+
+[[items]]
+id = "gh2"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, her face exactly as it is: the same sharp widow's peak, the same heavy-lidded sultry dark-ringed eyes with their whites, dark irises and lashes, the same nose, the same dark lips, the same pale face, the same skin colours, finish, view and light; the bust ends in soft rounded shoulders and a slender neck like a normal bust, not a cut block. Change only what grows on her head: the two long side lobes that stick out like pigtails are removed completely; instead a short, choppy, asymmetric crop with sharp separate pointed locks, longer and falling over one side of the forehead, very short at the back and the other side, an edgy, unkempt, dark look. Part of her skull, the same smooth soft-matte skin in its darkest tone, sculpted, never real hair, never a hat or a helmet; no collar, no clothes, no jewellery. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r9/w96/image-0.png", provenance = "w96, the round-9 gloomy goth (the engineer likes her face), our own OpenAI generation, batch 2026-10-22-alien-roster-r9 item w96, image 0, art#196", sha256 = "be71851065159af3f58005b390e46c1bfbf0cc969a610fef2f17729a3dd24f6b" },
+]
+
+[[items]]
+id = "gh3"
+kind = "edit"
+prompt = "Keep this exact image: the same alien woman, her face exactly as it is: the same sharp widow's peak, the same heavy-lidded sultry dark-ringed eyes with their whites, dark irises and lashes, the same nose, the same dark lips, the same pale face, the same skin colours, finish, view and light; the bust ends in soft rounded shoulders and a slender neck like a normal bust, not a cut block. Change only what grows on her head: the two long side lobes that stick out like pigtails are removed completely; instead everything is slicked straight back from the widow's peak into one sleek, smooth, long form that falls down the back of the head and the nape like a long dark tail, nothing at the sides of the face, severe and elegant. Part of her skull, the same smooth soft-matte skin in its darkest tone, sculpted, never real hair, never a hat or a helmet; no collar, no clothes, no jewellery. Nothing else changes."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r9/w96/image-0.png", provenance = "w96, the round-9 gloomy goth (the engineer likes her face), our own OpenAI generation, batch 2026-10-22-alien-roster-r9 item w96, image 0, art#196", sha256 = "be71851065159af3f58005b390e46c1bfbf0cc969a610fef2f17729a3dd24f6b" },
+]
+
+[[items]]
+id = "b1"
+kind = "edit"
+prompt = "Keep from this image only the shape that grows on her head: the same smooth, sculpted, blunt bob shape with its straight fringe ridge across the forehead and straight sides ending at the jaw, the same skin colours, finish, view and light, the same neck and shoulders. Make the bob a little softer and more rounded so it reads as part of her head and never as a helmet or a wig, with a few clean separations at the ends. Replace her face completely with a new face: a young woman in her twenties, a cool, chic, aloof city girl: a small heart-shaped face with high cheekbones and a small pointed chin, big almond eyes with green irises under long, lazy, half-lowered lids with a winged line, a small nose with two nostril slits, small full lips with a faint knowing curve; detached and stylish. Cartoon eyes with whites, never solid black eyes. A calm, neutral face at rest, no open mouth, no teeth. Nothing worn: no collar, no clothes, no hat, no glasses, no jewellery. Adult, cool and striking, never childish, never grotesque, never a human with coloured skin."
+images = [
+  { file = "raw:2026-10-22-alien-goth/g2/image-0.png", provenance = "g2, the bob-shaped goth rework (the engineer likes the bob shape), our own OpenAI generation, batch 2026-10-22-alien-goth item g2, image 0, art#196", sha256 = "b930a8c3f3e99e4ca2a21ef2bc2b0c5cfe54687cbdbc0f351cb70204db3fdd3b" },
+]
+
+[[items]]
+id = "b2"
+kind = "edit"
+prompt = "Keep from this image only the shape that grows on her head: the same smooth, sculpted, blunt bob shape with its straight fringe ridge across the forehead and straight sides ending at the jaw, the same skin colours, finish, view and light, the same neck and shoulders. Make the bob a little softer and more rounded so it reads as part of her head and never as a helmet or a wig, with a few clean separations at the ends. Replace her face completely with a new face: a woman in her thirties, a sharp, clever, slightly mischievous one: a narrow oval face, large round eyes with amber irises and slit pupils under arched lids, one corner of the mouth lifted in a faint sly smirk, a fine pointed nose ridge with two nostrils, freckle-like darker dots across the cheeks. Cartoon eyes with whites, never solid black eyes. A calm, neutral face at rest, no open mouth, no teeth. Nothing worn: no collar, no clothes, no hat, no glasses, no jewellery. Adult, cool and striking, never childish, never grotesque, never a human with coloured skin."
+images = [
+  { file = "raw:2026-10-22-alien-goth/g2/image-0.png", provenance = "g2, the bob-shaped goth rework (the engineer likes the bob shape), our own OpenAI generation, batch 2026-10-22-alien-goth item g2, image 0, art#196", sha256 = "b930a8c3f3e99e4ca2a21ef2bc2b0c5cfe54687cbdbc0f351cb70204db3fdd3b" },
+]
+
+[[items]]
+id = "b3"
+kind = "edit"
+prompt = "Keep from this image only the shape that grows on her head: the same smooth, sculpted, blunt bob shape with its straight fringe ridge across the forehead and straight sides ending at the jaw, the same skin colours, finish, view and light, the same neck and shoulders. Make the bob a little softer and more rounded so it reads as part of her head and never as a helmet or a wig, with a few clean separations at the ends. Replace her face completely with a new face: a woman in her forties, cold, elegant and composed, a strict boss by her features alone: a long face with strong cheekbones and a firm jaw, narrow pale grey eyes under heavy level lids, a long straight nose ridge with two nostrils, a wide flat mouth with thin, defined lips in a level line. Cartoon eyes with whites, never solid black eyes. A calm, neutral face at rest, no open mouth, no teeth. Nothing worn: no collar, no clothes, no hat, no glasses, no jewellery. Adult, cool and striking, never childish, never grotesque, never a human with coloured skin."
+images = [
+  { file = "raw:2026-10-22-alien-goth/g2/image-0.png", provenance = "g2, the bob-shaped goth rework (the engineer likes the bob shape), our own OpenAI generation, batch 2026-10-22-alien-goth item g2, image 0, art#196", sha256 = "b930a8c3f3e99e4ca2a21ef2bc2b0c5cfe54687cbdbc0f351cb70204db3fdd3b" },
+]
