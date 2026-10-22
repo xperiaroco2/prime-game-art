@@ -2,8 +2,10 @@
 lanes' piece lists and placements, and the plain-Python check of the rules `ship --check` holds: the footprint, the
 corridor width, the tip rooms' outer wall, the station spots (inside their rooms, the wall spots' plain flat panels
 and the free pass behind a player standing at each), every room and placed piece inside the hull, the head room, and
-one entrance. Rooms are circles, axis-aligned rects, convex "poly"s (`points` counter-clockwise: the throat) or "strip"s (a straight corridor at any angle: `axis` [from, to],
-`along` [u0, u1] its floor's ends measured from `from`, `width`). The least skin round every room comes from the
+one entrance, the capsule walk's points on the floor. Rooms are circles, axis-aligned rects, convex "poly"s (`points`
+with a positive signed area in plan (x, y), that is clockwise seen from above with y running south: the throat) or
+"strip"s (a straight corridor at any angle: `axis` [from, to], `along` [u0, u1] its floor's ends measured from
+`from`, `width`). The least skin round every room comes from the
 hull's own shape (tools/blender/ship_hull_shape.py, plain Python; [hull] shape names its variant).
 Plan coordinates: x east, y south, h up (metres); Godot (x, h, y)."""
 
@@ -32,19 +34,7 @@ def load(path: Path = SHIP) -> dict[str, Any]:
         for p in data.get("pieces", []):
             layout["pieces"].append({"lane": lane, "args": {}, "collide": False, "outside": False, **p})
         layout["place"] += [[p[0], list(p[1]), float(p[2])] for p in data.get("place", [])]
-        # inside-1: the tip windows' shutters closed (`place` holds them open): the rows `pose(layout, "closed")` swaps in
-        layout.setdefault("shutter_closed", [])
-        layout["shutter_closed"] += [[p[0], list(p[1]), float(p[2])] for p in data.get("shutter_closed", [])]
     return layout
-
-
-def pose(layout: dict[str, Any], shutters: str) -> dict[str, Any]:
-    """The layout with the tip windows' shutters "open" (as loaded) or "closed": the closed rows replace every
-    placement of a piece they place (the shutter panels)."""
-    if shutters == "open":
-        return layout
-    ids = {p[0] for p in layout["shutter_closed"]}
-    return {**layout, "place": [p for p in layout["place"] if p[0] not in ids] + layout["shutter_closed"]}
 
 
 def rooms(layout: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -85,7 +75,8 @@ def strip_point(room: dict[str, Any], u: float, v: float) -> tuple[float, float]
 
 
 def poly_edges(room: dict[str, Any]):
-    """A poly room's edges as (a, b, inward unit normal)."""
+    """A poly room's edges as (a, b, inward unit normal); the inward side is the left of a -> b in plan (x, y), right
+    for points with a positive signed area (check_polys)."""
     pts = [tuple(p) for p in room["points"]]
     out = []
     for a, b in zip(pts, pts[1:] + pts[:1]):
@@ -197,9 +188,9 @@ def check(layout: dict[str, Any]) -> list[str]:
     width, length = extent(layout)
     for name, got, want in (("width", width, size["width_m"]), ("length", length, size["length_m"])):
         if name == "width" and want < got <= size.get("span_max_m", want):
-            continue  # the blades past the tip rooms (manager update 2, art #263: the span up to about 27.5 m)
+            continue  # up to span_max_m (J: its 30.0 m span)
         if name == "length" and want < got <= size.get("length_max_m", want):
-            continue  # the nozzle pods behind the hull (the manager, art #263: their reach is open, up to 15 m)
+            continue  # up to length_max_m (J: its 18.9 m with the nozzle pods, plus the tolerance)
         if abs(got - want) > size["tolerance_m"]:
             what = "length (with the nozzles, no ramp)" if name == "length" else name
             problems.append(f"footprint {what} {got:.2f} m, wants {want:g} +- {size['tolerance_m']:g}")
@@ -215,7 +206,7 @@ def check(layout: dict[str, Any]) -> list[str]:
                 problems.append(f"{r['id']}: {w:.2f} m wide, wants about {want:g}")
             if run < 2.5:
                 problems.append(f"{r['id']}: shorter than 2.5 m")
-    # the tip rooms' outer walls at x +-tip_outer_m (5a mirrored; rebuild A: their centres at y 4.0, no window)
+    # the tip rooms' outer walls at x +-tip_outer_m (5a mirrored; rebuild C: their centres at y 3.0)
     for r in layout["rooms"]:
         if r["id"].startswith("tip"):
             outer = abs(r["centre"][0]) + r["radius"]
@@ -259,7 +250,9 @@ def check(layout: dict[str, Any]) -> list[str]:
             todo.append(other)
     if seen != set(by_id):
         problems.append(f"rooms not reachable from the hall: {', '.join(sorted(set(by_id) - seen))}")
+    problems += check_polys(layout)
     problems += check_spots(layout)
+    problems += check_walk(layout)
     problems += hull_skin(layout)
     # inside the hull: every room's outer wall and every placed piece's origin (unless the piece may stand outside)
     poly = outline(layout)
@@ -281,10 +274,38 @@ def check(layout: dict[str, Any]) -> list[str]:
             problems.append(f"placement of unknown piece {pid}")
         elif not piece["outside"] and not inside(poly, (at[0], at[1])):
             problems.append(f"{pid} at ({at[0]:g}, {at[1]:g}) stands outside the hull")
-    # a piece placed only in the closed pose (shutter_closed) counts as placed
-    unplaced = sorted(set(pieces) - {p[0] for p in layout["place"] + layout.get("shutter_closed", [])})
+    unplaced = sorted(set(pieces) - {p[0] for p in layout["place"]})
     if unplaced:
         problems.append(f"pieces never placed: {', '.join(unplaced)}")
+    return problems
+
+
+def check_polys(layout: dict[str, Any]) -> list[str]:
+    """Every poly room convex with its points in the order poly_edges expects (a positive signed area in plan (x, y)):
+    every corner turns the same way, left."""
+    problems = []
+    for r in layout["rooms"]:
+        if r["shape"] != "poly":
+            continue
+        pts = [tuple(p) for p in r["points"]]
+        area = 0.5 * sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(pts, pts[1:] + pts[:1]))
+        if len(pts) < 3 or area <= TOL:
+            problems.append(f"{r['id']}: its points wind the wrong way (signed area {area:.2f}, wants > 0)")
+            continue
+        for a, b, c in zip(pts, pts[1:] + pts[:1], pts[2:] + pts[:2]):
+            if (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) <= TOL:
+                problems.append(f"{r['id']}: not convex at ({b[0]:g}, {b[1]:g})")
+    return problems
+
+
+def check_walk(layout: dict[str, Any]) -> list[str]:
+    """Every capsule walk point on the deck (h at floor_h or above; the ones below stand on the ground or the ramp)
+    lies on a room's floor with at least the capsule's radius of room round it."""
+    rad, floor = layout["player"]["capsule_radius_m"], layout["deck"]["floor_h"]
+    problems = []
+    for p in layout["walk"]["points"]:
+        if p[2] >= floor - TOL and in_rooms(layout, (p[0], p[1])) < rad - TOL:
+            problems.append(f"walk point ({p[0]:g}, {p[1]:g}) is not on a room's floor with {rad:g} m round it")
     return problems
 
 
@@ -306,7 +327,7 @@ def hull_skin(layout: dict[str, Any]) -> list[str]:
     if blender not in sys.path:
         sys.path.insert(0, blender)
     import ship_hull_shape
-    _least, bad = ship_hull_shape.clearance(layout["hull"]["shape"])
+    _least, bad = ship_hull_shape.clearance(layout["hull"]["shape"], rooms(layout))
     return [f"hull {layout['hull']['shape']}: {b}" for b in bad]
 
 
@@ -391,8 +412,8 @@ def check_spots(layout: dict[str, Any]) -> list[str]:
 
 
 def ascii_plan(layout: dict[str, Any], cell: float = 0.5) -> str:
-    """A text plan, south at the top as in plan-3.jpg: '#' hull, '.' room floor, 'o' tip-room window side, '=' ramp,
-    letters the station spots (C console, V vent, S socket, B breaker board, R renewer: the player's stand)."""
+    """A text plan, south at the top as in plan-3.jpg: '#' hull (and a 0.45 m band round the tip rooms), '.' room
+    floor, '=' ramp, letters the station spots (C console, V vent, S socket, B breaker board, R renewer: the player's stand)."""
     poly = outline(layout)
     by_id = rooms(layout)
     marks = {"console": "C", "vent": "V", "socket": "S", "breaker": "B", "renewer": "R"}

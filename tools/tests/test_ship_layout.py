@@ -33,7 +33,7 @@ class ShipLayoutTest(unittest.TestCase):
         width, length = sl.extent(LAYOUT)
         size = LAYOUT["size"]  # the lens blades may reach span_max_m (manager update 2, art #263)
         self.assertAlmostEqual(width, size["width_m"], delta=0.01)
-        self.assertAlmostEqual(length, size["length_m"], delta=0.01)   # with the nozzles, no ramp  # with the nozzles, no ramp
+        self.assertAlmostEqual(length, size["length_m"], delta=0.01)   # with the nozzles, no ramp
         lens = sl.lengths(LAYOUT)
         self.assertGreater(lens["nozzles"], lens["body"])
         self.assertGreater(lens["overall"], lens["nozzles"])
@@ -141,10 +141,49 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertGreaterEqual(least, S.SKIN)
 
     def test_a_poke_is_found(self) -> None:
-        """A room point outside the hull counts as a poke (negative skin), one inside the mouth recess too."""
+        """A room point outside the hull counts as a poke (negative skin), one inside the throat's open notch too; and
+        `check()` reports a room pushed out through the hull (the east tip room's roof raised 1.6 m)."""
         self.assertLess(S.skin((15.5, 6.4, 3.0)), 0.0)
         self.assertLess(S.skin((0.0, -6.0, 1.5)), 0.0)   # rebuild C: in the throat's open notch
         self.assertGreater(S.skin((0.0, 0.0, 2.0)), 1.0)
+
+        def tall(layout):
+            r = sl.rooms(layout)["tip_e"]
+            r["clear_h"], r["apex_h"] = 4.1, 4.4
+        found = problems_after(tall)
+        self.assertTrue(any("POKES OUT" in p and "tip_e" in p for p in found), found[:3])
+
+    def test_every_room_is_checked_from_the_layout_given(self) -> None:
+        """rebuild D: the skin check samples every room of the checked layout on its own, the west ones too (it used
+        to read ship.toml once and mirror the east rooms): a west tip room or corridor raised in a copy fails."""
+        def tip_w(layout):
+            sl.rooms(layout)["tip_w"]["clear_h"] = 3.4
+        found = problems_after(tip_w)
+        self.assertTrue(any(p.startswith("hull J: tip wall tip_w") for p in found), found[:3])
+        self.assertFalse(any("tip_e" in p for p in found))
+
+        def corridor_w(layout):
+            sl.rooms(layout)["corridor_w"]["clear_h"] = 3.4
+        found = problems_after(corridor_w)
+        self.assertTrue(any("corridor_w" in p and p.startswith("hull J") for p in found), found[:3])
+        self.assertFalse(any("corridor_e" in p for p in found))
+
+        def throat(layout):
+            sl.rooms(layout)["throat"]["clear_h"] = 3.6
+        self.assertTrue(any(p.startswith("hull J: throat") for p in problems_after(throat)))
+
+    def test_a_bad_poly_and_a_walk_point_off_the_floor_are_refused(self) -> None:
+        def reverse(layout):
+            sl.rooms(layout)["throat"]["points"].reverse()
+        self.assertTrue(any("wind the wrong way" in p for p in problems_after(reverse)))
+
+        def dent(layout):
+            sl.rooms(layout)["throat"]["points"].insert(1, [0.0, -6.5])
+        self.assertTrue(any("not convex" in p for p in problems_after(dent)))
+
+        def stray(layout):
+            layout["walk"]["points"].insert(5, [-5.0, -3.5, 0.6])   # between the hall and the west corridor: no room
+        self.assertTrue(any(p.startswith("walk point (-5, -3.5)") for p in problems_after(stray)))
 
     def test_a_low_ceiling_is_refused(self) -> None:
         def low(layout):

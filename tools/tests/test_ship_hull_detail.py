@@ -36,12 +36,17 @@ class ShipHullDetailTest(unittest.TestCase):
             self.assertLess(max(h for _x, _y, h in glass) - D.skin_h(side * D.CANOPY["x"], D.CANOPY["y"]), 0.95)
 
     def test_the_pods_stay_out_of_the_hall_and_end_as_js(self) -> None:
-        pods = {p["id"]: p for p in LAYOUT["pieces"] if p["builder"] == "nozzle_pod"}
+        pods = {p["id"]: p for p in LAYOUT["pieces"] if p["builder"] in ("nozzle_pod", "pod_ring")}
+        build = {"nozzle_pod": D.nozzle_pod, "pod_ring": D.pod_ring}
+        hx, hy = HALL["centre"]
         ends = []
-        for pid, at, _yaw in LAYOUT["place"]:
+        for pid, at, yaw in LAYOUT["place"]:
             if pid in pods:
-                r = float(pods[pid]["args"]["r"])
-                self.assertGreater(math.hypot(at[0], at[1]) - r, HALL["radius"] + 0.2, f"{pid} in the hall")
+                c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+                for x, y, _h in verts(build[pods[pid]["builder"]](pods[pid]["args"], LAYOUT)):
+                    px, py = at[0] + c * x - s * y, at[1] + s * x + c * y   # every vertex where it is placed
+                    self.assertGreater(math.hypot(px - hx, py - hy), HALL["radius"] + 0.2, f"{pid} in the hall")
+            if pid in pods and pods[pid]["builder"] == "nozzle_pod":
                 ends.append(at[1] + float(pods[pid]["args"]["length"]) + LAYOUT["hull"]["pod_tail_m"])
         self.assertEqual(len(ends), 3)
         self.assertAlmostEqual(max(ends), max(S.pod_ends()), delta=0.01)

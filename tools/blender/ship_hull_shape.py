@@ -9,7 +9,12 @@ tip, the stern face, the flat belly under every room; ship_hull_blockout.py's do
 recess (|x| < 1.3, y < -4.6, h < 3.0) cut away. `facets()` holds its planes (n . p <= d inside) and polygons;
 `surface()` the outer faces after the cut (the recess's faces turned into it); `skin()` a point's distance to the
 outside (negative outside); `clearance()` every room's sampled outer surface against SKIN; `outline_rows()` the plan
-footprint as ship.toml's [hull] rows."""
+footprint as ship.toml's [hull] rows.
+
+Only variant J (DEFAULT, with its throat notch) is live: the build, `ship --check` and the exterior lane use it, and
+`clearance(name, rooms)` samples every room of the layout it is given (ship_layout.hull_skin passes the checked
+layout's rooms). The other variants are the blockouts' history (ship_hull_blockout.py, docs/ship.md "History"); they
+keep v2's hall at the centre and sample the tip rooms at the old window's SILL and HEAD."""
 
 from __future__ import annotations
 
@@ -52,7 +57,8 @@ FRONT_DEG = RM["hall"]["front_from_deg"]                               # -15.11
 TIP_R = RM["tip_e"]["radius"] + WALL                                   # 2.0
 TIP_RIM = FLOOR + RM["tip_e"]["clear_h"] + ROOF                        # 3.22
 TIP_APEX = FLOOR + RM["tip_e"]["apex_h"] + ROOF                        # 3.52
-# the old tip window's band (variant D only; the J rooms have none): the tip walls are still sampled at its heights
+# the old tip window's band (variant D only; the blockouts' tip walls are sampled at its heights, J's at the slab,
+# mid-wall and rim)
 WIN_HALF = math.radians(65.0)
 SILL, HEAD = FLOOR + 1.0, FLOOR + 2.2                                  # 1.6, 2.8
 RAMP = SHIP["ramp"]
@@ -236,21 +242,128 @@ def design_points(var):
     return mirrored([p for p in pts if p[0] >= -1e-6]), tip
 
 
-def interior_points(var):
-    """(what, plan point) of every room's outer surface: walls, ceilings, crowns and slab bottoms; the tip rooms and
-    the corridors where the variant puts them."""
+STEP_DEG = 2.5     # the round walls' sample step; the samples lie on the polygon circumscribed about the wall (+1 mm)
+STEP_M = 0.15      # the straight walls' sample step, both ends included
+
+
+def _ring_pts(cx, cy, r, step=STEP_DEG):
+    """(plan angle in (-180, 180], x, y): every `step` deg on the polygon circumscribed about the circle r, so a round
+    wall face between two samples never lies farther out than they do."""
+    rr = r / math.cos(math.radians(step / 2))
+    out = []
+    for i in range(int(round(360 / step))):
+        d = i * step
+        a = (d + 180) % 360 - 180
+        out.append((a, cx + rr * math.cos(math.radians(d)), cy + rr * math.sin(math.radians(d))))
+    return out
+
+
+def _steps(a, b, step=STEP_M):
+    n = max(1, math.ceil(abs(b - a) / step - 1e-9))
+    return [a + (b - a) * i / n for i in range(n + 1)]
+
+
+def _room_points(rooms):
+    """rebuild D: every room's outer surface where `rooms` (a layout's rooms by id) has it, each room on its own (no
+    mirroring): the hall with its low front rim and the throat's opening, the throat's covered part, every corridor
+    strip, every tip room."""
     pts = []
-    thr = bool(var.get("throat"))
-    if thr:   # rebuild C: the rooms where ship.toml has them (the inside 1 m forward) and the throat
-        (hx, hy), (tcx, tcy) = HALL_C, TIP_C_ROOM
-        (ax, ay), (bx, by) = COR_A
-        dd = math.hypot(bx - ax, by - ay)
-        u = ((bx - ax) / dd, (by - ay) / dd)
-        n, s0, s1 = (-u[1], u[0]), COR_S[0], COR_S[1]
-    else:
-        (hx, hy), (tcx, tcy) = (0.0, 0.0), tip_c(var)
-        u, n, s0, s1 = corridor_frame(var)
-    corner = math.degrees(math.atan2(TH_PTS[2][1] - hy, TH_PTS[2][0] - hx))      # -44.38: the throat's hall corner
+    hall = rooms["hall"]
+    hx, hy = hall["centre"]
+    hr = hall["radius"] + WALL
+    rim0, apex = FLOOR + hall["clear_h"] + ROOF, FLOOR + hall["apex_h"] + ROOF
+    front_rim = FLOOR + hall.get("front_clear_h", hall["clear_h"]) + ROOF
+    fdeg = hall.get("front_from_deg", -90.0)
+    th = next((r for r in rooms.values() if r.get("exit") and r["shape"] == "poly"), None)
+    open_lo = open_hi = None
+    back = []
+    if th:   # the throat's opening in the hall's wall: between its two points farthest aft (the hall's corners)
+        back = sorted(th["points"], key=lambda p: p[1])[-2:]
+        angs = sorted(math.degrees(math.atan2(p[1] - hy, p[0] - hx)) for p in back)
+        open_lo, open_hi = angs
+    lamp = 1.47
+    for a, x, y in _ring_pts(hx, hy, hr):
+        front = -180.0 - fdeg - 1e-6 <= a <= fdeg + 1e-6
+        rim = front_rim if front else rim0
+        # the throat's opening; a sample within a wall's thickness and 5 cm of the opening's corner is the throat
+        # wall's joint (its outer face is the notch's cut, plated by the cheeks), not the hall's skin
+        joint = th and min(math.dist((x, y), p) for p in back) < WALL + 0.05
+        if not (th and open_lo + 1e-6 < a < open_hi - 1e-6) and not joint:
+            for h in (SLAB, 1.4, 2.6, rim):
+                pts.append(("hall wall", (x, y, h)))
+        c, s = (x - hx) / math.hypot(x - hx, y - hy), (y - hy) / math.hypot(x - hx, y - hy)
+        for rr in (1.0, 2.0, 3.0, 4.0):
+            if front and rr > lamp:   # the front panels: from the lamp ring down to the low rim
+                h_in = apex - (apex - rim0) * lamp / hr
+                h = h_in - (h_in - rim) * (rr - lamp) / (hr - lamp)
+            else:
+                h = apex - (apex - rim0) * rr / hr
+            pts.append(("hall roof", (hx + rr * c, hy + rr * s, h)))
+            if not in_cutter((hx + rr * c, hy + rr * s - 0.2, SLAB - 0.02)):   # by the throat's open underside
+                pts.append(("hall slab", (hx + rr * c, hy + rr * s, SLAB)))
+    pts.append(("hall crown", (hx, hy, apex)))
+    if th:   # the throat's covered part (aft of roof_y): its walls' tops, the chamfers' outer edges and the roof
+        top = FLOOR + th["clear_h"] + ROOF
+        ch_h, ch_in = th["chamfer"]
+        side = [(a, b) for a, b in zip(th["points"], th["points"][1:] + th["points"][:1]) if abs(a[1] - b[1]) > 1e-6]
+        y_end = max(p[1] for p in th["points"])
+        for y in _steps(th["roof_y"] + SKIN, y_end):
+            row = []
+            for a, b in side:
+                if min(a[1], b[1]) - 1e-6 <= y <= max(a[1], b[1]) + 1e-6:
+                    xw = a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1])
+                    k = math.hypot(b[0] - a[0], b[1] - a[1]) / abs(b[1] - a[1])   # an across distance as an x offset
+                    row.append((xw, k))
+            if len(row) != 2:
+                continue
+            (x0, k0), (x1, k1) = sorted(row)
+            for what, x, h in (("throat wall", x0 - WALL * k0, FLOOR + ch_h), ("throat wall", x1 + WALL * k1, FLOOR + ch_h),
+                               ("throat chamfer", x0 + (ch_in - 0.17) * k0, top),
+                               ("throat chamfer", x1 - (ch_in - 0.17) * k1, top),
+                               ("throat roof", x0 + ch_in * k0, top), ("throat roof", x1 - ch_in * k1, top),
+                               ("throat roof", 0.5 * (x0 + x1), top)):
+                if math.hypot(x - hx, y - hy) > hr - 0.3:
+                    pts.append((what, (x, y, h)))
+    for r in rooms.values():
+        if r["shape"] == "strip":
+            (ax, ay), (bx, by) = r["axis"]
+            dd = math.hypot(bx - ax, by - ay)
+            u = ((bx - ax) / dd, (by - ay) / dd)
+            n = (-u[1], u[0])
+            half, top = r["width"] / 2 + WALL, FLOOR + r["clear_h"] + ROOF
+            for s in _steps(*r["along"]):
+                for w, hs, what in ((-half, (SLAB, 1.7, top), "corridor"), (half, (SLAB, 1.7, top), "corridor"),
+                                    (-half, (top,), "corridor roof"), (0.0, (top,), "corridor roof"),
+                                    (half, (top,), "corridor roof")):
+                    for h in hs:
+                        pts.append((f"{what} {r['id']}", (ax + s * u[0] + w * n[0], ay + s * u[1] + w * n[1], h)))
+        elif r["shape"] == "circle" and r["id"] != "hall":
+            cx, cy = r["centre"]
+            tr = r["radius"] + WALL
+            rim, tap = FLOOR + r["clear_h"] + ROOF, FLOOR + r.get("apex_h", r["clear_h"]) + ROOF
+            for _a, x, y in _ring_pts(cx, cy, tr):
+                for h in (SLAB, 0.5 * (SLAB + rim), rim):
+                    pts.append((f"tip wall {r['id']}", (x, y, h)))
+                c, s = (x - cx) / math.hypot(x - cx, y - cy), (y - cy) / math.hypot(x - cx, y - cy)
+                for f in (0.3, 0.6, 0.9):
+                    pts.append((f"tip roof {r['id']}", (cx + f * tr * c, cy + f * tr * s, tap - (tap - rim) * f)))
+                    pts.append((f"tip slab {r['id']}", (cx + f * tr * c, cy + f * tr * s, SLAB)))
+            pts.append((f"tip crown {r['id']}", (cx, cy, tap)))
+    return pts
+
+
+def interior_points(var, rooms=None):
+    """(what, plan point) of every room's outer surface: walls, ceilings, crowns and slab bottoms. A variant with a
+    throat (J, the live hull) samples every room of `rooms` (a layout's rooms by id; default ship.toml's) on its own;
+    the blockouts' variants keep v2's hall at the centre and the tip rooms and corridors where the variant puts them,
+    mirrored."""
+    if var.get("throat"):
+        return _room_points(rooms if rooms is not None else RM)
+    pts = []
+    thr = False
+    (hx, hy), (tcx, tcy) = (0.0, 0.0), tip_c(var)
+    u, n, s0, s1 = corridor_frame(var)
+    corner = 0.0
     for d in range(0, 360, 5):
         c, s = math.cos(math.radians(d)), math.sin(math.radians(d))
         a = (d + 180) % 360 - 180
@@ -271,19 +384,6 @@ def interior_points(var):
             if not (thr and in_cutter((hx + rr * c, hy + rr * s - 0.2, SLAB - 0.02))):   # by the throat's open underside
                 pts.append(("hall slab", (hx + rr * c, hy + rr * s, SLAB)))
     pts.append(("hall crown", (hx, hy, HALL_APEX)))
-    if thr:   # the throat's covered part: its walls' tops, the chamfers' outer edges and the roof
-        (mx, my), (kx, ky) = TH_PTS[1], TH_PTS[2]
-        k = math.hypot(kx - mx, ky - my) / (ky - my)                    # an across distance as an x offset in a row
-        y = TH_ROOF_Y + SKIN
-        while y <= ky + 1e-6:
-            xw = mx + (kx - mx) * (y - my) / (ky - my)                    # the wall's face at y
-            for sx in (-1, 1):
-                for what, x, h in (("throat wall", xw + WALL * k, FLOOR + TH_CH[0]),
-                                   ("throat chamfer", xw - (TH_CH[1] - 0.17) * k, TH_TOP),
-                                   ("throat roof", 0.5 * (xw - TH_CH[1] * k), TH_TOP), ("throat roof", 0.0, TH_TOP)):
-                    if math.hypot(sx * x - hx, y - hy) > HALL_R - 0.3:
-                        pts.append((what, (sx * x, y, h)))
-            y += 0.3
     for side in (-1, 1):
         s = s0
         while s <= s1 + 1e-6:
@@ -560,10 +660,11 @@ def skin(p, name: str = DEFAULT) -> float:
     return min(inner, math.sqrt(dx * dx + dy * dy + dh * dh))
 
 
-def clearance(name: str = DEFAULT):
-    """(least skin, problems): every room's sampled outer surface (interior_points) with less than SKIN of hull."""
+def clearance(name: str = DEFAULT, rooms=None):
+    """(least skin, problems): every room's sampled outer surface (interior_points; `rooms` a layout's rooms by id,
+    default ship.toml's) with less than SKIN of hull."""
     least, bad = 9.0, []
-    for what, p in interior_points(VARIANTS[name]):
+    for what, p in interior_points(VARIANTS[name], rooms):
         s = skin(p, name)
         least = min(least, s)
         if s < SKIN - 1e-4:

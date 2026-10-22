@@ -4,6 +4,8 @@
 # the neighbouring views' edges painted out in the background navy by tools/blender/ship_hull_meshy.py --prep) and
 # one image-to-3D from hero.jpg's ship (cropped, the trees above it painted out). ship_hull_meshy.py --fit turns each
 # into a skin fitted round the v2 rooms and the hull lane picks one; only the shape matters.
+# The run was stopped and the hull went to the convex blockouts (variant J); tools/blender/ship_hull_meshy.py was
+# removed after the stopped run, so its --prep and --fit steps above no longer exist (art #263, rebuild D).
 
 id = "2026-10-22-ship-hull-meshy"
 purpose = "The ship's outer skin from Meshy generations of the approved 2D, a hull variant for art#263 step 1."

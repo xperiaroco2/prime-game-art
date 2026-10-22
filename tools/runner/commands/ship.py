@@ -38,8 +38,6 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "DIR/walkthrough.mp4 (off-screen window, 1280x720)")
     parser.add_argument("--no-video", action="store_true", help="--walk without the video")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
-    parser.add_argument("--shutters", choices=("open", "closed"), default="open",
-                        help="the tip windows' shutters in the scene (default open; the blades' closed pose otherwise)")
 
 
 def raw(layout: dict) -> Path:
@@ -47,7 +45,7 @@ def raw(layout: dict) -> Path:
 
 
 def run(args: argparse.Namespace) -> int:
-    layout = ship_layout.pose(ship_layout.load(), args.shutters)
+    layout = ship_layout.load()
     problems = ship_layout.check(layout)
     width, length = ship_layout.extent(layout)
     lens = ship_layout.lengths(layout)
@@ -219,7 +217,9 @@ def shot_views(layout: dict) -> tuple[list, list]:
 
 
 def room_boxes(layout: dict) -> list:
-    """A reflection probe box per room: [id, centre (Godot), size (Godot), interior]; the tip rooms see the sky."""
+    """A reflection probe box per room: [id, centre (Godot), size (Godot), interior]: every room an interior probe
+    (ship.toml probe_intensity, 0.15, the tip rooms too, as in the step C shots) but the exit room, the throat open to
+    the sky (1.0)."""
     deck = layout["deck"]
     out = []
     for r in layout["rooms"]:
@@ -238,7 +238,7 @@ def room_boxes(layout: dict) -> list:
             sx, sy = r["x"][1] - r["x"][0], r["y"][1] - r["y"][0]
         hh = r.get("apex_h", r["clear_h"])
         out.append([r["id"], _g([cx, cy, deck["floor_h"] + hh / 2]), [sx + 0.4, hh + 0.2, sy + 0.4],
-                    "window" not in r and not r.get("exit")])
+                    not r.get("exit")])
     return out
 
 
