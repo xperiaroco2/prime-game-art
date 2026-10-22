@@ -1,40 +1,28 @@
-"""The manta's details on the smooth skin (art #263 v2, hull lane step 2; docs/ship.md "The hull's details"): the
-cockpit canopies flush in the forward hull with a rim, the three nozzle pods with the middle one's housing, the cyan
-lead blades and diagonal stripes, the tip windows' glass and frames, the amber ground lamps. The HULL lane owns this
-file. No hatches, seam lines or scratches: the skin is one clean surface (the engineer after the night build).
+"""The hull's details (art #263; docs/ship.md "The hull's details"): the two cockpit canopies over the hall flush
+in the hull with a rim, the three nozzle pods with their cyan rings, the amber ground lamps. The HULL lane owns this
+file. Rebuild B (variant J): no lead blades, stripes or tip windows (no outside light strips; the rooms have no
+windows), no pod housing (J's stern face holds the pods); no hatches, seam lines or scratches.
 
-Every builder reads the skin's top from ship_hull_smooth.heights (variant DEFAULT), so a detail sits on the skin
-wherever the skin moves; pieces in the plan frame are placed at the origin. Numbers (plan metres):
-- canopies: a glass ellipse 1.15 (x) by 1.5 (y) at (+-2.3, -2.75), 0.85 m high, its base on the skin (skin_h + 0.02);
-  a low smooth teardrop collar round it 0.03 over the skin; a dark rim lip; a lit floor, seat and desk under the glass.
-- pods: the outer two r 1.05 at (+-2.75, h 2.15) from y 3.85, the middle r 1.2 at h 2.45 from y 4.25; smooth
-  32-sided shells with a round nose, one dark collar, the bell; the middle one under a smooth housing (y 3.7..6.4).
-- lead blades: 0.24 x 0.12 bars along the smooth lead edge from x 2.7 to the tip (x 13.6).
-- stripes: 12 slanted cyan bars per side from x 3.0 to 10.4, each wrapping the lead edge (0.25 m under, 0.6 m over).
-- tip windows: glass on the skin's open band round (+-8.3, 0) (rings pod_r(HEAD + 0.05) .. pod_r(SILL - 0.05), +-65 deg),
-  a head and a sill bar, two jambs and three mullions, 0.03 m proud."""
+Every builder reads the hull's top from ship_hull_shape.heights (variant J), so a detail sits on the hull wherever it
+moves; pieces in the plan frame are placed at the origin. Numbers (plan metres):
+- canopies: J's, a glass ellipse 0.95 (x) by 1.35 (y) at (+-2.25, -3.6), 0.75 m high, its base on the hull (+ 0.02);
+  a low collar round it; a dark rim lip; a lit floor, seat and desk under the glass.
+- pods: the outer two r 1.05 at (+-2.75, h 2.15), the middle r 1.2 at h 2.45, their rear ends at J's (y 11.0 and
+  11.8: exterior.toml places each at J's y less hull.pod_tail_m); smooth 32-sided shells with a round nose, one dark
+  collar, the bell."""
 
 from __future__ import annotations
 
 import math
 
 import ship_hull as H
-import ship_hull_smooth as SM
+import ship_hull_shape as S
 import ship_lib as L
 
-VARIANT = None  # the skin these details sit on (None: ship_hull_smooth.DEFAULT)
-
-
-def _v() -> dict:
-    return SM.VARIANTS[VARIANT or SM.DEFAULT]
-
-
 def skin_h(x: float, y: float) -> float | None:
-    """The smooth skin's top height at plan (x, y), None off its outline."""
-    v, ax = _v(), abs(x)
-    if ax > SM.SPAN_X or not (SM.lead(ax, v) - 1e-9 <= y <= SM.trail(ax, v) + 1e-9):
-        return None
-    return SM.heights(x, y, v)[0]
+    """The hull's top height at plan (x, y) (ship_hull_shape, variant J), None off its footprint."""
+    hb = S.heights(x, y)
+    return hb[0] if hb else None
 
 
 def _smooth(p: dict) -> dict:
@@ -61,7 +49,7 @@ def _bar(path, w, t, lift=0.0, up=(0.0, 0.0, 1.0)):
 
 
 # --- the canopies --------------------------------------------------------------------------------------------------
-CANOPY = {"x": 2.3, "y": -2.75, "ax": 1.15, "ay": 1.5, "height": 0.85, "segs": 28, "rings": 5}
+CANOPY = {"x": 2.25, "y": -3.6, "ax": 0.95, "ay": 1.35, "height": 0.75, "segs": 28, "rings": 5}   # J's
 
 
 def _canopy_frame(side):
@@ -198,127 +186,6 @@ def pod_ring(args: dict, layout: dict) -> list:
             L.part("pod_core", *core, "ext_glow_cyan_dim")]
 
 
-HOUSING = {"y0": 4.25, "y1": 6.4, "hw": 1.55, "top_end": 3.9, "rows": 13, "cols": 9}
-
-
-def pod_housing(args: dict, layout: dict) -> list:
-    """The middle pod's smooth housing in the plan frame: from the hall's eave at the stern (y 3.7) back over the
-    middle pod (from y 4.25, out of the hall; its front rises out of the skin), a rounded section whose sides run down into the skin (or onto the pod's axis past the stern)."""
-    hs = HOUSING
-    nr, m = hs["rows"], hs["cols"]
-    secs = []
-    for k in range(nr):
-        t = k / (nr - 1)
-        y = hs["y0"] + (hs["y1"] - hs["y0"]) * t
-        top = 4.75 + (hs["top_end"] - 4.75) * min(1.0, 2 * t) - 0.35 * max(0.0, (t - 0.85) / 0.15) ** 2
-        hw = hs["hw"] * (1.0 - 0.25 * max(0.0, (t - 0.66) / 0.34))
-        pts = []
-        for j in range(m):
-            th = math.pi * j / (m - 1)
-            x = -hw * math.cos(th)
-            sh = skin_h(hw, y)
-            base = min((sh - 0.06) if sh is not None and sh > 2.3 else 2.45, top - 0.4)
-            pts.append((x, y, base + (top - base) * math.sin(th) ** 0.6))
-        secs.append(pts)
-    v = [p for s in secs for p in s]
-    f = [(i * m + j, i * m + j + 1, (i + 1) * m + j + 1, (i + 1) * m + j) for i in range(nr - 1) for j in range(m - 1)]
-    inner = lambda q: (0.0, min(q[1], hs["y1"] - 0.4), 2.45)  # noqa: E731
-    cap = [tuple((nr - 1) * m + j for j in range(m))]
-    return [_smooth(L.part("housing", v, L.orient(v, f, inner), "hull_silver", solid=False)),
-            L.part("housing_cap", v, L.orient(v, cap, inner), "hull_silver", solid=False)]
-
-
-# --- the cyan lead blades and stripes ------------------------------------------------------------------------------
-BLADE = (2.7, 0.15, 0.25)   # x from, short of the tip (SPAN_X) by, step (read late: ship_hull_smooth may still be loading)
-
-
-def _lead_path(side):
-    v, (x0, short, dx) = _v(), BLADE
-    x1 = SM.SPAN_X - short
-    xs = [x0 + k * dx for k in range(int((x1 - x0) / dx) + 1)]
-    if xs[-1] < x1 - 1e-6:
-        xs.append(x1)
-    return [(side * x, SM.lead(x, v), SM.edge_h(x, v)[0]) for x in xs]
-
-
-def lead_blade(args: dict, layout: dict) -> list:
-    """The long bright cyan blade along a wing's lead edge (args side), from x 2.7 to the curled tip."""
-    side = float(args.get("side", 1.0))
-    out = [H._add(p, (0.0, -1.0, 0.0), 0.02) for p in _lead_path(side)]
-    return [L.part("lead_blade", *_bar(out, 0.24, 0.12), "glow_cyan")]
-
-
-STRIPES = {"count": 12, "x0": 3.0, "x1": 10.4, "width": 0.3, "slant": 0.42, "under": 0.25, "over": 0.6}
-
-
-def _wrap(x, s):
-    """A point s metres from the lead edge round it (s < 0 under on the belly, s > 0 over on the top) at |x|, and the
-    outward direction there."""
-    v = _v()
-    y = SM.lead(x, v) + abs(s)
-    top, bot = SM.heights(x, y, v)
-    w = min(1.0, abs(s) / 0.1)
-    up = (0.0, -(1 - w), w if s >= 0 else -w)
-    return (x, y, top if s >= 0 else bot), H._norm(up)
-
-
-def stripe_bars(side):
-    """The slanted bars as closed slabs (each a 2 x 9 sheet, 0.035 proud of the skin and 0.01 under it)."""
-    st = STRIPES
-    ss = [-st["under"] + (st["under"] + st["over"]) * k / 8 for k in range(9)]
-    out = []
-    for k in range(st["count"]):
-        xa = st["x0"] + k * (st["x1"] - st["x0"]) / st["count"]
-        outer, under = [], []
-        for s in ss:
-            xs = xa + st["slant"] * (s + st["under"]) / (st["under"] + st["over"])
-            for x in (xs, xs + st["width"]):
-                p, n = _wrap(x, s)
-                q = (side * p[0], p[1], p[2])
-                outer.append(H._add(q, n, 0.035))
-                under.append(H._add(q, n, -0.01))
-        nb = len(outer)
-        f = []
-        for i in range(len(ss) - 1):
-            a, b, c, d = 2 * i, 2 * i + 1, 2 * i + 3, 2 * i + 2
-            f += [(a, b, c, d), (nb + d, nb + c, nb + b, nb + a), (a, d, nb + d, nb + a), (b, nb + b, nb + c, c)]
-        f += [(0, nb, nb + 1, 1), (nb - 2, nb - 1, 2 * nb - 1, 2 * nb - 2)]
-        out.append((outer + under, f))
-    return out
-
-
-def smooth_stripes(args: dict, layout: dict) -> list:
-    """The cyan diagonal light bars wrapping a wing's lead edge (args side), one piece per side."""
-    return [L.part("stripes", *L.merge(*stripe_bars(float(args.get("side", 1.0)))), "glow_cyan")]
-
-
-# --- the tip windows -----------------------------------------------------------------------------------------------
-def _band_pt(side, a, r, lift=0.0):
-    x, y = SM.TIP_X + r * math.cos(a), r * math.sin(a)
-    h = SM.heights(x, y, _v())[0]
-    return (side * (x + lift * math.cos(a)), y + lift * math.sin(a), h)
-
-
-def smooth_window(args: dict, layout: dict) -> list:
-    """The tip's big window in the skin's open band (args side; plan frame): tinted glass on the band's rings (head,
-    middle, sill) within the window's half angle, a head and a sill bar along the band's edges, the two jambs and
-    three mullions down the slope, all about 0.03 m proud."""
-    side = float(args.get("side", 1.0))
-    rh, rs = SM.pod_r(SM.HEAD + 0.05), SM.pod_r(SM.SILL - 0.05)
-    rings = (rh, (rh + rs) / 2, rs)
-    angs = L.angles(-SM.HALF, SM.HALF, SM.RAY)
-    m = len(angs)
-    gv = [_band_pt(side, a, r, -0.01) for r in rings for a in angs]
-    gf = [(i * m + j, i * m + j + 1, (i + 1) * m + j + 1, (i + 1) * m + j) for i in range(2) for j in range(m - 1)]
-    gf = L.orient(gv, gf, lambda q: (side * SM.TIP_X, 0.0, q[2] - 2.0))
-    frames = [_bar([_band_pt(side, a, r, 0.03) for a in angs], 0.12, 0.08) for r in (rh, rs)]
-    for a in (-SM.HALF, -SM.HALF / 2, 0.0, SM.HALF / 2, SM.HALF):
-        w = 0.12 if abs(a) == SM.HALF else 0.07
-        frames.append(_bar([_band_pt(side, a, r, 0.03) for r in rings], w, 0.06))
-    return [_smooth(L.part("window_glass", gv, gf, "glass_window", solid=False)),
-            L.part("window_frame", *L.merge(*frames), "ext_frame")]
-
-
 def ground_lamp(args: dict, layout: dict) -> list:
     """An amber ground lamp (local origin on the ground): a low faceted housing with a glowing lens."""
     body = L.disc(0.2, 8, 0.0, 0.07)
@@ -326,6 +193,5 @@ def ground_lamp(args: dict, layout: dict) -> list:
     return [L.part("lamp_body", *body, "hull_dark"), L.part("lamp_lens", *lens, "glow_amber")]
 
 
-for _name in ("canopy", "nozzle_pod", "pod_ring", "pod_housing", "lead_blade", "smooth_stripes", "smooth_window",
-              "ground_lamp"):
+for _name in ("canopy", "nozzle_pod", "pod_ring", "ground_lamp"):
     globals()[_name] = H._outward(globals()[_name])

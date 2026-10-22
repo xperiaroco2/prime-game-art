@@ -30,15 +30,16 @@ var _scenes: Dictionary = {}
 var _metals: Dictionary = {}
 
 ## The shared metal library (metal.gdshader) by glTF material name: base colour, metallic, roughness, grain, seams,
-## scratches, grime. Other materials keep their glTF look. The outside (v2, the engineer: smooth like a ray, brushed
-## silver with a clean soft sheen): no seam grid, no scratches, a trace of grime, a softer brush on the skin.
+## scratches, grime. Other materials keep their glTF look. The outside (rebuild B, the engineer: back to the night
+## build's plated, brushed silver): the night's colours, brush and grime; no scratches, and no seam grid in the shader
+## (the plates' seams are geometry, laid over the hull's facets by ship_hull_j.py).
 const METALS: Dictionary = {
-	"hull_silver": [Color(0.66, 0.68, 0.71), 0.6, 0.36, 0.4, 0.0, 0.0, 0.05],
-	"ext_silver_b": [Color(0.74, 0.76, 0.79), 0.6, 0.32, 0.4, 0.0, 0.0, 0.05],
-	"ext_silver_c": [Color(0.62, 0.64, 0.67), 0.35, 0.5, 0.4, 0.0, 0.0, 0.05],  # join: the belly read black in the side view (0.56 grey, metallic 0.6, rough 0.4)
-	"hull_dark": [Color(0.12, 0.125, 0.13), 0.8, 0.42, 0.4, 0.0, 0.0, 0.1],
-	"ext_frame": [Color(0.17, 0.18, 0.19), 0.85, 0.34, 0.35, 0.0, 0.0, 0.1],
-	"leg_metal": [Color(0.32, 0.33, 0.35), 0.9, 0.36, 0.5, 0.0, 0.0, 0.15],
+	"hull_silver": [Color(0.66, 0.68, 0.71), 0.6, 0.36, 0.6, 0.0, 0.0, 0.25],
+	"ext_silver_b": [Color(0.74, 0.76, 0.79), 0.6, 0.32, 0.6, 0.0, 0.0, 0.2],
+	"ext_silver_c": [Color(0.56, 0.58, 0.61), 0.6, 0.4, 0.6, 0.0, 0.0, 0.3],
+	"hull_dark": [Color(0.12, 0.125, 0.13), 0.8, 0.42, 0.4, 0.0, 0.0, 0.3],
+	"ext_frame": [Color(0.17, 0.18, 0.19), 0.85, 0.34, 0.35, 0.0, 0.0, 0.2],
+	"leg_metal": [Color(0.32, 0.33, 0.35), 0.9, 0.36, 0.5, 0.0, 0.0, 0.35],
 	"wall_panel": [Color(0.42, 0.44, 0.47), 0.75, 0.4, 0.4, 0.4, 0.3, 0.25],
 	"ceiling": [Color(0.36, 0.38, 0.41), 0.75, 0.42, 0.4, 0.4, 0.2, 0.2],
 	"ext_seam": [Color(0.035, 0.037, 0.04), 0.6, 0.6, 0.0, 0.0, 0.0, 0.0],

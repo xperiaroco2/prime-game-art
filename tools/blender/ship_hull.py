@@ -4,9 +4,9 @@ layouts/ship/exterior.toml places them).
 
 This module holds the shared helpers (boxes, rods, lathes, the panelled skin: every face cut into plates with a real
 chamfer sinking into a dark seam, over a dark under-skin) and the pieces that are not the skin: the tip windows' frames,
-the mouth's portal and lights, the ramp, the landing legs and the clearing. The skin itself is ship_hull_skin.py (the
-manta's continuous faceted loft, variant F of the silhouette grid); its details (canopies, pods, blades, seams,
-hatches, ground lamps) are ship_hull_detail.py. Skin faces point outward, so from inside the ship they are back faces
+the mouth's portal and lights, the ramp, the landing legs and the clearing. The skin itself is ship_hull_j.py (variant
+J of the blockouts, ship_hull_shape.py, plated with this module's _plate; rebuild B); its details (canopies, pods,
+ground lamps) are ship_hull_detail.py. Skin faces point outward, so from inside the ship they are back faces
 and never hide a room (the interior lane's walls close the rooms). Belly h 0.6 (under the 0.75 slab bottoms)."""
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ L.MATERIALS.update({
 })
 
 BELLY_H = 0.6
+CLEARING_K = 1.25   # rebuild B: the clearing scaled to the hull J (span 30 m, 18.9 m long; v2's 27.5 by 14)
 CREST_H = 4.0
 ROOT_X = 1.5
 POD_X = 10.75
@@ -382,14 +383,16 @@ def leg(args: dict, layout: dict) -> list:
 
 # --- the clearing --------------------------------------------------------------------------------------------------
 def ground(args: dict, layout: dict) -> list:
-    """The clearing's ground: flat within 16 m (the walk's world boundary stays at h 0), rolling gently beyond."""
-    radii = [0.0, 5.0, 10.0, 16.0, 21.0, 27.0, 35.0, 45.0, 58.0, 75.0]
+    """The clearing's ground: flat within 16 m * CLEARING_K (the walk's world boundary stays at h 0), rolling gently
+    beyond."""
+    radii = [r * CLEARING_K for r in (0.0, 5.0, 10.0, 16.0, 21.0, 27.0, 35.0, 45.0, 58.0, 75.0)]
+    flat = 16.0 * CLEARING_K
     segs = 40
     v = [(0.0, 0.0, 0.0)]
     for r in radii[1:]:
         for j in range(segs):
             a = 2 * math.pi * (j + 0.5 * (radii.index(r) % 2)) / segs
-            h = 0.0 if r <= 16.0 else (r - 16.0) * 0.035 + 0.6 * _hash(r, j) * min(1.0, (r - 16.0) / 10.0)
+            h = 0.0 if r <= flat else (r - flat) * 0.035 + 0.6 * _hash(r / CLEARING_K, j) * min(1.0, (r - flat) / 10.0)
             v.append((r * math.cos(a), r * math.sin(a), h - 0.005))
     f = [(0, 1 + (j + 1) % segs, 1 + j) for j in range(segs)]
     for i in range(len(radii) - 2):
@@ -452,12 +455,9 @@ def _outward(fn):
 for _name in ("window_frame", "mouth_frame", "mouth_lights", "ramp", "ramp_lights", "leg", "ground", "pine", "rock"):
     globals()[_name] = _outward(globals()[_name])
 
-import ship_hull_skin  # noqa: E402  (the manta's skin; it imports this module's helpers)
+import ship_hull_j  # noqa: E402  (rebuild B: the hull J, plated; it imports this module's helpers)
 
-MODULES.append(ship_hull_skin)
-import ship_hull_smooth  # noqa: E402  (v2: the smooth skin that replaces the faceted one)
-
-MODULES.append(ship_hull_smooth)
+MODULES.append(ship_hull_j)
 import ship_hull_detail  # noqa: E402  (the canopies, pods, blades, hatches and lamps; step 2)
 
 MODULES.append(ship_hull_detail)

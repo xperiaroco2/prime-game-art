@@ -55,7 +55,7 @@ def make(p: dict):
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(mesh)
     bm.free()
-    if p.get("smooth"):  # the hull's smooth skin (ship_hull_smooth.py): soft shading, no facets
+    if p.get("smooth"):  # a part shaded smooth (the nozzle pods' shells, the canopy glass)
         for poly in mesh.polygons:
             poly.use_smooth = True
     mesh.materials.append(ship_lib.material(p["mat"]))

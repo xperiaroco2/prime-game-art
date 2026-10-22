@@ -32,7 +32,7 @@ class ShipBuildTest(unittest.TestCase):
 
     def test_bounds_hold_the_numbers(self) -> None:
         """The exterior's numbers survive the build (Godot's frame (x, h, y)): the ramp as wide as the mouth and as
-        long as its run, the smooth skin's tips at the span, its belly under the slabs and its nose short of the
+        long as its run, the hull's tips at the span, its belly under the slabs and its nose short of the
         ramp's foot."""
         layout = ship_layout.load()
         ramp = self.report["ramp"]["bounds"]
@@ -40,15 +40,13 @@ class ShipBuildTest(unittest.TestCase):
         self.assertAlmostEqual(ramp["max"][0] - ramp["min"][0], layout["ramp"]["width_m"], delta=0.01)
         self.assertAlmostEqual(ramp["min"][2], -run, delta=0.05)
         top, belly = self.report["skin_top"]["bounds"], self.report["skin_belly"]["bounds"]
-        # v2 (the smooth skin): the tips at the span, curling up to 4.0; the belly 0.22..0.3 under the slabs; the
-        # nose over the mouth short of the ramp's foot
-        if not layout["hull"].get("pending"):   # rebuild A: the v2 skin's span is not J's 30 m until step B
-            self.assertAlmostEqual(top["max"][0], layout["size"]["span_max_m"] / 2, delta=0.05)
-            self.assertAlmostEqual(-top["min"][0], layout["size"]["span_max_m"] / 2, delta=0.05)
-        self.assertGreater(top["max"][1], 4.9)
-        self.assertTrue(0.2 <= belly["min"][1] <= 0.3, belly["min"][1])
+        # rebuild B (the hull J): the tips at the span, the spine's peak 4.82, the belly 0.17 (its under-skin 0.025
+        # lower) under the slabs; the nose short of the ramp's foot
+        self.assertAlmostEqual(top["max"][0], layout["size"]["span_max_m"] / 2, delta=0.05)
+        self.assertAlmostEqual(-top["min"][0], layout["size"]["span_max_m"] / 2, delta=0.05)
+        self.assertTrue(4.78 <= top["max"][1] <= 4.85, top["max"][1])
+        self.assertTrue(0.14 <= belly["min"][1] <= 0.18, belly["min"][1])
         self.assertGreater(top["min"][2], layout["ramp"]["foot"][1])
-
 
 if __name__ == "__main__":
     unittest.main()
