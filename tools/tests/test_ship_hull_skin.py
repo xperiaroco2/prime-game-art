@@ -75,7 +75,8 @@ class HullSkinTest(unittest.TestCase):
     def test_no_outside_face_stands_near_vertical(self) -> None:
         """Manager update 2 (art #263): every outside face leans at least ~25 deg from vertical."""
         for name, var in S.VARIANTS.items():
-            self.assertEqual(S.steep(var), [] if name != "I" else S.steep(var), f"variant {name}")
+            if name != "I":  # variant I (the grid's steep one) is kept for comparison and not held to the rule
+                self.assertEqual(S.steep(var), [], f"variant {name}")
         self.assertEqual(S.steep(S.VARIANTS[S.DEFAULT]), [])
 
     def test_the_lens_blade_reaches_past_the_tip_room(self) -> None:
