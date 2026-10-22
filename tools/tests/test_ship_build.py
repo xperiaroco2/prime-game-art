@@ -40,12 +40,13 @@ class ShipBuildTest(unittest.TestCase):
         self.assertAlmostEqual(ramp["max"][0] - ramp["min"][0], layout["ramp"]["width_m"], delta=0.01)
         self.assertAlmostEqual(ramp["min"][2], -run, delta=0.05)
         tip = self.report["skin_tip_e"]["bounds"]
-        self.assertAlmostEqual(tip["min"][1], 0.6, delta=0.01)
-        self.assertAlmostEqual(tip["max"][1], 4.42, delta=0.02)
-        self.assertLessEqual(tip["max"][0], layout["size"]["width_m"] / 2 + layout["size"]["tolerance_m"] / 2)
+        # launch 3 (deck 0.6): the belly 0.3 under the slabs, the lens's crown 3.65, its blade within the span
+        self.assertAlmostEqual(tip["min"][1], 0.3, delta=0.01)
+        self.assertAlmostEqual(tip["max"][1], 3.65, delta=0.02)
+        self.assertLessEqual(tip["max"][0], layout["size"]["span_max_m"] / 2 + 0.01)
         body = self.report["skin_body_e"]["bounds"]
         self.assertGreater(body["min"][2], layout["ramp"]["foot"][1])
-        self.assertAlmostEqual(body["min"][1], 0.35, delta=0.01)
+        self.assertAlmostEqual(body["min"][1], 0.3, delta=0.01)
 
 if __name__ == "__main__":
     unittest.main()

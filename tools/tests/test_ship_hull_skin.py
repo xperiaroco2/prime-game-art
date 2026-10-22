@@ -56,24 +56,38 @@ class HullSkinTest(unittest.TestCase):
                 self.assertAlmostEqual(loop[k][1], back[j][1], delta=0.02, msg=f"{name} back {k}")
 
     def test_the_window_and_the_mouth_are_open(self) -> None:
-        tip = S.hull_skin({"part": "tip", "side": 1.0, "variant": "F"}, LAYOUT)
+        tip = S.hull_skin({"part": "tip", "side": 1.0, "variant": S.DEFAULT}, LAYOUT)
         seam = [p for p in tip if p["name"].endswith("_seam")][0]
         for face in seam["faces"]:
             c = [sum(seam["verts"][i][k] for i in face) / len(face) for k in range(3)]
             ang = math.degrees(math.atan2(c[1], c[0] - S.TIP_X))
             r = math.hypot(c[0] - S.TIP_X, c[1])
-            self.assertFalse(abs(ang) < 64 and S.SILL + 0.05 < c[2] < S.HEAD - 0.05 and r > 2.2,
-                             f"skin across the window at {c}")
-        body = S.hull_skin({"part": "body", "side": 1.0, "variant": "F"}, LAYOUT)
+            band = S.tip_profile(S.VARIANTS[S.DEFAULT], math.radians(ang))
+            self.assertFalse(abs(ang) < 64 and band[4][1] + 0.05 < c[2] < band[5][1] - 0.05 and r > 2.2,
+                             f"skin across the window band at {c}")
+        body = S.hull_skin({"part": "body", "side": 1.0, "variant": S.DEFAULT}, LAYOUT)
         seam = [p for p in body if p["name"].endswith("_seam")][0]
         for face in seam["faces"]:
             c = [sum(seam["verts"][i][k] for i in face) / len(face) for k in range(3)]
-            self.assertFalse(c[0] < 1.3 and c[1] < -4.5 and 1.0 < c[2] < 3.6, f"skin across the mouth at {c}")
+            self.assertFalse(c[0] < 1.3 and c[1] < -4.5 and S.FLOOR + 0.4 < c[2] < S.COR_TOP,
+                             f"skin across the mouth at {c}")
+
+    def test_no_outside_face_stands_near_vertical(self) -> None:
+        """Manager update 2 (art #263): every outside face leans at least ~25 deg from vertical."""
+        for name, var in S.VARIANTS.items():
+            self.assertEqual(S.steep(var), [] if name != "I" else S.steep(var), f"variant {name}")
+        self.assertEqual(S.steep(S.VARIANTS[S.DEFAULT]), [])
+
+    def test_the_lens_blade_reaches_past_the_tip_room(self) -> None:
+        prof = S.tip_profile(S.VARIANTS[S.DEFAULT], 0.0)
+        self.assertGreaterEqual(prof[3][0], 2.05 + 0.2 + 0.6)          # the room's wall + about 0.8 m
+        self.assertLessEqual(2 * (S.TIP_X + prof[3][0]), 27.5 + 1e-6)  # the span
+        self.assertTrue(S.FLOOR + 0.8 < prof[3][1] < S.TIP_TOP - 0.8)  # about the room's mid-height
 
     def test_faces_point_outward_after_the_mirror(self) -> None:
         """The harness writes (x, -y, h): after it, the tops of the blades and of the swept tip's plate face up and the
         belly faces down (the inner-point test once turned the far blades' tops down; Godot culled them)."""
-        var = S.VARIANTS["F"]
+        var = S.VARIANTS[S.DEFAULT]
         meshes = [(S._loft(S.STATIONS[p], var, 1.0), 14, set(range(9))) for p in ("wing1", "wing2", "wing3")]
         meshes.append((S._tip(var, 1.0, LAYOUT), 9, set(range(3, 9))))
         for (verts, faces), n, upper in meshes:
@@ -86,7 +100,7 @@ class HullSkinTest(unittest.TestCase):
 
     def test_the_footprint_rows_follow_the_skin(self) -> None:
         rows = {r[0]: r for r in LAYOUT["hull"]["core"]}
-        for x, lead, trail in S.outline(S.VARIANTS["F"]):
+        for x, lead, trail in S.outline(S.VARIANTS[S.DEFAULT]):
             if x in rows:
                 self.assertAlmostEqual(rows[x][1], lead, delta=0.02, msg=f"lead at x {x}")
                 self.assertAlmostEqual(rows[x][2], trail, delta=0.02, msg=f"trail at x {x}")

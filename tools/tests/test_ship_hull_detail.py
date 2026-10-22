@@ -53,7 +53,7 @@ class ShipHullDetailTest(unittest.TestCase):
     def test_the_lead_blade_runs_to_the_tip(self) -> None:
         path = D._lead_path(1.0)
         self.assertLess(path[0][0], 2.5)
-        self.assertAlmostEqual(path[-1][0], S.TIP_X + max(dx for dx, _dy in S.VARIANTS["F"]["tip"]), places=3)
+        self.assertAlmostEqual(path[-1][0], S.TIP_X + max(dx for dx, _dy in S.VARIANTS[S.DEFAULT]["tip"]), places=3)
         xs = [p[0] for p in path]
         self.assertEqual(xs, sorted(xs), "the blade turns back on itself")
 

@@ -107,6 +107,8 @@ def check(layout: dict[str, Any]) -> list[str]:
     size = layout["size"]
     width, length = extent(layout)
     for name, got, want in (("width", width, size["width_m"]), ("length", length, size["length_m"])):
+        if name == "width" and want < got <= size.get("span_max_m", want):
+            continue  # the blades past the tip rooms (manager update 2, art #263: the span up to about 27.5 m)
         if abs(got - want) > size["tolerance_m"]:
             problems.append(f"footprint {name} {got:.2f} m, wants {want:g} +- {size['tolerance_m']:g}")
     by_id = rooms(layout)

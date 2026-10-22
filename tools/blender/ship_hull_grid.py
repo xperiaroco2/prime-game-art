@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ship_hull_skin as S  # noqa: E402
 
 W, H_ = 320, 180
+SPAN = 27.5            # the manager's update 2: the span up to about 27.5 m (the lens blades)
 PARTS = ("body", "wing1", "wing2", "wing3", "tip")
 REFS = ("turnaround_1_front.png", "turnaround_2_side.png", "turnaround_4_top.png",
         "D:/prime-game-design/ideas/ship-components/2d/hero.jpg")
@@ -60,13 +61,14 @@ def ghost(coll):
         v = [(x, y, h) for h in (h0, h1) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))]
         f = [(0, 1, 2, 3), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
         mesh(name, v, f, m, coll)
-    cyl("hall", 0.0, 3.6, 0.75, 5.0)
-    box("mouth", -1.5, 1.5, -4.6, -3.3, 0.75, 3.6)
-    box("corr_w", -9.1, -3.3, -1.45, 1.45, 0.75, 3.85)
-    box("corr_e", 3.3, 9.1, -1.45, 1.45, 0.75, 3.85)
-    cyl("tip_w", -10.75, 2.25, 0.75, 4.2)
-    cyl("tip_e", 10.75, 2.25, 0.75, 4.2)
-    box("ramp", -1.3, 1.3, -7.0, -4.6, 0.0, 0.15)
+    f = S.FLOOR - 0.25  # the slabs' bottoms; tops: the rooms' ceilings (ship.toml's heights)
+    cyl("hall", 0.0, 3.6, f, S.HALL_APEX)
+    box("mouth", -1.5, 1.5, -4.6, -3.3, f, S.COR_TOP + 0.1)
+    box("corr_w", -9.1, -3.3, -1.45, 1.45, f, S.COR_TOP + 0.1)
+    box("corr_e", 3.3, 9.1, -1.45, 1.45, f, S.COR_TOP + 0.1)
+    cyl("tip_w", -10.75, 2.25, f, S.TIP_TOP + 0.1)
+    cyl("tip_e", 10.75, 2.25, f, S.TIP_TOP + 0.1)
+    box("ramp", -1.3, 1.3, -7.4, -4.6, 0.0, 0.15)
 
 
 def camera(scene, view):
@@ -140,6 +142,8 @@ def main():
         colls[name] = coll
         var = S.VARIANTS[name]
         bad = S.clearance(var)
+        steep = S.steep(var)
+        print(f"SKIN steep {name}: {len(steep)} faces within 25 deg of vertical" + (f", e.g. {steep[:4]}" if steep else ""))
         print(f"SKIN clear {name}: {len(bad)} room points outside" + (f", e.g. {bad[:4]}" if bad else ""))
         print(f"SKIN outline {name}: " + ", ".join(f"[{x:.2f}, {a:.2f}, {b:.2f}]" for x, a, b in S.outline(var)))
     ref = arg("--ref")
@@ -164,9 +168,13 @@ def main():
         pts = [v.co.copy() for o in objs for v in o.data.vertices]
         lo = Vector([min(p[k] for p in pts) for k in range(3)])
         hi = Vector([max(p[k] for p in pts) for k in range(3)])
-        s = 26.5 / (hi.y - lo.y)  # its span lies along y (Meshy faced it sideways)
-        print(f"SKIN ref bbox {tuple(round(v, 3) for v in lo)} {tuple(round(v, 3) for v in hi)} scale {s:.3f}")
-        m = (Matrix.Translation((0.0, -0.5, 0.0)) @ Matrix.Rotation(-math.pi / 2, 4, "Z") @ Matrix.Scale(s, 4)
+        s = SPAN / (hi.y - lo.y)  # its span lies along y (Meshy faced it sideways)
+        # its height scaled up only as much as the rooms need: its top over the hall's dome plus the skin
+        sz = max(s, (S.HALL_APEX + 0.4) / (hi.z - lo.z))
+        print(f"SKIN ref bbox {tuple(round(v, 3) for v in lo)} {tuple(round(v, 3) for v in hi)} scale {s:.3f} "
+              f"height x {sz:.3f}")
+        sc = Matrix.Diagonal((s, s, sz, 1.0))
+        m = (Matrix.Translation((0.0, -0.5, 0.0)) @ Matrix.Rotation(-math.pi / 2, 4, "Z") @ sc
              @ Matrix.Translation(-Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))))
         for o in objs:
             o.data.transform(m)

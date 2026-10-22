@@ -22,11 +22,11 @@ import ship_hull as H
 import ship_hull_skin as S
 import ship_lib as L
 
-VARIANT = "F"  # the skin these details sit on (read late: ship_hull imports this module half-way)
+VARIANT = None  # the skin these details sit on (None: the skin's DEFAULT, read late: ship_hull imports this module half-way)
 
 
 def _v() -> dict:
-    return S.VARIANTS[VARIANT]
+    return S.VARIANTS[VARIANT or S.DEFAULT]
 
 
 def _section_h(x: float, y: float) -> float | None:

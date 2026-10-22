@@ -25,7 +25,8 @@ class ShipLayoutTest(unittest.TestCase):
 
     def test_the_footprint_is_about_26_by_14(self) -> None:
         width, length = sl.extent(LAYOUT)
-        self.assertAlmostEqual(width, 26.0, delta=0.5)
+        size = LAYOUT["size"]  # the lens blades may reach span_max_m (manager update 2, art #263)
+        self.assertTrue(26.0 - 0.5 <= width <= size.get("span_max_m", 26.5) + 1e-6, width)
         self.assertAlmostEqual(length, 14.0, delta=0.5)
 
     def test_the_station_spots_are_the_design_docs(self) -> None:

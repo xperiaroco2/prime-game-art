@@ -14,6 +14,8 @@ three wall facets a side, the corridor chord over +-37.6 deg from the back), rim
 from __future__ import annotations
 
 import math
+import tomllib
+from pathlib import Path
 
 import ship_interior_geom as G
 import ship_lib as L
@@ -57,9 +59,12 @@ L.MATERIALS.update({
 })
 
 D = math.radians
-FLOOR = 1.0
+with (Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml").open("rb") as _f:
+    _SHIP = tomllib.load(_f)
+_ROOM = {r["id"]: r for r in _SHIP["rooms"]}
+FLOOR = _SHIP["deck"]["floor_h"]                # the heights come from ship.toml (the hull lane owns them)
 # the hall
-N_HALL, R_HALL, H_HALL, APEX_HALL = 16, 3.4, 3.4, 4.0
+N_HALL, R_HALL, H_HALL, APEX_HALL = 16, 3.4, _ROOM["hall"]["clear_h"], _ROOM["hall"]["apex_h"]
 PHI = math.pi / N_HALL
 HV = R_HALL / math.cos(PHI)                # vertex radius 3.467
 HW = R_HALL * math.tan(PHI)                # facet half width 0.676
@@ -68,13 +73,14 @@ HCH = HV * math.sin(2 * PHI)               # its half width 1.327
 R_RING = 1.25                              # the lamp ring and the ceiling's inner edge
 OPENINGS = {"corridor_e": 0.0, "mouth": -90.0, "corridor_w": 180.0}   # opening centre angles (deg)
 # the corridors: profile (u across, v up from the deck), the five modules between the portals
-PROF = [(-1.25, 0.0), (-1.25, 1.45), (-0.9, 2.6), (0.9, 2.6), (1.25, 1.45), (1.25, 0.0)]
-H_COR = 2.6
+H_COR = _ROOM["corridor_e"]["clear_h"]
+PROF = [(-1.25, 0.0), (-1.25, H_COR - 0.95), (-0.9, H_COR), (0.9, H_COR), (1.25, H_COR - 0.95), (1.25, 0.0)]
 PORTAL_D = 0.15
 # the tip rooms
-R_TIP, H_TIP, APEX_TIP, R_TIP_RING = 2.1, 2.8, 3.2, 0.6
+R_TIP, H_TIP, APEX_TIP, R_TIP_RING = 2.1, _ROOM["tip_e"]["clear_h"], _ROOM["tip_e"]["apex_h"], 0.6
 TIP_X = 10.75
-WIN_HALF, DOOR_HALF, SILL, HEAD = 65.0, 37.6, 0.5, 2.4
+WIN_HALF, DOOR_HALF = 65.0, 37.6
+SILL, HEAD = _ROOM["tip_e"]["window"]["sill_h"], _ROOM["tip_e"]["window"]["head_h"]
 TIP_CHORD = -R_TIP * math.cos(D(DOOR_HALF))          # -1.664
 TIP_CHORD_H = R_TIP * math.sin(D(DOOR_HALF))         # 1.281
 COR_X0 = HC + PORTAL_D                               # 3.353
