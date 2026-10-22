@@ -789,3 +789,30 @@ fanned their seams out round the fins' roots, and the lens's 48 rim facets read 
 - **The edge light**: the glow 6 cm high (`EDGE_GLOW` 0.03), strength 16, in 4 m pieces (`EDGE_CHUNK`): Godot puts one
   strip light per piece, so they stand along the edge and pool faintly on the ground (`glow_edge` l 0.6); one merged
   mesh had put its one light in the ship's middle.
+
+## The light layer (outside at night, 2026-10-22)
+The engineer approved the lens ship and the manager's light plan; the inside's lamps and energies are unchanged.
+Raw output: `<raw>/ship/v4/light/` (shots), `light-before/` (the same views before), `logs/`, `notes/light.md`.
+- **The edge light** stays a continuous cool-white line. Its strip lights (`glow_edge`, one per 4 m piece) stood at
+  their pieces' AABB centres, up to 1.8 m high over the fins, and left small bright hot spots on the silver near the
+  edge. They now light only the inside layer (`[light.mats]` `cull = "inside"`, read by `ship.gd _dress`): the lens
+  rooms keep the light that came in through their windows. The pool on the ground under the edge is six cool spots
+  (`edge` lamps, `edge_lamp` 0.8): under each lead edge, lens rim and trail edge, 0.8 m outside it, under the edge's
+  height, pointing down (55 deg), so the fins above lie outside their cones.
+- **Spots:** a lamp row's 11th number is a spot angle in degrees: `ship.gd` makes a `SpotLight3D` pointing straight down.
+- **Navigation lamps** (`nav_red`, `nav_green`, `nav_white`; `ship_hull_detail.nav_lamp`): a round silver housing, a dark
+  bezel and a glowing lens (`glow_nav_*`). Port red on the west lens rim's forward facet (-48.75 deg plan, under the
+  edge light at h 1.13), starboard green on the east's, white on the tail's top centre (y 11.2). Each has a tiny
+  unshadowed omni 0.45 m out (`nav`, `nav_tail`; range 1.0, `nav_lamp` 0.05: more painted a coloured blob on the rim).
+  `ship.gd`'s `nav_blink` (default true, the game) flashes the white lamp 0.12 s once a second and pulses red and green
+  0.55..1.0 over 2 s, lights and lenses together; the shoot and video requests send `"nav_blink": false` (a static glow).
+- **Landing lights** (`landing_lamp`): a silver housing with a warm lens under the belly by each of the six legs,
+  0.8 m inboard of the mount, on the belly's bottom (`ship_hull_shape.heights`); each a warm spot (`land`, 65..75 deg,
+  range 4, `land_lamp` 1.6). They replace the three orange belly pools.
+- **Windows:** unchanged. From outside the band shows the lit lens room and the roof windows its warm floor; a
+  glass shader with a warm glow seen only from outside (a pane's normal away from its lens's centre) was tried and
+  showed no glow in the shots, so it was dropped (open: the west band reads dark at a grazing angle in `out_far`).
+- **Engine rings:** `glow_pod` `e` 0.6 (the bands clipped pale cyan-white in out_back).
+- **Views:** `out_far` (the first sight from the clearing's edge by the path, 26 m, eye height); `top_full` and
+  `top_full_day` (the whole ship from straight above, orthographic, 27 m high, south up; the day shot swaps in a sun
+  and a pale sky after the night shots). `tools/tests/test_ship_light.py` checks the lamps' placement.
