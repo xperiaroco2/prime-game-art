@@ -36,8 +36,12 @@ HALL_C = tuple(RM["hall"]["centre"])                                   # rebuild
 HALL_R = RM["hall"]["radius"] + WALL                                   # 4.2
 HALL_RIM = FLOOR + RM["hall"]["clear_h"] + ROOF                        # 3.92
 HALL_APEX = FLOOR + RM["hall"]["apex_h"] + ROOF                        # 4.52
-COR_S = tuple(RM["corridor_e"]["along"])                               # (3.708, 8.219): the floor along the axis
-COR_A = RM["corridor_e"]["axis"]
+# lens step 1 (art#263): ship.toml's corridors and tip rooms are the lens rooms now (P's, outside J); J and the
+# blockouts keep rebuild E's rooms, pinned here, so the live hull J builds as before until step 2 makes P the hull
+J_ROOMS = {"corridor_e": {"axis": [[0.0, -0.4], [8.3, 3.6]], "along": [3.708, 8.219], "width": 3.0, "clear_h": 2.4},
+           "tip_e": {"centre": [8.3, 3.6], "radius": 1.8, "clear_h": 2.5, "apex_h": 2.8}}
+COR_S = tuple(J_ROOMS["corridor_e"]["along"])                          # (3.708, 8.219): the floor along the axis
+COR_A = J_ROOMS["corridor_e"]["axis"]
 COR_D = math.dist(*COR_A)                                              # 9.214: the hall's centre to the tip room's
 COR_Y = RM["corridor_e"]["width"] / 2 + WALL                           # 1.7
 COR_TOP = FLOOR + RM["corridor_e"]["clear_h"] + ROOF                   # 3.12
@@ -46,16 +50,16 @@ COR_TOP = FLOOR + RM["corridor_e"]["clear_h"] + ROOF                   # 3.12
 MOUTH_X, MOUTH_Y, MOUTH_TOP = 1.3, -4.6, 3.0                           # the old recess (variants without a throat)
 TIP_X = 8.3
 PIN_HALL_R, PIN_TIP_R = 4.2, 2.0                                       # the belly rings' rooms (v2's hall, J's tips)
-TIP_C_ROOM = tuple(RM["tip_e"]["centre"])                              # rebuild C: (8.3, 3.0)
+TIP_C_ROOM = tuple(J_ROOMS["tip_e"]["centre"])                              # rebuild C: (8.3, 3.0)
 # rebuild C: the throat (ship.toml room "throat"); J's mouth notch is cut along it (`cutters`)
 TH = RM["throat"]
 TH_PTS = [tuple(p) for p in TH["points"]]                              # mouth (-+1.65, -7.1), hall corners (+-2.915, -3.252)
 TH_ROOF_Y = TH["roof_y"]                                               # -5.5608: the ceiling from here aft
 TH_TOP = FLOOR + TH["clear_h"] + ROOF                                  # 3.02: the throat's roof
 TH_CH = TH["chamfer"]                                                  # walls vertical to 1.35, then 0.55 in
-TIP_R = RM["tip_e"]["radius"] + WALL                                   # 2.0
-TIP_RIM = FLOOR + RM["tip_e"]["clear_h"] + ROOF                        # 3.22
-TIP_APEX = FLOOR + RM["tip_e"]["apex_h"] + ROOF                        # 3.52
+TIP_R = J_ROOMS["tip_e"]["radius"] + WALL                              # 2.0
+TIP_RIM = FLOOR + J_ROOMS["tip_e"]["clear_h"] + ROOF                   # 3.22
+TIP_APEX = FLOOR + J_ROOMS["tip_e"]["apex_h"] + ROOF                   # 3.52
 # the old tip window's band (variant D only; the blockouts' tip walls are sampled at its heights, J's at the slab,
 # mid-wall and rim)
 WIN_HALF = math.radians(65.0)

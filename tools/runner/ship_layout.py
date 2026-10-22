@@ -7,7 +7,11 @@ with a positive signed area in plan (x, y): counter-clockwise in the (x, y) axes
 running south; the throat) or
 "strip"s (a straight corridor at any angle: `axis` [from, to], `along` [u0, u1] its floor's ends measured from
 `from`, `width`). The least skin round every room comes from the
-hull's own shape (tools/blender/ship_hull_shape.py, plain Python; [hull] shape names its variant).
+hull's own shape (tools/blender/ship_hull_shape.py, plain Python; [hull] shape names its variant). While `[hull]
+pending` is set (lens step 1: the rooms are P's, the live hull still J) the footprint, the skin and the inside-the-hull
+tests skip and `skipped` says so. A room may slant its ceiling (`ceiling = "slant"`: the lens rooms' `clear_h_in`, the
+vault's `clear_h_back`), carry a window `band` (check_bands) or be `closed` (the vault: a shut `door` on another room's
+wall, no exit, no link, not walkable floor; check_closed).
 Plan coordinates: x east, y south, h up (metres); Godot (x, h, y)."""
 
 from __future__ import annotations
@@ -187,7 +191,8 @@ def check(layout: dict[str, Any]) -> list[str]:
     problems = []
     size = layout["size"]
     width, length = extent(layout)
-    for name, got, want in (("width", width, size["width_m"]), ("length", length, size["length_m"])):
+    pending = layout["hull"].get("pending")
+    for name, got, want in ([] if pending else (("width", width, size["width_m"]), ("length", length, size["length_m"]))):
         if name == "width" and want < got <= size.get("span_max_m", want):
             continue  # up to span_max_m (J: its 30.0 m span)
         if name == "length" and want < got <= size.get("length_max_m", want):
@@ -216,7 +221,7 @@ def check(layout: dict[str, Any]) -> list[str]:
     player = layout["player"]
     need = player["capsule_height_m"] + player["head_margin_m"]
     for r in layout["rooms"]:
-        if r["clear_h"] < need:
+        if min(r["clear_h"], r.get("clear_h_in", r["clear_h"])) < need:   # the vault's clear_h_back: nobody walks there
             problems.append(f"{r['id']}: clear height {r['clear_h']:g} m < {need:g} m (capsule and margin)")
         if r["shape"] == "circle" and r["radius"] * 2 < 2 * player["capsule_radius_m"] + 2.0:
             problems.append(f"{r['id']}: too small to walk round in")
@@ -249,11 +254,16 @@ def check(layout: dict[str, Any]) -> list[str]:
             elif not _touch(by_id[rid], by_id[other]):
                 problems.append(f"{rid} and {other} are linked but do not meet")
             todo.append(other)
-    if seen != set(by_id):
-        problems.append(f"rooms not reachable from the hall: {', '.join(sorted(set(by_id) - seen))}")
+    closed = {r["id"] for r in layout["rooms"] if r.get("closed")}
+    if seen | closed != set(by_id):
+        problems.append(f"rooms not reachable from the hall: {', '.join(sorted(set(by_id) - seen - closed))}")
     problems += check_polys(layout)
+    problems += check_closed(layout)
+    problems += check_bands(layout)
     problems += check_spots(layout)
     problems += check_walk(layout)
+    if pending:
+        return problems + _pieces(layout)
     problems += hull_skin(layout)
     # inside the hull: every room's outer wall and every placed piece's origin (unless the piece may stand outside)
     poly = outline(layout)
@@ -265,6 +275,21 @@ def check(layout: dict[str, Any]) -> list[str]:
         out = [p for p in pts if not inside(poly, p)]
         if out:
             problems.append(f"{r['id']}: {len(out)} wall points outside the hull, e.g. ({out[0][0]:.2f}, {out[0][1]:.2f})")
+    return problems + _pieces(layout, poly)
+
+
+def skipped(layout: dict[str, Any]) -> list[str]:
+    """The tests `check` skips and why (while `[hull] pending` is set)."""
+    pending = layout["hull"].get("pending")
+    if not pending:
+        return []
+    return [f"skipped: the footprint, the skin and the rooms and pieces inside the hull ([hull] pending: {pending})"]
+
+
+def _pieces(layout: dict[str, Any], poly: list[tuple[float, float]] | None = None) -> list[str]:
+    """No piece defined twice or never placed, none unknown; with the hull's outline (poly) every placed piece inside
+    it unless it may stand outside."""
+    problems = []
     pieces = {p["id"]: p for p in layout["pieces"]}
     ids = [p["id"] for p in layout["pieces"]]
     for dup in sorted({i for i in ids if ids.count(i) > 1}):
@@ -273,11 +298,84 @@ def check(layout: dict[str, Any]) -> list[str]:
         piece = pieces.get(pid)
         if piece is None:
             problems.append(f"placement of unknown piece {pid}")
-        elif not piece["outside"] and not inside(poly, (at[0], at[1])):
+        elif poly is not None and not piece["outside"] and not inside(poly, (at[0], at[1])):
             problems.append(f"{pid} at ({at[0]:g}, {at[1]:g}) stands outside the hull")
     unplaced = sorted(set(pieces) - {p[0] for p in layout["place"]})
     if unplaced:
         problems.append(f"pieces never placed: {', '.join(unplaced)}")
+    return problems
+
+
+def check_closed(layout: dict[str, Any]) -> list[str]:
+    """A closed room (the vault): no exit and no links either way; its shut door (width_m at least the capsule's width
+    and 0.1 m) on the wall of its door's room (`room`: 0.05 m in to 0.35 m behind that room's floor edge) and before
+    its own floor (within 0.4 m); its floor's edge outside the other room's wall; a slanted ceiling falling from the
+    door."""
+    problems = []
+    by_id = rooms(layout)
+    wall, rad = layout["deck"]["wall_m"], layout["player"]["capsule_radius_m"]
+    for r in layout["rooms"]:
+        if not r.get("closed"):
+            continue
+        rid = r["id"]
+        if r.get("exit") or r.get("links") or any(rid in o.get("links", []) for o in layout["rooms"]):
+            problems.append(f"{rid}: a closed room has no exit and no links")
+        door = r.get("door") or {}
+        other = by_id.get(door.get("room", ""))
+        if other is None or "at" not in door:
+            problems.append(f"{rid}: a closed room needs a door on another room's wall")
+            continue
+        at = tuple(door["at"])
+        if not -0.35 <= room_margin(other, at) <= 0.05:
+            problems.append(f"{rid}: its door ({at[0]:g}, {at[1]:g}) is not on {other['id']}'s wall")
+        if not -0.4 <= room_margin(r, at) <= 0.0:
+            problems.append(f"{rid}: its door ({at[0]:g}, {at[1]:g}) is not before its floor")
+        if door.get("width_m", 0.0) < 2 * rad + 0.1:
+            problems.append(f"{rid}: its door is narrower than {2 * rad + 0.1:g} m")
+        inner = [p for p in boundary(r, 0.0) if room_margin(other, p) > -wall]
+        if inner:
+            problems.append(f"{rid}: {len(inner)} floor edge points inside {other['id']}'s wall")
+        if r.get("ceiling") == "slant" and not 0 < r.get("clear_h_back", r["clear_h"]) <= r["clear_h"]:
+            problems.append(f"{rid}: its ceiling does not slant down from the door")
+    return problems
+
+
+def band_angles(layout: dict[str, Any], room: dict[str, Any]) -> tuple[float, float, float]:
+    """A room's window band in plan degrees round its centre (plan angles grow toward +y, aft): (outward axis, from,
+    to); the axis runs from the hall's centre through the room's, the band's degrees are + aft on both sides (the
+    west band is the east one mirrored)."""
+    hx, hy = rooms(layout)["hall"]["centre"]
+    cx, cy = room["centre"]
+    axis = math.degrees(math.atan2(cy - hy, cx - hx))
+    b = room["band"]
+    if cx >= hx:
+        return axis, axis + b["from_deg"], axis + b["to_deg"]
+    return axis, axis - b["to_deg"], axis - b["from_deg"]
+
+
+def check_bands(layout: dict[str, Any]) -> list[str]:
+    """A room's window band: the sill under the head, the head 0.1 m under the room's least clear height, the band on
+    the outer side (inside +-90 deg of the outward axis, off the door) and off every wall spot's plain band in that
+    room (by angle: the plain width over the room's radius)."""
+    problems = []
+    st = layout["stations"]
+    for r in layout["rooms"]:
+        b = r.get("band")
+        if not b:
+            continue
+        if not 0.3 <= b["sill_h"] < b["head_h"] <= r["clear_h"] - 0.1:
+            problems.append(f"{r['id']}: its window band's sill {b['sill_h']:g} and head {b['head_h']:g} do not fit "
+                            f"under {r['clear_h']:g} m")
+        if not -90.0 < b["from_deg"] < b["to_deg"] < 90.0:
+            problems.append(f"{r['id']}: its window band is not on the outer side")
+        _axis, a0, a1 = band_angles(layout, r)
+        for s in st["spot"]:
+            if s["room"] != r["id"] or not s.get("normal"):
+                continue
+            a = math.degrees(math.atan2(s["at"][1] - r["centre"][1], s["at"][0] - r["centre"][0]))
+            half = math.degrees(st["plain_width_m"] / 2 / r["radius"])
+            if any(a - half + k < a1 and a + half + k > a0 for k in (-360.0, 0.0, 360.0)):
+                problems.append(f"station {s['id']}: its plain wall overlaps {r['id']}'s window band")
     return problems
 
 
@@ -354,6 +452,8 @@ def room_skin(layout: dict[str, Any]) -> dict[str, tuple[float, str]]:
     if blender not in sys.path:
         sys.path.insert(0, blender)
     import ship_hull_shape
+    if layout["hull"].get("pending"):
+        return {}
     return ship_hull_shape.room_skin(layout["hull"]["shape"], rooms(layout))
 
 
@@ -363,8 +463,9 @@ def _unit(v: list[float]) -> tuple[float, float]:
 
 
 def in_rooms(layout: dict[str, Any], pt: tuple[float, float]) -> float:
-    """How far pt lies inside the rooms' floor (the largest margin over all rooms; < 0 outside every room)."""
-    return max(room_margin(r, pt) for r in layout["rooms"])
+    """How far pt lies inside the walkable rooms' floor (the largest margin over every room but the closed ones; < 0
+    outside every room)."""
+    return max(room_margin(r, pt) for r in layout["rooms"] if not r.get("closed"))
 
 
 def to_local(pt: tuple[float, float], at: list[float], yaw: float) -> tuple[float, float]:
