@@ -55,12 +55,34 @@ POSES = {
               "bones": {"LipCorner": (-0.04, -0.20, 0.0), "LipUpper": (0.0, -0.04, 0.0), "LipLower": (0.0, 0.06, 0.06),
                         "BrowInner": (-0.12, -0.35, 0.06), "BrowOuter": (0.0, 0.08, 0.0)}},
     "surprised": {"lid": (30.0, -8.0), "tilt": 0.0, "jaw": 14.0,
-                  "bones": {"LipCorner": ("in", -0.05, 0.10), "LipUpper": (0.0, 0.16, 0.12), "LipLower": (0.0, -0.05, 0.12),
+                  "bones": {"LipCorner": ("in", -0.05, 0.25), "LipUpper": (0.0, 0.16, 0.12), "LipLower": (0.0, -0.05, 0.12),
                             "BrowInner": (0.0, 0.30, 0.0), "BrowOuter": (0.0, 0.30, 0.0)}},
     "talk": {"lid": (0.0, 0.0), "tilt": 0.0, "jaw": 10.0,
              "bones": {"LipCorner": (-0.03, 0.0, 0.0), "LipUpper": (0.0, 0.06, 0.0)}},
 }
 BROWS = ("BrowInner", "BrowOuter")
+# per head (2b-1b): the lips (the chameleon's swept lip mesh: vertical radius in mouth units, fullness = depth radius
+# over vertical radius; None keeps the skin's lips), the expression amounts picked from the variant grid (a factor on
+# every bone move, jaw angle, lid angle and corrective of the pose), the brows' weight sigma and move unit in eye radii,
+# the cheeks' lift for the smile and the knit between the brows for the angry face (corrective deltas, in mouth units
+# and eye radii), the mouth lining cleared behind the slit ("lining": the half width's fraction, the half height in
+# lip radii (chameleon) or mouth units, the depth behind the line in mouth units) and the blink's flattening of the closed eye along the gaze (a fraction of
+# its front bulge, so the closed lid sits close like skin)
+RIGCFG = {
+    # picked from the 2b-1b grids (v2/<head>_grid_*.png); "lid": the lids' own factor where it differs (his heavy
+    # lids already droop enough at 1, more covers the iris; her small lids need more to show at all)
+    "chameleon": {"lips": {"radius": 0.42, "full": 1.2},
+                  "amount": {"smile": 1.75, "sad": 1.75, "angry": 1.75, "surprised": 1.75, "talk": 1.75},
+                  "lid": {"sad": 1.0, "angry": 1.0}, "brow": (0.75, 1.0), "cheek": 0.35, "knit": 0.25,
+                  "blink_flat": 0.55, "lining": (0.97, 1.5, 0.1)},
+    "axolotl": {"lips": None, "amount": {"smile": 2.2, "sad": 2.5, "angry": 2.5, "surprised": 1.75, "talk": 1.75},
+                "lining": (0.8, 0.3, 0.1),
+                "lid": {"sad": 2.2, "angry": 2.0, "surprised": 1.0}, "brow": (1.5, 2.2), "cheek": 0.35, "knit": 0.25,
+                "blink_flat": 0.6},
+}
+GRID_LIPS = ({"radius": 0.30, "full": 1.0}, {"radius": 0.36, "full": 1.1}, {"radius": 0.42, "full": 1.2},
+             {"radius": 0.36, "full": 1.4})
+GRID_AMOUNTS = (1.0, 1.75, 2.5)
 
 
 def log(msg):
@@ -96,6 +118,177 @@ def coords(obj):
     return a.reshape(-1, 3)
 
 
+def lip_core(x, s, L):
+    """The swept lip's cross-section at x along the mouth (s 1: the upper lip, -1: the lower): the core's height and
+    depth and the ellipse's vertical and depth radii. Both lips kiss at the fitted lip line; they taper toward the
+    corners and tuck back into the cheeks there."""
+    hw = L["hw"]
+    xc = np.clip(x, -hw, hw)
+    u = np.sqrt(np.clip(1 - (xc / hw) ** 2, 0, 1))
+    zl, dl = np.polyval(L["kz"], xc), np.polyval(L["kd"], xc)
+    taper = 0.18 + 0.82 * u ** 0.6
+    rz, rd = L["rz"] * taper, L["rd"] * taper
+    front = dl + (L["prot"][s] + (L["full"] - 1) * L["rz"]) * taper - (1 - u) * 0.6 * L["rd"]
+    return zl + s * rz, front - rd, rz, rd
+
+
+def build_lips(head, objs, L, lf, fr, n_st=48, n_ring=24):
+    """The chameleon's lips (2b-1b): Meshy's lip zone and the slit's cut row (a jagged row of folded triangles that
+    read as stitches, and as teeth with the mouth open) are replaced by a separate swept mesh, two rolled lips of clean
+    quad rings along the mouth, in the lips' sampled colour. The skin inside a lip's ellipse is drawn into it (a smooth
+    radial remap of 1.6 ellipse radii onto 0.8, no step at the border), the faces then wholly inside and the lining
+    between the lips (the slit row) deleted: the open mouth shows the dark cup and the tongue."""
+    skin = objs["skin"]
+    img = H.base_image(skin.active_material)
+    samples = []
+    for s in (1, -1):
+        for k in (-0.4, -0.15, 0.15, 0.4):
+            czz, cdep, rz, rd = (float(v) for v in lip_core(np.array([k * L["hw"]]), s, L))
+            samples.append(H.sample_skin(skin, img, Vector((0, 0, czz)) + lf * k * L["hw"] + fr * (cdep + rd)))
+    rgb = tuple(float(c) for c in np.median(np.array(samples), axis=0))
+    co = coords(skin)
+    x, z, d = co @ np.array(lf), co[:, 2], co @ np.array(fr)
+    inx = np.abs(x) < L["hw"] * 1.02
+    new, e_after, side = co.copy(), np.full(len(co), 9.0), np.zeros(len(co), dtype=np.int32)
+    for s in (1, -1):
+        czz, cdep, rz, rd = lip_core(x, s, L)
+        e = np.hypot((z - czz) / rz, (d - cdep) / rd)
+        sel = inx & (e < 1.6) & (e < e_after)
+        t = np.clip((e - 0.8) / 0.8, 0, 1)
+        e2 = np.where(e < 0.8, e, 0.8 + 0.8 * t * t * (2 - t))
+        k = e2 / np.maximum(e, 1e-9)
+        nz, nd = czz + (z - czz) * k, cdep + (d - cdep) * k
+        moved = co + np.outer(nz - z, UP) + np.outer(nd - d, fr)
+        new[sel] = moved[sel]
+        side[sel] = s
+        e_after = np.where(sel, e2, np.minimum(e_after, e))
+    zl, dl = np.polyval(L["kz"], np.clip(x, -L["hw"], L["hw"])), np.polyval(L["kd"], np.clip(x, -L["hw"], L["hw"]))
+    gap = (np.abs(x) < 0.97 * L["hw"]) & (np.abs(z - zl) < 0.8 * L["rz"]) & (d < dl) & (d > dl - 1.6 * L["m"])
+    gone = (e_after < 0.98) | gap
+    skin.data.vertices.foreach_set("co", new.ravel())
+    att = skin.data.attributes.new("lip_side", "INT", "POINT")  # read back by the weights, after the deletion
+    att.data.foreach_set("value", side)
+    skin.data.update()
+    above = z >= zl
+    lipzone = np.abs(x) < 1.02 * L["hw"]
+    bm = bmesh.new()
+    bm.from_mesh(skin.data)
+    bm.faces.ensure_lookup_table()
+
+    def doomed(f):
+        ix = [v.index for v in f.verts]
+        if all(gone[i] for i in ix):
+            return True
+        sides = {int(side[i]) for i in ix}
+        if {1, -1} <= sides:  # drawn into both lips: it would hang across the open mouth
+            return True
+        return bool(sides - {0}) and any(lipzone[i] for i in ix) and len({bool(above[i]) for i in ix}) == 2
+
+    dead = [f for f in bm.faces if doomed(f)]
+    bmesh.ops.delete(bm, geom=dead, context="FACES")
+    bm.to_mesh(skin.data)
+    bm.free()
+    skin.data.update()
+    # the swept mesh: rings round each lip's core, denser toward the corners, a pole closing each end
+    xs = L["hw"] * np.sin(np.linspace(-1, 1, n_st) * math.pi / 2)
+    verts, faces, uvs = [], [], []
+    th = np.arange(n_ring) * 2 * math.pi / n_ring
+    for s in (1, -1):
+        base = len(verts)
+        czz, cdep, rz, rd = lip_core(xs, s, L)
+        for i in range(n_st):
+            for j in range(n_ring):
+                verts.append(lf * float(xs[i]) + UP * float(czz[i] + rz[i] * math.sin(th[j]))
+                             + fr * float(cdep[i] + rd[i] * math.cos(th[j])))
+                uvs.append((i / (n_st - 1), j / n_ring))
+        for i in range(n_st - 1):
+            for j in range(n_ring):
+                j1 = (j + 1) % n_ring
+                faces.append((base + i * n_ring + j, base + i * n_ring + j1, base + (i + 1) * n_ring + j1,
+                              base + (i + 1) * n_ring + j))
+        for i, sg in ((0, -1), (n_st - 1, 1)):
+            pole = len(verts)
+            verts.append(lf * float(xs[i] + sg * 0.6 * rz[i]) + UP * float(czz[i]) + fr * float(cdep[i]))
+            uvs.append((0.5, 0.5))
+            for j in range(n_ring):
+                faces.append((base + i * n_ring + j, base + i * n_ring + (j + 1) % n_ring, pole))
+    me = bpy.data.meshes.new(f"{head}_lips")
+    me.from_pydata([tuple(v) for v in verts], [], faces)
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(me)
+    bm.free()
+    uvl = me.uv_layers.new(name="UVMap").data
+    for loop in me.loops:
+        uvl[loop.index].uv = uvs[loop.vertex_index]
+    me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
+    me.materials.append(H.principled(f"{head}_lips", rgb=rgb, rough=0.42))
+    obj = bpy.data.objects.new(f"{head}_lips", me)
+    bpy.context.collection.objects.link(obj)
+    return obj, {"radius": L["radius"], "full": L["full"], "srgb": [round(c, 4) for c in rgb],
+                 "skin_moved": int((e_after < 1.6).sum()), "skin_faces_deleted": len(dead), "tris": H.tris(obj)}
+
+
+def slit_sides(skin, x, dz, hw, m):
+    """Which lip each vertex round the slit belongs to by the cut, not by its height: the vertices within 0.9 half
+    widths and a mouth unit of the line split into connected pieces (the cut parts them; the corners, where the outer
+    skin joins them, are left out), each piece the side of its median height against the line (1 upper, -1 lower)."""
+    zone = (np.abs(x) < 0.9 * hw) & (np.abs(dz) < 1.0 * m)
+    me = skin.data
+    ed = np.empty(len(me.edges) * 2, dtype=np.int64)
+    me.edges.foreach_get("vertices", ed)
+    ed = ed.reshape(-1, 2)
+    ed = ed[zone[ed[:, 0]] & zone[ed[:, 1]]]
+    parent = np.arange(len(x))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for a, b in ed:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+    roots = np.array([find(i) for i in range(len(x))])
+    side = np.zeros(len(x), dtype=np.int32)
+    for r in np.unique(roots[zone]):
+        idx = np.nonzero(zone & (roots == r))[0]
+        below = float((dz[idx] < 0).mean())
+        if len(idx) > 40 and 0.2 < below < 0.8:  # a piece across the line: the cut did not part it, keep the height
+            continue
+        side[idx] = 1 if below < 0.5 else -1
+    return side
+
+
+def clear_lining(skin, lf, fr, kz, kd, hw, m, spec, unit):
+    """The mouth's lining behind the slit (2b-1b): Meshy's slit is cut along a jagged path whose folded rows read as
+    teeth, or as dark blobs at the corners, once the mouth opens. Faces wholly inside the volume behind the line (the
+    half width's fraction spec[0], spec[1] units up and down, from spec[2] to 2 mouth units behind it), or with a vertex
+    inside it and vertices on both sides of the line, are deleted: the open mouth shows the dark cup behind."""
+    co = coords(skin)
+    x, z, d = co @ np.array(lf), co[:, 2], co @ np.array(fr)
+    xc = np.clip(x, -hw, hw)
+    zl, dl = np.polyval(kz, xc), np.polyval(kd, xc)
+    inner = ((np.abs(x) < spec[0] * hw) & (np.abs(z - zl) < spec[1] * unit) & (d < dl - spec[2] * m)
+             & (d > dl - 2.0 * m))
+    above = z >= zl
+    bm = bmesh.new()
+    bm.from_mesh(skin.data)
+    dead = []
+    for f in bm.faces:
+        ix = [v.index for v in f.verts]
+        if all(inner[i] for i in ix) or (any(inner[i] for i in ix) and len({bool(above[i]) for i in ix}) == 2):
+            dead.append(f)
+    bmesh.ops.delete(bm, geom=dead, context="FACES")
+    bm.to_mesh(skin.data)
+    bm.free()
+    skin.data.update()
+    return len(dead)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--head", required=True)
@@ -104,8 +297,31 @@ def main():
     ap.add_argument("--expr", type=Path, required=True)
     ap.add_argument("--view2d", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--grid", action="store_true", help="the variant grids (lips, expression amounts), no export")
+    ap.add_argument("--suffix", default="", help="the review sheet's name suffix, e.g. _v2")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
+    args.out.mkdir(parents=True, exist_ok=True)
+    rc = RIGCFG[args.head]
+    if not args.grid:
+        rig(args, rc["lips"], rc["amount"], final=True)
+        return
+    rows = []
+    if rc["lips"]:
+        for lips in GRID_LIPS:  # rows: per variant the mouth at rest (3/4 and front), talking and surprised
+            rows.append(rig(args, lips, rc["amount"], final=False, cells="lips"))
+        H.save_rgb(np.concatenate(rows[::-1], axis=0), args.out / f"{args.head}_grid_lips.png")
+    cols = [rig(args, rc["lips"], {e: f for e in EXPRESSIONS[1:]}, final=False, cells="expr") for f in GRID_AMOUNTS]
+    # one row per expression: the 2D cell, then the amounts left to right
+    top = crops_2d(args.expr, 320)
+    grid = [np.concatenate([top[i + 1], *[c[i] for c in cols]], axis=1) for i in range(len(EXPRESSIONS) - 1)]
+    H.save_rgb(np.concatenate(grid[::-1], axis=0), args.out / f"{args.head}_grid_expr.png")
+
+
+def rig(args, lips, amounts, final, cells=None):
+    """One rig of the head from its build: with final, the GLB, rig.json, the .blend and the review sheet; else the
+    grid cells (`lips`: one row of mouth close-ups; `expr`: the five expressions' 3/4 cells) as arrays."""
     head, out = args.head, args.out
+    rc = RIGCFG[head]
     bpy.ops.wm.open_mainfile(filepath=str(args.blend))
     build = json.loads(args.build.read_text(encoding="utf-8"))
     cfg = H.HEADS[head]
@@ -128,10 +344,19 @@ def main():
                 bpy.data.objects.remove(o)
     H.select_only(list(objs.values()))
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)  # local == world from here on
-    report = {"head": head, "m": m, "R": R}
+    report = {"head": head, "m": m, "R": R, "amount": amounts}
 
     def at(x, z, d):
         return Vector((0, 0, z)) + lf * x + fr * d
+
+    if lips:
+        L = dict(lips, hw=hw, kz=kz, kd=kd, m=m, rz=lips["radius"] * m, rd=lips["radius"] * lips["full"] * m,
+                 prot={1: build["lip_tube"]["upper"]["protrusion"], -1: build["lip_tube"]["lower"]["protrusion"]})
+        objs["lips"], report["lips"] = build_lips(head, objs, L, lf, fr)
+        log(f"lips {report['lips']}")
+    report["lining_faces_deleted"] = clear_lining(objs["skin"], lf, fr, kz, kd, hw, m, rc["lining"],
+                                                  lips["radius"] * m if lips else m)
+    log(f"lining faces deleted {report['lining_faces_deleted']}")
 
     # ------------------------------------------------------------------ the skeleton
     skin_co = coords(objs["skin"])
@@ -223,7 +448,7 @@ def main():
             w[f"{side}LipCorner"] = 0.9 * gauss(co, corner[s], 0.4 * m) * H.sstep(-0.2 * m, 0.4 * m, (co @ np.array(lf)) * s)
             for name in BROWS:
                 c, r = eyes["L" if s == 1 else "R"]
-                w[f"{side}{name}"] = (0.85 * gauss(co, brow_pts[f"{side}{name}"], 0.5 * r)
+                w[f"{side}{name}"] = (0.85 * gauss(co, brow_pts[f"{side}{name}"], rc["brow"][0] * r)
                                       * H.sstep(c.z + 0.4 * r, c.z + 0.8 * r, z))
         return w
 
@@ -250,7 +475,21 @@ def main():
         return counts
 
     report["weights"] = {}
-    sk = face_weights(skin_co)
+    # every vertex round the slit weighted on its own lip's side of the line: the side the cut puts it on (the slit is
+    # cut along a jagged path, so the height against the fitted line puts some of the lining on the wrong lip and the
+    # open mouth stretched those faces into a row of teeth), else the lip it was drawn into
+    ev = skin_co.copy()
+    zl_, _ = zl_dl(skin_co @ np.array(lf))
+    side = slit_sides(objs["skin"], skin_co @ np.array(lf), skin_co[:, 2] - zl_, hw, m)
+    if "lip_side" in objs["skin"].data.attributes:
+        drawn = np.empty(len(skin_co), dtype=np.int32)
+        objs["skin"].data.attributes["lip_side"].data.foreach_get("value", drawn)
+        side = np.where(side == 0, drawn, side)
+        objs["skin"].data.attributes.remove(objs["skin"].data.attributes["lip_side"])
+    report["slit_sides"] = {"upper": int((side > 0).sum()), "lower": int((side < 0).sum())}
+    ev[:, 2] = np.where(side > 0, np.maximum(skin_co[:, 2], zl_ + 0.15 * m),
+                        np.where(side < 0, np.minimum(skin_co[:, 2], zl_ - 0.3 * m), skin_co[:, 2]))
+    sk = face_weights(ev)
     report["weights"]["skin"] = assign(objs["skin"], sk)
     n_skin = len(skin_co)
     co = coords(objs["eyes"])
@@ -265,8 +504,17 @@ def main():
         lw[f"{side}{'LidUpper' if p[2] > c.z else 'LidLower'}"][isl] = 1.0
     report["weights"]["lids"] = assign(objs["lids"], lw)
     co = coords(objs["mouth"])
-    jw = H.sstep(z0 + 0.05 * m, z0 - 0.3 * m, co[:, 2])
-    report["weights"]["mouth"] = assign(objs["mouth"], {"Jaw": jw})
+    # the cup and tongue follow the face (corners, lips), not the jaw alone: no cup showing at moved corners
+    report["weights"]["mouth"] = assign(objs["mouth"], face_weights(co))
+    if "lips" in objs:
+        co = coords(objs["lips"])
+        zl_, _ = zl_dl(co @ np.array(lf))
+        # by tube, never by height: the upper lip's bottom ring lies on the line itself, and a height test split it
+        # vertex by vertex between the lips (a row of teeth with the mouth open); build_lips writes the upper first
+        upper = np.arange(len(co)) < len(co) // 2
+        ev = co.copy()  # the upper lip weighted as if above the line, the lower as if below: no jaw in the upper lip
+        ev[:, 2] = np.where(upper, np.maximum(co[:, 2], zl_ + 0.15 * m), np.minimum(co[:, 2], zl_ - 0.3 * m))
+        report["weights"]["lips"] = assign(objs["lips"], face_weights(ev))
     if "gills" in objs:
         gw = {}
         gco = coords(objs["gills"])
@@ -306,27 +554,54 @@ def main():
         pb.matrix = mat @ Matrix.Translation(-hd) @ cur
         bpy.context.view_layer.update()
 
-    def apply_pose(spec):
+    def apply_pose(spec, f=1.0):
         """A paired bone's move is (out from the midline, up, front) in its unit; "in" pulls the lip corners toward
         the middle (the O); the Jaw rotates open round the character's left axis."""
         reset()
         if spec.get("jaw"):
-            move("Jaw", rot=(UP.cross(fr).normalized(), spec["jaw"]))
+            move("Jaw", rot=(UP.cross(fr).normalized(), spec["jaw"] * f))
         for bname, (a, b, c) in spec["bones"].items():
-            unit = R if bname in BROWS else m
+            a = a if a == "in" else a * f
+            b, c = b * f, c * f
+            unit = R * rc["brow"][1] if bname in BROWS else m
             if bname in ("LipCorner", *BROWS):
                 for s_, side in ((1, "Left"), (-1, "Right")):
-                    a_ = -0.18 * hw / unit if a == "in" else a
+                    a_ = -0.28 * f * hw / unit if a == "in" else a
                     move(f"{side}{bname}", (lf * s_ * a_ + UP * b + fr * c) * unit)
             else:
                 move(bname, (UP * b + fr * c) * unit)
 
+    # correctives (2b-1b), added to the posed shapes: the smile's cheeks lifted and puffed between the eye and the
+    # corner; the angry face's knit, the skin between the brows pulled down and forward into one smooth fold
+    cheek_c, cheek_s = {}, {}
+    for t, s_ in (("L", 1), ("R", -1)):
+        c, r = eyes[t]
+        bottom = c - UP * 1.05 * r
+        p, _, _ = kd_skin.find(bottom.lerp(corner[s_], 0.45) + fr * r)
+        cheek_c[t], cheek_s[t] = np.array(p), 0.35 * (bottom - corner[s_]).length
+    knit_c = np.array(kd_skin.find((brow_pts["LeftBrowInner"] + brow_pts["RightBrowInner"]) / 2 + fr * R)[0])
+
+    def corrective(name, co, f):
+        dlt = np.zeros_like(co)
+        if name == "smile":
+            for t in ("L", "R"):
+                dlt += np.outer(gauss(co, cheek_c[t], cheek_s[t]), np.array(UP * 0.8 + fr * 0.35)) * rc["cheek"] * m * f
+        if name == "angry":
+            g = gauss(co, knit_c, 0.9 * R * rc["brow"][1])
+            dlt += np.outer(g, np.array(-UP * 0.6 + fr * 0.5)) * rc["knit"] * R * rc["brow"][1] * f
+        return dlt
+
+    parts = [k for k in ("skin", "mouth", "lips") if k in objs]
+    rest = {k: coords(objs[k]) for k in parts}
     deformed = {}
     for name in EXPRESSIONS[1:]:
-        apply_pose(POSES[name])
+        f = amounts.get(name, 1.0)
+        apply_pose(POSES[name], f)
         dg = bpy.context.evaluated_depsgraph_get()
-        deformed[name] = {k: np.array([tuple(v.co) for v in objs[k].evaluated_get(dg).data.vertices])
-                          for k in ("skin", "mouth")}
+        deformed[name] = {}
+        for k in parts:
+            ev = np.array([tuple(v.co) for v in objs[k].evaluated_get(dg).data.vertices])
+            deformed[name][k] = ev + corrective(name, rest[k], f)
     reset()
 
     # the lids: rebuilt at the pose's edge angles, matched to the joined lids by their rest positions
@@ -371,23 +646,32 @@ def main():
         lid_rest_idx[key] = np.array(idx)
     report["lid_match_worst"] = worst
     log(f"lid rebuild matched, worst {worst:.2e}")
+    def flatten(pts_, tag, k):
+        """The front bulge pressed back toward the eye's centre along the gaze (k: the fraction)."""
+        c = np.array(eyes[tag][0])
+        a = np.maximum((pts_ - c) @ np.array(fr), 0.0)
+        return pts_ - np.outer(a * k, np.array(fr))
+
+    flat = rc["blink_flat"]
     lid_keys = {}
     for tag in ("L", "R"):
         k = lid_co.copy()
         up_, lo_ = build["lids"][f"upper_{tag}"], build["lids"][f"lower_{tag}"]
         ui = lid_rest_idx[f"upper_{tag}"]
-        k[ui] = lid_points(f"upper_{tag}", up_, closed_to=lo_)
+        k[ui] = flatten(lid_points(f"upper_{tag}", up_, closed_to=lo_), tag, flat)
+        li = lid_rest_idx[f"lower_{tag}"]
+        k[li] = flatten(lid_co[li], tag, flat)
         lid_keys[f"blink_{tag}"] = k
         # the corrective: a blend shape is a straight line, so blink_* at 0.5 cuts the chord through the eyeball; at
         # weight 4t(1-t) with blink_* at t, blink_arc_* puts the half-closed lid back on its sphere (exact at 0.5)
         arc = lid_co.copy()
-        arc[ui] = lid_co[ui] + lid_points(f"upper_{tag}", up_, closed_to=lo_, frac=0.5) - (lid_co[ui] + k[ui]) / 2
+        arc[ui] = lid_co[ui] + flatten(lid_points(f"upper_{tag}", up_, closed_to=lo_, frac=0.5), tag, flat / 2)             - (lid_co[ui] + k[ui]) / 2
         lid_keys[f"blink_arc_{tag}"] = arc
     for name in EXPRESSIONS[1:]:
-        spec = POSES[name]
+        spec, f = POSES[name], rc.get("lid", {}).get(name, amounts.get(name, 1.0))
         k = lid_co.copy()
         for tag in ("L", "R"):
-            for kind, dfrom, tilt in (("upper", spec["lid"][0], spec["tilt"]), ("lower", spec["lid"][1], 0.0)):
+            for kind, dfrom, tilt in (("upper", spec["lid"][0] * f, spec["tilt"] * f), ("lower", spec["lid"][1] * f, 0.0)):
                 key = f"{kind}_{tag}"
                 if dfrom or tilt:
                     k[lid_rest_idx[key]] = lid_points(key, build["lids"][key], d_from=dfrom, tilt=tilt)
@@ -401,9 +685,17 @@ def main():
             kb.data.foreach_set("co", np.ascontiguousarray(pts_, dtype=np.float32).ravel())
             kb.value = 0.0
 
-    add_keys(objs["skin"], {n: deformed[n]["skin"] for n in EXPRESSIONS[1:]})
-    add_keys(objs["mouth"], {n: deformed[n]["mouth"] for n in EXPRESSIONS[1:]})
+    for k in parts:
+        add_keys(objs[k], {n: deformed[n][k] for n in EXPRESSIONS[1:]})
     add_keys(objs["lids"], lid_keys)
+    eye_co = coords(objs["eyes"])
+    side_l = (eye_co @ np.array(lf)) > 0
+    eye_keys = {}
+    for tag, sel in (("L", side_l), ("R", ~side_l)):
+        k = eye_co.copy()
+        k[sel] = flatten(eye_co[sel], tag, flat)
+        eye_keys[f"blink_{tag}"] = k
+    add_keys(objs["eyes"], eye_keys)
     report["shape_keys"] = {k: [b.name for b in o.data.shape_keys.key_blocks[1:]] for k, o in objs.items()
                             if o.data.shape_keys}
     report["max_shift"] = {n: round(float(np.max(np.linalg.norm(deformed[n]["skin"] - skin_co, axis=1))), 4)
@@ -421,11 +713,12 @@ def main():
             p = lids_me.vertices[loop.vertex_index].co
             c = eyes["L"][0] if p.dot(lf) > 0 else eyes["R"][0]
             uvl[loop.index].uv = (0.5 + 0.4 * (p - c).dot(lf) / R, 0.5 + 0.4 * (p.z - c.z) / R)
-    H.select_only([arm, *objs.values()], active=arm)
-    bpy.ops.export_scene.gltf(filepath=str(out / f"{head}_rig.glb"), export_format="GLB", use_selection=True,
-                              export_apply=False, export_yup=True, export_animations=False, export_extras=True,
-                              export_skins=True, export_morph=True, export_morph_normal=True)
     report["tris"] = {k: H.tris(o) for k, o in objs.items()}
+    if final:
+        H.select_only([arm, *objs.values()], active=arm)
+        bpy.ops.export_scene.gltf(filepath=str(out / f"{head}_rig.glb"), export_format="GLB", use_selection=True,
+                                  export_apply=False, export_yup=True, export_animations=False, export_extras=True,
+                                  export_skins=True, export_morph=True, export_morph_normal=True)
 
     # ------------------------------------------------------------------ review
     def set_keys(name, value=1.0):
@@ -449,34 +742,28 @@ def main():
     face_c = Vector((0.0, 0.0, (top + head_lo) / 2)) + fr * eyes["L"][0].dot(fr) * 0.5
     face_scale = max(top - head_lo, width) * 1.2
     tq = (fr + lf).normalized()
-    cells = []
-    for name in EXPRESSIONS:
-        set_keys(name)
-        path = out / "views" / f"rig_{name}.png"
-        H.shoot(cam, face_c, tq, face_scale, path)
-        cells.append(path)
-    strip = []
-    for i, v in enumerate((0.0, 0.5, 1.0)):
-        set_keys("blink", v)
-        path = out / "views" / f"rig_blink_{i}.png"
-        H.shoot(cam, (eyes["L"][0] + eyes["R"][0]) / 2, fr, 2.0 * (abs(eyes["L"][0].dot(lf)) + 1.5 * R), path)
-        strip.append(path)
-    set_keys(None)
-    for nm, d in (("side", lf), ("front", fr)):
-        path = out / "views" / f"rig_{nm}.png"
-        H.shoot(cam, face_c, d, face_scale * 1.15, path)
-        strip.append(path)
-    move("Jaw", rot=(UP.cross(fr).normalized(), 18.0))
-    for pb in pose_bones:
-        if "Gill" in pb.name:
-            pb.rotation_mode = "XYZ"
-            pb.rotation_euler = (math.radians(25.0), 0.0, 0.0)
-    bpy.context.view_layer.update()
-    path = out / "views" / "rig_bones.png"
-    H.shoot(cam, face_c, tq, face_scale * 1.15, path)
-    strip.append(path)
-    reset()
-    review_sheet(args, out, head, cells, strip)
+    mouth_c, mouth_s = at(0, z0 - 0.25 * m, d0), hw * 3.0
+
+    def shots(specs, size):
+        arrs = []
+        for i, (key, value, centre, d, scale) in enumerate(specs):
+            set_keys(key, value)
+            path = out / "views" / f"rig_cell_{i}.png"
+            H.shoot(cam, centre, d, scale, path)
+            arrs.append(H.load_rgb(path, (size, size)))
+        set_keys(None)
+        return arrs
+
+    mouth = [("rest", 1.0, mouth_c, tq, mouth_s), ("talk", 1.0, mouth_c, fr, mouth_s),
+             ("surprised", 1.0, mouth_c, fr, mouth_s)]
+    if cells == "lips":
+        return np.concatenate(shots([("rest", 1.0, mouth_c, fr, mouth_s), *mouth], 320), axis=1)
+    if cells == "expr":
+        return shots([(n, 1.0, face_c, tq, face_scale) for n in EXPRESSIONS[1:]], 320)
+    row3d = shots([(n, 1.0, face_c, tq, face_scale) for n in EXPRESSIONS], 420)
+    eyes_c, eyes_s = (eyes["L"][0] + eyes["R"][0]) / 2, 2.0 * (abs(eyes["L"][0].dot(lf)) + 1.5 * R)
+    strip = shots([("blink", v, eyes_c, fr, eyes_s) for v in (0.0, 0.5, 1.0)] + mouth, 420)
+    review_sheet(args, out, head, row3d, strip)
     for o in objs.values():
         for kb in (o.data.shape_keys.key_blocks if o.data.shape_keys else []):
             kb.value = 0.0
@@ -486,31 +773,38 @@ def main():
     log("done")
 
 
-def review_sheet(args, out, head, cells, strip, cell=420):
-    img = bpy.data.images.load(str(args.expr))
+def crops_2d(path, cell):
+    """The 2D expression sheet's six cells (2 rows of 3) in the sheet's order, each cell x cell."""
+    img = bpy.data.images.load(str(path))
     a = H.image_array(img)
     bpy.data.images.remove(img)
     h, w = a.shape[:2]
-    top = []
+    out = []
     for r in range(2):  # rows are bottom-up: the 2D's top row first
         for c in range(3):
             crop = a[h - (r + 1) * (h // 2): h - r * (h // 2), c * (w // 3): (c + 1) * (w // 3)]
             tmp = bpy.data.images.new("crop", crop.shape[1], crop.shape[0], alpha=True)
             tmp.pixels.foreach_set(np.ascontiguousarray(crop).ravel())
             tmp.scale(cell, cell)
-            top.append(H.image_array(tmp))
+            out.append(H.image_array(tmp))
             bpy.data.images.remove(tmp)
-    rows3d = [H.load_rgb(p, (cell, cell)) for p in cells]
-    last = [H.load_rgb(p, (cell, cell)) for p in strip]
+    return out
+
+
+def review_sheet(args, out, head, rows3d, strip, cell=420):
+    """The 2D expressions above the 3D's (both in the 2D's order), then the blink strip (open, half, closed) and the
+    mouth close-ups (rest in 3/4, talking and surprised from the front)."""
+    top = crops_2d(args.expr, cell)
     gap = np.ones((8, cell * 6, 4), dtype=np.float32)
     gap[..., :3] = 0.1
-    sheet = np.concatenate([np.concatenate(last, axis=1), gap, np.concatenate(rows3d, axis=1), gap,
+    sheet = np.concatenate([np.concatenate(strip, axis=1), gap, np.concatenate(rows3d, axis=1), gap,
                             np.concatenate(top, axis=1)], axis=0)
     sheet[..., 3] = 1.0
-    H.save_rgb(sheet, out / f"{head}_rig.png")
-    small = bpy.data.images.load(str(out / f"{head}_rig.png"))
+    full = out / f"{head}_rig{args.suffix}.png"
+    H.save_rgb(sheet, full)
+    small = bpy.data.images.load(str(full))
     small.scale(1280, int(1280 * sheet.shape[0] / sheet.shape[1]))
-    H.save_rgb(H.image_array(small), out / f"{head}_rig_1280.png")
+    H.save_rgb(H.image_array(small), out / f"{head}_rig_1280{args.suffix}.png")
     bpy.data.images.remove(small)
 
 
