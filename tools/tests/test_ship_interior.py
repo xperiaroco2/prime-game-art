@@ -89,7 +89,8 @@ class ShipInteriorTest(unittest.TestCase):
         import ship_hull_skin as HS
         var = HS.VARIANTS[HS.DEFAULT]
         ids = {p[0] for p in INTERIOR["place"]}
-        self.assertTrue({"tip_well_e", "tip_well_w", "tip_glass_e", "tip_glass_w"} <= ids)
+        self.assertTrue({"tip_well_e", "tip_well_w"} <= ids)
+        self.assertFalse({"tip_glass_e", "tip_glass_w"} & ids)  # one glass: the hull's tip window
         self.assertNotIn("tip_glass", ids)
         for side in (1, -1):
             rows = S._well_rows(side)

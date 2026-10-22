@@ -88,7 +88,8 @@ def _prof(args):
 
 PORTAL_D = 0.15
 # the tip rooms
-R_TIP, H_TIP, APEX_TIP, R_TIP_RING = 2.1, _ROOM["tip_e"]["clear_h"], _ROOM["tip_e"]["apex_h"], 0.6
+R_TIP, H_TIP, APEX_TIP, R_TIP_RING = 2.1, _ROOM["tip_e"]["clear_h"], _ROOM["tip_e"]["apex_h"], 0.42
+# polish 4: R_TIP_RING 0.6 -> 0.42 (the tip ceiling's pale lamp cog read oversized from the room)
 TIP_X = 10.75
 WIN_HALF, DOOR_HALF = 65.0, 37.6
 SILL, HEAD = _ROOM["tip_e"]["window"]["sill_h"], _ROOM["tip_e"]["window"]["head_h"]
@@ -282,6 +283,17 @@ def floor_disc(args, layout):
     disc = G.slab(G.floor_frame(0.0), G.arc(r - 0.005, 0.0, 2 * math.pi)[:-1], FLOOR - 0.035, FLOOR, 0.008)
     a = L.angles(0.0, 2 * math.pi, D(6.0))
     trim = M(*[L.sector(r, r + 0.07, p, q, FLOOR - 0.035, FLOOR) for p, q in zip(a, a[1:])])
+    if args.get("grate"):
+        # polish 4 (hall_in-3's lit centre): a slotted grating disc in four quarters round a bolted hub, a warm glow
+        # layer under the slots (int_halo: glows, lights nothing), the trim ring kept (was a plain plate: a black hole)
+        q = [G.radial_grate(0.26, r - 0.005, D(90.0 * k + 1.0), D(90.0 * (k + 1) - 1.0), FLOOR - 0.035, FLOOR)
+             for k in range(4)]
+        glow = L.disc(r - 0.01, 32, FLOOR - 0.034, FLOOR - 0.032)
+        hub = G.slab(G.floor_frame(0.0), G.arc(0.265, 0.0, 2 * math.pi)[:-1], FLOOR - 0.035, FLOOR + 0.004, 0.008)
+        bolts = M(*[hex_bolt(0.19 * math.cos(D(45.0 * k + 22.5)), 0.19 * math.sin(D(45.0 * k + 22.5)), FLOOR + 0.004,
+                             0.012) for k in range(8)])
+        return [P("grate", M(*q), "int_grate"), P("glow", glow, "int_halo"), P("hub", hub, "int_plate"),
+                P("bolts", bolts, "int_bolt"), P("trim", trim, "int_silver_c")]
     inlay = M(*[L.sector(r * 0.55, r * 0.55 + 0.03, p, q, FLOOR, FLOOR + 0.002) for p, q in zip(a, a[1:])])
     return [P("disc", disc, "int_plate"), P("trim", trim, "int_silver_c"), P("inlay", inlay, "int_dark")]
 
@@ -521,10 +533,10 @@ def cor_ceil(args, layout):
 def cor_arch(args, layout):
     """A rib frame across the corridor (local x = 0; corridor.jpg): a 0.2 m deep band 18 cm into the corridor,
     chamfered 3 cm on both faces, and a raised inner rim (the cyan strip's seat), stepped and chamfered again."""
-    prof = _prof(args)
-    inner = [(u, max(0.0, v)) for u, v in G.inset(prof, 0.18)]
+    prof, i = _prof(args), args.get("inset", 0.18)  # polish 4: the mouth's arch 0.08 (its 0.18 narrowed the opening)
+    inner = [(u, max(0.0, v)) for u, v in G.inset(prof, i)]
     outer = [(u, max(0.0, v)) for u, v in G.inset(prof, -0.03)]
-    rim = [(u, max(0.0, v)) for u, v in G.inset(prof, 0.115)]
+    rim = [(u, max(0.0, v)) for u, v in G.inset(prof, i - 0.065)]
     out, lip = [], []
     for n in ((-1, 0, 0), (1, 0, 0)):
         fr = G.Frame((0.0, 0.0, FLOOR), (0, 1, 0), (0, 0, 1), n)
@@ -536,8 +548,9 @@ def cor_arch(args, layout):
 def cor_arch_strip(args, layout):
     """The cyan strips on both faces of an arch's inner rim, up one side (side -1: -y, +1: +y)."""
     edges = (0, 1) if args["side"] < 0 else (3, 4)
-    a = [(u, max(0.0, v)) for u, v in G.inset(_prof(args), 0.135)]
-    b = [(u, max(0.0, v)) for u, v in G.inset(_prof(args), 0.16)]
+    i = args.get("inset", 0.18)
+    a = [(u, max(0.0, v)) for u, v in G.inset(_prof(args), i - 0.045)]
+    b = [(u, max(0.0, v)) for u, v in G.inset(_prof(args), i - 0.02)]
     out = []
     for n in ((-1, 0, 0), (1, 0, 0)):
         fr = G.Frame((0.0, 0.0, FLOOR), (0, 1, 0), (0, 0, 1), n)

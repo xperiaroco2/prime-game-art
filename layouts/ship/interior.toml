@@ -421,7 +421,6 @@ place = [
   ["tip_ceiling", [10.75, 0.0, 0.0], 0.0],
   ["tip_lamp_ring", [10.75, 0.0, 0.0], 0.0],
   ["tip_well_e", [10.75, 0.0, 0.0], 0.0],
-  ["tip_glass_e", [10.75, 0.0, 0.0], 0.0],
   ["tip_grate", [11.8587, 0.4592, 0.0], -22.5],
   ["tip_spoke", [11.95, 0.0, 0.0], 0.0],
   ["tip_light", [11.97, 0.0, 0.0], 0.0],
@@ -454,12 +453,12 @@ place = [
   ["tip_spoke", [11.5985, -0.8485, 0.0], 45.0],
   ["tip_light", [11.6127, -0.8627, 0.0], 45.0],
   ["tip_sill_strip", [11.8861, 1.7411, 0.0], -56.875],
-  ["tip_lamp", [11.2696, 0.3, 0.0], -30.0],
-  ["tip_lamp", [10.75, 0.6, 0.0], -90.0],
-  ["tip_lamp", [10.2304, 0.3, 0.0], -150.0],
-  ["tip_lamp", [10.2304, -0.3, 0.0], 150.0],
-  ["tip_lamp", [10.75, -0.6, 0.0], 90.0],
-  ["tip_lamp", [11.2696, -0.3, 0.0], 30.0],
+  ["tip_lamp", [11.1137, 0.21, 0.0], -30.0],
+  ["tip_lamp", [10.75, 0.42, 0.0], -90.0],
+  ["tip_lamp", [10.3863, 0.21, 0.0], -150.0],
+  ["tip_lamp", [10.3863, -0.21, 0.0], 150.0],
+  ["tip_lamp", [10.75, -0.42, 0.0], 90.0],
+  ["tip_lamp", [11.1137, -0.21, 0.0], 30.0],
   ["tip_panel_b", [11.1791, 2.0015, 0.0], -77.9],
   ["tip_panel_a", [10.2652, 1.9888, 0.0], -103.7],
   ["tip_panel_b", [9.4479, 1.5795, 0.0], -129.5],
@@ -534,7 +533,6 @@ place = [
   ["tip_ceiling", [-10.75, 0.0, 0.0], -180.0],
   ["tip_lamp_ring", [-10.75, 0.0, 0.0], -180.0],
   ["tip_well_w", [-10.75, 0.0, 0.0], -180.0],
-  ["tip_glass_w", [-10.75, 0.0, 0.0], -180.0],
   ["tip_grate", [-11.8587, -0.4592, 0.0], 157.5],
   ["tip_spoke", [-11.95, -0.0, 0.0], -180.0],
   ["tip_light", [-11.97, -0.0, 0.0], -180.0],
@@ -567,12 +565,12 @@ place = [
   ["tip_spoke", [-11.5985, 0.8485, 0.0], -135.0],
   ["tip_light", [-11.6127, 0.8627, 0.0], -135.0],
   ["tip_sill_strip", [-11.8861, -1.7411, 0.0], 123.125],
-  ["tip_lamp", [-11.2696, -0.3, 0.0], 150.0],
-  ["tip_lamp", [-10.75, -0.6, 0.0], 90.0],
-  ["tip_lamp", [-10.2304, -0.3, 0.0], 30.0],
-  ["tip_lamp", [-10.2304, 0.3, 0.0], -30.0],
-  ["tip_lamp", [-10.75, 0.6, 0.0], -90.0],
-  ["tip_lamp", [-11.2696, 0.3, 0.0], -150.0],
+  ["tip_lamp", [-11.1137, -0.21, 0.0], 150.0],
+  ["tip_lamp", [-10.75, -0.42, 0.0], 90.0],
+  ["tip_lamp", [-10.3863, -0.21, 0.0], 30.0],
+  ["tip_lamp", [-10.3863, 0.21, 0.0], -30.0],
+  ["tip_lamp", [-10.75, 0.42, 0.0], -90.0],
+  ["tip_lamp", [-11.1137, 0.21, 0.0], -150.0],
   ["tip_panel_b", [-11.1791, -2.0015, 0.0], 102.1],
   ["tip_panel_a", [-10.2652, -1.9888, 0.0], 76.3],
   ["tip_panel_b", [-9.4479, -1.5795, 0.0], 50.5],
@@ -640,10 +638,10 @@ place = [
   ["tip_portal", [-9.0862, 0.0, 0.0], 0.0],
   ["portal_strip_l", [-9.0862, 0.0, 0.0], 0.0],
   ["portal_strip_r", [-9.0862, 0.0, 0.0], 0.0],
-  ["cup_a", [1.05, -1.95, 0.0], 35.0],
-  ["spill_a", [1.05, -1.95, 0.0], 35.0],
-  ["cup_c", [-1.55, -0.75, 0.0], -160.0],
-  ["spill_c", [-1.55, -0.75, 0.0], -160.0],
+  ["cup_a", [0.85, -2.65, 0.0], 145.0],
+  ["spill_a", [0.85, -2.65, 0.0], 145.0],
+  ["cup_c", [-1.05, -0.45, 0.0], -160.0],
+  ["spill_c", [-1.05, -0.45, 0.0], -160.0],
   ["cup_b", [-6.6, 0.7, 0.0], 80.0],
   ["cable_coil", [6.5, 0.72, 0.0], 20.0],
   ["floor_patch_a", [-2.2368, 1.8769, 0.0], -132.0],
@@ -667,7 +665,7 @@ collide = true
 id = "hall_floor_disc"
 builder = "floor_disc"
 collide = true
-args = { radius = 1.0 }
+args = { radius = 1.0, grate = true }
 
 [[pieces]]
 id = "hall_grate"
@@ -950,19 +948,19 @@ args = { side = 1, prof = "mouth" }
 id = "mouth_arch"
 builder = "cor_arch"
 collide = true
-args = { prof = "mouth" }
+args = { prof = "mouth", inset = 0.08 }
 
 [[pieces]]
 id = "mouth_arch_strip_l"
 builder = "cor_arch_strip"
 collide = false
-args = { side = -1, prof = "mouth" }
+args = { side = -1, prof = "mouth", inset = 0.08 }
 
 [[pieces]]
 id = "mouth_arch_strip_r"
 builder = "cor_arch_strip"
 collide = false
-args = { side = 1, prof = "mouth" }
+args = { side = 1, prof = "mouth", inset = 0.08 }
 
 [[pieces]]
 id = "tip_floor_base"
@@ -1052,18 +1050,6 @@ collide = false
 args = { side = -1 }
 
 [[pieces]]
-id = "tip_glass_e"
-builder = "tip_band_glass"
-collide = true
-args = { side = 1 }
-
-[[pieces]]
-id = "tip_glass_w"
-builder = "tip_band_glass"
-collide = true
-args = { side = -1 }
-
-[[pieces]]
 id = "tip_sill_strip"
 builder = "tip_sill_strip"
 collide = false
@@ -1083,55 +1069,55 @@ collide = false
 id = "tip_rib"
 builder = "rib"
 collide = false
-args = { rv = 2.1, rim = 3.1, r_in = 0.6, h_in = 3.31429 }
+args = { rv = 2.1, rim = 3.1, r_in = 0.42, h_in = 3.34 }
 
 [[pieces]]
 id = "tip_rib_strip"
 builder = "rib"
 collide = false
-args = { rv = 2.1, rim = 3.1, r_in = 0.6, h_in = 3.31429, strip = true }
+args = { rv = 2.1, rim = 3.1, r_in = 0.42, h_in = 3.34, strip = true }
 
 [[pieces]]
 id = "tip_lamp_ring"
 builder = "lamp_ring"
 collide = false
-args = { radius = 0.6, h_in = 3.31429 }
+args = { radius = 0.42, h_in = 3.34 }
 
 [[pieces]]
 id = "tip_lamp"
 builder = "lamp"
 collide = false
-args = { h_in = 3.31429 }
+args = { h_in = 3.34 }
 
 [[pieces]]
 id = "cup_a"
 builder = "cup"
 collide = false
-args = { seed = 3, scale = 1.5 }
+args = { seed = 3, scale = 1.8 }
 
 [[pieces]]
 id = "cup_b"
 builder = "cup"
 collide = false
-args = { seed = 11, scale = 1.5 }
+args = { seed = 11, scale = 1.8 }
 
 [[pieces]]
 id = "cup_c"
 builder = "cup"
 collide = false
-args = { seed = 27, scale = 1.5 }
+args = { seed = 27, scale = 1.8 }
 
 [[pieces]]
 id = "spill_a"
 builder = "spill"
 collide = false
-args = { seed = 4, from = 0.17, size = 1.6 }
+args = { seed = 4, from = 0.2, size = 2.2 }
 
 [[pieces]]
 id = "spill_c"
 builder = "spill"
 collide = false
-args = { seed = 8, from = 0.17, size = 1.4 }
+args = { seed = 8, from = 0.2, size = 2.0 }
 
 [[pieces]]
 id = "cable_coil"

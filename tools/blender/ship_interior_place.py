@@ -27,7 +27,7 @@ SPOKE_HALL, SPOKE_TIP = 3.07, 4.1
 PIECES: dict[str, tuple[str, dict, bool]] = {
     # the hall
     "hall_floor_base": ("hall_floor_base", {}, True),
-    "hall_floor_disc": ("floor_disc", {"radius": 1.0}, True),
+    "hall_floor_disc": ("floor_disc", {"radius": 1.0, "grate": True}, True),  # polish 4: the lit grating disc
     "hall_grate": ("radial_grate", {"r0": 1.1, "r1": 2.5, "half_deg": 22.5 - SPOKE_HALL, "ref": 1.8}, True),
     "hall_spoke": ("spoke", {"r0": 1.07, "r1": 2.53, "half_deg": SPOKE_HALL, "ref": 1.8}, True),
     "hall_amber_arc": ("amber_arc", {"radius": 2.58}, False),
@@ -78,9 +78,9 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "mouth_portal": ("portal", {"half": S.HCH, "height": S.H_HALL, "soffit": True, "prof": "mouth"}, True),
     "mouth_portal_strip_l": ("portal_strip", {"side": -1, "prof": "mouth"}, False),
     "mouth_portal_strip_r": ("portal_strip", {"side": 1, "prof": "mouth"}, False),
-    "mouth_arch": ("cor_arch", {"prof": "mouth"}, True),
-    "mouth_arch_strip_l": ("cor_arch_strip", {"side": -1, "prof": "mouth"}, False),
-    "mouth_arch_strip_r": ("cor_arch_strip", {"side": 1, "prof": "mouth"}, False),
+    "mouth_arch": ("cor_arch", {"prof": "mouth", "inset": 0.08}, True),  # polish 4: thin, the opening wide
+    "mouth_arch_strip_l": ("cor_arch_strip", {"side": -1, "prof": "mouth", "inset": 0.08}, False),
+    "mouth_arch_strip_r": ("cor_arch_strip", {"side": 1, "prof": "mouth", "inset": 0.08}, False),
     # the tip rooms
     "tip_floor_base": ("tip_floor_base", {}, True),
     "tip_floor_disc": ("floor_disc", {"radius": 0.62}, True),
@@ -101,8 +101,6 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     # is not symmetric about the room's axis: the swept tip's rear side reaches farther)
     "tip_well_e": ("tip_well", {"side": 1}, False),
     "tip_well_w": ("tip_well", {"side": -1}, False),
-    "tip_glass_e": ("tip_band_glass", {"side": 1}, True),
-    "tip_glass_w": ("tip_band_glass", {"side": -1}, True),
     "tip_sill_strip": ("tip_sill_strip", {}, False),
     "tip_portal": ("portal", {"half": S.TIP_CHORD_H, "height": S.H_TIP}, True),
     "tip_ceiling": ("tip_ceiling", {}, False),
@@ -112,11 +110,11 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_lamp_ring": ("lamp_ring", {"radius": S.R_TIP_RING, "h_in": H_IN_TIP}, False),
     "tip_lamp": ("lamp", {"h_in": H_IN_TIP}, False),
     # details
-    "cup_a": ("cup", {"seed": 3, "scale": 1.5}, False),  # inside 3-1: 1.5 (18 cm), readable from the hall views
-    "cup_b": ("cup", {"seed": 11, "scale": 1.5}, False),
-    "cup_c": ("cup", {"seed": 27, "scale": 1.5}, False),
-    "spill_a": ("spill", {"seed": 4, "from": 0.17, "size": 1.6}, False),
-    "spill_c": ("spill", {"seed": 8, "from": 0.17, "size": 1.4}, False),
+    "cup_a": ("cup", {"seed": 3, "scale": 1.8}, False),  # polish 4: 1.8 (22 cm; inside 3-1: 1.5 read as a red mark)
+    "cup_b": ("cup", {"seed": 11, "scale": 1.8}, False),
+    "cup_c": ("cup", {"seed": 27, "scale": 1.8}, False),
+    "spill_a": ("spill", {"seed": 4, "from": 0.2, "size": 2.2}, False),
+    "spill_c": ("spill", {"seed": 8, "from": 0.2, "size": 2.0}, False),
     "cable_coil": ("cable_coil", {}, False),
     "floor_patch_a": ("floor_patch", {"u": 0.42, "v": 0.36}, False),
     "floor_patch_b": ("floor_patch", {"u": 0.36, "v": 0.3}, False),
@@ -231,8 +229,8 @@ def placements() -> list[tuple[str, list[float], float]]:
         for pid in ("tip_floor_base", "tip_floor_disc", "tip_floor_rim", "tip_window_frame",
                     "tip_ceiling", "tip_lamp_ring"):
             put(pid, list(c), room)
-        for pid in ("tip_well", "tip_glass"):
-            put(f"{pid}_{'e' if s > 0 else 'w'}", list(c), room)
+        # polish 4: one glass, the hull's tip window (the well's own pane doubled it: dim and tinted)
+        put(f"tip_well_{'e' if s > 0 else 'w'}", list(c), room)
         for k in range(8):
             put("tip_grate", polar(1.2, 22.5 + 45 * k, c, room), room - (22.5 + 45 * k))
             put("tip_spoke", polar(1.2, 45 * k, c, room), room - 45 * k)
@@ -268,8 +266,9 @@ def placements() -> list[tuple[str, list[float], float]]:
     # (inside-3: three bigger cups where the party left them, two with a spill from the mouth, none near a station
     # spot; a coil of spare cable by the east corridor's south bay; two bolted repair plates on the hall's rim floor)
     # inside 3-1: the two hall cups moved onto the grate ring in sight of both hall views (were by the wall)
-    for pid, xy, yaw in (("cup_a", [1.05, -1.95], 35.0), ("spill_a", [1.05, -1.95], 35.0),
-                         ("cup_c", [-1.55, -0.75], 200.0), ("spill_c", [-1.55, -0.75], 200.0),
+    # polish 4: cup_a in the hall-out view's foreground (its floor shows from y -2.45 on), cup_c in hall-in's
+    for pid, xy, yaw in (("cup_a", [0.85, -2.65], 145.0), ("spill_a", [0.85, -2.65], 145.0),
+                         ("cup_c", [-1.05, -0.45], 200.0), ("spill_c", [-1.05, -0.45], 200.0),
                          ("cup_b", [-6.6, 0.7], 80.0), ("cable_coil", [6.5, 0.72], 20.0),
                          ("floor_patch_a", polar(2.92, 140.0), -140.0 + 8.0), ("floor_patch_b", polar(2.92, -50.0), 50.0 - 5.0)):
         put(pid, xy, yaw)
