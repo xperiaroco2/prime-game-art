@@ -202,6 +202,13 @@ def godot_check(layout: dict, out: Path, folder: Path) -> int:
     return 0
 
 
+# The whole ship from straight above: nose (y -9.6 with the ramp's foot) to the nozzles (15.0) and both lenses (+-13.1)
+# in a 27 m high frame (1920x1080: 48 m wide), centred between them; south up as `top`.
+TOP_FULL = {"name": "top_full", "title": "top: the whole ship from straight above, at night", "size_m": 27.0,
+            "centre": [0.0, 2.7, 0.0], "day_name": "top_full_day",
+            "day_title": "top: the whole ship from straight above, by day"}
+
+
 def shot_views(layout: dict) -> tuple[list, list]:
     """The review views: the exterior lane's (exterior.toml [shots], each with its 2D sheet) replace ship.toml's of the
     same name; ship.toml's others follow. Returns (views [name, title, eye, look, fov] in plan coordinates, compares
@@ -266,6 +273,9 @@ def shoot(layout: dict, out: Path, folder: Path) -> int:
     req.update({"mode": "shoot", "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in views],
                 "top": {"name": "top", "title": "top: plan view, south up (as plan-3)", "size_m": 36.0},
+                # light layer: the whole ship from straight above (the top view crops the stern and the pods), at night
+                # and by day; shots show the nav lamps' static glow (nav_blink off; on in game)
+                "top_full": {**TOP_FULL, "centre": _g(TOP_FULL["centre"])}, "nav_blink": False,
                 "compare": [["top", layout["plan_ref"]], *compares], "rooms": room_boxes(layout)})
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
@@ -307,7 +317,7 @@ def walk_video(layout: dict, out: Path, folder: Path) -> int:
     import shutil
     video = video_request(layout)
     req, staged = built_request(layout, out)
-    req.update({"mode": "video", "video": video, "watchdog_s": VIDEO_TIMEOUT - 60,
+    req.update({"mode": "video", "video": video, "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "rooms": room_boxes(layout)})
     errors = _stage(staged)
