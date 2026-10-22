@@ -409,3 +409,37 @@ Open problems after launch 3:
 
 The light numbers come from one grid (`grid_p4/grid.png`: key 0 / 0.6 / 1.0 / 1.6, fill 1 / 1.5 / 2 / 3, ground
 specular 0.5 / 0.1 / 0.1 / 0): C taken (key 1.0, fill 2.0, specular 0.1).
+
+## After the night (join 4): open problems and the silhouette question
+
+Join 4 ran the whole on polish 4's tree: `ship --check --build --godot --shoot shots4 --walk walk4`: 27.50 x 14.30 m,
+157 pieces (the well's two tip panes gone), 1226 placements, 92,035 triangles, glTF-Validator clean, 125 colliders,
+the walk 14/14, 14 shots and compare sheets, walkthrough.mp4 1280x720, 89.5 s, 13.1 MB. Nothing broke.
+
+**The silhouette question (the engineer's; not chosen here).** The 2D (turnaround front and side) ends each wing in a
+thin blade that rises toward the tip. One deck with a walkable round room at the tip fights that in these numbers
+(the 2D's are read off turnaround.jpg's front view at its 27.5 m span, so they are about):
+
+| What | Now (ship.toml, `ship_hull_skin.py`) | The 2D, about | What sets ours |
+|---|---|---|---|
+| Tip room | r 2.05 at x +-10.75 (x 8.7..12.8), floor h 0.6, rim 3.1, apex 3.4 abs | a thin wing there | 5a: panel (-10.5, 0), renewer (12, 0); corridors across the whole width |
+| Hull depth at x 10.75 | 3.35 m (belly 0.3 to the lens crown 3.65) | 1.0..1.5 m | slab 0.25 + clear 2.5..2.8 + roof; the floor is 2.3 clear (1.8 capsule + 0.5) + slab + roof, about 2.8 m |
+| Tip blade | x +-13.75 at h 1.7, 0.7 m past the room's wall | x +-13.75, a blade about 1 m deep | the lens's faces at the 25 deg minimum off vertical |
+| Rise to the tip (dihedral) | lead blade h 0.9 at the body -> 1.6 at x 10.75 (+0.7 m) | the tip's underside about 2.5..3 m over the root's (about 12 deg) | the corridor and the tip room floors level at 0.6 (one deck) |
+| Spine / tip depth | 4.9 / 3.65: the tips 75 % of the spine | the tips a small fraction of the body | the tip room's head room |
+
+The numbers in the way are the tip room's centre (x 10.75) and its clear height (2.5 m, the rule's floor 2.3) on a
+level deck. The levers, each with its cost: lower the tip rooms to 2.3 clear (saves 0.2 m of the about 2 m too deep); move the
+tip rooms toward the body (the 5a panel and renewer spots move with them, the outer wing becomes an empty blade); a
+dihedral skin over level rooms (the tips get taller, not thinner); a floor that rises with the wing (steps or a slope
+into the tip rooms: no longer one level deck); or keep the deep tips and accept a heavier manta than the 2D.
+
+Other open problems after the night:
+
+- Outside 3423..3827 draw calls and 2.0M..2.5M primitives per view (the branched pines); inside 984..3328 (the hall the most):
+  a pine LOD or impostor ring and `bench` before the game.
+- The tip window shows the moonlit pines but no warm party glow (the string is north-west, outside the windows' +-65
+  deg); the tip ceiling's cog still reads pale; the gate string crosses the front shot under the ramp's foot.
+- 26 small strip cells unlit (`MAX_LIGHTS` 96); no interior UVs; the seam close-up's hatches read as faces; the legs
+  small and hidden from the front.
+- No fresh-context review of launch 4's diff ran inside the workflow (no agent tool): the manager runs one.
