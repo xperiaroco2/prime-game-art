@@ -22,17 +22,35 @@ L.MATERIALS.update({
     # details 2: opaque dark warm glass with a faint inner glow (0.07; details 3: 0.05 round a warm core) ([light.mats] l 0: it lights nothing)
     "ext_porthole": {"base": (0.012, 0.014, 0.018, 1.0), "metallic": 0.0, "roughness": 0.05,
                      "emission": (1.0, 0.55, 0.25), "strength": 0.05},
-    # details 3: the glow is a soft warm core (0.55 of the glass, 4 mm over it) in the dark glossy glass: the whole
-    # disc at 0.2 read as a flat brown disc; the core averages about 0.2 over the glass
-    "ext_porthole_core": {"base": (0.03, 0.025, 0.02, 1.0), "metallic": 0.0, "roughness": 0.05,
-                          "emission": (1.0, 0.62, 0.3), "strength": 0.6},
     "ext_dome": {"base": (0.05, 0.06, 0.07, 1.0), "metallic": 0.3, "roughness": 0.1},
     "ext_hazard": {"base": (0.92, 0.66, 0.06, 1.0), "metallic": 0.05, "roughness": 0.55},
     "ext_hazard_dark": {"base": (0.035, 0.035, 0.04, 1.0), "metallic": 0.3, "roughness": 0.6},
 })
 
+# details 3b: the glass glows in PORT_GLOW[0] concentric bands, warm and strongest at the centre (PORT_GLOW[1]) and
+# fading to dark glass at the rim (PORT_GLOW[2]), log-linear in (r / glass)^PORT_GLOW[3]: each band about 15 % under
+# the next one in, so the steps read as one soft falloff ("a dim lit room behind thick glass"). D3's one flat warm core
+# read as an amber bullseye, D3's 0.2 over the whole glass as a flat brown disc. Their materials "ext_porthole__gNN"
+# share ext_porthole's [light.mats] entry (ship.gd: a name's part before "__").
+PORT_GLOW = (20, 0.45, 0.03, 1.6)
+
+
+def glow_bands():
+    """[(r0, r1, emission strength)] of the glass's bands, centre first (r0 0: the centre disc)."""
+    k, e0, e1, p = PORT_GLOW
+    g = PORT_R[0]
+    out = []
+    for i in range(k):
+        t = (i + 0.5) / k
+        out.append((g * i / k, g * (i + 1) / k, e1 * (e0 / e1) ** (1.0 - t ** p)))
+    return out
+
+
 PORT_Y = (5.6, 6.8, 8.0)        # the portholes' plan y on each flank (the lens rims end at y 3.75, the pods' noses 9.6)
 PORT_R = (0.17, 0.225, 0.26)    # the glass, the ring's crown and its flange (outer radii): about 0.35 m of glass
+for _i, (_r0, _r1, _e) in enumerate(glow_bands()):
+    L.MATERIALS[f"ext_porthole__g{_i:02d}"] = {"base": (0.012, 0.014, 0.018, 1.0), "metallic": 0.0, "roughness": 0.05,
+                                              "emission": (1.0, 0.6, 0.3), "strength": round(_e, 4)}
 VENTS = [(1.15, 8.55)]          # mirrored: the vents' centres on the tail's top
 VENT = (0.7, 0.42, 6)           # length along the ship, width, slats
 MAST = (0.0, -1.6, 0.75)        # the antenna mast on the hump's centre line: x, y, height
@@ -83,6 +101,15 @@ def _disc(r, c0, c1, k=24):
     return v, f + [(i, (i + 1) % k, k + (i + 1) % k, k + i) for i in range(k)] if len(f) == 2 else f
 
 
+def _flat_ring(r0, r1, k=48):
+    """A flat ring's one face (local: c 0, facing +c), radii r0..r1; r0 0: a flat disc."""
+    pts = [(math.cos(2 * math.pi * i / k), math.sin(2 * math.pi * i / k)) for i in range(k)]
+    if r0 == 0:
+        return [(r1 * a, r1 * b, 0.0) for a, b in pts], [tuple(range(k))]
+    v = [(r * a, r * b, 0.0) for r in (r0, r1) for a, b in pts]
+    return v, [(i, k + i, k + (i + 1) % k, (i + 1) % k) for i in range(k)]
+
+
 def _lbox(a0, a1, b0, b1, c0, c1):
     return L.box(a0, a1, b0, b1, c0, c1)
 
@@ -104,21 +131,26 @@ def porthole_spots():
 
 def portholes(args: dict, layout: dict) -> list:
     """details 2: the tail's portholes (plan frame): a bright silver crown 4.5 cm proud on a darker flange, a dark
-    bezel round the glass and the dark warm glass 4.5 cm under the crown (all 3 cm into the skin)."""
-    ring, flanges, bezels, glass, core = [], [], [], [], []
+    bezel round the glass and the dark warm glass 4.5 cm under the crown (all 3 cm into the skin). details 3b: the
+    glass's face in glow_bands(), flat rings side by side 2 mm over the dark glass's body (one surface, no overlap and
+    no walls between them: the coincident walls of closed rings sparkled as dotted circles)."""
+    ring, flanges, bezels, glass = [], [], [], []
+    bands = [[] for _ in glow_bands()]
     g, crown, flange = PORT_R
     for o, n in porthole_spots():
         u, v = frame(n)
         ring.append(_place(_annulus(g + 0.015, crown, -0.03, 0.045), o, u, v, n))
         flanges.append(_place(_annulus(crown - 0.01, flange, -0.03, 0.015), o, u, v, n))
         bezels.append(_place(_annulus(g - 0.005, g + 0.017, -0.03, 0.02), o, u, v, n))
-        glass.append(_place(_disc(g, -0.04, 0.0), o, u, v, n))
-        core.append(_place(_disc(0.55 * g, -0.01, 0.004), o, u, v, n))
+        glass.append(_place(_disc(g, -0.04, -0.002, k=48), o, u, v, n))
+        for k, (r0, r1, _e) in enumerate(glow_bands()):
+            bands[k].append(_place(_flat_ring(r0, r1), o, u, v, n))
     return [L.part("porthole_ring", *L.merge(*ring), "ext_silver_b"),
             L.part("porthole_flange", *L.merge(*flanges), "ext_silver_c"),
             L.part("porthole_bezel", *L.merge(*bezels), "ext_frame"),
             L.part("porthole_glass", *L.merge(*glass), "ext_porthole"),
-            L.part("porthole_core", *L.merge(*core), "ext_porthole_core")]
+            *(L.part(f"porthole_glass_{k:02d}", *L.merge(*b), f"ext_porthole__g{k:02d}", solid=False)
+              for k, b in enumerate(bands))]
 
 
 def vent_spots():
