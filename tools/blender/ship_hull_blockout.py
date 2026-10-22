@@ -109,7 +109,19 @@ VARIANTS = {   # half span, tip height, the tip rooms' windows
           "stern_y": 6.4, "trail": (10.6, 3.6)},
     "I": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 6.1, "nose_y": -7.67,
           "nose_x": MOUTH_X + WALL + SKIN, "stern_y": 6.4, "trail": (10.6, 3.6)},
+    # Rounded tips on F's outline (2026-10-22): tip_r the tip's plan radius (an arc tangent to the lead and trail
+    # edges, the corner pushed out along the lead edge so the span stays), tip_e the arc's half thickness about the
+    # edge's height, lip the radius of a rounded lip along the arc and both edges (the edge seen end-on is a half
+    # round 2 * lip thick), smooth the hull smooth-shaded (normals smooth below SMOOTH_DEG, weighted by face area).
+    "J": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
+          "stern_y": 10.2, "trail": (4.4, 2.6), "tip_r": 1.5, "tip_e": 0.15},
+    "K": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
+          "stern_y": 10.2, "trail": (4.4, 2.6), "tip_r": 3.0, "tip_e": 0.15},
+    "L": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
+          "stern_y": 10.2, "trail": (4.4, 2.6),
+          "tip_r": 3.0, "lip": 0.18, "smooth": True},
 }
+SMOOTH_DEG = 30.0
 
 
 def tip_c(var):
@@ -156,6 +168,60 @@ def ring(cx, cy, r, z, n=16, a0=0.0, a1=360.0):
              cy + rr * math.sin(math.radians(a0 + (a1 - a0) * i / k)), z) for i in range(k + 1)]
 
 
+def _unit(x, y):
+    n = math.hypot(x, y)
+    return x / n, y / n
+
+
+def rounded_tip(var, nose, tip, trail, n=10):
+    """The tip as a plan arc of radius tip_r tangent to the lead edge (nose -> corner) and the trail edge (corner ->
+    trail): the corner is pushed out along the lead edge until the arc reaches x = half again. Each arc point is a
+    pair at its height +- tip_e or, with lip, a half round of radius lip whose outer face is the outline, and the lip
+    runs on along both edges. Returns (points, the arc's outermost point)."""
+    r, half = var["tip_r"], var["half"]
+    vx, vy = tip[0], tip[1]
+    for _ in range(6):
+        a, b = _unit(vx - nose[0], vy - nose[1]), _unit(trail[0] - vx, trail[1] - vy)
+        u1, u2 = (-a[0], -a[1]), b
+        th = math.acos(max(-1.0, min(1.0, u1[0] * u2[0] + u1[1] * u2[1])))
+        d = r / math.tan(th / 2)
+        bis = _unit(u1[0] + u2[0], u1[1] + u2[1])
+        c = (vx + bis[0] * r / math.sin(th / 2), vy + bis[1] * r / math.sin(th / 2))
+        t1, t2 = (vx + u1[0] * d, vy + u1[1] * d), (vx + u2[0] * d, vy + u2[1] * d)
+        p1, p2 = math.atan2(t1[1] - c[1], t1[0] - c[0]), math.atan2(t2[1] - c[1], t2[0] - c[0])
+        sweep = (p2 - p1 + math.pi) % (2 * math.pi) - math.pi     # the short way round, through the corner's side
+        arc = [(c[0] + r * math.cos(p1 + sweep * k / n), c[1] + r * math.sin(p1 + sweep * k / n)) for k in range(n + 1)]
+        gap = half - max(x for x, _ in arc)
+        if abs(gap) < 1e-4:
+            break
+        vx, vy = vx + gap, vy + gap * a[1] / a[0]
+    lead_len, trail_len = math.hypot(vx - nose[0], vy - nose[1]), math.hypot(trail[0] - vx, trail[1] - vy)
+    h1 = nose[2] + (tip[2] - nose[2]) * (lead_len - d) / lead_len
+    h2 = tip[2] + (trail[2] - tip[2]) * d / trail_len
+    edge = []   # (plan x, y, h, outward unit)
+    for k, (x, y) in enumerate(arc):
+        edge.append((x, y, h1 + (h2 - h1) * k / n, _unit(x - c[0], y - c[1])))
+    out = []
+    lip = var.get("lip")
+    if lip:
+        na, nb = (a[1], -a[0]), (b[1], -b[0])     # the lead edge's outward normal (forward), the trail edge's (back)
+        for f in (0.15, 0.35, 0.55, 0.75, 0.9):
+            x, y = nose[0] + (t1[0] - nose[0]) * f, nose[1] + (t1[1] - nose[1]) * f
+            edge.append((x, y, nose[2] + (h1 - nose[2]) * f, na))
+            x, y = t2[0] + (trail[0] - t2[0]) * f, t2[1] + (trail[1] - t2[1]) * f
+            edge.append((x, y, h2 + (trail[2] - h2) * f, nb))
+        for x, y, h, (ox, oy) in edge:
+            for deg in range(-90, 91, 30):
+                g = math.radians(deg)
+                out.append((x - ox * lip * (1 - math.cos(g)), y - oy * lip * (1 - math.cos(g)), h + lip * math.sin(g)))
+    else:
+        e = var.get("tip_e", 0.15)
+        for x, y, h, _ in edge:
+            out += [(x, y, h + e), (x, y, h - e)]
+    far = max(edge, key=lambda q: q[0])
+    return out, (far[0], far[1], far[2])
+
+
 def design_points(var):
     half, tip_h = var["half"], var["tip_h"]
     tip_y = var.get("tip_y", LEAD_PIVOT[1] + LEAD_SLOPE * (half - LEAD_PIVOT[0]))
@@ -164,7 +230,13 @@ def design_points(var):
     spine = SPINE[:-1] + [(SPINE[-1][0] + ds, SPINE[-1][1])]
     tx, th = var.get("trail", (TRAIL_END[0], TRAIL_END[2]))
     nose = (var.get("nose_x", NOSE[0]), var.get("nose_y", NOSE[1]), NOSE[2])
-    pts = [(SPINE_X, y, z) for y, z in spine] + [nose, tip, (tx, TRAIL_END[1] + ds, th)]
+    trail = (tx, TRAIL_END[1] + ds, th)
+    pts = [(SPINE_X, y, z) for y, z in spine] + [nose, trail]
+    if "tip_r" in var:
+        edge, tip = rounded_tip(var, nose, tip, trail)
+        pts += edge
+    else:
+        pts.append(tip)
     pts += [(x, STERN_Y + ds, z) for x, z in STERN]
     cx, cy = tip_c(var)
     pts += ring(0.0, 0.0, HALL_R + 0.3, BELLY) + ring(cx, cy, TIP_R + 0.25, BELLY)
@@ -308,6 +380,12 @@ def hull_object(name, var, coll, m, m_recess, cut_coll):
         if all(abs(me.vertices[i].co.x) <= MOUTH_X + 1e-3 and me.vertices[i].co.z <= MOUTH_TOP + 1e-3
                for i in p.vertices):
             p.material_index = 1
+    if var.get("smooth"):   # smooth normals, sharp edges above SMOOTH_DEG, weighted by face area; no subdivision
+        for p in me.polygons:
+            p.use_smooth = True
+        me.set_sharp_from_angle(angle=math.radians(SMOOTH_DEG))
+        wn = ob.modifiers.new("wn", "WEIGHTED_NORMAL")
+        wn.mode, wn.weight, wn.keep_sharp = "FACE_AREA", 50, True
     return ob, tip
 
 
@@ -509,7 +587,13 @@ def save(arr, path):
     bpy.data.images.remove(img)
 
 
-def set_view(cam, view):
+def set_view(cam, view, tip=None):
+    if view == "tipzoom":   # a three-quarter close-up of the east wing tip, from ahead, outboard and above
+        aim = Vector(bl(tip)) + Vector((-0.8, 0.0, 0.0))
+        cam.location = aim + Vector((6.0, 9.0, 8.0))
+        cam.data.type, cam.data.lens = "PERSP", 35.0
+        cam.rotation_euler = (aim - cam.location).to_track_quat("-Z", "Y").to_euler()
+        return
     loc, rot, scale = VIEWS[view]
     cam.location = loc
     if scale is None:
@@ -609,6 +693,8 @@ def main():
         meas = measure(hull, bvh, [o for o in obs if "ramp" not in o.name], var)
         meas["tip"] = [round(v, 3) for v in tip]
         meas["variant"] = var
+        meas["tip_radius_m"] = var.get("tip_r", 0.0)
+        meas["edge_thickness_m"] = round(2 * var["lip"] if "lip" in var else 2 * var.get("tip_e", 0.0), 3)
         report[name] = meas
         colls[name] = coll
         print(f"BLOCKOUT {name}: {len(meas['pokes'])} interior points with less than {SKIN} m of skin"
@@ -617,7 +703,7 @@ def main():
     if "--no-render" in sys.argv:   # the numbers alone (a quick fit check)
         (out / "report.json").write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8", newline="\n")
         return
-    order = ("front", "side", "back", "top", "hero")
+    order = ("front", "side", "back", "top", "hero", "tipzoom")
     W, H = 320, 180
     shots, ghosts = {}, {}
     for name in names:
@@ -626,7 +712,7 @@ def main():
         colls[name].hide_render = False
         shots[name] = {}
         for view in order:
-            set_view(cam, view)
+            set_view(cam, view, report[name]["tip"])
             scene.render.resolution_x, scene.render.resolution_y = (W, H)
             render(scene, cells / f"{name}_{view}.png")
             shots[name][view] = over_bg(pixels(cells / f"{name}_{view}.png", W, H))
@@ -646,14 +732,21 @@ def main():
         colls[name].hide_render, ghost[name].hide_render = True, True
     lsc = label_scene()
     lab = cells / "_label.png"
-    top_down = [label(lsc, "2D turnaround (approved): front, side, back, top; hero", 5 * W, 28, lab),
-                np.concatenate([pixels(crops / CROPS[v], W, H) for v in order[:4]] + [pixels(hero_2d, W, H)], axis=1)]
+    blank = np.zeros((H, W, 4), dtype=np.float32)
+    blank[...] = BG
+    top_down = [label(lsc, "2D turnaround (approved): front, side, back, top; hero   (last column: a close-up of the"
+                      " east wing tip)", 6 * W, 28, lab),
+                np.concatenate([pixels(crops / CROPS[v], W, H) for v in order[:4]] + [pixels(hero_2d, W, H), blank],
+                               axis=1)]
     gl = []
     for name in names:
         m = report[name]
         var = VARIANTS[name]
         tag = "  (tip windows)" if var["window"] else ""
-        if "tip_c" in var:
+        if "tip_r" in var:
+            tag += f"  tip r {var['tip_r']:.1f} m, edge {m['edge_thickness_m']:.2f} m" + (", smooth" if var.get("smooth")
+                                                                                         else "")
+        elif "tip_c" in var:
             tag += "  tip rooms at ({:.1f}, {:.1f})".format(*var["tip_c"])
         elif len(names) > 1 and any("tip_c" in VARIANTS[o] for o in names):
             tag += "  (last round, reference)"
@@ -661,7 +754,7 @@ def main():
                 f"length {m['length_m']:.1f} m   height {m['height_m']:.2f} m   "
                 f"wing 1 m from tip {m['wing_thickness_1m_from_tip_m']:.2f} m   least skin {m['least_skin_m']:.2f} m"
                 f"   pokes {len(m['pokes'])}")
-        top_down.append(label(lsc, text, 5 * W, 28, lab))
+        top_down.append(label(lsc, text, 6 * W, 28, lab))
         top_down.append(np.concatenate([shots[name][v] for v in order], axis=1))
         gl.append(label(lsc, text.split("   wing")[0] + "   (rooms ghosted orange)", 1280, 28, lab))
         gl.append(np.concatenate([ghosts[name]["top"], ghosts[name]["front"]], axis=1))
