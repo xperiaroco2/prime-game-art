@@ -20,6 +20,7 @@ then the mouth recess (and, in a window variant, the tip rooms' window sectors) 
 Variants E-G (the arrowhead, 2026-10-22): the tip rooms moved back into the rear corners (tip_c), the corridors
 straight boxes along the diagonal from the hall's wall to them, the tip at the rear corner (tip_y), the stern moved
 back (stern_y) so the top view's proportions approach the 2D's; the checks, legs and ghosts follow the rooms.
+Variants H-I (the true triangle): the trail edge straight across, level with the tips; I with a pointed nose.
 Every room's outer surface (ship.toml: the clear sizes plus the walls, the roofs and the slabs) is sampled and must
 lie inside the hull with at least SKIN of hull around it; the mouth's own opening is the only exception.
 
@@ -92,7 +93,7 @@ VARIANTS = {   # half span, tip height, the tip rooms' windows
     # corridors run straight along the diagonal from the hall's wall to them, the lead edge runs straight from the
     # nose to a tip at the rear corner and the trail edge near-straight from the tip in to a stern moved back.
     # Optional keys: tip_c the tip rooms' plan centre (x, y), tip_y the tip's plan y (else through LEAD_PIVOT),
-    # nose_y the nose edge's y, stern_y the stern face's y (the stern block, the spine's rear and the pods move with
+    # nose_y the nose edge's y, nose_x its half width, stern_y the stern face's y (the stern block, the spine's rear and the pods move with
     # it), trail (x, h) the trail edge's stern corner.
     "E": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 2.5), "tip_y": 4.4, "nose_y": -7.1,
           "stern_y": 8.8, "trail": (4.4, 2.6)},
@@ -100,6 +101,14 @@ VARIANTS = {   # half span, tip height, the tip rooms' windows
           "stern_y": 10.2, "trail": (4.4, 2.6)},
     "G": {"half": 13.75, "tip_h": 3.3, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.4, "nose_y": -8.6,
           "stern_y": 10.2, "trail": (4.4, 2.6)},
+    # The true triangle (2026-10-22): the trail edge straight across, level with the tips (a blunt back face over
+    # the rear rooms, thinning out to the tips); only the nozzle pods stick out behind it. trail (x, h): the back
+    # edge's corner outboard of the tip room, at stern_y - 0.2. I: the nose edge narrowed to the mouth's width plus
+    # its walls and skin (nose_x), on the lead edge's line, so the nose comes to a point.
+    "H": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 6.1, "nose_y": -7.1,
+          "stern_y": 6.4, "trail": (10.6, 3.6)},
+    "I": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 6.1, "nose_y": -7.67,
+          "nose_x": MOUTH_X + WALL + SKIN, "stern_y": 6.4, "trail": (10.6, 3.6)},
 }
 
 
@@ -154,8 +163,8 @@ def design_points(var):
     ds = stern_shift(var)
     spine = SPINE[:-1] + [(SPINE[-1][0] + ds, SPINE[-1][1])]
     tx, th = var.get("trail", (TRAIL_END[0], TRAIL_END[2]))
-    pts = [(SPINE_X, y, z) for y, z in spine] + [(NOSE[0], var.get("nose_y", NOSE[1]), NOSE[2]), tip,
-                                                 (tx, TRAIL_END[1] + ds, th)]
+    nose = (var.get("nose_x", NOSE[0]), var.get("nose_y", NOSE[1]), NOSE[2])
+    pts = [(SPINE_X, y, z) for y, z in spine] + [nose, tip, (tx, TRAIL_END[1] + ds, th)]
     pts += [(x, STERN_Y + ds, z) for x, z in STERN]
     cx, cy = tip_c(var)
     pts += ring(0.0, 0.0, HALL_R + 0.3, BELLY) + ring(cx, cy, TIP_R + 0.25, BELLY)
