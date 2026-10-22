@@ -900,10 +900,11 @@ The shape, the rooms, the inside, the lights and the look stay. Raw output: `<ra
   the lens's or the fin's skin and the union only grows, so no room's skin can thin (not tested: it could not fail);
   nothing reaches inside, the footprint rows skip them (they lie under the fin and lens in plan). They stay 0.14 m
   and more under the edge's mid line, so the edge light runs on above them as it was.
-  `tools/tests/test_ship_fairing.py`: the four parts and their mirror, their points on the lens and fin (the far one on the fin's skin within 1 mm), a
-  grid finding points inside the fairing and the lens, the fairing and the fin, and its own new volume; neither a grid
-  point nor a hull point standing more than `MAX_OUT` 0.45 m out of the lens, fin and body; the barrel past the roots
-  standing 5 mm out at most; every point 0.14 m under the edge's mid line (the edge light).
+  `tools/tests/test_ship_fairing.py`: the four parts and their mirror, their points on the lens and fin (the far one
+  on the fin's skin within 1 mm), a grid finding points inside the fairing and the lens, the fairing and the fin, and
+  its own new volume; neither a grid point nor a hull point standing more than `MAX_OUT` 0.45 m out of the lens, fin
+  and body; the barrel past the roots standing 5 mm out at most; every point 0.14 m under the edge's mid line (the
+  edge light).
 - **The portholes' glow:** `ext_porthole` at 0.2 over the whole glass read as flat brown discs; now the glass is
   0.05 and a warm core (`porthole_core`, 0.55 of the glass, 4 mm over it, `ext_porthole_core` 0.6, l 0) averages
   about 0.2. From out_portholes_e the core read as a flat amber disc in a dark ring (a bullseye). Superseded by 3b's
@@ -941,11 +942,12 @@ The shape, the rooms, the inside, the lights and the look stay. Raw output: `<ra
     `INSET * sin`: 186 corners of 25 to 155 deg under 0.9 `INSET`) and the pieces still end at one point.
     `test_ship_hull_detail.py` asserts the corners lie on their flush edge, the shared ends meet within 0.1 mm and the
     groove stays 0.9 `INSET` wide (corners of 25 to 155 deg between edges of 0.25 m and more).
-  - *The portholes' glow, cheaper* (`PORT_GLOW = (8, 0.45, 0.03, 1.6)`, `PORT_SEG` 24, `PORT_LIFT` 5 mm): 8 bands
-    of 24 segments (the glass disc keeps 48), each band one equal step of (r / glass)^1.6, so each glows about 29 %
-    under the next in, wide at the centre and narrow at the rim; the mean glow stays 0.132. The portholes piece went
-    from 15,804 triangles and 24 surfaces to 6,732 and 12. The bands lie 5 mm over the glass's face (3b: 2 mm)
-    against far-view z-fighting.
+  - *The portholes' glow, cheaper* (`PORT_GLOW = (16, 0.45, 0.03, 1.6)`, `PORT_SEG` 24, `PORT_LIFT` 5 mm): 16
+    bands of 24 segments (the glass disc keeps 48), each band one equal step of (r / glass)^1.6, so each glows about
+    16 % under the next in, wide at the centre and narrow at the rim; the mean glow stays 0.132. The portholes piece
+    went from 15,804 triangles and 24 surfaces to 9,036 and 20. 8 bands (6,732 triangles, 12 surfaces; 29 % steps)
+    showed their rings in out_portholes_e. The bands lie 5 mm over the glass's face (3b: 2 mm) against far-view
+    z-fighting.
   - *Tests:* `test_ship_light.py` asserts every `__` material has its family's `[light.mats]` row with `l` 0 (and
     `ship.gd` looks the family up); `test_ship_fairing.py` also checks each fairing's own points against `MAX_OUT`.
 

@@ -31,10 +31,11 @@ L.MATERIALS.update({
 # fading to dark glass at the rim (PORT_GLOW[2]), log-linear in (r / glass)^PORT_GLOW[3], so the steps read as one soft
 # falloff ("a dim lit room behind thick glass"). D3's one flat warm core read as an amber bullseye, D3's 0.2 over the
 # whole glass as a flat brown disc. Their materials "ext_porthole__gNN" share ext_porthole's [light.mats] entry
-# (ship.gd: a name's part before "__"). details 3c: 8 bands of PORT_SEG segments (3b: 20 of 48, about 11.2k triangles
-# and 20 surfaces), each band one equal step of (r / glass)^1.6 (equal steps in the log of the glow: wide bands at the
-# centre, narrow ones at the rim, where 3b's equal widths changed fastest), PORT_LIFT over the glass's face.
-PORT_GLOW = (8, 0.45, 0.03, 1.6)
+# (ship.gd: a name's part before "__"). details 3c: 16 bands of PORT_SEG segments (3b: 20 of 48, about 11.2k triangles),
+# each band one equal step of (r / glass)^1.6 (equal steps in the log of the glow, each band about 16 % under the next
+# in: wide bands at the centre, narrow ones at the rim), PORT_LIFT over the glass's face. 8 bands (29 % steps) showed
+# their rings in out_portholes_e.
+PORT_GLOW = (16, 0.45, 0.03, 1.6)
 PORT_SEG = 24        # the glow bands' segments (the glass disc under them keeps 48)
 PORT_LIFT = 0.005    # the glow bands over the dark glass's face (3b: 2 mm; 5 mm keeps the far views from z-fighting)
 
