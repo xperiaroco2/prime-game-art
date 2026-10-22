@@ -44,7 +44,7 @@ What the build does (pure geometry in `alien_pilot_geom.py`, tested by `tools/te
 - **Chameleon:** the skull widened above the mouth (10 %), larger bulging eyes, thicker and wider lips (no vertical push
   at the lip line), and the crest-root ledge above each eye smoothed in a soft region (`smooth_grid.png`: the region's
   weights and three strengths, both sides). **Axolotl:** the six gill stalks cut off outside the head's ellipsoid, their
-  holes filled, each its own object `gill_<L|R><1-3>` with its origin at its root, fanned 12 degrees out; the raised rim
+  holes filled, fanned 12 degrees out (pivots at their roots, see below); the raised rim
   around each eye softened.
 - `<head>.glb`, `<head>_lod1.glb` (skin and gills at 35 %), `<head>.blend`, `build.json` (eye fits, lip line, palette,
   tri counts), `<head>_compare.png` (2D on top: front, side, back and the expression sheet's 3/4 cell; the new 3D
@@ -52,7 +52,7 @@ What the build does (pure geometry in `alien_pilot_geom.py`, tested by `tools/te
 
 The second pass (`--tag v2`, the manager's notes on the first sheets) builds into `<head>/v2/` and copies
 `<head>_compare_1280_v2.png` (three rows: the 2D, the first build, this build) and `<head>_godot_v2.png` up:
-- **One mesh per part kind:** `<head>_skin` (skin and lip lining), `<head>_eyes` (no normal map needed: the `_eyes`
+- **One mesh per part kind** (every build, with or without `--tag`): `<head>_skin` (skin and lip lining), `<head>_eyes` (no normal map needed: the `_eyes`
   rule), `<head>_lids`, `<head>_mouth` (cup and tongue), `<head>_gills`; the pieces' pivots (eye centres, gill roots)
   are the custom property `pivots`, exported as glTF extras for step 2b's bones. Six surfaces or fewer, within the
   contract's cap of 8.

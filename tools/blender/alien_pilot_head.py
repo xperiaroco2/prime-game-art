@@ -2,18 +2,18 @@
 headless Blender. Reads the raw GLB (never writes it) and writes into --out:
 
 - the skin: Meshy's fused shell, its UV seams welded, decimated to the budget (`skin_tris`), a new UV atlas and a
-  2048 px colour and normal bake from the raw model (colour graded toward the 2D turnaround's median colour; the
-  chameleon's crest stripes painted in during the bake);
+  2048 px colour and normal bake from the raw model (colour through a palette ramp from the 2D turnaround's teal and
+  mint, `palette_stops`; the chameleon's crest stripes painted in during the bake);
 - a real lip parting: a thin slit cut along the lip line (the deepest valley between the lips in the front profile,
   tracked from the middle to the corners), its edges rolled back into the mouth as a lining, an open mouth cup behind
   it (dark, its inside facing the slit) and, for the chameleon (his 2D shows one), a simple tongue;
-- eyeballs `eye_L`/`eye_R` (sclera, iris, pupil, a catch light in a generated texture; the axolotl's are black beads)
-  at the painted eyes' fitted spheres, and lids `lid_upper_*`/`lid_lower_*` as solid spherical shells at the 2D's rest
-  pose, every eye part's origin at its eye's centre (the pivot for blinks and gaze);
+- eyeballs (sclera, iris, pupil, a catch light in a generated texture; the axolotl's are black beads) at the painted
+  eyes' fitted spheres, and upper and lower lids as solid spherical shells at the 2D's rest pose;
 - chameleon: the skull widened above the mouth, the eyes larger and bulging, the lips thicker and wider, and the
   crest root's ledge above each eye smoothed (a Laplacian smooth inside a soft region, its strength `--smooth`);
-- axolotl: the six gill stalks cut off the head at their roots (their holes filled), each its own object `gill_<L|R><1-3>`
-  with its origin at its root, fanned out from the head; the raised rim around each eye softened;
+- axolotl: the six gill stalks cut off the head at their roots (their holes filled), fanned out from the head; the raised rim around each eye softened;
+- the parts joined into one mesh per kind, `<head>_skin`, `<head>_eyes`, `<head>_lids`, `<head>_mouth` and
+  `<head>_gills`, with each piece's pivot (eye centres, gill roots) in the custom property `pivots` (glTF extras);
 - `<head>.glb` and `<head>_lod1.glb` (skin and gills decimated further), `<head>.blend`, `build.json` (tri counts,
   eye fits, the lip line, gains), review renders `views/` (front, side, back, 3/4) and `smooth_grid.png` (the smooth
   region's weights and three strengths, close up, both sides).
