@@ -27,7 +27,7 @@ arrangement, the numbers give the sizes. A gentle curve is fine only where the n
 | `tools/blender/ship_hull*.py` | the exterior builders | EXTERIOR lane |
 | `godot/ship/` | `ship.gd`: assembly, headless check and walk, night shots, the walk-through frames | EXTERIOR lane |
 | `tools/blender/ship_video.py` | encodes the walk-through MP4 under its size cap | EXTERIOR lane |
-| `tools/tests/test_ship_*.py` | fast: `test_ship_layout.py`, `test_ship_interior.py`, `test_ship_hull_skin.py`, `test_ship_hull_detail.py`, `test_ship_exterior.py`, `test_ship_clearing.py`; heavy (Blender): `test_ship_build.py` | either lane adds its own file |
+| `tools/tests/test_ship_*.py` | fast: `test_ship_layout.py`, `test_ship_interior.py`, `test_ship_hull_skin.py`, `test_ship_hull_smooth.py`, `test_ship_hull_detail.py`, `test_ship_exterior.py`, `test_ship_clearing.py`; heavy (Blender): `test_ship_build.py` | either lane adds its own file |
 
 Raw output (never in git): `<raw>/ship/v2/` (the layout's `raw_dir`; v1's in `<raw>/ship/v1/`) with `pieces/` (GLBs, `build_report.json`, validator `reports/`),
 `plan/` (`plan.txt`), `shots/` (the views, `compare_*.png` with the 2D left, among them `compare_top.png` against
@@ -43,7 +43,7 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 
 | What | Number (ship.toml) | Why |
 |---|---|---|
-| Footprint | 27.5 m wide (the lens tips' blades at x +-13.75, `span_max_m` 27.5); two lengths (`ship_layout.lengths()`, as built): the hull body 12.9 m (lead edge y -6.5 to the trail 6.4: the swept tips and the pod housing; no ramp, no nozzle pods), 14.8 m with the nozzle pods (lead edge to the nozzle tips at 8.34), the one `ship --check` holds to 14, up to `length_max_m` 15; overall 15.7 m from the ramp's foot (-7.4) to the nozzle tips | 5a: about 26 x 14; manager update 2: the span up to about 27.5; the manager (art #263): the length counts the nozzles, up to 15 m, as how far they stick out is open (2D README) |
+| Footprint | 27.5 m wide (the lens tips' blades at x +-13.75, `span_max_m` 27.5); two lengths (`ship_layout.lengths()`, as built): at the v2 join the hull body 12.55 m (lead edge to the trail: the pod housing; no ramp, no nozzle pods), 14.49 m with the nozzle pods (lead edge to the nozzle tips), the one `ship --check` holds to 14, up to `length_max_m` 15; overall 15.74 m from the ramp's foot (-7.4) to the nozzle tips (a hull rebuild moves them: `ship --check` prints the current ones) | 5a: about 26 x 14; manager update 2: the span up to about 27.5; the manager (art #263): the length counts the nozzles, up to 15 m, as how far they stick out is open (2D README) |
 | Deck | floor at h 0.6 on landing legs (launch 3; was 1.0), slabs 0.25, walls 0.2 | the ramp meets the ground; a thinner hull |
 | Hall | circle r 4.0 at (0, 0) (v2; v1 3.4); 3.2 m to the ceiling's rim, 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
 | Mouth | x -1.3..1.3, y -4.6..-3.9 (v2), 2.4 m high | the only way in or out (5a's side hatch is dropped, see below) |
@@ -65,9 +65,9 @@ ship.toml has no hatch, and `check` and `test_a_second_exit_is_refused` demand e
 back, both change with it. The corridors also run straight (5a: "curve with the wing"): numbers, not curvature.
 
 **Wall stations and the corridor's slant.** The check places a breaker board in plan only; the corridor wall is
-vertical to 1.45 m and then slants in (half width 0.9 m at the ceiling), so a station taller than about 1.5 m at
-u 1.0 meets the slant. The console at (0, 1) straddles the hall's plain disc (r 1.0) and its first grate ring (r 1.1).
-Step 2 accounts for both.
+vertical to 1.45 m and then slants in (v2: half width 1.15 m at the 2.4 m ceiling, from 1.5 at the wall), so a station
+taller than about 1.5 m at the wall meets the slant. The console at (0, 1) straddles the hall's plain disc (v2: r 1.176)
+and its first grate ring (r 1.294). Step 2 accounts for both.
 
 ## Pieces
 
@@ -89,21 +89,32 @@ numbers at the top of `tools/blender/ship_interior.py` (`--check` compares; the 
 use absolute heights (deck at ship.toml `floor_h`, 0.6), so a placement's h is an offset (the clips' heights); a piece built at plan
 angle 0 (its room toward -x) standing at angle a gets yaw -a; in a tip room turned by r, yaw r - a.
 
-The numbers (step 1, art #263):
-- hall: 16 facets, inner faces at apothem 3.4 (vertices at 3.467), rim 3.2 m, apex 3.8 m (ship.toml `clear_h`, `apex_h`); the three openings
-  (corridors east and west, the mouth north) are two facets wide, framed by a portal on their chord (x 3.203, half
-  width 1.327) 0.15 m deep; floor: plain disc r 1.0, eight radial grate sectors r 1.1 to 2.5 between wedge spokes,
-  the amber ring at r 2.58, solid plates to the walls; ceiling: 16 facet panels, ribs with cyan strips, the lamp
-  ring (eight lamps) at r 1.25.
-- corridors: one profile, 2.5 m wide, vertical to 1.45 m (cable channel 1.1 to 1.45 m), slanted in to 1.8 m wide at
-  the 2.4 m ceiling (`clear_h`); five modules of 1.117 m from x 3.353 (hall portal) to 8.936 (tip portal); arches at the first
-  three module joints only, none near the vent and socket spots (x 5 and 8). The mouth passage is one module of
-  1.247 m with an arch at the ramp hinge.
-- tip rooms: polygon on radius 2.1, eight window segments over +-65 deg (sill 1.0, head 2.2 since launch 3), three wall facets a
-  side, the corridor chord over +-37.6 deg (half width 1.281); rim 2.5 m, apex 2.8 m; radial grate floor with amber
-  spokes; ribbed ceiling with cyan strips and a six-lamp ring.
-- details: three crushed cup models (five placed, off every station spot), two scratch decal clusters (geometry
-  0.6 mm proud of flat panel faces, eight placed).
+The numbers (version 2, the mirrored layout; the inside fix of 2026-10-22 included; `ship_interior.py` holds them):
+- hall: 16 facets, inner faces at apothem 4.0 (vertices at 4.078), rim 3.2 m, apex 3.8 m (ship.toml `clear_h`,
+  `apex_h`); the three openings (corridors east and west, the mouth north) are two facets wide, framed by a portal on
+  their chord (x 3.768, half width 1.561) 0.15 m deep; the four diagonal facet pairs (45, 135, -45, -135 deg) are one
+  flat chord each, a plain 1.6 m centre panel for the vents and sockets with its own floor plate (`hall_flat_floor`);
+  floor: plain disc r 1.176, eight radial grate sectors r 1.294 to 2.941 between wedge spokes, the amber ring at
+  r 3.035 (a 5 cm light in a 9 cm halo, 3 cm in 6 cm on the four arcs by the mouth), solid plates from r 3.129 to the
+  walls (a rim plate per facet, a threshold per opening, a flat plate per chord: a fast test holds one per facet);
+  ceiling: 16 facet panels in a pale lit steel (`int_ceil_a`/`_b`, metallic 0.3), ribs with cyan strips, the lamp
+  ring (eight lamps) at r 1.471; cable trunks only on the back vertex at 90 deg (none on a station chord's end).
+- corridors: one profile, 3 m wide, vertical to 1.45 m (cable bay 1.1 to 1.45 m), slanted in to 2.3 m wide at the
+  2.4 m ceiling (`clear_h`); three modules of 1.064 m from x 3.918 (hall portal) to 7.11 (tip portal); the back wall
+  (y +1.5) a cable bay per module; the front wall (y -1.5) a bay from 3.918 to 4.35, the breaker board's plain wall
+  4.35 to 6.15 (the spot's 1.6 m and 0.1 a side), a bay from 6.15 to 7.11; cyan arches at x 4.15 and 6.4, ceiling
+  ribs (12 cm, 7 cm deep, the flat ceiling only) at 4.85 and 5.65. The mouth passage is one module of 0.682 m with an
+  arch at the ramp hinge.
+- tip rooms: polygon on radius 1.85 round (+-8.3, 0) (the check's circle r 1.8; the built outer wall about 10.15),
+  eight window segments over +-65 deg (sill 1.0, head 2.2), three wall facets a side, the corridor chord over
+  +-55.8 deg (x -1.04 from the centre, half width 1.53); rim 2.5 m, apex 2.8 m; radial grate floor with amber
+  spokes, solid plates 0.3 m wide to the walls (at the door two slivers and the portal's plate: `tip_rim_polys`, a
+  test holds them simple); ribbed ceiling with cyan strips and a six-lamp ring; the cable trunks flat (0.09 m proud).
+- shutter: eight panels in the window's reveal, corridor grey (tone b) with a cyan line across at 0.62 of their height
+  and one along the top; the button a round amber push in a cyan ring on a pale face plate on a dark 15 x 22 cm
+  back plate, 1.15 m up beside the window (not wired: a prop; the game track wires it).
+- details: three crushed cup models (five placed, off every station spot; the hall's red cup on the grate inside
+  the amber ring, in from the mouth's threshold).
 
 Materials `int_*` (the library in `ship_interior.py` sets metallic 0.7 to 0.8; at night ship.toml `[light.mats]`
 overrides them in Godot: the silvers 0.45 so the lamps light them, the plate 0.3, the grate 0.6): two silver
@@ -114,7 +125,7 @@ scratches are geometry).
 The lane's own look check (no Godot): `ship_interior_render.py` in headless Blender through `runner.blender`
 imports each GLB once, instances it at every placement, lights it with `[light]` and a moon and writes Eevee views
 and `compare.png` (the 2D left, the render right). Interior pieces build with `ship --build --only <their ids>
---out <raw>/ship/v1/pieces_int`, then their GLBs and report entries are copied into `pieces/` (one build report for
+--out <raw>/ship/v2/pieces_int`, then their GLBs and report entries are copied into `pieces/` (one build report for
 the Godot run).
 
 The worked geometry (inside lane, step 2, from hall_in-3, corridor.jpg and materials-3): the hall's wall facets fold
