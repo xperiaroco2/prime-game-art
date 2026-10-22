@@ -14,14 +14,19 @@
 // - cavity, flush: the creases deeper and more saturated (never grey), the lips and lids a little flushed;
 // - fuzz: a soft, lighter and more saturated sheen at grazing angles;
 // - eye_coat: a wet clear coat on the eyes over a softer iris, the limbal ring darker.
+// static_v3: the alive read is baked into the albedo; plain_tex (the albedo without it) and alive_mix scale it for the
+// review grids (1 = the GLB's albedo as baked; above 1 extrapolates). The shader's cavity, flush and micro grain stay
+// off in the pick (baked now; the grain read as orange peel).
 // debug_mode: 1 grey with the normal map, 2 grey geometry only, 3 the albedo alone (emitted).
 shader_type spatial;
-render_mode diffuse_burley, specular_schlick_ggx, sss_mode_skin;
+render_mode diffuse_burley, specular_schlick_ggx;  // static_v3: no sss_mode_skin (its red profile browned the teal creases)
 
 uniform sampler2D albedo_tex : source_color, filter_linear_mipmap_anisotropic, repeat_disable;
 uniform sampler2D normal_tex : hint_normal, filter_linear_mipmap_anisotropic, repeat_disable;
 uniform sampler2D mask_tex : hint_default_white, filter_linear_mipmap, repeat_disable;
 uniform sampler2D detail_tex : hint_default_white, filter_linear_mipmap, repeat_disable;
+uniform sampler2D plain_tex : source_color, filter_linear_mipmap_anisotropic, repeat_disable;
+uniform float alive_mix : hint_range(0.0, 2.0) = 1.0;
 uniform vec3 base_skin : source_color = vec3(0.39, 0.77, 0.76);
 uniform vec3 skin_color : source_color = vec3(0.39, 0.77, 0.76);
 uniform float normal_strength : hint_range(0.0, 2.0) = 1.0;
@@ -103,6 +108,9 @@ void vertex() {
 
 void fragment() {
 	vec3 a = texture(albedo_tex, UV).rgb;
+	if (alive_mix != 1.0) {
+		a = clamp(mix(texture(plain_tex, UV).rgb, a, alive_mix), 0.0, 1.0);
+	}
 	vec3 m = texture(mask_tex, UV).rgb;
 	vec4 d = texture(detail_tex, UV);
 	float eye = 1.0 - m.r;

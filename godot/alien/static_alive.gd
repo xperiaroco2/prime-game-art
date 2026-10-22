@@ -3,7 +3,7 @@ extends SceneTree
 ## (the runner's _godot.window(); tools/blender/alien_static_review.py writes the job and calls it). The stage is
 ## static_shots.gd's (the showroom's: studio HDRI, key with soft shadows, fill, rim, SSAO, SSS). The job:
 ##   {"hdri": PATH, "window": [w, h],
-##    "heads": {KEY: {"glb": "res://...", "mask": PNG, "detail": PNG or "", "base": [r, g, b]}},
+##    "heads": {KEY: {"glb": "res://...", "mask": PNG, "detail": PNG or "", "plain": PNG or "", "base": [r, g, b]}},
 ##    "sheets": [{"file": PNG, "cell": [w, h], "width": 1280,
 ##                "rows": [[{"head": KEY, "params": {...}, "debug": 0, "tone": "pick"|"showroom",
 ##                           "shot": {"target": [x, y, z] or "box", "yaw": deg, "pitch": deg, "width": m},
@@ -54,7 +54,8 @@ func _run() -> void:
 			return
 		var detail: Texture2D = _texture(h.get("detail", ""))
 		var b: Array = h["base"]
-		var mats: Array[ShaderMaterial] = AlienStatic.apply(node, mask, Color(b[0], b[1], b[2]), detail)
+		var plain: Texture2D = _texture(h.get("plain", ""))
+		var mats: Array[ShaderMaterial] = AlienStatic.apply(node, mask, Color(b[0], b[1], b[2]), detail, plain)
 		if mats.is_empty():
 			printerr("ALIVE no _static_skin material in %s" % h["glb"])
 			quit(4)

@@ -1,14 +1,19 @@
-"""The alien pilot's static heads, round 2 (art #196, static_v2): review sheets in an off-screen Godot window
-(godot/alien/static_alive.gd through the runner's _godot.window()). Plain Python, outside Blender. Sheets (JPG, about
-1280 px wide) go into <out>/<head>/ or <out>/:
+"""The alien pilot's static heads (art #196): review sheets in an off-screen Godot window (godot/alien/static_alive.gd
+through the runner's _godot.window()). Plain Python, outside Blender. Round 3 (static_v3): the alive read is baked into
+the textures (alien_static_head.py `alive`), so the Godot levers are the baked layers' strength (`alive_mix`, against
+the plain albedo), the skin specular, the scatter and transmission, the grazing sheen and the wet eyes. Sheets (JPG,
+about 1280 px wide) go into <new>/<name>/ or <new>/:
 - `seams`: the engineer's close-ups (the axolotl's lip corner, the chameleon's eye rim) and a wider framing; rows: the
-  #288 build, then this build; columns: the full material, grey with the normal map, grey geometry only, the albedo;
-- `grid`: one row per "alive" lever (B to F), four variants each, the face at 3/4, on top of the ladder's earlier picks;
-- `ladder`: the cumulative ladder A..F (A = the #288 material) and F under the showroom's AgX 0.9; rows: the front
-  close-up, the 3/4 close-up, the full head; GPU ms per column into `ladder.json`;
-- `gate`: the whole-head gate, both heads from 4 sides, #288 against this build, under the same light.
+  #288 build, step 1 (static_v2), this build (and the chameleon's heavier-lid alternative); columns: the full
+  material, grey with the normal map, grey geometry only, the albedo;
+- `grid`: one row per lever (A, S, B, E, F), four decisive strengths each (off, mid, strong, too much), the face at
+  3/4, on top of the earlier rows' picks;
+- `final`: the before/after, #288 against the pick under the recommended light (AgX 0.65, saturation 1.35) and under
+  the showroom's AgX 0.9; rows: the front close-up, the 3/4 close-up, the full head; GPU ms into `final.json`;
+- `gate`: the whole-head gate from 4 sides, #288 against the default build (and the heavier-lid alternative), under
+  the same light.
 
-    $PYTHON_BIN tools/blender/alien_static_review.py <seams|grid|ladder|gate|all> [--old DIR] [--new DIR] [--heads ...]
+    $PYTHON_BIN tools/blender/alien_static_review.py <seams|grid|final|gate|all> [--old DIR] [--mid DIR] [--new DIR]
 """
 from __future__ import annotations
 
@@ -27,34 +32,34 @@ RAW = common.raw_dir()
 DESIGN = RAW / "research" / "2026-10-22-roster" / "design"
 STEP2A = DESIGN / "pilot3d" / "step2a"
 OLD = DESIGN / "pilot3d" / "static"
-NEW = DESIGN / "pilot3d" / "static_v2"
+MID = DESIGN / "pilot3d" / "static_v2"
+NEW = DESIGN / "pilot3d" / "static_v3"
 HDRI = RAW / "env" / "polyhaven" / "studio_small_09" / "studio_small_09_2k.hdr"  # CC0, sources/polyhaven_hdris_2k.toml
 WINDOW = (1000, 1000)
+BUILDS = {"axolotl": ["axolotl"], "chameleon": ["chameleon", "chameleon_heavylid"]}
 
-# The "alive" ladder, cumulative: each lever's parameters (alien_static.gdshader); PICK is the tuned set per lever
-# (from the grid), GRID the variants tried per lever.
-LEVERS = ["B", "C", "D", "E", "F"]
-NAMES = {"A": "#288", "B": "subsurface + transmission", "C": "micro grain + roughness breakup",
-         "D": "cavity colour + flush", "E": "grazing sheen", "F": "wet eyes"}
+# The levers, cumulative (alien_static.gdshader): PICK is the chosen strength per lever, GRID four decisive strengths
+# (off, mid, strong, too much). The shader's own cavity, flush and micro grain stay off: the cavity and flush are baked
+# into the albedo now, and the grain read as orange peel (step 1).
+LEVERS = ["A", "S", "B", "E", "F"]
+NAMES = {"A": "baked alive layers", "S": "skin specular", "B": "subsurface + transmission", "E": "grazing sheen",
+         "F": "wet eyes"}
 GRID = {
-    "B": [{"sss": 0.4, "transmission": 0.6}, {"sss": 0.6, "transmission": 1.0},
-          {"sss": 0.6, "transmission": 1.0, "scatter_from_skin": 0.0}, {"sss": 0.85, "transmission": 1.5}],
-    "C": [{"micro_strength": 0.08, "micro_scale": 140.0, "rough_breakup": 0.06},
-          {"micro_strength": 0.15, "micro_scale": 140.0, "rough_breakup": 0.1},
-          {"micro_strength": 0.15, "micro_scale": 260.0, "rough_breakup": 0.1},
-          {"micro_strength": 0.3, "micro_scale": 90.0, "rough_breakup": 0.15}],
-    "D": [{"cavity": 0.5, "flush": 0.3}, {"cavity": 0.8, "flush": 0.5},
-          {"cavity": 0.8, "cavity_warm": -0.04, "flush": 0.5}, {"cavity": 1.0, "flush": 0.8}],
-    "E": [{"fuzz": 0.2, "fuzz_power": 3.0, "sheen": 0.2}, {"fuzz": 0.4, "fuzz_power": 3.0, "sheen": 0.3},
-          {"fuzz": 0.4, "fuzz_power": 2.0, "sheen": 0.3}, {"fuzz": 0.7, "fuzz_power": 2.5, "sheen": 0.4}],
-    "F": [{"eye_coat": 0.6, "eye_coat_rough": 0.05, "eye_under_rough": 0.25, "limbal": 0.3},
-          {"eye_coat": 1.0, "eye_coat_rough": 0.02, "eye_under_rough": 0.3, "limbal": 0.5},
-          {"eye_coat": 1.0, "eye_coat_rough": 0.02, "eye_under_rough": 0.45, "limbal": 0.6},
-          {"eye_coat": 1.0, "eye_coat_rough": 0.0, "eye_under_rough": 0.3, "limbal": 0.8}],
+    "A": [{"alive_mix": 0.0}, {"alive_mix": 0.6}, {"alive_mix": 1.0}, {"alive_mix": 1.8}],
+    "S": [{"specular_level": 0.45}, {"specular_level": 0.3}, {"specular_level": 0.18}, {"specular_level": 0.06}],
+    "B": [{"sss": 0.0, "transmission": 0.0}, {"sss": 0.5, "transmission": 0.8},
+          {"sss": 0.85, "transmission": 1.5}, {"sss": 1.0, "transmission": 2.0, "scatter_from_skin": 0.3}],
+    "E": [{"fuzz": 0.0}, {"fuzz": 0.3, "fuzz_power": 2.5, "sheen": 0.3}, {"fuzz": 0.5, "fuzz_power": 2.0, "sheen": 0.3},
+          {"fuzz": 0.9, "fuzz_power": 1.5, "sheen": 0.5}],
+    "F": [{"eye_coat": 0.0, "limbal": 0.0}, {"eye_coat": 0.6, "eye_coat_rough": 0.05, "limbal": 0.4},
+          {"eye_coat": 1.0, "eye_coat_rough": 0.02, "eye_under_rough": 0.3, "limbal": 0.8},
+          {"eye_coat": 1.0, "eye_coat_rough": 0.0, "eye_under_rough": 0.5, "limbal": 1.0}],
 }
-# the pick from grid.jpg (2026-10-22, both heads alike): B the strongest scatter, C the second (the fourth reads as
-# pores), D the full cavity colour and flush, E the softer grazing sheen, F the sharpest wet coat and darkest ring
-PICK = {"B": GRID["B"][3], "C": GRID["C"][1], "D": GRID["D"][3], "E": GRID["E"][2], "F": GRID["F"][3]}
+PICK = {"A": GRID["A"][2], "S": GRID["S"][2], "B": GRID["B"][2], "E": GRID["E"][1], "F": GRID["F"][2]}
+# step 1's pick (static_v2), for its rows
+V2_PICK = {"sss": 0.85, "transmission": 1.5, "micro_strength": 0.15, "micro_scale": 140.0, "rough_breakup": 0.1,
+           "cavity": 1.0, "flush": 0.8, "fuzz": 0.4, "fuzz_power": 2.0, "sheen": 0.3, "eye_coat": 1.0,
+           "eye_coat_rough": 0.0, "eye_under_rough": 0.3, "limbal": 0.8}
 
 
 def picks(new: Path) -> dict:
@@ -64,13 +69,14 @@ def picks(new: Path) -> dict:
 
 def column(upto: str, pick: dict) -> dict:
     out = {}
-    for k in LEVERS[:LEVERS.index(upto) + 1] if upto != "A" else []:
+    for k in LEVERS[:LEVERS.index(upto) + 1] if upto else []:
         out.update(pick[k])
     return out
 
 
-def features(head: str) -> dict:
+def features(name: str) -> dict:
     """Godot-space framings from step 2a's fits (Blender Z-up, -Y front; the GLB is Y-up, +Z front)."""
+    head = name.split("_")[0]
     ref = json.loads((STEP2A / head / "v2" / "build.json").read_text(encoding="utf-8"))
     e = ref["eye_fit"]
     ex, ey, ez, r = abs(e["x"]), e["z"], -e["y"], e["r"]
@@ -87,11 +93,12 @@ def features(head: str) -> dict:
     return {"close": close, "wide": wide, "face": face}
 
 
-def head_entry(d: Path, head: str, name: str) -> dict:
-    build = json.loads((d / head / "build.json").read_text(encoding="utf-8"))
-    detail = d / head / f"{head}_detail.png"
-    return {"glb": _godot.stage(d / head / f"{head}_static.glb", name), "mask": str(d / head / f"{head}_mask.png"),
-            "detail": str(detail) if detail.exists() else "", "base": build["base_skin_srgb"]}
+def head_entry(d: Path, name: str, key: str) -> dict:
+    build = json.loads((d / name / "build.json").read_text(encoding="utf-8"))
+    detail, plain = d / name / f"{name}_detail.png", d / name / f"{name}_albedo_plain.png"
+    return {"glb": _godot.stage(d / name / f"{name}_static.glb", key), "mask": str(d / name / f"{name}_mask.png"),
+            "detail": str(detail) if detail.exists() else "", "plain": str(plain) if plain.exists() else "",
+            "base": build["base_skin_srgb"]}
 
 
 def run(job: dict, out: Path, tag: str) -> int:
@@ -107,52 +114,52 @@ def run(job: dict, out: Path, tag: str) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["seams", "grid", "ladder", "gate", "all"])
+    ap.add_argument("what", choices=["seams", "grid", "final", "gate", "all"])
     ap.add_argument("--old", type=Path, default=OLD)
+    ap.add_argument("--mid", type=Path, default=MID)
     ap.add_argument("--new", type=Path, default=NEW)
     ap.add_argument("--heads", default="axolotl,chameleon")
     ap.add_argument("--tag", default="")
     args = ap.parse_args()
     heads = args.heads.split(",")
-    new_ok = all((args.new / h / f"{h}_static.glb").exists() for h in heads)
     job = {"hdri": str(HDRI), "window": list(WINDOW), "heads": {}, "sheets": []}
     pick = picks(args.new)
     final = column("F", pick)
     for h in heads:
         job["heads"][f"{h}_old"] = head_entry(args.old, h, f"alive_{h}_old")
-        if new_ok:
-            job["heads"][f"{h}_new"] = head_entry(args.new, h, f"alive_{h}_new")
-    todo = ["seams", "grid", "ladder", "gate"] if args.what == "all" else [args.what]
+        job["heads"][f"{h}_mid"] = head_entry(args.mid, h, f"alive_{h}_mid")
+        for n in BUILDS[h]:
+            job["heads"][f"{n}_new"] = head_entry(args.new, n, f"alive_{n}_new")
+    todo = ["seams", "grid", "final", "gate"] if args.what == "all" else [args.what]
     for h in heads:
         f = features(h)
         d = args.new / h
-        d.mkdir(parents=True, exist_ok=True)
         if "seams" in todo:
+            keys = [(f"{h}_old", {}), (f"{h}_mid", V2_PICK)] + [(f"{n}_new", final) for n in BUILDS[h]]
             for fr in ("close", "wide"):
-                rows = []
-                for key in [f"{h}_old"] + ([f"{h}_new"] if new_ok else []):
-                    rows.append([{"head": key, "debug": m, "tone": "showroom", "shot": f[fr]} for m in (0, 1, 2, 3)])
+                rows = [[{"head": key, "params": prm, "debug": m, "tone": "showroom", "shot": f[fr]}
+                         for m in (0, 1, 2, 3)] for key, prm in keys]
                 job["sheets"].append({"file": str(d / f"seams_{fr}{args.tag}.jpg"), "cell": [320, 320], "rows": rows})
-        if "grid" in todo and new_ok:
-            rows = []
+        if "grid" in todo:
             face34 = dict(f["face"], yaw=35.0)
+            rows = []
             for lever in LEVERS:
-                base = column(LEVERS[LEVERS.index(lever) - 1], pick) if lever != "B" else {}
+                base = column(LEVERS[LEVERS.index(lever) - 1], pick) if lever != LEVERS[0] else {}
                 rows.append([{"head": f"{h}_new", "params": {**base, **v}, "shot": face34} for v in GRID[lever]])
             job["sheets"].append({"file": str(d / f"grid{args.tag}.jpg"), "cell": [320, 360], "rows": rows})
-        if "ladder" in todo and new_ok:
-            cols = [("A", f"{h}_old", "pick"), *[(c, f"{h}_new", "pick") for c in ["A", *LEVERS]], ("F", f"{h}_new", "showroom")]
+        if "final" in todo:
+            cols = [(f"{h}_old", {}, "pick"), (f"{h}_new", final, "pick"), (f"{h}_old", {}, "showroom"),
+                    (f"{h}_new", final, "showroom")]
             rows = []
             for name, shot in (("front", dict(f["face"], yaw=0.0)), ("q34", dict(f["face"], yaw=35.0)),
                                ("full", {"target": "box", "yaw": 30.0})):
-                rows.append([{"head": key, "params": column(c, pick), "tone": tone, "shot": shot, "gpu": name == "full"}
-                             for c, key, tone in cols])
-            job["sheets"].append({"file": str(d / f"ladder{args.tag}.jpg"), "cell": [300, 360], "width": 2120,
-                                  "rows": rows})
-    if "gate" in todo and new_ok:
+                rows.append([{"head": key, "params": prm, "tone": tone, "shot": shot, "gpu": name == "full"}
+                             for key, prm, tone in cols])
+            job["sheets"].append({"file": str(d / f"final{args.tag}.jpg"), "cell": [320, 380], "rows": rows})
+    if "gate" in todo:
         rows = []
         for h in heads:
-            for key, params in ((f"{h}_old", {}), (f"{h}_new", final)):
+            for key, params in [(f"{h}_old", {})] + [(f"{n}_new", final) for n in BUILDS[h]]:
                 rows.append([{"head": key, "params": params, "shot": {"target": "box", "yaw": y}}
                              for y in (0.0, 35.0, 90.0, 180.0)])
         job["sheets"].append({"file": str(args.new / f"gate{args.tag}.jpg"), "cell": [320, 380], "rows": rows})
