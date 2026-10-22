@@ -41,7 +41,115 @@ KEEP_MAX_ADD = 0.15  # at most this much more of the vertices in the keep region
 RIM_W = 0.018
 RELAX = (0.6, 5)  # the local relax of the dense original's jagged creases (lip edges, lid on eyeball): factor, iterations  # the lid-rim shell's half width in metres (the chameleon's eye radius is 3 times the axolotl's)
 CAGE, RAY = 0.008, 0.03  # static_v2: the bakes' cage and ray (#288: 0.015/0.05, 0.012/0.04 reached across the lip slit)
-ROUGH = {"skin": 0.42, "lips": 0.28, "eyes": 0.04, "gills": 0.5}
+ROUGH = {"skin": 0.5, "lips": 0.3, "eyes": 0.04, "gills": 0.55}  # static_v3: the skin satin (0.42 read as vinyl)
+# static_v3: the normal map and the cavity come from a smoothed copy of the dense original (a Laplacian relax,
+# factor and iterations): its millimetre noise was the orange-peel grain over the whole head in static_v2
+DENSE_SMOOTH = (0.5, 24)
+# static_v3: a spike (the axolotl's upper-lip peak) is a convex vertex standing out of its neighbours' plane by more
+# than DESPIKE[0] of its mean edge length and more than DESPIKE[1] times its neighbours' own median (a local outlier:
+# a smoothly rounded lip, whose neighbours stand out alike, is never touched); it moves to its neighbours' mean, near
+# the lips and lid rims only
+DESPIKE = (0.08, 3.0)
+# static_v3: per head, whether the decimation keeps more of the budget on the lid rims (the chameleon's default
+# keeps #288's plain rims: the denser rims kept the dense original's heavier, lower lids; `--rims on` builds that
+# alternative)
+RIMS = {"chameleon": False, "axolotl": True}
+SPEC_LEVEL = 0.3  # static_v3: Principled's Specular IOR Level (0.5 = glTF's default 0.04 reflectance)
+# static_v3: weight, roughness, tint; the glTF exporter writes the tint alone as sheenColorFactor, so the weight is 1
+# and the tint carries the strength
+SHEEN = (1.0, 0.45, (0.25, 0.32, 0.31))
+
+
+def hsv2rgb(h, s, v):
+    """Hue (degrees), saturation, value arrays to (..., 3) RGB."""
+    h6 = (h % 360.0) / 60.0
+    c = v * s
+    x = c * (1 - np.abs(h6 % 2 - 1))
+    z = np.zeros_like(h6)
+    i = np.floor(h6).astype(np.int32) % 6
+    rgb = [np.choose(i, ch) for ch in ([c, x, z, z, x, c], [x, c, c, x, z, z], [z, z, x, c, c, x])]
+    return np.stack(rgb, -1) + (v - c)[..., None]
+
+
+def smoothstep(a, b, x):
+    t = np.clip((x - a) / (b - a), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def despike(o, region, thresh=DESPIKE, iters=8):
+    """Moves each convex spike vertex in region (a per-vertex bool) to its neighbours' mean, up to iters passes.
+    Returns the moved vertices' indices. Concave points (the lip slit) are never touched."""
+    bm = bmesh.new()
+    bm.from_mesh(o.data)
+    bm.verts.ensure_lookup_table()
+    moved = set()
+    idx = np.nonzero(region)[0]
+    near = set(int(u.index) for i in idx for e in bm.verts[int(i)].link_edges for u in e.verts)
+
+    def stand(v):
+        nb = [e.other_vert(v) for e in v.link_edges]
+        if v.is_boundary or len(nb) < 3:
+            return 0.0, Vector()
+        lap = sum((u.co for u in nb), Vector()) / len(nb) - v.co
+        el = sum((u.co - v.co).length for u in nb) / len(nb)
+        return -lap.dot(v.normal) / max(el, 1e-9), lap
+
+    for _ in range(iters):
+        bm.normal_update()
+        out = {i: stand(bm.verts[i]) for i in near}
+        hits = []
+        for i in idx:
+            v = bm.verts[int(i)]
+            sv, lap = out[int(i)]
+            nbo = [max(out[u.index][0], 0.0) for e in v.link_edges for u in e.verts if u is not v]
+            if sv > thresh[0] and sv > thresh[1] * max(float(np.median(nbo)), 0.01):
+                hits.append((v, lap))
+        for v, lap in hits:
+            v.co += lap
+            moved.add(v.index)
+        if not hits:
+            break
+    bm.to_mesh(o.data)
+    bm.free()
+    return sorted(moved)
+
+
+def alive(albedo, skin, pos, cav, thin, lips, ed, gills, head, ec, r, mouth_z, teal, k=1.0):
+    """static_v3: the "alive" read baked into the albedo (it shows in a browser's glTF viewer as well as in Godot):
+    the 2D's teal top of the axolotl's head, a gentle hue and value drift over big areas, a coloured (never grey)
+    cavity in the creases, a warmer, more saturated flush on the lips, lids, nostrils and the thin parts' roots (gill
+    and crest roots). k scales every change (0 = the plain albedo). Returns the albedo and the layers' weights."""
+    a = albedo.copy()
+    x, z = np.abs(pos[..., 0]), pos[..., 2]
+    span = ec[2] - mouth_z
+    top = np.zeros(skin.shape, np.float32)
+    if head == "axolotl":  # the 2D: teal forehead and crown down to the eyes, teal cheeks outside the eyes
+        top = smoothstep(ec[2] - 0.33 * span, ec[2] + 0.55 * span, z)
+        side = smoothstep(ec[0] + 0.3 * r, ec[0] + 1.8 * r, x) * smoothstep(mouth_z, mouth_z + 0.6 * span, z)
+        top = np.maximum(top, 0.8 * side) * skin
+        lum = a.mean(-1, keepdims=True) / max(float(np.mean(teal)), 1e-3)
+        a = a + min(0.85 * k, 1.0) * top[..., None] * (np.clip(np.asarray(teal) * (0.75 + 0.25 * lum), 0, 1) - a)
+    h, s, v = (q.reshape(skin.shape) for q in hsv(np.clip(a, 0, 1).reshape(-1, 3)))
+    rng = np.random.default_rng(7)
+    drift = np.zeros(skin.shape, np.float32)
+    for _ in range(6):  # a smooth 3D drift: sinusoids along random directions, wavelengths a tenth of the head
+        d = rng.normal(size=3)
+        d /= np.linalg.norm(d)
+        drift += np.sin(pos @ d * (2 * np.pi / (rng.uniform(0.6, 1.4) * 1.2 * span)) + rng.uniform(0, 6.3))
+    drift /= 6 ** 0.5
+    crease = np.clip((float(np.percentile(cav[skin > 0.9], 75)) - cav) / 0.35, 0, 1)  # relative to the open skin
+    lid = np.clip((1.55 - ed) / 0.45, 0, 1) * (ed > 0.98)
+    nose = ellipsoid_w(np.stack([pos[..., 0], np.zeros_like(z), z], -1), (0.0, 0.0, (ec[2] + mouth_z) / 2),
+                       (0.6 * ec[0], 1.0, 0.45 * span), 0.3) * (pos[..., 1] < ec[1])
+    roots = np.clip(4 * thin * (1 - thin), 0, 1)
+    flush = np.clip(np.maximum.reduce([lips, 0.7 * lid, 0.9 * nose * np.clip(2.5 * blur(crease, 6), 0, 1),
+                                       0.7 * roots, 0.6 * gills * (1 - gills) * 4]), 0, 1) * skin
+    crease = crease * skin
+    dh = (4.0 * drift + 6.0 * crease - 3.0 * flush) * skin  # degrees: the creases a little bluer (-10 read green)
+    ks = 1 + (0.35 * crease + 0.3 * flush) * skin
+    kv = 1 + (0.035 * drift - 0.25 * crease - 0.06 * flush) * skin
+    out = np.clip(hsv2rgb(h + k * dh, np.clip(s * (1 + k * (ks - 1)), 0, 1), np.clip(v * (1 + k * (kv - 1)), 0, 1)), 0, 1)
+    return out, {"top": top, "drift": drift, "crease": crease, "flush": flush}
 
 
 def log(msg):
@@ -254,22 +362,38 @@ def main():
         ap.add_argument(a, required=True)
     ap.add_argument("--res", type=int, default=4096, help="the colour bake's size (the normal, mask: half)")
     ap.add_argument("--albedo-res", type=int, default=2048, help="the saved albedo's size (contract: 2048)")
+    ap.add_argument("--name", default="", help="the build's file and object name (default: the head)")
+    ap.add_argument("--rims", choices=["auto", "on", "off"], default="auto",
+                    help="keep more of the budget on the lid rims (auto: RIMS per head)")
+    ap.add_argument("--alive", type=float, default=1.0, help="the baked alive layers' strength (0: off)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
     if args.albedo_res > args.res or args.res % args.albedo_res or args.res % 2:
         ap.error(f"--albedo-res {args.albedo_res} must divide --res {args.res} (an even size)")
     head, out = args.head, Path(args.out)
+    nm = args.name or head
+    rims_on = RIMS[head] if args.rims == "auto" else args.rims == "on"
     out.mkdir(parents=True, exist_ok=True)
     (out / "base_choice").mkdir(exist_ok=True)
     ref = json.loads(Path(args.ref).read_text(encoding="utf-8"))
     eye = ref["eye_fit"]
     ec, r = np.array([abs(eye["x"]), eye["y"], eye["z"]]), eye["r"]
-    report = {"head": head, "eye_fit": {k: eye[k] for k in ("x", "y", "z", "r")}}
+    report = {"head": head, "name": nm, "rims": rims_on, "alive": args.alive,
+              "eye_fit": {k: eye[k] for k in ("x", "y", "z", "r")}}
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
     src = H.import_glb(Path(args.src))
     src.name = f"{head}_src"
     dense = H.import_glb(Path(args.dense))
     dense.name = f"{head}_dense"
+    # static_v3: the bakes' smoothed source (the orange peel): the decimation still takes the dense original's shape
+    dense_s = dense.copy()
+    dense_s.data = dense.data.copy()
+    bpy.context.scene.collection.objects.link(dense_s)
+    dense_s.name = f"{head}_dense_smooth"
+    H.weld(dense_s)
+    sm_d = dense_s.modifiers.new("relax", "SMOOTH")
+    sm_d.factor, sm_d.iterations = DENSE_SMOOTH
+    H.apply_modifiers(dense_s)
     lo_s, hi_s = H.bounds([src])
     lo_d, hi_d = H.bounds([dense])
     off = max((lo_s - lo_d).length, (hi_s - hi_d).length)
@@ -282,8 +406,8 @@ def main():
     low = geo.copy()
     low.data = geo.data.copy()
     bpy.context.scene.collection.objects.link(low)
-    low.name = f"{head}_static"
-    low.data.name = f"{head}_static"
+    low.name = f"{nm}_static"
+    low.data.name = f"{nm}_static"
     for m in list(low.modifiers):
         low.modifiers.remove(m)
     low.data.materials.clear()
@@ -291,7 +415,7 @@ def main():
     # static_v2: more of the budget on the lips and lid rims (#288's long sliver triangles there streaked the shading
     # and stepped the lid rims)
     fp = ref["lip_line"]["front_point"]
-    kw_of = lambda c, rims=True: keep_weights(c, ec, r, (0.0, fp[1] + 0.25 * r, fp[2]), ref["lip_line"]["half_width"], rims)  # noqa: E731
+    kw_of = lambda c, rims=rims_on: keep_weights(c, ec, r, (0.0, fp[1] + 0.25 * r, fp[2]), ref["lip_line"]["half_width"], rims)  # noqa: E731
     co = np.empty(len(low.data.vertices) * 3, np.float32)
     low.data.vertices.foreach_get("co", co)
     kw = kw_of(co.reshape(-1, 3))
@@ -321,8 +445,8 @@ def main():
     report["keep_search"] = tries
     bpy.data.objects.remove(low)
     low = chosen
-    low.name = f"{head}_static"
-    low.data.name = f"{head}_static"
+    low.name = f"{nm}_static"
+    low.data.name = f"{nm}_static"
     cfg = H.HEADS[head]
     ledge = cfg["smooth_region"] if cfg.get("smooth_region", {}).get("kind") == "ledge" else None
     # the dense original's own crease is jagged where the lips meet the skin (kept denser, it showed more): a local
@@ -338,6 +462,14 @@ def main():
     sm.vertex_group = "relax"
     sm.factor, sm.iterations = RELAX
     H.apply_modifiers(low)
+    # static_v3: the spikes left near the lips and lid rims (the axolotl's upper-lip peak) moved into their
+    # neighbours' plane
+    low.data.vertices.foreach_get("co", co)
+    spikes = despike(low, keep_weights(co.reshape(-1, 3), ec, r, (0.0, fp[1] + 0.25 * r, fp[2]),
+                                       ref["lip_line"]["half_width"], True) > 0.05)
+    report["despiked"] = {"count": len(spikes),
+                          "where": [[round(float(c), 3) for c in low.data.vertices[i].co] for i in spikes[:40]]}
+    log(f"despiked {len(spikes)} vertices")
     for p in low.data.polygons:
         p.use_smooth = True
     report["tris"] = H.tris(low)
@@ -365,7 +497,7 @@ def main():
     bake_to(low, grade_img, "DIFFUSE", [src], pass_filter={"COLOR"}, cage=CAGE, ray=RAY)
     nres = res // 2
     nrm_img = new_image(f"{head}_normal_raw", nres, data=True)
-    bake_to(low, nrm_img, "NORMAL", [dense], normal_space="TANGENT", cage=CAGE, ray=RAY)
+    bake_to(low, nrm_img, "NORMAL", [dense_s], normal_space="TANGENT", cage=CAGE, ray=RAY)
     pos_img = new_image(f"{head}_pos", nres, data=True, float_buffer=True)
     nt = bake_mat.node_tree
     geo_node = nt.nodes.new("ShaderNodeNewGeometry")
@@ -374,8 +506,8 @@ def main():
     nt.links.new(emit.outputs["Emission"], nt.nodes["Material Output"].inputs["Surface"])
     bake_to(low, pos_img, "EMIT")
     scene.cycles.samples = 4
-    cav = blur(bake_ao(low, dense, nres, False, 0.05), 1)
-    thick = blur(bake_ao(low, dense, nres, True, 0.06), 2)
+    cav = blur(bake_ao(low, dense_s, nres, False, 0.05), 1)
+    thick = blur(bake_ao(low, dense_s, nres, True, 0.06), 2)
     scene.cycles.samples = 1
     log("bakes done")
 
@@ -447,17 +579,33 @@ def main():
             cc = (ec[0] * sd + sd * a * r, ec[1] + b * r, ec[2] + u * r)
             lw = np.maximum(lw, ellipsoid_w(pos, cc, [x * r for x in ledge["radii"]], 0.3))
         fw = np.maximum(fw, lw)
-    fw_n = np.maximum(fw[::2, ::2], 0.8 * kw_of(pos_n.reshape(-1, 3), False).reshape(nres, nres))
+    # static_v3: the lips' normal detail fully flat (0.8 in static_v2 left the upper lip's spike and light line)
+    fw_n = np.maximum(fw[::2, ::2], 1.0 * kw_of(pos_n.reshape(-1, 3), False).reshape(nres, nres))
     nrm = nrm * (1 - fw_n[..., None]) + flat * fw_n[..., None]
     f = res // args.albedo_res
     if f > 1:  # baked at --res, kept at the contract's 2048 (godot-check texture_size): a supersampled albedo,
         # averaged in linear light
         albedo = to_srgb(to_linear(albedo).reshape(args.albedo_res, f, args.albedo_res, f, 3).mean((1, 3)))
-    alb_img = save(albedo, out / f"{head}_albedo.png")
-    nrm_out = save(nrm, out / f"{head}_normal.png", data=True)
     m_half = m_rgb.reshape(nres, 2, nres, 2, 3).mean((1, 3))
-    mask_img = save(m_half, out / f"{head}_mask.png", data=True)
-    save(detail, out / f"{head}_detail.png", data=True)
+    # static_v3: the alive layers baked into the albedo and the roughness (at the maps' 2048, from the position bake)
+    if albedo.shape[0] != nres:
+        raise SystemExit(f"--albedo-res {args.albedo_res} must be half of --res {res} for the alive layers")
+    skin2 = m_half[..., 0]
+    teal = stats(albedo[skin2 > 0.95].reshape(-1, 3))["teal"]["srgb"]
+    plain = albedo
+    albedo, lay = alive(plain, skin2, pos_n, cav, thin, half(lips), eye_dist(pos_n, ec, r), half(gills), head, ec, r,
+                        fp[2], teal, args.alive)
+    m_half[..., 1] = np.clip(m_half[..., 1] + args.alive * (0.05 * lay["drift"] + 0.08 * lay["crease"]) * skin2, 0.03, 1)
+    report["alive_layers"] = {k: round(float(v.mean()), 4) for k, v in lay.items()}
+    save(plain, out / f"{nm}_albedo_plain.png")  # Godot's grid only (alive_mix), not in the GLB
+    alb_img = save(albedo, out / f"{nm}_albedo.png")
+    nrm_out = save(nrm, out / f"{nm}_normal.png", data=True)
+    # the eyes' clear coat (glTF KHR_materials_clearcoat reads R): 1 on the eyes
+    coat_img = save(np.stack([1 - skin2, np.zeros_like(skin2), np.zeros_like(skin2)], -1), out / f"{nm}_coat.png",
+                    data=True)
+    coat_img.colorspace_settings.name = "Non-Color"
+    mask_img = save(m_half, out / f"{nm}_mask.png", data=True)
+    save(detail, out / f"{nm}_detail.png", data=True)
     alb_img.colorspace_settings.name = "sRGB"
     nrm_out.colorspace_settings.name = "Non-Color"
     mask_img.colorspace_settings.name = "Non-Color"
@@ -471,9 +619,9 @@ def main():
     log(f"colour {json.dumps(diag)}")
 
     # ---- the material
-    for o in (src, dense):
+    for o in (src, dense, dense_s):
         o.hide_render = True
-    mat = bpy.data.materials.new(f"{head}_static_skin")
+    mat = bpy.data.materials.new(f"{nm}_static_skin")
     mat.use_nodes = True
     nt = mat.node_tree
     bsdf = nt.nodes["Principled BSDF"]
@@ -493,12 +641,24 @@ def main():
     bsdf.inputs["Metallic"].default_value = 0.0
     bsdf.inputs["Subsurface Weight"].default_value = 0.12
     bsdf.inputs["Subsurface Scale"].default_value = 0.02
-    bsdf.inputs["Sheen Weight"].default_value = 0.15
+    # static_v3: glTF extensions a browser's viewer renders (three.js): the eyes' wet clear coat from the coat map
+    # (KHR_materials_clearcoat), a soft sheen at grazing angles (KHR_materials_sheen) and a lower skin specular
+    # (KHR_materials_specular) against the vinyl gloss
+    t_coat = nt.nodes.new("ShaderNodeTexImage")
+    t_coat.image = coat_img
+    sep_c = nt.nodes.new("ShaderNodeSeparateColor")
+    nt.links.new(t_coat.outputs["Color"], sep_c.inputs["Color"])
+    nt.links.new(sep_c.outputs["Red"], bsdf.inputs["Coat Weight"])
+    bsdf.inputs["Coat Roughness"].default_value = 0.03
+    bsdf.inputs["Specular IOR Level"].default_value = SPEC_LEVEL
+    bsdf.inputs["Sheen Weight"].default_value = SHEEN[0]
+    bsdf.inputs["Sheen Roughness"].default_value = SHEEN[1]
+    bsdf.inputs["Sheen Tint"].default_value = (*SHEEN[2], 1.0)
     nt.nodes.active = t_alb
     low.data.materials.clear()
     low.data.materials.append(mat)
     low["base_skin_srgb"] = report["base_skin_srgb"]
-    low["tint_mask"] = f"{head}_mask.png"
+    low["tint_mask"] = f"{nm}_mask.png"
 
     # the crest-root ledge smoothed after the bakes (the maps follow the UVs; a smooth before them left the colour
     # bake's rays short of the source there), its normal detail flattened above
@@ -511,13 +671,13 @@ def main():
     lod = low.copy()
     lod.data = low.data.copy()
     scene.collection.objects.link(lod)
-    lod.name = f"{head}_static_lod1"
+    lod.name = f"{nm}_static_lod1"
     d1 = lod.modifiers.new("dec", "DECIMATE")
     d1.ratio = 0.45
     d1.use_symmetry = True
     H.apply_modifiers(lod)
     report["tris_lod1"] = H.tris(lod)
-    for o, name in ((low, f"{head}_static.glb"), (lod, f"{head}_static_lod1.glb")):
+    for o, name in ((low, f"{nm}_static.glb"), (lod, f"{nm}_static_lod1.glb")):
         H.select_only([o])
         bpy.ops.export_scene.gltf(filepath=str(out / name), export_format="GLB", use_selection=True,
                                   export_apply=True, export_yup=True, export_animations=False, export_extras=True,
@@ -542,7 +702,7 @@ def main():
     v2d = Path(args.view2d)
     base_sheet([[v2d / "front.png", v2d / "side.png", v2d / "back.png", Path(args.roster)],
                 [bc / f"a_{k}.png" for k in views], [bc / f"b_{k}.png" for k in views]],
-               out / f"{head}_base_choice.png")
+               out / f"{nm}_base_choice.png")
     low.hide_render = False
     # Cycles front render of the final material, a plain grey studio
     scene.render.engine = "CYCLES"
@@ -566,7 +726,7 @@ def main():
     scene.render.filepath = str(out / "blender_front.png")
     bpy.ops.render.render(write_still=True)
     bpy.context.preferences.filepaths.save_version = 0  # no .blend1 backups in the raw outputs
-    bpy.ops.wm.save_as_mainfile(filepath=str(out / f"{head}_static.blend"), compress=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(out / f"{nm}_static.blend"), compress=True)
     (out / "build.json").write_text(json.dumps(report, indent=2), encoding="utf-8", newline="\n")
     log(f"done tris={report['tris']} lod1={report['tris_lod1']} base={report['base_skin_srgb']}")
 
