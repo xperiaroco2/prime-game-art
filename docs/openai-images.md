@@ -231,3 +231,13 @@ three 1024x1280 images (about 378 each); $0.066 a request, $0.085 with two refer
 $5 cap. A style reference used only for finish and light held the look without copying its face; framing (one bust
 edge) did not follow the prompt reliably. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r2/`; JPEGs, overview and
 handoff: `D:/prime-art-raw/research/2026-10-22-roster/design/`.
+
+## Batch 2026-10-22-alien-roster-r3b (art #196, roster round 3b)
+
+Four new alien women for the slots W7 and W10, each prompt writing the eye (solid glossy dark, no white) and the
+mouth (beak, lipless slit, crease, seam) as non-human, two revised after a look, and h08b (round 2's h08-2 with only its
+gills made feathery), medium, 1024x1280, n = 3, under the standing permission; the batch file is generated from
+`D:/prime-art-raw/research/2026-10-22-roster/design/r3b/concepts_r3b.src.json`. 7 requests: $0.067 to $0.068 with one
+reference, $0.097 with two; **$0.5044** of the $3 cap. No head came out the stock alien-woman face; "no lips" alone
+still gave a small round mouth pouting human lips, while "flat, flush with the face, nothing pushed forward, no pout"
+held. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r3b/`; JPEGs, overview and handoff: `.../design/r3b/`.
