@@ -1,7 +1,8 @@
 """The empty ship's layout (art #263, docs/ship.md): layouts/ship/ship.toml (the numbers) with the interior and exterior
 lanes' piece lists and placements, and the plain-Python check of the rules `ship --check` holds: the footprint, the
-corridor width, the station spots inside their rooms with walking room, every room and placed piece inside the hull,
-the head room, and one entrance. Plan coordinates: x east, y south, h up (metres); Godot (x, h, y)."""
+corridor width, the tip rooms' outer wall, the station spots (inside their rooms, the wall spots' plain flat panels
+and the free pass behind a player standing at each), every room and placed piece inside the hull, the head room, and
+one entrance. Plan coordinates: x east, y south, h up (metres); Godot (x, h, y)."""
 
 from __future__ import annotations
 
@@ -135,15 +136,17 @@ def check(layout: dict[str, Any]) -> list[str]:
     by_id = rooms(layout)
     for r in layout["rooms"]:
         if r["id"].startswith("corridor"):
-            w = r["y"][1] - r["y"][0]
-            if abs(w - 2.5) > 0.1:
-                problems.append(f"{r['id']}: {w:.2f} m wide, wants about 2.5")
-            if r["x"][1] - r["x"][0] < 4.0:
-                problems.append(f"{r['id']}: shorter than 4 m")
-    # the corridors run across the whole width: tip room to tip room
-    xs = [r["centre"][0] + s * r["radius"] for r in layout["rooms"] if r.get("window") for s in (-1, 1)]
-    if xs and max(xs) - min(xs) < size["width_m"] - 1.5:
-        problems.append(f"tip rooms span {max(xs) - min(xs):.2f} m, not the whole width")
+            w, want = r["y"][1] - r["y"][0], size["corridor_width_m"]
+            if abs(w - want) > 0.1:
+                problems.append(f"{r['id']}: {w:.2f} m wide, wants about {want:g}")
+            if r["x"][1] - r["x"][0] < 2.5:
+                problems.append(f"{r['id']}: shorter than 2.5 m")
+    # the tip rooms' outer walls (the window side) at +-tip_outer_m (5a mirrored)
+    for r in layout["rooms"]:
+        if r.get("window"):
+            outer = abs(r["centre"][0]) + r["radius"]
+            if abs(outer - size["tip_outer_m"]) > 0.05:
+                problems.append(f"{r['id']}: outer wall at {outer:.2f} m, wants {size['tip_outer_m']:g}")
     player = layout["player"]
     need = player["capsule_height_m"] + player["head_margin_m"]
     for r in layout["rooms"]:
@@ -184,26 +187,7 @@ def check(layout: dict[str, Any]) -> list[str]:
             todo.append(other)
     if seen != set(by_id):
         problems.append(f"rooms not reachable from the hall: {', '.join(sorted(set(by_id) - seen))}")
-    # stations: inside their room with their footprint, at a wall where asked, walking room left
-    st = layout["stations"]
-    for s in st["spot"]:
-        room = by_id.get(s["room"])
-        if room is None:
-            problems.append(f"station {s['id']}: unknown room {s['room']}")
-            continue
-        margin = room_margin(room, tuple(s["at"]))
-        least = st["wall_depth_m"] / 2 if s.get("at_wall") else st["radius_m"]  # a wall unit stands against its wall
-        if margin < least - TOL:
-            problems.append(f"station {s['id']}: {margin:.2f} m inside {room['id']}, wants >= {least:g}")
-        if room["shape"] == "rect":
-            gaps = (s["at"][1] - room["y"][0], room["y"][1] - s["at"][1])
-            if s.get("at_wall") and min(gaps) > st["wall_reach_m"]:
-                problems.append(f"station {s['id']}: {min(gaps):.2f} m from a wall, wants <= {st['wall_reach_m']:g}")
-            free = max(gaps) - st["radius_m"]
-            if free < st["min_free_width_m"]:
-                problems.append(f"station {s['id']}: {free:.2f} m free beside it, wants >= {st['min_free_width_m']:g}")
-        elif room["radius"] - st["radius_m"] * 2 < st["min_free_width_m"]:
-            problems.append(f"station {s['id']}: no walking room round it in {room['id']}")
+    problems += check_spots(layout)
     # inside the hull: every room's outer wall and every placed piece's origin (unless the piece may stand outside)
     poly = outline(layout)
     wall = layout["deck"]["wall_m"]
@@ -230,12 +214,94 @@ def check(layout: dict[str, Any]) -> list[str]:
     return problems
 
 
+def _unit(v: list[float]) -> tuple[float, float]:
+    n = math.hypot(v[0], v[1])
+    return v[0] / n, v[1] / n
+
+
+def in_rooms(layout: dict[str, Any], pt: tuple[float, float]) -> float:
+    """How far pt lies inside the rooms' floor (the largest margin over all rooms; < 0 outside every room)."""
+    return max(room_margin(r, pt) for r in layout["rooms"])
+
+
+def to_local(pt: tuple[float, float], at: list[float], yaw: float) -> tuple[float, float]:
+    """A plan point in the frame of a piece placed at `at` turned by yaw (plan angle a -> a - yaw)."""
+    c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+    dx, dy = pt[0] - at[0], pt[1] - at[1]
+    return c * dx - s * dy, s * dx + c * dy
+
+
+def spot_stand(layout: dict[str, Any], s: dict[str, Any]) -> tuple[float, float]:
+    """Where a player stands to use a wall spot (the capsule's centre in front of the unit)."""
+    n = _unit(s["normal"])
+    d = s.get("depth_m", layout["stations"]["depth_m"]) + layout["player"]["capsule_radius_m"]
+    return s["at"][0] + n[0] * d, s["at"][1] + n[1] * d
+
+
+def check_spots(layout: dict[str, Any]) -> list[str]:
+    """The station spots (5a mirrored): a floor spot's footprint inside its room; a wall spot on its room's wall, its
+    plain panel free of every piece with a `foot` (trunks, cable bays, arches, pilasters), the player's stand inside the
+    room and pass_m of free floor behind it (the capsule's width inside the rooms, clear of every floor spot)."""
+    problems: list[str] = []
+    st, by_id = layout["stations"], rooms(layout)
+    rad = layout["player"]["capsule_radius_m"]
+    feet = {p["id"]: p["foot"] for p in layout["pieces"] if p.get("foot")}
+    floors = [s for s in st["spot"] if not s.get("normal")]
+    for s in st["spot"]:
+        room = by_id.get(s["room"])
+        if room is None:
+            problems.append(f"station {s['id']}: unknown room {s['room']}")
+            continue
+        if not s.get("normal"):
+            margin = room_margin(room, tuple(s["at"]))
+            if margin < st["radius_m"] - TOL:
+                problems.append(f"station {s['id']}: {margin:.2f} m inside {room['id']}, wants >= {st['radius_m']:g}")
+            continue
+        n = _unit(s["normal"])
+        wall = room_margin(room, (s["at"][0] + n[0] * 0.05, s["at"][1] + n[1] * 0.05))
+        if not -0.2 <= wall <= 0.3:
+            problems.append(f"station {s['id']}: {wall - 0.05:.2f} m from the wall of {room['id']}, wants it on the wall")
+        t = (-n[1], n[0])
+        half = st["plain_width_m"] / 2
+        band = [(s["at"][0] + t[0] * u + n[0] * v, s["at"][1] + t[1] * u + n[1] * v)
+                for u in [half * (k / 8 - 1) for k in range(17)] for v in (0.02, 0.15, 0.3)]
+        hits = set()
+        for pid, at, yaw in layout["place"]:
+            f = feet.get(pid)
+            if f is None:
+                continue
+            for q in band:
+                lx, ly = to_local(q, at, yaw)
+                if f[0] <= lx <= f[1] and f[2] <= ly <= f[3]:
+                    hits.add(pid)
+                    break
+        for pid in sorted(hits):
+            problems.append(f"station {s['id']}: {pid} sticks out over its plain wall ({st['plain_width_m']:g} m)")
+        stand = spot_stand(layout, s)
+        if in_rooms(layout, stand) < rad - TOL:
+            problems.append(f"station {s['id']}: the player's stand ({stand[0]:.2f}, {stand[1]:.2f}) is not in the room")
+        for k in range(9):
+            v = rad + st["pass_m"] * k / 8
+            c = (stand[0] + n[0] * v, stand[1] + n[1] * v)
+            side = [(c[0] + t[0] * w, c[1] + t[1] * w) for w in (-rad, 0.0, rad)]
+            if min(in_rooms(layout, q) for q in side) < -TOL:
+                problems.append(f"station {s['id']}: the pass behind it leaves the rooms at ({c[0]:.2f}, {c[1]:.2f})")
+                break
+            near = [o["id"] for o in floors if math.hypot(c[0] - o["at"][0], c[1] - o["at"][1]) < st["radius_m"]]
+            if near:
+                problems.append(f"station {s['id']}: the pass behind it crosses {near[0]}")
+                break
+    return problems
+
+
 def ascii_plan(layout: dict[str, Any], cell: float = 0.5) -> str:
     """A text plan, south at the top as in plan-3.jpg: '#' hull, '.' room floor, 'o' tip-room window side, '=' ramp,
-    letters the station spots (C console, V vent, S socket, P panel, R renewer)."""
+    letters the station spots (C console, V vent, S socket, B breaker board, R renewer: the player's stand)."""
     poly = outline(layout)
     by_id = rooms(layout)
-    marks = {"console": "C", "vent_w": "V", "vent_e": "V", "socket_w": "S", "socket_e": "S", "panel": "P", "renewer": "R"}
+    marks = {"console": "C", "vent": "V", "socket": "S", "breaker": "B", "renewer": "R"}
+    spots = [(marks.get(s["id"].split("_")[0], "*"), spot_stand(layout, s) if s.get("normal") else tuple(s["at"]))
+             for s in layout["stations"]["spot"]]
     ramp = layout["ramp"]
     lines = []
     y = 7.5
@@ -250,13 +316,14 @@ def ascii_plan(layout: dict[str, Any], cell: float = 0.5) -> str:
                 ch = "."
             if abs(x) < ramp["width_m"] / 2 and ramp["foot"][1] <= y < ramp["hinge"][1]:
                 ch = "="
-            for s in layout["stations"]["spot"]:
-                if abs(s["at"][0] - x) < cell / 2 + TOL and abs(s["at"][1] - y) < cell / 2 + TOL:
-                    ch = marks.get(s["id"], "*")
+            for mark, at in spots:
+                if abs(at[0] - x) < cell / 2 + TOL and abs(at[1] - y) < cell / 2 + TOL:
+                    ch = mark
             row.append(ch)
             x -= cell
         lines.append("".join(row).rstrip())
         y -= cell
     head = (f"ship plan v{layout['version']}: {cell:g} m cells, south at the top and east on the left (as plan-3.jpg, "
-            "seen from above); # hull, . floor, = ramp, C console, V vent, S socket, P panel, R renewer")
+            "seen from above); # hull, . floor, = ramp, C console; where a player stands at V vent, S socket, B breaker, "
+            "R renewer")
     return head + "\n" + "\n".join(lines) + "\n"

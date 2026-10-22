@@ -1,10 +1,11 @@
-# The empty ship, a wide metal manta (art #263, step 1). The numbers win over the pictures' curvature (the engineer).
-# Sources: prime-game docs/design/estate-map.md section 5a; the approved 2D in prime-game-design
-# ideas/ship-components/2d/ (plan-3.jpg, the top view, is the source of truth for the arrangement).
+# The empty ship, a wide metal manta (art #263). The numbers win over the pictures' curvature (the engineer).
+# Version 2, the mirrored layout (2026-10-22): prime-game docs/design/estate-map.md section 5a (xperiaroco2/prime-game
+# #1293) and prime-game-design ideas/ship-components/2d/README.md "The layout mirrored": for the geometry 5a wins over
+# plan-3.jpg; the 2D sheets still set the look.
 # Plan coordinates from the ship's centre in metres: x east, y south, h up from the ground. Godot: (x, h, y).
 # `tools/run.py ship --check` checks every rule below (tools/runner/ship_layout.py, docs/ship.md).
-version = 1
-raw_dir = "ship/v1"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
+version = 2
+raw_dir = "ship/v2"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
 interior = "layouts/ship/interior.toml"      # the INTERIOR lane's pieces and placements
 exterior = "layouts/ship/exterior.toml"      # the EXTERIOR lane's pieces and placements
 plan_ref = "D:/prime-game-design/ideas/ship-components/2d/plan-3.jpg"
@@ -15,6 +16,8 @@ span_max_m = 27.5                            # manager update 2: the lens tips' 
 length_m = 14.0                              # checked with the nozzle pods (the ship's length on the map), no ramp
 length_max_m = 15.0                          # the manager, art #263: how far the nozzles stick out is open (2D README); 14.84 m now
 tolerance_m = 0.5
+corridor_width_m = 3.0                       # 5a mirrored: straight corridors 3 m wide (v1: 2.5)
+tip_outer_m = 10.1                           # 5a mirrored: the tip rooms' outer wall at x +-10.1 (v1: 12.8)
 
 [deck]
 ground_h = 0.0
@@ -32,7 +35,7 @@ head_margin_m = 0.5
 id = "hall"
 shape = "circle"
 centre = [0.0, 0.0]
-radius = 3.4
+radius = 4.0                                  # 5a mirrored: 8 m across, about 50 m2 (v1: 3.4)
 clear_h = 3.2                                 # update 2 (was 3.4 / 4.0): the hull thins
 apex_h = 3.8
 links = ["mouth", "corridor_w", "corridor_e"]
@@ -41,31 +44,31 @@ links = ["mouth", "corridor_w", "corridor_e"]
 id = "mouth"                                 # the short passage from the ramp's hinge into the hall
 shape = "rect"
 x = [-1.3, 1.3]
-y = [-4.6, -3.3]
+y = [-4.6, -3.9]                             # v2: the hall's wall at y -4.0; the ramp's hinge stays at -4.6
 clear_h = 2.4
 exit = "ramp"                                # the only way in or out (5a's side hatch is dropped: one entrance, art#263)
 
 [[rooms]]
 id = "corridor_w"
 shape = "rect"
-x = [-9.1, -3.3]
-y = [-1.25, 1.25]
+x = [-7.3, -3.7]                             # v2: straight, from the hall's circle to the tip room's (both at y +-1.5)
+y = [-1.5, 1.5]
 clear_h = 2.4                                 # update 2 (was 2.6)
 links = ["tip_w"]
 
 [[rooms]]
 id = "corridor_e"
 shape = "rect"
-x = [3.3, 9.1]
-y = [-1.25, 1.25]
+x = [3.7, 7.3]
+y = [-1.5, 1.5]
 clear_h = 2.4                                 # update 2 (was 2.6)
 links = ["tip_e"]
 
 [[rooms]]
 id = "tip_w"
 shape = "circle"
-centre = [-10.75, 0.0]
-radius = 2.05
+centre = [-8.3, 0.0]
+radius = 1.8                                  # v2: 3.6 m across, the outer wall at -10.1
 clear_h = 2.5                                 # update 2 (was 2.8 / 3.2)
 apex_h = 2.8
 window = { dir = [-1.0, 0.0], half_angle_deg = 65.0, sill_h = 1.0, head_h = 2.2 }   # glass onto the clearing, not an exit
@@ -73,19 +76,22 @@ window = { dir = [-1.0, 0.0], half_angle_deg = 65.0, sill_h = 1.0, head_h = 2.2 
 [[rooms]]
 id = "tip_e"
 shape = "circle"
-centre = [10.75, 0.0]
-radius = 2.05
+centre = [8.3, 0.0]
+radius = 1.8                                  # v2: 3.6 m across, the outer wall at 10.1
 clear_h = 2.5                                 # update 2 (was 2.8 / 3.2)
 apex_h = 2.8
 window = { dir = [1.0, 0.0], half_angle_deg = 65.0, sill_h = 1.0, head_h = 2.2 }    # join 3: sill 0.45 -> 1.0 (the lens band starts 1.33 m up)
 
-# The future stations (estate-map 5a): NOT built in step 1; only their spots stay clear. radius_m: the footprint kept
-# free; at_wall: stands at a corridor wall (within wall_reach_m of it).
+# The future stations (estate-map 5a mirrored): NOT built yet; only their spots stay plain and clear. A wall spot: `at`
+# the point on the wall's face where the unit hangs flat, `normal` into the room; the wall stays a flat panel
+# plain_width_m wide there (no niche, trunk, cable bay, arch or rib sticking out: the pieces with a `foot` in their
+# lane file keep off it); a player stands depth_m (the unit) + the capsule's radius in front of it with pass_m of free
+# floor behind. A floor spot (the console): `at` its centre, radius_m clear floor. `ship --check` holds all of it.
 [stations]
-radius_m = 0.35
-wall_depth_m = 0.5                            # a wall station's depth from its wall
-wall_reach_m = 0.6
-min_free_width_m = 1.2                       # walking width left beside a station in a corridor
+radius_m = 0.35                               # a floor station's footprint radius
+depth_m = 0.5                                 # a wall unit's depth from its wall
+plain_width_m = 1.6                           # the flat panel at a wall spot
+pass_m = 1.6                                  # free floor behind a player standing at a spot
 
 [[stations.spot]]
 id = "console"
@@ -93,38 +99,54 @@ at = [0.0, 1.0]
 room = "hall"
 
 [[stations.spot]]
+id = "vent_e"                                 # the hall wall east of the mouth (5a: about (2.6, -2.6)), on the flat
+at = [2.664, -2.664]                          # chord at 45 deg (apothem 3.768: the 16-gon's two facets made one)
+normal = [-1.0, 1.0]
+room = "hall"
+
+[[stations.spot]]
 id = "vent_w"
-at = [-5.0, -1.0]
-room = "corridor_w"
-at_wall = true
+at = [-2.664, -2.664]
+normal = [1.0, 1.0]
+room = "hall"
+
+[[stations.spot]]
+id = "socket_e"                               # the hall wall east of the back
+at = [2.664, 2.664]
+normal = [-1.0, -1.0]
+room = "hall"
 
 [[stations.spot]]
 id = "socket_w"
-at = [-8.0, -1.0]
+at = [-2.664, 2.664]
+normal = [1.0, -1.0]
+room = "hall"
+
+[[stations.spot]]
+id = "breaker_e"                              # the corridor's front wall (y -1.5), centred at x 5.25
+at = [5.25, -1.5]
+normal = [0.0, 1.0]
+room = "corridor_e"
+
+[[stations.spot]]
+id = "breaker_w"
+at = [-5.25, -1.5]
+normal = [0.0, 1.0]
 room = "corridor_w"
-at_wall = true
 
 [[stations.spot]]
-id = "panel"
-at = [-10.5, 0.0]
-room = "tip_w"
-
-[[stations.spot]]
-id = "vent_e"
-at = [5.0, -1.0]
-room = "corridor_e"
-at_wall = true
-
-[[stations.spot]]
-id = "socket_e"
-at = [8.0, -1.0]
-room = "corridor_e"
-at_wall = true
-
-[[stations.spot]]
-id = "renewer"
-at = [12.0, 0.0]
+id = "renewer_e"                              # a waist-high washer before the window (sill 1.0: the window seen over
+at = [10.1, 0.0]                              # it); the player stands at (8.8, 0), the pass behind runs to x 6.8
+normal = [-1.0, 0.0]
 room = "tip_e"
+depth_m = 0.9
+
+[[stations.spot]]
+id = "renewer_w"
+at = [-10.1, 0.0]
+normal = [1.0, 0.0]
+room = "tip_w"
+depth_m = 0.9
 
 [ramp]                                       # the mouth ramp, north at the centre; it meets the ground
 width_m = 2.6
@@ -199,18 +221,18 @@ lamps = [
   [2.772, -1.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
   [0.0, -3.9, 2.8, 0.6, 3.5, 1.0, 0.7, 0.42, "hall", true],  # the mouth
   [0.0, 0.0, 4.2, 0.5, 1.3, 1.0, 0.7, 0.42, "hall", false],  # the hall cap's lamp: lights the faceted cone, not the floor
-  [-4.3, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
-  [-6.1, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
-  [-7.9, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
-  [-10.75, 0.0, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room
-  [-12.2, 0.0, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # west window: moonlight
+  [-4.4, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling (v2: 4.3/6.1/7.9 -> 4.4/5.5/6.6)
+  [-5.5, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
+  [-6.6, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
+  [-8.3, 0.0, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room (v2: 10.75 -> 8.3)
+  [-9.6, 0.0, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # west window: moonlight (v2: 12.2 -> 9.6)
   [-27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
   [-27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
-  [4.3, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
-  [6.1, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
-  [7.9, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
-  [10.75, 0.0, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # east tip room
-  [12.2, 0.0, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # east window: moonlight
+  [4.4, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling (v2: 4.3/6.1/7.9 -> 4.4/5.5/6.6)
+  [5.5, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
+  [6.6, 0.0, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
+  [8.3, 0.0, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # east tip room (v2: 10.75 -> 8.3)
+  [9.6, 0.0, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # east window: moonlight (v2: 12.2 -> 9.6)
   [27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   [27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   # inside 3-1 (grid_in31 C): moonlight on the pines the tip windows look at, kept off the wing tips (x 13.9)
@@ -284,7 +306,7 @@ int_silver_c = {v = 0.55, r = 0.25, m = 0.45}
 # The capsule walk: up the ramp, through the hall into both tip rooms and back out. Points [x, y, h].
 [walk]
 points = [[0.0, -9.0, 0.0], [0.0, -7.4, 0.0], [0.0, -4.4, 0.6], [0.0, -1.8, 0.6], [-3.0, 0.0, 1.0],
-          [-10.4, 0.0, 0.6], [-3.0, 0.0, 0.6], [3.0, 0.0, 0.6], [10.4, 0.0, 0.6], [3.0, 0.0, 1.0],
+          [-8.8, 0.0, 0.6], [-3.0, 0.0, 0.6], [3.0, 0.0, 0.6], [8.8, 0.0, 0.6], [3.0, 0.0, 1.0],
           [0.0, -1.8, 0.6], [0.0, -4.4, 0.6], [0.0, -7.4, 0.0], [0.0, -9.0, 0.0]]
 
 # Views: [name, title, eye [x, y, h], look [x, y, h], fov]; the plan view "top" (south up, as plan-3) is added by the
@@ -294,5 +316,6 @@ views = [
   ["out_front", "outside: front, ramp down", [0.0, -19.0, 2.4], [0.0, 0.0, 2.2], 55.0],
   ["out_hero", "outside: three-quarter at night", [-17.0, -15.0, 6.0], [0.0, 0.0, 2.0], 50.0],
   ["in_hall", "inside: the hall from the ramp", [0.0, -4.3, 2.2], [0.0, 2.0, 2.0], 75.0],
-  ["in_corridor_e", "inside: the east corridor", [3.0, 0.0, 2.2], [10.0, 0.0, 2.0], 70.0],
+  ["in_corridor_e", "inside: the east corridor", [2.6, 0.0, 2.2], [10.0, 0.0, 1.9], 70.0],
+  ["in_tip_e", "inside: the east tip room's window", [6.2, 0.9, 1.9], [10.1, -0.3, 1.6], 75.0],
 ]

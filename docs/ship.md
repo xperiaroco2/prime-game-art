@@ -1,7 +1,8 @@
 # The ship
 
 The aliens' ship, a wide metal manta (art #263; prime-game `docs/design/estate-map.md` section 5a; the approved 2D in
-prime-game-design `ideas/ship-components/2d/`, whose top view `plan-3.jpg` is the source of truth). Step 1 is the
+prime-game-design `ideas/ship-components/2d/`; since version 2, the mirrored layout of 2026-10-22, 5a wins over
+`plan-3.jpg` for the geometry and the 2D sheets still set the look; see "Version 2" below). Step 1 is the
 **empty** ship: hull outside, the central hall, both wing corridors with their round tip rooms, one entrance (the
 mouth ramp), no stations of any kind, worked out to release quality. Every object is its own model (one GLB),
 placed by a placements file, so a piece the engineer dislikes is replaced alone.
@@ -44,19 +45,18 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 |---|---|---|
 | Footprint | 27.5 m wide (the lens tips' blades at x +-13.75, `span_max_m` 27.5); two lengths (`ship_layout.lengths()`, as built): the hull body 12.9 m (lead edge y -6.5 to the trail 6.4: the swept tips and the pod housing; no ramp, no nozzle pods), 14.8 m with the nozzle pods (lead edge to the nozzle tips at 8.34), the one `ship --check` holds to 14, up to `length_max_m` 15; overall 15.7 m from the ramp's foot (-7.4) to the nozzle tips | 5a: about 26 x 14; manager update 2: the span up to about 27.5; the manager (art #263): the length counts the nozzles, up to 15 m, as how far they stick out is open (2D README) |
 | Deck | floor at h 0.6 on landing legs (launch 3; was 1.0), slabs 0.25, walls 0.2 | the ramp meets the ground; a thinner hull |
-| Hall | circle r 3.4 at (0, 0); 3.2 m to the ceiling's rim, 3.8 m to its apex (faceted, 16 sides; launch 3, was 3.4 / 4.0) | console (0, 1) with room round it |
-| Mouth | x -1.3..1.3, y -4.6..-3.3, 2.4 m high | the only way in or out (5a's side hatch is dropped, see below) |
+| Hall | circle r 4.0 at (0, 0) (v2; v1 3.4); 3.2 m to the ceiling's rim, 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
+| Mouth | x -1.3..1.3, y -4.6..-3.9 (v2), 2.4 m high | the only way in or out (5a's side hatch is dropped, see below) |
 | Ramp | 2.6 m wide, hinge (0, -4.6) at the deck, foot (0, -7.4) on the ground: 12.1 deg, a long plane | north at the centre |
-| Corridors | y -1.25..1.25 (2.5 m), x 3.3..9.1 each side, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a: about 2.5 m wide |
-| Tip rooms | circles r 2.05 at (+-10.75, 0); 2.5 m to the rim, 2.8 m apex (launch 3, was 2.8 / 3.2); window +-65 deg outward, sill 1.0 (join 3, was 0.45), head 2.2 over the deck | panel (-10.5, 0), renewer (12, 0); the lens's window band starts 1.33 m over the deck |
-| Stations (not built) | console (0, 1); vents (+-5, -1), sockets (+-8, -1) at the north corridor wall; panel (-10.5, 0); renewer (12, 0) | 5a |
+| Corridors | y -1.5..1.5 (3 m, v2), x 3.7..7.3 each side (the hall's and the tip room's circles at y +-1.5), straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide |
+| Tip rooms | circles r 1.8 at (+-8.3, 0), the outer wall at +-10.1 (v2; v1 r 2.05 at +-10.75); 2.5 m to the rim, 2.8 m apex; window +-65 deg outward, sill 1.0, head 2.2 over the deck | 5a mirrored: 3.6 m across |
+| Stations (not built) | console (0, 1) clear floor; vents at (+-2.66, -2.66) and sockets at (+-2.66, 2.66) on the hall's flat chords; breaker boards at (+-5.25, -1.5) on the corridors' front wall; renewers before the tip windows (wall +-10.1, 0.9 m deep: the player at (+-8.8, 0)) | 5a mirrored, "Version 2" below |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
 
-The check holds: the footprint within 0.5 m; corridors 2.5 +- 0.1 m wide and over 4 m long; the tip rooms spanning
-the width; clear heights over the capsule and margin; exactly one room with an exit, the ramp's hinge on its north
+The check holds: the footprint within 0.5 m; corridors `corridor_width_m` (3) +- 0.1 m wide and over 2.5 m long; the
+tip rooms' outer wall at `tip_outer_m` (10.1) +- 0.05; the station spots (`check_spots`, "Version 2" below); clear heights over the capsule and margin; exactly one room with an exit, the ramp's hinge on its north
 edge, the ramp as wide as the mouth and under 30 deg; no window is an exit; every room reachable from the hall and
-linked rooms meeting; each station spot inside its room by its footprint (0.35 m; a wall unit 0.5 m deep stands
-against its wall, within 0.6 m), 1.2 m free beside the corridor stations; every room's outer wall and every placed
+linked rooms meeting; every room's outer wall and every placed
 piece inside the hull outline (the ramp may stand outside); no piece defined twice or never placed.
 
 **One entrance; the side hatch is dropped.** estate-map 5a lists a side hatch at (-12.5, 1) as a second way out. The
@@ -64,7 +64,7 @@ engineer's step-1 rule (art#263: the mouth ramp is the only way in or out, no si
 ship.toml has no hatch, and `check` and `test_a_second_exit_is_refused` demand exactly one exit. If the hatch comes
 back, both change with it. The corridors also run straight (5a: "curve with the wing"): numbers, not curvature.
 
-**Wall stations and the corridor's slant.** The check places a vent or socket in plan only; the corridor wall is
+**Wall stations and the corridor's slant.** The check places a breaker board in plan only; the corridor wall is
 vertical to 1.45 m and then slants in (half width 0.9 m at the ceiling), so a station taller than about 1.5 m at
 u 1.0 meets the slant. The console at (0, 1) straddles the hall's plain disc (r 1.0) and its first grate ring (r 1.1).
 Step 2 accounts for both.
@@ -444,3 +444,42 @@ Other open problems after the night:
 - 26 small strip cells unlit (`MAX_LIGHTS` 96); no interior UVs; the seam close-up's hatches read as faces; the legs
   small and hidden from the front.
 - No fresh-context review of launch 4's diff ran inside the workflow (no agent tool): the manager runs one.
+
+## Version 2: the mirrored layout (layout step, 2026-10-22)
+
+The engineer changed the geometry (prime-game `docs/design/estate-map.md` section 5a in xperiaroco2/prime-game#1293;
+prime-game-design `ideas/ship-components/2d/README.md`, "The layout mirrored"): a round hall 8 m across, two straight
+corridors 3 m wide, two round tip rooms 3.6 m across at x +-8.3 with the outer wall at +-10.1, and every station
+hanging flat on a plain wall. The look of v1's inside stays (materials, night light, ribs, cable bays, amber floor
+strips, cyan arches, the tip window, the closed hall ceiling with its lamp ring); the rooms are refitted. Raw output:
+`<raw>/ship/v2` (`raw_dir`; v1 stays in `<raw>/ship/v1`).
+
+**The plain wall spots** (`[stations]`, `ship_layout.check_spots`). A wall spot is the point `at` on the wall's face
+and the `normal` into the room. The check holds: the point on its room's wall; a band `plain_width_m` (1.6) wide and
+0.3 m deep in front of it free of every piece with a `foot` (a plan box in the piece's own frame, written by
+`ship_interior_place.py` for the trunks, trunk cables and clips, pilasters, the corridors' cable bays and clips and the
+arches); the player's stand (`depth_m` 0.5, the renewers' 0.9, plus the capsule's radius out from the wall) inside
+the room; and `pass_m` (1.6) of free floor behind the player, the capsule's width inside the rooms, crossing no floor
+spot. The console is a floor spot: 0.35 m of clear floor round (0, 1).
+
+**How the generator keeps them plain** (`ship_interior.py`, `ship_interior_place.py`):
+- The hall: the 16-gon keeps its facets and ribs, but at the four spots (45 deg, read from ship.toml as `FLATS`) the two
+  facets meet in one flat chord (`hall_panel_flat`, 3.12 m wide at apothem 3.768, with a soffit up to the ceiling's
+  rim, as an opening's), and the vertex between them gets no cable trunk. The spot sits on the chord at (+-2.66,
+  +-2.66) (5a: about (+-2.6, +-2.6)); a 16-gon vertex sits at 45 deg, so a facet there would put a trunk in the spot.
+- The corridors: 3 modules of 1.064 m portal to portal (`N_MOD` 3; x 3.918..7.111); on the front wall (y < 0) the
+  modules over a breaker board's span get `cor_wall_mid` (a plain strip) in place of the cable bay, the cables and
+  the clips; the cyan arches stand at x +-4.15 and +-6.4, off the board.
+- The tip rooms: R_TIP 1.85, the door chord 55.8 deg for the 3 m corridor, three wall facets of 19.7 deg each side;
+  the window side holds no trunk, so the renewer stands before the window (sill 1.0: the window is seen above it).
+
+**The lanes' files** (two builder lanes on one branch):
+- INSIDE: `tools/blender/ship_interior*.py`, `layouts/ship/interior.toml` (generated: its look and details),
+  `ship.toml` `[light]`, `godot/ship/`; the tip windows' shutter and button.
+- HULL: `tools/blender/ship_hull*.py`, `layouts/ship/exterior.toml`, `ship.toml` `[hull]`: the smooth skin and the new
+  silhouette (the tips at about +-13.75 past the tip rooms).
+- Shared, changed by either only with a note: `ship.toml` `[size]`, `[deck]`, `[[rooms]]`, `[stations]`, `[walk]`,
+  `[shots]`, `tools/runner/ship_layout.py`, `tools/runner/commands/ship.py`, the tests.
+
+The layout step moved the stern pods' noses 0.35 m back (y 3.85 and 4.25, lengths 3.25 and 3.65, the nozzle tips
+where they were): the r 4.0 hall's back wall reached into them.
