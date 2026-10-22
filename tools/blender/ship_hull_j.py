@@ -247,9 +247,51 @@ def seams(q, i, edges, zone) -> list:
     return out
 
 
-def lay_seams(q, flags):
+SLIDE_MAX = 3.0   # details 3c: a seam corner slides at most SLIDE_MAX * INSET along its flush edge (a needle or a
+                  # near-straight corner, sin under 1 / SLIDE_MAX)
+
+
+def _corner(q, flags, j):
+    """Corner j of piece q where a seam meets a flush edge: (the slide's direction along the flush edge, the slide
+    that keeps the groove INSET wide: INSET / sin of the corner's angle, up to SLIDE_MAX * INSET); else None."""
+    k = len(q)
+    a, b, c = q[j - 1], q[j], q[(j + 1) % k]
+    if flags[j - 1] == flags[j]:
+        return None
+    d1, d2 = S._unit3(S._sub(b, a)), S._unit3(S._sub(c, b))
+    x = S._cross(d1, d2)
+    sin = math.sqrt(S._dot(x, x))
+    way = d2 if flags[j - 1] else tuple(-t for t in d1)
+    return way, INSET / max(sin, 1.0 / SLIDE_MAX)
+
+
+def corner_slides(pieces) -> list:
+    """details 3c: per piece {corner index: slide} for its seam corners on a flush edge. The corners at one point
+    sliding one way (the pieces on both sides of a facet fold, along the fold) share one slide, the largest one wanted
+    (each keeps its groove at least INSET wide: 3b's slide of INSET whatever the angle tapered an acute corner's groove
+    to INSET * sin), so they end at one point and leave no wedge (a small piece's own cap in lay_seams may stop it
+    short)."""
+    groups: dict = {}
+    at = []
+    for idx, (_k, _z, _c, _i, q, flags) in enumerate(pieces):
+        fl = flags if width(q) > SLIVER else [False] * len(q)
+        for j in range(len(q)):
+            cr = _corner(q, fl, j)
+            if cr:
+                key = (tuple(round(t, 4) for t in q[j]), tuple(round(t, 2) for t in cr[0]))
+                groups.setdefault(key, []).append(cr[1])
+                at.append((idx, j, key))
+    slide = {key: max(g) for key, g in groups.items()}
+    out = [{} for _ in pieces]
+    for idx, j, key in at:
+        out[idx][j] = slide[key]
+    return out
+
+
+def lay_seams(q, flags, slides=None):
     """One plate piece: v1's inset and chamfer on its seam edges only; a flush edge keeps its outline and has no
-    chamfer (the plate goes on over the next facet). A sliver is laid flush all round."""
+    chamfer (the plate goes on over the next facet). A sliver is laid flush all round. slides: {corner: how far a
+    seam corner slides along its flush edge} (corner_slides; else INSET)."""
     if width(q) <= SLIVER:
         flags = [False] * len(q)
     n = S._unit3(S._newell(q))
@@ -264,10 +306,11 @@ def lay_seams(q, flags):
         d1, d2 = S._unit3(S._sub(b, a)), S._unit3(S._sub(c, b))
         m1, m2 = S._cross(n, d1), S._cross(n, d2)   # the edges' inward normals in the face
         den = S._dot(d1, m2)
-        if o1 and not o2:   # details 3b: a seam ending on a flush edge slides INSET along it, whatever the angle, so
-            x = tuple(d2[t] * o1 for t in range(3))   # the pieces on either side of a fold end at one point (the
-        elif o2 and not o1:  # exact inset's INSET / sin slide differed per facet: black wedges past the groove)
-            x = tuple(-d1[t] * o2 for t in range(3))
+        s = (slides or {}).get(i, INSET)
+        if o1 and not o2:   # details 3b: a seam ending on a flush edge slides along it, the pieces on either side of a
+            x = tuple(d2[t] * s for t in range(3))   # fold by one slide to one point (3b: INSET; per facet INSET / sin
+        elif o2 and not o1:  # left black wedges past the groove); 3c: corner_slides keeps the groove's width
+            x = tuple(-d1[t] * s for t in range(3))
         elif abs(den) < 1e-6:
             x = tuple(m1[t] * max(o1, o2) for t in range(3))
         else:
@@ -302,6 +345,16 @@ def skin_pieces(name: str = S.DEFAULT) -> list:
     return _SKIN[name]
 
 
+_SLIDES: dict = {}
+
+
+def skin_slides(name: str = S.DEFAULT) -> list:
+    """corner_slides of skin_pieces(name), cached per hull."""
+    if name not in _SLIDES:
+        _SLIDES[name] = corner_slides(skin_pieces(name))
+    return _SLIDES[name]
+
+
 def cell_mat(cell, mats) -> str:
     """A plate's silver, one per cell (all its pieces alike, so a lens plate is one smooth mesh)."""
     return mats[zlib.crc32(repr(cell).encode()) % len(mats)]
@@ -313,9 +366,10 @@ def j_skin(args: dict, layout: dict) -> list:
     kind = args["part"]
     mats = MATS[kind]
     groups: dict = {}
-    for k, zone, cell, _i, q, flags in skin_pieces(S.DEFAULT):
+    pieces = skin_pieces(S.DEFAULT)
+    for (k, zone, cell, _i, q, flags), slides in zip(pieces, skin_slides(S.DEFAULT)):
         if k == kind:
-            groups.setdefault((zone, cell_mat(cell, mats)), []).append(lay_seams(q, flags))
+            groups.setdefault((zone, cell_mat(cell, mats)), []).append(lay_seams(q, flags, slides))
     under = [([H._add(x, n, -DEPTH * 1.8) for x in poly], [tuple(range(len(poly)))])
              for poly, n, k in S.surface(S.DEFAULT) if k == kind]
     parts = []
