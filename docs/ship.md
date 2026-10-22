@@ -337,6 +337,24 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
   `fill` lamps (`fill_lamp` 1.0) at x +-23 on the pines the tip windows look at (range 9.5 m: off the wing tips),
   `sky_horizon` 10 (was 5).
 
+## The tip window's well (inside lane, launch 3 step 2)
+
+- **The glass sits in the lens's band.** The tip room's opening in its wall (sill 0.45, head 2.2 over the deck, the
+  rooms' numbers) is lined out to the hull lens's slanted window band (`ship_hull_skin.tip_profile`, points 4 and 5:
+  about h 1.93 to 2.98 m, r 2.9 to 2.35 m at the axis): a sill rising outward from the wall to the band's lower
+  edge, a soffit to its upper edge, two jambs at +-65 deg, slim frame bars along both edges, the three mullions'
+  frames on round the well (sill, glass, soffit) and a thin cyan glow line over the lower bar (`tip_well_e`/`_w`),
+  and the glass 1.5 cm inside the band (`tip_glass_e`/`_w`). Before, the glass stood upright in the wall and its
+  lower half showed the lens's lower face and its cyan blade. Eye height (1.65 m over the deck) looks through the
+  band (the test keeps lower edge < 2.25 < upper edge).
+- **One per side**: the well is sampled at the hull's own angles (10 deg steps, the swept tip's outline points) plus
+  the room's window vertices, from the placed variant (`DEFAULT`), so it meets the band's hole edge exactly; the
+  lens is not symmetric (toward the swept tip's rear the blade reaches r 5.3, the band's lower edge r 4.85), so the
+  west room (turned 180) reads the profile at the mirrored angle. A change to the skin moves the well with it on the
+  next `--build --only tip_well_e,tip_well_w,tip_glass_e,tip_glass_w`.
+- **The views**: `in_hall_out` from y 1.0 at fov 60 (the mouth fills the frame, hall_out-2), the tip views level at
+  2.25 m toward the band (`exterior.toml` `[shots]`).
+
 ## Open problems (after launch 2)
 
 - **The hull's thickness** (launch 3): the lower deck took 0.75 m off every top (tips 3.65 m, wings about 3.1 m

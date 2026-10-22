@@ -663,10 +663,21 @@ def tip_well(args, layout):
         (r0, h0), (r1, h1) = _band_in(rb, hb, rt, ht, 0.03)
         lo.append(_pt(b, r0, h0 + 0.02))
         hi.append(_pt(b, r1, h1 - 0.02))
+    # the mullions' frames go on round the well: up the sill, up the glass, back along the soffit (tip-3: one frame)
+    ribs, glow = [], []
+    marks = [D(-WIN_HALF + 2 * WIN_HALF / 8 * i) for i in MULLIONS]
+    for b, r_in, (rb, hb), (rt, ht) in rows:
+        (r0, h0), (r1, h1) = _band_in(rb, hb, rt, ht, 0.035)
+        if any(abs(b - m) < 1e-5 for m in marks):
+            ribs.append(G.tube([_pt(b, r_in + 0.03, sill + 0.02), _pt(b, r0, h0), _pt(b, r1, h1),
+                                _pt(b, r_in + 0.03, head - 0.02)], 0.022, 8))
+        (g0, gh), _ = _band_in(rb, hb, rt, ht, 0.06)
+        glow.append(_pt(b, g0, gh + 0.05))
     return [L.part("sill", *_sheet(lin), "int_silver_c", solid=False),
             L.part("soffit", *_sheet(top), "int_silver_b", solid=False),
             L.part("jambs", *M(*jambs), "int_silver_b", solid=False),
-            P("bars", M(G.tube(lo, 0.03, 8), G.tube(hi, 0.03, 8)), "int_silver_c")]
+            P("bars", M(G.tube(lo, 0.03, 8), G.tube(hi, 0.03, 8), *ribs), "int_silver_c"),
+            P("glow", G.tube(glow, 0.011, 6), "int_cyan")]
 
 
 def tip_band_glass(args, layout):
