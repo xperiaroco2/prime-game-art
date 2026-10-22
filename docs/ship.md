@@ -919,7 +919,7 @@ The shape, the rooms, the inside, the lights and the look stay. Raw output: `<ra
   - *The portholes' glow* (`ship_hull_fittings.glow_bands`, `PORT_GLOW = (20, 0.45, 0.03, 1.6)`): the glass's face
     is 20 flat concentric rings 2 mm over the dark glass body (`ext_porthole`, 0.05), each its own material
     `ext_porthole__gNN`, the emission log-linear in (r / glass)^1.6 from 0.45 at the centre to 0.03 at the rim (each
-    ring about 15 % under the next in): a soft warm falloff, no disc and no ring edge. D3's warm core read as an
+    ring about 15 % under the next in; 3c: 16 bands, 5 mm; see below): a soft warm falloff, no disc and no ring edge. D3's warm core read as an
     amber bullseye. The rings are open faces (closed rings' coincident walls sparkled as dotted circles). Their
     `[light.mats]` entry is `ext_porthole`'s: `ship.gd` looks a material up by its name, else by its part before `__`.
   - *The fairings plated flat:* a face on a fairing's own facet (`ship_hull_shape.p_fair_face`: its plane and normal,
@@ -940,8 +940,7 @@ The shape, the rooms, the inside, the lights and the look stay. Raw output: `<ra
     its angle (up to `SLIDE_MAX` 3 `INSET`), and the corners at one point sliding one way (both sides of a fold) take
     the largest of theirs, so the groove stays `INSET` wide at an acute corner (3b's `INSET` tapered it to
     `INSET * sin`: 186 corners of 25 to 155 deg under 0.9 `INSET`) and the pieces still end at one point.
-    `test_ship_hull_detail.py` asserts the corners lie on their flush edge, the shared ends meet within 0.1 mm and the
-    groove stays 0.9 `INSET` wide (corners of 25 to 155 deg between edges of 0.25 m and more).
+    (3d below: one cap per group.)
   - *The portholes' glow, cheaper* (`PORT_GLOW = (16, 0.45, 0.03, 1.6)`, `PORT_SEG` 24, `PORT_LIFT` 5 mm): 16
     bands of 24 segments (the glass disc keeps 48), each band one equal step of (r / glass)^1.6, so each glows about
     16 % under the next in, wide at the centre and narrow at the rim; the mean glow stays 0.132. The portholes piece
@@ -950,4 +949,18 @@ The shape, the rooms, the inside, the lights and the look stay. Raw output: `<ra
     z-fighting.
   - *Tests:* `test_ship_light.py` asserts every `__` material has its family's `[light.mats]` row with `l` 0 (and
     `ship.gd` looks the family up); `test_ship_fairing.py` also checks each fairing's own points against `MAX_OUT`.
+- **Details 3d (review fix):** raw output `<raw>/ship/v4/details3d/`, `<raw>/ship/v4/notes/details3d.md`.
+  - *Seam corners, one cap per group* (`ship_hull_j._slide_cap`, `corner_slides`): 3c shared a group's slide, but
+    `lay_seams` still capped each piece at `CORNER_CAP` 0.3 of its shorter edge, so on short edges a group's corners
+    stopped at different points: 450 groups ended over 0.1 mm apart (worst 6.5 cm), the black wedges at seam corners.
+    Now a group's slide is the largest wanted, capped at its members' smallest `_slide_cap`: `CORNER_CAP` of the
+    flush edge, and the slide's part along the seam (`s * |cos|`) at most `SEAM_CAP` 0.6 of the seam edge (with the
+    seam's other corner at 0.3 at most, no plate folds over); `lay_seams` does not cap a slid corner again. 0 groups
+    over 0.1 mm apart. The cost: 23 corners of 25 to 155 deg between edges of 0.25 m and more (in a group with a
+    short member) keep a groove under 0.9 `INSET` (narrowest 0.275 `INSET`); capping by the shorter edge outright
+    pinched 186.
+  - *Tests:* `test_ship_hull_detail.py` asserts every corner lies on its flush edge, every group (short edges
+    included) meets within 0.1 mm, each groove is its slide times sin with the slide within `SLIDE_MAX` and its
+    `_slide_cap`, and counts the limits: at most 25 narrow wide corners, none under 0.25 `INSET`; the near-straight or
+    needle corners (sin under 1 / `SLIDE_MAX`, 362) and the corners their group's cap stops short (747).
 
