@@ -765,3 +765,26 @@ footprint, skin and inside-the-hull tests again and no ship test skips.
   a cyan edge strip, a card reader with a small dim light); a dim warm lamp (`corr`, 0.1) under its fixture.
 - **Views:** `out_lens_e`, `out_lens_roof_e`, `out_tail`; `detail_floor` and `detail_cables` and the walk video's
   corridor and lens keys on the 8.66 deg axes.
+
+## Lens step 3: the plates in rows (polish, 2026-10-22)
+The hull P's shape is kept; its surface was messy: every facet plated in its own frame, so the union's sliver facets
+fanned their seams out round the fins' roots, and the lens's 48 rim facets read as slats (a corrugated tank).
+- **Plates by zone, not by facet** (`ship_hull_j.cells`, `skin_pieces`). Every face is in one zone with one seam
+  family. Plan: global planes, rows span-wise (constant plan y; a face looking fore or aft: constant h), the plates'
+  ends on constant x (a face looking sideways: constant h), brickwork. Lens (a face within the rim's radius of a
+  lens's centre): the rim and the under faces in three bands (seams at h 1.35 under the edge light and 2.8 at the
+  band's head) with radial seams every 36 deg, staggered by 18 per band; the top and bottom discs, the sill and the
+  head in a ring of 36 deg sectors outside a ten-gon of apothem 1.5 m, rows along the lens's axis inside it. The west
+  lens is the east's mirror.
+- **Seams only where meant** (`Edges`, `seams`, `lay_seams`). A piece's edge is a seam (v1's inset and chamfer) where a
+  seam plane cut it, where the face ends (an opening, a cut) or where the next face bends away by more than
+  `CREASE` (plan 20 deg, lens 30 deg); across a shallower facet edge it is laid flush with no chamfer, so a plate goes
+  on over the next facet and no seam follows a sliver. A plate's pieces share one silver (`cell_mat`, by its cell).
+- **The lens shaded smooth.** The lens's plates are their own parts with `smooth_deg` 30 (`ship_build.make`: sharp
+  over it), so the rim reads as wide curved plates; at 40 the rim's top chamfer (33.7 deg) smoothed into the flat top
+  and blotched it. The body and the fins stay faceted.
+- **The lens's top 4 cm up** (`P_TOP_LIFT`): the fin's ridge (3.30 at the lens's centre) stood 2.5 cm proud of the old
+  top, a ledge across the roof. Lowering the ridge instead cost the corridors 3 cm of skin (0.180 -> 0.152).
+- **The edge light**: the glow 6 cm high (`EDGE_GLOW` 0.03), strength 16, in 4 m pieces (`EDGE_CHUNK`): Godot puts one
+  strip light per piece, so they stand along the edge and pool faintly on the ground (`glow_edge` l 0.6); one merged
+  mesh had put its one light in the ship's middle.
