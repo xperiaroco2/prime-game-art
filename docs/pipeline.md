@@ -19,6 +19,40 @@ section wins:
 
 Every step runs through a Meshy batch file (`docs/meshy.md`), and every such asset records `ai_generated = true`.
 
+### The roster pilot's heads, step 2a (art #196, 2026-10-22)
+
+The pilot (the chameleon man and the axolotl woman) takes Meshy's raw multi-image heads (step 1:
+`batches/2026-10-22-alien-pilot-3d.toml`) to game parts in headless Blender, no paid generation:
+`$PYTHON_BIN tools/blender/alien_pilot_run.py [--heads chameleon,axolotl] [--smooth ITER,FACTOR]` runs
+`tools/blender/alien_pilot_head.py` per head (through `tools/runner/blender.py`), glTF-Validator on both GLBs and
+one Godot picture per head in the off-screen window (`godot/alien/pilot_shots.gd` through `_godot.window()`);
+`tools/run.sh godot-check <glb>` runs separately. Output: `<raw>/research/2026-10-22-roster/design/pilot3d/step2a/<head>/`.
+
+What the build does (pure geometry in `alien_pilot_geom.py`, tested by `tools/tests/test_alien_pilot_geom.py`):
+- **Eyes found from the texture:** the painted sclera (chameleon) or black bead (axolotl) pixels' faces, clustered per
+  side, a sphere fitted to them, made symmetric. New eyeballs (`eye_L`, `eye_R`, a generated 256 px texture with iris,
+  pupil and catch light) and solid shell lids (`lid_upper_*`, `lid_lower_*`) at the 2D's rest opening, every eye part's
+  origin at its eye's centre; the skin's faces inside a ball are deleted.
+- **Lip parting:** the lip line is the deepest valley of the front profile between the lips, tracked bin by bin from
+  the middle to the corners; a one-row slit is cut along it, its edges rolled back as a lining (the mouth material)
+  into an open mouth cup (`mouth_cup`, its inside facing the slit) and, for the chameleon (his 2D shows one), a
+  `tongue`. The lower lip sits behind the upper one, so the valley is shallow: the threshold is 1.5 % of the eye radius.
+- **Colour:** the skin and gills are decimated to the budget, unwrapped into one atlas and baked (2048 px colour and
+  tangent normal) from the raw model with a palette ramp: Meshy's luminance mapped to the 2D's teal and mint (medians of
+  the turnaround's saturated and light pixels); the chameleon's crest stripes are painted in during the bake. Reshapes
+  come after the bake, so the texture follows them.
+- **Chameleon:** the skull widened above the mouth (10 %), larger bulging eyes, thicker and wider lips (no vertical push
+  at the lip line), and the crest-root ledge above each eye smoothed in a soft region (`smooth_grid.png`: the region's
+  weights and three strengths, both sides). **Axolotl:** the six gill stalks cut off outside the head's ellipsoid, their
+  holes filled, each its own object `gill_<L|R><1-3>` with its origin at its root, fanned 12 degrees out; the raised rim
+  around each eye softened.
+- `<head>.glb`, `<head>_lod1.glb` (skin and gills at 35 %), `<head>.blend`, `build.json` (eye fits, lip line, palette,
+  tri counts), `<head>_compare.png` (2D on top: front, side, back and the expression sheet's 3/4 cell; the new 3D
+  below) and `<head>_godot.png`.
+
+The heads are not rigged yet (step 2b: the shared neck, face bones or shape keys, spring bones on the gills), so
+`godot-check`'s skeleton, parts and animation checks fail on them by design; its import and texture checks apply.
+
 ## Since 2026-10-03: the character base and who decides
 
 The direction below changed on 2026-10-03 (xperiaroco2/prime-game#165, stage 1 plan #16). Where they differ, this
