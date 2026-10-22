@@ -202,11 +202,38 @@ lamps = [
   [27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   [27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   [0.0, -16.0, 1.4, 2.5, 8.0, 1.0, 0.6, 0.3, "out", false],  # the clearing in front of the ramp
+  # the hull lane's outside light (step 3): ground lamps' and belly pools, the party string, the rim
+  [-2.99, -4.34, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [2.99, -4.34, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [-8.95, -1.32, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [8.95, -1.32, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [-8.95, 1.43, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [8.95, 1.43, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [-3.06, 5.42, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [3.06, 5.42, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [-1.75, -7.25, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [1.75, -7.25, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [-1.75, -5.9, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [1.75, -5.9, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [0.0, -1.5, 0.35, 1.2, 6.0, 1.0, 0.55, 0.22, "pool", true],  # the warm pool under the belly
+  [-5.0, 0.0, 0.35, 1.2, 6.0, 1.0, 0.55, 0.22, "pool", true],  # the warm pool under the belly
+  [5.0, 0.0, 0.35, 1.2, 6.0, 1.0, 0.55, 0.22, "pool", true],  # the warm pool under the belly
+  [-0.33, -11.52, 2.10, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-1.61, -14.90, 2.10, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-3.45, -17.30, 2.22, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-6.15, -19.73, 2.48, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-8.85, -21.61, 2.66, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-12.01, -23.50, 2.82, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
+  [-14.0, 22.0, 13.0, 1.0, 34.0, 0.62, 0.74, 1.0, "rim", false],  # cool rim from behind (south-west)
+  [14.0, 22.0, 13.0, 1.0, 34.0, 0.62, 0.74, 1.0, "rim", false],  # cool rim from behind (south-east)
 ]
 hall_lamp = 0.7
 corr_lamp = 2.0
 tip_lamp = 2.4
 out_lamp = 2.5
+pool_lamp = 1.0                                # the outside lamps' groups (hull step 3; the light grid)
+party_lamp = 1.0
+rim_lamp = 1.0
 ssil_intensity = 0.4                           # screen-space bounce (1: the lamp ring's band lit a spot on the hall's disc)
 sky_horizon = 5.0                              # the sky's horizon colour x this (the windows' and the ramp's view)
 
