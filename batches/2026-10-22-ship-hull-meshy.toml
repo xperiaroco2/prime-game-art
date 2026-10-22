@@ -1,0 +1,62 @@
+# The empty ship's hull variant "meshy" (art #263, step 1, the mirrored rebuild): Meshy's smooth organic shapes as the
+# outer skin. Three untextured generations from the approved 2D (prime-game-design ideas/ship-components/2d): two
+# multi-image-to-3D runs from turnaround.jpg's views (the v1 crops of raw:ship/v1/meshy_in with the legs, the ramp and
+# the neighbouring views' edges painted out in the background navy by tools/blender/ship_hull_meshy.py --prep) and
+# one image-to-3D from hero.jpg's ship (cropped, the trees above it painted out). ship_hull_meshy.py --fit turns each
+# into a skin fitted round the v2 rooms and the hull lane picks one; only the shape matters.
+
+id = "2026-10-22-ship-hull-meshy"
+purpose = "The ship's outer skin from Meshy generations of the approved 2D, a hull variant for art#263 step 1."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 120
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/263#issuecomment-6327428873"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 60000
+should_texture = false
+target_formats = ["glb"]
+
+[defaults.image_to_3d.params]
+ai_model = "meshy-7.1"
+should_remesh = true
+topology = "triangle"
+target_polycount = 60000
+should_texture = false
+target_formats = ["glb"]
+
+[[items]]
+id = "multi4"
+variant = "turnaround4"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:ship/v2/hullvar/meshy/in/front.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg's front view, legs and ramp painted out", sha256 = "727fedaf4fcc5acda9bff52016ab2657caf412e65771cf9efa8a4ff79656dc62" },
+  { file = "raw:ship/v2/hullvar/meshy/in/side.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg's side view, legs painted out", sha256 = "223d5858bd193f15516523d2dac4bfc8ffe3a3bfdaee170323bca9b7fece687f" },
+  { file = "raw:ship/v2/hullvar/meshy/in/back.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg's back view, legs painted out", sha256 = "9ee85e80547015f7b00e3b2ff3ac06238d8a9c8cac92cc619024af8b678c2cd6" },
+  { file = "raw:ship/v2/hullvar/meshy/in/top.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg's top view", sha256 = "6d473e0dc8b8174a8707a54faa3e0d8f75b6cfd626b277874cfde359bc8fe77d" },
+]
+
+[[items]]
+id = "multi3q"
+variant = "turnaround3"
+kind = "multi_image_to_3d"
+params = { topology = "quad", target_polycount = 40000 }
+images = [
+  { file = "raw:ship/v2/hullvar/meshy/in/front.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg's front view, legs and ramp painted out", sha256 = "727fedaf4fcc5acda9bff52016ab2657caf412e65771cf9efa8a4ff79656dc62" },
+  { file = "raw:ship/v2/hullvar/meshy/in/side.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg's side view, legs painted out", sha256 = "223d5858bd193f15516523d2dac4bfc8ffe3a3bfdaee170323bca9b7fece687f" },
+  { file = "raw:ship/v2/hullvar/meshy/in/top.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), turnaround.jpg's top view", sha256 = "6d473e0dc8b8174a8707a54faa3e0d8f75b6cfd626b277874cfde359bc8fe77d" },
+]
+
+[[items]]
+id = "hero"
+variant = "hero"
+kind = "image_to_3d"
+images = [
+  { file = "raw:ship/v2/hullvar/meshy/in/hero.png", provenance = "own approved 2D (OpenAI generation, prime-game#1095), hero.jpg's ship cropped, the trees above it painted out", sha256 = "e119efc57286ab1aa46e472018d11aa6ab6341a3485007b2d5a178831df2774b" },
+]
