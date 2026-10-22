@@ -319,3 +319,19 @@ no smirk); the giant reads as one only with a bull neck and shoulders (m82b), wh
 man is closer (m89c's nose pad, thin lips and lobes behind the jaw) but still slightly androgynous. Lobes beside the
 cheeks read as hair whatever the prompt says. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r8/`; JPEGs, overview
 and handoff: `D:/prime-art-raw/research/2026-10-22-roster/design/r8/`.
+
+## Batch 2026-10-22-alien-roster-r9 (art #196, roster round 9, ten women by character type)
+
+The roster is ten men and ten women; the men are done, eight women are kept and two are to go, and the engineer wants
+a choice. Ten new women, w91..w100, by round 7's method: a stern matriarch, a bookish nerd, a tomboy athlete, a
+glamorous diva, an old fortune-teller, a gloomy goth, a girl next door, a ruthless executive, a dreamy hippie and a
+tough biker, each carried by the head and face shapes alone, each with a growth that suggests a hairstyle (beehive,
+set curl, pigtails, ponytail, braids) as a smooth part of the skull. rf2 as the style reference only, round 7's lead,
+framing sentence and style tail; medium, 1024x1280, **n = 1**; a concept that missed got one revised item (w92r,
+w93r, w98r). The batch file is generated from
+`D:/prime-art-raw/research/2026-10-22-roster/design/r9/concepts_r9.src.json`. 13 requests, $0.023017 to $0.023457
+each; **$0.3012** of the $2 cap. Seven of ten types read in a second (matriarch, diva, fortune-teller, goth, girl next
+door, biker, tomboy nearly); the nerd and the executive only half. "Lashes" and "full lips" pull every woman toward
+glamour unless the prompt says no make-up look; a darker crown tone with a hard edge reads as a swim cap or helmet
+(w92, w98). Images: `D:/prime-art-raw/2026-10-22-alien-roster-r9/`; JPEGs, overview and handoff:
+`D:/prime-art-raw/research/2026-10-22-roster/design/r9/`.
