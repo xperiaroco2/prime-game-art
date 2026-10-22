@@ -398,3 +398,11 @@ backs for the kept orchid (he picked **or1**) and two cactus men (rejected); $0.
 picked **gh2** and **b2** ($0.1367); orchid-cactus 4, goth 3 and goth-bob 6 requests at $0.022367 to $0.022865 each. Images under
 `D:/prime-art-raw/2026-10-22-alien-<rockgirl-hair|orchid-cactus|goth|goth-bob>/`; sheets under
 `D:/prime-art-raw/research/2026-10-22-roster/design/<rockgirl|orchid-cactus|goth>/`; the roster line-up in `.../final/`.
+
+## Batch 2026-10-22-alien-pilot-2d (art #196, the 3D pilot's 2D reference)
+
+The engineer picked the chameleon man and the axolotl woman for the 3D pilot. Per head a turnaround sheet (front, side
+profile, back in one row) and an expression sheet (neutral, happy, sad, angry, surprised, talking in a 3 x 2 grid),
+**high** (work inside a picked concept), 1536x1024, n = 1, edits of each head's kept image (the chameleon from its
+mirrored copy). 4 requests, **$0.2097** of the $1 cap. All four held the character; the axolotl's back view and the
+gill count stay consistent across views. Images: `D:/prime-art-raw/2026-10-22-alien-pilot-2d/`.
