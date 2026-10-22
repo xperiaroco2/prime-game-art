@@ -5,7 +5,10 @@ and glued-back lips or lids), only decimated, with premium texture maps and a sk
 - `<head>_albedo.png` (baked at 4096, kept at 2048 for the contract, sRGB): Meshy's skin graded to the 2D's teal and mint (step 2a's palette ramp, the
   chameleon's crest stripes), Meshy's own painted eyes kept (sclera cleaned, iris a little richer);
 - `<head>_normal.png` (2048, tangent, from the dense original; the crest-root ledge and the eyes flattened);
+- `<head>_albedo_plain.png` (2048, sRGB, static_v3): the albedo without the baked alive layers (Godot's `alive_mix`
+  review grid only, not in the GLB);
 - `<head>_mask.png` (2048, linear): R the skin tint mask (1 skin, 0 eyes), G roughness, B subsurface and sheen weight;
+- `<head>_coat.png` (2048, linear, static_v3): R the eyes' clear coat (the GLB's KHR_materials_clearcoat);
 - `<head>_detail.png` (2048, linear RGBA, static_v2): R the cavity (ambient occlusion of the dense original, 1 open),
   G the thinness (its inside occlusion: gills, crest, lips), B the flush region (lips, lids), A the eyes' limbal ring;
 - `base_choice/`: Workbench views of this build and of step 2a's v2 build for the base-choice sheet;
@@ -29,6 +32,7 @@ from mathutils import Matrix, Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_pilot_head as H  # noqa: E402
+import alien_static_geom as G  # noqa: E402  (the pure formulas, tested by tools/tests/test_alien_static_geom.py)
 
 TRIS = {"chameleon": 32000, "axolotl": 40000}
 # static_v2: the decimation keeps more of the budget on the lips and lid rims. Blender's collapse adds
@@ -38,8 +42,8 @@ TRIS = {"chameleon": 32000, "axolotl": 40000}
 KEEP_FACTORS = (1e-4, 3e-4, 1e-3, 3e-3, 1e-2)
 KEEP_GAIN = 2.4
 KEEP_MAX_ADD = 0.15  # at most this much more of the vertices in the keep region (the rest of the head keeps its share)
-RIM_W = 0.018
-RELAX = (0.6, 5)  # the local relax of the dense original's jagged creases (lip edges, lid on eyeball): factor, iterations  # the lid-rim shell's half width in metres (the chameleon's eye radius is 3 times the axolotl's)
+RIM_W = 0.018  # the lid-rim shell's half width in metres (the chameleon's eye radius is 3 times the axolotl's)
+RELAX = (0.6, 5)  # the local relax of the dense original's jagged creases (lip edges, lid on eyeball): factor, iterations
 CAGE, RAY = 0.008, 0.03  # static_v2: the bakes' cage and ray (#288: 0.015/0.05, 0.012/0.04 reached across the lip slit)
 ROUGH = {"skin": 0.5, "lips": 0.3, "eyes": 0.04, "gills": 0.55}  # static_v3: the skin satin (0.42 read as vinyl)
 # static_v3: the normal map and the cavity come from a smoothed copy of the dense original (a Laplacian relax,
@@ -74,11 +78,16 @@ LIP_RELAX = (0.5, 6)  # the band's own relax for the second snap: factor, iterat
 # chameleon's iris sat higher on the eyeball with round 2's short ray than with #288's 0.015/0.05, so its upper lid
 # cut the iris and read heavier and lower (the grey geometry was the same)
 COLOUR_CAGE = {"chameleon": (0.015, 0.05), "axolotl": (CAGE, RAY)}
+# static_v5: the eye fringe (static_v4's chameleon, the side view): with the long colour ray, texels on the eyeball
+# just under the upper lid took the lid's teal. Per head (margin, reach): a teal texel inside the eye sphere whose
+# distance to the eye's centre is within `margin` eye radii of its clean eye neighbours' own distance (so it lies on
+# the eyeball, not on the lid outside it) and within `reach` texels of them (the 4096 colour bake) takes the eye's
+# own colour from its nearest clean eye texels
+EYE_FRINGE = {"chameleon": (0.03, 16), "axolotl": None}
 
 
 def smoothstep(a, b, x):
-    t = np.clip((x - a) / (b - a), 0, 1)
-    return t * t * (3 - 2 * t)
+    return G.smoothstep(a, b, x, np)
 
 
 def despike(o, region, thresh=DESPIKE, iters=8):
@@ -159,8 +168,6 @@ def alive(albedo, skin, pos, cav, thin, lips, ed, gills, head, ec, r, mouth_z, t
         top = smoothstep(ec[2] - 0.33 * span, ec[2] + 0.55 * span, z)
         side = smoothstep(ec[0] + 0.3 * r, ec[0] + 1.8 * r, x) * smoothstep(mouth_z, mouth_z + 0.6 * span, z)
         top = np.maximum(top, 0.8 * side) * skin
-        lum = a.mean(-1, keepdims=True) / max(float(np.mean(tl)), 1e-3)
-        a = a + min(0.85 * k, 1.0) * top[..., None] * (np.clip(tl * (0.75 + 0.25 * lum), 0, 1) - a)
     # the crease: how far the cavity sits below its skin neighbourhood's mean (a normalised box blur, so the islands'
     # edges and the eyes never count), from its 90th to its 99.5th percentile on the skin
     sk = (skin > 0.9).astype(np.float32)
@@ -176,10 +183,8 @@ def alive(albedo, skin, pos, cav, thin, lips, ed, gills, head, ec, r, mouth_z, t
     flush = np.clip(np.maximum.reduce([lips, LID_FLUSH[head] * lid, 0.9 * nose * np.clip(2.5 * blur(crease, 6), 0, 1),
                                        0.7 * roots, 0.6 * gills * (1 - gills) * 4]), 0, 1) * skin
     crease = crease * skin
-    deep = tl * 0.72  # the teal's own hue and saturation, darker
-    a = a + (k * 0.22 * flush)[..., None] * (tl - a)
-    a = a + (k * 0.3 * crease)[..., None] * (deep - a)
-    return np.clip(a, 0, 1), {"top": top, "crease": crease, "flush": flush}
+    a = np.stack(G.alive_colour((a[..., 0], a[..., 1], a[..., 2]), top, flush, crease, tl, k, np), -1)
+    return a, {"top": top, "crease": crease, "flush": flush}
 
 
 def log(msg):
@@ -286,27 +291,22 @@ def blur(a, k=2):
 
 
 def to_linear(c):
-    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+    return G.to_linear(c, np)
 
 
 def to_srgb(c):
-    c = np.clip(c, 0, 1)
-    return np.where(c <= 0.0031308, c * 12.92, 1.055 * c ** (1 / 2.4) - 0.055)
+    return G.to_srgb(c, np)
 
 
 def eye_dist(pos, ec, r):
-    """The distance to the nearer fitted eye sphere's centre, in eye radii."""
-    return np.min([np.linalg.norm(pos - np.array([ec[0] * sd, ec[1], ec[2]]), axis=-1) for sd in (1, -1)], 0) / r
+    """The distance to the nearer fitted eye sphere's centre, in eye radii (pos: (..., 3))."""
+    return G.eye_dist(pos[..., 0], pos[..., 1], pos[..., 2], ec, r, np)
 
 
 def keep_weights(co, ec, r, mouth, half_w, rims=True):
-    """static_v2: where the decimation keeps more of the dense original: the lips (an ellipsoid around the lip line)
-    and the lid rims (a shell around each fitted eye sphere). co: (n, 3) Blender coordinates."""
-    lips = ellipsoid_w(co, mouth, (half_w * 1.25, 0.09, 0.09), 0.5)
-    if not rims:
-        return lips
-    rim = np.exp(-((eye_dist(co, ec, r) - 1.1) * r / RIM_W) ** 2)
-    return np.clip(np.maximum(lips, rim), 0, 1)
+    """static_v2: where the decimation keeps more of the dense original (G.keep_weights). co: (n, 3) Blender
+    coordinates."""
+    return G.keep_weights(co[..., 0], co[..., 1], co[..., 2], ec, r, mouth, half_w, RIM_W, rims, np)
 
 
 def decimated(base, target, factor):
@@ -360,9 +360,7 @@ def bake_ao(low, dense, res, inside, distance):
 
 
 def ellipsoid_w(pos, centre, radii, lo=0.6):
-    d = (pos - np.asarray(centre)) / np.asarray(radii)
-    e = np.sqrt((d ** 2).sum(-1))
-    return 1.0 - np.clip((e - lo) / (1.0 - lo), 0, 1)
+    return G.ellipsoid_w(pos[..., 0], pos[..., 1], pos[..., 2], centre, radii, lo, np)
 
 
 def square(path, n):
@@ -398,18 +396,18 @@ def main():
     ap.add_argument("--alive", type=float, default=1.0, help="the baked alive layers' strength (0: off)")
     ap.add_argument("--colour-cage", default="", help="the colour bakes' cage,ray in metres (default: COLOUR_CAGE)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
-    if args.albedo_res > args.res or args.res % args.albedo_res or args.res % 2:
-        ap.error(f"--albedo-res {args.albedo_res} must divide --res {args.res} (an even size)")
+    if args.albedo_res * 2 != args.res:  # the alive layers are composed at the maps' size, half the colour bake's
+        ap.error(f"--albedo-res {args.albedo_res} must be half of --res {args.res}")
     head, out = args.head, Path(args.out)
     nm = args.name or head
     rims_on = RIMS[head] if args.rims == "auto" else args.rims == "on"
-    cc = tuple(float(x) for x in args.colour_cage.split(",")) if args.colour_cage else COLOUR_CAGE[head]
+    colour_cage = tuple(float(x) for x in args.colour_cage.split(",")) if args.colour_cage else COLOUR_CAGE[head]
     out.mkdir(parents=True, exist_ok=True)
     (out / "base_choice").mkdir(exist_ok=True)
     ref = json.loads(Path(args.ref).read_text(encoding="utf-8"))
     eye = ref["eye_fit"]
     ec, r = np.array([abs(eye["x"]), eye["y"], eye["z"]]), eye["r"]
-    report = {"head": head, "name": nm, "rims": rims_on, "alive": args.alive, "colour_cage": list(cc),
+    report = {"head": head, "name": nm, "rims": rims_on, "alive": args.alive, "colour_cage": list(colour_cage),
               "eye_fit": {k: eye[k] for k in ("x", "y", "z", "r")}}
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
@@ -549,11 +547,11 @@ def main():
     fg = fg_pixels(Path(args.view2d) / "front.png")
     res = args.res
     raw_img = new_image(f"{head}_raw", res)
-    bake_to(low, raw_img, "DIFFUSE", [src], pass_filter={"COLOR"}, cage=cc[0], ray=cc[1])
+    bake_to(low, raw_img, "DIFFUSE", [src], pass_filter={"COLOR"}, cage=colour_cage[0], ray=colour_cage[1])
     stops = H.palette_stops(fg, tex)
     H.grade_source(smat, stops, ref.get("stripes") if cfg.get("stripes") else None)
     grade_img = new_image(f"{head}_graded", res)
-    bake_to(low, grade_img, "DIFFUSE", [src], pass_filter={"COLOR"}, cage=cc[0], ray=cc[1])
+    bake_to(low, grade_img, "DIFFUSE", [src], pass_filter={"COLOR"}, cage=colour_cage[0], ray=colour_cage[1])
     nres = res // 2
     nrm_img = new_image(f"{head}_normal_raw", nres, data=True)
     bake_to(low, nrm_img, "NORMAL", [dense_s], normal_space="TANGENT", cage=CAGE, ray=RAY)
@@ -582,13 +580,33 @@ def main():
     h, s, v = (x.reshape(raw.shape[:2]) for x in hsv(raw.reshape(-1, 3)))
     skin_like = (h > 140) & (h < 215) & (s > 0.2) & (v > 0.18)
     fixed = in_eye & ~skin_like
-    mask = 1.0 - blur(fixed.astype(np.float32), 2)
     eye_px = raw.copy()
     sclera = fixed & (s < 0.25) & (v > 0.5)
     eye_px[sclera] = eye_px[sclera] * 0.15 + np.array([0.96, 0.96, 0.94]) * 0.85  # v2: less of Meshy's grey top
     iris = fixed & (s >= 0.25)
     g = eye_px[iris].mean(1, keepdims=True)
     eye_px[iris] = np.clip(g + (eye_px[iris] - g) * 1.15, 0, 1)
+    if EYE_FRINGE.get(head):  # static_v5: the eye fringe under the upper lid (EYE_FRINGE)
+        margin, reach = EYE_FRINGE[head]
+        dist = np.linalg.norm(pos - eye_c, axis=-1) / r
+        teal_ish = (h > 140) & (h < 215) & (s > 0.12)
+        w = (fixed & ~teal_ish).astype(np.float32)
+        wn = blur(w, reach)
+        off = dist - blur(dist * w, reach) / np.maximum(wn, 1e-6)  # above the clean eye neighbours' distance
+        cand = in_eye & teal_ish & (wn > 1e-3)
+        fringe = cand & (off < margin)
+        got = np.zeros_like(fringe)
+        for kk in (2, 4, 8, reach):
+            wb = blur(w, kk)
+            new = fringe & ~got & (wb > 1e-4)
+            for i in range(3):
+                eye_px[..., i][new] = (blur(eye_px[..., i] * w, kk) / np.maximum(wb, 1e-6))[new]
+            got |= new
+        fixed = fixed | got
+        report["eye_fringe"] = {"texels": int(got.sum()), "candidates": int(cand.sum()), "off_percentiles": [
+            round(float(x), 4) for x in np.percentile(off[cand], [5, 25, 50, 75, 95])] if cand.any() else []}
+        log(f"eye fringe: {int(got.sum())} of {int(cand.sum())} teal texels by the eyes recoloured")
+    mask = 1.0 - blur(fixed.astype(np.float32), 2)
     albedo = graded * mask[..., None] + eye_px * (1 - mask[..., None])
     # saturation matched to the 2D: the palette ramp's stops come from the 2D's brighter pixels, which its shading
     # washes toward white, so the albedo's teal was less saturated than the 2D's own (the pale fault, part 1)
@@ -635,8 +653,8 @@ def main():
         a, b, u = ledge["centre"]
         lw = np.zeros(mask.shape, np.float32)
         for sd in (1, -1):
-            cc = (ec[0] * sd + sd * a * r, ec[1] + b * r, ec[2] + u * r)
-            lw = np.maximum(lw, ellipsoid_w(pos, cc, [x * r for x in ledge["radii"]], 0.3))
+            ledge_c = (ec[0] * sd + sd * a * r, ec[1] + b * r, ec[2] + u * r)
+            lw = np.maximum(lw, ellipsoid_w(pos, ledge_c, [x * r for x in ledge["radii"]], 0.3))
         fw = np.maximum(fw, lw)
     # static_v3: the lips' normal detail fully flat (0.8 in static_v2 left the upper lip's spike and light line)
     fw_n = np.maximum(fw[::2, ::2], 1.0 * kw_of(pos_n.reshape(-1, 3), False).reshape(nres, nres))

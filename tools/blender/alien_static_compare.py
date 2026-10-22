@@ -1,8 +1,8 @@
-"""The alien pilot's static heads, round 4 (art #196, static_v4): two Blender comparison sheets (JPG, about 1280 px wide).
+"""The alien pilot's static heads, round 5 (art #196, static_v5): two Blender comparison sheets (JPG, about 1280 px wide).
 Run as plain Python (the driver calls headless Blender through tools/runner/blender.py), or inside Blender with the
 same arguments after "--".
-- `lids`: the chameleon's lids in grey clay (Workbench, studio light): the dense Meshy original, #288, step 2
-  (static_v3) and this round (rows); the eye from the front, at 3/4 and from
+- `lids`: the chameleon's lids in grey clay (Workbench, studio light): the dense Meshy original, #288, round 4
+  (static_v4) and this round (rows); the eye from the front, at 3/4 and from
   the side (columns). Which lid the original has, and which build keeps it.
 - `web`: what a browser's glTF viewer (three.js) shows: each GLB as Blender's glTF importer reads it (the base colour,
   roughness and normal maps and the KHR_materials_clearcoat, _sheen and _specular extensions; no Godot shader), Cycles
@@ -31,7 +31,7 @@ RAW = common.raw_dir()
 MESHY = RAW / "2026-10-22-alien-pilot-3d"
 PILOT = RAW / "research" / "2026-10-22-roster" / "design" / "pilot3d"
 HDRI = RAW / "env" / "polyhaven" / "studio_small_09" / "studio_small_09_2k.hdr"  # CC0, sources/polyhaven_hdris_2k.toml
-NEW = PILOT / "static_v4"  # static_v4: the heavier-lid alternative dropped (its lids were the same geometry)
+NEW = PILOT / "static_v5"  # static_v4 dropped the heavier-lid alternative (its lids were the same geometry)
 BUILDS = {"axolotl": ["axolotl"], "chameleon": ["chameleon"]}
 
 
@@ -39,7 +39,7 @@ def rows_for(what: str, head: str) -> list[tuple[str, Path]]:
     if what == "lids":
         return [("dense", MESHY / head / "multi_image_to_3d-pre_remeshed_model.glb"),
                 ("288", PILOT / "static" / head / f"{head}_static.glb"),
-                ("v3", PILOT / "static_v3" / head / f"{head}_static.glb"),
+                ("v4", PILOT / "static_v4" / head / f"{head}_static.glb"),
                 *[(n, NEW / n / f"{n}_static.glb") for n in BUILDS[head]]]
     return [("288", PILOT / "static" / head / f"{head}_static.glb"),
             *[(n, NEW / n / f"{n}_static.glb") for n in BUILDS[head]]]

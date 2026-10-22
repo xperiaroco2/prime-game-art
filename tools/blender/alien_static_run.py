@@ -11,8 +11,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
-import struct
 import sys
 from pathlib import Path
 
@@ -21,54 +19,20 @@ sys.path.insert(0, str(ROOT / "tools"))
 from runner import blender, common  # noqa: E402
 from runner.commands import _export, _godot  # noqa: E402
 
+sys.path.insert(0, str(ROOT / "tools" / "blender"))
+from alien_static_geom import fix_tangents  # noqa: E402  (static_v5: moved there, tested)
+
 RAW = common.raw_dir()
 MESHY = RAW / "2026-10-22-alien-pilot-3d"
 DESIGN = RAW / "research" / "2026-10-22-roster" / "design"
 STEP2A = DESIGN / "pilot3d" / "step2a"
 ROSTER = {"chameleon": DESIGN / "final" / "m01-chameleon.jpg", "axolotl": DESIGN / "final" / "w01-axolotl.jpg"}
-OUT = DESIGN / "pilot3d" / "static_v4"  # #288 wrote static/, steps 1-3 static_v2/ and static_v3/, kept as they were
+OUT = DESIGN / "pilot3d" / "static_v5"  # #288 wrote static/, steps 1-4 static_v2/ to static_v4/, kept as they were
 # the builds per head: (name, extra arguments); static_v4 dropped static_v3's chameleon_heavylid (`--rims on`): its
 # lid geometry was the same as the default's, the heavier read was shading
 BUILDS = {"axolotl": [("axolotl", [])],
           "chameleon": [("chameleon", [])]}
 HDRI = RAW / "env" / "polyhaven" / "studio_small_09" / "studio_small_09_2k.hdr"  # CC0, sources/polyhaven_hdris_2k.toml
-
-
-def fix_tangents(glb: Path) -> int:
-    """static_v2: Blender exports a zero TANGENT where a triangle's UVs have no area (glTF-Validator: non-unit
-    TANGENT; a glTF viewer then shades the vertex black). Each zero tangent becomes a unit vector perpendicular to its
-    vertex normal (w = 1); returns how many were fixed. The GLB is rewritten in place (the chunks keep their sizes)."""
-    data = bytearray(glb.read_bytes())
-    jlen = struct.unpack_from("<I", data, 12)[0]
-    doc = json.loads(data[20:20 + jlen])
-    base = 20 + jlen + 8  # the BIN chunk's data
-    fixed = 0
-
-    def where(i: int) -> tuple[int, int]:
-        acc = doc["accessors"][i]
-        view = doc["bufferViews"][acc["bufferView"]]
-        return base + view.get("byteOffset", 0) + acc.get("byteOffset", 0), acc["count"]
-
-    for mesh in doc["meshes"]:
-        for prim in mesh["primitives"]:
-            att = prim["attributes"]
-            if "TANGENT" not in att or "NORMAL" not in att:
-                continue
-            t0, n = where(att["TANGENT"])
-            n0, _ = where(att["NORMAL"])
-            for k in range(n):
-                tx, ty, tz, _w = struct.unpack_from("<4f", data, t0 + 16 * k)
-                if tx * tx + ty * ty + tz * tz > 0.5:
-                    continue
-                nx, ny, nz = struct.unpack_from("<3f", data, n0 + 12 * k)
-                ax = (0.0, 1.0, 0.0) if abs(ny) < 0.9 else (1.0, 0.0, 0.0)
-                cx, cy, cz = ny * ax[2] - nz * ax[1], nz * ax[0] - nx * ax[2], nx * ax[1] - ny * ax[0]
-                ln = math.sqrt(cx * cx + cy * cy + cz * cz) or 1.0
-                struct.pack_into("<4f", data, t0 + 16 * k, cx / ln, cy / ln, cz / ln, 1.0)
-                fixed += 1
-    if fixed:
-        glb.write_bytes(bytes(data))
-    return fixed
 
 
 def main() -> int:
