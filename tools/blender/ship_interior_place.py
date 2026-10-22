@@ -72,8 +72,15 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "mouth_wall_low": ("cor_wall_low", {"length": S.MOUTH_L, "tone": "a"}, True),
     "mouth_channel": ("cor_channel", {"length": S.MOUTH_L}, True),
     "mouth_cables": ("cor_cables", {"length": S.MOUTH_L}, False),
-    "mouth_wall_up": ("cor_wall_up", {"length": S.MOUTH_L, "tone": "a"}, True),
-    "mouth_ceil": ("cor_ceil", {"length": S.MOUTH_L}, False),
+    "mouth_wall_up": ("cor_wall_up", {"length": S.MOUTH_L, "tone": "a", "prof": "mouth"}, True),
+    "mouth_ceil": ("cor_ceil", {"length": S.MOUTH_L, "prof": "mouth"}, False),
+    # inside 3-1: the mouth's own wide portal and arch (S.MOUTH_PROF: hall_out-2's opening)
+    "mouth_portal": ("portal", {"half": S.HCH, "height": S.H_HALL, "soffit": True, "prof": "mouth"}, True),
+    "mouth_portal_strip_l": ("portal_strip", {"side": -1, "prof": "mouth"}, False),
+    "mouth_portal_strip_r": ("portal_strip", {"side": 1, "prof": "mouth"}, False),
+    "mouth_arch": ("cor_arch", {"prof": "mouth"}, True),
+    "mouth_arch_strip_l": ("cor_arch_strip", {"side": -1, "prof": "mouth"}, False),
+    "mouth_arch_strip_r": ("cor_arch_strip", {"side": 1, "prof": "mouth"}, False),
     # the tip rooms
     "tip_floor_base": ("tip_floor_base", {}, True),
     "tip_floor_disc": ("floor_disc", {"radius": 0.62}, True),
@@ -100,11 +107,11 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_lamp_ring": ("lamp_ring", {"radius": S.R_TIP_RING, "h_in": H_IN_TIP}, False),
     "tip_lamp": ("lamp", {"h_in": H_IN_TIP}, False),
     # details
-    "cup_a": ("cup", {"seed": 3, "scale": 1.25}, False),
-    "cup_b": ("cup", {"seed": 11, "scale": 1.25}, False),
-    "cup_c": ("cup", {"seed": 27, "scale": 1.25}, False),
-    "spill_a": ("spill", {"seed": 4}, False),
-    "spill_c": ("spill", {"seed": 8}, False),
+    "cup_a": ("cup", {"seed": 3, "scale": 1.5}, False),  # inside 3-1: 1.5 (18 cm), readable from the hall views
+    "cup_b": ("cup", {"seed": 11, "scale": 1.5}, False),
+    "cup_c": ("cup", {"seed": 27, "scale": 1.5}, False),
+    "spill_a": ("spill", {"seed": 4, "from": 0.17, "size": 1.6}, False),
+    "spill_c": ("spill", {"seed": 8, "from": 0.17, "size": 1.4}, False),
     "cable_coil": ("cable_coil", {}, False),
     "floor_patch_a": ("floor_patch", {"u": 0.42, "v": 0.36}, False),
     "floor_patch_b": ("floor_patch", {"u": 0.36, "v": 0.3}, False),
@@ -170,10 +177,11 @@ def placements() -> list[tuple[str, list[float], float]]:
         for h in (0.55, 1.25, 1.95, 2.65):
             put("trunk_clip", polar(S.HV, v), -v, h)
     for o in openings:
+        pre = "mouth_" if o == S.OPENINGS["mouth"] else ""
         put("hall_threshold", polar(S.HC, o), -o)
-        put("hall_portal", polar(S.HC, o), -o)
-        put("portal_strip_l", polar(S.HC, o), -o)
-        put("portal_strip_r", polar(S.HC, o), -o)
+        put("mouth_portal" if pre else "hall_portal", polar(S.HC, o), -o)
+        put(pre + "portal_strip_l", polar(S.HC, o), -o)
+        put(pre + "portal_strip_r", polar(S.HC, o), -o)
 
     # --- a passage: modules along its axis (yaw: its outward direction a gives yaw -a)
     def passage(prefix, x0, n, length, yaw, tones):
@@ -204,7 +212,7 @@ def placements() -> list[tuple[str, list[float], float]]:
     c = passage("mouth", S.COR_X0, 1, S.MOUTH_L, 90.0, [""])
     put("mouth_floor_base", c, 90.0)
     p = local((0.0, 0.0), 90.0, 4.6 - 0.09, 0.0)
-    for pid in ("cor_arch", "arch_strip_l", "arch_strip_r"):
+    for pid in ("mouth_arch", "mouth_arch_strip_l", "mouth_arch_strip_r"):
         put(pid, p, 90.0)
 
     # --- the tip rooms
@@ -252,8 +260,9 @@ def placements() -> list[tuple[str, list[float], float]]:
     # --- details: a few crushed party cups, scratches on flat panels
     # (inside-3: three bigger cups where the party left them, two with a spill from the mouth, none near a station
     # spot; a coil of spare cable by the east corridor's south bay; two bolted repair plates on the hall's rim floor)
-    for pid, xy, yaw in (("cup_a", [2.69, -1.2], 35.0), ("spill_a", [2.69, -1.2], 35.0),
-                         ("cup_c", polar(2.98, -146.25), 200.0), ("spill_c", polar(2.98, -146.25), 200.0),
+    # inside 3-1: the two hall cups moved onto the grate ring in sight of both hall views (were by the wall)
+    for pid, xy, yaw in (("cup_a", [1.05, -1.95], 35.0), ("spill_a", [1.05, -1.95], 35.0),
+                         ("cup_c", [-1.55, -0.75], 200.0), ("spill_c", [-1.55, -0.75], 200.0),
                          ("cup_b", [-6.6, 0.7], 80.0), ("cable_coil", [6.5, 0.72], 20.0),
                          ("floor_patch_a", polar(2.92, 140.0), -140.0 + 8.0), ("floor_patch_b", polar(2.92, -50.0), 50.0 - 5.0)):
         put(pid, xy, yaw)

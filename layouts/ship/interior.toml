@@ -185,9 +185,9 @@ place = [
   ["portal_strip_l", [3.2027, 0.0, 0.0], 0.0],
   ["portal_strip_r", [3.2027, 0.0, 0.0], 0.0],
   ["hall_threshold", [0.0, -3.2027, 0.0], 90.0],
-  ["hall_portal", [0.0, -3.2027, 0.0], 90.0],
-  ["portal_strip_l", [0.0, -3.2027, 0.0], 90.0],
-  ["portal_strip_r", [0.0, -3.2027, 0.0], 90.0],
+  ["mouth_portal", [0.0, -3.2027, 0.0], 90.0],
+  ["mouth_portal_strip_l", [0.0, -3.2027, 0.0], 90.0],
+  ["mouth_portal_strip_r", [0.0, -3.2027, 0.0], 90.0],
   ["hall_threshold", [-3.2027, 0.0, 0.0], -180.0],
   ["hall_portal", [-3.2027, 0.0, 0.0], -180.0],
   ["portal_strip_l", [-3.2027, 0.0, 0.0], -180.0],
@@ -411,9 +411,9 @@ place = [
   ["clip_h", [-0.0, -3.6764, 0.0], -90.0],
   ["floor_light", [1.075, -3.9764, 0.0], 90.0],
   ["mouth_floor_base", [0.0, -3.9764, 0.0], 90.0],
-  ["cor_arch", [0.0, -4.51, 0.0], 90.0],
-  ["arch_strip_l", [0.0, -4.51, 0.0], 90.0],
-  ["arch_strip_r", [0.0, -4.51, 0.0], 90.0],
+  ["mouth_arch", [0.0, -4.51, 0.0], 90.0],
+  ["mouth_arch_strip_l", [0.0, -4.51, 0.0], 90.0],
+  ["mouth_arch_strip_r", [0.0, -4.51, 0.0], 90.0],
   ["tip_floor_base", [10.75, 0.0, 0.0], 0.0],
   ["tip_floor_disc", [10.75, 0.0, 0.0], 0.0],
   ["tip_floor_rim", [10.75, 0.0, 0.0], 0.0],
@@ -638,22 +638,22 @@ place = [
   ["tip_portal", [-9.0862, 0.0, 0.0], 0.0],
   ["portal_strip_l", [-9.0862, 0.0, 0.0], 0.0],
   ["portal_strip_r", [-9.0862, 0.0, 0.0], 0.0],
-  ["cup_a", [2.69, -1.2, 0.0], 35.0],
-  ["spill_a", [2.69, -1.2, 0.0], 35.0],
-  ["cup_c", [-2.4778, -1.6556, 0.0], -160.0],
-  ["spill_c", [-2.4778, -1.6556, 0.0], -160.0],
+  ["cup_a", [1.05, -1.95, 0.0], 35.0],
+  ["spill_a", [1.05, -1.95, 0.0], 35.0],
+  ["cup_c", [-1.55, -0.75, 0.0], -160.0],
+  ["spill_c", [-1.55, -0.75, 0.0], -160.0],
   ["cup_b", [-6.6, 0.7, 0.0], 80.0],
   ["cable_coil", [6.5, 0.72, 0.0], 20.0],
   ["floor_patch_a", [-2.2368, 1.8769, 0.0], -132.0],
   ["floor_patch_b", [1.8769, -2.2368, 0.0], 45.0],
-  ["scratch_a", [2.8019, 1.8722, 3.7], -33.75],
-  ["scratch_b", [-1.8722, 2.8019, 3.7], -123.75],
-  ["scratch_a", [1.8722, -2.8019, 3.7], 56.25],
-  ["scratch_b", [-2.8019, -1.8722, 3.7], 146.25],
-  ["scratch_b", [5.9, -1.2148, 1.3], 90.0],
-  ["scratch_a", [-7.0, 1.2148, 1.3], -90.0],
-  ["scratch_a", [7.2, 1.2148, 1.3], -90.0],
-  ["scratch_b", [-4.2, -1.2148, 1.3], 90.0],
+  ["scratch_a", [2.8019, 1.8722, 3.1], -33.75],
+  ["scratch_b", [-1.8722, 2.8019, 3.1], -123.75],
+  ["scratch_a", [1.8722, -2.8019, 3.1], 56.25],
+  ["scratch_b", [-2.8019, -1.8722, 3.1], 146.25],
+  ["scratch_b", [5.9, -1.2148, 0.9], 90.0],
+  ["scratch_a", [-7.0, 1.2148, 0.9], -90.0],
+  ["scratch_a", [7.2, 1.2148, 0.9], -90.0],
+  ["scratch_b", [-4.2, -1.2148, 0.9], 90.0],
 ]
 
 [[pieces]]
@@ -699,37 +699,37 @@ collide = true
 id = "hall_panel_a"
 builder = "wall_panel"
 collide = true
-args = { half = 0.6763, height = 3.4, tone = "a" }
+args = { half = 0.6763, height = 3.2, tone = "a" }
 
 [[pieces]]
 id = "hall_panel_b"
 builder = "wall_panel"
 collide = true
-args = { half = 0.6763, height = 3.4, tone = "b" }
+args = { half = 0.6763, height = 3.2, tone = "b" }
 
 [[pieces]]
 id = "hall_pilaster"
 builder = "pilaster"
 collide = true
-args = { height = 3.4 }
+args = { height = 3.2 }
 
 [[pieces]]
 id = "hall_pilaster_strip"
 builder = "pilaster_strip"
 collide = false
-args = { height = 3.4 }
+args = { height = 3.2 }
 
 [[pieces]]
 id = "hall_trunk"
 builder = "trunk"
 collide = true
-args = { height = 3.4 }
+args = { height = 3.2 }
 
 [[pieces]]
 id = "hall_trunk_cables"
 builder = "trunk_cables"
 collide = false
-args = { height = 3.4 }
+args = { height = 3.2 }
 
 [[pieces]]
 id = "trunk_clip"
@@ -740,7 +740,7 @@ collide = false
 id = "hall_portal"
 builder = "portal"
 collide = true
-args = { half = 1.32661, height = 3.4, soffit = true }
+args = { half = 1.32661, height = 3.2, soffit = true }
 
 [[pieces]]
 id = "portal_strip_l"
@@ -770,25 +770,25 @@ args = { tone = "b" }
 id = "hall_rib"
 builder = "rib"
 collide = false
-args = { rv = 3.46661, rim = 4.4, r_in = 1.25, h_in = 4.77941 }
+args = { rv = 3.46661, rim = 3.8, r_in = 1.25, h_in = 4.17941 }
 
 [[pieces]]
 id = "hall_rib_strip"
 builder = "rib"
 collide = false
-args = { rv = 3.46661, rim = 4.4, r_in = 1.25, h_in = 4.77941, strip = true }
+args = { rv = 3.46661, rim = 3.8, r_in = 1.25, h_in = 4.17941, strip = true }
 
 [[pieces]]
 id = "hall_lamp_ring"
 builder = "lamp_ring"
 collide = false
-args = { radius = 1.25, h_in = 4.77941 }
+args = { radius = 1.25, h_in = 4.17941 }
 
 [[pieces]]
 id = "hall_lamp"
 builder = "lamp"
 collide = false
-args = { h_in = 4.77941 }
+args = { h_in = 4.17941 }
 
 [[pieces]]
 id = "cor_floor_base"
@@ -918,13 +918,49 @@ args = { length = 1.24727 }
 id = "mouth_wall_up"
 builder = "cor_wall_up"
 collide = true
-args = { length = 1.24727, tone = "a" }
+args = { length = 1.24727, tone = "a", prof = "mouth" }
 
 [[pieces]]
 id = "mouth_ceil"
 builder = "cor_ceil"
 collide = false
-args = { length = 1.24727 }
+args = { length = 1.24727, prof = "mouth" }
+
+[[pieces]]
+id = "mouth_portal"
+builder = "portal"
+collide = true
+args = { half = 1.32661, height = 3.2, soffit = true, prof = "mouth" }
+
+[[pieces]]
+id = "mouth_portal_strip_l"
+builder = "portal_strip"
+collide = false
+args = { side = -1, prof = "mouth" }
+
+[[pieces]]
+id = "mouth_portal_strip_r"
+builder = "portal_strip"
+collide = false
+args = { side = 1, prof = "mouth" }
+
+[[pieces]]
+id = "mouth_arch"
+builder = "cor_arch"
+collide = true
+args = { prof = "mouth" }
+
+[[pieces]]
+id = "mouth_arch_strip_l"
+builder = "cor_arch_strip"
+collide = false
+args = { side = -1, prof = "mouth" }
+
+[[pieces]]
+id = "mouth_arch_strip_r"
+builder = "cor_arch_strip"
+collide = false
+args = { side = 1, prof = "mouth" }
 
 [[pieces]]
 id = "tip_floor_base"
@@ -964,37 +1000,37 @@ collide = true
 id = "tip_panel_a"
 builder = "wall_panel"
 collide = true
-args = { half = 0.46883, height = 2.8, tone = "a" }
+args = { half = 0.46883, height = 2.5, tone = "a" }
 
 [[pieces]]
 id = "tip_panel_b"
 builder = "wall_panel"
 collide = true
-args = { half = 0.46883, height = 2.8, tone = "b" }
+args = { half = 0.46883, height = 2.5, tone = "b" }
 
 [[pieces]]
 id = "tip_pilaster"
 builder = "pilaster"
 collide = true
-args = { height = 2.8 }
+args = { height = 2.5 }
 
 [[pieces]]
 id = "tip_pilaster_strip"
 builder = "pilaster_strip"
 collide = false
-args = { height = 2.8 }
+args = { height = 2.5 }
 
 [[pieces]]
 id = "tip_trunk"
 builder = "trunk"
 collide = true
-args = { height = 2.8 }
+args = { height = 2.5 }
 
 [[pieces]]
 id = "tip_trunk_cables"
 builder = "trunk_cables"
 collide = false
-args = { height = 2.8 }
+args = { height = 2.5 }
 
 [[pieces]]
 id = "tip_window_frame"
@@ -1015,7 +1051,7 @@ collide = false
 id = "tip_portal"
 builder = "portal"
 collide = true
-args = { half = 1.2813, height = 2.8 }
+args = { half = 1.2813, height = 2.5 }
 
 [[pieces]]
 id = "tip_ceiling"
@@ -1026,55 +1062,55 @@ collide = false
 id = "tip_rib"
 builder = "rib"
 collide = false
-args = { rv = 2.1, rim = 3.8, r_in = 0.6, h_in = 4.08571 }
+args = { rv = 2.1, rim = 3.1, r_in = 0.6, h_in = 3.31429 }
 
 [[pieces]]
 id = "tip_rib_strip"
 builder = "rib"
 collide = false
-args = { rv = 2.1, rim = 3.8, r_in = 0.6, h_in = 4.08571, strip = true }
+args = { rv = 2.1, rim = 3.1, r_in = 0.6, h_in = 3.31429, strip = true }
 
 [[pieces]]
 id = "tip_lamp_ring"
 builder = "lamp_ring"
 collide = false
-args = { radius = 0.6, h_in = 4.08571 }
+args = { radius = 0.6, h_in = 3.31429 }
 
 [[pieces]]
 id = "tip_lamp"
 builder = "lamp"
 collide = false
-args = { h_in = 4.08571 }
+args = { h_in = 3.31429 }
 
 [[pieces]]
 id = "cup_a"
 builder = "cup"
 collide = false
-args = { seed = 3, scale = 1.25 }
+args = { seed = 3, scale = 1.5 }
 
 [[pieces]]
 id = "cup_b"
 builder = "cup"
 collide = false
-args = { seed = 11, scale = 1.25 }
+args = { seed = 11, scale = 1.5 }
 
 [[pieces]]
 id = "cup_c"
 builder = "cup"
 collide = false
-args = { seed = 27, scale = 1.25 }
+args = { seed = 27, scale = 1.5 }
 
 [[pieces]]
 id = "spill_a"
 builder = "spill"
 collide = false
-args = { seed = 4 }
+args = { seed = 4, from = 0.17, size = 1.6 }
 
 [[pieces]]
 id = "spill_c"
 builder = "spill"
 collide = false
-args = { seed = 8 }
+args = { seed = 8, from = 0.17, size = 1.4 }
 
 [[pieces]]
 id = "cable_coil"

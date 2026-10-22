@@ -71,6 +71,18 @@ class ShipInteriorTest(unittest.TestCase):
         v_at = v0 + (v1 - v0) * (u0 - u_in) / (u0 - u1) if u_in > u1 else v1
         self.assertGreaterEqual(v_at, pl["capsule_height_m"])
 
+    def test_the_mouth_opens_wide_and_the_window_has_few_mullions(self) -> None:
+        # hall_out-2: the mouth's portal and arch take the mouth room's full width and height (inside 3-1)
+        mouth = {r["id"]: r for r in SHIP["rooms"]}["mouth"]
+        top = max(v for _, v in S.MOUTH_PROF)
+        self.assertAlmostEqual(top, mouth["clear_h"], places=3)
+        self.assertGreaterEqual(min(v for _, v in S.MOUTH_PROF if v > 0), top - 0.4)
+        self.assertGreaterEqual(2 * max(u for u, _ in S.MOUTH_PROF), mouth["x"][1] - mouth["x"][0] - 0.11)
+        ids = {p[0] for p in INTERIOR["place"]}
+        self.assertTrue({"mouth_portal", "mouth_arch"} <= ids)
+        # tip-3: a few thin mullions, the view nearly uninterrupted
+        self.assertLessEqual(len(S.MULLIONS), 4)
+
     def test_arches_and_details_keep_off_the_station_spots(self) -> None:
         spots = SHIP["stations"]["spot"]
         r = SHIP["stations"]["radius_m"]
