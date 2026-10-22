@@ -29,6 +29,11 @@ MATERIALS = {
                   "strength": 6.0},
     "glow_amber": {"base": (1.0, 0.6, 0.2, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.6, 0.2),
                    "strength": 5.0},
+    # lens step 2: the hull's edge light (cool white, "like a flashlight") and the pods' rings (the 2D's cyan, dimmer)
+    "glow_edge": {"base": (0.85, 0.92, 1.0, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.85, 0.92, 1.0),
+                  "strength": 4.0},
+    "glow_pod": {"base": (0.2, 0.9, 1.0, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.2, 0.9, 1.0),
+                 "strength": 4.0},
 }
 
 

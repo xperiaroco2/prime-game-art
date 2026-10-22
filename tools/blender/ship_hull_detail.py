@@ -145,44 +145,51 @@ def canopy(args: dict, layout: dict) -> list:
 
 # --- the nozzle pods -----------------------------------------------------------------------------------------------
 POD_SEGS = 32
+NOZZLE = (0.8, 0.45)   # lens step 2: the nozzle's radius at the bell's lip and 1.0 m in (x r), its floor 1.15 m in
 
 
 def nozzle_pod(args: dict, layout: dict) -> list:
     """A long engine pod along +y (local origin: its nose on the axis; args r, length): a smooth shell with a round
-    nose (shaded smooth, no plates), one dark collar, the bell and the dark throat (the lights: pod_ring)."""
+    nose (shaded smooth, no plates), one dark collar, the bell (an open ring: lens step 2) and the dark nozzle, 1.15 m
+    deep from the bell's lip (NOZZLE), behind it the shell's cone (the lights: pod_ring)."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
     nose = [(0.97 * r * math.sin(math.pi / 2 * k / 7) ** 0.85, 1.5 * (1 - math.cos(math.pi / 2 * k / 7)))
             for k in range(1, 8)]
-    shell = H._lathe_y([(0.0, 0.0)] + nose + [(r, ln - 0.7), (0.97 * r, ln - 0.35), (0.0, ln - 0.35)], POD_SEGS)
+    shell = H._lathe_y([(0.0, 0.0)] + nose + [(r, ln - 0.7), (0.97 * r, ln - 0.35), (0.0, ln - 0.9)], POD_SEGS)
     collar = H._lathe_y([(0.0, ln - 1.5), (1.03 * r, ln - 1.5), (1.03 * r, ln - 1.3), (0.0, ln - 1.3)], POD_SEGS)
-    bell = H._lathe_y([(0.0, ln - 0.4), (0.95 * r, ln - 0.4), (0.92 * r, ln + 0.35), (0.84 * r, ln + 0.4),
-                       (0.0, ln + 0.4)], POD_SEGS)
-    tv, tf = H._lathe_y([(0.82 * r, ln + 0.41), (0.62 * r, ln - 0.05), (0.0, ln - 0.25)], POD_SEGS)
-    throat = (tv, L.orient(tv, tf, lambda q: (0.0, q[1] - 1.0, 0.0)))
+    bv, bf = H._lathe_y([(0.95 * r, ln - 0.4), (0.92 * r, ln + 0.35), (0.84 * r, ln + 0.4), (NOZZLE[0] * r, ln + 0.4)],
+                        POD_SEGS)
+    bell = (bv, L.orient(bv, bf, lambda q: (0.0, q[1] - 2.0, 0.0)))
+    tv, tf = H._lathe_y([(NOZZLE[0] * r, ln + 0.4), (NOZZLE[1] * r, ln - 0.6), (0.0, ln - 0.75)], POD_SEGS)
+    throat = (tv, L.orient(tv, tf, lambda q: (2.0 * q[0], q[1], 2.0 * q[2])))
     return [_smooth(L.part("pod_shell", *shell, "hull_silver")), L.part("pod_collar", *collar, "hull_dark"),
-            L.part("pod_bell", *bell, "ext_frame"), L.part("pod_throat", *throat, "ext_nozzle_inner")]
+            L.part("pod_bell", *bell, "ext_frame", solid=False), L.part("pod_throat", *throat, "ext_nozzle_inner",
+                                                                        solid=False)]
 
 
 def pod_ring(args: dict, layout: dict) -> list:
-    """A pod's cyan lights (local frame as nozzle_pod): the band round the bell, a band on the barrel ahead of it, the
-    segmented ring in its rear face and the bright inner ring in the nozzle's mouth."""
+    """A pod's cyan lights (local frame as nozzle_pod; glow_pod, dimmer than the strips: a ring you see, not a lamp):
+    the band round the bell, a band on the barrel ahead of it, the segmented ring on the bell's lip and (lens step 2)
+    the glowing inner ring 0.3 m down the nozzle, a dim core on its floor."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
     band = H._lathe_y([(0.0, ln + 0.02), (0.99 * r, ln + 0.02), (0.99 * r, ln + 0.24), (0.0, ln + 0.24)], POD_SEGS)
     band2 = H._lathe_y([(0.0, ln - 0.95), (1.015 * r, ln - 0.95), (1.015 * r, ln - 0.8), (0.0, ln - 0.8)], POD_SEGS)
     segs = []
     for k in range(10):
         a0, a1 = 2 * math.pi * k / 10 + 0.06, 2 * math.pi * (k + 1) / 10 - 0.06
-        v, f = L.sector(0.5 * r, 0.62 * r, a0, a1, ln + 0.0, ln + 0.05)
+        v, f = L.sector(0.805 * r, 0.835 * r, a0, a1, ln + 0.405, ln + 0.435)
         v = [(x, h, y) for x, y, h in v]  # the swap mirrors the winding: orient the faces rearward (polish 4)
         segs.append((v, L.orient(v, f, lambda q: (0.0, q[1] - 1.0, 0.0))))
-    core = H._lathe_y([(0.0, ln - 0.22), (0.2 * r, ln - 0.22), (0.0, ln - 0.18)], 12)
-    inner = []
-    for k in range(24):
-        v, f = L.sector(0.5 * r, 0.72 * r, 2 * math.pi * k / 24, 2 * math.pi * (k + 1) / 24, ln + 0.405, ln + 0.435)
-        v = [(x, h, y) for x, y, h in v]
-        inner.append((v, L.orient(v, f, lambda q: (0.0, q[1] - 1.0, 0.0))))
-    return [L.part("pod_band", *L.merge(band, band2), "glow_cyan"),
-            L.part("pod_segments", *L.merge(*segs, *inner), "glow_cyan"),
+    core = H._lathe_y([(0.0, ln - 0.73), (0.3 * r, ln - 0.73), (0.0, ln - 0.7)], 12)
+
+    def wall(y):   # the nozzle's radius at y, 6 mm inside it
+        a, b = NOZZLE
+        return (b + (a - b) * (y - (ln - 0.6)) / 1.0) * r - 0.006
+    iv, i_f = H._lathe_y([(wall(ln - 0.27), ln - 0.27), (wall(ln - 0.33), ln - 0.33)], POD_SEGS)
+    inner = (iv, L.orient(iv, i_f, lambda q: (2.0 * q[0], q[1], 2.0 * q[2])))
+    return [L.part("pod_band", *L.merge(band, band2), "glow_pod"),
+            L.part("pod_segments", *L.merge(*segs), "glow_pod"),
+            L.part("pod_inner_ring", *inner, "glow_pod", solid=False),
             L.part("pod_core", *core, "ext_glow_cyan_dim")]
 
 
@@ -194,4 +201,131 @@ def ground_lamp(args: dict, layout: dict) -> list:
 
 
 for _name in ("canopy", "nozzle_pod", "pod_ring", "ground_lamp"):
+    globals()[_name] = H._outward(globals()[_name])
+
+
+# --- lens step 2: the edge light and the lens windows' outer frames --------------------------------------------------
+EDGE_GLOW = (0.0175, 0.006)    # the glow's half height (3.5 cm visible) and its lift off the face
+EDGE_LIP = (0.04, 0.014)       # the channel's lips: out to this half height, this far proud (the glow sits 8 mm in)
+
+
+def _sweep(path, profile, mat_of):
+    """Extrude a 2D profile [(lift, z)] along path [(point, outward n)] (z vertical): per profile edge a strip of
+    quads, its normal the edge's outward side in (n, z). mat_of(i) names edge i's material. {mat: (verts, faces)}."""
+    out = {}
+    for i, ((o0, z0), (o1, z1)) in enumerate(zip(profile, profile[1:])):
+        dz, do = z1 - z0, o1 - o0
+        en = (dz, -do)   # the profile walks top to bottom on the outside: its right side faces out
+        vs, fs = out.setdefault(mat_of(i), ([], []))
+        for (p0, n0), (p1, n1) in zip(path, path[1:]):
+            q = [tuple(p0[k] + o0 * n0[k] + (z0 if k == 2 else 0.0) for k in range(3)),
+                 tuple(p1[k] + o0 * n1[k] + (z0 if k == 2 else 0.0) for k in range(3)),
+                 tuple(p1[k] + o1 * n1[k] + (z1 if k == 2 else 0.0) for k in range(3)),
+                 tuple(p0[k] + o1 * n0[k] + (z1 if k == 2 else 0.0) for k in range(3))]
+            nm = tuple(0.5 * (n0[k] + n1[k]) for k in range(3))
+            want = tuple(en[0] * nm[k] + (en[1] if k == 2 else 0.0) for k in range(3))
+            base = len(vs)
+            vs += q
+            fs.append(tuple(base + j for j in ((0, 1, 2, 3) if S._dot(S._newell(q), want) > 0 else (3, 2, 1, 0))))
+    return out
+
+
+def edge_light(args: dict, layout: dict) -> list:
+    """lens step 2: the thin cool-white light line round the hull's outer edge, where the top meets the belly: along
+    each fin's lead edge from the nose (not across the mouth), round the lens rim under the window band and along the
+    trail edge into the pod (ship_hull_shape.p_edge_line). A dark channel with two lips, the glow 3.5 cm high 8 mm
+    in between them."""
+    gh, go = EDGE_GLOW
+    lh, lo = EDGE_LIP
+    profile = [(0.003, lh), (lo, lh), (lo, gh), (go, gh), (go, -gh), (lo, -gh), (lo, -lh), (0.003, -lh)]
+    groups: dict = {}
+    for sx in (1, -1):
+        for mat, (v, f) in _sweep(S.p_edge_line(sx), profile, lambda i: "glow_edge" if i == 3 else "ext_frame").items():
+            groups.setdefault(mat, []).append((v, f))
+    return [L.part(f"edge_{'glow' if m == 'glow_edge' else 'channel'}", *L.merge(*g), m, solid=False)
+            for m, g in sorted(groups.items())]
+
+
+def _rim_at(g, sx=1):
+    """The lens rim's face point at plan angle g (east frame) and its facet's outward normal."""
+    step = 2 * math.pi / S.P_LENS_N
+    gm = (math.floor(g / step + 1e-9) + 0.5) * step
+    r = S.P_RIM_R / math.cos(g - gm)
+    cx, cy = S.P_TIP
+    return (sx * (cx + r * math.cos(g)), cy + r * math.sin(g)), (sx * math.cos(gm), math.sin(gm))
+
+
+def _box2(p0, p1, w, h0, h1, lift=0.0):
+    """A solid bar from plan p0 to p1 (w wide, centred `lift` to the left), bottoms h0 (each end its own) to tops h1."""
+    dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+    ln = math.hypot(dx, dy)
+    nx, ny = -dy / ln, dx / ln
+    v = []
+    for (x, y), b, t in ((p0, h0[0], h1[0]), (p1, h0[1], h1[1])):
+        for s in (-1, 1):
+            o = lift + s * w / 2
+            v += [(x + o * nx, y + o * ny, b), (x + o * nx, y + o * ny, t)]
+    f = [(0, 2, 3, 1), (4, 5, 7, 6), (0, 1, 5, 4), (2, 6, 7, 3), (1, 3, 7, 5), (0, 4, 6, 2)]
+    return v, f
+
+
+def lens_frames(args: dict, layout: dict) -> list:
+    """lens step 2: the lenses' outer window frames (ext_frame): along the band's sill and head on the rim (5 cm, 3 cm
+    proud), its two end posts, a mullion in the reveal at each of the room's inner window vertices (step 1's
+    mullions), and a thin raised frame round each roof window on the slanted top."""
+    bars = []
+    ax = S.p_axis_deg()
+    a0, a1 = math.radians(ax + S.P_BAND[0]), math.radians(ax + S.P_BAND[1])
+    step = 2 * math.pi / S.P_LENS_N
+    cuts = [a0] + [k * step for k in range(math.floor(a0 / step) + 1, math.ceil(a1 / step))] + [a1]
+    facet = (S.P_BAND[1] - S.P_BAND[0]) / 5.0
+    for sx in (1, -1):
+        for a, b in zip(cuts, cuts[1:]):
+            (p, n), (q, _m) = _rim_at(a + 1e-7, sx), _rim_at(b - 1e-7, sx)
+            n = _rim_at(0.5 * (a + b), sx)[1]
+            dx, dy = q[0] - p[0], q[1] - p[1]
+            ln = math.hypot(dx, dy)
+            p = (p[0] - 0.01 * dx / ln, p[1] - 0.01 * dy / ln)
+            q = (q[0] + 0.01 * dx / ln, q[1] + 0.01 * dy / ln)
+            lift = 0.015 if (-dy * n[0] + dx * n[1]) > 0 else -0.015   # the bar's middle 1.5 cm out of the face
+            for h0, h1 in ((S.SILL - 0.05, S.SILL), (S.HEAD, S.HEAD + 0.05)):
+                bars.append(_box2(p, q, 0.03, (h0, h0), (h1, h1), lift))
+        for g in (a0, a1):   # the end posts, 5 cm wide outside the opening
+            (p, n) = _rim_at(g, sx)
+            t = (-n[1], n[0])
+            s = -1 if g == a0 else 1
+            c = (p[0] + s * sx * 0.025 * t[0] + 0.015 * n[0], p[1] + s * sx * 0.025 * t[1] + 0.015 * n[1])
+            bars.append(H._obox((c[0], c[1], 0.5 * (S.SILL + S.HEAD)), (0.025 * t[0], 0.025 * t[1], 0.0),
+                                (0.015 * n[0], 0.015 * n[1], 0.0), (0.0, 0.0, 0.5 * (S.HEAD - S.SILL) + 0.05)))
+        for k in range(1, 5):   # the mullions: the room's inner window vertices, from the glass's reveal to the rim
+            g = math.radians(ax + S.P_BAND[0] + k * facet)
+            (p, n) = _rim_at(g, sx)
+            cx, cy = sx * S.P_TIP[0], S.P_TIP[1]
+            u = (sx * math.cos(g), math.sin(g))
+            r0, r1 = S.P_BAND_IN - 0.01, math.hypot(p[0] - cx, p[1] - cy) + 0.02
+            c = (cx + 0.5 * (r0 + r1) * u[0], cy + 0.5 * (r0 + r1) * u[1])
+            bars.append(H._obox((c[0], c[1], 0.5 * (S.SILL + S.HEAD)), (0.5 * (r1 - r0) * u[0], 0.5 * (r1 - r0) * u[1], 0.0),
+                                (-0.025 * u[1], 0.025 * u[0], 0.0), (0.0, 0.0, 0.5 * (S.HEAD - S.SILL))))
+    roof = []
+    la, lw = S.P_ROOF_WIN_M
+    for sx in (1, -1):
+        ux, uy = S.p_axis(sx)
+        nx, ny = -uy, ux
+        for t, w in S.P_ROOF_WIN:
+            mx, my = sx * S.P_TIP[0] + t * ux + w * nx, S.P_TIP[1] + t * uy + w * ny
+            cs = [(mx + a * (la / 2 + 0.025) * ux + b * (lw / 2 + 0.025) * nx,
+                   my + a * (la / 2 + 0.025) * uy + b * (lw / 2 + 0.025) * ny)
+                  for a, b in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+            for i in range(4):
+                p, q = cs[i], cs[(i + 1) % 4]
+                dx, dy = q[0] - p[0], q[1] - p[1]
+                ln = math.hypot(dx, dy)
+                p2 = (p[0] - 0.025 * dx / ln, p[1] - 0.025 * dy / ln)
+                q2 = (q[0] + 0.025 * dx / ln, q[1] + 0.025 * dy / ln)
+                tops = [S.heights(*e, S.DEFAULT)[0] for e in (p2, q2)]
+                roof.append(_box2(p2, q2, 0.05, tuple(h - 0.02 for h in tops), tuple(h + 0.02 for h in tops)))
+    return [L.part("band_frame", *L.merge(*bars), "ext_frame"), L.part("roof_frame", *L.merge(*roof), "ext_frame")]
+
+
+for _name in ("edge_light", "lens_frames"):
     globals()[_name] = H._outward(globals()[_name])
