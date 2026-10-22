@@ -149,7 +149,7 @@ its own GLB (`layouts/ship/exterior.toml`): the skin (body, three wing sections 
 a darker underside), the cyan wing stripes, lead blades and seam lines, the inset hatches with their scratches, the
 tip windows' frames, the cockpit canopies (fairing, tinted glass, warm glow; outside only, the hall's ceiling closes
 them off), the mouth frame and its amber lights, the ramp and its edge strips, three long nozzle pods with their cyan
-rings and the middle pod's housing, eight landing legs and twelve amber ground lamps; the clearing's ground, pines
+rings and the middle pod's housing, six landing legs and twelve amber ground lamps; the clearing's ground, pines
 and rocks. Every skin face is cut into plates of about 1.5 m, each with a 2.2 cm chamfer sinking 1.4 cm into a dark
 seam (real bevels, not a texture).
 
@@ -190,7 +190,7 @@ parts once at the end (`_outward`); a lane that orients open parts must do the s
 (Blender exports double-sided materials, so they still show, lit from the wrong side).
 
 **The night look** (`godot/ship/ship.gd`): a star sky with a moon (`night_sky.gdshader`), moonlight (ship.toml
-`[light]`), one shared triplanar metal shader by glTF material name (`metal.gdshader`: grain, fine seams, scratches,
+`[light]`) with a cool shadowed key from the north-west (`key_dir_deg` [-38, -140], `key_energy` 0.55, hull 3-2: the silver catches light from the hero, front and side cameras), one shared triplanar metal shader by glTF material name (`metal.gdshader`: grain, fine seams, scratches,
 grime), an OmniLight per 1.6 m cell of emissive surfaces (at most 96: the strips and lamps light the ship), a
 ReflectionProbe per room, AgX, SSAO 0.6 / 1.5 (look_presets High), SSIL, glow, a thin blue fog.
 
@@ -214,13 +214,16 @@ round |x|, linear between them as the loft's faces are), so it follows the skin 
 | Detail | Numbers (plan metres) |
 |---|---|
 | Two tones | the skin loop's faces 9..13 (trail edge, belly, lower lead facet) in `ext_silver_c`/`leg_metal`; the tip's profile faces 0..2 likewise |
-| Canopies | glass ellipse 1.1 x 1.4 at (+-2.5, -2.7), either side of the spine, 0.95 high, four frame ribs; a deck plane fitted to the skin (least squares in x and y, tilt cap 34 deg, raised 0.05 over the skin under the glass); the fairing's teardrop 1.14x, stretched 1.6x backward, collar 0.06 into the skin; mean collar 0.43 m (2.2 m with a deck flat across x: two barrels from the front) |
-| Nozzle pods | outer r 1.05 at (+-2.75, h 2.15) from y 3.5, 3.6 long; middle r 1.2 at h 2.45 from y 3.9, 4.0 long; a 12-sided panelled barrel, a collar, the bell, ten cyan segments and a band per pod (`pod_ring`) |
+| Canopies | flush in the forward hull (hull 3-2): faceted glass ellipse 1.15 x 1.5 at (+-2.3, -2.75), 14 sides, 3 rings, 0.85 high, its base on the skin (`skin_h` + 0.02); four frame ribs; a low teardrop plate 1.14x round it (0.03 over the skin); a lit floor, a seat and a desk under the glass (tops below 0.62) |
+| Nozzle pods | outer r 1.05 at (+-2.75, h 2.15) from y 3.5, 3.6 long; middle r 1.2 at h 2.45 from y 3.9, 4.0 long (0.8 longer, 0.3 higher); a 12-sided panelled barrel with two raised rib rings and six stringers (tube relief), a collar, the bell; per pod ten cyan segments, a cyan end ring 0.99 r (proud of the bell) and a second band 1.04 r 0.8 m ahead (`pod_ring`) |
 | Pod housing | from y 3.7 (top 4.75, the hall's eave) to 6.4 (top 3.9), half-width 1.55, sides into the skin or onto the pod's axis |
-| Lead blades | 0.13 x 0.07 cyan bars (0.07 x 0.05 until step 3: thin from the front) on the lead edge (section point 0) from x 2.0 to the swept tip point (13.23, 5.9) |
+| Lead blades | 0.24 x 0.12 cyan bars (hull 3-2; 0.13 x 0.07 read thin) on the lead edge (section point 0) from x 2.0 to the swept tip point |
 | Seam lines | 0.025 cyan bars on the front eave crease from x 4 to 9 and the rear eave from x 5 to 8 |
-| Hatches | six per side, 1.4..2.4 x 1.0..1.4, a bevelled frame round a recessed plate with two slots; 40 seeded scratches per side (ext_chrome, 0.18..0.68 m) |
-| Legs | mount 0.8 x 0.6, knee (0.75, h 0.36), struts r 0.15/0.12, twin pistons, a foot plate r 0.55 with three toes at x 1.0 |
+| Hatches | six per side, a bevelled frame round a recessed plate; a latch at the outer end (a dark well, a chrome lever on two posts) and a hinge rod along the inner edge (the two slots read as a face); 40 seeded scratches per side (ext_chrome, 0.18..0.68 m) |
+| Legs | six (hull 3-2): `leg_front` at (+-5.0, -3.6), `leg_rear` at (+-6.5, 3.6), `leg_stern` at (+-1.8, 4.2), each mounted 0.12 into the skin's underside (top 0.74 / 0.75 / 1.21), feet out past the edges (reach 2.0 / 2.2 / 1.6); struts r 0.17 / 0.14, knee drum r 0.22, twin pistons, a foot plate r 0.5 with three toes. The 0.6 deck keeps them short |
+| Mouth portal | a chamfered frame from the inside's opening (half width 1.25, the mouth's clear_h, 0.3 x 0.35 chamfers) out to half width 1.62 and clear_h + 0.4, 0.3 deep, over the skin's hole; a chrome lip; amber strips on the jambs and the head |
+| Tip windows | `tip_window`: tinted glass on the lens's slanted band (profile points 4..5, h 1.93..2.98) within the window's half angle, sill and head bars along it, two jambs and three mullions up the slope (replaces the vertical ring) |
+| Stripes | twelve chunky cyan bars per wing from x 2.6 to 10.2, each wrapping the lead edge: down the lower facet (8..92 %) and a third of the way up the upper slope |
 | Ramp light | a continuous amber strip inside each rail and a cross strip at the foot |
 | Ground lamps | r 0.2 amber pucks 1.75 m out from each leg's mount and at (+-1.75, -5.9 / -7.25) by the ramp |
 
@@ -269,7 +272,7 @@ reads them with `_lk(key, old value)`:
 | `lamp_scale` (ship.toml's lamps) | 0.25 | 1 |
 | `probe_intensity` (the windowless rooms' probes) | 0.15 | 1 |
 | `int_value`, `int_rough_add` (the `int_silver_*` metals) | 0.55, +0.25 | 1, 0 |
-| `hull_rough_add` (the hull silvers: the moonlit white plates) | +0.22 | 0 |
+| `hull_rough_add` (the hull silvers: the moonlit white plates) | +0.12 (hull 3-2; was 0.22) | 0 |
 
 A look grid: a scratch script that loads the layout, overrides `[light]` per variant, calls `ship.shoot` on a few
 views and tiles them with `house_bake_props.sheet` (`<raw>/ship/v1/logs/join_grid.py`).
