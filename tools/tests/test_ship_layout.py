@@ -212,7 +212,7 @@ class ShipLayoutTest(unittest.TestCase):
 
     @unittest.skipIf(PENDING, f"[hull] pending: {PENDING}")
     def test_every_room_has_its_skin(self) -> None:
-        """rebuild B: J holds every room with at least SKIN (0.15 m) of hull and nothing pokes out."""
+        """rebuild B, lens step 2: the live hull (P) holds every room with at least SKIN (0.15 m) of hull and nothing pokes out."""
         least, bad = S.clearance(LAYOUT["hull"]["shape"])
         self.assertEqual(bad, [])
         self.assertGreaterEqual(least, S.SKIN)
@@ -238,18 +238,18 @@ class ShipLayoutTest(unittest.TestCase):
         def tip_w(layout):
             sl.rooms(layout)["tip_w"]["clear_h"] = 3.4
         found = problems_after(tip_w)
-        self.assertTrue(any(p.startswith("hull J: tip wall tip_w") for p in found), found[:3])
+        self.assertTrue(any(p.startswith("hull P: tip wall tip_w") for p in found), found[:3])
         self.assertFalse(any("tip_e" in p for p in found))
 
         def corridor_w(layout):
             sl.rooms(layout)["corridor_w"]["clear_h"] = 3.4
         found = problems_after(corridor_w)
-        self.assertTrue(any("corridor_w" in p and p.startswith("hull J") for p in found), found[:3])
+        self.assertTrue(any("corridor_w" in p and p.startswith("hull P") for p in found), found[:3])
         self.assertFalse(any("corridor_e" in p for p in found))
 
         def throat(layout):
             sl.rooms(layout)["throat"]["clear_h"] = 3.6
-        self.assertTrue(any(p.startswith("hull J: throat") for p in problems_after(throat)))
+        self.assertTrue(any(p.startswith("hull P: throat") for p in problems_after(throat)))
 
     def test_a_bad_poly_and_a_walk_point_off_the_floor_are_refused(self) -> None:
         def reverse(layout):

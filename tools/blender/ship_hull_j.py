@@ -1,8 +1,9 @@
-"""The hull as built (art #263 rebuild B, docs/ship.md "The hull"): variant J of the blockouts (ship_hull_shape.py),
-the engineer's pick, in the night build's plated, faceted brushed silver (PR #267's skin; no scratches, no decals, no
+"""The hull's plating (art #263 rebuild B, docs/ship.md "The hull"): the live hull of ship_hull_shape.py (DEFAULT: P
+since lens step 2, the union of convex parts with its window band and roof windows cut; J before it; the module keeps
+its name, its builders j_skin and j_cheeks plate whichever is live), in the night build's plated, faceted brushed silver (PR #267's skin; no scratches, no decals, no
 light strips). The HULL lane owns this file.
 
-Every outer face of J (the convex hull's facets after the mouth cut, ship_hull_shape.surface) is cut into plates in its
+Every outer face of the hull (its facets after the mouth cut and the openings, ship_hull_shape.surface) is cut into plates in its
 own plane: rows PLATE[1] wide along the facet's span direction (plan x projected into the facet; the mouth's sides use
 plan y), each row cut every PLATE[0], the rows staggered by half a plate like brickwork, so every seam lies on the
 facet and the facets' edges are seams too. A plate is ship_hull._plate (v1's: its face inset INSET at the surface,
