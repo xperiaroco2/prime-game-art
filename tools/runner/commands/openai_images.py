@@ -73,6 +73,8 @@ def estimate(batch: batches.Batch) -> int:
     common.say("  approval: " + ("complete, within the cap" if not approval else "; ".join(approval)))
     for problem in problems:
         common.say(f"  not ready: {problem}")
+    for warning in batches.n_warnings(batch.items):
+        common.say(f"  {warning}")
     return 0
 
 

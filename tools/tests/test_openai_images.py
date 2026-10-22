@@ -600,6 +600,64 @@ class RunTest(unittest.TestCase):
         self.assertIn("approval: complete, within the cap", out.getvalue())
 
 
+class OneImagePerConceptTest(unittest.TestCase):
+    """#276: n > 1 is warned about in estimate and run, never refused."""
+
+    def setUp(self) -> None:
+        self.tmp = TemporaryDirectory()
+        self.raw = Path(self.tmp.name) / "raw"
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def batch(self) -> batches.Batch:
+        return parse(items=[{"id": "g1", "kind": "generate", "prompt": "one concept"},
+                            {"id": "g3", "kind": "generate", "prompt": "three of one", "n": 3}])
+
+    def test_only_items_with_n_over_one_are_warned(self) -> None:
+        warnings = batches.n_warnings(self.batch().items)
+        self.assertEqual(len(warnings), 1)
+        self.assertTrue(warnings[0].startswith("WARNING g3: n = 3"))
+        self.assertIn("one image per concept", warnings[0])
+        self.assertIn('docs/openai-images.md, "One image per concept"', warnings[0])
+        self.assertEqual(batches.n_warnings(parse().items), [])
+
+    def test_the_estimate_warns_and_still_succeeds(self) -> None:
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = openai_images.estimate(self.batch())
+        self.assertEqual(code, 0)
+        lines = [line for line in out.getvalue().splitlines() if "WARNING" in line]
+        self.assertEqual(len(lines), 1)
+        self.assertIn("g3", lines[0])
+
+    def test_a_run_warns_and_still_sends_every_item(self) -> None:
+        fake, logs = FakeOpenAI([ok_answer(), ok_answer(3)]), []
+        runner = runs.Runner(self.batch(), fake.client(logs), raw=self.raw)
+        self.assertEqual(runner.run(), 0)
+        self.assertEqual(len(fake.requests), 2)
+        warned = [line for line in logs if line.startswith("WARNING")]
+        self.assertEqual(len(warned), 1)
+        self.assertIn("g3", warned[0])
+        # a run of the n = 1 item alone warns about nothing
+        logs.clear()
+        runs.Runner(self.batch(), fake.client(logs), raw=self.raw, only=["g1"]).run()
+        self.assertFalse([line for line in logs if line.startswith("WARNING")])
+        # a rerun of the whole batch sends nothing (both done), so it warns about nothing
+        logs.clear()
+        runs.Runner(self.batch(), fake.client(logs), raw=self.raw).run()
+        self.assertEqual(len(fake.requests), 2)
+        self.assertFalse([line for line in logs if line.startswith("WARNING")])
+
+    def test_n_from_the_defaults_or_a_variant_is_warned(self) -> None:
+        batch = parse(defaults={"size": "1024x1024", "n": 3}, variants={"v": {"prompt": "from the variant", "n": 2}},
+                      items=[{"id": "d3", "kind": "generate", "prompt": "from the defaults"},
+                             {"id": "v2", "kind": "generate", "variant": "v"},
+                             {"id": "i1", "kind": "generate", "prompt": "own", "n": 1}])
+        warnings = batches.n_warnings(batch.items)
+        self.assertEqual([w.split(":")[0] for w in warnings], ["WARNING d3", "WARNING v2"])
+
+
 class RepositoryBatchesTest(unittest.TestCase):
     def test_every_committed_openai_batch_is_valid_and_approved(self) -> None:
         found = 0
