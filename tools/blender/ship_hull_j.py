@@ -81,10 +81,16 @@ def j_skin(args: dict, layout: dict) -> list:
 j_skin = H._outward(j_skin)
 
 
+CHEEK_OUT = S.WALL + 0.03   # rebuild D: the cheeks 3 cm proud of the wall modules' backs (in their plane they z-fought:
+#                             the modules' pale backs showed through as boards beside the mouth)
+
+
 def j_cheeks(args: dict, layout: dict) -> list:
     """rebuild C: the mouth's cheeks, the throat walls' outer faces where J's belly rises over the deck (under the nose,
     forward of the hall): plates in the walls' outer planes from the slab's bottom up to the belly, so the throat
-    reads as a mouth cut into the nose and no wall stands bare under it."""
+    reads as a mouth cut into the nose and no wall stands bare under it. rebuild D: in the mouth's dark plates
+    (MATS["mouth"], skin_mouth's), so with the notch's cut faces above them each side reads as one dark face up to
+    the nose's sloped top (the pale silver read as a board standing beside the mouth)."""
     (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
     ln = math.hypot(kx - mx, ky - my)
     d = ((kx - mx) / ln, (ky - my) / ln)
@@ -94,7 +100,7 @@ def j_cheeks(args: dict, layout: dict) -> list:
         pts = []
         for i in range(25):
             s = ln * i / 24
-            x, y = sx * (mx + d[0] * s) + n[0] * S.WALL, my + d[1] * s + n[1] * S.WALL
+            x, y = sx * (mx + d[0] * s) + n[0] * CHEEK_OUT, my + d[1] * s + n[1] * CHEEK_OUT
             hb = S.heights(x, y)
             if hb and hb[1] > S.SLAB + 0.01:
                 pts.append((x, y, hb[1]))
@@ -103,7 +109,7 @@ def j_cheeks(args: dict, layout: dict) -> list:
             if S._dot(S._newell(q), n) < 0:
                 q.reverse()
             for p in plates(q, n):
-                groups.setdefault("ext_silver_c", []).append(H._plate(p, INSET, DEPTH))
+                groups.setdefault(MATS["mouth"][0], []).append(H._plate(p, INSET, DEPTH))
     return [L.part(f"cheeks_{mat}", *L.merge(*g), mat, solid=False) for mat, g in sorted(groups.items())]
 
 

@@ -42,7 +42,7 @@ SEGS = S.hall_segments()
 _E0 = S.COR_ANG - 2 * math.degrees(S.PHI)
 PHI_STD = math.degrees(S.PHI)                                  # 11.25
 PHI_FRONT = round((_E0 - S.FRONT_DEG) / 2, 4)                  # rebuild C: the front facet to the corridor (9.17)
-PHI_THROAT = round((-2 * S.TH_CORNER - 180.0) / S.TH_SUBS / 2, 4)   # rebuild C: a throat sub-facet (11.40)
+PHI_THROAT = round((180.0 + 2 * S.TH_CORNER) / S.TH_SUBS / 2, 4)   # a throat sub-facet (11.40; rebuild D: was negative, the rims turned inside out)
 # rebuild C: the throat's walls, from the mouth to the hall's corner, in four modules; the vent's plain band
 _TM, _TK = S.TH_PTS[1], S.TH_PTS[2]
 TH_LEN = math.dist(_TM, _TK)                                   # 3.485
@@ -52,6 +52,8 @@ _VENT = next(s["at"] for s in S._SHIP["stations"]["spot"] if s["id"] == "vent_e"
 _VS = math.dist(_TM, (_VENT[0] - S.HALL_C[0], _VENT[1] - S.HALL_C[1]))   # the vent along the wall (1.447)
 TH_PLAIN = [i for i in range(4) if i * TH_MOD < _VS + 0.9 and (i + 1) * TH_MOD > _VS - 0.9]
 TH_COVER = [i for i in range(4) if _TM[1] + (_TK[1] - _TM[1]) * i / 4 >= S.TH_ROOF - 1e-6]   # under the roof
+TH_ARCH_Y = S.TH_ROOF + 0.1                                    # rebuild D: the arch's mid-plane, its face on the roof line
+TH_ARCH_HALF = _TM[0] + (_TK[0] - _TM[0]) * (TH_ARCH_Y - _TM[1]) / (_TK[1] - _TM[1])   # the walls' half width there
 PHI_BACK = round(S.BACK_DEG / 2, 4)                            # a back facet (7.5)
 PHI_SOCK = round((90.0 - S.BACK_DEG - (S.COR_ANG + 2 * PHI_STD)) / 2, 4)   # a socket's flat chord (13.39)
 
@@ -127,6 +129,8 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "th_clip_h": ("clip_h", {"prof": "throat"}, False),
     "th_wall_up_a": ("cor_wall_up", {"length": TH_MOD, "tone": "a", "prof": "throat"}, True),
     "th_wall_up_b": ("cor_wall_up", {"length": TH_MOD, "tone": "b", "prof": "throat"}, True),
+    # rebuild D: the cyan arch at the throat's roof line (its ceiling and chamfers: the vents' walls stay plain)
+    "th_arch": ("th_arch", {"half": round(TH_ARCH_HALF, 4), "k": round(TH_LEN / (_TK[1] - _TM[1]), 4)}, False),
     "hall_rib": ("rib", {"rv": S.HV, "rim": F + S.H_HALL, "r_in": S.R_RING, "h_in": H_IN_HALL}, False),
     "hall_rib_strip": ("rib", {"rv": S.HV, "rim": F + S.H_HALL, "r_in": S.R_RING, "h_in": H_IN_HALL, "strip": True},
                        False),
@@ -399,6 +403,8 @@ def placements() -> list[tuple[str, list[float], float]]:
                 lp = [round(w[0] + d[0] * TH_MOD * 0.5 + inward[0] * 0.3, 4),
                       round(w[1] + d[1] * TH_MOD * 0.5 + inward[1] * 0.3, 4)]
                 put("floor_light", lp, yw)
+
+    put("th_arch", [0.0, TH_ARCH_Y], 90.0)
 
     # --- the tip rooms (rebuild A: at (+-8.3, 4.0), turned so the door faces the hall along the corridor's axis:
     # room yaw -COR_ANG east, 180 + COR_ANG west; no window, TIP_N wall facets round the outer side)

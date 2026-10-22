@@ -344,6 +344,7 @@ place = [
   ["th_clip_h", [-1.9158, -3.6621, 0.0], 68.721],
   ["th_clip_h", [-1.7344, -4.1281, 0.0], 68.721],
   ["th_wall_up_a", [-1.8251, -3.8951, 0.0], 68.721],
+  ["th_arch", [0.0, -5.376, 0.0], 90.0],
   ["tip_floor_base", [8.3, 3.0, 0.0], -25.731],
   ["tip_floor_disc", [8.3, 3.0, 0.0], -25.731],
   ["tip_floor_rim", [8.3, 3.0, 0.0], -25.731],
@@ -710,7 +711,7 @@ args = { phi_deg = 6.25 }
 id = "hall_floor_rim_throat"
 builder = "hall_floor_rim"
 collide = true
-args = { phi_deg = -11.4065 }
+args = { phi_deg = 11.4065 }
 
 [[pieces]]
 id = "hall_ceil_front_a"
@@ -752,13 +753,13 @@ args = { tone = "b", phi_deg = 7.3173 }
 id = "hall_ceil_throat_lo_a"
 builder = "hall_ceil_panel"
 collide = false
-args = { tone = "a", phi_deg = -11.4065, height = 2.75 }
+args = { tone = "a", phi_deg = 11.4065, height = 2.75 }
 
 [[pieces]]
 id = "hall_ceil_throat_lo_b"
 builder = "hall_ceil_panel"
 collide = false
-args = { tone = "b", phi_deg = -11.4065, height = 2.75 }
+args = { tone = "b", phi_deg = 11.4065, height = 2.75 }
 
 [[pieces]]
 id = "hall_ceil_socket_lo_a"
@@ -866,6 +867,12 @@ id = "th_wall_up_b"
 builder = "cor_wall_up"
 collide = true
 args = { length = 0.87141, tone = "b", prof = "throat" }
+
+[[pieces]]
+id = "th_arch"
+builder = "th_arch"
+collide = false
+args = { half = 2.3214, k = 1.0732 }
 
 [[pieces]]
 id = "hall_rib"

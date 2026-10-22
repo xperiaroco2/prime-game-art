@@ -597,7 +597,7 @@ outside = true
 [[pieces]]
 id = "leg_front"
 builder = "leg"
-args = { top = 0.6, reach = 2.0 }
+args = { top = 0.6, reach = 2.0, rise = 0.25 }   # rebuild D: the belly over the mount climbs to 1.05 (was a gap)
 collide = true
 outside = true                               # the feet stand past the lead edge
 
@@ -673,8 +673,8 @@ views = [
   ["out_side", "outside: side (turnaround side)", [-31.0, 1.5, 3.0], [0.0, 1.5, 2.2], 46.0, "turnaround.jpg"],
   ["out_back", "outside: back with the nozzles (turnaround back)", [2.0, 27.5, 4.4], [0.0, 1.0, 2.3], 62.0, "turnaround.jpg"],  # clear of the near pines
   ["detail_seam", "detail: the plates on the east wing (materials-3)", [7.0, 10.5, 6.6], [9.0, 4.5, 3.4], 40.0, "materials-3.jpg"],  # rebuild B: the plated wing's back slope in the moon
-  ["detail_floor", "detail: a floor light strip and grate (materials-3)", [3.96, 1.91, 1.7], [5.95, 2.86, 0.6], 50.0, "materials-3.jpg"],  # rebuild B: down the diagonal east corridor
-  ["detail_cables", "detail: a cable channel with clips (materials-3)", [5.59, 2.69, 1.9], [5.11, 4.13, 1.5], 55.0, "materials-3.jpg"],  # the corridor's back wall
+  ["detail_floor", "detail: a floor light strip and grate (materials-3)", [3.96, 0.91, 1.7], [5.95, 1.86, 0.6], 50.0, "materials-3.jpg"],  # rebuild D: down the east corridor from (0, -1)
+  ["detail_cables", "detail: a cable channel with clips (materials-3)", [5.59, 1.69, 1.9], [5.11, 3.13, 1.5], 55.0, "materials-3.jpg"],  # the corridor's back wall (rebuild D: 1 m forward)
 ]
 
 # The walk-through video (`ship --walk DIR`, the exterior lane): a camera at eye height (1.65 m over the floor: deck

@@ -155,8 +155,8 @@ MOUTH_PROF = [(-1.25, 0.0), (-1.25, H_MOUTH - 0.35), (-0.95, H_MOUTH), (0.95, H_
 
 def _prof(args):
     if args.get("prof") == "throat":   # rebuild C: the throat's, args half (its width where an arch stands)
-        w = args.get("half", TH_HALF)
-        return [(-w, 0.0), (-w, TH_BEND), (-w + TH_IN, TH_H), (w - TH_IN, TH_H), (w, TH_BEND), (w, 0.0)]
+        w, k = args.get("half", TH_HALF), args.get("k", 1.0)   # k: the chamfer's lean in a cut across the walls
+        return [(-w, 0.0), (-w, TH_BEND), (-w + TH_IN * k, TH_H), (w - TH_IN * k, TH_H), (w, TH_BEND), (w, 0.0)]
     return MOUTH_PROF if args.get("prof") == "mouth" else PROF
 
 
@@ -714,6 +714,23 @@ def cor_arch_strip(args, layout):
         fr = G.Frame((0.0, 0.0, FLOOR), (0, 1, 0), (0, 0, 1), n)
         out.append(G.band(fr, a, b, 0.13, 0.138, 0.0, edges))
     return [P("strip", M(*out), "int_cyan")]
+
+
+def th_arch(args, layout):
+    """rebuild D: the throat's arch at its roof line in the corridors' arch style (cor_arch's band, stepped rim and
+    cyan strips), over the ceiling and both chamfers only, so the vents' plain walls below stay clear; args half (the
+    walls' half width in the cut across the throat's axis) and k (the chamfer's lean in that cut)."""
+    prof, i = _prof({**args, "prof": "throat"}), 0.18
+    edges = (1, 2, 3)
+    inner, outer, rim = G.inset(prof, i), G.inset(prof, -0.03), G.inset(prof, i - 0.065)
+    a, b = G.inset(prof, i - 0.045), G.inset(prof, i - 0.02)
+    arch, lip, strip = [], [], []
+    for n in ((-1, 0, 0), (1, 0, 0)):
+        fr = G.Frame((0.0, 0.0, FLOOR), (0, 1, 0), (0, 0, 1), n)
+        arch.append(G.band(fr, inner, outer, 0.0, 0.1, 0.03, edges))
+        lip.append(G.band(fr, inner, rim, 0.1, 0.13, 0.012, edges))
+        strip.append(G.band(fr, a, b, 0.13, 0.138, 0.0, edges))
+    return [P("arch", M(*arch), "int_silver_c"), P("rim", M(*lip), "int_silver_a"), P("strip", M(*strip), "int_cyan")]
 
 
 # --- rebuild C: the throat (hall-relative plan coordinates, placed at the hall's centre) -------------------------
