@@ -17,11 +17,14 @@ mirrored in x, so it is one faceted shape with no local bump by construction:
     the stern     a flat face with the three nozzle pods (stand-ins) sticking out
     the belly     flat at BELLY under every room's slab, rising toward every edge
 then the mouth recess (and, in a window variant, the tip rooms' window sectors) cut away and coplanar facets merged.
+Variants E-G (the arrowhead, 2026-10-22): the tip rooms moved back into the rear corners (tip_c), the corridors
+straight boxes along the diagonal from the hall's wall to them, the tip at the rear corner (tip_y), the stern moved
+back (stern_y) so the top view's proportions approach the 2D's; the checks, legs and ghosts follow the rooms.
 Every room's outer surface (ship.toml: the clear sizes plus the walls, the roofs and the slabs) is sampled and must
 lie inside the hull with at least SKIN of hull around it; the mouth's own opening is the only exception.
 
     blender -b --factory-startup --python ship_hull_blockout.py -- --out <dir> [--variants A,B,C,D]
-            [--crops <dir>] [--hero <jpg>]
+            [--crops <dir>] [--hero <jpg>] [--no-render]
 
 Writes <out>/sheet.png (the 2D's turnaround crops and hero, then one row per variant: front, side, back, top, hero
 in flat grey, the variant's numbers on the row), <out>/ghost.png (each variant's top and front with the rooms as a
@@ -85,7 +88,36 @@ VARIANTS = {   # half span, tip height, the tip rooms' windows
     "B": {"half": 15.0, "tip_h": 3.15, "window": False},
     "C": {"half": 16.0, "tip_h": 3.2, "window": False},
     "D": {"half": 15.0, "tip_h": 1.2, "window": True},
+    # The arrowhead (2026-10-22): the tip rooms moved back into the rear corners (the hall stays at the centre), the
+    # corridors run straight along the diagonal from the hall's wall to them, the lead edge runs straight from the
+    # nose to a tip at the rear corner and the trail edge near-straight from the tip in to a stern moved back.
+    # Optional keys: tip_c the tip rooms' plan centre (x, y), tip_y the tip's plan y (else through LEAD_PIVOT),
+    # nose_y the nose edge's y, stern_y the stern face's y (the stern block, the spine's rear and the pods move with
+    # it), trail (x, h) the trail edge's stern corner.
+    "E": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 2.5), "tip_y": 4.4, "nose_y": -7.1,
+          "stern_y": 8.8, "trail": (4.4, 2.6)},
+    "F": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
+          "stern_y": 10.2, "trail": (4.4, 2.6)},
+    "G": {"half": 13.75, "tip_h": 3.3, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.4, "nose_y": -8.6,
+          "stern_y": 10.2, "trail": (4.4, 2.6)},
 }
+
+
+def tip_c(var):
+    return var.get("tip_c", (TIP_X, 0.0))
+
+
+def stern_shift(var):
+    return var.get("stern_y", STERN_Y) - STERN_Y
+
+
+def corridor_frame(var):
+    """The corridor's axis from the hall's centre to the east tip room's: (unit along, unit across, s0, s1), the box
+    running from s0 (inside the hall's wall) to s1 (inside the tip room's wall), as COR_X does on the x axis."""
+    cx, cy = tip_c(var)
+    d = math.hypot(cx, cy)
+    u = (cx / d, cy / d)
+    return u, (-u[1], u[0]), COR_X[0], d - (TIP_X - COR_X[1])
 BG = np.array([0.05, 0.07, 0.1, 1.0], dtype=np.float32)
 
 
@@ -117,19 +149,28 @@ def ring(cx, cy, r, z, n=16, a0=0.0, a1=360.0):
 
 def design_points(var):
     half, tip_h = var["half"], var["tip_h"]
-    tip = (half, LEAD_PIVOT[1] + LEAD_SLOPE * (half - LEAD_PIVOT[0]), tip_h)
-    pts = [(SPINE_X, y, z) for y, z in SPINE] + [NOSE, tip, TRAIL_END]
-    pts += [(x, STERN_Y, z) for x, z in STERN]
-    pts += ring(0.0, 0.0, HALL_R + 0.3, BELLY) + ring(TIP_X, 0.0, TIP_R + 0.25, BELLY)
+    tip_y = var.get("tip_y", LEAD_PIVOT[1] + LEAD_SLOPE * (half - LEAD_PIVOT[0]))
+    tip = (half, tip_y, tip_h)
+    ds = stern_shift(var)
+    spine = SPINE[:-1] + [(SPINE[-1][0] + ds, SPINE[-1][1])]
+    tx, th = var.get("trail", (TRAIL_END[0], TRAIL_END[2]))
+    pts = [(SPINE_X, y, z) for y, z in spine] + [(NOSE[0], var.get("nose_y", NOSE[1]), NOSE[2]), tip,
+                                                 (tx, TRAIL_END[1] + ds, th)]
+    pts += [(x, STERN_Y + ds, z) for x, z in STERN]
+    cx, cy = tip_c(var)
+    pts += ring(0.0, 0.0, HALL_R + 0.3, BELLY) + ring(cx, cy, TIP_R + 0.25, BELLY)
     pts += [(MOUTH_X + WALL + 0.3, MOUTH_Y - 0.2, BELLY)]
     if var["window"]:   # the room's cover: the wing steps down beyond it to a tip under the sill
         pts += ring(TIP_X, 0.0, TIP_R + 0.25, TIP_RIM + 0.25, a0=-90.0, a1=90.0)
     return mirrored([p for p in pts if p[0] >= -1e-6]), tip
 
 
-def interior_points():
-    """(what, plan point) of every room's outer surface: walls, ceilings, crowns and slab bottoms."""
+def interior_points(var):
+    """(what, plan point) of every room's outer surface: walls, ceilings, crowns and slab bottoms; the tip rooms and
+    the corridors where the variant puts them."""
     pts = []
+    tcx, tcy = tip_c(var)
+    u, n, s0, s1 = corridor_frame(var)
     for d in range(0, 360, 5):
         c, s = math.cos(math.radians(d)), math.sin(math.radians(d))
         x, y = HALL_R * c, HALL_R * s
@@ -145,22 +186,23 @@ def interior_points():
             for h in (SLAB, MOUTH_TOP + ROOF):
                 pts.append(("mouth", (x, y, h)))
     for side in (-1, 1):
-        x = COR_X[0]
-        while x <= COR_X[1] + 1e-6:
-            for y in (-COR_Y, COR_Y):
+        s = s0
+        while s <= s1 + 1e-6:
+            for w in (-COR_Y, COR_Y):
                 for h in (SLAB, 1.7, COR_TOP):
-                    pts.append(("corridor", (side * x, y, h)))
-            pts.append(("corridor roof", (side * x, 0.0, COR_TOP)))
-            x += 0.3
+                    pts.append(("corridor", (side * (s * u[0] + w * n[0]), s * u[1] + w * n[1], h)))
+            for w in (-COR_Y, 0.0, COR_Y):
+                pts.append(("corridor roof", (side * (s * u[0] + w * n[0]), s * u[1] + w * n[1], COR_TOP)))
+            s += 0.3
         for d in range(0, 360, 5):
             c, s = math.cos(math.radians(d)), math.sin(math.radians(d))
             for h in (SLAB, SILL, HEAD, TIP_RIM):
-                pts.append(("tip wall", (side * (TIP_X + TIP_R * c), TIP_R * s, h)))
+                pts.append(("tip wall", (side * (tcx + TIP_R * c), tcy + TIP_R * s, h)))
             for rr in (0.6, 1.2, 1.8):
-                pts.append(("tip roof", (side * (TIP_X + rr * c), rr * s,
+                pts.append(("tip roof", (side * (tcx + rr * c), tcy + rr * s,
                                          TIP_APEX - (TIP_APEX - TIP_RIM) * rr / TIP_R)))
-                pts.append(("tip slab", (side * (TIP_X + rr * c), rr * s, SLAB)))
-        pts.append(("tip crown", (side * TIP_X, 0.0, TIP_APEX)))
+                pts.append(("tip slab", (side * (tcx + rr * c), tcy + rr * s, SLAB)))
+        pts.append(("tip crown", (side * tcx, tcy, TIP_APEX)))
     return pts
 
 
@@ -292,16 +334,16 @@ def vertical(bvh, x, y):
 
 def thickness_at(bvh, x):
     best = 0.0
-    for k in range(-500, 501):
+    for k in range(-700, 701):
         tb = vertical(bvh, x, k * 0.02)
         if tb:
             best = max(best, tb[0] - tb[1])
     return best
 
 
-def measure(hull, bvh, details):
+def measure(hull, bvh, details, var):
     bad, least = [], 9.0
-    for what, (x, y, h) in interior_points():
+    for what, (x, y, h) in interior_points(var):
         p = Vector(bl((x, y, h)))
         d = bvh.find_nearest(p)[3]
         ins = inside(bvh, p)
@@ -331,7 +373,10 @@ def measure(hull, bvh, details):
 def details(name, var, bvh, coll, m_dark, m_glass, m_ramp):
     obs = []
     n = 12
+    ds = stern_shift(var)
+    tcx, tcy = tip_c(var)
     for k, (x, y, h, r, ln) in enumerate(NOZZLES):
+        y += ds
         ring_ = [(x + r * math.cos(2 * math.pi * a / n + math.pi / n), h + r * math.sin(2 * math.pi * a / n + math.pi / n))
                  for a in range(n)]
         v = [(px, y + t, pz) for t in (0.0, ln) for px, pz in ring_]
@@ -367,8 +412,12 @@ def details(name, var, bvh, coll, m_dark, m_glass, m_ramp):
     f = [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
     obs.append(new_obj(f"{name}_ramp", bm_from(v, f), m_ramp, coll))
     for lx, ly in LEGS:
+        if lx > 10:   # the wing leg: outboard of the tip room, level with it
+            lx, ly = min(tcx + (lx - TIP_X), var["half"] - 2.4), tcy + ly
+        elif ly > 0:  # the rear leg moves back with the stern
+            ly += ds
         for side in (-1, 1):
-            x = side * min(lx, var["half"] - 2.4) if lx > 10 else side * lx
+            x = side * lx
             tb = vertical(bvh, x, ly)
             if not tb or tb[1] < 0.45:
                 continue
@@ -387,32 +436,34 @@ def details(name, var, bvh, coll, m_dark, m_glass, m_ramp):
     return obs
 
 
-def ghost_rooms(coll, m):
-    def cyl(name, cx, r, h0, h1, n=32):
-        v = [(cx + r * math.cos(2 * math.pi * k / n), r * math.sin(2 * math.pi * k / n), h) for h in (h0, h1)
+def ghost_rooms(name, var, coll, m):
+    def cyl(gname, cx, cy, r, h0, h1, n=32):
+        v = [(cx + r * math.cos(2 * math.pi * k / n), cy + r * math.sin(2 * math.pi * k / n), h) for h in (h0, h1)
              for k in range(n)]
         f = [tuple(range(n)), tuple(range(2 * n - 1, n - 1, -1))] + [(k, (k + 1) % n, n + (k + 1) % n, n + k)
                                                                      for k in range(n)]
-        new_obj(name, bm_from(v, f), m, coll)
-    cyl("g_hall", 0.0, HALL_R, SLAB, HALL_APEX)
-    new_obj("g_mouth", bm_from(*prism([(-MOUTH_X - WALL, MOUTH_Y), (MOUTH_X + WALL, MOUTH_Y),
-                                        (MOUTH_X + WALL, -3.7), (-MOUTH_X - WALL, -3.7)], SLAB, MOUTH_TOP + ROOF)),
-            m, coll)
+        new_obj(gname, bm_from(v, f), m, coll)
+    cyl(f"g{name}_hall", 0.0, 0.0, HALL_R, SLAB, HALL_APEX)
+    new_obj(f"g{name}_mouth", bm_from(*prism([(-MOUTH_X - WALL, MOUTH_Y), (MOUTH_X + WALL, MOUTH_Y),
+                                               (MOUTH_X + WALL, -3.7), (-MOUTH_X - WALL, -3.7)], SLAB,
+                                              MOUTH_TOP + ROOF)), m, coll)
+    tcx, tcy = tip_c(var)
+    u, n, s0, s1 = corridor_frame(var)
     for side in (-1, 1):
-        x0, x1 = sorted((side * COR_X[0], side * COR_X[1]))
-        new_obj(f"g_cor{side}", bm_from(*prism([(x0, -COR_Y), (x1, -COR_Y), (x1, COR_Y), (x0, COR_Y)], SLAB,
-                                                COR_TOP)), m, coll)
-        cyl(f"g_tip{side}", side * TIP_X, TIP_R, SLAB, TIP_APEX)
+        box = [(side * (s * u[0] + w * n[0]), s * u[1] + w * n[1]) for s, w in
+               ((s0, -COR_Y), (s1, -COR_Y), (s1, COR_Y), (s0, COR_Y))]
+        new_obj(f"g{name}_cor{side}", bm_from(*prism(box, SLAB, COR_TOP)), m, coll)
+        cyl(f"g{name}_tip{side}", side * tcx, tcy, TIP_R, SLAB, TIP_APEX)
 
 
 VIEWS = {   # name: (location, rotation, ortho scale or None for perspective) in Blender coordinates (y north)
     "front": ((0.0, 60.0, 2.8), (math.pi / 2, 0.0, math.pi), 34.0),
-    "side": ((-60.0, -0.25, 2.8), (math.pi / 2, 0.0, -math.pi / 2), 18.0),
+    "side": ((-60.0, -1.5, 2.8), (math.pi / 2, 0.0, -math.pi / 2), 23.0),
     "back": ((0.0, -60.0, 2.8), (math.pi / 2, 0.0, 0.0), 34.0),
-    "top": ((0.0, -0.25, 60.0), (0.0, 0.0, 0.0), 34.0),
-    "hero": ((-21.0, 25.0, 11.0), None, None),
+    "top": ((0.0, -1.5, 60.0), (0.0, 0.0, 0.0), 40.0),
+    "hero": ((-24.0, 28.0, 13.0), None, None),
 }
-HERO_AIM = Vector((-1.2, -1.0, 1.6))
+HERO_AIM = Vector((-1.2, -2.0, 1.6))
 CROPS = {"front": "turnaround_1_front.png", "side": "turnaround_2_side.png", "back": "turnaround_3_back.png",
          "top": "turnaround_4_top.png"}
 
@@ -524,9 +575,13 @@ def main():
     cam.data.clip_end = 300.0
     scene.collection.objects.link(cam)
     scene.camera = cam
-    ghost = bpy.data.collections.new("rooms")
-    scene.collection.children.link(ghost)
-    ghost_rooms(ghost, mat("room", (1.0, 1.0, 1.0)))
+    m_room = mat("room", (1.0, 1.0, 1.0))
+    ghost = {}
+    for name in names:   # each variant's rooms where it puts them
+        ghost[name] = bpy.data.collections.new(f"rooms_{name}")
+        scene.collection.children.link(ghost[name])
+        ghost_rooms(name, VARIANTS[name], ghost[name], m_room)
+        ghost[name].hide_render = True
     cut_coll = bpy.data.collections.new("cutters")
     scene.collection.children.link(cut_coll)
     cut_coll.hide_render = True
@@ -542,7 +597,7 @@ def main():
         hull, tip = hull_object(f"hull_{name}", var, coll, grey, ramp, cut_coll)
         bvh = bvh_of(hull)
         obs = details(name, var, bvh, coll, dark, glass, ramp)
-        meas = measure(hull, bvh, [o for o in obs if "ramp" not in o.name])
+        meas = measure(hull, bvh, [o for o in obs if "ramp" not in o.name], var)
         meas["tip"] = [round(v, 3) for v in tip]
         meas["variant"] = var
         report[name] = meas
@@ -550,6 +605,9 @@ def main():
         print(f"BLOCKOUT {name}: {len(meas['pokes'])} interior points with less than {SKIN} m of skin"
               + (f", e.g. {meas['pokes'][:6]}" if meas["pokes"] else ""))
         print(f"BLOCKOUT {name} measures: " + json.dumps({k: v for k, v in meas.items() if k != "pokes"}))
+    if "--no-render" in sys.argv:   # the numbers alone (a quick fit check)
+        (out / "report.json").write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8", newline="\n")
+        return
     order = ("front", "side", "back", "top", "hero")
     W, H = 320, 180
     shots, ghosts = {}, {}
@@ -557,7 +615,6 @@ def main():
         for c in colls.values():
             c.hide_render = True
         colls[name].hide_render = False
-        ghost.hide_render = True
         shots[name] = {}
         for view in order:
             set_view(cam, view)
@@ -568,16 +625,16 @@ def main():
         for view in ("top", "front"):
             set_view(cam, view)
             scene.render.resolution_x, scene.render.resolution_y = (640, 360)
-            colls[name].hide_render, ghost.hide_render = False, True
+            colls[name].hide_render, ghost[name].hide_render = False, True
             render(scene, cells / f"{name}_{view}_big.png")
             solid = over_bg(pixels(cells / f"{name}_{view}_big.png", 640, 360))
-            colls[name].hide_render, ghost.hide_render = True, False
+            colls[name].hide_render, ghost[name].hide_render = True, False
             render(scene, cells / "_mask.png")
             mask = pixels(cells / "_mask.png", 640, 360)[..., 3:4] * 0.3
             g = solid * (1 - mask) + np.array([1.0, 0.45, 0.1, 1.0], dtype=np.float32) * mask
             g[..., 3] = 1.0
             ghosts[name][view] = g
-        colls[name].hide_render, ghost.hide_render = True, True
+        colls[name].hide_render, ghost[name].hide_render = True, True
     lsc = label_scene()
     lab = cells / "_label.png"
     top_down = [label(lsc, "2D turnaround (approved): front, side, back, top; hero", 5 * W, 28, lab),
@@ -585,7 +642,13 @@ def main():
     gl = []
     for name in names:
         m = report[name]
-        text = (f"{name}{'  (tip windows)' if VARIANTS[name]['window'] else ''}   span {m['span_m']:.1f} m   "
+        var = VARIANTS[name]
+        tag = "  (tip windows)" if var["window"] else ""
+        if "tip_c" in var:
+            tag += "  tip rooms at ({:.1f}, {:.1f})".format(*var["tip_c"])
+        elif len(names) > 1 and any("tip_c" in VARIANTS[o] for o in names):
+            tag += "  (last round, reference)"
+        text = (f"{name}{tag}   span {m['span_m']:.1f} m   "
                 f"length {m['length_m']:.1f} m   height {m['height_m']:.2f} m   "
                 f"wing 1 m from tip {m['wing_thickness_1m_from_tip_m']:.2f} m   least skin {m['least_skin_m']:.2f} m"
                 f"   pokes {len(m['pokes'])}")
