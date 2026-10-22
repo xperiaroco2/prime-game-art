@@ -59,16 +59,22 @@ def run(args: argparse.Namespace) -> int:
     plan.write_text(ship_layout.ascii_plan(layout), encoding="utf-8", newline="\n")
     common.ok(f"ship: footprint, corridors, stations, hull, head room and the one entrance hold; plan {plan.as_posix()}")
     out = (args.out or raw(layout) / "pieces").resolve()
-    code = 0
+    # Each stage stops the run on a failure: a later stage would work on pieces just reported bad.
     if args.build:
-        code |= build(layout, out, [s for s in args.only.split(",") if s])
+        code = build(layout, out, [s for s in args.only.split(",") if s])
+        if code:
+            return code
     if args.godot or args.walk:
-        code |= godot_check(layout, out, args.walk.resolve() if args.walk else common.OUT / "ship" / "godot")
-    if args.walk and not args.no_video and code == 0:
-        code |= walk_video(layout, out, args.walk.resolve())
+        code = godot_check(layout, out, args.walk.resolve() if args.walk else common.OUT / "ship" / "godot")
+        if code:
+            return code
+    if args.walk and not args.no_video:
+        code = walk_video(layout, out, args.walk.resolve())
+        if code:
+            return code
     if args.shoot:
-        code |= shoot(layout, out, args.shoot.resolve())
-    return code
+        return shoot(layout, out, args.shoot.resolve())
+    return 0
 
 
 # --- build ---------------------------------------------------------------------------------------------------------
@@ -158,6 +164,7 @@ def godot_check(layout: dict, out: Path, folder: Path) -> int:
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "check_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "check.json").unlink(missing_ok=True)
     code, output = _godot.godot(["--headless", "--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s",
@@ -241,6 +248,7 @@ def shoot(layout: dict, out: Path, folder: Path) -> int:
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "shoot_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "shots.json").unlink(missing_ok=True)
     code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
@@ -285,6 +293,7 @@ def walk_video(layout: dict, out: Path, folder: Path) -> int:
     shutil.rmtree(work / "frames", ignore_errors=True)
     work.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "video_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
                                   path.as_posix(), work.as_posix()], tuple(video["size"]), VIDEO_TIMEOUT)

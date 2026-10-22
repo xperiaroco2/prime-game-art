@@ -86,14 +86,18 @@ def extent(layout: dict[str, Any]) -> tuple[float, float]:
     return max(xs) - min(xs), max(ys) - min(ys)
 
 
+TOUCH_M = 0.05  # how far a linked room's edge must reach into the other
+
+
 def _touch(a: dict[str, Any], b: dict[str, Any]) -> bool:
-    """Two linked rooms share floor: some point of one's edge lies inside the other (a rect's short end in a circle)."""
+    """Two linked rooms share floor: some point of one's edge lies at least TOUCH_M inside the other (a rect's short end
+    in a circle). The rooms overlap by 0.1 m by design; the margin keeps the test off floating-point luck."""
     for room, other in ((a, b), (b, a)):
         if room["shape"] != "rect":
             continue
         (x0, x1), (y0, y1) = room["x"], room["y"]
         for p in ((x0, (y0 + y1) / 2), (x1, (y0 + y1) / 2), ((x0 + x1) / 2, y0), ((x0 + x1) / 2, y1)):
-            if room_margin(other, p) > 0.1:
+            if room_margin(other, p) >= TOUCH_M:
                 return True
     return False
 
@@ -122,7 +126,7 @@ def check(layout: dict[str, Any]) -> list[str]:
     for r in layout["rooms"]:
         if r["clear_h"] < need:
             problems.append(f"{r['id']}: clear height {r['clear_h']:g} m < {need:g} m (capsule and margin)")
-        if r["shape"] == "circle" and min(r["radius"], 99) * 2 < 2 * player["capsule_radius_m"] + 2.0:
+        if r["shape"] == "circle" and r["radius"] * 2 < 2 * player["capsule_radius_m"] + 2.0:
             problems.append(f"{r['id']}: too small to walk round in")
     # one entrance: exactly one room with an exit, the ramp's hinge on its north edge; every room reachable
     exits = [r for r in layout["rooms"] if r.get("exit")]

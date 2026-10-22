@@ -39,7 +39,7 @@ class ShipExteriorTest(unittest.TestCase):
     def test_faces_point_outward_after_the_mirror(self) -> None:
         """The harness writes (x, -y, h): after it, every face of a nozzle pod's under-skin points away from its axis
         (the pod's barrel runs along local y, its axis at x 0, h 0)."""
-        parts = H.MODULES[-1].nozzle_pod({"r": 1.05, "length": 3.6}, LAYOUT)
+        parts = next(m for m in H.MODULES if hasattr(m, "nozzle_pod")).nozzle_pod({"r": 1.05, "length": 3.6}, LAYOUT)
         skin = [p for p in parts if p["name"].endswith("_seam")][0]
         verts = [(x, -y, h) for x, y, h in skin["verts"]]
         for face in skin["faces"]:

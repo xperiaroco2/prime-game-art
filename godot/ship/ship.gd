@@ -208,7 +208,7 @@ func _walk(r: float, h: float, points: Array) -> Dictionary:
 
 # --- pictures ------------------------------------------------------------------------------------------------------
 ## The night: the star sky (night_sky.gdshader), the look of godot/showroom/look_presets.json's High preset (AgX,
-## SSAO 0.6 / 1.5) at exposure 1.1 for a night exterior, glow for the emissive strips, SSIL, a thin blue distance fog,
+## SSAO 0.6 / 1.5) at ship.toml [light] exposure (1.0) for a night exterior, glow for the emissive strips, SSIL, a thin blue distance fog,
 ## the moonlight and the layout's lamps.
 func _environment() -> void:
 	var light: Dictionary = _req["light"]
@@ -473,7 +473,8 @@ func _video() -> void:
 		var t: float = minf(f / fps, float(times[-1]))
 		while k < keys.size() - 2 and t > float(times[k + 1]):
 			k += 1
-		var w: float = (t - float(times[k])) / (float(times[k + 1]) - float(times[k]))
+		var gap: float = float(times[k + 1]) - float(times[k])
+		var w: float = (t - float(times[k])) / gap if gap > 0.0 else 1.0
 		_camera.look_at_from_position(_key(keys, times, k, w, 0), _key(keys, times, k, w, 1), UP)
 		await RenderingServer.frame_post_draw
 		var image: Image = root.get_texture().get_image()
@@ -490,6 +491,8 @@ func _key(keys: Array, times: Array, k: int, w: float, j: int) -> Vector3:
 	var a: Vector3 = _v(keys[k][j])
 	var b: Vector3 = _v(keys[k + 1][j])
 	var span: float = float(times[k + 1]) - float(times[k])
+	if span <= 0.0:  # two keys at one time (a 0 s key): no curve to follow
+		return b
 	var pre: Vector3 = _v(keys[k - 1][j]) if k > 0 else a
 	var pre_t: float = float(times[k - 1]) - float(times[k]) if k > 0 else -span
 	var post: Vector3 = _v(keys[k + 2][j]) if k + 2 < keys.size() else b
