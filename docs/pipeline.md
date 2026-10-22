@@ -106,6 +106,25 @@ runs separately. Output: `<raw>/research/2026-10-22-roster/design/pilot3d/static
   toward white: the same albedo reads pale. Step 2a's palette stops, taken from the 2D's brighter pixels, also gave a
   less saturated teal (0.47) than the 2D's. `strip.png` measures AgX 0.65 with the environment's saturation 1.35
   closest to the 2D for both heads; it is a look change for the engineer (`look_presets.json` is untouched).
+- **Round 2 (static_v2, 2026-10-22; output `<raw>/.../pilot3d/static_v2/<head>/`, `static/` kept as it was).** The
+  engineer's close-ups showed grey spiky streaks and a bright jagged line along the axolotl's lip edge and sharp
+  streaks and a notch at the chameleon's lid rim. The `debug_mode` views (`docs/godot.md`) put the streaks in the
+  geometry: the plain decimation left long sliver triangles along the lips and rims, whose smooth vertex normals
+  fan out (the normal map hides them only partly, and a viewer without the bake's tangents not at all). Fixes at the
+  source: the decimation keeps more of the budget on the lips and the lid rims (a "keep" vertex group, weight
+  `1 - 0.9 * keep`; Blender's collapse adds `length * (2 - w1 - w2) * factor` to an edge's cost and a weight of 0
+  all but freezes it, so the factor is searched per head for about 2.4 times the plain decimation's vertex share
+  there, `build.json` `keep_search`); the bakes' cage and ray shorter (0.008 / 0.03: #288's reached across the lip
+  slit); kept denser, the dense original's own jagged lip-skin crease showed more, so the lips (only) are relaxed
+  locally (a weighted Smooth, 0.6 x 5) and their normal-map detail flattened; relaxing the lid rims too made the
+  chameleon's lids read heavier in the whole-head gate, so the rims keep only the density and a rougher mask;
+  zero-area triangles dissolved; the GLBs carry their tangents (`export_tangents`, so a glTF viewer shades
+  with the bake's MikkTSpace frame; `alien_static_run.py` `fix_tangents` repairs the few zero tangents a no-area UV
+  triangle gets); the lid rims rougher in the mask. New map: `<head>_detail.png` (cavity and inside occlusion baked
+  from the dense original, the flush region, the limbal ring). The albedo is downsampled in linear light; the sclera
+  cleaned further toward white. Review: `$PYTHON_BIN tools/blender/alien_static_review.py <seams|grid|ladder|gate>`
+  (seams before and after under the full material and the three debug views, the "alive" levers' variant grid, the
+  cumulative ladder A..F with GPU ms, the whole-head gate against #288).
 
 ## Since 2026-10-03: the character base and who decides
 
