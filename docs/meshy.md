@@ -640,3 +640,21 @@ shoulders, shorter legs, separate eyeballs) and V3 (V1 with eyes and mouth paint
 says "symmetrical"). `texture_prompt` is unset. The prompts are 306 to 318 characters, under the 800 limit, so none
 was shortened. Estimate 360 credits, cap 360: the engineer approved "about 360 credits" (prime-game#165), and a
 failed task costs nothing, so the cap stops the run only when Meshy charges more than the estimate.
+
+## Batch 2026-10-22-alien-t1-sockets-3d (art #196, test T1: a socketed head and its separate pieces)
+
+The chameleon man's head with recesses (a mouth dish, two empty round eye sockets, no brows) as `head`,
+`multi_image_to_3d` on `meshy-7.1` as the pilot (2k geometry, textured 4k with PBR, lighting removed, remeshed to
+100,000 triangles, the dense original kept), from the front, side and back cut out of the OpenAI turnaround
+`ch_sockets` (batch `2026-10-22-alien-t1-sockets-2d`, `docs/openai-images.md`); and the eight face pieces that seat
+into the recesses, one `image_to_3d` each from that batch's product images, remeshed to 30,000 triangles: the four
+mouths on `meshy-7.1` at standard geometry, textured (30 each), the three eyes with lids and the brow on
+`meshy-6-lite`, textured at 2k (15 each). The engineer's request: art#196 comment 6344356802, cap 260. **215 credits**
+(35 + 4 x 30 + 4 x 15, as estimated; balance 2890 before). The first run stopped at the lite items: Meshy answers
+HTTP 400 "remove_lighting is only supported for meshy-6" to a `meshy-6-lite` image-to-3D that sends the key at all,
+even false (no credits charged); the batch check now refuses it (above, the parameters list), and the batch gives
+`remove_lighting` to the mouths per item. Head about 3 minutes, a 7.1 piece about 2, a lite piece about 1.5. The head
+kept both sockets and the dish; the 7.1 mouths keep the rolled lips and the O's hole; the lite eyes keep a lid shell
+over a ball but with a soft, faceted eyeball texture, and the closed eye comes out wrinkled. Every piece comes back
+normalised to about 1.9 units on its long side, so step 2 scales each into its recess. The sheet and the verdict:
+`D:/prime-art-raw/research/2026-10-22-roster/design/t1/` (`step1_sheet.jpg`, `step1_handoff.md`).
