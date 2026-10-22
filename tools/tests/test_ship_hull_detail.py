@@ -84,6 +84,27 @@ class ShipHullDetailTest(unittest.TestCase):
         top = sum(S.area(p) for p, _n, kind in surf if kind == "top")
         self.assertAlmostEqual(top, whole, delta=1e-6)
 
+    def test_the_outside_is_all_silver_and_every_strip_plated(self) -> None:
+        # the engineer, 2026-10-22: the belly's leg_metal plates and the open slivers (the dark under-skin through
+        # them) read as black patches and streaks; the top and the belly are in v1's silvers only, and every piece of
+        # every facet is a plate (a sliver laid flush), so no outer facet shows the under-skin
+        silvers = {"hull_silver", "ext_silver_b", "ext_silver_c"}
+        for kind in ("top", "belly"):
+            self.assertLessEqual(set(J.MATS[kind]), silvers, kind)
+            mats = {p["mat"] for p in J.j_skin({"part": kind}, LAYOUT) if not p["name"].endswith("_seam")}
+            self.assertLessEqual(mats, silvers, kind)
+        slivers = 0
+        for poly, n, kind in S.surface():
+            if kind not in ("top", "belly"):
+                continue
+            qs = J.plates(poly, n)
+            self.assertAlmostEqual(sum(S.area(q) for q in qs), S.area(poly), delta=1e-4 + 1e-3 * S.area(poly))
+            for q in qs:
+                if J.width(q) <= J.SLIVER:   # a sliver is laid flush: its face is its outline, no inset to flip
+                    slivers += 1
+                    self.assertEqual(J.lay(q)[0][:len(q)], [tuple(x) for x in q])
+        self.assertGreater(slivers, 0)   # the cut makes slivers on J: they are laid, not left open
+
     def test_the_jamb_caps(self) -> None:
         caps = J.jamb_caps()
         self.assertEqual(len(caps), 8)
