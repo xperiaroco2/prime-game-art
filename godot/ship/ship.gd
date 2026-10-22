@@ -3,8 +3,8 @@ extends SceneTree
 ## placements (pieces imported with `-col` meshes carry their trimesh colliders), then either checks it headless or
 ## shoots it at night in an off-screen window. The EXTERIOR lane owns this folder after the foundation step.
 ##   godot --headless --path godot -s res://ship/ship.gd -- <request.json> <out>          (mode "check")
-##   PRIME_WINDOW=1920x1080 godot --path godot --position 30000,30000 --resolution 1x1 -s res://ship/ship.gd
-##       -- <request.json> <out>                                                          (mode "shoot")
+##   shoot: started by the runner through `_godot.window()` (one off-screen pixel; CLAUDE.md, #214), never by hand:
+##       PRIME_WINDOW=1920x1080 godot <_godot.window() flags> -s res://ship/ship.gd -- <request.json> <out>  (mode "shoot")
 ## request.json (tools/runner/commands/ship.py): {"mode", "pieces": {id: res}, "place": [[id, [x, h, y], yaw]],
 ##   "collide": [id], "bounds": {id: {"min", "max"}}, "walk": {"r", "h", "points"}, "light": {"moon_dir_deg",
 ##   "moon_energy", "lamps": [[x, h, y, energy, range, r, g, b]]}, "views": [[name, title, eye, look, fov]],
