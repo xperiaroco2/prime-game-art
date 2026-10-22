@@ -243,11 +243,11 @@ sky_horizon = 5.0                              # the sky's horizon colour x this
 # lets the lamps light the silver (at 0.7 it only mirrored the dark rooms); the lamp ring and lamps light nothing,
 # so the hall's centre disc stays dark metal.
 [light.mats]
-int_cyan = {c = [0.05, 0.8, 1.0], e = 0.05, l = 0.3}
-int_amber = {c = [1.0, 0.42, 0.06], e = 0.08, l = 5.0, rr = 0.5}
-int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.08, l = 5.0, rr = 0.5}     # the hall's floor ring (its own lights)
+int_cyan = {c = [0.05, 0.8, 1.0], e = 0.05, l = 0.04}               # inside-3 (grid_in6 H): 0.3 washed the walls teal once the lights stood on their strips
+int_amber = {c = [1.0, 0.42, 0.06], e = 0.14, l = 2.0, rr = 0.5}    # e 0.14: the strips pass the glow threshold, still amber
+int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
-int_halo = {c = [1.0, 0.45, 0.1], e = 0.25, l = 0.0}               # the floor strips' frosted halo: glows, lights nothing
+int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
 int_plate = {v = 0.2, r = 0.45}
 int_grate = {v = 1.2, r = 0.1, m = 0.6}
 int_glass = {a = 0.05, r = -0.03}

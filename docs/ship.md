@@ -287,6 +287,24 @@ its 2D sheet; script `<raw>/ship/v1/logs/in_grid.py`) found the causes and the n
 `ship.gd` `_look` applies `[light.mats]` (keys `v`, `r`, `m`, `c`, `e`, `a`, `l`, `rr`); a material without an entry keeps
 the join's `int_value`, `int_rough_add` and `emission_scale`.
 
+## Strip lights in place and the small details (inside lane, step 3)
+
+- **The warm spot on the hall's disc** was every amber strip's light in one place. `_dress` put each emissive cell's
+  omni light at its mesh's AABB through `mi.global_transform`, which here gave the piece's own frame, so all sixteen
+  floor arcs (and every corridor floor strip) lit from the hall's centre. `_placed` now composes the transform up the
+  parents: 122 cells, the 96 largest get a light, none within 2.2 m of the hall's centre. Every shoot writes
+  `lights.json` beside its shots (the cells' count, each light's position, energy, range and colour).
+- With the lights on their strips the old numbers washed the rooms teal and white; one grid
+  (`<raw>/ship/v1/grid_in6/grid.png`, script `<raw>/ship/v1/logs/in3_grid.py`, five views x six variants) picked
+  variant H, written as the interior materials' own numbers so the hull's strip lights keep theirs: `int_cyan` `l`
+  0.04, `int_amber` `e` 0.14 `l` 2.0 (the strips pass the glow threshold and stay amber), the hall ring's own
+  material `int_amber_ring` `e` 0.14 `l` 0.8 `rr` 0.3, `int_halo` `e` 0.5.
+- The details, each its own piece: `cup_a`..`cup_c` (16 oz, scale 1.25, crushed, lying), `spill_a` and `spill_c` (a
+  1.5 mm glossy film running from the mouth; each placed with its cup's position and yaw), `cable_coil` (3.5 turns of
+  blue cable and a plug, by the east corridor's south bay), `floor_patch_a`/`_b` (bolted repair plates on the hall's
+  rim floor) and `rim_bolts` (hex bolts down every rim plate's seam). The layout test keeps every cup, spill, coil
+  and patch outside a station's clearance + 0.4 m.
+
 ## Open problems (after step 1)
 
 - **The hull's thickness** (after the hull lane's step 1): the skin is now one continuous faceted surface (variant
