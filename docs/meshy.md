@@ -650,7 +650,7 @@ The chameleon man's head with recesses (a mouth dish, two empty round eye socket
 into the recesses, one `image_to_3d` each from that batch's product images, remeshed to 30,000 triangles: the four
 mouths on `meshy-7.1` at standard geometry, textured (30 each), the three eyes with lids and the brow on
 `meshy-6-lite`, textured at 2k (15 each). The engineer's request: art#196 comment 6344356802, cap 260. **215 credits**
-(35 + 4 x 30 + 4 x 15, as estimated; balance 2890 before). The first run stopped at the lite items: Meshy answers
+(35 + 4 x 30 + 4 x 15, as estimated; balance 2890 before, 2675 after). The first run stopped at the lite items: Meshy answers
 HTTP 400 "remove_lighting is only supported for meshy-6" to a `meshy-6-lite` image-to-3D that sends the key at all,
 even false (no credits charged); the batch check now refuses it (above, the parameters list), and the batch gives
 `remove_lighting` to the mouths per item. Head about 3 minutes, a 7.1 piece about 2, a lite piece about 1.5. The head
