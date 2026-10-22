@@ -276,3 +276,18 @@ reference carries the eyes, lids and lips well, but it also drags its head along
 mouth, m67 copied m5a's flat head, and the women all share one face. Ideas behind or beside the head (a streamer, a
 nape coil, brow fins) slid into hair (a ponytail, a bun, one crest). Images:
 `D:/prime-art-raw/2026-10-22-alien-roster-r5/`; JPEGs, overview and handoff: `.../design/r5/`.
+
+## Batch 2026-10-22-alien-roster-r6 (art #196, roster round 6, inner states)
+
+The engineer asked for aliens that differ inside too: a stoned, a sleepy, an angry and a scared one. **A**: seven
+kept heads re-expressed (h02 angry, h03 scared, m5a stoned, h08 sleepy, m65 paranoid, w45 irritated, w10a smitten),
+each an edit of the kept head's own raw PNG alone, no rf2, led by "keep this exact head, shape, features, colours,
+finish, framing and light; change ONLY the facial expression and what the lids, eyes, mouth and soft parts do".
+**B**: four new heads whose shape carries the state (m71 stoned, m72 sleepy, w71 angry, w72 scared), rf2 as the style
+reference only, round 4's lead, framing sentence and style tail. Medium, 1024x1280, n = 3; the batch file is
+generated from `D:/prime-art-raw/research/2026-10-22-roster/design/r6/concepts_r6.src.json`. 13 requests (two
+revised prompts, h02r and w71r, after the first look), $0.068 to $0.070 each; **$0.8931** of the $4 cap. An edit of
+the kept image alone keeps the head, colour, finish and framing every time; strong states read in one second, but
+the model only nudges a kept look unless the prompt asks for an extreme, and mixed states (offended, smitten) come out
+as the nearest simple one. Soft parts act best (limp whiskers, drooping gills, pinned ears, raised spines). Images:
+`D:/prime-art-raw/2026-10-22-alien-roster-r6/`; JPEGs, overview and handoff: `.../design/r6/`.
