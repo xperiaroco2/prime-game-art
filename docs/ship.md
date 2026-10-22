@@ -42,12 +42,12 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 
 | What | Number (ship.toml) | Why |
 |---|---|---|
-| Footprint | 26.46 x 13.9 m (the skin's swept tips at x +-13.23; ramp foot -7.0 to nozzle tips 6.9 y) | 5a: about 26 x 14 |
-| Deck | floor at h 1.0 on landing legs, slabs 0.25, walls 0.2 | the ramp meets the ground |
-| Hall | circle r 3.4 at (0, 0); 3.4 m to the ceiling's rim, 4.0 m to its apex (faceted, 16 sides) | console (0, 1) with room round it |
-| Mouth | x -1.3..1.3, y -4.6..-3.3, 2.6 m high | the only way in or out (5a's side hatch is dropped, see below) |
-| Ramp | 2.6 m wide, hinge (0, -4.6) at the deck, foot (0, -7.0) on the ground: 22.6 deg | north at the centre |
-| Corridors | y -1.25..1.25 (2.5 m), x 3.3..9.1 each side, 2.6 m high | 5a: about 2.5 m wide |
+| Footprint | 27.5 x 14.3 m (the lens tips' blades at x +-13.75, `span_max_m` 27.5; ramp foot -7.4 to nozzle tips 6.9 y) | 5a: about 26 x 14; manager update 2: the span up to about 27.5 |
+| Deck | floor at h 0.6 on landing legs (launch 3; was 1.0), slabs 0.25, walls 0.2 | the ramp meets the ground; a thinner hull |
+| Hall | circle r 3.4 at (0, 0); 3.2 m to the ceiling's rim, 3.8 m to its apex (faceted, 16 sides; launch 3, was 3.4 / 4.0) | console (0, 1) with room round it |
+| Mouth | x -1.3..1.3, y -4.6..-3.3, 2.4 m high | the only way in or out (5a's side hatch is dropped, see below) |
+| Ramp | 2.6 m wide, hinge (0, -4.6) at the deck, foot (0, -7.4) on the ground: 12.1 deg, a long plane | north at the centre |
+| Corridors | y -1.25..1.25 (2.5 m), x 3.3..9.1 each side, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a: about 2.5 m wide |
 | Tip rooms | circles r 2.05 at (+-10.75, 0); 2.8 m to the rim, 3.2 m apex; window +-65 deg outward, sill 0.5, head 2.4 | panel (-10.5, 0), renewer (12, 0) |
 | Stations (not built) | console (0, 1); vents (+-5, -1), sockets (+-8, -1) at the north corridor wall; panel (-10.5, 0); renewer (12, 0) | 5a |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
@@ -153,38 +153,36 @@ rings and the middle pod's housing, eight landing legs and twelve amber ground l
 and rocks. Every skin face is cut into plates of about 1.5 m, each with a 2.2 cm chamfer sinking 1.4 cm into a dark
 seam (real bevels, not a texture).
 
-### The hull skin (hull lane, step 1)
+### The hull skin (hull lane; launch 3: the lower deck and the lens tips)
 
-One continuous faceted surface from the centre to the tips (`ship_hull_skin.py`; the old drum, nose, wing, pod,
-blade, nozzle-mount and bubble builders were retired in step 2). The half-span is lofted through sections across x, each the
-same loop of 14 (y, h) points (lead edge, two upper-front slope points, the eave, two ridge points, the rear eave, two
-upper-rear points, trail edge, lower rear, two belly points, lower front), so the facets run as long creases from the
-body to the tips; past the tip room's centre (x 10.75) the tip fairing is a revolve whose +-90 deg profiles equal the
-loft's last section. The rooms give the inside: `clearance()` lists room points outside a section (the hall's wall at
-h 4.4, the corridors' top corners (1.45, 3.85), the tip room's wall top (r 2.25, 3.8) and dome), and the fast test
-keeps it empty for every variant.
+One continuous faceted surface from the centre to the tips (`ship_hull_skin.py`). The half-span is lofted through
+sections across x, each the same loop of 14 (y, h) points (lead edge, two upper-front slope points, the eave, two ridge
+points, the rear eave, two upper-rear points, trail edge, lower rear, two belly points, lower front), so the facets run
+as long creases from the body to the tips; past the tip room's centre (x 10.75) the tip fairing is a lens revolved
+round the room's centre whose +-90 deg profiles equal the loft's last section. The heights come from ship.toml (the
+skin and `ship_interior.py` read `[deck]` and the rooms). `clearance()` lists room points outside a section (the hall's
+wall top and dome, the corridors' chamfered top corners and slab, the tip room's wall top and crown) and `steep()` the
+outside faces within 25 deg of vertical (manager update 2: none); the fast tests keep both empty.
 
 The silhouette grid (`tools/blender/ship_hull_grid.py`, headless Workbench with the rooms as an orange ghost): the
-variants of `VARIANTS` in front, side, top and three-quarter views under the approved 2D and the Meshy silhouette
-reference (batch `2026-10-22-ship-hull-ref`, 20 credits, a multi-image-to-3D of turnaround.jpg's four views, scaled to
-a 26.5 m span; never shipped). Variant F was picked (`<raw>/ship/v1/grid/hull2/grid.png`, rows 2D, ref, B, D, E, F).
+variants in front, side, top and three-quarter views under the approved 2D and the Meshy silhouette reference (batch
+`2026-10-22-ship-hull-ref`, 20 credits, a multi-image-to-3D of turnaround.jpg's four views, scaled to the 27.5 m span;
+never shipped). Launch 3's grid: `<raw>/ship/v1/grid/hull31/grid.png` (rows 2D, ref, G, H, I, J); J is placed: the
+most swept tips (the turnaround top's) and the spine standing clearest over the wings from the front. The front of
+every variant is still a flat wide plate with the lens ends: the tip rooms (0.3 to 3.65 m) set the tips' depth.
 
-| What | Number (plan m), variant F | Why |
+| What | Number (plan m), variant J | Why |
 |---|---|---|
-| Lead edge | (1.5, -6.3) -> (4.0, -5.5) -> (8.0, -4.1) -> (10.75, -3.0); h 1.1 -> 1.2 at x 6 -> 1.38 | the blades well ahead of the corridor ridge |
-| Trail edge | (0, 5.0) -> (3.0, 5.15) -> (8.0, 5.0) -> (10.75, 4.9); the body's stern edge h 2.45 | the blades well behind it |
-| Swept tip | round the tip centre (dx, dy): (2.1, -2.2), (2.47, -0.6), (2.48, 5.9), (1.2, 5.4); edge h 1.38 (under the sill) | turnaround top's tips swept back, outside the window's 65 deg |
-| Ridge | spine h 6.05 over the hall's middle (x < 0.9), the hall's eave r 3.72 at h 4.75, the wing's eave 0.12 m outside the corridor walls at h 3.95 (4.75 at the hall), ridge 4.15, the tip fairing's eave (2.28, 4.02) and crown 4.42 | sloping down outward; the rooms inside |
-| Belly | keel h 0.35 under the hall and the mouth, 0.6 under the wings | the belly slopes up toward the edges |
-| Mouth | the opening's face cut between x -1.3 and 1.3 (h 0.95..3.65 at y -4.6) under a brow 0.55 m forward at h 3.92 | a notched recess in a low nose |
-| Window | the fairing's band r 2.41, h 1.5..3.4 within 65 deg of the tip's axis left open | the frame and the interior's glass fill it |
-| Bubbles | (+-1.9, -3.75) at h 4.15, on the forward body over the mouth | two eyes over the mouth |
-| Footprint | 26.46 x 13.90 m (`ship --check`); ship.toml [hull] rows from `ship_hull_skin.outline()` | the numbers hold; nothing bent |
-
-Where the interior forces the silhouette thicker than the 2D: scaled to the same span, the Meshy reference's wing is
-about 1 m thick and its body about 2.5 m, while the rooms need 0.6 to 4.4 m at the tips (tip room apex 4.2 over a
-1.0 m deck) and to 5.0 under the hall's apex. The skin slopes and thins everywhere the rooms allow, but from the front
-the wings stay a thick wedge with the tip fairings at their ends.
+| Lead edge | (1.5, -6.5) -> (4.0, -5.4) -> (8.0, -3.9) -> (10.75, -3.0); blade h 0.9 -> 0.95 at x 4 -> 1.2 at x 8 -> 1.6 | low at the body, rising to the tips |
+| Trail edge | (0, 5.0) -> (3.0, 5.2) -> (8.0, 5.4) -> (10.75, 5.4); the stern's edge h 2.2 under the housing | the blades behind the corridors |
+| Crest | spine h 4.9 over the hall's middle (x < 0.9), 4.3 at the hall's rim (x 3.72), 3.75 at x 5.5, 3.62 at the tip | falls from the spine to the tips |
+| Eave | the hall's r 3.84 at h 4.1; the wing's 0.15 m outside the corridor walls (y 1.6) at max(3.08, crest - 0.45) | the rooms inside |
+| Belly | h 0.3 under every room (the slabs' bottoms 0.35), the lower facets rising to the blade | the belly rises toward the edges |
+| Lens tip | blade r 3.0 at h 1.7 in the window's direction (1.6 at +-90 deg), lower and upper faces 25 deg off vertical to (2.39, 0.45) and the eave (2.24, 3.2), crown (1.0, 3.62) to 3.65 | a sharp blade 0.7 m past the room's wall at about its mid-height; span 27.5 |
+| Swept tip | round the tip centre (dx, dy): (2.25, -2.05), (2.9, -0.9), (3.0, 0), (2.95, 1.0), (2.75, 3.0), (1.8, 6.4) | the turnaround top's swept tips |
+| Window | the band from 15 % to 85 % of the upper face (h 1.93..2.98) within 65 deg of the tip's axis left open | a slanted band; the inside's glass stands behind it |
+| Mouth | the opening (h 0.55..3.15 at y -4.6) under a brow 1.0 m forward at h 3.45, the brow's top leaning back to (−4.2, 4.3) | a notch cut into the low ray nose |
+| Footprint | 27.5 x 14.3 m (`ship --check`); ship.toml [hull] rows from `ship_hull_skin.outline()` | span_max_m 27.5 |
 
 **Winding.** Plan coordinates are left-handed (x east, y south, h up); the harness's (x, -y, h) mirrors them, which
 flips every winding set in plan coordinates with `ship_lib.orient`. `ship_hull.py` reverses its open (`solid=False`)
@@ -321,10 +319,8 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
 
 ## Open problems (after launch 2)
 
-- **The hull's thickness** (after the hull lane's step 1): the skin is now one continuous faceted surface (variant
-  F), but the rooms' heights keep the wings about 3.5 m deep and the tips 3.8 m tall, so from the front it is a thick
-  wedge, not the turnaround's thin plate. Only a lower deck and rooms, or a wider span with blades beyond the tip
-  rooms, would thin it; both change the numbers.
+- **The hull's thickness** (launch 3): the lower deck took 0.75 m off every top (tips 3.65 m, wings about 3.1 m
+  deep over the corridors, spine 4.9); from the front it is still a wide plate, not the turnaround's V of thin wings.
 - **The hull still does not read as the manta** from the front and the three-quarter (critique 1-4, the manager's
   updates 1 and 2): launch 3 lowers the deck (floor_h 1.0 -> 0.6, corridor clear 2.6 -> 2.4, tip room 2.8 -> 2.5,
   keeping 0.5 m over the 1.8 m capsule), removes every vertical outside face (>= 25 deg from vertical), makes the tip
