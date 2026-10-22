@@ -331,6 +331,17 @@ def hull_skin(layout: dict[str, Any]) -> list[str]:
     return [f"hull {layout['hull']['shape']}: {b}" for b in bad]
 
 
+def room_skin(layout: dict[str, Any]) -> dict[str, tuple[float, str]]:
+    """rebuild E: the least skin of each room ({room: (metres, sample kind)}, ship_hull_shape.room_skin)."""
+    import sys
+    from pathlib import Path as _Path
+    blender = str(_Path(__file__).resolve().parents[1] / "blender")
+    if blender not in sys.path:
+        sys.path.insert(0, blender)
+    import ship_hull_shape
+    return ship_hull_shape.room_skin(layout["hull"]["shape"], rooms(layout))
+
+
 def _unit(v: list[float]) -> tuple[float, float]:
     n = math.hypot(v[0], v[1])
     return v[0] / n, v[1] / n

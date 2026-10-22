@@ -110,7 +110,39 @@ def j_cheeks(args: dict, layout: dict) -> list:
                 q.reverse()
             for p in plates(q, n):
                 groups.setdefault(MATS["mouth"][0], []).append(H._plate(p, INSET, DEPTH))
-    return [L.part(f"cheeks_{mat}", *L.merge(*g), mat, solid=False) for mat, g in sorted(groups.items())]
+    # rebuild E: the jambs. Forward of the roof line the throat's walls stood as pale interior modules with flat tops
+    # at 2.05 m, free under the open notch (the "cheeks" of the D shots). Here each wall is the hull's own side of the
+    # cut instead: a solid in the wall's thickness from the slab up to J's top over it (one convex face, as every
+    # section of the convex hull), its inner face in the hull's plates, its top and front edge in hull_silver
+    s_roof = (S.TH_ROOF_Y - my) / d[1]
+    edge = []
+    for sx in (1, -1):
+        n = (sx * d[1], -d[0], 0.0)                     # outward
+        inner, outer = [], []
+        for i in range(17):
+            s = 0.02 + (s_roof - 0.02) * i / 16   # 2 cm in from the nose edge (heights() is None on it)
+            x, y = sx * (mx + d[0] * s), my + d[1] * s
+            xo, yo = x + n[0] * (S.WALL - 0.01), max(y + n[1] * (S.WALL - 0.01), my + 0.02)   # not past the nose edge
+            inner.append((x, y, S.heights(x, y)[0]))
+            outer.append((xo, yo, S.heights(xo, yo)[0]))
+        face = [(inner[0][0], inner[0][1], S.SLAB - 0.01), (inner[-1][0], inner[-1][1], S.SLAB - 0.01)]
+        face += [inner[k] for k in range(len(inner) - 1, -1, -1)]
+        inward = S._neg(n)
+        if S._dot(S._newell(face), inward) < 0:
+            face.reverse()
+        for p in plates(face, inward):
+            c = [sum(x[i] for x in p) / len(p) for i in range(3)]
+            mat = MATS["top"][int(H._hash(round(c[0], 1), round(c[1], 1), round(c[2], 1)) * len(MATS["top"])) %
+                              len(MATS["top"])]
+            groups.setdefault(mat, []).append(H._plate(p, INSET, DEPTH))
+        for (a0, b0), (a1, b1) in zip(zip(inner, outer), zip(inner[1:], outer[1:])):   # the top, along the slope
+            q = [a0, a1, b1, b0]
+            edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), S.H) > 0 else (3, 2, 1, 0)]))
+        q = [(inner[0][0], inner[0][1], S.SLAB - 0.01), (outer[0][0], outer[0][1], S.SLAB - 0.01), outer[0], inner[0]]
+        edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), (0.0, -1.0, 0.0)) > 0 else (3, 2, 1, 0)]))   # front
+    parts = [L.part(f"cheeks_{mat}", *L.merge(*g), mat, solid=False) for mat, g in sorted(groups.items())]
+    parts.append(L.part("jamb_edge", *L.merge(*edge), "hull_silver", solid=False))
+    return parts
 
 
 j_cheeks = H._outward(j_cheeks)

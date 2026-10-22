@@ -43,30 +43,31 @@ class ShipLayoutTest(unittest.TestCase):
         J): the sockets moved back off the diagonal corridors' openings to (+-1.80, 3.51), the breaker boards on the
         corridors' front wall at (+-6.03, 1.24), the renewers' players 0.5 m past the tip rooms' centres on the axis."""
         spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
-        # rebuild C: the inside 1 m forward; the vents on the throat's slanted walls (asked (+-2.3, -5.8)), four
-        # sockets (the front two beside the throat, asked (+-3.5, -3.0)); each snapped onto its wall by under 0.15 m
+        # rebuild C: the vents on the throat's slanted walls (asked (+-2.3, -5.8)), four sockets (the front two beside
+        # the throat, asked (+-3.5, -3.0)). rebuild E: the inside 0.4 m forward of step A (the hall's full rim), the
+        # spots with it; the vents snapped 0.21 m onto the longer throat's walls, the front sockets asked (+-3.5, -2.4)
         self.assertEqual(set(spots), {"console", "vent_e", "vent_w", "socket_e", "socket_w", "socket_fe", "socket_fw",
                                       "breaker_e", "breaker_w", "renewer_e", "renewer_w"})
-        self.assertEqual(tuple(spots["console"]["at"]), (0.0, 0.0))
+        self.assertEqual(tuple(spots["console"]["at"]), (0.0, 0.6))
         for sx in (1, -1):
             sid = "e" if sx > 0 else "w"
             self.assertEqual(spots[f"vent_{sid}"]["room"], "throat")
-            self.assertLess(math.dist(spots[f"vent_{sid}"]["at"], (sx * 2.3, -5.8)), 0.15)
-            self.assertLess(math.dist(spots[f"socket_f{sid}"]["at"], (sx * 3.5, -3.0)), 0.15)
-            self.assertEqual(tuple(spots[f"socket_{sid}"]["at"]), (sx * 1.8, 2.512))
-            self.assertEqual(tuple(spots[f"breaker_{sid}"]["at"]), (sx * 6.03, 0.241))
+            self.assertLess(math.dist(spots[f"vent_{sid}"]["at"], (sx * 2.3, -5.8)), 0.25)
+            self.assertLess(math.dist(spots[f"socket_f{sid}"]["at"], (sx * 3.5, -2.4)), 0.15)
+            self.assertEqual(tuple(spots[f"socket_{sid}"]["at"]), (sx * 1.8, 3.112))
+            self.assertEqual(tuple(spots[f"breaker_{sid}"]["at"]), (sx * 6.03, 0.841))
             stand = sl.spot_stand(LAYOUT, spots[f"renewer_{sid}"])
             self.assertAlmostEqual(stand[0], sx * 8.751, places=2)
-            self.assertAlmostEqual(stand[1], 3.217, places=2)
+            self.assertAlmostEqual(stand[1], 3.817, places=2)
 
     def test_the_rooms_are_5a_mirrored(self) -> None:
         r = sl.rooms(LAYOUT)
-        self.assertEqual((r["hall"]["radius"], tuple(r["hall"]["centre"])), (4.0, (0.0, -1.0)))   # rebuild C
+        self.assertEqual((r["hall"]["radius"], tuple(r["hall"]["centre"])), (4.0, (0.0, -0.4)))   # rebuild E
         for sx, sid in ((1, "e"), (-1, "w")):
-            self.assertEqual((r[f"tip_{sid}"]["radius"], tuple(r[f"tip_{sid}"]["centre"])), (1.8, (sx * 8.3, 3.0)))
+            self.assertEqual((r[f"tip_{sid}"]["radius"], tuple(r[f"tip_{sid}"]["centre"])), (1.8, (sx * 8.3, 3.6)))
             cor = r[f"corridor_{sid}"]   # rebuild A: straight and diagonal, hall centre to tip room centre
             self.assertEqual((cor["shape"], cor["width"]), ("strip", 3.0))
-            self.assertEqual(cor["axis"], [[0.0, -1.0], r[f"tip_{sid}"]["centre"]])
+            self.assertEqual(cor["axis"], [[0.0, -0.4], r[f"tip_{sid}"]["centre"]])
 
     def test_the_throat_opens_at_the_nose_with_head_room_under_its_roof(self) -> None:
         """rebuild C: the throat from the mouth (+-1.65 at J's nose edge, y -7.1) to the hall's wall; its roof from
@@ -87,12 +88,12 @@ class ShipLayoutTest(unittest.TestCase):
 
     def test_a_trunk_on_a_plain_spot_is_refused(self) -> None:
         def trunk(layout):
-            layout["place"].append(["hall_trunk", [3.505, -3.003, 0.0], 29.745])   # rebuild C: on a front socket
+            layout["place"].append(["hall_trunk", [3.505, -2.403, 0.0], 29.745])   # rebuild E: on a front socket
         self.assertTrue(any("socket_fe: hall_trunk sticks out" in p for p in problems_after(trunk)))
 
     def test_a_cable_bay_on_a_breaker_wall_is_refused(self) -> None:
         def bay(layout):
-            layout["place"].append(["cor_channel", [5.380, 1.592, 0.0], -25.7307])   # on the axis at the board
+            layout["place"].append(["cor_channel", [5.380, 2.192, 0.0], -25.7307])   # on the axis at the board
         self.assertTrue(any("breaker_e: cor_channel sticks out" in p for p in problems_after(bay)))
 
     def test_a_blocked_pass_is_refused(self) -> None:

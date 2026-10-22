@@ -34,12 +34,10 @@ head_margin_m = 0.5
 [[rooms]]
 id = "hall"
 shape = "circle"
-centre = [0.0, -1.0]                          # rebuild C (art#263 c6341553197): the whole inside 1 m forward
+centre = [0.0, -0.4]                          # rebuild E (art#263 c6342342554): 0.4 m forward of step A (C: 1 m)
 radius = 4.0                                  # 5a mirrored: 8 m across, about 50 m2 (v1: 3.4)
 clear_h = 3.2                                 # update 2 (was 3.4 / 4.0): the hull thins
 apex_h = 3.8
-front_clear_h = 2.75                          # rebuild C: the rim over the throat and the front sockets' flats (J's nose)
-front_from_deg = -15.11                       # rebuild C: the front rim from here round the front (mirrored: -164.89)
 links = ["throat", "corridor_w", "corridor_e"]
 # rebuild A (variant J): the tip rooms at (+-8.3, 4.0); the corridors straight and diagonal from the hall's wall to
 # each tip room's wall. A "strip" room: `axis` [from, to] its centre line (here from the hall's centre to the tip
@@ -49,16 +47,17 @@ links = ["throat", "corridor_w", "corridor_e"]
 [[rooms]]
 id = "throat"                                # rebuild C: the funnel from the mouth at J's nose edge to the hall's wall
 shape = "poly"                               # a convex floor polygon [x, y] (counter-clockwise in plan)
-points = [[-1.65, -7.1], [1.65, -7.1], [2.915, -3.852], [-2.915, -3.852]]
+points = [[-1.65, -7.1], [1.65, -7.1], [2.915, -3.252], [-2.915, -3.252]]
 clear_h = 2.3                                 # 2.9 over the ground: the capsule and its margin; walls vertical to
 chamfer = [1.45, 0.55]                        # 1.45, then slanted 0.55 in to the ceiling (the corridors' bend)
-roof_y = -5.476                               # the ceiling from here aft (the front is J's open notch, no roof)
+roof_y = -5.5608                              # the ceiling from here aft (the front is J's open notch, no roof): the
+                                              # first module line (5 of 0.810) with 0.15 m of hull over the roof
 exit = "ramp"                                # the only way in or out (5a's side hatch is dropped: one entrance, art#263)
 
 [[rooms]]
 id = "corridor_w"
 shape = "strip"
-axis = [[0.0, -1.0], [-8.3, 3.0]]              # 25.73 deg south of west, 9.214 m centre to centre
+axis = [[0.0, -0.4], [-8.3, 3.6]]              # 25.73 deg south of west, 9.214 m centre to centre
 along = [3.708, 8.219]                        # v2: x -3.7..-7.3 on the x axis; 4.51 m of floor now
 width = 3.0
 clear_h = 2.4                                 # update 2 (was 2.6)
@@ -67,7 +66,7 @@ links = ["tip_w"]
 [[rooms]]
 id = "corridor_e"
 shape = "strip"
-axis = [[0.0, -1.0], [8.3, 3.0]]
+axis = [[0.0, -0.4], [8.3, 3.6]]
 along = [3.708, 8.219]
 width = 3.0
 clear_h = 2.4                                 # update 2 (was 2.6)
@@ -76,7 +75,7 @@ links = ["tip_e"]
 [[rooms]]
 id = "tip_w"
 shape = "circle"
-centre = [-8.3, 3.0]                          # rebuild A (variant J): was (-8.3, 0); no window (plain wall facets)
+centre = [-8.3, 3.6]                          # rebuild A (variant J): was (-8.3, 0); no window (plain wall facets)
 radius = 1.8                                  # v2: 3.6 m across, the outer wall at x -10.1
 clear_h = 2.5                                 # update 2 (was 2.8 / 3.2)
 apex_h = 2.8
@@ -84,7 +83,7 @@ apex_h = 2.8
 [[rooms]]
 id = "tip_e"
 shape = "circle"
-centre = [8.3, 3.0]                           # rebuild A (variant J): was (8.3, 0); no window
+centre = [8.3, 3.6]                           # rebuild A (variant J): was (8.3, 0); no window
 radius = 1.8                                  # v2: 3.6 m across, the outer wall at x 10.1
 clear_h = 2.5                                 # update 2 (was 2.8 / 3.2)
 apex_h = 2.8
@@ -102,67 +101,67 @@ pass_m = 1.6                                  # free floor behind a player stand
 
 [[stations.spot]]
 id = "console"
-at = [0.0, 0.0]                               # rebuild C: the hall's centre
+at = [0.0, 0.6]                               # 1 m aft of the hall's centre (step A: (0, 1))
 room = "hall"
 
 [[stations.spot]]
 id = "vent_e"                                 # rebuild C: on the throat's slanted east wall (asked (2.3, -5.8),
-at = [2.1753, -5.7514]                        # snapped 0.134 m onto the wall from the mouth (1.65, -7.1) to the
-normal = [-0.9318, 0.3629]                    # hall's vertex (2.915, -3.852))
+at = [2.0991, -5.7339]                        # rebuild E: snapped 0.211 m onto the wall from the mouth (1.65, -7.1) to
+normal = [-0.9500, 0.3123]                    # the hall's vertex (2.915, -3.252))
 room = "throat"
 
 [[stations.spot]]
 id = "vent_w"
-at = [-2.1753, -5.7514]
-normal = [0.9318, 0.3629]
+at = [-2.0991, -5.7339]
+normal = [0.9500, 0.3123]
 room = "throat"
 
 [[stations.spot]]
 id = "socket_e"                               # the hall wall east of the back; rebuild A: the corridor's opening
-at = [1.800, 2.512]                           # (3.2..48.2 deg) took v2's chord at 45 deg (2.664, 2.664): the flat chord
+at = [1.800, 3.112]                           # (3.2..48.2 deg) took v2's chord at 45 deg (2.664, 2.664): the flat chord
 normal = [-0.4561, -0.8899]                   # moved back to 48.2..77.5 deg (2.06 m, apothem 3.946), the spot 1.21 m
 room = "hall"
 
 [[stations.spot]]
 id = "socket_w"
-at = [-1.800, 2.512]
+at = [-1.800, 3.112]
 normal = [0.4561, -0.8899]
 room = "hall"
 
 [[stations.spot]]
 id = "socket_fe"                              # rebuild C: the front sockets beside the throat (asked (3.5, -3.0)), on a
-at = [3.4261, -2.9578]                        # flat chord of the socket's width (29.27 deg, -44.38..-15.11 from the
+at = [3.4261, -2.3578]                        # flat chord of the socket's width (29.27 deg, -44.38..-15.11 from the
 normal = [-0.8682, 0.4961]                    # hall's centre) snapped 0.085 m onto it; off the throat's walking line
 room = "hall"
 
 [[stations.spot]]
 id = "socket_fw"
-at = [-3.4261, -2.9578]
+at = [-3.4261, -2.3578]
 normal = [0.8682, 0.4961]
 room = "hall"
 
 [[stations.spot]]
 id = "breaker_e"                              # the corridor's front (north) wall, centred between its arches
-at = [6.030, 0.241]                           # (u 5.971 along the axis; v2: (5.25, -1.5) on the straight corridor)
+at = [6.030, 0.841]                           # (u 5.971 along the axis; v2: (5.25, -1.5) on the straight corridor)
 normal = [-0.4341, 0.9008]
 room = "corridor_e"
 
 [[stations.spot]]
 id = "breaker_w"
-at = [-6.030, 0.241]
+at = [-6.030, 0.841]
 normal = [0.4341, 0.9008]
 room = "corridor_w"
 
 [[stations.spot]]
 id = "renewer_e"                              # a waist-high washer before the tip room's outer wall, on its axis
-at = [9.922, 3.781]                           # (rebuild A: plain wall facets, no window; v2 (10.1, 0)); the player
+at = [9.922, 4.381]                           # (rebuild A: plain wall facets, no window; v2 (10.1, 0)); the player
 normal = [-0.9008, -0.4341]                   # stands 1.3 m in, the pass behind runs back toward the corridor
 room = "tip_e"
 depth_m = 0.9
 
 [[stations.spot]]
 id = "renewer_w"
-at = [-9.922, 3.781]
+at = [-9.922, 4.381]
 normal = [0.9008, -0.4341]
 room = "tip_w"
 depth_m = 0.9
@@ -235,29 +234,29 @@ hull_rough_add = 0.12                          # + the hull silvers' roughness (
 # L's corridor and tip lamps): rows [x, y, h, energy, range, r, g, b, group, shadow]; each group's energies scale by
 # its "<group>_lamp" number below (a row without a group by lamp_scale).
 lamps = [
-  [2.772, 0.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [1.148, 1.772, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [-1.148, 1.772, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [-2.772, 0.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [-2.772, -2.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [-1.148, -3.772, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [1.148, -3.772, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [2.772, -2.148, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [0.0, -4.900, 2.8, 0.6, 3.5, 1.0, 0.7, 0.42, "hall", true],  # the mouth
-  [0.0, -1.000, 4.2, 0.5, 1.3, 1.0, 0.7, 0.42, "hall", false],  # the hall cap's lamp: lights the faceted cone, not the floor
-  [-4.144, 0.997, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling (rebuild A: u 4.6/5.97/7.35 on the diagonal; v2 x 4.4/5.5/6.6)
-  [-5.378, 1.592, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
-  [-6.621, 2.191, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
-  [0.0, -4.55, 2.75, 0.45, 3.0, 1.0, 0.95, 0.88, "corr", false],  # rebuild C: the throat's ceiling
-  [-8.3, 3.000, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room (rebuild A: (8.3, 0) -> (8.3, 4.0))
-  [-9.471, 3.564, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # west tip room's cool fill (was the window's moonlight; kept for the room's look, 1.3 m out on its axis)
+  [2.772, 0.748, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [1.148, 2.372, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-1.148, 2.372, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-2.772, 0.748, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-2.772, -1.548, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [-1.148, -3.172, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [1.148, -3.172, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [2.772, -1.548, 3.6, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [0.0, -4.300, 2.8, 0.6, 3.5, 1.0, 0.7, 0.42, "hall", true],  # the mouth
+  [0.0, -0.400, 4.2, 0.5, 1.3, 1.0, 0.7, 0.42, "hall", false],  # the hall cap's lamp: lights the faceted cone, not the floor
+  [-4.144, 1.597, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling (rebuild A: u 4.6/5.97/7.35 on the diagonal; v2 x 4.4/5.5/6.6)
+  [-5.378, 2.192, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
+  [-6.621, 2.791, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # west corridor ceiling
+  [0.0, -5.0, 2.75, 0.45, 3.0, 1.0, 0.95, 0.88, "corr", false],  # rebuild C: the throat's ceiling (E: its covered part's middle)
+  [-8.3, 3.600, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room (rebuild A: (8.3, 0) -> (8.3, 4.0))
+  [-9.471, 4.164, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # west tip room's cool fill (was the window's moonlight; kept for the room's look, 1.3 m out on its axis)
   [-27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
   [-27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
-  [4.144, 0.997, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling (rebuild A, as the west's)
-  [5.378, 1.592, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
-  [6.621, 2.191, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
-  [8.3, 3.000, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # east tip room (rebuild A: (8.3, 0) -> (8.3, 4.0))
-  [9.471, 3.564, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # east tip room's cool fill (was the window's moonlight)
+  [4.144, 1.597, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling (rebuild A, as the west's)
+  [5.378, 2.192, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
+  [6.621, 2.791, 2.8, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling
+  [8.3, 3.600, 3.0, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # east tip room (rebuild A: (8.3, 0) -> (8.3, 4.0))
+  [9.471, 4.164, 2.0, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # east tip room's cool fill (was the window's moonlight)
   [27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   [27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # east treeline camp light
   # inside 3-1 (grid_in31 C): moonlight on the pines the tip windows look at, kept off the wing tips (x 13.9)
@@ -334,9 +333,9 @@ int_silver_c = {v = 0.55, r = 0.25, m = 0.45}
 # The capsule walk: up the ramp, through the hall into both tip rooms and back out. Points [x, y, h].
 [walk]
 # rebuild A: the corridor points on the diagonal (u 3.0 from the hall's centre), the tip rooms' 0.5 m past their centres
-points = [[0.0, -11.5, 0.0], [0.0, -9.9, 0.0], [0.0, -6.6, 0.6], [0.0, -2.8, 0.6], [-2.703, 0.302, 1.0],
-          [-8.75, 3.217, 0.6], [-2.703, 0.302, 0.6], [2.703, 0.302, 0.6], [8.75, 3.217, 0.6], [2.703, 0.302, 1.0],
-          [0.0, -2.8, 0.6], [0.0, -6.6, 0.6], [0.0, -9.9, 0.0], [0.0, -11.5, 0.0]]
+points = [[0.0, -11.5, 0.0], [0.0, -9.9, 0.0], [0.0, -6.6, 0.6], [0.0, -2.2, 0.6], [-2.703, 0.902, 1.0],
+          [-8.75, 3.817, 0.6], [-2.703, 0.902, 0.6], [2.703, 0.902, 0.6], [8.75, 3.817, 0.6], [2.703, 0.902, 1.0],
+          [0.0, -2.2, 0.6], [0.0, -6.6, 0.6], [0.0, -9.9, 0.0], [0.0, -11.5, 0.0]]
 
 # Views: [name, title, eye [x, y, h], look [x, y, h], fov]; the plan view "top" (south up, as plan-3) is added by the
 # command and compared side by side with plan_ref.
@@ -344,16 +343,16 @@ points = [[0.0, -11.5, 0.0], [0.0, -9.9, 0.0], [0.0, -6.6, 0.6], [0.0, -2.8, 0.6
 views = [
   ["out_front", "outside: front, ramp down", [0.0, -19.0, 2.4], [0.0, 0.0, 2.2], 55.0],
   ["out_hero", "outside: three-quarter at night", [-17.0, -15.0, 6.0], [0.0, 0.0, 2.0], 50.0],
-  ["in_hall", "inside: the hall from the throat", [0, -5.3, 2.2], [0, 1, 2], 75.0],
+  ["in_hall", "inside: the hall from the throat", [0, -4.7, 2.2], [0, 1.6, 2], 75.0],
   # rebuild C: the throat from the ramp's foot and the hall toward the throat
-  ["in_throat", "inside: the throat from the ramp", [0, -9.6, 1.75], [0, -3.5, 2.0], 62.0],
-  ["in_hall_throat", "inside: the hall toward the throat", [0, 1.6, 2.1], [0, -7.0, 1.6], 75.0],
-  ["in_corridor_e", "inside: the east corridor", [2.343, 0.129, 2.2], [9.011, 3.342, 1.9], 70.0],
+  ["in_throat", "inside: the throat from the ramp", [0, -9.6, 1.75], [0, -2.9, 2.0], 62.0],
+  ["in_hall_throat", "inside: the hall toward the throat", [0, 2.2, 2.1], [0, -7.0, 1.6], 75.0],
+  ["in_corridor_e", "inside: the east corridor", [2.343, 0.729, 2.2], [9.011, 3.942, 1.9], 70.0],
   # rebuild A: the inside views on the moved rooms; an "in_" view here wins over exterior.toml's of the same name
   # (ship.py shot_views; exterior's reference image stays)
-  ["in_corridor_w", "inside: the west corridor", [-2.343, 0.129, 2.2], [-9.011, 3.342, 1.9], 70.0],
-  ["in_hall_cor_e", "inside: the hall toward the east corridor", [-2, -2.2, 2], [6, 2, 1.7], 70.0],
-  ["in_hall_cor_w", "inside: the hall toward the west corridor", [2, -2.2, 2], [-6, 2, 1.7], 70.0],
-  ["in_tip_e", "inside: the east tip room toward its outer wall", [6, 1.9, 1.95], [9.92, 3.78, 1.55], 75.0],
-  ["in_tip_w", "inside: the west tip room toward its outer wall", [-6, 1.9, 1.95], [-9.92, 3.78, 1.55], 75.0],
+  ["in_corridor_w", "inside: the west corridor", [-2.343, 0.729, 2.2], [-9.011, 3.942, 1.9], 70.0],
+  ["in_hall_cor_e", "inside: the hall toward the east corridor", [-2, -1.6, 2], [6, 2.6, 1.7], 70.0],
+  ["in_hall_cor_w", "inside: the hall toward the west corridor", [2, -1.6, 2], [-6, 2.6, 1.7], 70.0],
+  ["in_tip_e", "inside: the east tip room toward its outer wall", [6, 2.5, 1.95], [9.92, 4.38, 1.55], 75.0],
+  ["in_tip_w", "inside: the west tip room toward its outer wall", [-6, 2.5, 1.95], [-9.92, 4.38, 1.55], 75.0],
 ]

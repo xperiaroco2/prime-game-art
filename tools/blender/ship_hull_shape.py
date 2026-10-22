@@ -52,8 +52,6 @@ TH_PTS = [tuple(p) for p in TH["points"]]                              # mouth (
 TH_ROOF_Y = TH["roof_y"]                                               # -5.476: the ceiling from here aft
 TH_TOP = FLOOR + TH["clear_h"] + ROOF                                  # 3.02: the throat's roof
 TH_CH = TH["chamfer"]                                                  # walls vertical to 1.35, then 0.55 in
-FRONT_RIM = FLOOR + RM["hall"]["front_clear_h"] + ROOF                 # 3.47: the hall's rim round its front
-FRONT_DEG = RM["hall"]["front_from_deg"]                               # -15.11
 TIP_R = RM["tip_e"]["radius"] + WALL                                   # 2.0
 TIP_RIM = FLOOR + RM["tip_e"]["clear_h"] + ROOF                        # 3.22
 TIP_APEX = FLOOR + RM["tip_e"]["apex_h"] + ROOF                        # 3.52
@@ -106,7 +104,7 @@ VARIANTS = {   # half span, tip height, the tip rooms' windows
     # round 2 * lip thick), smooth the hull smooth-shaded (normals smooth below SMOOTH_DEG, weighted by face area).
     "J": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
           "stern_y": 10.2, "trail": (4.4, 2.6), "tip_r": 1.5, "tip_e": 0.15, "throat": True,
-          "belly_also": ((0.0, -1.0), (8.3, 3.0))},
+          "belly_also": ((8.3, 3.6, PIN_TIP_R + 0.25),)},
     "K": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
           "stern_y": 10.2, "trail": (4.4, 2.6), "tip_r": 3.0, "tip_e": 0.15},
     "L": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
@@ -233,9 +231,11 @@ def design_points(var):
     cx, cy = tip_c(var)
     pts += ring(0.0, 0.0, PIN_HALL_R + 0.3, BELLY) + ring(cx, cy, PIN_TIP_R + 0.25, BELLY)
     pts += [(1.8, -4.8, BELLY)]                                        # pinned (v2's mouth room's corner)
-    # rebuild C: the flat belly also under the rooms moved 1 m forward (the hall's and tips' centres, pinned): without
-    # it the tip rooms' slabs poked 0.27 m out of the rising belly; the plan outline, span, length, nose and top stay
-    for (bx, by), r in zip(var.get("belly_also", ()), (PIN_HALL_R + 0.3, PIN_TIP_R + 0.25)):
+    # rebuild C: the flat belly also under rooms moved forward, rings (x, y, r) pinned here. Rebuild E (the inside
+    # 0.4 m forward of step A): only the tip rooms' ring at (8.3, 3.6) is left; without it their slab fronts keep
+    # 0.10 m of skin under the rising belly. The hall's slab keeps 0.18 m on step A's ring, so C's hall ring is gone.
+    # The plan outline, span, length, nose and top stay
+    for bx, by, r in var.get("belly_also", ()):
         pts += ring(bx, by, r, BELLY)
     if var["window"]:   # the room's cover: the wing steps down beyond it to a tip under the sill
         pts += ring(TIP_X, 0.0, TIP_R + 0.25, TIP_RIM + 0.25, a0=-90.0, a1=90.0)
@@ -265,15 +265,13 @@ def _steps(a, b, step=STEP_M):
 
 def _room_points(rooms):
     """rebuild D: every room's outer surface where `rooms` (a layout's rooms by id) has it, each room on its own (no
-    mirroring): the hall with its low front rim and the throat's opening, the throat's covered part, every corridor
-    strip, every tip room."""
+    mirroring): the hall with the throat's opening, the throat's covered part, every corridor strip, every tip room.
+    rebuild E: the hall's rim is its full height all round (the engineer, art#263 c6342342554)."""
     pts = []
     hall = rooms["hall"]
     hx, hy = hall["centre"]
     hr = hall["radius"] + WALL
-    rim0, apex = FLOOR + hall["clear_h"] + ROOF, FLOOR + hall["apex_h"] + ROOF
-    front_rim = FLOOR + hall.get("front_clear_h", hall["clear_h"]) + ROOF
-    fdeg = hall.get("front_from_deg", -90.0)
+    rim, apex = FLOOR + hall["clear_h"] + ROOF, FLOOR + hall["apex_h"] + ROOF
     th = next((r for r in rooms.values() if r.get("exit") and r["shape"] == "poly"), None)
     open_lo = open_hi = None
     back = []
@@ -281,24 +279,26 @@ def _room_points(rooms):
         back = sorted(th["points"], key=lambda p: p[1])[-2:]
         angs = sorted(math.degrees(math.atan2(p[1] - hy, p[0] - hx)) for p in back)
         open_lo, open_hi = angs
-    lamp = 1.47
-    for a, x, y in _ring_pts(hx, hy, hr):
-        front = -180.0 - fdeg - 1e-6 <= a <= fdeg + 1e-6
-        rim = front_rim if front else rim0
-        # the throat's opening; a sample within a wall's thickness and 5 cm of the opening's corner is the throat
-        # wall's joint (its outer face is the notch's cut, plated by the cheeks), not the hall's skin
-        joint = th and min(math.dist((x, y), p) for p in back) < WALL + 0.05
-        if not (th and open_lo + 1e-6 < a < open_hi - 1e-6) and not joint:
+    ring = _ring_pts(hx, hy, hr)
+    if th:   # rebuild E: the wall's ends at the opening's corners, sampled too (the wall top's least skin is there)
+        rr = hr / math.cos(math.radians(STEP_DEG / 2))
+        ring += [(a, hx + rr * math.cos(math.radians(a)), hy + rr * math.sin(math.radians(a))) for a in angs]
+    for a, x, y in ring:
+        in_open = th and open_lo + 1e-6 < a < open_hi - 1e-6
+        if in_open:   # rebuild E: over the opening the hall's ceiling meets the throat's header at the full rim
+            pts.append(("hall rim", (x, y, rim)))
+        else:
+            # rebuild E (D's skip, narrowed): only the slab bottom within a wall's thickness and 5 cm of the opening's
+            # corner is skipped. It is the edge of the throat's open underside (the "belly" cutter, whose back plane
+            # runs through the hall's corners and whose ceiling is the throat's slab), plated by the cheeks; the wall
+            # above it is checked like the rest
+            joint = th and min(math.dist((x, y), p) for p in back) < WALL + 0.05
             for h in (SLAB, 1.4, 2.6, rim):
-                pts.append(("hall wall", (x, y, h)))
+                if not (joint and h == SLAB):
+                    pts.append(("hall wall", (x, y, h)))
         c, s = (x - hx) / math.hypot(x - hx, y - hy), (y - hy) / math.hypot(x - hx, y - hy)
         for rr in (1.0, 2.0, 3.0, 4.0):
-            if front and rr > lamp:   # the front panels: from the lamp ring down to the low rim
-                h_in = apex - (apex - rim0) * lamp / hr
-                h = h_in - (h_in - rim) * (rr - lamp) / (hr - lamp)
-            else:
-                h = apex - (apex - rim0) * rr / hr
-            pts.append(("hall roof", (hx + rr * c, hy + rr * s, h)))
+            pts.append(("hall roof", (hx + rr * c, hy + rr * s, apex - (apex - rim) * rr / hr)))
             if not in_cutter((hx + rr * c, hy + rr * s - 0.2, SLAB - 0.02)):   # by the throat's open underside
                 pts.append(("hall slab", (hx + rr * c, hy + rr * s, SLAB)))
     pts.append(("hall crown", (hx, hy, apex)))
@@ -360,29 +360,17 @@ def interior_points(var, rooms=None):
     if var.get("throat"):
         return _room_points(rooms if rooms is not None else RM)
     pts = []
-    thr = False
     (hx, hy), (tcx, tcy) = (0.0, 0.0), tip_c(var)
     u, n, s0, s1 = corridor_frame(var)
-    corner = 0.0
     for d in range(0, 360, 5):
         c, s = math.cos(math.radians(d)), math.sin(math.radians(d))
-        a = (d + 180) % 360 - 180
-        front = thr and -180.0 - FRONT_DEG - 1e-6 <= a <= FRONT_DEG + 1e-6
-        in_throat = thr and -180.0 - corner + 1e-6 < a < corner - 1e-6
-        rim = FRONT_RIM if front else HALL_RIM
         x, y = hx + HALL_R * c, hy + HALL_R * s
-        if not in_throat and not (not thr and abs(x) < MOUTH_X + WALL and y < 0):
-            for h in (SLAB, 1.4, 2.6, rim):
+        if not (abs(x) < MOUTH_X + WALL and y < 0):   # v2's mouth room's opening
+            for h in (SLAB, 1.4, 2.6, HALL_RIM):
                 pts.append(("hall wall", (x, y, h)))
         for rr in (1.0, 2.0, 3.0, 4.0):
-            if front and rr > 1.47:   # the front panels: from the lamp ring down to the low rim
-                h_in = HALL_APEX - (HALL_APEX - HALL_RIM) * 1.47 / HALL_R
-                h = h_in - (h_in - rim) * (rr - 1.47) / (HALL_R - 1.47)
-            else:
-                h = HALL_APEX - (HALL_APEX - HALL_RIM) * rr / HALL_R
-            pts.append(("hall roof", (hx + rr * c, hy + rr * s, h)))
-            if not (thr and in_cutter((hx + rr * c, hy + rr * s - 0.2, SLAB - 0.02))):   # by the throat's open underside
-                pts.append(("hall slab", (hx + rr * c, hy + rr * s, SLAB)))
+            pts.append(("hall roof", (hx + rr * c, hy + rr * s, HALL_APEX - (HALL_APEX - HALL_RIM) * rr / HALL_R)))
+            pts.append(("hall slab", (hx + rr * c, hy + rr * s, SLAB)))
     pts.append(("hall crown", (hx, hy, HALL_APEX)))
     for side in (-1, 1):
         s = s0
@@ -670,6 +658,19 @@ def clearance(name: str = DEFAULT, rooms=None):
         if s < SKIN - 1e-4:
             bad.append(f"{what} ({p[0]:+.2f}, {p[1]:+.2f}, h {p[2]:.2f}): {'skin' if s >= 0 else 'POKES OUT'} {s:.3f} m")
     return least, bad
+
+
+def room_skin(name: str = DEFAULT, rooms=None) -> dict:
+    """rebuild E: {room: (least skin, sample kind)} over clearance's samples, the room the sample's kind names (a
+    corridor's or tip room's id, else "hall" or "throat")."""
+    ids = list(rooms if rooms is not None else RM)
+    out = {}
+    for what, p in interior_points(VARIANTS[name], rooms):
+        room = next((r for r in ids if what.endswith(" " + r)), what.split()[0])
+        s = skin(p, name)
+        if room not in out or s < out[room][0]:
+            out[room] = (s, what)
+    return out
 
 
 def heights(x: float, y: float, name: str = DEFAULT):

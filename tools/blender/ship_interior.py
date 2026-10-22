@@ -71,8 +71,9 @@ with (Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml").op
     _SHIP = tomllib.load(_f)
 _ROOM = {r["id"]: r for r in _SHIP["rooms"]}
 FLOOR = _SHIP["deck"]["floor_h"]                # the heights come from ship.toml (the hull lane owns them)
-# rebuild C (art#263 c6341553197): the whole inside 1 m forward. The builders and the generator work round the hall's
-# centre (HALL_C, (0, -1)); ship_interior_place.py adds HALL_C to every placement.
+# rebuild C (art#263 c6341553197) moved the inside forward; rebuild E (c6342342554): 0.4 m forward of step A, the hall's
+# rim full height all round. The builders and the generator work round the hall's centre (HALL_C, (0, -0.4));
+# ship_interior_place.py adds HALL_C to every placement.
 HALL_C = tuple(_ROOM["hall"]["centre"])
 # the hall
 N_HALL, R_HALL, H_HALL, APEX_HALL = 16, _ROOM["hall"]["radius"], _ROOM["hall"]["clear_h"], _ROOM["hall"]["apex_h"]
@@ -86,13 +87,11 @@ FLATS = sorted(round(math.degrees(math.atan2(s["at"][1] - HALL_C[1], s["at"][0] 
                for s in _SHIP["stations"]["spot"] if s["room"] == "hall" and s.get("normal"))
 # rebuild C: the throat (ship.toml room "throat"): its hall corner on the 16-gon's circle HV, the front rim lower
 _TH = _ROOM["throat"]
-TH_PTS = [(x - HALL_C[0], y - HALL_C[1]) for x, y in _TH["points"]]   # hall-relative: mouth (-+1.65, -6.1), corners
+TH_PTS = [(x - HALL_C[0], y - HALL_C[1]) for x, y in _TH["points"]]   # hall-relative: mouth (-+1.65, -6.7), corners
 TH_CORNER = math.degrees(math.atan2(TH_PTS[2][1], TH_PTS[2][0]))      # -44.38
-TH_ROOF = _TH["roof_y"] - HALL_C[1]                                   # -4.476: the throat's ceiling from here aft
+TH_ROOF = _TH["roof_y"] - HALL_C[1]                                   # -5.161: the throat's ceiling from here aft
 TH_H, (TH_BEND, TH_IN) = _TH["clear_h"], _TH["chamfer"]                # 2.3; walls vertical to 1.45, then 0.55 in
 TH_HALF = 1.0                                                         # the wall modules' nominal half width
-H_FRONT = _ROOM["hall"]["front_clear_h"]                              # 2.75: the hall's rim round its front
-FRONT_DEG = _ROOM["hall"]["front_from_deg"]                           # -15.11
 # inside-1: the hall's floor rings and lamp ring scaled with the hall (v1 apothem 3.4 -> 4.0: x 1.176)
 K_HALL = R_HALL / 3.4
 R_RING = round(1.25 * K_HALL, 3)           # the lamp ring and the ceiling's inner edge (1.47; v1 1.25)
@@ -110,6 +109,9 @@ COR_DIR = (math.cos(D(COR_ANG)), math.sin(D(COR_ANG)))
 OPENINGS = {"corridor_e": COR_ANG, "mouth": -90.0, "corridor_w": 180.0 - COR_ANG}   # opening centre angles (deg)
 BACK_DEG = 12.5   # each of the two back facets either side of the back's trunk at 90 deg (was 22.5: the sockets' flats
 # moved back off the corridor openings and need 1.6 m of plain chord clear of the portal pilaster: 2.06 m)
+# rebuild C: the front sockets' flat beside the throat, as wide as a back socket's (29.27 deg): from the throat's corner
+# to here (-15.11)
+FRONT_DEG = TH_CORNER + (90.0 - BACK_DEG) - (COR_ANG + 2 * math.degrees(PHI))
 
 
 def hall_segments() -> list[tuple[float, float, str]]:
@@ -117,9 +119,9 @@ def hall_segments() -> list[tuple[float, float, str]]:
     chord, a portal: the mouth and the corridors), "flat" (a station's plain chord over two sub-facets: the vents and
     sockets) or "facet" (one wall facet). Every vertex on the circle HV, so the openings keep their chord (HC, HCH)."""
     e0, e1 = COR_ANG - 2 * math.degrees(PHI), COR_ANG + 2 * math.degrees(PHI)   # the east corridor's chord ends
-    # rebuild C: the throat over -135.62..-44.38 (four sub-facets), a front socket's low flat beside it, one front
-    # facet to the corridor's opening (the vents moved into the throat)
-    east = [(-180.0 - TH_CORNER, TH_CORNER, "throat"), (TH_CORNER, FRONT_DEG, "flat_lo"), (FRONT_DEG, e0, "facet"),
+    # rebuild C: the throat over -135.62..-44.38 (four sub-facets), a front socket's flat beside it, one front facet
+    # to the corridor's opening (the vents moved into the throat)
+    east = [(-180.0 - TH_CORNER, TH_CORNER, "throat"), (TH_CORNER, FRONT_DEG, "flat"), (FRONT_DEG, e0, "facet"),
             (e0, e1, "opening"), (e1, 90.0 - BACK_DEG, "flat"), (90.0 - BACK_DEG, 90.0, "facet")]
     west = [(180.0 - b, 180.0 - a, k) for a, b, k in reversed(east[1:])]
     return east + west
@@ -813,7 +815,7 @@ def throat_floor(args, layout):
 
 def throat_ceil(args, layout):
     """The throat's ceiling from its roof line aft to the hall's rim: the corridors' flat ceiling (a body, panels and
-    a dark spine) between the walls' chamfer tops, and the header under the hall's low rim over each sub-facet, down
+    a dark spine) between the walls' chamfer tops, and the header under the hall's rim over each sub-facet, down
     to the ceiling (to the chamfer near the corners)."""
     top = FLOOR + TH_H
     fr = G.Frame((0.0, 0.0, top), (1, 0, 0), (0, 1, 0), (0, 0, -1))
@@ -826,7 +828,6 @@ def throat_ceil(args, layout):
     spine = [G.slab(G.floor_frame(0.0), G.rect(-0.03, 0.03, TH_ROOF, -HV), top - 0.02, top)]
     head = []
     a0, a1 = -180.0 - TH_CORNER, TH_CORNER
-    rim = FLOOR + H_FRONT
     for i in range(TH_SUBS):
         b0, b1 = a0 + (a1 - a0) * i / TH_SUBS, a0 + (a1 - a0) * (i + 1) / TH_SUBS
         p0 = (HV * math.cos(D(b0)), HV * math.sin(D(b0)))
@@ -844,18 +845,9 @@ def throat_ceil(args, layout):
             ss.append(s)
         ss = sorted(ss)
         for s0, s1 in zip(ss, ss[1:]):
-            head.append(G.slab(fv, [(s0, low(s0)), (s1, low(s1)), (s1, H_FRONT), (s0, H_FRONT)], -0.2, 0.0))
+            head.append(G.slab(fv, [(s0, low(s0)), (s1, low(s1)), (s1, H_HALL), (s0, H_HALL)], -0.2, 0.0))
     return [P("body", M(*body), "int_silver_b"), P("panels", M(*panels), "int_silver_a"),
             P("spine", M(*spine), "int_dark"), P("header", M(*head), "int_silver_b")]
-
-
-def ceil_step(args, layout):
-    """rebuild C: the ceiling's fold where the front's low rim meets the full one (origin on the vertex, radial along
-    local +x): a thin triangle from the two rims at the wall to the lamp ring."""
-    h_in = FLOOR + H_HALL + (APEX_HALL - H_HALL) * (1 - R_RING / R_HALL)
-    tri = [(0.0, FLOOR + H_FRONT), (0.0, FLOOR + H_HALL), (R_RING - HV, h_in)]
-    fr = G.Frame((0.0, 0.0, 0.0), (1, 0, 0), (0, 0, 1), (0, -1, 0))
-    return [P("fold", G.slab(fr, tri, -0.03, 0.03), "int_silver_b")]
 
 
 # --- the tip rooms (built for the east room, centre at the origin; the west one is turned 180) ----------------------
