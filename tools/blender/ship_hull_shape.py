@@ -26,17 +26,29 @@ SLAB = FLOOR - SHIP["deck"]["slab_m"]                                  # 0.35: t
 WALL = SHIP["deck"]["wall_m"]                                          # 0.2: a room's wall outside its clear size
 ROOF = 0.12                                                            # a room's ceiling over its clear height
 SKIN = 0.15                                                            # the least hull around every room
+HALL_C = tuple(RM["hall"]["centre"])                                   # rebuild C: (0, -1)
 HALL_R = RM["hall"]["radius"] + WALL                                   # 4.2
 HALL_RIM = FLOOR + RM["hall"]["clear_h"] + ROOF                        # 3.92
 HALL_APEX = FLOOR + RM["hall"]["apex_h"] + ROOF                        # 4.52
 COR_S = tuple(RM["corridor_e"]["along"])                               # (3.708, 8.219): the floor along the axis
-COR_D = math.hypot(*RM["corridor_e"]["axis"][1])                       # 9.214: the hall's centre to the tip room's
+COR_A = RM["corridor_e"]["axis"]
+COR_D = math.dist(*COR_A)                                              # 9.214: the hall's centre to the tip room's
 COR_Y = RM["corridor_e"]["width"] / 2 + WALL                           # 1.7
 COR_TOP = FLOOR + RM["corridor_e"]["clear_h"] + ROOF                   # 3.12
-MOUTH_X = RM["mouth"]["x"][1]                                          # 1.3: the recess's half width
-MOUTH_Y = RM["mouth"]["y"][0]                                          # -4.6: the opening (the recess's back plane)
-MOUTH_TOP = FLOOR + RM["mouth"]["clear_h"]                             # 3.0: the recess's ceiling
-TIP_X = RM["tip_e"]["centre"][0]                                       # 8.3
+# rebuild C pins the outside: the design points read J's own numbers, no longer the rooms' (the inside moved 1 m
+# forward under the same hull); the blockouts' variants without a throat keep v2's mouth recess box
+MOUTH_X, MOUTH_Y, MOUTH_TOP = 1.3, -4.6, 3.0                           # the old recess (variants without a throat)
+TIP_X = 8.3
+PIN_HALL_R, PIN_TIP_R = 4.2, 2.0                                       # the belly rings' rooms (v2's hall, J's tips)
+TIP_C_ROOM = tuple(RM["tip_e"]["centre"])                              # rebuild C: (8.3, 3.0)
+# rebuild C: the throat (ship.toml room "throat"); J's mouth notch is cut along it (`cutters`)
+TH = RM["throat"]
+TH_PTS = [tuple(p) for p in TH["points"]]                              # mouth (-+1.65, -7.1), hall corners (+-2.915, -3.852)
+TH_ROOF_Y = TH["roof_y"]                                               # -5.476: the ceiling from here aft
+TH_TOP = FLOOR + TH["clear_h"] + ROOF                                  # 3.02: the throat's roof
+TH_CH = TH["chamfer"]                                                  # walls vertical to 1.35, then 0.55 in
+FRONT_RIM = FLOOR + RM["hall"]["front_clear_h"] + ROOF                 # 3.47: the hall's rim round its front
+FRONT_DEG = RM["hall"]["front_from_deg"]                               # -15.11
 TIP_R = RM["tip_e"]["radius"] + WALL                                   # 2.0
 TIP_RIM = FLOOR + RM["tip_e"]["clear_h"] + ROOF                        # 3.22
 TIP_APEX = FLOOR + RM["tip_e"]["apex_h"] + ROOF                        # 3.52
@@ -87,7 +99,8 @@ VARIANTS = {   # half span, tip height, the tip rooms' windows
     # edge's height, lip the radius of a rounded lip along the arc and both edges (the edge seen end-on is a half
     # round 2 * lip thick), smooth the hull smooth-shaded (normals smooth below SMOOTH_DEG, weighted by face area).
     "J": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
-          "stern_y": 10.2, "trail": (4.4, 2.6), "tip_r": 1.5, "tip_e": 0.15},
+          "stern_y": 10.2, "trail": (4.4, 2.6), "tip_r": 1.5, "tip_e": 0.15, "throat": True,
+          "belly_also": ((0.0, -1.0), (8.3, 3.0))},
     "K": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
           "stern_y": 10.2, "trail": (4.4, 2.6), "tip_r": 3.0, "tip_e": 0.15},
     "L": {"half": 15.0, "tip_h": 3.25, "window": False, "tip_c": (8.3, 4.0), "tip_y": 5.7, "nose_y": -7.1,
@@ -212,8 +225,12 @@ def design_points(var):
         pts.append(tip)
     pts += [(x, STERN_Y + ds, z) for x, z in STERN]
     cx, cy = tip_c(var)
-    pts += ring(0.0, 0.0, HALL_R + 0.3, BELLY) + ring(cx, cy, TIP_R + 0.25, BELLY)
-    pts += [(MOUTH_X + WALL + 0.3, MOUTH_Y - 0.2, BELLY)]
+    pts += ring(0.0, 0.0, PIN_HALL_R + 0.3, BELLY) + ring(cx, cy, PIN_TIP_R + 0.25, BELLY)
+    pts += [(1.8, -4.8, BELLY)]                                        # pinned (v2's mouth room's corner)
+    # rebuild C: the flat belly also under the rooms moved 1 m forward (the hall's and tips' centres, pinned): without
+    # it the tip rooms' slabs poked 0.27 m out of the rising belly; the plan outline, span, length, nose and top stay
+    for (bx, by), r in zip(var.get("belly_also", ()), (PIN_HALL_R + 0.3, PIN_TIP_R + 0.25)):
+        pts += ring(bx, by, r, BELLY)
     if var["window"]:   # the room's cover: the wing steps down beyond it to a tip under the sill
         pts += ring(TIP_X, 0.0, TIP_R + 0.25, TIP_RIM + 0.25, a0=-90.0, a1=90.0)
     return mirrored([p for p in pts if p[0] >= -1e-6]), tip
@@ -223,30 +240,58 @@ def interior_points(var):
     """(what, plan point) of every room's outer surface: walls, ceilings, crowns and slab bottoms; the tip rooms and
     the corridors where the variant puts them."""
     pts = []
-    tcx, tcy = tip_c(var)
-    u, n, s0, s1 = corridor_frame(var)
+    thr = bool(var.get("throat"))
+    if thr:   # rebuild C: the rooms where ship.toml has them (the inside 1 m forward) and the throat
+        (hx, hy), (tcx, tcy) = HALL_C, TIP_C_ROOM
+        (ax, ay), (bx, by) = COR_A
+        dd = math.hypot(bx - ax, by - ay)
+        u = ((bx - ax) / dd, (by - ay) / dd)
+        n, s0, s1 = (-u[1], u[0]), COR_S[0], COR_S[1]
+    else:
+        (hx, hy), (tcx, tcy) = (0.0, 0.0), tip_c(var)
+        u, n, s0, s1 = corridor_frame(var)
+    corner = math.degrees(math.atan2(TH_PTS[2][1] - hy, TH_PTS[2][0] - hx))      # -44.38: the throat's hall corner
     for d in range(0, 360, 5):
         c, s = math.cos(math.radians(d)), math.sin(math.radians(d))
-        x, y = HALL_R * c, HALL_R * s
-        if not (abs(x) < MOUTH_X + WALL and y < 0):
-            for h in (SLAB, 1.4, 2.6, HALL_RIM):
+        a = (d + 180) % 360 - 180
+        front = thr and -180.0 - FRONT_DEG - 1e-6 <= a <= FRONT_DEG + 1e-6
+        in_throat = thr and -180.0 - corner + 1e-6 < a < corner - 1e-6
+        rim = FRONT_RIM if front else HALL_RIM
+        x, y = hx + HALL_R * c, hy + HALL_R * s
+        if not in_throat and not (not thr and abs(x) < MOUTH_X + WALL and y < 0):
+            for h in (SLAB, 1.4, 2.6, rim):
                 pts.append(("hall wall", (x, y, h)))
         for rr in (1.0, 2.0, 3.0, 4.0):
-            pts.append(("hall roof", (rr * c, rr * s, HALL_APEX - (HALL_APEX - HALL_RIM) * rr / HALL_R)))
-            pts.append(("hall slab", (rr * c, rr * s, SLAB)))
-    pts.append(("hall crown", (0.0, 0.0, HALL_APEX)))
-    for x in (-MOUTH_X - WALL, -MOUTH_X, 0.0, MOUTH_X, MOUTH_X + WALL):
-        for y in (MOUTH_Y + SKIN + 0.01, -3.9):
-            for h in (SLAB, MOUTH_TOP + ROOF):
-                pts.append(("mouth", (x, y, h)))
+            if front and rr > 1.47:   # the front panels: from the lamp ring down to the low rim
+                h_in = HALL_APEX - (HALL_APEX - HALL_RIM) * 1.47 / HALL_R
+                h = h_in - (h_in - rim) * (rr - 1.47) / (HALL_R - 1.47)
+            else:
+                h = HALL_APEX - (HALL_APEX - HALL_RIM) * rr / HALL_R
+            pts.append(("hall roof", (hx + rr * c, hy + rr * s, h)))
+            if not (thr and in_cutter((hx + rr * c, hy + rr * s - 0.2, SLAB - 0.02))):   # by the throat's open underside
+                pts.append(("hall slab", (hx + rr * c, hy + rr * s, SLAB)))
+    pts.append(("hall crown", (hx, hy, HALL_APEX)))
+    if thr:   # the throat's covered part: its walls' tops, the chamfers' outer edges and the roof
+        (mx, my), (kx, ky) = TH_PTS[1], TH_PTS[2]
+        k = math.hypot(kx - mx, ky - my) / (ky - my)                    # an across distance as an x offset in a row
+        y = TH_ROOF_Y + SKIN
+        while y <= ky + 1e-6:
+            xw = mx + (kx - mx) * (y - my) / (ky - my)                    # the wall's face at y
+            for sx in (-1, 1):
+                for what, x, h in (("throat wall", xw + WALL * k, FLOOR + TH_CH[0]),
+                                   ("throat chamfer", xw - (TH_CH[1] - 0.17) * k, TH_TOP),
+                                   ("throat roof", 0.5 * (xw - TH_CH[1] * k), TH_TOP), ("throat roof", 0.0, TH_TOP)):
+                    if math.hypot(sx * x - hx, y - hy) > HALL_R - 0.3:
+                        pts.append((what, (sx * x, y, h)))
+            y += 0.3
     for side in (-1, 1):
         s = s0
         while s <= s1 + 1e-6:
             for w in (-COR_Y, COR_Y):
                 for h in (SLAB, 1.7, COR_TOP):
-                    pts.append(("corridor", (side * (s * u[0] + w * n[0]), s * u[1] + w * n[1], h)))
+                    pts.append(("corridor", (hx + side * (s * u[0] + w * n[0]), hy + s * u[1] + w * n[1], h)))
             for w in (-COR_Y, 0.0, COR_Y):
-                pts.append(("corridor roof", (side * (s * u[0] + w * n[0]), s * u[1] + w * n[1], COR_TOP)))
+                pts.append(("corridor roof", (hx + side * (s * u[0] + w * n[0]), hy + s * u[1] + w * n[1], COR_TOP)))
             s += 0.3
         for d in range(0, 360, 5):
             c, s = math.cos(math.radians(d)), math.sin(math.radians(d))
@@ -397,12 +442,86 @@ X, Y, H = (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)
 
 
 @lru_cache(maxsize=None)
+def cutters():
+    """rebuild C: J's mouth notch as two convex cutters [(n, d)] (inside n . p <= d), each side plane the throat
+    wall's outer face (its face line from the mouth to the hall's corner, WALL out): "notch" the open front, all
+    heights, forward of the roof line (the nose is too low for head room there: no roof, the throat open to the sky);
+    "belly" under the throat's covered part, below its slab (the belly rises over the deck there)."""
+    (mx, my), (kx, ky) = TH_PTS[1], TH_PTS[2]
+    ln = math.hypot(kx - mx, ky - my)
+    ne = ((ky - my) / ln, -(kx - mx) / ln, 0.0)                         # the east wall's outward normal
+    nw = (-ne[0], ne[1], 0.0)
+    de = _dot(ne, (mx, my, 0.0)) + WALL
+    sides = [(ne, de), (nw, de)]
+    notch = sides + [(Y, TH_ROOF_Y), (_neg(H), -RECESS_FLOOR)]
+    belly = sides + [(_neg(Y), -TH_ROOF_Y), (Y, ky), (H, SLAB - 0.005), (_neg(H), -RECESS_FLOOR)]
+    return {"notch": notch, "belly": belly}
+
+
+def in_cutter(p) -> bool:
+    return any(all(_dot(n, p) <= d for n, d in planes) for planes in cutters().values())
+
+
+def _subtract(poly, planes):
+    """A convex polygon minus a convex region: its disjoint convex pieces outside it."""
+    out, rest = [], poly
+    for n, d in planes:
+        piece = clip(rest, _neg(n), -d)
+        if len(piece) >= 3 and area(piece) > 1e-6:
+            out.append(piece)
+        rest = clip(rest, n, d)
+        if len(rest) < 3:
+            break
+    return out
+
+
+def _plane_quad(n, d, size=40.0):
+    a = X if abs(n[0]) < 0.9 else Y
+    e1 = _unit3(_sub(a, tuple(n[k] * _dot(a, n) for k in range(3))))
+    e2 = _cross(n, e1)
+    o = tuple(n[k] * d for k in range(3))
+    return [tuple(o[k] + size * (s1 * e1[k] + s2 * e2[k]) for k in range(3)) for s1, s2 in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+
+
+def _throat_surface(hull):
+    """rebuild C: the hull's faces outside both cutters, and the cutters' own faces inside the hull facing into them
+    ("mouth"): the notch's sides and the lintel over the throat's roof (its back plane only above TH_TOP: below it the
+    throat runs on aft), the belly cut's sides, its ceiling under the slab and its back."""
+    cut = cutters()
+    out = []
+    for n, d, poly in hull:
+        kind = "top" if n[2] >= -0.05 else "belly"
+        for a in _subtract(poly, cut["notch"]):
+            out += [(b, n, kind) for b in _subtract(a, cut["belly"])]
+    for name, planes in cut.items():
+        for i, (n, d) in enumerate(planes):
+            if name == "belly" and n == _neg(Y):
+                continue   # its front borders the notch
+            poly = _plane_quad(n, d)
+            for j, (m, e) in enumerate(planes):
+                if j != i:
+                    poly = clip(poly, m, e)
+            if name == "notch" and n == Y:
+                poly = clip(poly, _neg(H), -TH_TOP)
+            for hn, hd, _p in hull:
+                if len(poly) < 3:
+                    break
+                poly = clip(poly, hn, hd)
+            if len(poly) >= 3 and area(poly) > 1e-6:
+                out.append((poly, _neg(n), "mouth"))
+    return out
+
+
+@lru_cache(maxsize=None)
 def surface(name: str = DEFAULT):
     """The hull's outer faces after the mouth cut: [(polygon, outward n, kind)], kind "top" (n_h >= -0.05), "belly" or
     "mouth" (the recess's back, sides and ceiling, facing into it); every polygon convex, its Newell normal along n
     (plan coordinates)."""
     mx, my, mt = MOUTH_X, MOUTH_Y, MOUTH_TOP
     hull = facets(name)
+    if VARIANTS[name].get("throat"):
+        out = _throat_surface(hull)
+        return [(p if _dot(_newell(p), n) > 0 else list(reversed(p)), n, kind) for p, n, kind in out]
     out = []
     for n, d, poly in hull:   # each facet outside the recess's box: four disjoint convex pieces
         kind = "top" if n[2] >= -0.05 else "belly"
@@ -432,6 +551,8 @@ def skin(p, name: str = DEFAULT) -> float:
     outside."""
     x, y, h = p
     inner = min(d - _dot(n, p) for n, d, _poly in facets(name))
+    if VARIANTS[name].get("throat"):   # the cutters' plane distances (a lower bound of the true distance)
+        return min([inner] + [max(_dot(n, p) - d for n, d in planes) for planes in cutters().values()])
     dx, dy = max(abs(x) - MOUTH_X, 0.0), max(y - MOUTH_Y, 0.0)
     dh = max(h - MOUTH_TOP, RECESS_FLOOR - h, 0.0)
     if dx == dy == dh == 0.0:   # inside the recess's box

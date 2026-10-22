@@ -24,7 +24,7 @@ with (ROOT / "layouts" / "ship" / "ship.toml").open("rb") as _f:
 
 def along(x: float, y: float) -> float:
     """rebuild A: a plan point's distance along its corridor's axis from the hall's centre (east or west)."""
-    return abs(x) * S.COR_DIR[0] + y * S.COR_DIR[1]
+    return abs(x - S.HALL_C[0]) * S.COR_DIR[0] + (y - S.HALL_C[1]) * S.COR_DIR[1]   # rebuild C: from the hall's centre
 
 
 class ShipInteriorTest(unittest.TestCase):
@@ -52,14 +52,15 @@ class ShipInteriorTest(unittest.TestCase):
         self.assertEqual(S.R_HALL, rooms["hall"]["radius"])
         self.assertEqual((S.H_HALL, S.APEX_HALL), (rooms["hall"]["clear_h"], rooms["hall"]["apex_h"]))
         self.assertEqual((S.H_TIP, S.APEX_TIP), (rooms["tip_e"]["clear_h"], rooms["tip_e"]["apex_h"]))
-        self.assertEqual(S.TIP_C, tuple(rooms["tip_e"]["centre"]))
-        self.assertAlmostEqual(S.TIP_X, math.hypot(*rooms["tip_e"]["centre"]), places=9)
+        hc = rooms["hall"]["centre"]   # rebuild C: the generator works round the hall's centre
+        self.assertEqual(S.TIP_C, (rooms["tip_e"]["centre"][0] - hc[0], rooms["tip_e"]["centre"][1] - hc[1]))
+        self.assertAlmostEqual(S.TIP_X, math.dist(rooms["tip_e"]["centre"], hc), places=9)
         self.assertEqual(S.H_COR, rooms["corridor_e"]["clear_h"])
         # rebuild A: the corridor's axis runs from the hall's centre through the tip room's
         (ax, ay), (bx, by) = rooms["corridor_e"]["axis"]
-        self.assertEqual((ax, ay), (0.0, 0.0))
-        self.assertAlmostEqual(S.COR_ANG, math.degrees(math.atan2(by, bx)), places=9)
-        self.assertAlmostEqual(math.degrees(math.atan2(*reversed(rooms["tip_e"]["centre"]))), S.COR_ANG, places=9)
+        self.assertEqual((ax, ay), tuple(hc))
+        self.assertAlmostEqual(S.COR_ANG, math.degrees(math.atan2(by - ay, bx - ax)), places=9)
+        self.assertAlmostEqual(math.degrees(math.atan2(*reversed(S.TIP_C))), S.COR_ANG, places=9)
         self.assertEqual(max(u for u, _ in S.PROF), rooms["corridor_e"]["width"] / 2)
 
     def test_the_openings_take_the_corridor(self) -> None:
@@ -83,13 +84,13 @@ class ShipInteriorTest(unittest.TestCase):
         self.assertGreaterEqual(v_at, pl["capsule_height_m"])
 
     def test_the_mouth_opens_wide_and_the_tip_rooms_have_no_window(self) -> None:
-        self.assertGreaterEqual(2 * S.MOUTH_PROF[3][0], 1.9)   # the mouth's ceiling stays wide (inside 3-1)
+        self.assertEqual(S.THROAT_PROF[1][1], S.PROF[1][1])   # rebuild C: the throat bends where the corridors do
         # rebuild A (the engineer, 2026-10-22): no tip windows; the window's segments are wall facets
         ids = {p["id"] for p in INTERIOR["pieces"]}
         self.assertFalse({i for i in ids if any(w in i for w in ("window", "shutter", "well", "sill", "glass"))})
         self.assertEqual(INTERIOR.get("shutter_closed", []), [])
         for sx in (1, -1):
-            c = (sx * S.TIP_C[0], S.TIP_C[1])
+            c = (sx * S.TIP_C[0] + S.HALL_C[0], S.TIP_C[1] + S.HALL_C[1])
             panels = [1 for pid, (x, y, _), _ in INTERIOR["place"] if pid.startswith("tip_panel")
                       and math.hypot(x - c[0], y - c[1]) < S.R_TIP]
             self.assertEqual(len(panels), S.TIP_N)
@@ -103,7 +104,8 @@ class ShipInteriorTest(unittest.TestCase):
         for a0, a1, k in segs:
             if k == "opening":
                 self.assertAlmostEqual(a1 - a0, 45.0, places=6)
-        portals = [math.degrees(math.atan2(y, x)) for pid, (x, y, _), _ in INTERIOR["place"] if pid == "hall_portal"]
+        portals = [math.degrees(math.atan2(y - S.HALL_C[1], x - S.HALL_C[0])) for pid, (x, y, _), _ in INTERIOR["place"]
+                   if pid == "hall_portal"]
         self.assertEqual(sorted(round(a, 3) for a in portals),
                          sorted(round(S.OPENINGS[k], 3) for k in ("corridor_e", "corridor_w")))
 
@@ -123,11 +125,14 @@ class ShipInteriorTest(unittest.TestCase):
         """inside-fix (code review major 1): no dark gap at the wall where a player stands. rebuild A: every hall
         segment (facet, flat chord, opening) has exactly one plate centred on it, of its kind; every tip-room edge
         its rim plate (the door's three)."""
-        kinds = {"facet": "hall_floor_rim", "flat": "hall_flat_floor", "opening": "hall_threshold"}
-        plates = [(pid, math.degrees(math.atan2(y, x))) for pid, (x, y, _), _yaw in INTERIOR["place"]
-                  if pid.startswith(("hall_floor_rim", "hall_flat_floor", "hall_threshold"))]
-        segs = S.hall_segments()
+        kinds = {"facet": "hall_floor_rim", "flat": "hall_flat_floor", "flat_lo": "hall_flat_floor",
+                 "opening": "hall_threshold"}
+        plates = [(pid, math.degrees(math.atan2(y - S.HALL_C[1], x - S.HALL_C[0]))) for pid, (x, y, _), _yaw
+                  in INTERIOR["place"] if pid.startswith(("hall_floor_rim", "hall_flat_floor", "hall_threshold"))
+                  and pid != "hall_floor_rim_throat"]
+        segs = [s for s in S.hall_segments() if s[2] != "throat"]   # rebuild C: the throat's sub-facets' own rims
         self.assertEqual(len(plates), len(segs))
+        self.assertEqual(sum(1 for p in INTERIOR["place"] if p[0] == "hall_floor_rim_throat"), 2 * S.TH_SUBS // 2)
         for a0, a1, k in segs:
             mid = (a0 + a1) / 2
             hits = [pid for pid, a in plates if abs(((a - mid + 180) % 360) - 180) < 1e-3]

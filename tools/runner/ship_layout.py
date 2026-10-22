@@ -2,7 +2,7 @@
 lanes' piece lists and placements, and the plain-Python check of the rules `ship --check` holds: the footprint, the
 corridor width, the tip rooms' outer wall, the station spots (inside their rooms, the wall spots' plain flat panels
 and the free pass behind a player standing at each), every room and placed piece inside the hull, the head room, and
-one entrance. Rooms are circles, axis-aligned rects or "strip"s (a straight corridor at any angle: `axis` [from, to],
+one entrance. Rooms are circles, axis-aligned rects, convex "poly"s (`points` counter-clockwise: the throat) or "strip"s (a straight corridor at any angle: `axis` [from, to],
 `along` [u0, u1] its floor's ends measured from `from`, `width`). The least skin round every room comes from the
 hull's own shape (tools/blender/ship_hull_shape.py, plain Python; [hull] shape names its variant).
 Plan coordinates: x east, y south, h up (metres); Godot (x, h, y)."""
@@ -84,8 +84,20 @@ def strip_point(room: dict[str, Any], u: float, v: float) -> tuple[float, float]
     return ox + u * ux - v * uy, oy + u * uy + v * ux
 
 
+def poly_edges(room: dict[str, Any]):
+    """A poly room's edges as (a, b, inward unit normal)."""
+    pts = [tuple(p) for p in room["points"]]
+    out = []
+    for a, b in zip(pts, pts[1:] + pts[:1]):
+        n = math.hypot(b[0] - a[0], b[1] - a[1])
+        out.append((a, b, (-(b[1] - a[1]) / n, (b[0] - a[0]) / n)))
+    return out
+
+
 def room_margin(room: dict[str, Any], pt: tuple[float, float]) -> float:
     """How far pt lies inside the room's floor (negative: outside)."""
+    if room["shape"] == "poly":
+        return min((pt[0] - a[0]) * n[0] + (pt[1] - a[1]) * n[1] for a, _b, n in poly_edges(room))
     if room["shape"] == "circle":
         return room["radius"] - math.dist(pt, room["centre"])
     if room["shape"] == "strip":
@@ -102,6 +114,13 @@ def boundary(room: dict[str, Any], wall: float, n: int = 48) -> list[tuple[float
         r = room["radius"] + wall
         cx, cy = room["centre"]
         return [(cx + r * math.cos(2 * math.pi * i / n), cy + r * math.sin(2 * math.pi * i / n)) for i in range(n)]
+    if room["shape"] == "poly":
+        pts = []
+        for a, b, nn in poly_edges(room):
+            for i in range(n // 4):
+                s = i / (n // 4)
+                pts.append((a[0] + (b[0] - a[0]) * s - nn[0] * wall, a[1] + (b[1] - a[1]) * s - nn[1] * wall))
+        return pts
     if room["shape"] == "strip":
         _o, _u, u0, u1, half = strip_frame(room)
         pts = []
@@ -162,6 +181,8 @@ def _touch(a: dict[str, Any], b: dict[str, Any]) -> bool:
         elif room["shape"] == "rect":
             (x0, x1), (y0, y1) = room["x"], room["y"]
             ends = [(x0, (y0 + y1) / 2), (x1, (y0 + y1) / 2), ((x0 + x1) / 2, y0), ((x0 + x1) / 2, y1)]
+        elif room["shape"] == "poly":
+            ends = [((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) for a, b, _n in poly_edges(room)]
         else:
             continue
         for p in ends:
@@ -213,11 +234,12 @@ def check(layout: dict[str, Any]) -> list[str]:
         problems.append(f"{len(exits)} rooms with an exit, wants exactly one (the mouth ramp)")
     else:
         m, ramp = exits[0], layout["ramp"]
-        if abs(ramp["hinge"][1] - m["y"][0]) > 0.01 or not m["x"][0] <= ramp["hinge"][0] <= m["x"][1]:
+        (x0, x1), y0 = exit_edge(m)
+        if abs(ramp["hinge"][1] - y0) > 0.01 or not x0 <= ramp["hinge"][0] <= x1:
             problems.append("the ramp's hinge is not on the mouth room's north edge")
         if ramp["foot"][1] >= ramp["hinge"][1] or abs(ramp["hinge"][0]) > 0.01:
             problems.append("the ramp does not run north from the ship's centre line")
-        if abs(m["x"][1] - m["x"][0] - ramp["width_m"]) > 0.01:
+        if abs(x1 - x0 - ramp["width_m"]) > 0.01:
             problems.append("the ramp is not as wide as the mouth")
         drop = layout["deck"]["floor_h"] - layout["deck"]["ground_h"]
         slope = math.degrees(math.atan2(drop, ramp["hinge"][1] - ramp["foot"][1]))
@@ -244,8 +266,8 @@ def check(layout: dict[str, Any]) -> list[str]:
     wall = layout["deck"]["wall_m"]
     for r in layout["rooms"]:
         pts = boundary(r, wall)
-        if r.get("exit") and r["shape"] == "rect":  # the exit's own open edge meets the ramp, outside the hull by design
-            pts = [p for p in pts if p[1] > r["y"][0] + 0.05]
+        if r.get("exit") and r["shape"] in ("rect", "poly"):  # the exit's own open edge meets the ramp, outside the hull by design
+            pts = [p for p in pts if p[1] > exit_edge(r)[1] + 0.05]
         out = [p for p in pts if not inside(poly, p)]
         if out:
             problems.append(f"{r['id']}: {len(out)} wall points outside the hull, e.g. ({out[0][0]:.2f}, {out[0][1]:.2f})")
@@ -264,6 +286,15 @@ def check(layout: dict[str, Any]) -> list[str]:
     if unplaced:
         problems.append(f"pieces never placed: {', '.join(unplaced)}")
     return problems
+
+
+def exit_edge(room: dict[str, Any]) -> tuple[tuple[float, float], float]:
+    """The exit room's north (open) edge: ((x0, x1), y); a poly's is its edge at the least y."""
+    if room["shape"] == "poly":
+        y0 = min(p[1] for p in room["points"])
+        xs = [p[0] for p in room["points"] if abs(p[1] - y0) < 1e-6]
+        return (min(xs), max(xs)), y0
+    return (room["x"][0], room["x"][1]), room["y"][0]
 
 
 def hull_skin(layout: dict[str, Any]) -> list[str]:

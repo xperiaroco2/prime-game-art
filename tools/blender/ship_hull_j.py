@@ -79,3 +79,32 @@ def j_skin(args: dict, layout: dict) -> list:
 
 
 j_skin = H._outward(j_skin)
+
+
+def j_cheeks(args: dict, layout: dict) -> list:
+    """rebuild C: the mouth's cheeks, the throat walls' outer faces where J's belly rises over the deck (under the nose,
+    forward of the hall): plates in the walls' outer planes from the slab's bottom up to the belly, so the throat
+    reads as a mouth cut into the nose and no wall stands bare under it."""
+    (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
+    ln = math.hypot(kx - mx, ky - my)
+    d = ((kx - mx) / ln, (ky - my) / ln)
+    groups: dict = {}
+    for sx in (1, -1):
+        n = (sx * d[1], -d[0], 0.0)                     # outward
+        pts = []
+        for i in range(25):
+            s = ln * i / 24
+            x, y = sx * (mx + d[0] * s) + n[0] * S.WALL, my + d[1] * s + n[1] * S.WALL
+            hb = S.heights(x, y)
+            if hb and hb[1] > S.SLAB + 0.01:
+                pts.append((x, y, hb[1]))
+        for (x0, y0, b0), (x1, y1, b1) in zip(pts, pts[1:]):
+            q = [(x0, y0, S.SLAB - 0.01), (x1, y1, S.SLAB - 0.01), (x1, y1, b1), (x0, y0, b0)]
+            if S._dot(S._newell(q), n) < 0:
+                q.reverse()
+            for p in plates(q, n):
+                groups.setdefault("ext_silver_c", []).append(H._plate(p, INSET, DEPTH))
+    return [L.part(f"cheeks_{mat}", *L.merge(*g), mat, solid=False) for mat, g in sorted(groups.items())]
+
+
+j_cheeks = H._outward(j_cheeks)

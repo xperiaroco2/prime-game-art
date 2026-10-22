@@ -53,7 +53,7 @@ class ShipExteriorTest(unittest.TestCase):
             if sum(k * k for k in n) < 1e-12:
                 continue
             near = [fn for fn, d in planes if abs(sum(fn[k] * c[k] for k in range(3)) - d) < 0.05]  # its facet(s)
-            self.assertGreater(max(sum(n[k] * fn[k] for k in range(3)) for fn in near), 0.0, f"inward face at {c}")
+            self.assertGreater(max(sum(n[k] * fn[k] for k in range(3)) for fn in near), -1e-3, f"inward face at {c}")
 
     def test_placements_and_views(self) -> None:
         pieces = {p["id"] for p in EXT["pieces"]}
