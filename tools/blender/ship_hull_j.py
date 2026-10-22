@@ -247,6 +247,8 @@ def seams(q, i, edges, zone) -> list:
     return out
 
 
+CORNER_CAP = 0.3  # a plate corner moves at most CORNER_CAP * the shorter of its two edges (lay_seams)
+SEAM_CAP = 0.6    # details 3d: a sliding seam corner moves at most SEAM_CAP of its seam edge along it (_slide_cap)
 SLIDE_MAX = 3.0   # details 3c: a seam corner slides at most SLIDE_MAX * INSET along its flush edge (a needle or a
                   # near-straight corner, sin under 1 / SLIDE_MAX)
 
@@ -265,13 +267,28 @@ def _corner(q, flags, j):
     return way, INSET / max(sin, 1.0 / SLIDE_MAX)
 
 
+def _slide_cap(q, flags, j) -> float:
+    """details 3d: how far seam corner j of piece q may slide along its flush edge: CORNER_CAP of that edge, and its
+    part along the seam (s * |cos|) at most SEAM_CAP of the seam edge, so with the seam's other corner (CORNER_CAP
+    at most) the plate neither runs past its edges nor folds over. (Capping by CORNER_CAP of the shorter edge
+    pinched the groove of 186 corners of 25 to 155 deg in groups with a short member; the flush edge alone folded a
+    piece over.)"""
+    k = len(q)
+    a, b, c = q[j - 1], q[j], q[(j + 1) % k]
+    (s0, s1), (f0, f1) = ((a, b), (b, c)) if flags[j - 1] else ((b, c), (a, b))
+    cos = abs(S._dot(S._unit3(S._sub(s1, s0)), S._unit3(S._sub(f1, f0))))
+    return min(CORNER_CAP * math.dist(f0, f1), SEAM_CAP * math.dist(s0, s1) / max(cos, 1e-9))
+
+
 def corner_slides(pieces) -> list:
     """details 3c: per piece {corner index: slide} for its seam corners on a flush edge. The corners at one point
     sliding one way (the pieces on both sides of a facet fold, along the fold) share one slide, the largest one wanted
     (each keeps its groove at least INSET wide: 3b's slide of INSET whatever the angle tapered an acute corner's groove
-    to INSET * sin), so they end at one point and leave no wedge (a small piece's own cap in lay_seams may stop it
-    short)."""
+    to INSET * sin), so they end at one point and leave no wedge. Details 3d: one cap per group, the smallest of
+    its members' _slide_cap, so no member stops short of the others (3c's lay_seams capped each piece on its own at
+    0.3 of its shorter edge: 450 groups ended over 0.1 mm apart, up to 6.5 cm, the black wedges at seam corners)."""
     groups: dict = {}
+    caps: dict = {}
     at = []
     for idx, (_k, _z, _c, _i, q, flags) in enumerate(pieces):
         fl = flags if width(q) > SLIVER else [False] * len(q)
@@ -280,8 +297,10 @@ def corner_slides(pieces) -> list:
             if cr:
                 key = (tuple(round(t, 4) for t in q[j]), tuple(round(t, 2) for t in cr[0]))
                 groups.setdefault(key, []).append(cr[1])
+                cap = _slide_cap(q, fl, j)
+                caps[key] = min(caps.get(key, cap), cap)
                 at.append((idx, j, key))
-    slide = {key: max(g) for key, g in groups.items()}
+    slide = {key: min(max(g), caps[key]) for key, g in groups.items()}
     out = [{} for _ in pieces]
     for idx, j, key in at:
         out[idx][j] = slide[key]
@@ -316,9 +335,9 @@ def lay_seams(q, flags, slides=None):
         else:
             beta = (o2 - o1 * S._dot(m1, m2)) / den
             x = tuple(m1[t] * o1 + d1[t] * beta for t in range(3))
-        cap = 0.3 * min(math.dist(a, b), math.dist(b, c))
+        cap = CORNER_CAP * min(math.dist(a, b), math.dist(b, c))
         ln = math.sqrt(S._dot(x, x))
-        if ln > cap:
+        if ln > cap and not (slides and i in slides):   # 3d: a corner_slides slide is capped per group already
             x = tuple(t * cap / ln for t in x)
         top.append(tuple(b[t] + x[t] for t in range(3)))
     verts = top + [H._add(p, n, -DEPTH) for p in q]
