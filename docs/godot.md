@@ -767,6 +767,8 @@ pilot's static premium heads"):
   `cavity`, `flush` and `micro_strength` stay off in the pick. New: `plain_tex` and `alive_mix` (1 = the GLB's albedo;
   0 the albedo without the baked layers, above 1 extrapolated; `apply(root, mask, base_skin, detail, plain)`) for the
   review grid. The pick (`alien_static_review.py` `PICK`) also lowers `specular_level` on the skin.
+- **Round 4 (static_v4, 2026-10-22):** the shader and the pick are unchanged; the fixes are in the baked textures
+  (`docs/pipeline.md`). The review's middle seams row is round 3 under the same pick.
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from

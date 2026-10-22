@@ -151,6 +151,27 @@ runs separately. Output: `<raw>/research/2026-10-22-roster/design/pilot3d/static
   levers' decisive grid; the before/after under AgX 0.65 + saturation 1.35 and the showroom's AgX 0.9; the gate),
   `alien_static_compare.py <lids|web>` (the browser-like render: Blender's glTF import, Cycles, the studio HDRI only,
   the Standard view transform).
+- **Round 4 (static_v4, 2026-10-22; output `<raw>/.../pilot3d/static_v4/<head>/`, the earlier folders kept).** The
+  manager's verdict on round 3: the orange peel, the axolotl's teal crown and the cleaner lips stay; the chameleon
+  read a dark ring round both eyes (bruises or bags, heavier lids than #288's), the axolotl dirty greenish blotches
+  (forehead, back, shoulder, a band at the lip corner), and a small bump stayed on the upper lip's border. Fixes:
+  - **Chameleon eyes:** `LID_FLUSH` and `RIM_ROUGH` per head (the chameleon 0: no lid flush, no rougher rim band),
+    and no crease colour within `EYE_CLEAR` (1.9 to 2.4 eye radii) of its eyes. `chameleon_heavylid` is dropped:
+    its lid geometry was the default's, the heavier read was shading. **The main cause was the colour bake:** with
+    round 2's short cage and ray (0.008 / 0.03) Meshy's painted iris landed higher on the eyeball, so the upper lid
+    cut the iris; `COLOUR_CAGE` per head gives the chameleon's colour bakes #288's 0.015 / 0.05 back (the seams
+    sheet's albedo column shows it; the normal, cavity and thinness bakes keep the short ones; `--colour-cage`).
+  - **No dirty colour:** the large-scale hue and value drift is gone (from the roughness as well). The crease is
+    narrow only: the cavity below its own skin neighbourhood's mean (a normalised box blur, `CREASE_K`), from the
+    90th to the 99.5th percentile, so eye sockets and wide hollows never count. Every colour the layers add is the
+    skin's own teal: the flush moves toward it, the crease toward a darker teal of the same hue; no hue shift and
+    no saturation boost (a saturated pale skin read green-grey).
+  - **Lip border:** within the lips' region and `LIP_GAP` above the slit, a low vertex standing out of the
+    smoothed dense original moves inward onto it (`lip_snap`; outward parts only, so the border's crease keeps its
+    depth), then onto a copy of the low mesh relaxed in that band (`LIP_RELAX`), since the bump is in the smoothed
+    original too (`build.json` `lip_snap`).
+
+  Review as round 3; the seams sheet's middle row is round 3 (under its pick), `lids` shows round 3 beside this one.
 
 ## Since 2026-10-03: the character base and who decides
 
