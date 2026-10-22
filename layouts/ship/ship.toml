@@ -67,7 +67,7 @@ centre = [-10.75, 0.0]
 radius = 2.05
 clear_h = 2.5                                 # update 2 (was 2.8 / 3.2)
 apex_h = 2.8
-window = { dir = [-1.0, 0.0], half_angle_deg = 65.0, sill_h = 0.45, head_h = 2.2 }   # glass onto the clearing, not an exit
+window = { dir = [-1.0, 0.0], half_angle_deg = 65.0, sill_h = 1.0, head_h = 2.2 }   # glass onto the clearing, not an exit
 
 [[rooms]]
 id = "tip_e"
@@ -76,7 +76,7 @@ centre = [10.75, 0.0]
 radius = 2.05
 clear_h = 2.5                                 # update 2 (was 2.8 / 3.2)
 apex_h = 2.8
-window = { dir = [1.0, 0.0], half_angle_deg = 65.0, sill_h = 0.45, head_h = 2.2 }
+window = { dir = [1.0, 0.0], half_angle_deg = 65.0, sill_h = 1.0, head_h = 2.2 }    # join 3: sill 0.45 -> 1.0 (the lens band starts 1.33 m up)
 
 # The future stations (estate-map 5a): NOT built in step 1; only their spots stay clear. radius_m: the footprint kept
 # free; at_wall: stands at a corridor wall (within wall_reach_m of it).
