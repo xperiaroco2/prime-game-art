@@ -48,8 +48,8 @@ PIN_HALL_R, PIN_TIP_R = 4.2, 2.0                                       # the bel
 TIP_C_ROOM = tuple(RM["tip_e"]["centre"])                              # rebuild C: (8.3, 3.0)
 # rebuild C: the throat (ship.toml room "throat"); J's mouth notch is cut along it (`cutters`)
 TH = RM["throat"]
-TH_PTS = [tuple(p) for p in TH["points"]]                              # mouth (-+1.65, -7.1), hall corners (+-2.915, -3.852)
-TH_ROOF_Y = TH["roof_y"]                                               # -5.476: the ceiling from here aft
+TH_PTS = [tuple(p) for p in TH["points"]]                              # mouth (-+1.65, -7.1), hall corners (+-2.915, -3.252)
+TH_ROOF_Y = TH["roof_y"]                                               # -5.5608: the ceiling from here aft
 TH_TOP = FLOOR + TH["clear_h"] + ROOF                                  # 3.02: the throat's roof
 TH_CH = TH["chamfer"]                                                  # walls vertical to 1.35, then 0.55 in
 TIP_R = RM["tip_e"]["radius"] + WALL                                   # 2.0
@@ -588,7 +588,8 @@ def _throat_surface(hull):
     for n, d, poly in hull:
         kind = "top" if n[2] >= -0.05 else "belly"
         for a in _subtract(poly, cut["notch"]):
-            out += [(c, n, kind) for b in _subtract(a, cut["belly"]) for c in _subtract(b, room)]
+            for b in _subtract(a, cut["belly"]):   # the room cuts only the belly: a top facet keeps its sliver aft
+                out += [(c, n, kind) for c in (_subtract(b, room) if kind == "belly" else [b])]   # of the jamb cap
     for name, planes in cut.items():
         for i, (n, d) in enumerate(planes):
             if name == "belly" and n == _neg(Y):

@@ -14,6 +14,7 @@ from runner import ship_layout as sl
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "blender"))
 import ship_hull  # noqa: E402,F401  (imports the skin and the details in their order)
 import ship_hull_detail as D  # noqa: E402
+import ship_hull_j as J  # noqa: E402
 import ship_hull_shape as S  # noqa: E402
 
 LAYOUT = sl.load()
@@ -63,6 +64,46 @@ class ShipHullDetailTest(unittest.TestCase):
             self.assertNotIn(gone, builders)
             self.assertFalse(hasattr(D, gone), gone)
 
+
+    def test_the_throats_covered_part_cuts_only_the_belly(self) -> None:
+        # rebuild F: the room cut takes J's belly out of the throat's covered part (between the walls' outer faces,
+        # roof line to the hall's corners) and leaves every top facet whole (a sliver of it once went: a hole)
+        cut = S.cutters()
+        sides, ky = cut["notch"][:2], S.TH_PTS[2][1]
+        surf = S.surface()
+        for poly, _n, kind in surf:
+            if kind != "belly":
+                continue
+            c = [sum(p[i] for p in poly) / len(poly) for i in range(3)]
+            inside = all(S._dot(n, c) <= d for n, d in sides) and S.TH_ROOF_Y <= c[1] <= ky and c[2] > S.SLAB
+            self.assertFalse(inside, f"a belly facet in the throat at ({c[0]:.2f}, {c[1]:.2f}, {c[2]:.2f})")
+        whole = 0.0
+        for n, _d, poly in S.facets():
+            if n[2] >= -0.05:
+                whole += sum(S.area(b) for a in S._subtract(poly, cut["notch"]) for b in S._subtract(a, cut["belly"]))
+        top = sum(S.area(p) for p, _n, kind in surf if kind == "top")
+        self.assertAlmostEqual(top, whole, delta=1e-6)
+
+    def test_the_jamb_caps(self) -> None:
+        caps = J.jamb_caps()
+        self.assertEqual(len(caps), 8)
+        (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
+        k = 1.0 / ((ky - my) / math.hypot(kx - mx, ky - my))
+        y = S.TH_ROOF_Y + J.CAP_BACK
+        xi = mx + (kx - mx) * (y - my) / (ky - my)
+        xo = xi + S.WALL * k + 0.02
+        x_ceil = xi - S.TH_CH[1] * k   # the upper cap's inner edge follows the chamfer in to the ceiling
+        for side in (1, -1):
+            mine = [(v, f) for v, f in caps if all(side * x > 0 for x, _y, _h in v)]
+            self.assertEqual(len(mine), 4)
+            normals = []
+            for v, faces in mine:
+                lo = xi if len(v) == 4 else x_ceil   # the lower cap: walls' inner face to past the notch's side
+                for x, _y, _h in v:
+                    self.assertGreaterEqual(side * x, lo - 1e-9)
+                    self.assertLessEqual(side * x, xo + 1e-9)
+                normals.append(S._newell([v[i] for i in faces[0]])[1])
+            self.assertEqual(sorted(n > 0 for n in normals), [False, False, True, True], "both windings per side")
 
 if __name__ == "__main__":
     unittest.main()
