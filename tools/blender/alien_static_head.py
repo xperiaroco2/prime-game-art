@@ -58,17 +58,22 @@ SPEC_LEVEL = 0.3  # static_v3: Principled's Specular IOR Level (0.5 = glTF's def
 # static_v3: weight, roughness, tint; the glTF exporter writes the tint alone as sheenColorFactor, so the weight is 1
 # and the tint carries the strength
 SHEEN = (1.0, 0.45, (0.25, 0.32, 0.31))
-
-
-def hsv2rgb(h, s, v):
-    """Hue (degrees), saturation, value arrays to (..., 3) RGB."""
-    h6 = (h % 360.0) / 60.0
-    c = v * s
-    x = c * (1 - np.abs(h6 % 2 - 1))
-    z = np.zeros_like(h6)
-    i = np.floor(h6).astype(np.int32) % 6
-    rgb = [np.choose(i, ch) for ch in ([c, x, z, z, x, c], [x, c, c, x, z, z], [z, z, x, c, c, x])]
-    return np.stack(rgb, -1) + (v - c)[..., None]
+# static_v4: per head, the lid flush and the lid rims' rougher band (static_v3's chameleon read a dark ring round
+# both eyes, bruises or bags, and heavier lids than #288's: both off there), and the eye zone (in eye radii, from
+# full to none) the crease colour never reaches
+LID_FLUSH = {"chameleon": 0.0, "axolotl": 0.7}
+RIM_ROUGH = {"chameleon": 0.0, "axolotl": 0.7}
+EYE_CLEAR = {"chameleon": (1.9, 2.4), "axolotl": None}
+CREASE_K = 8  # static_v4: the crease's neighbourhood, a box of 2k+1 texels of the 2048 maps
+# static_v4: the upper lip's border (the axolotl's bump at x = +-0.15 left by static_v3's despike): a low vertex
+# there standing out of the smoothed dense original moves onto it (outward only: the lip border's concave crease
+# keeps its depth), then onto the low mesh relaxed there; the slit and LIP_GAP metres above it are left alone
+LIP_GAP = (0.006, 0.016)
+LIP_RELAX = (0.5, 6)  # the band's own relax for the second snap: factor, iterations
+# static_v4: the colour bakes' cage and ray per head (the normal, cavity and thinness bakes keep CAGE, RAY). The
+# chameleon's iris sat higher on the eyeball with round 2's short ray than with #288's 0.015/0.05, so its upper lid
+# cut the iris and read heavier and lower (the grey geometry was the same)
+COLOUR_CAGE = {"chameleon": (0.015, 0.05), "axolotl": (CAGE, RAY)}
 
 
 def smoothstep(a, b, x):
@@ -114,42 +119,67 @@ def despike(o, region, thresh=DESPIKE, iters=8):
     return sorted(moved)
 
 
+def lip_snap(o, smooth, weight):
+    """static_v4: moves each low vertex with weight > 0 that stands out of the smoothed dense original (smooth, the
+    same space) inward along its normal by weight times its outward distance; a vertex inside it is never moved.
+    Returns the count moved and the largest move in metres."""
+    from mathutils.bvhtree import BVHTree
+    bvh = BVHTree.FromObject(smooth, bpy.context.evaluated_depsgraph_get())
+    moved, most = 0, 0.0
+    for i in np.nonzero(weight > 0.02)[0]:
+        v = o.data.vertices[int(i)]
+        hit = bvh.find_nearest(v.co)
+        if hit[0] is None:
+            continue
+        out = (v.co - hit[0]).dot(v.normal)
+        if out <= 0:
+            continue
+        step = float(weight[i]) * out
+        v.co = v.co - v.normal * step
+        moved, most = moved + 1, max(most, step)
+    o.data.update()
+    return moved, most
+
+
 def alive(albedo, skin, pos, cav, thin, lips, ed, gills, head, ec, r, mouth_z, teal, k=1.0):
-    """static_v3: the "alive" read baked into the albedo (it shows in a browser's glTF viewer as well as in Godot):
-    the 2D's teal top of the axolotl's head, a gentle hue and value drift over big areas, a coloured (never grey)
-    cavity in the creases, a warmer, more saturated flush on the lips, lids, nostrils and the thin parts' roots (gill
-    and crest roots). k scales every change (0 = the plain albedo). Returns the albedo and the layers' weights."""
+    """static_v3: the "alive" read baked into the albedo (it shows in a browser's glTF viewer as well as in Godot).
+    static_v4: no large-scale drift any more (it read as dirty greenish blotches on the axolotl's forehead and back),
+    and every colour added is the skin's own teal, never a hue shift (a shifted or saturated pale skin read
+    green-grey at the lip corner): the 2D's teal top of the axolotl's head (a smooth gradient), the narrow creases
+    (nostrils, lip corners, gill roots: the cavity below its own neighbourhood, never a wide patch) a little toward a
+    deeper teal, and a flush toward the teal on the lips, the nostrils, the thin parts' roots and (per head,
+    LID_FLUSH) the lids. The chameleon's eyes and sockets get no crease colour (EYE_CLEAR). k scales every change
+    (0 = the plain albedo). Returns the albedo and the layers' weights."""
     a = albedo.copy()
     x, z = np.abs(pos[..., 0]), pos[..., 2]
     span = ec[2] - mouth_z
+    tl = np.clip(np.asarray(teal, np.float32), 0, 1)
     top = np.zeros(skin.shape, np.float32)
     if head == "axolotl":  # the 2D: teal forehead and crown down to the eyes, teal cheeks outside the eyes
         top = smoothstep(ec[2] - 0.33 * span, ec[2] + 0.55 * span, z)
         side = smoothstep(ec[0] + 0.3 * r, ec[0] + 1.8 * r, x) * smoothstep(mouth_z, mouth_z + 0.6 * span, z)
         top = np.maximum(top, 0.8 * side) * skin
-        lum = a.mean(-1, keepdims=True) / max(float(np.mean(teal)), 1e-3)
-        a = a + min(0.85 * k, 1.0) * top[..., None] * (np.clip(np.asarray(teal) * (0.75 + 0.25 * lum), 0, 1) - a)
-    h, s, v = (q.reshape(skin.shape) for q in hsv(np.clip(a, 0, 1).reshape(-1, 3)))
-    rng = np.random.default_rng(7)
-    drift = np.zeros(skin.shape, np.float32)
-    for _ in range(6):  # a smooth 3D drift: sinusoids along random directions, wavelengths a tenth of the head
-        d = rng.normal(size=3)
-        d /= np.linalg.norm(d)
-        drift += np.sin(pos @ d * (2 * np.pi / (rng.uniform(0.6, 1.4) * 1.2 * span)) + rng.uniform(0, 6.3))
-    drift /= 6 ** 0.5
-    crease = np.clip((float(np.percentile(cav[skin > 0.9], 75)) - cav) / 0.35, 0, 1)  # relative to the open skin
+        lum = a.mean(-1, keepdims=True) / max(float(np.mean(tl)), 1e-3)
+        a = a + min(0.85 * k, 1.0) * top[..., None] * (np.clip(tl * (0.75 + 0.25 * lum), 0, 1) - a)
+    # the crease: how far the cavity sits below its skin neighbourhood's mean (a normalised box blur, so the islands'
+    # edges and the eyes never count), from its 90th to its 99.5th percentile on the skin
+    sk = (skin > 0.9).astype(np.float32)
+    hp = np.clip(blur(cav * sk, CREASE_K) / np.maximum(blur(sk, CREASE_K), 1e-3) - cav, 0, None) * sk
+    q = hp[sk > 0]
+    crease = smoothstep(float(np.percentile(q, 90)), float(np.percentile(q, 99.5)), hp)
+    if EYE_CLEAR.get(head):
+        crease = crease * smoothstep(*EYE_CLEAR[head], ed)
     lid = np.clip((1.55 - ed) / 0.45, 0, 1) * (ed > 0.98)
     nose = ellipsoid_w(np.stack([pos[..., 0], np.zeros_like(z), z], -1), (0.0, 0.0, (ec[2] + mouth_z) / 2),
                        (0.6 * ec[0], 1.0, 0.45 * span), 0.3) * (pos[..., 1] < ec[1])
     roots = np.clip(4 * thin * (1 - thin), 0, 1)
-    flush = np.clip(np.maximum.reduce([lips, 0.7 * lid, 0.9 * nose * np.clip(2.5 * blur(crease, 6), 0, 1),
+    flush = np.clip(np.maximum.reduce([lips, LID_FLUSH[head] * lid, 0.9 * nose * np.clip(2.5 * blur(crease, 6), 0, 1),
                                        0.7 * roots, 0.6 * gills * (1 - gills) * 4]), 0, 1) * skin
     crease = crease * skin
-    dh = (4.0 * drift + 6.0 * crease - 3.0 * flush) * skin  # degrees: the creases a little bluer (-10 read green)
-    ks = 1 + (0.35 * crease + 0.3 * flush) * skin
-    kv = 1 + (0.035 * drift - 0.25 * crease - 0.06 * flush) * skin
-    out = np.clip(hsv2rgb(h + k * dh, np.clip(s * (1 + k * (ks - 1)), 0, 1), np.clip(v * (1 + k * (kv - 1)), 0, 1)), 0, 1)
-    return out, {"top": top, "drift": drift, "crease": crease, "flush": flush}
+    deep = tl * 0.72  # the teal's own hue and saturation, darker
+    a = a + (k * 0.22 * flush)[..., None] * (tl - a)
+    a = a + (k * 0.3 * crease)[..., None] * (deep - a)
+    return np.clip(a, 0, 1), {"top": top, "crease": crease, "flush": flush}
 
 
 def log(msg):
@@ -366,18 +396,20 @@ def main():
     ap.add_argument("--rims", choices=["auto", "on", "off"], default="auto",
                     help="keep more of the budget on the lid rims (auto: RIMS per head)")
     ap.add_argument("--alive", type=float, default=1.0, help="the baked alive layers' strength (0: off)")
+    ap.add_argument("--colour-cage", default="", help="the colour bakes' cage,ray in metres (default: COLOUR_CAGE)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
     if args.albedo_res > args.res or args.res % args.albedo_res or args.res % 2:
         ap.error(f"--albedo-res {args.albedo_res} must divide --res {args.res} (an even size)")
     head, out = args.head, Path(args.out)
     nm = args.name or head
     rims_on = RIMS[head] if args.rims == "auto" else args.rims == "on"
+    cc = tuple(float(x) for x in args.colour_cage.split(",")) if args.colour_cage else COLOUR_CAGE[head]
     out.mkdir(parents=True, exist_ok=True)
     (out / "base_choice").mkdir(exist_ok=True)
     ref = json.loads(Path(args.ref).read_text(encoding="utf-8"))
     eye = ref["eye_fit"]
     ec, r = np.array([abs(eye["x"]), eye["y"], eye["z"]]), eye["r"]
-    report = {"head": head, "name": nm, "rims": rims_on, "alive": args.alive,
+    report = {"head": head, "name": nm, "rims": rims_on, "alive": args.alive, "colour_cage": list(cc),
               "eye_fit": {k: eye[k] for k in ("x", "y", "z", "r")}}
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
@@ -470,6 +502,33 @@ def main():
     report["despiked"] = {"count": len(spikes),
                           "where": [[round(float(c), 3) for c in low.data.vertices[i].co] for i in spikes[:40]]}
     log(f"despiked {len(spikes)} vertices")
+    # static_v4: the upper lip's border onto the smoothed dense original (LIP_GAP above the slit, in the lips' region)
+    low.data.vertices.foreach_get("co", co)
+    c3 = co.reshape(-1, 3)
+    line = np.asarray(ref["lip_line"]["line"], np.float64)  # (x, up, front)
+    slit = np.interp(np.abs(c3[:, 0]), line[:, 0], line[:, 1])
+    lw = kw_of(c3, False) * smoothstep(LIP_GAP[0], LIP_GAP[1], c3[:, 2] - slit)
+    n_snap, d_snap = lip_snap(low, dense_s, lw)
+    # the bump is in the smoothed original too (its first try moved 1.3 mm at most and left it): a second pass onto a
+    # copy of the low mesh relaxed in the same band (LIP_RELAX, outward only again)
+    band = low.copy()
+    band.data = low.data.copy()
+    bpy.context.scene.collection.objects.link(band)
+    bg = band.vertex_groups.get("relax") or band.vertex_groups.new(name="relax")
+    bg.remove(list(range(len(band.data.vertices))))
+    for i in np.nonzero(lw > 0.02)[0]:
+        bg.add([int(i)], float(lw[i]), "REPLACE")
+    for m in list(band.modifiers):
+        band.modifiers.remove(m)
+    sm_b = band.modifiers.new("band", "SMOOTH")
+    sm_b.vertex_group = "relax"
+    sm_b.factor, sm_b.iterations = LIP_RELAX
+    H.apply_modifiers(band)
+    n2, d2 = lip_snap(low, band, lw)
+    bpy.data.objects.remove(band)
+    n_snap, d_snap = n_snap + n2, max(d_snap, d2)
+    report["lip_snap"] = {"count": n_snap, "max_m": round(d_snap, 5)}
+    log(f"lip border: {n_snap} vertices moved, at most {d_snap * 1000:.2f} mm")
     for p in low.data.polygons:
         p.use_smooth = True
     report["tris"] = H.tris(low)
@@ -490,11 +549,11 @@ def main():
     fg = fg_pixels(Path(args.view2d) / "front.png")
     res = args.res
     raw_img = new_image(f"{head}_raw", res)
-    bake_to(low, raw_img, "DIFFUSE", [src], pass_filter={"COLOR"}, cage=CAGE, ray=RAY)
+    bake_to(low, raw_img, "DIFFUSE", [src], pass_filter={"COLOR"}, cage=cc[0], ray=cc[1])
     stops = H.palette_stops(fg, tex)
     H.grade_source(smat, stops, ref.get("stripes") if cfg.get("stripes") else None)
     grade_img = new_image(f"{head}_graded", res)
-    bake_to(low, grade_img, "DIFFUSE", [src], pass_filter={"COLOR"}, cage=CAGE, ray=RAY)
+    bake_to(low, grade_img, "DIFFUSE", [src], pass_filter={"COLOR"}, cage=cc[0], ray=cc[1])
     nres = res // 2
     nrm_img = new_image(f"{head}_normal_raw", nres, data=True)
     bake_to(low, nrm_img, "NORMAL", [dense_s], normal_space="TANGENT", cage=CAGE, ray=RAY)
@@ -556,16 +615,16 @@ def main():
         gills = np.clip((np.abs(pos[..., 0]) - rx + 0.02) / 0.06, 0, 1) * np.clip((pos[..., 2] - rz + 0.1) / 0.1, 0, 1)
     rough = ROUGH["skin"] + (ROUGH["lips"] - ROUGH["skin"]) * lips
     rough = rough + (ROUGH["gills"] - rough) * gills
-    # v2: the lid rims rougher (#288's sharp streaks along the rim)
+    # v2: the lid rims rougher (static_v4: per head, RIM_ROUGH) (#288's sharp streaks along the rim)
     ed = eye_dist(pos, ec, r)
-    rough = rough + (0.62 - rough) * 0.7 * np.exp(-((ed - 1.12) * r / (0.8 * RIM_W)) ** 2)
+    rough = rough + (0.62 - rough) * RIM_ROUGH[head] * np.exp(-((ed - 1.12) * r / (0.8 * RIM_W)) ** 2)
     rough = rough * mask + ROUGH["eyes"] * (1 - mask)
     sss = mask * (1 - 0.2 * lips)
     m_rgb = np.stack([mask, rough, sss], -1)
     # the detail map (static_v2): cavity, thinness, flush, limbal ring
     ring = blur(iris.astype(np.float32), 4)
     limbal = np.clip(4 * ring * (1 - ring), 0, 1) * (ring > 0.25) * (1 - mask)
-    flushw = np.maximum(lips, 0.7 * np.clip((1.45 - ed) / 0.35, 0, 1)) * mask
+    flushw = np.maximum(lips, LID_FLUSH[head] * np.clip((1.45 - ed) / 0.35, 0, 1)) * mask
     thin = np.clip((1 - thick - 0.15) / 0.6, 0, 1)
     half = lambda x: x.reshape(nres, 2, nres, 2).mean((1, 3))  # noqa: E731
     detail = np.stack([np.clip(cav, 0, 1), thin, half(flushw), half(limbal)], -1)
@@ -595,7 +654,7 @@ def main():
     plain = albedo
     albedo, lay = alive(plain, skin2, pos_n, cav, thin, half(lips), eye_dist(pos_n, ec, r), half(gills), head, ec, r,
                         fp[2], teal, args.alive)
-    m_half[..., 1] = np.clip(m_half[..., 1] + args.alive * (0.05 * lay["drift"] + 0.08 * lay["crease"]) * skin2, 0.03, 1)
+    m_half[..., 1] = np.clip(m_half[..., 1] + args.alive * 0.08 * lay["crease"] * skin2, 0.03, 1)
     report["alive_layers"] = {k: round(float(v.mean()), 4) for k, v in lay.items()}
     save(plain, out / f"{nm}_albedo_plain.png")  # Godot's grid only (alive_mix), not in the GLB
     alb_img = save(albedo, out / f"{nm}_albedo.png")

@@ -26,11 +26,11 @@ MESHY = RAW / "2026-10-22-alien-pilot-3d"
 DESIGN = RAW / "research" / "2026-10-22-roster" / "design"
 STEP2A = DESIGN / "pilot3d" / "step2a"
 ROSTER = {"chameleon": DESIGN / "final" / "m01-chameleon.jpg", "axolotl": DESIGN / "final" / "w01-axolotl.jpg"}
-OUT = DESIGN / "pilot3d" / "static_v3"  # #288 wrote static/, step 1 static_v2/, both kept as they were
-# static_v3: the builds per head: (name, extra arguments); the chameleon's heavier-lid alternative keeps more of
-# the budget on the lid rims (the dense original's lids)
+OUT = DESIGN / "pilot3d" / "static_v4"  # #288 wrote static/, steps 1-3 static_v2/ and static_v3/, kept as they were
+# the builds per head: (name, extra arguments); static_v4 dropped static_v3's chameleon_heavylid (`--rims on`): its
+# lid geometry was the same as the default's, the heavier read was shading
 BUILDS = {"axolotl": [("axolotl", [])],
-          "chameleon": [("chameleon", []), ("chameleon_heavylid", ["--rims", "on"])]}
+          "chameleon": [("chameleon", [])]}
 HDRI = RAW / "env" / "polyhaven" / "studio_small_09" / "studio_small_09_2k.hdr"  # CC0, sources/polyhaven_hdris_2k.toml
 
 

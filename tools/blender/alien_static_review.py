@@ -1,16 +1,16 @@
 """The alien pilot's static heads (art #196): review sheets in an off-screen Godot window (godot/alien/static_alive.gd
-through the runner's _godot.window()). Plain Python, outside Blender. Round 3 (static_v3): the alive read is baked into
+through the runner's _godot.window()). Plain Python, outside Blender. Round 3 (static_v3) baked the alive read into
 the textures (alien_static_head.py `alive`), so the Godot levers are the baked layers' strength (`alive_mix`, against
 the plain albedo), the skin specular, the scatter and transmission, the grazing sheen and the wet eyes. Sheets (JPG,
 about 1280 px wide) go into <new>/<name>/ or <new>/:
 - `seams`: the engineer's close-ups (the axolotl's lip corner, the chameleon's eye rim) and a wider framing; rows: the
-  #288 build, step 1 (static_v2), this build (and the chameleon's heavier-lid alternative); columns: the full
+  #288 build, step 2 (static_v3, under its own pick), this build (static_v4); columns: the full
   material, grey with the normal map, grey geometry only, the albedo;
 - `grid`: one row per lever (A, S, B, E, F), four decisive strengths each (off, mid, strong, too much), the face at
   3/4, on top of the earlier rows' picks;
 - `final`: the before/after, #288 against the pick under the recommended light (AgX 0.65, saturation 1.35) and under
   the showroom's AgX 0.9; rows: the front close-up, the 3/4 close-up, the full head; GPU ms into `final.json`;
-- `gate`: the whole-head gate from 4 sides, #288 against the default build (and the heavier-lid alternative), under
+- `gate`: the whole-head gate from 4 sides, #288 against this build, under
   the same light.
 
     $PYTHON_BIN tools/blender/alien_static_review.py <seams|grid|final|gate|all> [--old DIR] [--mid DIR] [--new DIR]
@@ -32,11 +32,11 @@ RAW = common.raw_dir()
 DESIGN = RAW / "research" / "2026-10-22-roster" / "design"
 STEP2A = DESIGN / "pilot3d" / "step2a"
 OLD = DESIGN / "pilot3d" / "static"
-MID = DESIGN / "pilot3d" / "static_v2"
-NEW = DESIGN / "pilot3d" / "static_v3"
+MID = DESIGN / "pilot3d" / "static_v3"  # static_v4: the seams' middle row is step 2 (it was step 1, static_v2)
+NEW = DESIGN / "pilot3d" / "static_v4"
 HDRI = RAW / "env" / "polyhaven" / "studio_small_09" / "studio_small_09_2k.hdr"  # CC0, sources/polyhaven_hdris_2k.toml
 WINDOW = (1000, 1000)
-BUILDS = {"axolotl": ["axolotl"], "chameleon": ["chameleon", "chameleon_heavylid"]}
+BUILDS = {"axolotl": ["axolotl"], "chameleon": ["chameleon"]}  # static_v4: chameleon_heavylid dropped
 
 # The levers, cumulative (alien_static.gdshader): PICK is the chosen strength per lever, GRID four decisive strengths
 # (off, mid, strong, too much). The shader's own cavity, flush and micro grain stay off: the cavity and flush are baked
@@ -56,10 +56,6 @@ GRID = {
           {"eye_coat": 1.0, "eye_coat_rough": 0.0, "eye_under_rough": 0.5, "limbal": 1.0}],
 }
 PICK = {"A": GRID["A"][2], "S": GRID["S"][2], "B": GRID["B"][2], "E": GRID["E"][1], "F": GRID["F"][2]}
-# step 1's pick (static_v2), for its rows
-V2_PICK = {"sss": 0.85, "transmission": 1.5, "micro_strength": 0.15, "micro_scale": 140.0, "rough_breakup": 0.1,
-           "cavity": 1.0, "flush": 0.8, "fuzz": 0.4, "fuzz_power": 2.0, "sheen": 0.3, "eye_coat": 1.0,
-           "eye_coat_rough": 0.0, "eye_under_rough": 0.3, "limbal": 0.8}
 
 
 def picks(new: Path) -> dict:
@@ -135,7 +131,7 @@ def main() -> int:
         f = features(h)
         d = args.new / h
         if "seams" in todo:
-            keys = [(f"{h}_old", {}), (f"{h}_mid", V2_PICK)] + [(f"{n}_new", final) for n in BUILDS[h]]
+            keys = [(f"{h}_old", {}), (f"{h}_mid", final)] + [(f"{n}_new", final) for n in BUILDS[h]]
             for fr in ("close", "wide"):
                 rows = [[{"head": key, "params": prm, "debug": m, "tone": "showroom", "shot": f[fr]}
                          for m in (0, 1, 2, 3)] for key, prm in keys]
