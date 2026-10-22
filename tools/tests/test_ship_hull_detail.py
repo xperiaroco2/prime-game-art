@@ -169,9 +169,10 @@ class ShipHullDetailTest(unittest.TestCase):
     def test_the_seam_corners_end_on_their_fold_and_keep_the_groove(self) -> None:
         """details 3b/3c (lay_seams, corner_slides): where a seam ends on a flush edge (a facet fold), the plate's
         corner lies on that flush edge (within 1e-6 m), so the pieces on both sides of the fold end on its line;
-        corners at one point sliding one way end at one point within 0.1 mm (no wedge between them); and at every corner of 25 to
-        155 deg between edges of 0.25 m and more the groove stays at least 0.9 INSET wide (3b's slide of INSET tapered
-        an acute corner's groove to INSET * sin: 186 such corners were under 0.9 INSET, the narrowest 0.7 mm)."""
+        corners at one point sliding one way end at one point within 0.1 mm (no wedge between them); and at every
+        corner of 25 to 155 deg between edges of 0.25 m and more the groove stays at least 0.9 INSET wide (3b's slide
+        of INSET tapered an acute corner's groove to INSET * sin: 186 such corners were under 0.9 INSET, the narrowest
+        0.7 mm)."""
         def off_line(p, a, b):
             ab = S._sub(b, a)
             c = S._cross(ab, S._sub(p, a))

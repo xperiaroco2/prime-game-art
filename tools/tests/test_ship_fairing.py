@@ -68,8 +68,8 @@ class ShipFairingTest(unittest.TestCase):
 
     def test_it_overlaps_both_skins_and_adds_its_own(self) -> None:
         """A 6 cm grid through each fairing finds points 1 cm deep inside it and the lens, inside it and the fin, and
-        inside it outside every other part (the new skin); none of it stands more than MAX_OUT out of the lens, the
-        fin and the body."""
+        inside it outside every other part (the new skin); none of it, neither a grid point nor one of its own points,
+        stands more than MAX_OUT out of the lens, the fin and the body."""
         for name in ("fair_lead_e", "fair_trail_e"):
             fac = PARTS[name]
             pts = POINTS[name]
@@ -91,6 +91,10 @@ class ShipFairingTest(unittest.TestCase):
                         hits["own"] += not any(_inside(p, f, -0.01) for f in others)
                         worst = max(worst, min(_out(p, f) for f in base))
             self.assertLessEqual(worst, MAX_OUT, f"{name} stands {worst:.3f} m out of the lens, fin and body")
+            # details 3c: the grid can miss the farthest point; the fairing's own hull points are its corners
+            for p in pts:
+                out = min(_out(p, f) for f in base)
+                self.assertLessEqual(out, MAX_OUT, f"{name}: its point {p} stands {out:.3f} m out")
             for what, count in hits.items():
                 self.assertGreater(count, 0, f"{name}: no overlap with the {what}")
 

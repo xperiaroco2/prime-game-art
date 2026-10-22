@@ -14,7 +14,10 @@ from pathlib import Path
 from runner import ship_layout as sl
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "blender"))
+import ship_hull  # noqa: E402,F401  (imports the skin and the details, which add their materials)
+import ship_hull_fittings  # noqa: E402,F401
 import ship_hull_shape as S  # noqa: E402
+import ship_lib as L  # noqa: E402
 
 LAYOUT = sl.load()
 EXT = tomllib.loads((sl.common.ROOT / LAYOUT["exterior"]).read_text(encoding="utf-8"))
@@ -88,6 +91,20 @@ class ShipLightTest(unittest.TestCase):
         for lamp in edge:
             self.assertGreater(lamp[10], 0.0)
             self.assertLess(lamp[2], 1.5, "an edge pool's spot above the edge (the fins' hot spots)")
+
+    def test_family_materials_take_their_familys_row_and_light_nothing(self) -> None:
+        """details 3b (ship.gd _entry): a material named "<family>__<x>" without its own [light.mats] row takes its
+        family's row, so every such material (the portholes' glow bands ext_porthole__gNN) has its family there, and
+        it keeps l 0: the glow lights nothing."""
+        mats = LAYOUT["light"]["mats"]
+        family = [m for m in L.MATERIALS if "__" in m]
+        self.assertTrue(any(m.startswith("ext_porthole__g") for m in family), family)
+        for m in family:
+            row = mats.get(m, mats.get(m.split("__", 1)[0]))
+            self.assertIsNotNone(row, f"{m}: no [light.mats] row of its own or of its family")
+            self.assertEqual(row.get("l"), 0, f"{m}: its [light.mats] row lights the hull (l {row.get('l')})")
+        gd = (ROOT / "godot" / "ship" / "ship.gd").read_text(encoding="utf-8")
+        self.assertIn('mats.get(mat_name.get_slice("__", 0), {})', gd)
 
     def test_nav_blink_flag(self) -> None:
         gd = (ROOT / "godot" / "ship" / "ship.gd").read_text(encoding="utf-8")
