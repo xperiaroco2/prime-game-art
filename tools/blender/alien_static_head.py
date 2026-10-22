@@ -318,7 +318,7 @@ def main():
 
     # ---- colour diagnosis: the 2D, Meshy's texture, step 2a's v2 bake, this albedo
     v2_png = Path(args.v2).with_name(f"{head}_colour.png")
-    diag = {"2d_front": stats(fg), "meshy_texture": stats(tex), "this_albedo": stats(albedo[mask > 0.95].reshape(-1, 3))}
+    diag = {"2d_front": stats(fg), "meshy_texture": stats(tex), "this_albedo": stats(albedo[(m_half[..., 0] if f > 1 else mask) > 0.95].reshape(-1, 3))}
     if v2_png.exists():
         diag["v2_colour_png"] = stats(H.load_rgb(v2_png)[..., :3].reshape(-1, 3)[::7])
     report["colour_diag"] = diag
