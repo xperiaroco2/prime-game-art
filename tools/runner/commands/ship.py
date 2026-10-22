@@ -230,6 +230,9 @@ def room_boxes(layout: dict) -> list:
             pts = [ship_layout.strip_point(r, u, v) for u in (u0, u1) for v in (-half, half)]
             xs, ys = [q[0] for q in pts], [q[1] for q in pts]
             cx, cy, sx, sy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, max(xs) - min(xs), max(ys) - min(ys)
+        elif r["shape"] == "poly":   # rebuild C: the throat's probe is its plan's bounding box
+            xs, ys = [q[0] for q in r["points"]], [q[1] for q in r["points"]]
+            cx, cy, sx, sy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, max(xs) - min(xs), max(ys) - min(ys)
         else:
             cx, cy = sum(r["x"]) / 2, sum(r["y"]) / 2
             sx, sy = r["x"][1] - r["x"][0], r["y"][1] - r["y"][0]

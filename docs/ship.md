@@ -45,9 +45,9 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 |---|---|---|
 | Footprint | 27.5 m wide (the lens tips' blades at x +-13.75, `span_max_m` 27.5); two lengths (`ship_layout.lengths()`, as built): at the v2 join the hull body 12.55 m (lead edge to the trail: the pod housing; no ramp, no nozzle pods), 14.49 m with the nozzle pods (lead edge to the nozzle tips), the one `ship --check` holds to 14, up to `length_max_m` 15; overall 15.74 m from the ramp's foot (-7.4) to the nozzle tips (a hull rebuild moves them: `ship --check` prints the current ones) | 5a: about 26 x 14; manager update 2: the span up to about 27.5; the manager (art #263): the length counts the nozzles, up to 15 m, as how far they stick out is open (2D README) |
 | Deck | floor at h 0.6 on landing legs (launch 3; was 1.0), slabs 0.25, walls 0.2 | the ramp meets the ground; a thinner hull |
-| Hall | circle r 4.0 at (0, 0) (v2; v1 3.4); 3.2 m to the ceiling's rim, 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
-| Mouth | x -1.3..1.3, y -4.6..-3.9 (v2), 2.4 m high | the only way in or out (5a's side hatch is dropped, see below) |
-| Ramp | 2.6 m wide, hinge (0, -4.6) at the deck, foot (0, -7.4) on the ground: 12.1 deg, a long plane | north at the centre |
+| Hall | circle r 4.0 at (0, -1) (rebuild C; v2 (0, 0), v1 r 3.4); the rim 2.75 m round its front (rebuild C); 3.2 m to the ceiling's rim, 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
+| Throat (rebuild C; v2's mouth passage x -1.3..1.3, y -4.6..-3.9) | the funnel from the mouth (x +-1.65 at y -7.1, J's nose edge; 5a: y -8) to the hall's vertices (+-2.915, -3.852); open to the sky forward of y -5.476, a 2.3 m ceiling aft of it | the only way in or out (5a's side hatch is dropped, see below) |
+| Ramp | 3.3 m wide (the mouth), hinge (0, -7.1) at the deck, foot (0, -9.9) on the ground: 12.1 deg, 2.86 m long (rebuild C; v2 2.6 m from (0, -4.6)) | north at the centre |
 | Corridors | y -1.5..1.5 (3 m, v2), x 3.7..7.3 each side (the hall's and the tip room's circles at y +-1.5), straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide |
 | Tip rooms | circles r 1.8 at (+-8.3, 0), the outer wall at +-10.1 (v2; v1 r 2.05 at +-10.75); 2.5 m to the rim, 2.8 m apex; window +-65 deg outward, sill 1.0, head 2.2 over the deck | 5a mirrored: 3.6 m across |
 | Stations (not built) | console (0, 1) clear floor; vents at (+-2.66, -2.66) and sockets at (+-2.66, 2.66) on the hall's flat chords; breaker boards at (+-5.25, -1.5) on the corridors' front wall; renewers before the tip windows (wall +-10.1, 0.9 m deep: the player at (+-8.8, 0)) | 5a mirrored, "Version 2" below |
@@ -720,3 +720,35 @@ no outside light strips; the inside (rebuild A) frozen; the clearing only scaled
 - **Views:** the turnaround views backed off and widened for the 30 m span; `detail_seam` on the plated east wing,
   `detail_floor` and `detail_cables` in the diagonal east corridor; the walk video's corridor and tip-room keys turned
   onto the diagonal axes. The exterior's `in_*` rows stay overridden by ship.toml's.
+
+## Rebuild C: the inside 1 m forward and the throat (2026-10-22)
+
+The engineer's pick "A" (prime-game PR #1314; art#263 comments 6341012901, 6341202614, 6341553197). The hull J's
+silhouette, span, length and nose do not change: `ship_hull_shape.design_points` no longer reads the rooms (the hall's
+and tip rooms' belly rings, the old mouth corner and TIP_X are pinned numbers), so moving the rooms moves nothing
+outside but the mouth notch. Two things had to give, both measured with `ship_hull_shape.clearance`:
+- **The belly.** With J's belly pinned, the moved tip rooms' slabs poked 0.27 m out of the rising belly at their front.
+  J's rule is a flat belly under every room, so `belly_also` adds the belly rings at the moved rooms too (the old ones
+  stay): the plan outline rows, span, length, nose and top are unchanged (test_ship_layout holds the rows); only the
+  underside's front facets differ (117 facets, was 111).
+- **The hall's front rim.** J's lead edge leaves no 0.15 m skin over a 3.2 m rim 1 m further forward (at -30 deg the
+  hall wall's top had 0.02 m). The rim is 2.75 m (`front_clear_h`) from -15.11 deg round the front to -164.89
+  (`front_from_deg`): the throat's four sub-facets and the front sockets' flats; their ceiling panels run from the lamp
+  ring (unchanged) down to the low rim, with a fold (`hall_ceil_step`) at -15.11 / -164.89 where it meets the full rim.
+
+| What | Built |
+|---|---|
+| Hall | (0, -1), r 4.0; the throat's opening -135.62..-44.38 deg from its centre (four sub-facets of 22.81 deg), the front sockets' flats -44.38..-15.11 (29.27 deg, the back sockets' width), one front facet -15.11..3.23 to each corridor |
+| Tip rooms, corridors | (+-8.3, 3.0); axes (0, -1) to (+-8.3, 3.0), the same 9.214 m and 25.73 deg; about 1 m of hull behind the tip rooms |
+| Throat | ship.toml room `throat` (shape `poly`): mouth x +-1.65 at y -7.1, the walls straight to the hall's vertices (+-2.915, -3.852), 3.485 m long, four modules of 0.871; walls vertical to 1.45 m, then 0.55 m in to the 2.3 m ceiling (2.9 m over the ground: the capsule and its margin); roof from y -5.476 aft (0.15 m of hull over it there; forward of it the nose is too low: an open notch) |
+| Notch | `ship_hull_shape.cutters`: "notch" (between the walls' outer faces, forward of y -5.476, all heights) and "belly" (between them, aft to the hall's corners, below the slab); the lintel over the roof line stays; `skin_cheeks` (`ship_hull_j.j_cheeks`) plates the walls' outer faces where the belly rises over the deck |
+| Ramp | hinge (0, -7.1), foot (0, -9.9), 3.3 m wide, 12.1 deg |
+| Spots | console (0, 0); vents on the throat's walls (+-2.175, -5.751), asked (+-2.3, -5.8), snapped 0.134 m; sockets (+-1.800, 2.512) and the front two (+-3.426, -2.958), asked (+-3.5, -3.0), snapped 0.085 m onto their flat; breakers (+-6.030, 0.241); renewers (+-9.922, 3.781) |
+
+The interior generator works round the hall's centre (`ship_interior.HALL_C`): the builders are unchanged in their
+frames, `ship_interior_place.put` adds HALL_C to every placement; the throat's floor (`throat_floor`: plates either
+side of a grate strip, the dark slab) and ceiling (`throat_ceil`: the flat ceiling between the chamfers and the header
+under the low rim) are built in hall-relative plan coordinates; its walls are the corridors' modules (`th_*`, prof
+`throat`): plain (`cor_wall_mid`) over the vent's 1.6 m band, a cable bay in the last module, chamfers under the roof.
+The v2 mouth passage's pieces, the mouth frame and lights are gone.
+
