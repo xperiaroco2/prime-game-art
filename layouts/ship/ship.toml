@@ -46,7 +46,9 @@ links = ["throat", "corridor_w", "corridor_e"]
 
 [[rooms]]
 id = "throat"                                # rebuild C: the funnel from the mouth at J's nose edge to the hall's wall
-shape = "poly"                               # a convex floor polygon [x, y] (counter-clockwise in plan)
+shape = "poly"                               # a convex floor polygon [x, y], a positive signed area in plan (x, y):
+                                             # counter-clockwise in the (x, y) axes, clockwise seen from above with y
+                                             # running south
 points = [[-1.65, -7.1], [1.65, -7.1], [2.915, -3.252], [-2.915, -3.252]]
 clear_h = 2.3                                 # 2.9 over the ground: the capsule and its margin; walls vertical to
 chamfer = [1.45, 0.55]                        # 1.45, then slanted 0.55 in to the ceiling (the corridors' bend)
@@ -105,14 +107,15 @@ at = [0.0, 0.6]                               # 1 m aft of the hall's centre (st
 room = "hall"
 
 [[stations.spot]]
-id = "vent_e"                                 # rebuild C: on the throat's slanted east wall (asked (2.3, -5.8),
-at = [2.0991, -5.7339]                        # rebuild E: snapped 0.211 m onto the wall from the mouth (1.65, -7.1) to
-normal = [-0.9500, 0.3123]                    # the hall's vertex (2.915, -3.252))
+id = "vent_e"                                 # rebuild C: on the throat's slanted east wall (asked (2.3, -5.8)).
+at = [2.4090, -4.7912]                        # rebuild F: on the line between wall modules 2 and 3 (3/5 of the wall
+normal = [-0.9500, 0.3123]                    # from the mouth (1.65, -7.1) to the hall's vertex (2.915, -3.252)), so
+                                              # its 1.6 m plain band lies on those two plain modules, off the jamb
 room = "throat"
 
 [[stations.spot]]
 id = "vent_w"
-at = [-2.0991, -5.7339]
+at = [-2.4090, -4.7912]
 normal = [0.9500, 0.3123]
 room = "throat"
 
@@ -347,6 +350,14 @@ views = [
   # rebuild C: the throat from the ramp's foot and the hall toward the throat
   ["in_throat", "inside: the throat from the ramp", [0, -9.6, 1.75], [0, -2.9, 2.0], 62.0],
   ["in_hall_throat", "inside: the hall toward the throat", [0, 2.2, 2.1], [0, -7.0, 1.6], 75.0],
+  # rebuild F: the mouth's upper corners close up (the hole beside the lintel), from the ramp and at an angle, and
+  # the throat's floor at the roof line
+  ["in_mouth_ne", "inside: the mouth's upper east corner from the ramp", [0.6, -9.0, 1.9], [2.3, -5.6, 3.0], 45.0],
+  ["in_mouth_nw", "inside: the mouth's upper west corner from the ramp", [-0.6, -9.0, 1.9], [-2.3, -5.6, 3.0], 45.0],
+  ["in_mouth_ne_side", "inside: the mouth's upper east corner at an angle", [-1.3, -7.9, 1.5], [2.4, -5.5, 3.1], 50.0],
+  ["in_mouth_nw_side", "inside: the mouth's upper west corner at an angle", [1.3, -7.9, 1.5], [-2.4, -5.5, 3.1], 50.0],
+  ["out_mouth_top", "outside: the mouth's notch from above at an angle", [4.2, -11.0, 5.0], [0.8, -6.0, 2.4], 50.0],
+  ["in_throat_floor", "inside: the throat's floor at the roof line", [0, -7.6, 1.9], [0, -5.2, 0.6], 60.0],
   ["in_corridor_e", "inside: the east corridor", [2.343, 0.729, 2.2], [9.011, 3.942, 1.9], 70.0],
   # rebuild A: the inside views on the moved rooms; an "in_" view here wins over exterior.toml's of the same name
   # (ship.py shot_views; exterior's reference image stays)

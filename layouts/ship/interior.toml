@@ -317,10 +317,7 @@ place = [
   ["th_wall_mid", [1.3325, -4.8637, 0.0], -71.802],
   ["th_wall_up_a", [1.3325, -4.8637, 0.0], -71.802],
   ["th_wall_low_b", [1.5855, -4.0941, 0.0], -71.802],
-  ["th_channel", [1.5855, -4.0941, 0.0], -71.802],
-  ["th_cables", [1.5855, -4.0941, 0.0], -71.802],
-  ["th_clip_h", [1.5074, -4.3316, 0.0], -71.802],
-  ["th_clip_h", [1.6636, -3.8566, 0.0], -71.802],
+  ["th_wall_mid", [1.5855, -4.0941, 0.0], -71.802],
   ["th_wall_up_b", [1.5855, -4.0941, 0.0], -71.802],
   ["floor_light", [2.377, -3.9279, 0.0], -71.802],
   ["th_wall_low_a", [1.8385, -3.3245, 0.0], -71.802],
@@ -334,10 +331,7 @@ place = [
   ["th_wall_mid", [-1.3325, -4.8637, 0.0], 71.802],
   ["th_wall_up_b", [-1.3325, -4.8637, 0.0], 71.802],
   ["th_wall_low_a", [-1.5855, -4.0941, 0.0], 71.802],
-  ["th_channel", [-1.5855, -4.0941, 0.0], 71.802],
-  ["th_cables", [-1.5855, -4.0941, 0.0], 71.802],
-  ["th_clip_h", [-1.6636, -3.8566, 0.0], 71.802],
-  ["th_clip_h", [-1.5074, -4.3316, 0.0], 71.802],
+  ["th_wall_mid", [-1.5855, -4.0941, 0.0], 71.802],
   ["th_wall_up_a", [-1.5855, -4.0941, 0.0], 71.802],
   ["floor_light", [-2.377, -3.9279, 0.0], 71.802],
   ["th_wall_low_b", [-1.8385, -3.3245, 0.0], 71.802],
@@ -790,6 +784,7 @@ id = "th_wall_mid"
 builder = "cor_wall_mid"
 collide = true
 args = { length = 0.81012, prof = "throat" }
+plain = [-0.40506, 0.40506, -1.25, -0.95]
 
 [[pieces]]
 id = "th_channel"
@@ -926,6 +921,7 @@ id = "cor_wall_board"
 builder = "cor_wall_mid"
 collide = true
 args = { length = 1.8 }
+plain = [-0.9, 0.9, -1.75, -1.45]
 
 [[pieces]]
 id = "cor_bay_out"
@@ -951,6 +947,7 @@ id = "hall_panel_flat_socket"
 builder = "flat_panel"
 collide = true
 args = { half = 1.03041, apo = 3.94605, height = 3.2, plain = 0.8 }
+plain = [-0.25, 0.25, -0.8, 0.8]
 
 [[pieces]]
 id = "cor_wall_up_a"
@@ -1029,12 +1026,14 @@ id = "tip_panel_a"
 builder = "wall_panel"
 collide = true
 args = { half = 0.30707, height = 2.5, tone = "a" }
+plain = [-0.25, 0.25, -0.30707, 0.30707]
 
 [[pieces]]
 id = "tip_panel_b"
 builder = "wall_panel"
 collide = true
 args = { half = 0.30707, height = 2.5, tone = "b" }
+plain = [-0.25, 0.25, -0.30707, 0.30707]
 
 [[pieces]]
 id = "tip_pilaster"

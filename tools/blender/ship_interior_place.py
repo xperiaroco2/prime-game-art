@@ -51,8 +51,9 @@ TH_LEN = math.dist(_TM, _TK)                                   # 4.051
 TH_MOD = TH_LEN / TH_N                                         # 0.810
 TH_DIR = math.degrees(math.atan2(_TK[1] - _TM[1], _TK[0] - _TM[0]))   # 71.80: the east wall's direction
 _VENT = next(s["at"] for s in S._SHIP["stations"]["spot"] if s["id"] == "vent_e")
-_VS = math.dist(_TM, (_VENT[0] - S.HALL_C[0], _VENT[1] - S.HALL_C[1]))   # the vent along the wall (1.438)
-TH_PLAIN = [i for i in range(TH_N) if i * TH_MOD < _VS + 0.9 and (i + 1) * TH_MOD > _VS - 0.9]
+_VS = math.dist(_TM, (_VENT[0] - S.HALL_C[0], _VENT[1] - S.HALL_C[1]))   # the vent along the wall (rebuild F: 2.430)
+_PW = S._SHIP["stations"]["plain_width_m"] / 2
+TH_PLAIN = [i for i in range(TH_N) if i * TH_MOD < _VS + _PW - 1e-6 and (i + 1) * TH_MOD > _VS - _PW + 1e-6]
 TH_COVER = [i for i in range(TH_N) if _TM[1] + (_TK[1] - _TM[1]) * i / TH_N >= S.TH_ROOF - 1e-6]   # under the roof
 TH_ARCH_Y = S.TH_ROOF + 0.1                                    # rebuild D: the arch's mid-plane, its face on the roof line
 TH_ARCH_HALF = _TM[0] + (_TK[0] - _TM[0]) * (TH_ARCH_Y - _TM[1]) / (_TK[1] - _TM[1])   # the walls' half width there
@@ -441,6 +442,21 @@ def placements() -> list[tuple[str, list[float], float]]:
     return out
 
 
+# rebuild F: the plan box [x0, x1, y0, y1] in its own frame of every PLAIN wall piece's face (a wall spot's plain
+# band lies on it; the box reaches 0.25 m behind the face, for the round walls' chords): `ship --check` holds that
+# plain pieces cover every wall spot's whole band (the vents stood half on the throat's hull jamb, rebuild E)
+_FACE = 0.25
+PLAIN: dict[str, list[float]] = {
+    "th_wall_mid": [-TH_MOD / 2, TH_MOD / 2, -S.TH_HALF - _FACE, -S.TH_HALF + 0.05],
+    "cor_wall_board": [-(BOARD_X[1] - BOARD_X[0]) / 2, (BOARD_X[1] - BOARD_X[0]) / 2, -S.COR_HALF - _FACE,
+                       -S.COR_HALF + 0.05],
+    "hall_panel_flat_socket": [-_FACE, _FACE, -PIECES["hall_panel_flat_socket"][1]["plain"],
+                               PIECES["hall_panel_flat_socket"][1]["plain"]],
+    **{f"tip_panel_{t}": [-_FACE, _FACE, -PIECES[f"tip_panel_{t}"][1]["half"], PIECES[f"tip_panel_{t}"][1]["half"]]
+       for t in "ab"},
+}
+
+
 def fmt(v) -> str:
     if isinstance(v, bool):
         return "true" if v else "false"
@@ -466,6 +482,8 @@ def render() -> str:
             lines.append("args = { " + ", ".join(f"{k} = {fmt(v)}" for k, v in args.items()) + " }")
         if pid in FOOT:
             lines.append("foot = [" + ", ".join(fmt(v) for v in FOOT[pid]) + "]")
+        if pid in PLAIN:
+            lines.append("plain = [" + ", ".join(fmt(v) for v in PLAIN[pid]) + "]")
     return "\n".join(lines) + "\n"
 
 

@@ -39,20 +39,24 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertGreater(lens["overall"], lens["nozzles"])
 
     def test_the_station_spots_are_the_design_docs(self) -> None:
-        """5a mirrored: the vents on the hall wall at about (+-2.6, -2.6), the console at (0, 1). rebuild A (variant
-        J): the sockets moved back off the diagonal corridors' openings to (+-1.80, 3.51), the breaker boards on the
-        corridors' front wall at (+-6.03, 1.24), the renewers' players 0.5 m past the tip rooms' centres on the axis."""
+        """The spots as built (rebuild F): the vents on the throat's slanted walls at (+-2.409, -4.791), the console
+        at (0, 0.6), the back sockets at (+-1.8, 3.112), the front sockets about (+-3.5, -2.4), the breaker boards on
+        the corridors' front wall at (+-6.03, 0.841), the renewers' players 0.5 m past the tip rooms' centres on the
+        corridors' axes."""
         spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
         # rebuild C: the vents on the throat's slanted walls (asked (+-2.3, -5.8)), four sockets (the front two beside
         # the throat, asked (+-3.5, -3.0)). rebuild E: the inside 0.4 m forward of step A (the hall's full rim), the
-        # spots with it; the vents snapped 0.21 m onto the longer throat's walls, the front sockets asked (+-3.5, -2.4)
+        # spots with it; the front sockets asked (+-3.5, -2.4). rebuild F: the vents on the line between the throat
+        # wall's modules 2 and 3 (3/5 of the wall from the mouth), their plain band on those two plain modules
         self.assertEqual(set(spots), {"console", "vent_e", "vent_w", "socket_e", "socket_w", "socket_fe", "socket_fw",
                                       "breaker_e", "breaker_w", "renewer_e", "renewer_w"})
         self.assertEqual(tuple(spots["console"]["at"]), (0.0, 0.6))
         for sx in (1, -1):
             sid = "e" if sx > 0 else "w"
             self.assertEqual(spots[f"vent_{sid}"]["room"], "throat")
-            self.assertLess(math.dist(spots[f"vent_{sid}"]["at"], (sx * 2.3, -5.8)), 0.25)
+            (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
+            self.assertLess(math.dist(spots[f"vent_{sid}"]["at"], (sx * (mx + 0.6 * (kx - mx)), my + 0.6 * (ky - my))),
+                            1e-3)
             self.assertLess(math.dist(spots[f"socket_f{sid}"]["at"], (sx * 3.5, -2.4)), 0.15)
             self.assertEqual(tuple(spots[f"socket_{sid}"]["at"]), (sx * 1.8, 3.112))
             self.assertEqual(tuple(spots[f"breaker_{sid}"]["at"]), (sx * 6.03, 0.841))
@@ -90,6 +94,20 @@ class ShipLayoutTest(unittest.TestCase):
         def trunk(layout):
             layout["place"].append(["hall_trunk", [3.505, -2.403, 0.0], 29.745])   # rebuild E: on a front socket
         self.assertTrue(any("socket_fe: hall_trunk sticks out" in p for p in problems_after(trunk)))
+
+    def test_a_vent_on_the_throat_jamb_is_refused(self) -> None:
+        """rebuild F: no plain wall piece under a wall spot's band is refused (rebuild E's vents stood half on the
+        hull's jamb, forward of the throat's interior wall modules)."""
+        def back(layout):
+            next(s for s in layout["stations"]["spot"] if s["id"] == "vent_e")["at"] = [2.0991, -5.7339]
+        self.assertTrue(any("vent_e: no plain wall piece under its band" in p for p in problems_after(back)))
+
+    def test_a_walk_cutting_a_corner_is_refused(self) -> None:
+        """rebuild F: the walk between two deck points is sampled; straight from one tip room to the other it passes
+        behind the hall, through the hull."""
+        def cut(layout):
+            layout["walk"]["points"] = [[-8.75, 3.817, 0.6], [8.75, 3.817, 0.6]]
+        self.assertTrue(any("the walk from (-8.75, 3.817) to (8.75, 3.817) leaves" in p for p in problems_after(cut)))
 
     def test_a_cable_bay_on_a_breaker_wall_is_refused(self) -> None:
         def bay(layout):

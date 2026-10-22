@@ -85,7 +85,8 @@ HCH = HV * math.sin(2 * PHI)               # its half width 1.561
 # v2 (5a mirrored): the plain wall spots at 45 deg (vents, sockets) get one flat chord over two facets, as an opening's
 FLATS = sorted(round(math.degrees(math.atan2(s["at"][1] - HALL_C[1], s["at"][0] - HALL_C[0])), 4)
                for s in _SHIP["stations"]["spot"] if s["room"] == "hall" and s.get("normal"))
-# rebuild C: the throat (ship.toml room "throat"): its hall corner on the 16-gon's circle HV, the front rim lower
+# rebuild C: the throat (ship.toml room "throat"): its hall corner on the 16-gon's circle HV (rebuild E: the rim full
+# height all round)
 _TH = _ROOM["throat"]
 TH_PTS = [(x - HALL_C[0], y - HALL_C[1]) for x, y in _TH["points"]]   # hall-relative: mouth (-+1.65, -6.7), corners
 TH_CORNER = math.degrees(math.atan2(TH_PTS[2][1], TH_PTS[2][0]))      # -44.38

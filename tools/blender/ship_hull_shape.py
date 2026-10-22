@@ -288,18 +288,20 @@ def _room_points(rooms):
         if in_open:   # rebuild E: over the opening the hall's ceiling meets the throat's header at the full rim
             pts.append(("hall rim", (x, y, rim)))
         else:
-            # rebuild E (D's skip, narrowed): only the slab bottom within a wall's thickness and 5 cm of the opening's
-            # corner is skipped. It is the edge of the throat's open underside (the "belly" cutter, whose back plane
+            # rebuild E (D's skip, narrowed): only the slab bottom within a wall's thickness and 12 cm (rebuild F: the
+            # thin zone's real width; E had 5 cm) of the opening's corner is skipped. It is the edge of the throat's open underside (the "belly" cutter, whose back plane
             # runs through the hall's corners and whose ceiling is the throat's slab), plated by the cheeks; the wall
             # above it is checked like the rest
-            joint = th and min(math.dist((x, y), p) for p in back) < WALL + 0.05
+            joint = th and min(math.dist((x, y), p) for p in back) < WALL + 0.12
             for h in (SLAB, 1.4, 2.6, rim):
                 if not (joint and h == SLAB):
                     pts.append(("hall wall", (x, y, h)))
         c, s = (x - hx) / math.hypot(x - hx, y - hy), (y - hy) / math.hypot(x - hx, y - hy)
         for rr in (1.0, 2.0, 3.0, 4.0):
             pts.append(("hall roof", (hx + rr * c, hy + rr * s, apex - (apex - rim) * rr / hr)))
-            if not in_cutter((hx + rr * c, hy + rr * s - 0.2, SLAB - 0.02)):   # by the throat's open underside
+            # by the throat's open underside. NOTE: in_cutter is J's notch as built, from ship.toml's throat (cutters()),
+            # not from `rooms`: a layout with another throat is checked against ship.toml's notch here
+            if not in_cutter((hx + rr * c, hy + rr * s - 0.2, SLAB - 0.02)):
                 pts.append(("hall slab", (hx + rr * c, hy + rr * s, SLAB)))
     pts.append(("hall crown", (hx, hy, apex)))
     if th:   # the throat's covered part (aft of roof_y): its walls' tops, the chamfers' outer edges and the roof

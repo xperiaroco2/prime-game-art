@@ -3,7 +3,8 @@ lanes' piece lists and placements, and the plain-Python check of the rules `ship
 corridor width, the tip rooms' outer wall, the station spots (inside their rooms, the wall spots' plain flat panels
 and the free pass behind a player standing at each), every room and placed piece inside the hull, the head room, and
 one entrance, the capsule walk's points on the floor. Rooms are circles, axis-aligned rects, convex "poly"s (`points`
-with a positive signed area in plan (x, y), that is clockwise seen from above with y running south: the throat) or
+with a positive signed area in plan (x, y): counter-clockwise in the (x, y) axes, clockwise seen from above with y
+running south; the throat) or
 "strip"s (a straight corridor at any angle: `axis` [from, to], `along` [u0, u1] its floor's ends measured from
 `from`, `width`). The least skin round every room comes from the
 hull's own shape (tools/blender/ship_hull_shape.py, plain Python; [hull] shape names its variant).
@@ -206,7 +207,7 @@ def check(layout: dict[str, Any]) -> list[str]:
                 problems.append(f"{r['id']}: {w:.2f} m wide, wants about {want:g}")
             if run < 2.5:
                 problems.append(f"{r['id']}: shorter than 2.5 m")
-    # the tip rooms' outer walls at x +-tip_outer_m (5a mirrored; rebuild C: their centres at y 3.0)
+    # the tip rooms' outer walls at x +-tip_outer_m (5a mirrored; rebuild E: their centres at y 3.6)
     for r in layout["rooms"]:
         if r["id"].startswith("tip"):
             outer = abs(r["centre"][0]) + r["radius"]
@@ -300,12 +301,26 @@ def check_polys(layout: dict[str, Any]) -> list[str]:
 
 def check_walk(layout: dict[str, Any]) -> list[str]:
     """Every capsule walk point on the deck (h at floor_h or above; the ones below stand on the ground or the ramp)
-    lies on a room's floor with at least the capsule's radius of room round it."""
+    lies on a room's floor with at least the capsule's radius of room round it. rebuild F: so does the walk between two
+    such points, sampled every 0.25 m: the capsule's footprint (its centre and 16 points on its rim) on the rooms'
+    floors (where two rooms meet, the footprint may lie in both)."""
     rad, floor = layout["player"]["capsule_radius_m"], layout["deck"]["floor_h"]
     problems = []
-    for p in layout["walk"]["points"]:
+    pts = layout["walk"]["points"]
+    for p in pts:
         if p[2] >= floor - TOL and in_rooms(layout, (p[0], p[1])) < rad - TOL:
             problems.append(f"walk point ({p[0]:g}, {p[1]:g}) is not on a room's floor with {rad:g} m round it")
+    rim = [(rad * math.cos(math.pi * k / 8), rad * math.sin(math.pi * k / 8)) for k in range(16)] + [(0.0, 0.0)]
+    for a, b in zip(pts, pts[1:]):
+        if min(a[2], b[2]) < floor - TOL:
+            continue
+        n = max(1, math.ceil(math.dist(a[:2], b[:2]) / 0.25))
+        for i in range(n + 1):
+            c = (a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n)
+            if min(in_rooms(layout, (c[0] + dx, c[1] + dy)) for dx, dy in rim) < -TOL:
+                problems.append(f"the walk from ({a[0]:g}, {a[1]:g}) to ({b[0]:g}, {b[1]:g}) leaves the rooms' floor "
+                                f"(the capsule's {rad:g} m) at ({c[0]:.2f}, {c[1]:.2f})")
+                break
     return problems
 
 
@@ -368,12 +383,14 @@ def spot_stand(layout: dict[str, Any], s: dict[str, Any]) -> tuple[float, float]
 
 def check_spots(layout: dict[str, Any]) -> list[str]:
     """The station spots (5a mirrored): a floor spot's footprint inside its room; a wall spot on its room's wall, its
-    plain panel free of every piece with a `foot` (trunks, cable bays, arches, pilasters), the player's stand inside the
-    room and pass_m of free floor behind it (the capsule's width inside the rooms, clear of every floor spot)."""
+    plain panel free of every piece with a `foot` (trunks, cable bays, arches, pilasters) and, rebuild F, laid on plain
+    wall pieces' faces (their `plain` boxes) all along, the player's stand inside the room and pass_m of free floor
+    behind it (the capsule's width inside the rooms, clear of every floor spot)."""
     problems: list[str] = []
     st, by_id = layout["stations"], rooms(layout)
     rad = layout["player"]["capsule_radius_m"]
     feet = {p["id"]: p["foot"] for p in layout["pieces"] if p.get("foot")}
+    plains = {p["id"]: p["plain"] for p in layout["pieces"] if p.get("plain")}
     floors = [s for s in st["spot"] if not s.get("normal")]
     for s in st["spot"]:
         room = by_id.get(s["room"])
@@ -405,6 +422,14 @@ def check_spots(layout: dict[str, Any]) -> list[str]:
                     break
         for pid in sorted(hits):
             problems.append(f"station {s['id']}: {pid} sticks out over its plain wall ({st['plain_width_m']:g} m)")
+        # rebuild F: a plain wall piece's face (a piece's `plain` box) under every point of the band, on the wall
+        bare = [u for u in [half * (k / 8 - 1) for k in range(17)]
+                if not any(f[0] - 0.005 <= lx <= f[1] + 0.005 and f[2] - 0.005 <= ly <= f[3] + 0.005
+                           for pid, at, yaw in layout["place"] if (f := plains.get(pid))
+                           for lx, ly in [to_local((s["at"][0] + t[0] * u, s["at"][1] + t[1] * u), at, yaw)])]
+        if bare:
+            problems.append(f"station {s['id']}: no plain wall piece under its band at {len(bare)} of 17 points "
+                            f"(from {bare[0]:+.2f} m along the wall)")
         stand = spot_stand(layout, s)
         if in_rooms(layout, stand) < rad - TOL:
             problems.append(f"station {s['id']}: the player's stand ({stand[0]:.2f}, {stand[1]:.2f}) is not in the room")
