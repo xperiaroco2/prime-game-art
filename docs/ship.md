@@ -349,15 +349,15 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
   about h 1.93 to 2.98 m, r 2.9 to 2.35 m at the axis): a sill rising outward from the wall to the band's lower
   edge, a soffit to its upper edge, two jambs at +-65 deg, slim frame bars along both edges, the three mullions'
   frames on round the well (sill, glass, soffit) and a thin cyan glow line over the lower bar (`tip_well_e`/`_w`),
-  and the glass 1.5 cm inside the band (`tip_glass_e`/`_w`). Before, the glass stood upright in the wall and its
+  and (until polish 4) the glass 1.5 cm inside the band (`tip_glass_e`/`_w`; now one pane, the hull's). Before, the glass stood upright in the wall and its
   lower half showed the lens's lower face and its cyan blade. Eye height (1.65 m over the deck) looks through the
   band (the test keeps lower edge < 2.25 < upper edge).
 - **One per side**: the well is sampled at the hull's own angles (10 deg steps, the swept tip's outline points) plus
   the room's window vertices, from the placed variant (`DEFAULT`), so it meets the band's hole edge exactly; the
   lens is not symmetric (toward the swept tip's rear the blade reaches r 5.3, the band's lower edge r 4.85), so the
   west room (turned 180) reads the profile at the mirrored angle. A change to the skin moves the well with it on the
-  next `--build --only tip_well_e,tip_well_w,tip_glass_e,tip_glass_w`.
-- **The views**: `in_hall_out` from y 1.0 at fov 60 (the mouth fills the frame, hall_out-2), the tip views level at
+  next `--build --only tip_well_e,tip_well_w,window_frame_e,window_frame_w`.
+- **The views**: `in_hall_out` from the hall's centre (y 0) at fov 52 (polish 4; was y 1.0, fov 60), the tip views level at
   2.25 m toward the band (`exterior.toml` `[shots]`).
 
 ## Launch 3's numbers and open problems (join 3)
@@ -388,6 +388,24 @@ Open problems after launch 3:
   impostor ring before the game (`bench`).
 - 26 small strip cells get no light (`MAX_LIGHTS` 96); the interior has no UVs (grain is geometry; the triplanar
   shader only on the hull's metals); the grates are about 60 % of the inside's triangles.
-- The tip windows: the hull's `tip_window` glass and the well's `tip_glass_e`/`_w` 1.5 cm apart (double tint from
-  inside); the clearing through the band is dim. The party string is not in the hall-out view.
+- The tip windows' double glass and the party string's absence from the hall-out view: fixed in polish 4 (below).
 - The detail_seam close-up's hatches read as faces (dot pairs); the legs are small and hidden from the front.
+
+## Polish 4 (launch 4): the critic's third-round items that are not the silhouette
+
+| What | Was | Now | Why |
+|---|---|---|---|
+| Hall centre disc | plain plate (`int_plate`) | a slotted grating in four quarters round a bolted 0.265 m hub over a warm `int_halo` glow layer (`floor_disc` `grate`) | it read as a black hole; hall_in-3's disc is a lit grating |
+| Tip glass | the hull's `tip_window` (`glass_tint`, alpha 0.6 brown) and the well's `tip_glass_e`/`_w` | one pane, the hull's, `glass_window` (alpha 0.12 cool; Godot alpha 0.05) | the doubled tint dimmed the clearing to orange |
+| Tip ceiling lamp ring | R 0.6 | R 0.42 (`R_TIP_RING`; facets, ribs and the six lamps follow) | the pale cog read oversized from the room |
+| Window-view fill lights | x +-23, range 9.5, `fill_lamp` 1.0 | x +-31, range 12, `fill_lamp` 2.0 | the pines stand at r 33+: the old lights never reached them |
+| Mouth arch | inset 0.18 | inset 0.08 (`cor_arch` `inset`) | the opening as wide as the mouth allows (+-1.25) |
+| Party posts | the first post alone at (-3.82, -15.51) | a gate pair (2.6, -14.6) and (-3.0, -15.0), the string across the path, then on (`GATE`) | the lone post read as a stick in the front and hero shots; the string now falls in the hall-out view |
+| Ground specular | 0.5 (Godot default) | 0.1 (`[light.mats]` `s`, `ext_ground`, `ext_dirt`, `ext_path`) | the dirt mirrored the bright horizon at grazing angles: snow-white through the mouth |
+| Hero fill | none | a `key` lamp (-11, -13, 9 m), range 40, cool, `key_lamp` 1.0 | the hull's far side and the ground were a black pool |
+| Ground cover | - | five pieces in the hero's west foreground, three under the east wing | dark patches in the hero view |
+| Cups | scale 1.5 | 1.8, spills 2.2 / 2.0; cup_a (0.75, -3.0) in hall-out's foreground, cup_c (-1.05, -0.45) in hall-in's | read as a red mark |
+| Nozzles | segments only, winding mirrored (culled) | a 0.5..0.72 r cyan inner ring 3 cm proud of the bell's rear cap (ln + 0.4, which hides the throat and the old segments), oriented rearward | black holes |
+
+The light numbers come from one grid (`grid_p4/grid.png`: key 0 / 0.6 / 1.0 / 1.6, fill 1 / 1.5 / 2 / 3, ground
+specular 0.5 / 0.1 / 0.1 / 0): C taken (key 1.0, fill 2.0, specular 0.1).
