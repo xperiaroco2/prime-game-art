@@ -259,7 +259,7 @@ def shoot(layout: dict, out: Path, folder: Path) -> int:
     views, compares = shot_views(layout)
     req.update({"mode": "shoot", "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in views],
-                "top": {"name": "top", "title": "top: plan view, south up (as plan-3)", "size_m": 30.0},
+                "top": {"name": "top", "title": "top: plan view, south up (as plan-3)", "size_m": 36.0},
                 "compare": [["top", layout["plan_ref"]], *compares], "rooms": room_boxes(layout)})
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)

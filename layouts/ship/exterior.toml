@@ -676,7 +676,7 @@ views = [
   ["out_front", "outside: front, ramp down (turnaround front)", [0.0, -31.0, 6.8], [0.0, 0.0, 1.8], 58.0, "turnaround.jpg"],  # rebuild B: back and wider for J's 30 m span
   ["out_hero", "outside: three-quarter at night (hero)", [-21.0, -24.0, 9.0], [0.8, 1.0, 1.8], 52.0, "hero.jpg"],
   ["out_side", "outside: side (turnaround side)", [-31.0, 1.5, 3.0], [0.0, 1.5, 2.2], 46.0, "turnaround.jpg"],
-  ["out_back", "outside: back with the nozzles (turnaround back)", [3.0, 32.0, 4.6], [0.0, 1.0, 2.3], 58.0, "turnaround.jpg"],
+  ["out_back", "outside: back with the nozzles (turnaround back)", [2.0, 27.5, 4.4], [0.0, 1.0, 2.3], 62.0, "turnaround.jpg"],  # clear of the near pines
   ["detail_seam", "detail: the plates on the east wing (materials-3)", [7.0, 10.5, 6.6], [9.0, 4.5, 3.4], 40.0, "materials-3.jpg"],  # rebuild B: the plated wing's back slope in the moon
   ["detail_floor", "detail: a floor light strip and grate (materials-3)", [3.96, 1.91, 1.7], [5.95, 2.86, 0.6], 50.0, "materials-3.jpg"],  # rebuild B: down the diagonal east corridor
   ["detail_cables", "detail: a cable channel with clips (materials-3)", [5.59, 2.69, 1.9], [5.11, 4.13, 1.5], 55.0, "materials-3.jpg"],  # the corridor's back wall
