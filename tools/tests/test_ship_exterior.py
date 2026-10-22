@@ -65,6 +65,14 @@ class ShipExteriorTest(unittest.TestCase):
                 self.assertGreater(math.hypot(at[0], at[1]), 12.0, f"{pid} at {at} stands in the clearing's middle")
         names = [v[0] for v in EXT["shots"]["views"]]
         self.assertEqual(len(names), len(set(names)))
+        # D1 review: the day views are shot after the night's under their own names: no name twice across ship.toml's
+        # views and day views, and no day view named as an exterior view
+        with open(Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml", "rb") as f:
+            shots = tomllib.load(f)["shots"]
+        own = [v[0] for v in shots["views"]] + [v[0] for v in shots.get("day_views", [])]
+        self.assertEqual(len(own), len(set(own)), sorted(n for n in own if own.count(n) > 1))
+        self.assertFalse({v[0] for v in shots.get("day_views", [])} & set(names))
+        self.assertTrue(shots.get("day_views"))
         for v in EXT["shots"]["views"]:
             self.assertEqual(len(v), 6, f"view {v[0]} needs its 2D sheet")
 

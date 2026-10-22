@@ -119,12 +119,26 @@ class ShipInteriorTest(unittest.TestCase):
             return all((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) >= -1e-9
                        for a, b in zip(poly, poly[1:] + poly[:1]))
         self.assertEqual(S.OC_R, 0.7)
+        inner = min(math.hypot(x, y) * math.cos(math.atan2(y, x) - S.oc_angle(k)) for k, c in enumerate(cells)
+                    for x, y in c)
+        self.assertGreater(inner, S.OC_WELL[0] + 1e-3)   # the slab starts outside the clear disc,
+        self.assertLess(inner, S.OC_WELL[1] - 1e-3)      # and overlaps the well's lining (no gap round the oculus)
         for r in (0.0, 0.3, S.OC_R - 0.01):
             self.assertFalse(any(inside((r, 0.0), c) for c in cells))
-        for p in ((-1.0, 1.0), (1.9, 0.0), (0.0, 1.2), (-1.3, -0.4), (1.05, 0.3)):
+        for p in ((-1.0, 1.0), (1.9, 0.0), (0.0, 1.2), (-1.3, -0.4), (1.05, 0.3), (0.85, 0.0), (0.0, -0.85)):
             self.assertEqual(sum(1 for c in cells if inside(p, c)), 1, p)
-        self.assertGreater(S.R_TIP_RING - 0.075, S.OC_BEAM[0])   # the lamps hang under the ring's beam
-        self.assertLess(S.R_TIP_RING + 0.075, S.OC_BEAM[1])
+        # details 2: the light ring's warm strip is slim (7 cm) inside the dark channel, under the beam; no lamps
+        parts = {q["name"]: q for q in S.tip_ceiling({}, None)}
+        rs = [math.hypot(x, y) for x, y, _h in parts["band"]["verts"]]
+        self.assertTrue(0.06 <= max(rs) - min(rs) <= 0.08, max(rs) - min(rs))
+        cr = [math.hypot(x, y) for x, y, _h in parts["channel"]["verts"]]
+        self.assertTrue(min(cr) < min(rs) and max(rs) < max(cr) < S.OC_BEAM[1] and min(cr) > S.OC_R + 0.03)
+        self.assertFalse([1 for pid, *_r in INTERIOR["place"] if pid == "tip_lamp"])
+        # D1 review: the fascia's foot OC_FASCIA (10 cm) under the walls' top everywhere round the slant
+        rim = S.FLOOR + S.H_TIP
+        self.assertAlmostEqual(min(h for _x, _y, h in parts["fascia"]["verts"]), rim - S.OC_FASCIA, places=6)
+        self.assertAlmostEqual(max(h for _x, _y, h in parts["fascia"]["verts"] if h < rim - 0.05), rim - S.OC_FASCIA,
+                               places=6)
         self.assertGreater(min(abs(x) - w for x, w in S.TIP_RIBS), S.OC_BEAM[1] + 0.05)
         parts = S.tip_ceiling({}, None)
         hs = [h for q in parts if q["name"] == "slab" for x, y, h in q["verts"] if abs(h - S.FLOOR - S.tip_clear(x)) < 1e-6]

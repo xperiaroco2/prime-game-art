@@ -573,7 +573,7 @@ no outside light strips; the inside (rebuild A) frozen; the clearing only scaled
   to the silvers and every facet's plates to its whole area.) Flat shaded. `ship.gd`'s METALS are the
   night build's again (brush 0.6, grime), with no scratches and no shader seam grid (the seams are geometry).
 - **Gone:** the lead blades, the stripes, the tip windows' glass and frames, the pod housing (J's stern face holds the
-  pods), `skin_brow`. The canopies are J's (0.95 x 1.35 at (+-2.25, -3.6), 0.75 high) on `ship_hull_shape.heights`.
+  pods), `skin_brow`. The canopies are J's (0.95 x 1.35 at (+-2.25, -3.6), 0.85 high since details 1) on `ship_hull_shape.heights`.
   The pods keep their style, placed so their rear ends are J's (y 11.0 and 11.8: J's y less `pod_tail_m`).
 - **Legs** at J's spots off the corridors and the tip rooms: front (+-4.6, -3.4), wing (+-11.6, 4.4), stern
   (+-5.0, 8.6); `top` = J's lowest belly under the mount + 0.1 (0.6, 0.63, 0.52); the six ground lamps 0.9 m past
@@ -847,3 +847,40 @@ The engineer's pick (art#263 comments 6347287605, 6347388160). Raw output: `<raw
 - **Small fixes.** The tail nav light moved to h 4.715 (0.45 m out, as the other two). `ship.gd _day` hides the moon
   and the key and leaves the sun unshadowed (a clean day). `[shots] day_views` are shot by day after the night's
   views (`out_canopy_e_day`). New views: `in_oculus_e`, `out_oculus_e`, `out_canopy_top`, `out_canopy_e`.
+
+## Details 2: the light ring, the portholes and the hull's fittings (2026-10-22)
+The engineer agreed to the manager's detail plan (art#263): the shape, the rooms, the lights and the look stay; detail
+only. Raw output: `<raw>/ship/v4/details2/` (shots, `walk/`), `logs/`, `notes/details2.md`.
+- **The light ring** (`ship_interior.tip_ceiling`): a slim warm strip (`OC_STRIP` 7 cm, `int_lamp`) centred at
+  `R_TIP_RING` 0.84 in a dark channel (`int_dark`, 12 cm) under a thinner silver beam (8 cm deep, r 0.71..0.97) with a
+  rim on its outer edge and the lip round the oculus (11 cm), in the corridor ribs' style. The six `tip_lamp` fixtures
+  are merged into the strip (the piece is no longer placed). in_tip_e's mean luminance (Rec. 709, 0-255) 100.0 before,
+  100.3 after; the room's omni is unchanged. The ceiling's fascia now reaches `OC_FASCIA` (10 cm) down the walls all
+  round the slant (it had 1.3 cm at the corridor's side).
+- **The fittings** (`tools/blender/ship_hull_fittings.py`, each piece in the plan frame at the origin; every fitting
+  sits on one facet of the live hull, its normal from `heights`' slope):
+  - `portholes`: three a side on the tail's flank (the steep face between the body's top and the fin's) at y 5.6,
+    6.8, 8.0, where the flank is midway down; at least 2.6 m in plan from any room's sampled surface (the vault's
+    roof the nearest), clear of the lens rims and the pods' noses. A bright silver crown 4.5 cm proud on a darker
+    flange, a dark bezel and opaque dark glass (`ext_porthole`, a faint warm emission, `[light.mats]` l 0): it glows a
+    little at night and never reads as a hole.
+  - `tail_vents`: two grilles (0.7 x 0.42 m, six slats tilted 35 deg in a dark well, a silver frame) at (+-1.15, 8.55)
+    on the tail's top, ahead of the pods.
+  - `hump_sensors`: an antenna mast (0.75 m, two collars, a dark cap; a cross-spar read as a cross) at (0, -1.6) and a
+    dark glossy sensor dome (r 0.16 on a silver collar) at (0, -2.9), on the hump's centre line behind the canopies.
+  - `service_hatches`: inset outlines (a dark groove 2 cm wide, 3 mm proud), a handle notch with a silver grip and
+    four bolts: 0.9 x 0.6 m on each fin's top at (+-5.6, 4.4) (clear of the fin's plate seams), 0.8 x 0.55 on the
+    belly at (0, 8.6).
+  - `hazard_stripes` (outside): yellow parallelograms at 45 deg every 0.2 m on a dark strip along both ramp rails'
+    tops (mirrored slant) and across the mouth's floor edge at the hinge (11 cm deep, over the throat floor's rim).
+- **Tests:** `test_ship_fittings.py` (the portholes' sides, flatness, distance from the rooms, the pods and the lenses;
+  the vents', mast's, dome's and hatches' spots; the stripes' counts and places). `test_ship_interior` asserts the
+  slab overlaps the well's lining, probes r 0.85, the strip's width and the fascia's foot; `test_ship_exterior`
+  checks ship.toml's views and day views together for duplicate names.
+- **Views:** `out_portholes_e`, `out_vents`, `out_mast`, `out_hatch_e`, `out_ramp_stripes`, `out_lens_under_e`.
+- **Not done: the lens's underside bulge.** Under each lens the barrel's lower part (r 2.55 to h 1.0, then 2.47 at
+  0.5, 2.3 at the belly) stands below the fin's underside near the fin's roots (the fin's edge there is 1.15 at its
+  bottom). Tapering the lens's lower profile is not possible: the room's bottom corner (r 2.21, h 0.35) keeps 0.162 m
+  of skin against the present chamfer, and a taper from h 1.2 leaves about 0.11. The blend needs a fairing, a sixth
+  convex part per side between the lens's lower barrel and the fin's underside round each root, with its plating and
+  the edge light checked; a step of its own.

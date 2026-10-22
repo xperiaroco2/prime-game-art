@@ -407,6 +407,7 @@ glow_nav_white = {l = 0.0}                                           # lamps abo
 glow_landing = {l = 0.0}
 ext_window_glow = {l = 0.0}                                          # details 1: the lens band's warm pane (outside, one-sided)
 ext_screen = {l = 0.0, e = 2.0}                                             # details 1: the cockpit screens glow, light nothing
+ext_porthole = {l = 0.0}                                            # details 2: the portholes' faint warm glass glows, lights nothing
 glow_pod = {c = [0.2, 0.9, 1.0], e = 0.6, l = 0.15, rr = 0.6}        # lens step 2: the pods' rings, seen, not a lamp; light layer: e 0.6, the bands clipped pale in out_back
 int_silver_a = {v = 0.55, r = 0.25, m = 0.45}
 int_silver_b = {v = 0.55, r = 0.25, m = 0.45}
@@ -456,6 +457,13 @@ views = [
   ["out_oculus_e", "outside: the east lens's oculus from above", [12.6, -1.0, 6.2], [10.5, 1.2, 3.3], 40.0],
   ["out_canopy_top", "outside: the east cockpit from above at night", [2.6, -2.9, 7.6], [2.25, -3.6, 4.3], 40.0],
   ["out_canopy_e", "outside: the east cockpit in three-quarter at night", [5.4, -0.2, 6.6], [2.25, -3.7, 4.4], 38.0],
+  # details 2: the tail's portholes, the vents, the mast and dome, a fin's hatch, the ramp's stripes, a lens's underside
+  ["out_portholes_e", "outside: the tail's east portholes at night", [7.6, 8.8, 5.4], [3.6, 6.8, 3.6], 40.0],
+  ["out_vents", "outside: the tail's vents ahead of the pods", [3.4, 12.2, 6.6], [0.0, 8.4, 4.4], 45.0],
+  ["out_mast", "outside: the hump's antenna mast and sensor dome", [2.9, -5.8, 6.0], [0.0, -2.3, 4.9], 42.0],
+  ["out_hatch_e", "outside: the east fin's service hatch", [7.0, 7.2, 5.0], [5.6, 4.4, 3.1], 40.0],
+  ["out_ramp_stripes", "outside: the ramp's and the mouth's warning stripes", [2.7, -11.8, 2.5], [0.0, -7.4, 0.8], 50.0],
+  ["out_lens_under_e", "outside: the east lens's underside at the fin", [14.0, -5.8, 0.5], [10.4, 0.2, 0.8], 50.0],
 ]
 # details 1: views shot by day after the night ones (ship.gd _day: the sun, a pale sky; the moon and key off)
 day_views = [

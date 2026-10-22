@@ -470,6 +470,9 @@ MODULES.append(ship_hull_j)
 import ship_hull_detail  # noqa: E402  (the canopies, pods, blades, hatches and lamps; step 2)
 
 MODULES.append(ship_hull_detail)
+import ship_hull_fittings  # noqa: E402  (details 2: portholes, vents, mast and dome, hatches, stripes)
+
+MODULES.append(ship_hull_fittings)
 import ship_hull_clearing  # noqa: E402  (the clearing: dirt, path, tufts, bushes, logs, pines, party lights; step 3)
 
 MODULES.append(ship_hull_clearing)
