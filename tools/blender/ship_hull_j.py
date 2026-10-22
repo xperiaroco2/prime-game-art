@@ -142,7 +142,41 @@ def j_cheeks(args: dict, layout: dict) -> list:
         edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), (0.0, -1.0, 0.0)) > 0 else (3, 2, 1, 0)]))   # front
     parts = [L.part(f"cheeks_{mat}", *L.merge(*g), mat, solid=False) for mat, g in sorted(groups.items())]
     parts.append(L.part("jamb_edge", *L.merge(*edge), "hull_silver", solid=False))
+    parts.append(L.part("jamb_cap", *L.merge(*jamb_caps()), MATS["mouth"][0], solid=False))
     return parts
+
+
+CAP_BACK = 0.01   # rebuild F: the jamb's aft cap this far aft of the roof line, behind the arch's face and the lintel
+
+
+def jamb_caps() -> list:
+    """rebuild F: the hole at the mouth's upper corners. The notch (cutters) is cut WALL beyond the throat's walls up
+    to J's top; at the roof line its back face (the lintel) closes it only above TH_TOP, and the throat's covered part
+    behind closes only its own profile (walls vertical to the chamfer, the chamfer in to the ceiling). Between that
+    profile's chamfer and the notch's side, under the lintel, the hull's hollow stood open: sky and pines through its
+    one-sided skin. Each side's cap closes it in the plane CAP_BACK aft of the roof line, from the slab up past
+    TH_TOP (under the lintel) and from the walls' inner face out past the notch's side (into the hull's hollow); its
+    inner edge follows the throat's inner profile, so the arch (its face on the roof line) hides the seam. Both
+    windings: no light through it either way. [(verts, faces)] in plan coordinates."""
+    (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
+    ln = math.hypot(kx - mx, ky - my)
+    d = ((kx - mx) / ln, (ky - my) / ln)
+    k = 1.0 / d[1]                                       # an across distance as a plan x offset at fixed y
+    y = S.TH_ROOF_Y + CAP_BACK
+    xi = mx + d[0] * (y - my) / d[1]                     # the walls' inner face
+    xo = xi + S.WALL * k + 0.02                          # past the notch's side plane
+    ch_h, ch_in = S.TH_CH
+    h_ch, h_ceil, h_top = S.FLOOR + ch_h, S.FLOOR + S.TH["clear_h"], S.TH_TOP + 0.03
+    x_ceil = xi - ch_in * k
+    out = []
+    for sx in (1, -1):
+        for poly in ([(xi, S.SLAB - 0.01), (xo, S.SLAB - 0.01), (xo, h_ch), (xi, h_ch)],
+                     [(xi, h_ch), (xo, h_ch), (xo, h_top), (x_ceil, h_top), (x_ceil, h_ceil)]):
+            q = [(sx * x, y, h) for x, h in poly]
+            n = len(q)
+            out.append((q, [tuple(range(n))]))
+            out.append(([(a, b + 0.002, c) for a, b, c in q], [tuple(range(n - 1, -1, -1))]))   # the back, 2 mm aft
+    return out
 
 
 j_cheeks = H._outward(j_cheeks)
