@@ -251,8 +251,9 @@ its 2D sheet; script `<raw>/ship/v1/logs/in_grid.py`) found the causes and the n
   centre, and so did the hall's sixteen amber floor arcs' cell lights. The hall's lamps now hang by the wall (r 3.0,
   h 4.2, range 3.2, out of the disc's reach), the ring lights nothing, the amber cells reach half as far (`rr` 0.5:
   tight pools), the disc (`int_plate`) value x0.2, roughness +0.45.
-- **Lamp groups** scale per room: `hall_lamp` 0.7, `corr_lamp` 2.0 (three ceiling lamps a corridor), `tip_lamp` 2.4
-  (the ring lamp and a moonlight fill by the window), `out_lamp` 2.5 (warm camp lights at the treeline, x +-27, and
+- **Lamp groups** scale per room: `hall_lamp` 0.7, `corr_lamp` 2.6 (three ceiling lamps a corridor), `tip_lamp` 2.4
+  (the lens rooms' group `tip`: the room's omni and the cool fill by the window; the group's scale, not the
+  `tip_lamp` piece, which details 2 stopped placing), `out_lamp` 2.5 (warm camp lights at the treeline, x +-27, and
   in front of the ramp, for the windows and the ramp's view); `sky_horizon` 5 lifts the horizon behind the trees.
 - The lamp ring has an emissive underside band (`lamp_ring`'s `band`): the thick warm ring of hall_in-3.
 
@@ -862,7 +863,8 @@ only. Raw output: `<raw>/ship/v4/details2/` (shots, `walk/`), `logs/`, `notes/de
   - `portholes`: three a side on the tail's flank (the steep face between the body's top and the fin's) at y 5.6,
     6.8, 8.0, where the flank is midway down; at least 2.6 m in plan from any room's sampled surface (the vault's
     roof the nearest), clear of the lens rims and the pods' noses. A bright silver crown 4.5 cm proud on a darker
-    flange, a dark bezel and opaque dark glass (`ext_porthole`, a faint warm emission, `[light.mats]` l 0): it glows a
+    flange, a dark bezel and opaque dark glass (`ext_porthole`, a faint warm emission (0.07; details 3: 0.05 round
+    a warm core), `[light.mats]` l 0): it glows a
     little at night and never reads as a hole.
   - `tail_vents`: two grilles (0.7 x 0.42 m, six slats tilted 35 deg in a dark well, a silver frame) at (+-1.15, 8.55)
     on the tail's top, ahead of the pods.
@@ -884,3 +886,81 @@ only. Raw output: `<raw>/ship/v4/details2/` (shots, `walk/`), `logs/`, `notes/de
   of skin against the present chamfer, and a taper from h 1.2 leaves about 0.11. The blend needs a fairing, a sixth
   convex part per side between the lens's lower barrel and the fin's underside round each root, with its plating and
   the edge light checked; a step of its own.
+
+## Details 3: the fairings under the lenses, the portholes' glow (2026-10-22)
+The shape, the rooms, the inside, the lights and the look stay. Raw output: `<raw>/ship/v4/details3/` (shots, `walk/`),
+`<raw>/ship/v4/logs/`, `<raw>/ship/v4/notes/details3.md`.
+- **The fairings** (`ship_hull_shape.p_fairings`, `P_FAIR = (60, 3.0)`): under each fin root the lens's lower barrel
+  stood out of the fin's underside (0.1 to 1 m past the fin within 30 deg of the root: a can under the fin). Four
+  more convex parts of the union, `fair_lead_e`, `fair_trail_e` and their mirrors: the convex hull of the lens's low
+  barrel (every profile level from the fin edge's bottom, h 1.15, down to the belly) from the root to 60 deg past it,
+  and the fin edge's bottom line from the root to 3.0 m along it. Their outer faces fall from the edge's bottom to
+  the barrel, so the barrel runs on into the fin's underside as one surface (no seam of its own: the union's
+  surface and plating take it in, `skin_pieces`), and end flush on the edge 3 m from the root. Every point lies on
+  the lens's or the fin's skin and the union only grows, so no room's skin can thin (not tested: it could not fail);
+  nothing reaches inside, the footprint rows skip them (they lie under the fin and lens in plan). They stay 0.14 m
+  and more under the edge's mid line, so the edge light runs on above them as it was.
+  `tools/tests/test_ship_fairing.py`: the four parts and their mirror, their points on the lens and fin (the far one
+  on the fin's skin within 1 mm), a grid finding points inside the fairing and the lens, the fairing and the fin, and
+  its own new volume; neither a grid point nor a hull point standing more than `MAX_OUT` 0.45 m out of the lens, fin
+  and body; the barrel past the roots standing 5 mm out at most; every point 0.14 m under the edge's mid line (the
+  edge light).
+- **The portholes' glow:** `ext_porthole` at 0.2 over the whole glass read as flat brown discs; now the glass is
+  0.05 and a warm core (`porthole_core`, 0.55 of the glass, 4 mm over it, `ext_porthole_core` 0.6, l 0) averages
+  about 0.2. From out_portholes_e the core read as a flat amber disc in a dark ring (a bullseye). Superseded by 3b's
+  glow bands (below): `porthole_core` and `ext_porthole_core` are gone.
+- **D2's minors:** the porthole test holds the 2.6 m to the rooms (it asserted > 1.0) and 1 m in 3D (height
+  included) from every pod's barrel. `tip_lamp = 2.4` in ship.toml stays: it is the lens rooms' lamp group (`tip`, the
+  room's omni and its cool fill), not the removed `tip_lamp` piece; removing it would dim the frozen lens rooms; its
+  comment and "Lamp groups" above say so now.
+- **Views:** `out_fair_lead_e`, `out_fair_trail_e` and the west's (from the side), each with `_below` (from the
+  ground under the fin).
+- **Details 3b (fixes):** raw output `<raw>/ship/v4/details3b/` (shots, `walk/`), `<raw>/ship/v4/notes/details3b.md`.
+  - *The portholes' glow* (`ship_hull_fittings.glow_bands`, `PORT_GLOW = (20, 0.45, 0.03, 1.6)`): the glass's face
+    is 20 flat concentric rings 2 mm over the dark glass body (`ext_porthole`, 0.05), each its own material
+    `ext_porthole__gNN`, the emission log-linear in (r / glass)^1.6 from 0.45 at the centre to 0.03 at the rim (each
+    ring about 15 % under the next in; 3c: 16 bands, 5 mm; see below): a soft warm falloff, no disc and no ring edge. D3's warm core read as an
+    amber bullseye. The rings are open faces (closed rings' coincident walls sparkled as dotted circles). Their
+    `[light.mats]` entry is `ext_porthole`'s: `ship.gd` looks a material up by its name, else by its part before `__`.
+  - *The fairings plated flat:* a face on a fairing's own facet (`ship_hull_shape.p_fair_face`: its plane and normal,
+    and on no lens facet) is plated in the plan zone like the fins (`ship_hull_j.cells`); in the lens zone it was
+    shaded smooth into the barrel up to 30 deg: a dark smear across several plates with a zig-zag lower edge.
+  - *The jambs' top* (`j_cheeks`): the jamb face's plates lay their top edge flush (`lay_seams`; their insets chewed
+    the edge against the sky into steps) and the top strip runs `JAMB_OUT` 3.5 cm past the wall's outer face over the
+    skin's seam groove (the dark band), `JAMB_LIFT` 4 mm over the skin, 33 samples along the slope.
+  - *Seam corners* (`lay_seams`): a seam ending on a flush edge slides its corner along that edge, and the pieces on
+    both sides of a facet fold end at one point on it; the exact inset's `INSET / sin` slide per facet differed and
+    left hairline black wedges past the groove (by the fin hatch). Hull-wide. (3b slid `INSET` whatever the angle; 3c
+    below keeps the groove's width.)
+  - *Tests:* `test_ship_fairing.py` asserts a fairing stands at most `MAX_OUT` 0.45 m out of the lens, fin and body
+    (grid) and its far point lies on the fin's skin (within 1 mm); the "no room loses skin" claim is dropped (the
+    union only grows, so it could not fail).
+- **Details 3c (review fixes):** raw output `<raw>/ship/v4/details3c/`, `<raw>/ship/v4/notes/details3c.md`.
+  - *Seam corners* (`ship_hull_j.corner_slides`): every seam corner on a flush edge wants the slide `INSET / sin` of
+    its angle (up to `SLIDE_MAX` 3 `INSET`), and the corners at one point sliding one way (both sides of a fold) take
+    the largest of theirs, so the groove stays `INSET` wide at an acute corner (3b's `INSET` tapered it to
+    `INSET * sin`: 186 corners of 25 to 155 deg under 0.9 `INSET`) and the pieces still end at one point.
+    (3d below: one cap per group.)
+  - *The portholes' glow, cheaper* (`PORT_GLOW = (16, 0.45, 0.03, 1.6)`, `PORT_SEG` 24, `PORT_LIFT` 5 mm): 16
+    bands of 24 segments (the glass disc keeps 48), each band one equal step of (r / glass)^1.6, so each glows about
+    16 % under the next in, wide at the centre and narrow at the rim; the mean glow stays 0.132. The portholes piece
+    went from 15,804 triangles and 24 surfaces to 9,036 and 20. 8 bands (6,732 triangles, 12 surfaces; 29 % steps)
+    showed their rings in out_portholes_e. The bands lie 5 mm over the glass's face (3b: 2 mm) against far-view
+    z-fighting.
+  - *Tests:* `test_ship_light.py` asserts every `__` material has its family's `[light.mats]` row with `l` 0 (and
+    `ship.gd` looks the family up); `test_ship_fairing.py` also checks each fairing's own points against `MAX_OUT`.
+- **Details 3d (review fix):** raw output `<raw>/ship/v4/details3d/`, `<raw>/ship/v4/notes/details3d.md`.
+  - *Seam corners, one cap per group* (`ship_hull_j._slide_cap`, `corner_slides`): 3c shared a group's slide, but
+    `lay_seams` still capped each piece at `CORNER_CAP` 0.3 of its shorter edge, so on short edges a group's corners
+    stopped at different points: 450 groups ended over 0.1 mm apart (worst 6.5 cm), the black wedges at seam corners.
+    Now a group's slide is the largest wanted, capped at its members' smallest `_slide_cap`: `CORNER_CAP` of the
+    flush edge, and the slide's part along the seam (`s * |cos|`) at most `SEAM_CAP` 0.6 of the seam edge (with the
+    seam's other corner at 0.3 at most, no plate folds over); `lay_seams` does not cap a slid corner again. 0 groups
+    over 0.1 mm apart. The cost: 23 corners of 25 to 155 deg between edges of 0.25 m and more (in a group with a
+    short member) keep a groove under 0.9 `INSET` (narrowest 0.275 `INSET`); capping by the shorter edge outright
+    pinched 186.
+  - *Tests:* `test_ship_hull_detail.py` asserts every corner lies on its flush edge, every group (short edges
+    included) meets within 0.1 mm, each groove is its slide times sin with the slide within `SLIDE_MAX` and its
+    `_slide_cap`, and counts the limits: at most 25 narrow wide corners, none under 0.25 `INSET`; the near-straight or
+    needle corners (sin under 1 / `SLIDE_MAX`, 362) and the corners their group's cap stops short (747).
+
