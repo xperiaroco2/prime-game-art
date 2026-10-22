@@ -35,9 +35,15 @@ L.MATERIALS.update({
     "int_lamp": {"base": (1.0, 0.86, 0.68, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.86, 0.68),
                  "strength": 12.0},
     "int_glass": {"base": (0.10, 0.14, 0.17, 0.16), "metallic": 0.0, "roughness": 0.03, "alpha": True},
-    "int_cable_red": {"base": (0.32, 0.025, 0.02, 1.0), "metallic": 0.0, "roughness": 0.42},
-    "int_cable_black": {"base": (0.018, 0.018, 0.02, 1.0), "metallic": 0.0, "roughness": 0.5},
-    "int_cable_blue": {"base": (0.025, 0.07, 0.28, 1.0), "metallic": 0.0, "roughness": 0.42},
+    # the halo round a floor strip: a frosted diffuser glowing weaker than the strip (lights nothing, ship.toml)
+    "int_halo": {"base": (1.0, 0.5, 0.12, 1.0), "metallic": 0.0, "roughness": 0.5, "emission": (1.0, 0.5, 0.12),
+                 "strength": 2.0},
+    # the cables: saturated mid values so they read in the bays (materials-3, corridor.jpg)
+    "int_cable_red": {"base": (0.55, 0.035, 0.025, 1.0), "metallic": 0.0, "roughness": 0.36},
+    "int_cable_black": {"base": (0.03, 0.03, 0.034, 1.0), "metallic": 0.0, "roughness": 0.45},
+    "int_cable_blue": {"base": (0.03, 0.12, 0.5, 1.0), "metallic": 0.0, "roughness": 0.36},
+    "int_cable_yellow": {"base": (0.8, 0.52, 0.04, 1.0), "metallic": 0.0, "roughness": 0.36},
+    "int_bolt": {"base": (0.5, 0.51, 0.53, 1.0), "metallic": 0.85, "roughness": 0.3},
     "int_scratch": {"base": (0.85, 0.86, 0.88, 1.0), "metallic": 1.0, "roughness": 0.58},
     "int_cup_red": {"base": (0.6, 0.02, 0.02, 1.0), "metallic": 0.0, "roughness": 0.28},
     "int_cup_white": {"base": (0.86, 0.86, 0.84, 1.0), "metallic": 0.0, "roughness": 0.4},
@@ -118,11 +124,79 @@ def wall_panel(args, layout):
     lo, hi = ("int_silver_a", "int_silver_b") if tone == "a" else ("int_silver_b", "int_silver_a")
     belt = h - 0.9
     e = hw - 0.135
+    # hall_in-3's faceted wall: a raised diamond folded up to a ridge point, four chamfered corner plates round it
+    # (seams 12 mm), the upper panel split on its diagonal into two folds (alternating with the tone)
+    v0, v1, g = 0.2, belt - 0.05, 0.012
+    vm = (v0 + v1) / 2
+    dia = [(0.0, v0 + g), (e - g, vm), (0.0, v1 - g), (-e + g, vm)]
+    corners = [[(-e, v0), (-g, v0), (-e, vm - g)], [(g, v0), (e, v0), (e, vm - g)],
+               [(e, vm + g), (e, v1), (g, v1)], [(-e, vm + g), (-g, v1), (-e, v1)]]
+    u0, u1 = belt + 0.17, h - 0.04
+    tris = (([(-e, u0), (e, u0), (-e, u1)], [(e, u0), (e, u1), (-e, u1)]) if tone == "a" else
+            ([(-e, u0), (e, u0), (e, u1)], [(-e, u0), (e, u1), (-e, u1)]))
+    up = [G.inset(t, 0.006) for t in tris]
     return [P("body", G.slab(fr, G.rect(-hw, hw, 0.0, h), -0.2, 0.0), "int_silver_b"),
             P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.16), 0.0, 0.015), "int_dark"),
-            P("main", G.pillow(fr, -e, e, 0.2, belt - 0.05, 0.0, 0.03, 0.09, 0.015), lo),
+            P("diamond", pyramid(fr, dia, 0.0, 0.035, 0.1, 0.012), lo),
+            P("corners", M(*[G.slab(fr, G.inset(c, 0.004), 0.0, 0.025, 0.01) for c in corners]), hi),
             P("belt", G.slab(fr, G.rect(-hw, hw, belt, belt + 0.12), 0.0, 0.05, 0.012), "int_silver_c"),
-            P("upper", G.slab(fr, G.rect(-e, e, belt + 0.17, h - 0.04), 0.0, 0.03, 0.012), hi)]
+            P("upper", M(G.slab(fr, up[0], 0.0, 0.03, 0.01), G.slab(fr, up[1], 0.0, 0.045, 0.01)), hi)]
+
+
+def pyramid(fr, poly, w0, w1, apex, bevel):
+    """A convex polygon (counter-clockwise in u, v) raised from w0 to w1, its top chamfered by `bevel` and folded up
+    to a ridge point at its centroid (w apex): pillow() for any polygon."""
+    n = len(poly)
+    cu, cv = sum(u for u, _ in poly) / n, sum(v for _, v in poly) / n
+    verts = [fr.point(u, v, w0) for u, v in poly] + [fr.point(u, v, w1) for u, v in poly]
+    verts += [fr.point(u, v, w1 + bevel) for u, v in G.inset(poly, bevel)]
+    verts.append(fr.point(cu, cv, apex))
+    faces = [tuple(range(n))] + [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
+    faces += [(n + i, n + (i + 1) % n, 2 * n + (i + 1) % n, 2 * n + i) for i in range(n)]
+    faces += [(2 * n + i, 2 * n + (i + 1) % n, 3 * n) for i in range(n)]
+    return verts, faces
+
+
+def hex_bolt(x, y, h, r=0.011):
+    """A hex bolt head standing on the plane h (plan x, y)."""
+    return shift(L.disc(r, 6, h, h + 0.007), x, y)
+
+
+def trunk(args, layout):
+    """A cable trunk on a plain vertex (hall_in-3's radial columns): two bevelled posts standing 0.2 m proud round a
+    dark back, a foot and a capital; the cables and clip frames are their own pieces (trunk_cables, trunk_clip)."""
+    h = args.get("height", H_HALL)
+    fr = G.wall_frame(FLOOR)
+    posts = M(G.slab(fr, G.rect(-0.23, -0.13, 0.18, h - 0.16), -0.02, 0.2, 0.03),
+              G.slab(fr, G.rect(0.13, 0.23, 0.18, h - 0.16), -0.02, 0.2, 0.03))
+    caps = M(G.slab(fr, G.rect(-0.26, 0.26, 0.0, 0.18), -0.02, 0.23, 0.035),
+             G.slab(fr, G.rect(-0.26, 0.26, h - 0.16, h), -0.02, 0.23, 0.035))
+    return [P("posts", posts, "int_silver_a"), P("caps", caps, "int_silver_c"),
+            P("back", G.slab(fr, G.rect(-0.13, 0.13, 0.18, h - 0.16), -0.02, 0.02), "int_dark")]
+
+
+def trunk_cables(args, layout):
+    """Five thick cables down a trunk, swaying a little between the clips (red, yellow, black, blue, red)."""
+    h = args.get("height", H_HALL)
+    out = []
+    for k, (u, w, r, mat) in enumerate(((-0.085, 0.07, 0.028, "int_cable_red"), (-0.035, 0.1, 0.024,
+                                        "int_cable_yellow"), (0.015, 0.065, 0.032, "int_cable_black"),
+                                        (0.068, 0.095, 0.026, "int_cable_blue"), (0.1, 0.06, 0.018, "int_cable_red"))):
+        pts = [(-w - 0.012 * math.sin(math.pi * t / 8 + k), u + 0.008 * math.sin(2.1 * t + k),
+                FLOOR + 0.15 + (h - 0.28) * t / 8) for t in range(9)]
+        out.append(P(f"{mat[10:]}{k}", G.tube(pts, r, 8), mat))
+    return out
+
+
+def trunk_clip(args, layout):
+    """A clip frame across a trunk (placed at a height offset): a bevelled bar over the cables, two bolted lugs."""
+    fr = G.wall_frame(FLOOR)
+    bar = M(G.slab(fr, G.rect(-0.2, 0.2, 0.0, 0.06), 0.13, 0.16, 0.008),
+            G.slab(fr, G.rect(-0.2, -0.15, 0.0, 0.06), 0.0, 0.16, 0.008),
+            G.slab(fr, G.rect(0.15, 0.2, 0.0, 0.06), 0.0, 0.16, 0.008))
+    bolts = M(*[G.slab(fr, [(u + 0.011 * math.cos(math.pi * i / 3), 0.03 + 0.011 * math.sin(math.pi * i / 3))
+                            for i in range(6)], 0.16, 0.168, 0.002) for u in (-0.175, 0.175)])
+    return [P("bar", bar, "int_silver_c"), P("bolts", bolts, "int_bolt")]
 
 
 def pilaster(args, layout):
@@ -141,25 +215,6 @@ def pilaster_strip(args, layout):
     """The cyan strip glowing in a pilaster's channel (at the openings and the windows)."""
     h = args.get("height", H_HALL)
     return [P("strip", G.slab(G.wall_frame(FLOOR), G.rect(-0.018, 0.018, 0.3, h - 0.3), -0.03, -0.012), "int_cyan")]
-
-
-def cables_v(args, layout):
-    """Three cables down a pilaster's channel."""
-    h = args.get("height", H_HALL)
-    out = []
-    for (y, x, r, mat) in ((-0.032, 0.0, 0.019, "int_cable_red"), (0.0, -0.012, 0.023, "int_cable_black"),
-                           (0.033, 0.004, 0.016, "int_cable_blue")):
-        pts = [(x - 0.012 * math.sin(math.pi * t / 6), y + 0.004 * math.sin(2.3 * t), FLOOR + 0.16 + (h - 0.3) * t / 6)
-               for t in range(7)]
-        out.append(P(mat[4:], G.tube(pts, r), mat))
-    return out
-
-
-def clip_v(args, layout):
-    """A strap across a pilaster's channel holding its cables (placed at a height offset)."""
-    fr = G.wall_frame(FLOOR)
-    return [P("strap", M(G.slab(fr, G.rect(-0.075, 0.075, 0.0, 0.045), 0.045, 0.058, 0.004),
-                         G.slab(fr, G.rect(-0.012, 0.012, 0.012, 0.033), 0.058, 0.064, 0.002)), "int_silver_c")]
 
 
 def portal(args, layout):
@@ -222,9 +277,12 @@ def amber_arc(args, layout):
     """One arc of the hall's amber floor ring: a bezel and the light, +-10 deg about angle 0."""
     r, ref = args["radius"], args["radius"]
     a = L.angles(D(-10.0), D(10.0), D(2.5))
-    bezel = M(*[L.sector(r - 0.055, r + 0.055, p, q, FLOOR - 0.01, FLOOR + 0.003) for p, q in zip(a, a[1:])])
-    light = M(*[L.sector(r - 0.03, r + 0.03, p, q, FLOOR + 0.003, FLOOR + 0.006) for p, q in zip(a, a[1:])])
-    return [P("bezel", shift(bezel, -ref), "int_silver_c"), P("light", shift(light, -ref), "int_amber")]
+    # hall_in-3's thick amber ring: a 12 cm light in a frosted halo, a bevelled bezel round both
+    bezel = M(*[L.sector(r - 0.11, r + 0.11, p, q, FLOOR - 0.01, FLOOR + 0.004) for p, q in zip(a, a[1:])])
+    halo = M(*[L.sector(r - 0.09, r + 0.09, p, q, FLOOR + 0.004, FLOOR + 0.006) for p, q in zip(a, a[1:])])
+    light = M(*[L.sector(r - 0.06, r + 0.06, p, q, FLOOR + 0.006, FLOOR + 0.009) for p, q in zip(a, a[1:])])
+    return [P("bezel", shift(bezel, -ref), "int_silver_c"), P("halo", shift(halo, -ref), "int_halo"),
+            P("light", shift(light, -ref), "int_amber")]
 
 
 def hall_floor_rim(args, layout):
@@ -313,22 +371,36 @@ def cor_floor_base(args, layout):
 
 
 def cor_grate(args, layout):
+    """A framed grate module (materials-3): the grate, a bevelled rim round it standing 8 mm proud, hex bolts at the
+    corners and the middles of the long sides."""
     hl = args["length"] / 2 - 0.004
-    return [P("grate", G.rect_grate(-hl, hl, -0.88, 0.88, FLOOR - 0.035, FLOOR), "int_grate")]
+    fr = G.floor_frame(0.0)
+    t = 0.05
+    rim = M(G.slab(fr, G.rect(-hl, hl, -0.88, -0.88 + t), FLOOR - 0.035, FLOOR + 0.008, 0.007),
+            G.slab(fr, G.rect(-hl, hl, 0.88 - t, 0.88), FLOOR - 0.035, FLOOR + 0.008, 0.007),
+            G.slab(fr, G.rect(-hl, -hl + t, -0.88 + t, 0.88 - t), FLOOR - 0.035, FLOOR + 0.008, 0.007),
+            G.slab(fr, G.rect(hl - t, hl, -0.88 + t, 0.88 - t), FLOOR - 0.035, FLOOR + 0.008, 0.007))
+    bolts = M(*[hex_bolt(x, y, FLOOR + 0.008) for x in (-hl + t / 2, 0.0, hl - t / 2) for y in (-0.855, 0.855)])
+    return [P("grate", G.rect_grate(-hl + t, hl - t, -0.88 + t, 0.88 - t, FLOOR - 0.035, FLOOR), "int_grate"),
+            P("rim", rim, "int_silver_c"), P("bolts", bolts, "int_bolt")]
 
 
 def cor_gutter(args, layout):
-    """The solid floor strip along the north wall (the amber dash sits on it)."""
+    """The solid floor strip along the north wall (the amber strip sits on it)."""
     hl = args["length"] / 2 - 0.004
     return [P("plate", G.slab(G.floor_frame(0.0), G.rect(-hl, hl, -1.25, -0.895), FLOOR - 0.035, FLOOR, 0.008),
               "int_plate")]
 
 
 def floor_light(args, layout):
-    """An amber light bar set in the floor along local x: bezel and light (length from args)."""
+    """An amber light bar set in the floor along local x (corridor.jpg, materials-3): a bevelled bezel with bolted
+    ends, a frosted halo and the light (length from args)."""
     hl = args.get("length", 0.44) / 2
-    return [P("bezel", G.bbox(-hl, hl, -0.042, 0.042, FLOOR - 0.002, FLOOR + 0.004, 0.002), "int_silver_c"),
-            P("light", G.bbox(-hl + 0.03, hl - 0.03, -0.024, 0.024, FLOOR + 0.004, FLOOR + 0.007), "int_amber")]
+    bolts = M(hex_bolt(-hl + 0.03, 0.0, FLOOR + 0.006, 0.009), hex_bolt(hl - 0.03, 0.0, FLOOR + 0.006, 0.009))
+    return [P("bezel", G.bbox(-hl, hl, -0.07, 0.07, FLOOR - 0.002, FLOOR + 0.006, 0.004), "int_silver_c"),
+            P("halo", G.bbox(-hl + 0.055, hl - 0.055, -0.055, 0.055, FLOOR + 0.006, FLOOR + 0.008), "int_halo"),
+            P("light", G.bbox(-hl + 0.07, hl - 0.07, -0.032, 0.032, FLOOR + 0.008, FLOOR + 0.011), "int_amber"),
+            P("bolts", bolts, "int_bolt")]
 
 
 def cor_wall_low(args, layout):
@@ -338,34 +410,41 @@ def cor_wall_low(args, layout):
     tone = "int_silver_a" if args.get("tone", "a") == "a" else "int_silver_b"
     return [P("body", G.slab(fr, G.rect(-hl, hl, 0.0, 1.1), -0.2, 0.0), "int_silver_b"),
             P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.13), 0.0, 0.015), "int_dark"),
-            P("panel", G.slab(fr, G.rect(-e, e, 0.16, 1.05), 0.0, 0.035, 0.012), tone)]
+            P("panel", G.pillow(fr, -e + 0.01, e - 0.01, 0.16, 1.04, 0.0, 0.03, 0.07, 0.012), tone)]
 
 
 def cor_channel(args, layout):
-    """The cable channel at the wall's bend: dark back and two bevelled lips."""
+    """The cable bay at the wall's bend (corridor.jpg): a dark recess 0.24 m deep with bevelled sill and lintel."""
     hl = args["length"] / 2
     fr = _north()
-    lips = M(G.slab(fr, G.rect(-hl, hl, 1.07, 1.13), -0.15, 0.035, 0.01),
-             G.slab(fr, G.rect(-hl, hl, 1.42, 1.48), -0.15, 0.03, 0.01))
-    return [P("back", G.slab(fr, G.rect(-hl, hl, 1.1, 1.45), -0.2, -0.15), "int_dark"), P("lips", lips, "int_silver_c")]
+    lips = M(G.slab(fr, G.rect(-hl, hl, 1.04, 1.12), -0.2, 0.06, 0.02),
+             G.slab(fr, G.rect(-hl, hl, 1.43, 1.5), -0.2, 0.05, 0.02))
+    return [P("back", G.slab(fr, G.rect(-hl, hl, 1.1, 1.45), -0.24, -0.2), "int_dark"), P("lips", lips, "int_silver_c")]
 
 
 def cor_cables(args, layout):
+    """Four thick cables along a bay (red, yellow, blue, black), sagging a little between the clip frames."""
     hl = args["length"] / 2
     out = []
-    for (y, h, r, mat, ph) in ((-1.36, 1.19, 0.024, "int_cable_red", 0.0), (-1.32, 1.27, 0.02, "int_cable_black", 1.3),
-                               (-1.35, 1.35, 0.017, "int_cable_blue", 2.1)):
-        pts = [(-hl + 2 * hl * t / 8, y + 0.006 * math.sin(math.pi * t / 8 * 2 + ph) * math.sin(math.pi * t / 8),
-                FLOOR + h - 0.012 * math.sin(math.pi * t / 8)) for t in range(9)]
-        out.append(P(mat[4:], G.tube(pts, r), mat))
+    for (w, h, r, mat, ph) in ((-0.17, 1.165, 0.032, "int_cable_red", 0.0), (-0.12, 1.235, 0.026, "int_cable_yellow",
+                               1.3), (-0.17, 1.305, 0.03, "int_cable_blue", 2.1), (-0.13, 1.38, 0.028,
+                               "int_cable_black", 0.7)):
+        pts = [(-hl + 2 * hl * t / 8, -1.25 + w + 0.012 * math.sin(math.pi * t / 4 + ph) * math.sin(math.pi * t / 8),
+                FLOOR + h - 0.014 * math.sin(math.pi * t / 8)) for t in range(9)]
+        out.append(P(mat[10:], G.tube(pts, r, 8), mat))
     return out
 
 
 def clip_h(args, layout):
+    """A clip frame across a bay (materials-3): a bevelled bar in front of the cables, its two arms back to the bay,
+    bolted to the sill and the lintel."""
     fr = _north()
-    return [P("strap", M(G.slab(fr, G.rect(-0.022, 0.022, 1.12, 1.43), -0.04, -0.025, 0.004),
-                         G.slab(fr, G.rect(-0.022, 0.022, 1.12, 1.15), -0.15, -0.025, 0.003),
-                         G.slab(fr, G.rect(-0.022, 0.022, 1.40, 1.43), -0.15, -0.025, 0.003)), "int_silver_c")]
+    bar = M(G.slab(fr, G.rect(-0.03, 0.03, 1.1, 1.45), 0.0, 0.03, 0.008),
+            G.slab(fr, G.rect(-0.03, 0.03, 1.1, 1.14), -0.2, 0.03, 0.006),
+            G.slab(fr, G.rect(-0.03, 0.03, 1.41, 1.45), -0.2, 0.03, 0.006))
+    bolts = M(*[G.slab(fr, [(0.009 * math.cos(math.pi * i / 3), v + 0.009 * math.sin(math.pi * i / 3))
+                            for i in range(6)], 0.03, 0.037, 0.002) for v in (1.15, 1.4)])
+    return [P("strap", bar, "int_silver_c"), P("bolts", bolts, "int_bolt")]
 
 
 def cor_wall_up(args, layout):
@@ -391,25 +470,28 @@ def cor_ceil(args, layout):
 
 
 def cor_arch(args, layout):
-    """A rib arch across the corridor (local x = 0), bevelled on both faces."""
-    inner = [(u, max(0.0, v)) for u, v in G.inset(PROF, 0.08)]
+    """A rib frame across the corridor (local x = 0; corridor.jpg): a 0.2 m deep band 18 cm into the corridor,
+    chamfered 3 cm on both faces, and a raised inner rim (the cyan strip's seat), stepped and chamfered again."""
+    inner = [(u, max(0.0, v)) for u, v in G.inset(PROF, 0.18)]
     outer = [(u, max(0.0, v)) for u, v in G.inset(PROF, -0.03)]
-    out = []
+    rim = [(u, max(0.0, v)) for u, v in G.inset(PROF, 0.115)]
+    out, lip = [], []
     for n in ((-1, 0, 0), (1, 0, 0)):
         fr = G.Frame((0.0, 0.0, FLOOR), (0, 1, 0), (0, 0, 1), n)
-        out.append(G.band(fr, inner, outer, 0.0, 0.09, 0.015, range(5)))
-    return [P("arch", M(*out), "int_silver_c")]
+        out.append(G.band(fr, inner, outer, 0.0, 0.1, 0.03, range(5)))
+        lip.append(G.band(fr, inner, rim, 0.1, 0.13, 0.012, range(5)))
+    return [P("arch", M(*out), "int_silver_c"), P("rim", M(*lip), "int_silver_a")]
 
 
 def cor_arch_strip(args, layout):
-    """The cyan strips on both faces of an arch, up one side (side -1: -y, +1: +y)."""
+    """The cyan strips on both faces of an arch's inner rim, up one side (side -1: -y, +1: +y)."""
     edges = (0, 1) if args["side"] < 0 else (3, 4)
-    a = [(u, max(0.0, v)) for u, v in G.inset(PROF, 0.055)]
-    b = [(u, max(0.0, v)) for u, v in G.inset(PROF, 0.075)]
+    a = [(u, max(0.0, v)) for u, v in G.inset(PROF, 0.135)]
+    b = [(u, max(0.0, v)) for u, v in G.inset(PROF, 0.16)]
     out = []
     for n in ((-1, 0, 0), (1, 0, 0)):
         fr = G.Frame((0.0, 0.0, FLOOR), (0, 1, 0), (0, 0, 1), n)
-        out.append(G.band(fr, a, b, 0.09, 0.1, 0.0, edges))
+        out.append(G.band(fr, a, b, 0.13, 0.138, 0.0, edges))
     return [P("strip", M(*out), "int_cyan")]
 
 
@@ -448,12 +530,14 @@ def tip_window_frame(args, layout):
         body += [rot(G.slab(fr, G.rect(-hw, hw, 0.0, SILL), -0.2, 0.0), c),
                  rot(G.slab(fr, G.rect(-hw, hw, HEAD, H_TIP), -0.2, 0.0), c)]
         panel.append(rot(G.slab(fr, G.rect(-hw + 0.04, hw - 0.04, 0.05, SILL - 0.09), 0.0, 0.03, 0.01), c))
-        sill.append(rot(G.slab(fr, G.rect(-hw - 0.01, hw + 0.01, SILL - 0.06, SILL), 0.0, 0.13, 0.015), c))
-        trim.append(rot(G.slab(fr, G.rect(-hw, hw, HEAD, HEAD + 0.09), 0.0, 0.07, 0.012), c))
+        sill.append(rot(G.slab(fr, G.rect(-hw - 0.01, hw + 0.01, SILL - 0.1, SILL), 0.0, 0.2, 0.035), c))
+        trim.append(rot(M(G.slab(fr, G.rect(-hw, hw, HEAD, HEAD + 0.2), 0.0, 0.14, 0.035),
+                          G.slab(fr, G.rect(-hw, hw, HEAD, HEAD + 0.07), 0.14, 0.17, 0.012)), c))
     for i in range(1, 8):
         a = -WIN_HALF + 2 * half * i
-        mull.append(rot(shift(G.slab(G.wall_frame(FLOOR), G.rect(-0.04, 0.04, SILL, HEAD), -0.1, 0.07, 0.012), R_TIP),
-                        a))
+        mull.append(rot(shift(M(G.slab(G.wall_frame(FLOOR), G.rect(-0.085, 0.085, SILL, HEAD), -0.1, 0.13, 0.035),
+                                 G.slab(G.wall_frame(FLOOR), G.rect(-0.045, 0.045, SILL, HEAD), 0.13, 0.16, 0.012)),
+                               R_TIP), a))
     return [P("body", M(*body), "int_silver_b"), P("panels", M(*panel), "int_silver_a"),
             P("sill", M(*sill), "int_silver_c"), P("trim", M(*trim), "int_silver_c"),
             P("mullions", M(*mull), "int_silver_c")]
@@ -471,8 +555,8 @@ def tip_sill_strip(args, layout):
     """The cyan strip along one window segment's sill (origin on the segment)."""
     half = WIN_HALF / 8
     hw = R_TIP * math.sin(D(half))
-    return [P("strip", G.slab(G.wall_frame(FLOOR), G.rect(-hw + 0.03, hw - 0.03, SILL - 0.045, SILL - 0.02), 0.13,
-                              0.14), "int_cyan")]
+    return [P("strip", G.slab(G.wall_frame(FLOOR), G.rect(-hw + 0.03, hw - 0.03, SILL - 0.075, SILL - 0.045), 0.2,
+                              0.21), "int_cyan")]
 
 
 def tip_ceiling(args, layout):

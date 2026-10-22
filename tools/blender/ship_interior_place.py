@@ -37,8 +37,9 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "hall_panel_b": ("wall_panel", {"half": S.HW, "height": S.H_HALL, "tone": "b"}, True),
     "hall_pilaster": ("pilaster", {"height": S.H_HALL}, True),
     "hall_pilaster_strip": ("pilaster_strip", {"height": S.H_HALL}, False),
-    "hall_cables_v": ("cables_v", {"height": S.H_HALL}, False),
-    "clip_v": ("clip_v", {}, False),
+    "hall_trunk": ("trunk", {"height": S.H_HALL}, True),
+    "hall_trunk_cables": ("trunk_cables", {"height": S.H_HALL}, False),
+    "trunk_clip": ("trunk_clip", {}, False),
     "hall_portal": ("portal", {"half": S.HCH, "height": S.H_HALL, "soffit": True}, True),
     "portal_strip_l": ("portal_strip", {"side": -1}, False),
     "portal_strip_r": ("portal_strip", {"side": 1}, False),
@@ -53,7 +54,7 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "cor_floor_base": ("cor_floor_base", {"length": S.COR_X1 - S.COR_X0}, True),
     "cor_grate": ("cor_grate", {"length": S.MOD_L}, True),
     "cor_gutter": ("cor_gutter", {"length": S.MOD_L}, True),
-    "floor_light": ("floor_light", {"length": 0.44}, False),
+    "floor_light": ("floor_light", {"length": 0.7}, False),
     "cor_wall_low_a": ("cor_wall_low", {"length": S.MOD_L, "tone": "a"}, True),
     "cor_wall_low_b": ("cor_wall_low", {"length": S.MOD_L, "tone": "b"}, True),
     "cor_channel": ("cor_channel", {"length": S.MOD_L}, True),
@@ -86,7 +87,8 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
                     True),
     "tip_pilaster": ("pilaster", {"height": S.H_TIP}, True),
     "tip_pilaster_strip": ("pilaster_strip", {"height": S.H_TIP}, False),
-    "tip_cables_v": ("cables_v", {"height": S.H_TIP}, False),
+    "tip_trunk": ("trunk", {"height": S.H_TIP}, True),
+    "tip_trunk_cables": ("trunk_cables", {"height": S.H_TIP}, False),
     "tip_window_frame": ("tip_window_frame", {}, True),
     "tip_glass": ("tip_glass", {}, True),
     "tip_sill_strip": ("tip_sill_strip", {}, False),
@@ -155,11 +157,11 @@ def placements() -> list[tuple[str, list[float], float]]:
     for v in edge:
         put("hall_pilaster", polar(S.HV, v), -v)
         put("hall_pilaster_strip", polar(S.HV, v), -v)
-    for v in plain:
-        put("hall_pilaster", polar(S.HV, v), -v)
-        put("hall_cables_v", polar(S.HV, v), -v)
-        for h in (0.55, 1.45, 2.35):
-            put("clip_v", polar(S.HV, v), -v, h)
+    for v in plain:  # hall_in-3's radial columns: cable trunks
+        put("hall_trunk", polar(S.HV, v), -v)
+        put("hall_trunk_cables", polar(S.HV, v), -v)
+        for h in (0.55, 1.25, 1.95, 2.65):
+            put("trunk_clip", polar(S.HV, v), -v, h)
     for o in openings:
         put("hall_threshold", polar(S.HC, o), -o)
         put("hall_portal", polar(S.HC, o), -o)
@@ -228,13 +230,14 @@ def placements() -> list[tuple[str, list[float], float]]:
             put("tip_rib", polar(S.R_TIP, a, c, room), room - a)
             put("tip_rib_strip", polar(S.R_TIP, a, c, room), room - a)
         for a in [-S.WIN_HALF, S.WIN_HALF] + wall_v:
-            put("tip_pilaster", polar(S.R_TIP, a, c, room), room - a)
             if abs(abs(a) - S.WIN_HALF) < 1e-6 or abs(abs(a) - (180 - S.DOOR_HALF)) < 1e-6:
+                put("tip_pilaster", polar(S.R_TIP, a, c, room), room - a)
                 put("tip_pilaster_strip", polar(S.R_TIP, a, c, room), room - a)
-            else:
-                put("tip_cables_v", polar(S.R_TIP, a, c, room), room - a)
-                for h in (0.55, 1.4, 2.2):
-                    put("clip_v", polar(S.R_TIP, a, c, room), room - a, h)
+            else:  # the plain vertices: cable trunks, as the hall's
+                put("tip_trunk", polar(S.R_TIP, a, c, room), room - a)
+                put("tip_trunk_cables", polar(S.R_TIP, a, c, room), room - a)
+                for h in (0.55, 1.3, 2.05):
+                    put("trunk_clip", polar(S.R_TIP, a, c, room), room - a, h)
         p = polar(-S.TIP_CHORD, 180.0, c, room)
         for pid in ("tip_portal", "portal_strip_l", "portal_strip_r"):
             put(pid, p, room - 180.0)
