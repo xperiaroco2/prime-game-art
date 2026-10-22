@@ -1,0 +1,54 @@
+# art#196, the 3D pilot's 2D (the engineer, 2026-10-22, chat: "the base chameleon and the axolotl"). For each pilot
+# head a turnaround sheet (front, side profile, back) and an expression sheet (neutral, happy, sad, angry, surprised,
+# talking), the 3D reference: the shapes to build, the movers, the mouth and lid shapes. High quality (work inside a
+# picked concept, the one-image rule's second half, #276), one image each, 1536x1024, edits of each head's kept image
+# (the chameleon mirrored to face left, at his wish). Standing permission art#196 comment 6291187194 (medium for
+# exploration, high for focused work on one piece). No game, film, studio or character names; no real people.
+id = "2026-10-22-alien-pilot-2d"
+service = "openai-images"
+purpose = "art#196: the 3D pilot's 2D reference: turnaround and expression sheets of the chameleon man and the axolotl woman."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 1.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "high"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+[[items]]
+id = "ch_turn"
+kind = "edit"
+prompt = "The reference image shows the chameleon man, a finished character design. Make a clean character turnaround sheet of this head-and-shoulders bust: three views side by side in one row, evenly spaced, the same size and the same height, at the same scale: on the left the front view looking straight at the viewer, in the middle the exact side profile facing left, on the right the back view. A calm, neutral face, the mouth closed. Every part of the head must be readable from each side, so its shape can be built in 3D. Keep the same character exactly: the same head shape, features, proportions, skin colours and markings, the same smooth soft-matte designer vinyl toy finish, the same slender neck and narrow smooth shoulders, the same soft even studio light on a plain flat neutral mid-grey background. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r2/h01/image-2_mirror.png", provenance = "h01-3 mirrored to face left (the engineer, 2026-10-22), the kept chameleon man, our own OpenAI generation, batch 2026-10-22-alien-roster-r2 item h01, image 2, flipped", sha256 = "b72782184e80bd8de81862649a05dc4518e232e8e21ea14eaac2a84fc62e60b5" },
+]
+
+[[items]]
+id = "ch_expr"
+kind = "edit"
+prompt = "The reference image shows the chameleon man, a finished character design. Make a clean expression sheet of this head-and-shoulders bust: six versions of the same head in a grid of three columns and two rows, all in the same three-quarter view, the same size and scale: top row neutral, happy with a wide closed-mouth smile, sad; bottom row angry, surprised with the mouth open in an O, talking with the mouth half open. Each expression clear and appealing, made by the lids, the brows or brow area, the cheeks and the mouth, the same character in every cell. Keep the same character exactly: the same head shape, features, proportions, skin colours and markings, the same smooth soft-matte designer vinyl toy finish, the same slender neck and narrow smooth shoulders, the same soft even studio light on a plain flat neutral mid-grey background. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r2/h01/image-2_mirror.png", provenance = "h01-3 mirrored to face left (the engineer, 2026-10-22), the kept chameleon man, our own OpenAI generation, batch 2026-10-22-alien-roster-r2 item h01, image 2, flipped", sha256 = "b72782184e80bd8de81862649a05dc4518e232e8e21ea14eaac2a84fc62e60b5" },
+]
+
+[[items]]
+id = "ax_turn"
+kind = "edit"
+prompt = "The reference image shows the axolotl woman, a finished character design. Make a clean character turnaround sheet of this head-and-shoulders bust: three views side by side in one row, evenly spaced, the same size and the same height, at the same scale: on the left the front view looking straight at the viewer, in the middle the exact side profile facing left, on the right the back view. A calm, neutral face, the mouth closed. Every part of the head must be readable from each side, so its shape can be built in 3D. Keep the same character exactly: the same head shape, features, proportions, skin colours and markings, the same smooth soft-matte designer vinyl toy finish, the same slender neck and narrow smooth shoulders, the same soft even studio light on a plain flat neutral mid-grey background. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r3/h08/image-1.png", provenance = "h08-2 (round 3), the kept axolotl woman, our own OpenAI generation, batch 2026-10-22-alien-roster-r3 item h08, image 1, art#196", sha256 = "e349210350d337b771807abd4fa1f8ade162f4ae76a55182903c67437c357350" },
+]
+
+[[items]]
+id = "ax_expr"
+kind = "edit"
+prompt = "The reference image shows the axolotl woman, a finished character design. Make a clean expression sheet of this head-and-shoulders bust: six versions of the same head in a grid of three columns and two rows, all in the same three-quarter view, the same size and scale: top row neutral, happy with a wide closed-mouth smile, sad; bottom row angry, surprised with the mouth open in an O, talking with the mouth half open. Each expression clear and appealing, made by the lids, the brows or brow area, the cheeks and the mouth, the same character in every cell. Keep the same character exactly: the same head shape, features, proportions, skin colours and markings, the same smooth soft-matte designer vinyl toy finish, the same slender neck and narrow smooth shoulders, the same soft even studio light on a plain flat neutral mid-grey background. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-roster-r3/h08/image-1.png", provenance = "h08-2 (round 3), the kept axolotl woman, our own OpenAI generation, batch 2026-10-22-alien-roster-r3 item h08, image 1, art#196", sha256 = "e349210350d337b771807abd4fa1f8ade162f4ae76a55182903c67437c357350" },
+]
