@@ -34,6 +34,7 @@ var nav_blink: bool = true
 var _nav: Array = []   # [light, energy, tail]; [material, emission energy, tail] for the lamps' lenses
 var _env: Environment
 var _sky_mat: ShaderMaterial
+var _night_lights: Array = []   # details 1: the moon and the key, hidden by _day
 
 ## The shared metal library (metal.gdshader) by glTF material name: base colour, metallic, roughness, grain, seams,
 ## scratches, grime. Other materials keep their glTF look. The outside (rebuild B, the engineer: back to the night
@@ -266,6 +267,7 @@ func _environment() -> void:
 	moon.directional_shadow_max_distance = 90.0
 	moon.rotation_degrees = Vector3(float(light["moon_dir_deg"][0]), float(light["moon_dir_deg"][1]), 0)
 	root.add_child(moon)
+	_night_lights.append(moon)
 	if light.has("key_dir_deg"):  # hull 3-2: a cool key from the cameras' side, so the silver facets catch light
 		var key: DirectionalLight3D = DirectionalLight3D.new()
 		var kc: Array = light.get("key_color", [0.78, 0.84, 1.0])
@@ -276,6 +278,7 @@ func _environment() -> void:
 		key.directional_shadow_max_distance = 90.0
 		key.rotation_degrees = Vector3(float(light["key_dir_deg"][0]), float(light["key_dir_deg"][1]), 0)
 		root.add_child(key)
+		_night_lights.append(key)
 	for l: Array in light["lamps"]:  # [x, h, y, energy, range, r, g, b, (group), (shadow), (spot angle)]
 		var omni: Light3D
 		if l.size() > 10 and float(l[10]) > 0.0:  # light layer: a spot pointing straight down (landing, edge pools)
@@ -493,6 +496,16 @@ func _shoot() -> void:
 		if full.has("day_name"):  # the same frame by day: a sun, a pale sky and daylight ambient
 			_day()
 			images[full["day_name"]] = await _shot(full["day_name"], full["day_title"], shots)
+	var day_views: Array = _req.get("day_views", [])
+	if not day_views.is_empty():  # details 1: perspective views by day, after the night's
+		if _night_lights.is_empty() or (_night_lights[0] as Light3D).visible:
+			_day()
+		_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+		_camera.keep_aspect = Camera3D.KEEP_HEIGHT
+		for v: Array in day_views:
+			_camera.fov = float(v[4])
+			_camera.look_at_from_position(_v(v[2]), _v(v[3]), UP)
+			images[v[0]] = await _shot(v[0], v[1], shots)
 	var rows: Array = []
 	for c: Array in _req["compare"]:
 		var ref: Image = Image.load_from_file(c[1])
@@ -525,8 +538,11 @@ func _nav_tick() -> void:
 			(n[0] as BaseMaterial3D).emission_energy_multiplier = float(n[1]) * k
 
 
-## Day for the top_full_day shot: a warm sun high in the south-west, a pale sky colour, daylight ambient.
+## Day for the top_full_day shot and the day views: a warm sun high in the south-west, a pale sky colour, daylight
+## ambient; the moon and the key hidden and the sun unshadowed (details 1: a clean day, no night light left over).
 func _day() -> void:
+	for l: Light3D in _night_lights:
+		l.visible = false
 	_env.background_mode = Environment.BG_COLOR
 	_env.background_color = Color(0.55, 0.68, 0.85)
 	_env.ambient_light_color = Color(0.62, 0.68, 0.78)
@@ -536,7 +552,7 @@ func _day() -> void:
 	var sun: DirectionalLight3D = DirectionalLight3D.new()
 	sun.light_color = Color(1.0, 0.96, 0.9)
 	sun.light_energy = 2.2
-	sun.shadow_enabled = true
+	sun.shadow_enabled = false
 	sun.directional_shadow_max_distance = 90.0
 	sun.rotation_degrees = Vector3(-58, -35, 0)
 	root.add_child(sun)

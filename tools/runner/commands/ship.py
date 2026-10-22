@@ -272,6 +272,8 @@ def shoot(layout: dict, out: Path, folder: Path) -> int:
     views, compares = shot_views(layout)
     req.update({"mode": "shoot", "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in views],
+                # details 1: views by day, after the night's (ship.toml [shots] day_views)
+                "day_views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in layout["shots"].get("day_views", [])],
                 "top": {"name": "top", "title": "top: plan view, south up (as plan-3)", "size_m": 36.0},
                 # light layer: the whole ship from straight above (the top view crops the stern and the pods), at night
                 # and by day; shots show the nav lamps' static glow (nav_blink off; on in game)
