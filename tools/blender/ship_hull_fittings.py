@@ -19,9 +19,13 @@ import ship_hull_shape as S
 import ship_lib as L
 
 L.MATERIALS.update({
-    # details 2: opaque dark warm glass with a faint inner glow (details 3: 0.07 -> 0.2) ([light.mats] l 0: it lights nothing)
+    # details 2: opaque dark warm glass with a faint inner glow (0.07; details 3: 0.05 round a warm core) ([light.mats] l 0: it lights nothing)
     "ext_porthole": {"base": (0.012, 0.014, 0.018, 1.0), "metallic": 0.0, "roughness": 0.05,
-                     "emission": (1.0, 0.55, 0.25), "strength": 0.2},
+                     "emission": (1.0, 0.55, 0.25), "strength": 0.05},
+    # details 3: the glow is a soft warm core (0.55 of the glass, 4 mm over it) in the dark glossy glass: the whole
+    # disc at 0.2 read as a flat brown disc; the core averages about 0.2 over the glass
+    "ext_porthole_core": {"base": (0.03, 0.025, 0.02, 1.0), "metallic": 0.0, "roughness": 0.05,
+                          "emission": (1.0, 0.62, 0.3), "strength": 0.6},
     "ext_dome": {"base": (0.05, 0.06, 0.07, 1.0), "metallic": 0.3, "roughness": 0.1},
     "ext_hazard": {"base": (0.92, 0.66, 0.06, 1.0), "metallic": 0.05, "roughness": 0.55},
     "ext_hazard_dark": {"base": (0.035, 0.035, 0.04, 1.0), "metallic": 0.3, "roughness": 0.6},
@@ -101,7 +105,7 @@ def porthole_spots():
 def portholes(args: dict, layout: dict) -> list:
     """details 2: the tail's portholes (plan frame): a bright silver crown 4.5 cm proud on a darker flange, a dark
     bezel round the glass and the dark warm glass 4.5 cm under the crown (all 3 cm into the skin)."""
-    ring, flanges, bezels, glass = [], [], [], []
+    ring, flanges, bezels, glass, core = [], [], [], [], []
     g, crown, flange = PORT_R
     for o, n in porthole_spots():
         u, v = frame(n)
@@ -109,10 +113,12 @@ def portholes(args: dict, layout: dict) -> list:
         flanges.append(_place(_annulus(crown - 0.01, flange, -0.03, 0.015), o, u, v, n))
         bezels.append(_place(_annulus(g - 0.005, g + 0.017, -0.03, 0.02), o, u, v, n))
         glass.append(_place(_disc(g, -0.04, 0.0), o, u, v, n))
+        core.append(_place(_disc(0.55 * g, -0.01, 0.004), o, u, v, n))
     return [L.part("porthole_ring", *L.merge(*ring), "ext_silver_b"),
             L.part("porthole_flange", *L.merge(*flanges), "ext_silver_c"),
             L.part("porthole_bezel", *L.merge(*bezels), "ext_frame"),
-            L.part("porthole_glass", *L.merge(*glass), "ext_porthole")]
+            L.part("porthole_glass", *L.merge(*glass), "ext_porthole"),
+            L.part("porthole_core", *L.merge(*core), "ext_porthole_core")]
 
 
 def vent_spots():
