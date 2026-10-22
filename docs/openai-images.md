@@ -406,3 +406,18 @@ profile, back in one row) and an expression sheet (neutral, happy, sad, angry, s
 **high** (work inside a picked concept), 1536x1024, n = 1, edits of each head's kept image (the chameleon from its
 mirrored copy). 4 requests, **$0.2097** of the $1 cap. All four held the character; the axolotl's back view and the
 gill count stay consistent across views. Images: `D:/prime-art-raw/2026-10-22-alien-pilot-2d/`.
+
+## Batch 2026-10-22-alien-h1-mouthless (art #196, hypothesis H1: a mouthless head and a fitted mouth module)
+
+H1 (the engineer, art#196 comment 6343841227): Meshy builds the head without a mouth, a smooth muzzle, and one designed
+mouth module is fitted into that place. The 2D test, medium, n = 1: per pilot head its turnaround with the mouth
+removed (`ax_nomouth`, `ch_nomouth`, edits of the pilot-2d turnarounds; both held the head and lost only the mouth), one
+shared module sheet (soft rolled teal lips on a pale skin patch, front and 3/4, rest, smile, sad, O, talk), and per
+head the mouthless head with the module fitted at rest, smile, sad and O (`ax_comp`, `ch_comp`, 1536x1536, edits from
+this batch's own images with `from`/`pick`). The first module sheet missed (smile and sad barely differed from rest,
+human pouty lips, a glowing patch), so `mouth_module_r` is its one revised item, and the composites use it. 6 requests,
+$0.0237 to $0.0448 each, **$0.2098** of the $3 cap. On the chameleon the module reads as his own mouth; on the
+axolotl it reads small and stuck on, a pout where her approved mouth is a wide thin smile across the muzzle, so a shared
+module would need a per-head variant (width, thickness). Images: `D:/prime-art-raw/2026-10-22-alien-h1-mouthless/`;
+JPEG copies and the sheet (with the approved expression sheets as the before row):
+`D:/prime-art-raw/research/2026-10-22-roster/design/h1/`.
