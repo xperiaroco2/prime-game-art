@@ -154,6 +154,8 @@ class Runner:
             self.preflight()
             failed = 0
             todo = [i for i in self.batch.items if not self.only or i.id in self.only]
+            for warning in batches.n_warnings(todo):
+                self.log(warning)
             for n, item in enumerate(todo, 1):
                 self.log(f"[{n}/{len(todo)}] {item.id}")
                 outcome = self.run_item(item)

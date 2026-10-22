@@ -395,6 +395,17 @@ def approval_problems(batch: Batch) -> list[str]:
     return problems
 
 
+ONE_IMAGE_RULE = ("one image per concept: explore with n = 1; variants only of a concept the engineer picked, as "
+                  "edits with the picked image as the reference (docs/openai-images.md, \"One image per concept\")")
+
+
+def n_warnings(items: list[Item]) -> list[str]:
+    """A warning per item that asks for more than one image; never a refusal (the engineer, #276: smarter work, not
+    caps). n > 1 is fine for variants of a picked concept, which the batch cannot tell apart, so every one is named."""
+    return [f"WARNING {item.id}: n = {item.n} asks for {item.n} images of one prompt; {ONE_IMAGE_RULE}"
+            for item in items if item.n > 1]
+
+
 def file_problems(inp: inputs.Input) -> list[str]:
     """Why a local reference image cannot be sent now: missing, not a PNG or JPEG, too big, or changed since the
     batch pinned its sha256."""
