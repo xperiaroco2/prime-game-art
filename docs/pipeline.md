@@ -110,6 +110,30 @@ existing build. The polish in `alien_pilot_head.py`:
   `<head>_godot.png` is the rigged GLB in the off-screen Godot window; `rig.json` (bones, weights per bone, shape keys,
   the largest skin shift per expression).
 
+**2b-1b (the rig's second pass):** `alien_pilot_run.py --out .../step2b --only-rig --rig-tag v2` rigs the 2b-1 build
+into `<head>/v2/` (the sheet and Godot shot copied up as `<head>_rig_1280_v2.png`, `<head>_godot_v2.png`; the summary
+`run_summary_v2.json`); `--grid` writes only the variant grids, `<head>_grid_lips.png` and `<head>_grid_expr.png`.
+- **Chameleon lips (`build_lips`):** a wireframe close-up showed the "stitches" were the slit's cut row, a jagged row
+  of folded triangles in the decimated lining, which also read as teeth with the mouth open. The lip zone is now a
+  separate swept mesh: per lip 48 quad rings of 24 round an elliptic core along the fitted lip line (denser at the
+  corners, tapering and tucking into the cheeks there, a pole closing each end), the upper and lower lip kissing at
+  the line, in the lips' sampled colour. The skin inside a lip's ellipse is drawn into it (a smooth remap of 1.6
+  ellipse radii onto 0.8), then the faces wholly inside, those drawn into both lips and those spanning the line are
+  deleted: the open mouth shows the dark cup and the tongue. The lip mesh is weighted by tube (its upper lip's
+  bottom ring lies on the line, and a height test split it vertex by vertex into a row of teeth); the skin round the
+  slit by the side the cut puts it on (`slit_sides`: connected pieces near the line, the corners left out), else
+  the lip it was drawn into. `clear_lining` deletes the lining behind the slit on both heads. Grid picked: radius
+  0.42 mouth units, fullness (depth over height) 1.2.
+- **Expressions:** `RIGCFG[head]["amount"]` scales every bone move, jaw angle and corrective of a pose, `"lid"` the
+  lids where they need their own factor (his heavy lids cover the iris past 1; her small lids need 2 to show). Picked
+  from the 3-amount grid per expression: chameleon 1.75 throughout; axolotl smile 2.2, sad and angry 2.5, surprised
+  1.75, talk 2.5. Correctives added to the posed shapes: the smile's cheeks lifted and puffed, the angry knit between
+  the brows. The O pulls the corners in by 0.28 half widths per amount and forward. The axolotl's brows weigh a wider
+  area (1.5 eye radii) and move in larger units (2.2 eye radii). The mouth cup and tongue take the face's weights
+  (corners, lips, jaw), so no cup shows at a moved corner.
+- **Blink:** the closed eye is flattened along the gaze (chameleon 0.3, axolotl 0.6 of its front bulge; the eyeballs
+  get `blink_L/R` too), so the closed lid sits close over the eye instead of reading as a ball.
+
 The neck weld to the shared body, spring bones in Godot and the cut at the neck are step 2b-2.
 
 ## Since 2026-10-03: the character base and who decides
