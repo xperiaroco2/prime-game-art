@@ -317,6 +317,26 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
   rim floor) and `rim_bolts` (hex bolts down every rim plate's seam). The layout test keeps every cup, spill, coil
   and patch outside a station's clearance + 0.4 m.
 
+## The mouth, the tip windows, the hall's cap and the light (inside lane, launch 3 step 1)
+
+- **The mouth** has its own portal, arch and upper walls on `MOUTH_PROF`: the mouth room's full 2.5 m width and
+  clear height, the walls vertical to 0.35 m under its ceiling, only the top corners chamfered (the corridors'
+  profile, vertical to 1.25 m and 1.8 m wide at the top, narrowed the view out of the hall to about 1.6 m;
+  hall_out-2). The pieces: `mouth_portal`, `mouth_portal_strip_l`/`_r`, `mouth_arch`, `mouth_arch_strip_l`/`_r`;
+  `mouth_wall_up` and `mouth_ceil` take `prof = "mouth"`.
+- **The tip window**: three thin mullions (10 cm deep face, 4.4 cm inner rib; `MULLIONS` = vertices 2, 4, 6 of the
+  eight segments), four panes of two facets (tip-3; were seven of 17 cm). The test allows at most four.
+- **The hall's cap**: the lamp ring closes on a faceted cone (16 facets) rising 0.34 m into the roof, eight ribs
+  under it and a lamp lens at its top, lit by its own short lamp (`[0, 0, 4.2]`, range 1.3 m: the cone, not the
+  floor). The tip rooms' rings get the same cap, scaled.
+- **The cups**: scale 1.5 (18 cm), two on the hall's grate ring at (1.05, -1.95) and (-1.55, -0.75) in sight of both
+  hall views, their spills 1.6x and 1.4x; the third stays in the west corridor.
+- **The light** (one grid, `<raw>/ship/v1/grid_in31/grid.png`, script `<raw>/ship/v1/logs/in31_grid.py`, four
+  variants x five inside views; variant C without its stronger `out_lamp`): the corridor lamps warm-white
+  (1.0, 0.95, 0.88) at `corr_lamp` 2.6, `int_cyan` `l` 0 (glows only: 0.04 still washed the corridors teal), four
+  `fill` lamps (`fill_lamp` 1.0) at x +-23 on the pines the tip windows look at (range 9.5 m: off the wing tips),
+  `sky_horizon` 10 (was 5).
+
 ## Open problems (after launch 2)
 
 - **The hull's thickness** (launch 3): the lower deck took 0.75 m off every top (tips 3.65 m, wings about 3.1 m
@@ -330,7 +350,8 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
 - The outside's hero view lost its bright silver (moon from behind, SE); the back view's top plates read flat lit.
   The seam close-up looks at the moonlit east wing's back slope since join 2 (the front hull is in the moon's shadow).
 - 26 small strip cells get no light (`MAX_LIGHTS` 96); raise to 128 only if a strip reads unlit.
-- The tip windows show 7 mullions against tip-3's few; the clearing through them is dark.
+- The tip windows: three mullions since launch 3; the clearing through them is still dim (moonlit pines, no
+  party glow in their view).
 - The interior has no UVs: the brushed grain is geometry and the triplanar shader only on the hull's metals.
 - Draw calls outside 1740..2032 per view (the clearing about 400) and the grates about 60% of the inside's triangles:
   measure with `bench` before the game takes it.
