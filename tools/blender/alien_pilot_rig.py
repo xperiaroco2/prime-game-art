@@ -74,15 +74,27 @@ RIGCFG = {
     "chameleon": {"lips": {"radius": 0.42, "full": 1.2},
                   "amount": {"smile": 1.75, "sad": 1.75, "angry": 1.75, "surprised": 1.75, "talk": 1.75},
                   "lid": {"sad": 1.0, "angry": 1.0}, "brow": (0.75, 1.0), "cheek": 0.35, "knit": 0.25,
-                  "blink_flat": 0.55, "lining": (0.97, 1.5, 0.1)},
-    "axolotl": {"lips": None, "amount": {"smile": 2.2, "sad": 2.5, "angry": 2.5, "surprised": 1.75, "talk": 1.75},
-                "lining": (0.8, 0.3, 0.1),
+                  "blink_flat": 0.55, "lining": (0.97, 1.5, 0.1),
+                  "o": 0.6, "pucker": 0.15, "tongue": 0.35, "blend": 0.7, "tube_smooth": 30},
+    # 2b-2: her own swept lip band (thin, flush with the skin: "prot" in mouth units), her tongue added by the rig
+    "axolotl": {"lips": {"radius": 0.24, "full": 1.0, "prot": 0.0, "draw": 2.4},
+                "amount": {"smile": 2.2, "sad": 2.5, "angry": 2.5, "surprised": 1.75, "talk": 1.75},
+                "lining": (0.9, 1.5, 0.1), "o": 0.6, "pucker": 0.1, "tongue": 0.3, "blend": 0.5, "add_tongue": True,
+                "tube_smooth": 0,
                 "lid": {"sad": 2.2, "angry": 2.0, "surprised": 1.0}, "brow": (1.5, 2.2), "cheek": 0.35, "knit": 0.25,
                 "blink_flat": 0.6},
 }
 GRID_LIPS = ({"radius": 0.30, "full": 1.0}, {"radius": 0.36, "full": 1.1}, {"radius": 0.42, "full": 1.2},
              {"radius": 0.36, "full": 1.4})
 GRID_AMOUNTS = (1.0, 1.75, 2.5)
+# 2b-2's mouth grid, one row per variant: the O's squeeze ("o": the fraction of each point's distance from the midline
+# taken off round the mouth), the tongue's lift in talk (mouth units), the lip flank's blend into the skin and, for the
+# axolotl, her lip band's radius
+GRID_MOUTH = {"chameleon": ({"o": 0.3, "tongue": 0.15, "blend": 0.3}, {"o": 0.45, "tongue": 0.25, "blend": 0.5},
+                            {"o": 0.6, "tongue": 0.35, "blend": 0.7}),
+              "axolotl": ({"o": 0.3, "tongue": 0.15, "lips_r": 0.16}, {"o": 0.45, "tongue": 0.25, "lips_r": 0.22},
+                          {"o": 0.6, "tongue": 0.35, "lips_r": 0.28})}
+TONGUE = "tongue"  # the tongue's material name part: its vertices in the joined mouth object
 
 
 def log(msg):
@@ -153,9 +165,10 @@ def build_lips(head, objs, L, lf, fr, n_st=48, n_ring=24):
     for s in (1, -1):
         czz, cdep, rz, rd = lip_core(x, s, L)
         e = np.hypot((z - czz) / rz, (d - cdep) / rd)
-        sel = inx & (e < 1.6) & (e < e_after)
-        t = np.clip((e - 0.8) / 0.8, 0, 1)
-        e2 = np.where(e < 0.8, e, 0.8 + 0.8 * t * t * (2 - t))
+        D = L.get("draw", 1.6)  # the skin drawn in from D ellipse radii (2b-2: hers wider, over her painted band)
+        sel = inx & (e < D) & (e < e_after)
+        t = np.clip((e - 0.8) / (D - 0.8), 0, 1)
+        e2 = np.where(e < 0.8, e, 0.8 + (D - 0.8) * t * t * (2 - t))
         k = e2 / np.maximum(e, 1e-9)
         nz, nd = czz + (z - czz) * k, cdep + (d - cdep) * k
         moved = co + np.outer(nz - z, UP) + np.outer(nd - d, fr)
@@ -198,8 +211,11 @@ def build_lips(head, objs, L, lf, fr, n_st=48, n_ring=24):
         czz, cdep, rz, rd = lip_core(xs, s, L)
         for i in range(n_st):
             for j in range(n_ring):
-                verts.append(lf * float(xs[i]) + UP * float(czz[i] + rz[i] * math.sin(th[j]))
-                             + fr * float(cdep[i] + rd[i] * math.cos(th[j])))
+                # the flank away from the line (o 1 at its top) runs out into the skin as a tail, outward and back:
+                # a soft crease where lip meets skin instead of a round tube glued on (2b-2)
+                o = max(0.0, s * math.sin(th[j]))
+                verts.append(lf * float(xs[i]) + UP * float(czz[i] + rz[i] * math.sin(th[j]) * (1 + 0.8 * L["blend"] * o ** 3))
+                             + fr * float(cdep[i] + rd[i] * math.cos(th[j]) - 0.6 * L["blend"] * rd[i] * o ** 2))
                 uvs.append((i / (n_st - 1), j / n_ring))
         for i in range(n_st - 1):
             for j in range(n_ring):
@@ -223,11 +239,14 @@ def build_lips(head, objs, L, lf, fr, n_st=48, n_ring=24):
     for loop in me.loops:
         uvl[loop.index].uv = uvs[loop.vertex_index]
     me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
-    me.materials.append(H.principled(f"{head}_lips", rgb=rgb, rough=0.42))
+    bsdf = next((n for n in skin.active_material.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+    rough = (float(bsdf.inputs["Roughness"].default_value) if bsdf and not bsdf.inputs["Roughness"].is_linked
+             else 0.5)  # the skin's own shading (2b-2): the lips read as skin, not as a glossier tube
+    me.materials.append(H.principled(f"{head}_lips", rgb=rgb, rough=rough))
     obj = bpy.data.objects.new(f"{head}_lips", me)
     bpy.context.collection.objects.link(obj)
-    return obj, {"radius": L["radius"], "full": L["full"], "srgb": [round(c, 4) for c in rgb],
-                 "skin_moved": int((e_after < 1.6).sum()), "skin_faces_deleted": len(dead), "tris": H.tris(obj)}
+    return obj, {"radius": L["radius"], "full": L["full"], "blend": L["blend"], "rough": round(rough, 3), "srgb": [round(c, 4) for c in rgb],
+                 "skin_moved": int((e_after < L.get("draw", 1.6)).sum()), "skin_faces_deleted": len(dead), "tris": H.tris(obj)}
 
 
 def slit_sides(skin, x, dz, hw, m):
@@ -298,10 +317,18 @@ def main():
     ap.add_argument("--view2d", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--grid", action="store_true", help="the variant grids (lips, expression amounts), no export")
+    ap.add_argument("--grid-mouth", action="store_true", help="2b-2's mouth grid (GRID_MOUTH), no export")
     ap.add_argument("--suffix", default="", help="the review sheet's name suffix, e.g. _v2")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     args.out.mkdir(parents=True, exist_ok=True)
     rc = RIGCFG[args.head]
+    if args.grid_mouth:  # rows: per variant the mouth at rest and smiling (3/4), talking and surprised (front)
+        rows = []
+        for over in GRID_MOUTH[args.head]:
+            lips = dict(rc["lips"], radius=over["lips_r"]) if "lips_r" in over else rc["lips"]
+            rows.append(rig(args, lips, rc["amount"], final=False, cells="mouth", over=over))
+        H.save_rgb(np.concatenate(rows[::-1], axis=0), args.out / f"{args.head}_grid_mouth.png")
+        return
     if not args.grid:
         rig(args, rc["lips"], rc["amount"], final=True)
         return
@@ -317,11 +344,11 @@ def main():
     H.save_rgb(np.concatenate(grid[::-1], axis=0), args.out / f"{args.head}_grid_expr.png")
 
 
-def rig(args, lips, amounts, final, cells=None):
+def rig(args, lips, amounts, final, cells=None, over=None):
     """One rig of the head from its build: with final, the GLB, rig.json, the .blend and the review sheet; else the
     grid cells (`lips`: one row of mouth close-ups; `expr`: the five expressions' 3/4 cells) as arrays."""
     head, out = args.head, args.out
-    rc = RIGCFG[head]
+    rc = {**RIGCFG[head], **(over or {})}
     bpy.ops.wm.open_mainfile(filepath=str(args.blend))
     build = json.loads(args.build.read_text(encoding="utf-8"))
     cfg = H.HEADS[head]
@@ -350,13 +377,24 @@ def rig(args, lips, amounts, final, cells=None):
         return Vector((0, 0, z)) + lf * x + fr * d
 
     if lips:
+        tube = build.get("lip_tube")  # the chameleon's fitted protrusions; the axolotl's band sits flush ("prot")
+        prot = ({1: tube["upper"]["protrusion"], -1: tube["lower"]["protrusion"]} if tube
+                else {1: lips.get("prot", 0.0) * m, -1: lips.get("prot", 0.0) * m})
         L = dict(lips, hw=hw, kz=kz, kd=kd, m=m, rz=lips["radius"] * m, rd=lips["radius"] * lips["full"] * m,
-                 prot={1: build["lip_tube"]["upper"]["protrusion"], -1: build["lip_tube"]["lower"]["protrusion"]})
+                 prot=prot, blend=rc.get("blend", 0.0))
         objs["lips"], report["lips"] = build_lips(head, objs, L, lf, fr)
         log(f"lips {report['lips']}")
     report["lining_faces_deleted"] = clear_lining(objs["skin"], lf, fr, kz, kd, hw, m, rc["lining"],
                                                   lips["radius"] * m if lips else m)
     log(f"lining faces deleted {report['lining_faces_deleted']}")
+    if rc.get("add_tongue") and not any(TONGUE in (mt.name if mt else "") for mt in objs["mouth"].data.materials):
+        # 2b-2: her tongue (the 2D's pink one in talk), as the head build makes his: a flat ellipsoid on the cup's floor
+        tongue = H.sphere_mesh("tongue", at(0, z0 - 0.32 * m, d0 - 0.55 * m), G.frame(tuple(fr)), 1.0, n_a=20, n_p=10)
+        tongue.data.transform(Matrix.Diagonal((hw * 0.45, 0.42 * m, 0.14 * m, 1.0)))
+        tongue.data.materials.append(H.principled(f"{head}_tongue", rgb=H.TONGUE_RGB, rough=0.45))
+        H.select_only([objs["mouth"], tongue], active=objs["mouth"])
+        bpy.ops.object.join()
+        report["tongue_added"] = True
 
     # ------------------------------------------------------------------ the skeleton
     skin_co = coords(objs["skin"])
@@ -489,6 +527,12 @@ def rig(args, lips, amounts, final, cells=None):
     report["slit_sides"] = {"upper": int((side > 0).sum()), "lower": int((side < 0).sum())}
     ev[:, 2] = np.where(side > 0, np.maximum(skin_co[:, 2], zl_ + 0.15 * m),
                         np.where(side < 0, np.minimum(skin_co[:, 2], zl_ - 0.3 * m), skin_co[:, 2]))
+    # 2b-2: past the lip corners Meshy's slit runs on; both its edges weighted as if on the line, so the open mouth
+    # never parts them into flaps (the painted lip colour showing as fins beside the O)
+    xa, dzs = np.abs(skin_co @ np.array(lf)), skin_co[:, 2] - zl_
+    past = (side == 0) & (xa > 0.9 * hw) & (xa < 1.5 * hw) & (np.abs(dzs) < 0.5 * m)
+    ev[:, 2] = np.where(past, zl_ + dzs * H.sstep(0.15 * m, 0.5 * m, np.abs(dzs)), ev[:, 2])
+    report["slit_past_corners"] = int(past.sum())
     sk = face_weights(ev)
     report["weights"]["skin"] = assign(objs["skin"], sk)
     n_skin = len(skin_co)
@@ -581,8 +625,28 @@ def rig(args, lips, amounts, final, cells=None):
         cheek_c[t], cheek_s[t] = np.array(p), 0.35 * (bottom - corner[s_]).length
     knit_c = np.array(kd_skin.find((brow_pts["LeftBrowInner"] + brow_pts["RightBrowInner"]) / 2 + fr * R)[0])
 
-    def corrective(name, co, f):
+    mouth_co = coords(objs["mouth"])
+    tongue_v = np.zeros(len(mouth_co), dtype=bool)
+    for poly in objs["mouth"].data.polygons:
+        mt = objs["mouth"].data.materials[poly.material_index] if objs["mouth"].data.materials else None
+        if mt is not None and TONGUE in mt.name:
+            tongue_v[list(poly.vertices)] = True
+    report["tongue_vertices"] = int(tongue_v.sum())
+
+    def corrective(name, part, co, cur, f):
+        """co: the part's rest positions, cur: posed. 2b-2: the surprised O squeezes the mouth round toward the
+        midline (rings rounded, corners in) and puckers it forward; talk lifts the tongue into view (half of it in the
+        O)."""
         dlt = np.zeros_like(co)
+        if name == "surprised":
+            x = cur @ np.array(lf)
+            g = np.exp(-(x / (1.3 * hw)) ** 2 - ((cur[:, 2] - (z0 - 0.3 * m)) / (1.8 * m)) ** 2)
+            g = g * H.sstep(zl_dl(co @ np.array(lf))[1] - 1.6 * m, zl_dl(co @ np.array(lf))[1] - 0.6 * m,
+                            co @ np.array(fr))
+            dlt += -np.outer(x * rc["o"] * g, np.array(lf)) + np.outer(g, np.array(fr)) * rc["pucker"] * m
+        if part == "mouth" and name in ("talk", "surprised") and tongue_v.any():
+            k = 1.0 if name == "talk" else 0.5
+            dlt[tongue_v] += np.array(UP + fr * 0.5) * rc["tongue"] * m * k
         if name == "smile":
             for t in ("L", "R"):
                 dlt += np.outer(gauss(co, cheek_c[t], cheek_s[t]), np.array(UP * 0.8 + fr * 0.35)) * rc["cheek"] * m * f
@@ -592,6 +656,21 @@ def rig(args, lips, amounts, final, cells=None):
         return dlt
 
     parts = [k for k in ("skin", "mouth", "lips") if k in objs]
+
+    def smooth_tubes(dlt, n_st=48, n_ring=24, passes=8):
+        """The swept lips' per-vertex moves averaged along each tube's stations ([1, 2, 1] / 4, the ends reflected),
+        each pole taking its end ring's mean."""
+        out_ = dlt.copy()
+        blk = n_st * n_ring + 2
+        for b in range(len(dlt) // blk):
+            r = dlt[b * blk: b * blk + n_st * n_ring].reshape(n_st, n_ring, 3)
+            for _ in range(passes):
+                pad = np.concatenate([r[:1], r, r[-1:]], axis=0)
+                r = 0.25 * pad[:-2] + 0.5 * pad[1:-1] + 0.25 * pad[2:]
+            out_[b * blk: b * blk + n_st * n_ring] = r.reshape(-1, 3)
+            out_[b * blk + n_st * n_ring] = r[0].mean(0)
+            out_[b * blk + n_st * n_ring + 1] = r[-1].mean(0)
+        return out_
     rest = {k: coords(objs[k]) for k in parts}
     deformed = {}
     for name in EXPRESSIONS[1:]:
@@ -601,7 +680,10 @@ def rig(args, lips, amounts, final, cells=None):
         deformed[name] = {}
         for k in parts:
             ev = np.array([tuple(v.co) for v in objs[k].evaluated_get(dg).data.vertices])
-            deformed[name][k] = ev + corrective(name, rest[k], f)
+            deformed[name][k] = ev + corrective(name, k, rest[k], ev, f)
+        if "lips" in objs and rc.get("tube_smooth"):  # 2b-2: smoothed along each tube (no kink at the corners)
+            deformed[name]["lips"] = rest["lips"] + smooth_tubes(deformed[name]["lips"] - rest["lips"],
+                                                                 passes=rc["tube_smooth"])
     reset()
 
     # the lids: rebuilt at the pose's edge angles, matched to the joined lids by their rest positions
@@ -758,6 +840,10 @@ def rig(args, lips, amounts, final, cells=None):
              ("surprised", 1.0, mouth_c, fr, mouth_s)]
     if cells == "lips":
         return np.concatenate(shots([("rest", 1.0, mouth_c, fr, mouth_s), *mouth], 320), axis=1)
+    if cells == "mouth":
+        return np.concatenate(shots([("rest", 1.0, mouth_c, tq, mouth_s), ("smile", 1.0, mouth_c, tq, mouth_s),
+                                     ("talk", 1.0, mouth_c, fr, mouth_s), ("surprised", 1.0, mouth_c, fr, mouth_s)],
+                                    320), axis=1)
     if cells == "expr":
         return shots([(n, 1.0, face_c, tq, face_scale) for n in EXPRESSIONS[1:]], 320)
     row3d = shots([(n, 1.0, face_c, tq, face_scale) for n in EXPRESSIONS], 420)

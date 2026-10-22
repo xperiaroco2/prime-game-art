@@ -4,7 +4,7 @@ Godot window (godot/alien/pilot_shots.gd through the runner's _godot.window()). 
 (`tools/run.sh godot-check <glb>`). Inputs are read from the raw folder, never written.
 
     $PYTHON_BIN tools/blender/alien_pilot_run.py [--heads chameleon,axolotl] [--out DIR] [--no-build] [--no-shots]
-        [--tag v2] [--prev DIR] [--rig] [--only-rig]
+        [--tag v2] [--prev DIR] [--rig] [--only-rig] [--rig-tag T] [--grid] [--grid-mouth] [--src-dir DIR]
 
 --prev: an earlier build's views for the comparison sheet's middle row, "{head}" standing for the head
 (e.g. .../step2a/{head}/v2/views). --rig (step 2b-1) runs alien_pilot_rig.py on the build: the face skeleton,
@@ -49,6 +49,9 @@ def main() -> int:
     ap.add_argument("--only-rig", action="store_true", help="rig the existing build, no head build")
     ap.add_argument("--rig-tag", default="", help="rig into <head>/<rig-tag>/; its sheet and shot copied up tagged")
     ap.add_argument("--grid", action="store_true", help="only the rig's variant grids (lips, expression amounts)")
+    ap.add_argument("--grid-mouth", action="store_true", help="only the rig's mouth grid (2b-2)")
+    ap.add_argument("--src-dir", type=Path, default=None,
+                    help="rig the head build in <src-dir>/<head>/ (read only), writing into --out (2b-2)")
     args = ap.parse_args()
     summary = {}
     failed = False
@@ -68,22 +71,25 @@ def main() -> int:
             (out / "build.log").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
             print(f"built {head}", *lines[-3:], sep="\n", flush=True)
         glbs = [out / f"{head}.glb", out / f"{head}_lod1.glb"]
-        if args.rig or args.only_rig or args.grid:
+        if args.rig or args.only_rig or args.grid or args.grid_mouth:
             rig_out = out / args.rig_tag if args.rig_tag else out
             rig_out.mkdir(parents=True, exist_ok=True)
-            extra = (["--grid"] if args.grid else []) + (["--suffix", f"_{args.rig_tag}"] if args.rig_tag else [])
-            result = blender.run_script("alien_pilot_rig.py", ["--head", head, "--blend", str(out / f"{head}.blend"),
-                                                       "--build", str(out / "build.json"), "--expr", str(EXPR[head]),
+            src = args.src_dir / head if args.src_dir else out
+            extra = (["--grid"] if args.grid else []) + (["--grid-mouth"] if args.grid_mouth else []) + (
+                ["--suffix", f"_{args.rig_tag}"] if args.rig_tag else [])
+            result = blender.run_script("alien_pilot_rig.py", ["--head", head, "--blend", str(src / f"{head}.blend"),
+                                                       "--build", str(src / "build.json"), "--expr", str(EXPR[head]),
                                                        "--view2d", str(VIEWS[head]), "--out", str(rig_out), *extra],
                                         timeout=2400)
             lines = [x for x in (result.stdout or "").splitlines() if x.startswith("RIG ")]
-            (rig_out / ("grid.log" if args.grid else "rig.log")).write_text("\n".join(lines) + "\n", encoding="utf-8",
+            grid = args.grid or args.grid_mouth
+            (rig_out / ("grid.log" if grid else "rig.log")).write_text("\n".join(lines) + "\n", encoding="utf-8",
                                                                            newline="\n")
             print(f"rigged {head} exit {result.returncode}", *lines[-4:], sep="\n", flush=True)
             if result.returncode:
                 print((result.stderr or "")[-2000:], (result.stdout or "")[-3000:], sep="\n", flush=True)
                 failed = True
-            if args.grid:
+            if grid:
                 continue
             out = rig_out
             glbs = [out / f"{head}_rig.glb"]
@@ -110,7 +116,7 @@ def main() -> int:
             for name in (f"{head}_compare_1280", f"{head}_godot"):
                 if (out / f"{name}.png").exists():
                     shutil.copyfile(out / f"{name}.png", args.out / head / f"{name}_{args.tag}.png")
-    (args.out / f"run_summary{'_' + (args.tag or args.rig_tag) if (args.tag or args.rig_tag) else ''}{'_grid' if args.grid else ''}.json").write_text(json.dumps(summary, indent=2), encoding="utf-8", newline="\n")
+    (args.out / f"run_summary{'_' + (args.tag or args.rig_tag) if (args.tag or args.rig_tag) else ''}{'_grid' if args.grid or args.grid_mouth else ''}.json").write_text(json.dumps(summary, indent=2), encoding="utf-8", newline="\n")
     return 1 if failed else 0
 
 
