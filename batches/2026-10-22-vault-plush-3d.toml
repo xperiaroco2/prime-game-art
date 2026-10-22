@@ -1,0 +1,48 @@
+# art#297, the vault's plush alien, step 2: the raw 3D model (the engineer's go, 2026-10-22: "Лист підходить.
+# Запускай крок 2: Meshy multi-image-to-3D з чотирьох ракурсів, ліміт 80 кредитів", art#297 comment 6348927383).
+# Four views cut from the approved turnaround sheet (batch 2026-10-22-vault-plush-turn item turn5), each padded to a
+# square on the sheet's own grey: front (first, as the API asks), side profile facing left, back, three-quarter
+# facing right. The top view is left out (the API takes at most four, and it reads poorly).
+#
+# Parameters: meshy-7.1 at geometry_resolution 2k (the lids, muzzle, pompoms and paws are small forms); textured, 2k
+# base colour with PBR maps, lighting removed, so the paint shows where the eyes, smile, seams and brown parts sit.
+# The engineer, the same day, on the sheet: its fur reads as a curly terry texture, unlike the concept's soft fuzz;
+# so texture_prompt asks for the concept's even short plush pile, and step 3 makes the material from the concept,
+# not from the sheet. Meshy's own remesh to 30,000 triangles keeps the raw model quick to open and render; the dense
+# original is kept too (save_pre_remeshed_model). This mesh is the source: the game mesh is cut down in Blender in
+# this step's cleanup. Price: 20 mesh + 5 for 2k + 10 texture = 35; the cap of 80 leaves one retry. No game, film,
+# studio, character or toy names (the images are the prompt). Schema: docs/meshy.md.
+
+id = "2026-10-22-vault-plush-3d"
+purpose = "art#297 step 2: the vault's plush alien as a raw Meshy multi-image-to-3D model from four views of its approved turnaround sheet, cleaned to a game prop in Blender afterwards."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 80
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/297#issuecomment-6348927383"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = true
+enable_pbr = true
+texture_resolution = "2k"
+remove_lighting = true
+texture_prompt = "a soft plush toy: short dense even fuzzy orange plush fur with a soft fuzzy halo, smooth pile, not curly and not terry cloth; dark brown short velour on the paws, feet, nose, antenna pads and tail pompom; orange embroidered seams; pink red-veined eyes with small dark pupils under heavy orange lids; a dark stitched smile"
+should_remesh = true
+topology = "triangle"
+target_polycount = 30000
+save_pre_remeshed_model = true
+target_formats = ["glb"]
+
+[[items]]
+id = "plush"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-22-vault-plush-3d/views/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-22-vault-plush-turn item turn5 (gpt-image-2.5-sunburst), padded to a square, art#297", sha256 = "b658bba9afc94dc3557e5c25b9c6924824f7deb0dfdd03ba413f76bce494adc5" },
+  { file = "raw:2026-10-22-vault-plush-3d/views/side.png", provenance = "side profile (facing left) cut from our own OpenAI generation, batch 2026-10-22-vault-plush-turn item turn5 (gpt-image-2.5-sunburst), padded to a square, art#297", sha256 = "87681f6868cfe0de77d35e290f3884386d5e47de71cac3d0a7d6bcc5e004658e" },
+  { file = "raw:2026-10-22-vault-plush-3d/views/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-22-vault-plush-turn item turn5 (gpt-image-2.5-sunburst), padded to a square, art#297", sha256 = "1966544e61bcb54f7907cfdd0552437408609bb69b558bab7583b45edf68b5d2" },
+  { file = "raw:2026-10-22-vault-plush-3d/views/three_quarter.png", provenance = "three-quarter view (facing right) cut from our own OpenAI generation, batch 2026-10-22-vault-plush-turn item turn5 (gpt-image-2.5-sunburst), padded to a square, art#297", sha256 = "dbb2a748956a989ca281a0d33c0ac6675e72acf681d9a5167388e85a21dfb4e3" },
+]
