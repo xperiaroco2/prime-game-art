@@ -265,7 +265,7 @@ over pouting lips, a beetle's shell a visor over a human chin, a moth the classi
 ## Batch 2026-10-22-alien-roster-r5 (art #196, roster round 5)
 
 Twelve heads (seven men, five women) from the design principles of animated alien and monster films: each a blend of
-two or three animals written as shapes, never as named animals; the men follow five rules (a soft skull with no
+two or three animals written mostly as shapes (a few compare a shape to an animal); the men follow five rules (a soft skull with no
 keratin, horn or beak; one silhouette; one alien eye idea under heavy lids; a big closed mouth with lips; one male
 signal). Medium, 1024x1280, n = 3, and **two references** per edit: rf2 for the style (round 4's lead, framing sentence
 and style tail) and one kept head (h01, m5a, w42 or w10a) for the face language only, with "never its head shape or
