@@ -29,7 +29,7 @@ arrangement, the numbers give the sizes. A gentle curve is fine only where the n
 | `tools/blender/ship_video.py` | encodes the walk-through MP4 under its size cap | EXTERIOR lane |
 | `tools/tests/test_ship_*.py` | fast: `test_ship_layout.py`, `test_ship_interior.py`, `test_ship_hull_detail.py`, `test_ship_exterior.py`, `test_ship_clearing.py`; heavy (Blender): `test_ship_build.py` | either lane adds its own file |
 
-Raw output (never in git): `<raw>/ship/v2/` (the layout's `raw_dir`; v1's in `<raw>/ship/v1/`) with `pieces/` (GLBs, `build_report.json`, validator `reports/`),
+Raw output (never in git): `<raw>/ship/v3/` (the layout's `raw_dir`; v2's in `<raw>/ship/v2/`, v1's in `<raw>/ship/v1/`) with `pieces/` (GLBs, `build_report.json`, validator `reports/`),
 `plan/` (`plan.txt`), `shots/` (the views, `compare_*.png` with the 2D left, among them `compare_top.png` against
 plan-3, `sheet.png`, `lights.json`), `walk/` (`check.json`, `walkthrough.mp4`), `logs/`, `notes/` (the workflow's
 handoff notes).
@@ -43,22 +43,23 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 
 | What | Number (ship.toml) | Why |
 |---|---|---|
-| Footprint | the hull J: span 30.0 m (`width_m`, `span_max_m`), 18.91 m long with the nozzle pods (`length_m` 18.9, `length_max_m` 19.4; `ship_layout.lengths()`), 21.70 m from the ramp's foot (-9.9) to the nozzle tips; `ship --check` prints the current ones | the engineer's pick J (art #263 comment 6340589162; "Rebuild B") |
+| Footprint | the hull P, live since lens step 2: span 26.11 m, 22.1 m long with the nozzle pods (blockout6 measured 22.15); `[hull] shape = "P"`, its rows `ship_hull_shape.outline_rows("P")` | the manager's pick P under the engineer's standing instruction (art#263 comment 6344490367) |
 | Deck | floor at h 0.6 on landing legs (launch 3; was 1.0), slabs 0.25, walls 0.2 | the ramp meets the ground; a thinner hull |
 | Hall | circle r 4.0 at (0, -0.4) (rebuild E; C (0, -1), v2 (0, 0), v1 r 3.4); 3.2 m to the ceiling's rim all round (rebuild E; C had 2.75 m round its front), 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
 | Throat (rebuild C; v2's mouth passage x -1.3..1.3, y -4.6..-3.9) | the funnel from the mouth (x +-1.65 at y -7.1, J's nose edge; 5a: y -8) to the hall's vertices (+-2.915, -3.252), 4.051 m walls in five modules of 0.810 (rebuild E); open to the sky forward of y -5.561 (the walls there are the hull's jambs, `skin_cheeks`), a 2.3 m ceiling aft of it | the only way in or out (5a's side hatch is dropped, see below) |
 | Ramp | 3.3 m wide (the mouth), hinge (0, -7.1) at the deck, foot (0, -9.9) on the ground: 12.1 deg, 2.86 m long (rebuild C; v2 2.6 m from (0, -4.6)) | north at the centre |
-| Corridors | `strip` rooms on the axes from the hall's centre (0, -0.4) to the tip rooms' (+-8.3, 3.6) (rebuild E): 9.214 m, 25.73 deg; floor 3.708..8.219 along the axis (4.51 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide; rebuild A: on the diagonal |
-| Tip rooms | circles r 1.8 at (+-8.3, 3.6) (rebuild E; C (+-8.3, 3.0)), the outer wall at +-10.1; 2.5 m to the rim, 2.8 m apex; no window since rebuild A (13 plain wall facets round the outer side) | 5a mirrored: 3.6 m across |
-| Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.409, -4.791; rebuild F); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.030, 0.841) on the corridors' front wall; renewers (+-9.922, 4.381) on the tip rooms' outer wall, the player at (+-8.751, 3.817) | 5a mirrored; as built in "Rebuild E", the vents in "Rebuild F" |
+| Corridors | `strip` rooms on the axes from the hall's centre (0, -0.4) to the lens rooms' (+-10.5, 1.2) (lens step 1): 10.621 m, 8.66 deg aft; floor 3.708..9.298 along the axis (5.59 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide |
+| Lens rooms (ids `tip_e`, `tip_w`) | circles r 2.0 at (+-10.5, 1.2), the outer wall at +-12.5; the ceiling slants down outward (P's: clear 2.4455 at the corridor's wall face, 2.3545 at the outer one; `clear_h` 2.35, `clear_h_in` 2.45); the window band -65..+45 deg round the outward axis, + aft, sill 1.0, head 2.2 (`band`); three roof windows (`roof_windows`, 0.9 x 0.7 m) | P's lens (art#263 comment 6344490367) |
+| Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.409, -4.791); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.664, -0.902) in the middle of the corridors' front wall; renewers (+-10.269, 3.237) on the lens rooms' aft wall (a vertex, 87.82 deg aft of the axis), the player at (+-10.415, 1.945) | lens step 1; the vents as in "Rebuild F" |
+| Vault (lens step 1) | `rect` x +-0.9, y 3.85..5.85 (1.8 x 2 m clear), `closed`: its shut door (1 m) in the hall's back wall at (0, 3.6), no exit, no link, not walkable floor (`check_closed`); ceiling 2.3 m at the door, 1.6 at the back (`clear_h_back`) | a shell only: no item, card or lock |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
 
 The check holds: the footprint within 0.5 m; corridors `corridor_width_m` (3) +- 0.1 m wide and over 2.5 m long; the
-tip rooms' outer wall at `tip_outer_m` (10.1) +- 0.05; the station spots (`check_spots`, "Version 2" below); clear heights over the capsule and margin; exactly one room with an exit, the ramp's hinge on its north
+tip rooms' outer wall at `tip_outer_m` (12.5) +- 0.05; the station spots (`check_spots`, "Version 2" below); clear heights over the capsule and margin; exactly one room with an exit, the ramp's hinge on its north
 edge, the ramp as wide as the mouth and under 30 deg; every room reachable from the hall and linked rooms meeting;
 every poly room convex, its points with a positive signed area in plan (x, y) (`check_polys`); every capsule walk
 point on the deck on a room's floor with the capsule's radius round it (`check_walk`); every room's sampled outer
-surface inside the hull J with 0.15 m of skin (`hull_skin`: `ship_hull_shape.clearance` on the checked layout's own
+surface inside the live hull (P) with 0.15 m of skin (`hull_skin`: `ship_hull_shape.clearance` on the checked layout's own
 rooms, each sampled on its own); every room's outer wall and every placed piece inside the hull outline (the ramp may
 stand outside); no piece defined twice or never placed.
 
@@ -164,7 +165,8 @@ their compare sheets, 415..620 draw calls inside the tip rooms, 1740..2032 outsi
 
 ## The exterior (EXTERIOR lane)
 
-The outside is the hull J (`ship_hull_shape.py`, plain Python; only variant J is live) built by `ship_hull_j.py` as
+The outside is the hull P (`ship_hull_shape.py`, plain Python; variant P is live, J and the blockouts' variants stay
+for reference) built by `ship_hull_j.py` as
 four pieces in the plan frame at the origin: `skin_top`, `skin_belly`, `skin_mouth` (the throat's notch: its cut side
 faces in dark plates) and `skin_cheeks` (the throat walls' outer faces under the rising belly, in the same dark plates,
 so each side of the mouth reads as one face up to the nose's slope). Every face is cut into plates in its own plane
@@ -559,8 +561,8 @@ no outside light strips; the inside (rebuild A) frozen; the clearing only scaled
   of them (`facets()`, 111 facets for J), the mouth recess cut as four convex pieces per facet plus the recess's own
   faces (`surface()`, 126 faces), `skin(p)` (a point's distance to the outside), `clearance()` (every room's sampled
   walls, roofs and slabs against SKIN 0.15 m), `heights(x, y)` and `outline_rows()` (ship.toml's `[hull]` rows,
-  checked by `test_ship_layout`). `[hull] shape = "J"` names the variant; `ship --check` runs `clearance` too
-  (`ship_layout.hull_skin`): least skin 0.16 m, no poke.
+  checked by `test_ship_layout`). `[hull] shape = "P"` names the variant (J's numbers here are rebuild B's);
+  `ship --check` runs `clearance` too (`ship_layout.hull_skin`): least skin 0.150 m (the throat, hull P), no poke.
 - **The skin** is `ship_hull_j.py` (builder `j_skin`, pieces `skin_top`, `skin_belly`, `skin_mouth`): each face cut in
   its own plane into plates (rows 1.3 m wide along the facet's span direction, cut every 1.8 m, staggered like
   brickwork), each plate v1's `_plate` (inset 0.022, chamfer 0.014 deep) in one of v1's silvers by a hash, the top
@@ -698,3 +700,92 @@ The engineer kept the hall's ceiling at full height (art#263 comment 6342342554)
   interior.toml: `th_wall_mid`, `cor_wall_board`, `hall_panel_flat_socket`, `tip_panel_a/b`); `check_walk` samples
   every deck segment of the walk every 0.25 m with the capsule's footprint on the rooms' floors. The throat joint's
   slab skip is the thin zone's width (`WALL + 0.12`).
+
+## Lens step 1: the lens rooms, the corridors and the vault (2026-10-22)
+
+The approved layout (art#263 comment 6344490367; hull P of `tools/blender/ship_hull_blockout.py`, the manager's pick
+under the engineer's standing instruction): the nose, mouth, throat, vents, hall, console and the four sockets as
+built; new lens rooms, longer corridors, a closed vault. `[hull] pending` stays until step 2 builds P as the live hull:
+J's own rooms are pinned in `ship_hull_shape.J_ROOMS`, so J and the blockouts build as before, and
+`test_the_lens_rooms_and_the_vault_are_ps` holds the layout's rooms equal to P's design numbers (`RAY_TIP`,
+`RAY_ROOM_R`, `RAY_CLEAR_*`, `RAY_PANELS`, `VAULT`, the band's `SILL`/`HEAD`), whose blockout measured 0.15 m of skin
+round the rooms and 0.18 m round the vault.
+
+| What | Built |
+|---|---|
+| Lens rooms | r 2.0 (vertex radius 2.05) at (+-10.5, 1.2), 12 wall facets of 21.95 deg (vertex 0 on the axis), the door's chord over +-48.27 deg from the back (half width 1.53); walls 2.35 m; the ceiling `tip_clear(t)` = 2.35 + 0.1 (2.2 - t) / 4.4 along the axis, a coffered plane in cells round the roof windows, four ribs across the axis (u -1.0, -0.55, 0.825, 1.8) with cyan strips, a fascia over the walls; the lamp ring r 0.32 (was 0.42) at the centre, raised 0.05 m up the slant |
+| Window band | facets 3..7 of the east room: -65.86..43.91 deg round the outward axis (the asked -65..+45 snapped to the vertices), + aft, the west room mirrored; per facet `tip_window_a/b` (low wall and panel, sill ledge, header to 2.35, trim), `tip_glass` 6 cm behind the face, `tip_sill_strip`; `tip_mullion` at the four inner vertices, pilasters at the band's ends; P's trail fin hides its band from +45.0 deg (blockout6 `hidden_deg`): the aft edge at 43.91 is 1.1 deg short of it |
+| Roof windows | three, 0.9 along x 0.7 across, centres (0.35, -+0.8) and (1.3, 0) from the room's centre along/across the axis: a frame 6 cm wide, a dark well up to 0.26 m over the ceiling, the glass at 0.24 m |
+| Door and pilasters | `tip_portal` and `tip_pilaster` 2.428 m (the slant at the door's chord); trunks 2.40 m at the fore vertices (-87.82, -109.77 deg), none within 25 deg of the renewer |
+| Corridors | five modules of 1.038 m from u 3.918 to 9.107; arches at 4.150 and 8.875; four ceiling ribs; the breaker board's plain wall at u 5.612..7.412 |
+| Hall | the corridors' openings at +-8.66 deg (+-13.84..31.16); the front socket's flat chord from the throat's corner to the opening (30.54 deg, `_sockf`, its plain panel 1.72 m: the spot 0.045 m off its middle); a side facet 31.16..48.23 (`_side`); the back socket's flat 48.23..77.5 unchanged; the vault's door 77.5..102.5 (`hall_door`, a flat chord at apothem 3.981 over the two back facets, which keep their ceiling panels and rim plates); no hall trunk (the back's at 90 deg was the last) |
+| Vault | `vault_shell` at (0, 3.85): walls with the corridors' panels (kick, lower panel, belt at 1.4, upper panel), the door's lining, the ceiling 2.3 m at the door to 1.6 at the back (heights over 1.5 m scaled to it), two ribs, a lamp fixture (no light: the door is shut); `hall_door` 1.0 x 2.1 m, its leaf closed with two raised panels, a handle and an amber lamp |
+| Light, walk, views | corridor lamps at u 4.9, 6.51, 8.12; the lens lamp at its centre, h 2.85, the cool fill 1.3 m out on the axis; walk points at u 3.0 and 0.5 m past the lens centres; views `in_corridor_*` toward the lenses, `in_tip_*` toward the windows, `in_lens_roof_e` up, `in_vault_door` |
+
+Left for step 2 (the hull lane): P as the live hull round these rooms (the window band's and roof windows' openings
+through it, the legs' clear zones), then drop `pending`; the walk-through video's keys (`test_the_walk_video_keys`
+skips while pending).
+
+## Lens step 2: the hull P built (2026-10-22)
+
+P (art#263 comment 6344879087) is the live hull: `[hull] shape = "P"`, `pending` gone, so `ship --check` runs the
+footprint, skin and inside-the-hull tests again and no ship test skips.
+
+- **The shape** (`ship_hull_shape.py`, the section at its end; `DEFAULT = "P"`): the UNION of five convex parts
+  (`p_parts`, `p_facets`): the body (the hump over the hall from J's own top, the nose, the vault, the tail), two fins
+  (a ridge 3.30 m over each corridor, 1.85 / 2.05 m half wide, the thin diamond edges) and two lenses (48 sides, rim
+  r 2.55, the top plane 0.275 m over the slanted ceiling, `P_PROFILE`). `skin(p)` is the best part's plane distance (a
+  lower bound of the union's), then J's notch cutters; `heights` the union's highest top and lowest bottom;
+  `surface()` every part's facets outside the other parts (a face on another part's boundary kept once, `EPS`), split
+  only where a region really meets it (`_meets`), J's throat cuts, then the openings (`p_openings`): the window band
+  as wedges between the rim's vertices from r 2.13 (the room wall's outer face is 2.21) out, sill 1.596 to head 2.804,
+  and three roof windows per lens (0.9 x 0.7, P's outlines) from 0.245 m over the ceiling up (the wells' tops 0.26);
+  the cutters' own faces close every cut (the band's sill, head and ends, the roof windows' sides), plated like the
+  hull. Faces thinner than 0.1 mm (hull artefacts) are dropped. 507 facets, 1140 faces (lens step 3).
+- **The corrections.** The tail tapers to the pods: the stern face `P_STERN` is 2.75 m half wide at most and sloped
+  (the blockout's stood 4.0 m with near-vertical sides behind the hall), the fins' trail corners come in to
+  (+-3.3, 12.3). The fins' roots on the rim sit at -72 and +50 deg round the lens's axis, 6.1 deg past the band's
+  ends (-65.86..+43.91), and the fins' edges come down to h 1.35 there (`P_LENS_EDGE`, under the 1.6 sill): no point
+  just outside the band (sill to head, -72..+48 deg) lies inside the hull.
+- **The skin check** (`_room_points`) samples the lens rooms' slanted ceilings (`ceiling = "slant"`, along the axis
+  from the hall's centre) and the closed vault (walls, its roof falling from 2.3 to 1.6, slab). Least skin: hall
+  0.152, throat 0.150, corridors 0.180, lens rooms 0.171 (0.155 before lens step 3's 4 cm lift), vault 0.180.
+- **Plating:** `ship_hull_j.py` (name kept) plates P's faces as it plated J's: all silver, every sliver laid flush.
+- **The edge light** (`edge_light`, `ship_hull_shape.p_edge_line`): a dark channel (lips 14 mm proud, 8 cm high) with
+  a cool-white glow 3.5 cm high set 8 mm in, along each fin's lead edge from the nose (not across the mouth), round
+  the lens rim at h 1.35 under the band and along the trail edge into the outer pod. `glow_edge` lights at
+  `l = 0.12` (a faint glow on the ground).
+- **Frames:** `lens_frames`: the band's sill and head bars on the rim, two end posts, four mullions in the reveal at
+  the room's inner window vertices; a raised 5 cm frame round each roof window.
+- **Pods:** 2.84 / 3.24 m across (`P_PODS`, `p_pods`), the noses at y 9.6 inside the tail, the ends at 14.7 / 15.0;
+  the bell is an open ring into a nozzle 1.15 m deep (`NOZZLE`), the glowing inner ring 0.3 m in, `glow_pod` at
+  `l = 0.15`.
+- **Legs:** front (+-4.6, -3.4), fin (+-9.0, 4.6) (J's (+-11.6, 4.4) lies outside P), stern (+-5.0, 8.6); mounts at
+  P's lowest belly over the mount's box + 0.1 (0.64, 0.44, 1.17). Ground lamps 0.9 m past the feet.
+- **The vault:** its door is a closed sliding hatch (stepped frame, cyan header strip, two recessed panels, a groove,
+  a cyan edge strip, a card reader with a small dim light); a dim warm lamp (`corr`, 0.1) under its fixture.
+- **Views:** `out_lens_e`, `out_lens_roof_e`, `out_tail`; `detail_floor` and `detail_cables` and the walk video's
+  corridor and lens keys on the 8.66 deg axes.
+
+## Lens step 3: the plates in rows (polish, 2026-10-22)
+The hull P's shape is kept; its surface was messy: every facet plated in its own frame, so the union's sliver facets
+fanned their seams out round the fins' roots, and the lens's 48 rim facets read as slats (a corrugated tank).
+- **Plates by zone, not by facet** (`ship_hull_j.cells`, `skin_pieces`). Every face is in one zone with one seam
+  family. Plan: global planes, rows span-wise (constant plan y; a face looking fore or aft: constant h), the plates'
+  ends on constant x (a face looking sideways: constant h), brickwork. Lens (a face within the rim's radius of a
+  lens's centre): the rim and the under faces in three bands (seams at h 1.35 under the edge light and 2.8 at the
+  band's head) with radial seams every 36 deg, staggered by 18 per band; the top and bottom discs, the sill and the
+  head in a ring of 36 deg sectors outside a ten-gon of apothem 1.5 m, rows along the lens's axis inside it. The west
+  lens is the east's mirror.
+- **Seams only where meant** (`Edges`, `seams`, `lay_seams`). A piece's edge is a seam (v1's inset and chamfer) where a
+  seam plane cut it, where the face ends (an opening, a cut) or where the next face bends away by more than
+  `CREASE` (plan 20 deg, lens 30 deg); across a shallower facet edge it is laid flush with no chamfer, so a plate goes
+  on over the next facet and no seam follows a sliver. A plate's pieces share one silver (`cell_mat`, by its cell).
+- **The lens shaded smooth.** The lens's plates are their own parts with `smooth_deg` 30 (`ship_build.make`: sharp
+  over it), so the rim reads as wide curved plates; at 40 the rim's top chamfer (33.7 deg) smoothed into the flat top
+  and blotched it. The body and the fins stay faceted.
+- **The lens's top 4 cm up** (`P_TOP_LIFT`): the fin's ridge (3.30 at the lens's centre) stood 2.5 cm proud of the old
+  top, a ledge across the roof. Lowering the ridge instead cost the corridors 3 cm of skin (0.180 -> 0.152).
+- **The edge light**: the glow 6 cm high (`EDGE_GLOW` 0.03), strength 16, in 4 m pieces (`EDGE_CHUNK`): Godot puts one
+  strip light per piece, so they stand along the edge and pool faintly on the ground (`glow_edge` l 0.6); one merged
+  mesh had put its one light in the ship's middle.

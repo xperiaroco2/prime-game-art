@@ -42,8 +42,9 @@ class ShipBuildTest(unittest.TestCase):
         top, belly = self.report["skin_top"]["bounds"], self.report["skin_belly"]["bounds"]
         # rebuild B (the hull J): the tips at the span, the spine's peak 4.82, the belly 0.17 (its under-skin 0.025
         # lower) under the slabs; the nose short of the ramp's foot
-        self.assertAlmostEqual(top["max"][0], layout["size"]["span_max_m"] / 2, delta=0.05)
-        self.assertAlmostEqual(-top["min"][0], layout["size"]["span_max_m"] / 2, delta=0.05)
+        half = layout["size"]["span_max_m"] / 2
+        self.assertAlmostEqual(top["max"][0], half, delta=0.05)
+        self.assertAlmostEqual(-top["min"][0], half, delta=0.05)
         self.assertTrue(4.78 <= top["max"][1] <= 4.85, top["max"][1])
         self.assertTrue(0.14 <= belly["min"][1] <= 0.18, belly["min"][1])
         self.assertGreater(top["min"][2], layout["ramp"]["foot"][1])

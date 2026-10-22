@@ -44,7 +44,8 @@ class ShipExteriorTest(unittest.TestCase):
         parts = next(m for m in H.MODULES if hasattr(m, "j_skin")).j_skin({"part": "top"}, LAYOUT)
         skin = next(p for p in parts if p["name"] == "skin_top_hull_silver")
         self.assertFalse(skin["solid"])
-        planes = [((n[0], -n[1], n[2]), d) for n, d, _p in S.facets()]
+        # lens step 2: the surface's own planes (P's parts' facets and the openings' reveals)
+        planes = [((n[0], -n[1], n[2]), sum(n[k] * poly[0][k] for k in range(3))) for poly, n, _kind in S.surface()]
         verts = [(x, -y, h) for x, y, h in skin["verts"]]
         for face in skin["faces"]:
             p = [verts[i] for i in face]

@@ -4,7 +4,7 @@ layouts/ship/exterior.toml places them).
 
 This module holds the shared helpers (boxes, rods, lathes, the panelled skin: every face cut into plates with a real
 chamfer sinking into a dark seam, over a dark under-skin) and the pieces that are not the skin: the tip windows' frames,
-the mouth's portal and lights, the ramp, the landing legs and the clearing. The skin itself is ship_hull_j.py (variant
+the mouth's portal and lights, the ramp, the landing legs and the clearing. The skin itself is ship_hull_j.py (the live hull P since lens step 2; before it variant
 J of the blockouts, ship_hull_shape.py, plated with this module's _plate; rebuild B); its details (canopies, pods,
 ground lamps) are ship_hull_detail.py. Skin faces point outward, so from inside the ship they are back faces
 and never hide a room (the interior lane's walls close the rooms). Belly h 0.6 (under the 0.75 slab bottoms)."""

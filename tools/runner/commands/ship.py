@@ -53,7 +53,8 @@ def run(args: argparse.Namespace) -> int:
                f"{len(layout['pieces'])} pieces, {len(layout['place'])} placements; length with the nozzles "
                f"{lens['nozzles']:.2f} m, ramp foot to nozzle tips {lens['overall']:.2f} m")
     skins = ship_layout.room_skin(layout)
-    common.say("  least skin: " + ", ".join(f"{r} {s:.3f} ({w})" for r, (s, w) in skins.items()))
+    if skins:
+        common.say("  least skin: " + ", ".join(f"{r} {s:.3f} ({w})" for r, (s, w) in skins.items()))
     for p in problems:
         common.say(f"  {p}")
     if problems:
