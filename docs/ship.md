@@ -29,7 +29,9 @@ arrangement, the numbers give the sizes. A gentle curve is fine only where the n
 | `tools/tests/test_ship_*.py` | `test_ship_layout.py` (fast), `test_ship_build.py` (heavy: Blender) | either lane adds its own file |
 
 Raw output (never in git): `<raw>/ship/v1/` with `pieces/` (GLBs, `build_report.json`, validator `reports/`),
-`plan/` (`plan.txt`, `plan_vs_plan-3.png`), `shots/`, `walk/`, `logs/`, `notes/` (the workflow's handoff notes).
+`plan/` (`plan.txt`), `shots/` (the views, `compare_*.png` with the 2D left, among them `compare_top.png` against
+plan-3, `sheet.png`, `lights.json`), `walk/` (`check.json`, `walkthrough.mp4`), `logs/`, `notes/` (the workflow's
+handoff notes).
 
 ## Coordinates and numbers
 
@@ -40,10 +42,10 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 
 | What | Number (ship.toml) | Why |
 |---|---|---|
-| Footprint | 26.1 x 13.9 m (hull and tip shells x; ramp foot -7.0 to nozzle tips 6.9 y) | 5a: about 26 x 14 |
+| Footprint | 26.46 x 13.9 m (the skin's swept tips at x +-13.23; ramp foot -7.0 to nozzle tips 6.9 y) | 5a: about 26 x 14 |
 | Deck | floor at h 1.0 on landing legs, slabs 0.25, walls 0.2 | the ramp meets the ground |
 | Hall | circle r 3.4 at (0, 0); 3.4 m to the ceiling's rim, 4.0 m to its apex (faceted, 16 sides) | console (0, 1) with room round it |
-| Mouth | x -1.3..1.3, y -4.6..-3.3, 2.6 m high | the only way in or out |
+| Mouth | x -1.3..1.3, y -4.6..-3.3, 2.6 m high | the only way in or out (5a's side hatch is dropped, see below) |
 | Ramp | 2.6 m wide, hinge (0, -4.6) at the deck, foot (0, -7.0) on the ground: 22.6 deg | north at the centre |
 | Corridors | y -1.25..1.25 (2.5 m), x 3.3..9.1 each side, 2.6 m high | 5a: about 2.5 m wide |
 | Tip rooms | circles r 2.05 at (+-10.75, 0); 2.8 m to the rim, 3.2 m apex; window +-65 deg outward, sill 0.5, head 2.4 | panel (-10.5, 0), renewer (12, 0) |
@@ -56,6 +58,16 @@ edge, the ramp as wide as the mouth and under 30 deg; no window is an exit; ever
 linked rooms meeting; each station spot inside its room by its footprint (0.35 m; a wall unit 0.5 m deep stands
 against its wall, within 0.6 m), 1.2 m free beside the corridor stations; every room's outer wall and every placed
 piece inside the hull outline (the ramp may stand outside); no piece defined twice or never placed.
+
+**One entrance; the side hatch is dropped.** estate-map 5a lists a side hatch at (-12.5, 1) as a second way out. The
+engineer's step-1 rule (art#263: the mouth ramp is the only way in or out, no side hatch, no doors) wins over that text:
+ship.toml has no hatch, and `check` and `test_a_second_exit_is_refused` demand exactly one exit. If the hatch comes
+back, both change with it. The corridors also run straight (5a: "curve with the wing"): numbers, not curvature.
+
+**Wall stations and the corridor's slant.** The check places a vent or socket in plan only; the corridor wall is
+vertical to 1.45 m and then slants in (half width 0.9 m at the ceiling), so a station taller than about 1.5 m at
+u 1.0 meets the slant. The console at (0, 1) straddles the hall's plain disc (r 1.0) and its first grate ring (r 1.1).
+Step 2 accounts for both.
 
 ## Pieces
 
@@ -118,7 +130,7 @@ nothing), the hall's ring 0.12 m wide; the tip windows' mullions are 0.17 m beve
 ```
 tools/run.sh ship                       # the check and plan.txt
 tools/run.sh ship --build               # one GLB per piece (about 1 min); --only ids
-tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsule walk into DIR/walk.json
+tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsule walk into DIR/check.json, then DIR/walkthrough.mp4
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
 ```
 
