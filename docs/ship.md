@@ -251,7 +251,7 @@ its 2D sheet; script `<raw>/ship/v1/logs/in_grid.py`) found the causes and the n
   centre, and so did the hall's sixteen amber floor arcs' cell lights. The hall's lamps now hang by the wall (r 3.0,
   h 4.2, range 3.2, out of the disc's reach), the ring lights nothing, the amber cells reach half as far (`rr` 0.5:
   tight pools), the disc (`int_plate`) value x0.2, roughness +0.45.
-- **Lamp groups** scale per room: `hall_lamp` 0.7, `corr_lamp` 2.0 (three ceiling lamps a corridor), `tip_lamp` 2.4
+- **Lamp groups** scale per room: `hall_lamp` 0.7, `corr_lamp` 2.6 (three ceiling lamps a corridor), `tip_lamp` 2.4
   (the lens rooms' group `tip`: the room's omni and the cool fill by the window; the group's scale, not the
   `tip_lamp` piece, which details 2 stopped placing), `out_lamp` 2.5 (warm camp lights at the treeline, x +-27, and
   in front of the ramp, for the windows and the ramp's view); `sky_horizon` 5 lifts the horizon behind the trees.
@@ -913,4 +913,23 @@ The shape, the rooms, the inside, the lights and the look stay. Raw output: `<ra
   comment and "Lamp groups" above say so now.
 - **Views:** `out_fair_lead_e`, `out_fair_trail_e` and the west's (from the side), each with `_below` (from the
   ground under the fin).
+- **Details 3b (fixes):** raw output `<raw>/ship/v4/details3b/` (shots, `walk/`), `<raw>/ship/v4/notes/details3b.md`.
+  - *The portholes' glow* (`ship_hull_fittings.glow_bands`, `PORT_GLOW = (20, 0.45, 0.03, 1.6)`): the glass's face
+    is 20 flat concentric rings 2 mm over the dark glass body (`ext_porthole`, 0.05), each its own material
+    `ext_porthole__gNN`, the emission log-linear in (r / glass)^1.6 from 0.45 at the centre to 0.03 at the rim (each
+    ring about 15 % under the next in): a soft warm falloff, no disc and no ring edge. D3's warm core read as an
+    amber bullseye. The rings are open faces (closed rings' coincident walls sparkled as dotted circles). Their
+    `[light.mats]` entry is `ext_porthole`'s: `ship.gd` looks a material up by its name, else by its part before `__`.
+  - *The fairings plated flat:* a face on a fairing's own facet (`ship_hull_shape.p_fair_face`: its plane and normal,
+    and on no lens facet) is plated in the plan zone like the fins (`ship_hull_j.cells`); in the lens zone it was
+    shaded smooth into the barrel up to 30 deg: a dark smear across several plates with a zig-zag lower edge.
+  - *The jambs' top* (`j_cheeks`): the jamb face's plates lay their top edge flush (`lay_seams`; their insets chewed
+    the edge against the sky into steps) and the top strip runs `JAMB_OUT` 3.5 cm past the wall's outer face over the
+    skin's seam groove (the dark band), `JAMB_LIFT` 4 mm over the skin, 33 samples along the slope.
+  - *Seam corners* (`lay_seams`): a seam ending on a flush edge slides its corner `INSET` along that edge whatever the
+    angle, so the pieces on both sides of a facet fold end at one point; the exact inset's `INSET / sin` slide
+    differed per facet and left hairline black wedges past the groove (by the fin hatch). Hull-wide; no other change.
+  - *Tests:* `test_ship_fairing.py` asserts a fairing stands at most `MAX_OUT` 0.45 m out of the lens, fin and body
+    (grid) and its far point lies on the fin's skin (within 1 mm); the "no room loses skin" claim is dropped (the
+    union only grows, so it could not fail).
 
