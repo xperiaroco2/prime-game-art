@@ -60,6 +60,8 @@ VARIANTS = {
           "brow": 0.55, "spine": 6.05, "keel": 0.35},
 }
 DEFAULT = "E"
+LOWER = (9, 10, 11, 12, 13)   # the loop's faces from the trail edge round the belly to the lead edge
+LOWER_MATS = ("ext_silver_c", "ext_silver_c", "leg_metal")
 STATIONS = {"body": [0.0, 0.65, MOUTH_X, 1.5, 2.2, 2.9, 3.4, 3.75], "wing1": [3.75, 4.6, 5.5, 6.5],
             "wing2": [6.5, 7.5, 8.4, 9.1], "wing3": [9.1, 9.6, 10.1, 10.45, TIP_X]}
 
@@ -240,9 +242,14 @@ def hull_skin(args: dict, layout: dict) -> list:
     name = f"skin_{part}_{'e' if side > 0 else 'w'}"
     if part == "tip":
         v, f = _tip(var, side, layout)
-        return H._skin(name, v, f, size=1.5)
-    v, f = _loft(STATIONS[part], var, side, _mouth_skip if part == "body" else None)
-    return H._skin(name, v, f)
+        m, low, size = len(tip_profile(var, 0.0)), (0, 1, 2), 1.5
+    else:
+        v, f = _loft(STATIONS[part], var, side, _mouth_skip if part == "body" else None)
+        m, low, size = 14, LOWER, 1.7
+    # two tones: the underside (the loop's lower facets) darker than the bright upper skin (turnaround front)
+    under = [q for q in f if q[0] % m in low]
+    upper = [q for q in f if q[0] % m not in low]
+    return H._skin(name, v, upper, size=size) + H._skin(f"{name}_low", v, under, size=size, mats=LOWER_MATS)
 
 
 def skin_stripes(args: dict, layout: dict) -> list:

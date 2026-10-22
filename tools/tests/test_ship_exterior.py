@@ -36,54 +36,19 @@ def newell(p: list) -> tuple:
 
 
 class ShipExteriorTest(unittest.TestCase):
-    def test_the_wing_encloses_the_corridor(self) -> None:
-        cor = ROOMS["corridor_e"]
-        wall, bottom = DECK["wall_m"], DECK["floor_h"] - DECK["slab_m"]
-        top = DECK["floor_h"] + cor["clear_h"] + DECK["slab_m"]
-        half = cor["y"][1] + wall
-        for x in (3.7, 4.8, 5.9, 7.0, 8.0, 9.0):
-            rows = H._wing_rows(x)
-            for corner in ((-half, bottom), (half, bottom), (-half, top - 0.01), (half, top - 0.01)):
-                self.assertTrue(inside(rows, corner), f"x {x}: corridor corner {corner} outside the wing")
-
-    def test_the_wing_meets_the_pod(self) -> None:
-        rows = H._wing_rows(H.POD_X)
-        pod = {round(h, 3): r for r, h in H.POD if r > 0}
-        for y, h in rows:
-            if round(h, 3) in pod and abs(abs(y) - pod[round(h, 3)]) > 1e-6:
-                self.assertAlmostEqual(abs(y), pod[round(h, 3)], places=6, msg=f"step at h {h}")
-
-    def test_the_pod_clears_the_tip_room(self) -> None:
-        room = ROOMS["tip_e"]
-        wall_out = room["radius"] + DECK["wall_m"]
-        rim = DECK["floor_h"] + room["clear_h"]
-        for (r0, h0), (r1, h1) in zip(H.POD, H.POD[1:]):
-            for t in (0.0, 0.5, 1.0):
-                r, h = r0 + (r1 - r0) * t, h0 + (h1 - h0) * t
-                if DECK["floor_h"] - DECK["slab_m"] <= h <= rim:
-                    self.assertGreaterEqual(r, wall_out + 0.02, f"the pod cuts the tip room's wall at h {h:.2f}")
-        self.assertGreater(H.POD[-1][1], DECK["floor_h"] + room["apex_h"] + 0.25)
-        self.assertLessEqual(H.POD_X + max(r for r, _ in H.POD), LAYOUT["size"]["width_m"] / 2 + LAYOUT["size"]["tolerance_m"])
-
-    def test_the_drum_clears_the_hall(self) -> None:
-        hall = ROOMS["hall"]
-        outer = hall["radius"] + DECK["wall_m"]
-        rim = DECK["floor_h"] + hall["clear_h"] + DECK["slab_m"]
-        for r, h in H.DRUM:
-            if DECK["floor_h"] <= h <= rim:
-                self.assertGreaterEqual(r, outer, f"the drum cuts the hall's wall at h {h}")
-        self.assertGreater(H.DRUM[-1][1], DECK["floor_h"] + hall["apex_h"] + DECK["slab_m"])
-
     def test_faces_point_outward_after_the_mirror(self) -> None:
-        """The harness writes (x, -y, h): after it, every drum face's normal points away from the drum's axis."""
-        parts = H.hull_drum({}, LAYOUT)
+        """The harness writes (x, -y, h): after it, every face of a nozzle pod's under-skin points away from its axis
+        (the pod's barrel runs along local y, its axis at x 0, h 0)."""
+        parts = H.MODULES[-1].nozzle_pod({"r": 1.05, "length": 3.6}, LAYOUT)
         skin = [p for p in parts if p["name"].endswith("_seam")][0]
         verts = [(x, -y, h) for x, y, h in skin["verts"]]
         for face in skin["faces"]:
             p = [verts[i] for i in face]
             c = [sum(q[k] for q in p) / len(p) for k in range(3)]
             n = newell(p)
-            self.assertGreater(n[0] * c[0] + n[1] * c[1] + n[2] * (c[2] - 2.6), 0.0, f"inward face at {c}")
+            if abs(n[1]) > 0.9 * math.sqrt(sum(k * k for k in n)):
+                continue  # the flat rear cap faces along the axis
+            self.assertGreater(n[0] * c[0] + n[2] * c[2], 0.0, f"inward face at {c}")
 
     def test_placements_and_views(self) -> None:
         pieces = {p["id"] for p in EXT["pieces"]}
@@ -97,23 +62,6 @@ class ShipExteriorTest(unittest.TestCase):
         for v in EXT["shots"]["views"]:
             self.assertEqual(len(v), 6, f"view {v[0]} needs its 2D sheet")
 
-
-    def test_the_blades_stay_outside_the_rooms_and_the_mouth(self) -> None:
-        """The knife-edge flanges along the chines never reach into a room or over the mouth and ramp, and stay
-        within the footprint's length."""
-        mouth = next(r for r in LAYOUT["rooms"] if r["id"] == "mouth")
-        half_ramp = LAYOUT["ramp"]["width_m"] / 2
-        for side in (1.0, -1.0):
-            for edge in ("lead", "trail"):
-                (part,) = H.blade({"side": side, "edge": edge}, LAYOUT)
-                for x, y, h in part["verts"]:
-                    self.assertGreater(abs(x), max(half_ramp, abs(mouth["x"][0])), f"{edge} blade over the mouth")
-                    self.assertTrue(-7.05 < y < 7.0, f"{edge} blade at y {y:.2f} beyond the footprint")
-                    for room in ROOMS.values():
-                        if room["id"] == "mouth":
-                            continue
-                        self.assertFalse(sl.room_margin(room, (x, y)) > 0.0 and h < DECK["floor_h"] + room["clear_h"],
-                                         f"{edge} blade vertex ({x:.2f}, {y:.2f}, {h:.2f}) inside {room['id']}")
 
     def test_the_walk_video_keys(self) -> None:
         """The walk-through: 1280x720, 60..90 s, under 15 MB, every key's eye above the ground and, on the deck, at

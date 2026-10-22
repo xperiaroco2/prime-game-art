@@ -2,19 +2,12 @@
 builder(args, layout) returns ship_lib parts in the piece's local frame (plan axes x east, y south, h up; metres;
 layouts/ship/exterior.toml places them).
 
-The hull is a kit of faceted skins, each its own piece: the drum over the hall, the nose over the mouth, three wing
-sections per side (lofted sections that hug the corridors and widen into the tip pods), the tip pods' outer halves
-with the window opening, and the nozzle mount. Every skin face is cut into panels; each panel is a plate with a real
-chamfer that sinks into a dark seam (geometry, not a texture), over a dark under-skin. Skin faces point outward, so
-from inside the ship they are back faces and never hide a room (the interior lane's walls close the rooms).
-
-Numbers (plan metres; ship.toml holds the rooms): belly h 0.6 (under the 0.75 slab bottoms); wing crest h 4.0 over the
-corridors' ceilings (3.85); the wing's half-width at the crest and belly 1.6 by the corridors, widening to the pods;
-the lead chine from (1.5, -6.2) to (9.0, -3.0) to (10.75, -2.5), the trail chine from (3.3, 5.0) to (9.0, 2.9) to
-(10.75, 2.5); the chines rise from h 1.4 at the root to 2.0 at the pods (the manta's raised tips). The pod profile
-(r, h) round each tip room: (2.25, 0.6), (2.41, 1.5), (2.5, 2.0), (2.36, 3.4), (2.3, 4.0), (1.3, 4.45), (0, 4.6): the
-window opening is the band h 1.5..3.4 within 65 deg of the tip's axis. The drum over the hall: r 3.85..3.95 up to h
-4.75, a faceted cupola to h 5.55."""
+This module holds the shared helpers (boxes, rods, lathes, the panelled skin: every face cut into plates with a real
+chamfer sinking into a dark seam, over a dark under-skin) and the pieces that are not the skin: the tip windows' frames,
+the mouth's portal and lights, the ramp, the landing legs and the clearing. The skin itself is ship_hull_skin.py (the
+manta's continuous faceted loft, variant F of the silhouette grid); its details (canopies, pods, blades, seams,
+hatches, ground lamps) are ship_hull_detail.py. Skin faces point outward, so from inside the ship they are back faces
+and never hide a room (the interior lane's walls close the rooms). Belly h 0.6 (under the 0.75 slab bottoms)."""
 
 from __future__ import annotations
 
@@ -208,209 +201,6 @@ def _skin(name, verts, faces, size=1.7, inset=0.022, depth=0.014, mats=SILVERS):
     return parts
 
 
-# --- the wing ------------------------------------------------------------------------------------------------------
-def _wing_rows(x):
-    """The wing section at |x| (plan, east half): its loop of (y, h) points."""
-    u = (x - ROOT_X) / (POD_X - ROOT_X)
-    lead = _lin([(ROOT_X, -6.2), (9.0, -3.0), (POD_X, -2.5)], x)
-    trail = _lin([(ROOT_X, 5.2), (3.3, 5.0), (9.0, 2.9), (POD_X, 2.5)], x)
-    hc = 1.4 + 0.6 * u
-    c = _lin([(ROOT_X, 1.6), (8.0, 1.6), (POD_X, 2.3)], x)
-    b = _lin([(ROOT_X, 1.6), (8.0, 1.6), (POD_X, 2.25)], x)
-    raise_ = 0.16 * max(0.0, 1.0 - max(0.0, x - 8.0) / (POD_X - 8.0))
-    if x >= POD_X - 1e-6:  # the pod's profile at 90 deg, so the wing meets the pod without a step
-        return [(lead, hc), (-2.41, 1.5), (-b, BELLY_H), (b, BELLY_H), (2.41, 1.5), (trail, hc), (2.36, 3.4),
-                (c, CREST_H), (-c, CREST_H), (-2.36, 3.4)]
-    fl = _lerp((0, lead, hc), (0, -b, BELLY_H), 0.5)
-    rl = _lerp((0, trail, hc), (0, b, BELLY_H), 0.5)
-    fu = _lerp((0, lead, hc), (0, -c, CREST_H), 0.5)
-    ru = _lerp((0, trail, hc), (0, c, CREST_H), 0.5)
-    return [(lead, hc), (fl[1], fl[2]), (-b, BELLY_H), (b, BELLY_H), (rl[1], rl[2]), (trail, hc),
-            (ru[1], ru[2] + raise_), (c, CREST_H), (-c, CREST_H), (fu[1], fu[2] + raise_)]
-
-
-def _clip_y(poly, ymax):
-    """The (y, h) polygon clipped to y <= ymax."""
-    out = []
-    for a, b in zip(poly, poly[1:] + poly[:1]):
-        ina, inb = a[0] <= ymax, b[0] <= ymax
-        if ina:
-            out.append(a)
-        if ina != inb:
-            t = (ymax - a[0]) / (b[0] - a[0])
-            out.append((ymax, a[1] + (b[1] - a[1]) * t))
-    return out
-
-
-def hull_wing(args: dict, layout: dict) -> list:
-    """One wing section of the kit: lofted between its stations (args x: [x0, ..., x1], side), with the wedge's
-    root cap in front of the mouth on the first section."""
-    side = float(args.get("side", 1.0))
-    xs = [float(x) for x in args["x"]]
-    secs = [[(side * x, y, h) for y, h in _wing_rows(x)] for x in xs]
-    n = len(secs[0])
-    verts = [p for s in secs for p in s]
-    faces = [(i * n + j, i * n + (j + 1) % n, (i + 1) * n + (j + 1) % n, (i + 1) * n + j)
-             for i in range(len(secs) - 1) for j in range(n)]
-
-    def inner(c):
-        x = abs(c[0])
-        rows = _wing_rows(min(max(x, ROOT_X), POD_X))
-        return (c[0], sum(r[0] for r in rows) / len(rows), sum(r[1] for r in rows) / len(rows))
-    faces = L.orient(verts, faces, inner)
-    if xs[0] <= ROOT_X + 1e-6:
-        mouth_y = next(r for r in layout["rooms"] if r["id"] == "mouth")["y"][0]
-        cap = _clip_y(_wing_rows(xs[0]), mouth_y)
-        k = len(verts)
-        verts += [(side * xs[0], y, h) for y, h in cap]
-        faces += L.orient(verts, [tuple(range(k, len(verts)))], lambda c: (c[0] + side, c[1], c[2]))
-    return _skin(f"wing_{'e' if side > 0 else 'w'}", verts, faces)
-
-
-def stripes(args: dict, layout: dict) -> list:
-    """The cyan diagonal light bars along a wing's lower lead facet (one light strip, its own piece)."""
-    side = float(args.get("side", 1.0))
-    count, x0, x1 = int(args.get("count", 14)), 3.6, 9.4
-
-    def at(x, t):
-        r = _wing_rows(x)
-        return _lerp((side * x, r[0][0], r[0][1]), (side * x, r[2][0], r[2][1]), t)
-    out = []
-    step = (x1 - x0) / count
-    for k in range(count):
-        xa = x0 + k * step
-        quad = [at(xa, 0.14), at(xa + 0.2, 0.14), at(xa + 0.2 + 0.34, 0.72), at(xa + 0.34, 0.72)]
-        n = _norm(_cross(_sub(at(xa + 0.1, 0.4), at(xa, 0.4)), _sub(at(xa, 0.5), at(xa, 0.4))))
-        if n[1] > 0:
-            n = (-n[0], -n[1], -n[2])
-        v = [_add(q, n, 0.014) for q in quad] + [_add(q, n, -0.03) for q in quad]
-        out.append((v, [(0, 1, 2, 3), (7, 6, 5, 4), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]))
-    return [L.part("stripes", *L.merge(*out), "glow_cyan")]
-
-
-def blade(args: dict, layout: dict) -> list:
-    """A thin knife-edge flange along a wing's chine (args side, edge "lead" or "trail"): the manta's sharp edge that
-    the thick wing (the corridors' height) cannot have. Its root sinks 0.3 m into the hull; it reaches out w(x) in plan
-    (lead: forward, 0.75 m at the root, 0.95 m mid-wing, 0 at the pod; trail: back, 0.5 m) and thins from 0.12 m to a
-    2 cm edge. Its top catches the moon as a bright line along the wing."""
-    side = float(args.get("side", 1.0))
-    lead = args.get("edge", "lead") == "lead"
-    s = -1.0 if lead else 1.0
-    row = 0 if lead else 5
-    x0 = 1.65 if lead else 3.4
-    widths = [(x0, 0.75 if lead else 0.5), (6.0, 0.95 if lead else 0.55), (9.0, 0.6 if lead else 0.35), (10.2, 0.0)]
-    xs = [x0 + (10.2 - x0) * k / 16 for k in range(17)]
-    secs = []
-    for x in xs:
-        y, h = _wing_rows(x)[row]
-        w = max(0.02, _lin(widths, x))
-        t = 0.06 * min(1.0, w / 0.5) + 0.01
-        secs.append([(side * x, y - s * 0.3, h + t), (side * x, y + s * w, h + 0.012), (side * x, y + s * w, h - 0.012),
-                     (side * x, y - s * 0.3, h - t)])
-    n = 4
-    verts = [p for sec in secs for p in sec]
-    faces = [(i * n + j, i * n + (j + 1) % n, (i + 1) * n + (j + 1) % n, (i + 1) * n + j)
-             for i in range(len(secs) - 1) for j in range(n)]
-    faces += [(0, 1, 2, 3), tuple(range(len(verts) - 1, len(verts) - 5, -1))]
-
-    def inner(c):
-        y, h = _wing_rows(min(max(abs(c[0]), x0), 10.2))[row]
-        return (c[0], y, h)
-    faces = L.orient(verts, faces, inner)
-    return [L.part("blade", verts, faces, "hull_silver", solid=False)]
-
-
-# --- the drum over the hall, the nose, the pods, the nozzle mount --------------------------------------------------
-DRUM = [(0.0, BELLY_H), (3.85, BELLY_H), (3.95, 1.4), (3.95, CREST_H), (3.9, 4.75), (3.0, 5.15), (1.5, 5.45),
-        (0.0, 5.55)]
-
-
-def _revolve(profile, a_list, skip=None):
-    """Faces of a faceted solid of revolution round the h axis (plan frame): profile [(r, h)], angles a_list;
-    skip(mid_angle, h0, h1) leaves a cell out."""
-    verts, faces = [], []
-    for a0, a1 in zip(a_list, a_list[1:]):
-        for (r0, h0), (r1, h1) in zip(profile, profile[1:]):
-            if skip and skip((a0 + a1) / 2, min(h0, h1), max(h0, h1), max(r0, r1)):
-                continue
-            p = [(r0 * math.cos(a0), r0 * math.sin(a0), h0), (r0 * math.cos(a1), r0 * math.sin(a1), h0),
-                 (r1 * math.cos(a1), r1 * math.sin(a1), h1), (r1 * math.cos(a0), r1 * math.sin(a0), h1)]
-            if r0 < 1e-6:
-                p = [p[0], p[2], p[3]]
-            elif r1 < 1e-6:
-                p = p[:3]
-            k = len(verts)
-            verts += p
-            faces.append(tuple(range(k, k + len(p))))
-    return verts, faces
-
-
-def hull_drum(args: dict, layout: dict) -> list:
-    """The faceted drum and cupola over the hall, open where the corridors and the mouth pass (the wings and the nose
-    cover those from outside)."""
-    cor = 1.6
-    a_cor = math.asin(cor / 3.95)
-    cuts = (-a_cor, a_cor, math.pi - a_cor, -math.pi + a_cor, -math.pi / 2 - a_cor, -math.pi / 2 + a_cor)
-    a = L.angles(-math.pi, math.pi, math.radians(22.5), cuts)
-
-    def skip(mid, h0, h1, r):
-        if r < 3.8 or h0 >= CREST_H - 1e-6 or h1 <= BELLY_H + 1e-6:
-            return False
-        x, y = math.cos(mid), math.sin(mid)
-        return abs(y) * 3.95 < cor or (y < 0 and abs(x) * 3.95 < cor)
-    v, f = _revolve(DRUM, a, skip)
-    f = L.orient(v, f, lambda c: (0.0, 0.0, 2.6))
-    return _skin("drum", v, f, size=1.6)
-
-
-def hull_nose(args: dict, layout: dict) -> list:
-    """The brow over the mouth from the mouth frame up into the drum, its sides down to the wing roots, and the plate
-    under the mouth."""
-    hw = ROOT_X + 0.12
-
-    def slope(y):
-        r = _wing_rows(ROOT_X)
-        return r[0][1] + (y - r[0][0]) / (r[-2][0] - r[0][0]) * (r[-2][1] - r[0][1])
-    prof = [(-4.75, slope(-4.75)), (-4.75, 3.6), (-4.88, 3.95), (-3.1, 4.9), (-3.1, slope(-3.1))]
-    verts, faces = [], []
-    for s in (-1, 1):
-        k = len(verts)
-        verts += [(s * hw, y, h) for y, h in prof]
-        faces.append(tuple(range(k, k + len(prof))))
-    k = len(verts)
-    verts += [(-hw, -4.75, 3.6), (hw, -4.75, 3.6), (hw, -4.88, 3.95), (-hw, -4.88, 3.95)]
-    faces.append((k, k + 1, k + 2, k + 3))
-    k = len(verts)
-    verts += [(-hw, -4.88, 3.95), (hw, -4.88, 3.95), (hw, -3.1, 4.9), (-hw, -3.1, 4.9)]
-    faces.append((k, k + 1, k + 2, k + 3))
-    k = len(verts)
-    verts += [(-hw, -4.75, BELLY_H), (hw, -4.75, BELLY_H), (hw, -3.3, BELLY_H), (-hw, -3.3, BELLY_H)]
-    faces.append((k, k + 1, k + 2, k + 3))
-    faces = L.orient(verts, faces, lambda c: (0.0, -3.9, 2.4))
-    return _skin("nose", verts, faces, size=1.4)
-
-
-def hull_pod(args: dict, layout: dict) -> list:
-    """A tip pod's outer half (built facing +x; the west one is placed at yaw 180): the panelled skin with the window
-    opening (the band h 1.5..3.4 within 65 deg of the axis), the full cupola on top."""
-    room = next(r for r in layout["rooms"] if r["id"] == "tip_e")
-    win = room["window"]
-    floor = layout["deck"]["floor_h"]
-    sill, head = floor + win["sill_h"], floor + win["head_h"]
-    half = math.radians(win["half_angle_deg"])
-    a = L.angles(-math.pi / 2, math.pi / 2, math.radians(12.0), (-half, half))
-
-    def skip(mid, h0, h1, r):
-        return abs(mid) < half and h0 >= sill - 1e-6 and h1 <= head + 1e-6
-    wall = [p for p in POD if p[1] < 4.0 + 1e-6]
-    v, f = _revolve(wall, a, skip)
-    top = [p for p in POD if p[1] >= 4.0 - 1e-6]
-    v2, f2 = _revolve(top, L.angles(-math.pi, math.pi, math.radians(12.0)))
-    v, f = L.merge((v, f), (v2, f2))
-    f = L.orient(v, f, lambda c: (0.0, 0.0, 2.3))
-    return _skin("pod", v, f, size=1.5)
-
-
 def window_frame(args: dict, layout: dict) -> list:
     """The tip window's frame (facing +x): sill, head and jambs from the glass (r 2.2) out through the pod skin,
     and four mullions; closes the jamb between the room's wall and the skin."""
@@ -431,60 +221,6 @@ def window_frame(args: dict, layout: dict) -> list:
     for ang in (-2 * half / 3, -half / 3, half / 3, 2 * half / 3):
         out.append(L.sector(2.27, 2.36, ang - 0.012, ang + 0.012, sill, head))
     return [L.part("window_frame", *L.merge(*out), "ext_frame")]
-
-
-def nozzle_mount(args: dict, layout: dict) -> list:
-    """The faceted block behind the hall that holds the three nozzles (open toward the hall)."""
-    sec = [(-3.25, 0.6), (3.25, 0.6), (3.25, 3.3), (2.6, 3.9), (-2.6, 3.9), (-3.25, 3.3)]
-    ys = [(3.0, 0.0), (4.95, 0.0), (5.35, 0.22)]
-    secs = []
-    for y, k in ys:
-        cx, ch = 0.0, 2.25
-        secs.append([(cx + (x - cx) * (1 - k * 0.6 / 3.25 * 3.25 / 3.25), y, ch + (h - ch) * (1 - k * 0.6 / 1.65))
-                     for x, h in sec])
-    n = len(sec)
-    verts = [p for s in secs for p in s]
-    faces = [(i * n + j, i * n + (j + 1) % n, (i + 1) * n + (j + 1) % n, (i + 1) * n + j)
-             for i in range(len(secs) - 1) for j in range(n)]
-    faces.append(tuple(range(2 * n, 3 * n)))
-    faces = L.orient(verts, faces, lambda c: (0.0, min(c[1], 5.0) - (0.6 if c[1] > 5.3 else 0.0), 2.25))
-    return _skin("mount", verts, faces, size=1.5)
-
-
-# --- the parts that sit on the hull --------------------------------------------------------------------------------
-def bubble_collar(args: dict, layout: dict) -> list:
-    """The cockpit bubble's collar (local origin: the glass's base), sunk into the wedge, with its lip."""
-    collar = L.disc(0.8, 16, -1.0, -0.02)
-    lip = L.ring(0.7, 0.86, [-0.02, 0.07], math.radians(22.5))
-    return _skin("collar", *collar, size=1.0, inset=0.015, depth=0.01) + [L.part("collar_lip", *lip, "ext_frame")]
-
-
-def bubble_glass(args: dict, layout: dict) -> list:
-    """The tinted glass dome and its two frame arches (outside only: the hall's ceiling closes it from inside)."""
-    rings, segs, r = 6, 24, 0.74
-    v = [(r * math.cos(math.pi / 2 * i / rings) * math.cos(2 * math.pi * j / segs),
-          r * math.cos(math.pi / 2 * i / rings) * math.sin(2 * math.pi * j / segs),
-          0.05 + r * math.sin(math.pi / 2 * i / rings)) for i in range(rings) for j in range(segs)]
-    v.append((0.0, 0.0, 0.05 + r))
-    f = [(i * segs + j, i * segs + (j + 1) % segs, (i + 1) * segs + (j + 1) % segs, (i + 1) * segs + j)
-         for i in range(rings - 1) for j in range(segs)]
-    f += [((rings - 1) * segs + j, (rings - 1) * segs + (j + 1) % segs, len(v) - 1) for j in range(segs)]
-    f = L.orient(v, f, lambda c: (0.0, 0.0, 0.0))
-    arches = []
-    for k in range(-6, 6):
-        t0, t1 = math.pi / 2 * (k / 6), math.pi / 2 * ((k + 1) / 6)
-        p0 = (0.0, (r + 0.02) * math.sin(t0), 0.05 + (r + 0.02) * math.cos(t0))
-        p1 = (0.0, (r + 0.02) * math.sin(t1), 0.05 + (r + 0.02) * math.cos(t1))
-        arches.append(_obox(_lerp(p0, p1, 0.5), (0.035, 0, 0), _lerp((0, 0, 0), _sub(p1, p0), 0.5),
-                            _add((0, 0, 0), _norm(_lerp(p0, p1, 0.5)), 0.025)))
-    return [L.part("bubble_glass", v, f, "glass_tint", solid=False), L.part("bubble_arch", *L.merge(*arches), "ext_frame")]
-
-
-def bubble_glow(args: dict, layout: dict) -> list:
-    """The warm glow inside the bubble seen through the tinted glass: a lit floor disc and a dark console block."""
-    disc = L.disc(0.62, 16, 0.05, 0.08)
-    block = _obox((0.0, 0.2, 0.3), (0.28, 0, 0), (0, 0.14, 0), (0, 0, 0.22))
-    return [L.part("bubble_light", *disc, "ext_glow_warm"), L.part("bubble_console", *block, "ext_frame")]
 
 
 def mouth_frame(args: dict, layout: dict) -> list:
@@ -550,62 +286,56 @@ def ramp(args: dict, layout: dict) -> list:
 
 
 def ramp_lights(args: dict, layout: dict) -> list:
-    """The amber dashes along both edges of the ramp's deck (local origin: the hinge)."""
+    """The ramp's amber light (local origin: the hinge; step 2): a continuous strip along each edge of the deck, inside
+    the rails, and a cross strip at the foot."""
     rp, deck = layout["ramp"], layout["deck"]
     run = rp["hinge"][1] - rp["foot"][1]
     fall = deck["floor_h"] - deck["ground_h"]
     length = math.hypot(run, fall)
     along = (0.0, -run / length, -fall / length)
     up = _norm((0.0, -fall, run))
+    if up[2] < 0:
+        up = (0.0, -up[1], -up[2])
     out = []
     for s in (-1, 1):
-        for k in range(6):
-            sa = 0.25 + k * (length - 0.5) / 5.5
-            c = _add(_add(_add((0.0, 0.0, deck["floor_h"]), along, sa), (1.0, 0, 0), s * (rp["width_m"] / 2 - 0.2)),
-                     up, 0.004)
-            out.append(_obox(c, (0.035, 0, 0), _lerp((0, 0, 0), along, 0.13), _lerp((0, 0, 0), up, 0.01)))
+        c = _add(_add(_add((0.0, 0.0, deck["floor_h"]), along, length / 2), (1.0, 0, 0), s * (rp["width_m"] / 2 - 0.2)),
+                 up, 0.004)
+        out.append(_obox(c, (0.03, 0, 0), _lerp((0, 0, 0), along, length / 2 - 0.15), _lerp((0, 0, 0), up, 0.012)))
+    c = _add(_add((0.0, 0.0, deck["floor_h"]), along, length - 0.25), up, 0.004)
+    out.append(_obox(c, (rp["width_m"] / 2 - 0.3, 0, 0), _lerp((0, 0, 0), along, 0.03), _lerp((0, 0, 0), up, 0.012)))
     return [L.part("ramp_lights", *L.merge(*out), "glow_amber")]
 
 
 def leg(args: dict, layout: dict) -> list:
-    """A landing leg (splaying toward local +x; exterior.toml yaws it outward): the mount under the belly, the strut,
-    the knee, the lower strut, a chrome piston and the faceted foot pad."""
+    """A chunky landing leg (splaying toward local +x; exterior.toml yaws it outward; step 2): a faceted mount box under
+    the belly, a thick upper strut out to the knee, a knee drum, the lower strut, a twin chrome piston pair and a broad
+    faceted foot plate with three toes and a dark rubber sole. Numbers: mount 0.8 x 0.6, knee at (0.75, 0.36), the
+    struts r 0.15/0.12, the foot plate r 0.55 at x 1.0."""
     top = BELLY_H
-    knee, ankle, foot = (0.42, 0.0, 0.34), (0.62, 0.0, 0.14), (0.66, 0.0, 0.0)
-    mount = _obox((0.0, 0.0, top - 0.07), (0.3, 0, 0), (0, 0.24, 0), (0, 0, 0.07))
-    upper = _rod((0.0, 0.0, top - 0.1), knee, 0.1, 10)
-    lower = _rod(knee, ankle, 0.085, 10)
-    joint = _rod((knee[0], -0.14, knee[2]), (knee[0], 0.14, knee[2]), 0.13, 12)
-    piston = _rod((-0.12, 0.0, top - 0.12), (0.55, 0.0, 0.2), 0.045, 8)
-    pad_v, pad_f = L.disc(0.36, 8, 0.0, 0.07)
-    cap_v, cap_f = L.disc(0.28, 8, 0.07, 0.13)
-    pad = L.merge(([(x + foot[0], y, h) for x, y, h in pad_v], pad_f), ([(x + foot[0], y, h) for x, y, h in cap_v], cap_f))
-    return [L.part("leg_mount", *mount, "hull_dark"), L.part("leg_strut", *L.merge(upper, lower), "leg_metal"),
-            L.part("leg_joint", *joint, "ext_frame"), L.part("leg_piston", *piston, "ext_chrome"),
-            L.part("leg_pad", *pad, "hull_dark")]
-
-
-def nozzle(args: dict, layout: dict) -> list:
-    """An engine nozzle along +y (south): faceted housing, the bell, the dark throat (lights: nozzle_ring)."""
-    housing = _lathe_y([(0.0, -0.6), (0.78, -0.6), (0.8, 0.3), (0.74, 0.55)], 12, math.pi / 12)
-    bell = _lathe_y([(0.71, 0.5), (0.69, 1.32), (0.6, 1.36)], 24)
-    tv, tf = _lathe_y([(0.58, 1.34), (0.45, 1.0), (0.0, 0.85)], 24)
-    throat = (tv, L.orient(tv, tf, lambda c: (0.0, c[1] - 1.0, 0.0)))  # the funnel's inside faces the back
-    return (_skin("housing", *housing, size=0.9, inset=0.015, depth=0.01, mats=("hull_dark", "ext_frame"))
-            + [L.part("bell", *bell, "ext_frame"), L.part("throat", *throat, "ext_nozzle_inner")])
-
-
-def nozzle_ring(args: dict, layout: dict) -> list:
-    """A nozzle's cyan lights: the band round the bell and the segmented ring in its rear face."""
-    band = _lathe_y([(0.0, 1.0), (0.705, 1.0), (0.705, 1.12), (0.0, 1.12)], 24)
-    segs = []
-    for k in range(8):
-        a0, a1 = 2 * math.pi * k / 8 + 0.08, 2 * math.pi * (k + 1) / 8 - 0.08
-        v, f = L.sector(0.42, 0.52, a0, a1, 1.18, 1.22)
-        segs.append(([(x, h, y) for x, y, h in v], f))
-    core = _lathe_y([(0.0, 0.88), (0.18, 0.88), (0.0, 0.9)], 12)
-    return [L.part("nozzle_band", *band, "glow_cyan"), L.part("nozzle_segments", *L.merge(*segs), "glow_cyan"),
-            L.part("nozzle_core", *core, "ext_glow_cyan_dim")]
+    knee, ankle, foot = (0.75, 0.0, 0.36), (0.98, 0.0, 0.17), (1.0, 0.0, 0.0)
+    mount = _obox((0.05, 0.0, top - 0.1), (0.4, 0, 0), (0, 0.3, 0), (0, 0, 0.1))
+    cheek = [_obox((0.25, s * 0.2, top - 0.22), (0.22, 0, 0), (0, 0.04, 0), (0, 0, 0.1)) for s in (-1, 1)]
+    upper = _rod((0.1, 0.0, top - 0.18), knee, 0.15, 8)
+    lower = _rod(knee, ankle, 0.12, 8)
+    joint = _rod((knee[0], -0.2, knee[2]), (knee[0], 0.2, knee[2]), 0.19, 12)
+    ajoint = _rod((ankle[0], -0.15, ankle[2]), (ankle[0], 0.15, ankle[2]), 0.12, 10)
+    pistons = [_rod((-0.15, s * 0.13, top - 0.2), (0.8, s * 0.13, 0.24), 0.045, 8) for s in (-1, 1)]
+    sleeves = [_rod((-0.15, s * 0.13, top - 0.2), (0.3, s * 0.13, 0.42), 0.07, 8) for s in (-1, 1)]
+    pad = L.disc(0.55, 8, 0.03, 0.12)
+    padv = [(x + foot[0], y, hh) for x, y, hh in pad[0]]
+    cap_v, cap_f = L.disc(0.34, 8, 0.12, 0.2)
+    capv = [(x + foot[0], y, hh) for x, y, hh in cap_v]
+    toes = [_obox(_add((foot[0], 0.0, 0.06), (math.cos(a), math.sin(a), 0.0), 0.6), (0.12 * math.cos(a), 0.12 * math.sin(a), 0),
+                  (-0.08 * math.sin(a), 0.08 * math.cos(a), 0), (0, 0, 0.05)) for a in (-0.9, 0.0, 0.9)]
+    sole = L.disc(0.57, 8, 0.0, 0.03)
+    solev = [(x + foot[0], y, hh) for x, y, hh in sole[0]]
+    return [L.part("leg_mount", *L.merge(mount, *cheek), "hull_dark"),
+            L.part("leg_strut", *L.merge(upper, lower), "leg_metal"),
+            L.part("leg_joint", *L.merge(joint, ajoint), "ext_frame"),
+            L.part("leg_piston", *L.merge(*pistons), "ext_chrome"),
+            L.part("leg_sleeve", *L.merge(*sleeves), "hull_dark"),
+            L.part("leg_pad", *L.merge((padv, pad[1]), (capv, cap_f), *toes), "leg_metal"),
+            L.part("leg_sole", solev, sole[1], "hull_dark")]
 
 
 # --- the clearing --------------------------------------------------------------------------------------------------
@@ -677,11 +407,12 @@ def _outward(fn):
     return run
 
 
-for _name in ("hull_wing", "stripes", "blade", "hull_drum", "hull_nose", "hull_pod", "window_frame", "nozzle_mount",
-              "bubble_collar", "bubble_glass", "bubble_glow", "mouth_frame", "mouth_lights", "ramp", "ramp_lights",
-              "leg", "nozzle", "nozzle_ring", "ground", "pine", "rock"):
+for _name in ("window_frame", "mouth_frame", "mouth_lights", "ramp", "ramp_lights", "leg", "ground", "pine", "rock"):
     globals()[_name] = _outward(globals()[_name])
 
 import ship_hull_skin  # noqa: E402  (the manta's skin; it imports this module's helpers)
 
 MODULES.append(ship_hull_skin)
+import ship_hull_detail  # noqa: E402  (the canopies, pods, blades, hatches and lamps; step 2)
+
+MODULES.append(ship_hull_detail)

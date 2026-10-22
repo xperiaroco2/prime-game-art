@@ -1,8 +1,8 @@
 # The EXTERIOR lane's pieces (builders in tools/blender/ship_hull*.py) and their placements (art #263, docs/ship.md);
 # the format as in interior.toml. outside: the piece may stand beyond the hull's outline (the ramp meets the ground,
 # the clearing). The hull is a kit: the skin (ship_hull_skin.py: body, three wing sections and the tip fairing per side,
-# variant F of the silhouette grid), the nozzle mount; every light
-# run (stripes, mouth, ramp, nozzle rings, bubble glow) is its own piece. The clearing's pines and rocks were placed by
+# variant F of the silhouette grid) and its details (ship_hull_detail.py: canopies, pods, housing, blades,
+# seams, hatches, lamps); every light run (stripes, blades, seams, mouth, ramp, pod rings, canopy glow) is its own piece. The clearing's pines and rocks were placed by
 # a seeded ring (pines 30..46 m from the centre, young pines and rocks nearer) and are plain data from here on.
 
 place = [
@@ -19,28 +19,46 @@ place = [
   ["skin_tip_w", [0.00, 0.00, 0.00], 0.0],
   ["skin_stripes_e", [0.00, 0.00, 0.00], 0.0],
   ["skin_stripes_w", [0.00, 0.00, 0.00], 0.0],
-  ["nozzle_mount", [0.00, 0.00, 0.00], 0.0],
   # the tip windows' frames (built facing east; the west one at yaw 180)
   ["window_frame", [-10.75, 0.00, 0.00], 180.0],
   ["window_frame", [10.75, 0.00, 0.00], 0.0],
-  # the cockpit bubbles (outside only), the mouth, the ramp
-  ["bubble_collar", [-1.90, -3.75, 4.15], 0.0],
-  ["bubble_glass", [-1.90, -3.75, 4.15], 0.0],
-  ["bubble_glow", [-1.90, -3.75, 4.15], 0.0],
-  ["bubble_collar", [1.90, -3.75, 4.15], 0.0],
-  ["bubble_glass", [1.90, -3.75, 4.15], 0.0],
-  ["bubble_glow", [1.90, -3.75, 4.15], 0.0],
   ["mouth_frame", [0.00, -4.60, 0.00], 0.0],
   ["mouth_lights", [0.00, -4.60, 0.00], 0.0],
   ["ramp", [0.00, -4.60, 0.00], 0.0],
   ["ramp_lights", [0.00, -4.60, 0.00], 0.0],
-  # nozzles and their cyan rings
-  ["nozzle", [-2.40, 5.50, 2.30], 0.0],
-  ["nozzle_ring", [-2.40, 5.50, 2.30], 0.0],
-  ["nozzle", [0.00, 5.80, 2.60], 0.0],
-  ["nozzle_ring", [0.00, 5.80, 2.60], 0.0],
-  ["nozzle", [2.40, 5.50, 2.30], 0.0],
-  ["nozzle_ring", [2.40, 5.50, 2.30], 0.0],
+  # step 2 details: the canopies in their fairings (outside only), the pods and housing, blades, seams, hatches
+  ["canopy_fairing_e", [0.00, 0.00, 0.00], 0.0],
+  ["canopy_glass_e", [0.00, 0.00, 0.00], 0.0],
+  ["canopy_glow_e", [0.00, 0.00, 0.00], 0.0],
+  ["canopy_fairing_w", [0.00, 0.00, 0.00], 0.0],
+  ["canopy_glass_w", [0.00, 0.00, 0.00], 0.0],
+  ["canopy_glow_w", [0.00, 0.00, 0.00], 0.0],
+  ["pod_housing", [0.00, 0.00, 0.00], 0.0],
+  ["nozzle_pod_outer", [-2.75, 3.50, 2.15], 0.0],
+  ["pod_ring_outer", [-2.75, 3.50, 2.15], 0.0],
+  ["nozzle_pod_mid", [0.00, 3.90, 2.45], 0.0],
+  ["pod_ring_mid", [0.00, 3.90, 2.45], 0.0],
+  ["nozzle_pod_outer", [2.75, 3.50, 2.15], 0.0],
+  ["pod_ring_outer", [2.75, 3.50, 2.15], 0.0],
+  ["lead_blade_e", [0.00, 0.00, 0.00], 0.0],
+  ["seam_lines_e", [0.00, 0.00, 0.00], 0.0],
+  ["hatches_e", [0.00, 0.00, 0.00], 0.0],
+  ["lead_blade_w", [0.00, 0.00, 0.00], 0.0],
+  ["seam_lines_w", [0.00, 0.00, 0.00], 0.0],
+  ["hatches_w", [0.00, 0.00, 0.00], 0.0],
+  # amber ground lamps beside the legs' feet and the ramp
+  ["ground_lamp", [-2.99, -4.34, 0.00], 0.0],
+  ["ground_lamp", [2.99, -4.34, 0.00], 0.0],
+  ["ground_lamp", [-8.95, -1.32, 0.00], 0.0],
+  ["ground_lamp", [8.95, -1.32, 0.00], 0.0],
+  ["ground_lamp", [-8.95, 1.43, 0.00], 0.0],
+  ["ground_lamp", [8.95, 1.43, 0.00], 0.0],
+  ["ground_lamp", [-3.06, 5.42, 0.00], 0.0],
+  ["ground_lamp", [3.06, 5.42, 0.00], 0.0],
+  ["ground_lamp", [-1.75, -7.25, 0.00], 0.0],
+  ["ground_lamp", [1.75, -7.25, 0.00], 0.0],
+  ["ground_lamp", [-1.75, -5.90, 0.00], 0.0],
+  ["ground_lamp", [1.75, -5.90, 0.00], 0.0],
   # landing legs, yawed outward from the ship's centre
   ["leg", [-2.00, -2.90, 0.00], 124.6],
   ["leg", [2.00, -2.90, 0.00], 55.4],
@@ -231,24 +249,8 @@ builder = "skin_stripes"
 args = { side = -1.0, variant = "F" }
 
 [[pieces]]
-id = "nozzle_mount"
-builder = "nozzle_mount"
-
-[[pieces]]
 id = "window_frame"
 builder = "window_frame"
-
-[[pieces]]
-id = "bubble_collar"
-builder = "bubble_collar"
-
-[[pieces]]
-id = "bubble_glass"
-builder = "bubble_glass"
-
-[[pieces]]
-id = "bubble_glow"
-builder = "bubble_glow"
 
 [[pieces]]
 id = "mouth_frame"
@@ -268,16 +270,6 @@ outside = true
 id = "ramp_lights"
 builder = "ramp_lights"
 outside = true
-
-[[pieces]]
-id = "nozzle"
-builder = "nozzle"
-outside = true                               # the nozzle pods stick out of the stern (turnaround back and side)
-
-[[pieces]]
-id = "nozzle_ring"
-builder = "nozzle_ring"
-outside = true                               # the nozzle pods stick out of the stern (turnaround back and side)
 
 [[pieces]]
 id = "leg"
@@ -387,3 +379,99 @@ keys = [
   [[-6.0, -13.5, 2.3], [0.0, -1.0, 2.6], 5.0],
   [[-9.0, -15.0, 2.8], [0.0, 0.0, 2.4], 3.0],
 ]
+
+[[pieces]]
+id = "canopy_fairing_e"
+builder = "canopy"
+args = { part = "fairing", side = 1.0 }
+
+[[pieces]]
+id = "canopy_glass_e"
+builder = "canopy"
+args = { part = "glass", side = 1.0 }
+
+[[pieces]]
+id = "canopy_glow_e"
+builder = "canopy"
+args = { part = "glow", side = 1.0 }
+
+[[pieces]]
+id = "lead_blade_e"
+builder = "lead_blade"
+args = { side = 1.0 }
+outside = true
+
+[[pieces]]
+id = "seam_lines_e"
+builder = "seam_lines"
+args = { side = 1.0 }
+
+[[pieces]]
+id = "hatches_e"
+builder = "hatches"
+args = { side = 1.0 }
+
+[[pieces]]
+id = "canopy_fairing_w"
+builder = "canopy"
+args = { part = "fairing", side = -1.0 }
+
+[[pieces]]
+id = "canopy_glass_w"
+builder = "canopy"
+args = { part = "glass", side = -1.0 }
+
+[[pieces]]
+id = "canopy_glow_w"
+builder = "canopy"
+args = { part = "glow", side = -1.0 }
+
+[[pieces]]
+id = "lead_blade_w"
+builder = "lead_blade"
+args = { side = -1.0 }
+outside = true
+
+[[pieces]]
+id = "seam_lines_w"
+builder = "seam_lines"
+args = { side = -1.0 }
+
+[[pieces]]
+id = "hatches_w"
+builder = "hatches"
+args = { side = -1.0 }
+
+[[pieces]]
+id = "pod_housing"
+builder = "pod_housing"
+outside = true
+
+[[pieces]]
+id = "nozzle_pod_outer"
+builder = "nozzle_pod"
+args = { r = 1.05, length = 3.6 }
+outside = true                               # the pods stick out of the stern (turnaround back, side, top)
+
+[[pieces]]
+id = "pod_ring_outer"
+builder = "pod_ring"
+args = { r = 1.05, length = 3.6 }
+outside = true
+
+[[pieces]]
+id = "nozzle_pod_mid"
+builder = "nozzle_pod"
+args = { r = 1.2, length = 4.0 }
+outside = true                               # the pods stick out of the stern (turnaround back, side, top)
+
+[[pieces]]
+id = "pod_ring_mid"
+builder = "pod_ring"
+args = { r = 1.2, length = 4.0 }
+outside = true
+
+[[pieces]]
+id = "ground_lamp"
+builder = "ground_lamp"
+outside = true
