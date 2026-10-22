@@ -65,17 +65,23 @@ with (Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml").op
 _ROOM = {r["id"]: r for r in _SHIP["rooms"]}
 FLOOR = _SHIP["deck"]["floor_h"]                # the heights come from ship.toml (the hull lane owns them)
 # the hall
-N_HALL, R_HALL, H_HALL, APEX_HALL = 16, 3.4, _ROOM["hall"]["clear_h"], _ROOM["hall"]["apex_h"]
+N_HALL, R_HALL, H_HALL, APEX_HALL = 16, _ROOM["hall"]["radius"], _ROOM["hall"]["clear_h"], _ROOM["hall"]["apex_h"]
 PHI = math.pi / N_HALL
-HV = R_HALL / math.cos(PHI)                # vertex radius 3.467
-HW = R_HALL * math.tan(PHI)                # facet half width 0.676
-HC = HV * math.cos(2 * PHI)                # an opening's chord (two facets) 3.203
-HCH = HV * math.sin(2 * PHI)               # its half width 1.327
+HV = R_HALL / math.cos(PHI)                # vertex radius 4.078 (v2: R_HALL 4.0)
+HW = R_HALL * math.tan(PHI)                # facet half width 0.796
+HC = HV * math.cos(2 * PHI)                # an opening's chord (two facets) 3.768
+HCH = HV * math.sin(2 * PHI)               # its half width 1.561
+# v2 (5a mirrored): the plain wall spots at 45 deg (vents, sockets) get one flat chord over two facets, as an opening's
+FLATS = sorted(round(math.degrees(math.atan2(s["at"][1], s["at"][0])), 4) for s in _SHIP["stations"]["spot"]
+               if s["room"] == "hall" and s.get("normal"))
 R_RING = 1.25                              # the lamp ring and the ceiling's inner edge
 OPENINGS = {"corridor_e": 0.0, "mouth": -90.0, "corridor_w": 180.0}   # opening centre angles (deg)
 # the corridors: profile (u across, v up from the deck), the five modules between the portals
 H_COR = _ROOM["corridor_e"]["clear_h"]
-PROF = [(-1.25, 0.0), (-1.25, H_COR - 0.95), (-0.9, H_COR), (0.9, H_COR), (1.25, H_COR - 0.95), (1.25, 0.0)]
+COR_HALF = (_ROOM["corridor_e"]["y"][1] - _ROOM["corridor_e"]["y"][0]) / 2   # v2: 1.5 (3 m wide; v1 1.25)
+MOUTH_HALF = 1.25
+PROF = [(-COR_HALF, 0.0), (-COR_HALF, H_COR - 0.95), (-COR_HALF + 0.35, H_COR), (COR_HALF - 0.35, H_COR),
+        (COR_HALF, H_COR - 0.95), (COR_HALF, 0.0)]
 # the mouth passage (inside 3-1, hall_out-2's wide opening): the mouth room's full 2.5 m width and clear height, the
 # walls vertical to 0.35 m under the ceiling, only the top corners chamfered (the corridors' profile narrowed the view
 # out to about 1.6 m)
@@ -87,27 +93,34 @@ MOUTH_PROF = [(-1.25, 0.0), (-1.25, H_MOUTH - 0.35), (-0.95, H_MOUTH), (0.95, H_
 def _prof(args):
     return MOUTH_PROF if args.get("prof") == "mouth" else PROF
 
+
+def _half(args):
+    """A passage's half width: the mouth's or a corridor's."""
+    return MOUTH_HALF if (args or {}).get("prof") == "mouth" else COR_HALF
+
 PORTAL_D = 0.15
 # the tip rooms
-R_TIP, H_TIP, APEX_TIP, R_TIP_RING = 2.1, _ROOM["tip_e"]["clear_h"], _ROOM["tip_e"]["apex_h"], 0.42
+R_TIP, H_TIP, APEX_TIP, R_TIP_RING = (_ROOM["tip_e"]["radius"] + 0.05, _ROOM["tip_e"]["clear_h"],
+                                      _ROOM["tip_e"]["apex_h"], 0.42)   # v2: room r 1.8 -> vertex radius 1.85
 # polish 4: R_TIP_RING 0.6 -> 0.42 (the tip ceiling's pale lamp cog read oversized from the room)
-TIP_X = 10.75
-WIN_HALF, DOOR_HALF = 65.0, 37.6
+TIP_X = _ROOM["tip_e"]["centre"][0]                  # v2: 8.3
+WIN_HALF = 65.0
+DOOR_HALF = math.degrees(math.asin((COR_HALF + 0.03) / R_TIP))   # v2: the 3 m corridor's chord, 55.8 (v1 37.6)
+TIP_STEP = (180.0 - DOOR_HALF - WIN_HALF) / 3        # a wall facet's angle between the window and the door
 SILL, HEAD = _ROOM["tip_e"]["window"]["sill_h"], _ROOM["tip_e"]["window"]["head_h"]
-TIP_CHORD = -R_TIP * math.cos(D(DOOR_HALF))          # -1.664
-TIP_CHORD_H = R_TIP * math.sin(D(DOOR_HALF))         # 1.281
-COR_X0 = HC + PORTAL_D                               # 3.353
-COR_X1 = TIP_X + TIP_CHORD - PORTAL_D                # 8.936
-N_MOD = 5
-MOD_L = (COR_X1 - COR_X0) / N_MOD                    # 1.117
-MOUTH_L = 4.6 - COR_X0                               # the mouth passage, from the hall portal to the ramp hinge
+TIP_CHORD = -R_TIP * math.cos(D(DOOR_HALF))          # -1.039
+TIP_CHORD_H = R_TIP * math.sin(D(DOOR_HALF))         # 1.53
+COR_X0 = HC + PORTAL_D                               # 3.918
+COR_X1 = TIP_X + TIP_CHORD - PORTAL_D                # 7.111
+N_MOD = 3
+MOD_L = (COR_X1 - COR_X0) / N_MOD                    # 1.064
+MOUTH_L = 4.6 - COR_X0                               # the mouth passage, from the hall portal to the ramp hinge (0.68)
 
 
 def tip_vertices() -> list[float]:
     """The tip room's vertex angles (deg, east room): window segments, wall facets, the corridor chord."""
     win = [-WIN_HALF + 2 * WIN_HALF * i / 8 for i in range(9)]
-    step = (180.0 - DOOR_HALF - WIN_HALF) / 3
-    walls = [WIN_HALF + step * i for i in range(1, 4)]
+    walls = [WIN_HALF + TIP_STEP * i for i in range(1, 4)]
     return win + walls + [-a for a in walls]
 
 
@@ -161,7 +174,11 @@ def wall_panel(args, layout):
     tris = (([(-e, u0), (e, u0), (-e, u1)], [(e, u0), (e, u1), (-e, u1)]) if tone == "a" else
             ([(-e, u0), (e, u0), (e, u1)], [(-e, u0), (e, u1), (-e, u1)]))
     up = [G.inset(t, 0.006) for t in tris]
-    return [P("body", G.slab(fr, G.rect(-hw, hw, 0.0, h), -0.2, 0.0), "int_silver_b"),
+    out = []
+    if args.get("soffit"):  # a flat chord over two hall facets: close the ceiling's rim behind it
+        tri = [(0.0, -hw), (HV - HC, 0.0), (0.0, hw)]
+        out.append(P("soffit", G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08), "int_silver_b"))
+    return out + [P("body", G.slab(fr, G.rect(-hw, hw, 0.0, h), -0.2, 0.0), "int_silver_b"),
             P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.16), 0.0, 0.015), "int_dark"),
             P("diamond", pyramid(fr, dia, 0.0, 0.035, 0.1, 0.012), lo),
             P("corners", M(*[G.slab(fr, G.inset(c, 0.004), 0.0, 0.025, 0.01) for c in corners]), hi),
@@ -275,7 +292,7 @@ def portal_strip(args, layout):
 
 # --- the hall ------------------------------------------------------------------------------------------------------
 def hall_floor_base(args, layout):
-    return [P("base", L.disc(3.75, N_HALL, FLOOR - 0.25, FLOOR - 0.035), "int_dark")]
+    return [P("base", L.disc(R_HALL + 0.35, N_HALL, FLOOR - 0.25, FLOOR - 0.035), "int_dark")]
 
 
 def floor_disc(args, layout):
@@ -337,7 +354,7 @@ def hall_floor_rim(args, layout):
 
 def hall_threshold(args, layout):
     """The floor plate of an opening, from the amber ring through the portal (origin on the chord)."""
-    poly = G.arc(2.66, -2 * PHI, 2 * PHI) + [(HC, HCH), (COR_X0 - 0.001, 1.25), (COR_X0 - 0.001, -1.25), (HC, -HCH)]
+    poly = G.arc(2.66, -2 * PHI, 2 * PHI) + [(HC, HCH), (COR_X0 - 0.001, COR_HALF), (COR_X0 - 0.001, -COR_HALF), (HC, -HCH)]
     return [P("plate", shift(G.slab(G.floor_frame(0.0), poly, FLOOR - 0.035, FLOOR, 0.006), -HC), "int_plate")]
 
 
@@ -415,13 +432,15 @@ def lamp(args, layout):
 
 
 # --- the corridors and the mouth passage (one module, length from args) ---------------------------------------------
-def _north(y=-1.25, h=FLOOR):
+def _north(y=None, h=FLOOR, args=None):
+    y = -_half(args) if y is None else y
     return G.Frame((0.0, y, h), (1, 0, 0), (0, 0, 1), (0, 1, 0))
 
 
 def cor_floor_base(args, layout):
     hl = args["length"] / 2
-    return [P("base", L.box(-hl, hl, -1.45, 1.45, FLOOR - 0.25, FLOOR - 0.04), "int_dark")]
+    hw = _half(args) + 0.2
+    return [P("base", L.box(-hl, hl, -hw, hw, FLOOR - 0.25, FLOOR - 0.04), "int_dark")]
 
 
 def cor_grate(args, layout):
@@ -442,7 +461,7 @@ def cor_grate(args, layout):
 def cor_gutter(args, layout):
     """The solid floor strip along the north wall (the amber strip sits on it)."""
     hl = args["length"] / 2 - 0.004
-    return [P("plate", G.slab(G.floor_frame(0.0), G.rect(-hl, hl, -1.25, -0.895), FLOOR - 0.035, FLOOR, 0.008),
+    return [P("plate", G.slab(G.floor_frame(0.0), G.rect(-hl, hl, -_half(args), -0.895), FLOOR - 0.035, FLOOR, 0.008),
               "int_plate")]
 
 
@@ -459,7 +478,7 @@ def floor_light(args, layout):
 
 def cor_wall_low(args, layout):
     hl = args["length"] / 2
-    fr = _north()
+    fr = _north(args=args)
     e = hl - 0.006
     tone = "int_silver_a" if args.get("tone", "a") == "a" else "int_silver_b"
     return [P("body", G.slab(fr, G.rect(-hl, hl, 0.0, 1.1), -0.2, 0.0), "int_silver_b"),
@@ -470,7 +489,7 @@ def cor_wall_low(args, layout):
 def cor_channel(args, layout):
     """The cable bay at the wall's bend (corridor.jpg): a dark recess 0.24 m deep with bevelled sill and lintel."""
     hl = args["length"] / 2
-    fr = _north()
+    fr = _north(args=args)
     lips = M(G.slab(fr, G.rect(-hl, hl, 1.04, 1.12), -0.2, 0.06, 0.02),
              G.slab(fr, G.rect(-hl, hl, 1.43, 1.5), -0.2, 0.05, 0.02))
     return [P("back", G.slab(fr, G.rect(-hl, hl, 1.1, 1.45), -0.24, -0.2), "int_dark"), P("lips", lips, "int_silver_c")]
@@ -483,16 +502,25 @@ def cor_cables(args, layout):
     for (w, h, r, mat, ph) in ((-0.17, 1.165, 0.032, "int_cable_red", 0.0), (-0.12, 1.235, 0.026, "int_cable_yellow",
                                1.3), (-0.17, 1.305, 0.03, "int_cable_blue", 2.1), (-0.13, 1.38, 0.028,
                                "int_cable_black", 0.7)):
-        pts = [(-hl + 2 * hl * t / 8, -1.25 + w + 0.012 * math.sin(math.pi * t / 4 + ph) * math.sin(math.pi * t / 8),
+        pts = [(-hl + 2 * hl * t / 8, -_half(args) + w + 0.012 * math.sin(math.pi * t / 4 + ph) * math.sin(math.pi * t / 8),
                 FLOOR + h - 0.014 * math.sin(math.pi * t / 8)) for t in range(9)]
         out.append(P(mat[10:], G.tube(pts, r, 8), mat))
     return out
 
 
+def cor_wall_mid(args, layout):
+    """v2: the plain wall between the low wall and the upper wall where a cable bay would be (a breaker board's)."""
+    hl = args["length"] / 2
+    fr = _north(args=args)
+    return [P("body", G.slab(fr, G.rect(-hl, hl, 1.1, PROF[1][1]), -0.2, 0.0), "int_silver_b"),
+            P("panel", G.pillow(fr, -hl + 0.01, hl - 0.01, 1.12, PROF[1][1] - 0.02, 0.0, 0.03, 0.07, 0.012),
+              "int_silver_a")]
+
+
 def clip_h(args, layout):
     """A clip frame across a bay (materials-3): a bevelled bar in front of the cables, its two arms back to the bay,
     bolted to the sill and the lintel."""
-    fr = _north()
+    fr = _north(args=args)
     bar = M(G.slab(fr, G.rect(-0.03, 0.03, 1.1, 1.45), 0.0, 0.03, 0.008),
             G.slab(fr, G.rect(-0.03, 0.03, 1.1, 1.14), -0.2, 0.03, 0.006),
             G.slab(fr, G.rect(-0.03, 0.03, 1.41, 1.45), -0.2, 0.03, 0.006))
@@ -513,7 +541,7 @@ def cor_wall_up(args, layout):
     body = [G.slab(fr, G.rect(-hl, hl, 0.0, vlen), -0.2, 0.0)]
     panels = [G.pillow(fr, -e, e, 0.05, vlen - 0.03, 0.0, 0.03, 0.065, 0.012)]
     if a[1] > PROF[1][1] + 0.01:  # the mouth: a vertical panel from the bay's lintel up to the chamfer
-        fv = _north()
+        fv = _north(args=args)
         body.append(G.slab(fv, G.rect(-hl, hl, PROF[1][1], a[1]), -0.2, 0.0))
         panels.append(G.pillow(fv, -e, e, PROF[1][1] + 0.05, a[1] - 0.03, 0.0, 0.03, 0.065, 0.012))
     return [P("body", M(*body), "int_silver_b"), P("panel", M(*panels), tone)]
@@ -573,10 +601,11 @@ def tip_floor_rim(args, layout):
     fr = G.floor_frame(0.0)
     plates = []
     for a0, a1 in tip_edges():
-        arc = G.arc(1.8, D(a0) + 0.003 / 1.8, D(a1) - 0.003 / 1.8)
+        ri = R_TIP - 0.3  # v2: the plates' inner edge 0.3 m in from the wall (v1 at 1.8 in a 2.1 room)
+        arc = G.arc(ri, D(a0) + 0.003 / ri, D(a1) - 0.003 / ri)
         if a1 - a0 > 2 * DOOR_HALF - 1:
             v0, v1 = _tv(a0), _tv(a1)
-            poly = arc + [v1, (COR_X1 - TIP_X + 0.001, -1.25), (COR_X1 - TIP_X + 0.001, 1.25), v0]
+            poly = arc + [v1, (COR_X1 - TIP_X + 0.001, -COR_HALF), (COR_X1 - TIP_X + 0.001, COR_HALF), v0]
         else:
             poly = arc + [_tv(a1), _tv(a0)]
         plates.append(G.slab(fr, poly, FLOOR - 0.035, FLOOR, 0.006))

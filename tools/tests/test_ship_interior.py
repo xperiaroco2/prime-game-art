@@ -55,10 +55,10 @@ class ShipInteriorTest(unittest.TestCase):
         self.assertEqual(max(u for u, _ in S.PROF), half)
 
     def test_the_openings_take_the_corridor(self) -> None:
-        self.assertGreater(S.HCH, 1.25)                    # the hall's chords
-        self.assertGreater(S.TIP_CHORD_H, 1.25)            # the tip rooms' chords
-        self.assertAlmostEqual(S.COR_X0, 3.353, places=2)  # the corridor modules run portal to portal
-        self.assertAlmostEqual(S.COR_X1, 8.936, places=2)
+        self.assertGreater(S.HCH, S.COR_HALF)              # the hall's chords
+        self.assertGreater(S.TIP_CHORD_H, S.COR_HALF)      # the tip rooms' chords
+        self.assertAlmostEqual(S.COR_X0, 3.918, places=2)  # the corridor modules run portal to portal (v2)
+        self.assertAlmostEqual(S.COR_X1, 7.111, places=2)
 
     def test_head_room(self) -> None:
         pl = SHIP["player"]
@@ -110,8 +110,9 @@ class ShipInteriorTest(unittest.TestCase):
         for pid, (x, y, _), _yaw in INTERIOR["place"]:
             for s in spots:
                 d = math.hypot(x - s["at"][0], y - s["at"][1])
-                if pid == "cor_arch" and s.get("at_wall"):
-                    self.assertGreater(abs(x - s["at"][0]), r + 0.09, (pid, x, s["id"]))
+                if pid == "cor_arch" and s.get("normal") and s["room"].startswith("corridor"):
+                    self.assertGreater(abs(x - s["at"][0]), SHIP["stations"]["plain_width_m"] / 2 + 0.15,
+                                       (pid, x, s["id"]))
                 if pid.startswith(("cup", "spill", "cable_coil", "floor_patch")):  # the small details
                     self.assertGreater(d, r + 0.4, (pid, x, y, s["id"]))
 

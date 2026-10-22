@@ -60,18 +60,21 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "cor_channel": ("cor_channel", {"length": S.MOD_L}, True),
     "cor_cables": ("cor_cables", {"length": S.MOD_L}, False),
     "clip_h": ("clip_h", {}, False),
+    "mouth_clip_h": ("clip_h", {"prof": "mouth"}, False),
+    "cor_wall_mid": ("cor_wall_mid", {"length": S.MOD_L}, True),     # v2: the plain wall at a breaker board's spot
+    "hall_panel_flat": ("wall_panel", {"half": S.HCH, "height": S.H_HALL, "tone": "a", "soffit": True}, True),
     "cor_wall_up_a": ("cor_wall_up", {"length": S.MOD_L, "tone": "a"}, True),
     "cor_wall_up_b": ("cor_wall_up", {"length": S.MOD_L, "tone": "b"}, True),
     "cor_ceil": ("cor_ceil", {"length": S.MOD_L}, False),
     "cor_arch": ("cor_arch", {}, True),
     "arch_strip_l": ("cor_arch_strip", {"side": -1}, False),
     "arch_strip_r": ("cor_arch_strip", {"side": 1}, False),
-    "mouth_floor_base": ("cor_floor_base", {"length": S.MOUTH_L}, True),
+    "mouth_floor_base": ("cor_floor_base", {"prof": "mouth", "length": S.MOUTH_L}, True),
     "mouth_grate": ("cor_grate", {"length": S.MOUTH_L}, True),
-    "mouth_gutter": ("cor_gutter", {"length": S.MOUTH_L}, True),
-    "mouth_wall_low": ("cor_wall_low", {"length": S.MOUTH_L, "tone": "a"}, True),
-    "mouth_channel": ("cor_channel", {"length": S.MOUTH_L}, True),
-    "mouth_cables": ("cor_cables", {"length": S.MOUTH_L}, False),
+    "mouth_gutter": ("cor_gutter", {"prof": "mouth", "length": S.MOUTH_L}, True),
+    "mouth_wall_low": ("cor_wall_low", {"prof": "mouth", "length": S.MOUTH_L, "tone": "a"}, True),
+    "mouth_channel": ("cor_channel", {"prof": "mouth", "length": S.MOUTH_L}, True),
+    "mouth_cables": ("cor_cables", {"prof": "mouth", "length": S.MOUTH_L}, False),
     "mouth_wall_up": ("cor_wall_up", {"length": S.MOUTH_L, "tone": "a", "prof": "mouth"}, True),
     "mouth_ceil": ("cor_ceil", {"length": S.MOUTH_L, "prof": "mouth"}, False),
     # inside 3-1: the mouth's own wide portal and arch (S.MOUTH_PROF: hall_out-2's opening)
@@ -84,13 +87,13 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     # the tip rooms
     "tip_floor_base": ("tip_floor_base", {}, True),
     "tip_floor_disc": ("floor_disc", {"radius": 0.62}, True),
-    "tip_grate": ("radial_grate", {"r0": 0.7, "r1": 1.72, "half_deg": 22.5 - SPOKE_TIP, "ref": 1.2}, True),
-    "tip_spoke": ("spoke", {"r0": 0.68, "r1": 1.76, "half_deg": SPOKE_TIP, "ref": 1.2}, True),
+    "tip_grate": ("radial_grate", {"r0": 0.7, "r1": S.R_TIP - 0.33, "half_deg": 22.5 - SPOKE_TIP, "ref": 1.2}, True),
+    "tip_spoke": ("spoke", {"r0": 0.68, "r1": S.R_TIP - 0.29, "half_deg": SPOKE_TIP, "ref": 1.2}, True),
     "tip_light": ("floor_light", {"length": 0.72}, False),
     "tip_floor_rim": ("tip_floor_rim", {}, True),
-    "tip_panel_a": ("wall_panel", {"half": S.R_TIP * math.sin(math.radians(12.9)), "height": S.H_TIP, "tone": "a"},
+    "tip_panel_a": ("wall_panel", {"half": S.R_TIP * math.sin(math.radians(S.TIP_STEP / 2)), "height": S.H_TIP, "tone": "a"},
                     True),
-    "tip_panel_b": ("wall_panel", {"half": S.R_TIP * math.sin(math.radians(12.9)), "height": S.H_TIP, "tone": "b"},
+    "tip_panel_b": ("wall_panel", {"half": S.R_TIP * math.sin(math.radians(S.TIP_STEP / 2)), "height": S.H_TIP, "tone": "b"},
                     True),
     "tip_pilaster": ("pilaster", {"height": S.H_TIP}, True),
     "tip_pilaster_strip": ("pilaster_strip", {"height": S.H_TIP}, False),
@@ -119,9 +122,24 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "floor_patch_a": ("floor_patch", {"u": 0.42, "v": 0.36}, False),
     "floor_patch_b": ("floor_patch", {"u": 0.36, "v": 0.3}, False),
     "rim_bolts": ("rim_bolts", {}, False),
-    "scratch_a": ("scratches", {"seed": 5}, False),
-    "scratch_b": ("scratches", {"seed": 9, "count": 12}, False),
 }
+# v2: the plan box [x0, x1, y0, y1] in its own frame of every piece that stands out from a wall: `ship --check` keeps
+# them off the station spots' plain panels (layouts/ship/ship.toml [stations])
+_V = [-0.2, 0.2, -0.2, 0.2]
+_BAY = [-S.MOD_L / 2, S.MOD_L / 2, -S.COR_HALF - 0.05, -S.COR_HALF + 0.35]
+FOOT: dict[str, list[float]] = {
+    "hall_trunk": _V, "hall_trunk_cables": _V, "trunk_clip": _V, "hall_pilaster": _V, "hall_pilaster_strip": _V,
+    "tip_trunk": _V, "tip_trunk_cables": _V, "tip_pilaster": _V, "tip_pilaster_strip": _V,
+    "cor_channel": _BAY, "cor_cables": _BAY, "clip_h": [-0.05, 0.05, -S.COR_HALF - 0.05, -S.COR_HALF + 0.35],
+    "cor_arch": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
+    "arch_strip_l": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
+    "arch_strip_r": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
+}
+# v2: the breaker boards' plain wall: no cable bay over [x - half, x + half] on a corridor's front wall (y < 0)
+BREAKERS = [(s["at"][0], S._SHIP["stations"]["plain_width_m"] / 2 + 0.1) for s in S._SHIP["stations"]["spot"]
+            if s["room"].startswith("corridor")]
+# v2: the corridors' cyan arches (plan |x|), off the breaker boards' span 4.35..6.15
+ARCH_X = (4.15, 6.4)
 
 
 def polar(r: float, a: float, c=(0.0, 0.0), room: float = 0.0) -> list[float]:
@@ -153,10 +171,12 @@ def placements() -> list[tuple[str, list[float], float]]:
     facets = [11.25 + 22.5 * k for k in range(16)]
     facets = [((a + 180) % 360) - 180 for a in facets]
     door = [a for a in facets if any(abs(((a - o + 180) % 360) - 180) < 12 for o in openings)]
-    walls = [a for a in facets if a not in door]
+    flats = S.FLATS
+    flat_f = [a for a in facets if any(abs(((a - f + 180) % 360) - 180) < 12 for f in flats)]
+    walls = [a for a in facets if a not in door and a not in flat_f]
     verts = [((22.5 * k + 180) % 360) - 180 for k in range(16)]
     edge = [v for v in verts if any(abs(abs(((v - o + 180) % 360) - 180) - 22.5) < 1 for o in openings)]
-    plain = [v for v in verts if v not in edge and all(abs(((v - o + 180) % 360) - 180) > 1 for o in openings)]
+    plain = [v for v in verts if v not in edge and all(abs(((v - o + 180) % 360) - 180) > 1 for o in openings + flats)]
     for k in range(8):
         put("hall_grate", polar(1.8, 22.5 + 45 * k), -(22.5 + 45 * k))
         put("hall_spoke", polar(1.8, 45 * k), -45 * k)
@@ -179,6 +199,8 @@ def placements() -> list[tuple[str, list[float], float]]:
         put("hall_trunk_cables", polar(S.HV, v), -v)
         for h in (0.55, 1.25, 1.95, 2.65):
             put("trunk_clip", polar(S.HV, v), -v, h)
+    for f in flats:  # v2: one flat panel over two facets at each vent and socket spot
+        put("hall_panel_flat", polar(S.HC, f), -f)
     for o in openings:
         pre = "mouth_" if o == S.OPENINGS["mouth"] else ""
         put("hall_threshold", polar(S.HC, o), -o)
@@ -193,23 +215,30 @@ def placements() -> list[tuple[str, list[float], float]]:
             mc = local((0.0, 0.0), yaw, x0 + length * (i + 0.5), 0.0)
             put(f"{prefix}_grate", mc, yaw)
             put(f"{prefix}_ceil", mc, yaw)
+            half = S.MOUTH_HALF if prefix == "mouth" else S.COR_HALF
             for side in (0.0, 180.0):
                 t = tones[(i + (side > 0)) % len(tones)]
                 put(f"{prefix}_gutter", mc, yaw + side)
                 put(f"{prefix}_wall_low{t}", mc, yaw + side)
-                put(f"{prefix}_channel", mc, yaw + side)
-                put(f"{prefix}_cables", mc, yaw + side)
                 put(f"{prefix}_wall_up{t}", mc, yaw + side)
-                for dx in (-0.3, 0.3):
-                    put("clip_h", local(mc, yaw + side, dx, 0.0), yaw + side)
-                put("floor_light", local(mc, yaw, 0.0, -1.075 if side == 0 else 1.075), yaw)
+                wall = local(mc, yaw + side, 0.0, -half)
+                if prefix == "cor" and wall[1] < 0 and any(abs(abs(wall[0]) - bx) < bh + length / 2
+                                                           for bx, bh in ((abs(x), h) for x, h in BREAKERS)):
+                    put("cor_wall_mid", mc, yaw + side)  # v2: a breaker board's plain wall, no cable bay
+                else:
+                    put(f"{prefix}_channel", mc, yaw + side)
+                    put(f"{prefix}_cables", mc, yaw + side)
+                    for dx in (-0.3, 0.3):
+                        put("mouth_clip_h" if prefix == "mouth" else "clip_h", local(mc, yaw + side, dx, 0.0),
+                            yaw + side)
+                put("floor_light", local(mc, yaw, 0.0, -(half - 0.175) if side == 0 else half - 0.175), yaw)
         return c
 
     for s, yaw in ((1, 0.0), (-1, 180.0)):
         c = passage("cor", S.COR_X0, S.N_MOD, S.MOD_L, yaw, ["_a", "_b"])
         put("cor_floor_base", c, yaw)
-        for i in (1, 2, 3):  # no arch at 7.82: the socket spot (8, -1) stays clear
-            p = local((0.0, 0.0), yaw, S.COR_X0 + S.MOD_L * i, 0.0)
+        for x in ARCH_X:  # v2: off the breaker board's plain wall
+            p = local((0.0, 0.0), yaw, x, 0.0)
             for pid in ("cor_arch", "arch_strip_l", "arch_strip_r"):
                 put(pid, p, yaw)
     c = passage("mouth", S.COR_X0, 1, S.MOUTH_L, 90.0, [""])
@@ -269,15 +298,9 @@ def placements() -> list[tuple[str, list[float], float]]:
     # polish 4: cup_a in the hall-out view's foreground (fov 52: its floor shows from y -2.9 on), cup_c in hall-in's
     for pid, xy, yaw in (("cup_a", [0.75, -3.0], 145.0), ("spill_a", [0.75, -3.0], 145.0),
                          ("cup_c", [-1.05, -0.45], 200.0), ("spill_c", [-1.05, -0.45], 200.0),
-                         ("cup_b", [-6.6, 0.7], 80.0), ("cable_coil", [6.5, 0.72], 20.0),
+                         ("cup_b", [-6.6, 0.95], 80.0), ("cable_coil", [6.4, 1.0], 20.0),
                          ("floor_patch_a", polar(2.92, 140.0), -140.0 + 8.0), ("floor_patch_b", polar(2.92, -50.0), 50.0 - 5.0)):
         put(pid, xy, yaw)
-    up = F + S.H_HALL - 0.9 + 0.2
-    for pid, a in (("scratch_a", 33.75), ("scratch_b", 123.75), ("scratch_a", -56.25), ("scratch_b", -146.25)):
-        put(pid, polar(S.R_HALL - 0.0302, a), -a, up)
-    for pid, x, y in (("scratch_b", 5.9, -1.2148), ("scratch_a", -7.0, 1.2148), ("scratch_a", 7.2, 1.2148),
-                      ("scratch_b", -4.2, -1.2148)):
-        put(pid, [x, y], 90.0 if y < 0 else -90.0, F + 0.3)
     return out
 
 
@@ -304,6 +327,8 @@ def render() -> str:
         lines += ["", "[[pieces]]", f'id = "{pid}"', f'builder = "{builder}"', f"collide = {fmt(collide)}"]
         if args:
             lines.append("args = { " + ", ".join(f"{k} = {fmt(v)}" for k, v in args.items()) + " }")
+        if pid in FOOT:
+            lines.append("foot = [" + ", ".join(fmt(v) for v in FOOT[pid]) + "]")
     return "\n".join(lines) + "\n"
 
 
