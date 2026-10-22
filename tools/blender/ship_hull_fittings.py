@@ -20,20 +20,21 @@ import ship_lib as L
 
 L.MATERIALS.update({
     # details 2: opaque dark warm glass with a faint inner glow ([light.mats] l 0: it lights nothing)
-    "ext_porthole": {"base": (0.05, 0.035, 0.025, 1.0), "metallic": 0.1, "roughness": 0.08,
-                     "emission": (1.0, 0.55, 0.25), "strength": 0.5},
+    "ext_porthole": {"base": (0.012, 0.014, 0.018, 1.0), "metallic": 0.0, "roughness": 0.05,
+                     "emission": (1.0, 0.55, 0.25), "strength": 0.07},
     "ext_dome": {"base": (0.05, 0.06, 0.07, 1.0), "metallic": 0.3, "roughness": 0.1},
     "ext_hazard": {"base": (0.92, 0.66, 0.06, 1.0), "metallic": 0.05, "roughness": 0.55},
     "ext_hazard_dark": {"base": (0.035, 0.035, 0.04, 1.0), "metallic": 0.3, "roughness": 0.6},
 })
 
 PORT_Y = (5.6, 6.8, 8.0)        # the portholes' plan y on each flank (the lens rims end at y 3.75, the pods' noses 9.6)
-PORT_R = (0.17, 0.205, 0.235)   # the glass, the ring's crown and its flange (outer radii): about 0.35 m of glass
+PORT_R = (0.17, 0.225, 0.26)    # the glass, the ring's crown and its flange (outer radii): about 0.35 m of glass
 VENTS = [(1.15, 8.55)]          # mirrored: the vents' centres on the tail's top
 VENT = (0.7, 0.42, 6)           # length along the ship, width, slats
 MAST = (0.0, -1.6, 0.75)        # the antenna mast on the hump's centre line: x, y, height
 DOME = (0.0, -2.9, 0.16)        # the sensor dome: x, y, radius
-HATCHES = [("top", 6.2, 4.4, 0.9, 0.6), ("top", -6.2, 4.4, 0.9, 0.6), ("bottom", 0.0, 8.6, 0.8, 0.55)]
+HATCHES = [("top", 5.6, 4.4, 0.9, 0.6), ("top", -5.6, 4.4, 0.9, 0.6), ("bottom", 0.0, 8.6, 0.8, 0.55)]   # clear of the
+#   fin's plate seams (at x 6.2 one ran down the hatch)
 
 
 def surface(x: float, y: float, side: str = "top", d: float = 0.03):
@@ -98,16 +99,19 @@ def porthole_spots():
 
 
 def portholes(args: dict, layout: dict) -> list:
-    """details 2: the tail's portholes (plan frame): a silver ring (crown and flange 3 cm into the skin) and the dark
-    warm glass 2.6 cm under the crown."""
-    ring, glass = [], []
+    """details 2: the tail's portholes (plan frame): a bright silver crown 4.5 cm proud on a darker flange, a dark
+    bezel round the glass and the dark warm glass 4.5 cm under the crown (all 3 cm into the skin)."""
+    ring, flanges, bezels, glass = [], [], [], []
     g, crown, flange = PORT_R
     for o, n in porthole_spots():
         u, v = frame(n)
-        ring += [_place(_annulus(g - 0.008, crown, -0.03, 0.032), o, u, v, n),
-                 _place(_annulus(crown - 0.01, flange, -0.03, 0.012), o, u, v, n)]
-        glass.append(_place(_disc(g, -0.04, 0.006), o, u, v, n))
+        ring.append(_place(_annulus(g + 0.015, crown, -0.03, 0.045), o, u, v, n))
+        flanges.append(_place(_annulus(crown - 0.01, flange, -0.03, 0.015), o, u, v, n))
+        bezels.append(_place(_annulus(g - 0.005, g + 0.017, -0.03, 0.02), o, u, v, n))
+        glass.append(_place(_disc(g, -0.04, 0.0), o, u, v, n))
     return [L.part("porthole_ring", *L.merge(*ring), "ext_silver_b"),
+            L.part("porthole_flange", *L.merge(*flanges), "ext_silver_c"),
+            L.part("porthole_bezel", *L.merge(*bezels), "ext_frame"),
             L.part("porthole_glass", *L.merge(*glass), "ext_porthole")]
 
 
@@ -140,7 +144,7 @@ def tail_vents(args: dict, layout: dict) -> list:
 
 def hump_sensors(args: dict, layout: dict) -> list:
     """details 2: on the hump's centre line behind the canopies: a short antenna mast (a base plate, a slim rod
-    MAST[2] high with a small cross-spar and a dark cap) and a sensor dome (a silver collar, a dark glossy dome)."""
+    MAST[2] high with two small collars and a dark cap) and a sensor dome (a silver collar, a dark glossy dome)."""
     mx, my, mh = MAST
     o, n = surface(mx, my)
     u, v = frame(n)
@@ -149,8 +153,9 @@ def hump_sensors(args: dict, layout: dict) -> list:
     top = H._add(foot, (0.0, 0.0, 1.0), mh)
     rods = [H._rod(foot, top, 0.022, 10), H._rod(H._add(foot, (0.0, 0.0, 1.0), 0.0), H._add(foot, (0.0, 0.0, 1.0), 0.18),
                                                 0.04, 10)]
-    spar_c = H._add(foot, (0.0, 0.0, 1.0), mh * 0.68)
-    rods.append(H._rod(H._add(spar_c, (1.0, 0.0, 0.0), -0.14), H._add(spar_c, (1.0, 0.0, 0.0), 0.14), 0.012, 8))
+    for f, r in ((0.55, 0.045), (0.7, 0.032)):   # two small collars up the rod (a cross-spar read as a cross)
+        c = H._add(foot, (0.0, 0.0, 1.0), mh * f)
+        rods.append(H._rod(H._add(c, (0.0, 0.0, 1.0), -0.012), H._add(c, (0.0, 0.0, 1.0), 0.012), r, 10))
     cap = H._rod(H._add(top, (0.0, 0.0, 1.0), -0.01), H._add(top, (0.0, 0.0, 1.0), 0.04), 0.03, 10)
     dx, dy, dr = DOME
     o2, n2 = surface(dx, dy)
