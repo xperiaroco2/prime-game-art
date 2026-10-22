@@ -240,3 +240,14 @@ generated from `D:/prime-art-raw/research/2026-10-22-roster/design/r3/concepts_r
 prompts after the first look): $0.066 to $0.068 with one reference, $0.097 to $0.098 with two; **$0.8645** of the $5 cap. Unless
 the prompt says "solid dark, no whites" and describes a non-human mouth, the model gives every head the same human
 eye and small lips. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r3/`; JPEGs, overview and handoff: `.../design/r3/`.
+
+## Batch 2026-10-22-alien-roster-r4 (art #196, roster round 4)
+
+A new ten heads (five men, five women), each built from one real animal read up first (shoebill, humphead wrasse, stag
+beetle, triceratops, gharial; moth, eyelash viper, seahorse, cassowary, lionfish), medium, 1024x1280, n = 3, rf2 as
+the style reference, round 3's lead, framing sentence and style tail; the batch file is generated from
+`D:/prime-art-raw/research/2026-10-22-roster/design/r4/concepts_r4.src.json`. 13 requests (three revised prompts after
+the first look), $0.067 to $0.068 each. Writing the animal's own eye and mouth into the prompt held for most heads, but
+the model still slides back to a human face where the animal's feature can sit on one: a forehead hump becomes a quiff
+over pouting lips, a beetle's shell a visor over a human chin, a moth the classic big black alien eyes. Images:
+`D:/prime-art-raw/2026-10-22-alien-roster-r4/`; JPEGs, overview and handoff: `.../design/r4/`.
