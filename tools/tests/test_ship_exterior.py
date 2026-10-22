@@ -44,7 +44,8 @@ class ShipExteriorTest(unittest.TestCase):
         parts = next(m for m in H.MODULES if hasattr(m, "j_skin")).j_skin({"part": "top"}, LAYOUT)
         skin = next(p for p in parts if p["name"] == "skin_top_hull_silver")
         self.assertFalse(skin["solid"])
-        planes = [((n[0], -n[1], n[2]), d) for n, d, _p in S.facets()]
+        # lens step 2: the surface's own planes (P's parts' facets and the openings' reveals)
+        planes = [((n[0], -n[1], n[2]), sum(n[k] * poly[0][k] for k in range(3))) for poly, n, _kind in S.surface()]
         verts = [(x, -y, h) for x, y, h in skin["verts"]]
         for face in skin["faces"]:
             p = [verts[i] for i in face]
@@ -64,6 +65,14 @@ class ShipExteriorTest(unittest.TestCase):
                 self.assertGreater(math.hypot(at[0], at[1]), 12.0, f"{pid} at {at} stands in the clearing's middle")
         names = [v[0] for v in EXT["shots"]["views"]]
         self.assertEqual(len(names), len(set(names)))
+        # D1 review: the day views are shot after the night's under their own names: no name twice across ship.toml's
+        # views and day views, and no day view named as an exterior view
+        with open(Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml", "rb") as f:
+            shots = tomllib.load(f)["shots"]
+        own = [v[0] for v in shots["views"]] + [v[0] for v in shots.get("day_views", [])]
+        self.assertEqual(len(own), len(set(own)), sorted(n for n in own if own.count(n) > 1))
+        self.assertFalse({v[0] for v in shots.get("day_views", [])} & set(names))
+        self.assertTrue(shots.get("day_views"))
         for v in EXT["shots"]["views"]:
             self.assertEqual(len(v), 6, f"view {v[0]} needs its 2D sheet")
 

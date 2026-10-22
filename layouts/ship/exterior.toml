@@ -21,19 +21,40 @@ place = [
   ["canopy_fairing_w", [0.00, 0.00, 0.00], 0.0],
   ["canopy_glass_w", [0.00, 0.00, 0.00], 0.0],
   ["canopy_glow_w", [0.00, 0.00, 0.00], 0.0],
-  ["nozzle_pod_outer", [-2.75, 7.32, 2.15], 0.0],
-  ["pod_ring_outer", [-2.75, 7.32, 2.15], 0.0],
-  ["nozzle_pod_mid", [0.00, 7.72, 2.45], 0.0],
-  ["pod_ring_mid", [0.00, 7.72, 2.45], 0.0],
-  ["nozzle_pod_outer", [2.75, 7.32, 2.15], 0.0],
-  ["pod_ring_outer", [2.75, 7.32, 2.15], 0.0],
+  ["nozzle_pod_outer", [-3.00, 9.60, 2.00], 0.0],
+  ["pod_ring_outer", [-3.00, 9.60, 2.00], 0.0],
+  ["nozzle_pod_outer", [3.00, 9.60, 2.00], 0.0],
+  ["pod_ring_outer", [3.00, 9.60, 2.00], 0.0],
+  ["nozzle_pod_mid", [0.00, 9.60, 2.55], 0.0],
+  ["pod_ring_mid", [0.00, 9.60, 2.55], 0.0],
+  # lens step 2: the edge light, the lens windows' frames
+  ["edge_light", [0.00, 0.00, 0.00], 0.0],
+  ["lens_frames", [0.00, 0.00, 0.00], 0.0],
+  # details 2: the tail's portholes, its vents, the hump's mast and dome, the service hatches, the ramp's and the
+  # mouth's warning stripes (ship_hull_fittings.py, each in the plan frame)
+  ["portholes", [0.00, 0.00, 0.00], 0.0],
+  ["tail_vents", [0.00, 0.00, 0.00], 0.0],
+  ["hump_sensors", [0.00, 0.00, 0.00], 0.0],
+  ["service_hatches", [0.00, 0.00, 0.00], 0.0],
+  ["hazard_stripes", [0.00, 0.00, 0.00], 0.0],
+  # light layer: the navigation lamps (port red on the west lens rim's forward facet, starboard green on the east's,
+  # under the edge light; white on the tail's top centre) and a warm landing light under the belly by each leg
+  ["nav_red", [-12.181, -0.717, 1.130], 131.25],
+  ["nav_green", [12.181, -0.717, 1.130], 48.75],
+  ["nav_white", [0.000, 11.200, 4.265], 0.0],
+  ["landing_lamp", [-3.80, -3.40, 0.680], 0.0],
+  ["landing_lamp", [3.80, -3.40, 0.680], 0.0],
+  ["landing_lamp", [-8.20, 4.60, 0.440], 0.0],
+  ["landing_lamp", [8.20, 4.60, 0.440], 0.0],
+  ["landing_lamp", [-4.20, 8.60, 1.182], 0.0],
+  ["landing_lamp", [4.20, 8.60, 1.182], 0.0],
   # amber ground lamps beside the six legs' feet (hull 3-3) and the ramp
-  ["ground_lamp", [5.68, -6.09, 0.00], 0.0],
   ["ground_lamp", [-5.68, -6.09, 0.00], 0.0],
-  ["ground_lamp", [14.59, 5.20, 0.00], 0.0],
-  ["ground_lamp", [-14.59, 5.20, 0.00], 0.0],
-  ["ground_lamp", [5.93, 10.92, 0.00], 0.0],
+  ["ground_lamp", [5.68, -6.09, 0.00], 0.0],
+  ["ground_lamp", [-11.68, 6.15, 0.00], 0.0],
+  ["ground_lamp", [11.68, 6.15, 0.00], 0.0],
   ["ground_lamp", [-5.93, 10.92, 0.00], 0.0],
+  ["ground_lamp", [5.93, 10.92, 0.00], 0.0],
   ["ground_lamp", [-1.75, -7.25, 0.00], 0.0],
   ["ground_lamp", [1.75, -7.25, 0.00], 0.0],
   ["ground_lamp", [-1.75, -5.90, 0.00], 0.0],
@@ -42,8 +63,8 @@ place = [
   # the front belly, the wings outboard of the tip rooms and the stern; top = J's lowest belly under the mount + 0.1
   ["leg_front", [-4.60, -3.40, 0.00], 111.8],
   ["leg_front", [4.60, -3.40, 0.00], 68.2],
-  ["leg_rear", [-11.60, 4.40, 0.00], -165.0],
-  ["leg_rear", [11.60, 4.40, 0.00], -15.0],
+  ["leg_rear", [-9.00, 4.60, 0.00], -150.0],
+  ["leg_rear", [9.00, 4.60, 0.00], -30.0],
   ["leg_stern", [-5.00, 8.60, 0.00], -111.8],
   ["leg_stern", [5.00, 8.60, 0.00], -68.2],
   # the clearing (hull step 3; seeded once, plain data from here on, heights on the ground's facets): ground,
@@ -597,21 +618,21 @@ outside = true
 [[pieces]]
 id = "leg_front"
 builder = "leg"
-args = { top = 0.6, reach = 2.0, rise = 0.25 }   # rebuild D: the belly over the mount climbs to 1.05 (was a gap)
+args = { top = 0.64, reach = 2.0, rise = 0.25 }   # lens step 2: P's lowest belly over the mount + 0.1
 collide = true
 outside = true                               # the feet stand past the lead edge
 
 [[pieces]]
 id = "leg_rear"
 builder = "leg"
-args = { top = 0.63, reach = 2.2 }
+args = { top = 0.44, reach = 2.2 }   # lens step 2: under the fin, clear of the lens
 collide = true
 outside = true
 
 [[pieces]]
 id = "leg_stern"
 builder = "leg"
-args = { top = 0.52, reach = 1.6 }
+args = { top = 1.17, reach = 1.6 }
 collide = true
 outside = true
 
@@ -673,8 +694,12 @@ views = [
   ["out_side", "outside: side (turnaround side)", [-31.0, 1.5, 3.0], [0.0, 1.5, 2.2], 46.0, "turnaround.jpg"],
   ["out_back", "outside: back with the nozzles (turnaround back)", [2.0, 27.5, 4.4], [0.0, 1.0, 2.3], 62.0, "turnaround.jpg"],  # clear of the near pines
   ["detail_seam", "detail: the plates on the east wing (materials-3)", [7.0, 10.5, 6.6], [9.0, 4.5, 3.4], 40.0, "materials-3.jpg"],  # rebuild B: the plated wing's back slope in the moon
-  ["detail_floor", "detail: a floor light strip and grate (materials-3)", [3.96, 1.51, 1.7], [5.95, 2.46, 0.6], 50.0, "materials-3.jpg"],  # rebuild E: down the east corridor from (0, -0.4)
-  ["detail_cables", "detail: a cable channel with clips (materials-3)", [5.59, 2.29, 1.9], [5.11, 3.73, 1.5], 55.0, "materials-3.jpg"],  # the corridor's back wall (rebuild E: 0.4 m forward of step A)
+  ["detail_floor", "detail: a floor light strip and grate (materials-3)", [3.95, 0.20, 1.7], [5.93, 0.50, 0.6], 50.0, "materials-3.jpg"],  # lens step 2: down the east corridor on its 8.66 deg axis
+  ["detail_cables", "detail: a cable channel with clips (materials-3)", [5.54, 0.44, 1.9], [4.92, 1.87, 1.5], 55.0, "materials-3.jpg"],  # lens step 2: the corridor's back wall
+  # lens step 2: a lens from outside (the window band, the edge light), its roof windows from above, the tapered tail
+  ["out_lens_e", "outside: the east lens, its window band and the edge light", [18.0, -4.5, 2.2], [10.6, 1.2, 1.9], 50.0, "hero.jpg"],
+  ["out_lens_roof_e", "outside: the east lens's roof windows from above", [14.8, 4.6, 7.4], [10.9, 1.2, 3.1], 48.0, "hero.jpg"],
+  ["out_tail", "outside: the tail tapering to the pods", [13.0, 21.0, 5.5], [1.5, 9.0, 2.2], 50.0, "turnaround.jpg"],
 ]
 
 # The walk-through video (`ship --walk DIR`, the exterior lane): a camera at eye height (1.65 m over the floor: deck
@@ -694,18 +719,18 @@ keys = [
   [[0.0, -2.60, 2.25], [0.0, 1.60, 2.6], 3.5],
   [[0.0, -1.00, 2.25], [-2.49, 1.35, 3.4], 3.0],
   [[0.0, -1.00, 2.25], [2.49, 1.35, 3.0], 4.0],
-  [[0.4, -0.40, 2.25], [-5.41, 2.20, 2.2], 3.0],
-  [[-3.24, 1.16, 2.25], [-8.93, 3.90, 2.2], 3.5],
-  [[-8.39, 3.64, 2.25], [-11.63, 5.21, 2.2], 4.5],
-  [[-9.34, 4.43, 2.25], [-13.1, 4.47, 2.0], 3.0],
-  [[-9.34, 4.43, 2.25], [-11.84, 7.08, 2.0], 3.5],
-  [[-9.29, 4.08, 2.25], [-4.5, 1.77, 2.2], 3.0],
-  [[-3.24, 1.16, 2.25], [2.7, 0.90, 2.2], 5.0],
-  [[3.24, 1.16, 2.25], [8.93, 3.90, 2.2], 5.0],
-  [[8.39, 3.64, 2.25], [11.63, 5.21, 2.2], 4.5],
-  [[9.6, 3.89, 2.25], [11.97, 6.81, 2.0], 3.0],
-  [[9.6, 3.89, 2.25], [13.23, 4.20, 2.0], 3.5],
-  [[9.29, 4.08, 2.25], [4.5, 1.77, 2.2], 3.0],
+  [[0.40, -0.40, 2.25], [-5.44, 0.43, 2.20], 3.0],
+  [[-3.16, 0.08, 2.25], [-8.90, 0.96, 2.20], 3.5],
+  [[-8.40, 0.88, 2.25], [-12.60, 0.60, 2.00], 4.5],
+  [[-10.00, 1.45, 2.25], [-12.20, -0.50, 2.00], 3.0],
+  [[-10.00, 1.45, 2.25], [-12.00, 3.30, 2.00], 3.5],
+  [[-9.70, 1.30, 2.25], [-4.50, 0.40, 2.20], 3.0],
+  [[-3.16, 0.08, 2.25], [2.97, 0.05, 2.20], 5.0],
+  [[3.16, 0.08, 2.25], [8.90, 0.96, 2.20], 3.5],
+  [[8.40, 0.88, 2.25], [12.60, 0.60, 2.00], 4.5],
+  [[10.00, 1.45, 2.25], [12.20, -0.50, 2.00], 3.0],
+  [[10.00, 1.45, 2.25], [12.00, 3.30, 2.00], 3.5],
+  [[9.70, 1.30, 2.25], [4.50, 0.40, 2.20], 3.0],
   [[2.0, -1.20, 2.25], [0.0, -7.00, 1.8], 5.0],
   [[0.0, -5.25, 2.2], [0.0, -11.00, 1.5], 3.5],
   [[0.0, -9.60, 1.7], [0.0, -15.00, 1.6], 4.0],
@@ -748,25 +773,25 @@ args = { part = "glow", side = -1.0 }
 [[pieces]]
 id = "nozzle_pod_outer"
 builder = "nozzle_pod"
-args = { r = 1.05, length = 3.25 }    # v2: nose 0.35 m back off the r 4.0 hall
+args = { r = 1.42, length = 4.665 }    # lens step 2: P's pods (ship_hull_shape.p_pods), 2.84 m across
 outside = true                               # the pods stick out of the stern (turnaround back, side, top)
 
 [[pieces]]
 id = "pod_ring_outer"
 builder = "pod_ring"
-args = { r = 1.05, length = 3.25 }    # v2: nose 0.35 m back off the r 4.0 hall
+args = { r = 1.42, length = 4.665 }
 outside = true
 
 [[pieces]]
 id = "nozzle_pod_mid"
 builder = "nozzle_pod"
-args = { r = 1.2, length = 3.65 }
+args = { r = 1.62, length = 4.965 }    # 3.24 m across
 outside = true                               # the pods stick out of the stern (turnaround back, side, top)
 
 [[pieces]]
 id = "pod_ring_mid"
 builder = "pod_ring"
-args = { r = 1.2, length = 3.65 }
+args = { r = 1.62, length = 4.965 }
 outside = true
 
 [[pieces]]
@@ -914,6 +939,54 @@ id = "log_c"
 builder = "log"
 args = { length = 7.0, r = 0.36, seed = 3.0 }
 outside = true
+
+[[pieces]]
+id = "edge_light"                            # lens step 2: the cool-white light line round the hull's outer edge
+builder = "edge_light"
+
+[[pieces]]
+id = "nav_red"                               # light layer: the navigation lamps (ship_hull_detail.nav_lamp)
+builder = "nav_lamp"
+args = { colour = "red", mount = "wall" }
+
+[[pieces]]
+id = "nav_green"
+builder = "nav_lamp"
+args = { colour = "green", mount = "wall" }
+
+[[pieces]]
+id = "nav_white"
+builder = "nav_lamp"
+args = { colour = "white", mount = "top" }
+
+[[pieces]]
+id = "landing_lamp"                          # light layer: the warm landing lights under the belly
+builder = "landing_lamp"
+
+[[pieces]]
+id = "portholes"                             # details 2: three a side on the tail's flank, no room behind them
+builder = "portholes"
+
+[[pieces]]
+id = "tail_vents"
+builder = "tail_vents"
+
+[[pieces]]
+id = "hump_sensors"
+builder = "hump_sensors"
+
+[[pieces]]
+id = "service_hatches"
+builder = "service_hatches"
+
+[[pieces]]
+id = "hazard_stripes"
+builder = "hazard_stripes"
+outside = true                               # the ramp's rails stand outside the hull
+
+[[pieces]]
+id = "lens_frames"                           # lens step 2: the band's and the roof windows' outer frames
+builder = "lens_frames"
 
 [[pieces]]
 id = "skin_top"

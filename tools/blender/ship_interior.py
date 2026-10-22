@@ -7,7 +7,7 @@ built at plan angle 0 (their room toward -x) and placed with yaw = -(their angle
 
 The numbers (version 2, rebuilt for the hull variant J, art #263; heights from ship.toml: `floor_h`, each room's
 `clear_h` and `apex_h`): the hall a 16-sided room, vertices on 4.078 (inner faces at about 4.0), rim 3.2 m, apex
-3.8 m over the deck at h 0.6; three openings (mouth north, corridors on the diagonal at +-25.73 deg from east) two
+3.8 m over the deck at h 0.6; three openings (mouth north, corridors on the diagonal at +-8.66 deg from east) two
 facets wide, framed by portals on the chords (3.768); the vents' and sockets' plain flat chords; the other facets
 re-spaced round the openings (hall_segments); the corridors one profile (3 m wide, vertical to 1.45 m, slanted in to
 2.3 m wide at the 2.4 m ceiling) straight along the axis from the hall's centre to the tip room's, four modules of
@@ -102,7 +102,8 @@ R_ARC = round(2.58 * K_HALL, 3)            # the amber floor ring (3.035)
 R_RIM0 = round(2.66 * K_HALL, 3)           # the solid rim plates' inner edge (3.129)
 R_RIM_REF = round(3.0 * K_HALL, 3)         # a rim plate's origin (3.529)
 # rebuild A (variant J, art #263 comment 6340589162): the corridors run straight along the diagonal from the hall's
-# centre to the tip rooms' (ship.toml `axis`), so the corridor openings sit on that angle (25.73 deg), off the 16-gon's
+# centre to the tip rooms' (ship.toml `axis`), so the corridor openings sit on that angle (8.66 deg since lens step 1;
+# rebuild A's 25.73), off the 16-gon's
 # vertices; the hall keeps its 16 facets' look, re-spaced round the moved openings (hall_segments)
 _COR = _ROOM["corridor_e"]
 COR_ANG = math.degrees(math.atan2(_COR["axis"][1][1] - _COR["axis"][0][1], _COR["axis"][1][0] - _COR["axis"][0][0]))
@@ -110,22 +111,23 @@ COR_DIR = (math.cos(D(COR_ANG)), math.sin(D(COR_ANG)))
 OPENINGS = {"corridor_e": COR_ANG, "mouth": -90.0, "corridor_w": 180.0 - COR_ANG}   # opening centre angles (deg)
 BACK_DEG = 12.5   # each of the two back facets either side of the back's trunk at 90 deg (was 22.5: the sockets' flats
 # moved back off the corridor openings and need 1.6 m of plain chord clear of the portal pilaster: 2.06 m)
-# rebuild C: the front sockets' flat beside the throat, as wide as a back socket's (29.27 deg): from the throat's corner
-# to here (-15.11)
-FRONT_DEG = TH_CORNER + (90.0 - BACK_DEG) - (COR_ANG + 2 * math.degrees(PHI))
+# lens step 1: the back sockets' flat chord stays where rebuild A put it (48.23..77.5 deg, the old corridor chord's end
+# at rebuild A's 25.73 + 22.5; the corridors are at 8.66 deg now), the sockets unchanged
+SOCK_A0 = 25.7299 + 2 * math.degrees(PHI)
 
 
 def hall_segments() -> list[tuple[float, float, str]]:
     """The hall's wall round the ring, (a0, a1, kind) counter-clockwise from the mouth: kind "opening" (two facets'
     chord, a portal: the mouth and the corridors), "flat" (a station's plain chord over two sub-facets: the vents and
-    sockets) or "facet" (one wall facet). Every vertex on the circle HV, so the openings keep their chord (HC, HCH)."""
+    sockets), "facet" (one wall facet) or "door" (the vault's shut door, a flat chord over the two back facets). Every
+    vertex on the circle HV, so the openings keep their chord (HC, HCH)."""
     e0, e1 = COR_ANG - 2 * math.degrees(PHI), COR_ANG + 2 * math.degrees(PHI)   # the east corridor's chord ends
-    # rebuild C: the throat over -135.62..-44.38 (four sub-facets), a front socket's flat beside it, one front facet
-    # to the corridor's opening (the vents moved into the throat)
-    east = [(-180.0 - TH_CORNER, TH_CORNER, "throat"), (TH_CORNER, FRONT_DEG, "flat"), (FRONT_DEG, e0, "facet"),
-            (e0, e1, "opening"), (e1, 90.0 - BACK_DEG, "flat"), (90.0 - BACK_DEG, 90.0, "facet")]
+    # lens step 1: the corridors' openings at +-8.66 deg; the front socket's flat from the throat's corner to the
+    # opening (30.54 deg), one side facet from the opening to the back socket's flat, the vault's door at the back
+    east = [(-180.0 - TH_CORNER, TH_CORNER, "throat"), (TH_CORNER, e0, "flat"), (e0, e1, "opening"),
+            (e1, SOCK_A0, "facet"), (SOCK_A0, 90.0 - BACK_DEG, "flat")]
     west = [(180.0 - b, 180.0 - a, k) for a, b, k in reversed(east[1:])]
-    return east + west
+    return east + [(90.0 - BACK_DEG, 90.0 + BACK_DEG, "door")] + west
 
 
 TH_SUBS = 4   # the throat's sub-facets (22.81 deg) under the hall's ceiling
@@ -173,20 +175,54 @@ def _half(args):
 PORTAL_D = 0.15
 # the tip rooms
 R_TIP, H_TIP, APEX_TIP, R_TIP_RING = (_ROOM["tip_e"]["radius"] + 0.05, _ROOM["tip_e"]["clear_h"],
-                                      _ROOM["tip_e"]["apex_h"], 0.42)   # v2: room r 1.8 -> vertex radius 1.85
-# polish 4: R_TIP_RING 0.6 -> 0.42 (the tip ceiling's pale lamp cog read oversized from the room)
+                                      _ROOM["tip_e"]["apex_h"], 0.84)   # lens step 1: room r 2.0 -> vertex radius 2.05
+# polish 4: R_TIP_RING 0.6 -> 0.42 (the tip ceiling's pale lamp cog read oversized from the room); lens step 1: 0.32,
+# its beam (to r 0.42) clear of the roof windows (their nearest corner at r 0.46); details 1: 0.86, the six lamps on
+# the light ring round the oculus (OC_BEAM); details 2: 0.84, the centre of the ring's slim warm strip (OC_STRIP wide), the
+# six lamps merged into it
+# lens step 1 (art#263 c6344490367): the lens rooms' ceiling slants down outward along the axis (P's ray_roof): clear
+# H_TIP_IN at the corridor's side, H_TIP at the outer wall; the walls stand H_TIP high and the ceiling's fascia closes
+# the slant's gap over them. The window band (local degrees, + aft in the east room; the west room is placed mirrored)
+# and the three roof windows (local rects along x, across y).
+H_TIP_IN = _ROOM["tip_e"]["clear_h_in"]
+RW_TIP = _ROOM["tip_e"]["radius"] + _SHIP["deck"]["wall_m"]          # 2.2: the slant's span is the outer wall's
+BAND = _ROOM["tip_e"]["band"]
+SILL, HEAD = BAND["sill_h"], BAND["head_h"]
+# details 1 (art#263 c6347287605): one round roof window, the oculus, centred on the room (its side k's normal at
+# k 360/N deg from the axis, as the hull's cut, ship_hull_shape.p_openings); the light ring round it under the ceiling
+OC_N = _ROOM["tip_e"]["oculus"]["sides"]                              # 32
+OC_R = _ROOM["tip_e"]["oculus"]["d"] / 2                              # 0.70: the clear radius, the lining's inner face
+OC_WELL = (OC_R, OC_R + 0.035)                                        # the lining's apothems: 1 cm into the hull's cut
+OC_BEAM = (0.69, 0.97)                                                # the light ring's beam under the ceiling
+OC_STRIP = 0.07                                                       # details 2: the ring's warm strip, 7 cm wide
+OC_FASCIA = 0.10                                                      # details 2: the fascia's overlap on the walls' tops
+
+
+def tip_clear(t: float) -> float:
+    """The lens room's clear height t along its outward axis from its centre (P's ray_roof: 2.4455 at the corridor's
+    wall face, 2.3545 at the outer one)."""
+    return H_TIP + (H_TIP_IN - H_TIP) * (RW_TIP - t) / (2 * RW_TIP)
 TIP_C = (_ROOM["tip_e"]["centre"][0] - HALL_C[0], _ROOM["tip_e"]["centre"][1] - HALL_C[1])   # (8.3, 4.0) from the hall
 TIP_X = math.hypot(*TIP_C)                           # the tip room's centre along the axis from the hall's (9.214)
 DOOR_HALF = math.degrees(math.asin((COR_HALF + 0.03) / R_TIP))   # v2: the 3 m corridor's chord, 55.8 (v1 37.6)
-TIP_N = 13                                           # rebuild A: no window, 13 wall facets round the room
+TIP_N = 12                                           # lens step 1: 12 wall facets of 21.95 deg (rebuild A: 13); vertex 0 on
+# the axis, the window band on facets 3..7 (-65.86..43.91 deg, the asked -65..45 snapped to the vertices)
 TIP_STEP = (360.0 - 2 * DOOR_HALF) / TIP_N           # a wall facet's angle (19.11; v2's wall facets 19.73)
 TIP_CHORD = -R_TIP * math.cos(D(DOOR_HALF))          # -1.039
 TIP_CHORD_H = R_TIP * math.sin(D(DOOR_HALF))         # 1.53
 # the corridor's modules along its axis (u from the hall's centre): hall portal to tip portal
 COR_X0 = HC + PORTAL_D                               # 3.918
 COR_X1 = TIP_X + TIP_CHORD - PORTAL_D                # 8.024 (v2 7.111 on the x axis)
-N_MOD = 4                                            # rebuild A: four modules of 1.026 (v2: three of 1.064)
-MOD_L = (COR_X1 - COR_X0) / N_MOD                    # 1.026
+N_MOD = 5                                            # lens step 1: five modules of 1.038 (rebuild A: four of 1.026)
+MOD_L = (COR_X1 - COR_X0) / N_MOD                    # 1.038
+H_TIP_PORTAL = round(tip_clear(TIP_CHORD) - 0.003, 4)   # the door's portal and pilasters up to the slanted ceiling (2.428)
+
+
+def tip_band_facets(side: int = 1) -> list[int]:
+    """The wall facets (indices into tip_vertices' pairs) in the window band; side -1: the west room's, mirrored."""
+    tv = tip_vertices()
+    lo, hi = (BAND["from_deg"], BAND["to_deg"]) if side > 0 else (-BAND["to_deg"], -BAND["from_deg"])
+    return [i for i, (a0, a1) in enumerate(zip(tv, tv[1:])) if lo - 1.5 <= a0 and a1 <= hi + 1.5]
 
 
 def tip_vertices() -> list[float]:
@@ -887,20 +923,278 @@ def tip_floor_rim(args, layout):
     return [P("plates", M(*plates), "int_plate")]
 
 
+def _slant(parts, h0):
+    """Every vertex of the parts at h0 or above raised by the lens ceiling's slant at its x (the room's axis)."""
+    for p in parts:
+        p["verts"] = [(x, y, h + (tip_clear(x) - H_TIP if h >= h0 - 1e-9 else 0.0)) for x, y, h in p["verts"]]
+    return parts
+
+
+def _clip_box(poly, x0, x1, y0, y1):
+    """A convex plan polygon clipped to the box (Sutherland-Hodgman); [] when less than a triangle is left."""
+    pts = list(poly)
+    for k, v, sign in ((0, x0, 1.0), (0, x1, -1.0), (1, y0, 1.0), (1, y1, -1.0)):
+        out = []
+        for i, p in enumerate(pts):
+            q = pts[i - 1]
+            dp, dq = sign * (p[k] - v), sign * (q[k] - v)
+            if (dp >= 0) != (dq >= 0):
+                f = dq / (dq - dp)
+                out.append((q[0] + (p[0] - q[0]) * f, q[1] + (p[1] - q[1]) * f))
+            if dp >= 0:
+                out.append(p)
+        pts = out
+        if len(pts) < 3:
+            return []
+    return pts
+
+
+def _clip_half(poly, n, d):
+    """A convex plan polygon clipped to n . p <= d (Sutherland-Hodgman); [] when less than a triangle is left."""
+    out = []
+    for i, p in enumerate(poly):
+        q = poly[i - 1]
+        dp, dq = d - (n[0] * p[0] + n[1] * p[1]), d - (n[0] * q[0] + n[1] * q[1])
+        if (dp >= 0) != (dq >= 0):
+            f = dq / (dq - dp)
+            out.append((q[0] + (p[0] - q[0]) * f, q[1] + (p[1] - q[1]) * f))
+        if dp >= 0:
+            out.append(p)
+    return out if len(out) >= 3 else []
+
+
+def _clip_convex(poly, hull):
+    """A convex plan polygon clipped to a convex polygon whose points run counter-clockwise."""
+    for a, b in zip(hull, hull[1:] + hull[:1]):
+        n = (b[1] - a[1], a[0] - b[0])   # the edge's outward normal
+        poly = _clip_half(poly, n, n[0] * a[0] + n[1] * a[1])
+        if not poly:
+            return []
+    return poly
+
+
+def oc_angle(k: float) -> float:
+    """The oculus polygon's side k's normal (radians from the axis); its vertices at k + 0.5."""
+    return 2 * math.pi * k / OC_N
+
+
+def oc_sector(r0: float, r1: float, k: int) -> list:
+    """Side k's piece of a ring between the apothems r0 and r1 (a convex quad, counter-clockwise)."""
+    c = 1 / math.cos(math.pi / OC_N)
+    a, b = oc_angle(k - 0.5), oc_angle(k + 0.5)
+    return [(r0 * c * math.cos(a), r0 * c * math.sin(a)), (r1 * c * math.cos(a), r1 * c * math.sin(a)),
+            (r1 * c * math.cos(b), r1 * c * math.sin(b)), (r0 * c * math.cos(b), r0 * c * math.sin(b))]
+
+
+def tip_ceiling_cells():
+    """details 1: the ceiling's slab round the oculus: per oculus side its sector from inside the well's lining out
+    past the room (plan polygons in the room's frame, clipped to the room by tip_ceiling)."""
+    return [oc_sector(OC_WELL[0] + 0.02, 3.0, k) for k in range(OC_N)]
+
+
 def tip_ceiling(args, layout):
-    h_in = FLOOR + H_TIP + (APEX_TIP - H_TIP) * (1 - R_TIP_RING / R_TIP)
-    out = {"int_silver_b": [], "int_silver_a": []}
-    body = []
-    for i, (a0, a1) in enumerate(tip_edges()):
-        phi = D(a1 - a0) / 2
-        fr, poly = ceiling_facet(R_TIP * math.cos(phi), R_TIP * math.sin(phi), FLOOR + H_TIP, R_TIP_RING, h_in, phi)
-        (b, t1, t2), (ma, mb) = ceiling_panels(fr, poly, "a" if i % 2 else "b")
-        c = (a0 + a1) / 2
-        body.append(rot(b, c))
-        out[ma].append(rot(t1, c))
-        out[mb].append(rot(t2, c))
-    return [P("body", M(*body), "int_silver_b"), P("tri_a", M(*out["int_silver_a"]), "int_silver_a"),
-            P("tri_b", M(*out["int_silver_b"]), "int_silver_b")]
+    """lens step 1: the lens room's ceiling, a plane slanting down outward (tip_clear); details 1: with the oculus at
+    its centre (one round roof window, d 1.4 clear): the slab round it, face panels in eight sectors, the well's dark
+    lining up to 0.26 m over the ceiling, the glass at 0.24, and the LIGHT RING round it; details 2: in the corridor
+    ribs' style, a slim warm strip (OC_STRIP, 7 cm, centred at R_TIP_RING; the six lamps merged into it) in a dark
+    channel under a silver beam, a lip round the oculus and a rim on the beam's outer edge; four ribs across the axis
+    outside the ring with cyan strips, and the fascia over the walls' tops (the slant's gap), its foot OC_FASCIA down
+    the walls on both sides of the slant. Everything follows the slant (_slant), the well with it."""
+    rim = FLOOR + H_TIP
+    room = [_tv(a) for a in sorted(tip_vertices())]
+    wide = [(x * (R_TIP + 0.25) / R_TIP, y * (R_TIP + 0.25) / R_TIP) for x, y in room]
+    inset = [(x * (R_TIP - 0.03) / R_TIP, y * (R_TIP - 0.03) / R_TIP) for x, y in room]
+    ff0 = G.floor_frame(0.0)
+    slab, faces = [], {"int_silver_a": [], "int_silver_b": []}
+    for cell in tip_ceiling_cells():
+        cw = _clip_convex(cell, wide)
+        if cw:
+            slab.append(G.slab(ff0, cw, rim, rim + 0.12))
+    per = OC_N // 8
+    for k in range(OC_N):   # the face panels: eight sectors of alternating tone, 3 cm gaps between them
+        q = _clip_convex(oc_sector(OC_BEAM[1] + 0.03, 3.0, k), inset)
+        if q and k % per == 0:   # the sector's first side: keep 1.5 cm clear of its start line
+            e = oc_angle(k - 0.5)
+            q = _clip_half(q, (math.sin(e), -math.cos(e)), -0.015)
+        if q and k % per == per - 1:   # its last side: 1.5 cm clear of its end line
+            e = oc_angle(k + 0.5)
+            q = _clip_half(q, (-math.sin(e), math.cos(e)), -0.015)
+        if q:
+            faces["int_silver_a" if (k // per) % 2 else "int_silver_b"].append(G.slab(ff0, q, rim - 0.025, rim))
+    well = [G.slab(ff0, oc_sector(*OC_WELL, k), rim, rim + 0.26) for k in range(OC_N)]
+    beam = [G.slab(ff0, oc_sector(OC_R + 0.01, OC_BEAM[1], k), rim - 0.08, rim) for k in range(OC_N)]
+    lip = [G.slab(ff0, oc_sector(OC_BEAM[0], OC_R + 0.03, k), rim - 0.11, rim + 0.005) for k in range(OC_N)]
+    edge = [G.slab(ff0, oc_sector(OC_BEAM[1] - 0.025, OC_BEAM[1], k), rim - 0.095, rim - 0.075) for k in range(OC_N)]
+    sw = OC_STRIP / 2
+    chan = [G.slab(ff0, oc_sector(R_TIP_RING - sw - 0.025, R_TIP_RING + sw + 0.025, k), rim - 0.09, rim - 0.075)
+            for k in range(OC_N)]
+    band = [G.slab(ff0, oc_sector(R_TIP_RING - sw, R_TIP_RING + sw, k), rim - 0.094, rim - 0.088)
+            for k in range(OC_N)]
+    gc = 1 / math.cos(math.pi / OC_N)
+    gv = [(OC_WELL[0] * gc * math.cos(oc_angle(k + 0.5)), OC_WELL[0] * gc * math.sin(oc_angle(k + 0.5)), rim + 0.24)
+          for k in range(OC_N)]
+    glass = (gv, [tuple(range(OC_N)), tuple(range(OC_N - 1, -1, -1))])
+    ribs, strips = [], []
+    apo = R_TIP * math.cos(D(TIP_STEP / 2))
+    for x, w in TIP_RIBS:
+        yh = math.sqrt(max(apo ** 2 - x ** 2, 0.0)) - 0.03
+        ribs.append(G.bbox(x - w, x + w, -yh, yh, rim - 0.09, rim - 0.02))
+        if w > 0.03:
+            strips.append(G.bbox(x - 0.012, x + 0.012, -yh + 0.15, yh - 0.15, rim - 0.096, rim - 0.09))
+    fv, ff = [], []
+    for a0, a1 in tip_edges():
+        if a1 - a0 > 2 * DOOR_HALF - 1:   # the door's chord: its portal reaches the ceiling
+            continue
+        (x0, y0), (x1, y1) = _tv(a0), _tv(a1)
+        k = len(fv)
+        b0, b1 = (rim - OC_FASCIA - (tip_clear(x) - H_TIP) for x in (x0, x1))   # OC_FASCIA under the rim once slanted
+        fv += [(x0, y0, b0), (x1, y1, b1), (x1, y1, rim + 0.005), (x0, y0, rim + 0.005)]
+        ff += [(k, k + 1, k + 2, k + 3), (k + 3, k + 2, k + 1, k)]
+    parts = [P("slab", M(*slab), "int_silver_b"), P("wells", M(*well), "int_dark"),
+             P("beam", M(*beam), "int_silver_c"), P("lip", M(*lip), "int_silver_a"), P("edge", M(*edge), "int_silver_a"),
+             P("channel", M(*chan), "int_dark"), P("band", M(*band), "int_lamp"),
+             P("ribs", M(*ribs), "int_silver_c"), P("strips", M(*strips), "int_cyan"),
+             L.part("glass", *glass, "int_glass", solid=False), L.part("fascia", fv, ff, "int_silver_c", solid=False)]
+    parts += [P(f"face_{m[-1]}", M(*v), m) for m, v in faces.items() if v]
+    return _slant(parts, rim - 0.2)
+
+
+# details 1: the ceiling's ribs across the axis (x, half width), outside the light ring (were at -1.0, -0.55, 0.825,
+# 1.8 between the three roof windows)
+TIP_RIBS = ((-1.55, 0.05), (-1.12, 0.025), (1.12, 0.025), (1.55, 0.05))
+
+
+def tip_window(args, layout):
+    """lens step 1 (revived from v2's tip_window_frame, one facet): a window facet of the lens room's band: the low
+    wall and its panel under the sill, the sill ledge, the header over the head and its trim (the glass: tip_glass)."""
+    hw, tone = R_TIP * math.sin(D(TIP_STEP / 2)), args.get("tone", "a")
+    fr = G.wall_frame(FLOOR)
+    lo, hi = ("int_silver_a", "int_silver_b") if tone == "a" else ("int_silver_b", "int_silver_a")
+    return [P("body", M(G.slab(fr, G.rect(-hw, hw, 0.0, SILL), -0.2, 0.0), G.slab(fr, G.rect(-hw, hw, HEAD, H_TIP), -0.2, 0.0)),
+              "int_silver_b"),
+            P("kick", G.slab(fr, G.rect(-hw + 0.04, hw - 0.04, 0.0, 0.16), 0.0, 0.015), "int_dark"),
+            P("panel", G.slab(fr, G.rect(-hw + 0.04, hw - 0.04, 0.2, SILL - 0.12), 0.0, 0.03, 0.01), lo),
+            P("sill", G.slab(fr, G.rect(-hw - 0.01, hw + 0.01, SILL - 0.1, SILL), 0.0, 0.16, 0.03), "int_silver_c"),
+            P("trim", G.slab(fr, G.rect(-hw, hw, HEAD, H_TIP - 0.02), 0.0, 0.06, 0.012), hi)]
+
+
+def tip_glass(args, layout):
+    """The glass of one window facet, a single pane 6 cm behind the wall's face (both windings)."""
+    hw = R_TIP * math.sin(D(TIP_STEP / 2))
+    x = 0.06
+    v = [(x, -hw, FLOOR + SILL), (x, hw, FLOOR + SILL), (x, hw, FLOOR + HEAD), (x, -hw, FLOOR + HEAD)]
+    return [L.part("glass", v, [(0, 1, 2, 3), (3, 2, 1, 0)], "int_glass", solid=False)]
+
+
+def tip_mullion(args, layout):
+    """A window vertex's mullion from the sill to the head (origin at the vertex), with a thin outer bar."""
+    fr = G.wall_frame(FLOOR)
+    return [P("mullion", M(G.slab(fr, G.rect(-0.045, 0.045, SILL - 0.02, HEAD + 0.02), -0.12, 0.08, 0.015),
+                           G.slab(fr, G.rect(-0.018, 0.018, SILL, HEAD), 0.08, 0.1, 0.006)), "int_silver_c")]
+
+
+def tip_sill_strip(args, layout):
+    """The cyan strip along one window facet's sill ledge (revived from v2)."""
+    hw = R_TIP * math.sin(D(TIP_STEP / 2))
+    return [P("strip", G.slab(G.wall_frame(FLOOR), G.rect(-hw + 0.03, hw - 0.03, SILL - 0.075, SILL - 0.045), 0.16,
+                              0.17), "int_cyan")]
+
+
+# --- the vault (lens step 1): the hall's shut door and the closet behind it, a shell only ---------------------------
+_VAULT = _ROOM["vault"]
+VAULT_W = (_VAULT["x"][1] - _VAULT["x"][0]) / 2                       # 0.9
+VAULT_L = _VAULT["y"][1] - _VAULT["y"][0]                             # 2.0
+VAULT_H, VAULT_H_BACK = _VAULT["clear_h"], _VAULT["clear_h_back"]       # 2.3 at the door, 1.6 at the back
+DOOR_HALF_W, DOOR_H = _VAULT["door"]["width_m"] / 2, 2.1
+
+
+def hall_door(args, layout):
+    """The vault's door in the hall's back wall: a flat chord over the two back facets (origin on its face, the hall
+    toward -x) with the door's opening and (lens step 2) a ship hatch: a stepped frame in the corridors' arch style
+    with a cyan strip in its header, the CLOSED sliding leaf (two recessed panels, a dark groove, a cyan strip along
+    its leading edge; no handle), a card reader beside it with a small dim light; the soffit closing the ceiling's
+    rim behind the chord. No logic: the hatch stays shut."""
+    hw, apo, h = args["half"], args["apo"], H_HALL
+    fr = G.wall_frame(FLOOR)
+    d, dh = DOOR_HALF_W, DOOR_H
+    body = M(G.slab(fr, G.rect(-hw, -d, 0.0, h), -0.2, 0.0), G.slab(fr, G.rect(d, hw, 0.0, h), -0.2, 0.0),
+             G.slab(fr, G.rect(-d, d, dh, h), -0.2, 0.0))
+    frame = M(G.slab(fr, G.rect(-d - 0.15, -d, 0.0, dh + 0.15), 0.0, 0.07, 0.015),
+              G.slab(fr, G.rect(d, d + 0.15, 0.0, dh + 0.15), 0.0, 0.07, 0.015),
+              G.slab(fr, G.rect(-d, d, dh, dh + 0.15), 0.0, 0.07, 0.015))
+    step = M(G.slab(fr, G.rect(-d - 0.05, -d, 0.0, dh + 0.05), -0.06, 0.035),
+             G.slab(fr, G.rect(d, d + 0.05, 0.0, dh + 0.05), -0.06, 0.035),
+             G.slab(fr, G.rect(-d, d, dh, dh + 0.05), -0.06, 0.035))
+    strip = G.slab(fr, G.rect(-d + 0.04, d - 0.04, dh + 0.075, dh + 0.1), 0.0, 0.075)
+    side = M(*[G.slab(fr, G.rect(a, b, 0.2, h - 0.95), 0.0, 0.025, 0.01) for a, b in ((-hw + 0.05, -d - 0.16), (d + 0.16, hw - 0.05))])
+    kick = M(*[G.slab(fr, G.rect(a, b, 0.0, 0.16), 0.0, 0.015) for a, b in ((-hw + 0.05, -d - 0.15), (d + 0.15, hw - 0.05))])
+    upper = G.slab(fr, G.rect(-hw + 0.05, hw - 0.05, h - 0.8, h - 0.06), 0.0, 0.03, 0.01)
+    belt = G.slab(fr, G.rect(-hw, hw, h - 0.9, h - 0.84), 0.0, 0.05, 0.012)
+    leaf = G.slab(fr, G.rect(-d, d, 0.0, dh), -0.12, -0.06)
+    panels = M(G.slab(fr, G.rect(-d + 0.07, d - 0.16, 0.1, 0.98), -0.06, -0.048, 0.006),
+               G.slab(fr, G.rect(-d + 0.07, d - 0.16, 1.1, dh - 0.1), -0.06, -0.048, 0.006))
+    groove = G.slab(fr, G.rect(-d, d - 0.12, 1.02, 1.06), -0.06, -0.056)
+    edge = G.slab(fr, G.rect(d - 0.1, d - 0.07, 0.15, dh - 0.15), -0.06, -0.052)
+    reader = G.slab(fr, G.rect(d + 0.22, d + 0.34, 1.12, 1.38), 0.0, 0.045, 0.008)
+    light = G.slab(fr, G.rect(d + 0.25, d + 0.31, 1.29, 1.33), 0.045, 0.05)
+    tri = [(0.0, -hw), (HV - apo, 0.0), (0.0, hw)]
+    soffit = G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08)
+    return [P("body", body, "int_silver_b"), P("trim", M(frame, belt), "int_silver_c"), P("step", step, "int_dark"),
+            P("side", side, "int_silver_a"), P("kick", kick, "int_dark"), P("upper", upper, "int_silver_a"),
+            P("leaf", leaf, "int_silver_a"), P("leaf_panels", panels, "int_silver_b"), P("groove", groove, "int_dark"),
+            P("strips", M(strip, edge), "int_cyan"), P("reader", reader, "int_dark"), P("lamp", light, "int_cyan"),
+            P("soffit", soffit, "int_silver_b")]
+
+
+def vault_top(y: float) -> float:
+    """The vault's ceiling over the deck, y from its door-side clear face (2.3 there, 1.6 at the back)."""
+    return VAULT_H + (VAULT_H_BACK - VAULT_H) * y / VAULT_L
+
+
+def vault_shell(args, layout):
+    """The vault's shell (origin at its door-side clear face's middle, y aft): floor, walls with the corridors'
+    panels (kick, lower panel, belt, upper panel), the door's lining, the ceiling slanting down aft, two ribs and a
+    lamp. Wall and panel heights over 1.5 m follow the ceiling; the ceiling and what hangs from it drop with it."""
+    w, ln, t = VAULT_W, VAULT_L, 0.2
+    d = DOOR_HALF_W
+    top = FLOOR + VAULT_H + 0.12
+    walls = [G.bbox(-w - t, -w, -t, ln + t, FLOOR - 0.25, top), G.bbox(w, w + t, -t, ln + t, FLOOR - 0.25, top),
+             G.bbox(-w, w, ln, ln + t, FLOOR - 0.25, top), G.bbox(-w, -d - 0.1, -t, 0.0, FLOOR - 0.25, top),
+             G.bbox(d + 0.1, w, -t, 0.0, FLOOR - 0.25, top), G.bbox(-d - 0.1, d + 0.1, -t, 0.0, FLOOR + DOOR_H + 0.1, top)]
+    lining = [G.bbox(-d - 0.1, -d, -0.45, 0.0, FLOOR, FLOOR + DOOR_H + 0.1), G.bbox(d, d + 0.1, -0.45, 0.0, FLOOR, FLOOR + DOOR_H + 0.1),
+              G.bbox(-d, d, -0.45, 0.0, FLOOR + DOOR_H, FLOOR + DOOR_H + 0.1)]
+    floor = [G.bbox(-w - t, w + t, -t, ln + t, FLOOR - 0.25, FLOOR - 0.04)]
+    plate = [G.bbox(-w, w, 0.0, ln, FLOOR - 0.04, FLOOR)]
+    kick, low, belt, up = [], [], [], []
+    for sx in (-1, 1):   # the side walls' panels, two along each
+        for y0, y1 in ((0.05, 0.97), (1.03, 1.95)):
+            f0, f1 = (w - 0.015, w) if sx > 0 else (-w, -w + 0.015)
+            g0, g1 = (w - 0.025, w) if sx > 0 else (-w, -w + 0.025)
+            kick.append(G.bbox(f0, f1, y0, y1, FLOOR, FLOOR + 0.16))
+            low.append(G.bbox(g0, g1, y0, y1, FLOOR + 0.2, FLOOR + 1.35))
+            up.append(G.bbox(g0, g1, y0, y1, FLOOR + 1.58, FLOOR + VAULT_H - 0.05))
+        b0, b1 = (w - 0.04, w) if sx > 0 else (-w, -w + 0.04)
+        belt.append(G.bbox(b0, b1, 0.0, ln, FLOOR + 1.4, FLOOR + 1.52))
+    for x0, x1 in ((-0.85, -0.03), (0.03, 0.85)):   # the back wall's
+        kick.append(G.bbox(x0, x1, ln - 0.015, ln, FLOOR, FLOOR + 0.16))
+        low.append(G.bbox(x0, x1, ln - 0.025, ln, FLOOR + 0.2, FLOOR + 1.35))
+        up.append(G.bbox(x0, x1, ln - 0.025, ln, FLOOR + 1.58, FLOOR + VAULT_H - 0.05))
+    belt.append(G.bbox(-w, w, ln - 0.04, ln, FLOOR + 1.4, FLOOR + 1.52))
+    ceil = [G.bbox(-w - t, w + t, -t, ln + t, FLOOR + VAULT_H, top)]
+    ribs = [G.bbox(-w, w, y - 0.04, y + 0.04, FLOOR + VAULT_H - 0.06, FLOOR + VAULT_H) for y in (0.4, 1.4)]
+    housing = [G.bbox(-0.16, 0.16, 0.72, 1.08, FLOOR + VAULT_H - 0.07, FLOOR + VAULT_H)]
+    lens = [G.bbox(-0.13, 0.13, 0.75, 1.05, FLOOR + VAULT_H - 0.085, FLOOR + VAULT_H - 0.07)]
+    squash = [P("walls", M(*walls), "int_silver_b"), P("lining", M(*lining), "int_silver_c"),
+              P("kick", M(*kick), "int_dark"), P("low", M(*low), "int_silver_a"), P("belt", M(*belt), "int_silver_c"),
+              P("up", M(*up), "int_silver_a")]
+    drop = [P("ceil", M(*ceil), "int_silver_b"), P("ribs", M(*ribs), "int_silver_c"),
+            P("housing", M(*housing), "int_silver_c"), P("lens", M(*lens), "int_lamp")]
+    for p in squash:   # over 1.5 m: scaled to the ceiling at y
+        p["verts"] = [(x, y, h if h <= FLOOR + 1.5 else FLOOR + 1.5 + (h - FLOOR - 1.5) * (vault_top(y) - 1.5) / (VAULT_H - 1.5))
+                      for x, y, h in p["verts"]]
+    for p in drop:     # rigid: down with the ceiling
+        p["verts"] = [(x, y, h + vault_top(y) - VAULT_H) for x, y, h in p["verts"]]
+    return squash + drop + [P("floor", M(*floor), "int_dark"), P("plate", M(*plate), "int_plate")]
 
 
 # --- details -------------------------------------------------------------------------------------------------------

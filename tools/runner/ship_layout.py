@@ -7,7 +7,10 @@ with a positive signed area in plan (x, y): counter-clockwise in the (x, y) axes
 running south; the throat) or
 "strip"s (a straight corridor at any angle: `axis` [from, to], `along` [u0, u1] its floor's ends measured from
 `from`, `width`). The least skin round every room comes from the
-hull's own shape (tools/blender/ship_hull_shape.py, plain Python; [hull] shape names its variant).
+hull's own shape (tools/blender/ship_hull_shape.py, plain Python; [hull] shape names its variant). A room may slant
+its ceiling (`ceiling = "slant"`: the lens rooms' `clear_h_in`, the vault's `clear_h_back`), carry a window `band`
+(check_bands) or be `closed` (the vault: a shut `door` on another room's wall, no exit, no link, not walkable floor;
+check_closed).
 Plan coordinates: x east, y south, h up (metres); Godot (x, h, y)."""
 
 from __future__ import annotations
@@ -216,8 +219,9 @@ def check(layout: dict[str, Any]) -> list[str]:
     player = layout["player"]
     need = player["capsule_height_m"] + player["head_margin_m"]
     for r in layout["rooms"]:
-        if r["clear_h"] < need:
-            problems.append(f"{r['id']}: clear height {r['clear_h']:g} m < {need:g} m (capsule and margin)")
+        least = min(r["clear_h"], r.get("clear_h_in", r["clear_h"]))   # a slanted ceiling's lower end
+        if not r.get("closed") and least < need:   # a closed room (the vault): nobody walks there
+            problems.append(f"{r['id']}: clear height {least:g} m < {need:g} m (capsule and margin)")
         if r["shape"] == "circle" and r["radius"] * 2 < 2 * player["capsule_radius_m"] + 2.0:
             problems.append(f"{r['id']}: too small to walk round in")
     # one entrance: exactly one room with an exit, the ramp's hinge on its north edge; every room reachable
@@ -249,9 +253,12 @@ def check(layout: dict[str, Any]) -> list[str]:
             elif not _touch(by_id[rid], by_id[other]):
                 problems.append(f"{rid} and {other} are linked but do not meet")
             todo.append(other)
-    if seen != set(by_id):
-        problems.append(f"rooms not reachable from the hall: {', '.join(sorted(set(by_id) - seen))}")
+    closed = {r["id"] for r in layout["rooms"] if r.get("closed")}
+    if seen | closed != set(by_id):
+        problems.append(f"rooms not reachable from the hall: {', '.join(sorted(set(by_id) - seen - closed))}")
     problems += check_polys(layout)
+    problems += check_closed(layout)
+    problems += check_bands(layout)
     problems += check_spots(layout)
     problems += check_walk(layout)
     problems += hull_skin(layout)
@@ -265,6 +272,13 @@ def check(layout: dict[str, Any]) -> list[str]:
         out = [p for p in pts if not inside(poly, p)]
         if out:
             problems.append(f"{r['id']}: {len(out)} wall points outside the hull, e.g. ({out[0][0]:.2f}, {out[0][1]:.2f})")
+    return problems + _pieces(layout, poly)
+
+
+def _pieces(layout: dict[str, Any], poly: list[tuple[float, float]] | None = None) -> list[str]:
+    """No piece defined twice or never placed, none unknown; with the hull's outline (poly) every placed piece inside
+    it unless it may stand outside."""
+    problems = []
     pieces = {p["id"]: p for p in layout["pieces"]}
     ids = [p["id"] for p in layout["pieces"]]
     for dup in sorted({i for i in ids if ids.count(i) > 1}):
@@ -273,11 +287,107 @@ def check(layout: dict[str, Any]) -> list[str]:
         piece = pieces.get(pid)
         if piece is None:
             problems.append(f"placement of unknown piece {pid}")
-        elif not piece["outside"] and not inside(poly, (at[0], at[1])):
+        elif poly is not None and not piece["outside"] and not inside(poly, (at[0], at[1])):
             problems.append(f"{pid} at ({at[0]:g}, {at[1]:g}) stands outside the hull")
     unplaced = sorted(set(pieces) - {p[0] for p in layout["place"]})
     if unplaced:
         problems.append(f"pieces never placed: {', '.join(unplaced)}")
+    return problems
+
+
+def check_closed(layout: dict[str, Any]) -> list[str]:
+    """A closed room (the vault): no exit and no links either way; its shut door (width_m at least the capsule's width
+    and 0.1 m) on the wall of its door's room (`room`: 0.05 m in to 0.35 m behind that room's floor edge) and before
+    its own floor (within 0.4 m); its floor's edge outside the other room's wall; a slanted ceiling falling from the
+    door."""
+    problems = []
+    by_id = rooms(layout)
+    wall, rad = layout["deck"]["wall_m"], layout["player"]["capsule_radius_m"]
+    for r in layout["rooms"]:
+        if not r.get("closed"):
+            continue
+        rid = r["id"]
+        if r.get("exit") or r.get("links") or any(rid in o.get("links", []) for o in layout["rooms"]):
+            problems.append(f"{rid}: a closed room has no exit and no links")
+        door = r.get("door") or {}
+        other = by_id.get(door.get("room", ""))
+        if other is None or "at" not in door:
+            problems.append(f"{rid}: a closed room needs a door on another room's wall")
+            continue
+        at = tuple(door["at"])
+        if not -0.35 <= room_margin(other, at) <= 0.05:
+            problems.append(f"{rid}: its door ({at[0]:g}, {at[1]:g}) is not on {other['id']}'s wall")
+        if not -0.4 <= room_margin(r, at) <= 0.0:
+            problems.append(f"{rid}: its door ({at[0]:g}, {at[1]:g}) is not before its floor")
+        if door.get("width_m", 0.0) < 2 * rad + 0.1:
+            problems.append(f"{rid}: its door is narrower than {2 * rad + 0.1:g} m")
+        inner = [p for p in boundary(r, 0.0) if room_margin(other, p) > -wall]
+        if inner:
+            problems.append(f"{rid}: {len(inner)} floor edge points inside {other['id']}'s wall")
+        if r.get("ceiling") == "slant" and not 0 < r.get("clear_h_back", r["clear_h"]) <= r["clear_h"]:
+            problems.append(f"{rid}: its ceiling does not slant down from the door")
+    return problems
+
+
+def band_angles(layout: dict[str, Any], room: dict[str, Any]) -> tuple[float, float, float]:
+    """A room's window band in plan degrees round its centre (plan angles grow toward +y, aft): (outward axis, from,
+    to); the axis runs from the hall's centre through the room's, the band's degrees are + aft on both sides (the
+    west band is the east one mirrored)."""
+    hx, hy = rooms(layout)["hall"]["centre"]
+    cx, cy = room["centre"]
+    axis = math.degrees(math.atan2(cy - hy, cx - hx))
+    b = room["band"]
+    if cx >= hx:
+        return axis, axis + b["from_deg"], axis + b["to_deg"]
+    return axis, axis - b["to_deg"], axis - b["from_deg"]
+
+
+def built_band(layout: dict[str, Any], room: dict[str, Any]) -> tuple[float, float]:
+    """A lens room's window band as built (deg round its outward axis, + aft): the asked from_deg..to_deg snapped to
+    the room's wall facets, each end to a facet vertex within 1.5 deg (ship_interior.tip_band_facets; -65.86..43.91 for
+    the asked -65..45). The hull cuts this band (ship_hull_shape.P_BAND) and test_the_built_window_band_is_fully_visible
+    holds it clear of every hull part. The snap follows the layout's band and the interior's facets (TIP_N, the
+    corridor's width); a band that meets no whole facet comes back as asked."""
+    import sys
+    from pathlib import Path as _Path
+    blender = str(_Path(__file__).resolve().parents[1] / "blender")
+    if blender not in sys.path:
+        sys.path.insert(0, blender)
+    import ship_interior
+    b, tv = room["band"], ship_interior.tip_vertices()
+    fs = [i for i, (a0, a1) in enumerate(zip(tv, tv[1:])) if b["from_deg"] - 1.5 <= a0 and a1 <= b["to_deg"] + 1.5]
+    return (tv[fs[0]], tv[fs[-1] + 1]) if fs else (b["from_deg"], b["to_deg"])
+
+
+def check_bands(layout: dict[str, Any]) -> list[str]:
+    """A room's window band: the sill under the head, the head 0.1 m under the room's least clear height, the band on
+    the outer side (inside +-90 deg of the outward axis, off the door) and off every wall spot's plain band in that
+    room (by angle: the plain width over the room's radius). The asked band and the band as built (built_band, the
+    asked one snapped to the wall's facets) are both held: the outer side and the stations' plain walls against the
+    wider of the two."""
+    problems = []
+    st = layout["stations"]
+    for r in layout["rooms"]:
+        b = r.get("band")
+        if not b:
+            continue
+        if not 0.3 <= b["sill_h"] < b["head_h"] <= r["clear_h"] - 0.1:
+            problems.append(f"{r['id']}: its window band's sill {b['sill_h']:g} and head {b['head_h']:g} do not fit "
+                            f"under {r['clear_h']:g} m")
+        g0, g1 = built_band(layout, r)
+        lo, hi = min(b["from_deg"], g0), max(b["to_deg"], g1)
+        if not -90.0 < lo < hi < 90.0:
+            problems.append(f"{r['id']}: its window band is not on the outer side")
+        axis, a0, a1 = band_angles(layout, r)
+        east = r["centre"][0] >= rooms(layout)["hall"]["centre"][0]
+        a0, a1 = (axis + lo, axis + hi) if east else (axis - hi, axis - lo)
+        for s in st["spot"]:
+            if s["room"] != r["id"] or not s.get("normal"):
+                continue
+            a = math.degrees(math.atan2(s["at"][1] - r["centre"][1], s["at"][0] - r["centre"][0]))
+            half = math.degrees(st["plain_width_m"] / 2 / r["radius"])
+            if any(a - half + k < a1 and a + half + k > a0 for k in (-360.0, 0.0, 360.0)):
+                problems.append(f"station {s['id']}: its plain wall overlaps {r['id']}'s window band")
     return problems
 
 
@@ -303,10 +413,13 @@ def check_walk(layout: dict[str, Any]) -> list[str]:
     """Every capsule walk point on the deck (h at floor_h or above; the ones below stand on the ground or the ramp)
     lies on a room's floor with at least the capsule's radius of room round it. rebuild F: so does the walk between two
     such points, sampled every 0.25 m: the capsule's footprint (its centre and 16 points on its rim) on the rooms'
-    floors (where two rooms meet, the footprint may lie in both)."""
+    floors (where two rooms meet, the footprint may lie in both). The walk (its deck points and the samples between
+    them) enters every room but a closed one, with the capsule's centre on that room's floor; the corridors hold no
+    point of their own (the walk runs through them from the hall's points to the lens rooms'), so the samples count."""
     rad, floor = layout["player"]["capsule_radius_m"], layout["deck"]["floor_h"]
     problems = []
     pts = layout["walk"]["points"]
+    on_deck = [(p[0], p[1]) for p in pts if p[2] >= floor - TOL]
     for p in pts:
         if p[2] >= floor - TOL and in_rooms(layout, (p[0], p[1])) < rad - TOL:
             problems.append(f"walk point ({p[0]:g}, {p[1]:g}) is not on a room's floor with {rad:g} m round it")
@@ -317,10 +430,14 @@ def check_walk(layout: dict[str, Any]) -> list[str]:
         n = max(1, math.ceil(math.dist(a[:2], b[:2]) / 0.25))
         for i in range(n + 1):
             c = (a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n)
+            on_deck.append(c)
             if min(in_rooms(layout, (c[0] + dx, c[1] + dy)) for dx, dy in rim) < -TOL:
                 problems.append(f"the walk from ({a[0]:g}, {a[1]:g}) to ({b[0]:g}, {b[1]:g}) leaves the rooms' floor "
                                 f"(the capsule's {rad:g} m) at ({c[0]:.2f}, {c[1]:.2f})")
                 break
+    for r in layout["rooms"]:
+        if not r.get("closed") and not any(room_margin(r, c) >= 0.0 for c in on_deck):
+            problems.append(f"{r['id']}: the walk does not enter it (every room but a closed one needs it)")
     return problems
 
 
@@ -363,8 +480,9 @@ def _unit(v: list[float]) -> tuple[float, float]:
 
 
 def in_rooms(layout: dict[str, Any], pt: tuple[float, float]) -> float:
-    """How far pt lies inside the rooms' floor (the largest margin over all rooms; < 0 outside every room)."""
-    return max(room_margin(r, pt) for r in layout["rooms"])
+    """How far pt lies inside the walkable rooms' floor (the largest margin over every room but the closed ones; < 0
+    outside every room)."""
+    return max(room_margin(r, pt) for r in layout["rooms"] if not r.get("closed"))
 
 
 def to_local(pt: tuple[float, float], at: list[float], yaw: float) -> tuple[float, float]:

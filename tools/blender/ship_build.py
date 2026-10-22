@@ -12,6 +12,7 @@ materials and bounds in Godot's frame (x, h, y)."""
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -53,6 +54,12 @@ def make(p: dict):
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
     if p["solid"]:
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    if p.get("smooth_deg"):   # lens polish: smooth across shallow edges, sharp over smooth_deg (the lens's plates)
+        lim = math.radians(p["smooth_deg"])
+        for e in bm.edges:
+            e.smooth = e.is_manifold and e.calc_face_angle(math.pi) <= lim
+        for f in bm.faces:
+            f.smooth = True
     bm.to_mesh(mesh)
     bm.free()
     if p.get("smooth"):  # a part shaded smooth (the nozzle pods' shells, the canopy glass)

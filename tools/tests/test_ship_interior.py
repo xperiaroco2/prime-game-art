@@ -67,9 +67,9 @@ class ShipInteriorTest(unittest.TestCase):
         self.assertGreater(S.HCH, S.COR_HALF)              # the hall's chords
         self.assertGreater(S.TIP_CHORD_H, S.COR_HALF)      # the tip rooms' chords
         self.assertAlmostEqual(S.COR_X0, 3.918, places=2)  # the corridor modules run portal to portal (v2)
-        self.assertAlmostEqual(S.COR_X1, 8.024, places=2)  # rebuild A: along the diagonal (v2 7.111)
-        self.assertEqual(S.N_MOD, 4)
-        self.assertAlmostEqual(S.MOD_L, 1.026, places=3)
+        self.assertAlmostEqual(S.COR_X1, 9.107, places=2)  # lens step 1: to the lens's portal (rebuild A 8.024)
+        self.assertEqual(S.N_MOD, 5)
+        self.assertAlmostEqual(S.MOD_L, 1.038, places=3)
         self.assertEqual(S.OPENINGS["corridor_w"], 180.0 - S.OPENINGS["corridor_e"])
 
     def test_head_room(self) -> None:
@@ -83,17 +83,80 @@ class ShipInteriorTest(unittest.TestCase):
         v_at = v0 + (v1 - v0) * (u0 - u_in) / (u0 - u1) if u_in > u1 else v1
         self.assertGreaterEqual(v_at, pl["capsule_height_m"])
 
-    def test_the_mouth_opens_wide_and_the_tip_rooms_have_no_window(self) -> None:
+    def test_the_mouth_opens_wide_and_the_lens_window_band(self) -> None:
+        """lens step 1: the window band's five facets (window, glass, sill strip) on the outer side, biased forward
+        (+ aft round the outward axis, the west room mirrored), mullions between them, pilasters at its ends; the
+        other seven facets plain panels; no shutters or wells."""
         self.assertEqual(S.THROAT_PROF[1][1], S.PROF[1][1])   # rebuild C: the throat bends where the corridors do
-        # rebuild A (the engineer, 2026-10-22): no tip windows; the window's segments are wall facets
         ids = {p["id"] for p in INTERIOR["pieces"]}
-        self.assertFalse({i for i in ids if any(w in i for w in ("window", "shutter", "well", "sill", "glass"))})
+        self.assertFalse({i for i in ids if any(w in i for w in ("shutter", "well"))})
         self.assertEqual(INTERIOR.get("shutter_closed", []), [])
+        tv = S.tip_vertices()
+        self.assertAlmostEqual(tv[3], -65.86, places=2)
+        self.assertAlmostEqual(tv[8], 43.91, places=2)
         for sx in (1, -1):
-            c = (sx * S.TIP_C[0] + S.HALL_C[0], S.TIP_C[1] + S.HALL_C[1])
-            panels = [1 for pid, (x, y, _), _ in INTERIOR["place"] if pid.startswith("tip_panel")
-                      and math.hypot(x - c[0], y - c[1]) < S.R_TIP]
-            self.assertEqual(len(panels), S.TIP_N)
+            cx, cy = sx * S.TIP_C[0] + S.HALL_C[0], S.TIP_C[1] + S.HALL_C[1]
+            near = [(pid, math.degrees(math.atan2(y - cy, sx * (x - cx))) - S.COR_ANG) for pid, (x, y, _), _ in
+                    INTERIOR["place"] if math.hypot(x - cx, y - cy) < S.R_TIP + 0.01 and math.hypot(x - cx, y - cy) > 1.5]
+            wins = sorted(round(a, 2) for pid, a in near if pid.startswith("tip_window"))
+            self.assertEqual(len(wins), 5)
+            self.assertEqual(len([1 for pid, _ in near if pid.startswith("tip_panel")]), S.TIP_N - 5)
+            self.assertEqual(len([1 for pid, _ in near if pid == "tip_glass"]), 5)
+            self.assertEqual(len([1 for pid, _ in near if pid == "tip_mullion"]), 4)
+            self.assertGreater(min(wins), S.BAND["from_deg"] - 1.5)
+            self.assertLess(max(wins), S.BAND["to_deg"] + 1.5)
+
+    def test_the_lens_ceiling_slants_round_its_oculus(self) -> None:
+        """lens step 1: the ceiling from 2.4455 at the corridor's side to 2.3545 at the outer wall (P's), the walls
+        H_TIP high under it; details 1: the slab round the oculus (none over its clear disc, every room point outside
+        the light ring under exactly one cell), the six lamps on the light ring, the ribs clear of it."""
+        self.assertAlmostEqual(S.tip_clear(-S.RW_TIP + 0.2), 2.4455, places=3)
+        self.assertAlmostEqual(S.tip_clear(S.RW_TIP - 0.2), 2.3545, places=3)
+        self.assertLessEqual(S.H_TIP, min(S.tip_clear(t) for t in (-2.2, 0.0, 2.2)))
+        cells = S.tip_ceiling_cells()
+
+        def inside(p, poly):
+            return all((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) >= -1e-9
+                       for a, b in zip(poly, poly[1:] + poly[:1]))
+        self.assertEqual(S.OC_R, 0.7)
+        inner = min(math.hypot(x, y) * math.cos(math.atan2(y, x) - S.oc_angle(k)) for k, c in enumerate(cells)
+                    for x, y in c)
+        self.assertGreater(inner, S.OC_WELL[0] + 1e-3)   # the slab starts outside the clear disc,
+        self.assertLess(inner, S.OC_WELL[1] - 1e-3)      # and overlaps the well's lining (no gap round the oculus)
+        for r in (0.0, 0.3, S.OC_R - 0.01):
+            self.assertFalse(any(inside((r, 0.0), c) for c in cells))
+        for p in ((-1.0, 1.0), (1.9, 0.0), (0.0, 1.2), (-1.3, -0.4), (1.05, 0.3), (0.85, 0.0), (0.0, -0.85)):
+            self.assertEqual(sum(1 for c in cells if inside(p, c)), 1, p)
+        # details 2: the light ring's warm strip is slim (7 cm) inside the dark channel, under the beam; no lamps
+        parts = {q["name"]: q for q in S.tip_ceiling({}, None)}
+        rs = [math.hypot(x, y) for x, y, _h in parts["band"]["verts"]]
+        self.assertTrue(0.06 <= max(rs) - min(rs) <= 0.08, max(rs) - min(rs))
+        cr = [math.hypot(x, y) for x, y, _h in parts["channel"]["verts"]]
+        self.assertTrue(min(cr) < min(rs) and max(rs) < max(cr) < S.OC_BEAM[1] and min(cr) > S.OC_R + 0.03)
+        self.assertFalse([1 for pid, *_r in INTERIOR["place"] if pid == "tip_lamp"])
+        # D1 review: the fascia's foot OC_FASCIA (10 cm) under the walls' top everywhere round the slant
+        rim = S.FLOOR + S.H_TIP
+        self.assertAlmostEqual(min(h for _x, _y, h in parts["fascia"]["verts"]), rim - S.OC_FASCIA, places=6)
+        self.assertAlmostEqual(max(h for _x, _y, h in parts["fascia"]["verts"] if h < rim - 0.05), rim - S.OC_FASCIA,
+                               places=6)
+        self.assertGreater(min(abs(x) - w for x, w in S.TIP_RIBS), S.OC_BEAM[1] + 0.05)
+        parts = S.tip_ceiling({}, None)
+        hs = [h for q in parts if q["name"] == "slab" for x, y, h in q["verts"] if abs(h - S.FLOOR - S.tip_clear(x)) < 1e-6]
+        self.assertTrue(hs)
+
+    def test_the_vault_door_and_shell(self) -> None:
+        """lens step 1: the hall's back is the vault's door (one shut door piece on a flat chord over the two back
+        facets, centred at 90 deg), the shell placed behind it; the vault's ceiling 2.3 m at the door, 1.6 at the
+        back."""
+        doors = [(x, y) for pid, (x, y, _), _ in INTERIOR["place"] if pid == "hall_door"]
+        self.assertEqual(len(doors), 1)
+        self.assertAlmostEqual(doors[0][0], 0.0, places=4)
+        self.assertAlmostEqual(doors[0][1], 3.6, delta=0.03)
+        self.assertEqual([k for *_a, k in S.hall_segments()].count("door"), 1)
+        shells = [(x, y) for pid, (x, y, _), _ in INTERIOR["place"] if pid == "vault_shell"]
+        self.assertEqual(shells, [(0.0, 3.85)])
+        self.assertAlmostEqual(S.vault_top(0.0), 2.3)
+        self.assertAlmostEqual(S.vault_top(S.VAULT_L), 1.6)
 
     def test_the_hall_openings_face_the_diagonal_corridors(self) -> None:
         """rebuild A: each corridor's opening and portal centred on its axis, the openings two facets' chord wide."""
@@ -126,12 +189,14 @@ class ShipInteriorTest(unittest.TestCase):
         segment (facet, flat chord, opening) has exactly one plate centred on it, of its kind; every tip-room edge
         its rim plate (the door's three)."""
         kinds = {"facet": "hall_floor_rim", "flat": "hall_flat_floor", "flat_lo": "hall_flat_floor",
-                 "opening": "hall_threshold"}
+                 "opening": "hall_threshold", "door": "hall_floor_rim_back"}
         plates = [(pid, math.degrees(math.atan2(y - S.HALL_C[1], x - S.HALL_C[0]))) for pid, (x, y, _), _yaw
                   in INTERIOR["place"] if pid.startswith(("hall_floor_rim", "hall_flat_floor", "hall_threshold"))
                   and pid != "hall_floor_rim_throat"]
         segs = [s for s in S.hall_segments() if s[2] != "throat"]   # rebuild C: the throat's sub-facets' own rims
-        self.assertEqual(len(plates), len(segs))
+        self.assertEqual(len(plates), len(segs) + 1)   # lens step 1: the door's two back rim plates
+        door = next(s for s in segs if s[2] == "door")
+        segs = [s for s in segs if s[2] != "door"] + [(door[0], 90.0, "door"), (90.0, door[1], "door")]
         self.assertEqual(sum(1 for p in INTERIOR["place"] if p[0] == "hall_floor_rim_throat"), 2 * S.TH_SUBS // 2)
         for a0, a1, k in segs:
             mid = (a0 + a1) / 2
@@ -178,12 +243,8 @@ class ShipInteriorTest(unittest.TestCase):
             if pid.startswith("cor_bay"):
                 x0, x1 = along(x, y) + foot[pid][0], along(x, y) + foot[pid][1]
                 self.assertTrue(x1 <= lo + 1e-3 or x0 >= hi - 1e-3, (pid, x))
-        ends = [a for a0, a1, k in S.hall_segments() if k == "flat" for a in (a0, a1)]
-        trunks = [math.degrees(math.atan2(y, x)) for pid, (x, y, _), _yaw in place if pid == "hall_trunk"]
-        self.assertEqual([round(a, 3) for a in trunks], [90.0])   # the back's one trunk, as v2
-        for a in trunks:
-            for f in ends:
-                self.assertGreater(abs(((a - f + 180) % 360) - 180), 1.0, (a, f))
+        trunks = [pid for pid, *_ in place if pid == "hall_trunk"]
+        self.assertEqual(trunks, [])   # lens step 1: the back's one trunk (90 deg) is the vault's door
 
 
 if __name__ == "__main__":

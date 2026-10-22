@@ -73,6 +73,40 @@ The second pass (`--tag v2`, the manager's notes on the first sheets) builds int
 The heads are not rigged yet (step 2b: the shared neck, face bones or shape keys, spring bones on the gills), so
 `godot-check`'s skeleton, parts and animation checks fail on them by design; its import and texture checks apply.
 
+### The roster pilot's static premium heads (art #196, 2026-10-22)
+
+The engineer's goal after the rigged faces (2026-10-22): the chameleon man and the axolotl woman as **static** heads
+(no blink, talk or expressions, no face rig) with premium materials and a skin colour the player can change. The
+rigged builds looked wrong where lips and lids were cut out of Meshy's fused sculpt and glued back, so this route does
+**no surgery**: Meshy's own sculpt, decimated, keeps its sculpted lids, lips, gills and painted eyes.
+`$PYTHON_BIN tools/blender/alien_static_run.py [--heads chameleon,axolotl] [--no-build] [--no-shots]` runs
+`tools/blender/alien_static_head.py` per head (through `tools/runner/blender.py`), glTF-Validator on both GLBs and the
+Godot sheets (`godot/alien/static_shots.gd` through `_godot.window()`); `tools/run.sh godot-check --textured <glb>`
+runs separately. Output: `<raw>/research/2026-10-22-roster/design/pilot3d/static/<head>/`, about 3 minutes a head.
+
+- **Geometry:** the dense original (`multi_image_to_3d-pre_remeshed_model.glb`, one closed shell, the same frame as the
+  textured remesh) decimated symmetrically to 32k (chameleon) and 40k (axolotl) triangles, LOD1 at 45 % (14.4k,
+  18k). The chameleon's crest-root ledge is smoothed in step 2a's soft region after the bakes (smoothing before them
+  left the colour bake's rays short of the source: black patches).
+- **Maps** (a new smart UV atlas): `<head>_albedo.png` sRGB (baked at 4096, saved at 2048 for the contract's `texture_size`), `<head>_normal.png` 2048 tangent (from the dense
+  original; flattened on the painted eyes and the ledge), `<head>_mask.png` 2048 linear: **R the skin tint mask**
+  (1 skin, 0 the painted eyes: inside each eye's fitted sphere, the texels that are not teal), G roughness (skin 0.42,
+  lips 0.28, eyes 0.04 for a wet glint, gills 0.5), B the subsurface and sheen weight. The albedo is Meshy's texture
+  through step 2a's palette ramp (and the chameleon's crest stripes), its saturation then matched to the 2D front's
+  teal and pale medians; the eyes keep Meshy's own paint (sclera cleaned toward white, iris a little richer).
+- **The GLB** has one material `<head>_static_skin` (albedo, roughness from the mask's G, normal) that any glTF viewer
+  shows; extras `base_skin_srgb` (the albedo's skin teal) and `tint_mask`. In Godot `godot/alien/alien_static.gd`
+  swaps it for the tint ShaderMaterial (`docs/godot.md`, "The alien pilot's static heads").
+- **Sheets:** `<head>_base_choice.png` (the 2D front, side, back and roster image; this build; step 2a's v2, Workbench),
+  `godot/views.png` (front, 3/4, side, back, face close-up under the showroom's AgX), `godot/strip.png` and
+  `colour.json` (the 2D, Blender, then the tone variants, measured), `godot/views_pick.png`, `godot/colours.png`.
+- **The pale fault:** the albedo matches the 2D (teal saturation 0.54 against the 2D's 0.54 on the axolotl after the
+  match; Blender's Standard view of it 0.43, the 2D's own front render 0.46 to 0.55). Godot's showroom AgX at exposure
+  0.9 drops the rendered teal's saturation to 0.31 to 0.35 and lifts the skin into AgX's shoulder, where it washes
+  toward white: the same albedo reads pale. Step 2a's palette stops, taken from the 2D's brighter pixels, also gave a
+  less saturated teal (0.47) than the 2D's. `strip.png` measures AgX 0.65 with the environment's saturation 1.35
+  closest to the 2D for both heads; it is a look change for the engineer (`look_presets.json` is untouched).
+
 ### T1, the socketed head (art #196, 2026-10-22)
 
 The test of "a head with recesses and separate pieces swapped whole". Step 1 (`batches/2026-10-22-alien-t1-sockets-2d.toml`,

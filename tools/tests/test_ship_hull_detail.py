@@ -26,6 +26,33 @@ def verts(parts):
 
 
 class ShipHullDetailTest(unittest.TestCase):
+    def test_the_cockpits_fit_under_their_glass(self) -> None:
+        """details 1: each canopy holds a seat (pan, back, headrest, armrests), a console with three screens, all
+        under the glass (2 cm clear), the screens glowing cyan, the glass the lighter canopy glass."""
+        for side in (-1.0, 1.0):
+            parts = {p["name"]: p for p in D.cockpit(side)}
+            self.assertEqual(set(parts), {"canopy_floor", "canopy_glow", "canopy_seat", "canopy_pads", "canopy_screen"})
+            for name, p in parts.items():
+                for x, y, h in p["verts"]:
+                    self.assertLess(h, D.glass_h(side, x, y) - 0.02, f"{name} through the glass at ({x:.2f}, {y:.2f})")
+            self.assertEqual(len(parts["canopy_screen"]["verts"]), 3 * 8)
+            self.assertEqual(parts["canopy_screen"]["mat"], "ext_screen")
+            self.assertEqual(parts["canopy_seat"]["mat"], "ext_seat")
+            seat = [y for _x, y, _h in parts["canopy_seat"]["verts"]]
+            self.assertLess(min(seat), D.CANOPY["y"] - 0.4, "no console ahead of the seat (-y)")
+            glass = D.canopy({"side": side, "part": "glass"}, LAYOUT)
+            self.assertEqual(glass[0]["mat"], "glass_canopy")
+
+    def test_the_oculus_frame_rings_the_cut(self) -> None:
+        """details 1: the oculus's ring frame on each lens, round its centre, over the cut's edge and out onto the
+        plates, on the hull's top."""
+        frame = next(p for p in D.lens_frames({}, LAYOUT) if p["name"] == "oculus_frame")
+        for sx in (1, -1):
+            cx, cy = sx * S.P_TIP[0], S.P_TIP[1]
+            rs = [math.hypot(x - cx, y - cy) for x, y, _h in frame["verts"] if x * sx > 0]
+            self.assertLess(min(rs), S.P_OCULUS_R)
+            self.assertGreater(max(rs), S.P_OCULUS_R + 0.12)
+            self.assertLess(max(rs), S.P_OCULUS_R + 0.25)
     def test_the_canopies_sit_on_the_hull(self) -> None:
         for side in (-1.0, 1.0):
             for part in ("glass", "fairing", "glow"):
@@ -34,9 +61,10 @@ class ShipHullDetailTest(unittest.TestCase):
                     if top is not None:
                         self.assertGreater(h, top - 0.1, f"canopy {part} under the hull at ({x:.2f}, {y:.2f})")
             glass = verts(D.canopy({"side": side, "part": "glass"}, LAYOUT))
-            self.assertLess(max(h for _x, _y, h in glass) - D.skin_h(side * D.CANOPY["x"], D.CANOPY["y"]), 0.95)
+            # details 1: 0.85 high (was 0.75 under a 0.95 cap), room over the pilot's seat
+            self.assertLess(max(h for _x, _y, h in glass) - D.skin_h(side * D.CANOPY["x"], D.CANOPY["y"]), 1.05)
 
-    def test_the_pods_stay_out_of_the_hall_and_end_as_js(self) -> None:
+    def test_the_pods_stay_out_of_the_hall_and_end_as_ps(self) -> None:
         pods = {p["id"]: p for p in LAYOUT["pieces"] if p["builder"] in ("nozzle_pod", "pod_ring")}
         build = {"nozzle_pod": D.nozzle_pod, "pod_ring": D.pod_ring}
         hx, hy = HALL["centre"]
@@ -77,12 +105,17 @@ class ShipHullDetailTest(unittest.TestCase):
             c = [sum(p[i] for p in poly) / len(poly) for i in range(3)]
             inside = all(S._dot(n, c) <= d for n, d in sides) and S.TH_ROOF_Y <= c[1] <= ky and c[2] > S.SLAB
             self.assertFalse(inside, f"a belly facet in the throat at ({c[0]:.2f}, {c[1]:.2f}, {c[2]:.2f})")
-        whole = 0.0
-        for n, _d, poly in S.facets():
-            if n[2] >= -0.05:
-                whole += sum(S.area(b) for a in S._subtract(poly, cut["notch"]) for b in S._subtract(a, cut["belly"]))
-        top = sum(S.area(p) for p, _n, kind in surf if kind == "top")
-        self.assertAlmostEqual(top, whole, delta=1e-6)
+        # lens step 2 (P, a union of parts): no hole in the top over the throat's covered part: every plan point
+        # there lies under a top face
+        tops = [poly for poly, n, kind in surf if kind == "top" and n[2] > 0.05]
+        (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
+        for i in range(1, 10):
+            y = S.TH_ROOF_Y + (ky - S.TH_ROOF_Y) * i / 10
+            xw = mx + (kx - mx) * (y - my) / (ky - my) + S.WALL
+            for j in range(-4, 5):
+                x = xw * j / 5
+                self.assertTrue(any(sl.inside([(q[0], q[1]) for q in poly], (x, y)) for poly in tops),
+                                f"no top face over ({x:.2f}, {y:.2f})")
 
     def test_the_outside_is_all_silver_and_every_strip_plated(self) -> None:
         # the engineer, 2026-10-22: the belly's leg_metal plates and the open slivers (the dark under-skin through
@@ -104,6 +137,34 @@ class ShipHullDetailTest(unittest.TestCase):
                     slivers += 1
                     self.assertEqual(J.lay(q)[0][:len(q)], [tuple(x) for x in q])
         self.assertGreater(slivers, 0)   # the cut makes slivers on J: they are laid, not left open
+
+    def test_the_plates_run_in_rows_across_the_facets(self) -> None:
+        # lens polish: every face is covered by its cells' pieces; a piece's edge is flush only on a facet edge whose
+        # neighbour bends less than the zone's crease; the lens's rim has its three bands and seams every 36 deg; a lens
+        # plate's pieces share one silver and the lens parts are shaded smooth
+        surf = S.surface()
+        pieces = J.skin_pieces()
+        area: dict = {}
+        for _k, _zone, _cell, i, q, flags in pieces:
+            area[i] = area.get(i, 0.0) + S.area(q)
+            self.assertEqual(len(flags), len(q))
+        for i, (poly, _n, _kind) in enumerate(surf):
+            self.assertAlmostEqual(area.get(i, 0.0), S.area(poly), delta=1e-4 + 1e-3 * S.area(poly))
+        edges = J.Edges(surf)
+        for _k, zone, _cell, i, q, flags in pieces[::7]:
+            for (a, b), seam in zip(zip(q, q[1:] + q[:1]), flags):
+                if not seam:
+                    own, bend = edges.bend(i, tuple(0.5 * (a[t] + b[t]) for t in range(3)))
+                    self.assertTrue(own)
+                    self.assertLessEqual(bend, J.CREASE[zone])
+        rim = {c[3] for _k, z, c, *_ in pieces if z == "lens" and c[2] == "rim"}
+        self.assertEqual(rim, {0, 1, 2})
+        self.assertLessEqual(len({c[4] for _k, z, c, *_ in pieces if z == "lens" and c[2] == "rim"}), 10)
+        self.assertLess(len({p[2] for p in pieces}), len(pieces) / 4)   # plates span facets: fewer cells than pieces
+        parts = J.j_skin({"part": "top"}, LAYOUT)
+        lens = [p for p in parts if p["name"].endswith("_lens")]
+        self.assertTrue(lens)
+        self.assertTrue(all(p["smooth_deg"] == J.CREASE["lens"] for p in lens))
 
     def test_the_jamb_caps(self) -> None:
         caps = J.jamb_caps()

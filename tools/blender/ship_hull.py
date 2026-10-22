@@ -4,7 +4,7 @@ layouts/ship/exterior.toml places them).
 
 This module holds the shared helpers (boxes, rods, lathes, the panelled skin: every face cut into plates with a real
 chamfer sinking into a dark seam, over a dark under-skin) and the pieces that are not the skin: the tip windows' frames,
-the mouth's portal and lights, the ramp, the landing legs and the clearing. The skin itself is ship_hull_j.py (variant
+the mouth's portal and lights, the ramp, the landing legs and the clearing. The skin itself is ship_hull_j.py (the live hull P since lens step 2; before it variant
 J of the blockouts, ship_hull_shape.py, plated with this module's _plate; rebuild B); its details (canopies, pods,
 ground lamps) are ship_hull_detail.py. Skin faces point outward, so from inside the ship they are back faces
 and never hide a room (the interior lane's walls close the rooms). Belly h 0.6 (under the 0.75 slab bottoms)."""
@@ -28,6 +28,14 @@ L.MATERIALS.update({
                       "strength": 1.6},
     "ext_glow_cyan_dim": {"base": (0.1, 0.6, 0.8, 1.0), "metallic": 0.0, "roughness": 0.4,
                           "emission": (0.15, 0.85, 1.0), "strength": 2.5},
+    # details 1: the lens band's faint warm glow seen from outside (one-sided: "cull"), the canopies' lighter glass
+    # and their cockpit screens
+    "ext_window_glow": {"base": (1.0, 0.62, 0.3, 0.18), "metallic": 0.0, "roughness": 0.5, "alpha": True,
+                        "emission": (1.0, 0.55, 0.22), "strength": 3.0, "cull": True},
+    "glass_canopy": {"base": (0.16, 0.19, 0.22, 0.28), "metallic": 0.0, "roughness": 0.05, "alpha": True},
+    "ext_seat": {"base": (0.6, 0.62, 0.65, 1.0), "metallic": 0.3, "roughness": 0.45},   # catches the cockpit's glow
+    "ext_screen": {"base": (0.1, 0.7, 0.9, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.15, 0.85, 1.0),
+                   "strength": 5.0},
     "ext_ground": {"base": (0.05, 0.062, 0.035, 1.0), "metallic": 0.0, "roughness": 0.95},
     "ext_bark": {"base": (0.12, 0.075, 0.05, 1.0), "metallic": 0.0, "roughness": 0.9},
     "ext_needles": {"base": (0.03, 0.075, 0.045, 1.0), "metallic": 0.0, "roughness": 0.85},
@@ -462,6 +470,9 @@ MODULES.append(ship_hull_j)
 import ship_hull_detail  # noqa: E402  (the canopies, pods, blades, hatches and lamps; step 2)
 
 MODULES.append(ship_hull_detail)
+import ship_hull_fittings  # noqa: E402  (details 2: portholes, vents, mast and dome, hatches, stripes)
+
+MODULES.append(ship_hull_fittings)
 import ship_hull_clearing  # noqa: E402  (the clearing: dirt, path, tufts, bushes, logs, pines, party lights; step 3)
 
 MODULES.append(ship_hull_clearing)

@@ -11,7 +11,7 @@ recess (|x| < 1.3, y < -4.6, h < 3.0) cut away. `facets()` holds its planes (n .
 outside (negative outside); `clearance()` every room's sampled outer surface against SKIN; `outline_rows()` the plan
 footprint as ship.toml's [hull] rows.
 
-Only variant J (DEFAULT, with its throat notch) is live: the build, `ship --check` and the exterior lane use it, and
+Only variant P (DEFAULT since lens step 2: the union of convex parts at the end of this module, J's throat notch) is live: the build, `ship --check` and the exterior lane use it, and
 `clearance(name, rooms)` samples every room of the layout it is given (ship_layout.hull_skin passes the checked
 layout's rooms). The other variants are the blockouts' history (ship_hull_blockout.py, docs/ship.md "History"); they
 keep v2's hall at the centre and sample the tip rooms at the old window's SILL and HEAD."""
@@ -19,6 +19,7 @@ keep v2's hall at the centre and sample the tip rooms at the old window's SILL a
 from __future__ import annotations
 
 import math
+import sys
 import tomllib
 from functools import lru_cache
 from pathlib import Path
@@ -35,8 +36,12 @@ HALL_C = tuple(RM["hall"]["centre"])                                   # rebuild
 HALL_R = RM["hall"]["radius"] + WALL                                   # 4.2
 HALL_RIM = FLOOR + RM["hall"]["clear_h"] + ROOF                        # 3.92
 HALL_APEX = FLOOR + RM["hall"]["apex_h"] + ROOF                        # 4.52
-COR_S = tuple(RM["corridor_e"]["along"])                               # (3.708, 8.219): the floor along the axis
-COR_A = RM["corridor_e"]["axis"]
+# lens step 1 (art#263): ship.toml's corridors and tip rooms are the lens rooms now (P's, outside J); J and the
+# blockouts keep rebuild E's rooms, pinned here, so the live hull J builds as before until step 2 makes P the hull
+J_ROOMS = {"corridor_e": {"axis": [[0.0, -0.4], [8.3, 3.6]], "along": [3.708, 8.219], "width": 3.0, "clear_h": 2.4},
+           "tip_e": {"centre": [8.3, 3.6], "radius": 1.8, "clear_h": 2.5, "apex_h": 2.8}}
+COR_S = tuple(J_ROOMS["corridor_e"]["along"])                          # (3.708, 8.219): the floor along the axis
+COR_A = J_ROOMS["corridor_e"]["axis"]
 COR_D = math.dist(*COR_A)                                              # 9.214: the hall's centre to the tip room's
 COR_Y = RM["corridor_e"]["width"] / 2 + WALL                           # 1.7
 COR_TOP = FLOOR + RM["corridor_e"]["clear_h"] + ROOF                   # 3.12
@@ -45,16 +50,16 @@ COR_TOP = FLOOR + RM["corridor_e"]["clear_h"] + ROOF                   # 3.12
 MOUTH_X, MOUTH_Y, MOUTH_TOP = 1.3, -4.6, 3.0                           # the old recess (variants without a throat)
 TIP_X = 8.3
 PIN_HALL_R, PIN_TIP_R = 4.2, 2.0                                       # the belly rings' rooms (v2's hall, J's tips)
-TIP_C_ROOM = tuple(RM["tip_e"]["centre"])                              # rebuild C: (8.3, 3.0)
+TIP_C_ROOM = tuple(J_ROOMS["tip_e"]["centre"])                              # rebuild C: (8.3, 3.0)
 # rebuild C: the throat (ship.toml room "throat"); J's mouth notch is cut along it (`cutters`)
 TH = RM["throat"]
 TH_PTS = [tuple(p) for p in TH["points"]]                              # mouth (-+1.65, -7.1), hall corners (+-2.915, -3.252)
 TH_ROOF_Y = TH["roof_y"]                                               # -5.5608: the ceiling from here aft
 TH_TOP = FLOOR + TH["clear_h"] + ROOF                                  # 3.02: the throat's roof
 TH_CH = TH["chamfer"]                                                  # walls vertical to 1.35, then 0.55 in
-TIP_R = RM["tip_e"]["radius"] + WALL                                   # 2.0
-TIP_RIM = FLOOR + RM["tip_e"]["clear_h"] + ROOF                        # 3.22
-TIP_APEX = FLOOR + RM["tip_e"]["apex_h"] + ROOF                        # 3.52
+TIP_R = J_ROOMS["tip_e"]["radius"] + WALL                              # 2.0
+TIP_RIM = FLOOR + J_ROOMS["tip_e"]["clear_h"] + ROOF                   # 3.22
+TIP_APEX = FLOOR + J_ROOMS["tip_e"]["apex_h"] + ROOF                   # 3.52
 # the old tip window's band (variant D only; the blockouts' tip walls are sampled at its heights, J's at the slab,
 # mid-wall and rim)
 WIN_HALF = math.radians(65.0)
@@ -339,6 +344,45 @@ def _room_points(rooms):
                                     (half, (top,), "corridor roof")):
                     for h in hs:
                         pts.append((f"{what} {r['id']}", (ax + s * u[0] + w * n[0], ay + s * u[1] + w * n[1], h)))
+        elif r["shape"] == "circle" and r["id"] != "hall" and r.get("ceiling") == "slant":
+            # lens step 2: the lens room's ceiling falls outward along the axis from the hall's centre (P's rooms)
+            cx, cy = r["centre"]
+            tr = r["radius"] + WALL
+            dd = math.hypot(cx - hx, cy - hy)
+            ux, uy = (cx - hx) / dd, (cy - hy) / dd
+            lo, hi = r["clear_h"], r.get("clear_h_in", r["clear_h"])
+
+            def roof(x, y):
+                t = (x - cx) * ux + (y - cy) * uy
+                return FLOOR + lo + (hi - lo) * (tr - t) / (2 * tr) + ROOF
+            for _a, x, y in _ring_pts(cx, cy, tr):
+                for h in (SLAB, 0.5 * (SLAB + roof(x, y)), roof(x, y)):
+                    pts.append((f"tip wall {r['id']}", (x, y, h)))
+                c, s = (x - cx) / math.hypot(x - cx, y - cy), (y - cy) / math.hypot(x - cx, y - cy)
+                for f in (0.3, 0.6, 0.9):
+                    q = (cx + f * tr * c, cy + f * tr * s)
+                    pts.append((f"tip roof {r['id']}", (*q, roof(*q))))
+                    pts.append((f"tip slab {r['id']}", (*q, SLAB)))
+            pts.append((f"tip crown {r['id']}", (cx, cy, roof(cx, cy))))
+        elif r["shape"] == "rect" and r.get("closed"):
+            # lens step 2: a closed room (the vault): its walls, roof (clear_h at y0 falling to clear_h_back at y1)
+            # and slab, every STEP_M
+            (x0, x1), (y0, y1) = r["x"], r["y"]
+            h0, h1 = r["clear_h"], r.get("clear_h_back", r["clear_h"])
+            X0, X1, Y0, Y1 = x0 - WALL, x1 + WALL, y0 - WALL, y1 + WALL
+
+            def vroof(y):
+                return FLOOR + h0 + (h1 - h0) * (y - y0) / (y1 - y0) + ROOF
+            for y in _steps(Y0, Y1):
+                for x in (X0, X1):
+                    for h in (SLAB, 0.5 * (SLAB + vroof(y)), vroof(y)):
+                        pts.append((f"vault wall {r['id']}", (x, y, h)))
+                for x in _steps(X0, X1):
+                    pts += [(f"vault roof {r['id']}", (x, y, vroof(y))), (f"vault slab {r['id']}", (x, y, SLAB))]
+            for x in _steps(X0, X1):
+                for y in (Y0, Y1):
+                    for h in (SLAB, 0.5 * (SLAB + vroof(y)), vroof(y)):
+                        pts.append((f"vault wall {r['id']}", (x, y, h)))
         elif r["shape"] == "circle" and r["id"] != "hall":
             cx, cy = r["centre"]
             tr = r["radius"] + WALL
@@ -395,7 +439,7 @@ def interior_points(var, rooms=None):
     return pts
 
 
-DEFAULT = "J"                                                          # the hull the build makes
+DEFAULT = "P"                                                          # the hull the build makes (lens step 2; J: rebuild B..lens step 1)
 
 
 # --- the convex hull (plain Python) --------------------------------------------------------------------------------
@@ -495,7 +539,10 @@ def convex_hull(points, eps=1e-7):
 
 @lru_cache(maxsize=None)
 def facets(name: str = DEFAULT):
-    """The variant's hull before the mouth cut: [(n, d, polygon)]."""
+    """The variant's hull before the mouth cut: [(n, d, polygon)]; P: its parts' facets one after another (they
+    overlap: `_parts` keeps them apart)."""
+    if VARIANTS[name].get("parts"):
+        return [f for _nm, fac, _bb in p_facets() for f in fac]
     pts, _tip = design_points(VARIANTS[name])
     return convex_hull(pts)
 
@@ -615,6 +662,8 @@ def surface(name: str = DEFAULT):
     "mouth" (the recess's back, sides and ceiling, facing into it); every polygon convex, its Newell normal along n
     (plan coordinates)."""
     mx, my, mt = MOUTH_X, MOUTH_Y, MOUTH_TOP
+    if VARIANTS[name].get("parts"):
+        return list(_p_surface())
     hull = facets(name)
     if VARIANTS[name].get("throat"):
         out = _throat_surface(hull)
@@ -647,7 +696,7 @@ def skin(p, name: str = DEFAULT) -> float:
     """A point's distance to the hull's outside (the convex hull's planes and the mouth recess's box); negative
     outside."""
     x, y, h = p
-    inner = min(d - _dot(n, p) for n, d, _poly in facets(name))
+    inner = max(min(d - _dot(n, p) for n, d, _poly in fac) for fac in _parts(name))   # P: the union's lower bound
     if VARIANTS[name].get("throat"):   # the cutters' plane distances (a lower bound of the true distance)
         return min([inner] + [max(_dot(n, p) - d for n, d in planes) for planes in cutters().values()])
     dx, dy = max(abs(x) - MOUTH_X, 0.0), max(y - MOUTH_Y, 0.0)
@@ -683,9 +732,17 @@ def room_skin(name: str = DEFAULT, rooms=None) -> dict:
 
 
 def heights(x: float, y: float, name: str = DEFAULT):
-    """(top, bottom) of the hull over plan (x, y), None off its footprint (the mouth recess not cut)."""
+    """(top, bottom) of the hull over plan (x, y), None off its footprint (the mouth recess not cut); P: the union's
+    highest top and lowest bottom over the parts there."""
+    if VARIANTS[name].get("parts"):
+        got = [tb for tb in (_heights(fac, x, y) for fac in _parts(name)) if tb]
+        return (max(t for t, _b in got), min(b for _t, b in got)) if got else None
+    return _heights(facets(name), x, y)
+
+
+def _heights(fac, x, y):
     top, bot = 99.0, -99.0
-    for n, d, _poly in facets(name):
+    for n, d, _poly in fac:
         rest = d - n[0] * x - n[1] * y
         if n[2] > 1e-9:
             top = min(top, rest / n[2])
@@ -716,6 +773,8 @@ def _span_at(poly, x):
 def outline_rows(name: str = DEFAULT):
     """ship.toml's [hull] rows from the footprint: (core, plate) with rows [x, lead y, trail y, bottom h, top h, -1]
     at every corner's x from the centre line out (x >= 0); the plate row is the tip's outermost x."""
+    if VARIANTS[name].get("parts"):
+        return p_outline_rows()
     poly = outline(name)
     xmax = max(p[0] for p in poly)
     xs = sorted({round(x, 3) for x, _y in poly if x >= -1e-6} | {0.0})
@@ -731,16 +790,409 @@ def outline_rows(name: str = DEFAULT):
 
 def pod_ends(name: str = DEFAULT):
     """The nozzle pods' rear ends' plan y (the blockout's pods: from the stern-shifted y, length ln)."""
+    if VARIANTS[name].get("parts"):
+        return [P_STERN_Y + o for _x, _h, _r, o in P_PODS]
     ds = stern_shift(VARIANTS[name])
     return [y + ds + ln for _x, y, _h, _r, ln in NOZZLES]
 
 
 def measures(name: str = DEFAULT) -> dict:
     """The hull's numbers: span, length (nose to the pods' ends), top, belly, the least skin, facets and faces."""
-    vs = [p for _n, _d, poly in facets(name) for p in poly]
+    vs = [p for fac in _parts(name) for _n, _d, poly in fac for p in poly]
     least, bad = clearance(name)
     return {"span_m": round(max(v[0] for v in vs) - min(v[0] for v in vs), 3),
             "length_m": round(max(pod_ends(name)) - min(v[1] for v in vs), 3),
             "hull_top_m": round(max(v[2] for v in vs), 3), "belly_m": round(min(v[2] for v in vs), 3),
-            "least_skin_m": round(least, 3), "pokes": bad, "facets": len(facets(name)),
+            "least_skin_m": round(least, 3), "pokes": bad, "facets": sum(len(f) for f in _parts(name)),
             "faces": len(surface(name))}
+
+
+# --- lens step 2: the hull P, the live hull --------------------------------------------------------------------------
+# P (art#263 comment 6344879087; designed in ship_hull_blockout.py RAYS["P"], sheet <raw>/ship/v2/blockout6) as the
+# UNION of five convex parts: the body (the hump over the hall, the throat's nose, the vault and the tail tapering to
+# the nozzle pods), the two fins (a ridge over each corridor, thin diamond edges) and the two lenses (round, the slanted
+# top over the lens room's ceiling, the rim's profile). Two corrections against the blockout (lens step 2): the tail
+# TAPERS to the pods (the stern face P_STERN narrower and sloped, the fins' trail corners in to P_TRAIL; the blockout's
+# stern stood 4.0 m wide with near-vertical sides behind the hall), and the fins' roots on the lens rim sit at
+# P_LEAD_DEG / P_TRAIL_DEG round the lens's axis, so the window band (P_BAND) stays fully visible with 6 deg to spare
+# (the blockout's rear tangent hid it from +45.0). The fins' edges come down to P_LENS_EDGE at the rim, under the band's
+# sill, so the edge light runs at one height round the lens. The openings (the band, three roof windows per lens) are
+# cut from the faces (`p_openings`), not from the skin: the skin is measured on the closed union.
+# The rooms' numbers come from ship.toml (the east lens room `tip_e`, the west mirrored, and the `vault`), the band as
+# the interior builds it (`_p_band`), so the cuts and the rooms cannot drift apart.
+
+
+def _p_band():
+    """The window band as built (deg round the lens's axis, + aft): ship.toml's band snapped to the lens room's wall
+    facets (ship_interior.tip_band_facets: each end to a vertex within 1.5 deg; facets 3..7, -65.86..43.91 for the
+    asked -65..45)."""
+    import ship_interior   # plain Python (bpy only inside its builders); it reads the same ship.toml
+    tv, fs = ship_interior.tip_vertices(), ship_interior.tip_band_facets(1)
+    return tv[fs[0]], tv[fs[-1] + 1]
+
+
+_LENS, _VAULT = RM["tip_e"], RM["vault"]
+P_TIP = tuple(_LENS["centre"])          # the lens rooms' centres (mirrored): (10.5, 1.2)
+P_ROOM_R = _LENS["radius"]              # 2.0
+P_RIM_R = P_ROOM_R + WALL + 0.35        # 2.55: the lens's rim radius
+P_CLEAR = (_LENS["clear_h"], _LENS["clear_h_in"])   # the lens room's clear height at its outer wall, at its inner
+#                                                     wall: (2.35, 2.45)
+P_RIDGE = (3.30, 1.85, 2.05)            # the corridor ridge's top h, its top and belly half widths about the axis
+P_VAULT = (_VAULT["x"][1], *_VAULT["y"], _VAULT["clear_h"], _VAULT["clear_h_back"])   # half width, clear y0..y1,
+#                                         clear height at the door and at the back: (0.9, 3.85, 5.85, 2.3, 1.6)
+P_STERN_Y = STERN_Y + 3.9 + 2.5         # 12.7: J's stern moved 2.5 m aft (P's stern_ext)
+P_STERN = [(1.2, 4.0), (2.2, 3.55), (2.75, 2.45), (2.35, 1.25), (1.2, 0.9)]   # (x, h): the tapered stern face
+P_SPINE_END = (11.0, 4.3)               # the spine's rear (y, h)
+P_TRAIL = (3.3, P_STERN_Y - 0.4, 2.0, 0.4)     # the fins' trail corner: x, y, the edge's mid h and thickness
+P_NOSE_EDGE = (NOSE[2], 0.3)            # the fins' edge at the nose: mid h, thickness
+P_LENS_EDGE = (1.35, 0.4)               # at the lens rim: under the band's sill (1.6)
+P_LEAD_DEG, P_TRAIL_DEG = -72.0, 50.0   # the fins' roots on the rim, deg round the lens's outward axis (+ aft)
+P_BAND = _p_band()                      # the window band as built (ship_interior: the lens room's facets 3..7)
+P_BAND_IN = 2.13                        # the band's cut from this radius out (the room's wall's outer face 2.21)
+P_OCULUS_D = _LENS["oculus"]["d"]                 # details 1: the oculus's clear diameter (1.4, inside the well's lining)
+P_OCULUS_N = _LENS["oculus"]["sides"]             # its polygon (32): side k's normal at k 360/N deg round the axis
+P_OCULUS_WELL = 0.025                             # the well's lining (ship_interior.tip_ceiling) inside the hull's cut
+P_OCULUS_R = P_OCULUS_D / 2 + P_OCULUS_WELL       # 0.725: the hull's cut, its sides' apothem round the lens's centre
+P_ROOF_CUT = 0.245                      # the oculus's reveal down to this over the ceiling (the well's top 0.26)
+P_PODS = [(3.0, 2.0, 1.42, 2.0), (0.0, 2.55, 1.62, 2.3)]   # (x, h, r, out past the stern face): 2.84 / 3.24 across
+P_POD_IN = 1.6                          # a pod's full barrel starts this far forward of the stern face
+P_LENS_N = 48
+P_TOP_LIFT = 0.04                       # lens polish: the lens's top 4 cm up, over the fin's ridge (3.30 at the lens's
+#                                         centre stood 2.5 cm proud of the old top: a ledge across the lens's roof)
+P_PROFILE = [(0.2, ("top", 0.0)), (0.0, ("top", 0.3)), (0.0, ("abs", 1.0)), (0.08, ("abs", 0.5)),
+             (0.25, ("abs", BELLY))]    # the lens rim: (inset from P_RIM_R, depth under the top plane or a height)
+POD_TAIL = SHIP["hull"]["pod_tail_m"]   # a pod's end past its builder's length
+EPS = 1e-5
+
+VARIANTS["P"] = {"half": P_TIP[0] + P_RIM_R, "tip_h": P_LENS_EDGE[0], "window": False, "tip_c": P_TIP,
+                 "throat": True, "parts": True}
+
+
+def p_axis(sx=1):
+    """The lens's outward axis (the corridor's, from the hall's centre) as a plan unit vector; sx -1 the west."""
+    a = math.atan2(P_TIP[1] - HALL_C[1], P_TIP[0] - HALL_C[0])
+    return sx * math.cos(a), math.sin(a)
+
+
+def p_axis_deg():
+    return math.degrees(math.atan2(P_TIP[1] - HALL_C[1], P_TIP[0] - HALL_C[0]))   # 8.664
+
+
+def p_ceiling(x, y, sx=1):
+    """The lens room's ceiling over plan (x, y) (h over the ground): it falls outward along the axis."""
+    ux, uy = p_axis(sx)
+    rw = P_ROOM_R + WALL
+    t = (x - sx * P_TIP[0]) * ux + (y - P_TIP[1]) * uy
+    return FLOOR + P_CLEAR[0] + (P_CLEAR[1] - P_CLEAR[0]) * (rw - t) / (2 * rw)
+
+
+def p_top(x, y, sx=1):
+    """The lens's top plane: the ceiling + ROOF + SKIN + 5 mm + P_TOP_LIFT."""
+    return p_ceiling(x, y, sx) + ROOF + SKIN + 0.005 + P_TOP_LIFT
+
+
+def p_rim(deg, sx=1, r=P_RIM_R):
+    """The plan point r from the lens's centre at deg round its outward axis (+ aft), the west mirrored."""
+    a = math.radians(p_axis_deg() + deg)
+    return sx * (P_TIP[0] + r * math.cos(a)), P_TIP[1] + r * math.sin(a)
+
+
+def p_edges():
+    """The east fin's edge corners (x, y, mid h, thickness): nose, lead root on the rim, trail root, trail corner."""
+    return [(NOSE[0], NOSE[1], *P_NOSE_EDGE), (*p_rim(P_LEAD_DEG), *P_LENS_EDGE), (*p_rim(P_TRAIL_DEG), *P_LENS_EDGE),
+            P_TRAIL]
+
+
+def _inside_plan(poly, x, y, margin):
+    sgn = 0
+    for (ax, ay), (bx, by) in zip(poly, poly[1:] + poly[:1]):
+        ln = math.hypot(bx - ax, by - ay)
+        c = ((bx - ax) * (y - ay) - (by - ay) * (x - ax)) / ln
+        sgn = sgn or (1 if c > 0 else -1)
+        if c * sgn < margin:
+            return False
+    return True
+
+
+def _mx(pts):
+    return [(-x, y, h) for x, y, h in pts]
+
+
+@lru_cache(maxsize=None)
+def p_parts():
+    """((name, points)): the body (mirrored in itself), the fins and the lenses, east and west."""
+    cx, cy = P_TIP
+    hx, hy = HALL_C
+    spine = SPINE[:-1] + [P_SPINE_END]
+    body = [(SPINE_X, y, z) for y, z in spine] + [NOSE, (1.8, -4.8, BELLY)]
+    body += ring(0.0, 0.0, PIN_HALL_R + 0.3, BELLY)
+    edges = p_edges()
+    half = [(e[0], e[1]) for e in edges]
+    diamond = [(-x, y) for x, y in reversed(half)] + half
+    for a in range(0, 360, 15):   # J's own top over the hall's ring, and the skirt into the fins
+        x, y = hx + (HALL_R + 0.4) * math.cos(math.radians(a)), hy + (HALL_R + 0.4) * math.sin(math.radians(a))
+        tb = heights(x, y, "J")
+        if tb and x >= -1e-6:
+            body.append((x, y, tb[0]))
+        x, y = hx + 6.2 * math.cos(math.radians(a)), hy + 6.2 * math.sin(math.radians(a))
+        if x >= -1e-6 and _inside_plan(diamond, x, y, 0.8):
+            body.append((x, y, 2.2))
+    hw, _y0, y1, _h0, _h1 = P_VAULT
+    body += [(hw + 0.6, 3.4, BELLY), (hw + 0.6, y1 + 0.8, BELLY)]
+    body += [(x, P_STERN_Y, z) for x, z in P_STERN]
+    ux, uy = p_axis()
+    nx, ny = -uy, ux
+    d = math.hypot(cx - hx, cy - hy)
+    rh, rw, rwb = P_RIDGE
+    wing = []
+    for s in (3.0, d):
+        px, py = hx + s * ux, hy + s * uy
+        wing += [(px + w * nx, py + w * ny, rh) for w in (-rw, rw)]
+        wing += [(px + w * nx, py + w * ny, BELLY) for w in (-rwb, rwb)]
+    for x, y, h, e in edges:
+        wing += [(x, y, h + e / 2), (x, y, h - e / 2)]
+    lens = []
+    for inset, (kind, h) in P_PROFILE:
+        rr = (P_RIM_R - inset) / math.cos(math.pi / P_LENS_N)
+        for i in range(P_LENS_N):
+            g = 2 * math.pi * i / P_LENS_N
+            x, y = cx + rr * math.cos(g), cy + rr * math.sin(g)
+            lens.append((x, y, h if kind == "abs" else p_top(x, y) - h))
+    return (("body", tuple(mirrored([p for p in body if p[0] >= -1e-6]))), ("fin_e", tuple(wing)),
+            ("fin_w", tuple(_mx(wing))), ("lens_e", tuple(lens)), ("lens_w", tuple(_mx(lens))))
+
+
+def _bbox(polys):
+    vs = [v for p in polys for v in p]
+    return tuple(min(v[k] for v in vs) for k in range(3)), tuple(max(v[k] for v in vs) for k in range(3))
+
+
+@lru_cache(maxsize=None)
+def p_facets():
+    """((name, facets, bbox)) of P's parts."""
+    out = []
+    for name, pts in p_parts():
+        fac = convex_hull(list(pts))
+        out.append((name, fac, _bbox([poly for _n, _d, poly in fac])))
+    return tuple(out)
+
+
+def _parts(name):
+    """The facet lists of a variant's convex parts (one for the single convex hulls)."""
+    if VARIANTS[name].get("parts"):
+        return [fac for _nm, fac, _bb in p_facets()]
+    return [facets(name)]
+
+
+def _overlap(bb, cc, e=1e-4):
+    return all(bb[0][k] <= cc[1][k] + e and cc[0][k] <= bb[1][k] + e for k in range(3))
+
+
+def _wedge_planes(c, g0, g1, r0, r1, h0, h1):
+    """The convex cutter of the plan wedge round c from angle g0 to g1 (radians, counter-clockwise in plan), r0..r1,
+    h0..h1: [(n, d)] inside n . p <= d, in the order side g0, side g1, inner, outer, sill, head."""
+    gm = 0.5 * (g0 + g1)
+    out = []
+    for n in ((math.sin(g0), -math.cos(g0), 0.0), (-math.sin(g1), math.cos(g1), 0.0)):
+        out.append((n, n[0] * c[0] + n[1] * c[1]))
+    u = (math.cos(gm), math.sin(gm), 0.0)
+    out.append((_neg(u), -(u[0] * c[0] + u[1] * c[1]) - r0))
+    out.append((u, u[0] * c[0] + u[1] * c[1] + r1))
+    out += [(_neg(H), -h0), (H, h1)]
+    return out
+
+
+def _mirror_planes(planes):
+    return [((-n[0], n[1], n[2]), d) for n, d in planes]
+
+
+@lru_cache(maxsize=None)
+def p_openings():
+    """The openings cut through P's faces: ((planes, emitted plane indices, what)): per lens the window band as wedges
+    between the lens rim's vertices (the band's sill and head faces, its two end faces) and the oculus (details 1: a
+    prism of P_OCULUS_N sides from P_ROOF_CUT over the ceiling up: its sides). The west's mirrored."""
+    c = P_TIP
+    g0, g1 = math.radians(p_axis_deg() + P_BAND[0]), math.radians(p_axis_deg() + P_BAND[1])
+    step = 2 * math.pi / P_LENS_N
+    cuts = [g0] + [k * step for k in range(math.floor(g0 / step) + 1, math.ceil(g1 / step))] + [g1]
+    east = []
+    for i, (a, b) in enumerate(zip(cuts, cuts[1:])):
+        planes = _wedge_planes(c, a, b, P_BAND_IN, P_RIM_R + 0.6, SILL - 0.004, HEAD + 0.004)
+        emit = [4, 5] + ([0] if i == 0 else []) + ([1] if i == len(cuts) - 2 else [])
+        east.append((planes, tuple(emit), "band"))
+    ux, uy = p_axis()
+    nx, ny = -uy, ux
+    k = (P_CLEAR[1] - P_CLEAR[0]) / (2 * (P_ROOM_R + WALL))
+    cc = FLOOR + 0.5 * (P_CLEAR[0] + P_CLEAR[1]) + k * (c[0] * ux + c[1] * uy)   # h + k (ux x + uy y) = cc: the ceiling
+    ln = math.sqrt(1 + k * k)
+    planes = []   # details 1: the oculus, a prism of P_OCULUS_N sides round the lens's centre (side 0 on the axis)
+    for j in range(P_OCULUS_N):
+        a = 2 * math.pi * j / P_OCULUS_N
+        ax, ay = ux * math.cos(a) - nx * math.sin(a), uy * math.cos(a) - ny * math.sin(a)
+        planes.append(((ax, ay, 0.0), ax * c[0] + ay * c[1] + P_OCULUS_R))
+    planes.append(((-k * ux / ln, -k * uy / ln, -1 / ln), -(cc + P_ROOF_CUT) / ln))
+    planes.append((H, 9.0))
+    east.append((planes, tuple(range(P_OCULUS_N)), "roof"))
+    out = [(tuple(p), e, w) for p, e, w in east] + [(tuple(_mirror_planes(p)), e, w) for p, e, w in east]
+    return tuple(out)
+
+
+def _meets(poly, planes, e=1e-6):
+    """Whether a convex polygon reaches into a convex region by more than a crumb (else it is kept whole: subtracting
+    a region it does not meet would only split it along the region's planes)."""
+    q = poly
+    for n, d in planes:
+        q = clip(q, n, d - e)
+        if len(q) < 3:
+            return False
+    return area(q) > 1e-7
+
+
+def _cut(pieces, planes):
+    return [r for pc in pieces for r in (_subtract(pc, planes) if _meets(pc, planes) else [pc])]
+
+
+def _union_pieces(poly):
+    """A convex polygon's pieces inside P's union, each point in one piece (the first part that holds it)."""
+    parts = p_facets()
+    out = []
+    for k, (_nm, fac, _bb) in enumerate(parts):
+        q = poly
+        for n, d, _p in fac:
+            q = clip(q, n, d)
+            if len(q) < 3:
+                break
+        if len(q) < 3 or area(q) < 1e-6:
+            continue
+        pieces = [q]
+        for j in range(k):
+            pieces = _cut(pieces, [(n, d + EPS) for n, d, _p in parts[j][1]])
+        out += pieces
+    return out
+
+
+def _cut_faces(planes, emit):
+    """A convex cutter's emitted faces inside P's union, facing into the cutter: [(polygon, n)]."""
+    out = []
+    for i in emit:
+        n, d = planes[i]
+        poly = _plane_quad(n, d)
+        for j, (m, e) in enumerate(planes):
+            if j != i:
+                poly = clip(poly, m, e)
+        if len(poly) < 3 or area(poly) < 1e-6:
+            continue
+        out += [(q, _neg(n)) for q in _union_pieces(poly)]
+    return out
+
+
+@lru_cache(maxsize=None)
+def _p_surface():
+    """P's outer faces: every part's facets outside the other parts (a face on another part's boundary kept once),
+    then J's throat cuts (`_throat_surface`'s rules) and the openings; the cutters' own faces: the mouth's, the band's
+    sill, head and ends, the roof windows' sides ("top"/"belly" by their normal, plated like the hull)."""
+    parts = p_facets()
+    cut = cutters()
+    room = cut["notch"][:2] + [(_neg(Y), -TH_ROOF_Y), (Y, TH_PTS[2][1]), (_neg(H), -(SLAB - 0.005)), (H, TH_TOP)]
+    opens = p_openings()
+    out = []
+    for k, (_nm, fac, _bb) in enumerate(parts):
+        for n, d, poly in fac:
+            pieces = [poly]
+            pb = _bbox([poly])
+            for j, (_m, other, ob) in enumerate(parts):
+                if j == k or not _overlap(pb, ob):
+                    continue
+                e = EPS if j < k else -EPS
+                planes = [(m, dd + e) for m, dd, _p in other]
+                pieces = _cut(pieces, planes)
+            kind = "top" if n[2] >= -0.05 else "belly"
+            done = []
+            for a in pieces:
+                for b in _cut([a], cut["notch"]):
+                    for c2 in _cut([b], cut["belly"]):
+                        done += _cut([c2], room) if kind == "belly" else [c2]
+            for planes, _emit, _what in opens:
+                done = _cut(done, list(planes))
+            out += [(c2, n, kind) for c2 in done]
+    for name, planes in cut.items():   # the mouth's faces, as _throat_surface
+        for i, (n, d) in enumerate(planes):
+            if name == "belly" and n == _neg(Y):
+                continue
+            poly = _plane_quad(n, d)
+            for j, (m, e) in enumerate(planes):
+                if j != i:
+                    poly = clip(poly, m, e)
+            if name == "notch" and n == Y:
+                poly = clip(poly, _neg(H), -TH_TOP)
+            if len(poly) >= 3 and area(poly) > 1e-6:
+                out += [(q, _neg(n), "mouth") for q in _union_pieces(poly)]
+    for planes, emit, _what in opens:
+        out += [(q, m, "top" if m[2] >= -0.05 else "belly") for q, m in _cut_faces(planes, emit)]
+    # a crumb (under 1 mm2) or a hull artefact thinner than 0.1 mm (a near-flat sliver along an edge) is no face
+    return tuple((p if _dot(_newell(p), n) > 0 else list(reversed(p)), n, kind) for p, n, kind in out
+                 if len(p) >= 3 and area(p) > 1e-6 and 2 * area(p) / sum(math.dist(a, b) for a, b in zip(p, p[1:] + p[:1])) > 1e-4)
+
+
+def p_outline_rows():
+    """[hull] rows of P: at every part corner's x the union's lead and trail y (the parts' plan hulls' spans)."""
+    hulls = []
+    for _nm, pts in p_parts():
+        q = sorted({(round(x, 6), round(y, 6), 0) for x, y, _h in pts})
+        hulls.append([(u, v) for u, v, _ in _chain(q)])
+    xmax = max(p[0] for poly in hulls for p in poly)
+    xs = sorted({round(x, 3) for poly in hulls for x, _y in poly if x >= -1e-6} | {0.0})
+    rows = []
+    for x in xs:
+        x = min(x, xmax)
+        spans = []
+        for poly in hulls:
+            lo, hi = min(p[0] for p in poly), max(p[0] for p in poly)
+            if lo - 1e-9 <= x <= hi + 1e-9:
+                spans.append(_span_at(poly, min(max(x, lo + 1e-9), hi - 1e-9)))
+        lead, trail = min(s[0] for s in spans), max(s[1] for s in spans)
+        hb = heights(max(0.0, x - 1e-3), (lead + trail) / 2, "P")
+        bot, top = (hb[1], hb[0]) if hb else (0.0, 0.0)
+        rows.append([round(x, 3), round(lead, 3), round(trail, 3), round(bot, 2), round(top, 2), -1])
+    return rows[:-1], rows[-1:]
+
+
+def p_pods():
+    """The nozzle pods' placements [(x, nose y, h, r, length)] for nozzle_pod / pod_ring: the pod's end (its length +
+    POD_TAIL) is P_STERN_Y + out."""
+    out = []
+    for x, h, r, o in P_PODS:
+        y0 = P_STERN_Y - P_POD_IN - 1.5
+        for sx in ((-1, 1) if x else (1,)):
+            out.append((sx * x, y0, h, r, round(P_STERN_Y + o - POD_TAIL - y0, 3)))
+    return out
+
+
+def p_edge_line(sx=1):
+    """The edge light's path on the east (sx -1: west) side: [(point, outward n)] along the fin's lead edge (nose to
+    the lead root), round the lens rim's facets from the lead root to the trail root at P_LENS_EDGE's height (a point
+    at every rim vertex), and along the fin's trail edge to its corner. The points lie on the faces."""
+    (n0x, n0y, n0h, _e0), (fx, fy, fh, _e1), (bx, by, bh, _e2), (tx, ty, th, _e3) = p_edges()
+    hx, hy = HALL_C
+
+    def flat(ax, ay, bx_, by_):
+        dx, dy = bx_ - ax, by_ - ay
+        ln = math.hypot(dx, dy)
+        n = (dy / ln, -dx / ln, 0.0)
+        return _neg(n) if n[0] * (hx - ax) + n[1] * (hy - ay) > 0 else n
+    lead, trail = flat(n0x, n0y, fx, fy), flat(bx, by, tx, ty)
+    cx, cy = P_TIP
+    step = 2 * math.pi / P_LENS_N
+    a0, a1 = math.radians(p_axis_deg() + P_LEAD_DEG), math.radians(p_axis_deg() + P_TRAIL_DEG)
+
+    def on_rim(g):   # the rim's face at plan angle g (its facet's plane, apothem P_RIM_R)
+        gm = (math.floor(g / step + 1e-9) + 0.5) * step
+        r = P_RIM_R / math.cos(g - gm)
+        return (cx + r * math.cos(g), cy + r * math.sin(g), P_LENS_EDGE[0]), (math.cos(gm), math.sin(gm), 0.0)
+    pts = [((n0x, n0y, n0h), lead), ((fx, fy, fh), lead)]
+    verts = [a0 + 1e-6] + [k * step for k in range(math.floor(a0 / step) + 1, math.ceil(a1 / step))] + [a1 - 1e-6]
+    pts += [on_rim(g) for g in verts]
+    pts += [((bx, by, bh), trail), ((tx, ty, th), trail)]
+    if sx < 0:
+        pts = [((-p[0], p[1], p[2]), (-n[0], n[1], n[2])) for p, n in pts]
+    return pts
