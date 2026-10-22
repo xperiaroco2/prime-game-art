@@ -17,12 +17,33 @@ separate yes when it stays within its `cost_cap_usd`; its spend goes into the pl
 generation beyond the prepaid balance he funds, on another model, or above a batch's `cost_cap_usd` needs his own yes
 linked in `approval_ref` (and, for another model, a change to `MODELS` in `_openai_batch.py`).
 
+## One image per concept (the engineer, 2026-10-22, #276)
+
+The default way of working, for every batch run through this client (this repo's `batches/`, the UI track's batches
+in it included, and the design repo's `ideas/batches/`):
+
+1. **Explore with one image per concept**: `n = 1`. A new idea is a new item with its own prompt, never a second or
+   third output of the same prompt. A concept that missed gets one revised item (a changed prompt), not more draws.
+2. **Iterate only inside a concept he picked**: once the engineer picks an image, variants of it are `edit` items
+   with the picked image as the reference (`{ from = "<item>", pick = n }`, or the saved file pinned by its sha256),
+   each asking for the one change it explores. Only there may `n` be above 1, and even there one item per change
+   usually says more.
+
+Why: several outputs of one prompt come out as the same concept with small differences, so when he dislikes the
+concept all of them are wasted. Roster rounds r3 to r6 on #196 ran at `n = 3` and paid about three times for what one
+image per prompt would have shown; round r7 at `n = 1` made 15 images, ten concepts and five revisions, for $0.35.
+Whether one image at high quality is worth more than one at medium is measured in the quality comparison below.
+
+`estimate` and `run` print a `WARNING <item>: n = <n> ...` line naming this rule for every item with `n` above 1
+(the batch cannot tell a picked concept's variants from blind draws, so each such item is named); they never refuse
+it: the rule asks for smarter work, not a cap.
+
 ## Commands
 
 | Command | Network | What it does |
 |---|---|---|
-| `openai-images estimate <batch>` | none | Per item the kind, quality, size, `n`, inputs and the estimated tokens (text in, image in, image out) and $; the total against the cap; whether the approval is complete; each input file's size and sha256 (or why it is not ready) |
-| `openai-images run <batch> [item ...] [--retry-failed]` | spends money | Refuses a batch without approval or over its cap; checks every input file; then one request per item, in file order, the dollar cap checked before each |
+| `openai-images estimate <batch>` | none | Per item the kind, quality, size, `n`, inputs and the estimated tokens (text in, image in, image out) and $; the total against the cap; whether the approval is complete; each input file's size and sha256 (or why it is not ready); a warning per item with `n` above 1 ("One image per concept") |
+| `openai-images run <batch> [item ...] [--retry-failed]` | spends money | Refuses a batch without approval or over its cap; checks every input file; then one request per item, in file order, the dollar cap checked before each; the same warning per item with `n` above 1 |
 | `openai-images status <batch>` | none | Each item's state and $ from its `generation.json`; flags saved images that went missing |
 
 OpenAI offers no balance endpoint for a project key (the costs API needs an admin key), so there is no `balance`:
@@ -54,7 +75,7 @@ missing key fails with the engineer's steps (top up, create a key, `[Environment
 | `approved_by`, `approved_at`, `approval_ref` | Who, the date, and a `https://github.com/` link (the decision's comment for the standing permission) |
 | `model` | `gpt-image-2.5-sunburst`, the model the standing permission names (`gpt-image-2.5-flare`, speed first at the same rates, is refused: another model needs the engineer's yes and a code change) |
 | `quality` | **Required, no default**: `"medium"` (exploration and many variants) or `"high"` (focused work on one piece); an item may set its own |
-| `[defaults]` | `size` (required somewhere), `n` (1 to 10, default 1), `background` (`auto`, `opaque`, `transparent`), `moderation` (`auto`, `low`; generations only) |
+| `[defaults]` | `size` (required somewhere), `n` (1 to 10, default 1; keep 1 for exploration, "One image per concept"), `background` (`auto`, `opaque`, `transparent`), `moderation` (`auto`, `low`; generations only) |
 | `[variants.<name>]` | A shared `prompt` and any of the `[defaults]` keys |
 | `[[items]]` | `id`, `kind`, `variant`, `prompt`, `images` and any of the `[defaults]` keys or `quality`; any other key is an error |
 
