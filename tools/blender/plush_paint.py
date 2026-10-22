@@ -33,9 +33,12 @@ def rgb(text):
     return np.array([float(v) / 255.0 for v in text.split(",")], dtype=np.float32)
 
 
-ORANGE = rgb(opts.get("--orange", "236,92,14"))
-BROWN = rgb(opts.get("--brown", "92,47,28"))
-PINK = rgb(opts.get("--pink", "238,176,170"))
+# Calibrated (2026-10-22) so that godot/plush/shots.gd under the approved look (AgX 0.9) lands near the concept's
+# medians: orange 222,80,19 (Godot 234,98,53: AgX adds blue no albedo can take out), brown 78,33,21 (75,30,20), eye
+# pink 187,136,129 (196,141,132). Meshy's own colours, painted for an unlit view, came out pale peach.
+ORANGE = rgb(opts.get("--orange", "180,34,0"))
+BROWN = rgb(opts.get("--brown", "60,26,19"))
+PINK = rgb(opts.get("--pink", "200,122,115"))
 VEIN = rgb(opts.get("--vein", "196,52,48"))
 THREAD = rgb(opts.get("--thread", "34,18,12"))
 SIZE = int(opts.get("--size", 2048))
