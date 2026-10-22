@@ -45,12 +45,12 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 |---|---|---|
 | Footprint | the hull J: span 30.0 m (`width_m`, `span_max_m`), 18.91 m long with the nozzle pods (`length_m` 18.9, `length_max_m` 19.4; `ship_layout.lengths()`), 21.70 m from the ramp's foot (-9.9) to the nozzle tips; `ship --check` prints the current ones | the engineer's pick J (art #263 comment 6340589162; "Rebuild B") |
 | Deck | floor at h 0.6 on landing legs (launch 3; was 1.0), slabs 0.25, walls 0.2 | the ramp meets the ground; a thinner hull |
-| Hall | circle r 4.0 at (0, -1) (rebuild C; v2 (0, 0), v1 r 3.4); the rim 2.75 m round its front (rebuild C); 3.2 m to the ceiling's rim, 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
-| Throat (rebuild C; v2's mouth passage x -1.3..1.3, y -4.6..-3.9) | the funnel from the mouth (x +-1.65 at y -7.1, J's nose edge; 5a: y -8) to the hall's vertices (+-2.915, -3.852); open to the sky forward of y -5.476, a 2.3 m ceiling aft of it | the only way in or out (5a's side hatch is dropped, see below) |
+| Hall | circle r 4.0 at (0, -0.4) (rebuild E; C (0, -1), v2 (0, 0), v1 r 3.4); 3.2 m to the ceiling's rim all round (rebuild E; C had 2.75 m round its front), 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
+| Throat (rebuild C; v2's mouth passage x -1.3..1.3, y -4.6..-3.9) | the funnel from the mouth (x +-1.65 at y -7.1, J's nose edge; 5a: y -8) to the hall's vertices (+-2.915, -3.252), 4.051 m walls in five modules of 0.810 (rebuild E); open to the sky forward of y -5.561 (the walls there are the hull's jambs, `skin_cheeks`), a 2.3 m ceiling aft of it | the only way in or out (5a's side hatch is dropped, see below) |
 | Ramp | 3.3 m wide (the mouth), hinge (0, -7.1) at the deck, foot (0, -9.9) on the ground: 12.1 deg, 2.86 m long (rebuild C; v2 2.6 m from (0, -4.6)) | north at the centre |
-| Corridors | `strip` rooms on the axes from the hall's centre (0, -1) to the tip rooms' (+-8.3, 3.0): 9.214 m, 25.73 deg; floor 3.708..8.219 along the axis (4.51 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide; rebuild A: on the diagonal |
-| Tip rooms | circles r 1.8 at (+-8.3, 3.0) (rebuild C), the outer wall at +-10.1; 2.5 m to the rim, 2.8 m apex; no window since rebuild A (13 plain wall facets round the outer side) | 5a mirrored: 3.6 m across |
-| Stations (not built) | console (0, 0) clear floor; vents on the throat's slanted walls (+-2.175, -5.751); sockets (+-1.800, 2.512) and the front two on the hall's flats (+-3.426, -2.958); breaker boards (+-6.030, 0.241) on the corridors' front wall; renewers (+-9.922, 3.781) on the tip rooms' outer wall, the player at (+-8.751, 3.217) | 5a mirrored; as built in "Rebuild C" |
+| Corridors | `strip` rooms on the axes from the hall's centre (0, -0.4) to the tip rooms' (+-8.3, 3.6) (rebuild E): 9.214 m, 25.73 deg; floor 3.708..8.219 along the axis (4.51 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide; rebuild A: on the diagonal |
+| Tip rooms | circles r 1.8 at (+-8.3, 3.6) (rebuild E; C (+-8.3, 3.0)), the outer wall at +-10.1; 2.5 m to the rim, 2.8 m apex; no window since rebuild A (13 plain wall facets round the outer side) | 5a mirrored: 3.6 m across |
+| Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.099, -5.734); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.030, 0.841) on the corridors' front wall; renewers (+-9.922, 4.381) on the tip rooms' outer wall, the player at (+-8.751, 3.817) | 5a mirrored; as built in "Rebuild E" |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
 
 The check holds: the footprint within 0.5 m; corridors `corridor_width_m` (3) +- 0.1 m wide and over 2.5 m long; the
@@ -637,3 +637,33 @@ The v2 mouth passage's pieces, the mouth frame and lights are gone.
 - **The front legs' mounts** rise 0.25 m more (`leg` arg `rise`): the belly over them climbs to 1.05 m, over the
   mount's old top (1.02).
 - **The detail views** `detail_floor` and `detail_cables` look into the corridors from the hall's centre at (0, -1).
+
+## Rebuild E: the hall's full rim and the inside 0.4 m forward (2026-10-22)
+The engineer kept the hall's ceiling at full height (art#263 comment 6342342554): C's 2.75 m front rim
+(`front_clear_h`, `front_from_deg`) and its fold piece `hall_ceil_step` are gone; the hall's rim is 3.2 m all round.
+- **The shift.** The inside moves forward of step A (hall (0, 0), tips (+-8.3, 4.0)) only as far as the hall's whole
+  wall top keeps 0.15 m of skin under J: s = 0.40 m (searched in 0.05 m steps, rounded down). At s 0.45 the hall's rim
+  over the throat's opening (where the hall's ceiling meets the throat's header) keeps 0.139 m, under the 0.15; at
+  0.40 it keeps 0.165 m and the wall top elsewhere 0.177 m (the least at the throat's corners).
+- **Built:** hall (0, -0.4); tip rooms (+-8.3, 3.6); corridor axes (0, -0.4) to (+-8.3, 3.6) (the same 9.214 m and
+  25.73 deg). The throat keeps its mouth at the nose edge (x +-1.65, y -7.1); its corners move to (+-2.915, -3.252) on
+  the hall's same vertices (-44.38 / -135.62 deg), so its walls are 4.051 m (C 3.485): five modules of 0.810. Its
+  roof starts at y -5.561, the first module line aft of y -5.77, where J's top first gives 0.15 m over the roof.
+- **Spots:** console (0, 0.6); sockets (+-1.800, 3.112) and (+-3.426, -2.358); breakers (+-6.030, 0.841); renewers
+  (+-9.922, 4.381); the vents' asked (+-2.3, -5.8) snapped 0.211 m onto the longer walls: (+-2.099, -5.734), normal
+  (-+0.950, 0.312).
+- **J's underside.** C's belly ring under the hall is removed: on step A's ring the hall's slab keeps 0.18 m. The
+  tip rooms' ring stays, moved to (+-8.3, 3.6) (`belly_also` holds (x, y, r) rings): without it their slab fronts
+  keep 0.10 m. J's outline, span, length, nose and top are unchanged.
+- **The skin check** (`ship_hull_shape._room_points`) samples the hall's rim over the throat's opening ("hall rim")
+  and the wall's ends at the opening's corners. D's skip of hall wall samples by the throat's corners is narrowed to
+  the slab bottom: that point is the edge of the throat's open underside (the "belly" cutter's back plane runs
+  through the hall's corners, 0.014 m from it). The wall above it is checked (its top keeps 0.152 m there).
+  `ship --check` prints each room's least skin: hall 0.152, throat 0.150, corridors 0.180, tip rooms 0.180. Behind
+  the tip rooms 2.1 m of hull is left in plan (the least margin, 1.25 m, is on their lead side).
+- **The pale boards beside the mouth** were the throat's wall modules forward of the roof line (`th_wall_low`,
+  `th_wall_mid`: interior silver, flat tops at 2.05 m, standing free under the open notch), not the cheeks. Forward
+  of the roof line those modules are gone; `skin_cheeks` (`j_cheeks`) now also builds the jambs: each wall there is
+  a solid in the wall's thickness from the slab up to J's top over it, its inner face in the hull's plates
+  (`hull_silver`, `ext_silver_b/c`), its sloped top and front edge in `hull_silver`. The amber floor lights stay
+  (two a side, at 1/5 and 4/5 of the wall).
