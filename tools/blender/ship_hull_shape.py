@@ -857,6 +857,8 @@ P_ROOF_CUT = 0.245                      # the oculus's reveal down to this over 
 P_PODS = [(3.0, 2.0, 1.42, 2.0), (0.0, 2.55, 1.62, 2.3)]   # (x, h, r, out past the stern face): 2.84 / 3.24 across
 P_POD_IN = 1.6                          # a pod's full barrel starts this far forward of the stern face
 P_LENS_N = 48
+P_FAIR = (60.0, 3.0)                    # details 3: a fairing round each fin root under the lens (deg of the lens's low
+#                                         barrel past the root it takes in, m along the fin's edge where it ends flush)
 P_TOP_LIFT = 0.04                       # lens polish: the lens's top 4 cm up, over the fin's ridge (3.30 at the lens's
 #                                         centre stood 2.5 cm proud of the old top: a ledge across the lens's roof)
 P_PROFILE = [(0.2, ("top", 0.0)), (0.0, ("top", 0.3)), (0.0, ("abs", 1.0)), (0.08, ("abs", 0.5)),
@@ -958,8 +960,52 @@ def p_parts():
             g = 2 * math.pi * i / P_LENS_N
             x, y = cx + rr * math.cos(g), cy + rr * math.sin(g)
             lens.append((x, y, h if kind == "abs" else p_top(x, y) - h))
+    fair = p_fairings()
     return (("body", tuple(mirrored([p for p in body if p[0] >= -1e-6]))), ("fin_e", tuple(wing)),
-            ("fin_w", tuple(_mx(wing))), ("lens_e", tuple(lens)), ("lens_w", tuple(_mx(lens))))
+            ("fin_w", tuple(_mx(wing))), ("lens_e", tuple(lens)), ("lens_w", tuple(_mx(lens))),
+            *((f"fair_{k}_e", tuple(pts)) for k, pts in fair), *((f"fair_{k}_w", tuple(_mx(pts))) for k, pts in fair))
+
+
+def _lens_at(g, inset, h):
+    """The point of the lens's 48-gon (its rim inset by `inset`) at plan angle g (radians) round its centre, height h:
+    on the polygon's side the ray at g meets (its apothem P_RIM_R - inset), so on the lens's surface."""
+    cx, cy = P_TIP
+    step = 2 * math.pi / P_LENS_N
+    gm = (math.floor(g / step + 1e-9) + 0.5) * step
+    r = (P_RIM_R - inset) / math.cos(g - gm)
+    return cx + r * math.cos(g), cy + r * math.sin(g), h
+
+
+def p_fairings():
+    """Details 3: the east side's two fairings [("lead" | "trail", points)]. Under each fin root the lens's lower
+    barrel stood out past the fin's underside (lens step 2: the barrel goes down to the belly, the fin's edge stops at
+    h 1.15). A fairing is the convex hull of the lens's low barrel (the rim from the fin edge's bottom down to the
+    belly, every profile level) from the root to P_FAIR[0] deg past it, and the fin edge's bottom line from the root
+    to P_FAIR[1] m along it: its outer face falls from that line to the barrel, so the underside runs on as one
+    surface and ends flush with the fin's edge. Every point lies on the lens's or the fin's surface; the union only
+    grows, so no room loses skin; the fairing stays under the edge's bottom (the edge light untouched)."""
+    span, length = P_FAIR
+    edges = p_edges()
+    step = 2 * math.pi / P_LENS_N
+    out = []
+    for kind, deg, sgn, root, far in (("lead", P_LEAD_DEG, -1, edges[1], edges[0]),
+                                      ("trail", P_TRAIL_DEG, 1, edges[2], edges[3])):
+        (fx, fy, fh, fe), (tx, ty, th, te) = root, far
+        k = length / math.hypot(tx - fx, ty - fy)
+        bottom = fh - fe / 2
+        pts = [(fx, fy, bottom),
+               (fx + (tx - fx) * k, fy + (ty - fy) * k, fh + (th - fh) * k - (fe + (te - fe) * k) / 2)]
+        g0 = math.radians(p_axis_deg() + deg)
+        gs = [g0]
+        g = (math.floor(g0 / step) + (1 if sgn > 0 else 0)) * step
+        while abs(g - g0) <= math.radians(span) + 1e-9:
+            if abs(g - g0) > 1e-6:
+                gs.append(g)
+            g += sgn * step
+        for g in gs:
+            pts += [_lens_at(g, 0.0, bottom)] + [_lens_at(g, inset, h) for inset, (lvl, h) in P_PROFILE if lvl == "abs"]
+        out.append((kind, pts))
+    return out
 
 
 def _bbox(polys):
@@ -1137,7 +1183,9 @@ def _p_surface():
 def p_outline_rows():
     """[hull] rows of P: at every part corner's x the union's lead and trail y (the parts' plan hulls' spans)."""
     hulls = []
-    for _nm, pts in p_parts():
+    for nm, pts in p_parts():
+        if nm.startswith("fair_"):   # details 3: a fairing lies under its fin and lens in plan (test_ship_fairing)
+            continue
         q = sorted({(round(x, 6), round(y, 6), 0) for x, y, _h in pts})
         hulls.append([(u, v) for u, v, _ in _chain(q)])
     xmax = max(p[0] for poly in hulls for p in poly)
