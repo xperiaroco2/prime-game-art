@@ -19,9 +19,9 @@ import ship_hull_shape as S
 import ship_lib as L
 
 L.MATERIALS.update({
-    # details 2: opaque dark warm glass with a faint inner glow ([light.mats] l 0: it lights nothing)
+    # details 2: opaque dark warm glass with a faint inner glow (details 3: 0.07 -> 0.2) ([light.mats] l 0: it lights nothing)
     "ext_porthole": {"base": (0.012, 0.014, 0.018, 1.0), "metallic": 0.0, "roughness": 0.05,
-                     "emission": (1.0, 0.55, 0.25), "strength": 0.07},
+                     "emission": (1.0, 0.55, 0.25), "strength": 0.2},
     "ext_dome": {"base": (0.05, 0.06, 0.07, 1.0), "metallic": 0.3, "roughness": 0.1},
     "ext_hazard": {"base": (0.92, 0.66, 0.06, 1.0), "metallic": 0.05, "roughness": 0.55},
     "ext_hazard_dark": {"base": (0.035, 0.035, 0.04, 1.0), "metallic": 0.3, "roughness": 0.6},
