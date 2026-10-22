@@ -110,6 +110,34 @@ class ShipHullDetailTest(unittest.TestCase):
                     self.assertEqual(J.lay(q)[0][:len(q)], [tuple(x) for x in q])
         self.assertGreater(slivers, 0)   # the cut makes slivers on J: they are laid, not left open
 
+    def test_the_plates_run_in_rows_across_the_facets(self) -> None:
+        # lens polish: every face is covered by its cells' pieces; a piece's edge is flush only on a facet edge whose
+        # neighbour bends less than the zone's crease; the lens's rim has its three bands and seams every 36 deg; a lens
+        # plate's pieces share one silver and the lens parts are shaded smooth
+        surf = S.surface()
+        pieces = J.skin_pieces()
+        area: dict = {}
+        for _k, _zone, _cell, i, q, flags in pieces:
+            area[i] = area.get(i, 0.0) + S.area(q)
+            self.assertEqual(len(flags), len(q))
+        for i, (poly, _n, _kind) in enumerate(surf):
+            self.assertAlmostEqual(area.get(i, 0.0), S.area(poly), delta=1e-4 + 1e-3 * S.area(poly))
+        edges = J.Edges(surf)
+        for _k, zone, _cell, i, q, flags in pieces[::7]:
+            for (a, b), seam in zip(zip(q, q[1:] + q[:1]), flags):
+                if not seam:
+                    own, bend = edges.bend(i, tuple(0.5 * (a[t] + b[t]) for t in range(3)))
+                    self.assertTrue(own)
+                    self.assertLessEqual(bend, J.CREASE[zone])
+        rim = {c[3] for _k, z, c, *_ in pieces if z == "lens" and c[2] == "rim"}
+        self.assertEqual(rim, {0, 1, 2})
+        self.assertLessEqual(len({c[4] for _k, z, c, *_ in pieces if z == "lens" and c[2] == "rim"}), 10)
+        self.assertLess(len({p[2] for p in pieces}), len(pieces) / 4)   # plates span facets: fewer cells than pieces
+        parts = J.j_skin({"part": "top"}, LAYOUT)
+        lens = [p for p in parts if p["name"].endswith("_lens")]
+        self.assertTrue(lens)
+        self.assertTrue(all(p["smooth_deg"] == J.CREASE["lens"] for p in lens))
+
     def test_the_jamb_caps(self) -> None:
         caps = J.jamb_caps()
         self.assertEqual(len(caps), 8)
