@@ -48,7 +48,7 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 | Mouth | x -1.3..1.3, y -4.6..-3.3, 2.4 m high | the only way in or out (5a's side hatch is dropped, see below) |
 | Ramp | 2.6 m wide, hinge (0, -4.6) at the deck, foot (0, -7.4) on the ground: 12.1 deg, a long plane | north at the centre |
 | Corridors | y -1.25..1.25 (2.5 m), x 3.3..9.1 each side, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a: about 2.5 m wide |
-| Tip rooms | circles r 2.05 at (+-10.75, 0); 2.8 m to the rim, 3.2 m apex; window +-65 deg outward, sill 0.5, head 2.4 | panel (-10.5, 0), renewer (12, 0) |
+| Tip rooms | circles r 2.05 at (+-10.75, 0); 2.5 m to the rim, 2.8 m apex (launch 3, was 2.8 / 3.2); window +-65 deg outward, sill 1.0 (join 3, was 0.45), head 2.2 over the deck | panel (-10.5, 0), renewer (12, 0); the lens's window band starts 1.33 m over the deck |
 | Stations (not built) | console (0, 1); vents (+-5, -1), sockets (+-8, -1) at the north corridor wall; panel (-10.5, 0); renewer (12, 0) | 5a |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
 
@@ -99,7 +99,7 @@ The numbers (step 1, art #263):
   the 2.6 m ceiling; five modules of 1.117 m from x 3.353 (hall portal) to 8.936 (tip portal); arches at the first
   three module joints only, none near the vent and socket spots (x 5 and 8). The mouth passage is one module of
   1.247 m with an arch at the ramp hinge.
-- tip rooms: polygon on radius 2.1, eight window segments over +-65 deg (sill 0.5, head 2.4), three wall facets a
+- tip rooms: polygon on radius 2.1, eight window segments over +-65 deg (sill 1.0, head 2.2 since launch 3), three wall facets a
   side, the corridor chord over +-37.6 deg (half width 1.281); rim 2.8 m, apex 3.2 m; radial grate floor with amber
   spokes; ribbed ceiling with cyan strips and a six-lamp ring.
 - details: three crushed cup models (five placed, off every station spot), two scratch decal clusters (geometry
@@ -344,8 +344,8 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
 
 ## The tip window's well (inside lane, launch 3 step 2)
 
-- **The glass sits in the lens's band.** The tip room's opening in its wall (sill 0.45, head 2.2 over the deck, the
-  rooms' numbers) is lined out to the hull lens's slanted window band (`ship_hull_skin.tip_profile`, points 4 and 5:
+- **The glass sits in the lens's band.** The tip room's opening in its wall (sill 1.0, head 2.2 over the deck, the
+  rooms' numbers; join 3 raised the sill from 0.45: the well's sill slope filled the lower half of the opening) is lined out to the hull lens's slanted window band (`ship_hull_skin.tip_profile`, points 4 and 5:
   about h 1.93 to 2.98 m, r 2.9 to 2.35 m at the axis): a sill rising outward from the wall to the band's lower
   edge, a soffit to its upper edge, two jambs at +-65 deg, slim frame bars along both edges, the three mullions'
   frames on round the well (sill, glass, soffit) and a thin cyan glow line over the lower bar (`tip_well_e`/`_w`),
@@ -360,21 +360,34 @@ the join's `int_value`, `int_rough_add` and `emission_scale`.
 - **The views**: `in_hall_out` from y 1.0 at fov 60 (the mouth fills the frame, hall_out-2), the tip views level at
   2.25 m toward the band (`exterior.toml` `[shots]`).
 
-## Open problems (after launch 2)
+## Launch 3's numbers and open problems (join 3)
 
-- **The hull's thickness** (launch 3): the lower deck took 0.75 m off every top (tips 3.65 m, wings about 3.1 m
-  deep over the corridors, spine 4.9); from the front it is still a wide plate, not the turnaround's V of thin wings.
-- **The hull still does not read as the manta** from the front and the three-quarter (critique 1-4, the manager's
-  updates 1 and 2): launch 3 lowers the deck (floor_h 1.0 -> 0.6, corridor clear 2.6 -> 2.4, tip room 2.8 -> 2.5,
-  keeping 0.5 m over the 1.8 m capsule), removes every vertical outside face (>= 25 deg from vertical), makes the tip
-  fairing a lens with a horizontal blade edge about 0.8 m past the room wall and lets the span grow to about 27.5 m.
-- The inside after launch 2 (strip lights on their strips, the join's `int_plate` v 1.0 r +0.45 m 0.3): silver walls in mid
-  values, cyan strips, amber pools; the hall's centre disc no longer reads as a black hole.
-- The outside's hero view lost its bright silver (moon from behind, SE); the back view's top plates read flat lit.
-  The seam close-up looks at the moonlit east wing's back slope since join 2 (the front hull is in the moon's shadow).
-- 26 small strip cells get no light (`MAX_LIGHTS` 96); raise to 128 only if a strip reads unlit.
-- The tip windows: three mullions since launch 3; the clearing through them is still dim (moonlit pines, no
-  party glow in their view).
-- The interior has no UVs: the brushed grain is geometry and the triplanar shader only on the hull's metals.
-- Draw calls outside 1740..2032 per view (the clearing about 400) and the grates about 60% of the inside's triangles:
-  measure with `bench` before the game takes it.
+What bent in launch 3 and why (manager update 2; ship.toml, `ship_hull_skin.py`):
+
+| What | Was | Now | Why |
+|---|---|---|---|
+| Deck floor | 1.0 | 0.6 | a thinner hull; the ramp still meets the ground (12.1 deg) |
+| Corridor clear | 2.6 | 2.4 | 0.6 m over the 1.8 m capsule (the rule keeps 0.5) |
+| Tip room clear / apex | 2.8 / 3.2 | 2.5 / 2.8 | 0.7 m over the capsule |
+| Hall clear / apex | 3.4 / 4.0 | 3.2 / 3.8 | the spine stays the thick part (crest 4.9) |
+| Tip window sill | 0.45 | 1.0 | the lens's band starts 1.33 m up: a low sill left the well's slope filling half the opening |
+| Span | 26.46 | 27.5 | the lens tips' blades at x +-13.75 (`span_max_m`); the plan's x positions inside are unchanged |
+| Outside faces | vertical walls | every face >= 25 deg off vertical (`steep()`, tested) | manager update 2 |
+| Pieces | 139 | 159 (83395 tris) | the lens skin, re-seated details, branched pines and ground cover |
+
+Open problems after launch 3:
+
+- **The silhouette is still not the turnaround's manta** (the night's serious problem). From the side the lens tip
+  reads as a glazed drum: the 2.5 m tip room inside a lens only 0.7 m deeper than its wall leaves the lower face at
+  the 25 deg minimum and the blade at mid-height. From the front at eye height the wings are a level plate, where the
+  2D's wings rise in a V to the tips (dihedral) on chunky legs. Both need a hull decision, not tuning: lower tip rooms
+  (2.3 m clear is the capsule rule's floor), wings with a dihedral (the corridor floor stays level, so the skin rises
+  over it), or the tip rooms pulled in toward the body. The front review shot was raised to the turnaround's view
+  (eye h 5.6) in join 3, which shows the upper slopes but does not change the shape.
+- Outside: 1.95M..2.49M primitives and 3367..3822 draw calls per view with the branched pines: a pine LOD or an
+  impostor ring before the game (`bench`).
+- 26 small strip cells get no light (`MAX_LIGHTS` 96); the interior has no UVs (grain is geometry; the triplanar
+  shader only on the hull's metals); the grates are about 60 % of the inside's triangles.
+- The tip windows: the hull's `tip_window` glass and the well's `tip_glass_e`/`_w` 1.5 cm apart (double tint from
+  inside); the clearing through the band is dim. The party string is not in the hall-out view.
+- The detail_seam close-up's hatches read as faces (dot pairs); the legs are small and hidden from the front.
