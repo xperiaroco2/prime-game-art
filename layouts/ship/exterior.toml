@@ -768,8 +768,8 @@ views = [
   ["in_hall_out", "inside: the hall toward the ramp (hall_out-2)", [0.0, 0.0, 2.25], [0.0, -8.0, 1.6], 52.0, "hall_out-2.jpg"],  # polish 4: from the hall's centre (was y 1.0, the console's spot), the opening wider in frame
   ["in_corridor_e", "inside: the east corridor (corridor)", [3.0, 0.0, 2.2], [10.0, 0.0, 2.0], 70.0, "corridor.jpg"],
   ["in_corridor_w", "inside: the west corridor (corridor)", [-3.0, 0.0, 2.2], [-10.0, 0.0, 2.0], 70.0, "corridor.jpg"],
-  ["in_tip_e", "inside: the east tip room toward its window (tip-3)", [9.2, 0.3, 2.25], [14.0, -0.2, 2.2], 75.0, "tip-3.jpg"],  # inside 3-2: level, at the band glass
-  ["in_tip_w", "inside: the west tip room toward its window (tip-3)", [-9.2, -0.3, 2.25], [-14.0, 0.2, 2.2], 75.0, "tip-3.jpg"],
+  ["in_tip_e", "inside: the east tip room toward its window (tip-3)", [6.3, 0.9, 1.95], [10.1, -0.35, 1.55], 75.0, "tip-3.jpg"],  # v2: from the corridor's end, the whole room r 1.8
+  ["in_tip_w", "inside: the west tip room toward its window (tip-3)", [-6.3, -0.9, 1.95], [-10.1, 0.35, 1.55], 75.0, "tip-3.jpg"],
   ["detail_seam", "detail: hull seams and scratches (materials-3)", [4.5, 7.5, 5.2], [6.0, 3.0, 3.7], 34.0, "materials-3.jpg"],  # join 2: the moonlit east wing's back slope (the front hull is in the moon's shadow)
   ["detail_floor", "detail: a floor light strip and grate (materials-3)", [4.4, 0.4, 1.7], [5.6, -0.3, 0.6], 50.0, "materials-3.jpg"],
   ["detail_cables", "detail: a cable channel with clips (materials-3)", [6.2, 0.7, 1.9], [6.6, -1.2, 1.5], 55.0, "materials-3.jpg"],

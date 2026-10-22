@@ -317,5 +317,4 @@ views = [
   ["out_hero", "outside: three-quarter at night", [-17.0, -15.0, 6.0], [0.0, 0.0, 2.0], 50.0],
   ["in_hall", "inside: the hall from the ramp", [0.0, -4.3, 2.2], [0.0, 2.0, 2.0], 75.0],
   ["in_corridor_e", "inside: the east corridor", [2.6, 0.0, 2.2], [10.0, 0.0, 1.9], 70.0],
-  ["in_tip_e", "inside: the east tip room's window", [6.2, 0.9, 1.9], [10.1, -0.3, 1.6], 75.0],
 ]
