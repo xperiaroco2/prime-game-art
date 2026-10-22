@@ -133,6 +133,7 @@ tools/run.sh ship                       # the check and plan.txt
 tools/run.sh ship --build               # one GLB per piece (about 1 min); --only ids
 tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsule walk into DIR/check.json, then DIR/walkthrough.mp4
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
+tools/run.sh ship --shoot DIR --shutters closed   # the same with the tip windows' shutters closed (default open)
 ```
 
 Runs over 180 s go to the background with their log (CLAUDE.md, "Shell"). A snapshot of the whole after launch
@@ -483,3 +484,22 @@ spot. The console is a floor spot: 0.35 m of clear floor round (0, 1).
 
 The layout step moved the stern pods' noses 0.35 m back (y 3.85 and 4.25, lengths 3.25 and 3.65, the nozzle tips
 where they were): the r 4.0 hall's back wall reached into them.
+
+## The inside refit to version 2 (inside lane, step 1)
+
+- The hall's floor and lamp ring scale with the hall (`K_HALL` = 4.0 / 3.4): the lit grating disc r 1.176, the grate
+  ring 1.294..2.941, the amber ring 3.035, the rim plates from 3.129 (origin 3.529), the lamp ring and the ceiling's
+  inner edge 1.47. The tip floor: disc 0.55, grate from 0.62, the strips at 1.08.
+- Each vent and socket chord (`hall_panel_flat`, builder `flat_panel`): a plain centre panel 1.6 m wide (no relief, no
+  trunk; `[stations] plain_width_m`) between two 0.76 m diamond panels; no floor marking at the spots.
+- **The tip windows' shutter.** A blast shutter in the window's 20 cm reveal: one ribbed panel per window segment
+  (`tip_shutter`, 8 a room, each its own placement, origin on the segment's centre line, its mid-plane 0.1 m behind
+  the wall face), guides in `tip_shutter_track` (the head's rail, the sill's slot). Closed it fills the segment from
+  the sill to the head; open it is lowered `SHUTTER_DROP` (1.17 m) into the low wall, its cyan top edge in the
+  sill's slot. The move is a straight drop (Godot `position.y`). `interior.toml` places the panels open (`place`)
+  and lists the closed pose as `shutter_closed`; `ship --shutters closed` (`ship_layout.pose`) swaps them in. The
+  button `tip_shutter_button` (a plate, an amber push button in a cyan ring) sits on the first wall facet north of
+  each window, 1.15 m over the deck, 1.7 m off the window's axis: off the renewer's band. Not wired (the game
+  track). Neither the shutter nor the button stands in front of the wall face, so they carry no `foot`. A first
+  try with 24 turning louvre blades read as bars across the window when open.
+- Party cups: as before, plus one on the east window's sill (north end).
