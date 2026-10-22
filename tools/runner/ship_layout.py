@@ -220,7 +220,8 @@ def check(layout: dict[str, Any]) -> list[str]:
             problems.append(f"placement of unknown piece {pid}")
         elif not piece["outside"] and not inside(poly, (at[0], at[1])):
             problems.append(f"{pid} at ({at[0]:g}, {at[1]:g}) stands outside the hull")
-    unplaced = sorted(set(pieces) - {p[0] for p in layout["place"]})
+    # a piece placed only in the closed pose (shutter_closed) counts as placed
+    unplaced = sorted(set(pieces) - {p[0] for p in layout["place"] + layout.get("shutter_closed", [])})
     if unplaced:
         problems.append(f"pieces never placed: {', '.join(unplaced)}")
     return problems

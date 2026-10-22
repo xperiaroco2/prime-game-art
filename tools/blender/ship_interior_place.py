@@ -10,6 +10,7 @@ room turned by r the yaw is r - a (the west room is the east one turned 180)."""
 from __future__ import annotations
 
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -119,6 +120,13 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_shutter": ("shutter_panel", {}, False),
     "tip_shutter_track": ("shutter_track", {}, False),
     "tip_shutter_button": ("shutter_button", {}, False),
+}
+# inside-2's tone grid (SHIP_SHUTTER_GRID=1, never committed): the east room's closed panels in four tones, two
+# segments each (tones a..d of ship_interior.SHUTTER_TONES, north to south); the west room keeps SHUTTER_TONE
+GRID = os.environ.get("SHIP_SHUTTER_GRID") == "1"
+if GRID:
+    PIECES.update({f"tip_shutter_t{t}": ("shutter_panel", {"tone": t}, False) for t in "abcd"})
+PIECES |= {
     "tip_rib": ("rib", {"rv": S.R_TIP, "rim": F + S.H_TIP, "r_in": S.R_TIP_RING, "h_in": H_IN_TIP}, False),
     "tip_rib_strip": ("rib", {"rv": S.R_TIP, "rim": F + S.H_TIP, "r_in": S.R_TIP_RING, "h_in": H_IN_TIP,
                               "strip": True}, False),
@@ -177,7 +185,8 @@ def shutter(c, room: float, pose: str) -> list[tuple[str, list[float], float]]:
     for i in range(8):
         a = -S.WIN_HALF + half * (2 * i + 1)
         xy = polar(apo + S.SHUTTER_W, a, c, room)
-        out.append(("tip_shutter", [xy[0], xy[1], round(h, 4)], norm(room - a)))
+        pid = f"tip_shutter_t{'abcd'[i // 2]}" if GRID and pose == "closed" and room == 0.0 else "tip_shutter"
+        out.append((pid, [xy[0], xy[1], round(h, 4)], norm(room - a)))
     return out
 
 

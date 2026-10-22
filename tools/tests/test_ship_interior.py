@@ -83,25 +83,28 @@ class ShipInteriorTest(unittest.TestCase):
         # tip-3: a few thin mullions, the view nearly uninterrupted
         self.assertLessEqual(len(S.MULLIONS), 4)
 
-    def test_the_window_well_meets_the_lens_band(self) -> None:
-        # inside 3-2: the glass sits in the hull lens's slanted band (no lens face inside); the well spans the whole
-        # window sector, starts at the room wall and ends on the band's edges, per side (the lens is not symmetric)
-        import ship_hull_skin as HS
+    def test_the_window_well_meets_the_skin_band(self) -> None:
+        # inside-2: the well lines the room wall's opening out to the smooth skin's window band (ship_hull_smooth: the
+        # open rings round the tip centre); it spans the whole window sector, starts at the room wall and ends on the
+        # band's edges as the skin's height field puts them, per side
+        import ship_hull_smooth as HS
         var = HS.VARIANTS[HS.DEFAULT]
         ids = {p[0] for p in INTERIOR["place"]}
         self.assertTrue({"tip_well_e", "tip_well_w"} <= ids)
         self.assertFalse({"tip_glass_e", "tip_glass_w"} & ids)  # one glass: the hull's tip window
         self.assertNotIn("tip_glass", ids)
+        rh, rs = HS.pod_r(HS.HEAD + 0.05), HS.pod_r(HS.SILL - 0.05)
         for side in (1, -1):
             rows = S._well_rows(side)
             self.assertAlmostEqual(rows[0][0], -math.radians(S.WIN_HALF), places=4)
             self.assertAlmostEqual(rows[-1][0], math.radians(S.WIN_HALF), places=4)
             for b, r_in, lo, hi in rows:
-                prof = HS.tip_profile(var, side * b)
-                self.assertEqual((lo, hi), (prof[4], prof[5]))
-                self.assertGreater(lo[0], r_in)                       # the band lies outside the room wall
-                self.assertLess(lo[1], S.FLOOR + 1.65)               # eye height sees through the glass
-                self.assertGreater(hi[1], S.FLOOR + 1.65)
+                a = side * b
+                self.assertEqual(lo, (rs, HS.heights(HS.TIP_X + rs * math.cos(a), rs * math.sin(a), var)[0]))
+                self.assertEqual(hi, (rh, HS.heights(HS.TIP_X + rh * math.cos(a), rh * math.sin(a), var)[0]))
+                self.assertGreater(hi[0], r_in)                       # the band lies outside the room wall
+                self.assertGreater(hi[1], lo[1] + 0.3)               # an open band, head over sill
+                self.assertGreater(hi[1], S.FLOOR + 1.65)            # its head over eye height
                 self.assertGreaterEqual(lo[1], S.FLOOR + S.SILL)    # the sill rises outward to the glass
 
     def test_arches_and_details_keep_off_the_station_spots(self) -> None:

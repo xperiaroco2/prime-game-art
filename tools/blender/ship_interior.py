@@ -670,23 +670,27 @@ def tip_window_frame(args, layout):
 
 
 def _well_rows(side):
-    """The tip window's well (inside 3-2): per local angle b (east room frame; the west room is turned 180, so its b
-    is the hull's -a) the room wall's face r_in and the hull lens's window band (its lower and upper edge, (r, h)) from
-    ship_hull_skin's placed variant, sampled at the hull's own angles so the well meets the band's hole edge exactly."""
-    import ship_hull_skin as HS
+    """The tip window's well (inside-2): per local angle b (east room frame; the west room is turned 180, so its b
+    is the hull's -a) the room wall's face r_in and the smooth skin's window band round the tip centre (hull lane:
+    ship_hull_smooth, the open rings between pod_r(HEAD + 0.05) and pod_r(SILL - 0.05)): its lower edge (the sill
+    ring, (r, h)) and upper edge (the head ring), the heights read from the skin's own height field at the hull's own
+    angles, so the well meets the band's hole edge exactly."""
+    import ship_hull_smooth as HS
     var = HS.VARIANTS[HS.DEFAULT]
     half = D(WIN_HALF)
-    hull = [a for a in L.angles(-math.pi / 2, math.pi / 2, D(10.0), (-half, half))
-            + [math.atan2(dy, dx) for dx, dy in var["tip"]] if -half - 1e-6 <= a <= half + 1e-6]
+    hull = [a for a in L.angles(-math.pi / 2, math.pi / 2, HS.RAY, (-half, half)) if -half - 1e-6 <= a <= half + 1e-6]
     bs = sorted({round(side * a, 6) for a in hull} | {round(D(a), 6) for a in tip_vertices() if abs(a) <= WIN_HALF + 1e-6})
     seg = D(WIN_HALF / 8)
     apo = R_TIP * math.cos(seg)
+    rh, rs = HS.pod_r(HS.HEAD + 0.05), HS.pod_r(HS.SILL - 0.05)
     rows = []
     for b in bs:
         k = min(7, max(0, int((b + half) / (2 * seg))))
         c = -half + seg * (2 * k + 1)
-        prof = HS.tip_profile(var, side * b)
-        rows.append((b, apo / math.cos(b - c), prof[4], prof[5]))
+        a = side * b
+        lo = (rs, HS.heights(HS.TIP_X + rs * math.cos(a), rs * math.sin(a), var)[0])
+        hi = (rh, HS.heights(HS.TIP_X + rh * math.cos(a), rh * math.sin(a), var)[0])
+        rows.append((b, apo / math.cos(b - c), lo, hi))
     return rows
 
 
@@ -782,6 +786,10 @@ SHUTTER_T = 0.015                       # its half thickness
 SHUTTER_TOP = 0.03                      # the gap under the head's rail
 SHUTTER_DROP = round(HEAD - SHUTTER_TOP - SILL, 4)   # the panel's height: open, its top sinks flush into the slot
 BTN_V = 1.15                            # the button's centre over the deck
+# the closed panel's (body, ribs) materials; inside-2's grid (v2/shots_in2_grid) chose SHUTTER_TONE
+SHUTTER_TONES = {"a": ("int_silver_b", "int_silver_a"), "b": ("int_silver_c", "int_silver_b"),
+                 "c": ("int_plate", "int_silver_c"), "d": ("int_grate", "int_silver_a")}
+SHUTTER_TONE = "d"
 
 
 def _round(r, cv, n=16):
@@ -802,7 +810,8 @@ def shutter_panel(args, layout):
         ribs.append(G.slab(fr, G.rect(-hw + 0.03, hw - 0.03, v0, v0 + pitch - 0.035), SHUTTER_T, SHUTTER_T + 0.012,
                            0.006))
     line = G.slab(fr, G.rect(-hw + 0.01, hw - 0.01, top - 0.025, top - 0.01), SHUTTER_T, SHUTTER_T + 0.004)
-    return [P("body", body, "int_silver_b"), P("ribs", M(*ribs), "int_silver_a"), P("line", line, "int_cyan")]
+    body_m, rib_m = SHUTTER_TONES[args.get("tone", SHUTTER_TONE)]
+    return [P("body", body, body_m), P("ribs", M(*ribs), rib_m), P("line", line, "int_cyan")]
 
 
 def shutter_track(args, layout):
@@ -821,12 +830,14 @@ def shutter_track(args, layout):
 
 
 def shutter_button(args, layout):
-    """The shutter's wall button (not wired): a bevelled plate, an amber push button in a cyan ring, a dark label."""
+    """The shutter's wall button (not wired; inside-2: big enough to read from the room's middle): a bevelled plate
+    12 x 20 cm, a cyan ring round an amber push button, two dark label bars under it."""
     fr = G.wall_frame(FLOOR)
-    plate = G.slab(fr, G.rect(-0.035, 0.035, BTN_V - 0.08, BTN_V + 0.07), 0.0, 0.045, 0.008)
-    ring = G.slab(fr, _round(0.026, BTN_V), 0.045, 0.05)
-    push = G.slab(fr, _round(0.018, BTN_V), 0.045, 0.064, 0.004)
-    label = G.slab(fr, G.rect(-0.022, 0.022, BTN_V - 0.065, BTN_V - 0.045), 0.045, 0.047)
+    plate = G.slab(fr, G.rect(-0.06, 0.06, BTN_V - 0.12, BTN_V + 0.08), 0.0, 0.03, 0.01)
+    ring = G.slab(fr, _round(0.042, BTN_V, 24), 0.03, 0.038, 0.003)
+    push = G.slab(fr, _round(0.03, BTN_V, 24), 0.03, 0.055, 0.006)
+    label = M(G.slab(fr, G.rect(-0.035, 0.035, BTN_V - 0.08, BTN_V - 0.068), 0.03, 0.033),
+              G.slab(fr, G.rect(-0.035, 0.035, BTN_V - 0.1, BTN_V - 0.088), 0.03, 0.033))
     return [P("plate", plate, "int_silver_c"), P("ring", ring, "int_cyan"), P("push", push, "int_amber"),
             P("label", label, "int_dark")]
 
