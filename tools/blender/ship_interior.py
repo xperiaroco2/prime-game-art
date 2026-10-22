@@ -175,9 +175,10 @@ def _half(args):
 PORTAL_D = 0.15
 # the tip rooms
 R_TIP, H_TIP, APEX_TIP, R_TIP_RING = (_ROOM["tip_e"]["radius"] + 0.05, _ROOM["tip_e"]["clear_h"],
-                                      _ROOM["tip_e"]["apex_h"], 0.32)   # lens step 1: room r 2.0 -> vertex radius 2.05
+                                      _ROOM["tip_e"]["apex_h"], 0.86)   # lens step 1: room r 2.0 -> vertex radius 2.05
 # polish 4: R_TIP_RING 0.6 -> 0.42 (the tip ceiling's pale lamp cog read oversized from the room); lens step 1: 0.32,
-# its beam (to r 0.42) clear of the roof windows (their nearest corner at r 0.46)
+# its beam (to r 0.42) clear of the roof windows (their nearest corner at r 0.46); details 1: 0.86, the six lamps on
+# the light ring round the oculus (OC_BEAM)
 # lens step 1 (art#263 c6344490367): the lens rooms' ceiling slants down outward along the axis (P's ray_roof): clear
 # H_TIP_IN at the corridor's side, H_TIP at the outer wall; the walls stand H_TIP high and the ceiling's fascia closes
 # the slant's gap over them. The window band (local degrees, + aft in the east room; the west room is placed mirrored)
@@ -186,8 +187,12 @@ H_TIP_IN = _ROOM["tip_e"]["clear_h_in"]
 RW_TIP = _ROOM["tip_e"]["radius"] + _SHIP["deck"]["wall_m"]          # 2.2: the slant's span is the outer wall's
 BAND = _ROOM["tip_e"]["band"]
 SILL, HEAD = BAND["sill_h"], BAND["head_h"]
-_RWS = _ROOM["tip_e"]["roof_window_m"]
-ROOF_WINS = [(t - _RWS[0] / 2, t + _RWS[0] / 2, w - _RWS[1] / 2, w + _RWS[1] / 2) for t, w in _ROOM["tip_e"]["roof_windows"]]
+# details 1 (art#263 c6347287605): one round roof window, the oculus, centred on the room (its side k's normal at
+# k 360/N deg from the axis, as the hull's cut, ship_hull_shape.p_openings); the light ring round it under the ceiling
+OC_N = _ROOM["tip_e"]["oculus"]["sides"]                              # 32
+OC_R = _ROOM["tip_e"]["oculus"]["d"] / 2                              # 0.70: the clear radius, the lining's inner face
+OC_WELL = (OC_R, OC_R + 0.035)                                        # the lining's apothems: 1 cm into the hull's cut
+OC_BEAM = (0.69, 0.99)                                                # the light ring's beam under the ceiling
 
 
 def tip_clear(t: float) -> float:
@@ -941,49 +946,88 @@ def _clip_box(poly, x0, x1, y0, y1):
     return pts
 
 
+def _clip_half(poly, n, d):
+    """A convex plan polygon clipped to n . p <= d (Sutherland-Hodgman); [] when less than a triangle is left."""
+    out = []
+    for i, p in enumerate(poly):
+        q = poly[i - 1]
+        dp, dq = d - (n[0] * p[0] + n[1] * p[1]), d - (n[0] * q[0] + n[1] * q[1])
+        if (dp >= 0) != (dq >= 0):
+            f = dq / (dq - dp)
+            out.append((q[0] + (p[0] - q[0]) * f, q[1] + (p[1] - q[1]) * f))
+        if dp >= 0:
+            out.append(p)
+    return out if len(out) >= 3 else []
+
+
+def _clip_convex(poly, hull):
+    """A convex plan polygon clipped to a convex polygon whose points run counter-clockwise."""
+    for a, b in zip(hull, hull[1:] + hull[:1]):
+        n = (b[1] - a[1], a[0] - b[0])   # the edge's outward normal
+        poly = _clip_half(poly, n, n[0] * a[0] + n[1] * a[1])
+        if not poly:
+            return []
+    return poly
+
+
+def oc_angle(k: float) -> float:
+    """The oculus polygon's side k's normal (radians from the axis); its vertices at k + 0.5."""
+    return 2 * math.pi * k / OC_N
+
+
+def oc_sector(r0: float, r1: float, k: int) -> list:
+    """Side k's piece of a ring between the apothems r0 and r1 (a convex quad, counter-clockwise)."""
+    c = 1 / math.cos(math.pi / OC_N)
+    a, b = oc_angle(k - 0.5), oc_angle(k + 0.5)
+    return [(r0 * c * math.cos(a), r0 * c * math.sin(a)), (r1 * c * math.cos(a), r1 * c * math.sin(a)),
+            (r1 * c * math.cos(b), r1 * c * math.sin(b)), (r0 * c * math.cos(b), r0 * c * math.sin(b))]
+
+
 def tip_ceiling_cells():
-    """The ceiling's cells round the roof windows: plan boxes (x0, x1, y0, y1) in the room's frame that tile the room
-    but the windows (bands along the axis at the windows' edges)."""
-    xs = sorted({round(v, 4) for w in ROOF_WINS for v in w[:2]})
-    big = 9.0
-    cells = []
-    for x0, x1 in zip([-big] + xs, xs + [big]):
-        holes = sorted((w[2], w[3]) for w in ROOF_WINS if w[0] <= x0 + 1e-6 and x1 <= w[1] + 1e-6)
-        ys = [-big] + [v for h in holes for v in h] + [big]
-        cells += [(x0, x1, ys[2 * i], ys[2 * i + 1]) for i in range(len(ys) // 2)]
-    return cells
+    """details 1: the ceiling's slab round the oculus: per oculus side its sector from inside the well's lining out
+    past the room (plan polygons in the room's frame, clipped to the room by tip_ceiling)."""
+    return [oc_sector(OC_WELL[0] + 0.02, 3.0, k) for k in range(OC_N)]
 
 
 def tip_ceiling(args, layout):
-    """lens step 1: the lens room's ceiling, a coffered plane slanting down outward (tip_clear) with the three roof
-    windows: the slab and the face panels per cell round the windows, each window's frame, well and glass, four ribs
-    across the axis with cyan strips, and the fascia over the walls' tops (the slant's gap)."""
+    """lens step 1: the lens room's ceiling, a plane slanting down outward (tip_clear); details 1: with the oculus at
+    its centre (one round roof window, d 1.4 clear): the slab round it, face panels in eight sectors, the well's dark
+    lining up to 0.26 m over the ceiling, the glass at 0.24, and the LIGHT RING round it in the lamp ring's style (a
+    silver beam, a lip round the oculus, the warm band glowing on the beam's whole underside; the six lamps hang
+    under it: tip_lamp at R_TIP_RING); four ribs across the axis outside the ring with cyan strips, and the fascia
+    over the walls' tops (the slant's gap). Everything follows the slant (_slant), the well with it."""
     rim = FLOOR + H_TIP
     room = [_tv(a) for a in sorted(tip_vertices())]
     wide = [(x * (R_TIP + 0.25) / R_TIP, y * (R_TIP + 0.25) / R_TIP) for x, y in room]
+    inset = [(x * (R_TIP - 0.03) / R_TIP, y * (R_TIP - 0.03) / R_TIP) for x, y in room]
+    ff0 = G.floor_frame(0.0)
     slab, faces = [], {"int_silver_a": [], "int_silver_b": []}
-    for i, (x0, x1, y0, y1) in enumerate(tip_ceiling_cells()):
-        cw = _clip_box(wide, x0, x1, y0, y1)
+    for cell in tip_ceiling_cells():
+        cw = _clip_convex(cell, wide)
         if cw:
-            slab.append(G.slab(G.floor_frame(0.0), cw, rim, rim + 0.12))
-        cf = _clip_box(room, x0 + 0.03, x1 - 0.03, y0 + 0.03, y1 - 0.03)
-        if cf:
-            faces["int_silver_a" if i % 2 else "int_silver_b"].append(G.slab(G.floor_frame(0.0), cf, rim - 0.025, rim))
-    frame, well, glass = [], [], ([], [])
-    for x0, x1, y0, y1 in ROOF_WINS:
-        e = 0.06
-        for bx in ((x0 - e, x1 + e, y0 - e, y0), (x0 - e, x1 + e, y1, y1 + e), (x0 - e, x0, y0, y1), (x1, x1 + e, y0, y1)):
-            frame.append(G.bbox(*bx, rim - 0.05, rim + 0.01))
-        t = 0.025
-        for bx in ((x0, x1, y0, y0 + t), (x0, x1, y1 - t, y1), (x0, x0 + t, y0, y1), (x1 - t, x1, y0, y1)):
-            well.append(G.bbox(*bx, rim, rim + 0.26))
-        gv, gf = glass
-        k = len(gv)
-        gv += [(x0, y0, rim + 0.24), (x1, y0, rim + 0.24), (x1, y1, rim + 0.24), (x0, y1, rim + 0.24)]
-        gf += [(k, k + 1, k + 2, k + 3), (k + 3, k + 2, k + 1, k)]
+            slab.append(G.slab(ff0, cw, rim, rim + 0.12))
+    per = OC_N // 8
+    for k in range(OC_N):   # the face panels: eight sectors of alternating tone, 3 cm gaps between them
+        q = _clip_convex(oc_sector(OC_BEAM[1] + 0.03, 3.0, k), inset)
+        if q and k % per == 0:   # the sector's first side: keep 1.5 cm clear of its start line
+            e = oc_angle(k - 0.5)
+            q = _clip_half(q, (math.sin(e), -math.cos(e)), -0.015)
+        if q and k % per == per - 1:   # its last side: 1.5 cm clear of its end line
+            e = oc_angle(k + 0.5)
+            q = _clip_half(q, (-math.sin(e), math.cos(e)), -0.015)
+        if q:
+            faces["int_silver_a" if (k // per) % 2 else "int_silver_b"].append(G.slab(ff0, q, rim - 0.025, rim))
+    well = [G.slab(ff0, oc_sector(*OC_WELL, k), rim, rim + 0.26) for k in range(OC_N)]
+    beam = [G.slab(ff0, oc_sector(OC_R + 0.01, OC_BEAM[1], k), rim - 0.15, rim) for k in range(OC_N)]
+    lip = [G.slab(ff0, oc_sector(OC_BEAM[0], OC_R + 0.03, k), rim - 0.19, rim + 0.005) for k in range(OC_N)]
+    band = [G.slab(ff0, oc_sector(OC_R + 0.04, OC_BEAM[1] - 0.02, k), rim - 0.165, rim - 0.15) for k in range(OC_N)]
+    gc = 1 / math.cos(math.pi / OC_N)
+    gv = [(OC_WELL[0] * gc * math.cos(oc_angle(k + 0.5)), OC_WELL[0] * gc * math.sin(oc_angle(k + 0.5)), rim + 0.24)
+          for k in range(OC_N)]
+    glass = (gv, [tuple(range(OC_N)), tuple(range(OC_N - 1, -1, -1))])
     ribs, strips = [], []
     apo = R_TIP * math.cos(D(TIP_STEP / 2))
-    for x, w in ((-1.0, 0.05), (-0.55, 0.05), (0.825, 0.025), (1.8, 0.05)):
+    for x, w in TIP_RIBS:
         yh = math.sqrt(max(apo ** 2 - x ** 2, 0.0)) - 0.03
         ribs.append(G.bbox(x - w, x + w, -yh, yh, rim - 0.09, rim - 0.02))
         if w > 0.03:
@@ -996,11 +1040,17 @@ def tip_ceiling(args, layout):
         k = len(fv)
         fv += [(x0, y0, rim - 0.11), (x1, y1, rim - 0.11), (x1, y1, rim + 0.005), (x0, y0, rim + 0.005)]
         ff += [(k, k + 1, k + 2, k + 3), (k + 3, k + 2, k + 1, k)]
-    parts = [P("slab", M(*slab), "int_silver_b"), P("frames", M(*frame), "int_silver_c"),
-             P("wells", M(*well), "int_dark"), P("ribs", M(*ribs), "int_silver_c"), P("strips", M(*strips), "int_cyan"),
+    parts = [P("slab", M(*slab), "int_silver_b"), P("wells", M(*well), "int_dark"),
+             P("beam", M(*beam), "int_silver_c"), P("lip", M(*lip), "int_silver_a"), P("band", M(*band), "int_lamp"),
+             P("ribs", M(*ribs), "int_silver_c"), P("strips", M(*strips), "int_cyan"),
              L.part("glass", *glass, "int_glass", solid=False), L.part("fascia", fv, ff, "int_silver_c", solid=False)]
     parts += [P(f"face_{m[-1]}", M(*v), m) for m, v in faces.items() if v]
-    return _slant(parts, rim - 0.1)
+    return _slant(parts, rim - 0.2)
+
+
+# details 1: the ceiling's ribs across the axis (x, half width), outside the light ring (were at -1.0, -0.55, 0.825,
+# 1.8 between the three roof windows)
+TIP_RIBS = ((-1.55, 0.05), (-1.12, 0.025), (1.12, 0.025), (1.55, 0.05))
 
 
 def tip_window(args, layout):

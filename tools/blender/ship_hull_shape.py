@@ -849,9 +849,11 @@ P_LENS_EDGE = (1.35, 0.4)               # at the lens rim: under the band's sill
 P_LEAD_DEG, P_TRAIL_DEG = -72.0, 50.0   # the fins' roots on the rim, deg round the lens's outward axis (+ aft)
 P_BAND = _p_band()                      # the window band as built (ship_interior: the lens room's facets 3..7)
 P_BAND_IN = 2.13                        # the band's cut from this radius out (the room's wall's outer face 2.21)
-P_ROOF_WIN = [tuple(w) for w in _LENS["roof_windows"]]   # the roof windows' centres (along, across) from the centre
-P_ROOF_WIN_M = tuple(_LENS["roof_window_m"])              # along, across: (0.9, 0.7)
-P_ROOF_CUT = 0.245                      # the roof window's reveal down to this over the ceiling (the well's top 0.26)
+P_OCULUS_D = _LENS["oculus"]["d"]                 # details 1: the oculus's clear diameter (1.4, inside the well's lining)
+P_OCULUS_N = _LENS["oculus"]["sides"]             # its polygon (32): side k's normal at k 360/N deg round the axis
+P_OCULUS_WELL = 0.025                             # the well's lining (ship_interior.tip_ceiling) inside the hull's cut
+P_OCULUS_R = P_OCULUS_D / 2 + P_OCULUS_WELL       # 0.725: the hull's cut, its sides' apothem round the lens's centre
+P_ROOF_CUT = 0.245                      # the oculus's reveal down to this over the ceiling (the well's top 0.26)
 P_PODS = [(3.0, 2.0, 1.42, 2.0), (0.0, 2.55, 1.62, 2.3)]   # (x, h, r, out past the stern face): 2.84 / 3.24 across
 P_POD_IN = 1.6                          # a pod's full barrel starts this far forward of the stern face
 P_LENS_N = 48
@@ -1007,8 +1009,8 @@ def _mirror_planes(planes):
 @lru_cache(maxsize=None)
 def p_openings():
     """The openings cut through P's faces: ((planes, emitted plane indices, what)): per lens the window band as wedges
-    between the lens rim's vertices (the band's sill and head faces, its two end faces) and the three roof windows
-    (a prism from P_ROOF_CUT over the ceiling up: its four sides). The west's mirrored."""
+    between the lens rim's vertices (the band's sill and head faces, its two end faces) and the oculus (details 1: a
+    prism of P_OCULUS_N sides from P_ROOF_CUT over the ceiling up: its sides). The west's mirrored."""
     c = P_TIP
     g0, g1 = math.radians(p_axis_deg() + P_BAND[0]), math.radians(p_axis_deg() + P_BAND[1])
     step = 2 * math.pi / P_LENS_N
@@ -1023,15 +1025,14 @@ def p_openings():
     k = (P_CLEAR[1] - P_CLEAR[0]) / (2 * (P_ROOM_R + WALL))
     cc = FLOOR + 0.5 * (P_CLEAR[0] + P_CLEAR[1]) + k * (c[0] * ux + c[1] * uy)   # h + k (ux x + uy y) = cc: the ceiling
     ln = math.sqrt(1 + k * k)
-    la, lw = P_ROOF_WIN_M
-    for t, w in P_ROOF_WIN:
-        mx, my = c[0] + t * ux + w * nx, c[1] + t * uy + w * ny
-        planes = []
-        for (ax, ay), half in (((ux, uy), la / 2), ((-ux, -uy), la / 2), ((nx, ny), lw / 2), ((-nx, -ny), lw / 2)):
-            planes.append(((ax, ay, 0.0), ax * mx + ay * my + half))
-        planes.append(((-k * ux / ln, -k * uy / ln, -1 / ln), -(cc + P_ROOF_CUT) / ln))
-        planes.append((H, 9.0))
-        east.append((planes, (0, 1, 2, 3), "roof"))
+    planes = []   # details 1: the oculus, a prism of P_OCULUS_N sides round the lens's centre (side 0 on the axis)
+    for j in range(P_OCULUS_N):
+        a = 2 * math.pi * j / P_OCULUS_N
+        ax, ay = ux * math.cos(a) - nx * math.sin(a), uy * math.cos(a) - ny * math.sin(a)
+        planes.append(((ax, ay, 0.0), ax * c[0] + ay * c[1] + P_OCULUS_R))
+    planes.append(((-k * ux / ln, -k * uy / ln, -1 / ln), -(cc + P_ROOF_CUT) / ln))
+    planes.append((H, 9.0))
+    east.append((planes, tuple(range(P_OCULUS_N)), "roof"))
     out = [(tuple(p), e, w) for p, e, w in east] + [(tuple(_mirror_planes(p)), e, w) for p, e, w in east]
     return tuple(out)
 

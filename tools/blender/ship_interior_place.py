@@ -190,7 +190,6 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_ceiling": ("tip_ceiling", {}, False),
 }
 PIECES |= {
-    "tip_lamp_ring": ("lamp_ring", {"radius": S.R_TIP_RING, "h_in": H_IN_TIP}, False),
     "tip_lamp": ("lamp", {"h_in": H_IN_TIP}, False),
     # details
     "cup_a": ("cup", {"seed": 3, "scale": 1.8}, False),  # polish 4: 1.8 (22 cm; inside 3-1: 1.5 read as a red mark)
@@ -419,7 +418,7 @@ def placements() -> list[tuple[str, list[float], float]]:
         c = (s * S.TIP_C[0], S.TIP_C[1])
         for pid in ("tip_floor_base", "tip_floor_disc", "tip_floor_rim", "tip_ceiling"):
             put(pid, list(c), room)
-        put("tip_lamp_ring", list(c), room, S.tip_clear(0.0) - S.H_TIP)   # lens step 1: up the slant at the centre
+        # details 1: no lamp ring at the centre (the oculus): tip_ceiling's light ring, the six lamps under it
         for k in range(8):
             put("tip_grate", polar(REF_TIP, 22.5 + 45 * k, c, room), room - (22.5 + 45 * k))
             put("tip_spoke", polar(REF_TIP, 45 * k, c, room), room - 45 * k)

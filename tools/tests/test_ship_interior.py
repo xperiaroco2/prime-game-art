@@ -106,20 +106,26 @@ class ShipInteriorTest(unittest.TestCase):
             self.assertGreater(min(wins), S.BAND["from_deg"] - 1.5)
             self.assertLess(max(wins), S.BAND["to_deg"] + 1.5)
 
-    def test_the_lens_ceiling_slants_round_its_roof_windows(self) -> None:
+    def test_the_lens_ceiling_slants_round_its_oculus(self) -> None:
         """lens step 1: the ceiling from 2.4455 at the corridor's side to 2.3545 at the outer wall (P's), the walls
-        H_TIP high under it, the cells round the roof windows tiling the room but the windows."""
+        H_TIP high under it; details 1: the slab round the oculus (none over its clear disc, every room point outside
+        the light ring under exactly one cell), the six lamps on the light ring, the ribs clear of it."""
         self.assertAlmostEqual(S.tip_clear(-S.RW_TIP + 0.2), 2.4455, places=3)
         self.assertAlmostEqual(S.tip_clear(S.RW_TIP - 0.2), 2.3545, places=3)
         self.assertLessEqual(S.H_TIP, min(S.tip_clear(t) for t in (-2.2, 0.0, 2.2)))
         cells = S.tip_ceiling_cells()
-        for x0, x1, y0, y1 in S.ROOF_WINS:
-            mx, my = (x0 + x1) / 2, (y0 + y1) / 2
-            self.assertFalse(any(a < mx < b and c < my < d for a, b, c, d in cells))
-            self.assertLess(math.hypot(max(abs(x0), abs(x1)), max(abs(y0), abs(y1))), S.R_TIP - 0.2)
-            self.assertGreater(min(math.hypot(x, y) for x in (x0, x1) for y in (y0, y1)), S.R_TIP_RING + 0.1)
-        for p in ((0.0, 0.0), (-1.0, 1.0), (1.9, 0.0), (0.825, 0.0)):
-            self.assertEqual(sum(1 for a, b, c, d in cells if a <= p[0] <= b and c <= p[1] <= d), 1, p)
+
+        def inside(p, poly):
+            return all((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) >= -1e-9
+                       for a, b in zip(poly, poly[1:] + poly[:1]))
+        self.assertEqual(S.OC_R, 0.7)
+        for r in (0.0, 0.3, S.OC_R - 0.01):
+            self.assertFalse(any(inside((r, 0.0), c) for c in cells))
+        for p in ((-1.0, 1.0), (1.9, 0.0), (0.0, 1.2), (-1.3, -0.4), (1.05, 0.3)):
+            self.assertEqual(sum(1 for c in cells if inside(p, c)), 1, p)
+        self.assertGreater(S.R_TIP_RING - 0.075, S.OC_BEAM[0])   # the lamps hang under the ring's beam
+        self.assertLess(S.R_TIP_RING + 0.075, S.OC_BEAM[1])
+        self.assertGreater(min(abs(x) - w for x, w in S.TIP_RIBS), S.OC_BEAM[1] + 0.05)
         parts = S.tip_ceiling({}, None)
         hs = [h for q in parts if q["name"] == "slab" for x, y, h in q["verts"] if abs(h - S.FLOOR - S.tip_clear(x)) < 1e-6]
         self.assertTrue(hs)

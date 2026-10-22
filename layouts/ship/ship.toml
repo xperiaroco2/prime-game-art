@@ -87,10 +87,10 @@ ceiling = "slant"
 # the window band on the outer side: deg round the room's outward axis (the corridor's, from the hall), + aft;
 # -65..+45, biased forward: P's trail fin hides the band from +45.0 (blockout6 report.json hidden_deg)
 band = {from_deg = -65.0, to_deg = 45.0, sill_h = 1.0, head_h = 2.2}
-# the roof windows in the slanted ceiling: centres [along the axis, across (+ aft)] from the room's centre, size
-# [along, across] (P's RAY_PANELS, RAY_PANEL)
-roof_windows = [[0.35, -0.8], [0.35, 0.8], [1.3, 0.0]]
-roof_window_m = [0.9, 0.7]
+# details 1 (art#263 c6347287605, c6347388160): one round roof window, the oculus, centred on the room: d its clear
+# diameter inside the well's lining, sides its polygon (the hull's cut, the well, the glass, both frames); the well
+# follows the slanted ceiling (was three 0.9 x 0.7 roof windows, P's RAY_PANELS)
+oculus = { d = 1.4, sides = 32 }
 
 [[rooms]]
 id = "tip_e"                                # lens step 1: the east lens room (P's lens; ids kept)
@@ -104,10 +104,10 @@ ceiling = "slant"
 # the window band on the outer side: deg round the room's outward axis (the corridor's, from the hall), + aft;
 # -65..+45, biased forward: P's trail fin hides the band from +45.0 (blockout6 report.json hidden_deg)
 band = {from_deg = -65.0, to_deg = 45.0, sill_h = 1.0, head_h = 2.2}
-# the roof windows in the slanted ceiling: centres [along the axis, across (+ aft)] from the room's centre, size
-# [along, across] (P's RAY_PANELS, RAY_PANEL)
-roof_windows = [[0.35, -0.8], [0.35, 0.8], [1.3, 0.0]]
-roof_window_m = [0.9, 0.7]
+# details 1 (art#263 c6347287605, c6347388160): one round roof window, the oculus, centred on the room: d its clear
+# diameter inside the well's lining, sides its polygon (the hull's cut, the well, the glass, both frames); the well
+# follows the slanted ceiling (was three 0.9 x 0.7 roof windows, P's RAY_PANELS)
+oculus = { d = 1.4, sides = 32 }
 
 [[rooms]]
 id = "vault"                                  # lens step 1: a closet behind the hall's back wall, a shell only (no item,
@@ -350,7 +350,7 @@ lamps = [
   [8.14, 8.39, 1.45, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the trail edge (east)
   [-12.48, -1.06, 1.13, 1.0, 1.0, 1.0, 0.08, 0.05, "nav", false],  # port nav lamp, red (west)
   [12.48, -1.06, 1.13, 1.0, 1.0, 0.1, 1.0, 0.3, "nav", false],  # starboard nav lamp, green (east)
-  [0.0, 11.2, 4.6, 1.0, 1.0, 1.0, 0.97, 0.92, "nav_tail", false],  # tail nav lamp, white
+  [0.0, 11.2, 4.715, 1.0, 1.0, 1.0, 0.97, 0.92, "nav_tail", false],  # tail nav lamp, white (0.45 m out: details 1)
   [-3.60, -17.52, 2.24, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
   [-5.47, -19.22, 2.42, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
   [-7.93, -21.03, 2.59, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
@@ -405,6 +405,8 @@ glow_nav_red = {l = 0.0}                                             # light lay
 glow_nav_green = {l = 0.0}                                           # their lights are the "nav", "nav_tail" and "land"
 glow_nav_white = {l = 0.0}                                           # lamps above
 glow_landing = {l = 0.0}
+ext_window_glow = {l = 0.0}                                          # details 1: the lens band's warm pane (outside, one-sided)
+ext_screen = {l = 0.0}                                               # details 1: the cockpit screens glow, light nothing
 glow_pod = {c = [0.2, 0.9, 1.0], e = 0.6, l = 0.15, rr = 0.6}        # lens step 2: the pods' rings, seen, not a lamp; light layer: e 0.6, the bands clipped pale in out_back
 int_silver_a = {v = 0.55, r = 0.25, m = 0.45}
 int_silver_b = {v = 0.55, r = 0.25, m = 0.45}
@@ -449,4 +451,13 @@ views = [
   ["in_tip_w", "inside: the west lens toward its windows", [-9.0, 1.7, 1.75], [-12.6, 0.6, 1.6], 80.0],
   ["in_lens_roof_e", "inside: the east lens's roof windows looking up", [9.6, 1.3, 1.6], [11.2, 1.2, 3.2], 80.0],
   ["in_vault_door", "inside: the vault's door from the hall", [0.0, 0.2, 1.7], [0.0, 3.6, 1.3], 70.0],
+  # details 1: the oculus from inside looking up and from outside, the east cockpit from above and in three-quarter
+  ["in_oculus_e", "inside: the east lens's oculus and its light ring, looking up", [9.7, 1.1, 1.5], [10.5, 1.2, 3.3], 75.0],
+  ["out_oculus_e", "outside: the east lens's oculus from above", [12.6, -1.0, 6.2], [10.5, 1.2, 3.3], 40.0],
+  ["out_canopy_top", "outside: the east cockpit from above at night", [2.6, -2.9, 7.6], [2.25, -3.6, 4.3], 40.0],
+  ["out_canopy_e", "outside: the east cockpit in three-quarter at night", [5.6, -7.6, 6.0], [2.25, -3.6, 4.4], 38.0],
+]
+# details 1: views shot by day after the night ones (ship.gd _day: the sun, a pale sky; the moon and key off)
+day_views = [
+  ["out_canopy_e_day", "outside: the east cockpit in three-quarter by day", [5.6, -7.6, 6.0], [2.25, -3.6, 4.4], 38.0],
 ]
