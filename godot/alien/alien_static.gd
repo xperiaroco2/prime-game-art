@@ -4,6 +4,7 @@ extends RefCounted
 ## player's skin colour. Use with preload (no class cache in a -s script):
 ##   const AlienStatic = preload("res://alien/alien_static.gd")
 ##   var mats := AlienStatic.apply(head, mask_texture, Color(0.39, 0.77, 0.76))  # base_skin: the build's sRGB median
+##   (an optional 4th argument: the detail texture, `<head>_detail.png`, for the "alive" levers; ALIVE below)
 ##   AlienStatic.set_skin(mats, Color("e98a8c"))
 
 const SHADER: Shader = preload("res://alien/alien_static.gdshader")
@@ -15,7 +16,7 @@ const PALETTE: Array[Color] = [Color(0.93, 0.55, 0.56), Color(0.64, 0.56, 0.92),
 
 
 ## Replaces every "_static_skin" surface material under root; returns the new ShaderMaterials.
-static func apply(root: Node, mask: Texture2D, base_skin: Color) -> Array[ShaderMaterial]:
+static func apply(root: Node, mask: Texture2D, base_skin: Color, detail: Texture2D = null) -> Array[ShaderMaterial]:
 	var made: Array[ShaderMaterial] = []
 	for node: Node in root.find_children("*", "MeshInstance3D", true, false):
 		var mi: MeshInstance3D = node
@@ -30,6 +31,8 @@ static func apply(root: Node, mask: Texture2D, base_skin: Color) -> Array[Shader
 			sm.set_shader_parameter("albedo_tex", base3d.albedo_texture)
 			sm.set_shader_parameter("normal_tex", base3d.normal_texture)
 			sm.set_shader_parameter("mask_tex", mask)
+			if detail != null:
+				sm.set_shader_parameter("detail_tex", detail)
 			sm.set_shader_parameter("base_skin", base_skin)
 			sm.set_shader_parameter("skin_color", base_skin)
 			mi.set_surface_override_material(i, sm)
