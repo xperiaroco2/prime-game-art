@@ -1,0 +1,106 @@
+# art#196, test T1 "socketed head", step 1, the 2D (the engineer's request, art#196 comment 6344356802): the
+# chameleon man's head is made WITH RECESSES, a smooth shallow dish where the mouth sits and two round empty eye
+# sockets, no brows, so separate pieces (mouths, eyes with lids, rolled brows) seat into them and are swapped whole for
+# expressions, never floating and never cut into the face. ch_sockets: his approved turnaround (batch
+# 2026-10-22-alien-pilot-2d, ch_turn) with the mouth and eyes taken out and the recesses left; then one clean
+# three-quarter product image per piece on a plain light background for Meshy image_to_3d, in his teal, matching the
+# H2 clay parts kit and his H2 swap expressions (batch 2026-10-22-alien-h2-clayparts, parts and ch_expr4). High
+# (focused work on one picked head), n = 1 per item (#276). Standing permission art#196 comment 6291187194. No game,
+# film, studio or character names; no photos; no real people.
+id = "2026-10-22-alien-t1-sockets-2d"
+service = "openai-images"
+purpose = "art#196 T1 step 1: the chameleon man's turnaround with a mouth recess and empty eye sockets, and eight separate face pieces (four mouths, three eyes with lids, one brow) as product images for image-to-3D."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 2.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6344356802"
+model = "gpt-image-2.5-sunburst"
+quality = "high"
+
+[defaults]
+size = "1024x1024"
+n = 1
+
+[[items]]
+id = "ch_sockets"
+kind = "edit"
+size = "1536x1024"
+prompt = "The reference image is a finished character turnaround sheet of the chameleon man: front view, side profile facing left, back view. Make the same sheet with exactly three changes, as if his face pieces had been taken out of a well-made toy and the head is shown ready to receive them. First, the mouth: remove the lips completely; where they were, the lower face has one smooth, shallow, soft-edged recess, a wide gently rounded oval dish pressed a little into the muzzle, the size and shape of the lips it held, its floor and rim smooth plain skin in the same pale mint colour, clean and even; no lips, no mouth line, no slit, no teeth. Second, the eyes: remove both eyeballs and their heavy lids completely; in their place are two round, empty, smooth eye sockets, clean shallow cup-shaped hollows in the skin with a soft rounded rim, each the size of the eye it held, the inside the same teal skin, slightly shaded by its depth; no eyeball, no iris, no lid, no lashes, nothing inside. Third, no brows: the brow area stays plain smooth skin. Everything else stays exactly the same: the same three views in the same places and sizes, the same head shape and backward-curling crest with its faint darker bands, the two nostril dots, the neck and shoulders, the same teal and pale mint colours, the same smooth soft-sheen toy finish like soft clay, the same soft even studio light on the same plain flat neutral grey background. The recesses look neat, intentional and well made, like the sockets of a quality toy; never creepy, nothing torn, cracked or broken. No text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-pilot-2d/ch_turn/image-0.png", provenance = "the chameleon man's approved turnaround, our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ch_turn, image 0, art#196", sha256 = "ef77948c78aebc489fa10622c3d937d600a603526b34da5443e1101aa1283f32" },
+]
+
+[[items]]
+id = "mouth_rest"
+kind = "edit"
+prompt = "The first reference image is a kit of separate clay face pieces (mouths, eyes with lids, brows); the second shows the chameleon man, whose pieces these are, with his pieces in place; use them for the style, the colours, the size and the material. Make a clean product photo of exactly one separate face piece, alone, centred, filling about two thirds of the frame, in a three-quarter view from the front and a little above so its depth and its back are readable: his mouth at rest: a wide pair of thick, softly rolled lips in his darker teal, closed and calm, nearly straight with a gentle droop, the upper lip slightly over the lower, rounded tube-like lips like the ones on his face, not human, no teeth. It is a self-contained solid piece made to seat into a recess on his face, so its back is a smooth, gently convex surface with no pins and nothing sticking out. The same smooth soft-sheen clay toy finish as the kit, neat and well made, soft even studio light with a soft contact shadow, a plain flat very light grey background, nothing else in the frame. No head, no face, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-h2-clayparts/parts/image-0.png", provenance = "the H2 clay parts kit (mouths, eyes with lids, brows), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item parts, image 0, art#196", sha256 = "93aec0fc8a975e07208b88807bceb56dbd4711992e739b8bcbb7c360a25827f8" },
+  { file = "raw:2026-10-22-alien-h2-clayparts/ch_expr4/image-0.png", provenance = "the chameleon man's H2 swap expressions (rest, smile, sad, surprised), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item ch_expr4, image 0, art#196", sha256 = "332508644e949e6ed8b363037bc189561dfe92418d45a73ccd5e53078ffa09de" },
+]
+
+[[items]]
+id = "mouth_smile"
+kind = "edit"
+prompt = "The first reference image is a kit of separate clay face pieces (mouths, eyes with lids, brows); the second shows the chameleon man, whose pieces these are, with his pieces in place; use them for the style, the colours, the size and the material. Make a clean product photo of exactly one separate face piece, alone, centred, filling about two thirds of the frame, in a three-quarter view from the front and a little above so its depth and its back are readable: his mouth smiling: the same wide pair of thick, softly rolled lips in his darker teal, closed, the whole mouth curved upward like a wide U, the corners pushed up, a pleased smile; not human, no teeth. It is a self-contained solid piece made to seat into a recess on his face, so its back is a smooth, gently convex surface with no pins and nothing sticking out. The same smooth soft-sheen clay toy finish as the kit, neat and well made, soft even studio light with a soft contact shadow, a plain flat very light grey background, nothing else in the frame. No head, no face, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-h2-clayparts/parts/image-0.png", provenance = "the H2 clay parts kit (mouths, eyes with lids, brows), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item parts, image 0, art#196", sha256 = "93aec0fc8a975e07208b88807bceb56dbd4711992e739b8bcbb7c360a25827f8" },
+  { file = "raw:2026-10-22-alien-h2-clayparts/ch_expr4/image-0.png", provenance = "the chameleon man's H2 swap expressions (rest, smile, sad, surprised), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item ch_expr4, image 0, art#196", sha256 = "332508644e949e6ed8b363037bc189561dfe92418d45a73ccd5e53078ffa09de" },
+]
+
+[[items]]
+id = "mouth_sad"
+kind = "edit"
+prompt = "The first reference image is a kit of separate clay face pieces (mouths, eyes with lids, brows); the second shows the chameleon man, whose pieces these are, with his pieces in place; use them for the style, the colours, the size and the material. Make a clean product photo of exactly one separate face piece, alone, centred, filling about two thirds of the frame, in a three-quarter view from the front and a little above so its depth and its back are readable: his mouth sad: the same wide pair of thick, softly rolled lips in his darker teal, closed, the whole mouth curved downward like an upside-down U with the corners pulled down, the lower lip pushed up a little; not human, no teeth. It is a self-contained solid piece made to seat into a recess on his face, so its back is a smooth, gently convex surface with no pins and nothing sticking out. The same smooth soft-sheen clay toy finish as the kit, neat and well made, soft even studio light with a soft contact shadow, a plain flat very light grey background, nothing else in the frame. No head, no face, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-h2-clayparts/parts/image-0.png", provenance = "the H2 clay parts kit (mouths, eyes with lids, brows), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item parts, image 0, art#196", sha256 = "93aec0fc8a975e07208b88807bceb56dbd4711992e739b8bcbb7c360a25827f8" },
+  { file = "raw:2026-10-22-alien-h2-clayparts/ch_expr4/image-0.png", provenance = "the chameleon man's H2 swap expressions (rest, smile, sad, surprised), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item ch_expr4, image 0, art#196", sha256 = "332508644e949e6ed8b363037bc189561dfe92418d45a73ccd5e53078ffa09de" },
+]
+
+[[items]]
+id = "mouth_o"
+kind = "edit"
+prompt = "The first reference image is a kit of separate clay face pieces (mouths, eyes with lids, brows); the second shows the chameleon man, whose pieces these are, with his pieces in place; use them for the style, the colours, the size and the material. Make a clean product photo of exactly one separate face piece, alone, centred, filling about two thirds of the frame, in a three-quarter view from the front and a little above so its depth and its back are readable: his surprised mouth: the same thick, softly rolled lips in his darker teal formed into a small round open O, a rounded ring of lips around a dark round hole that goes into the piece; not human, no teeth. It is a self-contained solid piece made to seat into a recess on his face, so its back is a smooth, gently convex surface with no pins and nothing sticking out. The same smooth soft-sheen clay toy finish as the kit, neat and well made, soft even studio light with a soft contact shadow, a plain flat very light grey background, nothing else in the frame. No head, no face, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-h2-clayparts/parts/image-0.png", provenance = "the H2 clay parts kit (mouths, eyes with lids, brows), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item parts, image 0, art#196", sha256 = "93aec0fc8a975e07208b88807bceb56dbd4711992e739b8bcbb7c360a25827f8" },
+  { file = "raw:2026-10-22-alien-h2-clayparts/ch_expr4/image-0.png", provenance = "the chameleon man's H2 swap expressions (rest, smile, sad, surprised), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item ch_expr4, image 0, art#196", sha256 = "332508644e949e6ed8b363037bc189561dfe92418d45a73ccd5e53078ffa09de" },
+]
+
+[[items]]
+id = "eye_open"
+kind = "edit"
+prompt = "The first reference image is a kit of separate clay face pieces (mouths, eyes with lids, brows); the second shows the chameleon man, whose pieces these are, with his pieces in place; use them for the style, the colours, the size and the material. Make a clean product photo of exactly one separate face piece, alone, centred, filling about two thirds of the frame, in a three-quarter view from the front and a little above so its depth and its back are readable: his eye, open: one glossy white eyeball like a polished bead with a dark brown iris and a black pupil looking forward, with a thick separate rolled teal clay eyelid piece lying over its top quarter, the lid's edge a soft rounded rim; the eyeball and lid together form one piece. It is a self-contained solid piece made to seat into a recess on his face, so its back is a smooth, gently convex surface with no pins and nothing sticking out. The same smooth soft-sheen clay toy finish as the kit, neat and well made, soft even studio light with a soft contact shadow, a plain flat very light grey background, nothing else in the frame. No head, no face, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-h2-clayparts/parts/image-0.png", provenance = "the H2 clay parts kit (mouths, eyes with lids, brows), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item parts, image 0, art#196", sha256 = "93aec0fc8a975e07208b88807bceb56dbd4711992e739b8bcbb7c360a25827f8" },
+  { file = "raw:2026-10-22-alien-h2-clayparts/ch_expr4/image-0.png", provenance = "the chameleon man's H2 swap expressions (rest, smile, sad, surprised), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item ch_expr4, image 0, art#196", sha256 = "332508644e949e6ed8b363037bc189561dfe92418d45a73ccd5e53078ffa09de" },
+]
+
+[[items]]
+id = "eye_half"
+kind = "edit"
+prompt = "The first reference image is a kit of separate clay face pieces (mouths, eyes with lids, brows); the second shows the chameleon man, whose pieces these are, with his pieces in place; use them for the style, the colours, the size and the material. Make a clean product photo of exactly one separate face piece, alone, centred, filling about two thirds of the frame, in a three-quarter view from the front and a little above so its depth and its back are readable: his eye, half-lidded and bored: one glossy white eyeball like a polished bead with a dark brown iris and a black pupil, with a thick rolled teal clay eyelid covering its top half, the lid's lower edge a straight soft rounded rim across the middle of the iris, his heavy-lidded look; the eyeball and lid together form one piece. It is a self-contained solid piece made to seat into a recess on his face, so its back is a smooth, gently convex surface with no pins and nothing sticking out. The same smooth soft-sheen clay toy finish as the kit, neat and well made, soft even studio light with a soft contact shadow, a plain flat very light grey background, nothing else in the frame. No head, no face, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-h2-clayparts/parts/image-0.png", provenance = "the H2 clay parts kit (mouths, eyes with lids, brows), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item parts, image 0, art#196", sha256 = "93aec0fc8a975e07208b88807bceb56dbd4711992e739b8bcbb7c360a25827f8" },
+  { file = "raw:2026-10-22-alien-h2-clayparts/ch_expr4/image-0.png", provenance = "the chameleon man's H2 swap expressions (rest, smile, sad, surprised), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item ch_expr4, image 0, art#196", sha256 = "332508644e949e6ed8b363037bc189561dfe92418d45a73ccd5e53078ffa09de" },
+]
+
+[[items]]
+id = "eye_closed"
+kind = "edit"
+prompt = "The first reference image is a kit of separate clay face pieces (mouths, eyes with lids, brows); the second shows the chameleon man, whose pieces these are, with his pieces in place; use them for the style, the colours, the size and the material. Make a clean product photo of exactly one separate face piece, alone, centred, filling about two thirds of the frame, in a three-quarter view from the front and a little above so its depth and its back are readable: his eye, closed: the same round eyeball shape completely covered by the thick teal clay eyelid, which closes down to a soft curved line where the upper lid meets a thin lower lid, a smooth rounded dome; no white and no iris visible; one piece. It is a self-contained solid piece made to seat into a recess on his face, so its back is a smooth, gently convex surface with no pins and nothing sticking out. The same smooth soft-sheen clay toy finish as the kit, neat and well made, soft even studio light with a soft contact shadow, a plain flat very light grey background, nothing else in the frame. No head, no face, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-h2-clayparts/parts/image-0.png", provenance = "the H2 clay parts kit (mouths, eyes with lids, brows), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item parts, image 0, art#196", sha256 = "93aec0fc8a975e07208b88807bceb56dbd4711992e739b8bcbb7c360a25827f8" },
+  { file = "raw:2026-10-22-alien-h2-clayparts/ch_expr4/image-0.png", provenance = "the chameleon man's H2 swap expressions (rest, smile, sad, surprised), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item ch_expr4, image 0, art#196", sha256 = "332508644e949e6ed8b363037bc189561dfe92418d45a73ccd5e53078ffa09de" },
+]
+
+[[items]]
+id = "brow"
+kind = "edit"
+prompt = "The first reference image is a kit of separate clay face pieces (mouths, eyes with lids, brows); the second shows the chameleon man, whose pieces these are, with his pieces in place; use them for the style, the colours, the size and the material. Make a clean product photo of exactly one separate face piece, alone, centred, filling about two thirds of the frame, in a three-quarter view from the front and a little above so its depth and its back are readable: one brow: a single short rolled clay sausage in his darker teal, gently arched, thicker in the middle and tapering softly to rounded ends, about as long as his eye is wide. It is a self-contained solid piece made to seat into a recess on his face, so its back is a smooth, gently convex surface with no pins and nothing sticking out. The same smooth soft-sheen clay toy finish as the kit, neat and well made, soft even studio light with a soft contact shadow, a plain flat very light grey background, nothing else in the frame. No head, no face, no text, no labels, no logos, no numbers."
+images = [
+  { file = "raw:2026-10-22-alien-h2-clayparts/parts/image-0.png", provenance = "the H2 clay parts kit (mouths, eyes with lids, brows), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item parts, image 0, art#196", sha256 = "93aec0fc8a975e07208b88807bceb56dbd4711992e739b8bcbb7c360a25827f8" },
+  { file = "raw:2026-10-22-alien-h2-clayparts/ch_expr4/image-0.png", provenance = "the chameleon man's H2 swap expressions (rest, smile, sad, surprised), our own OpenAI generation, batch 2026-10-22-alien-h2-clayparts item ch_expr4, image 0, art#196", sha256 = "332508644e949e6ed8b363037bc189561dfe92418d45a73ccd5e53078ffa09de" },
+]
