@@ -563,8 +563,12 @@ no outside light strips; the inside (rebuild A) frozen; the clearing only scaled
   (`ship_layout.hull_skin`): least skin 0.16 m, no poke.
 - **The skin** is `ship_hull_j.py` (builder `j_skin`, pieces `skin_top`, `skin_belly`, `skin_mouth`): each face cut in
   its own plane into plates (rows 1.3 m wide along the facet's span direction, cut every 1.8 m, staggered like
-  brickwork; slivers under 3 cm stay open as seams), each plate v1's `_plate` (inset 0.022, chamfer 0.014 deep) in
-  one of v1's silvers by a hash, the dark `ext_seam` under-skin 0.025 inside. Flat shaded. `ship.gd`'s METALS are the
+  brickwork), each plate v1's `_plate` (inset 0.022, chamfer 0.014 deep) in one of v1's silvers by a hash, the top
+  and the belly alike, the dark `ext_seam` under-skin 0.025 inside. A cut plate thinner than 3 cm (2 area / perimeter)
+  is laid flush, with no inset, so every piece of every facet is plated and only the neighbours' chamfers draw its
+  seam. (Until the belly fix of 2026-10-22 the belly drew every third plate in `leg_metal` and left the slivers open;
+  the side view showed both as black patches and streaks, "camouflage". `test_ship_hull_detail` now holds the outside
+  to the silvers and every facet's plates to its whole area.) Flat shaded. `ship.gd`'s METALS are the
   night build's again (brush 0.6, grime), with no scratches and no shader seam grid (the seams are geometry).
 - **Gone:** the lead blades, the stripes, the tip windows' glass and frames, the pod housing (J's stern face holds the
   pods), `skin_brow`. The canopies are J's (0.95 x 1.35 at (+-2.25, -3.6), 0.75 high) on `ship_hull_shape.heights`.

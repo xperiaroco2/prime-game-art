@@ -6,8 +6,9 @@ Every outer face of J (the convex hull's facets after the mouth cut, ship_hull_s
 own plane: rows PLATE[1] wide along the facet's span direction (plan x projected into the facet; the mouth's sides use
 plan y), each row cut every PLATE[0], the rows staggered by half a plate like brickwork, so every seam lies on the
 facet and the facets' edges are seams too. A plate is ship_hull._plate (v1's: its face inset INSET at the surface,
-chamfered down to its outline sunk DEPTH), its silver drawn from the v1 sets by a hash of its centre; under the plates a
-dark under-skin DEPTH * 1.8 inside closes the seams. Three pieces, all in the plan frame at the origin: skin_top (the
+chamfered down to its outline sunk DEPTH), its silver drawn from the v1 silvers by a hash of its centre, the top and
+the belly alike; a cut plate thinner than SLIVER is laid flush (no inset), so it closes its strip and only its
+neighbours' chamfers draw the seam. Under the plates a dark under-skin DEPTH * 1.8 inside closes the seams. Three pieces, all in the plan frame at the origin: skin_top (the
 faces looking up or sideways), skin_belly (the faces looking down), skin_mouth (the recess's back, sides and ceiling).
 Flat shaded: the facets stay crisp."""
 
@@ -21,8 +22,11 @@ import ship_lib as L
 
 PLATE = (1.8, 1.3)            # a plate's length along the facet's span direction and its row's width (metres)
 INSET, DEPTH = 0.022, 0.014   # v1's seam: the chamfer's inset at the surface and its depth
-SLIVER = 0.03                 # a cut plate's least inradius-like width (2 area / perimeter) to be a plate at all
-MATS = {"top": H.SILVERS, "belly": ("ext_silver_c", "ext_silver_c", "leg_metal"), "mouth": ("hull_dark",)}
+SLIVER = 0.03                 # a cut plate's inradius-like width (2 area / perimeter) under which it is laid flush
+TINY = 1e-6                   # a cut piece's area (m2) under which it is no piece at all (a clipping crumb)
+# the outside in v1's silvers only, the belly as the top: the belly's every third plate was leg_metal once, and those
+# dark plates read as holes and camouflage patches in the side view (the engineer, 2026-10-22)
+MATS = {"top": H.SILVERS, "belly": H.SILVERS, "mouth": ("hull_dark",)}
 
 
 def _basis(n):
@@ -42,8 +46,18 @@ def _clean(poly):
     return out
 
 
+def width(q) -> float:
+    """A convex polygon's inradius-like width, 2 area / perimeter."""
+    return 2 * S.area(q) / sum(math.dist(a, b) for a, b in zip(q, q[1:] + q[:1]))
+
+
+def lay(q) -> tuple:
+    """One plate: v1's inset and chamfer, or flush (no inset) where it is a sliver, too thin for the inset."""
+    return H._plate(q, INSET if width(q) > SLIVER else 0.0, DEPTH)
+
+
 def plates(poly, n, size=PLATE):
-    """A convex face cut into its plates (convex polygons wound as the face)."""
+    """A convex face cut into its plates (convex polygons wound as the face), every piece of it covered."""
     e1, e2 = _basis(n)
     us, vs = [S._dot(p, e1) for p in poly], [S._dot(p, e2) for p in poly]
     out = []
@@ -54,8 +68,8 @@ def plates(poly, n, size=PLATE):
         off = 0.5 * size[0] * (j % 2)
         for i in range(math.floor((min(us) - off) / size[0]), math.floor((max(us) - off) / size[0]) + 1):
             q = _clean(S.clip(S.clip(row, S._neg(e1), -(off + i * size[0])), e1, off + (i + 1) * size[0]))
-            if len(q) >= 3 and 2 * S.area(q) / sum(math.dist(a, b) for a, b in zip(q, q[1:] + q[:1])) > SLIVER:
-                out.append(q)   # a sliver thinner than SLIVER stays open: the dark under-skin shows, a wider seam
+            if len(q) >= 3 and S.area(q) > TINY:
+                out.append(q)   # slivers too: left open, the dark under-skin showed through as black streaks
     return out
 
 
@@ -71,7 +85,7 @@ def j_skin(args: dict, layout: dict) -> list:
         for q in plates(poly, n):
             c = [sum(x[i] for x in q) / len(q) for i in range(3)]
             mat = mats[int(H._hash(round(c[0], 1), round(c[1], 1), round(c[2], 1)) * len(mats)) % len(mats)]
-            groups.setdefault(mat, []).append(H._plate(q, INSET, DEPTH))
+            groups.setdefault(mat, []).append(lay(q))
         under.append(([H._add(x, n, -DEPTH * 1.8) for x in poly], [tuple(range(len(poly)))]))
     parts = [L.part(f"skin_{kind}_{mat}", *L.merge(*g), mat, solid=False) for mat, g in sorted(groups.items())]
     parts.append(L.part(f"skin_{kind}_seam", *L.merge(*under), "ext_seam", solid=False))
@@ -109,7 +123,7 @@ def j_cheeks(args: dict, layout: dict) -> list:
             if S._dot(S._newell(q), n) < 0:
                 q.reverse()
             for p in plates(q, n):
-                groups.setdefault(MATS["mouth"][0], []).append(H._plate(p, INSET, DEPTH))
+                groups.setdefault(MATS["mouth"][0], []).append(lay(p))
     # rebuild E: the jambs. Forward of the roof line the throat's walls stood as pale interior modules with flat tops
     # at 2.05 m, free under the open notch (the "cheeks" of the D shots). Here each wall is the hull's own side of the
     # cut instead: a solid in the wall's thickness from the slab up to J's top over it (one convex face, as every
@@ -134,7 +148,7 @@ def j_cheeks(args: dict, layout: dict) -> list:
             c = [sum(x[i] for x in p) / len(p) for i in range(3)]
             mat = MATS["top"][int(H._hash(round(c[0], 1), round(c[1], 1), round(c[2], 1)) * len(MATS["top"])) %
                               len(MATS["top"])]
-            groups.setdefault(mat, []).append(H._plate(p, INSET, DEPTH))
+            groups.setdefault(mat, []).append(lay(p))
         for (a0, b0), (a1, b1) in zip(zip(inner, outer), zip(inner[1:], outer[1:])):   # the top, along the slope
             q = [a0, a1, b1, b0]
             edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), S.H) > 0 else (3, 2, 1, 0)]))
