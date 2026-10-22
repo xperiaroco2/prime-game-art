@@ -30,6 +30,13 @@ place = [
   # lens step 2: the edge light, the lens windows' frames
   ["edge_light", [0.00, 0.00, 0.00], 0.0],
   ["lens_frames", [0.00, 0.00, 0.00], 0.0],
+  # details 2: the tail's portholes, its vents, the hump's mast and dome, the service hatches, the ramp's and the
+  # mouth's warning stripes (ship_hull_fittings.py, each in the plan frame)
+  ["portholes", [0.00, 0.00, 0.00], 0.0],
+  ["tail_vents", [0.00, 0.00, 0.00], 0.0],
+  ["hump_sensors", [0.00, 0.00, 0.00], 0.0],
+  ["service_hatches", [0.00, 0.00, 0.00], 0.0],
+  ["hazard_stripes", [0.00, 0.00, 0.00], 0.0],
   # light layer: the navigation lamps (port red on the west lens rim's forward facet, starboard green on the east's,
   # under the edge light; white on the tail's top centre) and a warm landing light under the belly by each leg
   ["nav_red", [-12.181, -0.717, 1.130], 131.25],
@@ -955,6 +962,27 @@ args = { colour = "white", mount = "top" }
 [[pieces]]
 id = "landing_lamp"                          # light layer: the warm landing lights under the belly
 builder = "landing_lamp"
+
+[[pieces]]
+id = "portholes"                             # details 2: three a side on the tail's flank, no room behind them
+builder = "portholes"
+
+[[pieces]]
+id = "tail_vents"
+builder = "tail_vents"
+
+[[pieces]]
+id = "hump_sensors"
+builder = "hump_sensors"
+
+[[pieces]]
+id = "service_hatches"
+builder = "service_hatches"
+
+[[pieces]]
+id = "hazard_stripes"
+builder = "hazard_stripes"
+outside = true                               # the ramp's rails stand outside the hull
 
 [[pieces]]
 id = "lens_frames"                           # lens step 2: the band's and the roof windows' outer frames
