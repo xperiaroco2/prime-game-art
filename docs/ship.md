@@ -235,10 +235,30 @@ the nozzles (`ship --check`; the nozzle tips sit at y 8.33). ship.toml `[hull]` 
 | Nose / mouth | the brow's edge h 3.45 over \|x\| < 1.62, back on the wing's line by 2.6; its underside >= 3.27 over the mouth |
 | Spine | 5.11 over the hall's middle |
 
-The old `ship_hull_skin.py` stays only for the details still seated on it (stripes, tip window, canopies, the inside's
-`tip_well`) until step 2 re-seats them on the smooth skin.
+The old `ship_hull_skin.py` stays only for the inside's `tip_well` (`tip_profile`); no placed piece uses its builders.
 
-### The hull's details (hull lane, step 2)
+### The details on the smooth skin (v2 hull lane, step 2)
+
+`ship_hull_detail.py` reads the smooth skin: `skin_h(x, y)` is `ship_hull_smooth.heights(x, y, L)[0]` inside the
+outline, so every detail follows the skin if its variant changes. The engineer after the night build: smooth like a
+ray, no panel tiles, seam grid, scratches or hatches. So the hatches, seam lines and scratches are gone (pieces and
+builders), and nothing outside is plated any more (`ship_hull._skin` is no longer called by a placed piece): the
+canopy fairings, pod shells and the housing are single smooth-shaded parts, the mouth portal one `ext_frame` part.
+The hull silvers keep their names (`hull_silver`, `ext_silver_b`, `ext_silver_c`); the metal shader's seams and
+scratches for them are set in `godot/ship/ship.gd` METALS (the inside lane's file). `ship_hull_look.py` (below) is
+the shape check: `D:/prime-art-raw/ship/v2/look_hull2/look.png`.
+
+| Detail | v2 numbers (plan metres) |
+|---|---|
+| Canopies | as v1's position (+-2.3, -2.75), 1.15 x 1.5, 0.85 high, base `skin_h` + 0.02; now 28 sides x 5 rings, smooth glass; a smooth collar (`ext_silver_b`) and the dark rim lip |
+| Nozzle pods | as placed (outer r 1.05 x 3.25 from y 3.85, middle r 1.2 x 3.65 from y 4.25); smooth 32-sided shell with a round nose (1.5 m), one dark collar, the bell; `pod_ring` unchanged but 32-sided |
+| Pod housing | smooth, 13 rows x 9 columns, from y 4.25 (out of the hall's r 4.2; its front rises out of the skin) to 6.4, half-width 1.55, top 4.75 -> 3.9 |
+| Lead blades | 0.24 x 0.12 cyan bars along `lead(x)` at the edge's height `edge_h(x)[0]`, 0.02 forward, from x 2.7 to 13.6 (the curled tip) |
+| Stripes | `smooth_stripes`: 12 bars per wing from x 3.0 to 10.4, 0.3 wide, slanted 0.42 m across, each wrapping the lead edge from 0.25 m under (belly) to 0.6 m over (top), 0.035 proud |
+| Tip windows | `smooth_window`: glass on the skin's open band (rings `pod_r(HEAD + 0.05)` 2.40 .. `pod_r(SILL - 0.05)` 2.74 round (+-8.3, 0), +-65 deg), head and sill bars, two jambs and three mullions 0.03 m proud |
+| Legs | as placed; the mount box reaches 0.42 over `top` into the skin; top 0.6 / 0.72 / 0.6 (the smooth belly under each mount: 0.50..0.76 / 0.62..0.88 / 0.30..1.00) |
+
+### The hull's details (v1, hull lane step 2)
 
 `ship_hull_detail.py`; every detail reads the skin's top (`skin_h`: the loop's upper points of the two loft stations
 round |x|, linear between them as the loft's faces are), so it follows the skin if the variant changes.
@@ -536,3 +556,24 @@ where they were): the r 4.0 hall's back wall reached into them.
   track). Neither the shutter nor the button stands in front of the wall face, so they carry no `foot`. A first
   try with 24 turning louvre blades read as bars across the window when open.
 - Party cups: as before, plus one on the east window's sill (north end).
+
+## The inside, step 2 (inside lane, v2)
+
+- **The tip well on the smooth skin.** `_well_rows` reads `ship_hull_smooth` (the hull lane's skin): the band's
+  lower edge is the sill ring `pod_r(SILL - 0.05)`, its upper edge the head ring `pod_r(HEAD + 0.05)`, each at the
+  skin's own height (`heights()`) at the hull's own angles (`RAY` steps, plus the room's facet angles), so the well
+  meets the hole's edge on every rebuild. `test_the_window_well_meets_the_skin_band` holds it: the band outside the
+  room wall, open (head over sill by 0.3 m or more), its head over eye height, the sill rising outward.
+- **The closed shutter's tone** (`SHUTTER_TONES`, `SHUTTER_TONE`): one grid run (`SHIP_SHUTTER_GRID=1` regenerates
+  `interior.toml` with the east room's closed panels in four tones, two segments each; never committed;
+  `ship --shoot DIR --shutters closed`). Tone `d`, a dark grate-steel body under bright silver slats, reads as a
+  shutter; the old pale silver (`a`) read as a flat wall. The open pose is unchanged.
+- **The button** is 12 x 20 cm (a plate, a cyan ring r 4.2 cm round an amber push button r 3 cm, two dark label
+  bars): the 7 cm plate did not read from the room's middle.
+- **Render layers** (`godot/ship/ship.gd`): the outside lane's pieces draw on layer 2 (`OUTSIDE_LAYER`; the request's
+  `outside` list from `ship.py`), and every strip light made from an inside emissive cell lights only layer 1: the
+  smooth skin sits close over the ceilings and the strips' unshadowed lights made cyan blots on its top.
+- **The outside metals** (`METALS` in `ship.gd`, the engineer: smooth like a ray, a clean soft sheen): no seam grid,
+  no scratches, a trace of grime, a softer brush (grain 0.4) on `hull_silver`, `ext_silver_b`, `ext_silver_c`;
+  no seams or scratches on `hull_dark`, `ext_frame`, `leg_metal`.
+- `ship_layout.check` counts a piece placed only in the closed pose (`shutter_closed`) as placed.
