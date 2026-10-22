@@ -89,32 +89,37 @@ numbers at the top of `tools/blender/ship_interior.py` (`--check` compares; the 
 use absolute heights (deck at ship.toml `floor_h`, 0.6), so a placement's h is an offset (the clips' heights); a piece built at plan
 angle 0 (its room toward -x) standing at angle a gets yaw -a; in a tip room turned by r, yaw r - a.
 
-The numbers (version 2, the mirrored layout; the inside fix of 2026-10-22 included; `ship_interior.py` holds them):
-- hall: 16 facets, inner faces at apothem 4.0 (vertices at 4.078), rim 3.2 m, apex 3.8 m (ship.toml `clear_h`,
-  `apex_h`); the three openings (corridors east and west, the mouth north) are two facets wide, framed by a portal on
-  their chord (x 3.768, half width 1.561) 0.15 m deep; the four diagonal facet pairs (45, 135, -45, -135 deg) are one
-  flat chord each, a plain 1.6 m centre panel for the vents and sockets with its own floor plate (`hall_flat_floor`);
-  floor: plain disc r 1.176, eight radial grate sectors r 1.294 to 2.941 between wedge spokes, the amber ring at
-  r 3.035 (a 5 cm light in a 9 cm halo, 3 cm in 6 cm on the four arcs by the mouth), solid plates from r 3.129 to the
-  walls (a rim plate per facet, a threshold per opening, a flat plate per chord: a fast test holds one per facet);
-  ceiling: 16 facet panels in a pale lit steel (`int_ceil_a`/`_b`, metallic 0.3), ribs with cyan strips, the lamp
-  ring (eight lamps) at r 1.471; cable trunks only on the back vertex at 90 deg (none on a station chord's end).
+The numbers (version 2 rebuilt for the hull variant J, rebuild A of 2026-10-22; `ship_interior.py` holds them):
+- hall: 16 facets' look, every vertex on the circle 4.078 (inner faces at about 4.0), rim 3.2 m, apex 3.8 m
+  (ship.toml `clear_h`, `apex_h`); the segments round the ring (`hall_segments`, counter-clockwise from the mouth):
+  the mouth's opening -112.5..-67.5 deg, the vent's flat chord -67.5..-22.5, one facet -22.5..3.23 (25.7 deg), the
+  corridor's opening 3.23..48.23 (centred on the corridor's axis, 25.73 deg), the socket's flat chord 48.23..77.5
+  (2.06 m, apothem 3.946, all plain: too narrow for the diamond side panels), two back facets 77.5..90..102.5
+  (12.5 deg each, the back's one cable trunk at 90), then the west half mirrored. Each opening is two facets' chord
+  (3.768, half width 1.561) framed by a portal 0.15 m deep; each flat a plain centre panel (`hall_panel_flat`, the
+  vents' 1.6 m between two diamond panels; `hall_panel_flat_socket`); a piece per facet width (`_side`, `_back`,
+  `_socket` for the wall panels, rim plates and ceiling panels; `phi_deg` their half angle). Floor: plain disc
+  r 1.176, eight radial grate sectors r 1.294 to 2.941 between wedge spokes, the amber ring at r 3.035 on the 16-gon's
+  old spacing (a 5 cm light in a 9 cm halo, 3 cm in 6 cm on the four arcs by the mouth), solid plates from r 3.129 to
+  the walls: a rim plate per facet, a threshold per opening, a flat plate per chord (a fast test holds one per
+  segment). Ceiling: one conical panel per (sub-)facet in a pale lit steel (`int_ceil_a`/`_b`, metallic 0.3), ribs
+  with cyan strips at every vertex, the lamp ring (eight lamps) at r 1.471.
 - corridors: one profile, 3 m wide, vertical to 1.45 m (cable bay 1.1 to 1.45 m), slanted in to 2.3 m wide at the
-  2.4 m ceiling (`clear_h`); three modules of 1.064 m from x 3.918 (hall portal) to 7.11 (tip portal); the back wall
-  (y +1.5) a cable bay per module; the front wall (y -1.5) a bay from 3.918 to 4.35, the breaker board's plain wall
-  4.35 to 6.15 (the spot's 1.6 m and 0.1 a side), a bay from 6.15 to 7.11; cyan arches at x 4.15 and 6.4, ceiling
-  ribs (12 cm, 7 cm deep, the flat ceiling only) at 4.85 and 5.65. The mouth passage is one module of 0.682 m with an
-  arch at the ramp hinge.
-- tip rooms: polygon on radius 1.85 round (+-8.3, 0) (the check's circle r 1.8; the built outer wall about 10.15),
-  eight window segments over +-65 deg (sill 1.0, head 2.2), three wall facets a side, the corridor chord over
-  +-55.8 deg (x -1.04 from the centre, half width 1.53); rim 2.5 m, apex 2.8 m; radial grate floor with amber
-  spokes, solid plates 0.3 m wide to the walls (at the door two slivers and the portal's plate: `tip_rim_polys`, a
-  test holds them simple); ribbed ceiling with cyan strips and a six-lamp ring; the cable trunks flat (0.09 m proud).
-- shutter: eight panels in the window's reveal, corridor grey (tone b) with a cyan line across at 0.62 of their height
-  and one along the top; the button a round amber push in a cyan ring on a pale face plate on a dark 15 x 22 cm
-  back plate, 1.15 m up beside the window (not wired: a prop; the game track wires it).
-- details: three crushed cup models (five placed, off every station spot; the hall's red cup on the grate inside
-  the amber ring, in from the mouth's threshold).
+  2.4 m ceiling (`clear_h`); straight along the axis from the hall's centre to the tip room's (25.73 deg off the x
+  axis, 9.214 m centre to centre); four modules of 1.026 m from u 3.918 (hall portal) to 8.024 (tip portal); the back
+  (south) wall a cable bay per module; the front (north) wall a bay from 3.918 to 5.071, the breaker board's plain
+  wall 5.071 to 6.871 (the spot's 1.6 m and 0.1 a side), a bay from 6.871 to 8.024; cyan arches at u 4.15 and 7.792,
+  ceiling ribs at 5.06, 5.97 and 6.88. A front-wall piece is turned by -25.73 deg in the east and +25.73 in the west
+  (the mirror image). The mouth passage is one module of 0.682 m with an arch at the ramp hinge.
+- tip rooms: polygon on radius 1.85 round (+-8.3, 4.0), turned so the door faces the hall along the axis (room yaw
+  -25.73 east, 180 + 25.73 west); 13 wall facets of 19.11 deg round the outer side (no window: the engineer,
+  2026-10-22), the corridor chord over +-55.8 deg from the back (1.04 from the centre, half width 1.53); rim 2.5 m,
+  apex 2.8 m; pilasters at the door's edges, cable trunks (flat, 0.09 m proud) at the two vertices nearest the door
+  each side, the outer side plain facets (the renewer's); radial grate floor with amber spokes, solid plates 0.3 m wide
+  to the walls (at the door two slivers and the portal's plate: `tip_rim_polys`, a test holds them simple); ribbed
+  ceiling with cyan strips and a six-lamp ring.
+- details: three crushed cup models (four placed, off every station spot; the hall's red cup on the grate inside
+  the amber ring, in from the mouth's threshold), a cable coil in the east corridor, two repair plates on the rim.
 
 Materials `int_*` (the library in `ship_interior.py` sets metallic 0.7 to 0.8; at night ship.toml `[light.mats]`
 overrides them in Godot: the silvers 0.45 so the lamps light them, the plate 0.3, the grate 0.6): two silver
@@ -608,7 +613,34 @@ where they were): the r 4.0 hall's back wall reached into them.
   no seams or scratches on `hull_dark`, `ext_frame`, `leg_metal`.
 - `ship_layout.check` counts a piece placed only in the closed pose (`shutter_closed`) as placed.
 
-## Version 2 joined (join step, 2026-10-22)
+## Rebuild A: the diagonal corridors for the hull J (2026-10-22)
+
+The engineer picked the grey blockout J (`tools/blender/ship_hull_blockout.py`: F's outline, span 30 m, length
+18.9 m with the nozzles, wing tips rounded in plan with r 1.5 m; art#263 comment 6340589162) and changed the inside
+for it: the tip rooms at (+-8.3, 4.0), the corridors straight and diagonal from the hall's wall to each tip room's
+wall, no tip windows; the hall's look frozen. What rebuild A changed:
+
+| What | Number |
+|---|---|
+| Tip rooms | r 1.8 at (+-8.3, 4.0) (was (+-8.3, 0)), outer wall at x +-10.1, heights as before; no window |
+| Corridors | ship.toml shape `strip`: `axis` [[0, 0], [+-8.3, 4.0]] (25.73 deg, 9.214 m), floor `along` 3.708..8.219 (4.51 m; v2 3.6 m), `width` 3.0 |
+| Hall openings | the corridors' at +-25.73 deg from east (v2: 0 and 180); the mouth's unchanged |
+| Sockets | moved back off the corridor openings: (+-1.800, 3.512), normal (-+0.456, -0.890) (v2 (+-2.664, 2.664)): 1.21 m |
+| Breakers | on the front wall, u 5.971: (+-6.030, 1.241), normal (-+0.434, 0.901) (v2 (+-5.25, -1.5)) |
+| Renewers | before the plain outer wall on the axis: (+-9.922, 4.781), the player at (+-8.751, 4.217) (v2 (+-10.1, 0)) |
+| Vents, console | unchanged |
+| Size | `[size]` J's: width and span 30.0, length 18.9 with the nozzles (max 19.4) |
+
+`[hull] pending` (the hull lane's v2 skin still stands round the old tip rooms): `ship --check` skips the footprint
+and the rooms' and pieces' inside-the-hull tests and prints the skip; the tests that need J's skin (the footprint,
+a piece outside the hull, the walk-through's keys, the skin's span) skip with the same reason. The tip rooms keep a
+legacy `window` key that only the v2 hull skin reads (`ship_hull_skin`, `ship_hull_smooth`); `ship_hull_blockout.py`
+still reads the old corridor keys (`x`). Step B (the hull lane) builds J round the moved rooms, then drops `pending`
+and the legacy key. The inside's light: the corridor lamps at u 4.6, 5.97 and 7.35 on the axis, the tip lamp at the
+room's centre, the old window's cool moonlight kept as a fill 1.3 m out on the axis (2.0 m up). ship.toml's `in_`
+views win over the exterior's of the same name (`ship.py` `shot_views`), so the inside views follow the rooms.
+
+## Version 2 joined (join step, 2026-10-22)## Version 2 joined (join step, 2026-10-22)
 
 The two lanes' work, run as one whole on `feat/ship-mirror-263`:
 
