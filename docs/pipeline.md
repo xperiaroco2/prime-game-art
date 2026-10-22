@@ -73,6 +73,32 @@ The second pass (`--tag v2`, the manager's notes on the first sheets) builds int
 The heads are not rigged yet (step 2b: the shared neck, face bones or shape keys, spring bones on the gills), so
 `godot-check`'s skeleton, parts and animation checks fail on them by design; its import and texture checks apply.
 
+### T1, the socketed head (art #196, 2026-10-22)
+
+The test of "a head with recesses and separate pieces swapped whole". Step 1 (`batches/2026-10-22-alien-t1-sockets-2d.toml`,
+`-3d.toml`) made a chameleon head with empty eye sockets and a mouth dish and, apart, four mouths, three eyes and a
+brow in Meshy. Step 2 seats them in headless Blender, no paid generation:
+`blender.run_script("alien_t1_kit.py", ["--raw", "<raw>/2026-10-22-alien-t1-sockets-3d", "--out", DIR, ...])`
+(`tools/blender/alien_t1_kit.py`; the pure parts in `alien_t1_geom.py`, tested by `tools/tests/test_alien_t1_geom.py`).
+- **Measure:** a front depth map of the head (rays along +Y) minus its blurred envelope gives the recesses; per side
+  the socket's centre and rim and a sphere fitted to its bowl; the dish is the recess on the muzzle's front (the crease
+  under the chin is deeper but far back, so the search keeps to the front 0.15).
+- **Eyes:** a clean ball per socket (the bowl's sphere x `--eye-k`), a generated 1024 px texture (white, brown iris,
+  pupil, a catch light), its origin at its centre so it turns for gaze. The lids are built here, not Meshy's: per side
+  three shells (open, half, closed), each an upper and a lower lid hinged on the eye's side axis (a straight edge from
+  the front; they meet at the corners), thicker at the rolled free edge.
+- **Mouths and brows:** Meshy's meshes decimated, scaled (mouths x `--mouth-w` the dish's width, the O 0.8 of that;
+  brows 1.5 eyeball radii), turned to the skin's normal, sunk 35-40 % of their depth, then every back vertex (back
+  half, facing +Y) still in front of the skin is pulled just behind it (`seat_y`), so no gap shows; the log prints each
+  piece's remaining float gap. The O's back ball is cut off at 42 % of its depth and a dark throat disc closes its hole.
+  Brows come in three seated poses per side (sad, raised, angry) rather than one moved brow, so an expression is only a
+  set of visible nodes.
+- **Output:** the expressions front and three-quarter, close-ups of the mouth seam and the socket,
+  `step2_compare.jpg` (`--ref-approved`, `--ref-h2`: the 2D rows on top), `t1_chameleon_kit.glb` (the head and every
+  piece as separate nodes parented to it; glTF has no hidden flag, so the rest set is marked in each node's extras
+  `prime_visible_rest`) and `t1_expressions.json` (each expression's nodes and gaze turn). `--grid` renders a mouth
+  width x eyeball scale grid instead.
+
 ## Since 2026-10-03: the character base and who decides
 
 The direction below changed on 2026-10-03 (xperiaroco2/prime-game#165, stage 1 plan #16). Where they differ, this
