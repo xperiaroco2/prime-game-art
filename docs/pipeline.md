@@ -70,8 +70,47 @@ The second pass (`--tag v2`, the manager's notes on the first sheets) builds int
 - `build.json`'s `gill_length_bins`: each stalk's vertices per tenth of its length (the fewest decides whether a
   spring-bone bend needs a retopology).
 
-The heads are not rigged yet (step 2b: the shared neck, face bones or shape keys, spring bones on the gills), so
-`godot-check`'s skeleton, parts and animation checks fail on them by design; its import and texture checks apply.
+### Step 2b-1: polish and the face rig (art #196, 2026-10-22)
+
+`$PYTHON_BIN tools/blender/alien_pilot_run.py --out <raw>/.../pilot3d/step2b --rig --prev ".../step2a/{head}/v2/views"`
+builds both heads (the compare sheet's middle row is the `--prev` build) and rigs them; `--only-rig` rigs the
+existing build. The polish in `alien_pilot_head.py`:
+- **Chameleon lips** (`lip_tube`): two rolled tubes along the lip line (its height and depth even quartics fitted to
+  the bins; radius 0.3 mouth units tapering to a fifth at the corners; the front at the measured protrusion), every
+  lip vertex moved to its point on the tube's circle, fading out toward the skin, behind the tube and past the
+  corners; the slit's edge moves with the lips. Meshy's creases are in the baked textures too: `flatten_lips` makes
+  the normal map flat and the colour the lips' median over the same weights (rasterised in UV space).
+- **Chameleon side view:** the lids' outer corner opens (`lid_corner_outer`: upper 6, lower -32 degrees against the
+  inner corner's -12 and -14), so the side shows the eye white as in the 2D.
+- **Axolotl front** (`pale_front`): a positional two-tone mask over the ramp (the object-space normal facing the front,
+  0.35 to 0.8, times the height below the eyes) mixes toward the 2D's near-white mint, the source's luminance keeping
+  the freckles; a band round the lip line stays teal.
+- **Axolotl eyes:** a tiny white cap (`catch_light`, 10 degrees) on each bead, its UVs on the eye texture's glint, so
+  the eyes read alive and `godot-check`'s `eye_pupils` finds near-white vertices.
+- `build.json`'s `lids`: each lid's `lid_mesh` parameters, which the rig rebuilds.
+
+`alien_pilot_rig.py` (headless, through `tools/runner/blender.py`) adds the face rig to `<head>_rig.glb`:
+- **Bones** under `Head` (the contract's `Head`, `Jaw`, `LeftEye`, `RightEye` names): `LipUpper`, `LipLower` (under
+  the Jaw), `Left/RightLipCorner`, `Left/RightBrowInner` and `BrowOuter`, `Left/RightLidUpper` and `LidLower` at the
+  eye centres; 16 bones. The axolotl adds a three-bone chain per gill stalk (`LeftGill1_1`..`_3`, root to tip from the
+  `pivots` extras) for 2b-2's `SpringBoneSimulator3D`: 34 bones.
+- **Weights by position**, not heat: the Jaw below the lip line inside an ellipsoid round the chin, the lip bones on
+  their own side of the line, the corners round the corners, the brows above the eyes, the rest on `Head`; the eyes,
+  lids and mouth cup rigid; the gills blended along their chain.
+- **Blend shapes**, the same name on every mesh they move (Godot imports glTF morph targets as blend shapes; the GLB
+  has no animations, so `godot-check`'s animation checks fail by design): `blink_L`, `blink_R` (the upper lid
+  rebuilt stretched to the lower lid's edge, a spherical shell, so nothing pokes through) with the corrective
+  `blink_arc_L/R` (a blend shape moves in a straight line, so a half blink would cut through the eyeball: drive
+  `blink_arc_*` at 4t(1-t) with `blink_*` at t); `smile`, `sad`, `angry`, `surprised` (mouth O) and `talk` (open):
+  bone poses (`POSES`) baked into the skin and mouth, each with its own lids rebuilt at other edge angles and tilted
+  round the gaze.
+- **Review:** `<head>_rig_1280.png`: the 2D expression sheet's six cells above the 3D's six at the same 3/4 view, then
+  the blink strip (open, half, closed), the side and front at rest and a bone check (the jaw open, the gills bent); the lids get planar UVs (Godot
+  generates tangents for blend shapes and errors on a mesh without UVs);
+  `<head>_godot.png` is the rigged GLB in the off-screen Godot window; `rig.json` (bones, weights per bone, shape keys,
+  the largest skin shift per expression).
+
+The neck weld to the shared body, spring bones in Godot and the cut at the neck are step 2b-2.
 
 ## Since 2026-10-03: the character base and who decides
 
