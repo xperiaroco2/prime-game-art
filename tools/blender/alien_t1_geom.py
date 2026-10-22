@@ -33,6 +33,10 @@ BROWS = {
     "raised": {"tilt": -3.0, "lift": 0.36},
     "angry": {"tilt": -20.0, "lift": -0.06},
 }
+# Which lids a state's shell holds: "ring" (steps 2-3) an upper and a lower lid in every state, a full ring around the
+# ball that reads as a socket; "upper" (step 3c) the upper lid only, plus a lower lid where the lids must meet (the
+# blink), so the ball sits bare in the skin below the lid.
+LID_MODES = ("ring", "upper")
 GAZE_DEG = 24.0  # the gaze pair's turn of both eyeballs about the head's up axis
 
 
@@ -116,3 +120,12 @@ def brow_tilt_rad(side: str, pose: str) -> float:
     """The brow's turn about +Y (Blender): the inner end (toward x = 0) rises for a positive tilt on both sides."""
     t = math.radians(BROWS[pose]["tilt"])
     return t if side == "L" else -t
+
+
+def lid_parts(state: str, mode: str = "ring") -> tuple[bool, ...]:
+    """The lids (True = upper, False = lower) a state's shell is built from in a lid mode (LID_MODES)."""
+    if mode not in LID_MODES:
+        raise ValueError(f"lid mode {mode!r} not in {LID_MODES}")
+    if mode == "ring" or LIDS[state]["upper"] - LIDS[state]["lower"] < 5.0:
+        return (True, False)
+    return (True,)

@@ -98,6 +98,13 @@ brow in Meshy. Step 2 seats them in headless Blender, no paid generation:
   piece as separate nodes parented to it; glTF has no hidden flag, so the rest set is marked in each node's extras
   `prime_visible_rest`) and `t1_expressions.json` (each expression's nodes and gaze turn). `--grid` renders a mouth
   width x eyeball scale grid instead.
+- **Step 3c, no recesses** (`--fill --eye-scale 0.75 --lids upper --repaint --bare SHEET`): the texture's old socket
+  rims and mouth hollow are painted over with the skin around them (a harmonic fill of the vertex colours on the
+  seam-welded mesh, the dish's core held at the chin's pale mint, drawn back into the 4k atlas; the normal map
+  flattened there; new PNGs in `--out`); the fill also lifts the sockets' undercut walls and relaxes the moved skin
+  outward (a crease along the old rim showed otherwise); the eye is a ball in the skin with the upper lid only (a lower
+  lid only for the blink, `alien_t1_geom.lid_parts`), the lids wearing the head's texture at their nearest skin
+  point; `--bare` renders the filled head without pieces beside Meshy's, plain grey, and the labelled sheet.
 
 ## Since 2026-10-03: the character base and who decides
 

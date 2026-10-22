@@ -63,6 +63,21 @@ class LidTests(unittest.TestCase):
         self.assertLess(G.lid_thickness(90.0, 20.0, 1.0), 1.01)
 
 
+class LidModeTests(unittest.TestCase):
+    def test_ring_mode_keeps_both_lids(self):
+        for st in G.LID_STATES:
+            self.assertEqual(G.lid_parts(st, "ring"), (True, False))
+
+    def test_upper_mode_drops_the_lower_lid_except_where_lids_meet(self):
+        self.assertEqual(G.lid_parts("open", "upper"), (True,))
+        self.assertEqual(G.lid_parts("half", "upper"), (True,))
+        self.assertEqual(G.lid_parts("closed", "upper"), (True, False))
+
+    def test_unknown_mode(self):
+        with self.assertRaises(ValueError):
+            G.lid_parts("open", "socket")
+
+
 class SeatTests(unittest.TestCase):
     def test_back_vertex_in_front_of_skin_is_sunk(self):
         self.assertAlmostEqual(G.seat_y(-0.5, -0.4, 1.0, 0.01), -0.39)
