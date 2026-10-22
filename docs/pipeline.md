@@ -105,6 +105,12 @@ brow in Meshy. Step 2 seats them in headless Blender, no paid generation:
   outward (a crease along the old rim showed otherwise); the eye is a ball in the skin with the upper lid only (a lower
   lid only for the blink, `alien_t1_geom.lid_parts`), the lids wearing the head's texture at their nearest skin
   point; `--bare` renders the filled head without pieces beside Meshy's, plain grey, and the labelled sheet.
+- **Step 3d, a smooth muzzle** (step 3c's flags plus `--muzzle --tag 3d`): the head's built-in lips and the slit
+  between them are gone. In the radial map from inside the head the muzzle region (`muzzle_region`: the dish's
+  centre, 0.62 x its lip width, 1.05 x its lip height, its front only) is replaced by a thin plate through the skin around it
+  (`thin_plate_fill`, a dense least-squared-Laplacian solve), the front vertices there, the slit's walls too, move
+  along their rays onto it and are relaxed over it (the slit's folds spread out); the repaint covers the muzzle with
+  the pale mint. The same mouth pieces are then seated on the smooth skin.
 
 ## Since 2026-10-03: the character base and who decides
 

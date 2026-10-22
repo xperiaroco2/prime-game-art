@@ -172,7 +172,13 @@ def grid_at(xs, zs, a: np.ndarray, x: float, z: float) -> float:
     return float((a[j, i] * (1 - tx) + a[j, i + 1] * tx) * (1 - tz) + (a[j + 1, i] * (1 - tx) + a[j + 1, i + 1] * tx) * tz)
 
 
-def face_regions(m: dict, paint: bool = False) -> list:
+def muzzle_region(m: dict) -> tuple:
+    """Step 3d: the whole mouth area, the head's built-in lips and their slit, as a region (cx, cz, ra, rb, fall)."""
+    d = m["dish"]
+    return (0.0, d["cz"], 0.62 * d["w"], 1.05 * d["h"], 1.4)
+
+
+def face_regions(m: dict, paint: bool = False, muzzle: bool = False) -> list:
     """The recesses as ellipses on the front (x, z): (cx, cz, ra, rb, fall), first the two sockets, then the dish.
     paint (step 3c): wider, over the texture's painted rims and the socket's measured recess too."""
     regions = []
@@ -185,7 +191,10 @@ def face_regions(m: dict, paint: bool = False) -> list:
             regions.append((bx, bz, 1.05 * s["bowl_r"], 1.05 * s["bowl_r"], 1.4))
     d = m["dish"]
     # the dish only: a wider ellipse reached the jaw's corners, where the jaw meets the neck (a hollow too)
-    if paint:
+    if paint and muzzle:  # step 3d: the smoothed muzzle and a little past it
+        _, cz, ra, rb, _ = muzzle_region(m)
+        regions.append((0.0, cz, max(1.1 * ra, 0.8 * d["w"]), max(1.1 * rb, d["h"]), 1.35))
+    elif paint:
         regions.append((0.0, d["cz"], 0.8 * d["w"], 1.0 * d["h"], 1.35))
         for side in G.SIDES:  # the socket's own recess, inward of the fitted bowl
             s = m["sockets"][side]
@@ -233,7 +242,7 @@ def head_images(head) -> dict:
     return found
 
 
-def repaint_recesses(head, m: dict, out: Path, iters: int = 4000) -> dict:
+def repaint_recesses(head, m: dict, out: Path, iters: int = 4000, muzzle: bool = False, tag: str = "3c") -> dict:
     """Paints the old sockets and the mouth hollow over with the skin around them (step 3c). The atlas is cut into
     many small islands, so the fill runs on the mesh, not on the image: every vertex inside the paint regions
     (face_regions(paint=True)) gets the harmonic fill of the vertex colours on the regions' border (Jacobi on the
@@ -251,7 +260,7 @@ def repaint_recesses(head, m: dict, out: Path, iters: int = 4000) -> dict:
     co = np.empty(nv * 3)
     me.vertices.foreach_get("co", co)
     co = co.reshape(nv, 3)
-    regions = face_regions(m, paint=True)
+    regions = face_regions(m, paint=True, muzzle=muzzle)
     wv = np.where(co[:, 1] < 0.0, region_mask(regions, co[:, 0], co[:, 2]), 0.0)
     nl = len(me.loops)
     lv = np.empty(nl, dtype=np.int64)
@@ -337,7 +346,7 @@ def repaint_recesses(head, m: dict, out: Path, iters: int = 4000) -> dict:
         if img is None:
             continue
         img.pixels.foreach_set(arr.ravel())
-        path = out / f"t1_head_{key}_3c.png"
+        path = out / f"t1_head_{key}_{tag}.png"
         img.save(filepath=str(path))
         img.pack()
         saved[key] = path.name
@@ -368,6 +377,166 @@ def skin_uv(o, head, bvh):
             uvl.data[li].uv = cache[vi]
 
 
+def radial_map(bvh, C: Vector, na: int = 220, ne: int = 200):
+    """The outer radius R(elevation, azimuth) of the head seen from C (nan where a ray misses)."""
+    az = np.linspace(-1.9, 1.9, na)  # 0 = straight ahead (-Y), + toward +X
+    el = np.linspace(-1.1, 1.3, ne)
+    R = np.full((ne, na), np.nan)
+    for j, e in enumerate(el):
+        for i, a in enumerate(az):
+            d = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
+            loc, _, _, _ = bvh.ray_cast(C + d * 5.0, -d)
+            if loc is not None:
+                R[j, i] = (loc - C).length
+    return az, el, R
+
+
+def grid_at_v(xs, zs, a: np.ndarray, x: np.ndarray, z: np.ndarray) -> np.ndarray:
+    """grid_at for arrays of points."""
+    fx = np.clip((x - xs[0]) / (xs[1] - xs[0]), 0.0, len(xs) - 1.001)
+    fz = np.clip((z - zs[0]) / (zs[1] - zs[0]), 0.0, len(zs) - 1.001)
+    i, j = fx.astype(int), fz.astype(int)
+    tx, tz = fx - i, fz - j
+    return (a[j, i] * (1 - tx) + a[j, i + 1] * tx) * (1 - tz) + (a[j + 1, i] * (1 - tx) + a[j + 1, i + 1] * tx) * tz
+
+
+def thin_plate_fill(R: np.ndarray, free: np.ndarray, hx: np.ndarray, hz: float, iters: int = 30000,
+                    tol: float = 1e-9) -> np.ndarray:
+    """R with its free cells replaced by the smoothest surface through the rest (a thin plate: the sum of the
+    squared Laplacians is least), by conjugate gradients on the free cells' window; hx: the column step per row."""
+    js, is_ = np.nonzero(free)
+    j0, j1 = max(int(js.min()) - 3, 0), min(int(js.max()) + 4, R.shape[0])
+    i0, i1 = max(int(is_.min()) - 3, 0), min(int(is_.max()) + 4, R.shape[1])
+    sub = R[j0:j1, i0:i1].copy()
+    sub = np.where(np.isnan(sub), np.nanmean(sub), sub)
+    f = free[j0:j1, i0:i1]
+    cx = ((hz / hx[j0:j1]) ** 2)[:, None]  # the steps' ratio; the vertical weight is 1
+
+    def lap(u):  # the 5-point Laplacian on the window's inner cells, 0 on its border
+        out = np.zeros_like(u)
+        out[1:-1, 1:-1] = (cx[1:-1] * (u[1:-1, :-2] + u[1:-1, 2:] - 2.0 * u[1:-1, 1:-1])
+                           + u[:-2, 1:-1] + u[2:, 1:-1] - 2.0 * u[1:-1, 1:-1])
+        return out
+
+    def lap_t(v):  # its transpose (v is 0 on the border)
+        q = np.pad(v, 1)
+        cq = np.pad(cx, ((1, 1), (0, 0)), mode="edge")
+        return (cq[1:-1] * (q[1:-1, :-2] + q[1:-1, 2:]) - 2.0 * cx * v + q[:-2, 1:-1] + q[2:, 1:-1] - 2.0 * v)
+
+    def op(x):
+        u = np.zeros_like(sub)
+        u[f] = x
+        return lap_t(lap(u))[f]
+
+    fixed = np.where(f, 0.0, sub)
+    rhs = -lap_t(lap(fixed))[f]
+    x = sub[f].copy()
+    r = rhs - op(x)
+    d = r.copy()
+    rr = float(r @ r)
+    stop = tol * max(float(rhs @ rhs), 1e-30)
+    for _ in range(iters):
+        if rr <= stop:
+            break
+        Ad = op(d)
+        alpha = rr / float(d @ Ad)
+        x += alpha * d
+        r -= alpha * Ad
+        rr2 = float(r @ r)
+        d = r + (rr2 / rr) * d
+        rr = rr2
+    u = fixed.copy()
+    u[f] = x
+    out = R.copy()
+    out[j0:j1, i0:i1] = u
+    return out
+
+
+def smooth_muzzle(head, m: dict, centre=(0.0, 0.1, 0.1), deep: float = 0.1, relax: int = 30) -> dict:
+    """Step 3d: the head's built-in lips and the slit between them become a smooth, flush muzzle. In the radial map
+    the muzzle region (muzzle_region) is replaced by a thin plate through the skin around it (the muzzle's curve
+    runs on, lips and slit are gone); every front vertex there moves along its ray onto it, the slit's walls too
+    (up to `deep` behind the outer skin; deeper is the neck under the jaw), then the moved vertices are relaxed
+    over the surface `relax` times (the slit's folded walls spread out) and put back on it. The rest is untouched."""
+    C = Vector(centre)
+    az, el, R = radial_map(make_bvh(head), C)
+    valid = ~np.isnan(R)
+    A, E = np.meshgrid(az, el)
+    Rf = np.where(valid, R, 0.0)
+    PX, PY, PZ = (C.x + Rf * np.sin(A) * np.cos(E), C.y - Rf * np.cos(A) * np.cos(E), C.z + Rf * np.sin(E))
+    reg = [muzzle_region(m)]
+    y0 = m["dish"]["y_valley"]
+
+    def front(y):  # the muzzle's front only: the jaw's sides and the neck under it match the region's x, z too
+        t = np.clip((y - (y0 + 0.06)) / 0.08, 0.0, 1.0)
+        return 1.0 - t * t * (3.0 - 2.0 * t)
+
+    wg = np.where(valid & (PY < 0.0), region_mask(reg, PX, PZ) * front(PY), 0.0)
+    # only the cells joined to the muzzle's centre: the region's x, z also match the neck and the jaw's far sides
+    comp = np.zeros_like(wg, dtype=bool)
+    i0 = int(np.argmin(np.abs(az)))
+    comp[int(np.argmax(wg[:, i0])), i0] = True  # the seed: straight ahead, the region's core
+    comp &= wg > 0.0
+    for _ in range(400):
+        grown = comp.copy()
+        grown[1:] |= comp[:-1]
+        grown[:-1] |= comp[1:]
+        grown[:, 1:] |= comp[:, :-1]
+        grown[:, :-1] |= comp[:, 1:]
+        grown &= wg > 0.0
+        if (grown == comp).all():
+            break
+        comp = grown
+    if not comp.any():
+        raise RuntimeError("the muzzle's centre is outside its region")
+    T = thin_plate_fill(R, comp, (az[1] - az[0]) * np.cos(el), float(el[1] - el[0]))
+    T = np.where(valid, T, 0.0)
+    me = head.data
+    nv = len(me.vertices)
+    co = np.empty(nv * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(nv, 3)
+    c = np.array(centre)
+
+    def polar(q):
+        p = q - c
+        r = np.linalg.norm(p, axis=1)
+        return p, r, np.arctan2(p[:, 0], -p[:, 1]), np.arcsin(np.clip(p[:, 2] / r, -1.0, 1.0))
+
+    _, rv, a, e = polar(co)
+    inside = (co[:, 1] < 0.0) & (a >= az[0]) & (a <= az[-1]) & (e >= el[0]) & (e <= el[-1])
+    k = np.where(inside, region_mask(reg, co[:, 0], co[:, 2]) * front(co[:, 1]), 0.0)
+    k = k * np.clip(grid_at_v(az, el, comp.astype(float), a, e), 0.0, 1.0)
+    behind = grid_at_v(az, el, Rf, a, e) - rv
+    t = np.clip((behind - 0.6 * deep) / (0.4 * deep), 0.0, 1.0)
+    k = k * (1.0 - t * t * (3.0 - 2.0 * t))
+    inv, nw, ea, eb = welded_edges(me, co)
+    cnt = np.bincount(inv, minlength=nw)
+    pos = np.stack([np.bincount(inv, weights=co[:, j], minlength=nw) for j in range(3)], 1) / cnt[:, None]
+    wk = np.zeros(nw)
+    np.maximum.at(wk, inv, k)
+    deg = np.maximum(np.bincount(ea, minlength=nw), 1)
+    mov = wk > 0.0
+
+    def onto(q):  # the radius: the thin plate blended with the old outer skin by the weight
+        qp, qr, qa, qe = polar(q)
+        r = (1.0 - wk) * grid_at_v(az, el, Rf, qa, qe) + wk * grid_at_v(az, el, T, qa, qe)
+        return c + qp / qr[:, None] * r[:, None]
+
+    start = pos.copy()
+    pos[mov] = onto(pos)[mov]
+    for _ in range(relax):
+        mean = np.stack([np.bincount(ea, weights=pos[eb, j], minlength=nw) for j in range(3)], 1) / deg[:, None]
+        pos[mov] = (pos + 0.5 * wk[:, None] * (mean - pos))[mov]
+        pos[mov] = onto(pos)[mov]
+    me.vertices.foreach_set("co", pos[inv].ravel())
+    me.update()
+    shift = np.linalg.norm(pos - start, axis=1)
+    return {"moved": int(mov.sum()), "max_shift": round(float(shift.max()), 4),
+            "max_behind": round(float(behind[k > 0].max()) if (k > 0).any() else 0.0, 4),
+            "region": [round(float(v), 4) for v in reg[0]], "cells": int(comp.sum()), "relax": relax}
+
+
 def fill_recesses(head, bvh, m: dict, centre=(0.0, 0.1, 0.1), sigma: float = 0.05, iters: int = 100,
                   tol: float = 0.08, max_rise: float = 0.3, dish_rise: float = 0.06, flush: bool = False,
                   relax: int = 12) -> dict:
@@ -379,16 +548,7 @@ def fill_recesses(head, bvh, m: dict, centre=(0.0, 0.1, 0.1), sigma: float = 0.0
     flush (step 3c): the sockets' undercut walls rise too (left behind, they folded into a dark crease along the old
     rim), and the moved skin's radius is relaxed `relax` times toward its neighbours' (no step, no crease)."""
     C = Vector(centre)
-    na, ne = 220, 200
-    az = np.linspace(-1.9, 1.9, na)  # 0 = straight ahead (-Y), + toward +X
-    el = np.linspace(-1.1, 1.3, ne)
-    R = np.full((ne, na), np.nan)
-    for j, e in enumerate(el):
-        for i, a in enumerate(az):
-            d = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
-            loc, _, _, _ = bvh.ray_cast(C + d * 5.0, -d)
-            if loc is not None:
-                R[j, i] = (loc - C).length
+    az, el, R = radial_map(bvh, C)
     valid = ~np.isnan(R)
     inner = float(np.nanmin(R))
     env = np.where(valid, R, inner)
@@ -714,19 +874,23 @@ def throat(name: str, o, bvh, mat):
 
 # ---------------------------------------------------------------- the kit
 def build(raw: Path, mouth_w: float, eye_k: float, cache: dict | None = None, fill: bool = False,
-          eye_scale: float = 1.0, eye_sink: float = 0.3, lids: str = "ring", repaint: Path | None = None) -> dict:
+          eye_scale: float = 1.0, eye_sink: float = 0.3, lids: str = "ring", repaint: Path | None = None,
+          muzzle: bool = False, tag: str = "3c") -> dict:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     head = import_one(raw / "head" / "multi_image_to_3d-model.glb", "head")
     bvh = make_bvh(head)
     m = measure(head, bvh)
-    filled = painted = None
+    filled = painted = smoothed = None
     if repaint is not None:  # before the fill: the regions are the old sockets' and dish's places
-        painted = repaint_recesses(head, m, repaint)
+        painted = repaint_recesses(head, m, repaint, muzzle=muzzle, tag=tag)
         log("repaint", json.dumps(painted))
     if fill:
         filled = fill_recesses(head, bvh, m, flush=repaint is not None,
                                dish_rise=0.15 if repaint is not None else 0.06)
         log("fill", json.dumps(filled))
+        if muzzle:  # step 3d: the built-in lips and slit smoothed into a flush muzzle
+            smoothed = smooth_muzzle(head, m)
+            log("muzzle", json.dumps(smoothed))
         bvh = make_bvh(head)
     log("measure", json.dumps(m["sockets"]), json.dumps(m["dish"]))
     skin = skin_colour(head, m["sockets"]["L"])
@@ -796,7 +960,7 @@ def build(raw: Path, mouth_w: float, eye_k: float, cache: dict | None = None, fi
             o.parent = head
             o.matrix_parent_inverse = Matrix.Identity(4)
             o.matrix_world = mw
-    return {"kit": kit, "measure": m, "gaps": gaps, "fill": filled, "repaint": painted}
+    return {"kit": kit, "measure": m, "gaps": gaps, "fill": filled, "repaint": painted, "muzzle": smoothed}
 
 
 # ---------------------------------------------------------------- render
@@ -949,7 +1113,7 @@ def grey_material() -> bpy.types.Material:
     return clay_material("t1_grey", (0.42, 0.42, 0.42), 0.6)
 
 
-def bare_proof(kit: dict, raw: Path, out: Path, cams: dict, sheet_path: Path):
+def bare_proof(kit: dict, raw: Path, out: Path, cams: dict, sheet_path: Path, tag: str = "3c"):
     """The geometry alone: the filled head without pieces beside the original Meshy head, plain grey, front and
     three-quarter, the same light (step 3c)."""
     head = kit["head"]
@@ -976,7 +1140,8 @@ def bare_proof(kit: dict, raw: Path, out: Path, cams: dict, sheet_path: Path):
     for mt in mats:
         head.data.materials.append(mt)
     cells = [load_rgb(shots[k]) for k in (("meshy", "front"), ("meshy", "q"), ("filled", "front"), ("filled", "q"))]
-    labelled_sheet([("GREY, NO TEXTURE, NO PIECES. LEFT - MESHY HEAD FRONT, 3/4. RIGHT - STEP 3C HEAD FRONT, 3/4",
+    labelled_sheet([(f"GREY, NO TEXTURE, NO PIECES. LEFT - MESHY HEAD FRONT, 3/4. RIGHT - STEP {tag.upper()} HEAD "
+                     "FRONT, 3/4",
                      cells)], 4, 320, 320, sheet_path)
 
 
@@ -1004,6 +1169,8 @@ def main():
     ap.add_argument("--glb-name", default="t1_chameleon_kit.glb")
     ap.add_argument("--lids", choices=G.LID_MODES, default="ring", help="step 3c: upper (no ring around the ball)")
     ap.add_argument("--repaint", action="store_true", help="step 3c: paint the old sockets and dish with the skin")
+    ap.add_argument("--muzzle", action="store_true", help="step 3d: the built-in lips and slit smoothed flush")
+    ap.add_argument("--tag", default="3c", help="the step's name in labels and texture names (3d)")
     ap.add_argument("--bare", type=Path, help="step 3c: the grey geometry proof sheet's path")
     a = ap.parse_args(argv)
     a.out.mkdir(parents=True, exist_ok=True)
@@ -1025,7 +1192,7 @@ def main():
         sheet(cells, 2 * len(a.grid_eye), 1280 // (2 * len(a.grid_eye)), 1280 // (2 * len(a.grid_eye)), a.out / "grid.jpg")
         return
     b = build(a.raw, a.mouth_w, a.eye_k, fill=a.fill, eye_scale=a.eye_scale, eye_sink=a.eye_sink, lids=a.lids,
-              repaint=a.out if a.repaint else None)
+              repaint=a.out if a.repaint else None, muzzle=a.muzzle, tag=a.tag)
     kit, m = b["kit"], b["measure"]
     rest = {s: kit[f"eye_{s}"].matrix_world.copy() for s in G.SIDES}
     setup_render(512, 512, a.samples)
@@ -1049,8 +1216,23 @@ def main():
     sheet([load_rgb(a.out / f"close_{k}.png") for k in close], 2, 640, 640, a.out / "step2_closeups.jpg")
     five = ("rest", "smile", "sad", "surprised", "angry")
     if a.bare:  # step 3c: the grey proof and the labelled sheet
-        bare_proof(kit, a.raw, a.out, cams, a.bare)
-    if a.bare and a.ref_approved and a.ref_step2:
+        bare_proof(kit, a.raw, a.out, cams, a.bare, a.tag)
+    if a.muzzle and a.bare and a.ref_approved and a.ref_step2:  # step 3d: 2D, the step before's front, this step
+        approved = load_rgb(a.ref_approved)
+        ah, aw = approved.shape[0] // 2, approved.shape[1] // 3
+        ap_cells = [approved[r * ah:(r + 1) * ah, c * aw:(c + 1) * aw] for r, c in ((0, 0), (0, 1), (0, 2), (1, 1), (1, 0))]
+        tg = a.tag.upper()
+        rows = [("2D APPROVED - REST, SMILE, SAD, SURPRISED, ANGRY", ap_cells),
+                ("STEP 3C FRONT (BEFORE) - BUILT-IN LIPS AND SLIT UNDER THE MOUTH",
+                 [load_rgb(a.ref_step2 / f"{e}_front.png") for e in five]),
+                (f"STEP {tg} FRONT - SMOOTH FLUSH MUZZLE, SAME MOUTH PIECES", [load_rgb(shots[(e, "front")]) for e in five]),
+                (f"STEP {tg} 3/4", [load_rgb(shots[(e, "q")]) for e in five]),
+                (f"CLOSE-UPS - STEP {tg} MOUTH, STEP 3C MOUTH, STEP {tg} EYE. STEP {tg} BLINK FRONT, 3/4",
+                 [load_rgb(a.out / "close_mouth.png"), load_rgb(a.ref_step2 / "close_mouth.png"),
+                  load_rgb(a.out / "close_socket.png"), load_rgb(shots[("blink", "front")]),
+                  load_rgb(shots[("blink", "q")])])]
+        labelled_sheet(rows, 5, 256, 256, a.sheet or a.out / f"step{a.tag}_compare.jpg")
+    elif a.bare and a.ref_approved and a.ref_step2:
         approved = load_rgb(a.ref_approved)
         ah, aw = approved.shape[0] // 2, approved.shape[1] // 3
         ap_cells = [approved[r * ah:(r + 1) * ah, c * aw:(c + 1) * aw] for r, c in ((0, 0), (0, 1), (0, 2), (1, 1), (1, 0))]
@@ -1099,7 +1281,7 @@ def main():
                     "pivot": "each eye node's origin (the ball's centre)", "eye_centres_blender": centres},
            "visibility": "glTF has no hidden flag: every node is in the file; nodes' extras.prime_visible_rest "
                          "marks the rest set", "measure": m, "float_gaps": b["gaps"], "fill": b["fill"],
-           "lids": a.lids, "repaint": b["repaint"]}
+           "lids": a.lids, "repaint": b["repaint"], "muzzle": b["muzzle"]}
     (a.out / "t1_expressions.json").write_text(json.dumps(doc, indent=1), encoding="utf-8", newline="\n")
     log("done", glb)
 
