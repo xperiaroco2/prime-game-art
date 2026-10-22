@@ -1,0 +1,57 @@
+# art#196, the alien 3D pilot, step 1 of 2 (the engineer's go, 2026-10-22: "Так, запускай 3D-пілот з Meshy",
+# art#196 comment 6339389911; Meshy generation within the plan's credits is also a standing permission, art#16).
+# Two pilot heads of the roster of ten, each a head-and-shoulders bust: the chameleon man and the axolotl woman, from
+# the three views (front, side profile, back) cut out of their OpenAI turnarounds, batch 2026-10-22-alien-pilot-2d
+# items ch_turn and ax_turn, each view padded to a square on the sheet's plain grey.
+#
+# Parameters (docs/meshy.md, "The character route"): meshy-7.1 multi-image to 3D at geometry_resolution 2k, the
+# finest geometry the API gives, because the heads carry small forms (heavy lids, rolled lips, nostrils, the
+# axolotl's feathered gill stalks) that a coarser mesh smears. Textured, 4k base colour with PBR maps (no extra
+# credits over 2k), lighting removed, so the raw head shows its colours and markings against the 2D. A sensible
+# polycount: Meshy's own remesh to 100,000 triangles (the API's polycount applies only with should_remesh) gives a
+# head that renders, probes and opens quickly in step 2, and save_pre_remeshed_model keeps the dense original as
+# well (model_urls.pre_remeshed_glb), so the gill fronds and lid edges are not lost if the remesh melts them. No pose
+# (a bust). Step 2 rebuilds the head in Blender (eyeballs, lids, inner mouth, the shared neck, face bones), so this
+# mesh is a sculpt reference, not a game mesh. Price: 20 mesh + 5 for 2k + 10 texture = 35 per head, 70 in all.
+# No game, film, studio, character or person names (the images are the prompt). Schema: docs/meshy.md.
+
+id = "2026-10-22-alien-pilot-3d"
+purpose = "art#196 alien 3D pilot step 1: the chameleon man and the axolotl woman as raw Meshy multi-image-to-3D heads from their own 2D turnaround views, to judge against the 2D before the Blender rebuild."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 100
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6339389911"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = true
+enable_pbr = true
+texture_resolution = "4k"
+remove_lighting = true
+should_remesh = true
+topology = "triangle"
+target_polycount = 100000
+save_pre_remeshed_model = true
+target_formats = ["glb"]
+
+[[items]]
+id = "chameleon"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-22-alien-pilot-3d/views/chameleon/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ch_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "24c565164813298b88f9b3b969af24991583171955680b13dfa235e66bbd8236" },
+  { file = "raw:2026-10-22-alien-pilot-3d/views/chameleon/side.png", provenance = "side profile (facing left) cut from our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ch_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "d6e8524df56746a98e17c1af965af9cfab63ebc0d81a1a451a6c8e63b5a6879a" },
+  { file = "raw:2026-10-22-alien-pilot-3d/views/chameleon/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ch_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "cde910d167ebf9f9e6757bba86958fa6c8cc5ad7839182ee8501b098b49f18cd" },
+]
+
+[[items]]
+id = "axolotl"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-22-alien-pilot-3d/views/axolotl/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ax_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "6f5f68b5f3a153a422bbc2a58eb8923fd1a6a70dc671632898fed58b66aab97e" },
+  { file = "raw:2026-10-22-alien-pilot-3d/views/axolotl/side.png", provenance = "side profile (facing left) cut from our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ax_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "23e4c7b583b31593a51a7c8bc08568c5580d2010bf610acc28f992b17ee65748" },
+  { file = "raw:2026-10-22-alien-pilot-3d/views/axolotl/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-22-alien-pilot-2d item ax_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "ab87c9337df575ffff6231eaa41be02d2940c333aac3c849736ec37425c35254" },
+]
