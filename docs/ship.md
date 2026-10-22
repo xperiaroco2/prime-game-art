@@ -258,6 +258,25 @@ the shape check: `D:/prime-art-raw/ship/v2/look_hull2/look.png`.
 | Tip windows | `smooth_window`: glass on the skin's open band (rings `pod_r(HEAD + 0.05)` 2.40 .. `pod_r(SILL - 0.05)` 2.74 round (+-8.3, 0), +-65 deg), head and sill bars, two jambs and three mullions 0.03 m proud |
 | Legs | as placed; the mount box reaches 0.42 over `top` into the skin; top 0.6 / 0.72 / 0.6 (the smooth belly under each mount: 0.50..0.76 / 0.62..0.88 / 0.30..1.00) |
 
+### The view from the tip window and the reshoot (v2 hull lane, step 3)
+
+The reshoot (`ship --shoot`, open and closed shutters) showed the open tip window full of grey skin: variant L's wing
+stood 2.39 m at the window band's sill, over the eye at 2.25 m. L now keeps the wing low out to x 11 and curls it up
+only past x 12:
+
+| L | x 8.3 | 10.1 | 11 | 12 | 13 | 13.75 |
+|---|---|---|---|---|---|---|
+| edge (m) | 1.0 | 1.0 | 1.1 | 1.65 | 2.8 | 3.8 (was 4.0) |
+| half-thickness t | 0.75 | 0.66 | 0.6 | 0.48 | 0.28 | 0 |
+
+The wing at x 11.5 is 0.93 m thick (the test's band 0.9 .. 1.5), at 12.5 0.67 m. A sill lip (`LIP` 0.06 over `SILL`,
+fading out 0.32 m past the band's sill ring and outside +-65 deg) keeps the band's lower edge at 1.66 .. 1.73, over the
+room's sill, so the inside lane's well still rises outward. `test_the_tip_window_looks_over_the_wing`: from the renewer's
+stand (0.5 m in from the tip centre, eye 1.65 m over the floor) the wing's top stays 0.1 m under eye height straight out
+and to the bow side; to the stern side the curled tip shows in the window's corner (meant). The `[hull]` rows follow
+(`outline_rows`). The skin parts carry only the vertices their faces use (`_compact`): loose plan vertices made Blender's
+bounds of `skin_brow` and `skin_belly` differ from the GLB's and failed `ship --godot`.
+
 ### The hull's details (v1, hull lane step 2)
 
 `ship_hull_detail.py`; every detail reads the skin's top (`skin_h`: the loop's upper points of the two loft stations
