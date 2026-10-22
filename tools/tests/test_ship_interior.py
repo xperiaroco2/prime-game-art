@@ -87,6 +87,7 @@ class ShipInteriorTest(unittest.TestCase):
         # inside-2: the well lines the room wall's opening out to the smooth skin's window band (ship_hull_smooth: the
         # open rings round the tip centre); it spans the whole window sector, starts at the room wall and ends on the
         # band's edges as the skin's height field puts them, per side
+        import ship_hull  # noqa: F401  (first, as ship_interior._well_rows)
         import ship_hull_smooth as HS
         var = HS.VARIANTS[HS.DEFAULT]
         ids = {p[0] for p in INTERIOR["place"]}

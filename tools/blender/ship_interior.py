@@ -675,6 +675,7 @@ def _well_rows(side):
     ship_hull_smooth, the open rings between pod_r(HEAD + 0.05) and pod_r(SILL - 0.05)): its lower edge (the sill
     ring, (r, h)) and upper edge (the head ring), the heights read from the skin's own height field at the hull's own
     angles, so the well meets the band's hole edge exactly."""
+    import ship_hull  # noqa: F401  (first: ship_hull -> ship_hull_detail -> ship_hull_smooth is the working order)
     import ship_hull_smooth as HS
     var = HS.VARIANTS[HS.DEFAULT]
     half = D(WIN_HALF)
