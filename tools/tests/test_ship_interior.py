@@ -71,7 +71,7 @@ class ShipInteriorTest(unittest.TestCase):
         v_at = v0 + (v1 - v0) * (u0 - u_in) / (u0 - u1) if u_in > u1 else v1
         self.assertGreaterEqual(v_at, pl["capsule_height_m"])
 
-    def test_arches_and_cups_keep_off_the_station_spots(self) -> None:
+    def test_arches_and_details_keep_off_the_station_spots(self) -> None:
         spots = SHIP["stations"]["spot"]
         r = SHIP["stations"]["radius_m"]
         for pid, (x, y, _), _yaw in INTERIOR["place"]:
@@ -79,7 +79,7 @@ class ShipInteriorTest(unittest.TestCase):
                 d = math.hypot(x - s["at"][0], y - s["at"][1])
                 if pid == "cor_arch" and s.get("at_wall"):
                     self.assertGreater(abs(x - s["at"][0]), r + 0.09, (pid, x, s["id"]))
-                if pid.startswith("cup"):
+                if pid.startswith(("cup", "spill", "cable_coil", "floor_patch")):  # the small details
                     self.assertGreater(d, r + 0.4, (pid, x, y, s["id"]))
 
 

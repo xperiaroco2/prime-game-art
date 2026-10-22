@@ -47,6 +47,13 @@ L.MATERIALS.update({
     "int_scratch": {"base": (0.85, 0.86, 0.88, 1.0), "metallic": 1.0, "roughness": 0.58},
     "int_cup_red": {"base": (0.6, 0.02, 0.02, 1.0), "metallic": 0.0, "roughness": 0.28},
     "int_cup_white": {"base": (0.86, 0.86, 0.84, 1.0), "metallic": 0.0, "roughness": 0.4},
+    # the hall's amber floor ring: the corridors' amber, its own material so its strip lights get their own numbers
+    "int_amber_ring": {"base": (1.0, 0.55, 0.15, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.55, 0.15),
+                       "strength": 8.0},
+    # a soda spill: a thin glossy dark red film
+    "int_spill": {"base": (0.22, 0.012, 0.01, 1.0), "metallic": 0.0, "roughness": 0.04},
+    # a repair plate: a slightly warmer, rougher steel than the floor round it
+    "int_patch": {"base": (0.42, 0.41, 0.39, 1.0), "metallic": 0.75, "roughness": 0.5},
 })
 
 D = math.radians
@@ -282,7 +289,7 @@ def amber_arc(args, layout):
     halo = M(*[L.sector(r - 0.09, r + 0.09, p, q, FLOOR + 0.004, FLOOR + 0.006) for p, q in zip(a, a[1:])])
     light = M(*[L.sector(r - 0.06, r + 0.06, p, q, FLOOR + 0.006, FLOOR + 0.009) for p, q in zip(a, a[1:])])
     return [P("bezel", shift(bezel, -ref), "int_silver_c"), P("halo", shift(halo, -ref), "int_halo"),
-            P("light", shift(light, -ref), "int_amber")]
+            P("light", shift(light, -ref), "int_amber_ring")]
 
 
 def hall_floor_rim(args, layout):
@@ -577,8 +584,72 @@ def tip_ceiling(args, layout):
 
 # --- details -------------------------------------------------------------------------------------------------------
 def cup(args, layout):
+    """A crushed red party cup lying on its side (16 oz: 15 cm long at scale 1.25), its mouth toward local +x."""
+    s = args.get("scale", 1.0)
     body, lip = G.cup(args["seed"])
-    return [P("cup", shift(body, dh=FLOOR), "int_cup_red"), P("lip", shift(lip, dh=FLOOR), "int_cup_white")]
+    big = lambda vf: ([(x * s, y * s, h * s) for x, y, h in vf[0]], vf[1])  # noqa: E731
+    return [P("cup", shift(big(body), dh=FLOOR), "int_cup_red"), P("lip", shift(big(lip), dh=FLOOR), "int_cup_white")]
+
+
+def _blob(rnd, cx, cy, r, n=22, wobble=0.28):
+    """A star-shaped puddle outline round (cx, cy): radius r, each point jittered by up to `wobble`."""
+    k = [rnd.uniform(0, 2 * math.pi) for _ in range(3)]
+    out = []
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        f = 1 + wobble * (0.5 * math.sin(2 * a + k[0]) + 0.3 * math.sin(3 * a + k[1]) + 0.2 * math.sin(5 * a + k[2]))
+        out.append((cx + r * f * math.cos(a) * 1.35, cy + r * f * math.sin(a)))
+    return out
+
+
+def spill(args, layout):
+    """A soda spill from a cup's mouth (the cup's own frame: placed with the cup's position and yaw): one flat puddle
+    running away along +x and two drops, a 1.5 mm glossy film on the floor."""
+    import random
+    rnd = random.Random(args["seed"])
+    x0 = args.get("from", 0.14)
+    films = [G.slab(G.floor_frame(FLOOR), _blob(rnd, x0 + 0.12, 0.0, 0.11), 0.0003, 0.0018)]
+    for dx, dy, r in ((0.32, 0.07, 0.025), (0.36, -0.05, 0.016)):
+        films.append(G.slab(G.floor_frame(FLOOR), _blob(rnd, x0 + dx, dy, r, n=12, wobble=0.15), 0.0003, 0.0016))
+    return [P("spill", M(*films), "int_spill")]
+
+
+def cable_coil(args, layout):
+    """A coil of spare cable left on the floor: a flat spiral of 3.5 turns (r 7..17 cm), its end running out 0.45 m to
+    a plug (blue cable, steel plug)."""
+    r_c, turns, r0, pitch = 0.012, 3.5, 0.07, 0.028
+    pts = []
+    n = int(turns * 28)
+    for i in range(n + 1):
+        a = 2 * math.pi * i / 28
+        r = r0 + pitch * a / (2 * math.pi)
+        pts.append((r * math.cos(a), r * math.sin(a), FLOOR + r_c + 0.0005))
+    end = pts[-1]
+    for i in range(1, 9):  # the loose end, curving away
+        t = i / 8
+        pts.append((end[0] + 0.45 * t, end[1] + 0.12 * math.sin(t * 2.4), FLOOR + r_c + 0.0005))
+    tail = pts[-1]
+    plug = shift(G.bbox(0.0, 0.07, -0.022, 0.022, 0.0, 0.034, 0.004), tail[0], tail[1], FLOOR)
+    pins = M(*[shift(G.bbox(0.07, 0.085, y - 0.003, y + 0.003, 0.012, 0.02), tail[0], tail[1], FLOOR)
+               for y in (-0.01, 0.01)])
+    return [P("cable", G.tube(pts, r_c, 8), "int_cable_blue"), P("plug", M(plug, pins), "int_bolt")]
+
+
+def floor_patch(args, layout):
+    """A bolted repair plate (u x v m) on solid floor: a 6 mm plate, chamfered, ten bolts round its edge."""
+    u, v = args["u"], args["v"]
+    plate = G.slab(G.floor_frame(FLOOR), G.rect(-u / 2, u / 2, -v / 2, v / 2), 0.0, 0.006, 0.0025)
+    bolts = []
+    for i in range(5):
+        x = -u / 2 + 0.03 + (u - 0.06) * i / 4
+        bolts += [hex_bolt(x, -v / 2 + 0.03, FLOOR + 0.006, 0.009), hex_bolt(x, v / 2 - 0.03, FLOOR + 0.006, 0.009)]
+    return [P("plate", plate, "int_patch"), P("bolts", M(*bolts), "int_bolt")]
+
+
+def rim_bolts(args, layout):
+    """The hex bolts down both sides of a hall rim plate's seam (hall_floor_rim's frame: origin at r 3.0 on the seam)."""
+    return [P("bolts", M(*[hex_bolt(r - 3.0, y, FLOOR, 0.01) for r in (2.78, 2.98, 3.18) for y in (-0.035, 0.035)]),
+              "int_bolt")]
 
 
 def scratches(args, layout):

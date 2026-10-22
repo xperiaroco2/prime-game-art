@@ -65,24 +65,34 @@ place = [
   ["hall_amber_arc", [2.5304, -0.5033, 0.0], 11.25],
   ["hall_ceil_panel_a", [3.3347, -0.6633, 0.0], 11.25],
   ["hall_floor_rim", [2.4944, 1.6667, 0.0], -33.75],
+  ["rim_bolts", [2.4944, 1.6667, 0.0], -33.75],
   ["hall_panel_b", [2.827, 1.8889, 0.0], -33.75],
   ["hall_floor_rim", [1.6667, 2.4944, 0.0], -56.25],
+  ["rim_bolts", [1.6667, 2.4944, 0.0], -56.25],
   ["hall_panel_a", [1.8889, 2.827, 0.0], -56.25],
   ["hall_floor_rim", [0.5853, 2.9424, 0.0], -78.75],
+  ["rim_bolts", [0.5853, 2.9424, 0.0], -78.75],
   ["hall_panel_b", [0.6633, 3.3347, 0.0], -78.75],
   ["hall_floor_rim", [-0.5853, 2.9424, 0.0], -101.25],
+  ["rim_bolts", [-0.5853, 2.9424, 0.0], -101.25],
   ["hall_panel_a", [-0.6633, 3.3347, 0.0], -101.25],
   ["hall_floor_rim", [-1.6667, 2.4944, 0.0], -123.75],
+  ["rim_bolts", [-1.6667, 2.4944, 0.0], -123.75],
   ["hall_panel_b", [-1.8889, 2.827, 0.0], -123.75],
   ["hall_floor_rim", [-2.4944, 1.6667, 0.0], -146.25],
+  ["rim_bolts", [-2.4944, 1.6667, 0.0], -146.25],
   ["hall_panel_a", [-2.827, 1.8889, 0.0], -146.25],
   ["hall_floor_rim", [-2.4944, -1.6667, 0.0], 146.25],
+  ["rim_bolts", [-2.4944, -1.6667, 0.0], 146.25],
   ["hall_panel_b", [-2.827, -1.8889, 0.0], 146.25],
   ["hall_floor_rim", [-1.6667, -2.4944, 0.0], 123.75],
+  ["rim_bolts", [-1.6667, -2.4944, 0.0], 123.75],
   ["hall_panel_a", [-1.8889, -2.827, 0.0], 123.75],
   ["hall_floor_rim", [1.6667, -2.4944, 0.0], 56.25],
+  ["rim_bolts", [1.6667, -2.4944, 0.0], 56.25],
   ["hall_panel_b", [1.8889, -2.827, 0.0], 56.25],
   ["hall_floor_rim", [2.4944, -1.6667, 0.0], 33.75],
+  ["rim_bolts", [2.4944, -1.6667, 0.0], 33.75],
   ["hall_panel_a", [2.827, -1.8889, 0.0], 33.75],
   ["hall_rib", [3.4666, 0.0, 0.0], 0.0],
   ["hall_rib_strip", [3.4666, 0.0, 0.0], 0.0],
@@ -628,11 +638,14 @@ place = [
   ["tip_portal", [-9.0862, 0.0, 0.0], 0.0],
   ["portal_strip_l", [-9.0862, 0.0, 0.0], 0.0],
   ["portal_strip_r", [-9.0862, 0.0, 0.0], 0.0],
-  ["cup_a", [2.25, -1.95, 0.0], 35.0],
-  ["cup_b", [-1.65, 2.4, 0.0], -160.0],
-  ["cup_c", [0.85, -2.95, 0.0], -60.0],
-  ["cup_b", [-7.4, 1.02, 0.0], 80.0],
-  ["cup_a", [11.7, -1.05, 0.0], 140.0],
+  ["cup_a", [2.69, -1.2, 0.0], 35.0],
+  ["spill_a", [2.69, -1.2, 0.0], 35.0],
+  ["cup_c", [-2.4778, -1.6556, 0.0], -160.0],
+  ["spill_c", [-2.4778, -1.6556, 0.0], -160.0],
+  ["cup_b", [-6.6, 0.7, 0.0], 80.0],
+  ["cable_coil", [6.5, 0.72, 0.0], 20.0],
+  ["floor_patch_a", [-2.2368, 1.8769, 0.0], -132.0],
+  ["floor_patch_b", [1.8769, -2.2368, 0.0], 45.0],
   ["scratch_a", [2.8019, 1.8722, 3.7], -33.75],
   ["scratch_b", [-1.8722, 2.8019, 3.7], -123.75],
   ["scratch_a", [1.8722, -2.8019, 3.7], 56.25],
@@ -1037,19 +1050,53 @@ args = { h_in = 4.08571 }
 id = "cup_a"
 builder = "cup"
 collide = false
-args = { seed = 3 }
+args = { seed = 3, scale = 1.25 }
 
 [[pieces]]
 id = "cup_b"
 builder = "cup"
 collide = false
-args = { seed = 11 }
+args = { seed = 11, scale = 1.25 }
 
 [[pieces]]
 id = "cup_c"
 builder = "cup"
 collide = false
-args = { seed = 27 }
+args = { seed = 27, scale = 1.25 }
+
+[[pieces]]
+id = "spill_a"
+builder = "spill"
+collide = false
+args = { seed = 4 }
+
+[[pieces]]
+id = "spill_c"
+builder = "spill"
+collide = false
+args = { seed = 8 }
+
+[[pieces]]
+id = "cable_coil"
+builder = "cable_coil"
+collide = false
+
+[[pieces]]
+id = "floor_patch_a"
+builder = "floor_patch"
+collide = false
+args = { u = 0.42, v = 0.36 }
+
+[[pieces]]
+id = "floor_patch_b"
+builder = "floor_patch"
+collide = false
+args = { u = 0.36, v = 0.3 }
+
+[[pieces]]
+id = "rim_bolts"
+builder = "rim_bolts"
+collide = false
 
 [[pieces]]
 id = "scratch_a"

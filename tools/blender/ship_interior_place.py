@@ -100,9 +100,15 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_lamp_ring": ("lamp_ring", {"radius": S.R_TIP_RING, "h_in": H_IN_TIP}, False),
     "tip_lamp": ("lamp", {"h_in": H_IN_TIP}, False),
     # details
-    "cup_a": ("cup", {"seed": 3}, False),
-    "cup_b": ("cup", {"seed": 11}, False),
-    "cup_c": ("cup", {"seed": 27}, False),
+    "cup_a": ("cup", {"seed": 3, "scale": 1.25}, False),
+    "cup_b": ("cup", {"seed": 11, "scale": 1.25}, False),
+    "cup_c": ("cup", {"seed": 27, "scale": 1.25}, False),
+    "spill_a": ("spill", {"seed": 4}, False),
+    "spill_c": ("spill", {"seed": 8}, False),
+    "cable_coil": ("cable_coil", {}, False),
+    "floor_patch_a": ("floor_patch", {"u": 0.42, "v": 0.36}, False),
+    "floor_patch_b": ("floor_patch", {"u": 0.36, "v": 0.3}, False),
+    "rim_bolts": ("rim_bolts", {}, False),
     "scratch_a": ("scratches", {"seed": 5}, False),
     "scratch_b": ("scratches", {"seed": 9, "count": 12}, False),
 }
@@ -150,6 +156,7 @@ def placements() -> list[tuple[str, list[float], float]]:
         put("hall_ceil_panel_a" if i % 2 else "hall_ceil_panel_b", polar(S.R_HALL, a), -a)
     for i, a in enumerate(walls):
         put("hall_floor_rim", polar(3.0, a), -a)
+        put("rim_bolts", polar(3.0, a), -a)
         put("hall_panel_a" if i % 2 else "hall_panel_b", polar(S.R_HALL, a), -a)
     for v in verts:
         put("hall_rib", polar(S.HV, v), -v)
@@ -243,8 +250,12 @@ def placements() -> list[tuple[str, list[float], float]]:
             put(pid, p, room - 180.0)
 
     # --- details: a few crushed party cups, scratches on flat panels
-    for pid, xy, yaw in (("cup_a", [2.25, -1.95], 35.0), ("cup_b", [-1.65, 2.4], 200.0), ("cup_c", [0.85, -2.95], 300.0),
-                         ("cup_b", [-7.4, 1.02], 80.0), ("cup_a", [11.7, -1.05], 140.0)):
+    # (inside-3: three bigger cups where the party left them, two with a spill from the mouth, none near a station
+    # spot; a coil of spare cable by the east corridor's south bay; two bolted repair plates on the hall's rim floor)
+    for pid, xy, yaw in (("cup_a", [2.69, -1.2], 35.0), ("spill_a", [2.69, -1.2], 35.0),
+                         ("cup_c", polar(2.98, -146.25), 200.0), ("spill_c", polar(2.98, -146.25), 200.0),
+                         ("cup_b", [-6.6, 0.7], 80.0), ("cable_coil", [6.5, 0.72], 20.0),
+                         ("floor_patch_a", polar(2.92, 140.0), -140.0 + 8.0), ("floor_patch_b", polar(2.92, -50.0), 50.0 - 5.0)):
         put(pid, xy, yaw)
     up = F + S.H_HALL - 0.9 + 0.2
     for pid, a in (("scratch_a", 33.75), ("scratch_b", 123.75), ("scratch_a", -56.25), ("scratch_b", -146.25)):
