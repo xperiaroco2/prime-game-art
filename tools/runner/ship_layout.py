@@ -29,7 +29,19 @@ def load(path: Path = SHIP) -> dict[str, Any]:
         for p in data.get("pieces", []):
             layout["pieces"].append({"lane": lane, "args": {}, "collide": False, "outside": False, **p})
         layout["place"] += [[p[0], list(p[1]), float(p[2])] for p in data.get("place", [])]
+        # inside-1: the tip windows' shutters closed (`place` holds them open): the rows `pose(layout, "closed")` swaps in
+        layout.setdefault("shutter_closed", [])
+        layout["shutter_closed"] += [[p[0], list(p[1]), float(p[2])] for p in data.get("shutter_closed", [])]
     return layout
+
+
+def pose(layout: dict[str, Any], shutters: str) -> dict[str, Any]:
+    """The layout with the tip windows' shutters "open" (as loaded) or "closed": the closed rows replace every
+    placement of a piece they place (the louvre blades)."""
+    if shutters == "open":
+        return layout
+    ids = {p[0] for p in layout["shutter_closed"]}
+    return {**layout, "place": [p for p in layout["place"] if p[0] not in ids] + layout["shutter_closed"]}
 
 
 def rooms(layout: dict[str, Any]) -> dict[str, dict[str, Any]]:

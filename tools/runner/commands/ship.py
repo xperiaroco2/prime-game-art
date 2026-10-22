@@ -38,6 +38,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "DIR/walkthrough.mp4 (off-screen window, 1280x720)")
     parser.add_argument("--no-video", action="store_true", help="--walk without the video")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
+    parser.add_argument("--shutters", choices=("open", "closed"), default="open",
+                        help="the tip windows' shutters in the scene (default open; the blades' closed pose otherwise)")
 
 
 def raw(layout: dict) -> Path:
@@ -45,7 +47,7 @@ def raw(layout: dict) -> Path:
 
 
 def run(args: argparse.Namespace) -> int:
-    layout = ship_layout.load()
+    layout = ship_layout.pose(ship_layout.load(), args.shutters)
     problems = ship_layout.check(layout)
     width, length = ship_layout.extent(layout)
     lens = ship_layout.lengths(layout)

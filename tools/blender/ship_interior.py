@@ -74,7 +74,14 @@ HCH = HV * math.sin(2 * PHI)               # its half width 1.561
 # v2 (5a mirrored): the plain wall spots at 45 deg (vents, sockets) get one flat chord over two facets, as an opening's
 FLATS = sorted(round(math.degrees(math.atan2(s["at"][1], s["at"][0])), 4) for s in _SHIP["stations"]["spot"]
                if s["room"] == "hall" and s.get("normal"))
-R_RING = 1.25                              # the lamp ring and the ceiling's inner edge
+# inside-1: the hall's floor rings and lamp ring scaled with the hall (v1 apothem 3.4 -> 4.0: x 1.176)
+K_HALL = R_HALL / 3.4
+R_RING = round(1.25 * K_HALL, 3)           # the lamp ring and the ceiling's inner edge (1.47; v1 1.25)
+R_DISC = round(1.0 * K_HALL, 3)            # the lit grating disc (1.176)
+R_GRATE = (round(1.1 * K_HALL, 3), round(2.5 * K_HALL, 3))   # the grate ring between the disc and the amber ring
+R_ARC = round(2.58 * K_HALL, 3)            # the amber floor ring (3.035)
+R_RIM0 = round(2.66 * K_HALL, 3)           # the solid rim plates' inner edge (3.129)
+R_RIM_REF = round(3.0 * K_HALL, 3)         # a rim plate's origin (3.529)
 OPENINGS = {"corridor_e": 0.0, "mouth": -90.0, "corridor_w": 180.0}   # opening centre angles (deg)
 # the corridors: profile (u across, v up from the deck), the five modules between the portals
 H_COR = _ROOM["corridor_e"]["clear_h"]
@@ -184,6 +191,29 @@ def wall_panel(args, layout):
             P("corners", M(*[G.slab(fr, G.inset(c, 0.004), 0.0, 0.025, 0.01) for c in corners]), hi),
             P("belt", G.slab(fr, G.rect(-hw, hw, belt, belt + 0.12), 0.0, 0.05, 0.012), "int_silver_c"),
             P("upper", M(G.slab(fr, up[0], 0.0, 0.03, 0.01), G.slab(fr, up[1], 0.0, 0.045, 0.01)), hi)]
+
+
+def flat_panel(args, layout):
+    """inside-1: a station's flat chord over two hall facets (3.12 m): a PLAIN centre panel 2 x `plain` wide (a
+    station hangs flat on it later: no relief, no trunk) between two narrow diamond panels, the soffit closing the
+    ceiling's rim behind the chord."""
+    hw, h, pl = args["half"], args.get("height", H_HALL), args.get("plain", 0.8)
+    fr = G.wall_frame(FLOOR)
+    belt = h - 0.9
+    side = (hw - pl) / 2
+    out = []
+    for k, sgn in enumerate((-1, 1)):
+        for part in wall_panel({"half": side, "height": h, "tone": "ab"[k]}, layout):
+            v = [(x, y + sgn * (pl + side), z) for x, y, z in part["verts"]]
+            out.append(L.part(f"{part['name']}_{k}", v, part["faces"], part["mat"]))
+    tri = [(0.0, -hw), (HV - HC, 0.0), (0.0, hw)]
+    e = pl - 0.06
+    return out + [P("soffit", G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08), "int_silver_b"),
+                  P("body", G.slab(fr, G.rect(-pl, pl, 0.0, h), -0.2, 0.0), "int_silver_b"),
+                  P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.16), 0.0, 0.015), "int_dark"),
+                  P("plain", G.slab(fr, G.rect(-e, e, 0.2, belt - 0.05), 0.0, 0.02, 0.008), "int_silver_a"),
+                  P("belt", G.slab(fr, G.rect(-pl, pl, belt, belt + 0.12), 0.0, 0.05, 0.012), "int_silver_c"),
+                  P("upper", G.slab(fr, G.rect(-e, e, belt + 0.17, h - 0.04), 0.0, 0.03, 0.01), "int_silver_b")]
 
 
 def pyramid(fr, poly, w0, w1, apex, bevel):
@@ -342,19 +372,19 @@ def amber_arc(args, layout):
 
 
 def hall_floor_rim(args, layout):
-    """The solid floor plates between the amber ring and a wall facet: two halves with a seam (origin at r 3.0)."""
+    """The solid floor plates between the amber ring and a wall facet: two halves with a seam (origin at R_RIM_REF)."""
     g = 0.003
-    a = G.arc(2.66, -PHI, -g / 2.66)
-    b = G.arc(2.66, g / 2.66, PHI)
+    a = G.arc(R_RIM0, -PHI, -g / R_RIM0)
+    b = G.arc(R_RIM0, g / R_RIM0, PHI)
     fr = G.floor_frame(0.0)
     halves = M(G.slab(fr, a + [(R_HALL, -g), (R_HALL, -HW)], FLOOR - 0.035, FLOOR, 0.006),
                G.slab(fr, b + [(R_HALL, HW), (R_HALL, g)], FLOOR - 0.035, FLOOR, 0.006))
-    return [P("plates", shift(halves, -3.0), "int_plate")]
+    return [P("plates", shift(halves, -R_RIM_REF), "int_plate")]
 
 
 def hall_threshold(args, layout):
     """The floor plate of an opening, from the amber ring through the portal (origin on the chord)."""
-    poly = G.arc(2.66, -2 * PHI, 2 * PHI) + [(HC, HCH), (COR_X0 - 0.001, COR_HALF), (COR_X0 - 0.001, -COR_HALF), (HC, -HCH)]
+    poly = G.arc(R_RIM0, -2 * PHI, 2 * PHI) + [(HC, HCH), (COR_X0 - 0.001, COR_HALF), (COR_X0 - 0.001, -COR_HALF), (HC, -HCH)]
     return [P("plate", shift(G.slab(G.floor_frame(0.0), poly, FLOOR - 0.035, FLOOR, 0.006), -HC), "int_plate")]
 
 
@@ -740,6 +770,59 @@ def tip_sill_strip(args, layout):
                               0.21), "int_cyan")]
 
 
+# --- the tip window's shutter (inside-1; the engineer: a button that opens and closes the windows) --------------------
+# Vertical louvre blades in the window's reveal, three per window segment (24 a room), each its own placement with its
+# origin on its own vertical pivot (plan: LOUVRE_W behind the window wall's face): the game turns each blade about
+# its origin (Godot rotation y), closed = the segment's yaw, open = + LOUVRE_OPEN deg. interior.toml places them open
+# (`place`) and lists the closed pose apart (`shutter_closed`); `ship --shutters closed` swaps them. Not wired: the
+# game track wires the button (tip_shutter_button) later.
+LOUVRE_N = 3
+LOUVRE_W = 0.1                          # the pivots 10 cm behind the wall face, inside the 20 cm reveal
+LOUVRE_OPEN = 80.0
+BTN_V = 1.15                            # the button's centre over the deck
+
+
+def _round(r, cv, n=16):
+    return [(r * math.cos(2 * math.pi * k / n), cv + r * math.sin(2 * math.pi * k / n)) for k in range(n)]
+
+
+def louvre_blade(args, layout):
+    """One louvre blade, closed in the plane x = 0 (the room toward -x), its pivot on the origin's vertical."""
+    hw = R_TIP * math.sin(D(WIN_HALF / 8))
+    b = 2 * hw / LOUVRE_N - 0.008
+    fr = G.wall_frame(FLOOR)
+    blade = G.slab(fr, G.rect(-b / 2, b / 2, SILL + 0.035, HEAD - 0.035), -0.008, 0.008, 0.003)
+    groove = G.slab(fr, G.rect(-0.005, 0.005, SILL + 0.1, HEAD - 0.1), 0.007, 0.0095)
+    pins = M(G.slab(fr, G.rect(-0.012, 0.012, SILL + 0.0, SILL + 0.035), -0.012, 0.012),
+             G.slab(fr, G.rect(-0.012, 0.012, HEAD - 0.035, HEAD), -0.012, 0.012))
+    return [P("blade", blade, "int_silver_a"), P("groove", groove, "int_dark"), P("pins", pins, "int_dark")]
+
+
+def louvre_track(args, layout):
+    """The blades' top and bottom rails in the window's reveal over the eight segments, a cyan line under the head."""
+    half = WIN_HALF / 8
+    apo, hw = R_TIP * math.cos(D(half)), R_TIP * math.sin(D(half))
+    fr = G.wall_frame(FLOOR, apo)
+    rails, line = [], []
+    for i in range(8):
+        c = -WIN_HALF + half * (2 * i + 1)
+        rails += [rot(G.slab(fr, G.rect(-hw, hw, SILL, SILL + 0.03), -0.2, 0.0), c),
+                  rot(G.slab(fr, G.rect(-hw, hw, HEAD - 0.03, HEAD), -0.2, 0.0), c)]
+        line.append(rot(G.slab(fr, G.rect(-hw, hw, HEAD - 0.024, HEAD - 0.012), 0.0, 0.004), c))
+    return [P("rails", M(*rails), "int_silver_c"), P("line", M(*line), "int_cyan")]
+
+
+def shutter_button(args, layout):
+    """The shutter's wall button (not wired): a bevelled plate, an amber push button in a cyan ring, a dark label."""
+    fr = G.wall_frame(FLOOR)
+    plate = G.slab(fr, G.rect(-0.035, 0.035, BTN_V - 0.08, BTN_V + 0.07), 0.0, 0.045, 0.008)
+    ring = G.slab(fr, _round(0.026, BTN_V), 0.045, 0.05)
+    push = G.slab(fr, _round(0.018, BTN_V), 0.045, 0.064, 0.004)
+    label = G.slab(fr, G.rect(-0.022, 0.022, BTN_V - 0.065, BTN_V - 0.045), 0.045, 0.047)
+    return [P("plate", plate, "int_silver_c"), P("ring", ring, "int_cyan"), P("push", push, "int_amber"),
+            P("label", label, "int_dark")]
+
+
 def tip_ceiling(args, layout):
     h_in = FLOOR + H_TIP + (APEX_TIP - H_TIP) * (1 - R_TIP_RING / R_TIP)
     out = {"int_silver_b": [], "int_silver_a": []}
@@ -823,8 +906,9 @@ def floor_patch(args, layout):
 
 
 def rim_bolts(args, layout):
-    """The hex bolts down both sides of a hall rim plate's seam (hall_floor_rim's frame: origin at r 3.0 on the seam)."""
-    return [P("bolts", M(*[hex_bolt(r - 3.0, y, FLOOR, 0.01) for r in (2.78, 2.98, 3.18) for y in (-0.035, 0.035)]),
+    """The hex bolts down both sides of a hall rim plate's seam (hall_floor_rim's frame: origin at R_RIM_REF)."""
+    rs = [R_RIM0 + (R_HALL - R_RIM0) * t for t in (0.2, 0.45, 0.7)]   # inside-1: spread over the wider rim
+    return [P("bolts", M(*[hex_bolt(r - R_RIM_REF, y, FLOOR, 0.01) for r in rs for y in (-0.035, 0.035)]),
               "int_bolt")]
 
 
