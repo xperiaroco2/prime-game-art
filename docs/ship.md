@@ -49,7 +49,7 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 | Throat (rebuild C; v2's mouth passage x -1.3..1.3, y -4.6..-3.9) | the funnel from the mouth (x +-1.65 at y -7.1, J's nose edge; 5a: y -8) to the hall's vertices (+-2.915, -3.252), 4.051 m walls in five modules of 0.810 (rebuild E); open to the sky forward of y -5.561 (the walls there are the hull's jambs, `skin_cheeks`), a 2.3 m ceiling aft of it | the only way in or out (5a's side hatch is dropped, see below) |
 | Ramp | 3.3 m wide (the mouth), hinge (0, -7.1) at the deck, foot (0, -9.9) on the ground: 12.1 deg, 2.86 m long (rebuild C; v2 2.6 m from (0, -4.6)) | north at the centre |
 | Corridors | `strip` rooms on the axes from the hall's centre (0, -0.4) to the lens rooms' (+-10.5, 1.2) (lens step 1): 10.621 m, 8.66 deg aft; floor 3.708..9.298 along the axis (5.59 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide |
-| Lens rooms (ids `tip_e`, `tip_w`) | circles r 2.0 at (+-10.5, 1.2), the outer wall at +-12.5; the ceiling slants down outward (P's: clear 2.4455 at the corridor's wall face, 2.3545 at the outer one; `clear_h` 2.35, `clear_h_in` 2.45); the window band -65..+45 deg round the outward axis, + aft, sill 1.0, head 2.2 (`band`); three roof windows (`roof_windows`, 0.9 x 0.7 m) | P's lens (art#263 comment 6344490367) |
+| Lens rooms (ids `tip_e`, `tip_w`) | circles r 2.0 at (+-10.5, 1.2), the outer wall at +-12.5; the ceiling slants down outward (P's: clear 2.4455 at the corridor's wall face, 2.3545 at the outer one; `clear_h` 2.35, `clear_h_in` 2.45); the window band -65..+45 deg round the outward axis, + aft, sill 1.0, head 2.2 (`band`); one round roof window, the oculus (`oculus`, 1.4 m clear, 32 sides; details 1, was three 0.9 x 0.7 m) | P's lens (art#263 comment 6344490367) |
 | Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.409, -4.791); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.664, -0.902) in the middle of the corridors' front wall; renewers (+-10.269, 3.237) on the lens rooms' aft wall (a vertex, 87.82 deg aft of the axis), the player at (+-10.415, 1.945) | lens step 1; the vents as in "Rebuild F" |
 | Vault (lens step 1) | `rect` x +-0.9, y 3.85..5.85 (1.8 x 2 m clear), `closed`: its shut door (1 m) in the hall's back wall at (0, 3.6), no exit, no link, not walkable floor (`check_closed`); ceiling 2.3 m at the door, 1.6 at the back (`clear_h_back`) | a shell only: no item, card or lock |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
@@ -816,3 +816,34 @@ Raw output: `<raw>/ship/v4/light/` (shots), `light-before/` (the same views befo
 - **Views:** `out_far` (the first sight from the clearing's edge by the path, 26 m, eye height); `top_full` and
   `top_full_day` (the whole ship from straight above, orthographic, 27 m high, south up; the day shot swaps in a sun
   and a pale sky after the night shots). `tools/tests/test_ship_light.py` checks the lamps' placement.
+
+## Details 1: the oculus, the cockpits, the band's glow (2026-10-22)
+The engineer's pick (art#263 comments 6347287605, 6347388160). Raw output: `<raw>/ship/v4/details1/` (shots),
+`logs/`, `notes/details1.md`.
+- **The oculus.** Each lens room's three square roof windows are one round window, `oculus = {d = 1.4, sides = 32}`
+  in ship.toml: 1.4 m clear, centred on the room. `ship_hull_shape.p_openings` cuts it from the layout as a 32-sided
+  prism (side k's normal at k 360/32 deg from the lens's axis) 2.5 cm outside the clear radius (`P_OCULUS_R` 0.725,
+  the well's lining), its floor 0.245 m over the slanted ceiling and parallel to it; the cutter's own sides close the
+  cut. Inside (`ship_interior.tip_ceiling`): the slab round it (per side a sector clipped to the room), face panels in
+  eight sectors, the well's dark lining (`OC_WELL` 0.70..0.735: 1 cm into the hull's cut, up to 0.26 m) and the
+  glass at 0.24, all on the slant. Outside (`lens_frames`): a thick silver ring frame (`ext_silver_b`) from a lip
+  1 cm over the cut's edge and 4 cm into it, 20 cm out over the plates, its crown 8.5 cm proud. The ceiling's ribs
+  moved outside the ring (`TIP_RIBS`, x +-1.12 and +-1.55).
+- **The light ring.** The centre's lamp ring piece (`tip_lamp_ring`) is gone; tip_ceiling's light ring is in its
+  style round the oculus: a silver beam (r 0.71..0.99) under the ceiling, a lip round the opening, the warm band
+  (`int_lamp`) on the beam's whole underside, the six `tip_lamp` fixtures under it at `R_TIP_RING` 0.86. The room's
+  omni (`tip`, h 2.85) is unchanged, so the light level holds: in_tip_e's mean luminance 94.6 before, 100.6 after.
+- **The cockpits** (`ship_hull_detail.cockpit`, the canopies' `glow` part). The glass is lighter (`glass_canopy`,
+  alpha 0.28, no warm tint) and 0.85 m high (was 0.75). Under it: the warm floor in rings 8 cm over the deck (one fan's
+  chords dipped under the convex hull), a warm glow ring at the glass's foot, a pilot's seat facing forward (-y):
+  pedestal, pan 0.5 m wide 0.17 m up, a back and headrest 0.61 m long reclined 40 deg, two armrests (`ext_seat`, a
+  less metallic silver that catches the glow; dark pads `ext_frame`), and a console 0.5 m ahead with a sloped face,
+  a shelf, two grips and three cyan screens (`ext_screen`, `[light.mats]` e 2.0, l 0). Every vertex stays 2 cm
+  under the glass (`glass_h`, test). Outside only, as before.
+- **The band's glow.** A faint warm emissive pane in each lens band's reveal (`band_glow`, r 2.32, sill to head,
+  `ext_window_glow`: alpha 0.18, emission 3.0, `l` 0), ONE-SIDED: a library material's `"cull": True` sets Blender's
+  backface culling, so the glTF is not double-sided and Godot culls its back; it faces out, so the room does not see
+  it. The band now reads warm in out_far.
+- **Small fixes.** The tail nav light moved to h 4.715 (0.45 m out, as the other two). `ship.gd _day` hides the moon
+  and the key and leaves the sun unshadowed (a clean day). `[shots] day_views` are shot by day after the night's
+  views (`out_canopy_e_day`). New views: `in_oculus_e`, `out_oculus_e`, `out_canopy_top`, `out_canopy_e`.
