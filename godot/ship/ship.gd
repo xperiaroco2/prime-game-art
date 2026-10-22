@@ -35,7 +35,7 @@ var _metals: Dictionary = {}
 const METALS: Dictionary = {
 	"hull_silver": [Color(0.66, 0.68, 0.71), 0.6, 0.36, 0.4, 0.0, 0.0, 0.05],
 	"ext_silver_b": [Color(0.74, 0.76, 0.79), 0.6, 0.32, 0.4, 0.0, 0.0, 0.05],
-	"ext_silver_c": [Color(0.56, 0.58, 0.61), 0.6, 0.4, 0.4, 0.0, 0.0, 0.05],
+	"ext_silver_c": [Color(0.62, 0.64, 0.67), 0.35, 0.5, 0.4, 0.0, 0.0, 0.05],  # join: the belly read black in the side view (0.56 grey, metallic 0.6, rough 0.4)
 	"hull_dark": [Color(0.12, 0.125, 0.13), 0.8, 0.42, 0.4, 0.0, 0.0, 0.1],
 	"ext_frame": [Color(0.17, 0.18, 0.19), 0.85, 0.34, 0.35, 0.0, 0.0, 0.1],
 	"leg_metal": [Color(0.32, 0.33, 0.35), 0.9, 0.36, 0.5, 0.0, 0.0, 0.15],
@@ -277,6 +277,8 @@ func _environment() -> void:
 		omni.omni_attenuation = 1.4
 		omni.light_color = Color(float(l[5]), float(l[6]), float(l[7]))
 		omni.shadow_enabled = bool(l[9]) if l.size() > 9 else true
+		if l.size() > 8 and str(l[8]) == "flank":  # join: the wing tips' outer faces, outside pieces only
+			omni.light_cull_mask = OUTSIDE_LAYER
 		root.add_child(omni)
 
 
