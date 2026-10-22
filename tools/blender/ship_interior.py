@@ -1048,30 +1048,39 @@ DOOR_HALF_W, DOOR_H = _VAULT["door"]["width_m"] / 2, 2.1
 
 def hall_door(args, layout):
     """The vault's door in the hall's back wall: a flat chord over the two back facets (origin on its face, the hall
-    toward -x) with the door's opening, its frame, the CLOSED leaf (two raised panels, a handle, an amber lamp beside
-    it) and the soffit closing the ceiling's rim behind the chord."""
+    toward -x) with the door's opening and (lens step 2) a ship hatch: a stepped frame in the corridors' arch style
+    with a cyan strip in its header, the CLOSED sliding leaf (two recessed panels, a dark groove, a cyan strip along
+    its leading edge; no handle), a card reader beside it with a small dim light; the soffit closing the ceiling's
+    rim behind the chord. No logic: the hatch stays shut."""
     hw, apo, h = args["half"], args["apo"], H_HALL
     fr = G.wall_frame(FLOOR)
     d, dh = DOOR_HALF_W, DOOR_H
     body = M(G.slab(fr, G.rect(-hw, -d, 0.0, h), -0.2, 0.0), G.slab(fr, G.rect(d, hw, 0.0, h), -0.2, 0.0),
              G.slab(fr, G.rect(-d, d, dh, h), -0.2, 0.0))
-    trim = M(G.slab(fr, G.rect(-d - 0.08, -d, 0.0, dh + 0.08), 0.0, 0.05, 0.012),
-             G.slab(fr, G.rect(d, d + 0.08, 0.0, dh + 0.08), 0.0, 0.05, 0.012),
-             G.slab(fr, G.rect(-d, d, dh, dh + 0.08), 0.0, 0.05, 0.012))
-    side = M(*[G.slab(fr, G.rect(a, b, 0.2, h - 0.95), 0.0, 0.025, 0.01) for a, b in ((-hw + 0.05, -d - 0.13), (d + 0.13, hw - 0.05))])
-    kick = M(*[G.slab(fr, G.rect(a, b, 0.0, 0.16), 0.0, 0.015) for a, b in ((-hw + 0.05, -d - 0.1), (d + 0.1, hw - 0.05))])
+    frame = M(G.slab(fr, G.rect(-d - 0.15, -d, 0.0, dh + 0.15), 0.0, 0.07, 0.015),
+              G.slab(fr, G.rect(d, d + 0.15, 0.0, dh + 0.15), 0.0, 0.07, 0.015),
+              G.slab(fr, G.rect(-d, d, dh, dh + 0.15), 0.0, 0.07, 0.015))
+    step = M(G.slab(fr, G.rect(-d - 0.05, -d, 0.0, dh + 0.05), -0.06, 0.035),
+             G.slab(fr, G.rect(d, d + 0.05, 0.0, dh + 0.05), -0.06, 0.035),
+             G.slab(fr, G.rect(-d, d, dh, dh + 0.05), -0.06, 0.035))
+    strip = G.slab(fr, G.rect(-d + 0.04, d - 0.04, dh + 0.075, dh + 0.1), 0.0, 0.075)
+    side = M(*[G.slab(fr, G.rect(a, b, 0.2, h - 0.95), 0.0, 0.025, 0.01) for a, b in ((-hw + 0.05, -d - 0.16), (d + 0.16, hw - 0.05))])
+    kick = M(*[G.slab(fr, G.rect(a, b, 0.0, 0.16), 0.0, 0.015) for a, b in ((-hw + 0.05, -d - 0.15), (d + 0.15, hw - 0.05))])
     upper = G.slab(fr, G.rect(-hw + 0.05, hw - 0.05, h - 0.8, h - 0.06), 0.0, 0.03, 0.01)
     belt = G.slab(fr, G.rect(-hw, hw, h - 0.9, h - 0.84), 0.0, 0.05, 0.012)
     leaf = G.slab(fr, G.rect(-d, d, 0.0, dh), -0.12, -0.06)
-    panels = M(G.slab(fr, G.rect(-d + 0.08, d - 0.08, 0.12, 0.98), -0.06, -0.04, 0.008),
-               G.slab(fr, G.rect(-d + 0.08, d - 0.08, 1.1, dh - 0.12), -0.06, -0.04, 0.008))
-    handle = G.slab(fr, G.rect(d - 0.2, d - 0.12, 0.95, 1.15), -0.06, -0.02, 0.006)
-    lamp = G.slab(fr, G.rect(d + 0.15, d + 0.21, 1.3, 1.62), 0.0, 0.035, 0.008)
+    panels = M(G.slab(fr, G.rect(-d + 0.07, d - 0.16, 0.1, 0.98), -0.06, -0.048, 0.006),
+               G.slab(fr, G.rect(-d + 0.07, d - 0.16, 1.1, dh - 0.1), -0.06, -0.048, 0.006))
+    groove = G.slab(fr, G.rect(-d, d - 0.12, 1.02, 1.06), -0.06, -0.056)
+    edge = G.slab(fr, G.rect(d - 0.1, d - 0.07, 0.15, dh - 0.15), -0.06, -0.052)
+    reader = G.slab(fr, G.rect(d + 0.22, d + 0.34, 1.12, 1.38), 0.0, 0.045, 0.008)
+    light = G.slab(fr, G.rect(d + 0.25, d + 0.31, 1.29, 1.33), 0.045, 0.05)
     tri = [(0.0, -hw), (HV - apo, 0.0), (0.0, hw)]
     soffit = G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08)
-    return [P("body", body, "int_silver_b"), P("trim", M(trim, belt), "int_silver_c"), P("side", side, "int_silver_a"),
-            P("kick", kick, "int_dark"), P("upper", upper, "int_silver_a"), P("leaf", leaf, "int_silver_a"),
-            P("leaf_panels", panels, "int_silver_b"), P("handle", handle, "int_dark"), P("lamp", lamp, "int_amber"),
+    return [P("body", body, "int_silver_b"), P("trim", M(frame, belt), "int_silver_c"), P("step", step, "int_dark"),
+            P("side", side, "int_silver_a"), P("kick", kick, "int_dark"), P("upper", upper, "int_silver_a"),
+            P("leaf", leaf, "int_silver_a"), P("leaf_panels", panels, "int_silver_b"), P("groove", groove, "int_dark"),
+            P("strips", M(strip, edge), "int_cyan"), P("reader", reader, "int_dark"), P("lamp", light, "int_cyan"),
             P("soffit", soffit, "int_silver_b")]
 
 
