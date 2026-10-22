@@ -596,11 +596,14 @@ def main():
         cand = in_eye & teal_ish & (wn > 1e-3)
         fringe = cand & (off < margin)
         got = np.zeros_like(fringe)
+        vraw = eye_px.max(-1)
         for kk in (2, 4, 8, reach):
             wb = blur(w, kk)
-            new = fringe & ~got & (wb > 1e-4)
-            for i in range(3):
-                eye_px[..., i][new] = (blur(eye_px[..., i] * w, kk) / np.maximum(wb, 1e-6))[new]
+            fill = np.stack([blur(eye_px[..., i] * w, kk) for i in range(3)], -1) / np.maximum(wb, 1e-6)[..., None]
+            # never darker than the texel was (a pupil or a UV-near but distant island would leave a dark dot; the
+            # iris's top under the lid keeps its teal, as in static_v4)
+            new = fringe & ~got & (wb > 1e-4) & (fill.max(-1) >= 0.85 * vraw)
+            eye_px[new] = fill[new]
             got |= new
         fixed = fixed | got
         report["eye_fringe"] = {"texels": int(got.sum()), "candidates": int(cand.sum()), "off_percentiles": [

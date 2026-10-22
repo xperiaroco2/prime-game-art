@@ -95,8 +95,8 @@ def features(name: str) -> dict:
         wide = {"target": [ex, ey, ez + 0.8 * r], "yaw": 20.0, "pitch": 4.0, "width": 3.2 * r}
     face = {"target": [0.0, (ey + my) / 2, (ez + max(ez + r, mz)) / 2], "width": 1.9 * max(ex + r, cx)}
     # static_v5: the eye under its upper lid, from the side and at 3/4 (the eye fringe)
-    eye_side = {"target": [ex + 0.5 * r, ey + 0.3 * r, ez + 0.2 * r], "yaw": 90.0, "pitch": 6.0, "width": 2.0 * r}
-    eye_q34 = {"target": [ex + 0.4 * r, ey + 0.3 * r, ez + 0.5 * r], "yaw": 45.0, "pitch": 6.0, "width": 2.0 * r}
+    eye_side = {"target": [ex + 0.3 * r, ey + 0.1 * r, ez - 0.1 * r], "yaw": 90.0, "pitch": 3.0, "width": 3.0 * r}
+    eye_q34 = {"target": [ex + 0.3 * r, ey + 0.1 * r, ez + 0.3 * r], "yaw": 50.0, "pitch": 3.0, "width": 3.0 * r}
     return {"close": close, "wide": wide, "face": face, "eye_side": eye_side, "eye_q34": eye_q34}
 
 
