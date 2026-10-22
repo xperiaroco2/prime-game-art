@@ -232,6 +232,15 @@ $5 cap. A style reference used only for finish and light held the look without c
 edge) did not follow the prompt reliably. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r2/`; JPEGs, overview and
 handoff: `D:/prime-art-raw/research/2026-10-22-roster/design/`.
 
+## Batch 2026-10-22-alien-roster-r3 (art #196, roster round 3)
+
+Two new candidates for each of round 2's four rejected heads and redraws of h06 (wrap-around eyes) and h08 (the real
+axolotl's feathery gills and bead eyes), medium, 1024x1280, n = 3, under the standing permission; the batch file is
+generated from `D:/prime-art-raw/research/2026-10-22-roster/design/r3/concepts_r3.src.json`. 12 requests (two revised
+prompts after the first look): $0.066 to $0.068 with one reference, $0.097 to $0.098 with two; **$0.8645** of the $5 cap. Unless
+the prompt says "solid dark, no whites" and describes a non-human mouth, the model gives every head the same human
+eye and small lips. Images: `D:/prime-art-raw/2026-10-22-alien-roster-r3/`; JPEGs, overview and handoff: `.../design/r3/`.
+
 ## Batch 2026-10-22-alien-roster-r3b (art #196, roster round 3b)
 
 Four new alien women for the slots W7 and W10, each prompt writing the eye (solid glossy dark, no white) and the
