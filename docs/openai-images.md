@@ -366,6 +366,7 @@ simple eyes, two above and one below; $0.0562 and $0.0565, **$0.1127** of the $0
 ordinary shark beside the hammerhead, an aggressive man, perhaps with gills on the neck: one concept at medium, n = 1,
 an edit with rf2 for style only, sh1 with three gill slits a side and sh2 without; **$0.0462** of the $0.50 cap
 (about $0.023 each). Both read at once (a conical snout, a dorsal fin on the head, flat black eyes, a down-turned
-mouth with two tooth tips, a pale belly line). Images: `D:/prime-art-raw/2026-10-22-alien-mantis-dots/`,
+mouth with a tooth tip at its near corner, a pale belly line); both came out with a scowl (angled, frowning brows)
+though the prompts asked for no visible emotion, kept as the aggressive type he asked for. Images: `D:/prime-art-raw/2026-10-22-alien-mantis-dots/`,
 `D:/prime-art-raw/2026-10-22-alien-shark/`; sheets: `D:/prime-art-raw/research/2026-10-22-roster/design/mantis/`,
 `.../design/shark/`.
