@@ -355,13 +355,21 @@ def skin(var):
             "mouth": _walls(walls, bot, brow)}
 
 
-MATS = {"top": "hull_silver", "belly": "ext_silver_c", "brow": "ext_silver_c", "mouth": "ext_silver_c"}
+def _compact(verts, faces):
+    """Only the vertices the faces use (the parts share the plan's vertex list; a loose vertex would widen Blender's
+    bounds past the GLB's, which `ship --godot` compares)."""
+    keep = sorted({i for f in faces for i in f})
+    new = {i: k for k, i in enumerate(keep)}
+    return [verts[i] for i in keep], [tuple(new[i] for i in f) for f in faces]
+
+
+MATS = {"top":"hull_silver", "belly": "ext_silver_c", "brow": "ext_silver_c", "mouth": "ext_silver_c"}
 
 
 def smooth_skin(args: dict, layout: dict) -> list:
     """One smooth skin piece (args part: top, belly, brow or mouth; variant), shaded smooth, one material."""
     part = args["part"]
-    v, f = skin(VARIANTS[args.get("variant", DEFAULT)])[part]
+    v, f = _compact(*skin(VARIANTS[args.get("variant", DEFAULT)])[part])
     p = L.part(f"skin_{part}", v, f, MATS[part], solid=False)
     p["smooth"] = True
     return [p]
