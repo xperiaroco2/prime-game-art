@@ -750,8 +750,9 @@ pilot's static premium heads"):
   against the 2D front (median teal and pale skin, `colour.json`); the closest is the pick for `views_pick.png` and
   `colours.png`.
 - **Round 2, "alive" (static_v2, 2026-10-22):** the engineer read the #288 heads as vinyl toys or statues. The shader
-  gained levers, each off at its default (so the defaults are still the #288 material and the GLB's own material is
-  unchanged): `detail_tex` (`<head>_detail.png`, linear RGBA from the dense original: R the cavity, G the thinness,
+  gained levers, each off at its default (in round 2 the defaults were still the #288 material; since round 3 they are
+  not, see round 5 below, and the GLB's own material carries clearcoat, sheen and specular extensions since round
+  3): `detail_tex` (`<head>_detail.png`, linear RGBA from the dense original: R the cavity, G the thinness,
   B the flush region of lips and lids, A the eyes' limbal ring; `apply(root, mask, base_skin, detail)`),
   `transmission` (`BACKLIGHT` on the thin parts in the skin's own colour, saturated), `micro_strength`,
   `micro_scale`, `rough_breakup` (a fine grain: a bump from 3D value noise in object space, faded with distance and
@@ -769,6 +770,13 @@ pilot's static premium heads"):
   review grid. The pick (`alien_static_review.py` `PICK`) also lowers `specular_level` on the skin.
 - **Round 4 (static_v4, 2026-10-22):** the shader and the pick are unchanged; the fixes are in the baked textures
   (`docs/pipeline.md`). The review's middle seams row is round 3 under the same pick.
+- **Round 5 (static_v5, 2026-10-22):** round 3 dropped `sss_mode_skin` from the shader's render mode, so its defaults
+  are not the #288 material. `alien_static_288.gdshader` is the merged #288 shader kept byte for byte (`7c2bac4`);
+  `apply(..., shader)` takes it (`AlienStatic.SHADER_288`), and `static_alive.gd` gives it to a head with
+  `"shader": "288"` (no detail or plain texture, no parameters, no debug view). #288's debug-view cells use the
+  current shader on a `"grey_only"` head (the debug modes do not depend on the material). A head on the current
+  shader without its detail or plain texture is an error (it was a silent white default); each head resets its own
+  last parameters.
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from

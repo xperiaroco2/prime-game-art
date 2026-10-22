@@ -5,7 +5,9 @@
 // shift every masked texel, so the light and shade and the pale front's two-tone stay. skin_color == base_skin is
 // the identity. alien_static.gd builds this material from the imported glTF material.
 //
-// The "alive" levers (static_v2, 2026-10-22), each off at its default so the defaults are the #288 material:
+// The "alive" levers (static_v2, 2026-10-22), each off at its default. The defaults are NOT the #288 material: static_v3
+// dropped sss_mode_skin from the render mode, so the #288 heads are shown with alien_static_288.gdshader, the merged
+// #288 shader kept byte for byte (static_v5):
 // detail_tex (linear, baked from the dense original) holds R the cavity (1 open, 0 deep crease), G the thinness
 // (1 thin: gills, crest, lips), B the flush region (lips, lids), A the eyes' limbal ring.
 // - transmission: light through the thin parts (BACKLIGHT) in a saturated scatter colour;

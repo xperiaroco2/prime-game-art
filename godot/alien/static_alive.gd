@@ -3,13 +3,18 @@ extends SceneTree
 ## (the runner's _godot.window(); tools/blender/alien_static_review.py writes the job and calls it). The stage is
 ## static_shots.gd's (the showroom's: studio HDRI, key with soft shadows, fill, rim, SSAO, SSS). The job:
 ##   {"hdri": PATH, "window": [w, h],
-##    "heads": {KEY: {"glb": "res://...", "mask": PNG, "detail": PNG or "", "plain": PNG or "", "base": [r, g, b]}},
+##    "heads": {KEY: {"glb": "res://...", "mask": PNG, "detail": PNG or "", "plain": PNG or "", "base": [r, g, b],
+##                    "shader": "288" or "", "grey_only": false}},
 ##    "sheets": [{"file": PNG, "cell": [w, h], "width": 1280,
 ##                "rows": [[{"head": KEY, "params": {...}, "debug": 0, "tone": "pick"|"showroom",
 ##                           "shot": {"target": [x, y, z] or "box", "yaw": deg, "pitch": deg, "width": m},
 ##                           "gpu": false}, ...], ...]}]}
-## Each cell shows one head (the others hidden) with its shader parameters reset to the defaults (the #288 material)
-## and then set from "params". "gpu": the median GPU ms of 60 frames at that cell, written to <sheet>.json.
+## Each cell shows one head (the others hidden) with its shader parameters reset to its shader's defaults and then set
+## from "params". The current shader's defaults are not the #288 material (static_v3 dropped sss_mode_skin): a head with
+## "shader": "288" gets alien_static_288.gdshader, the merged #288 shader as it was, and no detail or plain texture
+## (static_v5). A head on the current shader needs both textures (a missing one is an error, never a white default),
+## unless it is "grey_only": an older build shown in the debug views only (debug 1-3), never in the full material.
+## "gpu": the median GPU ms of 60 frames at that cell, written to <sheet>.json.
 ## Args after "--": <job JSON>
 
 const Offscreen = preload("res://lib/offscreen.gd")
@@ -23,7 +28,6 @@ const TONES: Dictionary = {
 var _env: Environment
 var _cam: Camera3D
 var _heads: Dictionary = {}  # KEY -> {"node": Node3D, "mats": Array[ShaderMaterial], "box": AABB}
-var _set: Array = []  # parameter names set by the previous cell
 
 
 func _initialize() -> void:
@@ -52,15 +56,32 @@ func _run() -> void:
 			printerr("ALIVE cannot load the mask %s" % h["mask"])
 			quit(4)
 			return
-		var detail: Texture2D = _texture(h.get("detail", ""))
+		var is_288: bool = h.get("shader", "") == "288"
+		var detail: Texture2D = null
+		var plain: Texture2D = null
+		if not is_288:
+			for which: String in ["detail", "plain"]:
+				var path: String = h.get(which, "")
+				if path == "" and h.get("grey_only", false):
+					continue
+				var tex: Texture2D = _texture(path)
+				if tex == null:
+					printerr("ALIVE %s: cannot load the %s texture '%s'" % [key, which, path])
+					quit(4)
+					return
+				if which == "detail":
+					detail = tex
+				else:
+					plain = tex
 		var b: Array = h["base"]
-		var plain: Texture2D = _texture(h.get("plain", ""))
-		var mats: Array[ShaderMaterial] = AlienStatic.apply(node, mask, Color(b[0], b[1], b[2]), detail, plain)
+		var mats: Array[ShaderMaterial] = AlienStatic.apply(node, mask, Color(b[0], b[1], b[2]), detail, plain,
+				AlienStatic.SHADER_288 if is_288 else null)
 		if mats.is_empty():
 			printerr("ALIVE no _static_skin material in %s" % h["glb"])
 			quit(4)
 			return
-		_heads[key] = {"node": node, "mats": mats, "box": _bounds(node)}
+		_heads[key] = {"node": node, "mats": mats, "box": _bounds(node), "is_288": is_288, "set": [],
+				"grey_only": h.get("grey_only", false)}
 		node.visible = false
 	for sheet: Dictionary in job["sheets"]:
 		var cell := Vector2i(int(sheet["cell"][0]), int(sheet["cell"][1]))
@@ -87,7 +108,7 @@ func _run() -> void:
 	quit(0)
 
 
-func _texture(path: String) -> Texture2D:
+func _texture(path: String) -> Texture2D:  # null when missing: the caller fails loudly
 	if path == "" or not FileAccess.file_exists(path):
 		return null
 	var img: Image = Image.load_from_file(path)
@@ -99,13 +120,22 @@ func _texture(path: String) -> Texture2D:
 
 func _cell(c: Dictionary, cell: Vector2i, gpu: Array) -> Image:
 	var h: Dictionary = _heads[c["head"]]
+	if h["grey_only"] and int(c.get("debug", 0)) == 0:
+		printerr("ALIVE %s is grey_only: shown in a debug view only" % c["head"])
+		quit(5)
+		return Image.create(cell.x, cell.y, false, Image.FORMAT_RGB8)
+	if h["is_288"] and (int(c.get("debug", 0)) != 0 or not c.get("params", {}).is_empty()):
+		printerr("ALIVE %s is #288's shader: no debug view, no parameters" % c["head"])
+		quit(5)
+		return Image.create(cell.x, cell.y, false, Image.FORMAT_RGB8)
 	for key: String in _heads:
 		_heads[key]["node"].visible = key == c["head"]
 	var shader: Shader = h["mats"][0].shader
-	var params: Dictionary = c.get("params", {})
-	params["debug_mode"] = c.get("debug", 0)
+	var params: Dictionary = c.get("params", {}).duplicate()
+	if not h["is_288"]:  # #288's shader has no debug_mode
+		params["debug_mode"] = c.get("debug", 0)
 	for sm: ShaderMaterial in h["mats"]:
-		for name: String in _set:
+		for name: String in h["set"]:  # static_v5: per head (a shared list missed a head's own last parameters)
 			sm.set_shader_parameter(name, RenderingServer.shader_get_parameter_default(shader.get_rid(), name))
 		for name: String in params:
 			var v: Variant = params[name]
@@ -114,7 +144,7 @@ func _cell(c: Dictionary, cell: Vector2i, gpu: Array) -> Image:
 			elif name == "debug_mode":
 				v = int(v)
 			sm.set_shader_parameter(name, v)
-	_set = params.keys()
+	h["set"] = params.keys()
 	var t: Dictionary = TONES[c.get("tone", "pick")]
 	_env.tonemap_mode = t["map"]
 	_env.tonemap_exposure = t["exposure"]

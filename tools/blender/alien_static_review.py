@@ -4,8 +4,10 @@ the textures (alien_static_head.py `alive`), so the Godot levers are the baked l
 the plain albedo), the skin specular, the scatter and transmission, the grazing sheen and the wet eyes. Sheets (JPG,
 about 1280 px wide) go into <new>/<name>/ or <new>/:
 - `seams`: the engineer's close-ups (the axolotl's lip corner, the chameleon's eye rim) and a wider framing; rows: the
-  #288 build, step 2 (static_v3, under its own pick), this build (static_v4); columns: the full
+  #288 build, the previous round (`--mid`, static_v4, under the pick), this build (static_v5); columns: the full
   material, grey with the normal map, grey geometry only, the albedo;
+- `eyes` (static_v5, the chameleon): the eye fringe under the upper lid; columns #288, the previous round, this build;
+  rows the eye from the side, its albedo alone from the side, the eye at 3/4;
 - `grid`: one row per lever (A, S, B, E, F), four decisive strengths each (off, mid, strong, too much), the face at
   3/4, on top of the earlier rows' picks;
 - `final`: the before/after, #288 against the pick under the recommended light (AgX 0.65, saturation 1.35) and under
@@ -13,7 +15,13 @@ about 1280 px wide) go into <new>/<name>/ or <new>/:
 - `gate`: the whole-head gate from 4 sides, #288 against this build, under
   the same light.
 
-    $PYTHON_BIN tools/blender/alien_static_review.py <seams|grid|final|gate|all> [--old DIR] [--mid DIR] [--new DIR]
+Every "#288" cell in the full material uses godot/alien/alien_static_288.gdshader, the merged #288 shader kept byte for
+byte, with #288's own defaults (the current shader dropped sss_mode_skin in static_v3, so its defaults are not #288's
+look); #288's debug-view cells (grey, albedo) use the current shader's debug modes, which do not depend on the
+material. A build on the current shader must have its detail and plain textures (a missing one is an error).
+One run can pass 180 s (the Godot window's limit is 900 s): run it in the background, its log in a file.
+
+    $PYTHON_BIN tools/blender/alien_static_review.py <seams|eyes|grid|final|gate|all> [--old DIR] [--mid DIR] [--new DIR]
 """
 from __future__ import annotations
 
@@ -32,8 +40,8 @@ RAW = common.raw_dir()
 DESIGN = RAW / "research" / "2026-10-22-roster" / "design"
 STEP2A = DESIGN / "pilot3d" / "step2a"
 OLD = DESIGN / "pilot3d" / "static"
-MID = DESIGN / "pilot3d" / "static_v3"  # static_v4: the seams' middle row is step 2 (it was step 1, static_v2)
-NEW = DESIGN / "pilot3d" / "static_v4"
+MID = DESIGN / "pilot3d" / "static_v4"  # static_v5: the seams' middle row is the previous round
+NEW = DESIGN / "pilot3d" / "static_v5"
 HDRI = RAW / "env" / "polyhaven" / "studio_small_09" / "studio_small_09_2k.hdr"  # CC0, sources/polyhaven_hdris_2k.toml
 WINDOW = (1000, 1000)
 BUILDS = {"axolotl": ["axolotl"], "chameleon": ["chameleon"]}  # static_v4: chameleon_heavylid dropped
@@ -86,15 +94,25 @@ def features(name: str) -> dict:
         close = {"target": [ex + 0.6 * r, ey - 0.1 * r, ez + 0.7 * r], "yaw": 30.0, "pitch": 4.0, "width": 1.2 * r}
         wide = {"target": [ex, ey, ez + 0.8 * r], "yaw": 20.0, "pitch": 4.0, "width": 3.2 * r}
     face = {"target": [0.0, (ey + my) / 2, (ez + max(ez + r, mz)) / 2], "width": 1.9 * max(ex + r, cx)}
-    return {"close": close, "wide": wide, "face": face}
+    # static_v5: the eye under its upper lid, from the side and at 3/4 (the eye fringe)
+    eye_side = {"target": [ex + 0.5 * r, ey + 0.3 * r, ez + 0.2 * r], "yaw": 90.0, "pitch": 6.0, "width": 2.0 * r}
+    eye_q34 = {"target": [ex + 0.4 * r, ey + 0.3 * r, ez + 0.5 * r], "yaw": 45.0, "pitch": 6.0, "width": 2.0 * r}
+    return {"close": close, "wide": wide, "face": face, "eye_side": eye_side, "eye_q34": eye_q34}
 
 
-def head_entry(d: Path, name: str, key: str) -> dict:
+def head_entry(d: Path, name: str, key: str, kind: str = "new") -> dict:
+    """kind: "new" (the current shader with its detail and plain textures, both required), "288" (#288's build under
+    alien_static_288.gdshader) or "288grey" (#288's build under the current shader, for the debug views only)."""
     build = json.loads((d / name / "build.json").read_text(encoding="utf-8"))
-    detail, plain = d / name / f"{name}_detail.png", d / name / f"{name}_albedo_plain.png"
-    return {"glb": _godot.stage(d / name / f"{name}_static.glb", key), "mask": str(d / name / f"{name}_mask.png"),
-            "detail": str(detail) if detail.exists() else "", "plain": str(plain) if plain.exists() else "",
-            "base": build["base_skin_srgb"]}
+    entry = {"glb": _godot.stage(d / name / f"{name}_static.glb", key), "mask": str(d / name / f"{name}_mask.png"),
+             "detail": "", "plain": "", "base": build["base_skin_srgb"], "shader": "288" if kind == "288" else "",
+             "grey_only": kind == "288grey"}
+    if kind == "new":
+        for which, path in (("detail", d / name / f"{name}_detail.png"), ("plain", d / name / f"{name}_albedo_plain.png")):
+            if not path.exists():
+                raise SystemExit(f"{name}: the {which} texture {path} is missing")
+            entry[which] = str(path)
+    return entry
 
 
 def run(job: dict, out: Path, tag: str) -> int:
@@ -110,7 +128,7 @@ def run(job: dict, out: Path, tag: str) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("what", choices=["seams", "grid", "final", "gate", "all"])
+    ap.add_argument("what", choices=["seams", "eyes", "grid", "final", "gate", "all"])
     ap.add_argument("--old", type=Path, default=OLD)
     ap.add_argument("--mid", type=Path, default=MID)
     ap.add_argument("--new", type=Path, default=NEW)
@@ -122,20 +140,27 @@ def main() -> int:
     pick = picks(args.new)
     final = column("F", pick)
     for h in heads:
-        job["heads"][f"{h}_old"] = head_entry(args.old, h, f"alive_{h}_old")
+        job["heads"][f"{h}_old"] = head_entry(args.old, h, f"alive_{h}_old", "288")
+        job["heads"][f"{h}_oldg"] = head_entry(args.old, h, f"alive_{h}_old", "288grey")
         job["heads"][f"{h}_mid"] = head_entry(args.mid, h, f"alive_{h}_mid")
         for n in BUILDS[h]:
             job["heads"][f"{n}_new"] = head_entry(args.new, n, f"alive_{n}_new")
-    todo = ["seams", "grid", "final", "gate"] if args.what == "all" else [args.what]
+    todo = ["seams", "eyes", "grid", "final", "gate"] if args.what == "all" else [args.what]
     for h in heads:
         f = features(h)
         d = args.new / h
         if "seams" in todo:
             keys = [(f"{h}_old", {}), (f"{h}_mid", final)] + [(f"{n}_new", final) for n in BUILDS[h]]
             for fr in ("close", "wide"):
-                rows = [[{"head": key, "params": prm, "debug": m, "tone": "showroom", "shot": f[fr]}
-                         for m in (0, 1, 2, 3)] for key, prm in keys]
+                rows = [[{"head": f"{h}_oldg" if key == f"{h}_old" and m else key, "params": prm, "debug": m,
+                          "tone": "showroom", "shot": f[fr]} for m in (0, 1, 2, 3)] for key, prm in keys]
                 job["sheets"].append({"file": str(d / f"seams_{fr}{args.tag}.jpg"), "cell": [320, 320], "rows": rows})
+        if "eyes" in todo and h == "chameleon":
+            cols = [(f"{h}_old", f"{h}_oldg", {}), (f"{h}_mid", f"{h}_mid", final)] + [
+                (f"{n}_new", f"{n}_new", final) for n in BUILDS[h]]
+            rows = [[{"head": full if m == 0 else grey, "params": prm, "debug": m, "shot": f[fr]}
+                     for full, grey, prm in cols] for fr, m in (("eye_side", 0), ("eye_side", 3), ("eye_q34", 0))]
+            job["sheets"].append({"file": str(d / f"eyes{args.tag}.jpg"), "cell": [400, 400], "rows": rows})
         if "grid" in todo:
             face34 = dict(f["face"], yaw=35.0)
             rows = []
