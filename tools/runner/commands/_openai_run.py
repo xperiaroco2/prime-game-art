@@ -154,7 +154,7 @@ class Runner:
             self.preflight()
             failed = 0
             todo = [i for i in self.batch.items if not self.only or i.id in self.only]
-            for warning in batches.n_warnings(todo):
+            for warning in batches.n_warnings([i for i in todo if self.will_send(i)]):
                 self.log(warning)
             for n, item in enumerate(todo, 1):
                 self.log(f"[{n}/{len(todo)}] {item.id}")
@@ -164,6 +164,11 @@ class Runner:
                  f"${self.batch.cost_cap_usd:.2f}; " + ("all items done" if not failed else f"{failed} item(s) not done"))
         return 1 if failed else 0
 
+    def will_send(self, item: batches.Item) -> bool:
+        """Whether this run sends the item: not done already, and not failed unless --retry-failed."""
+        status = (read_state(self.batch, item, self.raw) or {}).get("status")
+        return not (status == "done" or (status == "failed" and not self.retry_failed))
+
     def preflight(self) -> None:
         """Every local reference image of the items this run may send exists, fits and matches its pinned sha256;
         checked before the first paid request."""
@@ -171,8 +176,7 @@ class Runner:
         for item in self.batch.items:
             if self.only and item.id not in self.only:
                 continue
-            status = (read_state(self.batch, item, self.raw) or {}).get("status")
-            if status == "done" or (status == "failed" and not self.retry_failed):
+            if not self.will_send(item):
                 continue
             for inp in item.inputs:
                 if not inp.from_item:

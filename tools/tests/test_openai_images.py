@@ -643,6 +643,19 @@ class OneImagePerConceptTest(unittest.TestCase):
         logs.clear()
         runs.Runner(self.batch(), fake.client(logs), raw=self.raw, only=["g1"]).run()
         self.assertFalse([line for line in logs if line.startswith("WARNING")])
+        # a rerun of the whole batch sends nothing (both done), so it warns about nothing
+        logs.clear()
+        runs.Runner(self.batch(), fake.client(logs), raw=self.raw).run()
+        self.assertEqual(len(fake.requests), 2)
+        self.assertFalse([line for line in logs if line.startswith("WARNING")])
+
+    def test_n_from_the_defaults_or_a_variant_is_warned(self) -> None:
+        batch = parse(defaults={"size": "1024x1024", "n": 3}, variants={"v": {"prompt": "from the variant", "n": 2}},
+                      items=[{"id": "d3", "kind": "generate", "prompt": "from the defaults"},
+                             {"id": "v2", "kind": "generate", "variant": "v"},
+                             {"id": "i1", "kind": "generate", "prompt": "own", "n": 1}])
+        warnings = batches.n_warnings(batch.items)
+        self.assertEqual([w.split(":")[0] for w in warnings], ["WARNING d3", "WARNING v2"])
 
 
 class RepositoryBatchesTest(unittest.TestCase):
