@@ -20,7 +20,6 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "layouts" / "ship" / "interior.toml"
 F = S.FLOOR
 H_IN_HALL = F + S.H_HALL + (S.APEX_HALL - S.H_HALL) * (1 - S.R_RING / S.R_HALL)
-H_IN_TIP = F + S.H_TIP   # lens step 1: the lamp ring at the walls' top, placed up the ceiling's slant (tip_clear)
 SPOKE_HALL, SPOKE_TIP = 3.07, 4.1
 REF_HALL = round(sum(S.R_GRATE) / 2, 3)    # inside-1: a hall grate sector's origin (v1 1.8)
 R_TIP_DISC, R_TIP_GRATE0, REF_TIP = 0.55, 0.62, 1.07   # inside-1: the tip floor scaled to the 1.85 m room (v1 2.1)
@@ -190,7 +189,6 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_ceiling": ("tip_ceiling", {}, False),
 }
 PIECES |= {
-    "tip_lamp": ("lamp", {"h_in": H_IN_TIP}, False),
     # details
     "cup_a": ("cup", {"seed": 3, "scale": 1.8}, False),  # polish 4: 1.8 (22 cm; inside 3-1: 1.5 read as a red mark)
     "cup_b": ("cup", {"seed": 11, "scale": 1.8}, False),
@@ -418,15 +416,11 @@ def placements() -> list[tuple[str, list[float], float]]:
         c = (s * S.TIP_C[0], S.TIP_C[1])
         for pid in ("tip_floor_base", "tip_floor_disc", "tip_floor_rim", "tip_ceiling"):
             put(pid, list(c), room)
-        # details 1: no lamp ring at the centre (the oculus): tip_ceiling's light ring, the six lamps under it
+        # details 1: no lamp ring at the centre (the oculus): tip_ceiling's light ring; details 2: its lamps merged into it
         for k in range(8):
             put("tip_grate", polar(REF_TIP, 22.5 + 45 * k, c, room), room - (22.5 + 45 * k))
             put("tip_spoke", polar(REF_TIP, 45 * k, c, room), room - 45 * k)
             put("tip_light", polar(REF_TIP + 0.01, 45 * k, c, room), room - 45 * k)
-        for k in range(6):
-            a = 30 + 60 * k
-            put("tip_lamp", polar(S.R_TIP_RING, a, c, room), room - a,
-                S.tip_clear(S.R_TIP_RING * math.cos(math.radians(a))) - S.H_TIP)
         apo = S.R_TIP * math.cos(math.radians(S.TIP_STEP / 2))
         band = S.tip_band_facets(s)
         band_v = {round(v, 4) for i in band for v in (tv[i], tv[i + 1])}

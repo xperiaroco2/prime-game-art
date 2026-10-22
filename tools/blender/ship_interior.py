@@ -175,10 +175,11 @@ def _half(args):
 PORTAL_D = 0.15
 # the tip rooms
 R_TIP, H_TIP, APEX_TIP, R_TIP_RING = (_ROOM["tip_e"]["radius"] + 0.05, _ROOM["tip_e"]["clear_h"],
-                                      _ROOM["tip_e"]["apex_h"], 0.86)   # lens step 1: room r 2.0 -> vertex radius 2.05
+                                      _ROOM["tip_e"]["apex_h"], 0.84)   # lens step 1: room r 2.0 -> vertex radius 2.05
 # polish 4: R_TIP_RING 0.6 -> 0.42 (the tip ceiling's pale lamp cog read oversized from the room); lens step 1: 0.32,
 # its beam (to r 0.42) clear of the roof windows (their nearest corner at r 0.46); details 1: 0.86, the six lamps on
-# the light ring round the oculus (OC_BEAM)
+# the light ring round the oculus (OC_BEAM); details 2: 0.84, the centre of the ring's slim warm strip (OC_STRIP wide), the
+# six lamps merged into it
 # lens step 1 (art#263 c6344490367): the lens rooms' ceiling slants down outward along the axis (P's ray_roof): clear
 # H_TIP_IN at the corridor's side, H_TIP at the outer wall; the walls stand H_TIP high and the ceiling's fascia closes
 # the slant's gap over them. The window band (local degrees, + aft in the east room; the west room is placed mirrored)
@@ -192,7 +193,9 @@ SILL, HEAD = BAND["sill_h"], BAND["head_h"]
 OC_N = _ROOM["tip_e"]["oculus"]["sides"]                              # 32
 OC_R = _ROOM["tip_e"]["oculus"]["d"] / 2                              # 0.70: the clear radius, the lining's inner face
 OC_WELL = (OC_R, OC_R + 0.035)                                        # the lining's apothems: 1 cm into the hull's cut
-OC_BEAM = (0.69, 0.99)                                                # the light ring's beam under the ceiling
+OC_BEAM = (0.69, 0.97)                                                # the light ring's beam under the ceiling
+OC_STRIP = 0.07                                                       # details 2: the ring's warm strip, 7 cm wide
+OC_FASCIA = 0.10                                                      # details 2: the fascia's overlap on the walls' tops
 
 
 def tip_clear(t: float) -> float:
@@ -992,10 +995,11 @@ def tip_ceiling_cells():
 def tip_ceiling(args, layout):
     """lens step 1: the lens room's ceiling, a plane slanting down outward (tip_clear); details 1: with the oculus at
     its centre (one round roof window, d 1.4 clear): the slab round it, face panels in eight sectors, the well's dark
-    lining up to 0.26 m over the ceiling, the glass at 0.24, and the LIGHT RING round it in the lamp ring's style (a
-    silver beam, a lip round the oculus, the warm band glowing on the beam's whole underside; the six lamps hang
-    under it: tip_lamp at R_TIP_RING); four ribs across the axis outside the ring with cyan strips, and the fascia
-    over the walls' tops (the slant's gap). Everything follows the slant (_slant), the well with it."""
+    lining up to 0.26 m over the ceiling, the glass at 0.24, and the LIGHT RING round it; details 2: in the corridor
+    ribs' style, a slim warm strip (OC_STRIP, 7 cm, centred at R_TIP_RING; the six lamps merged into it) in a dark
+    channel under a silver beam, a lip round the oculus and a rim on the beam's outer edge; four ribs across the axis
+    outside the ring with cyan strips, and the fascia over the walls' tops (the slant's gap), its foot OC_FASCIA down
+    the walls on both sides of the slant. Everything follows the slant (_slant), the well with it."""
     rim = FLOOR + H_TIP
     room = [_tv(a) for a in sorted(tip_vertices())]
     wide = [(x * (R_TIP + 0.25) / R_TIP, y * (R_TIP + 0.25) / R_TIP) for x, y in room]
@@ -1018,9 +1022,14 @@ def tip_ceiling(args, layout):
         if q:
             faces["int_silver_a" if (k // per) % 2 else "int_silver_b"].append(G.slab(ff0, q, rim - 0.025, rim))
     well = [G.slab(ff0, oc_sector(*OC_WELL, k), rim, rim + 0.26) for k in range(OC_N)]
-    beam = [G.slab(ff0, oc_sector(OC_R + 0.01, OC_BEAM[1], k), rim - 0.15, rim) for k in range(OC_N)]
-    lip = [G.slab(ff0, oc_sector(OC_BEAM[0], OC_R + 0.03, k), rim - 0.19, rim + 0.005) for k in range(OC_N)]
-    band = [G.slab(ff0, oc_sector(OC_R + 0.04, OC_BEAM[1] - 0.02, k), rim - 0.165, rim - 0.15) for k in range(OC_N)]
+    beam = [G.slab(ff0, oc_sector(OC_R + 0.01, OC_BEAM[1], k), rim - 0.08, rim) for k in range(OC_N)]
+    lip = [G.slab(ff0, oc_sector(OC_BEAM[0], OC_R + 0.03, k), rim - 0.11, rim + 0.005) for k in range(OC_N)]
+    edge = [G.slab(ff0, oc_sector(OC_BEAM[1] - 0.025, OC_BEAM[1], k), rim - 0.095, rim - 0.075) for k in range(OC_N)]
+    sw = OC_STRIP / 2
+    chan = [G.slab(ff0, oc_sector(R_TIP_RING - sw - 0.025, R_TIP_RING + sw + 0.025, k), rim - 0.09, rim - 0.075)
+            for k in range(OC_N)]
+    band = [G.slab(ff0, oc_sector(R_TIP_RING - sw, R_TIP_RING + sw, k), rim - 0.094, rim - 0.088)
+            for k in range(OC_N)]
     gc = 1 / math.cos(math.pi / OC_N)
     gv = [(OC_WELL[0] * gc * math.cos(oc_angle(k + 0.5)), OC_WELL[0] * gc * math.sin(oc_angle(k + 0.5)), rim + 0.24)
           for k in range(OC_N)]
@@ -1038,10 +1047,12 @@ def tip_ceiling(args, layout):
             continue
         (x0, y0), (x1, y1) = _tv(a0), _tv(a1)
         k = len(fv)
-        fv += [(x0, y0, rim - 0.11), (x1, y1, rim - 0.11), (x1, y1, rim + 0.005), (x0, y0, rim + 0.005)]
+        b0, b1 = (rim - OC_FASCIA - (tip_clear(x) - H_TIP) for x in (x0, x1))   # OC_FASCIA under the rim once slanted
+        fv += [(x0, y0, b0), (x1, y1, b1), (x1, y1, rim + 0.005), (x0, y0, rim + 0.005)]
         ff += [(k, k + 1, k + 2, k + 3), (k + 3, k + 2, k + 1, k)]
     parts = [P("slab", M(*slab), "int_silver_b"), P("wells", M(*well), "int_dark"),
-             P("beam", M(*beam), "int_silver_c"), P("lip", M(*lip), "int_silver_a"), P("band", M(*band), "int_lamp"),
+             P("beam", M(*beam), "int_silver_c"), P("lip", M(*lip), "int_silver_a"), P("edge", M(*edge), "int_silver_a"),
+             P("channel", M(*chan), "int_dark"), P("band", M(*band), "int_lamp"),
              P("ribs", M(*ribs), "int_silver_c"), P("strips", M(*strips), "int_cyan"),
              L.part("glass", *glass, "int_glass", solid=False), L.part("fascia", fv, ff, "int_silver_c", solid=False)]
     parts += [P(f"face_{m[-1]}", M(*v), m) for m, v in faces.items() if v]
