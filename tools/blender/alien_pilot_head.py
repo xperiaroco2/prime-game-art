@@ -14,6 +14,10 @@ headless Blender. Reads the raw GLB (never writes it) and writes into --out:
 - axolotl: the six gill stalks cut off the head at their roots (their holes filled), fanned out from the head; the raised rim around each eye softened;
 - the parts joined into one mesh per kind, `<head>_skin`, `<head>_eyes`, `<head>_lids`, `<head>_mouth` and
   `<head>_gills`, with each piece's pivot (eye centres, gill roots) in the custom property `pivots` (glTF extras);
+- step 2b-1's polish: the chameleon's lips rebuilt as two rolled tubes (`lip_tube`) with their textures flattened
+  (`flatten_lips`) and his lids' outer corners opened (`lid_corner_outer`); the axolotl's pale front as a positional
+  mask over the ramp (`pale_front`) and a white catch light on her beads (`catch_light`); each lid's parameters in
+  `build.json` (`lids`) for the rig (alien_pilot_rig.py);
 - `<head>.glb` and `<head>_lod1.glb` (skin and gills decimated further), `<head>.blend`, `build.json` (tri counts,
   eye fits, the lip line, gains), review renders `views/` (front, side, back, 3/4) and `smooth_grid.png` (the smooth
   region's weights and three strengths, close up, both sides).
@@ -46,12 +50,16 @@ HEADS = {
         # lids: (free edge, root) in degrees above the gaze; the 2D's heavy upper lid covers the top third
         "lid_upper": (10.0, 100.0), "lid_lower": (-62.0, -100.0), "lid_thick": 0.16, "lid_alpha": 130.0,
         "lid_corner": {"upper": -12.0, "lower": -14.0},
+        # the outer corner opened (2b): more white from the side, as the 2D's side view shows
+        "lid_corner_outer": {"upper": 6.0, "lower": -32.0},
         "eye_spec": {"iris_deg": 27.0, "pupil_deg": 12.0, "sclera": (1.0, 1.0, 0.98), "iris": (0.40, 0.19, 0.08),
                      "iris_rim": (0.16, 0.07, 0.03), "pupil": (0.02, 0.01, 0.01), "glint": (0.89, 0.075, 0.035)},
         "eye_rough": 0.08,
         # the lips: a volume-keeping Laplacian smooth (iterations, lambda) on the raw and the work mesh before the cut;
         # the mouth cup's half width in lip half widths, and the lips' parting at rest in mouth units (0: closed)
-        "lip_smooth": (40, 1.0), "lip_post": (30, 0.7), "cup_x": 0.72, "lip_gap": 0.0, "lip_from": "profile",
+        "lip_smooth": (40, 1.0), "lip_post": (12, 0.5),
+        # 2b: the lips rebuilt as two rolled tubes along the lip line (radius in mouth units), no Meshy creases
+        "lip_tube": {"radius": 0.3}, "cup_x": 0.72, "lip_gap": 0.0, "lip_from": "profile",
         # the ledge at the crest's root above each eye, seen from the side: (side offset, back, up) in eye radii
         "smooth_region": {"kind": "ledge", "centre": (0.4, 1.5, 1.0), "radii": (1.3, 2.0, 1.3)},
         "smooth": (150, 0.9),
@@ -63,6 +71,8 @@ HEADS = {
         "eye_spec": {"iris_deg": 70.0, "pupil_deg": 30.0, "sclera": (0.05, 0.035, 0.035), "iris": (0.05, 0.03, 0.03),
                      "iris_rim": (0.04, 0.03, 0.03), "pupil": (0.01, 0.01, 0.01), "glint": (0.89, 0.12, 0.05)},
         "eye_rough": 0.06,
+        # 2b: the 2D's near-white front (face below the eyes, throat, chest) over the ramp, and a white catch light
+        "pale_front": {"rgb": (0.86, 0.97, 0.91), "strength": 0.9, "facing": (0.35, 0.8), "lip_band": (0.5, 0.8)}, "catch_light": 10.0,
         # her lip band overhangs the mouth line, so the line comes from the texture's darker painted smile
         "lip_smooth": (0, 0.0), "cup_x": 0.8, "lip_gap": 0.06, "lip_from": "texture",
         "smooth_region": {"kind": "ring", "inner": 0.8, "peak": (1.1, 1.45), "outer": 2.0},
@@ -618,7 +628,7 @@ def principled(name, rgb=None, rough=0.5, image=None, normal=None):
     return mat
 
 
-def grade_source(mat, gains, stripes):
+def grade_source(mat, gains, stripes, pale=None):
     """Inserts the colour grade (and the crest stripes) between Meshy's base colour image and its BSDF."""
     nt = mat.node_tree
     bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
@@ -668,6 +678,62 @@ def grade_source(mat, gains, stripes):
         b_in.default_value = (0.70, 0.80, 0.80, 1.0)
         out = next(x for x in mix.outputs if x.type == "RGBA")
     nt.links.new(out, bsdf.inputs["Base Color"])
+
+
+def map_range(nt, value, lo, hi):
+    n = nt.nodes.new("ShaderNodeMapRange")
+    n.clamp = True
+    nt.links.new(value, n.inputs["Value"])
+    n.inputs["From Min"].default_value, n.inputs["From Max"].default_value = lo, hi
+    return n.outputs["Result"]
+
+
+def mix_rgb(nt, blend, fac, a, b):
+    mix = nt.nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    mix.blend_type = blend
+    sockets = [x for x in mix.inputs if x.type == "RGBA"][:2]
+    for sock, val in ((mix.inputs["Factor"], fac), *zip(sockets, (a, b))):
+        if isinstance(val, (int, float, tuple)):
+            sock.default_value = val
+        else:
+            nt.links.new(val, sock)
+    return next(x for x in mix.outputs if x.type == "RGBA")
+
+
+def pale_front(mat, pale, line, m):
+    """The axolotl's pale front (2b): a positional two-tone mask over the graded ramp, the object-space normal facing
+    the front times the height below the eyes, mixing toward the 2D's near-white mint; the source's luminance against
+    the mint stop's keeps its freckles and shading. The lips stay teal as in the 2D: a band of lip_band (inner,
+    outer) mouth units round the lip line (a quadratic in x fitted to it) is left out inside its half width."""
+    nt = mat.node_tree
+    bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
+    out = bsdf.inputs["Base Color"].links[0].from_socket
+    lum = next(n for n in nt.nodes if n.type == "RGBTOBW").outputs["Val"]
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(tc.outputs["Object"], sep.inputs[0])
+    dot = nt.nodes.new("ShaderNodeVectorMath")
+    dot.operation = "DOT_PRODUCT"
+    nt.links.new(tc.outputs["Normal"], dot.inputs[0])
+    dot.inputs[1].default_value = pale["front"]
+    facing = map_range(nt, dot.outputs["Value"], *pale["facing"])
+    below = map_range(nt, sep.outputs["Z"], pale["z_top"], pale["z_full"])
+    fac = math_node(nt, "MULTIPLY", math_node(nt, "MULTIPLY", facing, below), pale["strength"])
+    if line and line.get("line"):
+        pts = np.array(line["line"], dtype=float)
+        k = float(np.polyfit(pts[:, 0] ** 2, pts[:, 1], 1)[0])
+        zl = math_node(nt, "ADD", math_node(nt, "MULTIPLY", math_node(nt, "MULTIPLY", sep.outputs["X"], sep.outputs["X"]), k),
+                       float(pts[0, 1]))
+        dz = math_node(nt, "ABSOLUTE", math_node(nt, "SUBTRACT", sep.outputs["Z"], zl))
+        inner, outer = pale["lip_band"]
+        off_band = map_range(nt, dz, inner * m, outer * m)
+        hw = float(line["half_width"])
+        off_x = map_range(nt, math_node(nt, "ABSOLUTE", sep.outputs["X"]), hw, 1.25 * hw)
+        fac = math_node(nt, "MULTIPLY", fac, math_node(nt, "MAXIMUM", off_band, off_x))
+    shade = math_node(nt, "MINIMUM", math_node(nt, "MAXIMUM", math_node(nt, "DIVIDE", lum, pale["lum"]), 0.75), 1.1)
+    tint = mix_rgb(nt, "MULTIPLY", 1.0, (*[srgb_to_linear(c) for c in pale["rgb"]], 1.0), shade)
+    nt.links.new(mix_rgb(nt, "MIX", fac, out, tint), bsdf.inputs["Base Color"])
 
 
 def palette_stops(fg, tex):
@@ -803,7 +869,8 @@ def eye_image(name, spec, size=256):
     return img
 
 
-def lid_mesh(name, centre, axes, radius, beta_from, beta_to, alpha_half, thick, rim_rows=6, corner=None):
+def lid_mesh(name, centre, axes, radius, beta_from, beta_to, alpha_half, thick, rim_rows=6, corner=None,
+             corner_outer=None, outer_sign=1):
     """A lid: a shell over the ball from its free edge (beta_from) to its root, thinning to nothing toward its two ends
     and its root so it melts onto the ball and into the skin. The free edge is a rolled rim: a half circle of rim_rows
     rows from the outer surface round to the inner one, bulging past the edge toward the opening."""
@@ -812,9 +879,11 @@ def lid_mesh(name, centre, axes, radius, beta_from, beta_to, alpha_half, thick, 
     if corner is not None:
         # an almond opening: the free edge bends toward corner (degrees) at the eye's corners (|alpha| >= 95 degrees),
         # where the upper and lower lids meet, instead of a level brim around the ball
-        b0, b1, bc = math.radians(beta_from), math.radians(beta_to), math.radians(corner)
+        # corner_outer: the outer corner's own angle (alpha's sign outer_sign points to the outer corner)
+        b0, b1 = math.radians(beta_from), math.radians(beta_to)
         for j, row in enumerate(rows):
             for i, (a, _) in enumerate(row):
+                bc = math.radians(corner_outer if corner_outer is not None and a * outer_sign > 0 else corner)
                 e = b0 + (bc - b0) * G.smoothstep(0.0, math.radians(95.0), abs(a))
                 row[i] = (a, e + (b1 - e) * j / (nb - 1))
     bm = bmesh.new()
@@ -1027,6 +1096,11 @@ def main() -> None:
         stripes = {"front": front, "front_sign": fs, "c_depth": c_depth, "c_z": eye["z"] + 0.5 * eye["r"], "k": 11.0,
                    "z_lo": eye["z"] + 0.9 * eye["r"], "z_hi": eye["z"] + 1.6 * eye["r"]}
         report["stripes"] = stripes
+    pale = None
+    if cfg.get("pale_front"):
+        pale = dict(cfg["pale_front"], front=front, lum=gains[3][0], z_top=eye["z"] - 0.4 * eye["r"],
+                    z_full=eye["z"] - 1.6 * eye["r"])
+        report["pale_front"] = pale
     grade_source(src.active_material, gains, stripes)
 
     ensure_part_layer(work, 0)
@@ -1054,6 +1128,8 @@ def main() -> None:
                                       "bisect" if cfg["lip_from"] == "texture" else "path")
         log(f"lip cut {report['lip_cut']}")
 
+    if pale:
+        pale_front(src.active_material, pale, line, m)
     # budget, one atlas for skin and gills, the bake
     decimate(work, cfg["skin_tris"])
     for g in gills.values():
@@ -1170,6 +1246,11 @@ def main() -> None:
     add_smooth(work, it, lam)
     apply_modifiers(work)
     work.vertex_groups.clear()
+    if cfg.get("lip_tube") and line["line"]:
+        report["lip_tube"], lip_w = lip_tube(work, line, front, m, lining, cfg["lip_tube"])
+        log(f"lip tube {report['lip_tube']}")
+        report["lip_texture_flattened_px"] = flatten_lips(work, lip_w, colour, normal)
+        log(f"lip textures flattened over {report['lip_texture_flattened_px']} px")
     if cfg.get("lip_post") and line["line"]:
         vg = work.vertex_groups.new(name="lips_post")
         n_post = 0
@@ -1214,9 +1295,25 @@ def main() -> None:
         ball = sphere_mesh(f"eye_{tag}", c, axes, R)
         ball.data.materials.append(eye_mat)
         eye_objs.append(ball)
+        if cfg.get("catch_light"):
+            # a tiny white cap on the bead, its every UV on the texture's white glint: the eye reads alive and
+            # godot-check's eye_pupils finds its near-white vertices
+            gdir = (fr + Vector((0, 0, 0.38)) + lf * 0.22).normalized()
+            cap = sphere_mesh(f"glint_{tag}", c, G.frame(tuple(gdir)), R * 1.004, n_a=10, n_p=4,
+                              polar_max=math.radians(cfg["catch_light"]))
+            gu, gv, _ = cfg["eye_spec"]["glint"]
+            for loop_uv in cap.data.uv_layers.active.data:
+                loop_uv.uv = (gu, gv)
+            cap.data.materials.append(eye_mat)
+            eye_objs.append(cap)
+        probe = Vector(G.shell_point((0, 0, 0), axes, 1.0, math.radians(90.0), 0.0))
+        outer_sign = 1 if probe.dot(lf * side) > 0 else -1
         for kind_, (b0, b1) in (("upper", cfg["lid_upper"]), ("lower", cfg["lid_lower"])):
-            lid = lid_mesh(f"lid_{kind_}_{tag}", c, axes, R * 1.03, b0, b1, cfg["lid_alpha"], cfg["lid_thick"] * R,
-                           corner=cfg.get("lid_corner", {}).get(kind_))
+            params = dict(radius=R * 1.03, beta_from=b0, beta_to=b1, alpha_half=cfg["lid_alpha"],
+                          thick=cfg["lid_thick"] * R, corner=cfg.get("lid_corner", {}).get(kind_),
+                          corner_outer=cfg.get("lid_corner_outer", {}).get(kind_), outer_sign=outer_sign)
+            lid = lid_mesh(f"lid_{kind_}_{tag}", c, axes, **params)
+            report.setdefault("lids", {})[f"{kind_}_{tag}"] = dict(params, centre=list(c), axes=[list(a) for a in axes])
             eye_objs.append(lid)
         report.setdefault("eyes", {})[tag] = {"centre": list(c), "radius": R}
     lid_mat = principled(f"{head}_lid", rgb=lid_rgb, rough=0.55)
@@ -1291,7 +1388,7 @@ def main() -> None:
             del o["root"]
         return o, pivots
 
-    groups = [(f"{head}_eyes", [o for o in eye_objs if o.name.startswith("eye_")]),
+    groups = [(f"{head}_eyes", [o for o in eye_objs if o.name.startswith(("eye_", "glint_"))]),
               (f"{head}_lids", [o for o in eye_objs if o.name.startswith("lid_")]),
               (f"{head}_gills", gill_objs), (f"{head}_mouth", mouth_objs)]
     joined = {}
@@ -1395,6 +1492,114 @@ def compare_sheet(args, out, head, cell=640):
     small.scale(1280, int(1280 * sheet.shape[0] / sheet.shape[1]))
     save_rgb(image_array(small), out / f"{head}_compare_1280.png")
     bpy.data.images.remove(small)
+
+
+def sstep(e0, e1, x):
+    t = np.clip((x - e0) / (e1 - e0), 0.0, 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def lip_tube(obj, line, front, m, lining, spec):
+    """The chameleon's lips rebuilt (2b): two rolled tubes along the lip line, the upper above it and the lower below,
+    kissing at it. The line's height and depth are even quartics fitted to its bins (no bin noise); each tube's radius
+    is spec radius x m, tapering to a fifth at the corners; its front reaches the lip's measured protrusion (the 95th
+    percentile in the middle third). Every lip vertex moves toward its point on the tube's circle at the same angle
+    round the tube's core, fading out toward the skin above or below, behind the tube (the lining rolling back into the
+    mouth) and past the corners: Meshy's lip creases are replaced by a clean rolled shape. The lining's slit edge moves
+    with the lips (left out, its jagged row stayed and read as teeth between the tubes; first 2b-1 build)."""
+    me = obj.data
+    fr = np.array(front, dtype=float)
+    pts = np.array(line["line"], dtype=float)
+    hw = float(line["half_width"])
+    xs = np.concatenate([-pts[:0:-1, 0], pts[:, 0]])
+    cz = np.polyfit(xs, np.concatenate([pts[:0:-1, 1], pts[:, 1]]), 4)
+    cd = np.polyfit(xs, np.concatenate([pts[:0:-1, 2], pts[:, 2]]), 4)
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    free = np.ones(len(co), dtype=bool)
+    x, z = co[:, 0], co[:, 2]
+    d = co @ fr
+    xc = np.clip(x, -hw, hw)
+    zl, dl = np.polyval(cz, xc), np.polyval(cd, xc)
+    taper = 0.2 + 0.8 * np.sqrt(np.clip(1 - (xc / hw) ** 2, 0, 1))
+    r0 = spec["radius"] * m
+    r = r0 * taper
+    new = co.copy()
+    report = {"radius": round(r0, 5)}
+    for side, s in (("upper", 1.0), ("lower", -1.0)):
+        sel = free & ((z - zl) * s >= 0)
+        near = sel & (np.abs(x) < 0.33 * hw) & (np.abs(z - zl) < 2.0 * r0)
+        p = float(np.percentile(d[near] - dl[near], 95)) if near.any() else r0
+        p = max(p, 0.6 * r0)
+        cdep, czz = dl + p * taper - r, zl + s * r
+        dz, dd = z - czz, d - cdep
+        th = np.arctan2(s * dz, dd)  # 0: the front; positive away from the slit
+        dist = np.hypot(dz, dd)
+        w = (1 - sstep(math.radians(55), math.radians(115), th)) * (1 - sstep(math.radians(100), math.radians(150), -th))
+        w *= (1 - sstep(1.5 * r, 2.6 * r, dist)) * (1 - sstep(0.85 * hw, 1.1 * hw, np.abs(x))) * sel
+        tgt_d, tgt_z = cdep + r * np.cos(th), czz + s * r * np.sin(th)
+        new[:, 2] += w * (tgt_z - z)
+        new += fr[None, :] * (w * (tgt_d - d))[:, None]
+        report[side] = {"protrusion": round(p, 5), "moved": int((w > 0.01).sum())}
+        wmax = w if side == "upper" else np.maximum(wmax, w)
+    me.vertices.foreach_set("co", new.ravel())
+    me.update()
+    return report, wmax
+
+
+def flatten_lips(obj, weights, colour, normal, keep=0.15):
+    """Meshy's lip creases live in the baked textures too (2a's smooths and 2b's tube left them showing): over the
+    lips' weights (rasterised in UV space, grown by 3 px) the normal map goes flat and the colour to the lips' median,
+    keeping `keep` of the old colour. Both images are saved again."""
+    me = obj.data
+    me.calc_loop_triangles()
+    uv = np.empty(len(me.loops) * 2)
+    me.uv_layers.active.data.foreach_get("uv", uv)
+    uv = uv.reshape(-1, 2)
+    h, w_ = colour.size[1], colour.size[0]
+    acc = np.zeros((h, w_), dtype=np.float32)
+    for lt in me.loop_triangles:
+        ws = weights[list(lt.vertices)]
+        if ws.max() < 0.02:
+            continue
+        t = uv[list(lt.loops)] * (w_, h) - 0.5
+        x0, y0 = np.floor(t.min(0)).astype(int)
+        x1, y1 = np.ceil(t.max(0)).astype(int)
+        x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, w_ - 1), min(y1, h - 1)
+        if x1 < x0 or y1 < y0:
+            continue
+        gx, gy = np.meshgrid(np.arange(x0, x1 + 1), np.arange(y0, y1 + 1))
+        (ax, ay), (bx, by), (cx, cy) = t
+        den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+        if abs(den) < 1e-12:
+            continue
+        l1 = ((by - cy) * (gx - cx) + (cx - bx) * (gy - cy)) / den
+        l2 = ((cy - ay) * (gx - cx) + (ax - cx) * (gy - cy)) / den
+        l3 = 1 - l1 - l2
+        inside = (l1 >= -0.05) & (l2 >= -0.05) & (l3 >= -0.05)
+        val = np.clip(l1 * ws[0] + l2 * ws[1] + l3 * ws[2], 0, 1) * inside
+        acc[y0:y1 + 1, x0:x1 + 1] = np.maximum(acc[y0:y1 + 1, x0:x1 + 1], val)
+    for _ in range(3):
+        grown = acc.copy()
+        grown[1:] = np.maximum(grown[1:], acc[:-1])
+        grown[:-1] = np.maximum(grown[:-1], acc[1:])
+        grown[:, 1:] = np.maximum(grown[:, 1:], acc[:, :-1])
+        grown[:, :-1] = np.maximum(grown[:, :-1], acc[:, 1:])
+        acc = grown
+    a = acc[..., None]
+    npx = image_array(normal)
+    npx[..., :3] = npx[..., :3] * (1 - a) + np.array([0.5, 0.5, 1.0]) * a
+    normal.pixels.foreach_set(npx.ravel())
+    cpx = image_array(colour)
+    core = acc > 0.6
+    if core.any():
+        med = np.median(cpx[core][:, :3], axis=0)
+        cpx[..., :3] = cpx[..., :3] * (1 - a * (1 - keep)) + med * a * (1 - keep)
+        colour.pixels.foreach_set(cpx.ravel())
+    for img in (colour, normal):
+        img.save()
+    return int((acc > 0.02).sum())
 
 
 def push_inside(objs, skin, m):
