@@ -50,6 +50,26 @@ What the build does (pure geometry in `alien_pilot_geom.py`, tested by `tools/te
   tri counts), `<head>_compare.png` (2D on top: front, side, back and the expression sheet's 3/4 cell; the new 3D
   below) and `<head>_godot.png`.
 
+The second pass (`--tag v2`, the manager's notes on the first sheets) builds into `<head>/v2/` and copies
+`<head>_compare_1280_v2.png` (three rows: the 2D, the first build, this build) and `<head>_godot_v2.png` up:
+- **One mesh per part kind:** `<head>_skin` (skin and lip lining), `<head>_eyes` (no normal map needed: the `_eyes`
+  rule), `<head>_lids`, `<head>_mouth` (cup and tongue), `<head>_gills`; the pieces' pivots (eye centres, gill roots)
+  are the custom property `pivots`, exported as glTF extras for step 2b's bones. Six surfaces or fewer, within the
+  contract's cap of 8.
+- **Lips:** a volume-keeping Laplacian smooth (`lip_smooth`) on the raw model and the work mesh before the cut, so the
+  normal bake does not bring Meshy's lumps back; the mouth cup is narrower (`cup_x`), further back, and every cup or
+  tongue vertex outside the skin is pushed just inside it. The axolotl's line comes from the texture
+  (`lip_from = "texture"`: the darkest front faces per bin, continuous, within 0.9 of the eyes' spacing) and her lips
+  part at rest by `lip_gap`, so the dark lining shows as her smile line.
+- **Lids:** a rolled half-circle rim at the free edge; the lower lids' free edge now comes first (it was at their
+  root); the chameleon's upper lid at 10 degrees covers the iris's top as in the 2D.
+- **Colour and review light:** the ramp's teal is the brighter half of the 2D's saturated pixels (saturation x1.2), its
+  light stop the brightest third of the 2D's light pixels (the pale front). The review renders' exposure is set so the
+  3D front's median foreground brightness matches the 2D front's, on the 2D's grey (`review_exposure` in
+  `build.json`).
+- `build.json`'s `gill_length_bins`: each stalk's vertices per tenth of its length (the fewest decides whether a
+  spring-bone bend needs a retopology).
+
 The heads are not rigged yet (step 2b: the shared neck, face bones or shape keys, spring bones on the gills), so
 `godot-check`'s skeleton, parts and animation checks fail on them by design; its import and texture checks apply.
 

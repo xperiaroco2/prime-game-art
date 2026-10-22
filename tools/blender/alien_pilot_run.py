@@ -4,11 +4,17 @@ Godot window (godot/alien/pilot_shots.gd through the runner's _godot.window()). 
 (`tools/run.sh godot-check <glb>`). Inputs are read from the raw folder, never written.
 
     $PYTHON_BIN tools/blender/alien_pilot_run.py [--heads chameleon,axolotl] [--out DIR] [--no-build] [--no-shots]
+        [--tag v2]
+
+--tag builds into <out>/<head>/<tag>/ (an earlier build is never overwritten), puts the earlier build's views in the
+comparison sheet's middle row and copies the sheet and the Godot shot up as <head>_compare_1280_<tag>.png and
+<head>_godot_<tag>.png.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -32,13 +38,16 @@ def main() -> int:
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--smooth", default=None, help="iterations,lambda for every head's smooth region")
+    ap.add_argument("--tag", default="", help="build into <out>/<head>/<tag>/ and copy its sheets up with the tag")
     args = ap.parse_args()
     summary = {}
     for head in args.heads.split(","):
-        out = args.out / head
+        out = args.out / head / args.tag if args.tag else args.out / head
         out.mkdir(parents=True, exist_ok=True)
         if not args.no_build:
             extra = ["--smooth", args.smooth] if args.smooth else []
+            if args.tag and (args.out / head / "views").is_dir():
+                extra += ["--prev-views", str(args.out / head / "views")]
             result = blender.run_script("alien_pilot_head.py", ["--head", head, "--src", str(SRC[head]), "--view2d",
                                                         str(VIEWS[head]), "--expr", str(EXPR[head]), "--out", str(out),
                                                         *extra], timeout=1500)
@@ -58,7 +67,11 @@ def main() -> int:
                                      str(shot), "30"], (1024, 1024), 180, log=out / "godot_shot.log")
             print(f"godot shot {head}: exit {code} {shot}", flush=True)
             summary[f"{head}_godot"] = code
-    (args.out / "run_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8", newline="\n")
+        if args.tag:
+            for name in (f"{head}_compare_1280", f"{head}_godot"):
+                if (out / f"{name}.png").exists():
+                    shutil.copyfile(out / f"{name}.png", args.out / head / f"{name}_{args.tag}.png")
+    (args.out / (f"run_summary_{args.tag}.json" if args.tag else "run_summary.json")).write_text(json.dumps(summary, indent=2), encoding="utf-8", newline="\n")
     return 0
 
 
