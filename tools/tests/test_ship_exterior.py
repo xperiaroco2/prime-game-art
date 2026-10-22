@@ -19,6 +19,7 @@ import ship_hull as H  # noqa: E402
 LAYOUT = sl.load()
 ROOMS = sl.rooms(LAYOUT)
 DECK = LAYOUT["deck"]
+EYE_M = 1.65  # the walk's eye over the floor (the 1.8 m capsule's eyes)
 EXT = tomllib.loads((sl.common.ROOT / LAYOUT["exterior"]).read_text(encoding="utf-8"))
 
 
@@ -64,18 +65,32 @@ class ShipExteriorTest(unittest.TestCase):
 
 
     def test_the_walk_video_keys(self) -> None:
-        """The walk-through: 1280x720, 60..90 s, under 15 MB, every key's eye above the ground and, on the deck, at
-        eye height inside a room."""
+        """The walk-through: 1280x720, 60..90 s, under 15 MB, every key's eye above the ground; a key on the deck at
+        eye height over floor_h and 0.3 m inside a room, the key on the ramp at eye height over the ramp's plane."""
         v = EXT["video"]
         self.assertEqual(v["size"], [1280, 720])
         seconds = sum(k[2] for k in v["keys"][1:])
         self.assertTrue(60.0 <= seconds <= 90.0, f"{seconds} s")
         self.assertLessEqual(v["max_mb"], 15.0)
+        ramp = LAYOUT["ramp"]
+        (_hx, hinge_y), (_fx, foot_y) = ramp["hinge"], ramp["foot"]
+        hull = sl.outline(LAYOUT)
+        deck = on_ramp = 0
         for eye, look, _s in v["keys"]:
             self.assertGreater(eye[2], 1.5, f"key {eye} below eye height")
-            if eye[2] > 2.6 and abs(eye[1]) < 4.5:  # on the deck (outside keys stand off the hull)
-                self.assertTrue(any(sl.room_margin(r, (eye[0], eye[1])) > 0.3 for r in ROOMS.values()),
+            x, y, h = eye
+            if foot_y < y < hinge_y and abs(x) <= ramp["width_m"] / 2:  # on the ramp: its plane from foot to hinge
+                surface = DECK["ground_h"] + (DECK["floor_h"] - DECK["ground_h"]) * (y - foot_y) / (hinge_y - foot_y)
+                self.assertAlmostEqual(h - surface, EYE_M, delta=0.5, msg=f"ramp key {eye}")
+                on_ramp += 1
+            elif y >= hinge_y and sl.inside(hull, (x, y)):  # on the deck
+                self.assertAlmostEqual(h - DECK["floor_h"], EYE_M, delta=0.15, msg=f"deck key {eye}")
+                self.assertTrue(any(sl.room_margin(r, (x, y)) > 0.3 for r in ROOMS.values()),
                                 f"deck key {eye} is not 0.3 m inside a room")
+                deck += 1
+        self.assertGreater(deck, 0, "no key on the deck")
+        self.assertGreater(on_ramp, 0, "no key on the ramp")
+
 
 if __name__ == "__main__":
     unittest.main()
