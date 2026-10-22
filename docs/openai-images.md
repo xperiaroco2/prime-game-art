@@ -291,3 +291,18 @@ the kept image alone keeps the head, colour, finish and framing every time; stro
 the model only nudges a kept look unless the prompt asks for an extreme, and mixed states (offended, smitten) come out
 as the nearest simple one. Soft parts act best (limp whiskers, drooping gills, pinned ears, raised spines). Images:
 `D:/prime-art-raw/2026-10-22-alien-roster-r6/`; JPEGs, overview and handoff: `.../design/r6/`.
+
+## Batch 2026-10-22-alien-roster-r7 (art #196, roster round 7, ten men by character type)
+
+The engineer rejected round 6's emotions: he meant heads whose base features hint at a character type at a calm,
+neutral rest, as the kept ones do (the catfish a count, the night ears a vampire). Ten new men, m81..m90: an old
+professor, a gentle giant, a sleazy salesman, an old sea captain, a rock star, a hermit sage, a young jock, a mob boss,
+a serene monk and a butler, each carried by the head and face shapes alone (no clothes, hats or props), by round 5's
+principles. rf2 as the style reference only, round 5's lead, framing sentence and style tail; the prompt names the type
+in plain words, then forbids anything worn or held and any visible emotion. Medium, 1024x1280, **n = 1** (three
+variants came out nearly alike); a concept that missed got one revised item instead (m82r, m85r, m87r, m89r, m90r).
+The batch file is generated from `D:/prime-art-raw/research/2026-10-22-roster/design/r7/concepts_r7.src.json`. 15
+requests, $0.0232 to $0.0234 each; **$0.3495** of the $3 cap. Eight of ten types read in a second; the giant and the
+butler only half. Full lips, eyeliner or a mass hanging at the sides of the head turned two men into women (m85, m89);
+the types pull the faces toward human, so the alien lives in the head shape. Images:
+`D:/prime-art-raw/2026-10-22-alien-roster-r7/`; JPEGs, overview and handoff: `.../design/r7/`.
