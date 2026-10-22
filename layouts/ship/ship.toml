@@ -380,7 +380,7 @@ glass_window = {a = 0.05, r = -0.03}                                # polish 4: 
 ext_ground = {s = 0.1}                                              # polish 4: low specular, the ground no longer mirrors
 ext_dirt = {s = 0.1}                                                # the bright horizon at grazing angles (snow-white
 ext_path = {s = 0.1}                                                # through the mouth)
-glow_edge = {c = [0.85, 0.92, 1.0], l = 0.12, rr = 0.7}              # lens step 2: the edge line, a faint glow on the ground
+glow_edge = {c = [0.85, 0.92, 1.0], l = 0.6, rr = 1.0}               # lens step 2: the edge line; step 3: a visible pool on the ground
 glow_pod = {c = [0.2, 0.9, 1.0], l = 0.15, rr = 0.6}                 # lens step 2: the pods' rings, seen, not a lamp
 int_silver_a = {v = 0.55, r = 0.25, m = 0.45}
 int_silver_b = {v = 0.55, r = 0.25, m = 0.45}

@@ -205,8 +205,8 @@ for _name in ("canopy", "nozzle_pod", "pod_ring", "ground_lamp"):
 
 
 # --- lens step 2: the edge light and the lens windows' outer frames --------------------------------------------------
-EDGE_GLOW = (0.0175, 0.006)    # the glow's half height (3.5 cm visible) and its lift off the face
-EDGE_LIP = (0.04, 0.014)       # the channel's lips: out to this half height, this far proud (the glow sits 8 mm in)
+EDGE_GLOW = (0.03, 0.006)      # the glow's half height (6 cm visible; 3.5 cm read thin at night) and its lift off the face
+EDGE_LIP = (0.045, 0.014)      # the channel's lips: out to this half height, this far proud (the glow sits 8 mm in)
 
 
 def _sweep(path, profile, mat_of):
@@ -233,17 +233,40 @@ def _sweep(path, profile, mat_of):
 def edge_light(args: dict, layout: dict) -> list:
     """lens step 2: the thin cool-white light line round the hull's outer edge, where the top meets the belly: along
     each fin's lead edge from the nose (not across the mouth), round the lens rim under the window band and along the
-    trail edge into the pod (ship_hull_shape.p_edge_line). A dark channel with two lips, the glow 3.5 cm high 8 mm
-    in between them."""
+    trail edge into the pod (ship_hull_shape.p_edge_line). A dark channel with two lips, the glow 8 mm
+    in between them. lens polish: the glow 6 cm high, in EDGE_CHUNK pieces."""
     gh, go = EDGE_GLOW
     lh, lo = EDGE_LIP
     profile = [(0.003, lh), (lo, lh), (lo, gh), (go, gh), (go, -gh), (lo, -gh), (lo, -lh), (0.003, -lh)]
     groups: dict = {}
+    glows = []
     for sx in (1, -1):
-        for mat, (v, f) in _sweep(S.p_edge_line(sx), profile, lambda i: "glow_edge" if i == 3 else "ext_frame").items():
-            groups.setdefault(mat, []).append((v, f))
-    return [L.part(f"edge_{'glow' if m == 'glow_edge' else 'channel'}", *L.merge(*g), m, solid=False)
-            for m, g in sorted(groups.items())]
+        for path in _chunks(S.p_edge_line(sx), EDGE_CHUNK):
+            for mat, (v, f) in _sweep(path, profile, lambda i: "glow_edge" if i == 3 else "ext_frame").items():
+                if mat == "glow_edge":
+                    glows.append((v, f))
+                else:
+                    groups.setdefault(mat, []).append((v, f))
+    parts = [L.part("edge_channel", *L.merge(*g), m, solid=False) for m, g in sorted(groups.items())]
+    return parts + [L.part(f"edge_glow_{k:02d}", v, f, "glow_edge", solid=False) for k, (v, f) in enumerate(glows)]
+
+
+EDGE_CHUNK = 4.0   # lens polish: the glow in pieces of about this length, so Godot's strip lights stand along the edge
+#                    (one mesh put its one light in the ship's middle) and pool faintly on the ground under it
+
+
+def _chunks(path, length):
+    """A path [(point, n)] in consecutive runs of about `length` metres, each sharing its end point with the next."""
+    out, run, run_len = [], [path[0]], 0.0
+    for a, b in zip(path, path[1:]):
+        run.append(b)
+        run_len += math.dist(a[0], b[0])
+        if run_len >= length:
+            out.append(run)
+            run, run_len = [b], 0.0
+    if len(run) > 1:
+        out.append(run)
+    return out
 
 
 def _rim_at(g, sx=1):
