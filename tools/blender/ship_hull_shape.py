@@ -578,11 +578,17 @@ def _throat_surface(hull):
     ("mouth"): the notch's sides and the lintel over the throat's roof (its back plane only above TH_TOP: below it the
     throat runs on aft), the belly cut's sides, its ceiling under the slab and its back."""
     cut = cutters()
+    # rebuild F: the throat's covered part as a third region with no faces of its own: J's belly rises over the deck
+    # forward of the hall (0.78 m at the roof line, under the floor's 0.6 only aft of y -5.33), so its front facet
+    # crossed the throat's floor as a dark bar with sloped ends (the "dark band" of rebuild E's in_throat). Every hull
+    # face inside the room (between the walls' outer faces, roof line to the hall's corners, slab to roof) is cut away;
+    # the room's floor slab is the underside there, as under the "belly" cut
+    room = cut["notch"][:2] + [(_neg(Y), -TH_ROOF_Y), (Y, TH_PTS[2][1]), (_neg(H), -(SLAB - 0.005)), (H, TH_TOP)]
     out = []
     for n, d, poly in hull:
         kind = "top" if n[2] >= -0.05 else "belly"
         for a in _subtract(poly, cut["notch"]):
-            out += [(b, n, kind) for b in _subtract(a, cut["belly"])]
+            out += [(c, n, kind) for b in _subtract(a, cut["belly"]) for c in _subtract(b, room)]
     for name, planes in cut.items():
         for i, (n, d) in enumerate(planes):
             if name == "belly" and n == _neg(Y):
