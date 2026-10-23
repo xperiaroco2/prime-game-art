@@ -154,6 +154,7 @@ tools/run.sh ship --build               # one GLB per piece (about 1 min); --onl
 tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsule walk into DIR/check.json, then DIR/walkthrough.mp4
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
 tools/run.sh ship --motion DIR          # step 2: the vents' moving parts on their GLBs off-screen: numbers, MP4, sheets
+tools/run.sh ship --vent-anim DIR       # the east vent's animation in place at night from the player's eye: MP4, key sheet
 tools/run.sh ship --play [DIR]          # the engineer's own walk (an on-screen window; agents run --play-test DIR)
 ```
 
@@ -1175,3 +1176,36 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   - *The screen.* The dark screen piece is the bezel's octagon 1.5 mm in (`lights.json` `hand.poly`), 1 mm off the
     body's screen face (b1's rectangle's corners cut through the bezel and flickered); the hand shrinks until its
     outline sits 4 mm inside the octagon.
+- **The animation (vents-anim1, 2026-10-24; the engineer: "make the vents, try to animate them"; beauty over
+  motion).** `godot/ship/vent_anim.gd`, the controller the game copies: a Node per vent (`setup(root, id,
+  mark_travel)` after the scene's materials are set; `_process` steps it, `manual = true` and `step(dt)` for a
+  proof). It takes each driven surface's material as a copy (a surface override) and drives the seven blades
+  (`rotation.x = -deg_to_rad(angle)`, the angle in degrees of opening from shut, calm `CALM_DEG` 9), the marker, the
+  cool and heat panels with their well lights, the seams, the lamp, the bar and its band. **Inputs:** `problem: bool`
+  and `hold: 0..1`; the signal `fixed` at the cough (the game clears `problem`; the controller re-arms only once it
+  is false). **States:**
+  - *CALM*: the blades breathe, each breath closing from calm by `BREATH_DEG` 3.2 and opening back every
+    `BREATH_PERIOD_S` 3.6 s, each blade `BREATH_WAVE` 0.07 of a breath behind the one above (a soft wave down); calm
+    stays the widest pose (the settled look), the cyan eases by up to `BREATH_GLOW` 0.35 as they close.
+  - *SLAM* (`problem` set): shut in `SLAM_S` 0.16 s (cubic ease-in), `SLAM_STAGGER_S` 0.012 s a blade, then rebounds
+    off the stop (`BOUNCE_DEG` 1.8, `BOUNCE_HALF_S` 0.085, `BOUNCE_DECAY_S` 0.11; never below shut); the heat panel
+    with a flash (`FLASH_GAIN` 2.6, falling over `FLASH_DECAY_S` 0.3), the seams lit, the lamp pulsing
+    (`LAMP_LOW` 0.35..1 at `LAMP_PULSE_HZ` 1.3; calm `LAMP_CALM` 0.1), the bar from `BAR_CALM` 0.6 to 1.
+  - *SHUT*: a barely seen heat tremble (`TREMBLE_DEG` 0.22 at `TREMBLE_HZ` 7); `hold` (followed with
+    `HOLD_FOLLOW_S` 0.12) lifts the marker and opens the blades toward calm in `HOLD_STEPS` 6 clicks (each moves in its
+    last `STEP_MOVE` 35 %); over `HEAT_FADE` 0.15..0.95 of the hold the cool panel shows, its colour and its lights
+    from the heat's orange to cyan; the band brightens by up to `BAND_GAIN` 1.6 near the top. `problem` cleared
+    without a hold: *OPEN*, shut to calm over `OPEN_S` 1.2 s.
+  - *COUGH* (hold 1): kicks past calm and snaps back three times (`COUGH`, [s, deg] keys: 10, 6.5, 3.5 deg over
+    0.58 s, smoothstep between keys, `COUGH_STAGGER_S` 0.015 a blade), a cyan puff (`PUFF_GAIN` 2.4 over
+    `PUFF_DECAY_S` 0.55), then CALM, the breath easing in over `BREATH_IN_S` 1.6 s, the marker sinking back
+    (`MARKER_RETURN_S` 0.5). The top blade dips instead (`COUGH_TOP` -0.2) and never rises above calm: its crest
+    stands under the header sill (1.4 mm a degree; a 10 deg kick cut it by 1.5 cm in the first clip).
+  - *The demo* (`VentAnim.demo(s)`: calm to 6 s, the problem, the hold 8..13 s, the cough, calm to 22 s) drives both
+    proofs. `ship --motion DIR` now runs it on the vent alone (the 22 s `vent_motion.mp4`) and checks every frame:
+    each blade's sections against the next (the penetration depth; the least clearance on every other frame) and its
+    vertices against the opening and the unit's depth; `motion.json` `clip`, `clip_closeups.png` (the widest, the
+    slam, the bounce, a breath). First result: 0 penetration, 0 outside, 0 past the depth, least clearance 1.5 cm,
+    the blades 0..19 deg. `ship --vent-anim DIR` (ship.gd mode `vent_anim`) renders it on the whole ship at night
+    from about 3 m across the throat at the player's eye (`VENT_ANIM` in `ship.py`), 1280x720, and shoots the demo's
+    key moments again with their labels into `keys/` and `keys_sheet.png`.
