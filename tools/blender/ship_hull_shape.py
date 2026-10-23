@@ -19,7 +19,6 @@ keep v2's hall at the centre and sample the tip rooms at the old window's SILL a
 from __future__ import annotations
 
 import math
-import os
 import sys
 import tomllib
 from functools import lru_cache
@@ -856,17 +855,6 @@ P_OCULUS_N = _LENS["oculus"]["sides"]             # its polygon (32): side k's n
 P_OCULUS_WELL = 0.025                             # the well's lining (ship_interior.tip_ceiling) inside the hull's cut
 P_OCULUS_R = P_OCULUS_D / 2 + P_OCULUS_WELL       # 0.725: the hull's cut, its sides' apothem round the lens's centre
 P_ROOF_CUT = 0.245                      # the oculus's reveal down to this over the ceiling (the well's top 0.26)
-# canopy fix (art#263, the engineer's walk 2, item 3): each cockpit canopy stands on a PLANE, not draped over the
-# nose's fold. Its deck was the skin + 2 cm (a warped saddle: the plane fitting it slopes 25.2 deg toward forward
-# and out, the glass's front slumped 0.3 m under that plane over the fold). The plane through the canopy's centre is
-# `drop` under the old deck there, its slope `tilt` deg toward level along the same fall line; where the skin stands
-# over it the hull is cut down to it (`canopy_cut`: a well with plated walls and floor), where it falls under it the
-# fairing's skirt runs down to the skin (ship_hull_detail.canopy).
-P_CANOPY = {"x": 2.25, "y": -3.6, "ax": 0.95, "ay": 1.35, "segs": 28, "k": 1.14, "drop": 0.3, "tilt": 10.0}
-P_CANOPY_FIT = (-0.331, 0.335)          # the old deck's least-squares plane round the east canopy: dh/dx, dh/dy
-P_CANOPY_WALL = 0.01                    # the well's wall this far outside the fairing's outline
-if os.environ.get("SHIP_CANOPY_GRID"):   # GRID ONLY (removed after the pick)
-    P_CANOPY["drop"], P_CANOPY["tilt"] = map(float, os.environ["SHIP_CANOPY_GRID"].split(","))
 P_PODS = [(3.0, 2.0, 1.42, 2.0), (0.0, 2.55, 1.62, 2.3)]   # (x, h, r, out past the stern face): 2.84 / 3.24 across
 P_POD_IN = 1.6                          # a pod's full barrel starts this far forward of the stern face
 P_LENS_N = 48
@@ -1104,61 +1092,7 @@ def p_openings():
     planes.append((H, 9.0))
     east.append((planes, tuple(range(P_OCULUS_N)), "roof"))
     out = [(tuple(p), e, w) for p, e, w in east] + [(tuple(_mirror_planes(p)), e, w) for p, e, w in east]
-    for side in (1.0, -1.0):   # canopy fix: the cockpit canopies' wells
-        planes, emit = canopy_cut(side)
-        out.append((tuple(planes), emit, "canopy"))
     return tuple(out)
-
-
-def canopy_outline(side, k=None):
-    """The canopy's outline in plan (the fairing's edge at k = P_CANOPY k; the glass's ellipse at k 1, no tail): a
-    convex egg, its tail aft (+y), counter-clockwise for the east side."""
-    c = P_CANOPY
-    k = c["k"] if k is None else k
-    cx, cy = side * c["x"], c["y"]
-    out = []
-    for j in range(c["segs"]):
-        t = 2 * math.pi * (j + 0.5) / c["segs"]
-        s = math.sin(t)
-        tail = max(0.0, s) ** 2 if k != 1.0 else 0.0
-        out.append((cx + c["ax"] * k * math.cos(t) * (1 - 0.35 * tail), cy + c["ay"] * k * s * (1 + 0.35 * tail)))
-    return out
-
-
-def canopy_plane(side):
-    """(h0, gx, gy): the canopy's deck plane h = h0 + gx (x - cx) + gy (y - cy) (see P_CANOPY)."""
-    c = P_CANOPY
-    gx, gy = side * P_CANOPY_FIT[0], P_CANOPY_FIT[1]
-    s0 = math.atan(math.hypot(gx, gy))
-    f = math.tan(max(0.0, s0 - math.radians(c["tilt"]))) / math.tan(s0)
-    cx, cy = side * c["x"], c["y"]
-    return heights(cx, cy)[0] + 0.02 - c["drop"], f * gx, f * gy
-
-
-def canopy_deck(side, x, y):
-    """The canopy's deck plane's height at plan (x, y)."""
-    h0, gx, gy = canopy_plane(side)
-    return h0 + gx * (x - side * P_CANOPY["x"]) + gy * (y - P_CANOPY["y"])
-
-
-def canopy_cut(side):
-    """The canopy's well: a prism P_CANOPY_WALL outside the fairing's outline, from the deck plane up (planes,
-    emitted indices: its sides and its floor, both plated like the hull)."""
-    pts = canopy_outline(side)
-    if side < 0:
-        pts = pts[::-1]
-    planes = []
-    for a, b in zip(pts, pts[1:] + pts[:1]):
-        ex, ey = b[0] - a[0], b[1] - a[1]
-        ln = math.hypot(ex, ey)
-        nx, ny = ey / ln, -ex / ln               # outward for a counter-clockwise outline
-        planes.append(((nx, ny, 0.0), nx * a[0] + ny * a[1] + P_CANOPY_WALL))
-    h0, gx, gy = canopy_plane(side)
-    ln = math.sqrt(1 + gx * gx + gy * gy)
-    cx, cy = side * P_CANOPY["x"], P_CANOPY["y"]
-    planes.append(((gx / ln, gy / ln, -1 / ln), (gx * cx + gy * cy - h0) / ln))
-    planes.append((H, 9.0))
-    return planes, tuple(range(len(pts) + 1))
 
 
 def _meets(poly, planes, e=1e-6):
