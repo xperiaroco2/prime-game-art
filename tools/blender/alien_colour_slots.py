@@ -1,14 +1,18 @@
 """The alien pilot's static heads (art #196, 2026-10-23): the player's colour slots in the real material, the proof.
 Plain Python, outside Blender (the maths: alien_colour_geom.py; the material: godot/alien/alien_static.gdshader and
 alien_static.gd's set_colours):
-- `masks`: each head's accent mask in headless Blender (alien_tint_mask.py: R lips, G details, B the pale front,
-  A 1 - the whole gills; the axolotl's smile tail grown into the lips) into `<out>/maps/`;
+- `masks`: each head's accent mask in headless Blender (alien_tint_mask.py: R lips, G details, B the pale front;
+  v3: the whole gills in their own `<head>_gill.png`; the axolotl's smile tail grown into the lips) into
+  `<out>/maps/`;
 - `sheets`: a job for godot/alien/tint_study.gd on the real shader (its heads' `"static": true`), rendered in an
   off-screen window under the study's studio and dusk lights: the eight presets (the study's E), free picks with
   deliberately bad colours (the guard rails), details off and on, the axolotl's gills as a root-to-tip gradient or whole,
-  the lips' corners close up (both corners at front, 3/4 and side, 4x), and the identity check (set_colours({}) against the
-  merged shader, origin/main's alien_static.gdshader, a pixel diff into `identity.json`); every cell's uniforms as
-  Godot set them into `uniforms.json`, compared here with alien_colour_geom.slot_colours;
+  the lips' corners close up (both corners at front, 3/4 and side, 4x), and the identity check (set_colours({})
+  against the merged shader, origin/main's alien_static.gdshader); v3: the import path (the masks imported by Godot
+  with the settings in docs/godot.md, IMPORT_SETTINGS, and with Godot's defaults, against Image.load_from_file);
+  the pixel diffs into `diffs.json`; the study's E sheets beside v2's presets (`E_compare.jpg`) and the per-cell
+  drift E -> v2 -> v3 (`drift.json`); every cell's uniforms as Godot set them into `uniforms.json`, compared here
+  with alien_colour_geom.slot_colours (within 1e-5: float32 against float64);
 - `web`: the three.js page: the GLBs, masks and bases beside tools/web/alien_colour/{colour.js,index.html} in
   `<out>/web/`.
 One run can pass 180 s: in the background, its log in a file.
@@ -35,10 +39,22 @@ import alien_static_review as R  # noqa: E402
 import alien_tint_study as T  # noqa: E402  (the study's lights, framings and head entries)
 
 BUILD = R.NEW  # static_v5
-OUT = R.DESIGN / "pilot3d" / "colour_slots" / "v2"  # v2 (CS2): the lips grown, whole gills, OKLCh rails
+OUT = R.DESIGN / "pilot3d" / "colour_slots" / "v3"  # v3 (CS3): the gills out of alpha, the tail into the cheek
 HEADS = T.HEADS
 WEB = ROOT / "tools" / "web" / "alien_colour"
 MERGED_SHADER_REF = "1aa19cd"  # origin/main when the slots began: the merged alien_static.gdshader
+STUDY = R.DESIGN / "pilot3d" / "colour"  # the skin colour study (E: its preset sheets, linear HSV, raw picks)
+V2 = R.DESIGN / "pilot3d" / "colour_slots" / "v2"
+UNIFORM_TOL = 1e-5  # Godot's float32 uniforms against Python's float64 (measured 1.3e-7 in v2)
+# The colour slots' masks are data: a Godot import keeps them lossless, linear and whole with these settings (each
+# mask's `.import` [params]; docs/godot.md); IMPORT_DIR (ignored by git) holds the proof's imported copies.
+IMPORT_SETTINGS = {"compress/mode": 0, "compress/high_quality": False, "compress/lossy_quality": 0.7,
+                   "compress/hdr_compression": 1, "compress/normal_map": 0, "compress/channel_pack": 0,
+                   "mipmaps/generate": True, "mipmaps/limit": -1, "roughness/mode": 0, "process/fix_alpha_border": False,
+                   "process/premult_alpha": False, "process/normal_map_invert_y": False, "process/hdr_as_srgb": False,
+                   "process/hdr_clamp_exposure": False, "process/size_limit": 0, "detect_3d/compress_to": 0}
+IMPORT_DIR = _godot.PROJECT / "import" / "colour_slots"
+IMPORT_MAPS = ("mask", "accent", "gill")
 # free picks: the player's own colours, the bad ones on purpose (the rails must hold)
 FREE = [("neon green, hot pink lips, yellow details", {"skin": "#39ff14", "lips": "#ff1493", "detail": "#ffff00"}),
         ("hot pink skin", {"skin": "#ff1493"}),
@@ -103,9 +119,13 @@ def job(build: Path, out: Path) -> dict:
     for h in HEADS:
         e = R.head_entry(build, h, f"slots_{h}")
         e["params"] = R.column("F", R.picks(build))  # the static_v5 pick of the alive levers
-        e.update(static=True, accent=str(out / "maps" / f"{h}_accent.png"), bases=bases(build, out / "maps", h))
+        e.update(static=True, accent=str(out / "maps" / f"{h}_accent.png"), gill=str(out / "maps" / f"{h}_gill.png"),
+                 bases=bases(build, out / "maps", h))
         j["heads"][h] = e
-        j["heads"][f"{h}_merged"] = {**e, "static": False, "accent": "", "shader_code": str(ref)}
+        j["heads"][f"{h}_merged"] = {**e, "static": False, "accent": "", "gill": "", "shader_code": str(ref)}
+        for kind in ("set", "default"):  # v3: the masks as a Godot import gives them (the settings, the defaults)
+            j["heads"][f"{h}_import_{kind}"] = {**e, **{m: f"res://import/colour_slots/{kind}/{h}_{m}.png"
+                                                        for m in IMPORT_MAPS}}
 
     def cell(head, picks, light, shot, text):
         return {"head": head, "colours": picks, "light": light, "shot": shot, "label": text}
@@ -117,12 +137,12 @@ def job(build: Path, out: Path) -> dict:
             rows = [[cell(h, presets[i][1], light, shot, f"E{i + 1} {presets[i][0]}\n{h} {view}") for i in idx]
                     for h in HEADS for view, shot in T.shots(h).items()]
             j["sheets"].append({"file": str(out / light / f"presets_{part}.jpg"), "cell": [320, 320], "width": 1280,
-                                "title": title(f"Presets E{idx[0] + 1}-E{idx[-1] + 1} on the real material (v2)", lt,
+                                "title": title(f"Presets E{idx[0] + 1}-E{idx[-1] + 1} on the real material (v3)", lt,
                                                "rows: axolotl front, 3/4, chameleon front, 3/4"), "rows": rows})
         rows = [[cell(h, p, light, shot, f"{k + 1} {name}\n{h} {view}") for k, (name, p) in enumerate(FREE)]
                 for h in HEADS for view, shot in T.shots(h).items()]
         j["sheets"].append({"file": str(out / light / "free.jpg"), "cell": [256, 256], "width": 1280,
-                            "title": title("Free picks, bad on purpose (the OKLCh rails, v2); the picks in the cells", lt),
+                            "title": title("Free picks, bad on purpose (the OKLCh rails, v3); the picks in the cells", lt),
                             "rows": rows})
         rows = []
         for h in HEADS:
@@ -155,7 +175,7 @@ def job(build: Path, out: Path) -> dict:
             for side in ("L", "R"):
                 rows.append([cell(head, presets[i][1], "studio", shot, f"E{i + 1} {head}\n{name}")
                              for name, shot in corners(head).items() if name.startswith(side)])
-        stem = "lips_v2" if head == "axolotl" else f"lips_v2_{head}"
+        stem = "lips_v3" if head == "axolotl" else f"lips_v3_{head}"
         j["sheets"].append({"file": str(out / f"{stem}.jpg"), "cell": [426, 426], "width": 1280,
                             "title": title(f"The {head}'s lip corners, 4x: L (+x) and R (-x) at front, 3/4, side",
                                            "rows: E2, E5, E7, each L then R; studio"), "rows": rows})
@@ -175,8 +195,55 @@ def job(build: Path, out: Path) -> dict:
     j["sheets"].append({"file": str(out / "identity.jpg"), "cell": [320, 320], "width": 1280,
                         "title": title("Identity: per pair the merged shader (left) and the slots material with "
                                        "no picks (right), studio; pixel diff in identity.json"), "rows": rows})
-    j["diff_out"] = str(out / "identity.json")
+    # v3: the import path: the masks imported by Godot (the shipped settings; Godot's defaults) against
+    # Image.load_from_file, E5 cobalt with the whole gills (every mask channel in play), studio
+    rows = []
+    for h in HEADS:
+        row = []
+        for view, shot in T.shots(h).items():
+            # the same label on all three (drawn in the window, so in the grab): the title gives the column order
+            for key, name in ((h, "file"), (f"{h}_import_set", "import"), (f"{h}_import_default", "default")):
+                tag = f"import_{h}_{view.replace('/', '')}_{name}"
+                row.append({**cell(key, {**presets[4][1], "gills": "whole"}, "studio", shot,
+                                   f"E5 whole gills\n{h} {view}"), "save": str(out / "identity" / f"{tag}.png")})
+            for name in ("import", "default"):
+                j["diffs"].append([str(out / "identity" / f"import_{h}_{view.replace('/', '')}_file.png"),
+                                   str(out / "identity" / f"import_{h}_{view.replace('/', '')}_{name}.png")])
+        rows.append(row)
+    j["sheets"].append({"file": str(out / "import.jpg"), "cell": [213, 213], "width": 1280,
+                        "title": title("Import path: masks from Image.load_from_file, a Godot import with the "
+                                       "shipped settings, Godot's defaults (E5, whole gills); diffs.json"),
+                        "rows": rows})
+    j["diff_out"] = str(out / "diffs.json")
+    # v3: the study's E sheets (linear HSV, raw picks) beside v2's presets, and the drift per cell
+    j["stacks"] = [{"file": str(out / "E_compare.jpg"), "width": 1280,
+                    "rows": [[str(STUDY / "studio" / f"E{p}.jpg"), str(V2 / "studio" / f"presets_{p}.jpg")]
+                             for p in ("a", "b")]}]
+    j["drifts"] = [{"a": str(a / "studio" / f"{sa}{p}.jpg"), "b": str(b / "studio" / f"presets_{p}.jpg"),
+                    "top": 168, "cell": [320, 320], "label": 40}
+                   for p in ("a", "b") for a, sa, b in ((STUDY, "E", V2), (V2, "presets_", out), (STUDY, "E", out))]
+    j["drift_out"] = str(out / "drift.json")
     return j
+
+
+def import_maps(build: Path, out: Path) -> None:
+    """The proof's imported masks: per head the skin mask, accent and gill PNGs copied into IMPORT_DIR/set with
+    IMPORT_SETTINGS in their `.import` files and into IMPORT_DIR/default with none (Godot's defaults)."""
+    for kind in ("set", "default"):
+        d = IMPORT_DIR / kind
+        d.mkdir(parents=True, exist_ok=True)
+        for h in HEADS:
+            for m in IMPORT_MAPS:
+                src = build / h / f"{h}_mask.png" if m == "mask" else out / "maps" / f"{h}_{m}.png"
+                shutil.copy2(src, d / f"{h}_{m}.png")
+                imp = d / f"{h}_{m}.png.import"
+                if kind == "set":
+                    params = "\n".join(f"{k}={json.dumps(v)}" if not isinstance(v, bool) else
+                                        f"{k}={'true' if v else 'false'}" for k, v in IMPORT_SETTINGS.items())
+                    imp.write_text(f'[remap]\n\nimporter="texture"\ntype="CompressedTexture2D"\n\n[params]\n\n'
+                                   f"{params}\n", encoding="utf-8", newline="\n")
+                elif imp.exists():
+                    imp.unlink()
 
 
 def check_uniforms(out: Path, j: dict) -> float:
@@ -201,10 +268,12 @@ def sheets(build: Path, out: Path, only: str = "") -> int:
     for d in [*T.LIGHTS, "identity"]:
         (out / d).mkdir(parents=True, exist_ok=True)
     j = job(build, out)
-    if only:  # sheets by stem (e.g. "identity"); the identity diffs only with the identity sheet
-        j["sheets"] = [s for s in j["sheets"] if Path(s["file"]).stem in only.split(",")]
-        if "identity" not in only.split(","):
-            j["diffs"] = []
+    if only:  # sheets by stem (e.g. "identity"); each sheet's diffs only with it (identity, import)
+        stems = only.split(",")
+        j["sheets"] = [s for s in j["sheets"] if Path(s["file"]).stem in stems]
+        j["diffs"] = [d for d in j["diffs"] if ("import" if Path(d[1]).name.startswith("import_") else "identity")
+                      in stems]
+    import_maps(build, out)
     _godot.import_project()
     path = out / "job.json"
     path.write_text(json.dumps(j, indent=1), encoding="utf-8", newline="\n")
@@ -212,8 +281,8 @@ def sheets(build: Path, out: Path, only: str = "") -> int:
                             T.WINDOW, 900, log=out / "godot.log")
     print(f"sheets: exit {code}", flush=True)
     if code == 0 and j["diffs"]:
-        print(f"identity: {(out / 'identity.json').read_text(encoding='utf-8')}", flush=True)
-    if code == 0 and check_uniforms(out, j) > 2e-3:
+        print(f"diffs: {(out / 'diffs.json').read_text(encoding='utf-8')}", flush=True)
+    if code == 0 and check_uniforms(out, j) > UNIFORM_TOL:
         return 5
     return code
 
@@ -225,6 +294,7 @@ def web(build: Path, out: Path) -> None:
     for h in HEADS:
         shutil.copy2(build / h / f"{h}_static.glb", d / f"{h}_static.glb")
         shutil.copy2(out / "maps" / f"{h}_accent.png", d / f"{h}_accent.png")
+        shutil.copy2(out / "maps" / f"{h}_gill.png", d / f"{h}_gill.png")
         shutil.copy2(build / h / f"{h}_mask.png", d / f"{h}_mask.png")
         heads[h] = bases(build, out / "maps", h)
     (d / "heads.json").write_text(json.dumps(heads, indent=1) + "\n", encoding="utf-8", newline="\n")
