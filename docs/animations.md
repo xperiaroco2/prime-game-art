@@ -711,11 +711,27 @@ untouched); `alien_char_build.py --clip-edits` runs it before the export:
 | `finger_cap_deg`, `thumb_cap_deg` | every finger joint's turn from its straight rest capped to the angle, its axis kept (`hands_relax` with `cap`): fists open to a relaxed hand, small gestures stay |
 | `abduct_deg` | each upper arm turned out about the body's forward axis in its rest frame, one angle on every key (`arm_offset`): the hands off a body thinner than the clip's |
 | `swing_deg` | the same about the left-right axis, + the hands forward |
-| `floor` | the Hips lifted on the frames whose skin goes under the floor (`floor` `lift`: running max over +-2 frames, smoothed over +-2) |
+| `head_up_deg` (A2) | Neck and Head turned half each about the left-right axis, + the face up |
+| `lean_deg` (A2) | Spine turned about the left-right axis, + the trunk forward |
+| `cut_straight_deg`, `cut_gap` (A2) | a one-shot's frames after the first on which both knees bend under the angle dropped, the later keys moved so `cut_gap` frames join the two sides (Jump_Start's in-place push-off, which read as a snap to a straight stand between the crouch and the tuck) |
+| `hips_up_cm`, `knees_in_deg` (A2) | the Hips raised and both legs solved again on every frame (`two_bone`: the feet kept in the world, the knee in the plane of the clip's own, turned `knees_in_deg` toward the middle) |
+| `floor` | the Hips lifted on the frames whose skin goes under the floor (`floor` `lift`: running max over +-2 frames, smoothed over +-2; a `*_Loop` clip wraps around its seam, A2); a clip still under -0.5 cm after it fails the build (A2) |
 
 Measured (A1, `<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/a1/`): the finger curl 87 to 22 degrees
 at most; the lowest vertex -1.3 (stand), -8.2 (crouch), -12.7 (jump take-off) to 0.0 cm; the head and the springs
 judged in `after/judgement.md`. The pure maths is tested in `tools/tests/test_alien_clip_edit.py`.
+
+A2 (`anim_bare/a2/`): only the clips listed under `[clips.*]` are edited (`[defaults]` applies to those alone; an
+unlisted clip stays as the body carries it). Per clip hands: Idle and Talk 22 degrees (relaxed), Walk 30, Jog and
+Sprint 50 with the thumb at 30 (loose fists); the run arms out 6 (Walk 8) so the hands stop crossing the groin;
+Sprint leans 4. UAL1 and UAL2 hold no other crouch or sneak, so the crouch loops are edited: the hips up 10 cm with
+the feet kept, the knees in 12, the arms swung forward 12 and in to 2, the face up 10. Jump_Start drops its push-off
+frames (the knees bend 113 degrees crouched, 43-69 at the push-off, 86 and more in the tuck: `cut_straight_deg` 75). and has no floor
+lift (its sink is the in-place tuck; the lift floated its crouch 10 cm). The leg solve replaces the legs' rotation
+channels whole, one linear key per frame: inserting keys beside the clip's own left 3 frames of 4 unsolved (the feet
+rose with the hips). The axolotl's gills on the body: `alien_char_build.py` raises their `zeta` to 0.55 in
+`<head>_char_lively.json` (`GILL_ZETA_ON_BODY`; 0.28 jittered 205-267 deg/s in the jog and sprint); the busts' lively.json
+is untouched.
 
 ## The review
 

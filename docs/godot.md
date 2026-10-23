@@ -1191,6 +1191,21 @@ pilot's static premium heads"):
   - The clip fixes are in the build: `alien_char_run.py --clip-edits tools/blender/anim_sets/alien.toml` passes them
     to `alien_char_build.py`, which runs `alien_clip_edit.py` on the body's actions before the export (the finger
     cap, the upper arms' abduction, the floor lift; docs/animations.md, "The alien's clip edits").
+- **A2: the clips' second round (2026-10-24, art #196; proof `anim_bare/a2/`):**
+  - `alien_clip_run.py ... --split --head60 Jog_Fwd,Sprint_Fwd --yaw-counter 0.55 --darts 3`: each reel frame a 2x2
+    of 640x360 views (three-quarter front, the left side, the back, a close-up of the head and hands following them);
+    a 60 fps head reel per `--head60` clip (`<head>_<clip>_head60.mp4`) to judge the springs' jitter at a game's rate.
+  - `alien_lively.gd` with `on_clip`: the turn goes on the clip's own pose of Neck and Head, remembered, so a clip
+    that stops posing them (a one-shot's end, a pause, a layer without them) no longer piles the turn up step after
+    step; `yaw_counter` (0-1) takes back that share of the clip's own head yaw, so in a run the head points where the
+    body travels (the reels: 0.55 on Walk, Jog, Sprint and the crouch walk); `darts` (degrees) moves the eyes' target
+    to a new nearby point every 0.6-2.4 s, the head not following; the measured motion is low-passed by
+    `1 - exp(-dt / MOTION_TAU)` (0.1 s) and the acceleration taken from velocities, the head's in the skeleton's
+    space plus the change of the skeleton's own low-passed world velocity, so an uneven frame time (60 Hz physics
+    under a 144 fps render) does not spike the springs. Call `reset_motion()` after a teleport or respawn,
+    `reset_springs()` to start the springs still (the reels do both per clip).
+  - No blinks: the static heads' lids are sculpted, no lid bone or shader closes them (emotions and face rigs stay
+    parked).
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
