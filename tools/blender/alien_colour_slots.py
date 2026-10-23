@@ -2,11 +2,11 @@
 Plain Python, outside Blender (the maths: alien_colour_geom.py; the material: godot/alien/alien_static.gdshader and
 alien_static.gd's set_colours):
 - `masks`: each head's accent mask in headless Blender (alien_tint_mask.py: R lips, G details, B the pale front,
-  A 1 - the gills; the axolotl's smile tail now in the lips) into `<out>/maps/`;
+  A 1 - the whole gills; the axolotl's smile tail grown into the lips) into `<out>/maps/`;
 - `sheets`: a job for godot/alien/tint_study.gd on the real shader (its heads' `"static": true`), rendered in an
   off-screen window under the study's studio and dusk lights: the eight presets (the study's E), free picks with
-  deliberately bad colours (the guard rails), details off and on, the axolotl's gills on the details or the skin,
-  the lips' corners close up (the old mask beside the new), and the identity check (set_colours({}) against the
+  deliberately bad colours (the guard rails), details off and on, the axolotl's gills as a root-to-tip gradient or whole,
+  the lips' corners close up (both corners at front, 3/4 and side, 4x), and the identity check (set_colours({}) against the
   merged shader, origin/main's alien_static.gdshader, a pixel diff into `identity.json`); every cell's uniforms as
   Godot set them into `uniforms.json`, compared here with alien_colour_geom.slot_colours;
 - `web`: the three.js page: the GLBs, masks and bases beside tools/web/alien_colour/{colour.js,index.html} in
@@ -22,6 +22,7 @@ import json
 import shutil
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -34,8 +35,7 @@ import alien_static_review as R  # noqa: E402
 import alien_tint_study as T  # noqa: E402  (the study's lights, framings and head entries)
 
 BUILD = R.NEW  # static_v5
-OUT = R.DESIGN / "pilot3d" / "colour_slots"
-OLD_MAPS = R.DESIGN / "pilot3d" / "colour" / "maps"  # the merged study's masks (#301), for the lips' before
+OUT = R.DESIGN / "pilot3d" / "colour_slots" / "v2"  # v2 (CS2): the lips grown, whole gills, OKLCh rails
 HEADS = T.HEADS
 WEB = ROOT / "tools" / "web" / "alien_colour"
 MERGED_SHADER_REF = "1aa19cd"  # origin/main when the slots began: the merged alien_static.gdshader
@@ -65,6 +65,30 @@ def masks(build: Path, out: Path) -> None:
         print(f"mask {h}: {(out / 'maps' / f'{h}_accent.json').read_text(encoding='utf-8')}", flush=True)
 
 
+def title(*parts: str) -> str:
+    """A sheet title the window shows whole: each part wrapped at TITLE_CHARS, at most three lines (the strip)."""
+    lines = [ln for part in parts for ln in textwrap.wrap(part, TITLE_CHARS)]
+    if len(lines) > 3:
+        raise ValueError(f"title over three lines: {lines}")
+    return "\n".join(lines)
+
+
+TITLE_CHARS = 64  # tint_study.gd's title strip: 28 px type in the 1000 px window, three lines in 132 px
+
+
+def corners(head: str) -> dict:
+    """The lips' corners close up (4x the sheets' face framing): per corner (L: +x, R: -x) front, 3/4, side."""
+    ref = json.loads((R.STEP2A / head / "v2" / "build.json").read_text(encoding="utf-8"))
+    cx, cy, cz = ref["lip_line"]["line"][-1]  # (x, up, front), the slit's end; the corner a little past it
+    w = T.shots(head)["front"]["width"] / 4.0
+    out = {}
+    for sx, side in ((1.0, "L"), (-1.0, "R")):
+        t = [sx * (cx + 0.15 * w), cy + 0.05 * w, cz - 0.1 * w]
+        for view, yaw in (("front", 0.0), ("3/4", 38.0), ("side", 80.0)):
+            out[f"{side} {view}"] = {"target": t, "width": w, "yaw": sx * yaw, "pitch": 3.0}
+    return out
+
+
 def label(picks: dict) -> str:
     return " ".join(f"{k[0]}{v}" if isinstance(v, str) else f"{k}={'on' if v else 'off'}" for k, v in picks.items())
 
@@ -82,8 +106,6 @@ def job(build: Path, out: Path) -> dict:
         e.update(static=True, accent=str(out / "maps" / f"{h}_accent.png"), bases=bases(build, out / "maps", h))
         j["heads"][h] = e
         j["heads"][f"{h}_merged"] = {**e, "static": False, "accent": "", "shader_code": str(ref)}
-    old = {**j["heads"]["axolotl"], "accent": str(OLD_MAPS / "axolotl_accent.png")}
-    j["heads"]["axolotl_oldmask"] = old
 
     def cell(head, picks, light, shot, text):
         return {"head": head, "colours": picks, "light": light, "shot": shot, "label": text}
@@ -95,13 +117,12 @@ def job(build: Path, out: Path) -> dict:
             rows = [[cell(h, presets[i][1], light, shot, f"E{i + 1} {presets[i][0]}\n{h} {view}") for i in idx]
                     for h in HEADS for view, shot in T.shots(h).items()]
             j["sheets"].append({"file": str(out / light / f"presets_{part}.jpg"), "cell": [320, 320], "width": 1280,
-                                "title": f"Presets E{idx[0] + 1}-E{idx[-1] + 1} (the study's E) on the real material"
-                                         f"\n{lt}\nrows: axolotl front, 3/4, chameleon front, 3/4", "rows": rows})
+                                "title": title(f"Presets E{idx[0] + 1}-E{idx[-1] + 1} on the real material (v2)", lt,
+                                               "rows: axolotl front, 3/4, chameleon front, 3/4"), "rows": rows})
         rows = [[cell(h, p, light, shot, f"{k + 1} {name}\n{h} {view}") for k, (name, p) in enumerate(FREE)]
                 for h in HEADS for view, shot in T.shots(h).items()]
         j["sheets"].append({"file": str(out / light / "free.jpg"), "cell": [256, 256], "width": 1280,
-                            "title": "Free picks, bad on purpose (the guard rails hold): " + "; ".join(
-                                f"{k + 1} {label(p)}" for k, (_, p) in enumerate(FREE)) + f"\n{lt}",
+                            "title": title("Free picks, bad on purpose (the OKLCh rails, v2); the picks in the cells", lt),
                             "rows": rows})
         rows = []
         for h in HEADS:
@@ -112,32 +133,32 @@ def job(build: Path, out: Path) -> dict:
                                     f"E{i + 1} details {'on' if on else 'off'}\n{h} 3/4"))
             rows.append(row)
         j["sheets"].append({"file": str(out / light / "details.jpg"), "cell": [256, 256], "width": 1280,
-                            "title": f"Details off (they follow the skin) vs on (their own colour): E2, E5, E7\n{lt}",
+                            "title": title("Details off (they follow the skin) vs on (their own colour): E2, E5, E7",
+                                           lt),
                             "rows": rows})
         rows = []
         for i in (1, 3, 4, 6):
             row = []
-            for gd in (True, False):
+            for mode in ("gradient", "whole"):
                 for view, shot in T.shots("axolotl").items():
-                    row.append(cell("axolotl", {**presets[i][1], "gills_detail": gd}, light, shot,
-                                    f"E{i + 1} gills on {'details' if gd else 'skin'}\n{view}"))
+                    row.append(cell("axolotl", {**presets[i][1], "gills": mode}, light, shot,
+                                    f"E{i + 1} gills {mode}\n{view}"))
             rows.append(row)
         j["sheets"].append({"file": str(out / light / "gills.jpg"), "cell": [320, 320], "width": 1280,
-                            "title": f"The axolotl's gills: on the details slot (left pair, the default) or on the "
-                                     f"skin (right pair)\n{lt}\nrows: E2, E4, E5, E7", "rows": rows})
-    # the lips' corners close up: a strong lip colour on the build's skin; the axolotl's old mask (#301) first
-    rows = []
-    lip = {"lips": "#a2575a"}
-    for light in T.LIGHTS:
-        for head, name in (("axolotl_oldmask", "axolotl, #301 mask"), ("axolotl", "axolotl, new mask"),
-                           ("chameleon", "chameleon")):
-            h = head.split("_")[0]
-            rows.append([cell(head, lip, light, shot, f"{name} {view}\n{light}") for view, shot in T.close(h).items()]
-                        + [cell(head, presets[1][1], light, T.close(h)["3/4"], f"{name} E2 3/4\n{light}")])
-    j["sheets"].append({"file": str(out / "lips.jpg"), "cell": [420, 420], "width": 1280,
-                        "title": "The lips to the smile line's end: lips #a2575a on the build's skin (3/4, side), "
-                                 "E2 coral reef\nrows: axolotl #301 mask, axolotl new, chameleon; studio then dusk",
-                        "rows": rows})
+                            "title": title("Gills: gradient (left pair, default), whole (right pair)",
+                                           "rows E2, E4, E5, E7", lt),
+                            "rows": rows})
+    # the lips' corners close up (v2): both corners at front, 3/4 and side, 4x, three presets, studio
+    for head in HEADS:
+        rows = []
+        for i in (1, 4, 6):
+            for side in ("L", "R"):
+                rows.append([cell(head, presets[i][1], "studio", shot, f"E{i + 1} {head}\n{name}")
+                             for name, shot in corners(head).items() if name.startswith(side)])
+        stem = "lips_v2" if head == "axolotl" else f"lips_v2_{head}"
+        j["sheets"].append({"file": str(out / f"{stem}.jpg"), "cell": [426, 426], "width": 1280,
+                            "title": title(f"The {head}'s lip corners, 4x: L (+x) and R (-x) at front, 3/4, side",
+                                           "rows: E2, E5, E7, each L then R; studio"), "rows": rows})
     # the identity: set_colours({}) on the new material against the merged shader, the same levers and light
     rows = []
     for h in HEADS:
@@ -152,8 +173,8 @@ def job(build: Path, out: Path) -> dict:
                                str(out / "identity" / f"{h}_{view.replace('/', '')}_slots.png")])
         rows.append(row)
     j["sheets"].append({"file": str(out / "identity.jpg"), "cell": [320, 320], "width": 1280,
-                        "title": "Identity: per pair the merged shader (left) and the slots material with no "
-                                 "picks (right), studio\npixel diff in identity.json", "rows": rows})
+                        "title": title("Identity: per pair the merged shader (left) and the slots material with "
+                                       "no picks (right), studio; pixel diff in identity.json"), "rows": rows})
     j["diff_out"] = str(out / "identity.json")
     return j
 
