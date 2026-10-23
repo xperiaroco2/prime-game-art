@@ -14,6 +14,7 @@ moves; pieces in the plan frame are placed at the origin. Numbers (plan metres):
 from __future__ import annotations
 
 import math
+import os
 
 import ship_hull as H
 import ship_hull_shape as S
@@ -52,12 +53,86 @@ def _bar(path, w, t, lift=0.0, up=(0.0, 0.0, 1.0)):
 CANOPY = {"x": 2.25, "y": -3.6, "ax": 0.95, "ay": 1.35, "height": 0.85, "segs": 28, "rings": 5}   # J's; details 1:
 #   0.85 high (was 0.75), room over a pilot's seat
 
+# canopy step 2 (art #263, walk 2 item 3, "lower the saddle and give it a normal tilt so it reads from the ground"):
+# the canopy's shape as switchable variants for the engineer's pick, grid <raw>/ship/v4/canopy/grid2/. "main" is the
+# canopy as it was (its deck the skin, its dome standing straight up over it). The others: dy (m, - forward), scale
+# (the glass in plan, x CANOPY's), height (the dome, x CANOPY's); with pitch, the rim on a plane instead of the skin:
+# pitch (deg the rim rises aft; "fit": the skin's slope along y at the centre), roll (deg it falls outboard; "fit":
+# the skin's slope across), the plane
+# lifted until its lowest point (rim or floor) sits on the skin + 2 cm, the dome on the plane's normal, a cowl from its rim down
+# to the skin (its width COWL). CANOPY_VARIANT picks one (the default: main); the environment's SHIP_CANOPY_VARIANT
+# overrides it for a grid's build only.
+CANOPY_VARIANTS = {
+    "main": {},
+    "A": {"dy": -0.7, "pitch": "fit", "roll": 0.0},
+    "B": {"pitch": 40.0, "roll": 0.0, "height": 1.25},
+    "C": {"dy": -0.7, "pitch": 40.0, "roll": 0.0, "height": 1.25},
+    "D": {"scale": 1.25},
+    "E": {"dy": -0.7, "pitch": 40.0, "roll": "fit", "height": 1.25},   # C on the skin's sideways slope
+}
+CANOPY_VARIANT = "main"
+COWL = (0.12, 0.9)   # the plane variants' cowl: its width at the skin, + this x the rim's height over the skin
+
+
+def canopy_variant() -> dict:
+    return CANOPY_VARIANTS[os.environ.get("SHIP_CANOPY_VARIANT") or CANOPY_VARIANT]
+
+
+def canopy_cfg() -> dict:
+    """CANOPY as the chosen variant moves and sizes it."""
+    v = canopy_variant()
+    c = dict(CANOPY)
+    c["y"] += v.get("dy", 0.0)
+    c["ax"] *= v.get("scale", 1.0)
+    c["ay"] *= v.get("scale", 1.0)
+    c["height"] *= v.get("height", 1.0)
+    return c
+
+
+def canopy_plane(side):
+    """A plane variant's rim plane: (centre (x, y, z), u (across), w (along, aft and up), n (its normal)), or None
+    for a canopy on the skin."""
+    v = canopy_variant()
+    if "pitch" not in v:
+        return None
+    c = canopy_cfg()
+    cx, cy = side * c["x"], c["y"]
+    p = v["pitch"]
+    gy = skin_h(cx, cy + 0.5) - skin_h(cx, cy - 0.5) if p == "fit" else math.tan(math.radians(p))
+    r = v.get("roll", 0.0)
+    gx = (skin_h(cx + 0.5, cy) - skin_h(cx - 0.5, cy) if r == "fit"
+          else -side * math.tan(math.radians(r)))
+    n = H._norm((-gx, -gy, 1.0))
+    u = H._norm(H._cross((0.0, 1.0, gy), n))
+    w = H._cross(n, u)
+    low = []
+    for k in range(c["segs"]):
+        t = 2 * math.pi * (k + 0.5) / c["segs"]
+        for r in (0.0, 0.35, 0.6, 0.85, 1.0, 1.06, 1.10):   # the rim and the floor inside it (the skin is convex)
+            o = H._add(H._add((0.0, 0.0, 0.0), u, r * c["ax"] * math.cos(t)), w, r * c["ay"] * math.sin(t))
+            h = skin_h(cx + o[0], cy + o[1])
+            if h is not None:
+                low.append(h + 0.02 - o[2])
+    return (cx, cy, max(low)), u, w, n
+
 
 def _canopy_frame(side):
-    """The canopy's outlines and its deck: the skin itself (hull 3-2: flush in the forward hull, no raised pod)."""
-    c = CANOPY
+    """The canopy's outlines and its deck: the skin itself (hull 3-2: flush in the forward hull, no raised pod), or
+    a plane variant's rim plane (glass: the plan points of its ellipse in the plane)."""
+    c = canopy_cfg()
     cx, cy = side * c["x"], c["y"]
     ts = [2 * math.pi * (k + 0.5) / c["segs"] for k in range(c["segs"])]
+    pl = canopy_plane(side)
+    if pl is not None:
+        (_x, _y, zc), u, w, n = pl
+
+        def pdeck(x, y):
+            return zc - (n[0] * (x - cx) + n[1] * (y - cy)) / n[2]
+
+        def poutline(t, k=1.14):
+            return (cx + k * (u[0] * c["ax"] * math.cos(t) + w[0] * c["ay"] * math.sin(t)),
+                    cy + k * (u[1] * c["ax"] * math.cos(t) + w[1] * c["ay"] * math.sin(t)))
+        return ts, [poutline(t) for t in ts], [poutline(t, 1.0) for t in ts], pdeck, poutline
 
     def outline(t, k=1.14):
         s = math.sin(t)
@@ -79,10 +154,13 @@ def canopy(args: dict, layout: dict) -> list:
     with two grips and three cyan screens, a warm floor and a warm glow round the glass's foot (cockpit())."""
     side = float(args.get("side", 1.0))
     part = args.get("part", "glass")
-    c = CANOPY
+    c = canopy_cfg()
     ts, rim, glass, deck, outline = _canopy_frame(side)
     n = len(ts)
     cx, cy = side * c["x"], c["y"]
+    pl = canopy_plane(side)
+    if pl is not None and part in ("glass", "fairing"):
+        return _plane_canopy(part, c, pl, ts, glass, deck)
     if part == "glass":
         v, rings = [], c["rings"]
         for i in range(rings):
@@ -131,10 +209,91 @@ def canopy(args: dict, layout: dict) -> list:
     return cockpit(side)
 
 
+def _dome(pl, c, t, phi, lift, height):
+    """A plane variant's dome point: the rim's ellipse at angle t shrunk by cos(phi), height x sin(phi) on the normal."""
+    (cx, cy, zc), u, w, n = pl
+    p = (cx, cy, zc + lift)
+    p = H._add(p, u, c["ax"] * math.cos(t) * math.cos(phi))
+    p = H._add(p, w, c["ay"] * math.sin(t) * math.cos(phi))
+    return H._add(p, n, height * math.sin(phi))
+
+
+def _plane_canopy(part, c, pl, ts, glass, deck):
+    """A plane variant's glass and ribs, or its fairing: the deck ring on the rim plane, the cowl down to the skin."""
+    n_ = len(ts)
+    (cx, cy, _zc), _u, _w, nrm = pl
+    if part == "glass":
+        rings = c["rings"]
+        v = [_dome(pl, c, t, math.pi / 2 * i / rings, 0.04, c["height"]) for i in range(rings) for t in ts]
+        v.append(_dome(pl, c, 0.0, math.pi / 2, 0.04, c["height"]))
+        f = [(i * n_ + j, i * n_ + (j + 1) % n_, (i + 1) * n_ + (j + 1) % n_, (i + 1) * n_ + j)
+             for i in range(rings - 1) for j in range(n_)]
+        f += [((rings - 1) * n_ + j, (rings - 1) * n_ + (j + 1) % n_, len(v) - 1) for j in range(n_)]
+        f = L.orient(v, f, lambda _q: H._add(_dome(pl, c, 0.0, 0.0, 0.04, 0.0), nrm, -0.5))
+        ribs = [_bar([_dome(pl, c, t0, math.pi / 2 * i / rings, 0.06, c["height"] + 0.01) for i in range(rings + 1)],
+                     0.07, 0.05, up=nrm) for t0 in (math.pi / 2, -math.pi / 2, 0.0, math.pi)]
+        return [_smooth(L.part("canopy_glass", v, f, "glass_canopy", solid=False)),
+                L.part("canopy_ribs", *L.merge(*ribs), "ext_frame")]
+    # the deck ring from the glass to 1.10 x it on the rim plane, then the cowl: an S-curve down to the skin, its
+    # width COWL[0] + COWL[1] x the rim's height over the skin there, radial in plan from the canopy's centre
+    rings = [[(x, y, deck(x, y) + 0.06) for x, y in glass]]
+    top = [(cx + (x - cx) * 1.10, cy + (y - cy) * 1.10) for x, y in glass]
+    rings.append([(x, y, deck(x, y) + 0.05) for x, y in top])
+    steps = (0.2, 0.4, 0.6, 0.8, 1.0)
+    cowl = [[] for _s in steps]
+    foot = []
+    for x, y in top:
+        zt = deck(x, y) + 0.05
+        st = skin_h(x, y)
+        d = max(0.0, zt - st) if st is not None else 0.0
+        r = math.hypot(x - cx, y - cy)
+        dx, dy = (x - cx) / r, (y - cy) / r
+        off = COWL[0] + COWL[1] * d
+        fx, fy = x + dx * off, y + dy * off
+        zf = (skin_h(fx, fy) or zt) + 0.03
+        for k, s in enumerate(steps):
+            px, py = x + dx * off * s, y + dy * off * s
+            z = zf + (zt - zf) * (1 + math.cos(math.pi * s)) / 2
+            sk = skin_h(px, py)
+            cowl[k].append((px, py, max(z, sk + 0.03) if sk is not None else z))
+        foot.append((fx, fy, (skin_h(fx, fy) or zt) - 0.01))
+    rings += cowl + [foot]
+    v = [q for r_ in rings for q in r_]
+    f = [(i * n_ + j, i * n_ + (j + 1) % n_, (i + 1) * n_ + (j + 1) % n_, (i + 1) * n_ + j)
+         for i in range(len(rings) - 1) for j in range(n_)]
+    f = (L.orient(v, f[:n_], lambda q: H._add(q, nrm, -1.0))
+         + L.orient(v, f[n_:], lambda q: (cx, cy, q[2] - 0.5)))
+    lip = []
+    for j in range(n_):
+        x, y = glass[j]
+        ox, oy = cx + (x - cx) * 1.06, cy + (y - cy) * 1.06
+        lip.append([(x, y, deck(x, y) - 0.02), (ox, oy, deck(ox, oy) - 0.02), (ox, oy, deck(ox, oy) + 0.09),
+                    (x, y, deck(x, y) + 0.07)])
+    lv = [q for s_ in lip for q in s_]
+    lf = [(j * 4 + k, j * 4 + (k + 1) % 4, ((j + 1) % n_) * 4 + (k + 1) % 4, ((j + 1) % n_) * 4 + k)
+          for j in range(n_) for k in range(4)]
+    return [_smooth(L.part("canopy_fairing", v, f, "ext_silver_b", solid=False)),
+            L.part("canopy_lip", lv, lf, "ext_frame")]
+
+
 def glass_h(side: float, x: float, y: float) -> float:
     """The canopy glass's inner height over plan (x, y) (its ellipse's dome over the deck; the deck where outside)."""
-    c = CANOPY
+    c = canopy_cfg()
     _ts, _rim, _glass, deck, _o = _canopy_frame(side)
+    pl = canopy_plane(side)
+    if pl is not None:   # the vertical line through (x, y) against the tilted half ellipsoid
+        (cx, cy, zc), u, w, n = pl
+        e = (cx, cy, zc + 0.04)
+        axes = ((u, c["ax"]), (w, c["ay"]), (n, c["height"]))
+        d0 = (x - e[0], y - e[1], -e[2])
+        qa = sum((a[2] / s) ** 2 for a, s in axes)
+        qb = sum(2 * H._dot(d0, a) * a[2] / s ** 2 for a, s in axes)
+        qc = sum((H._dot(d0, a) / s) ** 2 for a, s in axes) - 1.0
+        disc = qb * qb - 4 * qa * qc
+        if disc < 0:
+            return deck(x, y) + 0.04
+        z = (-qb + math.sqrt(disc)) / (2 * qa)
+        return z if H._dot((d0[0], d0[1], z - e[2]), n) >= 0 else deck(x, y) + 0.04
     q = math.hypot((x - side * c["x"]) / c["ax"], (y - c["y"]) / c["ay"])
     return deck(x, y) + 0.04 + c["height"] * math.sqrt(max(0.0, 1.0 - q * q))
 
@@ -158,7 +317,7 @@ def cockpit(side: float) -> list:
     sloped face, two grips and three cyan screens (ext_screen, bright enough to read through the glass at night).
     Sized for a person: the pan 0.5 m wide, the back and headrest 0.61 m long reclined SEAT 25 deg (the glass is
     0.85 m high); every vertex stays under the glass (test_ship_hull_detail)."""
-    c = CANOPY
+    c = canopy_cfg()
     ts, rim, glass, deck, outline = _canopy_frame(side)
     n = len(ts)
     cx, cy = side * c["x"], c["y"]
@@ -190,7 +349,15 @@ def cockpit(side: float) -> list:
     py, ph = sy0 + 0.2, pan_top          # the back's foot
     def along(t, d=0.0):  # a point t up the back, d behind its face
         return (cx, py + up[0] * t + aft[0] * d, ph + up[1] * t + aft[1] * d)
-    shell = [H._obox((cx, sy0, f0 + 0.06), (0.07, 0, 0), (0, 0.07, 0), (0, 0, 0.06)),          # the pedestal
+    tilted = canopy_plane(side) is not None   # canopy step 2: on a tilted rim the pedestal reaches the floor
+
+    def post(x, y, hx, hy, top):   # a box from the floor (each bottom corner on it) up to a level top
+        v = [(x + sx * hx, y + sy * hy, top if sz > 0 else deck(x + sx * hx, y + sy * hy) + 0.07)
+             for sz in (-1, 1) for sy in (-1, 1) for sx in (-1, 1)]
+        return v, [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
+    ped = (post(cx, sy0, 0.07, 0.07, f0 + 0.12) if tilted
+           else H._obox((cx, sy0, f0 + 0.06), (0.07, 0, 0), (0, 0.07, 0), (0, 0, 0.06)))
+    shell = [ped,                                                                                # the pedestal
              H._obox((cx, sy0, pan_top - 0.06), (0.25, 0, 0), (0, 0.22, 0), (0, 0, 0.035)),      # the pan's shell
              _tilt(along(0.25, 0.05), 0.24, 0.035, 0.25, rec),                                   # the back's shell
              _tilt(along(0.55, 0.04), 0.14, 0.03, 0.06, rec)]                                    # the headrest's
@@ -203,7 +370,10 @@ def cockpit(side: float) -> list:
     # the console: a body 0.6 m wide 0.5 m ahead of the pan, its face sloped toward the pilot, a shelf, two grips
     ky = cy - 0.47
     k0 = on(cx, ky, 0.3, 0.12)
-    shell.append(H._obox((cx, ky, k0 + 0.11), (0.3, 0, 0), (0, 0.12, 0), (0, 0, 0.11)))         # the body
+    if tilted:   # canopy step 2: the console's body down to the tilted floor
+        shell.append(post(cx, ky, 0.3, 0.12, k0 + 0.22))
+    else:
+        shell.append(H._obox((cx, ky, k0 + 0.11), (0.3, 0, 0), (0, 0.12, 0), (0, 0, 0.11)))     # the body
     shell.append(_tilt((cx, ky + 0.07, k0 + 0.28), 0.3, 0.03, 0.1, -40.0))                     # the sloped face
     shell.append(H._obox((cx, ky + 0.18, k0 + 0.19), (0.27, 0, 0), (0, 0.07, 0), (0, 0, 0.015)))  # the shelf
     for sx in (-1, 1):

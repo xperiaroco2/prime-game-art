@@ -39,12 +39,12 @@ class ShipHullDetailTest(unittest.TestCase):
             self.assertEqual(parts["canopy_screen"]["mat"], "ext_screen")
             self.assertEqual(parts["canopy_seat"]["mat"], "ext_seat")
             seat = [y for _x, y, _h in parts["canopy_seat"]["verts"]]
-            self.assertLess(min(seat), D.CANOPY["y"] - 0.4, "no console ahead of the seat (-y)")
+            self.assertLess(min(seat), D.canopy_cfg()["y"] - 0.4, "no console ahead of the seat (-y)")
             # the canopy fix: the seat low (its pan 0.22 over the floor, was 0.30) and near upright, so it reads as a seat from the ground; a pilot's head
             # (the headrest's top) still under the glass
             self.assertLessEqual(D.SEAT["recline"], 25.0)
             _t, _r, _g, deck, _o = D._canopy_frame(side)
-            cx, cy = side * D.CANOPY["x"], D.CANOPY["y"]
+            cx, cy = side * D.canopy_cfg()["x"], D.canopy_cfg()["y"]
             pan = [h - deck(x, y) for x, y, h in parts["canopy_seat"]["verts"] if abs(y - cy) < 0.2 and abs(x - cx) < 0.2]
             self.assertLess(max(pan), 0.23, "the seat's pan stands too high over the floor")
             head = max(parts["canopy_pads"]["verts"], key=lambda v: v[2])
@@ -71,7 +71,7 @@ class ShipHullDetailTest(unittest.TestCase):
                         self.assertGreater(h, top - 0.1, f"canopy {part} under the hull at ({x:.2f}, {y:.2f})")
             glass = verts(D.canopy({"side": side, "part": "glass"}, LAYOUT))
             # details 1: 0.85 high (was 0.75 under a 0.95 cap), room over the pilot's seat
-            self.assertLess(max(h for _x, _y, h in glass) - D.skin_h(side * D.CANOPY["x"], D.CANOPY["y"]), 1.05)
+            self.assertLess(max(h for _x, _y, h in glass) - D.skin_h(side * D.canopy_cfg()["x"], D.canopy_cfg()["y"]), 1.05)
 
     def test_the_pods_stay_out_of_the_hall_and_end_as_ps(self) -> None:
         pods = {p["id"]: p for p in LAYOUT["pieces"] if p["builder"] in ("nozzle_pod", "pod_ring")}

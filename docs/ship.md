@@ -1039,6 +1039,14 @@ over the floor and its back 40 deg from upright. Two grids, raw in `<raw>/ship/v
   corner) and its back 25 deg from upright (`recline`, was 40: a long dark ramp along the slant). From the ground
   and the bow the back now stands up inside the bubble as a seat; 15 deg read the same but leaves a seated head
   less room. The headrest stays 2.3 cm under the glass (`test_the_cockpits_fit_under_their_glass`).
+- Canopy grid 2 (for his pick, nothing picked yet): `ship_hull_detail.CANOPY_VARIANTS`, chosen by `CANOPY_VARIANT`
+  (default `main`, the canopy above); the environment's `SHIP_CANOPY_VARIANT` overrides it for a grid's build only.
+  A variant moves the canopy (`dy`, - forward), sizes it (`scale` in plan, `height` of the dome) and, with `pitch`,
+  sets its rim on a plane instead of the skin: `pitch` (deg rising aft, `fit` the skin's slope), `roll` (deg falling
+  outboard, `fit` the skin's), the plane lifted until its lowest rim or floor point sits on the skin + 2 cm, the dome
+  on the plane's normal and a cowl from the rim down to the skin (`COWL`: 0.12 m + 0.9 x the rim's height over it);
+  the cockpit's pedestal and console then stand on the tilted floor. Nothing cuts the skin, so the hall's roof keeps
+  its 0.15 m. Raw: `<raw>/ship/v4/canopy/grid2/` (`grid.sh`, `views.json`, the sheets), note `notes/canopy-2.md`.
 
 `ship --shoot DIR --views FILE`: a row's optional 6th element, `{"ssil": false}`, `{"ssao": false}`, `{"glow": false}`
 or `{"shadows": false}` (the moon's and the key's), switches that part of the night look off for that one shot,
