@@ -51,8 +51,8 @@ def refusal(out: Path, heads: list[str], build: bool, shots: bool) -> str | None
 def bases(head: str) -> dict:
     """The slots' bases wholesale as the colour slots proof takes them (`alien_colour_slots.bases`: every region's
     median, gill_tips and gill_whole included), and the body's paint (body_skin, body_front): the same skin and front
-    medians, so the body is a typical head skin texel to the slots' recolour and the neck shows no step under any
-    pick."""
+    medians, so the body is a typical head skin texel to the slots' recolour. The neck still shows a step where the
+    head's own paint differs from its median: the chameleon's cobalt back under a pick (r5)."""
     out = CS.bases(CS.BUILD, REGIONS, head)
     out["body_skin"], out["body_front"] = out["skin"], out["front"]
     return out
