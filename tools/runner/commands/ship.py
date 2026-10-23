@@ -406,9 +406,10 @@ def motion_request(layout: dict) -> dict:
     f = v.FLOOR
     vents = {}
     for pid, s in (("station_vent_e", 1.0), ("station_vent_w", -1.0)):
-        u = sorted((s * v.OPEN_U[0], s * v.OPEN_U[1]))
-        g = sorted((s * (v.UC - 0.032), s * (v.UC + 0.032)))
-        vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0], "h1": f + v.OPEN_H[1],
+        # way A: the blades keep between the cap rows (their ends sit in the caps), in front of the well's glow
+        u = sorted((s * v.CAP_U[0], s * v.CAP_U[1]))
+        g = sorted((s * v.GLASS_U[0], s * v.GLASS_U[1]))
+        vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0] - 0.1, "h1": f + v.OPEN_H[1],
                                   "v_back": v.COOL_V + 0.002, "v_max": v.UNIT[3]},
                       "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]}}
     cu = [["frame_corner_tl", [-0.42, f + 1.85, 1.15], [-0.70, f + 2.0, 0.45]],
