@@ -704,6 +704,9 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
         roots[name] = np.array([bx, bz, -by])
     R = np.array([roots[n] for n in names])
     near = np.argmin(np.linalg.norm(P[:, None, :] - R[None], axis=-1), axis=1)
+    # AL3: a vertex belongs to the stalk it is reached from first along the mesh (gill_labels), not the nearest root:
+    # by the nearest root a fin's tip leaning toward the next stalk's root went to that stalk and tore at 15 degrees
+    near, reached = gill_labels(P, I, R, near)
     dist = np.linalg.norm(P - R[near], axis=1)
     rep, W = {"gills": {}}, np.zeros((len(P), len(names)))
     stalk = np.zeros(len(P), bool)  # every stalk's geometry out of the skull, the thick base too (not the skull)
@@ -754,8 +757,21 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
             o = loc + d * 1e-5
         return r
 
-    def inside(pts):
+    def inside_star(pts):
         return np.array([np.linalg.norm(pp - head_c) < skull_r(pp) - G.POKE_TOL for pp in pts], bool)
+
+    # AL3: the star test alone is no proof. Its 40 "pokes" at 15 degrees (gill_pokes_diag.json) were all stalk-base
+    # vertices (weight 0.35 to 0.54) 4 to 16 mm off the skull at rest, every one in front of its nearest skull
+    # triangle (0.3 to 7 mm off it): near a stalk's root the skull is no star about head_c (the ray crosses the rim of
+    # the bulge the stalk grows from, 1.5 to 19 mm further out). A poke is now inside by both tests: the star's, and
+    # more than POKE_TOL behind the nearest skull triangle (which alone misread the hole edges, AL2)
+    def behind(pp):
+        near, nrm, _i, _d = bvh.find_nearest(Vector(pp))
+        return near is not None and (Vector(pp) - near).dot(nrm) < -G.POKE_TOL
+
+    def inside(pts):
+        star = inside_star(pts)
+        return np.array([bool(a) and behind(pp) for a, pp in zip(star, pts)], bool)
 
     test = {}
     for k in range(len(names)):
@@ -778,6 +794,7 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
                 moved = np.linalg.norm(d, axis=1) > 0.0005
                 n += int(inside(P[m][moved] + d[moved]).sum())
         return n
+    poke_diag(out, names, test, W, P, roots, head_c, bvh, skull_r, inside_star, min(args.gill_swing, G.SPRING_MAX_DEG))
     swing, counts = min(args.gill_swing, G.SPRING_MAX_DEG), {}
     while swing > 0:
         counts[f"{swing:g}"] = pokes(swing)
@@ -800,6 +817,9 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
                                                         "n": len(dump)}, indent=1), encoding="utf-8", newline="\n")
         raise SystemExit(f"LIVELY gills poke into the head at every swing tested: {counts}")
     rep["gill_swing_deg"] = float(swing)
+    rep["gill_labels_reached"] = round(reached, 4)
+    rep["gill_stretch_mm"] = gill_stretch(P, I, W, roots, names, swing)
+    print(f"LIVELY gill labels reached {reached:.4f}, stretch {rep['gill_stretch_mm']} mm at {swing:g} degrees", flush=True)
     rep["gill_pokes_by_swing"] = counts
     rep["gill_weight_on_thick"] = round(float(W.sum(1)[tv < 0.25].max(initial=0.0)), 6)
     infl = []
@@ -817,6 +837,156 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     print(f"LIVELY gills: swing {rep['gill_swing_deg']} pokes {counts} thick {rep['gill_weight_on_thick']} " + json.dumps(
         {n: (g["vertices"], g["length"], g["root_to_mesh_mm"]) for n, g in rep["gills"].items()}), flush=True)
     return rep
+
+
+def gill_labels(P, I, R, near):
+    """Each vertex's gill by a multi-source Dijkstra over the mesh's edges (vertices welded by position, so UV
+    seams do not cut it) from the vertex nearest each root; vertices no front reaches keep near (the nearest root).
+    Returns (labels, the share reached)."""
+    import heapq
+    key = np.round(P / 1e-5).astype(np.int64)
+    _u, weld = np.unique(key, axis=0, return_inverse=True)
+    weld = weld.reshape(-1)
+    n = int(weld.max()) + 1
+    Q = np.zeros((n, 3))
+    Q[weld] = P
+    adj = [[] for _ in range(n)]
+    for t in np.asarray(I).reshape(-1, 3):
+        a, b, c = (int(weld[x]) for x in t)
+        for u, v in ((a, b), (b, c), (c, a)):
+            if u != v:
+                adj[u].append(v)
+                adj[v].append(u)
+    best = np.full(n, np.inf)
+    lab = np.full(n, -1)
+    heap = []
+    for k, r in enumerate(R):
+        s0 = int(np.argmin(np.linalg.norm(Q - r, axis=1)))
+        best[s0], lab[s0] = 0.0, k
+        heap.append((0.0, s0, k))
+    heapq.heapify(heap)
+    while heap:
+        d, u, k = heapq.heappop(heap)
+        if d > best[u]:
+            continue
+        for v in adj[u]:
+            nd = d + float(np.sqrt(((Q[u] - Q[v]) ** 2).sum()))
+            if nd < best[v]:
+                best[v], lab[v] = nd, k
+                heapq.heappush(heap, (nd, v, k))
+    out = lab[weld]
+    ok = out >= 0
+    return np.where(ok, out, near), float(ok.mean())
+
+
+def gill_stretch(P, I, W, roots, names, swing):
+    """The tear measure (AL3): the largest change of an edge's length (mm) when the gills sit at opposite cap corners
+    (even gills at a corner, odd ones at its opposite, and the other way), the worst of the 8 corners; a fin split
+    between two stalks tears here."""
+    E = np.asarray(I).reshape(-1, 3)
+    E = np.concatenate([E[:, [0, 1]], E[:, [1, 2]], E[:, [2, 0]]])
+    E = E[(W[E[:, 0]].sum(1) > 0.01) | (W[E[:, 1]].sum(1) > 0.01)]
+    rest = np.linalg.norm(P[E[:, 0]] - P[E[:, 1]], axis=1)
+    worst = 0.0
+    for y, p in G.SWING_CORNERS:
+        for flip in (1, -1):
+            Q = P.copy()
+            for k, name in enumerate(names):
+                sg = flip if k % 2 == 0 else -flip
+                q = P - roots[name]
+                rq = q @ np.array(G.spring_matrix(math.radians(swing) * y * sg, math.radians(swing) * p * sg)).T
+                Q += W[:, k][:, None] * (rq - q)
+            worst = max(worst, float(np.abs(np.linalg.norm(Q[E[:, 0]] - Q[E[:, 1]], axis=1) - rest).max()))
+    return round(worst * 1000, 2)
+
+
+def poke_diag(out, names, test, W, P, roots, head_c, bvh, skull_r, inside, swing):
+    """AL3: why the gills "poke": every star-test poke (inside: the star test alone) at the top swing (each gill,
+    each of the 8 corners) with its rest gap to the skull proxy, the moved point's nearest skull point (gap, and whether it lies behind that triangle: a real
+    contact), the outermost crossing the star test compared against (its distance from the point: a far crossing is a
+    test flaw, the ray meeting another part of the body), into gill_pokes_diag.json; gill_pokes_diag.png: per gill
+    its worst corner as a cross-section (the skull proxy's vertices within 2 cm of the plane through the root, the
+    stalk's axis and the head's centre, grey; the stalk at rest blue; the poking points moved red, at rest cyan,
+    their crossings yellow), 6 panels of 420 px."""
+    rows, worst = [], {}
+    cv = Vector(head_c)
+    for k, name in enumerate(names):
+        m = test[k]
+        q = P[m] - roots[name]
+        for y, p in G.SWING_CORNERS:
+            rq = q @ np.array(G.spring_matrix(math.radians(swing) * y, math.radians(swing) * p)).T
+            d = W[m, k][:, None] * (rq - q)
+            moved = np.linalg.norm(d, axis=1) > 0.0005
+            p2 = P[m] + d
+            hit = moved & inside(p2)
+            worst.setdefault(name, (0, None))
+            if hit.sum() > worst[name][0]:
+                worst[name] = (int(hit.sum()), (y, p), m[hit], p2[hit])
+            for i, pp in zip(m[hit], p2[hit]):
+                near, nrm, _i, gap = bvh.find_nearest(Vector(pp))
+                behind = (Vector(pp) - near).dot(nrm) < 0
+                dr = (Vector(pp) - cv).normalized()
+                rr = skull_r(pp)
+                cross = cv + dr * rr
+                rows.append({"gill": name, "corner": [y, p], "v": int(i), "w": round(float(W[i, k]), 3),
+                             "rest_gap_mm": round((Vector(P[i]) - bvh.find_nearest(Vector(P[i]))[0]).length * 1000, 1),
+                             "moved_mm": round(float(np.linalg.norm(pp - P[i])) * 1000, 1),
+                             "gap_mm": round(gap * 1000, 1), "behind_nearest": bool(behind),
+                             "depth_mm": round((rr - float(np.linalg.norm(pp - head_c))) * 1000, 1),
+                             "crossing_from_point_mm": round((cross - Vector(pp)).length * 1000, 1),
+                             "crossing": [round(c, 4) for c in cross]})
+    real = [r for r in rows if r["behind_nearest"] and r["gap_mm"] < 5.0]
+    summary = {"swing_deg": swing, "pokes": len(rows), "behind_nearest_within_5mm": len(real),
+               "crossing_from_point_mm": {"min": min((r["crossing_from_point_mm"] for r in rows), default=None),
+                                          "median": float(np.median([r["crossing_from_point_mm"] for r in rows])) if rows else None},
+               "gap_mm": {"min": min((r["gap_mm"] for r in rows), default=None),
+                          "median": float(np.median([r["gap_mm"] for r in rows])) if rows else None},
+               "rest_gap_mm_min": min((r["rest_gap_mm"] for r in rows), default=None),
+               "by_gill": {n: sum(r["gill"] == n for r in rows) for n in names},
+               "worst_corner": {n: list(v[1]) if v[1] else None for n, v in worst.items()}}
+    (out / "gill_pokes_diag.json").write_text(json.dumps({"summary": summary, "pokes": rows}, indent=1),
+                                              encoding="utf-8", newline="\n")
+    print("LIVELY gill poke diag: " + json.dumps(summary), flush=True)
+    size = 420
+    img = np.full((2 * size, 3 * size, 3), 40, np.uint8)
+    for k, name in enumerate(names):
+        r0 = roots[name]
+        m_all = np.nonzero(W[:, k] > 0.01)[0]
+        ax = (P[m_all] - r0).mean(0)
+        ax /= np.linalg.norm(ax)
+        rad = r0 - head_c
+        nrm = np.cross(ax, rad)
+        nrm /= np.linalg.norm(nrm)
+        u = ax
+        v = np.cross(nrm, u)
+        ctr = r0 + ax * 0.12
+        span = 0.42
+        if worst[name][1] is not None:  # zoomed on the pokes (8 cm)
+            ctr, span = worst[name][3].mean(0), 0.08
+
+        def to_px(pts):
+            d = pts - ctr
+            return ((d @ u / span + 0.5) * (size - 1)).astype(int), ((0.5 - d @ v / span) * (size - 1)).astype(int)
+        ox, oy = (k % 3) * size, (k // 3) * size
+        sk = np.nonzero((np.abs((P - r0) @ nrm) < 0.02) & (W.sum(1) <= 0.01) & (np.linalg.norm(P - ctr, axis=1) < span))[0]
+        hits = [bvh.find_nearest(Vector(P[i])) for i in sk]
+        sk = sk[np.array([h[3] < 0.0015 for h in hits], bool)] if len(sk) else sk
+        layers = [(P[sk], (150, 150, 150), 0), (P[m_all], (60, 110, 230), 0)]
+        if worst[name][1] is not None:
+            _n, _c, idx, moved = worst[name]
+            cross = np.array([head_c + (pp - head_c) / np.linalg.norm(pp - head_c) * skull_r(pp) for pp in moved])
+            layers += [(P[idx], (0, 230, 230), 1), (moved, (255, 40, 40), 1), (cross, (255, 230, 0), 1)]
+        for pts, col, big in layers:
+            if not len(pts):
+                continue
+            x, y = to_px(pts)
+            for dx in range(-big, big + 1):
+                for dy in range(-big, big + 1):
+                    ok = (x + dx >= 0) & (x + dx < size) & (y + dy >= 0) & (y + dy < size)
+                    img[oy + y[ok] + dy, ox + x[ok] + dx] = col
+        img[oy:oy + size, ox] = (90, 90, 90)
+        img[oy, ox:ox + size] = (90, 90, 90)
+    G.write_png(out / "gill_pokes_diag.png", 3 * size, 2 * size, img.tobytes())
 
 
 def crest_view(path, P, w, head_c, r_skull, size=640):

@@ -945,14 +945,25 @@ pilot's static premium heads"):
       frame (the light's), while the eye centre moves with the head, so the glint stays toward the light as the
       head turns under it. No cut, no moved vertex (the pit projection is off for a bead).
     - *The gills* (`--gills <step 2a build.json>`, `--detail <head>_detail.png`): one bone per stalk
-      (`alien_lively_geom.GILL_JOINTS`, each a child of Head) at step 2a's gill pivots; a stalk's vertices are the
-      thin ones (the detail map's G over 0.5) nearest its root, its axis their mean, its weight
+      (`alien_lively_geom.GILL_JOINTS`, each a child of Head) at step 2a's gill pivots; a vertex belongs to the stalk
+      it is reached from first along the mesh (AL3, `gill_labels`: a multi-source Dijkstra over the edges, the
+      vertices welded by position; `rig.gill_labels_reached` the share reached, the rest keep the nearest root: by the
+      nearest root alone a fin's tip leaning toward the next stalk went to that stalk and tore at 15 degrees, and
+      `rig.gill_stretch_mm` is that tear measure: the largest edge length change with neighbouring stalks at opposite
+      cap corners); a stalk's vertices are its thin ones (the detail map's G over 0.5), its axis their mean, its weight
       `G.stalk_weight` (none at the root's first 8 %, full from 45 %, none where the detail map says thick: the skull
       never moves, `rig.gill_weight_on_thick`). The poke test (AL2) turns each stalk's weighted vertices as the
       controllers do (`G.spring_matrix`: Ry(yaw) Rx(-pitch) about the root) at the cap's four axis ends and four
       corners (`G.SWING_CORNERS`) and counts moved vertices that end over 1 mm (`G.POKE_TOL`) inside the skull. The
       skull is a star about the head's centre: a point is inside when it is nearer the centre than the skull's
-      outermost crossing along the same ray (Blender's BVH `ray_cast`, the thick triangles alone). The root band,
+      outermost crossing along the same ray (Blender's BVH `ray_cast`, the thick triangles alone), **and** (AL3)
+      more than 1 mm behind its nearest skull triangle. The star test alone gave 40 "pokes" at 15 degrees (the cap
+      fell to 2): `gill_pokes_diag.json` and `gill_pokes_diag.png` (written on every build: each star-test poke at
+      the top swing, its rest gap, nearest-triangle gap and side, and its crossing; the cross-sections zoomed on
+      them) showed all 40 were stalk-base vertices (weight 0.35 to 0.54, 4 to 16 mm off the skull at rest), every
+      one in front of its nearest skull triangle (0.3 to 7 mm off it): near a root the skull is no star about the
+      centre, the ray crossing the rim of the bulge the stalk grows from 1.5 to 19 mm further out. A test flaw, no
+      contact: the cap is 15 now. The root band,
       vertices within 3 mm of the skull at rest (`G.ROOT_BAND`, the stalks' bases that touch it by construction)
       and those inside it at rest, is left out (`rig.gill_poke_tested` the vertices tested). The swing starts at
       15 degrees (`G.SPRING_MAX_DEG`, `--gill-swing`) and is lowered 1 degree at a time until none pokes
@@ -961,7 +972,9 @@ pilot's static premium heads"):
       of pokes even at 2 degrees: beside the hole the dropped root triangles leave, the nearest point is a hole
       edge whose plane says nothing. `gill_weights.png` shows the weights; `gills_<tag>.jpg` (`lively_shots.gd`)
       the gills held at the cap's eight corners (`alien_lively.gd` `hold_springs`) with the head at both yaw
-      limits, from the back three-quarter (`shots_<tag>.json` `gill_closeups`).
+      limits, four rows (head left, head right, each seen from both back three-quarters), each cell framed on the
+      camera side's three gills (their posed roots' mean, 0.12 m out, 0.9 high; AL3: AL2 framed the back of the
+      skull) (`shots_<tag>.json` `gill_closeups`).
     - *The springs* are data now (`lively.json` `rig.springs`: bones, rate, damping, lag, cap): the chameleon's
       crest one chain of Crest1-3; the axolotl's six gills one bone each at 1.8 to 2.4 Hz, so they never swing in
       step. `alien_lively.gd` and `lively.js` read them, and the head's follow from `controller`. Every spring is
@@ -970,7 +983,12 @@ pilot's static premium heads"):
     - *One glint per bead (AL2):* the drawn catch light alone; the bead's own reflections are cut on its eye texels
       (`alien_static.gdshader` `bead_reflect` 0.15 times the specular and clear coat, roughness at least
       `bead_rough` 0.55), so the key light leaves a soft sheen, not a second sharp point that broke into a "<" at
-      the silhouette in head turns.
+      the silhouette in head turns. *The glint at a head turn (AL3):* the catch light stays toward the light, so on
+      the turned-away eye it fell under the lid and the bead went flat and dead. The controllers now set `gaze_l/r`
+      to the posed bead front and `catch_reach_l/r` to the rest angle between front and catch plus 0.12 rad
+      (`CATCH_MARGIN` in `alien_lively.gd`, `lively.js` and `alien_lively_geom`); past that the shader turns the
+      glint toward the front (`G.glint_dir`), so it slides to the open cap's edge nearest the light and stays there.
+      At rest nothing changes (the gate's numbers equal v2e's).
     - *Eye close-ups* are framed on each posed eye's front (`alien_lively.gd` `eye_front`: the centre plus the rest
       direction times the radius), not its centre deep inside the head. `eye_pit_shots.gd`'s JSON also holds
       `away_from_eyes`: the whole head before | after at rest from four sides, the pixel difference with every
