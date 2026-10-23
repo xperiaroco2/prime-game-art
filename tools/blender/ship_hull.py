@@ -357,7 +357,8 @@ def leg(args: dict, layout: dict) -> list:
     """A standing landing leg (the raise, 2026-10-23; local +x outward, exterior.toml yaws it; built at the real
     heights, the ground at h 0): args top (the mount's height: the lowest belly over it + 0.1, the mount box reaching
     0.42 + rise over it, into the skin), reach (the mount's pivot to the foot's centre, plan) and rise (rebuild D: the
-    mount's top raised more under a steep belly). A faceted mount box with a yoke and its pin; the oleo strut from the
+    mount's top raised more under a steep belly). A faceted fairing out of the belly (the raise step 2: 8 sides,
+    r 0.62 in the skin to 0.36 at a dark frame lip, smooth hull silver) over a yoke and its pin; the oleo strut from the
     pin down and out to the ankle at a steep angle: a thick sleeve, a collar, the chrome piston and a forked end; two
     side braces from the yoke's cheeks to the sleeve (an A-frame seen from the front); the ankle's knuckle pin; a
     broad flat footpad (r 0.6) with a raised hub, four ribs and a dark sole."""
@@ -365,14 +366,18 @@ def leg(args: dict, layout: dict) -> list:
     rise = float(args.get("rise", 0.0))
     piv, ank = (0.05, 0.0, top - 0.15), (reach, 0.0, 0.34)
     at = lambda t, y=0.0: (piv[0] + (ank[0] - piv[0]) * t, y, piv[2] + (ank[2] - piv[2]) * t)  # noqa: E731
-    mount = _obox((0.0, 0.0, top + 0.1 + rise / 2), (0.42, 0, 0), (0, 0.34, 0), (0, 0, 0.32 + rise / 2))
+    # step 2 of the raise: a faceted fairing grows out of the belly (its top inside the skin, where step 1's dark box
+    # reached) in the hull's smooth silver, tapering down to a dark frame lip over the yoke (was a plain dark box)
+    fair = L.disc(0.62, 8, top - 0.16, top + 0.42 + rise)
+    fair = ([(x * (0.36 / 0.62), y * (0.36 / 0.62), h) if h < top else (x, y, h) for x, y, h in fair[0]], fair[1])
+    lip_ring = L.disc(0.39, 8, top - 0.2, top - 0.12)
     cheeks = [_obox((0.05, s * 0.25, top - 0.12), (0.2, 0, 0), (0, 0.05, 0), (0, 0, 0.16)) for s in (-1, 1)]
-    pin = _rod((piv[0], -0.31, piv[2]), (piv[0], 0.31, piv[2]), 0.09, 10)
-    sleeve = _rod(at(-0.04), at(0.56), 0.15, 10)
-    collar = _rod(at(0.53), at(0.6), 0.185, 10)
-    piston = _rod(at(0.5), at(0.86), 0.085, 10)
-    fork = _rod(at(0.84), at(0.97), 0.12, 8)
-    braces = [_rod((piv[0] - 0.05, s * 0.27, top - 0.22), at(0.4, s * 0.12), 0.045, 8) for s in (-1, 1)]
+    pin = _rod((piv[0], -0.31, piv[2]), (piv[0], 0.31, piv[2]), 0.1, 10)
+    sleeve = _rod(at(-0.04), at(0.56), 0.19, 10)          # step 2: stouter (r 0.15 -> 0.19), read from the yard
+    collar = _rod(at(0.53), at(0.6), 0.23, 10)
+    piston = _rod(at(0.5), at(0.86), 0.11, 10)
+    fork = _rod(at(0.84), at(0.97), 0.145, 8)
+    braces = [_rod((piv[0] - 0.05, s * 0.27, top - 0.22), at(0.4, s * 0.15), 0.06, 8) for s in (-1, 1)]
     knuckle = _rod((ank[0], -0.17, ank[2]), (ank[0], 0.17, ank[2]), 0.1, 10)
     ears = [_obox((ank[0], s * 0.13, 0.27), (0.09, 0, 0), (0, 0.03, 0), (0, 0, 0.11)) for s in (-1, 1)]
     pad = L.disc(0.6, 12, 0.03, 0.11)
@@ -382,7 +387,8 @@ def leg(args: dict, layout: dict) -> list:
     ribs = [_obox((ank[0] + 0.44 * math.cos(a), 0.44 * math.sin(a), 0.135),
                   (0.13 * math.cos(a), 0.13 * math.sin(a), 0), (-0.035 * math.sin(a), 0.035 * math.cos(a), 0),
                   (0, 0, 0.025)) for a in (math.pi / 4 + k * math.pi / 2 for k in range(4))]
-    return [L.part("leg_mount", *L.merge(mount, *cheeks), "hull_dark"),
+    return [L.part("leg_fairing", *fair, "hull_silver"), L.part("leg_lip", *lip_ring, "ext_frame"),
+            L.part("leg_mount", *L.merge(*cheeks), "hull_dark"),
             L.part("leg_strut", *L.merge(sleeve, *braces), "leg_metal"),
             L.part("leg_joint", *L.merge(pin, collar, fork, knuckle, *ears, *ribs), "ext_frame"),
             L.part("leg_piston", *piston, "ext_chrome"),
