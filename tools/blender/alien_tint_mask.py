@@ -1,8 +1,11 @@
 """The alien pilot's static heads (art #196): the skin colour study's accent mask, made in headless Blender
 (tools/runner/blender.py) from a static build's saved .blend and maps (never changed). Writes into --out:
-- `<head>_accent.png` (2048, linear RGBA): R the lips, G the marks (the axolotl's gills and cheek freckles, the
-  chameleon's crest stripes), B the pale front panel, A 1 - the gills (the colour slots' gills on the skin); every
-  channel already multiplied by the skin tint mask, so the eyes stay out;
+- `<head>_accent.png` (2048, linear RGB, no alpha): R the lips, G the marks (the axolotl's gills' root-to-tip
+  gradient and cheek freckles, the chameleon's crest stripes), B the pale front panel; every channel already
+  multiplied by the skin tint mask, so the eyes stay out;
+- `<head>_gill.png` (2048, linear RGB, grey): the whole gills' weight (stalk and fringe; the colour slots' "whole"
+  and "skin" gill modes), the same in R, G and B (v3: out of the accent's alpha, which a normal Godot import's
+  fix_alpha_border and compression would destroy under zero alpha);
 - `<head>_accent.json`: each region's median sRGB in the build's albedo (the study's recolour bases) and its texel share.
 
 The regions come from the object-space position baked onto the build's own UVs (an emission bake with Blender's
@@ -48,10 +51,15 @@ LIP_BAND = {"axolotl": (1.1, 0.15, 0.02, 0.5, None), "chameleon": (0.75, 0.15, 0
 # above, its tip only 0.02 m) along the surface through the connected teal texels past the corner (3D voxels of
 # 1.5 texel pitches, 26 neighbours): the zone a ball of zone_r (m) round each corner, at most max_len (m) of growth,
 # teal components of fewer than min_vox voxels (the freckles, if one touched the zone) out, the darkness test the
-# teal paint's own value against the cheek's; the colour fades over the tail's last fade share (at most fade_max m).
+# teal paint's own value against the cheek's. v3: the whole grown tail is lips (v2 faded its last 15 mm into the
+# skin-following paint: a thin blue tip on cobalt); the lips' weight then fades with the paint itself, from the
+# darkness test's value to the cheek's, on the texels within halo texels of the tail, so the tail's end turns into
+# the cheek's colour, never into the skin-turned dark paint.
 # None: no growth (the chameleon's lips are whole as the band has them).
-LIP_GROW = {"axolotl": {"zone_r": 0.11, "max_len": 0.10, "min_vox": 40, "fade": 0.25, "fade_max": 0.015},
-            "chameleon": None}
+LIP_GROW = {"axolotl": {"zone_r": 0.11, "max_len": 0.10, "min_vox": 40, "halo": 3}, "chameleon": None}
+# v3: the cheek freckles' weight hardened (smoothstep over FRECKLE_EDGE of the raw teal-dot weight, then the
+# one-texel blur every mark gets as its anti-aliasing): v2's soft weight left the dots half detail, half skin.
+FRECKLE_EDGE = (0.15, 0.45)
 # The axolotl's gills (v2): the whole gill, stalk and fringe, from the build's own segmented gill part
 # (`<head>_gills` in the static .blend): a texel is gill where the gill part's surface is nearer than the skin's
 # (soft over GILL_SOFT m); its gradient runs from the root (the nearest step 2a gill pivot, 0) to the gill's farthest
@@ -332,17 +340,22 @@ def main() -> int:
         tail = np.zeros_like(body)
         grow_stats = {"pitch_m": round(pitch, 5), "voxel_m": round(vs, 5), "pale_v": round(pale_v, 3),
                       "teal_v": round(teal_v, 3), "dropped": dropped[:20], "sides": {}}
+        grown = steps > 0
+        mid_v = 0.5 * (pale_v + teal_v)
+        k = int(grow_cfg["halo"])
+        halo = (S.blur(grown.astype(np.float32), k) > 0.5 / (2 * k + 1) ** 2) & zone & (skin > 0.5) & ok & ~grown
+        tail[grown] = 1.0
+        tail[halo] = 1.0 - smoothstep(mid_v, pale_v, val[halo])  # fades with the paint into the cheek
         for sx, name in ((1.0, "L"), (-1.0, "R")):
-            m = (steps > 0) & (np.sign(x) == sx)
+            m = grown & (np.sign(x) == sx)
             if not m.any():
                 grow_stats["sides"][name] = None
                 continue
             L = float(dm[m].max())
-            fade = min(grow_cfg["fade"] * L, grow_cfg["fade_max"])
-            tail[m] = 1.0 - smoothstep(L - fade, L, dm[m])
-            grow_stats["sides"][name] = {"length_m": round(L, 4), "fade_m": round(fade, 4), "texels": int(m.sum()),
+            grow_stats["sides"][name] = {"length_m": round(L, 4), "texels": int(m.sum()),
+                                         "halo_texels": int((halo & (np.sign(x) == sx)).sum()),
                                          "hit_max": bool(L >= grow_cfg["max_len"] - 2 * vs)}
-        body = np.maximum(body, tail * teal)
+        body = np.maximum(body, np.where(grown, tail * teal, tail))
         unreached = (cand & (steps < 0)).astype(np.float32)
         print(f"GROW {head} {json.dumps(grow_stats)}", flush=True)
     lips = S.blur(body.astype(np.float32), 1) * skin
@@ -355,7 +368,7 @@ def main() -> int:
     if roots:  # the whole gills, stalk and fringe (the build's segmented gill part), and their root-to-tip gradient
         gills, gill_grad, gill_stats = gill_region(low, pos, lit > 0.5, roots)
         print(f"GILLS {head} {json.dumps(gill_stats)}", flush=True)
-        freckles = freckle_raw * (1.0 - lips) * (1.0 - gills)
+        freckles = smoothstep(*FRECKLE_EDGE, freckle_raw) * (1.0 - lips) * (1.0 - gills)
         marks = np.maximum(gills * gill_grad, freckles)  # G: the gradient on the gills (the default mode)
     st = ref.get("stripes")
     if st:  # the crest stripes: alien_pilot_head.grade_source's formula
@@ -368,8 +381,8 @@ def main() -> int:
     front_w = S.blur(pale.astype(np.float32), 1) * skin * (1.0 - lips) * (1.0 - marks)
     gill_w = S.blur(gills.astype(np.float32), 1) * skin * (1.0 - lips)
     front_w = front_w * (1.0 - gill_w)
-    acc = np.stack([lips, marks, front_w, 1.0 - gill_w], -1)  # A: 1 - the whole gills (stalk and fringe)
-    S.save(acc, out / f"{head}_accent.png", data=True)
+    S.save(np.stack([lips, marks, front_w], -1), out / f"{head}_accent.png", data=True)  # RGB: no alpha to lose
+    S.save(np.repeat(gill_w[..., None], 3, -1), out / f"{head}_gill.png", data=True)  # the whole gills, grey
     if args.debug:
         cav = load(build / f"{head}_detail.png")[..., 0]
         col = plain * cav[..., None] ** 3 * lit[..., None]

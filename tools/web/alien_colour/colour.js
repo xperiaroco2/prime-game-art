@@ -1,19 +1,24 @@
 // The alien pilot's static heads' colour slots in the browser (art #196, 2026-10-23): three.js 0.160, the same maths
-// as godot/alien/alien_static.gd (slot_colours, guard) and alien_static.gdshader's recolour, checked against
-// tools/blender/alien_colour_geom.py by tools/tests/test_alien_colour_slots.py. Slots: skin, lips, detail (the crest
-// stripes, the freckles and gills; detailOn), gills (the axolotl's gills: "gradient", the default, "whole" or "skin"); the pale
-// front follows the skin as a tinted cream. Every picked colour goes through the guard rails (OKLCh, the hue kept: a chroma
-// cap, lower round yellow-green and hot pink, a lightness range per slot, the lips at least 0.1 OKLab delta E from the skin); a slot left out
-// keeps the build's own paint, and no picks is the build's look exactly.
+// as godot/alien/alien_static.gd (slot_colours, guard) and alien_static.gdshader's recolour; the uniforms are
+// checked against tools/blender/alien_colour_geom.py by tools/tests/test_alien_colour_slots.py (node), the GLSL's
+// text against the Godot shader's (the same test); never yet run in a browser. Slots: skin, lips, detail (the crest
+// stripes, the freckles and gills; detailOn), gills (the axolotl's gills: "gradient", the default, "whole" or
+// "skin"; anything else throws); the pale front follows the skin as a tinted cream. Every picked colour goes through
+// the guard rails (OKLCh, the hue kept: a chroma cap, lower round yellow-green and hot pink, a lightness range per
+// slot, the lips at least 0.1 OKLab delta E from the skin); a slot left out keeps the build's own paint, and no
+// picks is the build's look exactly. The recolour acts on the raw albedo map texel, gated by the skin mask's red
+// (the painted eyes keep their paint), then the material's base colour factor multiplies it, as glTF does; Godot's
+// material ignores the factor, so makeColours sets it to white (the heads' GLBs have none: 1).
 //
 //   import { makeColours, PRESETS } from "./colour.js";
-//   const col = await makeColours(gltf.scene, "axolotl_accent.png", "axolotl_mask.png", bases);  // bases: heads.json's entry
+//   const col = await makeColours(gltf.scene, "axolotl_accent.png", "axolotl_mask.png", "axolotl_gill.png", bases);
 //   col.set({ skin: "#e39c8c", lips: "#a2575a", detail: "#a2575a", detailOn: true });  // returns the uniforms (sRGB)
 //
 // Plain functions (slotColours, guard, toOklab, fromOklab, recolour) need no three.js: `node colour.js --json` prints
 // them on the test colours.
 
-// per slot: [chroma cap C*, L* min, L* max, dark knee, light knee] (null: no knee); hue bands [centre, half, factor]
+// per slot (OKLCh): [chroma cap C, L min, L max, dark knee, light knee] (null: no knee); hue bands [centre (deg),
+// half width (deg), the cap's factor at the centre]
 export const RAILS = { skin: [0.108, 0.44, 0.871, 0.612, null], lips: [0.113, 0.353, 0.828, null, 0.741],
   detail: [0.113, 0.31, 0.871, null, 0.741], front: [0.043, 0.845, 0.94, null, null] };  // OKLCh
 export const BANDS = [[125, 36, 0.7], [341, 41, 0.8]];
@@ -133,13 +138,15 @@ export function slotColours(bases, picks = {}) {
   const on = "detailOn" in picks ? !!picks.detailOn : "detail" in picks;
   u.detail_color = "detail" in picks ? guard("detail", pick(picks.detail)) : recolour(u.detail_base, base, skin);
   u.detail_on = on ? 1 : 0;
-  u.gill_mode = GILL_MODES.indexOf(picks.gills ?? "gradient");
+  const gills = picks.gills ?? "gradient";
+  if (!GILL_MODES.includes(gills)) throw new Error(`unknown gills ${JSON.stringify(gills)} (one of ${GILL_MODES.join(", ")})`);
+  u.gill_mode = GILL_MODES.indexOf(gills);
   return u;
 }
 
 // The fragment code: the same recolour as alien_static.gdshader (sRGB HSV on the map's linear texel)
-const GLSL = `
-uniform sampler2D csAccent; uniform sampler2D csMask; uniform vec3 csBaseSkin; uniform vec3 csSkin; uniform vec3 csLipBase; uniform vec3 csLip;
+export const GLSL = `
+uniform sampler2D csAccent; uniform sampler2D csMask; uniform sampler2D csGill; uniform vec3 csBaseSkin; uniform vec3 csSkin; uniform vec3 csLipBase; uniform vec3 csLip;
 uniform vec3 csDetailBase; uniform vec3 csDetail; uniform vec3 csFrontBase; uniform vec3 csFront;
 uniform float csFrontSatMax; uniform float csDetailOn; uniform float csGillMode;
 vec3 csHsv(vec3 c) {
@@ -156,12 +163,11 @@ vec3 csTurn(vec3 h, vec3 b, vec3 t) {  // b, t: sRGB uniforms
   b = csHsv(b); t = csHsv(t);
   return vec3(fract(h.x + t.x - b.x), clamp(h.y * t.y / max(b.y, 1.0e-4), 0.0, 1.0), clamp(h.z * t.z / max(b.z, 1.0e-4), 0.0, 1.0));
 }
-vec3 csRecolour(vec3 c, vec4 acc) {
+vec3 csRecolour(vec3 c, vec3 acc, float gill) {
   vec3 h = csHsv(csSrgb(c));
   vec3 t = csRgb(csTurn(h, csBaseSkin, csSkin));
   vec3 fh = csTurn(h, csFrontBase, csFront); fh.y = min(fh.y, max(h.y, csFrontSatMax));
   t = mix(t, csRgb(fh), acc.b);
-  float gill = 1.0 - acc.a;
   float dw = csGillMode < 0.5 ? max(acc.g - gill, 0.0) : (csGillMode < 1.5 ? acc.g : max(acc.g, gill));
   t = mix(t, csRgb(csTurn(h, csDetailBase, csDetail)), csDetailOn * dw);
   t = mix(t, csRgb(csTurn(h, csLipBase, csLip)), acc.r);
@@ -173,9 +179,21 @@ const NAMES = { base_skin: "csBaseSkin", skin_color: "csSkin", lip_base: "csLipB
   detail_base: "csDetailBase", detail_color: "csDetail", front_base: "csFrontBase", front_color: "csFront",
   front_sat_max: "csFrontSatMax", detail_on: "csDetailOn", gill_mode: "csGillMode" };
 
-// Hooks the head's "_static_skin" materials: the accent mask and the skin mask (RGBA and RGB PNGs, loaded
-// unpremultiplied and without colour conversion: the gills live in the accent's alpha, the skin mask in the mask's
-// red). Returns {set(picks), uniforms}; set returns the uniforms (sRGB).
+// three.js's map_fragment with the recolour on the raw map texel, gated by the skin mask as Godot's
+// mix(a, recolour(a, acc, gill), m.r), before the base colour factor multiplies it
+export const MAP_FRAGMENT = `
+#ifdef USE_MAP
+  vec4 sampledDiffuseColor = texture2D( map, vMapUv );
+  vec3 csA = sampledDiffuseColor.rgb;
+  sampledDiffuseColor.rgb = mix(csA, csRecolour(csA, texture2D(csAccent, vMapUv).rgb, texture2D(csGill, vMapUv).r),
+    texture2D(csMask, vMapUv).r);
+  diffuseColor *= sampledDiffuseColor;
+#endif
+`;
+
+// Hooks the head's "_static_skin" materials: the accent mask, the skin mask and the gills (RGB PNGs, loaded without
+// colour conversion: data, as Godot's Image.load_from_file path). Returns {set(picks), uniforms}; set returns the
+// uniforms (sRGB).
 async function dataTexture(THREE, url) {
   const blob = await (await fetch(url)).blob();
   const bmp = await createImageBitmap(blob, { premultiplyAlpha: "none", colorSpaceConversion: "none" });
@@ -184,18 +202,24 @@ async function dataTexture(THREE, url) {
   return t;
 }
 
-export async function makeColours(root, accentUrl, maskUrl, bases) {
+export async function makeColours(root, accentUrl, maskUrl, gillUrl, bases) {
   const THREE = await import("three");
-  const uniforms = { csAccent: { value: await dataTexture(THREE, accentUrl) }, csMask: { value: await dataTexture(THREE, maskUrl) } };
+  const uniforms = { csAccent: { value: await dataTexture(THREE, accentUrl) }, csMask: { value: await dataTexture(THREE, maskUrl) },
+    csGill: { value: await dataTexture(THREE, gillUrl) } };
   for (const n of Object.values(NAMES)) uniforms[n] = { value: ["csFrontSatMax", "csDetailOn", "csGillMode"].includes(n) ? 1 : new THREE.Color() };
   root.traverse((o) => {
     if (!o.isMesh || !o.material || !o.material.name.endsWith("_static_skin")) return;
     const mat = o.material, prev = mat.onBeforeCompile;
+    if (!mat.map) throw new Error(`${mat.name}: no albedo map`);
+    if (mat.color.r !== 1 || mat.color.g !== 1 || mat.color.b !== 1) {  // Godot ignores the factor: so do we
+      console.warn(`${mat.name}: base colour factor ${mat.color.getHexString()} set to white, as Godot's material`);
+      mat.color.setRGB(1, 1, 1);
+    }
     mat.onBeforeCompile = (sh, r) => {
       if (prev) prev(sh, r);
       Object.assign(sh.uniforms, uniforms);
-      sh.fragmentShader = GLSL + sh.fragmentShader.replace("#include <map_fragment>",
-        "#include <map_fragment>\n  diffuseColor.rgb = csRecolour(diffuseColor.rgb, texture2D(csAccent, vMapUv));");
+      if (!sh.fragmentShader.includes("#include <map_fragment>")) throw new Error("three.js: no map_fragment");
+      sh.fragmentShader = GLSL + sh.fragmentShader.replace("#include <map_fragment>", MAP_FRAGMENT);
     };
     mat.needsUpdate = true;
   });
@@ -213,7 +237,12 @@ export async function makeColours(root, accentUrl, maskUrl, bases) {
 }
 
 // node colour.js --json '<{"bases": {...}, "picks": [...]}>' : slotColours per picks (the parity test)
+// node colour.js --glsl : the GLSL and the map chunk (the shader test)
 if (typeof process !== "undefined" && process.argv && process.argv[2] === "--json") {
   const job = JSON.parse(process.argv[3]);
-  console.log(JSON.stringify(job.picks.map((p) => slotColours(job.bases, p))));
+  console.log(JSON.stringify(job.picks.map((p) => {
+    try { return slotColours(job.bases, p); } catch (e) { return { error: String(e.message) }; }
+  })));
+} else if (typeof process !== "undefined" && process.argv && process.argv[2] === "--glsl") {
+  console.log(JSON.stringify({ glsl: GLSL, map: MAP_FRAGMENT }));
 }

@@ -8,9 +8,11 @@ extends RefCounted
 ##   plain albedo, `<head>_albedo_plain.png`, for alive_mix; the 6th another shader: SHADER_288, the merged #288
 ##   shader kept as it was, for the review's "before" rows)
 ##   AlienStatic.set_skin(mats, Color("e98a8c"))
-## The colour slots (2026-10-23): apply()'s 7th and 8th arguments, the accent mask (`<head>_accent.png` beside the
-## GLB: R lips, G details, B the pale front, A 1 - the gills) and its bases ({"lips", "detail", "front"}: the sRGB
-## medians in `<head>_accent.json`); then
+## The colour slots (2026-10-23): apply()'s 7th to 9th arguments, the accent mask (`<head>_accent.png` beside the
+## GLB: R lips, G details, B the pale front), its bases ({"lips", "detail", "front"}: the sRGB medians in
+## `<head>_accent.json`) and the whole gills (`<head>_gill.png`, grey; v3: out of the accent's alpha). Both masks are
+## data: load them with data_texture() (Image.load_from_file) or import them lossless with the settings in
+## docs/godot.md ("The colour slots' masks"); then
 ##   AlienStatic.set_colours(mats, {"skin": Color(...), "lips": Color(...), "detail": Color(...), "detail_on": true})
 ## (a slot left out keeps the build's own paint; set_colours(mats, {}) is the merged look) or a preset:
 ##   AlienStatic.set_colours(mats, AlienStatic.PRESETS[1]["picks"])
@@ -44,15 +46,18 @@ const PRESETS: Array[Dictionary] = [
 	{"name": "slate", "picks": {"skin": "#7f98a8", "lips": "#c98a7e", "detail": "#c98a7e", "detail_on": true}},
 ]
 
-## A curated skin palette (sRGB); the build's own teal comes first at run time.
-const PALETTE: Array[Color] = [Color(0.93, 0.55, 0.56), Color(0.64, 0.56, 0.92), Color(0.98, 0.78, 0.30),
+## A curated skin palette (sRGB); the build's own teal comes first at run time. v3: the colours as set_skin's guard
+## rails render them on SHADER (guard("skin", PALETTE_288[i])); PALETTE_288, the merged values, stay for SHADER_288,
+## whose set_skin is unguarded as merged (the #288 review output reproducible).
+const PALETTE: Array[Color] = [Color("#ea9191"), Color("#a293dd"), Color("#efca79"), Color("#6184c6")]
+const PALETTE_288: Array[Color] = [Color(0.93, 0.55, 0.56), Color(0.64, 0.56, 0.92), Color(0.98, 0.78, 0.30),
 	Color(0.30, 0.50, 0.90)]
 
 
 ## Replaces every "_static_skin" surface material under root; returns the new ShaderMaterials.
 static func apply(root: Node, mask: Texture2D, base_skin: Color, detail: Texture2D = null,
 		plain: Texture2D = null, shader: Shader = null, accent: Texture2D = null,
-		bases: Dictionary = {}) -> Array[ShaderMaterial]:
+		bases: Dictionary = {}, gill: Texture2D = null) -> Array[ShaderMaterial]:
 	var made: Array[ShaderMaterial] = []
 	for node: Node in root.find_children("*", "MeshInstance3D", true, false):
 		var mi: MeshInstance3D = node
@@ -75,6 +80,8 @@ static func apply(root: Node, mask: Texture2D, base_skin: Color, detail: Texture
 			sm.set_shader_parameter("skin_color", base_skin)
 			if accent != null:
 				sm.set_shader_parameter("accent_tex", accent)
+			if gill != null:
+				sm.set_shader_parameter("gill_tex", gill)
 			var b: Dictionary = {"skin": base_skin}
 			for k: String in ["lips", "detail", "front"]:
 				b[k] = _pick(bases[k]) if bases.has(k) else base_skin
@@ -85,18 +92,41 @@ static func apply(root: Node, mask: Texture2D, base_skin: Color, detail: Texture
 	return made
 
 
-## The player's skin colour (sRGB) on every material apply() made.
+## The player's skin colour (sRGB) on every material apply() made: through the guard rails (set_colours), except on
+## SHADER_288 materials, which take it as it is (the merged #288 path, its review output reproducible).
 static func set_skin(mats: Array[ShaderMaterial], color: Color) -> void:
-	set_colours(mats, {"skin": color})
+	for sm: ShaderMaterial in mats:
+		if sm.shader == SHADER_288:
+			sm.set_shader_parameter("skin_color", color)
+		else:
+			var one: Array[ShaderMaterial] = [sm]
+			set_colours(one, {"skin": color})
+
+
+## A colour slots mask (accent or gill PNG) as data: an imported res:// texture as it is (its import settings in
+## docs/godot.md), any other path through Image.load_from_file (lossless, linear) with mipmaps; null if missing.
+static func data_texture(path: String) -> Texture2D:
+	if path.begins_with("res://"):
+		return load(path) as Texture2D
+	if not FileAccess.file_exists(path):
+		return null
+	var img: Image = Image.load_from_file(path)
+	if img == null or img.is_empty():
+		return null
+	img.generate_mipmaps()
+	return ImageTexture.create_from_image(img)
 
 
 ## The player's colour slots on every material apply() made: picks holds any of "skin", "lips", "detail" (Color,
 ## "#rrggbb" or [r, g, b]), "detail_on" (default: true when "detail" is picked), "gills" ("skin", "gradient" (default), "whole").
-## Returns the uniforms set (sRGB), the same for every material of one head.
+## Returns the uniforms set (sRGB), the same for every material of one head; an unknown "gills" value is an error
+## (push_error, {} returned, the materials left as they were), as in alien_colour_geom.py and colour.js.
 static func set_colours(mats: Array[ShaderMaterial], picks: Dictionary) -> Dictionary:
 	var u: Dictionary = {}
 	for sm: ShaderMaterial in mats:
 		u = slot_colours(sm.get_meta("colour_bases", {}), picks)
+		if u.is_empty():
+			return u
 		_put(sm, u)
 	return u
 
@@ -109,6 +139,10 @@ static func _put(sm: ShaderMaterial, u: Dictionary) -> void:
 ## The shader's colour uniforms for a head's bases ({"skin", "lips", "detail", "front"}, sRGB) and the picks; no
 ## picks: every target its base (the identity). alien_colour_geom.slot_colours, line for line.
 static func slot_colours(bases: Dictionary, picks: Dictionary) -> Dictionary:
+	var gm: int = GILL_MODES.find(str(picks.get("gills", "gradient")))
+	if gm < 0:
+		push_error("alien_static: unknown gills '%s' (one of %s)" % [picks["gills"], ", ".join(GILL_MODES)])
+		return {}
 	var base: Color = bases["skin"]
 	var u: Dictionary = {"base_skin": base, "lip_base": bases["lips"], "detail_base": bases["detail"],
 		"front_base": bases["front"]}
@@ -131,7 +165,7 @@ static func slot_colours(bases: Dictionary, picks: Dictionary) -> Dictionary:
 	else:  # the build's marks, following a picked skin
 		u["detail_color"] = recolour(u["detail_base"], base, skin)
 	u["detail_on"] = 1.0 if on else 0.0
-	u["gill_mode"] = float(GILL_MODES.find(picks.get("gills", "gradient")))
+	u["gill_mode"] = float(gm)
 	return u
 
 

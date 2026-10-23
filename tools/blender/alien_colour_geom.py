@@ -1,6 +1,8 @@
 """The alien pilot's static heads (art #196): the player's colour slots, plain Python. The same maths lives in
-godot/alien/alien_static.gd (`slot_colours`, `guard`) and tools/web/alien_colour/colour.js (`slotColours`, `guard`);
-test_alien_colour_slots.py checks all three against this file.
+godot/alien/alien_static.gd (`slot_colours`, `guard`) and tools/web/alien_colour/colour.js (`slotColours`, `guard`).
+Their uniforms are checked against this file: the JS by test_alien_colour_slots.py (node, within 1e-6), the GDScript
+by test_alien_parse_godot.py (headless Godot, a heavy test, within 1e-5) and by the proof's every cell
+(alien_colour_slots.py). The per-texel recolour (the shaders) is checked only by the proof's renders and the identity.
 
 Slots, each an sRGB colour the player picks:
 - skin: every skin texel follows it (hue turned, saturation and value scaled from the build's `base_skin`);
@@ -8,7 +10,8 @@ Slots, each an sRGB colour the player picks:
 - detail: the marks (the accent's G: the chameleon's crest stripes, the axolotl's freckles and gills) in their own
   colour when `detail_on`; off, they follow the skin as the build's paint does;
 - gills (the axolotl, with the details on): "gradient" (the default: the accent's G, skin at the gill's root to the
-  details colour at its tips), "whole" (the whole gill, stalk and fringe: the accent's A, 1 - gill) or "skin";
+  details colour at its tips), "whole" (the whole gill, stalk and fringe: `<head>_gill.png`) or "skin"; any other
+  value is an error (ValueError here; colour.js throws, alien_static.gd push_errors and returns {});
 - the pale front (the accent's B) is no slot: it follows the skin as a tinted cream (study variant E).
 
 Guard rails, in OKLCh (OKLab's lightness, chroma and hue; v2: the hue angle kept, CIELAB's chroma cut bent blue
@@ -112,7 +115,8 @@ def chroma_cap(slot: str, hue_deg: float, L: float) -> float:
 def guard(slot: str, c) -> tuple:
     """One picked sRGB colour inside its slot's rails (OKLCh): the chroma capped (lower in the hue bands and past the
     knees), the lightness clamped, the hue angle kept; a colour inside the rails comes back unchanged. sRGB's gamut
-    clip (a channel past 0 or 1 after the cut) may still turn the hue a little: the chroma is halved until it fits."""
+    clip (a channel past 0 or 1 after the cut) may still turn the hue a little: the chroma scale is bisected (20
+    steps) to the largest that fits."""
     L, a, b = to_oklab(c)
     lo, hi = RAILS[slot][1:3]
     Lc = max(lo, min(hi, L))
@@ -202,5 +206,8 @@ def slot_colours(bases: dict, picks: dict) -> dict:
     else:  # the build's marks, following a picked skin
         out["detail_color"] = recolour(out["detail_base"], base, skin)
     out["detail_on"] = 1.0 if on else 0.0
-    out["gill_mode"] = float(GILL_MODES.index(picks.get("gills", "gradient")))
+    gills = picks.get("gills", "gradient")
+    if gills not in GILL_MODES:
+        raise ValueError(f"unknown gills {gills!r} (one of {', '.join(GILL_MODES)})")
+    out["gill_mode"] = float(GILL_MODES.index(gills))
     return out

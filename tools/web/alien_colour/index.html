@@ -52,7 +52,7 @@ for (const name of ["axolotl", "chameleon"]) {
   gltf.scene.position.set(x, -box.getCenter(new THREE.Vector3()).y * 1.1 / size.y, 0);
   x += 1.3;
   scene.add(gltf.scene);
-  cols.push(await makeColours(gltf.scene, `${name}_accent.png`, `${name}_mask.png`, heads[name]));
+  cols.push(await makeColours(gltf.scene, `${name}_accent.png`, `${name}_mask.png`, `${name}_gill.png`, heads[name]));
 }
 const $ = (id) => document.getElementById(id);
 function picks() {

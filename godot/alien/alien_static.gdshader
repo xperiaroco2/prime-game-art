@@ -1,14 +1,17 @@
 // The alien pilot's static premium head skin (art #196): one material for the whole head, Meshy's own sculpt with
 // its painted eyes. The albedo (sRGB) holds the 2D's teal and mint; mask_tex (linear) holds R the skin tint mask
 // (1 skin, 0 the eyes), G the roughness (wet eyes, softer lips, matte gills), B the subsurface and sheen weight.
-// The colour slots (2026-10-23): accent_tex (linear RGBA, tools/blender/alien_tint_mask.py, `<head>_accent.png`) holds
-// R the lips, G the details (the chameleon's crest stripes, the axolotl's freckles and its gills' root-to-tip
-// gradient), B the pale front, A 1 - the whole gills (stalk and fringe). Every skin texel is recoloured from base_skin (the GLB's base_skin_srgb) to skin_color; the front
-// from front_base to front_color (a tinted cream after the skin), its saturation never above max(its own,
-// front_sat_max); the details from detail_base to detail_color where detail_on (off: they follow the skin), the gills
-// with them by gill_mode (0 the skin, 1 the gradient: skin at the root to the details at the tips, 2 the whole gill); the lips from lip_base to lip_color. The recolour (the
-// hue turned by target - base, saturation and value scaled by their ratios) runs in sRGB HSV: the albedo is turned
-// to sRGB and back, so it is the same maths as alien_static.gd's guard rails and tools/blender/alien_colour_geom.py.
+// The colour slots (2026-10-23; tools/blender/alien_tint_mask.py): accent_tex (`<head>_accent.png`, linear RGB)
+// holds R the lips, G the details (the chameleon's crest stripes, the axolotl's freckles and its gills'
+// root-to-tip gradient), B the pale front; gill_tex (`<head>_gill.png`, linear, grey; v3: out of the accent's
+// alpha) the whole gills (stalk and fringe). Both are data: lossless, no sRGB, no alpha (docs/godot.md).
+// Every skin texel is recoloured from base_skin (the GLB's base_skin_srgb) to skin_color; the front from
+// front_base to front_color (a tinted cream after the skin), its saturation never above max(its own,
+// front_sat_max); the details from detail_base to detail_color where detail_on (off: they follow the skin), the
+// gills with them by gill_mode (0 the skin, 1 the gradient: skin at the root to the details at the tips, 2 the
+// whole gill); the lips from lip_base to lip_color. The recolour (the hue turned by target - base, saturation and
+// value scaled by their ratios) runs in sRGB HSV on the raw albedo texel, gated by the skin mask (the eyes keep
+// their paint): the albedo is turned to sRGB and back, the same maths as tools/web/alien_colour/colour.js's GLSL.
 // Every target at its base is the identity. alien_static.gd builds this material from the imported glTF material
 // and works out the targets from the player's picks (set_colours, the guard rails).
 //
@@ -45,6 +48,7 @@ uniform float alive_mix : hint_range(0.0, 2.0) = 1.0;
 uniform vec3 base_skin : source_color = vec3(0.39, 0.77, 0.76);
 uniform vec3 skin_color : source_color = vec3(0.39, 0.77, 0.76);
 uniform sampler2D accent_tex : hint_default_black, filter_linear_mipmap, repeat_disable;
+uniform sampler2D gill_tex : hint_default_black, filter_linear_mipmap, repeat_disable;
 uniform vec3 lip_base : source_color = vec3(0.39, 0.77, 0.76);
 uniform vec3 lip_color : source_color = vec3(0.39, 0.77, 0.76);
 uniform vec3 detail_base : source_color = vec3(0.39, 0.77, 0.76);
@@ -124,14 +128,13 @@ vec3 turn(vec3 h, vec3 base_c, vec3 target_c) {
 		clamp(h.z * t.z / max(b.z, 1.0e-4), 0.0, 1.0));
 }
 
-// the colour slots on one linear albedo texel
-vec3 recolour(vec3 c, vec4 acc) {
+// the colour slots on one linear albedo texel: acc the accent (lips, details, front), gill the whole gills' weight
+vec3 recolour(vec3 c, vec3 acc, float gill) {
 	vec3 h = rgb2hsv(to_srgb(c));
 	vec3 t = hsv2rgb(turn(h, base_skin, skin_color));
 	vec3 fh = turn(h, front_base, front_color);
 	fh.y = min(fh.y, max(h.y, front_sat_max));
 	t = mix(t, hsv2rgb(fh), acc.b);
-	float gill = 1.0 - acc.a;
 	float dw = gill_mode < 0.5 ? max(acc.g - gill, 0.0) : (gill_mode < 1.5 ? acc.g : max(acc.g, gill));
 	t = mix(t, hsv2rgb(turn(h, detail_base, detail_color)), detail_on * dw);
 	t = mix(t, hsv2rgb(turn(h, lip_base, lip_color)), acc.r);
@@ -203,7 +206,7 @@ void fragment() {
 	}
 	vec4 d = texture(detail_tex, UV);
 	float eye = 1.0 - m.r;
-	vec3 c = mix(a, recolour(a, texture(accent_tex, UV)), m.r);
+	vec3 c = mix(a, recolour(a, texture(accent_tex, UV).rgb, texture(gill_tex, UV).r), m.r);
 	float rough = m.g;
 	// the creases deeper and more saturated, the lips and lids a little flushed (skin only)
 	float crease = (1.0 - d.r) * cavity * m.r;
