@@ -521,6 +521,8 @@ place = [
   ["cable_coil", [6.8782, 1.6597, 0.0], 11.336],
   ["floor_patch_a", [-0.3605, 3.0301, 0.0], -88.0],
   ["floor_patch_b", [1.6192, -3.4453, 0.0], 57.0],
+  ["station_vent_e", [2.409, -4.7912, 0.0], -71.802],
+  ["station_vent_w", [-2.409, -4.7912, 0.0], 71.802],
 ]
 
 [[pieces]]
@@ -1129,3 +1131,19 @@ args = { u = 0.36, v = 0.3 }
 id = "rim_bolts"
 builder = "rim_bolts"
 collide = false
+
+[[pieces]]
+id = "station_vent_e"
+builder = "station_vent"
+collide = false
+args = { id = "station_vent_e", side = "e" }
+spot = "vent_e"
+unit = [-0.78, 0.78, -0.01, 0.5, -0.02, 2.08]
+
+[[pieces]]
+id = "station_vent_w"
+builder = "station_vent"
+collide = false
+args = { id = "station_vent_w", side = "w" }
+spot = "vent_w"
+unit = [-0.78, 0.78, -0.01, 0.5, -0.02, 2.08]

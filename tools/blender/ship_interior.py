@@ -1285,3 +1285,8 @@ def scratches(args, layout):
                 (u - du + nu, v - dv + nv)]
         lines.append(G.slab(fr, poly, 0.0, 0.0006))
     return [P("scratches", M(*lines), "int_scratch")]
+
+
+# step 2, station 1: the throat vents' builder (imported last: it reads this module's numbers)
+import ship_interior_vent  # noqa: E402
+MODULES.append(ship_interior_vent)
