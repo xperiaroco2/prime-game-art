@@ -85,3 +85,8 @@ prompt = "The reference image is a finished head-and-shoulders design of the axo
 images = [
   { file = "raw:research/2026-10-22-roster/design/final/w01-axolotl.jpg", provenance = "w01, the axolotl woman of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "41e9054af43a8c3f04d2c8575aeb2726a459f8a4e6189e1534b4b24c5d65961d" },
 ]
+
+# Ran 2026-10-23: 8 of 8 items done, $0.1505 of the $3.00 cap (`openai-images status`). Review sheets (bust beside
+# bare A, bare B, clothed A, clothed B) and the per-image verdict in <raw>/2026-10-23-alien-body-concepts/sheets/:
+# ch_body_sheet.png, ax_body_sheet.png, verdict.md. Recommended: body B for both; every body's neck is narrower than
+# the bust's flare and needs widening into the shoulders next.
