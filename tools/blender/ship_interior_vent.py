@@ -10,7 +10,7 @@ carries "rot_u", its closed turn, and "hull", its box's corners for the checks).
 The piece's frame: the spot at the origin, u (plan x) along the wall, v (plan y) out of the wall into the throat,
 h absolute (the deck at FLOOR). East: +u runs toward the hall; the west piece mirrors u, so its column is toward the
 hall too. In Godot (x, h, v): each blade a leaf `<id>_slat<k>` (k 1..7 from the top) with its origin on its pivot (the
-caps' axis, along x): it opens with rotation.x = -OPEN_RAD * t (t 0 closed: the blades hang flat, each tip over the
+caps' axis, along x): it opens with rotation.x = -OPEN_RAD * t (t 0 closed: the blades hang 33 deg down, each tip over the
 next blade's back, an orange seam between; t 1 calm, as the concept's front and side views); the marker
 `<id>_marker` a leaf with its origin at its rest point, the glass's bottom: position.y = rest + MARK_TRAVEL * t.
 The game drives the glows by material: `int_halo__vent_heat` (the heat panel in the well, the problem state;
@@ -35,7 +35,7 @@ BEND, IN, TOP = S.TH_BEND, S.TH_IN, S.TH_H      # the throat wall: vertical to 1
 for _name in ("int_halo__vent_heat", "int_cyan__vent_cool", "glow_nav_white__vent_marker"):
     L.MATERIALS[_name] = dict(L.MATERIALS[_name.split("__")[0]])
 # the well's two glows (step 2: hotter and deeper, strength 1.5 read tan and pale blue under AgX)
-L.MATERIALS["int_halo__vent_heat"].update(base=(1.0, 0.22, 0.0, 1.0), emission=(1.0, 0.22, 0.0), strength=5.0)
+L.MATERIALS["int_halo__vent_heat"].update(base=(1.0, 0.22, 0.0, 1.0), emission=(1.0, 0.22, 0.0), strength=12.0)
 L.MATERIALS["int_cyan__vent_cool"].update(base=(0.0, 0.5, 1.0, 1.0), emission=(0.0, 0.5, 1.0), strength=4.0)
 BLADE, DARK = "vent_a_blade", "int_dark"   # the blade GLB's material
 
@@ -59,11 +59,15 @@ SLATS, PIVOT_TOP, PITCH = 7, 1.276, 0.15      # the pivots 127.6 .. 37.6 every 1
 # pivot, the calm pose; seven copies. Its blade.json (2026-10-23): the calm blade's box about the pivot (du, dv, dh),
 # the calm seam straight from the front 4.7 cm (the slices' median), closed 1.9 cm at CLOSED_DEG, the first cut at
 # 58 deg; 36.5 deg (a 7.5 mm seam) and 34 dipped the bottom blade's tip below the frame's bottom (vent_motion.gd).
-BLADE_GLB = "ship/v4/vents-a/blade_r4/blade.glb"
-BLADE_BOX = ((-0.3877, 0.3874), (-0.03, 0.2649), (-0.0966, 0.0303))
+BLADE_GLB = "ship/v4/vents-a/blade_r5/blade.glb"
+BLADE_BOX = ((-0.3878, 0.3874), (-0.0324, 0.265), (-0.1301, 0.0155))
 NOSE_R = 0.03                                 # the root's back behind the pivot (ship_vent_a_blade.NOSE_R)
-BLADE_SEAMS = {"calm": 0.0473, "closed": 0.0187, "first_cut_deg": 58.0}
-CLOSED_DEG = 33.0
+# step 4 (vents-a4): the calm pose tilted 22 deg tip down (the concept's claws, the upper bevel facet to the front),
+# the section squashed to 0.5 in h; blade_r5/blade.json: the calm seam 5.9 cm, closed 1.35 cm at CLOSED_DEG more
+# (33 deg from flat, the bottom blade's limit), the first cut at 50; each blade carries a lit seam strip on its lower
+# edge (`int_halo__vent_seam`, 32 triangles: the heat state, dark calm).
+BLADE_SEAMS = {"calm": 0.0593, "closed": 0.0135, "first_cut_deg": 50.0}
+CLOSED_DEG = 11.0
 # closed: each blade CLOSED_DEG further down than calm, a seam of about 1.9 cm straight on (front_closed's lit seams)
 OPEN_RAD = math.radians(CLOSED_DEG)
 MARK_H = 0.03                                 # the marker's height; it slides from GLASS_H[0]

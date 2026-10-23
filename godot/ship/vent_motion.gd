@@ -149,6 +149,26 @@ func _calm(id: String, calm: bool) -> void:
 		_dim[id] = mats
 	for i: int in _dim[id]:
 		body.set_surface_override_material(i, _dim[id][i] if calm else null)
+	# step 4: each blade's lit seam strip (`int_halo__vent_seam`) glows with the heat, dark bronze when calm
+	for k: int in range(1, int(_req["slats"]) + 1):
+		var slat: MeshInstance3D = _leaf(id, "slat%d" % k) as MeshInstance3D
+		for i: int in slat.mesh.get_surface_count():
+			var src: Material = slat.mesh.surface_get_material(i)
+			if src != null and src.resource_name.ends_with("__vent_seam"):
+				slat.set_surface_override_material(i, _seam_off(src) if calm else null)
+
+
+var _seam_dark: Dictionary = {}
+
+
+## The seam strip's material with its glow off (the calm state).
+func _seam_off(src: Material) -> Material:
+	if not _seam_dark.has(src):
+		var m: BaseMaterial3D = (src as BaseMaterial3D).duplicate()
+		m.emission_enabled = false
+		m.albedo_color = Color(0.16, 0.09, 0.05)
+		_seam_dark[src] = m
+	return _seam_dark[src]
 
 
 func _breathe(s: float) -> float:

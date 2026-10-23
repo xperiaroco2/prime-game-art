@@ -96,7 +96,8 @@ class ShipVentTest(unittest.TestCase):
             self.assertAlmostEqual(o[0], (V.CAP_U[0] + V.CAP_U[1]) / 2, places=6)
             self.assertAlmostEqual(o[1], V.PIVOT_V, places=6)
             self.assertAlmostEqual(o[2], V.FLOOR + V.PIVOT_TOP - (k - 1) * V.PITCH, places=6)
-        self.assertAlmostEqual(V.BLADE_BOX[1][0], -0.03, places=3)   # the root's back 3 cm behind the caps' axis
+        # the root's back about 3 cm behind the caps' axis (step 4: the 22 deg calm tilt adds 2.4 mm)
+        self.assertAlmostEqual(V.BLADE_BOX[1][0], -0.03, delta=0.005)
         m = parts["marker"]
         self.assertAlmostEqual(m["origin"][2], min(h for _, _, h in m["verts"]), places=6)
         self.assertAlmostEqual(m["origin"][2] + V.MARK_TRAVEL + V.MARK_H, V.FLOOR + V.GLASS_H[1], places=6)
