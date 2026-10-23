@@ -130,7 +130,8 @@ void vertex() {
 
 // The procedural iris over the clean sclera at one eye texel (lively).
 vec3 lively_eye(vec3 sclera) {
-	bool left = v_obj.x > 0.0;
+	// the nearer eye centre (v_obj is the posed position: after a head turn a texel may cross x = 0)
+	bool left = distance(v_obj, eye_centre_l) < distance(v_obj, eye_centre_r);
 	vec3 dir = normalize(v_obj - (left ? eye_centre_l : eye_centre_r));
 	vec3 g = left ? gaze_l : gaze_r;
 	float th = acos(clamp(dot(dir, g), -1.0, 1.0));

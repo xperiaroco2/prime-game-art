@@ -8,7 +8,8 @@ extends RefCounted
 ##   const Lively = preload("res://alien/alien_lively.gd")
 ##   var live := Lively.new(head_scene_root, mats, lively_json_dict, sclera_texture)
 ##   live.target = some_global_position; live.step(delta)  # each frame (it advances the skeleton itself)
-## The gaze maths repeat tools/blender/alien_lively_geom.py (eye_frame, gaze_dir, gaze_offsets, clamp_gaze).
+## The gaze maths repeat tools/blender/alien_lively_geom.py (eye_frame, gaze_dir, eye_offsets, clamp_gaze with
+## cap_deg = EYE_LIMIT's 25).
 
 const YAW_LIMIT := deg_to_rad(35.0)
 const PITCH_LIMIT := deg_to_rad(20.0)
@@ -84,6 +85,13 @@ static func gaze_dir(rest: Vector3, yaw: float, pitch: float) -> Vector3:
 	return (fr[0] + fr[1] * tan(yaw) + fr[2] * tan(pitch)).normalized()
 
 
+## (yaw, pitch) of a direction t in the eye's rest frame: gaze_dir's inverse (alien_lively_geom.eye_offsets).
+static func eye_offsets(rest: Vector3, t: Vector3) -> Vector2:
+	var fr := eye_frame(rest)
+	var a: float = t.dot(fr[0])
+	return Vector2(atan2(t.dot(fr[1]), a), atan2(t.dot(fr[2]), a))
+
+
 static func clamp_gaze(yaw: float, pitch: float, lim: Dictionary) -> Vector2:
 	var ly: float = minf(deg_to_rad(float(lim["pos_x"] if yaw >= 0.0 else lim["neg_x"])), EYE_LIMIT)
 	var lp: float = minf(deg_to_rad(float(lim["up"] if pitch >= 0.0 else lim["down"])), EYE_LIMIT)
@@ -103,6 +111,7 @@ static func _damp(x: float, v: float, goal: float, hz: float, dt: float) -> Vect
 
 
 func step(dt: float) -> void:
+	dt = minf(dt, 0.05)  # a hitch frame must not kick the crest spring (as the web)
 	time += dt
 	var to_skel: Transform3D = skeleton.global_transform.affine_inverse()
 	var t_local: Vector3 = to_skel * target
@@ -141,7 +150,8 @@ func step(dt: float) -> void:
 		var e: Dictionary = eyes[side]
 		var c: Vector3 = posed * _v(e["centre"])
 		var tl: Vector3 = posed.basis.inverse() * (t_local - c)
-		var lim := clamp_gaze(atan2(tl.x, tl.z), atan2(tl.y, Vector2(tl.x, tl.z).length()), e["limits_deg"])
+		var off := eye_offsets(_v(e["rest"]), tl)  # in the eye's rest frame, where the lid limits were measured
+		var lim := clamp_gaze(off.x, off.y, e["limits_deg"])
 		var s: Vector4 = _eye[side]
 		var ry := _damp(s.x, s.z, lim.x, EYE_HZ, dt)
 		var rp := _damp(s.y, s.w, lim.y, EYE_HZ, dt)

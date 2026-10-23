@@ -2,7 +2,8 @@
 offsets and their lid clamp, a minimal skin written into an existing GLB, and a plain PNG writer. No Blender import:
 tools/tests/test_alien_lively_geom.py runs them with the standard library; alien_lively_build.py calls the same
 functions (the weights on plain floats per vertex). godot/alien/alien_lively.gd and the web module
-(`lively/web/lively.js`) repeat the gaze maths (gaze_offsets, gaze_dir, clamp_gaze) line for line.
+(`lively/web/lively.js`) repeat the gaze maths (eye_frame, gaze_dir, eye_offsets, clamp_gaze with its 25-degree
+`cap_deg`) line for line.
 """
 from __future__ import annotations
 
@@ -70,11 +71,21 @@ def gaze_dir(rest: tuple[float, float, float], yaw: float, pitch: float) -> tupl
     return _norm(tuple(f[i] + a * s[i] + b * u[i] for i in range(3)))
 
 
-def clamp_gaze(yaw: float, pitch: float, lim: dict) -> tuple[float, float]:
+def eye_offsets(rest: tuple[float, float, float], t: tuple[float, float, float]) -> tuple[float, float]:
+    """(yaw, pitch) in radians of a direction t in the eye's rest frame (eye_frame): gaze_dir's inverse, so
+    gaze_dir(rest, *eye_offsets(rest, t)) points along t. The lid limits are measured in this frame."""
+    f, s, u = eye_frame(rest)
+    a = sum(t[i] * f[i] for i in range(3))
+    return math.atan2(sum(t[i] * s[i] for i in range(3)), a), math.atan2(sum(t[i] * u[i] for i in range(3)), a)
+
+
+def clamp_gaze(yaw: float, pitch: float, lim: dict, cap_deg: float | None = None) -> tuple[float, float]:
     """(yaw, pitch) pulled inside the lid ellipse: lim holds the degrees the lids allow toward +X (`pos_x`), -X
-    (`neg_x`), up and down; each quadrant is an ellipse through its two limits."""
-    ly = math.radians(lim["pos_x"] if yaw >= 0.0 else lim["neg_x"])
-    lp = math.radians(lim["up"] if pitch >= 0.0 else lim["down"])
+    (`neg_x`), up and down, each capped at cap_deg (the controllers' EYE_LIMIT, 25) when given; each quadrant is an
+    ellipse through its two limits."""
+    cap = math.inf if cap_deg is None else cap_deg
+    ly = math.radians(min(lim["pos_x"] if yaw >= 0.0 else lim["neg_x"], cap))
+    lp = math.radians(min(lim["up"] if pitch >= 0.0 else lim["down"], cap))
     if ly <= 0.0 or lp <= 0.0:
         return (min(max(yaw, -ly), ly) if ly > 0 else 0.0), (min(max(pitch, -lp), lp) if lp > 0 else 0.0)
     e = (yaw / ly) ** 2 + (pitch / lp) ** 2

@@ -76,6 +76,23 @@ class GazeTest(unittest.TestCase):
         self.assertAlmostEqual((math.degrees(y) / 10) ** 2 + (math.degrees(p) / 30) ** 2, 1.0)
         self.assertEqual(G.clamp_gaze(0.01, 0.01, lim), (0.01, 0.01))
 
+    def test_clamp_cap(self):
+        lim = {"pos_x": 40, "neg_x": 8, "up": 0, "down": 40}
+        self.assertAlmostEqual(math.degrees(G.clamp_gaze(math.radians(60), 0.0, lim)[0]), 40)
+        self.assertAlmostEqual(math.degrees(G.clamp_gaze(math.radians(60), 0.0, lim, cap_deg=25)[0]), 25)
+        self.assertAlmostEqual(math.degrees(G.clamp_gaze(-math.radians(60), 0.0, lim, cap_deg=25)[0]), -8)
+        self.assertAlmostEqual(math.degrees(G.clamp_gaze(0.0, -math.radians(60), lim, cap_deg=25)[1]), -25)
+
+    def test_eye_offsets_invert_gaze_dir(self):
+        rest = (-0.06077, -0.01519, 0.99804)  # the chameleon's left eye
+        for yaw, pitch in ((0.0, 0.0), (0.3, -0.2), (-0.4, 0.1)):
+            y, p = G.eye_offsets(rest, G.gaze_dir(rest, yaw, pitch))
+            self.assertAlmostEqual(y, yaw)
+            self.assertAlmostEqual(p, pitch)
+        # straight ahead in the head's frame is a few degrees off this eye's rest gaze
+        y, _ = G.eye_offsets(rest, (0.0, 0.0, 1.0))
+        self.assertAlmostEqual(math.degrees(y), math.degrees(math.atan2(0.06077, 0.99804)), places=3)
+
 
 class SkinTest(unittest.TestCase):
     def test_add_skin_round_trip(self):
