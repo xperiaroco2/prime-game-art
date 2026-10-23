@@ -71,6 +71,42 @@ def make(p: dict):
     return obj
 
 
+def import_glb(p: dict) -> list:
+    """A part made elsewhere (way A of station 1: Meshy's cleaned vent body): {"name", "glb", "offset": (x, y, h),
+    "mirror_u": bool}. Every mesh of the GLB, its own materials and textures kept, joined into one object named
+    p["name"], moved by offset (plan x, y, h) and mirrored in x when mirror_u (its normals flipped back)."""
+    from mathutils import Matrix
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=p["glb"])
+    new = [o for o in bpy.data.objects if o not in before]
+    meshes = [o for o in new if o.type == "MESH"]
+    for o in meshes:
+        o.data.transform(o.matrix_world)
+        o.parent = None
+        o.matrix_world = Matrix.Identity(4)
+    for o in new:
+        if o not in meshes:
+            bpy.data.objects.remove(o, do_unlink=True)
+    obj = meshes[0]
+    if len(meshes) > 1:
+        with bpy.context.temp_override(active_object=obj, selected_editable_objects=meshes):
+            bpy.ops.object.join()
+    x, y, h = p.get("offset", (0.0, 0.0, 0.0))
+    m = Matrix.Translation((x, -y, h))
+    if p.get("mirror_u"):
+        m = m @ Matrix.Scale(-1.0, 4, (1.0, 0.0, 0.0))
+    obj.data.transform(m)
+    if p.get("mirror_u"):
+        obj.data.flip_normals()
+    obj.name = obj.data.name = p["name"]
+    for c in obj.users_collection:
+        if c is not bpy.context.scene.collection:
+            c.objects.unlink(obj)
+    if obj.name not in bpy.context.scene.collection.objects:
+        bpy.context.scene.collection.objects.link(obj)
+    return obj
+
+
 def rig(objs: list, parts: list[dict]) -> None:
     """Moving parts (step 2, the stations; docs/props.md "Conventions"): a part with "origin" (plan x, y, h in the
     piece's frame) gets its object's origin there, its hinge or rest point, the mesh kept in place; a part with
@@ -98,7 +134,7 @@ def build(piece: dict, layout: dict, out: Path) -> dict:
     for p in parts:  # Godot's importer gives a `-col` mesh a static body with its trimesh (one-sided: solids face out)
         if piece.get("collide"):
             p["name"] += "-col"
-    objs = [make(p) for p in parts]
+    objs = [import_glb(p) if p.get("glb") else make(p) for p in parts]
     rig(objs, parts)
     glb = out / f"{piece['id']}.glb"
     bpy.ops.export_scene.gltf(filepath=str(glb), **EXPORT)
@@ -107,7 +143,7 @@ def build(piece: dict, layout: dict, out: Path) -> dict:
     hi = [max(p[k] for p in pts) for k in range(3)]
     return {"glb": glb.as_posix(), "lane": piece["lane"],
             "triangles": sum(len(pl.vertices) - 2 for o in objs for pl in o.data.polygons),
-            "objects": [o.name for o in objs], "materials": sorted({p["mat"] for p in parts}),
+            "objects": [o.name for o in objs], "materials": sorted({p["mat"] for p in parts if p.get("mat")} | {m.name for o in objs for m in o.data.materials if m}),
             "bounds": {"min": [lo[0], lo[2], -hi[1]], "max": [hi[0], hi[2], -lo[1]]}}
 
 
