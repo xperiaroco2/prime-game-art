@@ -4,6 +4,9 @@ extends SceneTree
 ## (the older build) and after; rows: rest, the gaze far to the head's left, far right, down, up (the lids' limit), then
 ## the gaze down under a raking light (the old iris place exposed): grey geometry only (debug_mode 2) from +X and from
 ## -X, and the full material from +X. One 1280 px wide JPG and a JSON of the row labels and eye states beside it.
+## Since v4 also the upper lid edge of each eye at 4x the sheet's scale (the window's own pixels, 2x, nearest), rows
+## far left, far right and down, columns before | after: <out>_crop_right.jpg (the head's right eye, on the image's
+## left) and <out>_crop_left.jpg.
 ## Args after "--": <before res://GLB> <before sclera PNG> <before lively.json> <after res://GLB> <after sclera PNG>
 ##   <after lively.json> <mask PNG> <base skin r,g,b> <HDRI> <out JPG>
 
@@ -13,6 +16,9 @@ const Lively = preload("res://alien/alien_lively.gd")
 const BACKGROUND := Color(0.16, 0.16, 0.17)
 const CELL := Vector2i(640, 300)
 const FPS := 24.0
+## the upper lid edges in a sheet cell's pixels (x, y, w, h), per eye; the crops show them 4x (1280 x 720 per eye)
+const CROPS := {"right": Rect2i(40, 100, 160, 60), "left": Rect2i(410, 100, 160, 60)}
+const CROP_ROWS := [1, 2, 3]
 const ROWS := [
 	["rest", Vector3(0, 0, 3), ""], ["eyes far to the head's left", Vector3(3.0, 0.0, 2.0), ""],
 	["eyes far to the head's right", Vector3(-3.0, 0.0, 2.0), ""], ["eyes down", Vector3(0.0, -2.5, 2.0), ""],
@@ -26,6 +32,7 @@ var _studio: Array[DirectionalLight3D] = []
 var _rake_pos: DirectionalLight3D
 var _rake_neg: DirectionalLight3D
 var _env: Environment
+var _full: Image  # the last shot at the window's resolution
 
 
 func _initialize() -> void:
@@ -76,6 +83,10 @@ func _run() -> void:
 	var sheet := Image.create(2 * CELL.x, ROWS.size() * (CELL.y + 4) - 4, false, Image.FORMAT_RGB8)
 	sheet.fill(Color(0.3, 0.3, 0.3))
 	var report := {"columns": ["before: " + a[0], "after: " + a[3]], "rows": [], "eyes": []}
+	var crops := {}
+	for key: String in CROPS:
+		var cr: Rect2i = CROPS[key]
+		crops[key] = Image.create(2 * cr.size.x * 4, CROP_ROWS.size() * cr.size.y * 4, false, Image.FORMAT_RGB8)
 	for r: int in ROWS.size():
 		var row: Array = ROWS[r]
 		report["rows"].append(row[0])
@@ -98,9 +109,24 @@ func _run() -> void:
 			states.append({"left": lives[k]._eye["left"], "right": lives[k]._eye["right"]})
 			var img: Image = await _shot(mid)
 			sheet.blit_rect(img, Rect2i(Vector2i.ZERO, CELL), Vector2i(k * CELL.x, r * (CELL.y + 4)))
+			if r in CROP_ROWS:
+				for key: String in CROPS:
+					var cr: Rect2i = CROPS[key]
+					var part: Image = _full.get_region(Rect2i(cr.position * 2, cr.size * 2))
+					part.resize(cr.size.x * 4, cr.size.y * 4, Image.INTERPOLATE_NEAREST)
+					(crops[key] as Image).blit_rect(part, Rect2i(Vector2i.ZERO, part.get_size()),
+						Vector2i(k * cr.size.x * 4, CROP_ROWS.find(r) * cr.size.y * 4))
 		report["eyes"].append(states)
 	sheet.fill_rect(Rect2i(CELL.x - 2, 0, 4, sheet.get_height()), Color(0.0, 0.0, 0.0))
 	sheet.save_jpg(a[9], 0.92)
+	for key: String in crops:
+		var ci: Image = crops[key]
+		ci.fill_rect(Rect2i(ci.get_width() / 2 - 2, 0, 4, ci.get_height()), Color(0.0, 0.0, 0.0))
+		for j: int in range(1, CROP_ROWS.size()):
+			ci.fill_rect(Rect2i(0, j * ci.get_height() / CROP_ROWS.size() - 2, ci.get_width(), 4), Color(0.0, 0.0, 0.0))
+		ci.save_jpg(a[9].get_basename() + "_crop_%s.jpg" % key, 0.95)
+	report["crops"] = {"rows": CROP_ROWS.map(func(i: int) -> String: return ROWS[i][0]), "cells": str(CROPS),
+		"scale": "4x the sheet (2x the window's pixels, nearest)"}
 	var f := FileAccess.open(a[9].get_basename() + ".json", FileAccess.WRITE)
 	f.store_string(JSON.stringify(report, "  ") + "\n")
 	f.close()
@@ -120,6 +146,7 @@ func _shot(mid: Vector3) -> Image:
 	var img: Image = root.get_texture().get_image()
 	img.convert(Image.FORMAT_RGB8)
 	var c: Image = img.get_region(Rect2i(0, (img.get_height() - 600) / 2, 1280, 600))
+	_full = c.duplicate()
 	c.resize(CELL.x, CELL.y, Image.INTERPOLATE_LANCZOS)
 	return c
 

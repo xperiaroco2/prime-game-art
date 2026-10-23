@@ -850,6 +850,23 @@ pilot's static premium heads"):
       It also writes `web_<tag>/` (the page and the tag's assets) and `eyes_pit_<tag>.jpg` (`eye_pit_shots.gd`:
       before/after close-ups of both eyes at rest, far left, far right, down, up, and under raking light).
       `--no-pit-fix` builds as v2 did.
+  - **The eye pit, v4 (2026-10-23):** two defects v3 left, both fixed in `alien_lively_build.py`:
+    - *A lid crossing.* v3's pull crossed one lid triangle: eyeball triangle 8774 under the upper lid rim of the
+      head's right eye, on the nose side, 24 degrees from the rest gaze; two of its vertices moved 1.8 and 3.8 mm
+      with the lid's surface 1.8 and 2.4 mm away. The lid fade measured only the distance to the vertices a lid
+      triangle shares, not to the lid's surface. Now each move is capped (`G.capped_weight`) at `MOVE_CAP`
+      (3.5 % of the eye radius) and at `ROOM_SHARE` (half) of the vertex's distance to the nearest lid or socket
+      triangle of its eye (a BVH of the original surface). A vertex lying on a lid triangle never moves.
+      `pit_geometry` adds `capped`, `capped_in_travel` and `min_room_left_mm`.
+    - *A dotted dark line under the upper lid* of the head's right eye once the gaze left the rest place. The old
+      pupil's dark texels at the lid line have a teal cast, so v3's "never the lids' teal" rule kept them; at rest
+      the procedural iris covered them. Teal now counts as the lid only from value `LID_TEAL_V` (0.45) up.
+    - *Grey seam lines:* the black gutter around the eye islands, mixed in by the texture filter. The gutter
+      within `GUTTER_PX` (4) of an eye island, and not within 4 of a skin or lid island, is filled with the
+      sclera too (`sclera_ghost.eye_rim`: the gutter ring's texels, the dark ones left, its median distance).
+    - `eye_pit_shots.gd` also writes `eyes_pit_<tag>_crop_right.jpg` and `_crop_left.jpg`: the upper lid edge of
+      each eye at 4x the sheet's scale (the window's own pixels, 2x, nearest), rows far left, far right and down,
+      columns before | after.
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
