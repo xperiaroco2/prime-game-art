@@ -134,3 +134,101 @@ def fit_lively(d: dict, s: float, src, dst) -> dict:
         out["eye_radius"] = out["eye_radius"] * s
     out["fit"] = {"scale": s, "src_blender": list(src), "dst_blender": list(dst)}
     return out
+
+
+# B2 (art #196): the pale front panel of the 2D busts, measured from the ring down (dz m, half-width m): the throat
+# at the head's own front width (the first row, set per head from the cut), flaring into the chest panel, its bottom
+# faded out over PANEL_FADE (the 2D shows throat to chest, not the u1 shield's belly)
+PANEL = [(0.0, 0.0), (0.04, 0.012), (0.08, 0.035), (0.13, 0.05), (0.20, 0.045), (0.27, 0.03)]  # widths over the top's
+PANEL_FADE = (0.20, 0.33)
+PANEL_EDGE = 0.03
+
+
+def front_panel(x: float, dz: float, ny: float, trunk: float, top_hw: float, edge: float = PANEL_EDGE) -> float:
+    """The pale front's weight (0..1) of a body point dz below the neck ring: inside the panel's half-width (the
+    throat's `top_hw` plus the PANEL flare) at its depth, facing the front (ny the world normal's Y, front -Y),
+    carried by the trunk bones (`trunk` their weight), faded out over PANEL_FADE."""
+    if dz < 0.0:
+        return 0.0
+    hw = top_hw + interp(PANEL, dz)
+    inside = 1.0 - sstep(hw - edge * 0.5, hw + edge * 0.5, abs(x))
+    return (inside * sstep(-0.1, 0.4, -ny) * sstep(0.4, 0.8, trunk)
+            * (1.0 - sstep(PANEL_FADE[0], PANEL_FADE[1], dz)))
+
+
+# B2: the neck's flare into the shoulders (the 2D busts' trapezius): a concave fillet surface round the neck axis,
+# r_ring + side(phi) * extra * (dz / depth)^2, that the body's skin is pushed out to (never in), only on the trunk's
+# skin, untouched at the ring (FLARE_TOP) and faded out below the shoulders' top (FLARE_FADE times depth)
+FLARE_TOP = 0.012
+FLARE_FADE = (0.9, 1.3)
+FLARE_SIDE = (0.35, 0.45)  # the fillet's share at the front and the back (the sides 1)
+FLARE_SOFT = 0.012  # the smooth max's width, m
+
+
+def flare_side(phi: float) -> float:
+    """The fillet's share at angle phi round the neck (0 the front, pi the back, pi/2 the sides): 1 at the sides."""
+    front, back = FLARE_SIDE
+    c, s = math.cos(phi), math.sin(phi)
+    b = (front + back) / 2 + (front - back) / 2 * c
+    return b + (1.0 - b) * s * s
+
+
+def smax(a: float, b: float, k: float) -> float:
+    h = max(k - abs(a - b), 0.0) / k
+    return max(a, b) + h * h * k * 0.25
+
+
+def flare_radius(r: float, r_ring: float, dz: float, phi: float, depth: float, extra: float, arm: float) -> float:
+    """A body vertex's new distance from the neck axis: r pushed out to the fillet at its depth dz below the ring
+    (depth: the ring to the shoulders' top; extra: the fillet's growth there at the sides), weighted off near the
+    ring, below the shoulders and on the arms' skin (`arm` their weight)."""
+    if dz <= 0.0 or depth <= 0.0:
+        return r
+    target = r_ring + flare_side(phi) * extra * (dz / depth) ** 2
+    w = sstep(0.0, FLARE_TOP, dz) * (1.0 - sstep(FLARE_FADE[0] * depth, FLARE_FADE[1] * depth, dz)) * (1.0 - min(arm, 1.0))
+    return r + w * (smax(r, target, FLARE_SOFT) - r)
+
+
+def bridge_outward(normal, centre, axis) -> bool:
+    """Whether a seam triangle's normal points away from the neck axis (axis: its (x, y) centre): the bridge's
+    triangles are drawn single-sided in Godot, an inward one is a hole (r2's dark ring)."""
+    return normal[0] * (centre[0] - axis[0]) + normal[1] * (centre[1] - axis[1]) > 0.0
+
+
+def walk_loop(edges: list[tuple[int, int]]) -> list[int]:
+    """The vertices of one closed loop in walk order from its edges (any order, either direction); ValueError when
+    the edges are not one simple closed loop (a branch, an open end, two loops)."""
+    nb: dict[int, list[int]] = {}
+    for i, j in edges:
+        nb.setdefault(i, []).append(j)
+        nb.setdefault(j, []).append(i)
+    if not nb or any(len(v) != 2 for v in nb.values()):
+        raise ValueError("not a simple loop: a vertex without exactly two loop edges")
+    start = min(nb)
+    order, prev, cur = [start], None, start
+    while True:
+        nxt = nb[cur][0] if nb[cur][0] != prev else nb[cur][1]
+        if nxt == start:
+            break
+        order.append(nxt)
+        prev, cur = cur, nxt
+    if len(order) != len(nb):
+        raise ValueError("not one loop: more than one ring of edges")
+    return order
+
+
+def monotone_angles(angles: list[float]) -> list[float]:
+    """A loop's angles round the axis in walk order (the walk going round in the increasing sense) made
+    non-decreasing: where the cut row folds back on itself (r3's first chameleon build: two cut vertices out of angle
+    order, so zipping by sorted angle left open and three-face edges) a vertex takes its predecessor's angle; the
+    result is in [0, 2 pi), starting at the first vertex's angle, for zip_loops."""
+    out, off, prev = [], 0.0, None
+    for a in angles:
+        v = a + off
+        if prev is not None and v < prev - math.pi:
+            off += 2.0 * math.pi
+            v += 2.0 * math.pi
+        v = max(v, prev) if prev is not None else v
+        out.append(v)
+        prev = v
+    return [v % (2.0 * math.pi) if v - out[0] < 2.0 * math.pi else out[0] - 1e-9 for v in out]

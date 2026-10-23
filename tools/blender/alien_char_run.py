@@ -26,6 +26,7 @@ RAW = common.raw_dir()
 PILOT = RAW / "research" / "2026-10-22-roster" / "design" / "pilot3d"
 BODY = RAW / "review" / "char" / "alien-parts-kit" / "S4b" / "build" / "alien_body.blend"  # the shared body (S4b)
 SLOTS = PILOT / "colour_slots" / "v4"  # the merged colour slots' maps and params (PR #304)
+REGIONS = PILOT / "colour_slots" / "v6" / "maps"  # CS6's region medians (<head>_regions.json, PR #310): the body's paint
 HDRI = RAW / "env" / "polyhaven" / "studio_small_09" / "studio_small_09_2k.hdr"  # CC0, sources/polyhaven_hdris_2k.toml
 LINEUP = RAW / "research" / "2026-10-22-roster" / "design" / "final"
 # the merged lively builds (PR #302 chameleon v6, PR #306 axolotl v6a, the default gill lift)
@@ -44,11 +45,18 @@ def refusal(out: Path, heads: list[str], build: bool, shots: bool) -> str | None
 
 
 def bases(head: str) -> dict:
-    """The slots' bases as the colour slots proof reads them (alien_colour_slots.bases)."""
+    """The slots' bases as the colour slots proof reads them (alien_colour_slots.bases), and the body's paint
+    (body_skin, body_front): the head's own skin and front region medians (CS6's <head>_regions.json), so the body
+    is a typical head skin texel to the slots' recolour and the neck shows no step under any pick."""
     build = json.loads((PILOT / "static_v5" / head / "build.json").read_text(encoding="utf-8"))
     rep = json.loads((SLOTS / "maps" / f"{head}_accent.json").read_text(encoding="utf-8"))["regions"]
-    return {"skin": build["base_skin_srgb"], "lips": rep["lips"]["srgb"], "detail": rep["marks"]["srgb"],
-            "front": rep["front"]["srgb"]}
+    out = {"skin": build["base_skin_srgb"], "lips": rep["lips"]["srgb"], "detail": rep["marks"]["srgb"],
+           "front": rep["front"]["srgb"]}
+    regions = REGIONS / f"{head}_regions.json"
+    if regions.exists():
+        med = json.loads(regions.read_text(encoding="utf-8"))["bases"]
+        out["body_skin"], out["body_front"] = med["skin"], med["front"]
+    return out
 
 
 def main() -> int:
@@ -79,7 +87,8 @@ def main() -> int:
             res = blender.run_script("alien_char_build.py", [
                 "--head", h, "--lively", str(lv / f"{h}_lively.glb"), "--lively-json", str(lv / "lively.json"),
                 "--body", str(BODY), "--albedo", str(static / f"{h}_albedo.png"), "--mask", str(static / f"{h}_mask.png"),
-                "--accent", str(SLOTS / "maps" / f"{h}_accent.png"), "--bases", str(hd / "bases.json"),
+                "--accent", str(SLOTS / "maps" / f"{h}_accent.png"),
+                "--detail", str(static / f"{h}_detail.png"), "--bases", str(hd / "bases.json"),
                 "--out", str(hd)], timeout=1500)
             (hd / "build.log").write_text((res.stdout or "") + (res.stderr or ""), encoding="utf-8", newline="\n")
             print(*[x for x in (res.stdout or "").splitlines() if x.startswith("CHAR ")], sep="\n", flush=True)
@@ -97,7 +106,7 @@ def main() -> int:
             "mask": str(static / f"{h}_mask.png"), "detail": str(static / f"{h}_detail.png"),
             "plain": str(static / f"{h}_albedo_plain.png"), "accent": str(SLOTS / "maps" / f"{h}_accent.png"),
             "gill": str(SLOTS / "maps" / f"{h}_gill.png"), "body_albedo": str(hd / f"{h}_body_albedo.png"),
-            "body_mask": str(hd / f"{h}_body_mask.png"), "body_accent": str(hd / f"{h}_body_accent.png"),
+            "body_mask": str(hd / f"{h}_body_mask.png"), "body_detail": str(hd / f"{h}_body_detail.png"), "body_accent": str(hd / f"{h}_body_accent.png"),
             "bases": b, "params": slots_job[h]["params"], "fit": char["fit"], "cut_z": char["fit"]["dst"][2], "band": char["neck_band"],
             "sheet2d": str(LINEUP / HEADS[h]["sheet"]), "preset": HEADS[h]["preset"]}
     if args.no_shots:

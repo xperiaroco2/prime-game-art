@@ -8,7 +8,12 @@ extends SceneTree
 ## - seam_<head>.jpg: the neck seam close (a 0.16 m frame) from the four sides;
 ## - lineup_<head>.jpg: the 2D bust | the 3D at the bust's 3/4 framing | the whole character;
 ## - video/char_<head>/0000.png...: 20 s, 1280x720, the idle clip, the head following a light ball, the springs;
-## shots.json: the gate numbers, the springs' largest swing.
+## - pose_<head>.jpg (B2): the seam at 4x (0.16 m) under 8 head poses (yaw +-30, pitch +12/-18, roll +-15, two
+##   mixes), each from the front-left and the back-right;
+## - iso_<head>.jpg (B2): the upper back close, the speckle isolated: r2's body (no detail map) | the body as built |
+##   albedo only | geometry only | the normal map only (the shader's debug_mode 3, 2, 1);
+## - clips_<head>.jpg (B2): each clip at its extreme frame (the largest trunk, neck and arm turn from the rest);
+## shots.json: the gate numbers, the springs' largest swing, the clips' extreme times.
 ## Args after "--": <job.json>
 
 const Offscreen = preload("res://lib/offscreen.gd")
@@ -56,7 +61,7 @@ func _setup(node: Node3D, h: Dictionary, body: bool) -> Array[ShaderMaterial]:
 		mats[0].set_shader_parameter(k, h["params"][k])
 	if body:
 		mats.append_array(AlienStatic.apply_body(node, mats[0], AlienStatic.data_texture(h["body_mask"]),
-			AlienStatic.data_texture(h["body_accent"])))
+			AlienStatic.data_texture(h["body_accent"]), AlienStatic.data_texture(h.get("body_detail", ""))))
 	for sm: ShaderMaterial in mats:
 		for k: String in (h["params"] as Dictionary):
 			sm.set_shader_parameter(k, h["params"][k])
@@ -163,6 +168,34 @@ func _run() -> void:
 		for yaw: float in [0.0, 90.0, 180.0, 270.0]:
 			scells.append(await _cell(sc, 0.16, yaw, SQ))
 		_sheet(scells, SQ, 4).save_jpg(out.path_join("seam_%s.jpg" % name), 0.92)
+		# B2: the seam under the head poses (Neck 60 %, Head 40 %), front-left and back-right
+		var sk: Skeleton3D = ch.find_children("*", "Skeleton3D", true, false)[0]
+		var poses: Array[Vector3] = [Vector3(0, 30, 0), Vector3(0, -30, 0), Vector3(12, 0, 0), Vector3(-18, 0, 0),
+			Vector3(0, 0, 15), Vector3(0, 0, -15), Vector3(-18, 30, 0), Vector3(12, -30, 10)]
+		var pcells: Array[Image] = []
+		for view: float in [35.0, 215.0]:
+			for e: Vector3 in poses:
+				_pose_head(sk, e)
+				pcells.append(await _cell(sc, 0.16, view, SQ))
+		_pose_head(sk, Vector3.ZERO)
+		_sheet(pcells, SQ, 8).save_jpg(out.path_join("pose_%s.jpg" % name), 0.92)
+		# B2: the speckle isolated on the upper back
+		var bc := Vector3(axis.x, cut - 0.25, axis.z)
+		var icells: Array[Image] = []
+		var body_mats: Array[ShaderMaterial] = mats.slice(1)
+		var det: Variant = body_mats[0].get_shader_parameter("detail_tex")
+		for sm: ShaderMaterial in body_mats:
+			sm.set_shader_parameter("detail_tex", null)
+		icells.append(await _cell(bc, 0.7, 160.0, SQ))
+		for sm: ShaderMaterial in body_mats:
+			sm.set_shader_parameter("detail_tex", det)
+		for dm: int in [0, 3, 2, 1]:
+			for sm: ShaderMaterial in mats:
+				sm.set_shader_parameter("debug_mode", dm)
+			icells.append(await _cell(bc, 0.7, 160.0, SQ))
+		for sm: ShaderMaterial in mats:
+			sm.set_shader_parameter("debug_mode", 0)
+		_sheet(icells, SQ, 5).save_jpg(out.path_join("iso_%s.jpg" % name), 0.92)
 		# the line-up: the 2D bust | the 3D bust at 3/4 | the whole character
 		var two: Image = Image.load_from_file(h["sheet2d"])
 		two.convert(Image.FORMAT_RGB8)
@@ -202,6 +235,28 @@ func _run() -> void:
 				img.save_png(dir.path_join("%04d.png" % i))
 		_marker.visible = false
 		rep["spring_swing_max_deg"] = snappedf(best, 0.01)
+		# B2: every clip at its extreme frame, the upper body at 3/4
+		if ap != null:
+			var ccells: Array[Image] = []
+			var extremes := {}
+			for n: String in ap.get_animation_list():
+				if n == "RESET":
+					continue
+				ap.play(n)
+				var length: float = ap.get_animation(n).length
+				var best_t := 0.0
+				var best_s := -1.0
+				for k: int in 25:
+					ap.seek(length * k / 24.0, true)
+					var sc_: float = _turn(sk)
+					if sc_ > best_s:
+						best_s = sc_
+						best_t = length * k / 24.0
+				ap.seek(best_t, true)
+				extremes[n.get_slice("|", n.get_slice_count("|") - 1)] = [snappedf(best_t, 0.01), snappedf(best_s, 0.1)]
+				ccells.append(await _cell(Vector3(axis.x, cut - 0.2, axis.z), 0.95, 35.0, SQ))
+			rep["clip_extremes_s_deg"] = extremes
+			_sheet(ccells, SQ, 5).save_jpg(out.path_join("clips_%s.jpg" % name), 0.92)
 		report[name] = rep
 		print("CHAR %s %s" % [name, JSON.stringify(rep)])
 		ch.queue_free()
@@ -212,6 +267,35 @@ func _run() -> void:
 	f.close()
 	print("CHAR done")
 	quit(0)
+
+
+## The head turned by e (degrees: pitch about X, yaw about Y, roll about Z, in the skeleton's space) on top of the
+## current pose: 60 % on the Neck, 40 % on the Head, each about its own joint.
+func _pose_head(sk: Skeleton3D, e: Vector3) -> void:
+	for pair: Array in [["Neck", 0.6], ["Head", 0.4]]:
+		var i: int = sk.find_bone(pair[0])
+		if i < 0:
+			continue
+		var f: float = pair[1]
+		var rw := Quaternion.from_euler(Vector3(deg_to_rad(e.x * f), deg_to_rad(e.y * f), deg_to_rad(e.z * f)))
+		var parent: int = sk.get_bone_parent(i)
+		var pq: Quaternion = sk.get_bone_global_pose(parent).basis.get_rotation_quaternion() if parent >= 0 else Quaternion()
+		if not sk.has_meta("b2_rest_%d" % i):
+			sk.set_meta("b2_rest_%d" % i, sk.get_bone_pose_rotation(i))
+		var base: Quaternion = sk.get_meta("b2_rest_%d" % i)
+		sk.set_bone_pose_rotation(i, (pq.inverse() * rw * pq) * base if e != Vector3.ZERO else base)
+
+
+## The sum of the trunk's, neck's and arms' turns from their rest (degrees): the clip frame that bends the body most.
+func _turn(sk: Skeleton3D) -> float:
+	var total := 0.0
+	for b: String in ["Spine", "Chest", "UpperChest", "Neck", "Head", "LeftShoulder", "RightShoulder", "LeftUpperArm",
+			"RightUpperArm", "LeftUpperLeg", "RightUpperLeg"]:
+		var i: int = sk.find_bone(b)
+		if i >= 0:
+			var q: Quaternion = sk.get_bone_rest(i).basis.get_rotation_quaternion().inverse() * sk.get_bone_pose_rotation(i)
+			total += rad_to_deg(q.get_angle())
+	return total
 
 
 func _path(mid: Vector3, t: float) -> Vector3:

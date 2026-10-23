@@ -130,7 +130,9 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 					entry["tones"] = _tones(mesh.mesh.surface_get_arrays(s), base)
 			materials.append(entry)
 	var rest: PackedVector3Array = Character.skinned_points(mesh)  # skinned once for both bounds
+	var eye_tones: Dictionary = _eye_tones(scene, mesh, target, rest)
 	return {
+		"eye_tones": eye_tones,
 		"name": str(mesh.name),
 		"path": str(scene.get_path_to(mesh)),
 		"skeleton": str(scene.get_path_to(target)) if target != null else "",
@@ -144,6 +146,60 @@ func _mesh(scene: Node, mesh: MeshInstance3D) -> Dictionary:
 		"rest_bounds": Character.bounds(rest),
 		"bone_bounds": Character.bone_bounds(mesh, rest),
 	}
+
+
+# The eyes of a character without an _eyes part (the alien, art #196 B2: its eyes are part of the head mesh, its
+# skeleton has LeftEye and RightEye bones on the eye centres): the albedo at each vertex (as _tones) of the front
+# caps, the rest-pose vertices within EYE_CAP of the eye distance from either eye bone and in front of it (+Z),
+# counted near-white and near-black over every surface. {} for any other character.
+const EYE_CAP := 0.42
+
+
+func _eye_tones(scene: Node, mesh: MeshInstance3D, target: Node, rest: PackedVector3Array) -> Dictionary:
+	if not (target is Skeleton3D) or mesh.mesh == null or not scene.find_children("*_eyes", "MeshInstance3D", true, false).is_empty():
+		return {}
+	var sk: Skeleton3D = target as Skeleton3D
+	var li: int = sk.find_bone("LeftEye")
+	var ri: int = sk.find_bone("RightEye")
+	if li < 0 or ri < 0:
+		return {}
+	sk.force_update_all_bone_transforms()
+	var cl: Vector3 = sk.global_transform * sk.get_bone_global_pose(li).origin
+	var cr: Vector3 = sk.global_transform * sk.get_bone_global_pose(ri).origin
+	var cap: float = EYE_CAP * cl.distance_to(cr)
+	var n := 0
+	var white := 0
+	var black := 0
+	var at := 0
+	for s: int in mesh.mesh.get_surface_count():
+		var arrays: Array = mesh.mesh.surface_get_arrays(s)
+		var count: int = (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+		var mat: Material = mesh.get_active_material(s)
+		var uvs: Variant = arrays[Mesh.ARRAY_TEX_UV]
+		var image: Image = null
+		if mat is BaseMaterial3D and (mat as BaseMaterial3D).albedo_texture != null:
+			image = (mat as BaseMaterial3D).albedo_texture.get_image()
+			if image != null and image.is_compressed():
+				image.decompress()
+		for i: int in count:
+			if at + i >= rest.size():
+				break
+			var p: Vector3 = rest[at + i]
+			var c: Vector3 = cl if p.distance_to(cl) < p.distance_to(cr) else cr
+			if p.distance_to(c) > cap or p.z < c.z:
+				continue
+			var col: Color = (mat as BaseMaterial3D).albedo_color.srgb_to_linear() if mat is BaseMaterial3D else Color.WHITE
+			if image != null and uvs is PackedVector2Array and (uvs as PackedVector2Array).size() == count:
+				var uv: Vector2 = (uvs as PackedVector2Array)[i]
+				var x: int = clampi(int(fposmod(uv.x, 1.0) * image.get_width()), 0, image.get_width() - 1)
+				var y: int = clampi(int(fposmod(uv.y, 1.0) * image.get_height()), 0, image.get_height() - 1)
+				col *= image.get_pixel(x, y).srgb_to_linear()
+			var lum: float = 0.2126 * col.r + 0.7152 * col.g + 0.0722 * col.b
+			n += 1
+			white += 1 if lum >= 0.5 else 0
+			black += 1 if lum <= 0.05 else 0
+		at += count
+	return {"vertices": n, "white": white, "black": black, "cap_m": snappedf(cap, 0.0001)}
 
 
 # The albedo Godot draws at each vertex of a surface (linear): the albedo colour, times the vertex colour when the

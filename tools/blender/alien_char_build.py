@@ -19,9 +19,16 @@ the face-rigged one:
 5. Weights: the head's Neck and Head groups are the body's; its Chest goes to UpperChest; over NECK_BLEND above the
    cut the weights blend to the ring's mean, so the neck bends as one. The spring bones (Crest1-3 or Gill*) join
    the body's armature under its Head; the eye bones move to the head's eye centres.
-6. The body's material set: `<head>_body_skin` with its own albedo, mask and accent (pale front B) on the body's UV,
-   from the head's own colours: the skin and front bases (`bases.json`, as the colour slots read them), the u1 shield (`shield`), and over
-   SEAM_FADE below the ring the head's sampled colour at the cut, so the seam has one colour.
+6. The body's material set: `<head>_body_skin` with its own albedo, mask, detail and accent (pale front B) on the
+   body's UV, from the head's own colours: the head's skin and front region medians (`bases.json` body_skin and
+   body_front, the colour slots' `<head>_regions.json`) with a faint low-frequency value variation, the 2D's pale
+   front panel (`front_panel`: the throat flaring into the chest), and over SEAM_FADE below the ring the head's
+   sampled colour at the cut, so the seam has one colour. The detail map is the head's at the cut (thick skin: no
+   transmission; r2's body had none, the shader's white default, so the whole body was "thin": lighter and speckled).
+B2 (art #196): the body's neck flares into its shoulders (`flare_radius`, below the ring only); the bridge's
+triangles face outward (`bridge_outward`; r2's were inward, culled in Godot: the dark ring) and each takes its ring
+vertex's UV (one texel per triangle, no stretch across the body's UV islands); `seam` in char.json counts the open
+and non-manifold edges round the seam (0 expected).
 Writes <out>/<head>_char.glb (the body's clips), <head>_char.blend, <head>_char_lively.json (the eyes under the fit),
 <head>_body_albedo.png, _mask.png, _accent.png, _normal.png and char.json.
 """
@@ -146,7 +153,7 @@ def raster(me, values, size):
         v = l0[m, None] * val[0] + l1[m, None] * val[1] + l2[m, None] * val[2]
         img[gy[m], gx[m]] = v
         got[gy[m], gx[m]] = True
-    for _ in range(8):
+    for _ in range(16):
         grow = img.copy()
         g2 = got.copy()
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
@@ -180,8 +187,8 @@ def corner_normals(me):
 
 def main():
     ap = argparse.ArgumentParser()
-    for k in ("--head", "--lively", "--lively-json", "--body", "--albedo", "--mask", "--accent", "--bases",
-              "--out"):
+    for k in ("--head", "--lively", "--lively-json", "--body", "--albedo", "--mask", "--accent", "--detail",
+              "--bases", "--out"):
         ap.add_argument(k, required=True)
     ap.add_argument("--shield", action="store_true")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -198,7 +205,7 @@ def main():
     select_only([body], active=body)
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.uv.smart_project(angle_limit=math.radians(60.0), island_margin=0.004, scale_to_bounds=True)
+    bpy.ops.uv.smart_project(angle_limit=math.radians(80.0), island_margin=0.012, scale_to_bounds=True)
     bpy.ops.object.mode_set(mode="OBJECT")
     log("body unwrapped")
     bco = world(body)
@@ -223,6 +230,34 @@ def main():
     sh_z = arm.data.bones["LeftUpperArm"].head_local.z
     near = bco[(np.abs(bco[:, 2] - sh_z) < 0.03) & (np.abs(bco[:, 0]) < arm.data.bones["LeftUpperArm"].head_local.x + 0.05)]
     shoulder_w = float(2 * np.abs(near[:, 0]).max())
+    # B2: the neck's flare into the shoulders (the 2D's trapezius), on the body below the ring only
+    depth = float(ring_z - sh_z)
+    extra = float(0.75 * shoulder_w / 2 - np.ptp(ring[:, 0]) / 2)
+    armg = {g.index for g in body.vertex_groups if any(k in g.name for k in ("Shoulder", "Arm", "Hand"))}
+    mw_b = np.array(body.matrix_world)
+    inv_b = np.linalg.inv(mw_b)
+    moved_f = 0
+    for v in body.data.vertices:
+        p = bco[v.index]
+        dz = ring_z - p[2]
+        if dz <= 0.0 or dz > depth * 1.4:
+            continue
+        rel_ = p[:2] - ring_c
+        r0 = float(np.hypot(*rel_))
+        if r0 < 1e-6:
+            continue
+        ph = G.angle(p[0], p[1], *ring_c)
+        arm_w = sum(g.weight for g in v.groups if g.group in armg)
+        r1 = G.flare_radius(r0, float(ring_r(ph)), dz, ph, depth, extra, arm_w)
+        if r1 - r0 > 1e-6:
+            q = p.copy()
+            q[:2] = ring_c + rel_ * (r1 / r0)
+            v.co = Vector((inv_b @ np.append(q, 1.0))[:3])
+            moved_f += 1
+    body.data.update()
+    bco = world(body)
+    rep["flare"] = {"depth_m": round(depth, 4), "extra_m": round(extra, 4), "moved": moved_f}
+    log(f"flare {rep['flare']}")
 
     log("step the head")
     # the head
@@ -306,7 +341,7 @@ def main():
     rep["moved_above_band_max_m"] = 0.0
 
     # the head's colours at the cut: albedo (sRGB) and the accent's front (B), per boundary vertex
-    alb, acc, msk = pixels(a.albedo), pixels(a.accent), pixels(a.mask)
+    alb, acc, msk, det = pixels(a.albedo), pixels(a.accent), pixels(a.mask), pixels(a.detail)
     huv = vert_uv(me)
     bm = bmesh.new()
     bm.from_mesh(me)
@@ -317,6 +352,10 @@ def main():
     cut_rgb = sample(alb, huv[cut_idx])[:, :3]
     cut_front = sample(acc, huv[cut_idx])[:, 2]
     head_mask = np.median(sample(msk, huv[cut_idx])[:, :3], axis=0)
+    head_detail = np.median(sample(det, huv[cut_idx])[:, :4], axis=0)
+    # the throat's pale width at the cut: the front's cut vertices' largest |x| from the axis
+    fr = np.array([abs(sco[i, 0] - ring_c[0]) for i, f_ in zip(cut_idx, cut_front) if f_ > 0.5])
+    top_hw = float(fr.max()) if len(fr) else 0.0
     co_ = np.argsort(cut_ang)
     rep["cut_loop"] = {"vertices": len(cut_idx), "other_boundary_edges": other}
     log(f"cut loop {rep['cut_loop']}")
@@ -330,16 +369,24 @@ def main():
     bme = body.data
     bnorm = np.empty(len(bme.vertices) * 3)
     bme.vertices.foreach_get("normal", bnorm)
-    bnorm = bnorm.reshape(-1, 3)
+    bnorm = bnorm.reshape(-1, 3) @ mw_b[:3, :3].T  # world normals (the front faces -Y in the world)
+    bnorm /= np.maximum(np.linalg.norm(bnorm, axis=1, keepdims=True), 1e-9)
     trunk = np.zeros(len(bme.vertices))
     tg = {body.vertex_groups[n].index for n in TRUNK if n in body.vertex_groups}
     for v in bme.vertices:
         trunk[v.index] = sum(g.weight for g in v.groups if g.group in tg)
     # the u1 shield is off: on this body it landed as a pale patch low on the belly (body_v2's first shots), not the
     # 2D's pale throat; the throat's pale comes from the head's cut over SEAM_FADE (below). --shield turns it on.
-    front = np.array([G.shield(p[0], p[2], n[1], tr) for p, n, tr in zip(bco, bnorm, trunk)]) if a.shield         else np.zeros(len(bco))
-    skin_c, front_c = np.array(bases["skin"][:3]), np.array(bases["front"][:3])
+    front = np.array([G.shield(p[0], p[2], n[1], tr) for p, n, tr in zip(bco, bnorm, trunk)]) if a.shield \
+        else np.array([G.front_panel(p[0] - ring_c[0], ring_z - p[2], n[1], tr, top_hw)
+                       for p, n, tr in zip(bco, bnorm, trunk)])
+    skin_c = np.array(bases.get("body_skin", bases["skin"])[:3])
+    front_c = np.array(bases.get("body_front", bases["front"])[:3])
     col = skin_c[None] * (1 - front[:, None]) + front_c[None] * front[:, None]
+    # a faint low-frequency value variation (the head's skin is never one flat colour): smooth waves 6 to 14 cm
+    wv = (np.sin(bco @ np.array([41.0, 13.0, 29.0]) + 1.3) + np.sin(bco @ np.array([-17.0, 47.0, 23.0]) + 0.4)
+          + np.sin(bco @ np.array([19.0, -31.0, 71.0]) + 2.1)) / 3.0
+    col = col * (1.0 + 0.018 * wv)[:, None]
     bphi = np.array([G.angle(p[0], p[1], *ring_c) for p in bco])
     seam = np.array([1 - G.sstep(ring_z - SEAM_FADE, ring_z, z) for z in bco[:, 2]])
     seam_rgb = np.stack([at_cut(bphi, cut_rgb[:, c]) for c in range(3)], 1)
@@ -350,6 +397,8 @@ def main():
     accent, _ = raster(bme, np.stack([np.zeros_like(front), np.zeros_like(front), front], 1), TEX)
     maskv = np.tile(np.array([1.0, head_mask[1], head_mask[2]]), (len(bco), 1))
     mask, _ = raster(bme, maskv, 256)
+    detail, _ = raster(bme, np.tile(head_detail, (len(bco), 1)), 256)
+    save_png(detail, out / f"{head}_body_detail.png", False)
     img_alb = save_png(albedo, out / f"{head}_body_albedo.png", True)
     save_png(accent, out / f"{head}_body_accent.png", False)
     save_png(mask, out / f"{head}_body_mask.png", False)
@@ -357,6 +406,8 @@ def main():
                        False)
     rep["body_maps"] = {"uv_cover": round(cover, 4), "skin_srgb": bases["skin"], "front_srgb": bases["front"],
                         "head_mask_at_cut": [round(float(x), 4) for x in head_mask],
+                        "head_detail_at_cut": [round(float(x), 4) for x in head_detail],
+                        "throat_half_width": round(top_hw, 4), "body_skin_srgb": [float(x) for x in skin_c],
                         "front_vertices": int((front > 0.5).sum()),
                         "cut_rgb_median": [round(float(x), 4) for x in np.median(cut_rgb, 0)]}
     log(f"body maps {rep['body_maps']}")
@@ -422,28 +473,48 @@ def main():
     bm.verts.ensure_lookup_table()
     uvl = bm.loops.layers.uv["UVMap"]
     hn = bm.loops.layers.float_vector.get("head_n")
-    a_loop = [bm.verts[i] for i in cut_idx]
     b_loop = [bm.verts[nh + i] for i in ring_idx]
-    a_loop = [a_loop[i] for i in np.argsort(cut_ang)]
     b_loop = [b_loop[i] for i in np.argsort(ring_ang)]
+    # the cut row in its walk order round the boundary, not by sorted angle: where it folds back on itself, sorting
+    # zipped across it (r3's first chameleon build: 6 open and 8 three-face edges); its angles made monotone
+    cut_set = set(cut_idx)
+    walk = G.walk_loop([(e.verts[0].index, e.verts[1].index) for e in bm.edges if e.is_boundary
+                        and e.verts[0].index in cut_set and e.verts[1].index in cut_set])
+    wa = [G.angle(bm.verts[i].co.x, bm.verts[i].co.y, *ring_c) for i in walk]
+    if sum(((wa[(k + 1) % len(wa)] - wa[k] + math.pi) % (2 * math.pi)) - math.pi for k in range(len(wa))) < 0:
+        walk, wa = walk[::-1], wa[::-1]  # the walk goes round in the increasing sense
+    a_loop = [bm.verts[i] for i in walk]
+    a_ang = G.monotone_angles(wa)
     b_uv = [next(iter(v.link_loops))[uvl].uv.copy() for v in b_loop]
     b_ang = sorted(ring_ang)
     bmat_i = next(i for i, m in enumerate(me.materials) if m.name == f"{head}_body_skin")
-    made = 0
-    for tri in G.zip_loops(sorted(cut_ang), b_ang):
+    made = flipped = skipped = 0
+    for tri in G.zip_loops(a_ang, b_ang):
         vs = [(a_loop if tri[2 * q] == "a" else b_loop)[tri[2 * q + 1]] for q in range(3)]
         try:
             f = bm.faces.new(vs)
         except ValueError:
+            skipped += 1
             continue
         f.material_index = bmat_i
         f.smooth = True
+        f.normal_update()
+        if not G.bridge_outward(f.normal, f.calc_center_median(), ring_c):
+            f.normal_flip()
+            flipped += 1
+        # one UV for the whole triangle: its ring vertex's (the seam fade paints the ring in the cut's colour)
+        jb = next(tri[2 * q + 1] for q in range(3) if tri[2 * q] == "b")
         for lp in f.loops:
-            ang = G.angle(lp.vert.co.x, lp.vert.co.y, *ring_c)
-            j = int(np.argmin([min(abs(ang - b), 2 * math.pi - abs(ang - b)) for b in b_ang]))
-            lp[uvl].uv = b_uv[j]
+            lp[uvl].uv = b_uv[jb]
         made += 1
     bm.normal_update()
+    # the seam closed: no open or non-manifold edge from just below the ring to just above the cut
+    zone = [e for e in bm.edges if all(ring_z - 0.01 < v.co.z < cut + 0.01 for v in e.verts)]
+    rep["seam"] = {"edges": len(zone), "open": sum(e.is_boundary for e in zone),
+                   "non_manifold": sum(not e.is_manifold for e in zone), "flipped": flipped, "skipped": skipped,
+                   "open_at": [[round(v.co.z - cut, 4), round(G.angle(v.co.x, v.co.y, *ring_c), 3), v.index < nh,
+                                len(e.link_faces)] for e in zone if not e.is_manifold for v in e.verts][:24]}
+    log(f"seam {rep['seam']}")
     # the normals: the head's own above the band, the geometric over the band, the bridge and the body
     cn = []
     for f in bm.faces:

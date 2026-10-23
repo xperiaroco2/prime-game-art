@@ -172,6 +172,84 @@ class WithoutExportJsonTest(unittest.TestCase):
         self.assertEqual((got["source"], got["parts"], got["bones"]), ("slice_m1.glb", ["m1_head"], ["Root", "Hips"]))
 
 
+A_BONES = ["Root", "Hips", "Head", "LeftEye", "RightEye", "LeftHand", "RightHand", "LeftFoot", "RightFoot", "LeftToes",
+           "RightToes"]
+A_JOINTS = {"Root": [0, 0, 0], "Hips": [0, 0.9, 0], "Head": [0, 1.45, 0.02], "LeftEye": [0.06, 1.62, 0.13],
+            "RightEye": [-0.06, 1.62, 0.13], "LeftHand": [0.5, 1.0, 0.05], "RightHand": [-0.5, 1.0, 0.05],
+            "LeftFoot": [0.1, 0.08, 0.0], "RightFoot": [-0.1, 0.08, 0.0], "LeftToes": [0.1, 0.02, 0.1],
+            "RightToes": [-0.1, 0.02, 0.1]}
+A_CONTRACT = {**CONTRACT, "body": {**CONTRACT["body"], "plasticine_height_max_m": 2.0},
+              "budgets": {"limits": {"texture_character_px": 2048, "surfaces_per_character_cap": 4,
+                                     "surfaces_per_character_target": 2}}, "skeleton": {"weighted": ["Hips", "Head", "LeftHand", "RightHand", "LeftFoot", "RightFoot"]}}
+
+
+def alien_dump(clips=_godot.ALIEN_CLIPS) -> dict:
+    body = mesh("x_char", [-0.2, -0.001, -0.05], [0.2, 1.88, 0.2])
+    body["binds"] = list(A_BONES)
+    body["bone_bounds"] = {"LeftFoot": {"min": [0.05, 0.0, -0.04], "max": [0.15, 0.1, 0.08]},
+                           "LeftToes": {"min": [0.05, 0.0, 0.08], "max": [0.15, 0.05, 0.16]},
+                           "RightFoot": {"min": [-0.15, 0.0, -0.04], "max": [-0.05, 0.1, 0.08]}}
+    body["eye_tones"] = {"vertices": 2000, "white": 900, "black": 60, "cap_m": 0.05}
+    d = dump()
+    d["skeletons"] = [{"path": "x_rig/Skeleton3D", "bones": list(A_BONES), "parents": [-1] + [0] * 10,
+                       "rest_joints": copy.deepcopy(A_JOINTS)}]
+    d["meshes"] = [body]
+    d["players"][0]["animations"] = {f"CharacterArmature|{n}": next(iter(d["players"][0]["animations"].values()))
+                                     for n in clips}
+    return d
+
+
+def alien(d: dict, profile: str = "alien") -> dict[str, dict]:
+    e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
+         "rest_heads_m": {}, "height_m": None, "animations": {}}
+    return {c["check"]: c for c in _godot.evaluate(d, e, A_CONTRACT, [], textured=True, profile=profile)}
+
+
+class AlienProfileTest(unittest.TestCase):
+    """--profile alien (art #196 B2): the alien kind's own equivalents of the Ultimate Modular rules."""
+
+    def test_an_alien_passes_its_own_rules(self) -> None:
+        got = alien(alien_dump())
+        for k in ("facing_plus_z", "eye_pupils", "pack_floor"):
+            self.assertEqual(got[k]["status"], "pass", got[k])
+            self.assertTrue(got[k]["detail"].startswith("alien profile"), got[k])
+        self.assertIn("+11.0 cm ahead", got["facing_plus_z"]["detail"])
+
+    def test_the_pack_rules_still_fail_an_alien(self) -> None:
+        got = alien(alien_dump(), profile="pack")
+        for k in ("facing_plus_z", "eye_pupils", "pack_floor"):
+            self.assertEqual(got[k]["status"], "fail", got[k])
+
+    def test_an_alien_facing_backwards_fails(self) -> None:
+        d = alien_dump()
+        for b in ("LeftEye", "RightEye"):
+            d["skeletons"][0]["rest_joints"][b][2] = -0.1  # the eyes behind the Head joint: it faces -Z
+        self.assertEqual(alien(d)["facing_plus_z"]["status"], "fail")
+        d = alien_dump()
+        j = d["skeletons"][0]["rest_joints"]
+        j["LeftEye"], j["RightEye"] = j["RightEye"], j["LeftEye"]  # mirrored
+        self.assertEqual(alien(d)["facing_plus_z"]["status"], "fail")
+
+    def test_eyes_without_pupils_fail(self) -> None:
+        d = alien_dump()
+        d["meshes"][0]["eye_tones"]["black"] = 3
+        self.assertEqual(alien(d)["eye_pupils"]["status"], "fail")
+        d["meshes"][0].pop("eye_tones")
+        self.assertIn("no eye caps", alien(d)["eye_pupils"]["detail"])
+
+    def test_a_missing_clip_or_bone_fails_the_floor(self) -> None:
+        got = alien(alien_dump(clips=_godot.ALIEN_CLIPS[:-1]))["pack_floor"]
+        self.assertEqual(got["status"], "fail")
+        self.assertIn("missing clips ['Walk']", got["detail"])
+        d = alien_dump()
+        d["skeletons"][0]["bones"].remove("LeftHand")
+        self.assertIn("missing bones ['LeftHand']", alien(d)["pack_floor"]["detail"])
+
+    def test_an_unknown_profile_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            alien(alien_dump(), profile="dragon")
+
+
 class LoopModesTest(unittest.TestCase):
     def test_cycles_that_play_once_warn_and_open_cycles_are_named(self) -> None:
         d = dump()

@@ -1088,6 +1088,26 @@ pilot's static premium heads"):
     Ultimate Modular characters that the M5 alien failed too: `facing_plus_z` and `eye_pupils` (no `_eyes` part, not
     the UM bone names) and `pack_floor` (10 clips; no `.export.json`).
 
+- **B2 on the shared body (2026-10-23, draft PR #311; proof `body_v2/r3/`):**
+  - The neck gap was a hole, not a texture line: `zip_loops` winds its triangles clockwise seen from outside, so every
+    bridge triangle faced inward and Godot culled it (the dark ring from every side). The build now flips each by
+    `bridge_outward`, zips the cut row in its walk order round the boundary (`walk_loop`, `monotone_angles`: the
+    chameleon's cut row folds back once, which zipping by sorted angle left as 6 open and 8 three-face edges), gives
+    each bridge triangle its ring vertex's UV, and reports `seam` in char.json: 0 open and 0 non-manifold edges on both.
+  - The body's speckle and its lighter teal were the shader's transmission: `apply_body` set no detail map, so the
+    white default read the whole body as thin (`BACKLIGHT = scatter * transmission * d.g`), lit through from the back
+    light with the shadow's pattern. The body now takes the head's detail at the cut (`<head>_body_detail.png`: thick,
+    no transmission); `char_shots.gd`'s `iso_<head>.jpg` isolates it (r2's condition | as built | albedo | geometry |
+    normal map).
+  - The body's paint is the head's skin and front region medians (CS6's `<head>_regions.json`, `bases.json` body_skin
+    and body_front), so to the slots' recolour it is a typical head texel; the slot maths is untouched.
+  - `front_panel` (the pale front: the throat's own width at the cut flaring into the chest) and `flare_radius` (the
+    neck pushed out to a concave fillet into the shoulders, below the ring only) are in `alien_char_geom.py`.
+  - `godot-check --profile alien`: the alien kind's own equivalents of the three Ultimate Modular rules:
+    `facing_plus_z` from the LeftEye/RightEye bones, the contract's foot, toe and hand bones; `eye_pupils` on the head
+    mesh's eye caps (inspect.gd's `eye_tones`: the vertices within 0.42 of the eye distance of either eye bone and in
+    front of it, for a character without an `_eyes` part); `pack_floor` the contract's weighted bones and the shared
+    alien body's 10 clips (`ALIEN_CLIPS`). The default profile `pack` is unchanged.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and

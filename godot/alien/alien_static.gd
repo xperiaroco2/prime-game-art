@@ -102,7 +102,8 @@ static func apply(root: Node, mask: Texture2D, base_skin: Color, detail: Texture
 ## ShaderMaterial (its look, its slot bases and colours) with the body's own maps on the body's UV: the imported
 ## albedo and normal, `mask` (R 1: all skin) and `accent` (B the pale front; no lips, details or gills). One material
 ## set: set_colours on the head's and these materials gives the body the same slots.
-static func apply_body(root: Node, head: ShaderMaterial, mask: Texture2D, accent: Texture2D) -> Array[ShaderMaterial]:
+static func apply_body(root: Node, head: ShaderMaterial, mask: Texture2D, accent: Texture2D,
+		detail: Texture2D = null) -> Array[ShaderMaterial]:
 	var made: Array[ShaderMaterial] = []
 	for node: Node in root.find_children("*", "MeshInstance3D", true, false):
 		var mi: MeshInstance3D = node
@@ -119,7 +120,9 @@ static func apply_body(root: Node, head: ShaderMaterial, mask: Texture2D, accent
 			sm.set_shader_parameter("normal_tex", base3d.normal_texture)
 			sm.set_shader_parameter("mask_tex", mask)
 			sm.set_shader_parameter("accent_tex", accent)
-			sm.set_shader_parameter("detail_tex", null)
+			# the body's detail map (B2: the head's at the cut); null leaves the shader's white default, which reads the
+			# whole body as thin (transmission everywhere: r2's lighter, speckled body)
+			sm.set_shader_parameter("detail_tex", detail)
 			sm.set_shader_parameter("gill_tex", null)
 			mi.set_surface_override_material(i, sm)
 			made.append(sm)
