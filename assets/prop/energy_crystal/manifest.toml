@@ -1,0 +1,40 @@
+# The ship engine's energy crystal (art#263's station props; the cartridge of xperiaroco2/prime-game#1033).
+# Built by tools/blender/crystal_run.py --tag build --asset assets/prop/energy_crystal; a rebuild
+# changes the hashes below.
+id = "energy_crystal"
+kind = "prop"
+slot = ""
+title = "The ship engine's energy crystal"
+notes = "The engine's cartridge: a faceted energy crystal in a bronze and graphite cap with a hexagonal carry loop, 0.352 m tall, 0.140 x 0.131 m across the cap, one mesh of 3,408 triangles in five surfaces (hero class), front +Z, origin at the tip. Two states on one mesh: export/crystal.gd set_charge (1 charged, 0 spent; HANDOFF.md). From the concept the engineer picked (prime-game#1033 comment 6361383461; prime-game-design ideas/ship-components/cartridge-v2, socket-claws.jpg and charge.jpg, copied to the raw folder), built from code in headless Blender (tools/blender/crystal_build.py): no generator, no download."
+tools = ["blender 5.2.2", "prime-game-art crystal_build.py, crystal_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-24
+url = "https://github.com/xperiaroco2/prime-game-art/issues/263"
+
+[[raw]]
+file = "energy-crystal/ref/socket-claws.jpg"
+sha256 = "e1cf6c1134495620f360de8075f16f2985478bef6fe7b84d876edb6b7f52099d"
+
+[[raw]]
+file = "energy-crystal/ref/charge.jpg"
+sha256 = "4a7b7b2099d5baa4af03c6052493590459681c26aac901394cf46fe308c5de93"
+
+[[raw]]
+file = "energy-crystal/build/energy_crystal.glb"
+sha256 = "e2a267c81661f61b6f9a5fb188dbf5a4d7d2ae661d3ef0a66f961be60f4977bc"
+
+[[raw]]
+file = "energy-crystal/build/energy_crystal.blend"
+sha256 = "354dda7fa8065a784cce75aa706f87270d05a27471f6473eb669618147503acf"

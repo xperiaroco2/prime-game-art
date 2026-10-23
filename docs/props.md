@@ -475,3 +475,48 @@ concept in four steps, each shown to him before the next.
 Lessons for the next hero prop: shoot 720 px close-ups of every part and give them to a fresh critic before calling a
 step done; decide colours in 3D, not per texel; check a feature that sits in a crease from above and below (the smile
 reads in full from 10 degrees below, mostly its corners from above, where the player usually stands).
+
+## A hero prop from code: the ship engine's energy crystal (art#263)
+
+`assets/prop/energy_crystal/`: the cartridge of the ship's engine (prime-game#1033, the engineer's comment
+6361383461): a faceted energy crystal in a bronze and graphite cap with a hexagonal carry loop. Players pull a spent
+one from its socket, recharge it at a charger and put it back; the sockets and chargers are built later to fit it.
+The concept is prime-game-design's `ideas/ship-components/cartridge-v2/` (`socket-claws.jpg` the clearest view,
+`charge.jpg`; the spent crystal's cracks there are not wanted), copied with its crops to `<raw>/energy-crystal/ref/`.
+
+No generator: it is simple faceted geometry, so `tools/blender/crystal_build.py` builds it from code in headless
+Blender, and `tools/blender/crystal_run.py` (the driver) runs the build, glTF-Validator and the Godot shots:
+
+```
+$PYTHON_BIN tools/blender/crystal_run.py [--tag build] [--res 900] [--samples 64] [--no-build] [--no-shots]
+```
+
+- **The crystal** is a hexagonal column whose corners run straight up; each face holds a column of long diamonds
+  (the face's middle line has a vertex every other step, 12 % outside the flat face, so the facets fold and catch
+  the light), neighbouring faces staggered by a step so the diamonds' sides run on across the corners. A faceted
+  taper to a point below, a shoulder into the cap above. Every facet edge has a 0.6 mm chamfer, the visible line.
+- **The core**, a slimmer copy turned 30 degrees inside it, is what the charged crystal glows from: seen through
+  the translucent shell it gives the depth and the second set of lines the concept paints.
+- **The cap**: a bronze collar lip, a hexagonal bronze skirt with graphite inset panels and two claws on the
+  crystal's side corners, the widest band (bronze rims, a graphite groove with four cyan windows and a chevron plate
+  front and back), a shallow dome, a boss with a cyan lens, two lugs and the hexagonal loop. Metal edges over 30
+  degrees get a 1.2 mm chamfer (0.8 mm on the small parts).
+- **UV0 carries data, not a layout**: u = 1 on every chamfer face (the materials brighten them: the bronze's worn
+  edges, the crystal's glinting edges), v = a per-facet random value (the facet-by-facet shade). No textures.
+- **Two states, one mesh**: the charge. Blender's look reads the node group `crystal_charge` (the `.blend` keeps it
+  at 1); the game's look is `godot/crystal/crystal.gd` (`apply(model)` puts `crystal_shell.gdshader`,
+  `crystal_core.gdshader`, `crystal_metal.gdshader` and the lights' material on the surfaces by their glTF names and
+  adds a small cyan OmniLight3D; `set_charge(look, c)`): 1 a translucent cyan gem glowing from inside, 0 a matte
+  grey stone, opaque, no glow, the cap's lights at 22 %. The GLB's own materials are a plain-PBR fallback of the
+  charged state.
+- **Colours across the two looks**: Blender's Principled colours are linear; Godot's `source_color` uniforms are
+  sRGB, so the Godot metal holds the sRGB of Blender's numbers (bronze (0.42, 0.29, 0.17) linear is (0.68, 0.578,
+  0.454)). Passing the linear numbers made the Godot bronze nearly black. AgX bleaches bright pale cyan to white:
+  keep the glow colours saturated ((0, 0.72..0.78, 1)) and the emissive strengths moderate.
+
+`godot/crystal/shots.gd` shoots both states in an off-screen window under the ship interior's night light rebuilt
+from `godot/ship/ship.gd` and `layouts/ship/ship.toml` (AgX 1.0, the dark blue ambient, the glow settings, SSAO,
+SSIL, a warm interior lamp, the cool night key, a cyan strip's rim): the 3/4, front and top views, close-ups of the
+cap, loop and facets, the crystal on a 1 m post seen from 1 m (its glow on the wall) and carried in the first-person
+view, and `sheet.png`, the concept beside Blender's and Godot's views. `tools/tests/test_props_energy_crystal.py`
+checks the committed asset.
