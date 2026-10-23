@@ -43,6 +43,12 @@ def clear() -> None:
         bpy.data.objects.remove(obj, do_unlink=True)
     for mesh in list(bpy.data.meshes):
         bpy.data.meshes.remove(mesh)
+    # and the materials and images, so a GLB imported again (the vents' body, east then west) keeps its materials'
+    # names, which the game drives (`vent_a_body__lamp`, not `.001`)
+    for mat in list(bpy.data.materials):
+        bpy.data.materials.remove(mat)
+    for img in list(bpy.data.images):
+        bpy.data.images.remove(img)
 
 
 def make(p: dict):
@@ -51,6 +57,12 @@ def make(p: dict):
     mesh.validate()
     bm = bmesh.new()
     bm.from_mesh(mesh)
+    if p.get("uv"):   # per face, its corners' UVs (a textured part: the vents' blades)
+        layer = bm.loops.layers.uv.new("UVMap")
+        bm.faces.ensure_lookup_table()
+        for f, uvs in zip(bm.faces, p["uv"]):
+            for loop, uv in zip(f.loops, uvs):
+                loop[layer].uv = uv
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
     if p["solid"]:
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
