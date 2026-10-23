@@ -1000,8 +1000,9 @@ pilot's static premium heads"):
       (`CATCH_MARGIN` in `alien_lively.gd`, `lively.js` and `alien_lively_geom`); past that the shader turns the
       glint toward the front (`G.glint_dir`), so it slides to the open cap's edge nearest the light and stays there.
       At rest nothing changes (the gate's numbers equal v2e's).
-    - *Eye close-ups* are framed on each posed eye sphere's centre (`alien_lively.gd` `eye_centre`; AL4: framed on
-      the front, `eye_front`, the turned-away eye sat at its cell's edge, its front point being the disc's rim then). `eye_pit_shots.gd`'s JSON also holds
+    - *Eye close-ups* are framed on the visible cap's middle: the posed eye sphere's point halfway between the bead's
+      front and the camera's side (`alien_lively.gd` `eye_centre` and `eye_front`; AL4: framed on the front alone,
+      the turned-away eye sat off its cell's middle, its front point being the disc's rim then). `eye_pit_shots.gd`'s JSON also holds
       `away_from_eyes`: the whole head before | after at rest from four sides, the pixel difference with every
       pixel within 2.2 eye radii of an eye centre left out (the chameleon's v5 against v4).
     - *For both heads:* every eyeball vertex takes the fitted sphere's radial normal, faded in over 6 % of r from
