@@ -9,21 +9,24 @@ extends RefCounted
 ##   shader kept as it was, for the review's "before" rows)
 ##   AlienStatic.set_skin(mats, Color("e98a8c"))
 ## The colour slots (2026-10-23): apply()'s 7th to 9th arguments, the accent mask (`<head>_accent.png` beside the
-## GLB: R lips, G details, B the pale front), its bases ({"lips", "detail", "front", "gill_tips", "gill_whole"}: the
-## regions' sRGB medians, `<head>_regions.json`; a missing gill base is the detail's) and the whole gills (`<head>_gill.png`, grey; v3: out of the accent's alpha). Both masks are
+## GLB: R lips, G details, B the pale front), its bases ({"skin", "lips", "detail", "front", "gill_tips",
+## "gill_whole"}: the regions' sRGB medians, `<head>_regions.json`; a missing skin base is base_skin, a missing gill
+## base the detail's) and the whole gills (`<head>_gill.png`, grey; v3: out of the accent's alpha). Both masks are
 ## data: load them with data_texture() (Image.load_from_file) or import them lossless with the settings in
 ## docs/godot.md ("The colour slots' masks"); then
 ##   AlienStatic.set_colours(mats, {"skin": Color(...), "lips": Color(...), "detail": Color(...), "detail_on": true})
 ## (a slot left out keeps the build's own paint; set_colours(mats, {}) is the merged look) or a preset:
 ##   AlienStatic.set_colours(mats, AlienStatic.PRESETS[1]["picks"])
 ## Every pick is applied as picked (CS6, 2026-10-23: no guard rails); the shader carries each texel's offset from
-## its region's median onto the pick in OKLab. tools/blender/alien_colour_geom.py holds the same maths and its tests.
+## its region's median onto the pick in OKLab. The pale front is no slot: picks' "front", "keep" (the default: its
+## two-tone against the skin) or "follow" (the skin). tools/blender/alien_colour_geom.py holds the same maths and its tests.
 
 const SHADER: Shader = preload("res://alien/alien_static.gdshader")
 const SHADER_288: Shader = preload("res://alien/alien_static_288.gdshader")  # static_v5: #288's look, byte for byte
 const SUFFIX: String = "_static_skin"
 
 const GILL_MODES: PackedStringArray = ["skin", "gradient", "whole"]  # the shader's gill_mode: 0, 1, 2
+const FRONT_MODES: PackedStringArray = ["keep", "follow"]  # the pale front (CS6b)
 
 ## The study's E palettes (E1: the build's own paint).
 const PRESETS: Array[Dictionary] = [
@@ -74,9 +77,9 @@ static func apply(root: Node, mask: Texture2D, base_skin: Color, detail: Texture
 			elif accent != null:  # v4: without the gills' texture "skin" and "whole" would act as "gradient"
 				push_warning("alien_static: %s: an accent mask without the gill texture: the gills modes 'skin' and"
 						% src.resource_name + " 'whole' act as 'gradient' (pass <head>_gill.png)")
-			var b: Dictionary = {"skin": base_skin}
+			var b: Dictionary = {"skin": _pick(bases["skin"]) if bases.has("skin") else base_skin}
 			for k: String in ["lips", "detail", "front"]:
-				b[k] = _pick(bases[k]) if bases.has(k) else base_skin
+				b[k] = _pick(bases[k]) if bases.has(k) else b["skin"]
 			for k: String in ["gill_tips", "gill_whole"]:
 				b[k] = _pick(bases[k]) if bases.has(k) else b["detail"]
 			sm.set_meta("colour_bases", b)
@@ -112,8 +115,9 @@ static func data_texture(path: String) -> Texture2D:
 
 
 ## The player's colour slots on every material apply() made: picks holds any of "skin", "lips", "detail" (Color,
-## "#rrggbb" or [r, g, b]), "detail_on" (default: true when "detail" is picked), "gills" ("skin", "gradient" (default), "whole").
-## Returns the uniforms set (sRGB), the same for every material of one head; an unknown "gills" value is an error
+## "#rrggbb" or [r, g, b]), "detail_on" (default: true when "detail" is picked), "gills" ("skin", "gradient"
+## (default), "whole"), "front" ("keep" (default), "follow").
+## Returns the uniforms set (sRGB), the same for every material of one head; an unknown "gills" or "front" is an error
 ## (push_error, {} returned, the materials left as they were), as in alien_colour_geom.py and colour.js.
 static func set_colours(mats: Array[ShaderMaterial], picks: Dictionary) -> Dictionary:
 	var u: Dictionary = {}
@@ -138,6 +142,10 @@ static func slot_colours(bases: Dictionary, picks: Dictionary) -> Dictionary:
 	if gm < 0:
 		push_error("alien_static: unknown gills '%s' (one of %s)" % [picks["gills"], ", ".join(GILL_MODES)])
 		return {}
+	var front: String = str(picks.get("front", "keep"))
+	if not FRONT_MODES.has(front):
+		push_error("alien_static: unknown front '%s' (one of %s)" % [front, ", ".join(FRONT_MODES)])
+		return {}
 	var base: Color = bases["skin"]
 	var gb: Color = bases.get("gill_whole" if gm == 2 else "gill_tips", bases["detail"])
 	var u: Dictionary = {"base_skin": base, "lip_base": bases["lips"], "detail_base": bases["detail"],
@@ -145,7 +153,7 @@ static func slot_colours(bases: Dictionary, picks: Dictionary) -> Dictionary:
 	var picked: bool = picks.has("skin")
 	var skin: Color = _pick(picks["skin"]) if picked else base
 	u["skin_color"] = skin
-	u["front_color"] = front_for(skin, base, u["front_base"]) if picked else u["front_base"]
+	u["front_color"] = front_for(skin, base, u["front_base"], front) if picked else u["front_base"]
 	# a slot left out: the build's paint there, following a picked skin as its paint does
 	if picks.has("lips"):
 		u["lip_color"] = _pick(picks["lips"])
@@ -175,11 +183,12 @@ static func recolour(c: Color, base: Color, target: Color) -> Color:
 
 
 ## A texel x (OKLab) from its region's base b to the target t (alien_colour_geom.shift): its offset from b carried
-## onto t, the lightness offset scaled by the room at t against the room at b, the a/b offset turned by the hue turn
-## and scaled by min(1, C_t / C_b).
+## onto t; kr = min(1, L_t / L_b), the lightness offset scaled by kr (a lighter texel's also by the room toward
+## white), the a/b offset turned by the hue turn and scaled by min(1, C_t / C_b) * kr.
 static func shift(x: Vector3, b: Vector3, t: Vector3) -> Vector3:
 	var dl: float = x.x - b.x
-	var kl: float = minf(1.0, (1.0 - t.x) / maxf(1.0 - b.x, 1.0e-4)) if dl > 0.0 else minf(1.0, t.x / maxf(b.x, 1.0e-4))
+	var kr: float = minf(1.0, t.x / maxf(b.x, 1.0e-4))
+	var kl: float = minf(kr, (1.0 - t.x) / maxf(1.0 - b.x, 1.0e-4)) if dl > 0.0 else kr
 	var cb: float = Vector2(b.y, b.z).length()
 	var ct: float = Vector2(t.y, t.z).length()
 	var co: float = 1.0
@@ -187,20 +196,29 @@ static func shift(x: Vector3, b: Vector3, t: Vector3) -> Vector3:
 	if cb > 1.0e-4 and ct > 1.0e-4:
 		co = (b.y * t.y + b.z * t.z) / (cb * ct)
 		si = (b.y * t.z - b.z * t.y) / (cb * ct)
-	var kc: float = minf(1.0, ct / maxf(cb, 1.0e-4))
+	var kc: float = minf(1.0, ct / maxf(cb, 1.0e-4)) * kr
 	var da: float = x.y - b.y
 	var db: float = x.z - b.z
 	return Vector3(t.x + dl * kl, t.y + (da * co - db * si) * kc, t.z + (da * si + db * co) * kc)
 
 
 ## The pale front for a picked skin: the build's front shifted with the skin, its chroma never above the build's
-## front's (a tinted cream).
-static func front_for(skin: Color, base_skin: Color, front_base: Color) -> Color:
+## front's (a tinted cream). "keep": its lightness at least the build's front's, then the build's two-tone (front
+## minus skin base) away from the skin: above it where that colour is inside the gamut, else below.
+static func front_for(skin: Color, base_skin: Color, front_base: Color, mode: String = "keep") -> Color:
 	var f: Vector3 = shift(to_oklab(front_base), to_oklab(base_skin), to_oklab(skin))
 	var fb: Vector3 = to_oklab(front_base)
+	var ls: float = to_oklab(skin).x
 	var cf: float = Vector2(fb.y, fb.z).length()
 	var c: float = Vector2(f.y, f.z).length()
 	var k: float = minf(1.0, cf / c) if c > 0.0 else 1.0
+	if mode == "keep":
+		var d: float = fb.x - to_oklab(base_skin).x
+		f.x = maxf(f.x, fb.x)
+		if absf(f.x - ls) < d - 1.0e-6:
+			var up: Vector3 = _oklab_rgb(Vector3(ls + d, f.y * k, f.z * k))
+			var inside: bool = minf(up.x, minf(up.y, up.z)) >= -1.0e-6 and maxf(up.x, maxf(up.y, up.z)) <= 1.0 + 1.0e-6
+			f.x = ls + d if inside else ls - d
 	return from_oklab(Vector3(f.x, f.y * k, f.z * k))
 
 
@@ -211,6 +229,8 @@ static func _lin(c: float) -> float:
 static func _srgb(c: float) -> float:
 	c = clampf(c, 0.0, 1.0)
 	return c * 12.92 if c <= 0.0031308 else 1.055 * pow(c, 1.0 / 2.4) - 0.055
+
+
 static func _cbrt(v: float) -> float:
 	return signf(v) * pow(absf(v), 1.0 / 3.0)
 

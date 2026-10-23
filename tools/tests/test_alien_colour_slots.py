@@ -6,6 +6,8 @@ recolour and its skin-mask gate against alien_static.gdshader's, statement by st
 from __future__ import annotations
 
 import json
+import math
+import random
 import re
 import shutil
 import subprocess
@@ -28,7 +30,7 @@ SHADER = ROOT / "godot" / "alien" / "alien_static.gdshader"
 JS = ROOT / "tools" / "web" / "alien_colour" / "colour.js"
 # colour.js's GLSL names -> alien_static.gdshader's (csU(x), an sRGB uniform in OKLab, is Godot's oklab(x) on a
 # linear uniform; csLin(uniform) is dropped first: Godot's source_color uniforms arrive linear)
-JS_TO_GODOT = {"csLab": "oklab", "csLabLin": "oklab_linear", "csShift": "shift", "csU": "oklab",
+JS_TO_GODOT = {"csLab": "oklab", "csLabLin": "oklab_linear", "csShift": "shift", "csGamut": "gamut", "csU": "oklab",
                "csBaseSkin": "base_skin", "csSkin": "skin_color", "csFrontBase": "front_base", "csFront": "front_color",
                "csDetailBase": "detail_base", "csDetail": "detail_color", "csGillBase": "gill_base",
                "csGillColor": "gill_color", "csDetailOn": "detail_on", "csGillMode": "gill_mode",
@@ -100,6 +102,57 @@ class ColourSlotsTest(unittest.TestCase):
                     self.assertGreater(L - t[0] if dl > 0 else t[0] - L, 0.0, (h, dl))
                 self.assertGreaterEqual(L, -1e-9)
                 self.assertLessEqual(L, 1.0 + 1e-9)
+
+    def test_region_median_reaches_the_pick(self):
+        """CS6b: a synthetic region (texels spread round a base in L, a and b, a quarter of them a dark tail) keeps
+        its median within 0.003 OKLab of every pick after `texel` (the gamut pulled toward the pick)."""
+        rnd = random.Random(7)
+        base = G.to_oklab(tuple(BASES["skin"]))
+        tx = []
+        for i in range(1200):
+            dl = -rnd.uniform(0.2, 0.5) if i % 4 == 0 else rnd.gauss(0.0, 0.03)
+            tx.append(G.from_oklab((base[0] + dl, base[1] + rnd.gauss(0.0, 0.02), base[2] + rnd.gauss(0.0, 0.02))))
+        b = G.median_lab(tx)
+        bases = {**BASES, "skin": b}
+        for h in PICKS:
+            u = G.slot_colours(bases, {"skin": h})
+            m = G.median_lab([G.texel(c, (0, 0, 0), 0.0, u) for c in tx])
+            self.assertLess(G.delta_e(m, G.hexc(h)), 0.003, (h, G.hexs(m)))
+
+    def test_dark_picks_keep_the_mottling_relative(self):
+        """CS6b: on a darker pick every offset shrinks with the lightness ratio (navy is not blotchy); lighter picks
+        keep the darker offsets whole."""
+        b = G.to_oklab(tuple(BASES["skin"]))
+        x = (b[0] + 0.03, b[1] + 0.02, b[2] - 0.01)
+        for h in ("#14206e", "#000000", "#0000ff", "#ffee00", "#ffffff"):
+            t = G.to_oklab(G.hexc(h))
+            y = G.shift(x, b, t)
+            kr = min(1.0, t[0] / b[0])
+            self.assertLessEqual(y[0] - t[0], 0.03 * kr + 1e-9, h)
+            self.assertLessEqual(math.dist(y[1:], t[1:]), math.hypot(0.02, 0.01) * kr + 1e-9, h)
+        dark = (b[0] - 0.1, b[1], b[2])
+        self.assertAlmostEqual(G.shift(dark, b, G.to_oklab(G.hexc("#ffee00")))[0],
+                               G.to_oklab(G.hexc("#ffee00"))[0] - 0.1, delta=1e-9)
+
+    def test_front_modes(self):
+        """CS6b: "keep" (the default) holds the build's two-tone against any skin, pale on dark skins; "follow"
+        follows the skin down; a skin at its base gives the build's front in both."""
+        L = lambda c: G.to_oklab(c)[0]  # noqa: E731
+        d = L(tuple(BASES["front"])) - L(tuple(BASES["skin"]))
+        self.assertGreater(d, 0.05)
+        for mode in G.FRONT_MODES:
+            u = G.slot_colours(BASES, {"skin": tuple(BASES["skin"]), "front": mode})
+            self.assertLess(max(abs(x - y) for x, y in zip(u["front_color"], BASES["front"])), 1e-6, mode)
+        for h in PICKS + ["#e9f5f0", "#f0f0f0", "#d8e8e0"]:
+            keep = G.slot_colours(BASES, {"skin": h})["front_color"]
+            self.assertEqual(keep, G.slot_colours(BASES, {"skin": h, "front": "keep"})["front_color"])
+            self.assertGreaterEqual(abs(L(keep) - L(G.hexc(h))), d - 2e-3, h)
+            if L(G.hexc(h)) < L(tuple(BASES["skin"])):
+                self.assertGreaterEqual(L(keep), L(tuple(BASES["front"])) - 2e-3, h)  # pale on a dark skin
+        navy = G.slot_colours(BASES, {"skin": "#14206e", "front": "follow"})["front_color"]
+        self.assertLess(L(navy), 0.6)
+        with self.assertRaises(ValueError):
+            G.slot_colours(BASES, {"skin": "#14206e", "front": "pale"})
 
     def test_identity(self):
         u = G.slot_colours(BASES, {})
@@ -183,12 +236,22 @@ class ColourSlotsTest(unittest.TestCase):
         for head_gd, head_js in (("vec3 recolour(vec3 c, vec3 acc, float gill) {",
                                   "vec3 csRecolour(vec3 c, vec3 acc, float gill) {"),
                                  ("vec3 shift(vec3 x, vec3 b, vec3 t) {", "vec3 csShift(vec3 x, vec3 b, vec3 t) {"),
+                                 ("vec3 gamut(vec3 p, vec3 r) {", "vec3 csGamut(vec3 p, vec3 r) {"),
                                  ("vec3 oklab(vec3 c) {", "vec3 csLab(vec3 c) {"),
                                  ("vec3 oklab_linear(vec3 lab) {", "vec3 csLabLin(vec3 lab) {")):
             want = statements(gd, head_gd)
             got = statements(renamed, godot_names(head_js))
             self.assertEqual(got, want, head_gd)
         self.assertIn("vec3 csU(vec3 c) { return csLab(csLin(c)); }", js)  # three.js's uniforms are the sRGB numbers
+        # every colour uniform reaches OKLab only through csU or csLin (sRGB numbers, never taken as linear)
+        body = js.split("vec3 csRecolour(vec3 c, vec3 acc, float gill) {", 1)[1].split("\n}", 1)[0]
+        colours = [n for n in JS_TO_GODOT.values() if n not in ("oklab", "oklab_linear", "shift", "gamut")]
+        js_names = {v: k for k, v in JS_TO_GODOT.items()}
+        for n in colours:
+            if n in ("detail_on", "gill_mode"):
+                continue
+            for m in re.finditer(rf"\b{js_names[n]}\b", body):
+                self.assertRegex(body[:m.start()], r"\b(csU|csLin)\($", (n, body[max(0, m.start() - 20):m.end()]))
         self.assertIn("uniform vec3 gill_base : source_color", gd)  # Godot's are linear (source_color)
         flat = re.sub(r"\s+", "", js.split("export const MAP_FRAGMENT", 1)[1].split("`;", 1)[0])
         self.assertIn("vec4sampledDiffuseColor=texture2D(map,vMapUv);vec3csA=sampledDiffuseColor.rgb;"
@@ -216,7 +279,8 @@ class ColourSlotsTest(unittest.TestCase):
             {"skin": h} for h in PICKS] + [
             {"skin": "#e39c8c", "detail": "#ff0000", "detail_on": False, "gills": "skin"},
             {"skin": "#14206e", "lips": "#ffffff", "gills": "whole"}, {"skin": "#0000ff", "lips": "#0000ff"},
-            {"gills": "fringe"}]
+            {"gills": "fringe"}, {"front": "pale"}] + [{"skin": h, "front": "follow"} for h in PICKS] + [
+            {"skin": h, "front": "keep"} for h in ("#ffffff", "#f0f0f0", "#d8e8e0", "#000000")]
         jpicks = [{("detailOn" if k == "detail_on" else k): v for k, v in p.items()} for p in picks]
         for bases in (BASES, no_gills):
             out = subprocess.run([node, str(JS), "--json", json.dumps({"bases": bases, "picks": jpicks})],
@@ -225,6 +289,9 @@ class ColourSlotsTest(unittest.TestCase):
             for p, got in zip(picks, json.loads(out.stdout)):
                 if p.get("gills") == "fringe":  # an unknown gill mode: an error in JS as in Python
                     self.assertIn("unknown gills", got.get("error", ""))
+                    continue
+                if p.get("front") == "pale":
+                    self.assertIn("unknown front", got.get("error", ""))
                     continue
                 want = G.slot_colours(bases, p)
                 self.assertEqual(sorted(want), sorted(got), p)

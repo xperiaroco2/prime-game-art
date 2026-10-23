@@ -5,14 +5,15 @@
 // holds R the lips, G the details (the chameleon's crest stripes, the axolotl's freckles and its gills'
 // root-to-tip gradient), B the pale front; gill_tex (`<head>_gill.png`, linear, grey; v3: out of the accent's
 // alpha) the whole gills (stalk and fringe). Both are data: lossless, no sRGB, no alpha (docs/godot.md).
-// Every skin texel is recoloured from base_skin (the GLB's base_skin_srgb) to skin_color; the front from
-// front_base to front_color (a tinted cream after the skin); the details from detail_base to detail_color where
+// Every skin texel is recoloured from base_skin (the skin's own median, CS6b) to skin_color; the front from
+// front_base to front_color (a tinted cream, set_colours' front mode); the details from detail_base to detail_color where
 // detail_on (off: they follow the skin), the gills (gill_base to gill_color) with them by gill_mode (0 the skin, 1 the
 // gradient: skin at the root to the details at the tips, 2 the whole gill); the lips from lip_base to lip_color.
 // CS6 (2026-10-23): the recolour carries each texel's offset from its region's base (the region's median) onto the
-// target in OKLab (shift), so the base texel becomes the picked colour exactly and the paint's lighter and darker
-// texels stay lighter and darker round it; on the raw albedo texel (linear), gated by the skin mask (the eyes keep
-// their paint): the same maths as tools/web/alien_colour/colour.js's GLSL and alien_colour_geom.py's texel. Every
+// target in OKLab (shift): the base texel becomes the pick, the region's median within the albedo table's dE of it,
+// and the paint's lighter and darker texels stay lighter and darker round it (CS6b: relative on a darker pick; a
+// texel out of gamut pulled toward the pick, gamut); on the raw albedo texel (linear), gated by the skin mask (the
+// eyes keep their paint): the same maths as tools/web/alien_colour/colour.js's GLSL and alien_colour_geom.py's texel. Every
 // target at its base is the identity. alien_static.gd builds this material from the imported glTF material and
 // works out the targets from the player's picks (set_colours: the picks as picked, no guard rails since CS6).
 //
@@ -158,35 +159,51 @@ vec3 oklab_linear(vec3 lab) {
 		dot(lms, vec3(-0.0041960863, -0.7034186147, 1.7076147010)));
 }
 
-// one texel x (OKLab) from its region's base b to the target t: its offset from b carried onto t, the lightness
-// offset scaled down where t has less room (toward white above, black below), the a/b offset turned by the hue
-// turn and scaled down when t has less chroma than b (alien_colour_geom.py's shift)
+// one texel x (OKLab) from its region's base b to the target t: its offset from b carried onto t; kr the lightness
+// ratio on a darker t (CS6b: the mottling relative), the lightness offset scaled by kr (a lighter texel's also by
+// the room toward white), the a/b offset turned by the hue turn and scaled by min(1, C_t / C_b) * kr
+// (alien_colour_geom.py's shift)
 vec3 shift(vec3 x, vec3 b, vec3 t) {
 	float dl = x.x - b.x;
-	float kl = dl > 0.0 ? min(1.0, (1.0 - t.x) / max(1.0 - b.x, 1.0e-4)) : min(1.0, t.x / max(b.x, 1.0e-4));
+	float kr = min(1.0, t.x / max(b.x, 1.0e-4));
+	float kl = dl > 0.0 ? min(kr, (1.0 - t.x) / max(1.0 - b.x, 1.0e-4)) : kr;
 	float cb = length(b.yz);
 	float ct = length(t.yz);
 	vec2 r = vec2(1.0, 0.0);
 	if (cb > 1.0e-4 && ct > 1.0e-4) {
 		r = vec2(dot(b.yz, t.yz), b.y * t.z - b.z * t.y) / (cb * ct);
 	}
-	float kc = min(1.0, ct / max(cb, 1.0e-4));
+	float kc = min(1.0, ct / max(cb, 1.0e-4)) * kr;
 	vec2 d = x.yz - b.yz;
 	return vec3(t.x + dl * kl, t.yz + vec2(d.x * r.x - d.y * r.y, d.x * r.y + d.y * r.x) * kc);
 }
 
+// r (linear, maybe out of gamut) pulled back toward the target p along the line p -> r into [0, 1] (CS6b; a
+// per-channel clamp moved a saturated pick's median off it; alien_colour_geom.py's gamut)
+vec3 gamut(vec3 p, vec3 r) {
+	p = clamp(p, 0.0, 1.0);
+	vec3 d = r - p;
+	vec3 s3 = mix(p / max(-d, vec3(1.0e-6)), (1.0 - p) / max(d, vec3(1.0e-6)), step(0.0, d));
+	float s = min(1.0, min(min(s3.x, s3.y), s3.z));
+	return clamp(p + d * s, 0.0, 1.0);
+}
+
 // the colour slots on one linear albedo texel: acc the accent (lips, details, front), gill the whole gills' weight;
-// the regions mixed in OKLab (alien_colour_geom.py's texel)
+// the regions mixed in OKLab, the targets alike (p, for gamut; alien_colour_geom.py's texel)
 vec3 recolour(vec3 c, vec3 acc, float gill) {
 	vec3 x = oklab(c);
 	vec3 t = shift(x, oklab(base_skin), oklab(skin_color));
+	vec3 p = oklab(skin_color);
 	t = mix(t, shift(x, oklab(front_base), oklab(front_color)), acc.b);
+	p = mix(p, oklab(front_color), acc.b);
 	float dw = gill_mode < 0.5 ? max(acc.g - gill, 0.0) : (gill_mode < 1.5 ? acc.g : max(acc.g, gill));
 	vec3 db = oklab(mix(detail_base, gill_base, gill));
 	vec3 dt = oklab(mix(detail_color, gill_color, gill));
 	t = mix(t, shift(x, db, dt), detail_on * dw);
+	p = mix(p, dt, detail_on * dw);
 	t = mix(t, shift(x, oklab(lip_base), oklab(lip_color)), acc.r);
-	return clamp(oklab_linear(t), 0.0, 1.0);
+	p = mix(p, oklab(lip_color), acc.r);
+	return gamut(oklab_linear(p), oklab_linear(t));
 }
 
 // hue (turns), saturation gain, value gain

@@ -3,9 +3,11 @@
 // against tools/blender/alien_colour_geom.py by tools/tests/test_alien_colour_slots.py (node), the GLSL's text
 // against the Godot shader's (the same test); never yet run in a browser. Slots: skin, lips, detail (the crest
 // stripes, the freckles and gills; detailOn), gills (the axolotl's gills: "gradient", the default, "whole" or
-// "skin"; anything else throws); the pale front follows the skin as a tinted cream. Every pick is applied as picked
-// (CS6: no guard rails): each region's median texel becomes the pick exactly, the paint's lighter and darker texels
-// stay so round it (the offset from the region's base carried onto the pick in OKLab, `shift`); a slot left out
+// "skin"; anything else throws), front (the pale front, no slot: "keep", the default, its two-tone against the skin,
+// or "follow" the skin; a tinted cream either way). Every pick is applied as picked (CS6: no guard rails): the
+// region's base texel becomes the pick and its median is within the albedo table's dE of it, the paint's lighter and
+// darker texels stay so round it (the offset from the region's base carried onto the pick in OKLab, `shift`;
+// CS6b: relative on a darker pick, a texel out of gamut pulled toward the pick, `gamut`); a slot left out
 // keeps the build's own paint, and no picks is the build's look exactly. The recolour acts on the raw albedo map
 // texel, gated by the skin mask's red (the painted eyes keep their paint), then the material's base colour factor
 // multiplies it, as glTF does; Godot's material ignores the factor, so makeColours sets it to white (the heads'
@@ -19,6 +21,7 @@
 // prints them on the test colours.
 
 export const GILL_MODES = ["skin", "gradient", "whole"];
+export const FRONT_MODES = ["keep", "follow"];
 
 export const PRESETS = [
   ["alien teal", {}],
@@ -55,39 +58,51 @@ export const fromOklab = (lab) => oklabRgb(lab).map(srgb);
 
 // One texel x (OKLab) from its region's base b to the target t: its offset from b carried onto t (alien_colour_geom.shift)
 export function shift(x, b, t) {
-  const dl = x[0] - b[0];
-  const kl = dl > 0 ? Math.min(1, (1 - t[0]) / Math.max(1 - b[0], 1e-4)) : Math.min(1, t[0] / Math.max(b[0], 1e-4));
+  const dl = x[0] - b[0], kr = Math.min(1, t[0] / Math.max(b[0], 1e-4));
+  const kl = dl > 0 ? Math.min(kr, (1 - t[0]) / Math.max(1 - b[0], 1e-4)) : kr;
   const cb = Math.hypot(b[1], b[2]), ct = Math.hypot(t[1], t[2]);
   let co = 1, si = 0;
   if (cb > 1e-4 && ct > 1e-4) { co = (b[1] * t[1] + b[2] * t[2]) / (cb * ct); si = (b[1] * t[2] - b[2] * t[1]) / (cb * ct); }
-  const kc = Math.min(1, ct / Math.max(cb, 1e-4)), da = x[1] - b[1], db = x[2] - b[2];
+  const kc = Math.min(1, ct / Math.max(cb, 1e-4)) * kr, da = x[1] - b[1], db = x[2] - b[2];
   return [t[0] + dl * kl, t[1] + (da * co - db * si) * kc, t[2] + (da * si + db * co) * kc];
 }
 
 // shift on one sRGB colour (sRGB in and out, clamped)
 export const recolour = (c, base, target) => fromOklab(shift(toOklab(c), toOklab(base), toOklab(target)));
 
-// the pale front for a picked skin: the build's front shifted with the skin, its chroma never above the build's front's
-export function frontFor(skin, baseSkin, frontBase) {
-  const [L, a, b] = shift(toOklab(frontBase), toOklab(baseSkin), toOklab(skin)), fb = toOklab(frontBase);
+// the pale front for a picked skin: the build's front shifted with the skin, its chroma never above the build's front's;
+// "keep": its lightness at least the build's front's, then the build's two-tone away from the skin (above where that
+// colour is inside the gamut, else below)
+export function frontFor(skin, baseSkin, frontBase, mode = "keep") {
+  let [L, a, b] = shift(toOklab(frontBase), toOklab(baseSkin), toOklab(skin));
+  const fb = toOklab(frontBase), ls = toOklab(skin)[0];
   const cf = Math.hypot(fb[1], fb[2]), c = Math.hypot(a, b), k = c > 0 ? Math.min(1, cf / c) : 1;
+  if (mode === "keep") {
+    const d = fb[0] - toOklab(baseSkin)[0];
+    L = Math.max(L, fb[0]);
+    if (Math.abs(L - ls) < d - 1e-6) {
+      const up = oklabRgb([ls + d, a * k, b * k]);
+      L = Math.min(...up) >= -1e-6 && Math.max(...up) <= 1 + 1e-6 ? ls + d : ls - d;
+    }
+  }
   return fromOklab([L, a * k, b * k]);
 }
 
 const pick = (v) => (typeof v === "string" ? hexc(v) : [...v]);
 
 // The shader's uniforms (sRGB arrays) for bases {skin, lips, detail, front, gill_tips, gill_whole} and picks {skin,
-// lips, detail, detailOn, gills}, applied as picked; alien_colour_geom.slot_colours line for line.
+// lips, detail, detailOn, gills, front}, applied as picked; alien_colour_geom.slot_colours line for line.
 export function slotColours(bases, picks = {}) {
-  const gills = picks.gills ?? "gradient";
+  const gills = picks.gills ?? "gradient", front = picks.front ?? "keep";
   if (!GILL_MODES.includes(gills)) throw new Error(`unknown gills ${JSON.stringify(gills)} (one of ${GILL_MODES.join(", ")})`);
+  if (!FRONT_MODES.includes(front)) throw new Error(`unknown front ${JSON.stringify(front)} (one of ${FRONT_MODES.join(", ")})`);
   const base = [...bases.skin];
   const gb = [...(bases[gills === "whole" ? "gill_whole" : "gill_tips"] ?? bases.detail)];
   const u = { base_skin: base, lip_base: [...bases.lips], detail_base: [...bases.detail], gill_base: gb,
     front_base: [...bases.front] };
   const picked = "skin" in picks, skin = picked ? pick(picks.skin) : base;
   u.skin_color = skin;
-  u.front_color = picked ? frontFor(skin, base, u.front_base) : u.front_base;
+  u.front_color = picked ? frontFor(skin, base, u.front_base, front) : u.front_base;
   // a slot left out: the build's paint there, following a picked skin as its paint does
   const follow = (b) => (picked ? recolour(b, base, skin) : b);
   u.lip_color = "lips" in picks ? pick(picks.lips) : follow(u.lip_base);
@@ -121,26 +136,38 @@ vec3 csLabLin(vec3 lab) {
 }
 vec3 csShift(vec3 x, vec3 b, vec3 t) {
   float dl = x.x - b.x;
-  float kl = dl > 0.0 ? min(1.0, (1.0 - t.x) / max(1.0 - b.x, 1.0e-4)) : min(1.0, t.x / max(b.x, 1.0e-4));
+  float kr = min(1.0, t.x / max(b.x, 1.0e-4));
+  float kl = dl > 0.0 ? min(kr, (1.0 - t.x) / max(1.0 - b.x, 1.0e-4)) : kr;
   float cb = length(b.yz);
   float ct = length(t.yz);
   vec2 r = vec2(1.0, 0.0);
   if (cb > 1.0e-4 && ct > 1.0e-4) { r = vec2(dot(b.yz, t.yz), b.y * t.z - b.z * t.y) / (cb * ct); }
-  float kc = min(1.0, ct / max(cb, 1.0e-4));
+  float kc = min(1.0, ct / max(cb, 1.0e-4)) * kr;
   vec2 d = x.yz - b.yz;
   return vec3(t.x + dl * kl, t.yz + vec2(d.x * r.x - d.y * r.y, d.x * r.y + d.y * r.x) * kc);
+}
+vec3 csGamut(vec3 p, vec3 r) {
+  p = clamp(p, 0.0, 1.0);
+  vec3 d = r - p;
+  vec3 s3 = mix(p / max(-d, vec3(1.0e-6)), (1.0 - p) / max(d, vec3(1.0e-6)), step(0.0, d));
+  float s = min(1.0, min(min(s3.x, s3.y), s3.z));
+  return clamp(p + d * s, 0.0, 1.0);
 }
 vec3 csU(vec3 c) { return csLab(csLin(c)); }  // an sRGB uniform in OKLab
 vec3 csRecolour(vec3 c, vec3 acc, float gill) {
   vec3 x = csLab(c);
   vec3 t = csShift(x, csU(csBaseSkin), csU(csSkin));
+  vec3 p = csU(csSkin);
   t = mix(t, csShift(x, csU(csFrontBase), csU(csFront)), acc.b);
+  p = mix(p, csU(csFront), acc.b);
   float dw = csGillMode < 0.5 ? max(acc.g - gill, 0.0) : (csGillMode < 1.5 ? acc.g : max(acc.g, gill));
   vec3 db = csLab(mix(csLin(csDetailBase), csLin(csGillBase), gill));
   vec3 dt = csLab(mix(csLin(csDetail), csLin(csGillColor), gill));
   t = mix(t, csShift(x, db, dt), csDetailOn * dw);
+  p = mix(p, dt, csDetailOn * dw);
   t = mix(t, csShift(x, csU(csLipBase), csU(csLip)), acc.r);
-  return clamp(csLabLin(t), 0.0, 1.0);
+  p = mix(p, csU(csLip), acc.r);
+  return csGamut(csLabLin(p), csLabLin(t));
 }
 `;
 
