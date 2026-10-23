@@ -224,7 +224,13 @@ func _eyes(live, mats: Array[ShaderMaterial], head: Node3D) -> Array[Image]:
 	var mesh: MeshInstance3D = live.mesh
 	var res: Array[Image] = []
 	for side: String in ["l", "r"]:
-		var c: Vector3 = mesh.global_transform * live.eye_front("left" if side == "l" else "right")  # AL2: centred
+		# AL4: framed on the visible cap's middle: the sphere point halfway between the bead's front and the camera's
+		# side (+Z). On the eye turned away, the front point (AL2) is the disc's rim and sat at the cell's edge
+		var nm: String = "left" if side == "l" else "right"
+		var ctr: Vector3 = mesh.global_transform * live.eye_centre(nm)
+		var fr: Vector3 = mesh.global_transform * live.eye_front(nm)
+		var rr: float = (fr - ctr).length()
+		var c: Vector3 = ctr + ((fr - ctr).normalized() + Vector3(0.0, 0.0, 1.0)).normalized() * rr
 		var e: Dictionary = live.eyes["left" if side == "l" else "right"]
 		var h: float = 6.0 * float(e["radius"])
 		var dist: float = h * 0.5 / tan(deg_to_rad(_cam.fov * 0.5))

@@ -251,8 +251,15 @@ func eye_front(side: String) -> Vector3:
 		skeleton.get_bone_global_rest(_bones["Head"]).affine_inverse()
 	var to_mesh: Transform3D = mesh.global_transform.affine_inverse() * skeleton.global_transform
 	var e: Dictionary = eyes[side]
-	var c: Vector3 = to_mesh * (posed * _v(e["centre"]))
-	return c + (to_mesh.basis * posed.basis * _v(e["rest"])).normalized() * float(e["radius"])
+	return eye_centre(side) + (to_mesh.basis * posed.basis * _v(e["rest"])).normalized() * float(e["radius"])
+
+
+## The eye sphere's posed centre in the mesh's frame (AL4: the close-ups frame on the visible cap's middle from it).
+func eye_centre(side: String) -> Vector3:
+	var posed: Transform3D = skeleton.get_bone_global_pose(_bones["Head"]) * \
+		skeleton.get_bone_global_rest(_bones["Head"]).affine_inverse()
+	var to_mesh: Transform3D = mesh.global_transform.affine_inverse() * skeleton.global_transform
+	return to_mesh * (posed * _v(eyes[side]["centre"]))
 
 
 ## The springs' largest swing now (degrees): the crest's or a gill's turn from its rest, carried by the head.
