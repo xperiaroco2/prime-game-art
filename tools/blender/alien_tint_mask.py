@@ -64,6 +64,21 @@ FRECKLE_EDGE = (0.15, 0.45)
 # (`<head>_gills` in the static .blend): a texel is gill where the gill part's surface is nearer than the skin's
 # (soft over GILL_SOFT m); its gradient runs from the root (the nearest step 2a gill pivot, 0) to the gill's farthest
 # texel (1), the details colour reaching full at GILL_RAMP[1] of the way out.
+# v4 (CS4): every freckle on the head, not only the cheek band's (on cobalt the others stayed skin beside salmon
+# ones): a freckle is a small isolated dot darker or more saturated than the paint round it (each texel against the
+# paint-weighted mean over (2 bg + 1)^2 texels: the black gutters never count), anywhere on the skin. Per head
+# (None: no freckles): bg (texels), contrast (the dot's value drop or its saturation rise over the teal's, whichever
+# is larger), the component's size in texels (min_tex, max_tex) and 3D extent (max_m: wider is a seam, a gradient's
+# edge or the eye ring; the axolotl's largest freckles, below and behind the eyes, measure 0.025-0.028 m, its
+# nostrils 0.036), eye_r (no freckle within eye_r eye radii of an eye's centre: the ring), lip_pad (texels round the
+# lips and the gills kept out), cav (a component whose mean cavity is below it is a nostril or a dent: the
+# freckles measured 0.92-1.0, the nostrils 0.28-0.71), gill_m (no freckle within it of a gill texel in 3D: the
+# gill tiles' paint specks), below (no freckle lower than this many eye radii under the lip line's lowest point:
+# the neck and its cut) and iters (the labelling's passes: a component still growing after them is too wide). The weight inside
+# an accepted dot is hardened as v3's (smoothstep over FRECKLE_EDGE of the dot's contrast as a share of 2 x
+# contrast) on its 1-texel rim, the dot itself whole, then the 1-texel blur every mark gets.
+FRECKLES = {"axolotl": {"bg": 8, "contrast": 0.1, "min_tex": 3, "max_tex": 150, "max_m": 0.032, "eye_r": 1.2,
+                        "lip_pad": 3, "cav": 0.85, "gill_m": 0.04, "below": 1.0, "iters": 40}, "chameleon": None}
 GILL_SOFT = 0.006
 GILL_RAMP = (0.12, 0.7)
 GILL_NEAR = 0.06  # m: a texel farther than this from the gill part is no gill (the gill part is a little larger)
@@ -105,6 +120,87 @@ def lip_path(line, tip, ax, y, h0, power=0.5, n_tip=8, cap=None):
     if cap is not None:
         hl = np.where(sl > s_end, np.minimum(hl, cap), hl)
     return zl, sl, hl, best, s_end
+
+
+def components(cand, iters):
+    """cand's 8-connected components by min-label propagation (numpy only): per texel its label (cand.size off
+    cand) and the labels still changing after iters passes (components wider than about iters texels: never a dot)."""
+    big = np.int64(cand.size)
+    lab = np.where(cand, np.arange(cand.size, dtype=np.int64).reshape(cand.shape), big)
+    h, w = cand.shape
+
+    def step(lb):
+        pd = np.pad(lb, 1, constant_values=big)
+        m = lb.copy()
+        for dy in range(3):
+            for dx in range(3):
+                m = np.minimum(m, pd[dy:dy + h, dx:dx + w])
+        return np.where(cand, m, big)
+    for _ in range(iters):
+        nl = step(lab)
+        if np.array_equal(nl, lab):
+            break
+        lab = nl
+    nl = step(lab)
+    ch = nl != lab
+    return lab, np.unique(np.concatenate([lab[ch], nl[ch]]))
+
+
+def freckle_dots(cfg, pos, val, sat, teal_s, ok, skin, keep_out, cav, eyes, r, gill_pts, floor_z, hue_a=None,
+                 dump=None):
+    """Every freckle (FRECKLES): the dots' hardened weight and the accepted dots' stats."""
+    k = cfg["bg"]
+    w = ok.astype(np.float32)
+    den = np.maximum(S.blur(w, k), 1e-4)
+    bgv, bgs = S.blur(val * w, k) / den, S.blur(sat * w, k) / den
+    dot = np.maximum(bgv - val, (sat - bgs) / teal_s * 0.5)  # the saturation rise counts half (teal_s ~ 2 x value)
+    ok_in = S.blur(w, 2) > 0.999  # 2 texels inside the paint: no seam or gutter edge
+    far = np.ones_like(ok)
+    for e in eyes:
+        far &= np.linalg.norm(pos - np.asarray(e), axis=-1) > cfg["eye_r"] * r
+    out = S.blur(keep_out.astype(np.float32), cfg["lip_pad"]) < 0.01
+    cand = (dot > cfg["contrast"]) & ok_in & (skin > 0.95) & far & out
+    lab, wide = components(cand, cfg["iters"])
+    flat = lab[cand]
+    labels, inv, counts = np.unique(flat, return_inverse=True, return_counts=True)
+    p3 = pos[cand]
+    ext = np.zeros((len(labels), 3))
+    for a in range(3):
+        mn = np.full(len(labels), np.inf)
+        mx = np.full(len(labels), -np.inf)
+        np.minimum.at(mn, inv, p3[:, a])
+        np.maximum.at(mx, inv, p3[:, a])
+        ext[:, a] = mx - mn
+    size_m = np.linalg.norm(ext, axis=1)
+    cav_m = np.bincount(inv, weights=cav[cand]) / counts
+    cen_all = np.stack([np.bincount(inv, weights=p3[:, a]) / counts for a in range(3)], -1)
+    gd = np.full(len(labels), np.inf)
+    for i in range(0, len(gill_pts), 2000):  # each component's 3D distance to the nearest gill texel
+        gd = np.minimum(gd, np.linalg.norm(cen_all[:, None] - gill_pts[None, i:i + 2000], axis=-1).min(1))
+    good = (counts >= cfg["min_tex"]) & (counts <= cfg["max_tex"]) & (size_m <= cfg["max_m"])         & (cav_m >= cfg["cav"]) & ~np.isin(labels, wide) & (gd > cfg["gill_m"]) & (cen_all[:, 2] > floor_z)
+    acc = np.zeros(cand.shape, bool)
+    acc[cand] = good[inv]
+    rim = (S.blur(acc.astype(np.float32), 1) > 0.01) & (skin > 0.95) & out
+    weight = np.where(rim, smoothstep(FRECKLE_EDGE[0], FRECKLE_EDGE[1], dot / (2 * cfg["contrast"])), 0.0)
+    weight[acc] = 1.0  # the dot itself whole
+    cen = cen_all[good]
+    stats = {"dots": int(good.sum()), "candidates": int(len(labels)), "too_small": int((counts < cfg["min_tex"]).sum()),
+             "too_big": int(((counts > cfg["max_tex"]) | (size_m > cfg["max_m"]) | np.isin(labels, wide)).sum()),
+             "dented": int(((cav_m < cfg["cav"]) & (counts >= cfg["min_tex"])).sum()),
+             "by_gills": int(((gd <= cfg["gill_m"]) & (counts >= cfg["min_tex"])).sum()),
+             "below": int(((cen_all[:, 2] <= floor_z) & (counts >= cfg["min_tex"])).sum()),
+             "texels": int(acc.sum()), "front": int((cen[:, 1] < -0.2).sum()), "upper": int((cen[:, 2] > 0.33).sum()),
+             "back": int((cen[:, 1] > 0.0).sum())}
+    if dump is not None:  # --debug: every candidate of min_tex or more, for tuning
+        hh, ss, vv = [np.bincount(inv, weights=q[cand]) / counts for q in (hue_a, sat, val)]
+        dn = np.bincount(inv, weights=den[cand]) / counts
+        uvc = np.stack([np.bincount(inv, weights=g[cand]) / counts for g in np.indices(cand.shape)], -1)
+        dump.extend({"good": bool(good[i]), "n": int(counts[i]), "m": round(float(size_m[i]), 4),
+                     "cav": round(float(cav_m[i]), 3), "wide": bool(np.isin(labels[i], wide)),
+                     "pos": [round(float(v), 3) for v in cen_all[i]], "uv": [int(v) for v in uvc[i]],
+                     "hsv": [round(float(hh[i]), 1), round(float(ss[i]), 3), round(float(vv[i]), 3)],
+                     "den": round(float(dn[i]), 3), "gill_m": round(float(gd[i]), 3)} for i in range(len(labels)) if counts[i] >= cfg["min_tex"])
+    return weight.astype(np.float32), stats
 
 
 def texel_pitch(pos, ok) -> float:
@@ -220,10 +316,10 @@ def load(path: Path) -> np.ndarray:
     return H.image_array(img)
 
 
-def debug(path: Path, pos, col, lips, line, fp, r, over=None, centre=None, half=0.36, yaws=(0.0, 40.0, 90.0)) -> None:
-    """The mouth's texels splatted into three views (a z-buffer per view), 400 px each: front, 3/4 (40 deg), side;
+def debug(path: Path, pos, col, lips, line, fp, r, over=None, centre=None, half=0.36, yaws=(0.0, 40.0, 90.0),
+          size=400) -> None:
+    """The mouth's texels splatted into three views (a z-buffer per view), size px each: by default front, 3/4 (40 deg), side;
     lips (a weight) drawn in over (default red) on the albedo."""
-    size = 400
     ok = col.sum(-1) > 0.05
     p, c = pos[ok], col[ok].copy()
     tint = np.array([0.6, 0.0, 0.0]) if over is None else over[ok]
@@ -365,10 +461,25 @@ def main() -> int:
     gills = np.zeros_like(lips)
     gill_grad = np.zeros_like(lips)
     gill_stats = None
+    freckle_stats = None
     if roots:  # the whole gills, stalk and fringe (the build's segmented gill part), and their root-to-tip gradient
         gills, gill_grad, gill_stats = gill_region(low, pos, lit > 0.5, roots)
         print(f"GILLS {head} {json.dumps(gill_stats)}", flush=True)
         freckles = smoothstep(*FRECKLE_EDGE, freckle_raw) * (1.0 - lips) * (1.0 - gills)
+        fcfg = FRECKLES.get(head)
+        if fcfg:  # v4: every freckle on the head, the cheek band's kept as v3 had them
+            cav = load(build / f"{head}_detail.png")[..., 0]
+            eyes = [(sx * eye["x"], eye["y"], eye["z"]) for sx in (1.0, -1.0)]  # Blender (x, y, z), both sides
+            dump = [] if args.debug else None
+            gill_pts = pos[gills > 0.5][::7]  # a seventh is enough for a 3 cm test
+            floor_z = float(line[:, 1].min()) - fcfg["below"] * r  # the lip line's (x, up, front): its up is z
+            dots, freckle_stats = freckle_dots(fcfg, pos, val, sat, teal_s, lit > 0.5, skin,
+                                               (lips > 0.02) | (gills > 0.02), cav, eyes, r, gill_pts, floor_z,
+                                               hue, dump)
+            if dump is not None:
+                (out / f"{head}_freckles.json").write_text(json.dumps(dump) + "\n", encoding="utf-8", newline="\n")
+            print(f"FRECKLES {head} {json.dumps(freckle_stats)}", flush=True)
+            freckles = np.maximum(freckles, dots * (1.0 - lips) * (1.0 - gills))
         marks = np.maximum(gills * gill_grad, freckles)  # G: the gradient on the gills (the default mode)
     st = ref.get("stripes")
     if st:  # the crest stripes: alien_pilot_head.grade_source's formula
@@ -398,9 +509,16 @@ def main() -> int:
             over = np.stack([gill_grad, 0.15 * np.ones_like(gill_grad), 1.0 - gill_grad], -1)
             debug(out / f"{head}_gills_debug.png", pos, col, gill_w, line, fp, r, over=over,
                   centre=(0.0, 0.1, 0.45), half=0.75, yaws=(0.0, 60.0, 90.0))
+            if freckle_stats:  # v4: the freckle map, the head's four sides, the freckles' weight red
+                fw = S.blur(freckles.astype(np.float32), 1) * skin * (1.0 - lips)
+                debug(out / f"{head}_freckles_debug.png", pos, col, fw, line, fp, r, centre=(0.0, 0.0, 0.3),
+                      half=0.62, yaws=(0.0, 90.0, 180.0, 270.0), size=560)
+                uv = plain * lit[..., None]  # the same in the UV atlas: the freckles red
+                uv = uv * (1 - fw[..., None]) + np.array([1.0, 0.0, 0.0]) * fw[..., None]
+                S.save(uv.astype(np.float32), out / f"{head}_freckles_uv.png", data=True)
 
     report = {"head": head, "teal_sat": round(teal_s, 4), "regions": {}, "lip_growth": grow_stats,
-              "gills": gill_stats}
+              "gills": gill_stats, "freckles": freckle_stats}
     core = skin > 0.95
     base = albedo[core & (teal > 0.9) & (lips < 0.1) & (marks < 0.1)]
     for name, w in (("skin", None), ("lips", lips), ("marks", marks), ("front", front_w)):

@@ -744,7 +744,8 @@ pilot's static premium heads"):
   material whose name ends in `_static_skin` for the ShaderMaterial (keeping the imported albedo and normal textures)
   and returns the materials; `set_skin(mats, color)` (since the colour slots guarded, except on `SHADER_288`
   materials, which take the colour as it is: the #288 review output reproducible); `PALETTE`, the curated skin
-  colours after the build's teal as the rails render them (`PALETTE_288` the merged values, for `SHADER_288`).
+  colours after the build's teal as the rails render them (exactly `hexs(guard("skin", PALETTE_288[i]))`, pinned by
+  `test_alien_colour_slots.py`; `PALETTE_288` the merged values, for `SHADER_288`).
   The mask PNG travels beside the GLB (`<head>_mask.png`); the proof loads it with `Image.load_from_file`.
 - **The skin colour study** (2026-10-23, after the engineer found one colour over lips, gills and crest "too acidic"):
   `tint_study.gdshader` is `alien_static.gdshader` copied with the tint split by region: `accent_tex` (R the lips, G
@@ -764,7 +765,10 @@ pilot's static premium heads"):
 - **The colour slots** (2026-10-23, after the study: the engineer picked E and asked for slots the player chooses):
   `alien_static.gdshader` reads `accent_tex` (`<head>_accent.png` beside the GLB, linear RGB from
   `alien_tint_mask.py`: R the lips, G the details (the chameleon's crest stripes, the axolotl's freckles and its
-  gills' root-to-tip gradient), B the pale front) and `gill_tex` (`<head>_gill.png`, linear grey: the whole gills;
+  gills' root-to-tip gradient), B the pale front; v4: every freckle on the axolotl's head, not only the cheek band's:
+  small isolated dots darker or more saturated than the paint round them, nostrils (low cavity), the eye ring
+  (near the eyes), the lips, the gills and the neck kept out, `FRECKLES`; `--debug` writes the freckle map,
+  `<head>_freckles_debug.png` (four sides) and `<head>_freckles_uv.png`) and `gill_tex` (`<head>_gill.png`, linear grey: the whole gills;
   v3, PR #304's review: out of the accent's alpha, which `fix_alpha_border` and VRAM compression would destroy
   under zero alpha), gates the recolour by the skin mask's red (the painted eyes keep their paint) and recolours
   each region from its base
@@ -777,7 +781,8 @@ pilot's static premium heads"):
   `alien_static.gd`: `apply(root, mask, base_skin, detail, plain, shader, accent, bases, gill)` (bases `{"lips",
   "detail", "front"}`), `set_colours(mats, {"skin", "lips", "detail", "detail_on", "gills"})` (`"gills"`:
   `"gradient"`, `"whole"` or `"skin"`; any other value is an error: `push_error`, `{}` returned, the materials
-  untouched, as Python's `ValueError` and JS's throw; returns the uniforms; `{}` is the merged look; `set_skin` is
+  untouched, as Python's `ValueError` and JS's throw; an accent without the gill texture warns (`push_warning`,
+  JS `console.warn`): "skin" and "whole" then act as "gradient"; returns the uniforms; `{}` is the merged look; `set_skin` is
   `{"skin": color}`), `PRESETS` (the study's E1-E8; E1 the build's own paint), `data_texture(path)` (a mask as data).
   **The colour slots' masks** (`<head>_mask.png`, `<head>_accent.png`, `<head>_gill.png`) are data, never colour:
   load them with `data_texture()` (`Image.load_from_file`, mipmaps generated: lossless and linear) or import them
@@ -801,11 +806,14 @@ pilot's static premium heads"):
   the Godot shader's statement by statement; `test_alien_parse_godot.py`, a heavy test, runs the GDScript maths
   headless within 1e-5) and `tools/web/alien_colour/colour.js` (three.js 0.160,
   `makeColours(root, accentUrl, maskUrl, gillUrl, bases).set(picks)`: the recolour on the raw map texel, gated by
-  the skin mask, before the base colour factor, which it sets to white as Godot ignores it; `index.html` a local
-  test page with pickers and presets; never yet opened in a browser). The proof: `$PYTHON_BIN
+  the skin mask, before the base colour factor, which it sets to white as Godot ignores it; `index.html` the pilot
+  page: both heads side by side, per slot a pick box and picker (skin, lips, details with an on box), the gills
+  mode and the eight presets as swatches; served over http (a `file://` page cannot fetch), never yet opened in a
+  browser). The proof: `$PYTHON_BIN
   tools/blender/alien_colour_slots.py <masks|web|sheets|all>` (in the background) into
-  `<raw>/research/2026-10-22-roster/design/pilot3d/colour_slots/v3/`: the presets, bad free picks, details off and
-  on, the gills in both modes, the lips' corners at 4x (`lips_v3.jpg`, `lips_v3_chameleon.jpg`), the identity
+  `<raw>/research/2026-10-22-roster/design/pilot3d/colour_slots/v4/` (v4; earlier runs in `v3/`, `v2/`): the presets, bad free picks, details off and
+  on, the gills in both modes, the freckles all round (`<light>/freckles.jpg`: E2, E5, E7 front, 3/4, side, back),
+  the lips' corners at 4x (`lips_v4.jpg`, `lips_v4_chameleon.jpg`), the identity
   against the merged shader and the import path (`diffs.json`), the study's E beside v2's presets
   (`E_compare.jpg`, the drift per cell in `drift.json`) and Godot's uniforms against the Python's (within 1e-5);
   `tint_study.gd` renders it (a head's `"static": true`, a cell's `"colours"`, `"drifts"`, `"stacks"`); titles are

@@ -11,7 +11,7 @@ alien_static.gd's set_colours):
   against the merged shader, origin/main's alien_static.gdshader); v3: the import path (the masks imported by Godot
   with the settings in docs/godot.md, IMPORT_SETTINGS, and with Godot's defaults, against Image.load_from_file);
   the pixel diffs into `diffs.json`; the study's E sheets beside v2's presets (`E_compare.jpg`) and the per-cell
-  drift E -> v2 -> v3 (`drift.json`); every cell's uniforms as Godot set them into `uniforms.json`, compared here
+  drift E -> v2 -> v3 (`drift.json`); v4: the freckle sheets (`<light>/freckles.jpg`: E2, E5, E7 all round); every cell's uniforms as Godot set them into `uniforms.json`, compared here
   with alien_colour_geom.slot_colours (within 1e-5: float32 against float64);
 - `web`: the three.js page: the GLBs, masks and bases beside tools/web/alien_colour/{colour.js,index.html} in
   `<out>/web/`.
@@ -39,7 +39,8 @@ import alien_static_review as R  # noqa: E402
 import alien_tint_study as T  # noqa: E402  (the study's lights, framings and head entries)
 
 BUILD = R.NEW  # static_v5
-OUT = R.DESIGN / "pilot3d" / "colour_slots" / "v3"  # v3 (CS3): the gills out of alpha, the tail into the cheek
+OUT = R.DESIGN / "pilot3d" / "colour_slots" / "v4"  # v4 (CS4): every freckle in the details (v3: the gills' alpha)
+V = "v4"  # the proof's version in the sheet titles and stems
 HEADS = T.HEADS
 WEB = ROOT / "tools" / "web" / "alien_colour"
 MERGED_SHADER_REF = "1aa19cd"  # origin/main when the slots began: the merged alien_static.gdshader
@@ -105,6 +106,16 @@ def corners(head: str) -> dict:
     return out
 
 
+def freckle_shots() -> dict:
+    """The axolotl all round (v4's freckle sheets): the study's front and 3/4, then the side and the back turned
+    round the head's middle (the study's orbit point is near the face's front)."""
+    f = T.shots("axolotl")
+    w = f["front"]["width"]
+    t = f["front"]["target"]
+    mid = {"target": [t[0], t[1], t[2] - 0.3 * w], "width": 1.1 * w, "pitch": 3.0}
+    return {"front": f["front"], "3/4": f["3/4"], "side": {**mid, "yaw": 85.0}, "back": {**mid, "yaw": 180.0}}
+
+
 def label(picks: dict) -> str:
     return " ".join(f"{k[0]}{v}" if isinstance(v, str) else f"{k}={'on' if v else 'off'}" for k, v in picks.items())
 
@@ -137,12 +148,12 @@ def job(build: Path, out: Path) -> dict:
             rows = [[cell(h, presets[i][1], light, shot, f"E{i + 1} {presets[i][0]}\n{h} {view}") for i in idx]
                     for h in HEADS for view, shot in T.shots(h).items()]
             j["sheets"].append({"file": str(out / light / f"presets_{part}.jpg"), "cell": [320, 320], "width": 1280,
-                                "title": title(f"Presets E{idx[0] + 1}-E{idx[-1] + 1} on the real material (v3)", lt,
+                                "title": title(f"Presets E{idx[0] + 1}-E{idx[-1] + 1} on the real material ({V})", lt,
                                                "rows: axolotl front, 3/4, chameleon front, 3/4"), "rows": rows})
         rows = [[cell(h, p, light, shot, f"{k + 1} {name}\n{h} {view}") for k, (name, p) in enumerate(FREE)]
                 for h in HEADS for view, shot in T.shots(h).items()]
         j["sheets"].append({"file": str(out / light / "free.jpg"), "cell": [256, 256], "width": 1280,
-                            "title": title("Free picks, bad on purpose (the OKLCh rails, v3); the picks in the cells", lt),
+                            "title": title(f"Free picks, bad on purpose (the OKLCh rails, {V}); the picks in the cells", lt),
                             "rows": rows})
         rows = []
         for h in HEADS:
@@ -156,6 +167,12 @@ def job(build: Path, out: Path) -> dict:
                             "title": title("Details off (they follow the skin) vs on (their own colour): E2, E5, E7",
                                            lt),
                             "rows": rows})
+        # v4: every freckle in the details: the axolotl all round, three contrasting presets
+        rows = [[cell("axolotl", presets[i][1], light, shot, f"E{i + 1} {presets[i][0]}\n{view}")
+                 for view, shot in freckle_shots().items()] for i in (1, 4, 6)]
+        j["sheets"].append({"file": str(out / light / "freckles.jpg"), "cell": [320, 320], "width": 1280,
+                            "title": title(f"Freckles ({V}): every freckle on the head in the details colour",
+                                           "rows E2, E5, E7; front, 3/4, side, back", lt), "rows": rows})
         rows = []
         for i in (1, 3, 4, 6):
             row = []
@@ -175,7 +192,7 @@ def job(build: Path, out: Path) -> dict:
             for side in ("L", "R"):
                 rows.append([cell(head, presets[i][1], "studio", shot, f"E{i + 1} {head}\n{name}")
                              for name, shot in corners(head).items() if name.startswith(side)])
-        stem = "lips_v3" if head == "axolotl" else f"lips_v3_{head}"
+        stem = f"lips_{V}" if head == "axolotl" else f"lips_{V}_{head}"
         j["sheets"].append({"file": str(out / f"{stem}.jpg"), "cell": [426, 426], "width": 1280,
                             "title": title(f"The {head}'s lip corners, 4x: L (+x) and R (-x) at front, 3/4, side",
                                            "rows: E2, E5, E7, each L then R; studio"), "rows": rows})

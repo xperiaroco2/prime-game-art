@@ -1,0 +1,41 @@
+# art#297, the vault's plush alien, step 2 again (the engineer, 2026-10-22, art#297 comment 6349333800: "Нехай шви
+# взагалі приберете... Переруби 2D без швів з нормальною шкірою і закинь заново"). The same route as batch
+# 2026-10-22-vault-plush-3d, from four views cut from the seamless sheet (batch 2026-10-22-vault-plush-turn item
+# turn5b: no seams or stitching anywhere, the concept's soft fuzzy plush), each padded to a square on its own grey:
+# front (first), side profile facing left, back, three-quarter facing right. The texture prompt asks for no seams.
+# meshy-7.1, 2k geometry, PBR texture, Meshy's remesh to 30,000 triangles with the dense original kept; the game mesh
+# is cut down by tools/blender/plush_clean.py. Price: 35; the cap 40 is one model. No names (the images are the prompt).
+
+id = "2026-10-22-vault-plush-3d-2"
+purpose = "art#297 step 2 again: the vault's plush alien as a raw Meshy multi-image-to-3D model from four views of its seamless turnaround sheet."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 40
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/297#issuecomment-6349333800"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = true
+enable_pbr = true
+texture_resolution = "2k"
+remove_lighting = true
+texture_prompt = "a soft seamless plush toy: short dense even fuzzy orange plush fur with fine fibres and a soft fuzzy halo, matte, not curly and not terry cloth; soft matte dark brown fuzzy velour on the paws, feet, nose, antenna pads and tail pompom; no seams and no stitching anywhere; pink red-veined eyes with small dark pupils under heavy orange lids; the smile a simple dark line"
+should_remesh = true
+topology = "triangle"
+target_polycount = 30000
+save_pre_remeshed_model = true
+target_formats = ["glb"]
+
+[[items]]
+id = "plush"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-22-vault-plush-3d-2/views/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-22-vault-plush-turn item turn5b (gpt-image-2.5-sunburst), padded to a square, art#297", sha256 = "cc9ab410c81d9faebb427f50930af12a56cb094443129a157078105a164cfa4c" },
+  { file = "raw:2026-10-22-vault-plush-3d-2/views/side.png", provenance = "side profile (facing left) cut from our own OpenAI generation, batch 2026-10-22-vault-plush-turn item turn5b (gpt-image-2.5-sunburst), padded to a square, art#297", sha256 = "1598f7e553f6a2361a275ec173c7df435c3cfa91bdff640e3aee124a27b87ed1" },
+  { file = "raw:2026-10-22-vault-plush-3d-2/views/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-22-vault-plush-turn item turn5b (gpt-image-2.5-sunburst), padded to a square, art#297", sha256 = "88a5c5ca9f84158e0e2644509d38ca4107fac05b65a175c5dc7838506b4d332a" },
+  { file = "raw:2026-10-22-vault-plush-3d-2/views/three_quarter.png", provenance = "three-quarter view (facing right) cut from our own OpenAI generation, batch 2026-10-22-vault-plush-turn item turn5b (gpt-image-2.5-sunburst), padded to a square, art#297", sha256 = "e69d9ade62672eb7a41b2c7ae783bdadcba377ffe4924a8e40f83e318d3c83ac" },
+]

@@ -127,6 +127,13 @@ class ColourSlotsTest(unittest.TestCase):
         self.assertIn(f"const LIP_CONTRAST: float = {G.LIP_CONTRAST}", src)
         self.assertIn(f"const FRONT_SAT_GAIN: float = {G.FRONT_SAT_GAIN}", src)
         self.assertIn("const GILL_MODES: PackedStringArray = [" + ", ".join(f'"{m}"' for m in G.GILL_MODES) + "]", src)
+        # PR #304's re-review: PALETTE is exactly the skin guard of PALETTE_288, as hexs gives it
+        m288 = re.search(r"const PALETTE_288: Array\[Color\] = \[(.*?)\]\n", src, re.S).group(1)
+        p288 = [tuple(float(x) for x in c.split(",")) for c in re.findall(r"Color\(([^)]*)\)", m288)]
+        m = re.search(r"const PALETTE: Array\[Color\] = \[(.*?)\]\n", src, re.S).group(1)
+        pal = re.findall(r'Color\("(#[0-9a-f]{6})"\)', m)
+        self.assertEqual(len(p288), 4)
+        self.assertEqual(pal, [G.hexs(G.guard("skin", c)) for c in p288])
         gd = re.findall(r'\{"name": "([^"]+)", "picks": (\{[^}]*\})\}', src)
         self.assertEqual([n for n, _ in gd], [n for n, _ in G.PRESETS])
         for (_, gp), (_, p) in zip(gd, G.PRESETS):
@@ -137,6 +144,14 @@ class ColourSlotsTest(unittest.TestCase):
             G.slot_colours(BASES, {"gills": "fringe"})
         self.assertIn("if gm < 0:\n\t\tpush_error(", GD.read_text(encoding="utf-8"))
         self.assertIn("if (!GILL_MODES.includes(gills)) throw new Error(", JS.read_text(encoding="utf-8"))
+
+    def test_accent_without_gills_warns(self):  # PR #304's re-review: never a silent "gradient" for "skin"/"whole"
+        gd = GD.read_text(encoding="utf-8")
+        self.assertIn("elif accent != null:  # v4: without the gills' texture", gd)
+        self.assertIn('push_warning("alien_static: %s: an accent mask without the gill texture', gd)
+        js = JS.read_text(encoding="utf-8")
+        self.assertIn('console.warn("colour.js: an accent mask without the gill texture', js)
+        self.assertIn("if (gillUrl) gillTex = await dataTexture(THREE, gillUrl);", js)
 
     def test_glsl_matches_the_godot_shader(self):  # PR #304's review: the browser gated by the skin mask as Godot
         js, gd = JS.read_text(encoding="utf-8"), SHADER.read_text(encoding="utf-8")

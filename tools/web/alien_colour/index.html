@@ -8,19 +8,27 @@
   #view { flex: 1; } #panel { width: 300px; padding: 12px; overflow-y: auto; background: #26272b; }
   .row { margin: 8px 0; } label { display: inline-block; width: 70px; } button { margin: 2px; }
   .sw { display: inline-block; width: 18px; height: 18px; border: 1px solid #000; vertical-align: middle; }
+  .pre { display: inline-flex; align-items: center; gap: 6px; width: 132px; text-align: left; background: #33343a;
+    color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 3px 5px; cursor: pointer; }
+  .pre:hover { border-color: #9cf; } .chip { display: inline-flex; border: 1px solid #000; }
+  .chip i { display: block; width: 12px; height: 20px; } #err { color: #f88; white-space: pre-wrap; }
   code { color: #9cf; }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
-<div id="view"></div>
+<div id="view"><div id="err"></div></div>
 <div id="panel">
-  <div class="row"><b>Presets</b><div id="presets"></div></div>
-  <div class="row"><label>skin</label><input type="checkbox" id="skin_on"><input type="color" id="skin" value="#e39c8c"> <span class="sw" id="skin_g"></span></div>
-  <div class="row"><label>lips</label><input type="checkbox" id="lips_on"><input type="color" id="lips" value="#a2575a"> <span class="sw" id="lips_g"></span></div>
-  <div class="row"><label>details</label><input type="checkbox" id="detail_on"><input type="color" id="detail" value="#a2575a"> <span class="sw" id="detail_g"></span></div>
+  <div class="row"><b>Presets</b> (the study's E)<div id="presets"></div></div>
+  <div class="row"><label>skin</label><input type="checkbox" id="skin_on" title="pick (unticked: the build's paint)"><input type="color" id="skin" value="#e39c8c"> <span class="sw" id="skin_g" title="after the guard rails"></span></div>
+  <div class="row"><label>lips</label><input type="checkbox" id="lips_on" title="pick (unticked: the build's paint)"><input type="color" id="lips" value="#a2575a"> <span class="sw" id="lips_g" title="after the guard rails"></span></div>
+  <div class="row"><label>details</label><input type="checkbox" id="detail_vis" title="details on (unticked: they follow the skin)"> on
+    <input type="checkbox" id="detail_on" title="pick (unticked: the build's paint)"><input type="color" id="detail" value="#a2575a"> <span class="sw" id="detail_g" title="after the guard rails"></span></div>
   <div class="row"><label>gills</label><select id="gills"><option value="gradient">root to tip (details)</option><option value="whole">whole (details)</option><option value="skin">on the skin</option></select></div>
-  <div class="row">Unticked: the build's own paint. The swatch after each picker is the colour after the guard rails.</div>
+  <div class="row"><button id="reset">the build's own paint</button></div>
+  <div class="row">A ticked box before a picker picks that colour; unticked keeps the build's paint. "on": the details
+    (freckles, the gills, the crest stripes) in the details colour, else in the skin's. The swatch after each picker is
+    the colour after the guard rails. Drag to turn, wheel to zoom.</div>
   <div class="row" id="out"></div>
 </div>
 <script type="module">
@@ -42,7 +50,13 @@ const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(1.5, 2, 
 const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 50);
 camera.position.set(0, 0.3, 3.2);
 const controls = new OrbitControls(camera, renderer.domElement);
-const heads = await (await fetch("heads.json")).json();
+let heads;
+try { heads = await (await fetch("heads.json")).json(); } catch (e) {
+  document.getElementById("err").textContent = `Cannot load heads.json (${e}).
+Serve this folder over http, e.g. ` +
+    "`python -m http.server` in it, then open http://localhost:8000/ (a file:// page cannot fetch).";
+  throw e;
+}
 const cols = [];
 let x = -0.65;
 for (const name of ["axolotl", "chameleon"]) {
@@ -59,7 +73,8 @@ function picks() {
   const p = {};
   if ($("skin_on").checked) p.skin = $("skin").value;
   if ($("lips_on").checked) p.lips = $("lips").value;
-  if ($("detail_on").checked) { p.detail = $("detail").value; p.detailOn = true; }
+  if ($("detail_on").checked) p.detail = $("detail").value;
+  p.detailOn = $("detail_vis").checked;
   p.gills = $("gills").value;
   return p;
 }
@@ -70,17 +85,25 @@ function apply() {
   for (const [s, k] of [["skin", "skin_color"], ["lips", "lip_color"], ["detail", "detail_color"]]) $(`${s}_g`).style.background = hexs(u[k]);
   $("out").innerHTML = `<code>${JSON.stringify(p)}</code>`;
 }
-for (const id of ["skin_on", "lips_on", "detail_on", "skin", "lips", "detail", "gills"]) $(id).addEventListener("input", apply);
+for (const id of ["skin_on", "lips_on", "detail_on", "detail_vis", "skin", "lips", "detail", "gills"]) $(id).addEventListener("input", apply);
+function setPicks(p) {
+  $("skin_on").checked = "skin" in p; $("lips_on").checked = "lips" in p; $("detail_on").checked = "detail" in p;
+  $("detail_vis").checked = !!p.detailOn;
+  if (p.skin) $("skin").value = p.skin; if (p.lips) $("lips").value = p.lips; if (p.detail) $("detail").value = p.detail;
+  apply();
+}
+const own = heads.axolotl;  // E1's chip: the axolotl's own paint
 PRESETS.forEach(([name, p]) => {
   const b = document.createElement("button");
-  b.textContent = name;
-  b.onclick = () => {
-    $("skin_on").checked = "skin" in p; $("lips_on").checked = "lips" in p; $("detail_on").checked = !!p.detailOn;
-    if (p.skin) $("skin").value = p.skin; if (p.lips) $("lips").value = p.lips; if (p.detail) $("detail").value = p.detail;
-    apply();
-  };
+  b.className = "pre";
+  const chip = [p.skin ?? hexs(own.skin), p.lips ?? hexs(own.lips), p.detail ?? hexs(own.detail)]
+    .map((c) => `<i style="background:${c}"></i>`).join("");
+  b.innerHTML = `<span class="chip">${chip}</span>${name}`;
+  b.title = JSON.stringify(p);
+  b.onclick = () => setPicks(p);
   $("presets").appendChild(b);
 });
+$("reset").onclick = () => setPicks({});
 apply();
 function resize() { renderer.setSize(view.clientWidth, view.clientHeight); camera.aspect = view.clientWidth / view.clientHeight; camera.updateProjectionMatrix(); }
 addEventListener("resize", resize); resize();

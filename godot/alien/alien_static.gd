@@ -47,9 +47,10 @@ const PRESETS: Array[Dictionary] = [
 ]
 
 ## A curated skin palette (sRGB); the build's own teal comes first at run time. v3: the colours as set_skin's guard
-## rails render them on SHADER (guard("skin", PALETTE_288[i])); PALETTE_288, the merged values, stay for SHADER_288,
-## whose set_skin is unguarded as merged (the #288 review output reproducible).
-const PALETTE: Array[Color] = [Color("#ea9191"), Color("#a293dd"), Color("#efca79"), Color("#6184c6")]
+## rails render them on SHADER: v4, generated as alien_colour_geom.hexs(guard("skin", PALETTE_288[i])) and pinned by
+## tools/tests/test_alien_colour_slots.py; PALETTE_288, the merged values, stay for SHADER_288, whose set_skin is
+## unguarded as merged (the #288 review output reproducible).
+const PALETTE: Array[Color] = [Color("#e89091"), Color("#a293dd"), Color("#efca79"), Color("#6183c5")]
 const PALETTE_288: Array[Color] = [Color(0.93, 0.55, 0.56), Color(0.64, 0.56, 0.92), Color(0.98, 0.78, 0.30),
 	Color(0.30, 0.50, 0.90)]
 
@@ -82,6 +83,9 @@ static func apply(root: Node, mask: Texture2D, base_skin: Color, detail: Texture
 				sm.set_shader_parameter("accent_tex", accent)
 			if gill != null:
 				sm.set_shader_parameter("gill_tex", gill)
+			elif accent != null:  # v4: without the gills' texture "skin" and "whole" would act as "gradient"
+				push_warning("alien_static: %s: an accent mask without the gill texture: the gills modes 'skin' and"
+						% src.resource_name + " 'whole' act as 'gradient' (pass <head>_gill.png)")
 			var b: Dictionary = {"skin": base_skin}
 			for k: String in ["lips", "detail", "front"]:
 				b[k] = _pick(bases[k]) if bases.has(k) else base_skin
