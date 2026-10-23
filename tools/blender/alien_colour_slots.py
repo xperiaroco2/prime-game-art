@@ -10,7 +10,7 @@ alien_static.gd's set_colours):
   `<out>/maps/`;
 - `sheets`: a job for godot/alien/tint_study.gd on the real shader (its heads' `"static": true`), rendered in an
   off-screen window under the study's studio and dusk lights: the eight presets (the study's E), free picks with
-  deliberately bad colours (the guard rails), details off and on, the axolotl's gills as a root-to-tip gradient or whole,
+  acidic colours on purpose (CS6: as picked), details off and on, the axolotl's gills as a root-to-tip gradient or whole,
   the lips' corners close up (both corners at front, 3/4 and side, 4x), and the identity check (set_colours({})
   against the merged shader, origin/main's alien_static.gdshader); v3: the import path (the masks imported by Godot
   with the settings in docs/godot.md, IMPORT_SETTINGS, and with Godot's defaults, against Image.load_from_file);
@@ -19,7 +19,9 @@ alien_static.gd's set_colours):
   with alien_colour_geom.slot_colours (within 1e-5: float32 against float64); CS6: the details in seven colours
   (`<light>/details_colours.jpg`), the gill tips close up in #ffee00 (`gill_tips.jpg`) and the lit measurement: per
   head and colour every slot in that colour, beside the shader's region codes (debug 4 and 5), into `measure/`, then
-  per region the lit median against the pick (`lit_table.json`, `swatches_<head>.png`, `table.md`);
+  per region the lit median against the pick (`lit_table.json`, `swatches_<head>.png`, `table.md`); CS6b: the free
+  picks with the pale front "keep" and "follow" in turn (`<light>/free.jpg`), dark skins close up under v6's shader
+  and bases beside this one's (`dark_skin.jpg`);
 - `web`: the three.js page: the GLBs, masks and bases beside tools/web/alien_colour/{colour.js,index.html} in
   `<out>/web/`.
 One run can pass 180 s: in the background, its log in a file.
@@ -48,8 +50,11 @@ import alien_static_review as R  # noqa: E402
 import alien_tint_study as T  # noqa: E402  (the study's lights, framings and head entries)
 
 BUILD = R.NEW  # static_v5
-OUT = R.DESIGN / "pilot3d" / "colour_slots" / "v6"  # v6 (CS6): the picks as picked, every region reaching its pick
-V = "v6"  # the proof's version in the sheet titles and stems
+# v6 (CS6): the picks as picked, every region reaching its pick; v7 (CS6b): the skin's own median as its base, the
+# mottling relative on dark picks, the gamut pulled toward the pick, the pale front's "keep" mode
+OUT = R.DESIGN / "pilot3d" / "colour_slots" / "v7"
+V = "v7"  # the proof's version in the sheet titles and stems
+V6_REF = "b15e299"  # PR #310's v6 head: the dark-skin sheet's "before" shader
 V4 = R.DESIGN / "pilot3d" / "colour_slots" / "v4"
 MAPS_FROM = V4 / "maps"  # CS6 left the masks as v4 made them
 # CS6's measurement: 12 hues every 30 degrees, the engineer's yellow, black and white
@@ -84,12 +89,15 @@ FREE = [("acid green skin, hot pink lips", {"skin": "#39ff14", "lips": "#ff1493"
                                           "detail_on": False})]
 
 
-def bases(build: Path, maps: Path, head: str) -> dict:
-    """The build's own colours: the skin from the GLB's build (base_skin_srgb, the face's teal; the painted skin's
-    median is within 0.012 OKLab of it), the rest the regions' medians (`<head>_regions.json`, `regions`)."""
-    b = json.loads((build / head / "build.json").read_text(encoding="utf-8"))
+def bases(build: Path, maps: Path, head: str, glb_skin: bool = False) -> dict:
+    """The build's own colours: every region's median (`<head>_regions.json`, `regions`), the skin's too (CS6b; v6
+    took the GLB's base_skin_srgb, 0.007 OKLab off the painted skin's median, which put a picked skin up to 0.012
+    off its pick). glb_skin: v6's bases (the dark-skin sheet's "before")."""
     med = json.loads((maps / f"{head}_regions.json").read_text(encoding="utf-8"))["bases"]
-    return {**{k: v for k, v in med.items() if k != "skin"}, "skin": b["base_skin_srgb"]}
+    if glb_skin:
+        b = json.loads((build / head / "build.json").read_text(encoding="utf-8"))
+        return {**med, "skin": b["base_skin_srgb"]}
+    return dict(med)
 
 
 def read_png(path: Path) -> tuple:
@@ -141,6 +149,9 @@ def texels(build: Path, maps: Path, head: str, stride: int = 2) -> list:
     imgs = [read_png(p) for p in (build / head / f"{head}_albedo.png", build / head / f"{head}_mask.png",
                                   maps / f"{head}_accent.png", maps / f"{head}_gill.png")]
     w = imgs[0][0]
+    sizes = {(iw, ih) for iw, ih, _, _ in imgs}
+    if sizes != {(w, w)}:
+        raise ValueError(f"{head}: the albedo, skin mask, accent and gill PNGs differ in size or are not square: {sizes}")
     out = []
     for y in range(0, w, stride):
         for x in range(0, w, stride):
@@ -237,10 +248,11 @@ def label(picks: dict) -> str:
 def job(build: Path, out: Path) -> dict:
     j = {"hdri": str(R.HDRI), "window": list(T.WINDOW), "heads": {}, "sheets": [],
          "uniforms": str(out / "uniforms.json"), "diffs": []}
-    ref = out / "merged_alien_static.gdshader"
-    ref.write_text(subprocess.run(["git", "-C", str(ROOT), "show", f"{MERGED_SHADER_REF}:godot/alien/"
-                                   "alien_static.gdshader"], capture_output=True, text=True, check=True).stdout,
-                   encoding="utf-8", newline="\n")
+    ref, v6 = out / "merged_alien_static.gdshader", out / "v6_alien_static.gdshader"
+    for path, rev in ((ref, MERGED_SHADER_REF), (v6, V6_REF)):
+        path.write_text(subprocess.run(["git", "-C", str(ROOT), "show", f"{rev}:godot/alien/alien_static.gdshader"],
+                                       capture_output=True, text=True, check=True).stdout,
+                        encoding="utf-8", newline="\n")
     for h in HEADS:
         e = R.head_entry(build, h, f"slots_{h}")
         e["params"] = R.column("F", R.picks(build))  # the static_v5 pick of the alive levers
@@ -248,6 +260,7 @@ def job(build: Path, out: Path) -> dict:
                  bases=bases(build, out / "maps", h))
         j["heads"][h] = e
         j["heads"][f"{h}_merged"] = {**e, "static": False, "accent": "", "gill": "", "shader_code": str(ref)}
+        j["heads"][f"{h}_v6"] = {**e, "shader_code": str(v6), "bases": bases(build, out / "maps", h, glb_skin=True)}
         for kind in ("set", "default"):  # v3: the masks as a Godot import gives them (the settings, the defaults)
             j["heads"][f"{h}_import_{kind}"] = {**e, **{m: f"res://import/colour_slots/{kind}/{h}_{m}.png"
                                                         for m in IMPORT_MAPS}}
@@ -264,11 +277,13 @@ def job(build: Path, out: Path) -> dict:
             j["sheets"].append({"file": str(out / light / f"presets_{part}.jpg"), "cell": [320, 320], "width": 1280,
                                 "title": title(f"Presets E{idx[0] + 1}-E{idx[-1] + 1} on the real material ({V})", lt,
                                                "rows: axolotl front, 3/4, chameleon front, 3/4"), "rows": rows})
-        rows = [[cell(h, p, light, shot, f"{k + 1} {name}\n{h} {view}") for k, (name, p) in enumerate(FREE)]
-                for h in HEADS for view, shot in T.shots(h).items()]
-        j["sheets"].append({"file": str(out / light / "free.jpg"), "cell": [256, 256], "width": 1280,
+        # CS6b: per head and view a row with the pale front "keep" (the default), then one with "follow"
+        rows = [[cell(h, {**p, "front": fm}, light, shot, f"{k + 1} {name}\n{h} {view}, front {fm}")
+                 for k, (name, p) in enumerate(FREE)]
+                for h in HEADS for view, shot in T.shots(h).items() for fm in G.FRONT_MODES]
+        j["sheets"].append({"file": str(out / light / "free.jpg"), "cell": [180, 180], "width": 1280,
                             "title": title(f"Free picks, acidic on purpose, applied as picked ({V}); the picks in "
-                                           "the cells", lt),
+                                           "the cells", "rows in pairs: pale front keep, then follow", lt),
                             "rows": rows})
         rows = []
         for h in HEADS:
@@ -345,6 +360,22 @@ def job(build: Path, out: Path) -> dict:
                                     "title": title(f"Measure {h} {view} gills {mode} ({V}): the region codes, then "
                                                    "every slot in each colour", "studio"),
                                     "rows": [row[i:i + 4] for i in range(0, len(row), 4)]})
+    # CS6b: dark skins close up (2x), v6's shader and bases (its "before"; front "follow", v6's only mode) beside
+    # this run's, studio
+    rows = []
+    for h in HEADS:
+        for view in ("3/4", "front"):
+            s0 = T.shots(h)[view]
+            shot = {**s0, "width": s0["width"] / 2.0}
+            row = []
+            for col, name in (("#14206e", "navy"), ("#000000", "black"), ("#0000ff", "blue")):
+                row.append(cell(f"{h}_v6", {"skin": col, "front": "follow"}, "studio", shot,
+                                f"v6 {name} skin\n{h} {view} 2x"))
+                row.append(cell(h, {"skin": col}, "studio", shot, f"{V} {name} skin\n{h} {view} 2x"))
+            rows.append(row)
+    j["sheets"].append({"file": str(out / "dark_skin.jpg"), "cell": [213, 213], "width": 1280,
+                        "title": title(f"Dark skins close up, 2x: per pair v6 (left) and {V} (right)",
+                                       "navy #14206e, black, blue #0000ff; studio"), "rows": rows})
     # the identity: set_colours({}) on the new material against the merged shader, the same levers and light
     rows = []
     for h in HEADS:
@@ -459,7 +490,8 @@ def lit_table(out: Path) -> dict:
                     for k, idx in masks.items():
                         if len(idx) < 30 or (k != "detail" and mode == "whole"):
                             continue
-                        slot = {"detail": "gill tips" if mode == "gradient" and h == "axolotl" else "details",
+                        # the axolotl's lit details region in the gradient holds its gill tips and freckles
+                        slot = {"detail": LIT_AX_DETAILS if mode == "gradient" and h == "axolotl" else "details",
                                 "skin": "skin", "lips": "lips"}[k]
                         if mode == "whole":
                             slot = "whole gills"
@@ -468,6 +500,14 @@ def lit_table(out: Path) -> dict:
                                                       "px": len(idx), "dE": round(G.delta_e(m, G.hexc(col)), 4)})
     (out / "lit_table.json").write_text(json.dumps(res, indent=1) + "\n", encoding="utf-8", newline="\n")
     return res
+
+
+LIT_AX_DETAILS = "details (gill tips and freckles)"
+
+
+def lit_slot(head: str, slot: str) -> str:
+    """The lit table's region for an albedo table's slot: the axolotl's gill tips and freckles are one lit region."""
+    return LIT_AX_DETAILS if head == "axolotl" and slot in ("details", "gill tips") else slot
 
 
 def swatches(out: Path, lit: dict) -> None:
@@ -488,7 +528,7 @@ def swatches(out: Path, lit: dict) -> None:
         for si, s in enumerate(slots):
             for ri, col in enumerate(MEASURE):
                 a = next(r for r in alb[h]["rows"] if r["slot"] == s and r["pick"] == col)
-                ls = {r["view"]: r for r in lit.get(h, []) if r["slot"] == s and r["pick"] == col}
+                ls = {r["view"]: r for r in lit.get(h, []) if r["slot"] == lit_slot(h, s) and r["pick"] == col}
                 cells = [col, a["albedo"], ls["3/4"]["lit"] if "3/4" in ls else "#181818"]
                 for k, hx in enumerate(cells):
                     c = G.hexc(hx)
@@ -497,7 +537,8 @@ def swatches(out: Path, lit: dict) -> None:
                         for x in range(x0 + 1, x0 + sw - 1):
                             img[(y * w + x) * 3:(y * w + x) * 3 + 3] = bytes(round(v * 255) for v in c)
                 lit_s = " | ".join(f"{ls[v]['lit']} | {ls[v]['dE']:.3f}" if v in ls else "- | -" for v in ("3/4", "front"))
-                md.append(f"| {s} | {col} | {a['albedo']} | {a['dE']:.4f} | {lit_s} |")
+                md.append(f"| {s if lit_slot(h, s) == s else s + ' (lit: ' + lit_slot(h, s) + ')'} | {col} | "
+                          f"{a['albedo']} | {a['dE']:.4f} | {lit_s} |")
         write_png(out / f"swatches_{h}.png", w, hh, img)
         md += ["", f"`swatches_{h}.png`: rows {', '.join(MEASURE)}; per slot ({', '.join(slots)}) the pick, the "
                "albedo, the lit 3/4.", ""]
