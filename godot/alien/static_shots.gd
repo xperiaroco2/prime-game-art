@@ -93,7 +93,7 @@ func _run() -> void:
 	_save(_sheet(picked), out.path_join("views_pick.png"))
 	var colours: Array[Image] = []
 	var palette: Array[Color] = [base]
-	palette.append_array(AlienStatic.PALETTE)  # SHADER (apply's default): the guarded colours
+	palette.append_array(AlienStatic.PALETTE)  # SHADER (apply's default): the colours as picked (CS6)
 	for c: Color in palette:
 		AlienStatic.set_skin(mats, c)
 		colours.append(await _shot(35.0, 0.0, 1.0))
