@@ -202,10 +202,11 @@ def alien_dump(clips=_godot.ALIEN_CLIPS) -> dict:
     return d
 
 
-def alien(d: dict, profile: str = "alien") -> dict[str, dict]:
+def alien(d: dict, profile: str = "alien", strict_contract: bool = False) -> dict[str, dict]:
     e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
          "rest_heads_m": {}, "height_m": None, "animations": {}}
-    return {c["check"]: c for c in _godot.evaluate(d, e, A_CONTRACT, [], textured=True, profile=profile)}
+    return {c["check"]: c for c in _godot.evaluate(d, e, A_CONTRACT, [], textured=True, profile=profile,
+                                                  strict_contract=strict_contract)}
 
 
 class AlienProfileTest(unittest.TestCase):
@@ -259,13 +260,18 @@ class AlienProfileTest(unittest.TestCase):
         self.assertEqual(got["status"], "fail")
         self.assertIn("no vertex weighted to ['LeftHand']", got["detail"])
 
-    def test_extra_bones_are_named_and_pass_only_as_a_whole_spring_set(self) -> None:
-        self.assertIn("no extra bone", alien(alien_dump())["alien_extra_bones"]["detail"])
+    def test_extra_bones_are_named_and_warn_as_a_whole_spring_set_and_fail_strict(self) -> None:
+        got = alien(alien_dump())["alien_extra_bones"]
+        self.assertEqual(got["status"], "pass", got)
+        self.assertIn("no extra bone", got["detail"])
         d = alien_dump()
         d["skeletons"][0]["bones"] += ["Crest1", "Crest2", "Crest3"]
         got = alien(d)["alien_extra_bones"]
-        self.assertEqual(got["status"], "pass", got)
+        self.assertEqual(got["status"], "warn", got)  # docs/contract.md allows no extra bone; the engineer decides
         self.assertIn("3 extra: the crest springs ['Crest1', 'Crest2', 'Crest3']", got["detail"])
+        self.assertIn("all in whole declared spring sets", got["detail"])
+        got = alien(d, strict_contract=True)["alien_extra_bones"]
+        self.assertEqual(got["status"], "fail", got)
         d["skeletons"][0]["bones"].remove("Crest3")
         got = alien(d)["alien_extra_bones"]
         self.assertEqual(got["status"], "fail")
