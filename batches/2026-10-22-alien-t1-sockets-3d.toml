@@ -1,0 +1,123 @@
+# art#196, test T1 "socketed head", step 1, the 3D (the engineer's request, art#196 comment 6344356802; Meshy
+# generation within the plan's credits is a standing permission, art#16). The chameleon man's head WITH RECESSES (a
+# shallow mouth dish, two empty round eye sockets, no brows) as a raw Meshy head from the three views cut out of this
+# test's OpenAI turnaround (batch 2026-10-22-alien-t1-sockets-2d, ch_sockets; front, side, back padded to squares on
+# the sheet's grey, 16 % margin), and the eight separate face pieces that seat into the recesses, one image_to_3d each
+# from that batch's product images.
+#
+# Parameters (docs/meshy.md): the head as the pilot (batch 2026-10-22-alien-pilot-3d): meshy-7.1 multi-image at 2k
+# geometry (the sockets' rims and the mouth dish are small forms), textured 4k with PBR, lighting removed, remeshed to
+# 100,000 triangles with the dense original kept: 35 credits. The pieces at the cheapest settings that keep their
+# shape: the four mouths on meshy-7.1 at standard geometry (rolled lips, the corners and the O's hole are the detail a
+# lighter model smears), textured: 30 each; the two open eyes, the closed eye and the brow are simple solids (a ball
+# with a lid shell, a dome, a rolled sausage), so meshy-6-lite, textured at 2k (its only size): 15 each. Every piece
+# remeshed to 30,000 triangles; remove_lighting only on the meshy-7.1 mouths (Meshy refuses the key with
+# meshy-6-lite, HTTP 400, even false: the first run's eye_open, no credits charged); plenty for a piece a few centimetres across that step 2 cleans up anyway. Estimate
+# 35 + 4 x 30 + 4 x 15 = 215 credits, cap 260. No game, film, studio, character or person names (the images are the
+# prompt). Schema: docs/meshy.md.
+
+id = "2026-10-22-alien-t1-sockets-3d"
+purpose = "art#196 T1 step 1: the chameleon man's socketed head (mouth recess, empty eye sockets) as a raw Meshy multi-image-to-3D head and its eight separate face pieces as image-to-3D models, to judge how the pieces seat into the recesses."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 260
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-22"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6344356802"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = true
+enable_pbr = true
+texture_resolution = "4k"
+remove_lighting = true
+should_remesh = true
+topology = "triangle"
+target_polycount = 100000
+save_pre_remeshed_model = true
+target_formats = ["glb"]
+
+[defaults.image_to_3d.params]
+ai_model = "meshy-7.1"
+should_texture = true
+enable_pbr = true
+texture_resolution = "2k"
+should_remesh = true
+topology = "triangle"
+target_polycount = 30000
+target_formats = ["glb"]
+
+[[items]]
+id = "head"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-22-alien-t1-sockets-3d/views/chameleon/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item ch_sockets (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "1a7a671fc9785620e6f8912944b1f0c0047f6c3743c59361fd718d569c1fc5d5" },
+  { file = "raw:2026-10-22-alien-t1-sockets-3d/views/chameleon/side.png", provenance = "side profile (facing left) cut from our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item ch_sockets (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "f9b41d3394130866af88b703a79217c4bac399ef2a41931400e24073be0d247b" },
+  { file = "raw:2026-10-22-alien-t1-sockets-3d/views/chameleon/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item ch_sockets (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "e85fc27e348b411ed073bb27a03ceb788852f34204326fd74268c31eac018396" },
+]
+
+[[items]]
+id = "mouth_rest"
+kind = "image_to_3d"
+params = { remove_lighting = true }
+images = [
+  { file = "raw:2026-10-22-alien-t1-sockets-2d/mouth_rest/image-0.png", provenance = "the mouth_rest piece, our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item mouth_rest (gpt-image-2.5-sunburst), art#196", sha256 = "65f9a533b7782c763077b1e5fba97f1bf7aa13f4250a9113d399fe8479a3ea47" },
+]
+
+[[items]]
+id = "mouth_smile"
+kind = "image_to_3d"
+params = { remove_lighting = true }
+images = [
+  { file = "raw:2026-10-22-alien-t1-sockets-2d/mouth_smile/image-0.png", provenance = "the mouth_smile piece, our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item mouth_smile (gpt-image-2.5-sunburst), art#196", sha256 = "68a106dfc78e0f93ee2f5f1c874ee4fe02e2209c9da32c3bfb82154e28e880d4" },
+]
+
+[[items]]
+id = "mouth_sad"
+kind = "image_to_3d"
+params = { remove_lighting = true }
+images = [
+  { file = "raw:2026-10-22-alien-t1-sockets-2d/mouth_sad/image-0.png", provenance = "the mouth_sad piece, our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item mouth_sad (gpt-image-2.5-sunburst), art#196", sha256 = "7984d85161ae125c31be47b2c5619e8b6a33e2970fb27c69952f91b62b5928e9" },
+]
+
+[[items]]
+id = "mouth_o"
+kind = "image_to_3d"
+params = { remove_lighting = true }
+images = [
+  { file = "raw:2026-10-22-alien-t1-sockets-2d/mouth_o/image-0.png", provenance = "the mouth_o piece, our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item mouth_o (gpt-image-2.5-sunburst), art#196", sha256 = "6b6107ff4b61a98b72ea1e21b57312a9d6ed6b518f6240e2868868440bbdf973" },
+]
+
+[[items]]
+id = "eye_open"
+kind = "image_to_3d"
+params = { ai_model = "meshy-6-lite", should_texture = true, enable_pbr = false, texture_resolution = "2k", should_remesh = true, topology = "triangle", target_polycount = 30000, target_formats = ["glb"] }
+images = [
+  { file = "raw:2026-10-22-alien-t1-sockets-2d/eye_open/image-0.png", provenance = "the eye_open piece, our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item eye_open (gpt-image-2.5-sunburst), art#196", sha256 = "174a7322dbf1cf9ae79e1dbdf8c80058d320fa1f45bd48ef98cb37a720ba3e55" },
+]
+
+[[items]]
+id = "eye_half"
+kind = "image_to_3d"
+params = { ai_model = "meshy-6-lite", should_texture = true, enable_pbr = false, texture_resolution = "2k", should_remesh = true, topology = "triangle", target_polycount = 30000, target_formats = ["glb"] }
+images = [
+  { file = "raw:2026-10-22-alien-t1-sockets-2d/eye_half/image-0.png", provenance = "the eye_half piece, our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item eye_half (gpt-image-2.5-sunburst), art#196", sha256 = "9273a81e2d65e69023467f0b957e47a8fead0c07b6e5327bf589e72bd9a9bf4c" },
+]
+
+[[items]]
+id = "eye_closed"
+kind = "image_to_3d"
+params = { ai_model = "meshy-6-lite", should_texture = true, enable_pbr = false, texture_resolution = "2k", should_remesh = true, topology = "triangle", target_polycount = 30000, target_formats = ["glb"] }
+images = [
+  { file = "raw:2026-10-22-alien-t1-sockets-2d/eye_closed/image-0.png", provenance = "the eye_closed piece, our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item eye_closed (gpt-image-2.5-sunburst), art#196", sha256 = "76a195b6bc2eb71abaf3d5f2d907c65c2b34f4bad09c4008dad8d4859defa69f" },
+]
+
+[[items]]
+id = "brow"
+kind = "image_to_3d"
+params = { ai_model = "meshy-6-lite", should_texture = true, enable_pbr = false, texture_resolution = "2k", should_remesh = true, topology = "triangle", target_polycount = 30000, target_formats = ["glb"] }
+images = [
+  { file = "raw:2026-10-22-alien-t1-sockets-2d/brow/image-0.png", provenance = "the brow piece, our own OpenAI generation, batch 2026-10-22-alien-t1-sockets-2d item brow (gpt-image-2.5-sunburst), art#196", sha256 = "1574ec992c2c49930b1d5a35fcca80331bf8a880699b2b9c8c730e89337aef57" },
+]

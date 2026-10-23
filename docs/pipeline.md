@@ -198,6 +198,45 @@ runs separately. Output: `<raw>/research/2026-10-22-roster/design/pilot3d/static
   a workflow agent's call may block: start each with its log in a file (`> <log> 2>&1; echo "exit=$?" >> <log>`)
   and check it with `tools/run.sh wait <log>` (`CLAUDE.md`, "Shell").
 
+### T1, the socketed head (art #196, 2026-10-22)
+
+The test of "a head with recesses and separate pieces swapped whole". Step 1 (`batches/2026-10-22-alien-t1-sockets-2d.toml`,
+`-3d.toml`) made a chameleon head with empty eye sockets and a mouth dish and, apart, four mouths, three eyes and a
+brow in Meshy. Step 2 seats them in headless Blender, no paid generation:
+`blender.run_script("alien_t1_kit.py", ["--raw", "<raw>/2026-10-22-alien-t1-sockets-3d", "--out", DIR, ...])`
+(`tools/blender/alien_t1_kit.py`; the pure parts in `alien_t1_geom.py`, tested by `tools/tests/test_alien_t1_geom.py`).
+- **Measure:** a front depth map of the head (rays along +Y) minus its blurred envelope gives the recesses; per side
+  the socket's centre and rim and a sphere fitted to its bowl; the dish is the recess on the muzzle's front (the crease
+  under the chin is deeper but far back, so the search keeps to the front 0.15).
+- **Eyes:** a clean ball per socket (the bowl's sphere x `--eye-k`), a generated 1024 px texture (white, brown iris,
+  pupil, a catch light), its origin at its centre so it turns for gaze. The lids are built here, not Meshy's: per side
+  three shells (open, half, closed), each an upper and a lower lid hinged on the eye's side axis (a straight edge from
+  the front; they meet at the corners), thicker at the rolled free edge.
+- **Mouths and brows:** Meshy's meshes decimated, scaled (mouths x `--mouth-w` the dish's width, the O 0.8 of that;
+  brows 1.5 eyeball radii), turned to the skin's normal, sunk 35-40 % of their depth, then every back vertex (back
+  half, facing +Y) still in front of the skin is pulled just behind it (`seat_y`), so no gap shows; the log prints each
+  piece's remaining float gap. The O's back ball is cut off at 42 % of its depth and a dark throat disc closes its hole.
+  Brows come in three seated poses per side (sad, raised, angry) rather than one moved brow, so an expression is only a
+  set of visible nodes.
+- **Output:** the expressions front and three-quarter, close-ups of the mouth seam and the socket,
+  `step2_compare.jpg` (`--ref-approved`, `--ref-h2`: the 2D rows on top), `t1_chameleon_kit.glb` (the head and every
+  piece as separate nodes parented to it; glTF has no hidden flag, so the rest set is marked in each node's extras
+  `prime_visible_rest`) and `t1_expressions.json` (each expression's nodes and gaze turn). `--grid` renders a mouth
+  width x eyeball scale grid instead.
+- **Step 3c, no recesses** (`--fill --eye-scale 0.75 --lids upper --repaint --bare SHEET`): the texture's old socket
+  rims and mouth hollow are painted over with the skin around them (a harmonic fill of the vertex colours on the
+  seam-welded mesh, the dish's core held at the chin's pale mint, drawn back into the 4k atlas; the normal map
+  flattened there; new PNGs in `--out`); the fill also lifts the sockets' undercut walls and relaxes the moved skin
+  outward (a crease along the old rim showed otherwise); the eye is a ball in the skin with the upper lid only (a lower
+  lid only for the blink, `alien_t1_geom.lid_parts`), the lids wearing the head's texture at their nearest skin
+  point; `--bare` renders the filled head without pieces beside Meshy's, plain grey, and the labelled sheet.
+- **Step 3d, a smooth muzzle** (step 3c's flags plus `--muzzle --tag 3d`): the head's built-in lips and the slit
+  between them are gone. In the radial map from inside the head the muzzle region (`muzzle_region`: the dish's
+  centre, 0.62 x its lip width, 1.05 x its lip height, its front only) is replaced by a thin plate through the skin around it
+  (`thin_plate_fill`, a dense least-squared-Laplacian solve), the front vertices there, the slit's walls too, move
+  along their rays onto it and are relaxed over it (the slit's folds spread out); the repaint covers the muzzle with
+  the pale mint. The same mouth pieces are then seated on the smooth skin.
+
 ## Since 2026-10-03: the character base and who decides
 
 The direction below changed on 2026-10-03 (xperiaroco2/prime-game#165, stage 1 plan #16). Where they differ, this
