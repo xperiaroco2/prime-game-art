@@ -29,6 +29,10 @@ def arg(k, d=None):
 GLB, CONCEPT, OUT = Path(arg("--glb")), Path(arg("--concept")), Path(arg("--out"))
 OPEN_RAD, FLOOR, TILE = float(arg("--open-rad", math.radians(25))), float(arg("--floor", 0.0)), int(arg("--tile", 420))
 GAME = arg("--game", "")   # two comma-separated PNGs: the last row, calm and the problem in Godot
+HEAT = [False]             # the state blades() last set: the well's lights follow it (vents-b2)
+# vents-b2: the well's lights as godot/ship/vent_glow.gd puts them (three up the opening, 7.5 cm in front of the glow
+# panel): cyan calm, orange closed; (u, v) of the east piece, the opening's h, colour and W per state
+WELL = {"u": -0.08, "v": 0.204, "h": (0.304, 1.326), False: ((0.15, 0.75, 1.0), 9.0), True: ((1.0, 0.38, 0.06), 7.0)}
 
 
 def scene():
@@ -46,6 +50,7 @@ def scene():
 
 
 def blades(t: float, heat: bool):
+    HEAT[0] = heat
     for o in bpy.context.scene.objects:
         if "_slat" in o.name:
             o.rotation_mode = "XYZ"
@@ -104,7 +109,23 @@ def camera(loc, at, ortho=None, lens=50):
     cam.rotation_euler = (Vector(at) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
 
 
+def well_lights():
+    for o in list(bpy.context.scene.objects):
+        if o.name.startswith("well_light"):
+            bpy.data.objects.remove(o, do_unlink=True)
+    col, watts = WELL[HEAT[0]]
+    h0, h1 = WELL["h"]
+    for k in range(3):
+        ld = bpy.data.lights.new(f"well_light{k}", "POINT")
+        ld.energy, ld.color, ld.shadow_soft_size = watts, col, 0.12
+        ld.use_shadow = False
+        ob = bpy.data.objects.new(f"well_light{k}", ld)
+        bpy.context.scene.collection.objects.link(ob)
+        ob.location = (WELL["u"], -WELL["v"], FLOOR + h0 + (h1 - h0) * (k + 0.5) / 3)
+
+
 def shoot(name: str) -> np.ndarray:
+    well_lights()
     path = OUT / "tiles" / f"{name}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     bpy.context.scene.render.filepath = str(path)
@@ -174,16 +195,15 @@ def main():
           ("blade", (0.15, -1.05, f + 1.15), (-0.08, -0.48, f + 0.95), 45, 1.0),
           ("scanner", (0.80, -1.0, f + 1.45), (0.685, -0.43, f + 1.398), 60, 1.0),
           ("lamp", (0.98, -1.0, f + 2.0), (0.633, -0.335, f + 1.78), 60, 1.0),
-          ("closed_seams", (-0.2, -1.4, f + 0.95), (-0.1, -0.35, f + 0.85), 45, 0.0)]
+          ("closed_seams", (-0.2, -1.4, f + 0.95), (-0.1, -0.35, f + 0.85), 45, 0.0),
+          ("glow", (-0.25, -1.15, f + 0.62), (-0.08, -0.36, f + 0.86), 45, 1.0)]   # vents-b2: between the blades
     light("warm")
     tiles = []
     for name, loc, at, lens, t in cu:
         blades(t, t == 0.0)
         camera(loc, at, lens=lens)
         tiles.append(shoot(f"cu_{name}"))
-    blank = tiles[0] * 0
-    blank[..., 3] = 1
-    save([tiles[:4], tiles[4:] + [blank]], OUT / "closeups.png")
+    save([tiles[:4], tiles[4:]], OUT / "closeups.png")
     print("SHEET done", OUT)
 
 
