@@ -5,7 +5,34 @@ extends SceneTree
 ## error lines ("SHADER ERROR", "Parse Error") go to the log too.
 ##     godot --headless --path godot -s res://alien/parse_check.gd
 
-const SCRIPTS: Array[String] = ["res://alien/alien.gd", "res://alien/alien_talk.gd"]
+const SCRIPTS: Array[String] = ["res://alien/alien.gd", "res://alien/alien_talk.gd", "res://alien/alien_static.gd"]
+
+
+## PR #304's review (art #196, CS3): alien_static.gd's colour slot maths on the axolotl's bases, the presets, bad
+## picks and every gill mode, for tools/tests/test_alien_parse_godot.py to compare with alien_colour_geom.py; and an
+## unknown gill mode, which must give {} (an error, as in Python and JS).
+func _colour_cases() -> Dictionary:
+	var A: GDScript = load("res://alien/alien_static.gd")
+	var bases := {"skin": Color(0.375, 0.8039, 0.8039), "lips": Color(0.3765, 0.7961, 0.7961),
+		"detail": Color(0.3098, 0.7098, 0.7176), "front": Color(0.7176, 0.8667, 0.8314)}
+	var picks: Array = []
+	for p: Dictionary in A.PRESETS:
+		picks.append(p["picks"])
+	for h: String in ["#39ff14", "#ff1493", "#ffff00", "#00e5ff", "#ff7a00", "#ffffff", "#000000", "#14206e"]:
+		picks.append({"skin": h, "lips": h, "detail": h})
+	for g: String in ["skin", "gradient", "whole"]:
+		picks.append({"skin": "#6c87c6", "gills": g})
+	var cases: Array = []
+	for p: Dictionary in picks:
+		var u: Dictionary = A.slot_colours(bases, p)
+		var rec := {}
+		for k: String in u:
+			var v: Variant = u[k]
+			rec[k] = [v.r, v.g, v.b] if v is Color else v
+		cases.append({"picks": p, "uniforms": rec})
+	return {"bases": {"skin": [0.375, 0.8039, 0.8039], "lips": [0.3765, 0.7961, 0.7961],
+		"detail": [0.3098, 0.7098, 0.7176], "front": [0.7176, 0.8667, 0.8314]}, "cases": cases,
+		"unknown_gills_empty": A.slot_colours(bases, {"gills": "fringe"}).is_empty()}
 
 
 ## M14 (PR #250's review): with the user argument "broken" it parses one deliberately broken shader instead and
@@ -57,5 +84,6 @@ func _init() -> void:
 		var err: int = s.reload(true) if s != null else -1
 		out["scripts"][p] = {"loaded": s != null, "reload": err, "can_instantiate": s != null and s.can_instantiate()}
 	out["jaw_weight"] = _jaw_weight_cases()
+	out["colour_slots"] = _colour_cases()
 	print("PARSE ", JSON.stringify(out))
 	quit(0)
