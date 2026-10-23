@@ -14,6 +14,12 @@ extends SceneTree
 ##                           "label": "text"} or {"image": PNG, "label": "text"}, ...], ...]}]}
 ## A cell's parameters are the head's "params" with the cell's on top (sRGB colours as [r, g, b]); its label is drawn
 ## in the cell's top left corner, the sheet's title in a strip above the rows.
+## Colour slots (2026-10-23, tools/blender/alien_colour_slots.py): a head with "static": true gets the real
+## alien_static.gdshader with its accent mask and "bases" (apply()'s accent and bases), a head with "shader_code":
+## PATH a shader made from that file (the merged shader, the identity check's before); a cell's "colours" (the
+## player's picks) go through AlienStatic.set_colours (a static head without them gets {}), its uniforms into the
+## job's "uniforms" JSON; a cell's "save": PNG keeps the full-size grab; the job's "diffs" ([PNG, PNG] pairs)
+## are compared pixel by pixel into "diff_out".
 ## Args after "--": <job JSON>
 
 const Offscreen = preload("res://lib/offscreen.gd")
@@ -27,6 +33,7 @@ var _cam: Camera3D
 var _label: Label
 var _picture: TextureRect
 var _heads: Dictionary = {}  # KEY -> {"node": Node3D, "mats": Array[ShaderMaterial], "box": AABB, "params": {}}
+var _uniforms: Array = []  # colour slots: per cell {head, picks, uniforms}
 
 
 func _initialize() -> void:
@@ -51,22 +58,33 @@ func _run() -> void:
 		var node: Node3D = scene.instantiate()
 		root.add_child(node)
 		var tex: Dictionary = {}
-		for which: String in ["mask", "detail", "plain", "accent"]:
+		var maps: Array[String] = ["mask", "detail", "plain"]
+		if not h.has("shader_code"):
+			maps.append("accent")
+		for which: String in maps:
 			tex[which] = _texture(h.get(which, ""))
 			if tex[which] == null:  # every map is needed: never a white or black default
 				printerr("TINT %s: cannot load the %s texture '%s'" % [key, which, h.get(which, "")])
 				quit(4)
 				return
 		var b: Array = h["base"]
+		var shader: Shader = SHADER
+		if h.get("static", false):
+			shader = AlienStatic.SHADER
+		elif h.has("shader_code"):
+			shader = Shader.new()
+			shader.code = FileAccess.get_file_as_string(h["shader_code"])
 		var mats: Array[ShaderMaterial] = AlienStatic.apply(node, tex["mask"], Color(b[0], b[1], b[2]), tex["detail"],
-				tex["plain"], SHADER)
+				tex["plain"], shader, tex.get("accent") if h.get("static", false) else null, h.get("bases", {}))
 		if mats.is_empty():
 			printerr("TINT no _static_skin material in %s" % h["glb"])
 			quit(4)
 			return
-		for sm: ShaderMaterial in mats:
-			sm.set_shader_parameter("accent_tex", tex["accent"])
-		_heads[key] = {"node": node, "mats": mats, "box": _bounds(node), "params": h.get("params", {}), "set": []}
+		if not h.get("static", false) and not h.has("shader_code"):
+			for sm: ShaderMaterial in mats:
+				sm.set_shader_parameter("accent_tex", tex["accent"])
+		_heads[key] = {"node": node, "mats": mats, "box": _bounds(node), "params": h.get("params", {}), "set": [],
+			"static": h.get("static", false)}
 		node.visible = false
 	for sheet: Dictionary in job["sheets"]:
 		var cell := Vector2i(int(sheet["cell"][0]), int(sheet["cell"][1]))
@@ -88,7 +106,38 @@ func _run() -> void:
 			img = full
 		img.save_jpg(sheet["file"], 0.9)
 		print("TINT wrote %s" % sheet["file"])
+	if job.has("uniforms"):
+		var f := FileAccess.open(job["uniforms"], FileAccess.WRITE)
+		f.store_string(JSON.stringify(_uniforms, " "))
+		f.close()
+	if job.has("diffs"):
+		var res: Array = []
+		for pair: Array in job["diffs"]:
+			res.append(_diff(pair[0], pair[1]))
+			print("TINT diff %s" % JSON.stringify(res[-1]))
+		var f := FileAccess.open(job["diff_out"], FileAccess.WRITE)
+		f.store_string(JSON.stringify(res, " "))
+		f.close()
 	quit(0)
+
+
+## Two grabs' per-channel difference in 8-bit levels: the largest, the mean and the share of pixels above 2.
+func _diff(a_path: String, b_path: String) -> Dictionary:
+	var a: Image = Image.load_from_file(a_path)
+	var b: Image = Image.load_from_file(b_path)
+	var pa: PackedByteArray = a.get_data()
+	var pb: PackedByteArray = b.get_data()
+	var worst: int = 0
+	var total: int = 0
+	var over: int = 0
+	for i: int in pa.size():
+		var d: int = absi(pa[i] - pb[i])
+		worst = maxi(worst, d)
+		total += d
+		if d > 2:
+			over += 1
+	return {"a": a_path.get_file(), "b": b_path.get_file(), "max": worst,
+		"mean": float(total) / pa.size(), "share_over_2": float(over) / pa.size()}
 
 
 func _texture(path: String) -> Texture2D:
@@ -134,6 +183,14 @@ func _cell(c: Dictionary, cell: Vector2i) -> Image:
 					v = int(v)
 				sm.set_shader_parameter(name, v)
 		h["set"] = params.keys()
+		if h["static"]:
+			var picks: Dictionary = c.get("colours", {})
+			var u: Dictionary = AlienStatic.set_colours(h["mats"], picks)
+			var rec: Dictionary = {}
+			for k: String in u:
+				var v: Variant = u[k]
+				rec[k] = [v.r, v.g, v.b] if v is Color else v
+			_uniforms.append({"head": c["head"], "picks": picks, "uniforms": rec})
 		_use_light(c.get("light", "studio"))
 		var s: Dictionary = c["shot"]
 		var box: AABB = h["box"]
@@ -152,6 +209,8 @@ func _cell(c: Dictionary, cell: Vector2i) -> Image:
 		await process_frame
 	await RenderingServer.frame_post_draw
 	var img: Image = _grab(float(cell.x) / cell.y)
+	if c.has("save"):
+		img.save_png(c["save"])
 	img.resize(cell.x, cell.y, Image.INTERPOLATE_LANCZOS)
 	return img
 
