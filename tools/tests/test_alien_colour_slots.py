@@ -23,33 +23,50 @@ JS = ROOT / "tools" / "web" / "alien_colour" / "colour.js"
 
 
 class ColourSlotsTest(unittest.TestCase):
-    def test_lab_round_trip(self):
+    def test_oklab_round_trip(self):
         for h in BAD + ["#e39c8c", "#7f98a8"]:
             c = G.hexc(h)
-            for x, y in zip(G.from_lab(G.to_lab(c)), c):
+            for x, y in zip(G.from_oklab(G.to_oklab(c)), c):
                 self.assertAlmostEqual(x, y, delta=1e-4)
+        L, a, b = G.to_oklab((1.0, 1.0, 1.0))
+        self.assertAlmostEqual(L, 1.0, delta=1e-4)
+        self.assertLess(abs(a) + abs(b), 1e-3)
 
     def test_rails_hold_on_bad_picks(self):
         for slot in ("skin", "lips", "detail"):
             for h in BAD:
-                L, a, b = G.to_lab(G.guard(slot, G.hexc(h)))
+                L, a, b = G.to_oklab(G.guard(slot, G.hexc(h)))
                 cmax, lo, hi = G.RAILS[slot][:3]
-                self.assertLessEqual(L, hi + 0.5, (slot, h))
-                self.assertGreaterEqual(L, lo - 0.5, (slot, h))
-                self.assertLessEqual((a * a + b * b) ** 0.5, cmax + 0.5, (slot, h))
+                self.assertLessEqual(L, hi + 0.003, (slot, h))
+                self.assertGreaterEqual(L, lo - 0.003, (slot, h))
+                self.assertLessEqual((a * a + b * b) ** 0.5, cmax + 0.002, (slot, h))
+
+    def test_hue_kept(self):
+        """v2: the cap keeps the OKLCh hue (CS1's CIELAB cut turned navy violet: #14206e -> #534d7a)."""
+        for slot in ("skin", "lips", "detail"):
+            for h in BAD + ["#0000ff", "#000080", "#ff0000", "#00ff00"]:
+                c = G.hexc(h)
+                _, a0, b0 = G.to_oklab(c)
+                _, a, b = G.to_oklab(G.guard(slot, c))
+                if (a0 * a0 + b0 * b0) ** 0.5 < 0.02 or (a * a + b * b) ** 0.5 < 0.01:
+                    continue  # a grey has no hue
+                d = abs((G.math.degrees(G.math.atan2(b, a) - G.math.atan2(b0, a0)) + 180) % 360 - 180)
+                self.assertLess(d, 1.5, (slot, h))
+        navy = G.guard("skin", G.hexc("#14206e"))
+        self.assertGreater(navy[2], navy[0] + 0.15)  # still blue, not violet: blue well above red
 
     def test_acid_band_is_lower(self):
-        self.assertAlmostEqual(G.chroma_cap("skin", 125.0, 70.0), 40.0 * 0.7)
-        self.assertAlmostEqual(G.chroma_cap("skin", 345.0, 70.0), 40.0 * 0.8)  # hot pink
-        self.assertEqual(G.chroma_cap("skin", 200.0, 70.0), 40.0)  # teal
-        self.assertAlmostEqual(G.chroma_cap("skin", 200.0, 35.0), 40.0 * 50.0 / 70.0)  # a dark skin
-        self.assertAlmostEqual(G.chroma_cap("detail", 200.0, 85.0), 42.0 * 0.5)  # a light detail
-        self.assertEqual(G.chroma_cap("lips", 200.0, 40.0), 42.0)
-        L, a, b = G.to_lab(G.guard("skin", G.hexc("#39ff14")))  # neon green: its hue 136 deg, in the band
-        _, a0, b0 = G.to_lab(G.hexc("#39ff14"))
+        self.assertAlmostEqual(G.chroma_cap("skin", 125.0, 0.75), 0.108 * 0.7)
+        self.assertAlmostEqual(G.chroma_cap("skin", 341.0, 0.75), 0.108 * 0.8)  # hot pink
+        self.assertEqual(G.chroma_cap("skin", 200.0, 0.75), 0.108)  # teal
+        self.assertAlmostEqual(G.chroma_cap("skin", 200.0, 0.44), 0.108 * 0.431 / 0.603)  # a dark skin
+        self.assertAlmostEqual(G.chroma_cap("detail", 200.0, 0.871), 0.113 * 0.129 / 0.259)  # a light detail
+        self.assertEqual(G.chroma_cap("lips", 200.0, 0.5), 0.113)
+        L, a, b = G.to_oklab(G.guard("skin", G.hexc("#39ff14")))  # neon green: its OKLCh hue 142 deg, in the band
+        _, a0, b0 = G.to_oklab(G.hexc("#39ff14"))
         cap = G.chroma_cap("skin", G.math.degrees(G.math.atan2(b0, a0)), L)
-        self.assertLess(cap, 32.0)
-        self.assertLessEqual((a * a + b * b) ** 0.5, cap + 0.5)
+        self.assertLess(cap, 0.09)
+        self.assertLessEqual((a * a + b * b) ** 0.5, cap + 0.002)
 
     def test_inside_the_rails_unchanged(self):
         for _, p in G.PRESETS:
@@ -61,7 +78,7 @@ class ColourSlotsTest(unittest.TestCase):
     def test_lip_contrast(self):
         for h in BAD + ["#e39c8c"]:
             u = G.slot_colours(BASES, {"skin": h, "lips": h})
-            self.assertGreaterEqual(G.delta_e(u["lip_color"], u["skin_color"]), G.LIP_CONTRAST - 0.5, h)
+            self.assertGreaterEqual(G.delta_e(u["lip_color"], u["skin_color"]), G.LIP_CONTRAST - 0.01, h)
 
     def test_identity(self):
         u = G.slot_colours(BASES, {})
@@ -75,16 +92,18 @@ class ColourSlotsTest(unittest.TestCase):
     def test_front_is_a_tinted_cream(self):
         for _, p in G.PRESETS[1:]:
             u = G.slot_colours(BASES, p)
-            L, a, b = G.to_lab(u["front_color"])
-            self.assertGreaterEqual(L, 81.5)
-            self.assertLessEqual((a * a + b * b) ** 0.5, 16.5)
+            L, a, b = G.to_oklab(u["front_color"])
+            self.assertGreaterEqual(L, 0.842)
+            self.assertLessEqual((a * a + b * b) ** 0.5, 0.045)
 
     def test_details_off_follow_the_skin(self):
         u = G.slot_colours(BASES, {"skin": "#e39c8c", "detail": "#ff0000", "detail_on": False})
         self.assertEqual(u["detail_on"], 0.0)
         u = G.slot_colours(BASES, {"skin": "#e39c8c"})
         self.assertEqual(u["detail_on"], 0.0)
-        self.assertEqual(u["gills_detail"], 1.0)
+        self.assertEqual(u["gill_mode"], 1.0)  # the gradient, the default
+        for mode, v in (("skin", 0.0), ("gradient", 1.0), ("whole", 2.0)):
+            self.assertEqual(G.slot_colours(BASES, {"gills": mode})["gill_mode"], v)
 
     def test_gdscript_constants_match(self):
         src = GD.read_text(encoding="utf-8")
@@ -93,6 +112,7 @@ class ColourSlotsTest(unittest.TestCase):
         self.assertIn("const BANDS: Array = [" + ", ".join(f"[{c}, {h}, {k}]" for c, h, k in G.BANDS) + "]", src)
         self.assertIn(f"const LIP_CONTRAST: float = {G.LIP_CONTRAST}", src)
         self.assertIn(f"const FRONT_SAT_GAIN: float = {G.FRONT_SAT_GAIN}", src)
+        self.assertIn("const GILL_MODES: PackedStringArray = [" + ", ".join(f'"{m}"' for m in G.GILL_MODES) + "]", src)
         gd = re.findall(r'\{"name": "([^"]+)", "picks": (\{[^}]*\})\}', src)
         self.assertEqual([n for n, _ in gd], [n for n, _ in G.PRESETS])
         for (_, gp), (_, p) in zip(gd, G.PRESETS):
@@ -105,12 +125,19 @@ class ColourSlotsTest(unittest.TestCase):
         for (_, jp), (_, p) in zip(js, G.PRESETS):
             jp = json.loads(re.sub(r"(\w+):", r'"\1":', jp))
             self.assertEqual({("detail_on" if k == "detailOn" else k): v for k, v in jp.items()}, p)
+        rails = re.search(r"export const RAILS = \{(.*?)\};", src, re.S).group(1)
+        for slot, r in G.RAILS.items():
+            self.assertIn(f"{slot}: [" + ", ".join("null" if x is None else f"{x:g}" for x in r) + "]", rails)
+        self.assertIn("export const BANDS = [" + ", ".join(f"[{c:g}, {h:g}, {k}]" for c, h, k in G.BANDS) + "]", src)
+        self.assertIn(f"export const LIP_CONTRAST = {G.LIP_CONTRAST};", src)
+        self.assertIn("export const GILL_MODES = [" + ", ".join(f'"{m}"' for m in G.GILL_MODES) + "]", src)
         node = shutil.which("node")
         if not node:
             self.skipTest("node is not installed")
         picks = [p for _, p in G.PRESETS] + [{"skin": h, "lips": h, "detail": h} for h in BAD] + [
-            {"skin": "#e39c8c", "detail": "#ff0000", "detail_on": False, "gills_detail": False}]
-        jpicks = [{("detailOn" if k == "detail_on" else "gillsDetail" if k == "gills_detail" else k): v
+            {"skin": "#e39c8c", "detail": "#ff0000", "detail_on": False, "gills": "skin"},
+            {"skin": "#14206e", "lips": "#ffffff", "gills": "whole"}, {"skin": "#0000ff", "lips": "#0000ff"}]
+        jpicks = [{("detailOn" if k == "detail_on" else k): v
                    for k, v in p.items()} for p in picks]
         out = subprocess.run([node, str(JS), "--json", json.dumps({"bases": BASES, "picks": jpicks})],
                              capture_output=True, text=True, timeout=60)

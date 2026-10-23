@@ -7,15 +7,17 @@ Slots, each an sRGB colour the player picks:
 - lips: the lips (the accent mask's R) in their own colour;
 - detail: the marks (the accent's G: the chameleon's crest stripes, the axolotl's freckles and gills) in their own
   colour when `detail_on`; off, they follow the skin as the build's paint does;
-- gills_detail (the axolotl): the gills (the accent's A, 1 - gill) take the detail colour (default) or the skin's;
+- gills (the axolotl, with the details on): "gradient" (the default: the accent's G, skin at the gill's root to the
+  details colour at its tips), "whole" (the whole gill, stalk and fringe: the accent's A, 1 - gill) or "skin";
 - the pale front (the accent's B) is no slot: it follows the skin as a tinted cream (study variant E).
 
-Guard rails, in CIELAB (D65), on every picked colour (a slot the player leaves out keeps the build's own paint, the
+Guard rails, in OKLCh (OKLab's lightness, chroma and hue; v2: the hue angle kept, CIELAB's chroma cut bent blue
+toward violet), on every picked colour (a slot the player leaves out keeps the build's own paint, the
 approved look, never guarded): a chroma cap and a lightness range per slot, the cap lowered round the yellow-green
 and the hot pink hues (BANDS: they read acidic at a chroma the others carry), for a dark skin (a deep colour at full
 chroma reads neon: below the dark knee) and for light lips and details (a light colour at full chroma reads neon:
-above the light knee), and the lips at least LIP_CONTRAST (CIE76 delta E) from
-the skin (moved darker in L*, or lighter when darker leaves the range). The recolour itself runs in sRGB HSV, in the
+above the light knee), and the lips at least LIP_CONTRAST from
+the skin (OKLab delta E; moved darker in L, or lighter when darker leaves the range). The recolour itself runs in sRGB HSV, in the
 shader too (it converts the linear albedo to sRGB and back), so every cap is in one space.
 """
 from __future__ import annotations
@@ -23,15 +25,19 @@ from __future__ import annotations
 import colorsys
 import math
 
-# per slot: (chroma cap C*, L* min, L* max, dark knee, light knee): the cap scaled by (L* + 15) / (dark + 15) below
-# the dark knee and by (100 - L*) / (100 - light) above the light knee (None: no knee)
-RAILS = {"skin": (40.0, 35.0, 85.0, 55.0, None), "lips": (42.0, 25.0, 80.0, None, 70.0),
-         "detail": (42.0, 20.0, 85.0, None, 70.0), "front": (16.0, 82.0, 93.0, None, None)}
-# hue bands with a lower cap: (centre, half width (CIELAB hue degrees), the cap's factor at the centre, a cosine bump)
-BANDS = [(125.0, 35.0, 0.7), (345.0, 40.0, 0.8)]  # yellow-green, hot pink
-LIP_CONTRAST = 12.0  # CIE76 delta E, lips against the skin
+# per slot: (chroma cap C, L min, L max, dark knee, light knee) in OKLab (OKLCh: L 0-1, the chroma C, the hue kept):
+# the cap scaled by (L - 0.009) / (dark - 0.009) below the dark knee and by (1 - L) / (1 - light) above the light knee
+# (None: no knee). v2 (2026-10-23): the CS1 rails were CIELAB (C* 40/42/42/16, L* 35-85, 25-80, 20-85, 82-93, knees
+# L* 55 and 70) and a CIELAB chroma cut bends blue toward violet (navy went violet-slate); re-derived here: L = (L* +
+# 16) / 116 on the greys, C = 0.0027 C* (the median ratio at C* 40 over every hue and L* 40-85), the bands' edges
+# mapped from CIELAB hues (yellow-green 90-161, hot pink 300-22).
+RAILS = {"skin": (0.108, 0.44, 0.871, 0.612, None), "lips": (0.113, 0.353, 0.828, None, 0.741),
+         "detail": (0.113, 0.31, 0.871, None, 0.741), "front": (0.043, 0.845, 0.94, None, None)}
+# hue bands with a lower cap: (centre, half width (OKLCh hue degrees), the cap's factor at the centre, a cosine bump)
+BANDS = [(125.0, 36.0, 0.7), (341.0, 41.0, 0.8)]  # yellow-green, hot pink
+LIP_CONTRAST = 0.1  # OKLab delta E (CIE76's 12 in lightness), lips against the skin
+GILL_MODES = ("skin", "gradient", "whole")  # the shader's gill_mode: 0, 1, 2
 FRONT_SAT_GAIN = 1.4  # a front texel's HSV saturation never above max(its own, this x the front target's)
-WHITE = (0.95047, 1.0, 1.08883)
 
 # The study's E palettes (studio/Ea.jpg, Eb.jpg; their skin and accent with the study's HSV caps applied, so the
 # presets are the colours he saw): E1 is the build's own paint (no picks).
@@ -64,35 +70,30 @@ def _srgb(c: float) -> float:
     return c * 12.92 if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
 
 
-def _f(t: float) -> float:
-    return t ** (1 / 3) if t > 216 / 24389 else (24389 / 27 * t + 16) / 116
-
-
-def _finv(t: float) -> float:
-    return t ** 3 if t ** 3 > 216 / 24389 else (116 * t - 16) / (24389 / 27)
-
-
-def to_lab(c) -> tuple:
+def to_oklab(c) -> tuple:
     r, g, b = (_lin(x) for x in c)
-    x = (0.4124564 * r + 0.3575761 * g + 0.1804375 * b) / WHITE[0]
-    y = (0.2126729 * r + 0.7151522 * g + 0.0721750 * b) / WHITE[1]
-    z = (0.0193339 * r + 0.1191920 * g + 0.9503041 * b) / WHITE[2]
-    fx, fy, fz = _f(x), _f(y), _f(z)
-    return 116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)
+    lms = (0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b,
+           0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b,
+           0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
+    l, m, s = (math.copysign(abs(v) ** (1 / 3), v) for v in lms)
+    return (0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+            1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s)
 
 
-def from_lab(lab) -> tuple:
+def from_oklab(lab) -> tuple:
     L, a, b = lab
-    fy = (L + 16) / 116
-    x, y, z = _finv(fy + a / 500) * WHITE[0], _finv(fy) * WHITE[1], _finv(fy - b / 200) * WHITE[2]
-    r = 3.2404542 * x - 1.5371385 * y - 0.4985314 * z
-    g = -0.9692660 * x + 1.8760108 * y + 0.0415560 * z
-    bl = 0.0556434 * x - 0.2040259 * y + 1.0572252 * z
-    return tuple(_srgb(v) for v in (r, g, bl))
+    l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3
+    m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3
+    s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3
+    return tuple(_srgb(v) for v in (4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+                                    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+                                    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s))
 
 
 def delta_e(c1, c2) -> float:
-    return math.dist(to_lab(c1), to_lab(c2))
+    """OKLab delta E."""
+    return math.dist(to_oklab(c1), to_oklab(c2))
 
 
 def chroma_cap(slot: str, hue_deg: float, L: float) -> float:
@@ -102,16 +103,17 @@ def chroma_cap(slot: str, hue_deg: float, L: float) -> float:
         if d < half:
             cap *= 1.0 - (1.0 - k) * 0.5 * (1.0 + math.cos(math.pi * d / half))
     if dark is not None:
-        cap *= min(1.0, (L + 15.0) / (dark + 15.0))
+        cap *= min(1.0, (L - 0.009) / (dark - 0.009))
     if light is not None:
-        cap *= min(1.0, (100.0 - L) / (100.0 - light))
+        cap *= min(1.0, (1.0 - L) / (1.0 - light))
     return cap
 
 
 def guard(slot: str, c) -> tuple:
-    """One picked sRGB colour inside its slot's rails: the chroma capped (lower in the yellow-green band), the
-    lightness clamped; a colour inside the rails comes back unchanged."""
-    L, a, b = to_lab(c)
+    """One picked sRGB colour inside its slot's rails (OKLCh): the chroma capped (lower in the hue bands and past the
+    knees), the lightness clamped, the hue angle kept; a colour inside the rails comes back unchanged. sRGB's gamut
+    clip (a channel past 0 or 1 after the cut) may still turn the hue a little: the chroma is halved until it fits."""
+    L, a, b = to_oklab(c)
     lo, hi = RAILS[slot][1:3]
     Lc = max(lo, min(hi, L))
     ch, hue = math.hypot(a, b), math.degrees(math.atan2(b, a)) % 360.0
@@ -119,19 +121,41 @@ def guard(slot: str, c) -> tuple:
     if ch <= cap and lo <= L <= hi:
         return tuple(c)
     k = min(1.0, cap / ch) if ch > 0 else 1.0
-    return from_lab((Lc, a * k, b * k))
+    return _in_gamut((Lc, a * k, b * k))
+
+
+def _in_gamut(lab) -> tuple:
+    """OKLab to sRGB, the chroma scaled down (bisection, the hue and L kept) until every channel is inside 0-1."""
+    def raw(k):
+        L, a, b = lab[0], lab[1] * k, lab[2] * k
+        l, m, s = ((L + 0.3963377774 * a + 0.2158037573 * b) ** 3, (L - 0.1055613458 * a - 0.0638541728 * b) ** 3,
+                   (L - 0.0894841775 * a - 1.2914855480 * b) ** 3)
+        return (4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+                -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+                -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)
+    if all(-1e-6 <= v <= 1.0 + 1e-6 for v in raw(1.0)):
+        return from_oklab(lab)
+    lo, hi = 0.0, 1.0
+    for _ in range(20):
+        k = 0.5 * (lo + hi)
+        if all(-1e-6 <= v <= 1.0 + 1e-6 for v in raw(k)):
+            lo = k
+        else:
+            hi = k
+    return from_oklab((lab[0], lab[1] * lo, lab[2] * lo))
 
 
 def lip_contrast(lips, skin) -> tuple:
-    """The lips at least LIP_CONTRAST from the skin: L* moved darker (lighter when darker leaves the range)."""
+    """The lips at least LIP_CONTRAST (OKLab) from the skin: L moved darker (lighter when darker leaves the range),
+    the hue and chroma kept."""
     if delta_e(lips, skin) >= LIP_CONTRAST:
         return tuple(lips)
-    L, a, b = to_lab(lips)
-    Ls, a_s, b_s = to_lab(skin)
-    dl = math.sqrt(max(0.0, LIP_CONTRAST ** 2 - (a - a_s) ** 2 - (b - b_s) ** 2)) + 0.5
+    L, a, b = to_oklab(lips)
+    Ls, a_s, b_s = to_oklab(skin)
+    dl = math.sqrt(max(0.0, LIP_CONTRAST ** 2 - (a - a_s) ** 2 - (b - b_s) ** 2)) + 0.005
     lo, hi = RAILS["lips"][1:3]
     L = Ls - dl if Ls - dl >= lo else min(hi, Ls + dl)
-    return from_lab((L, a, b))
+    return _in_gamut((L, a, b))
 
 
 def recolour(c, base, target) -> tuple:
@@ -155,7 +179,7 @@ def _pick(v):
 def slot_colours(bases: dict, picks: dict) -> dict:
     """The shader's colour uniforms (sRGB) for a head. bases: the build's own colours, {"skin" (the GLB's
     base_skin_srgb), "lips", "detail", "front" (the accent JSON's region medians)}; picks: any of "skin", "lips",
-    "detail" (sRGB or "#rrggbb"), "detail_on" (default: true when "detail" is picked), "gills_detail" (default true).
+    "detail" (sRGB or "#rrggbb"), "detail_on" (default: true when "detail" is picked), "gills" (GILL_MODES, default "gradient").
     No picks: every target is its base, the identity."""
     base = tuple(bases["skin"])
     out = {"base_skin": base, "lip_base": tuple(bases["lips"]), "detail_base": tuple(bases["detail"]),
@@ -178,5 +202,5 @@ def slot_colours(bases: dict, picks: dict) -> dict:
     else:  # the build's marks, following a picked skin
         out["detail_color"] = recolour(out["detail_base"], base, skin)
     out["detail_on"] = 1.0 if on else 0.0
-    out["gills_detail"] = 1.0 if picks.get("gills_detail", True) else 0.0
+    out["gill_mode"] = float(GILL_MODES.index(picks.get("gills", "gradient")))
     return out

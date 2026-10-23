@@ -14,22 +14,23 @@ extends RefCounted
 ##   AlienStatic.set_colours(mats, {"skin": Color(...), "lips": Color(...), "detail": Color(...), "detail_on": true})
 ## (a slot left out keeps the build's own paint; set_colours(mats, {}) is the merged look) or a preset:
 ##   AlienStatic.set_colours(mats, AlienStatic.PRESETS[1]["picks"])
-## The guard rails (here, in CIELAB; tools/blender/alien_colour_geom.py holds the same maths and its tests) act on
+## The guard rails (here, in OKLCh, the hue kept; tools/blender/alien_colour_geom.py holds the same maths and its tests) act on
 ## every picked colour before it reaches the shader, which does the recolour in sRGB HSV.
 
 const SHADER: Shader = preload("res://alien/alien_static.gdshader")
 const SHADER_288: Shader = preload("res://alien/alien_static_288.gdshader")  # static_v5: #288's look, byte for byte
 const SUFFIX: String = "_static_skin"
 
-## The guard rails per slot: [chroma cap C*, L* min, L* max, dark knee, light knee] (CIELAB, D65; the cap scaled by
-## (L* + 15) / (dark + 15) below the dark knee, by (100 - L*) / (100 - light) above the light knee; null: none).
-const RAILS: Dictionary = {"skin": [40.0, 35.0, 85.0, 55.0, null], "lips": [42.0, 25.0, 80.0, null, 70.0],
-	"detail": [42.0, 20.0, 85.0, null, 70.0], "front": [16.0, 82.0, 93.0, null, null]}
-## Hue bands with a lower cap: [centre, half width (hue degrees), the cap's factor at the centre]: yellow-green, hot pink.
-const BANDS: Array = [[125.0, 35.0, 0.7], [345.0, 40.0, 0.8]]
-const LIP_CONTRAST: float = 12.0  # CIE76 delta E, lips against the skin
+## The guard rails per slot: [chroma cap C, L min, L max, dark knee, light knee] (OKLCh: the hue angle kept; the cap
+## scaled by (L - 0.009) / (dark - 0.009) below the dark knee, by (1 - L) / (1 - light) above the light knee; null:
+## none). v2: re-derived from CS1's CIELAB rails, whose chroma cut turned navy violet (alien_colour_geom.py).
+const RAILS: Dictionary = {"skin": [0.108, 0.44, 0.871, 0.612, null], "lips": [0.113, 0.353, 0.828, null, 0.741],
+	"detail": [0.113, 0.31, 0.871, null, 0.741], "front": [0.043, 0.845, 0.94, null, null]}
+## Hue bands with a lower cap: [centre, half width (OKLCh hue degrees), the cap's factor at the centre]: yellow-green, hot pink.
+const BANDS: Array = [[125.0, 36.0, 0.7], [341.0, 41.0, 0.8]]
+const LIP_CONTRAST: float = 0.1  # OKLab delta E, lips against the skin
+const GILL_MODES: PackedStringArray = ["skin", "gradient", "whole"]  # the shader's gill_mode: 0, 1, 2
 const FRONT_SAT_GAIN: float = 1.4  # a front texel's HSV saturation never above max(its own, this x the target's)
-const WHITE := Vector3(0.95047, 1.0, 1.08883)
 
 ## The study's E palettes (E1: the build's own paint).
 const PRESETS: Array[Dictionary] = [
@@ -90,7 +91,7 @@ static func set_skin(mats: Array[ShaderMaterial], color: Color) -> void:
 
 
 ## The player's colour slots on every material apply() made: picks holds any of "skin", "lips", "detail" (Color,
-## "#rrggbb" or [r, g, b]), "detail_on" (default: true when "detail" is picked), "gills_detail" (default true).
+## "#rrggbb" or [r, g, b]), "detail_on" (default: true when "detail" is picked), "gills" ("skin", "gradient" (default), "whole").
 ## Returns the uniforms set (sRGB), the same for every material of one head.
 static func set_colours(mats: Array[ShaderMaterial], picks: Dictionary) -> Dictionary:
 	var u: Dictionary = {}
@@ -130,7 +131,7 @@ static func slot_colours(bases: Dictionary, picks: Dictionary) -> Dictionary:
 	else:  # the build's marks, following a picked skin
 		u["detail_color"] = recolour(u["detail_base"], base, skin)
 	u["detail_on"] = 1.0 if on else 0.0
-	u["gills_detail"] = 1.0 if picks.get("gills_detail", true) else 0.0
+	u["gill_mode"] = float(GILL_MODES.find(picks.get("gills", "gradient")))
 	return u
 
 
@@ -159,31 +160,53 @@ static func _srgb(c: float) -> float:
 	return c * 12.92 if c <= 0.0031308 else 1.055 * pow(c, 1.0 / 2.4) - 0.055
 
 
-static func _f(t: float) -> float:
-	return pow(t, 1.0 / 3.0) if t > 216.0 / 24389.0 else (24389.0 / 27.0 * t + 16.0) / 116.0
+static func _cbrt(v: float) -> float:
+	return signf(v) * pow(absf(v), 1.0 / 3.0)
 
 
-static func _finv(t: float) -> float:
-	return t * t * t if t * t * t > 216.0 / 24389.0 else (116.0 * t - 16.0) / (24389.0 / 27.0)
-
-
-static func to_lab(c: Color) -> Vector3:
+static func to_oklab(c: Color) -> Vector3:
 	var r: float = _lin(c.r)
 	var g: float = _lin(c.g)
 	var b: float = _lin(c.b)
-	var x: float = (0.4124564 * r + 0.3575761 * g + 0.1804375 * b) / WHITE.x
-	var y: float = (0.2126729 * r + 0.7151522 * g + 0.0721750 * b) / WHITE.y
-	var z: float = (0.0193339 * r + 0.1191920 * g + 0.9503041 * b) / WHITE.z
-	return Vector3(116.0 * _f(y) - 16.0, 500.0 * (_f(x) - _f(y)), 200.0 * (_f(y) - _f(z)))
+	var l: float = _cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)
+	var m: float = _cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b)
+	var s: float = _cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
+	return Vector3(0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+		1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s)
 
 
-static func from_lab(lab: Vector3) -> Color:
-	var fy: float = (lab.x + 16.0) / 116.0
-	var x: float = _finv(fy + lab.y / 500.0) * WHITE.x
-	var y: float = _finv(fy) * WHITE.y
-	var z: float = _finv(fy - lab.z / 200.0) * WHITE.z
-	return Color(_srgb(3.2404542 * x - 1.5371385 * y - 0.4985314 * z),
-		_srgb(-0.9692660 * x + 1.8760108 * y + 0.0415560 * z), _srgb(0.0556434 * x - 0.2040259 * y + 1.0572252 * z))
+## OKLab to linear sRGB, unclipped.
+static func _oklab_rgb(lab: Vector3) -> Vector3:
+	var l: float = pow(lab.x + 0.3963377774 * lab.y + 0.2158037573 * lab.z, 3.0)
+	var m: float = pow(lab.x - 0.1055613458 * lab.y - 0.0638541728 * lab.z, 3.0)
+	var s: float = pow(lab.x - 0.0894841775 * lab.y - 1.2914855480 * lab.z, 3.0)
+	return Vector3(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+		-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)
+
+
+static func from_oklab(lab: Vector3) -> Color:
+	var v: Vector3 = _oklab_rgb(lab)
+	return Color(_srgb(v.x), _srgb(v.y), _srgb(v.z))
+
+
+static func _fits(lab: Vector3, k: float) -> bool:
+	var v: Vector3 = _oklab_rgb(Vector3(lab.x, lab.y * k, lab.z * k))
+	return v.x >= -1e-6 and v.y >= -1e-6 and v.z >= -1e-6 and v.x <= 1.000001 and v.y <= 1.000001 and v.z <= 1.000001
+
+
+## OKLab to sRGB, the chroma scaled down (bisection, the hue and L kept) until every channel is inside 0-1.
+static func _in_gamut(lab: Vector3) -> Color:
+	if _fits(lab, 1.0):
+		return from_oklab(lab)
+	var lo: float = 0.0
+	var hi: float = 1.0
+	for i in 20:
+		var k: float = 0.5 * (lo + hi)
+		if _fits(lab, k):
+			lo = k
+		else:
+			hi = k
+	return from_oklab(Vector3(lab.x, lab.y * lo, lab.z * lo))
 
 
 static func chroma_cap(slot: String, hue_deg: float, l: float) -> float:
@@ -194,15 +217,15 @@ static func chroma_cap(slot: String, hue_deg: float, l: float) -> float:
 		if d < band[1]:
 			cap *= 1.0 - (1.0 - band[2]) * 0.5 * (1.0 + cos(PI * d / band[1]))
 	if r[3] != null:
-		cap *= minf(1.0, (l + 15.0) / (r[3] + 15.0))
+		cap *= minf(1.0, (l - 0.009) / (r[3] - 0.009))
 	if r[4] != null:
-		cap *= minf(1.0, (100.0 - l) / (100.0 - r[4]))
+		cap *= minf(1.0, (1.0 - l) / (1.0 - r[4]))
 	return cap
 
 
-## One picked sRGB colour inside its slot's rails (unchanged when inside them).
+## One picked sRGB colour inside its slot's rails (unchanged when inside them; the hue angle kept).
 static func guard(slot: String, c: Color) -> Color:
-	var lab: Vector3 = to_lab(c)
+	var lab: Vector3 = to_oklab(c)
 	var r: Array = RAILS[slot]
 	var lc: float = clampf(lab.x, r[1], r[2])
 	var ch: float = Vector2(lab.y, lab.z).length()
@@ -210,16 +233,17 @@ static func guard(slot: String, c: Color) -> Color:
 	if ch <= cap and lab.x >= r[1] and lab.x <= r[2]:
 		return Color(c.r, c.g, c.b)
 	var k: float = minf(1.0, cap / ch) if ch > 0.0 else 1.0
-	return from_lab(Vector3(lc, lab.y * k, lab.z * k))
+	return _in_gamut(Vector3(lc, lab.y * k, lab.z * k))
 
 
-## The lips at least LIP_CONTRAST from the skin: L* darker (lighter when darker leaves the range).
+## The lips at least LIP_CONTRAST (OKLab) from the skin: L darker (lighter when darker leaves the range).
 static func lip_contrast(lips: Color, skin: Color) -> Color:
-	var a: Vector3 = to_lab(lips)
-	var s: Vector3 = to_lab(skin)
+	var a: Vector3 = to_oklab(lips)
+	var s: Vector3 = to_oklab(skin)
 	if a.distance_to(s) >= LIP_CONTRAST:
 		return lips
-	var dl: float = sqrt(maxf(0.0, LIP_CONTRAST * LIP_CONTRAST - pow(a.y - s.y, 2.0) - pow(a.z - s.z, 2.0))) + 0.5
+	var dl: float = sqrt(maxf(0.0, LIP_CONTRAST * LIP_CONTRAST - pow(a.y - s.y, 2.0) - pow(a.z - s.z, 2.0))) + 0.005
 	var r: Array = RAILS["lips"]
 	var l: float = s.x - dl if s.x - dl >= r[1] else minf(r[2], s.x + dl)
-	return from_lab(Vector3(l, a.y, a.z))
+	return _in_gamut(Vector3(l, a.y, a.z))
+

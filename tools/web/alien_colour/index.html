@@ -19,7 +19,7 @@
   <div class="row"><label>skin</label><input type="checkbox" id="skin_on"><input type="color" id="skin" value="#e39c8c"> <span class="sw" id="skin_g"></span></div>
   <div class="row"><label>lips</label><input type="checkbox" id="lips_on"><input type="color" id="lips" value="#a2575a"> <span class="sw" id="lips_g"></span></div>
   <div class="row"><label>details</label><input type="checkbox" id="detail_on"><input type="color" id="detail" value="#a2575a"> <span class="sw" id="detail_g"></span></div>
-  <div class="row"><label>gills</label><select id="gills"><option value="1">on the details</option><option value="0">on the skin</option></select></div>
+  <div class="row"><label>gills</label><select id="gills"><option value="gradient">root to tip (details)</option><option value="whole">whole (details)</option><option value="skin">on the skin</option></select></div>
   <div class="row">Unticked: the build's own paint. The swatch after each picker is the colour after the guard rails.</div>
   <div class="row" id="out"></div>
 </div>
@@ -60,7 +60,7 @@ function picks() {
   if ($("skin_on").checked) p.skin = $("skin").value;
   if ($("lips_on").checked) p.lips = $("lips").value;
   if ($("detail_on").checked) { p.detail = $("detail").value; p.detailOn = true; }
-  p.gillsDetail = $("gills").value === "1";
+  p.gills = $("gills").value;
   return p;
 }
 function apply() {

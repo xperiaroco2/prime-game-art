@@ -1,24 +1,25 @@
 // The alien pilot's static heads' colour slots in the browser (art #196, 2026-10-23): three.js 0.160, the same maths
 // as godot/alien/alien_static.gd (slot_colours, guard) and alien_static.gdshader's recolour, checked against
 // tools/blender/alien_colour_geom.py by tools/tests/test_alien_colour_slots.py. Slots: skin, lips, detail (the crest
-// stripes, the freckles and gills; detailOn), gillsDetail (the axolotl's gills on the details or the skin); the pale
-// front follows the skin as a tinted cream. Every picked colour goes through the guard rails (CIELAB: a chroma cap,
-// lower round yellow-green, a lightness range per slot, the lips at least 12 delta E from the skin); a slot left out
+// stripes, the freckles and gills; detailOn), gills (the axolotl's gills: "gradient", the default, "whole" or "skin"); the pale
+// front follows the skin as a tinted cream. Every picked colour goes through the guard rails (OKLCh, the hue kept: a chroma
+// cap, lower round yellow-green and hot pink, a lightness range per slot, the lips at least 0.1 OKLab delta E from the skin); a slot left out
 // keeps the build's own paint, and no picks is the build's look exactly.
 //
 //   import { makeColours, PRESETS } from "./colour.js";
 //   const col = await makeColours(gltf.scene, "axolotl_accent.png", "axolotl_mask.png", bases);  // bases: heads.json's entry
 //   col.set({ skin: "#e39c8c", lips: "#a2575a", detail: "#a2575a", detailOn: true });  // returns the uniforms (sRGB)
 //
-// Plain functions (slotColours, guard, toLab, fromLab, recolour) need no three.js: `node colour.js --json` prints
+// Plain functions (slotColours, guard, toOklab, fromOklab, recolour) need no three.js: `node colour.js --json` prints
 // them on the test colours.
 
 // per slot: [chroma cap C*, L* min, L* max, dark knee, light knee] (null: no knee); hue bands [centre, half, factor]
-export const RAILS = { skin: [40, 35, 85, 55, null], lips: [42, 25, 80, null, 70], detail: [42, 20, 85, null, 70], front: [16, 82, 93, null, null] };
-export const BANDS = [[125, 35, 0.7], [345, 40, 0.8]];
-export const LIP_CONTRAST = 12;
+export const RAILS = { skin: [0.108, 0.44, 0.871, 0.612, null], lips: [0.113, 0.353, 0.828, null, 0.741],
+  detail: [0.113, 0.31, 0.871, null, 0.741], front: [0.043, 0.845, 0.94, null, null] };  // OKLCh
+export const BANDS = [[125, 36, 0.7], [341, 41, 0.8]];
+export const LIP_CONTRAST = 0.1;  // OKLab delta E
+export const GILL_MODES = ["skin", "gradient", "whole"];
 export const FRONT_SAT_GAIN = 1.4;
-const WHITE = [0.95047, 1.0, 1.08883];
 
 export const PRESETS = [
   ["alien teal", {}],
@@ -35,22 +36,31 @@ export const hexc = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) 
 export const hexs = (c) => "#" + c.map((x) => Math.round(Math.min(1, Math.max(0, x)) * 255).toString(16).padStart(2, "0")).join("");
 const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const srgb = (c) => { c = Math.min(1, Math.max(0, c)); return c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055; };
-const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116);
-const finv = (t) => (t ** 3 > 216 / 24389 ? t ** 3 : (116 * t - 16) / (24389 / 27));
-
-export function toLab(c) {
+export function toOklab(c) {
   const [r, g, b] = c.map(lin);
-  const x = (0.4124564 * r + 0.3575761 * g + 0.1804375 * b) / WHITE[0];
-  const y = (0.2126729 * r + 0.7151522 * g + 0.0721750 * b) / WHITE[1];
-  const z = (0.0193339 * r + 0.1191920 * g + 0.9503041 * b) / WHITE[2];
-  return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s, 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s];
 }
 
-export function fromLab([L, a, b]) {
-  const fy = (L + 16) / 116;
-  const x = finv(fy + a / 500) * WHITE[0], y = finv(fy) * WHITE[1], z = finv(fy - b / 200) * WHITE[2];
-  return [3.2404542 * x - 1.5371385 * y - 0.4985314 * z, -0.9692660 * x + 1.8760108 * y + 0.0415560 * z,
-    0.0556434 * x - 0.2040259 * y + 1.0572252 * z].map(srgb);
+function oklabRgb([L, a, b]) {  // linear sRGB, unclipped
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3, m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.2914855480 * b) ** 3;
+  return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+}
+
+export const fromOklab = (lab) => oklabRgb(lab).map(srgb);
+
+// OKLab to sRGB, the chroma scaled down (bisection, the hue and L kept) until every channel is inside 0-1
+function inGamut(lab) {
+  const fits = (k) => oklabRgb([lab[0], lab[1] * k, lab[2] * k]).every((v) => v >= -1e-6 && v <= 1 + 1e-6);
+  if (fits(1)) return fromOklab(lab);
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 20; i++) { const k = 0.5 * (lo + hi); if (fits(k)) lo = k; else hi = k; }
+  return fromOklab([lab[0], lab[1] * lo, lab[2] * lo]);
 }
 
 export function rgbToHsv([r, g, b]) {  // Python's colorsys
@@ -80,33 +90,33 @@ export function chromaCap(slot, hueDeg, L) {
     const d = Math.abs((((hueDeg - centre + 180) % 360) + 360) % 360 - 180);
     if (d < half) cap *= 1 - (1 - k) * 0.5 * (1 + Math.cos(Math.PI * d / half));
   }
-  if (dark !== null) cap *= Math.min(1, (L + 15) / (dark + 15));
-  if (light !== null) cap *= Math.min(1, (100 - L) / (100 - light));
+  if (dark !== null) cap *= Math.min(1, (L - 0.009) / (dark - 0.009));
+  if (light !== null) cap *= Math.min(1, (1 - L) / (1 - light));
   return cap;
 }
 
 export function guard(slot, c) {
-  const [L, a, b] = toLab(c), [, lo, hi] = RAILS[slot], Lc = Math.max(lo, Math.min(hi, L));
+  const [L, a, b] = toOklab(c), [, lo, hi] = RAILS[slot], Lc = Math.max(lo, Math.min(hi, L));
   const ch = Math.hypot(a, b), hue = ((Math.atan2(b, a) * 180 / Math.PI) % 360 + 360) % 360, cap = chromaCap(slot, hue, Lc);
   if (ch <= cap && L >= lo && L <= hi) return [...c];
   const k = ch > 0 ? Math.min(1, cap / ch) : 1;
-  return fromLab([Lc, a * k, b * k]);
+  return inGamut([Lc, a * k, b * k]);
 }
 
 const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
 
 export function lipContrast(lips, skin) {
-  const a = toLab(lips), s = toLab(skin);
+  const a = toOklab(lips), s = toOklab(skin);
   if (dist(a, s) >= LIP_CONTRAST) return [...lips];
-  const dl = Math.sqrt(Math.max(0, LIP_CONTRAST ** 2 - (a[1] - s[1]) ** 2 - (a[2] - s[2]) ** 2)) + 0.5;
+  const dl = Math.sqrt(Math.max(0, LIP_CONTRAST ** 2 - (a[1] - s[1]) ** 2 - (a[2] - s[2]) ** 2)) + 0.005;
   const [, lo, hi] = RAILS.lips;
-  return fromLab([s[0] - dl >= lo ? s[0] - dl : Math.min(hi, s[0] + dl), a[1], a[2]]);
+  return inGamut([s[0] - dl >= lo ? s[0] - dl : Math.min(hi, s[0] + dl), a[1], a[2]]);
 }
 
 const pick = (v) => (typeof v === "string" ? hexc(v) : [...v]);
 
 // The shader's uniforms (sRGB arrays) for bases {skin, lips, detail, front} and picks {skin, lips, detail, detailOn,
-// gillsDetail}; alien_colour_geom.slot_colours line for line.
+// gills}; alien_colour_geom.slot_colours line for line.
 export function slotColours(bases, picks = {}) {
   const base = [...bases.skin];
   const u = { base_skin: base, lip_base: [...bases.lips], detail_base: [...bases.detail], front_base: [...bases.front] };
@@ -123,7 +133,7 @@ export function slotColours(bases, picks = {}) {
   const on = "detailOn" in picks ? !!picks.detailOn : "detail" in picks;
   u.detail_color = "detail" in picks ? guard("detail", pick(picks.detail)) : recolour(u.detail_base, base, skin);
   u.detail_on = on ? 1 : 0;
-  u.gills_detail = picks.gillsDetail === false ? 0 : 1;
+  u.gill_mode = GILL_MODES.indexOf(picks.gills ?? "gradient");
   return u;
 }
 
@@ -131,7 +141,7 @@ export function slotColours(bases, picks = {}) {
 const GLSL = `
 uniform sampler2D csAccent; uniform sampler2D csMask; uniform vec3 csBaseSkin; uniform vec3 csSkin; uniform vec3 csLipBase; uniform vec3 csLip;
 uniform vec3 csDetailBase; uniform vec3 csDetail; uniform vec3 csFrontBase; uniform vec3 csFront;
-uniform float csFrontSatMax; uniform float csDetailOn; uniform float csGillsDetail;
+uniform float csFrontSatMax; uniform float csDetailOn; uniform float csGillMode;
 vec3 csHsv(vec3 c) {
   vec4 k = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
   vec4 p = mix(vec4(c.bg, k.wz), vec4(c.gb, k.xy), step(c.b, c.g));
@@ -151,8 +161,9 @@ vec3 csRecolour(vec3 c, vec4 acc) {
   vec3 t = csRgb(csTurn(h, csBaseSkin, csSkin));
   vec3 fh = csTurn(h, csFrontBase, csFront); fh.y = min(fh.y, max(h.y, csFrontSatMax));
   t = mix(t, csRgb(fh), acc.b);
-  float gill = min(1.0 - acc.a, acc.g);
-  t = mix(t, csRgb(csTurn(h, csDetailBase, csDetail)), csDetailOn * max(acc.g - gill * (1.0 - csGillsDetail), 0.0));
+  float gill = 1.0 - acc.a;
+  float dw = csGillMode < 0.5 ? max(acc.g - gill, 0.0) : (csGillMode < 1.5 ? acc.g : max(acc.g, gill));
+  t = mix(t, csRgb(csTurn(h, csDetailBase, csDetail)), csDetailOn * dw);
   t = mix(t, csRgb(csTurn(h, csLipBase, csLip)), acc.r);
   return csLin(t);
 }
@@ -160,7 +171,7 @@ vec3 csRecolour(vec3 c, vec4 acc) {
 
 const NAMES = { base_skin: "csBaseSkin", skin_color: "csSkin", lip_base: "csLipBase", lip_color: "csLip",
   detail_base: "csDetailBase", detail_color: "csDetail", front_base: "csFrontBase", front_color: "csFront",
-  front_sat_max: "csFrontSatMax", detail_on: "csDetailOn", gills_detail: "csGillsDetail" };
+  front_sat_max: "csFrontSatMax", detail_on: "csDetailOn", gill_mode: "csGillMode" };
 
 // Hooks the head's "_static_skin" materials: the accent mask and the skin mask (RGBA and RGB PNGs, loaded
 // unpremultiplied and without colour conversion: the gills live in the accent's alpha, the skin mask in the mask's
@@ -176,7 +187,7 @@ async function dataTexture(THREE, url) {
 export async function makeColours(root, accentUrl, maskUrl, bases) {
   const THREE = await import("three");
   const uniforms = { csAccent: { value: await dataTexture(THREE, accentUrl) }, csMask: { value: await dataTexture(THREE, maskUrl) } };
-  for (const n of Object.values(NAMES)) uniforms[n] = { value: ["csFrontSatMax", "csDetailOn", "csGillsDetail"].includes(n) ? 1 : new THREE.Color() };
+  for (const n of Object.values(NAMES)) uniforms[n] = { value: ["csFrontSatMax", "csDetailOn", "csGillMode"].includes(n) ? 1 : new THREE.Color() };
   root.traverse((o) => {
     if (!o.isMesh || !o.material || !o.material.name.endsWith("_static_skin")) return;
     const mat = o.material, prev = mat.onBeforeCompile;

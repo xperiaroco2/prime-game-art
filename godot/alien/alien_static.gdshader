@@ -2,11 +2,11 @@
 // its painted eyes. The albedo (sRGB) holds the 2D's teal and mint; mask_tex (linear) holds R the skin tint mask
 // (1 skin, 0 the eyes), G the roughness (wet eyes, softer lips, matte gills), B the subsurface and sheen weight.
 // The colour slots (2026-10-23): accent_tex (linear RGBA, tools/blender/alien_tint_mask.py, `<head>_accent.png`) holds
-// R the lips, G the details (the chameleon's crest stripes, the axolotl's freckles and gills), B the pale front,
-// A 1 - the gills. Every skin texel is recoloured from base_skin (the GLB's base_skin_srgb) to skin_color; the front
+// R the lips, G the details (the chameleon's crest stripes, the axolotl's freckles and its gills' root-to-tip
+// gradient), B the pale front, A 1 - the whole gills (stalk and fringe). Every skin texel is recoloured from base_skin (the GLB's base_skin_srgb) to skin_color; the front
 // from front_base to front_color (a tinted cream after the skin), its saturation never above max(its own,
 // front_sat_max); the details from detail_base to detail_color where detail_on (off: they follow the skin), the gills
-// with them where gills_detail (0: the gills follow the skin); the lips from lip_base to lip_color. The recolour (the
+// with them by gill_mode (0 the skin, 1 the gradient: skin at the root to the details at the tips, 2 the whole gill); the lips from lip_base to lip_color. The recolour (the
 // hue turned by target - base, saturation and value scaled by their ratios) runs in sRGB HSV: the albedo is turned
 // to sRGB and back, so it is the same maths as alien_static.gd's guard rails and tools/blender/alien_colour_geom.py.
 // Every target at its base is the identity. alien_static.gd builds this material from the imported glTF material
@@ -53,7 +53,7 @@ uniform vec3 front_base : source_color = vec3(0.39, 0.77, 0.76);
 uniform vec3 front_color : source_color = vec3(0.39, 0.77, 0.76);
 uniform float front_sat_max : hint_range(0.0, 1.0) = 1.0;
 uniform float detail_on : hint_range(0.0, 1.0) = 1.0;
-uniform float gills_detail : hint_range(0.0, 1.0) = 1.0;
+uniform float gill_mode : hint_range(0.0, 2.0) = 1.0;
 uniform float normal_strength : hint_range(0.0, 2.0) = 1.0;
 uniform float specular_level : hint_range(0.0, 1.0) = 0.45;
 uniform float sss : hint_range(0.0, 1.0) = 0.25;
@@ -131,8 +131,9 @@ vec3 recolour(vec3 c, vec4 acc) {
 	vec3 fh = turn(h, front_base, front_color);
 	fh.y = min(fh.y, max(h.y, front_sat_max));
 	t = mix(t, hsv2rgb(fh), acc.b);
-	float gill = min(1.0 - acc.a, acc.g);
-	t = mix(t, hsv2rgb(turn(h, detail_base, detail_color)), detail_on * max(acc.g - gill * (1.0 - gills_detail), 0.0));
+	float gill = 1.0 - acc.a;
+	float dw = gill_mode < 0.5 ? max(acc.g - gill, 0.0) : (gill_mode < 1.5 ? acc.g : max(acc.g, gill));
+	t = mix(t, hsv2rgb(turn(h, detail_base, detail_color)), detail_on * dw);
 	t = mix(t, hsv2rgb(turn(h, lip_base, lip_color)), acc.r);
 	return to_linear(t);
 }
