@@ -1,7 +1,8 @@
 """M13b (art #196, PR #248's review minor 7): the alien kit's Godot sources parse in Godot 4.7.2, headless
 (godot/alien/parse_check.gd): every shader under godot/alien/ compiles in the dummy renderer's parser (no "SHADER
-ERROR", its uniforms listed; a broken shader lists none) and alien.gd and alien_talk.gd load and reload. Skips without
-Godot."""
+ERROR", its uniforms listed; a broken shader lists none) and alien.gd, alien_talk.gd and alien_static.gd load and
+reload; alien_static.gd's colour slot maths (GDScript) match tools/blender/alien_colour_geom.py within 1e-5 (PR #304's
+review). Skips without Godot."""
 
 from __future__ import annotations
 
@@ -17,6 +18,8 @@ from runner.commands import _godot  # noqa: E402
 
 HAVE_GODOT = common.tool_path(pins.GODOT_ENV, None) is not None
 ALIEN = Path(__file__).resolve().parents[2] / "godot" / "alien"
+sys.path.insert(0, str(ALIEN.parents[1] / "tools" / "blender"))
+import alien_colour_geom as G  # noqa: E402
 
 
 @unittest.skipUnless(HAVE_GODOT, "needs Godot")
@@ -34,6 +37,20 @@ class AlienParseTest(unittest.TestCase):
         bad = [ln for ln in self.out.splitlines()
                if "SHADER ERROR" in ln or "Parse Error" in ln or "SCRIPT ERROR" in ln or "compilation failed" in ln]
         self.assertEqual(bad, [])
+
+    def test_colour_slot_maths(self):  # PR #304's review: the GDScript maths against Python's, not only the proof
+        cs = self.d["colour_slots"]
+        self.assertGreaterEqual(len(cs["cases"]), 19)
+        for case in cs["cases"]:
+            want = G.slot_colours(cs["bases"], case["picks"])
+            self.assertEqual(sorted(want), sorted(case["uniforms"]), case["picks"])
+            for k, v in want.items():
+                got = case["uniforms"][k]
+                for x, y in zip(v if isinstance(v, tuple) else (v,), got if isinstance(got, list) else [got]):
+                    self.assertAlmostEqual(x, y, delta=1e-5, msg=(case["picks"], k))
+        self.assertTrue(cs["unknown_gills_empty"])  # an unknown gill mode is an error, as in Python and JS
+        with self.assertRaises(ValueError):
+            G.slot_colours(cs["bases"], {"gills": "fringe"})
 
     def test_every_shader_parses(self):
         files = sorted(p.name for p in ALIEN.glob("*.gdshader"))

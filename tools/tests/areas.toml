@@ -95,6 +95,10 @@ tests = ["test_alien_fit_*"]
 sources = ["tools/blender/alien_mouth_fit_geom.py", "tools/blender/alien_mouth_fit.py"]  # M19's AI mouth fit (#196); before light's alien_*
 tests = ["test_alien_mouth_fit_*"]
 
+[area.alien_colour]
+sources = ["tools/blender/alien_colour_geom.py", "tools/web/alien_colour/*"]  # the static heads' colour slots' maths and its three.js copy (#196); before light's alien_*
+tests = ["test_alien_colour_slots*"]
+
 [area.alien_texture]
 sources = ["tools/blender/alien_texture_geom.py"]  # the alien skin's texture formulas (#196); before light's alien_*
 tests = ["test_alien_texture_*"]
@@ -113,7 +117,7 @@ sources = ["tools/blender/alien_mouths.py", "tools/blender/alien_lips_geom.py", 
 tests = ["test_alien_pout_*"]
 
 [area.alien_parse]
-sources = ["godot/alien/*.gdshader", "godot/alien/*.gdshaderinc", "godot/alien/alien.gd", "godot/alien/parse_check.gd"]  # the alien kit's shaders and alien.gd parse (#196, M13b); before light's godot/alien/*
+sources = ["godot/alien/*.gdshader", "godot/alien/*.gdshaderinc", "godot/alien/alien.gd", "godot/alien/alien_static.gd", "godot/alien/parse_check.gd", "tools/blender/alien_colour_geom.py"]  # the alien kit's shaders and alien.gd parse (#196, M13b); before light's godot/alien/*
 tests = ["test_alien_parse_*"]
 
 [area.meshy]
