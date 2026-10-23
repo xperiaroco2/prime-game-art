@@ -124,6 +124,8 @@ func _run() -> void:
 		report["cells"].append("%s (yaw limit %.0f)" % [side[0], rad_to_deg(live.yaw_limit)])
 		eyes_cells.append_array(await _eyes(live, mats, heads[0]))
 		eye_labels.append(side[0])
+	if bead:
+		report["gill_closeups"] = await _gill_closeups(live, out)
 	live.target = far
 	_settle(live, 72)
 	# row 2: the eyes alone (the head held) toward the head's left, right and down; the breath's two ends
@@ -217,12 +219,12 @@ func _diff(x: Image, y: Image) -> Dictionary:
 	return {"mean_abs": snappedf(sum / n * 255.0, 0.001), "share_over_8": snappedf(float(over) / n, 0.00001)}
 
 
-## Both eyes close up (4x the sheet's scale: a frame 6 eye radii high about each posed eye centre, from the front).
+## Both eyes close up (4x the sheet's scale: a frame 6 eye radii high about each posed eye's front, from the front).
 func _eyes(live, mats: Array[ShaderMaterial], head: Node3D) -> Array[Image]:
 	var mesh: MeshInstance3D = live.mesh
 	var res: Array[Image] = []
 	for side: String in ["l", "r"]:
-		var c: Vector3 = mesh.global_transform * (mats[0].get_shader_parameter("eye_centre_" + side) as Vector3)
+		var c: Vector3 = mesh.global_transform * live.eye_front("left" if side == "l" else "right")  # AL2: centred
 		var e: Dictionary = live.eyes["left" if side == "l" else "right"]
 		var h: float = 6.0 * float(e["radius"])
 		var dist: float = h * 0.5 / tan(deg_to_rad(_cam.fov * 0.5))
@@ -238,6 +240,31 @@ func _eyes(live, mats: Array[ShaderMaterial], head: Node3D) -> Array[Image]:
 		sq.resize(EYE.x, EYE.y, Image.INTERPOLATE_LANCZOS)
 		res.append(sq)
 	return res
+
+
+## The gills held at their cap's eight limit corners with the head at its yaw limits (AL2: the poke proof):
+## gills.jpg, columns the corners, rows the head turned left / right, each cell from the head's back three-quarter on
+## the side the head turned away from (the gills against the skull); the springs move again after it.
+func _gill_closeups(live, out: String) -> Dictionary:
+	var corners := [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+	var cells: Array[Image] = []
+	var labels: Array[String] = []
+	for turn: Array in [["head left", Vector3(2.2, 0.3, 2.0), 215.0], ["head right", Vector3(-2.2, 0.3, 2.0), 145.0]]:
+		live.target = _mid + (turn[1] as Vector3)
+		_settle(live, 72)
+		for cn: Array in corners:
+			live.hold_springs(float(cn[0]), float(cn[1]))
+			cells.append(await _cell(Vector3(0.0, _mid.y + 0.05, -0.1), 1.1, float(turn[2])))
+			labels.append("%s, gills yaw %+d pitch %+d x cap" % [turn[0], cn[0], cn[1]])
+	var sheet := Image.create(8 * (CELL.x + 4) - 4, 2 * (CELL.y + 4) - 4, false, Image.FORMAT_RGB8)
+	sheet.fill(Color(0.2, 0.2, 0.2))
+	for i: int in cells.size():
+		sheet.blit_rect(cells[i], Rect2i(Vector2i.ZERO, CELL), Vector2i((i % 8) * (CELL.x + 4), (i / 8) * (CELL.y + 4)))
+	sheet.save_jpg(out.path_join("gills%s.jpg" % _suffix), 0.92)
+	var caps: Array = []
+	for sp: Dictionary in live.springs:
+		caps.append(snappedf(rad_to_deg(float(sp["cap"])), 0.01))
+	return {"cells": labels, "caps_deg": caps}
 
 
 ## The target's path (seconds): ahead, the head's left, right, up, down, near, a fast swipe, ahead.

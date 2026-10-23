@@ -886,13 +886,33 @@ pilot's static premium heads"):
       (`alien_lively_geom.GILL_JOINTS`, each a child of Head) at step 2a's gill pivots; a stalk's vertices are the
       thin ones (the detail map's G over 0.5) nearest its root, its axis their mean, its weight
       `G.stalk_weight` (none at the root's first 8 %, full from 45 %, none where the detail map says thick: the skull
-      never moves, `rig.gill_weight_on_thick`). The poke test turns each stalk's weighted vertices by the swing about
-      the head's up and side axes and counts vertices that end inside the head but were outside at rest; the swing
-      is lowered by 2 degrees until none pokes, and that is the springs' cap (`rig.gill_swing_deg`,
-      `springs[].max_deg`). `gill_weights.png` shows the weights.
+      never moves, `rig.gill_weight_on_thick`). The poke test (AL2) turns each stalk's weighted vertices as the
+      controllers do (`G.spring_matrix`: Ry(yaw) Rx(-pitch) about the root) at the cap's four axis ends and four
+      corners (`G.SWING_CORNERS`) and counts moved vertices that end over 1 mm (`G.POKE_TOL`) inside the skull. The
+      skull is a star about the head's centre: a point is inside when it is nearer the centre than the skull's
+      outermost crossing along the same ray (Blender's BVH `ray_cast`, the thick triangles alone). The root band,
+      vertices within 3 mm of the skull at rest (`G.ROOT_BAND`, the stalks' bases that touch it by construction)
+      and those inside it at rest, is left out (`rig.gill_poke_tested` the vertices tested). The swing starts at
+      15 degrees (`G.SPRING_MAX_DEG`, `--gill-swing`) and is lowered 1 degree at a time until none pokes
+      (`rig.gill_pokes_by_swing`); that is the springs' cap (`rig.gill_swing_deg`, `springs[].max_deg`); a head
+      whose gills poke at every swing is refused. AL1's test (behind the nearest triangle's plane) read thousands
+      of pokes even at 2 degrees: beside the hole the dropped root triangles leave, the nearest point is a hole
+      edge whose plane says nothing. `gill_weights.png` shows the weights; `gills_<tag>.jpg` (`lively_shots.gd`)
+      the gills held at the cap's eight corners (`alien_lively.gd` `hold_springs`) with the head at both yaw
+      limits, from the back three-quarter (`shots_<tag>.json` `gill_closeups`).
     - *The springs* are data now (`lively.json` `rig.springs`: bones, rate, damping, lag, cap): the chameleon's
       crest one chain of Crest1-3; the axolotl's six gills one bone each at 1.8 to 2.4 Hz, so they never swing in
-      step. `alien_lively.gd` and `lively.js` read them, and the head's follow from `controller`.
+      step. `alien_lively.gd` and `lively.js` read them, and the head's follow from `controller`. Every spring is
+      clamped at its `max_deg`; 0 or none given holds it still (AL2: AL1's 0 meant "no cap", so v1b's gills swung
+      38 degrees); the chameleon's crest has an explicit 30 (v4's largest swing 11.6, never reached).
+    - *One glint per bead (AL2):* the drawn catch light alone; the bead's own reflections are cut on its eye texels
+      (`alien_static.gdshader` `bead_reflect` 0.15 times the specular and clear coat, roughness at least
+      `bead_rough` 0.55), so the key light leaves a soft sheen, not a second sharp point that broke into a "<" at
+      the silhouette in head turns.
+    - *Eye close-ups* are framed on each posed eye's front (`alien_lively.gd` `eye_front`: the centre plus the rest
+      direction times the radius), not its centre deep inside the head. `eye_pit_shots.gd`'s JSON also holds
+      `away_from_eyes`: the whole head before | after at rest from four sides, the pixel difference with every
+      pixel within 2.2 eye radii of an eye centre left out (the chameleon's v5 against v4).
     - *For both heads:* every eyeball vertex takes the fitted sphere's radial normal, faded in over 6 % of r from
       the lid line (the faint triangular facets under the upper lids in `eyes_pit_v4_crop_*.jpg` were the sculpt's
       flat-shaded eyeball normals), and every TANGENT whose normal changed is made orthogonal again

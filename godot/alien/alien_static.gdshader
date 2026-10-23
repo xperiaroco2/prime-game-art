@@ -77,6 +77,10 @@ uniform float catch_size = 0.16;  // its radius in iris radii
 // the painted catch light painted out) and a catch light fixed in the mesh's own frame (to the light) at catch_dir_l/r,
 // catch_angle wide, in catch_colour, times catch_light; the bead turns with the head under it
 uniform float bead : hint_range(0.0, 1.0) = 0.0;
+// AL2: one glint per bead, the drawn one: the bead's own reflections (specular, clear coat) times bead_reflect and
+// its roughness at least bead_rough, so the key light leaves a soft sheen, not a second sharp point
+uniform float bead_reflect : hint_range(0.0, 1.0) = 0.15;
+uniform float bead_rough : hint_range(0.0, 1.0) = 0.55;
 uniform vec3 catch_dir_l = vec3(0.0, 0.0, 1.0);
 uniform vec3 catch_dir_r = vec3(0.0, 0.0, 1.0);
 uniform float catch_angle = 0.1;
@@ -209,9 +213,10 @@ void fragment() {
 	c = mix(c, shade(c, 0.0, 1.15, 1.25), fuzz * pow(1.0 - nv, fuzz_power) * m.r);
 	ALBEDO = c;
 	METALLIC = 0.0;
-	SPECULAR = specular_level;
-	ROUGHNESS = mix(rough, max(rough, eye_under_rough), eye * step(0.001, eye_coat));
-	CLEARCOAT = eye_coat * eye;
+	float br = step(0.5, bead) * gaze_on * eye;  // the bead's own eye texels (0 on the chameleon)
+	SPECULAR = specular_level * mix(1.0, bead_reflect, br);
+	ROUGHNESS = mix(mix(rough, max(rough, eye_under_rough), eye * step(0.001, eye_coat)), max(rough, bead_rough), br);
+	CLEARCOAT = eye_coat * eye * mix(1.0, bead_reflect, br);
 	CLEARCOAT_ROUGHNESS = eye_coat_rough;
 	SSS_STRENGTH = sss * m.b;
 	RIM = sheen * m.b;
