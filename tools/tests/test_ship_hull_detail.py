@@ -142,21 +142,34 @@ class ShipHullDetailTest(unittest.TestCase):
         # lens polish: every face is covered by its cells' pieces; a piece's edge is flush only on a facet edge whose
         # neighbour bends less than the zone's crease; the lens's rim has its three bands and seams every 36 deg; a lens
         # plate's pieces share one silver and the lens parts are shaded smooth
+        # fix 2 step 3: a plate's pieces on coplanar faces are merged (skin_faces), so the area is checked per plane
         surf = S.surface()
         pieces = J.skin_pieces()
+        faces = J.skin_faces()
+        self.assertEqual(len(faces), len(pieces))
+
+        def plane(i):
+            u = S._unit3(surf[i][1])
+            return tuple(round(t, 4) for t in u), round(S._dot(u, surf[i][0][0]), 3)
         area: dict = {}
-        for _k, _zone, _cell, i, q, flags in pieces:
-            area[i] = area.get(i, 0.0) + S.area(q)
+        for (_k, _zone, _cell, i, q, flags), fs in zip(pieces, faces):
+            self.assertEqual(i, fs[0])
+            self.assertEqual({plane(f) for f in fs}, {plane(i)})
+            area[plane(i)] = area.get(plane(i), 0.0) + S.area(q)
             self.assertEqual(len(flags), len(q))
+        want: dict = {}
         for i, (poly, _n, _kind) in enumerate(surf):
-            self.assertAlmostEqual(area.get(i, 0.0), S.area(poly), delta=1e-4 + 1e-3 * S.area(poly))
+            want[plane(i)] = want.get(plane(i), 0.0) + S.area(poly)
+        for key, a in want.items():
+            self.assertAlmostEqual(area.get(key, 0.0), a, delta=1e-4 + 1e-3 * a)
         edges = J.Edges(surf)
-        for _k, zone, _cell, i, q, flags in pieces[::7]:
+        for (_k, zone, _cell, i, q, flags), fs in list(zip(pieces, faces))[::7]:
             for (a, b), seam in zip(zip(q, q[1:] + q[:1]), flags):
                 if not seam:
-                    own, bend = edges.bend(i, tuple(0.5 * (a[t] + b[t]) for t in range(3)))
-                    self.assertTrue(own)
-                    self.assertLessEqual(bend, J.CREASE[zone])
+                    m = tuple(0.5 * (a[t] + b[t]) for t in range(3))
+                    hits = [edges.bend(f, m) for f in fs if edges.bend(f, m)[0]]
+                    self.assertTrue(hits)
+                    self.assertLessEqual(max(bd for _o, bd in hits), J.CREASE[zone])
         rim = {c[3] for _k, z, c, *_ in pieces if z == "lens" and c[2] == "rim"}
         self.assertEqual(rim, {0, 1, 2})
         self.assertLessEqual(len({c[4] for _k, z, c, *_ in pieces if z == "lens" and c[2] == "rim"}), 10)
@@ -208,13 +221,16 @@ class ShipHullDetailTest(unittest.TestCase):
                     self.assertGreater(groove, 0.25 * J.INSET, (round(deg, 1), b))
                     if groove < 0.9 * J.INSET:
                         narrow.append((round(deg, 1), round(groove, 4), b))
-        self.assertGreater(corners, 5000)
-        self.assertGreater(wide, 2000)
-        self.assertGreater(folds, 100)    # 3d: 362 near-straight or needle corners, SLIDE_MAX INSET * sin
-        self.assertLess(capped, 1000)     # 3d: 747 corners stopped short by their group's cap
-        self.assertLessEqual(len(narrow), 25, f"{len(narrow)} seam corners taper the groove")
+        # fix 2 step 3: a plate's coplanar pieces merge (J.merge_coplanar), so the seam corners on the surface's
+        # fragment edges are gone: 3138 corners (3d: over 5000), 1416 wide, 238 near-straight or needle, 419 capped
+        # (3d: 747), 1 narrow (3d: 23), 1270 shared groups
+        self.assertGreater(corners, 2500)
+        self.assertGreater(wide, 1000)
+        self.assertGreater(folds, 100)    # near-straight or needle corners, SLIDE_MAX INSET * sin
+        self.assertLess(capped, 600)      # corners stopped short by their group's cap
+        self.assertLessEqual(len(narrow), 5, f"{len(narrow)} seam corners taper the groove")
         shared = [g for g in ends.values() if len(g) > 1]
-        self.assertGreater(len(shared), 2000)
+        self.assertGreater(len(shared), 1000)
         for g in shared:
             self.assertLess(max(math.dist(g[0], t) for t in g), 1e-4, g)   # 0.1 mm
 
@@ -238,12 +254,98 @@ class ShipHullDetailTest(unittest.TestCase):
             self.assertEqual(len(mine), 4)
             normals = []
             for v, faces in mine:
+                self.assertGreaterEqual(len(v), 3)
                 lo = xi if len(v) == 4 else x_ceil   # the lower cap: walls' inner face to past the notch's side
                 for x, _y, _h in v:
                     self.assertGreaterEqual(side * x, lo - 1e-9)
                     self.assertLessEqual(side * x, xo + 1e-9)
                 normals.append(S._newell([v[i] for i in faces[0]])[1])
             self.assertEqual(sorted(n > 0 for n in normals), [False, False, True, True], "both windings per side")
+
+    def test_the_jamb_caps_stay_under_the_roof(self) -> None:
+        """fix 2 (item 6): past the notch's side the roof line falls under the cap's top; the cap's upper outer
+        corner stood out of the roof's plates (the dark triangle by each canopy fairing). Every cap corner lies at
+        least CAP_SKIN under each roof face over the cap's line."""
+        caps = J.jamb_caps()
+        y = S.TH_ROOF_Y + J.CAP_BACK
+        roofs = J._roof_planes(y, 0.0, 3.0, steps=60)
+        self.assertTrue(roofs)
+        for v, _f in caps:
+            for x, yy, h in v:
+                for n, d in roofs:
+                    self.assertLessEqual(S._dot(n, (abs(x), yy, h)), d - J.CAP_SKIN + 1e-6)
+        upper = [v for v, _f in caps if len(v) > 4]
+        self.assertEqual(len(upper), 4)
+        self.assertTrue(all(max(h for _x, _y, h in v) > S.TH_TOP for v in upper), "still up under the lintel")
+
+    def test_the_fairings_plates_follow_the_lens_sectors(self) -> None:
+        """fix 2 (item 4): the fairings' plates are the lens rim's lowest band's sectors, one seam family for every
+        facet (the per-facet plan family switched round the bend: seams stopped on a fold and restarted offset);
+        each piece lies in its sector, mirrored on the west."""
+        surf = S.surface()
+        fair = [(c, i, q) for _k, _z, c, i, q, _f in J.skin_pieces() if c[0] == "fair"]
+        self.assertTrue(fair)
+        self.assertEqual({c[1] for c, _i, _q in fair}, {1, -1})
+        for c, i, q in fair:
+            self.assertTrue(S.p_fair_face(*surf[i][:2]))
+            sx, k = c[1], c[2]
+            g0 = S.p_axis_deg() + k * J.LENS_SECTOR
+            for p in q:
+                g = math.degrees(math.atan2(p[1] - S.P_TIP[1], sx * p[0] - S.P_TIP[0]))
+                off = (g - g0) % 360.0
+                self.assertTrue(off <= J.LENS_SECTOR + 1e-3 or off >= 360.0 - 1e-3, (c, p, off))
+
+    def test_the_folds_sink_along_one_miter(self) -> None:
+        """fix 2 (item 4, step 1): a point on a fold sinks along one line for every face there, by exactly 1 in each
+        face's own plane (two faces) and by the cap at most."""
+        a = S._unit3((0.0, 0.0, 1.0))
+        b = S._unit3((0.0, math.sin(math.radians(40)), math.cos(math.radians(40))))
+        for own in (a, b):
+            m = J.miter([a, b], own)
+            self.assertAlmostEqual(S._dot(m, a), 1.0, places=9)
+            self.assertAlmostEqual(S._dot(m, b), 1.0, places=9)
+        self.assertEqual(J.miter([a], a), a)
+        sharp = S._unit3((0.0, math.sin(math.radians(170)), math.cos(math.radians(170))))
+        self.assertLessEqual(math.sqrt(S._dot(*(J.miter([a, sharp], a),) * 2)), J.MITER_MAX + 1e-9)
+        pieces, faces = J.skin_miters()
+        self.assertEqual(len(pieces), len(J.skin_pieces()))
+        self.assertEqual(len(faces), len(S.surface()))
+
+    def test_the_nozzle_throats_are_smooth(self) -> None:
+        """fix 2 (item 5): the throat (the dark dish) is shaded smooth across its radial facets, sharp at its crease."""
+        for args in ({"r": 1.42, "length": 4.665}, {"r": 1.62, "length": 4.965}):
+            throat = next(p for p in D.nozzle_pod(args, LAYOUT) if p["name"] == "pod_throat")
+            self.assertEqual(throat["smooth_deg"], D.THROAT_SMOOTH_DEG)
+            self.assertGreater(D.THROAT_SMOOTH_DEG, 360.0 / D.POD_SEGS)
+            # no flat disc across the nozzle: the bell, the throat and the lights' rings have no end caps (an n-gon of
+            # POD_SEGS corners); the bell's and the throat's caps z-fought in one plane over the whole nozzle
+            parts = D.nozzle_pod(args, LAYOUT) + D.pod_ring(args, LAYOUT)
+            for p in parts:
+                if p["name"] in ("pod_bell", "pod_throat", "pod_band", "pod_inner_ring"):
+                    self.assertFalse([f for f in p["faces"] if len(f) >= D.POD_SEGS], p["name"])
+
+    def test_merged_plate_pieces_stay_convex(self) -> None:
+        """fix 2 step 3 (item 4): merge_coplanar joins only what stays convex: two squares side by side become one
+        rectangle, an L of three stays in convex pieces of the same total area."""
+        n = (0.0, 0.0, 1.0)
+
+        def sq(x: float, y: float) -> list:
+            return [(x, y, 0.0), (x + 1.0, y, 0.0), (x + 1.0, y + 1.0, 0.0), (x, y + 1.0, 0.0)]
+
+        def convex(q: list) -> bool:
+            turns = [S._dot(S._cross(S._sub(q[i], q[i - 1]), S._sub(q[(i + 1) % len(q)], q[i])), n)
+                     for i in range(len(q))]
+            return all(t >= -1e-9 for t in turns) or all(t <= 1e-9 for t in turns)
+
+        two = J.merge_coplanar([(0, sq(0, 0)), (1, sq(1, 0))], n)
+        self.assertEqual(len(two), 1)
+        self.assertAlmostEqual(S.area(two[0][1]), 2.0, places=6)
+        ell = J.merge_coplanar([(0, sq(0, 0)), (1, sq(1, 0)), (2, sq(0, 1))], n)
+        self.assertGreater(len(ell), 1)
+        self.assertAlmostEqual(sum(S.area(q) for _f, q in ell), 3.0, places=6)
+        for _faces, q in ell + two:
+            self.assertTrue(convex(q), q)
+
 
 if __name__ == "__main__":
     unittest.main()

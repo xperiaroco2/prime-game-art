@@ -39,6 +39,9 @@ var nav_blink: bool = true
 var _nav: Array = []   # [light, energy, tail]; [material, emission energy, tail] for the lamps' lenses
 var _env: Environment
 var _sky_mat: ShaderMaterial
+var _by_name: Dictionary = {}   # fix 2: glTF material name -> its BaseMaterial3D copies (not the METALS), for _ab
+var _ab_saved: Dictionary = {}   # material -> [roughness, metallic, specular] before an A/B row's "mats"
+var _ab_env: Dictionary = {}   # the environment's ssil/ssao/glow and the night lights' shadows before the first A/B row
 var _night_lights: Array = []   # details 1: the moon and the key, hidden by _day
 
 ## The shared metal library (metal.gdshader) by glTF material name: base colour, metallic, roughness, grain, seams,
@@ -359,6 +362,7 @@ func _dress(ship: Node3D) -> int:
 				mi.set_surface_override_material(i, _metal(mat.resource_name))
 			elif mat is BaseMaterial3D and not seen.has(mat) and not (mat as BaseMaterial3D).emission_enabled:
 				seen[mat] = 0.0
+				_by_name[mat.resource_name] = _by_name.get(mat.resource_name, []) + [mat]
 				_look(mat, _entry(mats, mat.resource_name))
 			elif mat is BaseMaterial3D and (mat as BaseMaterial3D).emission_enabled:
 				var bm: BaseMaterial3D = mat
@@ -497,7 +501,9 @@ func _shoot() -> void:
 		_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
 		_camera.fov = float(v[4])
 		_camera.look_at_from_position(_v(v[2]), _v(v[3]), UP)
+		_ab(v[5] if v.size() > 5 else {})
 		images[v[0]] = await _shot(v[0], v[1], shots)
+		_ab({})
 	var top: Dictionary = _req["top"]
 	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	_camera.size = float(top["size_m"])
@@ -680,6 +686,38 @@ func _key(keys: Array, times: Array, k: int, w: float, j: int) -> Vector3:
 	var post: Vector3 = _v(keys[k + 2][j]) if k + 2 < keys.size() else b
 	var post_t: float = float(times[k + 2]) - float(times[k]) if k + 2 < keys.size() else 2.0 * span
 	return a.cubic_interpolate_in_time(b, pre, post, w, span, pre_t, post_t)
+
+
+## fix 2: a view's A/B switch ({"ssil"|"ssao"|"glow"|"shadows": false}, ship.py --views): those parts of the night
+## look off for the shot; {} puts back what the environment had (the directional lights' shadows: the moon and the
+## key). A row's "mats" ({glTF material name: {"roughness", "metallic", "specular"}}) sets those values on that
+## material's glTF copies (not the METALS) for that one shot; _ab({}) puts them back.
+func _ab(off: Dictionary) -> void:
+	if _ab_env.is_empty():
+		_ab_env = {"ssil": _env.ssil_enabled, "ssao": _env.ssao_enabled, "glow": _env.glow_enabled,
+			"shadows": [] as Array}
+		for l: Node in _night_lights:
+			(_ab_env["shadows"] as Array).append((l as DirectionalLight3D).shadow_enabled)
+	for bm: BaseMaterial3D in _ab_saved:
+		var was: Array = _ab_saved[bm]
+		bm.roughness = was[0]
+		bm.metallic = was[1]
+		bm.metallic_specular = was[2]
+	_ab_saved.clear()
+	var mats: Dictionary = off.get("mats", {})
+	for mat_name: String in mats:
+		for bm: BaseMaterial3D in _by_name.get(mat_name, []):
+			var want: Dictionary = mats[mat_name]
+			_ab_saved[bm] = [bm.roughness, bm.metallic, bm.metallic_specular]
+			bm.roughness = float(want.get("roughness", bm.roughness))
+			bm.metallic = float(want.get("metallic", bm.metallic))
+			bm.metallic_specular = float(want.get("specular", bm.metallic_specular))
+	_env.ssil_enabled = bool(off.get("ssil", _ab_env["ssil"]))
+	_env.ssao_enabled = bool(off.get("ssao", _ab_env["ssao"]))
+	_env.glow_enabled = bool(off.get("glow", _ab_env["glow"]))
+	for i: int in _night_lights.size():
+		var had: bool = (_ab_env["shadows"] as Array)[i]
+		(_night_lights[i] as DirectionalLight3D).shadow_enabled = bool(off.get("shadows", had)) and had
 
 
 func _shot(name: String, title: String, shots: Dictionary) -> Image:
