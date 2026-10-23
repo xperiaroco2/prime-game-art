@@ -49,16 +49,17 @@ HEADS = {
 def run_refusal(out: Path, tag: str, build: bool, shots: bool, seconds: float) -> str | None:
     """Why a run must not start (a run never overwrites in the raw folder), or None. A build needs a new tag: an
     untagged one would write into <out> itself, over the v2 chameleon's GLB, lively.json and build.log (PR #306
-    review, major 1), and a tagged one's folder must not exist. Shots need a new sheet (sheet_<tag>.jpg, even with
-    --no-build or --seconds 0: the sheet, shots JSON and logs share the tag; minor 9) and, with a video, a new frame
-    folder."""
+    review, major 1), and a tagged one's folder must not exist. Shots need a new sheet, eye pit sheet and shots JSON
+    (sheet_<tag>.jpg, eyes_pit_<tag>.jpg, shots_<tag>.json, even with --no-build or --seconds 0: they and the logs share
+    the tag; minor 9, AL7) and, with a video, a new frame folder."""
     suffix = f"_{tag}" if tag else ""
     if build and not tag:
         return f"an untagged build would write into {out} itself (an older build's GLB, lively.json, build.log): pass a new --tag"
     if build and (out / tag).exists():
         return f"{out / tag} exists: pick a new --tag (a run never overwrites in the raw folder)"
-    if shots and (out / f"sheet{suffix}.jpg").exists():
-        return f"{out / f'sheet{suffix}.jpg'} exists: pick a new --tag (a run never overwrites in the raw folder)"
+    for name in (f"sheet{suffix}.jpg", f"eyes_pit{suffix}.jpg", f"shots{suffix}.json"):
+        if shots and (out / name).exists():
+            return f"{out / name} exists: pick a new --tag (a run never overwrites in the raw folder)"
     if shots and seconds > 0 and (out / "video" / f"lively{suffix}").exists():
         return f"{out / 'video' / f'lively{suffix}'} exists: pick a new --tag (a run never deletes in the raw folder)"
     return None
@@ -93,7 +94,7 @@ def main() -> int:
     ap.add_argument("--tag", default="", help="names the sheet, shots and video of this run (no overwrite of an older one)")
     ap.add_argument("--pit-before", type=Path, default=None, help="the build folder of the eye pit sheet's before (default: --out)")
     ap.add_argument("--no-pit-fix", action="store_true", help="build as v2 did (the eyeballs as sculpted, the old fill)")
-    ap.add_argument("--gill-lift", choices=("centre", "skull"), default="centre",
+    ap.add_argument("--gill-lift", choices=("centre", "skull", "centre_pinned"), default="centre",
                     help="the axolotl's gill weights' lift (alien_lively_build.py --gill-lift)")
     ap.add_argument("--web-with", type=Path, default=None, help="another head's tagged build folder, copied into the web folder too")
     args = ap.parse_args()

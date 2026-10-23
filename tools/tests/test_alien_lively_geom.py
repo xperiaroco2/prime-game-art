@@ -358,6 +358,11 @@ class RunTest(unittest.TestCase):
                 self.assertIn("sheet_v9.jpg", R.run_refusal(d, "v9", False, True, seconds))
             (d / "sheet_v7.jpg").write_bytes(b"x")  # a build whose folder is new, but its sheet is not
             self.assertIn("sheet_v7.jpg", R.run_refusal(d, "v7", True, True, 0.0))
+            for name in ("eyes_pit_v5.jpg", "shots_v6.json"):  # AL7: the eye pit sheet and the shots JSON too
+                (d / name).write_bytes(b"x")
+            self.assertIn("eyes_pit_v5.jpg", R.run_refusal(d, "v5", False, True, 0.0))
+            self.assertIn("shots_v6.json", R.run_refusal(d, "v6", True, True, 20.0))
+            self.assertIsNone(R.run_refusal(d, "v5", True, False, 20.0))  # a build alone makes neither
             self.assertIsNone(R.run_refusal(d, "v9", False, False, 20.0))  # the validator alone
             (d / "sheet.jpg").write_bytes(b"x")
             self.assertIn("sheet.jpg", R.run_refusal(d, "", False, True, 0.0))

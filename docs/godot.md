@@ -938,8 +938,9 @@ pilot's static premium heads"):
       each eye at 4x the sheet's scale (the window's own pixels, 2x, nearest), rows far left, far right and down,
       columns before | after.
   - **Either head (AL1, 2026-10-23):** `alien_lively_run.py --head chameleon|axolotl --tag <tag>`; every build file is
-    named by the head (`<head>_lively.glb`, `<head>_sclera.png`), and an untagged build whose GLB exists is refused
-    (`build_refusal`, tested). The page and the module live in the repo, `tools/web/lively/` (`index.html` shows every
+    named by the head (`<head>_lively.glb`, `<head>_sclera.png`). `run_refusal` (tested) refuses every untagged
+    build, a build whose tag folder exists, and a shots run whose `sheet_<tag>.jpg`, `eyes_pit_<tag>.jpg` or
+    `shots_<tag>.json` exists (or, with a video, its frame folder). The page and the module live in the repo, `tools/web/lively/` (`index.html` shows every
     head `heads.json` lists side by side, or `?head=axolotl`; `lively.js` takes either head's `lively.json`); each
     tag's `web_<tag>/` holds them with `<head>_lively.glb`, `<head>_lively.json`, `<head>_sclera.png`, and
     `--web-with <other build folder>` adds the other head.
@@ -979,8 +980,18 @@ pilot's static premium heads"):
       contact. AL2 to AL5 also left out a root band (weights under 0.35, vertices within 3 mm of the skull at rest),
       the likeliest vertices to poke (PR #306 review); since AL6 every vertex weighted over 0.01 (`G.TEST_W`) that
       moves over 0.01 mm (`G.MOVED_EPS`) is tested, only those inside the skull at rest by both tests left out
-      (`rig.gill_poke_tested`, `rig.gill_poke_excluded_inside_at_rest`). On the axolotl (`axolotl_v6a`): all
-      18 769 weighted vertices tested, none inside at rest, 0 pokes at 15 degrees, so the cap stays 15. The swing starts at
+      (`rig.gill_poke_tested`, `rig.gill_poke_excluded_inside_at_rest`). AL7 (PR #306 re-review, major): AL2 to AL6's
+      skull was the triangles with no vertex weighted over 0.01, which dropped the root bulge (178 weighted
+      vertices): the "0 pokes at 15 degrees" of `axolotl_v6a` was tested against a hole, and the two lifts against
+      two different skulls. Now the skull is the proxy built before the weights (below), posed with the gill's own
+      weights at each corner (a new BVH per corner when the bulge moves), its own vertices not tested; a vertex
+      behind its nearest skull triangle at rest that cannot reach the skull's surface (its distance larger than its
+      own reach at the top swing plus the largest move of the bulge's vertices within reach) is left out
+      (`of_which_buried_only`). Every build weighs and tests all three lifts (`G.GILL_LIFTS`) and writes them to
+      `rig.gill_pokes_by_lift`, each gill's pokes in `gill_pokes_posed.json`. On the axolotl, like for like: `centre`
+      3 pokes at 15 degrees and 3 or 4 at every swing down to 2 (one vertex, GillR2's 7862, weight 0.065, 7.25 mm
+      under the skull at rest, at three corners), poke-free only at 1; `skull` and `centre_pinned` (centre with the
+      bulge pinned at 0) 6 at 15, poke-free at 8. The swing starts at
       15 degrees (`G.SPRING_MAX_DEG`, `--gill-swing`) and is lowered 1 degree at a time until none pokes
       (`rig.gill_pokes_by_swing`); that is the springs' cap (`rig.gill_swing_deg`, `springs[].max_deg`); a head
       whose gills poke at every swing is refused. AL1's test (behind the nearest triangle's plane) read thousands
@@ -999,9 +1010,11 @@ pilot's static premium heads"):
       from the head's centre beyond the root's nearest mesh vertex's, `G.LIFT_IN` 5 mm to `G.LIFT_FULL` 60 mm). The
       weights live on the welded vertices, so a seam's copies never part (their largest thinness counts), and are
       smoothed inside the stalk alone (`G.smooth_within`, `G.SMOOTH_PASSES` passes, edges to other stalks ignored,
-      the zeros pinned). `rig.gill_weight_on_skull` is measured (AL6) on the skull proxy built before the
-      weights (`rig.skull_proxy_pre_weights`: the triangles with no thin and no stalk vertex, welded): on
-      `axolotl_v6a` 0.56 on 178 of its vertices, the thick bulge around the roots inside the stalk's first 2 cm
+      the zeros pinned). The weight on the skull proxy built before the weights (`rig.skull_proxy_pre_weights`: the
+      triangles with no thin and no stalk vertex, welded) is reported apart (AL7) for the root bulge (the proxy's
+      vertices within a stalk's own reach, `rig.gill_weight_on_root_bulge`) and the open skull
+      (`rig.gill_weight_on_open_skull`, 0): with `centre` 0.56 on 178 bulge vertices, the thick bulge around the
+      roots inside the stalk's first 2 cm
       (AL4's measure, thick and under 5 mm of lift, read 0 there); AL4's `gill_weight_on_thick` is gone (the stalks'
       thick cores move by design).
     - *AL5's tries at the root junction (none kept):* fading the thin vertices in by their lift too (0 to 20 mm)
@@ -1011,9 +1024,10 @@ pilot's static premium heads"):
       16.0 mm. The cause is that "lift" (distance from the head's centre) is no height over the skull for fins that
       hang back toward the head: they read no lift far out on the stalk. AL4's rule stays (11.47 mm).
     - *AL6's try, the height over the skull (not kept):* `--gill-lift skull` takes the lift as the distance to the
-      skull proxy built before the weights (above). It pins the root bulge at 0 (`gill_weight_on_skull` 0), but the
+      skull proxy built before the weights (above). It pins the root bulge at 0 (its weight 0), but the
       stalks then bend over the pinned rim: 6 pokes at 15 degrees, the cap fell to 8, and the tear 9.26 mm is at
-      8 degrees only (`axolotl_v6b`). `--gill-lift centre` (AL4's rule, the default) stays: 0 pokes at 15, 11.47 mm.
+      8 degrees only (`axolotl_v6b`). AL7: against the posed bulge `centre` pokes too (above), so neither lift is
+      poke-free at 15 degrees; the choice between them (and the cap) is open.
     - *The springs* are data now (`lively.json` `rig.springs`: bones, rate, damping, lag, cap): the chameleon's
       crest one chain of Crest1-3; the axolotl's six gills one bone each at 1.8 to 2.4 Hz, so they never swing in
       step. `alien_lively.gd` and `lively.js` read them, and the head's follow from `controller`. Every spring is

@@ -32,6 +32,8 @@ GILL_PARENTS = (-1, 0, 1) + (2,) * len(GILLS)
 # likeliest to poke.
 POKE_TOL = 0.001
 TEST_W = 0.01
+# the gill weights' lifts (alien_lively_build.py --gill-lift; AL7: every build weighs and poke-tests all of them)
+GILL_LIFTS = ("centre", "skull", "centre_pinned")
 MOVED_EPS = 1e-5
 SWING_CORNERS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
 SPRING_MAX_DEG = 15.0  # the gills' cap at most (the measured limit when lower)
