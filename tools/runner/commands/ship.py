@@ -26,7 +26,6 @@ GODOT_TIMEOUT = 300
 VIEW_SIZE = (1920, 1080)
 SIZE_TOL_M = 0.01
 PLAY_DEFAULT = Path("<raw>/play")  # --play with no DIR: <raw>/<raw_dir>/play
-PLAY_SIZE = (1600, 900)
 PLAY_HOURS = 8  # the most one --play session stays open
 
 
@@ -348,9 +347,9 @@ def play(layout: dict, out: Path, folder: Path, test: bool) -> int:
         common.ok(f"ship --play-test: walked {result['moved_m']} m on the floor, one shot in {folder.as_posix()}")
         return 0
     common.say(f"ship --play: a window opens; P saves a screenshot into {folder.as_posix()}, Ctrl+Q or closing it quits")
-    w, h = PLAY_SIZE
-    # heavy=False: his window may stay open for hours, so it does not hold the heavy-run lock (the import above took it)
-    result = common.run([common.godot_bin(), "--resolution", f"{w}x{h}", *args], PLAY_HOURS * 3600, heavy=False)
+    # ship.gd's _play sizes and centres his window itself. heavy=False: it may stay open for hours, so it does not hold
+    # the heavy-run lock (the import above took it)
+    result = common.run([common.godot_bin(), *args], PLAY_HOURS * 3600, heavy=False)
     code = result.returncode
     shots = sorted(folder.glob("shot_*.png"))
     common.say(f"ship --play: closed (exit code {code}); {len(shots)} screenshots in {folder.as_posix()}")
