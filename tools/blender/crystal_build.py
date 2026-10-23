@@ -245,8 +245,8 @@ def part(name: str, build, mat_name: str, chamfer: float, extra=None, angle: flo
     bpy.context.collection.objects.link(ob)
     me.materials.append(MATS[mat_name])
     me.materials.append(MATS["_chamfer"])
-    for name in more:
-        me.materials.append(MATS[name])
+    for extra_mat in more:
+        me.materials.append(MATS[extra_mat])
     if chamfer > 0:
         mod = ob.modifiers.new("chamfer", "BEVEL")
         mod.width = chamfer
@@ -536,7 +536,7 @@ def join(objs: list) -> bpy.types.Object:
     order = ["crystal_shell", "crystal_core", "crystal_bronze", "crystal_graphite", "crystal_light"]
     deps = bpy.context.evaluated_depsgraph_get()
     bm_all = bmesh.new()
-    uv_all = bm_all.loops.layers.uv.new("UVMap")
+    bm_all.loops.layers.uv.new("UVMap")
     stats = {}
     for ob in objs:
         ev = ob.evaluated_get(deps)
@@ -561,7 +561,6 @@ def join(objs: list) -> bpy.types.Object:
         bm_all.from_mesh(tmp)
         bpy.data.meshes.remove(tmp)
         bpy.data.meshes.remove(me)
-    del uv_all
     me = bpy.data.meshes.new("energy_crystal")
     lowest = min(v.co.z for v in bm_all.verts)  # the chamfer lifts the tip: the origin goes back under it
     for v in bm_all.verts:

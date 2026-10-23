@@ -63,7 +63,7 @@ func _run() -> void:
 		_room.visible = false
 		_strip.visible = true
 		_place(Vector3.ZERO, 0.0)
-		for v: Array in [["q34", -35.0, 14.0, 1.0, 0.0], ["front", 0.0, 4.0, 1.0, 0.0], ["top", 0.0, 82.0, 0.5, 0.13]]:
+		for v: Array in [["q34", -35.0, 14.0, 1.0, 0.0], ["front", 0.0, 4.0, 1.0, 0.0], ["top", 0.0, 88.0, 0.5, 0.13]]:
 			var img: Image = await _orbit(v[1], v[2], v[3], v[4], VIEW)
 			shots["%s_%s" % [state, v[0]]] = img
 			_save(img, out.path_join("%s_%s.png" % [state, v[0]]))

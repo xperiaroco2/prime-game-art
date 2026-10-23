@@ -46,7 +46,7 @@
     "numHints": 0
   },
   "godot_gpu_ms_hand_view_1280x720": {
-    "hand_charge_0": 0.953,
+    "hand_charge_0": 1.0,
     "hand_charge_1": 1.053
   },
   "review": "<raw>/energy-crystal/build/godot/sheet.png"

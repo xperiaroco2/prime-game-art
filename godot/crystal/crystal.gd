@@ -42,7 +42,12 @@ static func apply(root: Node3D) -> Dictionary:
 	light.emission = LIGHT_COLOUR
 	var by_name := {"crystal_shell": shell, "crystal_core": core, "crystal_bronze": bronze,
 		"crystal_graphite": graphite, "crystal_light": light}
+	var old: Node = root.get_node_or_null(^"CrystalLight")  # a second apply() replaces the light, never adds one
+	if old != null:
+		root.remove_child(old)
+		old.free()
 	var omni := OmniLight3D.new()
+	omni.name = "CrystalLight"
 	omni.light_color = LIGHT_COLOUR
 	omni.omni_range = OMNI_RANGE
 	omni.omni_attenuation = 1.6
@@ -50,6 +55,8 @@ static func apply(root: Node3D) -> Dictionary:
 	var box := AABB()
 	var first := true
 	for m: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
+		if m.mesh == null:
+			continue
 		for i: int in m.mesh.get_surface_count():
 			var src: Material = m.mesh.surface_get_material(i)
 			var key: String = src.resource_name if src != null else ""
@@ -57,7 +64,8 @@ static func apply(root: Node3D) -> Dictionary:
 				m.set_surface_override_material(i, by_name[key])
 			else:
 				push_warning("crystal.gd: no look for surface material '%s'" % key)
-		var b: AABB = m.transform * m.get_aabb()
+		# in root's space, however deep the importer nests the mesh
+		var b: AABB = (root.global_transform.affine_inverse() * m.global_transform) * m.get_aabb()
 		box = b if first else box.merge(b)
 		first = false
 	root.add_child(omni)

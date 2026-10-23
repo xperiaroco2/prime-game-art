@@ -8,7 +8,7 @@ render_mode blend_mix, depth_prepass_alpha, cull_back, diffuse_burley, specular_
 uniform float charge : hint_range(0.0, 1.0) = 1.0;
 uniform vec3 deep : source_color = vec3(0.0, 0.22, 0.48);         // the gem's own colour, under its glow
 uniform vec3 glow_colour : source_color = vec3(0.0, 0.78, 1.0);
-uniform vec3 edge_colour : source_color = vec3(0.2, 0.88, 1.0); 
+uniform vec3 edge_colour : source_color = vec3(0.2, 0.88, 1.0);
 uniform float glow = 0.75;                                          // the facets' glow (HDR: over 1 blooms)
 uniform float edge_glow = 0.45;
 uniform float clarity : hint_range(0.0, 1.0) = 0.45;               // how much of the core shows through, face-on

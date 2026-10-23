@@ -43,6 +43,8 @@ def main() -> int:
     ap.add_argument("--samples", type=int, default=64, help="the Blender renders' EEVEE samples")
     ap.add_argument("--asset", type=Path, help="write the asset folder here from this build")
     args = ap.parse_args()
+    if args.asset and args.no_shots:
+        ap.error("--asset needs this run's shots (report.json takes their GPU cost)")
     out = RAW / "energy-crystal" / args.tag
     renders = out / "renders"
     if not args.no_build:
@@ -116,12 +118,12 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         "title = \"The ship engine's energy crystal\"",
         ("notes = \"The engine's cartridge: "
          'a faceted energy crystal in a bronze and graphite cap with a hexagonal carry '
-         f'loop, {size[2]:.3f} m tall, {size[0]:.3f} x {size[1]:.3f} m across the cap, one mesh of {build["triangles"]:,} '
+         f'loop, {size[2]:.3f} m tall, {size[0]:.3f} m across the claws, {size[1]:.3f} m across the band, one mesh of {build["triangles"]:,} '
          'triangles in five surfaces (hero class), front +Z, origin at the tip. Two states on one mesh: '
          'export/crystal.gd set_charge (1 charged, 0 spent; HANDOFF.md). From the concept the engineer picked '
          '(prime-game#1033 comment 6361383461; prime-game-design ideas/ship-components/cartridge-v2, socket-claws.jpg '
-         'and charge.jpg, copied to the raw folder), built from code in headless Blender (tools/blender/'
-         'crystal_build.py): no generator, no download."'),
+         'and charge.jpg, copied to the raw folder; a 2D concept used only as the reference), built from code in '
+         'headless Blender (tools/blender/crystal_build.py): no part of the model was generated or downloaded."'),
         'tools = ["blender 5.2.2", "prime-game-art crystal_build.py, crystal_run.py", '
         '"glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]',
         'licence = "own-work"',
