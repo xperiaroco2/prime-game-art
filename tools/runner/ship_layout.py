@@ -90,9 +90,15 @@ def poly_edges(room: dict[str, Any]):
 
 
 def room_margin(room: dict[str, Any], pt: tuple[float, float]) -> float:
-    """How far pt lies inside the room's floor (negative: outside)."""
+    """How far pt lies inside the room's floor (negative: outside); a poly room with a tunnel (tunnel_m) also has the
+    tunnel's floor."""
     if room["shape"] == "poly":
-        return min((pt[0] - a[0]) * n[0] + (pt[1] - a[1]) * n[1] for a, _b, n in poly_edges(room))
+        m = min((pt[0] - a[0]) * n[0] + (pt[1] - a[1]) * n[1] for a, _b, n in poly_edges(room))
+        t = tunnel(room)
+        if t:
+            (x0, x1), (y0, y1) = t
+            m = max(m, min(pt[0] - x0, x1 - pt[0], pt[1] - y0, y1 - pt[1]))
+        return m
     if room["shape"] == "circle":
         return room["radius"] - math.dist(pt, room["centre"])
     if room["shape"] == "strip":
@@ -268,7 +274,8 @@ def check(layout: dict[str, Any]) -> list[str]:
     for r in layout["rooms"]:
         pts = boundary(r, wall)
         if r.get("exit") and r["shape"] in ("rect", "poly"):  # the exit's own open edge meets the ramp, outside the hull by design
-            pts = [p for p in pts if p[1] > exit_edge(r)[1] + 0.05]
+            y_open = min(p[1] for p in r["points"]) if r["shape"] == "poly" else exit_edge(r)[1]   # the mouth (a
+            pts = [p for p in pts if p[1] > y_open + 0.05]   # tunnel's walls are its outside piece's, not the room's)
         out = [p for p in pts if not inside(poly, p)]
         if out:
             problems.append(f"{r['id']}: {len(out)} wall points outside the hull, e.g. ({out[0][0]:.2f}, {out[0][1]:.2f})")
@@ -441,8 +448,22 @@ def check_walk(layout: dict[str, Any]) -> list[str]:
     return problems
 
 
+def tunnel(room: dict[str, Any]):
+    """The raise step 2 (art#263): an exit poly room's entry tunnel, the mouth (its edge at the least y) run straight
+    on to `tunnel_y`, its width: ((x0, x1), (tunnel_y, mouth y)), or None. The tunnel is the one floor allowed past the
+    hull's outline (its piece is `outside`); check() still holds the room's own polygon inside the hull."""
+    if room["shape"] != "poly" or "tunnel_y" not in room:
+        return None
+    y0 = min(p[1] for p in room["points"])
+    xs = [p[0] for p in room["points"] if abs(p[1] - y0) < 1e-6]
+    return (min(xs), max(xs)), (room["tunnel_y"], y0)
+
+
 def exit_edge(room: dict[str, Any]) -> tuple[tuple[float, float], float]:
-    """The exit room's north (open) edge: ((x0, x1), y); a poly's is its edge at the least y."""
+    """The exit room's north (open) edge: ((x0, x1), y); a poly's is its edge at the least y, or its tunnel's front."""
+    t = tunnel(room)
+    if t:
+        return t[0], t[1][0]
     if room["shape"] == "poly":
         y0 = min(p[1] for p in room["points"])
         xs = [p[0] for p in room["points"] if abs(p[1] - y0) < 1e-6]

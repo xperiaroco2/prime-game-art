@@ -12,8 +12,10 @@ place = [
   ["skin_belly", [0.00, 0.00, 0.00], 0.0],
   ["skin_mouth", [0.00, 0.00, 0.00], 0.0],
   ["skin_cheeks", [0.00, 0.00, 0.00], 0.0],
-  ["ramp", [0.00, -7.10, 0.00], 0.0],
-  ["ramp_lights", [0.00, -7.10, 0.00], 0.0],
+  ["ramp", [0.00, -8.10, 0.00], 0.0],
+  ["ramp_lights", [0.00, -8.10, 0.00], 0.0],
+  # the raise step 2: the entry tunnel past the nose (y -7.1 to -8.1), its hood over the notch
+  ["mouth_tunnel", [0.00, 0.00, 0.00], 0.0],
   # details: the canopies in their fairings (outside only), the pods (rear ends at J's y 11.0 / 11.8)
   ["canopy_fairing_e", [0.00, 0.00, 0.00], 0.0],
   ["canopy_glass_e", [0.00, 0.00, 0.00], 0.0],
@@ -55,10 +57,10 @@ place = [
   ["ground_lamp", [10.13, 5.25, 0.00], 0.0],
   ["ground_lamp", [-5.56, 9.99, 0.00], 0.0],
   ["ground_lamp", [5.56, 9.99, 0.00], 0.0],
-  ["ground_lamp", [-1.75, -9.30, 0.00], 0.0],
-  ["ground_lamp", [1.75, -9.30, 0.00], 0.0],
-  ["ground_lamp", [-1.75, -11.00, 0.00], 0.0],
-  ["ground_lamp", [1.75, -11.00, 0.00], 0.0],
+  ["ground_lamp", [-1.75, -10.30, 0.00], 0.0],
+  ["ground_lamp", [1.75, -10.30, 0.00], 0.0],
+  ["ground_lamp", [-1.75, -12.00, 0.00], 0.0],
+  ["ground_lamp", [1.75, -12.00, 0.00], 0.0],
   # landing legs (hull 3-2), yawed outward (rebuild B: J's spots, off the corridors and the tip rooms): mounts under
   # the front belly, the wings outboard of the tip rooms and the stern; top = J's lowest belly under the mount + 0.1
   ["leg_front", [-4.60, -3.40, 0.00], 111.8],
@@ -727,7 +729,7 @@ max_mb = 15.0
 keys = [
   [[7.0, -16.0, 1.7], [0.0, -2.0, 2.6], 0.0],
   [[2.5, -13.0, 1.7], [0.0, -3.0, 2.8], 6.0],
-  [[0.0, -10.60, 1.92], [0.0, -3.40, 2.9], 4.0],
+  [[0.0, -11.60, 1.92], [0.0, -3.40, 2.9], 4.0],
   [[0.0, -6.20, 2.85], [0.0, -0.40, 2.6], 4.0],
   [[0.0, -2.60, 2.85], [0.0, 1.60, 2.6], 3.5],
   [[0.0, -1.00, 2.85], [-2.49, 1.35, 3.4], 3.0],
@@ -1042,3 +1044,10 @@ args = { part = "belly" }
 id = "skin_mouth"
 builder = "j_skin"
 args = { part = "mouth" }
+
+[[pieces]]
+id = "mouth_tunnel"                          # the raise step 2: the entry tunnel 1 m past the nose and its hood over
+builder = "mouth_tunnel"                     # the mouth's notch (ship_hull_j.mouth_tunnel)
+collide = true
+outside = true                               # the only hull piece past the footprint's lead edge (y -7.1): its front
+                                             # at the throat's tunnel_y -8.1

@@ -58,6 +58,10 @@ chamfer = [1.45, 0.55]                        # 1.45, then slanted 0.55 in to th
 roof_y = -5.5608                              # the ceiling from here aft (the front is J's open notch, no roof): the
                                               # first module line (5 of 0.810) with 0.15 m of hull over the roof
 exit = "ramp"                                # the only way in or out (5a's side hatch is dropped: one entrance, art#263)
+tunnel_y = -8.1                               # step 2 of the raise: the entry tunnel (exterior piece mouth_tunnel) runs the
+                                             # mouth straight on, its width (x +-1.65), from the nose edge (y -7.1) 1 m
+                                             # forward past the hull; its open front at tunnel_y is the exit edge (the
+                                             # ramp's hinge); the only floor allowed outside the hull (ship_layout)
 
 [[rooms]]
 id = "corridor_w"
@@ -203,8 +207,8 @@ depth_m = 0.9
 
 [ramp]                                       # the mouth ramp, north at the centre; it meets the ground
 width_m = 3.3                                # rebuild C: the mouth's width
-hinge = [0.0, -7.1]                          # at floor_h, the throat's front edge (J's nose edge; 5a: y -8)
-foot = [0.0, -11.6]                          # at ground_h (the raise: 1.2 m over 4.5 m, 14.9 deg, 4.66 m long; was -9.9)
+hinge = [0.0, -8.1]                          # at floor_h, the tunnel's open front (the raise step 2: was the nose edge -7.1)
+foot = [0.0, -12.6]                          # at ground_h (the raise: 1.2 m over 4.5 m, 14.9 deg, 4.66 m long; step 1 -11.6)
 thickness_m = 0.15
 
 # The hull's footprint: the hull P (lens step 2; tools/blender/ship_hull_shape.py, the union of convex parts at its
@@ -331,10 +335,10 @@ lamps = [
   [8.95, 1.43, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
   [-3.06, 5.42, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
   [3.06, 5.42, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
-  [-1.75, -9.3, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
-  [1.75, -9.3, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
-  [-1.75, -11.0, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
-  [1.75, -11.0, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [-1.75, -10.3, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [1.75, -10.3, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [-1.75, -12.0, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  [1.75, -12.0, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
   # light layer: the three orange belly pools became the six landing lights' spots (an 11th number: a spot's
   # angle in deg, pointing down); the edge light's pools are six cool spots under the edge (its own glow lights
   # nothing: its strip lights left hot spots on the fins); the nav lamps' tiny lights (ship.gd blinks them in game)
@@ -419,9 +423,9 @@ int_silver_c = {v = 0.55, r = 0.25, m = 0.45}
 # The capsule walk: up the ramp, through the hall into both tip rooms and back out. Points [x, y, h].
 [walk]
 # lens step 1: the corridor points on the axes (u 3.0 from the hall's centre), the lens rooms' 0.5 m past their centres
-points = [[0.0, -13.0, 0.0], [0.0, -11.6, 0.0], [0.0, -6.6, 1.2], [0.0, -2.2, 1.2], [-2.966, 0.052, 1.6],
+points = [[0.0, -14.0, 0.0], [0.0, -12.6, 0.0], [0.0, -6.6, 1.2], [0.0, -2.2, 1.2], [-2.966, 0.052, 1.6],
           [-10.994, 1.275, 1.2], [-2.966, 0.052, 1.2], [2.966, 0.052, 1.2], [10.994, 1.275, 1.2], [2.966, 0.052, 1.6],
-          [0.0, -2.2, 1.2], [0.0, -6.6, 1.2], [0.0, -11.6, 0.0], [0.0, -13.0, 0.0]]
+          [0.0, -2.2, 1.2], [0.0, -6.6, 1.2], [0.0, -12.6, 0.0], [0.0, -14.0, 0.0]]
 
 # Views: [name, title, eye [x, y, h], look [x, y, h], fov]; the plan view "top" (south up, as plan-3) is added by the
 # command and compared side by side with plan_ref.
