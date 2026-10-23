@@ -121,6 +121,8 @@ def main():
     ap.add_argument("--neck", default="", help="y0,y1 of the neck blend (default: from the neck's waist)")
     ap.add_argument("--crest-root", type=float, default=0.45, help="the crest root between the head centre and tip")
     ap.add_argument("--blade", default="0.10,0.16", help="the crest blade's half width: full weight, none")
+    ap.add_argument("--skull-margin", type=float, default=0.06,
+                    help="the crest weight fades in over this distance below the crest root's radius from the head centre")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -301,24 +303,66 @@ def main():
         pos[f"Crest{k + 1}"] = tuple(float(v) for v in root + (tip - root) * k / 3.0)
     b0, b1 = (float(v) for v in args.blade.split(","))
     seg = tip - root
-    infl, crest_n = [], 0
+    # the skull: a sphere about the head centre through the crest root; only what stands out of it is crest (the
+    # axis test alone also caught a strip of the back of the skull behind the root)
+    r_root = float(np.linalg.norm(root - head_c))
+    infl, crest_n, crest_w = [], 0, []
     for p in P:
         ch, nk, hd = G.neck_weights(float(p[1]), y0, ym, y1)
         t = float((p - root) @ seg / (seg @ seg))
         wc = G.smoothstep(0.0, 0.3, t) * (1.0 - G.smoothstep(b0, b1, abs(float(p[0])))) * hd
+        wc *= G.smoothstep(r_root - args.skull_margin, r_root, float(np.linalg.norm(p - head_c)))
+        crest_w.append(wc)
         crest_n += wc > 0.01
         c1, c2, c3 = G.crest_split(t)
         inf = [(j, w) for j, w in ((0, ch), (1, nk), (2, hd * (1.0 - wc)), (3, wc * c1), (4, wc * c2), (5, wc * c3))
                if w > 1e-4]
         infl.append(inf)
     (out / f"{args.name}_lively.glb").write_bytes(G.add_skin(data, pos, infl))
+    crest_view(out / "crest_weights.png", P, np.array(crest_w), head_c, r_root - args.skull_margin)
     report["rig"] = {"joints": {k: [round(v, 5) for v in pos[k]] for k in G.JOINTS}, "neck_y": [y0, ym, y1],
                      "waist": waist, "shoulder": shoulder, "chin_y": chin, "crest_root": root.round(5).tolist(),
-                     "crest_tip": tip.round(5).tolist(), "crest_vertices": int(crest_n), "blade": [b0, b1]}
+                     "crest_tip": tip.round(5).tolist(), "crest_vertices": int(crest_n), "blade": [b0, b1],
+                     "skull_radius": round(r_root - args.skull_margin, 5),
+                     "crest_weight_inside_skull": round(float(max([w for w, p in zip(crest_w, P)
+                                                                    if np.linalg.norm(p - head_c) <= r_root - args.skull_margin]
+                                                                   or [0.0])), 6)}
     report["sclera"] = f"{args.name}_sclera.png"
     (out / "lively.json").write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
     print(f"LIVELY rig neck {y0:.3f}/{ym:.3f}/{y1:.3f} waist {waist[0]:.3f} (w {waist[1]:.3f}) shoulder {shoulder[0]:.3f} "
           f"chin {chin:.3f} crest {root.round(3).tolist()} -> {tip.round(3).tolist()} ({crest_n} verts)", flush=True)
+
+
+def crest_view(path, P, w, head_c, r_skull, size=640):
+    """The crest weights' proof (1280 x 640): the head from its right side (-X, the face to the right)
+    and from behind (-Z), every vertex a
+    dot, grey shaded by depth, red by its crest weight, the skull sphere's outline in blue."""
+    img = np.full((size, 2 * size, 3), 60, np.uint8)
+    lo = P.min(0) - 0.05
+    span = float((P.max(0) - P.min(0)).max()) + 0.1
+    for k, (u, v, dpt, sgn) in enumerate(((2, 1, 0, -1.0), (0, 1, 2, -1.0))):
+        zb = np.full((size, size), -np.inf)
+        cu = ((P[:, u] - lo[u]) / span * (size - 1)).astype(int) if k == 0 else             ((-P[:, u] - (-P[:, u]).min() + 0.05) / span * (size - 1)).astype(int)
+        cv = (size - 1 - (P[:, v] - lo[v]) / span * (size - 1)).astype(int)
+        z = P[:, dpt] * sgn
+        zn = (z - z.min()) / (np.ptp(z) or 1.0)
+        for i in np.argsort(z):
+            for du in (0, 1):
+                for dv in (0, 1):
+                    x, y = cu[i] + du, cv[i] + dv
+                    if 0 <= x < size and 0 <= y < size and z[i] >= zb[y, x]:
+                        zb[y, x] = z[i]
+                        g = 70 + 150 * zn[i]
+                        img[y, x + k * size] = (g + (255 - g) * w[i], g * (1 - w[i]), g * (1 - w[i]))
+        # the skull sphere's outline (its silhouette in this view)
+        cx = (head_c[u] - lo[u]) / span * (size - 1) if k == 0 else (-head_c[u] - (-P[:, u]).min() + 0.05) / span * (size - 1)
+        cy = size - 1 - (head_c[v] - lo[v]) / span * (size - 1)
+        rr = r_skull / span * (size - 1)
+        for a in np.linspace(0, 2 * math.pi, 720):
+            x, y = int(cx + rr * math.cos(a)), int(cy + rr * math.sin(a))
+            if 0 <= x < size and 0 <= y < size:
+                img[y, x + k * size] = (60, 120, 255)
+    G.write_png(path, 2 * size, size, img.tobytes())
 
 
 main()
