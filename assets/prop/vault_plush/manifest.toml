@@ -10,9 +10,10 @@ licence = "owned-paid-output"
 licence_url = "https://www.meshy.ai/terms-of-use"
 public_repo_ok = true
 ai_generated = true
-approved_by = []
-approved_at = ""
-approval_pr = ""
+# the engineer approved the look step by step on art#297 (the last: 2026-10-23, the smile kept, "Роби крок 4")
+approved_by = ["xperiaroco2"]
+approved_at = 2026-10-23
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/305"
 
 [source]
 service = "meshy"
