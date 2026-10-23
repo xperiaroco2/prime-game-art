@@ -29,7 +29,7 @@ func _run() -> void:
 	_apply_fix(job.get("fix", {}))
 	var ground := MeshInstance3D.new()  # a floor at y = 0 to judge the feet against (sliding, floating, sinking)
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(8.0, 8.0)
+	plane.size = Vector2(60.0, 60.0)
 	var gm := StandardMaterial3D.new()
 	gm.albedo_color = Color(0.33, 0.34, 0.36)
 	gm.roughness = 0.9
