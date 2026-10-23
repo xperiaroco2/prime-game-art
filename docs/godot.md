@@ -1064,6 +1064,30 @@ pilot's static premium heads"):
       left and right, the springs' largest swing; row 2: the eyes alone left, right and down, the breath's two
       ends) and `eyes_<tag>.jpg` (both eyes at 4x: rest, the head turns, the gazes).
 
+- **On the shared body (B1, 2026-10-23):** `tools/blender/alien_char_run.py [--heads] [--tag body_v2]` builds each
+  lively head on the S4b body (`<raw>/review/char/alien-parts-kit/S4b/build/alien_body.blend`, the contract
+  skeleton, 10 clips) with `alien_char_build.py` (#287's weld; pure maths in `alien_char_geom.py`), then
+  `godot/alien/char_shots.gd` in the off-screen window and the videos; output under
+  `<raw>/research/2026-10-22-roster/design/pilot3d/<tag>/`, never overwritten (a head folder with a GLB, or a
+  `shots.json`, is refused).
+  - **Fit:** the head's scale puts its neck waist (lively.json `rig.waist`, its x extent) on the body's 24-vertex neck
+    ring's x extent; a median radius there is pulled in by the mouth's inner surfaces and made the head 1.4 times
+    too big (the stopped body_v1 run). The chameleon is 1.884 m tall (scale 0.345, head 0.33 m wide against 0.38 m
+    shoulders), the axolotl 1.759 m (scale 0.314). Above the cut plus `NECK_BAND` (3 cm) the head is only scaled and
+    moved; the band's radii blend onto the ring's ellipse; the glTF import's seam-split vertices are merged over the
+    band (positions unchanged) so the band, the cut loop and the bridge are one surface.
+  - **The body's maps:** S4b's own UV is every face on the whole square, so the build unwraps the body (smart
+    project, 60 degrees) for its own albedo, mask and accent (`<head>_body_*.png`), painted from the head's skin
+    base and, over 5 cm below the ring, the head's colour at the cut; the map's background is the values' mean (a
+    black one bled through the mipmaps as a speckle). The u1 shield (`alien_char_geom.shield`) is off by default
+    (`--shield`): on this body it made a pale patch low on the belly.
+  - **Godot:** `alien_static.apply_body()` gives the `<head>_body_skin` surface a copy of the head's ShaderMaterial
+    (one material set: `set_colours` recolours both); `alien_lively.gd` turns the Neck, Head and spring bones on top
+    of their rest (`rest_turn`: the contract skeleton's bones rest turned, the busts' did not).
+  - **`godot-check --strict-contract --humanoid --textured`** passes everything but the three rules written for the
+    Ultimate Modular characters that the M5 alien failed too: `facing_plus_z` and `eye_pupils` (no `_eyes` part, not
+    the UM bone names) and `pack_floor` (10 clips; no `.export.json`).
+
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and

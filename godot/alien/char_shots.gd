@@ -2,7 +2,7 @@ extends SceneTree
 ## The pilot heads on the shared body (art #196, B1) in an off-screen window (the runner's _godot.window();
 ## tools/blender/alien_char_run.py stages the GLBs and writes the job): per head
 ## - gate_<head>.jpg: the approved static v5 head (placed by the build's fit) | the welded head at rest, from the
-##   front, left, back and right in an orthographic view, the pixel diff over the rows above the cut + 2 cm;
+##   front, left, back and right in an orthographic view, the pixel diff over the rows above the neck's morph band (the cut + NECK_BAND);
 ## - turn_<head>.jpg: front, 3/4, side, back under the studio light, two colour presets (E1, the build's own paint,
 ##   and the job's preset), the standing idle's first frame, the head at rest;
 ## - seam_<head>.jpg: the neck seam close (a 0.16 m frame) from the four sides;
@@ -69,7 +69,7 @@ func _anim(node: Node) -> AnimationPlayer:
 		return null
 	var ap: AnimationPlayer = found[0]
 	for n: String in ap.get_animation_list():
-		if n.to_lower().contains("idle"):
+		if n.get_slice("|", n.get_slice_count("|") - 1).to_lower() in ["idle", "idle_loop"]:  # not Crouch_Idle
 			ap.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 			ap.play(n)
 			ap.get_animation(n).loop_mode = Animation.LOOP_LINEAR
@@ -110,6 +110,7 @@ func _run() -> void:
 			return
 		var rep := {"materials": mats.size()}
 		var cut: float = h["cut_z"]
+		var band: float = h["band"]
 		var top: float = fit["top_z"]
 		var axis := Vector3(dst.x, 0.0, dst.z)
 		# the gate: static v5 vs the welded head, both at rest, no gaze, no pose (the rest skeleton)
@@ -124,14 +125,14 @@ func _run() -> void:
 			ch.visible = true
 			st.visible = false
 			var b_img: Image = await _ortho(hc, span, yaw)
-			var rows: int = int(SQ.y * (0.5 - ((cut + 0.02) - hc.y) / span))  # the image rows above cut + 2 cm
+			var rows: int = int(SQ.y * (0.5 - ((cut + band) - hc.y) / span))  # the rows above the neck's morph band
 			gate[str(int(yaw))] = _diff(a_img, b_img, rows)
 			gcells.append(a_img)
 			gcells.append(b_img)
 		st.visible = false
 		rep["gate"] = gate
 		_sheet(gcells, SQ, 8).save_jpg(out.path_join("gate_%s.jpg" % name), 0.92)
-		print("CHAR %s gate (front, left, back, right; mean abs /255, share over 8/255, rows above cut+2cm): %s"
+		print("CHAR %s gate (front, left, back, right; mean abs /255, share over 8/255, rows above the band): %s"
 			% [name, JSON.stringify(gate)])
 		# the lively controller on the whole character; the idle clip
 		var live = Lively.new(ch, mats, lively, sclera)
@@ -194,7 +195,9 @@ func _run() -> void:
 				if ap != null:
 					ap.advance(1.0 / FPS)
 				live.step(1.0 / FPS)
-				best = maxf(best, live.crest_swing() if live.has_method("crest_swing") else 0.0)
+				for sp: Dictionary in live.springs:
+					var sv: Vector4 = sp["s"]
+					best = maxf(best, rad_to_deg(maxf(absf(sv.x), absf(sv.y))))
 				var img: Image = await _frame(vc, 1.3, 30.0)
 				img.save_png(dir.path_join("%04d.png" % i))
 		_marker.visible = false

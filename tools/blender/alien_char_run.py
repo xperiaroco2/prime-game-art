@@ -36,8 +36,8 @@ HEADS = {"chameleon": {"lively": PILOT / "lively" / "v6", "sheet": "m01-chameleo
 def refusal(out: Path, heads: list[str], build: bool, shots: bool) -> str | None:
     """Why a run must not start (a run never overwrites in the raw folder), or None."""
     for h in heads if build else []:
-        if (out / h).exists():
-            return f"{out / h} exists: pick a new --tag"
+        if (out / h / f"{h}_char.glb").exists():
+            return f"{out / h} holds a build: pick a new --tag"
     if shots and (out / "shots.json").exists():
         return f"{out / 'shots.json'} exists: pick a new --tag"
     return None
@@ -74,7 +74,7 @@ def main() -> int:
         lv = HEADS[h]["lively"]
         b = bases(h)
         if not args.no_build:
-            hd.mkdir(parents=True)
+            hd.mkdir(parents=True, exist_ok=True)
             (hd / "bases.json").write_text(json.dumps(b, indent=1), encoding="utf-8", newline="\n")
             res = blender.run_script("alien_char_build.py", [
                 "--head", h, "--lively", str(lv / f"{h}_lively.glb"), "--lively-json", str(lv / "lively.json"),
@@ -98,7 +98,7 @@ def main() -> int:
             "plain": str(static / f"{h}_albedo_plain.png"), "accent": str(SLOTS / "maps" / f"{h}_accent.png"),
             "gill": str(SLOTS / "maps" / f"{h}_gill.png"), "body_albedo": str(hd / f"{h}_body_albedo.png"),
             "body_mask": str(hd / f"{h}_body_mask.png"), "body_accent": str(hd / f"{h}_body_accent.png"),
-            "bases": b, "params": slots_job[h]["params"], "fit": char["fit"], "cut_z": char["ring"]["z"] + 0.008,
+            "bases": b, "params": slots_job[h]["params"], "fit": char["fit"], "cut_z": char["fit"]["dst"][2], "band": char["neck_band"],
             "sheet2d": str(LINEUP / HEADS[h]["sheet"]), "preset": HEADS[h]["preset"]}
     if args.no_shots:
         return 0 if ok else 1

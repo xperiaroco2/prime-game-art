@@ -8,7 +8,7 @@
 The weld is #287's (`alien_pilot_char.py`, never merged; its vertex-index fix kept), on the lively head instead of
 the face-rigged one:
 1. Fit: the head's neck waist (its narrowest slab between its Neck joint and just above its Head joint) is scaled
-   onto the body's neck ring (`alien_char_geom.fit_scale`: the median radii) and set on the ring's axis GAP above it.
+   onto the body's neck ring (`alien_char_geom.fit_scale`: the x half-widths) and set on the ring's axis GAP above it.
    No turn (both face -Y). The head above the band is only scaled and moved: never reshaped.
 2. Cut and morph: the skin below the waist (the bust) is deleted; over NECK_BAND above the cut each vertex's
    distance from the axis blends toward the ring's ellipse at its angle, the boundary flat on the cut.
@@ -31,6 +31,7 @@ import argparse
 import json
 import math
 import sys
+import time
 from pathlib import Path
 
 import bmesh
@@ -50,8 +51,16 @@ TEX = 1024  # the body's maps
 TRUNK = ("Hips", "Spine", "Chest", "UpperChest", "Neck", "Head")
 
 
+_T0 = time.time()
+_PROGRESS = []  # the progress file (<out>/progress.log): run_script shows Blender's output only at its end
+
+
 def log(msg):
-    print(f"CHAR {msg}", flush=True)
+    line = f"CHAR {msg}"
+    print(line, flush=True)
+    for p in _PROGRESS:
+        with open(p, "a", encoding="utf-8", newline="\n") as f:
+            f.write(f"{time.time() - _T0:7.1f}s {line}\n")
 
 
 def world(obj):
@@ -107,7 +116,9 @@ def vert_uv(me):
 def raster(me, values, size):
     """Per-vertex values (n, c) painted onto the mesh's active UV (barycentric per triangle), the gutter grown 4 px."""
     c = values.shape[1]
-    img = np.zeros((size, size, c), np.float32)
+    # the background the values' mean (not black): the body's many small islands would bleed black into their
+    # borders through the mipmaps (body_v2's first shots: a dark speckle over the whole body)
+    img = np.tile(values.mean(0).astype(np.float32), (size, size, 1))
     got = np.zeros((size, size), bool)
     me.calc_loop_triangles()
     luv = np.empty(len(me.loops) * 2)
@@ -135,7 +146,7 @@ def raster(me, values, size):
         v = l0[m, None] * val[0] + l1[m, None] * val[1] + l2[m, None] * val[2]
         img[gy[m], gx[m]] = v
         got[gy[m], gx[m]] = True
-    for _ in range(4):
+    for _ in range(8):
         grow = img.copy()
         g2 = got.copy()
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
@@ -172,13 +183,24 @@ def main():
     for k in ("--head", "--lively", "--lively-json", "--body", "--albedo", "--mask", "--accent", "--bases",
               "--out"):
         ap.add_argument(k, required=True)
+    ap.add_argument("--shield", action="store_true")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     head, out = a.head, Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
+    _PROGRESS.append(out / "progress.log")
+    log("start")
     rep = {"head": head, "lively": a.lively, "body": a.body}
     bases = json.loads(Path(a.bases).read_text(encoding="utf-8"))  # {"skin", "lips", "detail", "front"} sRGB
     bpy.ops.wm.open_mainfile(filepath=a.body)
     arm, body = bpy.data.objects["CharacterArmature"], bpy.data.objects["Body"]
+    # the body's own UV is every face on the whole 0..1 square (S4b's plain material needs none): unwrap it for its
+    # maps (islands by angle; the head's UV is untouched)
+    select_only([body], active=body)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(angle_limit=math.radians(60.0), island_margin=0.004, scale_to_bounds=True)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    log("body unwrapped")
     bco = world(body)
     bm = bmesh.new()
     bm.from_mesh(body.data)
@@ -202,6 +224,7 @@ def main():
     near = bco[(np.abs(bco[:, 2] - sh_z) < 0.03) & (np.abs(bco[:, 0]) < arm.data.bones["LeftUpperArm"].head_local.x + 0.05)]
     shoulder_w = float(2 * np.abs(near[:, 0]).max())
 
+    log("step the head")
     # the head
     bpy.ops.import_scene.gltf(filepath=a.lively)
     for o in [o for o in bpy.data.objects if o.name.startswith("Icosphere")]:
@@ -212,17 +235,16 @@ def main():
     me.attributes.new("head_n", "FLOAT_VECTOR", "CORNER").data.foreach_set("vector", corner_normals(me).ravel())
     sco = world(skin)
     jn = {b.name: larm.matrix_world @ b.head_local for b in larm.data.bones}
-    best = None
-    for zz in np.arange(jn["Neck"].z, jn["Head"].z + 0.12, 0.005):
-        sl = sco[np.abs(sco[:, 2] - zz) < 0.01]
-        if len(sl) < 12:
-            continue
-        c = sl[:, :2].mean(0)
-        r = float(np.median(np.hypot(*(sl[:, :2] - c).T)))
-        if best is None or r < best[1]:
-            best = (float(zz), r, c)
-    z_w, r_w, c_w = best
-    s = G.fit_scale(r_w, float(np.median(ring_rad)))
+    # the waist: the lively build's own (lively.json rig.waist, glTF y = Blender z here), measured again on the mesh
+    # by its x extent and its extents' middle: a median radius there is pulled in by the mouth's inner surfaces
+    # (body_v1's 0.109 against an outer half-width of 0.164, a head 1.4 times too big)
+    lj = json.loads(Path(a.lively_json).read_text(encoding="utf-8"))
+    z_w = float(lj["rig"]["waist"][0])
+    sl = sco[np.abs(sco[:, 2] - z_w) < 0.01]
+    r_w = float(np.ptp(sl[:, 0]) / 2)
+    c_w = (sl[:, :2].min(0) + sl[:, :2].max(0)) / 2
+    ring_hx = float(np.ptp(ring[:, 0]) / 2)
+    s = G.fit_scale(r_w, ring_hx)
     src = (float(c_w[0]), float(c_w[1]), z_w)
     dst = (float(ring_c[0]), float(ring_c[1]), ring_z + GAP)
     T = Matrix.Translation(dst) @ Matrix.Scale(s, 4) @ Matrix.Translation([-v for v in src])
@@ -236,11 +258,12 @@ def main():
     sco = world(skin)
     hw = sco[sco[:, 2] > ring_z + 0.05]
     head_w = float(hw[:, 0].max() - hw[:, 0].min())
-    rep["fit"] = {"scale": round(s, 5), "waist_z": round(z_w, 4), "waist_r": round(r_w, 4), "src": src, "dst": dst,
+    rep["fit"] = {"scale": round(s, 5), "ring_half_x": round(ring_hx, 4), "waist_slab": len(sl), "waist_z": round(z_w, 4), "waist_r": round(r_w, 4), "src": src, "dst": dst,
                   "top_z": round(float(sco[:, 2].max()), 4), "head_width": round(head_w, 4),
                   "shoulder_width": round(shoulder_w, 4), "head_to_shoulder": round(G.head_ratio(head_w, shoulder_w), 3)}
     log(f"fit {rep['fit']}")
 
+    log("step cut and morph")
     # cut and morph (each vertex's index before the cut in a layer: bmesh renumbers after a delete, #287's fix)
     cut = ring_z + GAP
     rel = sco[:, :2] - ring_c
@@ -258,6 +281,10 @@ def main():
     for v in bm.verts:
         v[oid] = v.index
     dead = [f for f in bm.faces if any(sco[v.index, 2] < cut - 1e-6 for v in f.verts)]
+    n0 = len(bm.verts)
+    bmesh.ops.remove_doubles(bm, verts=[v for v in bm.verts if sco[v[oid], 2] < cut + NECK_BAND + 0.03], dist=1e-6)
+    rep["band_merged"] = n0 - len(bm.verts)
+    dead = [f for f in bm.faces if any(sco[v[oid], 2] < cut - 1e-6 for v in f.verts)]
     bmesh.ops.delete(bm, geom=dead, context="FACES")
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
     moved = 0
@@ -271,6 +298,7 @@ def main():
     bm.verts.layers.int.remove(oid)
     bm.to_mesh(me)
     bm.free()
+    rep["neck_band"] = NECK_BAND
     rep["cut_faces_deleted"] = len(dead)
     rep["band_moved"] = int(moved)
     sco = world(skin)
@@ -282,18 +310,22 @@ def main():
     huv = vert_uv(me)
     bm = bmesh.new()
     bm.from_mesh(me)
-    cut_idx = sorted({v.index for e in bm.edges if e.is_boundary for v in e.verts})
+    cut_idx = sorted({v.index for e in bm.edges if e.is_boundary for v in e.verts if v.co.z < cut + 0.002})
+    other = sum(1 for e in bm.edges if e.is_boundary) - sum(1 for e in bm.edges if e.is_boundary and all(v.co.z < cut + 0.002 for v in e.verts))
     bm.free()
     cut_ang = np.array([G.angle(sco[i, 0], sco[i, 1], *ring_c) for i in cut_idx])
     cut_rgb = sample(alb, huv[cut_idx])[:, :3]
     cut_front = sample(acc, huv[cut_idx])[:, 2]
     head_mask = np.median(sample(msk, huv[cut_idx])[:, :3], axis=0)
     co_ = np.argsort(cut_ang)
+    rep["cut_loop"] = {"vertices": len(cut_idx), "other_boundary_edges": other}
+    log(f"cut loop {rep['cut_loop']}")
 
     def at_cut(phi, vals):
         aa, vv = cut_ang[co_], vals[co_]
         return np.interp(phi, np.concatenate([aa - 2 * math.pi, aa, aa + 2 * math.pi]), np.tile(vv, 3))
 
+    log("step the body's maps")
     # the body's maps
     bme = body.data
     bnorm = np.empty(len(bme.vertices) * 3)
@@ -303,7 +335,9 @@ def main():
     tg = {body.vertex_groups[n].index for n in TRUNK if n in body.vertex_groups}
     for v in bme.vertices:
         trunk[v.index] = sum(g.weight for g in v.groups if g.group in tg)
-    front = np.array([G.shield(p[0], p[2], n[1], tr) for p, n, tr in zip(bco, bnorm, trunk)])
+    # the u1 shield is off: on this body it landed as a pale patch low on the belly (body_v2's first shots), not the
+    # 2D's pale throat; the throat's pale comes from the head's cut over SEAM_FADE (below). --shield turns it on.
+    front = np.array([G.shield(p[0], p[2], n[1], tr) for p, n, tr in zip(bco, bnorm, trunk)]) if a.shield         else np.zeros(len(bco))
     skin_c, front_c = np.array(bases["skin"][:3]), np.array(bases["front"][:3])
     col = skin_c[None] * (1 - front[:, None]) + front_c[None] * front[:, None]
     bphi = np.array([G.angle(p[0], p[1], *ring_c) for p in bco])
@@ -340,6 +374,7 @@ def main():
     nt.links.new(nm.outputs["Normal"], bsdf.inputs["Normal"])
     bsdf.inputs["Roughness"].default_value = float(head_mask[1])
 
+    log("step weights: the head")
     # weights: the head's Chest is UpperChest; the band blends to the ring's mean
     if "Chest" in skin.vertex_groups:
         skin.vertex_groups["Chest"].name = "UpperChest"
@@ -369,6 +404,7 @@ def main():
         blended += 1
     rep["neck_blended"] = blended
 
+    log("step weld")
     # weld
     for o in (skin, body):
         uvs = o.data.uv_layers
@@ -426,6 +462,7 @@ def main():
     skin.name = me.name = f"{head}_char"
     log(f"bridge {made} (cut {len(cut_idx)}, ring {len(ring_idx)})")
 
+    log("step the skeleton: the sp")
     # the skeleton: the springs join the body's armature under Head; the eye bones on the head's eyes
     for b in larm.data.bones:
         if b.name in ("Chest", "Neck", "Head"):
@@ -441,7 +478,6 @@ def main():
     for n in ("L_Chest", "L_Neck", "L_Head"):
         if n in eb:
             eb.remove(eb[n])
-    lj = json.loads(Path(a.lively_json).read_text(encoding="utf-8"))
     fitted = G.fit_lively(lj, s, src, dst)
     for side, bone in (("left", "LeftEye"), ("right", "RightEye")):
         c = Vector(G.gltf_to_blender(fitted["eyes"][side]["centre"]))
