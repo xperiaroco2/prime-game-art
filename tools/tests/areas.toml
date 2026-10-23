@@ -95,6 +95,10 @@ tests = ["test_alien_fit_*"]
 sources = ["tools/blender/alien_mouth_fit_geom.py", "tools/blender/alien_mouth_fit.py"]  # M19's AI mouth fit (#196); before light's alien_*
 tests = ["test_alien_mouth_fit_*"]
 
+[area.alien_colour]
+sources = ["tools/blender/alien_colour_geom.py", "tools/web/alien_colour/*"]  # the static heads' colour slots' maths and its three.js copy (#196); before light's alien_*
+tests = ["test_alien_colour_slots*"]
+
 [area.alien_texture]
 sources = ["tools/blender/alien_texture_geom.py"]  # the alien skin's texture formulas (#196); before light's alien_*
 tests = ["test_alien_texture_*"]
