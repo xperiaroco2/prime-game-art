@@ -61,6 +61,7 @@ class ShipLightTest(unittest.TestCase):
         for pid, lamp in (("nav_red", min(nav, key=lambda q: q[0])), ("nav_green", max(nav, key=lambda q: q[0])),
                           ("nav_white", tail[0])):
             (at, _), = placed(pid)
+            at = (at[0], at[1], at[2] + LAYOUT["deck"].get("lift_m", 0.0))   # the raise: the piece is lifted, its light is real
             self.assertLess(math.dist(at, lamp[:3]), 0.6, f"{pid}'s light is not at its lamp")
             self.assertLessEqual(lamp[4], 2.0, f"{pid}'s light is not a tiny one")
         red, green = sorted(nav)
@@ -77,7 +78,7 @@ class ShipLightTest(unittest.TestCase):
             self.assertAlmostEqual(h, bottom, delta=0.01, msg=f"landing lamp ({x}, {y}) not on the belly")
             spot = min(spots, key=lambda q: math.hypot(q[0] - x, q[1] - y))
             self.assertLess(math.hypot(spot[0] - x, spot[1] - y), 0.2)
-            self.assertLess(spot[2], h - 0.09, "the spot is not under the lens")
+            self.assertLess(spot[2], h + LAYOUT["deck"].get("lift_m", 0.0) - 0.09, "the spot is not under the lens")
             self.assertGreater(spot[10], 0.0, "not a spot")
         old = [(0.0, -1.5), (-5.0, 0.0), (5.0, 0.0)]   # details 1: the three orange belly pools' spots, at h 0.2
         back = [q for q in group("pool") if abs(q[2] - 0.2) < 0.05 and any(math.hypot(q[0] - x, q[1] - y) < 0.1
@@ -90,7 +91,7 @@ class ShipLightTest(unittest.TestCase):
         self.assertEqual(len(edge), 6)
         for lamp in edge:
             self.assertGreater(lamp[10], 0.0)
-            self.assertLess(lamp[2], 1.5, "an edge pool's spot above the edge (the fins' hot spots)")
+            self.assertLess(lamp[2], 1.5 + LAYOUT["deck"].get("lift_m", 0.0), "an edge pool's spot above the edge (the fins' hot spots)")
 
     def test_family_materials_take_their_familys_row_and_light_nothing(self) -> None:
         """details 3b (ship.gd _entry): a material named "<family>__<x>" without its own [light.mats] row takes its
