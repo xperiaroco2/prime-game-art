@@ -179,6 +179,7 @@ A_JOINTS = {"Root": [0, 0, 0], "Hips": [0, 0.9, 0], "Head": [0, 1.45, 0.02], "Le
             "LeftFoot": [0.1, 0.08, 0.0], "RightFoot": [-0.1, 0.08, 0.0], "LeftToes": [0.1, 0.02, 0.1],
             "RightToes": [-0.1, 0.02, 0.1]}
 A_CONTRACT = {**CONTRACT, "body": {**CONTRACT["body"], "plasticine_height_max_m": 2.0},
+              "kinds": {**CONTRACT["kinds"], "alien": {"bones": "all"}},
               "budgets": {"limits": {"texture_character_px": 2048, "surfaces_per_character_cap": 4,
                                      "surfaces_per_character_target": 2}}, "skeleton": {"weighted": ["Hips", "Head", "LeftHand", "RightHand", "LeftFoot", "RightFoot"]}}
 
@@ -264,6 +265,8 @@ class AlienProfileTest(unittest.TestCase):
         got = alien(alien_dump())["alien_extra_bones"]
         self.assertEqual(got["status"], "pass", got)
         self.assertIn("no extra bone", got["detail"])
+        got = alien(alien_dump(), strict_contract=True)["alien_extra_bones"]  # B6: strict with no extra bone passes
+        self.assertEqual(got["status"], "pass", got)
         d = alien_dump()
         d["skeletons"][0]["bones"] += ["Crest1", "Crest2", "Crest3"]
         got = alien(d)["alien_extra_bones"]
@@ -271,7 +274,12 @@ class AlienProfileTest(unittest.TestCase):
         self.assertIn("3 extra: the crest springs ['Crest1', 'Crest2', 'Crest3']", got["detail"])
         self.assertIn("all in whole declared spring sets", got["detail"])
         got = alien(d, strict_contract=True)["alien_extra_bones"]
-        self.assertEqual(got["status"], "fail", got)
+        self.assertEqual(got["status"], "fail", got)  # [kinds.alien] bones = "all"
+        subset = {**A_CONTRACT, "kinds": {**A_CONTRACT["kinds"], "alien": {**A_CONTRACT["kinds"]["alien"], "bones": "subset"}}}
+        got = {c["check"]: c for c in _godot.evaluate(d, {**expect(), "source": "x_char.glb", "parts": ["x_char"],
+               "bones": list(A_BONES), "bone_parents": {}, "rest_heads_m": {}, "height_m": None, "animations": {}},
+               subset, [], textured=True, profile="alien", strict_contract=True)}["alien_extra_bones"]
+        self.assertEqual(got["status"], "warn", got)  # the severity follows the contract's rule
         d["skeletons"][0]["bones"].remove("Crest3")
         got = alien(d)["alien_extra_bones"]
         self.assertEqual(got["status"], "fail")

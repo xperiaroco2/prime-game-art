@@ -370,7 +370,7 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
     c.add("skeleton_bones", not missing and not extra and len(got) == len(want_bones),
           f"{len(got)} bones, the rig has {len(want_bones)}" + (f"; missing {missing}" if missing else "") + (f"; extra {extra}" if extra else ""))
     if profile == "alien":
-        _alien_extra_bones(c, got, renamed, strict_contract)
+        _alien_extra_bones(c, got, renamed, strict_contract, contract)
     if expect.get("bone_parents") and got:
         wrong = []
         for bone, parent in expect["bone_parents"].items():
@@ -591,10 +591,13 @@ def _facing_alien(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], ren
           f"{'+X' if left > 0 else '-X'}, left eye at {'+X' if eye_l[0] > eye_r[0] else '-X'}")
 
 
-def _alien_extra_bones(c: Checks, got: list[str], renamed: dict[str, str], strict_contract: bool = False) -> None:
+def _alien_extra_bones(c: Checks, got: list[str], renamed: dict[str, str], strict_contract: bool = False,
+                       contract: dict[str, Any] | None = None) -> None:
     """B4 review (a): every bone beyond the contract profile's, named, and whether it belongs to a whole ALIEN_SPRING_SETS
     set. docs/contract.md allows no extra bone and the engineer has not ruled on the springs: whole declared sets are a
-    warning, a failure under strict_contract (as contract_height); a stray bone or a set in part always fails."""
+    warning, under strict_contract the severity the contract's alien kind gives its bone rule (`[kinds.alien]` `bones =
+    "all"`: exactly the profile's bones, so "fail"; read as contract_height reads `rules["height"]`); a stray bone or a
+    set in part always fails."""
     profile_bones = {renamed.get(b, b) for b in _contract.profile_parents(_contract.load_profile())}
     extra = [b for b in got if b not in profile_bones]
     used = {n: [b for b in bones if b in extra] for n, bones in ALIEN_SPRING_SETS.items()}
@@ -602,7 +605,9 @@ def _alien_extra_bones(c: Checks, got: list[str], renamed: dict[str, str], stric
     partial = sorted(n for n, v in used.items() if len(v) != len(ALIEN_SPRING_SETS[n]))
     stray = [b for b in extra if not any(b in v for v in ALIEN_SPRING_SETS.values())]
     named = "; ".join(f"the {n} springs {v}" for n, v in used.items())
-    severity = "fail" if strict_contract or stray or partial else "warn"
+    rules = (contract or _contract.load_contract())["kinds"]["alien"]
+    strict = "fail" if rules["bones"] == "all" else "warn"  # "subset" allows bones beyond the profile's
+    severity = "fail" if stray or partial else (strict if strict_contract else "warn")
     c.add("alien_extra_bones", not extra,
           f"alien profile: {len(got)} bones: {len(got) - len(extra)} of the contract's {len(profile_bones)}"
           + (f" and {len(extra)} extra: {named or '-'}" if extra else ", no extra bone")
