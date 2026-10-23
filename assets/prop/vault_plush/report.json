@@ -1,0 +1,153 @@
+{
+  "asset": "vault_plush",
+  "built_by": "tools/blender/plush_run.py --size 1024 --tag=_final --blend <raw>/2026-10-22-vault-plush-3d-2/game_final/vault_plush.blend",
+  "mesh": {
+    "triangles": 3999,
+    "vertices": 2009,
+    "size_m": [
+      0.2091,
+      0.2948,
+      0.3003
+    ],
+    "budget_class": "hero",
+    "budget_triangles": 4000,
+    "front": "+Z",
+    "origin": "floor, under the footprint's middle"
+  },
+  "textures_px": 1024,
+  "gltf_validator": {
+    "numErrors": 0,
+    "numWarnings": 0,
+    "numInfos": 0,
+    "numHints": 0
+  },
+  "mouth": {
+    "crease_angles": 57,
+    "nose_m": [
+      -0.0002,
+      -0.1397,
+      0.1657
+    ],
+    "line_x_m": [
+      -0.0432,
+      0.043
+    ],
+    "line_z_m": [
+      0.1328,
+      0.1655
+    ],
+    "line_length_m": 0.1577,
+    "vertices_moved": 502,
+    "max_shift_mm": 6.31,
+    "mean_shift_mm": 1.422
+  },
+  "paint": {
+    "colours": {
+      "orange": [
+        180,
+        34,
+        0
+      ],
+      "brown": [
+        60,
+        26,
+        19
+      ],
+      "pink": [
+        200,
+        122,
+        115
+      ],
+      "vein": [
+        196,
+        52,
+        48
+      ],
+      "thread": [
+        34,
+        18,
+        12
+      ]
+    },
+    "regions": {
+      "tail_stalk_faces": 2028,
+      "tail_pompom_faces": 796,
+      "antenna_ball_faces": 3194,
+      "brown_faces": 13310,
+      "faces": 31009,
+      "small_islands_flipped_faces": 156,
+      "pompom_radius_m": 0.0223,
+      "balls": [
+        {
+          "centre": [
+            -0.0581,
+            -0.0459,
+            0.2797
+          ],
+          "radius_m": 0.0247,
+          "stalk_radius_m": 0.0085
+        },
+        {
+          "centre": [
+            0.0582,
+            -0.0454,
+            0.2801
+          ],
+          "radius_m": 0.0247,
+          "stalk_radius_m": 0.0086
+        },
+        {
+          "centre": [
+            0.0006,
+            0.1316,
+            0.0232
+          ],
+          "radius_m": 0.0224,
+          "stalk_radius_m": 0.011
+        }
+      ]
+    },
+    "eyes": [
+      {
+        "centre": [
+          -0.03891,
+          -0.07547,
+          0.18525
+        ],
+        "side": -1.0,
+        "faces": 344,
+        "pupil_faces": 22,
+        "eye_radius_m": 0.0198,
+        "pupil_radius_m": 0.004
+      },
+      {
+        "centre": [
+          0.03729,
+          -0.0764,
+          0.18542
+        ],
+        "side": 1.0,
+        "faces": 287,
+        "pupil_faces": 25,
+        "eye_radius_m": 0.02,
+        "pupil_radius_m": 0.0042
+      }
+    ],
+    "smile_slices": 789
+  },
+  "godot": {
+    "version": "4.7.2",
+    "import": "ok (headless --import, then loaded in the off-screen shot window)",
+    "gpu_ms_hand_view_1280x720": {
+      "shells_0": 0.584,
+      "shells_12": 0.719
+    },
+    "shells": 12
+  },
+  "spend": {
+    "openai_usd": 0.1027,
+    "meshy_credits": 70,
+    "note": "both Meshy models (with and without seams) and both sheets"
+  },
+  "rebuilt_identical": "plush_run.py --size 1024 --tag=_check after the review's cleanup: the GLB and the mask byte-identical (sha256 9af88a34..., 6503efb4...)"
+}
