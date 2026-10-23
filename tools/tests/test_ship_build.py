@@ -45,8 +45,9 @@ class ShipBuildTest(unittest.TestCase):
         half = layout["size"]["span_max_m"] / 2
         self.assertAlmostEqual(top["max"][0], half, delta=0.05)
         self.assertAlmostEqual(-top["min"][0], half, delta=0.05)
-        self.assertTrue(4.78 <= top["max"][1] <= 4.85, top["max"][1])
-        self.assertTrue(0.14 <= belly["min"][1] <= 0.18, belly["min"][1])
+        lift = layout["deck"].get("lift_m", 0.0)   # the raise: the skin is built in the design frame and lifted
+        self.assertTrue(4.78 + lift <= top["max"][1] <= 4.85 + lift, top["max"][1])
+        self.assertTrue(0.14 + lift <= belly["min"][1] <= 0.18 + lift, belly["min"][1])
         self.assertGreater(top["min"][2], layout["ramp"]["foot"][1])
 
 if __name__ == "__main__":

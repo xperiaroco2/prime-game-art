@@ -40,6 +40,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "DIR/walkthrough.mp4 (off-screen window, 1280x720)")
     parser.add_argument("--no-video", action="store_true", help="--walk without the video")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
+    parser.add_argument("--views", type=Path, metavar="FILE",
+                        help="--shoot only these views (a JSON list of [name, title, eye [x, y, h], look [x, y, h], fov]"
+                             " in plan coordinates) and the plan view; no compares or day views")
     parser.add_argument("--play", type=Path, nargs="?", const=PLAY_DEFAULT, metavar="DIR",
                         help="FOR THE ENGINEER ONLY (an on-screen window; agents never run it): walk the built ship in "
                              "first person at night; P saves a screenshot and its position into DIR "
@@ -87,7 +90,7 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.shoot:
-        code = shoot(layout, out, args.shoot.resolve())
+        code = shoot(layout, out, args.shoot.resolve(), args.views)
         if code:
             return code
     if args.play_test:
@@ -217,10 +220,10 @@ def godot_check(layout: dict, out: Path, folder: Path) -> int:
     return 0
 
 
-# The whole ship from straight above: nose (y -9.6 with the ramp's foot) to the nozzles (15.0) and both lenses (+-13.1)
-# in a 27 m high frame (1920x1080: 48 m wide), centred between them; south up as `top`.
-TOP_FULL = {"name": "top_full", "title": "top: the whole ship from straight above, at night", "size_m": 27.0,
-            "centre": [0.0, 2.7, 0.0], "day_name": "top_full_day",
+# The whole ship from straight above: the ramp's foot (y -12.6 since the raise) to the nozzles (15.0) and both lenses
+# (+-13.1) in a 29.5 m high frame (1920x1080: 52 m wide), centred between them; south up as `top`.
+TOP_FULL = {"name": "top_full", "title": "top: the whole ship from straight above, at night", "size_m": 29.5,
+            "centre": [0.0, 1.2, 0.0], "day_name": "top_full_day",
             "day_title": "top: the whole ship from straight above, by day"}
 
 
@@ -278,13 +281,18 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
            "collide": [p["id"] for p in layout["pieces"] if p["collide"] and p["id"] in ids],
            "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"] if pid in ids],
            # inside-2: the outside pieces draw on render layer 2, out of reach of the inside's strip lights
-           "outside": [p["id"] for p in layout["pieces"] if p["lane"] != "interior" and p["id"] in ids]}
+           # (an exterior piece with layer = "inside", the tunnel's inside, draws with the inside's)
+           "outside": [p["id"] for p in layout["pieces"]
+                       if p["lane"] != "interior" and p.get("layer") != "inside" and p["id"] in ids]}
     return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
 
 
-def shoot(layout: dict, out: Path, folder: Path) -> int:
+def shoot(layout: dict, out: Path, folder: Path, only: Path | None = None) -> int:
     req, staged = built_request(layout, out)
     views, compares = shot_views(layout)
+    if only:   # the raise (2026-10-23): a review's own views, shot alone into their own sheet
+        views, compares = json.loads(only.read_text(encoding="utf-8")), []
+        layout = {**layout, "shots": {**layout["shots"], "day_views": []}}
     req.update({"mode": "shoot", "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in views],
                 # details 1: views by day, after the night's (ship.toml [shots] day_views)

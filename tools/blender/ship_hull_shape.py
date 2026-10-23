@@ -27,7 +27,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SHIP = tomllib.loads((ROOT / "layouts/ship/ship.toml").read_text(encoding="utf-8"))
 RM = {r["id"]: r for r in SHIP["rooms"]}
-FLOOR = SHIP["deck"]["floor_h"]                                        # 0.6
+LIFT = SHIP["deck"].get("lift_m", 0.0)                                 # raised 0.6 m (2026-10-23): the build lifts
+FLOOR = SHIP["deck"]["floor_h"] - LIFT                                 # 0.6: the design frame's deck (ship_build lifts it)
 SLAB = FLOOR - SHIP["deck"]["slab_m"]                                  # 0.35: the slabs' bottoms
 WALL = SHIP["deck"]["wall_m"]                                          # 0.2: a room's wall outside its clear size
 ROOF = 0.12                                                            # a room's ceiling over its clear height
@@ -783,7 +784,7 @@ def outline_rows(name: str = DEFAULT):
         x = min(x, xmax)
         lead, trail = _span_at(poly, x - 1e-9 if x > 0 else x)
         hb = heights(max(0.0, x - 1e-3), (lead + trail) / 2, name)
-        bot, top = (hb[1], hb[0]) if hb else (0.0, 0.0)
+        bot, top = (hb[1] + LIFT, hb[0] + LIFT) if hb else (0.0, 0.0)   # the real frame (the raise)
         rows.append([round(x, 3), round(lead, 3), round(trail, 3), round(bot, 2), round(top, 2), -1])
     return rows[:-1], rows[-1:]
 
@@ -1211,7 +1212,7 @@ def p_outline_rows():
                 spans.append(_span_at(poly, min(max(x, lo + 1e-9), hi - 1e-9)))
         lead, trail = min(s[0] for s in spans), max(s[1] for s in spans)
         hb = heights(max(0.0, x - 1e-3), (lead + trail) / 2, "P")
-        bot, top = (hb[1], hb[0]) if hb else (0.0, 0.0)
+        bot, top = (hb[1] + LIFT, hb[0] + LIFT) if hb else (0.0, 0.0)   # the real frame (the raise)
         rows.append([round(x, 3), round(lead, 3), round(trail, 3), round(bot, 2), round(top, 2), -1])
     return rows[:-1], rows[-1:]
 

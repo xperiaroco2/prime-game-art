@@ -48,7 +48,7 @@ class ShipInteriorTest(unittest.TestCase):
 
     def test_the_numbers_match_ship_toml(self) -> None:
         rooms = {r["id"]: r for r in SHIP["rooms"]}
-        self.assertEqual(S.FLOOR, SHIP["deck"]["floor_h"])
+        self.assertEqual(S.FLOOR, SHIP["deck"]["floor_h"] - SHIP["deck"].get("lift_m", 0.0))   # the design frame (the raise)
         self.assertEqual(S.R_HALL, rooms["hall"]["radius"])
         self.assertEqual((S.H_HALL, S.APEX_HALL), (rooms["hall"]["clear_h"], rooms["hall"]["apex_h"]))
         self.assertEqual((S.H_TIP, S.APEX_TIP), (rooms["tip_e"]["clear_h"], rooms["tip_e"]["apex_h"]))
