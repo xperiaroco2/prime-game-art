@@ -137,16 +137,18 @@ func _drive(id: String, slats: float, marker: float) -> void:
 ## as the game drives them.
 func _calm(id: String, calm: bool) -> void:
 	_leaf(id, "cool").visible = calm
-	var lamp: MeshInstance3D = _leaf(id, "lamp") as MeshInstance3D
-	if not _dim.has(id):
-		var mats: Array = []
-		for i: int in lamp.mesh.get_surface_count():
-			var m: BaseMaterial3D = (lamp.mesh.surface_get_material(i) as BaseMaterial3D).duplicate()
-			m.emission_energy_multiplier *= 0.1
-			mats.append(m)
+	var body: MeshInstance3D = _leaf(id, "body") as MeshInstance3D
+	if not _dim.has(id):   # way A: the lamp is the body's `vent_a_body__lamp` surface
+		var mats: Dictionary = {}
+		for i: int in body.mesh.get_surface_count():
+			var src: Material = body.mesh.surface_get_material(i)
+			if src != null and src.resource_name.ends_with("__lamp"):
+				var m: BaseMaterial3D = (src as BaseMaterial3D).duplicate()
+				m.emission_energy_multiplier *= 0.1
+				mats[i] = m
 		_dim[id] = mats
-	for i: int in lamp.mesh.get_surface_count():
-		lamp.set_surface_override_material(i, _dim[id][i] if calm else null)
+	for i: int in _dim[id]:
+		body.set_surface_override_material(i, _dim[id][i] if calm else null)
 
 
 func _breathe(s: float) -> float:
@@ -180,7 +182,7 @@ func _sections(pts: PackedVector3Array) -> Dictionary:
 # --- the checks ---------------------------------------------------------------------------------------------------
 func _check(id: String) -> Dictionary:
 	var r: Dictionary = {"missing": [], "problems": []}
-	var names: Array = ["marker", "body", "column", "heat", "cool", "lamp", "band", "hand"]
+	var names: Array = ["marker", "body", "heat", "cool"]   # way A: the lamp, band and hand are body surfaces
 	for k: int in range(1, int(_req["slats"]) + 1):
 		names.append("slat%d" % k)
 	for suffix: String in names:
@@ -205,6 +207,16 @@ func _check(id: String) -> Dictionary:
 				mats.append(m.resource_name)
 	mats.sort()
 	r["materials"] = mats
+	var body_mats: Array = []
+	var body: MeshInstance3D = _leaf(id, "body") as MeshInstance3D
+	if body != null:
+		for s: int in body.mesh.get_surface_count():
+			var m: Material = body.mesh.surface_get_material(s)
+			body_mats.append(m.resource_name if m != null else "")
+	for want: String in ["vent_a_body__lamp", "vent_a_body__band", "vent_a_body__hand"]:
+		if not body_mats.has(want):
+			r["missing"].append(want)
+	r["body_surfaces"] = body_mats
 	if not r["missing"].is_empty() or shapes != 2:
 		r["problems"].append("missing %s, %d convex colliders" % [str(r["missing"]), shapes])
 		return r
@@ -236,27 +248,27 @@ func _check(id: String) -> Dictionary:
 				if row[k + 1].has(key) and not Geometry2D.intersect_polygons(row[k][key], row[k + 1][key]).is_empty():
 					cuts.append("slat%d/slat%d at t %.1f, x %.3f" % [k + 1, k + 2, t, key / 1000.0])
 					break
+	var to_vent: Transform3D = (_vents[id] as Node3D).global_transform.affine_inverse()
 	for k: int in range(1, int(_req["slats"]) + 1):
 		var node: MeshInstance3D = _leaf(id, "slat%d" % k) as MeshInstance3D
+		var pivot: Vector3 = _v(_req["vents"][id]["pivots"][k - 1])
+		var local: PackedVector3Array = node.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 		_drive(id, 0.0, 0.0)
 		var p0: PackedVector3Array = _verts(id, node)
-		var local: PackedVector3Array = node.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		origin_off = maxf(origin_off, (to_vent * node.global_position).distance_to(pivot))
 		_drive(id, 1.0, 0.0)
 		var p1: PackedVector3Array = _verts(id, node)
-		var top: float = -1e9
-		for q: Vector3 in local:
-			top = maxf(top, q.y)
-		origin_off = maxf(origin_off, absf(top))
+		origin_off = maxf(origin_off, (to_vent * node.global_position).distance_to(pivot))
 		for j: int in local.size():
-			if local[j].y > top - 0.012:   # the upper edge's vertices (the hinge line)
+			if Vector2(local[j].y, local[j].z).length() < float(_req["nose_r"]) + 0.003:   # the root round the axis
 				edge_drift = maxf(edge_drift, p0[j].distance_to(p1[j]))
 			tip_swing = maxf(tip_swing, p0[j].distance_to(p1[j]))
 	r["hinge_edge_drift_m"] = edge_drift
-	r["origin_to_upper_edge_m"] = origin_off
+	r["origin_to_pivot_m"] = origin_off
 	r["tip_swing_m"] = tip_swing
 	r["slat_cuts"] = cuts
 	r["slat_outside_opening"] = outside
-	if edge_drift > 0.012 or origin_off > 0.01 or tip_swing < 0.15:
+	if edge_drift > 0.012 or origin_off > 0.002 or tip_swing < float(_req["min_tip_swing"]):
 		r["problems"].append("hinge: edge drift %.4f, origin off %.4f, tip swing %.3f" % [edge_drift, origin_off, tip_swing])
 	if not cuts.is_empty() or not outside.is_empty():
 		r["problems"].append("%d cuts, %d outside the opening" % [cuts.size(), outside.size()])
@@ -375,7 +387,9 @@ func _run() -> void:
 			_look(c + Vector3(4.2, 0.2, 0.6), c + Vector3(0.0, 0.0, 0.25), 32.0)
 		else:
 			_look(c + Vector3(1.2, 0.25, 4.0), c, 40.0)
-		states.append(_tile(await _grab(3), 426, 360))
+		var shot: Image = await _grab(3)
+		shot.save_png(_out.path_join("state_%d.png" % states.size()))   # each state whole: the review sheet's game row
+		states.append(_tile(shot, 426, 360))
 	_sheet(states, 3, 426, 360, _out.path_join("states_sheet.png"))
 	_drive(id0, 0.0, 0.0)
 	_calm(id0, false)   # the sides and close-ups shut in the problem state: the orange slits

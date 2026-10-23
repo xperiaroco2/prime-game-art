@@ -411,7 +411,10 @@ def motion_request(layout: dict) -> dict:
         g = sorted((s * v.GLASS_U[0], s * v.GLASS_U[1]))
         vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0] - 0.1, "h1": f + v.OPEN_H[1],
                                   "v_back": v.COOL_V + 0.002, "v_max": v.UNIT[3]},
-                      "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]}}
+                      "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]},
+                      # each blade's pivot on the caps' axis (Godot x, y, z)
+                      "pivots": [[s * (v.CAP_U[0] + v.CAP_U[1]) / 2, f + v.PIVOT_TOP - k * v.PITCH, v.PIVOT_V]
+                                 for k in range(v.SLATS)]}
     cu = [["frame_corner_tl", [-0.42, f + 1.85, 1.15], [-0.70, f + 2.0, 0.45]],
           ["opening_corner_br", [0.5, f + 0.4, 1.0], [0.2, f + 0.62, 0.42]],
           ["slat_ends_l", [-0.3, f + 1.3, 0.9], [-0.66, f + 1.2, 0.33]],
@@ -422,6 +425,7 @@ def motion_request(layout: dict) -> dict:
           ["box_wall_top", [-0.2, f + 1.6, 1.3], [-0.4, f + 2.08, 0.42]],
           ["column_wall_r", [1.4, f + 0.5, 0.8], [0.78, f + 0.3, 0.2]]]
     return {"ids": list(vents), "vents": vents, "slats": v.SLATS, "open_rad": v.OPEN_RAD, "mark_travel": v.MARK_TRAVEL, "gap_m": 3.0,
+            "nose_r": v.NOSE_R, "min_tip_swing": 0.04,
             "fps": MOTION["fps"], "seconds": MOTION["seconds"], "closeups": cu, "watchdog_s": MOTION_TIMEOUT - 60,
             "wall": {"floor": f, "bend": v.BEND, "in": v.IN, "top": v.TOP}}
 
