@@ -1167,6 +1167,30 @@ pilot's static premium heads"):
   - `colour_check` per part: `patch_vs_region_median` (the 24 px patch's median against the pick; the base row's pick
     is the region's median, so the mottled skin alone gives a few units) and `vs_base`, that number minus the base
     row's: the pick's own error.
+- **A1: the clips on the bare alien (2026-10-24, art #196; proofs `anim_bare/a1/before/`, `after/`):**
+  - `tools/blender/alien_clip_run.py --from <tag dir> --out <dir> [--on-clip auto|yes|no]` plays every clip of each
+    built head in the off-screen window (`godot/alien/clip_reels.gd`, which extends `char_shots.gd` for its stage and
+    materials): one 1280x720 MP4 per clip and head (`mp4/<head>_<clip>.mp4`; loops twice, at least 3 s; one-shots
+    with a 0.4 s hold at each end), the camera at 3/4 front framed to the clip's whole motion (every bone over 48
+    samples plus the head's top, times 1.22: the feet in front need the room), a grey floor at y = 0;
+    `clips_<head>.jpg` (a row per clip, six phases); `reels.json` per clip: the loop seam, the lowest skinned vertex,
+    the feet's slide while planted, the share of hand vertices within 1.5 cm of the trunk or legs (a spatial hash
+    of `Character.skinned_points`), the fingers' mean curl, the springs' swing and jitter, the head's turn off the
+    clip's. Godot's import drops the `_Loop` suffix and sets the loop mode: read `Animation.loop_mode`, not the name.
+  - Measured on r5 (before): the clips are UAL1's copied key for key onto the refitted body (`alien_body.py` step 7),
+    so the stand sank 1.2 cm, the crouch 8.2 cm and the jump's take-off 12.7 cm under the floor; fists (the
+    fingers' mean curl 66-77 degrees) in Idle, Walk, Jog, Sprint and Jump_Land; the hands against the thighs on
+    every Idle frame.
+  - The lively controller wrote the Neck and Head as rest times its turn, so on a clip the clip's own head motion
+    was lost (10-33 degrees off it) and the springs moved only with the controller's turn (frozen in a jog). With
+    `on_clip = true` (`alien_lively.gd`, A1) the turn goes on top of the clip's Neck and Head (`rest_turn` with the
+    posed local and global rotations) and the springs are driven by the head's measured motion in the world (turn
+    rates and acceleration in its rest-aligned frame, clamped and low-passed; `accel_gain` 4); the caller re-poses
+    the clip before each `step` and calls `reset_motion()` on a clip change. The shots and busts keep `on_clip`
+    false, so the whole-head gate is unchanged (after vs r5: the same mean differences on all four sides).
+  - The clip fixes are in the build: `alien_char_run.py --clip-edits tools/blender/anim_sets/alien.toml` passes them
+    to `alien_char_build.py`, which runs `alien_clip_edit.py` on the body's actions before the export (the finger
+    cap, the upper arms' abduction, the floor lift; docs/animations.md, "The alien's clip edits").
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and

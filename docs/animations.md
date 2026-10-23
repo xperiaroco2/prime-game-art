@@ -698,6 +698,25 @@ mvp` selects them. On the treadmill (`rates`) a set's clip plays at the row's sp
 plays it, with the feet's measured ground speed reported beside it; a row's `direction` (`forward`, `back`, `left`,
 `right`) moves the stripes along the clip's ground axis.
 
+### The alien's clip edits (art #196, A1)
+
+The shared alien body carries UAL1's clips copied key for key onto the contract skeleton (`alien_body.py`, step 7),
+not the MVP set's: the edits above work on the Ultimate Modular rig (`Root`, `Body`, the IK feet) and do not apply.
+`tools/blender/alien_clip_edit.py` does the few the bare alien needs on its own actions, by name, from
+`tools/blender/anim_sets/alien.toml` (`[defaults]` and `[clips.<name>]`; not an anim-set file, and `mvp.toml` is
+untouched); `alien_char_build.py --clip-edits` runs it before the export:
+
+| key | What it does |
+|---|---|
+| `finger_cap_deg`, `thumb_cap_deg` | every finger joint's turn from its straight rest capped to the angle, its axis kept (`hands_relax` with `cap`): fists open to a relaxed hand, small gestures stay |
+| `abduct_deg` | each upper arm turned out about the body's forward axis in its rest frame, one angle on every key (`arm_offset`): the hands off a body thinner than the clip's |
+| `swing_deg` | the same about the left-right axis, + the hands forward |
+| `floor` | the Hips lifted on the frames whose skin goes under the floor (`floor` `lift`: running max over +-2 frames, smoothed over +-2) |
+
+Measured (A1, `<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/a1/`): the finger curl 87 to 22 degrees
+at most; the lowest vertex -1.3 (stand), -8.2 (crouch), -12.7 (jump take-off) to 0.0 cm; the head and the springs
+judged in `after/judgement.md`. The pure maths is tested in `tools/tests/test_alien_clip_edit.py`.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
