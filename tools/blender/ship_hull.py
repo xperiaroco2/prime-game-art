@@ -127,8 +127,9 @@ def _rod(p0, p1, r, n=10):
     return v, f
 
 
-def _lathe_y(profile, n, a0=0.0):
-    """A closed solid of revolution round the y axis: profile [(r, y)] from one end to the other (r 0 ends close)."""
+def _lathe_y(profile, n, a0=0.0, caps=True):
+    """A closed solid of revolution round the y axis: profile [(r, y)] from one end to the other (r 0 ends close).
+    caps False: an end ring off the axis stays open (fix 2, art #263: no flat disc across a ring or a nozzle)."""
     v, f = [], []
     rings = []
     for r, y in profile:
@@ -146,9 +147,9 @@ def _lathe_y(profile, n, a0=0.0):
                 f.append((a[i], a[(i + 1) % n], b[0]))
             else:
                 f.append((a[i], a[(i + 1) % n], b[(i + 1) % n], b[i]))
-    if len(rings[0]) > 1:
+    if caps and len(rings[0]) > 1:
         f.append(tuple(rings[0]))
-    if len(rings[-1]) > 1:
+    if caps and len(rings[-1]) > 1:
         f.append(tuple(reversed(rings[-1])))
     ys = [y for _r, y in profile]
     lo, hi = min(ys) + 0.02, max(ys) - 0.02
