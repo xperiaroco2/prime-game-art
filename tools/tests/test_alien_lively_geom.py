@@ -230,6 +230,30 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(G.stalk_weight(0.3, 0.3, 1.0), 1.0)
         self.assertEqual(G.stalk_weight(0.3, 0.3, 0.2), 0.0)  # the thick skull never moves
 
+    def test_stalk_weight_lifted(self):
+        # the thick skull (no lift) never moves; a thick core out over the skull moves fully (AL4)
+        self.assertEqual(G.stalk_weight_lifted(0.3, 0.3, 0.0, 0.0), 0.0)
+        self.assertEqual(G.stalk_weight_lifted(0.3, 0.3, 0.0, G.LIFT_FULL), 1.0)
+        self.assertEqual(G.stalk_weight_lifted(0.3, 0.3, 1.0, 0.0), 1.0)
+        self.assertEqual(G.stalk_weight_lifted(0.0, 0.3, 1.0, 1.0), 0.0)  # the root band
+        mid = G.stalk_weight_lifted(0.3, 0.3, 0.0, 0.5 * (G.LIFT_IN + G.LIFT_FULL))
+        self.assertAlmostEqual(mid, 0.5)
+
+    def test_smooth_within(self):
+        # a chain 0-1-2-3 of stalk 0, then 4 of stalk 1: the step 1 -> 0 at vertex 2 softens, nothing leaks to 4
+        vals = [0.0, 0.0, 1.0, 1.0, 1.0]
+        edges = [(0, 1), (1, 2), (2, 3), (3, 4)]
+        labels = [0, 0, 0, 0, 1]
+        pinned = [True, False, False, False, False]
+        w = G.smooth_within(vals, edges, labels, 0, pinned, passes=1, alpha=0.5)
+        self.assertEqual(w[0], 0.0)  # pinned
+        self.assertAlmostEqual(w[1], 0.25)  # 0.5 * 0 + 0.5 * mean(0, 1)
+        self.assertAlmostEqual(w[2], 0.75)
+        self.assertAlmostEqual(w[3], 1.0)  # its only same-label neighbour is 2 (1.0); vertex 4 does not count
+        self.assertEqual(w[4], 1.0)  # another stalk's vertex is left as it was
+        w = G.smooth_within(vals, edges, labels, 0, pinned, passes=200)
+        self.assertLess(max(w[:4]), 0.01)  # pinned at 0: the chain settles to the pin
+
     def test_gill_skin(self):
         pos = {n: (0.0, 0.1 * k, 0.0) for k, n in enumerate(G.GILL_JOINTS)}
         out = G.add_skin(tiny_glb(3), pos, [[(2, 1.0)], [(3, 0.5), (2, 0.5)], [(8, 1.0)]],

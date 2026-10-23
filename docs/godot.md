@@ -975,6 +975,17 @@ pilot's static premium heads"):
       limits, four rows (head left, head right, each seen from both back three-quarters), each cell framed on the
       camera side's three gills (their posed roots' mean, 0.12 m out, 0.9 high; AL3: AL2 framed the back of the
       skull) (`shots_<tag>.json` `gill_closeups`).
+    - *The gill tear (AL4):* `gill_stretch.json` and `gill_stretch.png` (every build) list the 60 edges whose length
+      changes most at the worst corner, each with its two vertices' gills, thinness and weights. In v3 (99.2 mm) all
+      of them lay inside one stalk (GillR2): vertices out on the stalk that the detail map reads thick (G 0.004 to
+      0.31, the stalk's core and fins at UV seams) kept weight 0 beside fringe weighted 1.0, a ladder of stretched
+      triangles. No edge crossed two stalks. Now a stalk's weight is `G.stalk_weight_lifted`: the ramp along the
+      stalk times the larger of the thinness gate and the vertex's lift over the skull at its root (its distance
+      from the head's centre beyond the root's nearest mesh vertex's, `G.LIFT_IN` 5 mm to `G.LIFT_FULL` 60 mm). The
+      weights live on the welded vertices, so a seam's copies never part (their largest thinness counts), and are
+      smoothed inside the stalk alone (`G.smooth_within`, `G.SMOOTH_PASSES` passes, edges to other stalks ignored,
+      the zeros pinned: the skull and the root band stay 0, `rig.gill_weight_on_skull`). `rig.gill_weight_on_thick`
+      is no longer 0 by design (the stalks' thick cores move).
     - *The springs* are data now (`lively.json` `rig.springs`: bones, rate, damping, lag, cap): the chameleon's
       crest one chain of Crest1-3; the axolotl's six gills one bone each at 1.8 to 2.4 Hz, so they never swing in
       step. `alien_lively.gd` and `lively.js` read them, and the head's follow from `controller`. Every spring is
@@ -989,8 +1000,8 @@ pilot's static premium heads"):
       (`CATCH_MARGIN` in `alien_lively.gd`, `lively.js` and `alien_lively_geom`); past that the shader turns the
       glint toward the front (`G.glint_dir`), so it slides to the open cap's edge nearest the light and stays there.
       At rest nothing changes (the gate's numbers equal v2e's).
-    - *Eye close-ups* are framed on each posed eye's front (`alien_lively.gd` `eye_front`: the centre plus the rest
-      direction times the radius), not its centre deep inside the head. `eye_pit_shots.gd`'s JSON also holds
+    - *Eye close-ups* are framed on each posed eye sphere's centre (`alien_lively.gd` `eye_centre`; AL4: framed on
+      the front, `eye_front`, the turned-away eye sat at its cell's edge, its front point being the disc's rim then). `eye_pit_shots.gd`'s JSON also holds
       `away_from_eyes`: the whole head before | after at rest from four sides, the pixel difference with every
       pixel within 2.2 eye radii of an eye centre left out (the chameleon's v5 against v4).
     - *For both heads:* every eyeball vertex takes the fitted sphere's radial normal, faded in over 6 % of r from

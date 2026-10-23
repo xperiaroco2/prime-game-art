@@ -711,6 +711,19 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     rep, W = {"gills": {}}, np.zeros((len(P), len(names)))
     stalk = np.zeros(len(P), bool)  # every stalk's geometry out of the skull, the thick base too (not the skull)
     hd = np.array([G.neck_weights(float(v), y0, ym, y1)[2] for v in P[:, 1]])
+    # AL4: the weights live on the welded vertices (a UV seam's copies read the detail map apart: the thickest copy
+    # alone would hold the others still), the thinness is the copies' largest
+    weld, edges = weld_edges(P, I)
+    nw = int(weld.max()) + 1
+    tvw = np.zeros(nw)
+    np.maximum.at(tvw, weld, tv)
+    rad = np.linalg.norm(P - head_c, axis=1)
+    lab_w = np.zeros(nw, int)
+    lab_w[weld] = near
+    first = np.full(nw, -1)
+    first[weld[::-1]] = np.arange(len(P))[::-1]
+    rep["gill_weight_rule"] = {"lift_in": G.LIFT_IN, "lift_full": G.LIFT_FULL, "smooth_passes": G.SMOOTH_PASSES,
+                               "smooth_alpha": G.SMOOTH_ALPHA}
     for k, name in enumerate(names):
         cand = (near == k) & (tv > 0.5) & (dist < 0.45)
         if cand.sum() < 20:
@@ -721,7 +734,15 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
         length = float(np.percentile(sp, 98))
         own = (near == k) & (dist < 1.3 * length)
         s_ = (P - roots[name]) @ ax
-        W[:, k] = np.array([G.stalk_weight(float(a), length, float(t)) if o else 0.0 for a, t, o in zip(s_, tv, own)]) * hd
+        # AL4: the ramp along the stalk, gated by thinness or by the vertex's lift over the skull at the root (the
+        # stalk's thick core and the fins the detail map reads thick moved not at all beside fringe weighted 1.0: the
+        # v3 tear, 99 mm), then smoothed inside this stalk alone, the zeros (skull, root band) pinned
+        r0 = float(rad[int(np.argmin(np.linalg.norm(P - roots[name], axis=1)))])
+        fw = first
+        w0 = [G.stalk_weight_lifted(float(s_[i]), length, float(tvw[j]), float(rad[i] - r0)) if own[i] else 0.0
+              for j, i in enumerate(fw)]
+        ws = G.smooth_within(w0, edges, lab_w.tolist(), k, [v == 0.0 for v in w0])
+        W[:, k] = np.array(ws)[weld] * hd
         pos[name] = tuple(float(v) for v in roots[name])
         snap = float(np.linalg.norm(P - roots[name], axis=1).min())
         # the stalk: near its root, farther from the head's centre than the skull there (the root's depth and 2 cm)
@@ -818,10 +839,14 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
         raise SystemExit(f"LIVELY gills poke into the head at every swing tested: {counts}")
     rep["gill_swing_deg"] = float(swing)
     rep["gill_labels_reached"] = round(reached, 4)
-    rep["gill_stretch_mm"] = gill_stretch(P, I, W, roots, names, swing)
+    rep["gill_stretch_mm"] = gill_stretch(P, I, W, roots, names, swing, diag=(tv, near, out))
     print(f"LIVELY gill labels reached {reached:.4f}, stretch {rep['gill_stretch_mm']} mm at {swing:g} degrees", flush=True)
     rep["gill_pokes_by_swing"] = counts
     rep["gill_weight_on_thick"] = round(float(W.sum(1)[tv < 0.25].max(initial=0.0)), 6)
+    # AL4: the skull's own vertices (thick and no lift over their stalk root's skull radius) must stay still
+    r0s = np.array([float(rad[int(np.argmin(np.linalg.norm(P - roots[n], axis=1)))]) for n in names])
+    skull_v = (tvw[weld] < 0.25) & (rad - r0s[near] < G.LIFT_IN)
+    rep["gill_weight_on_skull"] = round(float(W.sum(1)[skull_v].max(initial=0.0)), 6)
     infl = []
     for i in range(len(P)):
         ch, nk, h = G.neck_weights(float(P[i, 1]), y0, ym, y1)
@@ -837,6 +862,17 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     print(f"LIVELY gills: swing {rep['gill_swing_deg']} pokes {counts} thick {rep['gill_weight_on_thick']} " + json.dumps(
         {n: (g["vertices"], g["length"], g["root_to_mesh_mm"]) for n, g in rep["gills"].items()}), flush=True)
     return rep
+
+
+def weld_edges(P, I):
+    """The vertices welded by position (1e-5 m) and the welded mesh's unique edges: (weld index per vertex, edges)."""
+    key = np.round(P / 1e-5).astype(np.int64)
+    _u, weld = np.unique(key, axis=0, return_inverse=True)
+    weld = weld.reshape(-1)
+    T = weld[np.asarray(I).reshape(-1, 3)]
+    E = np.concatenate([T[:, [0, 1]], T[:, [1, 2]], T[:, [2, 0]]])
+    E = np.unique(np.sort(E[E[:, 0] != E[:, 1]], axis=1), axis=0)
+    return weld, [(int(a), int(b)) for a, b in E]
 
 
 def gill_labels(P, I, R, near):
@@ -879,7 +915,7 @@ def gill_labels(P, I, R, near):
     return np.where(ok, out, near), float(ok.mean())
 
 
-def gill_stretch(P, I, W, roots, names, swing):
+def gill_stretch(P, I, W, roots, names, swing, diag=None):
     """The tear measure (AL3): the largest change of an edge's length (mm) when the gills sit at opposite cap corners
     (even gills at a corner, odd ones at its opposite, and the other way), the worst of the 8 corners; a fin split
     between two stalks tears here."""
@@ -887,7 +923,7 @@ def gill_stretch(P, I, W, roots, names, swing):
     E = np.concatenate([E[:, [0, 1]], E[:, [1, 2]], E[:, [2, 0]]])
     E = E[(W[E[:, 0]].sum(1) > 0.01) | (W[E[:, 1]].sum(1) > 0.01)]
     rest = np.linalg.norm(P[E[:, 0]] - P[E[:, 1]], axis=1)
-    worst = 0.0
+    worst, worst_ch, worst_corner = 0.0, np.zeros(len(E)), None
     for y, p in G.SWING_CORNERS:
         for flip in (1, -1):
             Q = P.copy()
@@ -896,7 +932,26 @@ def gill_stretch(P, I, W, roots, names, swing):
                 q = P - roots[name]
                 rq = q @ np.array(G.spring_matrix(math.radians(swing) * y * sg, math.radians(swing) * p * sg)).T
                 Q += W[:, k][:, None] * (rq - q)
-            worst = max(worst, float(np.abs(np.linalg.norm(Q[E[:, 0]] - Q[E[:, 1]], axis=1) - rest).max()))
+            ch = np.abs(np.linalg.norm(Q[E[:, 0]] - Q[E[:, 1]], axis=1) - rest)
+            if float(ch.max()) > worst:
+                worst, worst_ch, worst_corner = float(ch.max()), ch, (y, p, flip)
+    if diag is not None:
+        tv, lab, out = diag
+        top = np.argsort(-worst_ch)[:60]
+        rows = []
+        for e in top:
+            a, b = (int(x) for x in E[e])
+            rows.append({"mm": round(float(worst_ch[e]) * 1000, 2), "rest_mm": round(float(rest[e]) * 1000, 2),
+                         "v": [a, b], "label": [names[int(lab[a])], names[int(lab[b])]],
+                         "tv": [round(float(tv[a]), 3), round(float(tv[b]), 3)],
+                         "w": [{names[k]: round(float(W[i, k]), 3) for k in range(len(names)) if W[i, k] > 1e-3} for i in (a, b)],
+                         "rest": [P[a].round(4).tolist(), P[b].round(4).tolist()]})
+        (out / "gill_stretch.json").write_text(json.dumps({"worst_mm": round(worst * 1000, 2), "corner": worst_corner,
+                                                          "edges": rows}, indent=1), encoding="utf-8", newline="\n")
+        mark = np.zeros(len(P))
+        for e in np.nonzero(worst_ch > 0.005)[0]:
+            mark[E[e]] = 1.0
+        crest_view(out / "gill_stretch.png", P, mark, Q[0] * 0 + P.mean(0), 0.0)
     return round(worst * 1000, 2)
 
 

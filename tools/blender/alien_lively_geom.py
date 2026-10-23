@@ -353,6 +353,47 @@ def stalk_weight(s: float, length: float, thin: float, in_: float = 0.08, full: 
     return smoothstep(in_ * length, full * length, s) * smoothstep(0.25, 0.5, thin)
 
 
+# AL4: a gill stalk's own geometry by its height over the skull: a vertex further from the head's centre than the
+# stalk's root on the skull (its pivot's distance from the centre plus the pivot's depth under the mesh) by LIFT_IN
+# starts to move, by LIFT_FULL it may move fully (metres); the detail map's thinness no longer gates it there
+LIFT_IN = 0.005
+LIFT_FULL = 0.06
+SMOOTH_PASSES = 24
+SMOOTH_ALPHA = 0.5
+
+
+def stalk_weight_lifted(s: float, length: float, thin: float, lift: float, in_: float = 0.08, full: float = 0.45) -> float:
+    """A gill stalk's bone weight (AL4): the ramp along the stalk (G.stalk_weight's, none in the root's first `in_`
+    of the length, full from `full`) times the larger of the vertex's thinness gate and its lift over the skull
+    (`lift` metres beyond the root's skull radius, LIFT_IN to LIFT_FULL). By thinness alone (AL1 to AL3) the
+    stalk's thick core and the fin vertices the detail map reads thick stayed at 0 out on the stalk beside fully
+    weighted fringe (99 mm of edge stretch at the cap); the skull itself (thick, no lift) still never moves."""
+    gate = max(smoothstep(0.25, 0.5, thin), smoothstep(LIFT_IN, LIFT_FULL, lift))
+    return smoothstep(in_ * length, full * length, s) * gate
+
+
+def smooth_within(values: list[float], edges: list[tuple[int, int]], labels: list[int], label: int,
+                  pinned: list[bool], passes: int = SMOOTH_PASSES, alpha: float = SMOOTH_ALPHA) -> list[float]:
+    """Laplacian smoothing of one stalk's weights (AL4): each pass moves every vertex of `label` that is not pinned
+    by `alpha` toward the mean of its neighbours of the same label (edges to other labels never count, so no weight
+    crosses to a neighbouring stalk; vertices of other labels keep their value). Pinned vertices (the skull, the
+    root band) keep theirs. Returns the new list."""
+    nb: dict[int, list[int]] = {}
+    for a, b in edges:
+        if a != b and labels[a] == label and labels[b] == label:
+            nb.setdefault(a, []).append(b)
+            nb.setdefault(b, []).append(a)
+    w = list(values)
+    for _ in range(passes):
+        nxt = list(w)
+        for i, js in nb.items():
+            if not pinned[i]:
+                m = sum(w[j] for j in js) / len(js)
+                nxt[i] = (1.0 - alpha) * w[i] + alpha * m
+        w = nxt
+    return w
+
+
 def png_bytes(width: int, height: int, rgb: bytes) -> bytes:
     """An 8-bit RGB PNG (rows top first, filter 0)."""
     stride = width * 3
