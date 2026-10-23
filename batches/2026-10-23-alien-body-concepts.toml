@@ -1,0 +1,92 @@
+# art#196, the body (the engineer, 2026-10-23, chat: "Тіло: робіть 2D-концепти, до $3"; recorded in the approval_ref
+# comment). The current 3D body was judged a cheap mannequin, so the body below the head is designed in 2D first, for
+# him to pick from. Two aliens of the approved roster, the chameleon man (m01) and the axolotl woman (w01); per alien two
+# bare builds and two sets of "just some nice clothes" (present-day casual, well made; no hats, no glasses). Edits of
+# each alien's own roster bust, so the head, face, colours and smooth toy finish stay theirs. Medium (exploration), one
+# image per concept (#276), 1024x1536 portrait. Both share one humanoid skeleton (the contract's), so the builds keep
+# the same height and limb layout. No game, film, studio, character or real-person names; no style names of other works.
+id = "2026-10-23-alien-body-concepts"
+service = "openai-images"
+purpose = "art#196: full-body 2D concepts of the chameleon man and the axolotl woman (two bare builds and two casual outfits each), for the engineer to pick the body below the approved heads."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 3.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-23"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6374319309"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1024x1536"
+n = 1
+
+[[items]]
+id = "ch_bare_a"
+kind = "edit"
+prompt = "The reference image is a finished head-and-shoulders design of the chameleon man, an adult alien character. Keep his head exactly as it is: the same head shape with the tall curled crest and its darker bands, the same big heavy-lidded bored eyes, the two nostril dots, the wide closed lips, the same teal skin with the pale mint throat, and the same smooth soft-matte designer vinyl toy finish and soft studio light. Now design his whole body and show him full length, head to feet. Build: lean and athletic, long limbs, shoulders a little broader than the hips, a flat stomach, a cool grown-up cartoon character, not childish, about five heads tall. The neck flares smoothly into the shoulders as in the reference, never a thin tube. The pale mint front panel of the throat continues down the chest and belly to the groin, with a soft edge to the teal sides; the darker teal bands of the crest echo faintly as a few stripes on the back, the upper arms and the thighs. Hands with four slender fingers and a thumb each, rounded fingertips, clearly drawn and relaxed open. Feet that belong to this species: long feet with the toes in two opposed groups and rounded toe tips, bare. No clothes; a smooth simplified body like a toy figure, with no nipples, no navel and no genitals. A neutral relaxed standing pose, weight even, arms hanging loose a little away from the body, hands open and relaxed, not fists. Front three-quarter view, the whole figure in the frame with a little space above the crest and below the feet, one character only, on a plain flat light-grey background. No text, no labels, no logos, no props."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/m01-chameleon.jpg", provenance = "m01, the chameleon man of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "9a4109f9495e3d9ccc72b2517d6036c431799435e204bed3bc7024880bcf6750" },
+]
+
+[[items]]
+id = "ch_bare_b"
+kind = "edit"
+prompt = "The reference image is a finished head-and-shoulders design of the chameleon man, an adult alien character. Keep his head exactly as it is: the same head shape with the tall curled crest and its darker bands, the same big heavy-lidded bored eyes, the two nostril dots, the wide closed lips, the same teal skin with the pale mint throat, and the same smooth soft-matte designer vinyl toy finish and soft studio light. Now design his whole body and show him full length, head to feet. Build: a sturdier, relaxed laid-back build, a broad chest and solid shoulders, a slightly rounded soft belly, thicker forearms and calves, a little slouch, a cool grown-up cartoon character, not childish, about five heads tall, the same height as a lean build. The neck flares smoothly and widely into the shoulders as in the reference, never a thin tube. The pale mint front panel of the throat continues down the chest and belly to the groin, with a soft edge to the teal sides; the darker teal bands of the crest continue as broad soft stripes over the shoulders and down the back and the outer arms and legs. Hands with four fingers and a thumb each, rounded fingertips, clearly drawn and relaxed open. Feet that belong to this species: broad feet with the toes in two opposed groups and rounded toe tips, bare. No clothes; a smooth simplified body like a toy figure, with no nipples, no navel and no genitals. A neutral relaxed standing pose, weight even, arms hanging loose a little away from the body, hands open and relaxed, not fists. Front three-quarter view, the whole figure in the frame with a little space above the crest and below the feet, one character only, on a plain flat light-grey background. No text, no labels, no logos, no props."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/m01-chameleon.jpg", provenance = "m01, the chameleon man of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "9a4109f9495e3d9ccc72b2517d6036c431799435e204bed3bc7024880bcf6750" },
+]
+
+[[items]]
+id = "ch_cloth_a"
+kind = "edit"
+prompt = "The reference image is a finished head-and-shoulders design of the chameleon man, an adult alien character. Keep his head exactly as it is: the same head shape with the tall curled crest and its darker bands, the same big heavy-lidded bored eyes, the two nostril dots, the wide closed lips, the same teal skin with the pale mint throat, and the same smooth soft-matte designer vinyl toy finish and soft studio light. Now design his whole body and show him full length, head to feet, dressed in just some nice present-day casual clothes, well made and well fitted: an unbuttoned charcoal overshirt jacket over a plain off-white crew-neck T-shirt, slim dark-olive chino trousers with a neat cuff at the ankle, and clean white low-top sneakers. A lean, slightly broad-shouldered adult body, about five heads tall, a cool grown-up cartoon character, not childish. The neck flares smoothly into the shoulders as in the reference, never a thin tube; the pale mint throat shows at the T-shirt's neckline. Hands with four slender fingers and a thumb each, rounded fingertips, clearly drawn and relaxed open, teal skin with a paler palm. No hat, no glasses, no bag, no jewellery. A neutral relaxed standing pose, weight even, arms hanging loose a little away from the body, hands open and relaxed, not fists. Front three-quarter view, the whole figure in the frame with a little space above the crest and below the feet, one character only, on a plain flat light-grey background. No text, no labels, no logos, no brand marks, no props."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/m01-chameleon.jpg", provenance = "m01, the chameleon man of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "9a4109f9495e3d9ccc72b2517d6036c431799435e204bed3bc7024880bcf6750" },
+]
+
+[[items]]
+id = "ch_cloth_b"
+kind = "edit"
+prompt = "The reference image is a finished head-and-shoulders design of the chameleon man, an adult alien character. Keep his head exactly as it is: the same head shape with the tall curled crest and its darker bands, the same big heavy-lidded bored eyes, the two nostril dots, the wide closed lips, the same teal skin with the pale mint throat, and the same smooth soft-matte designer vinyl toy finish and soft studio light. Now design his whole body and show him full length, head to feet, dressed in just some nice present-day casual clothes, well made: a soft rust-orange knitted crew-neck sweater with the sleeves pushed up to the forearms, relaxed straight-leg mid-blue jeans, and brown suede lace-up shoes. A sturdier, relaxed adult body with a broad chest, about five heads tall, a cool grown-up cartoon character, not childish. The neck flares smoothly into the shoulders as in the reference, never a thin tube; the pale mint throat shows at the sweater's neckline and the faint darker teal stripes show on the bare forearms. Hands with four fingers and a thumb each, rounded fingertips, clearly drawn and relaxed open, teal skin with a paler palm. No hat, no glasses, no bag, no jewellery. A neutral relaxed standing pose, weight even, arms hanging loose a little away from the body, hands open and relaxed, not fists. Front three-quarter view, the whole figure in the frame with a little space above the crest and below the feet, one character only, on a plain flat light-grey background. No text, no labels, no logos, no brand marks, no props."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/m01-chameleon.jpg", provenance = "m01, the chameleon man of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "9a4109f9495e3d9ccc72b2517d6036c431799435e204bed3bc7024880bcf6750" },
+]
+
+[[items]]
+id = "ax_bare_a"
+kind = "edit"
+prompt = "The reference image is a finished head-and-shoulders design of the axolotl woman, an adult alien character. Keep her head exactly as it is: the same wide rounded head, the three feathery frilled gill stalks on each side, the small glossy black eyes, the two nostril dots, the freckle-like dots across the cheeks, the wide gentle smile, the same teal skin with the pale mint chin and throat, and the same smooth soft-matte designer vinyl toy finish and soft studio light. Now design her whole body and show her full length, head to feet. Build: slender and graceful, long limbs, narrow shoulders, a defined waist and softly rounded hips, a cool grown-up cartoon character, not childish, about five heads tall. The neck flares smoothly into the shoulders as in the reference, never a thin tube. The pale mint front panel of the chin and throat continues down the chest and belly to the groin, with a soft edge to the teal sides; a few of the same freckle-like dots are scattered on the shoulders and the backs of the hands. Hands with four slender fingers and a thumb each, softly rounded fingertips, clearly drawn and relaxed open. Feet that belong to this species: soft rounded feet with short spread toes and round tips, bare. No clothes; a smooth simplified body like a toy figure, with no nipples, no navel and no genitals. A neutral relaxed standing pose, weight even, arms hanging loose a little away from the body, hands open and relaxed, not fists. Front three-quarter view, the whole figure in the frame with a little space above the gills and below the feet, one character only, on a plain flat light-grey background. No text, no labels, no logos, no props."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/w01-axolotl.jpg", provenance = "w01, the axolotl woman of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "41e9054af43a8c3f04d2c8575aeb2726a459f8a4e6189e1534b4b24c5d65961d" },
+]
+
+[[items]]
+id = "ax_bare_b"
+kind = "edit"
+prompt = "The reference image is a finished head-and-shoulders design of the axolotl woman, an adult alien character. Keep her head exactly as it is: the same wide rounded head, the three feathery frilled gill stalks on each side, the small glossy black eyes, the two nostril dots, the freckle-like dots across the cheeks, the wide gentle smile, the same teal skin with the pale mint chin and throat, and the same smooth soft-matte designer vinyl toy finish and soft studio light. Now design her whole body and show her full length, head to feet. Build: a softer, fuller, curvier figure, rounded shoulders and hips, soft thighs, a gently rounded belly, sturdy calves, a cool grown-up cartoon character, not childish, about five heads tall, the same height as a slender build. The neck flares smoothly into the shoulders as in the reference, never a thin tube. The pale mint front panel of the chin and throat continues down the chest and belly to the groin, with a soft edge to the teal sides; a thin soft frilled fin ridge, the same feathery texture as the gills but much smaller, runs down the middle of her back to a short rounded tail stub. Hands with four fingers and a thumb each, softly rounded fingertips, clearly drawn and relaxed open. Feet that belong to this species: soft broad feet with short spread toes and round tips, bare. No clothes; a smooth simplified body like a toy figure, with no nipples, no navel and no genitals. A neutral relaxed standing pose, weight even, arms hanging loose a little away from the body, hands open and relaxed, not fists. Front three-quarter view, the whole figure in the frame with a little space above the gills and below the feet, one character only, on a plain flat light-grey background. No text, no labels, no logos, no props."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/w01-axolotl.jpg", provenance = "w01, the axolotl woman of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "41e9054af43a8c3f04d2c8575aeb2726a459f8a4e6189e1534b4b24c5d65961d" },
+]
+
+[[items]]
+id = "ax_cloth_a"
+kind = "edit"
+prompt = "The reference image is a finished head-and-shoulders design of the axolotl woman, an adult alien character. Keep her head exactly as it is: the same wide rounded head, the three feathery frilled gill stalks on each side, the small glossy black eyes, the two nostril dots, the freckle-like dots across the cheeks, the wide gentle smile, the same teal skin with the pale mint chin and throat, and the same smooth soft-matte designer vinyl toy finish and soft studio light. Now design her whole body and show her full length, head to feet, dressed in just some nice present-day casual clothes, well made and well fitted: a soft cream ribbed knit cardigan, buttoned, slightly cropped, over high-waisted wide-leg trousers in warm coral, and clean white low-top sneakers. A slender adult body with a defined waist, about five heads tall, a cool grown-up cartoon character, not childish. The neck flares smoothly into the shoulders as in the reference, never a thin tube; the pale mint throat shows at the cardigan's open neckline. Hands with four slender fingers and a thumb each, softly rounded fingertips, clearly drawn and relaxed open, teal skin with a paler palm. No hat, no glasses, no bag, no jewellery. A neutral relaxed standing pose, weight even, arms hanging loose a little away from the body, hands open and relaxed, not fists. Front three-quarter view, the whole figure in the frame with a little space above the gills and below the feet, one character only, on a plain flat light-grey background. No text, no labels, no logos, no brand marks, no props."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/w01-axolotl.jpg", provenance = "w01, the axolotl woman of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "41e9054af43a8c3f04d2c8575aeb2726a459f8a4e6189e1534b4b24c5d65961d" },
+]
+
+[[items]]
+id = "ax_cloth_b"
+kind = "edit"
+prompt = "The reference image is a finished head-and-shoulders design of the axolotl woman, an adult alien character. Keep her head exactly as it is: the same wide rounded head, the three feathery frilled gill stalks on each side, the small glossy black eyes, the two nostril dots, the freckle-like dots across the cheeks, the wide gentle smile, the same teal skin with the pale mint chin and throat, and the same smooth soft-matte designer vinyl toy finish and soft studio light. Now design her whole body and show her full length, head to feet, dressed in just some nice present-day casual clothes, well made: a cropped light-wash denim jacket over a fitted mustard-yellow scoop-neck top, a knee-length pleated midi skirt in deep navy, and white canvas low-top sneakers with short white socks. A softer, curvier adult body, about five heads tall, a cool grown-up cartoon character, not childish. The neck flares smoothly into the shoulders as in the reference, never a thin tube; the pale mint throat shows at the scoop neckline, and her teal shins show between the skirt and the socks. Hands with four fingers and a thumb each, softly rounded fingertips, clearly drawn and relaxed open, teal skin with a paler palm. No hat, no glasses, no bag, no jewellery. A neutral relaxed standing pose, weight even, arms hanging loose a little away from the body, hands open and relaxed, not fists. Front three-quarter view, the whole figure in the frame with a little space above the gills and below the feet, one character only, on a plain flat light-grey background. No text, no labels, no logos, no brand marks, no props."
+images = [
+  { file = "raw:research/2026-10-22-roster/design/final/w01-axolotl.jpg", provenance = "w01, the axolotl woman of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "41e9054af43a8c3f04d2c8575aeb2726a459f8a4e6189e1534b4b24c5d65961d" },
+]
+
+# Ran 2026-10-23: 8 of 8 items done, $0.1505 of the $3.00 cap (`openai-images status`). Review sheets (bust beside
+# bare A, bare B, clothed A, clothed B) and the per-image verdict in <raw>/2026-10-23-alien-body-concepts/sheets/:
+# ch_body_sheet.png, ax_body_sheet.png, verdict.md. Recommended: body B for both; every body's neck is narrower than
+# the bust's flare and needs widening into the shoulders next.
