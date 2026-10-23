@@ -149,6 +149,14 @@ func _calm(id: String, calm: bool) -> void:
 		_dim[id] = mats
 	for i: int in _dim[id]:
 		body.set_surface_override_material(i, _dim[id][i] if calm else null)
+	# the look step: the lamp is its own emissive dome, `<id>_lamp`, at a tenth when calm
+	var lamp: MeshInstance3D = _leaf(id, "lamp") as MeshInstance3D
+	if lamp != null:
+		if not _dim.has(id + ":lamp"):
+			var lm: BaseMaterial3D = (lamp.mesh.surface_get_material(0) as BaseMaterial3D).duplicate()
+			lm.emission_energy_multiplier *= 0.1
+			_dim[id + ":lamp"] = lm
+		lamp.material_override = _dim[id + ":lamp"] if calm else null
 	# step 4: each blade's lit seam strip (`int_halo__vent_seam`) glows with the heat, dark bronze when calm
 	for k: int in range(1, int(_req["slats"]) + 1):
 		var slat: MeshInstance3D = _leaf(id, "slat%d" % k) as MeshInstance3D
@@ -202,7 +210,8 @@ func _sections(pts: PackedVector3Array) -> Dictionary:
 # --- the checks ---------------------------------------------------------------------------------------------------
 func _check(id: String) -> Dictionary:
 	var r: Dictionary = {"missing": [], "problems": []}
-	var names: Array = ["marker", "body", "heat", "cool"]   # way A: the lamp, band and hand are body surfaces
+	# way A: the body's lamp, band and hand surfaces are dark glass under the look step's clean light pieces
+	var names: Array = ["marker", "body", "heat", "cool", "lamp", "bar", "band", "bar_hot", "screen", "hand", "strip1"]
 	for k: int in range(1, int(_req["slats"]) + 1):
 		names.append("slat%d" % k)
 	for suffix: String in names:

@@ -70,15 +70,46 @@ class ShipVentTest(unittest.TestCase):
             for x, y, h in p["verts"]:
                 self.assertGreaterEqual(y, V.cv(h - V.FLOOR) - 0.0201, (name, y, h))
 
+    def test_light_pieces(self):
+        """The look step: every light a clean emissive piece over the body's painted one, off its surface."""
+        if not (V.raw_root() / V.LIGHTS).is_file():
+            self.skipTest("no raw lights.json")
+        parts = build("e", meshes=False)
+        want = {"lamp": "glow_nav_red__vent_lamp", "hand": "glow_cyan__vent_hand", "screen": "int_dark__vent_screen",
+                "bar": "glow_amber__vent_bar", "bar_top": "glow_amber__vent_bar", "bar_hot": "glow_nav_white__vent_bar_hot",
+                "band": "glow_nav_green__vent_band"}
+        for name, mat in want.items():
+            self.assertEqual(parts[name]["mat"], mat)
+        strips = [p for n, p in parts.items() if n.startswith("strip")]
+        self.assertGreaterEqual(len(strips), 6)
+        centres = [[sum(c) / len(p["verts"]) for c in zip(*p["verts"])] for p in strips]
+        for i, a in enumerate(centres):   # one strip per place (no two pieces z-fighting)
+            for b in centres[i + 1:]:
+                self.assertGreater(math.dist(a, b), 0.03)
+        for name in ("bar", "bar_top", "bar_hot", "band"):   # on the glass, behind the sliding marker
+            self.assertLess(max(y for _, y, _ in parts[name]["verts"]), min(y for _, y, _ in parts["marker"]["verts"]))
+        scr, hand = parts["screen"]["verts"], parts["hand"]["verts"]
+        for k in (0, 2):   # the outline inside its screen, in front of it
+            self.assertGreaterEqual(min(p[k] for p in hand), min(p[k] for p in scr))
+            self.assertLessEqual(max(p[k] for p in hand), max(p[k] for p in scr))
+        self.assertGreater(min(y for _, y, _ in hand), max(y for _, y, _ in scr))
+
+    def test_hand_has_a_thumb_and_three_fingers(self):
+        pts = V.hand_outline()
+        tips = [i for i in range(1, len(pts) - 1) if pts[i][1] > pts[i - 1][1] and pts[i][1] >= pts[i + 1][1]
+                and pts[i][1] > 0.9]
+        self.assertEqual(len(tips), 3)                       # three fingers' tips, of one length
+        self.assertEqual(len({round(pts[i][1], 6) for i in tips}), 1)
+        self.assertLess(min(x for x, _ in pts), -0.6)        # the thumb out past the palm's side
+
     def test_budget_names_and_materials(self):
         parts = build("e", meshes=False)
         built = sum(tris(p) for n, p in parts.items() if "verts" in p and "-convcolonly" not in n)
         self.assertLessEqual(built, 2000, built)   # the body adds its 4,000 baked triangles
-        self.assertTrue(parts["body"]["glb"].replace("\\", "/").endswith("body4k_r4/body.glb"), parts["body"])
+        self.assertTrue(parts["body"]["glb"].replace("\\", "/").endswith("body4k_r6/body.glb"), parts["body"])
         for name in [f"slat{k}" for k in range(1, V.SLATS + 1)] + ["marker", "heat", "cool", "col0-convcolonly",
                                                                     "col1-convcolonly"]:
             self.assertIn(name, parts)
-        self.assertNotIn("lamp", parts)            # the lamp, band and hand are faces of the body now
         self.assertEqual(parts["heat"]["mat"], "int_halo__vent_heat")
         self.assertEqual(parts["cool"]["mat"], "int_cyan__vent_cool")
         self.assertEqual(parts["marker"]["mat"], "glow_nav_white__vent_marker")
