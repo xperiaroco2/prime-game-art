@@ -260,6 +260,7 @@ def check(layout: dict[str, Any]) -> list[str]:
     problems += check_closed(layout)
     problems += check_bands(layout)
     problems += check_spots(layout)
+    problems += check_units(layout)
     problems += check_walk(layout)
     problems += hull_skin(layout)
     # inside the hull: every room's outer wall and every placed piece's origin (unless the piece may stand outside)
@@ -562,6 +563,42 @@ def check_spots(layout: dict[str, Any]) -> list[str]:
             if near:
                 problems.append(f"station {s['id']}: the pass behind it crosses {near[0]}")
                 break
+    return problems
+
+
+def check_units(layout: dict[str, Any]) -> list[str]:
+    """Step 2: every station piece (a piece with a `spot`) placed once, on its spot (its +v on the spot's normal), and
+    its `unit` box [u0, u1, v0, v1, h0, h1] (u along the wall, v out of it, h over the deck) inside the spot's plain
+    band (plain_width_m), at most its depth_m from the wall and under the room's clear height. The builder's geometry
+    against the box: tools/tests/test_ship_vent.py."""
+    problems: list[str] = []
+    st, by_id = layout["stations"], rooms(layout)
+    spots = {s["id"]: s for s in st["spot"]}
+    for p in layout["pieces"]:
+        if not p.get("spot"):
+            continue
+        s = spots.get(p["spot"])
+        if s is None or not s.get("normal"):
+            problems.append(f"station piece {p['id']}: no wall spot {p['spot']}")
+            continue
+        at = [q for q in layout["place"] if q[0] == p["id"]]
+        want = 90.0 - math.degrees(math.atan2(s["normal"][1], s["normal"][0]))
+        if len(at) != 1:
+            problems.append(f"station piece {p['id']}: placed {len(at)} times, wants once")
+        elif (math.hypot(at[0][1][0] - s["at"][0], at[0][1][1] - s["at"][1]) > 0.001
+              or abs((at[0][2] - want + 180.0) % 360.0 - 180.0) > 0.01):
+            problems.append(f"station piece {p['id']}: not on its spot {s['id']} (at {at[0][1][:2]}, yaw {at[0][2]:g}, "
+                            f"wants {s['at']} and {want:.3f})")
+        u0, u1, v0, v1, h0, h1 = p["unit"]
+        half, depth = st["plain_width_m"] / 2, s.get("depth_m", st["depth_m"])
+        clear = by_id[s["room"]]["clear_h"]
+        if u0 < -half - TOL or u1 > half + TOL:
+            problems.append(f"station piece {p['id']}: {u0:g}..{u1:g} m along the wall, wants within +-{half:g}")
+        if v0 < -0.05 or v1 > depth + TOL:
+            problems.append(f"station piece {p['id']}: {v0:g}..{v1:g} m from the wall, wants 0..{depth:g}")
+        if h0 < -0.05 or h1 > clear - 0.05:
+            problems.append(f"station piece {p['id']}: up to {h1:g} m, wants under {clear - 0.05:g} (the room's clear "
+                            "height)")
     return problems
 
 
