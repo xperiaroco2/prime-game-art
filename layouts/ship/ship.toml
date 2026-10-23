@@ -218,7 +218,7 @@ thickness_m = 0.15
 # with ship_hull_shape.outline_rows() when the shape changes (test_ship_layout checks they match).
 [hull]
 shape = "P"                                  # ship_hull_shape.VARIANTS key: lens step 2, the hull P (the union of convex parts)
-bottom_h = 0.77                              # the raise (was 0.17): P's belly, flat under every room's slab (0.35), rising toward the edges
+bottom_h = 0.77                              # the raise (was 0.17): P's belly, flat under every room's slab (0.95 since the raise), rising toward the edges
 brow_h = 4.9                                 # the raise (was 4.3): the spine's front over the mouth
 mouth_half_width_m = 1.65                    # rebuild C: the mouth at the nose edge (the throat's front)
 trail_y = 12.7                               # P's stern face (ship_hull_shape.P_STERN_Y)

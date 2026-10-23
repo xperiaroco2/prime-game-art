@@ -220,10 +220,10 @@ def godot_check(layout: dict, out: Path, folder: Path) -> int:
     return 0
 
 
-# The whole ship from straight above: nose (y -9.6 with the ramp's foot) to the nozzles (15.0) and both lenses (+-13.1)
-# in a 27 m high frame (1920x1080: 48 m wide), centred between them; south up as `top`.
-TOP_FULL = {"name": "top_full", "title": "top: the whole ship from straight above, at night", "size_m": 27.0,
-            "centre": [0.0, 2.7, 0.0], "day_name": "top_full_day",
+# The whole ship from straight above: the ramp's foot (y -12.6 since the raise) to the nozzles (15.0) and both lenses
+# (+-13.1) in a 29.5 m high frame (1920x1080: 52 m wide), centred between them; south up as `top`.
+TOP_FULL = {"name": "top_full", "title": "top: the whole ship from straight above, at night", "size_m": 29.5,
+            "centre": [0.0, 1.2, 0.0], "day_name": "top_full_day",
             "day_title": "top: the whole ship from straight above, by day"}
 
 
