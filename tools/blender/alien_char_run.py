@@ -4,7 +4,7 @@
 godot-check runs separately (`tools/run.sh godot-check --strict-contract --humanoid --textured <glb>`).
 
     $PYTHON_BIN tools/blender/alien_char_run.py [--heads chameleon,axolotl] [--tag body_v1] [--no-build]
-        [--no-shots] [--seconds 20]
+        [--no-shots] [--seconds 20] [--clip-edits tools/blender/anim_sets/alien.toml]
 
 Into <raw>/research/2026-10-22-roster/design/pilot3d/<tag>/<head>/ (the build) and <tag>/ (the sheets, the gate,
 the seams, the line-up, char_<head>.mp4). A run never overwrites: a build whose head folder exists is refused, and
@@ -58,6 +58,24 @@ def bases(head: str) -> dict:
     return out
 
 
+def head_job(h: str, hd: Path, b: dict, slots_job: dict) -> dict:
+    """One head's entry in a Godot job (char_shots.gd, clip_reels.gd): its built character in hd, staged."""
+    static = PILOT / "static_v5" / h
+    lv = HEADS[h]["lively"]
+    char = json.loads((hd / "char.json").read_text(encoding="utf-8"))
+    return {
+        "char": _godot.stage(hd / f"{h}_char.glb", f"char_{h}"),
+        "static": _godot.stage(static / f"{h}_static.glb", f"static_{h}"),
+        "lively": str(hd / f"{h}_char_lively.json"), "sclera": str(lv / f"{h}_sclera.png"),
+        "mask": str(static / f"{h}_mask.png"), "detail": str(static / f"{h}_detail.png"),
+        "plain": str(static / f"{h}_albedo_plain.png"), "accent": str(SLOTS / "maps" / f"{h}_accent.png"),
+        "gill": str(SLOTS / "maps" / f"{h}_gill.png"), "body_albedo": str(hd / f"{h}_body_albedo.png"),
+        "body_mask": str(hd / f"{h}_body_mask.png"), "body_detail": str(hd / f"{h}_body_detail.png"),
+        "body_accent": str(hd / f"{h}_body_accent.png"), "bases": b, "params": slots_job[h]["params"],
+        "fit": char["fit"], "cut_z": char["fit"]["dst"][2], "band": char["neck_band"],
+        "sheet2d": str(LINEUP / HEADS[h]["sheet"]), "preset": HEADS[h]["preset"]}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--heads", default="chameleon,axolotl")
@@ -65,6 +83,7 @@ def main() -> int:
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--seconds", type=float, default=20.0)
+    ap.add_argument("--clip-edits", default="", help="A1: the alien's clip edits, e.g. tools/blender/anim_sets/alien.toml")
     ap.add_argument("--shots-sub", default="", help="B3: the shots into this subfolder of the tag (a trial)")
     ap.add_argument("--fix", default="{}", help="B3: JSON render settings after the front isolation sheet "
                     "(shadow_quality 0-5, default 5; taa, angular_deg, sss_scale)")
@@ -92,7 +111,8 @@ def main() -> int:
                 "--body", str(BODY), "--albedo", str(static / f"{h}_albedo.png"), "--mask", str(static / f"{h}_mask.png"),
                 "--accent", str(SLOTS / "maps" / f"{h}_accent.png"),
                 "--detail", str(static / f"{h}_detail.png"), "--bases", str(hd / "bases.json"),
-                "--out", str(hd)], timeout=1500)
+                "--out", str(hd), *(["--clip-edits", str(Path(args.clip_edits).resolve())] if args.clip_edits else [])],
+                timeout=1500)
             (hd / "build.log").write_text((res.stdout or "") + (res.stderr or ""), encoding="utf-8", newline="\n")
             print(*[x for x in (res.stdout or "").splitlines() if x.startswith("CHAR ")], sep="\n", flush=True)
             if res.returncode != 0:
@@ -102,16 +122,7 @@ def main() -> int:
         verdict_ok, text = _export.verdict(_export.validate(glb, hd / f"{h}_char.validator.json"))
         print(f"validator {glb.name}: {text}", flush=True)
         ok &= verdict_ok
-        char = json.loads((hd / "char.json").read_text(encoding="utf-8"))
-        job["heads"][h] = {
-            "char": _godot.stage(glb, f"char_{h}"), "static": _godot.stage(static / f"{h}_static.glb", f"static_{h}"),
-            "lively": str(hd / f"{h}_char_lively.json"), "sclera": str(lv / f"{h}_sclera.png"),
-            "mask": str(static / f"{h}_mask.png"), "detail": str(static / f"{h}_detail.png"),
-            "plain": str(static / f"{h}_albedo_plain.png"), "accent": str(SLOTS / "maps" / f"{h}_accent.png"),
-            "gill": str(SLOTS / "maps" / f"{h}_gill.png"), "body_albedo": str(hd / f"{h}_body_albedo.png"),
-            "body_mask": str(hd / f"{h}_body_mask.png"), "body_detail": str(hd / f"{h}_body_detail.png"), "body_accent": str(hd / f"{h}_body_accent.png"),
-            "bases": b, "params": slots_job[h]["params"], "fit": char["fit"], "cut_z": char["fit"]["dst"][2], "band": char["neck_band"],
-            "sheet2d": str(LINEUP / HEADS[h]["sheet"]), "preset": HEADS[h]["preset"]}
+        job["heads"][h] = head_job(h, hd, b, slots_job)
     if args.no_shots:
         return 0 if ok else 1
     out = shots_out

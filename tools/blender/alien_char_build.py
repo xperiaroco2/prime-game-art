@@ -186,12 +186,16 @@ def corner_normals(me):
     return n.reshape(-1, 3)
 
 
+GILL_ZETA_ON_BODY = 0.55  # A2: the axolotl's gills on the walking body (anim_bare/a2: Jog and Sprint jitter 205-267 deg/s)
+
+
 def main():
     ap = argparse.ArgumentParser()
     for k in ("--head", "--lively", "--lively-json", "--body", "--albedo", "--mask", "--accent", "--detail",
               "--bases", "--out"):
         ap.add_argument(k, required=True)
     ap.add_argument("--shield", action="store_true")
+    ap.add_argument("--clip-edits", default="", help="A1: the alien's clip edits (anim_sets/alien.toml)")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     head, out = a.head, Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -588,6 +592,9 @@ def main():
     skin.parent = arm
     skin.modifiers.new("rig", "ARMATURE").object = arm
     fitted["name"] = head
+    for sp in fitted["rig"].get("springs", []):  # A2: on the body a run's bob made the gills (zeta 0.28) jitter
+        if sp["name"].startswith("Gill"):
+            sp["zeta"] = max(float(sp["zeta"]), GILL_ZETA_ON_BODY)
     (out / f"{head}_char_lively.json").write_text(json.dumps(fitted, indent=1), encoding="utf-8", newline="\n")
     rep["springs"] = springs
     rep["bones"] = len(arm.data.bones)
@@ -596,6 +603,10 @@ def main():
     me.calc_loop_triangles()
     rep["tris"] = len(me.loop_triangles)
     log(f"tris {rep['tris']} bones {rep['bones']} springs {springs}")
+    if a.clip_edits:  # A1: the clips edited for the bare alien body (alien_clip_edit.py) before the export
+        import alien_clip_edit
+        rep["clip_edits"] = {"settings": a.clip_edits, "clips": alien_clip_edit.apply(arm, skin, a.clip_edits)}
+        log(f"clip edits {json.dumps(rep['clip_edits']['clips'], default=float)}")
     select_only([arm, skin], active=arm)
     bpy.ops.export_scene.gltf(filepath=str(out / f"{head}_char.glb"), export_format="GLB", use_selection=True,
                               export_apply=False, export_yup=True, export_animations=True, export_skins=True,
