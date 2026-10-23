@@ -677,7 +677,10 @@ def main():
                                                                        or [0.0])), 6)}
         report["rig"]["springs"] = [{"name": "crest", "bones": ["Crest1", "Crest2", "Crest3"], "hz": 2.2, "zeta": 0.3,
                                      "lag": 0.09, "max_deg": 30.0}]  # AL2: an explicit cap (v4's largest swing 11.6, never clamped); 0 is no swing
-    report["controller"] = ({"gaze": "none", "head_hz": 2.2, "yaw_deg": 40.0, "pitch_deg": 24.0, "neck_share": 0.4}
+    # AL5: the axolotl's head limits lowered (v4's 40 / 24: the neck stretched looking up, the far eye swivelled away),
+    # the pitch spread evenly over Neck and Head, a slight roll into the turn
+    report["controller"] = ({"gaze": "none", "head_hz": 2.2, "yaw_deg": 30.0, "pitch_deg": 12.0, "pitch_up_deg": 12.0,
+                             "pitch_down_deg": 18.0, "neck_share": 0.4, "pitch_neck_share": 0.5, "tilt": 0.15}
                             if bead else {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0, "neck_share": 0.4})
     report["sclera"] = f"{args.name}_sclera.png"
     (out / "lively.json").write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")

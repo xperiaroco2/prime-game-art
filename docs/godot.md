@@ -947,7 +947,12 @@ pilot's static premium heads"):
       a painted white catch light (59 and 70 texels, about 8 degrees of the bead), almost nothing between. A dark
       sphere that turns shows nothing, and a painted catch light that turned with it would read as the light
       moving, so the axolotl has no eye gaze (`lively.json` `controller.gaze` "none"): the head leads instead
-      (2.2 Hz against the chameleon's 1.6, yaw 40, pitch 24). The build (`--kind bead`) paints the catch light out
+      (2.2 Hz against the chameleon's 1.6; AL5: yaw 30, pitch up 12 and down 18, AL4's 40 and 24 stretched the
+      neck looking up, the mouth reading as a bill from below, and swivelled the far eye out of sight in hard turns).
+      `lively.json` `controller` may give `pitch_up_deg` and `pitch_down_deg` (else `pitch_deg` both ways),
+      `pitch_neck_share` (the pitch's share in Neck, else `neck_share`; the axolotl's 0.5 spreads it evenly over the
+      neck's two bands) and `tilt` (the head's roll per radian of yaw, the top leaning into the turn; the axolotl's
+      0.15, about 4.5 degrees at the limit; else 0); `alien_lively.gd` and `lively.js` read the same keys (tested). The build (`--kind bead`) paints the catch light out
       of `<head>_sclera.png` from the bead's own dark texels; `alien_static.gdshader`'s `bead` draws it back at the
       measured place, size and colour (`catch_dir_l`/`_r`, `catch_angle`, `catch_colour`) fixed in the mesh's own
       frame (the light's), while the eye centre moves with the head, so the glint stays toward the light as the
@@ -994,6 +999,13 @@ pilot's static premium heads"):
       smoothed inside the stalk alone (`G.smooth_within`, `G.SMOOTH_PASSES` passes, edges to other stalks ignored,
       the zeros pinned: the skull and the root band stay 0, `rig.gill_weight_on_skull`). `rig.gill_weight_on_thick`
       is no longer 0 by design (the stalks' thick cores move).
+    - *AL5's tries at the root junction (none kept):* fading the thin vertices in by their lift too (0 to 20 mm)
+      gave 11.8 mm (the worst moved into GillR3's weight slope); capping every edge's rise at 0.2 hop by hop left a
+      ladder of 0.2 steps out on the stalks (16.9 mm); pinning the root ring at 0.2 and the full weights put a pinned
+      0.2 beside a pinned 1.0 where a zero lies out on a stalk (33.8 mm); the cap and the fade near the root alone,
+      16.0 mm. The cause is that "lift" (distance from the head's centre) is no height over the skull for fins that
+      hang back toward the head: they read no lift far out on the stalk. AL4's rule stays (11.47 mm); the next try
+      is the height over the skull's own surface (a BVH of the thick triangles before the weights).
     - *The springs* are data now (`lively.json` `rig.springs`: bones, rate, damping, lag, cap): the chameleon's
       crest one chain of Crest1-3; the axolotl's six gills one bone each at 1.8 to 2.4 Hz, so they never swing in
       step. `alien_lively.gd` and `lively.js` read them, and the head's follow from `controller`. Every spring is

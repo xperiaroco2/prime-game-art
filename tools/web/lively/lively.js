@@ -94,8 +94,11 @@ export async function makeLively(root, jsonUrl, scleraUrl) {
   sclera.flipY = false;
   sclera.colorSpace = THREE.SRGBColorSpace;
   const ctl = data.controller || { gaze: "iris", head_hz: 1.6, yaw_deg: 35, pitch_deg: 20, neck_share: 0.4 };
-  const YAW = THREE.MathUtils.degToRad(ctl.yaw_deg), PITCH = THREE.MathUtils.degToRad(ctl.pitch_deg);
+  const YAW = THREE.MathUtils.degToRad(ctl.yaw_deg);
+  // AL5: separate up and down pitch limits, the pitch's own neck share and the head's roll per radian of yaw
+  const PITCH = THREE.MathUtils.degToRad(ctl.pitch_up_deg ?? ctl.pitch_deg), PITCH_DOWN = THREE.MathUtils.degToRad(ctl.pitch_down_deg ?? ctl.pitch_deg);
   const NECK_SHARE = ctl.neck_share, HEAD_HZ = ctl.head_hz, bead = ctl.gaze === "none";
+  const PITCH_NECK = ctl.pitch_neck_share ?? NECK_SHARE, TILT = ctl.tilt ?? 0;
   let mesh = null;
   root.traverse((o) => { if (o.isSkinnedMesh && !mesh) mesh = o; });
   if (!mesh) throw new Error("lively: no skinned mesh (load a <head>_lively.glb)");
@@ -151,15 +154,15 @@ export async function makeLively(root, jsonUrl, scleraUrl) {
       st.time += dt;
       const t = mesh.worldToLocal(target.clone()), d = t.clone().sub(mid);
       const gy = THREE.MathUtils.clamp(Math.atan2(d.x, d.z), -YAW, YAW);
-      const gp = THREE.MathUtils.clamp(Math.atan2(d.y, Math.hypot(d.x, d.z)), -PITCH, PITCH);
+      const gp = THREE.MathUtils.clamp(Math.atan2(d.y, Math.hypot(d.x, d.z)), -PITCH_DOWN, PITCH);
       [st.hy, st.vy] = damp(st.hy, st.vy, gy, HEAD_HZ, dt);
       [st.hp, st.vp] = damp(st.hp, st.vp, gp, HEAD_HZ, dt);
       const b = 0.5 - 0.5 * Math.cos(2 * Math.PI * st.time / BREATH_S), nod = BREATH_NOD * Math.sin(2 * Math.PI * st.time / BREATH_S - 0.6);
       const chest = new THREE.Vector3(1, 1, 1).addScaledVector(BREATH_CHEST, b);
       B.chest.scale.copy(chest);
       B.neck.scale.set(1 / chest.x, 1 / chest.y, 1 / chest.z);  // the head keeps its size
-      B.neck.quaternion.setFromEuler(new THREE.Euler(-st.hp * NECK_SHARE, st.hy * NECK_SHARE, 0, "YXZ"));
-      B.head.quaternion.setFromEuler(new THREE.Euler(-st.hp * (1 - NECK_SHARE) - nod, st.hy * (1 - NECK_SHARE), 0, "YXZ"));
+      B.neck.quaternion.setFromEuler(new THREE.Euler(-st.hp * PITCH_NECK, st.hy * NECK_SHARE, 0, "YXZ"));
+      B.head.quaternion.setFromEuler(new THREE.Euler(-st.hp * (1 - PITCH_NECK) - nod, st.hy * (1 - NECK_SHARE), -TILT * st.hy, "YXZ"));
       // the springs (crest or gills): under-damped, pulled back by the head's turn speed, capped at max_deg (0 or missing: held still)
       for (const s of springs) {
         const w = 2 * Math.PI * s.hz, cap = THREE.MathUtils.degToRad(s.max_deg || 0);

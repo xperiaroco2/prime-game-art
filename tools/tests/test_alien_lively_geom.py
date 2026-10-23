@@ -329,6 +329,20 @@ class RunTest(unittest.TestCase):
         self.assertIn(f"const CATCH_MARGIN := {G.CATCH_MARGIN}", gd)
         self.assertIn(f"const CATCH_MARGIN = {G.CATCH_MARGIN};", js)
 
+    def test_head_limits_in_controllers(self):
+        # AL5: Godot and the web read the same controller keys (up and down pitch, the pitch's neck share, the tilt,
+        # each falling back to AL4's) and roll the head the same way
+        root = Path(__file__).resolve().parents[2]
+        js = (root / "tools/web/lively/lively.js").read_text(encoding="utf-8")
+        gd = (root / "godot/alien/alien_lively.gd").read_text(encoding="utf-8")
+        for key in ("pitch_up_deg", "pitch_down_deg", "pitch_neck_share", "tilt"):
+            self.assertIn(f'ctl.get("{key}"', gd)
+            self.assertIn(f"ctl.{key} ??", js)
+        self.assertIn("-tilt * _hy", gd)
+        self.assertIn("-TILT * st.hy", js)
+        self.assertIn("-pitch_down_limit, pitch_limit", gd)
+        self.assertIn("-PITCH_DOWN, PITCH", js)
+
     def test_build_refusal(self):
         import tempfile
         sys.path.insert(0, str(ROOT / "tools" / "blender"))

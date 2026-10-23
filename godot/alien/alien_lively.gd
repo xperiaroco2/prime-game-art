@@ -18,11 +18,16 @@ const BREATH_S := 4.4  # one breath
 const BREATH_CHEST := Vector3(0.006, 0.004, 0.010)  # the chest's scale at the top of a breath (x, y, z)
 const BREATH_NOD := deg_to_rad(0.6)  # the head's bob with it
 # the head's critically damped follow per head, from lively.json's controller (the chameleon: gaze "iris", 1.6 Hz,
-# yaw 35, pitch 20; the axolotl: gaze "none", its dark beads show no turn, so the head leads: 2.2 Hz, yaw 40, pitch 24);
-# neck_share of the turn in Neck, the rest in Head
+# yaw 35, pitch 20; the axolotl: gaze "none", its dark beads show no turn, so the head leads: 2.2 Hz; AL5: yaw 30,
+# pitch up 12 and down 18, AL4's 40 and 24 stretched the neck looking up and swivelled the far eye out of sight);
+# neck_share of the yaw in Neck, pitch_neck_share of the pitch (default neck_share), the rest in Head; tilt: the head's
+# roll per radian of yaw (AL5, the axolotl 0.15: the top leans into a turn, default 0)
 var yaw_limit := deg_to_rad(35.0)
 var pitch_limit := deg_to_rad(20.0)
+var pitch_down_limit := deg_to_rad(20.0)
 var neck_share := 0.4
+var pitch_neck_share := 0.4
+var tilt := 0.0
 var head_hz := 1.6
 var bead := false
 # the springs (lively.json rig.springs: the chameleon's crest, Crest1-3 as one chain; the axolotl's six gills, one
@@ -55,8 +60,11 @@ func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, scl
 	var ctl: Dictionary = lively.get("controller", {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0,
 		"neck_share": 0.4})
 	yaw_limit = deg_to_rad(float(ctl["yaw_deg"]))
-	pitch_limit = deg_to_rad(float(ctl["pitch_deg"]))
+	pitch_limit = deg_to_rad(float(ctl.get("pitch_up_deg", ctl.get("pitch_deg", 20.0))))
+	pitch_down_limit = deg_to_rad(float(ctl.get("pitch_down_deg", ctl.get("pitch_deg", 20.0))))
 	neck_share = float(ctl["neck_share"])
+	pitch_neck_share = float(ctl.get("pitch_neck_share", neck_share))
+	tilt = float(ctl.get("tilt", 0.0))
 	head_hz = float(ctl["head_hz"])
 	bead = ctl["gaze"] == "none"
 	var specs: Array = lively["rig"].get("springs", [{"name": "crest", "bones": ["Crest1", "Crest2", "Crest3"],
@@ -157,7 +165,7 @@ func step(dt: float) -> void:
 	var mid: Vector3 = (_v(eyes["left"]["centre"]) + _v(eyes["right"]["centre"])) * 0.5
 	var d := t_local - mid
 	var gy: float = clampf(atan2(d.x, d.z), -yaw_limit, yaw_limit) * head_follow
-	var gp: float = clampf(atan2(d.y, Vector2(d.x, d.z).length()), -pitch_limit, pitch_limit) * head_follow
+	var gp: float = clampf(atan2(d.y, Vector2(d.x, d.z).length()), -pitch_down_limit, pitch_limit) * head_follow
 	var r := _damp(_hy, _hvy, gy, head_hz, dt)
 	_hy = r.x
 	_hvy = r.y
@@ -169,9 +177,9 @@ func step(dt: float) -> void:
 	var chest := Vector3.ONE + BREATH_CHEST * b
 	skeleton.set_bone_pose_scale(_bones["Chest"], chest)
 	skeleton.set_bone_pose_scale(_bones["Neck"], Vector3.ONE / chest)  # the head keeps its size
-	skeleton.set_bone_pose_rotation(_bones["Neck"], Quaternion.from_euler(Vector3(-_hp * neck_share, _hy * neck_share, 0.0)))
+	skeleton.set_bone_pose_rotation(_bones["Neck"], Quaternion.from_euler(Vector3(-_hp * pitch_neck_share, _hy * neck_share, 0.0)))
 	skeleton.set_bone_pose_rotation(_bones["Head"],
-		Quaternion.from_euler(Vector3(-_hp * (1.0 - neck_share) - nod, _hy * (1.0 - neck_share), 0.0)))
+		Quaternion.from_euler(Vector3(-_hp * (1.0 - pitch_neck_share) - nod, _hy * (1.0 - neck_share), -tilt * _hy)))
 	for sp: Dictionary in springs:
 		var w: float = TAU * float(sp["hz"])
 		var st: Vector4 = sp["s"]
