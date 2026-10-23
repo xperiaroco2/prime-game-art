@@ -401,6 +401,14 @@ class AlienFingersTest(unittest.TestCase):
                         springs("Hips", "Crest1", "Crest2", "Crest3")):
             self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["extra_bones"], _checks.FAIL)
 
+    def test_the_alien_head_may_stand_above_the_capsule_up_to_its_cap(self) -> None:
+        # [kinds.alien] head_top_max_m 1.95 (art #196 comment 6374319309); the body keeps height_max_m
+        for top, alien, body in ((1.884, _checks.PASS, _checks.FAIL), (1.951, _checks.FAIL, _checks.FAIL)):
+            measure = four_finger_alien(self.profile)
+            measure["meshes"][0]["max"][1] = top
+            self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["height"], alien, top)
+            self.assertEqual(self.statuses(self.evaluate(copy.deepcopy(measure), "body"))["height"], body, top)
+
     def test_the_alien_keeps_the_body_morph_rule(self) -> None:
         measure = with_keys(four_finger_alien(self.profile), {"belly": {"Spine": 30}})
         self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["body_shape_morphs"], _checks.FAIL)

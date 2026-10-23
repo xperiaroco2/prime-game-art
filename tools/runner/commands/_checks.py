@@ -379,11 +379,16 @@ def _shape_checks(report: _Report, meshes: list, contract: dict, rules: dict) ->
     low = min(m["min"][1] for m in meshes)
     high = max(m["max"][1] for m in meshes)
     height = high - low
+    # head_top_max_m (kinds.alien, art #196 comment 6374319309): the head's top may stand above the capsule; the body
+    # below the Head's skin is held to height_max_m by godot-check's contract_height, which has the skin per bone
+    top = rules.get("head_top_max_m", body["height_max_m"])
     report.gate(
         "height",
         rules["height"],
-        body["height_min_m"] <= height <= body["height_max_m"],
-        f"{height:.3f} m (contract {body['height_m']} m, allowed {body['height_min_m']} to {body['height_max_m']})",
+        body["height_min_m"] <= height <= top,
+        f"{height:.3f} m (contract {body['height_m']} m, allowed {body['height_min_m']} to {top}"
+        + (f"; the head may pass the {body['height_max_m']} m capsule, the body may not: godot-check)"
+           if "head_top_max_m" in rules else ")"),
     )
     report.gate(
         "feet_at_zero",
