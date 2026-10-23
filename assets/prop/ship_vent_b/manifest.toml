@@ -2,7 +2,7 @@ id = "ship_vent_b"
 kind = "prop"
 slot = ""
 title = "The ship's throat vent body and gill blade, way B (art#263 station 1)"
-notes = "Way B (art#263 comments 6363433518 and 6374327838; builder steps vents-b1 and vents-b2, the look polish: the hooked claw, the well lights, the deeper bronze): the body (frame, copper hinge caps, column, light bar, scanner, lamp, feet) and the one gill blade built in headless Blender by tools/blender/ship_vent_b.py as flat-faceted chamfered solids from our own OpenAI concept views (batch 2026-10-23-ship-vent-final; the shapes were drawn after them by hand in code, no image or mesh of them is in the files) and the traced numbers; way A's Meshy body only as the to-scale guide. tools/blender/ship_interior_vent.py places the blade seven times and adds the marker, glows, light pieces and colliders into the station_vent_e and station_vent_w pieces. Not approved yet."
+notes = "Way B (art#263 comments 6363433518 and 6374327838; builder steps vents-b1, vents-b2 (the look polish: the well lights) and vents-b3 (the swept wedge standing open, the heavier frame, the patinated bronze)): the body (frame, copper hinge caps, column, light bar, scanner, lamp, feet) and the one gill blade built in headless Blender by tools/blender/ship_vent_b.py as flat-faceted chamfered solids from our own OpenAI concept views (batch 2026-10-23-ship-vent-final; the shapes were drawn after them by hand in code, no image or mesh of them is in the files) and the traced numbers; way A's Meshy body only as the to-scale guide. tools/blender/ship_interior_vent.py places the blade seven times and adds the marker, glows, light pieces and colliders into the station_vent_e and station_vent_w pieces. lights.json (the light pieces' places) is computed by ship_vent_b.py from this body's own geometry in the format way A measured on its Meshy body; the shapes follow our OpenAI concept images, but no AI output (image or mesh) is in these files, hence own-work and ai_generated false. Not approved yet."
 tools = ["blender 5.2.2"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -21,21 +21,21 @@ generated_at = 2026-10-24
 url = "https://github.com/xperiaroco2/prime-game-art"
 
 [[raw]]
-file = "ship/v4/vents-b/b2/body.glb"
-sha256 = "4869b7e7db8acb581c9219c3d0b1be0e285ad8e4b1eab7a49ce94ae56a08757b"
+file = "ship/v4/vents-b/b3/body.glb"
+sha256 = "455898e2fd1e67ce5fefb1ee2e463d3a18f00c477bac964ed2ed157edf02b9ff"
 
 [[raw]]
-file = "ship/v4/vents-b/b2/blade.glb"
-sha256 = "1acbef0b73ca6c7a0436710f4d256273e7941905694542bab5f7e015f8919c05"
+file = "ship/v4/vents-b/b3/blade.glb"
+sha256 = "371731601699a3c40e5499b2a94e9e2c89674ebb81b7ffa2e2f1d668b628fcf3"
 
 [[raw]]
-file = "ship/v4/vents-b/b2/lights.json"
-sha256 = "f31b773ce0cd1e6a9e3f18ff9dcf70e56097fdfb63e1dc7b4ee93d943f3719d0"
+file = "ship/v4/vents-b/b3/lights.json"
+sha256 = "23939c88ca0b8888deb127e7a8bb48e2988384b79e0dd86dbac61ead3908dbeb"
 
 [[raw]]
-file = "ship/v4/vents-b/pieces_b2/station_vent_e.glb"
-sha256 = "08c4886dfb49128104baa33d8d2b3df11e25b9cf99b269a60adf66f736a95b2a"
+file = "ship/v4/vents-b/pieces_b3/station_vent_e.glb"
+sha256 = "f8aa487dbb06f117d66160e20591712c213ab950b9de00bdc79aa45f7a1178c7"
 
 [[raw]]
-file = "ship/v4/vents-b/pieces_b2/station_vent_w.glb"
-sha256 = "9f64faa15091098d5fc77d9d7063b6a22cf5a91936001349ac49a042a19ddc31"
+file = "ship/v4/vents-b/pieces_b3/station_vent_w.glb"
+sha256 = "4a63bdc9ebc26ba0f94f21e0f000dd7fc38d9a3c168f6290222b335e1ed7fdd9"

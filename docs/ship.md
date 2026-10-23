@@ -1085,7 +1085,7 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
 - **In place:** `ship --shoot DIR --views in_vent_` shoots the vents at the ship's night look (the throat from the
   hall and the ramp, each vent from 2 m and 4 m), `--views cu_vent_` their edges against the real wall and floor
   close up (`--views` keeps the views whose names start with a prefix; no plan, day views or compares).
-- **Way A (art#263 comment 6363433518; builder steps vents-a1 to a3), the current build.** The body (frame, copper
+- **Way A (art#263 comment 6363433518; builder steps vents-a1 to a3), archived** (vents-b3: way B replaced it; its scripts `ship_vent_a*.py` are kept for the record, and `ship_vent_a_sheet.py` still draws way B's sheets). The body (frame, copper
   hinge caps, column, light bar, palm scanner, lamp, feet) is Meshy's multi-image-to-3D model of the concept's body
   views (batch `2026-10-23-ship-vent-a-body`, 35 credits), cleaned, fitted and baked onto 4,000 triangles by
   `tools/blender/ship_vent_a.py` (`<raw>/ship/v4/vents-a/body4k/`), then finished without a new generation by
@@ -1152,8 +1152,7 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   (17.9 cm past the frame). About 5,800 body triangles; a vent with its seven blades, light pieces and colliders
   about 9,600. `ship_vent_a_sheet.py` serves both ways (the close-ups re-aimed on the raised column, the seams dark
   calm) and `motion_request`'s close-ups are re-aimed on the built body.
-- **Way B, the look polish (vents-b2, 2026-10-24), the current build** (`<raw>/ship/v4/vents-b/b2`, the pieces in
-  `pieces_b2`):
+- **Way B, the look polish (vents-b2, 2026-10-24)** (`<raw>/ship/v4/vents-b/b2`, the pieces in `pieces_b2`):
   - *The glow.* The calm well wall (`int_cyan__vent_cool`, 0/0.42/1) at strength 3 (was 1.8; 5 washed white in
     EEVEE), Godot `e` 1.0; the frame's strips 3.5. Each
     glow panel carries its own well lights (`godot/ship/vent_glow.gd`, used by `ship.gd` and `vent_motion.gd`;
@@ -1176,19 +1175,40 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   - *The screen.* The dark screen piece is the bezel's octagon 1.5 mm in (`lights.json` `hand.poly`), 1 mm off the
     body's screen face (b1's rectangle's corners cut through the bezel and flickered); the hand shrinks until its
     outline sits 4 mm inside the octagon.
+- **Way B step 3 (vents-b3, 2026-10-24), the current build** (`<raw>/ship/v4/vents-b/b3`, the pieces in `pieces_b3`;
+  a fresh critic's findings on b2):
+  - *The blade stands open.* A swept wedge (`SECTION`, 29 points, 750 triangles): 8.6 cm thick at the root, the upper
+    face sweeping down to a 2.8 cm tip 4 cm under the pivot, a shallow concave underside, no crease (its rings read
+    as a hard split line), shaded smooth under 35 deg (`SMOOTH_DEG`; b2's polished facet bands are gone). Calm seam
+    5.4 cm straight from the front (b2 4.0), shut `CLOSED_DEG` 20 deg below calm (b2 9) with a 1.8 cm overlap
+    (`SHUT_SEAM` -1 cm is reached at 18.1 deg), the first cut 57 deg below calm; reach 0.257 (0.262 at most turned).
+  - *The frame is heavier.* The face at 0.44 (was 0.415) with 2.4 cm chamfers (was 1 cm), the header 14 cm deep
+    (was 9.2), the shoulder 4 cm deeper and 3 cm higher (`BOX_TOP` 1.64), the feet 5 cm higher and 3 cm prouder,
+    the scanner's bezel 22.4 x 28.4 cm (was 21 x 25). The calm blades project 14.7 cm past the frame's face.
+  - *The colour.* A dark patinated bronze (`vent_b_bronze` 0.085/0.052/0.024, every other frame panel and the
+    shoulder `vent_b_bronze2`, Godot `v` 1.55 for both), duller chamfers (`vent_b_edge` 0.42/0.26/0.11, roughness
+    0.30, Godot `v` 1.0: no blown highlights), an olive `vent_b_tarnish`. Saturated cyan (0/0.62/1) strips, hand and
+    well lights; the well lights' range 0.75 m (b2 1.1 hazed the wall above); the heat and seams a deep red-orange
+    (1/0.10..0.13/0). The glow panels end 3 cm under the top blade's root (b2's showed as a cyan plate over it), the
+    header sill is dark tarnish.
+  - *Defects.* The hand: a bolder neon line on a matte black screen. The lamp dome: 6 rings of 32, shaded smooth.
+    The calm seams: `ship --shoot` kept their orange colour (`dim` only scales the glow); `VENT_STATES` now has a
+    `"dark"` key (glow off, `VentAnim.SEAM_DARK`), and the Blender sheet darkens their base colour calm. The
+    controller and `ship --motion` were already dark.
+  - *Code.* `ship_interior_vent.lights()` raises when `lights.json` is missing beside the body.
 - **The animation (vents-anim1, 2026-10-24; the engineer: "make the vents, try to animate them"; beauty over
   motion).** `godot/ship/vent_anim.gd`, the controller the game copies: a Node per vent (`setup(root, id,
   mark_travel)` after the scene's materials are set; `_process` steps it, `manual = true` and `step(dt)` for a
   proof). It takes each driven surface's material as a copy (a surface override) and drives the seven blades
-  (`rotation.x = -deg_to_rad(angle)`, the angle in degrees of opening from shut, calm `CALM_DEG` 9), the marker, the
+  (`rotation.x = -deg_to_rad(angle)`, the angle in degrees of opening from shut, calm `CALM_DEG` 20 since vents-b3, was 9), the marker, the
   cool and heat panels with their well lights, the seams, the lamp, the bar and its band. **Inputs:** `problem: bool`
   and `hold: 0..1`; the signal `fixed` at the cough (the game clears `problem`; the controller re-arms only once it
   is false). **States:**
-  - *CALM*: the blades breathe, each breath closing from calm by `BREATH_DEG` 3.2 and opening back every
+  - *CALM*: the blades breathe, each breath closing from calm by `BREATH_DEG` 5 (vents-b3; was 3.2) and opening back every
     `BREATH_PERIOD_S` 3.6 s, each blade `BREATH_WAVE` 0.07 of a breath behind the one above (a soft wave down); calm
     stays the widest pose (the settled look), the cyan eases by up to `BREATH_GLOW` 0.35 as they close.
   - *SLAM* (`problem` set): shut in `SLAM_S` 0.16 s (cubic ease-in), `SLAM_STAGGER_S` 0.012 s a blade, then rebounds
-    off the stop (`BOUNCE_DEG` 1.8, `BOUNCE_HALF_S` 0.085, `BOUNCE_DECAY_S` 0.11; never below shut); the heat panel
+    off the stop (`BOUNCE_DEG` 3, vents-b3; was 1.8, `BOUNCE_HALF_S` 0.085, `BOUNCE_DECAY_S` 0.11; never below shut); the heat panel
     with a flash (`FLASH_GAIN` 2.6, falling over `FLASH_DECAY_S` 0.3), the seams lit, the lamp pulsing
     (`LAMP_LOW` 0.35..1 at `LAMP_PULSE_HZ` 1.3; calm `LAMP_CALM` 0.1), the bar from `BAR_CALM` 0.6 to 1.
   - *SHUT*: a barely seen heat tremble (`TREMBLE_DEG` 0.22 at `TREMBLE_HZ` 7); `hold` (followed with
