@@ -384,6 +384,23 @@ class AlienFingersTest(unittest.TestCase):
         self.assertEqual(result["status"], _checks.FAIL)
         self.assertIn("RightRing is not weighted on RightRingProximal", result["detail"])
 
+    def test_whole_spring_sets_under_head_pass_and_other_extra_bones_fail(self) -> None:
+        # [kinds.alien] bones = "all_and_springs" (art #196 comment 6374319309)
+        def springs(parent: str, *names: str) -> dict:
+            measure = four_finger_alien(self.profile)
+            for name in names:
+                measure["armatures"][0]["bones"].append({"name": name, "parent": parent, "head": [0, 1.8, 0],
+                                                         "tail": [0, 1.85, 0], "deform": True})
+                parent = name
+            return measure
+
+        crest = springs("Head", "Crest1", "Crest2", "Crest3")
+        self.assertEqual(self.statuses(self.evaluate(crest, "alien"))["extra_bones"], _checks.PASS)
+        self.assertEqual(self.statuses(self.evaluate(crest, "body"))["extra_bones"], _checks.FAIL)
+        for measure in (springs("Head", "Crest1", "Crest2"), springs("Head", "Sword_Socket"),
+                        springs("Hips", "Crest1", "Crest2", "Crest3")):
+            self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["extra_bones"], _checks.FAIL)
+
     def test_the_alien_keeps_the_body_morph_rule(self) -> None:
         measure = with_keys(four_finger_alien(self.profile), {"belly": {"Spine": 30}})
         self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["body_shape_morphs"], _checks.FAIL)

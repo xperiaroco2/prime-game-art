@@ -30,7 +30,7 @@ SEVERITIES = ("fail", "warn", "off")
 # The values each kinds.<kind> rule may take in contract.toml.
 RULE_VALUES = {
     "rig": ("required", "forbidden"),
-    "bones": ("all", "subset"),
+    "bones": ("all", "subset", "all_and_springs"),  # all_and_springs: all, plus whole spring_sets under spring_parent
     "fingers": SEVERITIES,
     "height": SEVERITIES,
     "eyes": SEVERITIES,
@@ -193,6 +193,7 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
                 errors.append(f"kinds.{kind}.{key} is {rules.get(key)!r}; it must be one of {', '.join(allowed)}")
         if not isinstance(rules.get("max_materials"), int):
             errors.append(f"kinds.{kind}.max_materials must be an integer")
+        errors += _validate_springs(kind, rules, contract, profile)
         fingers = skeleton.get("fingers", [])
         unweighted = rules.get("fingers_unweighted", [])
         if not isinstance(unweighted, list) or any(finger not in fingers for finger in unweighted):
@@ -212,6 +213,54 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
         if slot.get("budget") and slot["budget"] not in contract.get("budgets", {}):
             errors.append(f"slot {slot.get('id')} names the unknown budget {slot['budget']!r}")
     return errors
+
+
+def _validate_springs(kind: str, rules: dict[str, Any], contract: dict[str, Any], profile: dict[str, Any]) -> list[str]:
+    """kinds.<kind>'s spring bones and head-top rule (art #196 comment 6374319309): spring_sets, spring_parent and
+    head_top_max_m belong to bones = "all_and_springs"; the sets name no profile bone and no bone twice."""
+    errors: list[str] = []
+    springs = rules.get("bones") == "all_and_springs"
+    keys = [k for k in ("spring_sets", "spring_parent", "head_top_max_m") if k in rules]
+    if not springs:
+        return [f"kinds.{kind}.{k} needs bones = \"all_and_springs\"" for k in keys]
+    parents = profile_parents(profile)
+    sets = rules.get("spring_sets")
+    names = [b for v in sets.values() for b in v] if isinstance(sets, dict) else []
+    if (not isinstance(sets, dict) or not sets or any(not isinstance(v, list) or not v for v in sets.values())
+            or any(not isinstance(b, str) for b in names)):
+        errors.append(f"kinds.{kind}.spring_sets must map set names to non-empty lists of bone names")
+    elif len(set(names)) != len(names) or any(b in parents for b in names):
+        errors.append(f"kinds.{kind}.spring_sets names a bone twice or a profile bone: {names}")
+    if rules.get("spring_parent") not in parents:
+        errors.append(f"kinds.{kind}.spring_parent is {rules.get('spring_parent')!r}; it must be a profile bone")
+    top = rules.get("head_top_max_m")
+    if not isinstance(top, (int, float)) or top < contract.get("body", {}).get("height_max_m", 0):
+        errors.append(f"kinds.{kind}.head_top_max_m must be a number of at least body.height_max_m")
+    return errors
+
+
+def spring_split(rules: dict[str, Any], extra: list[str], parent_of: dict[str, str]) -> dict[str, Any]:
+    """The bones beyond the profile against a kind's spring rule: {"sets": {name: bones} of the sets present,
+    "partial": set names present in part, "stray": extra bones in no declared set, "outside": spring bones that are
+    not descendants of spring_parent}. parent_of maps each bone to its parent ("" for none). Without bones =
+    "all_and_springs" every extra bone is stray."""
+    sets = rules.get("spring_sets", {}) if rules.get("bones") == "all_and_springs" else {}
+    used = {n: [b for b in bones if b in extra] for n, bones in sets.items()}
+    used = {n: v for n, v in used.items() if v}
+    top = rules.get("spring_parent", "")
+
+    def under(bone: str) -> bool:
+        seen: set[str] = set()
+        while bone and bone not in seen:
+            seen.add(bone)
+            bone = parent_of.get(bone, "")
+            if bone == top:
+                return True
+        return False
+
+    return {"sets": used, "partial": sorted(n for n, v in used.items() if len(v) != len(sets[n])),
+            "stray": [b for b in extra if not any(b in v for v in sets.values())],
+            "outside": [b for v in used.values() for b in v if not under(b)]}
 
 
 def model_from_scene(position: list[float]) -> list[float]:

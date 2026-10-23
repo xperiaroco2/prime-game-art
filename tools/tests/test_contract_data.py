@@ -108,8 +108,33 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(kinds["alien"]["fingers_unweighted"], ["Little"])
         for kind in ("body", "clothing", "accessory", "prop"):
             self.assertNotIn("fingers_unweighted", kinds[kind], kind)
-        same = {k: v for k, v in kinds["alien"].items() if k != "fingers_unweighted"}
-        self.assertEqual(same, kinds["body"])
+        own = ("fingers_unweighted", "bones", "spring_parent", "spring_sets", "head_top_max_m")
+        same = {k: v for k, v in kinds["alien"].items() if k not in own}
+        self.assertEqual(same, {k: v for k, v in kinds["body"].items() if k != "bones"})
+
+    def test_the_alien_carries_whole_spring_sets_under_head_and_a_head_top_cap(self) -> None:
+        # the engineer, art #196 comment 6374319309
+        alien = self.contract["kinds"]["alien"]
+        self.assertEqual(alien["bones"], "all_and_springs")
+        self.assertEqual(alien["spring_parent"], "Head")
+        self.assertEqual(alien["spring_sets"], {"crest": ["Crest1", "Crest2", "Crest3"],
+                                                "gills": ["GillL1", "GillL2", "GillL3", "GillR1", "GillR2", "GillR3"]})
+        self.assertEqual(alien["head_top_max_m"], 1.95)
+        self.assertEqual(self.contract["kinds"]["body"]["bones"], "all")
+
+    def test_a_bad_spring_rule_is_caught(self) -> None:
+        for change, message in (
+            ({"spring_parent": "Skull"}, "kinds.alien.spring_parent is 'Skull'"),
+            ({"spring_sets": {"crest": ["Head"]}}, "names a bone twice or a profile bone"),
+            ({"spring_sets": {"a": ["X1"], "b": ["X1"]}}, "names a bone twice or a profile bone"),
+            ({"spring_sets": {"crest": []}}, "non-empty lists of bone names"),
+            ({"head_top_max_m": 1.7}, "head_top_max_m must be a number of at least body.height_max_m"),
+            ({"bones": "all"}, "kinds.alien.spring_sets needs bones = \"all_and_springs\""),
+        ):
+            broken = copy.deepcopy(self.contract)
+            broken["kinds"]["alien"].update(change)
+            errors = _contract.validate_contract(broken, self.profile)
+            self.assertTrue(any(message in e for e in errors), (change, errors))
 
     def test_a_bad_unweighted_finger_list_is_caught(self) -> None:
         for value, message in (

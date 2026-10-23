@@ -449,12 +449,18 @@ def _rig_checks(
     if duplicates:
         report.add("duplicate_bones", FAIL, f"two bones become {', '.join(sorted(set(duplicates)))} after the map")
     extra = sorted(n for n in bones if n not in parents)
-    report.add(
-        "extra_bones",
-        FAIL if extra else PASS,
-        f"not in the profile: {', '.join(extra)}" if extra else "every bone is a profile bone",
-    )
-    if rules["bones"] == "all":
+    split = _contract.spring_split(rules, extra, {n: b["parent"] for n, b in bones.items()})
+    bad = split["stray"] or split["partial"] or split["outside"]
+    if bad:
+        detail = (f"not in the profile: {', '.join(extra)}"
+                  + (f" (spring sets in part: {split['partial']})" if split["partial"] else "")
+                  + (f" (not below {rules.get('spring_parent')}: {split['outside']})" if split["outside"] else ""))
+    elif extra:
+        detail = f"every bone is a profile bone or in a whole spring set: {', '.join(extra)}"
+    else:
+        detail = "every bone is a profile bone"
+    report.add("extra_bones", FAIL if bad else PASS, detail)
+    if rules["bones"] != "subset":
         missing = [n for n in parents if n not in bones]
         report.add(
             "missing_bones",
@@ -496,7 +502,7 @@ def _rig_checks(
         FAIL if weights.get(root) else PASS,
         f"{root} carries weights on {weights[root]} vertices" if weights.get(root) else f"{root} carries no weights",
     )
-    if rules["bones"] == "all":
+    if rules["bones"] != "subset":
         unpainted = [n for n in skeleton["weighted"] if not weights.get(n)]
         report.add(
             "weighted_bones",

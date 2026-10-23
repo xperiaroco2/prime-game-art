@@ -40,12 +40,9 @@ ALIEN_CLIPS = ("Crouch_Fwd", "Crouch_Idle", "Idle", "Jog_Fwd", "Jump_Air", "Jump
 # (B4, r5: chameleon 2282 white and 182 black of 5228, 43.6 % and 3.5 %; axolotl 1495 and 607 of 2485, 60 % and 24 %)
 ALIEN_EYE_SHARE = 0.017
 PROFILES = ("pack", "alien")
-# B4 review (a): the alien heads' spring bones beyond the contract's 56 (docs/contract.md: "no extra bones"; whether
-# they may stay is the engineer's call, the measurement is r5's bones.md). alien_extra_bones names every extra bone and
-# whether it belongs to a whole set declared here: a warning while any extra bone exists, a failure under
-# --strict-contract (as contract_height); an extra bone outside the sets, or a set in part, fails either way.
-ALIEN_SPRING_SETS = {"crest": ("Crest1", "Crest2", "Crest3"),
-                     "gills": ("GillL1", "GillL2", "GillL3", "GillR1", "GillR2", "GillR3")}
+# The alien heads' spring bones beyond the contract's 56 are declared in contract/contract.toml ([kinds.alien]
+# spring_sets under spring_parent, bones = "all_and_springs"; the engineer, art #196 comment 6374319309):
+# alien_extra_bones passes whole sets under Head and fails any other extra bone or a set in part, in every mode.
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 NOTEWORTHY = ("ERROR", "WARNING", "SCRIPT ERROR", "USER ERROR", "USER WARNING")
 
@@ -351,9 +348,10 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
     B2): the alien kind's own equivalents of the Ultimate Modular rules: facing_plus_z from the LeftEye and RightEye
     bones and the contract's bone names, eye_pupils on the head mesh's eye caps, pack_floor the contract skeleton's
     weighted bones (each the heaviest bone of some vertex) and the shared alien body's clips (ALIEN_CLIPS), and
-    alien_extra_bones (ALIEN_SPRING_SETS; warn, fail if strict_contract). allowance (the alien profile only, B4): a named height allowance of the
-    contract's body (`<allowance>_height_max_m`, e.g. "plasticine"); without one the alien profile holds height_max_m,
-    textured or not."""
+    alien_extra_bones (whole [kinds.alien] spring_sets below spring_parent pass; any other extra bone fails).
+    allowance (the alien profile only, B4): a named height allowance of the contract's body
+    (`<allowance>_height_max_m`, e.g. "plasticine"); without one the alien profile holds [kinds.alien]'s rule (the
+    body below the Head's skin at most height_max_m, the top at most head_top_max_m), textured or not."""
     if profile not in PROFILES:
         raise ValueError(f"unknown profile {profile!r} (known: {', '.join(PROFILES)})")
     if allowance and (profile != "alien" or f"{allowance}_height_max_m" not in contract["body"]):
@@ -370,7 +368,7 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
     c.add("skeleton_bones", not missing and not extra and len(got) == len(want_bones),
           f"{len(got)} bones, the rig has {len(want_bones)}" + (f"; missing {missing}" if missing else "") + (f"; extra {extra}" if extra else ""))
     if profile == "alien":
-        _alien_extra_bones(c, got, renamed, strict_contract, contract)
+        _alien_extra_bones(c, skeleton, renamed, contract)
     if expect.get("bone_parents") and got:
         wrong = []
         for bone, parent in expect["bone_parents"].items():
@@ -453,14 +451,17 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
         (_facing_alien if profile == "alien" else _facing)(c, dump, skeleton, renamed)
         rules = contract["kinds"]["body"]
         severity = rules["height"] if strict_contract else "warn"
-        if profile == "alien":  # B4: the alien holds the contract's height unless an allowance is named
-            top = body[f"{allowance}_height_max_m"] if allowance else body["height_max_m"]
-            look = f" with the {allowance} allowance" if allowance else " (alien profile, no allowance)"
+        if profile == "alien" and not allowance:  # art #196 comment 6374319309: the head may pass the capsule
+            _alien_height(c, dump, skeleton, renamed, contract, low, height, severity)
         else:
-            top = body["plasticine_height_max_m"] if textured else body["height_max_m"]  # the baked clay look
-            look = " for the plasticine look" if textured else ""
-        c.add("contract_height", body["height_min_m"] <= height <= top,
-              f"{height:.3f} m to the top (contract v1{look}: {body['height_min_m']} to {top} m)", severity)
+            if profile == "alien":  # B4: a named allowance replaces the alien rule (never the paused plasticine's)
+                top = body[f"{allowance}_height_max_m"]
+                look = f" with the {allowance} allowance"
+            else:
+                top = body["plasticine_height_max_m"] if textured else body["height_max_m"]  # the baked clay look
+                look = " for the plasticine look" if textured else ""
+            c.add("contract_height", body["height_min_m"] <= height <= top,
+                  f"{height:.3f} m to the top (contract v1{look}: {body['height_min_m']} to {top} m)", severity)
         eyes = _part(dump, "eyes")
         if eyes:
             eye = _centre(eyes["rest_bounds"])[1]
@@ -591,30 +592,72 @@ def _facing_alien(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], ren
           f"{'+X' if left > 0 else '-X'}, left eye at {'+X' if eye_l[0] > eye_r[0] else '-X'}")
 
 
-def _alien_extra_bones(c: Checks, got: list[str], renamed: dict[str, str], strict_contract: bool = False,
+def _parent_names(skeleton: dict[str, Any]) -> dict[str, str]:
+    """Each bone of a dumped Skeleton3D to its parent's name ("" for a root or an unknown parent)."""
+    bones, parents = skeleton.get("bones", []), skeleton.get("parents", [])
+    return {b: (bones[parents[i]] if i < len(parents) and 0 <= parents[i] < len(bones) else "")
+            for i, b in enumerate(bones)}
+
+
+def _below(top: str, parent_of: dict[str, str]) -> set[str]:
+    """top and every bone below it."""
+    out = set()
+    for bone in parent_of:
+        seen, b = set(), bone
+        while b and b not in seen:
+            if b == top:
+                out.add(bone)
+                break
+            seen.add(b)
+            b = parent_of.get(b, "")
+    return out
+
+
+def _alien_extra_bones(c: Checks, skeleton: dict[str, Any], renamed: dict[str, str],
                        contract: dict[str, Any] | None = None) -> None:
-    """B4 review (a): every bone beyond the contract profile's, named, and whether it belongs to a whole ALIEN_SPRING_SETS
-    set. docs/contract.md allows no extra bone and the engineer has not ruled on the springs: whole declared sets are a
-    warning, under strict_contract the severity the contract's alien kind gives its bone rule (`[kinds.alien]` `bones =
-    "all"`: exactly the profile's bones, so "fail"; read as contract_height reads `rules["height"]`); a stray bone or a
-    set in part always fails."""
+    """Every bone beyond the contract profile's, named, against `[kinds.alien]`'s spring rule (bones =
+    "all_and_springs", art #196 comment 6374319309): whole spring_sets whose bones are all below spring_parent pass;
+    an extra bone in no set, a set in part or a spring bone outside spring_parent fails, with or without
+    --strict-contract."""
+    got = skeleton["bones"]
     profile_bones = {renamed.get(b, b) for b in _contract.profile_parents(_contract.load_profile())}
     extra = [b for b in got if b not in profile_bones]
-    used = {n: [b for b in bones if b in extra] for n, bones in ALIEN_SPRING_SETS.items()}
-    used = {n: v for n, v in used.items() if v}
-    partial = sorted(n for n, v in used.items() if len(v) != len(ALIEN_SPRING_SETS[n]))
-    stray = [b for b in extra if not any(b in v for v in ALIEN_SPRING_SETS.values())]
-    named = "; ".join(f"the {n} springs {v}" for n, v in used.items())
+    if not extra:
+        c.add("alien_extra_bones", True, f"alien profile: {len(got)} bones, the contract's {len(profile_bones)}, "
+              "no extra bone")
+        return
     rules = (contract or _contract.load_contract())["kinds"]["alien"]
-    strict = "fail" if rules["bones"] == "all" else "warn"  # "subset" allows bones beyond the profile's
-    severity = "fail" if stray or partial else (strict if strict_contract else "warn")
-    c.add("alien_extra_bones", not extra,
-          f"alien profile: {len(got)} bones: {len(got) - len(extra)} of the contract's {len(profile_bones)}"
-          + (f" and {len(extra)} extra: {named or '-'}" if extra else ", no extra bone")
-          + (f"; not in a declared spring set: {stray}" if stray else "")
-          + (f"; spring sets in part: {partial}" if partial else "")
-          + ("; all in whole declared spring sets, which docs/contract.md does not allow yet (the engineer's call)"
-             if extra and not stray and not partial else ""), severity)
+    top = renamed.get(rules.get("spring_parent", ""), rules.get("spring_parent", ""))
+    split = _contract.spring_split({**rules, "spring_parent": top}, extra, _parent_names(skeleton))
+    bad = split["stray"] or split["partial"] or split["outside"]
+    named = "; ".join(f"the {n} springs {v}" for n, v in split["sets"].items())
+    c.add("alien_extra_bones", not bad,
+          f"alien profile: {len(got)} bones: {len(got) - len(extra)} of the contract's {len(profile_bones)} and "
+          f"{len(extra)} extra: {named or '-'}"
+          + (f"; not in a declared spring set: {split['stray']}" if split["stray"] else "")
+          + (f"; spring sets in part: {split['partial']}" if split["partial"] else "")
+          + (f"; not below {top}: {split['outside']}" if split["outside"] else "")
+          + (f"; all in whole declared spring sets below {top} (contract [kinds.alien] bones = \"{rules['bones']}\")"
+             if not bad else ""))
+
+
+def _alien_height(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], renamed: dict[str, str],
+                  contract: dict[str, Any], low: float, height: float, severity: str) -> None:
+    """contract_height for the alien (art #196 comment 6374319309): the whole height from body.height_min_m to
+    [kinds.alien] head_top_max_m, and the body, the skin whose heaviest bone is not spring_parent or below it
+    (inspect.gd's bone_bounds), at most body.height_max_m, the game's capsule."""
+    body, rules = contract["body"], contract["kinds"]["alien"]
+    cap = rules.get("head_top_max_m", body["height_max_m"])
+    top = renamed.get(rules.get("spring_parent", "Head"), rules.get("spring_parent", "Head"))
+    head = _below(top, _parent_names(skeleton))
+    boxes = [box for m in dump["meshes"] for b, box in (m.get("bone_bounds") or {}).items() if b not in head]
+    trunk = max(box["max"][1] for box in boxes) - low if boxes else None
+    good = body["height_min_m"] <= height <= cap and trunk is not None and trunk <= body["height_max_m"]
+    c.add("contract_height", good,
+          f"{height:.3f} m to the top, "
+          + (f"the body below {top}'s skin {trunk:.3f} m" if trunk is not None else "no skin outside the head to measure")
+          + f" (contract, alien: the top {body['height_min_m']} to {cap} m, the body at most {body['height_max_m']} m,"
+          " art #196 comment 6374319309)", severity)
 
 
 def _loops(c: Checks, anims: dict[str, Any], seams: dict[str, dict[str, float]]) -> None:
