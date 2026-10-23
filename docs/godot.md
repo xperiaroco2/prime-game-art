@@ -1150,10 +1150,14 @@ pilot's static premium heads"):
     bones and springs through Godot's BoneMap retarget, the Head bone's scale over a breath; `<tag>/bones.md`).
   - Measured (r5, B4 and B5): Godot 4.7.2's BoneMap retarget (SkeletonProfileHumanoid, both trial variants) keeps
     the extra spring bones, chameleon 59 -> 59 and axolotl 62 -> 62, contrary to docs/contract.md's remark that they
-    "would be dropped by Godot's BoneMap anyway"; whether the contract allows them waits on the engineer. B5's probe
+    "would be dropped by Godot's BoneMap anyway"; whether the contract allows them waits on the engineer. The probe
     compares the spring-weighted vertices' head-relative motion as vectors in rest world space
-    (`hr * (hb.affine_inverse() * p) - rest`): after the retarget the springs swing a different way (the rest fixer
-    turns the bones' local axes, and alien_lively writes the same local rotation), numbers in `bones.md`.
+    (`W hr * ((W hb)^-1 * p) - rest`, W the Skeleton3D's global transform, since `Character.skinned_points` is world
+    space). The BoneMap import reorders the vertices (same counts, other index lists), so since B6 the probe pairs them
+    by rest position and fails on a count mismatch or an unpaired vertex. Measured (B6): the springs swing the same way
+    after the retarget, 0.0 mm and at most 0.02 deg apart; B5's "a different way" (30 deg mean) compared different
+    vertices by index. The rest fixer turns the spring bones' local rests (up to 1.66 deg) but not their world rests,
+    and alien_lively's `rest_turn` writes the turn in the skeleton's frame, so the swing does not change; `bones.md`.
   - `colour_check` per part: `patch_vs_region_median` (the 24 px patch's median against the pick; the base row's pick
     is the region's median, so the mottled skin alone gives a few units) and `vs_base`, that number minus the base
     row's: the pick's own error.

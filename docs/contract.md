@@ -57,7 +57,8 @@ and one shared `AnimationLibrary` work on every body without per-model bone maps
 typing it would drift. `Root` sits on the ground between the feet and carries no weights. 22 bones must carry weights
 (the trunk, and per side the shoulder, both arm bones, the hand, both leg bones, the foot and the toes); `Jaw` and the
 eyes may. Five fingers per hand are present and weighted, because gestures need them (three bones each; the thumb's
-first is the metacarpal). No extra bones: sockets, jiggle and helper bones would be dropped by Godot's `BoneMap` anyway,
+first is the metacarpal). No extra bones: sockets, jiggle and helper bones are not in the profile (Godot 4.7.2's `BoneMap`
+retarget keeps unmapped bones: measured 59 -> 59 and 62 -> 62 on the alien heads' springs, art #196 r5),
 and sockets live in the Godot scene instead.
 
 **Axes and size.** glTF, Y up, 1 unit = 1 m, front +Z (`Vector3.MODEL_FRONT`; Blender shows it as -Y, and the
