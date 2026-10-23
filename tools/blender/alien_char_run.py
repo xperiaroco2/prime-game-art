@@ -66,16 +66,20 @@ def main() -> int:
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--seconds", type=float, default=20.0)
+    ap.add_argument("--shots-sub", default="", help="B3: the shots into this subfolder of the tag (a trial)")
+    ap.add_argument("--fix", default="{}", help="B3: JSON render settings after the front isolation sheet "
+                    "(shadow_quality 0-5, taa, angular_deg, sss_scale)")
     args = ap.parse_args()
     heads = args.heads.split(",")
     out = PILOT / args.tag
-    why = refusal(out, heads, not args.no_build, not args.no_shots)
+    shots_out = out / args.shots_sub if args.shots_sub else out
+    why = refusal(out, heads, not args.no_build, False) or refusal(shots_out, [], False, not args.no_shots)
     if why:
         print(why, flush=True)
         return 2
     ok = True
     slots_job = json.loads((SLOTS / "job.json").read_text(encoding="utf-8"))["heads"]
-    job = {"hdri": str(HDRI), "seconds": args.seconds, "out": str(out), "heads": {}}
+    job = {"hdri": str(HDRI), "seconds": args.seconds, "out": str(shots_out), "fix": json.loads(args.fix), "heads": {}}
     for h in heads:
         hd = out / h
         static = PILOT / "static_v5" / h
@@ -111,6 +115,7 @@ def main() -> int:
             "sheet2d": str(LINEUP / HEADS[h]["sheet"]), "preset": HEADS[h]["preset"]}
     if args.no_shots:
         return 0 if ok else 1
+    out = shots_out
     out.mkdir(parents=True, exist_ok=True)
     (out / "job.json").write_text(json.dumps(job, indent=1), encoding="utf-8", newline="\n")
     _godot.import_project()

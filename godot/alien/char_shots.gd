@@ -13,6 +13,11 @@ extends SceneTree
 ## - iso_<head>.jpg (B2): the upper back close, the speckle isolated: r2's body (no detail map) | the body as built |
 ##   albedo only | geometry only | the normal map only (the shader's debug_mode 3, 2, 1);
 ## - clips_<head>.jpg (B2): each clip at its extreme frame (the largest trunk, neck and arm turn from the rest);
+## - front_<head>.jpg (B3): the throat from the front, the dark patch under the chin isolated: as built | albedo only |
+##   normal map only | geometry only | SSS off | SSAO off | shadows off | soft shadow filter ultra | TAA | pitched up 12;
+## - throat_<head>.jpg (B3): the throat close from the front and at 3/4, at rest and pitched up 12, studio and dusk;
+## - turn_dusk_<head>.jpg (B3): the turnaround at dusk, the same two presets;
+## the job's "fix" (render settings: shadow_quality, taa, angular_deg) applies after front_ to every other sheet.
 ## shots.json: the gate numbers, the springs' largest swing, the clips' extreme times.
 ## Args after "--": <job.json>
 
@@ -26,6 +31,10 @@ const FPS := 24.0
 
 var _cam: Camera3D
 var _marker: MeshInstance3D
+var _env: Environment
+var _key: DirectionalLight3D
+var _fill: DirectionalLight3D
+var _back: DirectionalLight3D
 
 
 func _initialize() -> void:
@@ -86,6 +95,7 @@ func _run() -> void:
 	var job: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(OS.get_cmdline_user_args()[0]))
 	var out: String = job["out"]
 	_stage(job["hdri"])
+	var fix: Dictionary = job.get("fix", {})
 	var report := {}
 	for name: String in (job["heads"] as Dictionary):
 		var h: Dictionary = job["heads"][name]
@@ -118,6 +128,29 @@ func _run() -> void:
 		var band: float = h["band"]
 		var top: float = fit["top_z"]
 		var axis := Vector3(dst.x, 0.0, dst.z)
+		var sk: Skeleton3D = ch.find_children("*", "Skeleton3D", true, false)[0]
+		# B3: the dark patch under the chin isolated from the front (no fix yet), then the job's fix for the rest
+		st.visible = false
+		_apply_fix({})
+		var tc := Vector3(axis.x, cut - 0.05, axis.z)
+		var fcells: Array[Image] = []
+		for step: int in 10:
+			for sm: ShaderMaterial in mats:
+				sm.set_shader_parameter("debug_mode", [0, 3, 1, 2, 0, 0, 0, 0, 0, 0][step])
+				sm.set_shader_parameter("sss", 0.0 if step == 4 else float(h["params"].get("sss", 0.25)))
+			_env.ssao_enabled = step != 5
+			_key.shadow_enabled = step != 6
+			RenderingServer.directional_soft_shadow_filter_set_quality(
+				RenderingServer.SHADOW_QUALITY_SOFT_ULTRA if step == 7 else RenderingServer.SHADOW_QUALITY_SOFT_LOW)
+			root.use_taa = step == 8
+			_pose_head(sk, Vector3(-12, 0, 0) if step == 9 else Vector3.ZERO)
+			fcells.append(await _cell(tc, 0.3, 0.0, SQ))
+		_pose_head(sk, Vector3.ZERO)
+		_env.ssao_enabled = true
+		_key.shadow_enabled = true
+		_sheet(fcells, SQ, 5).save_jpg(out.path_join("front_%s.jpg" % name), 0.92)
+		_apply_fix(fix)
+		st.visible = true
 		# the gate: static v5 vs the welded head, both at rest, no gaze, no pose (the rest skeleton)
 		var gate := {}
 		var gcells: Array[Image] = []
@@ -160,8 +193,26 @@ func _run() -> void:
 			for yaw: float in [0.0, 35.0, 90.0, 180.0]:
 				tcells.append(await _cell(body_c, top * 1.06, yaw, CELL))
 		rep["presets"] = [AlienStatic.PRESETS[presets[0]]["name"], AlienStatic.PRESETS[presets[1]]["name"]]
-		AlienStatic.set_colours(mats, {})
 		_sheet(tcells, CELL, 4).save_jpg(out.path_join("turn_%s.jpg" % name), 0.92)
+		_dusk(true)
+		var dcells: Array[Image] = []
+		for pi: int in presets:
+			AlienStatic.set_colours(mats, AlienStatic.PRESETS[pi]["picks"])
+			for yaw: float in [0.0, 35.0, 90.0, 180.0]:
+				dcells.append(await _cell(body_c, top * 1.06, yaw, CELL))
+		AlienStatic.set_colours(mats, {})
+		_sheet(dcells, CELL, 4).save_jpg(out.path_join("turn_dusk_%s.jpg" % name), 0.92)
+		# B3: the throat close, front and 3/4, at rest and pitched up 12, studio and dusk
+		var thcells: Array[Image] = []
+		for dusk: bool in [false, true]:
+			_dusk(dusk)
+			for e: Vector3 in [Vector3.ZERO, Vector3(-12, 0, 0)]:
+				_pose_head(sk, e)
+				for yaw: float in [0.0, 35.0]:
+					thcells.append(await _cell(tc, 0.3, yaw, SQ))
+		_pose_head(sk, Vector3.ZERO)
+		_dusk(false)
+		_sheet(thcells, SQ, 4).save_jpg(out.path_join("throat_%s.jpg" % name), 0.92)
 		# the seam close
 		var scells: Array[Image] = []
 		var sc := Vector3(axis.x, cut, axis.z)
@@ -169,7 +220,6 @@ func _run() -> void:
 			scells.append(await _cell(sc, 0.16, yaw, SQ))
 		_sheet(scells, SQ, 4).save_jpg(out.path_join("seam_%s.jpg" % name), 0.92)
 		# B2: the seam under the head poses (Neck 60 %, Head 40 %), front-left and back-right
-		var sk: Skeleton3D = ch.find_children("*", "Skeleton3D", true, false)[0]
 		var poses: Array[Vector3] = [Vector3(0, 30, 0), Vector3(0, -30, 0), Vector3(12, 0, 0), Vector3(-18, 0, 0),
 			Vector3(0, 0, 15), Vector3(0, 0, -15), Vector3(-18, 30, 0), Vector3(12, -30, 10)]
 		var pcells: Array[Image] = []
@@ -415,12 +465,14 @@ func _stage(hdri: String) -> void:
 	var world := WorldEnvironment.new()
 	world.environment = env
 	root.add_child(world)
+	_env = env
 	var key := _light(Vector3(-2.0, 3.2, 3.0), 2.0, true, 0.6)
 	key.light_angular_distance = 1.5
 	key.shadow_blur = 1.0
 	key.directional_shadow_max_distance = 12.0
-	_light(Vector3(3.0, 1.6, 2.0), 0.12, false, 0.0)
-	_light(Vector3(0.5, 2.5, -3.0), 0.30, false, 0.3)
+	_key = key
+	_fill = _light(Vector3(3.0, 1.6, 2.0), 0.12, false, 0.0)
+	_back = _light(Vector3(0.5, 2.5, -3.0), 0.30, false, 0.3)
 	_cam = Camera3D.new()
 	_cam.fov = 22.0
 	_cam.near = 0.05
@@ -450,3 +502,40 @@ func _light(at: Vector3, energy: float, shadow: bool, specular: float) -> Direct
 	light.light_specular = specular
 	light.shadow_enabled = shadow
 	return light
+
+
+## B3: the render settings after the front isolation (the job's "fix"): the directional soft shadow filter quality
+## (RenderingServer.ShadowQuality, the stage's default 2 = soft low), TAA, the key light's angular size (degrees).
+func _apply_fix(fix: Dictionary) -> void:
+	RenderingServer.directional_soft_shadow_filter_set_quality(int(fix.get("shadow_quality",
+		RenderingServer.SHADOW_QUALITY_SOFT_LOW)))
+	root.use_taa = bool(fix.get("taa", false))
+	_key.light_angular_distance = float(fix.get("angular_deg", 1.5))
+
+
+## B3: dusk (a low warm key from the front-left, a blue sky fill, the sky's ambient dimmed) or back to the studio.
+func _dusk(on: bool) -> void:
+	if on:
+		_key.look_at_from_position(Vector3(-3.0, 1.1, 2.2), Vector3.ZERO)
+		_key.light_color = Color(1.0, 0.66, 0.42)
+		_key.light_energy = 1.6
+		_fill.light_color = Color(0.55, 0.65, 1.0)
+		_fill.light_energy = 0.35
+		_back.light_color = Color(0.6, 0.6, 1.0)
+		_back.light_energy = 0.45
+		_env.ambient_light_sky_contribution = 0.2
+		_env.ambient_light_color = Color(0.42, 0.5, 0.75)
+		_env.ambient_light_energy = 0.35
+		_env.tonemap_exposure = 0.75
+	else:
+		_key.look_at_from_position(Vector3(-2.0, 3.2, 3.0), Vector3.ZERO)
+		_key.light_color = Color.WHITE
+		_key.light_energy = 2.0
+		_fill.light_color = Color.WHITE
+		_fill.light_energy = 0.12
+		_back.light_color = Color.WHITE
+		_back.light_energy = 0.30
+		_env.ambient_light_sky_contribution = 0.5
+		_env.ambient_light_color = Color(1.0, 0.8, 0.62)
+		_env.ambient_light_energy = 0.12
+		_env.tonemap_exposure = 0.65
