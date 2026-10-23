@@ -16,7 +16,8 @@ lively_<tag>.mp4); a run never deletes in the raw folder, so a tag whose frame f
 tagged build writes into its own folder, <out>/<tag>/ (the GLB, the sclera, lively.json, the weights' and the eyes'
 proofs), and a ready web folder, <out>/web_<tag>/ (index.html and lively.js from tools/web/lively/, the tag's assets as
 <head>_lively.glb, <head>_lively.json, <head>_sclera.png, heads.json; --web-with adds another head's); an existing tag
-folder is refused, and so is an untagged build whose GLB exists. --pit-before DIR (default <out>, the v2 build) adds a
+folder is refused, and so is any untagged build (it would write into <out> itself, PR #306 review) and any shots run
+whose sheet_<tag>.jpg exists. --pit-before DIR (default <out>, the v2 build) adds a
 painted head's eye pit before/after close-ups, eyes_pit_<tag>.jpg (godot/alien/eye_pit_shots.gd).
 """
 from __future__ import annotations
@@ -45,13 +46,21 @@ HEADS = {
 }
 
 
-def build_refusal(build_dir: Path, glb: Path, tag: str) -> str | None:
-    """Why a build must not run (a run never overwrites in the raw folder), or None: a tagged build whose folder
-    exists, or an untagged one whose GLB exists (PR #303 review, minor 1)."""
-    if tag and build_dir.exists():
-        return f"{build_dir} exists: pick a new --tag (a run never overwrites in the raw folder)"
-    if not tag and glb.exists():
-        return f"{glb} exists: an untagged build would overwrite it; pass a new --tag"
+def run_refusal(out: Path, tag: str, build: bool, shots: bool, seconds: float) -> str | None:
+    """Why a run must not start (a run never overwrites in the raw folder), or None. A build needs a new tag: an
+    untagged one would write into <out> itself, over the v2 chameleon's GLB, lively.json and build.log (PR #306
+    review, major 1), and a tagged one's folder must not exist. Shots need a new sheet (sheet_<tag>.jpg, even with
+    --no-build or --seconds 0: the sheet, shots JSON and logs share the tag; minor 9) and, with a video, a new frame
+    folder."""
+    suffix = f"_{tag}" if tag else ""
+    if build and not tag:
+        return f"an untagged build would write into {out} itself (an older build's GLB, lively.json, build.log): pass a new --tag"
+    if build and (out / tag).exists():
+        return f"{out / tag} exists: pick a new --tag (a run never overwrites in the raw folder)"
+    if shots and (out / f"sheet{suffix}.jpg").exists():
+        return f"{out / f'sheet{suffix}.jpg'} exists: pick a new --tag (a run never overwrites in the raw folder)"
+    if shots and seconds > 0 and (out / "video" / f"lively{suffix}").exists():
+        return f"{out / 'video' / f'lively{suffix}'} exists: pick a new --tag (a run never deletes in the raw folder)"
     return None
 
 
@@ -84,6 +93,8 @@ def main() -> int:
     ap.add_argument("--tag", default="", help="names the sheet, shots and video of this run (no overwrite of an older one)")
     ap.add_argument("--pit-before", type=Path, default=None, help="the build folder of the eye pit sheet's before (default: --out)")
     ap.add_argument("--no-pit-fix", action="store_true", help="build as v2 did (the eyeballs as sculpted, the old fill)")
+    ap.add_argument("--gill-lift", choices=("centre", "skull"), default="centre",
+                    help="the axolotl's gill weights' lift (alien_lively_build.py --gill-lift)")
     ap.add_argument("--web-with", type=Path, default=None, help="another head's tagged build folder, copied into the web folder too")
     args = ap.parse_args()
     head = args.head
@@ -92,20 +103,18 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     suffix = f"_{args.tag}" if args.tag else ""
     video = out / "video" / f"lively{suffix}"
-    if not args.no_shots and args.seconds > 0 and video.exists():
-        print(f"{video} exists: pick a new --tag (a run never deletes in the raw folder)", flush=True)
+    why = run_refusal(out, args.tag, not args.no_build, not args.no_shots, args.seconds)
+    if why:
+        print(why, flush=True)
         return 2
     build_dir = out / args.tag if args.tag else out
     glb = build_dir / f"{head}_lively.glb"
     sclera = build_dir / f"{head}_sclera.png"
     if not args.no_build:
-        why = build_refusal(build_dir, glb, args.tag)
-        if why:
-            print(why, flush=True)
-            return 2
         build_dir.mkdir(parents=True, exist_ok=True)
         extra = ["--neck", args.neck] if args.neck else []
         extra += ["--no-pit-fix"] if args.no_pit_fix else []
+        extra += ["--gill-lift", args.gill_lift] if head == "axolotl" else []
         result = blender.run_script("alien_lively_build.py", [
             "--glb", str(static / f"{head}_static.glb"), "--albedo", str(static / f"{head}_albedo.png"),
             "--mask", str(static / f"{head}_mask.png"), "--build", str(static / "build.json"), "--out", str(build_dir),

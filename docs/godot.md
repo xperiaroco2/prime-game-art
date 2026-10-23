@@ -964,8 +964,8 @@ pilot's static premium heads"):
       nearest root alone a fin's tip leaning toward the next stalk went to that stalk and tore at 15 degrees, and
       `rig.gill_stretch_mm` is that tear measure: the largest edge length change with neighbouring stalks at opposite
       cap corners); a stalk's vertices are its thin ones (the detail map's G over 0.5), its axis their mean, its weight
-      `G.stalk_weight` (none at the root's first 8 %, full from 45 %, none where the detail map says thick: the skull
-      never moves, `rig.gill_weight_on_thick`). The poke test (AL2) turns each stalk's weighted vertices as the
+      `G.stalk_weight` (none at the root's first 8 %, full from 45 %, none where the detail map says thick; since AL4
+      by the lift, below). The poke test (AL2) turns each stalk's weighted vertices as the
       controllers do (`G.spring_matrix`: Ry(yaw) Rx(-pitch) about the root) at the cap's four axis ends and four
       corners (`G.SWING_CORNERS`) and counts moved vertices that end over 1 mm (`G.POKE_TOL`) inside the skull. The
       skull is a star about the head's centre: a point is inside when it is nearer the centre than the skull's
@@ -976,9 +976,11 @@ pilot's static premium heads"):
       them) showed all 40 were stalk-base vertices (weight 0.35 to 0.54, 4 to 16 mm off the skull at rest), every
       one in front of its nearest skull triangle (0.3 to 7 mm off it): near a root the skull is no star about the
       centre, the ray crossing the rim of the bulge the stalk grows from 1.5 to 19 mm further out. A test flaw, no
-      contact: the cap is 15 now. The root band,
-      vertices within 3 mm of the skull at rest (`G.ROOT_BAND`, the stalks' bases that touch it by construction)
-      and those inside it at rest, is left out (`rig.gill_poke_tested` the vertices tested). The swing starts at
+      contact. AL2 to AL5 also left out a root band (weights under 0.35, vertices within 3 mm of the skull at rest),
+      the likeliest vertices to poke (PR #306 review); since AL6 every vertex weighted over 0.01 (`G.TEST_W`) that
+      moves over 0.01 mm (`G.MOVED_EPS`) is tested, only those inside the skull at rest by both tests left out
+      (`rig.gill_poke_tested`, `rig.gill_poke_excluded_inside_at_rest`). On the axolotl (`axolotl_v6a`): all
+      18 769 weighted vertices tested, none inside at rest, 0 pokes at 15 degrees, so the cap stays 15. The swing starts at
       15 degrees (`G.SPRING_MAX_DEG`, `--gill-swing`) and is lowered 1 degree at a time until none pokes
       (`rig.gill_pokes_by_swing`); that is the springs' cap (`rig.gill_swing_deg`, `springs[].max_deg`); a head
       whose gills poke at every swing is refused. AL1's test (behind the nearest triangle's plane) read thousands
@@ -997,15 +999,21 @@ pilot's static premium heads"):
       from the head's centre beyond the root's nearest mesh vertex's, `G.LIFT_IN` 5 mm to `G.LIFT_FULL` 60 mm). The
       weights live on the welded vertices, so a seam's copies never part (their largest thinness counts), and are
       smoothed inside the stalk alone (`G.smooth_within`, `G.SMOOTH_PASSES` passes, edges to other stalks ignored,
-      the zeros pinned: the skull and the root band stay 0, `rig.gill_weight_on_skull`). `rig.gill_weight_on_thick`
-      is no longer 0 by design (the stalks' thick cores move).
+      the zeros pinned). `rig.gill_weight_on_skull` is measured (AL6) on the skull proxy built before the
+      weights (`rig.skull_proxy_pre_weights`: the triangles with no thin and no stalk vertex, welded): on
+      `axolotl_v6a` 0.56 on 178 of its vertices, the thick bulge around the roots inside the stalk's first 2 cm
+      (AL4's measure, thick and under 5 mm of lift, read 0 there); AL4's `gill_weight_on_thick` is gone (the stalks'
+      thick cores move by design).
     - *AL5's tries at the root junction (none kept):* fading the thin vertices in by their lift too (0 to 20 mm)
       gave 11.8 mm (the worst moved into GillR3's weight slope); capping every edge's rise at 0.2 hop by hop left a
       ladder of 0.2 steps out on the stalks (16.9 mm); pinning the root ring at 0.2 and the full weights put a pinned
       0.2 beside a pinned 1.0 where a zero lies out on a stalk (33.8 mm); the cap and the fade near the root alone,
       16.0 mm. The cause is that "lift" (distance from the head's centre) is no height over the skull for fins that
-      hang back toward the head: they read no lift far out on the stalk. AL4's rule stays (11.47 mm); the next try
-      is the height over the skull's own surface (a BVH of the thick triangles before the weights).
+      hang back toward the head: they read no lift far out on the stalk. AL4's rule stays (11.47 mm).
+    - *AL6's try, the height over the skull (not kept):* `--gill-lift skull` takes the lift as the distance to the
+      skull proxy built before the weights (above). It pins the root bulge at 0 (`gill_weight_on_skull` 0), but the
+      stalks then bend over the pinned rim: 6 pokes at 15 degrees, the cap fell to 8, and the tear 9.26 mm is at
+      8 degrees only (`axolotl_v6b`). `--gill-lift centre` (AL4's rule, the default) stays: 0 pokes at 15, 11.47 mm.
     - *The springs* are data now (`lively.json` `rig.springs`: bones, rate, damping, lag, cap): the chameleon's
       crest one chain of Crest1-3; the axolotl's six gills one bone each at 1.8 to 2.4 Hz, so they never swing in
       step. `alien_lively.gd` and `lively.js` read them, and the head's follow from `controller`. Every spring is
@@ -1026,8 +1034,12 @@ pilot's static premium heads"):
       `away_from_eyes`: the whole head before | after at rest from four sides, the pixel difference with every
       pixel within 2.2 eye radii of an eye centre left out (the chameleon's v5 against v4).
     - *For both heads:* every eyeball vertex takes the fitted sphere's radial normal, faded in over 6 % of r from
-      the lid line (the faint triangular facets under the upper lids in `eyes_pit_v4_crop_*.jpg` were the sculpt's
-      flat-shaded eyeball normals), and every TANGENT whose normal changed is made orthogonal again
+      the lid line. That does **not** remove the faint grey triangular facets under the chameleon's upper lids
+      (PR #306 review major 3): `eyes_pit_v6_crop_*.jpg` (before v5 | after v6) show them in the full material, in
+      grey with the normal map and in grey geometry alone (debug_mode 2, studio light), and with the eye texels'
+      normal map off (`controller.sclera_normal_map` 0, v6's after column): so they are neither the normal map's
+      bake nor the eyeball's own vertices, most likely the lid-shared vertices (left out of the radial normals, so
+      the triangles fanning from them interpolate their old normals), or shadowing from the lid; open. Every TANGENT whose normal changed is made orthogonal again
       (`G.orthogonal_tangent`: t - n (n . t), normalised, w kept; `pit_geometry.max_abs_n_dot_t_after`). One
       eyeball classification (`classify_eyeball`: the mask's eye triangles and the warm, saturated painted iris
       triangles near an eye) serves `eyeball_fix` and the sclera fill. `lively.json` `eyes.<side>.front_sphere`

@@ -338,6 +338,8 @@ def main():
                                                 " stalks on springs instead of the crest")
     ap.add_argument("--detail", default="", help="the head's detail PNG (G the thinness): the gills' weights")
     ap.add_argument("--gill-swing", type=float, default=15.0, help="the gills' largest spring swing tested (degrees): the cap, lowered 1 degree at a time until none pokes")
+    ap.add_argument("--gill-lift", choices=("centre", "skull"), default="centre",
+                    help="the gill weights' lift: beyond the root's distance from the head's centre (AL4) or the height over the skull proxy's surface (AL6)")
     ap.add_argument("--neck", default="", help="y0,y1 of the neck blend (default: from the neck's waist)")
     ap.add_argument("--crest-root", type=float, default=0.45, help="the crest root between the head centre and tip")
     ap.add_argument("--blade", default="0.10,0.16", help="the crest blade's half width: full weight, none")
@@ -682,6 +684,8 @@ def main():
     report["controller"] = ({"gaze": "none", "head_hz": 2.2, "yaw_deg": 30.0, "pitch_deg": 12.0, "pitch_up_deg": 12.0,
                              "pitch_down_deg": 18.0, "neck_share": 0.4, "pitch_neck_share": 0.5, "tilt": 0.15}
                             if bead else {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0, "neck_share": 0.4})
+    # AL6 (PR #306 review major 3): the chameleon's grey facets under the upper lids are not in its normal map: they
+    # stay with it off (controller.sclera_normal_map 0, eyes_pit_v6) and in grey geometry alone, so no build sets it
     report["sclera"] = f"{args.name}_sclera.png"
     (out / "lively.json").write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
     print(f"LIVELY rig neck {y0:.3f}/{ym:.3f}/{y1:.3f} waist {waist[0]:.3f} (w {waist[1]:.3f}) shoulder {shoulder[0]:.3f} "
@@ -694,7 +698,7 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     -> glTF x, z, -y), its axis the mean of its thin vertices; weights by G.stalk_weight (none at the root, none on the
     thick skull), times the head's. The poke test: each stalk's weighted vertices turned by +-swing about the head's
     yaw and pitch axes through the root as the controllers turn them (G.spring_matrix, the four axis ends and four
-    corners); a moved vertex outside the root band ending inside the skull is a poke (see below); the swing is
+    corners); a moved vertex (any weight over G.TEST_W, AL6) ending inside the skull is a poke (see below); the swing is
     lowered by 1 degree from --gill-swing until none pokes (rig.gill_swing_deg, the controller's cap; none: refused). Writes <name>_lively.glb and gill_weights.png; returns the rig report (pos gets the gill joints)."""
     piv = json.loads(Path(args.gills).read_text(encoding="utf-8"))["pivots"][f"{args.name}_gills"]
     thin = load_png(args.detail)[..., 1]
@@ -727,6 +731,7 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     first[weld[::-1]] = np.arange(len(P))[::-1]
     rep["gill_weight_rule"] = {"lift_in": G.LIFT_IN, "lift_full": G.LIFT_FULL, "smooth_passes": G.SMOOTH_PASSES,
                                "smooth_alpha": G.SMOOTH_ALPHA}
+    stalks = {}
     for k, name in enumerate(names):
         cand = (near == k) & (tv > 0.5) & (dist < 0.45)
         if cand.sum() < 20:
@@ -736,20 +741,39 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
         sp = (P[cand] - roots[name]) @ ax
         length = float(np.percentile(sp, 98))
         own = (near == k) & (dist < 1.3 * length)
+        snap = float(np.linalg.norm(P - roots[name], axis=1).min())
+        # the stalk: near its root, farther from the head's centre than the skull there (the root's depth and 2 cm)
+        stalk |= own & (np.linalg.norm(P - head_c, axis=1) > np.linalg.norm(roots[name] - head_c) + snap + 0.02)
+        stalks[name] = (ax, length, own, snap)
+    # AL6: the skull proxy built before the weights (no thin vertex, no stalk vertex), so the skull's own weight is
+    # measured on it (PR #306 review minor 4); with --gill-lift skull the lift is the height over its surface (AL5:
+    # the distance from the head's centre read 0 far out on fins that hang back toward the head)
+    thick_v = (tvw[weld] <= 0.25) & ~stalk
+    skull0_t = [tuple(int(x) for x in t) for t in I if thick_v[t].all()]
+    skull0 = BVHTree.FromPolygons([Vector(v) for v in P], skull0_t, all_triangles=True)
+    anyown = np.zeros(len(P), bool)
+    for _ax, _l, own, _s in stalks.values():
+        anyown |= own
+    hgt = np.zeros(len(P))
+    if args.gill_lift == "skull":
+        for i in np.nonzero(anyown)[0]:
+            hgt[i] = skull0.find_nearest(Vector(P[i]))[3]
+    rep["gill_lift"] = args.gill_lift
+    for k, name in enumerate(names):
+        ax, length, own, snap = stalks[name]
         s_ = (P - roots[name]) @ ax
         # AL4: the ramp along the stalk, gated by thinness or by the vertex's lift over the skull at the root (the
         # stalk's thick core and the fins the detail map reads thick moved not at all beside fringe weighted 1.0: the
-        # v3 tear, 99 mm), then smoothed inside this stalk alone, the zeros (skull, root band) pinned
+        # v3 tear, 99 mm), then smoothed inside this stalk alone, the zeros (skull, root band) pinned; AL6: --gill-lift
+        # skull takes the height over the skull proxy instead of the distance from the head's centre beyond the root's
         r0 = float(rad[int(np.argmin(np.linalg.norm(P - roots[name], axis=1)))])
+        lift = hgt if args.gill_lift == "skull" else rad - r0
         fw = first
-        w0 = [G.stalk_weight_lifted(float(s_[i]), length, float(tvw[j]), float(rad[i] - r0)) if own[i] else 0.0
+        w0 = [G.stalk_weight_lifted(float(s_[i]), length, float(tvw[j]), float(lift[i])) if own[i] else 0.0
               for j, i in enumerate(fw)]
         ws = G.smooth_within(w0, edges, lab_w.tolist(), k, [v == 0.0 for v in w0])
         W[:, k] = np.array(ws)[weld] * hd
         pos[name] = tuple(float(v) for v in roots[name])
-        snap = float(np.linalg.norm(P - roots[name], axis=1).min())
-        # the stalk: near its root, farther from the head's centre than the skull there (the root's depth and 2 cm)
-        stalk |= own & (np.linalg.norm(P - head_c, axis=1) > np.linalg.norm(roots[name] - head_c) + snap + 0.02)
         rep["gills"][name] = {"root": roots[name].round(5).tolist(), "axis": ax.round(4).tolist(), "length": round(length, 4),
                               "vertices": int((W[:, k] > 0.01).sum()), "root_to_mesh_mm": round(snap * 1000, 2)}
     tot = W.sum(1)
@@ -759,8 +783,8 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     # stalk roots). AL2: the old test (behind the nearest triangle's plane) read thousands of pokes even at 2 degrees:
     # beside the hole the dropped root triangles leave, the nearest point is a hole edge whose plane says nothing. Now
     # the skull is a star about head_c: a point is inside when it is nearer head_c than the skull's outermost surface
-    # along the same ray, by more than POKE_TOL; the root band (vertices within ROOT_BAND of the skull at rest, the
-    # stalks' bases that touch it by construction, and those inside it at rest) is left out; only moved vertices count.
+    # along the same ray, by more than POKE_TOL (and, AL3, behind the nearest skull triangle); since AL6 only the vertices
+    # inside it at rest are left out (AL2 to AL5 also left out a root band); only moved vertices count.
     # AL2: the stalks' thick static bases are no skull either (else their triangles stand beyond the moving filaments
     # along the rays and read as "inside")
     gill_v = (W.sum(1) > 0.01) | (tv > 0.25) | stalk
@@ -793,19 +817,27 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
         near, nrm, _i, _d = bvh.find_nearest(Vector(pp))
         return near is not None and (Vector(pp) - near).dot(nrm) < -G.POKE_TOL
 
-    def inside(pts):
-        star = inside_star(pts)
-        return np.array([bool(a) and behind(pp) for a, pp in zip(star, pts)], bool)
+    def inside(pts):  # behind first (a nearest-point query), the star's ray casts only where behind
+        pts = np.asarray(pts)
+        b = np.array([behind(pp) for pp in pts], bool)
+        out_ = np.zeros(len(pts), bool)
+        if b.any():
+            out_[np.nonzero(b)[0]] = inside_star(pts[b])
+        return out_
 
-    test = {}
-    for k in range(len(names)):
-        m = np.nonzero(W[:, k] > G.ROOT_W)[0]  # the weight's root band left out: the stalk's base (see G.ROOT_W)
-        gap = np.array([(Vector(P[i]) - bvh.find_nearest(Vector(P[i]))[0]).length for i in m])
-        keep = m[(gap > G.ROOT_BAND) & ~inside(P[m])]
-        test[k] = keep
+    # AL6 (PR #306 review major 2): every moved vertex weighted over G.TEST_W is tested, the root band and the
+    # vertices near the skull at rest too (AL2 to AL5 left out weights under 0.35 and vertices within 3 mm of the
+    # skull: the likeliest to poke); only the vertices already inside the skull at rest are left out, and counted
+    test, rest_inside = {}, {}
+    for k, name in enumerate(names):
+        m = np.nonzero(W[:, k] > G.TEST_W)[0]
+        at_rest = inside(P[m])
+        test[k] = m[~at_rest]
+        rest_inside[name] = int(at_rest.sum())
     rep["skull_proxy"] = {"triangles": len(body_t), "max_r": round(float(max(np.linalg.norm(P[list(t)] - head_c, axis=1).max()
                                                                        for t in body_t)), 4)}
     rep["gill_poke_tested"] = {n: int(len(test[k])) for k, n in enumerate(names)}
+    rep["gill_poke_excluded_inside_at_rest"] = rest_inside
 
     def pokes(swing):
         n = 0
@@ -815,7 +847,7 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
             for y, p in G.SWING_CORNERS:
                 rq = q @ np.array(G.spring_matrix(math.radians(swing) * y, math.radians(swing) * p)).T
                 d = W[m, k][:, None] * (rq - q)
-                moved = np.linalg.norm(d, axis=1) > 0.0005
+                moved = np.linalg.norm(d, axis=1) > G.MOVED_EPS
                 n += int(inside(P[m][moved] + d[moved]).sum())
         return n
     poke_diag(out, names, test, W, P, roots, head_c, bvh, skull_r, inside_star, min(args.gill_swing, G.SPRING_MAX_DEG))
@@ -845,11 +877,13 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     rep["gill_stretch_mm"] = gill_stretch(P, I, W, roots, names, swing, diag=(tv, near, out))
     print(f"LIVELY gill labels reached {reached:.4f}, stretch {rep['gill_stretch_mm']} mm at {swing:g} degrees", flush=True)
     rep["gill_pokes_by_swing"] = counts
-    rep["gill_weight_on_thick"] = round(float(W.sum(1)[tv < 0.25].max(initial=0.0)), 6)
-    # AL4: the skull's own vertices (thick and no lift over their stalk root's skull radius) must stay still
-    r0s = np.array([float(rad[int(np.argmin(np.linalg.norm(P - roots[n], axis=1)))]) for n in names])
-    skull_v = (tvw[weld] < 0.25) & (rad - r0s[near] < G.LIFT_IN)
+    # the skull proxy's own vertices (the triangles with no thin and no stalk vertex, built before the weights) must
+    # stay still; AL6: AL4's "thick" share (0.9998) is gone, the stalks' thick cores move by design
+    skull_v = np.zeros(len(P), bool)
+    skull_v[np.array(skull0_t, int).ravel()] = True
     rep["gill_weight_on_skull"] = round(float(W.sum(1)[skull_v].max(initial=0.0)), 6)
+    rep["skull_proxy_pre_weights"] = {"triangles": len(skull0_t),
+                                      "vertices_weighted_over_0.01": int((W.sum(1)[skull_v] > 0.01).sum())}
     infl = []
     for i in range(len(P)):
         ch, nk, h = G.neck_weights(float(P[i, 1]), y0, ym, y1)
@@ -862,7 +896,8 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     hz = (2.3, 2.0, 1.8, 2.4, 2.1, 1.9)  # each stalk its own rate, so they never swing in step
     rep["springs"] = [{"name": n, "bones": [n], "hz": hz[k], "zeta": 0.28, "lag": 0.11, "max_deg": rep["gill_swing_deg"]}
                       for k, n in enumerate(names)]
-    print(f"LIVELY gills: swing {rep['gill_swing_deg']} pokes {counts} thick {rep['gill_weight_on_thick']} " + json.dumps(
+    print(f"LIVELY gills: lift {args.gill_lift} swing {rep['gill_swing_deg']} pokes {counts} tested {rep['gill_poke_tested']} "
+          f"inside at rest {rest_inside} skull {rep['gill_weight_on_skull']} " + json.dumps(
         {n: (g["vertices"], g["length"], g["root_to_mesh_mm"]) for n, g in rep["gills"].items()}), flush=True)
     return rep
 

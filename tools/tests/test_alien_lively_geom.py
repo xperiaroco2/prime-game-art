@@ -295,12 +295,13 @@ class SpringTest(unittest.TestCase):
         self.assertEqual(len(set(G.SWING_CORNERS)), 8)
         self.assertNotIn((0, 0), G.SWING_CORNERS)
         self.assertLessEqual(G.SPRING_MAX_DEG, 15.0)
-        self.assertGreater(G.ROOT_BAND, G.POKE_TOL)
+        self.assertLess(G.MOVED_EPS, G.POKE_TOL)
+        self.assertLessEqual(G.TEST_W, 0.01)
 
 
 class RunTest(unittest.TestCase):
-    """The run's refusals (PR #303 review minors 1 and 7): a tagged build whose folder exists, an untagged one whose GLB
-    exists."""
+    """The run's refusals (PR #303 review minors 1 and 7, PR #306 review major 1 and minor 9) and the controllers'
+    shared defaults."""
 
     def test_glint_reach(self):
         # AL3: at rest the glint is where it was; at a head turn it slides to the reach, never under the lid
@@ -317,45 +318,52 @@ class RunTest(unittest.TestCase):
         self.assertGreater(g[1], 0.0)  # still on the catch light's side (up)
         self.assertEqual(G.glint_dir(turned, catch, 0.0), cn)
 
-    def test_glint_reach_in_shaders(self):
-        # the clamp is the same text in the Godot shader and the web module, and the margins agree
-        root = Path(__file__).resolve().parents[2]
-        shader = (root / "godot/alien/alien_static.gdshader").read_text(encoding="utf-8")
-        js = (root / "tools/web/lively/lively.js").read_text(encoding="utf-8")
-        gd = (root / "godot/alien/alien_lively.gd").read_text(encoding="utf-8")
-        clamp = "normalize(f * cos(reach) + normalize(cd - f * dot(cd, f)) * sin(reach))"
-        self.assertIn(clamp, shader)
-        self.assertIn(clamp, js)
-        self.assertIn(f"const CATCH_MARGIN := {G.CATCH_MARGIN}", gd)
-        self.assertIn(f"const CATCH_MARGIN = {G.CATCH_MARGIN};", js)
-
-    def test_head_limits_in_controllers(self):
-        # AL5: Godot and the web read the same controller keys (up and down pitch, the pitch's neck share, the tilt,
-        # each falling back to AL4's) and roll the head the same way
+    def test_controller_defaults_agree(self):
+        # AL6 (PR #306 review): Godot and the web share one table of the controller's defaults (a lively.json without
+        # a key, or without a controller, e.g. v2's) and the same constants; parsed from both files, not string-matched
         root = Path(__file__).resolve().parents[2]
         js = (root / "tools/web/lively/lively.js").read_text(encoding="utf-8")
         gd = (root / "godot/alien/alien_lively.gd").read_text(encoding="utf-8")
-        for key in ("pitch_up_deg", "pitch_down_deg", "pitch_neck_share", "tilt"):
-            self.assertIn(f'ctl.get("{key}"', gd)
-            self.assertIn(f"ctl.{key} ??", js)
-        self.assertIn("-tilt * _hy", gd)
-        self.assertIn("-TILT * st.hy", js)
-        self.assertIn("-pitch_down_limit, pitch_limit", gd)
-        self.assertIn("-PITCH_DOWN, PITCH", js)
+        import re
+        want = {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0, "neck_share": 0.4, "tilt": 0.0,
+                "sclera_normal_map": 1.0}
+        got_gd = json.loads(re.search(r"^const CONTROLLER_DEFAULTS := (\{.*\})$", gd, re.M).group(1))
+        got_js = json.loads(re.search(r"^export const CONTROLLER_DEFAULTS = (\{.*\});$", js, re.M).group(1))
+        self.assertEqual(got_gd, want)
+        self.assertEqual(got_js, want)
+        consts = {"CATCH_MARGIN": G.CATCH_MARGIN, "EYE_HZ": 9.0, "BREATH_S": 4.4}
+        for name, value in consts.items():
+            self.assertAlmostEqual(float(re.search(rf"const {name} := ([0-9.]+)", gd).group(1)), value)
+            self.assertAlmostEqual(float(re.search(rf"\b{name} = ([0-9.]+)", js).group(1)), value)
+        # both fall back the same way: no springs listed, none made
+        self.assertIn('lively["rig"].get("springs", [])', gd)
+        self.assertIn("(data.rig.springs || [])", js)
 
-    def test_build_refusal(self):
+    def test_run_refusal(self):
+        # PR #306 review: an untagged build is refused outright (it wrote into <out> itself, over the v2 chameleon's
+        # lively.json and build.log); a tagged build whose folder exists; shots whose sheet_<tag>.jpg exists, even
+        # with --no-build or --seconds 0; a video whose frame folder exists
         import tempfile
-        sys.path.insert(0, str(ROOT / "tools" / "blender"))
         import alien_lively_run as R
         with tempfile.TemporaryDirectory() as d:
             d = Path(d)
-            glb = d / "axolotl_lively.glb"
-            self.assertIsNone(R.build_refusal(d / "v9", d / "v9" / "axolotl_lively.glb", "v9"))
-            self.assertIsNone(R.build_refusal(d, glb, ""))
-            glb.write_bytes(b"x")
-            self.assertIn("untagged", R.build_refusal(d, glb, ""))
+            self.assertIn("untagged", R.run_refusal(d, "", True, False, 20.0))
+            self.assertIn("untagged", R.run_refusal(d, "", True, True, 0.0))
+            self.assertIsNone(R.run_refusal(d, "v9", True, True, 20.0))
             (d / "v9").mkdir()
-            self.assertIn("new --tag", R.build_refusal(d / "v9", d / "v9" / "axolotl_lively.glb", "v9"))
+            self.assertIn("new --tag", R.run_refusal(d, "v9", True, False, 20.0))
+            self.assertIsNone(R.run_refusal(d, "v9", False, True, 20.0))  # a re-shoot of a build with no shots yet
+            (d / "sheet_v9.jpg").write_bytes(b"x")
+            for seconds in (0.0, 20.0):
+                self.assertIn("sheet_v9.jpg", R.run_refusal(d, "v9", False, True, seconds))
+            (d / "sheet_v7.jpg").write_bytes(b"x")  # a build whose folder is new, but its sheet is not
+            self.assertIn("sheet_v7.jpg", R.run_refusal(d, "v7", True, True, 0.0))
+            self.assertIsNone(R.run_refusal(d, "v9", False, False, 20.0))  # the validator alone
+            (d / "sheet.jpg").write_bytes(b"x")
+            self.assertIn("sheet.jpg", R.run_refusal(d, "", False, True, 0.0))
+            (d / "video" / "lively_v8").mkdir(parents=True)
+            self.assertIn("lively_v8", R.run_refusal(d, "v8", False, True, 20.0))
+            self.assertIsNone(R.run_refusal(d, "v8", False, True, 0.0))
 
 
 if __name__ == "__main__":

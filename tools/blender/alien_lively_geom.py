@@ -24,15 +24,15 @@ PARENTS = (-1, 0, 1, 2, 3, 4)
 GILLS = ("GillL1", "GillL2", "GillL3", "GillR1", "GillR2", "GillR3")
 GILL_JOINTS = ("Chest", "Neck", "Head") + GILLS
 GILL_PARENTS = (-1, 0, 1) + (2,) * len(GILLS)
-# the gill poke test (AL2): a moved gill vertex is a poke when it ends more than POKE_TOL inside the skull (metres);
-# vertices nearer the skull than ROOT_BAND at rest are the stalks' bases, which touch it by construction; the swing
-# is tested at the controllers' four axis ends and four corners (yaw, pitch signs), both clamped at the same cap
+# the gill poke test (AL2): a moved gill vertex is a poke when it ends more than POKE_TOL inside the skull (metres),
+# by both inside tests (AL3); the swing is tested at the controllers' four axis ends and four corners (yaw, pitch
+# signs), both clamped at the same cap. AL6 (PR #306 review): every gill vertex weighted over TEST_W that moves more
+# than MOVED_EPS (metres) is tested; only those already inside the skull at rest are left out (and counted). AL2 to
+# AL5 also left out the root band (weights under 0.35) and the vertices within 3 mm of the skull at rest, the
+# likeliest to poke.
 POKE_TOL = 0.001
-ROOT_BAND = 0.003
-# and vertices weighted under ROOT_W are the weight's root band (the stalk's base, about its first quarter):
-# they move under 5 mm at a 15-degree cap, and their rays from the head's centre graze the hole the stalk leaves in the
-# skull proxy, where a tiny move flips the outermost crossing (AL2's v2d: 1 such "poke" at 1 degree, 6 to 10 mm deep)
-ROOT_W = 0.35
+TEST_W = 0.01
+MOVED_EPS = 1e-5
 SWING_CORNERS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
 SPRING_MAX_DEG = 15.0  # the gills' cap at most (the measured limit when lower)
 
