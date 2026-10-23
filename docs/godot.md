@@ -744,6 +744,19 @@ pilot's static premium heads"):
   material whose name ends in `_static_skin` for the ShaderMaterial (keeping the imported albedo and normal textures)
   and returns the materials; `set_skin(mats, color)`; `PALETTE`, the curated skin colours after the build's teal.
   The mask PNG travels beside the GLB (`<head>_mask.png`); the proof loads it with `Image.load_from_file`.
+- **The skin colour study** (2026-10-23, after the engineer found one colour over lips, gills and crest "too acidic"):
+  `tint_study.gdshader` is `alien_static.gdshader` copied with the tint split by region: `accent_tex` (R the lips, G
+  the marks: the axolotl's gills and freckles, the chameleon's crest stripes; B the pale front panel) recolours each
+  region from its own base (`lip_base`, `mark_base`, `front_base`, the albedo's medians there) to its own target
+  (`lip_color`, `mark_color`, `front_color`); a region that follows the skin gets `base_skin` and `skin_color`
+  (today's tint); `debug_mode` 4 emits the accent mask. `tools/blender/alien_tint_mask.py` makes the mask in headless
+  Blender from the build's .blend and maps (a position bake on the build's UVs, step 2a's lip line, gill roots and
+  crest stripe formula, the plain albedo's saturation), with each region's median sRGB in `<head>_accent.json`.
+  `tools/blender/alien_tint_study.py <masks|sheets|all>` holds the variants (A today, B fixed lip colours, C a deeper
+  warmer lip shade of the skin, D skin and accent pairs, E curated palettes with capped saturation; their colour
+  math is tested by `test_alien_tint_study.py`) and renders the labelled sheets with `tint_study.gd` in an off-screen
+  window under the static heads' studio and a dusk forest light (into `<raw>/research/2026-10-22-roster/design/
+  pilot3d/colour/`). The study changes neither `alien_static.gdshader` nor `look_presets.json`.
 - `static_shots.gd`: the review sheets in an off-screen window under the showroom's ladder step 6 (the studio HDRI,
   AgX 0.9, key 2.0 with 1.5 degree soft shadows, fill 0.12, rim 0.3, SSAO, SSS medium), plus the tone grid
   (`TONES`: the showroom's AgX 0.9, AgX 0.65, AgX 0.65 with the environment's saturation 1.35, linear 0.6) measured
