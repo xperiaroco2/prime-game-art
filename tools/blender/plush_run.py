@@ -46,7 +46,12 @@ def main() -> int:
                                                   str(clean / "plush.glb"), "--height", "0.30", "--tris", "10000000"],
                                timeout=900)
         print(*lines(r, "PLUSH_CLEAN"), sep="\n", flush=True)
-        r = blender.run_script("plush_paint.py", [str(clean / "plush.glb"), str(paint)], timeout=900)
+        # option A for the mouth (the engineer, 2026-10-23): the crease closed to a seam, the smile's line with curls
+        r = blender.run_script("plush_mouth.py", [str(clean / "plush.glb"), str(clean / "plush_mouth.glb"),
+                                                  str(clean / "smile.json")], timeout=900)
+        print(*lines(r, "PLUSH_MOUTH"), sep="\n", flush=True)
+        r = blender.run_script("plush_paint.py", [str(clean / "plush_mouth.glb"), str(paint),
+                                                  "--smile", str(clean / "smile.json")], timeout=900)
         print(*lines(r, "PLUSH_PAINT"), sep="\n", flush=True)
         r = blender.run_script("plush_bake.py", [str(paint / "plush.glb"), str(paint / "plush_albedo.png"),
                                                  str(paint / "plush_mask.png"), str(game), "--tris", str(args.tris)],

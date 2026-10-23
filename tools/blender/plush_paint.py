@@ -42,6 +42,7 @@ PINK = rgb(opts.get("--pink", "200,122,115"))
 VEIN = rgb(opts.get("--vein", "196,52,48"))
 THREAD = rgb(opts.get("--thread", "34,18,12"))
 SIZE = int(opts.get("--size", 2048))
+SMILE_JSON = opts.get("--smile")  # plush_mouth.py's line (option A); without it the line is fitted here
 rng = np.random.default_rng(int(opts.get("--seed", 297)))
 out.mkdir(parents=True, exist_ok=True)
 
@@ -404,7 +405,10 @@ smile_points = 0
 res[dark] = ORANGE  # Meshy's bits: fur, under the new line
 orange |= dark
 dark[:] = False
-if len(pts) > 50:
+if SMILE_JSON:
+    line = np.array(json.loads(Path(SMILE_JSON).read_text(encoding="utf-8"))["line"])
+    smile_points = len(line)
+elif len(pts) > 50:
     lo, hi = np.percentile(pts[:, 0], [1, 99])
     edges = np.linspace(lo, hi, 31)
     mids = [np.median(pts[(pts[:, 0] >= e0) & (pts[:, 0] < e1)], axis=0) for e0, e1 in zip(edges[:-1], edges[1:])
@@ -416,6 +420,7 @@ if len(pts) > 50:
     tt = np.linspace(0, 1, 300)
     line = np.stack([np.interp(tt, t, line[:, k]) for k in range(3)], axis=1)
     smile_points = len(mids)
+if smile_points:
     box_lo, box_hi = line.min(0) - 0.004, line.max(0) + 0.004
     ys, xs = np.nonzero(sm_hit)
     p = sm_pos[ys, xs]
