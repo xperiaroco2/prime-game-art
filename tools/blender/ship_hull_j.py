@@ -637,13 +637,10 @@ def mouth_tunnel(args: dict, layout: dict) -> list:
         if hs is None or hood is None:
             return None
         return max(hs[0] + TUN_FILL, hood - TUN_SINK)
-    # bug 2's rest: out over the jambs' tops to past the notch's side and 10 cm aft of the roof line, so the notch's
-    # aft corners (the jamb, its cap and the nose's slope meeting) lie under one skin
-    yf = yr + 0.10
+    yf = ye
 
     def wf(y):
-        w, k = _tun_w(y)
-        return w + S.WALL * k + 0.03
+        return _tun_w(y)[0] + 0.02
     ys_f = [my + (yf - my) * j / nj for j in range(nj + 1)]
     for sx in (1, -1):
         idx = {}
@@ -666,7 +663,7 @@ def mouth_tunnel(args: dict, layout: dict) -> list:
             xa, xb = sx * wf(ya), sx * wf(yb)
             ha, hb = S.heights(xa, ya), S.heights(xb, yb)
             ga, gb = _tun_h(xa, ya), _tun_h(xb, yb)
-            if ha and hb and ga and gb:
+            if ha and hb and ga and gb and max(ha[0] - ga, hb[0] - gb) + TUN_FILL > -TUN_SINK:
                 q = _face([(xa, ya, min(ga, ha[0]) - 0.05), (xb, yb, min(gb, hb[0]) - 0.05),
                            (xb, yb, fill_h(xb, yb)), (xa, ya, fill_h(xa, ya))], (sx, 0.0, 0.0))
                 ff.append(tuple(range(len(fv), len(fv) + 4)))
