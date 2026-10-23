@@ -398,8 +398,20 @@ class AlienFingersTest(unittest.TestCase):
         self.assertEqual(self.statuses(self.evaluate(crest, "alien"))["extra_bones"], _checks.PASS)
         self.assertEqual(self.statuses(self.evaluate(crest, "body"))["extra_bones"], _checks.FAIL)
         for measure in (springs("Head", "Crest1", "Crest2"), springs("Head", "Sword_Socket"),
-                        springs("Hips", "Crest1", "Crest2", "Crest3")):
+                        springs("Hips", "Crest1", "Crest2", "Crest3"), springs("Head", "Crest3", "Crest1", "Crest2")):
             self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["extra_bones"], _checks.FAIL)
+
+        def with_gills(gill_l_parent: str) -> dict:
+            measure = springs("Head", "Crest1", "Crest2", "Crest3")
+            for parent, chain in ((gill_l_parent, ("GillL1", "GillL2", "GillL3")), ("Head", ("GillR1", "GillR2", "GillR3"))):
+                for name in chain:
+                    measure["armatures"][0]["bones"].append({"name": name, "parent": parent, "head": [0, 1.7, 0],
+                                                             "tail": [0, 1.75, 0], "deform": True})
+                    parent = name
+            return measure
+
+        self.assertEqual(self.statuses(self.evaluate(with_gills("Head"), "alien"))["extra_bones"], _checks.PASS)
+        self.assertEqual(self.statuses(self.evaluate(with_gills("Crest2"), "alien"))["extra_bones"], _checks.FAIL)
 
     def test_the_alien_head_may_stand_above_the_capsule_up_to_its_cap(self) -> None:
         # [kinds.alien] head_top_max_m 1.95 (art #196 comment 6374319309); the body keeps height_max_m

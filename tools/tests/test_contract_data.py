@@ -128,6 +128,9 @@ class ContractTest(unittest.TestCase):
             ({"spring_sets": {"crest": ["Head"]}}, "names a bone twice or a profile bone"),
             ({"spring_sets": {"a": ["X1"], "b": ["X1"]}}, "names a bone twice or a profile bone"),
             ({"spring_sets": {"crest": []}}, "non-empty lists of bone names"),
+            ({"spring_sets": {"crest": 3}}, "non-empty lists of bone names"),  # no TypeError
+            ({"spring_sets": {"crest": [3]}}, "non-empty lists of bone names"),
+            ({"spring_sets": 3}, "non-empty lists of bone names"),
             ({"head_top_max_m": 1.7}, "head_top_max_m must be a number of at least body.height_max_m"),
             ({"bones": "all"}, "kinds.alien.spring_sets needs bones = \"all_and_springs\""),
         ):

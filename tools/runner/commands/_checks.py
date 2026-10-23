@@ -455,11 +455,11 @@ def _rig_checks(
         report.add("duplicate_bones", FAIL, f"two bones become {', '.join(sorted(set(duplicates)))} after the map")
     extra = sorted(n for n in bones if n not in parents)
     split = _contract.spring_split(rules, extra, {n: b["parent"] for n, b in bones.items()})
-    bad = split["stray"] or split["partial"] or split["outside"]
+    bad = split["stray"] or split["partial"] or split["unchained"]
     if bad:
         detail = (f"not in the profile: {', '.join(extra)}"
                   + (f" (spring sets in part: {split['partial']})" if split["partial"] else "")
-                  + (f" (not below {rules.get('spring_parent')}: {split['outside']})" if split["outside"] else ""))
+                  + (f" (not chained under {rules.get('spring_parent')}: {split['unchained']})" if split["unchained"] else ""))
     elif extra:
         detail = f"every bone is a profile bone or in a whole spring set: {', '.join(extra)}"
     else:

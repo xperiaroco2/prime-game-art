@@ -283,7 +283,7 @@ class AlienProfileTest(unittest.TestCase):
             got = alien(d, strict_contract=strict)["alien_extra_bones"]
             self.assertEqual(got["status"], "pass", got)
             self.assertIn("9 extra: the crest springs ['Crest1', 'Crest2', 'Crest3']", got["detail"])
-            self.assertIn("all in whole declared spring sets below Head", got["detail"])
+            self.assertIn("all in whole declared spring sets chained under Head", got["detail"])
         partial = alien_dump()
         partial = with_bones(partial, "Head", "Crest1", "Crest2", "Crest3")
         partial = with_bones(partial, "Head", "GillL1", "GillL2", "GillL3")  # the gills' right side missing
@@ -299,7 +299,16 @@ class AlienProfileTest(unittest.TestCase):
         hips = with_bones(alien_dump(), "Hips", "Crest1", "Crest2", "Crest3")  # a whole set, not under Head
         got = alien(hips, strict_contract=True)["alien_extra_bones"]
         self.assertEqual(got["status"], "fail", got)
-        self.assertIn("not below Head: ['Crest1', 'Crest2', 'Crest3']", got["detail"])
+        self.assertIn("not chained under Head: ['Crest1']", got["detail"])
+        shuffled = with_bones(alien_dump(), "Head", "Crest3", "Crest1", "Crest2")  # Crest3 under Head, Crest1 under it
+        gill = with_bones(with_bones(alien_dump(), "Head", "Crest1", "Crest2", "Crest3"), "Crest2", "GillL1", "GillL2",
+                          "GillL3")  # GillL1 under Crest2
+        gill = with_bones(gill, "Head", "GillR1", "GillR2", "GillR3")
+        for d_bad, named in ((shuffled, "['Crest1', 'Crest3']"), (gill, "['GillL1']")):
+            for strict in (False, True):
+                got = alien(d_bad, strict_contract=strict)["alien_extra_bones"]
+                self.assertEqual(got["status"], "fail", got)
+                self.assertIn(f"not chained under Head: {named}", got["detail"])
         plain = {**A_CONTRACT, "kinds": {**A_CONTRACT["kinds"], "alien": {**A_CONTRACT["kinds"]["alien"], "bones": "all"}}}
         e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
              "rest_heads_m": {}, "height_m": None, "animations": {}}
@@ -319,7 +328,9 @@ class AlienProfileTest(unittest.TestCase):
         for top in (1.884, 1.759, 1.95):  # the chameleon's top, the axolotl's, the cap
             got = height(top, 1.55)
             self.assertEqual(got["status"], "pass", got)
-        self.assertIn("1.884 m to the top, the body below Head's skin 1.550 m", height(1.884, 1.55)["detail"])
+        self.assertIn("1.884 m to the top (the binding rule: ", height(1.884, 1.55)["detail"])
+        self.assertIn("the body below Head's skin 1.550 m (reported against", height(1.884, 1.55)["detail"])
+        self.assertIn("it never binds on a real alien", height(1.884, 1.55)["detail"])
         self.assertEqual(height(1.951, 1.55)["status"], "fail")  # the top over the cap
         self.assertEqual(height(1.90, 1.81)["status"], "fail")  # the body over the capsule
         self.assertEqual(height(1.90, 1.81, strict=False)["status"], "warn")  # contract gates warn unless strict

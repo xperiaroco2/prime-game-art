@@ -616,9 +616,9 @@ def _below(top: str, parent_of: dict[str, str]) -> set[str]:
 def _alien_extra_bones(c: Checks, skeleton: dict[str, Any], renamed: dict[str, str],
                        contract: dict[str, Any] | None = None) -> None:
     """Every bone beyond the contract profile's, named, against `[kinds.alien]`'s spring rule (bones =
-    "all_and_springs", art #196 comment 6374319309): whole spring_sets whose bones are all below spring_parent pass;
-    an extra bone in no set, a set in part or a spring bone outside spring_parent fails, with or without
-    --strict-contract."""
+    "all_and_springs", art #196 comment 6374319309): whole spring_sets chained under spring_parent pass (each chain's
+    first bone directly under it, each next bone under the one before); an extra bone in no set, a set in part or a
+    spring bone off its chain fails, with or without --strict-contract."""
     got = skeleton["bones"]
     profile_bones = {renamed.get(b, b) for b in _contract.profile_parents(_contract.load_profile())}
     extra = [b for b in got if b not in profile_bones]
@@ -629,23 +629,25 @@ def _alien_extra_bones(c: Checks, skeleton: dict[str, Any], renamed: dict[str, s
     rules = (contract or _contract.load_contract())["kinds"]["alien"]
     top = renamed.get(rules.get("spring_parent", ""), rules.get("spring_parent", ""))
     split = _contract.spring_split({**rules, "spring_parent": top}, extra, _parent_names(skeleton))
-    bad = split["stray"] or split["partial"] or split["outside"]
+    bad = split["stray"] or split["partial"] or split["unchained"]
     named = "; ".join(f"the {n} springs {v}" for n, v in split["sets"].items())
     c.add("alien_extra_bones", not bad,
           f"alien profile: {len(got)} bones: {len(got) - len(extra)} of the contract's {len(profile_bones)} and "
           f"{len(extra)} extra: {named or '-'}"
           + (f"; not in a declared spring set: {split['stray']}" if split["stray"] else "")
           + (f"; spring sets in part: {split['partial']}" if split["partial"] else "")
-          + (f"; not below {top}: {split['outside']}" if split["outside"] else "")
-          + (f"; all in whole declared spring sets below {top} (contract [kinds.alien] bones = \"{rules['bones']}\")"
+          + (f"; not chained under {top}: {split['unchained']}" if split["unchained"] else "")
+          + (f"; all in whole declared spring sets chained under {top} (contract [kinds.alien] bones = \"{rules['bones']}\")"
              if not bad else ""))
 
 
 def _alien_height(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], renamed: dict[str, str],
                   contract: dict[str, Any], low: float, height: float, severity: str) -> None:
-    """contract_height for the alien (art #196 comment 6374319309): the whole height from body.height_min_m to
-    [kinds.alien] head_top_max_m, and the body, the skin whose heaviest bone is not spring_parent or below it
-    (inspect.gd's bone_bounds), at most body.height_max_m, the game's capsule."""
+    """contract_height for the alien: the binding rule is the whole height from body.height_min_m to [kinds.alien]
+    head_top_max_m (the art manager's sanity cap against a runaway scale; the eye height is contract_eye_height's).
+    The body, the skin whose heaviest bone is not spring_parent or below it (inspect.gd's bone_bounds), is also held
+    to body.height_max_m and reported, but on a real alien it never binds: r5's chameleon has 1.418 m of body under a
+    1.884 m top, so it would take a scale of about 1.27 before the body passed 1.80 m."""
     body, rules = contract["body"], contract["kinds"]["alien"]
     cap = rules.get("head_top_max_m", body["height_max_m"])
     top = renamed.get(rules.get("spring_parent", "Head"), rules.get("spring_parent", "Head"))
@@ -654,10 +656,10 @@ def _alien_height(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], ren
     trunk = max(box["max"][1] for box in boxes) - low if boxes else None
     good = body["height_min_m"] <= height <= cap and trunk is not None and trunk <= body["height_max_m"]
     c.add("contract_height", good,
-          f"{height:.3f} m to the top, "
+          f"{height:.3f} m to the top (the binding rule: {body['height_min_m']} to {cap} m); "
           + (f"the body below {top}'s skin {trunk:.3f} m" if trunk is not None else "no skin outside the head to measure")
-          + f" (contract, alien: the top {body['height_min_m']} to {cap} m, the body at most {body['height_max_m']} m,"
-          " art #196 comment 6374319309)", severity)
+          + f" (reported against {body['height_max_m']} m; it never binds on a real alien, the head top and the eye"
+          " height bind first)", severity)
 
 
 def _loops(c: Checks, anims: dict[str, Any], seams: dict[str, dict[str, float]]) -> None:
