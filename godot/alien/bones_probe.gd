@@ -4,8 +4,11 @@ extends SceneTree
 ## job.json: {"out": <bones.json>, "heads": {<head>: {"lively": <head>_char_lively.json, "variants": {<name>: res
 ## path}}}}, the first variant the plain import. Per variant: the skeleton's bones; the lively controller
 ## (alien_lively.gd) driving the springs for SECONDS under the idle clip, the head following a target swept left and
-## right: the springs' largest pose angle off their rest, the spring-weighted vertices' largest skinned move off the
-## rest pose and, against the first variant at the same frames, their largest difference; the Head bone's global scale
+## right: the springs' largest pose angle off their rest (an echo of what alien_lively writes, the same in every
+## import by construction); the spring-weighted vertices' head-relative motion as vectors in rest world space
+## (hr * (hb.affine_inverse() * p) - rest, a frame both imports share), its largest length and, against the first
+## variant at the same frames, the largest vector difference (mm) and the angle between the swing directions (max over
+## the vertices moving at least MIN_SWING_MM in both, and the motion-weighted mean); the Head bone's global scale
 ## over one breath (alien_lively.BREATH_S) with the head held and following; per clip its tracks that name no bone and
 ## its largest bone turn between 0 and half its length.
 
@@ -14,6 +17,7 @@ const Character = preload("res://lib/character.gd")
 const FPS := 30.0
 const SECONDS := 3.0
 const SAMPLE := 6  # skinned points every SAMPLE frames
+const MIN_SWING_MM := 2.0  # the swing angle only where both imports move at least this
 
 
 func _initialize() -> void:
@@ -28,9 +32,9 @@ func _initialize() -> void:
 		for variant: String in h["variants"]:
 			var r: Dictionary = await _probe(h["variants"][variant], lively, first)
 			report[head][variant] = r
-			print("BONES %s %s: %d bones, springs %s deg, spring vertices %s mm (against the plain import %s mm), head scale %s %%"
+			print("BONES %s %s: %d bones, springs %s deg, spring swing %s mm (against the plain import: %s mm apart, directions %s deg max, %s deg mean), head scale %s %%"
 				% [head, variant, r.get("bone_count", 0), r.get("spring_max_deg"), r.get("spring_move_max_mm"),
-				r.get("against_first_mm"), r.get("head_scale_range_pct")])
+				r.get("against_first_mm"), r.get("swing_angle_max_deg"), r.get("swing_angle_mean_deg"), r.get("head_scale_range_pct")])
 	var f := FileAccess.open(job["out"], FileAccess.WRITE)
 	f.store_string(JSON.stringify(report, " "))
 	f.close()
@@ -97,8 +101,12 @@ func _probe(res: String, lively: Dictionary, first: Array) -> Dictionary:
 	live.breathing = 1.0
 	var best := 0.0
 	var move := 0.0
-	var against := 0.0
+	var diff := 0.0
+	var angle_max := 0.0
+	var angle_sum := 0.0
+	var weight := 0.0
 	var k := 0
+	var hi0: int = sk.find_bone("Head")
 	for i: int in int(SECONDS * FPS):
 		var t: float = i / FPS
 		live.target = mid + Vector3(1.5 * sin(TAU * 0.7 * t), 0.3 * sin(TAU * 0.3 * t), 2.0)
@@ -111,24 +119,32 @@ func _probe(res: String, lively: Dictionary, first: Array) -> Dictionary:
 				best = maxf(best, rad_to_deg(sk.get_bone_pose_rotation(bi).angle_to(sk.get_bone_rest(bi).basis.get_rotation_quaternion())))
 		if i % SAMPLE == 0 and not idx.is_empty():
 			var pts: PackedVector3Array = Character.skinned_points(mesh)
-			var hb: Transform3D = sk.get_bone_global_pose(sk.find_bone("Head"))
-			var hr: Transform3D = sk.get_bone_global_rest(sk.find_bone("Head"))
+			var hb: Transform3D = sk.get_bone_global_pose(hi0)
+			var hr: Transform3D = sk.get_bone_global_rest(hi0)
 			var sample := PackedVector3Array()
 			for j: int in idx:
-				var local: Vector3 = hb.affine_inverse() * pts[j]  # in the head's frame: the springs' own move
-				sample.append(local)
-				move = maxf(move, local.distance_to(hr.affine_inverse() * rest[j]))
+				# the head's own turn taken out, back in the rest pose's world space: the springs' swing alone
+				var m: Vector3 = hr * (hb.affine_inverse() * pts[j]) - rest[j]
+				sample.append(m)
+				move = maxf(move, m.length())
 			if first.size() <= k:
 				first.append(sample)
 			else:
 				var f: PackedVector3Array = first[k]
 				for j: int in mini(f.size(), sample.size()):
-					against = maxf(against, f[j].distance_to(sample[j]))
+					diff = maxf(diff, f[j].distance_to(sample[j]))
+					if f[j].length() * 1000.0 >= MIN_SWING_MM and sample[j].length() * 1000.0 >= MIN_SWING_MM:
+						var a: float = rad_to_deg(f[j].angle_to(sample[j]))
+						angle_max = maxf(angle_max, a)
+						angle_sum += a * f[j].length()
+						weight += f[j].length()
 			k += 1
 	out["spring_max_deg"] = snappedf(best, 0.01)
 	out["spring_vertices"] = idx.size()
 	out["spring_move_max_mm"] = snappedf(move * 1000.0, 0.1)
-	out["against_first_mm"] = snappedf(against * 1000.0, 0.01)
+	out["against_first_mm"] = snappedf(diff * 1000.0, 0.01)
+	out["swing_angle_max_deg"] = snappedf(angle_max, 0.01)
+	out["swing_angle_mean_deg"] = snappedf(angle_sum / weight, 0.01) if weight > 0.0 else 0.0
 	# the Head bone's global scale over one breath, held and following
 	var hi: int = sk.find_bone("Head")
 	var ranges := {}

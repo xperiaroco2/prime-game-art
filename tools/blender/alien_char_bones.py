@@ -7,7 +7,8 @@ heights against the game's 1.80 m capsule. Measures only; changes no build, cont
    extra bones, height without an allowance) and the SkeletonProfileHumanoid trial (Godot 4.7.2's BoneMap retarget,
    with and without its default track removal), reports in `<tag>/godot_check/`.
 2. godot/alien/bones_probe.gd, headless, on the three imports: bones after import, the springs driven by the lively
-   controller (pose angles, the spring-weighted vertices' skinned move, the difference against the plain import), the
+   controller (pose angles, the spring-weighted vertices' head-relative swing as vectors in rest world space, their
+   difference and swing-direction angle against the plain import), the
    Head bone's scale over a breath, every clip's unresolved tracks and turn.
 3. `<tag>/bones.json` and `<tag>/bones.md` (with the heights from each build's char.json).
 """
@@ -36,9 +37,10 @@ def table(heads: list[str], out: Path, probe: dict) -> str:
             "rescaled or changed. The contract (docs/contract.md) asks for exactly the 56 profile bones; whether the "
             "springs may stay is the engineer's call.", "",
             "## Bones through the import path", "",
-            "| head | variant | bones in | bones after import | springs found | spring pose max deg | spring vertices "
-            "move max mm | against the plain import mm | clips (unresolved tracks) | Head scale range over a breath % "
-            "(held / following) |", "|---|---|---|---|---|---|---|---|---|---|"]
+            "| head | variant | bones in | bones after import | springs found | spring pose max deg (the controller's "
+            "own value) | spring swing max mm (head-relative, rest world space) | against the plain import: vector "
+            "difference max mm | swing direction angle max / mean deg | clips (unresolved tracks) | Head scale range "
+            "over a breath % (held / following) |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     for h in heads:
         char = json.loads((out / h / "char.json").read_text(encoding="utf-8"))
         for v, _ in VARIANTS:
@@ -49,7 +51,7 @@ def table(heads: list[str], out: Path, probe: dict) -> str:
             hs = r.get("head_scale_range_pct", {})
             rows.append(f"| {h} | {v} | {char['bones']} | {r.get('bone_count')} | {len(r.get('springs_found', []))} of "
                         f"{len(char['springs'])} | {r.get('spring_max_deg')} | {r.get('spring_move_max_mm')} | "
-                        f"{r.get('against_first_mm')} | {len(clips)} clips, {moving} turning > 1 deg, {lost} unresolved "
+                        f"{r.get('against_first_mm')} | {r.get('swing_angle_max_deg')} / {r.get('swing_angle_mean_deg')} | {len(clips)} clips, {moving} turning > 1 deg, {lost} unresolved "
                         f"| {hs.get('held')} / {hs.get('follow')} |")
     rows += ["", "## Heights (rest pose, m above the lowest vertex)", "",
              "| head | whole top | over the 1.80 m capsule | skull top | crest/gill top | body top (no head weight) | "
