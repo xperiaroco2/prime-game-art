@@ -736,16 +736,14 @@ pilot's static premium heads"):
 - `alien_static.gdshader`: `albedo_tex` (sRGB), `normal_tex`, `mask_tex` (linear: R the skin tint mask, G roughness,
   B the subsurface and sheen weight), `diffuse_burley` (Test D's finding: the lambert wrap flattened the shading),
   `sss_mode_skin`, the sheen as Godot's rim. **The skin colour:** `skin_color` against `base_skin` (the albedo's own
-  skin teal, the GLB's `base_skin_srgb` extra): every masked texel's hue is turned by the two colours' hue difference
-  and its saturation and value scaled by their ratios, so the shade, the light and the pale front's two-tone stay;
-  `skin_color == base_skin` is the identity. Hue turning moves the pale front with it (mint under a yellow skin turns
-  a pale pink cream).
+  skin teal, the GLB's `base_skin_srgb` extra): every masked texel follows it (until CS6 by the hue difference and
+  the saturation and value ratios; since CS6 by its OKLab offset from the base, the colour slots' recolour below), so
+  the shade, the light and the pale front's two-tone stay; `skin_color == base_skin` is the identity.
 - `alien_static.gd` (`preload`, no class cache in a `-s` script): `apply(root, mask, base_skin)` swaps every surface
   material whose name ends in `_static_skin` for the ShaderMaterial (keeping the imported albedo and normal textures)
-  and returns the materials; `set_skin(mats, color)` (since the colour slots guarded, except on `SHADER_288`
-  materials, which take the colour as it is: the #288 review output reproducible); `PALETTE`, the curated skin
-  colours after the build's teal as the rails render them (exactly `hexs(guard("skin", PALETTE_288[i]))`, pinned by
-  `test_alien_colour_slots.py`; `PALETTE_288` the merged values, for `SHADER_288`).
+  and returns the materials; `set_skin(mats, color)` (`set_colours(mats, {"skin": color})`; on `SHADER_288`
+  materials the skin uniform alone: the #288 review output reproducible); `PALETTE`, the curated skin colours after
+  the build's teal, as picked (CS6; v3-v5 held their guarded copies).
   The mask PNG travels beside the GLB (`<head>_mask.png`); the proof loads it with `Image.load_from_file`.
 - **The skin colour study** (2026-10-23, after the engineer found one colour over lips, gills and crest "too acidic"):
   `tint_study.gdshader` is `alien_static.gdshader` copied with the tint split by region: `accent_tex` (R the lips, G
@@ -772,14 +770,23 @@ pilot's static premium heads"):
   v3, PR #304's review: out of the accent's alpha, which `fix_alpha_border` and VRAM compression would destroy
   under zero alpha), gates the recolour by the skin mask's red (the painted eyes keep their paint) and recolours
   each region from its base
-  (`base_skin` the GLB's `base_skin_srgb`; `lip_base`, `detail_base`, `front_base` the medians in `<head>_accent.json`)
+  (`base_skin` the GLB's `base_skin_srgb`; `lip_base`, `detail_base`, `gill_base`, `front_base` the regions' medians in
+  `<head>_regions.json`, CS6)
   to its target (`skin_color`, `lip_color`, `detail_color`, `front_color`); `detail_on` 0 lets the details follow the
   skin (the build's paint); `gill_mode` picks the gills with the details on: 1 the gradient (the default: skin at the
   root to the details colour at the tips), 2 the whole gill (stalk and fringe) in the details colour, 0 the skin; a
-  front texel's saturation stays at most max(its own, `front_sat_max`). The recolour runs in sRGB HSV (the linear
-  albedo turned to sRGB and back). Without an accent texture every skin texel follows the skin (the merged tint).
+  front follows the skin as a tinted cream (its chroma never above the build's front's). **The recolour** (CS6,
+  2026-10-23): each region's base is the median of its painted texels (`alien_colour_geom.bases_from_texels`,
+  `REGIONS`: 8-bit thresholds on the masks, the atlas' unpainted black gaps out; the gills' base is the gill tips'
+  median in the gradient mode, the whole gills' in the whole mode, `gill_base`/`gill_color` beside the details'),
+  and every texel carries its offset from its region's base onto the target in OKLab (`shift`): the lightness offset
+  scaled by min(1, the target's room / the base's room) (toward white above, toward black below), the a/b offset
+  turned by the hue turn and scaled by min(1, C target / C base); the regions mix in OKLab, on the linear albedo. So
+  the region's median texel becomes the pick exactly and its painted shading stays as lighter and darker texels round
+  it; a target at its base is the identity. v1-v5 turned the sRGB HSV hue and scaled saturation and value by the
+  ratios from one detail base. Debug modes 4 and 5 emit the regions as flat codes (the proof's lit measurement).
   `alien_static.gd`: `apply(root, mask, base_skin, detail, plain, shader, accent, bases, gill)` (bases `{"lips",
-  "detail", "front"}`), `set_colours(mats, {"skin", "lips", "detail", "detail_on", "gills"})` (`"gills"`:
+  "detail", "front", "gill_tips", "gill_whole"}`; a missing gill base is the detail's), `set_colours(mats, {"skin", "lips", "detail", "detail_on", "gills"})` (`"gills"`:
   `"gradient"`, `"whole"` or `"skin"`; any other value is an error: `push_error`, `{}` returned, the materials
   untouched, as Python's `ValueError` and JS's throw; an accent without the gill texture warns (`push_warning`,
   JS `console.warn`): "skin" and "whole" then act as "gradient"; returns the uniforms; `{}` is the merged look; `set_skin` is
@@ -791,16 +798,11 @@ pilot's static premium heads"):
   `compress/normal_map=0`, `compress/channel_pack=0`, `process/size_limit=0`, `detect_3d/compress_to=0` (never
   switched to VRAM compression on use in 3D); the shader's uniforms carry no `source_color`, so nothing turns
   them to linear. v3's proof renders both paths and Godot's defaults (no mipmaps) and diffs them (`diffs.json`).
-  **The guard rails** act in the script on every picked colour, in OKLCh (v2; CS1's CIELAB chroma cut bent blue toward
-  violet, navy went violet-slate; OKLab keeps the hue angle under the cut): a chroma cap and lightness range per slot
-  (skin C 0.108, L 0.44-0.871; lips C 0.113, L 0.353-0.828; details C 0.113, L 0.31-0.871; the front, the skin's
-  tinted cream, C 0.043, L 0.845-0.94), the cap lowered round the hues that read acidic (a cosine bump: yellow-green
-  0.7x at 125 deg, half width 36; hot pink 0.8x at 341 deg, half width 41), for a dark skin (times (L - 0.009) /
-  0.603 below L 0.612: a deep colour at full chroma reads neon) and for light lips and details (times (1 - L) / 0.259
-  above L 0.741), and the lips at least 0.1 (OKLab delta E) from the skin (L moved darker, or lighter at the range's
-  end); a cut colour outside sRGB loses more chroma (bisection), never its hue. The numbers are CS1's CIELAB rails
-  mapped: L = (L* + 16) / 116, C = 0.0027 C* (the median ratio at C* 40 over the hues), the bands' edges converted.
-  A slot the player leaves out keeps the build's paint, never guarded (the axolotl's lips are its skin's teal). The
+  **No guard rails** (CS6, the engineer 2026-10-23: "the player chooses; maybe he wants it acidic, it's his
+  choice; the main thing is that he can set it"): every pick is applied as picked, in every slot (v2-v5 capped
+  chroma and lightness per slot in OKLCh, lowered round yellow-green and hot pink, and pushed the lips away from the
+  skin; their #ffee00 details came out #d9d7b1). A slot the player leaves out keeps the build's paint (following a
+  picked skin). The presets keep their stored colours. The
   same maths: `tools/blender/alien_colour_geom.py` (`test_alien_colour_slots.py` checks it, the GDScript and JS
   constants, runs the JS through node within 1e-6 and compares the three.js GLSL's recolour and skin-mask gate with
   the Godot shader's statement by statement; `test_alien_parse_godot.py`, a heavy test, runs the GDScript maths
@@ -810,12 +812,16 @@ pilot's static premium heads"):
   page: both heads side by side, per slot a pick box and picker (skin, lips, details with an on box), the gills
   mode and the eight presets as swatches; served over http (a `file://` page cannot fetch), never yet opened in a
   browser). The proof: `$PYTHON_BIN
-  tools/blender/alien_colour_slots.py <masks|web|sheets|all>` (in the background) into
-  `<raw>/research/2026-10-22-roster/design/pilot3d/colour_slots/v4/` (v4; earlier runs in `v3/`, `v2/`): the presets, bad free picks, details off and
+  tools/blender/alien_colour_slots.py <regions|masks|web|sheets|all>` (in the background) into
+  `<raw>/research/2026-10-22-roster/design/pilot3d/colour_slots/v6/` (v6; earlier runs in `v4/`, `v3/`, `v2/`; `all`
+  copies v4's masks, `masks` remakes them in Blender): `regions` the bases and the albedo table (`albedo_table.json`:
+  per slot the pick against the recoloured albedo's region median, 15 colours); the presets, acidic free picks,
+  the details in seven colours (`<light>/details_colours.jpg`), the gill tips close up (`gill_tips.jpg`), the lit
+  measurement (`measure/`, `lit_table.json`, `swatches_<head>.png`, `table.md`), details off and
   on, the gills in both modes, the freckles all round (`<light>/freckles.jpg`: E2, E5, E7 front, 3/4, side, back),
   the lips' corners at 4x (`lips_v4.jpg`, `lips_v4_chameleon.jpg`), the identity
-  against the merged shader and the import path (`diffs.json`), the study's E beside v2's presets
-  (`E_compare.jpg`, the drift per cell in `drift.json`) and Godot's uniforms against the Python's (within 1e-5);
+  against the merged shader and the import path (`diffs.json`), v4's presets beside v6's
+  (`presets_compare.jpg`, the drift per cell in `drift.json`) and Godot's uniforms against the Python's (within 1e-5);
   `tint_study.gd` renders it (a head's `"static": true`, a cell's `"colours"`, `"drifts"`, `"stacks"`); titles are
   wrapped to three lines of 64 characters.
   **The axolotl's smile tail** (v2): the thin teal line past the lips' corner curves up into the pale cheek, so no
