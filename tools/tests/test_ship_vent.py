@@ -106,14 +106,14 @@ class ShipVentTest(unittest.TestCase):
         parts = build("e", meshes=False)
         built = sum(tris(p) for n, p in parts.items() if "verts" in p and "-convcolonly" not in n)
         self.assertLessEqual(built, 2000, built)   # the body adds its 4,000 baked triangles
-        self.assertTrue(parts["body"]["glb"].replace("\\", "/").endswith("body4k_r6/body.glb"), parts["body"])
+        self.assertTrue(parts["body"]["glb"].replace("\\", "/").endswith(V.BODY), parts["body"])
         for name in [f"slat{k}" for k in range(1, V.SLATS + 1)] + ["marker", "heat", "cool", "col0-convcolonly",
                                                                     "col1-convcolonly"]:
             self.assertIn(name, parts)
         self.assertEqual(parts["heat"]["mat"], "int_halo__vent_heat")
         self.assertEqual(parts["cool"]["mat"], "int_cyan__vent_cool")
         self.assertEqual(parts["marker"]["mat"], "glow_nav_white__vent_marker")
-        for k in range(1, V.SLATS + 1):   # one Meshy blade, seven copies, each turned to closed
+        for k in range(1, V.SLATS + 1):   # one blade, seven copies, each turned to closed
             p = parts[f"slat{k}"]
             self.assertTrue(p["glb"].replace("\\", "/").endswith(V.BLADE_GLB), p["glb"])
             self.assertAlmostEqual(p["rot_u"], -V.OPEN_RAD, places=9)

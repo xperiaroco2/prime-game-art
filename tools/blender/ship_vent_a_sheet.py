@@ -54,6 +54,11 @@ def blades(t: float, heat: bool):
             o.hide_render = not heat
         if o.name.endswith("_cool"):   # calm: the cyan glow in front of the heat; the problem: hidden
             o.hide_render = heat
+    for m in bpy.data.materials:   # the blades' lit seams glow with the heat only (as the game drives them)
+        if m.name.endswith("__vent_seam") and m.use_nodes:
+            b = m.node_tree.nodes.get("Principled BSDF")
+            if b is not None:
+                b.inputs["Emission Strength"].default_value = 2.0 if heat else 0.0
 
 
 def light(kind: str):
@@ -162,11 +167,13 @@ def main():
                     + [load(Path(g)) for g in GAME.split(",")][:2])
     save(rows, OUT / "sheet.png")
     # close-ups in the warm light: (name, camera, target, lens, t)
-    cu = [("texture_frame", (-0.9, -1.2, f + 1.5), (-0.6, -0.42, f + 1.35), 50, 1.0),
+    # (way B, vents-b1: the scanner and lamp re-aimed on the raised column, a blade in place of the texture)
+    cu = [("frame_bevels_tl", (-0.9, -1.2, f + 1.6), (-0.6, -0.42, f + 1.38), 50, 1.0),
           ("blade_ends_caps", (-0.75, -0.95, f + 1.0), (-0.45, -0.38, f + 0.95), 50, 1.0),
           ("frame_bevels_feet", (-1.2, -1.3, f + 0.45), (-0.6, -0.4, f + 0.2), 40, 1.0),
-          ("scanner", (0.75, -1.0, f + 1.25), (0.65, -0.4, f + 1.25), 60, 1.0),
-          ("lamp", (0.95, -1.0, f + 1.95), (0.65, -0.3, f + 1.72), 60, 1.0),
+          ("blade", (0.15, -1.05, f + 1.15), (-0.08, -0.48, f + 0.95), 45, 1.0),
+          ("scanner", (0.80, -1.0, f + 1.45), (0.685, -0.43, f + 1.398), 60, 1.0),
+          ("lamp", (0.98, -1.0, f + 2.0), (0.633, -0.335, f + 1.78), 60, 1.0),
           ("closed_seams", (-0.2, -1.4, f + 0.95), (-0.1, -0.35, f + 0.85), 45, 0.0)]
     light("warm")
     tiles = []
@@ -174,7 +181,9 @@ def main():
         blades(t, t == 0.0)
         camera(loc, at, lens=lens)
         tiles.append(shoot(f"cu_{name}"))
-    save([tiles[:3], tiles[3:]], OUT / "closeups.png")
+    blank = tiles[0] * 0
+    blank[..., 3] = 1
+    save([tiles[:4], tiles[4:] + [blank]], OUT / "closeups.png")
     print("SHEET done", OUT)
 
 

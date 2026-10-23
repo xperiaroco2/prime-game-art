@@ -1,9 +1,9 @@
-"""The throat vents (art #263 step 2, station 1; docs/ship.md "Station 1: the throat vents"), way A (art#263 comment
-6363433518): `station_vent_e` and its mirror `station_vent_w`. The body (the faceted bronze frame round the empty well
-with its copper hinge caps, the column with its light bar, palm scanner and red lamp, the feet) is Meshy's
-multi-image-to-3D model of the concept's body views (batch 2026-10-23-ship-vent-a-body), cleaned and baked by
-ship_vent_a.py into <raw>/BODY; the seven gill blades are copies of one rigid Meshy blade (ship_vent_a_blade.py,
-<raw>/BLADE_GLB) on pivots through the caps; the bar's marker, the glows and the colliders are built here. Plain
+"""The throat vents (art #263 step 2, station 1; docs/ship.md "Station 1: the throat vents"), way B (art#263 comments
+6363433518 and 6374327838, vents-b1): `station_vent_e` and its mirror `station_vent_w`. The body (the faceted bronze
+frame round the empty well with its copper hinge caps, the column with its light bar, palm scanner and red lamp, the
+feet) and the gill blade are built in Blender from the concept's views by ship_vent_b.py into <raw>/BODY and
+<raw>/BLADE_GLB (way A's Meshy body only as the to-scale guide); the seven gill blades are copies of the one blade on
+pivots by the caps; the bar's marker, the glows, the light pieces and the colliders are built here. Plain
 Python: the harness (ship_build.py) makes the meshes and imports the body and the blades (parts with "glb"; a blade
 carries "rot_u", its closed turn, and "hull", its box's corners for the checks).
 
@@ -36,37 +36,39 @@ for _name in ("int_halo__vent_heat", "int_cyan__vent_cool", "glow_nav_white__ven
     L.MATERIALS[_name] = dict(L.MATERIALS[_name.split("__")[0]])
 # the well's two glows (step 2: hotter and deeper, strength 1.5 read tan and pale blue under AgX)
 L.MATERIALS["int_halo__vent_heat"].update(base=(1.0, 0.22, 0.0, 1.0), emission=(1.0, 0.22, 0.0), strength=12.0)
-L.MATERIALS["int_cyan__vent_cool"].update(base=(0.0, 0.5, 1.0, 1.0), emission=(0.0, 0.5, 1.0), strength=4.0)
-BLADE, DARK = "vent_a_blade", "int_dark"   # the blade GLB's material
+# way B: the calm cyan brighter (r6's barely showed between the blades)
+L.MATERIALS["int_cyan__vent_cool"].update(base=(0.0, 0.55, 1.0, 1.0), emission=(0.0, 0.55, 1.0), strength=1.8)
+BLADE, DARK = "vent_b_bronze", "int_dark"   # the blade GLB's main material
 # the look step (vents-a4): every light a clean emissive piece over the body's painted one (a glow material's suffix
 # names it; the strengths set for the game's night light, the concept's bright neon)
 for _name, _base, _upd in (
-        ("glow_cyan__vent_strip", "glow_cyan", dict(base=(0.1, 0.85, 1.0, 1.0), emission=(0.1, 0.85, 1.0), strength=6.0)),
-        ("glow_cyan__vent_hand", "glow_cyan", dict(base=(0.15, 0.75, 1.0, 1.0), emission=(0.15, 0.75, 1.0), strength=8.0)),
-        ("glow_nav_red__vent_lamp", "glow_nav_red", dict(strength=6.0)),
-        ("glow_amber__vent_bar", "glow_amber", dict(base=(1.0, 0.55, 0.05, 1.0), emission=(1.0, 0.55, 0.05), strength=5.0)),
-        ("glow_nav_green__vent_band", "glow_nav_green", dict(strength=5.0)),
+        ("glow_cyan__vent_strip", "glow_cyan", dict(base=(0.1, 0.85, 1.0, 1.0), emission=(0.1, 0.85, 1.0), strength=1.8)),
+        ("glow_cyan__vent_hand", "glow_cyan", dict(base=(0.15, 0.75, 1.0, 1.0), emission=(0.15, 0.75, 1.0), strength=2.0)),
+        ("glow_nav_red__vent_lamp", "glow_nav_red", dict(strength=1.5)),
+        ("glow_amber__vent_bar", "glow_amber", dict(base=(1.0, 0.55, 0.05, 1.0), emission=(1.0, 0.55, 0.05), strength=1.8)),
+        ("glow_nav_green__vent_band", "glow_nav_green", dict(strength=1.8)),
         ("glow_nav_white__vent_bar_hot", "glow_nav_white", dict(base=(1.0, 0.93, 0.75, 1.0), emission=(1.0, 0.93, 0.75),
-                                                                 strength=5.0)),
+                                                                 strength=1.8)),
         ("int_dark__vent_screen", "int_dark", {})):
     L.MATERIALS[_name] = {**L.MATERIALS[_base], **_upd}
 
-# --- the body (ship_vent_a.py's clean.json, 2026-10-23) ---------------------------------------------------------------
-BODY = "ship/v4/vents-a/body4k_r6/body.glb"  # under the raw folder (vents-a4: the clean bronze, ship_vent_a_bronze.py)
-LIGHTS = "ship/v4/vents-a/body4k_r6/lights.json"   # the body's painted lights, measured (ship_vent_a_bronze.py)
+# --- the body (ship_vent_b.py, vents-b1, 2026-10-24) ------------------------------------------------------------------
+BODY = "ship/v4/vents-b/b1/body.glb"          # under the raw folder (way B: built in Blender, flat facets, chamfers)
+LIGHTS = "ship/v4/vents-b/b1/lights.json"     # the light pieces' places on the body (ship_vent_b.py)
 LIGHT_OUT = (0.0015, 0.0045)                  # a light piece's back and front off its surface
 # the light bar's segments up the glass (front_ortho, bottom to top): white-hot, amber, the green band, amber
-BAR = (("bar_hot", 0.0, 0.31, "glow_nav_white__vent_bar_hot"), ("bar", 0.31, 0.82, "glow_amber__vent_bar"),
-       ("band", 0.82, 0.90, "glow_nav_green__vent_band"), ("bar_top", 0.90, 1.0, "glow_amber__vent_bar"))
+# (the green band at 141..146.4 cm of the bar's 62.2..154.8, the comment's numbers)
+BAR = (("bar_hot", 0.0, 0.31, "glow_nav_white__vent_bar_hot"), ("bar", 0.31, 0.851, "glow_amber__vent_bar"),
+       ("band", 0.851, 0.909, "glow_nav_green__vent_band"), ("bar_top", 0.909, 1.0, "glow_amber__vent_bar"))
 BOX_U, COL_U = (-0.80, 0.466), (0.466, 0.80)  # the box with its feet, the column
 BOX_TOP, BOX_FACE = 1.608, 0.415              # the box's top, the frame's face (v)
-COL_TOP, COL_FACE = 1.81, 0.40                # the column's top (the lamp's dome after the 20 cm raise), its face
+COL_TOP, COL_FACE = 1.84, 0.40                # the column's top (the lamp's dome after the 20 cm raise), its face
 WELL_V = 0.115                                # the well's back
-OPEN_U, OPEN_H = (-0.44, 0.28), (0.30, 1.40)  # the well's opening (between the cap rows)
+OPEN_U, OPEN_H = (-0.44, 0.28), (0.30, 1.33)   # the well's opening between the cap rows (way B: under the header)
 CAP_U = (-0.48, 0.32)                         # the cap rows' centres
 CAP_R = 0.035                                 # a cap's radius
 PIVOT_V = 0.33                                # the caps' axis
-GLASS_U, GLASS_H = (0.507, 0.547), (0.66, 1.52)   # the light bar's glass after the raise
+GLASS_U, GLASS_H = (0.500, 0.556), (0.622, 1.548)   # the light bar's glass after the raise (the comment's 62.2..154.8)
 GLASS_V = 0.405                               # the glass's face
 
 # --- the blades ------------------------------------------------------------------------------------------------------
@@ -76,22 +78,24 @@ SLATS, PIVOT_TOP, PITCH = 7, 1.276, 0.15      # the pivots 127.6 .. 37.6 every 1
 # pivot, the calm pose; seven copies. Its blade.json (2026-10-23): the calm blade's box about the pivot (du, dv, dh),
 # the calm seam straight from the front 4.7 cm (the slices' median), closed 1.9 cm at CLOSED_DEG, the first cut at
 # 58 deg; 36.5 deg (a 7.5 mm seam) and 34 dipped the bottom blade's tip below the frame's bottom (vent_motion.gd).
-BLADE_GLB = "ship/v4/vents-a/blade_r5/blade.glb"
-BLADE_BOX = ((-0.3878, 0.3874), (-0.0324, 0.265), (-0.1301, 0.0155))
-NOSE_R = 0.03                                 # the root's back behind the pivot (ship_vent_a_blade.NOSE_R)
+# way B (vents-b1): one faceted claw built by ship_vent_b.py (412 triangles, the calm pose 22 deg tip down, bowed
+# 1.4 cm), its box about the pivot from its blade.json
+BLADE_GLB = "ship/v4/vents-b/b1/blade.glb"
+BLADE_BOX = ((-0.361, 0.361), (-0.03, 0.264), (-0.079, 0.039))
+NOSE_R = 0.03                                 # the root's back behind the pivot (ship_vent_b.SECTION)
 # step 4 (vents-a4): the calm pose tilted 22 deg tip down (the concept's claws, the upper bevel facet to the front),
 # the section squashed to 0.5 in h; blade_r5/blade.json: the calm seam 5.9 cm, closed 1.35 cm at CLOSED_DEG more
 # (33 deg from flat, the bottom blade's limit), the first cut at 50; each blade carries a lit seam strip on its lower
 # edge (`int_halo__vent_seam`, 32 triangles: the heat state, dark calm).
-BLADE_SEAMS = {"calm": 0.0593, "closed": 0.0135, "first_cut_deg": 50.0}
-CLOSED_DEG = 11.0
+BLADE_SEAMS = {"calm": 0.046, "closed": 0.006, "first_cut_deg": 55.0}   # way B: ship_vent_b.blade_numbers()
+CLOSED_DEG = 9.0
 # closed: each blade CLOSED_DEG further down than calm, a seam of about 1.9 cm straight on (front_closed's lit seams)
 OPEN_RAD = math.radians(CLOSED_DEG)
 MARK_H = 0.03                                 # the marker's height; it slides from GLASS_H[0]
 MARK_TRAVEL = GLASS_H[1] - GLASS_H[0] - MARK_H
 COOL_V = WELL_V + 0.012                       # the cool glow's panel, just in front of the heat's
 UC = (GLASS_U[0] + GLASS_U[1]) / 2            # the bar's centre line
-UNIT = [-0.80, 0.80, -0.01, 0.60, -0.02, 1.82]   # u0 u1 v0 v1 h0 h1 (the calm blades' tips at v 0.595)
+UNIT = [-0.80, 0.80, -0.01, 0.60, -0.02, 1.85]   # u0 u1 v0 v1 h0 h1 (the calm blades' tips at v 0.598, the lamp 1.841)
 
 
 def raw_root() -> Path:
@@ -263,11 +267,17 @@ def lights(pid: str, s: float) -> list[dict]:
     wu, wh = (hi[0] - lo[0]) / 2, (hi[2] - lo[2]) / 2
     put("screen", L.box(su - wu * 0.92, su + wu * 0.92, face + 0.0005, face + 0.0020, sh - wh * 0.94, sh + wh * 0.94),
         "int_dark__vent_screen")
-    scale = min(wu * 2 * 0.40, wh * 2 * 0.80 / 1.50)
+    # way B: the hand as big as the screen allows (4 mm in from its edges), centred on it
+    pts = hand_outline()
+    lw = 0.075
+    x0, x1 = min(x for x, _ in pts) - lw, max(x for x, _ in pts) + lw
+    y0, y1 = min(y for _, y in pts) - lw, max(y for _, y in pts) + lw
+    scale = min((wu * 0.92 - 0.004) * 2 / (x1 - x0), (wh * 0.94 - 0.004) * 2 / (y1 - y0))
+    xc, yc = (x0 + x1) / 2, (y0 + y1) / 2
     hv, hf = [], []
-    for q in ribbon(hand_outline(), 0.075):
+    for q in ribbon(pts, lw):
         b = len(hv)
-        hv += [(su + x * scale, face + d, sh + (y - 0.75) * scale) for d in (0.0022, 0.0036) for x, y in q]
+        hv += [(su + (x - xc) * scale, face + d, sh + (y - yc) * scale) for d in (0.0022, 0.0036) for x, y in q]
         hf += [tuple(b + i for i in f) for f in ((0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3),
                                                   (3, 7, 4, 0))]
     put("hand", (hv, hf), "glow_cyan__vent_hand")

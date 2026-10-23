@@ -487,14 +487,15 @@ def motion_request(layout: dict) -> dict:
                       # each blade's pivot on the caps' axis (Godot x, y, z)
                       "pivots": [[s * (v.CAP_U[0] + v.CAP_U[1]) / 2, f + v.PIVOT_TOP - k * v.PITCH, v.PIVOT_V]
                                  for k in range(v.SLATS)]}
-    cu = [["frame_corner_tl", [-0.42, f + 1.85, 1.15], [-0.70, f + 2.0, 0.45]],
-          ["opening_corner_br", [0.5, f + 0.4, 1.0], [0.2, f + 0.62, 0.42]],
-          ["slat_ends_l", [-0.3, f + 1.3, 0.9], [-0.66, f + 1.2, 0.33]],
-          ["box_column_top", [0.7, f + 1.9, 1.1], [0.33, f + 1.95, 0.45]],
-          ["lamp_base", [0.75, f + 1.85, 0.85], [0.55, f + 1.94, 0.47]],
-          ["scanner", [0.65, f + 1.25, 0.95], [0.57, f + 1.19, 0.46]],
-          ["box_floor_l", [-1.2, f + 0.35, 1.0], [-0.78, f + 0.0, 0.4]],
-          ["box_wall_top", [-0.2, f + 1.6, 1.3], [-0.4, f + 2.08, 0.42]],
+    # way B (vents-b1): re-aimed on the built body (four of way A's framed empty air)
+    cu = [["frame_corner_tl", [-0.30, f + 1.62, 1.05], [-0.64, f + 1.40, 0.41]],
+          ["opening_corner_br", [0.5, f + 0.4, 1.0], [0.2, f + 0.36, 0.40]],
+          ["slat_ends_l", [-0.3, f + 1.3, 0.9], [-0.50, f + 1.13, 0.36]],
+          ["box_column_top", [0.85, f + 1.85, 1.0], [0.47, f + 1.56, 0.36]],
+          ["lamp_base", [0.95, f + 1.95, 0.85], [0.633, f + 1.77, 0.335]],
+          ["scanner", [0.72, f + 1.42, 0.85], [0.685, f + 1.398, 0.43]],
+          ["box_floor_l", [-1.2, f + 0.35, 1.0], [-0.70, f + 0.10, 0.40]],
+          ["box_wall_top", [-0.2, f + 1.95, 0.95], [-0.2, f + 1.58, 0.15]],
           ["column_wall_r", [1.4, f + 0.5, 0.8], [0.78, f + 0.3, 0.2]]]
     return {"ids": list(vents), "vents": vents, "slats": v.SLATS, "open_rad": v.OPEN_RAD, "mark_travel": v.MARK_TRAVEL, "gap_m": 3.0,
             "nose_r": v.NOSE_R, "min_tip_swing": 0.04,
