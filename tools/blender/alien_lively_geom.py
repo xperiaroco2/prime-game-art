@@ -95,6 +95,62 @@ def clamp_gaze(yaw: float, pitch: float, lim: dict, cap_deg: float | None = None
     return yaw * k, pitch * k
 
 
+def fit_sphere(points) -> tuple[tuple[float, float, float], float]:
+    """(centre, radius) of the least-squares sphere through the points (the algebraic fit: 2 c . p + d = |p|^2,
+    r^2 = d + |c|^2), solved by its 4 x 4 normal equations. At least four points not on one plane."""
+    a = [[0.0] * 5 for _ in range(4)]
+    for p in points:
+        row = (2.0 * p[0], 2.0 * p[1], 2.0 * p[2], 1.0)
+        b = p[0] * p[0] + p[1] * p[1] + p[2] * p[2]
+        for i in range(4):
+            for j in range(4):
+                a[i][j] += row[i] * row[j]
+            a[i][4] += row[i] * b
+    for k in range(4):  # Gauss-Jordan with partial pivoting
+        piv = max(range(k, 4), key=lambda i: abs(a[i][k]))
+        if abs(a[piv][k]) < 1e-15:
+            raise ValueError("degenerate points: no sphere")
+        a[k], a[piv] = a[piv], a[k]
+        for i in range(4):
+            if i != k:
+                f = a[i][k] / a[k][k]
+                for j in range(k, 5):
+                    a[i][j] -= f * a[k][j]
+    x = [a[i][4] / a[i][i] for i in range(4)]
+    c = (x[0], x[1], x[2])
+    return c, math.sqrt(max(0.0, x[3] + c[0] * c[0] + c[1] * c[1] + c[2] * c[2]))
+
+
+def pit_weight(theta: float, inner: float, outer: float, gap: float, gap_in: float, gap_out: float) -> float:
+    """How far an eyeball vertex is projected onto its fitted sphere (the old iris's pit, art #196 eye pit): 1 inside
+    `inner` (its angle from the rest gaze), fading to 0 at `outer`, times a fade-in over its distance `gap` to the
+    nearest vertex a lid or socket triangle shares (0 below gap_in), so the lid line never moves."""
+    return (1.0 - smoothstep(inner, outer, theta)) * smoothstep(gap_in, gap_out, gap)
+
+
+def capped_weight(w: float, full_move: float, room: float, share: float, cap: float) -> float:
+    """The pit weight w lowered so the vertex's move (w times full_move, its distance to the sphere) stays within
+    cap and within share of its room, its distance to the nearest lid or socket triangle (the eye pit v4: a pull
+    toward the sphere never reaches a lid, so no eyeball triangle crosses one)."""
+    if w <= 0.0 or full_move <= 0.0:
+        return max(w, 0.0)
+    return min(w, max(0.0, min(cap, share * room)) / full_move)
+
+
+def project_on_sphere(p, c, r: float, w: float) -> tuple[float, float, float]:
+    """p moved the share w of the way to its radial projection on the sphere (c, r)."""
+    d = [p[i] - c[i] for i in range(3)]
+    n = math.sqrt(sum(x * x for x in d))
+    if n < 1e-12:
+        return tuple(p)
+    return tuple(p[i] + w * (c[i] + d[i] / n * r - p[i]) for i in range(3))
+
+
+def colour_distance(a, b) -> float:
+    """The RGB distance of two colours (0..1 channels): the sclera ghost's measure."""
+    return math.sqrt(sum((a[i] - b[i]) ** 2 for i in range(3)))
+
+
 def read_glb(data: bytes) -> tuple[dict, bytearray]:
     magic, _version, _length = struct.unpack_from("<III", data, 0)
     if magic != GLB_MAGIC:
