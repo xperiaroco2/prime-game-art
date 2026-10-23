@@ -117,7 +117,7 @@ sources = ["tools/blender/alien_mouths.py", "tools/blender/alien_lips_geom.py", 
 tests = ["test_alien_pout_*"]
 
 [area.alien_parse]
-sources = ["godot/alien/*.gdshader", "godot/alien/*.gdshaderinc", "godot/alien/alien.gd", "godot/alien/parse_check.gd"]  # the alien kit's shaders and alien.gd parse (#196, M13b); before light's godot/alien/*
+sources = ["godot/alien/*.gdshader", "godot/alien/*.gdshaderinc", "godot/alien/alien.gd", "godot/alien/alien_static.gd", "godot/alien/parse_check.gd", "tools/blender/alien_colour_geom.py"]  # the alien kit's shaders and alien.gd parse (#196, M13b); before light's godot/alien/*
 tests = ["test_alien_parse_*"]
 
 [area.meshy]

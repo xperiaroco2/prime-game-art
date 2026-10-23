@@ -1,6 +1,7 @@
 """The alien pilot's colour slots (art #196, 2026-10-23): tools/blender/alien_colour_geom.py's guard rails and slot
-uniforms, and the same constants and maths in godot/alien/alien_static.gd and tools/web/alien_colour/colour.js
-(the JS run through node when it is installed)."""
+uniforms, and the same constants in godot/alien/alien_static.gd and tools/web/alien_colour/colour.js, the JS maths
+run through node when it is installed (the GDScript maths: test_alien_parse_godot.py, headless Godot), and the
+three.js GLSL's recolour and its skin-mask gate against alien_static.gdshader's, statement by statement."""
 from __future__ import annotations
 
 import json
@@ -19,6 +20,19 @@ BASES = {"skin": [0.375, 0.8039, 0.8039], "lips": [0.3765, 0.7961, 0.7961], "det
          "front": [0.7176, 0.8667, 0.8314]}  # the axolotl's build
 BAD = ["#39ff14", "#ff1493", "#ffff00", "#00e5ff", "#ff7a00", "#ffffff", "#000000", "#14206e"]
 GD = ROOT / "godot" / "alien" / "alien_static.gd"
+SHADER = ROOT / "godot" / "alien" / "alien_static.gdshader"
+# colour.js's GLSL names -> alien_static.gdshader's
+JS_TO_GODOT = {"csHsv": "rgb2hsv", "csRgb": "hsv2rgb", "csSrgb": "to_srgb", "csLin": "to_linear", "csTurn": "turn",
+               "csBaseSkin": "base_skin", "csSkin": "skin_color", "csFrontBase": "front_base", "csFront": "front_color",
+               "csFrontSatMax": "front_sat_max", "csDetailBase": "detail_base", "csDetail": "detail_color",
+               "csDetailOn": "detail_on", "csGillMode": "gill_mode", "csLipBase": "lip_base", "csLip": "lip_color"}
+
+
+def statements(src: str, head: str) -> list:
+    """A GLSL function's body (from its head to the first closing brace at the line start) as whitespace-free
+    statements."""
+    body = src.split(head, 1)[1].split("\n}", 1)[0]
+    return [re.sub(r"\s+", "", st) for st in body.split(";") if st.strip()]
 JS = ROOT / "tools" / "web" / "alien_colour" / "colour.js"
 
 
@@ -118,6 +132,32 @@ class ColourSlotsTest(unittest.TestCase):
         for (_, gp), (_, p) in zip(gd, G.PRESETS):
             self.assertEqual(json.loads(gp), p)
 
+    def test_gill_modes_validated(self):  # PR #304's review: an unknown gill mode is an error everywhere
+        with self.assertRaises(ValueError):
+            G.slot_colours(BASES, {"gills": "fringe"})
+        self.assertIn("if gm < 0:\n\t\tpush_error(", GD.read_text(encoding="utf-8"))
+        self.assertIn("if (!GILL_MODES.includes(gills)) throw new Error(", JS.read_text(encoding="utf-8"))
+
+    def test_glsl_matches_the_godot_shader(self):  # PR #304's review: the browser gated by the skin mask as Godot
+        js, gd = JS.read_text(encoding="utf-8"), SHADER.read_text(encoding="utf-8")
+        want = statements(gd, "vec3 recolour(vec3 c, vec3 acc, float gill) {")
+        renamed = js
+        for a, b in JS_TO_GODOT.items():
+            renamed = re.sub(rf"\b{a}\b", b, renamed)
+        got = statements(renamed, "vec3 csRecolour(vec3 c, vec3 acc, float gill) {")
+        self.assertEqual(got, want)
+        self.assertIn("vec3 b = rgb2hsv(to_srgb(base_c));", gd)  # Godot's uniforms are linear (source_color)
+        self.assertIn("b = csHsv(b); t = csHsv(t);", js)  # three.js's are the sRGB numbers
+        flat = re.sub(r"\s+", "", js.split("export const MAP_FRAGMENT", 1)[1].split("`;", 1)[0])
+        self.assertIn("vec4sampledDiffuseColor=texture2D(map,vMapUv);vec3csA=sampledDiffuseColor.rgb;"
+                      "sampledDiffuseColor.rgb=mix(csA,csRecolour(csA,texture2D(csAccent,vMapUv).rgb,"
+                      "texture2D(csGill,vMapUv).r),texture2D(csMask,vMapUv).r);diffuseColor*=sampledDiffuseColor;", flat)
+        g = re.sub(r"\s+", "", gd)
+        self.assertIn("vec3a=texture(albedo_tex,UV).rgb;", g)
+        self.assertIn("vec3m=texture(mask_tex,UV).rgb;", g)
+        self.assertIn("vec3c=mix(a,recolour(a,texture(accent_tex,UV).rgb,texture(gill_tex,UV).r),m.r);", g)
+        self.assertNotIn(".a", "".join(want))  # v3: no alpha read: the gills are their own texture
+
     def test_js_matches(self):
         src = JS.read_text(encoding="utf-8")
         js = re.findall(r'\["([^"]+)", (\{[^}]*\})\]', src.split("export const PRESETS")[1].split("];")[0])
@@ -136,13 +176,17 @@ class ColourSlotsTest(unittest.TestCase):
             self.skipTest("node is not installed")
         picks = [p for _, p in G.PRESETS] + [{"skin": h, "lips": h, "detail": h} for h in BAD] + [
             {"skin": "#e39c8c", "detail": "#ff0000", "detail_on": False, "gills": "skin"},
-            {"skin": "#14206e", "lips": "#ffffff", "gills": "whole"}, {"skin": "#0000ff", "lips": "#0000ff"}]
+            {"skin": "#14206e", "lips": "#ffffff", "gills": "whole"}, {"skin": "#0000ff", "lips": "#0000ff"},
+            {"gills": "fringe"}]
         jpicks = [{("detailOn" if k == "detail_on" else k): v
                    for k, v in p.items()} for p in picks]
         out = subprocess.run([node, str(JS), "--json", json.dumps({"bases": BASES, "picks": jpicks})],
                              capture_output=True, text=True, timeout=60)
         self.assertEqual(out.returncode, 0, out.stderr)
         for p, got in zip(picks, json.loads(out.stdout)):
+            if p.get("gills") == "fringe":  # an unknown gill mode: an error in JS as in Python
+                self.assertIn("unknown gills", got.get("error", ""))
+                continue
             want = G.slot_colours(BASES, p)
             for k, v in want.items():
                 for x, y in zip(v if isinstance(v, tuple) else (v,), got[k] if isinstance(got[k], list) else [got[k]]):
