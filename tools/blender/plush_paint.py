@@ -396,11 +396,12 @@ dark &= ~eye_t  # what is left of the thread: Meshy's smile
 # smile is broken bits and dashes in the muzzle's crease. Its texels' 3D points give the line: the median point in
 # each of 30 slices across the face, smoothed and resampled; every face texel within half the thread's width of that
 # line is thread, with a soft edge, and Meshy's own bits are fur again.
-SMILE_HALF_M = 0.0009
+SMILE_HALF_M = 0.0012
 sm_hit, sm_pos = raster_pos(np.nonzero(face_front)[0])
 old_smile = dark & sm_hit
 pts = sm_pos[old_smile]
 smile_line = np.zeros((h, w), dtype=bool)
+smile_flat = np.zeros((h, w), dtype=bool)
 smile_points = 0
 res[dark] = ORANGE  # Meshy's bits: fur, under the new line
 orange |= dark
@@ -433,6 +434,9 @@ if smile_points:
     a = np.clip((SMILE_HALF_M - dist) / 0.0003 + 0.5, 0.0, 1.0)
     res[ys, xs] = res[ys, xs] * (1 - a[:, None]) + THREAD[None, :] * a[:, None]
     smile_line[ys[a > 0.5], xs[a > 0.5]] = True
+    # the thread presses the pile flat in a 2 mm band, so no fur strand hangs over the line
+    smile_flat = np.zeros((h, w), dtype=bool)
+    smile_flat[ys[dist < SMILE_HALF_M + 0.002], xs[dist < SMILE_HALF_M + 0.002]] = True
 orange &= ~smile_line  # no pile over the thread
 veins = 0
 
@@ -458,6 +462,7 @@ def pad(img, filled, steps):
 # the shader's weights: R fur, G velour, B the glossy eye (whites, pupils, catch lights); the smile's thread none
 mask = np.zeros((h, w, 3), dtype=np.float32)
 mask[..., 0] = masked_blur(orange.astype(np.float32), np.ones_like(orange), 1)
+mask[..., 0] = np.where(smile_flat, np.minimum(mask[..., 0], 0.35), mask[..., 0])  # under the shells' 0.5
 mask[..., 1] = masked_blur(brown.astype(np.float32), np.ones_like(brown), 1)
 mask[..., 2] = masked_blur(eye_t.astype(np.float32), np.ones_like(white), 1)  # the smile's thread: none, matte
 res = pad(res, covered, 6)

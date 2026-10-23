@@ -9,7 +9,7 @@ read as a dark wedge, a crack. The smile's line is found from those bits (their 
 in each slice across the face, smoothed). The vertices within --reach metres of the line are relaxed towards their
 neighbours' average, weighted from 1 at the line to 0 at the reach, so the crease's walls come together into a
 shallow seam while the head and muzzle elsewhere stay as they are. The line is then laid back on the relaxed surface,
-each end gets a small upturned curl (--curl metres long, bending up to 75 degrees) and both are written to the JSON
+each end gets an upturned curl (--curl metres long, bending up to 80 degrees), all of it laid by rays from the front and both are written to the JSON
 for plush_paint.py to draw. Prints one line `PLUSH_MOUTH {...}`.
 """
 
@@ -29,7 +29,7 @@ src, out, smile_json = Path(argv[0]), Path(argv[1]), Path(argv[2])
 opts = dict(zip(argv[3::2], argv[4::2]))
 REACH = float(opts.get("--reach", 0.007))
 ITER = int(opts.get("--iterations", 40))
-CURL = float(opts.get("--curl", 0.005))
+CURL = float(opts.get("--curl", 0.007))
 DROP = float(opts.get("--drop", 0.0015))  # the line this far below the muzzle's overhang, where the front sees it
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -160,23 +160,25 @@ def from_front(p):
     return np.array(hit[0]) if hit[0] is not None else on_surface(p)
 
 
-line = np.array([from_front(p - np.array([0.0, 0.0, DROP])) for p in line])
+# the whole smile is drawn as the front sees it, in x and z, then laid on the surface by rays from the front (a curl
+# crawling over the surface climbed the crease's wall and doubled the line, the critic, 2026-10-23): the fitted curve
+# DROP below the overhang, and at each end a curl that turns from the curve's own direction to 80 degrees up
+flat = line[:, [0, 2]] - np.array([0.0, DROP])
 curls = []
-for end, prev in ((line[0], line[3]), (line[-1], line[-4])):
-    tangent = end - prev
-    tangent /= np.linalg.norm(tangent)
-    up = np.array([0.0, 0.0, 1.0])
-    p = end.copy()
+for end, prev in ((flat[0], flat[3]), (flat[-1], flat[-4])):
+    tangent = (end - prev) / np.linalg.norm(end - prev)
+    up = np.array([0.0, 1.0])
+    q = end.copy()
     curl = []
-    steps = 10
+    steps = 14
     for k in range(1, steps + 1):
-        ang = np.radians(75.0) * k / steps
+        ang = np.radians(80.0) * k / steps
         d = tangent * np.cos(ang) + up * np.sin(ang)
-        d /= np.linalg.norm(d)
-        p = on_surface(p + d * CURL / steps)
-        curl.append(p)
+        q = q + d / np.linalg.norm(d) * CURL / steps
+        curl.append(q.copy())
     curls.append(np.array(curl))
-full = np.concatenate([curls[0][::-1], line, curls[1]])
+flat = np.concatenate([curls[0][::-1], flat, curls[1]])
+full = np.array([from_front(np.array([q[0], 0.0, q[1]])) for q in flat])
 # resampled every 0.2 mm along its length, so the painted thread is one stroke, never a row of dots
 seg = np.linalg.norm(np.diff(full, axis=0), axis=1)
 arc = np.concatenate([[0.0], np.cumsum(seg)])
