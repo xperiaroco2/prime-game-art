@@ -1128,9 +1128,13 @@ pilot's static premium heads"):
     (inspect.gd's `eye_tones`: the vertices within 0.42 of the eye distance of either eye bone and in front of it, for
     a character without an `_eyes` part; `ALIEN_EYE_SHARE` 0.017, half the smallest share r5 measured);
     `pack_floor` the contract's weighted bones, each the heaviest bone of some vertex, and the shared alien body's 10
-    clips (`ALIEN_CLIPS`); `alien_extra_bones` names every bone beyond the contract's 56 and passes only whole
-    `ALIEN_SPRING_SETS` (the crest's Crest1-3, the gills' GillL/R1-3); `contract_height` holds `height_max_m`, textured
-    or not, unless `--allowance plasticine` names the paused clay allowance. The default profile `pack` is unchanged.
+    clips (`ALIEN_CLIPS`); `alien_extra_bones` names every bone beyond the contract's 56 and whether it belongs to a
+    whole `ALIEN_SPRING_SETS` set (the crest's Crest1-3, the gills' GillL/R1-3): a warning while any extra bone exists
+    (docs/contract.md allows none; the engineer has not ruled on the springs), a failure under `--strict-contract`
+    like `contract_height`, and a failure either way for a bone outside the sets or a set in part; `contract_height`
+    holds `height_max_m`, textured or not, unless `--allowance plasticine` names the paused clay allowance. That
+    allowance belongs to the paused plasticine look: never pass it to hide the alien's height question (the
+    chameleon's 1.884 m against the 1.80 m capsule waits on the engineer). The default profile `pack` is unchanged.
 - **B3 and B4 on the shared body (2026-10-23, PR #311; proofs `body_v2/r4/`, `body_v2/r5/`):**
   - B3: the pale front is `throat_fade` (a soft tongue from the throat to the sternum, per texel; the u1 shield only
     behind `--shield`); `char_shots.gd`'s `--fix` render settings, the soft shadow filter at ultra (5) by default since
@@ -1141,9 +1145,18 @@ pilot's static premium heads"):
     turn (a fold back across 0 stays one turn).
   - B4's measurements: `char.json` `heights` (whole, skull, crest/gill, body and eye heights against the 1.80 m
     capsule); `char_shots.gd`'s `colour_check` (the recoloured albedo alone, the shader's `debug_mode` 6, under a
-    linear tone map: the median on the back of the head and the upper back against each pick, OKLab dE x100);
+    linear tone map: the median on the back of the head and the upper back against each pick, OKLab x100);
     `tools/blender/alien_char_bones.py` (godot-check `--humanoid` and `godot/alien/bones_probe.gd`, headless: the
     bones and springs through Godot's BoneMap retarget, the Head bone's scale over a breath; `<tag>/bones.md`).
+  - Measured (r5, B4 and B5): Godot 4.7.2's BoneMap retarget (SkeletonProfileHumanoid, both trial variants) keeps
+    the extra spring bones, chameleon 59 -> 59 and axolotl 62 -> 62, contrary to docs/contract.md's remark that they
+    "would be dropped by Godot's BoneMap anyway"; whether the contract allows them waits on the engineer. B5's probe
+    compares the spring-weighted vertices' head-relative motion as vectors in rest world space
+    (`hr * (hb.affine_inverse() * p) - rest`): after the retarget the springs swing a different way (the rest fixer
+    turns the bones' local axes, and alien_lively writes the same local rotation), numbers in `bones.md`.
+  - `colour_check` per part: `patch_vs_region_median` (the 24 px patch's median against the pick; the base row's pick
+    is the region's median, so the mottled skin alone gives a few units) and `vs_base`, that number minus the base
+    row's: the pick's own error.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
