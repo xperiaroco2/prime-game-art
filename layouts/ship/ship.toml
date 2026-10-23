@@ -335,10 +335,12 @@ lamps = [
   [8.95, 1.43, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
   [-3.06, 5.42, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
   [3.06, 5.42, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
-  [-1.75, -10.3, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
-  [1.75, -10.3, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
-  [-1.75, -12.0, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
-  [1.75, -12.0, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
+  # fix 2 (art #263, the engineer's walk 2026-10-23): the ramp's four lamps 3.7 m out (were 1.75, at the ramp's edge:
+  # their pools cut into it), range 1.9 (was 3.5), so no pool reaches the ramp (half width 1.65; test_ship_light)
+  [-3.7, -10.3, 0.3, 1.0, 1.9, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool, beside the ramp
+  [3.7, -10.3, 0.3, 1.0, 1.9, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool, beside the ramp
+  [-3.7, -12.0, 0.3, 1.0, 1.9, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool, beside the ramp
+  [3.7, -12.0, 0.3, 1.0, 1.9, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool, beside the ramp
   # light layer: the three orange belly pools became the six landing lights' spots (an 11th number: a spot's
   # angle in deg, pointing down); the edge light's pools are six cool spots under the edge (its own glow lights
   # nothing: its strip lights left hot spots on the fins); the nav lamps' tiny lights (ship.gd blinks them in game)
@@ -354,8 +356,10 @@ lamps = [
   [13.81, 1.70, 1.75, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the lens rim (east)
   [-8.14, 8.39, 2.05, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the trail edge (west)
   [8.14, 8.39, 2.05, 1.0, 3.2, 0.8, 0.88, 1.0, "edge", false, 55.0],  # under the trail edge (east)
-  [-12.48, -1.06, 1.73, 1.0, 1.0, 1.0, 0.08, 0.05, "nav", false],  # port nav lamp, red (west)
-  [12.48, -1.06, 1.73, 1.0, 1.0, 0.1, 1.0, 0.3, "nav", false],  # starboard nav lamp, green (east)
+  # fix 2: the red and green nav lamps are off, "not needed yet" (the engineer, 2026-10-23); to bring them back,
+  # uncomment these two rows and the NAV SIDE rows in exterior.toml (placements and pieces)
+  # [-12.48, -1.06, 1.73, 1.0, 1.0, 1.0, 0.08, 0.05, "nav", false],  # port nav lamp, red (west)
+  # [12.48, -1.06, 1.73, 1.0, 1.0, 0.1, 1.0, 0.3, "nav", false],  # starboard nav lamp, green (east)
   [0.0, 11.2, 5.315, 1.0, 1.0, 1.0, 0.97, 0.92, "nav_tail", false],  # tail nav lamp, white (0.45 m out: details 1)
   [-3.60, -17.52, 2.24, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
   [-5.47, -19.22, 2.42, 1.0, 5.0, 1.0, 0.7, 0.38, "party", false],  # party string
