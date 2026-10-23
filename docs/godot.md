@@ -766,30 +766,39 @@ pilot's static premium heads"):
   gills' root-to-tip gradient), B the pale front; v4: every freckle on the axolotl's head, not only the cheek band's:
   small isolated dots darker or more saturated than the paint round them, nostrils (low cavity), the eye ring
   (near the eyes), the lips, the gills and the neck kept out, `FRECKLES`; `--debug` writes the freckle map,
-  `<head>_freckles_debug.png` (four sides) and `<head>_freckles_uv.png`) and `gill_tex` (`<head>_gill.png`, linear grey: the whole gills;
+  `<head>_freckles_debug.png` (four sides) and `<head>_freckles_uv.png`) and `gill_tex` (`<head>_gill.png`, linear
+  grey: the whole gills;
   v3, PR #304's review: out of the accent's alpha, which `fix_alpha_border` and VRAM compression would destroy
   under zero alpha), gates the recolour by the skin mask's red (the painted eyes keep their paint) and recolours
   each region from its base
-  (`base_skin` the GLB's `base_skin_srgb`; `lip_base`, `detail_base`, `gill_base`, `front_base` the regions' medians in
-  `<head>_regions.json`, CS6)
+  (`base_skin`, `lip_base`, `detail_base`, `gill_base`, `front_base` the regions' medians in `<head>_regions.json`,
+  CS6; the skin's since CS6b, v6 took the GLB's `base_skin_srgb`, 0.007 OKLab off it)
   to its target (`skin_color`, `lip_color`, `detail_color`, `front_color`); `detail_on` 0 lets the details follow the
   skin (the build's paint); `gill_mode` picks the gills with the details on: 1 the gradient (the default: skin at the
   root to the details colour at the tips), 2 the whole gill (stalk and fringe) in the details colour, 0 the skin; a
-  front follows the skin as a tinted cream (its chroma never above the build's front's). **The recolour** (CS6,
+  front is no slot: a tinted cream (its chroma never above the build's front's) by the picks' `"front"`: `"keep"`
+  (the default, CS6b: its lightness at least the build's front's, then at least the build's two-tone, the front's
+  median minus the skin's, away from the skin: above it where that colour is inside the gamut, else below; pale on a dark skin, a
+  little darker than a very light one) or `"follow"` (the skin, down and up: v6). **The recolour** (CS6,
   2026-10-23): each region's base is the median of its painted texels (`alien_colour_geom.bases_from_texels`,
   `REGIONS`: 8-bit thresholds on the masks, the atlas' unpainted black gaps out; the gills' base is the gill tips'
   median in the gradient mode, the whole gills' in the whole mode, `gill_base`/`gill_color` beside the details'),
-  and every texel carries its offset from its region's base onto the target in OKLab (`shift`): the lightness offset
-  scaled by min(1, the target's room / the base's room) (toward white above, toward black below), the a/b offset
-  turned by the hue turn and scaled by min(1, C target / C base); the regions mix in OKLab, on the linear albedo. So
-  the region's median texel becomes the pick exactly and its painted shading stays as lighter and darker texels round
-  it; a target at its base is the identity. v1-v5 turned the sRGB HSV hue and scaled saturation and value by the
+  and every texel carries its offset from its region's base onto the target in OKLab (`shift`): with kr = min(1,
+  L target / L base) (CS6b: the paint's mottling relative on a darker pick, never blotchy on navy or black), the
+  lightness offset scaled by kr (a lighter texel's also by the room toward white), the a/b offset turned by the hue
+  turn and scaled by min(1, C target / C base) * kr; the regions mix in OKLab, on the linear albedo, and a texel out
+  of gamut is pulled back toward the target along the line between them (`gamut`, CS6b; a per-channel clamp put a
+  saturated pick's median up to 0.009 off). So the region's base texel becomes the pick and the region's median is
+  within the albedo table's dE of it (`albedo_table.json`: about 0.003 at most over the 15 measured colours), its
+  painted shading stays as lighter and darker texels round it; a target at its base is the identity. v1-v5 turned the sRGB HSV hue and scaled saturation and value by the
   ratios from one detail base. Debug modes 4 and 5 emit the regions as flat codes (the proof's lit measurement).
-  `alien_static.gd`: `apply(root, mask, base_skin, detail, plain, shader, accent, bases, gill)` (bases `{"lips",
-  "detail", "front", "gill_tips", "gill_whole"}`; a missing gill base is the detail's), `set_colours(mats, {"skin", "lips", "detail", "detail_on", "gills"})` (`"gills"`:
-  `"gradient"`, `"whole"` or `"skin"`; any other value is an error: `push_error`, `{}` returned, the materials
+  `alien_static.gd`: `apply(root, mask, base_skin, detail, plain, shader, accent, bases, gill)` (bases `{"skin",
+  "lips", "detail", "front", "gill_tips", "gill_whole"}`; a missing skin base is `base_skin`, a missing gill base the
+  detail's), `set_colours(mats, {"skin", "lips", "detail", "detail_on", "gills", "front"})` (`"gills"`:
+  `"gradient"`, `"whole"` or `"skin"`, `"front"` `"keep"` or `"follow"`; any other value is an error: `push_error`, `{}` returned, the materials
   untouched, as Python's `ValueError` and JS's throw; an accent without the gill texture warns (`push_warning`,
-  JS `console.warn`): "skin" and "whole" then act as "gradient"; returns the uniforms; `{}` is the merged look; `set_skin` is
+  JS `console.warn`): "skin" and "whole" then act as "gradient"; returns the uniforms; `{}` is the merged look;
+  `set_skin` is
   `{"skin": color}`), `PRESETS` (the study's E1-E8; E1 the build's own paint), `data_texture(path)` (a mask as data).
   **The colour slots' masks** (`<head>_mask.png`, `<head>_accent.png`, `<head>_gill.png`) are data, never colour:
   load them with `data_texture()` (`Image.load_from_file`, mipmaps generated: lossless and linear) or import them
