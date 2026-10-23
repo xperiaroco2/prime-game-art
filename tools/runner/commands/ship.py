@@ -297,12 +297,13 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
     return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
 
 
-VENT_STATES = {"calm": {"slats": 1.0, "hide": [], "dim": ["lamp", "slat*:__vent_seam"]},
-               "problem": {"slats": 0.0, "hide": ["cool"], "dim": []}}
+# vents-b2: each glow panel carries its well lights (godot/ship/vent_glow.gd): calm hides the heat, the problem the cool
+VENT_STATES = {"calm": {"slats": 1.0, "show": [], "hide": ["heat"], "dim": ["lamp", "slat*:__vent_seam"]},
+               "problem": {"slats": 0.0, "show": ["heat"], "hide": ["cool"], "dim": []}}
 
 
 def vent_states(spec: str) -> dict:
-    """--vent-states "e=problem,w=calm" as ship.gd's "stations" request: {piece: {"slats", "hide", "dim"}}."""
+    """--vent-states "e=problem,w=calm" as ship.gd's "stations" request: {piece: {"slats", "show", "hide", "dim"}}."""
     states = {}
     for item in (i for i in spec.split(",") if i):
         side, _, state = item.partition("=")

@@ -10,6 +10,7 @@ extends SceneTree
 ## from 8 sides and the close-ups. Writes <out>/motion.json and PNGs; the runner encodes the frames into an MP4.
 
 const Offscreen = preload("res://lib/offscreen.gd")
+const VentGlow = preload("res://ship/vent_glow.gd")
 
 var _req: Dictionary
 var _out: String
@@ -91,6 +92,7 @@ func _stage() -> void:
 		node.position = Vector3(x, 0, 0)
 		root.add_child(node)
 		_vents[id] = node
+		VentGlow.add(node)   # vents-b2: the well's lights under its glow panels
 		var mk: Node3D = _leaf(id, "marker")
 		_rest[id] = mk.position.y if mk != null else 0.0
 		x += float(_req["gap_m"])
@@ -137,6 +139,7 @@ func _drive(id: String, slats: float, marker: float) -> void:
 ## as the game drives them.
 func _calm(id: String, calm: bool) -> void:
 	_leaf(id, "cool").visible = calm
+	_leaf(id, "heat").visible = not calm   # vents-b2: its well lights with it
 	var body: MeshInstance3D = _leaf(id, "body") as MeshInstance3D
 	if not _dim.has(id):   # way A: the lamp is the body's `vent_a_body__lamp` surface
 		var mats: Dictionary = {}

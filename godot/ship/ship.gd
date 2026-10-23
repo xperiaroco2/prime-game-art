@@ -21,6 +21,7 @@ extends SceneTree
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const Player = preload("res://ship/player.gd")
+const VentGlow = preload("res://ship/vent_glow.gd")
 const WATCHDOG_S: float = 240.0
 const UP := Vector3.UP
 const SPEED: float = 3.0
@@ -402,7 +403,12 @@ func _dress(ship: Node3D) -> int:
 		dump.append([_r3(omni.position), snappedf(omni.light_energy, 0.001), snappedf(omni.omni_range, 0.001),
 			omni.light_color.to_html(false)])
 	_write("lights.json", {"cells": list.size(), "strip_lights": dump})  # where the emissive cells' lights stand (the hall disc's spot, inside-3)
-	return mini(list.size(), MAX_LIGHTS)
+	# vents-b2: the vents' well lights, children of their glow panels; calm by default (the heat panel and its lights
+	# hidden; ship --shoot's problem state shows them, _stations)
+	var vents: int = VentGlow.add(ship, _lk("vent_well_scale", 1.0))
+	for n: Node in ship.find_children("station_vent_*_heat", "Node3D", true, false):
+		(n as Node3D).visible = false
+	return mini(list.size(), MAX_LIGHTS) + vents
 
 
 ## Every mesh under n on the render layers bits.
@@ -553,7 +559,7 @@ func _shoot() -> void:
 
 
 ## The stations' states for the shots (station 1, the vents; ship --shoot --vent-states): the request's "stations"
-## {piece: {"slats": t, "hide": [suffix], "dim": [suffix]}} and "open_rad": each placed piece's leaves `<piece>_slat<k>`
+## {piece: {"slats": t, "show": [suffix], "hide": [suffix], "dim": [suffix]}} and "open_rad": each placed piece's leaves `<piece>_slat<k>`
 ## turned to rotation.x = -open_rad * t, its `<piece>_<suffix>` nodes hidden (the calm glow `cool` for the problem) or
 ## dimmed (a lamp's glow at a tenth, calm; "<part>:<material suffix>" one surface), as the game drives them.
 func _stations(ship: Node3D) -> void:
@@ -565,6 +571,9 @@ func _stations(ship: Node3D) -> void:
 		var st: Dictionary = states[pid]
 		for leaf: Node in node.find_children("%s_slat*" % pid, "Node3D", true, false):
 			(leaf as Node3D).rotation.x = -float(_req["open_rad"]) * float(st.get("slats", 0.0))
+		for suffix: String in st.get("show", []):   # vents-b2: the problem shows the heat panel and its lights
+			for n: Node in node.find_children("%s_%s" % [pid, suffix], "Node3D", true, false):
+				(n as Node3D).visible = true
 		for suffix: String in st.get("hide", []):
 			for n: Node in node.find_children("%s_%s" % [pid, suffix], "Node3D", true, false):
 				(n as Node3D).visible = false
