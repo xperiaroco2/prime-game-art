@@ -1011,3 +1011,20 @@ Step 3 of the raise:
 | The notch's fill | cells of about 5 x 15 cm, each left out where the hood stood over it, else lifted to 2 mm under the hood: rows of bands from above, a stair edge on the chamfers | one connected grid a side (60 x 28), every vertex at the nose's top + 12 mm (`TUN_FILL`) or 3 cm under the hood (`TUN_SINK`), whichever is higher (the widening over the jambs to past the notch side made a saw edge on the nose and did not close bug 2: dropped) |
 
 `ship --shoot DIR --views FILE` shoots only a JSON list of views (and the plan views): a review's own sheet.
+
+## Fix 2: the engineer's walk (2026-10-23)
+
+The engineer walked the raised ship (`ship --play`, his shots in `<raw>/ship/v3/play/`, 15-16..15-19) and listed
+fixes. Step 1 of the fix round (items 1, 2, 4, 5, 6; item 3, the cockpit canopies, waits for his word):
+
+| Item | Cause | Now |
+|---|---|---|
+| 1. The ramp's ground lamps | the four stood at x +-1.75, 0.1 m past the ramp's edge (half width 1.65), their pools (range 3.5) over its edge | 3.7 m out (`ground_lamp` and their `pool` rows, y -10.3 and -12.0), range 1.9: no pool reaches the ramp; `test_ship_light` keeps every pool and fixture clear of it |
+| 2. The red and green nav lamps | "not needed yet" | off: their placements, `[[pieces]]` and `nav` light rows are commented out, marked NAV SIDE in `exterior.toml` and `ship.toml`; uncomment the three blocks to bring them back (`test_ship_light` keeps them on or off together; the white tail lamp stays) |
+| 4. Broken plates and gaps along the seams by the lens rooms | open (step 1 found two things): (a) every plate's chamfer and the dark under-skin sank along its own face's normal (`lay_seams`, `j_skin`), so on a valley fold the sunk outlines parted into a slot (1201 shared plate corners over 3 mm apart); (b) the visible breaks in shots 010..013 stay after (a): the seams of the plan cells on the lens fairings end on a fold and restart offset on the next facet, and their chamfers catch the moon as pale strips | (a) WIP, `ship_hull_j.miter` and `skin_miters`: a point on a fold sinks along the faces' mean normal scaled so its own plane sinks by the depth (two faces: the exact miter; three: the point under all three), plates and under-skin alike: 42 corners over 3 mm left (folds over 120 degrees, capped at `MITER_MAX` 2); (b) for step 2 |
+
+`ship --shoot DIR --views FILE`: a row's optional 6th element, `{"ssil": false}`, `{"ssao": false}`, `{"glow": false}`
+or `{"shadows": false}` (the moon's and the key's), switches that part of the night look off for that one shot
+(`ship.gd _ab`): one run holds an A/B. The fix round's views (every walk shot at its exact eye and look, fov 75,
+narrow close-ups, the nose and the ramp's lamps) are `<raw>/ship/v4/fix2/views.json`, written from `shots.txt` by
+`<raw>/ship/v4/fix2/mkviews.py`.

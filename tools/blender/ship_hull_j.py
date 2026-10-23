@@ -237,6 +237,41 @@ class Edges:
                 best = ang if best is None else max(best, ang)
         return own, best
 
+    def normals_at(self, p) -> list:
+        """The distinct normals (over 1 degree apart) of the faces whose outline holds point p."""
+        out, kx, ky, kz = [], *self._key(p)
+        for key in ((kx + a, ky + b, kz + c) for a in (-1, 0, 1) for b in (-1, 0, 1) for c in (-1, 0, 1)):
+            for j, a, b in self.grid.get(key, ()):
+                if _off_segment(p, a, b) <= 2e-4 and all(S._dot(self.normals[j], m) < MITER_SAME for m in out):
+                    out.append(self.normals[j])
+        return out
+
+
+MITER_SAME = math.cos(math.radians(1.0))
+MITER_MAX = 2.0   # a miter at most this long (a 120 degree fold); sharper folds keep the capped miter
+
+
+def miter(normals, own) -> tuple:
+    """fix 2 (art #263, items 4 and 6): the direction a point on a fold sinks along: the faces' mean normal a (of the
+    distinct normals meeting there), scaled so the face's own plane sinks by exactly 1 (m . own = 1). Every face at
+    the point sinks along the one line a, so their sunk outlines and under-skins meet on the fold (for two faces m
+    is the exact miter, m . n = 1 for both); each face sinking along its own normal parted them on a valley fold,
+    and the seam's groove opened a slot to the hull's inside (the dark lines and slivers by the lens rooms). Capped
+    at MITER_MAX long (folds sharper than 120 degrees). At a corner of three faces the exact point under all three."""
+    ns = [own] + [n for n in normals if S._dot(n, own) < MITER_SAME]
+    if len(ns) == 1:
+        return own
+    if len(ns) == 3:   # a corner of three faces: the point under all three planes by 1, where it is not too far
+        a, b, c = ns
+        bc, ca, ab = S._cross(b, c), S._cross(c, a), S._cross(a, b)
+        det = S._dot(a, bc)
+        if abs(det) > 1e-3:
+            m = tuple((bc[t] + ca[t] + ab[t]) / det for t in range(3))
+            if S._dot(m, m) <= MITER_MAX ** 2:
+                return m
+    a = S._unit3(tuple(sum(n[t] for n in ns) for t in range(3)))
+    return tuple(a[t] / max(S._dot(a, own), 1.0 / MITER_MAX) for t in range(3))
+
 
 def seams(q, i, edges, zone) -> list:
     """Per edge of piece q (of surface face i): True where it is a seam (inset), False where it is laid flush."""
@@ -307,10 +342,11 @@ def corner_slides(pieces) -> list:
     return out
 
 
-def lay_seams(q, flags, slides=None):
+def lay_seams(q, flags, slides=None, miters=None):
     """One plate piece: v1's inset and chamfer on its seam edges only; a flush edge keeps its outline and has no
     chamfer (the plate goes on over the next facet). A sliver is laid flush all round. slides: {corner: how far a
-    seam corner slides along its flush edge} (corner_slides; else INSET)."""
+    seam corner slides along its flush edge} (corner_slides; else INSET). miters: per corner the sink's direction
+    (skin_miters; else the face's normal)."""
     if width(q) <= SLIVER:
         flags = [False] * len(q)
     n = S._unit3(S._newell(q))
@@ -340,7 +376,7 @@ def lay_seams(q, flags, slides=None):
         if ln > cap and not (slides and i in slides):   # 3d: a corner_slides slide is capped per group already
             x = tuple(t * cap / ln for t in x)
         top.append(tuple(b[t] + x[t] for t in range(3)))
-    verts = top + [H._add(p, n, -DEPTH) for p in q]
+    verts = top + [H._add(p, (miters[i] if miters else n), -DEPTH) for i, p in enumerate(q)]
     faces = [tuple(range(k))] + [((i + 1) % k, i, k + i, k + (i + 1) % k) for i in range(k) if flags[i]]
     used = sorted({x for f in faces for x in f})
     remap = {old: new for new, old in enumerate(used)}
@@ -374,6 +410,27 @@ def skin_slides(name: str = S.DEFAULT) -> list:
     return _SLIDES[name]
 
 
+_MITERS: dict = {}
+
+
+def skin_miters(name: str = S.DEFAULT) -> tuple:
+    """fix 2: (per piece of skin_pieces(name) its corners' miters, per surface face its corners' miters), cached."""
+    if name not in _MITERS:
+        surf = S.surface(name)
+        edges = Edges(surf)
+        memo: dict = {}
+
+        def at(p, i):
+            key = (tuple(round(t, 5) for t in p), i)
+            if key not in memo:
+                memo[key] = miter(edges.normals_at(p), edges.normals[i])
+            return memo[key]
+        pieces = [[at(p, i) for p in q] for (_k, _z, _c, i, q, _f) in skin_pieces(name)]
+        faces = [[at(p, i) for p in poly] for i, (poly, _n, _k) in enumerate(surf)]
+        _MITERS[name] = (pieces, faces)
+    return _MITERS[name]
+
+
 def cell_mat(cell, mats) -> str:
     """A plate's silver, one per cell (all its pieces alike, so a lens plate is one smooth mesh)."""
     return mats[zlib.crc32(repr(cell).encode()) % len(mats)]
@@ -386,11 +443,13 @@ def j_skin(args: dict, layout: dict) -> list:
     mats = MATS[kind]
     groups: dict = {}
     pieces = skin_pieces(S.DEFAULT)
-    for (k, zone, cell, _i, q, flags), slides in zip(pieces, skin_slides(S.DEFAULT)):
+    p_miters, f_miters = skin_miters(S.DEFAULT)
+    for (k, zone, cell, _i, q, flags), slides, mit in zip(pieces, skin_slides(S.DEFAULT), p_miters):
         if k == kind:
-            groups.setdefault((zone, cell_mat(cell, mats)), []).append(lay_seams(q, flags, slides))
-    under = [([H._add(x, n, -DEPTH * 1.8) for x in poly], [tuple(range(len(poly)))])
-             for poly, n, k in S.surface(S.DEFAULT) if k == kind]
+            groups.setdefault((zone, cell_mat(cell, mats)), []).append(lay_seams(q, flags, slides, mit))
+    # fix 2: the under-skin's corners sink along the folds' miters, so neighbouring faces' under-skins meet
+    under = [([H._add(x, m, -DEPTH * 1.8) for x, m in zip(poly, mits)], [tuple(range(len(poly)))])
+             for (poly, n, k), mits in zip(S.surface(S.DEFAULT), f_miters) if k == kind]
     parts = []
     for (zone, mat), g in sorted(groups.items()):
         p = L.part(f"skin_{kind}_{mat}" + ("_lens" if zone == "lens" else ""), *L.merge(*g), mat, solid=False)
