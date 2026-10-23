@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lively alien heads: test page (art #196)</title>
+<style>html,body{margin:0;height:100%;background:#73767a;overflow:hidden;font:13px system-ui;color:#eee}#info{position:fixed;left:8px;top:6px}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="info">The heads follow the cursor (heads.json lists them; ?head=axolotl shows one). Keys: C the chameleon's catch light, G the lively eyes on/off. <span id="state"></span></div>
+<script>addEventListener("error", (e) => { document.title = "ERR " + e.message; }); addEventListener("unhandledrejection", (e) => { document.title = "ERR " + e.reason; });</script>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { makeLively } from "./lively.js";
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.AgXToneMapping;
+renderer.toneMappingExposure = 0.9;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const key = new THREE.DirectionalLight(0xffffff, 2.0);
+key.position.set(-2, 3.2, 3);
+scene.add(key);
+const camera = new THREE.PerspectiveCamera(22, innerWidth / innerHeight, 0.05, 100);
+const q = new URLSearchParams(location.search);
+// heads.json: the heads in this folder, each as <head>_lively.glb, <head>_lively.json and <head>_sclera.png
+const heads = q.has("head") ? [q.get("head")] : await fetch("heads.json").then((r) => r.json());
+const lives = [];
+for (const [i, name] of heads.entries()) {
+  const gltf = await new GLTFLoader().loadAsync(`${name}_lively.glb`);
+  gltf.scene.position.x = (i - (heads.length - 1) / 2) * 1.5;
+  scene.add(gltf.scene);
+  gltf.scene.traverse((o) => { if (o.isMesh) o.material.envMapIntensity = 0.45; });
+  lives.push(await makeLively(gltf.scene, `${name}_lively.json`, `${name}_sclera.png`));
+}
+const live = { setCatch: (v) => lives.forEach((l) => l.setCatch(v)), setOn: (v) => lives.forEach((l) => l.setOn(v)),
+  pointer: (x, y, c) => lives.forEach((l) => l.pointer(x, y, c)), update: (dt) => lives.forEach((l) => l.update(dt)) };
+camera.position.set(1.5, 0.35, 5.2 + 2.2 * (heads.length - 1));
+camera.lookAt(0, -0.05, 0);
+const ndc = { x: 0, y: 0.1 };
+addEventListener("pointermove", (e) => { ndc.x = (e.clientX / innerWidth) * 2 - 1; ndc.y = -(e.clientY / innerHeight) * 2 + 1; });
+addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
+let catchOn = false, gazeOn = true;
+addEventListener("keydown", (e) => {
+  if (e.key === "c") live.setCatch((catchOn = !catchOn) ? 0.85 : 0);
+  if (e.key === "g") live.setOn((gazeOn = !gazeOn));
+});
+// ?x=..&y=..&t=..: a fixed pointer and a settle time, for a headless screenshot
+if (q.has("x")) { ndc.x = +q.get("x"); ndc.y = +q.get("y"); }
+if (q.has("catch")) live.setCatch(+q.get("catch"));
+let last = performance.now();
+if (q.has("t")) { live.pointer(ndc.x, ndc.y, camera); for (let i = 0; i < +q.get("t") * 60; i++) live.update(1 / 60); }
+renderer.setAnimationLoop((now) => {
+  live.pointer(ndc.x, ndc.y, camera);
+  live.update((now - last) / 1000);
+  last = now;
+  renderer.render(scene, camera);
+  document.getElementById("state").textContent = "ready"; document.title = "READY";
+});
+</script>
+</body>
+</html>

@@ -73,6 +73,14 @@ uniform float limbal_ring : hint_range(0.0, 1.0) = 0.0;
 uniform float catch_light : hint_range(0.0, 1.0) = 0.0;
 uniform vec2 catch_offset = vec2(-0.35, 0.45);  // the catch light's place in iris radii: (toward -X, up)
 uniform float catch_size = 0.16;  // its radius in iris radii
+// the bead (AL1, 2026-10-23: the axolotl's all-dark eyes, no iris to move): bead 1 draws sclera_tex (the albedo with
+// the painted catch light painted out) and a catch light fixed in the mesh's own frame (to the light) at catch_dir_l/r,
+// catch_angle wide, in catch_colour, times catch_light; the bead turns with the head under it
+uniform float bead : hint_range(0.0, 1.0) = 0.0;
+uniform vec3 catch_dir_l = vec3(0.0, 0.0, 1.0);
+uniform vec3 catch_dir_r = vec3(0.0, 0.0, 1.0);
+uniform float catch_angle = 0.1;
+uniform vec3 catch_colour : source_color = vec3(1.0);
 
 varying vec3 v_obj;
 
@@ -133,6 +141,11 @@ vec3 lively_eye(vec3 sclera) {
 	// the nearer eye centre (v_obj is the posed position: after a head turn a texel may cross x = 0)
 	bool left = distance(v_obj, eye_centre_l) < distance(v_obj, eye_centre_r);
 	vec3 dir = normalize(v_obj - (left ? eye_centre_l : eye_centre_r));
+	if (bead > 0.5) {
+		float ca = acos(clamp(dot(dir, left ? catch_dir_l : catch_dir_r), -1.0, 1.0));
+		float wa = max(fwidth(ca), 1.0e-4);
+		return mix(sclera, catch_colour, catch_light * (1.0 - smoothstep(catch_angle * 0.75 - wa, catch_angle * 1.1 + wa, ca)));
+	}
 	vec3 g = left ? gaze_l : gaze_r;
 	float th = acos(clamp(dot(dir, g), -1.0, 1.0));
 	float w = max(fwidth(th), 1.0e-4);
