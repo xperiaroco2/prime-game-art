@@ -518,10 +518,10 @@ def build_materials() -> None:
     charged = bsdf(nd, **{"Base Color": (0.0, 0.10, 0.24, 1.0), "Roughness": 0.1, "IOR": 1.55,
                           "Specular IOR Level": 0.2, "Alpha": alpha, "Emission Strength": glow})
     nd.nt.links.new(hot, charged.inputs["Emission Color"])
-    grey = nd.math("ADD", 0.085, nd.math("MULTIPLY", rnd, 0.05))
+    grey = nd.math("ADD", 0.19, nd.math("MULTIPLY", rnd, 0.07))
     grey = nd.math("ADD", grey, nd.math("MULTIPLY", flag, 0.04))
     gcol = nd.n("ShaderNodeCombineXYZ")
-    for i, k in enumerate((1.0, 1.06, 1.18)):
+    for i, k in enumerate((1.0, 1.05, 1.2)):
         nd.set(gcol, i, nd.math("MULTIPLY", grey, k))
     spent = bsdf(nd, Roughness=0.7, **{"Specular IOR Level": 0.35})
     nd.nt.links.new(gcol.outputs[0], spent.inputs["Base Color"])

@@ -9,10 +9,10 @@ uniform float charge : hint_range(0.0, 1.0) = 1.0;
 uniform vec3 deep : source_color = vec3(0.0, 0.22, 0.48);         // the gem's own colour, under its glow
 uniform vec3 glow_colour : source_color = vec3(0.0, 0.78, 1.0);
 uniform vec3 edge_colour : source_color = vec3(0.2, 0.88, 1.0);
-uniform float glow = 0.75;                                          // the facets' glow (HDR: over 1 blooms)
+uniform float glow = 0.95;                                          // the facets' glow (HDR: over 1 blooms)
 uniform float edge_glow = 0.45;
 uniform float clarity : hint_range(0.0, 1.0) = 0.45;               // how much of the core shows through, face-on
-uniform vec3 stone : source_color = vec3(0.33, 0.37, 0.43);        // the spent crystal
+uniform vec3 stone : source_color = vec3(0.46, 0.52, 0.64);        // the spent crystal
 uniform float pulse : hint_range(0.0, 0.3) = 0.05;                  // a slow shimmer while charged; 0: still
 
 varying vec3 mpos;

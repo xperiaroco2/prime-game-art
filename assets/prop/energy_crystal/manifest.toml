@@ -1,5 +1,5 @@
 # The ship engine's energy crystal (art#263's station props; the cartridge of xperiaroco2/prime-game#1033).
-# Built by tools/blender/crystal_run.py --tag drawn3 --asset assets/prop/energy_crystal; a rebuild
+# Built by tools/blender/crystal_run.py --tag drawn5 --asset assets/prop/energy_crystal; a rebuild
 # changes the hashes below.
 id = "energy_crystal"
 kind = "prop"
@@ -36,9 +36,9 @@ file = "energy-crystal/ref/charge.jpg"
 sha256 = "4a7b7b2099d5baa4af03c6052493590459681c26aac901394cf46fe308c5de93"
 
 [[raw]]
-file = "energy-crystal/drawn3/energy_crystal.glb"
+file = "energy-crystal/drawn5/energy_crystal.glb"
 sha256 = "b9adce55242d2fc5a123a44de3ef446a85a92eb0ef37ae3ea0d7c6c4b229f980"
 
 [[raw]]
-file = "energy-crystal/drawn3/energy_crystal.blend"
-sha256 = "a0af3d0dea5d4018420a23217a7ef29dfdd86435601649f01671c4ac4ab35914"
+file = "energy-crystal/drawn5/energy_crystal.blend"
+sha256 = "2e97e1ec8a1e6597882131115575798fb201abe3be7a83732c713545c991e0bb"
