@@ -7,7 +7,7 @@
 // or "follow" the skin; a tinted cream either way). Every pick is applied as picked (CS6: no guard rails): the
 // region's base texel becomes the pick and its median is within the albedo table's dE of it, the paint's lighter and
 // darker texels stay so round it (the offset from the region's base carried onto the pick in OKLab, `shift`;
-// CS6b: relative on a darker pick, a texel out of gamut pulled toward the pick, `gamut`); a slot left out
+// CS6b: relative on a darker pick); a slot left out
 // keeps the build's own paint, and no picks is the build's look exactly. The recolour acts on the raw albedo map
 // texel, gated by the skin mask's red (the painted eyes keep their paint), then the material's base colour factor
 // multiplies it, as glTF does; Godot's material ignores the factor, so makeColours sets it to white (the heads'
@@ -146,28 +146,17 @@ vec3 csShift(vec3 x, vec3 b, vec3 t) {
   vec2 d = x.yz - b.yz;
   return vec3(t.x + dl * kl, t.yz + vec2(d.x * r.x - d.y * r.y, d.x * r.y + d.y * r.x) * kc);
 }
-vec3 csGamut(vec3 p, vec3 r) {
-  p = clamp(p, 0.0, 1.0);
-  vec3 d = r - p;
-  vec3 s3 = mix(p / max(-d, vec3(1.0e-6)), (1.0 - p) / max(d, vec3(1.0e-6)), step(0.0, d));
-  float s = min(1.0, min(min(s3.x, s3.y), s3.z));
-  return clamp(p + d * s, 0.0, 1.0);
-}
 vec3 csU(vec3 c) { return csLab(csLin(c)); }  // an sRGB uniform in OKLab
 vec3 csRecolour(vec3 c, vec3 acc, float gill) {
   vec3 x = csLab(c);
   vec3 t = csShift(x, csU(csBaseSkin), csU(csSkin));
-  vec3 p = csU(csSkin);
   t = mix(t, csShift(x, csU(csFrontBase), csU(csFront)), acc.b);
-  p = mix(p, csU(csFront), acc.b);
   float dw = csGillMode < 0.5 ? max(acc.g - gill, 0.0) : (csGillMode < 1.5 ? acc.g : max(acc.g, gill));
   vec3 db = csLab(mix(csLin(csDetailBase), csLin(csGillBase), gill));
   vec3 dt = csLab(mix(csLin(csDetail), csLin(csGillColor), gill));
   t = mix(t, csShift(x, db, dt), csDetailOn * dw);
-  p = mix(p, dt, csDetailOn * dw);
   t = mix(t, csShift(x, csU(csLipBase), csU(csLip)), acc.r);
-  p = mix(p, csU(csLip), acc.r);
-  return csGamut(csLabLin(p), csLabLin(t));
+  return clamp(csLabLin(t), 0.0, 1.0);
 }
 `;
 

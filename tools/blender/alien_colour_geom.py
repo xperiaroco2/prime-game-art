@@ -23,10 +23,11 @@ The recolour (CS6, `shift`): each region has a base, the median (OKLab, per comp
 OKLab: the lightness offset scaled down where the target has less room (above it toward white, below it toward
 black), the a/b offset turned by the hue turn and scaled down when the target has less chroma than the base; on a
 target darker than the base every offset is scaled by the lightness ratio too (CS6b: the paint's mottling relative,
-not absolute, so a dark pick is not blotchy). A texel the offset takes out of the sRGB gamut is pulled back toward
-the target along the line between them (`gamut`), not clamped per channel. The base texel becomes the target; over
-a region the recoloured median is within the albedo table's dE of the pick (CS6b: about 0.003 at most for the 15
-measured colours), and a target at its base is the identity. v1-v5 turned the hue and scaled
+not absolute, so a dark pick is not blotchy). The base texel becomes the target; over a region the recoloured
+median is within the albedo table's dE of the pick (CS6b: 0.003 at most where the shifted texels stay inside the
+sRGB gamut; a pick on the gamut's edge, e.g. #ff00ff, up to 0.009 on the skin: the per-channel clamp moves its
+lighter texels, and a clip toward the pick, tried, made the median exact but flattened every such texel onto the
+pick), and a target at its base is the identity. v1-v5 turned the hue and scaled
 sRGB HSV saturation and value by the target/base ratios, from one detail base for the freckles, the crest and the
 gills alike, after guard rails on every pick; the rails made a picked detail miss (#ffee00 became #d9d7b1: the
 details' lightness cap 0.871, the light knee and the yellow-green band cut its chroma from 0.197 to 0.050).
@@ -133,18 +134,6 @@ def shift(x, b, t) -> tuple:
     return (t[0] + dl * kl, t[1] + (da * co - db * si) * kc, t[2] + (da * si + db * co) * kc)
 
 
-def gamut(p, r) -> tuple:
-    """r (linear sRGB, maybe out of gamut) pulled back toward p (the target, linear, clamped) along the line p -> r
-    until it is inside [0, 1] (CS6b: a per-channel clamp moved the lighter half of a saturated pick's texels off its
-    hue and the region's median 0.004-0.009 off the pick)."""
-    p = tuple(max(0.0, min(1.0, v)) for v in p)
-    s = 1.0
-    for pc, rc in zip(p, r):
-        d = rc - pc
-        s = min(s, (1.0 - pc) / max(d, 1e-6) if d >= 0.0 else pc / max(-d, 1e-6))
-    return tuple(max(0.0, min(1.0, pc + (rc - pc) * s)) for pc, rc in zip(p, r))
-
-
 def _lab_rgb(lab) -> tuple:
     """OKLab to linear sRGB, unclipped."""
     L, a, b = lab
@@ -221,23 +210,19 @@ def _mix(p, q, w) -> tuple:
 def texel(c, acc, gill: float, u: dict) -> tuple:
     """alien_static.gdshader's recolour on one sRGB albedo texel (sRGB out): acc the accent (lips, details, front;
     0-1), gill the whole gills' weight, u slot_colours' uniforms. The shader gets the albedo and the uniforms linear
-    and mixes the regions in OKLab; so does this, with the targets mixed alike (p) for `gamut`."""
+    and mixes the regions in OKLab; so does this."""
     lin = lambda k: tuple(_lin(v) for v in u[k])  # noqa: E731
     lab = lambda k: _lab_lin(lin(k))  # noqa: E731
     x = to_oklab(c)
     t = shift(x, lab("base_skin"), lab("skin_color"))
-    p = lab("skin_color")
     t = _mix(t, shift(x, lab("front_base"), lab("front_color")), acc[2])
-    p = _mix(p, lab("front_color"), acc[2])
     gm = u["gill_mode"]
     dw = max(acc[1] - gill, 0.0) if gm < 0.5 else (acc[1] if gm < 1.5 else max(acc[1], gill))
     db = _lab_lin(_mix(lin("detail_base"), lin("gill_base"), gill))
     dt = _lab_lin(_mix(lin("detail_color"), lin("gill_color"), gill))
     t = _mix(t, shift(x, db, dt), u["detail_on"] * dw)
-    p = _mix(p, dt, u["detail_on"] * dw)
     t = _mix(t, shift(x, lab("lip_base"), lab("lip_color")), acc[0])
-    p = _mix(p, lab("lip_color"), acc[0])
-    return tuple(_srgb(v) for v in gamut(_lab_rgb(p), _lab_rgb(t)))
+    return from_oklab(t)
 
 
 def region_of(acc8, gill8: int) -> list:

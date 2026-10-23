@@ -786,11 +786,13 @@ pilot's static premium heads"):
   and every texel carries its offset from its region's base onto the target in OKLab (`shift`): with kr = min(1,
   L target / L base) (CS6b: the paint's mottling relative on a darker pick, never blotchy on navy or black), the
   lightness offset scaled by kr (a lighter texel's also by the room toward white), the a/b offset turned by the hue
-  turn and scaled by min(1, C target / C base) * kr; the regions mix in OKLab, on the linear albedo, and a texel out
-  of gamut is pulled back toward the target along the line between them (`gamut`, CS6b; a per-channel clamp put a
-  saturated pick's median up to 0.009 off). So the region's base texel becomes the pick and the region's median is
-  within the albedo table's dE of it (`albedo_table.json`: about 0.003 at most over the 15 measured colours), its
-  painted shading stays as lighter and darker texels round it; a target at its base is the identity. v1-v5 turned the sRGB HSV hue and scaled saturation and value by the
+  turn and scaled by min(1, C target / C base) * kr; the regions mix in OKLab, on the linear albedo, clamped to the
+  sRGB gamut per channel. So the region's base texel becomes the pick and the region's median is within the albedo
+  table's dE of it (`albedo_table.json`, 15 colours: 0.003 at most where the shifted texels stay in gamut; a pick
+  on the gamut's edge up to 0.009 on the skin, whose paint spreads widest: the clamp moves its lighter texels. A
+  clip toward the pick, tried in CS6b, made the median exact but flattened every texel of such a pick, #0000ff or
+  #ffee00, onto it); its painted shading stays as lighter and darker texels round it; a target at its base is the
+  identity. v1-v5 turned the sRGB HSV hue and scaled saturation and value by the
   ratios from one detail base. Debug modes 4 and 5 emit the regions as flat codes (the proof's lit measurement).
   `alien_static.gd`: `apply(root, mask, base_skin, detail, plain, shader, accent, bases, gill)` (bases `{"skin",
   "lips", "detail", "front", "gill_tips", "gill_whole"}`; a missing skin base is `base_skin`, a missing gill base the

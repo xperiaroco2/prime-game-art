@@ -30,7 +30,7 @@ SHADER = ROOT / "godot" / "alien" / "alien_static.gdshader"
 JS = ROOT / "tools" / "web" / "alien_colour" / "colour.js"
 # colour.js's GLSL names -> alien_static.gdshader's (csU(x), an sRGB uniform in OKLab, is Godot's oklab(x) on a
 # linear uniform; csLin(uniform) is dropped first: Godot's source_color uniforms arrive linear)
-JS_TO_GODOT = {"csLab": "oklab", "csLabLin": "oklab_linear", "csShift": "shift", "csGamut": "gamut", "csU": "oklab",
+JS_TO_GODOT = {"csLab": "oklab", "csLabLin": "oklab_linear", "csShift": "shift", "csU": "oklab",
                "csBaseSkin": "base_skin", "csSkin": "skin_color", "csFrontBase": "front_base", "csFront": "front_color",
                "csDetailBase": "detail_base", "csDetail": "detail_color", "csGillBase": "gill_base",
                "csGillColor": "gill_color", "csDetailOn": "detail_on", "csGillMode": "gill_mode",
@@ -104,20 +104,22 @@ class ColourSlotsTest(unittest.TestCase):
                 self.assertLessEqual(L, 1.0 + 1e-9)
 
     def test_region_median_reaches_the_pick(self):
-        """CS6b: a synthetic region (texels spread round a base in L, a and b, a quarter of them a dark tail) keeps
-        its median within 0.003 OKLab of every pick after `texel` (the gamut pulled toward the pick)."""
+        """CS6b: a synthetic region (texels spread round a base in L, a and b as the painted skin, a quarter of them a dark tail) keeps
+        its median within 0.003 OKLab of every pick whose shifted texels stay inside the sRGB gamut, within 0.012
+        (the albedo table's bound) of a pick on the gamut's edge, after `texel`."""
         rnd = random.Random(7)
         base = G.to_oklab(tuple(BASES["skin"]))
         tx = []
         for i in range(1200):
-            dl = -rnd.uniform(0.2, 0.5) if i % 4 == 0 else rnd.gauss(0.0, 0.03)
-            tx.append(G.from_oklab((base[0] + dl, base[1] + rnd.gauss(0.0, 0.02), base[2] + rnd.gauss(0.0, 0.02))))
+            dl = -rnd.uniform(0.2, 0.5) if i % 4 == 0 else rnd.gauss(0.0, 0.012)
+            tx.append(G.from_oklab((base[0] + dl, base[1] + rnd.gauss(0.0, 0.012), base[2] + rnd.gauss(0.0, 0.012))))
         b = G.median_lab(tx)
         bases = {**BASES, "skin": b}
-        for h in PICKS:
+        inner = ["#e39c8c", "#a99cd8", "#e2c07a", "#6c87c6", "#8fb99f", "#a07596", "#7f98a8", "#808080", "#c04040"]
+        for h in PICKS + inner:
             u = G.slot_colours(bases, {"skin": h})
             m = G.median_lab([G.texel(c, (0, 0, 0), 0.0, u) for c in tx])
-            self.assertLess(G.delta_e(m, G.hexc(h)), 0.003, (h, G.hexs(m)))
+            self.assertLess(G.delta_e(m, G.hexc(h)), 0.003 if h in inner else 0.012, (h, G.hexs(m)))
 
     def test_dark_picks_keep_the_mottling_relative(self):
         """CS6b: on a darker pick every offset shrinks with the lightness ratio (navy is not blotchy); lighter picks
@@ -236,7 +238,6 @@ class ColourSlotsTest(unittest.TestCase):
         for head_gd, head_js in (("vec3 recolour(vec3 c, vec3 acc, float gill) {",
                                   "vec3 csRecolour(vec3 c, vec3 acc, float gill) {"),
                                  ("vec3 shift(vec3 x, vec3 b, vec3 t) {", "vec3 csShift(vec3 x, vec3 b, vec3 t) {"),
-                                 ("vec3 gamut(vec3 p, vec3 r) {", "vec3 csGamut(vec3 p, vec3 r) {"),
                                  ("vec3 oklab(vec3 c) {", "vec3 csLab(vec3 c) {"),
                                  ("vec3 oklab_linear(vec3 lab) {", "vec3 csLabLin(vec3 lab) {")):
             want = statements(gd, head_gd)
@@ -245,7 +246,7 @@ class ColourSlotsTest(unittest.TestCase):
         self.assertIn("vec3 csU(vec3 c) { return csLab(csLin(c)); }", js)  # three.js's uniforms are the sRGB numbers
         # every colour uniform reaches OKLab only through csU or csLin (sRGB numbers, never taken as linear)
         body = js.split("vec3 csRecolour(vec3 c, vec3 acc, float gill) {", 1)[1].split("\n}", 1)[0]
-        colours = [n for n in JS_TO_GODOT.values() if n not in ("oklab", "oklab_linear", "shift", "gamut")]
+        colours = [n for n in JS_TO_GODOT.values() if n not in ("oklab", "oklab_linear", "shift")]
         js_names = {v: k for k, v in JS_TO_GODOT.items()}
         for n in colours:
             if n in ("detail_on", "gill_mode"):
