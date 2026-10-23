@@ -61,7 +61,7 @@ every poly room convex, its points with a positive signed area in plan (x, y) (`
 point on the deck on a room's floor with the capsule's radius round it (`check_walk`); every room's sampled outer
 surface inside the live hull (P) with 0.15 m of skin (`hull_skin`: `ship_hull_shape.clearance` on the checked layout's own
 rooms, each sampled on its own); every room's outer wall and every placed piece inside the hull outline (a piece marked `outside` may
-stand outside: the ramp, the legs, the clearing, the entry tunnel `mouth_tunnel`; the exit room's tunnel floor, `tunnel_y`, is the one floor past the outline, `ship_layout.tunnel`); no piece defined twice or never placed.
+stand outside: the ramp, the legs, the clearing, the entry tunnel `mouth_tunnel` and `mouth_tunnel_in`; the exit room's tunnel floor, `tunnel_y`, is the one floor past the outline, `ship_layout.tunnel`); no piece defined twice or never placed.
 
 **One entrance; the side hatch is dropped.** estate-map 5a lists a side hatch at (-12.5, 1) as a second way out. The
 engineer's step-1 rule (art#263: the mouth ramp is the only way in or out, no side hatch, no doors) wins over that text:
@@ -1001,9 +1001,13 @@ Step 2 of the raise:
 | `mouth_tunnel` (`ship_hull_j.py`) | | inside: the throat's profile (vertical to 1.45, the chamfer 0.55 in, the 2.3 m ceiling) from -8.1 back to 4 cm past the roof line, walls in the jambs' plates, plated chamfers and ceiling, a cyan strip on each bend, frame ribs at the front and the nose, a grated floor, two amber floor lights; outside: a hood, the profile offset 0.25 m (roof at `TH_TOP` + 0.15), plated silver, cut by the nose where its top rises over it; inside the notch a fill at the nose's top + 12 mm closes the notch (bug 2: the lintel and jamb ends no longer stand out); a dark portal frame and a chrome lip at the front |
 | Ramp | hinge -7.1, foot -11.6 | hinge -8.1, foot -12.6 (14.9 deg, 4.66 m); its ground lamps and pools at y -10.3 and -12.0; the walk from y -14.0 |
 | Legs | a dark mount box hanging 0.12 m under the belly; sleeve r 0.15, piston 0.085 | a faceted fairing (8 sides, r 0.62 inside the skin to 0.36 at a dark frame lip, smooth hull silver); sleeve 0.19, collar 0.23, piston 0.11, fork 0.145, braces 0.06 |
-| Bug 1 (the throat's slanted wall and brace against the hall's panel, the black slot above) | | not fixed yet: the throat's last wall module ends square at the hall's vertex (+-2.915, -3.252) while its chamfer leans 0.55 in; the hall's flat panel there stands vertical to 3.2 m. The slot is the open triangle between the chamfer, the vertex's vertical and the hall's ceiling over the throat (`hall_ceil_throat_*`) |
+| Bug 1 (the throat's slanted wall and brace against the hall's panel, the black slot above) | | step 3, closed: the throat's last upper-wall module ended square at the hall's vertex (+-2.915, -3.252) while its chamfer leans 0.55 in; the hall's flat panel there stands vertical to 3.2 m, so a pocket stood open up to the hall's ceiling. That module is now `th_wall_up_end_e`/`_w` (`cor_wall_up` with `end`, `ship_interior.th_end_cut`): its chamfer and panel are cut 1 cm inside the hall face of the throat ceiling's header (`TH_HEAD_D` 0.2 hall-ward of the corner sub-facet's chord), so the lean runs into the header; on the two corner sub-facets the header carries a trim (`int_silver_c`) along the seam and a raised panel (`int_silver_a`) above it |
 
-The tunnel is in the outside lane (render layer 2), so the inside's strip lights do not reach its inner faces: its
-chamfers and ceiling read darker than the throat's.
+Step 3 of the raise:
+
+| What | Step 2 | Now |
+|---|---|---|
+| The tunnel's light | one piece in the outside lane (render layer 2): the inside's strip lights did not reach its inner faces, darker than the throat | two pieces of `mouth_tunnel` (`args.part`): `mouth_tunnel_in` (walls, chamfers, ceiling, ribs, strips, slab, grate, floor lights) has `layer = "inside"` in exterior.toml, so `ship.py` leaves it out of the request's `outside` list and it draws on the inside's layer; `mouth_tunnel` (`part = "hood"`: the hood, the undersides, the fill, the portal, the lip) stays outside |
+| The notch's fill | cells of about 5 x 15 cm, each left out where the hood stood over it, else lifted to 2 mm under the hood: rows of bands from above, a stair edge on the chamfers | one connected grid a side (60 x 28), every vertex at the nose's top + 12 mm (`TUN_FILL`) or 3 cm under the hood (`TUN_SINK`), whichever is higher; out over the jambs' tops to 3 cm past the notch's side and 10 cm aft of the roof line, so the notch's aft corners (jamb, cap and the nose's slope) lie under one skin (bug 2's dark triangle) |
 
 `ship --shoot DIR --views FILE` shoots only a JSON list of views (and the plan views): a review's own sheet.
