@@ -123,6 +123,9 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "th_clip_h": ("clip_h", {"prof": "throat"}, False),
     "th_wall_up_a": ("cor_wall_up", {"length": TH_MOD, "tone": "a", "prof": "throat"}, True),
     "th_wall_up_b": ("cor_wall_up", {"length": TH_MOD, "tone": "b", "prof": "throat"}, True),
+    # the raise step 3 (art#263 bug 1): the last module at each hall corner, its chamfer mitred into the header
+    "th_wall_up_end_e": ("cor_wall_up", {"length": TH_MOD, "tone": "a", "prof": "throat", "end": 1}, True),
+    "th_wall_up_end_w": ("cor_wall_up", {"length": TH_MOD, "tone": "b", "prof": "throat", "end": -1}, True),
     # rebuild D: the cyan arch at the throat's roof line (its ceiling and chamfers: the vents' walls stay plain)
     "th_arch": ("th_arch", {"half": round(TH_ARCH_HALF, 4), "k": round(TH_LEN / (_TK[1] - _TM[1]), 4)}, False),
     "hall_rib": ("rib", {"rv": S.HV, "rim": F + S.H_HALL, "r_in": S.R_RING, "h_in": H_IN_HALL}, False),
@@ -399,7 +402,9 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put("th_cables", o, yw)
                 for dx in (-0.25, 0.25):
                     put("th_clip_h", local(o, yw, dx, 0.0), yw)
-            if i in TH_COVER:
+            if i == TH_N - 1:   # the raise step 3: the hall corner's module (tone a east, b west, as before)
+                put("th_wall_up_end_" + ("e" if sx > 0 else "w"), o, yw)
+            elif i in TH_COVER:
                 put(f"th_wall_up_{tone}", o, yw)
             if i in (0, 3):   # rebuild E: two a side, at 1/5 and 4/5 of the wall
                 lp = [round(w[0] + d[0] * TH_MOD * 0.5 + inward[0] * 0.3, 4),
