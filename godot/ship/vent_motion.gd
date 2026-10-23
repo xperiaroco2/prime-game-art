@@ -238,7 +238,10 @@ func _check(id: String) -> Dictionary:
 			var pts: PackedVector3Array = _verts(id, node)
 			row.append(_sections(pts))
 			for p: Vector3 in pts:
-				var inside_open: bool = p.x > o["u0"] and p.x < o["u1"] and p.y > o["h0"] and p.y < o["h1"]
+				# behind the frame's face inside the opening; in front of it (hanging over the frame's bottom bar, which
+				# it cannot cut) only between the cap rows and over the deck's v_face_h0
+				var lo_h: float = o["h0"] if p.z < float(o["v_face"]) else float(o["v_face_h0"])
+				var inside_open: bool = p.x > o["u0"] and p.x < o["u1"] and p.y > lo_h and p.y < o["h1"]
 				if not inside_open or p.z < o["v_back"] or p.z > o["v_max"]:
 					outside.append("slat%d t %.1f at (%.3f, %.3f, %.3f)" % [k, t, p.x, p.y, p.z])
 					break
@@ -268,7 +271,10 @@ func _check(id: String) -> Dictionary:
 	r["tip_swing_m"] = tip_swing
 	r["slat_cuts"] = cuts
 	r["slat_outside_opening"] = outside
-	if edge_drift > 0.012 or origin_off > 0.002 or tip_swing < float(_req["min_tip_swing"]):
+	# the root's ring (nose_r + 3 mm round the axis) moves at most its chord over the turn, plus 4 mm (and 12 mm)
+	var drift_max: float = maxf(0.012, 2.0 * (float(_req["nose_r"]) + 0.003) * sin(float(_req["open_rad"]) / 2.0) + 0.004)
+	r["hinge_edge_drift_max_m"] = drift_max
+	if edge_drift > drift_max or origin_off > 0.002 or tip_swing < float(_req["min_tip_swing"]):
 		r["problems"].append("hinge: edge drift %.4f, origin off %.4f, tip swing %.3f" % [edge_drift, origin_off, tip_swing])
 	if not cuts.is_empty() or not outside.is_empty():
 		r["problems"].append("%d cuts, %d outside the opening" % [cuts.size(), outside.size()])

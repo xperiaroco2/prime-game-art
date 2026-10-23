@@ -410,7 +410,8 @@ def motion_request(layout: dict) -> dict:
         u = sorted((s * v.CAP_U[0], s * v.CAP_U[1]))
         g = sorted((s * v.GLASS_U[0], s * v.GLASS_U[1]))
         vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0] - 0.1, "h1": f + v.OPEN_H[1],
-                                  "v_back": v.COOL_V + 0.002, "v_max": v.UNIT[3]},
+                                  "v_back": v.COOL_V + 0.002, "v_max": v.UNIT[3],
+                                  "v_face": v.BOX_FACE, "v_face_h0": f + 0.12},
                       "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]},
                       # each blade's pivot on the caps' axis (Godot x, y, z)
                       "pivots": [[s * (v.CAP_U[0] + v.CAP_U[1]) / 2, f + v.PIVOT_TOP - k * v.PITCH, v.PIVOT_V]

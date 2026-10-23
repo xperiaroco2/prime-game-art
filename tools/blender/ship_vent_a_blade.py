@@ -3,7 +3,7 @@
 vent builder (ship_interior_vent.py) places seven times on the caps' pivots.
 
     blender -b --python ship_vent_a_blade.py -- --in <meshy.glb> --out <dir> [--tris 500] [--tex 1024]
-        [--body <body dir>] [--flip-up] [--flip-out]
+        [--body <body dir>] [--flip-up] [--flip-out] [--max-closed DEG]
 
 - Clean: welded, the specks (loose bits) dropped.
 - Orient by the principal axes: the longest along u (Blender x), the next out of the wall (v, Blender -y), the
@@ -16,7 +16,8 @@ vent builder (ship_interior_vent.py) places seven times on the caps' pivots.
   pose about its origin; the builder turns it down by the closed angle.
 - Meshy's arch along the blade cut to BOW (front_ortho's slight arch).
 - The closed angle: the smallest turn down at which the median seam seen straight from the front is SEAM or less,
-  below the first turn at which a blade comes within CLEAR of the next one PITCH below (both turned).
+  below the first turn at which a blade comes within CLEAR of the next one PITCH below (both turned) and at most
+  --max-closed (r4: 33, the bottom blade's tip over the frame's bottom).
 - A decimated copy (--tris) with a fresh Smart UV layout, baked from the full model (albedo, roughness, metallic, a
   tangent normal), the albedo graded per channel to the body's bronze median (--body: its finish.json).
 
@@ -209,7 +210,9 @@ def closed_angle(obj, rep: dict) -> None:
             first_cut = step
             break
     top = (first_cut - 1) if first_cut is not None else 70
-    close = next((d / 2 for d in range(0, 2 * top + 1) if seam(d / 2) <= SEAM), float(top))
+    if arg("--max-closed"):   # the bottom blade's closed tip must stay over the frame's bottom (vent_motion.gd)
+        top = min(top, float(arg("--max-closed")))
+    close = next((d / 2 for d in range(0, int(2 * top) + 1) if seam(d / 2) <= SEAM), float(top))
     rep["closed"] = {"first_cut_deg": first_cut, "closed_deg": close, "front_seam_m": round(seam(close), 4),
                      "calm_seam_m": round(seam(0.0), 4)}
     bm.free()
