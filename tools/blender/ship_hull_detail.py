@@ -49,46 +49,27 @@ def _bar(path, w, t, lift=0.0, up=(0.0, 0.0, 1.0)):
 
 
 # --- the canopies --------------------------------------------------------------------------------------------------
-CANOPY = dict(S.P_CANOPY, height=0.85, rings=5)   # J's; details 1: 0.85 high (was 0.75), room over a pilot's seat;
-#   canopy fix: on its deck plane (S.canopy_plane), the hull cut down to it (S.canopy_cut)
-SKIRT_OUT = 1.2     # canopy fix: where the skin falls under the deck the skirt's foot lies this x its drop outside
+CANOPY = {"x": 2.25, "y": -3.6, "ax": 0.95, "ay": 1.35, "height": 0.85, "segs": 28, "rings": 5}   # J's; details 1:
+#   0.85 high (was 0.75), room over a pilot's seat
 
 
 def _canopy_frame(side):
-    """The canopy's outlines and its deck: canopy fix, the plane S.canopy_deck (was the skin + 2 cm)."""
+    """The canopy's outlines and its deck: the skin itself (hull 3-2: flush in the forward hull, no raised pod)."""
     c = CANOPY
+    cx, cy = side * c["x"], c["y"]
     ts = [2 * math.pi * (k + 0.5) / c["segs"] for k in range(c["segs"])]
-    rim = S.canopy_outline(side)
-    glass = S.canopy_outline(side, 1.0)
 
-    def deck(x, y):
-        return S.canopy_deck(side, x, y)
-
-    def outline(t, k=c["k"]):
-        cx, cy = side * c["x"], c["y"]
+    def outline(t, k=1.14):
         s = math.sin(t)
         tail = max(0.0, s) ** 2
         return (cx + c["ax"] * k * math.cos(t) * (1 - 0.35 * tail), cy + c["ay"] * k * s * (1 + 0.35 * tail))
+    rim = [outline(t) for t in ts]
+    glass = [(cx + c["ax"] * math.cos(t), cy + c["ay"] * math.sin(t)) for t in ts]
+
+    def deck(x, y):
+        h = skin_h(x, y)
+        return (h if h is not None else skin_h(cx, cy)) + 0.02
     return ts, rim, glass, deck, outline
-
-
-def _skirt_foot(side, x, y, deck):
-    """The fairing's foot under an outline point: on the well's floor where the skin stands over the deck, else on
-    the skin SKIRT_OUT x the drop further out (a sloped skirt, not a stalk)."""
-    cx, cy = side * CANOPY["x"], CANOPY["y"]
-    h = deck(x, y) + 0.02
-    fx, fy = x, y
-    for _ in range(3):
-        top = skin_h(fx, fy)
-        if top is None or top >= h - 0.03:
-            break
-        r = math.hypot(x - cx, y - cy)
-        s = SKIRT_OUT * (h - top)
-        fx, fy = x + (x - cx) / r * s, y + (y - cy) / r * s
-    top = skin_h(fx, fy)
-    if top is None or top >= h - 0.03:
-        return (x, y, h - 0.05)
-    return (fx, fy, top - 0.01)
 
 
 def canopy(args: dict, layout: dict) -> list:
@@ -127,8 +108,10 @@ def canopy(args: dict, layout: dict) -> list:
     if part == "fairing":
         # the deck ring between the glass and the teardrop outline, the collar down into the skin, the rim lip
         inner = [(x, y, deck(x, y) + 0.06) for x, y in glass]
-        outer = [(x, y, deck(x, y) + 0.02) for x, y in rim]   # canopy fix: the deck ring flat on the plane
-        foot = [_skirt_foot(side, x, y, deck) for x, y in rim]
+        outer = []
+        for t, (x, y) in zip(ts, rim):
+            outer.append((x, y, (skin_h(x, y) or deck(x, y)) + 0.03))
+        foot = [(x, y, (skin_h(x, y) or deck(x, y)) - 0.01) for x, y in rim]
         v = inner + outer + foot
         f = [(j, (j + 1) % n, n + (j + 1) % n, n + j) for j in range(n)]
         f += [(n + j, n + (j + 1) % n, 2 * n + (j + 1) % n, 2 * n + j) for j in range(n)]
@@ -156,6 +139,12 @@ def glass_h(side: float, x: float, y: float) -> float:
     return deck(x, y) + 0.04 + c["height"] * math.sqrt(max(0.0, 1.0 - q * q))
 
 
+# canopy fix (art #263, walk 2 item 3, "lower the saddle and give it a normal tilt"): the pilot's seat 8 cm lower
+# (its pan flush with the floor's uphill corner, was 5.5 cm over it) and its back 25 deg from upright (was 40: a long
+# dark ramp along the nose's slant that read as a seat only from close by); grid <raw>/ship/v4/canopy/sheets/
+SEAT = {"drop": 0.08, "recline": 25.0}
+
+
 def _tilt(c, hx, hy, hz, deg):
     """An oriented box at c, half sizes hx (x), hy, hz, turned deg about x (+: its top leans aft, +y)."""
     a = math.radians(deg)
@@ -167,8 +156,8 @@ def cockpit(side: float) -> list:
     the glass's foot (the 2D's orange domes), a pilot's seat facing forward (-y): a pedestal, the seat pan with its
     cushion, a reclined back and a headrest, two armrests (silver shell, dark pads), and a console ahead with a
     sloped face, two grips and three cyan screens (ext_screen, bright enough to read through the glass at night).
-    Sized for a person: the pan 0.5 m wide, the back and headrest 0.61 m long reclined 40 deg (the glass is 0.85 m
-    high); every vertex stays under the glass (test_ship_hull_detail)."""
+    Sized for a person: the pan 0.5 m wide, the back and headrest 0.61 m long reclined SEAT 25 deg (the glass is
+    0.85 m high); every vertex stays under the glass (test_ship_hull_detail)."""
     c = CANOPY
     ts, rim, glass, deck, outline = _canopy_frame(side)
     n = len(ts)
@@ -193,9 +182,9 @@ def cockpit(side: float) -> list:
         return max(deck(x + sx * hx, y + sy * hy) for sx in (-1, 1) for sy in (-1, 1)) + 0.06
     # the seat: its pan's centre 0.1 m aft of the canopy's centre, the back pivot at its rear edge
     sy0 = cy + 0.02
-    f0 = on(cx, sy0, 0.25, 0.3)
+    f0 = on(cx, sy0, 0.25, 0.3) - SEAT["drop"]
     pan_top = f0 + 0.17
-    rec = 40.0
+    rec = SEAT["recline"]
     ra = math.radians(rec)
     up, aft = (math.sin(ra), math.cos(ra)), (math.cos(ra), -math.sin(ra))   # along the back (y, h), its thickness
     py, ph = sy0 + 0.2, pan_top          # the back's foot

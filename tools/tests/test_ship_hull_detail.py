@@ -40,6 +40,15 @@ class ShipHullDetailTest(unittest.TestCase):
             self.assertEqual(parts["canopy_seat"]["mat"], "ext_seat")
             seat = [y for _x, y, _h in parts["canopy_seat"]["verts"]]
             self.assertLess(min(seat), D.CANOPY["y"] - 0.4, "no console ahead of the seat (-y)")
+            # the canopy fix: the seat low (its pan 0.22 over the floor, was 0.30) and near upright, so it reads as a seat from the ground; a pilot's head
+            # (the headrest's top) still under the glass
+            self.assertLessEqual(D.SEAT["recline"], 25.0)
+            _t, _r, _g, deck, _o = D._canopy_frame(side)
+            cx, cy = side * D.CANOPY["x"], D.CANOPY["y"]
+            pan = [h - deck(x, y) for x, y, h in parts["canopy_seat"]["verts"] if abs(y - cy) < 0.2 and abs(x - cx) < 0.2]
+            self.assertLess(max(pan), 0.23, "the seat's pan stands too high over the floor")
+            head = max(parts["canopy_pads"]["verts"], key=lambda v: v[2])
+            self.assertGreater(head[2] - deck(head[0], head[1]), 0.7, "the headrest too low for a seated pilot")
             glass = D.canopy({"side": side, "part": "glass"}, LAYOUT)
             self.assertEqual(glass[0]["mat"], "glass_canopy")
 
