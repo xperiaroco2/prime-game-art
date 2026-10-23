@@ -1,0 +1,41 @@
+id = "ship_vent_b"
+kind = "prop"
+slot = ""
+title = "The ship's throat vent body and gill blade, way B (art#263 station 1)"
+notes = "Way B (art#263 comments 6363433518 and 6374327838; builder step vents-b1): the body (frame, copper hinge caps, column, light bar, scanner, lamp, feet) and the one gill blade built in headless Blender by tools/blender/ship_vent_b.py as flat-faceted chamfered solids from our own OpenAI concept views (batch 2026-10-23-ship-vent-final; the shapes were drawn after them by hand in code, no image or mesh of them is in the files) and the traced numbers; way A's Meshy body only as the to-scale guide. tools/blender/ship_interior_vent.py places the blade seven times and adds the marker, glows, light pieces and colliders into the station_vent_e and station_vent_w pieces. Not approved yet."
+tools = ["blender 5.2.2"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-24
+url = "https://github.com/xperiaroco2/prime-game-art"
+
+[[raw]]
+file = "ship/v4/vents-b/b1/body.glb"
+sha256 = "8d4eb681dba594c4bfb8e55cbc8cd0484c236e7753babf287638b2f0800a65c6"
+
+[[raw]]
+file = "ship/v4/vents-b/b1/blade.glb"
+sha256 = "597ea2745b541340acd1f54894d99baaca5ab269a360d57913d4290b4a14e343"
+
+[[raw]]
+file = "ship/v4/vents-b/b1/lights.json"
+sha256 = "e19ed37cad469a543c78aac0ee4af7ea1bda7bc1977de345867264c0e7e1b457"
+
+[[raw]]
+file = "ship/v4/vents-b/pieces/station_vent_e.glb"
+sha256 = "67b668ce4148e17d181f6d1a4b331bebded249d7a9a4786a5f5011d15fcabcec"
+
+[[raw]]
+file = "ship/v4/vents-b/pieces/station_vent_w.glb"
+sha256 = "5e9d1a720cbbf8d05bb0c09a62de76aa4ff90e94ebb1880203abfe31e030298f"

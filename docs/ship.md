@@ -1127,3 +1127,27 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   pure-Python tests) there are no light pieces.
 - **The raise** (2026-10-23): the vents are built in the design frame (`FLOOR` 0.6) and lifted by `ship_build.lifted`
   like every piece; it lifts a GLB part's `offset`, `origin` and `hull` too, and the motion request adds `lift_m`.
+- **Way B (vents-b1, 2026-10-24; art#263 c6374327838: the frame still read crumpled with the clean bronze), the
+  current build.** The body and the blade are built in Blender from the concept's views and the comment's numbers by
+  `tools/blender/ship_vent_b.py` (`blender -b --python ship_vent_b.py -- --out <raw>/ship/v4/vents-b/b1 [--guide
+  <way A body.glb>]`); way A's Meshy body is only the to-scale guide (`--guide` prints its box). No textures: every
+  shape is a flat-faceted solid (`solid()`: a convex profile extruded with 45 deg chamfer steps on its ends), the
+  chamfer faces a lighter polished bronze (`vent_b_edge`) over the body's `vent_b_bronze`, the caps `vent_b_copper`,
+  the rails, sockets and strip slots `vent_b_dark`, the well's inner lip `vent_b_well`. The frame is a ring of nine
+  panels (4 mm apart) round the octagonal opening (`OUTER`, `OPEN`: u -0.56..0.388, h 0.304..1.408) and an inner lip
+  ring 2 cm lower; a chamfered header sill under the opening's top (h 1.335..1.412: no glow over the top
+  blade, as front_closed; the glows and `OPEN_H` stop at 1.33); behind it the box's back slab (the well's back, v 0.115) and its roof (the top 1.608, its back on
+  the wall's slant); the foot and the plinth; two dark cap rails in the well with seven copper caps each (a socket, a
+  chamfered disc, a boss). The column: plinth, foot, shaft, a front panel, the bar's housing round its glass (h
+  0.622..1.548, the green band 1.41..1.464), the lower strip's bezel, the scanner's octagonal bezel (21 x 25 cm, the
+  centre 1.398) with its screen 1.5 cm sunk, the head and the lamp's stepped collar (the dome's top 1.841, its back
+  2 cm clear of the wall's slant). The game's surfaces keep way A's names (`vent_a_body__band`, `__hand`, `__lamp`, a
+  dark glass each); `lights.json` gives `lights()` the seven strips, the lamp, the band and the screen, and the hand
+  fills its screen (4 mm in, centred). The blade: one claw section (`SECTION`, 17 points, the calm pose 22 deg tip
+  down: a round nose, a broad convex top in four facets, the lit front lip `int_halo__vent_seam`, a nearly flat
+  underside; 8.5 cm thick at the root, 4.5 cm at 0.2 m), extruded along the caps' span (-0.441..0.281), bowed 1.4 cm
+  up in the middle, its ends chamfered 1.2 cm; 438 triangles. `blade.json`: calm seam 4.6 cm straight from the front,
+  closed 6 mm at `CLOSED_DEG` 9, the first cut between two neighbours at 55 deg. The calm tips stand 0.594 out
+  (17.9 cm past the frame). About 5,800 body triangles; a vent with its seven blades, light pieces and colliders
+  about 9,600. `ship_vent_a_sheet.py` serves both ways (the close-ups re-aimed on the raised column, the seams dark
+  calm) and `motion_request`'s close-ups are re-aimed on the built body.

@@ -62,3 +62,11 @@ sha256 = "b19fbf0631848012ef92281df5226493ee925d35b5f5bbedc1df1de87d93943f"
 [[raw]]
 file = "ship/v4/vents-a/body4k_r4/body.glb"
 sha256 = "c6df28961c5e88210f54f67538488e2db23b9ca0a3e8a55ba269b6ab21a3b915"
+
+[[raw]]
+file = "ship/v4/vents-a/body4k_r6/body.glb"
+sha256 = "fcfe32b61d546cbcdc82a132c7324b951003b2b1f84df71aa11bf96ef5892642"
+
+[[raw]]
+file = "ship/v4/vents-a/blade_r5/blade.glb"
+sha256 = "fb38f9d78cd2efd9e41a0c41f458f4430afb437f25741598fd3df981943014c3"
