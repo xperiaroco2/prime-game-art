@@ -33,17 +33,21 @@ class ColourSlotsTest(unittest.TestCase):
         for slot in ("skin", "lips", "detail"):
             for h in BAD:
                 L, a, b = G.to_lab(G.guard(slot, G.hexc(h)))
-                cmax, lo, hi = G.RAILS[slot]
+                cmax, lo, hi = G.RAILS[slot][:3]
                 self.assertLessEqual(L, hi + 0.5, (slot, h))
                 self.assertGreaterEqual(L, lo - 0.5, (slot, h))
                 self.assertLessEqual((a * a + b * b) ** 0.5, cmax + 0.5, (slot, h))
 
     def test_acid_band_is_lower(self):
-        self.assertAlmostEqual(G.chroma_cap("skin", 125.0), 40.0 * 0.7)
-        self.assertEqual(G.chroma_cap("skin", 200.0), 40.0)  # teal
+        self.assertAlmostEqual(G.chroma_cap("skin", 125.0, 70.0), 40.0 * 0.7)
+        self.assertAlmostEqual(G.chroma_cap("skin", 345.0, 70.0), 40.0 * 0.8)  # hot pink
+        self.assertEqual(G.chroma_cap("skin", 200.0, 70.0), 40.0)  # teal
+        self.assertAlmostEqual(G.chroma_cap("skin", 200.0, 35.0), 40.0 * 50.0 / 70.0)  # a dark skin
+        self.assertAlmostEqual(G.chroma_cap("detail", 200.0, 85.0), 42.0 * 0.5)  # a light detail
+        self.assertEqual(G.chroma_cap("lips", 200.0, 40.0), 42.0)
         L, a, b = G.to_lab(G.guard("skin", G.hexc("#39ff14")))  # neon green: its hue 136 deg, in the band
         _, a0, b0 = G.to_lab(G.hexc("#39ff14"))
-        cap = G.chroma_cap("skin", G.math.degrees(G.math.atan2(b0, a0)))
+        cap = G.chroma_cap("skin", G.math.degrees(G.math.atan2(b0, a0)), L)
         self.assertLess(cap, 32.0)
         self.assertLessEqual((a * a + b * b) ** 0.5, cap + 0.5)
 
@@ -84,9 +88,9 @@ class ColourSlotsTest(unittest.TestCase):
 
     def test_gdscript_constants_match(self):
         src = GD.read_text(encoding="utf-8")
-        for slot, (c, lo, hi) in G.RAILS.items():
-            self.assertIn(f'"{slot}": [{c}, {lo}, {hi}]', src)
-        self.assertIn(f"const ACID: Array[float] = [{G.ACID[0]}, {G.ACID[1]}, {G.ACID[2]}]", src)
+        for slot, r in G.RAILS.items():
+            self.assertIn(f'"{slot}": [' + ", ".join("null" if x is None else str(x) for x in r) + "]", src)
+        self.assertIn("const BANDS: Array = [" + ", ".join(f"[{c}, {h}, {k}]" for c, h, k in G.BANDS) + "]", src)
         self.assertIn(f"const LIP_CONTRAST: float = {G.LIP_CONTRAST}", src)
         self.assertIn(f"const FRONT_SAT_GAIN: float = {G.FRONT_SAT_GAIN}", src)
         gd = re.findall(r'\{"name": "([^"]+)", "picks": (\{[^}]*\})\}', src)

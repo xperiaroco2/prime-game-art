@@ -21,10 +21,12 @@ const SHADER: Shader = preload("res://alien/alien_static.gdshader")
 const SHADER_288: Shader = preload("res://alien/alien_static_288.gdshader")  # static_v5: #288's look, byte for byte
 const SUFFIX: String = "_static_skin"
 
-## The guard rails per slot: [chroma cap C*, L* min, L* max] (CIELAB, D65).
-const RAILS: Dictionary = {"skin": [40.0, 35.0, 85.0], "lips": [42.0, 25.0, 80.0], "detail": [42.0, 20.0, 85.0],
-	"front": [16.0, 82.0, 93.0]}
-const ACID: Array[float] = [125.0, 35.0, 0.7]  # the yellow-green band: centre, half width (hue degrees), cap factor
+## The guard rails per slot: [chroma cap C*, L* min, L* max, dark knee, light knee] (CIELAB, D65; the cap scaled by
+## (L* + 15) / (dark + 15) below the dark knee, by (100 - L*) / (100 - light) above the light knee; null: none).
+const RAILS: Dictionary = {"skin": [40.0, 35.0, 85.0, 55.0, null], "lips": [42.0, 25.0, 80.0, null, 70.0],
+	"detail": [42.0, 20.0, 85.0, null, 70.0], "front": [16.0, 82.0, 93.0, null, null]}
+## Hue bands with a lower cap: [centre, half width (hue degrees), the cap's factor at the centre]: yellow-green, hot pink.
+const BANDS: Array = [[125.0, 35.0, 0.7], [345.0, 40.0, 0.8]]
 const LIP_CONTRAST: float = 12.0  # CIE76 delta E, lips against the skin
 const FRONT_SAT_GAIN: float = 1.4  # a front texel's HSV saturation never above max(its own, this x the target's)
 const WHITE := Vector3(0.95047, 1.0, 1.08883)
@@ -184,11 +186,17 @@ static func from_lab(lab: Vector3) -> Color:
 		_srgb(-0.9692660 * x + 1.8760108 * y + 0.0415560 * z), _srgb(0.0556434 * x - 0.2040259 * y + 1.0572252 * z))
 
 
-static func chroma_cap(slot: String, hue_deg: float) -> float:
-	var cap: float = RAILS[slot][0]
-	var d: float = absf(fposmod(hue_deg - ACID[0] + 180.0, 360.0) - 180.0)
-	if d < ACID[1]:
-		cap *= 1.0 - (1.0 - ACID[2]) * 0.5 * (1.0 + cos(PI * d / ACID[1]))
+static func chroma_cap(slot: String, hue_deg: float, l: float) -> float:
+	var r: Array = RAILS[slot]
+	var cap: float = r[0]
+	for band: Array in BANDS:
+		var d: float = absf(fposmod(hue_deg - band[0] + 180.0, 360.0) - 180.0)
+		if d < band[1]:
+			cap *= 1.0 - (1.0 - band[2]) * 0.5 * (1.0 + cos(PI * d / band[1]))
+	if r[3] != null:
+		cap *= minf(1.0, (l + 15.0) / (r[3] + 15.0))
+	if r[4] != null:
+		cap *= minf(1.0, (100.0 - l) / (100.0 - r[4]))
 	return cap
 
 
@@ -196,12 +204,13 @@ static func chroma_cap(slot: String, hue_deg: float) -> float:
 static func guard(slot: String, c: Color) -> Color:
 	var lab: Vector3 = to_lab(c)
 	var r: Array = RAILS[slot]
+	var lc: float = clampf(lab.x, r[1], r[2])
 	var ch: float = Vector2(lab.y, lab.z).length()
-	var cap: float = chroma_cap(slot, fposmod(rad_to_deg(atan2(lab.z, lab.y)), 360.0))
+	var cap: float = chroma_cap(slot, fposmod(rad_to_deg(atan2(lab.z, lab.y)), 360.0), lc)
 	if ch <= cap and lab.x >= r[1] and lab.x <= r[2]:
 		return Color(c.r, c.g, c.b)
 	var k: float = minf(1.0, cap / ch) if ch > 0.0 else 1.0
-	return from_lab(Vector3(clampf(lab.x, r[1], r[2]), lab.y * k, lab.z * k))
+	return from_lab(Vector3(lc, lab.y * k, lab.z * k))
 
 
 ## The lips at least LIP_CONTRAST from the skin: L* darker (lighter when darker leaves the range).

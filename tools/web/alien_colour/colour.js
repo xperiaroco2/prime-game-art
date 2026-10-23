@@ -13,8 +13,9 @@
 // Plain functions (slotColours, guard, toLab, fromLab, recolour) need no three.js: `node colour.js --json` prints
 // them on the test colours.
 
-export const RAILS = { skin: [40, 35, 85], lips: [42, 25, 80], detail: [42, 20, 85], front: [16, 82, 93] };
-export const ACID = [125, 35, 0.7];
+// per slot: [chroma cap C*, L* min, L* max, dark knee, light knee] (null: no knee); hue bands [centre, half, factor]
+export const RAILS = { skin: [40, 35, 85, 55, null], lips: [42, 25, 80, null, 70], detail: [42, 20, 85, null, 70], front: [16, 82, 93, null, null] };
+export const BANDS = [[125, 35, 0.7], [345, 40, 0.8]];
 export const LIP_CONTRAST = 12;
 export const FRONT_SAT_GAIN = 1.4;
 const WHITE = [0.95047, 1.0, 1.08883];
@@ -72,19 +73,24 @@ export function recolour(c, base, target) {
   return hsvToRgb([(((h + th - bh) % 1) + 1) % 1, Math.min(1, s * ts / Math.max(bs, 1e-4)), Math.min(1, v * tv / Math.max(bv, 1e-4))]);
 }
 
-export function chromaCap(slot, hueDeg) {
-  let cap = RAILS[slot][0];
-  const d = Math.abs((((hueDeg - ACID[0] + 180) % 360) + 360) % 360 - 180);
-  if (d < ACID[1]) cap *= 1 - (1 - ACID[2]) * 0.5 * (1 + Math.cos(Math.PI * d / ACID[1]));
+export function chromaCap(slot, hueDeg, L) {
+  const [c0, , , dark, light] = RAILS[slot];
+  let cap = c0;
+  for (const [centre, half, k] of BANDS) {
+    const d = Math.abs((((hueDeg - centre + 180) % 360) + 360) % 360 - 180);
+    if (d < half) cap *= 1 - (1 - k) * 0.5 * (1 + Math.cos(Math.PI * d / half));
+  }
+  if (dark !== null) cap *= Math.min(1, (L + 15) / (dark + 15));
+  if (light !== null) cap *= Math.min(1, (100 - L) / (100 - light));
   return cap;
 }
 
 export function guard(slot, c) {
-  const [L, a, b] = toLab(c), [, lo, hi] = RAILS[slot];
-  const ch = Math.hypot(a, b), hue = ((Math.atan2(b, a) * 180 / Math.PI) % 360 + 360) % 360, cap = chromaCap(slot, hue);
+  const [L, a, b] = toLab(c), [, lo, hi] = RAILS[slot], Lc = Math.max(lo, Math.min(hi, L));
+  const ch = Math.hypot(a, b), hue = ((Math.atan2(b, a) * 180 / Math.PI) % 360 + 360) % 360, cap = chromaCap(slot, hue, Lc);
   if (ch <= cap && L >= lo && L <= hi) return [...c];
   const k = ch > 0 ? Math.min(1, cap / ch) : 1;
-  return fromLab([Math.max(lo, Math.min(hi, L)), a * k, b * k]);
+  return fromLab([Lc, a * k, b * k]);
 }
 
 const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);

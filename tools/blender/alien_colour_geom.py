@@ -12,7 +12,9 @@ Slots, each an sRGB colour the player picks:
 
 Guard rails, in CIELAB (D65), on every picked colour (a slot the player leaves out keeps the build's own paint, the
 approved look, never guarded): a chroma cap and a lightness range per slot, the cap lowered round the yellow-green
-hues (ACID: they read acidic at a chroma the others carry), and the lips at least LIP_CONTRAST (CIE76 delta E) from
+and the hot pink hues (BANDS: they read acidic at a chroma the others carry), for a dark skin (a deep colour at full
+chroma reads neon: below the dark knee) and for light lips and details (a light colour at full chroma reads neon:
+above the light knee), and the lips at least LIP_CONTRAST (CIE76 delta E) from
 the skin (moved darker in L*, or lighter when darker leaves the range). The recolour itself runs in sRGB HSV, in the
 shader too (it converts the linear albedo to sRGB and back), so every cap is in one space.
 """
@@ -21,10 +23,12 @@ from __future__ import annotations
 import colorsys
 import math
 
-# per slot: (chroma cap C*, L* min, L* max)
-RAILS = {"skin": (40.0, 35.0, 85.0), "lips": (42.0, 25.0, 80.0), "detail": (42.0, 20.0, 85.0),
-         "front": (16.0, 82.0, 93.0)}
-ACID = (125.0, 35.0, 0.7)  # the yellow-green band: its centre and half width (CIELAB hue degrees), the cap's factor
+# per slot: (chroma cap C*, L* min, L* max, dark knee, light knee): the cap scaled by (L* + 15) / (dark + 15) below
+# the dark knee and by (100 - L*) / (100 - light) above the light knee (None: no knee)
+RAILS = {"skin": (40.0, 35.0, 85.0, 55.0, None), "lips": (42.0, 25.0, 80.0, None, 70.0),
+         "detail": (42.0, 20.0, 85.0, None, 70.0), "front": (16.0, 82.0, 93.0, None, None)}
+# hue bands with a lower cap: (centre, half width (CIELAB hue degrees), the cap's factor at the centre, a cosine bump)
+BANDS = [(125.0, 35.0, 0.7), (345.0, 40.0, 0.8)]  # yellow-green, hot pink
 LIP_CONTRAST = 12.0  # CIE76 delta E, lips against the skin
 FRONT_SAT_GAIN = 1.4  # a front texel's HSV saturation never above max(its own, this x the front target's)
 WHITE = (0.95047, 1.0, 1.08883)
@@ -91,12 +95,16 @@ def delta_e(c1, c2) -> float:
     return math.dist(to_lab(c1), to_lab(c2))
 
 
-def chroma_cap(slot: str, hue_deg: float) -> float:
-    cap = RAILS[slot][0]
-    centre, half, k = ACID
-    d = abs((hue_deg - centre + 180.0) % 360.0 - 180.0)
-    if d < half:
-        cap *= 1.0 - (1.0 - k) * 0.5 * (1.0 + math.cos(math.pi * d / half))
+def chroma_cap(slot: str, hue_deg: float, L: float) -> float:
+    cap, _, _, dark, light = RAILS[slot]
+    for centre, half, k in BANDS:
+        d = abs((hue_deg - centre + 180.0) % 360.0 - 180.0)
+        if d < half:
+            cap *= 1.0 - (1.0 - k) * 0.5 * (1.0 + math.cos(math.pi * d / half))
+    if dark is not None:
+        cap *= min(1.0, (L + 15.0) / (dark + 15.0))
+    if light is not None:
+        cap *= min(1.0, (100.0 - L) / (100.0 - light))
     return cap
 
 
@@ -104,13 +112,14 @@ def guard(slot: str, c) -> tuple:
     """One picked sRGB colour inside its slot's rails: the chroma capped (lower in the yellow-green band), the
     lightness clamped; a colour inside the rails comes back unchanged."""
     L, a, b = to_lab(c)
-    cmax, lo, hi = RAILS[slot]
+    lo, hi = RAILS[slot][1:3]
+    Lc = max(lo, min(hi, L))
     ch, hue = math.hypot(a, b), math.degrees(math.atan2(b, a)) % 360.0
-    cap = chroma_cap(slot, hue)
+    cap = chroma_cap(slot, hue, Lc)
     if ch <= cap and lo <= L <= hi:
         return tuple(c)
     k = min(1.0, cap / ch) if ch > 0 else 1.0
-    return from_lab((max(lo, min(hi, L)), a * k, b * k))
+    return from_lab((Lc, a * k, b * k))
 
 
 def lip_contrast(lips, skin) -> tuple:
@@ -120,7 +129,7 @@ def lip_contrast(lips, skin) -> tuple:
     L, a, b = to_lab(lips)
     Ls, a_s, b_s = to_lab(skin)
     dl = math.sqrt(max(0.0, LIP_CONTRAST ** 2 - (a - a_s) ** 2 - (b - b_s) ** 2)) + 0.5
-    lo, hi = RAILS["lips"][1:]
+    lo, hi = RAILS["lips"][1:3]
     L = Ls - dl if Ls - dl >= lo else min(hi, Ls + dl)
     return from_lab((L, a, b))
 
