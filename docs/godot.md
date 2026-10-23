@@ -778,7 +778,7 @@ pilot's static premium heads"):
   root to the details colour at the tips), 2 the whole gill (stalk and fringe) in the details colour, 0 the skin; a
   front is no slot: a tinted cream (its chroma never above the build's front's) by the picks' `"front"`: `"keep"`
   (the default, CS6b: its lightness at least the build's front's, then at least the build's two-tone, the front's
-  median minus the skin's, away from the skin: above it where that colour is inside the gamut, else below; pale on a dark skin, a
+  median minus the skin's, away from the skin: above it, up to white, while half of it fits there, else below; pale on a dark skin, a
   little darker than a very light one) or `"follow"` (the skin, down and up: v6). **The recolour** (CS6,
   2026-10-23): each region's base is the median of its painted texels (`alien_colour_geom.bases_from_texels`,
   `REGIONS`: 8-bit thresholds on the masks, the atlas' unpainted black gaps out; the gills' base is the gill tips'

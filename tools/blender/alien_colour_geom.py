@@ -154,8 +154,9 @@ def front_for(skin, base_skin, front_base, mode: str = "keep") -> tuple:
     """The pale front for a picked skin: the build's front shifted with the skin, its chroma never above the build's
     front's (a tinted cream, the panel's design; no slot of its own). "follow": that colour. "keep" (CS6b): its
     lightness at least the build's front's, then at least the build's two-tone (d = L_front_base - L_base_skin, the
-    painted default) away from the skin's: above it where the colour there is inside the sRGB gamut, else below it.
-    A skin at its base gives the build's front in both modes."""
+    painted default) away from the skin's: above it (up to white) while half of d fits there, else below it (a very
+    light skin; going below sooner turned E4 honey's chameleon front brown). A skin at its base gives the build's
+    front in both modes."""
     L, a, b = shift(to_oklab(front_base), to_oklab(base_skin), to_oklab(skin))
     fb, ls = to_oklab(front_base), to_oklab(skin)[0]
     cf, c = math.hypot(fb[1], fb[2]), math.hypot(a, b)
@@ -164,8 +165,7 @@ def front_for(skin, base_skin, front_base, mode: str = "keep") -> tuple:
         d = fb[0] - to_oklab(base_skin)[0]
         L = max(L, fb[0])
         if abs(L - ls) < d - 1e-6:
-            up = _lab_rgb((ls + d, a * k, b * k))
-            L = ls + d if min(up) >= -1e-6 and max(up) <= 1.0 + 1e-6 else ls - d
+            L = min(1.0, ls + d) if ls + 0.5 * d <= 1.0 else ls - d
     return from_oklab((L, a * k, b * k))
 
 

@@ -71,8 +71,8 @@ export function shift(x, b, t) {
 export const recolour = (c, base, target) => fromOklab(shift(toOklab(c), toOklab(base), toOklab(target)));
 
 // the pale front for a picked skin: the build's front shifted with the skin, its chroma never above the build's front's;
-// "keep": its lightness at least the build's front's, then the build's two-tone away from the skin (above where that
-// colour is inside the gamut, else below)
+// "keep": its lightness at least the build's front's, then the build's two-tone away from the skin (above, up to
+// white, while half of it fits there, else below)
 export function frontFor(skin, baseSkin, frontBase, mode = "keep") {
   let [L, a, b] = shift(toOklab(frontBase), toOklab(baseSkin), toOklab(skin));
   const fb = toOklab(frontBase), ls = toOklab(skin)[0];
@@ -80,10 +80,7 @@ export function frontFor(skin, baseSkin, frontBase, mode = "keep") {
   if (mode === "keep") {
     const d = fb[0] - toOklab(baseSkin)[0];
     L = Math.max(L, fb[0]);
-    if (Math.abs(L - ls) < d - 1e-6) {
-      const up = oklabRgb([ls + d, a * k, b * k]);
-      L = Math.min(...up) >= -1e-6 && Math.max(...up) <= 1 + 1e-6 ? ls + d : ls - d;
-    }
+    if (Math.abs(L - ls) < d - 1e-6) L = ls + 0.5 * d <= 1 ? Math.min(1, ls + d) : ls - d;
   }
   return fromOklab([L, a * k, b * k]);
 }
