@@ -166,6 +166,13 @@ func _probe(res: String, lively: Dictionary, first: Dictionary) -> Dictionary:
 				return out
 			md = maxf(md, best_d)
 			order.append(best_j)
+		var taken := {}
+		for j: int in order:  # B6 review: two plain-import vertices paired with one vertex here is no pairing
+			if taken.has(j):
+				out["error"] = "two of the plain import's spring vertices pair with vertex %d here" % j
+				ch.queue_free()
+				return out
+			taken[j] = true
 		out["rest_paired_vs_first_mm"] = snappedf(md * 1000.0, 0.001)
 		var lr := 0.0
 		var wr := 0.0
