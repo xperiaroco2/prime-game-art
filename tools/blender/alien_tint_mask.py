@@ -1,8 +1,8 @@
 """The alien pilot's static heads (art #196): the skin colour study's accent mask, made in headless Blender
 (tools/runner/blender.py) from a static build's saved .blend and maps (never changed). Writes into --out:
-- `<head>_accent.png` (2048, linear RGB): R the lips, G the marks (the axolotl's gills and cheek freckles, the
-  chameleon's crest stripes), B the pale front panel; every channel already multiplied by the skin tint mask, so the
-  eyes stay out;
+- `<head>_accent.png` (2048, linear RGBA): R the lips, G the marks (the axolotl's gills and cheek freckles, the
+  chameleon's crest stripes), B the pale front panel, A 1 - the gills (the colour slots' gills on the skin); every
+  channel already multiplied by the skin tint mask, so the eyes stay out;
 - `<head>_accent.json`: each region's median sRGB in the build's albedo (the study's recolour bases) and its texel share.
 
 The regions come from the object-space position baked onto the build's own UVs (an emission bake with Blender's
@@ -37,9 +37,12 @@ import alien_static_head as S  # noqa: E402
 # on past the fitted line to their corners (the axolotl's smile tips, the chameleon's lips a fifth of a metre further
 # back). Per head: the band's half height round the slit (eye radii), its reach from the line in plan (m: the lip's
 # bulge in front, the lining behind), the tip's length past the line's end (m) and its taper's power (the axolotl's
-# smile tip is a thin line with freckles above it: 1.5; the chameleon's a rounded point: 0.5). Both heads' lips are teal paint
-# between pale panels above and below, so the band may be generous: the paint gives the edge, soft and on the border.
-LIP_BAND = {"axolotl": (1.1, 0.15, 0.16, 1.5), "chameleon": (0.75, 0.15, 0.26, 0.5)}
+# smile tip is a thin line with freckles above it, the chameleon's a rounded point: both 0.5) and the tip's half height
+# cap (m; None: no cap). Both heads' lips are teal paint between pale panels above and below, so the band may be
+# generous: the paint gives the edge, soft and on the border. Colour slots (2026-10-23): the axolotl's smile tail (the
+# thin line past the corner) stayed skin under power 1.5 and power 0.5 alone caught a cheek freckle; now power 0.5
+# with the tip capped at 0.03 m, and the cheek freckles taken out of the tip.
+LIP_BAND = {"axolotl": (1.1, 0.15, 0.16, 0.5, 0.03), "chameleon": (0.75, 0.15, 0.26, 0.5, None)}
 
 
 def smoothstep(a, b, x):
@@ -47,11 +50,12 @@ def smoothstep(a, b, x):
     return t * t * (3 - 2 * t)
 
 
-def lip_path(line, tip, ax, y, h0, power=0.5, n_tip=8):
+def lip_path(line, tip, ax, y, h0, power=0.5, n_tip=8, cap=None):
     """The slit's path on one side (the fitted line, x >= 0; its height a running median of 5, the fit's outliers
     out), run on past its end by tip metres in plan along its last two points' direction. Returns per texel (|x| ax,
     y): the slit's height at the nearest point of the path in plan, that point's arc length, the band's half height
-    there (h0 along the line, tapering as (1 - u) ** power to 0 at the tip's end) and the plan distance."""
+    there (h0 along the line, tapering as (1 - u) ** power to 0 at the tip's end, at most cap past the line's end),
+    the plan distance and the line's end's arc length."""
     k = len(line)
     zp = np.pad(line[:, 1], 2, mode="edge")
     zs = np.median(np.stack([zp[i:i + k] for i in range(5)]), 0)
@@ -74,7 +78,9 @@ def lip_path(line, tip, ax, y, h0, power=0.5, n_tip=8):
         zl[m] = (a[2] + t * (b[2] - a[2]))[m]
         sl[m] = (arc[i] + t * seg[i])[m]
     hl = h0 * np.clip(1.0 - (sl - s_end) / tip, 0.0, 1.0) ** power
-    return zl, sl, hl, best
+    if cap is not None:
+        hl = np.where(sl > s_end, np.minimum(hl, cap), hl)
+    return zl, sl, hl, best, s_end
 
 
 def load(path: Path) -> np.ndarray:
@@ -165,26 +171,30 @@ def main() -> int:
     line = np.asarray(ref["lip_line"]["line"], np.float64)  # (x, up, front)
     line = line[np.argsort(line[:, 0])]
     fp = ref["lip_line"]["front_point"]
-    band_h, reach, tip, power = LIP_BAND[head]
-    zl, sl, hl, dh = lip_path(line, tip, np.abs(x), y, band_h * r, power)
+    band_h, reach, tip, power, tip_cap = LIP_BAND[head]
+    zl, sl, hl, dh, s_end = lip_path(line, tip, np.abs(x), y, band_h * r, power, cap=tip_cap)
     band = 1.0 - smoothstep(0.8 * hl, np.maximum(hl, 1e-4), np.abs(z - zl))
     near = 1.0 - smoothstep(0.8 * reach, reach, dh)
-    lips = S.blur((band * near * teal).astype(np.float32), 1) * skin
     slit = np.interp(np.abs(x), line[:, 0], line[:, 1])  # the freckles' face band below
+    roots = (ref.get("pivots") or {}).get(f"{head}_gills") or {}
+    freckle_raw = np.zeros_like(teal)
+    if roots:  # the cheek freckles: teal dots inside the pale cheeks, between the lips and the eyes, on the front
+        cheeks = smoothstep(0.55, 0.75, S.blur(pale.astype(np.float32), 6))
+        face = (1.0 - smoothstep(eye["y"] + 0.5 * r, eye["y"] + 2.0 * r, y)) \
+            * smoothstep(slit + 0.6 * r, slit + 1.2 * r, z) * (1.0 - smoothstep(eye["z"], eye["z"] + 0.8 * r, z))
+        freckle_raw = teal * cheeks * face
+    past = (sl > s_end).astype(np.float32)  # the tip: never a freckle
+    lips = S.blur((band * near * teal * (1.0 - freckle_raw * past)).astype(np.float32), 1) * skin
 
     # marks
     marks = np.zeros_like(lips)
-    roots = (ref.get("pivots") or {}).get(f"{head}_gills") or {}
+    gills = np.zeros_like(lips)
     if roots:  # the build's own gill region (alien_static_head.py, the rough map)
         rx = min(abs(p[0]) for p in roots.values())
         rz = min(p[2] for p in roots.values())
         gills = np.clip((np.abs(x) - rx + 0.02) / 0.06, 0, 1) * np.clip((z - rz + 0.1) / 0.1, 0, 1)
         gills = gills * smoothstep(0.25, 0.55, thin)  # the thin gills only, not the head's side behind them
-        # freckles: teal dots inside the pale cheeks, between the lips and the eyes, on the face's front
-        cheeks = smoothstep(0.55, 0.75, S.blur(pale.astype(np.float32), 6))
-        face = (1.0 - smoothstep(eye["y"] + 0.5 * r, eye["y"] + 2.0 * r, y)) \
-            * smoothstep(slit + 0.6 * r, slit + 1.2 * r, z) * (1.0 - smoothstep(eye["z"], eye["z"] + 0.8 * r, z))
-        freckles = teal * cheeks * face * (1.0 - lips)
+        freckles = freckle_raw * (1.0 - lips)
         marks = np.maximum(gills, freckles)
     st = ref.get("stripes")
     if st:  # the crest stripes: alien_pilot_head.grade_source's formula
@@ -195,7 +205,8 @@ def main() -> int:
         marks = smoothstep(-0.25, 0.25, wave) * smoothstep(st["z_lo"], st["z_hi"], z)
     marks = S.blur(marks.astype(np.float32), 1) * skin * (1.0 - lips)
     front_w = S.blur(pale.astype(np.float32), 1) * skin * (1.0 - lips) * (1.0 - marks)
-    acc = np.stack([lips, marks, front_w], -1)
+    gill_w = np.minimum(S.blur(gills.astype(np.float32), 1) * skin * (1.0 - lips), marks)
+    acc = np.stack([lips, marks, front_w, 1.0 - gill_w], -1)  # A: 1 - the gills (colour slots: gills on the skin)
     S.save(acc, out / f"{head}_accent.png", data=True)
     if args.debug:
         cav = load(build / f"{head}_detail.png")[..., 0]
