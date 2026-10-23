@@ -14,7 +14,8 @@ const SCRIPTS: Array[String] = ["res://alien/alien.gd", "res://alien/alien_talk.
 func _colour_cases() -> Dictionary:
 	var A: GDScript = load("res://alien/alien_static.gd")
 	var bases := {"skin": Color(0.375, 0.8039, 0.8039), "lips": Color(0.3765, 0.7961, 0.7961),
-		"detail": Color(0.3098, 0.7098, 0.7176), "front": Color(0.7176, 0.8667, 0.8314)}
+		"detail": Color(0.3922, 0.8039, 0.8039), "front": Color(0.7412, 0.8745, 0.8275),
+		"gill_tips": Color(0.3216, 0.7255, 0.7333), "gill_whole": Color(0.3373, 0.7569, 0.7608)}
 	var picks: Array = []
 	for p: Dictionary in A.PRESETS:
 		picks.append(p["picks"])
@@ -22,6 +23,7 @@ func _colour_cases() -> Dictionary:
 		picks.append({"skin": h, "lips": h, "detail": h})
 	for g: String in ["skin", "gradient", "whole"]:
 		picks.append({"skin": "#6c87c6", "gills": g})
+		picks.append({"detail": "#ffee00", "gills": g})
 	var cases: Array = []
 	for p: Dictionary in picks:
 		var u: Dictionary = A.slot_colours(bases, p)
@@ -31,7 +33,8 @@ func _colour_cases() -> Dictionary:
 			rec[k] = [v.r, v.g, v.b] if v is Color else v
 		cases.append({"picks": p, "uniforms": rec})
 	return {"bases": {"skin": [0.375, 0.8039, 0.8039], "lips": [0.3765, 0.7961, 0.7961],
-		"detail": [0.3098, 0.7098, 0.7176], "front": [0.7176, 0.8667, 0.8314]}, "cases": cases,
+		"detail": [0.3922, 0.8039, 0.8039], "front": [0.7412, 0.8745, 0.8275],
+		"gill_tips": [0.3216, 0.7255, 0.7333], "gill_whole": [0.3373, 0.7569, 0.7608]}, "cases": cases,
 		"unknown_gills_empty": A.slot_colours(bases, {"gills": "fringe"}).is_empty()}
 
 

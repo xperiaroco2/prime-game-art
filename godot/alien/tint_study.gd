@@ -74,11 +74,11 @@ func _run() -> void:
 				return
 		var b: Array = h["base"]
 		var shader: Shader = SHADER
-		if h.get("static", false):
-			shader = AlienStatic.SHADER
-		elif h.has("shader_code"):
+		if h.has("shader_code"):  # the merged shader (identity) or, on a static head, v6's (CS6b's "before")
 			shader = Shader.new()
 			shader.code = FileAccess.get_file_as_string(h["shader_code"])
+		elif h.get("static", false):
+			shader = AlienStatic.SHADER
 		var mats: Array[ShaderMaterial] = AlienStatic.apply(node, tex["mask"], Color(b[0], b[1], b[2]), tex["detail"],
 				tex["plain"], shader, tex.get("accent") if h.get("static", false) else null, h.get("bases", {}),
 				tex.get("gill"))
