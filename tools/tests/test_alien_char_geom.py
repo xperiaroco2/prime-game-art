@@ -174,6 +174,22 @@ class B2(unittest.TestCase):
         self.assertEqual(unwrapped, sorted(unwrapped))
         self.assertAlmostEqual(got[3], 0.5 + 6.0 - 6.0)  # the fold-back vertex takes its predecessor's angle
 
+    def test_monotone_angles_take_a_fold_back_across_zero_as_one_turn(self) -> None:
+        """B4 review (d): the walk passes angle 0, folds back across it (6.25 after 0.05) and goes on."""
+        got = G.monotone_angles([3.0, 4.0, 5.0, 6.2, 0.05, 6.25, 0.3, 1.0, 2.0])
+        unwrapped = [got[0]] + [g + 2 * math.pi if g < got[0] else g for g in got[1:]]
+        self.assertEqual(unwrapped, sorted(unwrapped))
+        self.assertLess(unwrapped[-1] - unwrapped[0], 2 * math.pi)  # one turn, not two
+        self.assertAlmostEqual(got[5], 0.05)  # the fold-back vertex takes its predecessor's angle
+        self.assertAlmostEqual(got[8], 2.0)
+
+    def test_the_default_build_paints_the_front_with_the_throat_fade(self) -> None:
+        """B4 review (e): the shield only behind --shield (off by default); the default path is throat_fade."""
+        src = (Path(G.__file__).parent / "alien_char_build.py").read_text(encoding="utf-8")
+        self.assertIn('ap.add_argument("--shield", action="store_true")', src)
+        self.assertRegex(src, r"if a\.shield:\n\s+tf = t\[:, 10\]\n\s+else:\n\s+tf = .*G\.throat_fade\(")
+
+
 
 if __name__ == "__main__":
     unittest.main()

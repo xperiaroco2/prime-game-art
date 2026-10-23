@@ -1120,13 +1120,30 @@ pilot's static premium heads"):
     normal map).
   - The body's paint is the head's skin and front region medians (CS6's `<head>_regions.json`, `bases.json` body_skin
     and body_front), so to the slots' recolour it is a typical head texel; the slot maths is untouched.
-  - `front_panel` (the pale front: the throat's own width at the cut flaring into the chest) and `flare_radius` (the
-    neck pushed out to a concave fillet into the shoulders, below the ring only) are in `alien_char_geom.py`.
+  - `front_panel` was B2's pale front (replaced in B3 by `throat_fade`, below); `flare_radius` (the neck pushed out to a
+    concave fillet into the shoulders, below the ring only) is in `alien_char_geom.py`.
   - `godot-check --profile alien`: the alien kind's own equivalents of the three Ultimate Modular rules:
-    `facing_plus_z` from the LeftEye/RightEye bones, the contract's foot, toe and hand bones; `eye_pupils` on the head
-    mesh's eye caps (inspect.gd's `eye_tones`: the vertices within 0.42 of the eye distance of either eye bone and in
-    front of it, for a character without an `_eyes` part); `pack_floor` the contract's weighted bones and the shared
-    alien body's 10 clips (`ALIEN_CLIPS`). The default profile `pack` is unchanged.
+    `facing_plus_z` from the geometry since B4 (the eye surfaces round the eye bones bulge toward +Z, their centres at
+    least 5 cm ahead of the Head joint; the feet's skin; the hand bones); `eye_pupils` on the head mesh's eye caps
+    (inspect.gd's `eye_tones`: the vertices within 0.42 of the eye distance of either eye bone and in front of it, for
+    a character without an `_eyes` part; `ALIEN_EYE_SHARE` 0.017, half the smallest share r5 measured);
+    `pack_floor` the contract's weighted bones, each the heaviest bone of some vertex, and the shared alien body's 10
+    clips (`ALIEN_CLIPS`); `alien_extra_bones` names every bone beyond the contract's 56 and passes only whole
+    `ALIEN_SPRING_SETS` (the crest's Crest1-3, the gills' GillL/R1-3); `contract_height` holds `height_max_m`, textured
+    or not, unless `--allowance plasticine` names the paused clay allowance. The default profile `pack` is unchanged.
+- **B3 and B4 on the shared body (2026-10-23, PR #311; proofs `body_v2/r4/`, `body_v2/r5/`):**
+  - B3: the pale front is `throat_fade` (a soft tongue from the throat to the sternum, per texel; the u1 shield only
+    behind `--shield`); `char_shots.gd`'s `--fix` render settings, the soft shadow filter at ultra (5) by default since
+    B4 (soft low drew a knit pattern).
+  - B4: the slots' bases come wholesale from `alien_colour_slots.bases` with CS6b's v7 maps (gill_tips and gill_whole
+    included); the seam's bridge triangles are rewound to their outside neighbours and the build fails on any open,
+    non-manifold or wrongly wound seam edge (`seam` in char.json); `monotone_angles` unwraps each step as the shorter
+    turn (a fold back across 0 stays one turn).
+  - B4's measurements: `char.json` `heights` (whole, skull, crest/gill, body and eye heights against the 1.80 m
+    capsule); `char_shots.gd`'s `colour_check` (the recoloured albedo alone, the shader's `debug_mode` 6, under a
+    linear tone map: the median on the back of the head and the upper back against each pick, OKLab dE x100);
+    `tools/blender/alien_char_bones.py` (godot-check `--humanoid` and `godot/alien/bones_probe.gd`, headless: the
+    bones and springs through Godot's BoneMap retarget, the Head bone's scale over a breath; `<tag>/bones.md`).
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and

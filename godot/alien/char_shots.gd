@@ -197,6 +197,9 @@ func _run() -> void:
 				tcells.append(await _cell(body_c, top * 1.06, yaw, CELL))
 		rep["presets"] = [AlienStatic.PRESETS[presets[0]]["name"], AlienStatic.PRESETS[presets[1]]["name"]]
 		_sheet(tcells, CELL, 4).save_jpg(out.path_join("turn_%s.jpg" % name), 0.92)
+		rep["colour_check"] = await _colour_check(mats, Vector3(axis.x, mid.y, axis.z), Vector3(axis.x, top * 0.72, axis.z))
+		print("CHAR %s colour check (OKLab dE x100, picked against rendered albedo): %s"
+			% [name, JSON.stringify(rep["colour_check"]["worst"])])
 		_dusk(true)
 		var dcells: Array[Image] = []
 		for pi: int in presets:
@@ -423,6 +426,61 @@ func _ortho(c: Vector3, h: float, yaw_deg: float) -> Image:
 	var img: Image = await _grab(SQ)
 	_cam.projection = Camera3D.PROJECTION_PERSPECTIVE
 	return img
+
+
+## B4 review (c): picked against rendered, head and body: per pick (the base, an acidic and two plain skins) the
+## recoloured albedo alone (debug_mode 6, emitted at 0.8) under a linear tone map at exposure 1.25 (so the frame shows the albedo
+## itself), seen from the back, the median of a 24 px square on the back of the head at eye height and on the upper
+## back against the pick (the base: the slots' skin base), as an OKLab distance x100.
+const COLOUR_PICKS := [{}, {"skin": Color("#39ff14")}, {"skin": Color("#14206e")}, {"skin": Color("#ff7a00")}]
+
+
+func _colour_check(mats: Array[ShaderMaterial], head_c: Vector3, body_c: Vector3) -> Dictionary:
+	var keep := [_env.tonemap_mode, _env.tonemap_exposure, _env.adjustment_enabled, _env.ssao_enabled]
+	_env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	_env.tonemap_exposure = 1.25
+	_env.adjustment_enabled = false
+	_env.ssao_enabled = false
+	for sm: ShaderMaterial in mats:
+		sm.set_shader_parameter("debug_mode", 6)
+	var rows: Array = []
+	var worst := {"head": 0.0, "body": 0.0}
+	var base: Color = mats[0].get_meta("colour_bases", {}).get("skin", Color.WHITE) if not mats.is_empty() else Color.WHITE
+	for picks: Dictionary in COLOUR_PICKS:
+		AlienStatic.set_colours(mats, picks)
+		var want: Color = picks["skin"] if picks.has("skin") else base
+		var row := {"pick": "#" + want.to_html(false)}
+		for part: String in ["head", "body"]:
+			var img: Image = await _frame(head_c if part == "head" else body_c, 0.5, 180.0)
+			var got: Color = _median(img, 24)
+			var d: float = (AlienStatic.to_oklab(got) - AlienStatic.to_oklab(want)).length() * 100.0
+			row[part] = {"rendered": "#" + got.to_html(false), "dE": snappedf(d, 0.01)}
+			worst[part] = maxf(worst[part], snappedf(d, 0.01))
+		rows.append(row)
+	for sm: ShaderMaterial in mats:
+		sm.set_shader_parameter("debug_mode", 0)
+	AlienStatic.set_colours(mats, {})
+	_env.tonemap_mode = keep[0]
+	_env.tonemap_exposure = keep[1]
+	_env.adjustment_enabled = keep[2]
+	_env.ssao_enabled = keep[3]
+	return {"rows": rows, "worst": worst}
+
+
+func _median(img: Image, side: int) -> Color:
+	var cx: int = img.get_width() / 2
+	var cy: int = img.get_height() / 2
+	var ch := [[], [], []]
+	for y: int in range(cy - side / 2, cy + side / 2):
+		for x: int in range(cx - side / 2, cx + side / 2):
+			var c: Color = img.get_pixel(x, y)
+			ch[0].append(c.r)
+			ch[1].append(c.g)
+			ch[2].append(c.b)
+	for a: Array in ch:
+		a.sort()
+	var m: int = ch[0].size() / 2
+	return Color(ch[0][m], ch[1][m], ch[2][m])
 
 
 func _frame(c: Vector3, h: float, yaw_deg: float) -> Image:

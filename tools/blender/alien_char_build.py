@@ -591,6 +591,8 @@ def main():
     (out / f"{head}_char_lively.json").write_text(json.dumps(fitted, indent=1), encoding="utf-8", newline="\n")
     rep["springs"] = springs
     rep["bones"] = len(arm.data.bones)
+    rep["heights"] = heights(skin, arm, springs)
+    log(f"heights {rep['heights']}")
     me.calc_loop_triangles()
     rep["tris"] = len(me.loop_triangles)
     log(f"tris {rep['tris']} bones {rep['bones']} springs {springs}")
@@ -601,6 +603,35 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(out / f"{head}_char.blend"), compress=True)
     (out / "char.json").write_text(json.dumps(rep, indent=2, default=float), encoding="utf-8", newline="\n")
     log("done")
+
+
+def heights(skin, arm, springs: list[str]) -> dict:
+    """B4 review (b), measured, nothing rescaled: the rest heights above the feet (m, Blender Z up, the lowest vertex
+    as 0) of the whole character, the body without the head (the vertices with no Head, eye or spring weight), the
+    skull (mostly Head-weighted vertices), the springs' crest or gills (mostly spring-weighted vertices) and the eye
+    bones, for the 1.80 m capsule."""
+    names = {g.index: g.name for g in skin.vertex_groups}
+    mw = skin.matrix_world
+    zs: dict[str, list[float]] = {"all": [], "body": [], "skull": [], "springs": []}
+    for v in skin.data.vertices:
+        z = (mw @ v.co).z
+        w = {names[g.group]: g.weight for g in v.groups if g.weight > 0.0}
+        sw = sum(x for n, x in w.items() if n in springs)
+        hw = w.get("Head", 0.0) + w.get("LeftEye", 0.0) + w.get("RightEye", 0.0)
+        zs["all"].append(z)
+        if sw >= 0.5:
+            zs["springs"].append(z)
+        elif hw >= 0.5:
+            zs["skull"].append(z)
+        if sw == 0.0 and hw == 0.0:
+            zs["body"].append(z)
+    low = min(zs["all"])
+    out = {f"{k}_top_m": round(max(v) - low, 4) for k, v in zs.items() if v}
+    for b in ("LeftEye", "RightEye"):
+        out[f"{b}_m"] = round((arm.matrix_world @ arm.data.bones[b].head_local).z - low, 4)
+    out["capsule_m"] = 1.80
+    out["over_capsule_m"] = round(out["all_top_m"] - 1.80, 4)
+    return out
 
 
 if __name__ == "__main__":
