@@ -9,7 +9,8 @@ extends SceneTree
 ##                    "params": {...}}},
 ##    "sheets": [{"file": JPG, "cell": [w, h], "width": 1280, "title": "line 1\nline 2",
 ##                "rows": [[{"head": KEY, "params": {...}, "debug": 0, "light": "studio"|"dusk",
-##                           "shot": {"target": [x, y, z] or "box", "yaw": deg, "pitch": deg, "width": m},
+##                           "shot": {"target": [x, y, z] or "box", "target_y": m, "yaw": deg, "pitch": deg,
+##                                    "width": m},
 ##                           "label": "text"} or {"image": PNG, "label": "text"}, ...], ...]}]}
 ## A cell's parameters are the head's "params" with the cell's on top (sRGB colours as [r, g, b]); its label is drawn
 ## in the cell's top left corner, the sheet's title in a strip above the rows.
@@ -140,6 +141,8 @@ func _cell(c: Dictionary, cell: Vector2i) -> Image:
 		var width: float = s.get("width", box.size.y * 1.08 * float(cell.x) / cell.y)
 		if s["target"] is Array:
 			target = Vector3(s["target"][0], s["target"][1], s["target"][2])
+		elif s.has("target_y"):  # the box's centre at that height
+			target.y = s["target_y"]
 		var yaw := deg_to_rad(s.get("yaw", 0.0))
 		var pitch := deg_to_rad(s.get("pitch", 3.0))
 		var dist: float = width * 0.5 / tan(deg_to_rad(_cam.fov * 0.5)) * float(cell.y) / cell.x

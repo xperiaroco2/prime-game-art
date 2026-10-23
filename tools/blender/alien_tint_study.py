@@ -91,6 +91,8 @@ def variant(name: str, i: int, reg: dict) -> tuple[str, dict]:
             lip_t, mark_t, front_t = acc, acc, cap(hexc(front_h), CAP["front"])
         params = {"skin_color": skin, "lip_base": lip, "lip_color": lip_t, "mark_base": mark, "mark_color": mark_t,
                   "front_base": front, "front_color": front_t}
+        if skin_h is not None:
+            params["front_sat_max"] = round(CAP["front"] * 1.4, 4)
     else:
         label, s = SKINS[i]
         skin = base if s is None else s
@@ -104,7 +106,7 @@ def variant(name: str, i: int, reg: dict) -> tuple[str, dict]:
             acc = hexc(PAIRS[label])
             params.update(lip_base=lip, lip_color=acc, mark_base=mark, mark_color=acc)
             label = f"{label} + accent"
-    return label, {k: [round(x, 4) for x in v] for k, v in params.items()}
+    return label, {k: [round(x, 4) for x in v] if isinstance(v, tuple) else v for k, v in params.items()}
 
 
 TITLES = {"A": "A  today: everything follows the skin colour",
@@ -122,9 +124,10 @@ def regions(out: Path, head: str) -> dict:
 
 def shots(head: str) -> dict:
     """The face, wider than the static review's close-up so the gills and the crest show."""
-    f = dict(R.features(head)["face"])
-    f["width"] *= 1.45
-    f["target"] = [f["target"][0], f["target"][1] + 0.1 * f["width"], f["target"][2]]
+    face = R.features(head)["face"]
+    w = face["width"] * 2.0
+    t = face["target"]  # on the face's front: turned round a point a fifth of the width behind it
+    f = {"target": [0.0, t[1], t[2] - 0.2 * w], "width": w}
     return {"front": {**f, "yaw": 0.0, "pitch": 3.0}, "3/4": {**f, "yaw": 38.0, "pitch": 3.0}}
 
 

@@ -32,8 +32,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_pilot_head as H  # noqa: E402
 import alien_static_head as S  # noqa: E402
 
-# lips: the band's half height round the slit (eye radii), its depth behind the lip line's front point (m)
-LIP_BAND = {"axolotl": (0.95, 0.20), "chameleon": (0.62, 0.26)}
+# lips: the band's half height round the slit (eye radii), its depth behind the lip line's front point (m), and its
+# side fade in lip line half widths (the axolotl's lips sit in the pale face, so its band may be wide: the paint gives
+# the edge; the chameleon's corners meet the teal cheek, so its fade ends at the lip line's end)
+LIP_BAND = {"axolotl": (1.1, 0.22, (1.0, 1.15)), "chameleon": (0.62, 0.26, (0.95, 1.0))}
 
 
 def smoothstep(a, b, x):
@@ -96,9 +98,9 @@ def main() -> int:
     slit = np.interp(np.abs(x), line[order, 0], line[order, 1])
     hw = ref["lip_line"]["half_width"]
     fp = ref["lip_line"]["front_point"]
-    band_h, depth = LIP_BAND[head]
+    band_h, depth, (w0, w1) = LIP_BAND[head]
     band = 1.0 - smoothstep(0.8 * band_h * r, band_h * r, np.abs(z - slit))
-    wide = 1.0 - smoothstep(0.88 * hw, 1.0 * hw, np.abs(x))
+    wide = 1.0 - smoothstep(w0 * hw, w1 * hw, np.abs(x))
     front = 1.0 - smoothstep(fp[1] + 0.8 * depth, fp[1] + depth, y)
     lips = S.blur((band * wide * front * teal).astype(np.float32), 1) * skin
 

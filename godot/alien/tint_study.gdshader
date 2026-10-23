@@ -47,6 +47,8 @@ uniform vec3 mark_base : source_color = vec3(0.39, 0.77, 0.76);
 uniform vec3 mark_color : source_color = vec3(0.39, 0.77, 0.76);
 uniform vec3 front_base : source_color = vec3(0.39, 0.77, 0.76);
 uniform vec3 front_color : source_color = vec3(0.39, 0.77, 0.76);
+uniform float front_sat_max : hint_range(0.0, 1.0) = 1.0;  // E: the front panel's saturation cap (its soft edge's
+// half-saturated texels would otherwise take the pale target's saturation ratio and turn a strong tint)
 uniform float normal_strength : hint_range(0.0, 2.0) = 1.0;
 uniform float specular_level : hint_range(0.0, 1.0) = 0.45;
 uniform float sss : hint_range(0.0, 1.0) = 0.25;
@@ -134,7 +136,8 @@ void fragment() {
 	float eye = 1.0 - m.r;
 	vec3 acc = texture(accent_tex, UV).rgb;
 	vec3 t = recolour_to(a, base_skin, skin_color);
-	t = mix(t, recolour_to(a, front_base, front_color), acc.b);
+	vec3 fr = rgb2hsv(recolour_to(a, front_base, front_color));
+	t = mix(t, hsv2rgb(vec3(fr.x, min(fr.y, front_sat_max), fr.z)), acc.b);
 	t = mix(t, recolour_to(a, mark_base, mark_color), acc.g);
 	t = mix(t, recolour_to(a, lip_base, lip_color), acc.r);
 	vec3 c = mix(a, t, m.r);
