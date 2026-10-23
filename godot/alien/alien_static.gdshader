@@ -106,6 +106,13 @@ uniform vec3 catch_dir_l = vec3(0.0, 0.0, 1.0);
 uniform vec3 catch_dir_r = vec3(0.0, 0.0, 1.0);
 uniform float catch_angle = 0.1;
 uniform vec3 catch_colour : source_color = vec3(1.0);
+// AL3: the glint at a head turn. The catch light stays toward the light while the bead turns under it; past the
+// bead's open cap (a turned-away eye) it would fall under the lid and the bead go flat and dead. catch_reach_l/r (radians,
+// 0: off) is how far from the posed bead front (gaze_l/r, set each frame by the controller) the glint may sit: the
+// rest angle between front and catch plus a margin, so at rest nothing changes and at a turn the glint slides to the
+// cap's edge nearest the light, where the light would still catch the bead
+uniform float catch_reach_l = 0.0;
+uniform float catch_reach_r = 0.0;
 
 varying vec3 v_obj;
 
@@ -187,7 +194,14 @@ vec3 lively_eye(vec3 sclera) {
 	bool left = distance(v_obj, eye_centre_l) < distance(v_obj, eye_centre_r);
 	vec3 dir = normalize(v_obj - (left ? eye_centre_l : eye_centre_r));
 	if (bead > 0.5) {
-		float ca = acos(clamp(dot(dir, left ? catch_dir_l : catch_dir_r), -1.0, 1.0));
+		vec3 cd = left ? catch_dir_l : catch_dir_r;
+		vec3 f = normalize(left ? gaze_l : gaze_r);
+		float reach = left ? catch_reach_l : catch_reach_r;
+		float fa = acos(clamp(dot(f, cd), -1.0, 1.0));
+		if (reach > 0.0 && fa > reach) {
+			cd = normalize(f * cos(reach) + normalize(cd - f * dot(cd, f)) * sin(reach));
+		}
+		float ca = acos(clamp(dot(dir, cd), -1.0, 1.0));
 		float wa = max(fwidth(ca), 1.0e-4);
 		return mix(sclera, catch_colour, catch_light * (1.0 - smoothstep(catch_angle * 0.75 - wa, catch_angle * 1.1 + wa, ca)));
 	}

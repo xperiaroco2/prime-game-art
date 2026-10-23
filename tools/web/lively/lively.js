@@ -26,12 +26,16 @@ uniform vec3 lvCentreL; uniform vec3 lvCentreR; uniform vec3 lvGazeL; uniform ve
 uniform float lvIris; uniform float lvPupil; uniform vec3 lvProfile[8]; uniform vec3 lvPupilColour;
 uniform float lvCatch; uniform vec2 lvCatchOffset; uniform float lvCatchSize;
 uniform float lvBead; uniform vec3 lvCatchL; uniform vec3 lvCatchR; uniform float lvCatchAngle; uniform vec3 lvCatchColour;
+uniform float lvReachL; uniform float lvReachR;  // AL3: the glint's reach from the posed bead front (lvGaze), 0 off
 varying vec3 lvObj;
 vec3 lvEye(vec3 sclera) {
   bool left = distance(lvObj, lvCentreL) < distance(lvObj, lvCentreR);  // the nearer eye (lvObj is posed)
   vec3 dir = normalize(lvObj - (left ? lvCentreL : lvCentreR));
   if (lvBead > 0.5) {  // the bead: its catch light fixed in the mesh's frame (to the light), the bead turning under it
-    float a = acos(clamp(dot(dir, left ? lvCatchL : lvCatchR), -1.0, 1.0));
+    vec3 cd = left ? lvCatchL : lvCatchR, f = normalize(left ? lvGazeL : lvGazeR);
+    float reach = left ? lvReachL : lvReachR, fa = acos(clamp(dot(f, cd), -1.0, 1.0));
+    if (reach > 0.0 && fa > reach) cd = normalize(f * cos(reach) + normalize(cd - f * dot(cd, f)) * sin(reach));
+    float a = acos(clamp(dot(dir, cd), -1.0, 1.0));
     float wa = max(fwidth(a), 1.0e-4);
     return mix(sclera, lvCatchColour, lvCatch * (1.0 - smoothstep(lvCatchAngle * 0.75 - wa, lvCatchAngle * 1.1 + wa, a)));
   }
@@ -52,6 +56,12 @@ vec3 lvEye(vec3 sclera) {
   return c;
 }
 `;
+
+// AL3: how far from the posed bead front the glint may sit (radians): its rest angle plus CATCH_MARGIN
+const CATCH_MARGIN = 0.12;
+function catchReach(e) {
+  return Math.acos(THREE.MathUtils.clamp(v3(e.rest).normalize().dot(v3(e.catch.dir).normalize()), -1, 1)) + CATCH_MARGIN;
+}
 
 function damp(x, v, goal, hz, dt) {  // a critically damped step, the exact solution (stable at any dt): [x, v]
   const w = 2 * Math.PI * hz, y = x - goal, k = (v + w * y) * dt, e = Math.exp(-w * dt);
@@ -104,6 +114,7 @@ export async function makeLively(root, jsonUrl, scleraUrl) {
     lvPupilColour: { value: bead ? new THREE.Vector3() : lin(L.pupil_colour) },
     lvCatch: { value: bead ? 1 : 0 }, lvCatchOffset: { value: new THREE.Vector2(-0.35, 0.45) }, lvCatchSize: { value: 0.16 },
     lvBead: { value: bead ? 1 : 0 },
+    lvReachL: { value: bead && L.catch ? catchReach(L) : 0 }, lvReachR: { value: bead && R.catch ? catchReach(R) : 0 },
     lvCatchL: { value: v3(bead && L.catch ? L.catch.dir : [0, 0, 1]) }, lvCatchR: { value: v3(bead && R.catch ? R.catch.dir : [0, 0, 1]) },
     lvCatchAngle: { value: bead && L.catch ? (L.catch.angle + (R.catch ? R.catch.angle : L.catch.angle)) / 2 : 0.1 },
     lvCatchColour: { value: bead && L.catch ? lin(L.catch.colour) : new THREE.Vector3(1, 1, 1) },
@@ -168,7 +179,10 @@ export async function makeLively(root, jsonUrl, scleraUrl) {
       for (const side of ["left", "right"]) {
         const e = eyes[side], c = v3(e.centre).applyMatrix4(posed);
         (side === "left" ? U.lvCentreL : U.lvCentreR).value.copy(c);
-        if (bead) continue;  // the catch light stays in the mesh's frame
+        if (bead) {  // the catch light stays in the mesh's frame; the bead's front bounds how far (lvReach)
+          (side === "left" ? U.lvGazeL : U.lvGazeR).value.copy(v3(e.rest).applyMatrix3(basis).normalize());
+          continue;
+        }
         const tl = t.clone().sub(c).applyMatrix3(inv);
         const [ly, lp] = clampGaze(...eyeOffsets(v3(e.rest), tl), e.limits_deg);
         const s = st.eye[side];

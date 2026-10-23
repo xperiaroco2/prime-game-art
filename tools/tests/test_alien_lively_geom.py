@@ -278,6 +278,33 @@ class RunTest(unittest.TestCase):
     """The run's refusals (PR #303 review minors 1 and 7): a tagged build whose folder exists, an untagged one whose GLB
     exists."""
 
+    def test_glint_reach(self):
+        # AL3: at rest the glint is where it was; at a head turn it slides to the reach, never under the lid
+        rest, catch = (0.0, 0.0, 1.0), (-0.22, 0.40, 0.89)
+        reach = G.catch_reach(rest, catch)
+        cn = G._norm(catch)
+        self.assertAlmostEqual(reach, math.acos(cn[2]) + G.CATCH_MARGIN, places=9)
+        for a, b in zip(G.glint_dir(rest, catch, reach), cn):
+            self.assertAlmostEqual(a, b, places=9)
+        turned = (math.sin(0.7), 0.0, math.cos(0.7))  # the bead turned 40 degrees away from the catch's side
+        g = G.glint_dir(turned, catch, reach)
+        self.assertAlmostEqual(math.acos(sum(x * y for x, y in zip(turned, g))), reach, places=9)
+        self.assertAlmostEqual(sum(x * x for x in g), 1.0, places=9)
+        self.assertGreater(g[1], 0.0)  # still on the catch light's side (up)
+        self.assertEqual(G.glint_dir(turned, catch, 0.0), cn)
+
+    def test_glint_reach_in_shaders(self):
+        # the clamp is the same text in the Godot shader and the web module, and the margins agree
+        root = Path(__file__).resolve().parents[2]
+        shader = (root / "godot/alien/alien_static.gdshader").read_text(encoding="utf-8")
+        js = (root / "tools/web/lively/lively.js").read_text(encoding="utf-8")
+        gd = (root / "godot/alien/alien_lively.gd").read_text(encoding="utf-8")
+        clamp = "normalize(f * cos(reach) + normalize(cd - f * dot(cd, f)) * sin(reach))"
+        self.assertIn(clamp, shader)
+        self.assertIn(clamp, js)
+        self.assertIn(f"const CATCH_MARGIN := {G.CATCH_MARGIN}", gd)
+        self.assertIn(f"const CATCH_MARGIN = {G.CATCH_MARGIN};", js)
+
     def test_build_refusal(self):
         import tempfile
         sys.path.insert(0, str(ROOT / "tools" / "blender"))

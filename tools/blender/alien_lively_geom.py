@@ -46,6 +46,29 @@ def spring_matrix(yaw: float, pitch: float) -> list[list[float]]:
     return [[sum(ry[i][k] * rx[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
 
 
+# AL3: the bead's glint at a head turn: how far past its rest angle from the bead's front it may slide (radians);
+# alien_lively.gd CATCH_MARGIN, lively.js CATCH_MARGIN; the shaders' clamp is glint_dir
+CATCH_MARGIN = 0.12
+
+
+def catch_reach(rest, catch_dir, margin: float = CATCH_MARGIN) -> float:
+    """How far from the posed bead front the glint may sit (radians): the rest angle between the bead's front and the
+    catch light's direction, plus margin (alien_lively.gd catch_reach, lively.js catchReach)."""
+    r, d = _norm(rest), _norm(catch_dir)
+    return math.acos(max(-1.0, min(1.0, sum(a * b for a, b in zip(r, d))))) + margin
+
+
+def glint_dir(front, catch_dir, reach: float) -> tuple[float, float, float]:
+    """The glint's direction from the eye centre (alien_static.gdshader and lively.js): the fixed catch direction,
+    turned toward the posed bead front until it is at most reach from it (reach 0: unclamped)."""
+    f, d = _norm(front), _norm(catch_dir)
+    c = max(-1.0, min(1.0, sum(a * b for a, b in zip(f, d))))
+    if reach <= 0.0 or math.acos(c) <= reach:
+        return d
+    perp = _norm(tuple(b - a * c for a, b in zip(f, d)))
+    return _norm(tuple(a * math.cos(reach) + p * math.sin(reach) for a, p in zip(f, perp)))
+
+
 def smoothstep(e0: float, e1: float, x: float) -> float:
     t = min(max((x - e0) / (e1 - e0), 0.0), 1.0)
     return t * t * (3.0 - 2.0 * t)

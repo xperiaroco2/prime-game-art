@@ -11,6 +11,7 @@ extends RefCounted
 ## The gaze maths repeat tools/blender/alien_lively_geom.py (eye_frame, gaze_dir, eye_offsets, clamp_gaze with
 ## cap_deg = EYE_LIMIT's 25).
 
+const CATCH_MARGIN := 0.12  # AL3: the bead glint's slide past its rest angle (radians), lively.js CATCH_MARGIN
 const EYE_LIMIT := deg_to_rad(25.0)  # the lids' clamp, capped
 const EYE_HZ := 9.0  # the eyes' (lead)
 const BREATH_S := 4.4  # one breath
@@ -86,6 +87,8 @@ func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, scl
 			sm.set_shader_parameter("catch_dir_r", _v(rc["dir"]))
 			sm.set_shader_parameter("catch_angle", (float(lc["angle"]) + float(rc["angle"])) * 0.5)
 			sm.set_shader_parameter("catch_colour", Color(cc[0], cc[1], cc[2]))
+			sm.set_shader_parameter("catch_reach_l", catch_reach(eyes["left"]))
+			sm.set_shader_parameter("catch_reach_r", catch_reach(eyes["right"]))
 		_apply_eyes()
 		return
 	var l: Dictionary = eyes["left"]
@@ -215,10 +218,19 @@ func _apply_eyes() -> void:
 		var s: Vector4 = _eye[side]
 		var g: Vector3 = (to_mesh.basis * posed.basis * gaze_dir(_v(e["rest"]), s.x, s.y)).normalized()
 		var c: Vector3 = to_mesh * (posed * _v(e["centre"]))
+		if bead:  # AL3: the bead's posed front, which bounds how far the fixed glint may sit (catch_reach)
+			g = (to_mesh.basis * posed.basis * _v(e["rest"])).normalized()
 		for sm: ShaderMaterial in mats:
 			sm.set_shader_parameter("eye_centre_" + side.left(1), c)
-			if not bead:
-				sm.set_shader_parameter("gaze_" + side.left(1), g)
+			sm.set_shader_parameter("gaze_" + side.left(1), g)
+
+
+## AL3: how far from the posed bead front the glint may sit (radians): its rest angle plus CATCH_MARGIN, so at rest
+## nothing changes and at a head turn the glint slides to the open cap's edge nearest the light (lively.js catchReach).
+static func catch_reach(e: Dictionary) -> float:
+	var r: Vector3 = _v(e["rest"]).normalized()
+	var d: Vector3 = _v(e["catch"]["dir"]).normalized()
+	return acos(clampf(r.dot(d), -1.0, 1.0)) + CATCH_MARGIN
 
 
 ## Every spring held at (yf, pf) times its cap (the poke proof, AL2: the gills at their limit corners), no motion.
