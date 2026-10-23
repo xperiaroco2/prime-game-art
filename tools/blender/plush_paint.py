@@ -1,7 +1,7 @@
 """The vault plush's paint (art#297, step 3): repaints the cleaned model's Meshy base colour to the approved concept.
 
 blender -b --factory-startup --python plush_paint.py -- <clean.glb> <out dir> [--orange r,g,b] [--brown r,g,b]
-    [--pink r,g,b] [--size 2048] [--seed 297]
+    [--pink r,g,b] [--size 2048] [--smile smile.json]
 
 Every texel of Meshy's base colour is sorted by its sRGB hue, saturation and value into five classes: the orange
 plush (the lids are its darker part), the brown velour, the eye whites, the dark thread (pupils and the smile) and
@@ -43,7 +43,6 @@ VEIN = rgb(opts.get("--vein", "196,52,48"))
 THREAD = rgb(opts.get("--thread", "34,18,12"))
 SIZE = int(opts.get("--size", 2048))
 SMILE_JSON = opts.get("--smile")  # plush_mouth.py's line (option A); without it the line is fitted here
-rng = np.random.default_rng(int(opts.get("--seed", 297)))
 out.mkdir(parents=True, exist_ok=True)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)

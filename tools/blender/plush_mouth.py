@@ -1,16 +1,20 @@
-"""The vault plush's mouth (art#297, step 3; the engineer, 2026-10-23, option A): the crease under the muzzle closed to
-a shallow seam, and the smile's line through it with corners curled up by the cheeks, as in the concept.
+"""The vault plush's mouth (art#297, step 3; the engineer, 2026-10-23, option A, then "under the nose, where the body
+and the nose meet"): the crease where the muzzle meets the body closed to a shallow seam, and the smile's line along
+that seam.
 
-blender -b --factory-startup --python plush_mouth.py -- <clean full.glb> <out.glb> <smile.json> [--reach 0.005]
-    [--iterations 12] [--curl 0.005]
+blender -b --factory-startup --python plush_mouth.py -- <clean full.glb> <out.glb> <smile.json> [--reach 0.007]
+    [--iterations 40] [--top 0.0]
 
-Meshy's smile is broken dark bits lying in a deep crease where the muzzle meets the cheeks; the shadow in the crease
-read as a dark wedge, a crack. The smile's line is found from those bits (their texels' 3D points, the median point
-in each slice across the face, smoothed). The vertices within --reach metres of the line are relaxed towards their
-neighbours' average, weighted from 1 at the line to 0 at the reach, so the crease's walls come together into a
-shallow seam while the head and muzzle elsewhere stay as they are. The line is then laid back on the relaxed surface,
-each end gets an upturned curl (--curl metres long, bending up to 80 degrees), all of it laid by rays from the front and both are written to the JSON
-for plush_paint.py to draw. Prints one line `PLUSH_MOUTH {...}`.
+Meshy's smile was broken dark bits in a deep crease, whose shadow read as a dark wedge, a crack; it painted the smile
+on one side only, so the line is found from the shape. Around the nose's axis (front to back), each angle's most
+concave vertex 1.5 to 4.5 cm from the axis and below the eyes is a pick, from the left cheek under the muzzle to the
+right one. The fill: every vertex within --reach metres of the smoothed picks that is still concave moves towards its
+neighbours' average, --iterations times, weighted from 1 at the seam to 0 at the reach; convex vertices (the muzzle's
+rim, the cheeks) never move, so nothing shrinks. The line: the picks' distance from the axis and their depth fitted as
+even quartics of the angle from straight down (both sides together: symmetric and smooth), out to where the curve
+rises to --top metres above the nose's middle, laid on the filled surface and resampled every 0.2 mm. Writes the
+filled model to <out.glb> (with the cleanup's normal map beside it under its name) and the line to <smile.json> for
+plush_paint.py. Prints one line `PLUSH_MOUTH {...}`.
 """
 
 import json
@@ -29,28 +33,13 @@ src, out, smile_json = Path(argv[0]), Path(argv[1]), Path(argv[2])
 opts = dict(zip(argv[3::2], argv[4::2]))
 REACH = float(opts.get("--reach", 0.007))
 ITER = int(opts.get("--iterations", 40))
-CURL = float(opts.get("--curl", 0.007))
-LINE = opts.get("--line", "seam")  # seam: along the muzzle-body seam; front: as the front sees it, under the overhang
 TOP = float(opts.get("--top", 0.0))  # the smile's corners end this far above the nose's middle
-DROP = float(opts.get("--drop", 0.0015))  # the line this far below the muzzle's overhang, where the front sees it
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(src))
 obj = next(o for o in bpy.context.scene.objects if o.type == "MESH")
 me = obj.data
-bsdf = next(n for n in obj.active_material.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
-img = bsdf.inputs["Base Color"].links[0].from_node.image
-w, h = img.size
-px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)[..., :3]
-v = px.max(-1)
-s = np.where(v > 1e-4, (v - px.min(-1)) / np.maximum(v, 1e-4), 0.0)
-dark = v < 0.20
-white = (~dark) & (s < 0.32) & (v > 0.55)
-brownish = (~dark) & (~white) & (v < 0.55)  # Meshy's velour: the nose, paws, balls
 
-# The smile's line is the crease itself, found from the shape (Meshy painted the smile only in bits, on one side):
-# around the nose's axis (front to back), below the nose, each angle's most concave vertex in a ring 1.5 to 4.5 cm
-# from the axis, from the left cheek under the muzzle to the right one, smoothed.
 bm = bmesh.new()
 bm.from_mesh(me)
 bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-6)
@@ -68,59 +57,29 @@ def concavity(points):
 
 
 front = vco[:, 1].min()
-nose_sel = vco[:, 1] < front + 0.015
-nose = vco[nose_sel].mean(0)
+nose = vco[vco[:, 1] < front + 0.015].mean(0)
 conc = concavity(vco)
 rel = vco - nose
 theta = np.arctan2(rel[:, 2], rel[:, 0])
 radius = np.hypot(rel[:, 0], rel[:, 2])
-# only the lower half of the ring (the corners' curls come later), below the nose's middle: higher up the most
-# concave place is an eye socket's rim
-cand = (rel[:, 1] > 0.005) & (rel[:, 1] < 0.08) & (radius > 0.015) & (radius < 0.045) & (theta < -0.2) & \
-    (theta > -np.pi + 0.2) & (rel[:, 2] < -0.003) & (conc > 0.08)
-crease = []
-bins = np.linspace(-np.pi + 0.2, -0.2, 41)
-for b0, b1 in zip(bins[:-1], bins[1:]):
-    sel = cand & (theta >= b0) & (theta < b1)
-    if sel.any():
-        i = np.nonzero(sel)[0][np.argmax(conc[sel])]
-        crease.append(vco[i])
-if len(crease) < 8:
-    raise SystemExit(f"PLUSH_MOUTH found the crease in only {len(crease)} of 40 angles")
-# one smooth, symmetric smile through the picks (the deepest point per angle jitters under the nose): z and y as even
-# quadratics of x about the nose, fitted twice, the second time without the picks far off the first fit; the curve is
-# snapped to the surface after the fill below
-crease = np.array(crease)
-cx = crease[:, 0] - nose[0]
-keep = np.ones(len(crease), dtype=bool)
-for _ in range(2):
-    A = np.stack([cx[keep] ** 2, np.ones(keep.sum())], axis=1)
-    fz = np.linalg.lstsq(A, crease[keep, 2], rcond=None)[0]
-    fy = np.linalg.lstsq(A, crease[keep, 1], rcond=None)[0]
-    resid = np.abs(fz[0] * cx ** 2 + fz[1] - crease[:, 2])
-    keep = resid <= max(2.0 * np.median(resid), 0.001)
-half = float(np.percentile(np.abs(cx), 95))
-xs = np.linspace(-half, half, 200)
-line = np.stack([nose[0] + xs, fy[0] * xs ** 2 + fy[1], fz[0] * xs ** 2 + fz[1]], axis=1)
-# the fill follows the crease itself (the picks, smoothed); the painted line is the fitted curve
-# and runs on up beside the muzzle, past the smile's ends, to just under the eyes: those picks join the fill
 th = np.where(theta > np.pi / 2, theta - 2 * np.pi, theta)  # one continuous angle from the left side to the right
-wide = (rel[:, 1] > 0.005) & (rel[:, 1] < 0.08) & (radius > 0.015) & (radius < 0.045) & (rel[:, 2] < 0.012) &     (th > -np.pi - 0.6) & (th < 0.6) & (conc > 0.08)
-seam = []
-for b0, b1 in zip(np.linspace(-np.pi - 0.6, 0.6, 61)[:-1], np.linspace(-np.pi - 0.6, 0.6, 61)[1:]):
-    sel = wide & (th >= b0) & (th < b1)
+# the picks: below the nose up its sides to just under the eyes (1.2 cm above the nose's middle)
+cand = (rel[:, 1] > 0.005) & (rel[:, 1] < 0.08) & (radius > 0.015) & (radius < 0.045) & (rel[:, 2] < 0.012) & \
+    (th > -np.pi - 0.6) & (th < 0.6) & (conc > 0.08)
+bins = np.linspace(-np.pi - 0.6, 0.6, 61)
+picks = []
+for b0, b1 in zip(bins[:-1], bins[1:]):
+    sel = cand & (th >= b0) & (th < b1)
     if sel.any():
-        seam.append(vco[np.nonzero(sel)[0][np.argmax(conc[sel])]])
-seam = np.array(seam)
-seam_raw = seam.copy()
+        picks.append(vco[np.nonzero(sel)[0][np.argmax(conc[sel])]])
+if len(picks) < 20:
+    raise SystemExit(f"PLUSH_MOUTH found the crease in only {len(picks)} of {len(bins) - 1} angles")
+picks = np.array(picks)
+seam = picks.copy()
 for _ in range(4):
     seam[1:-1] = (seam[:-2] + 2 * seam[1:-1] + seam[2:]) / 4
-pts = line
-mids = crease
-lo, hi = float(line[:, 0].min()), float(line[:, 0].max())
 
-# fill the crease: each vertex within the reach and still concave moves towards its neighbours' average, weighted
-# by its closeness; convex vertices (the muzzle's rim, the cheeks) never move, so nothing shrinks
+# fill the crease: each vertex within the reach and still concave moves towards its neighbours' average
 dist = np.full(len(vco), np.inf)
 for k in range(0, len(seam), 40):
     dist = np.minimum(dist, np.linalg.norm(vco[:, None, :] - seam[None, k:k + 40, :], axis=2).min(1))
@@ -145,8 +104,6 @@ shift = np.linalg.norm(vco - before, axis=1)
 bm.to_mesh(me)
 bm.free()
 me.update()
-
-# the line back on the relaxed surface, then a curl at each end: on along the line, bending up
 tree = BVHTree.FromObject(obj, bpy.context.evaluated_depsgraph_get())
 
 
@@ -155,76 +112,39 @@ def on_surface(p):
     return np.array(hit[0]) if hit[0] is not None else np.array(p)
 
 
-
-
-def from_front(p):
-    """The surface the front sees at p's x and z (a ray along +Y from in front of the toy)."""
-    hit = tree.ray_cast(Vector((p[0], -1.0, p[2])), Vector((0.0, 1.0, 0.0)))
-    return np.array(hit[0]) if hit[0] is not None else on_surface(p)
-
-
-# the smile is the seam itself, where the muzzle meets the body (the engineer, 2026-10-23: "under the nose, where
-# the body and the nose meet... just paint that junction black"; drawn as the front sees it, it landed on the
-# muzzle, which juts out over the seam). One smooth symmetric curve through the seam's picks (the deepest point per
-# angle jitters), out to where it rises to --top metres above the nose's middle, laid on the filled surface
-if LINE == "seam":
-    # around the nose's axis: the seam's distance from the axis and its depth as even quartics of the angle from
-    # straight down (both sides fitted together, so the smile is symmetric and smooth), up to the angle where the
-    # seam reaches TOP above the nose's middle; then laid on the surface
-    rp = seam_raw - nose
-    ang = np.arctan2(rp[:, 2], rp[:, 0])
-    u = np.where(ang > np.pi / 2, ang - 2 * np.pi, ang) + np.pi / 2  # 0 straight down, -/+ towards each side
-    rad = np.hypot(rp[:, 0], rp[:, 2])
-    A = np.stack([np.ones_like(u), u ** 2, u ** 4], axis=1)
-    keep = np.ones(len(u), dtype=bool)
-    for _ in range(2):
-        fr = np.linalg.lstsq(A[keep], rad[keep], rcond=None)[0]
-        fd = np.linalg.lstsq(A[keep], rp[keep, 1], rcond=None)[0]
-        res_r = np.abs(A @ fr - rad)
-        keep = res_r <= max(2.0 * np.median(res_r), 0.001)
-    us = np.linspace(-np.pi, np.pi, 2001)
-    Au = np.stack([np.ones_like(us), us ** 2, us ** 4], axis=1)
-    zr = (Au @ fr) * np.sin(us - np.pi / 2)
-    ok = (zr < TOP) & (np.abs(us) <= np.abs(u).max())
-    # the smile runs from the bottom out to the first angle on each side where it would pass TOP
-    mid = len(us) // 2
-    hi_i = mid
-    while hi_i + 1 < len(us) and ok[hi_i + 1]:
-        hi_i += 1
-    lo_i = mid
-    while lo_i - 1 >= 0 and ok[lo_i - 1]:
-        lo_i -= 1
-    us = us[lo_i:hi_i + 1]
-    Au = Au[lo_i:hi_i + 1]
-    r_s, d_s = Au @ fr, Au @ fd
-    th_s = us - np.pi / 2
-    path = np.stack([nose[0] + r_s * np.cos(th_s), nose[1] + d_s, nose[2] + r_s * np.sin(th_s)], axis=1)
-    full = np.array([on_surface(p) for p in path])
-else:
-    # the whole smile is drawn as the front sees it, in x and z, then laid on the surface by rays from the front (a curl
-    # crawling over the surface climbed the crease's wall and doubled the line, the critic, 2026-10-23): the fitted curve
-    # DROP below the overhang, and at each end a curl that turns from the curve's own direction to 80 degrees up
-    flat = line[:, [0, 2]] - np.array([0.0, DROP])
-    curls = []
-    for end, prev in ((flat[0], flat[3]), (flat[-1], flat[-4])):
-        tangent = (end - prev) / np.linalg.norm(end - prev)
-        up = np.array([0.0, 1.0])
-        q = end.copy()
-        curl = []
-        steps = 14
-        for k in range(1, steps + 1):
-            ang = np.radians(80.0) * k / steps
-            d = tangent * np.cos(ang) + up * np.sin(ang)
-            q = q + d / np.linalg.norm(d) * CURL / steps
-            curl.append(q.copy())
-        curls.append(np.array(curl))
-    flat = np.concatenate([curls[0][::-1], flat, curls[1]])
-    full = np.array([from_front(np.array([q[0], 0.0, q[1]])) for q in flat])
+# the line: the picks' distance from the axis and depth as even quartics of the angle from straight down, fitted twice
+# (the second time without the picks far off the first fit)
+rp = picks - nose
+ang = np.arctan2(rp[:, 2], rp[:, 0])
+u = np.where(ang > np.pi / 2, ang - 2 * np.pi, ang) + np.pi / 2  # 0 straight down, -/+ towards each side
+rad = np.hypot(rp[:, 0], rp[:, 2])
+A = np.stack([np.ones_like(u), u ** 2, u ** 4], axis=1)
+keep = np.ones(len(u), dtype=bool)
+for _ in range(2):
+    fr = np.linalg.lstsq(A[keep], rad[keep], rcond=None)[0]
+    fd = np.linalg.lstsq(A[keep], rp[keep, 1], rcond=None)[0]
+    res_r = np.abs(A @ fr - rad)
+    keep = res_r <= max(2.0 * np.median(res_r), 0.001)
+us = np.linspace(-np.pi, np.pi, 2001)
+Au = np.stack([np.ones_like(us), us ** 2, us ** 4], axis=1)
+ok = ((Au @ fr) * np.sin(us - np.pi / 2) < TOP) & (np.abs(us) <= np.abs(u).max())
+mid = len(us) // 2
+if not ok[mid]:
+    raise SystemExit("PLUSH_MOUTH: the fitted smile does not pass under the nose")
+hi_i = mid  # from the bottom out to the first angle on each side where it would pass TOP
+while hi_i + 1 < len(us) and ok[hi_i + 1]:
+    hi_i += 1
+lo_i = mid
+while lo_i - 1 >= 0 and ok[lo_i - 1]:
+    lo_i -= 1
+us, Au = us[lo_i:hi_i + 1], Au[lo_i:hi_i + 1]
+r_s, d_s, th_s = Au @ fr, Au @ fd, us - np.pi / 2
+path = np.stack([nose[0] + r_s * np.cos(th_s), nose[1] + d_s, nose[2] + r_s * np.sin(th_s)], axis=1)
+full = np.array([on_surface(p) for p in path])
 # resampled every 0.2 mm along its length, so the painted thread is one stroke, never a row of dots
 seg = np.linalg.norm(np.diff(full, axis=0), axis=1)
 arc = np.concatenate([[0.0], np.cumsum(seg)])
-fine = np.arange(0.0, arc[-1], 0.0002)
-full = np.stack([np.interp(fine, arc, full[:, k]) for k in range(3)], axis=1)
+full = np.stack([np.interp(np.arange(0.0, arc[-1], 0.0002), arc, full[:, k]) for k in range(3)], axis=1)
 
 out.parent.mkdir(parents=True, exist_ok=True)
 for o in bpy.context.scene.objects:
@@ -234,10 +154,12 @@ bpy.ops.export_scene.gltf(filepath=str(out), export_format="GLB", use_selection=
 # the cleanup's baked normal travels beside the GLB under its name (plush_paint.py reads it from there)
 shutil.copyfile(src.with_name(src.stem + "_normal.png"), out.with_name(out.stem + "_normal.png"))
 smile_json.write_text(json.dumps({"line": [[round(float(c), 6) for c in p] for p in full],
-                                  "reach_m": REACH, "iterations": ITER, "curl_m": CURL, "drop_m": DROP, "line_mode": LINE, "top_m": TOP}, indent=1) + "\n",
+                                  "reach_m": REACH, "iterations": ITER, "top_m": TOP}, indent=1) + "\n",
                       encoding="utf-8")
 print("PLUSH_MOUTH " + json.dumps({
-    "crease_angles": len(mids), "nose_m": [round(float(c), 4) for c in nose], "x_range_m": [round(float(lo), 4), round(float(hi), 4)],
+    "crease_angles": len(picks), "nose_m": [round(float(c), 4) for c in nose],
+    "line_x_m": [round(float(full[:, 0].min()), 4), round(float(full[:, 0].max()), 4)],
     "line_z_m": [round(float(full[:, 2].min()), 4), round(float(full[:, 2].max()), 4)],
-    "seam_angles": len(seam), "vertices_moved": int(len(moved)), "max_shift_mm": round(float(shift.max()) * 1000, 2),
+    "line_length_m": round(float(arc[-1]), 4), "vertices_moved": int(len(moved)),
+    "max_shift_mm": round(float(shift.max()) * 1000, 2),
     "mean_shift_mm": round(float(shift[moved].mean()) * 1000, 3) if len(moved) else 0.0}))

@@ -40,6 +40,8 @@ void fragment() {
 	float graze = pow(1.0 - facing, 2.0);
 	ALBEDO = base * mix(1.0, 0.9 + grazing_lift * graze * 1.6, fabric);
 	vec3 n = texture(normal_tex, UV).rgb * 2.0 - 1.0;
+	// the pile is sampled in model space (triplanar) and only its xy nudges the tangent-space normal: not aligned with
+	// the tangent frame, which is fine for an isotropic fine noise at 2 cm tiles
 	vec3 f = pile(mpos, mnorm) * 2.0 - 1.0;
 	n = normalize(n + vec3(f.xy * pile_strength * fabric, 0.0));
 	// the eyes are smooth glossy toy eyes: Meshy's sculpt wrinkles in them would crumple the gloss

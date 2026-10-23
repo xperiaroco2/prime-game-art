@@ -22,21 +22,21 @@
     "numHints": 0
   },
   "mouth": {
-    "crease_angles": 40,
+    "crease_angles": 57,
     "nose_m": [
       -0.0002,
       -0.1397,
       0.1657
     ],
-    "x_range_m": [
-      -0.0389,
-      0.0384
+    "line_x_m": [
+      -0.0432,
+      0.043
     ],
     "line_z_m": [
       0.1328,
       0.1655
     ],
-    "seam_angles": 57,
+    "line_length_m": 0.1577,
     "vertices_moved": 502,
     "max_shift_mm": 6.31,
     "mean_shift_mm": 1.422
@@ -148,5 +148,6 @@
     "openai_usd": 0.1027,
     "meshy_credits": 70,
     "note": "both Meshy models (with and without seams) and both sheets"
-  }
+  },
+  "rebuilt_identical": "plush_run.py --size 1024 --tag=_check after the review's cleanup: the GLB and the mask byte-identical (sha256 9af88a34..., 6503efb4...)"
 }

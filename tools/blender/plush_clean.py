@@ -1,14 +1,15 @@
-"""The vault plush's cleanup (art#297, step 2): a raw Meshy GLB to a game-ready hand-held prop.
+"""The vault plush's cleanup (art#297): a raw Meshy GLB welded, sized and placed, its normals baked into an image.
 
 blender -b --factory-startup --python plush_clean.py -- <raw.glb> <out.glb> [--height 0.30] [--tris 4000]
     [--bake-size 2048]
 
-Joins the model, drops loose specks, scales it to --height metres with its lowest point on the floor and its
-footprint centred (front to -Y, as Meshy delivers it), decimates a copy to --tris triangles (the props' `hero`
-class, docs/props.md), bakes the dense model's shading normals (its own normal map included) onto the copy's UVs in
-Cycles, and writes the copy with the base colour, the roughness and the baked normal map; metallic 0 and no
-emission (Meshy's metallic and emission maps are dropped: a plush has neither). Prints one JSON line `PLUSH_CLEAN
-{...}` with the counts and sizes.
+Joins the model, welds it (Meshy's GLB arrives split at every UV seam), drops loose specks, scales it to --height
+metres with its lowest point on the floor and its footprint centred (Blender's import: front -Y, up +Z), makes a copy
+decimated to --tris triangles and bakes the model's shading normals (its own normal map included) onto the copy in
+Cycles; writes the copy with the base colour, the roughness and the baked normal map (<out>_normal.png); metallic 0,
+no emission (a plush has neither). plush_run.py passes --tris 10000000: no decimation, the copy is the full model and
+the bake only carries Meshy's normal map into one image; the game mesh is decimated later, by plush_bake.py. Prints
+one JSON line `PLUSH_CLEAN {...}` with the counts and sizes.
 """
 
 import json

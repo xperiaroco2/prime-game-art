@@ -3,6 +3,7 @@ and the material files, read without Blender or Godot. Skips the GLB checks in a
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import struct
@@ -22,13 +23,21 @@ def lfs_pointer(path: Path) -> bool:
 
 
 def glb_json(path: Path) -> tuple[dict, bytes]:
+    """The GLB's JSON and its BIN chunk, found by walking the chunks (each: length, type, data)."""
     data = path.read_bytes()
     magic, _, _ = struct.unpack("<4sII", data[:12])
     assert magic == b"glTF", path
-    json_len = struct.unpack("<I", data[12:16])[0]
-    doc = json.loads(data[20:20 + json_len])
-    bin_start = 20 + json_len + 8
-    return doc, data[bin_start:]
+    doc, binary, at = None, b"", 12
+    while at < len(data):
+        length, kind = struct.unpack("<I4s", data[at:at + 8])
+        chunk = data[at + 8:at + 8 + length]
+        if kind == b"JSON":
+            doc = json.loads(chunk)
+        elif kind == b"BIN\x00":
+            binary = chunk
+        at += 8 + length
+    assert doc is not None, path
+    return doc, binary
 
 
 def png_size(data: bytes) -> tuple[int, int]:
@@ -70,17 +79,35 @@ class VaultPlushAsset(unittest.TestCase):
             sizes.append(png_size(binary[start:start + 24]))
         self.assertEqual(sorted(sizes), [(1024, 1024), (1024, 1024)])
 
-    def test_mask_is_1024(self) -> None:
+    def test_mask_is_1024_rgb(self) -> None:
         mask = EXPORT / "vault_plush_mask.png"
         if lfs_pointer(mask):
             self.skipTest("LFS file not fetched")
-        self.assertEqual(png_size(mask.read_bytes()[:24]), (1024, 1024))
+        head = mask.read_bytes()[:26]
+        self.assertEqual(png_size(head), (1024, 1024))
+        self.assertIn(head[25], (2, 6))  # colour type RGB or RGBA: three weights, fur, velour, eyes
+
+    def test_shipped_glb_is_the_recorded_build(self) -> None:
+        glb = EXPORT / "vault_plush.glb"
+        if lfs_pointer(glb):
+            self.skipTest("LFS file not fetched")
+        data, _ = _manifest.load(ASSET / "manifest.toml")
+        recorded = {r["file"]: r["sha256"] for r in data["raw"]}
+        built = recorded["2026-10-22-vault-plush-3d-2/game_final/plush.glb"]
+        self.assertEqual(hashlib.sha256(glb.read_bytes()).hexdigest(), built)
 
     def test_report_records_a_clean_validation(self) -> None:
         report = json.loads((ASSET / "report.json").read_text(encoding="utf-8"))
         self.assertEqual(report["gltf_validator"]["numErrors"], 0)
         self.assertEqual(report["gltf_validator"]["numWarnings"], 0)
         self.assertLessEqual(report["mesh"]["triangles"], HERO_TRIANGLES)
+        glb = EXPORT / "vault_plush.glb"
+        if not lfs_pointer(glb):
+            doc, _ = glb_json(glb)
+            prim = doc["meshes"][0]["primitives"][0]
+            self.assertEqual(report["mesh"]["triangles"], doc["accessors"][prim["indices"]]["count"] // 3)
+            pos = doc["accessors"][prim["attributes"]["POSITION"]]
+            self.assertAlmostEqual(report["mesh"]["size_m"][2], pos["max"][1] - pos["min"][1], delta=0.001)  # height
 
     def test_material_files_ship_together(self) -> None:
         for name in ("plush.gd", "plush.gdshader", "plush_shell.gdshader"):
