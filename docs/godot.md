@@ -920,7 +920,7 @@ pilot's static premium heads"):
       It also writes `web_<tag>/` (the page and the tag's assets) and `eyes_pit_<tag>.jpg` (`eye_pit_shots.gd`:
       before/after close-ups of both eyes at rest, far left, far right, down, up, and under raking light).
       `--no-pit-fix` builds as v2 did.
-  - **The eye pit, v4 (2026-10-23):** two defects v3 left, both fixed in `alien_lively_build.py`:
+  - **The eye pit, v4 (2026-10-23):** three defects v3 left, all fixed in `alien_lively_build.py`:
     - *A lid crossing.* v3's pull crossed one lid triangle: eyeball triangle 8774 under the upper lid rim of the
       head's right eye, on the nose side, 24 degrees from the rest gaze; two of its vertices moved 1.8 and 3.8 mm
       with the lid's surface 1.8 and 2.4 mm away. The lid fade measured only the distance to the vertices a lid
@@ -937,6 +937,132 @@ pilot's static premium heads"):
     - `eye_pit_shots.gd` also writes `eyes_pit_<tag>_crop_right.jpg` and `_crop_left.jpg`: the upper lid edge of
       each eye at 4x the sheet's scale (the window's own pixels, 2x, nearest), rows far left, far right and down,
       columns before | after.
+  - **Either head (AL1, 2026-10-23):** `alien_lively_run.py --head chameleon|axolotl --tag <tag>`; every build file is
+    named by the head (`<head>_lively.glb`, `<head>_sclera.png`). `run_refusal` (tested) refuses every untagged
+    build, a build whose tag folder exists, and a shots run whose `sheet_<tag>.jpg`, `eyes_pit_<tag>.jpg` or
+    `shots_<tag>.json` exists (or, with a video, its frame folder). The page and the module live in the repo, `tools/web/lively/` (`index.html` shows every
+    head `heads.json` lists side by side, or `?head=axolotl`; `lively.js` takes either head's `lively.json`); each
+    tag's `web_<tag>/` holds them with `<head>_lively.glb`, `<head>_lively.json`, `<head>_sclera.png`, and
+    `--web-with <other build folder>` adds the other head.
+    - *The axolotl's eyes are beads:* measured on the visible eye texels, 96 to 97 % dark (value under 0.45), 3 %
+      a painted white catch light (59 and 70 texels, about 8 degrees of the bead), almost nothing between. A dark
+      sphere that turns shows nothing, and a painted catch light that turned with it would read as the light
+      moving, so the axolotl has no eye gaze (`lively.json` `controller.gaze` "none"): the head leads instead
+      (2.2 Hz against the chameleon's 1.6; AL5: yaw 30, pitch up 12 and down 18, AL4's 40 and 24 stretched the
+      neck looking up, the mouth reading as a bill from below, and swivelled the far eye out of sight in hard turns).
+      `lively.json` `controller` may give `pitch_up_deg` and `pitch_down_deg` (else `pitch_deg` both ways),
+      `pitch_neck_share` (the pitch's share in Neck, else `neck_share`; the axolotl's 0.5 spreads it evenly over the
+      neck's two bands) and `tilt` (the head's roll per radian of yaw, the top leaning into the turn; the axolotl's
+      0.15, about 4.5 degrees at the limit; else 0); `alien_lively.gd` and `lively.js` read the same keys (tested). The build (`--kind bead`) paints the catch light out
+      of `<head>_sclera.png` from the bead's own dark texels; `alien_static.gdshader`'s `bead` draws it back at the
+      measured place, size and colour (`catch_dir_l`/`_r`, `catch_angle`, `catch_colour`) fixed in the mesh's own
+      frame (the light's), while the eye centre moves with the head, so the glint stays toward the light as the
+      head turns under it. No cut, no moved vertex (the pit projection is off for a bead).
+    - *The gills* (`--gills <step 2a build.json>`, `--detail <head>_detail.png`): one bone per stalk
+      (`alien_lively_geom.GILL_JOINTS`, each a child of Head) at step 2a's gill pivots; a vertex belongs to the stalk
+      it is reached from first along the mesh (AL3, `gill_labels`: a multi-source Dijkstra over the edges, the
+      vertices welded by position; `rig.gill_labels_reached` the share reached, the rest keep the nearest root: by the
+      nearest root alone a fin's tip leaning toward the next stalk went to that stalk and tore at 15 degrees, and
+      `rig.gill_stretch_mm` is that tear measure: the largest edge length change with neighbouring stalks at opposite
+      cap corners); a stalk's vertices are its thin ones (the detail map's G over 0.5), its axis their mean, its weight
+      `G.stalk_weight` (none at the root's first 8 %, full from 45 %, none where the detail map says thick; since AL4
+      by the lift, below). The poke test (AL2) turns each stalk's weighted vertices as the
+      controllers do (`G.spring_matrix`: Ry(yaw) Rx(-pitch) about the root) at the cap's four axis ends and four
+      corners (`G.SWING_CORNERS`) and counts moved vertices that end over 1 mm (`G.POKE_TOL`) inside the skull. The
+      skull is a star about the head's centre: a point is inside when it is nearer the centre than the skull's
+      outermost crossing along the same ray (Blender's BVH `ray_cast`, the thick triangles alone), **and** (AL3)
+      more than 1 mm behind its nearest skull triangle. The star test alone gave 40 "pokes" at 15 degrees (the cap
+      fell to 2): `gill_pokes_diag.json` and `gill_pokes_diag.png` (written on every build: each star-test poke at
+      the top swing, its rest gap, nearest-triangle gap and side, and its crossing; the cross-sections zoomed on
+      them) showed all 40 were stalk-base vertices (weight 0.35 to 0.54, 4 to 16 mm off the skull at rest), every
+      one in front of its nearest skull triangle (0.3 to 7 mm off it): near a root the skull is no star about the
+      centre, the ray crossing the rim of the bulge the stalk grows from 1.5 to 19 mm further out. A test flaw, no
+      contact. AL2 to AL5 also left out a root band (weights under 0.35, vertices within 3 mm of the skull at rest),
+      the likeliest vertices to poke (PR #306 review); since AL6 every vertex weighted over 0.01 (`G.TEST_W`) that
+      moves over 0.01 mm (`G.MOVED_EPS`) is tested, only those inside the skull at rest by both tests left out
+      (`rig.gill_poke_tested`, `rig.gill_poke_excluded_inside_at_rest`). AL7 (PR #306 re-review, major): AL2 to AL6's
+      skull was the triangles with no vertex weighted over 0.01, which dropped the root bulge (178 weighted
+      vertices): the "0 pokes at 15 degrees" of `axolotl_v6a` was tested against a hole, and the two lifts against
+      two different skulls. Now the skull is the proxy built before the weights (below), posed with the gill's own
+      weights at each corner (a new BVH per corner when the bulge moves), its own vertices not tested; a vertex
+      behind its nearest skull triangle at rest that cannot reach the skull's surface (its distance larger than its
+      own reach at the top swing plus the largest move of the bulge's vertices within reach) is left out
+      (`of_which_buried_only`). Every build weighs and tests all three lifts (`G.GILL_LIFTS`) and writes them to
+      `rig.gill_pokes_by_lift`, each gill's pokes in `gill_pokes_posed.json`. On the axolotl, like for like: `centre`
+      3 pokes at 15 degrees and 3 or 4 at every swing down to 2 (one vertex, GillR2's 7862, weight 0.065, 7.25 mm
+      under the skull at rest, at three corners), poke-free only at 1; `skull` and `centre_pinned` (centre with the
+      bulge pinned at 0) 6 at 15, poke-free at 8. The swing starts at
+      15 degrees (`G.SPRING_MAX_DEG`, `--gill-swing`) and is lowered 1 degree at a time until none pokes
+      (`rig.gill_pokes_by_swing`); that is the springs' cap (`rig.gill_swing_deg`, `springs[].max_deg`); a head
+      whose gills poke at every swing is refused. AL1's test (behind the nearest triangle's plane) read thousands
+      of pokes even at 2 degrees: beside the hole the dropped root triangles leave, the nearest point is a hole
+      edge whose plane says nothing. `gill_weights.png` shows the weights; `gills_<tag>.jpg` (`lively_shots.gd`)
+      the gills held at the cap's eight corners (`alien_lively.gd` `hold_springs`) with the head at both yaw
+      limits, four rows (head left, head right, each seen from both back three-quarters), each cell framed on the
+      camera side's three gills (their posed roots' mean, 0.12 m out, 0.9 high; AL3: AL2 framed the back of the
+      skull) (`shots_<tag>.json` `gill_closeups`).
+    - *The gill tear (AL4):* `gill_stretch.json` and `gill_stretch.png` (every build) list the 60 edges whose length
+      changes most at the worst corner, each with its two vertices' gills, thinness and weights. In v3 (99.2 mm) all
+      of them lay inside one stalk (GillR2): vertices out on the stalk that the detail map reads thick (G 0.004 to
+      0.31, the stalk's core and fins at UV seams) kept weight 0 beside fringe weighted 1.0, a ladder of stretched
+      triangles. No edge crossed two stalks. Now a stalk's weight is `G.stalk_weight_lifted`: the ramp along the
+      stalk times the larger of the thinness gate and the vertex's lift over the skull at its root (its distance
+      from the head's centre beyond the root's nearest mesh vertex's, `G.LIFT_IN` 5 mm to `G.LIFT_FULL` 60 mm). The
+      weights live on the welded vertices, so a seam's copies never part (their largest thinness counts), and are
+      smoothed inside the stalk alone (`G.smooth_within`, `G.SMOOTH_PASSES` passes, edges to other stalks ignored,
+      the zeros pinned). The weight on the skull proxy built before the weights (`rig.skull_proxy_pre_weights`: the
+      triangles with no thin and no stalk vertex, welded) is reported apart (AL7) for the root bulge (the proxy's
+      vertices within a stalk's own reach, `rig.gill_weight_on_root_bulge`) and the open skull
+      (`rig.gill_weight_on_open_skull`, 0): with `centre` 0.56 on 178 bulge vertices, the thick bulge around the
+      roots inside the stalk's first 2 cm
+      (AL4's measure, thick and under 5 mm of lift, read 0 there); AL4's `gill_weight_on_thick` is gone (the stalks'
+      thick cores move by design).
+    - *AL5's tries at the root junction (none kept):* fading the thin vertices in by their lift too (0 to 20 mm)
+      gave 11.8 mm (the worst moved into GillR3's weight slope); capping every edge's rise at 0.2 hop by hop left a
+      ladder of 0.2 steps out on the stalks (16.9 mm); pinning the root ring at 0.2 and the full weights put a pinned
+      0.2 beside a pinned 1.0 where a zero lies out on a stalk (33.8 mm); the cap and the fade near the root alone,
+      16.0 mm. The cause is that "lift" (distance from the head's centre) is no height over the skull for fins that
+      hang back toward the head: they read no lift far out on the stalk. AL4's rule stays (11.47 mm).
+    - *AL6's try, the height over the skull (not kept):* `--gill-lift skull` takes the lift as the distance to the
+      skull proxy built before the weights (above). It pins the root bulge at 0 (its weight 0), but the
+      stalks then bend over the pinned rim: 6 pokes at 15 degrees, the cap fell to 8, and the tear 9.26 mm is at
+      8 degrees only (`axolotl_v6b`). AL7: against the posed bulge `centre` pokes too (above), so neither lift is
+      poke-free at 15 degrees; the choice between them (and the cap) is open.
+    - *The springs* are data now (`lively.json` `rig.springs`: bones, rate, damping, lag, cap): the chameleon's
+      crest one chain of Crest1-3; the axolotl's six gills one bone each at 1.8 to 2.4 Hz, so they never swing in
+      step. `alien_lively.gd` and `lively.js` read them, and the head's follow from `controller`. Every spring is
+      clamped at its `max_deg`; 0 or none given holds it still (AL2: AL1's 0 meant "no cap", so v1b's gills swung
+      38 degrees); the chameleon's crest has an explicit 30 (v4's largest swing 11.6, never reached).
+    - *One glint per bead (AL2):* the drawn catch light alone; the bead's own reflections are cut on its eye texels
+      (`alien_static.gdshader` `bead_reflect` 0.15 times the specular and clear coat, roughness at least
+      `bead_rough` 0.55), so the key light leaves a soft sheen, not a second sharp point that broke into a "<" at
+      the silhouette in head turns. *The glint at a head turn (AL3):* the catch light stays toward the light, so on
+      the turned-away eye it fell under the lid and the bead went flat and dead. The controllers now set `gaze_l/r`
+      to the posed bead front and `catch_reach_l/r` to the rest angle between front and catch plus 0.12 rad
+      (`CATCH_MARGIN` in `alien_lively.gd`, `lively.js` and `alien_lively_geom`); past that the shader turns the
+      glint toward the front (`G.glint_dir`), so it slides to the open cap's edge nearest the light and stays there.
+      At rest nothing changes (the gate's numbers equal v2e's).
+    - *Eye close-ups* are framed on the visible cap's middle: the posed eye sphere's point halfway between the bead's
+      front and the camera's side (`alien_lively.gd` `eye_centre` and `eye_front`; AL4: framed on the front alone,
+      the turned-away eye sat off its cell's middle, its front point being the disc's rim then). `eye_pit_shots.gd`'s JSON also holds
+      `away_from_eyes`: the whole head before | after at rest from four sides, the pixel difference with every
+      pixel within 2.2 eye radii of an eye centre left out (the chameleon's v5 against v4).
+    - *For both heads:* every eyeball vertex takes the fitted sphere's radial normal, faded in over 6 % of r from
+      the lid line. That does **not** remove the faint grey triangular facets under the chameleon's upper lids
+      (PR #306 review major 3): `eyes_pit_v6_crop_*.jpg` (before v5 | after v6) show them in the full material, in
+      grey with the normal map and in grey geometry alone (debug_mode 2, studio light), and with the eye texels'
+      normal map off (`controller.sclera_normal_map` 0, v6's after column): so they are neither the normal map's
+      bake nor the eyeball's own vertices, most likely the lid-shared vertices (left out of the radial normals, so
+      the triangles fanning from them interpolate their old normals), or shadowing from the lid; open. Every TANGENT whose normal changed is made orthogonal again
+      (`G.orthogonal_tangent`: t - n (n . t), normalised, w kept; `pit_geometry.max_abs_n_dot_t_after`). One
+      eyeball classification (`classify_eyeball`: the mask's eye triangles and the warm, saturated painted iris
+      triangles near an eye) serves `eyeball_fix` and the sclera fill. `lively.json` `eyes.<side>.front_sphere`
+      is the fitted front sphere beside the shader's `centre` and `radius`.
+    - `lively_shots.gd` (either head) writes `gate_<tag>.jpg` (the whole-head gate: merged | lively at rest from the
+      front, left, back and right; `shots_<tag>.json` `gate`: per side the mean absolute difference in 0..255 and
+      the share of pixels over 8/255), `sheet_<tag>.jpg` (row 1: merged rest, lively rest, the head turned to its
+      left and right, the springs' largest swing; row 2: the eyes alone left, right and down, the breath's two
+      ends) and `eyes_<tag>.jpg` (both eyes at 4x: rest, the head turns, the gazes).
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
