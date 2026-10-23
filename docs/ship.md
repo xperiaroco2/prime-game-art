@@ -987,8 +987,8 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   is a saturated orange (`int_halo__vent_heat`, emission (1, 0.3, 0.02)) and the lamp a deep red
   (`glow_nav_red__vent_lamp`, (1, 0.015, 0.01)), each with its own `[light.mats]` entry, so AgX keeps them orange and
   red at night (the library strengths washed them to tan and pink). About 3,600 triangles a vent.
-- **Room made for it:** the throat's floor light at 4/5 of each wall (`ship_interior_place.py`) moved 0.25 m toward
-  the hall; at its old place its bar ran 19 cm under the column's foot.
+- **Room made for it:** the throat's floor light at 4/5 of each wall (`ship_interior_place.py`) moved 0.36 m toward
+  the hall (its 0.7 m bar now 4 cm clear of the column); at its old place the bar ran 32 cm under the column's foot.
 - **On the wall:** the piece's frame is the spot's (u along the wall, v out of it, h absolute); the backs follow the
   throat wall's profile 2 cm inside it (vertical to 1.45 m, then the chamfer), so the box reaches 2.08 m and the
   column 2.0 m without cutting the chamfer. `ship --check` (`ship_layout.check_units`) holds every station piece

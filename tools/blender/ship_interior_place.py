@@ -408,8 +408,8 @@ def placements() -> list[tuple[str, list[float], float]]:
                     put("th_clip_h", local(o, yw, dx, 0.0), yw)
             if i in TH_COVER:
                 put(f"th_wall_up_{tone}", o, yw)
-            if i in (0, 3):   # rebuild E: two a side, at 1/5 and 4/5 of the wall; station 1: the hall's one 0.25 m
-                sh = TH_MOD * 0.5 + (0.25 if i == 3 else 0.0)   # on, its bar clear of the vent's column (u 0.78)
+            if i in (0, 3):   # rebuild E: two a side, at 1/5 and 4/5 of the wall; station 1: the hall's one 0.36 m
+                sh = TH_MOD * 0.5 + (0.36 if i == 3 else 0.0)   # on, its 0.7 m bar 4 cm clear of the vent column
                 lp = [round(w[0] + d[0] * sh + inward[0] * 0.3, 4), round(w[1] + d[1] * sh + inward[1] * 0.3, 4)]
                 put("floor_light", lp, yw)
 
