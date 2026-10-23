@@ -458,3 +458,18 @@ front view, and his smile is weak. The bean woman's smile cell winks (one lid cl
 sage-teal, duller than the roster's teal. Images: `D:/prime-art-raw/2026-10-22-alien-t2-partsbuilt/`; one JPEG per
 image and the labelled sheet `t2_sheet.jpg` (the six revised concepts, then both swap sheets):
 `D:/prime-art-raw/research/2026-10-22-roster/design/t2/`.
+
+## Batch 2026-10-22-alien-t1-sockets-2d (art #196, test T1: a socketed head and its separate pieces)
+
+T1 (the engineer, art#196 comment 6344356802): the chameleon man's head is generated with recesses, a shallow mouth
+dish and two round empty eye sockets, no brows, so separate pieces (mouths, eyes with lids, rolled brows) seat into
+them and are swapped whole for expressions. **High** (focused work on one picked head), n = 1: his pilot turnaround
+with the lips, eyeballs and lids taken out and the recesses left (`ch_sockets`, an edit of `ch_turn`, 1536x1024), and
+one three-quarter product image per piece on a plain light grey, 1024x1024, edits of the H2 parts kit and his H2 swap
+expressions (`mouth_rest`, `mouth_smile`, `mouth_sad`, `mouth_o`, `eye_open`, `eye_half`, `eye_closed`, `brow`). 9
+requests, $0.0553 for the turnaround and $0.0784 to $0.0786 per piece (two 1536 references each), **$0.6834** of the
+$2 cap; no item needed a revision. The turnaround kept the head, crest, bands, nostrils, neck and colours and shows
+clean round sockets and a lens-shaped mouth dish (deeper than "shallow" in the profile, an open lip-shaped hollow);
+the pieces match the H2 kit's teal clay (the rest mouth has a slight human bow; the O carries a mint skin back).
+Images: `D:/prime-art-raw/2026-10-22-alien-t1-sockets-2d/`; the views cut for Meshy are in batch
+2026-10-22-alien-t1-sockets-3d (`docs/meshy.md`).
