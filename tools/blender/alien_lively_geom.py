@@ -24,6 +24,22 @@ PARENTS = (-1, 0, 1, 2, 3, 4)
 GILLS = ("GillL1", "GillL2", "GillL3", "GillR1", "GillR2", "GillR3")
 GILL_JOINTS = ("Chest", "Neck", "Head") + GILLS
 GILL_PARENTS = (-1, 0, 1) + (2,) * len(GILLS)
+# the gill poke test (AL2): a moved gill vertex is a poke when it ends more than POKE_TOL inside the skull (metres);
+# vertices nearer the skull than ROOT_BAND at rest are the stalks' bases, which touch it by construction; the swing
+# is tested at the controllers' four axis ends and four corners (yaw, pitch signs), both clamped at the same cap
+POKE_TOL = 0.001
+ROOT_BAND = 0.003
+SWING_CORNERS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
+SPRING_MAX_DEG = 15.0  # the gills' cap at most (the measured limit when lower)
+
+
+def spring_matrix(yaw: float, pitch: float) -> list[list[float]]:
+    """The 3 x 3 rotation the controllers give a spring bone (radians): Godot's Quaternion.from_euler(Vector3(-pitch,
+    yaw, 0)) and three.js's Euler(-pitch, yaw, 0, "YXZ"), both Ry(yaw) * Rx(-pitch); a column vector's turn."""
+    cy, sy, cx, sx = math.cos(yaw), math.sin(yaw), math.cos(-pitch), math.sin(-pitch)
+    ry = ((cy, 0.0, sy), (0.0, 1.0, 0.0), (-sy, 0.0, cy))
+    rx = ((1.0, 0.0, 0.0), (0.0, cx, -sx), (0.0, sx, cx))
+    return [[sum(ry[i][k] * rx[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
 
 
 def smoothstep(e0: float, e1: float, x: float) -> float:

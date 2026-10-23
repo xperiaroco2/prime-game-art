@@ -242,6 +242,38 @@ class PatchTest(unittest.TestCase):
             G.add_skin(tiny_glb(3), pos, [[(0, 1.0)]] * 3, joints=("A", "B"), parents=(1, -1))
 
 
+class SpringTest(unittest.TestCase):
+    """AL2: the poke test turns the gills as the controllers do, at the cap's eight limit corners."""
+
+    @staticmethod
+    def apply(m, v):
+        return [sum(m[i][j] * v[j] for j in range(3)) for i in range(3)]
+
+    def test_spring_matrix_axes(self):
+        a = math.radians(15.0)
+        # yaw alone turns about +Y: +Z toward +X (Godot's and three.js's right-handed Ry)
+        x, y, z = self.apply(G.spring_matrix(a, 0.0), [0.0, 0.0, 1.0])
+        self.assertAlmostEqual(x, math.sin(a))
+        self.assertAlmostEqual(y, 0.0)
+        # pitch alone is Rx(-pitch): +Z tips up toward +Y
+        x, y, z = self.apply(G.spring_matrix(0.0, a), [0.0, 0.0, 1.0])
+        self.assertAlmostEqual((x, y), (0.0, math.sin(a)))
+
+    def test_spring_matrix_is_ry_times_rx(self):
+        m = G.spring_matrix(0.3, -0.2)
+        for i in range(3):  # orthonormal
+            for j in range(3):
+                self.assertAlmostEqual(sum(m[k][i] * m[k][j] for k in range(3)), 1.0 if i == j else 0.0)
+        # Ry(yaw) * Rx(-pitch): +X stays in the XZ plane (Rx leaves it, Ry turns it about Y)
+        self.assertAlmostEqual(self.apply(m, [1.0, 0.0, 0.0])[1], 0.0)
+
+    def test_corners_and_limits(self):
+        self.assertEqual(len(set(G.SWING_CORNERS)), 8)
+        self.assertNotIn((0, 0), G.SWING_CORNERS)
+        self.assertLessEqual(G.SPRING_MAX_DEG, 15.0)
+        self.assertGreater(G.ROOT_BAND, G.POKE_TOL)
+
+
 class RunTest(unittest.TestCase):
     """The run's refusals (PR #303 review minors 1 and 7): a tagged build whose folder exists, an untagged one whose GLB
     exists."""

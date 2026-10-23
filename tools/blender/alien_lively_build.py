@@ -337,7 +337,7 @@ def main():
     ap.add_argument("--gills", default="", help="a build.json with pivots.<name>_gills (Blender x, y, z): six gill"
                                                 " stalks on springs instead of the crest")
     ap.add_argument("--detail", default="", help="the head's detail PNG (G the thinness): the gills' weights")
-    ap.add_argument("--gill-swing", type=float, default=14.0, help="the gills' largest spring swing tested (degrees)")
+    ap.add_argument("--gill-swing", type=float, default=15.0, help="the gills' largest spring swing tested (degrees): the cap, lowered 1 degree at a time until none pokes")
     ap.add_argument("--neck", default="", help="y0,y1 of the neck blend (default: from the neck's waist)")
     ap.add_argument("--crest-root", type=float, default=0.45, help="the crest root between the head centre and tip")
     ap.add_argument("--blade", default="0.10,0.16", help="the crest blade's half width: full weight, none")
@@ -676,7 +676,7 @@ def main():
                                                                         if np.linalg.norm(p - head_c) <= r_root - args.skull_margin]
                                                                        or [0.0])), 6)}
         report["rig"]["springs"] = [{"name": "crest", "bones": ["Crest1", "Crest2", "Crest3"], "hz": 2.2, "zeta": 0.3,
-                                     "lag": 0.09, "max_deg": 0.0}]
+                                     "lag": 0.09, "max_deg": 30.0}]  # AL2: an explicit cap (v4's largest swing 11.6, never clamped); 0 is no swing
     report["controller"] = ({"gaze": "none", "head_hz": 2.2, "yaw_deg": 40.0, "pitch_deg": 24.0, "neck_share": 0.4}
                             if bead else {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0, "neck_share": 0.4})
     report["sclera"] = f"{args.name}_sclera.png"
@@ -690,9 +690,9 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     """The axolotl's six gill stalks (2026-10-23, AL1): one bone each at its root (step 2a's pivots, Blender x, y, z
     -> glTF x, z, -y), its axis the mean of its thin vertices; weights by G.stalk_weight (none at the root, none on the
     thick skull), times the head's. The poke test: each stalk's weighted vertices turned by +-swing about the head's
-    up and side axes through the root; a vertex ending inside the head (behind the nearest non-gill triangle, more
-    than 1 mm) that was outside at rest is a poke; the swing is lowered by 2 degrees until none pokes (rig.gill_swing_deg, the controller's
-    cap). Writes <name>_lively.glb and gill_weights.png; returns the rig report (pos gets the gill joints)."""
+    yaw and pitch axes through the root as the controllers turn them (G.spring_matrix, the four axis ends and four
+    corners); a moved vertex outside the root band ending inside the skull is a poke (see below); the swing is
+    lowered by 1 degree from --gill-swing until none pokes (rig.gill_swing_deg, the controller's cap; none: refused). Writes <name>_lively.glb and gill_weights.png; returns the rig report (pos gets the gill joints)."""
     piv = json.loads(Path(args.gills).read_text(encoding="utf-8"))["pivots"][f"{args.name}_gills"]
     thin = load_png(args.detail)[..., 1]
     Ht, Wt = thin.shape
@@ -725,46 +725,61 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     tot = W.sum(1)
     over = tot > 1.0
     W[over] /= tot[over][:, None]
-    # the head the gills must not poke into: its thick triangles (the skull and face, none of the thin gill fins at
-    # the roots, whose own planes a turning filament crosses without poking anything)
+    # the head the gills must not poke into: its thick triangles (the skull and face, none of the thin gill fins and
+    # stalk roots). AL2: the old test (behind the nearest triangle's plane) read thousands of pokes even at 2 degrees:
+    # beside the hole the dropped root triangles leave, the nearest point is a hole edge whose plane says nothing. Now
+    # the skull is a star about head_c: a point is inside when it is nearer head_c than the skull's outermost surface
+    # along the same ray, by more than POKE_TOL; the root band (vertices within ROOT_BAND of the skull at rest, the
+    # stalks' bases that touch it by construction, and those inside it at rest) is left out; only moved vertices count.
     gill_v = (W.sum(1) > 0.01) | (tv > 0.25)
     body_t = [tuple(int(x) for x in t) for t in I if not gill_v[t].any()]
     bvh = BVHTree.FromPolygons([Vector(v) for v in P], body_t, all_triangles=True)
-    up = np.array([0.0, 1.0, 0.0])
-    # the head's triangles' outward sense (a GLB's winding may face either way)
-    cen_t = np.array([P[list(t)].mean(0) for t in body_t])
-    fn = np.cross(P[[t[1] for t in body_t]] - P[[t[0] for t in body_t]], P[[t[2] for t in body_t]] - P[[t[0] for t in body_t]])
-    outward = 1.0 if float(np.median(((cen_t - head_c) * fn).sum(1))) > 0 else -1.0
+    cv = Vector(head_c)
+
+    def skull_r(p):
+        d = Vector(p) - cv
+        far = d.length + 0.5
+        d.normalize()
+        o, r = cv, 0.0
+        for _ in range(16):  # the outermost crossing along the ray
+            loc, _n, _i, dist = bvh.ray_cast(o, d, far)
+            if loc is None:
+                break
+            r = (loc - cv).length
+            o = loc + d * 1e-5
+        return r
 
     def inside(pts):
-        res = np.zeros(len(pts), bool)
-        for i, pp in enumerate(pts):
-            loc, nrm, _, _ = bvh.find_nearest(Vector(pp))
-            res[i] = loc is not None and (Vector(pp) - loc).dot(nrm) * outward < -0.001
-        return res
-    rest_in = {k: inside(P[np.nonzero(W[:, k] > 0.05)[0]]) for k in range(len(names))}
+        return np.array([np.linalg.norm(pp - head_c) < skull_r(pp) - G.POKE_TOL for pp in pts], bool)
+
+    test = {}
+    for k in range(len(names)):
+        m = np.nonzero(W[:, k] > 0.05)[0]
+        gap = np.array([(Vector(P[i]) - bvh.find_nearest(Vector(P[i]))[0]).length for i in m])
+        keep = m[(gap > G.ROOT_BAND) & ~inside(P[m])]
+        test[k] = keep
+    rep["gill_poke_tested"] = {n: int(len(test[k])) for k, n in enumerate(names)}
 
     def pokes(swing):
         n = 0
         for k, name in enumerate(names):
-            m = np.nonzero(W[:, k] > 0.05)[0]
-            side = np.cross(up, np.array(rep["gills"][name]["axis"]))
-            side /= np.linalg.norm(side)
+            m = test[k]
             q = P[m] - roots[name]
-            for axis in (up, side):
-                for sgn in (1.0, -1.0):
-                    a = math.radians(swing) * sgn
-                    rq = q * math.cos(a) + np.cross(axis, q) * math.sin(a) + np.outer(q @ axis, axis) * (1 - math.cos(a))
-                    p2 = roots[name] + q + W[m, k][:, None] * (rq - q)
-                    n += int((inside(p2) & ~rest_in[k]).sum())  # a poke: inside now, outside at rest
+            for y, p in G.SWING_CORNERS:
+                rq = q @ np.array(G.spring_matrix(math.radians(swing) * y, math.radians(swing) * p)).T
+                d = W[m, k][:, None] * (rq - q)
+                moved = np.linalg.norm(d, axis=1) > 0.0005
+                n += int(inside(P[m][moved] + d[moved]).sum())
         return n
-    swing, counts = args.gill_swing, {}
+    swing, counts = min(args.gill_swing, G.SPRING_MAX_DEG), {}
     while swing > 0:
-        counts[str(swing)] = pokes(swing)
-        if counts[str(swing)] == 0:
+        counts[f"{swing:g}"] = pokes(swing)
+        if counts[f"{swing:g}"] == 0:
             break
-        swing -= 2.0
-    rep["gill_swing_deg"] = max(swing, 0.0)
+        swing -= 1.0
+    if swing <= 0:
+        raise SystemExit(f"LIVELY gills poke into the head at every swing tested: {counts}")
+    rep["gill_swing_deg"] = float(swing)
     rep["gill_pokes_by_swing"] = counts
     rep["gill_weight_on_thick"] = round(float(W.sum(1)[tv < 0.25].max(initial=0.0)), 6)
     infl = []

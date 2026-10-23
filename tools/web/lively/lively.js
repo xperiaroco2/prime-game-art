@@ -149,14 +149,16 @@ export async function makeLively(root, jsonUrl, scleraUrl) {
       B.neck.scale.set(1 / chest.x, 1 / chest.y, 1 / chest.z);  // the head keeps its size
       B.neck.quaternion.setFromEuler(new THREE.Euler(-st.hp * NECK_SHARE, st.hy * NECK_SHARE, 0, "YXZ"));
       B.head.quaternion.setFromEuler(new THREE.Euler(-st.hp * (1 - NECK_SHARE) - nod, st.hy * (1 - NECK_SHARE), 0, "YXZ"));
-      // the springs (crest or gills): under-damped, pulled back by the head's turn speed, capped at max_deg (0: none)
+      // the springs (crest or gills): under-damped, pulled back by the head's turn speed, capped at max_deg (0 or missing: held still)
       for (const s of springs) {
         const w = 2 * Math.PI * s.hz, cap = THREE.MathUtils.degToRad(s.max_deg || 0);
         s.vy += (-w * w * (s.y + st.vy * s.lag) - 2 * s.zeta * w * s.vy) * dt;
         s.vp += (-w * w * (s.p + st.vp * s.lag) - 2 * s.zeta * w * s.vp) * dt;
         s.y += s.vy * dt;
         s.p += s.vp * dt;
-        if (cap > 0) { s.y = THREE.MathUtils.clamp(s.y, -cap, cap); s.p = THREE.MathUtils.clamp(s.p, -cap, cap); }
+        s.y = THREE.MathUtils.clamp(s.y, -cap, cap);
+        s.p = THREE.MathUtils.clamp(s.p, -cap, cap);
+        if (!(cap > 0)) { s.vy = 0; s.vp = 0; }
         for (const c of s.b) c.quaternion.setFromEuler(new THREE.Euler(-s.p / s.b.length, s.y / s.b.length, 0, "YXZ"));
       }
       root.updateMatrixWorld(true);

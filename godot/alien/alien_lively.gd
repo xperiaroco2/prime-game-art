@@ -25,7 +25,7 @@ var neck_share := 0.4
 var head_hz := 1.6
 var bead := false
 # the springs (lively.json rig.springs: the chameleon's crest, Crest1-3 as one chain; the axolotl's six gills, one
-# bone each, each its own rate, capped at max_deg so no gill pokes into the head): under-damped, pulled back by the
+# bone each, each its own rate, capped at max_deg so no gill pokes into the head; max_deg 0 or missing holds it still): under-damped, pulled back by the
 # head's turn speed, the same as the web port's (a SpringBoneSimulator3D on Crest1-3 under the manual skeleton advance
 # showed no measurable swing in the first proof)
 var springs: Array[Dictionary] = []
@@ -59,7 +59,7 @@ func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, scl
 	head_hz = float(ctl["head_hz"])
 	bead = ctl["gaze"] == "none"
 	var specs: Array = lively["rig"].get("springs", [{"name": "crest", "bones": ["Crest1", "Crest2", "Crest3"],
-		"hz": 2.2, "zeta": 0.3, "lag": 0.09, "max_deg": 0.0}])
+		"hz": 2.2, "zeta": 0.3, "lag": 0.09, "max_deg": 30.0}])
 	for sp: Dictionary in specs:
 		var bones: Array[int] = []
 		for b: String in sp["bones"]:
@@ -178,9 +178,10 @@ func step(dt: float) -> void:
 		var sy: float = st.x + cv.x * dt
 		var spt: float = st.y + cv.y * dt
 		var cap: float = sp["cap"]
-		if cap > 0.0:
-			sy = clampf(sy, -cap, cap)
-			spt = clampf(spt, -cap, cap)
+		sy = clampf(sy, -cap, cap)  # AL2: max_deg 0 (or none given) holds the spring still; no "no cap"
+		spt = clampf(spt, -cap, cap)
+		if cap <= 0.0:
+			cv = Vector2.ZERO
 		sp["s"] = Vector4(sy, spt, cv.x, cv.y)
 		var n: float = float((sp["bones"] as Array).size())
 		for bi: int in sp["bones"]:
@@ -218,6 +219,28 @@ func _apply_eyes() -> void:
 			sm.set_shader_parameter("eye_centre_" + side.left(1), c)
 			if not bead:
 				sm.set_shader_parameter("gaze_" + side.left(1), g)
+
+
+## Every spring held at (yf, pf) times its cap (the poke proof, AL2: the gills at their limit corners), no motion.
+func hold_springs(yf: float, pf: float) -> void:
+	for sp: Dictionary in springs:
+		var cap: float = sp["cap"]
+		sp["s"] = Vector4(cap * yf, cap * pf, 0.0, 0.0)
+		var n: float = float((sp["bones"] as Array).size())
+		for bi: int in sp["bones"]:
+			skeleton.set_bone_pose_rotation(bi, Quaternion.from_euler(Vector3(-cap * pf / n, cap * yf / n, 0.0)))
+	skeleton.advance(0.0)
+
+
+## A posed eye's front in mesh space (its centre plus its rest direction times its radius, turned with the head):
+## the eye close-ups' middle (AL2: the sphere's centre sits deep inside, so framing on it put the bead off-centre).
+func eye_front(side: String) -> Vector3:
+	var posed: Transform3D = skeleton.get_bone_global_pose(_bones["Head"]) * \
+		skeleton.get_bone_global_rest(_bones["Head"]).affine_inverse()
+	var to_mesh: Transform3D = mesh.global_transform.affine_inverse() * skeleton.global_transform
+	var e: Dictionary = eyes[side]
+	var c: Vector3 = to_mesh * (posed * _v(e["centre"]))
+	return c + (to_mesh.basis * posed.basis * _v(e["rest"])).normalized() * float(e["radius"])
 
 
 ## The springs' largest swing now (degrees): the crest's or a gill's turn from its rest, carried by the head.
