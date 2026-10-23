@@ -158,10 +158,12 @@ cap = cent[:, 1] > tip[1] - 0.02
 pom_r = float(np.clip((cent[cap, 2].max() - cent[cap, 2].min()) / 2, 0.012, 0.03)) if cap.any() else 0.02
 pom_c = tip - np.array([0.0, pom_r, 0.0])
 in_pompom = np.linalg.norm(cent - pom_c, axis=1) < pom_r * 1.08
+pompom_info = (pom_c, pom_r, np.array([0.0, -1.0, 0.0]))  # the tail leaves the pompom towards the body (-Y)
 stalk = np.array([abs(c[0]) < 0.03 and c[2] < 0.1 and c[1] > back_y.get(round(np.floor(c[2] * 100) / 100, 2), 1.0) + 0.004
                   for c in cent]) & ~in_pompom
 # the antenna balls: around the highest point on each side, a ball's radius down
 balls = np.zeros(len(cent), dtype=bool)
+ball_info = []
 for side in (-1.0, 1.0):
     s_sel = (np.sign(cent[:, 0]) == side) & (cent[:, 2] > zmax - 0.08)
     if not s_sel.any():
@@ -178,6 +180,44 @@ for side in (-1.0, 1.0):
     to_head /= np.linalg.norm(to_head)
     along_stalk = (d @ to_head) > np.cos(np.radians(25.0)) * np.maximum(dist, 1e-9)
     balls |= (dist < r_ball * 1.1) & ~(along_stalk & (dist > 0.9 * r_ball))
+    ball_info.append((ball_c, r_ball, to_head))
+face_co = [np.array([tuple(obj.matrix_world @ me.vertices[me.loops[li].vertex_index].co) for li in poly.loop_indices])
+           for poly in me.polygons]
+areas = np.array([poly.area for poly in me.polygons])
+
+
+def raster_pos(faces):
+    """The texels the faces cover and each one's 3D point (interpolated over its triangle)."""
+    hit = np.zeros((h, w), dtype=bool)
+    pos = np.zeros((h, w, 3), dtype=np.float32)
+    for f in faces:
+        pts = face_uv[f] * np.array([w, h])
+        p3 = face_co[f]
+        for k in range(1, len(pts) - 1):
+            tri = np.array([pts[0], pts[k], pts[k + 1]])
+            t3 = np.array([p3[0], p3[k], p3[k + 1]])
+            x0, y0 = np.floor(tri.min(0)).astype(int)
+            x1, y1 = np.ceil(tri.max(0)).astype(int)
+            x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, w - 1), min(y1, h - 1)
+            if x1 < x0 or y1 < y0:
+                continue
+            gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+            (ax, ay), (bx, by), (cx, cy) = tri
+            den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+            if abs(den) < 1e-9:
+                continue
+            l1 = ((by - cy) * (gx - cx) + (cx - bx) * (gy - cy)) / den
+            l2 = ((cy - ay) * (gx - cx) + (ax - cx) * (gy - cy)) / den
+            l3 = 1 - l1 - l2
+            ins = (l1 >= -0.02) & (l2 >= -0.02) & (l3 >= -0.02)
+            p = l1[..., None] * t3[0] + l2[..., None] * t3[1] + l3[..., None] * t3[2]
+            sub_hit = hit[y0:y1 + 1, x0:x1 + 1]
+            sub_pos = pos[y0:y1 + 1, x0:x1 + 1]
+            sub_pos[ins] = p[ins]
+            sub_hit |= ins
+    return hit, pos
+
+
 # The fabric's colour is decided per face of the model, never per texel (the engineer, art#297, 2026-10-23: dots on
 # the belly, by an eye): each face's share of brown texels is diffused over the surface and cut at a half (a smooth
 # border), and islands under 200 faces join the colour around them, so no stray mark of Meshy's can stay a dot.
@@ -253,6 +293,44 @@ regions = {"tail_stalk_faces": int(stalk.sum()), "tail_pompom_faces": int(in_pom
            "antenna_ball_faces": int(balls.sum()), "brown_faces": int(label.sum()), "faces": len(label),
            "small_islands_flipped_faces": int(small.sum()), "pompom_radius_m": round(float(pom_r), 4)}
 
+# The balls (the antennae's, the tail's pompom) per texel in 3D (the engineer, art#297, 2026-10-23: the antenna tips
+# "look buggy", a gap where the paint ran short): per face the border zigzagged. Every texel near a ball gets its 3D
+# point: inside the ball brown, on the stalk orange right up to where it goes in, a clean ring.
+ball_report = []
+for bc0, r0, sdir in ball_info + [pompom_info]:
+    near = np.linalg.norm(cent - bc0, axis=1) < r0 * 2.2
+    d0 = cent - bc0
+    surf_sel = near & ((d0 @ sdir) < 0.5 * r0) & (np.linalg.norm(d0, axis=1) < 1.3 * r0)
+    bc = cent[surf_sel].mean(0) if surf_sel.sum() > 20 else bc0
+    rr = float(np.median(np.linalg.norm(cent[surf_sel] - bc, axis=1))) if surf_sel.sum() > 20 else r0
+    ds = cent - bc
+    proj = ds @ sdir
+    st = near & (proj > 1.2 * rr) & (proj < 2.0 * rr)
+    if st.sum() > 5:
+        axis_dir = cent[st].mean(0) - bc
+        axis_dir /= np.linalg.norm(axis_dir)
+        radial = ds[st] - np.outer(ds[st] @ axis_dir, axis_dir)
+        sr = float(np.median(np.linalg.norm(radial, axis=1)))
+    else:
+        axis_dir, sr = sdir, 0.005
+    hit, pos = raster_pos(np.nonzero(near)[0])
+    p = pos[hit] - bc
+    along = p @ axis_dir
+    off_axis = np.linalg.norm(p - np.outer(along, axis_dir), axis=1)
+    stalk_px = (off_axis < sr * 1.6) & (along > 0.9 * rr)
+    ball_px = (np.linalg.norm(p, axis=1) < 1.4 * rr) & ~stalk_px
+    on = np.zeros((h, w), dtype=bool)
+    off = np.zeros((h, w), dtype=bool)
+    on[hit] = ball_px
+    off[hit] = stalk_px
+    brown_t = (brown_t | on) & ~off
+    ball_report.append({"centre": [round(float(c), 4) for c in bc], "radius_m": round(rr, 4),
+                        "stalk_radius_m": round(sr, 4)})
+brown = brown_t & ~white & ~dark
+orange = ~brown_t & ~white & ~dark
+regions["balls"] = ball_report
+
+
 res = px.copy()
 # orange: the concept hue; Meshy's own light and dark only where Meshy painted orange, clipped and blurred, so large
 # forms (the lids' darker orange) stay and thin marks go
@@ -269,43 +347,6 @@ res[brown] = BROWN[None, :] * shade_b[brown][:, None]
 # Meshy painted white or as its pupil; every texel of them gets its 3D point, and from it: pink with a soft redder
 # rim towards the eye's edge (bloodshot, never dotted), a round pupil where Meshy's pupil sits and of its size, and a
 # small catch light above the pupil's middle.
-face_co = [np.array([tuple(obj.matrix_world @ me.vertices[me.loops[li].vertex_index].co) for li in poly.loop_indices])
-           for poly in me.polygons]
-areas = np.array([poly.area for poly in me.polygons])
-
-
-def raster_pos(faces):
-    """The texels the faces cover and each one's 3D point (interpolated over its triangle)."""
-    hit = np.zeros((h, w), dtype=bool)
-    pos = np.zeros((h, w, 3), dtype=np.float32)
-    for f in faces:
-        pts = face_uv[f] * np.array([w, h])
-        p3 = face_co[f]
-        for k in range(1, len(pts) - 1):
-            tri = np.array([pts[0], pts[k], pts[k + 1]])
-            t3 = np.array([p3[0], p3[k], p3[k + 1]])
-            x0, y0 = np.floor(tri.min(0)).astype(int)
-            x1, y1 = np.ceil(tri.max(0)).astype(int)
-            x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, w - 1), min(y1, h - 1)
-            if x1 < x0 or y1 < y0:
-                continue
-            gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
-            (ax, ay), (bx, by), (cx, cy) = tri
-            den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
-            if abs(den) < 1e-9:
-                continue
-            l1 = ((by - cy) * (gx - cx) + (cx - bx) * (gy - cy)) / den
-            l2 = ((cy - ay) * (gx - cx) + (ax - cx) * (gy - cy)) / den
-            l3 = 1 - l1 - l2
-            ins = (l1 >= -0.02) & (l2 >= -0.02) & (l3 >= -0.02)
-            p = l1[..., None] * t3[0] + l2[..., None] * t3[1] + l3[..., None] * t3[2]
-            sub_hit = hit[y0:y1 + 1, x0:x1 + 1]
-            sub_pos = pos[y0:y1 + 1, x0:x1 + 1]
-            sub_pos[ins] = p[ins]
-            sub_hit |= ins
-    return hit, pos
-
-
 share_white = np.array([share(white, f) if face_front[f] else 0.0 for f in range(len(cent))])
 share_dark = np.array([share(dark, f) if face_front[f] else 0.0 for f in range(len(cent))])
 eye_t = np.zeros((h, w), dtype=bool)
@@ -349,8 +390,45 @@ for side in (-1.0, 1.0):
                  "eye_radius_m": round(er, 4), "pupil_radius_m": round(pr, 4)})
 orange &= ~eye_t
 brown &= ~eye_t
-dark &= ~eye_t  # what is left of the thread: the smile
-res[dark] = THREAD
+dark &= ~eye_t  # what is left of the thread: Meshy's smile
+# The smile, drawn afresh as one even line (the engineer, art#297, 2026-10-23: the mouth "looks strange"): Meshy's
+# smile is broken bits and dashes in the muzzle's crease. Its texels' 3D points give the line: the median point in
+# each of 30 slices across the face, smoothed and resampled; every face texel within half the thread's width of that
+# line is thread, with a soft edge, and Meshy's own bits are fur again.
+SMILE_HALF_M = 0.0009
+sm_hit, sm_pos = raster_pos(np.nonzero(face_front)[0])
+old_smile = dark & sm_hit
+pts = sm_pos[old_smile]
+smile_line = np.zeros((h, w), dtype=bool)
+smile_points = 0
+res[dark] = ORANGE  # Meshy's bits: fur, under the new line
+orange |= dark
+dark[:] = False
+if len(pts) > 50:
+    lo, hi = np.percentile(pts[:, 0], [1, 99])
+    edges = np.linspace(lo, hi, 31)
+    mids = [np.median(pts[(pts[:, 0] >= e0) & (pts[:, 0] < e1)], axis=0) for e0, e1 in zip(edges[:-1], edges[1:])
+            if ((pts[:, 0] >= e0) & (pts[:, 0] < e1)).sum() >= 3]
+    line = np.array(mids)
+    for _ in range(3):
+        line[1:-1] = (line[:-2] + 2 * line[1:-1] + line[2:]) / 4
+    t = np.linspace(0, 1, len(line))
+    tt = np.linspace(0, 1, 300)
+    line = np.stack([np.interp(tt, t, line[:, k]) for k in range(3)], axis=1)
+    smile_points = len(mids)
+    box_lo, box_hi = line.min(0) - 0.004, line.max(0) + 0.004
+    ys, xs = np.nonzero(sm_hit)
+    p = sm_pos[ys, xs]
+    in_box = np.all((p >= box_lo) & (p <= box_hi), axis=1)
+    ys, xs, p = ys[in_box], xs[in_box], p[in_box]
+    dist = np.full(len(p), np.inf, dtype=np.float32)
+    for k in range(0, len(line), 50):
+        seg = line[k:k + 50]
+        dist = np.minimum(dist, np.linalg.norm(p[:, None, :] - seg[None, :, :], axis=2).min(1))
+    a = np.clip((SMILE_HALF_M - dist) / 0.0003 + 0.5, 0.0, 1.0)
+    res[ys, xs] = res[ys, xs] * (1 - a[:, None]) + THREAD[None, :] * a[:, None]
+    smile_line[ys[a > 0.5], xs[a > 0.5]] = True
+orange &= ~smile_line  # no pile over the thread
 veins = 0
 
 
@@ -415,7 +493,7 @@ report = {
                (("orange", orange), ("brown", brown), ("white", white), ("dark", dark), ("rest", rest))},
     "colours": {k: [round(float(c) * 255) for c in val] for k, val in
                 (("orange", ORANGE), ("brown", BROWN), ("pink", PINK), ("vein", VEIN), ("thread", THREAD))},
-    "veins": veins, "regions": regions, "eyes": eyes, "orange_median_v": round(float(vo), 3), "brown_median_v": round(float(vb), 3),
+    "veins": veins, "regions": regions, "eyes": eyes, "smile_slices": smile_points, "orange_median_v": round(float(vo), 3), "brown_median_v": round(float(vb), 3),
 }
 (out / "paint.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 print("PLUSH_PAINT " + json.dumps(report))
