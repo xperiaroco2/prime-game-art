@@ -5,7 +5,7 @@ EXTERIOR lane owns this file. Builders work in the plan frame (x east, y south, 
 string are placed at the origin, the rest at their own spot (exterior.toml). Numbers:
 - dirt patch: an irregular blob about 15 x 11 m round the ship (radius capped at 15.6, inside the ground's flat 16 m; all
   three times ship_hull.CLEARING_K since rebuild B),
-  0.006 over the ground; the path: PATH's centre line from the ramp's foot (0, -9.6) north-west to the treeline at
+  0.006 over the ground; the path: PATH's centre line from under the ramp (0, -9.6; the raise put its foot at -12.6) north-west to the treeline at
   r ~ 41, 2.0 m wide at the ramp narrowing to 1.3 m, 0.012 over the ground (0.05 beyond r 16, over its coarse facets).
 - tufts: 9..14 blades 0.18..0.5 m; bushes: 5..8 lumps in a size-metre spread; logs: r 0.22..0.3, 3..4.5 m with cut
   ends and stubs; stumps r 0.3, 0.45 m.
@@ -41,7 +41,7 @@ L.MATERIALS.update({
                        "emission": (1.0, 0.45, 0.12), "strength": 8.0},
 })
 
-# the path's centre line from the ramp's foot (the ramp ends at y -9.4) north-west to the treeline
+# the path's centre line from under the ramp (its foot at y -12.6 since the raise) north-west to the treeline
 PATH = [(0.0, -9.6)] + [(x * H.CLEARING_K, y * H.CLEARING_K) for x, y in (  # rebuild B: scaled with the clearing
     (-0.5, -13.0), (-2.6, -16.6), (-6.0, -19.8), (-10.4, -22.6), (-15.4, -25.4), (-21.0, -28.8), (-26.5, -32.5))]
 POST_T = (0.2, 0.28, 0.36, 0.44, 0.52, 0.6, 0.68, 0.76)  # the posts' arc fractions (clear of the front shot)

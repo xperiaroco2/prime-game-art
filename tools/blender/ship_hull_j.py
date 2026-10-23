@@ -510,3 +510,248 @@ def jamb_caps() -> list:
 
 
 j_cheeks = H._outward(j_cheeks)
+
+
+# --- the raise step 2 (art#263, 2026-10-23): the entry tunnel ---------------------------------------------------------
+TUN_OUT = 0.25                # the hood's side wall past the throat wall's inner face (the wall's 0.2 and 5 cm over
+#                               the cheeks, which sit 3 cm proud of the wall)
+TUN_TOP = S.TH_TOP + 0.15     # the hood's roof: the throat's roof and its least skin
+TUN_FILL = 0.012              # the fill over the nose's top inside the notch (the jambs' tops lie 4 mm over it)
+TUN_SINK = 0.03               # the raise step 3: the fill's least depth under the hood where the hood stands higher
+
+
+def _tun_frame():
+    """The mouth's line: (mouth x, mouth y, roof line y, tunnel front y, plan dx/dy of the walls aft of the mouth, k
+    the across-to-plan-x factor there)."""
+    (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
+    return mx, my, S.TH_ROOF_Y, S.TH["tunnel_y"], (kx - mx) / (ky - my), math.hypot(kx - mx, ky - my) / (ky - my)
+
+
+def _tun_w(y):
+    """The throat wall's inner face (plan x, east) at y and its k: straight in the tunnel, slanted aft of the mouth."""
+    mx, my, _r, _t, sl, k = _tun_frame()
+    return (mx, 1.0) if y <= my else (mx + sl * (y - my), k)
+
+
+def _tun_prof(y):
+    """The hood's cross-section at y, east half, (x, h) from the bottom outside up over the roof to the centre: the
+    throat's profile (walls vertical to the bend, the chamfer in, the ceiling) offset 0.25 m out, its chamfer parallel
+    to the inside's (0.55 in over 0.85 up)."""
+    w, k = _tun_w(y)
+    return [(w + TUN_OUT * k, S.SLAB - 0.01), (w + TUN_OUT * k, S.FLOOR + S.TH_CH[0] + 0.074),
+            (w - 0.427 * k, TUN_TOP), (0.0, TUN_TOP)]
+
+
+def _tun_h(x, y):
+    """The hood's top at plan (x, y) (its roof or chamfer), None past its side."""
+    p = _tun_prof(y)
+    ax = abs(x)
+    if ax <= p[2][0]:
+        return TUN_TOP
+    if ax <= p[1][0]:
+        return p[2][1] + (p[1][1] - p[2][1]) * (ax - p[2][0]) / (p[1][0] - p[2][0])
+    return None
+
+
+def _face(q, n):
+    """A face wound so its Newell normal points along n (the side it is seen from)."""
+    return q if S._dot(S._newell(q), n) > 0 else list(reversed(q))
+
+
+def _quad(q, n):
+    return (_face(q, n), [tuple(range(len(q)))])
+
+
+def mouth_tunnel(args: dict, layout: dict) -> list:
+    """The raise step 2 (the engineer, 2026-10-23: "extend the entrance"): the mouth run 1 m forward past the nose as
+    a short tunnel (ship.toml throat tunnel_y), and its hood over J's notch. Inside: the throat's profile (walls
+    vertical to the bend, the chamfer in, the ceiling) from the tunnel's front back to the throat's roof line, the
+    walls in the jambs' plates (the jambs are the walls aft of the nose), the chamfers and ceiling plated, a cyan strip
+    along each bend, frame ribs at the front and the nose, a grated floor with two amber floor lights. Outside: the
+    hood, the throat's profile offset 0.25 m out, in the hull's plated silver, from the tunnel's front aft until the
+    nose's top rises over it (the hull's closed skin cuts it: the penetration is the join, both sides); inside the
+    notch, where the nose's top stands over the hood, a fill at the nose's own top (+12 mm) closes the notch, so no
+    pit, lintel or jamb end sticks out (bug 2). The front: a dark portal frame round the opening, a chrome lip. Plan
+    coordinates in the design frame (ship_build lifts the piece)."""
+    mx, my, yr, y0, _sl, _k = _tun_frame()
+    bend, cin = S.TH_CH
+    h_b, h_c = S.FLOOR + bend, S.FLOOR + S.TH["clear_h"]
+    ye = yr + 0.04                                    # 4 cm past the roof line: under the throat's arch (yr + 0.1)
+    ys = [y0, my] + [my + (ye - my) * i / 8 for i in range(1, 9)]
+    groups: dict = {}       # the hood's (outside) faces by material
+    in_groups: dict = {}    # the raise step 3: the tunnel's inside faces by material (their own piece, the inside layer)
+
+    def plate_into(q, n, mats=MATS["top"], into=groups):
+        for p in plates(_face(q, n), n):
+            c = [sum(x[i] for x in p) / len(p) for i in range(3)]
+            m = mats[int(H._hash(round(c[0], 1), round(c[1], 1), round(c[2], 1)) * len(mats)) % len(mats)]
+            into.setdefault(m, []).append(lay(p))
+
+    def flat(q, n, mat, into=groups):
+        into.setdefault(mat, []).append(_quad(q, n))
+
+    def inner(y, e=0.0):
+        w, k = _tun_w(y)
+        w += e * k
+        return [(w, S.FLOOR - 0.01), (w, h_b), (w - cin * k, h_c + e), (0.0, h_c + e)]
+
+    def centre(q):
+        return tuple(sum(p[j] for p in q) / len(q) for j in range(3))
+
+    for sx in (1, -1):
+        for ya, yb in zip(ys, ys[1:]):
+            fwd = yb <= my + 1e-9
+            e = 0.0 if fwd else 0.003                 # aft of the nose 3 mm behind the throat's own faces
+            pa, pb = inner(ya, e), inner(yb, e)
+            for i in range(3):
+                if not fwd and i == 0:                # the jambs are the walls there: a 10 cm strip under the bend
+                    q = [(sx * (pa[1][0] - 0.005), ya, h_b - 0.1), (sx * (pb[1][0] - 0.005), yb, h_b - 0.1),
+                         (sx * (pb[1][0] - 0.005), yb, h_b), (sx * (pa[1][0] - 0.005), ya, h_b)]
+                    flat(q, (-sx, 0.0, 0.0), "hull_silver", in_groups)
+                    continue
+                q = [(sx * pa[i][0], ya, pa[i][1]), (sx * pb[i][0], yb, pb[i][1]),
+                     (sx * pb[i + 1][0], yb, pb[i + 1][1]), (sx * pa[i + 1][0], ya, pa[i + 1][1])]
+                n = S._unit3(S._sub((0.0, (ya + yb) / 2, h_c - 1.0), centre(q)))
+                plate_into(q, n, MATS["top"] if i == 0 else ("ext_silver_c", "ext_silver_b"), in_groups)
+            # the hood's side, chamfer and roof, each a plated strip (hidden where the nose stands over it)
+            pa, pb = _tun_prof(ya), _tun_prof(yb)
+            for i in range(3):
+                q = [(sx * pa[i][0], ya, pa[i][1]), (sx * pb[i][0], yb, pb[i][1]),
+                     (sx * pb[i + 1][0], yb, pb[i + 1][1]), (sx * pa[i + 1][0], ya, pa[i + 1][1])]
+                c = centre(q)
+                plate_into(q, S._unit3(S._sub(c, (0.0, c[1], S.FLOOR + 1.0))))
+            # its underside beside the floor: the walls' thickness at the slab's bottom
+            q = [(sx * _tun_w(ya)[0], ya, S.SLAB - 0.01), (sx * _tun_w(yb)[0], yb, S.SLAB - 0.01),
+                 (sx * pb[0][0], yb, S.SLAB - 0.01), (sx * pa[0][0], ya, S.SLAB - 0.01)]
+            flat(q, (0.0, 0.0, -1.0), "hull_dark")
+    flat([(-mx, y0, S.SLAB - 0.01), (mx, y0, S.SLAB - 0.01), (mx, my, S.SLAB - 0.01), (-mx, my, S.SLAB - 0.01)],
+         (0.0, 0.0, -1.0), "hull_dark")                # under the tunnel's floor
+    # the fill: inside the notch, where the nose's top (+TUN_FILL) stands over the hood. The raise step 3 (bug 4): one
+    # connected grid a side, every vertex at the nose's top + TUN_FILL or TUN_SINK under the hood, whichever is higher,
+    # so it runs under the hood's roof and chamfers without a cell's step (no cell left out) and never lies within
+    # millimetres of the hood (that read as fine bands from above)
+    fv, ff, nj, cols = [], [], 60, 28
+
+    def fill_h(x, y):
+        hs, hood = S.heights(x, y), _tun_h(x, y)
+        if hs is None or hood is None:
+            return None
+        return max(hs[0] + TUN_FILL, hood - TUN_SINK)
+    yf = ye
+
+    def wf(y):
+        return _tun_w(y)[0] + 0.02
+    ys_f = [my + (yf - my) * j / nj for j in range(nj + 1)]
+    for sx in (1, -1):
+        idx = {}
+        for j, y in enumerate(ys_f):
+            w = wf(y)
+            for i in range(cols + 1):
+                x = sx * w * i / cols
+                h = fill_h(x, y)
+                if h is not None:
+                    idx[j, i] = len(fv)
+                    fv.append((x, y, h))
+        for j in range(nj):
+            for i in range(cols):
+                q = [idx.get(k) for k in ((j, i), (j, i + 1), (j + 1, i + 1), (j + 1, i))]
+                if None not in q:   # wound up (the plan frame's Newell), as _quad(q, up) winds
+                    up = S._dot(S._newell([fv[k] for k in q]), (0.0, 0.0, 1.0)) > 0
+                    ff.append(tuple(q) if up else tuple(reversed(q)))
+        for j in range(nj):                            # its sides, down into the jambs
+            ya, yb = ys_f[j], ys_f[j + 1]
+            xa, xb = sx * wf(ya), sx * wf(yb)
+            ha, hb = S.heights(xa, ya), S.heights(xb, yb)
+            ga, gb = _tun_h(xa, ya), _tun_h(xb, yb)
+            if ha and hb and ga and gb and max(ha[0] - ga, hb[0] - gb) + TUN_FILL > -TUN_SINK:
+                q = _face([(xa, ya, min(ga, ha[0]) - 0.05), (xb, yb, min(gb, hb[0]) - 0.05),
+                           (xb, yb, fill_h(xb, yb)), (xa, ya, fill_h(xa, ya))], (sx, 0.0, 0.0))
+                ff.append(tuple(range(len(fv), len(fv) + 4)))
+                fv += q
+    xe = wf(yf)                                        # its end, aft of the lintel, into the hull
+    end = [(-xe, yf, TUN_TOP - 0.3), (xe, yf, TUN_TOP - 0.3)]
+    end += [(x, yf, fill_h(x, yf) or TUN_TOP) for x in (xe * (1 - 2 * i / 28) for i in range(29))]
+    fill_part = L.part("tunnel_fill", *L.merge((fv, ff), _quad(end, (0.0, 1.0, 0.0))), "hull_silver", solid=False)
+    # the front: the portal between the opening and the hood's outline, its edge back to the hood, a chrome lip
+    po, pi = _tun_prof(y0), inner(y0)
+    outline = [(-p[0], p[1]) for p in po[:-1]] + [(p[0], p[1]) for p in reversed(po[:-1])]
+    opening = [(-p[0], p[1]) for p in pi[:-1]] + [(p[0], p[1]) for p in reversed(pi[:-1])]
+    yf = y0 - 0.06
+    portal, lip = [], []
+    for a, b, c, d in _portal_quads(opening, outline):
+        portal.append(_quad([(a[0], yf, a[1]), (b[0], yf, b[1]), (c[0], yf, c[1]), (d[0], yf, d[1])], (0.0, -1.0, 0.0)))
+    for (xa, ha), (xb, hb) in zip(outline, outline[1:]):
+        q = [(xa, yf, ha), (xb, yf, hb), (xb, y0 + 0.01, hb), (xa, y0 + 0.01, ha)]
+        c = centre(q)
+        portal.append(_quad(q, S._unit3(S._sub(c, (0.0, c[1], S.FLOOR + 1.0)))))
+    for (xa, ha), (xb, hb) in zip(opening, opening[1:]):
+        c = ((xa + xb) / 2, (ha + hb) / 2)
+        nn = S._unit3((-c[0], 0.0, (h_c - 1.0) - c[1]))
+        q = [(xa + nn[0] * 0.004, yf, ha + nn[2] * 0.004), (xb + nn[0] * 0.004, yf, hb + nn[2] * 0.004),
+             (xb + nn[0] * 0.004, y0 + 0.08, hb + nn[2] * 0.004), (xa + nn[0] * 0.004, y0 + 0.08, ha + nn[2] * 0.004)]
+        lip.append(_quad(q, nn))
+    # frame ribs (the throat's bands) just inside the front and at the nose; the cyan strips along the bends
+    ribs, strips, lamps, halos, bezels = [], [], [], [], []
+    for yy in (y0 + 0.16, my):
+        p = inner(yy)
+        prof = [(-x, h) for x, h in p[1:]] + [(x, h) for x, h in reversed(p[1:])]
+        for (xa, ha), (xb, hb) in zip(prof, prof[1:]):
+            if math.dist((xa, ha), (xb, hb)) < 1e-6:
+                continue
+            c = ((xa + xb) / 2, (ha + hb) / 2)
+            nn = S._unit3((-c[0], 0.0, (h_c - 1.0) - c[1]))
+            a0, b0 = (xa + nn[0] * 0.006, ha + nn[2] * 0.006), (xb + nn[0] * 0.006, hb + nn[2] * 0.006)
+            a1, b1 = (xa + nn[0] * 0.035, ha + nn[2] * 0.035), (xb + nn[0] * 0.035, hb + nn[2] * 0.035)
+            ribs.append(_quad([(a1[0], yy - 0.05, a1[1]), (b1[0], yy - 0.05, b1[1]), (b1[0], yy + 0.05, b1[1]),
+                               (a1[0], yy + 0.05, a1[1])], nn))
+            for s in (-1, 1):
+                ribs.append(_quad([(a0[0], yy + s * 0.05, a0[1]), (b0[0], yy + s * 0.05, b0[1]),
+                                   (b1[0], yy + s * 0.05, b1[1]), (a1[0], yy + s * 0.05, a1[1])], (0.0, float(s), 0.0)))
+    for sx in (1, -1):
+        for ya, yb in zip(ys, ys[1:]):
+            yb = min(yb, ye - 0.06)
+            wa, wb = _tun_w(ya)[0] - 0.008, _tun_w(yb)[0] - 0.008
+            strips.append(_quad([(sx * wa, ya, h_b - 0.03), (sx * wb, yb, h_b - 0.03), (sx * wb, yb, h_b),
+                                 (sx * wa, ya, h_b)], (-sx, 0.0, 0.0)))
+        x = sx * (mx - 0.30)                           # the throat's floor lights, 0.3 m off the wall, along it
+        yc = (y0 + my) / 2
+        bezels.append(L.box(x - 0.07, x + 0.07, yc - 0.22, yc + 0.22, S.FLOOR - 0.002, S.FLOOR + 0.006))
+        halos.append(L.box(x - 0.055, x + 0.055, yc - 0.165, yc + 0.165, S.FLOOR + 0.006, S.FLOOR + 0.008))
+        lamps.append(L.box(x - 0.032, x + 0.032, yc - 0.15, yc + 0.15, S.FLOOR + 0.008, S.FLOOR + 0.011))
+    if args.get("part") == "hood":   # the raise step 3: the outside (the outside layer): the hood, fill, portal, lip
+        parts = [L.part(f"tunnel_{m}", *L.merge(*g), m, solid=False) for m, g in sorted(groups.items())]
+        return parts + [fill_part,
+                        L.part("tunnel_portal", *L.merge(*portal), "ext_frame", solid=False),
+                        L.part("tunnel_lip", *L.merge(*lip), "ext_chrome", solid=False)]
+    # the inside (the inside layer, lit by the throat's strips): walls, chamfers, ceiling, ribs, strips, floor
+    parts = [L.part(f"tunnel_{m}", *L.merge(*g), m, solid=False) for m, g in sorted(in_groups.items())]
+    parts += [L.part("tunnel_ribs", *L.merge(*ribs), "ext_frame", solid=False),
+              L.part("tunnel_strips", *L.merge(*strips), "int_cyan", solid=False),
+              L.part("tunnel_slab", *L.box(-mx, mx, y0, my + 0.002, S.SLAB, S.FLOOR - 0.012), "hull_dark"),
+              L.part("tunnel_grate", *L.box(-mx + 0.05, mx - 0.05, y0 + 0.02, my, S.FLOOR - 0.012, S.FLOOR - 0.002),
+                     "floor_grate"),
+              L.part("tunnel_bezels", *L.merge(*bezels), "int_silver_c"),
+              L.part("tunnel_halos", *L.merge(*halos), "int_halo"),
+              L.part("tunnel_lamps", *L.merge(*lamps), "int_amber")]
+    return parts
+
+
+def _portal_quads(opening, outline, m=24):
+    """The portal's face between the opening and the outline ((x, h) from the west bottom over the top to the east
+    bottom), each resampled by arc length to m segments: quads between matched points."""
+    def resample(poly):
+        d = [0.0]
+        for a, b in zip(poly, poly[1:]):
+            d.append(d[-1] + math.dist(a, b))
+        out = []
+        for i in range(m + 1):
+            t = d[-1] * i / m
+            k = min(max(j for j in range(len(d)) if d[j] <= t + 1e-9), len(poly) - 2)
+            s = (t - d[k]) / max(d[k + 1] - d[k], 1e-9)
+            out.append((poly[k][0] + (poly[k + 1][0] - poly[k][0]) * s, poly[k][1] + (poly[k + 1][1] - poly[k][1]) * s))
+        return out
+    a, b = resample(opening), resample(outline)
+    return [(a[i], a[i + 1], b[i + 1], b[i]) for i in range(m)]
+
+
+mouth_tunnel = H._outward(mouth_tunnel)

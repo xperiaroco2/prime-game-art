@@ -44,10 +44,10 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 | What | Number (ship.toml) | Why |
 |---|---|---|
 | Footprint | the hull P, live since lens step 2: span 26.11 m, 22.1 m long with the nozzle pods (blockout6 measured 22.15); `[hull] shape = "P"`, its rows `ship_hull_shape.outline_rows("P")` | the manager's pick P under the engineer's standing instruction (art#263 comment 6344490367) |
-| Deck | floor at h 0.6 on landing legs (launch 3; was 1.0), slabs 0.25, walls 0.2 | the ramp meets the ground; a thinner hull |
+| Deck | floor at h 1.2 on standing legs (the raise, 2026-10-23; launch 3: 0.6, before it 1.0), slabs 0.25, walls 0.2; the builders work in the design frame (deck 0.6) and the build lifts every piece but the grounded ones by `lift_m` 0.6 (see "Raised 0.6 m") | the belly clears the ground; the inside unchanged |
 | Hall | circle r 4.0 at (0, -0.4) (rebuild E; C (0, -1), v2 (0, 0), v1 r 3.4); 3.2 m to the ceiling's rim all round (rebuild E; C had 2.75 m round its front), 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
-| Throat (rebuild C; v2's mouth passage x -1.3..1.3, y -4.6..-3.9) | the funnel from the mouth (x +-1.65 at y -7.1, J's nose edge; 5a: y -8) to the hall's vertices (+-2.915, -3.252), 4.051 m walls in five modules of 0.810 (rebuild E); open to the sky forward of y -5.561 (the walls there are the hull's jambs, `skin_cheeks`), a 2.3 m ceiling aft of it | the only way in or out (5a's side hatch is dropped, see below) |
-| Ramp | 3.3 m wide (the mouth), hinge (0, -7.1) at the deck, foot (0, -9.9) on the ground: 12.1 deg, 2.86 m long (rebuild C; v2 2.6 m from (0, -4.6)) | north at the centre |
+| Throat (rebuild C; v2's mouth passage x -1.3..1.3, y -4.6..-3.9) | the funnel from the mouth (x +-1.65 at y -7.1, J's nose edge; 5a: y -8) to the hall's vertices (+-2.915, -3.252), 4.051 m walls in five modules of 0.810 (rebuild E); open to the sky forward of y -5.561 (the walls there are the hull's jambs, `skin_cheeks`), a 2.3 m ceiling aft of it; since the raise's step 2 the entry tunnel (`tunnel_y` -8.1) runs the mouth 1 m on past the nose and its hood roofs the notch (see "Raised 0.6 m") | the only way in or out (5a's side hatch is dropped, see below) |
+| Ramp | 3.3 m wide (the mouth), hinge (0, -8.1) at the tunnel's front, foot (0, -12.6) on the ground: 14.9 deg, 4.66 m long (the raise, step 2; step 1 hinge -7.1, foot -11.6; rebuild C: foot -9.9, 12.1 deg, 2.86 m; v2 2.6 m from (0, -4.6)) | north at the centre |
 | Corridors | `strip` rooms on the axes from the hall's centre (0, -0.4) to the lens rooms' (+-10.5, 1.2) (lens step 1): 10.621 m, 8.66 deg aft; floor 3.708..9.298 along the axis (5.59 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide |
 | Lens rooms (ids `tip_e`, `tip_w`) | circles r 2.0 at (+-10.5, 1.2), the outer wall at +-12.5; the ceiling slants down outward (P's: clear 2.4455 at the corridor's wall face, 2.3545 at the outer one; `clear_h` 2.35, `clear_h_in` 2.45); the window band -65..+45 deg round the outward axis, + aft, sill 1.0, head 2.2 (`band`); one round roof window, the oculus (`oculus`, 1.4 m clear, 32 sides; details 1, was three 0.9 x 0.7 m) | P's lens (art#263 comment 6344490367) |
 | Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.409, -4.791); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.664, -0.902) in the middle of the corridors' front wall; renewers (+-10.269, 3.237) on the lens rooms' aft wall (a vertex, 87.82 deg aft of the axis), the player at (+-10.415, 1.945) | lens step 1; the vents as in "Rebuild F" |
@@ -60,8 +60,8 @@ edge, the ramp as wide as the mouth and under 30 deg; every room reachable from 
 every poly room convex, its points with a positive signed area in plan (x, y) (`check_polys`); every capsule walk
 point on the deck on a room's floor with the capsule's radius round it (`check_walk`); every room's sampled outer
 surface inside the live hull (P) with 0.15 m of skin (`hull_skin`: `ship_hull_shape.clearance` on the checked layout's own
-rooms, each sampled on its own); every room's outer wall and every placed piece inside the hull outline (the ramp may
-stand outside); no piece defined twice or never placed.
+rooms, each sampled on its own); every room's outer wall and every placed piece inside the hull outline (a piece marked `outside` may
+stand outside: the ramp, the legs, the clearing, the entry tunnel `mouth_tunnel` and `mouth_tunnel_in`; the exit room's tunnel floor, `tunnel_y`, is the one floor past the outline, `ship_layout.tunnel`); no piece defined twice or never placed.
 
 **One entrance; the side hatch is dropped.** estate-map 5a lists a side hatch at (-12.5, 1) as a second way out. The
 engineer's step-1 rule (art#263: the mouth ramp is the only way in or out, no side hatch, no doors) wins over that text:
@@ -978,3 +978,36 @@ The shape, the rooms, the inside, the lights and the look stay. Raw output: `<ra
     `_slide_cap`, and counts the limits: at most 25 narrow wide corners, none under 0.25 `INSET`; the near-straight or
     needle corners (sin under 1 / `SLIDE_MAX`, 362) and the corners their group's cap stops short (747).
 
+## Raised 0.6 m (2026-10-23)
+
+The engineer (chat, 2026-10-23): "Піднімай на 0,6 м, витягни вхід і виправ ті два баги" (raise it 0.6 m, extend the
+entrance, fix the two bugs). Step 1 of the raise:
+
+| What | Before | Now |
+|---|---|---|
+| Deck (`[deck] floor_h`) | 0.6 | 1.2; `lift_m` 0.6 |
+| The design frame | the builders' heights were the real ones | `ship_hull_shape.FLOOR`, `ship_interior.FLOOR` and the lifted `ship_hull` builders use `floor_h - lift_m` (0.6); `ship_build.lifted` raises each built piece by `lift_m` unless its record says `grounded = true` (the clearing, the ramp, `ramp_lights`, `hazard_stripes`, the legs, the ground lamps: built at the real heights) |
+| Belly, brow (`[hull] bottom_h`, `brow_h`) | 0.17, 4.3 | 0.77, 4.9; the footprint rows' heights are `outline_rows()` + `LIFT` |
+| Ramp | foot (0, -9.9): 12.1 deg, 2.86 m | foot (0, -11.6): 14.9 deg, 4.66 m (the hinge and the mouth unchanged in this step) |
+| Legs (`leg`) | a long splayed leg lying almost flat (reach 1.6..2.2) | a standing oleo leg: a yoke and pin under the mount box, a sleeve (r 0.15), a collar, the chrome piston, a fork, two side braces, the ankle's knuckle and a flat 1.2 m footpad with a hub and four ribs; tops 1.24 (front, rise 0.25), 1.04 (rear), 1.77 (stern), reach 0.5, 0.4, 0.6; the same six spots |
+| Lamps | | the inside's, the landing, edge, nav and flank lights +0.6; the ground lamps 0.9 m past the new feet, the ramp's pair at y -9.3 and -11.0 |
+| Walk, views | | the deck points at 1.2 (the lens and hall checks at 1.6), the ramp's foot -11.6, start and end -13.0; every inside and detail view +0.6; the walk-through's deck keys 2.85 |
+
+Step 2 of the raise:
+
+| What | Step 1 | Now |
+|---|---|---|
+| The mouth | the throat's front edge at J's nose edge, y -7.1, open to the sky forward of the roof line (-5.561) | the entry tunnel 1 m past the nose: `[[rooms]] throat` `tunnel_y = -8.1` (the room's polygon unchanged; `ship_layout.tunnel` adds the floor x +-1.65, y -8.1..-7.1 to `room_margin` and makes its front the exit edge); the hull's footprint keeps its lead edge at -7.1 and the tunnel's piece `mouth_tunnel` is `outside` (the only hull piece past it) |
+| `mouth_tunnel` (`ship_hull_j.py`) | | inside: the throat's profile (vertical to 1.45, the chamfer 0.55 in, the 2.3 m ceiling) from -8.1 back to 4 cm past the roof line, walls in the jambs' plates, plated chamfers and ceiling, a cyan strip on each bend, frame ribs at the front and the nose, a grated floor, two amber floor lights; outside: a hood, the profile offset 0.25 m (roof at `TH_TOP` + 0.15), plated silver, cut by the nose where its top rises over it; inside the notch a fill at the nose's top + 12 mm closes the notch (bug 2: the lintel and jamb ends no longer stand out); a dark portal frame and a chrome lip at the front |
+| Ramp | hinge -7.1, foot -11.6 | hinge -8.1, foot -12.6 (14.9 deg, 4.66 m); its ground lamps and pools at y -10.3 and -12.0; the walk from y -14.0 |
+| Legs | a dark mount box hanging 0.12 m under the belly; sleeve r 0.15, piston 0.085 | a faceted fairing (8 sides, r 0.62 inside the skin to 0.36 at a dark frame lip, smooth hull silver); sleeve 0.19, collar 0.23, piston 0.11, fork 0.145, braces 0.06 |
+| Bug 1 (the throat's slanted wall and brace against the hall's panel, the black slot above) | | step 3, closed: the throat's last upper-wall module ended square at the hall's vertex (+-2.915, -3.252) while its chamfer leans 0.55 in; the hall's flat panel there stands vertical to 3.2 m, so a pocket stood open up to the hall's ceiling. That module is now `th_wall_up_end_e`/`_w` (`cor_wall_up` with `end`, `ship_interior.th_end_cut`): its chamfer and panel are cut 1 cm inside the hall face of the throat ceiling's header (`TH_HEAD_D` 0.2 hall-ward of the corner sub-facet's chord), so the lean runs into the header; on the two corner sub-facets the header carries a trim (`int_silver_c`) along the seam and a raised panel (`int_silver_a`) above it |
+
+Step 3 of the raise:
+
+| What | Step 2 | Now |
+|---|---|---|
+| The tunnel's light | one piece in the outside lane (render layer 2): the inside's strip lights did not reach its inner faces, darker than the throat | two pieces of `mouth_tunnel` (`args.part`): `mouth_tunnel_in` (walls, chamfers, ceiling, ribs, strips, slab, grate, floor lights) has `layer = "inside"` in exterior.toml, so `ship.py` leaves it out of the request's `outside` list and it draws on the inside's layer; `mouth_tunnel` (`part = "hood"`: the hood, the undersides, the fill, the portal, the lip) stays outside |
+| The notch's fill | cells of about 5 x 15 cm, each left out where the hood stood over it, else lifted to 2 mm under the hood: rows of bands from above, a stair edge on the chamfers | one connected grid a side (60 x 28), every vertex at the nose's top + 12 mm (`TUN_FILL`) or 3 cm under the hood (`TUN_SINK`), whichever is higher (the widening over the jambs to past the notch side made a saw edge on the nose and did not close bug 2: dropped) |
+
+`ship --shoot DIR --views FILE` shoots only a JSON list of views (and the plan views): a review's own sheet.
