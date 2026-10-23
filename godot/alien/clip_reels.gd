@@ -12,11 +12,17 @@ extends "res://alien/char_shots.gd"
 ##   planted foot moves at the travel speed), the hands' vertices near the trunk or legs (the share within 1.5 cm), the
 ##   fingers' curl (degrees), the springs' largest swing and jitter, the Neck and Head's turn from the clip's own.
 ## The lively controller runs with on_clip (A1) when it has it, unless the job says "on_clip": false.
+## A2: with "split": true in the job each reel frame is a 2x2 of 640x360 views (three-quarter front, the left side, the
+## back, a close-up of the head and hands following the chest), the sheet's cells stay the three-quarter view; per
+## clip in "head60" (Jog_Fwd, Sprint_Fwd) a second reel <head>_<clip>_head60 at 60 fps of the head alone (the gills'
+## and the crest's jitter); "yaw_counter" per clip (the locomotion) and "darts" go to the controller when it has them.
 ## Args after "--": <job.json>
 
 const Char = preload("res://lib/character.gd")
 const REEL := Vector2i(1280, 720)
 const PH := Vector2i(212, 212)
+const HALF := Vector2i(640, 360)
+const LOCOMOTION := ["Walk", "Jog_Fwd", "Sprint_Fwd", "Crouch_Fwd"]
 const ARM_PARTS := ["Hand", "Thumb", "Index", "Middle", "Ring", "Little"]
 const CORE_SKIP := ["UpperArm", "LowerArm", "Shoulder", "Hand", "Thumb", "Index", "Middle", "Ring", "Little", "Head",
 	"Neck", "Eye", "Jaw"]
@@ -174,6 +180,10 @@ func _run() -> void:
 			if "on_clip" in live:  # A1's lively: the head's turn and the springs on top of the clip
 				live.on_clip = bool(job.get("on_clip", true))
 				live.reset_motion()
+			if "yaw_counter" in live:  # A2
+				live.reset_springs()
+				live.yaw_counter = float(job.get("yaw_counter", 0.0)) if clip in LOCOMOTION else 0.0
+				live.darts = float(job.get("darts", 0.0))
 			live.head_follow = 0.5
 			live.breathing = 1.0
 			var shown: float = maxf(3.0, length * 2.0) if looped else length + 0.8
@@ -205,7 +215,11 @@ func _run() -> void:
 				p2 = p1
 				p1 = now
 				var img: Image = await _framed(c, fh, 35.0)
-				img.save_png(dir.path_join("%04d.png" % i))
+				if bool(job.get("split", false)):
+					var split_img: Image = await _split(img, sk, c, fh)
+					split_img.save_png(dir.path_join("%04d.png" % i))
+				else:
+					img.save_png(dir.path_join("%04d.png" % i))
 				if cells.size() < 6 and i == int(count * cells.size() / 6.0):
 					var cimg: Image = img.get_region(Rect2i((REEL.x - REEL.y) / 2, 0, REEL.y, REEL.y))
 					cimg.resize(PH.x, PH.y, Image.INTERPOLATE_LANCZOS)
@@ -224,6 +238,8 @@ func _run() -> void:
 				"spring_jitter_deg_per_s": snappedf(jitter / maxf(0.1, shown), 0.01),
 				"head_off_clip_max_deg": snappedf(head_off, 0.1), "frame_height_m": snappedf(fh, 0.01)}
 			print("REEL %s %s %s" % [name, clip, JSON.stringify(clips[clip])])
+			if clip in (job.get("head60", []) as Array):
+				await _head60(live, ap, sk, head_bi, mid, length, String(job["frames"]).path_join("%s_%s_head60" % [name, clip]))
 		var sheet := Image.create(PH.x * 6, PH.y * rows.size(), false, Image.FORMAT_RGB8)
 		for j: int in rows.size():
 			sheet.blit_rect(rows[j], Rect2i(Vector2i.ZERO, rows[j].get_size()), Vector2i(0, PH.y * j))
@@ -259,3 +275,38 @@ func _framed(c: Vector3, h: float, yaw_deg: float) -> Image:
 	if img.get_size() != REEL:
 		img.resize(REEL.x, REEL.y, Image.INTERPOLATE_LANCZOS)
 	return img
+
+
+## A2: the 2x2 review frame: the three-quarter view already rendered (top left), the left side, the back, and a
+## close-up of the head and hands (bottom right, three-quarter, following the chest).
+func _split(q34: Image, sk: Skeleton3D, c: Vector3, fh: float) -> Image:
+	var out := Image.create(REEL.x, REEL.y, false, Image.FORMAT_RGB8)
+	var views: Array[Image] = [q34, await _framed(c, fh, 90.0), await _framed(c, fh, 180.0)]
+	var head: Vector3 = sk.global_transform * sk.get_bone_global_pose(sk.find_bone("Head")).origin
+	var hands := Vector3.ZERO
+	for b: String in ["LeftHand", "RightHand"]:
+		hands += sk.global_transform * sk.get_bone_global_pose(sk.find_bone(b)).origin * 0.5
+	var cc: Vector3 = (head + Vector3(0.0, 0.12, 0.0) + hands) * 0.5
+	views.append(await _framed(cc, maxf(0.75, absf(head.y - hands.y) + 0.55), 35.0))
+	for j: int in 4:
+		var v: Image = views[j].duplicate()
+		v.resize(HALF.x, HALF.y, Image.INTERPOLATE_LANCZOS)
+		out.blit_rect(v, Rect2i(Vector2i.ZERO, HALF), Vector2i(HALF.x * (j % 2), HALF.y * (j / 2)))
+	return out
+
+
+## A2: the head alone at 60 fps over two loops (at least 2 s), three-quarter front, following the head: the springs'
+## jitter at a game's frame rate.
+func _head60(live, ap: AnimationPlayer, sk: Skeleton3D, head_bi: int, mid: Vector3, length: float, dir: String) -> void:
+	DirAccess.make_dir_recursive_absolute(dir)
+	live.reset_motion()
+	live.reset_springs()
+	var n: int = int(maxf(2.0, length * 2.0) * 60.0)
+	for i: int in n:
+		var t: float = i / 60.0
+		live.target = sk.global_transform * mid + Vector3(1.2 * sin(TAU * t / 5.0), 0.25 * sin(TAU * t / 3.3), 2.5)
+		ap.seek(fmod(t, length), true)
+		live.step(1.0 / 60.0)
+		var head: Vector3 = sk.global_transform * sk.get_bone_global_pose(head_bi).origin
+		var img: Image = await _framed(head + Vector3(0.0, 0.12, 0.0), 0.62, 35.0)
+		img.save_png(dir.path_join("%04d.png" % i))

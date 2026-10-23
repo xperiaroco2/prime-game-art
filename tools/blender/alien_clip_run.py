@@ -4,7 +4,7 @@ window (one 1280x720 reel per clip, framed to the clip's motion; clips_<head>.jp
 and encodes one MP4 per clip and head with Blender's FFmpeg.
 
     $PYTHON_BIN tools/blender/alien_clip_run.py --from <tag dir> --out <proof dir> [--heads chameleon,axolotl]
-        [--on-clip auto|yes|no]
+        [--on-clip auto|yes|no] [--split] [--head60 Jog_Fwd,Sprint_Fwd] [--yaw-counter 0.55] [--darts 3]
 
 The frames go to tools/out/alien_clips/<out's name>/ (temporary); the MP4s, sheets and reels.json into --out, never
 overwritten (an --out holding reels.json is refused). Long: run it in the background.
@@ -33,6 +33,10 @@ def main() -> int:
     ap.add_argument("--on-clip", choices=("auto", "yes", "no"), default="auto",
                     help="the lively controller on top of the clip (A1); auto: yes for a build made with --clip-edits, "
                          "no for an older one (its before, as the r5 proof played it)")
+    ap.add_argument("--split", action="store_true", help="A2: 2x2 review frames (three-quarter, side, back, close-up)")
+    ap.add_argument("--head60", default="", help="A2: clips that also get a 60 fps head reel, e.g. Jog_Fwd,Sprint_Fwd")
+    ap.add_argument("--yaw-counter", type=float, default=0.0, help="A2: the controller's yaw_counter on the locomotion")
+    ap.add_argument("--darts", type=float, default=0.0, help="A2: the controller's eye darts (degrees)")
     args = ap.parse_args()
     src, out = Path(args.src), Path(args.out)
     if (out / "reels.json").exists():
@@ -49,23 +53,31 @@ def main() -> int:
                                    slots_job) for h in heads}}
     edited = all("clip_edits" in json.loads((src / h / "char.json").read_text(encoding="utf-8")) for h in heads)
     job["on_clip"] = edited if args.on_clip == "auto" else args.on_clip == "yes"
+    job.update(split=args.split, head60=[c for c in args.head60.split(",") if c], yaw_counter=args.yaw_counter,
+               darts=args.darts)
     print(f"on_clip {job['on_clip']}", flush=True)
     (out / "reels_job.json").write_text(json.dumps(job, indent=1), encoding="utf-8", newline="\n")
     _godot.import_project()
     code, output = _godot.window(["--path", str(_godot.PROJECT), "-s", "res://alien/clip_reels.gd", "--",
-                                  str(out / "reels_job.json")], (1280, 720), 3000)
+                                  str(out / "reels_job.json")], (1280, 720), 3000 * (4 if args.split else 1))
     (out / "reels_godot.log").write_text(output, encoding="utf-8", newline="\n")
     print(f"godot reels: exit {code}", *[x for x in output.splitlines() if "REEL" in x or "ERROR" in x][-30:],
           sep="\n", flush=True)
     if code != 0:
         return 1
     folders = sorted(str(d) for d in frames.iterdir() if d.is_dir())
-    res = blender.run_script("encode_clips.py", ["--frames", *folders, "--out", str(out / "mp4"), "--fps", "24",
-                                                 "--repeat", "1"], timeout=2400)
-    print(*[x for x in (res.stdout or "").splitlines() if x.startswith("ENCODED")], sep="\n", flush=True)
+    ok = True
+    for fps, group in ((24, [f for f in folders if not f.endswith("_head60")]),
+                       (60, [f for f in folders if f.endswith("_head60")])):
+        if not group:
+            continue
+        res = blender.run_script("encode_clips.py", ["--frames", *group, "--out", str(out / "mp4"), "--fps", str(fps),
+                                                     "--repeat", "1"], timeout=2400)
+        print(*[x for x in (res.stdout or "").splitlines() if x.startswith("ENCODED")], sep="\n", flush=True)
+        ok &= res.returncode == 0
     sizes = {p.name: p.stat().st_size // 1024 for p in sorted((out / "mp4").glob("*.mp4"))}
     print("mp4 KB", json.dumps(sizes), flush=True)
-    return 0 if res.returncode == 0 and len(sizes) == len(folders) else 1
+    return 0 if ok and len(sizes) == len(folders) else 1
 
 
 if __name__ == "__main__":
