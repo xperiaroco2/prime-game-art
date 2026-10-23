@@ -25,7 +25,7 @@
   <div class="row"><label>details</label><input type="checkbox" id="detail_vis" title="details on (unticked: they follow the skin)"> on
     <input type="checkbox" id="detail_on" title="pick (unticked: the build's paint)"><input type="color" id="detail" value="#a2575a"> <span class="sw" id="detail_g" title="the colour applied (as picked)"></span></div>
   <div class="row"><label>gills</label><select id="gills"><option value="gradient">root to tip (details)</option><option value="whole">whole (details)</option><option value="skin">on the skin</option></select></div>
-  <div class="row"><label>Pale front</label><select id="front" title="the pale front panel: no slot, a colour derived from the skin"><option value="keep">keep (two-tone against the skin)</option><option value="follow">follow skin</option></select> <span class="sw" id="front_g" title="the front's colour"></span></div>
+  <div class="row"><label>Pale front</label><select id="front" title="the pale front panel: no slot, a colour derived from the skin"><option value="keep">keep (two-tone against the skin)</option><option value="follow">follow skin</option></select> <span class="sw" id="front_g0" title="the axolotl's front colour"></span><span class="sw" id="front_g1" title="the chameleon's front colour"></span></div>
   <div class="row"><button id="reset">the build's own paint</button></div>
   <div class="row">A ticked box before a picker picks that colour; unticked keeps the build's paint. "on": the details
     (freckles, the gills, the crest stripes) in the details colour, else in the skin's. The swatch after each picker is
@@ -82,9 +82,9 @@ function picks() {
 }
 function apply() {
   const p = picks();
-  let u;
-  for (const c of cols) u = c.set(p);
-  for (const [s, k] of [["skin", "skin_color"], ["lips", "lip_color"], ["detail", "detail_color"], ["front", "front_color"]]) $(`${s}_g`).style.background = hexs(u[k]);
+  const us = cols.map((c) => c.set(p)), u = us[us.length - 1];
+  for (const [s, k] of [["skin", "skin_color"], ["lips", "lip_color"], ["detail", "detail_color"]]) $(`${s}_g`).style.background = hexs(u[k]);
+  us.forEach((h, i) => { $(`front_g${i}`).style.background = hexs(h.front_color); }); // each head's own front
   $("out").innerHTML = `<code>${JSON.stringify(p)}</code>`;
 }
 for (const id of ["skin_on", "lips_on", "detail_on", "detail_vis", "skin", "lips", "detail", "gills", "front"]) $(id).addEventListener("input", apply);
