@@ -281,7 +281,9 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
            "collide": [p["id"] for p in layout["pieces"] if p["collide"] and p["id"] in ids],
            "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"] if pid in ids],
            # inside-2: the outside pieces draw on render layer 2, out of reach of the inside's strip lights
-           "outside": [p["id"] for p in layout["pieces"] if p["lane"] != "interior" and p["id"] in ids]}
+           # (an exterior piece with layer = "inside", the tunnel's inside, draws with the inside's)
+           "outside": [p["id"] for p in layout["pieces"]
+                       if p["lane"] != "interior" and p.get("layer") != "inside" and p["id"] in ids]}
     return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
 
 

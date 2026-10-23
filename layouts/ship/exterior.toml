@@ -16,6 +16,7 @@ place = [
   ["ramp_lights", [0.00, -8.10, 0.00], 0.0],
   # the raise step 2: the entry tunnel past the nose (y -7.1 to -8.1), its hood over the notch
   ["mouth_tunnel", [0.00, 0.00, 0.00], 0.0],
+  ["mouth_tunnel_in", [0.00, 0.00, 0.00], 0.0],
   # details: the canopies in their fairings (outside only), the pods (rear ends at J's y 11.0 / 11.8)
   ["canopy_fairing_e", [0.00, 0.00, 0.00], 0.0],
   ["canopy_glass_e", [0.00, 0.00, 0.00], 0.0],
@@ -1048,6 +1049,15 @@ args = { part = "mouth" }
 [[pieces]]
 id = "mouth_tunnel"                          # the raise step 2: the entry tunnel 1 m past the nose and its hood over
 builder = "mouth_tunnel"                     # the mouth's notch (ship_hull_j.mouth_tunnel)
+args = { part = "hood" }                     # the raise step 3: the hood, the fill, the portal (the outside layer)
 collide = true
-outside = true                               # the only hull piece past the footprint's lead edge (y -7.1): its front
-                                             # at the throat's tunnel_y -8.1
+outside = true                               # the only hull pieces past the footprint's lead edge (y -7.1): their
+                                             # front at the throat's tunnel_y -8.1
+
+[[pieces]]
+id = "mouth_tunnel_in"                       # the raise step 3: the tunnel's inside (walls, chamfers, ceiling, ribs,
+builder = "mouth_tunnel"                     # strips, floor) on the inside layer, lit by the throat's strips as the
+args = { part = "inside" }                   # throat is (it drew on the outside layer, darker)
+layer = "inside"
+collide = true
+outside = true
