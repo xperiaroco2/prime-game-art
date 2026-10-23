@@ -349,6 +349,7 @@ def hips_up(arm, act, metres: float, knees_in_deg: float, up_arm, side_arm, up_h
                 fcs[(fc.data_path.split('"')[1], fc.array_index)] = fc
     miss = 0.0
     prev = {}
+    solved: dict[tuple[str, int], list[float]] = {}
     for f in range(f0, f1 + 1):
         r = rec[f]
         hips = Matrix.Translation(lift) @ r["Hips"]
@@ -377,15 +378,19 @@ def hips_up(arm, act, metres: float, knees_in_deg: float, up_arm, side_arm, up_h
                     q = -q
                 prev[name] = q
                 for i in range(4):
-                    fc = fcs.get((name, i))
-                    if fc is None:
+                    if (name, i) not in fcs:
                         raise ValueError(f"{act.name}: {name} has no rotation keys")
-                    fc.keyframe_points.insert(f, q[i], options={"REPLACE", "FAST"})
-    for (name, i), fc in fcs.items():
-        if name.endswith(("UpperLeg", "LowerLeg", "Foot")):
-            for kp in fc.keyframe_points:
-                kp.handle_left_type = kp.handle_right_type = "AUTO_CLAMPED"
-            fc.update()
+                    solved.setdefault((name, i), []).extend((float(f), q[i]))
+    # the solved legs replace their channels whole, one linear key per frame (inserting beside the clip's own keys
+    # left the frames between them unsolved: the feet rose with the hips on 3 frames of 4)
+    for key, co in solved.items():
+        fc = fcs[key]
+        fc.keyframe_points.clear()
+        fc.keyframe_points.add(len(co) // 2)
+        fc.keyframe_points.foreach_set("co", co)
+        for kp in fc.keyframe_points:
+            kp.interpolation = "LINEAR"
+        fc.update()
     return {"hips_up_cm": round(metres * 100, 2), "knees_in_deg": knees_in_deg, "frames": f1 - f0 + 1,
             "ankle_miss_max_cm": round(miss * 100, 3)}
 

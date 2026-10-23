@@ -186,6 +186,9 @@ def corner_normals(me):
     return n.reshape(-1, 3)
 
 
+GILL_ZETA_ON_BODY = 0.55  # A2: the axolotl's gills on the walking body (anim_bare/a2: Jog and Sprint jitter 205-267 deg/s)
+
+
 def main():
     ap = argparse.ArgumentParser()
     for k in ("--head", "--lively", "--lively-json", "--body", "--albedo", "--mask", "--accent", "--detail",
@@ -589,6 +592,9 @@ def main():
     skin.parent = arm
     skin.modifiers.new("rig", "ARMATURE").object = arm
     fitted["name"] = head
+    for sp in fitted["rig"].get("springs", []):  # A2: on the body a run's bob made the gills (zeta 0.28) jitter
+        if sp["name"].startswith("Gill"):
+            sp["zeta"] = max(float(sp["zeta"]), GILL_ZETA_ON_BODY)
     (out / f"{head}_char_lively.json").write_text(json.dumps(fitted, indent=1), encoding="utf-8", newline="\n")
     rep["springs"] = springs
     rep["bones"] = len(arm.data.bones)
