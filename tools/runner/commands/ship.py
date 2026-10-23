@@ -42,7 +42,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
     parser.add_argument("--views", type=Path, metavar="FILE",
                         help="--shoot only these views (a JSON list of [name, title, eye [x, y, h], look [x, y, h], fov]"
-                             " in plan coordinates) and the plan view; no compares or day views")
+                             " in plan coordinates, an optional 6th {\"ssil\"|\"ssao\"|\"glow\"|\"shadows\": false}"
+                             " A/B switch) and the plan view; no compares or day views")
     parser.add_argument("--play", type=Path, nargs="?", const=PLAY_DEFAULT, metavar="DIR",
                         help="FOR THE ENGINEER ONLY (an on-screen window; agents never run it): walk the built ship in "
                              "first person at night; P saves a screenshot and its position into DIR "
@@ -294,7 +295,9 @@ def shoot(layout: dict, out: Path, folder: Path, only: Path | None = None) -> in
         views, compares = json.loads(only.read_text(encoding="utf-8")), []
         layout = {**layout, "shots": {**layout["shots"], "day_views": []}}
     req.update({"mode": "shoot", "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
-                "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in views],
+                # fix 2: a --views row's optional 6th element switches the night look's parts off for that shot
+                # (an A/B: {"ssil": false, "ssao": false, "glow": false, "shadows": false}; ship.gd _ab)
+                "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4], *v[5:6]] for v in views],
                 # details 1: views by day, after the night's (ship.toml [shots] day_views)
                 "day_views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in layout["shots"].get("day_views", [])],
                 "top": {"name": "top", "title": "top: plan view, south up (as plan-3)", "size_m": 36.0},

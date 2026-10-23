@@ -497,7 +497,9 @@ func _shoot() -> void:
 		_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
 		_camera.fov = float(v[4])
 		_camera.look_at_from_position(_v(v[2]), _v(v[3]), UP)
+		_ab(v[5] if v.size() > 5 else {})
 		images[v[0]] = await _shot(v[0], v[1], shots)
+		_ab({})
 	var top: Dictionary = _req["top"]
 	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	_camera.size = float(top["size_m"])
@@ -680,6 +682,16 @@ func _key(keys: Array, times: Array, k: int, w: float, j: int) -> Vector3:
 	var post: Vector3 = _v(keys[k + 2][j]) if k + 2 < keys.size() else b
 	var post_t: float = float(times[k + 2]) - float(times[k]) if k + 2 < keys.size() else 2.0 * span
 	return a.cubic_interpolate_in_time(b, pre, post, w, span, pre_t, post_t)
+
+
+## fix 2: a view's A/B switch ({"ssil"|"ssao"|"glow"|"shadows": false}, ship.py --views): those parts of the night
+## look off for the shot; {} puts them back (the directional lights' shadows: the moon and the key).
+func _ab(off: Dictionary) -> void:
+	_env.ssil_enabled = bool(off.get("ssil", true))
+	_env.ssao_enabled = bool(off.get("ssao", true))
+	_env.glow_enabled = bool(off.get("glow", true))
+	for l: Node in _night_lights:
+		(l as DirectionalLight3D).shadow_enabled = bool(off.get("shadows", true))
 
 
 func _shot(name: String, title: String, shots: Dictionary) -> Image:
