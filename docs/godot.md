@@ -779,7 +779,9 @@ pilot's static premium heads"):
   front is no slot: a tinted cream (its chroma never above the build's front's) by the picks' `"front"`: `"keep"`
   (the default, CS6b: its lightness at least the build's front's, then at least the build's two-tone, the front's
   median minus the skin's, away from the skin: above it, up to white, while half of it fits there, else below; pale on a dark skin, a
-  little darker than a very light one) or `"follow"` (the skin, down and up: v6). **The recolour** (CS6,
+  little darker than a very light one; CS6c: the two blended over `FRONT_BAND`, 0.08 in the skin's L round 1 - d/2,
+  where it stepped by 1.5 d before, 0.14 on the axolotl and 0.21 on the chameleon; inside the band the front passes
+  the skin's lightness) or `"follow"` (the skin, down and up: v6's rule with CS6b's relative offsets). **The recolour** (CS6,
   2026-10-23): each region's base is the median of its painted texels (`alien_colour_geom.bases_from_texels`,
   `REGIONS`: 8-bit thresholds on the masks, the atlas' unpainted black gaps out; the gills' base is the gill tips'
   median in the gradient mode, the whole gills' in the whole mode, `gill_base`/`gill_color` beside the details'),
@@ -789,7 +791,7 @@ pilot's static premium heads"):
   turn and scaled by min(1, C target / C base) * kr; the regions mix in OKLab, on the linear albedo, clamped to the
   sRGB gamut per channel. So the region's base texel becomes the pick and the region's median is within the albedo
   table's dE of it (`albedo_table.json`, 15 colours: 0.003 at most where the shifted texels stay in gamut; a pick
-  on the gamut's edge up to 0.009 on the skin, whose paint spreads widest: the clamp moves its lighter texels. A
+  on the gamut's edge under 0.01 on the skin (0.0094 measured), whose paint spreads widest: the clamp moves its lighter texels. A
   clip toward the pick, tried in CS6b, made the median exact but flattened every texel of such a pick, #0000ff or
   #ffee00, onto it); its painted shading stays as lighter and darker texels round it; a target at its base is the
   identity. v1-v5 turned the sRGB HSV hue and scaled saturation and value by the
