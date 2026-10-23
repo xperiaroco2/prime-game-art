@@ -1185,7 +1185,7 @@ pilot's static premium heads"):
     was lost (10-33 degrees off it) and the springs moved only with the controller's turn (frozen in a jog). With
     `on_clip = true` (`alien_lively.gd`, A1) the turn goes on top of the clip's Neck and Head (`rest_turn` with the
     posed local and global rotations) and the springs are driven by the head's measured motion in the world (turn
-    rates and acceleration in its rest-aligned frame, clamped and low-passed; `accel_gain` 4); the caller re-poses
+    rates and acceleration in its rest-aligned frame, clamped and low-passed; `accel_gain` 1: at 4 a jog drove the gills and the crest into their caps, 15 and 30 degrees, with a jitter of 130-830 deg/s); the caller re-poses
     the clip before each `step` and calls `reset_motion()` on a clip change. The shots and busts keep `on_clip`
     false, so the whole-head gate is unchanged (after vs r5: the same mean differences on all four sides).
   - The clip fixes are in the build: `alien_char_run.py --clip-edits tools/blender/anim_sets/alien.toml` passes them

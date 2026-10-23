@@ -51,7 +51,7 @@ var skeleton: Skeleton3D
 ## the gills) instead of the controller's turn alone. The caller re-poses the clip before each step (seek or advance)
 ## and calls reset_motion() when it jumps to another clip. False: the busts' and the shots' way, unchanged.
 var on_clip := false
-var accel_gain := 4.0  # rad/s^2 of spring push per m/s^2 of the head's acceleration (A1)
+var accel_gain := 1.0  # rad/s^2 of spring push per m/s^2 of the head's acceleration (A1)
 var _h_prev := Quaternion.IDENTITY
 var _p1 := Vector3.ZERO
 var _p2 := Vector3.ZERO
@@ -293,7 +293,7 @@ func reset_motion() -> void:
 
 ## A1: the head's measured motion since the last step, in its own rest-aligned frame (the springs' frame): [the yaw and
 ## pitch rates (rad/s; + pitch = the face up, as _hvp), the acceleration (m/s^2; x its left, y up, z forward)], each
-## clamped (a loop's seam or a clip's jump is not a hit) and low-passed over about two frames.
+## clamped (a loop's seam or a clip's jump is not a hit) and low-passed over about three frames.
 func _head_motion(dt: float) -> Array:
 	var bh: int = _bones["Head"]
 	var pose := skeleton.get_bone_global_pose(bh)
@@ -312,8 +312,8 @@ func _head_motion(dt: float) -> Array:
 	_p2 = _p1
 	_p1 = p
 	_seen += 1
-	_mv = _mv.lerp(v, 0.5)
-	_ma = _ma.lerp(a, 0.5)
+	_mv = _mv.lerp(v, 0.3)
+	_ma = _ma.lerp(a, 0.3)
 	return [_mv, _ma]
 
 
