@@ -777,6 +777,33 @@ pilot's static premium heads"):
   current shader on a `"grey_only"` head (the debug modes do not depend on the material). A head on the current
   shader without its detail or plain texture is an error (it was a silent white default); each head resets its own
   last parameters.
+- **Lively (2026-10-23, the liveliness proof):** the static chameleon looks at a target, turns its head, its crest
+  springs and its chest breathes, with no face rig and no cut in the sculpt. `$PYTHON_BIN
+  tools/blender/alien_lively_run.py [--no-build] [--seconds 20]` (in the background) writes into
+  `<raw>/research/2026-10-22-roster/design/pilot3d/lively/`:
+  - `alien_lively_build.py` (headless Blender for numpy and its BVH; the merged GLB's bytes are kept, never
+    re-exported): every eye texel gets its 3D point (a UV rasterizer); texels the lids leave open (a ray from outside
+    the eye sphere meets an eye triangle first) are pupil, iris (warm, saturated) or sclera; the iris and pupil are
+    caps on the build's eye sphere, fitted by least squares on their open edges; the iris colour is a radial profile
+    of 8 medians. `chameleon_sclera.png` is the albedo with the painted irises filled from the sclera around them
+    (push-pull). The lid clamp: per eye the gaze offsets that keep the rest's open share of the iris and pupil discs,
+    reduced to an ellipse's four limits (`lively.json` `limits_deg`; the chameleon's heavy lids leave no room up).
+    The skin (`alien_lively_geom.add_skin`): Chest at the bust's base, Neck and Head through the neck's waist (weights
+    by height, the chin and face rigid), Crest1-3 along the crest (weights only in the crest blade).
+    `chameleon_lively.glb`: glTF-Validator 0 errors.
+  - `alien_static.gdshader` `gaze_on` (0 by default: the merged look untouched): the eye texels from `sclera_tex`
+    and a procedural iris (profile, crisp pupil, `limbal_ring`, `catch_light`) on each eye sphere at `gaze_l`/`gaze_r`,
+    computed from the skinned vertex position, so the iris rides the head.
+  - `alien_lively.gd`: the controller (`step(dt)` advances the skeleton by hand): eyes lead (critically damped at
+    9 Hz, clamped by the lids, capped at 25 degrees), the head follows (1.6 Hz; yaw 35, pitch 20, 40 % in Neck), a
+    SpringBoneSimulator3D on the crest, a 4.4 s breath (the chest's scale, the Neck's inverse so the head keeps its
+    size, a 0.6 degree nod).
+  - `lively_shots.gd`: `sheet.jpg` (row 1: merged head at rest, lively at rest, with the catch light, a head turn, the
+    crest's largest swing; row 2: the eyes alone left, right, up, down, near), `lively.mp4` (20 s, 1280x720, a target
+    ball's path), `shots.json`.
+  - `web/lively.js`: the browser port (three.js 0.160, `onBeforeCompile` on the GLB's material, the same maths; the
+    crest is a damped spring on the head's turn speed there), with `chameleon_lively.glb`, `lively.json`,
+    `chameleon_sclera.png` and a test page.
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
