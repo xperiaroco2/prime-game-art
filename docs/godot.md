@@ -1132,7 +1132,7 @@ pilot's static premium heads"):
     spring rule in `contract/contract.toml` (`bones = "all_and_springs"`, `spring_sets` under `spring_parent` Head;
     the engineer, art #196 comment 6374319309, for crests and gills; docs/contract.md, "The alien's spring bones and
     head top"): whole declared sets chained under Head (each chain's first bone directly under Head, each next under
-    the one before) pass, with or without `--strict-contract`; an extra bone outside the sets, a set in part or a
+    the one before or under Head) pass, with or without `--strict-contract`; an extra bone outside the sets, a set in part or a
     spring bone off its chain fails in every mode. `contract_height` (a warning unless `--strict-contract`) binds on
     the top, from `height_min_m` to `head_top_max_m` (1.95 m, the art manager's sanity cap), textured or not; with
     `contract_eye_height` these are the alien's binding height checks. It also reports the body, the skin whose

@@ -616,8 +616,8 @@ def _below(top: str, parent_of: dict[str, str]) -> set[str]:
 def _alien_extra_bones(c: Checks, skeleton: dict[str, Any], renamed: dict[str, str],
                        contract: dict[str, Any] | None = None) -> None:
     """Every bone beyond the contract profile's, named, against `[kinds.alien]`'s spring rule (bones =
-    "all_and_springs", art #196 comment 6374319309): whole spring_sets chained under spring_parent pass (each chain's
-    first bone directly under it, each next bone under the one before); an extra bone in no set, a set in part or a
+    "all_and_springs", art #196 comment 6374319309): whole spring_sets chained under spring_parent pass (each spring
+    bone directly under it or under the bone before it in its chain, a chain's first bone under it alone); an extra bone in no set, a set in part or a
     spring bone off its chain fails, with or without --strict-contract."""
     got = skeleton["bones"]
     profile_bones = {renamed.get(b, b) for b in _contract.profile_parents(_contract.load_profile())}

@@ -279,6 +279,10 @@ class AlienProfileTest(unittest.TestCase):
         d = with_bones(alien_dump(), "Head", "Crest1", "Crest2", "Crest3")
         d = with_bones(d, "Head", "GillL1", "GillL2", "GillL3")
         d = with_bones(d, "Head", "GillR1", "GillR2", "GillR3")
+        fan = alien_dump()
+        for name in ("GillL1", "GillL2", "GillL3", "GillR1", "GillR2", "GillR3"):  # r5's axolotl: six stalks
+            fan = with_bones(fan, "Head", name)
+        self.assertEqual(alien(fan, strict_contract=True)["alien_extra_bones"]["status"], "pass")
         for strict in (False, True):
             got = alien(d, strict_contract=strict)["alien_extra_bones"]
             self.assertEqual(got["status"], "pass", got)
@@ -304,7 +308,7 @@ class AlienProfileTest(unittest.TestCase):
         gill = with_bones(with_bones(alien_dump(), "Head", "Crest1", "Crest2", "Crest3"), "Crest2", "GillL1", "GillL2",
                           "GillL3")  # GillL1 under Crest2
         gill = with_bones(gill, "Head", "GillR1", "GillR2", "GillR3")
-        for d_bad, named in ((shuffled, "['Crest1', 'Crest3']"), (gill, "['GillL1']")):
+        for d_bad, named in ((shuffled, "['Crest1']"), (gill, "['GillL1']")):
             for strict in (False, True):
                 got = alien(d_bad, strict_contract=strict)["alien_extra_bones"]
                 self.assertEqual(got["status"], "fail", got)

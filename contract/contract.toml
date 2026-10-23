@@ -345,7 +345,7 @@ max_materials = 1
 # стирчати над 1,80 м" (spring bones under Head are allowed; crests and gills may stick out above 1.80 m).
 # bones = "all_and_springs": exactly the profile's bones plus whole sets of spring_sets; a set's chains are its bones
 # sharing a name without the trailing digits, in order: the first directly under spring_parent, each next under the
-# one before. Any other extra bone, a set in part or a bone off its chain fails. head_top_max_m is the art manager's
+# one before or under spring_parent (r5's axolotl gills: six stalks under Head). Any other extra bone, a set in part or a bone off its chain fails. head_top_max_m is the art manager's
 # reading, not the engineer's words: the pointed skull may stand above 1.80 m like the crests and gills, and 1.95 m
 # is a sanity cap against a runaway scale. It and the eye height are the alien's binding height checks; the body's
 # 1.80 m (the skin not on spring_parent or below it) is reported by godot-check but never binds on a real alien.

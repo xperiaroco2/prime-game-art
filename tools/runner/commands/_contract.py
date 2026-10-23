@@ -239,9 +239,10 @@ def _validate_springs(kind: str, rules: dict[str, Any], contract: dict[str, Any]
 
 
 def spring_chain_parents(bones: list[str], top: str) -> dict[str, str]:
-    """Each bone of a spring set to the parent its chain wants: a chain is the set's bones sharing a name without its
-    trailing digits (Crest1-3; GillL1-3 and GillR1-3), in the listed order; its first bone sits directly under top,
-    each next bone directly under the one before."""
+    """Each bone of a spring set to the bone before it in its chain: a chain is the set's bones sharing a name without
+    its trailing digits (Crest1-3; GillL1-3 and GillR1-3), in the listed order; a chain's first bone maps to top. A
+    spring bone sits directly under top or under the bone before it (spring_split): the crest is one chain, the r5
+    axolotl's gills are six stalks straight under Head."""
     want: dict[str, str] = {}
     last: dict[str, str] = {}
     for bone in bones:
@@ -253,9 +254,9 @@ def spring_chain_parents(bones: list[str], top: str) -> dict[str, str]:
 
 def spring_split(rules: dict[str, Any], extra: list[str], parent_of: dict[str, str]) -> dict[str, Any]:
     """The bones beyond the profile against a kind's spring rule: {"sets": {name: bones} of the sets present,
-    "partial": set names present in part, "stray": extra bones in no declared set, "unchained": spring bones not
-    directly under the parent their chain wants (spring_chain_parents: a chain's first bone under spring_parent,
-    each next under the one before)}. parent_of maps each bone to its parent ("" for none). Without bones =
+    "partial": set names present in part, "stray": extra bones in no declared set, "unchained": spring bones directly
+    under neither spring_parent nor the bone before them in their chain (spring_chain_parents; a chain's first bone
+    only under spring_parent)}. parent_of maps each bone to its parent ("" for none). Without bones =
     "all_and_springs" every extra bone is stray."""
     sets = rules.get("spring_sets", {}) if rules.get("bones") == "all_and_springs" else {}
     used = {n: [b for b in bones if b in extra] for n, bones in sets.items()}
@@ -264,7 +265,7 @@ def spring_split(rules: dict[str, Any], extra: list[str], parent_of: dict[str, s
     want = {b: p for bones in sets.values() for b, p in spring_chain_parents(bones, top).items()}
     return {"sets": used, "partial": sorted(n for n, v in used.items() if len(v) != len(sets[n])),
             "stray": [b for b in extra if not any(b in v for v in sets.values())],
-            "unchained": [b for v in used.values() for b in v if parent_of.get(b, "") != want[b]]}
+            "unchained": [b for v in used.values() for b in v if parent_of.get(b, "") not in (top, want[b])]}
 
 
 def model_from_scene(position: list[float]) -> list[float]:

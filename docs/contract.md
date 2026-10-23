@@ -128,7 +128,8 @@ decision of the engineer. For the alien this replaces "No extra bones" and the 1
 - `[kinds.alien]` `bones = "all_and_springs"`: exactly the profile's 56 bones, plus whole sets of
   `[kinds.alien.spring_sets]` (`crest` = Crest1-3; `gills` = GillL1-3 and GillR1-3), each set's chains (its bones
   sharing a name without the trailing digits, in the listed order) hanging from `spring_parent` (`Head`): a chain's
-  first bone directly under `Head`, each next bone directly under the one before. These are the chains the head's
+  first bone directly under `Head`, each next bone directly under the one before or directly under `Head` (r5's
+  crest is one chain of three; the axolotl's gills are six stalks straight under `Head`). These are the chains the head's
   `SpringBoneSimulator3D` swings. Any other extra bone, a set in part, or a spring bone off its chain (under another
   bone, a set outside `Head`, Crest3 under Head with Crest1 under it, GillL1 under Crest2) fails, in `check --kind
   alien` and in `godot-check --profile alien`, with or without `--strict-contract`. The sets are declared once, in
