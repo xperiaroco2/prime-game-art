@@ -850,7 +850,7 @@ pilot's static premium heads"):
       It also writes `web_<tag>/` (the page and the tag's assets) and `eyes_pit_<tag>.jpg` (`eye_pit_shots.gd`:
       before/after close-ups of both eyes at rest, far left, far right, down, up, and under raking light).
       `--no-pit-fix` builds as v2 did.
-  - **The eye pit, v4 (2026-10-23):** two defects v3 left, both fixed in `alien_lively_build.py`:
+  - **The eye pit, v4 (2026-10-23):** three defects v3 left, all fixed in `alien_lively_build.py`:
     - *A lid crossing.* v3's pull crossed one lid triangle: eyeball triangle 8774 under the upper lid rim of the
       head's right eye, on the nose side, 24 degrees from the rest gaze; two of its vertices moved 1.8 and 3.8 mm
       with the lid's surface 1.8 and 2.4 mm away. The lid fade measured only the distance to the vertices a lid
@@ -867,6 +867,44 @@ pilot's static premium heads"):
     - `eye_pit_shots.gd` also writes `eyes_pit_<tag>_crop_right.jpg` and `_crop_left.jpg`: the upper lid edge of
       each eye at 4x the sheet's scale (the window's own pixels, 2x, nearest), rows far left, far right and down,
       columns before | after.
+  - **Either head (AL1, 2026-10-23):** `alien_lively_run.py --head chameleon|axolotl --tag <tag>`; every build file is
+    named by the head (`<head>_lively.glb`, `<head>_sclera.png`), and an untagged build whose GLB exists is refused
+    (`build_refusal`, tested). The page and the module live in the repo, `tools/web/lively/` (`index.html` shows every
+    head `heads.json` lists side by side, or `?head=axolotl`; `lively.js` takes either head's `lively.json`); each
+    tag's `web_<tag>/` holds them with `<head>_lively.glb`, `<head>_lively.json`, `<head>_sclera.png`, and
+    `--web-with <other build folder>` adds the other head.
+    - *The axolotl's eyes are beads:* measured on the visible eye texels, 96 to 97 % dark (value under 0.45), 3 %
+      a painted white catch light (59 and 70 texels, about 8 degrees of the bead), almost nothing between. A dark
+      sphere that turns shows nothing, and a painted catch light that turned with it would read as the light
+      moving, so the axolotl has no eye gaze (`lively.json` `controller.gaze` "none"): the head leads instead
+      (2.2 Hz against the chameleon's 1.6, yaw 40, pitch 24). The build (`--kind bead`) paints the catch light out
+      of `<head>_sclera.png` from the bead's own dark texels; `alien_static.gdshader`'s `bead` draws it back at the
+      measured place, size and colour (`catch_dir_l`/`_r`, `catch_angle`, `catch_colour`) fixed in the mesh's own
+      frame (the light's), while the eye centre moves with the head, so the glint stays toward the light as the
+      head turns under it. No cut, no moved vertex (the pit projection is off for a bead).
+    - *The gills* (`--gills <step 2a build.json>`, `--detail <head>_detail.png`): one bone per stalk
+      (`alien_lively_geom.GILL_JOINTS`, each a child of Head) at step 2a's gill pivots; a stalk's vertices are the
+      thin ones (the detail map's G over 0.5) nearest its root, its axis their mean, its weight
+      `G.stalk_weight` (none at the root's first 8 %, full from 45 %, none where the detail map says thick: the skull
+      never moves, `rig.gill_weight_on_thick`). The poke test turns each stalk's weighted vertices by the swing about
+      the head's up and side axes and counts vertices that end inside the head but were outside at rest; the swing
+      is lowered by 2 degrees until none pokes, and that is the springs' cap (`rig.gill_swing_deg`,
+      `springs[].max_deg`). `gill_weights.png` shows the weights.
+    - *The springs* are data now (`lively.json` `rig.springs`: bones, rate, damping, lag, cap): the chameleon's
+      crest one chain of Crest1-3; the axolotl's six gills one bone each at 1.8 to 2.4 Hz, so they never swing in
+      step. `alien_lively.gd` and `lively.js` read them, and the head's follow from `controller`.
+    - *For both heads:* every eyeball vertex takes the fitted sphere's radial normal, faded in over 6 % of r from
+      the lid line (the faint triangular facets under the upper lids in `eyes_pit_v4_crop_*.jpg` were the sculpt's
+      flat-shaded eyeball normals), and every TANGENT whose normal changed is made orthogonal again
+      (`G.orthogonal_tangent`: t - n (n . t), normalised, w kept; `pit_geometry.max_abs_n_dot_t_after`). One
+      eyeball classification (`classify_eyeball`: the mask's eye triangles and the warm, saturated painted iris
+      triangles near an eye) serves `eyeball_fix` and the sclera fill. `lively.json` `eyes.<side>.front_sphere`
+      is the fitted front sphere beside the shader's `centre` and `radius`.
+    - `lively_shots.gd` (either head) writes `gate_<tag>.jpg` (the whole-head gate: merged | lively at rest from the
+      front, left, back and right; `shots_<tag>.json` `gate`: per side the mean absolute difference in 0..255 and
+      the share of pixels over 8/255), `sheet_<tag>.jpg` (row 1: merged rest, lively rest, the head turned to its
+      left and right, the springs' largest swing; row 2: the eyes alone left, right and down, the breath's two
+      ends) and `eyes_<tag>.jpg` (both eyes at 4x: rest, the head turns, the gazes).
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
