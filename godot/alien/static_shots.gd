@@ -46,7 +46,11 @@ func _run() -> void:
 		return
 	var head: Node3D = scene.instantiate()
 	root.add_child(head)
-	var mask_img: Image = Image.load_from_file(a[2])
+	var mask_img: Image = Image.load_from_file(a[2]) if FileAccess.file_exists(a[2]) else null
+	if mask_img == null or mask_img.is_empty():
+		printerr("STATIC cannot load the mask %s" % a[2])
+		quit(4)
+		return
 	mask_img.generate_mipmaps()
 	var rgb: PackedStringArray = a[3].split(",")
 	var base := Color(float(rgb[0]), float(rgb[1]), float(rgb[2]))

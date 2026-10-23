@@ -47,8 +47,11 @@ class ShipFittingsTest(unittest.TestCase):
             self.assertGreater(abs(n[0]), 0.6, f"{o}: not on a flank")   # the steep side face, looking outward
             self.assertTrue(_flat(o, n, F.PORT_R[2] + 0.02), o)
             near = min(math.hypot(p[0] - o[0], p[1] - o[1]) for _what, p in rooms)
-            self.assertGreater(near, 1.0, f"porthole at {o} over a room ({near:.2f} m)")
+            self.assertGreaterEqual(near, 2.6, f"porthole at {o} over a room ({near:.2f} m)")   # docs: 2.6 m
             self.assertLess(o[1] + F.PORT_R[2], POD_NOSE_Y - 0.5, "a porthole over a pod")
+            for x, y0, h, r, _ln in S.p_pods():   # details 3: in height too, the flange keeps 1 m off every pod's barrel
+                gap = math.hypot(max(0.0, y0 - o[1]), max(0.0, math.hypot(o[0] - x, o[2] - h) - r)) - F.PORT_R[2]
+                self.assertGreaterEqual(gap, 1.0, f"porthole at {o}: {gap:.2f} m from the pod at x {x}")
             self.assertGreater(o[1] - F.PORT_R[2], S.P_TIP[1] + S.P_RIM_R, "a porthole beside a lens")
         self.assertTrue(all(abs(o[0]) > S.P_VAULT[0] + 1.0 for o, _n in spots))   # the vault's box stays clear
         self.assertAlmostEqual(2 * F.PORT_R[0], 0.35, delta=0.02)

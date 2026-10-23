@@ -166,6 +166,64 @@ class ShipHullDetailTest(unittest.TestCase):
         self.assertTrue(lens)
         self.assertTrue(all(p["smooth_deg"] == J.CREASE["lens"] for p in lens))
 
+    def test_the_seam_corners_end_on_their_fold_and_keep_the_groove(self) -> None:
+        """details 3b/3c/3d (lay_seams, corner_slides): where a seam ends on a flush edge (a facet fold), the plate's
+        corner lies on that flush edge (within 1e-6 m), so the pieces on both sides of the fold end on its line; every
+        group of corners at one point sliding one way ends at one point within 0.1 mm, short edges included (3c's
+        per-piece cap left 450 groups over 0.1 mm apart, up to 6.5 cm: black wedges); each corner's groove is its
+        slide * sin, the slide at most SLIDE_MAX INSET and its own _slide_cap. The limits, counted: corners of 25 to
+        155 deg between edges of 0.25 m and more keep a groove of 0.9 INSET but for at most 25 (3d: 23, in groups
+        with a short member; 3b: 186), none under 0.25 INSET; near-straight or needle corners (sin under 1 /
+        SLIDE_MAX) taper to SLIDE_MAX INSET * sin; corners stopped short by their group's cap are counted."""
+        ends: dict = {}
+        corners = wide = folds = capped = 0
+        narrow = []
+        for (_k, _zone, _cell, _i, q, flags), slides in zip(J.skin_pieces(), J.skin_slides()):
+            if J.width(q) <= J.SLIVER:
+                continue
+            v, f = J.lay_seams(q, flags, slides)
+            top = [v[x] for x in f[0]]
+            self.assertEqual(len(top), len(q))
+            for j in range(len(q)):
+                a, b, c = q[j - 1], q[j], q[(j + 1) % len(q)]
+                if flags[j - 1] == flags[j]:
+                    continue
+                corners += 1
+                seam, flush = ((a, b), (b, c)) if flags[j - 1] else ((b, c), (a, b))
+                self.assertLess(J._off_segment(top[j], *flush), 1e-6, (q[j], top[j]))
+                way, want = J._corner(q, flags, j)
+                key = (tuple(round(t, 4) for t in b), tuple(round(t, 2) for t in way))
+                ends.setdefault(key, []).append(top[j])
+                s = slides[j]
+                self.assertLessEqual(s, min(J.SLIDE_MAX * J.INSET, J._slide_cap(q, flags, j)) + 1e-12)
+                u, w = S._unit3(S._sub(a, b)), S._unit3(S._sub(c, b))
+                deg = math.degrees(math.acos(max(-1.0, min(1.0, S._dot(u, w)))))
+                sin = math.sin(math.radians(deg))
+                groove = self._off_line(top[j], *seam)
+                self.assertAlmostEqual(groove, s * sin, delta=1e-6)
+                folds += sin < 1.0 / J.SLIDE_MAX
+                capped += s < want - 1e-9
+                if 25 <= deg <= 155 and min(math.dist(a, b), math.dist(b, c)) >= 0.25:
+                    wide += 1
+                    self.assertGreater(groove, 0.25 * J.INSET, (round(deg, 1), b))
+                    if groove < 0.9 * J.INSET:
+                        narrow.append((round(deg, 1), round(groove, 4), b))
+        self.assertGreater(corners, 5000)
+        self.assertGreater(wide, 2000)
+        self.assertGreater(folds, 100)    # 3d: 362 near-straight or needle corners, SLIDE_MAX INSET * sin
+        self.assertLess(capped, 1000)     # 3d: 747 corners stopped short by their group's cap
+        self.assertLessEqual(len(narrow), 25, f"{len(narrow)} seam corners taper the groove")
+        shared = [g for g in ends.values() if len(g) > 1]
+        self.assertGreater(len(shared), 2000)
+        for g in shared:
+            self.assertLess(max(math.dist(g[0], t) for t in g), 1e-4, g)   # 0.1 mm
+
+    @staticmethod
+    def _off_line(p, a, b) -> float:
+        ab = S._sub(b, a)
+        c = S._cross(ab, S._sub(p, a))
+        return math.sqrt(S._dot(c, c) / S._dot(ab, ab))
+
     def test_the_jamb_caps(self) -> None:
         caps = J.jamb_caps()
         self.assertEqual(len(caps), 8)
