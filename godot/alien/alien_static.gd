@@ -28,6 +28,7 @@ const BODY_SUFFIX: String = "_body_skin"  # B1: the shared body's surface (apply
 
 const GILL_MODES: PackedStringArray = ["skin", "gradient", "whole"]  # the shader's gill_mode: 0, 1, 2
 const FRONT_MODES: PackedStringArray = ["keep", "follow"]  # the pale front (CS6b)
+const FRONT_BAND := 0.08  # CS6c: the "keep" front's blend from above the skin to below it, in skin L round 1 - d/2
 
 ## The study's E palettes (E1: the build's own paint).
 const PRESETS: Array[Dictionary] = [
@@ -236,7 +237,8 @@ static func shift(x: Vector3, b: Vector3, t: Vector3) -> Vector3:
 
 ## The pale front for a picked skin: the build's front shifted with the skin, its chroma never above the build's
 ## front's (a tinted cream). "keep": its lightness at least the build's front's, then the build's two-tone (front
-## minus skin base) away from the skin: above it (up to white) while half of it fits there, else below.
+## minus skin base) away from the skin: above it (up to white) while half of it fits there, else below, the two
+## blended over FRONT_BAND in the skin's L round 1 - d/2 (CS6c: continuous).
 static func front_for(skin: Color, base_skin: Color, front_base: Color, mode: String = "keep") -> Color:
 	var f: Vector3 = shift(to_oklab(front_base), to_oklab(base_skin), to_oklab(skin))
 	var fb: Vector3 = to_oklab(front_base)
@@ -248,7 +250,10 @@ static func front_for(skin: Color, base_skin: Color, front_base: Color, mode: St
 		var d: float = fb.x - to_oklab(base_skin).x
 		f.x = maxf(f.x, fb.x)
 		if absf(f.x - ls) < d - 1.0e-6:
-			f.x = minf(1.0, ls + d) if ls + 0.5 * d <= 1.0 else ls - d
+			# CS6c: above the skin, then below it, blended over FRONT_BAND round 1 - d/2 (a step there before)
+			var s: float = minf(1.0, maxf(0.0, (ls - (1.0 - 0.5 * d)) / FRONT_BAND + 0.5))
+			s = s * s * (3.0 - 2.0 * s)
+			f.x = minf(1.0, ls + d) * (1.0 - s) + (ls - d) * s
 	return from_oklab(Vector3(f.x, f.y * k, f.z * k))
 
 

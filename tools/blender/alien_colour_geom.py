@@ -15,7 +15,8 @@ maybe he wants it acidic, it's his choice"; no guard rails since):
   value is an error (ValueError here; colour.js throws, alien_static.gd push_errors and returns {});
 - the pale front (the accent's B) is no slot but a derived colour (CS6b), by the picks' "front" (FRONT_MODES):
   "keep" (the default) keeps the panel's two-tone against the skin, pale on dark skins and a little darker than a
-  very light skin (`front_for`), "follow" follows the skin down and up; either a tinted cream (its chroma never
+  very light skin (`front_for`, continuous: CS6c's FRONT_BAND), "follow" follows the skin down and up (v6's rule
+  with CS6b's relative offsets); either a tinted cream (its chroma never
   above the build's front's).
 
 The recolour (CS6, `shift`): each region has a base, the median (OKLab, per component) of its painted texels
@@ -25,7 +26,7 @@ black), the a/b offset turned by the hue turn and scaled down when the target ha
 target darker than the base every offset is scaled by the lightness ratio too (CS6b: the paint's mottling relative,
 not absolute, so a dark pick is not blotchy). The base texel becomes the target; over a region the recoloured
 median is within the albedo table's dE of the pick (CS6b: 0.003 at most where the shifted texels stay inside the
-sRGB gamut; a pick on the gamut's edge, e.g. #ff00ff, up to 0.009 on the skin: the per-channel clamp moves its
+sRGB gamut; a pick on the gamut's edge, e.g. #ff00ff, under 0.01 on the skin (0.0094 measured): the per-channel clamp moves its
 lighter texels, and a clip toward the pick, tried, made the median exact but flattened every such texel onto the
 pick), and a target at its base is the identity. v1-v5 turned the hue and scaled
 sRGB HSV saturation and value by the target/base ratios, from one detail base for the freckles, the crest and the
@@ -38,6 +39,8 @@ import math
 
 GILL_MODES = ("skin", "gradient", "whole")  # the shader's gill_mode: 0, 1, 2
 FRONT_MODES = ("keep", "follow")  # the pale front (CS6b): keep its two-tone against the skin, or follow it
+FRONT_BAND = 0.08  # CS6c: the "keep" front's blend from above the skin to below it, a band in skin L round
+# 1 - d/2 (a step of 1.5 d there before: 0.14 on the axolotl, 0.21 on the chameleon)
 # The regions whose medians are the bases (`bases_from_texels`): 8-bit thresholds on the masks; every texel in the
 # skin mask (R >= SKIN_GATE)
 SKIN_GATE = 230
@@ -155,8 +158,9 @@ def front_for(skin, base_skin, front_base, mode: str = "keep") -> tuple:
     front's (a tinted cream, the panel's design; no slot of its own). "follow": that colour. "keep" (CS6b): its
     lightness at least the build's front's, then at least the build's two-tone (d = L_front_base - L_base_skin, the
     painted default) away from the skin's: above it (up to white) while half of d fits there, else below it (a very
-    light skin; going below sooner turned E4 honey's chameleon front brown). A skin at its base gives the build's
-    front in both modes."""
+    light skin; going below sooner turned E4 honey's chameleon front brown), the two blended over FRONT_BAND in the
+    skin's L round 1 - d/2 (CS6c: continuous; inside the band the front passes the skin's lightness, as any
+    continuous front from above to below must). A skin at its base gives the build's front in both modes."""
     L, a, b = shift(to_oklab(front_base), to_oklab(base_skin), to_oklab(skin))
     fb, ls = to_oklab(front_base), to_oklab(skin)[0]
     cf, c = math.hypot(fb[1], fb[2]), math.hypot(a, b)
@@ -165,7 +169,10 @@ def front_for(skin, base_skin, front_base, mode: str = "keep") -> tuple:
         d = fb[0] - to_oklab(base_skin)[0]
         L = max(L, fb[0])
         if abs(L - ls) < d - 1e-6:
-            L = min(1.0, ls + d) if ls + 0.5 * d <= 1.0 else ls - d
+            # CS6c: above the skin, then below it, blended over FRONT_BAND round 1 - d/2 (a step there before)
+            s = min(1.0, max(0.0, (ls - (1.0 - 0.5 * d)) / FRONT_BAND + 0.5))
+            s = s * s * (3.0 - 2.0 * s)
+            L = min(1.0, ls + d) * (1.0 - s) + (ls - d) * s
     return from_oklab((L, a * k, b * k))
 
 

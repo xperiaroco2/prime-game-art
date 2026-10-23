@@ -22,6 +22,7 @@
 
 export const GILL_MODES = ["skin", "gradient", "whole"];
 export const FRONT_MODES = ["keep", "follow"];
+export const FRONT_BAND = 0.08; // CS6c: the "keep" front's blend from above the skin to below it, in skin L round 1 - d/2
 
 export const PRESETS = [
   ["alien teal", {}],
@@ -72,7 +73,8 @@ export const recolour = (c, base, target) => fromOklab(shift(toOklab(c), toOklab
 
 // the pale front for a picked skin: the build's front shifted with the skin, its chroma never above the build's front's;
 // "keep": its lightness at least the build's front's, then the build's two-tone away from the skin (above, up to
-// white, while half of it fits there, else below)
+// white, while half of it fits there, else below), the two blended over FRONT_BAND in the skin's L round 1 - d/2
+// (CS6c: continuous)
 export function frontFor(skin, baseSkin, frontBase, mode = "keep") {
   let [L, a, b] = shift(toOklab(frontBase), toOklab(baseSkin), toOklab(skin));
   const fb = toOklab(frontBase), ls = toOklab(skin)[0];
@@ -80,7 +82,12 @@ export function frontFor(skin, baseSkin, frontBase, mode = "keep") {
   if (mode === "keep") {
     const d = fb[0] - toOklab(baseSkin)[0];
     L = Math.max(L, fb[0]);
-    if (Math.abs(L - ls) < d - 1e-6) L = ls + 0.5 * d <= 1 ? Math.min(1, ls + d) : ls - d;
+    if (Math.abs(L - ls) < d - 1e-6) {
+      // CS6c: above the skin, then below it, blended over FRONT_BAND round 1 - d/2 (a step there before)
+      let s = Math.min(1, Math.max(0, (ls - (1 - 0.5 * d)) / FRONT_BAND + 0.5));
+      s = s * s * (3 - 2 * s);
+      L = Math.min(1, ls + d) * (1 - s) + (ls - d) * s;
+    }
   }
   return fromOklab([L, a * k, b * k]);
 }
