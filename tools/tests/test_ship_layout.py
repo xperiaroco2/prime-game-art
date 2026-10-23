@@ -183,8 +183,11 @@ class ShipLayoutTest(unittest.TestCase):
         mouth to the ground; four sockets in the hall."""
         t = sl.rooms(LAYOUT)["throat"]
         (x0, x1), y0 = sl.exit_edge(t)
-        self.assertEqual((x0, x1, y0), (-1.65, 1.65, -7.1))
-        self.assertEqual(LAYOUT["ramp"]["hinge"], [0.0, -7.1])
+        self.assertEqual((x0, x1, y0), (-1.65, 1.65, -8.1))   # the raise step 2: the tunnel's front, 1 m past the nose
+        self.assertEqual(min(q[1] for q in t["points"]), -7.1)   # the room's own polygon still ends at the nose edge
+        self.assertEqual(sl.tunnel(t), ((-1.65, 1.65), (-8.1, -7.1)))
+        self.assertAlmostEqual(sl.room_margin(t, (0.0, -7.6)), 0.5)   # the tunnel's floor is the throat's
+        self.assertEqual(LAYOUT["ramp"]["hinge"], [0.0, -8.1])
         self.assertEqual(LAYOUT["ramp"]["width_m"], x1 - x0)
         p = LAYOUT["player"]
         self.assertGreaterEqual(LAYOUT["deck"]["floor_h"] + t["clear_h"],
