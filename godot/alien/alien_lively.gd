@@ -55,6 +55,7 @@ var _hvy := 0.0
 var _hvp := 0.0
 var _eye := {"left": Vector4.ZERO, "right": Vector4.ZERO}  # yaw, pitch, their velocities
 var _bones := {}
+var _rest_q := {}  # B1: bone -> [its local rest rotation, its global rest rotation]
 
 
 func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, sclera: Texture2D) -> void:
@@ -87,6 +88,11 @@ func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, scl
 		_bones[b] = skeleton.find_bone(b)
 		if _bones[b] < 0:
 			push_error("LIVELY no bone %s" % b)
+	for bi: int in [_bones["Neck"], _bones["Head"]]:
+		_keep_rest(bi)
+	for sp: Dictionary in springs:
+		for bi: int in sp["bones"]:
+			_keep_rest(bi)
 	skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
 	if bead:
 		var lc: Dictionary = eyes["left"]["catch"]
@@ -119,6 +125,22 @@ func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, scl
 		sm.set_shader_parameter("iris_profile", profile)
 		sm.set_shader_parameter("pupil_colour", Color(pc[0], pc[1], pc[2]))
 	_apply_eyes()
+
+
+func _keep_rest(bi: int) -> void:
+	_rest_q[bi] = [skeleton.get_bone_rest(bi).basis.get_rotation_quaternion(),
+		skeleton.get_bone_global_rest(bi).basis.get_rotation_quaternion()]
+
+
+## B1 (the head on the body): q is a turn in the skeleton's frame about the bone's joint; it goes on top of the bone's
+## rest as rest * (G^-1 q G), G the bone's global rest rotation. The lively busts' bones rest unturned (G and the rest
+## the identity), so there this is set_bone_pose_rotation(q) as before; the contract skeleton's do not.
+func _set_rot(bi: int, q: Quaternion) -> void:
+	skeleton.set_bone_pose_rotation(bi, rest_turn(_rest_q[bi][0], _rest_q[bi][1], q))
+
+
+static func rest_turn(rest: Quaternion, g: Quaternion, q: Quaternion) -> Quaternion:
+	return (rest * (g.inverse() * q * g)).normalized()
 
 
 static func _v(a: Array) -> Vector3:
@@ -183,8 +205,8 @@ func step(dt: float) -> void:
 	var chest := Vector3.ONE + BREATH_CHEST * b
 	skeleton.set_bone_pose_scale(_bones["Chest"], chest)
 	skeleton.set_bone_pose_scale(_bones["Neck"], Vector3.ONE / chest)  # the head keeps its size
-	skeleton.set_bone_pose_rotation(_bones["Neck"], Quaternion.from_euler(Vector3(-_hp * pitch_neck_share, _hy * neck_share, 0.0)))
-	skeleton.set_bone_pose_rotation(_bones["Head"],
+	_set_rot(_bones["Neck"], Quaternion.from_euler(Vector3(-_hp * pitch_neck_share, _hy * neck_share, 0.0)))
+	_set_rot(_bones["Head"],
 		Quaternion.from_euler(Vector3(-_hp * (1.0 - pitch_neck_share) - nod, _hy * (1.0 - neck_share), -tilt * _hy)))
 	for sp: Dictionary in springs:
 		var w: float = TAU * float(sp["hz"])
@@ -208,7 +230,7 @@ func step(dt: float) -> void:
 		sp["s"] = Vector4(sy, spt, cv.x, cv.y)
 		var n: float = float((sp["bones"] as Array).size())
 		for bi: int in sp["bones"]:
-			skeleton.set_bone_pose_rotation(bi, Quaternion.from_euler(Vector3(-spt / n, sy / n, 0.0)))
+			_set_rot(bi, Quaternion.from_euler(Vector3(-spt / n, sy / n, 0.0)))
 	skeleton.advance(dt)
 	# the eyes: toward the target from each posed eye centre, in the posed head's frame, clamped by the lids, leading
 	var head_pose: Transform3D = skeleton.get_bone_global_pose(_bones["Head"])
@@ -260,7 +282,7 @@ func hold_springs(yf: float, pf: float) -> void:
 		sp["s"] = Vector4(cap * yf, cap * pf, 0.0, 0.0)
 		var n: float = float((sp["bones"] as Array).size())
 		for bi: int in sp["bones"]:
-			skeleton.set_bone_pose_rotation(bi, Quaternion.from_euler(Vector3(-cap * pf / n, cap * yf / n, 0.0)))
+			_set_rot(bi, Quaternion.from_euler(Vector3(-cap * pf / n, cap * yf / n, 0.0)))
 	skeleton.advance(0.0)
 
 

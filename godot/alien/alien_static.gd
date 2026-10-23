@@ -22,6 +22,7 @@ extends RefCounted
 const SHADER: Shader = preload("res://alien/alien_static.gdshader")
 const SHADER_288: Shader = preload("res://alien/alien_static_288.gdshader")  # static_v5: #288's look, byte for byte
 const SUFFIX: String = "_static_skin"
+const BODY_SUFFIX: String = "_body_skin"  # B1: the shared body's surface (apply_body)
 
 ## The guard rails per slot: [chroma cap C, L min, L max, dark knee, light knee] (OKLCh: the hue angle kept; the cap
 ## scaled by (L - 0.009) / (dark - 0.009) below the dark knee, by (1 - L) / (1 - light) above the light knee; null:
@@ -95,6 +96,34 @@ static func apply(root: Node, mask: Texture2D, base_skin: Color, detail: Texture
 			made.append(sm)
 	return made
 
+
+
+## B1, the head on the shared body: every surface whose material name ends in BODY_SUFFIX takes a copy of the head's
+## ShaderMaterial (its look, its slot bases and colours) with the body's own maps on the body's UV: the imported
+## albedo and normal, `mask` (R 1: all skin) and `accent` (B the pale front; no lips, details or gills). One material
+## set: set_colours on the head's and these materials gives the body the same slots.
+static func apply_body(root: Node, head: ShaderMaterial, mask: Texture2D, accent: Texture2D) -> Array[ShaderMaterial]:
+	var made: Array[ShaderMaterial] = []
+	for node: Node in root.find_children("*", "MeshInstance3D", true, false):
+		var mi: MeshInstance3D = node
+		for i: int in mi.mesh.get_surface_count():
+			var src: Material = mi.get_active_material(i)
+			if not (src is BaseMaterial3D) or not src.resource_name.ends_with(BODY_SUFFIX):
+				continue
+			var base3d: BaseMaterial3D = src
+			var sm: ShaderMaterial = head.duplicate()
+			sm.resource_name = src.resource_name
+			sm.set_meta("colour_bases", head.get_meta("colour_bases"))
+			sm.set_shader_parameter("albedo_tex", base3d.albedo_texture)
+			sm.set_shader_parameter("plain_tex", base3d.albedo_texture)  # no alive layers on the body
+			sm.set_shader_parameter("normal_tex", base3d.normal_texture)
+			sm.set_shader_parameter("mask_tex", mask)
+			sm.set_shader_parameter("accent_tex", accent)
+			sm.set_shader_parameter("detail_tex", null)
+			sm.set_shader_parameter("gill_tex", null)
+			mi.set_surface_override_material(i, sm)
+			made.append(sm)
+	return made
 
 ## The player's skin colour (sRGB) on every material apply() made: through the guard rails (set_colours), except on
 ## SHADER_288 materials, which take it as it is (the merged #288 path, its review output reproducible).
