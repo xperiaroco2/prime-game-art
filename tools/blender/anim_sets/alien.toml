@@ -1,0 +1,35 @@
+# The alien's clip edits (art #196, A1): the shared alien body's UAL1 clips (alien_body.py step 7) made to look right
+# on the bare alien, applied by alien_char_build.py --clip-edits (tools/blender/alien_clip_edit.py, the keys there).
+# Not an anim-set settings file: the human MVP set (mvp.toml) is untouched. Angles in degrees.
+# Measured on body_v2/r5 (anim_bare/a1/before/reels.json): fists (the fingers' mean curl 66-77 degrees) in Idle,
+# Walk, Jog, Sprint and Jump_Land; hand vertices near the trunk or legs on 22-25 of 25 frames in Idle and Walk; the
+# lowest vertex 1.2 cm under the floor standing, 8 cm crouching, up to 12.7 cm in the jumps.
+
+[defaults]
+finger_cap_deg = 22.0  # a relaxed hand: each finger joint at most 22 degrees from straight (a fist is 70-90)
+thumb_cap_deg = 18.0
+floor = true
+
+[clips.Idle_Loop]
+abduct_deg = 6.0
+
+[clips.Talk_Upper_Loop]
+abduct_deg = 3.0
+
+[clips.Walk_Loop]
+abduct_deg = 6.0
+
+[clips.Jog_Fwd_Loop]
+abduct_deg = 3.0
+
+[clips.Crouch_Idle_Loop]
+abduct_deg = 6.0
+
+[clips.Crouch_Fwd_Loop]
+abduct_deg = 6.0
+
+[clips.Jump_Land]
+abduct_deg = 4.0
+
+[clips.Jump_Air_Loop]
+floor = false  # airborne: the game holds it off the floor
