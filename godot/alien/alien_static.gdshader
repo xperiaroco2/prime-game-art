@@ -19,6 +19,12 @@
 // static_v3: the alive read is baked into the albedo; plain_tex (the albedo without it) and alive_mix scale it for the
 // review grids (1 = the GLB's albedo as baked; above 1 extrapolates). The shader's cavity, flush and micro grain stay
 // off in the pick (baked now; the grain read as orange peel).
+// lively (2026-10-23): the gaze. gaze_on 0 (the default) leaves the merged look untouched. gaze_on 1 draws the eyes
+// from sclera_tex (the albedo with the painted irises filled from the sclera around them, alien_lively_build.py) and
+// a procedural iris on the build's fitted eye sphere: per eye (left = +X) its centre and gaze in this mesh's own
+// space (alien_lively.gd moves both with the head bone), the iris and pupil caps' angles, the iris's radial colour
+// profile (8 medians of the painted iris, pupil edge to limbus), the pupil's colour, a limbal ring and a painted
+// catch light (catch_light 0: none, as the painted eyes have none).
 // debug_mode: 1 grey with the normal map, 2 grey geometry only, 3 the albedo alone (emitted).
 shader_type spatial;
 render_mode diffuse_burley, specular_schlick_ggx;  // static_v3: no sss_mode_skin (its red profile browned the teal creases)
@@ -53,6 +59,20 @@ uniform float eye_coat_rough : hint_range(0.0, 1.0) = 0.03;
 uniform float eye_under_rough : hint_range(0.0, 1.0) = 0.3;
 uniform float limbal : hint_range(0.0, 1.0) = 0.0;
 uniform int debug_mode = 0;
+uniform float gaze_on : hint_range(0.0, 1.0) = 0.0;
+uniform sampler2D sclera_tex : source_color, filter_linear_mipmap_anisotropic, repeat_disable;
+uniform vec3 eye_centre_l = vec3(0.265, 0.266, 0.355);
+uniform vec3 eye_centre_r = vec3(-0.265, 0.266, 0.355);
+uniform vec3 gaze_l = vec3(0.0, 0.0, 1.0);
+uniform vec3 gaze_r = vec3(0.0, 0.0, 1.0);
+uniform float iris_angle = 0.27;
+uniform float pupil_angle = 0.19;
+uniform vec3 iris_profile[8];
+uniform vec3 pupil_colour : source_color = vec3(0.05, 0.03, 0.02);
+uniform float limbal_ring : hint_range(0.0, 1.0) = 0.0;
+uniform float catch_light : hint_range(0.0, 1.0) = 0.0;
+uniform vec2 catch_offset = vec2(-0.35, 0.45);  // the catch light's place in iris radii: (toward -X, up)
+uniform float catch_size = 0.16;  // its radius in iris radii
 
 varying vec3 v_obj;
 
@@ -108,12 +128,40 @@ void vertex() {
 	v_obj = VERTEX;
 }
 
+// The procedural iris over the clean sclera at one eye texel (lively).
+vec3 lively_eye(vec3 sclera) {
+	bool left = v_obj.x > 0.0;
+	vec3 dir = normalize(v_obj - (left ? eye_centre_l : eye_centre_r));
+	vec3 g = left ? gaze_l : gaze_r;
+	float th = acos(clamp(dot(dir, g), -1.0, 1.0));
+	float w = max(fwidth(th), 1.0e-4);
+	float t = clamp((th - pupil_angle) / (iris_angle - pupil_angle), 0.0, 1.0) * 7.0;
+	int k = min(int(t), 6);
+	vec3 iris = mix(iris_profile[k], iris_profile[k + 1], t - float(k));
+	iris *= 1.0 - limbal_ring * smoothstep(iris_angle * 0.8, iris_angle, th);
+	vec3 c = mix(sclera, iris, 1.0 - smoothstep(iris_angle - w, iris_angle + w, th));
+	c = mix(c, pupil_colour, 1.0 - smoothstep(pupil_angle - w, pupil_angle + w, th));
+	if (catch_light > 0.0) {
+		// the catch light's place: the gaze turned by catch_offset iris radii in the eye's own frame
+		vec3 side = normalize(vec3(g.z, 0.0, -g.x));
+		vec3 up = cross(g, side);
+		vec3 cd = normalize(g + (side * catch_offset.x + up * catch_offset.y) * tan(iris_angle));
+		float cth = acos(clamp(dot(dir, cd), -1.0, 1.0));
+		float cr = catch_size * iris_angle;
+		c = mix(c, vec3(1.0), catch_light * (1.0 - smoothstep(cr - w, cr + w, cth)));
+	}
+	return c;
+}
+
 void fragment() {
 	vec3 a = texture(albedo_tex, UV).rgb;
 	if (alive_mix != 1.0) {
 		a = clamp(mix(texture(plain_tex, UV).rgb, a, alive_mix), 0.0, 1.0);
 	}
 	vec3 m = texture(mask_tex, UV).rgb;
+	if (gaze_on > 0.0) {
+		a = mix(a, lively_eye(texture(sclera_tex, UV).rgb), gaze_on * (1.0 - m.r));
+	}
 	vec4 d = texture(detail_tex, UV);
 	float eye = 1.0 - m.r;
 	vec3 c = mix(a, recolour(a), m.r);
