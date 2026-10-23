@@ -1112,5 +1112,18 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   1.2 cm), the tip's swing at least 4 cm. Review:
   `ship_vent_a_sheet.py` (the concept's views beside neutral and warm EEVEE, `--game` a last row from the motion
   run's `state_<n>.png`); pieces in `<raw>/ship/v4/vents-a/pieces`, never the layout's `raw_dir`. `ship.gd`'s
-  `--vent-states` dims `body:__lamp` calm (a dim entry `<part>:<material suffix>` dims only those surfaces). Not
-  yet: the steam.
+  `--vent-states` dims the lamp piece and `slat*:__vent_seam` calm (a dim entry `<part>:<material suffix>` dims only
+  those surfaces). Not yet: the steam.
+- **The look step** (vents-a4, the engineer's yes of 2026-10-23, art#263 c6374327838): the calm pose tilted 22 deg tip
+  down (`blade_r5`, the broad upper facet to the front; closed 11 deg further, each blade's lower-edge seam strip
+  `int_halo__vent_seam` lit with the heat). `ship_vent_a_bronze.py` (`--in body4k_r4 --out body4k_r6`) replaces
+  Meshy's baked albedo with one polished bronze: a Cycles-baked edge mask (the Bevel node's normal against the true
+  normal, `BEVEL_R` 6 mm) lerps `BRONZE` to `EDGE`, a 5 cm occlusion darkens the recesses, the well is darker, Meshy's
+  normal map stays; and it measures the painted lights into `lights.json` (cyan islands from the emission map and the
+  albedo; the cut `__lamp`, `__band`, `__hand` faces, which turn a dark glass). The builder lays a clean emissive
+  piece over each (`lights()`): `strip1..7` (`glow_cyan__vent_strip`, one per place), `lamp` (a red dome),
+  `bar_hot`/`bar`/`band`/`bar_top` (white-hot, amber, the green band; behind the marker), `screen` and `hand` (the
+  outline of a thumb and three fingers of one length, `hand_outline()`). Without the raw `lights.json` (the
+  pure-Python tests) there are no light pieces.
+- **The raise** (2026-10-23): the vents are built in the design frame (`FLOOR` 0.6) and lifted by `ship_build.lifted`
+  like every piece; it lifts a GLB part's `offset`, `origin` and `hull` too, and the motion request adds `lift_m`.
