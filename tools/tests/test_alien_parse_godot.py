@@ -34,6 +34,9 @@ class AlienParseTest(unittest.TestCase):
         cls.d = json.loads(line[6:])
 
     def test_no_error_lines(self):
+        # parse_check.gd calls set_colours with an unknown gills value on purpose (it must push_error and return {}),
+        # so its "ERROR: alien_static: unknown gills" line is expected: a filter widened to every "ERROR:" line would
+        # need to allow that one.
         bad = [ln for ln in self.out.splitlines()
                if "SHADER ERROR" in ln or "Parse Error" in ln or "SCRIPT ERROR" in ln or "compilation failed" in ln]
         self.assertEqual(bad, [])

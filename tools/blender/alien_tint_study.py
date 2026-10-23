@@ -36,7 +36,8 @@ V2D = RAW / "2026-10-22-alien-pilot-3d" / "views"
 HEADS = ["axolotl", "chameleon"]
 WINDOW = (1000, 1000)
 
-# the player's skin choices: the build's own teal first, then alien_static.gd's PALETTE (sRGB)
+# the player's skin choices: the build's own teal first, then alien_static.gd's PALETTE_288 (sRGB, the merged values;
+# its PALETTE is them through the skin guard)
 SKINS = [("teal", None), ("coral", (0.93, 0.55, 0.56)), ("lavender", (0.64, 0.56, 0.92)),
          ("sunflower", (0.98, 0.78, 0.30)), ("cobalt", (0.30, 0.50, 0.90))]
 LIP_FIXED = {"B1": ("dusty rose", "#c48a8c"), "B2": ("teal-grey", "#4f6d70")}
