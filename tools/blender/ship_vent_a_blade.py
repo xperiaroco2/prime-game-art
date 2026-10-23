@@ -44,7 +44,7 @@ NOSE_R = 0.03                          # the root's back behind the pivot
 TIP_DV = 0.265                         # the calm tip out of the pivot (PIVOT_V 0.33 + 0.265 = 0.595 < the 0.60 depth)
 PITCH = 0.15
 COVER = 2.0 / 3.0                      # the calm blade's front-projected height over the pitch
-SQUASH_MIN = 0.7                       # the section's least squash in h when it is thicker than COVER flat
+SQUASH_MIN = 0.7                       # the section's least squash in h when it is thicker than COVER (--squash-min)
 CLEAR = 0.004                          # the closed blades' least gap
 BOW = 0.02                             # the arch kept along the blade (front_ortho: the middle up about 2 cm)
 SEAM = 0.008                           # closed: the median see-through seam straight from the front (front_closed)
@@ -149,16 +149,31 @@ def place(hi, rep: dict) -> None:
 
     want = COVER * PITCH / TIP_DV
     squash = 1.0
-    if ratio(0.0) > want:   # thicker than COVER even flat: the section squashed in h (at most to SQUASH_MIN)
+    q0 = q[:, 2].copy()
+    if arg("--calm-tilt"):   # step 4: the calm tilt forced (the concept's claws), the squash solved for COVER at it
+        a = math.radians(float(arg("--calm-tilt")))
+        lo_s, hi_s = float(arg("--squash-min", SQUASH_MIN)), 1.0
+        q[:, 2] = q0 * lo_s
+        if ratio(a) > want:
+            squash = lo_s
+        else:
+            for _ in range(30):
+                squash = (lo_s + hi_s) / 2
+                q[:, 2] = q0 * squash
+                lo_s, hi_s = (squash, hi_s) if ratio(a) < want else (lo_s, squash)
+        q[:, 2] = q0 * squash
+    elif ratio(0.0) > want:   # thicker than COVER even flat: the section squashed in h (at most to SQUASH_MIN)
         squash = max(SQUASH_MIN, want / ratio(0.0))
         q[:, 2] *= squash
     lo, hi_a = 0.0, math.radians(70)
-    if ratio(lo) > want:
+    if arg("--calm-tilt"):
+        pass
+    elif ratio(lo) > want:
         a = 0.0
     else:
         for _ in range(40):
-            mid = (lo + hi_a) / 2
-            lo, hi_a = (mid, hi_a) if ratio(mid) < want else (lo, mid)
+            m_ = (lo + hi_a) / 2
+            lo, hi_a = (m_, hi_a) if ratio(m_) < want else (lo, m_)
         a = (lo + hi_a) / 2
     # the section scale: the tip at TIP_DV (NOSE_R fixed behind the pivot)
     s = 1.0
@@ -172,7 +187,7 @@ def place(hi, rep: dict) -> None:
     hi.data.update()
     rep["place"] = {"length_scale": round(float(sx), 4), "section_scale": round(float(s), 4),
                     "calm_tilt_deg": round(math.degrees(a), 2), "h_squash": round(squash, 3),
-                    "front_height": round(ratio(a) * TIP_DV, 4),
+                    "front_height": round(ratio(a) * TIP_DV, 4), "cover": round(ratio(a) * TIP_DV / PITCH, 3),
                     "tip_dv": round(float(vv.max()), 4), "back_dv": round(float(vv.min()), 4),
                     "h": [round(float(hh.min()), 4), round(float(hh.max()), 4)]}
 
@@ -326,6 +341,53 @@ def bake(hi, out: Path, tris: int, size: int, body_dir, rep: dict):
     return low
 
 
+SEAM_MAT = "int_halo__vent_seam"         # the lit seam's strip (the heat state; the game darkens it calm)
+
+
+def seam_strip(low, rep: dict):
+    """Step 4 (front_closed's lit seams): a thin emissive strip on the blade's lower edge, its own material SEAM_MAT.
+    Per slice along u the blade's lowest point in the closed pose; the strip 2 mm in front of it, from 6 mm below to
+    4 mm above, facing the front in the closed pose, turned back into the calm pose the GLB holds."""
+    a = math.radians(rep["closed"]["closed_deg"])
+    p = co(low)
+    rx = Matrix.Rotation(a, 4, "X")
+    q = np.array([(rx @ Vector(v.tolist()))[:] for v in p])
+    x0, x1 = p[:, 0].min() + 0.01, p[:, 0].max() - 0.01
+    n = 16
+    pts = []
+    for i in range(n + 1):
+        x = x0 + (x1 - x0) * i / n
+        near = np.abs(q[:, 0] - x) < (x1 - x0) / n
+        k = np.argmin(q[near, 2])
+        y, z = q[near][k, 1], q[near][k, 2]
+        pts.append((x, y - 0.002, z))
+    back = rx.inverted()
+    verts, faces = [], []
+    for x, y, z in pts:
+        verts += [(back @ Vector((x, y, z - 0.006)))[:], (back @ Vector((x, y, z + 0.004)))[:]]
+    for i in range(n):   # facing -y (the front, the tip's side)
+        faces.append((2 * i, 2 * i + 2, 2 * i + 3, 2 * i + 1))
+    me = bpy.data.meshes.new("blade_seam")
+    me.from_pydata(verts, [], faces)
+    me.update()
+    if me.polygons[0].normal.y > 0:
+        for f in me.polygons:
+            f.flip()
+    me.uv_layers.new(name="UVMap")
+    m = bpy.data.materials.new(SEAM_MAT)
+    m.use_nodes = True
+    b = m.node_tree.nodes["Principled BSDF"]
+    b.inputs["Base Color"].default_value = (1.0, 0.3, 0.02, 1.0)
+    b.inputs["Emission Color"].default_value = (1.0, 0.3, 0.02, 1.0)
+    b.inputs["Emission Strength"].default_value = 8.0
+    b.inputs["Roughness"].default_value = 0.6
+    me.materials.append(m)
+    ob = bpy.data.objects.new("blade_seam", me)
+    bpy.context.scene.collection.objects.link(ob)
+    rep["seam_strip"] = {"tris": 2 * n, "material": SEAM_MAT, "closed_low_h": round(float(min(z for _, _, z in pts)), 4)}
+    return ob
+
+
 def main() -> None:
     src, out = Path(arg("--in")), Path(arg("--out"))
     body = Path(arg("--body")) if arg("--body") else None
@@ -339,11 +401,12 @@ def main() -> None:
     rep["full_tris"] = sum(len(p.vertices) - 2 for p in hi.data.polygons)
     low = bake(hi, out, int(arg("--tris", 500)), int(arg("--tex", 1024)), body, rep)
     closed_angle(low, rep)
+    strip = seam_strip(low, rep)
     p = co(low)
     rep["bounds"] = {"min": p.min(0).round(4).tolist(), "max": p.max(0).round(4).tolist()}
     bpy.ops.wm.save_as_mainfile(filepath=str(out / "blade.blend"))
     for o in bpy.context.scene.objects:
-        o.select_set(o is low)
+        o.select_set(o is low or o is strip)
     bpy.ops.export_scene.gltf(filepath=str(out / "blade.glb"), export_format="GLB", use_selection=True,
                               export_yup=True, export_apply=True, export_materials="EXPORT")
     (out / "blade.json").write_text(json.dumps(rep, indent=1), encoding="utf-8", newline="\n")
