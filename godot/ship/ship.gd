@@ -41,6 +41,7 @@ var _env: Environment
 var _sky_mat: ShaderMaterial
 var _by_name: Dictionary = {}   # fix 2: glTF material name -> its BaseMaterial3D copies (not the METALS), for _ab
 var _ab_saved: Dictionary = {}   # material -> [roughness, metallic, specular] before an A/B row's "mats"
+var _ab_env: Dictionary = {}   # the environment's ssil/ssao/glow and the night lights' shadows before the first A/B row
 var _night_lights: Array = []   # details 1: the moon and the key, hidden by _day
 
 ## The shared metal library (metal.gdshader) by glTF material name: base colour, metallic, roughness, grain, seams,
@@ -688,10 +689,15 @@ func _key(keys: Array, times: Array, k: int, w: float, j: int) -> Vector3:
 
 
 ## fix 2: a view's A/B switch ({"ssil"|"ssao"|"glow"|"shadows": false}, ship.py --views): those parts of the night
-## look off for the shot; {} puts them back (the directional lights' shadows: the moon and the key).
-## fix 2: a --views row's "mats" ({glTF material name: {"roughness", "metallic", "specular"}}) sets those values on
-## that material's glTF copies (not the METALS) for that one shot; _ab({}) puts them back.
+## look off for the shot; {} puts back what the environment had (the directional lights' shadows: the moon and the
+## key). A row's "mats" ({glTF material name: {"roughness", "metallic", "specular"}}) sets those values on that
+## material's glTF copies (not the METALS) for that one shot; _ab({}) puts them back.
 func _ab(off: Dictionary) -> void:
+	if _ab_env.is_empty():
+		_ab_env = {"ssil": _env.ssil_enabled, "ssao": _env.ssao_enabled, "glow": _env.glow_enabled,
+			"shadows": [] as Array}
+		for l: Node in _night_lights:
+			(_ab_env["shadows"] as Array).append((l as DirectionalLight3D).shadow_enabled)
 	for bm: BaseMaterial3D in _ab_saved:
 		var was: Array = _ab_saved[bm]
 		bm.roughness = was[0]
@@ -706,11 +712,12 @@ func _ab(off: Dictionary) -> void:
 			bm.roughness = float(want.get("roughness", bm.roughness))
 			bm.metallic = float(want.get("metallic", bm.metallic))
 			bm.metallic_specular = float(want.get("specular", bm.metallic_specular))
-	_env.ssil_enabled = bool(off.get("ssil", true))
-	_env.ssao_enabled = bool(off.get("ssao", true))
-	_env.glow_enabled = bool(off.get("glow", true))
-	for l: Node in _night_lights:
-		(l as DirectionalLight3D).shadow_enabled = bool(off.get("shadows", true))
+	_env.ssil_enabled = bool(off.get("ssil", _ab_env["ssil"]))
+	_env.ssao_enabled = bool(off.get("ssao", _ab_env["ssao"]))
+	_env.glow_enabled = bool(off.get("glow", _ab_env["glow"]))
+	for i: int in _night_lights.size():
+		var had: bool = (_ab_env["shadows"] as Array)[i]
+		(_night_lights[i] as DirectionalLight3D).shadow_enabled = bool(off.get("shadows", had)) and had
 
 
 func _shot(name: String, title: String, shots: Dictionary) -> Image:

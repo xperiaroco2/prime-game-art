@@ -772,6 +772,8 @@ def jamb_caps() -> list:
                 q = _clean(S.clip(q, n, d - CAP_SKIN))
             q = [(sx * x, yy, h) for x, yy, h in q]
             n = len(q)
+            if n < 3:   # a roof that clips a cap away leaves no face (test_the_jamb_caps counts them)
+                continue
             out.append((q, [tuple(range(n))]))
             out.append(([(a, b + 0.002, c) for a, b, c in q], [tuple(range(n - 1, -1, -1))]))   # the back, 2 mm aft
     return out

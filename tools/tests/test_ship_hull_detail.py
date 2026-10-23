@@ -254,6 +254,7 @@ class ShipHullDetailTest(unittest.TestCase):
             self.assertEqual(len(mine), 4)
             normals = []
             for v, faces in mine:
+                self.assertGreaterEqual(len(v), 3)
                 lo = xi if len(v) == 4 else x_ceil   # the lower cap: walls' inner face to past the notch's side
                 for x, _y, _h in v:
                     self.assertGreaterEqual(side * x, lo - 1e-9)
@@ -322,6 +323,28 @@ class ShipHullDetailTest(unittest.TestCase):
             for p in parts:
                 if p["name"] in ("pod_bell", "pod_throat", "pod_band", "pod_inner_ring"):
                     self.assertFalse([f for f in p["faces"] if len(f) >= D.POD_SEGS], p["name"])
+
+    def test_merged_plate_pieces_stay_convex(self) -> None:
+        """fix 2 step 3 (item 4): merge_coplanar joins only what stays convex: two squares side by side become one
+        rectangle, an L of three stays in convex pieces of the same total area."""
+        n = (0.0, 0.0, 1.0)
+
+        def sq(x: float, y: float) -> list:
+            return [(x, y, 0.0), (x + 1.0, y, 0.0), (x + 1.0, y + 1.0, 0.0), (x, y + 1.0, 0.0)]
+
+        def convex(q: list) -> bool:
+            turns = [S._dot(S._cross(S._sub(q[i], q[i - 1]), S._sub(q[(i + 1) % len(q)], q[i])), n)
+                     for i in range(len(q))]
+            return all(t >= -1e-9 for t in turns) or all(t <= 1e-9 for t in turns)
+
+        two = J.merge_coplanar([(0, sq(0, 0)), (1, sq(1, 0))], n)
+        self.assertEqual(len(two), 1)
+        self.assertAlmostEqual(S.area(two[0][1]), 2.0, places=6)
+        ell = J.merge_coplanar([(0, sq(0, 0)), (1, sq(1, 0)), (2, sq(0, 1))], n)
+        self.assertGreater(len(ell), 1)
+        self.assertAlmostEqual(sum(S.area(q) for _f, q in ell), 3.0, places=6)
+        for _faces, q in ell + two:
+            self.assertTrue(convex(q), q)
 
 
 if __name__ == "__main__":

@@ -216,7 +216,7 @@ the party string over head height, the clearing on the ground and the walk's out
 | Party lights | eight 2.7 m posts 1.6 off the path's centre on alternating sides (the first west) at arc fractions 0.2..0.76 (nearer, a post stood in the front shot); the string sags 0.45 per span, a bulb every 0.6 (one in four amber) |
 
 The outside light: lamp rows in `ship.toml` [light] by group (each scaled by `<group>_lamp`): `pool` (the twelve
-ground lamps at h 0.3, range 3.5, and three under the belly at h 0.35, range 6; amber, shadowed so they never light a
+ground lamps at h 0.3, range 3.5, the ramp's four of them at x +-3.7 and range 1.9 since fix 2, and three under the belly at h 0.35, range 6; amber, shadowed so they never light a
 room), `party` (one per span at 2.1 over the ground, range 5, warm), `rim` (two cool omnis behind the ship, (+-14, 22,
 h 13), range 34). The moon and the groups' numbers come from one grid (`<raw>/ship/v1/grid_out/grid.png`, script
 `<raw>/ship/v1/logs/hull3_grid.py`, the four outside views): A, the old moon (1.3 from the north-east, pitch -38),
@@ -815,7 +815,8 @@ Raw output: `<raw>/ship/v4/light/` (shots), `light-before/` (the same views befo
   (`edge` lamps, `edge_lamp` 0.8): under each lead edge, lens rim and trail edge, 0.8 m outside it, under the edge's
   height, pointing down (55 deg), so the fins above lie outside their cones.
 - **Spots:** a lamp row's 11th number is a spot angle in degrees: `ship.gd` makes a `SpotLight3D` pointing straight down.
-- **Navigation lamps** (`nav_red`, `nav_green`, `nav_white`; `ship_hull_detail.nav_lamp`): a round silver housing, a dark
+- **Navigation lamps** (`nav_red`, `nav_green`, `nav_white`; `ship_hull_detail.nav_lamp`; since fix 2 only the white
+  tail lamp is built: the red and green rows are commented out as NAV SIDE, the engineer's "not needed yet"): a round silver housing, a dark
   bezel and a glowing lens (`glow_nav_*`). Port red on the west lens rim's forward facet (-48.75 deg plan, under the
   edge light at h 1.13), starboard green on the east's, white on the tail's top centre (y 11.2). Each has a tiny
   unshadowed omni 0.45 m out (`nav`, `nav_tail`; range 1.0, `nav_lamp` 0.05: more painted a coloured blob on the rim).
