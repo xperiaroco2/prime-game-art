@@ -171,16 +171,16 @@ for side in (-1.0, 1.0):
     r_ball = float(np.clip((cent[cap, 0].max() - cent[cap, 0].min()) / 2, 0.012, 0.035)) if cap.any() else 0.022
     ball_c = top - np.array([0.0, 0.0, r_ball])
     # the whole ball, but not the stalk where it goes in: the stalks lean outwards, so the stalk is the faces within
-    # 35 degrees of the line from the ball's middle down towards the head
+    # 25 degrees of the line from the ball's middle down towards the head, past 0.9 of the ball's radius
     d = cent - ball_c
     dist = np.linalg.norm(d, axis=1)
     to_head = np.array([-0.6 * ball_c[0], 0.0, -0.07])
     to_head /= np.linalg.norm(to_head)
-    along_stalk = (d @ to_head) > np.cos(np.radians(35.0)) * np.maximum(dist, 1e-9)
-    balls |= (dist < r_ball * 1.1) & ~(along_stalk & (dist > 0.7 * r_ball))
+    along_stalk = (d @ to_head) > np.cos(np.radians(25.0)) * np.maximum(dist, 1e-9)
+    balls |= (dist < r_ball * 1.1) & ~(along_stalk & (dist > 0.9 * r_ball))
 # The fabric's colour is decided per face of the model, never per texel (the engineer, art#297, 2026-10-23: dots on
-# the belly, by an eye): a face is brown when most of its texels are, the labels are smoothed over the faces'
-# neighbours and islands under 60 faces join the colour around them, so no stray mark of Meshy's can stay a dot.
+# the belly, by an eye): each face's share of brown texels is diffused over the surface and cut at a half (a smooth
+# border), and islands under 200 faces join the colour around them, so no stray mark of Meshy's can stay a dot.
 # Then the tail's stalk is orange and its pompom and the antenna balls brown. Only the eyes and the thread (pupils,
 # the smile) keep texel detail, and only on the face's front.
 orig_orange, orig_brown = orange.copy(), brown.copy()
@@ -202,15 +202,16 @@ def share(cls, f):
     return np.mean([texel_class(cls, q) for q in [c] + [(c + u) / 2 for u in uv]])
 
 
-label = np.array([share(brown | (dark & ~white), f) for f in range(len(cent))]) > 0.5
-for _ in range(2):  # a majority over each face and its neighbours
-    total = label.astype(np.float32)
-    count = np.ones(len(label), dtype=np.float32)
-    np.add.at(total, pairs[:, 0], label[pairs[:, 1]])
-    np.add.at(total, pairs[:, 1], label[pairs[:, 0]])
+field = np.array([share(brown | (dark & ~white), f) for f in range(len(cent))])
+for _ in range(15):  # diffuse the brown share over the surface, so the border is a smooth level line, not a zigzag
+    total = field.copy()
+    count = np.ones(len(field))
+    np.add.at(total, pairs[:, 0], field[pairs[:, 1]])
+    np.add.at(total, pairs[:, 1], field[pairs[:, 0]])
     np.add.at(count, pairs[:, 0], 1.0)
     np.add.at(count, pairs[:, 1], 1.0)
-    label = total / count > 0.5
+    field = total / count
+label = field > 0.5
 
 
 def islands(lab):
@@ -232,7 +233,7 @@ def islands(lab):
 
 ids = islands(label)
 sizes = np.bincount(ids, minlength=len(label))
-small = sizes[ids] < 60
+small = sizes[ids] < 200
 label[small] = ~label[small]
 label[stalk] = False
 label[in_pompom | balls] = True
@@ -329,6 +330,8 @@ for side in (-1.0, 1.0):
         faces = (total / count > 0.5) & near
     pc = np.average(cent[pup], axis=0, weights=areas[pup]) if pup.any() else ec
     pr = float(np.sqrt(areas[pup].sum() / np.pi)) if pup.any() else er * 0.35
+    # every face around the pupil belongs to the eye (one left out stayed orange: a chip in the pupil)
+    faces |= np.linalg.norm(cent - pc, axis=1) < pr * 1.3
     hit, pos = raster_pos(np.nonzero(faces)[0])
     d_eye = np.linalg.norm(pos[hit] - ec, axis=1) / er
     rim_r = np.clip((d_eye - 0.5) / 0.5, 0.0, 1.0) ** 1.4
@@ -342,7 +345,7 @@ for side in (-1.0, 1.0):
     col = col * (1 - a_catch) + np.array([0.96, 0.94, 0.92], dtype=np.float32)[None, :] * a_catch
     res[hit] = col
     eye_t |= hit
-    eyes.append({"side": side, "faces": int(faces.sum()), "pupil_faces": int(pup.sum()),
+    eyes.append({"centre": [round(float(c), 5) for c in ec], "side": side, "faces": int(faces.sum()), "pupil_faces": int(pup.sum()),
                  "eye_radius_m": round(er, 4), "pupil_radius_m": round(pr, 4)})
 orange &= ~eye_t
 brown &= ~eye_t
