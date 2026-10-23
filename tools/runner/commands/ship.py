@@ -49,6 +49,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
     parser.add_argument("--motion", type=Path, metavar="DIR",
                         help="the stations' motion proof (step 2: the vents) off-screen: checks, MP4, sheets into DIR")
+    parser.add_argument("--vent-anim", type=Path, metavar="DIR",
+                        help="the east vent's animation in place at night (godot/ship/vent_anim.gd through its demo: calm, "
+                             "the problem, a hold, the cough, calm) from the player's eye off-screen: MP4 and key sheet into DIR")
     parser.add_argument("--play", type=Path, nargs="?", const=PLAY_DEFAULT, metavar="DIR",
                         help="FOR THE ENGINEER ONLY (an on-screen window; agents never run it): walk the built ship in "
                              "first person at night; P saves a screenshot and its position into DIR "
@@ -97,6 +100,10 @@ def run(args: argparse.Namespace) -> int:
             return code
     if args.motion:
         code = motion(layout, out, args.motion.resolve())
+        if code:
+            return code
+    if args.vent_anim:
+        code = vent_anim(layout, out, args.vent_anim.resolve())
         if code:
             return code
     if args.shoot:
@@ -464,7 +471,7 @@ def walk_video(layout: dict, out: Path, folder: Path) -> int:
 # --- step 2: the stations' motion proof ----------------------------------------------------------------------------
 MOTION_SCRIPT = "res://ship/vent_motion.gd"
 MOTION_TIMEOUT = 900
-MOTION = {"size": (1280, 720), "fps": 24, "seconds": 10.0, "max_mb": 10}
+MOTION = {"size": (1280, 720), "fps": 24, "seconds": 22.0, "max_mb": 15}   # vents-anim1: vent_anim.gd's demo, 22 s
 
 
 def motion_request(layout: dict) -> dict:
@@ -502,6 +509,55 @@ def motion_request(layout: dict) -> dict:
             "nose_r": v.NOSE_R, "min_tip_swing": 0.04,
             "fps": MOTION["fps"], "seconds": MOTION["seconds"], "closeups": cu, "watchdog_s": MOTION_TIMEOUT - 60,
             "wall": {"floor": f, "bend": v.BEND, "in": v.IN, "top": v.TOP}}
+
+
+# vents-anim1: the east vent from about 3 m across the throat at the player's eye (deck 1.2 + 1.6), plan (x, y, h)
+VENT_ANIM = {"piece": "station_vent_e", "eye": [-0.25, -3.05, 2.8], "look": [2.108, -4.745, 2.12], "fov": 50.0,
+             "size": (1280, 720), "fps": 24, "max_mb": 15}
+
+
+def vent_anim(layout: dict, out: Path, folder: Path) -> int:
+    """The vent's animation in place (art #263, vents-anim1): ship.gd mode "vent_anim" renders the controller's demo
+    on the whole ship at night in the off-screen window, the key moments labelled into keys_sheet.png; headless
+    Blender encodes the MP4 (ship_video.py, under max_mb); the frames are deleted."""
+    import importlib
+    import shutil
+    import sys
+    sys.path.insert(0, str(blender.SCRIPTS))
+    v = importlib.import_module("ship_interior_vent")
+    req, staged = built_request(layout, out)
+    a = VENT_ANIM
+    req.update({"mode": "vent_anim", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
+                "anim": {"piece": a["piece"], "eye": _g(a["eye"]), "look": _g(a["look"]), "fov": a["fov"], "fps": a["fps"],
+                         "mark_travel": v.MARK_TRAVEL},
+                "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    errors = _stage(staged)
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "vent_anim_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    (folder / "anim.json").unlink(missing_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
+                                  path.as_posix(), folder.as_posix()], a["size"], VIDEO_TIMEOUT)
+    if code != 0 or not (folder / "anim.json").is_file():
+        raise common.Failure(f"ship.gd vent_anim failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+    info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
+    clip = folder / "vent_anim.mp4"
+    clip.unlink(missing_ok=True)
+    blender.run_script(VIDEO_SCRIPT, ["--frames", str(folder / "frames"), "--out", str(clip), "--fps", str(a["fps"]),
+                                      "--max-mb", str(a["max_mb"])], timeout=VIDEO_TIMEOUT)
+    if not clip.is_file():
+        raise common.Failure(f"{VIDEO_SCRIPT} wrote no {clip}")
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    mb = clip.stat().st_size / 2 ** 20
+    if errors or mb > a["max_mb"]:
+        common.bad(f"ship --vent-anim: video {mb:.1f} MB (max {a['max_mb']}), {len(errors)} import errors")
+        return 1
+    common.ok(f"ship --vent-anim: {clip.as_posix()} {a['size'][0]}x{a['size'][1]}, {info['seconds']:.1f} s, "
+              f"{info['frames']} frames, {mb:.1f} MB; states {info['states']}; sheet {(folder / 'keys_sheet.png').as_posix()}")
+    return 0
 
 
 def motion(layout: dict, out: Path, folder: Path) -> int:

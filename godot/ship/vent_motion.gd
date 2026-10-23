@@ -5,12 +5,14 @@ extends SceneTree
 ## On the imported GLBs: every leaf by its name, the slats driven from one 0..1 value each (rotation.x = -open_rad * t
 ## about the hinge at the node's origin) and the marker (position.y = rest + travel * t). Checks by numbers (each
 ## slat's hinge edge does not move, no slat cuts the next or leaves the frame's opening, the marker stays on its bar),
-## then the video's frames (calm: open, breathing, the cyan glow; the problem: the orange heat, slam shut, the marker
-## up; calm again: open), the states sheet (both glows: calm hides nothing, the problem hides `cool`), the vent alone
+## then the video's frames: vent_anim.gd's controller (the game's) through its demo inputs (calm breathing, the
+## problem's slam, a 5 s hold, the cough, calm), every frame's blades checked against each other and the opening (the
+## max penetration, the least clearance; vents-anim1), close-ups at the widest and the slam's moments, the states sheet (both glows: calm hides nothing, the problem hides `cool`), the vent alone
 ## from 8 sides and the close-ups. Writes <out>/motion.json and PNGs; the runner encodes the frames into an MP4.
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const VentGlow = preload("res://ship/vent_glow.gd")
+const VentAnim = preload("res://ship/vent_anim.gd")
 
 var _req: Dictionary
 var _out: String
@@ -182,10 +184,6 @@ func _seam_off(src: Material) -> Material:
 	return _seam_dark[src]
 
 
-func _breathe(s: float) -> float:
-	return 1.0 - 0.09 * (1.0 - cos(s * TAU / 1.6))
-
-
 ## A mesh's vertices in the vent's frame (the vent root at the origin, not turned).
 func _verts(id: String, node: MeshInstance3D) -> PackedVector3Array:
 	var to_vent: Transform3D = (_vents[id] as Node3D).global_transform.affine_inverse() * node.global_transform
@@ -208,6 +206,61 @@ func _sections(pts: PackedVector3Array) -> Dictionary:
 	for key: int in by_x:
 		by_x[key] = Geometry2D.convex_hull(by_x[key])
 	return by_x
+
+
+## How deep convex polygon a reaches into b (0 when apart): its deepest vertex inside b, to b's boundary.
+func _depth(a: PackedVector2Array, b: PackedVector2Array) -> float:
+	var d: float = 0.0
+	for p: Vector2 in a:
+		if Geometry2D.is_point_in_polygon(p, b):
+			d = maxf(d, _edge_dist(p, b))
+	return d
+
+
+func _edge_dist(p: Vector2, b: PackedVector2Array) -> float:
+	var best: float = 1e9
+	for j: int in b.size():
+		var q: Vector2 = Geometry2D.get_closest_point_to_segment(p, b[j], b[(j + 1) % b.size()])
+		best = minf(best, p.distance_to(q))
+	return best
+
+
+## vents-anim1: one clip frame's blades as they stand: each against the next (their sections' hulls: the penetration
+## depth, and with gaps the least clearance) and the opening (how far a vertex leaves it; past the unit's depth apart).
+func _sample(id: String, clip: Dictionary, when: String, clearance: bool) -> void:
+	var o: Dictionary = _req["vents"][id]["opening"]
+	var rows: Array = []
+	for k: int in range(1, int(_req["slats"]) + 1):
+		var pts: PackedVector3Array = _verts(id, _leaf(id, "slat%d" % k) as MeshInstance3D)
+		rows.append(_sections(pts))
+		for p: Vector3 in pts:
+			var lo_h: float = o["h0"] if p.z < float(o["v_face"]) else float(o["v_face_h0"])
+			var out: float = maxf(maxf(float(o["u0"]) - p.x, p.x - float(o["u1"])), maxf(lo_h - p.y, p.y - float(o["h1"])))
+			out = maxf(out, float(o["v_back"]) - p.z)
+			if out > clip["max_outside_m"]:
+				clip["max_outside_m"] = out
+				clip["worst"] = "slat%d outside by %.4f at %s" % [k, out, when]
+			clip["max_past_depth_m"] = maxf(clip["max_past_depth_m"], p.z - float(o["v_max"]))
+	for k: int in rows.size() - 1:
+		var keys: Array = (rows[k] as Dictionary).keys()
+		for n: int in keys.size():
+			var key: int = keys[n]
+			if not rows[k + 1].has(key):
+				continue
+			var a: PackedVector2Array = rows[k][key]
+			var b: PackedVector2Array = rows[k + 1][key]
+			if not Geometry2D.intersect_polygons(a, b).is_empty():
+				var d: float = maxf(_depth(a, b), _depth(b, a))
+				if d > clip["max_penetration_m"]:
+					clip["max_penetration_m"] = d
+					clip["worst"] = "slat%d/slat%d cut %.4f at %s" % [k + 1, k + 2, d, when]
+			elif clearance and n % 4 == 0:
+				var gap: float = 1e9
+				for p: Vector2 in a:
+					gap = minf(gap, _edge_dist(p, b))
+				for p: Vector2 in b:
+					gap = minf(gap, _edge_dist(p, a))
+				clip["min_clearance_m"] = minf(clip["min_clearance_m"], gap)
 
 
 # --- the checks ---------------------------------------------------------------------------------------------------
@@ -379,37 +432,66 @@ func _run() -> void:
 	var c: Vector3 = (_vents[id0] as Node3D).position + Vector3(0.0, fl + 1.04, 0.25)   # the east vent's middle
 	for id: String in _vents:   # the pictures show the east vent alone
 		(_vents[id] as Node3D).visible = id == id0
-	# the motion video (the east vent): calm, open and breathing in the cyan glow 4.5 s; the problem: the orange heat,
-	# a 0.3 s slam shut, shut with orange slits while the marker climbs to 7 s; calm again: cyan, open over 2 s
+	# the motion video (the east vent): the controller through its demo (vent_anim.gd: calm 6 s, the problem's slam,
+	# the hold 8..13 s, the cough, calm), each frame's blades checked; then the close-ups at its key moments
 	var fps: int = int(_req["fps"])
-	var secs: float = float(_req["seconds"])
+	var secs: float = VentAnim.DEMO_S
 	_label.text = ""
+	var anim: Node = VentAnim.new()
+	anim.manual = true
+	root.add_child(anim)
+	anim.setup(_vents[id0], id0, float(_req["mark_travel"]))
+	var clip: Dictionary = {"max_penetration_m": 0.0, "max_outside_m": 0.0, "max_past_depth_m": 0.0,
+		"min_clearance_m": 1e9, "deg_min": 1e9, "deg_max": -1e9, "worst": ""}
+	var keep: Dictionary = {}   # frame -> the blades' angles (the close-ups' moments)
+	var widest: Array = [-1.0, 0]
+	var deepest: Array = [1e9, 0]
 	_look(c + Vector3(1.9, 0.3, 3.3), c + Vector3(-0.05, 0.0, 0.0), 42.0)
 	for i: int in int(secs * fps):
 		var s: float = float(i) / fps
-		var t: float = 0.0
-		var calm: bool = s < 4.5 or s >= 7.0
-		if s < 4.5:
-			t = _breathe(s)
-		elif s < 4.8:
-			var a: float = (s - 4.5) / 0.3
-			t = _breathe(4.5) * (1.0 - a * a)
-		elif s < 7.0:
-			t = 0.0
-		elif s < 9.0:
-			t = smoothstep(0.0, 1.0, (s - 7.0) / 2.0)
-		else:
-			t = _breathe(s - 9.0)
-		var m: float = 0.0
-		if s >= 4.5 and s < 7.0:
-			m = smoothstep(0.0, 1.0, (s - 4.5) / 2.5)
-		elif s >= 7.0 and s < 9.5:
-			m = 1.0 - smoothstep(0.0, 1.0, (s - 7.0) / 2.5)
-		_drive(id0, t, m)
-		_calm(id0, calm)
+		var inp: Array = VentAnim.demo(s)
+		anim.problem = inp[0]
+		anim.hold = inp[1]
+		anim.step(1.0 / fps)
+		_sample(id0, clip, "%.2f s" % s, i % 2 == 0)
+		var a: PackedFloat32Array = anim.angles
+		for k: int in a.size():
+			clip["deg_min"] = minf(clip["deg_min"], a[k])
+			clip["deg_max"] = maxf(clip["deg_max"], a[k])
+		var top: float = Array(a).max()
+		if top > widest[0]:   # the widest blade (the top one never rises above calm)
+			widest = [top, i]
+		if s > VentAnim.DEMO_PROBLEM_S and s < VentAnim.DEMO_PROBLEM_S + 0.6 and a[3] < deepest[0]:
+			deepest = [a[3], i]
+		keep[i] = [a.duplicate(), anim.marker]
 		var img: Image = await _grab(1)
 		img.save_png(_out.path_join("frames/%05d.png" % i))
+	anim.release(_vents[id0])
+	anim.queue_free()
+	result["clip"] = clip
+	print("VENT clip: max penetration %.4f m, max outside the opening %.4f m, past the depth %.4f m, least clearance "
+		% [clip["max_penetration_m"], clip["max_outside_m"], clip["max_past_depth_m"]]
+		+ "%.4f m, blades %.1f..%.1f deg %s" % [clip["min_clearance_m"], clip["deg_min"], clip["deg_max"], clip["worst"]])
+	if clip["max_penetration_m"] > 0.0 or clip["max_outside_m"] > 0.0:
+		ok = false
+		result["vents"][id0]["problems"].append("the clip: penetration %.4f, outside %.4f" % [clip["max_penetration_m"], clip["max_outside_m"]])
+	# close-ups at the widest (the cough's kick) and the slam's deepest moment: the blades from the side, their ends
+	var moments: Array = [["widest (cough kick)", widest[1]], ["slam (shut)", deepest[1]],
+		["bounce", deepest[1] + 2], ["breath top", int(2.0 * fps)]]
+	var mclose: Array = []
+	for mo: Array in moments:
+		var ang: PackedFloat32Array = keep[int(mo[1])][0]
+		for k: int in ang.size():
+			_leaf(id0, "slat%d" % (k + 1)).rotation.x = -deg_to_rad(ang[k])
+		for cam: Array in [[Vector3(1.6, 0.05, 0.55), Vector3(0.0, 0.0, 0.3), 30.0],
+				[Vector3(-0.25, 0.25, 0.65), Vector3(-0.47, 0.1, 0.33), 34.0]]:
+			_label.text = "%s, %.2f s, blades %.1f..%.1f deg" % [mo[0], float(mo[1]) / fps, Array(ang).min(), Array(ang).max()]
+			_look(c + cam[0], c + cam[1], cam[2])
+			var shot: Image = await _grab(3)
+			mclose.append(_tile(shot, 640, 360))
+	_sheet(mclose, 2, 640, 360, _out.path_join("clip_closeups.png"))
 	result["frames"] = int(secs * fps)
+	_label.text = ""
 	# the states sheet: the problem shut and half open, calm open and shut, the marker high, calm open from the side
 	var states: Array = []
 	for st: Array in [["problem, shut (t 0)", 0.0, 0.0, false, false], ["problem, half open", 0.5, 0.0, false, false],
