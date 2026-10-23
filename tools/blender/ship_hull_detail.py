@@ -219,6 +219,7 @@ def cockpit(side: float) -> list:
 
 # --- the nozzle pods -----------------------------------------------------------------------------------------------
 POD_SEGS = 32
+THROAT_SMOOTH_DEG = 30.0   # fix 2: the throat smooth across its radial facets, sharp at its wall/floor crease
 NOZZLE = (0.8, 0.45)   # lens step 2: the nozzle's radius at the bell's lip and 1.0 m in (x r), its floor 1.15 m in
 
 
@@ -231,14 +232,22 @@ def nozzle_pod(args: dict, layout: dict) -> list:
             for k in range(1, 8)]
     shell = H._lathe_y([(0.0, 0.0)] + nose + [(r, ln - 0.7), (0.97 * r, ln - 0.35), (0.0, ln - 0.9)], POD_SEGS)
     collar = H._lathe_y([(0.0, ln - 1.5), (1.03 * r, ln - 1.5), (1.03 * r, ln - 1.3), (0.0, ln - 1.3)], POD_SEGS)
+    # fix 2 (art #263, item 5): the bell and the throat open (caps=False). The lathe capped their rings off the axis:
+    # the bell's lip ring and the throat's mouth were two flat discs in one plane (ln + 0.4) over the whole nozzle,
+    # ext_frame and ext_nozzle_inner z-fighting, so the "dish" changed as the camera turned (wedges of the two discs'
+    # triangles, the brushed frame's moving highlight), and the nozzle behind them was never seen
     bv, bf = H._lathe_y([(0.95 * r, ln - 0.4), (0.92 * r, ln + 0.35), (0.84 * r, ln + 0.4), (NOZZLE[0] * r, ln + 0.4)],
-                        POD_SEGS)
+                        POD_SEGS, caps=False)
     bell = (bv, L.orient(bv, bf, lambda q: (0.0, q[1] - 2.0, 0.0)))
-    tv, tf = H._lathe_y([(NOZZLE[0] * r, ln + 0.4), (NOZZLE[1] * r, ln - 0.6), (0.0, ln - 0.75)], POD_SEGS)
+    tv, tf = H._lathe_y([(NOZZLE[0] * r, ln + 0.4), (NOZZLE[1] * r, ln - 0.6), (0.0, ln - 0.75)], POD_SEGS, caps=False)
     throat = (tv, L.orient(tv, tf, lambda q: (2.0 * q[0], q[1], 2.0 * q[2])))
+    # fix 2 (art #263, item 5): the throat (the dark dish behind the cyan ring) shaded smooth round its POD_SEGS
+    # radial facets (11.25 deg apart), its crease between the wall and the floor (about 50 deg) kept: flat, each facet
+    # mirrored another strip of the sky, streaks that moved as the camera turned
+    pt = L.part("pod_throat", *throat, "ext_nozzle_inner", solid=False)
+    pt["smooth_deg"] = THROAT_SMOOTH_DEG
     return [_smooth(L.part("pod_shell", *shell, "hull_silver")), L.part("pod_collar", *collar, "hull_dark"),
-            L.part("pod_bell", *bell, "ext_frame", solid=False), L.part("pod_throat", *throat, "ext_nozzle_inner",
-                                                                        solid=False)]
+            L.part("pod_bell", *bell, "ext_frame", solid=False), pt]
 
 
 def pod_ring(args: dict, layout: dict) -> list:
@@ -246,7 +255,10 @@ def pod_ring(args: dict, layout: dict) -> list:
     the band round the bell, a band on the barrel ahead of it, the segmented ring on the bell's lip and (lens step 2)
     the glowing inner ring 0.3 m down the nozzle, a dim core on its floor."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
-    band = H._lathe_y([(0.0, ln + 0.02), (0.99 * r, ln + 0.02), (0.99 * r, ln + 0.24), (0.0, ln + 0.24)], POD_SEGS)
+    # fix 2: the band round the bell a ring outside the nozzle's wall (it was a solid disc across the nozzle 16 cm in)
+    rin = NOZZLE[0] * r
+    band = H._lathe_y([(rin, ln + 0.02), (0.99 * r, ln + 0.02), (0.99 * r, ln + 0.24), (rin, ln + 0.24), (rin, ln + 0.02)],
+                      POD_SEGS, caps=False)
     band2 = H._lathe_y([(0.0, ln - 0.95), (1.015 * r, ln - 0.95), (1.015 * r, ln - 0.8), (0.0, ln - 0.8)], POD_SEGS)
     segs = []
     for k in range(10):
@@ -259,7 +271,7 @@ def pod_ring(args: dict, layout: dict) -> list:
     def wall(y):   # the nozzle's radius at y, 6 mm inside it
         a, b = NOZZLE
         return (b + (a - b) * (y - (ln - 0.6)) / 1.0) * r - 0.006
-    iv, i_f = H._lathe_y([(wall(ln - 0.27), ln - 0.27), (wall(ln - 0.33), ln - 0.33)], POD_SEGS)
+    iv, i_f = H._lathe_y([(wall(ln - 0.27), ln - 0.27), (wall(ln - 0.33), ln - 0.33)], POD_SEGS, caps=False)
     inner = (iv, L.orient(iv, i_f, lambda q: (2.0 * q[0], q[1], 2.0 * q[2])))
     return [L.part("pod_band", *L.merge(band, band2), "glow_pod"),
             L.part("pod_segments", *L.merge(*segs), "glow_pod"),
