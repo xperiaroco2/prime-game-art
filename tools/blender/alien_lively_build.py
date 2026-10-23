@@ -124,20 +124,27 @@ def ring(axis, ang, n):
             for p in np.linspace(0, 2 * math.pi, n, endpoint=False)]
 
 
-def eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r):
-    """The eye pit: per eye, its eyeball vertices (every triangle of theirs an eye triangle) near the painted iris
-    projected onto the sphere fitted to the eyeball's open front (G.pit_weight: full inside TRAVEL, none from FADE,
-    faded in from the lid-shared vertices). Returns the new positions and normals, the report and the
-    heat map's inputs."""
+def classify_eyeball(P, I, UV, alb, tri_eye, centres, r):
+    """The eyeball triangles, one classification for eyeball_fix and the sclera fill (PR #303 review, minor 3): the
+    mask's eye triangles, and the painted iris's triangles the mask calls skin (warm and saturated, near an eye)."""
     H, W = alb.shape[:2]
-    hue, sat, val = hsv(alb[np.clip((UV[:, 1] * H).astype(int), 0, H - 1), np.clip((UV[:, 0] * W).astype(int), 0, W - 1)])
-    # a lid or socket triangle: not an eye triangle by the mask, and not painted iris or pupil (a few iris triangles
-    # read the mask's skin at their centre: they are eyeball)
     uvc = UV[I].mean(1)
     th_, ts_, tv_ = hsv(alb[np.clip((uvc[:, 1] * H).astype(int), 0, H - 1), np.clip((uvc[:, 0] * W).astype(int), 0, W - 1)])
-    iris_tri = (tv_ < 0.2) | ((ts_ > 0.25) & ((th_ < 0.14) | (th_ > 0.92)))
+    iris_tri = (ts_ > 0.25) & (tv_ > 0.15) & ((th_ < 0.14) | (th_ > 0.92))
     near_t = np.minimum(*(np.linalg.norm(P[I].mean(1) - c, axis=1) for c in centres.values())) < 1.05 * r
-    eyeball = tri_eye | (iris_tri & near_t)
+    return tri_eye | (iris_tri & near_t)
+
+
+def eyeball_fix(P, N, T, I, UV, alb, eyeball, centres, r, bead=False):
+    """The eye pit: per eye, its eyeball vertices (every triangle of theirs an eye triangle) near the painted iris
+    projected onto the sphere fitted to the eyeball's open front (G.pit_weight: full inside TRAVEL, none from FADE,
+    faded in from the lid-shared vertices). bead (the axolotl's all-dark bead, no gaze): nothing is moved, the
+    sphere is fitted to the whole eyeball. Then every eyeball vertex gets that sphere's radial normal (the faceted
+    sclera under the upper lids, PR #303 review minor 2), faded in over 6 % of r from the lid line, and every TANGENT
+    whose normal changed is made orthogonal to it again. Returns the new positions, normals and tangents, the report
+    and the heat map's inputs."""
+    H, W = alb.shape[:2]
+    hue, sat, val = hsv(alb[np.clip((UV[:, 1] * H).astype(int), 0, H - 1), np.clip((UV[:, 0] * W).astype(int), 0, W - 1)])
     ve, vs = np.zeros(len(P), bool), np.zeros(len(P), bool)
     np.logical_or.at(ve, I[eyeball].ravel(), True)
     np.logical_or.at(vs, I[~eyeball].ravel(), True)
@@ -153,6 +160,8 @@ def eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r):
         # the painted iris's vertices: warm and saturated (a vertex on an island's edge can read the black gutter,
         # so dark alone is no sign), refined once to those within 30 degrees of their mean direction
         painted = (sat[sel] > 0.25) & (val[sel] > 0.15) & ((hue[sel] < 0.14) | (hue[sel] > 0.92))
+        if bead:
+            painted = np.ones(len(sel), bool)  # the bead's front: the whole eyeball
         if painted.sum() < 8:
             raise SystemExit(f"LIVELY pit: only {int(painted.sum())} painted iris vertices on the {key} eye")
         rest0 = dn[painted].mean(0)
@@ -164,7 +173,7 @@ def eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r):
         ia = float(np.percentile(th[painted], 90))
         # the sphere: fitted to the whole open front of the eyeball (60 degrees about the old iris), so the region the
         # procedural iris travels (the 25-degree gaze cap plus the iris, TRAVEL) is made that sphere, faded out to FADE
-        ring = th < math.radians(60)
+        ring = th < math.radians(60) if not bead else np.ones(len(sel), bool)
         if ring.sum() < 12:
             raise SystemExit(f"LIVELY pit: only {int(ring.sum())} sclera ring vertices on the {key} eye (iris {math.degrees(ia):.1f} deg)")
         cl, rl = G.fit_sphere(P[sel][ring].tolist())
@@ -181,6 +190,8 @@ def eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r):
         full = np.abs(np.linalg.norm(P[sel] - cl, axis=1) - rl)
         w0 = w
         w = np.array([G.capped_weight(float(k), float(f), float(m), ROOM_SHARE, MOVE_CAP * r) for k, f, m in zip(w, full, room)])
+        if bead:
+            w = np.zeros(len(sel))
         moved = np.array([G.project_on_sphere(tuple(p), tuple(cl), rl, float(k)) for p, k in zip(P[sel], w)])
         P1[sel] = moved
 
@@ -206,7 +217,7 @@ def eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r):
                     "min_gap_of_moved_mm": round(float(gap[mv > 1e-7].min()) * 1000, 3) if (mv > 1e-7).any() else None,
                     "capped": int((w < w0 - 1e-9).sum()), "capped_in_travel": int(((w < w0 - 1e-9) & (th < TRAVEL)).sum()),
                     "min_room_left_mm": round(float((room - mv)[mv > 1e-7].min()) * 1000, 3) if (mv > 1e-7).any() else None}
-        views[key] = (sel, rest0, cl, rl, ia, r0, r1)
+        views[key] = (sel, rest0, cl, rl, ia, r0, r1, gap)
     # the normals: each vertex's original normal turned by its welded position's change of the geometric normal
     weld = np.unique(np.round(P * 1e5).astype(np.int64), axis=0, return_inverse=True)[1].ravel()
 
@@ -224,10 +235,26 @@ def eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r):
     N1[ch_w] = N[ch_w] + (g1[ch_w] - g0[ch_w])
     N1[ch_w] /= np.linalg.norm(N1[ch_w], axis=1)[:, None]
     rep["normals_turned"] = int(ch_w.sum())
+    # the faceted sclera: the eyeball's own vertices take the sphere's radial normal, faded in from the lid line
+    radial_n = np.zeros(len(P), bool)
+    for key, (sel, _r0, cl, rl, _ia, _a, _b, gap) in views.items():
+        rad = P1[sel] - cl
+        rad /= np.linalg.norm(rad, axis=1)[:, None]
+        k = np.array([G.smoothstep(0.0, 0.06 * r, float(g)) for g in gap])[:, None]
+        n = N1[sel] * (1.0 - k) + rad * k
+        N1[sel] = n / np.linalg.norm(n, axis=1)[:, None]
+        radial_n[sel[k[:, 0] > 0]] = True
+        rep[key]["radial_normals"] = int((k[:, 0] > 0).sum())
+    changed = np.abs(N1 - N).max(1) > 1e-7
+    T1 = T.copy()
+    for i in np.nonzero(changed)[0]:
+        T1[i] = G.orthogonal_tangent(tuple(N1[i]), tuple(T[i]))
+    rep["tangents_reorthogonalised"] = int(changed.sum())
+    rep["max_abs_n_dot_t_after"] = round(float(np.abs((N1 * T1[:, :3]).sum(1)).max()), 6)
     rep["lid_vertices_moved"] = int((np.linalg.norm(P1 - P, axis=1)[vs] > 0).sum())
     mv = np.linalg.norm(P1 - P, axis=1)[mv_any := np.linalg.norm(P1 - P, axis=1) > 0]
-    rep["move_mm"] = {"p50": round(float(np.median(mv)) * 1000, 3), "p99": round(float(np.percentile(mv, 99)) * 1000, 3),
-                      "over_5mm": int((mv > 0.005).sum())}
+    rep["move_mm"] = ({"p50": round(float(np.median(mv)) * 1000, 3), "p99": round(float(np.percentile(mv, 99)) * 1000, 3),
+                       "over_5mm": int((mv > 0.005).sum())} if len(mv) else {"p50": 0.0, "p99": 0.0, "over_5mm": 0})
     # the lid gap: eyeball triangles that cross a lid or socket triangle near the eyes (neighbours sharing a vertex
     # or a welded position left out), before and after
     near_t = np.minimum(*(np.linalg.norm(P[I].mean(1) - c, axis=1) for c in centres.values())) < 1.4 * r
@@ -243,21 +270,7 @@ def eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r):
                 n += 1
         return n
     rep["lid_crossings"] = {"before": crossings(P), "after": crossings(P1)}
-    return P1, N1, rep, views
-
-
-def write_vec3(doc, binary, i, rows):
-    """Writes float32 VEC3 rows into accessor i's tightly packed bytes (POSITION's min and max with them)."""
-    a = doc["accessors"][i]
-    v = doc["bufferViews"][a["bufferView"]]
-    if v.get("byteStride", 12) != 12 or a["componentType"] != 5126 or a["type"] != "VEC3":
-        raise SystemExit("LIVELY interleaved or non-float VEC3: cannot patch")
-    start = v.get("byteOffset", 0) + a.get("byteOffset", 0)
-    payload = rows.astype("<f4").tobytes()
-    binary[start:start + len(payload)] = payload
-    if "min" in a:
-        f = rows.astype(np.float32).astype(np.float64)
-        a["min"], a["max"] = f.min(0).tolist(), f.max(0).tolist()
+    return P1, N1, T1, rep, views
 
 
 def residual_view(path, P, I, views, size=640):
@@ -267,7 +280,7 @@ def residual_view(path, P, I, views, size=640):
     full and zero weight (TRAVEL and FADE, grey)."""
     img = np.full((2 * size, 2 * size, 3), 40, np.uint8)
     for row, key in enumerate(("left", "right")):
-        sel, rest0, cl, rl, ia, r0, r1 = views[key]
+        sel, rest0, cl, rl, ia, r0, r1, _gap = views[key]
         f, s, u = (np.array(v) for v in G.eye_frame(tuple(rest0)))
         idx = -np.ones(len(P), int)
         idx[sel] = np.arange(len(sel))
@@ -318,6 +331,13 @@ def main():
     for k in ("--glb", "--albedo", "--mask", "--build", "--out"):
         ap.add_argument(k, required=True)
     ap.add_argument("--name", default="chameleon")
+    ap.add_argument("--kind", choices=("painted", "bead"), default="painted",
+                    help="painted: a painted iris on a white eyeball (the chameleon, a moving iris); bead: an all-dark"
+                         " bead with a painted catch light (the axolotl: no gaze, the catch light fixed to the light)")
+    ap.add_argument("--gills", default="", help="a build.json with pivots.<name>_gills (Blender x, y, z): six gill"
+                                                " stalks on springs instead of the crest")
+    ap.add_argument("--detail", default="", help="the head's detail PNG (G the thinness): the gills' weights")
+    ap.add_argument("--gill-swing", type=float, default=14.0, help="the gills' largest spring swing tested (degrees)")
     ap.add_argument("--neck", default="", help="y0,y1 of the neck blend (default: from the neck's waist)")
     ap.add_argument("--crest-root", type=float, default=0.45, help="the crest root between the head centre and tip")
     ap.add_argument("--blade", default="0.10,0.16", help="the crest blade's half width: full weight, none")
@@ -344,13 +364,18 @@ def main():
     cen = P[I].mean(1)
     uvc = UV[I].mean(1)
     tri_eye = mask[np.clip((uvc[:, 1] * H).astype(int), 0, H - 1), np.clip((uvc[:, 0] * W).astype(int), 0, W - 1), 0] < 0.5
+    bead = args.kind == "bead"
+    eyeball = classify_eyeball(P, I, UV, alb, tri_eye, centres, r)
+    views = {}
 
     # ---- the eye pit: the eyeballs' dent at the painted pupil projected out (the GLB's positions and normals patched)
     if not args.no_pit_fix:
         N = accessor(doc, binary, prim["attributes"]["NORMAL"])
-        P, N1, pit, views = eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r)
-        write_vec3(doc, binary, prim["attributes"]["POSITION"], P)
-        write_vec3(doc, binary, prim["attributes"]["NORMAL"], N1)
+        T = accessor(doc, binary, prim["attributes"]["TANGENT"])
+        P, N1, T1, pit, views = eyeball_fix(P, N, T, I, UV, alb, eyeball, centres, r, bead=bead)
+        G.write_vec3(doc, binary, prim["attributes"]["POSITION"], P.tolist())
+        G.write_vec3(doc, binary, prim["attributes"]["NORMAL"], N1.tolist())
+        G.write_floats(doc, binary, prim["attributes"]["TANGENT"], T1.tolist())
         data = G.write_glb(doc, binary)
         cen = P[I].mean(1)
         residual_view(out / "eye_residual.png", P, I, views)
@@ -360,7 +385,9 @@ def main():
                                                         b["after_min_pct"]) for n, b in pit[k]["residual"].items()})
                   + f" moved {pit[k]['moved']} max {pit[k]['max_move_mm']} mm near lid {pit[k]['max_move_near_lid_mm']} mm,"
                   f" capped {pit[k]['capped']} ({pit[k]['capped_in_travel']} in travel), room left {pit[k]['min_room_left_mm']} mm,"
-                  f" lid vertices moved {pit['lid_vertices_moved']}, lid crossings {pit['lid_crossings']}, move {pit['move_mm']}", flush=True)
+                  f" lid vertices moved {pit['lid_vertices_moved']}, lid crossings {pit['lid_crossings']}, move {pit['move_mm']},"
+                  f" radial normals {pit[k]['radial_normals']}, tangents {pit['tangents_reorthogonalised']}"
+                  f" (|n.t| max {pit['max_abs_n_dot_t_after']})", flush=True)
 
     # ---- every texel of the triangles near the eyes gets its 3D position (a small UV rasterizer)
     hue, sat, val = hsv(alb)
@@ -382,7 +409,7 @@ def main():
         l2 = ((cy - ay_) * (gx - cx) + (ax_ - cx) * (gy - cy)) / den
         strict = (l1 >= 0) & (l2 >= 0) & (1.0 - l1 - l2 >= 0)
         cov_any[gy[strict].astype(int), gx[strict].astype(int)] = True
-        if tri_eye[t]:
+        if eyeball[t]:
             cov_eye[gy[strict].astype(int), gx[strict].astype(int)] = True
         if not near[t]:
             continue
@@ -417,6 +444,35 @@ def main():
         vis = np.zeros((H, W), bool)
         vis[iy, ix] = True
         colour = alb[iy, ix]
+        key = "left" if side > 0 else "right"
+        if bead:  # the axolotl: an all-dark bead; its painted catch light is measured and painted out
+            hh, ss, vv = hsv(colour)
+            dark = vv < 0.45
+            bright = (vv > 0.6) & (ss < 0.35)
+            centre = np.array(views[key][2]) if key in views else c
+            bd = posmap[iy, ix] - centre
+            bd /= np.linalg.norm(bd, axis=1)[:, None]
+            catch = None
+            if bright.sum() >= 4:
+                cd = bd[bright].mean(0)
+                cd /= np.linalg.norm(cd)
+                ang = np.arccos(np.clip(bd[bright] @ cd, -1, 1))
+                catch = {"dir": cd.round(5).tolist(), "angle": round(float(np.percentile(ang, 90)), 5),
+                         "colour": np.median(colour[bright], 0).round(4).tolist(), "texels": int(bright.sum())}
+                sel = (np.arccos(np.clip(tdir @ cd, -1, 1)) < 1.8 * catch["angle"] + 0.03) & cov_eye[ty, tx] & (val[ty, tx] > 0.45)
+                hole0[ty[sel], tx[sel]] = True
+            fd = bd[dark].mean(0)
+            fd /= np.linalg.norm(fd)
+            meds.append(np.median(colour[dark], 0))
+            share = {"dark": round(float(dark.mean()), 4), "bright": round(float(bright.mean()), 4),
+                     "mid": round(float((~dark & ~bright).mean()), 4)}
+            eyes[key] = {"centre": centre.round(5).tolist(), "radius": round(float(views[key][3]), 5) if key in views else r,
+                         "build_eye_fit": {"centre": c.round(5).tolist(), "r": r}, "rest": fd.round(5).tolist(),
+                         "bead_colour": np.median(colour[dark], 0).round(4).tolist(), "catch": catch, "shares": share,
+                         "limits_deg": {"pos_x": 0, "neg_x": 0, "up": 0, "down": 0}}
+            report.setdefault("texels", {})[key] = {"eye": int(len(ty)), "visible": int(tvis.sum()), **share}
+            print(f"LIVELY bead {key}: visible {int(tvis.sum())} texels, shares {share}, catch {catch}", flush=True)
+            continue
         pupil = vis & (val < PUPIL_V)
         iris = vis & ~pupil & (sat > 0.25) & ((hue < 0.14) | (hue > 0.92))
         sclera = vis & ~pupil & ~iris
@@ -501,6 +557,8 @@ def main():
             "sclera_colour": np.median(colour[sclera[iy, ix]], 0).round(4).tolist(), "catch": catch,
             "open_at_rest": {"iris": round(float(i0), 3), "pupil": round(float(p0), 3)}, "limits_deg": lim,
             "allowed_rows_pitch_up": ["".join("#" if x else "." for x in row) for row in allowed[::-1]]}
+        if key in views:  # the sphere fitted to the eyeball's open front (eyeball_fix) beside the shader's eye sphere
+            eyes[key]["front_sphere"] = {"centre": np.round(views[key][2], 5).tolist(), "r": round(float(views[key][3]), 5)}
         print(f"LIVELY eye {side:+d}: iris {math.degrees(e_ang):.1f} deg (rms {e_res:.2f}), pupil "
               f"{math.degrees(p_ang):.1f} deg (rms {p_res:.2f}), axes apart {eyes['left' if side > 0 else 'right']['axes_apart_deg']}, "
               f"rest open {i0:.2f}/{p0:.2f}, limits {lim}, catch {catch}", flush=True)
@@ -511,7 +569,10 @@ def main():
     # gutter beside the old iris filled too, so the texture filter never bleeds a dark rim
     smed = np.mean(meds, 0)
     teal_all = (hue > 0.35) & (hue < 0.65) & (sat > 0.15)
-    if args.no_pit_fix:  # the v2 fill, kept for a before/after
+    if bead:  # the catch light painted out from the bead's own dark texels
+        hole = dilate(hole0, 2) & cov_eye
+        known = cov_eye & ~hole & (val < 0.45)
+    elif args.no_pit_fix:  # the v2 fill, kept for a before/after
         hole = dilate(hole0, 3) & eye
         known = eye & ~hole
     else:
@@ -577,42 +638,150 @@ def main():
     def zc(yy):
         return min(prof, key=lambda p: abs(p[0] - yy))[2]
     pos = {"Chest": (0.0, ymin, zc(shoulder[0])), "Neck": (0.0, y0, zc(y0)), "Head": (0.0, ym, zc(ym))}
-    top = P[(y > ey) & (np.abs(P[:, 0]) < 0.08)]
-    tip = top[np.argmax(top[:, 1] - top[:, 2])]  # the crest tip: high and far back
     head_c = np.array([0.0, ey, zc(ey) if ey < prof[-1][0] + 0.02 else float(P[np.abs(y - ey) < 0.01][:, 2].mean())])
-    root = head_c + args.crest_root * (tip - head_c)
-    for k in range(3):
-        pos[f"Crest{k + 1}"] = tuple(float(v) for v in root + (tip - root) * k / 3.0)
-    b0, b1 = (float(v) for v in args.blade.split(","))
-    seg = tip - root
-    # the skull: a sphere about the head centre through the crest root; only what stands out of it is crest (the
-    # axis test alone also caught a strip of the back of the skull behind the root)
-    r_root = float(np.linalg.norm(root - head_c))
-    infl, crest_n, crest_w = [], 0, []
-    for p in P:
-        ch, nk, hd = G.neck_weights(float(p[1]), y0, ym, y1)
-        t = float((p - root) @ seg / (seg @ seg))
-        wc = G.smoothstep(0.0, 0.3, t) * (1.0 - G.smoothstep(b0, b1, abs(float(p[0])))) * hd
-        wc *= G.smoothstep(r_root - args.skull_margin, r_root, float(np.linalg.norm(p - head_c)))
-        crest_w.append(wc)
-        crest_n += wc > 0.01
-        c1, c2, c3 = G.crest_split(t)
-        inf = [(j, w) for j, w in ((0, ch), (1, nk), (2, hd * (1.0 - wc)), (3, wc * c1), (4, wc * c2), (5, wc * c3))
-               if w > 1e-4]
-        infl.append(inf)
-    (out / f"{args.name}_lively.glb").write_bytes(G.add_skin(data, pos, infl))
-    crest_view(out / "crest_weights.png", P, np.array(crest_w), head_c, r_root - args.skull_margin)
-    report["rig"] = {"joints": {k: [round(v, 5) for v in pos[k]] for k in G.JOINTS}, "neck_y": [y0, ym, y1],
-                     "waist": waist, "shoulder": shoulder, "chin_y": chin, "crest_root": root.round(5).tolist(),
-                     "crest_tip": tip.round(5).tolist(), "crest_vertices": int(crest_n), "blade": [b0, b1],
-                     "skull_radius": round(r_root - args.skull_margin, 5),
-                     "crest_weight_inside_skull": round(float(max([w for w, p in zip(crest_w, P)
-                                                                    if np.linalg.norm(p - head_c) <= r_root - args.skull_margin]
-                                                                   or [0.0])), 6)}
+    if args.gills:
+        rig = gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out)
+        report["rig"] = {"joints": {k: [round(v, 5) for v in pos[k]] for k in G.GILL_JOINTS}, "neck_y": [y0, ym, y1],
+                         "waist": waist, "shoulder": shoulder, "chin_y": chin, **rig}
+    else:
+        top = P[(y > ey) & (np.abs(P[:, 0]) < 0.08)]
+        tip = top[np.argmax(top[:, 1] - top[:, 2])]  # the crest tip: high and far back
+        root = head_c + args.crest_root * (tip - head_c)
+        for k in range(3):
+            pos[f"Crest{k + 1}"] = tuple(float(v) for v in root + (tip - root) * k / 3.0)
+        b0, b1 = (float(v) for v in args.blade.split(","))
+        seg = tip - root
+        # the skull: a sphere about the head centre through the crest root; only what stands out of it is crest (the
+        # axis test alone also caught a strip of the back of the skull behind the root)
+        r_root = float(np.linalg.norm(root - head_c))
+        infl, crest_n, crest_w = [], 0, []
+        for p in P:
+            ch, nk, hd = G.neck_weights(float(p[1]), y0, ym, y1)
+            t = float((p - root) @ seg / (seg @ seg))
+            wc = G.smoothstep(0.0, 0.3, t) * (1.0 - G.smoothstep(b0, b1, abs(float(p[0])))) * hd
+            wc *= G.smoothstep(r_root - args.skull_margin, r_root, float(np.linalg.norm(p - head_c)))
+            crest_w.append(wc)
+            crest_n += wc > 0.01
+            c1, c2, c3 = G.crest_split(t)
+            inf = [(j, w) for j, w in ((0, ch), (1, nk), (2, hd * (1.0 - wc)), (3, wc * c1), (4, wc * c2), (5, wc * c3))
+                   if w > 1e-4]
+            infl.append(inf)
+        (out / f"{args.name}_lively.glb").write_bytes(G.add_skin(data, pos, infl))
+        crest_view(out / "crest_weights.png", P, np.array(crest_w), head_c, r_root - args.skull_margin)
+        report["rig"] = {"joints": {k: [round(v, 5) for v in pos[k]] for k in G.JOINTS}, "neck_y": [y0, ym, y1],
+                         "waist": waist, "shoulder": shoulder, "chin_y": chin, "crest_root": root.round(5).tolist(),
+                         "crest_tip": tip.round(5).tolist(), "crest_vertices": int(crest_n), "blade": [b0, b1],
+                         "skull_radius": round(r_root - args.skull_margin, 5),
+                         "crest_weight_inside_skull": round(float(max([w for w, p in zip(crest_w, P)
+                                                                        if np.linalg.norm(p - head_c) <= r_root - args.skull_margin]
+                                                                       or [0.0])), 6)}
+        report["rig"]["springs"] = [{"name": "crest", "bones": ["Crest1", "Crest2", "Crest3"], "hz": 2.2, "zeta": 0.3,
+                                     "lag": 0.09, "max_deg": 0.0}]
+    report["controller"] = ({"gaze": "none", "head_hz": 2.2, "yaw_deg": 40.0, "pitch_deg": 24.0, "neck_share": 0.4}
+                            if bead else {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0, "neck_share": 0.4})
     report["sclera"] = f"{args.name}_sclera.png"
     (out / "lively.json").write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
     print(f"LIVELY rig neck {y0:.3f}/{ym:.3f}/{y1:.3f} waist {waist[0]:.3f} (w {waist[1]:.3f}) shoulder {shoulder[0]:.3f} "
-          f"chin {chin:.3f} crest {root.round(3).tolist()} -> {tip.round(3).tolist()} ({crest_n} verts)", flush=True)
+          f"chin {chin:.3f} " + json.dumps({k: v for k, v in report["rig"].items() if k in ("crest_vertices", "gill_swing_deg")}),
+          flush=True)
+
+
+def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
+    """The axolotl's six gill stalks (2026-10-23, AL1): one bone each at its root (step 2a's pivots, Blender x, y, z
+    -> glTF x, z, -y), its axis the mean of its thin vertices; weights by G.stalk_weight (none at the root, none on the
+    thick skull), times the head's. The poke test: each stalk's weighted vertices turned by +-swing about the head's
+    up and side axes through the root; a vertex ending inside the head (behind the nearest non-gill triangle, more
+    than 1 mm) that was outside at rest is a poke; the swing is lowered by 2 degrees until none pokes (rig.gill_swing_deg, the controller's
+    cap). Writes <name>_lively.glb and gill_weights.png; returns the rig report (pos gets the gill joints)."""
+    piv = json.loads(Path(args.gills).read_text(encoding="utf-8"))["pivots"][f"{args.name}_gills"]
+    thin = load_png(args.detail)[..., 1]
+    Ht, Wt = thin.shape
+    tv = thin[np.clip((UV[:, 1] * Ht).astype(int), 0, Ht - 1), np.clip((UV[:, 0] * Wt).astype(int), 0, Wt - 1)]
+    names = list(G.GILLS)
+    roots = {}
+    for name in names:
+        bx, by, bz = piv[f"gill_{name[4:]}"]
+        roots[name] = np.array([bx, bz, -by])
+    R = np.array([roots[n] for n in names])
+    near = np.argmin(np.linalg.norm(P[:, None, :] - R[None], axis=-1), axis=1)
+    dist = np.linalg.norm(P - R[near], axis=1)
+    rep, W = {"gills": {}}, np.zeros((len(P), len(names)))
+    hd = np.array([G.neck_weights(float(v), y0, ym, y1)[2] for v in P[:, 1]])
+    for k, name in enumerate(names):
+        cand = (near == k) & (tv > 0.5) & (dist < 0.45)
+        if cand.sum() < 20:
+            raise SystemExit(f"LIVELY gill {name}: only {int(cand.sum())} thin vertices near its root")
+        ax = (P[cand] - roots[name]).mean(0)
+        ax /= np.linalg.norm(ax)
+        sp = (P[cand] - roots[name]) @ ax
+        length = float(np.percentile(sp, 98))
+        own = (near == k) & (dist < 1.3 * length)
+        s_ = (P - roots[name]) @ ax
+        W[:, k] = np.array([G.stalk_weight(float(a), length, float(t)) if o else 0.0 for a, t, o in zip(s_, tv, own)]) * hd
+        pos[name] = tuple(float(v) for v in roots[name])
+        snap = float(np.linalg.norm(P - roots[name], axis=1).min())
+        rep["gills"][name] = {"root": roots[name].round(5).tolist(), "axis": ax.round(4).tolist(), "length": round(length, 4),
+                              "vertices": int((W[:, k] > 0.01).sum()), "root_to_mesh_mm": round(snap * 1000, 2)}
+    tot = W.sum(1)
+    over = tot > 1.0
+    W[over] /= tot[over][:, None]
+    # the head the gills must not poke into: its thick triangles (the skull and face, none of the thin gill fins at
+    # the roots, whose own planes a turning filament crosses without poking anything)
+    gill_v = (W.sum(1) > 0.01) | (tv > 0.25)
+    body_t = [tuple(int(x) for x in t) for t in I if not gill_v[t].any()]
+    bvh = BVHTree.FromPolygons([Vector(v) for v in P], body_t, all_triangles=True)
+    up = np.array([0.0, 1.0, 0.0])
+    # the head's triangles' outward sense (a GLB's winding may face either way)
+    cen_t = np.array([P[list(t)].mean(0) for t in body_t])
+    fn = np.cross(P[[t[1] for t in body_t]] - P[[t[0] for t in body_t]], P[[t[2] for t in body_t]] - P[[t[0] for t in body_t]])
+    outward = 1.0 if float(np.median(((cen_t - head_c) * fn).sum(1))) > 0 else -1.0
+
+    def inside(pts):
+        res = np.zeros(len(pts), bool)
+        for i, pp in enumerate(pts):
+            loc, nrm, _, _ = bvh.find_nearest(Vector(pp))
+            res[i] = loc is not None and (Vector(pp) - loc).dot(nrm) * outward < -0.001
+        return res
+    rest_in = {k: inside(P[np.nonzero(W[:, k] > 0.05)[0]]) for k in range(len(names))}
+
+    def pokes(swing):
+        n = 0
+        for k, name in enumerate(names):
+            m = np.nonzero(W[:, k] > 0.05)[0]
+            side = np.cross(up, np.array(rep["gills"][name]["axis"]))
+            side /= np.linalg.norm(side)
+            q = P[m] - roots[name]
+            for axis in (up, side):
+                for sgn in (1.0, -1.0):
+                    a = math.radians(swing) * sgn
+                    rq = q * math.cos(a) + np.cross(axis, q) * math.sin(a) + np.outer(q @ axis, axis) * (1 - math.cos(a))
+                    p2 = roots[name] + q + W[m, k][:, None] * (rq - q)
+                    n += int((inside(p2) & ~rest_in[k]).sum())  # a poke: inside now, outside at rest
+        return n
+    swing, counts = args.gill_swing, {}
+    while swing > 0:
+        counts[str(swing)] = pokes(swing)
+        if counts[str(swing)] == 0:
+            break
+        swing -= 2.0
+    rep["gill_swing_deg"] = max(swing, 0.0)
+    rep["gill_pokes_by_swing"] = counts
+    rep["gill_weight_on_thick"] = round(float(W.sum(1)[tv < 0.25].max(initial=0.0)), 6)
+    infl = []
+    for i in range(len(P)):
+        ch, nk, h = G.neck_weights(float(P[i, 1]), y0, ym, y1)
+        g = W[i]
+        inf = [(j, w) for j, w in ((0, ch), (1, nk), (2, h * (1.0 - g.sum()))) if w > 1e-4]
+        inf += [(3 + k, float(g[k])) for k in range(len(names)) if g[k] > 1e-4]
+        infl.append(inf)
+    (out / f"{args.name}_lively.glb").write_bytes(G.add_skin(data, pos, infl, joints=G.GILL_JOINTS, parents=G.GILL_PARENTS))
+    crest_view(out / "gill_weights.png", P, np.clip(W.sum(1), 0, 1), head_c, 0.0)
+    hz = (2.3, 2.0, 1.8, 2.4, 2.1, 1.9)  # each stalk its own rate, so they never swing in step
+    rep["springs"] = [{"name": n, "bones": [n], "hz": hz[k], "zeta": 0.28, "lag": 0.11, "max_deg": rep["gill_swing_deg"]}
+                      for k, n in enumerate(names)]
+    print(f"LIVELY gills: swing {rep['gill_swing_deg']} pokes {counts} thick {rep['gill_weight_on_thick']} " + json.dumps(
+        {n: (g["vertices"], g["length"], g["root_to_mesh_mm"]) for n, g in rep["gills"].items()}), flush=True)
+    return rep
 
 
 def crest_view(path, P, w, head_c, r_skull, size=640):
