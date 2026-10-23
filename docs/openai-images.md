@@ -81,7 +81,9 @@ missing key fails with the engineer's steps (top up, create a key, `[Environment
 | `[variants.<name>]` | A shared `prompt` and any of the `[defaults]` keys |
 | `[[items]]` | `id`, `kind`, `variant`, `prompt`, `images` and any of the `[defaults]` keys or `quality`; any other key is an error |
 
-Merged: `[defaults]`, then the variant, then the item. Kinds:
+Merged: `[defaults]`, then the variant, then the item. An item's `prompt` **replaces** its variant's, it is not appended
+(a variant's prompt is for items that set none; batch 2026-10-22-alien-t2-partsbuilt sent six short prompts without the
+shared style this way). Kinds:
 
 - `generate`: `POST /v1/images/generations`, JSON `{model, prompt, size, quality, n, output_format = "png"}`. No
   `images`.
@@ -436,3 +438,38 @@ no item needed a revision. All five kept both characters; the pressed-on mouths 
 and the swap-only expressions read clearly; the surface reads more as smooth soft clay than as rough hand-worked
 plasticine (fingerprints faint). Images: `D:/prime-art-raw/2026-10-22-alien-h2-clayparts/`; JPEGs and the labelled
 sheet `h2_sheet.jpg`: `D:/prime-art-raw/research/2026-10-22-roster/design/h2/`.
+
+## Batch 2026-10-22-alien-t2-partsbuilt (art #196, test T2: aliens built of parts, from scratch)
+
+T2 (the engineer, art#196 comment 6344356802): new aliens designed as characters built of parts, a simple clay base
+form with separate stuck-on eyes (some on stalks), a rolled mouth and clay "sausage" brows, so swapping the pieces gives
+expressions. Six concepts, front three-quarter, head and shoulders, 1024x1536, medium, n = 1: a tall stick (m), a bean
+(f), a stack of stones (m), a cone (f), a ball on a stalk neck (f), a flat disc (m). The first six (`c1_stick_m` to
+`c6_disc_m`) went out with only the character text, because an item's `prompt` replaces its variant's (the doc line
+under "Batch files" now says so): they came back clothed, in rooms, the bean woman with human hair; kept as a record.
+The six `c*r_*` items carry the whole prompt (the shared style, then the character). `c2r_bean_f` was first refused by
+moderation (HTTP 400 `moderation_blocked`, "sexual", $0) for a bare female body; reworded as a display-bust form with
+no anatomical detail, it passed. The picks for the expression sheets are the stick man and the bean woman. Their parts
+are the most clearly separate pieces, both read at a glance, and the bean keeps a human neck for the shared skeleton,
+where the ball on a stalk does not. Each got a 3 x 2 swap sheet, 1536x1536, an edit of its concept: rest, smile, sad,
+surprised, angry, and the swapped pieces laid out on the table (`x1_stick_m`, `x2_bean_f`). 15 requests (one refused),
+**$0.2092** of the $1.50 cap. Both sheets kept the head and swapped only the pieces. The stick man's sheet drifted to a
+front view, and his smile is weak. The bean woman's smile cell winks (one lid closed). The palette came out a muted
+sage-teal, duller than the roster's teal. Images: `D:/prime-art-raw/2026-10-22-alien-t2-partsbuilt/`; one JPEG per
+image and the labelled sheet `t2_sheet.jpg` (the six revised concepts, then both swap sheets):
+`D:/prime-art-raw/research/2026-10-22-roster/design/t2/`.
+
+## Batch 2026-10-22-alien-t1-sockets-2d (art #196, test T1: a socketed head and its separate pieces)
+
+T1 (the engineer, art#196 comment 6344356802): the chameleon man's head is generated with recesses, a shallow mouth
+dish and two round empty eye sockets, no brows, so separate pieces (mouths, eyes with lids, rolled brows) seat into
+them and are swapped whole for expressions. **High** (focused work on one picked head), n = 1: his pilot turnaround
+with the lips, eyeballs and lids taken out and the recesses left (`ch_sockets`, an edit of `ch_turn`, 1536x1024), and
+one three-quarter product image per piece on a plain light grey, 1024x1024, edits of the H2 parts kit and his H2 swap
+expressions (`mouth_rest`, `mouth_smile`, `mouth_sad`, `mouth_o`, `eye_open`, `eye_half`, `eye_closed`, `brow`). 9
+requests, $0.0553 for the turnaround and $0.0784 to $0.0786 per piece (two 1536 references each), **$0.6834** of the
+$2 cap; no item needed a revision. The turnaround kept the head, crest, bands, nostrils, neck and colours and shows
+clean round sockets and a lens-shaped mouth dish (deeper than "shallow" in the profile, an open lip-shaped hollow);
+the pieces match the H2 kit's teal clay (the rest mouth has a slight human bow; the O carries a mint skin back).
+Images: `D:/prime-art-raw/2026-10-22-alien-t1-sockets-2d/`; the views cut for Meshy are in batch
+2026-10-22-alien-t1-sockets-3d (`docs/meshy.md`).

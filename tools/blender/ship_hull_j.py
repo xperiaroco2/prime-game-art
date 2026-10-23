@@ -191,7 +191,7 @@ def cells(poly, n):
     """A face's plates in its zone: [(cell key, piece)], the key shared by the pieces of one plate on other facets.
     The west lens is the east's mirror image."""
     sx = _lens_of(poly)
-    if sx == 0:
+    if sx == 0 or S.p_fair_face(poly, n):   # details 3b: the fairings are plated flat, like the fins
         return [(("plan",) + key, q) for key, q in _plan_cells(poly, n)]
     if sx > 0:
         return [(("lens", 1) + key, q) for key, q in _lens_cells(poly, n)]
@@ -247,9 +247,70 @@ def seams(q, i, edges, zone) -> list:
     return out
 
 
-def lay_seams(q, flags):
+CORNER_CAP = 0.3  # a plate corner moves at most CORNER_CAP * the shorter of its two edges (lay_seams)
+SEAM_CAP = 0.6    # details 3d: a sliding seam corner moves at most SEAM_CAP of its seam edge along it (_slide_cap)
+SLIDE_MAX = 3.0   # details 3c: a seam corner slides at most SLIDE_MAX * INSET along its flush edge (a needle or a
+                  # near-straight corner, sin under 1 / SLIDE_MAX)
+
+
+def _corner(q, flags, j):
+    """Corner j of piece q where a seam meets a flush edge: (the slide's direction along the flush edge, the slide
+    that keeps the groove INSET wide: INSET / sin of the corner's angle, up to SLIDE_MAX * INSET); else None."""
+    k = len(q)
+    a, b, c = q[j - 1], q[j], q[(j + 1) % k]
+    if flags[j - 1] == flags[j]:
+        return None
+    d1, d2 = S._unit3(S._sub(b, a)), S._unit3(S._sub(c, b))
+    x = S._cross(d1, d2)
+    sin = math.sqrt(S._dot(x, x))
+    way = d2 if flags[j - 1] else tuple(-t for t in d1)
+    return way, INSET / max(sin, 1.0 / SLIDE_MAX)
+
+
+def _slide_cap(q, flags, j) -> float:
+    """details 3d: how far seam corner j of piece q may slide along its flush edge: CORNER_CAP of that edge, and its
+    part along the seam (s * |cos|) at most SEAM_CAP of the seam edge, so with the seam's other corner (CORNER_CAP
+    at most) the plate neither runs past its edges nor folds over. (Capping by CORNER_CAP of the shorter edge
+    pinched the groove of 186 corners of 25 to 155 deg in groups with a short member; the flush edge alone folded a
+    piece over.)"""
+    k = len(q)
+    a, b, c = q[j - 1], q[j], q[(j + 1) % k]
+    (s0, s1), (f0, f1) = ((a, b), (b, c)) if flags[j - 1] else ((b, c), (a, b))
+    cos = abs(S._dot(S._unit3(S._sub(s1, s0)), S._unit3(S._sub(f1, f0))))
+    return min(CORNER_CAP * math.dist(f0, f1), SEAM_CAP * math.dist(s0, s1) / max(cos, 1e-9))
+
+
+def corner_slides(pieces) -> list:
+    """details 3c: per piece {corner index: slide} for its seam corners on a flush edge. The corners at one point
+    sliding one way (the pieces on both sides of a facet fold, along the fold) share one slide, the largest one wanted
+    (each keeps its groove at least INSET wide: 3b's slide of INSET whatever the angle tapered an acute corner's groove
+    to INSET * sin), so they end at one point and leave no wedge. Details 3d: one cap per group, the smallest of
+    its members' _slide_cap, so no member stops short of the others (3c's lay_seams capped each piece on its own at
+    0.3 of its shorter edge: 450 groups ended over 0.1 mm apart, up to 6.5 cm, the black wedges at seam corners)."""
+    groups: dict = {}
+    caps: dict = {}
+    at = []
+    for idx, (_k, _z, _c, _i, q, flags) in enumerate(pieces):
+        fl = flags if width(q) > SLIVER else [False] * len(q)
+        for j in range(len(q)):
+            cr = _corner(q, fl, j)
+            if cr:
+                key = (tuple(round(t, 4) for t in q[j]), tuple(round(t, 2) for t in cr[0]))
+                groups.setdefault(key, []).append(cr[1])
+                cap = _slide_cap(q, fl, j)
+                caps[key] = min(caps.get(key, cap), cap)
+                at.append((idx, j, key))
+    slide = {key: min(max(g), caps[key]) for key, g in groups.items()}
+    out = [{} for _ in pieces]
+    for idx, j, key in at:
+        out[idx][j] = slide[key]
+    return out
+
+
+def lay_seams(q, flags, slides=None):
     """One plate piece: v1's inset and chamfer on its seam edges only; a flush edge keeps its outline and has no
-    chamfer (the plate goes on over the next facet). A sliver is laid flush all round."""
+    chamfer (the plate goes on over the next facet). A sliver is laid flush all round. slides: {corner: how far a
+    seam corner slides along its flush edge} (corner_slides; else INSET)."""
     if width(q) <= SLIVER:
         flags = [False] * len(q)
     n = S._unit3(S._newell(q))
@@ -264,14 +325,19 @@ def lay_seams(q, flags):
         d1, d2 = S._unit3(S._sub(b, a)), S._unit3(S._sub(c, b))
         m1, m2 = S._cross(n, d1), S._cross(n, d2)   # the edges' inward normals in the face
         den = S._dot(d1, m2)
-        if abs(den) < 1e-6:
+        s = (slides or {}).get(i, INSET)
+        if o1 and not o2:   # details 3b: a seam ending on a flush edge slides along it, the pieces on either side of a
+            x = tuple(d2[t] * s for t in range(3))   # fold by one slide to one point (3b: INSET; per facet INSET / sin
+        elif o2 and not o1:  # left black wedges past the groove); 3c: corner_slides keeps the groove's width
+            x = tuple(-d1[t] * s for t in range(3))
+        elif abs(den) < 1e-6:
             x = tuple(m1[t] * max(o1, o2) for t in range(3))
         else:
             beta = (o2 - o1 * S._dot(m1, m2)) / den
             x = tuple(m1[t] * o1 + d1[t] * beta for t in range(3))
-        cap = 0.3 * min(math.dist(a, b), math.dist(b, c))
+        cap = CORNER_CAP * min(math.dist(a, b), math.dist(b, c))
         ln = math.sqrt(S._dot(x, x))
-        if ln > cap:
+        if ln > cap and not (slides and i in slides):   # 3d: a corner_slides slide is capped per group already
             x = tuple(t * cap / ln for t in x)
         top.append(tuple(b[t] + x[t] for t in range(3)))
     verts = top + [H._add(p, n, -DEPTH) for p in q]
@@ -298,6 +364,16 @@ def skin_pieces(name: str = S.DEFAULT) -> list:
     return _SKIN[name]
 
 
+_SLIDES: dict = {}
+
+
+def skin_slides(name: str = S.DEFAULT) -> list:
+    """corner_slides of skin_pieces(name), cached per hull."""
+    if name not in _SLIDES:
+        _SLIDES[name] = corner_slides(skin_pieces(name))
+    return _SLIDES[name]
+
+
 def cell_mat(cell, mats) -> str:
     """A plate's silver, one per cell (all its pieces alike, so a lens plate is one smooth mesh)."""
     return mats[zlib.crc32(repr(cell).encode()) % len(mats)]
@@ -309,9 +385,10 @@ def j_skin(args: dict, layout: dict) -> list:
     kind = args["part"]
     mats = MATS[kind]
     groups: dict = {}
-    for k, zone, cell, _i, q, flags in skin_pieces(S.DEFAULT):
+    pieces = skin_pieces(S.DEFAULT)
+    for (k, zone, cell, _i, q, flags), slides in zip(pieces, skin_slides(S.DEFAULT)):
         if k == kind:
-            groups.setdefault((zone, cell_mat(cell, mats)), []).append(lay_seams(q, flags))
+            groups.setdefault((zone, cell_mat(cell, mats)), []).append(lay_seams(q, flags, slides))
     under = [([H._add(x, n, -DEPTH * 1.8) for x in poly], [tuple(range(len(poly)))])
              for poly, n, k in S.surface(S.DEFAULT) if k == kind]
     parts = []
@@ -327,6 +404,7 @@ def j_skin(args: dict, layout: dict) -> list:
 j_skin = H._outward(j_skin)
 
 
+JAMB_OUT, JAMB_LIFT = 0.035, 0.004   # details 3b: the jamb's top strip past the wall's outer face, over the skin
 CHEEK_OUT = S.WALL + 0.03   # rebuild D: the cheeks 3 cm proud of the wall modules' backs (in their plane they z-fought:
 #                             the modules' pale backs showed through as boards beside the mouth)
 
@@ -365,22 +443,28 @@ def j_cheeks(args: dict, layout: dict) -> list:
     for sx in (1, -1):
         n = (sx * d[1], -d[0], 0.0)                     # outward
         inner, outer = [], []
-        for i in range(17):
-            s = 0.02 + (s_roof - 0.02) * i / 16   # 2 cm in from the nose edge (heights() is None on it)
+        for i in range(33):
+            s = 0.02 + (s_roof - 0.02) * i / 32   # 2 cm in from the nose edge (heights() is None on it)
             x, y = sx * (mx + d[0] * s), my + d[1] * s
-            xo, yo = x + n[0] * (S.WALL - 0.01), max(y + n[1] * (S.WALL - 0.01), my + 0.02)   # not past the nose edge
-            inner.append((x, y, S.heights(x, y)[0]))
-            outer.append((xo, yo, S.heights(xo, yo)[0]))
+            # details 3b: the top runs JAMB_OUT past the wall over the skin's seam chamfer (its groove read as a dark
+            # band under a chewed edge), JAMB_LIFT over the skin (no z-fighting)
+            xo, yo = x + n[0] * (S.WALL + JAMB_OUT), max(y + n[1] * (S.WALL + JAMB_OUT), my + 0.02)   # not past the nose
+            inner.append((x, y, S.heights(x, y)[0] + JAMB_LIFT))
+            outer.append((xo, yo, (S.heights(xo, yo) or S.heights(x, y))[0] + JAMB_LIFT))
         face = [(inner[0][0], inner[0][1], S.SLAB - 0.01), (inner[-1][0], inner[-1][1], S.SLAB - 0.01)]
         face += [inner[k] for k in range(len(inner) - 1, -1, -1)]
         inward = S._neg(n)
         if S._dot(S._newell(face), inward) < 0:
             face.reverse()
+        top = inner[::-1]
         for p in plates(face, inward):
+            # details 3b: a plate's edge on the jamb's top is laid flush (its insets chewed the edge against the sky)
+            flags = [not any(_off_segment(a, u, w) < 1e-4 and _off_segment(b, u, w) < 1e-4
+                             for u, w in zip(top, top[1:])) for a, b in zip(p, p[1:] + p[:1])]
             c = [sum(x[i] for x in p) / len(p) for i in range(3)]
             mat = MATS["top"][int(H._hash(round(c[0], 1), round(c[1], 1), round(c[2], 1)) * len(MATS["top"])) %
                               len(MATS["top"])]
-            groups.setdefault(mat, []).append(lay(p))
+            groups.setdefault(mat, []).append(lay_seams(p, flags))
         for (a0, b0), (a1, b1) in zip(zip(inner, outer), zip(inner[1:], outer[1:])):   # the top, along the slope
             q = [a0, a1, b1, b0]
             edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), S.H) > 0 else (3, 2, 1, 0)]))

@@ -100,6 +100,10 @@ tests = ["test_alien_mouth_fit_*"]
 sources = ["tools/blender/alien_texture_geom.py"]  # the alien skin's texture formulas (#196); before light's alien_*
 tests = ["test_alien_texture_*"]
 
+[area.alien_static]
+sources = ["tools/blender/alien_static_geom.py"]  # the static heads' pure formulas (#196, static_v5); before light's alien_*
+tests = ["test_alien_static_*"]
+
 [area.alien_talk]
 sources = ["godot/alien/alien_talk.gd", "godot/alien/talk_check.gd"]  # the mouths' talk styles (#196, M13); before light's godot/alien/*
 tests = ["test_alien_talk_*"]
@@ -139,3 +143,7 @@ sources = [
   "godot/ship/*",
 ]
 tests = ["test_ship_*"]
+
+[area.alien_lively]
+sources = ["tools/blender/alien_lively_geom.py"]  # the static head's liveliness proof's pure formulas (#196, lively)
+tests = ["test_alien_lively_*"]

@@ -744,11 +744,129 @@ pilot's static premium heads"):
   material whose name ends in `_static_skin` for the ShaderMaterial (keeping the imported albedo and normal textures)
   and returns the materials; `set_skin(mats, color)`; `PALETTE`, the curated skin colours after the build's teal.
   The mask PNG travels beside the GLB (`<head>_mask.png`); the proof loads it with `Image.load_from_file`.
+- **The skin colour study** (2026-10-23, after the engineer found one colour over lips, gills and crest "too acidic"):
+  `tint_study.gdshader` is `alien_static.gdshader` copied with the tint split by region: `accent_tex` (R the lips, G
+  the marks: the axolotl's gills and freckles, the chameleon's crest stripes; B the pale front panel) recolours each
+  region from its own base (`lip_base`, `mark_base`, `front_base`, the albedo's medians there) to its own target
+  (`lip_color`, `mark_color`, `front_color`); a region that follows the skin gets `base_skin` and `skin_color`
+  (today's tint); `debug_mode` 4 emits the accent mask. `tools/blender/alien_tint_mask.py` makes the mask in headless
+  Blender from the build's .blend and maps (a position bake on the build's UVs, step 2a's lip line, gill roots and
+  crest stripe formula, the plain albedo's saturation), with each region's median sRGB in `<head>_accent.json`.
+  `tools/blender/alien_tint_study.py <masks|sheets|all>` holds the variants (A today, B fixed lip colours, C a deeper
+  warmer lip shade of the skin, D skin and accent pairs, E curated palettes with capped saturation; their colour
+  math is tested by `test_alien_tint_study.py`) and renders the labelled sheets with `tint_study.gd` in an off-screen
+  window under the static heads' studio and a dusk forest light (into `<raw>/research/2026-10-22-roster/design/
+  pilot3d/colour/`). The study changes neither `alien_static.gdshader` nor `look_presets.json`.
 - `static_shots.gd`: the review sheets in an off-screen window under the showroom's ladder step 6 (the studio HDRI,
   AgX 0.9, key 2.0 with 1.5 degree soft shadows, fill 0.12, rim 0.3, SSAO, SSS medium), plus the tone grid
   (`TONES`: the showroom's AgX 0.9, AgX 0.65, AgX 0.65 with the environment's saturation 1.35, linear 0.6) measured
   against the 2D front (median teal and pale skin, `colour.json`); the closest is the pick for `views_pick.png` and
   `colours.png`.
+- **Round 2, "alive" (static_v2, 2026-10-22):** the engineer read the #288 heads as vinyl toys or statues. The shader
+  gained levers, each off at its default (in round 2 the defaults were still the #288 material; since round 3 they are
+  not, see round 5 below, and the GLB's own material carries clearcoat, sheen and specular extensions since round
+  3): `detail_tex` (`<head>_detail.png`, linear RGBA from the dense original: R the cavity, G the thinness,
+  B the flush region of lips and lids, A the eyes' limbal ring; `apply(root, mask, base_skin, detail)`),
+  `transmission` (`BACKLIGHT` on the thin parts in the skin's own colour, saturated), `micro_strength`,
+  `micro_scale`, `rough_breakup` (a fine grain: a bump from 3D value noise in object space, faded with distance and
+  with the pixel footprint, so it never aliases), `cavity` and `flush` (creases deeper and more saturated, never
+  grey; lips and lids a little flushed), `fuzz` (a lighter, more saturated sheen at grazing angles), `eye_coat`,
+  `eye_under_rough`, `limbal` (a wet clear coat over a softer iris, the limbal ring darker). The normal map is applied
+  by hand (Godot's own `NORMAL_MAP` maths) so the grain can bend the result. `debug_mode` 1, 2, 3: grey with the
+  normal map, grey geometry only, the albedo alone: tells a geometry fault from a normal-bake or an albedo-bake fault.
+- `static_alive.gd`: review sheets from a JSON job (heads, sheets, rows of cells: head, shader parameters, debug
+  mode, tone, a framing by target, yaw and width; optional GPU ms) in an off-screen window, written and run by
+  `tools/blender/alien_static_review.py <seams|grid|final|gate>` (`docs/pipeline.md`).
+- **Round 3 (static_v3, 2026-10-22):** the alive read moved into the textures (`docs/pipeline.md`), so the shader's
+  `cavity`, `flush` and `micro_strength` stay off in the pick. New: `plain_tex` and `alive_mix` (1 = the GLB's albedo;
+  0 the albedo without the baked layers, above 1 extrapolated; `apply(root, mask, base_skin, detail, plain)`) for the
+  review grid. The pick (`alien_static_review.py` `PICK`) also lowers `specular_level` on the skin.
+- **Round 4 (static_v4, 2026-10-22):** the shader and the pick are unchanged; the fixes are in the baked textures
+  (`docs/pipeline.md`). The review's middle seams row is round 3 under the same pick.
+- **Round 5 (static_v5, 2026-10-22):** round 3 dropped `sss_mode_skin` from the shader's render mode, so its defaults
+  are not the #288 material. `alien_static_288.gdshader` is the merged #288 shader kept byte for byte (`7c2bac4`);
+  `apply(..., shader)` takes it (`AlienStatic.SHADER_288`), and `static_alive.gd` gives it to a head with
+  `"shader": "288"` (no detail or plain texture, no parameters, no debug view). #288's debug-view cells use the
+  current shader on a `"grey_only"` head (the debug modes do not depend on the material). A head on the current
+  shader without its detail or plain texture is an error (it was a silent white default); each head resets its own
+  last parameters.
+- **Lively (2026-10-23, the liveliness proof):** the static chameleon looks at a target, turns its head, its crest
+  springs and its chest breathes, with no face rig and no cut in the sculpt. `$PYTHON_BIN
+  tools/blender/alien_lively_run.py [--no-build] [--seconds 20] [--tag v2]` (in the background; `--tag` names the
+  run's sheet, shots and video, and a tag whose frame folder exists is refused: a run never deletes in the raw
+  folder) writes into
+  `<raw>/research/2026-10-22-roster/design/pilot3d/lively/`:
+  - `alien_lively_build.py` (headless Blender for numpy and its BVH; the merged GLB's bytes are kept, never
+    re-exported): every eye texel gets its 3D point (a UV rasterizer); texels the lids leave open (a ray from outside
+    the eye sphere meets an eye triangle first) are pupil, iris (warm, saturated) or sclera; the iris and pupil are
+    caps on the build's eye sphere, fitted by least squares on their open edges; the iris colour is a radial profile
+    of 8 medians. `chameleon_sclera.png` is the albedo with the painted irises filled from the sclera around them
+    (push-pull); the pupil is darker than value 0.12 (0.22 took the iris's dark inner ring). The lid clamp: per eye the gaze offsets that keep the rest's open share of the iris and pupil discs,
+    reduced to an ellipse's four limits (`lively.json` `limits_deg`; the chameleon's heavy lids leave no room up).
+    The skin (`alien_lively_geom.add_skin`): Chest at the bust's base, Neck and Head through the neck's waist (weights
+    by height, the chin and face rigid), Crest1-3 along the crest (weights only in the crest blade and outside the
+    skull: a sphere about the head centre through the crest root, `--skull-margin`; `crest_weights.png` shows them
+    from the side and from behind with the sphere's outline, `lively.json` `rig.crest_weight_inside_skull` is 0).
+    `chameleon_lively.glb`: glTF-Validator 0 errors.
+  - `alien_static.gdshader` `gaze_on` (0 by default: the merged look untouched): the eye texels from `sclera_tex`
+    and a procedural iris (profile, crisp pupil, `limbal_ring`, `catch_light`) on each eye sphere at `gaze_l`/`gaze_r`,
+    computed from the skinned vertex position, so the iris rides the head; a texel takes the nearer eye centre
+    (a test on x = 0 handed one eye's texels the other's gaze after a head turn).
+  - `alien_lively.gd`: the controller (`step(dt)` advances the skeleton by hand): eyes lead (critically damped at
+    9 Hz; the target's offsets measured in each eye's rest frame, `eye_offsets`, where the lid limits were measured;
+    clamped by the lids, capped at 25 degrees; `dt` capped at 0.05 s as on the web), the head follows (1.6 Hz; yaw 35, pitch 20, 40 % in Neck), a
+    4.4 s breath (the chest's scale, the Neck's inverse so the head keeps its
+    size, a 0.6 degree nod). The crest is an under-damped spring (2.2 Hz, damping 0.3) pulled back by the head's
+    turn speed, the same as the web port's: a SpringBoneSimulator3D on Crest1-3 under the manual skeleton advance
+    showed no measurable swing (0.0 degrees over the whole video) in the first proof.
+  - `lively_shots.gd`: `sheet.jpg` (row 1: merged head at rest, lively at rest, with the catch light, a head turn, the
+    crest's largest swing; row 2: the eyes alone left, right, up, down, near), `lively.mp4` (20 s, 1280x720, a target
+    ball's path), `shots.json`.
+  - `web/lively.js`: the browser port (three.js 0.160, `onBeforeCompile` on the GLB's material, the same maths; the
+    crest spring included), with `chameleon_lively.glb`, `lively.json`,
+    `chameleon_sclera.png` and a test page.
+  - **The eye pit (v3, 2026-10-23):** in `lively_v2.mp4` the place the painted iris left read as a hollow in the
+    eyeball. Measured causes, both fixed in `alien_lively_build.py`:
+    - *The sclera fill (the main one).* The eye mask's R < 0.5 also holds the atlas's empty gutter (68,146 black
+      texels, half the "eye" texels), and the painted irises touch their UV islands' edges. The push-pull fill
+      pulled that black in: in the texels the GPU samples, the v2 sclera's old pupil sat at a median RGB distance
+      of 0.82 (left) and 0.59 (right) from the sclera median, the iris at 0.46 and 0.26 (the open sclera 0.004).
+      That is a soft grey-brown disc, which reads as a dent. The painted catch light stayed in it too. Now the
+      hole is every sampled texel within 1.6 iris angles that reads iris, pupil, dark ring or catch light (never
+      the lids' teal line), plus the gutter 8 texels around it. It is filled only from sampled sclera texels
+      within 0.06 of the median. `lively.json` `sclera_ghost` holds the check per eye and angle band (median,
+      p99, max, texels over 0.06 and how many of them are the lids' teal).
+    - *The geometry.* The sculpt's eyeballs are flattened at the front, up to 3 % of the radius inside the sphere
+      fitted to their open front, and most of all where the iris sits and where it travels. `eyeball_fix`
+      projects every eyeball vertex within `TRAVEL` (42 degrees: the 25-degree gaze cap plus the iris) onto that
+      sphere, faded out to `FADE` (58 degrees) and faded in from the lid line (no vertex that a lid or socket
+      triangle shares moves; iris-painted triangles the mask calls skin count as eyeball). The normals turn by
+      the change of the welded geometric normal. `lively.json` `pit_geometry` and `eye_residual.png` show the
+      residual per band before and after (blue a dent, red a bulge, saturated at 3 %).
+    - Ruled out by measurement: the normal map is flat on the whole eye (median 0.32 degrees, the same on the
+      pupil, iris and sclera), and the mask's G and B are constant over the eye (0.039 and 0). The shader is
+      unchanged, so `web/lively.js` is too.
+    - `--tag` now also names the build folder (`<out>/<tag>/`, refused if it exists), so v3 never overwrites v2.
+      It also writes `web_<tag>/` (the page and the tag's assets) and `eyes_pit_<tag>.jpg` (`eye_pit_shots.gd`:
+      before/after close-ups of both eyes at rest, far left, far right, down, up, and under raking light).
+      `--no-pit-fix` builds as v2 did.
+  - **The eye pit, v4 (2026-10-23):** two defects v3 left, both fixed in `alien_lively_build.py`:
+    - *A lid crossing.* v3's pull crossed one lid triangle: eyeball triangle 8774 under the upper lid rim of the
+      head's right eye, on the nose side, 24 degrees from the rest gaze; two of its vertices moved 1.8 and 3.8 mm
+      with the lid's surface 1.8 and 2.4 mm away. The lid fade measured only the distance to the vertices a lid
+      triangle shares, not to the lid's surface. Now each move is capped (`G.capped_weight`) at `MOVE_CAP`
+      (3.5 % of the eye radius) and at `ROOM_SHARE` (half) of the vertex's distance to the nearest lid or socket
+      triangle of its eye (a BVH of the original surface). A vertex lying on a lid triangle never moves.
+      `pit_geometry` adds `capped`, `capped_in_travel` and `min_room_left_mm`.
+    - *A dotted dark line under the upper lid* of the head's right eye once the gaze left the rest place. The old
+      pupil's dark texels at the lid line have a teal cast, so v3's "never the lids' teal" rule kept them; at rest
+      the procedural iris covered them. Teal now counts as the lid only from value `LID_TEAL_V` (0.45) up.
+    - *Grey seam lines:* the black gutter around the eye islands, mixed in by the texture filter. The gutter
+      within `GUTTER_PX` (4) of an eye island, and not within 4 of a skin or lid island, is filled with the
+      sclera too (`sclera_ghost.eye_rim`: the gutter ring's texels, the dark ones left, its median distance).
+    - `eye_pit_shots.gd` also writes `eyes_pit_<tag>_crop_right.jpg` and `_crop_left.jpg`: the upper lid edge of
+      each eye at 4x the sheet's scale (the window's own pixels, 2x, nearest), rows far left, far right and down,
+      columns before | after.
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from

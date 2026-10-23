@@ -350,11 +350,11 @@ func _dress(ship: Node3D) -> int:
 				mi.set_surface_override_material(i, _metal(mat.resource_name))
 			elif mat is BaseMaterial3D and not seen.has(mat) and not (mat as BaseMaterial3D).emission_enabled:
 				seen[mat] = 0.0
-				_look(mat, mats.get(mat.resource_name, {}))
+				_look(mat, _entry(mats, mat.resource_name))
 			elif mat is BaseMaterial3D and (mat as BaseMaterial3D).emission_enabled:
 				var bm: BaseMaterial3D = mat
 				if not seen.has(bm):  # a shared glTF material is scaled once; its strip light keeps the original
-					var look: Dictionary = mats.get(bm.resource_name, {})
+					var look: Dictionary = _entry(mats, bm.resource_name)
 					seen[bm] = minf(bm.emission_energy_multiplier, 6.0) * float(look.get("l", 1.0))  # its lights' strength
 					_look(bm, look)
 					if bm.resource_name.begins_with("glow_nav_"):  # light layer: the nav lenses blink with their lights
@@ -366,8 +366,8 @@ func _dress(ship: Node3D) -> int:
 				var key: String = "%d_%d_%d_%s_%s" % [floori(c.x / LIGHT_CELL_M), floori(c.y / LIGHT_CELL_M),
 					floori(c.z / LIGHT_CELL_M), bm.emission.to_html(false), inside]
 				if not cells.has(key):
-					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0, float(mats.get(bm.resource_name, {}).get("rr", 1.0)),
-						inside or mats.get(bm.resource_name, {}).get("cull", "") == "inside"]
+					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0, float(_entry(mats, bm.resource_name).get("rr", 1.0)),
+						inside or _entry(mats, bm.resource_name).get("cull", "") == "inside"]
 				var cell: Array = cells[key]
 				cell[0] = (cell[0] as Vector3) + c * area
 				cell[1] = float(cell[1]) + area
@@ -412,6 +412,16 @@ func _placed(n: Node) -> Transform3D:
 
 func _r3(v: Vector3) -> Array:
 	return [snappedf(v.x, 0.001), snappedf(v.y, 0.001), snappedf(v.z, 0.001)]
+
+
+## A material's [light.mats] entry: its own, else (details 3b) its family's, the part of its name before "__" (the
+## portholes' glow bands ext_porthole__gNN share ext_porthole's).
+func _entry(mats: Dictionary, mat_name: String) -> Dictionary:
+	if mats.has(mat_name):
+		return mats[mat_name]
+	if "__" in mat_name:
+		return mats.get(mat_name.get_slice("__", 0), {})
+	return {}
 
 
 ## One glTF material's night look from ship.toml [light.mats] (the room-by-room light grid, inside-1): "v" base
