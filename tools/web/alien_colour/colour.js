@@ -202,10 +202,18 @@ async function dataTexture(THREE, url) {
   return t;
 }
 
+// No gillUrl: a black gill texture and a warning, as alien_static.gd's apply() ("skin" and "whole" act as "gradient").
 export async function makeColours(root, accentUrl, maskUrl, gillUrl, bases) {
   const THREE = await import("three");
+  let gillTex;
+  if (gillUrl) gillTex = await dataTexture(THREE, gillUrl);
+  else {
+    console.warn("colour.js: an accent mask without the gill texture: the gills modes 'skin' and 'whole' act as 'gradient' (pass <head>_gill.png)");
+    gillTex = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
+    gillTex.needsUpdate = true;
+  }
   const uniforms = { csAccent: { value: await dataTexture(THREE, accentUrl) }, csMask: { value: await dataTexture(THREE, maskUrl) },
-    csGill: { value: await dataTexture(THREE, gillUrl) } };
+    csGill: { value: gillTex } };
   for (const n of Object.values(NAMES)) uniforms[n] = { value: ["csFrontSatMax", "csDetailOn", "csGillMode"].includes(n) ? 1 : new THREE.Color() };
   root.traverse((o) => {
     if (!o.isMesh || !o.material || !o.material.name.endsWith("_static_skin")) return;
