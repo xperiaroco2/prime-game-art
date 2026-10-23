@@ -38,6 +38,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "DIR/walkthrough.mp4 (off-screen window, 1280x720)")
     parser.add_argument("--no-video", action="store_true", help="--walk without the video")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
+    parser.add_argument("--views", default="", help="--shoot only the views whose names start with one of these "
+                        "comma-separated prefixes (no plan views, day views or compares), e.g. in_vent_,cu_vent_")
     parser.add_argument("--motion", type=Path, metavar="DIR",
                         help="the stations' motion proof (step 2: the vents) off-screen: checks, MP4, sheets into DIR")
 
@@ -85,7 +87,7 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.shoot:
-        return shoot(layout, out, args.shoot.resolve())
+        return shoot(layout, out, args.shoot.resolve(), args.views)
     return 0
 
 
@@ -273,9 +275,14 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
     return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
 
 
-def shoot(layout: dict, out: Path, folder: Path) -> int:
+def shoot(layout: dict, out: Path, folder: Path, only: str = "") -> int:
     req, staged = built_request(layout, out)
     views, compares = shot_views(layout)
+    prefixes = tuple(p for p in only.split(",") if p)
+    if prefixes:   # step 2: a view set alone (the vents' in-place shots and close-ups)
+        views = [v for v in views if v[0].startswith(prefixes)]
+        if not views:
+            raise common.Failure(f"ship --shoot --views {only}: no view matches")
     req.update({"mode": "shoot", "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in views],
                 # details 1: views by day, after the night's (ship.toml [shots] day_views)
@@ -285,6 +292,10 @@ def shoot(layout: dict, out: Path, folder: Path) -> int:
                 # and by day; shots show the nav lamps' static glow (nav_blink off; on in game)
                 "top_full": {**TOP_FULL, "centre": _g(TOP_FULL["centre"])}, "nav_blink": False,
                 "compare": [["top", layout["plan_ref"]], *compares], "rooms": room_boxes(layout)})
+    if prefixes:
+        for key in ("top", "top_full", "day_views"):
+            req.pop(key)
+        req["compare"] = []
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "shoot_request.json"

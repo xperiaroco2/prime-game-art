@@ -489,13 +489,14 @@ func _shoot() -> void:
 		_camera.fov = float(v[4])
 		_camera.look_at_from_position(_v(v[2]), _v(v[3]), UP)
 		images[v[0]] = await _shot(v[0], v[1], shots)
-	var top: Dictionary = _req["top"]
-	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	_camera.size = float(top["size_m"])
-	_camera.keep_aspect = Camera3D.KEEP_WIDTH
-	# looking straight down with +z (south) up the picture: east falls on the left, as plan-3.jpg
-	_camera.look_at_from_position(Vector3(0, 60, 0), Vector3.ZERO, Vector3(0, 0, 1))
-	images[top["name"]] = await _shot(top["name"], top["title"], shots)
+	if _req.has("top"):  # (a --views set alone has no plan view)
+		var top: Dictionary = _req["top"]
+		_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+		_camera.size = float(top["size_m"])
+		_camera.keep_aspect = Camera3D.KEEP_WIDTH
+		# looking straight down with +z (south) up the picture: east falls on the left, as plan-3.jpg
+		_camera.look_at_from_position(Vector3(0, 60, 0), Vector3.ZERO, Vector3(0, 0, 1))
+		images[top["name"]] = await _shot(top["name"], top["title"], shots)
 	if _req.has("top_full"):  # the whole ship from straight above, nose to nozzles, framed by its height
 		var full: Dictionary = _req["top_full"]
 		_camera.size = float(full["size_m"])
