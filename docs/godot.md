@@ -779,7 +779,9 @@ pilot's static premium heads"):
   last parameters.
 - **Lively (2026-10-23, the liveliness proof):** the static chameleon looks at a target, turns its head, its crest
   springs and its chest breathes, with no face rig and no cut in the sculpt. `$PYTHON_BIN
-  tools/blender/alien_lively_run.py [--no-build] [--seconds 20]` (in the background) writes into
+  tools/blender/alien_lively_run.py [--no-build] [--seconds 20] [--tag v2]` (in the background; `--tag` names the
+  run's sheet, shots and video, and a tag whose frame folder exists is refused: a run never deletes in the raw
+  folder) writes into
   `<raw>/research/2026-10-22-roster/design/pilot3d/lively/`:
   - `alien_lively_build.py` (headless Blender for numpy and its BVH; the merged GLB's bytes are kept, never
     re-exported): every eye texel gets its 3D point (a UV rasterizer); texels the lids leave open (a ray from outside
@@ -789,13 +791,17 @@ pilot's static premium heads"):
     (push-pull); the pupil is darker than value 0.12 (0.22 took the iris's dark inner ring). The lid clamp: per eye the gaze offsets that keep the rest's open share of the iris and pupil discs,
     reduced to an ellipse's four limits (`lively.json` `limits_deg`; the chameleon's heavy lids leave no room up).
     The skin (`alien_lively_geom.add_skin`): Chest at the bust's base, Neck and Head through the neck's waist (weights
-    by height, the chin and face rigid), Crest1-3 along the crest (weights only in the crest blade).
+    by height, the chin and face rigid), Crest1-3 along the crest (weights only in the crest blade and outside the
+    skull: a sphere about the head centre through the crest root, `--skull-margin`; `crest_weights.png` shows them
+    from the side and from behind with the sphere's outline, `lively.json` `rig.crest_weight_inside_skull` is 0).
     `chameleon_lively.glb`: glTF-Validator 0 errors.
   - `alien_static.gdshader` `gaze_on` (0 by default: the merged look untouched): the eye texels from `sclera_tex`
     and a procedural iris (profile, crisp pupil, `limbal_ring`, `catch_light`) on each eye sphere at `gaze_l`/`gaze_r`,
-    computed from the skinned vertex position, so the iris rides the head.
+    computed from the skinned vertex position, so the iris rides the head; a texel takes the nearer eye centre
+    (a test on x = 0 handed one eye's texels the other's gaze after a head turn).
   - `alien_lively.gd`: the controller (`step(dt)` advances the skeleton by hand): eyes lead (critically damped at
-    9 Hz, clamped by the lids, capped at 25 degrees), the head follows (1.6 Hz; yaw 35, pitch 20, 40 % in Neck), a
+    9 Hz; the target's offsets measured in each eye's rest frame, `eye_offsets`, where the lid limits were measured;
+    clamped by the lids, capped at 25 degrees; `dt` capped at 0.05 s as on the web), the head follows (1.6 Hz; yaw 35, pitch 20, 40 % in Neck), a
     4.4 s breath (the chest's scale, the Neck's inverse so the head keeps its
     size, a 0.6 degree nod). The crest is an under-damped spring (2.2 Hz, damping 0.3) pulled back by the head's
     turn speed, the same as the web port's: a SpringBoneSimulator3D on Crest1-3 under the manual skeleton advance
