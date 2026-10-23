@@ -1016,22 +1016,33 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
 - **In place:** `ship --shoot DIR --views in_vent_` shoots the vents at the ship's night look (the throat from the
   hall and the ramp, each vent from 2 m and 4 m), `--views cu_vent_` their edges against the real wall and floor
   close up (`--views` keeps the views whose names start with a prefix; no plan, day views or compares).
-- **Way A (art#263 comment 6363433518; builder steps vents-a1 and a2), the current build.** The body (frame, copper
+- **Way A (art#263 comment 6363433518; builder steps vents-a1 to a3), the current build.** The body (frame, copper
   hinge caps, column, light bar, palm scanner, lamp, feet) is Meshy's multi-image-to-3D model of the concept's body
   views (batch `2026-10-23-ship-vent-a-body`, 35 credits), cleaned, fitted and baked onto 4,000 triangles by
   `tools/blender/ship_vent_a.py` (`<raw>/ship/v4/vents-a/body4k/`), then finished without a new generation by
-  `ship_vent_a_finish.py` (`body4k_r2/`): its light-blue texels outside the well repainted bronze, its bronze graded
-  toward front_ortho's frame bronze, and the blades' albedo, roughness and metallic maps painted on their UV layout.
+  `ship_vent_a_finish.py` (`body4k_r2/`: its light-blue texels outside the well repainted bronze, its bronze graded
+  toward front_ortho's frame bronze) and `ship_vent_a_sides.py` (`body4k_r4/`: the box's outer side and back, by face
+  direction, set to the body's bronze median with the bronze's lightness spread).
   The harness imports the body (a part with `glb`); the lamp, band and hand are the body's surfaces
   `vent_a_body__lamp`, `__band`, `__hand` (each piece starts without materials, so the west copy keeps those names).
-  The seven blades are built in `ship_interior_vent.py`: faceted curved claws (a 9 cm root round the caps' axis, an
-  upper facet to the ridge, a front facet to a thin trailing edge 26.5 cm out, 19 cm past the frame, a concave
-  underside, the ends tapering into the caps), each leaf's origin on its pivot; closed is calm turned `OPEN_RAD`
-  11 deg down, seams of about 1 cm (calm 4.6 cm) straight on. The well's glows are two panels on its back,
+  **The blades (step 3)**: one rigid Meshy blade, seven copies. Two procedural tries read from the front as thin
+  brown strips, so the blade is an image-to-3D model (item `blade1`, 30 credits) of our own isolated blade shot (an
+  edit of the concept at medium, batch `2026-10-23-ship-vent-blade-img`, item `bfront` of three framings, $0.10),
+  cleaned by `ship_vent_a_blade.py` (`<raw>/ship/v4/vents-a/blade_r4/`): oriented by its principal axes (the thick
+  edge to the wall, the flat side down), its arch cut to 2 cm (front_ortho), the length on the caps' span, the section
+  scaled so the calm tip stands 26.5 cm out of the pivot (19 cm past the frame) and the slices' front height is two
+  thirds of the 15 cm pitch (squashed 0.92 in h), decimated to 500 triangles and baked, its albedo graded to the
+  body's bronze. Its `blade.json` gives the builder its box about the pivot and the seams straight from the front:
+  calm 4.7 cm, closed 1.9 cm at `CLOSED_DEG` 33 (36.5 left 7.5 mm, but the bottom blade's tip then dipped below the
+  frame's bottom; the first cut of two blades is at 58). A blade part carries `rot_u` (the harness turns the GLB about
+  u before placing it) and `hull`, its box's corners for the plain-Python checks; the harness shares the first copy's
+  material. The well's glows are two panels on its back,
   `int_cyan__vent_cool` (calm) in front of `int_halo__vent_heat` (the problem: the game hides `cool`). The spots
   `vent_e`/`vent_w` have their own `depth_m = 0.6` (the engineer, comment 6363588759), the units
   `[-0.80, 0.80, -0.01, 0.60, -0.02, 1.82]`. The motion proof for way A: the body's three driven surfaces, each blade's
-  origin on its pivot (at most 2 mm), the root round the axis fixed (1.2 cm), the tip's swing at least 4 cm. Review:
+  origin on its pivot (at most 2 mm), the root's ring round the axis fixed (its chord over the turn plus 4 mm, at least
+  1.2 cm), the tip's swing at least 4 cm. Review:
   `ship_vent_a_sheet.py` (the concept's views beside neutral and warm EEVEE, `--game` a last row from the motion
-  run's `state_<n>.png`); pieces in `<raw>/ship/v4/vents-a/pieces`, never the layout's `raw_dir`. Not yet: `ship.gd`'s
-  `--vent-states` still dims a `lamp` leaf (in place, after the ship's raise), the steam.
+  run's `state_<n>.png`); pieces in `<raw>/ship/v4/vents-a/pieces`, never the layout's `raw_dir`. `ship.gd`'s
+  `--vent-states` dims `body:__lamp` calm (a dim entry `<part>:<material suffix>` dims only those surfaces). Not
+  yet: the steam.
