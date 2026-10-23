@@ -14,8 +14,13 @@ extends SceneTree
 ##   sheet.png (1280 px wide) and shots.json; prints SHIP saved <dir>.
 ## video (off-screen window, as shoot): "video": {"fps", "fov", "keys": [[eye, look, seconds]]} (Godot coordinates):
 ##   the camera through the keys (cubic in time), one PNG per frame in <out>/frames/, video.json; "watchdog_s".
+## play (an on-screen window, for the engineer only: `ship --play`): the night scene as shoot dresses it and a
+##   first-person capsule (player.gd) at "spawn" [x, h, y] facing "spawn_yaw" degrees; P saves <out>/shot_*.png and a
+##   line in <out>/shots.txt. With "test": true the runner opens it off-screen (`ship --play-test`): the capsule walks
+##   forward 2 s, saves one shot, writes <out>/play.json and quits.
 
 const Offscreen = preload("res://lib/offscreen.gd")
+const Player = preload("res://ship/player.gd")
 const WATCHDOG_S: float = 240.0
 const UP := Vector3.UP
 const SPEED: float = 3.0
@@ -71,7 +76,8 @@ func _initialize() -> void:
 	_out = args[1]
 	nav_blink = bool(_req.get("nav_blink", true))
 	DirAccess.make_dir_recursive_absolute(_out)
-	if _req["mode"] in ["shoot", "video"]:
+	var test_play: bool = _req["mode"] == "play" and bool(_req.get("test", false))
+	if _req["mode"] in ["shoot", "video"] or test_play:
 		if DisplayServer.get_name() == "headless":
 			_fail("shoot needs a window (off-screen), not --headless")
 			return
@@ -79,9 +85,12 @@ func _initialize() -> void:
 		if placed != "":
 			_fail(placed)
 			return
-	var watchdog: float = float(_req.get("watchdog_s", WATCHDOG_S))
-	create_timer(watchdog).timeout.connect(_fail.bind("not done within %d s" % watchdog))
-	if _req["mode"] == "check":
+	if _req["mode"] != "play" or test_play:
+		var watchdog: float = float(_req.get("watchdog_s", WATCHDOG_S))
+		create_timer(watchdog).timeout.connect(_fail.bind("not done within %d s" % watchdog))
+	if _req["mode"] == "play":
+		_play(test_play)
+	elif _req["mode"] == "check":
 		_check()
 	elif _req["mode"] == "video":
 		_video()
@@ -531,6 +540,54 @@ func _shoot() -> void:
 	_save(_sheet(rows), _out.path_join("sheet.png"))
 	_write("shots.json", {"shots": shots})
 	print("SHIP saved %s" % _out)
+	quit(0)
+
+
+## The engineer's walk (mode "play"): an on-screen window of its own (the project opens every window borderless and
+## unfocused for the off-screen reviews), the night scene and the first-person capsule.
+func _play(test: bool) -> void:
+	if not test:
+		root.borderless = false
+		root.unfocusable = false
+		root.title = "prime-game-art: the ship (P screenshot, H help, Ctrl+Q quit)"
+		root.size = Vector2i(1600, 900)
+		root.move_to_center()
+		root.grab_focus()
+	_environment()
+	var lights: int = _dress(_build())
+	_probes()
+	if nav_blink:
+		process_frame.connect(_nav_tick)
+	var w: Dictionary = _req["walk"]
+	var p = Player.new()  # untyped: player.gd's own fields (test, shots, shot())
+	p.test = test
+	p.setup(float(w["r"]), float(w["h"]), _out)
+	root.add_child(p)
+	p.global_position = _v(_req["spawn"]) + Vector3(0, 0.05, 0)
+	p.rotation_degrees.y = float(_req.get("spawn_yaw", 180.0))
+	print("SHIP play ready: %d emissive lights, shots into %s" % [lights, _out])
+	if not test:
+		return
+	for i: int in 30:
+		await physics_frame
+	var start: Vector3 = p.global_position
+	var key: InputEventKey = InputEventKey.new()
+	key.physical_keycode = KEY_W
+	key.keycode = KEY_W
+	key.pressed = true
+	Input.parse_input_event(key)
+	for i: int in 2 * Engine.physics_ticks_per_second:
+		await physics_frame
+	key = key.duplicate()
+	key.pressed = false
+	Input.parse_input_event(key)
+	for i: int in 5:
+		await physics_frame
+	await p.shot()
+	var end: Vector3 = p.global_position
+	_write("play.json", {"start": _r3(start), "end": _r3(end), "moved_m": snappedf(start.distance_to(end), 0.001),
+		"on_floor": p.is_on_floor(), "shots": p.shots})
+	print("SHIP play test saved %s" % _out)
 	quit(0)
 
 
