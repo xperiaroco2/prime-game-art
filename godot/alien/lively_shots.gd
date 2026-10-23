@@ -5,7 +5,7 @@ extends SceneTree
 ## video's frames: a target (a small light ball) moving left, right, up, down, near and a fast swipe, the head following
 ## (video/lively/0000.png...). Writes shots.json (each cell, the crest's largest swing and its frame).
 ## Args after "--": <lively res://GLB> <static res://GLB> <OUT> <mask PNG> <base skin r,g,b> <HDRI> <lively.json>
-##   <sclera PNG> <video seconds (0: none)>
+##   <sclera PNG> <video seconds (0: none)> [<suffix, e.g. _v2: sheet_v2.jpg, shots_v2.json, video/lively_v2/>]
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const AlienStatic = preload("res://alien/alien_static.gd")
@@ -18,6 +18,7 @@ var _env: Environment
 var _cam: Camera3D
 var _mid: Vector3
 var _marker: MeshInstance3D
+var _suffix := ""
 
 
 func _initialize() -> void:
@@ -40,6 +41,7 @@ func _texture(path: String) -> Texture2D:
 func _run() -> void:
 	var a: PackedStringArray = OS.get_cmdline_user_args()
 	var out: String = a[2]
+	_suffix = a[9] if a.size() > 9 else ""
 	var mask: Texture2D = _texture(a[3])
 	var sclera: Texture2D = _texture(a[7])
 	var lively: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(a[6]))
@@ -114,7 +116,7 @@ func _run() -> void:
 		live.head_follow = 1.0
 		live.breathing = 1.0
 		live.time = 0.0
-		var dir: String = out.path_join("video").path_join("lively")
+		var dir: String = out.path_join("video").path_join("lively" + _suffix)
 		DirAccess.make_dir_recursive_absolute(dir)
 		_marker.visible = true
 		var n: int = int(seconds * FPS)
@@ -145,11 +147,11 @@ func _run() -> void:
 	for i: int in cells.size():
 		sheet.blit_rect(cells[i], Rect2i(Vector2i.ZERO, CELL), Vector2i((i % 5) * (CELL.x + 4), (i / 5) * (CELL.y + 4)))
 	sheet.resize(1280, sheet.get_height() * 1280 / sheet.get_width(), Image.INTERPOLATE_LANCZOS)
-	sheet.save_jpg(out.path_join("sheet.jpg"), 0.9)
-	var f := FileAccess.open(out.path_join("shots.json"), FileAccess.WRITE)
+	sheet.save_jpg(out.path_join("sheet%s.jpg" % _suffix), 0.9)
+	var f := FileAccess.open(out.path_join("shots%s.json" % _suffix), FileAccess.WRITE)
 	f.store_string(JSON.stringify(report, "  ") + "\n")
 	f.close()
-	print("LIVELY wrote %s %s" % [out.path_join("sheet.jpg"), JSON.stringify(best)])
+	print("LIVELY wrote %s %s" % [out.path_join("sheet%s.jpg" % _suffix), JSON.stringify(best)])
 	quit(0)
 
 
