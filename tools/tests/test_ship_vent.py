@@ -1,8 +1,9 @@
 """The throat vents (art #263 step 2, station 1, way A; docs/ship.md "Station 1: the throat vents"): the built parts
-(the blades, the well's glows, the marker, the colliders; the Meshy body is imported from its GLB) inside the unit box
-(the spot's plain band, its own 0.6 m depth, the height), the leaves' names, materials and origins (each blade's on
-the caps' axis, the marker's at the bar's bottom), the blades inside the frame's opening and depth all the way, their
-calm reach past the frame and their seams calm and closed, the blade's UVs, the west piece the east one's mirror, and
+(the well's glows, the marker, the colliders; the Meshy body and the Meshy blade's seven copies are imported from
+their GLBs) inside the unit box (the spot's plain band, its own 0.6 m depth, the height), the leaves' names, materials
+and origins (each blade's on the caps' axis, the marker's at the bar's bottom), the blades' boxes inside the depth all
+the way, their calm reach past the frame and their seams calm and closed (the blade cleaner's numbers), the west
+piece the east one's mirror, and
 `ship --check` holding a station piece to its spot and depth. Pure Python: needs neither Blender, Godot nor the raw
 files (the motion proof on the GLBs: `ship --motion DIR`)."""
 
@@ -54,8 +55,12 @@ class ShipVentTest(unittest.TestCase):
     def test_inside_the_unit_box(self):
         u0, u1, v0, v1, h0, h1 = V.UNIT
         for side in "ew":
-            for name, p in build(side).items():
-                for x, y, h in p["verts"]:
+            for name, p in build(side, meshes=False).items():
+                if name.startswith("slat"):
+                    pts = [turn(q, p["origin"], a) for q in p["hull"] for a in (0.0, V.OPEN_RAD)]
+                else:
+                    pts = p.get("verts", [])
+                for x, y, h in pts:
                     self.assertTrue(u0 - 1e-6 <= x <= u1 + 1e-6 and v0 - 1e-6 <= y <= v1 + 1e-6, (side, name, x, y))
                     self.assertTrue(V.FLOOR + h0 - 1e-6 <= h <= V.FLOOR + h1 + 1e-6, (side, name, h))
 
@@ -69,7 +74,7 @@ class ShipVentTest(unittest.TestCase):
         parts = build("e", meshes=False)
         built = sum(tris(p) for n, p in parts.items() if "verts" in p and "-convcolonly" not in n)
         self.assertLessEqual(built, 2000, built)   # the body adds its 4,000 baked triangles
-        self.assertTrue(parts["body"]["glb"].replace("\\", "/").endswith("body4k_r2/body.glb"), parts["body"])
+        self.assertTrue(parts["body"]["glb"].replace("\\", "/").endswith("body4k_r4/body.glb"), parts["body"])
         for name in [f"slat{k}" for k in range(1, V.SLATS + 1)] + ["marker", "heat", "cool", "col0-convcolonly",
                                                                     "col1-convcolonly"]:
             self.assertIn(name, parts)
@@ -77,62 +82,59 @@ class ShipVentTest(unittest.TestCase):
         self.assertEqual(parts["heat"]["mat"], "int_halo__vent_heat")
         self.assertEqual(parts["cool"]["mat"], "int_cyan__vent_cool")
         self.assertEqual(parts["marker"]["mat"], "glow_nav_white__vent_marker")
-        self.assertEqual(set(V.L.MATERIALS[V.BLADE]["tex"]), {"albedo", "rough", "metal"})
-        for k in range(1, V.SLATS + 1):
+        for k in range(1, V.SLATS + 1):   # one Meshy blade, seven copies, each turned to closed
             p = parts[f"slat{k}"]
-            self.assertEqual(p["mat"], V.BLADE)
-            self.assertEqual([len(u) for u in p["uv"]], [len(f) for f in p["faces"]], k)
-            self.assertTrue(all(0.0 <= c <= 1.0 for u in p["uv"] for xy in u for c in xy), k)
+            self.assertTrue(p["glb"].replace("\\", "/").endswith(V.BLADE_GLB), p["glb"])
+            self.assertAlmostEqual(p["rot_u"], -V.OPEN_RAD, places=9)
+            self.assertEqual(p["offset"], p["origin"])
+            self.assertEqual(len(p["hull"]), 8)
 
     def test_leaves_origins(self):
-        parts = build("e")
+        parts = build("e", meshes=False)
         for k in range(1, V.SLATS + 1):
             o = parts[f"slat{k}"]["origin"]
             self.assertAlmostEqual(o[0], (V.CAP_U[0] + V.CAP_U[1]) / 2, places=6)
             self.assertAlmostEqual(o[1], V.PIVOT_V, places=6)
             self.assertAlmostEqual(o[2], V.FLOOR + V.PIVOT_TOP - (k - 1) * V.PITCH, places=6)
-        self.assertAlmostEqual(math.hypot(*V.UPPER[0]), V.NOSE_R, places=6)   # the root round the caps' axis
+        self.assertAlmostEqual(V.BLADE_BOX[1][0], -0.03, places=3)   # the root's back 3 cm behind the caps' axis
         m = parts["marker"]
         self.assertAlmostEqual(m["origin"][2], min(h for _, _, h in m["verts"]), places=6)
         self.assertAlmostEqual(m["origin"][2] + V.MARK_TRAVEL + V.MARK_H, V.FLOOR + V.GLASS_H[1], places=6)
 
     def test_blades_in_the_frame(self):
-        """From closed to calm every blade stays inside the unit's depth and in front of the cool glow; whatever of it
-        is behind the frame's face stays inside the opening's height."""
-        for k, p in build("e").items():
+        """From closed to calm every blade's box stays inside the unit's depth and in front of the cool glow."""
+        for k, p in build("e", meshes=False).items():
             if not k.startswith("slat"):
                 continue
-            for q in p["verts"]:
+            for q in p["hull"]:
                 for a in (V.OPEN_RAD * t / 4 for t in range(5)):
                     x, y, h = turn(q, p["origin"], a)
                     self.assertTrue(V.COOL_V + 0.002 < y <= V.UNIT[3] + 1e-6, (k, a, y))
-                    if y < V.BOX_FACE:
-                        self.assertTrue(V.FLOOR + V.OPEN_H[0] < h < V.FLOOR + V.OPEN_H[1], (k, a, h))
 
     def test_calm_reach_past_the_frame(self):
         """Calm, the blades stick out about 19 cm past the frame's face (side_left)."""
-        p = build("e")["slat4"]
-        reach = max(turn(q, p["origin"], V.OPEN_RAD)[1] for q in p["verts"]) - V.BOX_FACE
+        p = build("e", meshes=False)["slat4"]
+        reach = max(turn(q, p["origin"], V.OPEN_RAD)[1] for q in p["hull"]) - V.BOX_FACE
         self.assertTrue(0.17 <= reach <= 0.20, reach)
 
     def test_seams_calm_and_closed(self):
-        """Straight from the front, between each blade's lowest point and the next one's top along its full-size part
-        (the ends taper into the caps): a wide lit band calm (front_ortho), a narrow lit seam closed (front_closed),
-        never an overlap."""
-        parts = build("e")
-        u0, u1 = V.CAP_U[0] + 0.012, V.CAP_U[1] - 0.012
-        full = {round(u0 + (t + 1) / 2 * (u1 - u0), 4) for t, sc, _ in V.STATIONS if sc >= 0.9}
-        for k in range(1, V.SLATS):
-            for a, lo, hi in ((0.0, 0.005, 0.03), (V.OPEN_RAD, 0.035, 0.07)):
-                up, down = front_span(parts[f"slat{k}"], a), front_span(parts[f"slat{k + 1}"], a)
-                gaps = [up[x][0] - down[x][1] for x in up if x in full]
-                self.assertTrue(lo <= min(gaps) and max(gaps) <= hi, (k, a, min(gaps), max(gaps)))
+        """Straight from the front (the blade cleaner's numbers, the slices' median): a lit band of about a third of
+        the pitch calm (front_ortho), a narrow lit seam closed (front_closed), the closed turn short of a cut."""
+        self.assertTrue(0.035 <= V.BLADE_SEAMS["calm"] <= 0.07, V.BLADE_SEAMS)
+        self.assertTrue(0.003 <= V.BLADE_SEAMS["closed"] <= 0.02, V.BLADE_SEAMS)
+        self.assertLess(V.CLOSED_DEG, V.BLADE_SEAMS["first_cut_deg"] - 1.0)
+        self.assertAlmostEqual(math.degrees(V.OPEN_RAD), V.CLOSED_DEG, places=9)
 
     def test_west_mirrors_east(self):
         e, w = build("e"), build("w")
         self.assertEqual(set(e), set(w))
         for name in e:
             self.assertEqual([(-x, y, h) for x, y, h in e[name]["verts"]], w[name]["verts"])
+        ea, wa = build("e", meshes=False), build("w", meshes=False)
+        for k in range(1, V.SLATS + 1):
+            pe, pw = ea[f"slat{k}"], wa[f"slat{k}"]
+            self.assertEqual([(-x, y, h) for x, y, h in pe["hull"]], pw["hull"])
+            self.assertEqual((pe["mirror_u"], pw["mirror_u"]), (False, True))
         self.assertGreater(e["marker"]["verts"][0][0], 0)   # the column on +u (toward the hall) east
         self.assertTrue(build("w", meshes=False)["body"]["mirror_u"])
 

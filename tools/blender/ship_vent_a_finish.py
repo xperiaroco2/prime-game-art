@@ -8,9 +8,7 @@ ship_vent_a.py finished without a new generation, and the blades' maps.
 - The grade: the body's bronze texels (outside the well, no glow) scaled per channel toward the concept's frame bronze
   (front_ortho's top and bottom bars, the median of their bronze pixels times LIT, a lit picture being brighter than
   its albedo); the well stays dark.
-- The blade's maps on its UV layout (ship_interior_vent.blade_uvs: U along the blade, V round its section): the graded
-  bronze with a mottle as strong as the body's, bright worn edges along the section's EDGES corners (the nose, the
-  ridge, the trailing edge), a darker underside; roughness and metallic from the body's bronze, the edges polished.
+(Step 2 also painted the procedural blades' maps here; step 3's blades are Meshy's, ship_vent_a_blade.py.)
 
 Writes <out>/body.glb (the body with the graded albedo), <out>/textures/*.png and <out>/finish.json."""
 
@@ -30,8 +28,6 @@ import ship_interior_vent as V  # noqa: E402
 LIT = 0.82                       # the concept's lit bronze over its albedo
 BARS = ((455, 940, 185, 235), (430, 940, 1245, 1290))    # front_ortho (1536 px): the frame's top and bottom bars
 WELL_V = 0.36                    # faces behind this inside the opening are the well's
-BLADE_LIFT, MOTTLE = 1.25, 0.22   # the blade's bronze over the body's median (it stands out in the light), its mottle
-                                 # over the body's spread (a fine patina; 1.1 read as camouflage blotches in Godot)
 
 
 def arg(k, d=None):
@@ -85,22 +81,6 @@ def label_map(obj, size: int) -> np.ndarray:
             if not well:
                 sub[inside] = 1
     return lab
-
-
-def noise(h: int, w: int, rng) -> np.ndarray:
-    """A mottle: octaves of smoothed random grids, zero mean, unit spread."""
-    out = np.zeros((h, w), np.float32)
-    for cells, amp in ((16, 0.5), (48, 0.6), (140, 0.45)):
-        g = rng.standard_normal((max(2, cells * h // w + 1), cells + 1)).astype(np.float32)
-        yi = np.linspace(0, g.shape[0] - 1, h)
-        xi = np.linspace(0, g.shape[1] - 1, w)
-        y0, x0 = np.floor(yi).astype(int), np.floor(xi).astype(int)
-        y1, x1 = np.minimum(y0 + 1, g.shape[0] - 1), np.minimum(x0 + 1, g.shape[1] - 1)
-        fy, fx = (yi - y0)[:, None], (xi - x0)[None, :]
-        fy, fx = fy * fy * (3 - 2 * fy), fx * fx * (3 - 2 * fx)
-        out += amp * ((g[y0][:, x0] * (1 - fx) + g[y0][:, x1] * fx) * (1 - fy)
-                      + (g[y1][:, x0] * (1 - fx) + g[y1][:, x1] * fx) * fy)
-    return (out - out.mean()) / out.std()
 
 
 def main() -> None:
@@ -167,32 +147,6 @@ def main() -> None:
                 n.image = new
     for name in ("vent_a_emission", "vent_a_metal", "vent_a_normal", "vent_a_rough"):
         shutil.copyfile(src / "textures" / f"{name}.png", out / "textures" / f"{name}.png")
-    # the blade's maps
-    bw, bh = 1024, 512
-    rng = np.random.default_rng(263)
-    spread = float(np.std(alb[bronze].mean(-1)))
-    us, vs = V.blade_uv_marks()
-    vy = (np.arange(bh) + 0.5) / bh
-    ux = (np.arange(bw) + 0.5) / bw
-    edge = np.zeros((bh, bw), np.float32)
-    for j in V.EDGES:
-        edge = np.maximum(edge, np.exp(-((vy[:, None] - vs[j]) / 0.012) ** 2) * np.ones((1, bw)))
-    under = ((vy > vs[V.EDGES[-1]]) & (vy < vs[-2] + 0.01))[:, None] * np.ones((1, bw))
-    ends = np.clip(1 - np.minimum(ux - us[0], us[-1] - ux) / 0.06, 0, 1)[None, :] * np.ones((bh, 1))
-    mot = noise(bh, bw, rng)
-    lum = float(np.median(alb[bronze].mean(-1)))
-    col = BLADE_LIFT * np.median(alb[bronze], 0)[None, None, :]
-    col = col * (1 + MOTTLE * spread / max(1e-4, lum) * mot[..., None])
-    col = col * (1 - 0.2 * under[..., None]) * (1 - 0.2 * ends[..., None])
-    hi_col = np.array([1.0, 0.82, 0.58], np.float32)
-    wear = np.clip(edge * (0.75 + 0.25 * noise(bh, bw, rng)), 0, 1)[..., None]
-    col = col * (1 - wear) + hi_col * wear
-    save(col, "vent_a_blade_albedo", out)
-    r0, m0 = float(np.median(rough[bronze])), float(np.median(metal[bronze]))
-    save(np.clip(r0 * (1 + 0.15 * mot) - 0.2 * wear[..., 0], 0.05, 1), "vent_a_blade_rough", out, "Non-Color")
-    save(np.clip(np.full((bh, bw), m0) + 0.1 * wear[..., 0], 0, 1), "vent_a_blade_metal", out, "Non-Color")
-    rep["blade"] = {"albedo_median": np.median(col.reshape(-1, 3), 0).round(3).tolist(), "rough": round(r0, 3),
-                    "metal": round(m0, 3), "mottle_spread": round(spread, 4), "lum": round(lum, 3)}
     for o in bpy.context.scene.objects:
         o.select_set(o is body)
     bpy.ops.export_scene.gltf(filepath=str(out / "body.glb"), export_format="GLB", use_selection=True,

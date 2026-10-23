@@ -85,8 +85,9 @@ def make(p: dict):
 
 def import_glb(p: dict) -> list:
     """A part made elsewhere (way A of station 1: Meshy's cleaned vent body): {"name", "glb", "offset": (x, y, h),
-    "mirror_u": bool}. Every mesh of the GLB, its own materials and textures kept, joined into one object named
-    p["name"], moved by offset (plan x, y, h) and mirrored in x when mirror_u (its normals flipped back)."""
+    "mirror_u": bool, "rot_u": rad}. Every mesh of the GLB, its own materials and textures kept, joined into one object
+    named p["name"], turned by rot_u about the u axis, moved by offset (plan x, y, h) and mirrored in x when mirror_u
+    (its normals flipped back)."""
     from mathutils import Matrix
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=p["glb"])
@@ -103,8 +104,18 @@ def import_glb(p: dict) -> list:
     if len(meshes) > 1:
         with bpy.context.temp_override(active_object=obj, selected_editable_objects=meshes):
             bpy.ops.object.join()
+    # a GLB imported again (the vents' seven blades) shares the first copy's materials, not `.001` copies
+    for slot in obj.material_slots:
+        m0 = slot.material
+        base = m0.name.rsplit(".", 1)[0] if m0 and m0.name[-4:-3] == "." and m0.name[-3:].isdigit() else None
+        if base and base in bpy.data.materials:
+            slot.material = bpy.data.materials[base]
+            if m0.users == 0:
+                bpy.data.materials.remove(m0)
     x, y, h = p.get("offset", (0.0, 0.0, 0.0))
     m = Matrix.Translation((x, -y, h))
+    if p.get("rot_u"):   # turned about the piece's u axis through the GLB's origin (positive: +v swings up)
+        m = m @ Matrix.Rotation(-p["rot_u"], 4, "X")
     if p.get("mirror_u"):
         m = m @ Matrix.Scale(-1.0, 4, (1.0, 0.0, 0.0))
     obj.data.transform(m)
