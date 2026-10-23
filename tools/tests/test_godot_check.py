@@ -189,7 +189,10 @@ def alien_dump(clips=_godot.ALIEN_CLIPS) -> dict:
     body["bone_bounds"] = {"LeftFoot": {"min": [0.05, 0.0, -0.04], "max": [0.15, 0.1, 0.08]},
                            "LeftToes": {"min": [0.05, 0.0, 0.08], "max": [0.15, 0.05, 0.16]},
                            "RightFoot": {"min": [-0.15, 0.0, -0.04], "max": [-0.05, 0.1, 0.08]}}
-    body["eye_tones"] = {"vertices": 2000, "white": 900, "black": 60, "cap_m": 0.05}
+    for b in ("Hips", "Head", "LeftHand", "RightHand"):  # B4: every weighted bone the heaviest of some vertex
+        body["bone_bounds"][b] = {"min": [0.0, 0.0, 0.0], "max": [0.01, 0.01, 0.01]}
+    body["eye_tones"] = {"vertices": 2000, "white": 900, "black": 60, "cap_m": 0.05, "near_vertices": 4000,
+                         "bulge": [0.0, 0.0, 0.008], "eye_mid": [0.0, 1.62, 0.13]}
     d = dump()
     d["skeletons"] = [{"path": "x_rig/Skeleton3D", "bones": list(A_BONES), "parents": [-1] + [0] * 10,
                        "rest_joints": copy.deepcopy(A_JOINTS)}]
@@ -222,9 +225,13 @@ class AlienProfileTest(unittest.TestCase):
 
     def test_an_alien_facing_backwards_fails(self) -> None:
         d = alien_dump()
-        for b in ("LeftEye", "RightEye"):
-            d["skeletons"][0]["rest_joints"][b][2] = -0.1  # the eyes behind the Head joint: it faces -Z
+        d["meshes"][0]["eye_tones"]["eye_mid"][2] = -0.1  # the eyes behind the Head joint: it faces -Z
         self.assertEqual(alien(d)["facing_plus_z"]["status"], "fail")
+        d = alien_dump()
+        d["meshes"][0]["eye_tones"]["bulge"][2] = -0.008  # B4: the eye surfaces bulge backwards (from the geometry)
+        self.assertEqual(alien(d)["facing_plus_z"]["status"], "fail")
+        d["meshes"][0]["eye_tones"].pop("near_vertices")
+        self.assertIn("cannot tell", alien(d)["facing_plus_z"]["detail"])
         d = alien_dump()
         j = d["skeletons"][0]["rest_joints"]
         j["LeftEye"], j["RightEye"] = j["RightEye"], j["LeftEye"]  # mirrored
@@ -244,6 +251,45 @@ class AlienProfileTest(unittest.TestCase):
         d = alien_dump()
         d["skeletons"][0]["bones"].remove("LeftHand")
         self.assertIn("missing bones ['LeftHand']", alien(d)["pack_floor"]["detail"])
+
+    def test_a_weighted_bone_without_vertices_fails_the_floor(self) -> None:
+        d = alien_dump()
+        d["meshes"][0]["bone_bounds"].pop("LeftHand")
+        got = alien(d)["pack_floor"]
+        self.assertEqual(got["status"], "fail")
+        self.assertIn("no vertex weighted to ['LeftHand']", got["detail"])
+
+    def test_extra_bones_are_named_and_pass_only_as_a_whole_spring_set(self) -> None:
+        self.assertIn("no extra bone", alien(alien_dump())["alien_extra_bones"]["detail"])
+        d = alien_dump()
+        d["skeletons"][0]["bones"] += ["Crest1", "Crest2", "Crest3"]
+        got = alien(d)["alien_extra_bones"]
+        self.assertEqual(got["status"], "pass", got)
+        self.assertIn("3 extra: the crest springs ['Crest1', 'Crest2', 'Crest3']", got["detail"])
+        d["skeletons"][0]["bones"].remove("Crest3")
+        got = alien(d)["alien_extra_bones"]
+        self.assertEqual(got["status"], "fail")
+        self.assertIn("spring sets in part: ['crest']", got["detail"])
+        d = alien_dump()
+        d["skeletons"][0]["bones"] += ["Sword_Socket"]
+        got = alien(d)["alien_extra_bones"]
+        self.assertEqual(got["status"], "fail")
+        self.assertIn("not in a declared spring set: ['Sword_Socket']", got["detail"])
+        self.assertNotIn("alien_extra_bones", alien(alien_dump(), profile="pack"))
+
+    def test_the_alien_holds_the_contract_height_unless_an_allowance_is_named(self) -> None:
+        d = alien_dump()  # 1.881 m: over height_max_m 1.80, under the fixture's plasticine 2.0
+        got = alien(d)["contract_height"]
+        self.assertEqual(got["status"], "warn")
+        self.assertIn("alien profile, no allowance", got["detail"])
+        e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
+             "rest_heads_m": {}, "height_m": None, "animations": {}}
+        got = {c["check"]: c for c in _godot.evaluate(d, e, A_CONTRACT, [], textured=True, profile="alien",
+                                                      allowance="plasticine")}["contract_height"]
+        self.assertEqual(got["status"], "pass", got)
+        self.assertIn("with the plasticine allowance", got["detail"])
+        with self.assertRaises(ValueError):
+            _godot.evaluate(d, e, A_CONTRACT, [], profile="alien", allowance="giant")
 
     def test_an_unknown_profile_is_refused(self) -> None:
         with self.assertRaises(ValueError):

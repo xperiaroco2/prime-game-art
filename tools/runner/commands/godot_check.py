@@ -29,6 +29,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="the character kind's rules: pack (the Ultimate Modular characters, the default) or alien "
                              "(art #196: eyes in the head mesh on its eye bones, the contract's bone names, the shared "
                              "alien body's clips; docs/godot.md)")
+    parser.add_argument("--allowance", default="",
+                        help="--profile alien: a named height allowance of the contract's body (plasticine: "
+                             "plasticine_height_max_m); without one the alien profile holds height_max_m")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -47,7 +50,7 @@ def run(args: argparse.Namespace) -> int:
     for glb, res_path in staged.items():
         out = (args.out or _godot.OUT).resolve() / glb.stem
         failed += not check_one(glb, res_path, out, contract, import_lines, args.strict_contract, list(staged.values()),
-                            args.textured, args.profile)
+                            args.textured, args.profile, args.allowance)
     if args.humanoid:
         from . import _humanoid
 
@@ -58,13 +61,13 @@ def run(args: argparse.Namespace) -> int:
 
 
 def check_one(glb: Path, res_path: str, out: Path, contract: dict, import_lines: list[str], strict: bool,
-              staged: list[str], textured: bool = False, profile: str = "pack") -> bool:
+              staged: list[str], textured: bool = False, profile: str = "pack", allowance: str = "") -> bool:
     expect = _godot.expectations(glb)
     dump, lines = _godot.inspect(res_path, out / "inspect.json")
     mine = _godot.lines_for(import_lines, res_path, staged)
     output = mine + lines
     checks = _godot.evaluate(dump, expect, contract, output, strict_contract=strict, textured=textured,
-                             profile=profile)
+                             profile=profile, allowance=allowance)
     failed = [c for c in checks if c["status"] == "fail"]
     report = {
         "glb": glb.as_posix(),

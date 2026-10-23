@@ -171,6 +171,8 @@ func _eye_tones(scene: Node, mesh: MeshInstance3D, target: Node, rest: PackedVec
 	var white := 0
 	var black := 0
 	var at := 0
+	var near := Vector3.ZERO
+	var nn := 0
 	for s: int in mesh.mesh.get_surface_count():
 		var arrays: Array = mesh.mesh.surface_get_arrays(s)
 		var count: int = (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
@@ -186,6 +188,9 @@ func _eye_tones(scene: Node, mesh: MeshInstance3D, target: Node, rest: PackedVec
 				break
 			var p: Vector3 = rest[at + i]
 			var c: Vector3 = cl if p.distance_to(cl) < p.distance_to(cr) else cr
+			if p.distance_to(c) <= cap:  # B4: every vertex round the eye centres, for facing from the geometry
+				near += p - c
+				nn += 1
 			if p.distance_to(c) > cap or p.z < c.z:
 				continue
 			var col: Color = (mat as BaseMaterial3D).albedo_color.srgb_to_linear() if mat is BaseMaterial3D else Color.WHITE
@@ -199,7 +204,11 @@ func _eye_tones(scene: Node, mesh: MeshInstance3D, target: Node, rest: PackedVec
 			white += 1 if lum >= 0.5 else 0
 			black += 1 if lum <= 0.05 else 0
 		at += count
-	return {"vertices": n, "white": white, "black": black, "cap_m": snappedf(cap, 0.0001)}
+	# B4: the eye surfaces' mean offset from their eye centres (the eyeballs bulge out of the head: +Z on a face
+	# looking +Z), and the eye centres' midpoint
+	var off: Vector3 = near / maxf(nn, 1)
+	return {"vertices": n, "white": white, "black": black, "cap_m": snappedf(cap, 0.0001), "near_vertices": nn,
+		"bulge": Character.vec(off), "eye_mid": Character.vec((cl + cr) * 0.5)}
 
 
 # The albedo Godot draws at each vertex of a surface (linear): the albedo colour, times the vertex colour when the
