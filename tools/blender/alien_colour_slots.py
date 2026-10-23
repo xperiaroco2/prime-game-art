@@ -282,8 +282,8 @@ def job(build: Path, out: Path) -> dict:
                  for k, (name, p) in enumerate(FREE)]
                 for h in HEADS for view, shot in T.shots(h).items() for fm in G.FRONT_MODES]
         j["sheets"].append({"file": str(out / light / "free.jpg"), "cell": [180, 180], "width": 1280,
-                            "title": title(f"Free picks, acidic on purpose, applied as picked ({V}); the picks in "
-                                           "the cells", "rows in pairs: pale front keep, then follow", lt),
+                            "title": title(f"Free picks, acidic, as picked ({V}); rows in pairs: pale front keep, "
+                                           "then follow", lt),
                             "rows": rows})
         rows = []
         for h in HEADS:
