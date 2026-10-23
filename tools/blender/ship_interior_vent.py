@@ -1,16 +1,18 @@
 """The throat vents (art #263 step 2, station 1; docs/ship.md "Station 1: the throat vents"): `station_vent_e` and its
 mirror `station_vent_w`, each a chunky faceted metal box hung flat on the throat's slanted wall at its spot (ship.toml
-[stations] vent_e / vent_w), its front a grille of six curved gill slats in a faceted frame, a column on the hall's
+[stations] vent_e / vent_w), its front a grille of seven crescent gill slats in a faceted frame, a column on the hall's
 side with a palm scanner for a four-fingered hand, a light bar with a green band and a sliding white marker, and a red
 problem lamp at its head. Plain Python: the harness (ship_build.py) makes the meshes.
 
 The piece's frame: the spot at the origin, u (plan x) along the wall, v (plan y) out of the wall into the throat
 (the placement's yaw turns +v onto the spot's normal), h absolute (the deck at FLOOR). East: +u runs toward the hall;
 the west piece mirrors u, so its column is toward the hall too. In Godot (x, h, v): each slat a leaf node
-`<id>_slat<k>` (k 1..6 from the top) with its origin on its hinge (the slat's upper edge, along x): it opens with
-rotation.x = -OPEN_RAD * t (t 0 shut .. 1 open); the marker `<id>_marker` a leaf with its origin at its rest point,
+`<id>_slat<k>` (k 1..7 from the top) with its origin on its hinge (the slat's upper edge, along x): it opens with
+rotation.x = -OPEN_RAD * t (t 0 shut: 30 deg out from hanging, a lit crescent slit under each slat .. 1 open: 85 deg,
+wide lit gaps); the marker `<id>_marker` a leaf with its origin at its rest point,
 the bar's bottom: it slides with position.y = rest + MARK_TRAVEL * t. The game drives the glows by material:
-`int_halo__vent_heat` (the heat behind the slats, the problem state), `glow_nav_green__vent_band`,
+`int_halo__vent_heat` (the heat behind the slats, the problem state; `<id>_heat`), `int_cyan__vent_cool` (the calm
+glow on `<id>_cool`, 4 mm in front of the heat: shown calm, hidden for the problem), `glow_nav_green__vent_band`,
 `glow_nav_white__vent_marker`, `int_cyan__vent_hand` (the scanner's outline) and `glow_nav_red__vent_lamp`; each is
 a copy of the library material before its "__" (the night look's [light.mats] family: they glow, light nothing).
 Convex colliders `<id>_col0-convcolonly` (the box) and `<id>_col1-convcolonly` (the column); the open slats stay
@@ -28,10 +30,11 @@ BEND, IN, TOP = S.TH_BEND, S.TH_IN, S.TH_H      # the throat wall: vertical to 1
 
 # the driveable glows: copies of library materials, their family before "__"; the heat a saturated orange and the
 # problem lamp a deep red (step 2: the library's strengths washed them to tan and pink under AgX)
-for _name in ("int_halo__vent_heat", "glow_nav_green__vent_band", "glow_nav_white__vent_marker",
+for _name in ("int_halo__vent_heat", "int_cyan__vent_cool", "glow_nav_green__vent_band", "glow_nav_white__vent_marker",
               "int_cyan__vent_hand", "glow_nav_red__vent_lamp"):
     L.MATERIALS[_name] = dict(L.MATERIALS[_name.split("__")[0]])
 L.MATERIALS["int_halo__vent_heat"].update(base=(1.0, 0.30, 0.02, 1.0), emission=(1.0, 0.30, 0.02), strength=1.5)
+L.MATERIALS["int_cyan__vent_cool"].update(base=(0.02, 0.62, 1.0, 1.0), emission=(0.02, 0.62, 1.0), strength=1.5)
 L.MATERIALS["glow_nav_red__vent_lamp"].update(base=(1.0, 0.015, 0.01, 1.0), emission=(1.0, 0.015, 0.01), strength=1.2,
                                               roughness=0.15)
 
@@ -46,18 +49,21 @@ BOX_C, COL_C = (0.12, 0.04, 0.05, 0.15), (0.04, 0.06, 0.10, 0.04)   # their 45 d
 OPEN_U, OPEN_H = (-0.60, 0.15), (0.17, 1.79)                 # the grille's opening: the whole front inside the frame;
 OPEN_C = (0.05, 0.05, 0.08, 0.05)                            # its top is the wall's chamfer behind the well (cv 0.2)
 WELL_V = 0.215                                               # the well's back (the heat panel just in front)
-SLATS, HINGE_TOP, PITCH, CHORD = 7, 1.765, 0.225, 0.24       # hinges every 0.225 m from 1.765 down; chord 0.24
-HINGE_V, TILT, BULGE = 0.25, math.radians(22.0), 0.008       # shut: 22 deg out from hanging, bowed 8 mm outward
+SLATS, HINGE_TOP, PITCH, CHORD = 7, 1.765, 0.225, 0.215      # hinges every 0.225 m from 1.765 down; chord at the ends
+CRESCENT = 0.24                                              # the chord 24 % shorter mid-blade: the tail's edge arches
+HINGE_V, TILT, BULGE = 0.25, math.radians(30.0), 0.015       # shut: 30 deg out from hanging, bowed 1.5 cm outward
 NOSE_R, TAIL_T = 0.009, 0.0025                               # the gill's round nose round its hinge, its thin tail
 SWEEP_V = 0.010                                              # its tail bowed out along u by 1.0 cm at its middle
 END_GAP = 0.012                                              # a slat's ends to the well's sides
-OPEN_RAD = math.radians(55.0)                                # fully open: 77 deg from hanging, the tip at 0.49 m
+OPEN_RAD = math.radians(55.0)                                # fully open: 85 deg from hanging, the tip at 0.47 m
+COOL_V = WELL_V + 0.012                                      # the cool glow's panel, just in front of the heat's
 UC = (COL_U[0] + COL_U[1]) / 2                               # the column's centre line
 PAD_H = (0.94, 1.27)                                         # the scanner's bezel (its centre 1.105)
-BAR_H, GLASS_H, BAND_H = (1.30, 1.79), (1.325, 1.765), (1.70, 1.735)
+BAR_H, GLASS_H, BAND_H = (1.30, 1.775), (1.325, 1.75), (1.685, 1.72)
 MARK_H = 0.03                                                # the marker's height; it slides from GLASS_H[0]
 MARK_TRAVEL = GLASS_H[1] - GLASS_H[0] - MARK_H
-LAMP_H, LAMP_R = 1.855, 0.026                                # the beacon's centre on the column's face, its dome
+LAMP_H, LAMP_R = 1.857, 0.045                                # the beacon's centre on the column's face, its dome
+LAMP_BASE = 0.058                                            # its octagonal base's radius (the face's top at 1.92)
 UNIT = [-0.78, 0.78, -0.01, 0.5, -0.02, 2.08]                # u0 u1 v0 v1 h0 h1: ship.toml's spot band and depth
 
 
@@ -115,12 +121,13 @@ def plate(outline, v0, v1, bevel=0.0) -> tuple[list, list]:
     return loft([ring(outline, v0), ring(outline, v1 - bevel), ring(inner, v1)])
 
 
-def hemisphere_v(c, r, v0, rings=4, segs=16) -> tuple[list, list]:
-    """A dome on the plane v = v0 bulging toward +v, centred at (u, h) = c."""
-    verts = [(c[0] + r * math.cos(t) * math.cos(2 * math.pi * j / segs), v0 + r * math.sin(t),
+def hemisphere_v(c, r, v0, rings=4, segs=16, depth=None) -> tuple[list, list]:
+    """A dome on the plane v = v0 bulging toward +v, centred at (u, h) = c; depth: its height (else r, a half ball)."""
+    depth = r if depth is None else depth
+    verts = [(c[0] + r * math.cos(t) * math.cos(2 * math.pi * j / segs), v0 + depth * math.sin(t),
               FLOOR + c[1] + r * math.cos(t) * math.sin(2 * math.pi * j / segs))
              for t in [math.pi / 2 * i / rings for i in range(rings)] for j in range(segs)]
-    verts.append((c[0], v0 + r, FLOOR + c[1]))
+    verts.append((c[0], v0 + depth, FLOOR + c[1]))
     faces = [(i * segs + j, i * segs + (j + 1) % segs, (i + 1) * segs + (j + 1) % segs, (i + 1) * segs + j)
              for i in range(rings - 1) for j in range(segs)]
     top, last = len(verts) - 1, (rings - 1) * segs
@@ -196,7 +203,7 @@ def slat_loops(k: int):
     for i in range(n_u):
         a = i / (n_u - 1)
         u = u0 + (u1 - u0) * a
-        chord = CHORD * (0.92 + 0.08 * math.sin(math.pi * a))
+        chord = CHORD * (1.0 - CRESCENT * math.sin(math.pi * a))   # the tail arches: a crescent slit under it
         sv = SWEEP_V * math.sin(math.pi * a)
         mids, tans = [], []
         for j in range(n_s + 1):
@@ -258,8 +265,10 @@ def station_vent(args, layout):
                                   ring(edge, BOX_V - 0.05), ring(edge, WELL_V)], fold=True), FRAME)
     col_rings = chunky((*COL_U, *COL_H), COL_C, COL_V, 0.06)
     add("column", loft(col_rings, fold=True), COLUMN)
-    # the heat behind the slats
+    # the glow behind the slats: the heat (the problem) and, 4 mm in front of it, the cool glow (calm); the game shows
+    # `cool` when calm and hides it for the problem, so the slits glow cyan or orange
     add("heat", plate(grow(*OPEN_U, *OPEN_H, OPEN_C, -0.004), WELL_V - 0.004, WELL_V + 0.006), "int_halo__vent_heat")
+    add("cool", plate(grow(*OPEN_U, *OPEN_H, OPEN_C, -0.004), COOL_V - 0.002, COOL_V + 0.002), "int_cyan__vent_cool")
     # the cyan strips, each in its groove (the groove's floor 1.2 cm under the face, its middle 7.1 cm in)
     gi = 0.071
     runs = [(BOX_U[0] + gi, 0.40, 1.00, "v", BOX_V), (BOX_U[0] + gi, 1.12, 1.62, "v", BOX_V),
@@ -294,13 +303,15 @@ def station_vent(args, layout):
         origin=(UC, COL_V + 0.014, FLOOR + GLASS_H[0]))
     # the problem lamp near the column's head: a beacon, an octagonal base, a metal collar, a red dome on a red band
     lc = (UC, LAMP_H)
-    base = [(UC + 0.047 * math.cos(math.pi * (i + 0.5) / 4), LAMP_H + 0.047 * math.sin(math.pi * (i + 0.5) / 4))
+    base = [(UC + LAMP_BASE * math.cos(math.pi * (i + 0.5) / 4), LAMP_H + LAMP_BASE * math.sin(math.pi * (i + 0.5) / 4))
             for i in range(8)]
     lip = [(UC + (x - UC) * 0.86, LAMP_H + (h - LAMP_H) * 0.86) for x, h in base]
-    add("lamp_collar", L.merge(loft([ring(base, COL_V - 0.01), ring(base, COL_V + 0.006), ring(lip, COL_V + 0.012)]),
-                               disc_v(lc, 0.034, COL_V + 0.011, COL_V + 0.024),
-                               disc_v(lc, 0.03, COL_V + 0.024, COL_V + 0.027)), TRIM, smooth_deg=40)
-    add("lamp", L.merge(disc_v(lc, LAMP_R, COL_V + 0.026, COL_V + 0.034), hemisphere_v(lc, LAMP_R, COL_V + 0.034)),
+    # (9 cm across; the dome flattened to 2.9 cm so the beacon keeps to the unit's 0.5 m depth)
+    add("lamp_collar", L.merge(loft([ring(base, COL_V - 0.01), ring(base, COL_V + 0.008), ring(lip, COL_V + 0.013)]),
+                               disc_v(lc, LAMP_R + 0.006, COL_V + 0.012, COL_V + 0.022, segs=20),
+                               disc_v(lc, LAMP_R + 0.003, COL_V + 0.022, COL_V + 0.025, segs=20)), TRIM, smooth_deg=40)
+    add("lamp", L.merge(disc_v(lc, LAMP_R, COL_V + 0.024, COL_V + 0.031, segs=20),
+                        hemisphere_v(lc, LAMP_R, COL_V + 0.031, rings=5, segs=20, depth=0.029)),
         "glow_nav_red__vent_lamp", smooth_deg=50)
     # the slats: leaves with their origin on the hinge (the nose's axis)
     for k in range(SLATS):

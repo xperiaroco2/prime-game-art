@@ -58,9 +58,10 @@ class ShipVentTest(unittest.TestCase):
         self.assertTrue(1200 <= visible <= 4000, visible)
         for k in range(1, V.SLATS + 1):
             self.assertIn(f"slat{k}", parts)
-        for name in ("marker", "lamp", "heat", "band", "hand", "col0-convcolonly", "col1-convcolonly"):
+        for name in ("marker", "lamp", "heat", "cool", "band", "hand", "col0-convcolonly", "col1-convcolonly"):
             self.assertIn(name, parts)
         self.assertEqual(parts["heat"]["mat"], "int_halo__vent_heat")
+        self.assertEqual(parts["cool"]["mat"], "int_cyan__vent_cool")
         self.assertEqual(parts["lamp"]["mat"], "glow_nav_red__vent_lamp")
         self.assertEqual(parts["hand"]["mat"], "int_cyan__vent_hand")
         self.assertEqual(parts["band"]["mat"], "glow_nav_green__vent_band")
@@ -88,8 +89,27 @@ class ShipVentTest(unittest.TestCase):
             for q in p["verts"]:
                 for a in (V.OPEN_RAD * t / 4 for t in range(5)):
                     x, y, h = turn(q, p["origin"], a)
-                    self.assertTrue(V.WELL_V + 0.006 < y <= V.UNIT[3], (k, a, y))
+                    self.assertTrue(V.COOL_V + 0.002 < y <= V.UNIT[3], (k, a, y))
                     self.assertTrue(V.FLOOR + V.OPEN_H[0] < h < V.FLOOR + V.OPEN_H[1], (k, a, h))
+
+    def test_lit_slits_when_shut(self):
+        """Shut (t 0), a lit slit shows under each slat straight on: its tail ends above the next slat's nose, widest
+        mid-blade (a crescent) and over 2.5 cm at its ends."""
+        parts = build("e")
+        for k in range(1, V.SLATS):
+            upper, lower = parts[f"slat{k}"], parts[f"slat{k + 1}"]
+            def loops(p):   # the slat's sections along u, left to right: their h values
+                by = {}
+                for x, _, h in p["verts"]:
+                    by.setdefault(round(x, 4), []).append(h)
+                return [by[x] for x in sorted(by)]
+            a, b = loops(upper), loops(lower)
+
+            def gap(i):
+                return min(a[i]) - max(b[i])
+            end, mid = 0, len(a) // 2
+            self.assertGreater(gap(end), 0.025, k)
+            self.assertGreater(gap(mid), gap(end) + 0.03, k)
 
     def test_west_mirrors_east(self):
         e, w = build("e"), build("w")

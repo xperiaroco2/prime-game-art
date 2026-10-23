@@ -5,7 +5,8 @@ extends SceneTree
 ## On the imported GLBs: every leaf by its name, the slats driven from one 0..1 value each (rotation.x = -open_rad * t
 ## about the hinge at the node's origin) and the marker (position.y = rest + travel * t). Checks by numbers (each
 ## slat's hinge edge does not move, no slat cuts the next or leaves the frame's opening, the marker stays on its bar),
-## then the video's frames (shut, open, breathing, slam shut; the marker up and down), the states sheet, the vent alone
+## then the video's frames (calm: open, breathing, the cyan glow; the problem: the orange heat, slam shut, the marker
+## up; calm again: open), the states sheet (both glows: calm hides nothing, the problem hides `cool`), the vent alone
 ## from 8 sides and the close-ups. Writes <out>/motion.json and PNGs; the runner encodes the frames into an MP4.
 
 const Offscreen = preload("res://lib/offscreen.gd")
@@ -16,6 +17,7 @@ var _vents: Dictionary = {}     # id -> root Node3D
 var _cam: Camera3D
 var _label: Label
 var _rest: Dictionary = {}      # id -> the marker's imported position.y (its rest point, the bar's bottom)
+var _dim: Dictionary = {}       # id -> the lamp's dimmed materials (calm)
 
 
 func _initialize() -> void:
@@ -131,6 +133,26 @@ func _drive(id: String, slats: float, marker: float) -> void:
 	m.position.y = float(_rest[id]) + float(_req["mark_travel"]) * marker
 
 
+## Calm (the cyan glow `cool` shown, the lamp at a tenth) or the problem (`cool` hidden: the orange heat; the lamp lit),
+## as the game drives them.
+func _calm(id: String, calm: bool) -> void:
+	_leaf(id, "cool").visible = calm
+	var lamp: MeshInstance3D = _leaf(id, "lamp") as MeshInstance3D
+	if not _dim.has(id):
+		var mats: Array = []
+		for i: int in lamp.mesh.get_surface_count():
+			var m: BaseMaterial3D = (lamp.mesh.surface_get_material(i) as BaseMaterial3D).duplicate()
+			m.emission_energy_multiplier *= 0.1
+			mats.append(m)
+		_dim[id] = mats
+	for i: int in lamp.mesh.get_surface_count():
+		lamp.set_surface_override_material(i, _dim[id][i] if calm else null)
+
+
+func _breathe(s: float) -> float:
+	return 1.0 - 0.09 * (1.0 - cos(s * TAU / 1.6))
+
+
 ## A mesh's vertices in the vent's frame (the vent root at the origin, not turned).
 func _verts(id: String, node: MeshInstance3D) -> PackedVector3Array:
 	var to_vent: Transform3D = (_vents[id] as Node3D).global_transform.affine_inverse() * node.global_transform
@@ -158,7 +180,7 @@ func _sections(pts: PackedVector3Array) -> Dictionary:
 # --- the checks ---------------------------------------------------------------------------------------------------
 func _check(id: String) -> Dictionary:
 	var r: Dictionary = {"missing": [], "problems": []}
-	var names: Array = ["marker", "body", "column", "heat", "lamp", "band", "hand"]
+	var names: Array = ["marker", "body", "column", "heat", "cool", "lamp", "band", "hand"]
 	for k: int in range(1, int(_req["slats"]) + 1):
 		names.append("slat%d" % k)
 	for suffix: String in names:
@@ -307,7 +329,8 @@ func _run() -> void:
 	var c: Vector3 = (_vents[id0] as Node3D).position + Vector3(0.0, fl + 1.04, 0.25)   # the east vent's middle
 	for id: String in _vents:   # the pictures show the east vent alone
 		(_vents[id] as Node3D).visible = id == id0
-	# the motion video (the east vent): shut 1 s, open 2 s, breathing 3.5 s, slam 0.3 s, shut; the marker up, down
+	# the motion video (the east vent): calm, open and breathing in the cyan glow 4.5 s; the problem: the orange heat,
+	# a 0.3 s slam shut, shut with orange slits while the marker climbs to 7 s; calm again: cyan, open over 2 s
 	var fps: int = int(_req["fps"])
 	var secs: float = float(_req["seconds"])
 	_label.text = ""
@@ -315,40 +338,47 @@ func _run() -> void:
 	for i: int in int(secs * fps):
 		var s: float = float(i) / fps
 		var t: float = 0.0
-		if s < 1.0:
-			t = 0.0
-		elif s < 3.0:
-			t = smoothstep(0.0, 1.0, (s - 1.0) / 2.0)
+		var calm: bool = s < 4.5 or s >= 7.0
+		if s < 4.5:
+			t = _breathe(s)
+		elif s < 4.8:
+			var a: float = (s - 4.5) / 0.3
+			t = _breathe(4.5) * (1.0 - a * a)
 		elif s < 7.0:
-			t = 1.0 - 0.09 * (1.0 - cos((s - 3.0) * TAU / 1.6)) * minf(1.0, (s - 3.0) / 0.6)
-		elif s < 7.3:
-			var a: float = (s - 7.0) / 0.3
-			t = (1.0 - 0.09 * (1.0 - cos(4.0 * TAU / 1.6))) * (1.0 - a * a)
+			t = 0.0
+		elif s < 9.0:
+			t = smoothstep(0.0, 1.0, (s - 7.0) / 2.0)
+		else:
+			t = _breathe(s - 9.0)
 		var m: float = 0.0
-		if s >= 1.0 and s < 5.0:
-			m = smoothstep(0.0, 1.0, (s - 1.0) / 4.0)
-		elif s >= 5.0 and s < 9.0:
-			m = 1.0 - smoothstep(0.0, 1.0, (s - 5.0) / 4.0)
+		if s >= 4.5 and s < 7.0:
+			m = smoothstep(0.0, 1.0, (s - 4.5) / 2.5)
+		elif s >= 7.0 and s < 9.5:
+			m = 1.0 - smoothstep(0.0, 1.0, (s - 7.0) / 2.5)
 		_drive(id0, t, m)
+		_calm(id0, calm)
 		var img: Image = await _grab(1)
 		img.save_png(_out.path_join("frames/%05d.png" % i))
 	result["frames"] = int(secs * fps)
-	# the states sheet: shut, half, open, marker low, marker high, open from the side
+	# the states sheet: the problem shut and half open, calm open and shut, the marker high, calm open from the side
 	var states: Array = []
-	for st: Array in [["shut", 0.0, 0.0, false], ["half open", 0.5, 0.0, false], ["fully open", 1.0, 0.0, false],
-			["marker low (t 0)", 0.0, 0.0, true], ["marker high (t 1)", 0.0, 1.0, true], ["open, from the side", 1.0, 0.0, false]]:
+	for st: Array in [["problem, shut (t 0)", 0.0, 0.0, false, false], ["problem, half open", 0.5, 0.0, false, false],
+			["calm, fully open (t 1)", 1.0, 0.0, false, true], ["calm, shut (t 0)", 0.0, 0.0, false, true],
+			["problem, marker high (t 1)", 0.0, 1.0, true, false], ["calm, open, from the side", 1.0, 0.0, false, true]]:
 		_drive(id0, st[1], st[2])
+		_calm(id0, st[4])
 		_label.text = st[0]
 		if st[3]:   # the column close
 			var b: Vector3 = (_vents[id0] as Node3D).position + Vector3(0.55, fl + 1.62, 0.45)
 			_look(b + Vector3(0.45, 0.05, 1.3), b + Vector3(0.0, -0.02, 0.0), 40.0)
-		elif st[0].begins_with("open, from"):
+		elif st[0].ends_with("from the side"):
 			_look(c + Vector3(4.2, 0.2, 0.6), c + Vector3(0.0, 0.0, 0.25), 32.0)
 		else:
 			_look(c + Vector3(1.2, 0.25, 4.0), c, 40.0)
 		states.append(_tile(await _grab(3), 426, 360))
 	_sheet(states, 3, 426, 360, _out.path_join("states_sheet.png"))
 	_drive(id0, 0.0, 0.0)
+	_calm(id0, false)   # the sides and close-ups shut in the problem state: the orange slits
 	# the vent alone from 8 sides (no backdrop), both vents' leaves shut
 	(root.find_child("Backdrop", true, false) as Node3D).visible = false
 	var sides: Array = []

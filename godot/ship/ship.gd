@@ -463,7 +463,9 @@ func _probes() -> void:
 
 func _shoot() -> void:
 	_environment()
-	var lights: int = _dress(_build())
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
+	_stations(ship)
 	_probes()
 	print("SHIP look: %d emissive lights" % lights)
 	if nav_blink:
@@ -533,6 +535,31 @@ func _shoot() -> void:
 	_write("shots.json", {"shots": shots})
 	print("SHIP saved %s" % _out)
 	quit(0)
+
+
+## The stations' states for the shots (station 1, the vents; ship --shoot --vent-states): the request's "stations"
+## {piece: {"slats": t, "hide": [suffix], "dim": [suffix]}} and "open_rad": each placed piece's leaves `<piece>_slat<k>`
+## turned to rotation.x = -open_rad * t, its `<piece>_<suffix>` nodes hidden (the calm glow `cool` for the problem) or
+## dimmed (a lamp's glow at a tenth, calm), as the game drives them.
+func _stations(ship: Node3D) -> void:
+	var states: Dictionary = _req.get("stations", {})
+	for node: Node in ship.get_children():
+		var pid: String = String(node.name).rsplit("_", true, 1)[0]
+		if not states.has(pid):
+			continue
+		var st: Dictionary = states[pid]
+		for leaf: Node in node.find_children("%s_slat*" % pid, "Node3D", true, false):
+			(leaf as Node3D).rotation.x = -float(_req["open_rad"]) * float(st.get("slats", 0.0))
+		for suffix: String in st.get("hide", []):
+			for n: Node in node.find_children("%s_%s" % [pid, suffix], "Node3D", true, false):
+				(n as Node3D).visible = false
+		for suffix: String in st.get("dim", []):
+			for n: Node in node.find_children("%s_%s" % [pid, suffix], "MeshInstance3D", true, false):
+				var mi: MeshInstance3D = n
+				for i: int in mi.mesh.get_surface_count():
+					var m: BaseMaterial3D = (mi.mesh.surface_get_material(i) as BaseMaterial3D).duplicate()
+					m.emission_energy_multiplier *= 0.1
+					mi.set_surface_override_material(i, m)
 
 
 ## The nav lamps' blink (light layer): the white tail lamp a short flash once a second (0.12 s), red and green a soft

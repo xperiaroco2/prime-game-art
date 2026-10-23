@@ -40,6 +40,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
     parser.add_argument("--views", default="", help="--shoot only the views whose names start with one of these "
                         "comma-separated prefixes (no plan views, day views or compares), e.g. in_vent_,cu_vent_")
+    parser.add_argument("--vent-states", default="", help="--shoot with the vents in a state each, e.g. e=problem,w=calm "
+                        "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
     parser.add_argument("--motion", type=Path, metavar="DIR",
                         help="the stations' motion proof (step 2: the vents) off-screen: checks, MP4, sheets into DIR")
 
@@ -87,7 +89,7 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.shoot:
-        return shoot(layout, out, args.shoot.resolve(), args.views)
+        return shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states)
     return 0
 
 
@@ -275,8 +277,28 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
     return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
 
 
-def shoot(layout: dict, out: Path, folder: Path, only: str = "") -> int:
+VENT_STATES = {"calm": {"slats": 1.0, "hide": [], "dim": ["lamp"]},
+               "problem": {"slats": 0.0, "hide": ["cool"], "dim": []}}
+
+
+def vent_states(spec: str) -> dict:
+    """--vent-states "e=problem,w=calm" as ship.gd's "stations" request: {piece: {"slats", "hide", "dim"}}."""
+    states = {}
+    for item in (i for i in spec.split(",") if i):
+        side, _, state = item.partition("=")
+        if side not in ("e", "w") or state not in VENT_STATES:
+            raise common.Failure(f"ship --vent-states: {item!r}, wants e=<state> or w=<state>, states {sorted(VENT_STATES)}")
+        states[f"station_vent_{side}"] = VENT_STATES[state]
+    return states
+
+
+def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "") -> int:
     req, staged = built_request(layout, out)
+    if states:   # step 3: the vents calm or in their problem state, as the game drives them
+        import importlib
+        import sys
+        sys.path.insert(0, str(blender.SCRIPTS))
+        req.update({"stations": vent_states(states), "open_rad": importlib.import_module("ship_interior_vent").OPEN_RAD})
     views, compares = shot_views(layout)
     prefixes = tuple(p for p in only.split(",") if p)
     if prefixes:   # step 2: a view set alone (the vents' in-place shots and close-ups)
@@ -387,7 +409,7 @@ def motion_request(layout: dict) -> dict:
         u = sorted((s * v.OPEN_U[0], s * v.OPEN_U[1]))
         g = sorted((s * (v.UC - 0.032), s * (v.UC + 0.032)))
         vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0], "h1": f + v.OPEN_H[1],
-                                  "v_back": v.WELL_V + 0.006, "v_max": v.UNIT[3]},
+                                  "v_back": v.COOL_V + 0.002, "v_max": v.UNIT[3]},
                       "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]}}
     cu = [["frame_corner_tl", [-0.42, f + 1.85, 1.15], [-0.70, f + 2.0, 0.45]],
           ["opening_corner_br", [0.5, f + 0.4, 1.0], [0.2, f + 0.62, 0.42]],
