@@ -132,13 +132,13 @@ func _physics_process(delta: float) -> void:
 func shot() -> void:
 	shots += 1
 	var stamp: String = Time.get_datetime_string_from_system().replace(":", "-")
-	var name: String = "shot_%s_%03d.png" % [stamp, shots]
+	var file: String = "shot_%s_%03d.png" % [stamp, shots]
 	await RenderingServer.frame_post_draw
 	var img: Image = get_viewport().get_texture().get_image()
-	img.save_png(out.path_join(name))
+	img.save_png(out.path_join(file))
 	var eye: Vector3 = camera.global_position
 	var fwd: Vector3 = -camera.global_transform.basis.z
-	var line: String = "%s  plan x %.3f y %.3f h %.3f  eye h %.3f  look [%.3f, %.3f, %.3f]  %s%s\n" % [name,
+	var line: String = "%s  plan x %.3f y %.3f h %.3f  eye h %.3f  look [%.3f, %.3f, %.3f]  %s%s\n" % [file,
 		global_position.x, global_position.z, global_position.y, eye.y, fwd.x, fwd.z, fwd.y,
 		Time.get_datetime_string_from_system(), "  fly" if flying else ""]
 	var path: String = out.path_join("shots.txt")
@@ -146,8 +146,8 @@ func shot() -> void:
 	f.seek_end()
 	f.store_string(line)
 	f.close()
-	print("SHIP play shot %s" % out.path_join(name))
-	_say("saved " + name)
+	print("SHIP play shot %s" % out.path_join(file))
+	_say("saved " + file)
 
 
 func _say(text: String) -> void:

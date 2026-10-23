@@ -351,6 +351,8 @@ def play(layout: dict, out: Path, folder: Path, test: bool) -> int:
     # the heavy-run lock (the import above took it)
     result = common.run([common.godot_bin(), *args], PLAY_HOURS * 3600, heavy=False)
     code = result.returncode
+    if code != 0:
+        common.say("\n".join(((result.stdout or "") + (result.stderr or "")).splitlines()[-20:]))
     shots = sorted(folder.glob("shot_*.png"))
     common.say(f"ship --play: closed (exit code {code}); {len(shots)} screenshots in {folder.as_posix()}")
     return 0 if code == 0 else 1
