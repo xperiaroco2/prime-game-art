@@ -91,14 +91,36 @@ class Fit(unittest.TestCase):
 
 
 class B2(unittest.TestCase):
-    def test_the_panel_is_the_throat_at_the_ring_and_flares_into_the_chest(self) -> None:
-        self.assertGreater(G.front_panel(0.03, 0.0, -1.0, 1.0, 0.035), 0.5)
-        self.assertLess(G.front_panel(0.06, 0.0, -1.0, 1.0, 0.035), 0.01)  # the neck's sides stay skin
-        self.assertGreater(G.front_panel(0.075, 0.13, -1.0, 1.0, 0.035), 0.5)  # the chest panel is wider
-        self.assertEqual(G.front_panel(0.0, 0.40, -1.0, 1.0, 0.035), 0.0)  # faded out below the chest
-        self.assertEqual(G.front_panel(0.0, 0.10, 1.0, 1.0, 0.035), 0.0)  # the back
-        self.assertEqual(G.front_panel(0.0, 0.10, -1.0, 0.0, 0.035), 0.0)  # the arms' skin
-        self.assertEqual(G.front_panel(0.0, -0.01, -1.0, 1.0, 0.035), 0.0)  # above the ring
+    def test_the_throat_fade_is_a_soft_tongue_from_the_throat_to_the_sternum(self) -> None:
+        hw = 0.045
+        self.assertGreater(G.throat_fade(0.0, 0.01, 1.0, hw), 0.99)  # the throat's centre at the ring
+        self.assertGreater(G.throat_fade(0.03, 0.01, 1.0, hw), 0.9)  # the head's throat width carried down
+        self.assertEqual(G.throat_fade(0.06, 0.01, 1.0, hw), 0.0)  # the neck's sides stay skin
+        self.assertGreater(G.throat_fade(0.0, 0.10, 1.0, hw), 0.4)  # still pale halfway to the sternum
+        self.assertEqual(G.throat_fade(0.0, 0.23, 1.0, hw), 0.0)  # gone below the sternum
+        self.assertEqual(G.throat_fade(0.0, 0.10, -1.0, hw), 0.0)  # the back
+        self.assertEqual(G.throat_fade(0.0, -0.01, 1.0, hw), 0.0)  # above the ring: the head's own mask
+        self.assertEqual(G.throat_fade(0.0, 0.05, 1.0, 0.0), 0.0)  # a head without a pale throat
+
+    def test_the_throat_fade_widens_downward(self) -> None:
+        edge = [max(x / 1000 for x in range(200)
+                    if G.throat_fade(x / 1000, dz, 1.0, 0.045) > 0.5 * G.throat_fade(0.0, dz, 1.0, 0.045))
+                for dz in (0.02, 0.08, 0.14)]
+        self.assertLess(edge[0], edge[1])
+        self.assertLess(edge[1], edge[2])
+
+    def test_the_throat_fade_has_no_hard_edge(self) -> None:
+        # the largest change over 2 mm anywhere on the front: a feathered mask moves by a few percent at most
+        worst = 0.0
+        for i in range(0, 120):
+            x = i / 1000
+            for j in range(-10, 260, 2):
+                dz = j / 1000
+                for c in (1.0, 0.6, 0.4, 0.2):
+                    v = G.throat_fade(x, dz, c, 0.045)
+                    worst = max(worst, abs(G.throat_fade(x + 0.002, dz, c, 0.045) - v),
+                                abs(G.throat_fade(x, dz + 0.002, c, 0.045) - v))
+        self.assertLess(worst, 0.35)  # the ring's 8 mm onset is the steepest step: 0.002 / 0.008 of a smoothstep
 
     def test_the_flare_only_pushes_out_and_leaves_the_ring(self) -> None:
         self.assertEqual(G.flare_radius(0.055, 0.055, 0.0, 1.5, 0.09, 0.08, 0.0), 0.055)

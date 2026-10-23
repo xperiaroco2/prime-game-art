@@ -136,24 +136,26 @@ def fit_lively(d: dict, s: float, src, dst) -> dict:
     return out
 
 
-# B2 (art #196): the pale front panel of the 2D busts, measured from the ring down (dz m, half-width m): the throat
-# at the head's own front width (the first row, set per head from the cut), flaring into the chest panel, its bottom
-# faded out over PANEL_FADE (the 2D shows throat to chest, not the u1 shield's belly)
-PANEL = [(0.0, 0.0), (0.04, 0.012), (0.08, 0.035), (0.13, 0.05), (0.20, 0.045), (0.27, 0.03)]  # widths over the top's
-PANEL_FADE = (0.20, 0.33)
-PANEL_EDGE = 0.03
+# B3 (art #196): the 2D's pale front is a soft tongue from the throat down to the sternum, not a panel: its half-width
+# the head's own throat width at the cut, widening by THROAT_WIDEN per metre down; the sides feathered over
+# THROAT_FEATHER of the half-width each way (no hard edge), the bottom faded out over THROAT_FADE (dz m below the
+# ring), the front picked by the angle round the neck axis (THROAT_FRONT on cos(phi)), not by the normal's direction
+THROAT_WIDEN = 0.3
+THROAT_FEATHER = (0.7, 1.25)
+THROAT_FADE = (0.03, 0.22)
+THROAT_FRONT = (0.15, 0.6)
 
 
-def front_panel(x: float, dz: float, ny: float, trunk: float, top_hw: float, edge: float = PANEL_EDGE) -> float:
-    """The pale front's weight (0..1) of a body point dz below the neck ring: inside the panel's half-width (the
-    throat's `top_hw` plus the PANEL flare) at its depth, facing the front (ny the world normal's Y, front -Y),
-    carried by the trunk bones (`trunk` their weight), faded out over PANEL_FADE."""
-    if dz < 0.0:
+def throat_fade(x: float, dz: float, cos_phi: float, top_hw: float) -> float:
+    """The pale front's weight (0..1) of a body point dz m below the neck ring, x m from the front centre line,
+    cos_phi the cosine of its angle round the neck axis (1 the front, -1 the back), under the throat's half-width
+    top_hw at the cut. Continuous everywhere: every factor is a smoothstep."""
+    if top_hw <= 0.0:
         return 0.0
-    hw = top_hw + interp(PANEL, dz)
-    inside = 1.0 - sstep(hw - edge * 0.5, hw + edge * 0.5, abs(x))
-    return (inside * sstep(-0.1, 0.4, -ny) * sstep(0.4, 0.8, trunk)
-            * (1.0 - sstep(PANEL_FADE[0], PANEL_FADE[1], dz)))
+    hw = top_hw + THROAT_WIDEN * max(dz, 0.0)
+    side = 1.0 - sstep(THROAT_FEATHER[0] * hw, THROAT_FEATHER[1] * hw, abs(x))
+    down = sstep(-0.004, 0.004, dz) * (1.0 - sstep(THROAT_FADE[0], THROAT_FADE[1], dz))
+    return side * down * sstep(THROAT_FRONT[0], THROAT_FRONT[1], cos_phi)
 
 
 # B2: the neck's flare into the shoulders (the 2D busts' trapezius): a concave fillet surface round the neck axis,

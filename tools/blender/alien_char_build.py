@@ -22,7 +22,8 @@ the face-rigged one:
 6. The body's material set: `<head>_body_skin` with its own albedo, mask, detail and accent (pale front B) on the
    body's UV, from the head's own colours: the head's skin and front region medians (`bases.json` body_skin and
    body_front, the colour slots' `<head>_regions.json`) with a faint low-frequency value variation, the 2D's pale
-   front panel (`front_panel`: the throat flaring into the chest), and over SEAM_FADE below the ring the head's
+   front (B3: `throat_fade`, a soft tongue from the throat to the sternum, evaluated per texel from the rastered
+   positions, so its edges follow no triangle), and over SEAM_FADE below the ring the head's
    sampled colour at the cut, so the seam has one colour. The detail map is the head's at the cut (thick skin: no
    transmission; r2's body had none, the shader's white default, so the whole body was "thin": lighter and speckled).
 B2 (art #196): the body's neck flares into its shoulders (`flare_radius`, below the ring only); the bridge's
@@ -375,26 +376,39 @@ def main():
     tg = {body.vertex_groups[n].index for n in TRUNK if n in body.vertex_groups}
     for v in bme.vertices:
         trunk[v.index] = sum(g.weight for g in v.groups if g.group in tg)
-    # the u1 shield is off: on this body it landed as a pale patch low on the belly (body_v2's first shots), not the
-    # 2D's pale throat; the throat's pale comes from the head's cut over SEAM_FADE (below). --shield turns it on.
-    front = np.array([G.shield(p[0], p[2], n[1], tr) for p, n, tr in zip(bco, bnorm, trunk)]) if a.shield \
-        else np.array([G.front_panel(p[0] - ring_c[0], ring_z - p[2], n[1], tr, top_hw)
-                       for p, n, tr in zip(bco, bnorm, trunk)])
-    skin_c = np.array(bases.get("body_skin", bases["skin"])[:3])
-    front_c = np.array(bases.get("body_front", bases["front"])[:3])
-    col = skin_c[None] * (1 - front[:, None]) + front_c[None] * front[:, None]
-    # a faint low-frequency value variation (the head's skin is never one flat colour): smooth waves 6 to 14 cm
-    wv = (np.sin(bco @ np.array([41.0, 13.0, 29.0]) + 1.3) + np.sin(bco @ np.array([-17.0, 47.0, 23.0]) + 0.4)
-          + np.sin(bco @ np.array([19.0, -31.0, 71.0]) + 2.1)) / 3.0
-    col = col * (1.0 + 0.018 * wv)[:, None]
     bphi = np.array([G.angle(p[0], p[1], *ring_c) for p in bco])
     seam = np.array([1 - G.sstep(ring_z - SEAM_FADE, ring_z, z) for z in bco[:, 2]])
     seam_rgb = np.stack([at_cut(bphi, cut_rgb[:, c]) for c in range(3)], 1)
     seam_f = at_cut(bphi, cut_front)
-    col = col * seam[:, None] + seam_rgb * (1 - seam[:, None])
-    front = front * seam + seam_f * (1 - seam)
-    albedo, cover = raster(bme, col, TEX)
-    accent, _ = raster(bme, np.stack([np.zeros_like(front), np.zeros_like(front), front], 1), TEX)
+    skin_c = np.array(bases.get("body_skin", bases["skin"])[:3])
+    front_c = np.array(bases.get("body_front", bases["front"])[:3])
+    # a faint low-frequency value variation (the head's skin is never one flat colour): smooth waves 6 to 14 cm
+    wv = (np.sin(bco @ np.array([41.0, 13.0, 29.0]) + 1.3) + np.sin(bco @ np.array([-17.0, 47.0, 23.0]) + 0.4)
+          + np.sin(bco @ np.array([19.0, -31.0, 71.0]) + 2.1)) / 3.0
+    # B3: the pale front per texel. The u1 shield (--shield) and B2's panel were per vertex and filtered by the
+    # normal's direction (the panel dropped the upward-facing upper chest: r3's horizontal band); the throat's tongue
+    # is evaluated per texel from the rastered position and the angle round the neck axis, so no triangle shows.
+    if a.shield:
+        sh = np.array([G.shield(p[0], p[2], n[1], tr) for p, n, tr in zip(bco, bnorm, trunk)])
+    else:
+        sh = np.zeros(len(bco))
+    per = np.concatenate([bco, np.cos(bphi)[:, None], seam[:, None], seam_f[:, None], seam_rgb, wv[:, None],
+                          sh[:, None]], 1)
+    tex, cover = raster(bme, per, TEX)
+    t = tex.reshape(-1, tex.shape[2])
+    if a.shield:
+        tf = t[:, 10]
+    else:
+        tf = np.vectorize(lambda x, z, c: G.throat_fade(x - ring_c[0], ring_z - z, c, top_hw), otypes=[float])(
+            t[:, 0], t[:, 2], t[:, 3])
+    tf = np.clip(tf, 0.0, 1.0)
+    sw = t[:, 4:5]
+    front_t = tf * sw[:, 0] + t[:, 5] * (1 - sw[:, 0])
+    col = (skin_c[None] * (1 - tf[:, None]) + front_c[None] * tf[:, None]) * (1.0 + 0.018 * t[:, 9:10])
+    col = col * sw + t[:, 6:9] * (1 - sw)
+    albedo = col.reshape(TEX, TEX, 3)
+    accent = np.stack([np.zeros_like(front_t), np.zeros_like(front_t), front_t], 1).reshape(TEX, TEX, 3)
+    front = front_t
     maskv = np.tile(np.array([1.0, head_mask[1], head_mask[2]]), (len(bco), 1))
     mask, _ = raster(bme, maskv, 256)
     detail, _ = raster(bme, np.tile(head_detail, (len(bco), 1)), 256)
@@ -408,7 +422,7 @@ def main():
                         "head_mask_at_cut": [round(float(x), 4) for x in head_mask],
                         "head_detail_at_cut": [round(float(x), 4) for x in head_detail],
                         "throat_half_width": round(top_hw, 4), "body_skin_srgb": [float(x) for x in skin_c],
-                        "front_vertices": int((front > 0.5).sum()),
+                        "front_texel_share": round(float((front > 0.5).mean()), 5),
                         "cut_rgb_median": [round(float(x), 4) for x in np.median(cut_rgb, 0)]}
     log(f"body maps {rep['body_maps']}")
     bmat = bme.materials[0]
