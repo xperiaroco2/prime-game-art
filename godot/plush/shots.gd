@@ -70,7 +70,9 @@ func _run() -> void:
 			["face_34", -35.0, 0.2, 0.45], ["belly", 0.0, -0.18, 0.5], ["back", 180.0, 0.0, 0.8],
 			["tail", 140.0, -0.35, 0.45], ["feet", 20.0, -0.38, 0.4],
 			["mouth", 0.0, 0.0, 0.3], ["mouth_34", -40.0, 0.0, 0.3], ["mouth_low", 0.0, -0.05, 0.3, -0.35],
-			["antennae", -20.0, 0.36, 0.45], ["antennae_back", 160.0, 0.36, 0.45]]:
+			["antennae", -20.0, 0.36, 0.45], ["antennae_back", 160.0, 0.36, 0.45],
+			["smile_up10", 0.0, 0.08, 0.55, 0.176], ["smile_0", 0.0, 0.08, 0.55, 0.0],
+			["smile_down10", 0.0, 0.08, 0.55, -0.176], ["smile_down20", 0.0, 0.08, 0.55, -0.364]]:
 		var img: Image = await _orbit_full(d[1], d[2], d[3], d[4] if d.size() > 4 else 0.06)
 		_save(img, out.path_join("detail_%s.png" % d[0]))
 
