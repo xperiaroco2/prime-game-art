@@ -971,12 +971,24 @@ The first station (art #263, the design session's item 1, comment 6361476098): `
 (`tools/blender/ship_interior_vent.py`, interior lane pieces placed by `ship_interior_place.py`, so `interior.toml`
 lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`pieces/`, `motion/`, `shots/`,
 `logs/`), the notes in `<raw>/ship/v4/notes/vents*.md`.
-- **The shape** (the engineer's pick, vent-v2 "box"): a faceted metal box (`int_silver_c`, 1.11 m wide, its front
-  0.48 m out) whose front is a faceted frame round a well with six curved gill slats over the heat glow; a column
-  (0.46 m) on the hall's side with a palm scanner for a four-fingered hand (a thumb and three fingers, a cyan outline
-  on a dark pad, centre 1.19 m), the light bar above it (glass 1.395..1.862 m: the throat wall's chamfer leaves no
-  room for 2.0) with its green band near the top and the white marker, and the red problem lamp at the column's head
-  (on its front: the chamfer leaves no room on top). Thin `int_cyan` strips on the faces. About 2,200 triangles a vent (the motion proof counts them after import).
+- **The shape** (the engineer's pick, vent-v2 "box"; reworked in builder step 2 after the manager compared step 1's
+  plain grey cabinet with it): a heavy machined box (1.11 m wide, its front 0.48 m out) and a column (0.46 m) on the
+  hall's side, both with deep double chamfers (45 deg, 4.4 cm, then a second facet) and 45 deg corner cuts, and a
+  groove (1.4 cm wide, 1.2 cm deep) round each front face with the thin `int_cyan` strips lying in it. The gill
+  grille takes the whole front inside the frame: its opening 0.17..1.79 m (the top is where the wall's chamfer meets
+  the well's back, `cv` 0.2 m), no blank panel; seven gill slats, each a blade with a round 18 mm nose round its
+  hinge, swept down and out to a 5 mm tail, bowed 8 mm across its chord and its tail 1 cm along u, shaded smooth up
+  to 40 deg (`smooth_deg`). The column holds the palm scanner for a four-fingered hand (a thumb and three fingers, a
+  cyan outline on a dark pad sunk in a faceted bezel, centre 1.105 m), the light bar above it (glass 1.325..1.765 m)
+  with its green band near the top and the white marker, and the problem lamp near its head: a red dome beacon
+  (r 2.6 cm) on a red band, a metal collar and an octagonal base (on its front at 1.855 m: the chamfer leaves no
+  room on top). Metals are the hall's own (`cor_wall_*`): the frame `int_silver_a` (tone a's panels), the column
+  `int_silver_b` (the wall body), the slats, bezels and collar `int_silver_c` (the belts' and lips' trim). The heat
+  is a saturated orange (`int_halo__vent_heat`, emission (1, 0.3, 0.02)) and the lamp a deep red
+  (`glow_nav_red__vent_lamp`, (1, 0.015, 0.01)), each with its own `[light.mats]` entry, so AgX keeps them orange and
+  red at night (the library strengths washed them to tan and pink). About 3,600 triangles a vent.
+- **Room made for it:** the throat's floor light at 4/5 of each wall (`ship_interior_place.py`) moved 0.25 m toward
+  the hall; at its old place its bar ran 19 cm under the column's foot.
 - **On the wall:** the piece's frame is the spot's (u along the wall, v out of it, h absolute); the backs follow the
   throat wall's profile 2 cm inside it (vertical to 1.45 m, then the chamfer), so the box reaches 2.08 m and the
   column 2.0 m without cutting the chamfer. `ship --check` (`ship_layout.check_units`) holds every station piece
@@ -984,18 +996,23 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   plain band, the depth and under the room's clear height; `test_ship_vent.py` holds the builder's vertices inside
   the box and behind nothing of the wall.
 - **Moving parts** (docs/props.md "Conventions"): the harness (`ship_build.rig`) gives a part with `origin` its own
-  object origin (and a part with `parent` its parent). Each slat is a leaf `<id>_slat<k>` (k 1..6 from the top), its
-  origin on its hinge (the upper edge, along x); it opens with `rotation.x = -OPEN_RAD * t` (62 deg; shut, the slats
-  overlap 1.7 cm). The marker `<id>_marker` has its origin at its rest point, the glass's bottom; it slides with
-  `position.y = rest + MARK_TRAVEL * t` (0.437 m). Both pieces drive the same way (the west one mirrors x only).
+  object origin (and a part with `parent` its parent). Each slat is a leaf `<id>_slat<k>` (k 1..7 from the top), its
+  origin on its hinge (the nose's axis, 9 mm under the slat's top, along x); it opens with
+  `rotation.x = -OPEN_RAD * t` (55 deg from its shut 22 deg: 77 deg from hanging; shut, each tail hangs in front of
+  the next nose, 8 cm out). The marker `<id>_marker` has its origin at its rest point, the glass's bottom; it slides with
+  `position.y = rest + MARK_TRAVEL * t` (0.41 m). Both pieces drive the same way (the west one mirrors x only).
 - **Glows the game drives** (their own materials, copies of the library ones; `[light.mats]` by family, l 0):
   `int_halo__vent_heat`, `glow_nav_green__vent_band`, `glow_nav_white__vent_marker`, `int_cyan__vent_hand`,
   `glow_nav_red__vent_lamp`. Colliders: `<id>_col0-convcolonly` (the box), `<id>_col1-convcolonly` (the column); the
   open slats stay inside the frame's depth (0.49 m), so they have none.
 - **The motion proof** (`ship --motion DIR`, `godot/ship/vent_motion.gd` in the off-screen window on the imported
-  GLBs): every leaf found by its name, two convex colliders; per slat at 11 steps 0..1 its cross-sections against
-  the next slat's (`Geometry2D.intersect_polygons`) and its vertices inside the opening, in front of the heat panel
+  GLBs): every leaf found by its name, two convex colliders; per slat (the count from the request) at 11 steps 0..1 its
+  cross-sections' convex hulls against the next slat's (`Geometry2D.intersect_polygons`; a curved gill is not
+  star-shaped round its centre, its hull is a safe outline) and its vertices inside the opening, in front of the heat panel
   and within the depth; the upper edge's drift from 0 to 1 (at most 1.2 cm: the edge's own thickness turning) and the
   tip's swing; the marker inside the glass at 0, 0.5 and 1. Then `vent_motion.mp4` (10 s, 1280x720: shut, open,
   breathing, slam shut; the marker up and down), `states_sheet.png`, `sides_sheet.png` (8 sides) and
-  `closeups_sheet.png` (on a replica of the throat wall's profile; the in-place shots come from `ship --shoot`).
+  `closeups_sheet.png` (on a replica of the throat wall's profile).
+- **In place:** `ship --shoot DIR --views in_vent_` shoots the vents at the ship's night look (the throat from the
+  hall and the ramp, each vent from 2 m and 4 m), `--views cu_vent_` their edges against the real wall and floor
+  close up (`--views` keeps the views whose names start with a prefix; no plan, day views or compares).
