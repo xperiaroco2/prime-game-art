@@ -1,4 +1,4 @@
-"""A lively pilot head on the shared alien body (art #196, step B1): one skinned character, `<head>_char.glb`.
+"""A lively pilot head on the shared alien body (art #196, steps B1 to B4): one skinned character, `<head>_char.glb`.
 
     run through tools/runner/blender.py by tools/blender/alien_char_run.py:
     alien_char_build.py -- --head H --lively <head>_lively.glb --lively-json lively.json --body alien_body.blend
@@ -503,6 +503,7 @@ def main():
     b_ang = sorted(ring_ang)
     bmat_i = next(i for i, m in enumerate(me.materials) if m.name == f"{head}_body_skin")
     made = flipped = skipped = 0
+    bridge: list = []
     for tri in G.zip_loops(a_ang, b_ang):
         vs = [(a_loop if tri[2 * q] == "a" else b_loop)[tri[2 * q + 1]] for q in range(3)]
         try:
@@ -521,14 +522,28 @@ def main():
         for lp in f.loops:
             lp[uvl].uv = b_uv[jb]
         made += 1
+        bridge.append(f)
+    # B4: each bridge triangle wound as its outside neighbour (the head band's or the body's face across its loop
+    # edge): the facing test above alone left wrongly wound edges
+    rewound, bridge_ids = 0, set(bridge)
+    for f in bridge:
+        for e in f.edges:
+            other = [x for x in e.link_faces if x is not f and x not in bridge_ids]
+            if len(e.link_faces) == 2 and other and not e.is_contiguous:
+                f.normal_flip()
+                rewound += 1
+                break
     bm.normal_update()
     # the seam closed: no open or non-manifold edge from just below the ring to just above the cut
     zone = [e for e in bm.edges if all(ring_z - 0.01 < v.co.z < cut + 0.01 for v in e.verts)]
     rep["seam"] = {"edges": len(zone), "open": sum(e.is_boundary for e in zone),
                    "non_manifold": sum(not e.is_manifold for e in zone), "flipped": flipped, "skipped": skipped,
+                   "rewound": rewound, "wound": sum(e.is_manifold and not e.is_contiguous for e in zone),
                    "open_at": [[round(v.co.z - cut, 4), round(G.angle(v.co.x, v.co.y, *ring_c), 3), v.index < nh,
                                 len(e.link_faces)] for e in zone if not e.is_manifold for v in e.verts][:24]}
     log(f"seam {rep['seam']}")
+    if rep["seam"]["open"] or rep["seam"]["non_manifold"] or rep["seam"]["wound"]:  # B4: a seam not closed fails
+        raise RuntimeError(f"the seam is not closed: {rep['seam']}")
     # the normals: the head's own above the band, the geometric over the band, the bridge and the body
     cn = []
     for f in bm.faces:

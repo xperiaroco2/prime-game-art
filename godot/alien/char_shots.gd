@@ -60,7 +60,10 @@ func _col(a: Array) -> Color:
 
 func _setup(node: Node3D, h: Dictionary, body: bool) -> Array[ShaderMaterial]:
 	var b: Dictionary = h["bases"]
-	var bases := {"lips": _col(b["lips"]), "detail": _col(b["detail"]), "front": _col(b["front"])}
+	var bases := {}  # B4: every slot base the job gives (gill_tips and gill_whole included), the body's paint aside
+	for k: String in ["lips", "detail", "front", "gill_tips", "gill_whole"]:
+		if b.has(k):
+			bases[k] = _col(b[k])
 	var mats: Array[ShaderMaterial] = AlienStatic.apply(node, AlienStatic.data_texture(h["mask"]), _col(b["skin"]),
 		_texture(h["detail"]), _texture(h["plain"]), null, AlienStatic.data_texture(h["accent"]), bases,
 		AlienStatic.data_texture(h["gill"]))
@@ -505,10 +508,10 @@ func _light(at: Vector3, energy: float, shadow: bool, specular: float) -> Direct
 
 
 ## B3: the render settings after the front isolation (the job's "fix"): the directional soft shadow filter quality
-## (RenderingServer.ShadowQuality, the stage's default 2 = soft low), TAA, the key light's angular size (degrees).
+## (RenderingServer.ShadowQuality, default 5 = soft ultra since B4), TAA, the key light's angular size (degrees).
 func _apply_fix(fix: Dictionary) -> void:
 	RenderingServer.directional_soft_shadow_filter_set_quality(int(fix.get("shadow_quality",
-		RenderingServer.SHADOW_QUALITY_SOFT_LOW)))
+		RenderingServer.SHADOW_QUALITY_SOFT_ULTRA)))  # B4: ultra by default (soft low draws a knit pattern)
 	root.use_taa = bool(fix.get("taa", false))
 	_key.light_angular_distance = float(fix.get("angular_deg", 1.5))
 

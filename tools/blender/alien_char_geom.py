@@ -5,7 +5,9 @@ tools/tests/test_alien_char_geom.py; alien_char_build.py runs it inside Blender.
   sits on the same slender neck as the body: matching the necks keeps the band morph near the identity and gives the
   line-up's head-to-shoulder ratio, `head_ratio` reports it).
 - `zip_loops`: triangles joining two closed loops of different vertex counts, walked by angle round the axis.
-- `shield`: the pale front's weight on the body (the u1 turnaround: a rounded shield from the throat to the crotch).
+- `shield`: the u1 shield (`--shield`, off by default); `throat_fade`: the default pale front (B3, a tongue from the
+  throat to the sternum, per texel).
+- `walk_loop`, `monotone_angles`, `bridge_outward`: the seam's bridge in walk order, its angles, its facing.
 - `gltf_to_blender`, `blender_to_gltf`, `fit_point`, `fit_lively`: the lively head's data (glTF, Y up) under the fit.
 - `sstep`: a smoothstep from a to b (either order).
 """
@@ -221,16 +223,19 @@ def walk_loop(edges: list[tuple[int, int]]) -> list[int]:
 
 def monotone_angles(angles: list[float]) -> list[float]:
     """A loop's angles round the axis in walk order (the walk going round in the increasing sense) made
-    non-decreasing: where the cut row folds back on itself (r3's first chameleon build: two cut vertices out of angle
-    order, so zipping by sorted angle left open and three-face edges) a vertex takes its predecessor's angle; the
-    result is in [0, 2 pi), starting at the first vertex's angle, for zip_loops."""
-    out, off, prev = [], 0.0, None
-    for a in angles:
-        v = a + off
-        if prev is not None and v < prev - math.pi:
-            off += 2.0 * math.pi
-            v += 2.0 * math.pi
-        v = max(v, prev) if prev is not None else v
-        out.append(v)
-        prev = v
-    return [v % (2.0 * math.pi) if v - out[0] < 2.0 * math.pi else out[0] - 1e-9 for v in out]
+    non-decreasing: each step is unwrapped as the shorter turn, so a fold back across angle 0 (B4 review:
+    [..., 6.2, 0.05, 6.25, 0.3, ...]) and a step forward across it both stay one turn; where the cut row folds back
+    on itself (r3's first chameleon build: two cut vertices out of angle order, so zipping by sorted angle left open
+    and three-face edges) a vertex takes its predecessor's angle. The result is in [0, 2 pi), starting at the first
+    vertex's angle, the last vertices held just short of one full turn, for zip_loops."""
+    if not angles:
+        return []
+    tau = 2.0 * math.pi
+    unwrapped = [angles[0]]
+    for prev, a in zip(angles, angles[1:]):
+        unwrapped.append(unwrapped[-1] + ((a - prev + math.pi) % tau) - math.pi)
+    out: list[float] = []
+    for v in unwrapped:
+        out.append(max(v, out[-1]) if out else v)
+    end = out[0] + tau
+    return [(v if v < end else end - 1e-9) % tau for v in out]
