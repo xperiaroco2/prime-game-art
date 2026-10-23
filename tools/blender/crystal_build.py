@@ -3,19 +3,21 @@ crystal in a bronze and graphite cap with a hexagonal carry loop, built from cod
 The driver (crystal_run.py) calls it; by hand, background only:
 
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/crystal_build.py -- \
-      --out <dir> [--render <dir>] [--res 900] [--samples 64]
+      --out <dir> [--render <dir>] [--res 900] [--samples 64] [--views <crystal-views.jpg>]
 
 Blender axes: Z up, front -Y (glTF: Y up, front +Z); origin at the crystal's tip, the lowest point, under its middle.
 
-The shape (concept: prime-game-design ideas/ship-components/cartridge-v2, socket-claws.jpg and charge.jpg):
-- the crystal: a hexagonal column of alternating rings (corners, then face middles 30 degrees on), so every band of
-  triangles makes long diamond facets; flat faces on the hexagon's sides, the corners cut by the diamonds; a faceted
-  taper to a point below and a shoulder into the cap above; every facet edge a thin chamfer;
+The shape is the engineering drawing tools/blender/crystal_dims.toml (centimetres, measured from the straight-views
+sheet prime-game-design ideas/ship-components/cartridge-v2/crystal-views.jpg; crystal_drawing.py draws it):
+- the crystal: a hexagonal column with straight corner edges, long diamond facets on its faces (each face's middle
+  line a little outside the flat face, neighbouring faces staggered), a point of twelve facets below, a shoulder
+  into the cap above; every facet edge a thin chamfer;
 - the core: a slimmer copy turned 30 degrees inside the crystal; seen through the charged crystal it is the inner
   glow and the second set of facet lines the concept paints;
-- the cap: a bronze collar lip, a graphite hexagonal skirt with inset panels and two bronze claws on the crystal's
-  shoulder, the widest band (two bronze rims, a graphite groove with four cyan windows and a chevron plate front and
-  back), a bevelled dome, a boss with a cyan lens, two lugs and the hexagonal loop.
+- the cap, an octagon with a flat to the front: a bronze lip and a graphite hexagonal skirt with inset panels over
+  the crystal's shoulder, a bronze rim, a dark groove, the upright bronze band (four cyan windows on its diagonal
+  faces, a graphite notch at the foot of each straight face), a bevelled bronze dome, the graphite top disc with a
+  cyan lens, and the hexagonal carry loop, a chunky bar.
 
 Every metal edge over 30 degrees gets a 1.2 mm chamfer (0.6 mm on the crystal); the chamfer faces are marked in UV0
 (u = 1) so the materials brighten them (the worn bronze edges, the crystal's glinting edges); UV0's v holds a
@@ -27,32 +29,38 @@ lights full), 0 spent (matte grey stone, no glow, the lights dimmed). The Blende
 
 Writes into --out: energy_crystal.glb (the plain-PBR fallback, the charged state), energy_crystal.blend (the look
 materials, charge 1), build.json (triangles per part and material, size). With --render, review renders of both
-states into that folder: <state>_<view>.png.
+states into that folder: <state>_<view>.png, and the drawing's orthographic views ortho_<state>_<front|side|top>.png
+at 16 px per cm; with --views, the concept sheet's views cut to the same frames, concept_<front|side|top>.png.
 """
 
 import json
 import math
 import sys
+import tomllib
 from pathlib import Path
 
 import bmesh
 import bpy
 from mathutils import Vector
 
-# --- sizes (metres) ------------------------------------------------------------------------------------------------
-R = 0.060                      # the crystal's corner radius: 12.0 cm across the corners, 10.4 cm across the flats
-BULGE = 1.12                   # the face middles' inner vertices sit this much outside the flat faces: facets fold
-BODY_Z0, BODY_STEP, BODY_STEPS = 0.048, 0.0415, 4
-TIP_RING = (0.022, 0.50)       # the taper's ring under the face middles: height, share of the apothem
-SHOULDER = (0.232, 0.84)       # the shoulder ring into the cap (corners): height, share of R
-TOP_RING = (0.246, 0.62)       # hidden inside the collar
-CHAMFER_METAL, CHAMFER_SMALL, CHAMFER_CRYSTAL = 0.0012, 0.0008, 0.0006
-CAP_SIDES = 16
+# --- sizes: the drawing (crystal_dims.toml, centimetres) -------------------------------------------------------------
+DIMS = tomllib.loads((Path(__file__).with_name("crystal_dims.toml")).read_text(encoding="utf-8"))
+CM = 0.01
+CHAMFER_METAL, CHAMFER_SMALL, CHAMFER_CRYSTAL, CHAMFER_LOOP = 0.0012, 0.0008, 0.0006, 0.002
+COS30, COS225 = math.cos(math.radians(30.0)), math.cos(math.radians(22.5))
+OCT, OCT_ROT = 8, 22.5           # the cap's octagon: vertices at 22.5 + 45 k degrees, so a flat faces the front (-Y)
+HEX, HEX_ROT = 6, 0.0            # the crystal's and the skirt's hexagon: corners at 60 k, a flat to the front
+
+
+def oct_r(flats_cm: float) -> float:
+    """An octagon's vertex radius in metres from its width across flats in centimetres."""
+    return flats_cm * 0.5 / COS225 * CM
+
 
 
 def argv() -> dict:
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    out = {"out": None, "render": None, "res": 900, "samples": 64}
+    out = {"out": None, "render": None, "res": 900, "samples": 64, "views": None}
     i = 0
     while i < len(a):
         key = a[i].lstrip("-")
@@ -100,35 +108,38 @@ def radial(angle_deg: float, r: float, z: float) -> tuple:
     return (r * math.cos(a), r * math.sin(a), z)
 
 
-def crystal_column(bm, scale: float, rot_deg: float, z_lift: float, z_squash: float) -> None:
-    """The faceted crystal: a hexagonal column whose corners run straight up (vertices at every step), each face
-    holding a column of long diamonds: its middle line has a vertex every other step, a little outside the flat face
-    (BULGE), so the facets fold and catch the light; neighbouring faces are staggered by a step, so the diamonds'
-    sides run on across the corners as one lattice. A faceted taper to a point below, a shoulder into the cap above,
-    a flat top hidden inside it. scale shrinks the radii (the core), rot_deg turns it, z_lift and z_squash move and
-    compress its heights about the body's middle."""
-    top = BODY_Z0 + BODY_STEPS * BODY_STEP
-    mid = 0.5 * (BODY_Z0 + top)
+def crystal_column(bm, scale: float, rot_deg: float, z_squash: float) -> None:
+    """The faceted crystal ([crystal] in the drawing): a hexagonal column whose corners run straight up (vertices at
+    every step; the corners narrow a little from the top ring to the point ring), each face holding a column of long
+    diamonds: its middle line has a vertex every other step, outside the flat face by `bulge`, so the facets fold and
+    catch the light; neighbouring faces are staggered by a step, so the diamonds' sides run on across the corners as
+    one lattice. A point of twelve facets below, a shoulder into the skirt above, a flat top hidden inside it. scale
+    shrinks the radii (the core), rot_deg turns it, z_squash compresses its heights about the body's middle."""
+    c = DIMS["crystal"]
+    n = int(c["body_steps"])
+    z0, z1 = c["z_point_ring"], c["z_body_top"]
+    r_top, r_bottom = c["corners_top"] * 0.5 * CM, c["corners_bottom"] * 0.5 * CM
+    mid = 0.5 * (z0 + z1)
 
-    def zz(z: float) -> float:
-        return mid + (z - mid) * z_squash + z_lift
+    def zz(z_cm: float) -> float:
+        return (mid + (z_cm - mid) * z_squash) * CM
 
-    def at(angle: float, r: float, z: float):
+    def at(angle: float, r: float, z_cm: float):
         a = math.radians(rot_deg + angle)
-        return bm.verts.new((r * scale * math.cos(a), r * scale * math.sin(a), zz(z)))
+        return bm.verts.new((r * scale * math.cos(a), r * scale * math.sin(a), zz(z_cm)))
 
-    steps = [BODY_Z0 + i * BODY_STEP for i in range(BODY_STEPS + 1)]
-    apothem = R * math.cos(math.radians(30.0))
-    corners = [[at(60.0 * j, R, z) for z in steps] for j in range(6)]
+    steps = [z0 + (z1 - z0) * i / n for i in range(n + 1)]
+    radii = [r_bottom + (r_top - r_bottom) * i / n for i in range(n + 1)]
+    corners = [[at(60.0 * j, radii[i], z) for i, z in enumerate(steps)] for j in range(6)]
     end_mids = {}
     for j in range(6):
         left, right = corners[j], corners[(j + 1) % 6]
         mids = []
         for i, z in enumerate(steps):
-            end = i in (0, BODY_STEPS)
+            end = i in (0, n)
             if (i + j) % 2 == 1 or end:
-                # the ends' middles lie on the flat face (the rings there stay hexagons); the inner ones bulge
-                mids.append((i, at(60.0 * j + 30.0, apothem * (1.0 if end else BULGE), z)))
+                share = (c["point_bulge"] if i == 0 else 1.0) if end else c["bulge"]
+                mids.append((i, at(60.0 * j + 30.0, radii[i] * COS30 * share, z)))
                 if end:
                     end_mids[(j, i)] = mids[-1][1]
         # zip the middle line to each corner line: every corner vertex meets the middle vertex beside it
@@ -138,38 +149,25 @@ def crystal_column(bm, scale: float, rot_deg: float, z_lift: float, z_squash: fl
                     f = (col[i], col[i + 1], m1 if i + 1 > (i0 + i1) / 2 else m0)
                     bm.faces.new(f if not flip else tuple(reversed(f)))
                 bm.faces.new((col[(i0 + i1) // 2], m1, m0) if not flip else (m0, m1, col[(i0 + i1) // 2]))
-    # the ends: a 12-vertex ring each (the corners and the flat middles)
-    def end_ring(i: int) -> list:
+
+    def end_ring(i: int) -> list:  # the corners and the middles, 12 vertices
         out = []
         for j in range(6):
-            out.append(corners[j][i])
-            out.append(end_mids[(j, i)])
+            out += [corners[j][i], end_mids[(j, i)]]
         return out
 
-    def taper(ring12: list, z: float, share: float, point: float | None) -> None:
-        # a 6-vertex ring under (or over) the face middles, then a point or a flat cap
-        t = [at(60.0 * j + 30.0, apothem * share, z) for j in range(6)]
-        for j in range(6):
-            c, m, c2 = ring12[2 * j], ring12[2 * j + 1], ring12[(2 * j + 2) % 12]
-            bm.faces.new((c, m, t[j]))
-            bm.faces.new((m, c2, t[j]))
-            bm.faces.new((c2, t[(j + 1) % 6], t[j]))
-        if point is None:
-            bm.faces.new(t)
-        else:
-            tip = bm.verts.new((0.0, 0.0, zz(point)))
-            for j in range(6):
-                bm.faces.new((t[j], t[(j + 1) % 6], tip))
-
-    taper(end_ring(0), TIP_RING[0], TIP_RING[1], 0.0)
-    shoulder = end_ring(BODY_STEPS)
-    s6 = [at(60.0 * j, R * SHOULDER[1], SHOULDER[0]) for j in range(6)]
+    point = end_ring(0)
+    tip = bm.verts.new((0.0, 0.0, zz(0.0)))
+    for k in range(12):
+        bm.faces.new((point[(k + 1) % 12], point[k], tip))
+    shoulder = end_ring(n)
+    s6 = [at(60.0 * j, r_top * c["shoulder_share"], c["z_shoulder"]) for j in range(6)]
     for j in range(6):
-        c, m, c2 = shoulder[2 * j], shoulder[2 * j + 1], shoulder[(2 * j + 2) % 12]
-        bm.faces.new((c, m, s6[j]))
+        cj, m, c2 = shoulder[2 * j], shoulder[2 * j + 1], shoulder[(2 * j + 2) % 12]
+        bm.faces.new((cj, m, s6[j]))
         bm.faces.new((m, c2, s6[(j + 1) % 6]))
         bm.faces.new((m, s6[(j + 1) % 6], s6[j]))
-    t6 = [at(60.0 * j, R * TOP_RING[1], TOP_RING[0]) for j in range(6)]
+    t6 = [at(60.0 * j, r_top * c["shoulder_share"] * 0.8, c["z_hidden_top"]) for j in range(6)]
     for j in range(6):
         k = (j + 1) % 6
         bm.faces.new((s6[j], s6[k], t6[k], t6[j]))
@@ -211,23 +209,23 @@ def sweep_loop(bm, pts: list, width: float, depth: float) -> None:
     bm.faces.new(list(reversed(sections[-1])))
 
 
-def prism(bm, poly: list, angle_deg: float, half_width: float) -> None:
-    """A part drawn in the radial plane at angle_deg (poly: [(r, z), ...], counter-clockwise seen from the tangent
-    side) extruded half_width to each side along the tangent."""
-    a = math.radians(angle_deg)
-    rad, tan = Vector((math.cos(a), math.sin(a), 0.0)), Vector((-math.sin(a), math.cos(a), 0.0))
-    sides = []
-    for s in (-1, 1):
-        sides.append([bm.verts.new(rad * r + Vector((0, 0, z)) + tan * (s * half_width)) for r, z in poly])
-    n = len(poly)
-    bm.faces.new(sides[0])
-    bm.faces.new(list(reversed(sides[1])))
-    for i in range(n):
-        j = (i + 1) % n
-        bm.faces.new((sides[0][j], sides[0][i], sides[1][i], sides[1][j]))
-
-
 # --- the parts -----------------------------------------------------------------------------------------------------
+LOWEST = [0.0]  # the chamfered point's lowest vertex over the drawing's tip (cm), for the record
+FEATURES: list = []  # the parts' edges for the drawing: [part, [x, y, z], [x, y, z], [normals of its faces]]
+
+
+def record_features(name: str, bm, angle: float) -> None:
+    """Keeps the edges the chamfer would bevel (folds over `angle`, and open edges), in centimetres with the normals of
+    their faces: crystal_drawing.py projects them into the drawing's views, so the drawing shows this model's edges."""
+    limit = math.radians(min(angle, 30.0))
+    for e in bm.edges:
+        faces = list(e.link_faces)
+        if len(faces) == 2 and faces[0].normal.angle(faces[1].normal, 0.0) < limit:
+            continue
+        FEATURES.append([name, [round(c / CM, 4) for c in e.verts[0].co], [round(c / CM, 4) for c in e.verts[1].co],
+                         [[round(c, 4) for c in f.normal] for f in faces]])
+
+
 def part(name: str, build, mat_name: str, chamfer: float, extra=None, angle: float = 30.0,
          more: tuple = ()) -> bpy.types.Object:
     """One part: its own material in slot 0, the chamfer marker in slot 1, `more` materials from slot 2 (a builder
@@ -238,6 +236,7 @@ def part(name: str, build, mat_name: str, chamfer: float, extra=None, angle: flo
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     if extra:
         extra(bm)
+    record_features(name, bm, angle)
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
     bm.free()
@@ -259,96 +258,125 @@ def part(name: str, build, mat_name: str, chamfer: float, extra=None, angle: flo
 
 
 def build_crystal(bm) -> None:
-    crystal_column(bm, 1.0, 0.0, 0.0, 1.0)
+    crystal_column(bm, 1.0, 0.0, 1.0)
 
 
 def build_core(bm) -> None:
-    crystal_column(bm, 0.52, 30.0, 0.012, 0.86)
+    crystal_column(bm, DIMS["crystal"]["core_share"], 30.0, 0.86)
 
 
 def build_skirt(bm) -> None:
-    # the graphite hexagonal skirt: narrow at the crystal, wide under the band; its six faces inset as panels
-    lathe(bm, [(0.0585, 0.2350), (0.0620, 0.2390), (0.0690, 0.2700)], 6, 0.0)
+    # the graphite hexagon frustum over the crystal's shoulder, its six faces inset as panels
+    s = DIMS["skirt"]
+    lathe(bm, [(s["corners_bottom"] * 0.5 * CM, (s["z_bottom"] + s["lip"]) * CM),
+               (s["corners_top"] * 0.5 * CM, s["z_top"] * CM)], HEX, HEX_ROT)
 
 
 def skirt_panels(bm) -> None:
-    faces = [f for f in bm.faces if abs(f.normal.z) < 0.6 and f.calc_center_median().z > 0.2385]
-    bmesh.ops.inset_individual(bm, faces=faces, thickness=0.0065, depth=-0.0016)
-    for f in faces:  # the inset keeps the original faces in the middle: the dark panels in a bronze frame
-        f.material_index = 2
+    faces = [f for f in bm.faces if abs(f.normal.z) < 0.6]
+    bmesh.ops.inset_individual(bm, faces=faces, thickness=DIMS["skirt"]["frame"] * CM, depth=-0.0015)
 
 
-def build_collar(bm) -> None:
-    # the bronze lip where the crystal meets the cap
-    lathe(bm, [(0.0580, 0.2285), (0.0605, 0.2295), (0.0610, 0.2345), (0.0585, 0.2365)], 6, 0.0)
+def build_lip(bm) -> None:
+    # the bronze lip at the skirt's foot, where the crystal meets the cap
+    s = DIMS["skirt"]
+    r = s["corners_bottom"] * 0.5 * CM
+    lathe(bm, [(r - 0.001, s["z_bottom"] * CM), (r + 0.0015, (s["z_bottom"] + 0.05) * CM),
+               (r + 0.0015, (s["z_bottom"] + s["lip"]) * CM), (r - 0.001, (s["z_bottom"] + s["lip"] + 0.05) * CM)],
+          HEX, HEX_ROT)
 
 
-def build_claws(bm) -> None:
-    # thin claws hugging the crystal's two side corners, from under the band down onto the shoulder
-    poly = [(0.0605, 0.2170), (0.0645, 0.2165), (0.0668, 0.2330), (0.0700, 0.2500), (0.0700, 0.2690),
-            (0.0648, 0.2690), (0.0632, 0.2500), (0.0605, 0.2330)]
-    for ang in (0.0, 180.0):
-        prism(bm, poly, ang, 0.0055)
-
-
-def build_band(bm) -> None:
-    # bronze: lower rim, the groove's floor (hidden behind the graphite band), upper rim, the dome, the boss, the
-    # lens recess
-    lathe(bm, [(0.0620, 0.2690), (0.0670, 0.2710), (0.0670, 0.2713), (0.0598, 0.2715), (0.0598, 0.2850),
-               (0.0670, 0.2852), (0.0670, 0.2915), (0.0655, 0.2918), (0.0655, 0.2926), (0.0670, 0.2929),
-               (0.0670, 0.2990), (0.0645, 0.3010), (0.0360, 0.3110), (0.0285, 0.3118),
-               (0.0285, 0.3185), (0.0262, 0.3208), (0.0150, 0.3208), (0.0142, 0.3178)],
-          CAP_SIDES, 180.0 / CAP_SIDES)
+def build_rim(bm) -> None:
+    m = DIMS["rim"]
+    r = oct_r(m["flats"])
+    lathe(bm, [(r - 0.002, m["z_bottom"] * CM), (r, (m["z_bottom"] + 0.12) * CM), (r, m["z_top"] * CM)],
+          OCT, OCT_ROT)
 
 
 def build_groove(bm) -> None:
-    lathe(bm, [(0.0628, 0.2712), (0.0628, 0.2853)], CAP_SIDES, 180.0 / CAP_SIDES, bottom=False, top=False)
+    g, b = DIMS["groove"], DIMS["band"]
+    r = oct_r(b["flats"] - 2.0 * g["depth"])
+    lathe(bm, [(r, (g["z"] - 0.1) * CM), (r, (g["z"] + g["height"] + 0.1) * CM)], OCT, OCT_ROT)
 
 
-SLOT_ANGLES = (270.0 - 48.0, 270.0 + 48.0, 90.0 - 48.0, 90.0 + 48.0)
+def build_band(bm) -> None:
+    # the upright band, the dome over it (its foot rounded off by a bevel); the top closes under the disc
+    b, d, g = DIMS["band"], DIMS["dome"], DIMS["groove"]
+    r = oct_r(b["flats"])
+    z0 = g["z"] + g["height"]
+    lathe(bm, [(r - 0.0015, z0 * CM), (r, (z0 + 0.1) * CM), (r, b["z_top"] * CM),
+               (r - d["bevel"] * CM, (b["z_top"] + d["bevel"] * 0.7) * CM),
+               (oct_r(d["flats_top"]), d["z_top"] * CM)], OCT, OCT_ROT)
 
 
-def build_slot_frames(bm) -> None:
-    # four window frames on the groove; each front face inset into a recessed window (the light material)
-    for ang in SLOT_ANGLES:
-        faces = box(bm, radial(ang, 0.0638, 0.2782), (0.0040, 0.0200, 0.0092), ang)
-        front = max(faces, key=lambda f: f.calc_center_median().to_2d().length)
-        bmesh.ops.inset_individual(bm, faces=[front], thickness=0.0022, depth=-0.0012)
+WINDOW_ANGLES = (45.0, 135.0, 225.0, 315.0)  # the octagon's diagonal faces
+NOTCH_ANGLES = (0.0, 90.0, 180.0, 270.0)     # its straight faces
+
+
+def build_windows(bm) -> None:
+    # a graphite frame on each diagonal face, its front inset into a recessed window (the light material)
+    b = DIMS["band"]
+    length, height = b["window"]
+    apothem = b["flats"] * 0.5 * CM
+    for ang in WINDOW_ANGLES:
+        # the frame stands 2.5 mm proud of the face, so the window recessed 1.2 mm into it stays in front of the band
+        faces = box(bm, radial(ang, apothem + 0.001, b["window_z"] * CM),
+                    (0.003, (length + 0.4) * CM, (height + 0.35) * CM), ang)
+        out = Vector(radial(ang, 1.0, 0.0))
+        for f in faces:  # box() moved the vertices: the cached normals are the unturned cube's
+            f.normal_update()
+        front = max(faces, key=lambda f: f.normal.dot(out))  # by its normal: a long box's end face lies farther out
+        bmesh.ops.inset_individual(bm, faces=[front], thickness=0.0018, depth=-0.0012)
         front.material_index = 2  # the window (the inset keeps the original face in the middle): the light
 
 
-def build_chevrons(bm) -> None:
-    # a small chevron plate front and back on the groove (the concept's notch)
-    for ang in (270.0, 90.0):
+def build_notches(bm) -> None:
+    # a graphite trapezoid at the foot of each straight face of the band, wider at its top
+    b, g = DIMS["band"], DIMS["groove"]
+    w, h = b["notch"]
+    z0 = (g["z"] + g["height"]) * CM
+    apothem = b["flats"] * 0.5 * CM
+    for ang in NOTCH_ANGLES:
         a = math.radians(ang)
         rad, tan = Vector((math.cos(a), math.sin(a), 0.0)), Vector((-math.sin(a), math.cos(a), 0.0))
-        outline = [(-0.0075, 0.2722), (0.0075, 0.2722), (0.0075, 0.2800), (0.0030, 0.2842), (-0.0030, 0.2842),
-                   (-0.0075, 0.2800)]
-        layers = []
-        for r in (0.0610, 0.0650):
-            layers.append([bm.verts.new(rad * r + tan * t + Vector((0, 0, z))) for t, z in outline])
-        n = len(outline)
+        outline = [(-w * 0.32 * CM, z0), (w * 0.32 * CM, z0), (w * 0.5 * CM, z0 + h * CM), (-w * 0.5 * CM, z0 + h * CM)]
+        layers = [[bm.verts.new(rad * r + tan * t + Vector((0, 0, z))) for t, z in outline]
+                  for r in (apothem - 0.002, apothem + 0.0006)]
         bm.faces.new(list(reversed(layers[0])))
         bm.faces.new(layers[1])
-        for i in range(n):
-            j = (i + 1) % n
+        for i in range(4):
+            j = (i + 1) % 4
             bm.faces.new((layers[0][i], layers[0][j], layers[1][j], layers[1][i]))
 
 
+def build_disc(bm) -> None:
+    d = DIMS["disc"]
+    r = oct_r(d["flats"])
+    lathe(bm, [(r, (d["z_bottom"] - 0.1) * CM), (r, (d["z_top"] - 0.15) * CM), (r - 0.0015, d["z_top"] * CM)],
+          OCT, OCT_ROT)
+
+
 def build_lens(bm) -> None:
-    lathe(bm, [(0.0138, 0.3176), (0.0138, 0.3190)], CAP_SIDES, 180.0 / CAP_SIDES)
+    d = DIMS["disc"]
+    lathe(bm, [(d["lens"] * 0.5 * CM, (d["z_top"] - 0.05) * CM), (d["lens"] * 0.5 * CM, (d["z_top"] + 0.06) * CM)],
+          16, 11.25)
 
 
-LOOP = [(-0.040, 0.303), (-0.040, 0.322), (-0.022, 0.347), (0.022, 0.347), (0.040, 0.322), (0.040, 0.303)]
+def loop_points() -> list:
+    """The loop bar's centre line [(x, z), ...] in metres from [loop]: feet sunk into the disc, short legs, shoulders,
+    the top bar."""
+    lp = DIMS["loop"]
+    half = lp["bar"] * 0.5
+    x_leg = lp["outer_width"] * 0.5 - half
+    x_top = lp["outer_top"] * 0.5 - half * 0.7  # the mitre carries the outer corner out by about this
+    z_top = lp["z_top"] - half
+    pts = [(-x_leg, lp["z_feet"] - 0.4), (-x_leg, lp["z_shoulder"]), (-x_top, z_top),
+           (x_top, z_top), (x_leg, lp["z_shoulder"]), (x_leg, lp["z_feet"] - 0.4)]
+    return [(x * CM, z * CM) for x, z in pts]
 
 
 def build_loop(bm) -> None:
-    sweep_loop(bm, LOOP, 0.0115, 0.0130)
-
-
-def build_lugs(bm) -> None:
-    for x in (-0.040, 0.040):
-        box(bm, (x, 0.0, 0.3095), (0.0170, 0.0200, 0.0120))
+    sweep_loop(bm, loop_points(), DIMS["loop"]["bar"] * CM, DIMS["loop"]["depth"] * CM)
 
 
 # --- materials -----------------------------------------------------------------------------------------------------
@@ -562,9 +590,8 @@ def join(objs: list) -> bpy.types.Object:
         bpy.data.meshes.remove(tmp)
         bpy.data.meshes.remove(me)
     me = bpy.data.meshes.new("energy_crystal")
-    lowest = min(v.co.z for v in bm_all.verts)  # the chamfer lifts the tip: the origin goes back under it
-    for v in bm_all.verts:
-        v.co.z -= lowest
+    # the origin stays at the drawing's tip: the chamfer blunts the point, whose lowest vertex ends a little above it
+    LOWEST[0] = round(min(v.co.z for v in bm_all.verts) / CM, 4)
     bm_all.to_mesh(me)
     bm_all.free()
     for name in order:
@@ -587,16 +614,16 @@ def build() -> bpy.types.Object:
         # every facet edge of the crystal gets its chamfer line, however shallow the fold
         part("crystal", build_crystal, "crystal_shell", CHAMFER_CRYSTAL, angle=2.0),
         part("core", build_core, "crystal_core", CHAMFER_CRYSTAL, angle=2.0),
-        part("skirt", build_skirt, "crystal_bronze", CHAMFER_SMALL, skirt_panels, more=("crystal_graphite",)),
-        part("collar", build_collar, "crystal_bronze", CHAMFER_SMALL),
-        part("claws", build_claws, "crystal_bronze", CHAMFER_SMALL),
-        part("band", build_band, "crystal_bronze", CHAMFER_METAL),
+        part("skirt", build_skirt, "crystal_graphite", CHAMFER_SMALL, skirt_panels),
+        part("lip", build_lip, "crystal_bronze", CHAMFER_SMALL),
+        part("rim", build_rim, "crystal_bronze", CHAMFER_METAL),
         part("groove", build_groove, "crystal_graphite", 0.0),
-        part("slot_frames", build_slot_frames, "crystal_bronze", CHAMFER_SMALL, more=("crystal_light",)),
-        part("chevrons", build_chevrons, "crystal_bronze", CHAMFER_SMALL),
+        part("band", build_band, "crystal_bronze", CHAMFER_METAL),
+        part("windows", build_windows, "crystal_graphite", CHAMFER_SMALL, more=("crystal_light",)),
+        part("notches", build_notches, "crystal_graphite", CHAMFER_SMALL),
+        part("disc", build_disc, "crystal_graphite", CHAMFER_METAL),
         part("lens", build_lens, "crystal_light", 0.0),
-        part("loop", build_loop, "crystal_bronze", CHAMFER_METAL),
-        part("lugs", build_lugs, "crystal_bronze", CHAMFER_SMALL),
+        part("loop", build_loop, "crystal_bronze", CHAMFER_LOOP),
     ]
     return join(parts)
 
@@ -764,12 +791,83 @@ def shoot(ob, folder: Path, state: str, res: int) -> list:
     return files
 
 
+# --- the drawing's views: orthographic renders and the concept's views at one scale ---------------------------------
+PX_PER_CM = 16
+# name: (width cm, height cm, the frame's middle: x and z in cm; for the top view x and y)
+ORTHO = {"front": (16.0, 37.0, 0.0, 17.5), "side": (16.0, 37.0, 0.0, 17.5), "top": (16.0, 16.0, 0.0, 0.0)}
+
+
+def shoot_ortho(folder: Path, state: str) -> list:
+    """The front (from -Y), side (from +X) and top (from +Z, the front at the bottom) views with an orthographic camera
+    at PX_PER_CM, framed like crystal_drawing.py's views, so the drawing lies over them exactly."""
+    sc = bpy.context.scene
+    co = sc.camera
+    lens, kind = co.data.lens, co.data.type
+    co.data.type = "ORTHO"
+    files = []
+    for view, (w, h, cx, cz) in ORTHO.items():
+        sc.render.resolution_x = int(w * PX_PER_CM)
+        sc.render.resolution_y = int(h * PX_PER_CM)
+        co.data.ortho_scale = max(w, h) * CM
+        if view == "front":
+            co.location = (cx * CM, -1.0, cz * CM)
+            co.rotation_euler = (math.radians(90.0), 0.0, 0.0)
+        elif view == "side":
+            co.location = (1.0, cx * CM, cz * CM)
+            co.rotation_euler = (math.radians(90.0), 0.0, math.radians(90.0))
+        else:
+            co.location = (cx * CM, cz * CM, 1.0)
+            co.rotation_euler = (0.0, 0.0, 0.0)
+        path = folder / f"ortho_{state}_{view}.png"
+        sc.render.filepath = str(path)
+        bpy.ops.render.render(write_still=True)
+        files.append(path.name)
+    co.data.type, co.data.lens = kind, lens
+    return files
+
+
+def concept_views(jpg: Path, folder: Path) -> list:
+    """The concept's spent front, side and top views cut and scaled to the ortho renders' frames, from the points and
+    scales the drawing was measured at ([measure] in crystal_dims.toml)."""
+    import numpy as np
+
+    m = DIMS["measure"]
+    img = bpy.data.images.load(str(jpg))
+    sw, sh = img.size
+    src = np.empty(sw * sh * 4, dtype=np.float32)
+    img.pixels.foreach_get(src)
+    src = src.reshape(sh, sw, 4)[::-1]  # rows from the top, like the measurements
+    files = []
+    for view, (w, h, cx, cz) in ORTHO.items():
+        if view == "top":
+            (ox, oy), k = m["top_centre"], m["top_cm_per_px"]
+            # the frame's middle (cx, cz) sits on the measured centre; image y grows downward
+            x0, y0 = ox + (cx - w / 2) / k, oy - (cz + h / 2) / k
+        else:
+            (ox, oy), k = m["front_tip" if view == "front" else "side_tip"], m["cm_per_px"]
+            x0, y0 = ox + (cx - w / 2) / k, oy - (cz + h / 2) / k
+        tw, th = int(w * PX_PER_CM), int(h * PX_PER_CM)
+        xs = np.clip(x0 + (np.arange(tw) + 0.5) / PX_PER_CM / k, 0, sw - 1).astype(int)
+        ys = np.clip(y0 + (np.arange(th) + 0.5) / PX_PER_CM / k, 0, sh - 1).astype(int)
+        cut = src[ys][:, xs]
+        out = bpy.data.images.new(f"concept_{view}", tw, th, alpha=True)
+        out.pixels.foreach_set(cut[::-1].ravel())
+        path = folder / f"concept_{view}.png"
+        out.filepath_raw = str(path)
+        out.file_format = "PNG"
+        out.save()
+        files.append(path.name)
+    return files
+
+
 def main() -> None:
     a = argv()
     out = Path(a["out"])
     out.mkdir(parents=True, exist_ok=True)
     ob = build()
     info = export(ob, out)
+    (out / "features.json").write_text(json.dumps({"units": "cm, Blender axes (Z up, front -Y)", "point_lift": LOWEST[0],
+                                                   "edges": FEATURES}) + "\n", encoding="utf-8")
     set_charge(1.0)
     bpy.ops.wm.save_as_mainfile(filepath=str(out / "energy_crystal.blend"), compress=True)
     renders = []
@@ -780,6 +878,9 @@ def main() -> None:
         for state, c in (("charged", 1.0), ("spent", 0.0)):
             set_charge(c)
             renders += shoot(ob, folder, state, a["res"])
+            renders += shoot_ortho(folder, state)
+        if a["views"]:
+            renders += concept_views(Path(a["views"]), folder)
     info["renders"] = renders
     (out / "build.json").write_text(json.dumps(info, indent=2) + "\n", encoding="utf-8")
     print("CRYSTAL_BUILD " + json.dumps(info))

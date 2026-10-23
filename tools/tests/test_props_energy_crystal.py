@@ -57,8 +57,8 @@ class EnergyCrystalAsset(unittest.TestCase):
         self.assertLessEqual(tris, HERO_TRIANGLES)
         lo = [min(doc["accessors"][p["attributes"]["POSITION"]]["min"][i] for p in prims) for i in range(3)]
         hi = [max(doc["accessors"][p["attributes"]["POSITION"]]["max"][i] for p in prims) for i in range(3)]
-        self.assertAlmostEqual(hi[1] - lo[1], 0.35, delta=0.015)  # glTF is Y-up: about 35 cm with the loop
-        self.assertAlmostEqual(lo[1], 0.0, delta=0.0005)  # the origin at the tip
+        self.assertAlmostEqual(hi[1], 0.349, delta=0.002)  # glTF is Y-up: the drawing's 34.9 cm to the loop's top
+        self.assertTrue(0.0 <= lo[1] < 0.004, lo[1])  # the origin at the drawing's tip; the chamfer blunts the point
         for axis in (0, 2):  # centred
             self.assertAlmostEqual((hi[axis] + lo[axis]) / 2, 0.0, delta=0.002)
         for p in prims:  # UV0 carries the chamfer flag and the facet value the shaders read
@@ -71,7 +71,7 @@ class EnergyCrystalAsset(unittest.TestCase):
             self.skipTest("LFS file not fetched")
         data, _ = _manifest.load(ASSET / "manifest.toml")
         recorded = {r["file"]: r["sha256"] for r in data["raw"]}
-        built = recorded["energy-crystal/build/energy_crystal.glb"]
+        built = next(sha for name, sha in recorded.items() if name.endswith("/energy_crystal.glb"))  # <tag>/
         self.assertEqual(hashlib.sha256(glb.read_bytes()).hexdigest(), built)
 
     def test_report_records_a_clean_validation(self) -> None:

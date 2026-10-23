@@ -2,7 +2,9 @@
 1. crystal_build.py in headless Blender: the model from code, the GLB (the plain-PBR fallback), the .blend with the
    look materials, build.json, and the Blender review renders of both states;
 2. glTF-Validator on the GLB;
-3. the Godot shots and the review sheet in an off-screen window (godot/crystal/shots.gd through the runner's
+3. crystal_drawing.py: the engineering drawing (front, side, top in cm) over the concept's views and the model's
+   orthographic renders, into <tag>/drawing/;
+4. the Godot shots and the review sheet in an off-screen window (godot/crystal/shots.gd through the runner's
    _godot.window(); the look from godot/crystal/crystal.gd), beside the concept's crops.
 Everything goes under <raw>/energy-crystal/<tag>/: the build, renders/ (Blender) and godot/ (the shots, sheet.png).
 --asset DIR then writes the asset folder (assets/prop/energy_crystal): the GLB and the material files in export/,
@@ -28,6 +30,8 @@ sys.path.insert(0, str(ROOT / "tools"))
 from runner import blender, common  # noqa: E402
 from runner.commands import _export, _godot  # noqa: E402
 
+import crystal_drawing  # noqa: E402  (beside this file)
+
 RAW = common.raw_dir()
 REF = RAW / "energy-crystal" / "ref"
 MATERIAL_FILES = ("crystal.gd", "crystal_shell.gdshader", "crystal_core.gdshader", "crystal_metal.gdshader")
@@ -49,8 +53,12 @@ def main() -> int:
     renders = out / "renders"
     if not args.no_build:
         r = blender.run_script("crystal_build.py", ["--out", str(out), "--render", str(renders), "--res",
-                                                    str(args.res), "--samples", str(args.samples)], timeout=1200)
+                                                    str(args.res), "--samples", str(args.samples),
+                                                    "--views", str(REF / "crystal-views.jpg")], timeout=1200)
         print(*[x for x in (r.stdout or "").splitlines() if x.startswith("CRYSTAL_BUILD")], sep="\n", flush=True)
+    if (out / "features.json").is_file():  # the engineering drawing over the concept's views and the model's
+        sys.argv[1:] = [str(out)]
+        crystal_drawing.main()
     glb = out / "energy_crystal.glb"
     report = _export.validate(glb, out / "energy_crystal.validator.json")
     ok, text = _export.verdict(report)
@@ -62,8 +70,8 @@ def main() -> int:
         shots = out / "godot"
         shots.mkdir(exist_ok=True)
         code, output = _godot.window(["--path", str(_godot.PROJECT), "-s", "res://crystal/shots.gd", "--", res,
-                                      str(shots), str(renders), str(REF / "concept_charged.png"),
-                                      str(REF / "concept_spent.png"), str(REF / "concept_charger.png"), str(HDRI)],
+                                      str(shots), str(renders), str(REF / "views_charged.png"),
+                                      str(REF / "views_spent.png"), str(REF / "concept_charger.png"), str(HDRI)],
                                      (1280, 720), 300, log=out / "godot_shots.log")
         print(*[x for x in output.splitlines() if x.startswith("CRYSTAL ")], sep="\n")
         print(f"godot shots: exit {code} {shots}", flush=True)
@@ -105,7 +113,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         "review": f"<raw>/energy-crystal/{tag}/godot/sheet.png",
     }
     (asset / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    raws = ["energy-crystal/ref/socket-claws.jpg", "energy-crystal/ref/charge.jpg",
+    raws = ["energy-crystal/ref/crystal-views.jpg", "energy-crystal/ref/socket-claws.jpg", "energy-crystal/ref/charge.jpg",
             f"energy-crystal/{tag}/energy_crystal.glb", f"energy-crystal/{tag}/energy_crystal.blend"]
     today = datetime.date.today().isoformat()
     lines = [
@@ -118,11 +126,13 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         "title = \"The ship engine's energy crystal\"",
         ("notes = \"The engine's cartridge: "
          'a faceted energy crystal in a bronze and graphite cap with a hexagonal carry '
-         f'loop, {size[2]:.3f} m tall, {size[0]:.3f} m across the claws, {size[1]:.3f} m across the band, one mesh of {build["triangles"]:,} '
+         f'loop, {size[2]:.3f} m tall, {size[0]:.3f} x {size[1]:.3f} m across the octagonal cap, one mesh of '
+         f'{build["triangles"]:,} '
          'triangles in five surfaces (hero class), front +Z, origin at the tip. Two states on one mesh: '
          'export/crystal.gd set_charge (1 charged, 0 spent; HANDOFF.md). From the concept the engineer picked '
-         '(prime-game#1033 comment 6361383461; prime-game-design ideas/ship-components/cartridge-v2, socket-claws.jpg '
-         'and charge.jpg, copied to the raw folder; a 2D concept used only as the reference), built from code in '
+         '(prime-game#1033 comment 6361383461; prime-game-design ideas/ship-components/cartridge-v2: crystal-views.jpg, the '
+         'straight views its drawing tools/blender/crystal_dims.toml was measured from, and socket-claws.jpg and charge.jpg, '
+         'copied to the raw folder; 2D concepts used only as references), built from code in '
          'headless Blender (tools/blender/crystal_build.py): no part of the model was generated or downloaded."'),
         'tools = ["blender 5.2.2", "prime-game-art crystal_build.py, crystal_run.py", '
         '"glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]',

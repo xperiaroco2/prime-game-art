@@ -1,0 +1,78 @@
+# The energy crystal's engineering drawing as numbers, in centimetres (art#263; the engineer, 2026-10-24: "a drawing,
+# like engineering drawings at university: the part from different sides, in centimetres, everything exact").
+# Measured from the straight-views sheet prime-game-design ideas/ship-components/cartridge-v2/crystal-views.jpg
+# (copied to <raw>/energy-crystal/ref/crystal-views.jpg): heights and widths from its spent front view (the
+# silhouette per pixel row, no glow there), the cap's plan from its top view, the loop's depth from its side view;
+# the scale from the overall height, 35 cm, the size the cartridge was decided at (prime-game#1033): 0.0877 cm per px.
+# Where the sheet's views disagree, the front view wins (its side view draws the band 20 % narrower; its top view
+# puts the windows on the side faces, its front and side views on the diagonal ones).
+# z is the height above the crystal's tip; "flats" is a width across flats, "corners" across corners. The crystal and
+# the skirt are hexagons, the cap an octagon, each with a flat face to the front.
+# tools/blender/crystal_build.py builds the model from these numbers; tools/blender/crystal_drawing.py draws them.
+
+[measure]                        # where the numbers were read on crystal-views.jpg (px)
+cm_per_px = 0.0877
+front_tip = [246.5, 902]         # the spent front view: the cap's centre line x, the tip's y
+side_tip = [557.0, 902]          # the spent side view
+top_centre = [890.5, 723]        # the spent top view, drawn at its own scale:
+top_cm_per_px = 0.0682           # the octagon's 198 px are the band's 13.5 cm
+
+[crystal]
+corners_top = 11.1               # across corners at the body's top ring (front view: 126 px)
+corners_bottom = 10.34           # at the body's bottom ring (118 px): the body narrows a little toward the point
+z_point_ring = 4.5               # the ring where the point starts (y 851)
+z_body_top = 20.1                # the body's top ring (y 673)
+z_shoulder = 21.4                # the shoulder ring, under the skirt's edge (y 658)
+shoulder_share = 0.88            # the shoulder ring's corners against the top ring's
+z_hidden_top = 22.4              # a flat top, hidden inside the skirt
+body_steps = 4                   # heights of the corner lines' vertices: diamonds two steps (half the body) tall
+bulge = 1.12                     # each face's middle line sits this much outside the flat face: the facets fold
+point_bulge = 1.03               # the face middles at the point ring: a faint crease down each point facet
+core_share = 0.52                # the glowing core inside: its corners against the crystal's, turned 30 degrees
+
+[skirt]                          # graphite hexagon frustum with a bronze frame round each face's panel
+z_bottom = 21.4
+z_top = 23.8
+corners_bottom = 9.6              # its front-view width is across corners (a corner each side)
+corners_top = 11.0
+lip = 0.25                       # the bronze lip at its bottom edge: height
+frame = 0.55                     # the bronze frame's width round each panel
+
+[rim]                            # the lower bronze rim under the band
+z_bottom = 23.8
+z_top = 24.25
+flats = 13.1
+
+[groove]                         # the dark line between the rim and the band
+z = 24.3
+height = 0.12
+depth = 0.25
+
+[band]                           # the cap's widest part, upright, bronze
+z_bottom = 24.3
+z_top = 26.8
+flats = 13.5
+window = [3.0, 0.9]              # the four cyan windows on the diagonal faces: length, height
+window_z = 25.45                 # their middle
+notch = [1.4, 0.65]              # the trapezoid notch at the foot of the front, back and side faces: width, height
+
+[dome]                           # bevelled bronze frustum
+z_bottom = 26.8
+z_top = 29.5
+flats_top = 9.6
+bevel = 0.35                     # the rounded-off edge where it meets the band
+
+[disc]                           # the graphite top disc the loop stands on
+z_bottom = 29.5
+z_top = 30.9
+flats = 7.7
+lens = 3.0                       # the cyan lens in its top: diameter
+
+[loop]                           # the hexagonal carry loop, a chunky bar
+z_feet = 30.9
+z_shoulder = 31.7
+z_top = 34.9
+outer_width = 8.4                # across its widest, at the shoulders
+outer_top = 4.9                  # its top bar's outer length
+bar = 1.2                        # the bar's width in the loop's plane
+depth = 2.4                      # the bar's depth (front to back; the side view)
