@@ -706,6 +706,7 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     near = np.argmin(np.linalg.norm(P[:, None, :] - R[None], axis=-1), axis=1)
     dist = np.linalg.norm(P - R[near], axis=1)
     rep, W = {"gills": {}}, np.zeros((len(P), len(names)))
+    stalk = np.zeros(len(P), bool)  # every stalk's geometry out of the skull, the thick base too (not the skull)
     hd = np.array([G.neck_weights(float(v), y0, ym, y1)[2] for v in P[:, 1]])
     for k, name in enumerate(names):
         cand = (near == k) & (tv > 0.5) & (dist < 0.45)
@@ -720,6 +721,8 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
         W[:, k] = np.array([G.stalk_weight(float(a), length, float(t)) if o else 0.0 for a, t, o in zip(s_, tv, own)]) * hd
         pos[name] = tuple(float(v) for v in roots[name])
         snap = float(np.linalg.norm(P - roots[name], axis=1).min())
+        # the stalk: near its root, farther from the head's centre than the skull there (the root's depth and 2 cm)
+        stalk |= own & (np.linalg.norm(P - head_c, axis=1) > np.linalg.norm(roots[name] - head_c) + snap + 0.02)
         rep["gills"][name] = {"root": roots[name].round(5).tolist(), "axis": ax.round(4).tolist(), "length": round(length, 4),
                               "vertices": int((W[:, k] > 0.01).sum()), "root_to_mesh_mm": round(snap * 1000, 2)}
     tot = W.sum(1)
@@ -731,7 +734,9 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
     # the skull is a star about head_c: a point is inside when it is nearer head_c than the skull's outermost surface
     # along the same ray, by more than POKE_TOL; the root band (vertices within ROOT_BAND of the skull at rest, the
     # stalks' bases that touch it by construction, and those inside it at rest) is left out; only moved vertices count.
-    gill_v = (W.sum(1) > 0.01) | (tv > 0.25)
+    # AL2: the stalks' thick static bases are no skull either (else their triangles stand beyond the moving filaments
+    # along the rays and read as "inside")
+    gill_v = (W.sum(1) > 0.01) | (tv > 0.25) | stalk
     body_t = [tuple(int(x) for x in t) for t in I if not gill_v[t].any()]
     bvh = BVHTree.FromPolygons([Vector(v) for v in P], body_t, all_triangles=True)
     cv = Vector(head_c)
@@ -754,10 +759,12 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
 
     test = {}
     for k in range(len(names)):
-        m = np.nonzero(W[:, k] > 0.05)[0]
+        m = np.nonzero(W[:, k] > G.ROOT_W)[0]  # the weight's root band left out: the stalk's base (see G.ROOT_W)
         gap = np.array([(Vector(P[i]) - bvh.find_nearest(Vector(P[i]))[0]).length for i in m])
         keep = m[(gap > G.ROOT_BAND) & ~inside(P[m])]
         test[k] = keep
+    rep["skull_proxy"] = {"triangles": len(body_t), "max_r": round(float(max(np.linalg.norm(P[list(t)] - head_c, axis=1).max()
+                                                                       for t in body_t)), 4)}
     rep["gill_poke_tested"] = {n: int(len(test[k])) for k, n in enumerate(names)}
 
     def pokes(swing):
@@ -778,6 +785,19 @@ def gill_rig(args, data, P, UV, I, pos, y0, ym, y1, head_c, out):
             break
         swing -= 1.0
     if swing <= 0:
+        dump = []
+        for k, name in enumerate(names):
+            m = test[k]
+            q = P[m] - roots[name]
+            for y, p in G.SWING_CORNERS:
+                rq = q @ np.array(G.spring_matrix(math.radians(1.0) * y, math.radians(1.0) * p)).T
+                p2 = P[m] + W[m, k][:, None] * (rq - q)
+                for i, pp in zip(m[inside(p2)], p2[inside(p2)]):
+                    dump.append({"gill": name, "v": int(i), "rest": P[i].round(4).tolist(), "tv": round(float(tv[i]), 3),
+                                 "w": round(float(W[i, k]), 3), "r": round(float(np.linalg.norm(pp - head_c)), 4),
+                                 "skull_r": round(skull_r(pp), 4)})
+        (out / "gill_pokes.json").write_text(json.dumps({"head_c": head_c.round(4).tolist(), "pokes_1deg": dump[:400],
+                                                        "n": len(dump)}, indent=1), encoding="utf-8", newline="\n")
         raise SystemExit(f"LIVELY gills poke into the head at every swing tested: {counts}")
     rep["gill_swing_deg"] = float(swing)
     rep["gill_pokes_by_swing"] = counts
