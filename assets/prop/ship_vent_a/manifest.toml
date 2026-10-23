@@ -2,7 +2,7 @@ id = "ship_vent_a"
 kind = "prop"
 slot = ""
 title = "The ship's throat vent body, way A (art#263 station 1)"
-notes = "The body (frame, copper hinge caps, column, light bar, scanner, lamp, feet) from Meshy multi-image-to-3D of our own OpenAI concept views (batch 2026-10-23-ship-vent-final: body_front, body_34, body_side); cleaned, scaled, its column raised 20 cm and baked onto a 4,000-triangle copy by tools/blender/ship_vent_a.py. The blades and the marker are built in tools/blender/ship_interior_vent.py. Not approved yet."
+notes = "The body (frame, copper hinge caps, column, light bar, scanner, lamp, feet) from Meshy multi-image-to-3D of our own OpenAI concept views (batch 2026-10-23-ship-vent-final: body_front, body_34, body_side); cleaned, scaled, its column raised 20 cm and baked onto a 4,000-triangle copy by tools/blender/ship_vent_a.py. Step 2: finished without a new generation by tools/blender/ship_vent_a_finish.py (body4k_r2: the blue patch repainted, the bronze graded, the blades' maps painted). The blades and the marker are built in tools/blender/ship_interior_vent.py. Not approved yet."
 tools = ["meshy-7.1", "blender 5.2.2"]
 licence = "owned-paid-output"
 licence_url = "https://www.meshy.ai/terms-of-use"
@@ -30,3 +30,19 @@ sha256 = "5eb1af328efc0259ce5528e20d2fbb0a14147cf3844ad21441c47e43e842fac7"
 [[raw]]
 file = "ship/v4/vents-a/body4k/body.glb"
 sha256 = "f3e4e7ee9f4fa4d018b3f61de79e3ab00faccd29faf6b61f0aa6918f459ad489"
+
+[[raw]]
+file = "ship/v4/vents-a/body4k_r2/body.glb"
+sha256 = "fe6799812b28055f095485bf9848662d55801d0dac49ab0e7e375789527a4ac2"
+
+[[raw]]
+file = "ship/v4/vents-a/body4k_r2/textures/vent_a_blade_albedo.png"
+sha256 = "0e6c8b19fe08a9fe01c3766c06cb07d5246aea423473fc897042011a87531f59"
+
+[[raw]]
+file = "ship/v4/vents-a/body4k_r2/textures/vent_a_blade_rough.png"
+sha256 = "963e2295cccd83f3a329fdb570e633e4191dc8a2d81d41578392c23c11f60f4f"
+
+[[raw]]
+file = "ship/v4/vents-a/body4k_r2/textures/vent_a_blade_metal.png"
+sha256 = "e9bf82bd179f708b93de9020bde1a89fa5d654067f955e3d10b86fb77635ceba"
