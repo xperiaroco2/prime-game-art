@@ -1130,12 +1130,15 @@ pilot's static premium heads"):
     `pack_floor` the contract's weighted bones, each the heaviest bone of some vertex, and the shared alien body's 10
     clips (`ALIEN_CLIPS`); `alien_extra_bones` names every bone beyond the contract's 56 against `[kinds.alien]`'s
     spring rule in `contract/contract.toml` (`bones = "all_and_springs"`, `spring_sets` under `spring_parent` Head;
-    the engineer, art #196 comment 6374319309; docs/contract.md, "The alien's spring bones and head top"): whole
-    declared sets below Head pass, with or without `--strict-contract`; an extra bone outside the sets, a set in part
-    or a set outside Head fails in every mode. `contract_height` (a warning unless `--strict-contract`) holds the top
-    from `height_min_m` to `head_top_max_m` (1.95 m) and the body, the skin whose heaviest bone (inspect.gd's
-    `bone_bounds`) is neither Head nor below it, at most `height_max_m` (the 1.80 m capsule), textured or not; r5's
-    chameleon (1.884 m) and axolotl (1.759 m) pass. `--allowance plasticine` replaces that rule with the paused clay
+    the engineer, art #196 comment 6374319309, for crests and gills; docs/contract.md, "The alien's spring bones and
+    head top"): whole declared sets chained under Head (each chain's first bone directly under Head, each next under
+    the one before) pass, with or without `--strict-contract`; an extra bone outside the sets, a set in part or a
+    spring bone off its chain fails in every mode. `contract_height` (a warning unless `--strict-contract`) binds on
+    the top, from `height_min_m` to `head_top_max_m` (1.95 m, the art manager's sanity cap), textured or not; with
+    `contract_eye_height` these are the alien's binding height checks. It also reports the body, the skin whose
+    heaviest bone (inspect.gd's `bone_bounds`) is neither Head nor below it, against `height_max_m` (1.80 m), but
+    that bound never binds on a real alien (the chameleon's body 1.418 m under a 1.884 m top: a scale of about 1.27);
+    r5's chameleon (1.884 m) and axolotl (1.759 m) pass. `--allowance plasticine` replaces that rule with the paused clay
     allowance: never pass it for the alien. The default profile `pack` is unchanged.
 - **B3 and B4 on the shared body (2026-10-23, PR #311; proofs `body_v2/r4/`, `body_v2/r5/`):**
   - B3: the pale front is `throat_fade` (a soft tongue from the throat to the sternum, per texel; the u1 shield only

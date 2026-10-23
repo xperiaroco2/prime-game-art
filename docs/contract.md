@@ -120,21 +120,29 @@ carries weights fails, and so does another finger left unweighted. `fingers_unwe
 (default none); `contract --check` refuses a finger outside `skeleton.fingers` or a list that leaves no weighted
 finger.
 
-**The alien's spring bones and head top** (the engineer, 2026-10-23, art #196 comment 6374319309: "Кістки пружин під
-Head дозволяю; гребені й зябра можуть стирчати над 1,80 м", spring bones under Head are allowed; crests and gills may
-stick out above 1.80 m). For the alien this replaces "No extra bones" and the 1.80 m top:
+**The alien's spring bones and head top.** The engineer's words (2026-10-23, art #196 comment 6374319309: "Кістки
+пружин під Head дозволяю; гребені й зябра можуть стирчати над 1,80 м") are: spring bones under Head are allowed; crests
+and gills may stick out above 1.80 m. They cover the crests and gills only. That the pointed skull may stand above
+1.80 m too, and the 1.95 m cap, are the art manager's reading: 1.95 m is a sanity cap against a runaway scale, not a
+decision of the engineer. For the alien this replaces "No extra bones" and the 1.80 m top:
 - `[kinds.alien]` `bones = "all_and_springs"`: exactly the profile's 56 bones, plus whole sets of
-  `[kinds.alien.spring_sets]` (`crest` = Crest1-3; `gills` = GillL1-3 and GillR1-3), every spring bone a descendant
-  of `spring_parent` (`Head`). These are the chains the head's `SpringBoneSimulator3D` swings. Any other extra bone, a
-  set in part, or a set outside `Head` fails, in `check --kind alien` and in `godot-check --profile alien`, with or
-  without `--strict-contract`. The sets are declared once, in `contract.toml`; godot-check reads them there.
-  `contract --check` refuses a spring set that names a profile bone or a bone twice, a `spring_parent` outside the
-  profile, and the three keys on a kind without `bones = "all_and_springs"`.
-- `head_top_max_m = 1.95`: the 1.80 m capsule (`body.height_max_m`) bounds the body, measured as the skin whose
-  heaviest bone is neither `Head` nor below it (the neck, trunk, arms and legs); the head's skin (the pointed skull,
-  the crest, the gills) may stand above it, the whole character at most 1.95 m. godot-check's `contract_height` holds
-  both; `check --kind alien` (Blender) holds the top at 1.95 m and leaves the body's 1.80 m to godot-check, which has
-  the skin per bone. r5 measured the chameleon's top at 1.884 m and the axolotl's at 1.759 m.
+  `[kinds.alien.spring_sets]` (`crest` = Crest1-3; `gills` = GillL1-3 and GillR1-3), each set's chains (its bones
+  sharing a name without the trailing digits, in the listed order) hanging from `spring_parent` (`Head`): a chain's
+  first bone directly under `Head`, each next bone directly under the one before. These are the chains the head's
+  `SpringBoneSimulator3D` swings. Any other extra bone, a set in part, or a spring bone off its chain (under another
+  bone, a set outside `Head`, Crest3 under Head with Crest1 under it, GillL1 under Crest2) fails, in `check --kind
+  alien` and in `godot-check --profile alien`, with or without `--strict-contract`. The sets are declared once, in
+  `contract.toml`; godot-check reads them there. `contract --check` refuses a spring set that is not a non-empty list
+  of bone names, names a profile bone or a bone twice, a `spring_parent` outside the profile, and the three keys on a
+  kind without `bones = "all_and_springs"`.
+- The height checks that bind on an alien are two: the whole character from `body.height_min_m` to `head_top_max_m =
+  1.95` (godot-check's `contract_height`; `check --kind alien` in Blender holds the same top), and the existing eye
+  height rule (`contract_eye_height`). godot-check also measures the body, the skin whose heaviest bone is neither
+  `Head` nor below it (the neck, trunk, arms and legs), against the 1.80 m capsule (`body.height_max_m`) and reports
+  it, but on a real alien that bound never binds: the chameleon's body is 1.418 m under a 1.884 m top, so it would
+  take a scale of about 1.27 before the body passed 1.80 m, long after the top and the eyes fail. The 1.80 m capsule is
+  not, in practice, enforced on the alien's body. r5 measured the chameleon's top at 1.884 m and the axolotl's at
+  1.759 m.
 - The game side: prime-game's character import must accept these spring bones (keep them through its `BoneMap`
   retarget, which Godot 4.7.2 does) and a head above the 1.80 m capsule (no clamp or refusal on the top). This repo
   does not touch the game; the handoff names it.
