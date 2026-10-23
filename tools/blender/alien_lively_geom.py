@@ -128,6 +128,15 @@ def pit_weight(theta: float, inner: float, outer: float, gap: float, gap_in: flo
     return (1.0 - smoothstep(inner, outer, theta)) * smoothstep(gap_in, gap_out, gap)
 
 
+def capped_weight(w: float, full_move: float, room: float, share: float, cap: float) -> float:
+    """The pit weight w lowered so the vertex's move (w times full_move, its distance to the sphere) stays within
+    cap and within share of its room, its distance to the nearest lid or socket triangle (the eye pit v4: a pull
+    toward the sphere never reaches a lid, so no eyeball triangle crosses one)."""
+    if w <= 0.0 or full_move <= 0.0:
+        return max(w, 0.0)
+    return min(w, max(0.0, min(cap, share * room)) / full_move)
+
+
 def project_on_sphere(p, c, r: float, w: float) -> tuple[float, float, float]:
     """p moved the share w of the way to its radial projection on the sphere (c, r)."""
     d = [p[i] - c[i] for i in range(3)]

@@ -39,6 +39,10 @@ import alien_lively_geom as G  # noqa: E402
 
 TRAVEL = math.radians(42.0)  # the eye pit fix: the iris's travel (the 25-degree gaze cap + the iris + a margin)
 FADE = math.radians(58.0)  # and its fade-out
+LID_TEAL_V = 0.45  # v4: a teal texel this bright or brighter is lid skin, left as it is; darker is old pupil
+GUTTER_PX = 4  # v4: the eye islands' gutter ring filled with the sclera
+MOVE_CAP = 0.035  # v4: no eyeball vertex moves more than this share of the eye radius (the dent is at most 3 %)
+ROOM_SHARE = 0.5  # nor more than half its distance to the nearest lid or socket triangle
 PUPIL_V = 0.12  # the pupil: darker than this (0.22 took the iris's dark inner ring: a pupil too big at rest)
 BARY = [(i / 4, j / 4) for i in range(5) for j in range(5 - i)]  # 15 points per triangle
 
@@ -168,6 +172,15 @@ def eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r):
         lid = P[shared & near]
         gap = np.sqrt(((P[sel][:, None, :] - lid[None, :, :]) ** 2).sum(-1)).min(1) if len(lid) else np.full(len(sel), 1.0)
         w = np.array([G.pit_weight(float(t), TRAVEL, FADE, float(g), 0.01 * r, 0.06 * r) for t, g in zip(th, gap)])
+        # v4: each move capped at MOVE_CAP and at ROOM_SHARE of the vertex's distance to the nearest lid or socket
+        # triangle of this eye (its surface, not only the shared vertices: v3's pull crossed one lid triangle)
+        lid_t = np.nonzero(~eyeball & (np.linalg.norm(P[I].mean(1) - c, axis=1) < 1.4 * r))[0]
+        lid_bvh = BVHTree.FromPolygons([Vector(v) for v in P], [tuple(int(x) for x in I[t]) for t in lid_t],
+                                       all_triangles=True)
+        room = np.array([lid_bvh.find_nearest(Vector(p))[3] for p in P[sel]])
+        full = np.abs(np.linalg.norm(P[sel] - cl, axis=1) - rl)
+        w0 = w
+        w = np.array([G.capped_weight(float(k), float(f), float(m), ROOM_SHARE, MOVE_CAP * r) for k, f, m in zip(w, full, room)])
         moved = np.array([G.project_on_sphere(tuple(p), tuple(cl), rl, float(k)) for p, k in zip(P[sel], w)])
         P1[sel] = moved
 
@@ -190,7 +203,9 @@ def eyeball_fix(P, N, I, UV, alb, tri_eye, centres, r):
                                     "rms_pct": round(float(np.sqrt((r0[ring] ** 2).mean())), 3)},
                     "residual": bins, "moved": int((mv > 1e-7).sum()), "max_move_mm": round(float(mv.max()) * 1000, 3),
                     "lid_fade_share": round(float((w < 0.999)[th < TRAVEL].mean()), 4), "max_move_near_lid_mm": round(float(mv[close].max()) * 1000 if close.any() else 0.0, 4),
-                    "min_gap_of_moved_mm": round(float(gap[mv > 1e-7].min()) * 1000, 3) if (mv > 1e-7).any() else None}
+                    "min_gap_of_moved_mm": round(float(gap[mv > 1e-7].min()) * 1000, 3) if (mv > 1e-7).any() else None,
+                    "capped": int((w < w0 - 1e-9).sum()), "capped_in_travel": int(((w < w0 - 1e-9) & (th < TRAVEL)).sum()),
+                    "min_room_left_mm": round(float((room - mv)[mv > 1e-7].min()) * 1000, 3) if (mv > 1e-7).any() else None}
         views[key] = (sel, rest0, cl, rl, ia, r0, r1)
     # the normals: each vertex's original normal turned by its welded position's change of the geometric normal
     weld = np.unique(np.round(P * 1e5).astype(np.int64), axis=0, return_inverse=True)[1].ravel()
@@ -344,6 +359,7 @@ def main():
             print(f"LIVELY pit {k}: " + json.dumps({n: (b["before_median_pct"], b["after_median_pct"], b["before_min_pct"],
                                                         b["after_min_pct"]) for n, b in pit[k]["residual"].items()})
                   + f" moved {pit[k]['moved']} max {pit[k]['max_move_mm']} mm near lid {pit[k]['max_move_near_lid_mm']} mm,"
+                  f" capped {pit[k]['capped']} ({pit[k]['capped_in_travel']} in travel), room left {pit[k]['min_room_left_mm']} mm,"
                   f" lid vertices moved {pit['lid_vertices_moved']}, lid crossings {pit['lid_crossings']}, move {pit['move_mm']}", flush=True)
 
     # ---- every texel of the triangles near the eyes gets its 3D position (a small UV rasterizer)
@@ -418,7 +434,9 @@ def main():
         meds.append(smed)
         h_, s_, v_ = hue[ty, tx], sat[ty, tx], val[ty, tx]
         d_alb = np.linalg.norm(alb[ty, tx] - smed, axis=1)
-        teal = (h_ > 0.35) & (h_ < 0.65) & (s_ > 0.15)
+        # the lids' teal: bright only (v4: the old pupil's dark texels at the lid line read a teal cast, v3 left
+        # them and they showed as a dotted dark line under the upper lid once the iris moved away)
+        teal = (h_ > 0.35) & (h_ < 0.65) & (s_ > 0.15) & (v_ >= LID_TEAL_V)
         paint = ((((h_ < 0.14) | (h_ > 0.92)) & (s_ > 0.12) & (d_alb > 0.06)) | ((v_ < 0.5) & ~teal)
                  | ((v_ > 0.985) & (s_ < 0.1)))
         if args.no_pit_fix:  # the v2 selection
@@ -497,7 +515,12 @@ def main():
         hole = dilate(hole0, 3) & eye
         known = eye & ~hole
     else:
-        hole = (dilate(hole0, 3) & ~(cov_any & ~cov_eye) & ~(cov_eye & teal_all)) | (dilate(hole0, 8) & ~cov_any)
+        lid_teal = teal_all & (val >= LID_TEAL_V)
+        hole = (dilate(hole0, 3) & ~(cov_any & ~cov_eye) & ~(cov_eye & lid_teal)) | (dilate(hole0, 8) & ~cov_any)
+        # v4: the black gutter around every eye island (not beside a lid or skin island) filled with the sclera too,
+        # so the texture filter draws no grey seam line along the islands' edges
+        cov_skin = cov_any & ~cov_eye
+        hole |= dilate(cov_eye, GUTTER_PX) & ~cov_any & ~dilate(cov_skin, GUTTER_PX)
         known = cov_eye & ~hole & (np.linalg.norm(alb - smed, axis=-1) < 0.06)
     clean = alb.astype(np.float64).copy()
     filled = push_pull(alb.astype(np.float64), known.astype(np.float64))
@@ -506,6 +529,10 @@ def main():
     # the check: every sampled eye texel's distance from the sclera median, by its angle from the rest gaze
     dist = np.linalg.norm(clean - smed, axis=-1)
     ghost = {"sclera_median": smed.round(4).tolist(), "filled": int(hole.sum()), "gutter_filled": int((hole & ~cov_any).sum())}
+    # the eye islands' outline: gutter texels next to a sampled eye texel (what the filter mixes in at a seam)
+    rim = dilate(cov_eye, 1) & ~cov_any
+    ghost["eye_rim"] = {"texels": int(rim.sum()), "dark": int((rim & (clean.max(-1) < 0.5)).sum()),
+                        "median": round(float(np.median(dist[rim])), 4) if rim.any() else None}
     for side, (e_ang, p_ang) in angs.items():
         m0 = cov_eye & (side_of == side)
         g = {}
@@ -521,6 +548,7 @@ def main():
         ghost["left" if side > 0 else "right"] = g
         print(f"LIVELY ghost {'left' if side > 0 else 'right'}: " + json.dumps(
             {k: (v["median"], v["p99"], v["over_0.06"], v["over_0.06_teal"], v["white_catch"]) for k, v in g.items()}), flush=True)
+    print(f"LIVELY eye rim: {json.dumps(ghost['eye_rim'])}", flush=True)
     report["sclera_ghost"] = ghost
     G.write_png(out / f"{args.name}_sclera.png", W, H, (np.clip(clean, 0, 1) * 255 + 0.5).astype(np.uint8).tobytes())
 

@@ -173,6 +173,14 @@ class EyePitTest(unittest.TestCase):
         self.assertAlmostEqual(G.pit_weight(0.4, 0.3, 0.5, 1.0, 0.1, 0.2), 0.5)
         self.assertAlmostEqual(G.pit_weight(0.1, 0.3, 0.5, 0.15, 0.1, 0.2), 0.5)
 
+    def test_capped_weight(self):
+        self.assertEqual(G.capped_weight(1.0, 0.002, 1.0, 0.5, 0.004), 1.0)  # a small move: untouched
+        self.assertAlmostEqual(G.capped_weight(1.0, 0.014, 1.0, 0.5, 0.004), 0.004 / 0.014)  # the absolute cap
+        self.assertAlmostEqual(G.capped_weight(1.0, 0.004, 0.002, 0.5, 0.004), 0.25)  # half the room to the lid
+        self.assertEqual(G.capped_weight(0.3, 0.004, 0.0, 0.5, 0.004), 0.0)  # touching a lid: never moved
+        self.assertEqual(G.capped_weight(0.0, 0.01, 1.0, 0.5, 0.004), 0.0)
+        self.assertEqual(G.capped_weight(0.7, 0.0, 1.0, 0.5, 0.004), 0.7)  # already on the sphere
+
     def test_project_on_sphere(self):
         dent = (0.0, 0.0, 0.97)  # 3 % of the radius inside the unit sphere
         self.assertEqual(G.project_on_sphere(dent, (0.0, 0.0, 0.0), 1.0, 0.0), dent)
