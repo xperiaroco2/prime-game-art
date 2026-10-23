@@ -1,7 +1,7 @@
 """The vault plush's game mesh (art#297, step 3): the painted full model baked onto a decimated copy with new UVs.
 
 blender -b --factory-startup --python plush_bake.py -- <painted full.glb> <albedo.png> <mask.png> <out dir>
-    [--tris 4000] [--size 2048]
+    [--tris 4000] [--size 2048] [--blend out.blend]
 
 Why: decimating Meshy's model in place (plush_clean.py with --tris) keeps its UVs, but the collapse moves the corners
 of Meshy's many small UV islands, so some triangles sample the next island's texels: black specks by an eye and on
@@ -25,6 +25,7 @@ src, albedo_path, mask_path, out = Path(argv[0]), Path(argv[1]), Path(argv[2]), 
 opts = dict(zip(argv[4::2], argv[5::2]))
 target_tris = int(opts.get("--tris", 4000))
 size = int(opts.get("--size", 2048))
+blend_out = opts.get("--blend")  # also save the game mesh with its packed maps as a .blend (the asset's source)
 out.mkdir(parents=True, exist_ok=True)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -149,10 +150,16 @@ nt.links.new(ntex.outputs["Color"], nmap.inputs["Color"])
 nt.links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
 
 bpy.data.objects.remove(high)
+lowmat.name = "vault_plush"  # the full model's own material held "plush": the GLB showed "plush.001"
 for o in scene.objects:
     o.select_set(o == low)
 bpy.ops.export_scene.gltf(filepath=str(out / "plush.glb"), export_format="GLB", use_selection=True,
                           export_yup=True, export_image_format="AUTO", export_tangents=True)
+if blend_out:
+    for img in (albedo, normal, mask):
+        img.pack()
+    Path(blend_out).parent.mkdir(parents=True, exist_ok=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(blend_out), compress=True)
 co = [v.co for v in low.data.vertices]
 dims = [max(c[i] for c in co) - min(c[i] for c in co) for i in range(3)]
 print("PLUSH_BAKE " + json.dumps({"source": str(src), "out": str(out), "tris": tri_count(low),

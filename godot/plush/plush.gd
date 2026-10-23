@@ -3,8 +3,8 @@ extends RefCounted
 ## plush_shell.gdshader chained as its next passes (0: the surface alone). The pile normal is a seamless noise normal
 ## map made here, so no texture file travels with it. Use with preload (no class cache in a `-s` script).
 
-const SURFACE := preload("res://plush/plush.gdshader")
-const SHELL := preload("res://plush/plush_shell.gdshader")
+const SURFACE := preload("plush.gdshader")  # relative: the same file works where the game keeps it
+const SHELL := preload("plush_shell.gdshader")
 
 
 ## A seamless fine-noise normal map for the pile; await its `changed` before the first frame.

@@ -1,0 +1,39 @@
+# The vault's plush alien (art#297): an easter egg the ship's vault holds (xperiaroco2/prime-game#1040). Built by
+# tools/blender/plush_run.py --size 1024 --tag=_final (clean, mouth, paint, bake); a rebuild changes the hashes below.
+id = "vault_plush"
+kind = "prop"
+slot = ""
+title = "The vault's plush alien"
+notes = "A sitting plush toy, 0.300 m tall (0.209 x 0.295 m footprint, the tail included), one mesh of 3,999 triangles, front +Z, origin at the floor under its middle. From the approved concept (prime-game-design ideas/vault-plush/final.jpg, round 6 \"combined\", the engineer 2026-10-22, prime-game#1040 comment 6345636663): an OpenAI turnaround sheet without seams (batch 2026-10-22-vault-plush-turn item turn5b), Meshy multi-image-to-3D from its four views (batch 2026-10-22-vault-plush-3d-2), then own work in Blender: the crease under the muzzle closed and the smile drawn along it, the model repainted to the concept, baked onto a decimated copy with fresh UVs. The GLB carries the plain-PBR fallback (albedo, normal, roughness 1); the game look is export/plush.gdshader with export/vault_plush_mask.png and 12 shells of export/plush_shell.gdshader, applied by export/plush.gd (HANDOFF.md). An alien homage of our own: no photo and no name of any existing toy was used."
+tools = ["gpt-image-2.5-sunburst (OpenAI images, the turnaround)", "meshy-7.1 (multi-image-to-3D)", "blender 5.2.2", "prime-game-art plush_clean, plush_mouth, plush_paint, plush_bake", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "owned-paid-output"
+licence_url = "https://www.meshy.ai/terms-of-use"
+public_repo_ok = true
+ai_generated = true
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "meshy"
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17); the turnaround on the OpenAI API's prepaid balance (outputs owned by the customer, OpenAI Services Agreement 4.1)"
+model_version = "meshy-7.1; gpt-image-2.5-sunburst"
+task_ids = ["01a16512-cdaa-727f-9bcc-3286fd5e8d00", "req_e377a6e485b34ccebbf290924ca97311", "req_df8eb75c2d1747d6afaeedd14d2ed02a"]
+generated_at = 2026-10-22T19:30:48Z
+url = "https://github.com/xperiaroco2/prime-game-art/issues/297"
+
+[[raw]]
+file = "vault-plush/ref/final.jpg"
+sha256 = "8224f79bf5099d30311175b79c3a96805405621dd316793f066ca373462a6bb9"
+
+[[raw]]
+file = "2026-10-22-vault-plush-turn/turn5b/image-0.png"
+sha256 = "a6eab78d360d1af143966ab54c66be0538d07aabef065cd87a6da4b73ed0e84d"
+
+[[raw]]
+file = "2026-10-22-vault-plush-3d-2/plush/multi_image_to_3d-model.glb"
+sha256 = "b18aa38da66efe8cb3f99cd638b052faeaa2ed36c6ef3ef2fb1cd5faf6632b2b"
+
+[[raw]]
+file = "2026-10-22-vault-plush-3d-2/game_final/plush.glb"
+sha256 = "9af88a345994a9dc1c13b8dd58f294cb1479981ac5625c7ec2ada35cdfb7620a"

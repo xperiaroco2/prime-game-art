@@ -1,12 +1,16 @@
-"""The vault plush (art#297): the driver (plain Python, outside Blender). From a Meshy multi-image-to-3D model it
-cleans the mesh (plush_clean.py: welded, 0.30 m on the floor, 4,000 triangles, the dense model's normals baked),
-repaints it to the concept (plush_paint.py: the albedo, the shader's mask, the plain-PBR GLB), checks the GLB with
-glTF-Validator and shoots the review sheets in an off-screen Godot window (godot/plush/shots.gd through the runner's
-_godot.window(), the material from godot/plush/plush.gd). Inputs are read from the raw folder, never written; the
-outputs go under the batch folder's clean/, paint/ and paint/godot/.
+"""The vault plush (art#297): the driver (plain Python, outside Blender). From a Meshy multi-image-to-3D model:
+1. plush_clean.py: the full model welded, 0.30 m tall on the floor, footprint centred (no decimation here);
+2. plush_mouth.py: the crease under the muzzle closed to a shallow seam and the smile's line along it (smile.json);
+3. plush_paint.py: the full model repainted to the concept (per face in 3D: orange, brown velour, the eyes painted
+   afresh, the smile) and the shader's mask (fur, velour, eyes);
+4. plush_bake.py: a decimated copy (--tris) with fresh UVs, the painted full model baked onto it (albedo, mask,
+   normal at --size px), the plain-PBR GLB and, with --blend, the game mesh as a .blend;
+then glTF-Validator on the GLB and the review shots in an off-screen Godot window (godot/plush/shots.gd through the
+runner's _godot.window(), the material from godot/plush/plush.gd). Inputs are read from the raw folder, never
+written; the outputs go under the batch folder's clean_full/, paint_full/ and game<tag>/ (shots in game<tag>/godot/).
 
     $PYTHON_BIN tools/blender/plush_run.py [--batch 2026-10-22-vault-plush-3d-2] [--no-build] [--no-shots]
-        [--shells 12]
+        [--shells 12] [--tris 4000] [--size 2048] [--blend OUT.blend] [--tag SUFFIX]
 """
 from __future__ import annotations
 
@@ -35,6 +39,8 @@ def main() -> int:
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--shells", type=int, default=12)
     ap.add_argument("--tris", type=int, default=4000, help="the game mesh's triangles")
+    ap.add_argument("--size", type=int, default=2048, help="the baked maps' size in pixels")
+    ap.add_argument("--blend", type=Path, help="also save the game mesh as this .blend")
     ap.add_argument("--tag", default="", help="a suffix for the game folder, to keep a trial apart")
     args = ap.parse_args()
     base = RAW / args.batch
@@ -54,7 +60,8 @@ def main() -> int:
                                                   "--smile", str(clean / "smile.json")], timeout=900)
         print(*lines(r, "PLUSH_PAINT"), sep="\n", flush=True)
         r = blender.run_script("plush_bake.py", [str(paint / "plush.glb"), str(paint / "plush_albedo.png"),
-                                                 str(paint / "plush_mask.png"), str(game), "--tris", str(args.tris)],
+                                                 str(paint / "plush_mask.png"), str(game), "--tris", str(args.tris),
+                                                 "--size", str(args.size)] + (["--blend", str(args.blend)] if args.blend else []),
                                timeout=1500)
         print(*lines(r, "PLUSH_BAKE"), sep="\n", flush=True)
     paint = game
