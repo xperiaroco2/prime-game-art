@@ -125,7 +125,7 @@ func _leaf(id: String, suffix: String) -> Node3D:
 
 
 func _drive(id: String, slats: float, marker: float) -> void:
-	for k: int in range(1, 7):
+	for k: int in range(1, int(_req["slats"]) + 1):
 		_leaf(id, "slat%d" % k).rotation.x = -float(_req["open_rad"]) * slats
 	var m: Node3D = _leaf(id, "marker")
 	m.position.y = float(_rest[id]) + float(_req["mark_travel"]) * marker
@@ -141,7 +141,8 @@ func _verts(id: String, node: MeshInstance3D) -> PackedVector3Array:
 	return out
 
 
-## The slat's cross-sections: per distinct x, its vertices' (z, y) ordered round their centre (a closed polygon).
+## The slat's cross-sections: per distinct x, the convex hull of its vertices' (z, y) (a curved gill blade is not
+## star-shaped round its centre; its hull is a safe outline: hulls apart means blades apart).
 func _sections(pts: PackedVector3Array) -> Dictionary:
 	var by_x: Dictionary = {}
 	for p: Vector3 in pts:
@@ -150,22 +151,17 @@ func _sections(pts: PackedVector3Array) -> Dictionary:
 			by_x[key] = PackedVector2Array()
 		by_x[key].append(Vector2(p.z, p.y))
 	for key: int in by_x:
-		var poly: PackedVector2Array = by_x[key]
-		var c: Vector2 = Vector2.ZERO
-		for q: Vector2 in poly:
-			c += q
-		c /= poly.size()
-		var arr: Array = Array(poly)
-		arr.sort_custom(func(a: Vector2, b: Vector2) -> bool: return (a - c).angle() < (b - c).angle())
-		by_x[key] = PackedVector2Array(arr)
+		by_x[key] = Geometry2D.convex_hull(by_x[key])
 	return by_x
 
 
 # --- the checks ---------------------------------------------------------------------------------------------------
 func _check(id: String) -> Dictionary:
 	var r: Dictionary = {"missing": [], "problems": []}
-	for suffix: String in ["slat1", "slat2", "slat3", "slat4", "slat5", "slat6", "marker", "body", "column", "heat",
-			"lamp", "band", "hand"]:
+	var names: Array = ["marker", "body", "column", "heat", "lamp", "band", "hand"]
+	for k: int in range(1, int(_req["slats"]) + 1):
+		names.append("slat%d" % k)
+	for suffix: String in names:
 		if _leaf(id, suffix) == null:
 			r["missing"].append(suffix)
 	var shapes: int = 0
@@ -203,7 +199,7 @@ func _check(id: String) -> Dictionary:
 		var t: float = float(i) / steps
 		_drive(id, t, 0.0)
 		var row: Array = []
-		for k: int in range(1, 7):
+		for k: int in range(1, int(_req["slats"]) + 1):
 			var node: MeshInstance3D = _leaf(id, "slat%d" % k) as MeshInstance3D
 			var pts: PackedVector3Array = _verts(id, node)
 			row.append(_sections(pts))
@@ -213,12 +209,12 @@ func _check(id: String) -> Dictionary:
 					outside.append("slat%d t %.1f at (%.3f, %.3f, %.3f)" % [k, t, p.x, p.y, p.z])
 					break
 		sections.append(row)
-		for k: int in 5:
+		for k: int in int(_req["slats"]) - 1:
 			for key: int in row[k]:
 				if row[k + 1].has(key) and not Geometry2D.intersect_polygons(row[k][key], row[k + 1][key]).is_empty():
 					cuts.append("slat%d/slat%d at t %.1f, x %.3f" % [k + 1, k + 2, t, key / 1000.0])
 					break
-	for k: int in range(1, 7):
+	for k: int in range(1, int(_req["slats"]) + 1):
 		var node: MeshInstance3D = _leaf(id, "slat%d" % k) as MeshInstance3D
 		_drive(id, 0.0, 0.0)
 		var p0: PackedVector3Array = _verts(id, node)

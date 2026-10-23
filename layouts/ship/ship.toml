@@ -392,6 +392,8 @@ int_amber = {c = [1.0, 0.42, 0.06], e = 0.14, l = 2.0, rr = 0.5}    # e 0.14: th
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
+int_halo__vent_heat = {c = [1.0, 0.3, 0.02], e = 0.6, l = 0.0}     # station 1: the vents' heat, orange-hot (not the halo's tan)
+glow_nav_red__vent_lamp = {c = [1.0, 0.015, 0.01], e = 0.5, l = 0.0}  # station 1: the problem beacon, a deep red
 int_plate = {v = 1.0, r = 0.45, m = 0.3}                            # join 2: at metallic 0.8 the hall's centre disc mirrored the dark lamp cap (a black hole); diffuse now
 int_grate = {v = 1.2, r = 0.1, m = 0.6}
 int_glass = {a = 0.05, r = -0.03}

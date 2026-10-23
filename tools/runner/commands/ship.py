@@ -387,7 +387,7 @@ def motion_request(layout: dict) -> dict:
           ["box_floor_l", [-1.2, f + 0.35, 1.0], [-0.78, f + 0.0, 0.4]],
           ["box_wall_top", [-0.2, f + 1.6, 1.3], [-0.4, f + 2.08, 0.42]],
           ["column_wall_r", [1.4, f + 0.5, 0.8], [0.78, f + 0.3, 0.2]]]
-    return {"ids": list(vents), "vents": vents, "open_rad": v.OPEN_RAD, "mark_travel": v.MARK_TRAVEL, "gap_m": 3.0,
+    return {"ids": list(vents), "vents": vents, "slats": v.SLATS, "open_rad": v.OPEN_RAD, "mark_travel": v.MARK_TRAVEL, "gap_m": 3.0,
             "fps": MOTION["fps"], "seconds": MOTION["seconds"], "closeups": cu, "watchdog_s": MOTION_TIMEOUT - 60,
             "wall": {"floor": f, "bend": v.BEND, "in": v.IN, "top": v.TOP}}
 

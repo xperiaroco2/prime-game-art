@@ -26,29 +26,38 @@ import ship_lib as L
 FLOOR = S.FLOOR
 BEND, IN, TOP = S.TH_BEND, S.TH_IN, S.TH_H      # the throat wall: vertical to 1.45, then 0.55 in at 2.3
 
-# the driveable glows: copies of library materials, their family before "__"
+# the driveable glows: copies of library materials, their family before "__"; the heat a saturated orange and the
+# problem lamp a deep red (step 2: the library's strengths washed them to tan and pink under AgX)
 for _name in ("int_halo__vent_heat", "glow_nav_green__vent_band", "glow_nav_white__vent_marker",
               "int_cyan__vent_hand", "glow_nav_red__vent_lamp"):
     L.MATERIALS[_name] = dict(L.MATERIALS[_name.split("__")[0]])
+L.MATERIALS["int_halo__vent_heat"].update(base=(1.0, 0.30, 0.02, 1.0), emission=(1.0, 0.30, 0.02), strength=1.5)
+L.MATERIALS["glow_nav_red__vent_lamp"].update(base=(1.0, 0.015, 0.01, 1.0), emission=(1.0, 0.015, 0.01), strength=1.2,
+                                              roughness=0.15)
 
-METAL, TRIM, DARK, CYAN = "int_silver_c", "int_silver_a", "int_dark", "int_cyan"
+# the hall's and throat's own metals (cor_wall_*: panels int_silver_a / _b, belts and lips int_silver_c)
+FRAME, COLUMN, SLAT = "int_silver_a", "int_silver_b", "int_silver_a"   # the frame and slats as tone a's panels
+TRIM, DARK, CYAN = "int_silver_c", "int_dark", "int_cyan"
 
 # --- the numbers (u east piece, h over the deck) ---------------------------------------------------------------------
 BOX_U, BOX_H, BOX_V = (-0.78, 0.33), (-0.02, 2.08), 0.48    # the grille box: 1.11 m wide, its front 0.48 m out
 COL_U, COL_H, COL_V = (0.32, 0.78), (-0.02, 2.00), 0.44      # the column (0.46 m) on the hall's side
-OPEN_U, OPEN_H = (-0.66, 0.21), (0.59, 1.80)                 # the grille's opening
-WELL_V = 0.25                                                # the well's back (the heat panel just in front)
-SLATS, HINGE_TOP, PITCH, CHORD = 6, 1.77, 0.19, 0.21         # hinges every 0.19 m from 1.77 down; chord 0.21
-HINGE_V, TILT, BULGE = 0.29, math.radians(9.0), 0.02         # shut: 9 deg out from vertical, bowed 2 cm outward
-THICK = (0.016, 0.007)                                       # a slat's thickness at its hinge and its tip
-END_GAP = 0.015                                              # a slat's ends to the well's sides
-OPEN_RAD = math.radians(62.0)                                # fully open: 71 deg from hanging, the tip at 0.49 m
+BOX_C, COL_C = (0.12, 0.04, 0.05, 0.15), (0.04, 0.06, 0.10, 0.04)   # their 45 deg corner cuts (bl, br, tr, tl)
+OPEN_U, OPEN_H = (-0.60, 0.15), (0.17, 1.79)                 # the grille's opening: the whole front inside the frame;
+OPEN_C = (0.05, 0.05, 0.08, 0.05)                            # its top is the wall's chamfer behind the well (cv 0.2)
+WELL_V = 0.215                                               # the well's back (the heat panel just in front)
+SLATS, HINGE_TOP, PITCH, CHORD = 7, 1.765, 0.225, 0.24       # hinges every 0.225 m from 1.765 down; chord 0.24
+HINGE_V, TILT, BULGE = 0.25, math.radians(22.0), 0.014       # shut: 22 deg out from hanging, bowed 1.4 cm outward
+NOSE_R, TAIL_T = 0.009, 0.0025                               # the gill's round nose round its hinge, its thin tail
+SWEEP_V = 0.016                                              # its tail bowed out along u by 1.6 cm at its middle
+END_GAP = 0.012                                              # a slat's ends to the well's sides
+OPEN_RAD = math.radians(55.0)                                # fully open: 77 deg from hanging, the tip at 0.49 m
 UC = (COL_U[0] + COL_U[1]) / 2                               # the column's centre line
-PAD_H = (1.02, 1.355)                                        # the scanner's bezel (its centre 1.19)
-BAR_H, GLASS_H, BAND_H = (1.37, 1.885), (1.395, 1.862), (1.80, 1.835)
+PAD_H = (0.94, 1.27)                                         # the scanner's bezel (its centre 1.105)
+BAR_H, GLASS_H, BAND_H = (1.30, 1.79), (1.325, 1.765), (1.70, 1.735)
 MARK_H = 0.03                                                # the marker's height; it slides from GLASS_H[0]
 MARK_TRAVEL = GLASS_H[1] - GLASS_H[0] - MARK_H
-LAMP_H, LAMP_R = 1.94, 0.038
+LAMP_H, LAMP_R = 1.855, 0.026                                # the beacon's centre on the column's face, its dome
 UNIT = [-0.78, 0.78, -0.01, 0.5, -0.02, 2.08]                # u0 u1 v0 v1 h0 h1: ship.toml's spot band and depth
 
 
@@ -162,25 +171,69 @@ def hand(c) -> list[tuple[float, float]]:
     return [(c[0] + u, c[1] + h) for u, h in pts]
 
 
+def disc_v(c, r, v0, v1, segs=16) -> tuple[list, list]:
+    """A round plate (a cylinder along v) from v0 to v1 centred at (u, h) = c."""
+    pts = [(c[0] + r * math.cos(2 * math.pi * (j + 0.5) / segs), c[1] + r * math.sin(2 * math.pi * (j + 0.5) / segs))
+           for j in range(segs)]
+    return loft([ring(pts, v0), ring(pts, v1)])
+
+
+def corner_cut(h0: float, h1: float) -> tuple[float, float]:
+    """How far the opening's 45 deg corners narrow it at its u0 and u1 sides anywhere between h0 and h1."""
+    bl, br, tr, tl = OPEN_C
+    lo, hi = OPEN_H
+    return (max(0.0, lo + bl - h0, h1 - (hi - tl)), max(0.0, lo + br - h0, h1 - (hi - tr)))
+
+
 def slat_loops(k: int):
-    """Slat k's loops along u (shut), and its hinge (u mid, v, h): a curved gill blade, its chord shorter at its ends."""
+    """Slat k's loops along u (shut), and its hinge (u mid, v, h): a gill blade, its thick round nose round the hinge,
+    swept down and out to a thin tail, bowed outward across its chord and along u, its chord shorter at its ends."""
     hk = HINGE_TOP - k * PITCH
     d, nrm = (math.sin(TILT), -math.cos(TILT)), (math.cos(TILT), math.sin(TILT))   # down the blade, out of it
-    u0, u1 = OPEN_U[0] + END_GAP, OPEN_U[1] - END_GAP
-    loops = []
-    for i in range(9):
-        u = u0 + (u1 - u0) * i / 8
-        chord = CHORD * (0.84 + 0.16 * math.sin(math.pi * i / 8))
-        top, bot = [], []
-        for j in range(6):
-            s = j / 5
-            mid = (HINGE_V + d[0] * chord * s + nrm[0] * BULGE * math.sin(math.pi * s),
-                   hk + d[1] * chord * s + nrm[1] * BULGE * math.sin(math.pi * s))
-            t = (THICK[0] + (THICK[1] - THICK[0]) * s) / 2
-            top.append((u, mid[0] + nrm[0] * t, FLOOR + mid[1] + nrm[1] * t))
-            bot.append((u, mid[0] - nrm[0] * t, FLOOR + mid[1] - nrm[1] * t))
-        loops.append(top + bot[::-1])
+    c0, c1 = corner_cut(hk - CHORD * math.cos(TILT) - 0.01, hk + NOSE_R)
+    u0, u1 = OPEN_U[0] + END_GAP + c0, OPEN_U[1] - END_GAP - c1
+    loops, n_u, n_s = [], 9, 6
+    for i in range(n_u):
+        a = i / (n_u - 1)
+        u = u0 + (u1 - u0) * a
+        chord = CHORD * (0.82 + 0.18 * math.sin(math.pi * a))
+        sv = SWEEP_V * math.sin(math.pi * a)
+        mids, tans = [], []
+        for j in range(n_s + 1):
+            s = j / n_s
+            b = BULGE * math.sin(math.pi * s)
+            db = BULGE * math.pi * math.cos(math.pi * s) / chord
+            mids.append((HINGE_V + sv * s + d[0] * chord * s + nrm[0] * b, hk + d[1] * chord * s + nrm[1] * b))
+            tx, ty = d[0] + nrm[0] * db, d[1] + nrm[1] * db
+            tl = math.hypot(tx, ty)
+            tans.append((tx / tl, ty / tl))
+        up, low = [], []
+        for j, ((mv, mh), (tx, ty)) in enumerate(zip(mids, tans)):
+            t = TAIL_T + (NOSE_R - TAIL_T) * (1.0 - j / n_s) ** 1.4
+            nv, nh = -ty, tx            # the tangent turned: out of the blade's outer face (+v)
+            if nv < 0:
+                nv, nh = -nv, -nh
+            up.append((u, mv + nv * t, FLOOR + mh + nh * t))
+            low.append((u, mv - nv * t, FLOOR + mh - nh * t))
+        # the nose: a half round over the leading edge, from the outer face over the top to the inner face
+        cvv, chh = mids[0]
+        ov, oh = up[0][1] - cvv, up[0][2] - FLOOR - chh
+        nose = []
+        for q in (0.2, 0.4, 0.6, 0.8):
+            ca, sa = math.cos(math.pi * q), math.sin(math.pi * q)
+            nose.append((u, cvv + ov * ca - tans[0][0] * NOSE_R * sa, FLOOR + chh + oh * ca - tans[0][1] * NOSE_R * sa))
+        loops.append(up[::-1] + nose + low)
     return loops, ((u0 + u1) / 2, HINGE_V, FLOOR + hk)
+
+
+def chunky(outline, c, vf, depth):
+    """The rings of a heavy machined block: its sides from the wall out to vf - depth, a deep 45 deg chamfer and a
+    second facet up to the front at vf, then a groove (1.4 cm wide, 1.2 cm deep) round the front face's edge."""
+    def g(d):
+        return split(grow(*outline, c, d))
+    return [ring(split(octo(*outline, c)), -0.01, True), ring(split(octo(*outline, c)), vf - depth, True),
+            ring(g(-0.044), vf - 0.018, True), ring(g(-0.056), vf), ring(g(-0.062), vf),
+            ring(g(-0.064), vf - 0.012), ring(g(-0.078), vf - 0.012), ring(g(-0.08), vf)]
 
 
 def station_vent(args, layout):
@@ -196,32 +249,35 @@ def station_vent(args, layout):
         p.update(extra)
         parts.append(p)
 
-    box_c, col_c, open_c = (0.06, 0.02, 0.03, 0.16), (0.03, 0.05, 0.10, 0.04), (0.03, 0.03, 0.025, 0.025)
-    box = split(octo(*BOX_U, *BOX_H, box_c))
-    add("body", loft([ring(box, -0.01, True), ring(box, BOX_V - 0.03, True),
-                      ring(split(grow(*BOX_U, *BOX_H, box_c, -0.025)), BOX_V),
-                      ring(split(grow(*OPEN_U, *OPEN_H, open_c, 0.055)), BOX_V),
-                      ring(split(grow(*OPEN_U, *OPEN_H, open_c, 0.02)), BOX_V - 0.02),
-                      ring(split(octo(*OPEN_U, *OPEN_H, open_c)), BOX_V - 0.04),
-                      ring(split(octo(*OPEN_U, *OPEN_H, open_c)), WELL_V)], fold=True), METAL)
-    col = split(octo(*COL_U, *COL_H, col_c))
-    add("column", loft([ring(col, -0.01, True), ring(col, COL_V - 0.03, True),
-                        ring(split(grow(*COL_U, *COL_H, col_c, -0.025)), COL_V)], fold=True), METAL)
-    # the heat behind the slats and the lower panel's plate
-    add("heat", plate(grow(*OPEN_U, *OPEN_H, open_c, -0.004), WELL_V - 0.004, WELL_V + 0.006), "int_halo__vent_heat")
-    add("kick", plate(octo(-0.70, 0.25, 0.10, 0.48, (0.04, 0.04, 0.04, 0.04)), BOX_V - 0.01, BOX_V + 0.008, 0.006),
-        TRIM)
-    # the cyan edge strips (sunk half into the faces they lie on)
-    strips = [(-0.737, -0.725, 0.75, 1.25), (-0.737, -0.725, 1.35, 1.6), (-0.30, -0.05, 0.035, 0.047),
-              (0.0, 0.17, 2.025, 2.037), (0.733, 0.745, 0.35, 0.95)]
-    vs = [(BOX_V - 0.004, BOX_V + 0.003)] * 4 + [(COL_V - 0.004, COL_V + 0.003)]
-    add("strips", L.merge(*[L.box(u0, u1, v0, v1, FLOOR + h0, FLOOR + h1) for (u0, u1, h0, h1), (v0, v1)
-                            in zip(strips, vs)]), CYAN)
-    # the scanner: a bezel, a dark pad, the hand's glowing outline
-    add("pad_bezel", plate(octo(UC - 0.13, UC + 0.13, *PAD_H, (0.03,) * 4), COL_V - 0.01, COL_V + 0.015, 0.006), TRIM)
-    add("pad", plate(octo(UC - 0.105, UC + 0.105, PAD_H[0] + 0.025, PAD_H[1] - 0.025, (0.02,) * 4), COL_V + 0.01,
-                     COL_V + 0.021), DARK)
-    add("hand", ribbon(hand((UC + 0.02, (PAD_H[0] + PAD_H[1]) / 2 - 0.005)), 0.006, COL_V + 0.019, COL_V + 0.025),
+    box_rings = chunky((*BOX_U, *BOX_H), BOX_C, BOX_V, 0.065)
+
+    def op(d):
+        return split(grow(*OPEN_U, *OPEN_H, OPEN_C, d))
+    edge = split(octo(*OPEN_U, *OPEN_H, OPEN_C))
+    add("body", loft(box_rings + [ring(op(0.06), BOX_V), ring(op(0.03), BOX_V - 0.03), ring(op(0.012), BOX_V - 0.04),
+                                  ring(edge, BOX_V - 0.05), ring(edge, WELL_V)], fold=True), FRAME)
+    col_rings = chunky((*COL_U, *COL_H), COL_C, COL_V, 0.06)
+    add("column", loft(col_rings, fold=True), COLUMN)
+    # the heat behind the slats
+    add("heat", plate(grow(*OPEN_U, *OPEN_H, OPEN_C, -0.004), WELL_V - 0.004, WELL_V + 0.006), "int_halo__vent_heat")
+    # the cyan strips, each in its groove (the groove's floor 1.2 cm under the face, its middle 7.1 cm in)
+    gi = 0.071
+    runs = [(BOX_U[0] + gi, 0.40, 1.00, "v", BOX_V), (BOX_U[0] + gi, 1.12, 1.62, "v", BOX_V),
+            (BOX_H[0] + gi, -0.48, -0.10, "h", BOX_V), (BOX_H[1] - gi, -0.40, -0.02, "h", BOX_V),
+            (COL_U[1] - gi, 0.30, 0.86, "v", COL_V), (COL_U[0] + gi, 0.20, 0.70, "v", COL_V)]
+    vfs = []
+    for at, a0, a1, kind, front in runs:
+        u0, u1, h0, h1 = (at - 0.004, at + 0.004, a0, a1) if kind == "v" else (a0, a1, at - 0.004, at + 0.004)
+        vfs.append(L.box(u0, u1, front - 0.013, front - 0.005, FLOOR + h0, FLOOR + h1))
+    add("strips", L.merge(*vfs), CYAN)
+    # the scanner: a faceted bezel, a dark pad sunk in it, the hand's glowing outline
+    pad_o, pad_c = (UC - 0.13, UC + 0.13, *PAD_H), (0.035,) * 4
+    add("pad_bezel", loft([ring(octo(*pad_o, pad_c), COL_V - 0.01), ring(octo(*pad_o, pad_c), COL_V + 0.006),
+                           ring(grow(*pad_o, pad_c, -0.012), COL_V + 0.018),
+                           ring(grow(*pad_o, pad_c, -0.02), COL_V + 0.018),
+                           ring(grow(*pad_o, pad_c, -0.024), COL_V + 0.008)]), TRIM)
+    add("pad", plate(grow(*pad_o, pad_c, -0.024), COL_V + 0.004, COL_V + 0.009), DARK)
+    add("hand", ribbon(hand((UC + 0.02, (PAD_H[0] + PAD_H[1]) / 2 - 0.005)), 0.006, COL_V + 0.008, COL_V + 0.012),
         "int_cyan__vent_hand")
     # the light bar: a housing with a recess, its dark glass, the green band, the marker
     bar_o, bar_c = (UC - 0.055, UC + 0.055, *BAR_H), (0.02,) * 4
@@ -236,18 +292,21 @@ def station_vent(args, layout):
     add("marker", L.box(UC - 0.026, UC + 0.026, COL_V + 0.012, COL_V + 0.019, FLOOR + GLASS_H[0],
                         FLOOR + GLASS_H[0] + MARK_H), "glow_nav_white__vent_marker",
         origin=(UC, COL_V + 0.014, FLOOR + GLASS_H[0]))
-    # the problem lamp at the column's head: a collar and a red dome
-    collar = [(UC + 0.048 * math.cos(math.pi * (i + 0.5) / 4), LAMP_H + 0.048 * math.sin(math.pi * (i + 0.5) / 4))
-              for i in range(8)]
-    add("lamp_collar", plate(collar, COL_V - 0.01, COL_V + 0.016), TRIM)
-    add("lamp", hemisphere_v((UC, LAMP_H), LAMP_R, COL_V + 0.014), "glow_nav_red__vent_lamp")
-    # the slats: leaves with their origin on the hinge
+    # the problem lamp near the column's head: a beacon, an octagonal base, a metal collar, a red dome on a red band
+    lc = (UC, LAMP_H)
+    base = [(UC + 0.047 * math.cos(math.pi * (i + 0.5) / 4), LAMP_H + 0.047 * math.sin(math.pi * (i + 0.5) / 4))
+            for i in range(8)]
+    lip = [(UC + (x - UC) * 0.86, LAMP_H + (h - LAMP_H) * 0.86) for x, h in base]
+    add("lamp_collar", L.merge(loft([ring(base, COL_V - 0.01), ring(base, COL_V + 0.006), ring(lip, COL_V + 0.012)]),
+                               disc_v(lc, 0.034, COL_V + 0.011, COL_V + 0.024),
+                               disc_v(lc, 0.03, COL_V + 0.024, COL_V + 0.027)), TRIM, smooth_deg=40)
+    add("lamp", L.merge(disc_v(lc, LAMP_R, COL_V + 0.026, COL_V + 0.034), hemisphere_v(lc, LAMP_R, COL_V + 0.034)),
+        "glow_nav_red__vent_lamp", smooth_deg=50)
+    # the slats: leaves with their origin on the hinge (the nose's axis)
     for k in range(SLATS):
         loops, hinge = slat_loops(k)
-        add(f"slat{k + 1}", loft(loops), METAL, origin=hinge)
+        add(f"slat{k + 1}", loft(loops), SLAT, origin=hinge, smooth_deg=40)
     # convex colliders: the box and the column (their outer loops)
-    add("col0-convcolonly", loft([ring(box, -0.01, True), ring(box, BOX_V - 0.03, True),
-                                  ring(split(grow(*BOX_U, *BOX_H, box_c, -0.025)), BOX_V)], fold=True), DARK)
-    add("col1-convcolonly", loft([ring(col, -0.01, True), ring(col, COL_V - 0.03, True),
-                                  ring(split(grow(*COL_U, *COL_H, col_c, -0.025)), COL_V)], fold=True), DARK)
+    add("col0-convcolonly", loft(box_rings[:4], fold=True), DARK)
+    add("col1-convcolonly", loft(col_rings[:4], fold=True), DARK)
     return parts

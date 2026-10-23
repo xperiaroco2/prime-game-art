@@ -72,7 +72,7 @@ class ShipVentTest(unittest.TestCase):
             p = parts[f"slat{k}"]
             o = p["origin"]
             top = max(h for _, _, h in p["verts"])
-            self.assertLess(abs(top - o[2]), 0.002, k)        # the origin on the slat's upper edge
+            self.assertLess(abs(top - o[2]), V.NOSE_R + 0.001, k)   # the origin on the nose's axis, under its top
             near = [q for q in p["verts"] if q[2] > top - 0.003]
             self.assertTrue(all(abs(q[1] - o[1]) < 0.01 for q in near), k)
         m = parts["marker"]
