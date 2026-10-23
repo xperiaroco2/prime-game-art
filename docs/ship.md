@@ -1151,3 +1151,27 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   (17.9 cm past the frame). About 5,800 body triangles; a vent with its seven blades, light pieces and colliders
   about 9,600. `ship_vent_a_sheet.py` serves both ways (the close-ups re-aimed on the raised column, the seams dark
   calm) and `motion_request`'s close-ups are re-aimed on the built body.
+- **Way B, the look polish (vents-b2, 2026-10-24), the current build** (`<raw>/ship/v4/vents-b/b2`, the pieces in
+  `pieces_b2`):
+  - *The glow.* The calm well wall (`int_cyan__vent_cool`, 0/0.42/1) at strength 3 (was 1.8; 5 washed white in
+    EEVEE), Godot `e` 1.0; the frame's strips 3.5. Each
+    glow panel carries its own well lights (`godot/ship/vent_glow.gd`, used by `ship.gd` and `vent_motion.gd`;
+    the game copies it): three OmniLights up the opening, 7.5 cm in front of the panel, children of `<id>_cool`
+    (cyan, energy 0.9, range 1.1 m) and `<id>_heat` (orange, 0.7, 0.9 m), no shadows; `[light] vent_well_scale`
+    scales them. They light the blades' undersides (`vent_b_under`, less metal so they take the light), the noses and
+    the frame's inner lip. The states: calm hides `heat`, the problem hides `cool` (`VENT_STATES` "show"/"hide";
+    `ship.gd` hides `heat` by default, so `--play` and `--video` are calm). The Blender sheet puts point lights at
+    the same places (`WELL`).
+  - *The blade.* A thicker, hooked claw (`SECTION`, 22 points): the upper face rises to a crest 8 cm out and curves
+    over in seven facets to a tip that curls back under itself, a concave underside; 10.5 cm thick at the root, 9.6
+    at 0.1 m, 6 at 0.2 m; a shallow crease at the middle (the concept's two halves); 656 triangles. Its reach (0.264)
+    and 11 cm seen from the front are kept: the calm seam 4.0 cm, closed 6 mm at 8.9 deg (`CLOSED_DEG` stays 9), the
+    first cut at 46.4 deg.
+  - *The colour.* A deeper, browner bronze (`vent_b_bronze` 0.15/0.08/0.032, metallic 0.8; Godot `v` 1.5, it read
+    near black at night), the polished chamfers (`vent_b_edge`, Godot `v` 1.2) kept, a darker `vent_b_tarnish` on the recesses (the frame panels' gaps, the column panel's sides,
+    the back slab's sides). The lamp a deep red (emission 0.8/0/0, strength 0.5: AgX turns a
+    stronger red salmon; Godot `e` 2.4, just past the glow threshold (3.5 read pink when lit)), the bar's amber
+    1/0.36/0, its band 0/1/0.08.
+  - *The screen.* The dark screen piece is the bezel's octagon 1.5 mm in (`lights.json` `hand.poly`), 1 mm off the
+    body's screen face (b1's rectangle's corners cut through the bezel and flickered); the hand shrinks until its
+    outline sits 4 mm inside the octagon.
