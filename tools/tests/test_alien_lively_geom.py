@@ -195,5 +195,71 @@ class EyePitTest(unittest.TestCase):
         self.assertEqual(G.colour_distance((0.5, 0.4, 0.3), (0.5, 0.4, 0.3)), 0.0)
 
 
+class PatchTest(unittest.TestCase):
+    """AL1 (PR #303 review minor 7): write_vec3's round trip through a 3-vertex GLB, the tangent fix, the gills' skin."""
+
+    def test_write_vec3_round_trip(self):
+        doc, binary = G.read_glb(tiny_glb(3))
+        doc["accessors"][0]["min"], doc["accessors"][0]["max"] = [0.0] * 3, [8.0] * 3
+        rows = [(0.5, -1.25, 2.0), (3.0, 4.5, -6.0), (0.1, 0.2, 0.3)]
+        G.write_vec3(doc, binary, 0, rows)
+        doc2, binary2 = G.read_glb(G.write_glb(doc, binary))
+        back = G.read_vec3(doc2, binary2, 0)
+        for r, b in zip(rows, back):
+            for x, y in zip(r, b):
+                self.assertAlmostEqual(x, y, places=6)
+        self.assertEqual(doc2["accessors"][0]["min"], [min(r[k] for r in back) for k in range(3)])
+        self.assertEqual(doc2["accessors"][0]["max"], [max(r[k] for r in back) for k in range(3)])
+        with self.assertRaises(ValueError):
+            G.write_vec3(doc, binary, 0, rows[:2])
+
+    def test_orthogonal_tangent(self):
+        t = G.orthogonal_tangent((0.0, 0.0, 1.0), (0.6, 0.0, 0.8, -1.0))
+        self.assertAlmostEqual(t[0], 1.0, places=9)
+        self.assertAlmostEqual(t[2], 0.0, places=9)
+        self.assertEqual(t[3], -1.0)
+        n = G._norm((0.3, -0.2, 0.9))
+        t = G.orthogonal_tangent(n, (1.0, 0.0, 0.0, 1.0))
+        self.assertAlmostEqual(sum(n[i] * t[i] for i in range(3)), 0.0, places=9)
+        self.assertAlmostEqual(math.sqrt(sum(c * c for c in t[:3])), 1.0, places=9)
+        t = G.orthogonal_tangent((0.0, 1.0, 0.0), (0.0, 2.0, 0.0, 1.0))  # along n: some perpendicular
+        self.assertAlmostEqual(t[1], 0.0, places=9)
+
+    def test_stalk_weight(self):
+        self.assertEqual(G.stalk_weight(0.0, 0.3, 1.0), 0.0)
+        self.assertEqual(G.stalk_weight(0.3, 0.3, 1.0), 1.0)
+        self.assertEqual(G.stalk_weight(0.3, 0.3, 0.2), 0.0)  # the thick skull never moves
+
+    def test_gill_skin(self):
+        pos = {n: (0.0, 0.1 * k, 0.0) for k, n in enumerate(G.GILL_JOINTS)}
+        out = G.add_skin(tiny_glb(3), pos, [[(2, 1.0)], [(3, 0.5), (2, 0.5)], [(8, 1.0)]],
+                         joints=G.GILL_JOINTS, parents=G.GILL_PARENTS)
+        doc, _ = G.read_glb(out)
+        first = doc["skins"][0]["joints"][0]
+        self.assertEqual(len(doc["skins"][0]["joints"]), 9)
+        self.assertEqual(doc["nodes"][first + 2]["children"], [first + k for k in range(3, 9)])
+        with self.assertRaises(ValueError):
+            G.add_skin(tiny_glb(3), pos, [[(0, 1.0)]] * 3, joints=("A", "B"), parents=(1, -1))
+
+
+class RunTest(unittest.TestCase):
+    """The run's refusals (PR #303 review minors 1 and 7): a tagged build whose folder exists, an untagged one whose GLB
+    exists."""
+
+    def test_build_refusal(self):
+        import tempfile
+        sys.path.insert(0, str(ROOT / "tools" / "blender"))
+        import alien_lively_run as R
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            glb = d / "axolotl_lively.glb"
+            self.assertIsNone(R.build_refusal(d / "v9", d / "v9" / "axolotl_lively.glb", "v9"))
+            self.assertIsNone(R.build_refusal(d, glb, ""))
+            glb.write_bytes(b"x")
+            self.assertIn("untagged", R.build_refusal(d, glb, ""))
+            (d / "v9").mkdir()
+            self.assertIn("new --tag", R.build_refusal(d / "v9", d / "v9" / "axolotl_lively.glb", "v9"))
+
+
 if __name__ == "__main__":
     unittest.main()
