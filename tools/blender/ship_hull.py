@@ -215,7 +215,7 @@ def window_frame(args: dict, layout: dict) -> list:
     and four mullions; closes the jamb between the room's wall and the skin."""
     room = next(r for r in layout["rooms"] if r["id"] == "tip_e")
     win = room["window"]
-    floor = layout["deck"]["floor_h"]
+    floor = layout["deck"]["floor_h"] - layout["deck"].get("lift_m", 0.0)   # lifted by ship_build
     sill, head = floor + win["sill_h"], floor + win["head_h"]
     half = math.radians(win["half_angle_deg"])
     out = []
@@ -263,7 +263,7 @@ def _ring_prism(inner, outer, y0, y1):
 def _mouth_outlines(layout):
     """The mouth's opening (the inside's portal: half width 1.25, clear_h with 0.3 x 0.35 chamfers) and the frame's
     outer outline, which covers the skin's rectangular hole (x +-1.3 up to the corridor's top + 0.15), as (x, h)."""
-    floor = layout["deck"]["floor_h"]
+    floor = layout["deck"]["floor_h"] - layout["deck"].get("lift_m", 0.0)   # lifted by ship_build
     hm = next(r for r in layout["rooms"] if r["id"] == "mouth")["clear_h"]
     inner = [(-1.25, floor - 0.02), (-1.25, floor + hm - 0.35), (-0.95, floor + hm), (0.95, floor + hm),
              (1.25, floor + hm - 0.35), (1.25, floor - 0.02)]
@@ -285,7 +285,7 @@ def mouth_frame(args: dict, layout: dict) -> list:
 def mouth_lights(args: dict, layout: dict) -> list:
     """The amber strips on the portal's inner faces and along its head (local origin: the ramp's hinge, on the
     ground)."""
-    floor = layout["deck"]["floor_h"]
+    floor = layout["deck"]["floor_h"] - layout["deck"].get("lift_m", 0.0)   # lifted by ship_build
     hm = next(r for r in layout["rooms"] if r["id"] == "mouth")["clear_h"]
     out = []
     for s in (-1, 1):
@@ -354,40 +354,40 @@ def ramp_lights(args: dict, layout: dict) -> list:
 
 
 def leg(args: dict, layout: dict) -> list:
-    """A chunky landing leg splaying toward local +x (exterior.toml yaws it outward; hull 3-2): args top (the mount's
-    height: about the lowest belly under its footprint + 0.1; the mount box reaches 0.42 over it, into the skin) and
-    reach (mount to foot). A faceted mount box with cheeks, a thick upper strut down to the knee drum at (0.62 reach, 0.45 top + 0.12), the lower strut to the ankle, a twin chrome
-    piston pair in dark sleeves, a broad faceted foot plate (r 0.5) with three toes and a dark sole."""
-    top, reach = float(args.get("top", 0.9)), float(args.get("reach", 1.5))
-    rise = float(args.get("rise", 0.0))   # rebuild D: the mount's top raised this much more (a steep belly over it)
-    knee, ankle, foot = (0.62 * reach, 0.0, 0.45 * top + 0.12), (reach, 0.0, 0.2), (reach, 0.0, 0.0)
+    """A standing landing leg (the raise, 2026-10-23; local +x outward, exterior.toml yaws it; built at the real
+    heights, the ground at h 0): args top (the mount's height: the lowest belly over it + 0.1, the mount box reaching
+    0.42 + rise over it, into the skin), reach (the mount's pivot to the foot's centre, plan) and rise (rebuild D: the
+    mount's top raised more under a steep belly). A faceted mount box with a yoke and its pin; the oleo strut from the
+    pin down and out to the ankle at a steep angle: a thick sleeve, a collar, the chrome piston and a forked end; two
+    side braces from the yoke's cheeks to the sleeve (an A-frame seen from the front); the ankle's knuckle pin; a
+    broad flat footpad (r 0.6) with a raised hub, four ribs and a dark sole."""
+    top, reach = float(args.get("top", 1.2)), float(args.get("reach", 0.5))
+    rise = float(args.get("rise", 0.0))
+    piv, ank = (0.05, 0.0, top - 0.15), (reach, 0.0, 0.34)
+    at = lambda t, y=0.0: (piv[0] + (ank[0] - piv[0]) * t, y, piv[2] + (ank[2] - piv[2]) * t)  # noqa: E731
     mount = _obox((0.0, 0.0, top + 0.1 + rise / 2), (0.42, 0, 0), (0, 0.34, 0), (0, 0, 0.32 + rise / 2))
-    cheek = [_obox((0.22, s * 0.25, top - 0.2), (0.26, 0, 0), (0, 0.05, 0), (0, 0, 0.13)) for s in (-1, 1)]
-    upper = _rod((0.08, 0.0, top - 0.2), knee, 0.17, 8)
-    lower = _rod(knee, ankle, 0.14, 8)
-    joint = _rod((knee[0], -0.25, knee[2]), (knee[0], 0.25, knee[2]), 0.22, 12)
-    ajoint = _rod((ankle[0], -0.17, ankle[2]), (ankle[0], 0.17, ankle[2]), 0.13, 10)
-    p1 = (0.85 * reach, 0.0, 0.3)
-    pistons = [_rod((-0.12, s * 0.16, top - 0.22), (p1[0], s * 0.16, p1[2]), 0.05, 8) for s in (-1, 1)]
-    mid = lambda t: (-0.12 + (p1[0] + 0.12) * t, 0.0, top - 0.22 + (p1[2] - top + 0.22) * t)  # noqa: E731
-    sleeves = [_rod((-0.12, s * 0.16, top - 0.22), (mid(0.45)[0], s * 0.16, mid(0.45)[2]), 0.08, 8) for s in (-1, 1)]
-    pad = L.disc(0.5, 8, 0.03, 0.13)
-    padv = [(x + foot[0], y, hh) for x, y, hh in pad[0]]
-    cap_v, cap_f = L.disc(0.3, 8, 0.13, 0.22)
-    capv = [(x + foot[0], y, hh) for x, y, hh in cap_v]
-    toes = [_obox(_add((foot[0], 0.0, 0.06), (math.cos(a), math.sin(a), 0.0), 0.55),
-                  (0.12 * math.cos(a), 0.12 * math.sin(a), 0), (-0.09 * math.sin(a), 0.09 * math.cos(a), 0),
-                  (0, 0, 0.05))
-            for a in (-0.9, 0.0, 0.9)]
-    sole = L.disc(0.52, 8, 0.0, 0.03)
-    solev = [(x + foot[0], y, hh) for x, y, hh in sole[0]]
-    return [L.part("leg_mount", *L.merge(mount, *cheek), "hull_dark"),
-            L.part("leg_strut", *L.merge(upper, lower), "leg_metal"),
-            L.part("leg_joint", *L.merge(joint, ajoint), "ext_frame"),
-            L.part("leg_piston", *L.merge(*pistons), "ext_chrome"),
-            L.part("leg_sleeve", *L.merge(*sleeves), "hull_dark"),
-            L.part("leg_pad", *L.merge((padv, pad[1]), (capv, cap_f), *toes), "leg_metal"),
-            L.part("leg_sole", solev, sole[1], "hull_dark")]
+    cheeks = [_obox((0.05, s * 0.25, top - 0.12), (0.2, 0, 0), (0, 0.05, 0), (0, 0, 0.16)) for s in (-1, 1)]
+    pin = _rod((piv[0], -0.31, piv[2]), (piv[0], 0.31, piv[2]), 0.09, 10)
+    sleeve = _rod(at(-0.04), at(0.56), 0.15, 10)
+    collar = _rod(at(0.53), at(0.6), 0.185, 10)
+    piston = _rod(at(0.5), at(0.86), 0.085, 10)
+    fork = _rod(at(0.84), at(0.97), 0.12, 8)
+    braces = [_rod((piv[0] - 0.05, s * 0.27, top - 0.22), at(0.4, s * 0.12), 0.045, 8) for s in (-1, 1)]
+    knuckle = _rod((ank[0], -0.17, ank[2]), (ank[0], 0.17, ank[2]), 0.1, 10)
+    ears = [_obox((ank[0], s * 0.13, 0.27), (0.09, 0, 0), (0, 0.03, 0), (0, 0, 0.11)) for s in (-1, 1)]
+    pad = L.disc(0.6, 12, 0.03, 0.11)
+    hub = L.disc(0.3, 12, 0.11, 0.2)
+    sole = L.disc(0.62, 12, 0.0, 0.03)
+    sh = lambda d: ([(x + ank[0], y, h) for x, y, h in d[0]], d[1])  # noqa: E731
+    ribs = [_obox((ank[0] + 0.44 * math.cos(a), 0.44 * math.sin(a), 0.135),
+                  (0.13 * math.cos(a), 0.13 * math.sin(a), 0), (-0.035 * math.sin(a), 0.035 * math.cos(a), 0),
+                  (0, 0, 0.025)) for a in (math.pi / 4 + k * math.pi / 2 for k in range(4))]
+    return [L.part("leg_mount", *L.merge(mount, *cheeks), "hull_dark"),
+            L.part("leg_strut", *L.merge(sleeve, *braces), "leg_metal"),
+            L.part("leg_joint", *L.merge(pin, collar, fork, knuckle, *ears, *ribs), "ext_frame"),
+            L.part("leg_piston", *piston, "ext_chrome"),
+            L.part("leg_pad", *L.merge(sh(pad), sh(hub)), "leg_metal"),
+            L.part("leg_sole", *sh(sole), "hull_dark")]
 
 
 # --- the clearing --------------------------------------------------------------------------------------------------

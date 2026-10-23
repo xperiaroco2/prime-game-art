@@ -71,9 +71,20 @@ def make(p: dict):
     return obj
 
 
+def lifted(parts: list, piece: dict, layout: dict) -> list:
+    """The raise (2026-10-23, art#263): every piece but a grounded one (ship.toml `grounded = true`: the clearing,
+    the ramp and its lights and stripes, the legs, the ground lamps, built at the real heights) is built in the design
+    frame (deck at floor_h - lift_m) and lifted here by [deck] lift_m."""
+    dz = 0.0 if piece.get("grounded") else float(layout["deck"].get("lift_m", 0.0))
+    if dz:
+        for p in parts:
+            p["verts"] = [(x, y, h + dz) for x, y, h in p["verts"]]
+    return parts
+
+
 def build(piece: dict, layout: dict, out: Path) -> dict:
     clear()
-    parts = builder(piece["lane"], piece["builder"])(piece.get("args", {}), layout)
+    parts = lifted(builder(piece["lane"], piece["builder"])(piece.get("args", {}), layout), piece, layout)
     for p in parts:  # Godot's importer gives a `-col` mesh a static body with its trimesh (one-sided: solids face out)
         if piece.get("collide"):
             p["name"] += "-col"

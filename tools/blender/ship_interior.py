@@ -70,7 +70,7 @@ D = math.radians
 with (Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml").open("rb") as _f:
     _SHIP = tomllib.load(_f)
 _ROOM = {r["id"]: r for r in _SHIP["rooms"]}
-FLOOR = _SHIP["deck"]["floor_h"]                # the heights come from ship.toml (the hull lane owns them)
+FLOOR = _SHIP["deck"]["floor_h"] - _SHIP["deck"].get("lift_m", 0.0)   # the design frame's deck (ship_build lifts it)
 # rebuild C (art#263 c6341553197) moved the inside forward; rebuild E (c6342342554): 0.4 m forward of step A, the hall's
 # rim full height all round. The builders and the generator work round the hall's centre (HALL_C, (0, -0.4));
 # ship_interior_place.py adds HALL_C to every placement.
