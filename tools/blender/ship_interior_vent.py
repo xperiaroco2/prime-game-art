@@ -36,7 +36,7 @@ L.MATERIALS["glow_nav_red__vent_lamp"].update(base=(1.0, 0.015, 0.01, 1.0), emis
                                               roughness=0.15)
 
 # the hall's and throat's own metals (cor_wall_*: panels int_silver_a / _b, belts and lips int_silver_c)
-FRAME, COLUMN, SLAT = "int_silver_a", "int_silver_b", "int_silver_a"   # the frame and slats as tone a's panels
+FRAME, COLUMN, SLAT = "int_silver_a", "int_silver_b", "int_silver_c"   # the frame as tone a's panels, slats as trims
 TRIM, DARK, CYAN = "int_silver_c", "int_dark", "int_cyan"
 
 # --- the numbers (u east piece, h over the deck) ---------------------------------------------------------------------
@@ -47,9 +47,9 @@ OPEN_U, OPEN_H = (-0.60, 0.15), (0.17, 1.79)                 # the grille's open
 OPEN_C = (0.05, 0.05, 0.08, 0.05)                            # its top is the wall's chamfer behind the well (cv 0.2)
 WELL_V = 0.215                                               # the well's back (the heat panel just in front)
 SLATS, HINGE_TOP, PITCH, CHORD = 7, 1.765, 0.225, 0.24       # hinges every 0.225 m from 1.765 down; chord 0.24
-HINGE_V, TILT, BULGE = 0.25, math.radians(22.0), 0.014       # shut: 22 deg out from hanging, bowed 1.4 cm outward
+HINGE_V, TILT, BULGE = 0.25, math.radians(22.0), 0.008       # shut: 22 deg out from hanging, bowed 8 mm outward
 NOSE_R, TAIL_T = 0.009, 0.0025                               # the gill's round nose round its hinge, its thin tail
-SWEEP_V = 0.016                                              # its tail bowed out along u by 1.6 cm at its middle
+SWEEP_V = 0.010                                              # its tail bowed out along u by 1.0 cm at its middle
 END_GAP = 0.012                                              # a slat's ends to the well's sides
 OPEN_RAD = math.radians(55.0)                                # fully open: 77 deg from hanging, the tip at 0.49 m
 UC = (COL_U[0] + COL_U[1]) / 2                               # the column's centre line
@@ -196,7 +196,7 @@ def slat_loops(k: int):
     for i in range(n_u):
         a = i / (n_u - 1)
         u = u0 + (u1 - u0) * a
-        chord = CHORD * (0.82 + 0.18 * math.sin(math.pi * a))
+        chord = CHORD * (0.92 + 0.08 * math.sin(math.pi * a))
         sv = SWEEP_V * math.sin(math.pi * a)
         mids, tans = [], []
         for j in range(n_s + 1):
