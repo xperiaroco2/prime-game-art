@@ -32,7 +32,8 @@ GAME = arg("--game", "")   # two comma-separated PNGs: the last row, calm and th
 HEAT = [False]             # the state blades() last set: the well's lights follow it (vents-b2)
 # vents-b2: the well's lights as godot/ship/vent_glow.gd puts them (three up the opening, 7.5 cm in front of the glow
 # panel): cyan calm, orange closed; (u, v) of the east piece, the opening's h, colour and W per state
-WELL = {"u": -0.08, "v": 0.204, "h": (0.304, 1.326), False: ((0.15, 0.75, 1.0), 9.0), True: ((1.0, 0.38, 0.06), 7.0)}
+# vents-b3: saturated, weaker (b2's 9 W blew white diamonds on the blades' noses), as vent_glow.gd's
+WELL = {"u": -0.08, "v": 0.204, "h": (0.304, 1.326), False: ((0.0, 0.62, 1.0), 6.0), True: ((1.0, 0.2, 0.02), 5.0)}
 
 
 def scene():
@@ -62,8 +63,10 @@ def blades(t: float, heat: bool):
     for m in bpy.data.materials:   # the blades' lit seams glow with the heat only (as the game drives them)
         if m.name.endswith("__vent_seam") and m.use_nodes:
             b = m.node_tree.nodes.get("Principled BSDF")
-            if b is not None:
-                b.inputs["Emission Strength"].default_value = 2.0 if heat else 0.0
+            if b is not None:   # vents-b3: calm also dark bronze (its orange base read lit under the well's light)
+                b.inputs["Emission Strength"].default_value = 1.2 if heat else 0.0
+                b.inputs["Base Color"].default_value = (1.0, 0.12, 0.0, 1.0) if heat else (0.16, 0.09, 0.05, 1.0)
+
 
 
 def light(kind: str):

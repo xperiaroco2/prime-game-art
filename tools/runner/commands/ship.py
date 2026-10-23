@@ -18,7 +18,7 @@ from .. import blender, common, ship_layout
 from . import _export, _godot
 
 NAME = "ship"
-HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts); --play (the engineer's walk)"
+HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts); --vent-anim DIR (the vents' animation in place); --play (the engineer's walk)"
 BUILD_SCRIPT = blender.SCRIPTS / "ship_build.py"
 GODOT_SCRIPT = "res://ship/ship.gd"
 BUILD_TIMEOUT = 900
@@ -304,9 +304,12 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
     return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
 
 
-# vents-b2: each glow panel carries its well lights (godot/ship/vent_glow.gd): calm hides the heat, the problem the cool
-VENT_STATES = {"calm": {"slats": 1.0, "show": [], "hide": ["heat"], "dim": ["lamp", "slat*:__vent_seam"]},
-               "problem": {"slats": 0.0, "show": ["heat"], "hide": ["cool"], "dim": []}}
+# vents-b2: each glow panel carries its well lights (godot/ship/vent_glow.gd): calm hides the heat, the problem the cool.
+# vents-b3: "dark" turns a surface's glow off and its colour to dark bronze, as vent_anim.gd does the seams calm (b2's
+# "dim" kept their orange colour: the seams read lit in the calm shots)
+VENT_STATES = {"calm": {"slats": 1.0, "show": [], "hide": ["heat"], "dim": ["lamp"], "dark": ["slat*:__vent_seam"]},
+               "problem": {"slats": 0.0, "show": ["heat"], "hide": ["cool"], "dim": [], "dark": []}}
+
 
 
 def vent_states(spec: str) -> dict:

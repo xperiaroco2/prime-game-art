@@ -9,8 +9,9 @@ extends RefCounted
 const ROWS := 3                 # lights up the opening
 const OUT_M := 0.075            # in front of the panel (the blades' backs stand about 17 cm in front of it)
 const LOOK := {                 # suffix: [colour, energy, range m]
-	"cool": [Color(0.15, 0.75, 1.0), 0.9, 1.1],
-	"heat": [Color(1.0, 0.38, 0.06), 0.7, 0.9],
+	"cool": [Color(0.0, 0.62, 1.0), 0.7, 0.75],    # vents-b3: saturated, shorter (b2's 1.1 m hazed the wall above)
+	"heat": [Color(1.0, 0.2, 0.02), 0.7, 0.75],    # vents-b3: a deep red-orange
+
 }
 
 

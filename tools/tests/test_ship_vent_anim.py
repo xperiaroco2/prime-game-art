@@ -1,8 +1,11 @@
 """The throat vent's animation controller (art #263, vents-anim1; docs/ship.md "Station 1", "The animation"): the
-constants at the top of `godot/ship/vent_anim.gd` keep the blades in their safe range (vents-b2: the first cut 46.4
-deg from calm, so + / - 20 deg; the top blade never above calm, its crest under the header sill), the calm pose is the
-builder's (`ship_interior_vent.CLOSED_DEG`), the timings are the brief's (a breath every 3-4 s, the slam 0.12-0.2 s)
-and the runner offers `--vent-anim`. Pure Python: reads the script as text (the clip itself: `ship --motion DIR`)."""
+constants at the top of `godot/ship/vent_anim.gd` keep the blades in their safe range (vents-b3: shut 20 deg below calm,
+the first cut 60 deg below it; the cough's kicks at most 20 deg above calm; the top blade never above calm, its crest
+under the header sill), the calm pose is the builder's (`ship_interior_vent.CLOSED_DEG`), the timings are the brief's
+(a breath every 3-4 s, the slam 0.12-0.2 s) and the runner offers `--vent-anim`. Pure Python: reads the script as
+text; every frame of the demo is checked in Godot by `ship --motion DIR` (the blades against each other and the
+opening, the hinge, the marker) and shot in place by `ship --vent-anim DIR`."""
+
 
 from __future__ import annotations
 

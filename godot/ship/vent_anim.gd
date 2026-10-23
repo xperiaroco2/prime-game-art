@@ -11,8 +11,9 @@ extends Node
 ## setup(vent_root, "station_vent_e") (or leave vent_id set and let _ready find the parent), then set `problem` and
 ## `hold` each frame. `manual = true` stops _process; a proof calls step(dt) itself at a fixed rate.
 ## Beauty over motion (the engineer's standing rule): small angles, ease curves, never linear; every amplitude is a
-## constant below. The blades stay within CALM_DEG + / - 20 deg (vents-b2: the first cut is 46.4 deg from calm), and
-## the top blade never above calm: its crest stands under the frame's header sill (the clip check, 1.4 mm a degree).
+## constant below. The blades stay between shut (0) and CALM_DEG + 20 deg (vents-b3: shut is 20 deg below calm, the
+## blades first cut 60 deg below it), and the top blade never above calm: its crest stands under the frame's header
+## sill (the clip check).
 
 signal fixed                        # the cough began: the game clears `problem`
 
@@ -20,16 +21,17 @@ enum State { CALM, SLAM, SHUT, COUGH, OPEN }
 
 # --- the blades (degrees of opening from shut; rotation.x = -deg_to_rad(angle) about each blade's hinge) ----------
 const SLATS := 7
-const CALM_DEG := 9.0               # the calm pose (the builder's CLOSED_DEG / OPEN_RAD: shut is 9 deg below calm)
+const CALM_DEG := 20.0              # the calm pose (the builder's CLOSED_DEG / OPEN_RAD: shut is 20 deg below calm)
 # CALM: gills breathing, a soft wave running down the blades
 const BREATH_PERIOD_S := 3.6        # one breath
-const BREATH_DEG := 3.2             # each breath closes from calm by this and opens back (calm is the widest: the look)
+const BREATH_DEG := 5.0             # each breath closes from calm by this and opens back (calm is the widest: the look)
 const BREATH_WAVE := 0.07           # each blade this much of a breath behind the one above (top to bottom)
 const BREATH_IN_S := 1.6            # after the cough the breath's amplitude eases in over this
 # SLAM: shut fast, each blade a hair after the one above, then bounce off the stop
 const SLAM_S := 0.16                # calm to shut (ease-in: accelerating into the stop)
 const SLAM_STAGGER_S := 0.012       # per blade, top to bottom (a clatter, not one plate)
-const BOUNCE_DEG := 1.8             # the first rebound off the stop
+const BOUNCE_DEG := 3.0             # the first rebound off the stop
+
 const BOUNCE_HALF_S := 0.085        # each rebound's length
 const BOUNCE_DECAY_S := 0.11        # the rebounds' fall-off (two or three are seen)
 # SHUT: the heat makes the shut blades tremble, barely

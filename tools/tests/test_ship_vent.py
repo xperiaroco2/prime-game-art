@@ -1,5 +1,5 @@
-"""The throat vents (art #263 step 2, station 1, way A; docs/ship.md "Station 1: the throat vents"): the built parts
-(the well's glows, the marker, the colliders; the Meshy body and the Meshy blade's seven copies are imported from
+"""The throat vents (art #263 step 2, station 1, way B; docs/ship.md "Station 1: the throat vents"): the built parts
+(the well's glows, the marker, the colliders; ship_vent_b.py's body and its blade's seven copies are imported from
 their GLBs) inside the unit box (the spot's plain band, its own 0.6 m depth, the height), the leaves' names, materials
 and origins (each blade's on the caps' axis, the marker's at the bar's bottom), the blades' boxes inside the depth all
 the way, their calm reach past the frame and their seams calm and closed (the blade cleaner's numbers), the west
@@ -147,13 +147,15 @@ class ShipVentTest(unittest.TestCase):
         """Calm, the blades stick out about 19 cm past the frame's face (side_left)."""
         p = build("e", meshes=False)["slat4"]
         reach = max(turn(q, p["origin"], V.OPEN_RAD)[1] for q in p["hull"]) - V.BOX_FACE
-        self.assertTrue(0.17 <= reach <= 0.20, reach)
+        self.assertTrue(0.14 <= reach <= 0.20, reach)   # vents-b3: the frame's face 2.5 cm prouder (0.44)
 
     def test_seams_calm_and_closed(self):
         """Straight from the front (the blade cleaner's numbers, the slices' median): a lit band of about a third of
         the pitch calm (front_ortho), a narrow lit seam closed (front_closed), the closed turn short of a cut."""
-        self.assertTrue(0.035 <= V.BLADE_SEAMS["calm"] <= 0.07, V.BLADE_SEAMS)
-        self.assertTrue(0.003 <= V.BLADE_SEAMS["closed"] <= 0.02, V.BLADE_SEAMS)
+        self.assertTrue(0.05 <= V.BLADE_SEAMS["calm"] <= 0.075, V.BLADE_SEAMS)   # vents-b3: standing open
+        self.assertTrue(-0.02 <= V.BLADE_SEAMS["closed"] <= 0.0, V.BLADE_SEAMS)   # shut: a real overlap
+        self.assertGreaterEqual(V.CLOSED_DEG, 15.0)                               # a slam that reads
+
         self.assertLess(V.CLOSED_DEG, V.BLADE_SEAMS["first_cut_deg"] - 1.0)
         self.assertAlmostEqual(math.degrees(V.OPEN_RAD), V.CLOSED_DEG, places=9)
 
