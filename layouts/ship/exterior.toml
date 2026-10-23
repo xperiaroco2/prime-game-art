@@ -12,8 +12,11 @@ place = [
   ["skin_belly", [0.00, 0.00, 0.00], 0.0],
   ["skin_mouth", [0.00, 0.00, 0.00], 0.0],
   ["skin_cheeks", [0.00, 0.00, 0.00], 0.0],
-  ["ramp", [0.00, -7.10, 0.00], 0.0],
-  ["ramp_lights", [0.00, -7.10, 0.00], 0.0],
+  ["ramp", [0.00, -8.10, 0.00], 0.0],
+  ["ramp_lights", [0.00, -8.10, 0.00], 0.0],
+  # the raise step 2: the entry tunnel past the nose (y -7.1 to -8.1), its hood over the notch
+  ["mouth_tunnel", [0.00, 0.00, 0.00], 0.0],
+  ["mouth_tunnel_in", [0.00, 0.00, 0.00], 0.0],
   # details: the canopies in their fairings (outside only), the pods (rear ends at J's y 11.0 / 11.8)
   ["canopy_fairing_e", [0.00, 0.00, 0.00], 0.0],
   ["canopy_glass_e", [0.00, 0.00, 0.00], 0.0],
@@ -39,8 +42,9 @@ place = [
   ["hazard_stripes", [0.00, 0.00, 0.00], 0.0],
   # light layer: the navigation lamps (port red on the west lens rim's forward facet, starboard green on the east's,
   # under the edge light; white on the tail's top centre) and a warm landing light under the belly by each leg
-  ["nav_red", [-12.181, -0.717, 1.130], 131.25],
-  ["nav_green", [12.181, -0.717, 1.130], 48.75],
+  # NAV SIDE (fix 2: off, "not needed yet"; uncomment with the pieces below and ship.toml's two "nav" lamp rows)
+  # ["nav_red", [-12.181, -0.717, 1.130], 131.25],
+  # ["nav_green", [12.181, -0.717, 1.130], 48.75],
   ["nav_white", [0.000, 11.200, 4.265], 0.0],
   ["landing_lamp", [-3.80, -3.40, 0.680], 0.0],
   ["landing_lamp", [3.80, -3.40, 0.680], 0.0],
@@ -48,17 +52,17 @@ place = [
   ["landing_lamp", [8.20, 4.60, 0.440], 0.0],
   ["landing_lamp", [-4.20, 8.60, 1.182], 0.0],
   ["landing_lamp", [4.20, 8.60, 1.182], 0.0],
-  # amber ground lamps beside the six legs' feet (hull 3-3) and the ramp
-  ["ground_lamp", [-5.68, -6.09, 0.00], 0.0],
-  ["ground_lamp", [5.68, -6.09, 0.00], 0.0],
-  ["ground_lamp", [-11.68, 6.15, 0.00], 0.0],
-  ["ground_lamp", [11.68, 6.15, 0.00], 0.0],
-  ["ground_lamp", [-5.93, 10.92, 0.00], 0.0],
-  ["ground_lamp", [5.93, 10.92, 0.00], 0.0],
-  ["ground_lamp", [-1.75, -7.25, 0.00], 0.0],
-  ["ground_lamp", [1.75, -7.25, 0.00], 0.0],
-  ["ground_lamp", [-1.75, -5.90, 0.00], 0.0],
-  ["ground_lamp", [1.75, -5.90, 0.00], 0.0],
+  # amber ground lamps beside the six legs' feet (hull 3-3; the raise: 0.9 m past the new feet) and the ramp (its new length)
+  ["ground_lamp", [-5.12, -4.70, 0.00], 0.0],
+  ["ground_lamp", [5.12, -4.70, 0.00], 0.0],
+  ["ground_lamp", [-10.13, 5.25, 0.00], 0.0],
+  ["ground_lamp", [10.13, 5.25, 0.00], 0.0],
+  ["ground_lamp", [-5.56, 9.99, 0.00], 0.0],
+  ["ground_lamp", [5.56, 9.99, 0.00], 0.0],
+  ["ground_lamp", [-3.70, -10.30, 0.00], 0.0],   # fix 2: the ramp's four 3.7 m out (were 1.75, at its edge)
+  ["ground_lamp", [3.70, -10.30, 0.00], 0.0],
+  ["ground_lamp", [-3.70, -12.00, 0.00], 0.0],
+  ["ground_lamp", [3.70, -12.00, 0.00], 0.0],
   # landing legs (hull 3-2), yawed outward (rebuild B: J's spots, off the corridors and the tip rooms): mounts under
   # the front belly, the wings outboard of the tip rooms and the stern; top = J's lowest belly under the mount + 0.1
   ["leg_front", [-4.60, -3.40, 0.00], 111.8],
@@ -607,79 +611,92 @@ builder = "j_cheeks"
 [[pieces]]
 id = "ramp"
 builder = "ramp"
+grounded = true                              # built at the real heights (not lifted: the raise)
 collide = true
 outside = true
 
 [[pieces]]
 id = "ramp_lights"
 builder = "ramp_lights"
+grounded = true                              # built at the real heights (not lifted: the raise)
 outside = true
 
 [[pieces]]
 id = "leg_front"
 builder = "leg"
-args = { top = 0.64, reach = 2.0, rise = 0.25 }   # lens step 2: P's lowest belly over the mount + 0.1
+grounded = true                              # built at the real heights (not lifted: the raise)
+args = { top = 1.24, reach = 0.5, rise = 0.25 }   # the raise (was top 0.64, reach 2.0): P's lowest belly over the mount + 0.1
 collide = true
 outside = true                               # the feet stand past the lead edge
 
 [[pieces]]
 id = "leg_rear"
 builder = "leg"
-args = { top = 0.44, reach = 2.2 }   # lens step 2: under the fin, clear of the lens
+grounded = true                              # built at the real heights (not lifted: the raise)
+args = { top = 1.04, reach = 0.4 }   # the raise (was 0.44, 2.2): under the fin, clear of the lens
 collide = true
 outside = true
 
 [[pieces]]
 id = "leg_stern"
 builder = "leg"
-args = { top = 1.17, reach = 1.6 }
+grounded = true                              # built at the real heights (not lifted: the raise)
+args = { top = 1.77, reach = 0.6 }   # the raise (was 1.17, 1.6)
 collide = true
 outside = true
 
 [[pieces]]
 id = "ground"
 builder = "ground"
+grounded = true                              # built at the real heights (not lifted: the raise)
 outside = true
 
 [[pieces]]
 id = "pine_a"
 builder = "pine2"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { height = 15.0, seed = 1.0, bare = 0.22 }
 outside = true
 
 [[pieces]]
 id = "pine_b"
 builder = "pine2"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { height = 11.0, seed = 2.0, bare = 0.25 }
 outside = true
 
 [[pieces]]
 id = "pine_c"
 builder = "pine2"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { height = 19.0, seed = 3.0, bare = 0.27 }
 outside = true
 
 [[pieces]]
 id = "pine_s"
 builder = "pine2"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { height = 5.5, seed = 4.0, bare = 0.12 }
 outside = true
 
 [[pieces]]
 id = "rock_a"
 builder = "rock"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 1.3, seed = 1.0 }
 outside = true
 
 [[pieces]]
 id = "rock_b"
 builder = "rock"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 0.6, seed = 2.0 }
 outside = true
 
 [[pieces]]
 id = "rock_c"
 builder = "rock"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 2.2, seed = 3.0 }
 outside = true
 
@@ -693,17 +710,17 @@ views = [
   ["out_hero", "outside: three-quarter at night (hero)", [-21.0, -24.0, 9.0], [0.8, 1.0, 1.8], 52.0, "hero.jpg"],
   ["out_side", "outside: side (turnaround side)", [-31.0, 1.5, 3.0], [0.0, 1.5, 2.2], 46.0, "turnaround.jpg"],
   ["out_back", "outside: back with the nozzles (turnaround back)", [2.0, 27.5, 4.4], [0.0, 1.0, 2.3], 62.0, "turnaround.jpg"],  # clear of the near pines
-  ["detail_seam", "detail: the plates on the east wing (materials-3)", [7.0, 10.5, 6.6], [9.0, 4.5, 3.4], 40.0, "materials-3.jpg"],  # rebuild B: the plated wing's back slope in the moon
-  ["detail_floor", "detail: a floor light strip and grate (materials-3)", [3.95, 0.20, 1.7], [5.93, 0.50, 0.6], 50.0, "materials-3.jpg"],  # lens step 2: down the east corridor on its 8.66 deg axis
-  ["detail_cables", "detail: a cable channel with clips (materials-3)", [5.54, 0.44, 1.9], [4.92, 1.87, 1.5], 55.0, "materials-3.jpg"],  # lens step 2: the corridor's back wall
+  ["detail_seam", "detail: the plates on the east wing (materials-3)", [7.0, 10.5, 7.20], [9.0, 4.5, 4.00], 40.0, "materials-3.jpg"],  # rebuild B: the plated wing's back slope in the moon
+  ["detail_floor", "detail: a floor light strip and grate (materials-3)", [3.95, 0.20, 2.30], [5.93, 0.50, 1.20], 50.0, "materials-3.jpg"],  # lens step 2: down the east corridor on its 8.66 deg axis
+  ["detail_cables", "detail: a cable channel with clips (materials-3)", [5.54, 0.44, 2.50], [4.92, 1.87, 2.10], 55.0, "materials-3.jpg"],  # lens step 2: the corridor's back wall
   # lens step 2: a lens from outside (the window band, the edge light), its roof windows from above, the tapered tail
-  ["out_lens_e", "outside: the east lens, its window band and the edge light", [18.0, -4.5, 2.2], [10.6, 1.2, 1.9], 50.0, "hero.jpg"],
-  ["out_lens_roof_e", "outside: the east lens's roof windows from above", [14.8, 4.6, 7.4], [10.9, 1.2, 3.1], 48.0, "hero.jpg"],
-  ["out_tail", "outside: the tail tapering to the pods", [13.0, 21.0, 5.5], [1.5, 9.0, 2.2], 50.0, "turnaround.jpg"],
+  ["out_lens_e", "outside: the east lens, its window band and the edge light", [18.0, -4.5, 2.80], [10.6, 1.2, 2.50], 50.0, "hero.jpg"],
+  ["out_lens_roof_e", "outside: the east lens's roof windows from above", [14.8, 4.6, 8.00], [10.9, 1.2, 3.70], 48.0, "hero.jpg"],
+  ["out_tail", "outside: the tail tapering to the pods", [13.0, 21.0, 6.10], [1.5, 9.0, 2.80], 50.0, "turnaround.jpg"],
 ]
 
 # The walk-through video (`ship --walk DIR`, the exterior lane): a camera at eye height (1.65 m over the floor: deck
-# 0.6 -> 2.25, ground -> 1.7) through camera keys [eye [x, y, h], look [x, y, h], seconds from the previous key],
+# 1.2 -> 2.85 (the raise), ground -> 1.7) through camera keys [eye [x, y, h], look [x, y, h], seconds from the previous key],
 # smoothed through the keys (Catmull-Rom); outside, up the ramp, the hall, the west corridor and tip room, the east
 # corridor and tip room, back down the ramp and a last look at the ship. 1280x720 at fps, H.264 MP4 under max_mb.
 [video]
@@ -712,28 +729,28 @@ fps = 24
 fov = 72.0
 max_mb = 15.0
 keys = [
-  [[7.0, -15.0, 1.7], [0.0, -2.0, 2.6], 0.0],
-  [[2.5, -11.5, 1.7], [0.0, -3.0, 2.4], 6.0],
-  [[0.0, -10.60, 1.7], [0.0, -3.40, 2.3], 4.0],
-  [[0.0, -6.20, 2.25], [0.0, -0.40, 2.6], 4.0],
-  [[0.0, -2.60, 2.25], [0.0, 1.60, 2.6], 3.5],
-  [[0.0, -1.00, 2.25], [-2.49, 1.35, 3.4], 3.0],
-  [[0.0, -1.00, 2.25], [2.49, 1.35, 3.0], 4.0],
-  [[0.40, -0.40, 2.25], [-5.44, 0.43, 2.20], 3.0],
-  [[-3.16, 0.08, 2.25], [-8.90, 0.96, 2.20], 3.5],
-  [[-8.40, 0.88, 2.25], [-12.60, 0.60, 2.00], 4.5],
-  [[-10.00, 1.45, 2.25], [-12.20, -0.50, 2.00], 3.0],
-  [[-10.00, 1.45, 2.25], [-12.00, 3.30, 2.00], 3.5],
-  [[-9.70, 1.30, 2.25], [-4.50, 0.40, 2.20], 3.0],
-  [[-3.16, 0.08, 2.25], [2.97, 0.05, 2.20], 5.0],
-  [[3.16, 0.08, 2.25], [8.90, 0.96, 2.20], 3.5],
-  [[8.40, 0.88, 2.25], [12.60, 0.60, 2.00], 4.5],
-  [[10.00, 1.45, 2.25], [12.20, -0.50, 2.00], 3.0],
-  [[10.00, 1.45, 2.25], [12.00, 3.30, 2.00], 3.5],
-  [[9.70, 1.30, 2.25], [4.50, 0.40, 2.20], 3.0],
-  [[2.0, -1.20, 2.25], [0.0, -7.00, 1.8], 5.0],
-  [[0.0, -5.25, 2.2], [0.0, -11.00, 1.5], 3.5],
-  [[0.0, -9.60, 1.7], [0.0, -15.00, 1.6], 4.0],
+  [[7.0, -16.0, 1.7], [0.0, -2.0, 2.6], 0.0],
+  [[2.5, -13.0, 1.7], [0.0, -3.0, 2.8], 6.0],
+  [[0.0, -11.60, 1.92], [0.0, -3.40, 2.9], 4.0],
+  [[0.0, -6.20, 2.85], [0.0, -0.40, 2.6], 4.0],
+  [[0.0, -2.60, 2.85], [0.0, 1.60, 2.6], 3.5],
+  [[0.0, -1.00, 2.85], [-2.49, 1.35, 3.4], 3.0],
+  [[0.0, -1.00, 2.85], [2.49, 1.35, 3.0], 4.0],
+  [[0.40, -0.40, 2.85], [-5.44, 0.43, 2.20], 3.0],
+  [[-3.16, 0.08, 2.85], [-8.90, 0.96, 2.20], 3.5],
+  [[-8.40, 0.88, 2.85], [-12.60, 0.60, 2.00], 4.5],
+  [[-10.00, 1.45, 2.85], [-12.20, -0.50, 2.00], 3.0],
+  [[-10.00, 1.45, 2.85], [-12.00, 3.30, 2.00], 3.5],
+  [[-9.70, 1.30, 2.85], [-4.50, 0.40, 2.20], 3.0],
+  [[-3.16, 0.08, 2.85], [2.97, 0.05, 2.20], 5.0],
+  [[3.16, 0.08, 2.85], [8.90, 0.96, 2.20], 3.5],
+  [[8.40, 0.88, 2.85], [12.60, 0.60, 2.00], 4.5],
+  [[10.00, 1.45, 2.85], [12.20, -0.50, 2.00], 3.0],
+  [[10.00, 1.45, 2.85], [12.00, 3.30, 2.00], 3.5],
+  [[9.70, 1.30, 2.85], [4.50, 0.40, 2.20], 3.0],
+  [[2.0, -1.20, 2.85], [0.0, -7.00, 1.8], 5.0],
+  [[0.0, -5.25, 2.85], [0.0, -11.00, 1.5], 3.5],
+  [[0.0, -9.60, 2.45], [0.0, -15.00, 1.6], 4.0],
   [[-6.0, -13.5, 2.3], [0.0, -1.0, 2.6], 5.0],
   [[-9.0, -15.0, 2.8], [0.0, 0.0, 2.4], 3.0],
 ]
@@ -797,6 +814,7 @@ outside = true
 [[pieces]]
 id = "ground_lamp"
 builder = "ground_lamp"
+grounded = true                              # built at the real heights (not lifted: the raise)
 outside = true
 
 # The clearing (hull step 3; tools/blender/ship_hull_clearing.py): dirt, path, tufts, bushes, logs, stumps, the
@@ -804,139 +822,164 @@ outside = true
 [[pieces]]
 id = "dirt_patch"
 builder = "dirt_patch"
+grounded = true                              # built at the real heights (not lifted: the raise)
 outside = true
 
 [[pieces]]
 id = "dirt_path"
 builder = "dirt_path"
+grounded = true                              # built at the real heights (not lifted: the raise)
 outside = true
 
 [[pieces]]
 id = "tuft_a"
 builder = "tuft"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { seed = 1.0 }
 outside = true
 
 [[pieces]]
 id = "tuft_b"
 builder = "tuft"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { seed = 2.0 }
 outside = true
 
 [[pieces]]
 id = "tuft_dry"
 builder = "tuft"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { seed = 3.0, dry = 1.0 }
 outside = true
 
 [[pieces]]
 id = "bush_s"
 builder = "bush"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 0.8, seed = 1.0 }
 outside = true
 
 [[pieces]]
 id = "bush_m"
 builder = "bush"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 1.3, seed = 2.0 }
 outside = true
 
 [[pieces]]
 id = "bush_l"
 builder = "bush"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 2.0, seed = 3.0 }
 outside = true
 
 [[pieces]]
 id = "log_a"
 builder = "log"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { length = 3.5, r = 0.24, seed = 1.0 }
 outside = true
 
 [[pieces]]
 id = "log_b"
 builder = "log"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { length = 4.5, r = 0.3, seed = 2.0 }
 outside = true
 
 [[pieces]]
 id = "stump"
 builder = "stump"
+grounded = true                              # built at the real heights (not lifted: the raise)
 outside = true
 
 [[pieces]]
 id = "pine_d"
 builder = "pine2"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { height = 17.0, seed = 11.0, bare = 0.24 }
 outside = true
 
 [[pieces]]
 id = "pine_e"
 builder = "pine2"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { height = 23.0, seed = 12.0, bare = 0.3 }
 outside = true
 
 [[pieces]]
 id = "pine_f"
 builder = "pine2"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { height = 9.0, seed = 13.0, bare = 0.18 }
 outside = true
 
 [[pieces]]
 id = "pine_g"
 builder = "pine2"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { height = 13.0, seed = 14.0, bare = 0.2 }
 outside = true
 
 [[pieces]]
 id = "party_post"
 builder = "party_post"
+grounded = true                              # built at the real heights (not lifted: the raise)
 outside = true
 
 [[pieces]]
 id = "party_lights"
 builder = "party_lights"
+grounded = true                              # built at the real heights (not lifted: the raise)
 outside = true
 
 # The ground cover (hull 3-3; ship_hull_clearing.py): ferns, moss and needle-litter mounds, rock piles, a long log.
 [[pieces]]
 id = "fern_a"
 builder = "fern"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 0.7, seed = 1.0 }
 outside = true
 [[pieces]]
 id = "fern_b"
 builder = "fern"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 1.05, seed = 2.0 }
 outside = true
 [[pieces]]
 id = "moss_a"
 builder = "moss"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 2.6, seed = 1.0 }
 outside = true
 [[pieces]]
 id = "moss_b"
 builder = "moss"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 1.5, seed = 2.0 }
 outside = true
 [[pieces]]
 id = "litter"
 builder = "moss"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 2.2, seed = 3.0, dry = 1.0 }
 outside = true
 [[pieces]]
 id = "rock_pile_a"
 builder = "rock_pile"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 1.4, seed = 1.0 }
 outside = true
 [[pieces]]
 id = "rock_pile_b"
 builder = "rock_pile"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { size = 0.85, seed = 2.0 }
 outside = true
 [[pieces]]
 id = "log_c"
 builder = "log"
+grounded = true                              # built at the real heights (not lifted: the raise)
 args = { length = 7.0, r = 0.36, seed = 3.0 }
 outside = true
 
@@ -944,15 +987,16 @@ outside = true
 id = "edge_light"                            # lens step 2: the cool-white light line round the hull's outer edge
 builder = "edge_light"
 
-[[pieces]]
-id = "nav_red"                               # light layer: the navigation lamps (ship_hull_detail.nav_lamp)
-builder = "nav_lamp"
-args = { colour = "red", mount = "wall" }
-
-[[pieces]]
-id = "nav_green"
-builder = "nav_lamp"
-args = { colour = "green", mount = "wall" }
+# NAV SIDE (fix 2: off; uncomment with the placements above and ship.toml's two "nav" lamp rows)
+# [[pieces]]
+# id = "nav_red"                             # light layer: the navigation lamps (ship_hull_detail.nav_lamp)
+# builder = "nav_lamp"
+# args = { colour = "red", mount = "wall" }
+#
+# [[pieces]]
+# id = "nav_green"
+# builder = "nav_lamp"
+# args = { colour = "green", mount = "wall" }
 
 [[pieces]]
 id = "nav_white"
@@ -982,6 +1026,7 @@ builder = "service_hatches"
 [[pieces]]
 id = "hazard_stripes"
 builder = "hazard_stripes"
+grounded = true                              # built at the real heights (not lifted: the raise)
 outside = true                               # the ramp's rails stand outside the hull
 
 [[pieces]]
@@ -1002,3 +1047,19 @@ args = { part = "belly" }
 id = "skin_mouth"
 builder = "j_skin"
 args = { part = "mouth" }
+
+[[pieces]]
+id = "mouth_tunnel"                          # the raise step 2: the entry tunnel 1 m past the nose and its hood over
+builder = "mouth_tunnel"                     # the mouth's notch (ship_hull_j.mouth_tunnel)
+args = { part = "hood" }                     # the raise step 3: the hood, the fill, the portal (the outside layer)
+collide = true
+outside = true                               # the only hull pieces past the footprint's lead edge (y -7.1): their
+                                             # front at the throat's tunnel_y -8.1
+
+[[pieces]]
+id = "mouth_tunnel_in"                       # the raise step 3: the tunnel's inside (walls, chamfers, ceiling, ribs,
+builder = "mouth_tunnel"                     # strips, floor) on the inside layer, lit by the throat's strips as the
+args = { part = "inside" }                   # throat is (it drew on the outside layer, darker)
+layer = "inside"
+collide = true
+outside = true

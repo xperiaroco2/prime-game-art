@@ -429,3 +429,49 @@ It checks the mapping file (no raw file needed); `--measure` reads every pack fi
 Python glTF reader: the accessors' bounds through the node transforms, the triangles) and compares them with the
 record; `--table` writes the prop table as markdown. The tests are `tools/tests/test_props_library.py`,
 `test_props_geom.py` and `test_props_godot.py`.
+
+## A hero prop from a concept: the vault's plush alien (art#297)
+
+`assets/prop/vault_plush/`: the easter egg the ship's vault holds (prime-game#1040), made from the engineer's approved
+concept in four steps, each shown to him before the next.
+
+1. **Turnaround.** An OpenAI edit of the concept (`batches/2026-10-22-vault-plush-turn.toml`, high, 2560x1024, one
+   image): five views in a row at one scale. His note on the first sheet's model: no seams anywhere and the
+   concept's soft fur, so item `turn5b` edits the sheet with the concept as the fur reference.
+2. **Model.** Meshy `multi_image_to_3d` (meshy-7.1, 2k geometry) from four views cut from the sheet, each padded
+   to a square on the sheet's own grey (`batches/2026-10-22-vault-plush-3d-2.toml`, 35 credits).
+3. **Paint and material**, `tools/blender/plush_run.py` (the driver, outside Blender), each step a headless Blender
+   script:
+   - `plush_clean.py`: welds Meshy's GLB (it arrives split at every UV seam: 2,938 loose patches), scales it to
+     0.30 m with its lowest point on the floor and its footprint centred;
+   - `plush_mouth.py`: finds the crease under the muzzle from the shape (the most concave vertex per angle around
+     the nose's axis), relaxes its concave vertices within 7 mm into a shallow seam and writes the smile's line along
+     the seam (`smile.json`: one symmetric curve, the distance and depth as even quartics of the angle, out to the
+     nose's middle height);
+   - `plush_paint.py`: repaints the **full** model to the concept. Orange or brown is decided per face in 3D (the
+     brown share diffused over the surface, cut at a half, islands under 200 faces merged), never per texel; the tail's
+     stalk orange and the antenna balls and pompom brown per texel from each texel's 3D point; the eyes painted
+     afresh (pink, a soft red rim, a round pupil, a catch light); the smile drawn from `smile.json`; Meshy's marks
+     elsewhere are fur again. Writes the albedo and the shader's mask (R fur, G velour, B eyes);
+   - `plush_bake.py`: decimates a welded copy to 4,000 triangles (`hero`) with a fresh Smart UV layout and bakes the
+     painted full model onto it (albedo and mask as emission, the normal in tangent space), `--size` px.
+
+   **Why paint full, then bake:** decimating Meshy's GLB in place keeps its many small UV islands but moves their
+   corners, so triangles sample the next island's texels: black specks by an eye and on the belly (the engineer's
+   review, 2026-10-23; the same paint on the 31k model had none). Growing a painted region in UV space spills into the
+   island packed beside it for the same reason; the paint never grows regions, it pads island edges instead.
+
+   The material is `godot/plush/`: `plush.gdshader` (Burley, roughness 1 on the fabric, a model-space pile normal
+   since the atlas is all islands, a fabric-tinted rim as the sheen, glossy eyes with a flat normal),
+   `plush_shell.gdshader` (12 shells of jittered strands for the fuzzy silhouette, thicker and flatter with distance,
+   none past 6 m) and `plush.gd` (applies them; it preloads the shaders by relative path, so the same file ships).
+   `shots.gd` renders the views, close-ups of the face, eyes, mouth, antennae, belly, back, tail and feet, the smile
+   from four elevations, the hand view and the 1 m stand at 3 and 5 m under the recommended look, and measures the
+   shells' GPU cost (0.14 ms in the hand view).
+4. **Export.** `plush_run.py --size 1024 --tag=_final --blend <raw>/.../vault_plush.blend`: the GLB (3,999
+   triangles, 0.300 m, glTF-Validator clean), the mask, the `.blend`; the asset folder holds them with the material
+   files, `report.json` and `HANDOFF.md`. `tools/tests/test_props_vault_plush.py` checks the committed asset.
+
+Lessons for the next hero prop: shoot 720 px close-ups of every part and give them to a fresh critic before calling a
+step done; decide colours in 3D, not per texel; check a feature that sits in a crease from above and below (the smile
+reads in full from 10 degrees below, mostly its corners from above, where the player usually stands).

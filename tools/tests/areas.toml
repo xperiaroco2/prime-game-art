@@ -24,6 +24,7 @@ light = [
   "tools/runner/commands/raw_backup.py", "tools/runner/commands/pins.py", "tools/runner/commands/nightly.py",
   "godot/alien_look/*",  # research shaders and their proof script; no runner command or test uses them yet (#196)
   "godot/alien/*", "tools/blender/alien_*",  # the alien parts kit's build and proof scripts (#196): no runner command or test uses them yet
+  "godot/plush/*", "tools/blender/plush_*",  # the vault plush's build and shot scripts (#297): no runner command or heavy test uses them
 ]
 
 [area.anim]
@@ -95,6 +96,10 @@ tests = ["test_alien_fit_*"]
 sources = ["tools/blender/alien_mouth_fit_geom.py", "tools/blender/alien_mouth_fit.py"]  # M19's AI mouth fit (#196); before light's alien_*
 tests = ["test_alien_mouth_fit_*"]
 
+[area.alien_colour]
+sources = ["tools/blender/alien_colour_geom.py", "tools/web/alien_colour/*"]  # the static heads' colour slots' maths and its three.js copy (#196); before light's alien_*
+tests = ["test_alien_colour_slots*"]
+
 [area.alien_texture]
 sources = ["tools/blender/alien_texture_geom.py"]  # the alien skin's texture formulas (#196); before light's alien_*
 tests = ["test_alien_texture_*"]
@@ -113,7 +118,7 @@ sources = ["tools/blender/alien_mouths.py", "tools/blender/alien_lips_geom.py", 
 tests = ["test_alien_pout_*"]
 
 [area.alien_parse]
-sources = ["godot/alien/*.gdshader", "godot/alien/*.gdshaderinc", "godot/alien/alien.gd", "godot/alien/parse_check.gd"]  # the alien kit's shaders and alien.gd parse (#196, M13b); before light's godot/alien/*
+sources = ["godot/alien/*.gdshader", "godot/alien/*.gdshaderinc", "godot/alien/alien.gd", "godot/alien/alien_static.gd", "godot/alien/parse_check.gd", "tools/blender/alien_colour_geom.py"]  # the alien kit's shaders and alien.gd parse (#196, M13b); before light's godot/alien/*
 tests = ["test_alien_parse_*"]
 
 [area.meshy]
@@ -144,5 +149,5 @@ sources = [
 tests = ["test_ship_*"]
 
 [area.alien_lively]
-sources = ["tools/blender/alien_lively_geom.py"]  # the static head's liveliness proof's pure formulas (#196, lively)
+sources = ["tools/blender/alien_lively_geom.py", "tools/web/lively/*"]  # the static head's liveliness proof's pure formulas (#196, lively)
 tests = ["test_alien_lively_*"]

@@ -70,7 +70,7 @@ D = math.radians
 with (Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml").open("rb") as _f:
     _SHIP = tomllib.load(_f)
 _ROOM = {r["id"]: r for r in _SHIP["rooms"]}
-FLOOR = _SHIP["deck"]["floor_h"]                # the heights come from ship.toml (the hull lane owns them)
+FLOOR = _SHIP["deck"]["floor_h"] - _SHIP["deck"].get("lift_m", 0.0)   # the design frame's deck (ship_build lifts it)
 # rebuild C (art#263 c6341553197) moved the inside forward; rebuild E (c6342342554): 0.4 m forward of step A, the hall's
 # rim full height all round. The builders and the generator work round the hall's centre (HALL_C, (0, -0.4));
 # ship_interior_place.py adds HALL_C to every placement.
@@ -695,6 +695,12 @@ def cor_wall_up(args, layout):
     fr = G.Frame((0.0, a[0], FLOOR + a[1]), (1, 0, 0), vdir, (0.0, vdir[2], -vdir[1]))
     e = hl - 0.006
     tone = "int_silver_b" if args.get("tone", "a") == "a" else "int_silver_a"
+    if args.get("end"):   # the raise step 3 (bug 1): the throat's last module mitred into the header at the hall
+        cut = th_end_cut(args["end"], hl, a[0], vlen)
+        body = [G.slab(fr, _clip2(G.rect(-hl, hl, 0.0, vlen), *cut), -0.2, 0.0)]
+        panel = _clip2(G.rect(-e, e, 0.05, vlen - 0.03), cut[0], cut[1], cut[2] - 0.04)
+        panels = [pyramid(fr, panel if G.area2(panel) > 0 else panel[::-1], 0.0, 0.03, 0.065, 0.012)]
+        return [P("body", M(*body), "int_silver_b"), P("panel", M(*panels), tone)]
     body = [G.slab(fr, G.rect(-hl, hl, 0.0, vlen), -0.2, 0.0)]
     panels = [G.pillow(fr, -e, e, 0.05, vlen - 0.03, 0.0, 0.03, 0.065, 0.012)]
     if a[1] > PROF[1][1] + 0.01:  # the mouth: a vertical panel from the bay's lintel up to the chamfer
@@ -702,6 +708,39 @@ def cor_wall_up(args, layout):
         body.append(G.slab(fv, G.rect(-hl, hl, PROF[1][1], a[1]), -0.2, 0.0))
         panels.append(G.pillow(fv, -e, e, PROF[1][1] + 0.05, a[1] - 0.03, 0.0, 0.03, 0.065, 0.012))
     return [P("body", M(*body), "int_silver_b"), P("panel", M(*panels), tone)]
+
+
+TH_HEAD_D = 0.2    # the throat ceiling's header under the hall's rim: its depth hall-ward of the sub-facet's chord
+
+
+def th_corner_chord():
+    """The east hall corner's throat sub-facet: (corner K, its other vertex, the chord's outward unit normal m, the
+    chord's distance from the hall's centre along m), hall-relative plan coordinates."""
+    k = TH_PTS[2]
+    sub = (2 * TH_CORNER + 180.0) / TH_SUBS
+    v = (HV * math.cos(D(TH_CORNER - sub)), HV * math.sin(D(TH_CORNER - sub)))
+    mid = ((k[0] + v[0]) / 2, (k[1] + v[1]) / 2)
+    ln = math.hypot(*mid)
+    m = (mid[0] / ln, mid[1] / ln)
+    return k, v, m, ln
+
+
+def th_end_cut(end, hl, y0, vlen):
+    """The raise step 3 (art#263 bug 1): the half plane (a, b, c), a u + b v <= c, of the throat's last upper-wall
+    module (its chamfer frame: u along the wall, v up the slope) kept on the throat's side of the header's hall face
+    (1 cm inside it), so the chamfer's lean runs into the header instead of ending square in the hall. end 1: the
+    east module (the hall at local +x); -1: the west one (local +x from the hall to the mouth, the east mirrored)."""
+    k, _v, m, dist = th_corner_chord()
+    d = (k[0] - TH_PTS[1][0], k[1] - TH_PTS[1][1])
+    ln = math.hypot(*d)
+    d = (d[0] / ln, d[1] / ln)
+    n_in = (-d[1], d[0])
+    o = (k[0] - d[0] * hl + n_in[0] * TH_HALF, k[1] - d[1] * hl + n_in[1] * TH_HALF)
+    md, mn = m[0] * d[0] + m[1] * d[1], m[0] * n_in[0] + m[1] * n_in[1]
+    a, b = -md, -mn * TH_IN / vlen
+    c = m[0] * o[0] + m[1] * o[1] + mn * y0 - dist + TH_HEAD_D - 0.01
+    s = math.hypot(a, b)
+    return (a * end / s, b / s, c / s)
 
 
 def cor_ceil(args, layout):
@@ -863,7 +902,7 @@ def throat_ceil(args, layout):
     spine = [G.slab(G.floor_frame(0.0), q, top - 0.02, top) for q in throat_pieces(TH_IN, TH_ROOF, None)
              if min(abs(x) for x, _ in q) < 0.05]
     spine = [G.slab(G.floor_frame(0.0), G.rect(-0.03, 0.03, TH_ROOF, -HV), top - 0.02, top)]
-    head = []
+    head, trim, panel = [], [], []
     a0, a1 = -180.0 - TH_CORNER, TH_CORNER
     for i in range(TH_SUBS):
         b0, b1 = a0 + (a1 - a0) * i / TH_SUBS, a0 + (a1 - a0) * (i + 1) / TH_SUBS
@@ -882,9 +921,33 @@ def throat_ceil(args, layout):
             ss.append(s)
         ss = sorted(ss)
         for s0, s1 in zip(ss, ss[1:]):
-            head.append(G.slab(fv, [(s0, low(s0)), (s1, low(s1)), (s1, H_HALL), (s0, H_HALL)], -0.2, 0.0))
+            head.append(G.slab(fv, [(s0, low(s0)), (s1, low(s1)), (s1, H_HALL), (s0, H_HALL)], -TH_HEAD_D, 0.0))
+        if i in (0, TH_SUBS - 1):   # the raise step 3 (bug 1): a trim where the mitred chamfer meets the header
+            def seat(s):   # the chamfer's height where it meets the header's hall face, None off the chamfer
+                x, y = p0[0] + ex[0] * s - nrm[0] * TH_HEAD_D, p0[1] + ex[1] * s - nrm[1] * TH_HEAD_D
+                d = min(-(a * x + b * y - c) for a, b, c in (_wall_line(1), _wall_line(-1)))
+                return TH_BEND + (TH_H - TH_BEND) * d / TH_IN if 0.0 <= d <= TH_IN else None
+            sq = [ln * k / 40 for k in range(41)]
+            for s0, s1 in zip(sq, sq[1:]):
+                h0, h1 = seat(s0), seat(s1)
+                if h0 is not None and h1 is not None:
+                    trim.append(G.slab(fv, [(s0, h0 - 0.03), (s1, h1 - 0.03), (s1, h1 + 0.035), (s0, h0 + 0.035)],
+                                       -TH_HEAD_D - 0.022, -TH_HEAD_D))
+            # and the wall's raised panel over the header's face above it, as the throat's upper wall has
+            sk, sg = (0.0, 1.0) if i == 0 else (ln, -1.0)   # the hall corner's end of the sub-facet (west 0, east ln)
+            st = lambda t: sk + sg * t
+            lo = lambda t: (seat(st(t)) if seat(st(t)) is not None else TH_H) + 0.07
+            tq = [t for t in sq if seat(st(t)) is not None]
+            t_a = tq[0] + 0.06
+            t_t = next((t for t in sq if t > t_a and (seat(st(t)) is None or seat(st(t)) >= TH_H - 1e-6)), ln - 0.12)
+            poly = [(st(t), v) for t, v in ((t_a, lo(t_a)), (t_t, TH_H + 0.07), (ln - 0.06, TH_H + 0.07),
+                                             (ln - 0.06, H_HALL - 0.06), (t_a, H_HALL - 0.06))]
+            fh = G.Frame((p0[0] - nrm[0] * TH_HEAD_D, p0[1] - nrm[1] * TH_HEAD_D, FLOOR), (ex[0], ex[1], 0.0),
+                         (0, 0, 1), (-nrm[0], -nrm[1], 0.0))
+            panel.append(pyramid(fh, poly if G.area2(poly) > 0 else poly[::-1], 0.0, 0.03, 0.065, 0.012))
     return [P("body", M(*body), "int_silver_b"), P("panels", M(*panels), "int_silver_a"),
-            P("spine", M(*spine), "int_dark"), P("header", M(*head), "int_silver_b")]
+            P("spine", M(*spine), "int_dark"), P("header", M(*head), "int_silver_b"),
+            P("trim", M(*trim), "int_silver_c"), P("corner_panel", M(*panel), "int_silver_a")]
 
 
 # --- the tip rooms (built for the east room, centre at the origin; the west one is turned 180) ----------------------

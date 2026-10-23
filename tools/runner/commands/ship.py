@@ -18,13 +18,15 @@ from .. import blender, common, ship_layout
 from . import _export, _godot
 
 NAME = "ship"
-HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts)"
+HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts); --play (the engineer's walk)"
 BUILD_SCRIPT = blender.SCRIPTS / "ship_build.py"
 GODOT_SCRIPT = "res://ship/ship.gd"
 BUILD_TIMEOUT = 900
 GODOT_TIMEOUT = 300
 VIEW_SIZE = (1920, 1080)
 SIZE_TOL_M = 0.01
+PLAY_DEFAULT = Path("<raw>/play")  # --play with no DIR: <raw>/<raw_dir>/play
+PLAY_HOURS = 8  # the most one --play session stays open
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -38,12 +40,21 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "DIR/walkthrough.mp4 (off-screen window, 1280x720)")
     parser.add_argument("--no-video", action="store_true", help="--walk without the video")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
-    parser.add_argument("--views", default="", help="--shoot only the views whose names start with one of these "
-                        "comma-separated prefixes (no plan views, day views or compares), e.g. in_vent_,cu_vent_")
+    parser.add_argument("--views", default="", metavar="FILE|PREFIXES",
+                        help="--shoot only these views: a JSON file (a list of [name, title, eye [x, y, h], look [x, y, h],"
+                             " fov] in plan coordinates, an optional 6th {\"ssil\"|\"ssao\"|\"glow\"|\"shadows\": false}"
+                             " A/B switch) and the plan view, no compares or day views; or comma-separated prefixes of"
+                             " ship.toml's view names (no plan view), e.g. in_vent_,cu_vent_")
     parser.add_argument("--vent-states", default="", help="--shoot with the vents in a state each, e.g. e=problem,w=calm "
                         "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
     parser.add_argument("--motion", type=Path, metavar="DIR",
                         help="the stations' motion proof (step 2: the vents) off-screen: checks, MP4, sheets into DIR")
+    parser.add_argument("--play", type=Path, nargs="?", const=PLAY_DEFAULT, metavar="DIR",
+                        help="FOR THE ENGINEER ONLY (an on-screen window; agents never run it): walk the built ship in "
+                             "first person at night; P saves a screenshot and its position into DIR "
+                             "(default <raw>/<raw_dir>/play)")
+    parser.add_argument("--play-test", type=Path, metavar="DIR",
+                        help="the --play scene off-screen: the capsule walks 2 s, saves one shot and DIR/play.json")
 
 
 def raw(layout: dict) -> Path:
@@ -89,7 +100,14 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.shoot:
-        return shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states)
+        code = shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states)
+        if code:
+            return code
+    if args.play_test:
+        return play(layout, out, args.play_test.resolve(), test=True)
+    if args.play:
+        folder = raw(layout) / "play" if args.play == PLAY_DEFAULT else args.play.resolve()
+        return play(layout, out, folder, test=False)
     return 0
 
 
@@ -212,10 +230,10 @@ def godot_check(layout: dict, out: Path, folder: Path) -> int:
     return 0
 
 
-# The whole ship from straight above: nose (y -9.6 with the ramp's foot) to the nozzles (15.0) and both lenses (+-13.1)
-# in a 27 m high frame (1920x1080: 48 m wide), centred between them; south up as `top`.
-TOP_FULL = {"name": "top_full", "title": "top: the whole ship from straight above, at night", "size_m": 27.0,
-            "centre": [0.0, 2.7, 0.0], "day_name": "top_full_day",
+# The whole ship from straight above: the ramp's foot (y -12.6 since the raise) to the nozzles (15.0) and both lenses
+# (+-13.1) in a 29.5 m high frame (1920x1080: 52 m wide), centred between them; south up as `top`.
+TOP_FULL = {"name": "top_full", "title": "top: the whole ship from straight above, at night", "size_m": 29.5,
+            "centre": [0.0, 1.2, 0.0], "day_name": "top_full_day",
             "day_title": "top: the whole ship from straight above, by day"}
 
 
@@ -273,7 +291,9 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
            "collide": [p["id"] for p in layout["pieces"] if p["collide"] and p["id"] in ids],
            "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"] if pid in ids],
            # inside-2: the outside pieces draw on render layer 2, out of reach of the inside's strip lights
-           "outside": [p["id"] for p in layout["pieces"] if p["lane"] != "interior" and p["id"] in ids]}
+           # (an exterior piece with layer = "inside", the tunnel's inside, draws with the inside's)
+           "outside": [p["id"] for p in layout["pieces"]
+                       if p["lane"] != "interior" and p.get("layer") != "inside" and p["id"] in ids]}
     return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
 
 
@@ -300,13 +320,20 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         sys.path.insert(0, str(blender.SCRIPTS))
         req.update({"stations": vent_states(states), "open_rad": importlib.import_module("ship_interior_vent").OPEN_RAD})
     views, compares = shot_views(layout)
-    prefixes = tuple(p for p in only.split(",") if p)
-    if prefixes:   # step 2: a view set alone (the vents' in-place shots and close-ups)
+    prefixes: tuple = ()
+    if only and (only.endswith(".json") or Path(only).is_file()):   # the raise (2026-10-23): a review's own views
+        views, compares = json.loads(Path(only).read_text(encoding="utf-8")), []
+        layout = {**layout, "shots": {**layout["shots"], "day_views": []}}
+    elif only:   # step 2: a view set alone by name prefix (the vents' in-place shots and close-ups), no plan view
+        prefixes = tuple(p for p in only.split(",") if p)
         views = [v for v in views if v[0].startswith(prefixes)]
         if not views:
             raise common.Failure(f"ship --shoot --views {only}: no view matches")
     req.update({"mode": "shoot", "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
-                "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in views],
+                # fix 2: a --views row's optional 6th element switches the night look's parts off for that shot
+                # (an A/B: {"ssil": false, "ssao": false, "glow": false, "shadows": false}, "mats": {name: {"roughness":
+                # r, "metallic": m, "specular": s}} for a glTF material; ship.gd _ab)
+                "views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4], *v[5:6]] for v in views],
                 # details 1: views by day, after the night's (ship.toml [shots] day_views)
                 "day_views": [[v[0], v[1], _g(v[2]), _g(v[3]), v[4]] for v in layout["shots"].get("day_views", [])],
                 "top": {"name": "top", "title": "top: plan view, south up (as plan-3)", "size_m": 36.0},
@@ -336,6 +363,50 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         return 1
     common.ok(f"ship --shoot: {len(result['shots'])} shots, sheet {(folder / 'sheet.png').as_posix()}")
     return 0
+
+
+# --- the engineer's walk --------------------------------------------------------------------------------------------
+def play(layout: dict, out: Path, folder: Path, test: bool) -> int:
+    """The built ship at night in first person (godot/ship/player.gd), from the ramp's foot. For the engineer: a
+    normal window on the screen (CLAUDE.md keeps Godot windows off the screen for agents; this one is his, and an
+    agent only runs the test). test: the same scene off-screen through _godot.window(); the capsule walks forward 2 s,
+    saves one shot and play.json."""
+    req, staged = built_request(layout, out)
+    walk = walk_request(layout)
+    req.update({"mode": "play", "test": test, "walk": walk, "spawn": walk["points"][0], "spawn_yaw": 180.0,
+                "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    errors = _stage(staged)
+    if errors:
+        common.bad(f"ship --play: {len(errors)} import errors")
+        return 1
+    folder.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "play_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    args = ["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--", path.as_posix(),
+            folder.as_posix()]
+    if test:
+        (folder / "play.json").unlink(missing_ok=True)
+        code, output = _godot.window(args, VIEW_SIZE, GODOT_TIMEOUT)
+        if code != 0 or not (folder / "play.json").is_file():
+            raise common.Failure(f"ship.gd play test failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+        result = json.loads((folder / "play.json").read_text(encoding="utf-8"))
+        if result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 1:
+            common.bad(f"ship --play-test: {result}")
+            return 1
+        common.ok(f"ship --play-test: walked {result['moved_m']} m on the floor, one shot in {folder.as_posix()}")
+        return 0
+    common.say(f"ship --play: a window opens; P saves a screenshot into {folder.as_posix()}, Ctrl+Q or closing it quits")
+    # ship.gd's _play sizes and centres his window itself. heavy=False: it may stay open for hours, so it does not hold
+    # the heavy-run lock (the import above took it)
+    result = common.run([common.godot_bin(), *args], PLAY_HOURS * 3600, heavy=False)
+    code = result.returncode
+    if code != 0:
+        common.say("\n".join(((result.stdout or "") + (result.stderr or "")).splitlines()[-20:]))
+    shots = sorted(folder.glob("shot_*.png"))
+    common.say(f"ship --play: closed (exit code {code}); {len(shots)} screenshots in {folder.as_posix()}")
+    return 0 if code == 0 else 1
 
 
 # --- the walk-through video (the exterior lane) --------------------------------------------------------------------
@@ -403,7 +474,7 @@ def motion_request(layout: dict) -> dict:
     import sys
     sys.path.insert(0, str(blender.SCRIPTS))
     v = importlib.import_module("ship_interior_vent")
-    f = v.FLOOR
+    f = v.FLOOR + float(layout["deck"].get("lift_m", 0.0))   # the raise: the built GLBs stand lifted (ship_build.lifted)
     vents = {}
     for pid, s in (("station_vent_e", 1.0), ("station_vent_w", -1.0)):
         # way A: the blades keep between the cap rows (their ends sit in the caps), in front of the well's glow

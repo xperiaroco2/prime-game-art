@@ -83,6 +83,24 @@ def make(p: dict):
     return obj
 
 
+def lifted(parts: list, piece: dict, layout: dict) -> list:
+    """The raise (2026-10-23, art#263): every piece but a grounded one (ship.toml `grounded = true`: the clearing,
+    the ramp and its lights and stripes, the legs, the ground lamps, built at the real heights) is built in the design
+    frame (deck at floor_h - lift_m) and lifted here by [deck] lift_m: a part's verts, and a moving or imported part's
+    "origin", "offset" (a GLB part's place) and "hull" (its box's corners for the checks)."""
+    dz = 0.0 if piece.get("grounded") else float(layout["deck"].get("lift_m", 0.0))
+    if dz:
+        for p in parts:
+            for key in ("verts", "hull"):
+                if key in p:
+                    p[key] = [(x, y, h + dz) for x, y, h in p[key]]
+            for key in ("origin", "offset"):
+                if key in p:
+                    x, y, h = p[key]
+                    p[key] = (x, y, h + dz)
+    return parts
+
+
 def import_glb(p: dict) -> list:
     """A part made elsewhere (way A of station 1: Meshy's cleaned vent body): {"name", "glb", "offset": (x, y, h),
     "mirror_u": bool, "rot_u": rad}. Every mesh of the GLB, its own materials and textures kept, joined into one object
@@ -153,7 +171,7 @@ def rig(objs: list, parts: list[dict]) -> None:
 
 def build(piece: dict, layout: dict, out: Path) -> dict:
     clear()
-    parts = builder(piece["lane"], piece["builder"])(piece.get("args", {}), layout)
+    parts = lifted(builder(piece["lane"], piece["builder"])(piece.get("args", {}), layout), piece, layout)
     for p in parts:  # Godot's importer gives a `-col` mesh a static body with its trimesh (one-sided: solids face out)
         if piece.get("collide"):
             p["name"] += "-col"

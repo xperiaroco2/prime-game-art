@@ -34,6 +34,30 @@ def group(name: str) -> list:
 
 
 class ShipLightTest(unittest.TestCase):
+    def test_side_nav_lamps_off_together(self) -> None:
+        """fix 2 (the engineer, 2026-10-23: "not needed yet"): the red and green lamps are off, their placements,
+        pieces and lights alike (commented rows, NAV SIDE); the white tail lamp stays."""
+        pieces = {p["id"] for p in EXT["pieces"]}
+        states = {pid in pieces or bool(placed(pid)) for pid in ("nav_red", "nav_green")} | {bool(group("nav"))}
+        self.assertEqual(len(states), 1, "the side nav lamps are half off: placements, pieces and lights go together")
+        self.assertEqual(len(placed("nav_white")), 1)
+        self.assertEqual(len(group("nav_tail")), 1)
+
+    def test_ramp_pools_clear_of_the_ramp(self) -> None:
+        """fix 2: no ground lamp's pool reaches the ramp (the engineer's walk: the pools cut into its edge)."""
+        rp = LAYOUT["ramp"]
+        half, y0, y1 = rp["width_m"] / 2, min(rp["hinge"][1], rp["foot"][1]), max(rp["hinge"][1], rp["foot"][1])
+        for lamp in group("pool"):
+            if y0 - lamp[4] < lamp[1] < y1 + lamp[4]:
+                dx = abs(lamp[0]) - half
+                dy = max(0.0, y0 - lamp[1], lamp[1] - y1)
+                self.assertGreater(math.hypot(max(dx, 0.0), dy), lamp[4] + 0.05,
+                                   f"the pool at ({lamp[0]}, {lamp[1]}) reaches the ramp")
+        for (x, y, _h), _ in placed("ground_lamp"):
+            if y0 - 0.5 < y < y1 + 0.5:
+                self.assertGreater(abs(x) - 0.2, half + 1.0, f"the ground lamp at ({x}, {y}) stands at the ramp")
+
+    @unittest.skipUnless(placed("nav_red"), "the side nav lamps are off (fix 2)")
     def test_nav_lamps_port_red_starboard_green_white_aft(self) -> None:
         (red, red_yaw), = placed("nav_red")
         (green, green_yaw), = placed("nav_green")
@@ -55,12 +79,14 @@ class ShipLightTest(unittest.TestCase):
         top, _bottom = S.heights(white[0], white[1])
         self.assertAlmostEqual(white[2], top, delta=0.03, msg="the white lamp is not on the tail's top")
 
+    @unittest.skipUnless(placed("nav_red"), "the side nav lamps are off (fix 2)")
     def test_nav_lamps_have_their_lights(self) -> None:
         nav, tail = group("nav"), group("nav_tail")
         self.assertEqual((len(nav), len(tail)), (2, 1))
         for pid, lamp in (("nav_red", min(nav, key=lambda q: q[0])), ("nav_green", max(nav, key=lambda q: q[0])),
                           ("nav_white", tail[0])):
             (at, _), = placed(pid)
+            at = (at[0], at[1], at[2] + LAYOUT["deck"].get("lift_m", 0.0))   # the raise: the piece is lifted, its light is real
             self.assertLess(math.dist(at, lamp[:3]), 0.6, f"{pid}'s light is not at its lamp")
             self.assertLessEqual(lamp[4], 2.0, f"{pid}'s light is not a tiny one")
         red, green = sorted(nav)
@@ -77,7 +103,7 @@ class ShipLightTest(unittest.TestCase):
             self.assertAlmostEqual(h, bottom, delta=0.01, msg=f"landing lamp ({x}, {y}) not on the belly")
             spot = min(spots, key=lambda q: math.hypot(q[0] - x, q[1] - y))
             self.assertLess(math.hypot(spot[0] - x, spot[1] - y), 0.2)
-            self.assertLess(spot[2], h - 0.09, "the spot is not under the lens")
+            self.assertLess(spot[2], h + LAYOUT["deck"].get("lift_m", 0.0) - 0.09, "the spot is not under the lens")
             self.assertGreater(spot[10], 0.0, "not a spot")
         old = [(0.0, -1.5), (-5.0, 0.0), (5.0, 0.0)]   # details 1: the three orange belly pools' spots, at h 0.2
         back = [q for q in group("pool") if abs(q[2] - 0.2) < 0.05 and any(math.hypot(q[0] - x, q[1] - y) < 0.1
@@ -90,7 +116,7 @@ class ShipLightTest(unittest.TestCase):
         self.assertEqual(len(edge), 6)
         for lamp in edge:
             self.assertGreater(lamp[10], 0.0)
-            self.assertLess(lamp[2], 1.5, "an edge pool's spot above the edge (the fins' hot spots)")
+            self.assertLess(lamp[2], 1.5 + LAYOUT["deck"].get("lift_m", 0.0), "an edge pool's spot above the edge (the fins' hot spots)")
 
     def test_family_materials_take_their_familys_row_and_light_nothing(self) -> None:
         """details 3b (ship.gd _entry): a material named "<family>__<x>" without its own [light.mats] row takes its

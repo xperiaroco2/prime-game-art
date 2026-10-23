@@ -346,7 +346,7 @@ place = [
   ["th_cables", [1.8385, -3.3245, 0.0], -71.802],
   ["th_clip_h", [1.7604, -3.562, 0.0], -71.802],
   ["th_clip_h", [1.9166, -3.087, 0.0], -71.802],
-  ["th_wall_up_a", [1.8385, -3.3245, 0.0], -71.802],
+  ["th_wall_up_end_e", [1.8385, -3.3245, 0.0], -71.802],
   ["floor_light", [-1.618, -6.2367, 0.0], 71.802],
   ["th_wall_low_b", [-1.3325, -4.8637, 0.0], 71.802],
   ["th_wall_mid", [-1.3325, -4.8637, 0.0], 71.802],
@@ -360,7 +360,7 @@ place = [
   ["th_cables", [-1.8385, -3.3245, 0.0], 71.802],
   ["th_clip_h", [-1.9166, -3.087, 0.0], 71.802],
   ["th_clip_h", [-1.7604, -3.562, 0.0], 71.802],
-  ["th_wall_up_b", [-1.8385, -3.3245, 0.0], 71.802],
+  ["th_wall_up_end_w", [-1.8385, -3.3245, 0.0], 71.802],
   ["th_arch", [0.0, -5.4608, 0.0], 90.0],
   ["tip_floor_base", [10.5, 1.2, 0.0], -8.664],
   ["tip_floor_disc", [10.5, 1.2, 0.0], -8.664],
@@ -780,6 +780,18 @@ id = "th_wall_up_b"
 builder = "cor_wall_up"
 collide = true
 args = { length = 0.81012, tone = "b", prof = "throat" }
+
+[[pieces]]
+id = "th_wall_up_end_e"
+builder = "cor_wall_up"
+collide = true
+args = { length = 0.81012, tone = "a", prof = "throat", end = 1 }
+
+[[pieces]]
+id = "th_wall_up_end_w"
+builder = "cor_wall_up"
+collide = true
+args = { length = 0.81012, tone = "b", prof = "throat", end = -1 }
 
 [[pieces]]
 id = "th_arch"

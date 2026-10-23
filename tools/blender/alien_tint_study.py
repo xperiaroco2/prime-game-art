@@ -36,7 +36,8 @@ V2D = RAW / "2026-10-22-alien-pilot-3d" / "views"
 HEADS = ["axolotl", "chameleon"]
 WINDOW = (1000, 1000)
 
-# the player's skin choices: the build's own teal first, then alien_static.gd's PALETTE (sRGB)
+# the player's skin choices: the build's own teal first, then alien_static.gd's PALETTE (sRGB, the merged values;
+# CS6: as picked)
 SKINS = [("teal", None), ("coral", (0.93, 0.55, 0.56)), ("lavender", (0.64, 0.56, 0.92)),
          ("sunflower", (0.98, 0.78, 0.30)), ("cobalt", (0.30, 0.50, 0.90))]
 LIP_FIXED = {"B1": ("dusty rose", "#c48a8c"), "B2": ("teal-grey", "#4f6d70")}
@@ -57,7 +58,10 @@ def hexc(h: str) -> tuple:
 
 
 def recolour(c, base, target) -> tuple:
-    """The shader's recolour_to on one colour (hue shift, saturation and value ratios), in sRGB."""
+    """recolour_to's formula (hue shift, saturation and value ratios) on one sRGB colour. Not the study shader's
+    exact maths: tint_study.gdshader runs it on linear values (Godot converts source_color uniforms and the albedo),
+    so this is the sRGB reading used to pick the variants' targets. The colour slots in alien_static.gdshader run it
+    in sRGB HSV (alien_colour_geom.recolour is exact there)."""
     h, s, v = colorsys.rgb_to_hsv(*c)
     bh, bs, bv = colorsys.rgb_to_hsv(*base)
     th, ts, tv = colorsys.rgb_to_hsv(*target)
@@ -91,7 +95,7 @@ def variant(name: str, i: int, reg: dict) -> tuple[str, dict]:
             lip_t, mark_t, front_t = acc, acc, cap(hexc(front_h), CAP["front"])
         params = {"skin_color": skin, "lip_base": lip, "lip_color": lip_t, "mark_base": mark, "mark_color": mark_t,
                   "front_base": front, "front_color": front_t}
-        if skin_h is not None:
+        if skin_h is not None:  # an sRGB HSV cap the study shader applies to linear HSV (see alien_colour_geom.py)
             params["front_sat_max"] = round(CAP["front"] * 1.4, 4)
     else:
         label, s = SKINS[i]
@@ -145,6 +149,7 @@ def job(build: Path, out: Path) -> dict:
     reg = {h: regions(out, h) for h in HEADS}
     for h in HEADS:
         e = R.head_entry(build, h, f"tint_{h}")
+        reg[h]["skin"] = e["base"]  # the GLB's base_skin_srgb (the shader's base_skin), not the accent median
         e["accent"] = str(out / "maps" / f"{h}_accent.png")
         e["params"] = R.column("F", R.picks(build))  # the static_v5 pick of the alive levers
         j["heads"][h] = e

@@ -91,8 +91,8 @@ class ShipLayoutTest(unittest.TestCase):
             self.assertEqual(t["oculus"], {"d": 1.4, "sides": 32})
             self.assertNotIn("roof_windows", t)
             band = t["band"]
-            self.assertAlmostEqual(LAYOUT["deck"]["floor_h"] + band["sill_h"], B.SILL)
-            self.assertAlmostEqual(LAYOUT["deck"]["floor_h"] + band["head_h"], B.HEAD)
+            self.assertAlmostEqual(S.FLOOR + band["sill_h"], B.SILL)
+            self.assertAlmostEqual(S.FLOOR + band["head_h"], B.HEAD)
             self.assertEqual((band["from_deg"], band["to_deg"]), (-65.0, 45.0))   # P's trail fin hides it from +45
         v = r["vault"]
         hw, y0, y1, h0, h1 = B.VAULT
@@ -158,7 +158,7 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertTrue(any("exactly one" in p or "closed room has no exit" in p
                             for p in problems_after(lambda l: sl.rooms(l)["vault"].update(exit="hatch"))))
         self.assertTrue(any("walk point (0, 4.85)" in p
-                            for p in problems_after(lambda l: l["walk"]["points"].insert(5, [0.0, 4.85, 0.6]))))
+                            for p in problems_after(lambda l: l["walk"]["points"].insert(5, [0.0, 4.85, 1.2]))))
         self.assertTrue(any("its door (0, 3.1) is not on hall's wall" in p
                             for p in problems_after(lambda l: sl.rooms(l)["vault"]["door"].update(at=[0.0, 3.1]))))
         self.assertTrue(any("vault: " in p and "inside hall's wall" in p
@@ -183,15 +183,18 @@ class ShipLayoutTest(unittest.TestCase):
         mouth to the ground; four sockets in the hall."""
         t = sl.rooms(LAYOUT)["throat"]
         (x0, x1), y0 = sl.exit_edge(t)
-        self.assertEqual((x0, x1, y0), (-1.65, 1.65, -7.1))
-        self.assertEqual(LAYOUT["ramp"]["hinge"], [0.0, -7.1])
+        self.assertEqual((x0, x1, y0), (-1.65, 1.65, -8.1))   # the raise step 2: the tunnel's front, 1 m past the nose
+        self.assertEqual(min(q[1] for q in t["points"]), -7.1)   # the room's own polygon still ends at the nose edge
+        self.assertEqual(sl.tunnel(t), ((-1.65, 1.65), (-8.1, -7.1)))
+        self.assertAlmostEqual(sl.room_margin(t, (0.0, -7.6)), 0.5)   # the tunnel's floor is the throat's
+        self.assertEqual(LAYOUT["ramp"]["hinge"], [0.0, -8.1])
         self.assertEqual(LAYOUT["ramp"]["width_m"], x1 - x0)
         p = LAYOUT["player"]
         self.assertGreaterEqual(LAYOUT["deck"]["floor_h"] + t["clear_h"],
                                 LAYOUT["deck"]["floor_h"] + p["capsule_height_m"] + p["head_margin_m"] - 1e-9)
         self.assertLess(S.skin((0.0, t["roof_y"] - 0.3, 2.5)), 0.0)                  # the open notch: no roof
         top = S.heights(0.0, t["roof_y"] + 0.15)[0]
-        self.assertGreaterEqual(top - (LAYOUT["deck"]["floor_h"] + t["clear_h"] + S.ROOF), S.SKIN)
+        self.assertGreaterEqual(top - (S.FLOOR + t["clear_h"] + S.ROOF), S.SKIN)   # the design frame (the raise)
         self.assertEqual(len([s for s in LAYOUT["stations"]["spot"] if s["id"].startswith("socket")]), 4)
 
     def test_a_trunk_on_a_plain_spot_is_refused(self) -> None:
@@ -210,7 +213,7 @@ class ShipLayoutTest(unittest.TestCase):
         """rebuild F: the walk between two deck points is sampled; straight from one tip room to the other it passes
         behind the hall, through the hull."""
         def cut(layout):
-            layout["walk"]["points"] = [[-10.994, 1.275, 0.6], [10.994, 1.275, 0.6]]
+            layout["walk"]["points"] = [[-10.994, 1.275, 1.2], [10.994, 1.275, 1.2]]
         self.assertTrue(any("the walk from (-10.994, 1.275) to (10.994, 1.275) leaves" in p for p in problems_after(cut)))
 
     def test_a_cable_bay_on_a_breaker_wall_is_refused(self) -> None:
@@ -310,7 +313,7 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertTrue(any("not convex" in p for p in problems_after(dent)))
 
         def stray(layout):
-            layout["walk"]["points"].insert(5, [-5.0, -3.5, 0.6])   # between the hall and the west corridor: no room
+            layout["walk"]["points"].insert(5, [-5.0, -3.5, 1.2])   # between the hall and the west corridor: no room
         self.assertTrue(any(p.startswith("walk point (-5, -3.5)") for p in problems_after(stray)))
 
     def test_a_low_ceiling_is_refused(self) -> None:

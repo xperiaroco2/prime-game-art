@@ -20,6 +20,55 @@ BIN_CHUNK = 0x004E4942
 # the joints, in skin order; parents by index (-1: the skin's root)
 JOINTS = ("Chest", "Neck", "Head", "Crest1", "Crest2", "Crest3")
 PARENTS = (-1, 0, 1, 2, 3, 4)
+# the axolotl (2026-10-23, AL1): one bone per gill stalk, each a child of Head (L the head's left, +X; 1 the top)
+GILLS = ("GillL1", "GillL2", "GillL3", "GillR1", "GillR2", "GillR3")
+GILL_JOINTS = ("Chest", "Neck", "Head") + GILLS
+GILL_PARENTS = (-1, 0, 1) + (2,) * len(GILLS)
+# the gill poke test (AL2): a moved gill vertex is a poke when it ends more than POKE_TOL inside the skull (metres),
+# by both inside tests (AL3); the swing is tested at the controllers' four axis ends and four corners (yaw, pitch
+# signs), both clamped at the same cap. AL6 (PR #306 review): every gill vertex weighted over TEST_W that moves more
+# than MOVED_EPS (metres) is tested; only those already inside the skull at rest are left out (and counted). AL2 to
+# AL5 also left out the root band (weights under 0.35) and the vertices within 3 mm of the skull at rest, the
+# likeliest to poke.
+POKE_TOL = 0.001
+TEST_W = 0.01
+# the gill weights' lifts (alien_lively_build.py --gill-lift; AL7: every build weighs and poke-tests all of them)
+GILL_LIFTS = ("centre", "skull", "centre_pinned")
+MOVED_EPS = 1e-5
+SWING_CORNERS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
+SPRING_MAX_DEG = 15.0  # the gills' cap at most (the measured limit when lower)
+
+
+def spring_matrix(yaw: float, pitch: float) -> list[list[float]]:
+    """The 3 x 3 rotation the controllers give a spring bone (radians): Godot's Quaternion.from_euler(Vector3(-pitch,
+    yaw, 0)) and three.js's Euler(-pitch, yaw, 0, "YXZ"), both Ry(yaw) * Rx(-pitch); a column vector's turn."""
+    cy, sy, cx, sx = math.cos(yaw), math.sin(yaw), math.cos(-pitch), math.sin(-pitch)
+    ry = ((cy, 0.0, sy), (0.0, 1.0, 0.0), (-sy, 0.0, cy))
+    rx = ((1.0, 0.0, 0.0), (0.0, cx, -sx), (0.0, sx, cx))
+    return [[sum(ry[i][k] * rx[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
+
+
+# AL3: the bead's glint at a head turn: how far past its rest angle from the bead's front it may slide (radians);
+# alien_lively.gd CATCH_MARGIN, lively.js CATCH_MARGIN; the shaders' clamp is glint_dir
+CATCH_MARGIN = 0.12
+
+
+def catch_reach(rest, catch_dir, margin: float = CATCH_MARGIN) -> float:
+    """How far from the posed bead front the glint may sit (radians): the rest angle between the bead's front and the
+    catch light's direction, plus margin (alien_lively.gd catch_reach, lively.js catchReach)."""
+    r, d = _norm(rest), _norm(catch_dir)
+    return math.acos(max(-1.0, min(1.0, sum(a * b for a, b in zip(r, d))))) + margin
+
+
+def glint_dir(front, catch_dir, reach: float) -> tuple[float, float, float]:
+    """The glint's direction from the eye centre (alien_static.gdshader and lively.js): the fixed catch direction,
+    turned toward the posed bead front until it is at most reach from it (reach 0: unclamped)."""
+    f, d = _norm(front), _norm(catch_dir)
+    c = max(-1.0, min(1.0, sum(a * b for a, b in zip(f, d))))
+    if reach <= 0.0 or math.acos(c) <= reach:
+        return d
+    perp = _norm(tuple(b - a * c for a, b in zip(f, d)))
+    return _norm(tuple(a * math.cos(reach) + p * math.sin(reach) for a, p in zip(f, perp)))
 
 
 def smoothstep(e0: float, e1: float, x: float) -> float:
@@ -197,10 +246,15 @@ def normalise_weights(w: list[float]) -> list[float]:
 
 
 def add_skin(data: bytes, positions: dict[str, tuple[float, float, float]],
-             influences: list[list[tuple[int, float]]], mesh_node: int = 0) -> bytes:
-    """A GLB with a skin of JOINTS (global rest positions, no rotation) on mesh_node's mesh: per vertex up to four
-    (joint index, weight) pairs, in the mesh's single primitive's vertex order. Everything else is kept byte for
-    byte; joint nodes are appended, the root joint added to the scene."""
+             influences: list[list[tuple[int, float]]], mesh_node: int = 0,
+             joints: tuple[str, ...] = JOINTS, parents: tuple[int, ...] = PARENTS) -> bytes:
+    """A GLB with a skin of `joints` (global rest positions, no rotation; `parents` by index, -1 the root, a parent
+    before its children) on mesh_node's mesh: per vertex up to four (joint index, weight) pairs, in the mesh's single
+    primitive's vertex order. Everything else is kept byte for byte; joint nodes are appended, the root joint added to
+    the scene. The chameleon's JOINTS are the default; the axolotl's are GILL_JOINTS."""
+    JOINTS, PARENTS = joints, parents  # noqa: N806 (the names below)
+    if len(PARENTS) != len(JOINTS) or any(p >= k for k, p in enumerate(PARENTS)):
+        raise ValueError("one parent per joint, each before its child")
     doc, binary = read_glb(data)
     prim = doc["meshes"][doc["nodes"][mesh_node]["mesh"]]["primitives"]
     count = doc["accessors"][prim[0]["attributes"]["POSITION"]]["count"]
@@ -213,8 +267,9 @@ def add_skin(data: bytes, positions: dict[str, tuple[float, float, float]],
         p = positions[name]
         parent = positions[JOINTS[PARENTS[k]]] if PARENTS[k] >= 0 else (0.0, 0.0, 0.0)
         node = {"name": name, "translation": [p[i] - parent[i] for i in range(3)]}
-        if k + 1 < len(JOINTS) and PARENTS[k + 1] == k:
-            node["children"] = [first + k + 1]
+        kids = [first + j for j in range(len(JOINTS)) if PARENTS[j] == k]
+        if kids:
+            node["children"] = kids
         doc["nodes"].append(node)
     joints, weights = array("H"), array("f")
     for inf in influences:
@@ -241,6 +296,104 @@ def add_skin(data: bytes, positions: dict[str, tuple[float, float, float]],
     doc["nodes"][mesh_node]["skin"] = len(doc["skins"]) - 1
     doc["scenes"][doc.get("scene", 0)]["nodes"].append(first)
     return write_glb(doc, binary)
+
+
+def read_vec3(doc: dict, binary: bytes | bytearray, i: int) -> list[tuple[float, float, float]]:
+    """Accessor i's float32 VEC3 rows (tightly packed or strided)."""
+    a = doc["accessors"][i]
+    v = doc["bufferViews"][a["bufferView"]]
+    if a["componentType"] != 5126 or a["type"] != "VEC3":
+        raise ValueError("a float VEC3 accessor expected")
+    stride = v.get("byteStride", 12)
+    start = v.get("byteOffset", 0) + a.get("byteOffset", 0)
+    return [struct.unpack_from("<3f", binary, start + k * stride) for k in range(a["count"])]
+
+
+def write_floats(doc: dict, binary: bytearray, i: int, rows) -> None:
+    """Writes float32 VEC3 or VEC4 rows (sequences of numbers) into accessor i's tightly packed bytes, and its min and
+    max with them when the accessor has them (POSITION must)."""
+    a = doc["accessors"][i]
+    v = doc["bufferViews"][a["bufferView"]]
+    n = {"VEC3": 3, "VEC4": 4}.get(a["type"], 0)
+    if not n or v.get("byteStride", 4 * n) != 4 * n or a["componentType"] != 5126:
+        raise ValueError("LIVELY interleaved or non-float VEC3/VEC4: cannot patch")
+    rows = [tuple(float(c) for c in r) for r in rows]
+    if len(rows) != a["count"] or any(len(r) != n for r in rows):
+        raise ValueError(f"{a['count']} rows of {n} expected")
+    start = v.get("byteOffset", 0) + a.get("byteOffset", 0)
+    payload = struct.pack(f"<{n * len(rows)}f", *[c for r in rows for c in r])
+    binary[start:start + len(payload)] = payload
+    if "min" in a:
+        f = list(struct.iter_unpack(f"<{n}f", payload))
+        a["min"] = [min(r[j] for r in f) for j in range(n)]
+        a["max"] = [max(r[j] for r in f) for j in range(n)]
+
+
+def write_vec3(doc: dict, binary: bytearray, i: int, rows) -> None:
+    """write_floats for a VEC3 accessor (POSITION, NORMAL)."""
+    if doc["accessors"][i]["type"] != "VEC3":
+        raise ValueError("a VEC3 accessor expected")
+    write_floats(doc, binary, i, rows)
+
+
+def orthogonal_tangent(n, t):
+    """A TANGENT (x, y, z, w) made orthogonal to the normal n again: t - n (n . t), normalised, w kept (glTF wants
+    them orthogonal; the sclera's new radial normals turned n under the old t)."""
+    nn = _norm(n)
+    d = sum(nn[i] * t[i] for i in range(3))
+    o = [t[i] - nn[i] * d for i in range(3)]
+    if math.sqrt(sum(c * c for c in o)) < 1e-9:  # t along n: any perpendicular
+        o = list(_norm((nn[2], 0.0, -nn[0]) if abs(nn[1]) < 0.9 else (0.0, nn[2], -nn[1])))
+    x, y, z = _norm(o)
+    return (x, y, z, float(t[3]) if len(t) > 3 else 1.0)
+
+
+def stalk_weight(s: float, length: float, thin: float, in_: float = 0.08, full: float = 0.45) -> float:
+    """A gill stalk's bone weight at s along its axis from the root (metres) of a stalk `length` long, on a vertex
+    of thinness `thin` (the detail map's G, 1 thin): none at the root and on the skull (thick), full from `full` of
+    the length; the root's first `in_` of the length bends nothing."""
+    return smoothstep(in_ * length, full * length, s) * smoothstep(0.25, 0.5, thin)
+
+
+# AL4: a gill stalk's own geometry by its height over the skull: a vertex further from the head's centre than the
+# stalk's root on the skull (its pivot's distance from the centre plus the pivot's depth under the mesh) by LIFT_IN
+# starts to move, by LIFT_FULL it may move fully (metres); the detail map's thinness no longer gates it there
+LIFT_IN = 0.005
+LIFT_FULL = 0.06
+SMOOTH_PASSES = 24
+SMOOTH_ALPHA = 0.5
+
+
+def stalk_weight_lifted(s: float, length: float, thin: float, lift: float, in_: float = 0.08, full: float = 0.45) -> float:
+    """A gill stalk's bone weight (AL4): the ramp along the stalk (G.stalk_weight's, none in the root's first `in_`
+    of the length, full from `full`) times the larger of the vertex's thinness gate and its lift over the skull
+    (`lift` metres beyond the root's skull radius, LIFT_IN to LIFT_FULL). By thinness alone (AL1 to AL3) the
+    stalk's thick core and the fin vertices the detail map reads thick stayed at 0 out on the stalk beside fully
+    weighted fringe (99 mm of edge stretch at the cap); the skull itself (thick, no lift) still never moves."""
+    gate = max(smoothstep(0.25, 0.5, thin), smoothstep(LIFT_IN, LIFT_FULL, lift))
+    return smoothstep(in_ * length, full * length, s) * gate
+
+
+def smooth_within(values: list[float], edges: list[tuple[int, int]], labels: list[int], label: int,
+                  pinned: list[bool], passes: int = SMOOTH_PASSES, alpha: float = SMOOTH_ALPHA) -> list[float]:
+    """Laplacian smoothing of one stalk's weights (AL4): each pass moves every vertex of `label` that is not pinned
+    by `alpha` toward the mean of its neighbours of the same label (edges to other labels never count, so no weight
+    crosses to a neighbouring stalk; vertices of other labels keep their value). Pinned vertices (the skull, the
+    root band) keep theirs. Returns the new list."""
+    nb: dict[int, list[int]] = {}
+    for a, b in edges:
+        if a != b and labels[a] == label and labels[b] == label:
+            nb.setdefault(a, []).append(b)
+            nb.setdefault(b, []).append(a)
+    w = list(values)
+    for _ in range(passes):
+        nxt = list(w)
+        for i, js in nb.items():
+            if not pinned[i]:
+                m = sum(w[j] for j in js) / len(js)
+                nxt[i] = (1.0 - alpha) * w[i] + alpha * m
+        w = nxt
+    return w
 
 
 def png_bytes(width: int, height: int, rgb: bytes) -> bytes:
