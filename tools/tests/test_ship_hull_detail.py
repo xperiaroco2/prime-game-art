@@ -245,5 +245,68 @@ class ShipHullDetailTest(unittest.TestCase):
                 normals.append(S._newell([v[i] for i in faces[0]])[1])
             self.assertEqual(sorted(n > 0 for n in normals), [False, False, True, True], "both windings per side")
 
+    def test_the_jamb_caps_stay_under_the_roof(self) -> None:
+        """fix 2 (item 6): past the notch's side the roof line falls under the cap's top; the cap's upper outer
+        corner stood out of the roof's plates (the dark triangle by each canopy fairing). Every cap corner lies at
+        least CAP_SKIN under each roof face over the cap's line."""
+        caps = J.jamb_caps()
+        y = S.TH_ROOF_Y + J.CAP_BACK
+        roofs = J._roof_planes(y, 0.0, 3.0, steps=60)
+        self.assertTrue(roofs)
+        for v, _f in caps:
+            for x, yy, h in v:
+                for n, d in roofs:
+                    self.assertLessEqual(S._dot(n, (abs(x), yy, h)), d - J.CAP_SKIN + 1e-6)
+        upper = [v for v, _f in caps if len(v) > 4]
+        self.assertEqual(len(upper), 4)
+        self.assertTrue(all(max(h for _x, _y, h in v) > S.TH_TOP for v in upper), "still up under the lintel")
+
+    def test_the_fairings_plates_follow_the_lens_sectors(self) -> None:
+        """fix 2 (item 4): the fairings' plates are the lens rim's lowest band's sectors, one seam family for every
+        facet (the per-facet plan family switched round the bend: seams stopped on a fold and restarted offset);
+        each piece lies in its sector, mirrored on the west."""
+        surf = S.surface()
+        fair = [(c, i, q) for _k, _z, c, i, q, _f in J.skin_pieces() if c[0] == "fair"]
+        self.assertTrue(fair)
+        self.assertEqual({c[1] for c, _i, _q in fair}, {1, -1})
+        for c, i, q in fair:
+            self.assertTrue(S.p_fair_face(*surf[i][:2]))
+            sx, k = c[1], c[2]
+            g0 = S.p_axis_deg() + k * J.LENS_SECTOR
+            for p in q:
+                g = math.degrees(math.atan2(p[1] - S.P_TIP[1], sx * p[0] - S.P_TIP[0]))
+                off = (g - g0) % 360.0
+                self.assertTrue(off <= J.LENS_SECTOR + 1e-3 or off >= 360.0 - 1e-3, (c, p, off))
+
+    def test_the_folds_sink_along_one_miter(self) -> None:
+        """fix 2 (item 4, step 1): a point on a fold sinks along one line for every face there, by exactly 1 in each
+        face's own plane (two faces) and by the cap at most."""
+        a = S._unit3((0.0, 0.0, 1.0))
+        b = S._unit3((0.0, math.sin(math.radians(40)), math.cos(math.radians(40))))
+        for own in (a, b):
+            m = J.miter([a, b], own)
+            self.assertAlmostEqual(S._dot(m, a), 1.0, places=9)
+            self.assertAlmostEqual(S._dot(m, b), 1.0, places=9)
+        self.assertEqual(J.miter([a], a), a)
+        sharp = S._unit3((0.0, math.sin(math.radians(170)), math.cos(math.radians(170))))
+        self.assertLessEqual(math.sqrt(S._dot(*(J.miter([a, sharp], a),) * 2)), J.MITER_MAX + 1e-9)
+        pieces, faces = J.skin_miters()
+        self.assertEqual(len(pieces), len(J.skin_pieces()))
+        self.assertEqual(len(faces), len(S.surface()))
+
+    def test_the_nozzle_throats_are_smooth(self) -> None:
+        """fix 2 (item 5): the throat (the dark dish) is shaded smooth across its radial facets, sharp at its crease."""
+        for args in ({"r": 1.42, "length": 4.665}, {"r": 1.62, "length": 4.965}):
+            throat = next(p for p in D.nozzle_pod(args, LAYOUT) if p["name"] == "pod_throat")
+            self.assertEqual(throat["smooth_deg"], D.THROAT_SMOOTH_DEG)
+            self.assertGreater(D.THROAT_SMOOTH_DEG, 360.0 / D.POD_SEGS)
+            # no flat disc across the nozzle: the bell, the throat and the lights' rings have no end caps (an n-gon of
+            # POD_SEGS corners); the bell's and the throat's caps z-fought in one plane over the whole nozzle
+            parts = D.nozzle_pod(args, LAYOUT) + D.pod_ring(args, LAYOUT)
+            for p in parts:
+                if p["name"] in ("pod_bell", "pod_throat", "pod_band", "pod_inner_ring"):
+                    self.assertFalse([f for f in p["faces"] if len(f) >= D.POD_SEGS], p["name"])
+
+
 if __name__ == "__main__":
     unittest.main()

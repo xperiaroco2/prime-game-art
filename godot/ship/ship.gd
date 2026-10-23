@@ -39,6 +39,8 @@ var nav_blink: bool = true
 var _nav: Array = []   # [light, energy, tail]; [material, emission energy, tail] for the lamps' lenses
 var _env: Environment
 var _sky_mat: ShaderMaterial
+var _by_name: Dictionary = {}   # fix 2: glTF material name -> its BaseMaterial3D copies (not the METALS), for _ab
+var _ab_saved: Dictionary = {}   # material -> [roughness, metallic, specular] before an A/B row's "mats"
 var _night_lights: Array = []   # details 1: the moon and the key, hidden by _day
 
 ## The shared metal library (metal.gdshader) by glTF material name: base colour, metallic, roughness, grain, seams,
@@ -359,6 +361,7 @@ func _dress(ship: Node3D) -> int:
 				mi.set_surface_override_material(i, _metal(mat.resource_name))
 			elif mat is BaseMaterial3D and not seen.has(mat) and not (mat as BaseMaterial3D).emission_enabled:
 				seen[mat] = 0.0
+				_by_name[mat.resource_name] = _by_name.get(mat.resource_name, []) + [mat]
 				_look(mat, _entry(mats, mat.resource_name))
 			elif mat is BaseMaterial3D and (mat as BaseMaterial3D).emission_enabled:
 				var bm: BaseMaterial3D = mat
@@ -686,7 +689,23 @@ func _key(keys: Array, times: Array, k: int, w: float, j: int) -> Vector3:
 
 ## fix 2: a view's A/B switch ({"ssil"|"ssao"|"glow"|"shadows": false}, ship.py --views): those parts of the night
 ## look off for the shot; {} puts them back (the directional lights' shadows: the moon and the key).
+## fix 2: a --views row's "mats" ({glTF material name: {"roughness", "metallic", "specular"}}) sets those values on
+## that material's glTF copies (not the METALS) for that one shot; _ab({}) puts them back.
 func _ab(off: Dictionary) -> void:
+	for bm: BaseMaterial3D in _ab_saved:
+		var was: Array = _ab_saved[bm]
+		bm.roughness = was[0]
+		bm.metallic = was[1]
+		bm.metallic_specular = was[2]
+	_ab_saved.clear()
+	var mats: Dictionary = off.get("mats", {})
+	for mat_name: String in mats:
+		for bm: BaseMaterial3D in _by_name.get(mat_name, []):
+			var want: Dictionary = mats[mat_name]
+			_ab_saved[bm] = [bm.roughness, bm.metallic, bm.metallic_specular]
+			bm.roughness = float(want.get("roughness", bm.roughness))
+			bm.metallic = float(want.get("metallic", bm.metallic))
+			bm.metallic_specular = float(want.get("specular", bm.metallic_specular))
 	_env.ssil_enabled = bool(off.get("ssil", true))
 	_env.ssao_enabled = bool(off.get("ssao", true))
 	_env.glow_enabled = bool(off.get("glow", true))
