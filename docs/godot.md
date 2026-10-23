@@ -869,6 +869,48 @@ pilot's static premium heads"):
   - `web/lively.js`: the browser port (three.js 0.160, `onBeforeCompile` on the GLB's material, the same maths; the
     crest spring included), with `chameleon_lively.glb`, `lively.json`,
     `chameleon_sclera.png` and a test page.
+  - **The eye pit (v3, 2026-10-23):** in `lively_v2.mp4` the place the painted iris left read as a hollow in the
+    eyeball. Measured causes, both fixed in `alien_lively_build.py`:
+    - *The sclera fill (the main one).* The eye mask's R < 0.5 also holds the atlas's empty gutter (68,146 black
+      texels, half the "eye" texels), and the painted irises touch their UV islands' edges. The push-pull fill
+      pulled that black in: in the texels the GPU samples, the v2 sclera's old pupil sat at a median RGB distance
+      of 0.82 (left) and 0.59 (right) from the sclera median, the iris at 0.46 and 0.26 (the open sclera 0.004).
+      That is a soft grey-brown disc, which reads as a dent. The painted catch light stayed in it too. Now the
+      hole is every sampled texel within 1.6 iris angles that reads iris, pupil, dark ring or catch light (never
+      the lids' teal line), plus the gutter 8 texels around it. It is filled only from sampled sclera texels
+      within 0.06 of the median. `lively.json` `sclera_ghost` holds the check per eye and angle band (median,
+      p99, max, texels over 0.06 and how many of them are the lids' teal).
+    - *The geometry.* The sculpt's eyeballs are flattened at the front, up to 3 % of the radius inside the sphere
+      fitted to their open front, and most of all where the iris sits and where it travels. `eyeball_fix`
+      projects every eyeball vertex within `TRAVEL` (42 degrees: the 25-degree gaze cap plus the iris) onto that
+      sphere, faded out to `FADE` (58 degrees) and faded in from the lid line (no vertex that a lid or socket
+      triangle shares moves; iris-painted triangles the mask calls skin count as eyeball). The normals turn by
+      the change of the welded geometric normal. `lively.json` `pit_geometry` and `eye_residual.png` show the
+      residual per band before and after (blue a dent, red a bulge, saturated at 3 %).
+    - Ruled out by measurement: the normal map is flat on the whole eye (median 0.32 degrees, the same on the
+      pupil, iris and sclera), and the mask's G and B are constant over the eye (0.039 and 0). The shader is
+      unchanged, so `web/lively.js` is too.
+    - `--tag` now also names the build folder (`<out>/<tag>/`, refused if it exists), so v3 never overwrites v2.
+      It also writes `web_<tag>/` (the page and the tag's assets) and `eyes_pit_<tag>.jpg` (`eye_pit_shots.gd`:
+      before/after close-ups of both eyes at rest, far left, far right, down, up, and under raking light).
+      `--no-pit-fix` builds as v2 did.
+  - **The eye pit, v4 (2026-10-23):** two defects v3 left, both fixed in `alien_lively_build.py`:
+    - *A lid crossing.* v3's pull crossed one lid triangle: eyeball triangle 8774 under the upper lid rim of the
+      head's right eye, on the nose side, 24 degrees from the rest gaze; two of its vertices moved 1.8 and 3.8 mm
+      with the lid's surface 1.8 and 2.4 mm away. The lid fade measured only the distance to the vertices a lid
+      triangle shares, not to the lid's surface. Now each move is capped (`G.capped_weight`) at `MOVE_CAP`
+      (3.5 % of the eye radius) and at `ROOM_SHARE` (half) of the vertex's distance to the nearest lid or socket
+      triangle of its eye (a BVH of the original surface). A vertex lying on a lid triangle never moves.
+      `pit_geometry` adds `capped`, `capped_in_travel` and `min_room_left_mm`.
+    - *A dotted dark line under the upper lid* of the head's right eye once the gaze left the rest place. The old
+      pupil's dark texels at the lid line have a teal cast, so v3's "never the lids' teal" rule kept them; at rest
+      the procedural iris covered them. Teal now counts as the lid only from value `LID_TEAL_V` (0.45) up.
+    - *Grey seam lines:* the black gutter around the eye islands, mixed in by the texture filter. The gutter
+      within `GUTTER_PX` (4) of an eye island, and not within 4 of a skin or lid island, is filled with the
+      sclera too (`sclera_ghost.eye_rim`: the gutter ring's texels, the dark ones left, its median distance).
+    - `eye_pit_shots.gd` also writes `eyes_pit_<tag>_crop_right.jpg` and `_crop_left.jpg`: the upper lid edge of
+      each eye at 4x the sheet's scale (the window's own pixels, 2x, nearest), rows far left, far right and down,
+      columns before | after.
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
