@@ -34,22 +34,31 @@ def main() -> int:
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--shells", type=int, default=12)
+    ap.add_argument("--tris", type=int, default=4000, help="the game mesh's triangles")
+    ap.add_argument("--tag", default="", help="a suffix for the game folder, to keep a trial apart")
     args = ap.parse_args()
     base = RAW / args.batch
-    clean, paint = base / "clean", base / "paint"
+    # the full model is welded, sized and painted with Meshy's own UVs; only then is the game mesh decimated, with
+    # fresh UVs, and the paint baked onto it (decimating Meshy's UVs in place pulled texels across islands: specks)
+    clean, paint, game = base / "clean_full", base / "paint_full", base / f"game{args.tag}"
     if not args.no_build:
         r = blender.run_script("plush_clean.py", [str(base / "plush" / "multi_image_to_3d-model.glb"),
-                                                  str(clean / "plush.glb"), "--height", "0.30", "--tris", "4000"],
+                                                  str(clean / "plush.glb"), "--height", "0.30", "--tris", "10000000"],
                                timeout=900)
         print(*lines(r, "PLUSH_CLEAN"), sep="\n", flush=True)
         r = blender.run_script("plush_paint.py", [str(clean / "plush.glb"), str(paint)], timeout=900)
         print(*lines(r, "PLUSH_PAINT"), sep="\n", flush=True)
+        r = blender.run_script("plush_bake.py", [str(paint / "plush.glb"), str(paint / "plush_albedo.png"),
+                                                 str(paint / "plush_mask.png"), str(game), "--tris", str(args.tris)],
+                               timeout=1500)
+        print(*lines(r, "PLUSH_BAKE"), sep="\n", flush=True)
+    paint = game
     report = _export.validate(paint / "plush.glb", paint / "plush.validator.json")
     ok, text = _export.verdict(report)
     print(f"validator plush.glb: {text}", flush=True)
     code = 0
     if not args.no_shots:
-        res = _godot.stage(paint / "plush.glb", "vault_plush")
+        res = _godot.stage(paint / "plush.glb", f"vault_plush{args.tag.replace('-', '_')}")
         _godot.import_project()
         shots = paint / "godot"
         shots.mkdir(exist_ok=True)

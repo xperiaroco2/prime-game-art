@@ -7,8 +7,8 @@ Every texel of Meshy's base colour is sorted by its sRGB hue, saturation and val
 plush (the lids are its darker part), the brown velour, the eye whites, the dark thread (pupils and the smile) and
 the rest (given to the nearer of orange and brown). The orange keeps a softened copy of its own light and dark (so the
 lids stay a darker orange) at the concept's hue; the velour is flattened (Meshy painted wrinkles into it) to one brown
-with a faint blurred variation; the eye whites turn pink with red veins drawn as random walks from each eye patch's
-rim inward; the dark thread becomes one near-black brown. Writes into <out dir>:
+with a faint blurred variation; the eye whites (Meshy's marks inside them filled) are painted afresh in 3D (pink, a soft redder rim, a round
+pupil, a catch light); the dark thread becomes one near-black brown. Writes into <out dir>:
 - plush_albedo.png (sRGB), plush_mask.png (linear: R fur, G velour, B eye, the shader's weights), plush_normal.png
   (the cleanup's baked normal, copied), plush.glb (the mesh with the new albedo and normal, roughness 1, metallic 0:
   the plain-PBR fallback; the game look is godot/plush/plush.gdshader);
@@ -104,47 +104,278 @@ lone = dark & (blur(dark.astype(np.float32), 4) < 0.08) & (blur(white.astype(np.
 orange |= lone
 dark &= ~lone
 
+# Regions Meshy painted wrong, found in 3D and drawn into the texture through each face's UVs (the engineer's critic,
+# art#297, 2026-10-23): the tail's stalk is orange (Meshy made it brown), only its end pompom brown; the antenna balls
+# are brown all round (Meshy left orange crescents under them); dark thread marks only on the face's front. Front is -Y, up +Z (Blender's import of the GLB), the model 0.30 m tall on the floor.
+me = obj.data
+uv_layer = me.uv_layers.active.data
+cent = np.array([tuple(obj.matrix_world @ p.center) for p in me.polygons])
+face_uv = [np.array([tuple(uv_layer[li].uv) for li in p.loop_indices]) for p in me.polygons]
+
+
+def texel_class(cls, uv):
+    x = min(w - 1, max(0, int(uv[0] * w)))
+    y = min(h - 1, max(0, int(uv[1] * h)))
+    return cls[y, x]
+
+
+def raster(faces, grow=2):
+    """The texels the faces cover in UV space (row 0 is v = 0, as in the pixel array), grown by grow texels."""
+    out_mask = np.zeros((h, w), dtype=bool)
+    for f in faces:
+        pts = face_uv[f] * np.array([w, h])
+        for k in range(1, len(pts) - 1):
+            tri = np.array([pts[0], pts[k], pts[k + 1]])
+            x0, y0 = np.floor(tri.min(0)).astype(int)
+            x1, y1 = np.ceil(tri.max(0)).astype(int)
+            x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, w - 1), min(y1, h - 1)
+            if x1 < x0 or y1 < y0:
+                continue
+            gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+            (ax, ay), (bx, by), (cx, cy) = tri
+            den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+            if abs(den) < 1e-9:
+                continue
+            l1 = ((by - cy) * (gx - cx) + (cx - bx) * (gy - cy)) / den
+            l2 = ((cy - ay) * (gx - cx) + (ax - cx) * (gy - cy)) / den
+            inside_t = (l1 >= -0.02) & (l2 >= -0.02) & (1 - l1 - l2 >= -0.02)
+            out_mask[y0:y1 + 1, x0:x1 + 1] |= inside_t
+    if grow:
+        out_mask = blur(out_mask.astype(np.float32), grow) > 0.01
+    return out_mask
+
+
+zmax = cent[:, 2].max()
+# the tail: it leaves the body low at the back, along the middle; its tip is the farthest point back
+body = np.abs(cent[:, 0]) > 0.03
+back_y = {}
+for z0 in np.arange(0.0, 0.12, 0.01):
+    band = body & (cent[:, 2] >= z0) & (cent[:, 2] < z0 + 0.01)
+    back_y[round(z0, 2)] = cent[band, 1].max() if band.any() else 0.0
+tip = cent[np.argsort(-cent[:, 1])[:20]].mean(0)
+# a sphere's cap 2 cm deep is about as wide as the sphere when its radius is near 2 cm: the cap gives the radius
+cap = cent[:, 1] > tip[1] - 0.02
+pom_r = float(np.clip((cent[cap, 2].max() - cent[cap, 2].min()) / 2, 0.012, 0.03)) if cap.any() else 0.02
+pom_c = tip - np.array([0.0, pom_r, 0.0])
+in_pompom = np.linalg.norm(cent - pom_c, axis=1) < pom_r * 1.08
+stalk = np.array([abs(c[0]) < 0.03 and c[2] < 0.1 and c[1] > back_y.get(round(np.floor(c[2] * 100) / 100, 2), 1.0) + 0.004
+                  for c in cent]) & ~in_pompom
+# the antenna balls: around the highest point on each side, a ball's radius down
+balls = np.zeros(len(cent), dtype=bool)
+for side in (-1.0, 1.0):
+    s_sel = (np.sign(cent[:, 0]) == side) & (cent[:, 2] > zmax - 0.08)
+    if not s_sel.any():
+        continue
+    top = cent[s_sel][np.argmax(cent[s_sel][:, 2])]
+    cap = s_sel & (cent[:, 2] > top[2] - 0.02)
+    r_ball = float(np.clip((cent[cap, 0].max() - cent[cap, 0].min()) / 2, 0.012, 0.035)) if cap.any() else 0.022
+    ball_c = top - np.array([0.0, 0.0, r_ball])
+    # the whole ball, but not the stalk where it goes in: the stalks lean outwards, so the stalk is the faces within
+    # 35 degrees of the line from the ball's middle down towards the head
+    d = cent - ball_c
+    dist = np.linalg.norm(d, axis=1)
+    to_head = np.array([-0.6 * ball_c[0], 0.0, -0.07])
+    to_head /= np.linalg.norm(to_head)
+    along_stalk = (d @ to_head) > np.cos(np.radians(35.0)) * np.maximum(dist, 1e-9)
+    balls |= (dist < r_ball * 1.1) & ~(along_stalk & (dist > 0.7 * r_ball))
+# The fabric's colour is decided per face of the model, never per texel (the engineer, art#297, 2026-10-23: dots on
+# the belly, by an eye): a face is brown when most of its texels are, the labels are smoothed over the faces'
+# neighbours and islands under 60 faces join the colour around them, so no stray mark of Meshy's can stay a dot.
+# Then the tail's stalk is orange and its pompom and the antenna balls brown. Only the eyes and the thread (pupils,
+# the smile) keep texel detail, and only on the face's front.
+orig_orange, orig_brown = orange.copy(), brown.copy()
+co = np.array([tuple(obj.matrix_world @ vv.co) for vv in me.vertices])
+_, weld = np.unique(np.round(co / 1e-5).astype(np.int64), axis=0, return_inverse=True)
+weld = weld.ravel()
+edge_faces = {}
+for poly in me.polygons:
+    vs = [int(weld[i]) for i in poly.vertices]
+    for k in range(len(vs)):
+        key = (min(vs[k], vs[k - 1]), max(vs[k], vs[k - 1]))
+        edge_faces.setdefault(key, []).append(poly.index)
+pairs = np.array([fs[:2] for fs in edge_faces.values() if len(fs) >= 2], dtype=np.int64)
+
+
+def share(cls, f):
+    uv = face_uv[f]
+    c = uv.mean(0)
+    return np.mean([texel_class(cls, q) for q in [c] + [(c + u) / 2 for u in uv]])
+
+
+label = np.array([share(brown | (dark & ~white), f) for f in range(len(cent))]) > 0.5
+for _ in range(2):  # a majority over each face and its neighbours
+    total = label.astype(np.float32)
+    count = np.ones(len(label), dtype=np.float32)
+    np.add.at(total, pairs[:, 0], label[pairs[:, 1]])
+    np.add.at(total, pairs[:, 1], label[pairs[:, 0]])
+    np.add.at(count, pairs[:, 0], 1.0)
+    np.add.at(count, pairs[:, 1], 1.0)
+    label = total / count > 0.5
+
+
+def islands(lab):
+    """Each face's island id among faces of the same label (union-find over the neighbour pairs)."""
+    parent = np.arange(len(lab))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    for f0, f1 in pairs:
+        if lab[f0] == lab[f1]:
+            r0, r1 = find(f0), find(f1)
+            if r0 != r1:
+                parent[r0] = r1
+    return np.array([find(i) for i in range(len(lab))])
+
+
+ids = islands(label)
+sizes = np.bincount(ids, minlength=len(label))
+small = sizes[ids] < 60
+label[small] = ~label[small]
+label[stalk] = False
+label[in_pompom | balls] = True
+# no growing in UV space: the atlas packs unrelated parts of the model side by side, so a grown region paints into a
+# neighbour island (red marks on the back, one on an eye white). Texels between islands, which no face covers, take
+# the colour of the nearer covered texels.
+covered = raster(np.arange(len(cent)), grow=0)
+brown_in = raster(np.nonzero(label)[0], grow=0) & covered
+brown_t = brown_in | (~covered & (blur(brown_in.astype(np.float32), 2) > blur((covered & ~brown_in).astype(np.float32), 2)))
+face_front = (cent[:, 2] > zmax * 0.42) & (cent[:, 1] < -0.02)
+face_t = raster(np.nonzero(face_front)[0], grow=0)
+white &= face_t
+dark &= face_t
+brown = brown_t & ~white & ~dark
+orange = ~brown_t & ~white & ~dark
+regions = {"tail_stalk_faces": int(stalk.sum()), "tail_pompom_faces": int(in_pompom.sum()),
+           "antenna_ball_faces": int(balls.sum()), "brown_faces": int(label.sum()), "faces": len(label),
+           "small_islands_flipped_faces": int(small.sum()), "pompom_radius_m": round(float(pom_r), 4)}
+
 res = px.copy()
-# orange: the concept hue, its own light and dark softened (k 0.6), lids included
-vo = np.median(v[orange])
-shade_o = np.clip((v / vo) ** 0.6, 0.55, 1.15)
-shade_o = masked_blur(shade_o, orange, 2)
+# orange: the concept hue; Meshy's own light and dark only where Meshy painted orange, clipped and blurred, so large
+# forms (the lids' darker orange) stay and thin marks go
+vo = np.median(v[orig_orange])
+ratio_o = np.where(orig_orange, np.clip(v / vo, 0.75, 1.1), 1.0)
+shade_o = masked_blur(ratio_o, orange, 6) ** 0.6
 res[orange] = (ORANGE[None, :] * shade_o[orange][:, None])
 # velour: flattened, a faint large-scale variation only
-vb = np.median(v[brown])
-shade_b = np.clip(masked_blur(v / vb, brown, 24), 0.85, 1.15) ** 0.5
+vb = np.median(v[orig_brown])
+shade_b = np.clip(masked_blur(np.where(orig_brown, v / vb, 1.0), brown, 24), 0.85, 1.15) ** 0.5
 res[brown] = BROWN[None, :] * shade_b[brown][:, None]
-# thread
-res[dark] = THREAD
-# eye whites: pink, slightly lighter towards each patch's middle, then veins
-inside = masked_blur(white.astype(np.float32), white, 6)
-res[white] = PINK[None, :] * (0.9 + 0.12 * inside[white])[:, None]
-veins = 0
-ys, xs = np.nonzero(white)
-rim = white & (blur(white.astype(np.float32), 3) < 0.75)
-ry, rx = np.nonzero(rim)
-if ry.size:
-    picks = rng.choice(ry.size, size=min(ry.size, max(12, ry.size // 60)), replace=False)
-    cy, cx = ys.mean(), xs.mean()
-    for i in picks:
-        y, x = float(ry[i]), float(rx[i])
-        ang = rng.uniform(0, 2 * np.pi)
-        for _ in range(int(rng.integers(18, 46))):
-            iy, ix = int(round(y)), int(round(x))
-            if not (0 <= iy < h and 0 <= ix < w) or not white[iy, ix]:
-                break
-            a = 0.55 if rng.random() < 0.8 else 0.35
-            res[iy, ix] = res[iy, ix] * (1 - a) + VEIN * a
-            ang += rng.normal(0, 0.45)
-            y += np.sin(ang) * 1.2
-            x += np.cos(ang) * 1.2
-        veins += 1
+# The eyes, painted afresh in 3D (the engineer, art#297, 2026-10-23: specks on the whites, odd eyes): Meshy's texels
+# there are a mess of red, dark and white bits, and every texel-level patch left a new mark. Each eye is the faces
+# Meshy painted white or as its pupil; every texel of them gets its 3D point, and from it: pink with a soft redder
+# rim towards the eye's edge (bloodshot, never dotted), a round pupil where Meshy's pupil sits and of its size, and a
+# small catch light above the pupil's middle.
+face_co = [np.array([tuple(obj.matrix_world @ me.vertices[me.loops[li].vertex_index].co) for li in poly.loop_indices])
+           for poly in me.polygons]
+areas = np.array([poly.area for poly in me.polygons])
 
-# the shader's weights: R fur, G velour, B eye (thread counts as eye: embroidered, no pile)
+
+def raster_pos(faces):
+    """The texels the faces cover and each one's 3D point (interpolated over its triangle)."""
+    hit = np.zeros((h, w), dtype=bool)
+    pos = np.zeros((h, w, 3), dtype=np.float32)
+    for f in faces:
+        pts = face_uv[f] * np.array([w, h])
+        p3 = face_co[f]
+        for k in range(1, len(pts) - 1):
+            tri = np.array([pts[0], pts[k], pts[k + 1]])
+            t3 = np.array([p3[0], p3[k], p3[k + 1]])
+            x0, y0 = np.floor(tri.min(0)).astype(int)
+            x1, y1 = np.ceil(tri.max(0)).astype(int)
+            x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, w - 1), min(y1, h - 1)
+            if x1 < x0 or y1 < y0:
+                continue
+            gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+            (ax, ay), (bx, by), (cx, cy) = tri
+            den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+            if abs(den) < 1e-9:
+                continue
+            l1 = ((by - cy) * (gx - cx) + (cx - bx) * (gy - cy)) / den
+            l2 = ((cy - ay) * (gx - cx) + (ax - cx) * (gy - cy)) / den
+            l3 = 1 - l1 - l2
+            ins = (l1 >= -0.02) & (l2 >= -0.02) & (l3 >= -0.02)
+            p = l1[..., None] * t3[0] + l2[..., None] * t3[1] + l3[..., None] * t3[2]
+            sub_hit = hit[y0:y1 + 1, x0:x1 + 1]
+            sub_pos = pos[y0:y1 + 1, x0:x1 + 1]
+            sub_pos[ins] = p[ins]
+            sub_hit |= ins
+    return hit, pos
+
+
+share_white = np.array([share(white, f) if face_front[f] else 0.0 for f in range(len(cent))])
+share_dark = np.array([share(dark, f) if face_front[f] else 0.0 for f in range(len(cent))])
+eye_t = np.zeros((h, w), dtype=bool)
+eyes = []
+for side in (-1.0, 1.0):
+    on_side = face_front & (np.sign(cent[:, 0]) == side)
+    e = on_side & (share_white > 0.4)
+    if e.sum() < 10:
+        continue
+    ec = np.median(cent[e], axis=0)
+    er = float(np.percentile(np.linalg.norm(cent[e] - ec, axis=1), 90))
+    near = np.linalg.norm(cent - ec, axis=1) < er * 1.3
+    pup = on_side & near & (share_dark > 0.5)
+    faces = e | pup
+    for _ in range(2):  # close the small gaps between Meshy's white and pupil patches
+        total = faces.astype(np.float32)
+        count = np.ones(len(faces), dtype=np.float32)
+        np.add.at(total, pairs[:, 0], faces[pairs[:, 1]])
+        np.add.at(total, pairs[:, 1], faces[pairs[:, 0]])
+        np.add.at(count, pairs[:, 0], 1.0)
+        np.add.at(count, pairs[:, 1], 1.0)
+        faces = (total / count > 0.5) & near
+    pc = np.average(cent[pup], axis=0, weights=areas[pup]) if pup.any() else ec
+    pr = float(np.sqrt(areas[pup].sum() / np.pi)) if pup.any() else er * 0.35
+    hit, pos = raster_pos(np.nonzero(faces)[0])
+    d_eye = np.linalg.norm(pos[hit] - ec, axis=1) / er
+    rim_r = np.clip((d_eye - 0.5) / 0.5, 0.0, 1.0) ** 1.4
+    col = PINK[None, :] * (1.0 - 0.45 * rim_r[:, None]) + VEIN[None, :] * (0.45 * rim_r[:, None])
+    d_pup = np.linalg.norm(pos[hit] - pc, axis=1) / pr
+    a_pup = np.clip((1.0 - d_pup) / 0.08 + 0.5, 0.0, 1.0)[:, None]
+    col = col * (1 - a_pup) + THREAD[None, :] * a_pup
+    catch_c = pc + np.array([0.0, -0.15 * pr, 0.45 * pr])
+    d_catch = np.linalg.norm(pos[hit] - catch_c, axis=1) / (0.28 * pr)
+    a_catch = np.clip((1.0 - d_catch) / 0.15 + 0.5, 0.0, 1.0)[:, None]
+    col = col * (1 - a_catch) + np.array([0.96, 0.94, 0.92], dtype=np.float32)[None, :] * a_catch
+    res[hit] = col
+    eye_t |= hit
+    eyes.append({"side": side, "faces": int(faces.sum()), "pupil_faces": int(pup.sum()),
+                 "eye_radius_m": round(er, 4), "pupil_radius_m": round(pr, 4)})
+orange &= ~eye_t
+brown &= ~eye_t
+dark &= ~eye_t  # what is left of the thread: the smile
+res[dark] = THREAD
+veins = 0
+
+
+def pad(img, filled, steps):
+    """Texels no face covers take the mean of their filled neighbours, ring by ring, so filtering at an island's
+    edge never mixes in the colour of the island packed next to it."""
+    img = img.copy()
+    filled = filled.copy()
+    for _ in range(steps):
+        acc = np.zeros_like(img)
+        cnt = np.zeros(filled.shape, dtype=np.float32)
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            sf = np.roll(filled, (dy, dx), axis=(0, 1))
+            acc += np.roll(img, (dy, dx), axis=(0, 1)) * sf[..., None]
+            cnt += sf
+        grow = (~filled) & (cnt > 0)
+        img[grow] = acc[grow] / cnt[grow][:, None]
+        filled |= grow
+    return img
+
+
+# the shader's weights: R fur, G velour, B the glossy eye (whites, pupils, catch lights); the smile's thread none
 mask = np.zeros((h, w, 3), dtype=np.float32)
 mask[..., 0] = masked_blur(orange.astype(np.float32), np.ones_like(orange), 1)
 mask[..., 1] = masked_blur(brown.astype(np.float32), np.ones_like(brown), 1)
-mask[..., 2] = masked_blur((white | dark).astype(np.float32), np.ones_like(white), 1)
+mask[..., 2] = masked_blur(eye_t.astype(np.float32), np.ones_like(white), 1)  # the smile's thread: none, matte
+res = pad(res, covered, 6)
+mask = pad(mask, covered, 6)
 
 
 def save(name, data, colorspace):
@@ -181,7 +412,7 @@ report = {
                (("orange", orange), ("brown", brown), ("white", white), ("dark", dark), ("rest", rest))},
     "colours": {k: [round(float(c) * 255) for c in val] for k, val in
                 (("orange", ORANGE), ("brown", BROWN), ("pink", PINK), ("vein", VEIN), ("thread", THREAD))},
-    "veins": veins, "orange_median_v": round(float(vo), 3), "brown_median_v": round(float(vb), 3),
+    "veins": veins, "regions": regions, "eyes": eyes, "orange_median_v": round(float(vo), 3), "brown_median_v": round(float(vb), 3),
 }
 (out / "paint.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 print("PLUSH_PAINT " + json.dumps(report))

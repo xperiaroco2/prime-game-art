@@ -1,7 +1,7 @@
 // The vault plush's surface (art#297, step 3): the painted albedo, the baked normal and a fine pile normal in model
 // space (the atlas is cut into many islands, so a UV-space pattern would show every seam), soft Burley diffuse,
 // roughness 1 on the pile, and the sheen of a plush as Godot's rim. mask_tex (linear): R the orange fur, G the brown
-// velour, B the eyes and thread (no pile, a little gloss). The fuzzy silhouette comes from plush_shell.gdshader,
+// velour, B the eyes (glossy: whites, pupils and their catch lights; the smile's thread is in no channel, matte). The fuzzy silhouette comes from plush_shell.gdshader,
 // chained as next passes by plush.gd.
 shader_type spatial;
 render_mode diffuse_burley, specular_schlick_ggx;
@@ -15,7 +15,7 @@ uniform float pile_strength = 0.55;
 uniform float sheen : hint_range(0.0, 1.0) = 0.55;
 uniform float sheen_tint : hint_range(0.0, 1.0) = 0.85;  // the sheen takes the fabric's colour, not white
 uniform float grazing_lift : hint_range(0.0, 1.0) = 0.12;  // fibres catch light at the silhouette
-uniform float eye_roughness : hint_range(0.0, 1.0) = 0.42;
+uniform float eye_roughness : hint_range(0.0, 1.0) = 0.18;  // glossy eyes with a catch light, as in the concept
 
 varying vec3 mpos;
 varying vec3 mnorm;
@@ -42,9 +42,12 @@ void fragment() {
 	vec3 n = texture(normal_tex, UV).rgb * 2.0 - 1.0;
 	vec3 f = pile(mpos, mnorm) * 2.0 - 1.0;
 	n = normalize(n + vec3(f.xy * pile_strength * fabric, 0.0));
+	// the eyes are smooth glossy toy eyes: Meshy's sculpt wrinkles in them would crumple the gloss
+	n = normalize(mix(n, vec3(0.0, 0.0, 1.0), m.b * 0.9));
 	NORMAL_MAP = n * 0.5 + 0.5;
-	ROUGHNESS = mix(eye_roughness, 1.0, fabric);
-	SPECULAR = mix(0.3, 0.1, fabric);
+	// the fabric matte, the smile's thread (neither fabric nor eye) nearly so, the eyes glossy
+	ROUGHNESS = mix(mix(0.9, 1.0, fabric), eye_roughness, m.b);
+	SPECULAR = mix(mix(0.2, 0.1, fabric), 0.5, m.b);
 	METALLIC = 0.0;
 	RIM = sheen * fabric;
 	RIM_TINT = sheen_tint;

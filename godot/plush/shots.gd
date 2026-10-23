@@ -65,6 +65,12 @@ func _run() -> void:
 	_save(_sheet(views), out.path_join("views.png"))
 	var colour: Array[Image] = [_load_cell(a[6]), await _orbit(-35.0, 0.0, 1.0)]
 	_save(_sheet(colour), out.path_join("colour.png"))
+	# the close-ups a defect hunt needs, 720x720 each: the face, each eye, the belly, the back, the tail
+	for d: Array in [["face", 0.0, 0.2, 0.42], ["eye_l", 18.0, 0.27, 0.16], ["eye_r", -18.0, 0.27, 0.16],
+			["face_34", -35.0, 0.2, 0.45], ["belly", 0.0, -0.18, 0.5], ["back", 180.0, 0.0, 0.8],
+			["tail", 140.0, -0.35, 0.45], ["feet", 20.0, -0.38, 0.4]]:
+		var img: Image = await _orbit_full(d[1], d[2], d[3])
+		_save(img, out.path_join("detail_%s.png" % d[0]))
 
 	# the pile A/B: the face close up and the stand at 3 m, without and with the shells
 	var ab: Array[Image] = []
@@ -208,6 +214,20 @@ func _orbit(yaw_deg: float, lift: float, frac: float) -> Image:
 	_cam.position = c + Vector3(sin(yaw), 0.06, cos(yaw)).normalized() * dist
 	_cam.look_at(c)
 	return _crop(await _frame())
+
+
+## The same framing as _orbit, the frame's middle 720x720 at full resolution.
+func _orbit_full(yaw_deg: float, lift: float, frac: float) -> Image:
+	_cam.fov = 22.0
+	var c: Vector3 = _box.get_center() + _plush.position + Vector3(0.0, lift * _box.size.y, 0.0)
+	var h: float = _box.size.y * 1.08 * frac
+	var dist: float = h * 0.5 / tan(deg_to_rad(_cam.fov * 0.5))
+	var yaw := deg_to_rad(yaw_deg)
+	_cam.position = c + Vector3(sin(yaw), 0.06, cos(yaw)).normalized() * dist
+	_cam.look_at(c)
+	var img: Image = await _frame()
+	var s: int = img.get_height()
+	return img.get_region(Rect2i((img.get_width() - s) / 2, 0, s, s))
 
 
 ## The first-person view: the camera at eye height over the origin, looking at target.
