@@ -71,6 +71,27 @@ def make(p: dict):
     return obj
 
 
+def rig(objs: list, parts: list[dict]) -> None:
+    """Moving parts (step 2, the stations; docs/props.md "Conventions"): a part with "origin" (plan x, y, h in the
+    piece's frame) gets its object's origin there, its hinge or rest point, the mesh kept in place; a part with
+    "parent" (another part's name) is parented to that part's object, its place kept. Parts without either are
+    unchanged."""
+    from mathutils import Matrix
+    for o, p in zip(objs, parts):
+        if p.get("origin"):
+            x, y, h = p["origin"]
+            o.data.transform(Matrix.Translation((-x, y, -h)))
+            o.location = (x, -y, h)
+    bpy.context.view_layer.update()
+    by_name = {p["name"]: o for o, p in zip(objs, parts)}
+    for o, p in zip(objs, parts):
+        if p.get("parent"):
+            par = by_name[p["parent"]]
+            o.parent = par
+            o.matrix_parent_inverse = par.matrix_world.inverted()
+    bpy.context.view_layer.update()
+
+
 def build(piece: dict, layout: dict, out: Path) -> dict:
     clear()
     parts = builder(piece["lane"], piece["builder"])(piece.get("args", {}), layout)
@@ -78,6 +99,7 @@ def build(piece: dict, layout: dict, out: Path) -> dict:
         if piece.get("collide"):
             p["name"] += "-col"
     objs = [make(p) for p in parts]
+    rig(objs, parts)
     glb = out / f"{piece['id']}.glb"
     bpy.ops.export_scene.gltf(filepath=str(glb), **EXPORT)
     pts = [o.matrix_world @ v.co for o in objs for v in o.data.vertices]
