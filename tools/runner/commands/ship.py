@@ -18,13 +18,16 @@ from .. import blender, common, ship_layout
 from . import _export, _godot
 
 NAME = "ship"
-HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR"
+HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR; --play (the engineer's walk)"
 BUILD_SCRIPT = blender.SCRIPTS / "ship_build.py"
 GODOT_SCRIPT = "res://ship/ship.gd"
 BUILD_TIMEOUT = 900
 GODOT_TIMEOUT = 300
 VIEW_SIZE = (1920, 1080)
 SIZE_TOL_M = 0.01
+PLAY_DEFAULT = Path("<raw>/play")  # --play with no DIR: <raw>/<raw_dir>/play
+PLAY_SIZE = (1600, 900)
+PLAY_HOURS = 8  # the most one --play session stays open
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -38,6 +41,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "DIR/walkthrough.mp4 (off-screen window, 1280x720)")
     parser.add_argument("--no-video", action="store_true", help="--walk without the video")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
+    parser.add_argument("--play", type=Path, nargs="?", const=PLAY_DEFAULT, metavar="DIR",
+                        help="FOR THE ENGINEER ONLY (an on-screen window; agents never run it): walk the built ship in "
+                             "first person at night; P saves a screenshot and its position into DIR "
+                             "(default <raw>/<raw_dir>/play)")
+    parser.add_argument("--play-test", type=Path, metavar="DIR",
+                        help="the --play scene off-screen: the capsule walks 2 s, saves one shot and DIR/play.json")
 
 
 def raw(layout: dict) -> Path:
@@ -79,7 +88,14 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.shoot:
-        return shoot(layout, out, args.shoot.resolve())
+        code = shoot(layout, out, args.shoot.resolve())
+        if code:
+            return code
+    if args.play_test:
+        return play(layout, out, args.play_test.resolve(), test=True)
+    if args.play:
+        folder = raw(layout) / "play" if args.play == PLAY_DEFAULT else args.play.resolve()
+        return play(layout, out, folder, test=False)
     return 0
 
 
@@ -297,6 +313,48 @@ def shoot(layout: dict, out: Path, folder: Path) -> int:
         return 1
     common.ok(f"ship --shoot: {len(result['shots'])} shots, sheet {(folder / 'sheet.png').as_posix()}")
     return 0
+
+
+# --- the engineer's walk --------------------------------------------------------------------------------------------
+def play(layout: dict, out: Path, folder: Path, test: bool) -> int:
+    """The built ship at night in first person (godot/ship/player.gd), from the ramp's foot. For the engineer: a
+    normal window on the screen (CLAUDE.md keeps Godot windows off the screen for agents; this one is his, and an
+    agent only runs the test). test: the same scene off-screen through _godot.window(); the capsule walks forward 2 s,
+    saves one shot and play.json."""
+    req, staged = built_request(layout, out)
+    walk = walk_request(layout)
+    req.update({"mode": "play", "test": test, "walk": walk, "spawn": walk["points"][0], "spawn_yaw": 180.0,
+                "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    errors = _stage(staged)
+    if errors:
+        common.bad(f"ship --play: {len(errors)} import errors")
+        return 1
+    folder.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "play_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    args = ["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--", path.as_posix(),
+            folder.as_posix()]
+    if test:
+        (folder / "play.json").unlink(missing_ok=True)
+        code, output = _godot.window(args, VIEW_SIZE, GODOT_TIMEOUT)
+        if code != 0 or not (folder / "play.json").is_file():
+            raise common.Failure(f"ship.gd play test failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+        result = json.loads((folder / "play.json").read_text(encoding="utf-8"))
+        if result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 1:
+            common.bad(f"ship --play-test: {result}")
+            return 1
+        common.ok(f"ship --play-test: walked {result['moved_m']} m on the floor, one shot in {folder.as_posix()}")
+        return 0
+    common.say(f"ship --play: a window opens; P saves a screenshot into {folder.as_posix()}, Ctrl+Q or closing it quits")
+    w, h = PLAY_SIZE
+    # heavy=False: his window may stay open for hours, so it does not hold the heavy-run lock (the import above took it)
+    result = common.run([common.godot_bin(), "--resolution", f"{w}x{h}", *args], PLAY_HOURS * 3600, heavy=False)
+    code = result.returncode
+    shots = sorted(folder.glob("shot_*.png"))
+    common.say(f"ship --play: closed (exit code {code}); {len(shots)} screenshots in {folder.as_posix()}")
+    return 0 if code == 0 else 1
 
 
 # --- the walk-through video (the exterior lane) --------------------------------------------------------------------
