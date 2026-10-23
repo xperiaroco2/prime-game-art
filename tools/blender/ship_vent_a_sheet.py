@@ -5,7 +5,7 @@ row beside the matching concept view; and a sheet of close-ups (the body's textu
 frame's bevels, the scanner, the lamp, the closed seams). EEVEE, headless.
 
     blender -b --python ship_vent_a_sheet.py -- --glb <station_vent_e.glb> --concept <dir> --out <dir>
-        [--open-rad R] [--floor F] [--tile 420]
+        [--open-rad R] [--floor F] [--tile 420] [--game <calm.png>,<problem.png>]
 
 <concept>/<item>/image-0.png: final_wide_hand, front_ortho, front_closed, side_left. Writes <out>/sheet.png,
 <out>/closeups.png and each tile."""
@@ -28,13 +28,14 @@ def arg(k, d=None):
 
 GLB, CONCEPT, OUT = Path(arg("--glb")), Path(arg("--concept")), Path(arg("--out"))
 OPEN_RAD, FLOOR, TILE = float(arg("--open-rad", math.radians(25))), float(arg("--floor", 0.0)), int(arg("--tile", 420))
+GAME = arg("--game", "")   # two comma-separated PNGs: the last row, calm and the problem in Godot
 
 
 def scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=str(GLB))
     for o in list(bpy.context.scene.objects):
-        if "convcolonly" in o.name or o.name.endswith("_cool"):
+        if "convcolonly" in o.name:
             bpy.data.objects.remove(o, do_unlink=True)
     sc = bpy.context.scene
     sc.render.engine = "BLENDER_EEVEE"
@@ -51,6 +52,8 @@ def blades(t: float, heat: bool):
             o.rotation_euler = (-OPEN_RAD * t, 0, 0)
         if o.name.endswith("_heat"):
             o.hide_render = not heat
+        if o.name.endswith("_cool"):   # calm: the cyan glow in front of the heat; the problem: hidden
+            o.hide_render = heat
 
 
 def light(kind: str):
@@ -154,6 +157,9 @@ def main():
             light(kind)
             row.append(shoot(f"{name}_{kind}"))
         rows.append(row)
+    if GAME:   # the game's look: Godot shots of the vent alone in the ship's night light (ship --motion)
+        rows.append([load(CONCEPT / "final_wide" / "image-0.png", (0.0, 0.0, 1.0, 1.0))]
+                    + [load(Path(g)) for g in GAME.split(",")][:2])
     save(rows, OUT / "sheet.png")
     # close-ups in the warm light: (name, camera, target, lens, t)
     cu = [("texture_frame", (-0.9, -1.2, f + 1.5), (-0.6, -0.42, f + 1.35), 50, 1.0),
