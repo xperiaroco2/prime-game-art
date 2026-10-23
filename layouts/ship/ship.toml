@@ -407,6 +407,13 @@ int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
 int_halo__vent_heat = {c = [1.0, 0.3, 0.02], e = 0.6, l = 0.0}     # station 1: the vents' heat, orange-hot (not the halo's tan)
 int_cyan__vent_cool = {c = [0.02, 0.62, 1.0], e = 0.6, l = 0.0}     # station 1: the vents' calm glow behind the slats (hidden for the problem)
+# the vents' look step (vents-a4): each light its own clean piece; they glow and light nothing
+glow_cyan__vent_strip = {c = [0.1, 0.85, 1.0], e = 0.8, l = 0.0}     # the frame's strips
+glow_cyan__vent_hand = {c = [0.15, 0.75, 1.0], e = 1.0, l = 0.0}     # the scanner's hand outline
+glow_amber__vent_bar = {c = [1.0, 0.55, 0.05], e = 0.7, l = 0.0}     # the light bar's amber
+glow_nav_green__vent_band = {c = [0.05, 1.0, 0.25], e = 0.7, l = 0.0}   # the bar's green band
+glow_nav_white__vent_bar_hot = {c = [1.0, 0.93, 0.75], e = 0.7, l = 0.0}  # the bar's white-hot foot
+int_dark__vent_screen = {c = [0.0, 0.0, 0.0], e = 0.0, l = 0.0}      # the hand's dark screen
 glow_nav_red__vent_lamp = {c = [1.0, 0.015, 0.01], e = 0.5, l = 0.0}  # station 1: the problem beacon, a deep red
 int_plate = {v = 1.0, r = 0.45, m = 0.3}                            # join 2: at metallic 0.8 the hall's centre disc mirrored the dark lamp cap (a black hole); diffuse now
 int_grate = {v = 1.2, r = 0.1, m = 0.6}
