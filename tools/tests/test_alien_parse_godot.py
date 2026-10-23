@@ -34,8 +34,8 @@ class AlienParseTest(unittest.TestCase):
         cls.d = json.loads(line[6:])
 
     def test_no_error_lines(self):
-        # parse_check.gd calls set_colours with an unknown gills value on purpose (it must push_error and return {}),
-        # so its "ERROR: alien_static: unknown gills" line is expected: a filter widened to every "ERROR:" line would
+        # parse_check.gd calls set_colours with an unknown gills value and an unknown front on purpose (each must
+        # push_error and return {}), so its "ERROR: alien_static: unknown gills"/"unknown front" lines are expected: a filter widened to every "ERROR:" line would
         # need to allow that one.
         bad = [ln for ln in self.out.splitlines()
                if "SHADER ERROR" in ln or "Parse Error" in ln or "SCRIPT ERROR" in ln or "compilation failed" in ln]
@@ -43,7 +43,7 @@ class AlienParseTest(unittest.TestCase):
 
     def test_colour_slot_maths(self):  # PR #304's review: the GDScript maths against Python's, not only the proof
         cs = self.d["colour_slots"]
-        self.assertGreaterEqual(len(cs["cases"]), 19)
+        self.assertGreaterEqual(len(cs["cases"]), 29)
         for case in cs["cases"]:
             want = G.slot_colours(cs["bases"], case["picks"])
             self.assertEqual(sorted(want), sorted(case["uniforms"]), case["picks"])
@@ -54,6 +54,12 @@ class AlienParseTest(unittest.TestCase):
         self.assertTrue(cs["unknown_gills_empty"])  # an unknown gill mode is an error, as in Python and JS
         with self.assertRaises(ValueError):
             G.slot_colours(cs["bases"], {"gills": "fringe"})
+        fronts = [c["picks"].get("front") for c in cs["cases"]]
+        self.assertGreaterEqual(fronts.count("follow"), 4)  # CS6c: the front's paths in GDScript too
+        self.assertGreaterEqual(fronts.count("keep"), 4)
+        self.assertTrue(cs["unknown_front_empty"])  # an unknown front is an error, as in Python and JS
+        with self.assertRaises(ValueError):
+            G.slot_colours(cs["bases"], {"front": "pale"})
 
     def test_every_shader_parses(self):
         files = sorted(p.name for p in ALIEN.glob("*.gdshader"))
