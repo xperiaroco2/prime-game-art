@@ -153,6 +153,7 @@ tools/run.sh ship                       # the check and plan.txt
 tools/run.sh ship --build               # one GLB per piece (about 1 min); --only ids
 tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsule walk into DIR/check.json, then DIR/walkthrough.mp4
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
+tools/run.sh ship --play [DIR]          # the engineer's own walk (an on-screen window; agents run --play-test DIR)
 ```
 
 Runs over 180 s go to the background with their log (CLAUDE.md, "Shell"). A snapshot of the whole after launch
@@ -162,6 +163,19 @@ party-light posts among them), 59310 triangles per piece set, glTF-Validator cle
 `--walk`: the 1280x720 walk-through, 89.5 s, 2149 frames, 12.8 MB (rendered in 313 s); `--shoot`: 14 views and
 their compare sheets, 415..620 draw calls inside the tip rooms, 1740..2032 outside. Times: `--build` about 2 min,
 `--godot --walk DIR --shoot DIR` about 10 min.
+
+### Walking it yourself (`--play`)
+
+`ship --play [DIR]` is the engineer's: it opens a 1600x900 window on the screen with the built ship at the shoot's
+night look and a first-person capsule of the game's size (ship.toml `[player]`) at the ramp's foot, facing the ship
+(`godot/ship/player.gd`). Keys: W A S D walk, Shift run, Space jump, the mouse looks, F flies through walls (Q down,
+E up), P or F12 saves a screenshot, F11 full screen, H the help, Esc frees the mouse (a click takes it back), Ctrl+Q
+quits. The top-left corner shows the plan position (x, y, h as ship.toml writes them) and the facing, so a
+screenshot says where it was taken; each one is `DIR/shot_<time>_<n>.png` with a line in `DIR/shots.txt` (position,
+eye height, look direction). DIR defaults to `<raw>/<raw_dir>/play`. `--out` picks the pieces folder, as for the
+other modes: a piece set built from `main` with `ship --build --out <folder>` walks the ship without a branch's
+changes. Agents never open it on the screen (CLAUDE.md): `ship --play-test DIR` runs the same scene off-screen, walks
+the capsule forward 2 s, saves one shot and `DIR/play.json`, and fails when it did not move 1 m on the floor.
 
 ## The exterior (EXTERIOR lane)
 

@@ -174,8 +174,9 @@ class CallSites(unittest.TestCase):
                    and re.search(r'get_name\(\) == "headless"|get_texture\(\)\.get_image\(\)', p.read_text(encoding="utf-8"))]
         self.assertGreaterEqual(len(scripts), 12, [p.name for p in scripts])
         # the helper, its copy in the ragdoll project (gitignored, there after a ragdoll run), and an overlay walk.gd
-        # and bake_shots.gd use
-        shared = {"lib/offscreen.gd", "ragdoll/lib/offscreen.gd", "house/draw_cost.gd"}
+        # and bake_shots.gd use; ship/player.gd, the capsule ship.gd adds (its --play-test places the window; --play is
+        # the engineer's own on-screen walk, never an agent's)
+        shared = {"lib/offscreen.gd", "ragdoll/lib/offscreen.gd", "house/draw_cost.gd", "ship/player.gd"}
         for path in scripts:
             rel = path.relative_to(ROOT / "godot").as_posix()
             if rel in shared:
