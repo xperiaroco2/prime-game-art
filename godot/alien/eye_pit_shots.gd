@@ -6,7 +6,8 @@ extends SceneTree
 ## -X, and the full material from +X. One 1280 px wide JPG and a JSON of the row labels and eye states beside it.
 ## Since v4 also the upper lid edge of each eye at 4x the sheet's scale (the window's own pixels, 2x, nearest), rows
 ## far left, far right and down, columns before | after: <out>_crop_right.jpg (the head's right eye, on the image's
-## left) and <out>_crop_left.jpg.
+## left) and <out>_crop_left.jpg. Since v5 (AL2) the JSON's away_from_eyes: the whole head before/after at rest from
+## four sides, the pixel difference with the eyes left out.
 ## Args after "--": <before res://GLB> <before sclera PNG> <before lively.json> <after res://GLB> <after sclera PNG>
 ##   <after lively.json> <mask PNG> <base skin r,g,b> <HDRI> <out JPG>
 
@@ -18,14 +19,16 @@ const CELL := Vector2i(640, 300)
 const FPS := 24.0
 ## the upper lid edges in a sheet cell's pixels (x, y, w, h), per eye; the crops show them 4x (1280 x 720 per eye)
 const CROPS := {"right": Rect2i(40, 100, 160, 60), "left": Rect2i(410, 100, 160, 60)}
-const CROP_ROWS := [1, 2, 3]
+const CROP_ROWS := [1, 2, 3, 8, 9]
 const ROWS := [
 	["rest", Vector3(0, 0, 3), ""], ["eyes far to the head's left", Vector3(3.0, 0.0, 2.0), ""],
 	["eyes far to the head's right", Vector3(-3.0, 0.0, 2.0), ""], ["eyes down", Vector3(0.0, -2.5, 2.0), ""],
 	["eyes up (the lids' limit)", Vector3(0.0, 2.5, 2.0), ""],
 	["eyes down, raking light from +X, grey geometry", Vector3(0.0, -2.5, 2.0), "grey+x"],
 	["eyes down, raking light from -X, grey geometry", Vector3(0.0, -2.5, 2.0), "grey-x"],
-	["eyes down, raking light from +X, full material", Vector3(0.0, -2.5, 2.0), "lit+x"]]
+	["eyes down, raking light from +X, full material", Vector3(0.0, -2.5, 2.0), "lit+x"],
+	["eyes far to the head's left, studio light, grey with the normal map", Vector3(3.0, 0.0, 2.0), "nm"],
+	["eyes far to the head's left, studio light, grey geometry only", Vector3(3.0, 0.0, 2.0), "geo"]]
 
 var _cam: Camera3D
 var _studio: Array[DirectionalLight3D] = []
@@ -92,17 +95,18 @@ func _run() -> void:
 		report["rows"].append(row[0])
 		var mode: String = row[2]
 		for l: DirectionalLight3D in _studio:
-			l.visible = mode == ""
+			l.visible = mode in ["", "nm", "geo"]  # AL6: the studio light for the two grey crop rows too
 		_rake_pos.visible = mode == "grey+x" or mode == "lit+x"
 		_rake_neg.visible = mode == "grey-x"
-		_env.ambient_light_energy = 0.12 if mode == "" else 0.02
-		_env.ambient_light_sky_contribution = 0.5 if mode == "" else 0.0
+		var studio: bool = mode in ["", "nm", "geo"]
+		_env.ambient_light_energy = 0.12 if studio else 0.02
+		_env.ambient_light_sky_contribution = 0.5 if studio else 0.0
 		var states := []
 		for k: int in 2:
 			heads[k].visible = true
 			heads[1 - k].visible = false
 			for sm: ShaderMaterial in mats[k]:
-				sm.set_shader_parameter("debug_mode", 2 if mode.begins_with("grey") else 0)
+				sm.set_shader_parameter("debug_mode", 2 if mode.begins_with("grey") or mode == "geo" else (1 if mode == "nm" else 0))
 			lives[k].target = mid + (row[1] as Vector3)
 			for _i: int in 48:
 				lives[k].step(1.0 / FPS)
@@ -127,11 +131,72 @@ func _run() -> void:
 		ci.save_jpg(a[9].get_basename() + "_crop_%s.jpg" % key, 0.95)
 	report["crops"] = {"rows": CROP_ROWS.map(func(i: int) -> String: return ROWS[i][0]), "cells": str(CROPS),
 		"scale": "4x the sheet (2x the window's pixels, nearest)"}
+	report["away_from_eyes"] = await _away_diff(heads, lives, mid)
+	print("PIT whole head before/after away from the eyes: %s" % JSON.stringify(report["away_from_eyes"]))
 	var f := FileAccess.open(a[9].get_basename() + ".json", FileAccess.WRITE)
 	f.store_string(JSON.stringify(report, "  ") + "\n")
 	f.close()
 	print("PIT wrote %s (%d x %d)" % [a[9], sheet.get_width(), sheet.get_height()])
 	quit(0)
+
+
+## The whole head before | after at rest from the front, left, back and right (AL2: "the look otherwise unchanged"):
+## per side the mean absolute difference (0..255) and the share of pixels over 8/255, both away from the eyes (every
+## pixel within 2.2 eye radii of a projected eye centre left out), and the pixels compared.
+func _away_diff(heads: Array[Node3D], lives: Array, mid: Vector3) -> Dictionary:
+	for l: DirectionalLight3D in _studio:
+		l.visible = true
+	_rake_pos.visible = false
+	_rake_neg.visible = false
+	_env.ambient_light_energy = 0.12
+	_env.ambient_light_sky_contribution = 0.5
+	var res := {}
+	var at := Vector3(0.0, mid.y - 0.05, 0.0)
+	for yaw_deg: float in [0.0, 90.0, 180.0, 270.0]:
+		var imgs: Array[Image] = []
+		var eyes_px: Array = []
+		for k: int in 2:
+			heads[k].visible = true
+			heads[1 - k].visible = false
+			lives[k].target = mid + Vector3(0.0, 0.0, 1000.0)
+			for _i: int in 48:
+				lives[k].step(1.0 / FPS)
+			var yaw := deg_to_rad(yaw_deg)
+			var dist: float = 1.5 * 0.5 / tan(deg_to_rad(_cam.fov * 0.5))
+			_cam.position = at + Vector3(sin(yaw), 0.04, cos(yaw)).normalized() * dist
+			_cam.look_at(at)
+			for _i: int in 6:
+				await process_frame
+			await RenderingServer.frame_post_draw
+			var img: Image = root.get_texture().get_image()
+			img.convert(Image.FORMAT_RGB8)
+			imgs.append(img)
+			if k == 0:
+				var mesh: MeshInstance3D = lives[k].mesh
+				for side: String in ["left", "right"]:
+					var e: Dictionary = lives[k].eyes[side]
+					var c: Vector3 = mesh.global_transform * Lively._v(e["centre"])
+					var edge: Vector3 = c + _cam.global_transform.basis.x * float(e["radius"]) * 2.2
+					var pc: Vector2 = _cam.unproject_position(c)
+					eyes_px.append([pc, pc.distance_to(_cam.unproject_position(edge))])
+		var sum := 0.0
+		var over := 0
+		var n := 0
+		for j: int in imgs[0].get_height():
+			for i: int in imgs[0].get_width():
+				var skip := false
+				for ep: Array in eyes_px:
+					skip = skip or Vector2(i, j).distance_to(ep[0]) < float(ep[1])
+				if skip:
+					continue
+				var p: Color = imgs[0].get_pixel(i, j)
+				var q: Color = imgs[1].get_pixel(i, j)
+				sum += (absf(p.r - q.r) + absf(p.g - q.g) + absf(p.b - q.b)) / 3.0
+				over += 1 if maxf(absf(p.r - q.r), maxf(absf(p.g - q.g), absf(p.b - q.b))) > 8.0 / 255.0 else 0
+				n += 1
+		res[str(int(yaw_deg))] = {"mean_abs": snappedf(sum / maxf(n, 1) * 255.0, 0.001),
+			"share_over_8": snappedf(float(over) / maxf(n, 1), 0.00001), "pixels": n}
+	return res
 
 
 ## Both eyes from the front, 1 m wide (the window's 1280 x 720 middle 1280 x 600, halved).

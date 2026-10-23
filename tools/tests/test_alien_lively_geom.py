@@ -195,5 +195,181 @@ class EyePitTest(unittest.TestCase):
         self.assertEqual(G.colour_distance((0.5, 0.4, 0.3), (0.5, 0.4, 0.3)), 0.0)
 
 
+class PatchTest(unittest.TestCase):
+    """AL1 (PR #303 review minor 7): write_vec3's round trip through a 3-vertex GLB, the tangent fix, the gills' skin."""
+
+    def test_write_vec3_round_trip(self):
+        doc, binary = G.read_glb(tiny_glb(3))
+        doc["accessors"][0]["min"], doc["accessors"][0]["max"] = [0.0] * 3, [8.0] * 3
+        rows = [(0.5, -1.25, 2.0), (3.0, 4.5, -6.0), (0.1, 0.2, 0.3)]
+        G.write_vec3(doc, binary, 0, rows)
+        doc2, binary2 = G.read_glb(G.write_glb(doc, binary))
+        back = G.read_vec3(doc2, binary2, 0)
+        for r, b in zip(rows, back):
+            for x, y in zip(r, b):
+                self.assertAlmostEqual(x, y, places=6)
+        self.assertEqual(doc2["accessors"][0]["min"], [min(r[k] for r in back) for k in range(3)])
+        self.assertEqual(doc2["accessors"][0]["max"], [max(r[k] for r in back) for k in range(3)])
+        with self.assertRaises(ValueError):
+            G.write_vec3(doc, binary, 0, rows[:2])
+
+    def test_orthogonal_tangent(self):
+        t = G.orthogonal_tangent((0.0, 0.0, 1.0), (0.6, 0.0, 0.8, -1.0))
+        self.assertAlmostEqual(t[0], 1.0, places=9)
+        self.assertAlmostEqual(t[2], 0.0, places=9)
+        self.assertEqual(t[3], -1.0)
+        n = G._norm((0.3, -0.2, 0.9))
+        t = G.orthogonal_tangent(n, (1.0, 0.0, 0.0, 1.0))
+        self.assertAlmostEqual(sum(n[i] * t[i] for i in range(3)), 0.0, places=9)
+        self.assertAlmostEqual(math.sqrt(sum(c * c for c in t[:3])), 1.0, places=9)
+        t = G.orthogonal_tangent((0.0, 1.0, 0.0), (0.0, 2.0, 0.0, 1.0))  # along n: some perpendicular
+        self.assertAlmostEqual(t[1], 0.0, places=9)
+
+    def test_stalk_weight(self):
+        self.assertEqual(G.stalk_weight(0.0, 0.3, 1.0), 0.0)
+        self.assertEqual(G.stalk_weight(0.3, 0.3, 1.0), 1.0)
+        self.assertEqual(G.stalk_weight(0.3, 0.3, 0.2), 0.0)  # the thick skull never moves
+
+    def test_stalk_weight_lifted(self):
+        # the thick skull (no lift) never moves; a thick core out over the skull moves fully (AL4)
+        self.assertEqual(G.stalk_weight_lifted(0.3, 0.3, 0.0, 0.0), 0.0)
+        self.assertEqual(G.stalk_weight_lifted(0.3, 0.3, 0.0, G.LIFT_FULL), 1.0)
+        self.assertEqual(G.stalk_weight_lifted(0.3, 0.3, 1.0, 0.0), 1.0)
+        self.assertEqual(G.stalk_weight_lifted(0.0, 0.3, 1.0, 1.0), 0.0)  # the root band
+        mid = G.stalk_weight_lifted(0.3, 0.3, 0.0, 0.5 * (G.LIFT_IN + G.LIFT_FULL))
+        self.assertAlmostEqual(mid, 0.5)
+
+    def test_smooth_within(self):
+        # a chain 0-1-2-3 of stalk 0, then 4 of stalk 1: the step 1 -> 0 at vertex 2 softens, nothing leaks to 4
+        vals = [0.0, 0.0, 1.0, 1.0, 1.0]
+        edges = [(0, 1), (1, 2), (2, 3), (3, 4)]
+        labels = [0, 0, 0, 0, 1]
+        pinned = [True, False, False, False, False]
+        w = G.smooth_within(vals, edges, labels, 0, pinned, passes=1, alpha=0.5)
+        self.assertEqual(w[0], 0.0)  # pinned
+        self.assertAlmostEqual(w[1], 0.25)  # 0.5 * 0 + 0.5 * mean(0, 1)
+        self.assertAlmostEqual(w[2], 0.75)
+        self.assertAlmostEqual(w[3], 1.0)  # its only same-label neighbour is 2 (1.0); vertex 4 does not count
+        self.assertEqual(w[4], 1.0)  # another stalk's vertex is left as it was
+        w = G.smooth_within(vals, edges, labels, 0, pinned, passes=200)
+        self.assertLess(max(w[:4]), 0.01)  # pinned at 0: the chain settles to the pin
+
+    def test_gill_skin(self):
+        pos = {n: (0.0, 0.1 * k, 0.0) for k, n in enumerate(G.GILL_JOINTS)}
+        out = G.add_skin(tiny_glb(3), pos, [[(2, 1.0)], [(3, 0.5), (2, 0.5)], [(8, 1.0)]],
+                         joints=G.GILL_JOINTS, parents=G.GILL_PARENTS)
+        doc, _ = G.read_glb(out)
+        first = doc["skins"][0]["joints"][0]
+        self.assertEqual(len(doc["skins"][0]["joints"]), 9)
+        self.assertEqual(doc["nodes"][first + 2]["children"], [first + k for k in range(3, 9)])
+        with self.assertRaises(ValueError):
+            G.add_skin(tiny_glb(3), pos, [[(0, 1.0)]] * 3, joints=("A", "B"), parents=(1, -1))
+
+
+class SpringTest(unittest.TestCase):
+    """AL2: the poke test turns the gills as the controllers do, at the cap's eight limit corners."""
+
+    @staticmethod
+    def apply(m, v):
+        return [sum(m[i][j] * v[j] for j in range(3)) for i in range(3)]
+
+    def test_spring_matrix_axes(self):
+        a = math.radians(15.0)
+        # yaw alone turns about +Y: +Z toward +X (Godot's and three.js's right-handed Ry)
+        x, y, z = self.apply(G.spring_matrix(a, 0.0), [0.0, 0.0, 1.0])
+        self.assertAlmostEqual(x, math.sin(a))
+        self.assertAlmostEqual(y, 0.0)
+        # pitch alone is Rx(-pitch): +Z tips up toward +Y
+        x, y, z = self.apply(G.spring_matrix(0.0, a), [0.0, 0.0, 1.0])
+        self.assertAlmostEqual((x, y), (0.0, math.sin(a)))
+
+    def test_spring_matrix_is_ry_times_rx(self):
+        m = G.spring_matrix(0.3, -0.2)
+        for i in range(3):  # orthonormal
+            for j in range(3):
+                self.assertAlmostEqual(sum(m[k][i] * m[k][j] for k in range(3)), 1.0 if i == j else 0.0)
+        # Ry(yaw) * Rx(-pitch): +X stays in the XZ plane (Rx leaves it, Ry turns it about Y)
+        self.assertAlmostEqual(self.apply(m, [1.0, 0.0, 0.0])[1], 0.0)
+
+    def test_corners_and_limits(self):
+        self.assertEqual(len(set(G.SWING_CORNERS)), 8)
+        self.assertNotIn((0, 0), G.SWING_CORNERS)
+        self.assertLessEqual(G.SPRING_MAX_DEG, 15.0)
+        self.assertLess(G.MOVED_EPS, G.POKE_TOL)
+        self.assertLessEqual(G.TEST_W, 0.01)
+
+
+class RunTest(unittest.TestCase):
+    """The run's refusals (PR #303 review minors 1 and 7, PR #306 review major 1 and minor 9) and the controllers'
+    shared defaults."""
+
+    def test_glint_reach(self):
+        # AL3: at rest the glint is where it was; at a head turn it slides to the reach, never under the lid
+        rest, catch = (0.0, 0.0, 1.0), (-0.22, 0.40, 0.89)
+        reach = G.catch_reach(rest, catch)
+        cn = G._norm(catch)
+        self.assertAlmostEqual(reach, math.acos(cn[2]) + G.CATCH_MARGIN, places=9)
+        for a, b in zip(G.glint_dir(rest, catch, reach), cn):
+            self.assertAlmostEqual(a, b, places=9)
+        turned = (math.sin(0.7), 0.0, math.cos(0.7))  # the bead turned 40 degrees away from the catch's side
+        g = G.glint_dir(turned, catch, reach)
+        self.assertAlmostEqual(math.acos(sum(x * y for x, y in zip(turned, g))), reach, places=9)
+        self.assertAlmostEqual(sum(x * x for x in g), 1.0, places=9)
+        self.assertGreater(g[1], 0.0)  # still on the catch light's side (up)
+        self.assertEqual(G.glint_dir(turned, catch, 0.0), cn)
+
+    def test_controller_defaults_agree(self):
+        # AL6 (PR #306 review): Godot and the web share one table of the controller's defaults (a lively.json without
+        # a key, or without a controller, e.g. v2's) and the same constants; parsed from both files, not string-matched
+        root = Path(__file__).resolve().parents[2]
+        js = (root / "tools/web/lively/lively.js").read_text(encoding="utf-8")
+        gd = (root / "godot/alien/alien_lively.gd").read_text(encoding="utf-8")
+        import re
+        want = {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0, "neck_share": 0.4, "tilt": 0.0,
+                "sclera_normal_map": 1.0}
+        got_gd = json.loads(re.search(r"^const CONTROLLER_DEFAULTS := (\{.*\})$", gd, re.M).group(1))
+        got_js = json.loads(re.search(r"^export const CONTROLLER_DEFAULTS = (\{.*\});$", js, re.M).group(1))
+        self.assertEqual(got_gd, want)
+        self.assertEqual(got_js, want)
+        consts = {"CATCH_MARGIN": G.CATCH_MARGIN, "EYE_HZ": 9.0, "BREATH_S": 4.4}
+        for name, value in consts.items():
+            self.assertAlmostEqual(float(re.search(rf"const {name} := ([0-9.]+)", gd).group(1)), value)
+            self.assertAlmostEqual(float(re.search(rf"\b{name} = ([0-9.]+)", js).group(1)), value)
+        # both fall back the same way: no springs listed, none made
+        self.assertIn('lively["rig"].get("springs", [])', gd)
+        self.assertIn("(data.rig.springs || [])", js)
+
+    def test_run_refusal(self):
+        # PR #306 review: an untagged build is refused outright (it wrote into <out> itself, over the v2 chameleon's
+        # lively.json and build.log); a tagged build whose folder exists; shots whose sheet_<tag>.jpg exists, even
+        # with --no-build or --seconds 0; a video whose frame folder exists
+        import tempfile
+        import alien_lively_run as R
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            self.assertIn("untagged", R.run_refusal(d, "", True, False, 20.0))
+            self.assertIn("untagged", R.run_refusal(d, "", True, True, 0.0))
+            self.assertIsNone(R.run_refusal(d, "v9", True, True, 20.0))
+            (d / "v9").mkdir()
+            self.assertIn("new --tag", R.run_refusal(d, "v9", True, False, 20.0))
+            self.assertIsNone(R.run_refusal(d, "v9", False, True, 20.0))  # a re-shoot of a build with no shots yet
+            (d / "sheet_v9.jpg").write_bytes(b"x")
+            for seconds in (0.0, 20.0):
+                self.assertIn("sheet_v9.jpg", R.run_refusal(d, "v9", False, True, seconds))
+            (d / "sheet_v7.jpg").write_bytes(b"x")  # a build whose folder is new, but its sheet is not
+            self.assertIn("sheet_v7.jpg", R.run_refusal(d, "v7", True, True, 0.0))
+            for name in ("eyes_pit_v5.jpg", "shots_v6.json"):  # AL7: the eye pit sheet and the shots JSON too
+                (d / name).write_bytes(b"x")
+            self.assertIn("eyes_pit_v5.jpg", R.run_refusal(d, "v5", False, True, 0.0))
+            self.assertIn("shots_v6.json", R.run_refusal(d, "v6", True, True, 20.0))
+            self.assertIsNone(R.run_refusal(d, "v5", True, False, 20.0))  # a build alone makes neither
+            self.assertIsNone(R.run_refusal(d, "v9", False, False, 20.0))  # the validator alone
+            (d / "sheet.jpg").write_bytes(b"x")
+            self.assertIn("sheet.jpg", R.run_refusal(d, "", False, True, 0.0))
+            (d / "video" / "lively_v8").mkdir(parents=True)
+            self.assertIn("lively_v8", R.run_refusal(d, "v8", False, True, 20.0))
+            self.assertIsNone(R.run_refusal(d, "v8", False, True, 0.0))
+
+
 if __name__ == "__main__":
     unittest.main()

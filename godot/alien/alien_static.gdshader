@@ -59,6 +59,9 @@ uniform float front_sat_max : hint_range(0.0, 1.0) = 1.0;
 uniform float detail_on : hint_range(0.0, 1.0) = 1.0;
 uniform float gill_mode : hint_range(0.0, 2.0) = 1.0;
 uniform float normal_strength : hint_range(0.0, 2.0) = 1.0;
+// AL6 (lively): the normal map's strength on the eye texels while gaze_on (lively.json controller.sclera_normal_map;
+// 1 the merged look; 0 tried on the chameleon, eyes_pit_v6: its facets under the upper lids stayed)
+uniform float sclera_normal_map : hint_range(0.0, 1.0) = 1.0;
 uniform float specular_level : hint_range(0.0, 1.0) = 0.45;
 uniform float sss : hint_range(0.0, 1.0) = 0.25;
 uniform float sheen : hint_range(0.0, 1.0) = 0.2;
@@ -94,6 +97,25 @@ uniform float limbal_ring : hint_range(0.0, 1.0) = 0.0;
 uniform float catch_light : hint_range(0.0, 1.0) = 0.0;
 uniform vec2 catch_offset = vec2(-0.35, 0.45);  // the catch light's place in iris radii: (toward -X, up)
 uniform float catch_size = 0.16;  // its radius in iris radii
+// the bead (AL1, 2026-10-23: the axolotl's all-dark eyes, no iris to move): bead 1 draws sclera_tex (the albedo with
+// the painted catch light painted out) and a catch light fixed in the mesh's own frame (to the light) at catch_dir_l/r,
+// catch_angle wide, in catch_colour, times catch_light; the bead turns with the head under it
+uniform float bead : hint_range(0.0, 1.0) = 0.0;
+// AL2: one glint per bead, the drawn one: the bead's own reflections (specular, clear coat) times bead_reflect and
+// its roughness at least bead_rough, so the key light leaves a soft sheen, not a second sharp point
+uniform float bead_reflect : hint_range(0.0, 1.0) = 0.15;
+uniform float bead_rough : hint_range(0.0, 1.0) = 0.55;
+uniform vec3 catch_dir_l = vec3(0.0, 0.0, 1.0);
+uniform vec3 catch_dir_r = vec3(0.0, 0.0, 1.0);
+uniform float catch_angle = 0.1;
+uniform vec3 catch_colour : source_color = vec3(1.0);
+// AL3: the glint at a head turn. The catch light stays toward the light while the bead turns under it; past the
+// bead's open cap (a turned-away eye) it would fall under the lid and the bead go flat and dead. catch_reach_l/r (radians,
+// 0: off) is how far from the posed bead front (gaze_l/r, set each frame by the controller) the glint may sit: the
+// rest angle between front and catch plus a margin, so at rest nothing changes and at a turn the glint slides to the
+// cap's edge nearest the light, where the light would still catch the bead
+uniform float catch_reach_l = 0.0;
+uniform float catch_reach_r = 0.0;
 
 varying vec3 v_obj;
 
@@ -174,6 +196,18 @@ vec3 lively_eye(vec3 sclera) {
 	// the nearer eye centre (v_obj is the posed position: after a head turn a texel may cross x = 0)
 	bool left = distance(v_obj, eye_centre_l) < distance(v_obj, eye_centre_r);
 	vec3 dir = normalize(v_obj - (left ? eye_centre_l : eye_centre_r));
+	if (bead > 0.5) {
+		vec3 cd = left ? catch_dir_l : catch_dir_r;
+		vec3 f = normalize(left ? gaze_l : gaze_r);
+		float reach = left ? catch_reach_l : catch_reach_r;
+		float fa = acos(clamp(dot(f, cd), -1.0, 1.0));
+		if (reach > 0.0 && fa > reach) {
+			cd = normalize(f * cos(reach) + normalize(cd - f * dot(cd, f)) * sin(reach));
+		}
+		float ca = acos(clamp(dot(dir, cd), -1.0, 1.0));
+		float wa = max(fwidth(ca), 1.0e-4);
+		return mix(sclera, catch_colour, catch_light * (1.0 - smoothstep(catch_angle * 0.75 - wa, catch_angle * 1.1 + wa, ca)));
+	}
 	vec3 g = left ? gaze_l : gaze_r;
 	float th = acos(clamp(dot(dir, g), -1.0, 1.0));
 	float w = max(fwidth(th), 1.0e-4);
@@ -218,7 +252,8 @@ void fragment() {
 	if (debug_mode != 2) {
 		vec2 nxy = texture(normal_tex, UV).xy * 2.0 - 1.0;
 		vec3 nm = vec3(nxy, sqrt(max(0.0, 1.0 - dot(nxy, nxy))));
-		n = normalize(mix(NORMAL, TANGENT * nm.x + BINORMAL * nm.y + NORMAL * nm.z, normal_strength));
+		float ns = normal_strength * mix(1.0, sclera_normal_map, gaze_on * eye);
+		n = normalize(mix(NORMAL, TANGENT * nm.x + BINORMAL * nm.y + NORMAL * nm.z, ns));
 	}
 	if (micro_strength > 0.0 && debug_mode == 0) {
 		vec3 p = v_obj * micro_scale;
@@ -237,9 +272,10 @@ void fragment() {
 	c = mix(c, shade(c, 0.0, 1.15, 1.25), fuzz * pow(1.0 - nv, fuzz_power) * m.r);
 	ALBEDO = c;
 	METALLIC = 0.0;
-	SPECULAR = specular_level;
-	ROUGHNESS = mix(rough, max(rough, eye_under_rough), eye * step(0.001, eye_coat));
-	CLEARCOAT = eye_coat * eye;
+	float br = step(0.5, bead) * gaze_on * eye;  // the bead's own eye texels (0 on the chameleon)
+	SPECULAR = specular_level * mix(1.0, bead_reflect, br);
+	ROUGHNESS = mix(mix(rough, max(rough, eye_under_rough), eye * step(0.001, eye_coat)), max(rough, bead_rough), br);
+	CLEARCOAT = eye_coat * eye * mix(1.0, bead_reflect, br);
 	CLEARCOAT_ROUGHNESS = eye_coat_rough;
 	SSS_STRENGTH = sss * m.b;
 	RIM = sheen * m.b;

@@ -149,5 +149,5 @@ sources = [
 tests = ["test_ship_*"]
 
 [area.alien_lively]
-sources = ["tools/blender/alien_lively_geom.py"]  # the static head's liveliness proof's pure formulas (#196, lively)
+sources = ["tools/blender/alien_lively_geom.py", "tools/web/lively/*"]  # the static head's liveliness proof's pure formulas (#196, lively)
 tests = ["test_alien_lively_*"]
