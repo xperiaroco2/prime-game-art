@@ -22,6 +22,14 @@ import alien_colour_geom as G  # noqa: E402
 BASES = {"skin": [0.375, 0.8039, 0.8039], "lips": [0.3765, 0.7961, 0.7961], "detail": [0.3922, 0.8039, 0.8039],
          "front": [0.7412, 0.8745, 0.8275], "gill_tips": [0.3216, 0.7255, 0.7333],
          "gill_whole": [0.3373, 0.7569, 0.7608]}  # the axolotl's build (the regions' medians)
+# both heads' bases as v7's page reads them (<raw>/research/2026-10-22-roster/design/pilot3d/colour_slots/v7/web/
+# heads.json, the texels' medians, `bases_from_texels`)
+HEADS = {"axolotl": {"skin": [0.3959, 0.7946, 0.7919], "lips": [0.377, 0.7965, 0.7965], "front": [0.7393, 0.8762, 0.8284],
+                     "detail": [0.3905, 0.8041, 0.8048], "gill_tips": [0.3199, 0.7263, 0.7334],
+                     "gill_whole": [0.3359, 0.7554, 0.7612]},
+         "chameleon": {"skin": [0.4349, 0.7493, 0.7431], "lips": [0.3804, 0.698, 0.6941],
+                       "front": [0.7676, 0.8984, 0.8314], "detail": [0.3176, 0.6196, 0.6157],
+                       "gill_tips": [0.3176, 0.6196, 0.6157], "gill_whole": [0.3176, 0.6196, 0.6157]}}
 # 12 hues every 30 degrees, then the engineer's yellow, black, white and the acidic picks
 PICKS = ["#ff0000", "#ff8000", "#ffff00", "#80ff00", "#00ff00", "#00ff80", "#00ffff", "#0080ff", "#0000ff",
          "#8000ff", "#ff00ff", "#ff0080", "#ffee00", "#000000", "#ffffff", "#39ff14", "#ff1493", "#14206e"]
@@ -148,13 +156,37 @@ class ColourSlotsTest(unittest.TestCase):
         for h in PICKS + ["#e9f5f0", "#f0f0f0", "#d8e8e0"]:
             keep = G.slot_colours(BASES, {"skin": h})["front_color"]
             self.assertEqual(keep, G.slot_colours(BASES, {"skin": h, "front": "keep"})["front_color"])
-            self.assertGreaterEqual(abs(L(keep) - L(G.hexc(h))), 0.5 * d - 2e-2, h)  # white caps it above
+            if abs(L(G.hexc(h)) - (1.0 - 0.5 * d)) > 0.5 * G.FRONT_BAND:  # inside the band it passes the skin's L
+                self.assertGreaterEqual(abs(L(keep) - L(G.hexc(h))), 0.5 * d - 2e-2, h)  # white caps it above
             if L(G.hexc(h)) < L(tuple(BASES["skin"])):
                 self.assertGreaterEqual(L(keep), L(tuple(BASES["front"])) - 2e-3, h)  # pale on a dark skin
         navy = G.slot_colours(BASES, {"skin": "#14206e", "front": "follow"})["front_color"]
         self.assertLess(L(navy), 0.6)
         with self.assertRaises(ValueError):
             G.slot_colours(BASES, {"skin": "#14206e", "front": "pale"})
+
+    def test_keep_front_is_continuous(self):
+        """CS6c (PR #310's review): the "keep" front stepped from white to 1 - 1.5 d at skin L = 1 - d/2 (axolotl
+        grey 239: L 1.0 -> 0.856; chameleon grey 232: 1.0 -> 0.791). Now blended over FRONT_BAND: on both heads, along
+        the 256 greys and the tints from five hues to white, no step in the front's L above 0.02 between neighbours;
+        no picks and a pick at the base stay exact."""
+        L = lambda c: G.to_oklab(c)[0]  # noqa: E731
+        hues = {"grey": None, "red": (1, 0, 0), "yellow": (1, 1, 0), "teal": (0, 1, 1), "blue": (0, 0, 1),
+                "pink": (1, 0.08, 0.58)}
+        for name, bases in HEADS.items():
+            for hn, h in hues.items():
+                ramp = [(i / 255,) * 3 if h is None else tuple(c + i / 255 * (1 - c) for c in h) for i in range(256)]
+                fl = [L(G.slot_colours(bases, {"skin": c})["front_color"]) for c in ramp]
+                worst = max(abs(fl[i + 1] - fl[i]) for i in range(255))
+                self.assertLess(worst, 0.02, (name, hn))
+            self.assertEqual(G.slot_colours(bases, {})["front_color"], tuple(bases["front"]), name)
+            at = G.slot_colours(bases, {"skin": tuple(bases["skin"])})["front_color"]
+            self.assertLess(max(abs(x - y) for x, y in zip(at, bases["front"])), 1e-6, name)
+            d = L(tuple(bases["front"])) - L(tuple(bases["skin"]))
+            for g in (0.0, 0.5, 0.8):  # away from the band the rule is CS6b's
+                if abs(L((g,) * 3) - (1 - 0.5 * d)) > G.FRONT_BAND:
+                    f = L(G.slot_colours(bases, {"skin": (g,) * 3})["front_color"])
+                    self.assertGreaterEqual(abs(f - L((g,) * 3)), 0.5 * d - 2e-2, (name, g))
 
     def test_identity(self):
         u = G.slot_colours(BASES, {})
@@ -211,6 +243,8 @@ class ColourSlotsTest(unittest.TestCase):
             self.assertEqual(json.loads(gp), p)
         for k in ("gill_tips", "gill_whole"):
             self.assertIn(f'"{k}"', src)
+        self.assertIn(f"const FRONT_BAND := {G.FRONT_BAND}", src)
+        self.assertIn(f"export const FRONT_BAND = {G.FRONT_BAND};", JS.read_text(encoding="utf-8"))
 
     def test_presets_unchanged(self):  # CS6: the stored preset colours stay as merged in #304/#306
         self.assertEqual(G.PRESETS[1], ("coral reef", {"skin": "#e39c8c", "lips": "#a2575a", "detail": "#a2575a",
@@ -281,9 +315,10 @@ class ColourSlotsTest(unittest.TestCase):
             {"skin": "#e39c8c", "detail": "#ff0000", "detail_on": False, "gills": "skin"},
             {"skin": "#14206e", "lips": "#ffffff", "gills": "whole"}, {"skin": "#0000ff", "lips": "#0000ff"},
             {"gills": "fringe"}, {"front": "pale"}] + [{"skin": h, "front": "follow"} for h in PICKS] + [
-            {"skin": h, "front": "keep"} for h in ("#ffffff", "#f0f0f0", "#d8e8e0", "#000000")]
+            {"skin": h, "front": "keep"} for h in ("#ffffff", "#f0f0f0", "#d8e8e0", "#000000", "#e8e8e8", "#eeeeee",
+                                                    "#f4f4f4", "#e8f0ff")]  # CS6c: inside the band too
         jpicks = [{("detailOn" if k == "detail_on" else k): v for k, v in p.items()} for p in picks]
-        for bases in (BASES, no_gills):
+        for bases in (BASES, no_gills, HEADS["chameleon"]):
             out = subprocess.run([node, str(JS), "--json", json.dumps({"bases": bases, "picks": jpicks})],
                                  capture_output=True, text=True, timeout=60)
             self.assertEqual(out.returncode, 0, out.stderr)
