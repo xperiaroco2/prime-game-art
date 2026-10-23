@@ -8,7 +8,7 @@ heights against the game's 1.80 m capsule. Measures only; changes no build, cont
    with and without its default track removal), reports in `<tag>/godot_check/`.
 2. godot/alien/bones_probe.gd, headless, on the three imports: bones after import, the springs driven by the lively
    controller (pose angles, the spring-weighted vertices' head-relative swing as vectors in rest world space, their
-   difference and swing-direction angle against the plain import), the
+   difference and swing-direction angle against the plain import; B6: the frames against it), the
    Head bone's scale over a breath, every clip's unresolved tracks and turn.
 3. `<tag>/bones.json` and `<tag>/bones.md` (with the heights from each build's char.json).
 """
@@ -53,6 +53,16 @@ def table(heads: list[str], out: Path, probe: dict) -> str:
                         f"{len(char['springs'])} | {r.get('spring_max_deg')} | {r.get('spring_move_max_mm')} | "
                         f"{r.get('against_first_mm')} | {r.get('swing_angle_max_deg')} / {r.get('swing_angle_mean_deg')} | {len(clips)} clips, {moving} turning > 1 deg, {lost} unresolved "
                         f"| {hs.get('held')} / {hs.get('follow')} |")
+    rows += ["", "## The frames against the plain import (B6)", "",
+             "| head | variant | Skeleton3D global turn deg (against the plain import) | rest points apart max mm, by "
+             "index / paired by position | spring vertex lists equal | spring bones' local rests apart max deg | their world rests apart max deg |",
+             "|---|---|---|---|---|---|---|"]
+    for h in heads:
+        for v, _ in VARIANTS[1:]:
+            r = probe[h].get(v, {})
+            rows.append(f"| {h} | {v} | {r.get('skeleton_turn_deg')} ({r.get('skeleton_turn_vs_first_deg')}) | "
+                        f"{r.get('rest_by_index_vs_first_mm')} / {r.get('rest_paired_vs_first_mm')} | {r.get('spring_idx_equal')} | "
+                        f"{r.get('spring_local_rest_vs_first_deg')} | {r.get('spring_world_rest_vs_first_deg')} |")
     rows += ["", "## Heights (rest pose, m above the lowest vertex)", "",
              "| head | whole top | over the 1.80 m capsule | skull top | crest/gill top | body top (no head weight) | "
              "eyes |", "|---|---|---|---|---|---|---|"]
@@ -84,7 +94,7 @@ def main() -> int:
     code, text = _godot.godot(["--headless", "--path", str(_godot.PROJECT), "-s", "res://alien/bones_probe.gd", "--",
                                str(out / "bones_job.json")], 900)
     (out / "bones_probe.log").write_text(text, encoding="utf-8", newline="\n")
-    print(*[x for x in text.splitlines() if x.startswith(("BONES", "ERROR", "SCRIPT ERROR"))], sep="\n", flush=True)
+    print(*[x for x in text.splitlines() if x.startswith(("BONES", "FRAME", "ERROR", "SCRIPT ERROR"))], sep="\n", flush=True)
     if code != 0 or not (out / "bones.json").exists():
         print(f"bones_probe: exit {code}", flush=True)
         return 1
