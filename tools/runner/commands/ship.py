@@ -18,7 +18,7 @@ from .. import blender, common, ship_layout
 from . import _export, _godot
 
 NAME = "ship"
-HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR"
+HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts)"
 BUILD_SCRIPT = blender.SCRIPTS / "ship_build.py"
 GODOT_SCRIPT = "res://ship/ship.gd"
 BUILD_TIMEOUT = 900
@@ -38,6 +38,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "DIR/walkthrough.mp4 (off-screen window, 1280x720)")
     parser.add_argument("--no-video", action="store_true", help="--walk without the video")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="off-screen shots at night, plan compare and sheet into DIR")
+    parser.add_argument("--motion", type=Path, metavar="DIR",
+                        help="the stations' motion proof (step 2: the vents) off-screen: checks, MP4, sheets into DIR")
 
 
 def raw(layout: dict) -> Path:
@@ -76,6 +78,10 @@ def run(args: argparse.Namespace) -> int:
             return code
     if args.walk and not args.no_video:
         code = walk_video(layout, out, args.walk.resolve())
+        if code:
+            return code
+    if args.motion:
+        code = motion(layout, out, args.motion.resolve())
         if code:
             return code
     if args.shoot:
@@ -347,4 +353,83 @@ def walk_video(layout: dict, out: Path, folder: Path) -> int:
         return 1
     common.ok(f"ship --walk: {clip.as_posix()} {video['size'][0]}x{video['size'][1]}, {info['seconds']:.1f} s, "
               f"{info['frames']} frames, {mb:.1f} MB (rendered in {info['render_s']:.0f} s)")
+    return 0
+
+
+# --- step 2: the stations' motion proof ----------------------------------------------------------------------------
+MOTION_SCRIPT = "res://ship/vent_motion.gd"
+MOTION_TIMEOUT = 900
+MOTION = {"size": (1280, 720), "fps": 24, "seconds": 10.0, "max_mb": 10}
+
+
+def motion_request(layout: dict) -> dict:
+    """The vents' numbers for ship/vent_motion.gd from their builder (tools/blender/ship_interior_vent.py), in the
+    piece's Godot frame (x along the wall, y up, z out of it): the opening the slats keep to, the glass the marker
+    keeps to, the close-ups' cameras."""
+    import importlib
+    import sys
+    sys.path.insert(0, str(blender.SCRIPTS))
+    v = importlib.import_module("ship_interior_vent")
+    f = v.FLOOR
+    vents = {}
+    for pid, s in (("station_vent_e", 1.0), ("station_vent_w", -1.0)):
+        u = sorted((s * v.OPEN_U[0], s * v.OPEN_U[1]))
+        g = sorted((s * (v.UC - 0.032), s * (v.UC + 0.032)))
+        vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0], "h1": f + v.OPEN_H[1],
+                                  "v_back": v.WELL_V + 0.006, "v_max": v.UNIT[3]},
+                      "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]}}
+    cu = [["frame_corner_tl", [-0.42, f + 1.85, 1.15], [-0.70, f + 2.0, 0.45]],
+          ["opening_corner_br", [0.5, f + 0.4, 1.0], [0.2, f + 0.62, 0.42]],
+          ["slat_ends_l", [-0.3, f + 1.3, 0.9], [-0.66, f + 1.2, 0.33]],
+          ["box_column_top", [0.7, f + 1.9, 1.1], [0.33, f + 1.95, 0.45]],
+          ["lamp_base", [0.75, f + 1.85, 0.85], [0.55, f + 1.94, 0.47]],
+          ["scanner", [0.65, f + 1.25, 0.95], [0.57, f + 1.19, 0.46]],
+          ["box_floor_l", [-1.2, f + 0.35, 1.0], [-0.78, f + 0.0, 0.4]],
+          ["box_wall_top", [-0.2, f + 1.6, 1.3], [-0.4, f + 2.08, 0.42]],
+          ["column_wall_r", [1.4, f + 0.5, 0.8], [0.78, f + 0.3, 0.2]]]
+    return {"ids": list(vents), "vents": vents, "open_rad": v.OPEN_RAD, "mark_travel": v.MARK_TRAVEL, "gap_m": 3.0,
+            "fps": MOTION["fps"], "seconds": MOTION["seconds"], "closeups": cu, "watchdog_s": MOTION_TIMEOUT - 60,
+            "wall": {"floor": f, "bend": v.BEND, "in": v.IN, "top": v.TOP}}
+
+
+def motion(layout: dict, out: Path, folder: Path) -> int:
+    """The vents' motion proof on the exported GLBs (art #263 step 2): ship/vent_motion.gd in the off-screen window
+    checks the leaves by their names and numbers and renders the frames, sheets and shots; headless Blender encodes
+    the MP4 (ship_video.py, under max_mb)."""
+    import shutil
+    ids = ["station_vent_e", "station_vent_w"]
+    missing = [pid for pid in ids if not (out / f"{pid}.glb").is_file()]
+    if missing:
+        raise common.Failure(f"ship --motion: build {', '.join(missing)} first (--build --only)")
+    errors = _stage({f"ship_{pid}": out / f"{pid}.glb" for pid in ids})
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "motion_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(motion_request(layout), indent=1), encoding="utf-8", newline="\n")
+    (folder / "motion.json").unlink(missing_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", MOTION_SCRIPT, "--",
+                                  path.as_posix(), folder.as_posix()], MOTION["size"], MOTION_TIMEOUT)
+    for line in output.splitlines():
+        if line.startswith("VENT"):
+            common.say(f"  {line}")
+    if not (folder / "motion.json").is_file():
+        raise common.Failure(f"vent_motion.gd failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+    result = json.loads((folder / "motion.json").read_text(encoding="utf-8"))
+    clip = folder / "vent_motion.mp4"
+    clip.unlink(missing_ok=True)
+    blender.run_script(VIDEO_SCRIPT, ["--frames", str(folder / "frames"), "--out", str(clip), "--fps",
+                                      str(MOTION["fps"]), "--max-mb", str(MOTION["max_mb"])], timeout=MOTION_TIMEOUT)
+    mb = clip.stat().st_size / 2 ** 20 if clip.is_file() else 0.0
+    if clip.is_file():
+        shutil.rmtree(folder / "frames", ignore_errors=True)
+    for pid, r in result["vents"].items():
+        common.say(f"  {pid}: {r.get('triangles')} triangles, {r.get('convex_colliders')} convex colliders, hinge edge "
+                   f"drift {r.get('hinge_edge_drift_m', -1):.4f} m, tip swing {r.get('tip_swing_m', -1):.3f} m, "
+                   f"{len(r.get('slat_cuts', []))} cuts, {len(r.get('slat_outside_opening', []))} outside; "
+                   f"problems {r['problems']}")
+    if code != 0 or errors or not result.get("ok") or not clip.is_file() or mb > MOTION["max_mb"]:
+        common.bad(f"ship --motion: exit {code}, {len(errors)} import errors, ok {result.get('ok')}, video {mb:.1f} MB")
+        return 1
+    common.ok(f"ship --motion: the leaves hold; {clip.as_posix()} {mb:.1f} MB, sheets in {folder.as_posix()}")
     return 0
