@@ -142,21 +142,34 @@ class ShipHullDetailTest(unittest.TestCase):
         # lens polish: every face is covered by its cells' pieces; a piece's edge is flush only on a facet edge whose
         # neighbour bends less than the zone's crease; the lens's rim has its three bands and seams every 36 deg; a lens
         # plate's pieces share one silver and the lens parts are shaded smooth
+        # fix 2 step 3: a plate's pieces on coplanar faces are merged (skin_faces), so the area is checked per plane
         surf = S.surface()
         pieces = J.skin_pieces()
+        faces = J.skin_faces()
+        self.assertEqual(len(faces), len(pieces))
+
+        def plane(i):
+            u = S._unit3(surf[i][1])
+            return tuple(round(t, 4) for t in u), round(S._dot(u, surf[i][0][0]), 3)
         area: dict = {}
-        for _k, _zone, _cell, i, q, flags in pieces:
-            area[i] = area.get(i, 0.0) + S.area(q)
+        for (_k, _zone, _cell, i, q, flags), fs in zip(pieces, faces):
+            self.assertEqual(i, fs[0])
+            self.assertEqual({plane(f) for f in fs}, {plane(i)})
+            area[plane(i)] = area.get(plane(i), 0.0) + S.area(q)
             self.assertEqual(len(flags), len(q))
+        want: dict = {}
         for i, (poly, _n, _kind) in enumerate(surf):
-            self.assertAlmostEqual(area.get(i, 0.0), S.area(poly), delta=1e-4 + 1e-3 * S.area(poly))
+            want[plane(i)] = want.get(plane(i), 0.0) + S.area(poly)
+        for key, a in want.items():
+            self.assertAlmostEqual(area.get(key, 0.0), a, delta=1e-4 + 1e-3 * a)
         edges = J.Edges(surf)
-        for _k, zone, _cell, i, q, flags in pieces[::7]:
+        for (_k, zone, _cell, i, q, flags), fs in list(zip(pieces, faces))[::7]:
             for (a, b), seam in zip(zip(q, q[1:] + q[:1]), flags):
                 if not seam:
-                    own, bend = edges.bend(i, tuple(0.5 * (a[t] + b[t]) for t in range(3)))
-                    self.assertTrue(own)
-                    self.assertLessEqual(bend, J.CREASE[zone])
+                    m = tuple(0.5 * (a[t] + b[t]) for t in range(3))
+                    hits = [edges.bend(f, m) for f in fs if edges.bend(f, m)[0]]
+                    self.assertTrue(hits)
+                    self.assertLessEqual(max(bd for _o, bd in hits), J.CREASE[zone])
         rim = {c[3] for _k, z, c, *_ in pieces if z == "lens" and c[2] == "rim"}
         self.assertEqual(rim, {0, 1, 2})
         self.assertLessEqual(len({c[4] for _k, z, c, *_ in pieces if z == "lens" and c[2] == "rim"}), 10)
@@ -208,13 +221,16 @@ class ShipHullDetailTest(unittest.TestCase):
                     self.assertGreater(groove, 0.25 * J.INSET, (round(deg, 1), b))
                     if groove < 0.9 * J.INSET:
                         narrow.append((round(deg, 1), round(groove, 4), b))
-        self.assertGreater(corners, 5000)
-        self.assertGreater(wide, 2000)
-        self.assertGreater(folds, 100)    # 3d: 362 near-straight or needle corners, SLIDE_MAX INSET * sin
-        self.assertLess(capped, 1000)     # 3d: 747 corners stopped short by their group's cap
-        self.assertLessEqual(len(narrow), 25, f"{len(narrow)} seam corners taper the groove")
+        # fix 2 step 3: a plate's coplanar pieces merge (J.merge_coplanar), so the seam corners on the surface's
+        # fragment edges are gone: 3138 corners (3d: over 5000), 1416 wide, 238 near-straight or needle, 419 capped
+        # (3d: 747), 1 narrow (3d: 23), 1270 shared groups
+        self.assertGreater(corners, 2500)
+        self.assertGreater(wide, 1000)
+        self.assertGreater(folds, 100)    # near-straight or needle corners, SLIDE_MAX INSET * sin
+        self.assertLess(capped, 600)      # corners stopped short by their group's cap
+        self.assertLessEqual(len(narrow), 5, f"{len(narrow)} seam corners taper the groove")
         shared = [g for g in ends.values() if len(g) > 1]
-        self.assertGreater(len(shared), 2000)
+        self.assertGreater(len(shared), 1000)
         for g in shared:
             self.assertLess(max(math.dist(g[0], t) for t in g), 1e-4, g)   # 0.1 mm
 

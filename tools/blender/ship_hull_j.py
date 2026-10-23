@@ -252,6 +252,32 @@ class Edges:
                 best = ang if best is None else max(best, ang)
         return own, best
 
+    def split(self, q) -> list:
+        """fix 2 step 3: piece q with every surface face corner that lies inside one of its edges inserted, so an edge
+        whose neighbour changes along it (the notch's side running on past the roof line, where the hull's next
+        face takes over) is flagged per stretch, not by its midpoint alone."""
+        out = []
+        for a, b in zip(q, q[1:] + q[:1]):
+            out.append(a)
+            ab = S._sub(b, a)
+            l2 = S._dot(ab, ab)
+            if l2 < 1e-12:
+                continue
+            steps = max(1, math.ceil(math.sqrt(l2) / (0.5 * self.CELL)))
+            keys = {self._key([a[k] + ab[k] * t / steps for k in range(3)]) for t in range(steps + 1)}
+            found = {}
+            for key in keys:
+                for _j, u, w in self.grid.get(key, ()):
+                    for p in (u, w):
+                        t = S._dot(S._sub(p, a), ab) / l2
+                        if (0 < t < 1 and min(math.dist(p, a), math.dist(p, b)) > SPLIT_MIN
+                                and _off_segment(p, a, b) < 2e-4):
+                            found.setdefault(round(t, 6), p)
+            for t in sorted(found):
+                if math.dist(found[t], out[-1]) > SPLIT_MIN:
+                    out.append(found[t])
+        return out
+
     def normals_at(self, p) -> list:
         """The distinct normals (over 1 degree apart) of the faces whose outline holds point p."""
         out, kx, ky, kz = [], *self._key(p)
@@ -262,6 +288,8 @@ class Edges:
         return out
 
 
+SPLIT_MIN = 0.01   # fix 2 step 3: Edges.split inserts no corner nearer than this to another (a mm stretch of seam
+#                    capped its corners' slides)
 MITER_SAME = math.cos(math.radians(1.0))
 MITER_MAX = 2.0   # a miter at most this long (a 120 degree fold); sharper folds keep the capped miter
 
@@ -298,6 +326,8 @@ def seams(q, i, edges, zone) -> list:
 
 
 CORNER_CAP = 0.3  # a plate corner moves at most CORNER_CAP * the shorter of its two edges (lay_seams)
+FIXED_CAP = 0.8  # fix 2 step 3: a seam corner may slide this much of a flush edge whose other corner stays put (a
+                 # short fold edge on a merged piece capped its group's slide at 0.3 of it: a pinched groove)
 SEAM_CAP = 0.6    # details 3d: a sliding seam corner moves at most SEAM_CAP of its seam edge along it (_slide_cap)
 SLIDE_MAX = 3.0   # details 3c: a seam corner slides at most SLIDE_MAX * INSET along its flush edge (a needle or a
                   # near-straight corner, sin under 1 / SLIDE_MAX)
@@ -327,7 +357,9 @@ def _slide_cap(q, flags, j) -> float:
     a, b, c = q[j - 1], q[j], q[(j + 1) % k]
     (s0, s1), (f0, f1) = ((a, b), (b, c)) if flags[j - 1] else ((b, c), (a, b))
     cos = abs(S._dot(S._unit3(S._sub(s1, s0)), S._unit3(S._sub(f1, f0))))
-    return min(CORNER_CAP * math.dist(f0, f1), SEAM_CAP * math.dist(s0, s1) / max(cos, 1e-9))
+    far = (j + 1) % k if flags[j - 1] else (j - 1) % k   # the flush edge's other corner
+    fixed = flags[far - 1] == flags[far] and not flags[far]   # fix 2 step 3: it stays put (flush on both sides)
+    return min((FIXED_CAP if fixed else CORNER_CAP) * math.dist(f0, f1), SEAM_CAP * math.dist(s0, s1) / max(cos, 1e-9))
 
 
 def corner_slides(pieces) -> list:
@@ -398,21 +430,135 @@ def lay_seams(q, flags, slides=None, miters=None):
     return [verts[x] for x in used], [tuple(remap[x] for x in f) for f in faces]
 
 
+def _hull2(pts, n):
+    """The convex hull of points in the plane of normal n, wound like a face of normal n, collinear boundary points
+    kept (a seam's corner on a straight run stays a corner)."""
+    e1, e2 = _basis(n)
+    uniq = {}
+    for p in pts:
+        uniq.setdefault(tuple(round(t, 7) for t in p), p)
+    pv = sorted(((S._dot(p, e1), S._dot(p, e2)), p) for p in uniq.values())
+    if len(pv) < 3:
+        return []
+
+    def turn(o, a, b):
+        return (a[0][0] - o[0][0]) * (b[0][1] - o[0][1]) - (a[0][1] - o[0][1]) * (b[0][0] - o[0][0])
+    lower, upper = [], []
+    for v in pv:
+        while len(lower) >= 2 and turn(lower[-2], lower[-1], v) < -1e-9:
+            lower.pop()
+        lower.append(v)
+    for v in reversed(pv):
+        while len(upper) >= 2 and turn(upper[-2], upper[-1], v) < -1e-9:
+            upper.pop()
+        upper.append(v)
+    ring = [p for _uv, p in lower[:-1] + upper[:-1]]
+    ring = [p for k, p in enumerate(ring) if math.dist(p, ring[k - 1]) > 1e-7]
+    if S._dot(S._newell(ring), n) < 0:
+        ring.reverse()
+    return ring
+
+
+MERGE_TOL = 1e-6   # m2 (and 1e-4 of the area): coplanar pieces of one plate merge where their union is convex
+
+
+def merge_coplanar(group, n) -> list:
+    """fix 2 step 3 (art #263, item 4): the pieces of one plate on coplanar surface faces [(face, piece)] as few
+    convex pieces as their union allows: [(faces, piece)]. The hull's surface splits a facet into fragments (the union
+    of its convex parts); plated per fragment, a plate's thin fragment along a seam was a sliver laid flush, so that
+    stretch of the groove had no chamfer on one side and read dark, the rest pale, and the seam's corners slid along
+    the fragments' edges (the zig-zag beside the trailing fairings)."""
+    acc = [((i,), q, S.area(q)) for i, q in group]
+    total = sum(a for _f, _q, a in acc)
+    ring = _hull2([p for _i, q in group for p in q], n)
+    if len(ring) >= 3 and abs(S.area(ring) - total) <= MERGE_TOL + 1e-4 * total:   # the whole plate is convex
+        return [(tuple(dict.fromkeys(i for i, _q in group)), ring)]
+    merged = True
+    while merged and len(acc) > 1:
+        merged = False
+        for a in range(len(acc)):
+            for b in range(a + 1, len(acc)):
+                fa, qa, aa = acc[a]
+                fb, qb, ab = acc[b]
+                ring = _hull2(qa + qb, n)
+                if len(ring) < 3:
+                    continue
+                ar = S.area(ring)
+                if abs(ar - aa - ab) <= MERGE_TOL + 1e-4 * (aa + ab):
+                    acc[a] = (tuple(dict.fromkeys(fa + fb)), ring, aa + ab)
+                    del acc[b]
+                    merged = True
+                    break
+            if merged:
+                break
+    return [(f, q) for f, q, _a in acc]
+
+
+def _straighten(q, flags):
+    """Drops a merged piece's corners on a straight run between two edges of one kind (a short edge there capped its
+    seam corners' slides, corner_slides); a corner where a seam turns flush on a straight line stays."""
+    q, flags = list(q), list(flags)
+    k = 0
+    while len(q) > 3 and k < len(q):
+        a, b, c = q[k - 1], q[k], q[(k + 1) % len(q)]
+        x = S._cross(S._unit3(S._sub(b, a)), S._unit3(S._sub(c, b)))
+        if flags[k - 1] == flags[k] and S._dot(x, x) < 1e-10:
+            del q[k]
+            del flags[k]            # edge k (b..c) goes; edge k - 1 now runs a..c with the same flag
+            k = 0
+            continue
+        k += 1
+    return q, flags
+
+
+def seams_of(q, faces, edges, zone) -> list:
+    """seams() for a piece spanning several coplanar faces: an edge is flush where it lies on one of their outlines and
+    no face there bends more than the zone's crease."""
+    out = []
+    for a, b in zip(q, q[1:] + q[:1]):
+        m = tuple(0.5 * (a[k] + b[k]) for k in range(3))
+        hits = [edges.bend(i, m) for i in faces]
+        own = any(o for o, _b in hits)
+        bends = [bd for o, bd in hits if o and bd is not None]
+        out.append((not own) or not bends or max(bends) > CREASE[zone])
+    return out
+
+
 _SKIN: dict = {}
+_SKIN_FACES: dict = {}
 
 
 def skin_pieces(name: str = S.DEFAULT) -> list:
-    """Every outer face's plate pieces: [(kind, zone, cell, face index, piece, seam flags)], cached per hull."""
+    """Every outer face's plate pieces: [(kind, zone, cell, face index, piece, seam flags)], cached per hull. A plate's
+    pieces on coplanar faces are merged where their union is convex (merge_coplanar); the face index is then the
+    first of them (skin_faces holds them all)."""
     if name not in _SKIN:
         surf = S.surface(name)
         edges = Edges(surf)
-        out = []
+        groups: dict = {}
         for i, (poly, n, kind) in enumerate(surf):
+            u = S._unit3(n)
+            plane = (tuple(round(t, 4) for t in u), round(S._dot(u, poly[0]), 3))
             for cell, q in cells(poly, n):
                 zone = "lens" if cell[0] == "lens" else "plan"
-                out.append((kind, zone, cell, i, q, seams(q, i, edges, zone)))
+                groups.setdefault((kind, zone, cell, plane), []).append((i, q))
+        out, faces = [], []
+        for (kind, zone, cell, plane), g in groups.items():
+            n = S._unit3(surf[g[0][0]][1])
+            for fs, q in (merge_coplanar(g, n) if len(g) > 1 else [((g[0][0],), g[0][1])]):
+                q = edges.split(q)
+                q, fl = _straighten(q, seams_of(q, fs, edges, zone))
+                out.append((kind, zone, cell, fs[0], q, fl))
+                faces.append(fs)
         _SKIN[name] = out
+        _SKIN_FACES[name] = faces
     return _SKIN[name]
+
+
+def skin_faces(name: str = S.DEFAULT) -> list:
+    """Per piece of skin_pieces(name) the surface faces it covers (more than one where coplanar pieces merged)."""
+    skin_pieces(name)
+    return _SKIN_FACES[name]
 
 
 _SLIDES: dict = {}
@@ -479,6 +625,9 @@ j_skin = H._outward(j_skin)
 
 
 JAMB_OUT, JAMB_LIFT = 0.035, 0.004   # details 3b: the jamb's top strip past the wall's outer face, over the skin
+JAMB_END = SLIDE_MAX * INSET + 0.006   # fix 2 step 3: the jamb's top runs this far aft of the roof line, over the
+#                                        notch side's seam where it tapers out (lay_seams' slide on a straight run)
+JAMB_END_DROP = 0.02       # and ends in a face this deep, looking aft (its 4 mm lift over the roof plates)
 CHEEK_OUT = S.WALL + 0.03   # rebuild D: the cheeks 3 cm proud of the wall modules' backs (in their plane they z-fought:
 #                             the modules' pale backs showed through as boards beside the mouth)
 
@@ -539,9 +688,27 @@ def j_cheeks(args: dict, layout: dict) -> list:
             mat = MATS["top"][int(H._hash(round(c[0], 1), round(c[1], 1), round(c[2], 1)) * len(MATS["top"])) %
                               len(MATS["top"])]
             groups.setdefault(mat, []).append(lay_seams(p, flags))
-        for (a0, b0), (a1, b1) in zip(zip(inner, outer), zip(inner[1:], outer[1:])):   # the top, along the slope
+        # fix 2 step 3 (item 6, the dark wedge at each canopy fairing): the top's samples pair across the wall, so its
+        # aft end ran square to the wall, its outer corner (WALL + JAMB_OUT) * d[0] / d[1] = 7.7 cm forward of the
+        # roof line; through that open triangle the eye looked down past the jamb onto the dark cap. The top's two
+        # edges now each run on to JAMB_END aft of the roof line (over the roof plates' seam at the notch's edge)
+        # and end in a short face looking aft.
+        y_end = S.TH_ROOF_Y + JAMB_END
+        s_in, s_out = (y_end - my) / d[1], (y_end - my + d[0] * (S.WALL + JAMB_OUT)) / d[1]
+        t_in, t_out = [], []
+        for i in range(41):
+            si, so = 0.02 + (s_in - 0.02) * i / 40, 0.02 + (s_out - 0.02) * i / 40
+            x, y = sx * (mx + d[0] * si), my + d[1] * si
+            t_in.append((x, y, S.heights(x, y)[0] + JAMB_LIFT))
+            x, y = sx * (mx + d[0] * so), my + d[1] * so
+            xo, yo = x + n[0] * (S.WALL + JAMB_OUT), max(y + n[1] * (S.WALL + JAMB_OUT), my + 0.02)
+            t_out.append((xo, yo, (S.heights(xo, yo) or S.heights(x, y))[0] + JAMB_LIFT))
+        for (a0, b0), (a1, b1) in zip(zip(t_in, t_out), zip(t_in[1:], t_out[1:])):   # the top, along the slope
             q = [a0, a1, b1, b0]
             edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), S.H) > 0 else (3, 2, 1, 0)]))
+        a, b = t_in[-1], t_out[-1]
+        q = [a, b, (b[0], b[1], b[2] - JAMB_END_DROP), (a[0], a[1], a[2] - JAMB_END_DROP)]
+        edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), S.Y) > 0 else (3, 2, 1, 0)]))   # its end, looking aft
         q = [(inner[0][0], inner[0][1], S.SLAB - 0.01), (outer[0][0], outer[0][1], S.SLAB - 0.01), outer[0], inner[0]]
         edge.append((q, [(0, 1, 2, 3) if S._dot(S._newell(q), (0.0, -1.0, 0.0)) > 0 else (3, 2, 1, 0)]))   # front
     parts = [L.part(f"cheeks_{mat}", *L.merge(*g), mat, solid=False) for mat, g in sorted(groups.items())]
