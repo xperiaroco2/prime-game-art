@@ -154,7 +154,7 @@ without Godot:
 | `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X; a barefoot body without a `_shoes` part (the alien, art #196/#207) is measured by its feet instead: the `bone_bounds` of the Foot and Toe bones on every part but the eyes (the vertices whose heaviest bone is a Foot or Toe bone) |
 | `flat_colours` | no surface has an albedo texture (with `--textured`: the textured checks instead, "Textured export" above) |
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
-| `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, 1.90 m with `--textured`, the plasticine look; eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
+| `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, 1.90 m with `--textured`, the plasticine look; `--profile alien`: the top to 1.95 m, the body below the Head's skin to 1.80 m; eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
 | `loop_modes` | **warning** while a cycle (`Idle*`, `Walk*`, `Run*`) imports with loop_mode NONE; names the open cycles |
 | `loop_suffix` | an action named as a loop (`_Loop`, art #33) imports with loop_mode LINEAR under its name without the suffix (`Idle_Loop` becomes `Idle`); `animations` and `animation_lengths` compare Godot's names |
 | `expectations`, `pack_floor` | only for a GLB without its `<stem>.export.json`: a **warning** that parts, bones and animations then come from the GLB itself (what it already lacks is not caught; no rest joints, hierarchy or Blender height; the clip names are taken as Godot gives them, a `_Loop` suffix dropped and checked by `loop_suffix`), and a failure below the Ultimate Modular rig's 62 bones and 24 actions |
@@ -1128,13 +1128,15 @@ pilot's static premium heads"):
     (inspect.gd's `eye_tones`: the vertices within 0.42 of the eye distance of either eye bone and in front of it, for
     a character without an `_eyes` part; `ALIEN_EYE_SHARE` 0.017, half the smallest share r5 measured);
     `pack_floor` the contract's weighted bones, each the heaviest bone of some vertex, and the shared alien body's 10
-    clips (`ALIEN_CLIPS`); `alien_extra_bones` names every bone beyond the contract's 56 and whether it belongs to a
-    whole `ALIEN_SPRING_SETS` set (the crest's Crest1-3, the gills' GillL/R1-3): a warning while any extra bone exists
-    (docs/contract.md allows none; the engineer has not ruled on the springs), a failure under `--strict-contract`
-    like `contract_height`, and a failure either way for a bone outside the sets or a set in part; `contract_height`
-    holds `height_max_m`, textured or not, unless `--allowance plasticine` names the paused clay allowance. That
-    allowance belongs to the paused plasticine look: never pass it to hide the alien's height question (the
-    chameleon's 1.884 m against the 1.80 m capsule waits on the engineer). The default profile `pack` is unchanged.
+    clips (`ALIEN_CLIPS`); `alien_extra_bones` names every bone beyond the contract's 56 against `[kinds.alien]`'s
+    spring rule in `contract/contract.toml` (`bones = "all_and_springs"`, `spring_sets` under `spring_parent` Head;
+    the engineer, art #196 comment 6374319309; docs/contract.md, "The alien's spring bones and head top"): whole
+    declared sets below Head pass, with or without `--strict-contract`; an extra bone outside the sets, a set in part
+    or a set outside Head fails in every mode. `contract_height` (a warning unless `--strict-contract`) holds the top
+    from `height_min_m` to `head_top_max_m` (1.95 m) and the body, the skin whose heaviest bone (inspect.gd's
+    `bone_bounds`) is neither Head nor below it, at most `height_max_m` (the 1.80 m capsule), textured or not; r5's
+    chameleon (1.884 m) and axolotl (1.759 m) pass. `--allowance plasticine` replaces that rule with the paused clay
+    allowance: never pass it for the alien. The default profile `pack` is unchanged.
 - **B3 and B4 on the shared body (2026-10-23, PR #311; proofs `body_v2/r4/`, `body_v2/r5/`):**
   - B3: the pale front is `throat_fade` (a soft tongue from the throat to the sternum, per texel; the u1 shield only
     behind `--shield`); `char_shots.gd`'s `--fix` render settings, the soft shadow filter at ultra (5) by default since
@@ -1150,7 +1152,8 @@ pilot's static premium heads"):
     bones and springs through Godot's BoneMap retarget, the Head bone's scale over a breath; `<tag>/bones.md`).
   - Measured (r5, B4 and B5): Godot 4.7.2's BoneMap retarget (SkeletonProfileHumanoid, both trial variants) keeps
     the extra spring bones, chameleon 59 -> 59 and axolotl 62 -> 62, contrary to docs/contract.md's remark that they
-    "would be dropped by Godot's BoneMap anyway"; whether the contract allows them waits on the engineer. The probe
+    "would be dropped by Godot's BoneMap anyway" (since corrected there); the contract now allows them for the alien
+    (art #196 comment 6374319309). The probe
     compares the spring-weighted vertices' head-relative motion as vectors in rest world space
     (`W hr * ((W hb)^-1 * p) - rest`, W the Skeleton3D's global transform, since `Character.skinned_points` is world
     space). The BoneMap import reorders the vertices (same counts, other index lists), so since B6 the probe pairs them

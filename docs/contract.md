@@ -59,7 +59,8 @@ typing it would drift. `Root` sits on the ground between the feet and carries no
 eyes may. Five fingers per hand are present and weighted, because gestures need them (three bones each; the thumb's
 first is the metacarpal). No extra bones: sockets, jiggle and helper bones are not in the profile (Godot 4.7.2's `BoneMap`
 retarget keeps unmapped bones: measured 59 -> 59 and 62 -> 62 on the alien heads' springs, art #196 r5),
-and sockets live in the Godot scene instead.
+and sockets live in the Godot scene instead. The alien's spring bones are the one exception ("The alien's spring bones
+and head top" below).
 
 **Axes and size.** glTF, Y up, 1 unit = 1 m, front +Z (`Vector3.MODEL_FRONT`; Blender shows it as -Y, and the
 character's left at +X). Feet at y = 0 and the origin between them, transforms applied, so a model drops into the
@@ -70,7 +71,9 @@ first-person view would not match the body. **The plasticine look** (the baked c
 --textured`) may stand 1.70 to 1.90 m (`plasticine_height_max_m`), the eyes window 1.6 +- 0.08 m unchanged: its head
 is 1.3 times the pack's, with hair on top, so a character scaled until its eyes are at the camera's 1.6 m stands
 about 1.85 m. The engineer chose that scale (`eyes16`, 2026-10-12, art PR #139) over a shorter body with the eyes
-below the camera. The hair top then passes the 1.8 m capsule by a few cm; the game side decides if that matters. T-pose rest, arms horizontal and palms down, the pose Godot's profile uses.
+below the camera. The hair top then passes the 1.8 m capsule by a few cm; the game side decides if that matters. **The
+alien** keeps its body inside the capsule and may raise its head above it, up to 1.95 m ("The alien's spring bones and
+head top" below). T-pose rest, arms horizontal and palms down, the pose Godot's profile uses.
 
 **Weights.** At most 4 influences per vertex (one glTF joint set, and the budget's assumption for about 20
 skinned bodies on screen), none below 0.01, summing to 1.
@@ -116,6 +119,25 @@ finger chain present, the Little chains without weights and the other four weigh
 carries weights fails, and so does another finger left unweighted. `fingers_unweighted` is a rule any kind may carry
 (default none); `contract --check` refuses a finger outside `skeleton.fingers` or a list that leaves no weighted
 finger.
+
+**The alien's spring bones and head top** (the engineer, 2026-10-23, art #196 comment 6374319309: "Кістки пружин під
+Head дозволяю; гребені й зябра можуть стирчати над 1,80 м", spring bones under Head are allowed; crests and gills may
+stick out above 1.80 m). For the alien this replaces "No extra bones" and the 1.80 m top:
+- `[kinds.alien]` `bones = "all_and_springs"`: exactly the profile's 56 bones, plus whole sets of
+  `[kinds.alien.spring_sets]` (`crest` = Crest1-3; `gills` = GillL1-3 and GillR1-3), every spring bone a descendant
+  of `spring_parent` (`Head`). These are the chains the head's `SpringBoneSimulator3D` swings. Any other extra bone, a
+  set in part, or a set outside `Head` fails, in `check --kind alien` and in `godot-check --profile alien`, with or
+  without `--strict-contract`. The sets are declared once, in `contract.toml`; godot-check reads them there.
+  `contract --check` refuses a spring set that names a profile bone or a bone twice, a `spring_parent` outside the
+  profile, and the three keys on a kind without `bones = "all_and_springs"`.
+- `head_top_max_m = 1.95`: the 1.80 m capsule (`body.height_max_m`) bounds the body, measured as the skin whose
+  heaviest bone is neither `Head` nor below it (the neck, trunk, arms and legs); the head's skin (the pointed skull,
+  the crest, the gills) may stand above it, the whole character at most 1.95 m. godot-check's `contract_height` holds
+  both; `check --kind alien` (Blender) holds the top at 1.95 m and leaves the body's 1.80 m to godot-check, which has
+  the skin per bone. r5 measured the chameleon's top at 1.884 m and the axolotl's at 1.759 m.
+- The game side: prime-game's character import must accept these spring bones (keep them through its `BoneMap`
+  retarget, which Godot 4.7.2 does) and a head above the 1.80 m capsule (no clamp or refusal on the top). This repo
+  does not touch the game; the handoff names it.
 
 **The alien parts kit** (art #226). The kit is one GLB holding the body and every eye, mouth and crest variant
 (`docs/godot.md`, "The alien parts kit"), and a character shows one of each. `check --kind alien` judges it per part
@@ -210,10 +232,10 @@ measured).
 | open edges, debris parts under 4 faces, UVs outside 0..1, unapplied modifiers, extra materials: warn | yes | yes | yes | yes |
 | a UV map on every mesh; location 0, rotation 0, scale 1 on every mesh and armature (an alien kit's parts: on their sockets) | yes | yes | yes | yes |
 | an alien parts kit: each part under its slot; the body and the largest shown parts against the character budget | alien | | | |
-| height 1.70 to 1.80 m (plasticine look 1.90 m); feet at y = 0 | fail | | | feet warn |
+| height 1.70 to 1.80 m (plasticine look 1.90 m; alien: the top up to 1.95 m, the body in godot-check to 1.80 m); feet at y = 0 | fail | | | feet warn |
 | eyes near 1.6 m (from the eye bones) | warn | | | |
 | facing: toes towards +Z, left hand at +X | fail | | | |
-| one armature, skinned; no extra bones; parents as in the profile; duplicate names after the map | yes | yes | | |
+| one armature, skinned; no extra bones (alien: whole spring sets under Head allowed); parents as in the profile; duplicate names after the map | yes | yes | | |
 | every profile bone present; the 22 weighted bones carry weights; five weighted finger chains (alien: Thumb, Index, Middle, Ring weighted, Little present and unweighted) | yes | | | |
 | at most 4 weights per vertex, no unweighted vertex, nothing on Root | yes | yes | | |
 | no armature and no skin (a rigid piece) | | | yes | yes |
