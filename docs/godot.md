@@ -786,7 +786,7 @@ pilot's static premium heads"):
     the eye sphere meets an eye triangle first) are pupil, iris (warm, saturated) or sclera; the iris and pupil are
     caps on the build's eye sphere, fitted by least squares on their open edges; the iris colour is a radial profile
     of 8 medians. `chameleon_sclera.png` is the albedo with the painted irises filled from the sclera around them
-    (push-pull). The lid clamp: per eye the gaze offsets that keep the rest's open share of the iris and pupil discs,
+    (push-pull); the pupil is darker than value 0.12 (0.22 took the iris's dark inner ring). The lid clamp: per eye the gaze offsets that keep the rest's open share of the iris and pupil discs,
     reduced to an ellipse's four limits (`lively.json` `limits_deg`; the chameleon's heavy lids leave no room up).
     The skin (`alien_lively_geom.add_skin`): Chest at the bust's base, Neck and Head through the neck's waist (weights
     by height, the chin and face rigid), Crest1-3 along the crest (weights only in the crest blade).
@@ -796,13 +796,15 @@ pilot's static premium heads"):
     computed from the skinned vertex position, so the iris rides the head.
   - `alien_lively.gd`: the controller (`step(dt)` advances the skeleton by hand): eyes lead (critically damped at
     9 Hz, clamped by the lids, capped at 25 degrees), the head follows (1.6 Hz; yaw 35, pitch 20, 40 % in Neck), a
-    SpringBoneSimulator3D on the crest, a 4.4 s breath (the chest's scale, the Neck's inverse so the head keeps its
-    size, a 0.6 degree nod).
+    4.4 s breath (the chest's scale, the Neck's inverse so the head keeps its
+    size, a 0.6 degree nod). The crest is an under-damped spring (2.2 Hz, damping 0.3) pulled back by the head's
+    turn speed, the same as the web port's: a SpringBoneSimulator3D on Crest1-3 under the manual skeleton advance
+    showed no measurable swing (0.0 degrees over the whole video) in the first proof.
   - `lively_shots.gd`: `sheet.jpg` (row 1: merged head at rest, lively at rest, with the catch light, a head turn, the
     crest's largest swing; row 2: the eyes alone left, right, up, down, near), `lively.mp4` (20 s, 1280x720, a target
     ball's path), `shots.json`.
   - `web/lively.js`: the browser port (three.js 0.160, `onBeforeCompile` on the GLB's material, the same maths; the
-    crest is a damped spring on the head's turn speed there), with `chameleon_lively.glb`, `lively.json`,
+    crest spring included), with `chameleon_lively.glb`, `lively.json`,
     `chameleon_sclera.png` and a test page.
 
 ## The alien parts kit (`godot/alien/`, art #196, step S3)

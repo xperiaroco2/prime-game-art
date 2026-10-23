@@ -1,7 +1,7 @@
 extends RefCounted
 ## The static premium head made lively (art #196, lively): the eyes look at a target (alien_static.gdshader's
 ## procedural iris on the fitted eye spheres, clamped to what the lids leave open), the head turns toward it with a
-## lag and limits (Neck and Head bones, eyes leading), the crest springs (a SpringBoneSimulator3D on Crest1-3) and the
+## lag and limits (Neck and Head bones, eyes leading), the crest springs (Crest1-3, a damped spring) and the
 ## chest breathes. No face rig: the sculpt never deforms above the neck except the crest.
 ## The head's skin and data come from tools/blender/alien_lively_build.py (`<name>_lively.glb`, `lively.json`,
 ## `<name>_sclera.png`). Use with preload:
@@ -19,15 +19,17 @@ const EYE_HZ := 9.0  # the eyes' (lead)
 const BREATH_S := 4.4  # one breath
 const BREATH_CHEST := Vector3(0.006, 0.004, 0.010)  # the chest's scale at the top of a breath (x, y, z)
 const BREATH_NOD := deg_to_rad(0.6)  # the head's bob with it
-const CREST_STIFFNESS := 1.2
-const CREST_DRAG := 0.35
+# the crest: an under-damped spring pulled back by the head's turn speed, the same as the web port's (a
+# SpringBoneSimulator3D on Crest1-3 under the manual skeleton advance showed no measurable swing in the first proof)
+const CREST_HZ := 2.2
+const CREST_ZETA := 0.3
+const CREST_LAG := 0.09
 
 var target := Vector3(0.0, 0.0, 10.0)
 var head_follow := 1.0  # 0 holds the head (the eyes alone), 1 follows
 var breathing := 1.0
 var skeleton: Skeleton3D
 var mesh: MeshInstance3D
-var springs: SpringBoneSimulator3D
 var mats: Array[ShaderMaterial]
 var eyes: Dictionary  # "left"/"right" -> lively.json's eye
 var time := 0.0
@@ -35,6 +37,7 @@ var _hy := 0.0  # the head's yaw and pitch now, and their velocities
 var _hp := 0.0
 var _hvy := 0.0
 var _hvp := 0.0
+var _crest := Vector4.ZERO  # yaw, pitch, their velocities
 var _eye := {"left": Vector4.ZERO, "right": Vector4.ZERO}  # yaw, pitch, their velocities
 var _bones := {}
 
@@ -49,21 +52,6 @@ func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, scl
 		if _bones[b] < 0:
 			push_error("LIVELY no bone %s" % b)
 	skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
-	springs = SpringBoneSimulator3D.new()
-	springs.name = "CrestSprings"
-	springs.set_setting_count(1)
-	var seg: float = skeleton.get_bone_global_rest(_bones["Crest3"]).origin.distance_to(
-		skeleton.get_bone_global_rest(_bones["Crest2"]).origin)
-	springs.set_root_bone_name(0, "Crest1")
-	springs.set_end_bone_name(0, "Crest3")
-	springs.set_extend_end_bone(0, true)
-	springs.set_end_bone_direction(0, 6)  # SpringBoneSimulator3D.BONE_DIRECTION_FROM_PARENT
-	springs.set_end_bone_length(0, seg)
-	springs.set_stiffness(0, CREST_STIFFNESS)
-	springs.set_drag(0, CREST_DRAG)
-	springs.set_gravity(0, 0.0)
-	springs.set_radius(0, seg * 0.1)
-	skeleton.add_child(springs)
 	var l: Dictionary = eyes["left"]
 	var profile := PackedVector3Array()
 	for c: Array in l["iris_profile"]:
@@ -137,6 +125,13 @@ func step(dt: float) -> void:
 	skeleton.set_bone_pose_rotation(_bones["Neck"], Quaternion.from_euler(Vector3(-_hp * NECK_SHARE, _hy * NECK_SHARE, 0.0)))
 	skeleton.set_bone_pose_rotation(_bones["Head"],
 		Quaternion.from_euler(Vector3(-_hp * (1.0 - NECK_SHARE) - nod, _hy * (1.0 - NECK_SHARE), 0.0)))
+	var w := TAU * CREST_HZ
+	var cv := Vector2(_crest.z, _crest.w)
+	cv.x += (-w * w * (_crest.x + _hvy * CREST_LAG) - 2.0 * CREST_ZETA * w * cv.x) * dt
+	cv.y += (-w * w * (_crest.y + _hvp * CREST_LAG) - 2.0 * CREST_ZETA * w * cv.y) * dt
+	_crest = Vector4(_crest.x + cv.x * dt, _crest.y + cv.y * dt, cv.x, cv.y)
+	for cb: String in ["Crest1", "Crest2", "Crest3"]:
+		skeleton.set_bone_pose_rotation(_bones[cb], Quaternion.from_euler(Vector3(-_crest.y / 3.0, _crest.x / 3.0, 0.0)))
 	skeleton.advance(dt)
 	# the eyes: toward the target from each posed eye centre, in the posed head's frame, clamped by the lids, leading
 	var head_pose: Transform3D = skeleton.get_bone_global_pose(_bones["Head"])

@@ -32,6 +32,7 @@ from mathutils.bvhtree import BVHTree
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_lively_geom as G  # noqa: E402
 
+PUPIL_V = 0.12  # the pupil: darker than this (0.22 took the iris's dark inner ring: a pupil too big at rest)
 BARY = [(i / 4, j / 4) for i in range(5) for j in range(5 - i)]  # 15 points per triangle
 
 
@@ -185,7 +186,7 @@ def main():
         vis = np.zeros((H, W), bool)
         vis[iy, ix] = True
         colour = alb[iy, ix]
-        pupil = vis & (val < 0.22)
+        pupil = vis & (val < PUPIL_V)
         iris = vis & ~pupil & (sat > 0.25) & ((hue < 0.14) | (hue > 0.92))
         sclera = vis & ~pupil & ~iris
         rim = dilate(~vis, 3)  # the lid edges and the islands' borders: no edge samples there
@@ -197,7 +198,7 @@ def main():
         theta = np.arccos(np.clip(dirs @ rest, -1, 1))
         # the painted iris to clear: every eye texel of this eye near the cap whose colour reads iris or pupil
         tth = np.arccos(np.clip(tdir @ rest, -1, 1))
-        dark = (val[ty, tx] < 0.22) | ((sat[ty, tx] > 0.25) & ((hue[ty, tx] < 0.14) | (hue[ty, tx] > 0.92)))
+        dark = (val[ty, tx] < PUPIL_V) | ((sat[ty, tx] > 0.25) & ((hue[ty, tx] < 0.14) | (hue[ty, tx] > 0.92)))
         sel = tth < 1.2 * e_ang
         hole[ty[sel & dark], tx[sel & dark]] = True
         report.setdefault("texels", {})["left" if side > 0 else "right"] = {

@@ -173,9 +173,9 @@ func _settle(live, steps: int) -> void:
 
 
 func _frame_cam() -> void:
-	var c := Vector3(0.0, _mid.y - 0.3, 0.0)
+	var c := Vector3(0.0, _mid.y - 0.12, 0.0)
 	var yaw := deg_to_rad(30.0)
-	var h := 1.75
+	var h := 1.95
 	var dist: float = h * 0.5 / tan(deg_to_rad(_cam.fov * 0.5))
 	_cam.position = c + Vector3(sin(yaw), 0.05, cos(yaw)).normalized() * dist
 	_cam.look_at(c)
