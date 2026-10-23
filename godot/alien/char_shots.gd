@@ -198,7 +198,7 @@ func _run() -> void:
 		rep["presets"] = [AlienStatic.PRESETS[presets[0]]["name"], AlienStatic.PRESETS[presets[1]]["name"]]
 		_sheet(tcells, CELL, 4).save_jpg(out.path_join("turn_%s.jpg" % name), 0.92)
 		rep["colour_check"] = await _colour_check(mats, Vector3(axis.x, mid.y, axis.z), Vector3(axis.x, top * 0.72, axis.z))
-		print("CHAR %s colour check (OKLab dE x100, picked against rendered albedo): %s"
+		print("CHAR %s colour check (OKLab x100: patch_vs_region_median, the 24 px patch against the pick; vs_base, that minus the base row's): %s"
 			% [name, JSON.stringify(rep["colour_check"]["worst"])])
 		_dusk(true)
 		var dcells: Array[Image] = []
