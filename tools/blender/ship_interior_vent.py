@@ -33,15 +33,14 @@ BEND, IN, TOP = S.TH_BEND, S.TH_IN, S.TH_H      # the throat wall: vertical to 1
 
 for _name in ("int_halo__vent_heat", "int_cyan__vent_cool", "glow_nav_white__vent_marker"):
     L.MATERIALS[_name] = dict(L.MATERIALS[_name.split("__")[0]])
-L.MATERIALS["int_halo__vent_heat"].update(base=(1.0, 0.30, 0.02, 1.0), emission=(1.0, 0.30, 0.02), strength=1.5)
-L.MATERIALS["int_cyan__vent_cool"].update(base=(0.02, 0.62, 1.0, 1.0), emission=(0.02, 0.62, 1.0), strength=1.5)
-# the blades: the nearest bronze to the body's baked metal (no library bronze exists; the hall's metals are silver)
-L.MATERIALS["vent_bronze"] = dict(L.MATERIALS["int_silver_c"])
-L.MATERIALS["vent_bronze"].update(base=(0.42, 0.27, 0.15, 1.0), metallic=0.85, roughness=0.42)
-BLADE, DARK = "vent_bronze", "int_dark"
+# the well's two glows (step 2: hotter and deeper, strength 1.5 read tan and pale blue under AgX)
+L.MATERIALS["int_halo__vent_heat"].update(base=(1.0, 0.22, 0.0, 1.0), emission=(1.0, 0.22, 0.0), strength=5.0)
+L.MATERIALS["int_cyan__vent_cool"].update(base=(0.0, 0.5, 1.0, 1.0), emission=(0.0, 0.5, 1.0), strength=4.0)
+BLADE, DARK = "vent_a_blade", "int_dark"
 
 # --- the body (ship_vent_a.py's clean.json, 2026-10-23) ---------------------------------------------------------------
-BODY = "ship/v4/vents-a/body4k/body.glb"     # under the raw folder
+BODY = "ship/v4/vents-a/body4k_r2/body.glb"  # under the raw folder (step 2: graded, the blue patch gone)
+BLADE_TEX = "ship/v4/vents-a/body4k_r2/textures/vent_a_blade_{}.png"   # the blade's maps (ship_vent_a_finish.py)
 BOX_U, COL_U = (-0.80, 0.466), (0.466, 0.80)  # the box with its feet, the column
 BOX_TOP, BOX_FACE = 1.608, 0.415              # the box's top, the frame's face (v)
 COL_TOP, COL_FACE = 1.81, 0.40                # the column's top (the lamp's dome after the 20 cm raise), its face
@@ -55,22 +54,36 @@ GLASS_V = 0.405                               # the glass's face
 
 # --- the blades ------------------------------------------------------------------------------------------------------
 SLATS, PIVOT_TOP, PITCH = 7, 1.276, 0.15      # the pivots 127.6 .. 37.6 every 15 cm (the comment's numbers)
-# the calm section about the pivot (dv out, dh up), from side_left: a round nose in the cap, a convex top swept out
-# and down to a blunt tip 17 cm out and 10 cm down, a concave underside; 6.5 cm thick at its thickest
-UPPER = [(-0.026, 0.012), (-0.012, 0.027), (0.004, 0.031), (0.04, 0.032), (0.08, 0.022), (0.12, 0.0),
-         (0.15, -0.04), (0.166, -0.088)]
-TIP = [(0.170, -0.097), (0.166, -0.104)]
-LOWER = [(0.14, -0.074), (0.10, -0.051), (0.06, -0.037), (0.02, -0.029), (-0.008, -0.025), (-0.024, -0.012)]
-NOSE_R = 0.026
-# along u: the section scaled about the pivot, small at the ends (inside the caps), a crease at the middle
-STATIONS = [(-1.0, 0.30, 0.0), (-0.94, 0.58, 0.0), (-0.78, 0.9, 0.0), (0.0, 1.0, 0.006), (0.78, 0.9, 0.0),
-            (0.94, 0.58, 0.0), (1.0, 0.30, 0.0)]       # (t along the blade, scale, lift of the top's crease)
-OPEN_RAD = math.radians(25.0)                 # closed: each blade 25 deg further down than calm
+# step 2 (art#263, vents-a2): a faceted, curved bronze claw as side_left and front_ortho draw it. The calm section about
+# the pivot (dv out, dh up), counter-clockwise from the nose's back: a thick rounded root round the caps' axis (9 cm),
+# an upper facet up to the ridge, a front facet sweeping out and down to a thin sharp trailing edge 26.5 cm out (19 cm
+# past the frame's face), a concave underside back to the root. Flat facets: each corner over SMOOTH_DEG is sharp.
+UPPER = [(-0.030, 0.0), (-0.024, 0.028), (0.0, 0.050), (0.09, 0.062), (0.18, 0.030), (0.235, -0.002)]
+TIP = [(0.265, -0.030), (0.261, -0.037)]
+LOWER = [(0.21, -0.025), (0.14, -0.027), (0.07, -0.036), (0.02, -0.042), (-0.018, -0.030)]
+EDGES = (1, 3, 5, 6, 7)                       # the section's corners with a bright worn edge (nose, ridge, tip)
+NOSE_R = 0.03                                 # the root's radius round the pivot
+SMOOTH_DEG = 18
+# along u: (t from -1 to 1, the section's scale about the pivot, its droop): small at the ends (into the caps), the
+# middle's trailing edge dropped DROOP (front_ortho's crescent) with a crease at t 0
+STATIONS = [(-1.0, 0.32, 0.0), (-0.93, 0.62, 0.0), (-0.8, 0.92, 0.0), (-0.4, 1.0, 0.5), (0.0, 1.0, 1.0),
+            (0.4, 1.0, 0.5), (0.8, 0.92, 0.0), (0.93, 0.62, 0.0), (1.0, 0.32, 0.0)]
+DROOP = 0.008
+# closed: each blade 11 deg further down than calm, the tip over the next blade's ridge with a seam of about 1 cm
+# (calm 4.6 cm): front_closed's thin lit seams; flatter plates would cut the next blade
+OPEN_RAD = math.radians(11.0)
 MARK_H = 0.03                                 # the marker's height; it slides from GLASS_H[0]
 MARK_TRAVEL = GLASS_H[1] - GLASS_H[0] - MARK_H
 COOL_V = WELL_V + 0.012                       # the cool glow's panel, just in front of the heat's
 UC = (GLASS_U[0] + GLASS_U[1]) / 2            # the bar's centre line
-UNIT = [-0.80, 0.80, -0.01, 0.52, -0.02, 1.82]   # u0 u1 v0 v1 h0 h1 (the calm blades' tips at v 0.52)
+UNIT = [-0.80, 0.80, -0.01, 0.60, -0.02, 1.82]   # u0 u1 v0 v1 h0 h1 (the calm blades' tips at v 0.595)
+
+
+def blade_material() -> None:
+    """The blades' material: the body's bronze, graded, with bright worn edges, as maps painted by
+    ship_vent_a_finish.py on the blade's UV layout (blade_uvs)."""
+    tex = {k: str(raw_root() / BLADE_TEX.format(k)) for k in ("albedo", "rough", "metal")}
+    L.MATERIALS[BLADE] = {"base": (0.6, 0.4, 0.24, 1.0), "metallic": 0.8, "roughness": 0.4, "tex": tex}
 
 
 def raw_root() -> Path:
@@ -90,10 +103,11 @@ def turn(p, a):
     return (p[0] * c - p[1] * s, p[0] * s + p[1] * c)
 
 
-def section(scale: float, lift: float) -> list[tuple[float, float]]:
-    """The calm section at one station, counter-clockwise from the nose's top: the top's crease lifted by lift."""
-    top = [(dv, dh + lift * min(1.0, max(0.0, (dv + 0.01) / 0.05)) * max(0.0, 1 - dv / 0.17)) for dv, dh in UPPER]
-    return [(dv * scale, dh * scale) for dv, dh in [*top, *TIP, *LOWER]]
+def section(scale: float, droop: float) -> list[tuple[float, float]]:
+    """The calm section at one station, counter-clockwise from the nose's back, scaled about the pivot, its outer
+    part dropped by droop * DROOP (most at the tip)."""
+    pts = [*UPPER, *TIP, *LOWER]
+    return [(dv * scale, (dh - droop * DROOP * max(0.0, dv) / TIP[0][0]) * scale) for dv, dh in pts]
 
 
 def slat_loops(k: int):
@@ -101,10 +115,32 @@ def slat_loops(k: int):
     hk = FLOOR + PIVOT_TOP - k * PITCH
     u0, u1 = CAP_U[0] + 0.012, CAP_U[1] - 0.012
     loops = []
-    for t, sc, lift in STATIONS:
+    for t, sc, droop in STATIONS:
         u = u0 + (t + 1) / 2 * (u1 - u0)
-        loops.append([(u, PIVOT_V + dv, hk + dh) for dv, dh in (turn(p, -OPEN_RAD) for p in section(sc, lift))])
+        loops.append([(u, PIVOT_V + dv, hk + dh) for dv, dh in (turn(p, -OPEN_RAD) for p in section(sc, droop))])
     return loops, ((u0 + u1) / 2, PIVOT_V, hk)
+
+
+def blade_uv_marks() -> tuple[list[float], list[float]]:
+    """The texture's layout of a blade (U along it, V round its section): each station's U and each section corner's
+    V (the full-scale section's perimeter fraction from the nose's back); the end caps take U < 0.02."""
+    pts = [*UPPER, *TIP, *LOWER, UPPER[0]]
+    run = [0.0]
+    for p, q in zip(pts, pts[1:]):
+        run.append(run[-1] + math.dist(p, q))
+    return [0.02 + 0.98 * (t + 1) / 2 for t, _, _ in STATIONS], [r / run[-1] for r in run]
+
+
+def blade_uvs(loops) -> list[list[tuple[float, float]]]:
+    """Per face of loft(loops), its corners' UVs (blade_uv_marks; the caps planar in the U < 0.02 strip)."""
+    us, vs = blade_uv_marks()
+    n = len(loops[0])
+    uvs = [[(us[i], vs[j]), (us[i], vs[j + 1]), (us[i + 1], vs[j + 1]), (us[i + 1], vs[j])]
+           for i in range(len(loops) - 1) for j in range(n)]
+    cap = [(0.01 + 0.03 * dv, 0.5 + 1.2 * dh) for dv, dh in section(1.0, 0.0)]
+    uvs.append(list(reversed(cap)))
+    uvs.append(cap)
+    return uvs
 
 
 def loft(loops) -> tuple[list, list]:
@@ -132,6 +168,7 @@ def wall_profile(face: float, top: float) -> list[tuple[float, float]]:
 def station_vent(args, layout):
     pid, s = args["id"], (-1.0 if args.get("side") == "w" else 1.0)
     parts = []
+    blade_material()
 
     def add(name, vf, mat, **extra):
         v, f = vf
@@ -157,7 +194,7 @@ def station_vent(args, layout):
     # the blades: leaves with their origin on the pivot (the caps' axis)
     for k in range(SLATS):
         loops, hinge = slat_loops(k)
-        add(f"slat{k + 1}", loft(loops), BLADE, origin=hinge, smooth_deg=28)
+        add(f"slat{k + 1}", loft(loops), BLADE, origin=hinge, smooth_deg=SMOOTH_DEG, uv=blade_uvs(loops))
     # convex colliders: the box and the column, their backs on the wall
     add("col0-convcolonly", prism(BOX_U[0], BOX_U[1], wall_profile(BOX_FACE, BOX_TOP)), DARK)
     add("col1-convcolonly", prism(COL_U[0], COL_U[1], wall_profile(COL_FACE, COL_TOP)), DARK)
