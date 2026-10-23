@@ -187,11 +187,26 @@ def _mirror(poly):
     return [(-p[0], p[1], p[2]) for p in reversed(poly)]
 
 
+def _fair_cells(poly):
+    """fix 2 (art #263, item 4): an east fairing face's plates [(k, piece)]: the sectors of the lens rim's lowest band
+    (LENS_SECTOR wide from the lens's axis), so the rim's radial seams run on down over the fairing. The fairing was
+    plated by _plan_cells, whose seam family follows each facet's normal (rows of constant y, or of constant h where a
+    facet looks fore or aft; ends of constant x, or of constant h or y where it looks sideways): round the fairing's
+    bend the family switched from facet to facet, so seams stopped on a fold and restarted offset on the next facet,
+    their chamfers lit pale by the moon (the walk's shots 010 to 013). Vertical planes through the lens's axis are one
+    family for every facet: each seam meets itself on every fold."""
+    return _sectors(poly, S.P_TIP, S.p_axis_deg(), LENS_SECTOR)
+
+
 def cells(poly, n):
     """A face's plates in its zone: [(cell key, piece)], the key shared by the pieces of one plate on other facets.
-    The west lens is the east's mirror image."""
+    The west lens and fairings are the east's mirror image."""
+    if S.p_fair_face(poly, n):   # details 3b: the fairings are plated flat, like the fins (zone plan, faceted)
+        if sum(p[0] for p in poly) > 0:
+            return [(("fair", 1, k), q) for k, q in _fair_cells(poly)]
+        return [(("fair", -1, k), _mirror(q)) for k, q in _fair_cells(_mirror(poly))]
     sx = _lens_of(poly)
-    if sx == 0 or S.p_fair_face(poly, n):   # details 3b: the fairings are plated flat, like the fins
+    if sx == 0:
         return [(("plan",) + key, q) for key, q in _plan_cells(poly, n)]
     if sx > 0:
         return [(("lens", 1) + key, q) for key, q in _lens_cells(poly, n)]
@@ -536,6 +551,26 @@ def j_cheeks(args: dict, layout: dict) -> list:
 
 
 CAP_BACK = 0.01   # rebuild F: the jamb's aft cap this far aft of the roof line, behind the arch's face and the lintel
+CAP_SKIN = DEPTH + 0.002   # fix 2 (item 6): the cap's top at least this far under the hull's outer top face
+
+
+def _roof_planes(y, x0, x1, steps=16) -> list:
+    """fix 2 (item 6): the distinct planes (n, d) of the hull's outer faces looking up over the plan line y from x0 to
+    x1 (east), sampled every (x1 - x0) / steps."""
+    out = []
+    for poly, n, _k in S.surface(S.DEFAULT):
+        n = S._unit3(n)
+        if n[2] <= 0.05:
+            continue
+        for t in range(steps + 1):
+            p = (x0 + (x1 - x0) * t / steps, y)
+            sides = [(b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) for a, b in zip(poly, poly[1:] + poly[:1])]
+            if all(c >= -1e-9 for c in sides) or all(c <= 1e-9 for c in sides):
+                d = S._dot(n, poly[0])
+                if all(S._dot(n, m) < 1 - 1e-6 or abs(d - e) > 1e-4 for m, e in out):
+                    out.append((n, d))
+                break
+    return out
 
 
 def jamb_caps() -> list:
@@ -557,11 +592,18 @@ def jamb_caps() -> list:
     ch_h, ch_in = S.TH_CH
     h_ch, h_ceil, h_top = S.FLOOR + ch_h, S.FLOOR + S.TH["clear_h"], S.TH_TOP + 0.03
     x_ceil = xi - ch_in * k
+    # fix 2 (item 6, the dark triangle on the nose by each canopy fairing): out past the notch's side the roof line
+    # falls under h_top (the roof at the cap's plane: 3.03 m at x 2.30, 2.97 m at xo), so the cap's upper outer corner
+    # stood up to 8 cm out of the roof's plates, hull_dark. Its top now stays CAP_SKIN under the roof's faces.
+    roofs = _roof_planes(y, x_ceil, xo)
     out = []
     for sx in (1, -1):
         for poly in ([(xi, S.SLAB - 0.01), (xo, S.SLAB - 0.01), (xo, h_ch), (xi, h_ch)],
                      [(xi, h_ch), (xo, h_ch), (xo, h_top), (x_ceil, h_top), (x_ceil, h_ceil)]):
-            q = [(sx * x, y, h) for x, h in poly]
+            q = [(x, y, h) for x, h in poly]
+            for n, d in roofs:
+                q = _clean(S.clip(q, n, d - CAP_SKIN))
+            q = [(sx * x, yy, h) for x, yy, h in q]
             n = len(q)
             out.append((q, [tuple(range(n))]))
             out.append(([(a, b + 0.002, c) for a, b, c in q], [tuple(range(n - 1, -1, -1))]))   # the back, 2 mm aft
