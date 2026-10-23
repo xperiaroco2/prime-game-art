@@ -14,7 +14,8 @@ caps' axis, along x): it opens with rotation.x = -OPEN_RAD * t (t 0 closed: the 
 next blade's back, an orange seam between; t 1 calm, as the concept's front and side views); the marker
 `<id>_marker` a leaf with its origin at its rest point, the glass's bottom: position.y = rest + MARK_TRAVEL * t.
 The game drives the glows by material: `int_halo__vent_heat` (the heat panel in the well, the problem state;
-`<id>_heat`), `int_cyan__vent_cool` (the calm glow 4 mm in front of it: shown calm, hidden for the problem),
+`<id>_heat`), `int_cyan__vent_cool` (the calm glow 4 mm in front of it: shown calm, hidden for the problem;
+vents-b2: each panel carries its well lights, godot/ship/vent_glow.gd, so calm hides `heat`),
 `glow_nav_white__vent_marker`, and the body's own faces `vent_a_body__lamp`, `vent_a_body__band`, `vent_a_body__hand`
 (copies of the baked body material cut from it by colour and place). Convex colliders `<id>_col0-convcolonly` (the
 box) and `<id>_col1-convcolonly` (the column)."""
@@ -38,23 +39,27 @@ for _name in ("int_halo__vent_heat", "int_cyan__vent_cool", "glow_nav_white__ven
 L.MATERIALS["int_halo__vent_heat"].update(base=(1.0, 0.22, 0.0, 1.0), emission=(1.0, 0.22, 0.0), strength=12.0)
 # way B: the calm cyan brighter (r6's barely showed between the blades)
 L.MATERIALS["int_cyan__vent_cool"].update(base=(0.0, 0.55, 1.0, 1.0), emission=(0.0, 0.55, 1.0), strength=1.8)
+# vents-b2: the well pours light (the concept's charm): the calm wall far brighter, the frame's strips brighter, the
+# lamp a deep red (b1's read salmon under AgX: less strength, no green), the bar's amber saturated, its band clear green
+L.MATERIALS["int_cyan__vent_cool"].update(base=(0.0, 0.42, 1.0, 1.0), emission=(0.0, 0.42, 1.0), strength=3.0)
 BLADE, DARK = "vent_b_bronze", "int_dark"   # the blade GLB's main material
 # the look step (vents-a4): every light a clean emissive piece over the body's painted one (a glow material's suffix
 # names it; the strengths set for the game's night light, the concept's bright neon)
 for _name, _base, _upd in (
-        ("glow_cyan__vent_strip", "glow_cyan", dict(base=(0.1, 0.85, 1.0, 1.0), emission=(0.1, 0.85, 1.0), strength=1.8)),
+        ("glow_cyan__vent_strip", "glow_cyan", dict(base=(0.05, 0.8, 1.0, 1.0), emission=(0.05, 0.8, 1.0), strength=3.5)),
         ("glow_cyan__vent_hand", "glow_cyan", dict(base=(0.15, 0.75, 1.0, 1.0), emission=(0.15, 0.75, 1.0), strength=2.0)),
-        ("glow_nav_red__vent_lamp", "glow_nav_red", dict(strength=1.5)),
-        ("glow_amber__vent_bar", "glow_amber", dict(base=(1.0, 0.55, 0.05, 1.0), emission=(1.0, 0.55, 0.05), strength=1.8)),
-        ("glow_nav_green__vent_band", "glow_nav_green", dict(strength=1.8)),
+        ("glow_nav_red__vent_lamp", "glow_nav_red", dict(base=(0.25, 0.0, 0.0, 1.0), emission=(0.8, 0.0, 0.0), strength=0.5)),
+        ("glow_amber__vent_bar", "glow_amber", dict(base=(1.0, 0.36, 0.0, 1.0), emission=(1.0, 0.36, 0.0), strength=1.6)),
+        ("glow_nav_green__vent_band", "glow_nav_green", dict(base=(0.0, 1.0, 0.08, 1.0), emission=(0.0, 1.0, 0.08),
+                                                             strength=1.4)),
         ("glow_nav_white__vent_bar_hot", "glow_nav_white", dict(base=(1.0, 0.93, 0.75, 1.0), emission=(1.0, 0.93, 0.75),
                                                                  strength=1.8)),
         ("int_dark__vent_screen", "int_dark", {})):
     L.MATERIALS[_name] = {**L.MATERIALS[_base], **_upd}
 
 # --- the body (ship_vent_b.py, vents-b1, 2026-10-24) ------------------------------------------------------------------
-BODY = "ship/v4/vents-b/b1/body.glb"          # under the raw folder (way B: built in Blender, flat facets, chamfers)
-LIGHTS = "ship/v4/vents-b/b1/lights.json"     # the light pieces' places on the body (ship_vent_b.py)
+BODY = "ship/v4/vents-b/b2/body.glb"          # under the raw folder (way B: built in Blender, flat facets, chamfers)
+LIGHTS = "ship/v4/vents-b/b2/lights.json"     # the light pieces' places on the body (ship_vent_b.py)
 LIGHT_OUT = (0.0015, 0.0045)                  # a light piece's back and front off its surface
 # the light bar's segments up the glass (front_ortho, bottom to top): white-hot, amber, the green band, amber
 # (the green band at 141..146.4 cm of the bar's 62.2..154.8, the comment's numbers)
@@ -80,14 +85,16 @@ SLATS, PIVOT_TOP, PITCH = 7, 1.276, 0.15      # the pivots 127.6 .. 37.6 every 1
 # 58 deg; 36.5 deg (a 7.5 mm seam) and 34 dipped the bottom blade's tip below the frame's bottom (vent_motion.gd).
 # way B (vents-b1): one faceted claw built by ship_vent_b.py (412 triangles, the calm pose 22 deg tip down, bowed
 # 1.4 cm), its box about the pivot from its blade.json
-BLADE_GLB = "ship/v4/vents-b/b1/blade.glb"
-BLADE_BOX = ((-0.361, 0.361), (-0.03, 0.264), (-0.079, 0.039))
-NOSE_R = 0.03                                 # the root's back behind the pivot (ship_vent_b.SECTION)
+# vents-b2: the thicker, hooked claw (656 triangles; blade.json: the calm seam 4.0 cm, closed 6 mm at 8.9 deg, the
+# first cut at 46.4 deg)
+BLADE_GLB = "ship/v4/vents-b/b2/blade.glb"
+BLADE_BOX = ((-0.361, 0.361), (-0.034, 0.264), (-0.0711, 0.052))
+NOSE_R = 0.034                                # the root's back behind the pivot (ship_vent_b.SECTION)
 # step 4 (vents-a4): the calm pose tilted 22 deg tip down (the concept's claws, the upper bevel facet to the front),
 # the section squashed to 0.5 in h; blade_r5/blade.json: the calm seam 5.9 cm, closed 1.35 cm at CLOSED_DEG more
 # (33 deg from flat, the bottom blade's limit), the first cut at 50; each blade carries a lit seam strip on its lower
 # edge (`int_halo__vent_seam`, 32 triangles: the heat state, dark calm).
-BLADE_SEAMS = {"calm": 0.046, "closed": 0.006, "first_cut_deg": 55.0}   # way B: ship_vent_b.blade_numbers()
+BLADE_SEAMS = {"calm": 0.040, "closed": 0.006, "first_cut_deg": 46.4}   # way B: ship_vent_b.blade_numbers()
 CLOSED_DEG = 9.0
 # closed: each blade CLOSED_DEG further down than calm, a seam of about 1.9 cm straight on (front_closed's lit seams)
 OPEN_RAD = math.radians(CLOSED_DEG)
@@ -265,8 +272,14 @@ def lights(pid: str, s: float) -> list[dict]:
     face = hi[1]
     su, sh = (lo[0] + hi[0]) / 2, (lo[2] + hi[2]) / 2
     wu, wh = (hi[0] - lo[0]) / 2, (hi[2] - lo[2]) / 2
-    put("screen", L.box(su - wu * 0.92, su + wu * 0.92, face + 0.0005, face + 0.0020, sh - wh * 0.94, sh + wh * 0.94),
-        "int_dark__vent_screen")
+    # vents-b2: the dark screen is the bezel's octagon 1.5 mm in (b1's rectangle's corners cut through the octagonal
+    # bezel and flickered), 1 mm off the body's screen face
+    poly = shrink(lj["hand"].get("poly") or [(lo[0], lo[2]), (hi[0], lo[2]), (hi[0], hi[2]), (lo[0], hi[2])], 0.0015)
+    n = len(poly)
+    sv = [(x, face + d, y) for d in (0.0010, 0.0020) for x, y in poly]
+    sf = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))] + [(j, (j + 1) % n, n + (j + 1) % n, n + j)
+                                                                   for j in range(n)]
+    put("screen", (sv, sf), "int_dark__vent_screen")
     # way B: the hand as big as the screen allows (4 mm in from its edges), centred on it
     pts = hand_outline()
     lw = 0.075
@@ -274,6 +287,10 @@ def lights(pid: str, s: float) -> list[dict]:
     y0, y1 = min(y for _, y in pts) - lw, max(y for _, y in pts) + lw
     scale = min((wu * 0.92 - 0.004) * 2 / (x1 - x0), (wh * 0.94 - 0.004) * 2 / (y1 - y0))
     xc, yc = (x0 + x1) / 2, (y0 + y1) / 2
+    inner = shrink(poly, 0.004)   # the outline's every corner (its ribbon's half width out) 4 mm inside the octagon
+    ring = [(x + dx, y + dy) for x, y in pts for dx in (-lw, lw) for dy in (-lw, lw)]
+    while scale > 0.01 and not all(inside(inner, (su + (x - xc) * scale, sh + (y - yc) * scale)) for x, y in ring):
+        scale *= 0.98
     hv, hf = [], []
     for q in ribbon(pts, lw):
         b = len(hv)
@@ -282,6 +299,34 @@ def lights(pid: str, s: float) -> list[dict]:
                                                   (3, 7, 4, 0))]
     put("hand", (hv, hf), "glow_cyan__vent_hand")
     return out
+
+
+def shrink(poly, d):
+    """A convex polygon's edges moved d inward (as ship_vent_b.inset), counter-clockwise."""
+    pts = [tuple(p) for p in poly]
+    if sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(pts, pts[1:] + pts[:1])) < 0:
+        pts = pts[::-1]
+    n, lines, out = len(pts), [], []
+    for i in range(n):
+        a, b = pts[i], pts[(i + 1) % n]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        ln = math.hypot(dx, dy)
+        lines.append(((a[0] - dy / ln * d, a[1] + dx / ln * d), (dx, dy)))
+    for i in range(n):
+        (p1, d1), (p2, d2) = lines[i - 1], lines[i]
+        den = d1[0] * d2[1] - d1[1] * d2[0]
+        if abs(den) < 1e-12:
+            out.append(p2)
+            continue
+        t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / den
+        out.append((p1[0] + t * d1[0], p1[1] + t * d1[1]))
+    return out
+
+
+def inside(poly, q) -> bool:
+    """q inside a convex counter-clockwise polygon."""
+    return all((b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]) >= 0
+               for a, b in zip(poly, poly[1:] + poly[:1]))
 
 
 def station_vent(args, layout):

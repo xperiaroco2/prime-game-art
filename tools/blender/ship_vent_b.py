@@ -56,9 +56,13 @@ OPEN = [(-0.49, 0.304), (0.33, 0.304), (0.388, 0.36), (0.388, 1.35), (0.33, 1.40
         (-0.56, 0.80), (-0.56, 0.37)]
 
 MATS = {  # name: (base colour linear, metallic, roughness, emission, strength)
-    "vent_b_bronze": ((0.26, 0.13, 0.05), 0.85, 0.40, None, 0.0),
-    "vent_b_edge": ((0.85, 0.52, 0.24), 1.0, 0.20, None, 0.0),
-    "vent_b_copper": ((0.42, 0.11, 0.04), 1.0, 0.26, None, 0.0),
+    # vents-b2: a deeper, warmer bronze (b1's 0.26/0.13/0.05 read pale tan in EEVEE), the polished chamfers kept, a
+    # darker tarnish on the recesses (the panels' gaps, the frame's inner sides, the column's slots)
+    "vent_b_bronze": ((0.15, 0.08, 0.032), 0.8, 0.40, None, 0.0),
+    "vent_b_edge": ((0.72, 0.43, 0.18), 1.0, 0.18, None, 0.0),
+    "vent_b_tarnish": ((0.075, 0.034, 0.012), 0.8, 0.52, None, 0.0),
+    "vent_b_under": ((0.30, 0.22, 0.16), 0.3, 0.40, None, 0.0),   # the blades' undersides: catch the well's glow
+    "vent_b_copper": ((0.40, 0.10, 0.035), 1.0, 0.26, None, 0.0),
     "vent_b_dark": ((0.035, 0.03, 0.028), 0.85, 0.42, None, 0.0),
     "vent_b_well": ((0.03, 0.05, 0.07), 0.7, 0.38, None, 0.0),
     "vent_a_body__band": ((0.03, 0.025, 0.02), 0.0, 0.4, None, 0.0),
@@ -185,13 +189,14 @@ def body():
     M = Mesh()
     strips = []
     # the box's back slab (the well's back) and its roof over the frame, the back following the wall's slant
-    solid(M, [(-0.72, 0.10), (0.45, 0.10), (0.45, 1.45), (-0.72, 1.45)], BACK, WELL_V, front=((0.01, 0.01),))
+    solid(M, [(-0.72, 0.10), (0.45, 0.10), (0.45, 1.45), (-0.72, 1.45)], BACK, WELL_V, front=((0.01, 0.01),),
+          side="vent_b_tarnish")
     roof = [(BACK, 1.42), (0.30, 1.42), (0.30, 1.53), (0.245, 1.608), (0.135, 1.608), (BACK + 0.012, 1.45)]
     solid(M, [(v, h) for v, h in roof], -0.72, 0.45, axis="u", front=((0.016, 0.016), (0.004, 0.002)),
           back=((0.016, 0.016), (0.004, 0.002)))
     # the frame: nine panels from the outline to 3 cm outside the opening, then the lip round the opening
     mid = inset(ccw(OPEN), -0.03)
-    ring(M, OUTER, mid, WELL_V, FACE, front=((0.010, 0.010), (0.004, 0.002)))
+    ring(M, OUTER, mid, WELL_V, FACE, front=((0.010, 0.010), (0.004, 0.002)), side="vent_b_tarnish")
     ring(M, mid, OPEN, WELL_V, LIP, gap=0.003, side="vent_b_well", front=((0.012, 0.012),))
     # the header: a chamfered sill under the opening's top, so no glow shows over the top blade (front_closed)
     solid(M, [(WELL_V, 1.335), (0.345, 1.335), (0.375, 1.36), (0.375, 1.412), (WELL_V, 1.412)], OPEN[-1][0] + 0.002,
@@ -235,7 +240,8 @@ def body():
     solid(M, [(0.47, 0.12), (0.785, 0.12), (0.785, 0.26), (0.47, 0.26)], BACK, 0.42, front=((0.016, 0.016),))
     shaft = [(BACK, 0.25), (0.36, 0.25), (0.36, 1.62), (cv(1.62) + 0.012, 1.62), (BACK, 1.45)]
     solid(M, shaft, 0.475, 0.785, axis="u", front=((0.014, 0.014),), back=((0.014, 0.014),))
-    solid(M, octo(0.48, 0.27, 0.78, 1.60, 0.03), 0.30, 0.38, front=((0.012, 0.012), (0.003, 0.002)))
+    solid(M, octo(0.48, 0.27, 0.78, 1.60, 0.03), 0.30, 0.38, front=((0.012, 0.012), (0.003, 0.002)),
+          side="vent_b_tarnish")
     # the light bar: a chamfered housing round the glass (the glass 1 mm into it)
     g_out = octo(GLASS_U[0] - 0.017, GLASS_H[0] - 0.024, GLASS_U[1] + 0.017, GLASS_H[1] + 0.024, 0.012)
     g_in = octo(GLASS_U[0], GLASS_H[0], GLASS_U[1], GLASS_H[1], 0.004)
@@ -258,7 +264,7 @@ def body():
     solid(M, inset(ccw(b_in), -0.001), 0.37, screen_v, mat="vent_a_body__hand", front=())
     xs, hs = [p[0] for p in b_in], [p[1] for p in b_in]
     hand = {"lo": [min(xs) + 0.004, 0.37, min(hs) + 0.004], "hi": [max(xs) - 0.004, screen_v, max(hs) - 0.004],
-            "n": [0.0, 1.0, 0.0]}
+            "n": [0.0, 1.0, 0.0], "poly": [[round(x, 5), round(y, 5)] for x, y in b_in]}
     # the head and the lamp's stepped collar; the core under the dome (`__lamp`)
     solid(M, [(0.48, 1.60), (0.78, 1.60), (0.78, 1.665), (0.745, 1.70), (0.515, 1.70), (0.48, 1.665)],
           cv(1.70) + 0.012, 0.40, front=((0.014, 0.014), (0.004, 0.002)))
@@ -275,11 +281,16 @@ def body():
 # --- the blade --------------------------------------------------------------------------------------------------------
 # the claw's section in the calm pose about the pivot (dv out of the wall, dh up), counter-clockwise from the front lip's
 # bottom (the tip); index ranges: the lip SEAM, the upper facets, the nose, the underside
-SECTION = [(0.264, -0.079), (0.258, -0.066), (0.246, -0.048), (0.215, -0.022), (0.170, -0.002), (0.120, 0.012),
-           (0.060, 0.022), (0.000, 0.025), (-0.020, 0.020), (-0.030, 0.006), (-0.030, -0.020), (-0.022, -0.045),
-           (0.000, -0.060), (0.060, -0.066), (0.130, -0.070), (0.200, -0.074), (0.246, -0.078)]
-SEAM_EDGE = 0                    # the edge from point 0 to 1: the front lip
-EDGE_EDGES = {1, 7, 8}           # the lip's top and the nose's two upper facets catch the light
+# vents-b2: a thicker, more curved claw (front_ortho, side_left): a broad upper face rising to a crest 8 cm out, curving
+# over in seven facets to a hooked tip that curls back under itself, a concave underside; 10.5 cm thick at the root,
+# 9.6 at 0.1 m, 6 at 0.2 m (b1: 8.5 and 4.5); the same 26.4 cm reach and 11 cm seen from the front (a 4 cm seam)
+SECTION = [(0.250, -0.072), (0.264, -0.058), (0.262, -0.040), (0.252, -0.020), (0.234, -0.002), (0.208, 0.014),
+           (0.172, 0.026), (0.128, 0.034), (0.078, 0.038), (0.028, 0.038), (-0.004, 0.034), (-0.024, 0.024),
+           (-0.034, 0.006), (-0.034, -0.016), (-0.026, -0.040), (-0.006, -0.060), (0.040, -0.067), (0.100, -0.062),
+           (0.160, -0.053), (0.205, -0.047), (0.232, -0.054), (0.244, -0.064)]
+SEAM_EDGE = 0                    # the edge from point 0 to 1: the hooked tip's lip
+EDGE_EDGES = {1, 7, 8, 11}       # the hook's outer edge, the crest's two facets and the nose's top catch the light
+UNDER_EDGES = {14, 15, 16, 17, 18, 19, 20}   # the concave underside: less metal, so the well's glow lights it
 END_CH = 0.012
 
 
@@ -291,12 +302,15 @@ def blade():
     cy = sum(p[1] for p in sec) / n
     u0, u1 = BLADE_U
     L = u1 - u0
-    xs = [u0, u0 + END_CH] + [u0 + L * i / 10 for i in range(1, 10)] + [u1 - END_CH, u1]
+    um = (u0 + u1) / 2
+    # the ends chamfered; a shallow crease at the middle (the concept's two halves): two rings 5 mm apart, 4% in
+    xs = ([u0, u0 + END_CH] + [u0 + L * i / 10 for i in range(1, 5)] + [um - 0.005, um, um + 0.005]
+          + [u0 + L * i / 10 for i in range(6, 10)] + [u1 - END_CH, u1])
     verts = []
     for i, x in enumerate(xs):
-        t = (x - (u0 + u1) / 2) / (L / 2)
+        t = (x - um) / (L / 2)
         bow = BOW * (1 - t * t)
-        k = 0.82 if i in (0, len(xs) - 1) else 1.0
+        k = 0.82 if i in (0, len(xs) - 1) else (0.96 if abs(x - um) < 1e-9 else 1.0)
         for dv, dh in sec:
             verts.append((x, cx + (dv - cx) * k, cy + (dh - cy) * k + bow))
     faces, mats = [], []
@@ -305,7 +319,8 @@ def blade():
         for j in range(n):
             faces.append((i * n + j, i * n + (j + 1) % n, (i + 1) * n + (j + 1) % n, (i + 1) * n + j))
             mats.append("vent_b_edge" if end or j in EDGE_EDGES else
-                        ("int_halo__vent_seam" if j == SEAM_EDGE else "vent_b_bronze"))
+                        ("int_halo__vent_seam" if j == SEAM_EDGE else
+                         ("vent_b_under" if j in UNDER_EDGES else "vent_b_bronze")))
     faces.append(tuple(range(n - 1, -1, -1)))
     faces.append(tuple(range((len(xs) - 1) * n, len(xs) * n)))
     mats += ["vent_b_bronze", "vent_b_bronze"]
