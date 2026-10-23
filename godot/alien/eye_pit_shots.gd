@@ -19,14 +19,16 @@ const CELL := Vector2i(640, 300)
 const FPS := 24.0
 ## the upper lid edges in a sheet cell's pixels (x, y, w, h), per eye; the crops show them 4x (1280 x 720 per eye)
 const CROPS := {"right": Rect2i(40, 100, 160, 60), "left": Rect2i(410, 100, 160, 60)}
-const CROP_ROWS := [1, 2, 3]
+const CROP_ROWS := [1, 2, 3, 8, 9]
 const ROWS := [
 	["rest", Vector3(0, 0, 3), ""], ["eyes far to the head's left", Vector3(3.0, 0.0, 2.0), ""],
 	["eyes far to the head's right", Vector3(-3.0, 0.0, 2.0), ""], ["eyes down", Vector3(0.0, -2.5, 2.0), ""],
 	["eyes up (the lids' limit)", Vector3(0.0, 2.5, 2.0), ""],
 	["eyes down, raking light from +X, grey geometry", Vector3(0.0, -2.5, 2.0), "grey+x"],
 	["eyes down, raking light from -X, grey geometry", Vector3(0.0, -2.5, 2.0), "grey-x"],
-	["eyes down, raking light from +X, full material", Vector3(0.0, -2.5, 2.0), "lit+x"]]
+	["eyes down, raking light from +X, full material", Vector3(0.0, -2.5, 2.0), "lit+x"],
+	["eyes far to the head's left, studio light, grey with the normal map", Vector3(3.0, 0.0, 2.0), "nm"],
+	["eyes far to the head's left, studio light, grey geometry only", Vector3(3.0, 0.0, 2.0), "geo"]]
 
 var _cam: Camera3D
 var _studio: Array[DirectionalLight3D] = []
@@ -93,17 +95,18 @@ func _run() -> void:
 		report["rows"].append(row[0])
 		var mode: String = row[2]
 		for l: DirectionalLight3D in _studio:
-			l.visible = mode == ""
+			l.visible = mode in ["", "nm", "geo"]  # AL6: the studio light for the two grey crop rows too
 		_rake_pos.visible = mode == "grey+x" or mode == "lit+x"
 		_rake_neg.visible = mode == "grey-x"
-		_env.ambient_light_energy = 0.12 if mode == "" else 0.02
-		_env.ambient_light_sky_contribution = 0.5 if mode == "" else 0.0
+		var studio: bool = mode in ["", "nm", "geo"]
+		_env.ambient_light_energy = 0.12 if studio else 0.02
+		_env.ambient_light_sky_contribution = 0.5 if studio else 0.0
 		var states := []
 		for k: int in 2:
 			heads[k].visible = true
 			heads[1 - k].visible = false
 			for sm: ShaderMaterial in mats[k]:
-				sm.set_shader_parameter("debug_mode", 2 if mode.begins_with("grey") else 0)
+				sm.set_shader_parameter("debug_mode", 2 if mode.begins_with("grey") or mode == "geo" else (1 if mode == "nm" else 0))
 			lives[k].target = mid + (row[1] as Vector3)
 			for _i: int in 48:
 				lives[k].step(1.0 / FPS)

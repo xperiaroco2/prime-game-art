@@ -11,6 +11,11 @@ extends RefCounted
 ## The gaze maths repeat tools/blender/alien_lively_geom.py (eye_frame, gaze_dir, eye_offsets, clamp_gaze with
 ## cap_deg = EYE_LIMIT's 25).
 
+## the controller's values when lively.json leaves one out (AL6, PR #306 review): the same table as lively.js's
+## CONTROLLER_DEFAULTS (test_controller_defaults_agree); pitch_up_deg and pitch_down_deg fall back to pitch_deg,
+## pitch_neck_share to neck_share; sclera_normal_map: the normal map's strength on the eye texels (AL6; 0 was tried on the
+## chameleon: its facets under the upper lids stayed, they are not in the normal map)
+const CONTROLLER_DEFAULTS := {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0, "neck_share": 0.4, "tilt": 0.0, "sclera_normal_map": 1.0}
 const CATCH_MARGIN := 0.12  # AL3: the bead glint's slide past its rest angle (radians), lively.js CATCH_MARGIN
 const EYE_LIMIT := deg_to_rad(25.0)  # the lids' clamp, capped
 const EYE_HZ := 9.0  # the eyes' (lead)
@@ -57,18 +62,19 @@ func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, scl
 	mesh = root.find_children("*", "MeshInstance3D", true, false)[0]
 	mats = materials
 	eyes = lively["eyes"]
-	var ctl: Dictionary = lively.get("controller", {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0,
-		"neck_share": 0.4})
+	var ctl: Dictionary = CONTROLLER_DEFAULTS.merged(lively.get("controller", {}), true)
 	yaw_limit = deg_to_rad(float(ctl["yaw_deg"]))
-	pitch_limit = deg_to_rad(float(ctl.get("pitch_up_deg", ctl.get("pitch_deg", 20.0))))
-	pitch_down_limit = deg_to_rad(float(ctl.get("pitch_down_deg", ctl.get("pitch_deg", 20.0))))
+	pitch_limit = deg_to_rad(float(ctl.get("pitch_up_deg", ctl["pitch_deg"])))
+	pitch_down_limit = deg_to_rad(float(ctl.get("pitch_down_deg", ctl["pitch_deg"])))
 	neck_share = float(ctl["neck_share"])
 	pitch_neck_share = float(ctl.get("pitch_neck_share", neck_share))
-	tilt = float(ctl.get("tilt", 0.0))
+	tilt = float(ctl["tilt"])
 	head_hz = float(ctl["head_hz"])
 	bead = ctl["gaze"] == "none"
-	var specs: Array = lively["rig"].get("springs", [{"name": "crest", "bones": ["Crest1", "Crest2", "Crest3"],
-		"hz": 2.2, "zeta": 0.3, "lag": 0.09, "max_deg": 30.0}])
+	for sm: ShaderMaterial in mats:
+		sm.set_shader_parameter("sclera_normal_map", float(ctl["sclera_normal_map"]))
+	# no rig.springs: no spring (AL6, as the web; v2's build had none listed and kept its crest still on the web)
+	var specs: Array = lively["rig"].get("springs", [])
 	for sp: Dictionary in specs:
 		var bones: Array[int] = []
 		for b: String in sp["bones"]:
@@ -189,7 +195,13 @@ func step(dt: float) -> void:
 		var sy: float = st.x + cv.x * dt
 		var spt: float = st.y + cv.y * dt
 		var cap: float = sp["cap"]
-		sy = clampf(sy, -cap, cap)  # AL2: max_deg 0 (or none given) holds the spring still; no "no cap"
+		# AL2: max_deg 0 (or none given) holds the spring still; no "no cap". AL6: at the cap the outward velocity
+		# is dropped (it kept growing against the clamp and held the spring there), the inward kept
+		if absf(sy) >= cap and cv.x * sy > 0.0:
+			cv.x = 0.0
+		if absf(spt) >= cap and cv.y * spt > 0.0:
+			cv.y = 0.0
+		sy = clampf(sy, -cap, cap)
 		spt = clampf(spt, -cap, cap)
 		if cap <= 0.0:
 			cv = Vector2.ZERO

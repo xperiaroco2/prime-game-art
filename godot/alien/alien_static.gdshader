@@ -59,6 +59,9 @@ uniform float front_sat_max : hint_range(0.0, 1.0) = 1.0;
 uniform float detail_on : hint_range(0.0, 1.0) = 1.0;
 uniform float gill_mode : hint_range(0.0, 2.0) = 1.0;
 uniform float normal_strength : hint_range(0.0, 2.0) = 1.0;
+// AL6 (lively): the normal map's strength on the eye texels while gaze_on (lively.json controller.sclera_normal_map;
+// 1 the merged look; 0 tried on the chameleon, eyes_pit_v6: its facets under the upper lids stayed)
+uniform float sclera_normal_map : hint_range(0.0, 1.0) = 1.0;
 uniform float specular_level : hint_range(0.0, 1.0) = 0.45;
 uniform float sss : hint_range(0.0, 1.0) = 0.25;
 uniform float sheen : hint_range(0.0, 1.0) = 0.2;
@@ -249,7 +252,8 @@ void fragment() {
 	if (debug_mode != 2) {
 		vec2 nxy = texture(normal_tex, UV).xy * 2.0 - 1.0;
 		vec3 nm = vec3(nxy, sqrt(max(0.0, 1.0 - dot(nxy, nxy))));
-		n = normalize(mix(NORMAL, TANGENT * nm.x + BINORMAL * nm.y + NORMAL * nm.z, normal_strength));
+		float ns = normal_strength * mix(1.0, sclera_normal_map, gaze_on * eye);
+		n = normalize(mix(NORMAL, TANGENT * nm.x + BINORMAL * nm.y + NORMAL * nm.z, ns));
 	}
 	if (micro_strength > 0.0 && debug_mode == 0) {
 		vec3 p = v_obj * micro_scale;

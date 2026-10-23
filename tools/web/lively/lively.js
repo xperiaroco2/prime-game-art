@@ -5,7 +5,8 @@
 //   the target, clamped to what the lids leave open; the head follows with a lag; the crest springs after the head.
 // - the axolotl (controller.gaze "none"): the all-dark bead does not visibly turn, so the head leads (faster, wider);
 //   the painted catch light is painted out (its sclera PNG) and drawn fixed to the light (the mesh's own frame) while
-//   the bead turns with the head; the six gills spring after the head, each at its own rate, capped at rig.gill_swing_deg.
+//   the bead turns with the head; the six gills spring after the head, each at its own rate, capped at its own
+//   rig.springs[].max_deg (the build's measured rig.gill_swing_deg).
 // Both breathe (the chest's scale, a small nod). No face rig, no blink, no talk, no expressions.
 //
 //   import { makeLively } from "./lively.js";
@@ -17,6 +18,10 @@
 import * as THREE from "three";
 
 const EYE_CAP = THREE.MathUtils.degToRad(25);
+// the controller's values when lively.json leaves one out (AL6): the same table as alien_lively.gd's
+// CONTROLLER_DEFAULTS (test_controller_defaults_agree); pitch_up_deg/pitch_down_deg fall back to pitch_deg,
+// pitch_neck_share to neck_share; sclera_normal_map: the normal map's strength on the eye texels
+export const CONTROLLER_DEFAULTS = {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0, "neck_share": 0.4, "tilt": 0.0, "sclera_normal_map": 1.0};
 const EYE_HZ = 9.0, BREATH_S = 4.4, BREATH_NOD = THREE.MathUtils.degToRad(0.6);
 const BREATH_CHEST = new THREE.Vector3(0.006, 0.004, 0.010);
 
@@ -26,6 +31,7 @@ uniform vec3 lvCentreL; uniform vec3 lvCentreR; uniform vec3 lvGazeL; uniform ve
 uniform float lvIris; uniform float lvPupil; uniform vec3 lvProfile[8]; uniform vec3 lvPupilColour;
 uniform float lvCatch; uniform vec2 lvCatchOffset; uniform float lvCatchSize;
 uniform float lvBead; uniform vec3 lvCatchL; uniform vec3 lvCatchR; uniform float lvCatchAngle; uniform vec3 lvCatchColour;
+uniform float lvNormalMap;  // AL6: the normal map's strength on the eye texels (controller.sclera_normal_map)
 uniform float lvReachL; uniform float lvReachR;  // AL3: the glint's reach from the posed bead front (lvGaze), 0 off
 varying vec3 lvObj;
 vec3 lvEye(vec3 sclera) {
@@ -93,17 +99,18 @@ export async function makeLively(root, jsonUrl, scleraUrl) {
   const [data, sclera] = await Promise.all([fetch(jsonUrl).then((r) => r.json()), new THREE.TextureLoader().loadAsync(scleraUrl)]);
   sclera.flipY = false;
   sclera.colorSpace = THREE.SRGBColorSpace;
-  const ctl = data.controller || { gaze: "iris", head_hz: 1.6, yaw_deg: 35, pitch_deg: 20, neck_share: 0.4 };
+  const ctl = { ...CONTROLLER_DEFAULTS, ...(data.controller || {}) };
   const YAW = THREE.MathUtils.degToRad(ctl.yaw_deg);
   // AL5: separate up and down pitch limits, the pitch's own neck share and the head's roll per radian of yaw
   const PITCH = THREE.MathUtils.degToRad(ctl.pitch_up_deg ?? ctl.pitch_deg), PITCH_DOWN = THREE.MathUtils.degToRad(ctl.pitch_down_deg ?? ctl.pitch_deg);
   const NECK_SHARE = ctl.neck_share, HEAD_HZ = ctl.head_hz, bead = ctl.gaze === "none";
-  const PITCH_NECK = ctl.pitch_neck_share ?? NECK_SHARE, TILT = ctl.tilt ?? 0;
+  const PITCH_NECK = ctl.pitch_neck_share ?? NECK_SHARE, TILT = ctl.tilt;
   let mesh = null;
   root.traverse((o) => { if (o.isSkinnedMesh && !mesh) mesh = o; });
   if (!mesh) throw new Error("lively: no skinned mesh (load a <head>_lively.glb)");
   const bone = (n) => { const b = mesh.skeleton.getBoneByName(n); if (!b) throw new Error("lively: no bone " + n); return b; };
   const B = { chest: bone("Chest"), neck: bone("Neck"), head: bone("Head") };
+  // no rig.springs: no spring (as alien_lively.gd)
   const springs = (data.rig.springs || []).map((s) => ({ ...s, b: s.bones.map(bone), y: 0, p: 0, vy: 0, vp: 0 }));
   root.updateMatrixWorld(true);
   // the head's rest relative to the mesh (moving root later keeps it valid)
@@ -116,7 +123,7 @@ export async function makeLively(root, jsonUrl, scleraUrl) {
     lvProfile: { value: bead ? Array(8).fill(new THREE.Vector3()) : L.iris_profile.map(lin) },
     lvPupilColour: { value: bead ? new THREE.Vector3() : lin(L.pupil_colour) },
     lvCatch: { value: bead ? 1 : 0 }, lvCatchOffset: { value: new THREE.Vector2(-0.35, 0.45) }, lvCatchSize: { value: 0.16 },
-    lvBead: { value: bead ? 1 : 0 },
+    lvBead: { value: bead ? 1 : 0 }, lvNormalMap: { value: ctl.sclera_normal_map },
     lvReachL: { value: bead && L.catch ? catchReach(L) : 0 }, lvReachR: { value: bead && R.catch ? catchReach(R) : 0 },
     lvCatchL: { value: v3(bead && L.catch ? L.catch.dir : [0, 0, 1]) }, lvCatchR: { value: v3(bead && R.catch ? R.catch.dir : [0, 0, 1]) },
     lvCatchAngle: { value: bead && L.catch ? (L.catch.angle + (R.catch ? R.catch.angle : L.catch.angle)) / 2 : 0.1 },
@@ -128,7 +135,8 @@ export async function makeLively(root, jsonUrl, scleraUrl) {
     Object.assign(sh.uniforms, U);
     sh.vertexShader = "varying vec3 lvObj;\n" + sh.vertexShader.replace("#include <skinning_vertex>", "#include <skinning_vertex>\n  lvObj = transformed;");
     sh.fragmentShader = GLSL + sh.fragmentShader.replace("#include <map_fragment>",
-      "#include <map_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, lvEye(texture2D(lvSclera, vMapUv).rgb), lvOn * (1.0 - texture2D(lvMask, vMapUv).r));");
+      "#include <map_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, lvEye(texture2D(lvSclera, vMapUv).rgb), lvOn * (1.0 - texture2D(lvMask, vMapUv).r));")
+      .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n  normal = normalize(mix(nonPerturbedNormal, normal, mix(1.0, lvNormalMap, lvOn * (1.0 - texture2D(lvMask, vMapUv).r))));");
   };
   mat.customProgramCacheKey = () => "lively";
   mat.needsUpdate = true;
@@ -170,6 +178,9 @@ export async function makeLively(root, jsonUrl, scleraUrl) {
         s.vp += (-w * w * (s.p + st.vp * s.lag) - 2 * s.zeta * w * s.vp) * dt;
         s.y += s.vy * dt;
         s.p += s.vp * dt;
+        // AL6: at the cap the outward velocity is dropped, the inward kept (as alien_lively.gd)
+        if (Math.abs(s.y) >= cap && s.vy * s.y > 0) s.vy = 0;
+        if (Math.abs(s.p) >= cap && s.vp * s.p > 0) s.vp = 0;
         s.y = THREE.MathUtils.clamp(s.y, -cap, cap);
         s.p = THREE.MathUtils.clamp(s.p, -cap, cap);
         if (!(cap > 0)) { s.vy = 0; s.vp = 0; }
