@@ -431,7 +431,10 @@ func _ortho(c: Vector3, h: float, yaw_deg: float) -> Image:
 ## B4 review (c): picked against rendered, head and body: per pick (the base, an acidic and two plain skins) the
 ## recoloured albedo alone (debug_mode 6, emitted at 0.8) under a linear tone map at exposure 1.25 (so the frame shows the albedo
 ## itself), seen from the back, the median of a 24 px square on the back of the head at eye height and on the upper
-## back against the pick (the base: the slots' skin base), as an OKLab distance x100.
+## back against the pick (the base: the slots' skin base, the region's median), as an OKLab distance x100: per part
+## "patch_vs_region_median", the raw distance (the patch's own texture against one flat colour, so never 0 on a
+## mottled skin), and "vs_base", that distance minus the base row's: the pick's error relative to the unrecoloured
+## skin (0 or below: the recolour adds no error of its own).
 const COLOUR_PICKS := [{}, {"skin": Color("#39ff14")}, {"skin": Color("#14206e")}, {"skin": Color("#ff7a00")}]
 
 
@@ -454,8 +457,11 @@ func _colour_check(mats: Array[ShaderMaterial], head_c: Vector3, body_c: Vector3
 			var img: Image = await _frame(head_c if part == "head" else body_c, 0.5, 180.0)
 			var got: Color = _median(img, 24)
 			var d: float = (AlienStatic.to_oklab(got) - AlienStatic.to_oklab(want)).length() * 100.0
-			row[part] = {"rendered": "#" + got.to_html(false), "dE": snappedf(d, 0.01)}
+			var vs_base: float = d - (rows[0][part]["patch_vs_region_median"] as float) if not rows.is_empty() else 0.0
+			row[part] = {"rendered": "#" + got.to_html(false), "patch_vs_region_median": snappedf(d, 0.01),
+				"vs_base": snappedf(vs_base, 0.01)}
 			worst[part] = maxf(worst[part], snappedf(d, 0.01))
+			worst[part + "_vs_base"] = maxf(worst.get(part + "_vs_base", 0.0), snappedf(vs_base, 0.01))
 		rows.append(row)
 	for sm: ShaderMaterial in mats:
 		sm.set_shader_parameter("debug_mode", 0)
