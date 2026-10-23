@@ -30,7 +30,7 @@ import ship_interior_vent as V  # noqa: E402
 LIT = 0.82                       # the concept's lit bronze over its albedo
 BARS = ((455, 940, 185, 235), (430, 940, 1245, 1290))    # front_ortho (1536 px): the frame's top and bottom bars
 WELL_V = 0.36                    # faces behind this inside the opening are the well's
-BLADE_LIFT, MOTTLE = 1.1, 0.45   # the blade's bronze over the body's median (it stands out in the light), its mottle
+BLADE_LIFT, MOTTLE = 1.25, 0.22   # the blade's bronze over the body's median (it stands out in the light), its mottle
                                  # over the body's spread (a fine patina; 1.1 read as camouflage blotches in Godot)
 
 
@@ -141,7 +141,9 @@ def main() -> None:
             places[where] = places.get(where, 0) + 1
     rep["light_blue_faces"] = places
     # repaint the blue bronze at its own lightness
-    lum = alb.mean(-1, keepdims=True)
+    # at its own lightness held to the bronze's 10th..90th percentile (r2 kept it whole: the patch went pale)
+    blum = alb[bronze].mean(-1)
+    lum = np.clip(alb.mean(-1, keepdims=True), np.percentile(blum, 10), np.percentile(blum, 90))
     alb = np.where(blue[..., None], cur[None, None, :] * lum / max(1e-4, float(cur.mean())), alb)
     # the grade toward the concept's frame bronze
     cimg = pixels(bpy.data.images.load(str(concept)))[..., :3]
@@ -174,14 +176,14 @@ def main() -> None:
     ux = (np.arange(bw) + 0.5) / bw
     edge = np.zeros((bh, bw), np.float32)
     for j in V.EDGES:
-        edge = np.maximum(edge, np.exp(-((vy[:, None] - vs[j]) / 0.007) ** 2) * np.ones((1, bw)))
+        edge = np.maximum(edge, np.exp(-((vy[:, None] - vs[j]) / 0.012) ** 2) * np.ones((1, bw)))
     under = ((vy > vs[V.EDGES[-1]]) & (vy < vs[-2] + 0.01))[:, None] * np.ones((1, bw))
     ends = np.clip(1 - np.minimum(ux - us[0], us[-1] - ux) / 0.06, 0, 1)[None, :] * np.ones((bh, 1))
     mot = noise(bh, bw, rng)
     lum = float(np.median(alb[bronze].mean(-1)))
     col = BLADE_LIFT * np.median(alb[bronze], 0)[None, None, :]
     col = col * (1 + MOTTLE * spread / max(1e-4, lum) * mot[..., None])
-    col = col * (1 - 0.35 * under[..., None]) * (1 - 0.25 * ends[..., None])
+    col = col * (1 - 0.2 * under[..., None]) * (1 - 0.2 * ends[..., None])
     hi_col = np.array([1.0, 0.82, 0.58], np.float32)
     wear = np.clip(edge * (0.75 + 0.25 * noise(bh, bw, rng)), 0, 1)[..., None]
     col = col * (1 - wear) + hi_col * wear
