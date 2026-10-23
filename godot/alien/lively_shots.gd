@@ -243,20 +243,30 @@ func _eyes(live, mats: Array[ShaderMaterial], head: Node3D) -> Array[Image]:
 
 
 ## The gills held at their cap's eight limit corners with the head at its yaw limits (AL2: the poke proof):
-## gills.jpg, columns the corners, rows the head turned left / right, each cell from the head's back three-quarter on
-## the side the head turned away from (the gills against the skull); the springs move again after it.
+## gills.jpg, columns the corners, rows the head turned left / right, each seen from both back three-quarters. AL3:
+## each cell framed on the camera side's three gills (their posed roots' mean, 0.12 m further out along x, 0.9 high),
+## not on the back of the skull; the springs move again after it.
 func _gill_closeups(live, out: String) -> Dictionary:
 	var corners := [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]
 	var cells: Array[Image] = []
 	var labels: Array[String] = []
-	for turn: Array in [["head left", Vector3(2.2, 0.3, 2.0), 215.0], ["head right", Vector3(-2.2, 0.3, 2.0), 145.0]]:
-		live.target = _mid + (turn[1] as Vector3)
-		_settle(live, 72)
-		for cn: Array in corners:
-			live.hold_springs(float(cn[0]), float(cn[1]))
-			cells.append(await _cell(Vector3(0.0, _mid.y + 0.05, -0.1), 1.1, float(turn[2])))
-			labels.append("%s, gills yaw %+d pitch %+d x cap" % [turn[0], cn[0], cn[1]])
-	var sheet := Image.create(8 * (CELL.x + 4) - 4, 2 * (CELL.y + 4) - 4, false, Image.FORMAT_RGB8)
+	var rows := 0
+	for turn: Array in [["head left", Vector3(2.2, 0.3, 2.0)], ["head right", Vector3(-2.2, 0.3, 2.0)]]:
+		# the head's left gills (+X) from the back-left three-quarter (yaw 145), the right ones from yaw 215
+		for side: Array in [["L", 145.0, 1.0], ["R", 215.0, -1.0]]:
+			live.target = _mid + (turn[1] as Vector3)
+			_settle(live, 72)
+			rows += 1
+			for cn: Array in corners:
+				live.hold_springs(float(cn[0]), float(cn[1]))
+				var c := Vector3.ZERO
+				for k: int in 3:
+					var bi: int = live.skeleton.find_bone("Gill%s%d" % [side[0], k + 1])
+					c += live.skeleton.global_transform * live.skeleton.get_bone_global_pose(bi).origin
+				c = c / 3.0 + Vector3(0.12 * float(side[2]), 0.0, 0.0)
+				cells.append(await _cell(c, 0.9, float(side[1])))
+				labels.append("%s, %s gills, yaw %+d pitch %+d x cap" % [turn[0], side[0], cn[0], cn[1]])
+	var sheet := Image.create(8 * (CELL.x + 4) - 4, rows * (CELL.y + 4) - 4, false, Image.FORMAT_RGB8)
 	sheet.fill(Color(0.2, 0.2, 0.2))
 	for i: int in cells.size():
 		sheet.blit_rect(cells[i], Rect2i(Vector2i.ZERO, CELL), Vector2i((i % 8) * (CELL.x + 4), (i / 8) * (CELL.y + 4)))
