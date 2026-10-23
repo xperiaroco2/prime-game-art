@@ -137,5 +137,55 @@ class PngTest(unittest.TestCase):
         self.assertEqual(zlib.decompress(data[idat + 4:idat + 4 + size]), b"\0" + bytes([255, 0, 0, 0, 255, 0]))
 
 
+class EyePitTest(unittest.TestCase):
+    """The eye pit's fix (art #196): the eyeball's sphere fit and the projection of the old iris onto it."""
+
+    def sphere_points(self, c, r, n=40):
+        pts = []
+        for i in range(n):
+            z = -1.0 + 2.0 * (i + 0.5) / n
+            a = i * 2.399963  # the golden angle: spread points
+            s = math.sqrt(1.0 - z * z)
+            pts.append((c[0] + r * s * math.cos(a), c[1] + r * s * math.sin(a), c[2] + r * z))
+        return pts
+
+    def test_fit_sphere_exact(self):
+        c, r = G.fit_sphere(self.sphere_points((0.265, 0.266, 0.355), 0.186))
+        for got, want in zip(c, (0.265, 0.266, 0.355)):
+            self.assertAlmostEqual(got, want, places=9)
+        self.assertAlmostEqual(r, 0.186, places=9)
+
+    def test_fit_sphere_cap_only(self):
+        # a cap of 60 degrees about +Z (the visible sclera ring the build fits) still gives the sphere
+        pts = [p for p in self.sphere_points((0.0, 0.0, 0.0), 1.0, 400) if p[2] > 0.5]
+        c, r = G.fit_sphere(pts)
+        self.assertAlmostEqual(r, 1.0, places=9)
+        self.assertAlmostEqual(math.dist(c, (0.0, 0.0, 0.0)), 0.0, places=9)
+
+    def test_fit_sphere_degenerate(self):
+        with self.assertRaises(ValueError):
+            G.fit_sphere([(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (1.0, 1.0, 0.0)])
+
+    def test_pit_weight(self):
+        self.assertEqual(G.pit_weight(0.1, 0.3, 0.5, 1.0, 0.1, 0.2), 1.0)
+        self.assertEqual(G.pit_weight(0.6, 0.3, 0.5, 1.0, 0.1, 0.2), 0.0)
+        self.assertEqual(G.pit_weight(0.1, 0.3, 0.5, 0.05, 0.1, 0.2), 0.0)  # next to the lid: never moved
+        self.assertAlmostEqual(G.pit_weight(0.4, 0.3, 0.5, 1.0, 0.1, 0.2), 0.5)
+        self.assertAlmostEqual(G.pit_weight(0.1, 0.3, 0.5, 0.15, 0.1, 0.2), 0.5)
+
+    def test_project_on_sphere(self):
+        dent = (0.0, 0.0, 0.97)  # 3 % of the radius inside the unit sphere
+        self.assertEqual(G.project_on_sphere(dent, (0.0, 0.0, 0.0), 1.0, 0.0), dent)
+        full = G.project_on_sphere(dent, (0.0, 0.0, 0.0), 1.0, 1.0)
+        self.assertAlmostEqual(full[2], 1.0)
+        half = G.project_on_sphere(dent, (0.0, 0.0, 0.0), 1.0, 0.5)
+        self.assertAlmostEqual(half[2], 0.985)
+        self.assertAlmostEqual(half[0], 0.0)
+
+    def test_colour_distance(self):
+        self.assertAlmostEqual(G.colour_distance((1.0, 1.0, 1.0), (0.0, 0.0, 0.0)), math.sqrt(3.0))
+        self.assertEqual(G.colour_distance((0.5, 0.4, 0.3), (0.5, 0.4, 0.3)), 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()
