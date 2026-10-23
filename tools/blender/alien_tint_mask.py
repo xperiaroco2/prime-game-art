@@ -7,8 +7,8 @@
 
 The regions come from the object-space position baked onto the build's own UVs (an emission bake with Blender's
 margin, so a region is continuous across the UV seams and the gutters) and the plain albedo's saturation:
-- lips: a band round step 2a's fitted lip line (the slit's height across the mouth), inside the lip line's half
-  width and in front of the face, kept to the saturated (teal) texels: the lips are teal on a pale snout and chin, so
+- lips: a band round step 2a's fitted lip line (the slit), following it in plan and run on past its end to the
+  mouth's corners (LIP_BAND), kept to the saturated (teal) texels: the lips are teal on a pale snout and chin, so
   the paint gives the edge, not the band;
 - marks: the axolotl's gills (step 2a's gill roots, as the build's rough map has them, on its thin parts) and its
   freckles (saturated dots inside the pale cheeks); the chameleon's crest stripes (the build's own stripe formula,
@@ -32,15 +32,49 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_pilot_head as H  # noqa: E402
 import alien_static_head as S  # noqa: E402
 
-# lips: the band's half height round the slit (eye radii), its depth behind the lip line's front point (m), and its
-# side fade in lip line half widths (the axolotl's lips sit in the pale face, so its band may be wide: the paint gives
-# the edge; the chameleon's corners meet the teal cheek, so its fade ends at the lip line's end)
-LIP_BAND = {"axolotl": (1.1, 0.22, (1.0, 1.15)), "chameleon": (0.62, 0.26, (0.95, 1.0))}
+# lips (C2): a band round the slit that follows the fitted lip line in plan (so it wraps back with the chameleon's
+# lips) and runs on past the line's end along its last direction, its height tapering to nothing there: the lips go
+# on past the fitted line to their corners (the axolotl's smile tips, the chameleon's lips a fifth of a metre further
+# back). Per head: the band's half height round the slit (eye radii), its reach from the line in plan (m: the lip's
+# bulge in front, the lining behind), the tip's length past the line's end (m) and its taper's power (the axolotl's
+# smile tip is a thin line with freckles above it: 1.5; the chameleon's a rounded point: 0.5). Both heads' lips are teal paint
+# between pale panels above and below, so the band may be generous: the paint gives the edge, soft and on the border.
+LIP_BAND = {"axolotl": (1.1, 0.15, 0.16, 1.5), "chameleon": (0.75, 0.15, 0.26, 0.5)}
 
 
 def smoothstep(a, b, x):
     t = np.clip((x - a) / (b - a), 0.0, 1.0)
     return t * t * (3 - 2 * t)
+
+
+def lip_path(line, tip, ax, y, h0, power=0.5, n_tip=8):
+    """The slit's path on one side (the fitted line, x >= 0; its height a running median of 5, the fit's outliers
+    out), run on past its end by tip metres in plan along its last two points' direction. Returns per texel (|x| ax,
+    y): the slit's height at the nearest point of the path in plan, that point's arc length, the band's half height
+    there (h0 along the line, tapering as (1 - u) ** power to 0 at the tip's end) and the plan distance."""
+    k = len(line)
+    zp = np.pad(line[:, 1], 2, mode="edge")
+    zs = np.median(np.stack([zp[i:i + k] for i in range(5)]), 0)
+    p = np.stack([line[:, 0], -line[:, 2], zs], -1)  # Blender (x, y, z)
+    d = p[-1] - p[-3]
+    d = d / np.linalg.norm(d[:2])  # per plan metre
+    p = np.concatenate([p, [p[-1] + d * tip * j / n_tip for j in range(1, n_tip + 1)]])
+    seg = np.linalg.norm(np.diff(p[:, :2], axis=0), axis=1)
+    arc = np.concatenate([[0.0], np.cumsum(seg)])
+    s_end = arc[k - 1]
+    best = np.full(ax.shape, np.inf)
+    zl, sl = np.zeros(ax.shape), np.zeros(ax.shape)
+    for i in range(len(p) - 1):
+        a, b = p[i], p[i + 1]
+        ab = b[:2] - a[:2]
+        t = np.clip(((ax - a[0]) * ab[0] + (y - a[1]) * ab[1]) / max(float(ab @ ab), 1e-12), 0.0, 1.0)
+        dist = np.hypot(ax - (a[0] + t * ab[0]), y - (a[1] + t * ab[1]))
+        m = dist < best
+        best[m] = dist[m]
+        zl[m] = (a[2] + t * (b[2] - a[2]))[m]
+        sl[m] = (arc[i] + t * seg[i])[m]
+    hl = h0 * np.clip(1.0 - (sl - s_end) / tip, 0.0, 1.0) ** power
+    return zl, sl, hl, best
 
 
 def load(path: Path) -> np.ndarray:
@@ -49,10 +83,45 @@ def load(path: Path) -> np.ndarray:
     return H.image_array(img)
 
 
+def debug(path: Path, pos, col, lips, line, fp, r) -> None:
+    """The mouth's texels splatted into three views (a z-buffer per view), 400 px each: front, 3/4 (40 deg), side."""
+    size, half = 400, 0.36
+    ok = col.sum(-1) > 0.05
+    p, c = pos[ok], col[ok].copy()
+    c = c * (1 - 0.6 * lips[ok, None]) + np.array([0.6, 0.0, 0.0]) * lips[ok, None]
+    pl = np.concatenate([line * [1, 1, 1], line * [-1, 1, 1]])  # (x, up, front) both sides
+    lp = np.stack([pl[:, 0], -pl[:, 2], pl[:, 1]], -1)
+    centre = np.array([0.0, fp[1] + 0.12, fp[2]])
+    views = []
+    for yaw in (0.0, 40.0, 90.0):
+        a = np.radians(yaw)
+        def proj(q):
+            d = q - centre
+            u = d[:, 0] * np.cos(a) + d[:, 1] * np.sin(a)  # screen right
+            depth = -d[:, 0] * np.sin(a) + d[:, 1] * np.cos(a)  # away from the camera
+            return ((u / half + 1) * size / 2).astype(int), ((d[:, 2] / half + 1) * size / 2).astype(int), depth
+        img = np.full((size, size, 3), 0.3, np.float32)
+        zb = np.full((size, size), np.inf)
+        ui, vi, dep = proj(p)
+        m = (ui >= 0) & (ui < size) & (vi >= 0) & (vi < size)
+        idx = np.nonzero(m)[0]
+        idx = idx[np.argsort(-dep[idx])]
+        img[vi[idx], ui[idx]] = c[idx]
+        zb[vi[idx], ui[idx]] = dep[idx]
+        lu, lv, ld = proj(lp)
+        for uu, vv, dd in zip(lu, lv, ld):
+            if 0 <= uu < size and 0 <= vv < size and dd <= zb[vv, uu] + 0.02:
+                img[max(vv - 1, 0):vv + 2, max(uu - 1, 0):uu + 2] = (1.0, 1.0, 0.0)
+        views.append(img)
+    S.save(np.concatenate(views, 1), path, data=True)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     for a in ("--head", "--build", "--ref", "--out"):
         ap.add_argument(a, required=True)
+    ap.add_argument("--debug", action="store_true", help="also <head>_lips_debug.png: the mouth seen from the front,"
+                    " 3/4 and the side, the lips red over the albedo times the cavity, the lip line yellow")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
     head, build, out = args.head, Path(args.build), Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -94,15 +163,14 @@ def main() -> int:
 
     # lips: the slit's band, the lip line's half width, in front of the face, on the teal paint only
     line = np.asarray(ref["lip_line"]["line"], np.float64)  # (x, up, front)
-    order = np.argsort(line[:, 0])
-    slit = np.interp(np.abs(x), line[order, 0], line[order, 1])
-    hw = ref["lip_line"]["half_width"]
+    line = line[np.argsort(line[:, 0])]
     fp = ref["lip_line"]["front_point"]
-    band_h, depth, (w0, w1) = LIP_BAND[head]
-    band = 1.0 - smoothstep(0.8 * band_h * r, band_h * r, np.abs(z - slit))
-    wide = 1.0 - smoothstep(w0 * hw, w1 * hw, np.abs(x))
-    front = 1.0 - smoothstep(fp[1] + 0.8 * depth, fp[1] + depth, y)
-    lips = S.blur((band * wide * front * teal).astype(np.float32), 1) * skin
+    band_h, reach, tip, power = LIP_BAND[head]
+    zl, sl, hl, dh = lip_path(line, tip, np.abs(x), y, band_h * r, power)
+    band = 1.0 - smoothstep(0.8 * hl, np.maximum(hl, 1e-4), np.abs(z - zl))
+    near = 1.0 - smoothstep(0.8 * reach, reach, dh)
+    lips = S.blur((band * near * teal).astype(np.float32), 1) * skin
+    slit = np.interp(np.abs(x), line[:, 0], line[:, 1])  # the freckles' face band below
 
     # marks
     marks = np.zeros_like(lips)
@@ -129,6 +197,9 @@ def main() -> int:
     front_w = S.blur(pale.astype(np.float32), 1) * skin * (1.0 - lips) * (1.0 - marks)
     acc = np.stack([lips, marks, front_w], -1)
     S.save(acc, out / f"{head}_accent.png", data=True)
+    if args.debug:
+        cav = load(build / f"{head}_detail.png")[..., 0]
+        debug(out / f"{head}_lips_debug.png", pos, plain * cav[..., None] ** 3 * lit[..., None], lips, line, fp, r)
 
     report = {"head": head, "teal_sat": round(teal_s, 4), "regions": {}}
     core = skin > 0.95

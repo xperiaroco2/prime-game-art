@@ -125,10 +125,19 @@ def regions(out: Path, head: str) -> dict:
 def shots(head: str) -> dict:
     """The face, wider than the static review's close-up so the gills and the crest show."""
     face = R.features(head)["face"]
-    w = face["width"] * 2.0
-    t = face["target"]  # on the face's front: turned round a point a fifth of the width behind it
-    f = {"target": [0.0, t[1], t[2] - 0.2 * w], "width": w}
+    w = face["width"] * 2.5  # C2: 2.0 cut the axolotl's far gills and the chameleon's crest at 3/4
+    t = face["target"]  # on the face's front: turned round a point a fifth of the width behind it, a little higher
+    f = {"target": [0.0, t[1] + 0.08 * w, t[2] - 0.2 * w], "width": w}
     return {"front": {**f, "yaw": 0.0, "pitch": 3.0}, "3/4": {**f, "yaw": 38.0, "pitch": 3.0}}
+
+
+def close(head: str) -> dict:
+    """The lips' close-ups: the mouth at 3/4 and from the side."""
+    face = R.features(head)["face"]
+    w = face["width"] * 1.15
+    t = face["target"]
+    f = {"target": [0.0, t[1] - 0.12 * w, t[2] - 0.15 * w], "width": w}
+    return {"3/4": {**f, "yaw": 40.0, "pitch": 3.0}, "side": {**f, "yaw": 70.0, "pitch": 3.0}}
 
 
 def job(build: Path, out: Path) -> dict:
@@ -171,6 +180,19 @@ def job(build: Path, out: Path) -> dict:
                             "title": f"Summary: 2D target | A today | B1 rose lips | C deeper lips | D pair | E\n"
                                      f"{LIGHTS[light]}\nrows: teal, coral, lavender (E: its own palettes)",
                             "rows": rows})
+    # C2: the lips whole to their corners, B1's rose against the teal skin, close up
+    rows = []
+    for light in LIGHTS:
+        row = []
+        for h in HEADS:
+            for view, shot in close(h).items():
+                lab, params = variant("B1", 0, reg[h])
+                row.append({"head": h, "params": params, "light": light, "shot": shot,
+                            "label": f"B1 {lab}\n{h} {view} ({light})"})
+        rows.append(row)
+    j["sheets"].append({"file": str(out / "lips_b1.jpg"), "cell": [320, 320], "width": 1280,
+                        "title": "The lips' accent mask to the mouth's corners: B1 rose lips on the teal skin\n"
+                                 "rows: studio, dusk", "rows": rows})
     # the accent mask itself (R lips, G marks, B front), emitted
     rows = []
     for h in HEADS:
