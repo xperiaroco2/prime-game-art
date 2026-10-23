@@ -10,7 +10,8 @@ const SCRIPTS: Array[String] = ["res://alien/alien.gd", "res://alien/alien_talk.
 
 ## PR #304's review (art #196, CS3): alien_static.gd's colour slot maths on the axolotl's bases, the presets, bad
 ## picks and every gill mode, for tools/tests/test_alien_parse_godot.py to compare with alien_colour_geom.py; and an
-## unknown gill mode, which must give {} (an error, as in Python and JS).
+## unknown gill mode or front, which must give {} (an error, as in Python and JS); CS6c: the front's "follow" and
+## "keep" picks, the latter inside its blend band.
 func _colour_cases() -> Dictionary:
 	var A: GDScript = load("res://alien/alien_static.gd")
 	var bases := {"skin": Color(0.375, 0.8039, 0.8039), "lips": Color(0.3765, 0.7961, 0.7961),
@@ -24,6 +25,11 @@ func _colour_cases() -> Dictionary:
 	for g: String in ["skin", "gradient", "whole"]:
 		picks.append({"skin": "#6c87c6", "gills": g})
 		picks.append({"detail": "#ffee00", "gills": g})
+	for h: String in ["#14206e", "#ffffff", "#e39c8c", "#eeeeee"]:  # CS6c: the front's two modes, the band's greys
+		picks.append({"skin": h, "front": "follow"})
+		picks.append({"skin": h, "front": "keep"})
+	for h: String in ["#e8e8e8", "#f4f4f4"]:
+		picks.append({"skin": h})
 	var cases: Array = []
 	for p: Dictionary in picks:
 		var u: Dictionary = A.slot_colours(bases, p)
@@ -35,7 +41,8 @@ func _colour_cases() -> Dictionary:
 	return {"bases": {"skin": [0.375, 0.8039, 0.8039], "lips": [0.3765, 0.7961, 0.7961],
 		"detail": [0.3922, 0.8039, 0.8039], "front": [0.7412, 0.8745, 0.8275],
 		"gill_tips": [0.3216, 0.7255, 0.7333], "gill_whole": [0.3373, 0.7569, 0.7608]}, "cases": cases,
-		"unknown_gills_empty": A.slot_colours(bases, {"gills": "fringe"}).is_empty()}
+		"unknown_gills_empty": A.slot_colours(bases, {"gills": "fringe"}).is_empty(),
+		"unknown_front_empty": A.slot_colours(bases, {"front": "pale"}).is_empty()}
 
 
 ## M14 (PR #250's review): with the user argument "broken" it parses one deliberately broken shader instead and
