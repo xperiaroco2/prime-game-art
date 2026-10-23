@@ -277,7 +277,7 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
     return req, {f"ship_{pid}": out / f"{pid}.glb" for pid in ids}
 
 
-VENT_STATES = {"calm": {"slats": 1.0, "hide": [], "dim": ["lamp"]},
+VENT_STATES = {"calm": {"slats": 1.0, "hide": [], "dim": ["body:__lamp"]},
                "problem": {"slats": 0.0, "hide": ["cool"], "dim": []}}
 
 

@@ -540,7 +540,7 @@ func _shoot() -> void:
 ## The stations' states for the shots (station 1, the vents; ship --shoot --vent-states): the request's "stations"
 ## {piece: {"slats": t, "hide": [suffix], "dim": [suffix]}} and "open_rad": each placed piece's leaves `<piece>_slat<k>`
 ## turned to rotation.x = -open_rad * t, its `<piece>_<suffix>` nodes hidden (the calm glow `cool` for the problem) or
-## dimmed (a lamp's glow at a tenth, calm), as the game drives them.
+## dimmed (a lamp's glow at a tenth, calm; "<part>:<material suffix>" one surface), as the game drives them.
 func _stations(ship: Node3D) -> void:
 	var states: Dictionary = _req.get("stations", {})
 	for node: Node in ship.get_children():
@@ -553,11 +553,18 @@ func _stations(ship: Node3D) -> void:
 		for suffix: String in st.get("hide", []):
 			for n: Node in node.find_children("%s_%s" % [pid, suffix], "Node3D", true, false):
 				(n as Node3D).visible = false
-		for suffix: String in st.get("dim", []):
+		for spec: String in st.get("dim", []):
+			# "<part>" dims every surface of the part; "<part>:<material suffix>" only the surfaces whose material
+			# ends with it (way A: the lamp is the body's `vent_a_body__lamp` surface, "body:__lamp")
+			var suffix: String = spec.get_slice(":", 0)
+			var mat_suffix: String = spec.get_slice(":", 1) if spec.contains(":") else ""
 			for n: Node in node.find_children("%s_%s" % [pid, suffix], "MeshInstance3D", true, false):
 				var mi: MeshInstance3D = n
 				for i: int in mi.mesh.get_surface_count():
-					var m: BaseMaterial3D = (mi.mesh.surface_get_material(i) as BaseMaterial3D).duplicate()
+					var src: Material = mi.mesh.surface_get_material(i)
+					if src == null or (mat_suffix != "" and not src.resource_name.ends_with(mat_suffix)):
+						continue
+					var m: BaseMaterial3D = (src as BaseMaterial3D).duplicate()
 					m.emission_energy_multiplier *= 0.1
 					mi.set_surface_override_material(i, m)
 
