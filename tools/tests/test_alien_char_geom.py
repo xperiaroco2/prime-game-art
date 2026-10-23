@@ -180,8 +180,11 @@ class B2(unittest.TestCase):
         unwrapped = [got[0]] + [g + 2 * math.pi if g < got[0] else g for g in got[1:]]
         self.assertEqual(unwrapped, sorted(unwrapped))
         self.assertLess(unwrapped[-1] - unwrapped[0], 2 * math.pi)  # one turn, not two
-        self.assertAlmostEqual(got[5], 0.05)  # the fold-back vertex takes its predecessor's angle
-        self.assertAlmostEqual(got[8], 2.0)
+        # by hand: the shorter turns give 6.2 + 0.1332 = 0.05 + 2 pi (6.333), then -0.2 to 6.25, held at 6.333 by its
+        # predecessor, then +0.25 from 6.25 to 0.3 + 2 pi (6.583); taken back into [0, 2 pi): 0.05, 0.05, 0.3
+        self.assertEqual([round(u, 3) for u in unwrapped[4:7]], [6.333, 6.333, 6.583])
+        for i, want in ((0, 3.0), (3, 6.2), (4, 0.05), (5, 0.05), (6, 0.3), (7, 1.0), (8, 2.0)):
+            self.assertAlmostEqual(got[i], want, msg=f"vertex {i}")
 
     def test_the_default_build_paints_the_front_with_the_throat_fade(self) -> None:
         """B4 review (e): the shield only behind --shield (off by default); the default path is throat_fade."""
