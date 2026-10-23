@@ -37,6 +37,9 @@ class ShipInteriorTest(unittest.TestCase):
             parts = getattr(mod, piece["builder"])(piece.get("args", {}), SHIP)
             self.assertTrue(parts, piece["id"])
             for p in parts:
+                if p.get("glb"):   # a part made elsewhere (the vents' Meshy body): its GLB, imported by the harness
+                    self.assertTrue(p["glb"].endswith(".glb"), piece["id"])
+                    continue
                 n = len(p["verts"])
                 self.assertTrue(p["faces"], piece["id"])
                 self.assertTrue(all(0 <= i < n for f in p["faces"] for i in f), piece["id"])

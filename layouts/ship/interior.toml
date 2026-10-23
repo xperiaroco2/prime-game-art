@@ -1138,7 +1138,7 @@ builder = "station_vent"
 collide = false
 args = { id = "station_vent_e", side = "e" }
 spot = "vent_e"
-unit = [-0.80, 0.80, -0.01, 0.60, -0.02, 1.82]
+unit = [-0.8, 0.8, -0.01, 0.6, -0.02, 1.82]
 
 [[pieces]]
 id = "station_vent_w"
@@ -1146,4 +1146,4 @@ builder = "station_vent"
 collide = false
 args = { id = "station_vent_w", side = "w" }
 spot = "vent_w"
-unit = [-0.80, 0.80, -0.01, 0.60, -0.02, 1.82]
+unit = [-0.8, 0.8, -0.01, 0.6, -0.02, 1.82]
