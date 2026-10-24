@@ -15,6 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ship_interior as S  # noqa: E402
+import ship_interior_vent as V  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "layouts" / "ship" / "interior.toml"
@@ -117,6 +118,7 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "throat_ceil": ("throat_ceil", {}, True),
     "th_wall_low_a": ("cor_wall_low", {"length": TH_MOD, "tone": "a", "prof": "throat"}, True),
     "th_wall_low_b": ("cor_wall_low", {"length": TH_MOD, "tone": "b", "prof": "throat"}, True),
+    # vents-b5: the pillow panels behind the vents again (b4's flat plates were for the recess, undone)
     "th_wall_mid": ("cor_wall_mid", {"length": TH_MOD, "prof": "throat"}, True),
     "th_channel": ("cor_channel", {"length": TH_MOD, "prof": "throat"}, True),
     "th_cables": ("cor_cables", {"length": TH_MOD, "prof": "throat"}, False),
@@ -202,7 +204,13 @@ PIECES |= {
     "floor_patch_a": ("floor_patch", {"u": 0.42, "v": 0.36}, False),
     "floor_patch_b": ("floor_patch", {"u": 0.36, "v": 0.3}, False),
     "rim_bolts": ("rim_bolts", {}, False),
+    # step 2, station 1: the throat vents (ship_interior_vent.py), each on its spot
+    "station_vent_e": ("station_vent", {"id": "station_vent_e", "side": "e"}, False),
+    "station_vent_w": ("station_vent", {"id": "station_vent_w", "side": "w"}, False),
 }
+# step 2: a station piece's spot and its box [u0, u1, v0, v1, h0, h1] in the spot's frame (u along the wall, v out
+# of it, h over the deck): `ship --check` holds it inside the spot's plain band, depth and the room's height
+UNITS: dict[str, tuple[str, list[float]]] = {"station_vent_e": ("vent_e", V.UNIT), "station_vent_w": ("vent_w", V.UNIT)}
 # v2: the plan box [x0, x1, y0, y1] in its own frame of every piece that stands out from a wall: `ship --check` keeps
 # them off the station spots' plain panels (layouts/ship/ship.toml [stations])
 _V = [-0.2, 0.2, -0.2, 0.2]
@@ -406,9 +414,9 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put("th_wall_up_end_" + ("e" if sx > 0 else "w"), o, yw)
             elif i in TH_COVER:
                 put(f"th_wall_up_{tone}", o, yw)
-            if i in (0, 3):   # rebuild E: two a side, at 1/5 and 4/5 of the wall
-                lp = [round(w[0] + d[0] * TH_MOD * 0.5 + inward[0] * 0.3, 4),
-                      round(w[1] + d[1] * TH_MOD * 0.5 + inward[1] * 0.3, 4)]
+            if i in (0, 3):   # rebuild E: two a side, at 1/5 and 4/5 of the wall; station 1: the hall's one 0.36 m
+                sh = TH_MOD * 0.5 + (0.36 if i == 3 else 0.0)   # on, its 0.7 m bar 4 cm clear of the vent column
+                lp = [round(w[0] + d[0] * sh + inward[0] * 0.3, 4), round(w[1] + d[1] * sh + inward[1] * 0.3, 4)]
                 put("floor_light", lp, yw)
 
     put("th_arch", [0.0, TH_ARCH_Y], 90.0)
@@ -474,6 +482,13 @@ def placements() -> list[tuple[str, list[float], float]]:
                          ("floor_patch_a", polar(S.R_RIM_REF - 0.08, 96.0), -96.0 + 8.0),   # rebuild A: 112.5 is a socket flat now
                          ("floor_patch_b", polar(S.R_RIM_REF - 0.08, -62.0), 62.0 - 5.0)):
         put(pid, xy, yaw)
+
+    # --- step 2: the stations on their spots (the piece's +v onto the spot's normal: plan angle 90 - yaw)
+    spots = {s["id"]: s for s in S._SHIP["stations"]["spot"]}
+    for pid, (spot, _unit) in UNITS.items():
+        s = spots[spot]
+        put(pid, [s["at"][0] - S.HALL_C[0], s["at"][1] - S.HALL_C[1]],
+            90.0 - math.degrees(math.atan2(s["normal"][1], s["normal"][0])))
     return out
 
 
@@ -519,6 +534,8 @@ def render() -> str:
             lines.append("foot = [" + ", ".join(fmt(v) for v in FOOT[pid]) + "]")
         if pid in PLAIN:
             lines.append("plain = [" + ", ".join(fmt(v) for v in PLAIN[pid]) + "]")
+        if pid in UNITS:
+            lines += [f'spot = "{UNITS[pid][0]}"', "unit = [" + ", ".join(fmt(v) for v in UNITS[pid][1]) + "]"]
     return "\n".join(lines) + "\n"
 
 

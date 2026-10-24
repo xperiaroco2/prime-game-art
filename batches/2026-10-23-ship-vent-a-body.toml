@@ -1,0 +1,63 @@
+# art#263 station 1, the throat vents, way A (the agreed brief, art#263 comment 6363433518): the vent's body (frame,
+# copper hinge caps, column, light bar, scanner, lamp, feet) from Meshy, the moving parts (seven gill blades, the
+# bar's marker) built in Blender. Multi-image-to-3D from the body views without blades of our own OpenAI batch
+# 2026-10-23-ship-vent-final (in the design repo, xperiaroco2/prime-game-design, ideas/batches/2026-10-23-ship-vent-final.toml; its
+# images are in the raw folder): body_front (first), body_34, body_side. meshy-7.1, textured with PBR, Meshy's remesh to
+# 60,000 triangles with the dense original kept; tools/blender/ship_vent_a.py cleans and cuts it to the game mesh.
+# Item body2k first (2k geometry, 35 credits); bodystd (standard geometry, 30) only if body2k is weak. Under the
+# engineer's standing Meshy permission (CLAUDE.md, within the plan's credits); this step's cap is 120. No names.
+
+id = "2026-10-23-ship-vent-a-body"
+purpose = "art#263 station 1 way A: the throat vent's body (no blades) as a textured Meshy multi-image-to-3D model from the concept's body views."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 120
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-23"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/263#issuecomment-6363433518"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+should_texture = true
+enable_pbr = true
+texture_resolution = "2k"
+remove_lighting = true
+texture_prompt = "a heavy alien machine of worn bronze-brown cast metal with faint mottled patina and thin bright worn edges on every bevel; polished copper round hinge caps; glowing cyan light strips set in dark grooves; a vertical glass light bar glowing orange-yellow with a green band and a white segment; a black glass scanner pad with a glowing cyan four-fingered hand outline; a glossy red dome warning lamp on dark metal rings; the deep well inside the frame dark blue-grey metal"
+should_remesh = true
+topology = "triangle"
+target_polycount = 60000
+save_pre_remeshed_model = true
+target_formats = ["glb"]
+
+[[items]]
+id = "body2k"
+variant = "2k"
+kind = "multi_image_to_3d"
+params = { geometry_resolution = "2k" }
+images = [
+  { file = "raw:2026-10-23-ship-vent-final/body_front/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item body_front): the vent concept's body straight from the front, without blades, art#263", sha256 = "112762635ff79b03244dc83ce6ec4a563116d0eb351414a505b3ec39a4e7f482" },
+  { file = "raw:2026-10-23-ship-vent-final/body_34/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item body_34): the vent concept's body in three-quarter view, without blades, art#263", sha256 = "bae868240427803be0125632f4bd4f428bb3a79a72cb4437d7a7391e4f28d720" },
+  { file = "raw:2026-10-23-ship-vent-final/body_side/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item body_side): the vent concept's body from the left side, without blades, art#263", sha256 = "13bdef777d233524b24396acf7d32c47c038d84a71565d5b45d79d0d830e912c" },
+]
+
+[[items]]
+id = "bodystd"
+variant = "standard"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-23-ship-vent-final/body_front/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item body_front): the vent concept's body straight from the front, without blades, art#263", sha256 = "112762635ff79b03244dc83ce6ec4a563116d0eb351414a505b3ec39a4e7f482" },
+  { file = "raw:2026-10-23-ship-vent-final/body_34/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item body_34): the vent concept's body in three-quarter view, without blades, art#263", sha256 = "bae868240427803be0125632f4bd4f428bb3a79a72cb4437d7a7391e4f28d720" },
+  { file = "raw:2026-10-23-ship-vent-final/body_side/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item body_side): the vent concept's body from the left side, without blades, art#263", sha256 = "13bdef777d233524b24396acf7d32c47c038d84a71565d5b45d79d0d830e912c" },
+]
+
+# Step 3 (art#263, vents-a3): the gill blade as one rigid Meshy part, from our own isolated blade shot (OpenAI batch
+# 2026-10-23-ship-vent-blade-img, item bfront, picked of three); tools/blender/ship_vent_a_blade.py cleans it to about
+# 500 triangles on the pivot and the vent builder places seven copies. This step's cap 70 credits, at most two tries.
+[[items]]
+id = "blade1"
+kind = "image_to_3d"
+images = [
+  { file = "raw:2026-10-23-ship-vent-blade-img/bfront/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-blade-img item bfront): one gill blade of the vent concept, isolated, art#263", sha256 = "2728973f6c32d3818a0925f527e6bc3b1ea404a82c00252fe89b119fe6506763" },
+]
+params = { ai_model = "meshy-7.1", should_texture = true, enable_pbr = true, texture_resolution = "2k", remove_lighting = true, should_remesh = true, topology = "triangle", target_polycount = 6000, target_formats = ["glb"], texture_prompt = "a heavy louver blade of worn warm bronze-brown cast metal with faint mottled patina, a bright polished upper bevel facet and thin bright worn edges on every corner" }

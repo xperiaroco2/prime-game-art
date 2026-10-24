@@ -67,6 +67,13 @@ def material(name: str):
     if spec.get("emission"):
         bsdf.inputs["Emission Color"].default_value = (*spec["emission"], 1.0)
         bsdf.inputs["Emission Strength"].default_value = spec["strength"]
+    for key, sock, cs in (("albedo", "Base Color", "sRGB"), ("rough", "Roughness", "Non-Color"),
+                          ("metal", "Metallic", "Non-Color")):
+        if key in spec.get("tex", {}):   # a textured part (the vents' blades): its maps on the part's "uv"
+            node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+            node.image = bpy.data.images.load(spec["tex"][key], check_existing=True)
+            node.image.colorspace_settings.name = cs
+            mat.node_tree.links.new(node.outputs["Color"], bsdf.inputs[sock])
     return mat
 
 
