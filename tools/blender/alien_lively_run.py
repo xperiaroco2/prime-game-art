@@ -6,7 +6,7 @@ Blender's FFmpeg (encode_clips.py). godot-check runs separately (`tools/run.sh g
 static head's folder is only read.
 
     $PYTHON_BIN tools/blender/alien_lively_run.py [--head chameleon|axolotl] [--out DIR] [--no-build] [--seconds 20]
-        [--neck y0,y1] [--tag v3] [--pit-before DIR] [--no-pit-fix] [--web-with <other head's build folder>]
+        [--neck y0,y1] [--tag v3] [--pit-before DIR] [--no-pit-fix] [--rim-smooth N] [--web-with <other head's build folder>]
 
 --head (AL1, 2026-10-23): the chameleon (a painted iris that moves, the crest) or the axolotl (dark beads with a catch
 light fixed to the light, no gaze, six gills on springs); the build's files are named by the head (<head>_lively.glb,
@@ -94,6 +94,10 @@ def main() -> int:
     ap.add_argument("--tag", default="", help="names the sheet, shots and video of this run (no overwrite of an older one)")
     ap.add_argument("--pit-before", type=Path, default=None, help="the build folder of the eye pit sheet's before (default: --out)")
     ap.add_argument("--no-pit-fix", action="store_true", help="build as v2 did (the eyeballs as sculpted, the old fill)")
+    ap.add_argument("--sclera-normal-map", type=float, default=None,
+                    help="A3b: the eye texels' normal map strength in lively.json (alien_lively_build.py --sclera-normal-map)")
+    ap.add_argument("--rim-smooth", type=int, default=0,
+                    help="A3b: Taubin steps along the eye rim (alien_lively_build.py --rim-smooth; 0: the v6 builds' rim)")
     ap.add_argument("--gill-lift", choices=("centre", "skull", "centre_pinned"), default="centre",
                     help="the axolotl's gill weights' lift (alien_lively_build.py --gill-lift)")
     ap.add_argument("--web-with", type=Path, default=None, help="another head's tagged build folder, copied into the web folder too")
@@ -115,6 +119,8 @@ def main() -> int:
         build_dir.mkdir(parents=True, exist_ok=True)
         extra = ["--neck", args.neck] if args.neck else []
         extra += ["--no-pit-fix"] if args.no_pit_fix else []
+        extra += ["--rim-smooth", str(args.rim_smooth)] if args.rim_smooth else []
+        extra += ["--sclera-normal-map", str(args.sclera_normal_map)] if args.sclera_normal_map is not None else []
         extra += ["--gill-lift", args.gill_lift] if head == "axolotl" else []
         result = blender.run_script("alien_lively_build.py", [
             "--glb", str(static / f"{head}_static.glb"), "--albedo", str(static / f"{head}_albedo.png"),

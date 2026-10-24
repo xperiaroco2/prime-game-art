@@ -46,6 +46,9 @@ MOVE_CAP = 0.035  # v4: no eyeball vertex moves more than this share of the eye 
 ROOM_SHARE = 0.5  # nor more than half its distance to the nearest lid or socket triangle
 PUPIL_V = 0.12  # the pupil: darker than this (0.22 took the iris's dark inner ring: a pupil too big at rest)
 BARY = [(i / 4, j / 4) for i in range(5) for j in range(5 - i)]  # 15 points per triangle
+RIM_LAMBDA, RIM_MU = 0.5, -0.53  # A3b: the rim's Taubin steps (lambda 0.5 cancels the alternate in-out step)
+RIM_CAP = 0.08  # A3b: no rim vertex slides further than this share of the eye radius (the corners stay)
+RIM_WELD_DEG = 45.0  # A3b: a rim position's copies share one normal when they are this close (a fold stays split)
 
 
 def accessor(doc, binary, i):
@@ -274,6 +277,108 @@ def eyeball_fix(P, N, T, I, UV, alb, eyeball, centres, r, bead=False):
     return P1, N1, T1, rep, views
 
 
+def rim_smooth(P, N, T, I, eyeball, centres, r, iters):
+    """A3b: the eye rim smoothed along itself. The rim is every welded edge with an eyeball triangle on one side and a
+    lid or socket triangle on the other (near an eye); Meshy left it a sawtooth (the shared vertices step in and out
+    by one triangle), so the crease drew a dark line with a light band and the eye mask, which follows the triangles,
+    drew white sclera teeth on the lid. Each rim vertex with two rim neighbours moves by `iters` Taubin steps (lambda,
+    mu: a 1D smoothing along the loop that does not shrink it; the alternate in-out step is cancelled by the first),
+    each capped at RIM_CAP of the eye radius from the start and followed by a projection onto the surface as it was (the lid and eyeball triangles near the eye), so the
+    vertex slides along the head, not off it: the shape stays, only the seam between the two moves. Junctions and ends
+    of the rim stay put. The normals of the triangles round a moved vertex turn with their geometric normal (as in
+    eyeball_fix), and every rim position's copies take one normal (the seam welded; a fold, copies over RIM_WELD_DEG apart, stays split). Returns P, N, T and the report."""
+    weld = np.unique(np.round(P * 1e5).astype(np.int64), axis=0, return_inverse=True)[1].ravel()
+    nw = int(weld.max()) + 1
+    near_t = np.minimum(*(np.linalg.norm(P[I].mean(1) - c, axis=1) for c in centres.values())) < 1.4 * r
+    E = np.concatenate([I[:, [0, 1]], I[:, [1, 2]], I[:, [2, 0]]])
+    tri = np.tile(np.arange(len(I)), 3)
+    we = np.sort(weld[E], axis=1)
+    keep = near_t[tri] & (we[:, 0] != we[:, 1])
+    we, tri = we[keep], tri[keep]
+    uk, inv = np.unique(we[:, 0].astype(np.int64) * nw + we[:, 1], return_inverse=True)
+    inv = inv.ravel()
+    has_e, has_l = np.zeros(len(uk), bool), np.zeros(len(uk), bool)
+    np.logical_or.at(has_e, inv, eyeball[tri])
+    np.logical_or.at(has_l, inv, ~eyeball[tri])
+    rim_k = uk[has_e & has_l]
+    a, b = rim_k // nw, rim_k % nw
+    nodes = np.unique(np.concatenate([a, b]))
+    idx = {int(n): k for k, n in enumerate(nodes)}
+    nbr = [[] for _ in nodes]
+    for x, y in zip(a, b):
+        nbr[idx[int(x)]].append(idx[int(y)])
+        nbr[idx[int(y)]].append(idx[int(x)])
+    free = np.array([len(n) == 2 for n in nbr])
+    nb = np.array([n if len(n) == 2 else [k, k] for k, n in enumerate(nbr)])
+    Qw = np.zeros((nw, 3))
+    Qw[weld] = P
+    S0 = Qw[nodes].copy()
+    S = S0.copy()
+    surf_t = np.nonzero(near_t)[0]
+    bvh = BVHTree.FromPolygons([Vector(v) for v in P], [tuple(int(x) for x in I[t]) for t in surf_t], all_triangles=True)
+
+    def zigzag(Q):  # each free rim vertex's distance from its neighbours' midpoint (the sawtooth's size)
+        return np.linalg.norm(Q[free] - Q[nb[free]].mean(1), axis=1)
+    z0 = zigzag(S0)
+    for _ in range(iters):
+        for f in (RIM_LAMBDA, RIM_MU):
+            S = S + f * (S[nb].mean(1) - S) * free[:, None]
+        d = S - S0
+        dl = np.linalg.norm(d, axis=1)
+        S = S0 + d * np.minimum(1.0, RIM_CAP * r / np.maximum(dl, 1e-12))[:, None]
+        S[free] = np.array([tuple(bvh.find_nearest(Vector(p))[0]) for p in S[free]])
+    z1 = zigzag(S)
+    P1 = P.copy()
+    on = np.isin(weld, nodes)
+    pos = np.zeros((nw, 3))
+    pos[nodes] = S
+    P1[on] = pos[weld[on]]
+    mv = np.linalg.norm(S - S0, axis=1)
+
+    def geo_normals(Q):
+        fn = np.cross(Q[I[:, 1]] - Q[I[:, 0]], Q[I[:, 2]] - Q[I[:, 0]])
+        acc = np.zeros((nw, 3))
+        for k in range(3):
+            np.add.at(acc, weld[I[:, k]], fn)
+        acc /= np.maximum(np.linalg.norm(acc, axis=1), 1e-12)[:, None]
+        return acc[weld]
+    moved_v = np.nonzero(np.linalg.norm(P1 - P, axis=1) > 0)[0]
+    touched = np.isin(I, moved_v).any(1)
+    ch_w = np.isin(weld, np.unique(weld[np.unique(I[touched].ravel())]))
+    g0, g1 = geo_normals(P), geo_normals(P1)
+    N1 = N.copy()
+    N1[ch_w] = N[ch_w] + (g1[ch_w] - g0[ch_w])
+    N1[ch_w] /= np.linalg.norm(N1[ch_w], axis=1)[:, None]
+    acc = np.zeros((nw, 3))
+    np.add.at(acc, weld[on], N1[on])
+    acc /= np.maximum(np.linalg.norm(acc, axis=1), 1e-12)[:, None]
+    ang = np.zeros(len(P))
+    ang[on] = np.degrees(np.arccos(np.clip((N1[on] * acc[weld[on]]).sum(1), -1, 1)))
+    folded = np.zeros(nw, bool)
+    np.logical_or.at(folded, weld[on], ang[on] > RIM_WELD_DEG)
+    weld_on = on & ~folded[weld]
+    split = float(ang[weld_on].max()) if weld_on.any() else 0.0
+    N1[weld_on] = acc[weld[weld_on]]
+    changed = np.abs(N1 - N).max(1) > 1e-7
+    T1 = T.copy()
+    for i in np.nonzero(changed)[0]:
+        T1[i] = G.orthogonal_tangent(tuple(N1[i]), tuple(T[i]))
+
+    def side_stats(m):
+        return {"rim_vertices": int(m.sum()), "max_move_mm": round(float(mv[m].max()) * 1000, 3) if m.any() else 0.0,
+                "p50_move_mm": round(float(np.median(mv[m])) * 1000, 3) if m.any() else 0.0}
+    rep = {"iters": iters, "rim_edges": int(len(rim_k)), "rim_vertices": int(len(nodes)), "fixed": int((~free).sum()),
+           "max_move_mm": round(float(mv.max()) * 1000, 3), "p50_move_mm": round(float(np.median(mv)) * 1000, 3),
+           "zigzag_mm": {"before_p50": round(float(np.median(z0)) * 1000, 3), "before_max": round(float(z0.max()) * 1000, 3),
+                         "after_p50": round(float(np.median(z1)) * 1000, 3), "after_max": round(float(z1.max()) * 1000, 3)},
+           "normal_split_welded_deg": round(split, 2), "folds_left_split": int(folded.sum()),
+           "normals_changed": int(changed.sum()),
+           "max_abs_n_dot_t_after": round(float(np.abs((N1 * T1[:, :3]).sum(1)).max()), 6)}
+    for side, c in centres.items():
+        rep["left" if side > 0 else "right"] = side_stats(np.linalg.norm(S0 - c, axis=1) < 1.5 * r)
+    return P1, N1, T1, rep
+
+
 def residual_view(path, P, I, views, size=640):
     """eye_residual.png (1280 x 1280): per eye (rows: left, right) its eyeball seen along the old iris's axis, before
     (left column) and after (right) the fix, each surface point coloured by its distance from the ring sphere in % of
@@ -345,6 +450,11 @@ def main():
     ap.add_argument("--crest-root", type=float, default=0.45, help="the crest root between the head centre and tip")
     ap.add_argument("--blade", default="0.10,0.16", help="the crest blade's half width: full weight, none")
     ap.add_argument("--no-pit-fix", action="store_true", help="the v2 build: the eyeballs as sculpted, the old fill")
+    ap.add_argument("--sclera-normal-map", type=float, default=None,
+                    help="A3b: controller.sclera_normal_map, the normal map's strength on the eye texels (none: the"
+                         " controller's 1.0); 0 drops the old iris's concentric rings, which live in the normal map")
+    ap.add_argument("--rim-smooth", type=int, default=0,
+                    help="A3b: Taubin steps along the eye rim (rim_smooth; 0: the rim as Meshy left it, the v6 builds)")
     ap.add_argument("--skull-margin", type=float, default=0.06,
                     help="the crest weight fades in over this distance below the crest root's radius from the head centre")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -376,6 +486,10 @@ def main():
         N = accessor(doc, binary, prim["attributes"]["NORMAL"])
         T = accessor(doc, binary, prim["attributes"]["TANGENT"])
         P, N1, T1, pit, views = eyeball_fix(P, N, T, I, UV, alb, eyeball, centres, r, bead=bead)
+        if args.rim_smooth > 0:
+            P, N1, T1, rim = rim_smooth(P, N1, T1, I, eyeball, centres, r, args.rim_smooth)
+            report["rim"] = rim
+            print(f"LIVELY rim: {json.dumps(rim)}", flush=True)
         G.write_vec3(doc, binary, prim["attributes"]["POSITION"], P.tolist())
         G.write_vec3(doc, binary, prim["attributes"]["NORMAL"], N1.tolist())
         G.write_floats(doc, binary, prim["attributes"]["TANGENT"], T1.tolist())
@@ -395,10 +509,12 @@ def main():
     # ---- every texel of the triangles near the eyes gets its 3D position (a small UV rasterizer)
     hue, sat, val = hsv(alb)
     eye = mask[..., 0] < 0.5
+    eye_m = mask[..., 0] < 0.5
     posmap = np.full((H, W, 3), np.nan)
     # strict coverage (no overdraw) of every triangle: what the GPU samples; the rest of the atlas is gutter
     cov_any, cov_eye = np.zeros((H, W), bool), np.zeros((H, W), bool)
     near = np.minimum(*(np.linalg.norm(cen - c, axis=1) for c in centres.values())) < 1.3 * r
+    near_e, near_l = np.zeros((H, W), bool), np.zeros((H, W), bool)
     for t in range(len(I)):
         uv = UV[I[t]] * [W, H]
         x0, y0 = np.maximum(np.floor(uv.min(0)).astype(int), 0)
@@ -416,11 +532,17 @@ def main():
             cov_eye[gy[strict].astype(int), gx[strict].astype(int)] = True
         if not near[t]:
             continue
+        (near_e if eyeball[t] else near_l)[gy[strict].astype(int), gx[strict].astype(int)] = True
         ins = (l1 >= -0.03) & (l2 >= -0.03) & (1.0 - l1 - l2 >= -0.03)  # a slight overdraw closes the seams
         if ins.any():
             l1, l2 = l1[ins, None], l2[ins, None]
             posmap[gy[ins].astype(int), gx[ins].astype(int)] = l1 * P[I[t, 0]] + l2 * P[I[t, 1]] + (1 - l1 - l2) * P[I[t, 2]]
     has_pos = ~np.isnan(posmap[..., 0])
+    # A3b: the eye mask against the triangles near the eyes: the lid texels it calls eye (sclera drawn on the lid) and
+    # the eyeball texels it calls skin; near 0 both, the mask's edge is the triangles' edge and moves with the rim
+    report["mask_vs_triangles"] = {"lid_texels": int(near_l.sum()), "lid_called_eye": int((near_l & ~near_e & eye_m).sum()),
+                                   "eye_texels": int(near_e.sum()), "eye_called_skin": int((near_e & ~near_l & ~eye_m).sum())}
+    print(f"LIVELY mask vs triangles: {json.dumps(report['mask_vs_triangles'])}", flush=True)
     hole0 = np.zeros((H, W), bool)
     side_of = np.zeros((H, W), np.int8)
     theta_of = np.full((H, W), np.inf)
@@ -685,6 +807,8 @@ def main():
     report["controller"] = ({"gaze": "none", "head_hz": 2.2, "yaw_deg": 30.0, "pitch_deg": 12.0, "pitch_up_deg": 12.0,
                              "pitch_down_deg": 18.0, "neck_share": 0.4, "pitch_neck_share": 0.5, "tilt": 0.15}
                             if bead else {"gaze": "iris", "head_hz": 1.6, "yaw_deg": 35.0, "pitch_deg": 20.0, "neck_share": 0.4})
+    if args.sclera_normal_map is not None:  # A3b: the rings of the sculpted iris are in the normal map, not the geometry
+        report["controller"]["sclera_normal_map"] = args.sclera_normal_map
     # AL6 (PR #306 review major 3): the chameleon's grey facets under the upper lids are not in its normal map: they
     # stay with it off (controller.sclera_normal_map 0, eyes_pit_v6) and in grey geometry alone, so no build sets it
     report["sclera"] = f"{args.name}_sclera.png"
