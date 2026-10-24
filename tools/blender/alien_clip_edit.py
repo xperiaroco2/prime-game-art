@@ -36,8 +36,10 @@ The settings: `[defaults]` and one `[clips.<name>]` table per clip, each key ove
   world's up; a clip still more than 0.5 cm under the floor afterwards fails the build. `floor_reach` (A3, default 2):
   the running max and average's half width in frames; 0 lifts each frame by exactly its own need, the Hips' location
   keyed on every frame (the crouch: the smoothing floated the planted foot up to 2.95 cm). `"ground"` (A3, a one-shot
-  that leaves the floor in place, Jump_Start): no lift, but the frames up to the push-off (the cut's last kept crouch
-  frame, every frame without a cut) still fail the build under -0.5 cm; `false`: neither lifted nor checked (an
+  that leaves the floor in place, Jump_Start): the frames up to the push-off (the cut's last kept crouch frame, every
+  frame without a cut) lifted onto the floor by their own need, the lift faded out over `cut_gap` frames into the
+  tuck, which is not lifted (the game lifts the body); those ground frames fail the build under -0.5 cm (A2's
+  `false` hid its crouch 5.6 cm under the floor); `false`: neither lifted nor checked (an
   airborne loop, Jump_Air, which the game holds off the floor).
 Only the clips listed under `[clips.*]` are edited, each with `[defaults]` under its own keys; an unlisted clip is
 left exactly as the body carries it (A2: A1 gave every clip the defaults).
@@ -301,10 +303,10 @@ def apply(arm, skin, path: str) -> dict:
                                  reach=int(cfg.get("floor_reach", 2)))
             if rep["floor"]["lowest_after_cm"] < FLOOR_FAIL_CM:
                 raise ValueError(f"{act.name}: still {rep['floor']['lowest_after_cm']} cm under the floor after the lift")
-        elif mode == "ground":  # A3: no lift; the crouch before the push-off still checked
+        elif mode == "ground":  # A3: the crouch before the push-off on the floor and checked, the tuck not lifted
             last = rep.get("cut", {}).get("frames_dropped", [None])[0]
             rep["floor"] = floor(arm, skin, act, rest, up_arm, check_only=True,
-                                 check_to=None if last is None else last - 1)
+                                 check_to=None if last is None else last - 1, fade=int(cfg.get("cut_gap", 3)))
             if rep["floor"]["lowest_after_cm"] < FLOOR_FAIL_CM:
                 raise ValueError(f"{act.name}: its ground frames are {rep['floor']['lowest_after_cm']} cm under the floor")
         elif mode not in (False, None):
@@ -527,11 +529,25 @@ def _roll_keys(act, bone, axis_local, degs, f0):
         fc.update()
 
 
+def ground_lift(lowest: list[float], last: int, fade: int) -> list[float]:
+    """A3, floor "ground": per frame the lift that puts frames 0..last (the crouch before the push-off) exactly on
+    the floor, then the last one's lift faded to 0 over fade frames (a smoothstep), 0 after (the airborne tuck)."""
+    out = []
+    for i, z in enumerate(lowest):
+        if i <= last:
+            out.append(max(0.0, -z))
+        else:
+            u = min(1.0, (i - last) / max(1, fade))
+            out.append(out[last] * (1.0 - u * u * (3.0 - 2.0 * u)))
+    return out
+
+
 def floor(arm, skin, act, rest, up_arm, wrap: bool = False, reach: int = 2, check_only: bool = False,
-          check_to=None) -> dict:
+          check_to=None, fade: int = 3) -> dict:
     """The `floor` edit on one action: samples the posed skin on every frame, lifts the Hips' location keys by
     lift_profile (wrap: a loop; reach 0: each frame its own need, keyed on every frame). check_only (A3, "ground"):
-    no lift, the lowest point over the frames up to check_to (all without it) reported as lowest_after_cm."""
+    the frames up to check_to (all without it) lifted onto the floor, the lift faded out over fade frames after
+    (ground_lift), and checked as lowest_after_cm."""
     import bpy
     import numpy as np
     from mathutils import Vector
@@ -554,16 +570,19 @@ def floor(arm, skin, act, rest, up_arm, wrap: bool = False, reach: int = 2, chec
         return out
 
     before = lowest_per_frame()
-    if check_only:
-        arm.animation_data.action = None
-        upto = before if check_to is None else before[:max(1, check_to - f0 + 1)]
-        return {"check_only": True, "checked_frames": [f0, f0 + len(upto) - 1],
-                "lowest_after_cm": round(min(upto) * 100, 2), "lowest_all_cm": round(min(before) * 100, 2)}
-    lift = lift_profile(before, reach=reach, wrap=wrap)
+    if check_only:  # A3 "ground": the ground frames lifted by their own need, the lift faded out over fade frames
+        last = len(before) - 1 if check_to is None else min(len(before) - 1, max(0, check_to - f0))
+        lift = ground_lift(before, last, fade)
+    else:
+        lift = lift_profile(before, reach=reach, wrap=wrap)
     up_h = rest["Hips"].inverted() @ Vector(up_arm).normalized()
-    _shift_hips(act, f0, f1, [up_h * x for x in lift], bake=reach == 0)
+    _shift_hips(act, f0, f1, [up_h * x for x in lift], bake=reach == 0 or check_only)
     after = lowest_per_frame()
     arm.animation_data.action = None
+    if check_only:
+        return {"ground": True, "ground_frames": [f0, f0 + last], "lowest_before_cm": round(min(before[:last + 1]) * 100, 2),
+                "lowest_after_cm": round(min(after[:last + 1]) * 100, 2), "max_lift_cm": round(max(lift) * 100, 2),
+                "highest_low_after_cm": round(max(after[:last + 1]) * 100, 2), "lowest_all_after_cm": round(min(after) * 100, 2)}
     return {"lowest_before_cm": round(min(before) * 100, 2), "lowest_after_cm": round(min(after) * 100, 2),
             "max_lift_cm": round(max(lift) * 100, 2), "highest_low_after_cm": round(max(after) * 100, 2),
             "wrap": wrap, "reach": reach}

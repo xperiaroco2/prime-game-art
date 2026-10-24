@@ -104,6 +104,11 @@ class A3Maths(unittest.TestCase):
         low = [0.01, -0.02, 0.0, -0.05, 0.03]
         self.assertEqual(E.lift_profile(low, reach=0), [0.0, 0.02, 0.0, 0.05, 0.0])
 
+    def test_ground_lift_fades_into_the_tuck(self):
+        lift = E.ground_lift([-0.05, -0.04, -0.2, -0.2, -0.2, -0.2], 1, 3)
+        self.assertEqual(lift[:2], [0.05, 0.04])
+        self.assertTrue(lift[1] > lift[2] > lift[3] > lift[4] == 0.0 == lift[5])
+
     def test_sway_one_period_clean_seam(self):
         s = E.sway(9)
         self.assertAlmostEqual(s[0], 0.0)
