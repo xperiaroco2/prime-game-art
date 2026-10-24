@@ -150,7 +150,9 @@ normal = [-0.9500, 0.3123]                    # from the mouth (1.65, -7.1) to t
 room = "throat"
 recess_m = 0.08
 depth_m = 0.6                                 # the vents' own depth: the calm gill blades 19 cm past the frame
-                                              # (the engineer, art#263 comment 6363588759); the other wall units 0.5
+                                              # (the engineer, art#263 comment 6363588759); the other wall units 0.5.
+                                              # Measured from the wall's face: the unit sits recess_m into the wall, so
+                                              # it stands at most depth_m - recess_m (0.52 m) out of it.
 
 [[stations.spot]]
 id = "vent_w"
