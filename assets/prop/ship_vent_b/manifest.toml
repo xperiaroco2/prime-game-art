@@ -2,7 +2,7 @@ id = "ship_vent_b"
 kind = "prop"
 slot = ""
 title = "The ship's throat vent body and gill blade, way B (art#263 station 1)"
-notes = "Way B (art#263 comments 6363433518 and 6374327838; builder steps vents-b1, vents-b2 (the look polish: the well lights) and vents-b3 (the swept wedge standing open, the heavier frame, the patinated bronze)): the body (frame, copper hinge caps, column, light bar, scanner, lamp, feet) and the one gill blade built in headless Blender by tools/blender/ship_vent_b.py as flat-faceted chamfered solids from our own OpenAI concept views (batch 2026-10-23-ship-vent-final; the shapes were drawn after them by hand in code, no image or mesh of them is in the files) and the traced numbers; way A's Meshy body only as the to-scale guide. tools/blender/ship_interior_vent.py places the blade seven times and adds the marker, glows, light pieces and colliders into the station_vent_e and station_vent_w pieces. lights.json (the light pieces' places) is computed by ship_vent_b.py from this body's own geometry in the format way A measured on its Meshy body; the shapes follow our OpenAI concept images, but no AI output (image or mesh) is in these files, hence own-work and ai_generated false. Not approved yet."
+notes = "Way B (art#263 comments 6363433518 and 6374327838; builder steps vents-b1, vents-b2 (the look polish: the well lights) vents-b3 (the swept wedge standing open, the heavier frame, the patinated bronze) and vents-b4 (the vent 8 cm into the wall, the frame's sides run back to the wall, the scanner at 1.20 m with the column's top dropped, the hand redrawn as one even stroke round a smooth silhouette)): the body (frame, copper hinge caps, column, light bar, scanner, lamp, feet) and the one gill blade built in headless Blender by tools/blender/ship_vent_b.py as flat-faceted chamfered solids from our own OpenAI concept views (batch 2026-10-23-ship-vent-final; the shapes were drawn after them by hand in code, no image or mesh of them is in the files) and the traced numbers; way A's Meshy body only as the to-scale guide. tools/blender/ship_interior_vent.py places the blade seven times and adds the marker, glows, light pieces and colliders into the station_vent_e and station_vent_w pieces. lights.json (the light pieces' places) is computed by ship_vent_b.py from this body's own geometry in the format way A measured on its Meshy body; the shapes follow our OpenAI concept images, but no AI output (image or mesh) is in these files, hence own-work and ai_generated false. Not approved yet."
 tools = ["blender 5.2.2"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -21,21 +21,21 @@ generated_at = 2026-10-24
 url = "https://github.com/xperiaroco2/prime-game-art"
 
 [[raw]]
-file = "ship/v4/vents-b/b3/body.glb"
-sha256 = "455898e2fd1e67ce5fefb1ee2e463d3a18f00c477bac964ed2ed157edf02b9ff"
+file = "ship/v4/vents-b/b4/body.glb"
+sha256 = "f83537b56bd7fac67b31f66d2219239467550e2f1d8402bad87cd97473947d9b"
 
 [[raw]]
 file = "ship/v4/vents-b/b3/blade.glb"
 sha256 = "371731601699a3c40e5499b2a94e9e2c89674ebb81b7ffa2e2f1d668b628fcf3"
 
 [[raw]]
-file = "ship/v4/vents-b/b3/lights.json"
-sha256 = "23939c88ca0b8888deb127e7a8bb48e2988384b79e0dd86dbac61ead3908dbeb"
+file = "ship/v4/vents-b/b4/lights.json"
+sha256 = "ec83b2378423162a123e500f8a81f028c5d4de31d3c5f34f8df83ac5863db0ec"
 
 [[raw]]
-file = "ship/v4/vents-b/pieces_b3/station_vent_e.glb"
-sha256 = "f8aa487dbb06f117d66160e20591712c213ab950b9de00bdc79aa45f7a1178c7"
+file = "ship/v4/vents-b/pieces_b4/station_vent_e.glb"
+sha256 = "df0834ede36401cd9ebe23effcb6658b82f55c1c22986eb40ac9a6d1a9636ab2"
 
 [[raw]]
-file = "ship/v4/vents-b/pieces_b3/station_vent_w.glb"
-sha256 = "4a63bdc9ebc26ba0f94f21e0f000dd7fc38d9a3c168f6290222b335e1ed7fdd9"
+file = "ship/v4/vents-b/pieces_b4/station_vent_w.glb"
+sha256 = "f3e1bdde6791ffa5e8f4c3142dfe0f1ea841493ecead2e88a82da144c1825aa4"

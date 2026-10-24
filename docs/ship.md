@@ -1175,7 +1175,7 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   - *The screen.* The dark screen piece is the bezel's octagon 1.5 mm in (`lights.json` `hand.poly`), 1 mm off the
     body's screen face (b1's rectangle's corners cut through the bezel and flickered); the hand shrinks until its
     outline sits 4 mm inside the octagon.
-- **Way B step 3 (vents-b3, 2026-10-24), the current build** (`<raw>/ship/v4/vents-b/b3`, the pieces in `pieces_b3`;
+- **Way B step 3 (vents-b3, 2026-10-24)** (`<raw>/ship/v4/vents-b/b3`, the pieces in `pieces_b3`;
   a fresh critic's findings on b2):
   - *The blade stands open.* A swept wedge (`SECTION`, 29 points, 750 triangles): 8.6 cm thick at the root, the upper
     face sweeping down to a 2.8 cm tip 4 cm under the pivot, a shallow concave underside, no crease (its rings read
@@ -1196,6 +1196,28 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
     `"dark"` key (glow off, `VentAnim.SEAM_DARK`), and the Blender sheet darkens their base colour calm. The
     controller and `ship --motion` were already dark.
   - *Code.* `ship_interior_vent.lights()` raises when `lights.json` is missing beside the body.
+- **Way B step 4 (vents-b4, 2026-10-24), the current build** (`<raw>/ship/v4/vents-b/b4`, the pieces in `pieces_b4`;
+  the engineer: "set them a little deeper into the wall", the scanner lower, the hand redrawn):
+  - *The recess.* The whole vent sits `RECESS` 8 cm into the throat wall (`ship_interior_vent.RECESS`, one source:
+    `recess_m` on the vents' spots in ship.toml; `ship --check` lets a station's unit back that far behind the face,
+    the unit is now v -0.09..0.52). The frame's sides run back to `FRAME_BACK` 0.07 (b3's started at the well's back,
+    11.5 cm out, and left a floating shadow line), so they reach 1 cm into the wall's plate. The two plain modules
+    behind each vent (`ship_interior_place.TH_PLAIN`) have a flat plate 2 cm proud instead of the pillow panel
+    (`th_wall_low_flat_a/b`, `th_wall_mid` with `flat`; the pillow's 7 cm ridge would stand in the well): the
+    vent's solids pass through the plate and the wall's face, which stay hidden inside them, so there is no hole to
+    cut, no coplanar face and no gap. Colliders move with the piece. A grid of 0 / 5 / 8 / 10 cm from the eye
+    (`sheets/b4/recess_grid.png`): 8 cm reads built in with the frame's 2.4 cm chamfer and most of its side panel
+    kept; 10 cm starts to swallow the side panel at arm's length.
+  - *The scanner.* Its centre at chest height, `SCAN_H` 1.20 (b3 1.398; `--scan-h` builds others, 1.15 was the
+    grid's other value). The column's top drops with it (`COL_DROP` 0.198): the bar's glass top (1.35, its foot
+    stays at 0.622 over the lower strip), the panel, the shaft (now under the bend, a plain block), the head and the
+    lamp (its dome top 1.64, level with the box's shoulder). `COL_TOP` 1.642.
+  - *The hand.* Redrawn as one even stroke round a smooth silhouette: `_hand_field` is a signed distance (a palm with
+    0.30 heel corners, three capsule fingers of one length with U crotches, a thumb out at 48 deg filleted into the
+    palm by a smooth union `HAND_K` 0.20), `hand_outline` walks its zero line and keeps a point every 7 deg of turn,
+    `hand_stroke` offsets each point `HAND_W`/2 both ways along the field's normal (even width; every curve's
+    radius is over it, so neither side folds). Its box is 80 % of the screen's height, centred, 1 cm inside the
+    octagon. b3's mitred ribbon read ugly.
 - **The animation (vents-anim1, 2026-10-24; the engineer: "make the vents, try to animate them"; beauty over
   motion).** `godot/ship/vent_anim.gd`, the controller the game copies: a Node per vent (`setup(root, id,
   mark_travel)` after the scene's materials are set; `_process` steps it, `manual = true` and `step(dt)` for a
