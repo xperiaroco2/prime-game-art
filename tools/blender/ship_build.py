@@ -136,9 +136,23 @@ def import_glb(p: dict) -> list:
         m = m @ Matrix.Rotation(-p["rot_u"], 4, "X")
     if p.get("mirror_u"):
         m = m @ Matrix.Scale(-1.0, 4, (1.0, 0.0, 0.0))
-    obj.data.transform(m)
+    me = obj.data
     if p.get("mirror_u"):
-        obj.data.flip_normals()
+        # vents-b5b: the GLB's shading normals (its smooth groups) kept through the mirror. flip_normals() reverses each
+        # face's corners but not the custom normals stored against them, so a mirrored smooth part (the west vent's
+        # blades) came out with a patchwork of facets. Each corner's normal is read per (face, vertex), turned by m's
+        # linear part (rotation and mirror: orthonormal) and set back on the same (face, vertex) after the flip.
+        lin = m.to_3x3()
+        cn = [lin @ c.vector for c in me.corner_normals]
+        keep = {(f.index, me.loops[li].vertex_index): cn[li].normalized() for f in me.polygons for li in f.loop_indices}
+    me.transform(m)
+    if p.get("mirror_u"):
+        me.flip_normals()
+        per_corner = [None] * len(me.loops)
+        for f in me.polygons:
+            for li in f.loop_indices:
+                per_corner[li] = keep[(f.index, me.loops[li].vertex_index)]
+        me.normals_split_custom_set(per_corner)
     obj.name = obj.data.name = p["name"]
     for c in obj.users_collection:
         if c is not bpy.context.scene.collection:
