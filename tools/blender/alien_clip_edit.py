@@ -22,10 +22,23 @@ The settings: `[defaults]` and one `[clips.<name>]` table per clip, each key ove
 - `hips_up_cm` (A2, the crouch): the Hips' keys raised by this much and the legs solved again (two-bone IK per frame:
   each ankle and foot kept where the clip put them in the world, the knee in the plane of the clip's own, turned
   `knees_in_deg` toward the body's middle about the hip-ankle line).
+- `chest_up_deg` (A3, the crouch): Spine and Chest each turned half of it about the body's left-right axis, positive
+  lifting the chest (the trunk more upright), applied like `lean_deg` (which turns the Spine alone the other way).
+- `repeat` (A3, a loop): the clip's cycle played this many times in one longer loop (the keys copied, each copy shifted
+  by the cycle's length), so a slow layer (the sway) can span several of the clip's own cycles.
+- `sway_cm` (A3, the idle's weight shift): the Hips moved sideways by up to this much, once to each side over the
+  (repeated) loop (a sine, so the seam is clean), the legs solved again per frame as with `hips_up_cm` (the feet kept);
+  `sway_counter_deg`: the Spine rolled the other way by up to this much and the Head back by half of it, so the head
+  stays over the feet.
 - `floor`: `true` lifts the Hips on the frames whose posed skin goes under the floor (anim_edit's `floor` with
   `mode = "lift"`): per frame the lowest skinned vertex below z = 0, a running max over +-2 frames smoothed over
   +-2 frames (`lift_profile`; a `*_Loop` clip wraps around its seam), added to the Hips' location keys along the
-  world's up; a clip still more than 0.5 cm under the floor afterwards fails the build.
+  world's up; a clip still more than 0.5 cm under the floor afterwards fails the build. `floor_reach` (A3, default 2):
+  the running max and average's half width in frames; 0 lifts each frame by exactly its own need, the Hips' location
+  keyed on every frame (the crouch: the smoothing floated the planted foot up to 2.95 cm). `"ground"` (A3, a one-shot
+  that leaves the floor in place, Jump_Start): no lift, but the frames up to the push-off (the cut's last kept crouch
+  frame, every frame without a cut) still fail the build under -0.5 cm; `false`: neither lifted nor checked (an
+  airborne loop, Jump_Air, which the game holds off the floor).
 Only the clips listed under `[clips.*]` are edited, each with `[defaults]` under its own keys; an unlisted clip is
 left exactly as the body carries it (A2: A1 gave every clip the defaults).
 Pure maths (`cap_turn`, `axis_turn`, `q_rotate`, `lift_profile`, `cut_frames`, `two_bone`) has no bpy and is unit-tested (tools/tests/test_alien_clip_edit.py).
@@ -39,8 +52,28 @@ FINGERS = ("Index", "Middle", "Ring", "Little")
 SEGMENTS = ("Proximal", "Intermediate", "Distal")
 THUMB = ("ThumbProximal", "ThumbDistal")
 KEYS = ("finger_cap_deg", "thumb_cap_deg", "abduct_deg", "swing_deg", "head_up_deg", "lean_deg", "cut_straight_deg",
-        "cut_gap", "hips_up_cm", "knees_in_deg", "floor")
+        "cut_gap", "hips_up_cm", "knees_in_deg", "floor", "floor_reach", "chest_up_deg", "repeat", "sway_cm",
+        "sway_counter_deg")
 FLOOR_FAIL_CM = -0.5  # A2: a clip still this far under the floor after its lift fails the build
+ANKLE_MISS_FAIL_CM = 0.5  # A3: a re-solved leg whose Foot lands this far from its kept place (re-evaluated) fails
+
+
+def sway(n: int) -> list[float]:
+    """A3: the idle's weight shift per frame of a loop of n frames (the last the first again): one sine period, 0 at
+    the seam, +1 a quarter in (over the left foot), -1 three quarters in."""
+    m = max(1, n - 1)
+    return [math.sin(2.0 * math.pi * i / m) for i in range(n)]
+
+
+def repeat_keys(keys: list[float], f0: float, f1: float, times: int) -> list[tuple[float, int]]:
+    """A3: (frame, source index) of a cycle's keys repeated `times` times: the keys on [f0, f1) copied, each copy
+    shifted by f1 - f0, then the last key at f1 (the seam) moved to the end; plain data for the bpy side."""
+    period = f1 - f0
+    body = [(k, i) for i, k in enumerate(keys) if k < f1 - 1e-6]
+    end = [(k, i) for i, k in enumerate(keys) if k >= f1 - 1e-6]
+    out = [(k + r * period, i) for r in range(max(1, times)) for k, i in body]
+    out += [(k + (max(1, times) - 1) * period, i) for k, i in end]
+    return out
 
 
 def settings(path: str, clip: str) -> dict:
@@ -186,6 +219,9 @@ def apply(arm, skin, path: str) -> dict:
         if not cfg:
             report[clip] = {"settings": {}, "untouched": True}
             continue
+        rep0 = {}
+        if int(cfg.get("repeat", 1)) > 1:
+            rep0["repeat"] = repeat(act, int(cfg["repeat"]))
         caps = {}
         for side in ("Left", "Right"):
             for f in FINGERS:
@@ -209,11 +245,13 @@ def apply(arm, skin, path: str) -> dict:
                 turns[b] = q
         # A2: the face up (Neck and Head, half each) and the trunk's lean forward; about +X a negative angle lifts -Y
         for bones, deg in ((("Neck", "Head"), -float(cfg.get("head_up_deg", 0.0)) * 0.5),
-                           (("Spine",), float(cfg.get("lean_deg", 0.0)))):
+                           (("Spine",), float(cfg.get("lean_deg", 0.0))),
+                           (("Spine", "Chest"), -float(cfg.get("chest_up_deg", 0.0)) * 0.5)):  # A3
             for b in bones:
                 if deg and b in rest:
-                    turns[b] = axis_turn(tuple(rest[b].inverted() @ side_arm), deg)
-        rep = {"settings": cfg, "finger_max_before_deg": 0.0, "finger_max_after_deg": 0.0, "bones_edited": 0}
+                    t = axis_turn(tuple(rest[b].inverted() @ side_arm), deg)
+                    turns[b] = q_mul(t, turns[b]) if b in turns else t
+        rep = {"settings": cfg, "finger_max_before_deg": 0.0, "finger_max_after_deg": 0.0, "bones_edited": 0, **rep0}
         for bag in _bags(act):
             groups: dict[str, list] = {}
             for fc in bag.fcurves:
@@ -250,16 +288,27 @@ def apply(arm, skin, path: str) -> dict:
                         kp.handle_left_type = kp.handle_right_type = "AUTO_CLAMPED"
                     fc.update()
                 rep["bones_edited"] += 1
-        up_hips = rest["Hips"].inverted() @ up_arm
         if cfg.get("cut_straight_deg"):
             rep["cut"] = cut(arm, act, float(cfg["cut_straight_deg"]), int(cfg.get("cut_gap", 3)))
-        if cfg.get("hips_up_cm"):
-            rep["hips_up"] = hips_up(arm, act, float(cfg["hips_up_cm"]) / 100.0, float(cfg.get("knees_in_deg", 0.0)),
-                                     up_arm, side_arm, up_hips)
-        if cfg.get("floor"):
-            rep["floor"] = floor(arm, skin, act, up_hips, wrap=clip.endswith("_Loop"))
+        if cfg.get("hips_up_cm") or cfg.get("sway_cm"):
+            rep["hips_up"] = hips_up(arm, act, float(cfg.get("hips_up_cm", 0.0)) / 100.0,
+                                     float(cfg.get("knees_in_deg", 0.0)), up_arm, side_arm, rest,
+                                     sway_m=float(cfg.get("sway_cm", 0.0)) / 100.0,
+                                     counter_deg=float(cfg.get("sway_counter_deg", 0.0)), fwd_arm=fwd_arm)
+        mode = cfg.get("floor", False)
+        if mode is True:
+            rep["floor"] = floor(arm, skin, act, rest, up_arm, wrap=clip.endswith("_Loop"),
+                                 reach=int(cfg.get("floor_reach", 2)))
             if rep["floor"]["lowest_after_cm"] < FLOOR_FAIL_CM:
                 raise ValueError(f"{act.name}: still {rep['floor']['lowest_after_cm']} cm under the floor after the lift")
+        elif mode == "ground":  # A3: no lift; the crouch before the push-off still checked
+            last = rep.get("cut", {}).get("frames_dropped", [None])[0]
+            rep["floor"] = floor(arm, skin, act, rest, up_arm, check_only=True,
+                                 check_to=None if last is None else last - 1)
+            if rep["floor"]["lowest_after_cm"] < FLOOR_FAIL_CM:
+                raise ValueError(f"{act.name}: its ground frames are {rep['floor']['lowest_after_cm']} cm under the floor")
+        elif mode not in (False, None):
+            raise ValueError(f"{act.name}: floor must be true, false or \"ground\", not {mode!r}")
         report[clip] = rep
     return report
 
@@ -302,27 +351,69 @@ def cut(arm, act, straight_deg: float, gap: int) -> dict:
             "frames_before": f1 - f0, "frames_after": int(act.frame_range[1] - act.frame_range[0])}
 
 
-def _shift_hips(act, f0, f1, lift, up_hips):
+def repeat(act, times: int) -> dict:
+    """The `repeat` edit (A3): every channel's keys on the cycle [f0, f1) copied times - 1 more times, each copy
+    shifted by the cycle's length (repeat_keys), the seam key moved to the new end."""
+    f0, f1 = (float(x) for x in act.frame_range)
+    for bag in _bags(act):
+        for fc in bag.fcurves:
+            pts = fc.keyframe_points
+            n = len(pts)
+            co = [0.0] * (2 * n)
+            pts.foreach_get("co", co)
+            plan = repeat_keys([co[2 * i] for i in range(n)], f0, f1, times)
+            vals = [(fr, co[2 * i + 1], pts[i].interpolation) for fr, i in plan]
+            pts.clear()
+            pts.add(len(vals))
+            pts.foreach_set("co", [x for fr, v, _ in vals for x in (fr, v)])
+            for kp, (_, _, ip) in zip(pts, vals):
+                kp.interpolation = ip
+                kp.handle_left_type = kp.handle_right_type = "AUTO_CLAMPED"
+            fc.update()
+    act.use_frame_range = False
+    return {"times": times, "frames_before": int(f1 - f0), "frames_after": int(act.frame_range[1] - act.frame_range[0])}
+
+
+def _hips_loc(act):
     loc = {}
     for bag in _bags(act):
         for fc in bag.fcurves:
             if fc.data_path == 'pose.bones["Hips"].location':
                 loc[fc.array_index] = fc
     if len(loc) != 3:
-        raise ValueError(f"{act.name}: no Hips location keys to lift")
-    for i, fc in loc.items():
-        for kp in fc.keyframe_points:
-            f = min(max(int(round(kp.co[0])), f0), f1)
-            d = lift[f - f0] * up_hips[i]
-            kp.co[1] += d
-            kp.handle_left[1] += d
-            kp.handle_right[1] += d
+        raise ValueError(f"{act.name}: no Hips location keys to move")
+    return loc
+
+
+def _shift_hips(act, f0, f1, offsets, bake=False):
+    """The Hips' location keys moved by offsets[f - f0] (a vector in the Hips' rest frame: a basis location is in
+    that frame). bake (A3): the channels first keyed on every frame (linear), so a per-frame offset holds between the
+    clip's own keys."""
+    for i, fc in _hips_loc(act).items():
+        if bake:
+            co = [x for f in range(f0, f1 + 1) for x in (float(f), fc.evaluate(f) + offsets[f - f0][i])]
+            fc.keyframe_points.clear()
+            fc.keyframe_points.add(len(co) // 2)
+            fc.keyframe_points.foreach_set("co", co)
+            for kp in fc.keyframe_points:
+                kp.interpolation = "LINEAR"
+        else:
+            for kp in fc.keyframe_points:
+                f = min(max(int(round(kp.co[0])), f0), f1)
+                d = offsets[f - f0][i]
+                kp.co[1] += d
+                kp.handle_left[1] += d
+                kp.handle_right[1] += d
         fc.update()
 
 
-def hips_up(arm, act, metres: float, knees_in_deg: float, up_arm, side_arm, up_hips) -> dict:
-    """The `hips_up_cm` edit: the Hips raised, each leg solved again per frame (two_bone), the feet kept in the world;
-    keys on every frame for the UpperLeg, LowerLeg and Foot rotations."""
+def hips_up(arm, act, metres: float, knees_in_deg: float, up_arm, side_arm, rest, sway_m: float = 0.0,
+            counter_deg: float = 0.0, fwd_arm=None) -> dict:
+    """The `hips_up_cm` and `sway_cm` edits: the Hips raised (and swayed sideways, A3), each leg solved again per
+    frame (two_bone), the feet kept in the world; keys on every frame for the UpperLeg, LowerLeg and Foot rotations
+    (and the Hips' location with a sway). A3: the UpperLeg's parent is read from the rig (it moves rigidly with the
+    Hips), and the feet are measured on the re-evaluated rig afterwards (ankle_miss_max_cm; over ANKLE_MISS_FAIL_CM
+    fails the build)."""
     import bpy
     from mathutils import Matrix, Quaternion, Vector
 
@@ -330,13 +421,20 @@ def hips_up(arm, act, metres: float, knees_in_deg: float, up_arm, side_arm, up_h
     pb = arm.pose.bones
     bones = arm.data.bones
     legs = [(s, f"{s}UpperLeg", f"{s}LowerLeg", f"{s}Foot") for s in ("Left", "Right")]
+    parents = {bones[u].parent.name for _, u, _, _ in legs}
     rec = {}
     for f in range(f0, f1 + 1):
         bpy.context.scene.frame_set(f)
-        rec[f] = {n: pb[n].matrix.copy() for n in ["Hips"] + [x for leg in legs for x in leg[1:]]}
+        rec[f] = {n: pb[n].matrix.copy() for n in parents | {x for leg in legs for x in leg[1:]}}
     arm.animation_data.action = None
-    _shift_hips(act, f0, f1, [metres] * (f1 - f0 + 1), up_hips)
-    lift = Vector(up_arm).normalized() * metres
+    sw = sway(f1 - f0 + 1)
+    up, side = Vector(up_arm).normalized(), Vector(side_arm).normalized()
+    moves = [up * metres + side * (sway_m * sw[f - f0]) for f in range(f0, f1 + 1)]  # armature space
+    hips_rest_inv = rest["Hips"].inverted()
+    _shift_hips(act, f0, f1, [hips_rest_inv @ m for m in moves], bake=bool(sway_m))
+    if counter_deg and sway_m:  # the Spine rolls against the shift, the Head back by half
+        for bone, k in (("Spine", -1.0), ("Head", 0.5)):
+            _roll_keys(act, bone, rest[bone].inverted() @ Vector(fwd_arm), [k * counter_deg * x for x in sw], f0)
 
     def rel(child):  # the child's rest relative to its parent's
         b = bones[child]
@@ -347,16 +445,16 @@ def hips_up(arm, act, metres: float, knees_in_deg: float, up_arm, side_arm, up_h
         for fc in bag.fcurves:
             if fc.data_path.endswith(".rotation_quaternion"):
                 fcs[(fc.data_path.split('"')[1], fc.array_index)] = fc
-    miss = 0.0
     prev = {}
     solved: dict[tuple[str, int], list[float]] = {}
     for f in range(f0, f1 + 1):
         r = rec[f]
-        hips = Matrix.Translation(lift) @ r["Hips"]
-        for side, u, lo, ft in legs:
+        lift = moves[f - f0]
+        for side_name, u, lo, ft in legs:
+            parent = Matrix.Translation(lift) @ r[bones[u].parent.name]
             mu, ml, mf = r[u], r[lo], r[ft]
             hip, knee, ank = mu.translation, ml.translation, mf.translation
-            outward = Vector(side_arm) * (1.0 if side == "Left" else -1.0)
+            outward = side * (1.0 if side_name == "Left" else -1.0)
 
             def turn_pole(ax0, pole, outward=outward):
                 if not knees_in_deg:
@@ -371,9 +469,8 @@ def hips_up(arm, act, metres: float, knees_in_deg: float, up_arm, side_arm, up_h
             mu2 = Matrix.Translation(new_hip) @ (du.to_matrix() @ mu.to_3x3()).to_4x4()
             dl = (du @ (ank - knee)).rotation_difference(ank - knee2)
             ml2 = Matrix.Translation(knee2) @ (dl.to_matrix() @ du.to_matrix() @ ml.to_3x3()).to_4x4()
-            miss = max(miss, (knee2 + (ank - knee2).normalized() * (ank - knee).length - ank).length)
-            for name, m, parent in ((u, mu2, hips), (lo, ml2, mu2), (ft, mf, ml2)):
-                q = (rel(name).inverted() @ parent.inverted() @ m).to_quaternion().normalized()
+            for name, m, par in ((u, mu2, parent), (lo, ml2, mu2), (ft, mf, ml2)):
+                q = (rel(name).inverted() @ par.inverted() @ m).to_quaternion().normalized()
                 if name in prev and q.dot(prev[name]) < 0.0:
                     q = -q
                 prev[name] = q
@@ -391,15 +488,53 @@ def hips_up(arm, act, metres: float, knees_in_deg: float, up_arm, side_arm, up_h
         for kp in fc.keyframe_points:
             kp.interpolation = "LINEAR"
         fc.update()
-    return {"hips_up_cm": round(metres * 100, 2), "knees_in_deg": knees_in_deg, "frames": f1 - f0 + 1,
-            "ankle_miss_max_cm": round(miss * 100, 3)}
+    # A3: the feet measured on the re-evaluated rig (A2 read the solved geometry: 0.0 while the feet rose 10 cm)
+    _assign(arm, act)
+    miss = 0.0
+    for f in range(f0, f1 + 1):
+        bpy.context.scene.frame_set(f)
+        for _, _, _, ft in legs:
+            miss = max(miss, (pb[ft].matrix.translation - rec[f][ft].translation).length)
+    arm.animation_data.action = None
+    if miss * 100.0 > ANKLE_MISS_FAIL_CM:
+        raise ValueError(f"{act.name}: a re-solved foot lands {miss * 100:.2f} cm from its place")
+    return {"hips_up_cm": round(metres * 100, 2), "sway_cm": round(sway_m * 100, 2), "knees_in_deg": knees_in_deg,
+            "frames": f1 - f0 + 1, "ankle_miss_max_cm": round(miss * 100, 3), "parents": sorted(parents)}
 
 
-def floor(arm, skin, act, up_hips, wrap: bool = False) -> dict:
+def _roll_keys(act, bone, axis_local, degs, f0):
+    """Each rotation key of bone turned by degs[frame - f0] about axis_local (the bone's rest frame), on the left."""
+    groups = [None] * 4
+    for bag in _bags(act):
+        for fc in bag.fcurves:
+            if fc.data_path == f'pose.bones["{bone}"].rotation_quaternion':
+                groups[fc.array_index] = fc
+    if None in groups:
+        raise ValueError(f"{act.name}: {bone} has no rotation keys")
+    n = len(groups[0].keyframe_points)
+    vals = []
+    for fc in groups:
+        buf = [0.0] * (2 * n)
+        fc.keyframe_points.foreach_get("co", buf)
+        vals.append(buf)
+    for k in range(n):
+        fr = min(max(int(round(vals[0][2 * k])) - f0, 0), len(degs) - 1)
+        q = q_mul(axis_turn(tuple(axis_local), degs[fr]), tuple(vals[i][2 * k + 1] for i in range(4)))
+        for i in range(4):
+            vals[i][2 * k + 1] = q[i]
+    for i, fc in enumerate(groups):
+        fc.keyframe_points.foreach_set("co", vals[i])
+        fc.update()
+
+
+def floor(arm, skin, act, rest, up_arm, wrap: bool = False, reach: int = 2, check_only: bool = False,
+          check_to=None) -> dict:
     """The `floor` edit on one action: samples the posed skin on every frame, lifts the Hips' location keys by
-    lift_profile (wrap: a loop). up_hips: the world's up in the Hips' rest frame (a basis location is in that frame)."""
+    lift_profile (wrap: a loop; reach 0: each frame its own need, keyed on every frame). check_only (A3, "ground"):
+    no lift, the lowest point over the frames up to check_to (all without it) reported as lowest_after_cm."""
     import bpy
     import numpy as np
+    from mathutils import Vector
 
     scene = bpy.context.scene
     f0, f1 = _assign(arm, act)
@@ -419,10 +554,16 @@ def floor(arm, skin, act, up_hips, wrap: bool = False) -> dict:
         return out
 
     before = lowest_per_frame()
-    lift = lift_profile(before, wrap=wrap)
-    _shift_hips(act, f0, f1, lift, up_hips)
+    if check_only:
+        arm.animation_data.action = None
+        upto = before if check_to is None else before[:max(1, check_to - f0 + 1)]
+        return {"check_only": True, "checked_frames": [f0, f0 + len(upto) - 1],
+                "lowest_after_cm": round(min(upto) * 100, 2), "lowest_all_cm": round(min(before) * 100, 2)}
+    lift = lift_profile(before, reach=reach, wrap=wrap)
+    up_h = rest["Hips"].inverted() @ Vector(up_arm).normalized()
+    _shift_hips(act, f0, f1, [up_h * x for x in lift], bake=reach == 0)
     after = lowest_per_frame()
     arm.animation_data.action = None
     return {"lowest_before_cm": round(min(before) * 100, 2), "lowest_after_cm": round(min(after) * 100, 2),
             "max_lift_cm": round(max(lift) * 100, 2), "highest_low_after_cm": round(max(after) * 100, 2),
-            "wrap": wrap}
+            "wrap": wrap, "reach": reach}
