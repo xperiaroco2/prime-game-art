@@ -1222,6 +1222,33 @@ pilot's static premium heads"):
     left, right: as built, albedo only, geometry only, SSAO off, the eye mask's share, `debug_mode` 7 of
     `alien_static.gdshader`), `rim_<head>_4x/`, and the look-around per eye mode (`<head>_look_fixed.mp4`,
     `_lead`, `_side`; yaw +-40, pitch +-15 with holds, 8 s, Idle underneath), `eyes.json`.
+- **A3b: the eye rim (2026-10-24, art #196; proof `anim_bare/a3b/`):**
+  - The cause (A3's `rim_<head>.jpg`): the dark line with a light band along the lower lid shows in the geometry-only
+    column, not in the albedo-only one. The rim, every welded edge between an eyeball and a lid triangle, is a
+    sawtooth: its vertices step in and out by a triangle (the chameleon: a vertex 3.4 mm off its neighbours' midpoint
+    at the median, 18.4 mm at most, in the static head's units, eye radius 0.186). The eye mask follows the triangles
+    (`mask_vs_triangles`: 566 of 125717 lid texels near the eyes read eye, 571 of 68809 eyeball texels read skin), so
+    the same zigzag drew white sclera teeth on the lid.
+  - The fix, `alien_lively_build.py --rim-smooth 4` (`alien_lively_run.py` passes it): `rim_smooth()` moves each rim
+    vertex with two rim neighbours by Taubin steps along the loop (lambda 0.5, mu -0.53: the in-out step cancels, the
+    loop does not shrink), capped at 8 % of the eye radius, each step projected back onto the surface as it was (the
+    lid and eyeball triangles), so the seam slides along the head and the shape stays; normals turn with the geometry
+    and a rim position's copies share one (copies over 45 degrees apart are a fold and stay split). The mask moves
+    with the triangles, so its edge follows the smoothed rim. Chameleon (`lively/v7rim3`): zigzag 3.41 to 0.81 mm
+    median, 18.44 to 4.49 max; largest move 11.2 mm (median 1.8), 494 rim vertices, 20 fixed (junctions). Axolotl
+    (`lively/axolotl_v7rim3`): 2.20 to 0.52 median, 8.16 to 1.37 max; largest move 4.7 mm (median 1.2).
+  - The whole-head gate vs r5 (front, left, back, right; A3 before, A3b after): chameleon 0.314/0.316,
+    0.221/0.221, 0.111/0.111, 0.307/0.305; axolotl 0.078/0.097, 0.027/0.031, 0.065/0.065, 0.027/0.030. The backs do not
+    move; only the face's rim and (the chameleon) the eye texels' normal map changed.
+  - The faint concentric rings on the chameleon's eyeball (where the sculpted iris was) are in the normal map: they
+    show as built and with SSAO off, not in the geometry-only column (`debug_mode` 2 skips the normal map). The build's
+    `--sclera-normal-map 0` writes `controller.sclera_normal_map` 0 (the normal map off on the eye texels, where the
+    gaze draws the eye).
+  - `eye_reels.gd`: `reset_eyes()` (new in `alien_lively.gd`) before each look pass, so the fixed reel starts
+    centred; the rim close-ups are 0.14 m high (`RIM_SIZE`; A3's 0.09 cut the eye off).
+  - `godot/alien/lively_check.gd` with `tools/tests/test_alien_lively_godot.py`: the pile-up guard (a clip that stops
+    posing Neck and Head ends where a re-posed one does) and the motion filter (the yaw rate and acceleration the same
+    at 30 and 120 fps and with an uneven step; nothing kicked after `reset_motion()` and a teleport), headless.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
