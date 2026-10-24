@@ -43,6 +43,22 @@ The method (no sculpting, no smoothing passes over a dense mesh; every shape is 
    by nearest-face interpolation, scaled by what the hand's leave, then blended with the neighbours' at every joint
    (WEIGHT_SMOOTH passes; the hands and the rings keep theirs), at most four per vertex, normalised. The Little
    finger's bones stay, unweighted.
+
+H1 (art #196, the chameleon's hybrid body): `--targets <toml>` (tools/blender/alien_cage_targets/) sets any of the
+constants in CAGE_KEYS; without it the defaults rebuild S4b exactly. Its new paths, each off by default:
+- BODY_SCALE scales the source character (rest skeleton, body, the clips' location keys) about the origin and moves
+  the neck ring down with it, its ellipse unchanged (the head's size stays; the whole character's height changes);
+- CAGE_REMAP moves the cage's numbers from S1c's skeleton (REF_*) onto the source's: heights by the ankle, knee, hip,
+  chest, shoulder and ring stations, the arm's x by the shoulder, elbow, wrist and knuckles, the foot's y by the
+  ankle, ball and toe tip; WRAP_Z and WRAP_X keep S1c-frame cage stations on the left and are remapped the same way;
+- HAND_REL reads HAND's rings as offsets from the LeftHand bone's head; HAND_COLS (the rings' columns as shares of
+  the half width, front to back) gives the hand len(HAND_COLS) - 1 finger roots: five columns for FINGERS of four
+  (the wrist joint's ring stays an octagon; two pentagons in the palm's heel join it to the ten-vertex rings);
+  FINGER_CURL bends each finger's mesh at its knuckles (a relaxed rest; the bones stay straight);
+- TOE_SET picks which of the foot's three end quads become toes (two groups: the middle one is capped, a cleft);
+- the target (--target) can be welded (TARGET_WELD), smoothed in soft boxes (TARGET_CLEAN: lumps, dimples, grooves
+  and seams it should not pass on) and symmetrised from one half (TARGET_MIRROR) before it is measured; ARM_GUESS is
+  the first guess of its arm's section centre.
 """
 from __future__ import annotations
 
@@ -51,10 +67,11 @@ import json
 import math
 import os
 import sys
+import tomllib
 
 import bmesh
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alien_parts_geom as G  # noqa: E402
@@ -213,6 +230,141 @@ WRAP_W = {"trunk": {"crotch": 0.3, "hip": 0.7, "belly": 1.0, "navel": 1.0, "wais
 # the target's kneecap and calf hints do not come through as knobs.
 WRAP_RELAX = {"trunk": (0.5, 1), "arm": (0.5, 6), "leg": (0.5, 8)}
 WRAP_TOL = 0.0015
+# H1 (art #196): the cage targets' new paths (see the docstring); these defaults keep S4b.
+BODY_SCALE = 1.0
+CAGE_REMAP = False
+HAND_REL = False
+HAND_COLS = None  # None: S8's rotated octagons (three finger roots)
+FINGER_CURL = (0.0, 0.0, 0.0)  # degrees at the J0, J1 and J2 knuckles, toward the palm
+TOE_SET = (0, 1, 2)
+ARM_GUESS = (-0.01, 1.34)  # the target arm section's first centre guess (y, z)
+NECK_END_ELLIPSE = (0.0605, 0.047, 0.0565)  # the neck's end ring: semi x, centre y, semi y
+TARGET_WELD = 0.0  # m; 0: the target is not welded
+TARGET_MIRROR = ""  # "+x" or "-x": the half of the target kept and mirrored
+TARGET_CLEAN = []  # [[x0, x1, y0, y1, z0, z1, passes], ...] soft boxes smoothed on the target (its own frame)
+TARGET_CLEAN_MARGIN = 0.015  # m: each box's soft edge
+# S1c's skeleton, the cage numbers' frame (CAGE_REMAP): heights, the arm's x and the foot's y of its joints.
+REF_Z = {"LeftFoot": 0.115, "LeftLowerLeg": 0.5181, "LeftUpperLeg": 0.8409, "Chest": 1.0283, "UpperChest": 1.1491,
+         "LeftUpperArm": 1.2765}
+REF_RING = (1.39, 0.008)  # S1's ring height and step
+REF_X = {"LeftUpperArm": 0.152, "LeftLowerArm": 0.4131, "LeftHand": 0.6444, "LeftIndexProximal": 0.7759}
+REF_FOOT_Y = (-0.1811, -0.0865, 0.0913)  # the toe bone's tail, its head (the ball) and the ankle
+CAGE_KEYS = ("TRUNK", "NECK_END", "CROTCH", "CROTCH_Z", "ARM_HOLE", "ARM", "ARM_THICK", "LEG_THICK", "WRIST_X",
+             "WRIST_GAP", "HAND", "HAND_INNER", "HAND_SIDE_H", "FINGERS", "FINGER_K", "FINGER_R", "TIP_BACK",
+             "FINGER_RINGS", "THUMB_R", "THUMB_OUT", "THUMB_LEN", "THUMB_DIR", "THUMB_RINGS", "HAND_W", "THUMB_ROOT_W",
+             "LEG", "FOOT", "FOOT_SIDE_H", "FOOT_X", "TOE", "TOE_MID", "THUMB_R0", "TOE_LEN", "TOE_THICK", "FIT",
+             "WEIGHT_SMOOTH", "WRAP_Z", "WRAP_X", "WRAP_S", "WRAP_W", "WRAP_RELAX", "WRAP_TOL", "BODY_SCALE",
+             "CAGE_REMAP", "HAND_REL", "HAND_COLS", "FINGER_CURL", "TOE_SET", "ARM_GUESS", "NECK_END_ELLIPSE",
+             "TARGET_WELD", "TARGET_MIRROR", "TARGET_CLEAN", "TARGET_CLEAN_MARGIN")
+
+
+def apply_cage_targets(path):
+    """H1: a cage targets file's upper-case keys over the module's constants (CAGE_KEYS only; CROTCH_Z's keys become
+    ints, the short vectors tuples). Returns the file's name key."""
+    with open(path, "rb") as fh:
+        t = tomllib.load(fh)
+    bad = sorted(k for k in t if k.isupper() and k not in CAGE_KEYS)
+    if bad:
+        raise SystemExit(f"{path}: unknown keys {bad}")
+    g = globals()
+    for k, v in t.items():
+        if not k.isupper():
+            continue
+        if k == "CROTCH_Z":
+            v = {int(a): b for a, b in v.items()}
+        elif k in ("FINGERS", "FINGER_CURL", "TOE_SET", "ARM_GUESS", "NECK_END_ELLIPSE", "CROTCH", "THUMB_DIR"):
+            v = tuple(v)
+        elif k in ("FINGER_RINGS", "THUMB_RINGS"):
+            v = [tuple(tuple(x) if isinstance(x, list) else x for x in row) for row in v]
+        elif k == "FIT":
+            v = {a: tuple(b) for a, b in v.items()}
+        g[k] = v
+    if HAND_COLS is not None and len(HAND_COLS) != len(FINGERS) + 1:
+        raise SystemExit(f"{path}: HAND_COLS needs len(FINGERS) + 1 = {len(FINGERS) + 1} columns")
+    if HAND_COLS is not None and len(HAND_COLS) not in (4, 5):
+        raise SystemExit(f"{path}: HAND_COLS: 4 or 5 columns (three or four fingers)")
+    return t.get("name", os.path.basename(path))
+
+
+def pw(table, v):
+    """A piecewise-linear map through (a, b) pairs sorted by a; past either end it continues the end segment's
+    slope (one segment) or slope 1 (more)."""
+    if v <= table[0][0]:
+        (a0, b0), (a1, b1) = table[0], table[1]
+        return b0 + (v - a0) * ((b1 - b0) / (a1 - a0) if len(table) == 2 else 1.0)
+    for (a0, b0), (a1, b1) in zip(table, table[1:]):
+        if v <= a1:
+            return b0 + (b1 - b0) * (v - a0) / (a1 - a0)
+    return table[-1][1] + (v - table[-1][0])
+
+
+def remap_tables(heads, ring_z, ring_step):
+    """H1 (CAGE_REMAP): the z, x and foot-y maps from S1c's skeleton onto one given by its bone heads
+    ({name: (x, y, z)}, plus LeftToes' tail as "LeftToesTail") and its ring."""
+    tz = [(0.0, 0.0)] + sorted((REF_Z[n], heads[n][2]) for n in REF_Z)
+    tz += [(REF_RING[0] - 2 * REF_RING[1], ring_z - 2 * ring_step), (REF_RING[0], ring_z)]
+    tx = [(0.0, 0.0)] + sorted((REF_X[n], heads[n][0]) for n in REF_X)
+    ty = list(zip(REF_FOOT_Y, (heads["LeftToesTail"][1], heads["LeftToes"][1], heads["LeftFoot"][1])))
+    return tz, tx, ty
+
+
+def remap_constants(tz, tx, ty):
+    """H1: the cage's S1c-frame numbers moved onto the new skeleton by the maps (module constants rewritten)."""
+    global NECK_END, CROTCH, CROTCH_Z, ARM_HOLE, ARM, WRIST_X, HAND, LEG, FOOT, WRAP_Z, WRAP_X, TRUNK
+    Z, X, Y = (lambda v: pw(tz, v)), (lambda v: pw(tx, v)), (lambda v: pw(ty, v))  # noqa: E731
+    TRUNK = [(n, Z(z), a, yf, yb) for n, z, a, yf, yb in TRUNK]
+    NECK_END = Z(NECK_END)
+    CROTCH = (CROTCH[0], CROTCH[1], Z(CROTCH[2]))
+    CROTCH_Z = {k: Z(v) for k, v in CROTCH_Z.items()}
+    (hy, hz), r, xs = ARM_HOLE
+    ARM_HOLE = ((hy, Z(hz)), r, tuple(X(x) for x in xs))
+    ARM = [(X(x), yc, Z(zc), ry, rz) for x, yc, zc, ry, rz in ARM]
+    WRIST_X = X(WRIST_X)
+    if not HAND_REL:
+        HAND = [(X(x), yc, Z(zc), w, h) for x, yc, zc, w, h in HAND]
+    LEG = [(Z(z), cx, cy, rx, ry) for z, cx, cy, rx, ry in LEG]
+    FOOT = [(Y(row[0]),) + tuple(row[1:]) for row in FOOT]
+    WRAP_Z = [(Z(a), b) for a, b in WRAP_Z]
+    WRAP_X = [(X(a), b) for a, b in WRAP_X]
+
+
+def fcurves_of(act):
+    """Every F-curve of an action (layered actions: layers, strips, channel bags)."""
+    out = []
+    for layer in getattr(act, "layers", []):
+        for strip in layer.strips:
+            for cb in strip.channelbags:
+                out += list(cb.fcurves)
+    return out
+
+
+def scale_character(arm, body, ring, s):
+    """H1 (BODY_SCALE): the source's rest skeleton, its body and its clips' location keys scaled by s about the
+    origin; the ring (S1's dict, before densifying) moved to z * s with its ellipse unchanged."""
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.object.mode_set(mode="EDIT")
+    for eb in arm.data.edit_bones:
+        eb.head = eb.head * s
+        eb.tail = eb.tail * s
+    bpy.ops.object.mode_set(mode="OBJECT")
+    for v in body.data.vertices:
+        v.co = v.co * s
+    keys = 0
+    for act in bpy.data.actions:
+        for fc in fcurves_of(act):
+            if fc.data_path.endswith(".location"):
+                for kp in fc.keyframe_points:
+                    kp.co.y *= s
+                    kp.handle_left.y *= s
+                    kp.handle_right.y *= s
+                    keys += 1
+                fc.update()
+    dz = ring["z"] * (s - 1.0)
+    ring["z"] = round(ring["z"] + dz, 6)
+    for key in ("loop", "loop_below"):
+        ring[key] = [[q[0], q[1], round(q[2] + dz, 6)] for q in ring[key]]
+    bpy.context.view_layer.update()
+    return {"scale": s, "location_keys": keys, "ring_z": ring["z"]}
 
 
 def trunk_vert(k, z, a, yf, yb, n=SUPER):
@@ -279,22 +431,50 @@ def build_hand(bm, wrist, bones):
     out = {}
     prev = wrist
     hr = []
+    h0 = bones["LeftHand"][0] if HAND_REL else Vector((0.0, 0.0, 0.0))
     for i, ((x, yc, zc, w, h), inner) in enumerate(zip(HAND, HAND_INNER)):
+        x, yc, zc = x + h0.x, yc + h0.y, zc + h0.z
         ring = []
-        for k in range(8):
-            ph = math.radians(202.5 - 45 * k)
-            sy, sz = math.copysign(1, math.sin(ph)), math.copysign(1, math.cos(ph))
-            side = abs(math.sin(ph)) > 0.7
-            ring.append(bm.verts.new((x, yc + sy * w * (1.0 if side else inner),
-                                      zc + sz * h * (HAND_SIDE_H if side else 1.0))))
-            out[ring[-1]] = dict(HAND_W[i])
-        for k in range(8):
-            if i == 2 and k == 6:
-                continue  # the thumb's root: the front side quad
-            bm.faces.new((prev[k], prev[(k + 1) % 8], ring[(k + 1) % 8], ring[k]))
+        if HAND_COLS is None or i == 0:
+            for k in range(8):
+                ph = math.radians(202.5 - 45 * k)
+                sy, sz = math.copysign(1, math.sin(ph)), math.copysign(1, math.cos(ph))
+                side = abs(math.sin(ph)) > 0.7
+                ring.append(bm.verts.new((x, yc + sy * w * (1.0 if side else inner),
+                                          zc + sz * h * (HAND_SIDE_H if side else 1.0))))
+        else:  # H1: columns front (c 0) to back; order: bottom c 1..C-1, back top, top C-2..1, front top, bottom
+            C = len(HAND_COLS)
+
+            def col(c, top):
+                side = c in (0, C - 1)
+                return bm.verts.new((x, yc + w * HAND_COLS[c] * (1.0 if side else inner / HAND_INNER[-1]),
+                                     zc + (1 if top else -1) * h * (HAND_SIDE_H if side else 1.0)))
+            ring = ([col(c, False) for c in range(1, C)] + [col(C - 1, True)]
+                    + [col(c, True) for c in range(C - 2, 0, -1)] + [col(0, True), col(0, False)])
+        for v in ring:
+            out[v] = dict(HAND_W[i])
+        n = len(ring)
+        if len(prev) == 8 and n == 10:  # H1: the octagon to ten, two pentagons (bottom and top middle)
+            P, R = prev, ring
+            for f in ((P[0], P[1], R[2], R[1], R[0]), (P[1], P[2], R[3], R[2]), (P[2], P[3], R[4], R[3]),
+                      (P[3], P[4], R[5], R[4]), (P[4], P[5], R[7], R[6], R[5]), (P[5], P[6], R[8], R[7]),
+                      (P[6], P[7], R[9], R[8]), (P[7], P[0], R[0], R[9])):
+                bm.faces.new(f)
+        else:
+            for k in range(n):
+                if i == 2 and k == n - 2:
+                    continue  # the thumb's root: the front side quad
+                bm.faces.new((prev[k], prev[(k + 1) % n], ring[(k + 1) % n], ring[k]))
         hr.append(ring)
         prev = ring
     K = hr[-1]
+    C = len(K) // 2
+
+    def top(c):
+        return K[2 * C - 2 - c]
+
+    def bot(c):
+        return K[2 * C - 1] if c == 0 else K[c - 1]
     seg = {"P": "Proximal", "I": "Intermediate", "D": "Distal"}
 
     def path(joints, rows, radius, names):
@@ -314,14 +494,27 @@ def build_hand(bm, wrist, bones):
             pts.append((c, d, sc, {names[k]: v for k, v in w.items()}))
         return pts, radius / 0.93
 
-    for f, base in zip(FINGERS, ([K[6], K[5], K[0], K[7]], [K[5], K[4], K[1], K[0]], [K[4], K[3], K[2], K[1]])):
+    for fi, f in enumerate(FINGERS):
+        base = [top(fi), top(fi + 1), bot(fi + 1), bot(fi)]
         j = {"J0": bones[f"Left{f}Proximal"][0], "J1": bones[f"Left{f}Intermediate"][0],
              "J2": bones[f"Left{f}Distal"][0], "T": bones[f"Left{f}Distal"][1]}
+        if any(FINGER_CURL):  # H1: a relaxed rest, each knuckle bent toward the palm (-Z), the joints after it with it
+            j = {k: Vector(v) for k, v in j.items()}
+            order = ("J0", "J1", "J2", "T")
+            for a, deg in zip(order, FINGER_CURL):
+                if not deg:
+                    continue
+                d = (j[order[order.index(a) + 1]] - j[a]).normalized()
+                axis = d.cross(Vector((0.0, 0.0, -1.0))).normalized()
+                rot = Matrix.Rotation(math.radians(deg), 3, axis)
+                for b in order[order.index(a) + 1:]:
+                    j[b] = j[a] + rot @ (j[b] - j[a])
         names = {k: f"Left{f}{v}" for k, v in seg.items()} | {"H": "LeftHand"}
         pts, half = path(j, FINGER_RINGS, FINGER_R, names)
         tube(bm, base, pts, half, out)
     P1, P2 = hr[1], hr[2]
-    base = [P1[6], P1[7], P2[7], P2[6]]
+    kt = len(P2) - 2
+    base = [P1[kt], P1[kt + 1], P2[kt + 1], P2[kt]]
     for v in base:
         out[v] = {"Left" + k: w for k, w in THUMB_ROOT_W.items()}
     names = {"M": "LeftThumbMetacarpal", "P": "LeftThumbProximal", "D": "LeftThumbDistal", "H": "LeftHand"}
@@ -372,7 +565,8 @@ def build_cage(sole_drop, trunk, bones=None):
     end = []
     for k in range(7):
         th = math.radians(30 * k)
-        end.append(V((0.0605 * math.sin(th), 0.047 - 0.0565 * math.cos(th), NECK_END)))
+        ex, ey, eb = NECK_END_ELLIPSE
+        end.append(V((ex * math.sin(th), ey - eb * math.cos(th), NECK_END)))
     rings["end"] = end
     names.append("end")
     for lo, hi in zip(names, names[1:]):
@@ -436,6 +630,9 @@ def build_cage(sole_drop, trunk, bones=None):
     bot = [prev[6], prev[5], prev[4], prev[3]]
     for i in range(3):
         base = [top[i], top[i + 1], bot[i + 1], bot[i]]
+        if i not in TOE_SET:  # H1: no toe here (the cleft between two toe groups): the end quad capped
+            bm.faces.new(base)
+            continue
         cen = sum((p.co for p in base), Vector()) / 4
         last = base
         for r, (fwd, sw, sh, drop) in enumerate(TOE):
@@ -539,10 +736,68 @@ class Wrap:
         lo_z = min(p.z for p in pts)
         cx = 0.5 * (min(p.x for p in pts) + max(p.x for p in pts))
         self.pts = [Vector((p.x - cx, p.y, p.z - lo_z)) for p in pts]
-        self.bvh = BVHTree.FromPolygons(self.pts, polys)
         self.report = {"target": path, "target_verts": len(pts), "target_height": round(max(p.z for p in self.pts), 4)}
+        if TARGET_WELD or TARGET_CLEAN or TARGET_MIRROR:
+            self.pts, polys = self.clean(self.pts, polys)
+        self.bvh = BVHTree.FromPolygons(self.pts, polys)
         self.corr = {}
         self.cache = {}
+
+    def clean(self, pts, polys):
+        """H1: the target welded (TARGET_WELD), smoothed in TARGET_CLEAN's soft boxes (a Laplacian per pass, each
+        vertex by its box weight: the lumps, dimples, grooves and seams the cage should not take) and symmetrised
+        (TARGET_MIRROR: the faces touching the kept half, mirrored across x = 0)."""
+        bm = bmesh.new()
+        vs = [bm.verts.new(p) for p in pts]
+        for f in polys:
+            try:
+                bm.faces.new([vs[i] for i in f])
+            except ValueError:
+                pass
+        if TARGET_WELD:
+            n0 = len(bm.verts)
+            bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=TARGET_WELD)
+            self.report["target_welded"] = n0 - len(bm.verts)
+        smoothed = {}
+        for box in TARGET_CLEAN:
+            x0, x1, y0, y1, z0, z1, passes = box
+            m = TARGET_CLEAN_MARGIN
+
+            def wgt(co):
+                t = 1.0
+                for v, a, b in ((co.x, x0, x1), (co.y, y0, y1), (co.z, z0, z1)):
+                    d = min(v - a, b - v)
+                    if d <= 0:
+                        return 0.0
+                    t = min(t, d / m)
+                return min(t, 1.0)
+            sel = [(v, wgt(v.co)) for v in bm.verts]
+            sel = [(v, w) for v, w in sel if w > 0]
+            for _ in range(int(passes)):
+                new = []
+                for v, w in sel:
+                    nb = [e.other_vert(v).co for e in v.link_edges]
+                    if nb:
+                        avg = sum(nb, Vector()) / len(nb)
+                        new.append(v.co + (avg - v.co) * (0.5 * w))
+                    else:
+                        new.append(v.co.copy())
+                for (v, _), co in zip(sel, new):
+                    v.co = co
+            smoothed[str(box)] = len(sel)
+        self.report["target_clean"] = smoothed
+        bm.verts.index_update()
+        pts = [v.co.copy() for v in bm.verts]
+        polys = [[v.index for v in f.verts] for f in bm.faces]
+        bm.free()
+        if TARGET_MIRROR:
+            sgn = 1.0 if TARGET_MIRROR == "+x" else -1.0
+            keep = [f for f in polys if any(sgn * pts[i].x >= 0 for i in f)]
+            n = len(pts)
+            pts = pts + [Vector((-p.x, p.y, p.z)) for p in pts]
+            polys = keep + [[n + i for i in reversed(f)] for f in keep]
+            self.report["target_mirror"] = {"kept": TARGET_MIRROR, "faces": len(polys)}
+        return pts, polys
 
     def ray(self, bvh, o, d):
         hit = bvh.ray_cast(o, d)
@@ -552,7 +807,7 @@ class Wrap:
         """The target section's centre at a station: (x, y, z) found by casting rays both ways along the section's
         two axes from a first guess, twice."""
         if kind == "arm":
-            c, axes = Vector((station, -0.01, 1.34)), (Vector((0, 1, 0)), Vector((0, 0, 1)))
+            c, axes = Vector((station, ARM_GUESS[0], ARM_GUESS[1])), (Vector((0, 1, 0)), Vector((0, 0, 1)))
         elif kind == "leg":
             band = [p for p in self.pts if abs(p.z - station) < 0.006 and 0.05 < p.x < 0.35]
             c = Vector((0.5 * (min(p.x for p in band) + max(p.x for p in band)),
@@ -698,12 +953,15 @@ def main():
     p.add_argument("--out", required=True)
     p.add_argument("--target", help="S4b: a body shape (GLB) the cage is shrink-wrapped onto before subdividing")
     p.add_argument("--digits", default="", help="M7: JSON {name: value} over DIGITS (a variant grid's setting)")
+    p.add_argument("--targets", help="H1: a cage targets file (TOML, upper-case keys over CAGE_KEYS)")
     args = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
+    name = apply_cage_targets(args.targets) if args.targets else "s4b"
     if args.digits:
         set_digits(json.loads(args.digits))
-    report = {"src": args.src, "target": args.target, "digits": {k: globals()[k] for k in DIGITS}}
+    report = {"src": args.src, "target": args.target, "targets": args.targets, "targets_name": name,
+              "digits": {k: globals()[k] for k in DIGITS}}
     with open(args.ring, encoding="utf-8") as fh:
-        ring = G.densify_ring(json.load(fh))  # S8b: 48 vertices, one to one with the body's end
+        ring = json.load(fh)
     bpy.ops.wm.open_mainfile(filepath=args.src)
     arm = bpy.data.objects["CharacterArmature"]
     old = bpy.data.objects["Body"]
@@ -711,6 +969,19 @@ def main():
         arm.animation_data.action = None
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
+    if BODY_SCALE != 1.0:  # H1: the whole character's height by the body's scale, the ring's ellipse unchanged
+        report["body_scale"] = scale_character(arm, old, ring, BODY_SCALE)
+    ring = G.densify_ring(ring)  # S8b: 48 vertices, one to one with the body's end
+    if CAGE_REMAP:  # H1: the cage's S1c-frame numbers onto this skeleton
+        heads = {b.name: tuple(arm.matrix_world @ b.head_local) for b in arm.data.bones}
+        heads["LeftToesTail"] = tuple(arm.matrix_world @ arm.data.bones["LeftToes"].tail_local)
+        tz, tx, ty = remap_tables(heads, ring["z"], ring["step"])
+        remap_constants(tz, tx, ty)
+        report["remap"] = {"z": [[round(a, 4), round(b, 4)] for a, b in tz],
+                           "x": [[round(a, 4), round(b, 4)] for a, b in tx],
+                           "foot_y": [[round(a, 4), round(b, 4)] for a, b in ty],
+                           "wrap_z": [[round(a, 4), b] for a, b in WRAP_Z],
+                           "wrap_x": [[round(a, 4), b] for a, b in WRAP_X]}
 
     # The wrist: S1c's section at the hand's cut (WRIST_X + WRIST_GAP), as a radius per angle around its centre. The
     # standard ring and the cage's last octagon take that shape, so the arm meets the hand's section exactly.
@@ -806,7 +1077,7 @@ def main():
     bm = bmesh.new()
     bm.from_mesh(me)
     bnd = {v for e in bm.edges if e.is_boundary for v in e.verts}
-    neck = [v for v in bnd if v.co.z > 1.3]
+    neck = [v for v in bnd if v.co.z > NECK_END - 0.074]
     cy = ring["centre"][1]
     ax, ay = (s / 0.98 for s in ring["semi_axes"])  # loop_below's semi-axes
     ax, ay = ax / 0.98, ay / 0.98
@@ -980,7 +1251,7 @@ def main():
                       "lowest": round(min(v.co.z for v in me.vertices), 5)}
     bm = bmesh.new()
     bm.from_mesh(me)
-    report["body"]["open_edges"] = sum(1 for e in bm.edges if e.is_boundary and e.verts[0].co.z < 1.385)
+    report["body"]["open_edges"] = sum(1 for e in bm.edges if e.is_boundary and e.verts[0].co.z < ring["z"] - 0.005)
     report["body"]["non_manifold_edges"] = sum(1 for e in bm.edges if len(e.link_faces) > 2)
     bm.free()
     # u1's measures against the body's: the trunk's front width (|x| < 0.2 at the midline's height) and midline depth.

@@ -11,7 +11,12 @@ Writes into <out>:
   concept only, red the body only), below the ring only (the head is drawn at its own scale);
 - close_*.png, about 1 Mpx each, in the rest pose: both hands' backs (from above) and palms (from below), both feet
   from the side, top and front, the neck-shoulder join from the front, side and back, the crotch from the front and
-  back, both armpits; and close_sheet.png, all of them at 320 px for an agent.
+  back, both armpits; and close_sheet.png, all of them at 320 px for an agent. H1 added: each hand from its thumb
+  side, the crotch from behind and below, both knees (front and side), both elbows (front and below), the armpits
+  framed closer, the hands framed back to the wrist;
+- with --fingers, fingers.png: the left hand at rest and with each finger chain (Index, Middle, Ring, Little, Thumb)
+  curled alone by FINGER_CURL degrees at every joint, about the axis across the finger and the palm's normal (the
+  fingers bend one at a time without dragging their neighbours).
 """
 from __future__ import annotations
 
@@ -23,9 +28,10 @@ import sys
 
 import bpy
 import numpy as np
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Quaternion, Vector
 
 ARM_DOWN = math.radians(72)
+FINGER_CURL = 60.0  # degrees per joint in fingers.png
 BODY_RGB = (0.16, 0.42, 0.40)
 
 
@@ -153,6 +159,7 @@ def main():
     p.add_argument("--concept", default="")
     p.add_argument("--bands", default="")
     p.add_argument("--only", default="", help="turn: the turnaround only")
+    p.add_argument("--fingers", action="store_true", help="H1: fingers.png, each finger curled alone")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
     os.makedirs(a.out, exist_ok=True)
     bpy.ops.wm.open_mainfile(filepath=a.blend)
@@ -239,9 +246,10 @@ def main():
         close.append(shot(sc, os.path.join(a.out, f"close_{name}.png"), R))
     for side, sgn in (("Left", 1), ("Right", -1)):
         hc = (bones[f"{side}Hand"] + bones[f"{side}MiddleDistal"]) / 2
-        hc.x += sgn * 0.02
-        cl(f"hand_{side.lower()}_back", hc + Vector((0, 0.05, 0.55)), hc, 60)
-        cl(f"hand_{side.lower()}_palm", hc + Vector((0, 0.05, -0.55)), hc, 60)
+        hc.x -= sgn * 0.01  # H1: framed back to the wrist
+        cl(f"hand_{side.lower()}_back", hc + Vector((0, 0.05, 0.6)), hc, 55)
+        cl(f"hand_{side.lower()}_palm", hc + Vector((0, 0.05, -0.6)), hc, 55)
+        cl(f"hand_{side.lower()}_side", hc + Vector((0, -0.6, -0.08)), hc, 55)
     for side, sgn in (("Left", 1), ("Right", -1)):
         fc = (bones[f"{side}Foot"] + bones[f"{side}Toes"]) / 2
         fc.z = 0.05
@@ -258,11 +266,50 @@ def main():
     cr = Vector((0, 0.03, cz))
     cl("crotch_front", cr + Vector((0, -0.8, -0.15)), cr, 50)
     cl("crotch_back", cr + Vector((0, 0.8, -0.15)), cr, 50)
+    cl("crotch_below", cr + Vector((0, 0.45, -0.7)), cr, 50)
     for side, sgn in (("Left", 1), ("Right", -1)):
-        ap = bones[f"{side}UpperArm"] + Vector((-sgn * 0.0, 0.0, -0.06))
-        cl(f"armpit_{side.lower()}", ap + Vector((sgn * 0.25, -0.75, -0.35)), ap, 50)
-    stitch(close, 4, os.path.join(a.out, "close_sheet.png"), cell=(320, 320))
+        ap = bones[f"{side}UpperArm"] + Vector((-sgn * 0.02, 0.0, -0.07))
+        cl(f"armpit_{side.lower()}", ap + Vector((sgn * 0.18, -0.55, -0.25)), ap, 60)
+    for side, sgn in (("Left", 1), ("Right", -1)):
+        kn = bones[f"{side}LowerLeg"]
+        cl(f"knee_{side.lower()}_front", kn + Vector((0, -0.7, 0.05)), kn, 60)
+        cl(f"knee_{side.lower()}_side", kn + Vector((sgn * 0.7, 0, 0.05)), kn, 60)
+    for side, sgn in (("Left", 1), ("Right", -1)):
+        el = bones[f"{side}LowerArm"]
+        cl(f"elbow_{side.lower()}_front", el + Vector((0, -0.7, 0.05)), el, 60)
+        cl(f"elbow_{side.lower()}_below", el + Vector((0, 0.05, -0.7)), el, 60)
+    stitch(close, 5, os.path.join(a.out, "close_sheet.png"), cell=(256, 256))
     print("REVIEW done", len(close), "close-ups", flush=True)
+    if a.fingers:
+        fingers(arm, cam, sc, a.out, bones, tails)
+
+
+def fingers(arm, cam, sc, out, bones, tails):
+    """H1: the left hand at rest, then each finger chain curled alone (FINGER_CURL at every joint) about the axis
+    across its proximal bone and the palm's normal (-Z in the T-pose), seen from the thumb side and a little below."""
+    hc = (bones["LeftHand"] + bones["LeftMiddleDistal"]) / 2
+    shots = []
+    look(cam, hc + Vector((0.05, -0.5, -0.22)), hc, lens=60)
+    shots.append(shot(sc, os.path.join(out, "finger_rest.png"), (768, 768)))
+    for f in ("Index", "Middle", "Ring", "Little", "Thumb"):
+        chain = [f"Left{f}{s}" for s in (("Metacarpal", "Proximal", "Distal") if f == "Thumb"
+                                         else ("Proximal", "Intermediate", "Distal"))]
+        chain = [n for n in chain if n in arm.pose.bones]
+        d = (tails[chain[0]] - bones[chain[0]]).normalized()
+        axis = d.cross(Vector((0.0, 0.0, -1.0))).normalized()
+        for pb in arm.pose.bones:
+            pb.rotation_mode = "QUATERNION"
+            pb.rotation_quaternion = (1, 0, 0, 0)
+        for n in chain:
+            b = arm.data.bones[n]
+            loc_axis = (b.matrix_local.to_3x3().inverted() @ axis).normalized()
+            arm.pose.bones[n].rotation_quaternion = Quaternion(loc_axis, math.radians(FINGER_CURL))
+        bpy.context.view_layer.update()
+        shots.append(shot(sc, os.path.join(out, f"finger_{f.lower()}.png"), (768, 768)))
+    for pb in arm.pose.bones:
+        pb.rotation_quaternion = (1, 0, 0, 0)
+    stitch(shots, 3, os.path.join(out, "fingers.png"), cell=(512, 512))
+    print("REVIEW fingers", len(shots), flush=True)
 
 
 if __name__ == "__main__":
