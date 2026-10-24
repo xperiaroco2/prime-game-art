@@ -1,7 +1,8 @@
 # art#263 station 1, the throat vents, way A (the agreed brief, art#263 comment 6363433518): the vent's body (frame,
 # copper hinge caps, column, light bar, scanner, lamp, feet) from Meshy, the moving parts (seven gill blades, the
 # bar's marker) built in Blender. Multi-image-to-3D from the body views without blades of our own OpenAI batch
-# 2026-10-23-ship-vent-final: body_front (first), body_34, body_side. meshy-7.1, textured with PBR, Meshy's remesh to
+# 2026-10-23-ship-vent-final (in the design repo, xperiaroco2/prime-game-design, ideas/batches/2026-10-23-ship-vent-final.toml; its
+# images are in the raw folder): body_front (first), body_34, body_side. meshy-7.1, textured with PBR, Meshy's remesh to
 # 60,000 triangles with the dense original kept; tools/blender/ship_vent_a.py cleans and cuts it to the game mesh.
 # Item body2k first (2k geometry, 35 credits); bodystd (standard geometry, 30) only if body2k is weak. Under the
 # engineer's standing Meshy permission (CLAUDE.md, within the plan's credits); this step's cap is 120. No names.
