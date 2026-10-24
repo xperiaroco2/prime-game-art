@@ -32,6 +32,17 @@ FACE_AHEAD_M = 0.05  # the eyes sit at least this far in front of the Head joint
 # The Ultimate Modular rig: the floor a GLB without its export.json is held to (expectations() then reads the GLB).
 PACK_BONES = 62
 PACK_ANIMATIONS = 24
+# the alien profile (art #196 B2, `godot-check --profile alien`): the shared alien body's clips (S4b), the floor of an
+# alien character without its .export.json; its eyes are part of the head mesh, its bones the contract's own names
+ALIEN_CLIPS = ("Crouch_Fwd", "Crouch_Idle", "Idle", "Jog_Fwd", "Jump_Air", "Jump_Land", "Jump_Start", "Sprint_Fwd",
+               "Talk_Upper", "Walk")
+# near-white and near-black each at least this share of the eye caps' vertices: half the smallest share measured
+# (B4, r5: chameleon 2282 white and 182 black of 5228, 43.6 % and 3.5 %; axolotl 1495 and 607 of 2485, 60 % and 24 %)
+ALIEN_EYE_SHARE = 0.017
+PROFILES = ("pack", "alien")
+# The alien heads' spring bones beyond the contract's 56 are declared in contract/contract.toml ([kinds.alien]
+# spring_sets under spring_parent, bones = "all_and_springs"; the engineer, art #196 comment 6374319309):
+# alien_extra_bones passes whole sets under Head and fails any other extra bone or a set in part, in every mode.
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 NOTEWORTHY = ("ERROR", "WARNING", "SCRIPT ERROR", "USER ERROR", "USER WARNING")
 
@@ -329,11 +340,23 @@ def _part(dump: dict[str, Any], slot: str) -> dict[str, Any] | None:
 
 def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, Any], output: list[str],
              strict_contract: bool = False, renamed: dict[str, str] | None = None,
-             textured: bool = False) -> list[dict[str, str]]:
+             textured: bool = False, profile: str = "pack", allowance: str = "") -> list[dict[str, str]]:
     """The assertions of godot-check on inspect.gd's description of an imported character (docs/godot.md). renamed maps
     the rig's bone names to the names the import gave them (the SkeletonProfileHumanoid trial); then the bone set is
     compared through it and the rest joints are not compared. Contract v1 gates are warnings unless strict_contract.
-    textured (a baked clay character): the textured checks (_textured) replace flat_colours."""
+    textured (a baked clay character): the textured checks (_textured) replace flat_colours. profile "alien" (art #196
+    B2): the alien kind's own equivalents of the Ultimate Modular rules: facing_plus_z from the LeftEye and RightEye
+    bones and the contract's bone names, eye_pupils on the head mesh's eye caps, pack_floor the contract skeleton's
+    weighted bones (each the heaviest bone of some vertex) and the shared alien body's clips (ALIEN_CLIPS), and
+    alien_extra_bones (whole [kinds.alien] spring_sets below spring_parent pass; any other extra bone fails).
+    allowance (the alien profile only, B4): a named height allowance of the contract's body
+    (`<allowance>_height_max_m`, e.g. "plasticine"); without one the alien profile holds [kinds.alien]'s rule (the
+    body below the Head's skin at most height_max_m, the top at most head_top_max_m), textured or not."""
+    if profile not in PROFILES:
+        raise ValueError(f"unknown profile {profile!r} (known: {', '.join(PROFILES)})")
+    if allowance and (profile != "alien" or f"{allowance}_height_max_m" not in contract["body"]):
+        raise ValueError(f"no height allowance {allowance!r} for the {profile} profile (the contract's body has "
+                         f"{sorted(k for k in contract['body'] if k.endswith('_height_max_m'))})")
     renamed = renamed or {}
     c = Checks()
     skeletons = dump["skeletons"]
@@ -344,6 +367,8 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
     missing, extra = sorted(set(want_bones) - set(got)), sorted(set(got) - set(want_bones))
     c.add("skeleton_bones", not missing and not extra and len(got) == len(want_bones),
           f"{len(got)} bones, the rig has {len(want_bones)}" + (f"; missing {missing}" if missing else "") + (f"; extra {extra}" if extra else ""))
+    if profile == "alien":
+        _alien_extra_bones(c, skeleton, renamed, contract)
     if expect.get("bone_parents") and got:
         wrong = []
         for bone, parent in expect["bone_parents"].items():
@@ -423,13 +448,20 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
                   f"rest height {height:.4f} m in Godot, {expect['height_m']:.4f} m in Blender (allowed {SIZE_TOLERANCE_M * 1000:.0f} mm)")
         c.add("feet_at_zero", abs(low) <= body["feet_tolerance_m"],
               f"the lowest skinned vertex at y = {low:.4f} m (contract: within {body['feet_tolerance_m']} m of 0)")
-        _facing(c, dump, skeleton, renamed)
+        (_facing_alien if profile == "alien" else _facing)(c, dump, skeleton, renamed)
         rules = contract["kinds"]["body"]
         severity = rules["height"] if strict_contract else "warn"
-        top = body["plasticine_height_max_m"] if textured else body["height_max_m"]  # the baked clay look
-        look = " for the plasticine look" if textured else ""
-        c.add("contract_height", body["height_min_m"] <= height <= top,
-              f"{height:.3f} m to the top (contract v1{look}: {body['height_min_m']} to {top} m)", severity)
+        if profile == "alien" and not allowance:  # art #196 comment 6374319309: the head may pass the capsule
+            _alien_height(c, dump, skeleton, renamed, contract, low, height, severity)
+        else:
+            if profile == "alien":  # B4: a named allowance replaces the alien rule (never the paused plasticine's)
+                top = body[f"{allowance}_height_max_m"]
+                look = f" with the {allowance} allowance"
+            else:
+                top = body["plasticine_height_max_m"] if textured else body["height_max_m"]  # the baked clay look
+                look = " for the plasticine look" if textured else ""
+            c.add("contract_height", body["height_min_m"] <= height <= top,
+                  f"{height:.3f} m to the top (contract v1{look}: {body['height_min_m']} to {top} m)", severity)
         eyes = _part(dump, "eyes")
         if eyes:
             eye = _centre(eyes["rest_bounds"])[1]
@@ -439,7 +471,7 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
     else:
         c.add("feet_at_zero", False, "no skinned vertices to measure")
     if textured:
-        _textured(c, dump, contract)
+        _textured(c, dump, contract, profile)
     else:
         textured_ = [f"{m['name']}/{mat['name']}" for m in dump["meshes"] for mat in m["materials"] if mat.get("textured")]
         c.add("flat_colours", not textured_, "every surface a flat albedo colour, no texture" if not textured_ else
@@ -452,13 +484,26 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
         c.add("expectations", False, f"no .export.json beside the GLB: the parts, bones and animations come from "
               f"{expect['source']} itself, so what the GLB already lacks is not caught, and the rest joints, the bone "
               f"hierarchy and Blender's height are not compared", "warn")
-        c.add("pack_floor", len(got) >= PACK_BONES and len(anims) >= PACK_ANIMATIONS,
-              f"{len(got)} bones and {len(anims)} animations (the Ultimate Modular rig has {PACK_BONES} bones and "
-              f"{PACK_ANIMATIONS} actions)")
+        if profile == "alien":
+            weighted = list(contract["skeleton"]["weighted"])
+            lack_b = [b for b in weighted if renamed.get(b, b) not in got]
+            heavy = {b for m in dump["meshes"] for b in (m.get("bone_bounds") or {})}  # B4: the weights counted
+            lack_w = [b for b in weighted if renamed.get(b, b) in got and renamed.get(b, b) not in heavy]
+            labels = {n.rsplit("|", 1)[-1].removesuffix("_Loop") for n in anims}
+            lack_c = [n for n in ALIEN_CLIPS if n not in labels]
+            c.add("pack_floor", not lack_b and not lack_w and not lack_c,
+                  f"alien profile: {len(weighted) - len(lack_b)} of the contract's {len(weighted)} weighted bones "
+                  f"({len(weighted) - len(lack_b) - len(lack_w)} the heaviest bone of some vertex), "
+                  f"{len(ALIEN_CLIPS) - len(lack_c)} of the shared alien body's {len(ALIEN_CLIPS)} clips"
+                  + (f"; missing bones {lack_b}" if lack_b else "") + (f"; no vertex weighted to {lack_w}" if lack_w else "") + (f"; missing clips {lack_c}" if lack_c else ""))
+        else:
+            c.add("pack_floor", len(got) >= PACK_BONES and len(anims) >= PACK_ANIMATIONS,
+                  f"{len(got)} bones and {len(anims)} animations (the Ultimate Modular rig has {PACK_BONES} bones and "
+                  f"{PACK_ANIMATIONS} actions)")
     return c.items
 
 
-def _textured(c: Checks, dump: dict[str, Any], contract: dict[str, Any]) -> None:
+def _textured(c: Checks, dump: dict[str, Any], contract: dict[str, Any], profile: str = "pack") -> None:
     """A baked clay character as Godot imported it: textured surfaces with their normal maps, no texture side over the
     contract's texture_character_px, the surfaces within its surfaces_per_character_cap."""
     limits = contract["budgets"]["limits"]
@@ -469,7 +514,7 @@ def _textured(c: Checks, dump: dict[str, Any], contract: dict[str, Any]) -> None
                 and not n.endswith("_eyes")]
     c.add("normal_maps", not flat_nrm, "every textured surface normal-mapped (the _eyes part aside)" if not flat_nrm
           else f"textured without a normal map: {', '.join(flat_nrm)}")
-    good, detail = eye_pupils(dump)
+    good, detail = eye_caps(dump) if profile == "alien" else eye_pupils(dump)
     c.add("eye_pupils", good, detail)
     sides = [max(mat.get(k) or [0]) for _, mat in mats for k in ("albedo_px", "normal_px")]
     cap_px = limits["texture_character_px"]
@@ -500,6 +545,121 @@ def eye_pupils(dump: dict[str, Any], least: float = 0.02) -> tuple[bool, str]:
         t.get("has_vertex_colours") and not t.get("uses_vertex_colours") for t in tones) else ""
     return good, (f"{eyes['name']}: {white} near-white, {black} near-black of {n} vertices from the {how}{unused}"
                   + ("" if good else ": no pupils"))
+
+
+def eye_caps(dump: dict[str, Any], least: float = ALIEN_EYE_SHARE) -> tuple[bool, str]:
+    """eye_pupils for the alien profile: its eyes are part of the head mesh, so inspect.gd's eye_tones (the albedo at
+    the vertices of the eyes' front caps round the LeftEye and RightEye bones) need near-white (the sclera) and
+    near-black (the pupils) vertices, each at least `least` of the caps' vertices."""
+    caps = [m["eye_tones"] for m in dump["meshes"] if m.get("eye_tones")]
+    if not caps:
+        return False, "alien profile: no eye caps in the dump (no LeftEye/RightEye bones, or an _eyes part)"
+    n = sum(t["vertices"] for t in caps)
+    white, black = sum(t["white"] for t in caps), sum(t["black"] for t in caps)
+    good = n > 0 and white >= least * n and black >= least * n
+    return good, (f"alien profile: the eye caps (within {caps[0].get('cap_m', 0) * 100:.1f} cm of the eye bones): "
+                  f"{white} near-white, {black} near-black of {n} vertices" + ("" if good else ": no pupils"))
+
+
+def _facing_alien(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], renamed: dict[str, str]) -> None:
+    """facing_plus_z for the alien profile: the eyes are the LeftEye and RightEye bones (on the head mesh's eye
+    centres), the feet the skin of the contract's foot and toe bones, the wrists its hand bones."""
+    joints = skeleton["rest_joints"]
+    name = lambda bone: renamed.get(bone, bone)  # noqa: E731
+    needed = [name(b) for b in ("Head", "LeftEye", "RightEye", "LeftFoot", "RightFoot", "LeftHand", "RightHand")]
+    feet = _body_feet(dump, [name(b) for b in ("LeftFoot", "RightFoot", "LeftToes", "RightToes")])
+    if not all(b in joints for b in needed) or feet is None:
+        c.add("facing_plus_z", False, f"alien profile: cannot tell: needs the bones {needed} and skin on the foot and "
+              f"toe bones")
+        return
+    head, eye_l, eye_r, foot_l, foot_r, hand_l, hand_r = (joints[b] for b in needed)
+    caps = [m["eye_tones"] for m in dump["meshes"] if (m.get("eye_tones") or {}).get("near_vertices")]
+    if not caps:
+        c.add("facing_plus_z", False, "alien profile: cannot tell: no eye surface round the eye bones in the dump "
+              "(inspect.gd's eye_tones near_vertices)")
+        return
+    # B4 review: from the geometry: the eye surfaces round the eye centres bulge forward, and their centres sit
+    # ahead of the Head joint
+    bulge = sum(t["bulge"][2] * t["near_vertices"] for t in caps) / sum(t["near_vertices"] for t in caps)
+    ahead = caps[0]["eye_mid"][2] - head[2]
+    foot_z = (foot_l[2] + foot_r[2]) / 2
+    toes, heels = feet["max"][2] - foot_z, foot_z - feet["min"][2]
+    left = hand_l[0] - hand_r[0]
+    good = ahead >= FACE_AHEAD_M and bulge > 0 and toes > heels and left > 0 and eye_l[0] > eye_r[0]
+    c.add("facing_plus_z", good, f"alien profile: the eye surfaces bulge {bulge * 1000:+.1f} mm in z round eye "
+          f"centres {ahead * 100:+.1f} cm ahead of the Head joint, bare feet "
+          f"reach {toes * 100:.1f} cm forward and {heels * 100:.1f} cm back from the ankles, left hand at "
+          f"{'+X' if left > 0 else '-X'}, left eye at {'+X' if eye_l[0] > eye_r[0] else '-X'}")
+
+
+def _parent_names(skeleton: dict[str, Any]) -> dict[str, str]:
+    """Each bone of a dumped Skeleton3D to its parent's name ("" for a root or an unknown parent)."""
+    bones, parents = skeleton.get("bones", []), skeleton.get("parents", [])
+    return {b: (bones[parents[i]] if i < len(parents) and 0 <= parents[i] < len(bones) else "")
+            for i, b in enumerate(bones)}
+
+
+def _below(top: str, parent_of: dict[str, str]) -> set[str]:
+    """top and every bone below it."""
+    out = set()
+    for bone in parent_of:
+        seen, b = set(), bone
+        while b and b not in seen:
+            if b == top:
+                out.add(bone)
+                break
+            seen.add(b)
+            b = parent_of.get(b, "")
+    return out
+
+
+def _alien_extra_bones(c: Checks, skeleton: dict[str, Any], renamed: dict[str, str],
+                       contract: dict[str, Any] | None = None) -> None:
+    """Every bone beyond the contract profile's, named, against `[kinds.alien]`'s spring rule (bones =
+    "all_and_springs", art #196 comment 6374319309): whole spring_sets chained under spring_parent pass (each spring
+    bone directly under it or under the bone before it in its chain, a chain's first bone under it alone); an extra bone in no set, a set in part or a
+    spring bone off its chain fails, with or without --strict-contract."""
+    got = skeleton["bones"]
+    profile_bones = {renamed.get(b, b) for b in _contract.profile_parents(_contract.load_profile())}
+    extra = [b for b in got if b not in profile_bones]
+    if not extra:
+        c.add("alien_extra_bones", True, f"alien profile: {len(got)} bones, the contract's {len(profile_bones)}, "
+              "no extra bone")
+        return
+    rules = (contract or _contract.load_contract())["kinds"]["alien"]
+    top = renamed.get(rules.get("spring_parent", ""), rules.get("spring_parent", ""))
+    split = _contract.spring_split({**rules, "spring_parent": top}, extra, _parent_names(skeleton))
+    bad = split["stray"] or split["partial"] or split["unchained"]
+    named = "; ".join(f"the {n} springs {v}" for n, v in split["sets"].items())
+    c.add("alien_extra_bones", not bad,
+          f"alien profile: {len(got)} bones: {len(got) - len(extra)} of the contract's {len(profile_bones)} and "
+          f"{len(extra)} extra: {named or '-'}"
+          + (f"; not in a declared spring set: {split['stray']}" if split["stray"] else "")
+          + (f"; spring sets in part: {split['partial']}" if split["partial"] else "")
+          + (f"; not chained under {top}: {split['unchained']}" if split["unchained"] else "")
+          + (f"; all in whole declared spring sets chained under {top} (contract [kinds.alien] bones = \"{rules['bones']}\")"
+             if not bad else ""))
+
+
+def _alien_height(c: Checks, dump: dict[str, Any], skeleton: dict[str, Any], renamed: dict[str, str],
+                  contract: dict[str, Any], low: float, height: float, severity: str) -> None:
+    """contract_height for the alien: the binding rule is the whole height from body.height_min_m to [kinds.alien]
+    head_top_max_m (the art manager's sanity cap against a runaway scale; the eye height is contract_eye_height's).
+    The body, the skin whose heaviest bone is not spring_parent or below it (inspect.gd's bone_bounds), is also held
+    to body.height_max_m and reported, but on a real alien it never binds: r5's chameleon has 1.418 m of body under a
+    1.884 m top, so it would take a scale of about 1.27 before the body passed 1.80 m."""
+    body, rules = contract["body"], contract["kinds"]["alien"]
+    cap = rules.get("head_top_max_m", body["height_max_m"])
+    top = renamed.get(rules.get("spring_parent", "Head"), rules.get("spring_parent", "Head"))
+    head = _below(top, _parent_names(skeleton))
+    boxes = [box for m in dump["meshes"] for b, box in (m.get("bone_bounds") or {}).items() if b not in head]
+    trunk = max(box["max"][1] for box in boxes) - low if boxes else None
+    good = body["height_min_m"] <= height <= cap and trunk is not None and trunk <= body["height_max_m"]
+    c.add("contract_height", good,
+          f"{height:.3f} m to the top (the binding rule: {body['height_min_m']} to {cap} m); "
+          + (f"the body below {top}'s skin {trunk:.3f} m" if trunk is not None else "no skin outside the head to measure")
+          + f" (reported against {body['height_max_m']} m; it never binds on a real alien, the head top and the eye"
+          " height bind first)", severity)
 
 
 def _loops(c: Checks, anims: dict[str, Any], seams: dict[str, dict[str, float]]) -> None:

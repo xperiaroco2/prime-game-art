@@ -30,7 +30,7 @@ SEVERITIES = ("fail", "warn", "off")
 # The values each kinds.<kind> rule may take in contract.toml.
 RULE_VALUES = {
     "rig": ("required", "forbidden"),
-    "bones": ("all", "subset"),
+    "bones": ("all", "subset", "all_and_springs"),  # all_and_springs: all, plus whole spring_sets under spring_parent
     "fingers": SEVERITIES,
     "height": SEVERITIES,
     "eyes": SEVERITIES,
@@ -193,6 +193,7 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
                 errors.append(f"kinds.{kind}.{key} is {rules.get(key)!r}; it must be one of {', '.join(allowed)}")
         if not isinstance(rules.get("max_materials"), int):
             errors.append(f"kinds.{kind}.max_materials must be an integer")
+        errors += _validate_springs(kind, rules, contract, profile)
         fingers = skeleton.get("fingers", [])
         unweighted = rules.get("fingers_unweighted", [])
         if not isinstance(unweighted, list) or any(finger not in fingers for finger in unweighted):
@@ -212,6 +213,59 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
         if slot.get("budget") and slot["budget"] not in contract.get("budgets", {}):
             errors.append(f"slot {slot.get('id')} names the unknown budget {slot['budget']!r}")
     return errors
+
+
+def _validate_springs(kind: str, rules: dict[str, Any], contract: dict[str, Any], profile: dict[str, Any]) -> list[str]:
+    """kinds.<kind>'s spring bones and head-top rule (art #196 comment 6374319309): spring_sets, spring_parent and
+    head_top_max_m belong to bones = "all_and_springs"; the sets name no profile bone and no bone twice."""
+    errors: list[str] = []
+    springs = rules.get("bones") == "all_and_springs"
+    keys = [k for k in ("spring_sets", "spring_parent", "head_top_max_m") if k in rules]
+    if not springs:
+        return [f"kinds.{kind}.{k} needs bones = \"all_and_springs\"" for k in keys]
+    parents = profile_parents(profile)
+    sets = rules.get("spring_sets")
+    if (not isinstance(sets, dict) or not sets or any(not isinstance(v, list) or not v for v in sets.values())
+            or any(not isinstance(b, str) for v in sets.values() for b in v)):
+        errors.append(f"kinds.{kind}.spring_sets must map set names to non-empty lists of bone names")
+    elif len(set(names := [b for v in sets.values() for b in v])) != len(names) or any(b in parents for b in names):
+        errors.append(f"kinds.{kind}.spring_sets names a bone twice or a profile bone: {names}")
+    if rules.get("spring_parent") not in parents:
+        errors.append(f"kinds.{kind}.spring_parent is {rules.get('spring_parent')!r}; it must be a profile bone")
+    top = rules.get("head_top_max_m")
+    if not isinstance(top, (int, float)) or top < contract.get("body", {}).get("height_max_m", 0):
+        errors.append(f"kinds.{kind}.head_top_max_m must be a number of at least body.height_max_m")
+    return errors
+
+
+def spring_chain_parents(bones: list[str], top: str) -> dict[str, str]:
+    """Each bone of a spring set to the bone before it in its chain: a chain is the set's bones sharing a name without
+    its trailing digits (Crest1-3; GillL1-3 and GillR1-3), in the listed order; a chain's first bone maps to top. A
+    spring bone sits directly under top or under the bone before it (spring_split): the crest is one chain, the r5
+    axolotl's gills are six stalks straight under Head."""
+    want: dict[str, str] = {}
+    last: dict[str, str] = {}
+    for bone in bones:
+        stem = bone.rstrip("0123456789")
+        want[bone] = last.get(stem, top)
+        last[stem] = bone
+    return want
+
+
+def spring_split(rules: dict[str, Any], extra: list[str], parent_of: dict[str, str]) -> dict[str, Any]:
+    """The bones beyond the profile against a kind's spring rule: {"sets": {name: bones} of the sets present,
+    "partial": set names present in part, "stray": extra bones in no declared set, "unchained": spring bones directly
+    under neither spring_parent nor the bone before them in their chain (spring_chain_parents; a chain's first bone
+    only under spring_parent)}. parent_of maps each bone to its parent ("" for none). Without bones =
+    "all_and_springs" every extra bone is stray."""
+    sets = rules.get("spring_sets", {}) if rules.get("bones") == "all_and_springs" else {}
+    used = {n: [b for b in bones if b in extra] for n, bones in sets.items()}
+    used = {n: v for n, v in used.items() if v}
+    top = rules.get("spring_parent", "")
+    want = {b: p for bones in sets.values() for b, p in spring_chain_parents(bones, top).items()}
+    return {"sets": used, "partial": sorted(n for n, v in used.items() if len(v) != len(sets[n])),
+            "stray": [b for b in extra if not any(b in v for v in sets.values())],
+            "unchained": [b for v in used.values() for b in v if parent_of.get(b, "") not in (top, want[b])]}
 
 
 def model_from_scene(position: list[float]) -> list[float]:

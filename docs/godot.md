@@ -154,7 +154,7 @@ without Godot:
 | `facing_plus_z` | the eyes are at least 5 cm in front of the Head joint, the shoes reach further forward than back from the ankles, the left wrist is at +X; a barefoot body without a `_shoes` part (the alien, art #196/#207) is measured by its feet instead: the `bone_bounds` of the Foot and Toe bones on every part but the eyes (the vertices whose heaviest bone is a Foot or Toe bone) |
 | `flat_colours` | no surface has an albedo texture (with `--textured`: the textured checks instead, "Textured export" above) |
 | `godot_output` | no ERROR line in Godot's import and inspection output (warnings are listed) |
-| `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, 1.90 m with `--textured`, the plasticine look; eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
+| `contract_height`, `contract_eye_height` | the contract v1 body gates (height 1.70 to 1.80 m to the top, 1.90 m with `--textured`, the plasticine look; `--profile alien`: the top to 1.95 m, the body below the Head's skin to 1.80 m; eyes 1.6 +- 0.08 m): **warnings** unless `--strict-contract` |
 | `loop_modes` | **warning** while a cycle (`Idle*`, `Walk*`, `Run*`) imports with loop_mode NONE; names the open cycles |
 | `loop_suffix` | an action named as a loop (`_Loop`, art #33) imports with loop_mode LINEAR under its name without the suffix (`Idle_Loop` becomes `Idle`); `animations` and `animation_lengths` compare Godot's names |
 | `expectations`, `pack_floor` | only for a GLB without its `<stem>.export.json`: a **warning** that parts, bones and animations then come from the GLB itself (what it already lacks is not caught; no rest joints, hierarchy or Blender height; the clip names are taken as Godot gives them, a `_Loop` suffix dropped and checked by `loop_suffix`), and a failure below the Ultimate Modular rig's 62 bones and 24 actions |
@@ -1083,6 +1083,129 @@ pilot's static premium heads"):
       left and right, the springs' largest swing; row 2: the eyes alone left, right and down, the breath's two
       ends) and `eyes_<tag>.jpg` (both eyes at 4x: rest, the head turns, the gazes).
 
+- **On the shared body (B1, 2026-10-23):** `tools/blender/alien_char_run.py [--heads] [--tag body_v2]` builds each
+  lively head on the S4b body (`<raw>/review/char/alien-parts-kit/S4b/build/alien_body.blend`, the contract
+  skeleton, 10 clips) with `alien_char_build.py` (#287's weld; pure maths in `alien_char_geom.py`), then
+  `godot/alien/char_shots.gd` in the off-screen window and the videos; output under
+  `<raw>/research/2026-10-22-roster/design/pilot3d/<tag>/`, never overwritten (a head folder with a GLB, or a
+  `shots.json`, is refused).
+  - **Fit:** the head's scale puts its neck waist (lively.json `rig.waist`, its x extent) on the body's 24-vertex neck
+    ring's x extent; a median radius there is pulled in by the mouth's inner surfaces and made the head 1.4 times
+    too big (the stopped body_v1 run). The chameleon is 1.884 m tall (scale 0.345, head 0.33 m wide against 0.38 m
+    shoulders), the axolotl 1.759 m (scale 0.314). Above the cut plus `NECK_BAND` (3 cm) the head is only scaled and
+    moved; the band's radii blend onto the ring's ellipse; the glTF import's seam-split vertices are merged over the
+    band (positions unchanged) so the band, the cut loop and the bridge are one surface.
+  - **The body's maps:** S4b's own UV is every face on the whole square, so the build unwraps the body (smart
+    project, 60 degrees) for its own albedo, mask and accent (`<head>_body_*.png`), painted from the head's skin
+    base and, over 5 cm below the ring, the head's colour at the cut; the map's background is the values' mean (a
+    black one bled through the mipmaps as a speckle). The u1 shield (`alien_char_geom.shield`) is off by default
+    (`--shield`): on this body it made a pale patch low on the belly.
+  - **Godot:** `alien_static.apply_body()` gives the `<head>_body_skin` surface a copy of the head's ShaderMaterial
+    (one material set: `set_colours` recolours both); `alien_lively.gd` turns the Neck, Head and spring bones on top
+    of their rest (`rest_turn`: the contract skeleton's bones rest turned, the busts' did not).
+  - **`godot-check --strict-contract --humanoid --textured`** passes everything but the three rules written for the
+    Ultimate Modular characters that the M5 alien failed too: `facing_plus_z` and `eye_pupils` (no `_eyes` part, not
+    the UM bone names) and `pack_floor` (10 clips; no `.export.json`).
+
+- **B2 on the shared body (2026-10-23, draft PR #311; proof `body_v2/r3/`):**
+  - The neck gap was a hole, not a texture line: `zip_loops` winds its triangles clockwise seen from outside, so every
+    bridge triangle faced inward and Godot culled it (the dark ring from every side). The build now flips each by
+    `bridge_outward`, zips the cut row in its walk order round the boundary (`walk_loop`, `monotone_angles`: the
+    chameleon's cut row folds back once, which zipping by sorted angle left as 6 open and 8 three-face edges), gives
+    each bridge triangle its ring vertex's UV, and reports `seam` in char.json: 0 open and 0 non-manifold edges on both.
+  - The body's speckle and its lighter teal were the shader's transmission: `apply_body` set no detail map, so the
+    white default read the whole body as thin (`BACKLIGHT = scatter * transmission * d.g`), lit through from the back
+    light with the shadow's pattern. The body now takes the head's detail at the cut (`<head>_body_detail.png`: thick,
+    no transmission); `char_shots.gd`'s `iso_<head>.jpg` isolates it (r2's condition | as built | albedo | geometry |
+    normal map).
+  - The body's paint is the head's skin and front region medians (CS6's `<head>_regions.json`, `bases.json` body_skin
+    and body_front), so to the slots' recolour it is a typical head texel; the slot maths is untouched.
+  - `front_panel` was B2's pale front (replaced in B3 by `throat_fade`, below); `flare_radius` (the neck pushed out to a
+    concave fillet into the shoulders, below the ring only) is in `alien_char_geom.py`.
+  - `godot-check --profile alien`: the alien kind's own equivalents of the three Ultimate Modular rules:
+    `facing_plus_z` from the geometry since B4 (the eye surfaces round the eye bones bulge toward +Z, their centres at
+    least 5 cm ahead of the Head joint; the feet's skin; the hand bones); `eye_pupils` on the head mesh's eye caps
+    (inspect.gd's `eye_tones`: the vertices within 0.42 of the eye distance of either eye bone and in front of it, for
+    a character without an `_eyes` part; `ALIEN_EYE_SHARE` 0.017, half the smallest share r5 measured);
+    `pack_floor` the contract's weighted bones, each the heaviest bone of some vertex, and the shared alien body's 10
+    clips (`ALIEN_CLIPS`); `alien_extra_bones` names every bone beyond the contract's 56 against `[kinds.alien]`'s
+    spring rule in `contract/contract.toml` (`bones = "all_and_springs"`, `spring_sets` under `spring_parent` Head;
+    the engineer, art #196 comment 6374319309, for crests and gills; docs/contract.md, "The alien's spring bones and
+    head top"): whole declared sets chained under Head (each chain's first bone directly under Head, each next under
+    the one before or under Head) pass, with or without `--strict-contract`; an extra bone outside the sets, a set in part or a
+    spring bone off its chain fails in every mode. `contract_height` (a warning unless `--strict-contract`) binds on
+    the top, from `height_min_m` to `head_top_max_m` (1.95 m, the art manager's sanity cap), textured or not; with
+    `contract_eye_height` these are the alien's binding height checks. It also reports the body, the skin whose
+    heaviest bone (inspect.gd's `bone_bounds`) is neither Head nor below it, against `height_max_m` (1.80 m), but
+    that bound never binds on a real alien (the chameleon's body 1.418 m under a 1.884 m top: a scale of about 1.27);
+    r5's chameleon (1.884 m) and axolotl (1.759 m) pass. `--allowance plasticine` replaces that rule with the paused clay
+    allowance: never pass it for the alien. The default profile `pack` is unchanged.
+- **B3 and B4 on the shared body (2026-10-23, PR #311; proofs `body_v2/r4/`, `body_v2/r5/`):**
+  - B3: the pale front is `throat_fade` (a soft tongue from the throat to the sternum, per texel; the u1 shield only
+    behind `--shield`); `char_shots.gd`'s `--fix` render settings, the soft shadow filter at ultra (5) by default since
+    B4 (soft low drew a knit pattern).
+  - B4: the slots' bases come wholesale from `alien_colour_slots.bases` with CS6b's v7 maps (gill_tips and gill_whole
+    included); the seam's bridge triangles are rewound to their outside neighbours and the build fails on any open,
+    non-manifold or wrongly wound seam edge (`seam` in char.json); `monotone_angles` unwraps each step as the shorter
+    turn (a fold back across 0 stays one turn).
+  - B4's measurements: `char.json` `heights` (whole, skull, crest/gill, body and eye heights against the 1.80 m
+    capsule); `char_shots.gd`'s `colour_check` (the recoloured albedo alone, the shader's `debug_mode` 6, under a
+    linear tone map: the median on the back of the head and the upper back against each pick, OKLab x100);
+    `tools/blender/alien_char_bones.py` (godot-check `--humanoid` and `godot/alien/bones_probe.gd`, headless: the
+    bones and springs through Godot's BoneMap retarget, the Head bone's scale over a breath; `<tag>/bones.md`).
+  - Measured (r5, B4 and B5): Godot 4.7.2's BoneMap retarget (SkeletonProfileHumanoid, both trial variants) keeps
+    the extra spring bones, chameleon 59 -> 59 and axolotl 62 -> 62, contrary to docs/contract.md's remark that they
+    "would be dropped by Godot's BoneMap anyway" (since corrected there); the contract now allows them for the alien
+    (art #196 comment 6374319309). The probe
+    compares the spring-weighted vertices' head-relative motion as vectors in rest world space
+    (`W hr * ((W hb)^-1 * p) - rest`, W the Skeleton3D's global transform, since `Character.skinned_points` is world
+    space). The BoneMap import reorders the vertices (same counts, other index lists), so since B6 the probe pairs them
+    by rest position and fails on a count mismatch or an unpaired vertex. Measured (B6): the springs swing the same way
+    after the retarget, 0.0 mm and at most 0.02 deg apart; B5's "a different way" (30 deg mean) compared different
+    vertices by index. The rest fixer turns the spring bones' local rests (up to 1.66 deg) but not their world rests,
+    and alien_lively's `rest_turn` writes the turn in the skeleton's frame, so the swing does not change; `bones.md`.
+  - `colour_check` per part: `patch_vs_region_median` (the 24 px patch's median against the pick; the base row's pick
+    is the region's median, so the mottled skin alone gives a few units) and `vs_base`, that number minus the base
+    row's: the pick's own error.
+- **A1: the clips on the bare alien (2026-10-24, art #196; proofs `anim_bare/a1/before/`, `after/`):**
+  - `tools/blender/alien_clip_run.py --from <tag dir> --out <dir> [--on-clip auto|yes|no]` plays every clip of each
+    built head in the off-screen window (`godot/alien/clip_reels.gd`, which extends `char_shots.gd` for its stage and
+    materials): one 1280x720 MP4 per clip and head (`mp4/<head>_<clip>.mp4`; loops twice, at least 3 s; one-shots
+    with a 0.4 s hold at each end), the camera at 3/4 front framed to the clip's whole motion (every bone over 48
+    samples plus the head's top, times 1.22: the feet in front need the room), a grey floor at y = 0;
+    `clips_<head>.jpg` (a row per clip, six phases); `reels.json` per clip: the loop seam, the lowest skinned vertex,
+    the feet's slide while planted, the share of hand vertices within 1.5 cm of the trunk or legs (a spatial hash
+    of `Character.skinned_points`), the fingers' mean curl, the springs' swing and jitter, the head's turn off the
+    clip's. Godot's import drops the `_Loop` suffix and sets the loop mode: read `Animation.loop_mode`, not the name.
+  - Measured on r5 (before): the clips are UAL1's copied key for key onto the refitted body (`alien_body.py` step 7),
+    so the stand sank 1.2 cm, the crouch 8.2 cm and the jump's take-off 12.7 cm under the floor; fists (the
+    fingers' mean curl 66-77 degrees) in Idle, Walk, Jog, Sprint and Jump_Land; the hands against the thighs on
+    every Idle frame.
+  - The lively controller wrote the Neck and Head as rest times its turn, so on a clip the clip's own head motion
+    was lost (10-33 degrees off it) and the springs moved only with the controller's turn (frozen in a jog). With
+    `on_clip = true` (`alien_lively.gd`, A1) the turn goes on top of the clip's Neck and Head (`rest_turn` with the
+    posed local and global rotations) and the springs are driven by the head's measured motion in the world (turn
+    rates and acceleration in its rest-aligned frame, clamped and low-passed; `accel_gain` 1: at 4 a jog drove the gills and the crest into their caps, 15 and 30 degrees, with a jitter of 130-830 deg/s); the caller re-poses
+    the clip before each `step` and calls `reset_motion()` on a clip change. The shots and busts keep `on_clip`
+    false, so the whole-head gate is unchanged (after vs r5: the same mean differences on all four sides).
+  - The clip fixes are in the build: `alien_char_run.py --clip-edits tools/blender/anim_sets/alien.toml` passes them
+    to `alien_char_build.py`, which runs `alien_clip_edit.py` on the body's actions before the export (the finger
+    cap, the upper arms' abduction, the floor lift; docs/animations.md, "The alien's clip edits").
+- **A2: the clips' second round (2026-10-24, art #196; proof `anim_bare/a2/`):**
+  - `alien_clip_run.py ... --split --head60 Jog_Fwd,Sprint_Fwd --yaw-counter 0.55 --darts 3`: each reel frame a 2x2
+    of 640x360 views (three-quarter front, the left side, the back, a close-up of the head and hands following them);
+    a 60 fps head reel per `--head60` clip (`<head>_<clip>_head60.mp4`) to judge the springs' jitter at a game's rate.
+  - `alien_lively.gd` with `on_clip`: the turn goes on the clip's own pose of Neck and Head, remembered, so a clip
+    that stops posing them (a one-shot's end, a pause, a layer without them) no longer piles the turn up step after
+    step; `yaw_counter` (0-1) takes back that share of the clip's own head yaw, so in a run the head points where the
+    body travels (the reels: 0.55 on Walk, Jog, Sprint and the crouch walk); `darts` (degrees) moves the eyes' target
+    to a new nearby point every 0.6-2.4 s, the head not following; the measured motion is low-passed by
+    `1 - exp(-dt / MOTION_TAU)` (0.1 s) and the acceleration taken from velocities, the head's in the skeleton's
+    space plus the change of the skeleton's own low-passed world velocity, so an uneven frame time (60 Hz physics
+    under a 144 fps render) does not spike the springs. Call `reset_motion()` after a teleport or respawn,
+    `reset_springs()` to start the springs still (the reels do both per clip).
+  - No blinks: the static heads' lids are sculpted, no lid bone or shader closes them (emotions and face rigs stay
+    parked).
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
