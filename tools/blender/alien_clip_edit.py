@@ -71,9 +71,10 @@ def repeat_keys(keys: list[float], f0: float, f1: float, times: int) -> list[tup
     """A3: (frame, source index) of a cycle's keys repeated `times` times: the keys on [f0, f1) copied, each copy
     shifted by f1 - f0, then the last key at f1 (the seam) moved to the end; plain data for the bpy side."""
     period = f1 - f0
-    body = [(k, i) for i, k in enumerate(keys) if k < f1 - 1e-6]
+    pre = [(k, i) for i, k in enumerate(keys) if k < f0 - 1e-6]  # A3d: keys before the cycle stay, once
+    body = [(k, i) for i, k in enumerate(keys) if f0 - 1e-6 <= k < f1 - 1e-6]
     end = [(k, i) for i, k in enumerate(keys) if k >= f1 - 1e-6]
-    out = [(k + r * period, i) for r in range(max(1, times)) for k, i in body]
+    out = pre + [(k + r * period, i) for r in range(max(1, times)) for k, i in body]
     out += [(k + (max(1, times) - 1) * period, i) for k, i in end]
     return out
 
@@ -355,22 +356,26 @@ def cut(arm, act, straight_deg: float, gap: int) -> dict:
 
 def repeat(act, times: int) -> dict:
     """The `repeat` edit (A3): every channel's keys on the cycle [f0, f1) copied times - 1 more times, each copy
-    shifted by the cycle's length (repeat_keys), the seam key moved to the new end."""
+    shifted by the cycle's length (repeat_keys), the seam key moved to the new end. Each copy keeps its source key's
+    interpolation, handle types and handles (shifted with it, A3d), so the curve's shape repeats as it was."""
     f0, f1 = (float(x) for x in act.frame_range)
     for bag in _bags(act):
         for fc in bag.fcurves:
             pts = fc.keyframe_points
             n = len(pts)
-            co = [0.0] * (2 * n)
+            co, hl, hr = [0.0] * (2 * n), [0.0] * (2 * n), [0.0] * (2 * n)
             pts.foreach_get("co", co)
+            pts.foreach_get("handle_left", hl)
+            pts.foreach_get("handle_right", hr)
+            kinds = [(p.interpolation, p.handle_left_type, p.handle_right_type) for p in pts]
             plan = repeat_keys([co[2 * i] for i in range(n)], f0, f1, times)
-            vals = [(fr, co[2 * i + 1], pts[i].interpolation) for fr, i in plan]
             pts.clear()
-            pts.add(len(vals))
-            pts.foreach_set("co", [x for fr, v, _ in vals for x in (fr, v)])
-            for kp, (_, _, ip) in zip(pts, vals):
-                kp.interpolation = ip
-                kp.handle_left_type = kp.handle_right_type = "AUTO_CLAMPED"
+            pts.add(len(plan))
+            for kp, (_, i) in zip(pts, plan):  # the types first, so setting the handles below does not re-align them
+                kp.interpolation, kp.handle_left_type, kp.handle_right_type = kinds[i]
+            pts.foreach_set("co", [x for fr, i in plan for x in (fr, co[2 * i + 1])])
+            pts.foreach_set("handle_left", [x for fr, i in plan for x in (hl[2 * i] + fr - co[2 * i], hl[2 * i + 1])])
+            pts.foreach_set("handle_right", [x for fr, i in plan for x in (hr[2 * i] + fr - co[2 * i], hr[2 * i + 1])])
             fc.update()
     act.use_frame_range = False
     return {"times": times, "frames_before": int(f1 - f0), "frames_after": int(act.frame_range[1] - act.frame_range[0])}

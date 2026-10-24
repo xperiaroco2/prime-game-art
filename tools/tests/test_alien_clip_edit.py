@@ -97,7 +97,7 @@ class A3Maths(unittest.TestCase):
         d = lambda a, b: math.dist(a, b)  # noqa: E731
         self.assertAlmostEqual(d(k2, new_hip), d(knee, hip), places=6)
         self.assertAlmostEqual(d(k2, ankle), d(ankle, knee), places=6)
-        self.assertGreater(abs(k2[0] - k0[0]), 0.02)  # the knee left the clip's plane
+        self.assertLess(k2[0], k0[0] - 0.02)  # the knee turned toward -X, the body's middle (k0 0.100, k2 -0.008)
         self.assertLess(k2[1], 0.0)
 
     def test_floor_lift_reach_zero_is_exact(self):
