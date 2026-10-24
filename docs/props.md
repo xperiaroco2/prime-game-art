@@ -546,3 +546,53 @@ SSIL, a warm interior lamp, the cool night key, a cyan strip's rim): the 3/4, fr
 cap, loop and facets, the crystal on a 1 m post seen from 1 m (its glow on the wall) and carried in the first-person
 view, and `sheet.png`, the concept beside Blender's and Godot's views. `tools/tests/test_props_energy_crystal.py`
 checks the committed asset.
+
+## A station from its drawing: the ship engine's start console (art#263)
+
+`assets/prop/start_console/`: the console in the middle of the ship's hall where a player presses the start button
+and, while breakers are tripped, the hologram plays the order to switch them back on, one lamp at a time. The
+engineer picked the concept on 2026-10-24 (prime-game-design `ideas/ship-components/stations-final/console-final.jpg`,
+the hologram in the style of `holo14-diamond-2.jpg`) and had its drawing made in cm (`console-drawing/`: the
+concept's straight views and `drawing.js`, whose numbers stretch the body 40 cm so the button sits at hip height).
+They are copied to `<raw>/start-console/ref/`.
+
+1. **The numbers.** `tools/blender/console_dims.toml` holds every size in cm: the drawing's own (the plinth, the
+   body, the rim, the button, the strips, the emitter, the hologram's span, height and tilt) and the smaller ones read
+   off the same views at the drawing's scale (the blocks' bevels, the bezels, the emitter's steps).
+2. **Build from the numbers.** `tools/blender/console_build.py` (headless Blender): the plinth, the body and the rim
+   are rings of bronze blocks round a graphite drum, each block a profile swept straight between two angles, so its
+   faces are flat chords; the body's front block is one wide flat face for the button, a cyan channel either side.
+   The drum must stay inside the front block's chord (47.9 cm from the axis at the top): a 51 cm drum first poked
+   through its middle as a dark column. Every block edge over 30 degrees gets a 9 mm chamfer marked in UV0 u, which
+   the metal brightens (the concept's bright edges).
+3. **The hologram from the ship's own mesh.** The built hull pieces (`skin_top`, `skin_belly`, `skin_mouth`,
+   `skin_cheeks`, the three nozzle pods; `<raw>/ship/v3/pieces/`) are joined, turned so the nose points at the
+   button, scaled to 1:16.3 (the 26.1 m span to the drawing's 159.8 cm), the hall's centre put over the core at
+   145.7 cm and leaned 12 degrees nose down. **Its plates' own edges do not make a hologram**: the hull is built of
+   separate plates, so its open and creased edges are a dense grid that read as white noise (the first trial,
+   78,900 triangles of lines). The lines are cut from the mesh instead: a level cut through the widest edge (the
+   outline), contour cuts over the top, the keel's profile, the long creases inside the plates, a section grid over
+   the top every 1.62 m (two module lines), rings and lengthwise cuts on the pods; and the rooms with the concept's
+   elements as one flat plan at the deck inside the hull: the hall's disc with a dashed ring, the entrance channel to
+   the nose, the bands to the tip discs with the eight order lamps. Laid on the curved top by rays
+   from above (the first try), the disc sat over the hull and the rooms climbed its hump (the engineer's review,
+   2026-10-24). Each line is a three-sided tube (it reads from every side), its brightness in UV0 v; a faint additive
+   shell gives the volume.
+4. **The states** are values, not meshes: the stage strips' and lamps' indices sit in UV0 v and
+   `godot/console/console_signal.gdshader` lights them from `passed`, `lit` and `order` (`console.gd` `set_state`,
+   `set_passed`, `set_lit`). The hologram and the light column are additive, both sides, no depth write
+   (`console_holo.gdshader`).
+5. **Check against the concept.** `tools/blender/console_run.py` renders the states in Blender, the orthographic
+   views at 4 px per cm and the concept's straight views cut and stretched as the drawing stretches them;
+   `console_drawing.py` draws the model's edges and the sizes over both (`<tag>/drawing/*.svg`). The Godot shots are
+   taken in the ship's hall itself: `godot/console/hall.gd` extends `godot/ship/ship.gd`'s shoot mode, adds the
+   console to the built ship on its station spot (`ship.toml`: (0, 0.6); yaw 180, the button to the mouth), keeps it
+   out of `ship.gd`'s dressing pass (that pass would give the GLB's plain emissive fallbacks strip lights the game
+   never has) and puts `console.gd`'s look and each view's state on it; `godot/console/sheet.gd` makes the sheet
+   beside the concept and measures the GPU cost.
+
+   ```bash
+   $PYTHON_BIN tools/blender/console_run.py --tag <tag> --res 900 --samples 64 --asset assets/prop/start_console
+   ```
+
+`tools/tests/test_props_start_console.py` checks the drawing's numbers in the dims file and the committed asset.
