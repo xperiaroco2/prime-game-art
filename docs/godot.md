@@ -1206,6 +1206,22 @@ pilot's static premium heads"):
     `reset_springs()` to start the springs still (the reels do both per clip).
   - No blinks: the static heads' lids are sculpted, no lid bone or shader closes them (emotions and face rigs stay
     parked).
+- **A3: the clips' third round, the eye rim and the eye modes (2026-10-24, art #196; proof `anim_bare/a3/`):**
+  - `alien_lively.gd`: `eye_mode` `fixed` (the default: the pupils centred in the head, the gaze the head's
+    forward), `lead` (the eyes reach the look target first, at most `EYE_LEAD_DEG` 8 off the head's forward) or
+    `free` (A1-A2's follow as far as the lids allow; older proofs that turn the eyes, such as `eye_pit_shots.gd`,
+    need it set); `darts` stays 0 by default and draws from a generator seeded with `rng_seed` (196) at the first
+    step or `reseed()`; the yaw counter is scaled by the head's horizontal facing (no roll near +-90 pitch) and
+    low-passed over `YAW_COUNTER_TAU` 0.25 s (the reels: 0.3, not 0.55); on a clip each spring's drive is scaled by
+    `clip_drive` (`{"Gill": 0.5}`: the gills); `step(dt <= 0)` returns at once; `reset_motion()` no longer
+    zeroes the body's velocity, the next measured step seeds it from its raw velocity. One rule for callers: call
+    `reset_motion()` after a clip change, teleport or respawn, `reset_springs()` when the springs must start still.
+  - `clip_reels.gd` zeroes the springs per reel exactly as A1 did (A2's extra `reset_springs()` did the same and is
+    gone), so A1's before reels are reproduced; `eye_mode` comes from the job (`alien_clip_run.py --eye-mode`).
+  - `eye_reels.gd` (`alien_clip_run.py --eyes`): `rim_<head>.jpg` (each eye's lower rim at rest, gaze down,
+    left, right: as built, albedo only, geometry only, SSAO off, the eye mask's share, `debug_mode` 7 of
+    `alien_static.gdshader`), `rim_<head>_4x/`, and the look-around per eye mode (`<head>_look_fixed.mp4`,
+    `_lead`, `_side`; yaw +-40, pitch +-15 with holds, 8 s, Idle underneath), `eyes.json`.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and

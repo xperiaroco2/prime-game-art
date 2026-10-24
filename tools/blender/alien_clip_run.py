@@ -4,7 +4,8 @@ window (one 1280x720 reel per clip, framed to the clip's motion; clips_<head>.jp
 and encodes one MP4 per clip and head with Blender's FFmpeg.
 
     $PYTHON_BIN tools/blender/alien_clip_run.py --from <tag dir> --out <proof dir> [--heads chameleon,axolotl]
-        [--on-clip auto|yes|no] [--split] [--head60 Jog_Fwd,Sprint_Fwd] [--yaw-counter 0.3] [--darts 0] [--eye-mode fixed|lead|free] [--eyes]
+        [--on-clip auto|yes|no] [--split] [--head60 Jog_Fwd,Sprint_Fwd] [--yaw-counter 0.3] [--darts 0]
+        [--eye-mode fixed|lead|free] [--eyes]
 
 The frames go to tools/out/alien_clips/<out's name>/ (temporary); the MP4s, sheets and reels.json into --out, never
 overwritten (an --out holding reels.json is refused). Long: run it in the background.
