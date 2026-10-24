@@ -1107,7 +1107,9 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   u before placing it) and `hull`, its box's corners for the plain-Python checks; the harness shares the first copy's
   material. The well's glows are two panels on its back,
   `int_cyan__vent_cool` (calm) in front of `int_halo__vent_heat` (the problem: the game hides `cool`). The spots
-  `vent_e`/`vent_w` have their own `depth_m = 0.6` (the engineer, comment 6363588759), the units
+  `vent_e`/`vent_w` have their own `depth_m = 0.6` (the engineer, comment 6363588759), the units (way A's, as
+  history; vents-b4 recessed them 8 cm, `[-0.80, 0.80, -0.09, 0.52, -0.02, 1.85]`: the depth stays the budget from the
+  wall's face and `test_ship_vent` asserts the unit's depth plus `RECESS` within it)
   `[-0.80, 0.80, -0.01, 0.60, -0.02, 1.82]`. The motion proof for way A: the body's three driven surfaces, each blade's
   origin on its pivot (at most 2 mm), the root's ring round the axis fixed (its chord over the turn plus 4 mm, at least
   1.2 cm), the tip's swing at least 4 cm. Review:
@@ -1139,9 +1141,10 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   ring 2 cm lower; a chamfered header sill under the opening's top (h 1.335..1.412: no glow over the top
   blade, as front_closed; the glows and `OPEN_H` stop at 1.33); behind it the box's back slab (the well's back, v 0.115) and its roof (the top 1.608, its back on
   the wall's slant); the foot and the plinth; two dark cap rails in the well with seven copper caps each (a socket, a
-  chamfered disc, a boss). The column: plinth, foot, shaft, a front panel, the bar's housing round its glass (h
-  0.622..1.548, the green band 1.41..1.464), the lower strip's bezel, the scanner's octagonal bezel (21 x 25 cm, the
-  centre 1.398) with its screen 1.5 cm sunk, the head and the lamp's stepped collar (the dome's top 1.841, its back
+  chamfered disc, a boss). The column (b3's numbers, history: vents-b4 put the scanner centre at 1.20, dropped the
+  column's top by `COL_DROP` 0.198 and set it 8 cm into the wall): plinth, foot, shaft, a front panel, the bar's housing
+  round its glass (h 0.622..1.548, the green band 1.41..1.464), the lower strip's bezel, the scanner's octagonal bezel
+  (21 x 25 cm, the centre 1.398) with its screen 1.5 cm sunk, the head and the lamp's stepped collar (the dome's top 1.841, its back
   2 cm clear of the wall's slant). The game's surfaces keep way A's names (`vent_a_body__band`, `__hand`, `__lamp`, a
   dark glass each); `lights.json` gives `lights()` the seven strips, the lamp, the band and the screen, and the hand
   fills its screen (4 mm in, centred). The blade: one claw section (`SECTION`, 17 points, the calm pose 22 deg tip
@@ -1225,7 +1228,7 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   (`rotation.x = -deg_to_rad(angle)`, the angle in degrees of opening from shut, calm `CALM_DEG` 20 since vents-b3, was 9), the marker, the
   cool and heat panels with their well lights, the seams, the lamp, the bar and its band. **Inputs:** `problem: bool`
   and `hold: 0..1`; the signal `fixed` at the cough (the game clears `problem`; the controller re-arms only once it
-  is false). **States:**
+  has been false for a step; `fixed` needs hold 1.0 held about 0.64 s). **States:**
   - *CALM*: the blades breathe, each breath closing from calm by `BREATH_DEG` 5 (vents-b3; was 3.2) and opening back every
     `BREATH_PERIOD_S` 3.6 s, each blade `BREATH_WAVE` 0.07 of a breath behind the one above (a soft wave down); calm
     stays the widest pose (the settled look), the cyan eases by up to `BREATH_GLOW` 0.35 as they close.
@@ -1247,7 +1250,9 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
     proofs. `ship --motion DIR` now runs it on the vent alone (the 22 s `vent_motion.mp4`) and checks every frame:
     each blade's sections against the next (the penetration depth; the least clearance on every other frame) and its
     vertices against the opening and the unit's depth; `motion.json` `clip`, `clip_closeups.png` (the widest, the
-    slam, the bounce, a breath). First result: 0 penetration, 0 outside, 0 past the depth, least clearance 1.5 cm,
-    the blades 0..19 deg. `ship --vent-anim DIR` (ship.gd mode `vent_anim`) renders it on the whole ship at night
+    slam, the bounce, a breath). First result (b3, history): 0 penetration, 0 outside, 0 past the depth, least
+    clearance 1.5 cm, the blades 0..19 deg. The b4 clip (`<raw>/ship/v4/vents-b/motion_b4`): 0 penetration, 0 outside,
+    0 past the depth, least clearance 5.1 cm, the blades 0..30 deg (calm 20, the cough's kick 10 above it; the top
+    blade never above calm). `ship --vent-anim DIR` (ship.gd mode `vent_anim`) renders it on the whole ship at night
     from about 3 m across the throat at the player's eye (`VENT_ANIM` in `ship.py`), 1280x720, and shoots the demo's
     key moments again with their labels into `keys/` and `keys_sheet.png`.
