@@ -1,0 +1,44 @@
+# The ship engine's energy crystal (art#263's station props; the cartridge of xperiaroco2/prime-game#1033).
+# Built by tools/blender/crystal_run.py --tag lit1 --asset assets/prop/energy_crystal; a rebuild
+# changes the hashes below.
+id = "energy_crystal"
+kind = "prop"
+slot = ""
+title = "The ship engine's energy crystal"
+notes = "The engine's cartridge: a faceted energy crystal in a bronze and graphite cap with a hexagonal carry loop, 0.347 m tall, 0.136 x 0.136 m across the octagonal cap, one mesh of 2,584 triangles in five surfaces (hero class), front +Z, origin at the tip. Two states on one mesh: export/crystal.gd set_charge (1 charged, 0 spent; HANDOFF.md). From the concept the engineer picked (prime-game#1033 comment 6361383461; prime-game-design ideas/ship-components/cartridge-v2: crystal-views.jpg, the straight views its drawing tools/blender/crystal_dims.toml was measured from, and socket-claws.jpg and charge.jpg, copied to the raw folder; 2D concepts used only as references), built from code in headless Blender (tools/blender/crystal_build.py): no part of the model was generated or downloaded."
+tools = ["blender 5.2.2", "prime-game-art crystal_build.py, crystal_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = ["xperiaroco2"]
+approved_at = 2026-10-24
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/316"
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-24
+url = "https://github.com/xperiaroco2/prime-game-art/issues/263"
+
+[[raw]]
+file = "energy-crystal/ref/crystal-views.jpg"
+sha256 = "927ea06e36c3b373b4e2c96443e55b7ecec8682382715ecc740048cbf14bd5cb"
+
+[[raw]]
+file = "energy-crystal/ref/socket-claws.jpg"
+sha256 = "e1cf6c1134495620f360de8075f16f2985478bef6fe7b84d876edb6b7f52099d"
+
+[[raw]]
+file = "energy-crystal/ref/charge.jpg"
+sha256 = "4a7b7b2099d5baa4af03c6052493590459681c26aac901394cf46fe308c5de93"
+
+[[raw]]
+file = "energy-crystal/lit1/energy_crystal.glb"
+sha256 = "b9adce55242d2fc5a123a44de3ef446a85a92eb0ef37ae3ea0d7c6c4b229f980"
+
+[[raw]]
+file = "energy-crystal/lit1/energy_crystal.blend"
+sha256 = "48a1e7b856d7ea53f1b244202473f1429d5343093f16ab50dd0dc1a55619067a"

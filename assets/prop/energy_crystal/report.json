@@ -1,0 +1,53 @@
+{
+  "asset": "energy_crystal",
+  "built_by": "tools/blender/crystal_run.py --tag lit1 --asset assets/prop/energy_crystal",
+  "mesh": {
+    "triangles": 2584,
+    "vertices": 1328,
+    "triangles_by_material": {
+      "crystal_shell": 560,
+      "crystal_core": 560,
+      "crystal_graphite": 820,
+      "crystal_bronze": 576,
+      "crystal_light": 68
+    },
+    "triangles_by_part": {
+      "crystal": 560,
+      "core": 560,
+      "skirt": 164,
+      "lip": 92,
+      "rim": 124,
+      "groove": 28,
+      "band": 220,
+      "windows": 304,
+      "notches": 176,
+      "disc": 156,
+      "lens": 60,
+      "loop": 140
+    },
+    "size_m": [
+      0.1362,
+      0.1362,
+      0.3468
+    ],
+    "budget_class": "hero",
+    "budget_triangles": 4000,
+    "front": "+Z",
+    "origin": "the crystal's tip, its lowest point, under its middle"
+  },
+  "states": {
+    "charged": "crystal.gd set_charge(look, 1.0)",
+    "spent": "set_charge(look, 0.0)"
+  },
+  "gltf_validator": {
+    "numErrors": 0,
+    "numWarnings": 0,
+    "numInfos": 5,
+    "numHints": 0
+  },
+  "godot_gpu_ms_hand_view_1280x720": {
+    "hand_charge_0": 0.998,
+    "hand_charge_1": 1.055
+  },
+  "review": "<raw>/energy-crystal/lit1/godot/sheet.png"
+}
