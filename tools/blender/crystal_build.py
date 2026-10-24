@@ -540,7 +540,7 @@ def build_materials() -> None:
     nd = Nodes(mat)
     flag, rnd = nd.uv()
     ch = nd.charge()
-    glow = nd.math("ADD", nd.math("MULTIPLY", rnd, 0.5), 0.55)
+    glow = nd.math("ADD", nd.math("MULTIPLY", rnd, 0.8), 0.9)
     glow = nd.math("ADD", glow, nd.math("MULTIPLY", flag, 0.3))
     glow = nd.math("MULTIPLY", glow, ch)
     hot = nd.mix_rgb(flag, (0.0, 0.62, 1.0, 1.0), (0.08, 0.82, 1.0, 1.0))

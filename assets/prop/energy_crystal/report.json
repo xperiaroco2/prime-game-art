@@ -1,6 +1,6 @@
 {
   "asset": "energy_crystal",
-  "built_by": "tools/blender/crystal_run.py --tag drawn5 --asset assets/prop/energy_crystal",
+  "built_by": "tools/blender/crystal_run.py --tag lit1 --asset assets/prop/energy_crystal",
   "mesh": {
     "triangles": 2584,
     "vertices": 1328,
@@ -46,8 +46,8 @@
     "numHints": 0
   },
   "godot_gpu_ms_hand_view_1280x720": {
-    "hand_charge_0": 0.958,
-    "hand_charge_1": 1.051
+    "hand_charge_0": 0.998,
+    "hand_charge_1": 1.055
   },
-  "review": "<raw>/energy-crystal/drawn5/godot/sheet.png"
+  "review": "<raw>/energy-crystal/lit1/godot/sheet.png"
 }

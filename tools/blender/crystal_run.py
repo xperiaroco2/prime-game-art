@@ -46,6 +46,8 @@ def main() -> int:
     ap.add_argument("--res", type=int, default=900, help="the Blender renders' size in pixels")
     ap.add_argument("--samples", type=int, default=64, help="the Blender renders' EEVEE samples")
     ap.add_argument("--asset", type=Path, help="write the asset folder here from this build")
+    ap.add_argument("--approved", nargs=3, metavar=("LOGIN", "DATE", "PR_URL"),
+                    help="the look's approval for the manifest (docs/manifest.md: all three together)")
     args = ap.parse_args()
     if args.asset and args.no_shots:
         ap.error("--asset needs this run's shots (report.json takes their GPU cost)")
@@ -76,7 +78,7 @@ def main() -> int:
         print(*[x for x in output.splitlines() if x.startswith("CRYSTAL ")], sep="\n")
         print(f"godot shots: exit {code} {shots}", flush=True)
     if args.asset and ok and code == 0:
-        write_asset(args.asset, out, args.tag, report)
+        write_asset(args.asset, out, args.tag, report, args.approved)
         print(f"asset: {args.asset}", flush=True)
     return 0 if ok and code == 0 else 1
 
@@ -85,7 +87,7 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
+def write_asset(asset: Path, out: Path, tag: str, validator: dict, approved: list | None = None) -> None:
     """The asset folder from the build in out: export/ (the GLB, the Godot look's files), source/ (the .blend),
     report.json, manifest.toml (HANDOFF.md is written by hand)."""
     asset = asset if asset.is_absolute() else ROOT / asset
@@ -140,9 +142,9 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         'licence_url = "https://github.com/xperiaroco2/prime-game"',
         "public_repo_ok = true",
         "ai_generated = false",
-        "approved_by = []",
-        'approved_at = ""',
-        'approval_pr = ""',
+        f'approved_by = ["{approved[0]}"]' if approved else "approved_by = []",
+        f"approved_at = {approved[1]}" if approved else 'approved_at = ""',
+        f'approval_pr = "{approved[2]}"' if approved else 'approval_pr = ""',
         "",
         "[source]",
         'service = "own"',

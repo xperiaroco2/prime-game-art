@@ -7,7 +7,7 @@ render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_sc
 uniform float charge : hint_range(0.0, 1.0) = 1.0;
 uniform vec3 glow_colour : source_color = vec3(0.0, 0.62, 1.0);
 uniform vec3 edge_colour : source_color = vec3(0.15, 0.85, 1.0);
-uniform float glow = 0.95;
+uniform float glow = 1.5;           // brighter than the shell: the light comes from inside
 uniform float edge_glow = 0.2;
 uniform float pulse : hint_range(0.0, 0.3) = 0.05;
 

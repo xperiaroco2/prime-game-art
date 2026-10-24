@@ -16,8 +16,8 @@ const METAL := preload("crystal_metal.gdshader")
 const LIGHT_COLOUR := Color(0.0, 0.72, 1.0)
 const LIGHT_ENERGY := 2.2       # the cap's windows and lens at full charge (HDR: they bloom; more bleaches them white)
 const LIGHT_SPENT := 0.22       # the share they keep when spent: a dim glow, never dark
-const OMNI_ENERGY := 1.2        # the crystal's own light at full charge
-const OMNI_RANGE := 1.6
+const OMNI_ENERGY := 2.6        # the crystal's own light at full charge (the engineer, 2026-10-24: more light)
+const OMNI_RANGE := 2.4
 
 
 ## Puts the crystal's materials on every surface under root; returns the look: {"shell", "core", "light"
