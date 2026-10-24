@@ -93,3 +93,17 @@ prompt = "The reference image is the finished full-body design of the axolotl wo
 images = [
   { from = "ax_neck", pick = 0 },
 ]
+
+# The engineer took ax_bust for the 3D body (2026-10-24, chat: "Так, беремо новий концепт аксолотля для 3D"; #196
+# comment 6383156211). Its front/side sheet for Meshy, worded as ax_turn_c; refused by the moderation too (sexual,
+# req_a42fb649370f4323b281f07ba7bb59b7, not billed), so the 3D body comes from ax_turn_c and the chest is made one
+# size fuller in the build, judged against ax_bust.
+[[items]]
+id = "ax_turn_d"
+kind = "edit"
+quality = "medium"
+size = "1536x1024"
+prompt = "The reference image shows the axolotl woman, a stylised cartoon alien character designed as a smooth vinyl collectible figure. Make a clean, family-friendly model sheet with two full-length views of the same figure side by side, the same size and height, at the same scale, the feet on one level: on the left the front view looking straight at the viewer, on the right the exact side profile facing left. The same neutral standing pose in both: standing straight, feet a little apart, arms hanging a little away from the body, hands open and relaxed with the fingers readable. Keep the same character and the same simplified smooth toy body exactly as in the reference, with its proportions and its chest: the same head, gill stalks, face, the slender neck widening smoothly into the shoulders, the hands with four fingers and a thumb, the soft rounded feet with short toes, the teal skin with the pale front and the freckle dots, the same soft-matte finish and soft even studio light on a plain flat neutral mid-grey background. No text, no labels, no logos, no numbers."
+images = [
+  { from = "ax_bust", pick = 0 },
+]
