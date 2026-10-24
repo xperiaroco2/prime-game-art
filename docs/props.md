@@ -515,8 +515,10 @@ They are copied to `<raw>/start-console/ref/`.
    views at 4 px per cm and the concept's straight views cut and stretched as the drawing stretches them;
    `console_drawing.py` draws the model's edges and the sizes over both (`<tag>/drawing/*.svg`). The Godot shots are
    taken in the ship's hall itself: `godot/console/hall.gd` extends `godot/ship/ship.gd`'s shoot mode, adds the
-   console to the built ship at the hall's centre (yaw 180, the button to the mouth) and puts `console.gd`'s look and
-   each view's state on it; `godot/console/sheet.gd` makes the sheet beside the concept and measures the GPU cost.
+   console to the built ship on its station spot (`ship.toml`: (0, 0.6); yaw 180, the button to the mouth), keeps it
+   out of `ship.gd`'s dressing pass (that pass would give the GLB's plain emissive fallbacks strip lights the game
+   never has) and puts `console.gd`'s look and each view's state on it; `godot/console/sheet.gd` makes the sheet
+   beside the concept and measures the GPU cost.
 
    ```bash
    $PYTHON_BIN tools/blender/console_run.py --tag <tag> --res 900 --samples 64 --asset assets/prop/start_console

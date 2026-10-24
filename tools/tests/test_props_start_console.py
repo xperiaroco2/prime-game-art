@@ -16,7 +16,7 @@ from runner.commands import _manifest
 ASSET = common.ROOT / "assets" / "prop" / "start_console"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "console_dims.toml"
-TRIANGLES = 60000  # the whole console: 55,661 at build2, the hologram's lines and shell 44k of them (0.14 ms GPU)
+TRIANGLES = 60000  # the whole console: 55,661 at build2, the hologram's lines and shell 43k of them (0.10 ms GPU)
 SURFACES = {"console_bronze", "console_graphite", "console_cyan", "console_button", "console_stage", "console_lamp",
             "console_holo_line", "console_holo_shell", "console_beam"}
 MATERIAL_FILES = ("console.gd", "console_metal.gdshader", "console_signal.gdshader", "console_holo.gdshader")
@@ -34,6 +34,19 @@ def glb_json(path) -> dict:
     length, kind = struct.unpack("<I4s", data[12:20])
     assert kind == b"JSON", path
     return json.loads(data[20:20 + length])
+
+
+def glb_uvs(path, doc: dict, prim: dict) -> list[tuple[float, float]]:
+    """A primitive's TEXCOORD_0 pairs (float VEC2) from the GLB's binary chunk."""
+    data = path.read_bytes()
+    jlen = struct.unpack("<I", data[12:16])[0]
+    bin_start = 20 + jlen + 8
+    acc = doc["accessors"][prim["attributes"]["TEXCOORD_0"]]
+    assert acc["componentType"] == 5126 and acc["type"] == "VEC2", acc
+    view = doc["bufferViews"][acc["bufferView"]]
+    start = bin_start + view.get("byteOffset", 0) + acc.get("byteOffset", 0)
+    stride = view.get("byteStride", 8)
+    return [struct.unpack_from("<2f", data, start + i * stride) for i in range(acc["count"])]
 
 
 class StartConsoleDrawing(unittest.TestCase):
@@ -88,9 +101,16 @@ class StartConsoleAsset(unittest.TestCase):
         self.assertAlmostEqual(lo[1], 0.0, delta=0.001)  # glTF is Y-up: the origin on the floor
         self.assertAlmostEqual(hi[0] - lo[0], 1.598, delta=0.03)  # the hologram's span, the drawing's 159.8 cm
         self.assertTrue(1.65 < hi[1] < 1.85, hi[1])  # the hologram's top over the rim's 1.093 m
-        for p in prims:  # UV0 carries the chamfer flag and the index or brightness the shaders read
-            self.assertIn("TEXCOORD_0", p["attributes"])
         self.assertNotIn("images", doc)  # no textures
+        # UV0 carries the chamfer flag (u) and the strip's or lamp's index (v); the exporter writes 1 - v and the
+        # shaders read 1 - UV.y, so the indices come back from 1 - v
+        by_name = {doc["materials"][p["material"]]["name"]: p for p in prims}
+        index = lambda name: {round(1.0 - v) for _u, v in glb_uvs(glb, doc, by_name[name])}  # noqa: E731
+        self.assertEqual(index("console_stage"), {0, 1, 2})
+        self.assertEqual(index("console_lamp"), set(range(8)))
+        self.assertEqual(index("console_holo_line") - set(range(101)), set())  # brightness x 100
+        bronze_u = {round(u) for u, _v in glb_uvs(glb, doc, by_name["console_bronze"])}
+        self.assertEqual(bronze_u, {0, 1})  # the chamfer faces are flagged, the metal brightens them
 
     def test_shipped_glb_is_the_recorded_build(self) -> None:
         glb = EXPORT / "start_console.glb"

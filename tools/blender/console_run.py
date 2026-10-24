@@ -9,7 +9,7 @@
 4. console_drawing.py: the drawing (front, side, top in cm) over the concept's stretched views and over the model's
    orthographic renders, into <tag>/drawing/;
 5. the Godot shots in the ship's hall at night in an off-screen window: godot/console/hall.gd (ship.gd's shoot mode
-   with every built ship piece and the console at the hall's centre, its button toward the mouth) through the
+   with every built ship piece and the console on its station spot, its button toward the mouth) through the
    runner's _godot.window(), into <tag>/hall/;
 6. godot/console/sheet.gd: the review sheet beside the concept and the console's GPU cost, into <tag>/godot/.
 Everything goes under <raw>/start-console/<tag>/. --asset DIR then writes the asset folder
@@ -32,7 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
-from runner import blender, common, ship_layout  # noqa: E402
+from runner import blender, common, pins, ship_layout  # noqa: E402
 from runner.commands import _export, _godot  # noqa: E402
 from runner.commands import ship as ship_cmd  # noqa: E402
 
@@ -48,7 +48,6 @@ REFS = {"console-final.jpg": DESIGN / "console-final.jpg", "holo14-diamond-2.jpg
         "drawing.js": DESIGN / "console-drawing" / "drawing.js"}
 MATERIAL_FILES = ("console.gd", "console_metal.gdshader", "console_signal.gdshader", "console_holo.gdshader")
 HDRI = RAW / "env" / "polyhaven" / "studio_small_09" / "studio_small_09_2k.hdr"  # CC0, sources/polyhaven_hdris_2k.toml
-HALL = (0.0, -0.4)          # ship.toml: the hall's centre (plan x, y)
 YAW = 180.0                 # the console's front (glTF +Z) turned to the ship's mouth (Godot -Z)
 # the hall shots: name, yaw from the front, elevation (deg), target (u, d, h cm), distance (m), fov, state
 HALL_VIEWS = [
@@ -130,14 +129,21 @@ def copy_refs() -> None:
             shutil.copyfile(src, REF / name)
 
 
+def spot() -> tuple[float, float]:
+    """The console's station spot in the ship (plan x, y): layouts/ship/ship.toml [[stations.spot]] "console"."""
+    at = next(s["at"] for s in ship_layout.load()["stations"]["spot"] if s["id"] == "console")
+    return float(at[0]), float(at[1])
+
+
 def to_godot(u: float, d: float, h: float) -> list[float]:
     """The console's frame (cm: u across, d toward the button, h up) -> Godot's world in the ship: the console
-    at the hall's centre on the deck, its front turned to the mouth (-Z)."""
+    on its station spot on the deck, its front turned to the mouth (-Z)."""
     floor = ship_layout.load()["deck"]["floor_h"]
     a = math.radians(YAW)
     x, z = u * 0.01, d * 0.01  # glTF: x = u, z = d (front +Z)
-    return [round(x * math.cos(a) + z * math.sin(a) + HALL[0], 4), round(floor + h * 0.01, 4),
-            round(-x * math.sin(a) + z * math.cos(a) + HALL[1], 4)]
+    sx, sy = spot()
+    return [round(x * math.cos(a) + z * math.sin(a) + sx, 4), round(floor + h * 0.01, 4),
+            round(-x * math.sin(a) + z * math.cos(a) + sy, 4)]
 
 
 def view_rows() -> list:
@@ -212,7 +218,8 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict, approved: lis
         "states": {"idle": "console.gd set_state(look, \"idle\"): set_passed(look, 1), set_lit(look, -1)",
                    "order": "set_lit(look, i) while the order plays (0..3 west, 4..7 east, from the hall outward)",
                    "stage": "set_passed(look, n): n strips green"},
-        "placement": "at the hall's centre on the deck, yaw 180 in the ship (its front, the button, toward the mouth)",
+        "placement": "on the ship's console spot (layouts/ship/ship.toml: plan (0, 0.6), 1 m aft of the hall's centre) on "
+                     "the deck, yaw 180 (its front, the button, toward the mouth)",
         "gltf_validator": {k: counts.get(k, 0) for k in ("numErrors", "numWarnings", "numInfos", "numHints")},
         "godot_cost": cost,
         "review": f"<raw>/start-console/{tag}/godot/sheet.png",
@@ -239,8 +246,8 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict, approved: lis
          'console-final.jpg, holo14-diamond-2.jpg, console-drawing/; copied to the raw folder; 2D concepts used only '
          'as references), built from code in headless Blender (tools/blender/console_build.py from '
          'console_dims.toml): no part of the model was generated or downloaded."'),
-        'tools = ["blender 5.2.2", "prime-game-art console_build.py, console_run.py", '
-        '"glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]',
+        f'tools = ["blender {pins.BLENDER}", "prime-game-art console_build.py, console_run.py", '
+        f'"glTF-Validator {pins.GLTF_VALIDATOR}", "Godot {pins.GODOT} (shots)"]',
         'licence = "own-work"',
         'licence_url = "https://github.com/xperiaroco2/prime-game"',
         "public_repo_ok = true",
