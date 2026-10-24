@@ -475,3 +475,74 @@ concept in four steps, each shown to him before the next.
 Lessons for the next hero prop: shoot 720 px close-ups of every part and give them to a fresh critic before calling a
 step done; decide colours in 3D, not per texel; check a feature that sits in a crease from above and below (the smile
 reads in full from 10 degrees below, mostly its corners from above, where the player usually stands).
+
+## A hero prop from code: the ship engine's energy crystal (art#263)
+
+`assets/prop/energy_crystal/`: the cartridge of the ship's engine (prime-game#1033, the engineer's comment
+6361383461): a faceted energy crystal in a bronze and graphite cap with a hexagonal carry loop. Players pull a spent
+one from its socket, recharge it at a charger and put it back; the sockets and chargers are built later to fit it.
+The concept is prime-game-design's `ideas/ship-components/cartridge-v2/`: `crystal-views.jpg`, the straight views
+of the crystal alone, charged and spent (front, side, top, 3/4), made for this build; `socket-claws.jpg` and
+`charge.jpg` show it in its socket and charger (the spent crystal's cracks there are not wanted). They are copied to
+`<raw>/energy-crystal/ref/`.
+
+**Drawing first, then the model** (the engineer, 2026-10-24: "like engineering drawings at university: the part
+from different sides, in centimetres, everything exact"):
+
+1. **Measure.** `tools/blender/crystal_dims.toml` holds every size in centimetres: the crystal's corners at its top
+   and point rings, the point's length, the body, the shoulder, the skirt, rim, groove, band, windows, notches, dome,
+   disc, lens and the loop's size, bar and depth. They were read off `crystal-views.jpg`'s spent front view (the
+   silhouette's width per pixel row; the charged views glow, which widens them), the cap's plan from its top view and
+   the loop's depth from its side view, scaled so that the whole is 35 cm. The sheet's views disagree in places (its
+   side view draws the band 20 % narrower; its top view puts the windows on the side faces, the other views on the
+   diagonal ones): the front view wins, and the file says so. A hexagon's front-view width is across its corners,
+   an octagon's (a flat to the front) across its flats.
+2. **Build from the numbers.** `tools/blender/crystal_build.py` reads the file and builds every part from it in
+   headless Blender. Before the chamfers it writes `features.json`, the model's own edges (the folds and open
+   edges, each with its faces' normals).
+3. **Draw.** `tools/blender/crystal_drawing.py` (plain Python) projects those edges into the front, side and top
+   views and dimensions them from the same file: `drawing/drawing.svg` on paper, `drawing_concept.svg` over the
+   concept's views and `drawing_model.svg` over the model's orthographic renders. The frames match
+   `crystal_build.py`'s `ORTHO` frames at 16 px per cm, and the concept's views are cut to the same frames from
+   the points they were measured at. So the drawing lies exactly over both, and a size that is wrong shows as a
+   line off the picture.
+
+`tools/blender/crystal_run.py` (the driver) runs the build, glTF-Validator, the drawing and the Godot shots:
+
+```
+$PYTHON_BIN tools/blender/crystal_run.py [--tag drawn] [--res 900] [--samples 64] [--no-build] [--no-shots]
+    [--asset assets/prop/energy_crystal]
+```
+
+- **The crystal** is a hexagonal column whose corners run straight up and narrow a little toward the point; each
+  face holds a column of long diamonds (the face's middle line has a vertex every other step, 12 % outside the flat
+  face, so the facets fold and catch the light). Neighbouring faces are staggered by a step, so the diamonds' sides
+  run on across the corners. Below is a point of twelve facets, above a shoulder into the skirt. Every facet edge
+  has a 0.6 mm chamfer, the visible line. The chamfer blunts the point a little: the model's origin stays at the
+  drawing's tip, a few millimetres below the lowest vertex.
+- **The core**, a slimmer copy turned 30 degrees inside it, is what the charged crystal glows from: seen through
+  the translucent shell it gives the depth and the second set of lines the concept paints.
+- **The cap** is an octagon with a flat to the front. Over the crystal's shoulder sit a bronze lip and a graphite
+  hexagonal skirt with inset panels. Then a bronze rim, a dark groove, and the upright bronze band, with four cyan
+  windows on its diagonal faces and a graphite notch at the foot of each straight face. On top are a bevelled
+  bronze dome, the graphite top disc with a cyan lens, and the hexagonal carry loop, a chunky bar. Metal edges over
+  30 degrees get a 1.2 mm chamfer (0.8 mm on the small parts, 2 mm on the loop).
+- **UV0 carries data, not a layout**: u = 1 on every chamfer face (the materials brighten them: the bronze's worn
+  edges, the crystal's glinting edges), v = a per-facet random value (the facet-by-facet shade). No textures.
+- **Two states, one mesh**: the charge. Blender's look reads the node group `crystal_charge` (the `.blend` keeps it
+  at 1); the game's look is `godot/crystal/crystal.gd` (`apply(model)` puts `crystal_shell.gdshader`,
+  `crystal_core.gdshader`, `crystal_metal.gdshader` and the lights' material on the surfaces by their glTF names and
+  adds a small cyan OmniLight3D; `set_charge(look, c)`): 1 a translucent cyan gem glowing from inside, 0 a matte
+  grey stone, opaque, no glow, the cap's lights at 22 %. The GLB's own materials are a plain-PBR fallback of the
+  charged state.
+- **Colours across the two looks**: Blender's Principled colours are linear; Godot's `source_color` uniforms are
+  sRGB, so the Godot metal holds the sRGB of Blender's numbers (bronze (0.42, 0.29, 0.17) linear is (0.68, 0.578,
+  0.454)). Passing the linear numbers made the Godot bronze nearly black. AgX bleaches bright pale cyan to white:
+  keep the glow colours saturated ((0, 0.72..0.78, 1)) and the emissive strengths moderate.
+
+`godot/crystal/shots.gd` shoots both states in an off-screen window under the ship interior's night light rebuilt
+from `godot/ship/ship.gd` and `layouts/ship/ship.toml` (AgX 1.0, the dark blue ambient, the glow settings, SSAO,
+SSIL, a warm interior lamp, the cool night key, a cyan strip's rim): the 3/4, front and top views, close-ups of the
+cap, loop and facets, the crystal on a 1 m post seen from 1 m (its glow on the wall) and carried in the first-person
+view, and `sheet.png`, the concept beside Blender's and Godot's views. `tools/tests/test_props_energy_crystal.py`
+checks the committed asset.
