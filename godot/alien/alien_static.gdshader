@@ -280,13 +280,16 @@ vec3 lively_eye(vec3 sclera) {
 }
 
 void fragment() {
-	// A3c: the rim rule; every map is read at uv with UV's own gradients (the same filtering where uv = UV)
+	// A3c: the rim rule (an off trial: eye_sphere_l.w 0). A3d: the maps are read with texture() again (A3c's swap to
+	// textureGrad reverted), so wherever uv = UV (the merged look, every gaze without the rim spheres) each read is
+	// the one before A3c; only the rim band's mask read below takes UV's gradients (a non-uniform branch), the trial's
+	// other reads take uv's own (a mip step at the band's edge while it is on)
 	vec2 uv = UV;
 	vec2 gx = dFdx(UV);
 	vec2 gy = dFdy(UV);
 	float ge = -1.0;  // the geometric eye share; -1: the mask decides
 	float rim_d = 0.0;
-	vec3 m = textureGrad(mask_tex, UV, gx, gy).rgb;
+	vec3 m = texture(mask_tex, UV).rgb;
 	float m_eye = 1.0 - m.r;
 	if (gaze_on > 0.0 && eye_sphere_l.w > 0.0) {  // a uniform branch: the derivatives below stay defined
 		bool lft = distance(v_obj, eye_sphere_l.xyz) < distance(v_obj, eye_sphere_r.xyz);
@@ -312,16 +315,16 @@ void fragment() {
 			m.r = 1.0 - ge;
 		}
 	}
-	vec3 a = textureGrad(albedo_tex, uv, gx, gy).rgb;
+	vec3 a = texture(albedo_tex, uv).rgb;
 	if (alive_mix != 1.0) {
-		a = clamp(mix(textureGrad(plain_tex, uv, gx, gy).rgb, a, alive_mix), 0.0, 1.0);
+		a = clamp(mix(texture(plain_tex, uv).rgb, a, alive_mix), 0.0, 1.0);
 	}
 	if (gaze_on > 0.0) {
-		a = mix(a, lively_eye(textureGrad(sclera_tex, uv, gx, gy).rgb), gaze_on * (1.0 - m.r));
+		a = mix(a, lively_eye(texture(sclera_tex, uv).rgb), gaze_on * (1.0 - m.r));
 	}
-	vec4 d = textureGrad(detail_tex, uv, gx, gy);
+	vec4 d = texture(detail_tex, uv);
 	float eye = 1.0 - m.r;
-	vec3 c = mix(a, recolour(a, textureGrad(accent_tex, uv, gx, gy).rgb, textureGrad(gill_tex, uv, gx, gy).r), m.r);
+	vec3 c = mix(a, recolour(a, texture(accent_tex, uv).rgb, texture(gill_tex, uv).r), m.r);
 	float rough = m.g;
 	// the creases deeper and more saturated, the lips and lids a little flushed (skin only)
 	float crease = (1.0 - d.r) * cavity * m.r;
@@ -331,7 +334,7 @@ void fragment() {
 	// the normal map as Godot's own NORMAL_MAP does it, then the micro grain on top
 	vec3 n = NORMAL;
 	if (debug_mode != 2) {
-		vec2 nxy = textureGrad(normal_tex, uv, gx, gy).xy * 2.0 - 1.0;
+		vec2 nxy = texture(normal_tex, uv).xy * 2.0 - 1.0;
 		vec3 nm = vec3(nxy, sqrt(max(0.0, 1.0 - dot(nxy, nxy))));
 		float ns = normal_strength * mix(1.0, sclera_normal_map, gaze_on * eye);
 		n = normalize(mix(NORMAL, TANGENT * nm.x + BINORMAL * nm.y + NORMAL * nm.z, ns));
@@ -392,8 +395,8 @@ void fragment() {
 		// CS6's proof: the colour slots' regions as flat codes for the lit measurement (alien_colour_slots.py): the
 		// lips red, the details (under gill_mode, with detail_on) green, the front blue, the rest of the skin yellow,
 		// a texel between regions grey, the eyes black; 5 the same inverted (the background is equal in both)
-		vec3 acc = textureGrad(accent_tex, uv, gx, gy).rgb;
-		float gl = textureGrad(gill_tex, uv, gx, gy).r;
+		vec3 acc = texture(accent_tex, uv).rgb;
+		float gl = texture(gill_tex, uv).r;
 		float dw = detail_on * (gill_mode < 0.5 ? max(acc.g - gl, 0.0) : (gill_mode < 1.5 ? acc.g : max(acc.g, gl)));
 		vec3 code = vec3(0.25);
 		if (acc.r > 0.9) {
@@ -415,7 +418,7 @@ void fragment() {
 		CLEARCOAT = 0.0;
 		EMISSION = debug_mode == 4 ? code : vec3(1.0) - code;
 	} else if (debug_mode >= 8 && debug_mode <= 11) {  // A3c: the rim rule and the ring isolation, emitted
-		vec2 nt = textureGrad(normal_tex, uv, gx, gy).xy * 2.0 - 1.0;
+		vec2 nt = texture(normal_tex, uv).xy * 2.0 - 1.0;
 		vec3 dv = vec3(clamp(abs(rim_d) / rim_band, 0.0, 1.0), max(ge, 0.0), m_eye);
 		if (debug_mode == 9) {
 			dv = vec3(m.g);
