@@ -492,7 +492,9 @@ def motion_request(layout: dict) -> dict:
         # way A: the blades keep between the cap rows (their ends sit in the caps), in front of the well's glow
         u = sorted((s * v.CAP_U[0], s * v.CAP_U[1]))
         g = sorted((s * v.GLASS_U[0], s * v.GLASS_U[1]))
-        vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0] - 0.1, "h1": f + v.OPEN_H[1],
+        # vents-b5: behind the frame's face the blades stay over the opening's floor (b4 10 cm under it: the blades
+        # stood out of the frame)
+        vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0], "h1": f + v.OPEN_H[1],
                                   "v_back": v.COOL_V + 0.002 - r, "v_max": v.UNIT[3],
                                   "v_face": v.BOX_FACE - r, "v_face_h0": f + 0.12},
                       "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]},
@@ -500,14 +502,15 @@ def motion_request(layout: dict) -> dict:
                       "pivots": [[s * (v.CAP_U[0] + v.CAP_U[1]) / 2, f + v.PIVOT_TOP - k * v.PITCH, v.PIVOT_V - r]
                                  for k in range(v.SLATS)]}
     # way B (vents-b1): re-aimed on the built body (four of way A's framed empty air)
-    # vents-b4: the looks RECESS back, the column's top and the scanner COL_DROP down
-    d = v.COL_DROP
+    # vents-b4: the looks RECESS back, the column's top and the scanner COL_DROP down; vents-b5: the box's right side
+    # BOX_DU along, the blades' ends on their hinge line, the opening's floor lower, the scanner and lamp SCAN_U, LAMP_U
+    d, du = v.COL_DROP, v.BOX_DU
     cu = [["frame_corner_tl", [-0.30, f + 1.62, 1.05], [-0.64, f + 1.40, 0.41 - r]],
-          ["opening_corner_br", [0.5, f + 0.4, 1.0], [0.2, f + 0.36, 0.40 - r]],
-          ["slat_ends_l", [-0.3, f + 1.3, 0.9], [-0.50, f + 1.13, 0.36 - r]],
-          ["box_column_top", [0.85, f + 1.85 - d, 1.0], [0.47, f + 1.56 - d, 0.36 - r]],
-          ["lamp_base", [0.95, f + 1.95 - d, 0.85], [0.633, f + 1.77 - d, 0.335 - r]],
-          ["scanner", [0.72, f + v.SCAN_H + 0.02, 0.85], [0.685, f + v.SCAN_H, 0.43 - r]],
+          ["opening_corner_br", [0.5 + du, f + 0.35, 1.0], [0.2 + du, f + 0.28, 0.40 - r]],
+          ["slat_ends_l", [-0.3 + du, f + 1.3, 0.9], [-0.50 + du, f + 1.13, v.PIVOT_V + 0.08 - r]],
+          ["box_column_top", [0.85, f + 1.85 - d, 1.0], [0.47 + du, f + 1.56 - d, 0.36 - r]],
+          ["lamp_base", [0.95, f + 1.95 - d, 0.85], [v.LAMP_U, f + 1.77 - d, 0.335 - r]],
+          ["scanner", [0.72, f + v.SCAN_H + 0.02, 0.85], [v.SCAN_U, f + v.SCAN_H, 0.43 - r]],
           ["box_floor_l", [-1.2, f + 0.35, 1.0], [-0.70, f + 0.10, 0.40 - r]],
           ["box_wall_top", [-0.2, f + 1.95, 0.95], [-0.2, f + 1.58, 0.15 - r]],
           ["column_wall_r", [1.4, f + 0.5, 0.8], [0.78, f + 0.3, 0.2 - r]]]

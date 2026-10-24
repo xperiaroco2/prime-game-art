@@ -65,9 +65,9 @@ class ShipVentTest(unittest.TestCase):
                     self.assertTrue(V.FLOOR + h0 - 1e-6 <= h <= V.FLOOR + h1 + 1e-6, (side, name, h))
 
     def test_inside_the_wall_face(self):
-        """vents-b4: the vent sits RECESS into the wall: its backs at most RECESS + 2 cm behind the wall's face, the
-        well's glow panels in front of it (b3: the backs on the face)."""
-        self.assertTrue(0.05 <= V.RECESS <= 0.10, V.RECESS)
+        """vents-b5: the vent back on the wall's face (b4 8 cm into it): its backs at most 2 cm behind the face, the
+        well's glow panels in front of it."""
+        self.assertEqual(V.RECESS, 0.0)
         for name, p in build("e").items():
             for x, y, h in p["verts"]:
                 self.assertGreaterEqual(y, V.cv(h - V.FLOOR) - V.RECESS - 0.0201, (name, y, h))
@@ -75,11 +75,12 @@ class ShipVentTest(unittest.TestCase):
                     self.assertGreater(y, 0.0, (name, y))
 
     def test_recess_in_the_plan(self):
-        """vents-b4: one recess for both vents (ship.toml's spots), the unit's back that far behind the face."""
+        """vents-b4: one recess for both vents (ship.toml's spots), the unit's back that far behind the face; vents-b5:
+        none, the unit 0.50 deep (the blades inside the frame)."""
         spots = [s for s in V.S._SHIP["stations"]["spot"] if s["id"].startswith("vent_")]
         self.assertEqual({s["recess_m"] for s in spots}, {V.RECESS})
         self.assertAlmostEqual(V.UNIT[2], -0.01 - V.RECESS, places=6)
-        self.assertAlmostEqual(V.UNIT[3], 0.60 - V.RECESS, places=6)
+        self.assertAlmostEqual(V.UNIT[3], 0.50 - V.RECESS, places=6)
 
     def test_light_pieces(self):
         """The look step: every light a clean emissive piece over the body's painted one, off its surface."""
@@ -113,14 +114,22 @@ class ShipVentTest(unittest.TestCase):
         self.assertTrue(0.70 <= (max(hz) - min(hz)) / (max(sz) - min(sz)) <= 0.85)
 
     def test_hand_has_a_thumb_and_three_fingers(self):
-        """vents-b4: one closed smooth silhouette: three fingers' tips of one length (a scan across them meets
-        three separate fingers), the thumb out past the palm's side and lower, the stroke even and unfolded."""
+        """vents-b4: one closed smooth silhouette (a scan across the fingers meets three separate ones), the thumb out
+        past the palm's side and lower, the stroke even and unfolded; vents-b5: human lengths (the middle longest,
+        the ring a little shorter, the index the shortest), a gap between two fingers wider than the stroke."""
         pts = V.hand_outline()
         self.assertGreater(len(pts), 120)
         self.assertLess(max(math.dist(a, b) for a, b in zip(pts, pts[1:] + pts[:1])), 0.11)   # closed, no jump
         self.assertAlmostEqual(max(y for _, y in pts), V.HAND_TIP, delta=0.002)
-        for cx in V.HAND_FINGERS:                            # each finger reaches the tip line
-            self.assertLess(V._hand_field(cx, V.HAND_TIP - 0.01), 0.0)
+        index, middle, ring = V.HAND_TIPS
+        self.assertTrue(middle > ring > index, V.HAND_TIPS)
+        self.assertGreaterEqual(middle - ring, 0.05)         # the steps read at 2 m
+        self.assertGreaterEqual(ring - index, 0.05)
+        for cx, tip in zip(V.HAND_FINGERS, V.HAND_TIPS):    # each finger reaches its own tip, no further
+            self.assertLess(V._hand_field(cx, tip - 0.01), 0.0)
+            self.assertGreater(V._hand_field(cx, tip + 0.01), 0.0)
+        for a, b in zip(V.HAND_FINGERS, V.HAND_FINGERS[1:]):   # the dark gap left inside the stroke
+            self.assertGreaterEqual(V._hand_field((a + b) / 2, 1.3), V.HAND_W / 2 + 0.035)
         row = [V._hand_field(-0.6 + i * 0.005, 1.4) < 0 for i in range(241)]
         self.assertEqual(sum(1 for a, b in zip(row, row[1:]) if b and not a), 3)   # three fingers across
         thumb = min(pts)
@@ -176,11 +185,28 @@ class ShipVentTest(unittest.TestCase):
                     x, y, h = turn(q, p["origin"], a)
                     self.assertTrue(V.COOL_V + 0.002 - V.RECESS < y <= V.UNIT[3] + 1e-6, (k, a, y))
 
-    def test_calm_reach_past_the_frame(self):
-        """Calm, the blades stick out about 19 cm past the frame's face (side_left)."""
-        p = build("e", meshes=False)["slat4"]
-        reach = max(turn(q, p["origin"], V.OPEN_RAD)[1] for q in p["hull"]) - (V.BOX_FACE - V.RECESS)
-        self.assertTrue(0.14 <= reach <= 0.20, reach)   # vents-b3: the frame's face 2.5 cm prouder (0.44)
+    def test_calm_tips_inside_the_frame(self):
+        """vents-b5: calm, the blades' tips TIP_BACK behind the frame's face (b3, b4: 15 cm past it); at the widest (the
+        cough, 10 deg past calm) under 1 cm past it; shut, the bottom blade over the opening's floor."""
+        self.assertTrue(0.02 <= V.TIP_BACK <= 0.06, V.TIP_BACK)
+        face = V.BOX_FACE - V.RECESS
+        for k in range(1, V.SLATS + 1):
+            p = build("e", meshes=False)[f"slat{k}"]
+            calm = max(turn(q, p["origin"], V.OPEN_RAD)[1] for q in p["hull"]) - face
+            self.assertAlmostEqual(calm, -V.TIP_BACK, delta=0.001)
+            wide = max(turn(q, p["origin"], V.OPEN_RAD + math.radians(10.0))[1] for q in p["hull"]) - face
+            self.assertLess(wide, 0.01 - V.TIP_BACK + 1e-9)
+        low = min(h for _, _, h in build("e", meshes=False)[f"slat{V.SLATS}"]["hull"])
+        self.assertGreater(low, V.FLOOR + V.OPEN_H[0] + 0.015)
+
+    def test_column_holds_the_scanner(self):
+        """vents-b5: the scanner's bezel (22.4 cm) inside the wider column, 1.5 cm from the bar's housing and 1.8 cm
+        inside the column's panel (b4 1.7 cm over its edge)."""
+        bezel = (V.SCAN_U - 0.112, V.SCAN_U + 0.112)
+        self.assertGreaterEqual(bezel[0] - (V.GLASS_U[1] + 0.017), 0.015 - 1e-9)
+        self.assertGreaterEqual((V.COL_U[1] - 0.01) - bezel[1], 0.015 - 1e-9)
+        self.assertAlmostEqual(V.COL_U[0], V.BOX_U[1], places=9)   # the column on the box's right edge
+        self.assertGreater(V.COL_U[1] - V.COL_U[0], 0.36)          # b4 0.334
 
     def test_seams_calm_and_closed(self):
         """Straight from the front (the blade cleaner's numbers, the slices' median): a lit band of about a third of
@@ -210,7 +236,7 @@ class ShipVentTest(unittest.TestCase):
         depth = {s["id"]: s.get("depth_m") for s in LAYOUT["stations"]["spot"] if s.get("normal")}
         self.assertEqual({k for k, d in depth.items() if d == 0.6}, {"vent_e", "vent_w"})
         self.assertEqual((depth["vent_e"], depth["vent_w"], LAYOUT["stations"]["depth_m"]), (0.6, 0.6, 0.5))
-        for d in (depth["vent_e"], depth["vent_w"]):   # the budget is measured from the wall's face: the unit sits RECESS in
+        for d in (depth["vent_e"], depth["vent_w"]):   # the budget is measured from the wall's face (RECESS: the unit's back)
             self.assertLessEqual(V.UNIT[3] + V.RECESS, d + 1e-9)
         bad = copy.deepcopy(LAYOUT)
         for p in bad["pieces"]:

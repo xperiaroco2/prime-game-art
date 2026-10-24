@@ -59,15 +59,16 @@ for _name, _base, _upd in (
 
 # --- the body (ship_vent_b.py, vents-b1, 2026-10-24; vents-b3 the heavier frame; vents-b4 the recess, the scanner) ---
 # vents-b4: a review build (`SHIP_VENT_REVIEW`, a JSON object: "dir" the body's folder under the raw folder, "scan_h"
-# its scanner height, "recess" {"e": m, "w": m}) builds the grids' variants; never set for the game's build
+# its scanner height, "recess" {"e": m, "w": m}; vents-b5: "dir_w" the west body's folder, "tip_back" {"e": m, "w": m}
+# its blades' depth) builds the grids' variants; never set for the game's build
 _REVIEW = json.loads(os.environ.get("SHIP_VENT_REVIEW") or "{}")
-_BODY_DIR = _REVIEW.get("dir", "ship/v4/vents-b/b4")
+_BODY_DIR = _REVIEW.get("dir", "ship/v4/vents-b/b5")
 BODY = _BODY_DIR + "/body.glb"                # under the raw folder (way B: built in Blender, flat facets, chamfers)
 LIGHTS = _BODY_DIR + "/lights.json"           # the light pieces' places on the body (ship_vent_b.py)
-# vents-b4: the vent sits RECESS into the throat wall (the engineer: b3 looked stuck on, floating in front of it): the
-# piece's every part moves RECESS behind the spot (the wall's face); the frame's sides and the column's back run into
-# the wall's plain plate (th_wall_low_flat_*, th_wall_mid: flat on the vents' modules, ship_interior_place.TH_PLAIN).
-# One source: ship.toml's `recess_m` on the vents' spots (ship --check allows the unit's back that far behind the face)
+_BODY_W = _REVIEW.get("dir_w", _BODY_DIR)
+# vents-b4: the vent sat RECESS into the throat wall; vents-b5: back on the wall's face (the engineer did not mean the
+# recess), RECESS 0, the wall's modules behind it the pillow panels again (as b3). The parts still move RECESS behind
+# the spot, so a review can try one. One source: ship.toml's `recess_m` on the vents' spots
 RECESS = next(s["recess_m"] for s in S._SHIP["stations"]["spot"] if s["id"] == "vent_e")
 RECESS_SIDE = {k: float(_REVIEW.get("recess", {}).get(k, RECESS)) for k in "ew"}
 # vents-b4: the scanner's centre over the deck (ship_vent_b.SCAN_H; b3 1.398), the column's top dropped with it
@@ -78,14 +79,34 @@ LIGHT_OUT = (0.0015, 0.0045)                  # a light piece's back and front o
 # (the green band at 141..146.4 cm of the bar's 62.2..154.8, the comment's numbers)
 BAR = (("bar_hot", 0.0, 0.31, "glow_nav_white__vent_bar_hot"), ("bar", 0.31, 0.851, "glow_amber__vent_bar"),
        ("band", 0.851, 0.909, "glow_nav_green__vent_band"), ("bar_top", 0.909, 1.0, "glow_amber__vent_bar"))
-BOX_U, COL_U = (-0.80, 0.466), (0.466, 0.80)  # the box with its feet, the column
+# vents-b5: the box's right side and opening 4 cm along (ship_vent_b.BOX_DU), the side column wider (b4 0.466..0.80)
+BOX_DU = -0.04
+BOX_U, COL_U = (-0.80, 0.466 + BOX_DU), (0.466 + BOX_DU, 0.80)   # the box with its feet, the column
 BOX_TOP, BOX_FACE = 1.64, 0.44                # the box's top, the frame's face (v; vents-b3: the fatter shoulder)
 COL_TOP, COL_FACE = 1.84 - COL_DROP, 0.40     # the column's top (the lamp's dome, vents-b4 dropped), its face
-WELL_V = 0.115                                # the well's back
-OPEN_U, OPEN_H = (-0.44, 0.28), (0.30, 1.33)   # the well's opening between the cap rows (way B: under the header)
-CAP_U = (-0.48, 0.32)                         # the cap rows' centres
-PIVOT_V = 0.33                                # the caps' axis
-GLASS_U, GLASS_H = (0.500, 0.556), (0.622, 1.548 - COL_DROP)   # the light bar's glass (vents-b4: its top dropped)
+# vents-b5: the blades inside the frame: the calm tips TIP_BACK behind the frame's face (ship_vent_b.TIP_BACK; the
+# review grid's 0, 3 and 6 cm), the hinge line PIVOT_V = BOX_FACE - TIP_BACK - TIP_DV (b4 0.33: the tips 14.7 cm past
+# the face), the well's back WELL_GAP behind it (b4 0.115)
+TIP_DV, WELL_GAP = 0.257, 0.065
+TIP_BACK = 0.03
+TIP_BACK_SIDE = {k: float(_REVIEW.get("tip_back", {}).get(k, TIP_BACK)) for k in "ew"}
+
+
+def depths(tip_back: float) -> tuple[float, float]:
+    """The hinge line and the well's back for blades tip_back behind the frame's face (ship_vent_b's numbers)."""
+    pivot = round(BOX_FACE - tip_back - TIP_DV, 4)
+    return pivot, round(pivot - WELL_GAP, 4)
+
+
+PIVOT_V, WELL_V = depths(TIP_BACK)            # the caps' axis (0.153), the well's back (0.088)
+# the well's opening between the cap rows (way B: under the header); vents-b5: its floor 0.22 (b4 0.30), under the shut
+# bottom blade's tip (0.238)
+OPEN_U, OPEN_H = (-0.44 + BOX_DU, 0.28 + BOX_DU), (0.216, 1.33)
+CAP_U = (-0.48 + BOX_DU, 0.32 + BOX_DU)       # the cap rows' centres
+# the light bar's glass (vents-b4: its top dropped; vents-b5: 4 cm along with the wider column), the scanner's centre
+# and the lamp's axis along the wall (ship_vent_b.SCAN_U, LAMP)
+GLASS_U, GLASS_H = (0.460, 0.516), (0.622, 1.548 - COL_DROP)
+SCAN_U, LAMP_U = 0.660, 0.615
 GLASS_V = 0.405                               # the glass's face
 
 # --- the blades ------------------------------------------------------------------------------------------------------
@@ -106,9 +127,9 @@ MARK_H = 0.03                                 # the marker's height; it slides f
 MARK_TRAVEL = GLASS_H[1] - GLASS_H[0] - MARK_H
 COOL_V = WELL_V + 0.012                       # the cool glow's panel, just in front of the heat's
 UC = (GLASS_U[0] + GLASS_U[1]) / 2            # the bar's centre line
-# u0 u1 v0 v1 h0 h1 in the spot's frame (the calm blades' tips at v 0.598 - RECESS; vents-b4: the backs RECESS behind
-# the wall's face)
-UNIT = [-0.80, 0.80, round(-0.01 - RECESS, 4), round(0.60 - RECESS, 4), -0.02, 1.85]
+# u0 u1 v0 v1 h0 h1 in the spot's frame (vents-b5: the column's foot 0.49 the proudest, the blades inside the frame;
+# b4 0.60 with the calm tips at 0.598; the backs RECESS behind the wall's face)
+UNIT = [-0.80, 0.80, round(-0.01 - RECESS, 4), round(0.50 - RECESS, 4), -0.02, 1.85]
 
 
 def raw_root() -> Path:
@@ -189,13 +210,24 @@ def ribbon(pts, w: float) -> list[list[tuple[float, float]]]:
 
 
 HAND_W = 0.085     # vents-b4: the hand's line width (the palm's width 1): one even stroke all round
-HAND_K = 0.20      # the fillet where the thumb meets the palm (0.12 folded the stroke's outer side there)
+HAND_K = 0.28      # the fillet where the thumb meets the palm (0.12 folded the stroke's outer side; vents-b5: 0.20 folded it
+                   # with the higher thumb)
+# vents-b5: human finger lengths (the engineer): index, middle, ring from the thumb's side, the middle longest, the ring
+# a little shorter, the index the shortest; narrower fingers (HAND_FR, b4 0.125) with wider U gaps between (HAND_GAP,
+# b4 0.125), so the dark gap inside the stroke reads at 2 m (b4 0.04 of the palm's width, now 0.085); the thumb a
+# little lower and shorter, 41 deg out from the index's line (b4 48)
+HAND_FINGERS = (-0.39, 0.0, 0.39)     # the three fingers' centre lines (index, middle, ring)
+HAND_TIPS = (1.60, 1.80, 1.70)        # their tips (b4 one length, 1.705)
+HAND_TIP = max(HAND_TIPS)
+HAND_FR = 0.11                        # a finger's half width
+HAND_GAP = 0.17                       # the gap between two fingers (their U crotch's width)
+HAND_THUMB = ((-0.30, 0.36), (-0.72, 0.84), 0.125)   # its axis from the palm out to the tip's centre, its half width
 
 
 def _hand_field(x: float, y: float) -> float:
     """vents-b4: the hand's silhouette as a signed distance (the palm's width 1, its heel at y 0; negative inside): a
-    palm with rounded heel corners, three fingers of one length (capsules 0.25 wide, U-shaped crotches 0.125 wide), a
-    thumb tilted out 48 deg, filleted into the palm."""
+    palm with rounded heel corners, three fingers (vents-b5: HAND_TIPS, capsules 2 HAND_FR wide, U crotches HAND_GAP
+    wide), a thumb tilted out (HAND_THUMB), filleted into the palm."""
     def capsule(ax, ay, bx, by, r):
         px, py, dx, dy = x - ax, y - ay, bx - ax, by - ay
         t = max(0.0, min(1.0, (px * dx + py * dy) / (dx * dx + dy * dy)))
@@ -204,16 +236,15 @@ def _hand_field(x: float, y: float) -> float:
     rr = 0.30 if y < 0.54 else 0.0
     qx, qy = abs(x) - 0.5 + rr, abs(y - 0.54) - 0.54 + rr
     palm = math.hypot(max(qx, 0.0), max(qy, 0.0)) + min(max(qx, qy), 0.0) - rr
-    d = min([palm] + [capsule(cx, 0.70, cx, HAND_TIP - 0.125, 0.125) for cx in HAND_FINGERS])
-    for gx in (-0.1875, 0.1875):   # the crotches: round at the bottom, the gap's half width
-        d = max(d, -capsule(gx, 1.08, gx, 3.0, 0.0625))
-    th = capsule(-0.30, 0.40, -0.746, 0.801, 0.13)
+    d = min([palm] + [capsule(cx, 0.70, cx, tip - HAND_FR, HAND_FR) for cx, tip in zip(HAND_FINGERS, HAND_TIPS)])
+    for a, b in zip(HAND_FINGERS, HAND_FINGERS[1:]):   # the crotches: round at the bottom, the gap's half width
+        gx = (a + b) / 2
+        d = max(d, -capsule(gx, 1.08, gx, 3.0, HAND_GAP / 2))
+    (ax, ay), (bx, by), tr = HAND_THUMB
+    th = capsule(ax, ay, bx, by, tr)
     h = max(0.0, min(1.0, 0.5 + 0.5 * (th - d) / HAND_K))   # a smooth union (polynomial smin)
     return th * (1 - h) + d * h - HAND_K * h * (1 - h)
 
-
-HAND_FINGERS = (-0.375, 0.0, 0.375)   # the three fingers' centre lines
-HAND_TIP = 1.705                      # their tips (one length)
 
 
 def hand_outline(step: float = 0.004, turn_deg: float = 7.0, max_len: float = 0.10) -> list[tuple[float, float]]:
@@ -268,15 +299,15 @@ def hand_stroke(pts, w: float = HAND_W):
     return out
 
 
-def lights(pid: str, s: float) -> list[dict]:
+def lights(pid: str, s: float, body_dir: str = _BODY_DIR) -> list[dict]:
     """The clean light pieces over the body's painted lights (lights.json, the east frame; mirrored by s): the
     frame's cyan strips, the lamp's dome, the bar's segments with the green band, the hand's dark screen and its
     outline. Each a closed thin solid (its normals recalculated), its own glow material."""
     import json
-    path = raw_root() / LIGHTS
+    path = raw_root() / body_dir / "lights.json"
     if not path.is_file():
-        if (raw_root() / BODY).is_file():   # vents-b3: a body without its lights would build a silent vent
-            raise FileNotFoundError(f"{path}: the vent's lights.json is missing beside {raw_root() / BODY}")
+        if (raw_root() / body_dir / "body.glb").is_file():   # vents-b3: a body without its lights builds a silent vent
+            raise FileNotFoundError(f"{path}: the vent's lights.json is missing beside its body.glb")
         return []   # no raw folder (the pure-Python tests): no lights; a real build fails on the body first
     lj = json.loads(path.read_text(encoding="utf-8"))
     out = []
@@ -401,25 +432,28 @@ def station_vent(args, layout):
         parts.append(p)
 
     # the body: ship_vent_b.py's (its lamp, band and hand faces carry their own dark glass materials)
-    parts.append({"name": f"{pid}_body", "glb": str(raw_root() / BODY), "offset": (0.0, 0.0, FLOOR),
+    body_dir = _BODY_W if s < 0 else _BODY_DIR
+    pivot_v, well_v = depths(TIP_BACK_SIDE["w" if s < 0 else "e"])
+    cool_v = well_v + (COOL_V - WELL_V)
+    parts.append({"name": f"{pid}_body", "glb": str(raw_root() / body_dir / "body.glb"), "offset": (0.0, 0.0, FLOOR),
                   "mirror_u": s < 0})
     # the glow in the well behind the blades: the heat (the problem) and, 4 mm in front of it, the cool glow (calm)
     ou = (OPEN_U[0] + 0.004, OPEN_U[1] - 0.004)
     # vents-b3: the panels end under the top blade's root (b2's showed as a cyan plate in the slot over the top blade)
     oh = (FLOOR + OPEN_H[0] + 0.004, FLOOR + PIVOT_TOP - 0.03)
 
-    add("heat", L.box(*ou, WELL_V + 0.002, WELL_V + 0.006, *oh), "int_halo__vent_heat")
-    add("cool", L.box(*ou, COOL_V - 0.002, COOL_V + 0.002, *oh), "int_cyan__vent_cool")
+    add("heat", L.box(*ou, well_v + 0.002, well_v + 0.006, *oh), "int_halo__vent_heat")
+    add("cool", L.box(*ou, cool_v - 0.002, cool_v + 0.002, *oh), "int_cyan__vent_cool")
     # the marker on the bar's glass
     add("marker", L.box(GLASS_U[0] + 0.004, GLASS_U[1] - 0.004, GLASS_V + 0.002, GLASS_V + 0.009, FLOOR + GLASS_H[0],
                         FLOOR + GLASS_H[0] + MARK_H), "glow_nav_white__vent_marker",
         origin=(UC, GLASS_V + 0.005, FLOOR + GLASS_H[0]))
-    parts += lights(pid, s)
+    parts += lights(pid, s, body_dir)
     # the blades: seven copies of the one blade, leaves with their origin on the pivot (the caps' axis), shut
 
     u0, u1 = CAP_U[0] + 0.012, CAP_U[1] - 0.012
     for k in range(SLATS):
-        hinge = ((u0 + u1) / 2, PIVOT_V, FLOOR + PIVOT_TOP - k * PITCH)
+        hinge = ((u0 + u1) / 2, pivot_v, FLOOR + PIVOT_TOP - k * PITCH)
         parts.append({"name": f"{pid}_slat{k + 1}", "glb": str(raw_root() / BLADE_GLB), "mirror_u": s < 0,
                       "offset": (s * hinge[0], hinge[1], hinge[2]), "rot_u": -OPEN_RAD,
                       "origin": (s * hinge[0], hinge[1], hinge[2]),

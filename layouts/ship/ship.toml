@@ -148,18 +148,17 @@ at = [2.4090, -4.7912]                        # rebuild F: on the line between w
 normal = [-0.9500, 0.3123]                    # from the mouth (1.65, -7.1) to the hall's vertex (2.915, -3.252)), so
                                               # its 1.6 m plain band lies on those two plain modules, off the jamb
 room = "throat"
-recess_m = 0.08
-depth_m = 0.6                                 # the vents' own depth: the calm gill blades 19 cm past the frame
-                                              # (the engineer, art#263 comment 6363588759); the other wall units 0.5.
-                                              # Measured from the wall's face: the unit sits recess_m into the wall, so
-                                              # it stands at most depth_m - recess_m (0.52 m) out of it.
+recess_m = 0.0                                # vents-b5: back on the wall's face (b4 0.08 into it)
+depth_m = 0.6                                 # the vents' budget from the wall's face (b3: the calm gill blades 19 cm
+                                              # past the frame, the engineer, art#263 comment 6363588759); vents-b5: the
+                                              # blades inside the frame, the unit 0.50 deep; the other wall units 0.5
 
 [[stations.spot]]
 id = "vent_w"
 at = [-2.4090, -4.7912]
 normal = [0.9500, 0.3123]
 room = "throat"
-recess_m = 0.08
+recess_m = 0.0
 depth_m = 0.6
 
 [[stations.spot]]

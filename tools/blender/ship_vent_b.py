@@ -42,12 +42,24 @@ def flag(k):
 # --- the numbers (m; art#263 c6363433518 and ship_interior_vent.py) ---------------------------------------------------
 BEND, IN, TOP = 1.45, 0.55, 2.30          # the throat wall: vertical to 1.45, then 0.55 in at 2.3
 BACK = 0.006                              # the backs off the wall
-PIVOT_TOP, PITCH, SLATS, PIVOT_V = 1.276, 0.15, 7, 0.33
-CAP_U = (-0.48, 0.32)
-BLADE_U = (-0.441, 0.281)                 # the blade's ends, between the caps' inner edges
-WELL_V = 0.115
+PIVOT_TOP, PITCH, SLATS = 1.276, 0.15, 7
 FACE = 0.44                               # the frame's face (vents-b3: 2.5 cm prouder, deeper chamfers)
-FRAME_BACK = 0.07                         # vents-b4: the frame's sides' back (see body())
+# vents-b5: the box's opening, blades and right side BOX_DU along the wall (its left edge and foot stay), so the side
+# column is wider (COL_*); the opening's floor OPEN_FLOOR (b4 0.304), under the shut bottom blade's tip (0.238)
+BOX_DU = -0.04
+OPEN_FLOOR = 0.22
+CAP_U = (-0.48 + BOX_DU, 0.32 + BOX_DU)
+BLADE_U = (-0.441 + BOX_DU, 0.281 + BOX_DU)   # the blade's ends, between the caps' inner edges
+# vents-b5: the blades inside the frame (the engineer: b4's stuck out too far): the calm blades' tips TIP_BACK behind
+# the frame's face (`--tip-back` builds the review grid's), so the hinge line PIVOT_V = FACE - TIP_BACK - TIP_DV (b4
+# 0.33, the tips 14.7 cm past the face); the well's back WELL_GAP behind the hinge (the root's box turned shut and at
+# the cough's widest, with the cool glow's 1.4 cm in front of the back; b4 0.115)
+TIP_DV = 0.257                            # the calm blade's tip in front of its pivot (SECTION)
+TIP_BACK = float(arg("--tip-back", "0.03"))
+PIVOT_V = round(FACE - TIP_BACK - TIP_DV, 4)
+WELL_GAP = 0.065
+WELL_V = round(PIVOT_V - WELL_GAP, 4)
+FRAME_BACK = BACK                         # vents-b5: each frame panel's back on the wall (see body())
 LIP = 0.412                               # the inner lip's face, a step down
 FRONT = ((0.024, 0.024), (0.006, 0.003))  # vents-b3: the frame's chamfers (b2 1 cm)
 # vents-b4: the scanner at chest height (the engineer: b3's 1.398 was too high); the column's top (the bar's glass top,
@@ -55,16 +67,29 @@ FRONT = ((0.024, 0.024), (0.006, 0.003))  # vents-b3: the frame's chamfers (b2 1
 # bar's foot stays over the lower strip. `--scan-h` builds the review's other heights (ship_interior_vent.SCAN_H)
 SCAN_H = float(arg("--scan-h", "1.20"))
 COL_DROP = 1.398 - SCAN_H
-GLASS_U, GLASS_H, GLASS_V = (0.500, 0.556), (0.622, 1.548 - COL_DROP), 0.405
-SCAN_C, LAMP = (0.685, SCAN_H), (0.633, 0.335)   # the scanner's centre (u, h); the lamp's axis (u, v)
+# vents-b5: the side column wider (the engineer: the scanner's bezel overhung it): its left edge COL_U0 on the box's
+# new right edge (b4 0.466), the shaft COL_SHAFT and its front panel COL_PANEL (b4 0.475..0.785 and 0.48..0.78), the
+# bar and its lower strip BAR_DU along, the scanner's bezel SCAN_GAP from the bar's housing and inside the panel's edge
+# (1.8 cm), the lamp centred on the head
+COL_U0, COL_U1 = 0.466 + BOX_DU, 0.80
+COL_SHAFT, COL_PANEL = (0.435, 0.795), (0.44, 0.79)
+BAR_DU = -0.04
+SCAN_GAP = 0.015
+BEZEL_HW, BEZEL_HH = 0.112, 0.142         # the scanner's bezel's half width and height (vents-b3)
+GLASS_U, GLASS_H, GLASS_V = (0.500 + BAR_DU, 0.556 + BAR_DU), (0.622, 1.548 - COL_DROP), 0.405
+SCAN_U = round(GLASS_U[1] + 0.017 + SCAN_GAP + BEZEL_HW, 4)   # 0.660 (b4 0.685)
+SCAN_C, LAMP = (SCAN_U, SCAN_H), ((COL_PANEL[0] + COL_PANEL[1]) / 2, 0.335)   # the scanner's centre; the lamp's axis
+LAMP_R = 0.086                            # the lamp's collar (b4 0.078), wider with the head
 BOW = 0.014
 SHUT_SEAM = -0.010                        # vents-b3: shut is a real overlap, 1 cm straight from the front
 # outer frame and opening (u, h), counter-clockwise from the bottom left; the left bar split at 0.80 (two panels)
 # vents-b3: the header 14 cm deep (b2 9.2), its corner chamfer larger
-OUTER = [(-0.66, 0.10), (0.40, 0.10), (0.466, 0.17), (0.466, 1.47), (0.386, 1.55), (-0.56, 1.55), (-0.74, 1.37),
-         (-0.74, 0.80), (-0.74, 0.20)]
-OPEN = [(-0.49, 0.304), (0.33, 0.304), (0.388, 0.36), (0.388, 1.35), (0.33, 1.408), (-0.46, 1.408), (-0.56, 1.31),
-        (-0.56, 0.80), (-0.56, 0.37)]
+# vents-b5: all but the left edge BOX_DU along, the top-left chamfer 14 cm (b4 18), the opening's floor OPEN_FLOOR
+D = BOX_DU
+OUTER = [(-0.66, 0.10), (0.40 + D, 0.10), (0.466 + D, 0.17), (0.466 + D, 1.47), (0.386 + D, 1.55), (-0.56 + D, 1.55),
+         (-0.74, 1.37 - D), (-0.74, 0.80), (-0.74, 0.20)]
+OPEN = [(-0.49 + D, OPEN_FLOOR), (0.33 + D, OPEN_FLOOR), (0.388 + D, OPEN_FLOOR + 0.058), (0.388 + D, 1.35),
+        (0.33 + D, 1.408), (-0.46 + D, 1.408), (-0.56 + D, 1.31), (-0.56 + D, 0.80), (-0.56 + D, OPEN_FLOOR + 0.07)]
 
 MATS = {  # name: (base colour linear, metallic, roughness, emission, strength)
     # vents-b3: a dark patinated bronze (the concept's; b2's 0.15/0.08/0.032 read copper), a second panel tone for
@@ -202,18 +227,23 @@ def body():
     M = Mesh()
     strips = []
     # the box's back slab (the well's back) and its roof over the frame, the back following the wall's slant
-    solid(M, [(-0.72, 0.10), (0.45, 0.10), (0.45, 1.45), (-0.72, 1.45)], BACK, WELL_V, front=((0.01, 0.01),),
+    solid(M, [(-0.72, 0.10), (0.45 + D, 0.10), (0.45 + D, 1.45), (-0.72, 1.45)], BACK, WELL_V, front=((0.01, 0.01),),
           side="vent_b_tarnish")
     # vents-b3: the shoulder fatter (4 cm deeper, 3 cm higher; its back on the wall's slant)
     roof = [(BACK, 1.42), (0.34, 1.42), (0.34, 1.56), (0.27, 1.64), (cv(1.64) + 0.02, 1.64), (BACK + 0.012, 1.45)]
-    solid(M, [(v, h) for v, h in roof], -0.72, 0.45, axis="u", front=((0.022, 0.022), (0.006, 0.003)),
+    solid(M, [(v, h) for v, h in roof], -0.72, 0.45 + D, axis="u", front=((0.022, 0.022), (0.006, 0.003)),
           back=((0.022, 0.022), (0.006, 0.003)), mat="vent_b_bronze2")
     # the frame: nine panels from the outline to 3 cm outside the opening, then the lip round the opening
     mid = inset(ccw(OPEN), -0.03)
-    # vents-b4: the frame's sides run back to FRAME_BACK (b3's started at the well's back, 11.5 cm out): with the
-    # recess (ship_interior_vent.RECESS 8 cm) they reach 1 cm into the wall's plate, which wraps them; not further
-    # back, as the frame's top over the bend would stick through the slanted wall
-    ring(M, OUTER, mid, FRAME_BACK, FACE, front=FRONT, side="vent_b_tarnish", tones=True)
+    # vents-b5: each frame panel's back on the wall, FRAME_BACK off the face at the panel's highest point (b3's
+    # started at the well's back and floated; b4's 7 cm out sank into the recess); the panels over the bend stop on
+    # the slanted wall
+    n = len(OUTER)
+    for i in range(n):
+        quad = [OUTER[i], OUTER[(i + 1) % n], mid[(i + 1) % n], mid[i]]
+        w0 = FRAME_BACK + cv(max(h for _, h in quad))
+        solid(M, inset(ccw(quad), 0.002), w0, FACE, front=FRONT, side="vent_b_tarnish",
+              **({"mat": "vent_b_bronze2"} if i % 2 else {}))
     ring(M, mid, OPEN, WELL_V, LIP, gap=0.003, side="vent_b_well", front=((0.012, 0.012),))
     # the header: a sill under the opening's top, so no glow shows over the top blade (front_closed); vents-b3: dark
     # tarnish with no polished chamfer, its face at the lip (b2's lit chamfer read as a cyan plate over the top blade)
@@ -222,20 +252,23 @@ def body():
           edge="vent_b_tarnish")
     # the cap rails in the well and the caps (copper, on a dark socket, a boss in the middle)
     for u0, u1 in ((OPEN[-1][0], BLADE_U[0] - 0.004), (BLADE_U[1] + 0.004, OPEN[3][0])):
-        solid(M, [(u0, 0.31), (u1, 0.31), (u1, 1.40), (u0, 1.40)], WELL_V, 0.30, mat="vent_b_dark",
+        solid(M, [(u0, OPEN_FLOOR + 0.006), (u1, OPEN_FLOOR + 0.006), (u1, 1.40), (u0, 1.40)], WELL_V, PIVOT_V - 0.03,
+              mat="vent_b_dark",
               front=((0.006, 0.006),))
     for cu in CAP_U:
         for k in range(SLATS):
             c = (cu, PIVOT_TOP - k * PITCH)
-            solid(M, ngon(c, 0.034, 16), 0.30, 0.322, mat="vent_b_dark", front=((0.004, 0.003),))
-            solid(M, ngon(c, 0.029, 16), 0.318, 0.346, mat="vent_b_copper", edge="vent_b_copper",
+            dv = PIVOT_V - 0.33   # vents-b5: the caps on the hinge line, set back with it
+            solid(M, ngon(c, 0.034, 16), 0.30 + dv, 0.322 + dv, mat="vent_b_dark", front=((0.004, 0.003),))
+            solid(M, ngon(c, 0.029, 16), 0.318 + dv, 0.346 + dv, mat="vent_b_copper", edge="vent_b_copper",
                   front=((0.008, 0.007), (0.002, 0.003)))
-            solid(M, ngon(c, 0.012, 12), 0.34, 0.356, mat="vent_b_copper", edge="vent_b_edge", front=((0.004, 0.003),))
+            solid(M, ngon(c, 0.012, 12), 0.34 + dv, 0.356 + dv, mat="vent_b_copper", edge="vent_b_edge",
+                  front=((0.004, 0.003),))
     # the foot at the bottom left and the plinth under the box
     # vents-b3: the feet larger (5 cm higher, 3 cm prouder, 2 cm wider)
     solid(M, [(-0.80, 0.0), (-0.52, 0.0), (-0.52, 0.09), (-0.60, 0.24), (-0.74, 0.24), (-0.80, 0.12)], BACK, 0.47,
           front=((0.024, 0.024), (0.006, 0.003)))
-    solid(M, [(-0.56, 0.0), (0.45, 0.0), (0.45, 0.10), (-0.56, 0.10)], 0.03, 0.385, front=((0.016, 0.016),))
+    solid(M, [(-0.56, 0.0), (0.45 + D, 0.0), (0.45 + D, 0.10), (-0.56, 0.10)], 0.03, 0.385, front=((0.016, 0.016),))
     # the frame's strips (each on its panel's face: the centre, the long axis, the half extents)
     def on_panel(i, e1, e2, t=0.5, lift=0.0):
         a, b = OUTER[i], OUTER[(i + 1) % len(OUTER)]
@@ -255,14 +288,18 @@ def body():
                for i, j in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
         solid(M, pts, FACE - 0.004, FACE + 0.0012, mat="vent_b_dark", front=())
     # --- the column ---
-    solid(M, [(0.43, 0.0), (0.80, 0.0), (0.80, 0.11), (0.765, 0.16), (0.465, 0.16), (0.43, 0.11)], BACK, 0.49,
-          front=((0.024, 0.024), (0.006, 0.003)))
-    solid(M, [(0.47, 0.16), (0.785, 0.16), (0.785, 0.28), (0.47, 0.28)], BACK, 0.43, front=((0.018, 0.018),))
+    # vents-b5: the foot, its step, the shaft, the panel and the head wider (the foot COL_U0 - 0.036..COL_U1, b4
+    # 0.43..0.80)
+    f0 = COL_U0 - 0.036
+    solid(M, [(f0, 0.0), (COL_U1, 0.0), (COL_U1, 0.11), (COL_U1 - 0.035, 0.16), (f0 + 0.035, 0.16), (f0, 0.11)], BACK,
+          0.49, front=((0.024, 0.024), (0.006, 0.003)))
+    solid(M, [(COL_SHAFT[0] - 0.005, 0.16), (COL_SHAFT[1], 0.16), (COL_SHAFT[1], 0.28), (COL_SHAFT[0] - 0.005, 0.28)],
+          BACK, 0.43, front=((0.018, 0.018),))
     top = 1.62 - COL_DROP
     shaft = ([(BACK, 0.25), (0.36, 0.25), (0.36, top), (cv(top) + 0.012, top), (BACK, 1.45)] if top > BEND + 0.02
              else [(BACK, 0.25), (0.36, 0.25), (0.36, top), (BACK, top)])
-    solid(M, shaft, 0.475, 0.785, axis="u", front=((0.014, 0.014),), back=((0.014, 0.014),))
-    solid(M, octo(0.48, 0.27, 0.78, 1.60 - COL_DROP, 0.03), 0.30, 0.38, front=((0.012, 0.012), (0.003, 0.002)),
+    solid(M, shaft, COL_SHAFT[0], COL_SHAFT[1], axis="u", front=((0.014, 0.014),), back=((0.014, 0.014),))
+    solid(M, octo(COL_PANEL[0], 0.27, COL_PANEL[1], 1.60 - COL_DROP, 0.03), 0.30, 0.38, front=((0.012, 0.012), (0.003, 0.002)),
           side="vent_b_tarnish")
     # the light bar: a chamfered housing round the glass (the glass 1 mm into it)
     g_out = octo(GLASS_U[0] - 0.017, GLASS_H[0] - 0.024, GLASS_U[1] + 0.017, GLASS_H[1] + 0.024, 0.012)
@@ -272,15 +309,17 @@ def body():
               (GLASS_U[1] + 0.001, GLASS_H[1] + 0.001), (GLASS_U[0] - 0.001, GLASS_H[1] + 0.001)], 0.37, GLASS_V,
           mat="vent_a_body__band", front=())
     # the lower strip in its bezel under the bar
-    s_out = octo(0.488, 0.29, 0.568, 0.565, 0.012)
-    s_in = octo(0.504, 0.306, 0.552, 0.549, 0.005)
+    b = BAR_DU
+    s_out = octo(0.488 + b, 0.29, 0.568 + b, 0.565, 0.012)
+    s_in = octo(0.504 + b, 0.306, 0.552 + b, 0.549, 0.005)
     ring(M, s_out, s_in, 0.36, 0.42, gap=0.0, front=((0.009, 0.008),))
-    solid(M, [(0.503, 0.305), (0.553, 0.305), (0.553, 0.55), (0.503, 0.55)], 0.37, 0.397, mat="vent_b_dark", front=())
-    strips.append(slab_light((0.528, 0.397, 0.4275), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0), 0.112, 0.017))
+    solid(M, [(0.503 + b, 0.305), (0.553 + b, 0.305), (0.553 + b, 0.55), (0.503 + b, 0.55)], 0.37, 0.397,
+          mat="vent_b_dark", front=())
+    strips.append(slab_light((0.528 + b, 0.397, 0.4275), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0), 0.112, 0.017))
     # the scanner: an octagonal bezel (two chamfers), its screen 1.5 cm behind the bezel's face
     su, sh = SCAN_C
     # vents-b3: the bezel larger and prouder (b2 21 x 25 cm, 9 cm out)
-    b_out = octo(su - 0.112, sh - 0.142, su + 0.112, sh + 0.142, 0.045)
+    b_out = octo(su - BEZEL_HW, sh - BEZEL_HH, su + BEZEL_HW, sh + BEZEL_HH, 0.045)
     b_in = inset(ccw(b_out), 0.026)
     ring(M, b_out, b_in, 0.36, 0.47, gap=0.0, front=((0.016, 0.015), (0.004, 0.003)))
     screen_v = 0.448
@@ -290,9 +329,10 @@ def body():
             "n": [0.0, 1.0, 0.0], "poly": [[round(x, 5), round(y, 5)] for x, y in b_in]}
     # the head and the lamp's stepped collar; the core under the dome (`__lamp`)
     d = COL_DROP
-    solid(M, [(0.48, 1.60 - d), (0.78, 1.60 - d), (0.78, 1.665 - d), (0.745, 1.70 - d), (0.515, 1.70 - d),
-              (0.48, 1.665 - d)], cv(1.70 - d) + 0.012, 0.40, front=((0.014, 0.014), (0.004, 0.002)))
-    solid(M, ngon(LAMP, 0.078, 8, math.pi / 8), 1.69 - d, 1.726 - d, axis="h", front=((0.008, 0.008),), back=())
+    p0, p1 = COL_PANEL
+    solid(M, [(p0, 1.60 - d), (p1, 1.60 - d), (p1, 1.665 - d), (p1 - 0.035, 1.70 - d), (p0 + 0.035, 1.70 - d),
+              (p0, 1.665 - d)], cv(1.70 - d) + 0.012, 0.40, front=((0.014, 0.014), (0.004, 0.002)))
+    solid(M, ngon(LAMP, LAMP_R, 8, math.pi / 8), 1.69 - d, 1.726 - d, axis="h", front=((0.008, 0.008),), back=())
     solid(M, ngon(LAMP, 0.066, 16), 1.726 - d, 1.743 - d, axis="h", mat="vent_b_dark", front=((0.002, 0.002),))
     solid(M, ngon(LAMP, 0.071, 16), 1.743 - d, 1.757 - d, axis="h", front=((0.004, 0.004),))
     solid(M, ngon(LAMP, 0.036, 12), 1.756 - d, 1.79 - d, axis="h", mat="vent_a_body__lamp", front=())
@@ -476,6 +516,7 @@ def main():
     rep["body_box"] = {k: [round(min(p[i] for p in M.v), 3), round(max(p[i] for p in M.v), 3)]
                        for i, k in enumerate("uvh")}
     rep["scan_h"], rep["col_drop"] = SCAN_H, round(COL_DROP, 4)
+    rep["tip_back"], rep["pivot_v"], rep["well_v"], rep["scan_u"] = TIP_BACK, PIVOT_V, WELL_V, SCAN_U
     rep["back_clear_min"] = round(min(v - cv(h) for _, v, h in M.v), 4)   # every vertex in front of the wall
     export(ob, out / "body.glb")
     bpy.data.objects.remove(ob, do_unlink=True)
