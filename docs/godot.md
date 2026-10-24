@@ -1238,6 +1238,16 @@ pilot's static premium heads"):
     with the triangles, so its edge follows the smoothed rim. Chameleon (`lively/v7rim3`): zigzag 3.41 to 0.81 mm
     median, 18.44 to 4.49 max; largest move 11.2 mm (median 1.8), 494 rim vertices, 20 fixed (junctions). Axolotl
     (`lively/axolotl_v7rim3`): 2.20 to 0.52 median, 8.16 to 1.37 max; largest move 4.7 mm (median 1.2).
+  - A3d: those v7rim3 numbers came with folded triangles. `rim_smooth()` now counts the triangles round a moved
+    vertex whose geometric normal flips or whose area drops under 10 % (`bad_triangles` in the rim report and
+    `pit_geometry.rim_bad_triangles`) and halves the step until there are none (the build fails at 1/64). At 4 steps:
+    chameleon 311 at the full step, clean at 0.25 (`lively/v7rim_a3d`: zigzag 3.41 to 2.61 mm median, 18.44 to 14.20
+    max, largest move 2.8 mm); axolotl 40, clean at 1/16 (`lively/axolotl_v7rim_a3d`: 2.20 to 2.09, 8.16 to 7.71). So
+    the guarded smoothing barely changes the rim: a rim that is not a sawtooth needs another route (re-meshing the
+    lid's lip), not more Taubin steps. Whole-head gate on `anim_bare/a3d/build` vs r5: chameleon 0.311, 0.221, 0.111,
+    0.306; axolotl 0.079, 0.027, 0.065, 0.027 (A3's numbers again).
+  - A3d: `alien_static.gdshader` reads its maps with `texture()` again (A3c's `textureGrad` swap reverted; only the rim
+    rule's band read keeps UV's gradients), so the merged look is the one before A3c by construction.
   - The whole-head gate vs r5 (front, left, back, right; A3 before, A3b after): chameleon 0.314/0.316,
     0.221/0.221, 0.111/0.111, 0.307/0.305; axolotl 0.078/0.097, 0.027/0.031, 0.065/0.065, 0.027/0.030. The backs do not
     move; only the face's rim and (the chameleon) the eye texels' normal map changed.
