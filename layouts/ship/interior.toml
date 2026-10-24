@@ -334,10 +334,10 @@ place = [
   ["arch_strip_l", [-8.7735, 0.9369, 0.0], -171.336],
   ["arch_strip_r", [-8.7735, 0.9369, 0.0], -171.336],
   ["floor_light", [1.618, -6.2367, 0.0], -71.802],
-  ["th_wall_low_a", [1.3325, -4.8637, 0.0], -71.802],
+  ["th_wall_low_flat_a", [1.3325, -4.8637, 0.0], -71.802],
   ["th_wall_mid", [1.3325, -4.8637, 0.0], -71.802],
   ["th_wall_up_a", [1.3325, -4.8637, 0.0], -71.802],
-  ["th_wall_low_b", [1.5855, -4.0941, 0.0], -71.802],
+  ["th_wall_low_flat_b", [1.5855, -4.0941, 0.0], -71.802],
   ["th_wall_mid", [1.5855, -4.0941, 0.0], -71.802],
   ["th_wall_up_b", [1.5855, -4.0941, 0.0], -71.802],
   ["floor_light", [2.4894, -3.5859, 0.0], -71.802],
@@ -348,10 +348,10 @@ place = [
   ["th_clip_h", [1.9166, -3.087, 0.0], -71.802],
   ["th_wall_up_end_e", [1.8385, -3.3245, 0.0], -71.802],
   ["floor_light", [-1.618, -6.2367, 0.0], 71.802],
-  ["th_wall_low_b", [-1.3325, -4.8637, 0.0], 71.802],
+  ["th_wall_low_flat_b", [-1.3325, -4.8637, 0.0], 71.802],
   ["th_wall_mid", [-1.3325, -4.8637, 0.0], 71.802],
   ["th_wall_up_b", [-1.3325, -4.8637, 0.0], 71.802],
-  ["th_wall_low_a", [-1.5855, -4.0941, 0.0], 71.802],
+  ["th_wall_low_flat_a", [-1.5855, -4.0941, 0.0], 71.802],
   ["th_wall_mid", [-1.5855, -4.0941, 0.0], 71.802],
   ["th_wall_up_a", [-1.5855, -4.0941, 0.0], 71.802],
   ["floor_light", [-2.4894, -3.5859, 0.0], 71.802],
@@ -748,8 +748,20 @@ args = { length = 0.81012, tone = "b", prof = "throat" }
 id = "th_wall_mid"
 builder = "cor_wall_mid"
 collide = true
-args = { length = 0.81012, prof = "throat" }
+args = { length = 0.81012, prof = "throat", flat = true }
 plain = [-0.40506, 0.40506, -1.25, -0.95]
+
+[[pieces]]
+id = "th_wall_low_flat_a"
+builder = "cor_wall_low"
+collide = true
+args = { length = 0.81012, tone = "a", prof = "throat", flat = true }
+
+[[pieces]]
+id = "th_wall_low_flat_b"
+builder = "cor_wall_low"
+collide = true
+args = { length = 0.81012, tone = "b", prof = "throat", flat = true }
 
 [[pieces]]
 id = "th_channel"
@@ -1150,7 +1162,7 @@ builder = "station_vent"
 collide = false
 args = { id = "station_vent_e", side = "e" }
 spot = "vent_e"
-unit = [-0.8, 0.8, -0.01, 0.6, -0.02, 1.85]
+unit = [-0.8, 0.8, -0.09, 0.52, -0.02, 1.85]
 
 [[pieces]]
 id = "station_vent_w"
@@ -1158,4 +1170,4 @@ builder = "station_vent"
 collide = false
 args = { id = "station_vent_w", side = "w" }
 spot = "vent_w"
-unit = [-0.8, 0.8, -0.01, 0.6, -0.02, 1.85]
+unit = [-0.8, 0.8, -0.09, 0.52, -0.02, 1.85]

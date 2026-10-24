@@ -615,8 +615,9 @@ def check_units(layout: dict[str, Any]) -> list[str]:
         clear = by_id[s["room"]]["clear_h"]
         if u0 < -half - TOL or u1 > half + TOL:
             problems.append(f"station piece {p['id']}: {u0:g}..{u1:g} m along the wall, wants within +-{half:g}")
-        if v0 < -0.05 or v1 > depth + TOL:
-            problems.append(f"station piece {p['id']}: {v0:g}..{v1:g} m from the wall, wants 0..{depth:g}")
+        back = -0.05 - s.get("recess_m", 0.0)   # vents-b4: a recessed station's back that far behind the face
+        if v0 < back or v1 > depth + TOL:
+            problems.append(f"station piece {p['id']}: {v0:g}..{v1:g} m from the wall, wants {back:g}..{depth:g}")
         if h0 < -0.05 or h1 > clear - 0.05:
             problems.append(f"station piece {p['id']}: up to {h1:g} m, wants under {clear - 0.05:g} (the room's clear "
                             "height)")

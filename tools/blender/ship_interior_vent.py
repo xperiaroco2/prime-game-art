@@ -24,6 +24,7 @@ box) and `<id>_col1-convcolonly` (the column)."""
 
 from __future__ import annotations
 
+import json
 import math
 import os
 import sys
@@ -56,9 +57,22 @@ for _name, _base, _upd in (
         ("int_dark__vent_screen", "int_dark", dict(base=(0.002, 0.002, 0.003, 1.0), metallic=0.0, roughness=0.7))):
     L.MATERIALS[_name] = {**L.MATERIALS[_base], **_upd}
 
-# --- the body (ship_vent_b.py, vents-b1, 2026-10-24; vents-b3 the heavier frame) ------------------------------------
-BODY = "ship/v4/vents-b/b3/body.glb"          # under the raw folder (way B: built in Blender, flat facets, chamfers)
-LIGHTS = "ship/v4/vents-b/b3/lights.json"     # the light pieces' places on the body (ship_vent_b.py)
+# --- the body (ship_vent_b.py, vents-b1, 2026-10-24; vents-b3 the heavier frame; vents-b4 the recess, the scanner) ---
+# vents-b4: a review build (`SHIP_VENT_REVIEW`, a JSON object: "dir" the body's folder under the raw folder, "scan_h"
+# its scanner height, "recess" {"e": m, "w": m}) builds the grids' variants; never set for the game's build
+_REVIEW = json.loads(os.environ.get("SHIP_VENT_REVIEW") or "{}")
+_BODY_DIR = _REVIEW.get("dir", "ship/v4/vents-b/b4")
+BODY = _BODY_DIR + "/body.glb"                # under the raw folder (way B: built in Blender, flat facets, chamfers)
+LIGHTS = _BODY_DIR + "/lights.json"           # the light pieces' places on the body (ship_vent_b.py)
+# vents-b4: the vent sits RECESS into the throat wall (the engineer: b3 looked stuck on, floating in front of it): the
+# piece's every part moves RECESS behind the spot (the wall's face); the frame's sides and the column's back run into
+# the wall's plain plate (th_wall_low_flat_*, th_wall_mid: flat on the vents' modules, ship_interior_place.TH_PLAIN).
+# One source: ship.toml's `recess_m` on the vents' spots (ship --check allows the unit's back that far behind the face)
+RECESS = next(s["recess_m"] for s in S._SHIP["stations"]["spot"] if s["id"] == "vent_e")
+RECESS_SIDE = {k: float(_REVIEW.get("recess", {}).get(k, RECESS)) for k in "ew"}
+# vents-b4: the scanner's centre over the deck (ship_vent_b.SCAN_H; b3 1.398), the column's top dropped with it
+SCAN_H = float(_REVIEW.get("scan_h", 1.20))
+COL_DROP = 1.398 - SCAN_H
 LIGHT_OUT = (0.0015, 0.0045)                  # a light piece's back and front off its surface
 # the light bar's segments up the glass (front_ortho, bottom to top): white-hot, amber, the green band, amber
 # (the green band at 141..146.4 cm of the bar's 62.2..154.8, the comment's numbers)
@@ -66,12 +80,12 @@ BAR = (("bar_hot", 0.0, 0.31, "glow_nav_white__vent_bar_hot"), ("bar", 0.31, 0.8
        ("band", 0.851, 0.909, "glow_nav_green__vent_band"), ("bar_top", 0.909, 1.0, "glow_amber__vent_bar"))
 BOX_U, COL_U = (-0.80, 0.466), (0.466, 0.80)  # the box with its feet, the column
 BOX_TOP, BOX_FACE = 1.64, 0.44                # the box's top, the frame's face (v; vents-b3: the fatter shoulder)
-COL_TOP, COL_FACE = 1.84, 0.40                # the column's top (the lamp's dome after the 20 cm raise), its face
+COL_TOP, COL_FACE = 1.84 - COL_DROP, 0.40     # the column's top (the lamp's dome, vents-b4 dropped), its face
 WELL_V = 0.115                                # the well's back
 OPEN_U, OPEN_H = (-0.44, 0.28), (0.30, 1.33)   # the well's opening between the cap rows (way B: under the header)
 CAP_U = (-0.48, 0.32)                         # the cap rows' centres
 PIVOT_V = 0.33                                # the caps' axis
-GLASS_U, GLASS_H = (0.500, 0.556), (0.622, 1.548)   # the light bar's glass after the raise (the comment's 62.2..154.8)
+GLASS_U, GLASS_H = (0.500, 0.556), (0.622, 1.548 - COL_DROP)   # the light bar's glass (vents-b4: its top dropped)
 GLASS_V = 0.405                               # the glass's face
 
 # --- the blades ------------------------------------------------------------------------------------------------------
@@ -92,7 +106,9 @@ MARK_H = 0.03                                 # the marker's height; it slides f
 MARK_TRAVEL = GLASS_H[1] - GLASS_H[0] - MARK_H
 COOL_V = WELL_V + 0.012                       # the cool glow's panel, just in front of the heat's
 UC = (GLASS_U[0] + GLASS_U[1]) / 2            # the bar's centre line
-UNIT = [-0.80, 0.80, -0.01, 0.60, -0.02, 1.85]   # u0 u1 v0 v1 h0 h1 (the calm blades' tips at v 0.598, the lamp 1.841)
+# u0 u1 v0 v1 h0 h1 in the spot's frame (the calm blades' tips at v 0.598 - RECESS; vents-b4: the backs RECESS behind
+# the wall's face)
+UNIT = [-0.80, 0.80, round(-0.01 - RECESS, 4), round(0.60 - RECESS, 4), -0.02, 1.85]
 
 
 def raw_root() -> Path:
@@ -172,39 +188,84 @@ def ribbon(pts, w: float) -> list[list[tuple[float, float]]]:
              (a[0] + sa[0], a[1] + sa[1])] for a, b, sa, sb in zip(pts, pts[1:], side, side[1:])]
 
 
-def hand_outline() -> list[tuple[float, float]]:
-    """The scanner's hand as one outline (the palm's width 1, the wrist at y 0, open there): a thumb and three
-    fingers of one length (the four-fingered rule), the thumb on the left, tilted out 50 deg."""
-    def u_shape(cx, cy, w, length, ang, steps=8):
-        up, rt = (-math.sin(ang), math.cos(ang)), (math.cos(ang), math.sin(ang))
-        r = w / 2
-        tip = (cx + up[0] * (length - r), cy + up[1] * (length - r))
-        pts = [(cx - rt[0] * r, cy - rt[1] * r)]
-        for i in range(steps + 1):
-            a = math.pi - math.pi * i / steps
-            pts.append((tip[0] + rt[0] * r * math.cos(a) + up[0] * r * math.sin(a),
-                        tip[1] + rt[1] * r * math.cos(a) + up[1] * r * math.sin(a)))
-        pts.append((cx + rt[0] * r, cy + rt[1] * r))
-        return pts
+HAND_W = 0.085     # vents-b4: the hand's line width (the palm's width 1): one even stroke all round
+HAND_K = 0.20      # the fillet where the thumb meets the palm (0.12 folded the stroke's outer side there)
 
-    def outside(pts, x):   # the thumb's points left of the palm's side, cut where they cross it
-        out = []
-        for a, b in zip(pts, pts[1:]):
-            if a[0] <= x:
-                out.append(a)
-            if (a[0] - x) * (b[0] - x) < 0:
-                t = (x - a[0]) / (b[0] - a[0])
-                out.append((x, a[1] + t * (b[1] - a[1])))
-        if pts[-1][0] <= x:
-            out.append(pts[-1])
-        return out
-    pts = [(-0.40, 0.0), (-0.5, 0.14)]
-    pts += outside(u_shape(-0.36, 0.34, 0.27, 0.62, math.radians(50)), -0.5)
-    pts += [(-0.5, 0.80)]
-    for cx in (-0.335, 0.0, 0.335):
-        pts += u_shape(cx, 0.88, 0.25, 0.62, 0.0)
-    pts += [(0.5, 0.80), (0.5, 0.14), (0.40, 0.0)]
-    return pts
+
+def _hand_field(x: float, y: float) -> float:
+    """vents-b4: the hand's silhouette as a signed distance (the palm's width 1, its heel at y 0; negative inside): a
+    palm with rounded heel corners, three fingers of one length (capsules 0.25 wide, U-shaped crotches 0.125 wide), a
+    thumb tilted out 48 deg, filleted into the palm."""
+    def capsule(ax, ay, bx, by, r):
+        px, py, dx, dy = x - ax, y - ay, bx - ax, by - ay
+        t = max(0.0, min(1.0, (px * dx + py * dy) / (dx * dx + dy * dy)))
+        return math.hypot(px - dx * t, py - dy * t) - r
+    # the palm: x -0.5..0.5, y 0..1.08, its heel corners rounded 0.30 (its top under the fingers)
+    rr = 0.30 if y < 0.54 else 0.0
+    qx, qy = abs(x) - 0.5 + rr, abs(y - 0.54) - 0.54 + rr
+    palm = math.hypot(max(qx, 0.0), max(qy, 0.0)) + min(max(qx, qy), 0.0) - rr
+    d = min([palm] + [capsule(cx, 0.70, cx, HAND_TIP - 0.125, 0.125) for cx in HAND_FINGERS])
+    for gx in (-0.1875, 0.1875):   # the crotches: round at the bottom, the gap's half width
+        d = max(d, -capsule(gx, 1.08, gx, 3.0, 0.0625))
+    th = capsule(-0.30, 0.40, -0.746, 0.801, 0.13)
+    h = max(0.0, min(1.0, 0.5 + 0.5 * (th - d) / HAND_K))   # a smooth union (polynomial smin)
+    return th * (1 - h) + d * h - HAND_K * h * (1 - h)
+
+
+HAND_FINGERS = (-0.375, 0.0, 0.375)   # the three fingers' centre lines
+HAND_TIP = 1.705                      # their tips (one length)
+
+
+def hand_outline(step: float = 0.004, turn_deg: float = 7.0, max_len: float = 0.10) -> list[tuple[float, float]]:
+    """vents-b4: the hand's silhouette (_hand_field's zero line) as a closed counter-clockwise loop: walked along its
+    tangent from the palm's right side, pulled back onto the line each step, then kept where it turns turn_deg or
+    every max_len (smooth curves, few points on the straights). b3's ribbon of mitred corners read ugly."""
+    def grad(x, y, e=1e-5):
+        gx = (_hand_field(x + e, y) - _hand_field(x - e, y)) / (2 * e)
+        gy = (_hand_field(x, y + e) - _hand_field(x, y - e)) / (2 * e)
+        n = math.hypot(gx, gy) or 1.0
+        return gx / n, gy / n
+
+    def snap(x, y):
+        for _ in range(3):
+            f = _hand_field(x, y)
+            gx, gy = grad(x, y)
+            x, y = x - f * gx, y - f * gy
+        return x, y
+    start = snap(0.5, 0.6)
+    pts, (x, y), walked = [start], start, 0.0
+    while True:
+        gx, gy = grad(x, y)
+        x, y = snap(x - gy * step, y + gx * step)
+        walked += step
+        if walked > 1.0 and math.dist((x, y), start) < step * 1.5:
+            break
+        pts.append((x, y))
+        if walked > 40.0:
+            raise RuntimeError("the hand's outline did not close")
+    keep, last_a, run = [pts[0]], None, 0.0
+    for a, b in zip(pts, pts[1:]):
+        ang = math.atan2(b[1] - a[1], b[0] - a[0])
+        run += math.dist(a, b)
+        if last_a is None:
+            last_a = ang
+        if abs((ang - last_a + math.pi) % (2 * math.pi) - math.pi) >= math.radians(turn_deg) or run >= max_len:
+            keep.append(b)
+            last_a, run = ang, 0.0
+    return keep
+
+
+def hand_stroke(pts, w: float = HAND_W):
+    """The loop's even stroke: per point its outer and inner offsets w/2 along the field's normal (exact on a level
+    line; every curve's radius is over w/2, so neither side folds)."""
+    out = []
+    for x, y in pts:
+        e = 1e-5
+        gx = (_hand_field(x + e, y) - _hand_field(x - e, y)) / (2 * e)
+        gy = (_hand_field(x, y + e) - _hand_field(x, y - e)) / (2 * e)
+        n = math.hypot(gx, gy) or 1.0
+        out.append(((x + gx / n * w / 2, y + gy / n * w / 2), (x - gx / n * w / 2, y - gy / n * w / 2)))
+    return out
 
 
 def lights(pid: str, s: float) -> list[dict]:
@@ -274,23 +335,26 @@ def lights(pid: str, s: float) -> list[dict]:
     sf = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))] + [(j, (j + 1) % n, n + (j + 1) % n, n + j)
                                                                    for j in range(n)]
     put("screen", (sv, sf), "int_dark__vent_screen")
-    # way B: the hand as big as the screen allows (4 mm in from its edges), centred on it
-    pts = hand_outline()
-    lw = 0.095   # vents-b3: a bolder neon line (b2 0.075)
-    x0, x1 = min(x for x, _ in pts) - lw, max(x for x, _ in pts) + lw
-    y0, y1 = min(y for _, y in pts) - lw, max(y for _, y in pts) + lw
-    scale = min((wu * 0.92 - 0.004) * 2 / (x1 - x0), (wh * 0.94 - 0.004) * 2 / (y1 - y0))
+    # vents-b4: the hand an even stroke round its smooth silhouette (hand_outline, hand_stroke), its box 80 % of the
+    # screen's height, centred on the screen, every point 1 cm inside the octagon
+    st = hand_stroke(hand_outline())
+    allp = [q for pair in st for q in pair]
+    x0, x1 = min(x for x, _ in allp), max(x for x, _ in allp)
+    y0, y1 = min(y for _, y in allp), max(y for _, y in allp)
+    scale = min(wh * 2 * 0.80 / (y1 - y0), wu * 2 * 0.90 / (x1 - x0))
     xc, yc = (x0 + x1) / 2, (y0 + y1) / 2
-    inner = shrink(poly, 0.004)   # the outline's every corner (its ribbon's half width out) 4 mm inside the octagon
-    ring = [(x + dx, y + dy) for x, y in pts for dx in (-lw, lw) for dy in (-lw, lw)]
-    while scale > 0.01 and not all(inside(inner, (su + (x - xc) * scale, sh + (y - yc) * scale)) for x, y in ring):
+    inner = shrink(poly, 0.010)
+    while scale > 0.01 and not all(inside(inner, (su + (x - xc) * scale, sh + (y - yc) * scale)) for x, y in allp):
         scale *= 0.98
-    hv, hf = [], []
-    for q in ribbon(pts, lw):
-        b = len(hv)
-        hv += [(su + (x - xc) * scale, face + d, sh + (y - yc) * scale) for d in (0.0022, 0.0036) for x, y in q]
-        hf += [tuple(b + i for i in f) for f in ((0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3),
-                                                  (3, 7, 4, 0))]
+    n = len(st)
+    hv = [(su + (q[0] - xc) * scale, face + d, sh + (q[1] - yc) * scale)
+          for d in (0.0036, 0.0022) for pair in st for q in pair]   # the front's outer, inner pairs, then the back's
+    hf = []
+    for i in range(n):
+        j = (i + 1) % n
+        fo, fi, fo2, fi2 = 2 * i, 2 * i + 1, 2 * j, 2 * j + 1
+        bo, bi, bo2, bi2 = fo + 2 * n, fi + 2 * n, fo2 + 2 * n, fi2 + 2 * n
+        hf += [(fo, fo2, fi2, fi), (bo, bi, bi2, bo2), (fo, bo, bo2, fo2), (fi, fi2, bi2, bi)]
     put("hand", (hv, hf), "glow_cyan__vent_hand")
     return out
 
@@ -363,4 +427,14 @@ def station_vent(args, layout):
     # convex colliders: the box and the column, their backs on the wall
     add("col0-convcolonly", prism(BOX_U[0], BOX_U[1], wall_profile(BOX_FACE, BOX_TOP)), DARK)
     add("col1-convcolonly", prism(COL_U[0], COL_U[1], wall_profile(COL_FACE, COL_TOP)), DARK)
+    # vents-b4: the whole vent RECESS into the wall (the parts, the body's and blades' offsets, the leaves' origins)
+    r = RECESS_SIDE["w" if s < 0 else "e"]
+    for p in parts:
+        if "verts" in p:
+            p["verts"] = [(x, y - r, h) for x, y, h in p["verts"]]
+        for k in ("offset", "origin"):
+            if k in p:
+                p[k] = (p[k][0], p[k][1] - r, p[k][2])
+        if "hull" in p:
+            p["hull"] = [(x, y - r, h) for x, y, h in p["hull"]]
     return parts

@@ -47,10 +47,16 @@ CAP_U = (-0.48, 0.32)
 BLADE_U = (-0.441, 0.281)                 # the blade's ends, between the caps' inner edges
 WELL_V = 0.115
 FACE = 0.44                               # the frame's face (vents-b3: 2.5 cm prouder, deeper chamfers)
+FRAME_BACK = 0.07                         # vents-b4: the frame's sides' back (see body())
 LIP = 0.412                               # the inner lip's face, a step down
 FRONT = ((0.024, 0.024), (0.006, 0.003))  # vents-b3: the frame's chamfers (b2 1 cm)
-GLASS_U, GLASS_H, GLASS_V = (0.500, 0.556), (0.622, 1.548), 0.405
-SCAN_C, LAMP = (0.685, 1.398), (0.633, 0.335)   # the scanner's centre (u, h); the lamp's axis (u, v)
+# vents-b4: the scanner at chest height (the engineer: b3's 1.398 was too high); the column's top (the bar's glass top,
+# the panel, the shaft, the head and the lamp) drops with it by COL_DROP, so the column still reads as one piece; the
+# bar's foot stays over the lower strip. `--scan-h` builds the review's other heights (ship_interior_vent.SCAN_H)
+SCAN_H = float(arg("--scan-h", "1.20"))
+COL_DROP = 1.398 - SCAN_H
+GLASS_U, GLASS_H, GLASS_V = (0.500, 0.556), (0.622, 1.548 - COL_DROP), 0.405
+SCAN_C, LAMP = (0.685, SCAN_H), (0.633, 0.335)   # the scanner's centre (u, h); the lamp's axis (u, v)
 BOW = 0.014
 SHUT_SEAM = -0.010                        # vents-b3: shut is a real overlap, 1 cm straight from the front
 # outer frame and opening (u, h), counter-clockwise from the bottom left; the left bar split at 0.80 (two panels)
@@ -204,7 +210,10 @@ def body():
           back=((0.022, 0.022), (0.006, 0.003)), mat="vent_b_bronze2")
     # the frame: nine panels from the outline to 3 cm outside the opening, then the lip round the opening
     mid = inset(ccw(OPEN), -0.03)
-    ring(M, OUTER, mid, WELL_V, FACE, front=FRONT, side="vent_b_tarnish", tones=True)
+    # vents-b4: the frame's sides run back to FRAME_BACK (b3's started at the well's back, 11.5 cm out): with the
+    # recess (ship_interior_vent.RECESS 8 cm) they reach 1 cm into the wall's plate, which wraps them; not further
+    # back, as the frame's top over the bend would stick through the slanted wall
+    ring(M, OUTER, mid, FRAME_BACK, FACE, front=FRONT, side="vent_b_tarnish", tones=True)
     ring(M, mid, OPEN, WELL_V, LIP, gap=0.003, side="vent_b_well", front=((0.012, 0.012),))
     # the header: a sill under the opening's top, so no glow shows over the top blade (front_closed); vents-b3: dark
     # tarnish with no polished chamfer, its face at the lip (b2's lit chamfer read as a cyan plate over the top blade)
@@ -249,9 +258,11 @@ def body():
     solid(M, [(0.43, 0.0), (0.80, 0.0), (0.80, 0.11), (0.765, 0.16), (0.465, 0.16), (0.43, 0.11)], BACK, 0.49,
           front=((0.024, 0.024), (0.006, 0.003)))
     solid(M, [(0.47, 0.16), (0.785, 0.16), (0.785, 0.28), (0.47, 0.28)], BACK, 0.43, front=((0.018, 0.018),))
-    shaft = [(BACK, 0.25), (0.36, 0.25), (0.36, 1.62), (cv(1.62) + 0.012, 1.62), (BACK, 1.45)]
+    top = 1.62 - COL_DROP
+    shaft = ([(BACK, 0.25), (0.36, 0.25), (0.36, top), (cv(top) + 0.012, top), (BACK, 1.45)] if top > BEND + 0.02
+             else [(BACK, 0.25), (0.36, 0.25), (0.36, top), (BACK, top)])
     solid(M, shaft, 0.475, 0.785, axis="u", front=((0.014, 0.014),), back=((0.014, 0.014),))
-    solid(M, octo(0.48, 0.27, 0.78, 1.60, 0.03), 0.30, 0.38, front=((0.012, 0.012), (0.003, 0.002)),
+    solid(M, octo(0.48, 0.27, 0.78, 1.60 - COL_DROP, 0.03), 0.30, 0.38, front=((0.012, 0.012), (0.003, 0.002)),
           side="vent_b_tarnish")
     # the light bar: a chamfered housing round the glass (the glass 1 mm into it)
     g_out = octo(GLASS_U[0] - 0.017, GLASS_H[0] - 0.024, GLASS_U[1] + 0.017, GLASS_H[1] + 0.024, 0.012)
@@ -278,14 +289,16 @@ def body():
     hand = {"lo": [min(xs) + 0.004, 0.37, min(hs) + 0.004], "hi": [max(xs) - 0.004, screen_v, max(hs) - 0.004],
             "n": [0.0, 1.0, 0.0], "poly": [[round(x, 5), round(y, 5)] for x, y in b_in]}
     # the head and the lamp's stepped collar; the core under the dome (`__lamp`)
-    solid(M, [(0.48, 1.60), (0.78, 1.60), (0.78, 1.665), (0.745, 1.70), (0.515, 1.70), (0.48, 1.665)],
-          cv(1.70) + 0.012, 0.40, front=((0.014, 0.014), (0.004, 0.002)))
-    solid(M, ngon(LAMP, 0.078, 8, math.pi / 8), 1.69, 1.726, axis="h", front=((0.008, 0.008),), back=())
-    solid(M, ngon(LAMP, 0.066, 16), 1.726, 1.743, axis="h", mat="vent_b_dark", front=((0.002, 0.002),))
-    solid(M, ngon(LAMP, 0.071, 16), 1.743, 1.757, axis="h", front=((0.004, 0.004),))
-    solid(M, ngon(LAMP, 0.036, 12), 1.756, 1.79, axis="h", mat="vent_a_body__lamp", front=())
+    d = COL_DROP
+    solid(M, [(0.48, 1.60 - d), (0.78, 1.60 - d), (0.78, 1.665 - d), (0.745, 1.70 - d), (0.515, 1.70 - d),
+              (0.48, 1.665 - d)], cv(1.70 - d) + 0.012, 0.40, front=((0.014, 0.014), (0.004, 0.002)))
+    solid(M, ngon(LAMP, 0.078, 8, math.pi / 8), 1.69 - d, 1.726 - d, axis="h", front=((0.008, 0.008),), back=())
+    solid(M, ngon(LAMP, 0.066, 16), 1.726 - d, 1.743 - d, axis="h", mat="vent_b_dark", front=((0.002, 0.002),))
+    solid(M, ngon(LAMP, 0.071, 16), 1.743 - d, 1.757 - d, axis="h", front=((0.004, 0.004),))
+    solid(M, ngon(LAMP, 0.036, 12), 1.756 - d, 1.79 - d, axis="h", mat="vent_a_body__lamp", front=())
     r = 0.055
-    lamp = {"lo": [LAMP[0] - r, LAMP[1] - r, 1.7555], "hi": [LAMP[0] + r, LAMP[1] + r, 1.838], "n": [0.0, 0.0, 1.0]}
+    lamp = {"lo": [LAMP[0] - r, LAMP[1] - r, 1.7555 - d], "hi": [LAMP[0] + r, LAMP[1] + r, 1.838 - d],
+            "n": [0.0, 0.0, 1.0]}
     band = {"lo": [GLASS_U[0], 0.37, GLASS_H[0]], "hi": [GLASS_U[1], GLASS_V, GLASS_H[1]], "n": [0.0, 1.0, 0.0]}
     return M, {"lamp": lamp, "band": band, "hand": hand, "strips": strips}
 
@@ -462,6 +475,7 @@ def main():
     rep["body_tris"] = tris(ob)
     rep["body_box"] = {k: [round(min(p[i] for p in M.v), 3), round(max(p[i] for p in M.v), 3)]
                        for i, k in enumerate("uvh")}
+    rep["scan_h"], rep["col_drop"] = SCAN_H, round(COL_DROP, 4)
     rep["back_clear_min"] = round(min(v - cv(h) for _, v, h in M.v), 4)   # every vertex in front of the wall
     export(ob, out / "body.glb")
     bpy.data.objects.remove(ob, do_unlink=True)

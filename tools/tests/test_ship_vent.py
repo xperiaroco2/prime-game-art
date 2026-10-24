@@ -65,10 +65,21 @@ class ShipVentTest(unittest.TestCase):
                     self.assertTrue(V.FLOOR + h0 - 1e-6 <= h <= V.FLOOR + h1 + 1e-6, (side, name, h))
 
     def test_inside_the_wall_face(self):
-        """Only the backs sink into the wall (2 cm at most); nothing else stands behind the wall's face."""
+        """vents-b4: the vent sits RECESS into the wall: its backs at most RECESS + 2 cm behind the wall's face, the
+        well's glow panels in front of it (b3: the backs on the face)."""
+        self.assertTrue(0.05 <= V.RECESS <= 0.10, V.RECESS)
         for name, p in build("e").items():
             for x, y, h in p["verts"]:
-                self.assertGreaterEqual(y, V.cv(h - V.FLOOR) - 0.0201, (name, y, h))
+                self.assertGreaterEqual(y, V.cv(h - V.FLOOR) - V.RECESS - 0.0201, (name, y, h))
+                if name in ("heat", "cool"):
+                    self.assertGreater(y, 0.0, (name, y))
+
+    def test_recess_in_the_plan(self):
+        """vents-b4: one recess for both vents (ship.toml's spots), the unit's back that far behind the face."""
+        spots = [s for s in V.S._SHIP["stations"]["spot"] if s["id"].startswith("vent_")]
+        self.assertEqual({s["recess_m"] for s in spots}, {V.RECESS})
+        self.assertAlmostEqual(V.UNIT[2], -0.01 - V.RECESS, places=6)
+        self.assertAlmostEqual(V.UNIT[3], 0.60 - V.RECESS, places=6)
 
     def test_light_pieces(self):
         """The look step: every light a clean emissive piece over the body's painted one, off its surface."""
@@ -93,19 +104,41 @@ class ShipVentTest(unittest.TestCase):
             self.assertGreaterEqual(min(p[k] for p in hand), min(p[k] for p in scr))
             self.assertLessEqual(max(p[k] for p in hand), max(p[k] for p in scr))
         self.assertGreater(min(y for _, y, _ in hand), max(y for _, y, _ in scr))
+        # vents-b4: the hand centred on its screen (within 1.5 cm), its box 70..85 % of the screen's height
+        hx = [p[0] for p in hand]
+        hz = [p[2] for p in hand]
+        sx, sz = [p[0] for p in scr], [p[2] for p in scr]
+        self.assertLess(abs((min(hx) + max(hx)) / 2 - (min(sx) + max(sx)) / 2), 0.015)
+        self.assertLess(abs((min(hz) + max(hz)) / 2 - (min(sz) + max(sz)) / 2), 0.015)
+        self.assertTrue(0.70 <= (max(hz) - min(hz)) / (max(sz) - min(sz)) <= 0.85)
 
     def test_hand_has_a_thumb_and_three_fingers(self):
+        """vents-b4: one closed smooth silhouette: three fingers' tips of one length (a scan across them meets
+        three separate fingers), the thumb out past the palm's side and lower, the stroke even and unfolded."""
         pts = V.hand_outline()
-        tips = [i for i in range(1, len(pts) - 1) if pts[i][1] > pts[i - 1][1] and pts[i][1] >= pts[i + 1][1]
-                and pts[i][1] > 0.9]
-        self.assertEqual(len(tips), 3)                       # three fingers' tips, of one length
-        self.assertEqual(len({round(pts[i][1], 6) for i in tips}), 1)
-        self.assertLess(min(x for x, _ in pts), -0.6)        # the thumb out past the palm's side
+        self.assertGreater(len(pts), 120)
+        self.assertLess(max(math.dist(a, b) for a, b in zip(pts, pts[1:] + pts[:1])), 0.11)   # closed, no jump
+        self.assertAlmostEqual(max(y for _, y in pts), V.HAND_TIP, delta=0.002)
+        for cx in V.HAND_FINGERS:                            # each finger reaches the tip line
+            self.assertLess(V._hand_field(cx, V.HAND_TIP - 0.01), 0.0)
+        row = [V._hand_field(-0.6 + i * 0.005, 1.4) < 0 for i in range(241)]
+        self.assertEqual(sum(1 for a, b in zip(row, row[1:]) if b and not a), 3)   # three fingers across
+        thumb = min(pts)
+        self.assertLess(thumb[0], -0.8)                      # the thumb out past the palm's side
+        self.assertLess(max(y for x, y in pts if x < -0.55), 1.1)   # and well under the fingers' tips
+        st = V.hand_stroke(pts)
+        for (o, i), p in zip(st, pts):                       # even: every pair HAND_W apart across the line
+            self.assertAlmostEqual(math.dist(o, i), V.HAND_W, places=6)
+        for j in range(len(st) - 1):                        # unfolded: no side runs backwards against the line
+            t = (pts[j + 1][0] - pts[j][0], pts[j + 1][1] - pts[j][1])
+            for k in (0, 1):
+                d = (st[j + 1][k][0] - st[j][k][0], st[j + 1][k][1] - st[j][k][1])
+                self.assertGreater(d[0] * t[0] + d[1] * t[1], 0.0, (j, k))
 
     def test_budget_names_and_materials(self):
         parts = build("e", meshes=False)
         built = sum(tris(p) for n, p in parts.items() if "verts" in p and "-convcolonly" not in n)
-        self.assertLessEqual(built, 2000, built)   # the body adds its 4,000 baked triangles
+        self.assertLessEqual(built, 2700, built)   # vents-b4: the hand's smooth stroke about 1,800 (b3 2,000 in all)
         self.assertTrue(parts["body"]["glb"].replace("\\", "/").endswith(V.BODY), parts["body"])
         for name in [f"slat{k}" for k in range(1, V.SLATS + 1)] + ["marker", "heat", "cool", "col0-convcolonly",
                                                                     "col1-convcolonly"]:
@@ -125,7 +158,7 @@ class ShipVentTest(unittest.TestCase):
         for k in range(1, V.SLATS + 1):
             o = parts[f"slat{k}"]["origin"]
             self.assertAlmostEqual(o[0], (V.CAP_U[0] + V.CAP_U[1]) / 2, places=6)
-            self.assertAlmostEqual(o[1], V.PIVOT_V, places=6)
+            self.assertAlmostEqual(o[1], V.PIVOT_V - V.RECESS, places=6)
             self.assertAlmostEqual(o[2], V.FLOOR + V.PIVOT_TOP - (k - 1) * V.PITCH, places=6)
         # the root's back about 3 cm behind the caps' axis (step 4: the 22 deg calm tilt adds 2.4 mm)
         self.assertAlmostEqual(V.BLADE_BOX[1][0], -0.03, delta=0.005)
@@ -141,12 +174,12 @@ class ShipVentTest(unittest.TestCase):
             for q in p["hull"]:
                 for a in (V.OPEN_RAD * t / 4 for t in range(5)):
                     x, y, h = turn(q, p["origin"], a)
-                    self.assertTrue(V.COOL_V + 0.002 < y <= V.UNIT[3] + 1e-6, (k, a, y))
+                    self.assertTrue(V.COOL_V + 0.002 - V.RECESS < y <= V.UNIT[3] + 1e-6, (k, a, y))
 
     def test_calm_reach_past_the_frame(self):
         """Calm, the blades stick out about 19 cm past the frame's face (side_left)."""
         p = build("e", meshes=False)["slat4"]
-        reach = max(turn(q, p["origin"], V.OPEN_RAD)[1] for q in p["hull"]) - V.BOX_FACE
+        reach = max(turn(q, p["origin"], V.OPEN_RAD)[1] for q in p["hull"]) - (V.BOX_FACE - V.RECESS)
         self.assertTrue(0.14 <= reach <= 0.20, reach)   # vents-b3: the frame's face 2.5 cm prouder (0.44)
 
     def test_seams_calm_and_closed(self):
@@ -185,7 +218,7 @@ class ShipVentTest(unittest.TestCase):
             if q[0] == "station_vent_w":
                 q[2] += 5.0
         found = " ".join(ship_layout.check_units(bad))
-        for word in ("along the wall", "0..0.6", "clear", "not on its spot"):
+        for word in ("along the wall", "..0.6", "clear", "not on its spot"):
             self.assertIn(word, found)
 
 

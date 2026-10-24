@@ -487,27 +487,30 @@ def motion_request(layout: dict) -> dict:
     v = importlib.import_module("ship_interior_vent")
     f = v.FLOOR + float(layout["deck"].get("lift_m", 0.0))   # the raise: the built GLBs stand lifted (ship_build.lifted)
     vents = {}
+    r = v.RECESS   # vents-b4: the piece's parts stand RECESS behind the wall's face (ship_interior_vent.station_vent)
     for pid, s in (("station_vent_e", 1.0), ("station_vent_w", -1.0)):
         # way A: the blades keep between the cap rows (their ends sit in the caps), in front of the well's glow
         u = sorted((s * v.CAP_U[0], s * v.CAP_U[1]))
         g = sorted((s * v.GLASS_U[0], s * v.GLASS_U[1]))
         vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0] - 0.1, "h1": f + v.OPEN_H[1],
-                                  "v_back": v.COOL_V + 0.002, "v_max": v.UNIT[3],
-                                  "v_face": v.BOX_FACE, "v_face_h0": f + 0.12},
+                                  "v_back": v.COOL_V + 0.002 - r, "v_max": v.UNIT[3],
+                                  "v_face": v.BOX_FACE - r, "v_face_h0": f + 0.12},
                       "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]},
                       # each blade's pivot on the caps' axis (Godot x, y, z)
-                      "pivots": [[s * (v.CAP_U[0] + v.CAP_U[1]) / 2, f + v.PIVOT_TOP - k * v.PITCH, v.PIVOT_V]
+                      "pivots": [[s * (v.CAP_U[0] + v.CAP_U[1]) / 2, f + v.PIVOT_TOP - k * v.PITCH, v.PIVOT_V - r]
                                  for k in range(v.SLATS)]}
     # way B (vents-b1): re-aimed on the built body (four of way A's framed empty air)
-    cu = [["frame_corner_tl", [-0.30, f + 1.62, 1.05], [-0.64, f + 1.40, 0.41]],
-          ["opening_corner_br", [0.5, f + 0.4, 1.0], [0.2, f + 0.36, 0.40]],
-          ["slat_ends_l", [-0.3, f + 1.3, 0.9], [-0.50, f + 1.13, 0.36]],
-          ["box_column_top", [0.85, f + 1.85, 1.0], [0.47, f + 1.56, 0.36]],
-          ["lamp_base", [0.95, f + 1.95, 0.85], [0.633, f + 1.77, 0.335]],
-          ["scanner", [0.72, f + 1.42, 0.85], [0.685, f + 1.398, 0.43]],
-          ["box_floor_l", [-1.2, f + 0.35, 1.0], [-0.70, f + 0.10, 0.40]],
-          ["box_wall_top", [-0.2, f + 1.95, 0.95], [-0.2, f + 1.58, 0.15]],
-          ["column_wall_r", [1.4, f + 0.5, 0.8], [0.78, f + 0.3, 0.2]]]
+    # vents-b4: the looks RECESS back, the column's top and the scanner COL_DROP down
+    d = v.COL_DROP
+    cu = [["frame_corner_tl", [-0.30, f + 1.62, 1.05], [-0.64, f + 1.40, 0.41 - r]],
+          ["opening_corner_br", [0.5, f + 0.4, 1.0], [0.2, f + 0.36, 0.40 - r]],
+          ["slat_ends_l", [-0.3, f + 1.3, 0.9], [-0.50, f + 1.13, 0.36 - r]],
+          ["box_column_top", [0.85, f + 1.85 - d, 1.0], [0.47, f + 1.56 - d, 0.36 - r]],
+          ["lamp_base", [0.95, f + 1.95 - d, 0.85], [0.633, f + 1.77 - d, 0.335 - r]],
+          ["scanner", [0.72, f + v.SCAN_H + 0.02, 0.85], [0.685, f + v.SCAN_H, 0.43 - r]],
+          ["box_floor_l", [-1.2, f + 0.35, 1.0], [-0.70, f + 0.10, 0.40 - r]],
+          ["box_wall_top", [-0.2, f + 1.95, 0.95], [-0.2, f + 1.58, 0.15 - r]],
+          ["column_wall_r", [1.4, f + 0.5, 0.8], [0.78, f + 0.3, 0.2 - r]]]
     return {"ids": list(vents), "vents": vents, "slats": v.SLATS, "open_rad": v.OPEN_RAD, "mark_travel": v.MARK_TRAVEL, "gap_m": 3.0,
             "nose_r": v.NOSE_R, "min_tip_swing": 0.04,
             "fps": MOTION["fps"], "seconds": MOTION["seconds"], "closeups": cu, "watchdog_s": MOTION_TIMEOUT - 60,

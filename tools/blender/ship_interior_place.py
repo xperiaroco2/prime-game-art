@@ -118,7 +118,10 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "throat_ceil": ("throat_ceil", {}, True),
     "th_wall_low_a": ("cor_wall_low", {"length": TH_MOD, "tone": "a", "prof": "throat"}, True),
     "th_wall_low_b": ("cor_wall_low", {"length": TH_MOD, "tone": "b", "prof": "throat"}, True),
-    "th_wall_mid": ("cor_wall_mid", {"length": TH_MOD, "prof": "throat"}, True),
+    "th_wall_mid": ("cor_wall_mid", {"length": TH_MOD, "prof": "throat", "flat": True}, True),   # vents-b4: flat
+    # vents-b4: the vents' modules' low wall, a flat plate the recessed vent sinks into (cor_wall_low's `flat`)
+    "th_wall_low_flat_a": ("cor_wall_low", {"length": TH_MOD, "tone": "a", "prof": "throat", "flat": True}, True),
+    "th_wall_low_flat_b": ("cor_wall_low", {"length": TH_MOD, "tone": "b", "prof": "throat", "flat": True}, True),
     "th_channel": ("cor_channel", {"length": TH_MOD, "prof": "throat"}, True),
     "th_cables": ("cor_cables", {"length": TH_MOD, "prof": "throat"}, False),
     "th_clip_h": ("clip_h", {"prof": "throat"}, False),
@@ -401,7 +404,7 @@ def placements() -> list[tuple[str, list[float], float]]:
                           round(w[1] + d[1] * TH_MOD * 0.5 + inward[1] * 0.3, 4)]
                     put("floor_light", lp, yw)
                 continue
-            put(f"th_wall_low_{tone}", o, yw)
+            put(f"th_wall_low_flat_{tone}" if i in TH_PLAIN else f"th_wall_low_{tone}", o, yw)
             if i in TH_PLAIN:
                 put("th_wall_mid", o, yw)
             else:
