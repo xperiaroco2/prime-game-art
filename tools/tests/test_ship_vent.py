@@ -9,7 +9,9 @@ files (the motion proof on the GLBs: `ship --motion DIR`)."""
 
 from __future__ import annotations
 
+import ast
 import copy
+import json
 import math
 import sys
 import unittest
@@ -81,6 +83,39 @@ class ShipVentTest(unittest.TestCase):
         self.assertEqual({s["recess_m"] for s in spots}, {V.RECESS})
         self.assertAlmostEqual(V.UNIT[2], -0.01 - V.RECESS, places=6)
         self.assertAlmostEqual(V.UNIT[3], 0.50 - V.RECESS, places=6)
+
+    def test_constants_match_the_body_build(self):
+        """The constants ship_interior_vent.py mirrors from ship_vent_b.py (which imports bpy, so its source is read, not
+        imported) and what the body build wrote into blade.json: a drift between the two makes the piece's parts stand
+        off the body (found in vents-b5b's review)."""
+        src = ast.parse((ROOT / "tools" / "blender" / "ship_vent_b.py").read_text(encoding="utf-8"))
+        theirs: dict[str, object] = {}
+        for node in src.body:
+            if isinstance(node, ast.Assign):
+                try:
+                    val = ast.literal_eval(node.value)
+                except ValueError:
+                    continue
+                for tg in node.targets:
+                    if isinstance(tg, ast.Name):
+                        theirs[tg.id] = val
+                    elif isinstance(tg, ast.Tuple) and isinstance(val, tuple) and len(val) == len(tg.elts):
+                        theirs.update({e.id: x for e, x in zip(tg.elts, val)})
+        for name in ("BEND", "IN", "TOP", "PIVOT_TOP", "PITCH", "SLATS", "BOX_DU", "TIP_DV", "WELL_GAP"):
+            self.assertIn(name, theirs, name)
+            self.assertEqual(theirs[name], getattr(V, name), name)
+        path = V.raw_root() / V._BODY_DIR / "blade.json"
+        if not path.is_file():
+            self.skipTest("no raw body report")
+        rep = json.loads(path.read_text(encoding="utf-8"))
+        for key, mine in (("tip_back", V.TIP_BACK), ("pivot_v", V.PIVOT_V), ("well_v", V.WELL_V), ("scan_u", V.SCAN_U),
+                          ("scan_h", V.SCAN_H), ("col_drop", V.COL_DROP)):
+            self.assertAlmostEqual(rep[key], mine, delta=1e-4, msg=key)
+        for got, want in zip(rep["blade_box"], V.BLADE_BOX):
+            for g, w in zip(got, want):   # the harness's box is rounded outwards (the hand's -0.0551 is -0.056)
+                self.assertAlmostEqual(g, w, delta=0.0015)
+        # the body stands inside the unit's depth and its face is the frame's face plus the chamfers' room
+        self.assertLessEqual(rep["body_box"]["v"][1], V.UNIT[3] + V.RECESS + 1e-6)
 
     def test_light_pieces(self):
         """The look step: every light a clean emissive piece over the body's painted one, off its surface."""
@@ -187,16 +222,19 @@ class ShipVentTest(unittest.TestCase):
                     self.assertTrue(V.COOL_V + 0.002 - V.RECESS < y <= V.UNIT[3] + 1e-6, (k, a, y))
 
     def test_calm_tips_inside_the_frame(self):
-        """vents-b5: calm, the blades' tips TIP_BACK behind the frame's face (b3, b4: 15 cm past it); at the widest (the
-        cough, 10 deg past calm) under 1 cm past it; shut, the bottom blade over the opening's floor."""
+        """vents-b5: calm, the blades' tips TIP_BACK (3 cm) behind the frame's face (b3, b4: 15 cm past it). The
+        cough kicks them 10 deg past calm and the tips come to 2.4 cm behind the face (the hull; the motion proof
+        measures 2.5 cm on the mesh): at least 2 cm behind it at calm and at calm + 10 deg, which `ship --motion`
+        keeps over every frame (its v_front, the face + 5 mm). Shut, the bottom blade stays over the opening's floor."""
         self.assertTrue(0.02 <= V.TIP_BACK <= 0.06, V.TIP_BACK)
         face = V.BOX_FACE - V.RECESS
         for k in range(1, V.SLATS + 1):
             p = build("e", meshes=False)[f"slat{k}"]
             calm = max(turn(q, p["origin"], V.OPEN_RAD)[1] for q in p["hull"]) - face
             self.assertAlmostEqual(calm, -V.TIP_BACK, delta=0.001)
-            wide = max(turn(q, p["origin"], V.OPEN_RAD + math.radians(10.0))[1] for q in p["hull"]) - face
-            self.assertLess(wide, 0.01 - V.TIP_BACK + 1e-9)
+            self.assertLessEqual(calm, -0.02 + 1e-9)
+            cough = max(turn(q, p["origin"], V.OPEN_RAD + math.radians(10.0))[1] for q in p["hull"]) - face
+            self.assertLessEqual(cough, -0.02 + 1e-9, (k, cough))
         low = min(h for _, _, h in build("e", meshes=False)[f"slat{V.SLATS}"]["hull"])
         self.assertGreater(low, V.FLOOR + V.OPEN_H[0] + 0.015)
 
