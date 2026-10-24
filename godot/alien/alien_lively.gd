@@ -50,9 +50,9 @@ var skeleton: Skeleton3D
 ## springs swing from the head's real motion in the world (its turn and its acceleration, so a jog bobs the crest and
 ## the gills) instead of the controller's turn alone. The caller re-poses the clip before each step (seek or advance)
 ## and calls reset_motion() when it jumps to another clip or teleports the character (a respawn; the next step seeds
-## the body's velocity from that step's raw velocity, A3), reset_springs() too when the springs must start still. A clip that stops posing Neck and Head (a one-shot's end, a pause, a layer
-## that leaves them out) does not pile the turn up: the turn goes on the clip's last own pose (A2). False: the busts'
-## and the shots' way, unchanged.
+## the body's velocity from that step's raw velocity, A3), reset_springs() too when the springs must start still. A
+## clip that stops posing Neck and Head (a one-shot's end, a pause, a layer that leaves them out) does not pile the
+## turn up: the turn goes on the clip's last own pose (A2). False: the busts' and the shots' way, unchanged.
 var on_clip := false
 var accel_gain := 1.0  # rad/s^2 of spring push per m/s^2 of the head's acceleration (A1)
 ## A2: the share of the clip's own head yaw (the Head's facing about the skeleton's up, as the clip poses it) taken
@@ -61,10 +61,11 @@ var yaw_counter := 0.0
 ## A2: small eye darts (degrees; 0 none): every 0.6-2.4 s the eyes jump to a new point near the target, the head
 ## does not follow; the eyes are the static head's only life at rest
 var darts := 0.0
-## A3: the eyes. "fixed" (the default): the pupils stay centred in the head, the gaze is the head's forward; "lead":
-## the eyes reach a new look target first, by at most EYE_LEAD_DEG off the head's forward, and re-centre as the head
-## follows; "free": the eyes follow the target as far as the lids allow (A1-A2's way; the eye proofs use it)
-var eye_mode := "fixed"
+## A3: the eyes. "free" (the default, A1-A2's way and the web module's): the eyes follow the target as far as the
+## lids allow; "fixed": the pupils stay centred in the head, the gaze is the head's forward, and darts are off (the
+## clip reels' job default); "lead": the eyes reach a new look target first, by at most EYE_LEAD_DEG off the head's
+## forward, and re-centre as the head follows. Another value is an error (push_error) and acts as "free".
+var eye_mode := "free"
 const EYE_LEAD_DEG := 8.0
 ## A3: the yaw counter low-passed over this time constant (s), so the head does not snap against the chest's swivel
 const YAW_COUNTER_TAU := 0.25
@@ -342,6 +343,8 @@ func step(dt: float) -> void:
 			lim = Vector2.ZERO
 		elif eye_mode == "lead":
 			lim = lim.limit_length(deg_to_rad(EYE_LEAD_DEG))
+		elif eye_mode != "free":
+			push_error("alien_lively: unknown eye_mode %s (free, fixed or lead)" % eye_mode)
 		var s: Vector4 = _eye[side]
 		var ry := _damp(s.x, s.z, lim.x, EYE_HZ, dt)
 		var rp := _damp(s.y, s.w, lim.y, EYE_HZ, dt)
@@ -370,7 +373,6 @@ func reset_eyes() -> void:
 ## A3: the darts' generator back to rng_seed (a reel starts the same on every run).
 func reseed() -> void:
 	_rng.seed = rng_seed
-	_rng.state = 0
 	_dart_t = 0.0
 	_seeded = true
 
@@ -426,8 +428,6 @@ func _head_motion(dt: float) -> Array:
 		vs = (p - _p1) / dt
 		var raw: Vector3 = (bp - _body_p) / dt
 		_body_v = raw if _seen == 1 else _body_v.lerp(raw, k)  # A3: seeded from the raw velocity after a reset
-		if _seen == 1:
-			_body_v1 = _body_v
 	if _seen >= 2:
 		var a_skel: Vector3 = skeleton.global_basis * ((vs - _v1) / dt)
 		var a_body: Vector3 = (_body_v - _body_v1) / dt
