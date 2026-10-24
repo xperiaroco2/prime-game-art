@@ -3,8 +3,11 @@ extends "res://alien/char_shots.gd"
 ## --eyes writes the job (clip_reels.gd's, plus "eye_modes"). Per head:
 ## - rim_<head>.jpg: the lower rim of each eye close (orthographic, RIM_SIZE high: 0.14 m since A3b, from the eye's front a little below),
 ##   rows the gaze at rest, down, to the head's left and right (eye_mode "free", the head held), each eye; columns as
-##   built | albedo only | geometry only | SSAO off | the eye mask's share (debug_mode 0, 3, 2, 0, 7);
-##   rim_<head>_4x/<row>_<eye>.png: the as-built and SSAO-off cells at 4x (the window's pixels, nearest);
+##   (A3c) before (A3b's look: the painted limbal on) | built | the rim rule's trial | albedo only | geometry only |
+##   SSAO off | the rim rule's map (debug_mode 8: R off the sphere over rim_band, G its eye share, B the mask's);
+##   rim_<head>_4x/<row>_<eye>_{before,after}.png: the first two cells at 4x round the lower rim (nearest);
+## - rings_<head>.jpg (A3c): each eye front on at rest, A3b's look (gaze_limbal 1) | as built | limbal 0 | eye_coat 0 | sclera_normal_map 0 |
+##   normal_strength 0 | the mask's G | the detail's A | the normal map's tilt (debug_mode 9, 10, 11);
 ## - <frames>/<head>_look_<mode>/0000.png...: per eye mode (fixed, lead) 8 s at 24 fps of the same scripted look-around (a
 ##   player turning their camera: yaw +-40, pitch +-15, holds), Idle underneath, head and shoulders, 1280x720;
 ## - <frames>/<head>_look_side/0000.png...: the two modes side by side (fixed | lead), the middle 640 px of each;
@@ -14,6 +17,15 @@ extends "res://alien/char_shots.gd"
 const Char = preload("res://lib/character.gd")
 const RIM_CELL := Vector2i(256, 192)
 const RIM_SIZE := 0.14  # m: the rim close-up's height (A3's 0.09 cut the eye off)
+## A3c: the rim sheet's columns: [debug_mode, the rim rule, gaze_limbal]; the first A3b's look (the before), the second
+## as built (the after), the third the rim rule's trial, the sixth SSAO off
+const RIM_COLS := [[0, false, 1.0], [0, false, 0.0], [0, true, 0.0], [3, false, 0.0], [2, false, 0.0], [0, false, 0.0],
+	[8, true, 0.0]]
+const CROP_Y := 0.8  # the 4x crops' middle, down the window (the lower rim; A3b's centre crops missed it)
+const RING_SIZE := 0.06  # m: the rings' close-up height, the eye front on
+## the rings' isolation (A3c): one shader parameter per column, as built first
+const RING_COLS := [["gaze_limbal", 1.0], ["debug_mode", 0], ["limbal", 0.0], ["eye_coat", 0.0], ["sclera_normal_map", 0.0],
+	["normal_strength", 0.0], ["debug_mode", 9], ["debug_mode", 10], ["debug_mode", 11]]
 const LOOK := Vector2i(1280, 720)
 const LOOK_S := 8.0
 ## the look-around's keys: (time s, yaw deg toward +X, pitch deg up); smoothstep between, so the holds stay still
@@ -47,6 +59,7 @@ func _run() -> void:
 		live.breathing = 0.0
 		live.eye_mode = "free"
 		var cells: Array[Image] = []
+		var rings: Array[Image] = []
 		var crops := out.path_join("rim_%s_4x" % name)
 		DirAccess.make_dir_recursive_absolute(crops)
 		for g: Array in GAZES:
@@ -63,24 +76,47 @@ func _run() -> void:
 				_cam.size = RIM_SIZE
 				_cam.position = lower + (fwd + Vector3(0.0, -0.35, 0.0)).normalized() * 1.0
 				_cam.look_at(lower)
-				for col: int in 5:
+				for col: int in RIM_COLS.size():
+					live.rim_rule = RIM_COLS[col][1]
+					live._apply_eyes()
 					for sm: ShaderMaterial in mats:
-						sm.set_shader_parameter("debug_mode", [0, 3, 2, 0, 7][col])
-					_env.ssao_enabled = col != 3
+						sm.set_shader_parameter("debug_mode", RIM_COLS[col][0])
+						sm.set_shader_parameter("gaze_limbal", RIM_COLS[col][2])
+					_env.ssao_enabled = col != 5
 					var img: Image = await _grab(RIM_CELL)
 					cells.append(img)
-					if col == 0 or col == 3:
+					if col <= 1:
 						var big: Image = root.get_texture().get_image()
 						big.convert(Image.FORMAT_RGB8)
 						var w: int = big.get_width() / 4
 						var hh: int = big.get_height() / 4
-						var z: Image = big.get_region(Rect2i((big.get_width() - w) / 2, (big.get_height() - hh) / 2, w, hh))
+						var cy: int = int(big.get_height() * CROP_Y) - hh / 2
+						var z: Image = big.get_region(Rect2i((big.get_width() - w) / 2, cy, w, hh))
 						z.resize(w * 4, hh * 4, Image.INTERPOLATE_NEAREST)
-						z.save_png(crops.path_join("%s_%s_%s.png" % [g[0], side, "built" if col == 0 else "no_ssao"]))
+						z.save_png(crops.path_join("%s_%s_%s.png" % [g[0], side, "before" if col == 0 else "after"]))
 				for sm: ShaderMaterial in mats:
 					sm.set_shader_parameter("debug_mode", 0)
+					sm.set_shader_parameter("gaze_limbal", 0.0)
+				live.rim_rule = false
+				live._apply_eyes()
 				_env.ssao_enabled = true
-		_sheet(cells, RIM_CELL, 5).save_jpg(out.path_join("rim_%s.jpg" % name), 0.92)
+				if g[0] == "rest":
+					# A3c: the rings' isolation, the eye front on
+					_cam.size = RING_SIZE
+					_cam.position = front + fwd * 1.0
+					_cam.look_at(front)
+					for col: int in RING_COLS.size():
+						var tweak: Array = RING_COLS[col]
+						var keep := []
+						for sm: ShaderMaterial in mats:
+							keep.append(sm.get_shader_parameter(tweak[0]))
+							sm.set_shader_parameter(tweak[0], tweak[1])
+						rings.append(await _grab(RIM_CELL))
+						for k: int in mats.size():
+							mats[k].set_shader_parameter(tweak[0], keep[k])
+					_cam.size = RIM_SIZE
+		_sheet(rings, RIM_CELL, RING_COLS.size()).save_jpg(out.path_join("rings_%s.jpg" % name), 0.92)
+		_sheet(cells, RIM_CELL, RIM_COLS.size()).save_jpg(out.path_join("rim_%s.jpg" % name), 0.92)
 		_cam.projection = Camera3D.PROJECTION_PERSPECTIVE
 		# the look-around per eye mode, Idle underneath
 		live.on_clip = true
