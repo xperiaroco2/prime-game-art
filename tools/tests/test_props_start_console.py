@@ -16,7 +16,7 @@ from runner.commands import _manifest
 ASSET = common.ROOT / "assets" / "prop" / "start_console"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "console_dims.toml"
-TRIANGLES = 60000  # the whole console: 56,873 at build1, the hologram's lines and shell 44k of them (0.14 ms GPU)
+TRIANGLES = 60000  # the whole console: 55,661 at build2, the hologram's lines and shell 44k of them (0.14 ms GPU)
 SURFACES = {"console_bronze", "console_graphite", "console_cyan", "console_button", "console_stage", "console_lamp",
             "console_holo_line", "console_holo_shell", "console_beam"}
 MATERIAL_FILES = ("console.gd", "console_metal.gdshader", "console_signal.gdshader", "console_holo.gdshader")
