@@ -1,0 +1,61 @@
+# The whole Cooking how-to card in the chosen style, for the UI track (prime-game#150). The engineer, 2026-10-22, UI
+# chat: the check frames are right ("все супер"); the thumbs-up of round 3 for the done burger; the three dots under
+# the burger are dropped (the agent's plate mark, unclear in one frame). One frame per step of the Cooking chain; the fry
+# frame is the check's. Every item an edit with the check fry frame as the character and rendering master. High, two
+# images each.
+# The standing permission for OpenAI images: art#196 comment 6291187194 (2026-10-20). No game, film, studio, brand,
+# artist or character names; no real people. Schema: docs/openai-images.md.
+
+id = "2026-10-22-howto-cooking-card"
+service = "openai-images"
+purpose = "The whole Cooking how-to card (prime-game#150): six more frames in the chosen style, drawn from the check frame's alien."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 3.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "high"
+
+[defaults]
+size = "1024x768"
+n = 2
+background = "opaque"
+
+[[items]]
+id = "c1-order"
+kind = "edit"
+prompt = "Image 1 is the master CHARACTER and RENDERING: keep exactly its cute small round-bodied teal-green alien with the big round head, its eyes (white eyeballs with dark pupils and a little eyebrow line, never solid dark ovals), small mouth, white three-fingered cartoon gloves, two antennae with signal-red ball tips, and its rendering (a 1940s workplace-safety poster, offset print on cream paper, thick confident brush outlines with thick-and-thin, flat inks of teal-green, signal red and navy only, a slight consistent misregistration). Draw a new frame of the same wordless how-to comic. Scene: the alien stands at a small wall board and studies an order on it: the board shows three simple pictures in a row, a sesame bun, a brown patty and a bold red star symbol that stands for a herb; the alien holds its chin with one gloved hand, memorising. Wordless: no lettering, no text, no numbers, no logos, no dots or marks on the plate; no photorealism, no 3D, no gradients, no glow. Plain cream background, nothing behind the scene, the props drawn in the same flat inks. One clear action, big simple shapes that read as a 160 by 120 pixel thumbnail."
+images = [{ file = "raw:2026-10-22-howto-style-check/check-fry/image-0.png", provenance = "check-fry image 0 (the character and rendering master), our own OpenAI generation (UI track, prime-game#150)", sha256 = "3b045b817831d760fa9b21e3b2b4f4c25127a1261e6b3947e3cfa06bbf5fc53b" }]
+
+[[items]]
+id = "c2-decode"
+kind = "edit"
+prompt = "Image 1 is the master CHARACTER and RENDERING: keep exactly its cute small round-bodied teal-green alien with the big round head, its eyes (white eyeballs with dark pupils and a little eyebrow line, never solid dark ovals), small mouth, white three-fingered cartoon gloves, two antennae with signal-red ball tips, and its rendering (a 1940s workplace-safety poster, offset print on cream paper, thick confident brush outlines with thick-and-thin, flat inks of teal-green, signal red and navy only, a slight consistent misregistration). Draw a new frame of the same wordless how-to comic. Scene: the alien points with a gloved finger at a second wall board that pairs symbols with herbs in two columns: a red star next to a spiky green leaf, a navy moon next to a round leaf, a navy drop next to a feathery sprig; the star and the spiky leaf pair is the one it points at, with small red emphasis marks; the alien looks pleased, it has worked it out. Wordless: no lettering, no text, no numbers, no logos, no dots or marks on the plate; no photorealism, no 3D, no gradients, no glow. Plain cream background, nothing behind the scene, the props drawn in the same flat inks. One clear action, big simple shapes that read as a 160 by 120 pixel thumbnail."
+images = [{ file = "raw:2026-10-22-howto-style-check/check-fry/image-0.png", provenance = "check-fry image 0 (the character and rendering master), our own OpenAI generation (UI track, prime-game#150)", sha256 = "3b045b817831d760fa9b21e3b2b4f4c25127a1261e6b3947e3cfa06bbf5fc53b" }]
+
+[[items]]
+id = "c3-print"
+kind = "edit"
+prompt = "Image 1 is the master CHARACTER and RENDERING: keep exactly its cute small round-bodied teal-green alien with the big round head, its eyes (white eyeballs with dark pupils and a little eyebrow line, never solid dark ovals), small mouth, white three-fingered cartoon gloves, two antennae with signal-red ball tips, and its rendering (a 1940s workplace-safety poster, offset print on cream paper, thick confident brush outlines with thick-and-thin, flat inks of teal-green, signal red and navy only, a slight consistent misregistration). Draw a new frame of the same wordless how-to comic. Scene: the alien stands at a rounded friendly food-printer machine (a boxy cabinet with a slot and two plain round buttons, no screen, no labels); a sesame bun slides out of the slot into its gloved hands while a raw pink patty already lies in the tray below; the alien is delighted, eyes wide. Wordless: no lettering, no text, no numbers, no logos, no dots or marks on the plate; no photorealism, no 3D, no gradients, no glow. Plain cream background, nothing behind the scene, the props drawn in the same flat inks. One clear action, big simple shapes that read as a 160 by 120 pixel thumbnail."
+images = [{ file = "raw:2026-10-22-howto-style-check/check-fry/image-0.png", provenance = "check-fry image 0 (the character and rendering master), our own OpenAI generation (UI track, prime-game#150)", sha256 = "3b045b817831d760fa9b21e3b2b4f4c25127a1261e6b3947e3cfa06bbf5fc53b" }]
+
+[[items]]
+id = "c5-herb"
+kind = "edit"
+prompt = "Image 1 is the master CHARACTER and RENDERING: keep exactly its cute small round-bodied teal-green alien with the big round head, its eyes (white eyeballs with dark pupils and a little eyebrow line, never solid dark ovals), small mouth, white three-fingered cartoon gloves, two antennae with signal-red ball tips, and its rendering (a 1940s workplace-safety poster, offset print on cream paper, thick confident brush outlines with thick-and-thin, flat inks of teal-green, signal red and navy only, a slight consistent misregistration). Draw a new frame of the same wordless how-to comic. Scene: the alien kneels at a low wooden garden bed with three kinds of herbs growing (round leaves, spiky leaves, feathery sprigs) and pulls up one spiky-leaf herb, holding it up proudly in a gloved hand; the other herbs stay in the soil. Wordless: no lettering, no text, no numbers, no logos, no dots or marks on the plate; no photorealism, no 3D, no gradients, no glow. Plain cream background, nothing behind the scene, the props drawn in the same flat inks. One clear action, big simple shapes that read as a 160 by 120 pixel thumbnail."
+images = [{ file = "raw:2026-10-22-howto-style-check/check-fry/image-0.png", provenance = "check-fry image 0 (the character and rendering master), our own OpenAI generation (UI track, prime-game#150)", sha256 = "3b045b817831d760fa9b21e3b2b4f4c25127a1261e6b3947e3cfa06bbf5fc53b" }]
+
+[[items]]
+id = "c6-plate"
+kind = "edit"
+prompt = "Image 1 is the master CHARACTER and RENDERING: keep exactly its cute small round-bodied teal-green alien with the big round head, its eyes (white eyeballs with dark pupils and a little eyebrow line, never solid dark ovals), small mouth, white three-fingered cartoon gloves, two antennae with signal-red ball tips, and its rendering (a 1940s workplace-safety poster, offset print on cream paper, thick confident brush outlines with thick-and-thin, flat inks of teal-green, signal red and navy only, a slight consistent misregistration). Draw a new frame of the same wordless how-to comic. Scene: the burger is done: the alien stands beside a finished burger on a plain round white plate (bottom bun, brown patty, one spiky green herb leaf, sesame top bun) and gives a big thumbs-up with one gloved hand, beaming, like the pose in image 2, little red emphasis marks around it. Image 2 sets only the thumbs-up pose; the character and rendering stay image 1. Wordless: no lettering, no text, no numbers, no logos, no dots or marks on the plate; no photorealism, no 3D, no gradients, no glow. Plain cream background, nothing behind the scene, the props drawn in the same flat inks. One clear action, big simple shapes that read as a 160 by 120 pixel thumbnail."
+images = [{ file = "raw:2026-10-22-howto-style-check/check-fry/image-0.png", provenance = "check-fry image 0 (the character and rendering master), our own OpenAI generation (UI track, prime-game#150)", sha256 = "3b045b817831d760fa9b21e3b2b4f4c25127a1261e6b3947e3cfa06bbf5fc53b" }, { file = "raw:2026-10-22-howto-styles-r3/v04-plate/image-0.png", provenance = "r3 v04-plate image 0 (the thumbs-up pose the engineer liked), our own OpenAI generation (UI track, prime-game#150)", sha256 = "e91a08407050ed41040a9845b2e2b2a26fa92861f001fab95fd16d30e3062fd4" }]
+
+[[items]]
+id = "c7-serve"
+kind = "edit"
+prompt = "Image 1 is the master CHARACTER and RENDERING: keep exactly its cute small round-bodied teal-green alien with the big round head, its eyes (white eyeballs with dark pupils and a little eyebrow line, never solid dark ovals), small mouth, white three-fingered cartoon gloves, two antennae with signal-red ball tips, and its rendering (a 1940s workplace-safety poster, offset print on cream paper, thick confident brush outlines with thick-and-thin, flat inks of teal-green, signal red and navy only, a slight consistent misregistration). Draw a new frame of the same wordless how-to comic. Scene: the finish: the alien holds the finished burger on its plate out to a simple rounded serving hatch in a wall panel; above the hatch a big round sign with a tick mark lights up in signal red and navy; the alien smiles, calm and satisfied. Wordless: no lettering, no text, no numbers, no logos, no dots or marks on the plate; no photorealism, no 3D, no gradients, no glow. Plain cream background, nothing behind the scene, the props drawn in the same flat inks. One clear action, big simple shapes that read as a 160 by 120 pixel thumbnail."
+images = [{ file = "raw:2026-10-22-howto-style-check/check-fry/image-0.png", provenance = "check-fry image 0 (the character and rendering master), our own OpenAI generation (UI track, prime-game#150)", sha256 = "3b045b817831d760fa9b21e3b2b4f4c25127a1261e6b3947e3cfa06bbf5fc53b" }]
