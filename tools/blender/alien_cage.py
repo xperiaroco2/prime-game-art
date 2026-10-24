@@ -243,6 +243,20 @@ TARGET_WELD = 0.0  # m; 0: the target is not welded
 TARGET_MIRROR = ""  # "+x" or "-x": the half of the target kept and mirrored
 TARGET_CLEAN = []  # [[x0, x1, y0, y1, z0, z1, passes], ...] soft boxes smoothed on the target (its own frame)
 TARGET_CLEAN_MARGIN = 0.015  # m: each box's soft edge
+# H2: after the subdivision the body's vertices projected onto the cleaned target (Wrap.project): the target's forms
+# the cage's coarse rings smooth away. Off by default (S4b, H1).
+PROJECT = False
+PROJECT_THICK = {"trunk": 1.0, "arm": 1.0, "leg": 1.0}  # each region's thickness against the target's (1: its own)
+PROJECT_K = 6  # the wrap pairs blended (inverse distance) for the frame offset at a vertex
+PROJECT_MAX = 0.025  # m: the sanity limit of a projection step (longer ones are cut to it)
+PROJECT_NORMAL_MIN = 0.2  # a closest point whose normal turns further from the vertex's is refused (the other thigh)
+PROJECT_HAND = (0.045, 0.008)  # m before WRIST_X: projected fully, not at all (the cage's hands stay)
+PROJECT_NECK = (0.08, 0.035)  # m below the ring: projected fully, not at all (the weld stays exact)
+PROJECT_SOLE = 0.02  # m: under this height the vertical step fades to 0, so the soles stay flat on z = 0
+PROJECT_FOOT = (0.0, -1.0)  # m: projected fully above the first height, not at all below the second (off: (0, -1))
+PROJECT_SMOOTH = 2  # passes over the steps before they are applied (the target's noise)
+PROJECT_RELAX = 3  # tangential relax passes after each projection, so the loops stay even
+PROJECT_PASSES = 2  # project and relax, repeated
 # S1c's skeleton, the cage numbers' frame (CAGE_REMAP): heights, the arm's x and the foot's y of its joints.
 REF_Z = {"LeftFoot": 0.115, "LeftLowerLeg": 0.5181, "LeftUpperLeg": 0.8409, "Chest": 1.0283, "UpperChest": 1.1491,
          "LeftUpperArm": 1.2765}
@@ -255,24 +269,29 @@ CAGE_KEYS = ("TRUNK", "NECK_END", "CROTCH", "CROTCH_Z", "ARM_HOLE", "ARM", "ARM_
              "LEG", "FOOT", "FOOT_SIDE_H", "FOOT_X", "TOE", "TOE_MID", "THUMB_R0", "TOE_LEN", "TOE_THICK", "FIT",
              "WEIGHT_SMOOTH", "WRAP_Z", "WRAP_X", "WRAP_S", "WRAP_W", "WRAP_RELAX", "WRAP_TOL", "BODY_SCALE",
              "CAGE_REMAP", "HAND_REL", "HAND_COLS", "FINGER_CURL", "TOE_SET", "ARM_GUESS", "NECK_END_ELLIPSE",
-             "TARGET_WELD", "TARGET_MIRROR", "TARGET_CLEAN", "TARGET_CLEAN_MARGIN")
+             "TARGET_WELD", "TARGET_MIRROR", "TARGET_CLEAN", "TARGET_CLEAN_MARGIN", "PROJECT", "PROJECT_THICK",
+             "PROJECT_K", "PROJECT_MAX", "PROJECT_NORMAL_MIN", "PROJECT_HAND", "PROJECT_NECK", "PROJECT_SOLE",
+             "PROJECT_FOOT", "PROJECT_SMOOTH", "PROJECT_RELAX", "PROJECT_PASSES")
 
 
 def apply_cage_targets(path):
-    """H1: a cage targets file's upper-case keys over the module's constants (CAGE_KEYS only; CROTCH_Z's keys become
+    """H1: a cage targets file's upper-case keys (after its `include`'s) over the module's constants (CAGE_KEYS only; CROTCH_Z's keys become
     ints, the short vectors tuples). Returns the file's name key."""
     with open(path, "rb") as fh:
         t = tomllib.load(fh)
     bad = sorted(k for k in t if k.isupper() and k not in CAGE_KEYS)
     if bad:
         raise SystemExit(f"{path}: unknown keys {bad}")
+    if t.get("include"):  # H2: another targets file (beside this one) applied first, this file's keys over it
+        apply_cage_targets(os.path.join(os.path.dirname(path), t["include"]))
     g = globals()
     for k, v in t.items():
         if not k.isupper():
             continue
         if k == "CROTCH_Z":
             v = {int(a): b for a, b in v.items()}
-        elif k in ("FINGERS", "FINGER_CURL", "TOE_SET", "ARM_GUESS", "NECK_END_ELLIPSE", "CROTCH", "THUMB_DIR"):
+        elif k in ("FINGERS", "FINGER_CURL", "TOE_SET", "ARM_GUESS", "NECK_END_ELLIPSE", "CROTCH", "THUMB_DIR",
+                   "PROJECT_HAND", "PROJECT_NECK", "PROJECT_FOOT"):
             v = tuple(v)
         elif k in ("FINGER_RINGS", "THUMB_RINGS"):
             v = [tuple(tuple(x) if isinstance(x, list) else x for x in row) for row in v]
@@ -833,6 +852,7 @@ class Wrap:
         """Each wrapped cage vertex's goal: (index, ring centre, unit direction, cage radius, goal radius, weight)."""
         rows, raw = [], {"arm": [], "leg": []}
         cache = self.cache
+        self.hits = {}  # H2: each wrapped vertex's (cage centre, direction, target centre, target radius, kind)
         for v, kind, ring, c in rings["meta"]:
             w = WRAP_W[kind][ring]
             if w <= 0:
@@ -853,6 +873,7 @@ class Wrap:
             if rt is None:
                 continue
             rows.append([v.index, c, d, r0, rt, w, kind])
+            self.hits[v.index] = (c.copy(), d.copy(), cache[key].copy(), rt, kind)
             if kind in raw:
                 raw[kind].append((r0, rt))
         k = {kind: sum(a for a, _ in pairs) / sum(b for _, b in pairs) for kind, pairs in raw.items() if pairs}
@@ -890,6 +911,101 @@ class Wrap:
                 v.co.x = along
             else:
                 v.co.z = along
+
+    def project(self, body, ring_z):
+        """H2: the subdivided body's vertices projected onto the cleaned target. The target stands in its own frame
+        (the stations of WRAP_Z/WRAP_X, its own centres), so each vertex is first moved by the frame offset at its
+        place: the wrap pairs' target hit minus the cage point at PROJECT_THICK of the target's radius, blended over
+        the PROJECT_K nearest by inverse distance, mirrored for -x. The closest target point's step from there, cut to
+        PROJECT_MAX and refused when its normal turns away (PROJECT_NORMAL_MIN), smoothed over the mesh and masked
+        (the hands, the neck band, the soles' height), moves the vertex; a tangential relax keeps the loops even.
+        Returns the report."""
+        from mathutils.kdtree import KDTree
+        src, off = [], []
+        for c, d, cm, rt, kind in self.hits.values():
+            cp = c + d * (rt * PROJECT_THICK.get(kind, 1.0))
+            src.append(cp)
+            off.append(cm + d * rt - cp)
+        kd = KDTree(len(src))
+        for j, q in enumerate(src):
+            kd.insert(q, j)
+        kd.balance()
+
+        def ramp(v, full, zero):
+            t = max(0.0, min(1.0, (zero - v) / (zero - full)))
+            return t * t * (3 - 2 * t)
+        bm = bmesh.new()
+        bm.from_mesh(body.data)
+        bm.verts.ensure_lookup_table()
+        vs = bm.verts
+        mask = [ramp(abs(v.co.x), WRIST_X - PROJECT_HAND[0], WRIST_X - PROJECT_HAND[1])
+                * ramp(v.co.z, ring_z - PROJECT_NECK[0], ring_z - PROJECT_NECK[1])
+                * (1.0 if PROJECT_FOOT[1] < 0 else 1.0 - ramp(v.co.z, PROJECT_FOOT[1], PROJECT_FOOT[0])) for v in vs]
+        offs = []
+        for v in vs:
+            q = Vector((abs(v.co.x), v.co.y, v.co.z))
+            acc, wt = Vector(), 0.0
+            for _, j, dist in kd.find_n(q, PROJECT_K):
+                w = 1.0 / (dist * dist + 1e-6)
+                acc += off[j] * w
+                wt += w
+            o = acc / wt
+            o.x *= 1.0 if v.co.x >= 0 else -1.0
+            offs.append(o)
+        nbs = [[e.other_vert(v).index for e in v.link_edges] for v in vs]
+        out = {"verts": len(vs), "masked_out": sum(1 for m in mask if m <= 0), "passes": []}
+        for _ in range(PROJECT_PASSES):
+            bm.normal_update()
+            step, known, cut, refused = [], [], 0, 0
+            for v, m, o in zip(vs, mask, offs):
+                if m <= 0:
+                    step.append(Vector())
+                    known.append(True)
+                    continue
+                loc, nrm, _, _ = self.bvh.find_nearest(v.co + o)
+                if loc is None or nrm.dot(v.normal) < PROJECT_NORMAL_MIN:
+                    refused += 1
+                    step.append(Vector())
+                    known.append(False)
+                    continue
+                dv = loc - (v.co + o)
+                if dv.length > PROJECT_MAX:
+                    cut += 1
+                    dv *= PROJECT_MAX / dv.length
+                step.append(dv)
+                known.append(True)
+            for _ in range(PROJECT_SMOOTH + 2):  # the refused steps filled from their neighbours first
+                new = []
+                for i, dv in enumerate(step):
+                    avg = sum((step[j] for j in nbs[i]), Vector()) / max(len(nbs[i]), 1)
+                    new.append(avg if not known[i] else dv * 0.5 + avg * 0.5)
+                step = new
+            moved = []
+            for v, m, dv in zip(vs, mask, step):
+                dv = dv * m
+                if v.co.z < PROJECT_SOLE:
+                    dv.z *= max(0.0, v.co.z) / PROJECT_SOLE
+                v.co += dv
+                v.co.z = max(v.co.z, 0.0)
+                moved.append(dv.length)
+            for _ in range(PROJECT_RELAX):
+                bm.normal_update()
+                new = []
+                for v, m, nb in zip(vs, mask, nbs):
+                    avg = sum((vs[j].co for j in nb), Vector()) / max(len(nb), 1)
+                    t = avg - v.co
+                    t -= v.normal * t.dot(v.normal)
+                    new.append(v.co + t * (0.5 * m))
+                for v, co in zip(vs, new):
+                    if v.co.z > 1e-5:
+                        v.co = co
+                    v.co.z = max(v.co.z, 0.0)
+            out["passes"].append({"cut": cut, "refused": refused, "mean_mm": round(1000 * sum(moved) / len(moved), 2),
+                                  "max_mm": round(1000 * max(moved), 2)})
+        bm.to_mesh(body.data)
+        bm.free()
+        body.data.update()
+        return out
 
     def measure(self, body):
         """The subdivided body's radius along each wrapped vertex's direction against its goal; the corrections are
@@ -1063,6 +1179,9 @@ def main():
             me = o.data
             bpy.data.objects.remove(o)
             bpy.data.meshes.remove(me)
+    if wrap and PROJECT:  # H2: the target's forms after the subdivision
+        report["project"] = wrap.project(body, ring["z"])
+        print("project:", json.dumps(report["project"]), flush=True)
     report["cage_trunk"] = [[t[0]] + [round(x, 4) for x in t[1:]] for t in trunk]
     report["cage"] = {"half_faces": cage_faces, "faces": len(cage.data.polygons), "verts": len(cage.data.vertices),
                       "poles": {str(k): len(v) for k, v in poles(cage.data).items()},

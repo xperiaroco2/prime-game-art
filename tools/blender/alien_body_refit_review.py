@@ -160,6 +160,7 @@ def main():
     p.add_argument("--bands", default="")
     p.add_argument("--only", default="", help="turn: the turnaround only")
     p.add_argument("--fingers", action="store_true", help="H1: fingers.png, each finger curled alone")
+    p.add_argument("--bends", action="store_true", help="H2: bends.png, the left shoulder, elbow, hip and knee bent")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
     os.makedirs(a.out, exist_ok=True)
     bpy.ops.wm.open_mainfile(filepath=a.blend)
@@ -282,6 +283,8 @@ def main():
     print("REVIEW done", len(close), "close-ups", flush=True)
     if a.fingers:
         fingers(arm, cam, sc, a.out, bones, tails)
+    if a.bends:
+        bends(arm, cam, sc, a.out)
 
 
 def fingers(arm, cam, sc, out, bones, tails):
@@ -310,6 +313,37 @@ def fingers(arm, cam, sc, out, bones, tails):
         pb.rotation_quaternion = (1, 0, 0, 0)
     stitch(shots, 3, os.path.join(out, "fingers.png"), cell=(512, 512))
     print("REVIEW fingers", len(shots), flush=True)
+
+
+# H2: the joint bends (the weights come from the cage and the refit; big forms near a joint can collapse): each pose
+# (bone, world axis, degrees) from the rest T-pose, about the bone's head, seen from two sides of the joint.
+BENDS = [
+    ("shoulder_up", [("LeftUpperArm", "Y", -50)], "LeftUpperArm", [(0.15, -0.75, 0.10), (0.05, 0.75, 0.10)]),
+    ("shoulder_down", [("LeftUpperArm", "Y", 72)], "LeftUpperArm", [(0.10, -0.75, 0.0), (0.05, 0.75, 0.0)]),
+    ("shoulder_forward", [("LeftUpperArm", "Z", -80)], "LeftUpperArm", [(0.55, -0.45, 0.25), (0.45, 0.45, 0.30)]),
+    ("elbow", [("LeftLowerArm", "Z", -110)], "LeftLowerArm", [(0.10, -0.55, 0.45), (0.10, 0.05, -0.70)]),
+    ("hip", [("LeftUpperLeg", "X", -85)], "LeftUpperLeg", [(0.80, -0.20, 0.05), (0.25, -0.70, -0.25)]),
+    ("knee", [("LeftLowerLeg", "X", 115)], "LeftLowerLeg", [(0.80, 0.0, 0.05), (0.30, 0.65, 0.20)]),
+]
+
+
+def bends(arm, cam, sc, out):
+    shots = []
+    for name, rots, centre, views in BENDS:
+        rest(arm)
+        for bone, axis, deg in rots:
+            pb = arm.pose.bones[bone]
+            h = arm.matrix_world @ pb.head
+            rot = Matrix.Translation(h) @ Matrix.Rotation(math.radians(deg), 4, axis) @ Matrix.Translation(-h)
+            pb.matrix = arm.matrix_world.inverted() @ rot @ arm.matrix_world @ pb.matrix
+            bpy.context.view_layer.update()
+        c = arm.matrix_world @ arm.pose.bones[centre].head
+        for k, v in enumerate(views):
+            look(cam, c + Vector(v), c, lens=60)
+            shots.append(shot(sc, os.path.join(out, f"bend_{name}_{k}.png"), (768, 768)))
+    rest(arm)
+    stitch(shots, 4, os.path.join(out, "bends.png"), cell=(384, 384))
+    print("REVIEW bends", len(shots), flush=True)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 """The alien cage's targets (art #196, H1: the chameleon's hybrid body). alien_cage.py runs inside Blender; its targets
 loader and the S1c-to-new-skeleton remap are checked here with stub Blender modules: without a targets file every new
 path is off (S4b's numbers stay), chameleon_h1.toml loads with its four-finger hand and two toe groups and keeps the
-whole character under the height cap, and the remap's piecewise maps hit the new skeleton's stations."""
+whole character under the height cap, and the remap's piecewise maps hit the new skeleton's stations. H2:
+chameleon_h2.toml is H1's numbers (by `include`) with the projection onto the target on."""
 from __future__ import annotations
 
 import importlib.util
@@ -15,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 BLENDER = ROOT / "tools" / "blender"
 H1 = BLENDER / "alien_cage_targets" / "chameleon_h1.toml"
+H2 = BLENDER / "alien_cage_targets" / "chameleon_h2.toml"
 
 
 class _Any:
@@ -59,6 +61,7 @@ class CageTargets(unittest.TestCase):
         self.assertEqual(c.ARM_GUESS, (-0.01, 1.34))
         self.assertEqual(c.NECK_END_ELLIPSE, (0.0605, 0.047, 0.0565))
         self.assertEqual((c.TARGET_WELD, c.TARGET_MIRROR, c.TARGET_CLEAN), (0.0, "", []))
+        self.assertFalse(c.PROJECT)
         self.assertEqual(c.NECK_END, 1.374)
         self.assertEqual(c.WRAP_X, [(0.15, 0.185), (0.413, 0.355), (0.605, 0.525)])
 
@@ -76,6 +79,24 @@ class CageTargets(unittest.TestCase):
         # slender fingers: a subdivided finger's radius is about 0.7 of FINGER_R; 14 to 17 mm thick
         self.assertTrue(14.0 <= 2 * 0.7 * c.FINGER_R * 1000 <= 17.0)
         self.assertIsInstance(c.FINGER_RINGS[0][3], dict)
+
+    def test_h2_is_h1_with_the_projection(self):
+        h1 = _load()
+        h1.apply_cage_targets(H1)
+        c = self.c
+        self.assertEqual(c.apply_cage_targets(H2), "chameleon_h2")
+        self.assertTrue(c.PROJECT)
+        self.assertFalse(h1.PROJECT)
+        for k in h1.CAGE_KEYS:
+            if not k.startswith("PROJECT"):
+                self.assertEqual(getattr(c, k), getattr(h1, k), k)
+        self.assertEqual(set(c.PROJECT_THICK), {"trunk", "arm", "leg"})
+        self.assertTrue(all(0.8 <= v <= 1.3 for v in c.PROJECT_THICK.values()))
+        full, zero = c.PROJECT_HAND
+        self.assertGreater(full, zero)  # metres before the wrist: full further in, zero at the wrist
+        full, zero = c.PROJECT_NECK
+        self.assertGreater(full, zero)
+        self.assertGreaterEqual(zero, 0.016)  # nothing moves within the ring's two steps (the weld)
 
     def test_h1_height_under_the_cap(self):
         c = self.c

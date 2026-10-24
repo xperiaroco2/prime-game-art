@@ -2933,6 +2933,23 @@ a time, by visibility.
     stays below the 2D's 36 on this flat lower face: the rest is form (Test B), not material.
   - The pick is not in `alien.gd` or `look_presets.json`: the look needs the engineer's yes (the values are in the
     handoff and `TD/final/spec.json`).
+- **Bodies A, H1 and H2: the chameleon's hybrid body** (art #196; output under
+  `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
+  - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in
+    `tools/blender/alien_cage_targets/`; a file's `include` (a file beside it) is applied first. Without a file every
+    H1/H2 path is off and S4b's numbers stay.
+  - H1 (`chameleon_h1.toml`): the cage on the refit's chameleon skeleton (`CAGE_REMAP`), four fingers and a thumb,
+    shrink-wrapped onto the cleaned, mirrored Meshy body (`TARGET_*`). The wrap moves only the cage's coarse rings,
+    so the subdivision smooths the target's forms away (a slim mannequin).
+  - H2 (`chameleon_h2.toml`, `PROJECT`): after the subdivision every vertex is projected onto the same cleaned
+    target (`Wrap.project`). The target stands in its own frame (its stations and section centres), so a vertex is
+    first moved by the frame offset of the nearest wrap pairs, then by the closest target point's step (cut at
+    `PROJECT_MAX`, refused when the normals disagree), smoothed, masked (the hands from the wrist, the neck band
+    under the ring, the feet below the ankle, the soles' height) and relaxed tangentially. `PROJECT_THICK` sets
+    each region's thickness against the target's (the arms 1.12: ours are about 1.25 times as long as Meshy's).
+    The axolotl can reuse it with her own target and a file that includes hers.
+  - `alien_body_refit_review.py --bends` shoots the left shoulder (up, down, forward), elbow, hip and knee bent
+    (`bends.png`); `alien_body_beside.py` puts bodies and raw targets side by side at one scale (`beside.png`).
 
 ## Findings for later tasks
 
