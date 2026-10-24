@@ -355,6 +355,15 @@ func reset_motion() -> void:
 	_last.clear()
 
 
+## A3b: the eyes back at rest (yaw, pitch and their velocities zero), applied: a proof's next pass starts from the
+## eyes centred, not from where the last pass left them.
+func reset_eyes() -> void:
+	for side: String in _eye:
+		_eye[side] = Vector4.ZERO
+	_dart = Vector2.ZERO
+	_apply_eyes()
+
+
 ## A3: the darts' generator back to rng_seed (a reel starts the same on every run).
 func reseed() -> void:
 	_rng.seed = rng_seed

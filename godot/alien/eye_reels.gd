@@ -1,7 +1,7 @@
 extends "res://alien/char_shots.gd"
 ## The bare aliens' eyes on the body (art #196, A3), in the runner's off-screen window; tools/blender/alien_clip_run.py
 ## --eyes writes the job (clip_reels.gd's, plus "eye_modes"). Per head:
-## - rim_<head>.jpg: the lower rim of each eye close (orthographic, 0.09 m high, from the eye's front a little below),
+## - rim_<head>.jpg: the lower rim of each eye close (orthographic, RIM_SIZE high: 0.14 m since A3b, from the eye's front a little below),
 ##   rows the gaze at rest, down, to the head's left and right (eye_mode "free", the head held), each eye; columns as
 ##   built | albedo only | geometry only | SSAO off | the eye mask's share (debug_mode 0, 3, 2, 0, 7);
 ##   rim_<head>_4x/<row>_<eye>.png: the as-built and SSAO-off cells at 4x (the window's pixels, nearest);
@@ -13,6 +13,7 @@ extends "res://alien/char_shots.gd"
 
 const Char = preload("res://lib/character.gd")
 const RIM_CELL := Vector2i(256, 192)
+const RIM_SIZE := 0.14  # m: the rim close-up's height (A3's 0.09 cut the eye off)
 const LOOK := Vector2i(1280, 720)
 const LOOK_S := 8.0
 ## the look-around's keys: (time s, yaw deg toward +X, pitch deg up); smoothstep between, so the holds stay still
@@ -59,7 +60,7 @@ func _run() -> void:
 				var fwd: Vector3 = (to_world.basis * Lively._v(e["rest"])).normalized()
 				var lower: Vector3 = front - Vector3(0.0, float(e["radius"]) * 0.45, 0.0)
 				_cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-				_cam.size = 0.09
+				_cam.size = RIM_SIZE
 				_cam.position = lower + (fwd + Vector3(0.0, -0.35, 0.0)).normalized() * 1.0
 				_cam.look_at(lower)
 				for col: int in 5:
@@ -92,6 +93,7 @@ func _run() -> void:
 			live.eye_mode = mode
 			live.reset_motion()
 			live.reset_springs()
+			live.reset_eyes()  # A3b: the rim pass left the eyes turned (fixed's first frames settled from it)
 			live.reseed()
 			var dir := String(job["frames"]).path_join("%s_look_%s" % [name, mode])
 			DirAccess.make_dir_recursive_absolute(dir)
