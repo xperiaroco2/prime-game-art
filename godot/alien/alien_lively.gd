@@ -97,6 +97,9 @@ var _hy := 0.0  # the head's yaw and pitch now, and their velocities
 var _hp := 0.0
 var _hvy := 0.0
 var _hvp := 0.0
+## A3c: the eye's share decided per fragment from the eyeball sphere at the rim (alien_static.gdshader's rim rule), a
+## trial left off: the chameleon's eyeball leaves its fitted sphere by more than the lid rises at the lower rim
+var rim_rule := false
 var _eye := {"left": Vector4.ZERO, "right": Vector4.ZERO}  # yaw, pitch, their velocities
 var _bones := {}
 var _rest_q := {}  # B1: bone -> [its local rest rotation, its global rest rotation]
@@ -451,9 +454,18 @@ func _apply_eyes() -> void:
 		var c: Vector3 = to_mesh * (posed * _v(e["centre"]))
 		if bead:  # AL3: the bead's posed front, which bounds how far the fixed glint may sit (catch_reach)
 			g = (to_mesh.basis * posed.basis * _v(e["rest"])).normalized()
+		# A3c: the rim rule's posed eyeball sphere (the build's front fit, else the eye sphere) and axis; 0: the mask
+		var fs: Dictionary = e.get("front_sphere", {"centre": e["centre"], "r": e["radius"]})
+		var sph := Vector4.ZERO
+		if rim_rule:
+			var fc: Vector3 = to_mesh * (posed * _v(fs["centre"]))
+			sph = Vector4(fc.x, fc.y, fc.z, float(fs["r"]))
+		var ax: Vector3 = (to_mesh.basis * posed.basis * _v(e["rest"])).normalized()
 		for sm: ShaderMaterial in mats:
 			sm.set_shader_parameter("eye_centre_" + side.left(1), c)
 			sm.set_shader_parameter("gaze_" + side.left(1), g)
+			sm.set_shader_parameter("eye_sphere_" + side.left(1), sph)
+			sm.set_shader_parameter("eye_axis_" + side.left(1), ax)
 
 
 ## AL3: how far from the posed bead front the glint may sit (radians): its rest angle plus CATCH_MARGIN, so at rest
