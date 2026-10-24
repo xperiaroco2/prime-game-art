@@ -1109,8 +1109,9 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   `int_cyan__vent_cool` (calm) in front of `int_halo__vent_heat` (the problem: the game hides `cool`). The spots
   `vent_e`/`vent_w` have their own `depth_m = 0.6` (the engineer, comment 6363588759), the units (way A's, as
   history; vents-b4 recessed them 8 cm, `[-0.80, 0.80, -0.09, 0.52, -0.02, 1.85]`: the depth stays the budget from the
-  wall's face and `test_ship_vent` asserts the unit's depth plus `RECESS` within it)
-  `[-0.80, 0.80, -0.01, 0.60, -0.02, 1.82]`. The motion proof for way A: the body's three driven surfaces, each blade's
+  wall's face and `test_ship_vent` asserts the unit's depth plus `RECESS` within it; the current unit, b5 on:
+  `[-0.80, 0.80, -0.01, 0.50, -0.02, 1.85]`, so 0.6 is the spot's budget and the unit is 0.50 deep)
+  `[-0.80, 0.80, -0.01, 0.60, -0.02, 1.82]` (way A's, history). The motion proof for way A: the body's three driven surfaces, each blade's
   origin on its pivot (at most 2 mm), the root's ring round the axis fixed (its chord over the turn plus 4 mm, at least
   1.2 cm), the tip's swing at least 4 cm. Review:
   `ship_vent_a_sheet.py` (the concept's views beside neutral and warm EEVEE, `--game` a last row from the motion
@@ -1137,9 +1138,9 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   shape is a flat-faceted solid (`solid()`: a convex profile extruded with 45 deg chamfer steps on its ends), the
   chamfer faces a lighter polished bronze (`vent_b_edge`) over the body's `vent_b_bronze`, the caps `vent_b_copper`,
   the rails, sockets and strip slots `vent_b_dark`, the well's inner lip `vent_b_well`. The frame is a ring of nine
-  panels (4 mm apart) round the octagonal opening (`OUTER`, `OPEN`: u -0.56..0.388, h 0.304..1.408) and an inner lip
-  ring 2 cm lower; a chamfered header sill under the opening's top (h 1.335..1.412: no glow over the top
-  blade, as front_closed; the glows and `OPEN_H` stop at 1.33); behind it the box's back slab (the well's back, v 0.115) and its roof (the top 1.608, its back on
+  panels (4 mm apart) round the octagonal opening (`OUTER`, `OPEN`; b3's numbers, history: u -0.56..0.388, h
+  0.304..1.408; the current ones are in "Way B step 5" below) and an inner lip ring 2 cm lower; a chamfered header sill under the opening's top (h 1.335..1.412: no glow over the top
+  blade, as front_closed; the glows and `OPEN_H` stop at 1.33); behind it the box's back slab (the well's back, b3/b4 v 0.115, b5 0.088) and its roof (the top 1.608, its back on
   the wall's slant); the foot and the plinth; two dark cap rails in the well with seven copper caps each (a socket, a
   chamfered disc, a boss). The column (b3's numbers, history: vents-b4 put the scanner centre at 1.20, dropped the
   column's top by `COL_DROP` 0.198 and set it 8 cm into the wall): plinth, foot, shaft, a front panel, the bar's housing
@@ -1220,10 +1221,10 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
     0.30 heel corners, three capsule fingers of one length with U crotches, a thumb out at 48 deg filleted into the
     palm by a smooth union `HAND_K` 0.20), `hand_outline` walks its zero line and keeps a point every 7 deg of turn,
     `hand_stroke` offsets each point `HAND_W`/2 both ways along the field's normal (even width; every curve's
-    radius is over it, so neither side folds). Its box is 80 % of the screen's height, centred, 1 cm inside the
-    octagon. b3's mitred ribbon read ugly.
-- **Way B step 5 (vents-b5, 2026-10-24), the current build** (`<raw>/ship/v4/vents-b/b5`, the pieces in `pieces_b5`;
-  the engineer's notes on step 4):
+    radius is over it, so neither side folds). Its box was 80 % of the screen's height (b4, b5; b5b: 70 %, see below),
+    centred, 1 cm inside the octagon. b3's mitred ribbon read ugly.
+- **Way B step 5 (vents-b5, 2026-10-24)** (`<raw>/ship/v4/vents-b/b5`, the pieces in `pieces_b5`; superseded by b5b
+  below, whose changes are listed after this step; the engineer's notes on step 4):
   - *Back on the wall.* `recess_m` 0 on the vents' spots (`RECESS` 0; the engineer did not mean the 8 cm recess), the
     unit v -0.01..0.50. The two plain modules behind each vent are the pillow panels again (as b3; the flat plates
     were only there for the recess). Each frame panel's back now stands `FRAME_BACK` (6 mm) off the wall at its
@@ -1233,8 +1234,10 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
     the inner lip (b3 and b4: 14.7 cm past it): the hinge line `PIVOT_V` = face - `TIP_BACK` - 0.257 = 0.153 (b4
     0.33), the well's back `WELL_V` = `PIVOT_V` - `WELL_GAP` 0.065 = 0.088 (b4 0.115), the cap rails and copper
     caps set back with the hinge. The shut bottom blade's tip falls to 0.238, so the opening's floor is
-    `OPEN_FLOOR` 0.22 (b4 0.304) and `ship --motion` now holds the blades over it behind the face (b4 allowed 10 cm
-    under it). At the widest (the cough, calm + 10 deg) the tips stay 2.5 cm behind the face. The grid
+    `OPEN_FLOOR` 0.22 (b4 0.304) and `ship --motion` now holds the blades over it (b4 allowed 10 cm under it). At the
+    widest (the cough, calm + 10 deg) the tips stay 2.4 cm behind the face (the hull; 2.5 cm on the mesh). b5 claimed
+    the motion proof held the blades behind the face too, but its depth limit was still the unit's 0.50 (the column's
+    foot, 6 cm past the face): that came in b5c, see the motion result below. The grid
     (`sheets/b5/blade_depth_grid.png`): 0, 3 and 6 cm; `ship_vent_b.py --tip-back` and the review's `tip_back`
     build the others.
   - *A wider column.* The box's opening, blades and right side moved `BOX_DU` 4 cm along the wall (its left edge and
@@ -1247,6 +1250,25 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
     the palm's width 1), narrower fingers (`HAND_FR` 0.11) with wider U gaps (`HAND_GAP` 0.17), so the dark gap
     inside the stroke is 0.085 of the palm (b4 0.04) and reads at 2 m; the thumb `HAND_THUMB` a little lower and
     shorter, its fillet `HAND_K` 0.28 (0.20 folded the stroke's outer side).
+- **Way B step 5b (vents-b5b, 2026-10-24), the current build** (`<raw>/ship/v4/vents-b/b5b`, the pieces in
+  `pieces_b5b`; the manager's three findings on b5; PR #318):
+  - *Clean bezel corners.* `ring()` built the bezel and the bar's and lower strip's housings as eight panels, each
+    chamfered all round, with chamfers wider than the frame, so the front faces crossed into spikes at the corners. New
+    `bezel()` in `ship_vent_b.py`: each of the three is one closed solid between two octagons, the outer and inner
+    chamfers apart, straight mitres at the shared corners, a flat front face (asserted). Bezel outer 1.2 cm, inner
+    0.4 cm; bar housing 0.85 / 0.3; lower strip 0.6 / 0.3. The body is 5,548 triangles (b5 5,836). The frame's nine
+    panels and the well lip keep `ring()` (real gaps between panels).
+  - *Hand at 70 %.* `HAND_FILL` 0.70 (b4, b5: 80 %, where the ring finger's tip ran into the octagon's top right
+    corner and the hand read off-centre): the box is centred on the screen octagon's box, margins 2.37 cm left and
+    right, 3.43 cm top and bottom; finger lengths and thumb unchanged. `test_light_pieces` holds the margins and the
+    fill.
+  - *Mirror normals.* On the west (mirrored) vent `ship_build.import_glb` mirrored with a negative scale and
+    `flip_normals()`, which reverses the corners but not the stored custom normals, so the blades showed facets. The
+    corner normals are now read per (face, vertex), turned by the placement and set back after the flip; the west
+    blades are as smooth as the east. The blade GLB is still `b3/blade.glb`.
+  - *Result.* `ship --motion` on the pieces (`motion_b5b`): 528 frames, 0 cuts, 0 outside, 0 past the depth, least
+    clearance 0.0509 m. Check at the time: the blades inside the opening and under the unit's depth only; the new face
+    check (b5c, below) passes on the same pieces (`motion_b5c`).
 - **The animation (vents-anim1, 2026-10-24; the engineer: "make the vents, try to animate them"; beauty over
   motion).** `godot/ship/vent_anim.gd`, the controller the game copies: a Node per vent (`setup(root, id,
   mark_travel)` after the scene's materials are set; `_process` steps it, `manual = true` and `step(dt)` for a
@@ -1275,10 +1297,13 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   - *The demo* (`VentAnim.demo(s)`: calm to 6 s, the problem, the hold 8..13 s, the cough, calm to 22 s) drives both
     proofs. `ship --motion DIR` now runs it on the vent alone (the 22 s `vent_motion.mp4`) and checks every frame:
     each blade's sections against the next (the penetration depth; the least clearance on every other frame) and its
-    vertices against the opening and the unit's depth; `motion.json` `clip`, `clip_closeups.png` (the widest, the
+    vertices against the opening (since b5c also behind the frame's face plus 5 mm, `v_front`, over every frame; the
+    unit's depth `v_max` is the separate "past the depth" count); `motion.json` `clip`, `clip_closeups.png` (the widest, the
     slam, the bounce, a breath). First result (b3, history): 0 penetration, 0 outside, 0 past the depth, least
     clearance 1.5 cm, the blades 0..19 deg. The b4 clip (`<raw>/ship/v4/vents-b/motion_b4`): 0 penetration, 0 outside,
     0 past the depth, least clearance 5.1 cm, the blades 0..30 deg (calm 20, the cough's kick 10 above it; the top
-    blade never above calm). `ship --vent-anim DIR` (ship.gd mode `vent_anim`) renders it on the whole ship at night
+    blade never above calm). The b5b clip (`motion_b5b`): the same, least clearance 0.0509 m. The face check (b5c,
+    `motion_b5c`, the b5b pieces): 0 outside including the face plane; as a control, with `v_front` set 4 cm inside
+    the face the same run fails with 0.0150 m outside, so the farthest tip is 2.5 cm behind the face. `ship --vent-anim DIR` (ship.gd mode `vent_anim`) renders it on the whole ship at night
     from about 3 m across the throat at the player's eye (`VENT_ANIM` in `ship.py`), 1280x720, and shoots the demo's
     key moments again with their labels into `keys/` and `keys_sheet.png`.
