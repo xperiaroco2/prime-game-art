@@ -234,9 +234,9 @@ func _sample(id: String, clip: Dictionary, when: String, clearance: bool) -> voi
 		var pts: PackedVector3Array = _verts(id, _leaf(id, "slat%d" % k) as MeshInstance3D)
 		rows.append(_sections(pts))
 		for p: Vector3 in pts:
-			var lo_h: float = o["h0"] if p.z < float(o["v_face"]) else float(o["v_face_h0"])
-			var out: float = maxf(maxf(float(o["u0"]) - p.x, p.x - float(o["u1"])), maxf(lo_h - p.y, p.y - float(o["h1"])))
+			var out: float = maxf(maxf(float(o["u0"]) - p.x, p.x - float(o["u1"])), maxf(float(o["h0"]) - p.y, p.y - float(o["h1"])))
 			out = maxf(out, float(o["v_back"]) - p.z)
+			out = maxf(out, p.z - float(o["v_front"]))   # never in front of the frame's face (5 mm tolerance)
 			if out > clip["max_outside_m"]:
 				clip["max_outside_m"] = out
 				clip["worst"] = "slat%d outside by %.4f at %s" % [k, out, when]
@@ -305,7 +305,7 @@ func _check(id: String) -> Dictionary:
 	if not r["missing"].is_empty() or shapes != 2:
 		r["problems"].append("missing %s, %d convex colliders" % [str(r["missing"]), shapes])
 		return r
-	var o: Dictionary = _req["vents"][id]["opening"]   # u0 u1 h0 h1 (h absolute), v_back, v_max
+	var o: Dictionary = _req["vents"][id]["opening"]   # u0 u1 h0 h1 (h absolute), v_back, v_max (the unit's depth), v_front (the face + 5 mm)
 	# each slat: its origin on its upper edge, the edge still at 0 and 1, the hinge's drift, the tip's swing
 	var edge_drift: float = 0.0
 	var origin_off: float = 0.0
@@ -323,11 +323,9 @@ func _check(id: String) -> Dictionary:
 			var pts: PackedVector3Array = _verts(id, node)
 			row.append(_sections(pts))
 			for p: Vector3 in pts:
-				# behind the frame's face inside the opening; in front of it (hanging over the frame's bottom bar, which
-				# it cannot cut) only between the cap rows and over the deck's v_face_h0
-				var lo_h: float = o["h0"] if p.z < float(o["v_face"]) else float(o["v_face_h0"])
-				var inside_open: bool = p.x > o["u0"] and p.x < o["u1"] and p.y > lo_h and p.y < o["h1"]
-				if not inside_open or p.z < o["v_back"] or p.z > o["v_max"]:
+				# inside the opening and behind the frame's face (v_front: the face plus 5 mm)
+				var inside_open: bool = p.x > o["u0"] and p.x < o["u1"] and p.y > o["h0"] and p.y < o["h1"]
+				if not inside_open or p.z < o["v_back"] or p.z > o["v_front"]:
 					outside.append("slat%d t %.1f at (%.3f, %.3f, %.3f)" % [k, t, p.x, p.y, p.z])
 					break
 		sections.append(row)

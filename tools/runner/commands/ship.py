@@ -492,11 +492,12 @@ def motion_request(layout: dict) -> dict:
         # way A: the blades keep between the cap rows (their ends sit in the caps), in front of the well's glow
         u = sorted((s * v.CAP_U[0], s * v.CAP_U[1]))
         g = sorted((s * v.GLASS_U[0], s * v.GLASS_U[1]))
-        # vents-b5: behind the frame's face the blades stay over the opening's floor (b4 10 cm under it: the blades
-        # stood out of the frame)
+        # vents-b5c: the blades stay inside the opening in every plane and behind the frame's face (+5 mm)
         vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0], "h1": f + v.OPEN_H[1],
-                                  "v_back": v.COOL_V + 0.002 - r, "v_max": v.UNIT[3],
-                                  "v_face": v.BOX_FACE - r, "v_face_h0": f + 0.12},
+                                  "v_back": v.COOL_V + 0.002 - r,
+                                  # v_max: the unit's depth (the body's check); v_front: the frame's face plus
+                                  # 5 mm, the plane no blade vertex may pass (vents-b5c; b5 left it at v_max)
+                                  "v_max": v.UNIT[3], "v_front": v.BOX_FACE - r + 0.005},
                       "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]},
                       # each blade's pivot on the caps' axis (Godot x, y, z)
                       "pivots": [[s * (v.CAP_U[0] + v.CAP_U[1]) / 2, f + v.PIVOT_TOP - k * v.PITCH, v.PIVOT_V - r]
