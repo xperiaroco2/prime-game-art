@@ -286,7 +286,10 @@ def rim_smooth(P, N, T, I, eyeball, centres, r, iters):
     each capped at RIM_CAP of the eye radius from the start and followed by a projection onto the surface as it was (the lid and eyeball triangles near the eye), so the
     vertex slides along the head, not off it: the shape stays, only the seam between the two moves. Junctions and ends
     of the rim stay put. The normals of the triangles round a moved vertex turn with their geometric normal (as in
-    eyeball_fix), and every rim position's copies take one normal (the seam welded; a fold, copies over RIM_WELD_DEG apart, stays split). Returns P, N, T and the report."""
+    eyeball_fix), and every rim position's copies take one normal (the seam welded; a fold, copies over RIM_WELD_DEG apart, stays split). A3d: a triangle round a moved vertex whose geometric normal
+    flips (dot <= 0) or whose area drops under 10 % scales the whole step back (halved and re-projected, down to 1/64;
+    still one: the build fails); the count goes into the report (bad_triangles) and pit_geometry. Returns P, N, T and
+    the report."""
     weld = np.unique(np.round(P * 1e5).astype(np.int64), axis=0, return_inverse=True)[1].ravel()
     nw = int(weld.max()) + 1
     near_t = np.minimum(*(np.linalg.norm(P[I].mean(1) - c, axis=1) for c in centres.values())) < 1.4 * r
@@ -327,12 +330,33 @@ def rim_smooth(P, N, T, I, eyeball, centres, r, iters):
         dl = np.linalg.norm(d, axis=1)
         S = S0 + d * np.minimum(1.0, RIM_CAP * r / np.maximum(dl, 1e-12))[:, None]
         S[free] = np.array([tuple(bvh.find_nearest(Vector(p))[0]) for p in S[free]])
-    z1 = zigzag(S)
-    P1 = P.copy()
     on = np.isin(weld, nodes)
-    pos = np.zeros((nw, 3))
-    pos[nodes] = S
-    P1[on] = pos[weld[on]]
+
+    def place(Sx):  # the mesh with the rim nodes at Sx (every copy of a welded position moved together)
+        Q = P.copy()
+        pos = np.zeros((nw, 3))
+        pos[nodes] = Sx
+        Q[on] = pos[weld[on]]
+        return Q
+
+    def bad_tris(Q):  # A3d: triangles round a moved vertex whose geometric normal flips or whose area drops under 10 %
+        t = np.isin(I, np.nonzero(np.linalg.norm(Q - P, axis=1) > 0)[0]).any(1)
+        f0 = np.cross(P[I[t, 1]] - P[I[t, 0]], P[I[t, 2]] - P[I[t, 0]])
+        f1 = np.cross(Q[I[t, 1]] - Q[I[t, 0]], Q[I[t, 2]] - Q[I[t, 0]])
+        a0, a1 = np.linalg.norm(f0, axis=1), np.linalg.norm(f1, axis=1)
+        ok = a0 > 1e-12  # a triangle degenerate before cannot flip
+        return int((ok & (((f0 * f1).sum(1) <= 0) | (a1 < 0.1 * a0))).sum())
+    bad_first = bad_tris(place(S))
+    bad, scale, S_full = bad_first, 1.0, S
+    while bad > 0 and scale > 1.0 / 64:  # the step scaled back (halved, then re-projected) until no triangle folds
+        scale *= 0.5
+        S = S0 + (S_full - S0) * scale
+        S[free] = np.array([tuple(bvh.find_nearest(Vector(p))[0]) for p in S[free]])
+        bad = bad_tris(place(S))
+    if bad > 0:
+        raise SystemExit(f"LIVELY rim: {bad} triangles still flip or collapse at 1/64 of the step")
+    z1 = zigzag(S)
+    P1 = place(S)
     mv = np.linalg.norm(S - S0, axis=1)
 
     def geo_normals(Q):
@@ -373,6 +397,7 @@ def rim_smooth(P, N, T, I, eyeball, centres, r, iters):
                          "after_p50": round(float(np.median(z1)) * 1000, 3), "after_max": round(float(z1.max()) * 1000, 3)},
            "normal_split_welded_deg": round(split, 2), "folds_left_split": int(folded.sum()),
            "normals_changed": int(changed.sum()),
+           "bad_triangles": {"at_full_step": bad_first, "after": bad, "step_scale": scale},
            "max_abs_n_dot_t_after": round(float(np.abs((N1 * T1[:, :3]).sum(1)).max()), 6)}
     for side, c in centres.items():
         rep["left" if side > 0 else "right"] = side_stats(np.linalg.norm(S0 - c, axis=1) < 1.5 * r)
@@ -496,6 +521,8 @@ def main():
         data = G.write_glb(doc, binary)
         cen = P[I].mean(1)
         residual_view(out / "eye_residual.png", P, I, views)
+        if args.rim_smooth > 0:
+            pit["rim_bad_triangles"] = rim["bad_triangles"]  # A3d: flipped or collapsed (under 10 %) round the rim
         report["pit_geometry"] = pit
         for k in ("left", "right"):
             print(f"LIVELY pit {k}: " + json.dumps({n: (b["before_median_pct"], b["after_median_pct"], b["before_min_pct"],
@@ -509,7 +536,6 @@ def main():
     # ---- every texel of the triangles near the eyes gets its 3D position (a small UV rasterizer)
     hue, sat, val = hsv(alb)
     eye = mask[..., 0] < 0.5
-    eye_m = mask[..., 0] < 0.5
     posmap = np.full((H, W, 3), np.nan)
     # strict coverage (no overdraw) of every triangle: what the GPU samples; the rest of the atlas is gutter
     cov_any, cov_eye = np.zeros((H, W), bool), np.zeros((H, W), bool)
@@ -540,8 +566,8 @@ def main():
     has_pos = ~np.isnan(posmap[..., 0])
     # A3b: the eye mask against the triangles near the eyes: the lid texels it calls eye (sclera drawn on the lid) and
     # the eyeball texels it calls skin; near 0 both, the mask's edge is the triangles' edge and moves with the rim
-    report["mask_vs_triangles"] = {"lid_texels": int(near_l.sum()), "lid_called_eye": int((near_l & ~near_e & eye_m).sum()),
-                                   "eye_texels": int(near_e.sum()), "eye_called_skin": int((near_e & ~near_l & ~eye_m).sum())}
+    report["mask_vs_triangles"] = {"lid_texels": int(near_l.sum()), "lid_called_eye": int((near_l & ~near_e & eye).sum()),
+                                   "eye_texels": int(near_e.sum()), "eye_called_skin": int((near_e & ~near_l & ~eye).sum())}
     print(f"LIVELY mask vs triangles: {json.dumps(report['mask_vs_triangles'])}", flush=True)
     hole0 = np.zeros((H, W), bool)
     side_of = np.zeros((H, W), np.int8)
