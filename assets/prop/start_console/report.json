@@ -84,7 +84,7 @@
     "order": "set_lit(look, i) while the order plays (0..3 west, 4..7 east, from the hall outward)",
     "stage": "set_passed(look, n): n strips green"
   },
-  "placement": "at the hall's centre on the deck, yaw 180 in the ship (its front, the button, toward the mouth)",
+  "placement": "on the ship's console spot (layouts/ship/ship.toml: plan (0, 0.6), 1 m aft of the hall's centre) on the deck, yaw 180 (its front, the button, toward the mouth)",
   "gltf_validator": {
     "numErrors": 0,
     "numWarnings": 0,
@@ -93,9 +93,9 @@
   },
   "godot_cost": {
     "draw_calls_console": 9,
-    "gpu_ms_console": 0.102,
-    "gpu_ms_with": 0.669,
-    "gpu_ms_without": 0.567,
+    "gpu_ms_console": 0.134,
+    "gpu_ms_with": 0.662,
+    "gpu_ms_without": 0.528,
     "view": "1280x720, eye 1.6 m, 2.1 m away"
   },
   "review": "<raw>/start-console/build2/godot/sheet.png"
