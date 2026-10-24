@@ -57,6 +57,17 @@ class VentAnimTest(unittest.TestCase):
         times = [k[0] for k in c["COUGH"]]
         self.assertEqual(times, sorted(times))
 
+    def test_every_bar_part_is_driven(self) -> None:
+        """vents-b4c: the light bar is four meshes (ship_interior_vent.BAR); a part the controller does not take over
+        (bar_top once stayed at full emission in calm, bar_hot never reacted) shows as an uneven bar."""
+        text = SCRIPT.read_text(encoding="utf-8")
+        parts = [name for name, *_ in v.BAR]
+        self.assertEqual(set(parts), {"bar_hot", "bar", "band", "bar_top"})
+        for name in parts:
+            self.assertIn('"%s"' % name, text, "vent_anim.gd never takes over the bar part %s" % name)
+        self.assertEqual(self.c["BAR_PARTS"], ["bar", "bar_top"])
+        self.assertIn("for e: Array in _bar + _bar_hot:", text)   # bar_hot rides the bar's calm / problem scale
+
     def test_timings(self) -> None:
         c = self.c
         self.assertTrue(3.0 <= c["BREATH_PERIOD_S"] <= 4.0)

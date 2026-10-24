@@ -60,6 +60,7 @@ const LAMP_LOW := 0.35              # the problem's pulse between LAMP_LOW and 1
 const LAMP_PULSE_HZ := 1.3
 const BAR_CALM := 0.6               # the bar's amber when calm; 1 with the problem
 const BAND_GAIN := 1.6              # the green band brightens by up to this as the marker nears it
+const BAR_PARTS := ["bar", "bar_top"]   # the amber segments (ship_interior_vent.BAR); "bar_hot" is _bar_hot, "band" _band
 const SEAM_DARK := Color(0.16, 0.09, 0.05)   # the blades' seam strips, unlit (calm)
 
 var vent_id: String = ""
@@ -89,7 +90,8 @@ var _cool: MeshInstance3D
 var _heat: MeshInstance3D
 var _glow: Dictionary = {}           # "cool" / "heat" -> [[material, energy, emission colour]], lights [[light, energy, colour]]
 var _lamp: Array = []                # [[material, energy]]
-var _bar: Array = []
+var _bar: Array = []                 # the amber bar's parts (BAR_PARTS), all driven by the same curve
+var _bar_hot: Array = []             # the white-hot foot: the same calm / problem scale on its own base energy
 var _band: Array = []
 var _seams: Array = []               # [[material, energy, albedo]]
 
@@ -111,21 +113,24 @@ func setup(root: Node3D, id: String, mark_travel: float = 0.896) -> void:
 	vent_id = id
 	_slats.clear()
 	for k: int in range(1, SLATS + 1):
-		_slats.append(root.find_child("%s_slat%d" % [id, k], true, false))
-	_marker = root.find_child(id + "_marker", true, false)
+		_slats.append(_leaf(root, id, "slat%d" % k))   # a missing blade stays null (warned): the index is the blade
+	_marker = _leaf(root, id, "marker")
 	_rest_y = _marker.position.y if _marker != null else 0.0
 	_travel = mark_travel
-	_cool = root.find_child(id + "_cool", true, false)
-	_heat = root.find_child(id + "_heat", true, false)
+	_cool = _leaf(root, id, "cool")
+	_heat = _leaf(root, id, "heat")
 	for pair: Array in [["cool", _cool], ["heat", _heat]]:
 		var lights: Array = []
 		if pair[1] != null:
 			for l: Node in (pair[1] as Node).find_children("*_light*", "OmniLight3D", false, false):
 				lights.append([l, (l as OmniLight3D).light_energy, (l as OmniLight3D).light_color])
 		_glow[pair[0]] = {"mats": _take(pair[1]), "lights": lights}
-	_lamp = _take(root.find_child(id + "_lamp", true, false))
-	_bar = _take(root.find_child(id + "_bar", true, false))
-	_band = _take(root.find_child(id + "_band", true, false))
+	_lamp = _take(_leaf(root, id, "lamp"))
+	_bar.clear()
+	for part: String in BAR_PARTS:
+		_bar.append_array(_take(_leaf(root, id, part)))
+	_bar_hot = _take(_leaf(root, id, "bar_hot"))
+	_band = _take(_leaf(root, id, "band"))
 	_seams.clear()
 	for s: Node in _slats:
 		_seams.append_array(_take(s, "__vent_seam"))
@@ -137,6 +142,14 @@ func setup(root: Node3D, id: String, mark_travel: float = 0.896) -> void:
 	_since = 0.0
 	_breath_t0 = _t - BREATH_IN_S   # the first breath at full amplitude
 	_apply()
+
+
+## The leaf `<id>_<suffix>` under root, or null with a warning.
+func _leaf(root: Node3D, id: String, suffix: String) -> Node:
+	var n: Node = root.find_child("%s_%s" % [id, suffix], true, false)
+	if n == null:
+		push_warning("vent_anim: no %s_%s under %s (a renamed import?)" % [id, suffix, root.name])
+	return n
 
 
 ## A mesh's surfaces' materials (those whose name ends with suffix) as copies set as surface overrides:
@@ -160,7 +173,7 @@ func _take(n: Node, suffix: String = "") -> Array:
 
 ## Puts the vent's materials back as the scene had them (the overrides off) and the leaves at calm.
 func release(root: Node3D) -> void:
-	for suffix: String in ["cool", "heat", "lamp", "bar", "band"] + range(1, SLATS + 1).map(func(k: int) -> String: return "slat%d" % k):
+	for suffix: String in ["cool", "heat", "lamp", "bar", "bar_top", "bar_hot", "band"] + range(1, SLATS + 1).map(func(k: int) -> String: return "slat%d" % k):
 		var mi: MeshInstance3D = root.find_child("%s_%s" % [vent_id, suffix], true, false) as MeshInstance3D
 		if mi != null:
 			for i: int in mi.mesh.get_surface_count():
@@ -320,7 +333,7 @@ func _apply() -> void:
 	for e: Array in _lamp:
 		(e[0] as BaseMaterial3D).emission_energy_multiplier = float(e[1]) * lamp
 	var bar: float = lerpf(BAR_CALM, 1.0, heat_mix)
-	for e: Array in _bar:
+	for e: Array in _bar + _bar_hot:   # bar, bar_top (one even amber) and the white-hot foot follow the same scale
 		(e[0] as BaseMaterial3D).emission_energy_multiplier = float(e[1]) * bar
 	var band: float = 1.0 + (BAND_GAIN - 1.0) * smoothstep(0.75, 1.0, marker) + (_puff - 1.0) * 0.4
 	for e: Array in _band:
