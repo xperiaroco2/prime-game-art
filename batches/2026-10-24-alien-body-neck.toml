@@ -1,0 +1,95 @@
+# art#196, the 3D bodies of the chameleon man and the axolotl woman. The engineer picked body A for both (2026-10-24,
+# chat: "Тіла мені подобається саме А варіант. Вони самі адекватні."; recorded in the approval_ref comment). Every A
+# concept narrows the neck to a tube where the approved roster busts flare it into the shoulders, so one high edit per
+# alien widens the neck into the shoulders as in the bust and changes nothing else (focused work on one piece: high);
+# then, from that edit, one medium turnaround per alien (front, side, back in one image) as the 3D route's views. The
+# standing OpenAI permission (#196 comment 6291187194) covers it within the cap. No game, film, studio, character or
+# real-person names; no style names of other works.
+id = "2026-10-24-alien-body-neck"
+service = "openai-images"
+purpose = "art#196: the chosen A bodies with the neck widened into the shoulders as in the roster busts (high), and a front/side/back turnaround of each (medium) for the 3D body."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 1.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-24"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6383047155"
+model = "gpt-image-2.5-sunburst"
+quality = "high"
+
+[defaults]
+size = "1024x1536"
+n = 1
+
+[[items]]
+id = "ch_neck"
+kind = "edit"
+prompt = "The first reference image is the finished full-body design of the chameleon man, an adult alien character. Reproduce it exactly, the same picture, with one change only: his neck. In the first image the neck is a thin straight tube that meets the shoulders at a sharp corner. Make it like the neck in the second reference image, his approved head-and-shoulders bust: the same slim neck under the jaw, which then widens smoothly downward in a soft concave sweep, like sloping trapezius muscles, flowing into the shoulders so that neck and shoulders read as one continuous shape, never a tube stuck onto the body. The pale mint throat continues down the front of the widened neck into the pale chest panel as before. Keep everything else exactly as in the first image: the head, its crest and bands, the face, the eyes, the lips, the skin colours and stripes, the body's proportions and build, the arms, the hands and fingers, the legs and feet, the pose, the camera angle, the framing, the smooth soft-matte vinyl toy finish, the light and the plain grey background. No text, no labels, no logos, no props."
+images = [
+  { file = "raw:2026-10-23-alien-body-concepts/ch_bare_a/image-0.png", provenance = "ch_bare_a, the chameleon's body A (picked by the engineer, 2026-10-24), our own OpenAI generation, batch 2026-10-23-alien-body-concepts", sha256 = "da55032d9179d2d9c4289c0da9aed1efad99855e18bf949a6e7ac24ff99d72e7" },
+  { file = "raw:research/2026-10-22-roster/design/final/m01-chameleon.jpg", provenance = "m01, the chameleon man of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "9a4109f9495e3d9ccc72b2517d6036c431799435e204bed3bc7024880bcf6750" },
+]
+
+[[items]]
+id = "ax_neck"
+kind = "edit"
+prompt = "The first reference image is the finished full-body design of the axolotl woman, an adult alien character. Reproduce it exactly, the same picture, with one change only: her neck. In the first image the neck is a thin straight tube that meets the shoulders at a sharp corner. Make it like the neck in the second reference image, her approved head-and-shoulders bust: the same slim neck under the chin, which then widens smoothly downward in a soft concave sweep, gently sloping, flowing into the shoulders so that neck and shoulders read as one continuous graceful shape, never a tube stuck onto the body. The pale mint throat continues down the front of the widened neck into the pale chest panel as before. Keep everything else exactly as in the first image: the head, the feathery gill stalks, the face, the eyes, the smile, the freckle dots, the skin colours, the body's proportions and slender build, the arms, the hands and fingers, the legs and feet, the pose, the camera angle, the framing, the smooth soft-matte vinyl toy finish, the light and the plain grey background. No text, no labels, no logos, no props."
+images = [
+  { file = "raw:2026-10-23-alien-body-concepts/ax_bare_a/image-0.png", provenance = "ax_bare_a, the axolotl's body A (picked by the engineer, 2026-10-24), our own OpenAI generation, batch 2026-10-23-alien-body-concepts", sha256 = "3b392f474aba8399464db0c84f8f6e38d72b049480a09013619d7bfe14531eb5" },
+  { file = "raw:research/2026-10-22-roster/design/final/w01-axolotl.jpg", provenance = "w01, the axolotl woman of the approved 2D roster (art#196, 2026-10-22), our own OpenAI generation", sha256 = "41e9054af43a8c3f04d2c8575aeb2726a459f8a4e6189e1534b4b24c5d65961d" },
+]
+
+[[items]]
+id = "ch_turn"
+kind = "edit"
+quality = "medium"
+size = "1536x1024"
+prompt = "The reference image shows the chameleon man, a finished full-body character design. Make a clean character turnaround sheet of his whole body, head to feet: three full-length views side by side in one row, evenly spaced, the same size and the same height, at the same scale, the feet on one level: on the left the front view looking straight at the viewer, in the middle the exact side profile facing left, on the right the back view. The same neutral relaxed standing pose in every view: standing straight, feet a little apart, arms hanging a little away from the body so the arms, hands and legs are clearly separated from the torso, hands open and relaxed with the fingers readable. Every part of the body must be readable from each side, so its shape can be built in 3D. Keep the same character exactly: the same head, crest, face, proportions, the neck widening smoothly into the shoulders, the hands with four fingers and a thumb, the long two-group feet, the skin colours, the pale front panel and the stripes, the same smooth soft-matte vinyl toy finish, the same soft even studio light on a plain flat neutral mid-grey background. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { from = "ch_neck", pick = 0 },
+]
+
+[[items]]
+id = "ax_turn"
+kind = "edit"
+quality = "medium"
+size = "1536x1024"
+prompt = "The reference image shows the axolotl woman, a finished full-body character design. Make a clean character turnaround sheet of her whole body, head to feet: three full-length views side by side in one row, evenly spaced, the same size and the same height, at the same scale, the feet on one level: on the left the front view looking straight at the viewer, in the middle the exact side profile facing left, on the right the back view. The same neutral relaxed standing pose in every view: standing straight, feet a little apart, arms hanging a little away from the body so the arms, hands and legs are clearly separated from the torso, hands open and relaxed with the fingers readable. Every part of the body must be readable from each side, so its shape can be built in 3D. Keep the same character exactly: the same head, gill stalks, face, proportions, the neck widening smoothly into the shoulders, the hands with four fingers and a thumb, the soft rounded feet, the skin colours, the pale front panel and the freckle dots, the same smooth soft-matte vinyl toy finish, the same soft even studio light on a plain flat neutral mid-grey background. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { from = "ax_neck", pick = 0 },
+]
+
+# ax_turn was refused by OpenAI's moderation (sexual, req_edc6a7974ef64f73b10e134bab9bc1e1); the second try asks for a
+# stylised collectible figure with a simplified, smooth torso and keeps the rest.
+[[items]]
+id = "ax_turn_b"
+kind = "edit"
+quality = "medium"
+size = "1536x1024"
+prompt = "The reference image shows the axolotl woman, a finished design of a stylised cartoon alien character, made like a smooth vinyl collectible figure. Make a clean, family-friendly character model sheet for building the figure in 3D: three full-length views of the same figure side by side in one row, evenly spaced, the same size and height, at the same scale, the feet on one level: on the left the front view looking straight at the viewer, in the middle the exact side profile facing left, on the right the back view. The same neutral standing pose in every view: standing straight, feet a little apart, arms hanging a little away from the body so the arms, hands and legs are clearly separated from the torso, hands open and relaxed with the fingers readable. The torso is a simplified smooth toy shape with a slender waist, with no anatomical detail at all, like an action figure. Keep the same character: the same head, gill stalks, face, proportions, the slender neck widening smoothly into the shoulders, the hands with four fingers and a thumb, the soft rounded feet with short toes, the teal skin with the pale front panel and the freckle dots, the same smooth soft-matte finish, the same soft even studio light on a plain flat neutral mid-grey background. No clothes, no text, no labels, no logos, no numbers."
+images = [
+  { from = "ax_neck", pick = 0 },
+]
+
+# ax_turn_b was refused too (sexual, req_e1467a9d6e0f4eca97f9f595f8856dc3), most likely the back view of the bare
+# female figure; the third try asks for the front and the side only.
+[[items]]
+id = "ax_turn_c"
+kind = "edit"
+quality = "medium"
+size = "1536x1024"
+prompt = "The reference image shows the axolotl woman, a stylised cartoon alien character designed as a smooth vinyl collectible figure. Make a clean, family-friendly model sheet with two full-length views of the same figure side by side, the same size and height, at the same scale, the feet on one level: on the left the front view looking straight at the viewer, on the right the exact side profile facing left. The same neutral standing pose in both: standing straight, feet a little apart, arms hanging a little away from the body, hands open and relaxed with the fingers readable. Keep the same character and the same simplified smooth toy body: the same head, gill stalks, face, proportions, the slender neck widening smoothly into the shoulders, the hands with four fingers and a thumb, the soft rounded feet with short toes, the teal skin with the pale front and the freckle dots, the same soft-matte finish and soft even studio light on a plain flat neutral mid-grey background. No text, no labels, no logos, no numbers."
+images = [
+  { from = "ax_neck", pick = 0 },
+]
+
+# The engineer (2026-10-24, chat): the axolotl's chest is too minimal; make it a little fuller, "literally one size",
+# more womanly, never sexualised; a concept for him to judge. One high edit of ax_neck, nothing else changed.
+[[items]]
+id = "ax_bust"
+kind = "edit"
+prompt = "The reference image is the finished full-body design of the axolotl woman, a stylised cartoon alien character made like a smooth vinyl collectible figure. Reproduce it exactly, the same picture, with one small change only: her chest is a little too flat and girlish now, so give her a slightly fuller, more womanly chest, about one size larger, still small and modest, softly rounded and smooth, with no anatomical detail, in the same simplified toy style, tasteful and not sexualised. Keep everything else exactly as in the reference: the head, the gill stalks, the face, the smile, the freckle dots, the slender neck widening into the shoulders, the waist, the hips, the arms, the hands and fingers, the legs and feet, the skin colours and the pale front, the pose, the camera angle, the framing, the soft-matte finish, the light and the plain grey background. No text, no labels, no logos, no props."
+images = [
+  { from = "ax_neck", pick = 0 },
+]
