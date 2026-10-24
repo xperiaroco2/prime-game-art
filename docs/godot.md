@@ -1240,10 +1240,13 @@ pilot's static premium heads"):
   - The whole-head gate vs r5 (front, left, back, right; A3 before, A3b after): chameleon 0.314/0.316,
     0.221/0.221, 0.111/0.111, 0.307/0.305; axolotl 0.078/0.097, 0.027/0.031, 0.065/0.065, 0.027/0.030. The backs do not
     move; only the face's rim and (the chameleon) the eye texels' normal map changed.
-  - The faint concentric rings on the chameleon's eyeball (where the sculpted iris was) are in the normal map: they
-    show as built and with SSAO off, not in the geometry-only column (`debug_mode` 2 skips the normal map). The build's
-    `--sclera-normal-map 0` writes `controller.sclera_normal_map` 0 (the normal map off on the eye texels, where the
-    gaze draws the eye).
+  - The faint concentric rings on the chameleon's eyeball (where the sculpted iris was) are not geometry: they show
+    as built and with SSAO off, not in the geometry-only column. They are not the normal map either: the A3b build
+    writes `controller.sclera_normal_map` 0 (`--sclera-normal-map 0`) and the rings stay (`a3b/eyes/rim_chameleon.jpg`).
+    The likely source, not yet checked, is the detail map's alpha, the limbal darkening (`limbal * d.a * eye` in
+    `alien_static.gdshader`), still painted at the old iris.
+  - After A3b the lower rim reads smoother at the large scale, but a fine serration is still visible as built and in
+    the geometry-only column: the next step.
   - `eye_reels.gd`: `reset_eyes()` (new in `alien_lively.gd`) before each look pass, so the fixed reel starts
     centred; the rim close-ups are 0.14 m high (`RIM_SIZE`; A3's 0.09 cut the eye off).
   - `godot/alien/lively_check.gd` with `tools/tests/test_alien_lively_godot.py`: the pile-up guard (a clip that stops
