@@ -37,7 +37,8 @@
 // profile (8 medians of the painted iris, pupil edge to limbus), the pupil's colour, a limbal ring and a painted
 // catch light (catch_light 0: none, as the painted eyes have none).
 // debug_mode: 1 grey with the normal map, 2 grey geometry only, 3 the albedo alone (emitted), 4 and 5 the colour
-// slots' regions as flat codes and inverted (CS6's lit measurement), 6 the recoloured albedo alone (emitted; B4).
+// slots' regions as flat codes and inverted (CS6's lit measurement), 6 the recoloured albedo alone (emitted; B4),
+// 7 the eye mask's share alone (1 - mask R, emitted: where the gaze draws the sclera and iris; A3).
 shader_type spatial;
 render_mode diffuse_burley, specular_schlick_ggx;  // static_v3: no sss_mode_skin (its red profile browned the teal creases)
 
@@ -317,6 +318,15 @@ void fragment() {
 		RIM = 0.0;
 		BACKLIGHT = vec3(0.0);
 		CLEARCOAT = 0.0;
+	} else if (debug_mode == 7) {  // A3: the eye mask's share (white: the gaze's sclera and iris drawn), emitted
+		ALBEDO = vec3(0.0);
+		SPECULAR = 0.0;
+		ROUGHNESS = 1.0;
+		SSS_STRENGTH = 0.0;
+		RIM = 0.0;
+		BACKLIGHT = vec3(0.0);
+		CLEARCOAT = 0.0;
+		EMISSION = vec3(eye) * 0.8;
 	} else if (debug_mode == 3 || debug_mode == 6) {
 		ALBEDO = vec3(0.0);
 		SPECULAR = 0.0;
