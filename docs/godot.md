@@ -1252,6 +1252,31 @@ pilot's static premium heads"):
   - `godot/alien/lively_check.gd` with `tools/tests/test_alien_lively_godot.py`: the pile-up guard (a clip that stops
     posing Neck and Head ends where a re-posed one does) and the motion filter (the yaw rate and acceleration the same
     at 30 and 120 fps and with an uneven step; nothing kicked after `reset_motion()` and a teleport), headless.
+- **A3c: the rim's fine serration and the eyeball's rings (2026-10-24, art #196; proof `anim_bare/a3c/`):**
+  - The rings: `eye_reels.gd`'s new `rings_<head>.jpg` isolates them, each eye front on at rest under one change per
+    column (A3b's look, as built, `limbal` 0, `eye_coat` 0, `sclera_normal_map` 0, `normal_strength` 0, then the
+    mask's G, the detail map's A and the normal map's tilt emitted, `debug_mode` 9, 10, 11). Only `limbal` 0 removes
+    them, and the detail map's A holds two concentric arcs at the old iris: the painted limbal darkening
+    (`limbal * d.a * eye`) the static head baked round the sculpted iris. The gaze draws its own iris and limbal ring
+    (`limbal_ring`), so under the gaze the painted ring is now off: `gaze_limbal` (default 0; 1 is A3b's look).
+  - The serration: the geometry-only column shows it as well, so most of it is the lower lid's lip, a thin rolled
+    strip of faces that catches light along a notched line, plus the mask's one-texel bleed each way (A3b's
+    `mask_vs_triangles`). The sclera/lid edge follows triangle edges and the mask's texels.
+  - The shader route was tried and is off: `alien_static.gdshader`'s rim rule gives the eye share per fragment from the
+    posed eyeball sphere (`eye_sphere_l/r`: the build's `front_sphere`, else the eye sphere; a fragment within `rim_tol`
+    eye radii of it is the eyeball's, feathered over a pixel). Where the mask disagrees, it reads every map
+    `rim_pull` texels further onto its own side (`eye_axis_l/r`). It is set by `alien_lively.gd` when `rim_rule` is
+    true, which is false by default. It fails on the chameleon: its rule map (`debug_mode` 8, the rim sheet's last
+    column) shows large parts of the eyeball off its fitted sphere by 0.6 to 8 % of the eye radius, most near the
+    lower lid. That is more than the lid rises off the eyeball near the rim, so no tolerance separates the two, and
+    the trial column moves the edge without cleaning it. A clean edge needs the geometric route: cut the lid and
+    eyeball along one smooth curve in the build (`alien_lively_build.py`), and smooth or remesh the lip's first loop
+    of faces.
+  - `eye_reels.gd`'s rim sheet now has the columns before (A3b's look) | as built | the rim rule's trial | albedo |
+    geometry | SSAO off | the rule's map. The 4x crops `rim_<head>_4x/<gaze>_<eye>_{before,after}.png` sit at the
+    window's 0.8 height (`CROP_Y`) on the lower rim, because A3b's centre crops missed it.
+  - `tools/web/lively/lively.js` draws the same eye but never applied the painted limbal ring (no `limbal` in it), so
+    it needs no `gaze_limbal`; the rim rule, being off, is not ported.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
