@@ -71,6 +71,19 @@ class Targets(unittest.TestCase):
         self.assertGreater(ab.NECK_FLARE, ab.NECK[0])
         self.assertLess(ab.NECK_FLARE_Z, ab.RING_Z)
 
+    def test_chameleon_h3_is_a_with_the_concepts_arm(self):
+        ab = self.ab
+        ab.apply_targets(TARGETS / "chameleon_a.toml")
+        a = {k: getattr(ab, k) for k in ab.TARGET_KEYS}
+        self.assertEqual(ab.apply_targets(TARGETS / "chameleon_h3.toml"), "chameleon_h3")
+        h3 = {k: getattr(ab, k) for k in ab.TARGET_KEYS}
+        changed = {k for k in ab.TARGET_KEYS if a[k] != h3[k]}
+        self.assertEqual(changed, {"LENGTH", "HAND_SCALE", "FINGER_LEN"})
+        self.assertEqual({k for k in a["LENGTH"] if a["LENGTH"][k] != h3["LENGTH"][k]}, {"upperarm", "lowerarm"})
+        scale = 0.9912  # the cage's BODY_SCALE (chameleon_h1.toml)
+        self.assertAlmostEqual(0.251 * h3["LENGTH"]["upperarm"] * scale, 0.22, places=3)  # the base's upper arm
+        self.assertAlmostEqual(0.2435 * h3["LENGTH"]["lowerarm"] * scale, 0.25, places=3)
+
 
 class Measure(unittest.TestCase):
     def test_png_decode_with_filters(self):

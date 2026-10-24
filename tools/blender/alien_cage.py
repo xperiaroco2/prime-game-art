@@ -257,6 +257,13 @@ PROJECT_FOOT = (0.0, -1.0)  # m: projected fully above the first height, not at 
 PROJECT_SMOOTH = 2  # passes over the steps before they are applied (the target's noise)
 PROJECT_RELAX = 3  # tangential relax passes after each projection, so the loops stay even
 PROJECT_PASSES = 2  # project and relax, repeated
+# H3: shaping after the projection (sculpt), both sides alike; off by default (S4b, H1 and H2 unchanged). s is the
+# distance along the T-posed arm from LeftUpperArm's head (m); nothing moves past the projection's hand mask.
+SCULPT_ARM = []  # [[s, height m, depth m], ...]: the arm's z and y extents scaled toward these (0: kept), linear between rows
+SCULPT_DELTOID = []  # [s0, s_peak, s1, push m]: the arm's top and sides (not its underside) pushed out, a bump over s
+SCULPT_THIGH = []  # [z0, z1, margin m, x max]: the leg's outer side pulled in to x max between z0 and z1 (soft margin)
+NECK_RELAX = []  # [lo, hi, passes]: Taubin smoothing of the band lo..hi m below the ring (a bump: none at either end)
+TOE_YAW = (0.0, 0.0, 0.0)  # degrees per toe slot (inner, middle, outer): + turns the toe out (+x), growing along it
 # S1c's skeleton, the cage numbers' frame (CAGE_REMAP): heights, the arm's x and the foot's y of its joints.
 REF_Z = {"LeftFoot": 0.115, "LeftLowerLeg": 0.5181, "LeftUpperLeg": 0.8409, "Chest": 1.0283, "UpperChest": 1.1491,
          "LeftUpperArm": 1.2765}
@@ -271,7 +278,8 @@ CAGE_KEYS = ("TRUNK", "NECK_END", "CROTCH", "CROTCH_Z", "ARM_HOLE", "ARM", "ARM_
              "CAGE_REMAP", "HAND_REL", "HAND_COLS", "FINGER_CURL", "TOE_SET", "ARM_GUESS", "NECK_END_ELLIPSE",
              "TARGET_WELD", "TARGET_MIRROR", "TARGET_CLEAN", "TARGET_CLEAN_MARGIN", "PROJECT", "PROJECT_THICK",
              "PROJECT_K", "PROJECT_MAX", "PROJECT_NORMAL_MIN", "PROJECT_HAND", "PROJECT_NECK", "PROJECT_SOLE",
-             "PROJECT_FOOT", "PROJECT_SMOOTH", "PROJECT_RELAX", "PROJECT_PASSES")
+             "PROJECT_FOOT", "PROJECT_SMOOTH", "PROJECT_RELAX", "PROJECT_PASSES", "SCULPT_ARM", "SCULPT_DELTOID",
+             "SCULPT_THIGH", "NECK_RELAX", "TOE_YAW")
 
 
 def apply_cage_targets(path):
@@ -291,7 +299,7 @@ def apply_cage_targets(path):
         if k == "CROTCH_Z":
             v = {int(a): b for a, b in v.items()}
         elif k in ("FINGERS", "FINGER_CURL", "TOE_SET", "ARM_GUESS", "NECK_END_ELLIPSE", "CROTCH", "THUMB_DIR",
-                   "PROJECT_HAND", "PROJECT_NECK", "PROJECT_FOOT"):
+                   "PROJECT_HAND", "PROJECT_NECK", "PROJECT_FOOT", "TOE_YAW"):
             v = tuple(v)
         elif k in ("FINGER_RINGS", "THUMB_RINGS"):
             v = [tuple(tuple(x) if isinstance(x, list) else x for x in row) for row in v]
@@ -657,10 +665,13 @@ def build_cage(sole_drop, trunk, bones=None):
         for r, (fwd, sw, sh, drop) in enumerate(TOE):
             fwd, sw, sh = toe_ring(r, fwd, sw, sh)
             f = fwd + (TOE_MID * fwd / (TOE[-1][0] * TOE_LEN) if i == 1 else 0.0)
+            yaw = math.radians(TOE_YAW[i]) * fwd / (TOE[-1][0] * TOE_LEN)  # H3: the toe turned out along its length
             ring = []
             for p in base:
                 d = p.co - cen
-                co = Vector((cen.x + d.x * sw, cen.y - f, cen.z - drop + d.z * sh))
+                lx, ly = d.x * sw, -f
+                co = Vector((cen.x + lx * math.cos(yaw) - ly * math.sin(yaw),
+                             cen.y + lx * math.sin(yaw) + ly * math.cos(yaw), cen.z - drop + d.z * sh))
                 if p in bot:
                     co.z = min(co.z, p.co.z + 0.002 + drop * 0.3)
                 ring.append(V(co))
@@ -1031,6 +1042,121 @@ class Wrap:
         return worst
 
 
+def smooth01(t):
+    t = max(0.0, min(1.0, t))
+    return t * t * (3 - 2 * t)
+
+
+def sculpt(body, bones, ring_z):
+    """H3: the body shaped after the projection, the same on both sides (by |x|), at rest in the T pose:
+    - SCULPT_ARM: the arm's z extent (its front width when it hangs) and y extent, measured per 5 mm of s over the
+      vertices within 12 mm, scaled about the section's middle toward the rows' targets (the scale linear between rows, 1 outside them);
+    - SCULPT_DELTOID: the arm's top and sides pushed out from the upper arm's line, a smooth bump over s;
+    - SCULPT_THIGH: the leg's outer side (past LeftUpperLeg's x) pulled in so its widest point is at x max;
+    - NECK_RELAX: Taubin smoothing of the neck band below the ring (none at the ring: the weld stays exact).
+    Every arm move fades out with the projection's hand mask. Returns the report."""
+    bm = bmesh.new()
+    bm.from_mesh(body.data)
+    bm.verts.ensure_lookup_table()
+    vs = bm.verts
+    sh = bones["LeftUpperArm"][0]
+    hx = bones["LeftUpperLeg"][0].x
+    out = {}
+
+    def hand_m(ax):
+        return smooth01((WRIST_X - PROJECT_HAND[1] - ax) / (PROJECT_HAND[0] - PROJECT_HAND[1]))
+
+    def arm_verts():
+        return [v for v in vs if abs(v.co.x) > sh.x - 0.04 and v.co.z > sh.z - 0.16]
+    if SCULPT_ARM:
+        rows = sorted(SCULPT_ARM)
+        left = sorted(((v.co.x - sh.x, v.co) for v in arm_verts() if v.co.x > 0), key=lambda t: t[0])
+        sec = {}  # per 5 mm of s: the extents of the vertices within 12 mm (a whole loop or two, never a part of one)
+        for b in range(int(left[0][0] / 0.005), int(left[-1][0] / 0.005) + 1):
+            pts = [c for sv, c in left if abs(sv - b * 0.005) < 0.012]
+            if len(pts) < 8:
+                continue
+            zs, ys = [p.z for p in pts], [p.y for p in pts]
+            sec[b] = (max(zs) - min(zs), max(ys) - min(ys), 0.5 * (max(zs) + min(zs)), 0.5 * (max(ys) + min(ys)))
+        keys = sorted(sec)
+
+        def at(s):  # the measured section at s (nearest bin)
+            b = min(keys, key=lambda k: abs(k - s / 0.005))
+            return sec[b]
+        scl = []
+        for s, h, d in rows:
+            mh, md, _, _ = at(s)
+            scl.append((s, h / mh if h else 1.0, d / md if d else 1.0))
+        out["arm_rows"] = [[round(s, 3), round(at(s)[0], 4), round(at(s)[1], 4), round(a, 3), round(b, 3)]
+                           for s, a, b in scl]
+
+        def scale_at(s):
+            if s <= scl[0][0] or s >= scl[-1][0]:
+                return 1.0, 1.0
+            for (s0, a0, b0), (s1, a1, b1) in zip(scl, scl[1:]):
+                if s <= s1:
+                    t = (s - s0) / (s1 - s0)
+                    return a0 + (a1 - a0) * t, b0 + (b1 - b0) * t
+        for v in arm_verts():
+            ax = abs(v.co.x)
+            s = ax - sh.x
+            a, b = scale_at(s)
+            m = hand_m(ax)
+            _, _, zc, yc = at(s)
+            v.co.z = zc + (v.co.z - zc) * (1 + (a - 1) * m)
+            v.co.y = yc + (v.co.y - yc) * (1 + (b - 1) * m)
+    if SCULPT_DELTOID:
+        s0, sp, s1, push = SCULPT_DELTOID
+        n = 0
+        for v in arm_verts():
+            s = abs(v.co.x) - sh.x
+            if not s0 < s < s1:
+                continue
+            bump = smooth01((s - s0) / (sp - s0)) if s < sp else smooth01((s1 - s) / (s1 - sp))
+            r = Vector((0.0, v.co.y - sh.y, v.co.z - sh.z))
+            if r.length < 1e-6:
+                continue
+            r.normalize()
+            v.co += r * (push * bump * smooth01((r.z + 0.45) / 0.9) * hand_m(abs(v.co.x)))
+            n += 1
+        out["deltoid_verts"] = n
+    if SCULPT_THIGH:
+        z0, z1, mg, xmax = SCULPT_THIGH
+        legs = [v for v in vs if abs(v.co.x) > 0.02 and z0 - mg < v.co.z < z1 + mg and abs(v.co.x) < 0.3]
+        wide = {}
+        for v in legs:
+            b = round(v.co.z / 0.01)
+            wide[b] = max(wide.get(b, 0.0), abs(v.co.x))
+        before = max(wide.values())
+        for v in legs:
+            ax = abs(v.co.x)
+            dx, span = ax - hx, wide[round(v.co.z / 0.01)] - hx
+            if dx <= 0 or span <= xmax - hx:
+                continue
+            wz = smooth01((v.co.z - (z0 - mg)) / mg) * smooth01(((z1 + mg) - v.co.z) / mg)
+            k = 1.0 - (1.0 - (xmax - hx) / span) * wz * smooth01(dx / span)
+            v.co.x = math.copysign(hx + dx * k, v.co.x)
+        out["thigh_x_max"] = [round(before, 4), round(max(abs(v.co.x) for v in legs), 4)]
+    if NECK_RELAX:
+        lo, hi, passes = NECK_RELAX
+        band = [(v, smooth01((v.co.z - (ring_z - lo)) / (0.5 * (lo - hi)))
+                 * smooth01(((ring_z - hi) - v.co.z) / (0.5 * (lo - hi)))) for v in vs
+                if ring_z - lo < v.co.z < ring_z - hi and abs(v.co.x) < sh.x - 0.03]  # the neck and trapezius only
+        for _ in range(int(passes)):  # Taubin's pair (shrink, then grow back): the lumps go, the volume stays
+            for lam in (0.5, -0.53):
+                new = []
+                for v, w in band:
+                    avg = sum((e.other_vert(v).co for e in v.link_edges), Vector()) / max(len(v.link_edges), 1)
+                    new.append(v.co + (avg - v.co) * (lam * w))
+                for (v, _), c in zip(band, new):
+                    v.co = c
+        out["neck_band_verts"] = len(band)
+    bm.to_mesh(body.data)
+    bm.free()
+    body.data.update()
+    return out
+
+
 def angle_sort(verts, centre, axis):
     """Sorts a loop by its angle around an axis ('x' for the wrists, 'z' for the neck): 0 at the front (-Y)."""
     if axis == "z":
@@ -1182,6 +1308,9 @@ def main():
     if wrap and PROJECT:  # H2: the target's forms after the subdivision
         report["project"] = wrap.project(body, ring["z"])
         print("project:", json.dumps(report["project"]), flush=True)
+    if SCULPT_ARM or SCULPT_DELTOID or SCULPT_THIGH or NECK_RELAX:  # H3
+        report["sculpt"] = sculpt(body, bones, ring["z"])
+        print("sculpt:", json.dumps(report["sculpt"]), flush=True)
     report["cage_trunk"] = [[t[0]] + [round(x, 4) for x in t[1:]] for t in trunk]
     report["cage"] = {"half_faces": cage_faces, "faces": len(cage.data.polygons), "verts": len(cage.data.vertices),
                       "poles": {str(k): len(v) for k, v in poles(cage.data).items()},

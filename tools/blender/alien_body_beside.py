@@ -5,7 +5,14 @@ four views (front, three-quarter, side, back) of every body in a row, one row pe
 
 Each .blend's `Body` (on its armature at rest) and each GLB's meshes (centred in x, the sole moved to z = 0, as
 alien_cage.py's Wrap reads a target) are shot alone with the same orthographic camera, in the given order (the
-.blends first). Workbench, the review script's look."""
+.blends first). Workbench, the review script's look.
+
+H3: `--apose` poses every armature in the review's A pose (the upper arms ARM_DOWN below the T) and links every mesh
+of a .blend (a welded character, not only `Body`); `--views 0,90` picks the views; `--concept PNG` adds the concept's
+matching panel (the front for 0, the side for 90, mirrored to face the same way) as the last column, resampled to the
+renders' metres per pixel (`--concept-px-m` per concept pixel, the sole on `--concept-sole-row`), its trunk centred.
+
+    blender -b --python alien_body_beside.py -- --out DIR --apose --views 0,90 --blend H2.blend --blend H3.blend         --concept turn.png --concept-px-m 0.0019477 --concept-sole-row 986"""
 import argparse
 import math
 import os
@@ -18,23 +25,59 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alien_body_refit_review as R  # noqa: E402
 
 
+def concept_cell(im, pw, panel, mirror, mpp, zc, px_m, sole_row, path, size=(420, 640)):
+    """H3: one concept panel resampled onto a render's grid (mpp m per pixel, zc the centre's height), its trunk rows'
+    centroid in the middle; mirrored for the side view (the concept faces left, the render's side right)."""
+    import numpy as np
+    sub = im[:, panel * pw:(panel + 1) * pw]
+    bg = np.median(np.stack([sub[2, 45], sub[2, pw - 25], sub[-3, 45], sub[-3, pw - 25]]), axis=0)
+    m = np.abs(sub[..., :3] - bg[:3]).sum(-1) > 38 / 255
+    W, H = size
+    zs = zc + (H / 2 - np.arange(H) - 0.5) * mpp
+    rows = np.round(sole_row - zs / px_m).astype(int)
+    trunk = [r for r in range(int(sole_row - 1.2 / px_m), int(sole_row - 0.9 / px_m)) if m[r].any()]
+    cc = np.mean([np.mean(np.nonzero(m[r])[0]) for r in trunk])
+    xs = (np.arange(W) + 0.5 - W / 2) * mpp
+    cols = np.round(cc + (-xs if mirror else xs) / px_m).astype(int)
+    out = np.empty((H, W, 4), np.float32)
+    out[:] = bg
+    okc = (cols >= 0) & (cols < pw)
+    for i, r in enumerate(rows):
+        if 0 <= r < sub.shape[0]:
+            out[i, okc] = sub[r, cols[okc]]
+    R.save(out, path)
+    return path
+
+
 def main():
     p = argparse.ArgumentParser(prog="alien_body_beside.py")
     p.add_argument("--out", required=True)
     p.add_argument("--blend", action="append", default=[])
     p.add_argument("--glb", action="append", default=[])
+    p.add_argument("--apose", action="store_true", help="H3: the review's A pose; every mesh of each .blend")
+    p.add_argument("--views", default="0,45,90,180")
+    p.add_argument("--concept", default="", help="H3: the concept turnaround (front | side | back)")
+    p.add_argument("--concept-px-m", type=float, default=0.001965 * 0.9912)
+    p.add_argument("--concept-sole-row", type=int, default=986)
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
     os.makedirs(a.out, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     groups = []
     for path in a.blend:
         with bpy.data.libraries.load(path) as (src, dst):
-            dst.objects = [n for n in src.objects if n in ("Body", "CharacterArmature")]
-        objs = [o for o in dst.objects if o is not None]
+            dst.objects = [n for n in src.objects if n in ("Body", "CharacterArmature")] if not a.apose else list(src.objects)
+        objs = [o for o in dst.objects if o is not None and o.type in ("MESH", "ARMATURE")]
         for o in objs:
             bpy.context.scene.collection.objects.link(o)
             if o.type == "ARMATURE":
-                o.data.pose_position = "REST"
+                o.data.pose_position = "POSE" if a.apose else "REST"
+                if o.animation_data:
+                    o.animation_data.action = None
+        bpy.context.view_layer.update()
+        for o in objs:
+            if o.type == "ARMATURE" and a.apose:
+                R.rest(o)
+                R.a_pose(o, R.ARM_DOWN)
         groups.append([o for o in objs if o.type == "MESH"])
     for path in a.glb:
         before = set(bpy.data.objects)
@@ -67,8 +110,15 @@ def main():
     deps = bpy.context.evaluated_depsgraph_get()
     top = max((o.evaluated_get(deps).matrix_world @ v.co).z for objs in groups for o in objs
               for v in o.evaluated_get(deps).to_mesh().vertices)
+    views = [int(v) for v in a.views.split(",")]
+    cmask = None
+    if a.concept:
+        cim = R.load(a.concept)
+        pw = cim.shape[1] // 3
+        top = max(top, (a.concept_sole_row - 20) * a.concept_px_m)
     paths = []
-    for k, ang in enumerate((0, 45, 90, 180)):
+    ncol = len(groups) + (1 if a.concept else 0)
+    for k, ang in enumerate(views):
         t = math.radians(ang)
         cams = []
         for j in range(len(groups)):  # each body alone at the origin, the same camera for all
@@ -78,8 +128,11 @@ def main():
             c = Vector((0, 0, top / 2))
             R.look(cam, c + Vector((-8 * math.sin(t), -8 * math.cos(t), 0)), c, ortho=top * 1.08)
             cams.append(R.shot(sc, os.path.join(a.out, f"_beside_{k}_{j}.png"), (420, 640)))
+        if a.concept:
+            cams.append(concept_cell(cim, pw, {0: 0, 90: 1, 180: 2}.get(ang, 0), ang == 90, top * 1.08 / 640, top / 2,
+                                     a.concept_px_m, a.concept_sole_row, os.path.join(a.out, f"_beside_{k}_c.png")))
         paths += cams
-    R.stitch(paths, len(groups), os.path.join(a.out, "beside.png"))
+    R.stitch(paths, ncol, os.path.join(a.out, "beside.png"))
     for q in paths:
         os.remove(q)
     print("BESIDE done", len(groups), "bodies", flush=True)

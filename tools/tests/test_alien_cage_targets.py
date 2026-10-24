@@ -2,7 +2,8 @@
 loader and the S1c-to-new-skeleton remap are checked here with stub Blender modules: without a targets file every new
 path is off (S4b's numbers stay), chameleon_h1.toml loads with its four-finger hand and two toe groups and keeps the
 whole character under the height cap, and the remap's piecewise maps hit the new skeleton's stations. H2:
-chameleon_h2.toml is H1's numbers (by `include`) with the projection onto the target on."""
+chameleon_h2.toml is H1's numbers (by `include`) with the projection onto the target on. H3: chameleon_h3.toml is
+H2's with the shaping after the projection, the toes turned out and the new hand; the shaping is off by default."""
 from __future__ import annotations
 
 import importlib.util
@@ -17,6 +18,10 @@ ROOT = Path(__file__).resolve().parents[2]
 BLENDER = ROOT / "tools" / "blender"
 H1 = BLENDER / "alien_cage_targets" / "chameleon_h1.toml"
 H2 = BLENDER / "alien_cage_targets" / "chameleon_h2.toml"
+H3 = BLENDER / "alien_cage_targets" / "chameleon_h3.toml"
+H3_KEYS = {"PROJECT_THICK", "PROJECT_NECK", "SCULPT_ARM", "SCULPT_DELTOID", "SCULPT_THIGH", "NECK_RELAX", "TOE",
+           "TOE_LEN", "TOE_YAW", "HAND", "FINGER_R", "FINGER_RINGS", "THUMB_R0", "THUMB_R", "THUMB_OUT", "THUMB_LEN",
+           "THUMB_DIR"}
 
 
 class _Any:
@@ -62,6 +67,8 @@ class CageTargets(unittest.TestCase):
         self.assertEqual(c.NECK_END_ELLIPSE, (0.0605, 0.047, 0.0565))
         self.assertEqual((c.TARGET_WELD, c.TARGET_MIRROR, c.TARGET_CLEAN), (0.0, "", []))
         self.assertFalse(c.PROJECT)
+        self.assertEqual((c.SCULPT_ARM, c.SCULPT_DELTOID, c.SCULPT_THIGH, c.NECK_RELAX), ([], [], [], []))
+        self.assertEqual(tuple(c.TOE_YAW), (0.0, 0.0, 0.0))
         self.assertEqual(c.NECK_END, 1.374)
         self.assertEqual(c.WRAP_X, [(0.15, 0.185), (0.413, 0.355), (0.605, 0.525)])
 
@@ -97,6 +104,33 @@ class CageTargets(unittest.TestCase):
         full, zero = c.PROJECT_NECK
         self.assertGreater(full, zero)
         self.assertGreaterEqual(zero, 0.016)  # nothing moves within the ring's two steps (the weld)
+
+    def test_h3_is_h2_with_the_shaping(self):
+        h2 = _load()
+        h2.apply_cage_targets(H2)
+        c = self.c
+        self.assertEqual(c.apply_cage_targets(H3), "chameleon_h3")
+        for k in h2.CAGE_KEYS:
+            if k not in H3_KEYS:
+                self.assertEqual(getattr(c, k), getattr(h2, k), k)
+        self.assertEqual(c.PROJECT_THICK["arm"], 1.0)
+        self.assertEqual(len(c.TOE_YAW), 3)
+        self.assertLess(c.TOE_YAW[0], 0.0)
+        self.assertGreater(c.TOE_YAW[2], 0.0)  # the outer toe group turned out
+        s = [r[0] for r in c.SCULPT_ARM]
+        self.assertEqual(s, sorted(s))
+        self.assertTrue(all(len(r) == 3 and r[1] >= 0 and r[2] >= 0 for r in c.SCULPT_ARM))
+        s0, sp, s1, push = c.SCULPT_DELTOID
+        self.assertTrue(s0 < sp < s1 and 0 < push < 0.03)
+        z0, z1, margin, xmax = c.SCULPT_THIGH
+        self.assertTrue(z0 < z1 and margin > 0 and 0.14 < xmax < 0.2)
+        lo, hi, passes = c.NECK_RELAX
+        self.assertGreater(lo, hi)
+        self.assertGreaterEqual(hi, 0.012)  # the ring's weld does not move
+        self.assertEqual(len(c.HAND), len(c.HAND_INNER))
+        xs = [r[0] for r in c.HAND]
+        self.assertEqual(xs, sorted(xs))
+        self.assertTrue(0.3 <= (xs[1] + xs[2]) / 2 / xs[-1] <= 0.4)  # the thumb's root quad at about 35 % of the palm
 
     def test_h1_height_under_the_cap(self):
         c = self.c
