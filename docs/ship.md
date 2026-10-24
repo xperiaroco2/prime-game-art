@@ -1199,7 +1199,8 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
     `"dark"` key (glow off, `VentAnim.SEAM_DARK`), and the Blender sheet darkens their base colour calm. The
     controller and `ship --motion` were already dark.
   - *Code.* `ship_interior_vent.lights()` raises when `lights.json` is missing beside the body.
-- **Way B step 4 (vents-b4, 2026-10-24), the current build** (`<raw>/ship/v4/vents-b/b4`, the pieces in `pieces_b4`;
+- **Way B step 4 (vents-b4, 2026-10-24)** (`<raw>/ship/v4/vents-b/b4`, the pieces in `pieces_b4`; its recess and
+  flat wall plates undone in step 5;
   the engineer: "set them a little deeper into the wall", the scanner lower, the hand redrawn):
   - *The recess.* The whole vent sits `RECESS` 8 cm into the throat wall (`ship_interior_vent.RECESS`, one source:
     `recess_m` on the vents' spots in ship.toml; `ship --check` lets a station's unit back that far behind the face,
@@ -1221,6 +1222,31 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
     `hand_stroke` offsets each point `HAND_W`/2 both ways along the field's normal (even width; every curve's
     radius is over it, so neither side folds). Its box is 80 % of the screen's height, centred, 1 cm inside the
     octagon. b3's mitred ribbon read ugly.
+- **Way B step 5 (vents-b5, 2026-10-24), the current build** (`<raw>/ship/v4/vents-b/b5`, the pieces in `pieces_b5`;
+  the engineer's notes on step 4):
+  - *Back on the wall.* `recess_m` 0 on the vents' spots (`RECESS` 0; the engineer did not mean the 8 cm recess), the
+    unit v -0.01..0.50. The two plain modules behind each vent are the pillow panels again (as b3; the flat plates
+    were only there for the recess). Each frame panel's back now stands `FRAME_BACK` (6 mm) off the wall at its
+    highest point (b3's started at the well's back and floated, b4's 7 cm out): the panels below the bend sit on the
+    wall and sink into the pillow, the two over the bend stop on the slanted wall.
+  - *The blades inside the frame.* The calm blades' tips stand `TIP_BACK` 3 cm behind the frame's face, level with
+    the inner lip (b3 and b4: 14.7 cm past it): the hinge line `PIVOT_V` = face - `TIP_BACK` - 0.257 = 0.153 (b4
+    0.33), the well's back `WELL_V` = `PIVOT_V` - `WELL_GAP` 0.065 = 0.088 (b4 0.115), the cap rails and copper
+    caps set back with the hinge. The shut bottom blade's tip falls to 0.238, so the opening's floor is
+    `OPEN_FLOOR` 0.22 (b4 0.304) and `ship --motion` now holds the blades over it behind the face (b4 allowed 10 cm
+    under it). At the widest (the cough, calm + 10 deg) the tips stay 2.5 cm behind the face. The grid
+    (`sheets/b5/blade_depth_grid.png`): 0, 3 and 6 cm; `ship_vent_b.py --tip-back` and the review's `tip_back`
+    build the others.
+  - *A wider column.* The box's opening, blades and right side moved `BOX_DU` 4 cm along the wall (its left edge and
+    foot stay, the left frame panels 4 cm narrower), so the column runs 0.426..0.80 (b4 0.466..0.80; the shaft
+    0.435..0.795, the panel 0.44..0.79, the foot, its step and the head with them); the bar and its lower strip
+    `BAR_DU` 4 cm along, the scanner's centre `SCAN_U` 0.660 (b4 0.685; still 1.20 high): its bezel 1.5 cm from the
+    bar's housing and 1.8 cm inside the panel's edge (b4 1.7 cm over it). The lamp is centred on the head, its
+    collar `LAMP_R` 0.086 (b4 0.078). The unit stays inside the 1.6 m plain band.
+  - *The hand.* Human finger lengths: index, middle, ring tips `HAND_TIPS` 1.60, 1.80, 1.70 (b4 one length, 1.705;
+    the palm's width 1), narrower fingers (`HAND_FR` 0.11) with wider U gaps (`HAND_GAP` 0.17), so the dark gap
+    inside the stroke is 0.085 of the palm (b4 0.04) and reads at 2 m; the thumb `HAND_THUMB` a little lower and
+    shorter, its fillet `HAND_K` 0.28 (0.20 folded the stroke's outer side).
 - **The animation (vents-anim1, 2026-10-24; the engineer: "make the vents, try to animate them"; beauty over
   motion).** `godot/ship/vent_anim.gd`, the controller the game copies: a Node per vent (`setup(root, id,
   mark_travel)` after the scene's materials are set; `_process` steps it, `manual = true` and `step(dt)` for a
