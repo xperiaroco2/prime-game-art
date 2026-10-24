@@ -37,7 +37,7 @@
 // profile (8 medians of the painted iris, pupil edge to limbus), the pupil's colour, a limbal ring and a painted
 // catch light (catch_light 0: none, as the painted eyes have none).
 // debug_mode: 1 grey with the normal map, 2 grey geometry only, 3 the albedo alone (emitted), 4 and 5 the colour
-// slots' regions as flat codes and inverted (CS6's lit measurement).
+// slots' regions as flat codes and inverted (CS6's lit measurement), 6 the recoloured albedo alone (emitted; B4).
 shader_type spatial;
 render_mode diffuse_burley, specular_schlick_ggx;  // static_v3: no sss_mode_skin (its red profile browned the teal creases)
 
@@ -317,7 +317,7 @@ void fragment() {
 		RIM = 0.0;
 		BACKLIGHT = vec3(0.0);
 		CLEARCOAT = 0.0;
-	} else if (debug_mode == 3) {
+	} else if (debug_mode == 3 || debug_mode == 6) {
 		ALBEDO = vec3(0.0);
 		SPECULAR = 0.0;
 		ROUGHNESS = 1.0;
@@ -325,7 +325,7 @@ void fragment() {
 		RIM = 0.0;
 		BACKLIGHT = vec3(0.0);
 		CLEARCOAT = 0.0;
-		EMISSION = a * 0.8;
+		EMISSION = (debug_mode == 6 ? c : a) * 0.8;  // 6 (B4): the recoloured albedo, picks and creases in
 	} else if (debug_mode == 4 || debug_mode == 5) {
 		// CS6's proof: the colour slots' regions as flat codes for the lit measurement (alien_colour_slots.py): the
 		// lips red, the details (under gill_mode, with detail_on) green, the front blue, the rest of the skin yellow,

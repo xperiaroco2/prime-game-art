@@ -8,7 +8,7 @@ import copy
 import json
 import unittest
 
-from runner.commands import _godot, _humanoid
+from runner.commands import _contract, _godot, _humanoid
 
 from . import _export_fixture as fx
 
@@ -170,6 +170,195 @@ class WithoutExportJsonTest(unittest.TestCase):
         self.assertEqual(got["animations"], {"Idle": 2.5, "Jump_Start": 0.3})
         self.assertEqual(got["loop_suffix"], ["Idle"])
         self.assertEqual((got["source"], got["parts"], got["bones"]), ("slice_m1.glb", ["m1_head"], ["Root", "Hips"]))
+
+
+A_BONES = ["Root", "Hips", "Head", "LeftEye", "RightEye", "LeftHand", "RightHand", "LeftFoot", "RightFoot", "LeftToes",
+           "RightToes"]
+A_JOINTS = {"Root": [0, 0, 0], "Hips": [0, 0.9, 0], "Head": [0, 1.45, 0.02], "LeftEye": [0.06, 1.62, 0.13],
+            "RightEye": [-0.06, 1.62, 0.13], "LeftHand": [0.5, 1.0, 0.05], "RightHand": [-0.5, 1.0, 0.05],
+            "LeftFoot": [0.1, 0.08, 0.0], "RightFoot": [-0.1, 0.08, 0.0], "LeftToes": [0.1, 0.02, 0.1],
+            "RightToes": [-0.1, 0.02, 0.1]}
+A_CONTRACT = {**CONTRACT, "body": {**CONTRACT["body"], "plasticine_height_max_m": 2.0},
+              "kinds": {**CONTRACT["kinds"], "alien": _contract.load_contract()["kinds"]["alien"]},
+              "budgets": {"limits": {"texture_character_px": 2048, "surfaces_per_character_cap": 4,
+                                     "surfaces_per_character_target": 2}}, "skeleton": {"weighted": ["Hips", "Head", "LeftHand", "RightHand", "LeftFoot", "RightFoot"]}}
+
+
+def alien_dump(clips=_godot.ALIEN_CLIPS) -> dict:
+    body = mesh("x_char", [-0.2, -0.001, -0.05], [0.2, 1.88, 0.2])
+    body["binds"] = list(A_BONES)
+    body["bone_bounds"] = {"LeftFoot": {"min": [0.05, 0.0, -0.04], "max": [0.15, 0.1, 0.08]},
+                           "LeftToes": {"min": [0.05, 0.0, 0.08], "max": [0.15, 0.05, 0.16]},
+                           "RightFoot": {"min": [-0.15, 0.0, -0.04], "max": [-0.05, 0.1, 0.08]}}
+    for b in ("Hips", "Head", "LeftHand", "RightHand"):  # B4: every weighted bone the heaviest of some vertex
+        body["bone_bounds"][b] = {"min": [0.0, 0.0, 0.0], "max": [0.01, 0.01, 0.01]}
+    body["eye_tones"] = {"vertices": 2000, "white": 900, "black": 60, "cap_m": 0.05, "near_vertices": 4000,
+                         "bulge": [0.0, 0.0, 0.008], "eye_mid": [0.0, 1.62, 0.13]}
+    d = dump()
+    d["skeletons"] = [{"path": "x_rig/Skeleton3D", "bones": list(A_BONES), "parents": [-1] + [0] * 10,
+                       "rest_joints": copy.deepcopy(A_JOINTS)}]
+    d["meshes"] = [body]
+    d["players"][0]["animations"] = {f"CharacterArmature|{n}": next(iter(d["players"][0]["animations"].values()))
+                                     for n in clips}
+    return d
+
+
+def with_bones(d: dict, parent: str, *chain: str) -> dict:
+    """d with a bone chain appended to its skeleton: the first under parent, each next under the one before."""
+    s = d["skeletons"][0]
+    for name in chain:
+        s["parents"].append(s["bones"].index(parent))
+        s["bones"].append(name)
+        parent = name
+    return d
+
+
+def alien(d: dict, profile: str = "alien", strict_contract: bool = False) -> dict[str, dict]:
+    e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
+         "rest_heads_m": {}, "height_m": None, "animations": {}}
+    return {c["check"]: c for c in _godot.evaluate(d, e, A_CONTRACT, [], textured=True, profile=profile,
+                                                  strict_contract=strict_contract)}
+
+
+class AlienProfileTest(unittest.TestCase):
+    """--profile alien (art #196 B2): the alien kind's own equivalents of the Ultimate Modular rules."""
+
+    def test_an_alien_passes_its_own_rules(self) -> None:
+        got = alien(alien_dump())
+        for k in ("facing_plus_z", "eye_pupils", "pack_floor"):
+            self.assertEqual(got[k]["status"], "pass", got[k])
+            self.assertTrue(got[k]["detail"].startswith("alien profile"), got[k])
+        self.assertIn("+11.0 cm ahead", got["facing_plus_z"]["detail"])
+
+    def test_the_pack_rules_still_fail_an_alien(self) -> None:
+        got = alien(alien_dump(), profile="pack")
+        for k in ("facing_plus_z", "eye_pupils", "pack_floor"):
+            self.assertEqual(got[k]["status"], "fail", got[k])
+
+    def test_an_alien_facing_backwards_fails(self) -> None:
+        d = alien_dump()
+        d["meshes"][0]["eye_tones"]["eye_mid"][2] = -0.1  # the eyes behind the Head joint: it faces -Z
+        self.assertEqual(alien(d)["facing_plus_z"]["status"], "fail")
+        d = alien_dump()
+        d["meshes"][0]["eye_tones"]["bulge"][2] = -0.008  # B4: the eye surfaces bulge backwards (from the geometry)
+        self.assertEqual(alien(d)["facing_plus_z"]["status"], "fail")
+        d["meshes"][0]["eye_tones"].pop("near_vertices")
+        self.assertIn("cannot tell", alien(d)["facing_plus_z"]["detail"])
+        d = alien_dump()
+        j = d["skeletons"][0]["rest_joints"]
+        j["LeftEye"], j["RightEye"] = j["RightEye"], j["LeftEye"]  # mirrored
+        self.assertEqual(alien(d)["facing_plus_z"]["status"], "fail")
+
+    def test_eyes_without_pupils_fail(self) -> None:
+        d = alien_dump()
+        d["meshes"][0]["eye_tones"]["black"] = 3
+        self.assertEqual(alien(d)["eye_pupils"]["status"], "fail")
+        d["meshes"][0].pop("eye_tones")
+        self.assertIn("no eye caps", alien(d)["eye_pupils"]["detail"])
+
+    def test_a_missing_clip_or_bone_fails_the_floor(self) -> None:
+        got = alien(alien_dump(clips=_godot.ALIEN_CLIPS[:-1]))["pack_floor"]
+        self.assertEqual(got["status"], "fail")
+        self.assertIn("missing clips ['Walk']", got["detail"])
+        d = alien_dump()
+        d["skeletons"][0]["bones"].remove("LeftHand")
+        self.assertIn("missing bones ['LeftHand']", alien(d)["pack_floor"]["detail"])
+
+    def test_a_weighted_bone_without_vertices_fails_the_floor(self) -> None:
+        d = alien_dump()
+        d["meshes"][0]["bone_bounds"].pop("LeftHand")
+        got = alien(d)["pack_floor"]
+        self.assertEqual(got["status"], "fail")
+        self.assertIn("no vertex weighted to ['LeftHand']", got["detail"])
+
+    def test_whole_spring_sets_under_head_pass_strict_and_any_other_extra_bone_fails(self) -> None:
+        # art #196 comment 6374319309: [kinds.alien] bones = "all_and_springs", spring_sets under spring_parent Head
+        got = alien(alien_dump())["alien_extra_bones"]
+        self.assertEqual(got["status"], "pass", got)
+        self.assertIn("no extra bone", got["detail"])
+        d = with_bones(alien_dump(), "Head", "Crest1", "Crest2", "Crest3")
+        d = with_bones(d, "Head", "GillL1", "GillL2", "GillL3")
+        d = with_bones(d, "Head", "GillR1", "GillR2", "GillR3")
+        fan = alien_dump()
+        for name in ("GillL1", "GillL2", "GillL3", "GillR1", "GillR2", "GillR3"):  # r5's axolotl: six stalks
+            fan = with_bones(fan, "Head", name)
+        self.assertEqual(alien(fan, strict_contract=True)["alien_extra_bones"]["status"], "pass")
+        for strict in (False, True):
+            got = alien(d, strict_contract=strict)["alien_extra_bones"]
+            self.assertEqual(got["status"], "pass", got)
+            self.assertIn("9 extra: the crest springs ['Crest1', 'Crest2', 'Crest3']", got["detail"])
+            self.assertIn("all in whole declared spring sets chained under Head", got["detail"])
+        partial = alien_dump()
+        partial = with_bones(partial, "Head", "Crest1", "Crest2", "Crest3")
+        partial = with_bones(partial, "Head", "GillL1", "GillL2", "GillL3")  # the gills' right side missing
+        for strict in (False, True):
+            got = alien(partial, strict_contract=strict)["alien_extra_bones"]
+            self.assertEqual(got["status"], "fail", got)
+            self.assertIn("spring sets in part: ['gills']", got["detail"])
+        stray = with_bones(alien_dump(), "Head", "Sword_Socket")
+        for strict in (False, True):
+            got = alien(stray, strict_contract=strict)["alien_extra_bones"]
+            self.assertEqual(got["status"], "fail", got)
+            self.assertIn("not in a declared spring set: ['Sword_Socket']", got["detail"])
+        hips = with_bones(alien_dump(), "Hips", "Crest1", "Crest2", "Crest3")  # a whole set, not under Head
+        got = alien(hips, strict_contract=True)["alien_extra_bones"]
+        self.assertEqual(got["status"], "fail", got)
+        self.assertIn("not chained under Head: ['Crest1']", got["detail"])
+        shuffled = with_bones(alien_dump(), "Head", "Crest3", "Crest1", "Crest2")  # Crest3 under Head, Crest1 under it
+        gill = with_bones(with_bones(alien_dump(), "Head", "Crest1", "Crest2", "Crest3"), "Crest2", "GillL1", "GillL2",
+                          "GillL3")  # GillL1 under Crest2
+        gill = with_bones(gill, "Head", "GillR1", "GillR2", "GillR3")
+        for d_bad, named in ((shuffled, "['Crest1']"), (gill, "['GillL1']")):
+            for strict in (False, True):
+                got = alien(d_bad, strict_contract=strict)["alien_extra_bones"]
+                self.assertEqual(got["status"], "fail", got)
+                self.assertIn(f"not chained under Head: {named}", got["detail"])
+        plain = {**A_CONTRACT, "kinds": {**A_CONTRACT["kinds"], "alien": {**A_CONTRACT["kinds"]["alien"], "bones": "all"}}}
+        e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
+             "rest_heads_m": {}, "height_m": None, "animations": {}}
+        got = {c["check"]: c for c in _godot.evaluate(d, e, plain, [], textured=True, profile="alien")}["alien_extra_bones"]
+        self.assertEqual(got["status"], "fail", got)  # without the spring rule every extra bone is stray
+        self.assertNotIn("alien_extra_bones", alien(alien_dump(), profile="pack"))
+
+    def test_the_alien_body_holds_the_capsule_and_its_head_top_the_cap(self) -> None:
+        # art #196 comment 6374319309: the body (skin not on Head or below it) at most 1.80 m, the top at most 1.95 m
+        def height(top: float, trunk: float, strict: bool = True) -> dict:
+            d = alien_dump()
+            d["meshes"][0]["rest_bounds"]["min"][1], d["meshes"][0]["rest_bounds"]["max"][1] = 0.0, top
+            d["meshes"][0]["bone_bounds"]["Hips"] = {"min": [0.0, 0.8, 0.0], "max": [0.1, trunk, 0.1]}
+            d["meshes"][0]["bone_bounds"]["Head"] = {"min": [0.0, 1.4, 0.0], "max": [0.1, top, 0.1]}
+            return alien(d, strict_contract=strict)["contract_height"]
+
+        for top in (1.884, 1.759, 1.95):  # the chameleon's top, the axolotl's, the cap
+            got = height(top, 1.55)
+            self.assertEqual(got["status"], "pass", got)
+        self.assertIn("1.884 m to the top (the binding rule: ", height(1.884, 1.55)["detail"])
+        self.assertIn("the body below Head's skin 1.550 m (reported against", height(1.884, 1.55)["detail"])
+        self.assertIn("it never binds on a real alien", height(1.884, 1.55)["detail"])
+        self.assertEqual(height(1.951, 1.55)["status"], "fail")  # the top over the cap
+        self.assertEqual(height(1.90, 1.81)["status"], "fail")  # the body over the capsule
+        self.assertEqual(height(1.90, 1.81, strict=False)["status"], "warn")  # contract gates warn unless strict
+        self.assertEqual(height(1.65, 1.5)["status"], "fail")  # under height_min_m
+        d = alien_dump()
+        d["meshes"][0]["bone_bounds"] = {"Head": {"min": [0, 1.4, 0], "max": [0, 1.88, 0]}}
+        got = alien(d, strict_contract=True)["contract_height"]
+        self.assertEqual(got["status"], "fail")
+        self.assertIn("no skin outside the head to measure", got["detail"])
+
+    def test_a_named_allowance_replaces_the_alien_rule(self) -> None:
+        d = alien_dump()  # 1.881 m: under the fixture's plasticine 2.0
+        e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
+             "rest_heads_m": {}, "height_m": None, "animations": {}}
+        got = {c["check"]: c for c in _godot.evaluate(d, e, A_CONTRACT, [], textured=True, profile="alien",
+                                                      allowance="plasticine")}["contract_height"]
+        self.assertEqual(got["status"], "pass", got)
+        self.assertIn("with the plasticine allowance", got["detail"])
+        with self.assertRaises(ValueError):
+            _godot.evaluate(d, e, A_CONTRACT, [], profile="alien", allowance="giant")
+
+    def test_an_unknown_profile_is_refused(self) -> None:
+        with self.assertRaises(ValueError):
+            alien(alien_dump(), profile="dragon")
 
 
 class LoopModesTest(unittest.TestCase):

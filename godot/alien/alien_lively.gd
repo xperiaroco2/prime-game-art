@@ -45,6 +45,36 @@ var target := Vector3(0.0, 0.0, 10.0)
 var head_follow := 1.0  # 0 holds the head (the eyes alone), 1 follows
 var breathing := 1.0
 var skeleton: Skeleton3D
+## A1 (art #196): true when an AnimationPlayer poses the skeleton before every step (a clip on the body): the head's
+## turn goes on top of the clip's Neck and Head instead of their rest (the clip's own head motion stays), and the
+## springs swing from the head's real motion in the world (its turn and its acceleration, so a jog bobs the crest and
+## the gills) instead of the controller's turn alone. The caller re-poses the clip before each step (seek or advance)
+## and calls reset_motion() when it jumps to another clip or teleports the character (a respawn), reset_springs()
+## too when the springs must start still. A clip that stops posing Neck and Head (a one-shot's end, a pause, a layer
+## that leaves them out) does not pile the turn up: the turn goes on the clip's last own pose (A2). False: the busts'
+## and the shots' way, unchanged.
+var on_clip := false
+var accel_gain := 1.0  # rad/s^2 of spring push per m/s^2 of the head's acceleration (A1)
+## A2: the share of the clip's own head yaw (the Head's facing about the skeleton's up, as the clip poses it) taken
+## back, so in a run the head stays pointed where the body travels instead of swivelling with the chest; 0 keeps it
+var yaw_counter := 0.0
+## A2: small eye darts (degrees; 0 none): every 0.6-2.4 s the eyes jump to a new point near the target, the head
+## does not follow; the eyes are the static head's only life at rest
+var darts := 0.0
+const MOTION_TAU := 0.1  # A2: the measured motion's low-pass time constant (s), the same at any frame rate
+var _h_prev := Quaternion.IDENTITY
+var _p1 := Vector3.ZERO
+var _v1 := Vector3.ZERO
+var _body_p := Vector3.ZERO
+var _body_v := Vector3.ZERO  # the skeleton's velocity in the world, low-passed
+var _body_v1 := Vector3.ZERO
+var _seen := 0
+var _mv := Vector2.ZERO  # the measured yaw and pitch rates, low-passed
+var _ma := Vector3.ZERO  # the measured acceleration in the head's frame, low-passed
+var _last := {}  # A2: bone -> [the rotation this controller wrote, the clip's pose under it]
+var _dart := Vector2.ZERO
+var _dart_t := 0.0
+var _rng := RandomNumberGenerator.new()
 var mesh: MeshInstance3D
 var mats: Array[ShaderMaterial]
 var eyes: Dictionary  # "left"/"right" -> lively.json's eye
@@ -55,6 +85,7 @@ var _hvy := 0.0
 var _hvp := 0.0
 var _eye := {"left": Vector4.ZERO, "right": Vector4.ZERO}  # yaw, pitch, their velocities
 var _bones := {}
+var _rest_q := {}  # B1: bone -> [its local rest rotation, its global rest rotation]
 
 
 func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, sclera: Texture2D) -> void:
@@ -87,6 +118,11 @@ func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, scl
 		_bones[b] = skeleton.find_bone(b)
 		if _bones[b] < 0:
 			push_error("LIVELY no bone %s" % b)
+	for bi: int in [_bones["Neck"], _bones["Head"]]:
+		_keep_rest(bi)
+	for sp: Dictionary in springs:
+		for bi: int in sp["bones"]:
+			_keep_rest(bi)
 	skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
 	if bead:
 		var lc: Dictionary = eyes["left"]["catch"]
@@ -119,6 +155,22 @@ func _init(root: Node, materials: Array[ShaderMaterial], lively: Dictionary, scl
 		sm.set_shader_parameter("iris_profile", profile)
 		sm.set_shader_parameter("pupil_colour", Color(pc[0], pc[1], pc[2]))
 	_apply_eyes()
+
+
+func _keep_rest(bi: int) -> void:
+	_rest_q[bi] = [skeleton.get_bone_rest(bi).basis.get_rotation_quaternion(),
+		skeleton.get_bone_global_rest(bi).basis.get_rotation_quaternion()]
+
+
+## B1 (the head on the body): q is a turn in the skeleton's frame about the bone's joint; it goes on top of the bone's
+## rest as rest * (G^-1 q G), G the bone's global rest rotation. The lively busts' bones rest unturned (G and the rest
+## the identity), so there this is set_bone_pose_rotation(q) as before; the contract skeleton's do not.
+func _set_rot(bi: int, q: Quaternion) -> void:
+	skeleton.set_bone_pose_rotation(bi, rest_turn(_rest_q[bi][0], _rest_q[bi][1], q))
+
+
+static func rest_turn(rest: Quaternion, g: Quaternion, q: Quaternion) -> Quaternion:
+	return (rest * (g.inverse() * q * g)).normalized()
 
 
 static func _v(a: Array) -> Vector3:
@@ -183,15 +235,47 @@ func step(dt: float) -> void:
 	var chest := Vector3.ONE + BREATH_CHEST * b
 	skeleton.set_bone_pose_scale(_bones["Chest"], chest)
 	skeleton.set_bone_pose_scale(_bones["Neck"], Vector3.ONE / chest)  # the head keeps its size
-	skeleton.set_bone_pose_rotation(_bones["Neck"], Quaternion.from_euler(Vector3(-_hp * pitch_neck_share, _hy * neck_share, 0.0)))
-	skeleton.set_bone_pose_rotation(_bones["Head"],
-		Quaternion.from_euler(Vector3(-_hp * (1.0 - pitch_neck_share) - nod, _hy * (1.0 - neck_share), -tilt * _hy)))
+	var hy := _hy
+	if on_clip:
+		var bn: int = _bones["Neck"]
+		var bh: int = _bones["Head"]
+		var ln := _clip_pose(bn)
+		var lh := _clip_pose(bh)
+		# the bones' global turns as the clip posed them (the parent's global times the clip's local)
+		var pn: Quaternion = _parent_global(bn)
+		var gn: Quaternion = pn * ln
+		var gh: Quaternion = gn * lh
+		if yaw_counter != 0.0:  # A2: take back part of the clip's own head yaw (its facing about the skeleton's up)
+			var f: Vector3 = (gh * skeleton.get_bone_global_rest(bh).basis.get_rotation_quaternion().inverse()) * Vector3.BACK
+			hy -= yaw_counter * atan2(f.x, f.z)
+		var qn := Quaternion.from_euler(Vector3(-_hp * pitch_neck_share, hy * neck_share, 0.0))
+		var qh := Quaternion.from_euler(Vector3(-_hp * (1.0 - pitch_neck_share) - nod, hy * (1.0 - neck_share), -tilt * hy))
+		var rn := rest_turn(ln, gn, qn)
+		var rh := rest_turn(lh, pn * rn * lh, qh)
+		skeleton.set_bone_pose_rotation(bn, rn)
+		skeleton.set_bone_pose_rotation(bh, rh)
+		_last[bn] = [rn, ln]
+		_last[bh] = [rh, lh]
+	else:
+		var qn := Quaternion.from_euler(Vector3(-_hp * pitch_neck_share, _hy * neck_share, 0.0))
+		var qh := Quaternion.from_euler(Vector3(-_hp * (1.0 - pitch_neck_share) - nod, _hy * (1.0 - neck_share), -tilt * _hy))
+		_set_rot(_bones["Neck"], qn)
+		_set_rot(_bones["Head"], qh)
+	var vy: float = _hvy
+	var vp: float = _hvp
+	var acc := Vector3.ZERO
+	if on_clip:
+		var m := _head_motion(dt)
+		vy = m[0].x
+		vp = m[0].y
+		acc = m[1]
 	for sp: Dictionary in springs:
 		var w: float = TAU * float(sp["hz"])
 		var st: Vector4 = sp["s"]
 		var cv := Vector2(st.z, st.w)
-		cv.x += (-w * w * (st.x + _hvy * float(sp["lag"])) - 2.0 * float(sp["zeta"]) * w * cv.x) * dt
-		cv.y += (-w * w * (st.y + _hvp * float(sp["lag"])) - 2.0 * float(sp["zeta"]) * w * cv.y) * dt
+		cv.x += (-w * w * (st.x + vy * float(sp["lag"])) + accel_gain * acc.x - 2.0 * float(sp["zeta"]) * w * cv.x) * dt
+		cv.y += (-w * w * (st.y + vp * float(sp["lag"])) + accel_gain * (acc.y + 0.5 * acc.z)
+			- 2.0 * float(sp["zeta"]) * w * cv.y) * dt
 		var sy: float = st.x + cv.x * dt
 		var spt: float = st.y + cv.y * dt
 		var cap: float = sp["cap"]
@@ -208,8 +292,15 @@ func step(dt: float) -> void:
 		sp["s"] = Vector4(sy, spt, cv.x, cv.y)
 		var n: float = float((sp["bones"] as Array).size())
 		for bi: int in sp["bones"]:
-			skeleton.set_bone_pose_rotation(bi, Quaternion.from_euler(Vector3(-spt / n, sy / n, 0.0)))
+			_set_rot(bi, Quaternion.from_euler(Vector3(-spt / n, sy / n, 0.0)))
 	skeleton.advance(dt)
+	if darts > 0.0:  # A2: a new dart now and then, the eyes' target only
+		_dart_t -= dt
+		if _dart_t <= 0.0:
+			_dart_t = _rng.randf_range(0.6, 2.4)
+			_dart = Vector2(_rng.randf_range(-1.0, 1.0), _rng.randf_range(-0.6, 0.6)) * deg_to_rad(darts)
+		var dd: float = t_local.distance_to(mid)
+		t_local += (skeleton.get_bone_global_pose(_bones["Head"]).basis * Vector3(_dart.x, _dart.y, 0.0)) * dd
 	# the eyes: toward the target from each posed eye centre, in the posed head's frame, clamped by the lids, leading
 	var head_pose: Transform3D = skeleton.get_bone_global_pose(_bones["Head"])
 	var head_rest_inv: Transform3D = skeleton.get_bone_global_rest(_bones["Head"]).affine_inverse()
@@ -227,6 +318,72 @@ func step(dt: float) -> void:
 		var rp := _damp(s.y, s.w, lim.y, EYE_HZ, dt)
 		_eye[side] = Vector4(ry.x, rp.x, ry.y, rp.y)
 	_apply_eyes()
+
+
+## A1: forget the head's motion history (a jump to another clip, a teleport or a respawn must not kick the springs).
+func reset_motion() -> void:
+	_seen = 0
+	_mv = Vector2.ZERO
+	_ma = Vector3.ZERO
+	_body_v = Vector3.ZERO
+	_last.clear()
+
+
+## A2: the springs at rest (between review reels; a respawn).
+func reset_springs() -> void:
+	for sp: Dictionary in springs:
+		sp["s"] = Vector4.ZERO
+
+
+## A2: the clip's own local rotation of bi: what the skeleton holds, unless that is still the turn this controller
+## wrote last step (the clip did not pose the bone again), then the clip's pose that turn went on.
+func _clip_pose(bi: int) -> Quaternion:
+	var now := skeleton.get_bone_pose_rotation(bi)
+	if _last.has(bi) and now.is_equal_approx(_last[bi][0]):
+		return _last[bi][1]
+	return now
+
+
+func _parent_global(bi: int) -> Quaternion:
+	var p := skeleton.get_bone_parent(bi)
+	return skeleton.get_bone_global_pose(p).basis.get_rotation_quaternion() if p >= 0 else Quaternion.IDENTITY
+
+
+## A1: the head's measured motion since the last step, in its own rest-aligned frame (the springs' frame): [the yaw and
+## pitch rates (rad/s; + pitch = the face up, as _hvp), the acceleration (m/s^2; x its left, y up, z forward)], each
+## clamped (a loop's seam or a clip's jump is not a hit). A2: low-passed by 1 - exp(-dt / MOTION_TAU), the same at any
+## frame rate; the acceleration is the head's in the skeleton's space (the clip's bob, from velocities, so an uneven
+## dt does not spike it) plus the change of the skeleton's low-passed world velocity (the body's own travel: a 60 Hz
+## physics body drawn at 144 fps moves unevenly from frame to frame).
+func _head_motion(dt: float) -> Array:
+	var bh: int = _bones["Head"]
+	var pose := skeleton.get_bone_global_pose(bh)
+	var turn: Quaternion = (skeleton.global_basis.get_rotation_quaternion() * pose.basis.get_rotation_quaternion()
+		* skeleton.get_bone_global_rest(bh).basis.get_rotation_quaternion().inverse()).normalized()
+	var p: Vector3 = pose.origin
+	var bp: Vector3 = skeleton.global_position
+	var k: float = 1.0 - exp(-dt / MOTION_TAU)
+	var v := Vector2.ZERO
+	var a := Vector3.ZERO
+	var vs := Vector3.ZERO
+	if _seen >= 1:
+		var e: Vector3 = (_h_prev.inverse() * turn).normalized().get_euler()
+		v = Vector2(clampf(e.y / dt, -6.0, 6.0), clampf(-e.x / dt, -6.0, 6.0))
+		vs = (p - _p1) / dt
+		_body_v = _body_v.lerp((bp - _body_p) / dt, k)
+	if _seen >= 2:
+		var a_skel: Vector3 = skeleton.global_basis * ((vs - _v1) / dt)
+		var a_body: Vector3 = (_body_v - _body_v1) / dt
+		a = (turn.inverse() * (a_skel + a_body)).limit_length(30.0)
+	_h_prev = turn
+	_p1 = p
+	_v1 = vs
+	_body_p = bp
+	_body_v1 = _body_v
+	_seen += 1
+	_mv = _mv.lerp(v, k)
+	_ma = _ma.lerp(a, k)
+	return [_mv, _ma]
 
 
 func _apply_eyes() -> void:
@@ -260,7 +417,7 @@ func hold_springs(yf: float, pf: float) -> void:
 		sp["s"] = Vector4(cap * yf, cap * pf, 0.0, 0.0)
 		var n: float = float((sp["bones"] as Array).size())
 		for bi: int in sp["bones"]:
-			skeleton.set_bone_pose_rotation(bi, Quaternion.from_euler(Vector3(-cap * pf / n, cap * yf / n, 0.0)))
+			_set_rot(bi, Quaternion.from_euler(Vector3(-cap * pf / n, cap * yf / n, 0.0)))
 	skeleton.advance(0.0)
 
 

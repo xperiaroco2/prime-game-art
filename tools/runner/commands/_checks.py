@@ -379,11 +379,16 @@ def _shape_checks(report: _Report, meshes: list, contract: dict, rules: dict) ->
     low = min(m["min"][1] for m in meshes)
     high = max(m["max"][1] for m in meshes)
     height = high - low
+    # head_top_max_m (kinds.alien, art #196 comment 6374319309): the head's top may stand above the capsule; the body
+    # below the Head's skin is held to height_max_m by godot-check's contract_height, which has the skin per bone
+    top = rules.get("head_top_max_m", body["height_max_m"])
     report.gate(
         "height",
         rules["height"],
-        body["height_min_m"] <= height <= body["height_max_m"],
-        f"{height:.3f} m (contract {body['height_m']} m, allowed {body['height_min_m']} to {body['height_max_m']})",
+        body["height_min_m"] <= height <= top,
+        f"{height:.3f} m (contract {body['height_m']} m, allowed {body['height_min_m']} to {top}"
+        + (f"; the head may pass the {body['height_max_m']} m capsule, the body may not: godot-check)"
+           if "head_top_max_m" in rules else ")"),
     )
     report.gate(
         "feet_at_zero",
@@ -449,12 +454,18 @@ def _rig_checks(
     if duplicates:
         report.add("duplicate_bones", FAIL, f"two bones become {', '.join(sorted(set(duplicates)))} after the map")
     extra = sorted(n for n in bones if n not in parents)
-    report.add(
-        "extra_bones",
-        FAIL if extra else PASS,
-        f"not in the profile: {', '.join(extra)}" if extra else "every bone is a profile bone",
-    )
-    if rules["bones"] == "all":
+    split = _contract.spring_split(rules, extra, {n: b["parent"] for n, b in bones.items()})
+    bad = split["stray"] or split["partial"] or split["unchained"]
+    if bad:
+        detail = (f"not in the profile: {', '.join(extra)}"
+                  + (f" (spring sets in part: {split['partial']})" if split["partial"] else "")
+                  + (f" (not chained under {rules.get('spring_parent')}: {split['unchained']})" if split["unchained"] else ""))
+    elif extra:
+        detail = f"every bone is a profile bone or in a whole spring set: {', '.join(extra)}"
+    else:
+        detail = "every bone is a profile bone"
+    report.add("extra_bones", FAIL if bad else PASS, detail)
+    if rules["bones"] != "subset":
         missing = [n for n in parents if n not in bones]
         report.add(
             "missing_bones",
@@ -496,7 +507,7 @@ def _rig_checks(
         FAIL if weights.get(root) else PASS,
         f"{root} carries weights on {weights[root]} vertices" if weights.get(root) else f"{root} carries no weights",
     )
-    if rules["bones"] == "all":
+    if rules["bones"] != "subset":
         unpainted = [n for n in skeleton["weighted"] if not weights.get(n)]
         report.add(
             "weighted_bones",
