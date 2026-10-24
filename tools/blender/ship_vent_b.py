@@ -216,6 +216,46 @@ def ring(M, outer, inner, w0, w1, gap=0.004, tones=False, **kw):
         solid(M, inset(ccw(quad), gap / 2), w0, w1, **({"mat": "vent_b_bronze2"} if tones and i % 2 else {}), **kw)
 
 
+def bezel(M, outer, inner, w0, w1, out_ch, in_ch, mat="vent_b_bronze", edge="vent_b_edge"):
+    """vents-b5b: a frame round an opening as ONE closed solid (two matching convex polygons, the same vertex count):
+    its outer side chamfered by `out_ch` steps (dw, inset), its inner side by `in_ch` (dw, outset), each corner one
+    straight mitre (the polygons' shared vertices). ring()'s panels each chamfered all round, the mitres too, and on a
+    bezel narrower than both chamfers their front faces crossed: spiky pyramids at every corner (b5's scanner and bar)."""
+    outer, inner = ccw(list(outer)), ccw(list(inner))
+    n = len(outer)
+    assert len(inner) == n
+    width = min(abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) / math.dist(a, b)
+                for a, b, c in zip(outer, outer[1:] + outer[:1], inner))   # each side's width (edge to edge)
+    assert sum(d for _, d in out_ch) + sum(d for _, d in in_ch) < width - 0.004, "the chamfers leave no front face"
+
+    def chain(poly, steps, sign):
+        w = w1 - sum(dw for dw, _ in steps)
+        loops, acc = [(w0, poly), (w, poly)], 0.0
+        for dw, di in steps:
+            w, acc = w + dw, acc + di
+            loops.append((w, inset(poly, sign * acc)))
+        return loops
+    verts, faces, mats = [], [], []
+
+    def add_loops(loops):
+        base = len(verts)
+        for w, pts in loops:
+            verts.extend(frame("v", p, q, w) for p, q in pts)
+        for i in range(len(loops) - 1):
+            for j in range(n):
+                faces.append((base + i * n + j, base + i * n + (j + 1) % n, base + (i + 1) * n + (j + 1) % n,
+                              base + (i + 1) * n + j))
+                mats.append(mat if i == 0 else edge)
+        return base, base + (len(loops) - 1) * n
+    ob, of = add_loops(chain(outer, out_ch, 1))
+    ib, if_ = add_loops(chain(inner, in_ch, -1))
+    for j in range(n):   # the back on w0 and the front face on w1, each a ring of quads between the two sides
+        k = (j + 1) % n
+        faces += [(ob + j, ib + j, ib + k, ob + k), (of + j, of + k, if_ + k, if_ + j)]
+        mats += [mat, mat]
+    M.add(verts, faces, mats)
+
+
 def slab_light(c, a1, n, e1, e2):
     a2 = (n[1] * a1[2] - n[2] * a1[1], n[2] * a1[0] - n[0] * a1[2], n[0] * a1[1] - n[1] * a1[0])
     return {"c": [round(x, 5) for x in c], "a1": [round(x, 5) for x in a1], "a2": [round(x, 5) for x in a2],
@@ -304,7 +344,9 @@ def body():
     # the light bar: a chamfered housing round the glass (the glass 1 mm into it)
     g_out = octo(GLASS_U[0] - 0.017, GLASS_H[0] - 0.024, GLASS_U[1] + 0.017, GLASS_H[1] + 0.024, 0.012)
     g_in = octo(GLASS_U[0], GLASS_H[0], GLASS_U[1], GLASS_H[1], 0.004)
-    ring(M, g_out, g_in, 0.36, 0.425, gap=0.0, front=((0.01, 0.009), (0.002, 0.0015)))
+    # vents-b5b: the housings and the scanner's bezel each one solid with straight mitres (bezel(); b5's ring() of
+    # eight panels chamfered all round showed spiky pyramids at the corners)
+    bezel(M, g_out, g_in, 0.36, 0.425, ((0.008, 0.007), (0.002, 0.0015)), ((0.003, 0.003),))
     solid(M, [(GLASS_U[0] - 0.001, GLASS_H[0] - 0.001), (GLASS_U[1] + 0.001, GLASS_H[0] - 0.001),
               (GLASS_U[1] + 0.001, GLASS_H[1] + 0.001), (GLASS_U[0] - 0.001, GLASS_H[1] + 0.001)], 0.37, GLASS_V,
           mat="vent_a_body__band", front=())
@@ -312,7 +354,7 @@ def body():
     b = BAR_DU
     s_out = octo(0.488 + b, 0.29, 0.568 + b, 0.565, 0.012)
     s_in = octo(0.504 + b, 0.306, 0.552 + b, 0.549, 0.005)
-    ring(M, s_out, s_in, 0.36, 0.42, gap=0.0, front=((0.009, 0.008),))
+    bezel(M, s_out, s_in, 0.36, 0.42, ((0.007, 0.006),), ((0.003, 0.003),))
     solid(M, [(0.503 + b, 0.305), (0.553 + b, 0.305), (0.553 + b, 0.55), (0.503 + b, 0.55)], 0.37, 0.397,
           mat="vent_b_dark", front=())
     strips.append(slab_light((0.528 + b, 0.397, 0.4275), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0), 0.112, 0.017))
@@ -321,7 +363,7 @@ def body():
     # vents-b3: the bezel larger and prouder (b2 21 x 25 cm, 9 cm out)
     b_out = octo(su - BEZEL_HW, sh - BEZEL_HH, su + BEZEL_HW, sh + BEZEL_HH, 0.045)
     b_in = inset(ccw(b_out), 0.026)
-    ring(M, b_out, b_in, 0.36, 0.47, gap=0.0, front=((0.016, 0.015), (0.004, 0.003)))
+    bezel(M, b_out, b_in, 0.36, 0.47, ((0.012, 0.010), (0.003, 0.002)), ((0.005, 0.004),))
     screen_v = 0.448
     solid(M, inset(ccw(b_in), -0.001), 0.37, screen_v, mat="vent_a_body__hand", front=())
     xs, hs = [p[0] for p in b_in], [p[1] for p in b_in]
