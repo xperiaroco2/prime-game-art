@@ -4,7 +4,13 @@ standard ring the separate head welds to), on the contract skeleton with Univers
 
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_body.py -- \
         --body <Superhero_Male_FullBody.gltf> --clips <UAL1_Standard.glb> --map contract/bone_maps/quaternius.toml \
-        --out <dir>
+        --out <dir> [--targets tools/blender/alien_body_targets/chameleon_a.toml]
+
+The targets file holds a concept's numbers (bands, bone lengths and radii, fingers, toes, ring height, neck flare,
+Z_ANCHORS mapping u1's fixed heights onto the target's): u1.toml (the default) rebuilds S1c exactly; chameleon_a.toml
+is the A chameleon body (the refit route of the bodies_a pilot), measured by alien_body_measure.py. Its new paths:
+FINGERS 5 keeps the Little finger, TOE_CENTRES with two entries gives the chameleon's two toe groups, NECK_FLARE the
+neck's concave sweep into the trapezius, CROTCH_SMOOTH flattens the base's bulge.
 
 Writes <out>/alien_body.blend (a saved character for `tools/run.py export`), <out>/neck_ring.json and
 <out>/fit.json (the measured widths before and after against the targets).
@@ -56,7 +62,7 @@ TARGETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "alien_bo
 TARGET_KEYS = ("PX_M", "BANDS", "LENGTH", "RADIUS", "FINGERS", "FINGER_LEN", "FINGER_THICK", "FINGER_SPREAD",
                "HAND_SCALE", "THUMB_ROOT", "FOOT_WIDTH", "TUBE_KEEP", "TUBE_SIGMA", "TOE_HALF", "TOE_LEN", "TOE_H",
                "GROOVE", "TOE_CENTRES", "TOE_SEMI", "NOTCHES", "NOTCH_W", "TOE_SPLAY", "TRUNK_Z", "RING_Z", "NECK",
-               "BELLY", "NECK_FLARE", "NECK_FLARE_Z", "Z_ANCHORS")
+               "BELLY", "NECK_FLARE", "NECK_FLARE_Z", "Z_ANCHORS", "CROTCH_SMOOTH")
 TAUBIN = 80                # iterations of the lambda/mu smooth over the body (not the hands)
 FOOT_RINGS = 12            # rings of the rebuilt forefoot (packed towards the toe end)
 TOE_END = 0.4              # the last part of the toes' length that rounds off (a quarter ellipse seen from the side)
@@ -597,6 +603,18 @@ def main():
     report["trunk"] = trunk_fit(allv, tws)
     z0, z1 = TRUNK_Z
     taubin(allv, [(tw ** 2 if z0 - 0.04 < v.co.z < z1 + 0.01 else 0.0) for v, tw in zip(allv, tws)], 10)
+    # The crotch (CROTCH_SMOOTH > 0): the base's bulge in front smoothed flat by a plain (shrinking) Laplacian
+    # around the midline between Z(0.70) and Z(0.84), fading out sideways and at both ends.
+    if CROTCH_SMOOTH:
+        zc0, zc1 = Z(0.70), Z(0.84)
+        cv = [v for v in allv if zc0 < v.co.z < zc1 + 0.06 and abs(v.co.x) < 0.1]
+        cw_ = [math.exp(-(v.co.x / 0.045) ** 2) * smoothstep((v.co.z - zc0) / 0.04)
+               * (1 - smoothstep((v.co.z - zc1) / 0.06)) for v in cv]
+        for _ in range(CROTCH_SMOOTH):
+            new = [sum((e.other_vert(v).co for e in v.link_edges), Vector()) / len(v.link_edges) for v in cv]
+            for v, n, w in zip(cv, new, cw_):
+                v.co = v.co + (n - v.co) * 0.5 * w
+        report["crotch_smoothed"] = len(cv)
     # The neck: narrowed to u1's width above 1.30 m and, near the cut, laid exactly on the NECK ellipse, so the cut is
     # an even convex loop and the zip to the standard ring is clean.
     zcut = RING_Z - 2 * RING_STEP
@@ -643,7 +661,7 @@ def main():
         fac = {}
         for k in ks:
             t = max(0.0, min(1.0, (zcut - k) / span))
-            fac[k] = max(0.7, min(1.8, (NECK[0] + (NECK_FLARE - NECK[0]) * t * t) / max(cur_hw[k], 1e-4)))
+            fac[k] = max(0.92, min(1.8, (NECK[0] + (NECK_FLARE - NECK[0]) * t * t) / max(cur_hw[k], 1e-4)))
         sm = {k: sum(math.exp(-0.5 * ((k2 - k) / 0.012) ** 2) * fac[k2] for k2 in ks)
               / sum(math.exp(-0.5 * ((k2 - k) / 0.012) ** 2) for k2 in ks) for k in ks}
         for v in sel:

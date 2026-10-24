@@ -48,3 +48,4 @@ NECK_FLARE = 0.0            # m: the neck's half width at NECK_FLARE_Z (0: no fl
 NECK_FLARE_Z = 0.0
 # u1's landmark heights -> this target's (piecewise linear): the code's fixed heights (seat, belly, neck) follow them.
 Z_ANCHORS = [[0.0, 0.0], [2.0, 2.0]]
+CROTCH_SMOOTH = 0             # passes of the crotch's flattening smooth (0: none)

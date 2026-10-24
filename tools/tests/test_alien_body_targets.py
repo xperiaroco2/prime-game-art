@@ -52,7 +52,7 @@ class Targets(unittest.TestCase):
         self.assertEqual((ab.RING_Z, ab.NECK, ab.TRUNK_Z, ab.BELLY), (1.39, (0.059, 0.055), (0.70, 1.22), 0.03))
         self.assertEqual(ab.TOE_CENTRES, [-2 / 3, 0.0, 2 / 3])
         self.assertEqual((ab.TOE_SEMI, ab.NOTCHES, ab.NOTCH_W, ab.TOE_SPLAY), (1 / 3, [-1 / 3, 1 / 3], 0.1, 0.0))
-        self.assertEqual(ab.NECK_FLARE, 0.0)
+        self.assertEqual((ab.NECK_FLARE, ab.CROTCH_SMOOTH), (0.0, 0))
         for h in (0.6, 0.8, 1.25, 1.29, 1.36):
             self.assertAlmostEqual(ab.Z(h), h)
 

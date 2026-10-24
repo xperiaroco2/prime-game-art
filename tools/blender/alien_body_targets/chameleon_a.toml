@@ -4,16 +4,17 @@
 # 1.39), the concept's head 221 px (top row 24, ring row 245), so the concept at the head's scale stands 2.15 m; the
 # body below the ring is scaled to the 1.95 m cap: 0.001965 m per pixel, the sole on row 986, the ring at 1.456 m.
 # Landmarks (m): shoulder top (trapezius) 1.37, armpit 1.212, waist 1.06, crotch 0.804, knee 0.517, ankle (narrowest)
-# 0.22. The side depths between 1.0 and 1.1 m and the hands' rows are read through the hanging arm: chosen by eye.
+# 0.22. The side depths between 1.0 and 1.1 m and the hands' rows are read through the hanging arm: chosen by eye
+# (round 3: the belly's depth lowered, a flat stomach).
 name = "chameleon_a"
 PX_M = 0.001965
 BANDS = [
     [0.843, 0.300, 0.200],
     [0.890, 0.280, 0.210],
     [0.937, 0.255, 0.205],
-    [0.984, 0.225, 0.190],
-    [1.031, 0.192, 0.180],
-    [1.079, 0.188, 0.182],
+    [0.984, 0.225, 0.175],
+    [1.031, 0.205, 0.170],
+    [1.079, 0.202, 0.172],
     [1.126, 0.212, 0.200],
     [1.173, 0.245, 0.215],
     [1.220, 0.0, 0.225],
@@ -24,10 +25,11 @@ BANDS = [
 ]
 # Lengths against the Quaternius base (its thigh 0.429 m, calf 0.456, Hips to Neck 0.571, neck 0.079, upper arm
 # 0.251, forearm 0.2435, clavicle 0.1805): hip joint 0.88, knee 0.52, ankle 0.12, Neck 1.36, Head 1.50; the shoulder
-# joints 0.356 m apart; upper arm 0.30, forearm 0.28 (the concept's A-pose arm: shoulder 1.30, elbow 1.01, wrist 0.74,
+# joints about 0.38 m apart; the spine a little shorter and the neck longer than measured (round 2: the base's
+# trapezius stood too high under the ring); upper arm 0.30, forearm 0.28 (the concept's A-pose arm: shoulder 1.30, elbow 1.01, wrist 0.74,
 # fingertips 0.56); long feet.
-LENGTH = { pelvis = 0.876, spine_01 = 0.876, spine_02 = 0.876, spine_03 = 0.876, neck_01 = 1.8, clavicle = 0.81, upperarm = 1.195, lowerarm = 1.15, hand = 1.0, thigh = 0.839, calf = 0.877, foot = 1.5, ball = 1.6 }
-RADIUS = { upperarm = 0.038, lowerarm = 0.029, thigh = 0.062, calf = 0.047 }
+LENGTH = { pelvis = 0.85, spine_01 = 0.85, spine_02 = 0.85, spine_03 = 0.85, neck_01 = 2.0, clavicle = 0.9, upperarm = 1.195, lowerarm = 1.15, hand = 1.0, thigh = 0.839, calf = 0.877, foot = 1.5, ball = 1.6 }
+RADIUS = { upperarm = 0.044, lowerarm = 0.034, thigh = 0.068, calf = 0.052 }
 FINGERS = 5
 FINGER_LEN = 1.08
 FINGER_THICK = 1.0
@@ -35,23 +37,24 @@ FINGER_SPREAD = 0.25
 HAND_SCALE = 1.0
 THUMB_ROOT = [0.95, 0.95]
 FOOT_WIDTH = 1.15
-TUBE_KEEP = 0.35
+TUBE_KEEP = 0.45
 TUBE_SIGMA = 0.05
 # Chameleon feet: the forefoot in two fused, rounded toe groups (inner and outer) with a deep cleft between them,
 # their tips a little apart.
-TOE_HALF = 0.075
-TOE_LEN = 0.075
-TOE_H = 0.058
-GROOVE = 0.012
+TOE_HALF = 0.062
+TOE_LEN = 0.08
+TOE_H = 0.085
+GROOVE = 0.02
 TOE_CENTRES = [-0.5, 0.5]
 TOE_SEMI = 0.5
 NOTCHES = [0.0]
-NOTCH_W = 0.14
+NOTCH_W = 0.16
 TOE_SPLAY = 0.012
-TRUNK_Z = [0.71, 1.24]
+TRUNK_Z = [0.71, 1.30]
 RING_Z = 1.456
 NECK = [0.059, 0.055]       # the standard ring's ellipse: unchanged (the welded heads are scaled from its x extent)
 BELLY = 0.0                 # a flat stomach
-NECK_FLARE = 0.15           # m: the trapezius' half width at NECK_FLARE_Z, reached in a concave sweep from the ring
-NECK_FLARE_Z = 1.37
+NECK_FLARE = 0.14           # m: the trapezius' half width at NECK_FLARE_Z, reached in a concave sweep from the ring
+NECK_FLARE_Z = 1.36
 Z_ANCHORS = [[0.0, 0.0], [0.79, 0.804], [1.20, 1.212], [1.39, 1.456], [2.0, 2.066]]
+CROTCH_SMOOTH = 40           # the base's bulge at the crotch flattened (no genitals)
