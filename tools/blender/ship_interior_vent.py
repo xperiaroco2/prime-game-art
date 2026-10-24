@@ -62,7 +62,7 @@ for _name, _base, _upd in (
 # its scanner height, "recess" {"e": m, "w": m}; vents-b5: "dir_w" the west body's folder, "tip_back" {"e": m, "w": m}
 # its blades' depth) builds the grids' variants; never set for the game's build
 _REVIEW = json.loads(os.environ.get("SHIP_VENT_REVIEW") or "{}")
-_BODY_DIR = _REVIEW.get("dir", "ship/v4/vents-b/b5")
+_BODY_DIR = _REVIEW.get("dir", "ship/v4/vents-b/b5b")
 BODY = _BODY_DIR + "/body.glb"                # under the raw folder (way B: built in Blender, flat facets, chamfers)
 LIGHTS = _BODY_DIR + "/lights.json"           # the light pieces' places on the body (ship_vent_b.py)
 _BODY_W = _REVIEW.get("dir_w", _BODY_DIR)
@@ -222,6 +222,9 @@ HAND_TIP = max(HAND_TIPS)
 HAND_FR = 0.11                        # a finger's half width
 HAND_GAP = 0.17                       # the gap between two fingers (their U crotch's width)
 HAND_THUMB = ((-0.30, 0.36), (-0.72, 0.84), 0.125)   # its axis from the palm out to the tip's centre, its half width
+# vents-b5b: the hand's box 70 % of the screen's height (b4/b5 80 %: the ring finger's tip ran into the octagon's top
+# right corner and the hand read off-centre), its box centred on the octagon's
+HAND_FILL = 0.70
 
 
 def _hand_field(x: float, y: float) -> float:
@@ -356,8 +359,6 @@ def lights(pid: str, s: float, body_dir: str = _BODY_DIR) -> list[dict]:
     # the hand: a dark screen on its faces' box, the outline 2 mm in front of it
     lo, hi = lj["hand"]["lo"], lj["hand"]["hi"]
     face = hi[1]
-    su, sh = (lo[0] + hi[0]) / 2, (lo[2] + hi[2]) / 2
-    wu, wh = (hi[0] - lo[0]) / 2, (hi[2] - lo[2]) / 2
     # vents-b2: the dark screen is the bezel's octagon 1.5 mm in (b1's rectangle's corners cut through the octagonal
     # bezel and flickered), 1 mm off the body's screen face
     poly = shrink(lj["hand"].get("poly") or [(lo[0], lo[2]), (hi[0], lo[2]), (hi[0], hi[2]), (lo[0], hi[2])], 0.0015)
@@ -366,13 +367,15 @@ def lights(pid: str, s: float, body_dir: str = _BODY_DIR) -> list[dict]:
     sf = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))] + [(j, (j + 1) % n, n + (j + 1) % n, n + j)
                                                                    for j in range(n)]
     put("screen", (sv, sf), "int_dark__vent_screen")
-    # vents-b4: the hand an even stroke round its smooth silhouette (hand_outline, hand_stroke), its box 80 % of the
-    # screen's height, centred on the screen, every point 1 cm inside the octagon
+    # vents-b4: the hand an even stroke round its smooth silhouette (hand_outline, hand_stroke), its box HAND_FILL of
+    # the screen's height, centred on the screen's octagon, every point 1 cm inside it
     st = hand_stroke(hand_outline())
     allp = [q for pair in st for q in pair]
     x0, x1 = min(x for x, _ in allp), max(x for x, _ in allp)
     y0, y1 = min(y for _, y in allp), max(y for _, y in allp)
-    scale = min(wh * 2 * 0.80 / (y1 - y0), wu * 2 * 0.90 / (x1 - x0))
+    pu, ph = [q[0] for q in poly], [q[1] for q in poly]
+    su, sh = (min(pu) + max(pu)) / 2, (min(ph) + max(ph)) / 2
+    scale = min((max(ph) - min(ph)) * HAND_FILL / (y1 - y0), (max(pu) - min(pu)) * 0.90 / (x1 - x0))
     xc, yc = (x0 + x1) / 2, (y0 + y1) / 2
     inner = shrink(poly, 0.010)
     while scale > 0.01 and not all(inside(inner, (su + (x - xc) * scale, sh + (y - yc) * scale)) for x, y in allp):

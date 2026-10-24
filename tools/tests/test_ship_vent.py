@@ -105,13 +105,14 @@ class ShipVentTest(unittest.TestCase):
             self.assertGreaterEqual(min(p[k] for p in hand), min(p[k] for p in scr))
             self.assertLessEqual(max(p[k] for p in hand), max(p[k] for p in scr))
         self.assertGreater(min(y for _, y, _ in hand), max(y for _, y, _ in scr))
-        # vents-b4: the hand centred on its screen (within 1.5 cm), its box 70..85 % of the screen's height
+        # vents-b5b: the hand's box centred on its screen (even margins left and right, top and bottom, within 2 mm),
+        # V.HAND_FILL (70 %) of the screen's height (b4/b5 80 %, the ring finger in the octagon's corner)
         hx = [p[0] for p in hand]
         hz = [p[2] for p in hand]
         sx, sz = [p[0] for p in scr], [p[2] for p in scr]
-        self.assertLess(abs((min(hx) + max(hx)) / 2 - (min(sx) + max(sx)) / 2), 0.015)
-        self.assertLess(abs((min(hz) + max(hz)) / 2 - (min(sz) + max(sz)) / 2), 0.015)
-        self.assertTrue(0.70 <= (max(hz) - min(hz)) / (max(sz) - min(sz)) <= 0.85)
+        self.assertLess(abs((min(hx) - min(sx)) - (max(sx) - max(hx))), 0.002)
+        self.assertLess(abs((min(hz) - min(sz)) - (max(sz) - max(hz))), 0.002)
+        self.assertAlmostEqual((max(hz) - min(hz)) / (max(sz) - min(sz)), V.HAND_FILL, delta=0.02)
 
     def test_hand_has_a_thumb_and_three_fingers(self):
         """vents-b4: one closed smooth silhouette (a scan across the fingers meets three separate ones), the thumb out
