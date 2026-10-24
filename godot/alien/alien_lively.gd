@@ -49,10 +49,10 @@ var skeleton: Skeleton3D
 ## turn goes on top of the clip's Neck and Head instead of their rest (the clip's own head motion stays), and the
 ## springs swing from the head's real motion in the world (its turn and its acceleration, so a jog bobs the crest and
 ## the gills) instead of the controller's turn alone. The caller re-poses the clip before each step (seek or advance)
-## and calls reset_motion() when it jumps to another clip or teleports the character (a respawn), reset_springs()
-## too when the springs must start still. A clip that stops posing Neck and Head (a one-shot's end, a pause, a layer
-## that leaves them out) does not pile the turn up: the turn goes on the clip's last own pose (A2). False: the busts'
-## and the shots' way, unchanged.
+## and calls reset_motion() when it jumps to another clip or teleports the character (a respawn; the next step seeds
+## the body's velocity from that step's raw velocity, A3), reset_springs() too when the springs must start still. A
+## clip that stops posing Neck and Head (a one-shot's end, a pause, a layer that leaves them out) does not pile the
+## turn up: the turn goes on the clip's last own pose (A2). False: the busts' and the shots' way, unchanged.
 var on_clip := false
 var accel_gain := 1.0  # rad/s^2 of spring push per m/s^2 of the head's acceleration (A1)
 ## A2: the share of the clip's own head yaw (the Head's facing about the skeleton's up, as the clip poses it) taken
@@ -61,6 +61,19 @@ var yaw_counter := 0.0
 ## A2: small eye darts (degrees; 0 none): every 0.6-2.4 s the eyes jump to a new point near the target, the head
 ## does not follow; the eyes are the static head's only life at rest
 var darts := 0.0
+## A3: the eyes. "free" (the default, A1-A2's way and the web module's): the eyes follow the target as far as the
+## lids allow; "fixed": the pupils stay centred in the head, the gaze is the head's forward, and darts are off (the
+## clip reels' job default); "lead": the eyes reach a new look target first, by at most EYE_LEAD_DEG off the head's
+## forward, and re-centre as the head follows. Another value is an error (push_error) and acts as "free".
+var eye_mode := "free"
+const EYE_LEAD_DEG := 8.0
+## A3: the yaw counter low-passed over this time constant (s), so the head does not snap against the chest's swivel
+const YAW_COUNTER_TAU := 0.25
+## A3: on a clip, each spring's push (its lag behind the head's turn and the acceleration) scaled by the first entry
+## whose key starts its name: the axolotl's gills, at 1 four times the crest's jitter in a jog, to about twice
+var clip_drive := {"Gill": 0.5}
+## A3: the darts' random seed (applied at the first step, or call reseed()), so a reel is the same on every run
+var rng_seed := 196
 const MOTION_TAU := 0.1  # A2: the measured motion's low-pass time constant (s), the same at any frame rate
 var _h_prev := Quaternion.IDENTITY
 var _p1 := Vector3.ZERO
@@ -75,6 +88,8 @@ var _last := {}  # A2: bone -> [the rotation this controller wrote, the clip's p
 var _dart := Vector2.ZERO
 var _dart_t := 0.0
 var _rng := RandomNumberGenerator.new()
+var _yc := 0.0  # A3: the clip's head yaw, low-passed (the counter's input)
+var _seeded := false
 var mesh: MeshInstance3D
 var mats: Array[ShaderMaterial]
 var eyes: Dictionary  # "left"/"right" -> lively.json's eye
@@ -83,6 +98,9 @@ var _hy := 0.0  # the head's yaw and pitch now, and their velocities
 var _hp := 0.0
 var _hvy := 0.0
 var _hvp := 0.0
+## A3c: the eye's share decided per fragment from the eyeball sphere at the rim (alien_static.gdshader's rim rule), a
+## trial left off: the chameleon's eyeball leaves its fitted sphere by more than the lid rises at the lower rim
+var rim_rule := false
 var _eye := {"left": Vector4.ZERO, "right": Vector4.ZERO}  # yaw, pitch, their velocities
 var _bones := {}
 var _rest_q := {}  # B1: bone -> [its local rest rotation, its global rest rotation]
@@ -215,6 +233,10 @@ static func _damp(x: float, v: float, goal: float, hz: float, dt: float) -> Vect
 
 
 func step(dt: float) -> void:
+	if dt <= 0.0:  # A3: a zero step would divide by it (the measured motion): nothing moves
+		return
+	if not _seeded:
+		reseed()
 	dt = minf(dt, 0.05)  # a hitch frame must not kick the crest spring (as the web)
 	time += dt
 	var to_skel: Transform3D = skeleton.global_transform.affine_inverse()
@@ -247,7 +269,10 @@ func step(dt: float) -> void:
 		var gh: Quaternion = gn * lh
 		if yaw_counter != 0.0:  # A2: take back part of the clip's own head yaw (its facing about the skeleton's up)
 			var f: Vector3 = (gh * skeleton.get_bone_global_rest(bh).basis.get_rotation_quaternion().inverse()) * Vector3.BACK
-			hy -= yaw_counter * atan2(f.x, f.z)
+			# A3: scaled by the facing's horizontal length (near +-90 pitch the yaw is arbitrary), low-passed
+			var yc: float = atan2(f.x, f.z) * clampf(Vector2(f.x, f.z).length(), 0.0, 1.0)
+			_yc = lerpf(_yc, yc, 1.0 - exp(-dt / YAW_COUNTER_TAU)) if _seen > 0 else yc
+			hy -= yaw_counter * _yc
 		var qn := Quaternion.from_euler(Vector3(-_hp * pitch_neck_share, hy * neck_share, 0.0))
 		var qh := Quaternion.from_euler(Vector3(-_hp * (1.0 - pitch_neck_share) - nod, hy * (1.0 - neck_share), -tilt * hy))
 		var rn := rest_turn(ln, gn, qn)
@@ -273,8 +298,9 @@ func step(dt: float) -> void:
 		var w: float = TAU * float(sp["hz"])
 		var st: Vector4 = sp["s"]
 		var cv := Vector2(st.z, st.w)
-		cv.x += (-w * w * (st.x + vy * float(sp["lag"])) + accel_gain * acc.x - 2.0 * float(sp["zeta"]) * w * cv.x) * dt
-		cv.y += (-w * w * (st.y + vp * float(sp["lag"])) + accel_gain * (acc.y + 0.5 * acc.z)
+		var g: float = drive(String(sp["name"])) if on_clip else 1.0  # A3
+		cv.x += (-w * w * (st.x + g * vy * float(sp["lag"])) + g * accel_gain * acc.x - 2.0 * float(sp["zeta"]) * w * cv.x) * dt
+		cv.y += (-w * w * (st.y + g * vp * float(sp["lag"])) + g * accel_gain * (acc.y + 0.5 * acc.z)
 			- 2.0 * float(sp["zeta"]) * w * cv.y) * dt
 		var sy: float = st.x + cv.x * dt
 		var spt: float = st.y + cv.y * dt
@@ -313,6 +339,12 @@ func step(dt: float) -> void:
 		var tl: Vector3 = posed.basis.inverse() * (t_local - c)
 		var off := eye_offsets(_v(e["rest"]), tl)  # in the eye's rest frame, where the lid limits were measured
 		var lim := clamp_gaze(off.x, off.y, e["limits_deg"])
+		if eye_mode == "fixed":  # A3
+			lim = Vector2.ZERO
+		elif eye_mode == "lead":
+			lim = lim.limit_length(deg_to_rad(EYE_LEAD_DEG))
+		elif eye_mode != "free":
+			push_error("alien_lively: unknown eye_mode %s (free, fixed or lead)" % eye_mode)
 		var s: Vector4 = _eye[side]
 		var ry := _damp(s.x, s.z, lim.x, EYE_HZ, dt)
 		var rp := _damp(s.y, s.w, lim.y, EYE_HZ, dt)
@@ -320,13 +352,37 @@ func step(dt: float) -> void:
 	_apply_eyes()
 
 
-## A1: forget the head's motion history (a jump to another clip, a teleport or a respawn must not kick the springs).
+## A1: forget the head's motion history (a jump to another clip, a teleport or a respawn must not kick the springs);
+## A3: the next measured step seeds the body's velocity from its raw velocity (zero kicked the springs mid-run).
 func reset_motion() -> void:
 	_seen = 0
 	_mv = Vector2.ZERO
 	_ma = Vector3.ZERO
-	_body_v = Vector3.ZERO
 	_last.clear()
+
+
+## A3b: the eyes back at rest (yaw, pitch and their velocities zero), applied: a proof's next pass starts from the
+## eyes centred, not from where the last pass left them.
+func reset_eyes() -> void:
+	for side: String in _eye:
+		_eye[side] = Vector4.ZERO
+	_dart = Vector2.ZERO
+	_apply_eyes()
+
+
+## A3: the darts' generator back to rng_seed (a reel starts the same on every run).
+func reseed() -> void:
+	_rng.seed = rng_seed
+	_dart_t = 0.0
+	_seeded = true
+
+
+## A3: the clip drive's scale for the spring named n (clip_drive's first key that starts it; 1 without one).
+func drive(n: String) -> float:
+	for k: String in clip_drive:
+		if n.begins_with(k):
+			return float(clip_drive[k])
+	return 1.0
 
 
 ## A2: the springs at rest (between review reels; a respawn).
@@ -370,7 +426,8 @@ func _head_motion(dt: float) -> Array:
 		var e: Vector3 = (_h_prev.inverse() * turn).normalized().get_euler()
 		v = Vector2(clampf(e.y / dt, -6.0, 6.0), clampf(-e.x / dt, -6.0, 6.0))
 		vs = (p - _p1) / dt
-		_body_v = _body_v.lerp((bp - _body_p) / dt, k)
+		var raw: Vector3 = (bp - _body_p) / dt
+		_body_v = raw if _seen == 1 else _body_v.lerp(raw, k)  # A3: seeded from the raw velocity after a reset
 	if _seen >= 2:
 		var a_skel: Vector3 = skeleton.global_basis * ((vs - _v1) / dt)
 		var a_body: Vector3 = (_body_v - _body_v1) / dt
@@ -397,9 +454,18 @@ func _apply_eyes() -> void:
 		var c: Vector3 = to_mesh * (posed * _v(e["centre"]))
 		if bead:  # AL3: the bead's posed front, which bounds how far the fixed glint may sit (catch_reach)
 			g = (to_mesh.basis * posed.basis * _v(e["rest"])).normalized()
+		# A3c: the rim rule's posed eyeball sphere (the build's front fit, else the eye sphere) and axis; 0: the mask
+		var fs: Dictionary = e.get("front_sphere", {"centre": e["centre"], "r": e["radius"]})
+		var sph := Vector4.ZERO
+		if rim_rule:
+			var fc: Vector3 = to_mesh * (posed * _v(fs["centre"]))
+			sph = Vector4(fc.x, fc.y, fc.z, float(fs["r"]))
+		var ax: Vector3 = (to_mesh.basis * posed.basis * _v(e["rest"])).normalized()
 		for sm: ShaderMaterial in mats:
 			sm.set_shader_parameter("eye_centre_" + side.left(1), c)
 			sm.set_shader_parameter("gaze_" + side.left(1), g)
+			sm.set_shader_parameter("eye_sphere_" + side.left(1), sph)
+			sm.set_shader_parameter("eye_axis_" + side.left(1), ax)
 
 
 ## AL3: how far from the posed bead front the glint may sit (radians): its rest angle plus CATCH_MARGIN, so at rest

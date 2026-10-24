@@ -1206,6 +1206,88 @@ pilot's static premium heads"):
     `reset_springs()` to start the springs still (the reels do both per clip).
   - No blinks: the static heads' lids are sculpted, no lid bone or shader closes them (emotions and face rigs stay
     parked).
+- **A3: the clips' third round, the eye rim and the eye modes (2026-10-24, art #196; proof `anim_bare/a3/`):**
+  - `alien_lively.gd`: `eye_mode` `free` (the default since A3d: A1-A2's follow as far as the lids allow, the
+    web module's way; every proof that never sets it, such as `eye_pit_shots.gd`, keeps its turning eyes), `fixed`
+    (the pupils centred in the head, the gaze the head's forward, the darts without effect; the clip reels' job
+    default) or `lead` (the eyes reach the look target first, at most `EYE_LEAD_DEG` 8 off the head's forward); any
+    other value is a `push_error`; `darts` stays 0 by default and draws from a generator seeded with `rng_seed` (196) at the first
+    step or `reseed()`; the yaw counter is scaled by the head's horizontal facing (no roll near +-90 pitch) and
+    low-passed over `YAW_COUNTER_TAU` 0.25 s (the reels: 0.3, not 0.55); on a clip each spring's drive is scaled by
+    `clip_drive` (`{"Gill": 0.5}`: the gills); `step(dt <= 0)` returns at once; `reset_motion()` no longer
+    zeroes the body's velocity, the next measured step seeds it from its raw velocity. One rule for callers: call
+    `reset_motion()` after a clip change, teleport or respawn, `reset_springs()` when the springs must start still.
+  - `clip_reels.gd` zeroes the springs per reel exactly as A1 did (A2's extra `reset_springs()` did the same and is
+    gone), so A1's before reels are reproduced; `eye_mode` comes from the job (`alien_clip_run.py --eye-mode`).
+  - `eye_reels.gd` (`alien_clip_run.py --eyes`): `rim_<head>.jpg` (each eye's lower rim at rest, gaze down,
+    left, right: as built, albedo only, geometry only, SSAO off, the eye mask's share, `debug_mode` 7 of
+    `alien_static.gdshader`), `rim_<head>_4x/`, and the look-around per eye mode (`<head>_look_fixed.mp4`,
+    `_lead`, `_side`; yaw +-40, pitch +-15 with holds, 8 s, Idle underneath), `eyes.json`.
+- **A3b: the eye rim (2026-10-24, art #196; proof `anim_bare/a3b/`):**
+  - The cause (A3's `rim_<head>.jpg`): the dark line with a light band along the lower lid shows in the geometry-only
+    column, not in the albedo-only one. The rim, every welded edge between an eyeball and a lid triangle, is a
+    sawtooth: its vertices step in and out by a triangle (the chameleon: a vertex 3.4 mm off its neighbours' midpoint
+    at the median, 18.4 mm at most, in the static head's units, eye radius 0.186). The eye mask follows the triangles
+    (`mask_vs_triangles`: 566 of 125717 lid texels near the eyes read eye, 571 of 68809 eyeball texels read skin), so
+    the same zigzag drew white sclera teeth on the lid.
+  - The fix, `alien_lively_build.py --rim-smooth 4` (`alien_lively_run.py` passes it): `rim_smooth()` moves each rim
+    vertex with two rim neighbours by Taubin steps along the loop (lambda 0.5, mu -0.53: the in-out step cancels, the
+    loop does not shrink), capped at 8 % of the eye radius, each step projected back onto the surface as it was (the
+    lid and eyeball triangles), so the seam slides along the head and the shape stays; normals turn with the geometry
+    and a rim position's copies share one (copies over 45 degrees apart are a fold and stay split). The mask moves
+    with the triangles, so its edge follows the smoothed rim. Chameleon (`lively/v7rim3`): zigzag 3.41 to 0.81 mm
+    median, 18.44 to 4.49 max; largest move 11.2 mm (median 1.8), 494 rim vertices, 20 fixed (junctions). Axolotl
+    (`lively/axolotl_v7rim3`): 2.20 to 0.52 median, 8.16 to 1.37 max; largest move 4.7 mm (median 1.2).
+  - A3d: those v7rim3 numbers came with folded triangles. `rim_smooth()` now counts the triangles round a moved
+    vertex whose geometric normal flips or whose area drops under 10 % (`bad_triangles` in the rim report and
+    `pit_geometry.rim_bad_triangles`) and halves the step until there are none (the build fails at 1/64). At 4 steps:
+    chameleon 311 at the full step, clean at 0.25 (`lively/v7rim_a3d`: zigzag 3.41 to 2.61 mm median, 18.44 to 14.20
+    max, largest move 2.8 mm); axolotl 40, clean at 1/16 (`lively/axolotl_v7rim_a3d`: 2.20 to 2.09, 8.16 to 7.71). So
+    the guarded smoothing barely changes the rim: a rim that is not a sawtooth needs another route (re-meshing the
+    lid's lip), not more Taubin steps. Whole-head gate on `anim_bare/a3d/build` vs r5: chameleon 0.311, 0.221, 0.111,
+    0.306; axolotl 0.079, 0.027, 0.065, 0.027 (A3's numbers again).
+  - A3d: `alien_static.gdshader` reads its maps with `texture()` again (A3c's `textureGrad` swap reverted; only the rim
+    rule's band read keeps UV's gradients), so the merged look is the one before A3c by construction.
+  - The whole-head gate vs r5 (front, left, back, right; A3 before, A3b after): chameleon 0.314/0.316,
+    0.221/0.221, 0.111/0.111, 0.307/0.305; axolotl 0.078/0.097, 0.027/0.031, 0.065/0.065, 0.027/0.030. The backs do not
+    move; only the face's rim and (the chameleon) the eye texels' normal map changed.
+  - The faint concentric rings on the chameleon's eyeball (where the sculpted iris was) are not geometry: they show
+    as built and with SSAO off, not in the geometry-only column. They are not the normal map either: the A3b build
+    writes `controller.sclera_normal_map` 0 (`--sclera-normal-map 0`) and the rings stay (`a3b/eyes/rim_chameleon.jpg`).
+    The likely source, not yet checked, is the detail map's alpha, the limbal darkening (`limbal * d.a * eye` in
+    `alien_static.gdshader`), still painted at the old iris.
+  - After A3b the lower rim reads smoother at the large scale, but a fine serration is still visible as built and in
+    the geometry-only column: the next step.
+  - `eye_reels.gd`: `reset_eyes()` (new in `alien_lively.gd`) before each look pass, so the fixed reel starts
+    centred; the rim close-ups are 0.14 m high (`RIM_SIZE`; A3's 0.09 cut the eye off).
+  - `godot/alien/lively_check.gd` with `tools/tests/test_alien_lively_godot.py`: the pile-up guard (a clip that stops
+    posing Neck and Head ends where a re-posed one does) and the motion filter (the yaw rate and acceleration the same
+    at 30 and 120 fps and with an uneven step; nothing kicked after `reset_motion()` and a teleport), headless.
+- **A3c: the rim's fine serration and the eyeball's rings (2026-10-24, art #196; proof `anim_bare/a3c/`):**
+  - The rings: `eye_reels.gd`'s new `rings_<head>.jpg` isolates them, each eye front on at rest under one change per
+    column (A3b's look, as built, `limbal` 0, `eye_coat` 0, `sclera_normal_map` 0, `normal_strength` 0, then the
+    mask's G, the detail map's A and the normal map's tilt emitted, `debug_mode` 9, 10, 11). Only `limbal` 0 removes
+    them, and the detail map's A holds two concentric arcs at the old iris: the painted limbal darkening
+    (`limbal * d.a * eye`) the static head baked round the sculpted iris. The gaze draws its own iris and limbal ring
+    (`limbal_ring`), so under the gaze the painted ring is now off: `gaze_limbal` (default 0; 1 is A3b's look).
+  - The serration: the geometry-only column shows it as well, so most of it is the lower lid's lip, a thin rolled
+    strip of faces that catches light along a notched line, plus the mask's one-texel bleed each way (A3b's
+    `mask_vs_triangles`). The sclera/lid edge follows triangle edges and the mask's texels.
+  - The shader route was tried and is off: `alien_static.gdshader`'s rim rule gives the eye share per fragment from the
+    posed eyeball sphere (`eye_sphere_l/r`: the build's `front_sphere`, else the eye sphere; a fragment within `rim_tol`
+    eye radii of it is the eyeball's, feathered over a pixel). Where the mask disagrees, it reads every map
+    `rim_pull` texels further onto its own side (`eye_axis_l/r`). It is set by `alien_lively.gd` when `rim_rule` is
+    true, which is false by default. It fails on the chameleon: its rule map (`debug_mode` 8, the rim sheet's last
+    column) shows large parts of the eyeball off its fitted sphere by 0.6 to 8 % of the eye radius, most near the
+    lower lid. That is more than the lid rises off the eyeball near the rim, so no tolerance separates the two, and
+    the trial column moves the edge without cleaning it. A clean edge needs the geometric route: cut the lid and
+    eyeball along one smooth curve in the build (`alien_lively_build.py`), and smooth or remesh the lip's first loop
+    of faces.
+  - `eye_reels.gd`'s rim sheet now has the columns before (A3b's look) | as built | the rim rule's trial | albedo |
+    geometry | SSAO off | the rule's map. The 4x crops `rim_<head>_4x/<gaze>_<eye>_{before,after}.png` sit at the
+    window's 0.8 height (`CROP_Y`) on the lower rim, because A3b's centre crops missed it.
+  - `tools/web/lively/lively.js` draws the same eye but never applied the painted limbal ring (no `limbal` in it), so
+    it needs no `gaze_limbal`; the rim rule, being off, is not ported.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and

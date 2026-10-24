@@ -1,0 +1,56 @@
+# The ship engine's start console (art#263's stations).
+# Built by tools/blender/console_run.py --tag build2 --asset assets/prop/start_console; a rebuild
+# changes the hashes below.
+id = "start_console"
+kind = "prop"
+slot = ""
+title = "The ship engine's start console"
+notes = "The engine's start console in the ship's hall: a round bronze and graphite pedestal (1.19 m across, 1.105 m tall) with the orange start button at hip height, three stage strips, two cyan strips and the hologram emitter, and over it the hologram of the ship from the built hull's own mesh at 1:16.3 (lines, a faint shell, eight order lamps), 55,661 triangles in nine surfaces, front +Z, origin on the floor under the middle. States on one mesh: export/console.gd set_state, set_passed, set_lit (HANDOFF.md). From the concept the engineer picked on 2026-10-24 and its drawing in cm (prime-game-design ideas/ship-components/stations-final: console-final.jpg, holo14-diamond-2.jpg, console-drawing/; copied to the raw folder; 2D concepts used only as references), built from code in headless Blender (tools/blender/console_build.py from console_dims.toml): no part of the model was generated or downloaded."
+tools = ["blender 5.2.2", "prime-game-art console_build.py, console_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-24
+url = "https://github.com/xperiaroco2/prime-game-art/issues/263"
+
+[[raw]]
+file = "start-console/ref/console-final.jpg"
+sha256 = "2984d63e70c96e767e6da7eb5d3289062fe08f8c83ea234acbf08ac58393aa71"
+
+[[raw]]
+file = "start-console/ref/holo14-diamond-2.jpg"
+sha256 = "0164bc236e3163bdf42fdbbe89b06b1c65758ef396f603ee9d2aa730b20753ea"
+
+[[raw]]
+file = "start-console/ref/front-ortho.jpg"
+sha256 = "8fe881cb8aeb7014bf73a68d9a00cde92abcf437d901664f0cd9b1d5bd829cdf"
+
+[[raw]]
+file = "start-console/ref/side-ortho.jpg"
+sha256 = "ac15fe9dd8a44fb201a34e5a3764f9a24713e1d4ff7e1181b369400cdab2938f"
+
+[[raw]]
+file = "start-console/ref/top-ortho.jpg"
+sha256 = "69a4395e68f4fad207e300fe06866fc5593f6bf5d3af8d4d284d0c50e39e0c65"
+
+[[raw]]
+file = "start-console/ref/drawing.js"
+sha256 = "dfee5e2220385b220d421e0771fc9543fc1876b15e1e9b443709a0a9b23c2575"
+
+[[raw]]
+file = "start-console/build2/start_console.glb"
+sha256 = "6f2bb16606f8cb5f05d938477149794afbde28e511ab870f2698d985089a9fe0"
+
+[[raw]]
+file = "start-console/build2/start_console.blend"
+sha256 = "d2178f8300f7a21cbf23009b7a3eb4995ef0b58ae10f8bd39157650c1371798f"

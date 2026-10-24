@@ -37,7 +37,18 @@
 // profile (8 medians of the painted iris, pupil edge to limbus), the pupil's colour, a limbal ring and a painted
 // catch light (catch_light 0: none, as the painted eyes have none).
 // debug_mode: 1 grey with the normal map, 2 grey geometry only, 3 the albedo alone (emitted), 4 and 5 the colour
-// slots' regions as flat codes and inverted (CS6's lit measurement), 6 the recoloured albedo alone (emitted; B4).
+// slots' regions as flat codes and inverted (CS6's lit measurement), 6 the recoloured albedo alone (emitted; B4),
+// 7 the eye mask's share alone (1 - mask R, emitted: where the gaze draws the sclera and iris; A3), 8 the rim rule
+// (A3c, emitted: R the fragment's distance off the eye sphere over rim_band, G the eye share it gives, B the mask's),
+// 9 the mask's G (roughness) alone, 10 the detail map's A (the limbal weight) alone, 11 the normal map's tilt (A3c's
+// ring isolation; all emitted).
+// A3c (the eye rim, 2026-10-24): the mask's edge follows the triangles and its texels (a texel staircase and a one-texel
+// bleed each way along the rim), so with gaze_on the eye's share is decided per fragment from the geometry instead:
+// within rim_band of the posed eyeball sphere (eye_sphere_l/r: centre and radius in this mesh's space,
+// alien_lively.gd; radius 0: the mask alone, as before), a fragment off the sphere by less than rim_tol eye radii is
+// the eyeball's, else the lid's, feathered over one pixel (fwidth); a fragment the mask misreads samples every map
+// rim_pull texels further onto its own side (along the UV gradient of the angle from the eye's posed axis, eye_axis_l/r)
+// so the lid keeps its own colour and shading and the sclera its own.
 shader_type spatial;
 render_mode diffuse_burley, specular_schlick_ggx;  // static_v3: no sss_mode_skin (its red profile browned the teal creases)
 
@@ -119,6 +130,17 @@ uniform vec3 catch_colour : source_color = vec3(1.0);
 // cap's edge nearest the light, where the light would still catch the bead
 uniform float catch_reach_l = 0.0;
 uniform float catch_reach_r = 0.0;
+// A3c: the rim rule (see the head comment)
+uniform vec4 eye_sphere_l = vec4(0.0);
+uniform vec4 eye_sphere_r = vec4(0.0);
+uniform vec3 eye_axis_l = vec3(0.0, 0.0, 1.0);
+uniform vec3 eye_axis_r = vec3(0.0, 0.0, 1.0);
+// A3c: the painted limbal ring (detail A) under the gaze: 0 (the default) off, as the procedural iris has its own
+// (limbal_ring) and the painted one, at the old iris's place, drew the faint rings on the sclera; 1 A3b's look
+uniform float gaze_limbal : hint_range(0.0, 1.0) = 0.0;
+uniform float rim_tol = 0.006;  // eye radii
+uniform float rim_band = 0.08;  // eye radii
+uniform float rim_pull = 3.0;  // texels at mip 0 (at least two pixels' footprint)
 
 varying vec3 v_obj;
 
@@ -258,27 +280,61 @@ vec3 lively_eye(vec3 sclera) {
 }
 
 void fragment() {
-	vec3 a = texture(albedo_tex, UV).rgb;
-	if (alive_mix != 1.0) {
-		a = clamp(mix(texture(plain_tex, UV).rgb, a, alive_mix), 0.0, 1.0);
-	}
+	// A3c: the rim rule (an off trial: eye_sphere_l.w 0). A3d: the maps are read with texture() again (A3c's swap to
+	// textureGrad reverted), so wherever uv = UV (the merged look, every gaze without the rim spheres) each read is
+	// the one before A3c; only the rim band's mask read below takes UV's gradients (a non-uniform branch), the trial's
+	// other reads take uv's own (a mip step at the band's edge while it is on)
+	vec2 uv = UV;
+	vec2 gx = dFdx(UV);
+	vec2 gy = dFdy(UV);
+	float ge = -1.0;  // the geometric eye share; -1: the mask decides
+	float rim_d = 0.0;
 	vec3 m = texture(mask_tex, UV).rgb;
-	if (gaze_on > 0.0) {
-		a = mix(a, lively_eye(texture(sclera_tex, UV).rgb), gaze_on * (1.0 - m.r));
+	float m_eye = 1.0 - m.r;
+	if (gaze_on > 0.0 && eye_sphere_l.w > 0.0) {  // a uniform branch: the derivatives below stay defined
+		bool lft = distance(v_obj, eye_sphere_l.xyz) < distance(v_obj, eye_sphere_r.xyz);
+		vec4 s = lft ? eye_sphere_l : eye_sphere_r;
+		vec3 rel = v_obj - s.xyz;
+		rim_d = (length(rel) - s.w) / s.w;
+		float ca = dot(normalize(rel), normalize(lft ? eye_axis_l : eye_axis_r));
+		float wd = max(fwidth(rim_d), 1.0e-5);
+		vec2 gs = vec2(dFdx(ca), dFdy(ca));
+		// the UV direction toward the eye's axis: (dFdx(UV), dFdy(UV)) as rows, inverted, times the screen gradient
+		float det = gx.x * gy.y - gx.y * gy.x;
+		vec2 gu = vec2(gy.y * gs.x - gx.y * gs.y, gx.x * gs.y - gy.x * gs.x) * sign(det);
+		gu = length(gu) > 0.0 ? normalize(gu) : vec2(0.0);
+		if (abs(rim_d) < rim_band) {
+			ge = 1.0 - smoothstep(rim_tol - wd, rim_tol + wd, abs(rim_d));
+			float pull = max(rim_pull / float(textureSize(mask_tex, 0).x), 2.0 * max(length(gx), length(gy)));
+			if (ge >= 0.5 && m.r > 0.02) {
+				uv = UV + gu * pull;  // an eyeball fragment the mask calls skin: read the eye's texels
+			} else if (ge < 0.5 && m.r < 0.98) {
+				uv = UV - gu * pull;  // a lid fragment the mask calls eye: read the lid's texels
+			}
+			m = textureGrad(mask_tex, uv, gx, gy).rgb;
+			m.r = 1.0 - ge;
+		}
 	}
-	vec4 d = texture(detail_tex, UV);
+	vec3 a = texture(albedo_tex, uv).rgb;
+	if (alive_mix != 1.0) {
+		a = clamp(mix(texture(plain_tex, uv).rgb, a, alive_mix), 0.0, 1.0);
+	}
+	if (gaze_on > 0.0) {
+		a = mix(a, lively_eye(texture(sclera_tex, uv).rgb), gaze_on * (1.0 - m.r));
+	}
+	vec4 d = texture(detail_tex, uv);
 	float eye = 1.0 - m.r;
-	vec3 c = mix(a, recolour(a, texture(accent_tex, UV).rgb, texture(gill_tex, UV).r), m.r);
+	vec3 c = mix(a, recolour(a, texture(accent_tex, uv).rgb, texture(gill_tex, uv).r), m.r);
 	float rough = m.g;
 	// the creases deeper and more saturated, the lips and lids a little flushed (skin only)
 	float crease = (1.0 - d.r) * cavity * m.r;
 	c = mix(c, shade(c, cavity_warm, 1.35, 0.55), crease);
 	c = mix(c, shade(c, -0.02, 1.25, 0.9), flush * d.b * m.r);
-	c *= 1.0 - limbal * d.a * eye;
+	c *= 1.0 - limbal * d.a * eye * mix(1.0, gaze_limbal, gaze_on);  // A3c: the painted ring sat at the old iris
 	// the normal map as Godot's own NORMAL_MAP does it, then the micro grain on top
 	vec3 n = NORMAL;
 	if (debug_mode != 2) {
-		vec2 nxy = texture(normal_tex, UV).xy * 2.0 - 1.0;
+		vec2 nxy = texture(normal_tex, uv).xy * 2.0 - 1.0;
 		vec3 nm = vec3(nxy, sqrt(max(0.0, 1.0 - dot(nxy, nxy))));
 		float ns = normal_strength * mix(1.0, sclera_normal_map, gaze_on * eye);
 		n = normalize(mix(NORMAL, TANGENT * nm.x + BINORMAL * nm.y + NORMAL * nm.z, ns));
@@ -317,6 +373,15 @@ void fragment() {
 		RIM = 0.0;
 		BACKLIGHT = vec3(0.0);
 		CLEARCOAT = 0.0;
+	} else if (debug_mode == 7) {  // A3: the eye mask's share (white: the gaze's sclera and iris drawn), emitted
+		ALBEDO = vec3(0.0);
+		SPECULAR = 0.0;
+		ROUGHNESS = 1.0;
+		SSS_STRENGTH = 0.0;
+		RIM = 0.0;
+		BACKLIGHT = vec3(0.0);
+		CLEARCOAT = 0.0;
+		EMISSION = vec3(eye) * 0.8;
 	} else if (debug_mode == 3 || debug_mode == 6) {
 		ALBEDO = vec3(0.0);
 		SPECULAR = 0.0;
@@ -330,8 +395,8 @@ void fragment() {
 		// CS6's proof: the colour slots' regions as flat codes for the lit measurement (alien_colour_slots.py): the
 		// lips red, the details (under gill_mode, with detail_on) green, the front blue, the rest of the skin yellow,
 		// a texel between regions grey, the eyes black; 5 the same inverted (the background is equal in both)
-		vec3 acc = texture(accent_tex, UV).rgb;
-		float gl = texture(gill_tex, UV).r;
+		vec3 acc = texture(accent_tex, uv).rgb;
+		float gl = texture(gill_tex, uv).r;
 		float dw = detail_on * (gill_mode < 0.5 ? max(acc.g - gl, 0.0) : (gill_mode < 1.5 ? acc.g : max(acc.g, gl)));
 		vec3 code = vec3(0.25);
 		if (acc.r > 0.9) {
@@ -352,5 +417,23 @@ void fragment() {
 		BACKLIGHT = vec3(0.0);
 		CLEARCOAT = 0.0;
 		EMISSION = debug_mode == 4 ? code : vec3(1.0) - code;
+	} else if (debug_mode >= 8 && debug_mode <= 11) {  // A3c: the rim rule and the ring isolation, emitted
+		vec2 nt = texture(normal_tex, uv).xy * 2.0 - 1.0;
+		vec3 dv = vec3(clamp(abs(rim_d) / rim_band, 0.0, 1.0), max(ge, 0.0), m_eye);
+		if (debug_mode == 9) {
+			dv = vec3(m.g);
+		} else if (debug_mode == 10) {
+			dv = vec3(d.a);
+		} else if (debug_mode == 11) {
+			dv = vec3(clamp(length(nt) * 4.0, 0.0, 1.0));
+		}
+		ALBEDO = vec3(0.0);
+		SPECULAR = 0.0;
+		ROUGHNESS = 1.0;
+		SSS_STRENGTH = 0.0;
+		RIM = 0.0;
+		BACKLIGHT = vec3(0.0);
+		CLEARCOAT = 0.0;
+		EMISSION = dv * 0.8;
 	}
 }

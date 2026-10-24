@@ -82,7 +82,55 @@ class A2Maths(unittest.TestCase):
         self.assertLess(k2[1], 0.0)  # the knee stays forward
 
 
+class A3Maths(unittest.TestCase):
+    def test_two_bone_with_pole_turn(self):
+        hip, knee, ankle = (0.1, 0.0, 0.5), (0.1, -0.35, 0.35), (0.1, 0.0, 0.05)
+        new_hip = (0.1, 0.0, 0.6)
+        seen = []
+
+        def toward_x(axis, pole):  # the knee turned in toward -X (the body's middle for a left leg)
+            seen.append(tuple(axis))
+            return E.q_rotate(E.axis_turn(axis, 20.0), pole)
+        k0 = E.two_bone(hip, knee, ankle, new_hip)
+        k2 = E.two_bone(hip, knee, ankle, new_hip, toward_x)
+        self.assertEqual(len(seen), 1)
+        d = lambda a, b: math.dist(a, b)  # noqa: E731
+        self.assertAlmostEqual(d(k2, new_hip), d(knee, hip), places=6)
+        self.assertAlmostEqual(d(k2, ankle), d(ankle, knee), places=6)
+        self.assertLess(k2[0], k0[0] - 0.02)  # the knee turned toward -X, the body's middle (k0 0.100, k2 -0.008)
+        self.assertLess(k2[1], 0.0)
+
+    def test_floor_lift_reach_zero_is_exact(self):
+        low = [0.01, -0.02, 0.0, -0.05, 0.03]
+        self.assertEqual(E.lift_profile(low, reach=0), [0.0, 0.02, 0.0, 0.05, 0.0])
+
+    def test_ground_lift_fades_into_the_tuck(self):
+        lift = E.ground_lift([-0.05, -0.04, -0.2, -0.2, -0.2, -0.2], 1, 3)
+        self.assertEqual(lift[:2], [0.05, 0.04])
+        self.assertTrue(lift[1] > lift[2] > lift[3] > lift[4] == 0.0 == lift[5])
+
+    def test_sway_one_period_clean_seam(self):
+        s = E.sway(9)
+        self.assertAlmostEqual(s[0], 0.0)
+        self.assertAlmostEqual(s[-1], 0.0, places=9)
+        self.assertAlmostEqual(s[2], 1.0)
+        self.assertAlmostEqual(s[6], -1.0)
+
+    def test_repeat_keys(self):
+        plan = E.repeat_keys([0.0, 5.0, 10.0], 0.0, 10.0, 3)
+        self.assertEqual(plan, [(0.0, 0), (5.0, 1), (10.0, 0), (15.0, 1), (20.0, 0), (25.0, 1), (30.0, 2)])
+        self.assertEqual(E.repeat_keys([0.0, 10.0], 0.0, 10.0, 1), [(0.0, 0), (10.0, 1)])
+
+
 class Settings(unittest.TestCase):
+    def test_a3_floor_modes_and_idle(self):
+        self.assertEqual(E.settings(str(SETTINGS), "Jump_Start")["floor"], "ground")
+        idle = E.settings(str(SETTINGS), "Idle_Loop")
+        self.assertGreater(idle["repeat"], 1)
+        self.assertGreater(idle["sway_cm"], 0.0)
+        for c in ("Crouch_Idle_Loop", "Crouch_Fwd_Loop"):
+            self.assertEqual(E.settings(str(SETTINGS), c)["floor_reach"], 0)
+
     def test_every_clip_reads(self):
         for clip in ("Idle_Loop", "Walk_Loop", "Jump_Air_Loop", "Jump_Start"):
             cfg = E.settings(str(SETTINGS), clip)

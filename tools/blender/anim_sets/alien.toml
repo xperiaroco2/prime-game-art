@@ -10,11 +10,19 @@ finger_cap_deg = 22.0  # a relaxed hand: each finger joint at most 22 degrees fr
 thumb_cap_deg = 18.0
 floor = true
 
+# A3: the idle's life: UAL's 2.5 s cycle played three times (7.5 s), the hips over one foot then the other (3 cm, the
+# legs solved per frame, the feet kept), the spine and head countering it; the chest breathes in the lively controller
 [clips.Idle_Loop]
 abduct_deg = 6.0
+repeat = 3
+sway_cm = 3.0
+sway_counter_deg = 2.0
+floor_reach = 0
 
-[clips.Talk_Upper_Loop]
-abduct_deg = 3.0
+[clips.Talk_Upper_Loop]  # A3: looser hands and arms
+abduct_deg = 5.0
+finger_cap_deg = 34.0
+thumb_cap_deg = 24.0
 
 # A2: per clip hands; the run arms out so the hands stop crossing into the groin (the critic: Jog f9-12, Sprint f12,
 # Walk f17-20)
@@ -36,30 +44,44 @@ lean_deg = 4.0  # a slight forward lean
 
 # A2: UAL1 and UAL2 have no other crouch or sneak; UAL's deep wide-kneed crouch read as a froggy squat on the thin
 # alien (front knee by the chin, hands hanging below the knees, the head sunk): the hips up with the feet kept, the
-# knees in, the hands swung forward to hover in front of the knees, the arms nearly in, the face up
+# knees in, the hands swung forward to hover in front of the knees, the arms nearly in, the face up.
+# A3: still a goblin squat; picked from the variant grid a3/crouch_grid (alien_clip_grid.py on A2's chameleon, on top of
+# A2's edit: hips +0/6/12, chest up 0/10/20, knees in +0/8): the most upright one, hips 22, chest up 20, knees in 20
+# (the face 64 cm over the front knee against A2's 40, the trunk 35-36 degrees from vertical against 48-50, the feet
+# drifting 1.2 cm as A2's, the hands 23 cm off the legs); floor_reach 0: each frame lifted by its own need (A2's
+# smoothing floated the planted foot up to 2.95 cm)
 [clips.Crouch_Idle_Loop]
-hips_up_cm = 10.0
-knees_in_deg = 12.0
+hips_up_cm = 22.0
+knees_in_deg = 20.0
+chest_up_deg = 20.0
 abduct_deg = 2.0
 swing_deg = 12.0
 head_up_deg = 10.0
+floor_reach = 0
 
 [clips.Crouch_Fwd_Loop]
-hips_up_cm = 10.0
-knees_in_deg = 12.0
+hips_up_cm = 22.0
+knees_in_deg = 20.0
+chest_up_deg = 20.0
 abduct_deg = 2.0
 swing_deg = 12.0
 head_up_deg = 10.0
+floor_reach = 0
 
 # A2: the in-place push-off's straight stand (the body does not rise in place, so it snapped to a rest pose with limp
-# arms between the crouch and the tuck) is cut: the crouch goes into the tuck over 3 frames
+# arms between the crouch and the tuck) is cut: the crouch goes into the tuck over cut_gap frames
 [clips.Jump_Start]
 cut_straight_deg = 75.0  # the knees bend 113 deg crouched, 43-69 at the push-off (frames 1-3), 86+ in the tuck
-cut_gap = 3
-floor = false  # its sink is the in-place tuck (the game lifts the body); a lift there floated the crouch 10 cm
+cut_gap = 6  # A3: 3 frames popped from the crouch into the tuck; 6 (0.25 s) extend into it
+# A3: no lift (the in-place tuck sinks: the game lifts the body; a lift floated the crouch 10 cm), but the crouch
+# before the push-off still fails the build under -0.5 cm
+floor = "ground"
 
 [clips.Jump_Land]
 abduct_deg = 4.0
 
 [clips.Jump_Air_Loop]
-floor = false  # airborne: the game holds it off the floor
+floor = false  # airborne: the game holds it off the floor; neither lifted nor checked
+abduct_deg = -30.0  # A3: the arms down from straight out (a scarecrow) and a little forward, the hands looser
+swing_deg = 8.0
+finger_cap_deg = 30.0

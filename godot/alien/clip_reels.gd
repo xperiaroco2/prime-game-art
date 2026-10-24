@@ -175,13 +175,16 @@ func _run() -> void:
 			# the reel and the row
 			var dir: String = String(job["frames"]).path_join("%s_%s" % [name, clip])
 			DirAccess.make_dir_recursive_absolute(dir)
+			# the springs at rest per reel (A1's loop; A2's reset_springs() does the same, so A1's before is unchanged)
 			for sp: Dictionary in live.springs:
 				sp["s"] = Vector4.ZERO
 			if "on_clip" in live:  # A1's lively: the head's turn and the springs on top of the clip
 				live.on_clip = bool(job.get("on_clip", true))
 				live.reset_motion()
+			if "eye_mode" in live:  # A3
+				live.eye_mode = String(job.get("eye_mode", "fixed"))
+				live.reseed()
 			if "yaw_counter" in live:  # A2
-				live.reset_springs()
 				live.yaw_counter = float(job.get("yaw_counter", 0.0)) if clip in LOCOMOTION else 0.0
 				live.darts = float(job.get("darts", 0.0))
 			live.head_follow = 0.5

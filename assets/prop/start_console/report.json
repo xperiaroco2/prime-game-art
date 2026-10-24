@@ -1,0 +1,102 @@
+{
+  "asset": "start_console",
+  "built_by": "tools/blender/console_run.py --tag build2 --asset assets/prop/start_console",
+  "mesh": {
+    "triangles": 55661,
+    "vertices": 30966,
+    "triangles_by_material": {
+      "console_graphite": 7310,
+      "console_bronze": 2112,
+      "console_cyan": 1270,
+      "console_stage": 6,
+      "console_button": 510,
+      "console_beam": 384,
+      "console_holo_line": 26340,
+      "console_holo_shell": 16929,
+      "console_lamp": 800
+    },
+    "triangles_by_part": {
+      "core": 380,
+      "bands": 760,
+      "plinth": 616,
+      "body": 748,
+      "channels": 264,
+      "rim": 748,
+      "strips": 228,
+      "button_seat": 1436,
+      "button": 510,
+      "deck": 1280,
+      "ring": 768,
+      "plates": 1840,
+      "collar": 1152,
+      "core_light": 478,
+      "beam": 384,
+      "holo_lines": 26340,
+      "holo_shell": 16938,
+      "holo_lamps": 800
+    },
+    "hologram": {
+      "source_triangles": 19505,
+      "bounds_cm": [
+        [
+          -79.99,
+          -39.04,
+          127.0
+        ],
+        [
+          80.0,
+          93.75,
+          174.54
+        ]
+      ],
+      "lamps": 8,
+      "scale": 16.34,
+      "lines": {
+        "outline": 1902,
+        "contours": 2760,
+        "keel": 462,
+        "creases": 1080,
+        "grid": 11946,
+        "hall disc": 1236,
+        "tip discs": 984,
+        "bands": 24,
+        "entrance": 66,
+        "turbines": 5880,
+        "shell": 16938,
+        "lamps": 800
+      }
+    },
+    "size_m": [
+      1.6,
+      1.4721,
+      1.7454
+    ],
+    "pedestal_size_m": [
+      1.1939,
+      1.1314,
+      1.1049
+    ],
+    "front": "+Z",
+    "origin": "on the floor under the console's middle"
+  },
+  "states": {
+    "idle": "console.gd set_state(look, \"idle\"): set_passed(look, 1), set_lit(look, -1)",
+    "order": "set_lit(look, i) while the order plays (0..3 west, 4..7 east, from the hall outward)",
+    "stage": "set_passed(look, n): n strips green"
+  },
+  "placement": "on the ship's console spot (layouts/ship/ship.toml: plan (0, 0.6), 1 m aft of the hall's centre) on the deck, yaw 180 (its front, the button, toward the mouth)",
+  "gltf_validator": {
+    "numErrors": 0,
+    "numWarnings": 0,
+    "numInfos": 9,
+    "numHints": 0
+  },
+  "godot_cost": {
+    "draw_calls_console": 9,
+    "gpu_ms_console": 0.134,
+    "gpu_ms_with": 0.662,
+    "gpu_ms_without": 0.528,
+    "view": "1280x720, eye 1.6 m, 2.1 m away"
+  },
+  "review": "<raw>/start-console/build2/godot/sheet.png"
+}

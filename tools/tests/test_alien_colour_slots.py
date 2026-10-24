@@ -293,9 +293,11 @@ class ColourSlotsTest(unittest.TestCase):
                       "sampledDiffuseColor.rgb=mix(csA,csRecolour(csA,texture2D(csAccent,vMapUv).rgb,"
                       "texture2D(csGill,vMapUv).r),texture2D(csMask,vMapUv).r);diffuseColor*=sampledDiffuseColor;", flat)
         g = re.sub(r"\s+", "", gd)
-        self.assertIn("vec3a=texture(albedo_tex,UV).rgb;", g)
+        # A3c's rim rule reads the maps at uv, a copy of UV that only its off trial moves (A3d: plain texture() reads)
+        self.assertIn("vec2uv=UV;", g)
+        self.assertIn("vec3a=texture(albedo_tex,uv).rgb;", g)
         self.assertIn("vec3m=texture(mask_tex,UV).rgb;", g)
-        self.assertIn("vec3c=mix(a,recolour(a,texture(accent_tex,UV).rgb,texture(gill_tex,UV).r),m.r);", g)
+        self.assertIn("vec3c=mix(a,recolour(a,texture(accent_tex,uv).rgb,texture(gill_tex,uv).r),m.r);", g)
         self.assertNotIn(".a", "".join(statements(gd, "vec3 recolour(vec3 c, vec3 acc, float gill) {")))
 
     def test_js_matches(self):
