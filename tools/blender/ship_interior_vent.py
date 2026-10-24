@@ -68,7 +68,8 @@ LIGHTS = _BODY_DIR + "/lights.json"           # the light pieces' places on the 
 _BODY_W = _REVIEW.get("dir_w", _BODY_DIR)
 # vents-b4: the vent sat RECESS into the throat wall; vents-b5: back on the wall's face (the engineer did not mean the
 # recess), RECESS 0, the wall's modules behind it the pillow panels again (as b3). The parts still move RECESS behind
-# the spot, so a review can try one. One source: ship.toml's `recess_m` on the vents' spots
+# the spot, so a review can try one. It is 0 because the engineer did not mean the recess (b4's 8 cm read as built
+# into the wall). One source: ship.toml's `recess_m` on the vents' spots
 RECESS = next(s["recess_m"] for s in S._SHIP["stations"]["spot"] if s["id"] == "vent_e")
 RECESS_SIDE = {k: float(_REVIEW.get("recess", {}).get(k, RECESS)) for k in "ew"}
 # vents-b4: the scanner's centre over the deck (ship_vent_b.SCAN_H; b3 1.398), the column's top dropped with it

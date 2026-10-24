@@ -638,10 +638,8 @@ def cor_wall_low(args, layout):
     fr = _north(args=args)
     e = hl - 0.006
     tone = "int_silver_a" if args.get("tone", "a") == "a" else "int_silver_b"
-    # vents-b4: `flat` (the vents' modules): a flat plate 2 cm proud, no pillow (its 7 cm ridge stood in the recessed
-    # vent's well); the vent's sides and backs run into it
-    panel = (G.slab(fr, G.rect(-e + 0.01, e - 0.01, 0.16, 1.04), 0.0, 0.02, 0.008) if args.get("flat")
-             else G.pillow(fr, -e + 0.01, e - 0.01, 0.16, 1.04, 0.0, 0.03, 0.07, 0.012))
+    # (vents-b4's `flat` plate, for a vent recessed into the wall, went with b5: RECESS is 0, the pillow stays)
+    panel = G.pillow(fr, -e + 0.01, e - 0.01, 0.16, 1.04, 0.0, 0.03, 0.07, 0.012)
     return [P("body", G.slab(fr, G.rect(-hl, hl, 0.0, 1.1), -0.2, 0.0), "int_silver_b"),
             P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.13), 0.0, 0.015), "int_dark"),
             P("panel", panel, tone)]
@@ -673,10 +671,9 @@ def cor_wall_mid(args, layout):
     """v2: the plain wall between the low wall and the upper wall where a cable bay would be (a breaker board's)."""
     hl = args["length"] / 2
     fr = _north(args=args)
-    panel = (G.slab(fr, G.rect(-hl + 0.01, hl - 0.01, 1.12, PROF[1][1] - 0.02), 0.0, 0.02, 0.008) if args.get("flat")
-             else G.pillow(fr, -hl + 0.01, hl - 0.01, 1.12, PROF[1][1] - 0.02, 0.0, 0.03, 0.07, 0.012))
+    panel = G.pillow(fr, -hl + 0.01, hl - 0.01, 1.12, PROF[1][1] - 0.02, 0.0, 0.03, 0.07, 0.012)
     return [P("body", G.slab(fr, G.rect(-hl, hl, 1.1, PROF[1][1]), -0.2, 0.0), "int_silver_b"),
-            P("panel", panel, "int_silver_a")]   # vents-b4: `flat` as cor_wall_low's
+            P("panel", panel, "int_silver_a")]
 
 
 def clip_h(args, layout):
