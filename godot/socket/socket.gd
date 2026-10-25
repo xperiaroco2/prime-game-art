@@ -15,8 +15,10 @@ const METAL := preload("socket_metal.gdshader")  # relative: the same files work
 const CYAN := Color(0.0, 0.62, 1.0)
 const AMBER := Color(1.0, 0.46, 0.04)
 const RED := Color(1.0, 0.05, 0.02)
-const CYAN_ENERGY := 2.2
-const AMBER_ENERGY := 1.6
+const BRONZE := Color(0.56, 0.46, 0.32)       # sRGB: a greyer gold, the studio grid's F (b5)
+const BRONZE_EDGE := Color(1.0, 0.9, 0.7)
+const CYAN_ENERGY := 4.0         # socket-2: the strip one bright line at 3 m (step 1: 2.2 read pale)
+const AMBER_ENERGY := 2.4        # the windows sunk in their bezels
 const LAMP_ENERGY := 3.2         # the dome lit (HDR: it blooms)
 const LAMP_LIGHT := 0.9          # its omni light, lit
 const LAMP_RANGE := 1.6
@@ -25,14 +27,19 @@ const SOCKET_LAYER := 1 << 19    # the socket draws on render layer 20 alone: it
 
 
 ## Puts the socket's materials on every surface under root; returns the look: {"lamp" (StandardMaterial3D),
-## "lamp_light" (OmniLight3D), "state"}.
+## "lamp_light" (OmniLight3D), "state", and the surfaces' materials "bronze", "graphite", "cyan", "amber"}.
 static func apply(root: Node3D) -> Dictionary:
 	var bronze := ShaderMaterial.new()
 	bronze.shader = METAL
-	bronze.set_shader_parameter("metallic", 0.35)  # the console's bronze: fully metallic reads black in the hall
-	bronze.set_shader_parameter("roughness", 0.42)
+	# socket-2: the sheet's polished bronze, darker and more metallic than step 1's (the console's 0.35 read as
+	# matte brown plastic beside the sheet), its broad chamfers half worn and the fine bevels bright (the build's
+	# UV0 u 0.5 and 1.0); the vents' family: a dark bronze body, bright edges
+	bronze.set_shader_parameter("base_color", BRONZE)
+	bronze.set_shader_parameter("worn_color", BRONZE_EDGE)
+	bronze.set_shader_parameter("metallic", 0.75)  # 0.9 read near-black in the hall (b5)
+	bronze.set_shader_parameter("roughness", 0.32)
 	bronze.set_shader_parameter("wear", 1.0)
-	bronze.set_shader_parameter("lift", 0.12)
+	bronze.set_shader_parameter("lift", 0.08)
 	var graphite := ShaderMaterial.new()
 	graphite.shader = METAL
 	graphite.set_shader_parameter("base_color", Color(0.272, 0.276, 0.293))
@@ -83,7 +90,8 @@ static func apply(root: Node3D) -> Dictionary:
 	light.shadow_enabled = false
 	root.add_child(light)
 	light.position = lamp_at + Vector3(0.0, 0.0, 0.03)
-	var look := {"lamp": lamp, "lamp_light": light, "state": ""}
+	var look := {"lamp": lamp, "lamp_light": light, "state": "", "bronze": bronze, "graphite": graphite, "cyan": cyan,
+		"amber": amber}
 	set_state(look, "charged")
 	return look
 

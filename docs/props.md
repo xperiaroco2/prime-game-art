@@ -611,8 +611,13 @@ They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, f
    at `[mount] drawn_at`; `[mount] h` (MOUNT, the crystal's middle, 140) is the one number that moves the socket**
    (`socket_drawing.load` shifts them all; the engineer may lower it to 120).
 2. **Build from the numbers.** `tools/blender/socket_build.py` (headless Blender): each layer a polygon, or a polygon
-   with a hole, extruded between two depths with a chamfer on its front edges marked in UV0 u (the console's metal
-   brightens it); the neck, the lamp ring, the dome and the collar are octagon or ellipse solids. The claws fit the
+   with a hole, extruded between two depths, its front edges bevelled twice (socket-2, `bevel2`: a broad chamfer,
+   then a fine bevel on both its edges), marked in UV0 u (0 flat, 0.5 the broad chamfer, 1 the fine bevels: the
+   console's metal wears them brighter, so each block reads as machined bronze with bright edges). The outer frame
+   is separate blocks (`[outline] seams`: the matched ring cut on rays from the bay's middle, each block pulled back
+   `seam / 2` square to its ray, the graphite plate dark in the gaps and round the edge); a raised inner bezel round
+   the bay carries the cyan strip (1.2 wide, proud of the ring's rim); the amber windows sit sunk in bronze bezels;
+   the neck, the lamp's collar and the crystal's cup are turned (16 sides, grooves and bevelled rims). The claws fit the
    **built** crystal, not the concept's: its cap measures 13.62 across at its band (its bronze rims), so the jaws sit
    at u 6.84 and reach down to 148.0 (the drawing's 149.0 held only 0.4 cm of the band). Convex colliders
    `crystal_socket_col<n>-convcolonly` leave the crystal's room and the lamp free; the `crystal_anchor` empty sits at
@@ -623,7 +628,9 @@ They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, f
    its colliders at rest and pulled out in 2 cm steps, parts touching no other part, open edges, and coplanar faces
    of two parts facing the same way (z-fighting). They go into `build.json` and the asset's `report.json`.
 4. **The look and the states.** `godot/socket/socket.gd`: the console's bronze and graphite
-   (`socket_metal.gdshader` is `console_metal.gdshader`, unchanged), cyan and amber glow, the red dome
+   (`socket_metal.gdshader` is `console_metal.gdshader`, unchanged; socket-2 sets the bronze darker and more metallic
+   than the console's, a greyer gold at metallic 0.75 and roughness 0.32, picked from the studio's variant grids (0.9 read near-black in the hall): the console's 0.35 read
+   as matte brown plastic beside the sheet), cyan and amber glow, the red dome
    `socket_lamp` with its own light; `set_state(look, "charged" | "spent" | "empty")` lights the lamp for spent and
    empty. `seat_crystal(crystal_look)` keeps the crystal's own light off the socket (the socket draws on render
    layer 20 alone, the crystal's light leaves that layer out of its cull mask): in the niche it burned the frame
@@ -633,10 +640,13 @@ They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, f
    numbers over both (`renders/overlay.png`; `socket_drawing.py` the same as an SVG). `godot/socket/hall.gd` extends
    `ship.gd`'s shoot mode: a socket on each of the four spots (yaw `atan2(normal x, normal y)`), the crystal on each
    anchor, the hall views and the sheet beside `socket.jpg` (`<tag>/hall/`), the close-ups of every edge and seam
-   (`<tag>/close/`).
+   (`<tag>/close/`). `godot/socket/studio.gd` then shoots the socket on a neutral backdrop at the sheet's
+   three-quarter angle beside `socket.jpg` (`<tag>/compare_sheet.png`); `--grid FILE` adds one render per bronze
+   variant (`[{"title", "bronze": {shader parameter: value}}]`, `<tag>/studio/grid.png`); `--studio-only` shoots only
+   that from an existing build.
 
    ```bash
-   $PYTHON_BIN tools/blender/socket_run.py --tag <tag> --asset assets/prop/crystal_socket
+   $PYTHON_BIN tools/blender/socket_run.py --tag <tag> [--grid FILE] --asset assets/prop/crystal_socket
    ```
 
 `tools/tests/test_props_crystal_socket.py` checks the drawing's numbers, the one-number MOUNT, the claws against the

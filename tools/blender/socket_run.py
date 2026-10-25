@@ -85,7 +85,13 @@ def main() -> int:
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--samples", type=int, default=32, help="the Blender renders' EEVEE samples")
     ap.add_argument("--asset", type=Path, help="write the asset folder here from this build")
+    ap.add_argument("--grid", type=Path, help="a JSON list of bronze variants for the studio's grid.png")
+    ap.add_argument("--studio-only", action="store_true", help="only the studio shots of an existing build")
     args = ap.parse_args()
+    if args.studio_only:
+        out = HOME / args.tag
+        ship_cmd._stage({"crystal_socket": out / "crystal_socket.glb", "energy_crystal": CRYSTAL})
+        return studio(out, args.grid)
     copy_refs()
     layout = ship_layout.load()
     pieces = ship_cmd.raw(layout) / "pieces"
@@ -110,6 +116,8 @@ def main() -> int:
         code = shots(layout, pieces, glb, out / "hall", hall_rows(), [["hero_charged", str(REF / "socket.jpg")]])
         if code == 0:
             code = shots(layout, pieces, glb, out / "close", view_rows(CLOSE_VIEWS), [])
+        if code == 0:
+            code = studio(out, args.grid)
     if args.asset and ok and code == 0:
         write_asset(args.asset, out, args.tag, report)
         print(f"asset: {args.asset}", flush=True)
@@ -195,6 +203,23 @@ def shots(layout: dict, pieces: Path, glb: Path, folder: Path, views: list, comp
         return code or 1
     result = json.loads((folder / "shots.json").read_text(encoding="utf-8"))
     print(f"{folder.name} shots: {len(result['shots'])} in {folder}", flush=True)
+    return 0
+
+
+def studio(out: Path, grid: Path | None) -> int:
+    """socket-2: the socket on a neutral backdrop at the sheet's three-quarter angle (godot/socket/studio.gd, after
+    shots() staged the socket and the crystal): <tag>/studio/studio.png, compare_sheet.png beside the sheet, and with
+    `grid` its variants' grid.png."""
+    folder = out / "studio"
+    folder.mkdir(parents=True, exist_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s",
+                                  "res://socket/studio.gd", "--", folder.as_posix(), (REF / "socket.jpg").as_posix(),
+                                  grid.resolve().as_posix() if grid else ""], (900, 1000), 300, log=out / "godot_studio.log")
+    print(*[x for x in output.splitlines() if x.startswith("SOCKET")], sep="\n")
+    if code != 0 or not (folder / "compare_sheet.png").is_file():
+        print("studio shots failed:\n" + "\n".join(output.splitlines()[-20:]))
+        return code or 1
+    shutil.copyfile(folder / "compare_sheet.png", out / "compare_sheet.png")
     return 0
 
 

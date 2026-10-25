@@ -61,22 +61,52 @@ class Part:
         if name not in PARTS:
             PARTS.append(name)
 
-    def end(self, chamfer_faces=()) -> list:
+    def end(self) -> list:
+        """The part's faces get its surface and index; their edge level (EDGE: 0 flat, 1 a broad chamfer, 2 a fine
+        bevel) the bevels set (bevel2, prism)."""
         bm = self.bm
         new = [f for f in bm.faces if f not in self.before]
-        lay, edge = bm.faces.layers.int[PART], bm.faces.layers.int[EDGE]
-        cf = set(chamfer_faces)
+        lay = bm.faces.layers.int[PART]
         for f in new:
             f.material_index = ORDER.index(self.mat)
             f[lay] = PARTS.index(self.name)
-            f[edge] = 1 if f in cf else 0
         return new
 
 
-def slab(bm, name: str, mat: str, outer: list, inner, d0: float, d1: float, chamfer: float = 0.0,
-         which: str = "outer") -> None:
-    """outer (and a hole inner, the same count) extruded from d0 to d1, its front edges chamfered (which: "outer",
-    "inner", "both")."""
+# socket-2: UV0 u per edge level, the metal shader's wear (console_metal.gdshader): the flat faces bronze, the broad
+# chamfers half worn, the fine bevels on each side of them bright (the sheet's polished edges)
+LEVEL_U = {0: 0.0, 1: 0.5, 2: 1.0}
+
+
+def bevel2(bm, edges: list, chamfer) -> None:
+    """socket-2's two bevels on the front edges: a broad chamfer (level 1), then a fine bevel (level 2) on both of
+    its long edges (to the front face and to the side). chamfer: broad, or (broad, fine); the fine one defaults to
+    the outline's `fine`, at most 0.3 of the broad one."""
+    broad, fine = chamfer if isinstance(chamfer, tuple) else (chamfer, min(D["outline"]["fine"], 0.3 * chamfer))
+    edges = [e for e in edges if e is not None and e.is_valid]
+    if broad <= 0 or not edges:
+        return
+    lev = bm.faces.layers.int[EDGE]
+    res = bmesh.ops.bevel(bm, geom=edges, offset=broad * CM, offset_type="OFFSET", segments=1, profile=0.5,
+                          affect="EDGES", clamp_overlap=True)
+    faces = [f for f in res["faces"] if f.is_valid]
+    for f in faces:
+        f[lev] = 1
+    if fine <= 0:
+        return
+    fs = set(faces)
+    rim = {e for f in faces for e in f.edges if not all(g in fs for g in e.link_faces)}
+    res = bmesh.ops.bevel(bm, geom=list(rim), offset=fine * CM, offset_type="OFFSET", segments=1, profile=0.5,
+                          affect="EDGES", clamp_overlap=True)
+    for f in res["faces"]:
+        if f.is_valid:
+            f[lev] = 2
+
+
+def slab(bm, name: str, mat: str, outer: list, inner, d0: float, d1: float, chamfer=0.0,
+         which: str = "outer", ends=None) -> None:
+    """outer (and a hole inner, the same count) extruded from d0 to d1, its front edges chamfered twice (bevel2;
+    which: "outer", "inner", "both"; ends: only the outer loop's front edges i -> i + 1 for i in ends)."""
     part = Part(bm, name, mat)
     ob = [bm.verts.new(P(u, d0, h)) for u, h in outer]
     of = [bm.verts.new(P(u, d1, h)) for u, h in outer]
@@ -84,7 +114,8 @@ def slab(bm, name: str, mat: str, outer: list, inner, d0: float, d1: float, cham
     for i in range(n):
         j = (i + 1) % n
         bm.faces.new((ob[i], ob[j], of[j], of[i]))
-    front_edges = [(of[i], of[(i + 1) % n]) for i in range(n)] if which in ("outer", "both") else []
+    front_edges = [(of[i], of[(i + 1) % n]) for i in (ends if ends is not None else range(n))] \
+        if which in ("outer", "both") else []
     if inner is None:
         bm.faces.new(of)
         bm.faces.new(list(reversed(ob)))
@@ -100,13 +131,36 @@ def slab(bm, name: str, mat: str, outer: list, inner, d0: float, d1: float, cham
             front_edges += [(if_[i], if_[(i + 1) % n]) for i in range(n)]
     new = [f for f in bm.faces if f not in part.before]
     bmesh.ops.recalc_face_normals(bm, faces=new)
-    cf = []
-    if chamfer > 0 and front_edges:
-        edges = [bm.edges.get(pair) for pair in front_edges]
-        res = bmesh.ops.bevel(bm, geom=[e for e in edges if e], offset=chamfer * CM, offset_type="OFFSET",
-                              segments=1, profile=0.5, affect="EDGES", clamp_overlap=True)
-        cf = res["faces"]
-    part.end(cf)
+    if front_edges:
+        bevel2(bm, [bm.edges.get(pair) for pair in front_edges], chamfer)
+    part.end()
+
+
+def blocks(bm, ring_out: list, ring_in: list, c: tuple, seams: list, d0: float, d1: float, chamfer, gap: float):
+    """socket-2: the outer frame as separate blocks (the sheet's): the matched ring cut on the rays through `seams`,
+    each piece pulled back gap / 2 square to its seam's ray (the plate shows dark in the gaps), its outer side and
+    both seam ends chamfered twice; the inner side lies under the inner ring."""
+    n = len(ring_out)
+
+    def near(a: float) -> int:
+        return min(range(n), key=lambda i: abs(math.remainder(sd.ray_angle(ring_out[i], c) - a, 2 * math.pi)))
+    cuts = sorted({near(sd.ray_angle(p, c)) for p in seams})
+    for k, a in enumerate(cuts):
+        b = cuts[(k + 1) % len(cuts)]
+        idx = list(range(a, b + 1)) if b > a else list(range(a, n)) + list(range(0, b + 1))
+        out, inn = [list(ring_out[i]) for i in idx], [list(ring_in[i]) for i in idx]
+        for end, nxt in ((0, 1), (-1, -2)):
+            ru, rh = out[end][0] - c[0], out[end][1] - c[1]
+            ln = math.hypot(ru, rh)
+            tu, th = rh / ln, -ru / ln
+            if tu * (out[nxt][0] - out[end][0]) + th * (out[nxt][1] - out[end][1]) < 0:
+                tu, th = -tu, -th
+            for pts in (out, inn):
+                pts[end] = [pts[end][0] + tu * gap / 2, pts[end][1] + th * gap / 2]
+        m = len(out)
+        poly = [tuple(p) for p in out] + [tuple(p) for p in reversed(inn)]
+        # the front edges: along the outer side (0 .. m - 2), the end at b (m - 1), the end at a (2 m - 1)
+        slab(bm, "outer", "socket_bronze", poly, None, d0, d1, chamfer, ends=[*range(m - 1), m - 1, 2 * m - 1])
 
 
 def box(bm, name: str, mat: str, u0, u1, h0, h1, d0, d1) -> None:
@@ -116,19 +170,21 @@ def box(bm, name: str, mat: str, u0, u1, h0, h1, d0, d1) -> None:
 def prism(bm, name: str, mat: str, prof: list, ru: float, rd: float, dc: float, sides: int, chamfer_rings=(),
           rot: float = math.pi / 8) -> None:
     """A vertical solid of an ellipse (ru across, rd in depth, centred at d dc): prof [(scale, h), ...] bottom up;
-    the faces between rings listed in chamfer_rings (index of the lower ring) are chamfer faces."""
+    the faces between rings listed in chamfer_rings (index of the lower ring) are chamfer faces: a tuple of indices
+    (fine bevels, level 2) or {index: level}."""
     part = Part(bm, name, mat)
+    if not isinstance(chamfer_rings, dict):
+        chamfer_rings = {i: 2 for i in chamfer_rings}
+    lev = bm.faces.layers.int[EDGE]
     rings = []
     for s, h in prof:
         rings.append([bm.verts.new(P(s * ru * math.cos(rot + 2 * math.pi * j / sides),
                                      dc - s * rd * math.sin(rot + 2 * math.pi * j / sides), h)) for j in range(sides)])
-    cf = []
     for i in range(len(rings) - 1):
         for j in range(sides):
             k = (j + 1) % sides
             f = bm.faces.new((rings[i][j], rings[i][k], rings[i + 1][k], rings[i + 1][j]))
-            if i in chamfer_rings:
-                cf.append(f)
+            f[lev] = chamfer_rings.get(i, 0)
     bm.faces.new(list(reversed(rings[0])))
     if prof[-1][0] > 1e-6:
         bm.faces.new(rings[-1])
@@ -136,7 +192,7 @@ def prism(bm, name: str, mat: str, prof: list, ru: float, rd: float, dc: float, 
         bmesh.ops.remove_doubles(bm, verts=rings[-1], dist=1e-6)
     new = [f for f in bm.faces if f not in part.before and f.is_valid]
     bmesh.ops.recalc_face_normals(bm, faces=new)
-    part.end(cf)
+    part.end()
 
 
 def build_mesh() -> bpy.types.Object:
@@ -148,14 +204,16 @@ def build_mesh() -> bpy.types.Object:
     bay = sd.loop(D["bay"]["pts"])
     slab(bm, "plate", "socket_graphite", outline, None, 0.0, dp["plate"], o["plate_chamfer"])
     # the hidden backs sit in the part behind at staggered depths (no two coplanar)
-    ring_out, ring_in = sd.match(sd.offset(outline, -o["inset"]), bay, (0.0, D["mount"]["h"] - 9.0))
-    slab(bm, "outer", "socket_bronze", ring_out, ring_in, dp["plate"] - 0.1, dp["layer"],
-         o["layer_chamfer"], "outer")
+    c = (0.0, D["mount"]["h"] - 9.0)
+    seams = [tuple(p) for p in o["seams"]] + [(-u, h) for u, h in o["seams"]]
+    ring_out, ring_in = sd.match(sd.offset(outline, -o["inset"]), bay, c, seams)
+    blocks(bm, ring_out, ring_in, c, seams, dp["plate"] - 0.1, dp["layer"], o["layer_chamfer"], o["seam"])
     slab(bm, "bay", "socket_graphite", sd.offset(bay, -0.02), None, dp["plate"] - 0.2, dp["bay"])
+    # socket-2: the inner bezel round the bay (raised), the cyan strip beside it, the ring's rim outside the strip
     lip, strip = sd.offset(bay, r["lip"]), sd.offset(bay, r["strip"])
     slab(bm, "lip", "socket_bronze", lip, bay, dp["layer"], dp["lip"], r["lip_chamfer"], "both")
     slab(bm, "strip", "socket_cyan", strip, lip, dp["layer"] - 0.2, dp["strip"])
-    slab(bm, "ring", "socket_bronze", sd.loop(r["pts"]), strip, dp["layer"] - 0.1, dp["ring"], r["chamfer"], "both")
+    slab(bm, "ring", "socket_bronze", sd.loop(r["pts"]), strip, dp["layer"] - 0.1, dp["ring"], r["chamfer"], "outer")
     slab(bm, "header", "socket_bronze", sd.loop(D["header"]["pts"]), None, dp["plate"] - 0.3, dp["header"],
          D["header"]["chamfer"])
     claw = [tuple(p) for p in D["claw"]["pts"]]
@@ -173,25 +231,34 @@ def build_mesh() -> bpy.types.Object:
     w0, w1 = c["window_h"]
     straight = c["pts"][2][1]
     cone = c["pts"][3][0] / ru
-    prism(bm, "collar", "socket_bronze", [(cone, h0), (1.0, straight), (1.0, w0 + 0.05)], ru, rd, ax, 8)
-    prism(bm, "collar", "socket_amber", [(0.95, w0), (0.95, w1)], ru, rd, ax, 8)
-    prism(bm, "collar", "socket_bronze", [(1.0, w1 - 0.05), (1.0, top - 0.35), (0.94, top)], ru, rd, ax, 8,
-          chamfer_rings=(1,))
+    # socket-2: a turned cup (16 sides): a cone, a bright bevelled foot ring, the sunk amber band, a bevelled lip
+    t16 = math.pi / 16
+    prism(bm, "collar", "socket_bronze", [(cone, h0), (0.93, straight - 0.8), (1.0, straight - 0.3), (1.0, w0 + 0.05)],
+          ru, rd, ax, 16, chamfer_rings={0: 1, 1: 2}, rot=t16)
+    prism(bm, "collar", "socket_amber", [(0.93, w0), (0.93, w1)], ru, rd, ax, 16, rot=t16)
+    prism(bm, "collar", "socket_bronze", [(1.0, w1 - 0.05), (1.0, top - 0.75), (0.97, top - 0.45), (0.9, top)],
+          ru, rd, ax, 16, chamfer_rings={1: 2, 2: 1}, rot=t16)
     box(bm, "collar", "socket_graphite", -ru * 0.55, ru * 0.55, h0 + 0.5, top - 0.6, dp["collar"][0], ax)
     s = D["slots"]
     for (u0, u1, h0, h1), face in [(q, dp["layer"]) for q in s["outer"]] + \
             [((-q[1], -q[0], q[2], q[3]), dp["layer"]) for q in s["outer"]] + [(q, dp["front"]) for q in s["bottom"]]:
-        b = s["bezel"]  # a graphite frame round the window, the amber light 0.1 behind its face
-        slab(bm, "slots", "socket_graphite", [(u0 - b, h1 + b), (u1 + b, h1 + b), (u1 + b, h0 - b), (u0 - b, h0 - b)],
-             [(u0, h1), (u1, h1), (u1, h0), (u0, h0)], face - 0.6, face + s["proud"], 0.12, "outer")
-        box(bm, "slots", "socket_amber", u0 + 0.01, u1 - 0.01, h0 + 0.01, h1 - 0.01, face - 0.4, face + s["proud"] - 0.1)
+        b = s["bezel"]  # socket-2: a bronze bezel round the window, the amber sunk in it just over the block's face
+        slab(bm, "slots", "socket_bronze", [(u0 - b, h1 + b), (u1 + b, h1 + b), (u1 + b, h0 - b), (u0 - b, h0 - b)],
+             [(u0, h1), (u1, h1), (u1, h0), (u0, h0)], face - 0.6, face + s["proud"], 0.12, "both")
+        box(bm, "slots", "socket_amber", u0 + 0.01, u1 - 0.01, h0 + 0.01, h1 - 0.01, face - 0.4, face + 0.08)
     n = D["neck"]
     (h0, h1) = n["h"]
-    prism(bm, "neck", "socket_bronze", [(0.9, h0 - 0.1), (1.0, h0 + 0.5), (1.0, h1 - 0.5), (0.92, h1)],
-          n["ru"], n["rd"], n["d"], 8, chamfer_rings=(0, 2))
+    # socket-2: the neck turned (16 sides): a foot, a groove, a bevelled top
+    prism(bm, "neck", "socket_bronze", [(0.9, h0 - 0.1), (1.0, h0 + 0.3), (1.0, h0 + 1.0), (0.92, h0 + 1.2),
+                                        (0.92, h0 + 1.6), (1.0, h0 + 1.8), (1.0, h1 - 0.4), (0.9, h1)],
+          n["ru"], n["rd"], n["d"], 16, chamfer_rings={0: 2, 2: 2, 4: 2, 6: 2}, rot=t16)
     lr = D["lamp_ring"]
-    prism(bm, "lamp_ring", "socket_graphite", [(1.0, lr["h"][0]), (1.0, lr["h"][1] - 0.4), (0.93, lr["h"][1])],
-          lr["ru"], lr["rd"], n["d"], 16, chamfer_rings=(1,), rot=0.0)
+    # socket-2: the lamp's bronze collar (the sheet's), a dark band where the dome sits in it
+    (h0, h1) = lr["h"]
+    prism(bm, "lamp_ring", "socket_bronze", [(0.9, h0), (1.0, h0 + 0.35), (1.0, h1 - 0.75), (0.93, h1 - 0.45)],
+          lr["ru"], lr["rd"], n["d"], 16, chamfer_rings={0: 2, 2: 2}, rot=t16)
+    prism(bm, "lamp_ring", "socket_graphite", [(0.85, h1 - 0.5), (0.85, h1 + 0.2)], lr["ru"], lr["rd"], n["d"], 16,
+          rot=t16)
     lp = D["lamp"]
     (h0, h1) = lp["h"]
     top = h1 - h0 - lp["wall"]
@@ -208,7 +275,7 @@ def build_mesh() -> bpy.types.Object:
     for f in bm.faces:
         v = rng.random()
         for lp_ in f.loops:
-            lp_[uv].uv = (float(f[edge]), v)
+            lp_[uv].uv = (LEVEL_U.get(f[edge], 0.0), v)
     bm.to_mesh(me)
     bm.free()
     for name in ORDER:
@@ -246,13 +313,13 @@ def colliders() -> list:
     side = []
     for sgn in (1, -1):
         pts = [(sgn * u, d, h) for u, h in D["outline"]["pts"] if u > 20 for d in (dp["bay"], dp["layer"])]
-        pts += [(sgn * 14.6, d, h) for h in (bay[4][1], bay[5][1]) for d in (dp["bay"], dp["ring"])]
+        pts += [(sgn * 14.6, d, h) for h in (bay[4][1], bay[5][1]) for d in (dp["bay"], max(dp["ring"], dp["lip"]))]
         side.append(pts)
     tip = D["mount"]["tip_h"]
     low = [(u, d, h) for u, h in sd.loop(D["block"]["pts"]) + sd.loop(D["collar"]["pts"])
            for d in (dp["bay"], dp["front"])]
     low += [(sgn * u, d, h) for sgn in (1, -1) for u, h in ((6.4, min(hs)), (14.0, 112.0 + (tip - 122.55)))
-            for d in (dp["bay"], dp["ring"])]
+            for d in (dp["bay"], max(dp["ring"], dp["lip"]))]
     hh = [h for _, h in D["header"]["pts"]]
     claw = D["claw"]["pts"]
     up = [(sgn * u, d, h) for sgn in (1, -1) for u, h in claw if h >= min(hh) for d in dp["claw"]]

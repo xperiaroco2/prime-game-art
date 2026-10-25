@@ -21,7 +21,7 @@ import socket_drawing  # noqa: E402
 ASSET = common.ROOT / "assets" / "prop" / "crystal_socket"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "socket_dims.toml"
-TRIANGLES = 4000  # a wall station: 2,0xx at b-builds
+TRIANGLES = 6000  # a wall station: 2,138 at b4, 3,9xx at b5 (socket-2: blocks, two bevels, turned parts)
 SURFACES = {"socket_bronze", "socket_graphite", "socket_cyan", "socket_amber", "socket_lamp"}
 MATERIAL_FILES = ("socket.gd", "socket_metal.gdshader")
 

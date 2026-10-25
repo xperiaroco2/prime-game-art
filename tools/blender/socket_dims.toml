@@ -30,9 +30,9 @@ bottom_h = 87.38
 [depth]                          # out of the wall (cm)
 plate = 6.7                      # drawing: the back plate's face
 layer = 12.2                     # drawing: the middle layer, the outer blocks' face
-lip = 19.4                       # the lip between the bay and the strip, a step under the ring
-ring = 19.6                      # the inner ring with the cyan strip (side view: its lower part at 615 px)
-strip = 19.2                     # the strip's light, sunk in its groove
+lip = 20.0                       # socket-2: the inner bezel round the bay, raised over the strip and the ring
+ring = 19.0                      # the inner ring's rim outside the strip (side view: its lower part at 615 px)
+strip = 19.3                     # the strip's light between the bezel and the rim, a step proud of the rim
 front = 21.1                     # drawing: the frame's face, the bottom block
 header = 20.6                    # the block over the bay the claws hang from (under the claws' 22.2)
 claw = [13.0, 22.2]              # drawing: the claws' tips at 22.2 (top view: from 10; 13 keeps them arms, not a hood)
@@ -44,8 +44,15 @@ collar = [9.4, 21.4]             # the cup under the crystal's tip (side view: i
 pts = [[0.0, 168.3], [11.54, 168.3], [23.39, 154.9], [23.39, 137.06], [19.55, 131.24], [23.39, 126.1],
        [23.39, 106.9], [6.4, 87.4], [0.0, 87.4]]
 plate_chamfer = 0.5
-inset = 0.8                      # the outer blocks inside the plate's edge: the plate shows as a dark step
+inset = 0.9                      # the outer blocks inside the plate's edge: the plate shows as a dark step (1.0
+                                 # put the bottom blocks' underside in the bottom block's plane, h 88.4)
 layer_chamfer = 2.0              # the outer blocks' wide front chamfer
+fine = 0.3                       # socket-2: the small edge bevel on each side of every broad chamfer
+seam = 0.5                       # socket-2: the dark gap between two outer blocks (the plate shows in it)
+# socket-2: the outer frame as separate blocks (the sheet's): the seams on rays from the bay's middle (u 0,
+# h mount - 9) through these right-half points, mirrored: beside the top block, the upper corner (clear of the upper
+# slot), the waist, under the lower slot, the bottom corner
+seams = [[11.54, 168.3], [21.7, 156.8], [19.55, 131.24], [15.0, 105.0], [6.4, 87.4]]
 
 [bay]                            # the bay round the crystal: drawing.js STRIP (the bay runs along the cyan strip:
                                  # 28.9 wide at its top, 20.1 at the collar), down beside the bottom block to 104.5
@@ -56,10 +63,10 @@ pts = [[0.0, 159.45], [5.65, 159.45], [10.58, 158.8], [12.9, 156.6], [14.49, 153
                                  # outer blocks' amber slots stay clear of it)
 pts = [[0.0, 163.0], [5.65, 163.0], [11.8, 162.6], [15.2, 159.8], [16.85, 155.0], [16.85, 131.0], [15.0, 128.4],
        [13.9, 126.6], [14.2, 116.0], [11.6, 108.5], [10.6, 100.0], [0.0, 100.0]]
-lip = 0.4                        # the lip between the bay and the strip
-strip = 1.3                      # the strip's outer edge from the bay's edge (the strip 0.9 wide)
-chamfer = 0.5
-lip_chamfer = 0.25
+lip = 0.8                        # socket-2: the inner bezel's width from the bay's edge
+strip = 2.0                      # the strip's outer edge from the bay's edge (the strip 1.2 wide; step 1: 0.9)
+chamfer = 0.25                   # the rim's (it is 0.36 wide at the upper sides)
+lip_chamfer = 0.2                # each side of the bezel (and a fine bevel of 0.06): its front 0.28 wide
 
 [header]                         # the block over the bay (under the neck), the claws' root
 pts = [[0.0, 164.6], [10.6, 164.6], [12.0, 162.6], [11.4, 158.4], [0.0, 158.4]]
@@ -85,8 +92,9 @@ window_h = [118.4, 120.9]        # its amber band, sunk between two bronze rims
 [slots]                          # the amber windows: on the outer blocks (right side; mirrored) and the bottom block
 outer = [[17.36, 19.83, 140.1, 150.0], [16.2, 18.05, 109.3, 118.6]]   # drawing.js SLOTS (u0, u1, h0, h1)
 bottom = [[-1.47, 1.4, 95.3, 103.15]]                                  # drawing.js SLOT_BOTTOM
-bezel = 0.4                      # the graphite frame round each
-proud = 0.25                     # the bezel's face ahead of its block's face; the light 0.1 behind the bezel's
+bezel = 0.45                     # socket-2: the bronze bezel round each window
+proud = 0.6                      # the bezel's face ahead of its block's face; the amber sunk in it, 0.08 over the
+                                 # block's face
 
 [neck]                           # under the lamp (drawing: 11.3 wide), an octagon prism on the header
 h = [164.6, 167.7]

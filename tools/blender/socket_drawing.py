@@ -28,6 +28,7 @@ def load(path: Path = DIMS_FILE) -> dict:
     s = d["mount"]["h"] - d["mount"]["drawn_at"]
     for name in POLYS:
         d[name]["pts"] = [[u, h + s] for u, h in d[name]["pts"]]
+    d["outline"]["seams"] = [[u, h + s] for u, h in d["outline"].get("seams", [])]
     for name in ("outer", "bottom"):
         d["slots"][name] = [[u0, u1, h0 + s, h1 + s] for u0, u1, h0, h1 in d["slots"][name]]
     d["collar"]["window_h"] = [h + s for h in d["collar"]["window_h"]]
@@ -83,10 +84,16 @@ def _ray(pts: list, c: tuple, a: float) -> tuple:
     return (c[0] + du * best, c[1] + dh * best)
 
 
-def match(outer: list, inner: list, c: tuple) -> tuple:
-    """Two closed loops, both star-shaped from c, resampled on the same rays (every corner of either), so a ring
-    between them is quads of matching points: (outer, inner), clockwise from the top."""
-    ang = sorted({round(math.atan2(u - c[0], h - c[1]) % (2 * math.pi), 9) for u, h in [*outer, *inner]})
+def ray_angle(p: tuple, c: tuple) -> float:
+    """The angle of the ray from c through p (0 up, + toward +u), in [0, 2 pi), rounded as match() keys its rays."""
+    return round(math.atan2(p[0] - c[0], p[1] - c[1]) % (2 * math.pi), 9)
+
+
+def match(outer: list, inner: list, c: tuple, extra: list = ()) -> tuple:
+    """Two closed loops, both star-shaped from c, resampled on the same rays (every corner of either, and the rays
+    through the `extra` points: the outer blocks' seams), so a ring between them is quads of matching points:
+    (outer, inner), clockwise from the top."""
+    ang = sorted({ray_angle(p, c) for p in [*outer, *inner, *extra]})
     return [_ray(outer, c, a) for a in ang], [_ray(inner, c, a) for a in ang]
 
 
@@ -118,7 +125,7 @@ def lines(d: dict) -> dict:
     bh = [p[1] for p in d["block"]["pts"]]
     rh = [p[1] for p in d["ring"]["pts"]]
     side = [col("plate", 0.0, dp["plate"], bottom, top), col("outer", dp["plate"], dp["layer"], bottom + 0.8, top - 0.8),
-            col("ring", dp["layer"], dp["ring"], min(rh), max(rh)), col("header", dp["plate"], dp["header"], min(hh), max(hh)),
+            col("ring", dp["layer"], max(dp["ring"], dp["lip"]), min(rh), max(rh)), col("header", dp["plate"], dp["header"], min(hh), max(hh)),
             col("claw", dp["claw"][0], dp["claw"][1], min(ch), max(ch)), col("block", dp["plate"], dp["front"], min(bh), max(bh)),
             col("collar", dp["collar"][0], dp["collar"][1], min(kh), max(kh)), ("bay", [(dp["bay"], min(kh)), (dp["bay"], max(hh))], False)]
     for name in ("neck", "lamp_ring", "lamp"):
