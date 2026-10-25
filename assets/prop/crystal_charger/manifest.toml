@@ -1,0 +1,52 @@
+# The ship's crystal charger (art#263's stations).
+# Built by tools/blender/charger_run.py --tag b6 --asset assets/prop/crystal_charger; a rebuild
+# changes the hashes below.
+id = "crystal_charger"
+kind = "prop"
+slot = ""
+title = "The ship's crystal charger"
+notes = "The crystal charger, one on each lens room's aft wall (renewer_e, renewer_w): a squat stepped bronze and graphite dome (Ø 100.4) raised on four long legs like the ship's landing legs (bronze struts, steel pistons, lit pads), the slot at 95.7 cm, the fixed outer prongs to 139.7 cm, the start button at 75.9 cm; leaves: the carrier cup under the crystal (rises 6 cm, spins; crystal_anchor), the track ring with the inner prongs (spins), the button (presses 1 cm). 41,060 triangles, front +Z, origin on the floor at the wall's face. From the engineer's pick of 2026-10-25 and its drawing in cm (prime-game-design commit a53ce6f, ideas/ship-components/stations-final: charger-legs.jpg, an AI concept used only as a reference, and charger-drawing/; copied to the raw folder), built from code in headless Blender (tools/blender/charger_build.py from charger_dims.toml): no part of the model was generated or downloaded."
+tools = ["blender 5.2.2", "prime-game-art charger_build.py, charger_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-25
+url = "https://github.com/xperiaroco2/prime-game-art/issues/263"
+
+[[raw]]
+file = "ship/v4/charger/ref-legs/charger-legs.jpg"
+sha256 = "925919201c234aa6ba968ee81776acbc39f526784caaa1576ec4fa532324e9e9"
+
+[[raw]]
+file = "ship/v4/charger/ref-legs/drawing.js"
+sha256 = "2a8912a7a1dd55266a5efeeefddddc532b53651b9240aab128acbdcd4a40b02c"
+
+[[raw]]
+file = "ship/v4/charger/ref-legs/drawing.html"
+sha256 = "bb25b83164b6496f800761ad3d9d517d95a5e7c75b3f4d54526122b2b042611f"
+
+[[raw]]
+file = "ship/v4/charger/ref-legs/front-ortho.jpg"
+sha256 = "52820b81c87e87fcb9188da665b86d71044a73dd2c581337414e6d4e3f0da563"
+
+[[raw]]
+file = "ship/v4/charger/ref-legs/top-ortho.jpg"
+sha256 = "b411f2ce82122e53955cfb5c5ad352bd9de223c3b598c4886e1078e09b19c00f"
+
+[[raw]]
+file = "ship/v4/charger/b6/crystal_charger.glb"
+sha256 = "fd01044a6bd0b46c7258170bbe2f1056ff6e54c5b55655754966e118c9f5be82"
+
+[[raw]]
+file = "ship/v4/charger/b6/crystal_charger.blend"
+sha256 = "1232eccf632b278214e339d2e5ef44c7f2bb32626fec3a1d1914a2c63390fd37"
