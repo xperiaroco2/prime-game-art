@@ -1302,7 +1302,7 @@ pilot's static premium heads"):
     piece an eyeball or lid triangle by its side; the band's border keeps its class (`clamped`), and a piece under 10 %
     of its parent snaps the cut through the nearest corner (`snapped`). The guard: `rim_bad_triangles` 0 (no piece
     turned over or under 10 %), the open and non-manifold welded edges unchanged (0 and 0), and (R2) each eye's
-    eyeball area within `RIM_CUT_MAX_AREA_PCT` (3 %) of its area before the cut, or the build fails; lively.json's
+    eyeball area within `RIM_CUT_MAX_AREA_PCT` (5 % since R2b; R2's 3 % failed R1's own cut) of its area before the cut, or the build fails; lively.json's
     `rim_cut` reports the pieces each way, the eyeball triangles, the mask texels, the trimmed rim positions per eye and
     `eyeball_area`. `--rim-cut` with `--no-pit-fix` is refused (the cut runs inside the pit fix). The GLB's buffers are
     compacted after the cut (`G.compact_buffers`: no old views, no `UNUSED_OBJECT`).
@@ -1334,6 +1334,29 @@ pilot's static premium heads"):
     (A3d 0.311, 0.221, 0.111, 0.306); axolotl 0.077, 0.027, 0.065, 0.027 (A3d 0.079, 0.027, 0.065, 0.027). The back
     view is unchanged; the views that show the eyes moved by up to 0.008, closer to r5.
   - Left: the lid's lip still catches light along its own faces (geometry, not the mask); the cut does not reshape it.
+- **R2b: the lid's lip and the outer corner (2026-10-25, art #196; proof `anim_bare/r2b/`):**
+  - The area bound is 5 % (the manager's decision from measured cuts): R1's chameleon cut changes the right eye's
+    eyeball area by 4.149 % and the left by 3.809 %. Follow-up, not fixed: the trimmed fit's bias, it drops 51 of the
+    right eye's 256 rim positions (29 of the left's 238) and leans the curve inward.
+  - `test_alien_lively_cut.py`'s rim check expected the cut rim within 1.5 mm of a circle and measured 2.04 mm: a
+    sliver's cut snaps through a grid corner, up to about a third of the 4 mm grid edge off the curve. It now asks for
+    under half the stepped rim's spread and under the teeth's 3 mm.
+  - The white fringe (the lower lid's serrated lip catching the key light): grid on the chameleon, all with the rim
+    cut at order 8 and `--rim-split`: `normals 4` (`lively/v9_r2c_n4`: 764 lip positions, 1111 vertices, normals
+    turned 8.5 degrees median, positions not moved), Taubin 4 and 8 (`v9_r2c_t4g`, `v9_r2c_t8g`: the new fold guard
+    halved the move to 1/16, largest move 0.47 mm; `v9_r2c_t4`/`t8` without the guard failed: a lip triangle turned,
+    face dot -0.96). In the 4x crops (`r2b/grid_<v>/eyes/rim_chameleon_4x/` beside `r1/eyes/rim_chameleon_4x/`) all
+    three lose R1's bright serrated line and its white specks, and the guarded Taubin ones look the same as normals 4.
+    The pick: `normals 4`, which moves no position, so the lid's shape is unchanged by construction. glTF-Validator
+    on the cut GLBs: 0 errors, 0 warnings (no `UNUSED_OBJECT`: `compact_buffers` works).
+  - The dark wedge at the outer corner: it shows as built, with SSAO off and with the key light's shadow off
+    (`eye_reels.gd`'s new `corner_<head>.jpg`: as built | albedo | geometry | SSAO off | shadow off | the mask; and
+    `corner_<head>_4x/`), not in the albedo, so it is the normals. The vertices an eyeball and a lid triangle share
+    carry one normal, Meshy's, bent into the lid's fold, and `eyeball_fix` fades the radial normal in only from 6 % of
+    r off the lid; at the sharp corner the eyeball's triangles fan out from a few of them, so that normal spreads
+    over a wedge. `rim_split()` (`--rim-split`) copies the shared vertices for the eyeball's triangles (positions,
+    UVs and skin alike, no edge opens) and gives every eyeball vertex its sphere's radial normal in full; the lid keeps
+    its own. Chameleon: 597 copied, 3631 eyeball vertices, their normals turned 10.4 degrees median, 116.6 at p99.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
