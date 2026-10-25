@@ -600,29 +600,36 @@ They are copied to `<raw>/start-console/ref/`.
 ## A station from its drawing: the ship's crystal charger (art#263)
 
 `assets/prop/crystal_charger/`: two of them, one on each lens room's aft wall (`layouts/ship/ship.toml`
-`[[stations.spot]]` `renewer_e`, `renewer_w`), where a player recharges a spent energy crystal. The engineer approved
-the sheet on 2026-10-25 (prime-game-design `ideas/ship-components/stations-final/charger.jpg`; its top view is
-wrong, he said, and nothing is taken from it) and the drawing in cm (`charger-drawing/drawing.js` at commit
-5458033: the base cut flat at the back, raised to the hip). They are copied to `<raw>/ship/v4/charger/ref/`.
+`[[stations.spot]]` `renewer_e`, `renewer_w`), where a player recharges a spent energy crystal. The engineer's pick of
+2026-10-25 (prime-game#1095 comment 6401197371): the squat base raised on four long legs like the ship's own
+(prime-game-design `ideas/ship-components/stations-final/charger-legs.jpg`) and its drawing in cm
+(`charger-drawing/drawing.js` at commit a53ce6f over `front-ortho.jpg` and `top-ortho.jpg`; the generated side view
+was wrong and is not used: the charger is round). They are copied to `<raw>/ship/v4/charger/ref-legs/` (`ref/` keeps
+the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the back) is history.
 
-1. **The numbers.** `tools/blender/charger_dims.toml`: the drawing's own (the tiers' heights and radii, the axis
-   27.3 cm from the wall, the feet, the slot, the carrier, the ring, the prongs' traced outlines mapped through the
-   drawing's raise, the strips' heights and angles) and the smaller ones read off the sheet at its scale (the seams,
-   the two bevels, the bezels, the blocks' angles). **The wall is not flat there**: the spot sits on a vertex of the
-   lens room's 12-sided wall, whose facets fold toward the room by 10.98 degrees either side; the drawing's flat back
-   at d 2 would sink 7 cm into the wall at its corners. The back is cut by two planes, each 2 cm off its facet (a
-   shallow V; the test checks the angle against `ship.toml`).
-2. **Build from the numbers.** `tools/blender/charger_build.py` (headless Blender): every tier is a ring of bronze
-   blocks round a graphite drum (flat chord faces; the drum must stay inside each block's chord, so its radius steps
-   per tier), thin dark seams between them, two bevels per block (a broad chamfer, UV0 u 0.45, and a small bright
-   bevel on its folds, u 1: `console_metal.gdshader` brightens both, the sheet's worn edges). The front's two panels
-   (the drum's tall facet with its amber light, the middle tier's button panel) are trapezoid recesses between bronze
-   wedge blocks. Lights sit in graphite bezels, inset. The leaves are their own objects, pivots on their axes, children
-   of the body: `carrier` (with the empty `crystal_anchor` at the crystal's tip), `track_ring` (with the inner prongs
-   and their electrodes), `button`. Convex colliders (`*-convcolonly`): the base, the feet, the outer prongs, and the
-   inner prongs on the ring. The build checks the clearances numerically (`build.json` `checks`): every vertex in
-   front of the wall's facets, the ring's full turn in 5 degree steps against the body (BVH overlaps), the carrier's
-   rise in 1 cm steps, the crystal at rest and risen.
+1. **The numbers.** `tools/blender/charger_dims.toml`: the drawing's own (the base 64.8..94 with its widest Ø 100.4 at
+   72.8 and the upper tier Ø 82, the slot at 95.7, the button Ø 8 at 75.9, the outer prongs to 139.7 at u 23.9..,
+   the inner pair to 123.1 on the track ring of r 19, the legs lengthened 27 cm in their pistons) and the smaller ones
+   read off the sheet (block angles, seams, bevels, bezels, strip widths, the legs' joints). **The wall is not flat
+   there**: the spot sits on a vertex of the lens room's 12-sided wall, whose facets fold toward the room by 10.98
+   degrees either side. The round base stands clear of it (the axis 53.5 cm out, the widest circle 2.3 cm off the
+   facets); the back legs turn to 120 degrees and tuck in to r 52 so their pads stay 3 cm off (at 135 they would
+   stand in the wall). The drawing's "base top 99.1" is the deck's far rim seen from a little above; the deck is at
+   94, the slot's collar to 95.7.
+2. **Build from the numbers.** `tools/blender/charger_build.py` (headless Blender): each tier is a ring of bronze
+   blocks, a profile swept straight between two angles (flat chord faces), thin dark seams onto a graphite core, two
+   bevels per block (a broad chamfer, UV0 u 0.45, and a small bright bevel on its folds, u 1:
+   `console_metal.gdshader` brightens both). The front block's pieces (strips and wedges round the button's
+   trapezoid facet) lie on the block's own chords, one planar prism per band of the profile, so nothing juts out of
+   its neighbours (b4's panels did). The prongs are (r, h) claw profiles swept round the crystal's axis over a few
+   degrees (their end faces toward the room carry the strips); the legs are octagonal prisms along each leg's axis
+   (strut, glands, the steel rod, the ankle sleeve) on a faceted pad. Lights sit in graphite bezels, inset, unbevelled
+   (the bevels on 70 small boxes cost 11k triangles). The leaves are their own objects, pivots on their axes, children
+   of the body: `carrier` (the cup with the pit for the crystal's point; the empty `crystal_anchor` at the tip),
+   `track_ring` (with the inner prongs and their electrodes), `button`. Convex colliders (`*-convcolonly`): the base,
+   the outer prongs, each leg, and the inner prongs on the ring. The build checks the clearances numerically
+   (`build.json` `checks`): every vertex in front of the wall's facets, the ring's full turn in 5 degree steps against
+   the body (BVH overlaps), the carrier's rise in 1 cm steps, the button pressed, the crystal at rest and risen.
 3. **The look in Godot**: `godot/charger/charger.gd` (`apply`, `set_state` idle / charging / charged, `set_carrier`,
    `set_ring`, `set_pressed`, `seat_crystal`). The bronze and graphite are the console's `console_metal.gdshader`,
    shared (the asset's `export/` carries the same file; the test checks it is byte-identical). The charger draws on
@@ -630,14 +637,17 @@ wrong, he said, and nothing is taken from it) and the drawing in cm (`charger-dr
    bronze white a few centimetres away (the socket's way); a soft cyan light of the charger's own stands in while
    charging.
 4. **The shots**: `godot/charger/room.gd` extends `godot/ship/ship.gd`'s shoot mode with the charger on `renewer_e`
-   and the crystal seated; `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's
-   neutral render at its angle, Godot in the room), `room_sheet.png` (the states, the straight views, the wall's
-   corner, the ring's full turn from above) and `closeups.png` (Blender's close-ups of the edges and seams), and
+   and the crystal seated, on the ship's current build (`--pieces`, default `<raw>/ship/v4/vents-b/pieces_b5b`; the
+   run refuses pieces whose deck is not at `floor_h`: `ship.toml`'s `raw_dir` pieces predate the deck's raise); `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's
+   neutral render at its angle, Godot in the room), `room_sheet.png` (the states, a player's view, the pass behind
+   them, the straight views, the back toward the wall, the legs, the ring's turn from above) and `closeups.png`
+   (Blender's close-ups of the seams: the prongs' roots and caps, the hips, knees and feet, the slot, the button), and
    measures the GPU cost.
 
    ```bash
    $PYTHON_BIN tools/blender/charger_run.py --tag <tag> --res 900 --samples 64 --asset assets/prop/crystal_charger
    ```
 
-`tools/tests/test_props_crystal_charger.py` checks the drawing's numbers, the back's fold against the ship's layout
-and the committed asset.
+`tools/tests/test_props_crystal_charger.py` checks the drawing's numbers, the base's gap to the wall, the wall's fold
+against the ship's layout and the committed asset. The pass behind a player (`ship_layout.check_spots` with the
+spot's depth at the charger's 1.04 m): 2.17 m of free floor behind the capsule, against `pass_m` 1.6.

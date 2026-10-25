@@ -1,7 +1,7 @@
 """The crystal charger's drawing (art#263's stations). Plain Python, no Blender: the front, side and top orthographic
 views of the model's own edges (features.json, written by charger_build.py before the bevels: the folds and open
 edges, each with its faces' normals; an edge is drawn when one of its faces looks at the viewer) with the numbers it
-was built from (charger_dims.toml, from prime-game-design 5458033 charger-drawing/drawing.js). The views' frames are
+was built from (charger_dims.toml, from prime-game-design a53ce6f charger-drawing/drawing.js). The views' frames are
 charger_build.py's ORTHO frames, so each lies exactly over its orthographic render (renders/ortho_<view>.png): a
 size that is wrong shows as a line off the picture.
 
@@ -20,10 +20,10 @@ from pathlib import Path
 
 DIMS_FILE = Path(__file__).with_name("charger_dims.toml")
 # charger_build.py ORTHO: frame (cm, square), its middle (front: u, h; side: d, h; top: u, d)
-ORTHO = {"front": (150.0, 0.0, 68.0), "side": (150.0, 45.0, 68.0), "top": (150.0, 0.0, 45.0)}
+ORTHO = {"front": (160.0, 0.0, 75.0), "side": (160.0, 60.0, 75.0), "top": (160.0, 0.0, 55.0)}
 TOP = 22.0
-X0 = {"front": 40.0, "side": 212.0, "top": 384.0}
-WIDTH, HEIGHT = 560.0, 196.0
+X0 = {"front": 40.0, "side": 222.0, "top": 404.0}
+WIDTH, HEIGHT = 590.0, 206.0
 STYLE = {
     "paper": ".bg{fill:#f4f1e8}.e{stroke:#1e2a36}.d{stroke:#9b3b16;fill:#9b3b16}.t{fill:#9b3b16}.h{fill:#1e2a36}"
              ".f{stroke:#b8b2a2}.w{stroke:#2f6f9b}",
@@ -99,42 +99,48 @@ def svg(feats: dict, d: dict, mode: str) -> str:
             if normals and not any(faces_viewer(view, n) for n in normals):
                 continue
             s.line(project(view, pa), project(view, pb), "e", 0.12)
-    fr, t, b = d["frame"], d["tiers"], d["button"]
+    fr, t, b, lg = d["frame"], d["base"], d["button"], d["legs"]
+    o, sl = d["outer"], d["slot"]
     # front: the heights on the left, the widths under
     pz = lambda h: project("front", (0, 0, h))[1]  # noqa: E731
     px = lambda u: project("front", (u, 0, 0))[0]  # noqa: E731
     x = X0["front"] + 4.0
-    for h, label in ((t["bottom"], "skirt"), (t["widest"], "drum"), (t["widest_top"], ""), (t["rim"], "rim"),
-                     (t["deck"], "deck"), (fr["top"], "prongs")):
+    for h, label in ((t["bottom"], "base"), (t["widest"], "widest"), (t["lower_top"], ""), (t["deck"], "deck"),
+                     (sl["collar_top"], "slot"), (fr["top"], "prongs")):
         s.dim((x, pz(0.0)), (x, pz(h)), f"{fmt(h)} {label}".strip())
         x += 3.6
-    s.dim((px(-60.0) + 0.0, pz(-0.0) + 4.0), (px(60.0), pz(0.0) + 4.0), f"{fmt(fr['width'])} across the feet")
     s.dim((px(-t["r_widest"]), pz(t["widest"]) + 2.0), (px(t["r_widest"]), pz(t["widest"]) + 2.0),
-          f"drum ⌀ {fmt(2 * t['r_widest'])}")
-    s.dim((px(-t["r_tier2"]), pz(t["rim"]) + 3.0), (px(t["r_tier2"]), pz(t["rim"]) + 3.0),
-          f"⌀ {fmt(2 * t['r_tier2'])}")
+          f"⌀ {fmt(2 * t['r_widest'])}")
+    s.dim((px(-t["r_upper"]), pz(t["lower_top"]) - 1.5), (px(t["r_upper"]), pz(t["lower_top"]) - 1.5),
+          f"⌀ {fmt(2 * t['r_upper'])}")
     s.dim((px(70.0), pz(0.0)), (px(70.0), pz(b["h"])), f"{fmt(b['h'])} button")
-    s.dim((px(-42.7), pz(fr["top"]) - 3.0), (px(42.7), pz(fr["top"]) - 3.0), "85.4 over the outer prongs")
+    cu = math.cos(math.radians(o["half_deg"]))
+    s.dim((px(-o["root"][0][0] * cu), pz(fr["top"]) - 3.0), (px(o["root"][0][0] * cu), pz(fr["top"]) - 3.0),
+          f"{fmt(2 * o['root'][0][0] * cu)} between the outer prongs")
     # side: the wall, the axis, the depth
     py = lambda dd: project("side", (0, dd, 0))[0]  # noqa: E731
     sz = lambda h: project("side", (0, 0, h))[1]  # noqa: E731
     s.line((py(0.0), sz(-2.0)), (py(0.0), sz(150.0)), "w", 0.3)
     s.line((py(fr["axis_d"]), sz(-2.0)), (py(fr["axis_d"]), sz(fr["top"] + 4.0)), "w", 0.15, "2 1")
     s.dim((py(0.0), sz(fr["top"]) - 2.0), (py(fr["axis_d"]), sz(fr["top"]) - 2.0), f"axis {fmt(fr['axis_d'])}")
-    s.dim((py(0.0), sz(0.0) + 4.0), (py(fr["depth"]), sz(0.0) + 4.0), f"{fmt(fr['depth'])} to the front foot")
-    s.dim((py(0.0), sz(t["deck"]) - 2.0), (py(fr["wall_gap"]), sz(t["deck"]) - 2.0), fmt(fr["wall_gap"]))
+    front = fr["axis_d"] + t["r_widest"]
+    s.dim((py(0.0), sz(0.0) + 4.0), (py(front), sz(0.0) + 4.0), f"{fmt(front)} to the base's front")
     s.text((py(1.0), sz(146.0)), "wall", cls="h", anchor="start", size=2.8)
-    # top: the two wall facets at the spot's vertex, the back 2 cm off them
+    # top: the two wall facets at the spot's vertex, the legs' pads
     f = math.radians(fr["back_fold_deg"])
     for sx in (-1.0, 1.0):
         a = project("top", (0.0, 0.0, 0.0))
         b2 = project("top", (sx * 75.0, 75.0 * math.tan(f), 0.0))
         s.line(a, b2, "w", 0.3)
+    for k, ang in enumerate(lg["angles"]):
+        r = lg["pad_s"][k]
+        p = project("top", (r * math.sin(math.radians(ang)), fr["axis_d"] + r * math.cos(math.radians(ang)), 0.0))
+        s.text((p[0], p[1] + 1.0), f"pad {fmt(ang)}° r {fmt(r)}", size=2.4)
     s.text(project("top", (0.0, -3.0, 0.0)), f"the lens room's wall: two facets, {fmt(fr['back_fold_deg'])}° each "
            "side of the spot's vertex", cls="h", size=2.6)
     s.text((6.0, 8.0), "THE CRYSTAL CHARGER · cm · three views at one scale (4 px per cm in the renders)", cls="h",
            anchor="start", size=4.4)
-    s.text((6.0, 14.0), "numbers: prime-game-design 5458033 charger-drawing/drawing.js → tools/blender/"
+    s.text((6.0, 14.0), "numbers: prime-game-design a53ce6f charger-drawing/drawing.js → tools/blender/"
            "charger_dims.toml; lines: the model's own edges", cls="h", anchor="start", size=2.8)
     s.out.append("</svg>")
     return "\n".join(s.out) + "\n"

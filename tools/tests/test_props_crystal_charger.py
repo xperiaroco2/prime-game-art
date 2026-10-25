@@ -16,8 +16,9 @@ from runner.commands import _manifest
 ASSET = common.ROOT / "assets" / "prop" / "crystal_charger"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "charger_dims.toml"
-SURFACES = {"charger_bronze", "charger_graphite", "charger_cyan", "charger_amber", "charger_lens"}
+SURFACES = {"charger_bronze", "charger_graphite", "charger_cyan", "charger_amber", "charger_lens", "charger_steel"}
 LEAVES = {"carrier", "track_ring", "button", "crystal_anchor"}
+CRYSTAL = 34.9  # the built crystal, its tip to its loop's top (prime-game-art#316)
 
 
 def lfs_pointer(path) -> bool:
@@ -33,26 +34,53 @@ def glb_json(path) -> dict:
     return json.loads(data[20:20 + length])
 
 
+def dims() -> dict:
+    return tomllib.loads(DIMS.read_text(encoding="utf-8"))
+
+
 class ChargerDrawing(unittest.TestCase):
     def test_dims_keep_the_drawings_numbers(self) -> None:
-        # prime-game-design 5458033 stations-final/charger-drawing/drawing.js (node: its N object)
-        d = tomllib.loads(DIMS.read_text(encoding="utf-8"))
-        f, t = d["frame"], d["tiers"]
-        self.assertEqual((f["width"], f["depth"], f["top"], f["axis_d"], f["wall_gap"]), (120.0, 89.5, 130.1, 27.3, 2.0))
-        self.assertEqual((t["widest"], t["widest_top"], t["rim"], t["bevel"], t["deck"]), (26.3, 51.3, 60.7, 82.9, 85.0))
-        self.assertAlmostEqual(t["r_widest"] * 2, 108.4, delta=0.05)
-        self.assertEqual((d["button"]["h"], d["button"]["travel"], d["carrier"]["rise"]), (72.0, 1.0, 6.0))
-        self.assertEqual((d["ring"]["r0"], d["ring"]["r1"]), (16.5, 24.5))
-        self.assertEqual(d["foot"]["angles"], [-75.0, 0.0, 75.0])
-        # the depth: the axis plus the feet's reach is the front foot's face, inside the spot's 90 cm
-        self.assertAlmostEqual(f["axis_d"] + d["foot"]["reach"], f["depth"], delta=0.05)
-        self.assertLessEqual(f["depth"], 90.0)
-        # the risen crystal's loop under the prongs' tops (the built crystal is 34.9 cm from its tip)
-        self.assertLess(d["slot"]["tip"] + 34.9 + d["carrier"]["rise"], f["top"])
+        # prime-game-design a53ce6f stations-final/charger-drawing/drawing.js (node: its N object)
+        d = dims()
+        f, b = d["frame"], d["base"]
+        self.assertEqual((f["top"], f["wall_gap"]), (139.7, 2.0))
+        self.assertEqual((b["bottom"], b["widest"]), (64.8, 72.8))
+        self.assertAlmostEqual(b["r_widest"] * 2, 100.4, delta=0.05)
+        self.assertAlmostEqual(b["r_upper"] * 2, 82.0, delta=0.05)
+        self.assertEqual((d["slot"]["collar_top"], d["slot"]["tip"]), (95.7, 95.1))
+        self.assertEqual((d["button"]["h"], d["button"]["lens"], d["button"]["travel"]), (75.9, 8.0, 1.0))
+        self.assertEqual(d["carrier"]["rise"], 6.0)
+        # the track ring orbits the crystal at r 19 (its cyan channel's middle), carrying the inner pair
+        self.assertAlmostEqual(sum(d["ring"]["light"]) / 2, 19.0, delta=0.05)
+        i = d["inner"]
+        rs = [r for prof in (i["column"], i["head"]) for r, _h in prof]
+        self.assertGreaterEqual(min(rs), d["ring"]["r0"] - 2.5)
+        self.assertAlmostEqual(max(rs), 22.8, delta=0.05)
+        self.assertAlmostEqual(max(h for prof in (i["column"], i["head"]) for _r, h in prof), 123.1, delta=0.05)
+        # the outer pair: in front, u = r cos(half_deg); its inner edge at the drawing's 23.9, its top 139.7
+        o = d["outer"]
+        cu = math.cos(math.radians(o["half_deg"]))
+        self.assertAlmostEqual(o["root"][0][0] * cu, 23.9, delta=0.1)
+        self.assertAlmostEqual(max(h for _r, h in o["cap"]), f["top"], delta=0.01)
+        # the outer pair clears the turning ring and the inner pair
+        self.assertGreater(min(r for prof in (o["root"], o["column"]) for r, _h in prof), d["ring"]["r1"] + 0.5)
+        self.assertGreater(min(h for _r, h in o["cap"]), max(h for _r, h in i["head"]) + 3.0)
+        # the risen crystal's loop under the prongs' tops
+        self.assertLess(d["slot"]["tip"] + CRYSTAL + d["carrier"]["rise"], f["top"])
+        # four legs, the pistons lengthened 27 cm (N.legLift): the base's underside at 64.8
+        self.assertEqual(len(d["legs"]["angles"]) * 2, 4)
+        self.assertAlmostEqual(d["legs"]["hip"][1], b["bottom"], delta=0.5)
+
+    def test_base_clears_the_wall(self) -> None:
+        # round and uncut: the widest circle stays wall_gap off the lens room's two facets at the spot's vertex
+        d = dims()
+        f = d["frame"]
+        gap = f["axis_d"] * math.cos(math.radians(f["back_fold_deg"])) - d["base"]["r_widest"]
+        self.assertGreaterEqual(gap, f["wall_gap"])
 
     def test_back_fold_is_the_lens_rooms_facet(self) -> None:
         # the spot sits on a vertex of the lens room's 12-sided wall: half a facet's angle either side
-        d = tomllib.loads(DIMS.read_text(encoding="utf-8"))
+        d = dims()
         ship = tomllib.loads((common.ROOT / "layouts" / "ship" / "ship.toml").read_text(encoding="utf-8"))
         room = next(r for r in ship["rooms"] if r["id"] == "tip_e")
         cor = next(r for r in ship["rooms"] if r["id"] == "corridor_e")
@@ -74,6 +102,8 @@ class ChargerAsset(unittest.TestCase):
         glb = EXPORT / "crystal_charger.glb"
         if not glb.is_file() or lfs_pointer(glb):
             self.skipTest("no GLB (LFS)")
+        d = dims()
+        ax = d["frame"]["axis_d"] / 100
         doc = glb_json(glb)
         nodes = {n["name"]: n for n in doc["nodes"]}
         self.assertIn("crystal_charger", nodes)
@@ -84,14 +114,15 @@ class ChargerAsset(unittest.TestCase):
         carrier = nodes["carrier"]
         self.assertIn("crystal_anchor", {doc["nodes"][i]["name"] for i in carrier.get("children", [])})
         cols = [n for n in nodes if n.endswith("-convcolonly")]
-        self.assertGreaterEqual(len([c for c in cols if c.startswith("crystal_charger_col")]), 6)
+        self.assertEqual(len([c for c in cols if c.startswith("crystal_charger_col")]), 7)  # base, 2 prongs, 4 legs
         self.assertEqual(len([c for c in cols if c.startswith("track_ring_col")]), 2)
         mats = {m["name"] for m in doc["materials"]}
         self.assertEqual(mats, SURFACES)
-        # the pivots: the carrier on the crystal's axis at its top, the ring at the deck (glTF: x u, y h, z d)
-        self.assertEqual([round(x, 3) for x in carrier["translation"]], [0.0, 0.845, 0.273])
-        self.assertEqual([round(x, 3) for x in nodes["track_ring"]["translation"]], [0.0, 0.85, 0.273])
-        self.assertAlmostEqual(nodes["crystal_anchor"]["translation"][1], -0.02, places=4)
+        # the pivots: the carrier on the crystal's axis at its rim, the ring at the deck (glTF: x u, y h, z d)
+        self.assertEqual([round(x, 3) for x in carrier["translation"]], [0.0, round(d["carrier"]["top"] / 100, 3), ax])
+        self.assertEqual([round(x, 3) for x in nodes["track_ring"]["translation"]], [0.0, round(d["base"]["deck"] / 100, 3), ax])
+        self.assertAlmostEqual(nodes["crystal_anchor"]["translation"][1],
+                               (d["slot"]["tip"] - d["carrier"]["top"]) / 100, places=4)
 
     def test_report_checks(self) -> None:
         if not (ASSET / "report.json").is_file():
@@ -100,10 +131,13 @@ class ChargerAsset(unittest.TestCase):
         c = r["checks"]
         self.assertEqual(c["ring_turn"]["overlaps"], 0)
         self.assertEqual(c["carrier_rise"]["overlaps"], 0)
-        self.assertGreaterEqual(c["wall_min_cm_body"], 1.9)
+        self.assertEqual(c["button_pressed_overlaps"], 0)
+        self.assertGreaterEqual(c["wall_min_cm_body"], 1.9)  # the base and the back legs' pads off the facets
         self.assertGreaterEqual(c["ring_turn"]["wall_min_cm"], 1.9)
         self.assertEqual(r["gltf_validator"]["numErrors"], 0)
-        self.assertLessEqual(r["mesh"]["size_cm"]["d"][1], 90.0)
+        self.assertLess(r["mesh"]["triangles"], 45000)
+        # the depth a player's stand counts from: the pass behind them was measured at 1.04 m (2.17 m free, pass_m 1.6)
+        self.assertLessEqual(r["mesh"]["size_cm"]["d"][1], 106.0)
 
     def test_look_files(self) -> None:
         if not (EXPORT / "charger.gd").is_file():

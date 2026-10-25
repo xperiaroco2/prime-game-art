@@ -1,128 +1,128 @@
 # The ship's crystal charger as numbers, in centimetres (art#263's stations; two of them, one on each lens room's aft
 # wall: layouts/ship/ship.toml [[stations.spot]] renewer_e, renewer_w). From its drawing, prime-game-design commit
-# 5458033 (ideas/ship-components/stations-final/charger-drawing/drawing.js, `node drawing.js`: its N object and the
-# traced outlines mapped through its H()), which is itself drawn over the approved sheet charger.jpg's front view
-# raised to the hip (the engineer, 2026-10-25: "Підняти до стегна", "raise it to the hip"; "Зрізати сзаду", "cut at
-# the back"). The sheet's top view is wrong (the engineer, 2026-10-25): no number here comes from it.
-# Frame: u across the front (0 the crystal's axis, + to the right as you face it), d out of the wall along the spot's
-# normal (0 the wall's face), h up from the floor. The model's origin is (u 0, d 0, h 0): the spot's `at` on the
-# floor. tools/blender/charger_build.py builds from these; tools/blender/charger_drawing.py draws them.
-# Sizes the drawing does not give (seams, bevels, bezels, block angles, the ring's height) are read off the sheet's
-# front view at its scale (9.4 px per cm) and marked "sheet".
+# a53ce6f (ideas/ship-components/stations-final/charger-drawing/drawing.js, `node drawing.js`: its N object), drawn
+# over the engineer's pick of 2026-10-25, the squat base raised on four long legs like the ship's own
+# (charger-legs.jpg; prime-game#1095 comment 6401197371): front-ortho.jpg and top-ortho.jpg redrawn straight, the legs
+# lengthened 27 cm in their pistons. The charger is round; its side is taken from the front (the generated side view
+# was wrong and is not used).
+# Frame: u across the front (0 the crystal's axis, + to the right as you face the button), d out of the wall along
+# the spot's normal (0 the wall's face), h up from the floor. The model's origin is (u 0, d 0, h 0): the spot's `at`
+# on the floor. tools/blender/charger_build.py builds from these; tools/blender/charger_drawing.py draws them.
+# Sizes the drawing does not give (block angles, seams, bevels, bezels, strip widths, the legs' joints) are read off
+# the sheet (charger-legs.jpg, its front-ortho.jpg at 8.74 px per cm) and marked "sheet".
 
 [frame]
-width = 120.0                    # across the two side feet (drawing WIDTH)
-depth = 89.5                     # the wall to the front foot's face (N.depth; the spot's budget 90)
-top = 130.1                      # the outer prongs' tops (N.top)
-axis_d = 27.3                    # the crystal's axis from the wall (N.axisD)
-wall_gap = 2.0                   # the flat back off the wall's face (WALL_GAP)
+top = 139.7                      # the outer prongs' tops (N.outerTop)
+axis_d = 53.5                    # the crystal's axis from the wall: the drawing's half footprint is 52.5; the base's
+                                 # widest circle (r 50.2) then clears the lens room's wall facets by 2.3 cm
+wall_gap = 2.0                   # the least gap to the wall's facets (the base, the back legs' pads)
 # The spot sits on a vertex of the lens room's 12-sided wall (tools/blender/ship_interior.py tip_vertices: facets of
-# 21.954 deg at r 2.05 m), so the wall folds toward the room by half a facet, 10.977 deg, either side of u 0: 9.3 cm
-# in at the back's corners. A flat back at d 2 would sink 7 cm into the wall there; the back is cut as two planes,
-# each 2 cm off its facet (a shallow V that meets at d 2 on the axis). The drawing's flat back assumed a flat wall.
+# 21.954 deg at r 2.05 m), so the wall folds toward the room by half a facet, 10.977 deg, either side of u 0. The
+# round base stands clear of it (no cut back); the back legs turn toward the sides to keep their pads off it.
 back_fold_deg = 10.977
 
-[tiers]                          # the round base: the drawing's levels, raised (N.bottom ... N.deck)
-bottom = 11.7                    # the lower tier's bottom, on the feet
-widest = 26.3                    # its widest girth, where the straight drum band starts
-widest_top = 51.3                # the drum band's top (+25, DRUM)
-rim = 60.7                       # the lower tier's rim; the middle tier's foot
-bevel = 82.9                     # the middle tier's top, the deck's bevel starts
-deck = 85.0                      # the deck with the slot (DECK)
-r_bottom = 49.5
-r_widest = 54.2                  # the drum (diameter 108.4)
-r_lower_top = 51.1               # the rim's radius
-r_tier2 = 47.6                   # the middle tier
-r_deck = 45.8                    # the deck's edge after the bevel
-r_core = 42.0                    # sheet: the graphite drum inside the blocks, seen in the seams
+[base]                           # the squat stepped dome (N.baseBottom, N.widestH, N.widest, N.tierTop)
+bottom = 64.8                    # the lower tier's underside (N.baseBottom; the legs' tops)
+widest = 72.8                    # the widest girth (N.widestH)
+band_top = 79.4                  # sheet: the lower tier's straight band, then its top bevel
+lower_top = 82.0                 # sheet: the lower tier's top, the step to the upper tier
+r_bottom = 44.0                  # sheet: the underside's edge (the drawing's 40 at 65.9 read as a dark shelf: steeper)
+r_widest = 50.2                  # Ø 100.4 (N.widest)
+r_lower_top = 48.8               # sheet
+r_upper = 41.0                   # the upper tier, Ø 82 (N.tierTop)
+upper_band = 91.6                # sheet: the upper tier's side, then its bevel to the deck
+deck = 94.0                      # sheet: the deck (under the slot; N.top 99.1 is its far rim seen from above)
+r_deck_edge = 38.6               # sheet: where the bevel meets the deck
+r_inner = 34.0                   # the upper tier's blocks' inner edge; the deck ring inside it
 seam = 0.55                      # sheet: the dark joint between two blocks
-band_split = 79.8                # sheet: the middle tier's upper band (its deck slots and the bevel) above this
-
-[blocks]                         # sheet: the blocks' edges, degrees round the axis from the front (mirrored)
-skirt = [22.0, 48.0, 80.0, 115.0]      # the lower taper, 11.7 .. 26.3 (the front block is the panel block)
-drum = [22.0, 62.0, 115.0]             # the drum band and the upper taper, 26.3 .. 60.7
-middle = [24.0, 64.0, 115.0]           # the middle tier, 60.7 .. band_split
-band = [12.0, 29.0, 41.0, 75.0, 115.0] # the upper band, band_split .. deck (a block either side of 0)
+lower_edges = [24.0, 54.0, 84.0, 114.0, 144.0, 180.0]   # sheet: block edges, deg from the front (mirrored)
+upper_edges = [14.0, 40.0, 66.0, 114.0, 140.0, 166.0, 180.0]
+deck_ring = [24.2, 33.8]         # sheet: the deck's inner course of blocks (radii) round the track ring
 chamfer = 1.1                    # sheet: the broad chamfer on every block edge
 edge = 0.28                      # sheet: the small bright bevel on its folds
 
-[facet]                          # the drum's tall front facet where the sheet's button was (N.facet)
-top = [16.9, 55.9]               # half width, h
-bottom = [8.1, 17.3]
-light = [2.4, 22.0, 50.0]        # the vertical amber light: width, h0, h1
-recess = 1.6                     # sheet: how far the graphite facet sits behind the block's face
-half_deg = 22.0                  # the panel block's half angle
-r_face = 53.6                    # sheet: its flat front at this distance from the axis (inside the drum's 54.2)
-
-[panel]                          # the button's panel on the middle tier's front (N.panel)
-top = [16.9, 77.1]
-bottom = [8.1, 63.5]
-recess = 3.4                     # sheet: deep enough for the lens to press 1 cm clear of the plate
+[panel]                          # the button's trapezoid facet on the lower tier's front block (sheet)
 half_deg = 24.0
-r_face = 47.6
+top = [14.0, 80.4]               # half width, h
+bottom = [8.2, 67.6]
+recess = 2.2                     # how far the graphite plate sits behind the block's chord face
 
-[button]                         # the start button (N.button)
-h = 72.0
-ring = 12.7                      # the bezel ring's diameter
-lens = 9.6                       # the cyan lens
+[button]                         # the start button (N.button, N.buttonD)
+h = 75.9
+lens = 8.0
+ring = 11.6                      # sheet: the bezel ring's diameter
 travel = 1.0                     # pressed in along its normal
-face_d = 73.3                    # the lens's face from the wall (the drawing's buttonD: axis + r_tier2 - 1.5)
 
-[strips]                         # the light slots on the round half (N.strips; the angles each side of the front)
-lower_cyan = { h = [54.7, 56.6], deg = [28.2, 55.4] }
-lower_amber = { h = [30.3, 47.3], deg = [48.3, 56.6] }
-mid_amber = { h = [70.4, 73.6], deg = [43.1, 58.3] }
-deck_amber = [{ h = [80.8, 82.3], deg = [30.8, 38.1] }, { h = [80.8, 82.3], deg = [16.3, 26.8] }]
-bezel = 0.6                      # sheet: the graphite bezel round a light
-proud = 0.9                      # sheet: the bezel's face out of its block
-inset = 0.55                     # how far the light sits in its bezel (0.35 still out of the block)
+[lights]                         # the light slots, mirrored across u 0 (deg from the front, h); sheet
+width = 2.0                      # the tier strips' height (b4's 1.3 read thin at 3 m)
+cyan_lower = [{ deg = [27.5, 50.5], h = [77.0, 79.0] }, { deg = [117.5, 140.5], h = [77.0, 79.0] }]
+amber_lower = [{ deg = [67.0, 71.0], h = [73.6, 79.0] }, { deg = [158.0, 162.0], h = [73.6, 79.0] }]
+amber_upper = [{ deg = [45.0, 61.0], h = [86.4, 88.8] }, { deg = [145.0, 161.0], h = [86.4, 88.8] }]
+amber_deck = [[17.0, 25.0], [29.0, 37.0], [143.0, 151.0], [155.0, 163.0]]   # dashes on the upper tier's bevel
+bezel = 0.6                      # the graphite bezel round a light
+proud = 0.8                      # the bezel's face out of its block
+inset = 0.45                     # how far the light sits in its bezel (still out of the block)
 
-[slot]                           # the crystal's slot (N.collar, N.bore, N.tip)
-collar_outer = 19.0
-collar_bore = 15.0
-collar_h = [85.0, 87.0]
-bore_bottom = 76.0
-tip = 82.5                       # the built crystal's tip at rest (its point ring on the collar's top)
+[slot]                           # the crystal's slot (N.slot) and the deck's rings
+collar = [7.8, 10.4]             # the collar's bore and outer radius
+collar_top = 95.7                # N.slot
+glow = [11.0, 12.6]              # sheet: the cyan slot ring between the collar and the track ring (radii)
+bore_bottom = 86.6
+tip = 95.1                       # the built crystal's tip at rest (N.tip), in the carrier's pit
 
-[carrier]                        # the carrier under the crystal (N.carrier): a leaf, rises and spins
-d = 14.0
-top = 84.5                       # its pivot: the middle of its top
-h = 8.0
-seat = 2.0                       # the hexagonal seat for the crystal's point
-rise = 6.0                       # RISE
+[carrier]                        # the cup under the crystal: a leaf, rises and spins
+r = 7.0
+top = 97.4                       # its pivot: the middle of its rim (sheet: the bronze cup round the crystal's foot)
+h = 10.0
+pit = [4.0, 0.6]                 # the pit's radius at the rim and at its floor; the floor 0.1 under the tip
+rise = 6.0
 
-[ring]                           # the track ring with the inner prongs (N.ring): a leaf, spins
-r0 = 16.5
-r1 = 24.5
-h = 3.0                          # sheet: its depth into the deck
-groove = 0.3                     # the deck's clearance round it
-light = [19.2, 21.0]             # sheet: the cyan channel on its top (radii)
+[ring]                           # the track ring with the inner prongs: a leaf, spins
+r0 = 13.5
+r1 = 23.6                        # N.track 19 is its middle
+h = 3.0
+groove = 0.3
+light = [18.0, 20.0]             # the cyan channel on its top (radii)
 
-[outer]                          # the fixed outer prongs, left (mirrored), traced (u, h) from the front view
-depth = 12.0
-outline = [[-42.7, 85.0], [-42.7, 117.9], [-33.0, 129.1], [-31.4, 130.1], [-21.7, 130.1], [-20.0, 128.3],
-           [-20.0, 117.9], [-26.0, 115.3], [-26.0, 85.0]]
-split = [115.5, 126.2]           # sheet: the joints between the column, the bend and the cap
-cyan = [[-35.3, 88.2], [-35.3, 117.9], [-29.1, 126.6]]
-amber = [[-28.9, 87.1], [-28.9, 116.3]]
-strip_w = [1.3, 1.3]             # the cyan and amber strips' widths (outer.cyan, outer.amber)
+[outer]                          # the fixed outer prongs on the u axis (N.outer, N.outerTop): an (r, h) profile swept
+                                 # round the axis over +-half_deg; in front their u is r cos(half_deg)
+half_deg = 13.0
+root_deg = 15.0                  # the root block and the cap a little wider (sheet: chunky)
+cap_deg = 14.0
+root = [[24.5, 94.0], [38.4, 94.0], [40.2, 101.0], [25.5, 101.0]]
+column = [[25.8, 101.6], [40.4, 101.6], [42.2, 108.5], [42.2, 121.5], [39.4, 128.4], [27.6, 128.4], [27.6, 107.5]]
+cap = [[24.0, 129.0], [39.0, 129.0], [39.0, 131.5], [33.2, 139.7], [21.4, 139.7], [19.6, 137.7], [19.6, 132.2],
+       [21.6, 130.2]]
+cyan = [[35.0, 102.6], [35.6, 120.0], [33.0, 127.4]]      # on the front face (the arc's end toward the room)
+cyan_cap = [[33.0, 130.0], [27.0, 137.0]]
+amber = [[30.0, 104.0], [30.0, 126.4]]
+amber_inner = [109.0, 126.0]     # an amber strip up the inner face (r 27.6), toward the crystal
+strip_w = [2.2, 2.0]             # cyan, amber (b4's 1.3 read thin)
 
-[inner]                          # the inner prongs on the ring, left (mirrored), traced (u, h)
-thick = 7.0
-outline = [[-24.5, 85.0], [-24.5, 109.4], [-21.9, 112.6], [-17.6, 113.7], [-13.8, 112.8], [-13.8, 109.6],
-           [-16.8, 107.3], [-16.8, 85.0]]
-split = 107.3                    # sheet: the column's top, the head above
-amber = [[-19.6, 89.2], [-19.6, 106.2]]
-amber_w = 1.3
-electrode = [-15.0, 111.0, 1.1] # u, h, radius
+[inner]                          # the inner prongs on the track ring (N.inner, N.innerTop), the same family
+half_deg = 11.0
+column = [[16.8, 94.0], [22.8, 94.0], [22.8, 116.2], [16.8, 116.2]]
+head = [[13.4, 116.8], [22.6, 116.8], [22.6, 120.0], [20.6, 123.1], [14.6, 123.1], [13.0, 121.6], [13.0, 118.0]]
+amber = [[19.9, 97.5], [19.9, 114.6]]
+amber_w = 1.8
+electrodes = [[13.0, 120.0, 1.3], [16.8, 101.0, 1.0]]   # r of the face, h, radius
 
-[foot]                           # the three feet at 0 and +-75 deg (N.foot, FOOT_ANGLE)
-angles = [-75.0, 0.0, 75.0]
-r0 = 39.5                        # where it starts under the tier (the drawing's side view: rBottom - 10)
-r_top0 = 43.5                    # its top's inner edge (rBottom - 6)
-reach = 62.2
-w_top = 32.7
-w_bottom = 29.7
-top = 11.7
-face = 9.9
-slot = [13.8, 5.1, 7.4]          # the amber slot on the face: width, h0, h1
+[legs]                           # four legs angled out like the ship's landing legs (N.legTop, N.legLift, N.foot)
+angles = [50.0, 120.0]           # deg from the front (mirrored); the back pair turned toward the sides: at 135 their
+                                 # pads would stand in the wall's facets
+pad_s = [57.5, 52.0]             # the pads' centres from the axis, front and back pair (N.foot 105: the outer
+                                 # corners at 45 deg); the back pair tucked 5.5 cm
+hip = [40.0, 64.6]               # s, h: the strut's top in its bracket under the base (front-ortho: the legs stand under
+                                 # the rim, near upright from the front)
+ankle_h = 10.0                   # the pad's top
+strut = [37.0, 64.6]             # h: the bronze upper strut from .. to
+strut_size = [[13.0, 11.5], [15.0, 13.0]]   # sheet: across, along s at its foot and its top (front-ortho: 15 across)
+gland = [35.6, 38.4]             # sheet: the graphite gland where the rod leaves the strut
+rod = [17.0, 39.0]               # h: the dark steel piston rod (lengthened 27 cm, N.legLift)
+rod_r = 3.6
+sleeve = [9.5, 21.0]             # h: the bronze ankle sleeve
+sleeve_size = [[13.0, 12.0], [11.5, 10.5]]
+pad = [22.0, 15.0, 2.5, 9.5]     # sheet: the pad's foot square (front-ortho: 24), its top square, its plinth's
+                                 # height, its top's h
+strut_light = [45.0, 59.0, 3.0]  # h0, h1, width: the amber slot on the strut's outer face
+pad_bars = [[4.6, 1.5], [7.4, 1.5]]   # sheet: the pads' two amber bars on each face: h of the middle, height

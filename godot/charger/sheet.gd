@@ -3,8 +3,8 @@ extends SceneTree
 ## _godot.window(); tools/blender/charger_run.py calls it after room.gd's shots). Writes into OUT:
 ## - compare_sheet.png: the approved sheet's hero view beside Blender's neutral render at its angle and Godot's shot
 ##   in the lens room;
-## - room_sheet.png: the Godot shots in the east lens room at night (idle empty, charging, charged, a player's view,
-##   the straight views, the wall's corner, the button, the ring's full turn from above);
+## - room_sheet.png: the Godot shots in the east lens room at night (idle empty, charging, charged, a player's view, the
+##   pass behind them, the straight views, the back toward the wall, the legs, the button, the ring's turn from above);
 ## - closeups.png: Blender's close-ups of the edges and seams;
 ## - cost.json: the charger's GPU ms alone at 1280x720 from a player's eyes 1.6 m away, and its draw calls.
 ## Args after "--": <res:// GLB> <OUT dir> <Blender renders dir> <room shots dir> <approved sheet>
@@ -33,20 +33,20 @@ func _run() -> void:
 	var blender: String = a[2]
 	var room: String = a[3]
 	var big := Vector2i(420, 420)
-	var compare: Array = [["the approved sheet (charger.jpg)", _load(a[4], big, Rect2(0.13, 0.08, 0.56, 0.84))],
+	var compare: Array = [["the engineer's pick (charger-legs.jpg)", _load(a[4], big, Rect2(0.135, 0.1, 0.47, 0.75))],
 		["Blender, neutral, the sheet's angle", _load(blender.path_join("hero.png"), big)],
 		["Godot, the lens room at night", _load(room.path_join("q34_charged.png"), big)]]
 	_save(await _grid(compare, big, 3), out.path_join("compare_sheet.png"))
 	var cell := Vector2i(312, 312)
 	var rows: Array = []
-	for n: String in ["q34_idle", "q34_charging", "q34_charged", "eye", "front", "side", "top_down", "deck_charging",
-			"wall_corner", "button", "turn_000", "turn_030", "turn_060", "turn_090", "turn_120", "turn_150"]:
+	for n: String in ["q34_idle", "q34_charging", "q34_charged", "eye", "pass", "front", "side", "top_down",
+			"deck_charging", "wall_back", "legs_low", "button", "turn_000", "turn_060", "turn_120", "turn_150"]:
 		rows.append([n.replace("_", " "), _load(room.path_join(n + ".png"), cell)])
 	_save(await _grid(rows, cell, 4), out.path_join("room_sheet.png"))
 	var cu: Array = []
-	for n: String in ["cu_button", "cu_facet", "cu_seams", "cu_band", "cu_deck", "cu_slot", "cu_prong_cap",
-			"cu_prong_strips", "cu_inner_head", "cu_feet", "cu_back", "cu_panel_side", "charging", "hero_idle", "side_q",
-			"ortho_top"]:
+	for n: String in ["cu_button", "cu_facet", "cu_seams", "cu_deck", "cu_slot", "cu_prong_root", "cu_prong_cap",
+			"cu_prong_strips", "cu_inner_head", "cu_hip", "cu_knee", "cu_feet", "cu_back_leg", "cu_low", "charging",
+			"side_q"]:
 		cu.append([n.replace("_", " "), _load(blender.path_join(n + ".png"), cell)])
 	_save(await _grid(cu, cell, 4), out.path_join("closeups.png"))
 	quit(0)
