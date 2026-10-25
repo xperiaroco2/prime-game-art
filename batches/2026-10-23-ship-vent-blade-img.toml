@@ -1,0 +1,55 @@
+# art#263 station 1, the throat vents, way A step 3: one product shot of a single gill blade, isolated on a plain
+# background, as the input of a Meshy image-to-3D blade (batch 2026-10-23-ship-vent-a-body, item blade). Edits of the
+# vent's own concept (batch 2026-10-23-ship-vent-final, final_wide and side_left) at medium, one image per concept
+# (docs/openai-images.md): three framings of the same blade, the best one picked. Under the engineer's standing
+# OpenAI permission (CLAUDE.md, 2026-10-20) and the agreed brief (art#263 comment 6363433518), within this batch's
+# cap. No names.
+
+id = "2026-10-23-ship-vent-blade-img"
+service = "openai-images"
+purpose = "art#263 station 1 way A: an isolated product shot of one gill blade of the vent concept, the input of a Meshy image-to-3D blade."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 2.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-23"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/263#issuecomment-6363433518"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+background = "opaque"
+
+[variants.blade]
+prompt = "Product shot of ONE single gill blade taken out of the machine in the reference images, alone, on a plain flat light grey studio background, nothing else in the picture. The blade is exactly like the reference's blades: a long, thick, heavy louver blade of worn warm bronze-brown cast metal, about seven times as long as it is wide, gently bowed along its length, its cross-section a thick wedge: a broad bright upper bevel facet meeting a broad front facet at a crisp ridge, tapering to a blunt trailing edge, a slightly concave underside. Thin bright worn edges on every corner, faint mottled patina, polished highlights on the upper facet. Both ends cut flat and square, each with one small round pivot hole at the thick back edge; no hinge caps, no bolts, no glow, no frame. Seen in three-quarter view from the front and above, the whole blade in the frame with margin all round, soft even studio light, a soft contact shadow under it. Clean stylised game-asset render, crisp facets, no text, no labels."
+
+[[items]]
+id = "b34"
+variant = "blade"
+kind = "edit"
+images = [
+  { file = "raw:2026-10-23-ship-vent-final/final_wide/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item final_wide): the vent concept, wide, art#263", sha256 = "a2ec1eda4676a1ae092e5edef8b1f19fdfb6cea644a8d3b406c24f047e19aab5" },
+  { file = "raw:2026-10-23-ship-vent-final/side_left/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item side_left): the vent concept from the left side, art#263", sha256 = "78e3dfb98a4c7ade424b5c91dc79d068d01d8387b3f8e9c833a802fa73fb4da4" },
+]
+
+[[items]]
+id = "bend"
+variant = "blade"
+kind = "edit"
+prompt = "Product shot of ONE single gill blade taken out of the machine in the reference images, alone, on a plain flat light grey studio background, nothing else in the picture. The blade is exactly like the reference's blades: a long, thick, heavy louver blade of worn warm bronze-brown cast metal, about seven times as long as it is wide, gently bowed along its length, its cross-section a thick wedge: a broad bright upper bevel facet meeting a broad front facet at a crisp ridge, tapering to a blunt trailing edge, a slightly concave underside. Thin bright worn edges on every corner, faint mottled patina, polished highlights on the upper facet. Both ends cut flat and square, each with one small round pivot hole at the thick back edge; no hinge caps, no bolts, no glow, no frame. Seen from the front and above, turned about 30 degrees so that the near flat end shows the thick wedge cross-section clearly, the whole blade in the frame with margin all round, soft even studio light, a soft contact shadow under it. Clean stylised game-asset render, crisp facets, no text, no labels."
+images = [
+  { file = "raw:2026-10-23-ship-vent-final/final_wide/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item final_wide): the vent concept, wide, art#263", sha256 = "a2ec1eda4676a1ae092e5edef8b1f19fdfb6cea644a8d3b406c24f047e19aab5" },
+  { file = "raw:2026-10-23-ship-vent-final/side_left/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item side_left): the vent concept from the left side, art#263", sha256 = "78e3dfb98a4c7ade424b5c91dc79d068d01d8387b3f8e9c833a802fa73fb4da4" },
+]
+
+[[items]]
+id = "bfront"
+variant = "blade"
+kind = "edit"
+prompt = "Product shot of ONE single gill blade taken out of the machine in the reference image, alone, on a plain flat light grey studio background, nothing else in the picture. Copy the blade exactly from the reference: the same long, thick, heavy louver blade of worn warm bronze-brown cast metal, gently bowed along its length, with the same broad bright upper bevel facet, the crisp ridge, the broad front facet tapering to a blunt trailing edge, the same thin bright worn edges on the corners and the same mottled patina and polished highlights. Both ends cut flat and square; no hinge caps, no bolts, no glow, no frame. Seen in three-quarter view from the front and slightly above, the blade horizontal, the whole blade in the frame with margin all round, soft even studio light, a soft contact shadow under it. Clean stylised game-asset render, crisp facets, no text, no labels."
+images = [
+  { file = "raw:2026-10-23-ship-vent-final/final_wide/image-0.png", provenance = "our own OpenAI generation (gpt-image-2.5-sunburst, batch 2026-10-23-ship-vent-final item final_wide): the vent concept, wide, art#263", sha256 = "a2ec1eda4676a1ae092e5edef8b1f19fdfb6cea644a8d3b406c24f047e19aab5" },
+]
