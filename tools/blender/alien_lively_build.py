@@ -684,7 +684,8 @@ def lip_smooth(A, I, cls, centres, r, steps, mode):
       move capped at LIP_CAP of the radius, then the lip's normals from its faces (area-weighted), half-blended on the
       outer ring so the shading meets the untouched lid without a seam.
     Tangents are made orthogonal again. Returns A (new arrays) and the report (moved positions, largest move, the
-    largest normal turn of a lip triangle; the build fails when one turns past LIP_FLIP_DOT)."""
+    largest normal turn of a lip triangle). R2b: the fold guard halves the whole Taubin move (down to 1/64, "scale" in
+    the report) until no lip triangle turns past LIP_FLIP_DOT; the build fails when one still does."""
     P, N = A["POSITION"], A["NORMAL"]
     near_t = np.minimum(*(np.linalg.norm(P[I].mean(1) - c, axis=1) for c in centres.values())) < 1.4 * r
     weld, nodes, _nbr = rim_graph(P, I, cls, near_t)
@@ -722,8 +723,18 @@ def lip_smooth(A, I, cls, centres, r, steps, mode):
                 Qw[free] += f * d[free]
         mv = Qw - Q0
         m = np.linalg.norm(mv, axis=1)
-        Qw = Q0 + mv * np.minimum(1.0, LIP_CAP * r / np.maximum(m, 1e-12))[:, None]
-        P1 = Qw[weld]
+        mv = mv * np.minimum(1.0, LIP_CAP * r / np.maximum(m, 1e-12))[:, None]
+        aff0 = free[weld[I]].any(1)
+        n_a = np.cross(P[I[aff0, 1]] - P[I[aff0, 0]], P[I[aff0, 2]] - P[I[aff0, 0]])
+        scale = 1.0
+        while True:  # R2b: the fold guard, the whole move halved until no lip triangle turns past LIP_FLIP_DOT
+            Qw = Q0 + mv * scale
+            P1 = Qw[weld]
+            n_b = np.cross(P1[I[aff0, 1]] - P1[I[aff0, 0]], P1[I[aff0, 2]] - P1[I[aff0, 0]])
+            dt = np.sum(n_a * n_b, 1) / np.maximum(np.linalg.norm(n_a, axis=1) * np.linalg.norm(n_b, axis=1), 1e-24)
+            if not len(dt) or dt.min() >= LIP_FLIP_DOT or scale <= 1.0 / 64:
+                break
+            scale *= 0.5
         fn = np.cross(P1[I[:, 1]] - P1[I[:, 0]], P1[I[:, 2]] - P1[I[:, 0]])
         acc = np.zeros((nw, 3))
         for k in range(3):
@@ -755,6 +766,7 @@ def lip_smooth(A, I, cls, centres, r, steps, mode):
         out["TANGENT"] = T
     turn = np.degrees(np.arccos(np.clip(np.sum(N[hit] * N1[hit], 1), -1, 1)))
     rep = {"mode": mode, "steps": steps, "rings": LIP_RINGS, "positions": int(free.sum()), "vertices": int(hit.sum()),
+           "scale": scale if mode == "taubin" else 1.0,
            "max_move_mm": round(float(np.linalg.norm(Qw - Q0, axis=1).max()) * 1000, 3),
            "normal_turn_deg": {"p50": round(float(np.median(turn)), 2) if len(turn) else 0.0,
                                "max": round(float(turn.max()), 2) if len(turn) else 0.0},
@@ -762,6 +774,50 @@ def lip_smooth(A, I, cls, centres, r, steps, mode):
     if rep["min_face_dot"] < LIP_FLIP_DOT:
         raise SystemExit(f"LIVELY lip smooth: a lip triangle turned (face dot {rep['min_face_dot']})")
     return out, rep
+
+
+def rim_split(A, I, cls, views):
+    """R2b: the dark wedge at the eye's outer corner. A vertex that an eyeball and a lid triangle share carries one
+    normal for both: Meshy's, bent into the lid's fold, and eyeball_fix fades the sphere's radial normal in only from
+    6 % of r off the lid line. Where the lid meets the eyeball at a sharp corner the eyeball's triangles fan out from
+    a few such vertices, so the bent normal is interpolated over a wide grey wedge that reads as a hole. Here every
+    vertex shared by both classes is copied for the eyeball's triangles (the same position, UV and every other
+    attribute, so no edge opens), and every eyeball vertex, the copies too, takes its eye's sphere's radial normal
+    in full (views: eyeball_fix's per-eye fitted sphere); the lid keeps its own normals. Tangents are made orthogonal
+    again. Returns A (new arrays), I and the report."""
+    eb_v = np.zeros(len(A["POSITION"]), bool)
+    lid_v = np.zeros(len(A["POSITION"]), bool)
+    eb_v[I[cls].ravel()] = True
+    lid_v[I[~cls].ravel()] = True
+    shared = np.nonzero(eb_v & lid_v)[0]
+    remap = np.arange(len(A["POSITION"]))
+    remap[shared] = len(A["POSITION"]) + np.arange(len(shared))
+    out = {k: np.concatenate([v, v[shared]]) for k, v in A.items()}
+    I1 = I.copy()
+    I1[cls] = remap[I[cls]]
+    P = out["POSITION"]
+    spheres = [(np.asarray(cl), rl) for (_sel, _r0, cl, rl, *_rest) in views.values()]
+    own = np.zeros(len(P), bool)
+    own[I1[cls].ravel()] = True
+    idx = np.nonzero(own)[0]
+    d = np.stack([np.linalg.norm(P[idx] - c, axis=1) - rl for c, rl in spheres], 1)
+    k = np.argmin(np.abs(d), 1)
+    cen = np.stack([spheres[j][0] for j in k])
+    rad = P[idx] - cen
+    rad /= np.maximum(np.linalg.norm(rad, axis=1), 1e-12)[:, None]
+    N = out["NORMAL"].copy()
+    turn = np.degrees(np.arccos(np.clip(np.sum(N[idx] * rad, 1), -1, 1)))
+    N[idx] = rad
+    out["NORMAL"] = N
+    if "TANGENT" in out:
+        T = out["TANGENT"].copy()
+        for i in idx:
+            T[i] = G.orthogonal_tangent(tuple(N[i]), tuple(T[i]))
+        out["TANGENT"] = T
+    rep = {"copied": int(len(shared)), "eyeball_vertices": int(len(idx)),
+           "normal_turn_deg": {"p50": round(float(np.median(turn)), 2), "p99": round(float(np.percentile(turn, 99)), 2),
+                               "max": round(float(turn.max()), 2)}}
+    return out, I1, rep
 
 
 def rim_mask(mask, UV, I, cls, band):
@@ -907,6 +963,9 @@ def main():
                     help="R2: with --rim-cut, the lid's lip smoothed this many steps (lip_smooth; 0: as cut)")
     ap.add_argument("--lip-mode", choices=("normals", "taubin"), default="taubin",
                     help="R2: lip_smooth's mode: the normals alone, or Taubin steps of the positions and the normals")
+    ap.add_argument("--rim-split", action="store_true",
+                    help="R2b: with --rim-cut, the eyeball's rim vertices split from the lid's and every eyeball vertex"
+                         " given its sphere's radial normal (rim_split: the outer corner's dark wedge)")
     ap.add_argument("--skull-margin", type=float, default=0.06,
                     help="the crest weight fades in over this distance below the crest root's radius from the head centre")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -914,6 +973,8 @@ def main():
         raise SystemExit("LIVELY --rim-cut needs the pit fix: drop --no-pit-fix or --rim-cut")
     if args.lip_smooth > 0 and args.rim_cut <= 0:
         raise SystemExit("LIVELY --lip-smooth needs --rim-cut")
+    if args.rim_split and args.rim_cut <= 0:
+        raise SystemExit("LIVELY --rim-split needs --rim-cut")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     data = Path(args.glb).read_bytes()
@@ -953,6 +1014,9 @@ def main():
             if args.lip_smooth > 0:  # R2: the lid's lip, the white fringe under the eye
                 A, cut["lip"] = lip_smooth(A, I, eyeball, centres, r, args.lip_smooth, args.lip_mode)
                 print(f"LIVELY lip: {json.dumps(cut['lip'])}", flush=True)
+            if args.rim_split:  # R2b: the outer corner's dark wedge, the eyeball shaded as its sphere up to the lid
+                A, I, cut["split"] = rim_split(A, I, eyeball, views)
+                print(f"LIVELY rim split: {json.dumps(cut['split'])}", flush=True)
             P, N1, T1, UV = A["POSITION"], A["NORMAL"], A["TANGENT"], A["TEXCOORD_0"]
             for k, i in prim["attributes"].items():
                 G.replace_accessor(doc, binary, i, A[k].tolist())
