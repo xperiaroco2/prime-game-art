@@ -1,0 +1,48 @@
+# The ship's crystal charger (art#263's stations).
+# Built by tools/blender/charger_run.py --tag b4 --asset assets/prop/crystal_charger; a rebuild
+# changes the hashes below.
+id = "crystal_charger"
+kind = "prop"
+slot = ""
+title = "The ship's crystal charger"
+notes = "The crystal charger, one on each lens room's aft wall (renewer_e, renewer_w): a round faceted bronze and graphite base cut at the back against the wall, raised to the hip (the deck with the slot at 85 cm, the fixed outer prongs to 130 cm), three feet, the start button at 72 cm; leaves: the carrier under the crystal (rises 6 cm, spins; crystal_anchor), the track ring with the inner prongs (spins), the button (presses 1 cm). 36,804 triangles, front +Z, origin on the floor at the wall's face. From the sheet the engineer approved on 2026-10-25 and its drawing in cm (prime-game-design commit 5458033, ideas/ship-components/stations-final: charger.jpg, an AI concept used only as a reference, and charger-drawing/; copied to the raw folder), built from code in headless Blender (tools/blender/charger_build.py from charger_dims.toml): no part of the model was generated or downloaded."
+tools = ["blender 5.2.2", "prime-game-art charger_build.py, charger_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-25
+url = "https://github.com/xperiaroco2/prime-game-art/issues/263"
+
+[[raw]]
+file = "ship/v4/charger/ref/charger.jpg"
+sha256 = "6b1931648d36731185887e01088d71728c68f8c5027c9d89d1a10185d0320758"
+
+[[raw]]
+file = "ship/v4/charger/ref/drawing.js"
+sha256 = "caf7e90c24378dfa29825ff07e704066ad2bf186a965eb946ede3b71fea3a56a"
+
+[[raw]]
+file = "ship/v4/charger/ref/drawing.html"
+sha256 = "573e783130e8bff433ff8b3741f36bd7c2ac8ed5d35db2d6773e082719c61339"
+
+[[raw]]
+file = "ship/v4/charger/ref/front-ortho.jpg"
+sha256 = "f8327260088fcdeb1f9b0f7d49daf10dda360a3b09c35fa470499f787d47d9e1"
+
+[[raw]]
+file = "ship/v4/charger/b4/crystal_charger.glb"
+sha256 = "d75ce0b2251e48006b3c7efe617a6a28eace33d76a2f66265d10719bcbe68b0b"
+
+[[raw]]
+file = "ship/v4/charger/b4/crystal_charger.blend"
+sha256 = "58344168f4bb8fb863d76835d5c5c0dd0c222ea1dcc8f1529160f3c065e2f287"
