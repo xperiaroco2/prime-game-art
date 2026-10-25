@@ -407,8 +407,8 @@ def rim_smooth(P, N, T, I, eyeball, centres, r, iters):
 RIM_CUT_SNAPS = 40  # R1: at most this many rounds of snapping slivers through a corner (the build fails beyond)
 RIM_CUT_RINGS = 2  # R1: the cut's band, rings of triangles round the rim (1: a lid tooth two triangles deep stays)
 RIM_CUT_MAX_AREA_PCT = 3.0  # R2: the largest net change of an eye's eyeball area by the cut (%): a fair curve through a
-# one-triangle sawtooth gives as much area to the lid as it takes, so the net stays near 0; a ring of rim triangles is
-# about 5 % of the eyeball patch, so 3 % flags a curve biased by more than half a ring (the build fails)
+# one-triangle sawtooth gives as much area to the lid as it takes, so the net stays near 0 (the test's sawtooth discs);
+# R1's chameleon cut (v8cut_r1e's settings) changes one eye by 4.15 % and fails here: its trimmed fit is biased
 
 
 def rim_graph(P, I, cls, near_t):
@@ -1800,4 +1800,5 @@ def crest_view(path, P, w, head_c, r_skull, size=640):
     G.write_png(path, 2 * size, size, img.tobytes())
 
 
-main()
+if __name__ == "__main__":  # R2: test_alien_lively_cut imports the module
+    main()
