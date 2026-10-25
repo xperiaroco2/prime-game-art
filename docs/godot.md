@@ -1312,6 +1312,13 @@ pilot's static premium heads"):
   - Chameleon (`lively/v8cut_r1e`, order 8): zigzag 3.41 to 1.00 mm median, 18.44 to 12.90 max; rim junctions 20 to 0
     (one loop per eye); 4112 band triangles into 4760 pieces, 350 new vertices; 68 clamped and 179 snapped positions
     (the cut 0.41 mm median, 13.4 max off the curve there); largest move 0; bad pieces 0; open/non-manifold 0/0.
+  - Axolotl (`lively/axolotl_v8cut_r1`, order 8): zigzag 2.20 to 0.63 mm median, 8.16 to 3.05 max; junctions 6 to 0;
+    1143 band triangles into 1285 pieces, 75 new vertices; 0 clamped, 105 snapped (0.24 mm median, 1.15 max off the
+    curve); largest move 0; bad pieces 0; open/non-manifold 0/0.
+  - Whole-head gate on `anim_bare/r1/build` vs r5 (front, left, back, right): chameleon 0.303, 0.219, 0.111, 0.306
+    (A3d 0.311, 0.221, 0.111, 0.306); axolotl 0.077, 0.027, 0.065, 0.027 (A3d 0.079, 0.027, 0.065, 0.027). The back
+    view is unchanged; the views that show the eyes moved by up to 0.008, closer to r5.
+  - Left: the lid's lip still catches light along its own faces (geometry, not the mask); the cut does not reshape it.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
