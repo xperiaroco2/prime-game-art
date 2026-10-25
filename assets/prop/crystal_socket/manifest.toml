@@ -1,0 +1,47 @@
+# The ship's crystal socket (art#263's stations).
+# Built by tools/blender/socket_run.py --tag b4 --asset assets/prop/crystal_socket; a rebuild changes the hashes below.
+id = "crystal_socket"
+kind = "prop"
+slot = ""
+title = "The ship's crystal socket"
+notes = "The wall socket that holds one energy crystal, four of them on the ship's hall walls: a bronze and graphite frame 46.8 cm wide and 87.4 cm tall with its red problem-lamp, 22.2 cm out of the wall, two fixed claws holding the built crystal's cap, a cyan strip round the bay and amber windows; 2,338 triangles in five surfaces, convex colliders, the crystal_anchor node at the crystal's pivot. Front +Z, origin on the wall at floor level under the axis. States: export/socket.gd set_state (HANDOFF.md). From the sheet the engineer picked on 2026-10-25 and its drawing in cm (prime-game-design ea27a81, ideas/ship-components/stations-final: socket.jpg, socket-drawing/; copied to the raw folder). The sheet and the drawing's straight views are AI images (OpenAI gpt-image, batch 2026-10-25-ship-socket-drawing), used only as references; the model is built from code in headless Blender (tools/blender/socket_build.py from socket_dims.toml): no part of it was generated or downloaded."
+tools = ["blender 5.2.2", "prime-game-art socket_build.py, socket_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-25
+url = "https://github.com/xperiaroco2/prime-game-art/issues/263"
+
+[[raw]]
+file = "ship/v4/socket/ref/socket.jpg"
+sha256 = "56ee51694d15bb3b3b357efc67568a4a6dc1188148997f5b75ea7fba322ef35c"
+
+[[raw]]
+file = "ship/v4/socket/ref/front-ortho.jpg"
+sha256 = "1e707623e365291ee76635c83a00126a2a8660b0981d2b4c343cace31beb9a2a"
+
+[[raw]]
+file = "ship/v4/socket/ref/side-ortho.jpg"
+sha256 = "6ddf9b93dc21876bd40b1948d0a85a8937afffc00765991721ab04ba17526496"
+
+[[raw]]
+file = "ship/v4/socket/ref/drawing.js"
+sha256 = "d37d049ace3dbc219c6173a421e550ad396e1b1fcc442359d4eb5e0a327956f6"
+
+[[raw]]
+file = "ship/v4/socket/b4/crystal_socket.glb"
+sha256 = "3173840f982f65d2af9f1bc425fa07701cd7657a9478752baa2037ca0a46d62d"
+
+[[raw]]
+file = "ship/v4/socket/b4/crystal_socket.blend"
+sha256 = "b431a64f10d6b2b0ff668dfa40713ae8071b3e46c9dd206f9fe0e84360277b08"

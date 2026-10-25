@@ -1,0 +1,108 @@
+{
+  "asset": "crystal_socket",
+  "built_by": "tools/blender/socket_run.py --tag b4 --asset assets/prop/crystal_socket",
+  "mesh": {
+    "triangles": 2338,
+    "triangles_by_material": {
+      "socket_bronze": 1212,
+      "socket_cyan": 176,
+      "socket_graphite": 480,
+      "socket_amber": 88,
+      "socket_lamp": 382
+    },
+    "vertices": 1205,
+    "size_cm": {
+      "u": 46.78,
+      "d": 22.2,
+      "h": 87.4
+    },
+    "u_cm": [
+      -23.39,
+      23.39
+    ],
+    "d_cm": [
+      0.0,
+      22.2
+    ],
+    "h_cm": [
+      87.4,
+      174.8
+    ]
+  },
+  "front": "+Z (out of the wall)",
+  "origin": "on the wall's face at the hall's floor level, under the crystal's axis",
+  "mount_cm": 140.0,
+  "crystal_anchor_cm": {
+    "u": 0.0,
+    "d": 17.0,
+    "h": 122.55
+  },
+  "colliders": {
+    "crystal_socket_col0-convcolonly": 28,
+    "crystal_socket_col1-convcolonly": 12,
+    "crystal_socket_col2-convcolonly": 12,
+    "crystal_socket_col3-convcolonly": 28,
+    "crystal_socket_col4-convcolonly": 40
+  },
+  "checks": {
+    "cap_half_cm": 6.81,
+    "claw_gap_cm": 0.03,
+    "claw_hold_cm": 1.35,
+    "tip_gap_cm": 0.295,
+    "crystal_top_cm": 157.45,
+    "header_clear_cm": 0.95,
+    "crystal_back_cm": 10.19,
+    "crystal_vs_socket_pairs": 0,
+    "crystal_vs_socket_by_part": {},
+    "crystal_vs_colliders_pairs": 0,
+    "pull_out_pairs_per_2cm": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "parts": [
+      "plate",
+      "outer",
+      "bay",
+      "lip",
+      "strip",
+      "ring",
+      "header",
+      "claws",
+      "block",
+      "collar",
+      "slots",
+      "neck",
+      "lamp_ring",
+      "lamp"
+    ],
+    "parts_touching_nothing": [],
+    "open_edges": 0,
+    "coplanar_overlaps": []
+  },
+  "states": {
+    "charged": "socket.gd set_state(look, \"charged\"): the lamp off",
+    "spent": "set_state(look, \"spent\"): the lamp lit red",
+    "empty": "set_state(look, \"empty\"): the lamp lit red, no crystal on the anchor"
+  },
+  "placement": "the four socket spots of layouts/ship/ship.toml (socket_e, socket_w, socket_fe, socket_fw): origin at the spot's `at` on the deck (floor_h), yaw atan2(normal x, normal y) so glTF +Z is the spot's normal",
+  "gltf_validator": {
+    "numErrors": 0,
+    "numWarnings": 0,
+    "numInfos": 6,
+    "numHints": 0
+  },
+  "review": "<raw>/ship/v4/socket/b4/hall/sheet.png"
+}
