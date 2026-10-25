@@ -1,10 +1,10 @@
 {
   "asset": "breaker_board",
-  "built_by": "tools/blender/board_run.py --tag b3 --asset assets/prop/breaker_board",
+  "built_by": "tools/blender/board_run.py --tag b4 --asset assets/prop/breaker_board",
   "mesh": {
-    "triangles": 17422,
+    "triangles": 17450,
     "triangles_by_material": {
-      "board_graphite": 2772,
+      "board_graphite": 2800,
       "board_bronze": 7432,
       "board_cyan": 156,
       "board_cable": 3864,
@@ -17,7 +17,7 @@
       "board_beacon": 862
     },
     "triangles_by_object": {
-      "board_body": 12072,
+      "board_body": 12100,
       "shell_red": 672,
       "core_red": 116,
       "lamp_red": 334,
@@ -44,7 +44,7 @@
     },
     "size_m": [
       1.6,
-      0.31,
+      0.385,
       1.254
     ],
     "front": "+Z (out of the wall)",
@@ -99,7 +99,7 @@
         80.0
       ],
       "d": [
-        -0.0,
+        -7.5,
         31.0
       ],
       "h": [
@@ -139,19 +139,21 @@
   "placement": {
     "breaker_e": {
       "at_godot": [
-        6.6638,
+        6.6533,
         1.2,
-        -0.9019
+        -0.8327
       ],
-      "yaw_deg": -8.662
+      "yaw_deg": -8.662,
+      "mount_d_cm": 7.0
     },
     "breaker_w": {
       "at_godot": [
-        -6.6638,
+        -6.6533,
         1.2,
-        -0.9019
+        -0.8327
       ],
-      "yaw_deg": 8.662
+      "yaw_deg": 8.662,
+      "mount_d_cm": 7.0
     }
   },
   "gltf_validator": {
@@ -160,5 +162,5 @@
     "numInfos": 25,
     "numHints": 0
   },
-  "review": "<raw>/ship/v4/board/b3/corridor/sheet.png"
+  "review": "<raw>/ship/v4/board/b4/corridor/sheet.png"
 }

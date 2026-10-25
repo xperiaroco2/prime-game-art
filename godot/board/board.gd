@@ -20,29 +20,36 @@ const TRIP := deg_to_rad(110.0)                         # a shell's local rotati
 const ENAMEL := {"red": Color(0.78, 0.09, 0.07), "yellow": Color(0.93, 0.68, 0.08),
 	"green": Color(0.13, 0.55, 0.22), "blue": Color(0.12, 0.25, 0.75)}
 const CYAN := Color(0.0, 0.62, 1.0)
-const CYAN_ENERGY := 2.4
+const CYAN_ENERGY := 3.6         # board-2: the sheet's bright lines (step 1: 2.4; the socket's 4.0)
+const BRONZE := Color(0.56, 0.46, 0.32)       # sRGB, the socket's (socket.gd BRONZE, BRONZE_EDGE)
+const BRONZE_EDGE := Color(1.0, 0.9, 0.7)
 const LAMP := [Color(0.02, 0.02, 0.02), Color(1.0, 0.62, 0.02), Color(0.1, 1.0, 0.22)]   # dark, yellow, green
 const LAMP_ENERGY := 2.2
 const BEACON := Color(1.0, 0.06, 0.03)
 const BEACON_ENERGY := 3.0
-const BEACON_LIGHT := 0.9
+const BEACON_LIGHT := 0.6
+const BEACON_RANGE := 0.45
 
 
 ## Returns the look: {"shells" (Node3D x4), "cores" (ShaderMaterial x4), "lamps" (StandardMaterial3D x4), "beacon"
 ## (StandardMaterial3D), "beacon_light" (OmniLight3D), "open" (float x4), "lamp" (int x4), "problem"}.
 static func apply(root: Node3D) -> Dictionary:
+	# board-2: the crystal socket's bronze and graphite (godot/socket/socket.gd, socket-2 build b5), one metal for
+	# the stations (step 1: the console's (0.774, 0.556, 0.349), metallic 0.4, lift 0.1 read flat tan)
 	var bronze := ShaderMaterial.new()
 	bronze.shader = METAL
-	bronze.set_shader_parameter("metallic", 0.4)  # fully metallic mirrors the dark corridor and reads black
-	bronze.set_shader_parameter("roughness", 0.4)
+	bronze.set_shader_parameter("base_color", BRONZE)
+	bronze.set_shader_parameter("worn_color", BRONZE_EDGE)
+	bronze.set_shader_parameter("metallic", 0.75)
+	bronze.set_shader_parameter("roughness", 0.32)
 	bronze.set_shader_parameter("wear", 1.0)
-	bronze.set_shader_parameter("lift", 0.1)
+	bronze.set_shader_parameter("lift", 0.08)
 	var graphite := ShaderMaterial.new()
 	graphite.shader = METAL
-	graphite.set_shader_parameter("base_color", Color(0.25, 0.255, 0.27))
-	graphite.set_shader_parameter("worn_color", Color(0.6, 0.6, 0.6))
+	graphite.set_shader_parameter("base_color", Color(0.272, 0.276, 0.293))
+	graphite.set_shader_parameter("worn_color", Color(0.634, 0.626, 0.618))
 	graphite.set_shader_parameter("metallic", 0.75)
-	graphite.set_shader_parameter("roughness", 0.4)
+	graphite.set_shader_parameter("roughness", 0.38)
 	var cyan := StandardMaterial3D.new()
 	cyan.albedo_color = Color(0.02, 0.05, 0.06)
 	cyan.emission_enabled = true
@@ -110,8 +117,11 @@ static func apply(root: Node3D) -> Dictionary:
 	var light := OmniLight3D.new()
 	light.name = "BoardBeaconLight"
 	light.light_color = BEACON
-	light.omni_range = 1.6
-	light.omni_attenuation = 1.5
+	# board-2: a short reach. At 1.6 m it caught the corridor wall's panel seams over the board as red streaks (the
+	# step 1 shots); now it reddens the board's top and the wall just round the dome, and its specular is low
+	light.omni_range = BEACON_RANGE
+	light.omni_attenuation = 2.0
+	light.light_specular = 0.2
 	light.shadow_enabled = false
 	root.add_child(light)
 	light.position = Vector3(0.0, 1.38, 0.2)  # over the dome, a little out of the wall (metres, the board's frame)

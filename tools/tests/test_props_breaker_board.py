@@ -60,6 +60,20 @@ class BreakerBoardDrawing(unittest.TestCase):
         self.assertAlmostEqual(d["lamp"]["h"], 114.6, delta=0.05)
         self.assertAlmostEqual(d["cables"]["low"], 17.8, delta=0.05)
 
+    def test_mount_clears_the_wall(self) -> None:
+        """board-2: rays on the built ship (b5b) at both spots: the wall's pillow panels stand up to 7.0 cm proud of
+        the spot's face plane inside the board's outline, and the wall is vertical to 1.45 m over the deck."""
+        d = tomllib.loads(DIMS.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(d["mount"]["d"], 7.0)
+        self.assertGreater(d["mount"]["back"], 0.0)  # the mount block reaches into the wall's body: no gap
+        self.assertLess(d["beacon"]["dome"]["top"], 145.0)
+        s, o, sh = d["bays"]["surround"], d["bays"]["opening"], d["shell"]
+        self.assertLess(sh["w"] / 2, d["bays"]["strip"]["u"][0])           # the strips clear the shell
+        self.assertLess(d["bays"]["strip"]["u"][1], o["w"] / 2 - 0.5)       # and sit inside the liner
+        self.assertGreater(o["h1"], d["hinge"]["h"] + sh["len"] + 0.3)      # the shell's top clears the bezel
+        self.assertLess(s["h1"], d["lamp"]["h"] - d["lamp"]["ring_r"])      # the bezel clears the lamp ring
+        self.assertLess(s["w"], d["bays"]["u"][1] - d["bays"]["u"][0])     # two bezels do not touch
+
 
 class BreakerBoardAsset(unittest.TestCase):
     def test_manifest_is_valid(self) -> None:
@@ -123,6 +137,8 @@ class BreakerBoardAsset(unittest.TestCase):
         self.assertAlmostEqual(m["shell_tripped"]["d"][1], 60.9, delta=0.5)  # the drawing's tripped reach
         self.assertAlmostEqual(m["shell_tripped"]["h"][0], 53.9, delta=0.5)
         self.assertAlmostEqual(m["cable_low_h"], 17.8, delta=0.1)
+        for spot in ("breaker_e", "breaker_w"):  # the review and the game stand the board off the wall the same
+            self.assertEqual(report["placement"][spot]["mount_d_cm"], 7.0)
         # every shell swept through its trip in tenths: no triangle crosses the body, a core, a lamp or a neighbour
         self.assertEqual(report["sweep_check"], {f"shell_{c}": {} for c in COLOURS})
 

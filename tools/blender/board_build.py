@@ -44,6 +44,7 @@ FR, BAY, SH, HG, CO, LA, BE, ST, CA = (DIMS[k] for k in ("frame", "bays", "shell
                                                           "strips", "cables"))
 COLOURS = BAY["colours"]
 CHAMFER_BLOCK, CHAMFER_SMALL = 0.5, 0.2      # cm
+CHAMFER_BROAD, BROAD_U = 1.2, 0.55           # board-2: the border, panel and bezel blocks' broad bevel, half-bright (UV0 u)
 SQ = 2.0 - math.sqrt(2.0)
 
 
@@ -206,6 +207,13 @@ def build_plate(bm) -> None:
     prism(bm, OUTER, 0.0, FR["plate_d"])
 
 
+def build_mount(bm) -> None:
+    """board-2: the block behind the plate down to the corridor wall's face plane and a little into it (the wall's
+    pillow panels stand up to [mount] d proud of it), so no gap shows between the plate and the wall."""
+    m = DIMS["mount"]
+    prism(bm, inset(0.0, FR["h0"], FR["h1"], FR["width"], FR["chamfer"], m["inset"]), -(m["d"] + m["back"]), 0.0)
+
+
 def build_border(bm) -> None:
     d0, d1, g = FR["plate_d"], FR["border_d"], SEAM / 2
     nh, nu = FR["notch"]["h"], FR["notch"]["half"]
@@ -363,7 +371,7 @@ def build_couplings(bm) -> None:
 def build_clamp_plates(bm) -> None:
     for m in CA["centre"]:
         w, h0, h1, d = CA["clamp"]["plate"]
-        box(bm, m - w / 2, m + w / 2, h0, h1, 0.0, d)
+        box(bm, m - w / 2, m + w / 2, h0, h1, -(DIMS["mount"]["d"] + DIMS["mount"]["back"]), d)  # into the wall
 
 
 def build_core(c: float):
@@ -441,7 +449,8 @@ def build_shell(c: float):
                       SH["chamfer"] - tb["inset"] * SQ)]
         l4, l5 = loop(SH["rim"], SH["back_d"]), loop(SH["rim"], SH["cup_floor_d"])
         bridge(bm, l0, l1, 3)  # the sides and the back rim in the enamel: a tripped shell reads as the sheet's
-        bridge(bm, l1, l2, 0)  # coloured tray round its dark ribs; the bronze is the lip round the facets
+        bridge(bm, l1, l2, 1)  # coloured tray round its dark ribs; the bronze is the lip round the facets, marked
+        # as a worn bright edge (slot 1, the chamfer's: UV0 u = 1; board-2, the sheet's bright rims)
         bridge(bm, l2, l3, 3)
         cap(bm, l3, 3)
         bridge(bm, l4, l0, 3)
@@ -541,7 +550,7 @@ def make_object(name: str, parts: list, origin: Vector | None = None) -> bpy.typ
             v = facet_random(f.calc_center_median() / CM)
             uv = bm.loops.layers.uv.get("UVMap") or bm.loops.layers.uv.new("UVMap")
             for lp in f.loops:
-                lp[uv].uv = (1.0 if marked else 0.0, v)
+                lp[uv].uv = ((BROAD_U if abs(chamfer) > 1.0 else 1.0) if marked else 0.0, v)
         tmp = bpy.data.meshes.new("tmp2")
         bm.to_mesh(tmp)
         bm.free()
@@ -592,11 +601,12 @@ def build() -> dict:
     build_materials()
     body = make_object("board_body", [
         (build_plate, "board_graphite", CHAMFER_SMALL),
-        (build_border, "board_bronze", CHAMFER_BLOCK),
+        (build_mount, "board_graphite", 0.0),
+        (build_border, "board_bronze", CHAMFER_BROAD),
         (build_slab, "board_graphite", CHAMFER_SMALL),
-        (build_panel, "board_bronze", CHAMFER_BLOCK),
+        (build_panel, "board_bronze", CHAMFER_BROAD),
         (build_liners, "board_graphite", CHAMFER_SMALL),
-        (build_surrounds, "board_bronze", CHAMFER_SMALL),
+        (build_surrounds, "board_bronze", CHAMFER_BROAD),  # board-2: the chunky bezels' broad bevel
         (build_knuckles, "board_bronze", 0.0),
         (build_holders, "board_bronze", 0.0),
         (build_lamp_rings, "board_bronze", CHAMFER_SMALL),

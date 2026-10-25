@@ -26,14 +26,25 @@ inner_chamfer = 6.0              # the inner panel's corners
 seam = 0.5                       # the dark joint between two bronze blocks
 notch = { half = 9.6, h = 124.9 }   # the border's seat for the beacon, at the top's middle
 
+[mount]                          # board-2: how the board stands on the corridor's wall (rays on the built ship, b5b)
+d = 7.0                          # the board's d 0 stands this far out of the spot's face plane: the wall's pillow
+                                 # panels stand 4.4 .. 7.0 proud of it inside the board's outline (the crown 7.0 at
+                                 # u 0, h 60 over the deck), so the plate's back rests on their crowns
+back = 0.5                       # the mount block reaches this far behind the face plane, into the wall's body
+inset = 0.6                      # the mount block's outline inside the plate's: a shadow line under the plate
+
 [bays]                           # the four bays, left to right red, yellow, green, blue
 u = [-50.4, -16.8, 16.8, 50.4]
 colours = ["red", "yellow", "green", "blue"]
 socket_d = 10.0                  # the pocket's floor behind the shell
 pocket_h0 = 64.3                 # the pocket, the opening's width, down to the surround's bottom (the hinge sits in it)
-surround = { w = 29.4, h0 = 64.3, h1 = 108.1, d = 28.0, chamfer = 5.0 }
-opening = { w = 27.1, h0 = 70.7, h1 = 106.2, chamfer = 4.5 }
-strip = { u = [11.0, 12.8], h = [75.0, 101.0], d = 21.5 }   # the cyan strip either side of the shell (u from the bay)
+# board-2, a look call against the sheet (its bays sit in chunky bronze bezels): the drawing's surround was
+# w 29.4, h1 108.1, chamfer 5.0 round an opening w 27.1, h1 106.2, chamfer 4.5 (1.15 cm sides, 1.9 top); now 3.0 cm
+# sides and 3.6 top, 1.25 inward and 0.8 outward (2.6 between two bays), the strips moved in with them (were
+# u 11.0 .. 12.8). The shell (w 20.4, top 104.9, its swing's highest point 105.0) and the lamp ring (low 109.75) clear.
+surround = { w = 31.0, h0 = 64.3, h1 = 109.2, d = 28.0, chamfer = 5.5 }
+opening = { w = 25.0, h0 = 70.7, h1 = 105.6, chamfer = 4.0 }
+strip = { u = [10.7, 11.9], h = [75.0, 101.0], d = 21.5 }   # the cyan strip either side of the shell (u from the bay)
 
 [shell]                          # one leaf per bay, turned round its bottom hinge axis
 w = 20.4
@@ -65,7 +76,7 @@ depth = 6.8                      # drawing 10.3 round; flattened so it clears th
 h0 = 78.5
 h1 = 95.9
 d = 18.0
-holder = { r = 1.95, top = 106.2, collar_r = 2.6, collar = [101.5, 103.0] }
+holder = { r = 1.95, top = 105.6, collar_r = 2.6, collar = [101.5, 103.0] }
 pin = { r = 1.25, collar_r = 2.2, collar = [76.0, 78.0] }
 
 [lamp]                           # one over each bay: yellow, then green when its shell is on

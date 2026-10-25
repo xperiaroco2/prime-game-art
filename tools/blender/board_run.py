@@ -45,6 +45,10 @@ REFS = {"v3-shell-final.jpg": "board-variants/v3-shell-final.jpg", "front-ortho.
         "side-ortho.jpg": "board-drawing/side-ortho.jpg", "drawing.js": "board-drawing/drawing.js"}
 MATERIAL_FILES = ("board.gd", "board_metal.gdshader", "board_core.gdshader")
 SPOTS = ("breaker_e", "breaker_w")
+# board-2: the ship's current build (docs/ship.md: the vents' b5b, the raise's 1.2 m deck). ship.toml's raw_dir
+# pieces/ (ship/v3/pieces, 2026-10-23 13:05) were built before the raise with their deck at 0.6 m: step 1 shot the
+# board on them, 0.6 m above that deck, so its beacon stood in the slanted upper wall.
+PIECES = RAW / "ship" / "v4" / "vents-b" / "pieces_b5b"
 SHOT_SPOT = "breaker_e"
 ON = {"open": [0, 0, 0, 0], "on": [True] * 4, "problem": False}
 TRIPPED = {"open": [0, 1, 1, 0], "on": [True, False, False, True], "problem": True}
@@ -68,6 +72,11 @@ CLOSE = [  # the edges and seams, close
     ("close_clamp", 35.0, 12.0, (-37.3, 10.0, 24.0), 0.5, 50.0, ON),
     ("close_plate", -72.0, 10.0, (-78.0, 4.0, 62.0), 0.55, 50.0, ON),
     ("close_corner", 32.0, 22.0, (62.0, 22.0, 124.0), 0.55, 50.0, ON),
+    # board-2: the board against the wall from the side: the beacon and the top border under the slant, the plate's
+    # top and bottom edges on the wall's pillow panels
+    ("close_beacon_side", 82.0, 4.0, (0.0, 10.0, 132.0), 0.55, 50.0, TRIPPED),
+    ("close_top_side", 75.0, 20.0, (62.0, 6.0, 128.0), 0.6, 50.0, ON),
+    ("close_bottom_side", -78.0, -12.0, (-68.0, 4.0, 56.0), 0.6, 50.0, ON),
 ]
 
 
@@ -78,6 +87,7 @@ def main() -> int:
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--res", type=int, default=1024, help="the overlays' width in pixels")
     ap.add_argument("--asset", type=Path, help="write the asset folder here from this build")
+    ap.add_argument("--pieces", type=Path, default=PIECES, help="the built ship pieces for the corridor shots")
     args = ap.parse_args()
     copy_refs()
     out = BASE / args.tag
@@ -96,7 +106,7 @@ def main() -> int:
     print(f"validator breaker_board.glb: {text}", flush=True)
     code = 0
     if not args.no_shots:
-        code = corridor_shots(glb, out / "corridor")
+        code = corridor_shots(glb, out / "corridor", args.pieces) or studio(out)
     if args.asset and ok and code == 0:
         write_asset(args.asset, out, args.tag, report)
         print(f"asset: {args.asset}", flush=True)
@@ -129,6 +139,7 @@ def to_godot(name: str, u: float, d: float, h: float) -> list[float]:
     """The board's frame (cm: u across, d out of the wall, h up) on its spot -> Godot's world in the ship."""
     floor = ship_layout.load()["deck"]["floor_h"]
     sx, sy, nx, ny = spot(name)
+    d = d + mount_d()  # the board's d 0 stands off the spot's face plane
     rx, ry = ny, -nx  # the board's +u: its right as you face it
     return [round(sx + (u * rx + d * nx) * 0.01, 4), round(floor + h * 0.01, 4), round(sy + (u * ry + d * ny) * 0.01, 4)]
 
@@ -150,9 +161,13 @@ def view_rows() -> list:
     return rows
 
 
-def corridor_shots(glb: Path, folder: Path) -> int:
+def corridor_shots(glb: Path, folder: Path, pieces: Path) -> int:
     layout = ship_layout.load()
-    pieces = ship_cmd.raw(layout) / "pieces"
+    deck = deck_top(pieces / "cor_grate.glb")
+    if abs(deck - layout["deck"]["floor_h"]) > 0.05:
+        raise common.Failure(f"the pieces in {pieces} have their corridor deck at {deck:.3f} m, not floor_h "
+                             f"{layout['deck']['floor_h']} (built before the raise?): pass --pieces")
+    print(f"pieces: {pieces} (corridor deck {deck:.3f} m)", flush=True)
     req, staged = ship_cmd.built_request(layout, pieces)
     req["pieces"]["breaker_board"] = "res://import/breaker_board.glb"
     for s in SPOTS:
@@ -181,6 +196,37 @@ def corridor_shots(glb: Path, folder: Path) -> int:
     result = json.loads((folder / "shots.json").read_text(encoding="utf-8"))
     print(f"corridor shots: {len(result['shots'])} in {folder}", flush=True)
     return 0
+
+
+def studio(out: Path) -> int:
+    """board-2: the board on a neutral backdrop at the sheet's hero angle (godot/board/studio.gd, after the corridor
+    shots staged the board): <tag>/studio/studio.png and <tag>/compare_sheet.png beside the sheet."""
+    folder = out / "studio"
+    folder.mkdir(parents=True, exist_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s",
+                                  "res://board/studio.gd", "--", folder.as_posix(),
+                                  (REF / "v3-shell-final.jpg").as_posix()], (1100, 800), 300,
+                                 log=out / "godot_studio.log")
+    print(*[x for x in output.splitlines() if x.startswith("BOARD")], sep="\n")
+    if code != 0 or not (folder / "compare_sheet.png").is_file():
+        print("studio shots failed:\n" + "\n".join(output.splitlines()[-20:]))
+        return code or 1
+    shutil.copyfile(folder / "compare_sheet.png", out / "compare_sheet.png")
+    return 0
+
+
+def mount_d() -> float:
+    """The board's stand-off from its spot's face plane, cm (board_dims.toml [mount] d)."""
+    return float(board_drawing.DIMS["mount"]["d"])
+
+
+def deck_top(glb: Path) -> float:
+    """A built piece's highest point (metres, glTF +Y up): the accessors' max in its GLB's JSON chunk."""
+    data = glb.read_bytes()
+    size = int.from_bytes(data[12:16], "little")
+    doc = json.loads(data[20:20 + size])
+    acc = doc["accessors"]
+    return max(acc[p["attributes"]["POSITION"]]["max"][1] for m in doc["meshes"] for p in m["primitives"])
 
 
 def sha256(path: Path) -> str:
@@ -216,7 +262,8 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
                    "lamp": "set_on(look, i, on): green on, dark off; set_lamp(look, i, 0 dark | 1 yellow | 2 green)",
                    "beacon": "set_problem(look, on): the red dome and its light",
                    "core": "set_core(look, i, glow): the crystal core's glow, 1 full"},
-        "placement": {s: {"at_godot": to_godot(s, 0.0, 0.0, 0.0), "yaw_deg": round(yaw(s), 3)} for s in SPOTS},
+        "placement": {s: {"at_godot": to_godot(s, 0.0, 0.0, 0.0), "yaw_deg": round(yaw(s), 3),
+                          "mount_d_cm": mount_d()} for s in SPOTS},
         "gltf_validator": {k: counts.get(k, 0) for k in ("numErrors", "numWarnings", "numInfos", "numHints")},
         "review": f"<raw>/ship/v4/board/{tag}/corridor/sheet.png",
     }

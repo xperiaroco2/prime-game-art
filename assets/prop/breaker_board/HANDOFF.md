@@ -46,15 +46,19 @@ point is the core's centre, (u, 0.872, 0.18).
 
 ## Placement
 
-On both breaker spots (`layouts/ship/ship.toml` `[[stations.spot]]`), its back flat on the wall's face, u 0 on the
-spot, on the deck (floor_h 1.2), turned about Y so its +Z is the spot's normal (`report.json` `placement`):
+On both breaker spots (`layouts/ship/ship.toml` `[[stations.spot]]`): u 0 on the spot, its h 0 on the deck
+(floor_h 1.2), turned about Y so its +Z is the spot's normal, and **moved 0.07 m out along the normal** from the
+spot's `at` (`report.json` `placement`, `mount_d_cm`). The spot's `at` lies on the corridor wall's face plane (its
+seams), and the wall's pillow panels stand 4.4 to 7.0 cm proud of it inside the board's outline: the plate's back
+rests on their crowns, and the graphite mount block behind it (and the cable clamps) reaches 0.075 m back, 0.005 m
+into the wall's body, so no gap shows. The wall stands vertical to 1.45 m over the deck; the beacon's top is at
+1.404 (measured by rays on the built ship, board-2).
 
 | Spot | Plan (x, y) | Normal | Yaw (deg) |
 |---|---|---|---|
 | `breaker_e` | (6.6638, -0.9019) | (-0.1506, 0.9886) | -8.66 |
 | `breaker_w` | (-6.6638, -0.9019) | (0.1506, 0.9886) | 8.66 |
 
-**Open: the corridor's wall.** The drawing keeps everything under 1.45 m, where the corridor's wall was to start
-slanting. In the built ship (`<raw>/ship/v3/pieces/`) the wall at `breaker_e` leans in lower than that: the review
-shots show the beacon and the top border's back inside the wall and the lower wall a few centimetres behind the
-plate. See the PR; the ship's layout or the spot needs a decision before the board goes in.
+Step 1's "beacon inside the wall" was its review scene, not the ship: it stood the board on a ship build made
+before the raise (deck at 0.6 m), 0.6 m above that deck. The review now uses a raised build and refuses one whose
+deck is not `floor_h`.

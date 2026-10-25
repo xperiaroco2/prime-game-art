@@ -635,9 +635,24 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
    the views are the sheet's (all on, yellow and green tripped, `compare_*.png` beside the sheet), the yellow shell
    at 0, 1/4, 1/2, 3/4 and 1, and close-ups of every edge and seam.
 
+   `godot/board/studio.gd` then shoots the board on a neutral backdrop at the sheet's hero angle, `compare_sheet.png`
+   beside the sheet (the socket's studio).
+
    ```bash
-   $PYTHON_BIN tools/blender/board_run.py --tag <tag> --asset assets/prop/breaker_board
+   $PYTHON_BIN tools/blender/board_run.py --tag <tag> [--pieces DIR] --asset assets/prop/breaker_board
    ```
+6. **The wall (board-2).** Shoot on a ship build with the raised deck: `--pieces` defaults to the vents' b5b build
+   (`<raw>/ship/v4/vents-b/pieces_b5b`), and the run refuses pieces whose corridor deck (the grate's top, read from
+   the GLB) is not `floor_h`. `ship.toml`'s `raw_dir` pieces (`<raw>/ship/v3/pieces/`) predate the raise (deck 0.6):
+   step 1 shot the board on them, 0.6 m above their deck, and its beacon stood in the slanted upper wall. Rays on the
+   b5b build at both spots: the deck at 1.200; the wall's face plane through the spot's `at` (its seams at d 0); its
+   pillow panels 4.4 .. 7.0 cm proud of it inside the board's outline; vertical to 2.65 (1.45 over the deck), slanting
+   above. So the board's d 0 stands `[mount] d` (7.0 cm) out of the face plane on the panels' crowns, and a graphite
+   mount block inside the plate's outline (and the cable clamps) reaches back 0.5 cm into the wall's body: no gap.
+   Its h 0 is the deck.
+7. **The look (board-2).** The bronze and graphite are the crystal socket's values (socket-2), the bays' surrounds
+   are thickened from the drawing's 1.15 cm sides to 3.0 (the sheet's chunky bezels, a look call), the shells' bronze
+   lips carry the bright-edge mark, the beacon's light reaches 0.45 m at 0.6 energy (at 1.6 m and 0.9 it streaked the wall's panel seams red).
 
 `tools/tests/test_props_breaker_board.py` checks the drawing's numbers, the leaves' pivots and colliders, the clean
-sweep and the committed asset.
+sweep, the mount and the committed asset.
