@@ -496,7 +496,8 @@ def cut_triangle(g) -> list[tuple[list, int]]:
 
 def replace_accessor(doc: dict, binary: bytearray, i: int, rows, component: int = 5126) -> None:
     """Accessor i rewritten with new rows (any count): a new tightly packed buffer view appended (float32, or uint32
-    indices with component 5125), its count, and its min and max when it had them. The old view stays unused."""
+    indices with component 5125), its count, and its min and max when it had them. The old view stays unused:
+    compact_buffers drops it."""
     a = doc["accessors"][i]
     n = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[a["type"]]
     flat = [c for r in rows for c in (r if n > 1 else (r,))]
@@ -509,6 +510,47 @@ def replace_accessor(doc: dict, binary: bytearray, i: int, rows, component: int 
     a["componentType"] = component
     a["count"] = len(flat) // n
     a.pop("sparse", None)
-    if "min" in a:
-        a["min"] = [min(flat[j::n]) for j in range(n)]
-        a["max"] = [max(flat[j::n]) for j in range(n)]
+    if "min" in a:  # R2: as stored (float32), so the validator's bounds check matches the bytes
+        vals = struct.unpack(f"<{len(flat)}{fmt}", payload)
+        a["min"] = [min(vals[j::n]) for j in range(n)]
+        a["max"] = [max(vals[j::n]) for j in range(n)]
+
+
+def compact_buffers(doc: dict, binary: bytearray) -> bytearray:
+    """R2: the buffer views no accessor, sparse accessor or image uses dropped (replace_accessor leaves the old ones,
+    the validator's UNUSED_OBJECT and the mesh bytes twice in the GLB), the rest packed in order, 4-byte aligned, and
+    every index into bufferViews renumbered. Returns the new binary (buffer 0's byteLength set)."""
+    used = set()
+    for a in doc.get("accessors", []):
+        if "bufferView" in a:
+            used.add(a["bufferView"])
+        sp = a.get("sparse")
+        if sp:
+            used.add(sp["indices"]["bufferView"])
+            used.add(sp["values"]["bufferView"])
+    for im in doc.get("images", []):
+        if "bufferView" in im:
+            used.add(im["bufferView"])
+    views = doc.get("bufferViews", [])
+    remap, out, kept = {}, bytearray(), []
+    for k in sorted(used):
+        v = dict(views[k])
+        out.extend(bytes(-len(out) % 4))
+        start = v.get("byteOffset", 0)
+        out.extend(binary[start:start + v["byteLength"]])
+        v["byteOffset"] = len(out) - v["byteLength"]
+        remap[k] = len(kept)
+        kept.append(v)
+    doc["bufferViews"] = kept
+    for a in doc.get("accessors", []):
+        if "bufferView" in a:
+            a["bufferView"] = remap[a["bufferView"]]
+        sp = a.get("sparse")
+        if sp:
+            sp["indices"]["bufferView"] = remap[sp["indices"]["bufferView"]]
+            sp["values"]["bufferView"] = remap[sp["values"]["bufferView"]]
+    for im in doc.get("images", []):
+        if "bufferView" in im:
+            im["bufferView"] = remap[im["bufferView"]]
+    doc["buffers"][0]["byteLength"] = len(out)
+    return out

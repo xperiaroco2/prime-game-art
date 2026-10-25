@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import random
 import struct
 import sys
 import unittest
@@ -384,14 +385,22 @@ class RimCutTest(unittest.TestCase):
             G.fourier_fit(phi[:5], [0.0] * 5, 2)
 
     def test_fourier_fit_smooths_a_sawtooth_and_drops_a_spur(self):
+        """R2: an irregular sawtooth (steps in and out of uneven depth, as the rim's triangles leave them), not a
+        Nyquist alternation, which no order below 40 can see."""
+        rng = random.Random(7)
         phi = [2 * math.pi * k / 80 for k in range(80)]
-        val = [0.6 + 0.1 * math.cos(p) + (0.02 if k % 2 else -0.02) for k, p in enumerate(phi)]  # a one-step zigzag
+        truth = [0.6 + 0.1 * math.cos(p) for p in phi]
+        step = [rng.uniform(-0.02, 0.02) for _ in phi]
+        val = [t + e for t, e in zip(truth, step)]
         val[10] += 0.5  # a junction's spur
         coef, keep = G.fourier_fit_trimmed(phi, val, 4)
         self.assertFalse(keep[10])
         self.assertEqual(sum(keep), 79)
-        for p in phi:
-            self.assertAlmostEqual(G.fourier_eval(coef, p), 0.6 + 0.1 * math.cos(p), delta=0.005)
+        err = [G.fourier_eval(coef, p) - t for p, t in zip(phi, truth)]
+        rms = math.sqrt(sum(e * e for e in err) / len(err))
+        rms_in = math.sqrt(sum(e * e for k, e in enumerate(step) if k != 10) / 79)
+        self.assertLess(rms, 0.55 * rms_in)  # the steps averaged out (about sqrt(9 / 79) of them stays, 0.45 here)
+        self.assertLess(max(abs(e) for e in err), 0.012)  # and the spur left no bump
 
     def test_cut_one_corner_alone(self):
         pieces = G.cut_triangle((-1.0, 1.0, 3.0))
