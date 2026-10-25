@@ -1360,6 +1360,15 @@ pilot's static premium heads"):
     over a wedge. `rim_split()` (`--rim-split`) copies the shared vertices for the eyeball's triangles (positions,
     UVs and skin alike, no edge opens) and gives every eyeball vertex its sphere's radial normal in full; the lid keeps
     its own. Chameleon: 597 copied, 3631 eyeball vertices, their normals turned 10.4 degrees median, 116.6 at p99.
+  - Whole-head gate on `anim_bare/r2b/build` vs r5 (front, left, back, right; `build/gate_fix/`, the static head with
+    its own mask): chameleon 0.393, 0.238, 0.110, 0.340 (R1 0.303, 0.219, 0.111, 0.306); axolotl 0.118, 0.038, 0.065,
+    0.041 (R1 0.077, 0.027, 0.065, 0.027). The back views are unchanged, so the head is not reshaped; the views that
+    show the eyes moved because `rim_split` gives the whole eyeball its sphere's normal (the shading of the eyeball,
+    not its shape). The back-face test on the r2b builds (`r2b/backface_after/`): the chameleon 0 red; the axolotl's
+    red only its nostril pit's sliver. godot-check `--profile alien --strict-contract --textured`: exit 0 on both.
+  - Follow-ups from R2b's review: bound the share of eyeball normals `rim_split` turns past 90 degrees (about 1 % of
+    the chameleon's, likely inside the lid fold), or keep the faded normal far off the sphere; bound the area change
+    each way, not only the net; tests for `lip_smooth`, `rim_split`, `compact_buffers` and the area guard raising.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
