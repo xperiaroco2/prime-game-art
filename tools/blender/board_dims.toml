@@ -1,0 +1,96 @@
+# The ship's breaker board, the shells, as numbers, in centimetres (art#263's stations; the engineer picked variant 3,
+# the shells, on 2026-10-25). The headline sizes are the drawing's (prime-game-design commit 6b0e83e,
+# ideas/ship-components/stations-final/board-drawing/drawing.js, run through node: its N and D objects), traced over
+# the picked sheet's straight views (front-ortho.jpg, side-ortho.jpg; the look: ../board-variants/v3-shell-final.jpg).
+# The smaller sizes (the frame's border, the blocks' seams, the hinge's knuckles, the shell's facets, the couplings)
+# were read off the same views at the drawing's scale (7.75 px per cm on the front view, 6.15 on the side view).
+# Axes: u across the face (0 the centre line, + to the right as you face it), d out of the wall (0 the wall's face),
+# h up from the floor; in Blender x = u, y = -d (the front at -Y; glTF +Z), z = h; the origin on the wall's face at
+# the floor under the centre line.
+# tools/blender/board_build.py builds the model from these numbers; tools/blender/board_drawing.py draws them.
+
+[measure]                        # where the drawing measured the straight views (drawing.js F, S; px of 1536 x 1024)
+front = { x0 = 148, x1 = 1388, bot = 700 }     # the frame's left, right and bottom edges: 160 cm over 1240 px
+side = { wall = 888, top = 112, bot = 600 }    # the wall's face, the frame's top and bottom
+
+[frame]                          # the board's outline: an octagon on the wall
+width = 160.0
+h0 = 52.0                        # its bottom, at the knee
+h1 = 131.4                       # its top; nothing above 145, where the corridor's wall slants
+chamfer = 12.9                   # each corner cut along both axes
+plate_d = 4.0                    # the graphite wall plate, d 0 .. 4
+border = [12.5, 9.7, 11.4]       # the raised bronze border's width: sides, bottom, top (front view, 97/75/88 px)
+border_d = 24.0                  # its face; the inner panel's face at body_d
+body_d = 21.0
+inner_chamfer = 6.0              # the inner panel's corners
+seam = 0.5                       # the dark joint between two bronze blocks
+notch = { half = 9.6, h = 124.9 }   # the border's seat for the beacon, at the top's middle
+
+[bays]                           # the four bays, left to right red, yellow, green, blue
+u = [-50.4, -16.8, 16.8, 50.4]
+colours = ["red", "yellow", "green", "blue"]
+socket_d = 10.0                  # the pocket's floor behind the shell
+pocket_h0 = 64.3                 # the pocket, the opening's width, down to the surround's bottom (the hinge sits in it)
+surround = { w = 29.4, h0 = 64.3, h1 = 108.1, d = 28.0, chamfer = 5.0 }
+opening = { w = 27.1, h0 = 70.7, h1 = 106.2, chamfer = 4.5 }
+strip = { u = [11.0, 12.8], h = [75.0, 101.0], d = 21.5 }   # the cyan strip either side of the shell (u from the bay)
+
+[shell]                          # one leaf per bay, turned round its bottom hinge axis
+w = 20.4
+len = 37.2                       # from the axis to its top
+bottom = 3.3                     # its body starts this far above the axis (clear of the fixed knuckles)
+chamfer = 5.0                    # the emerald cut's corners
+back_d = 22.0
+edge_d = 26.0                    # the rim's face at the outline
+face_d = 31.0                    # the table (the flat middle facet)
+rim = 1.2                        # the bronze lip round the enamel
+table = { s = [9.0, 24.0], inset = 5.0 }   # the flat top facet, s up from the axis: the drawing's face is a dome
+                                 # (26 + 5 sin(pi s / 37.2)), so a table to the top dropped the tripped top to h 51.1
+cup_floor_d = 24.5               # the dark ribbed inside, seen when the shell hangs open
+ribs = [10.0, 17.0, 24.0, 31.0]  # their s (up from the axis), 1.0 tall, standing 1.2 off the floor
+trip_deg = 110.0                 # tripped: the top falls forward and down
+
+[hinge]
+h = 67.7
+d = 25.0
+r = 2.9                          # drawing: diameter 5.8
+w = 21.3
+knuckle = 5.3                    # the shell's own knuckle: |u| under this
+fixed = [5.6, 9.9]               # the two fixed knuckles, |u| from the bay's centre
+cap = { r = 3.2, to = 10.65 }    # their end caps
+
+[core]                           # the crystal core in its socket, fixed, glowing cyan
+w = 10.3
+depth = 6.8                      # drawing 10.3 round; flattened so it clears the closed shell's back (d 22) by 0.6
+h0 = 78.5
+h1 = 95.9
+d = 18.0
+holder = { r = 1.95, top = 106.2, collar_r = 2.6, collar = [101.5, 103.0] }
+pin = { r = 1.25, collar_r = 2.2, collar = [76.0, 78.0] }
+
+[lamp]                           # one over each bay: yellow, then green when its shell is on
+h = 114.6
+ring_r = 4.85
+lens_r = 3.1
+ring_d = 29.0
+lens_d = 30.4
+
+[beacon]                         # the red problem lamp at the top's middle
+d = 11.0
+collar = { r = 9.05, h0 = 124.9, h1 = 129.0, r2 = 7.5, h2 = 132.6 }
+dome = { r = 6.45, h0 = 132.6, top = 140.4, ribs = 8 }
+
+[strips]                         # the cyan glow strips on the border, [u0, u1] and [h0, h1]
+top = { u = [21.7, 44.3], h = [125.3, 127.9] }       # mirrored left and right
+side = { u = [73.3, 76.1], h = [81.0, 109.4] }       # mirrored
+bottom = { u = [-9.35, 9.35], h = [53.3, 55.6] }
+
+[cables]                         # two U loops of three cables under the frame, into the wall at their clamp
+centre = [-37.3, 37.3]           # drawing -37.5, 37.05: made symmetric
+outer_half = 22.95               # the loop's outer half width (drawing 45.8 and 46.5 across)
+low = 17.8                       # the loop's outer bottom
+bundle = 9.7                     # three cables side by side
+d = 12.0
+couplings = [[47.5, 51.0], [37.0, 40.5]]   # bronze sleeves on each leg, h ranges
+coupling_r = 5.8
+clamp = { w = 6.5, h0 = 16.8, h1 = 27.5, d = 17.8, plate = [9.0, 15.0, 29.5, 1.5] }   # plate: w, h0, h1, d

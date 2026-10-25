@@ -596,3 +596,48 @@ They are copied to `<raw>/start-console/ref/`.
    ```
 
 `tools/tests/test_props_start_console.py` checks the drawing's numbers in the dims file and the committed asset.
+
+## A station with moving leaves: the ship's breaker board, the shells (art#263)
+
+`assets/prop/breaker_board/`: the board on each corridor's front wall (`breaker_e`, `breaker_w`) where a tripped
+breaker is switched back on by lifting its shell. The engineer picked variant 3, the shells, on 2026-10-25
+(prime-game-design `ideas/ship-components/stations-final/board-variants/v3-shell-final.jpg`) and its drawing in cm
+(`board-drawing/`: the sheet's straight views and `drawing.js`, at commit 6b0e83e). They are copied to
+`<raw>/ship/v4/board/ref/`. The way is the console's, file for file; what differs:
+
+1. **The numbers.** `tools/blender/board_dims.toml`: the drawing's own (160 wide, the frame h 52 to 131.4, the beacon's
+   top 140.4 under the wall's slant at 145, the bays at u +-16.8 and +-50.4, the shell 20.4 wide and 37.2 from its
+   hinge axis at h 67.7, d 25, the trip of 110 degrees, the core 10.3 x 17.4 at h 87.2, d 18) and the smaller ones read
+   off the straight views at 7.75 px per cm (the border's widths, the seams, the knuckles, the facets, the couplings).
+   Two numbers had to move: the core is flattened to 6.8 deep (round, its 10.3 would cross the closed shell's back at
+   d 22), and the shell's flat top facet runs only from 9 to 24 cm up its length, because the drawing's face is a
+   dome (26 + 5 sin(pi s / 37.2)); a table to the top dropped the tripped shell's lowest point to h 51.1 against the
+   drawing's 53.9.
+2. **Build from the numbers.** `tools/blender/board_build.py` (headless Blender) cuts the octagon into convex blocks
+   (clipped polygons extruded in d) with half-centimetre joints over a graphite slab, so the border and the inner
+   panel read as the sheet's bronze blocks; each bay's surround is eight trapezoids, its bottom rail open in the
+   middle where the hinge sits. Each **leaf is its own object with its origin on its hinge axis** (local X rotation,
+   0 closed, +110 degrees tripped: the top out of the wall and down), its convex collider its child; the cores, the
+   lamps' lenses and the beacon are their own objects, so the game can light each alone. The leaf's body starts 3.3
+   cm over the axis and a lug carries it down to its own knuckle, which leaves 0.3 cm to the fixed knuckles either
+   side: a body down to the axis crossed them on the way.
+3. **The sweep check.** The build turns every shell through its trip in tenths and counts the triangles it crosses
+   on the body, the cores, the lamps and its neighbours (`build.json` `sweep_check`; empty is clean, and the test holds
+   it). `board_drawing.py` compares 23 of the drawing's numbers with the model's own vertices (`drawing/compare.json`,
+   0.5 cm tolerance) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
+   straight views at the drawing's scale.
+4. **The states** are node rotations and material values: `godot/board/board.gd` `set_shell(look, i, open01)`,
+   `set_on` / `set_lamp` (dark, yellow, green), `set_problem` (the beacon and its red light), `set_core`; the cores'
+   shader is kin to the energy crystal's core (`board_core.gdshader`), the metal is the console's (copied, so the
+   board's files stand alone). The sparks and smoke at a tripped core are the game's.
+5. **The shots** are taken in the east corridor itself: `godot/board/corridor.gd` extends `ship.gd`'s shoot mode, puts
+   a board on both spots (yaw from the spot's normal), keeps them out of the dressing pass and sets each view's state;
+   the views are the sheet's (all on, yellow and green tripped, `compare_*.png` beside the sheet), the yellow shell
+   at 0, 1/4, 1/2, 3/4 and 1, and close-ups of every edge and seam.
+
+   ```bash
+   $PYTHON_BIN tools/blender/board_run.py --tag <tag> --asset assets/prop/breaker_board
+   ```
+
+`tools/tests/test_props_breaker_board.py` checks the drawing's numbers, the leaves' pivots and colliders, the clean
+sweep and the committed asset.
