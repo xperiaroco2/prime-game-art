@@ -1,0 +1,177 @@
+{
+  "asset": "crystal_charger",
+  "built_by": "tools/blender/charger_run.py --tag b6 --asset assets/prop/crystal_charger",
+  "mesh": {
+    "triangles": 41060,
+    "by_object": {
+      "body": {
+        "triangles": 26574,
+        "by_material": {
+          "charger_graphite": 8944,
+          "charger_bronze": 16762,
+          "charger_cyan": 532,
+          "charger_amber": 96,
+          "charger_steel": 240
+        },
+        "pivot_cm": [
+          0.0,
+          -0.0,
+          0.0
+        ],
+        "open_edges": 0
+      },
+      "carrier": {
+        "triangles": 2618,
+        "by_material": {
+          "charger_bronze": 2298,
+          "charger_cyan": 320
+        },
+        "pivot_cm": [
+          0.0,
+          53.5,
+          97.4
+        ],
+        "open_edges": 0
+      },
+      "ring": {
+        "triangles": 11616,
+        "by_material": {
+          "charger_bronze": 10136,
+          "charger_cyan": 1440,
+          "charger_graphite": 36,
+          "charger_amber": 4
+        },
+        "pivot_cm": [
+          0.0,
+          53.5,
+          94.0
+        ],
+        "open_edges": 0
+      },
+      "button": {
+        "triangles": 252,
+        "by_material": {
+          "charger_lens": 252
+        },
+        "pivot_cm": [
+          0.0,
+          99.07,
+          75.9
+        ],
+        "open_edges": 0
+      }
+    },
+    "size_cm": {
+      "u": [
+        -59.51,
+        59.51
+      ],
+      "d": [
+        3.73,
+        105.25
+      ],
+      "h": [
+        0.0,
+        139.7
+      ]
+    },
+    "front": "+Z (out of the wall, along the spot's normal)",
+    "origin": "on the floor at the wall's face under the crystal's axis (the spot's `at`)"
+  },
+  "anchor_cm": [
+    0.0,
+    53.5,
+    95.1
+  ],
+  "colliders": [
+    "crystal_charger_col0-convcolonly",
+    "crystal_charger_col1-convcolonly",
+    "crystal_charger_col2-convcolonly",
+    "crystal_charger_col3-convcolonly",
+    "crystal_charger_col4-convcolonly",
+    "crystal_charger_col5-convcolonly",
+    "crystal_charger_col6-convcolonly",
+    "track_ring_col0-convcolonly",
+    "track_ring_col1-convcolonly"
+  ],
+  "checks": {
+    "wall_min_cm_body": 3.357,
+    "ring_turn": {
+      "steps_deg": 5,
+      "overlaps": 0,
+      "wall_min_cm": 29.019,
+      "worst": []
+    },
+    "carrier_rise": {
+      "overlaps": 0,
+      "steps": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0
+        ]
+      ]
+    },
+    "button_pressed_overlaps": 0,
+    "crystal_overlaps_rise0": {
+      "body": 0,
+      "ring": 0
+    },
+    "crystal_top_cm_rise0": 130.0,
+    "crystal_overlaps_rise6": {
+      "body": 0,
+      "ring": 0
+    },
+    "crystal_top_cm_rise6": 136.0
+  },
+  "states": {
+    "idle": "charger.gd set_state(look, \"idle\"): carrier down, ring still, lights at rest",
+    "charging": "set_state(look, \"charging\"); the game drives set_carrier(look, rise01, angle) and set_ring(look, angle) and its lightning",
+    "charged": "set_state(look, \"charged\"): carrier down, the cyan lights full"
+  },
+  "placement": "layouts/ship/ship.toml [[stations.spot]] renewer_e, renewer_w: origin at (at.x, floor_h, at.y), rotation.y = atan2(normal.x, normal.y)",
+  "gltf_validator": {
+    "numErrors": 0,
+    "numWarnings": 0,
+    "numInfos": 13,
+    "numHints": 0
+  },
+  "godot_cost": {
+    "draw_calls_charger": 12,
+    "gpu_ms_charger": 0.165,
+    "gpu_ms_with": 0.548,
+    "gpu_ms_without": 0.383,
+    "view": "1280x720, eye 1.6 m, 1.6 m away, charging"
+  },
+  "review": "<raw>/ship/v4/charger/b6/sheets/"
+}
