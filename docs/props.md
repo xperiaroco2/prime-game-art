@@ -667,3 +667,77 @@ They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, f
 `tools/tests/test_props_crystal_socket.py` checks the drawing's numbers, the one-number MOUNT, the claws against the
 built cap, the claws' hinge, angle and pull against the drawing and `socket.gd`, and the committed asset (anchor,
 the claws' nodes and colliders, the report's checks).
+
+## A station with moving leaves: the ship's breaker board, the shells (art#263)
+
+`assets/prop/breaker_board/`: the board on each corridor's front wall (`breaker_e`, `breaker_w`) where a tripped
+breaker is switched back on by lifting its shell. The engineer picked variant 3, the shells, on 2026-10-25
+(prime-game-design `ideas/ship-components/stations-final/board-variants/v3-shell-final.jpg`) and its drawing in cm
+(`board-drawing/`: the sheet's straight views and `drawing.js`, at commit 6b0e83e). They are copied to
+`<raw>/ship/v4/board/ref/`. The way is the console's, file for file; what differs:
+
+1. **The numbers.** `tools/blender/board_dims.toml`: the drawing's own (160 wide, the frame h 52 to 131.4, the beacon's
+   top 140.4 under the wall's slant at 145, the bays at u +-16.8 and +-50.4, the shell 20.4 wide and 37.2 from its
+   hinge axis at h 67.7, d 25, the trip of 110 degrees, the core 10.3 x 17.4 at h 87.2, d 18) and the smaller ones read
+   off the straight views at 7.75 px per cm (the border's widths, the seams, the knuckles, the facets, the couplings).
+   Two numbers had to move: the core is flattened to 6.8 deep (round, its 10.3 would cross the closed shell's back at
+   d 22), and the shell's flat top facet runs only from 9 to 24 cm up its length, because the drawing's face is a
+   dome (26 + 5 sin(pi s / 37.2)); a table to the top dropped the tripped shell's lowest point to h 51.1 against the
+   drawing's 53.9.
+2. **Build from the numbers.** `tools/blender/board_build.py` (headless Blender) cuts the octagon into convex blocks
+   (clipped polygons extruded in d) with half-centimetre joints over a graphite slab, so the border and the inner
+   panel read as the sheet's bronze blocks; each bay's surround is eight trapezoids, its bottom rail open in the
+   middle where the hinge sits. Each **leaf is its own object with its origin on its hinge axis** (local X rotation,
+   0 closed, +110 degrees tripped: the top out of the wall and down), its convex collider its child; the cores, the
+   lamps' lenses and the beacon are their own objects, so the game can light each alone. The leaf's body starts 3.3
+   cm over the axis and a lug carries it down to its own knuckle, which leaves 0.3 cm to the fixed knuckles either
+   side: a body down to the axis crossed them on the way.
+3. **The sweep check.** The build turns every shell through its trip in tenths and counts the triangles it crosses
+   on the body, the cores, the lamps and its neighbours (`build.json` `sweep_check`; empty is clean, and the test holds
+   it). `board_drawing.py` compares 23 of the drawing's numbers with the model's own vertices (`drawing/compare.json`,
+   0.5 cm tolerance) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
+   straight views at the drawing's scale.
+4. **The states** are node rotations and material values: `godot/board/board.gd` `set_shell(look, i, open01)`,
+   `set_on` / `set_lamp` (dark, yellow, green), `set_problem` (the beacon and its red light), `set_core`; the cores'
+   shader is kin to the energy crystal's core (`board_core.gdshader`), the metal is the console's (a byte-identical copy, so the
+   board's files stand alone). The sparks and smoke at a tripped core are the game's.
+5. **The shots** are taken in the east corridor itself: `godot/board/corridor.gd` extends `ship.gd`'s shoot mode, puts
+   a board on both spots (yaw from the spot's normal), keeps them out of the dressing pass and sets each view's state;
+   the views are the sheet's (all on, yellow and green tripped, `compare_*.png` beside the sheet), the yellow shell
+   at 0, 1/4, 1/2, 3/4 and 1, and close-ups of every edge and seam.
+
+   `godot/board/studio.gd` then shoots the board on a neutral backdrop at the sheet's hero angle, `compare_sheet.png`
+   beside the sheet (the socket's studio).
+
+   ```bash
+   $PYTHON_BIN tools/blender/board_run.py --tag <tag> [--pieces DIR] --asset assets/prop/breaker_board
+   ```
+6. **The wall (board-2).** Shoot on a ship build with the raised deck: `--pieces` defaults to the vents' b5b build
+   (`<raw>/ship/v4/vents-b/pieces_b5b`), and the run refuses pieces whose corridor deck (the grate's top, read from
+   the GLB) is not `floor_h`. `ship.toml`'s `raw_dir` pieces (`<raw>/ship/v3/pieces/`) predate the raise (deck 0.6):
+   step 1 shot the board on them, 0.6 m above their deck, and its beacon stood in the slanted upper wall. Rays on the
+   b5b build at both spots: the deck at 1.200; the wall's face plane through the spot's `at` (its seams at d 0); its
+   pillow panels 4.4 .. 7.0 cm proud of it inside the board's outline; vertical to 2.65 (1.45 over the deck), slanting
+   above. So the board's d 0 stands `[mount] d` (7.0 cm) out of the face plane on the panels' crowns, and a graphite
+   mount block inside the plate's outline (and the cable clamps) reaches back 0.5 cm into the wall's body: no gap.
+   Its h 0 is the deck.
+7. **The look (board-2).** The bronze and graphite are the crystal socket's values (socket-2), the bays' surrounds
+   are thickened from the drawing's 1.15 cm sides to 3.0 (the sheet's chunky bezels, a look call), the shells' bronze
+   lips carry the bright-edge mark, the beacon's light reaches 0.45 m at 0.6 energy (at 1.6 m and 0.9 it streaked the wall's panel seams red).
+8. **The look (board-3), toward the sheet.**
+   - The bronze is the socket's step 3 (`socket.gd` `BRONZE`, `BRONZE_FINISH`) on the shared metal shader:
+     `board_metal.gdshader` is the console's `console_metal.gdshader` byte for byte, as the socket's copy is.
+   - The inner panel behind the shells is a seventh body surface, `board_panel`: the same finish in a darker bronze.
+   - The border is a ring of mitred blocks between the outline and the inner panel's octagon: the four big cut
+     corners are blocks of their own, the bottom and top cut again at u +-47.5, the beacon's seat at the notch;
+     their bevel is `[frame] border_chamfer` (1.8 cm). The broad bevels are marked u 0.35 (0.55 went cream).
+   - The hinge knuckles are turned (`[hinge] turned`, `leaf_turned`: lathe profiles with grooves and a big end cap).
+     The shell's bottom edge stands 3.3 cm over the axis only in its middle, so the barrels grow past |u| 6.6.
+   - The cores are cut gems: three rings, the middle one turned half a facet; deep blue with bright cyan edges.
+   - The strips stand 1 cm proud in raised graphite frames, the lamps are saturated green on a coloured lens.
+   - The beacon's light is a spot out of the wall and 25 degrees down (55 degree cone, 0.9 m). The omni lit the
+     corridor's slanted wall right above the dome red at close range; the spot leaves the wall above and behind it
+     dark.
+
+`tools/tests/test_props_breaker_board.py` checks the drawing's numbers, the leaves' pivots and colliders, the clean
+sweep, the mount and the committed asset.

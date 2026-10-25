@@ -1,0 +1,167 @@
+{
+  "asset": "breaker_board",
+  "built_by": "tools/blender/board_run.py --tag b5 --asset assets/prop/breaker_board",
+  "mesh": {
+    "triangles": 27726,
+    "triangles_by_material": {
+      "board_graphite": 3460,
+      "board_bronze": 16280,
+      "board_panel": 752,
+      "board_cyan": 156,
+      "board_cable": 3864,
+      "board_enamel_red": 134,
+      "board_core": 480,
+      "board_lamp": 1336,
+      "board_enamel_yellow": 134,
+      "board_enamel_green": 134,
+      "board_enamel_blue": 134,
+      "board_beacon": 862
+    },
+    "triangles_by_object": {
+      "board_body": 20216,
+      "shell_red": 1208,
+      "core_red": 120,
+      "lamp_red": 334,
+      "shell_yellow": 1208,
+      "core_yellow": 120,
+      "lamp_yellow": 334,
+      "shell_green": 1208,
+      "core_green": 120,
+      "lamp_green": 334,
+      "shell_blue": 1208,
+      "core_blue": 120,
+      "lamp_blue": 334,
+      "beacon": 862
+    },
+    "colliders": {
+      "board_col0-convcolonly": 16,
+      "board_col1-convcolonly": 8,
+      "board_col2-convcolonly": 8,
+      "board_col3-convcolonly": 8,
+      "shell_red_col-convcolonly": 104,
+      "shell_yellow_col-convcolonly": 104,
+      "shell_green_col-convcolonly": 104,
+      "shell_blue_col-convcolonly": 104
+    },
+    "size_m": [
+      1.6,
+      0.385,
+      1.254
+    ],
+    "front": "+Z (out of the wall)",
+    "origin": "on the wall's face at the floor under the centre line"
+  },
+  "leaves": {
+    "shell_red": {
+      "hinge_cm": [
+        -50.4,
+        25.0,
+        67.7
+      ],
+      "axis": "local X",
+      "closed_deg": 0.0,
+      "tripped_deg": 110.0
+    },
+    "shell_yellow": {
+      "hinge_cm": [
+        -16.8,
+        25.0,
+        67.7
+      ],
+      "axis": "local X",
+      "closed_deg": 0.0,
+      "tripped_deg": 110.0
+    },
+    "shell_green": {
+      "hinge_cm": [
+        16.8,
+        25.0,
+        67.7
+      ],
+      "axis": "local X",
+      "closed_deg": 0.0,
+      "tripped_deg": 110.0
+    },
+    "shell_blue": {
+      "hinge_cm": [
+        50.4,
+        25.0,
+        67.7
+      ],
+      "axis": "local X",
+      "closed_deg": 0.0,
+      "tripped_deg": 110.0
+    }
+  },
+  "measured_cm": {
+    "all_closed": {
+      "u": [
+        -80.0,
+        80.0
+      ],
+      "d": [
+        -7.5,
+        31.0
+      ],
+      "h": [
+        15.0,
+        140.4
+      ]
+    },
+    "shell_tripped": {
+      "u": [
+        -27.0,
+        -6.6
+      ],
+      "d": [
+        21.42,
+        60.92
+      ],
+      "h": [
+        53.85,
+        71.28
+      ]
+    },
+    "beacon_top_h": 140.4,
+    "cable_low_h": 17.85
+  },
+  "sweep_check": {
+    "shell_red": {},
+    "shell_yellow": {},
+    "shell_green": {},
+    "shell_blue": {}
+  },
+  "states": {
+    "shell": "board.gd set_shell(look, i, open01): 0 closed .. 1 tripped (110 deg forward and down)",
+    "lamp": "set_on(look, i, on): green on, dark off; set_lamp(look, i, 0 dark | 1 yellow | 2 green)",
+    "beacon": "set_problem(look, on): the red dome and its light",
+    "core": "set_core(look, i, glow): the crystal core's glow, 1 full"
+  },
+  "placement": {
+    "breaker_e": {
+      "at_godot": [
+        6.6533,
+        1.2,
+        -0.8327
+      ],
+      "yaw_deg": -8.662,
+      "mount_d_cm": 7.0
+    },
+    "breaker_w": {
+      "at_godot": [
+        -6.6533,
+        1.2,
+        -0.8327
+      ],
+      "yaw_deg": 8.662,
+      "mount_d_cm": 7.0
+    }
+  },
+  "gltf_validator": {
+    "numErrors": 0,
+    "numWarnings": 0,
+    "numInfos": 26,
+    "numHints": 0
+  },
+  "review": "<raw>/ship/v4/board/b5/corridor/sheet.png"
+}

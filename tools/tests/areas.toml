@@ -28,6 +28,7 @@ light = [
   "godot/crystal/*", "tools/blender/crystal_*",  # the energy crystal's build and shot scripts (#263): no runner command or heavy test uses them
   "godot/console/*", "tools/blender/console_*",  # the start console's build and shot scripts (#263): no runner command or heavy test uses them
   "godot/socket/*", "tools/blender/socket_*",  # the crystal socket's build and shot scripts (#263): no runner command or heavy test uses them
+  "godot/board/*", "tools/blender/board_*",  # the breaker board's build and shot scripts (#263): no runner command or heavy test uses them
 ]
 
 [area.anim]
