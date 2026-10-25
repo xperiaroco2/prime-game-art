@@ -961,7 +961,7 @@ def main():
                          " writes <name>_mask.png, the eye mask repainted on the cut, and lively.json's mask")
     ap.add_argument("--lip-smooth", type=int, default=0,
                     help="R2: with --rim-cut, the lid's lip smoothed this many steps (lip_smooth; 0: as cut)")
-    ap.add_argument("--lip-mode", choices=("normals", "taubin"), default="taubin",
+    ap.add_argument("--lip-mode", choices=("normals", "taubin"), default="normals",
                     help="R2: lip_smooth's mode: the normals alone, or Taubin steps of the positions and the normals")
     ap.add_argument("--rim-split", action="store_true",
                     help="R2b: with --rim-cut, the eyeball's rim vertices split from the lid's and every eyeball vertex"
