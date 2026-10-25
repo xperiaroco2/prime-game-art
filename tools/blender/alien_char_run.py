@@ -67,7 +67,8 @@ def eye_mask(lv: Path, static: Path, h: str) -> Path:
 
 def head_job(h: str, hd: Path, b: dict, slots_job: dict) -> dict:
     """One head's entry in a Godot job (char_shots.gd, clip_reels.gd): its built character in hd, staged; the eye
-    mask and sclera from the character's own lively build (char.json "lively", R2)."""
+    mask and sclera from the character's own lively build (char.json "lively", R2); the uncut static v5 head of the
+    whole-head gate keeps its own mask ("static_mask")."""
     static = PILOT / "static_v5" / h
     char = json.loads((hd / "char.json").read_text(encoding="utf-8"))
     lv = Path(char["lively"]).parent
@@ -75,7 +76,8 @@ def head_job(h: str, hd: Path, b: dict, slots_job: dict) -> dict:
         "char": _godot.stage(hd / f"{h}_char.glb", f"char_{h}"),
         "static": _godot.stage(static / f"{h}_static.glb", f"static_{h}"),
         "lively": str(hd / f"{h}_char_lively.json"), "sclera": str(lv / f"{h}_sclera.png"),
-        "mask": str(eye_mask(lv, static, h)), "detail": str(static / f"{h}_detail.png"),
+        "mask": str(eye_mask(lv, static, h)), "static_mask": str(static / f"{h}_mask.png"),
+        "detail": str(static / f"{h}_detail.png"),
         "plain": str(static / f"{h}_albedo_plain.png"), "accent": str(SLOTS / "maps" / f"{h}_accent.png"),
         "gill": str(SLOTS / "maps" / f"{h}_gill.png"), "body_albedo": str(hd / f"{h}_body_albedo.png"),
         "body_mask": str(hd / f"{h}_body_mask.png"), "body_detail": str(hd / f"{h}_body_detail.png"),

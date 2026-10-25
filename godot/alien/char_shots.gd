@@ -64,7 +64,9 @@ func _setup(node: Node3D, h: Dictionary, body: bool) -> Array[ShaderMaterial]:
 	for k: String in ["lips", "detail", "front", "gill_tips", "gill_whole"]:
 		if b.has(k):
 			bases[k] = _col(b[k])
-	var mats: Array[ShaderMaterial] = AlienStatic.apply(node, AlienStatic.data_texture(h["mask"]), _col(b["skin"]),
+	# R2b review: the uncut static head (the gate's reference) keeps its own mask; the cut one fits only the character
+	var mask: String = h["mask"] if body else h.get("static_mask", h["mask"])
+	var mats: Array[ShaderMaterial] = AlienStatic.apply(node, AlienStatic.data_texture(mask), _col(b["skin"]),
 		_texture(h["detail"]), _texture(h["plain"]), null, AlienStatic.data_texture(h["accent"]), bases,
 		AlienStatic.data_texture(h["gill"]))
 	if mats.is_empty():

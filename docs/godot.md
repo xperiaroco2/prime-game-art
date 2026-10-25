@@ -1310,7 +1310,10 @@ pilot's static premium heads"):
     its class's median mask texel, two rings of gutter too) and writes `<head>_mask.png` with lively.json's `mask`.
     Since R2 every head job and the character build take the mask from the character's own lively build
     (`alien_char_run.eye_mask()`: char.json's `lively` folder for the head jobs, HEADS' lively build for the character
-    build), the static head's mask only when that build wrote none. R1's shots ran through a wrapper instead.
+    build), the static head's mask only when that build wrote none. The exception is the whole-head gate's reference,
+    the uncut static v5 head in `char_shots.gd`: it keeps its own mask (the head job's `static_mask`; R2b's review: the
+    cut mask on the uncut head painted skin notches and sclera specks on the reference). R1's shots ran through a
+    wrapper instead.
   - The back-face test (R2, `alien_clip_run.py --from <build> --out DIR --backface`, `godot/alien/backface_shots.gd`):
     every mesh unshaded with culling off, the head's back faces red, others orange, the background blue; per head the
     gazes rest, up, down, left, right, lead (8 frames into a 40 degree turn) and jog (Jog_Fwd under the controller,
