@@ -607,15 +607,20 @@ They are copied to `<raw>/start-console/ref/`.
 was wrong and is not used: the charger is round). They are copied to `<raw>/ship/v4/charger/ref-legs/` (`ref/` keeps
 the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the back) is history.
 
-1. **The numbers.** `tools/blender/charger_dims.toml`: the drawing's own (the base 64.8..94 with its widest Ø 100.4 at
-   72.8 and the upper tier Ø 82, the slot at 95.7, the button Ø 8 at 75.9, the outer prongs to 139.7 at u 23.9..,
-   the inner pair to 123.1 on the track ring of r 19, the legs lengthened 27 cm in their pistons) and the smaller ones
+1. **The numbers.** `tools/blender/charger_dims.toml`: the drawing's own (the deck at its "base top" 99.1, the widest
+   Ø 100.4 at 72.8, the upper tier's top edge Ø 82, the slot at 95.7, the button Ø 8 at 75.9, the outer prongs to
+   139.7 at u 23.9.., the inner pair to 123.1 on the track ring of r 19, the legs lengthened 27 cm in their pistons)
+   and the smaller ones
    read off the sheet (block angles, seams, bevels, bezels, strip widths, the legs' joints). **The wall is not flat
    there**: the spot sits on a vertex of the lens room's 12-sided wall, whose facets fold toward the room by 10.98
    degrees either side. The round base stands clear of it (the axis 53.5 cm out, the widest circle 2.3 cm off the
    facets); the back legs turn to 120 degrees and tuck in to r 52 so their pads stay 3 cm off (at 135 they would
-   stand in the wall). The drawing's "base top 99.1" is the deck's far rim seen from a little above; the deck is at
-   94, the slot's collar to 95.7.
+   stand in the wall). Step 3 (build b6) made the base heavy, as on the sheet (b5, its deck at 94 and its underside at
+   the drawing's 64.8, read as a thin table on stilts): the deck at 99.1 with the slot sunk in a well whose floor is
+   b5's deck (94: the track ring, the slot ring, the collar's foot; the well's wall is the deck ring's inner chords);
+   the lower tier taller (a skirt down to 60, 4.8 under the drawing's underside, so the legs read as struts under
+   it; its band to 83) and broader (the underside's edge r 45, the upper tier r 43). The slot, the button, the prongs'
+   tops, the footprint and the clearances are unchanged.
 2. **Build from the numbers.** `tools/blender/charger_build.py` (headless Blender): each tier is a ring of bronze
    blocks, a profile swept straight between two angles (flat chord faces), thin dark seams onto a graphite core, two
    bevels per block (a broad chamfer, UV0 u 0.45, and a small bright bevel on its folds, u 1:
@@ -635,7 +640,9 @@ the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the
    shared (the asset's `export/` carries the same file; the test checks it is byte-identical). The charger draws on
    render layer 20 alone and `seat_crystal` takes that layer off the crystal's own light, which otherwise burns the
    bronze white a few centimetres away (the socket's way); a soft cyan light of the charger's own stands in while
-   charging.
+   charging. The bronze is the socket's step 3 (`BRONZE`, `BRONZE_FINISH`: the same numbers as `socket.gd`), so the
+   stations match. The Blender review render is a darker studio under AgX Punchy (the plain AgX and a bright studio
+   paled the amber to cream and the bronze to tan).
 4. **The shots**: `godot/charger/room.gd` extends `godot/ship/ship.gd`'s shoot mode with the charger on `renewer_e`
    and the crystal seated, on the ship's current build (`--pieces`, default `<raw>/ship/v4/vents-b/pieces_b5b`; the
    run refuses pieces whose deck is not at `floor_h`: `ship.toml`'s `raw_dir` pieces predate the deck's raise); `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's

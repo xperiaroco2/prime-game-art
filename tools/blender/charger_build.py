@@ -193,6 +193,7 @@ LOWER = [(BA["r_bottom"], BA["bottom"]), (BA["r_widest"], BA["widest"]), (BA["r_
 UPPER = [(BA["r_upper"], BA["lower_top"]), (BA["r_upper"], BA["upper_band"]), (BA["r_deck_edge"], BA["deck"])]
 R_LOWER_IN = 37.0                # the lower tier's blocks reach in to here (the core behind them)
 R_CORE = 37.6                    # the graphite core seen in the lower tier's seams and under it
+R_WELL = 24.0                    # charger-3: the well's graphite wall behind the deck ring's inner chords (r 24.2)
 
 
 def r_of(prof: list, h: float) -> float:
@@ -229,12 +230,13 @@ def build_core(bm) -> None:
     """The graphite core: the underside, the drum seen in the seams, the deck under its rings, the track ring's
     groove, the slot's bore."""
     s, rg = DIMS["slot"], DIMS["ring"]
-    deck = BA["deck"] - 0.3
+    deck, well = BA["deck"] - 0.3, BA["well"] - 0.3
     g0, g1 = rg["r0"] - rg["groove"], rg["r1"] + rg["groove"]
-    floor = BA["deck"] - rg["h"] - rg["groove"]
+    floor = BA["well"] - rg["h"] - rg["groove"]
     prof = [(2.0, BA["bottom"] + 0.4), (R_CORE, BA["bottom"] + 0.4), (R_CORE, BA["lower_top"] - 0.4),
-            (BA["r_inner"] + 0.6, BA["lower_top"] + 0.4), (BA["r_inner"] + 0.6, deck), (g1, deck), (g1, floor),
-            (g0, floor), (g0, deck), (s["collar"][0], deck), (s["collar"][0], s["bore_bottom"]),
+            (BA["r_inner"] + 0.6, BA["lower_top"] + 0.4), (BA["r_inner"] + 0.6, deck), (R_WELL, deck),
+            (R_WELL, well), (g1, well), (g1, floor),
+            (g0, floor), (g0, well), (s["collar"][0], well), (s["collar"][0], s["bore_bottom"]),
             (2.0, s["bore_bottom"])]
     lathe(bm, prof, 96)
 
@@ -248,13 +250,14 @@ def build_upper(bm) -> None:
 
 
 def build_deck_ring(bm) -> None:
-    """The deck's inner course of blocks round the track ring, flush with the upper tier's top."""
+    """The deck's inner course of blocks round the track ring, flush with the upper tier's top; their inner chords are
+    the well's wall down to its floor (charger-3)."""
     r0, r1 = BA["deck_ring"]
-    n, top = 16, BA["deck"]
+    n, top, bot = 16, BA["deck"], BA["well"] - 0.3
     g = seam_deg(r1)
     for k in range(n):
         a0 = 11.25 + 22.5 * k
-        sector(bm, a0 + g, a0 + 22.5 - g, [(r0 / math.cos(math.radians(11.25)), top - 4.0), (r1, top - 4.0),
+        sector(bm, a0 + g, a0 + 22.5 - g, [(r0 / math.cos(math.radians(11.25)), bot), (r1, bot),
                                            (r1, top), (r0 / math.cos(math.radians(11.25)), top)])
 
 
@@ -407,13 +410,13 @@ def build_tier_lights(bm) -> None:
 def build_collar(bm) -> None:
     s = DIMS["slot"]
     rb, ro = s["collar"]
-    h0, h1 = BA["deck"] - 0.45, s["collar_top"]
+    h0, h1 = BA["well"] - 0.45, s["collar_top"]
     lathe(bm, [(rb, h0), (ro, h0), (ro, h1 - 0.5), (ro - 0.5, h1), (rb + 0.4, h1), (rb, h1 - 0.4)], 48)
 
 
 def build_slot_glow(bm) -> None:
     r0, r1 = DIMS["slot"]["glow"]
-    d = BA["deck"]
+    d = BA["well"]
     lathe(bm, [(r0, d - 0.8), (r1, d - 0.8), (r1, d - 0.05), (r0, d - 0.05)], 64)
 
 
@@ -438,7 +441,7 @@ def build_ring(bm) -> None:
     """The track ring: an inner and an outer course of bronze blocks (offset joints) either side of the cyan
     channel, a graphite band under them."""
     rg = DIMS["ring"]
-    top, bot = BA["deck"], BA["deck"] - rg["h"]
+    top, bot = BA["well"], BA["well"] - rg["h"]
     l0, l1 = rg["light"]
     n = 16
     half = 180.0 / n
@@ -453,7 +456,7 @@ def build_ring(bm) -> None:
 
 def build_ring_light(bm) -> None:
     l0, l1 = DIMS["ring"]["light"]
-    d = BA["deck"]
+    d = BA["well"]
     lathe(bm, [(l0 - 0.05, d - 1.2), (l1 + 0.05, d - 1.2), (l1 + 0.05, d - 0.3), (l0 - 0.05, d - 0.3)], 96)
 
 
@@ -495,7 +498,7 @@ def build_prong_joints(bm) -> None:
     """Graphite plates in the outer prongs' joints (the seams read dark, never see-through)."""
     o = DIMS["outer"]
     for a_mid in SIDES:
-        for prof in ([(26.4, 100.7), (39.8, 100.7), (39.8, 101.9), (26.4, 101.9)],
+        for prof in ([(26.4, 103.7), (39.8, 103.7), (39.8, 104.9), (26.4, 104.9)],
                      [(25.0, 128.1), (38.8, 128.1), (38.8, 129.3), (25.0, 129.3)]):
             sweep(bm, prof, a_mid, o["half_deg"] - 1.0, 3)
 
@@ -531,7 +534,8 @@ def build_inner_prongs(bm) -> None:
     for a_mid in SIDES:
         for prof in inner_pieces():
             sweep(bm, [tuple(p) for p in prof], a_mid, i["half_deg"], 3)
-        sweep(bm, [(17.4, 116.2), (22.4, 116.2), (22.4, 117.2), (17.4, 117.2)], a_mid, i["half_deg"] - 1.0, 3)
+        top = i["column"][-1][1]  # the graphite plate in the joint under the head
+        sweep(bm, [(17.4, top), (22.4, top), (22.4, top + 1.0), (17.4, top + 1.0)], a_mid, i["half_deg"] - 1.0, 3)
 
 
 def build_inner_lights(bm) -> None:
@@ -672,8 +676,8 @@ def build_leg_lights(bm) -> None:
 # --- parts, materials, assembly ------------------------------------------------------------------------------------
 FEATURES: list = []
 MATS: dict = {}
-CYAN = (0.0, 0.62, 1.0, 1.0)
-AMBER = (1.0, 0.3, 0.0, 1.0)  # deep: AgX pales a bright amber to white (b2)
+CYAN = (0.0, 0.5, 1.0, 1.0)
+AMBER = (1.0, 0.26, 0.0, 1.0)  # deep: AgX pales a bright amber to white (b2)
 
 
 def record_features(name: str, bm) -> None:
@@ -793,13 +797,14 @@ def emissive(name: str, colour, strength: float):
 
 
 def build_materials() -> None:
-    MATS["charger_bronze"] = metal_material("charger_bronze", (0.56, 0.27, 0.10, 1.0), (1.0, 0.70, 0.40, 1.0), 0.34, 1.0)
+    MATS["charger_bronze"] = metal_material("charger_bronze", (0.56, 0.27, 0.10, 1.0), (1.0, 0.70, 0.40, 1.0), 0.28, 1.0)
     MATS["charger_graphite"] = metal_material("charger_graphite", (0.06, 0.062, 0.07, 1.0), (0.36, 0.35, 0.34, 1.0),
                                               0.38, 0.85)
     MATS["charger_steel"] = metal_material("charger_steel", (0.40, 0.42, 0.45, 1.0), (0.85, 0.86, 0.88, 1.0), 0.16,
                                            1.0)
-    MATS["charger_amber"] = emissive("charger_amber", AMBER, 2.2)  # b5q: 6 / 9 bleached to salmon and white
-    MATS["charger_cyan"] = emissive("charger_cyan", CYAN, 2.6)
+    MATS["charger_amber"] = emissive("charger_amber", AMBER, 1.6)  # b5q: 6 / 9 bleached to salmon and white
+    # (b6: 1.6 under the darker studio and AgX Punchy; 2.6 to 3.4 read cream, flat salmon)
+    MATS["charger_cyan"] = emissive("charger_cyan", CYAN, 2.4)
     MATS["charger_lens"] = emissive("charger_lens", (0.05, 0.75, 1.0, 1.0), 5.0)
     MATS["_broad"] = bpy.data.materials.new("_broad")
     MATS["_edge"] = bpy.data.materials.new("_edge")
@@ -935,7 +940,7 @@ def build(crystal: str | None) -> dict:
                                part("inner_prongs", build_inner_prongs, "charger_bronze", small=True),
                                part("inner_lights", build_inner_lights, "charger_graphite", bevel=False, drawn=False),
                                part("electrodes", build_electrodes, "charger_cyan", bevel=False, drawn=False)],
-                Vector(P(0.0, AX, BA["deck"])))
+                Vector(P(0.0, AX, BA["well"])))
     b = DIMS["button"]
     button = join("button", [part("lens", build_button, "charger_lens", bevel=False, drawn=False)],
                   P(0.0, BUTTON_D, b["h"]))
@@ -1132,6 +1137,10 @@ def stage(samples: int, hdri: str | None) -> None:
     except AttributeError:
         pass
     sc.view_settings.view_transform = "AgX"
+    try:
+        sc.view_settings.look = "AgX - Punchy"  # b6: plain AgX paled the amber to cream and the bronze to tan
+    except TypeError:
+        pass
     world = bpy.data.worlds.new("studio")
     sc.world = world
     world.use_nodes = True
@@ -1142,7 +1151,7 @@ def stage(samples: int, hdri: str | None) -> None:
         env = nt.nodes.new("ShaderNodeTexEnvironment")
         env.image = bpy.data.images.load(hdri)
         ref = nt.nodes.new("ShaderNodeBackground")
-        ref.inputs[1].default_value = 0.8
+        ref.inputs[1].default_value = 0.3  # b6: 0.8 washed the bronze to a pale studio tan
         nt.links.new(env.outputs[0], ref.inputs[0])
         path = nt.nodes.new("ShaderNodeLightPath")
         mix = nt.nodes.new("ShaderNodeMixShader")
@@ -1150,9 +1159,10 @@ def stage(samples: int, hdri: str | None) -> None:
         nt.links.new(ref.outputs[0], mix.inputs[1])
         nt.links.new(bg.outputs[0], mix.inputs[2])
         nt.links.new(mix.outputs[0], nt.nodes["World Output"].inputs[0])
-    for name, loc, energy, colour, size in (("key", (-1.6, -2.2, 2.6), 380.0, (1.0, 0.95, 0.9), 1.2),
-                                            ("fill", (1.8, -1.8, 1.4), 120.0, (0.85, 0.9, 1.0), 1.5),
-                                            ("rim", (0.8, 1.4, 2.4), 160.0, (0.8, 0.85, 1.0), 1.0)):
+    # b6: a darker, moodier studio so the strips glow (b5: key 380, fill 120 read as a washed studio)
+    for name, loc, energy, colour, size in (("key", (-1.6, -2.2, 2.6), 230.0, (1.0, 0.93, 0.86), 1.0),
+                                            ("fill", (1.8, -1.8, 1.4), 45.0, (0.7, 0.8, 1.0), 1.5),
+                                            ("rim", (0.8, 1.4, 2.4), 200.0, (0.75, 0.85, 1.0), 0.8)):
         ld = bpy.data.lights.new(name, "AREA")
         ld.energy, ld.color, ld.size = energy, colour, size
         lo = bpy.data.objects.new(name, ld)
@@ -1179,7 +1189,7 @@ def stage(samples: int, hdri: str | None) -> None:
         rl = tree.nodes.new("CompositorNodeRLayers")
         gl = tree.nodes.new("CompositorNodeGlare")
         go = tree.nodes.new("NodeGroupOutput")
-        for key, value in (("Type", "Bloom"), ("Threshold", 1.0), ("Strength", 0.5), ("Size", 0.5)):
+        for key, value in (("Type", "Bloom"), ("Threshold", 0.75), ("Strength", 0.7), ("Size", 0.6)):  # b6: glow
             if key in gl.inputs:
                 gl.inputs[key].default_value = value
         tree.links.new(rl.outputs["Image"], gl.inputs["Image"])

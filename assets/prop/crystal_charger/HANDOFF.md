@@ -1,7 +1,7 @@
 # The ship's crystal charger: handoff to the game
 
 The charger where a player recharges a spent energy crystal (art#263's stations), one on each lens room's aft wall:
-a squat stepped bronze dome on four long legs like the ship's landing legs (the engineer's pick of 2026-10-25,
+a heavy stepped bronze dome on four long legs like the ship's landing legs (the engineer's pick of 2026-10-25,
 prime-game#1095 comment 6401197371). Not yet approved by the engineer: the look is in review (the PR's open
 questions).
 
@@ -37,7 +37,7 @@ player at the button stands about 1.45 m out and still has 2.17 m of free floor 
 |---|---|---|
 | `carrier` | (0, 0.974, 0.535): the middle of the cup's rim, on the crystal's axis | up `RISE` 0.06 and round its Y axis: `set_carrier(look, rise01, angle)` |
 | `crystal_anchor` | under `carrier`, 2.3 cm below its rim, in the cup's pit: the crystal's tip | parent the crystal here with an identity transform (`seat_crystal`) |
-| `track_ring` | (0, 0.94, 0.535): the deck on the crystal's axis | round its Y axis: `set_ring(look, angle)`; 0 = the inner prongs left and right |
+| `track_ring` | (0, 0.94, 0.535): the well's floor (the deck at 0.991 round it) on the crystal's axis | round its Y axis: `set_ring(look, angle)`; 0 = the inner prongs left and right |
 | `button` | (0, 0.759, 0.9907): the lens's face | 1 cm in along -Z: `set_pressed(look, on)` |
 
 The outer prongs and the legs are part of the body. The lightning (arcs from the inner prongs' electrodes into the

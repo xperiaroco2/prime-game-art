@@ -44,9 +44,10 @@ class ChargerDrawing(unittest.TestCase):
         d = dims()
         f, b = d["frame"], d["base"]
         self.assertEqual((f["top"], f["wall_gap"]), (139.7, 2.0))
-        self.assertEqual((b["bottom"], b["widest"]), (64.8, 72.8))
+        self.assertEqual((b["bottom"], b["widest"]), (60.0, 72.8))  # charger-3: a skirt 4.8 under N.baseBottom 64.8
         self.assertAlmostEqual(b["r_widest"] * 2, 100.4, delta=0.05)
-        self.assertAlmostEqual(b["r_upper"] * 2, 82.0, delta=0.05)
+        self.assertAlmostEqual(b["r_deck_edge"] * 2, 82.0, delta=0.05)  # N.tierTop: the upper tier's top edge
+        self.assertEqual((b["deck"], b["well"]), (99.1, 94.0))  # N.top: the deck; the slot sunk in its well (charger-3)
         self.assertEqual((d["slot"]["collar_top"], d["slot"]["tip"]), (95.7, 95.1))
         self.assertEqual((d["button"]["h"], d["button"]["lens"], d["button"]["travel"]), (75.9, 8.0, 1.0))
         self.assertEqual(d["carrier"]["rise"], 6.0)
@@ -67,7 +68,7 @@ class ChargerDrawing(unittest.TestCase):
         self.assertGreater(min(h for _r, h in o["cap"]), max(h for _r, h in i["head"]) + 3.0)
         # the risen crystal's loop under the prongs' tops
         self.assertLess(d["slot"]["tip"] + CRYSTAL + d["carrier"]["rise"], f["top"])
-        # four legs, the pistons lengthened 27 cm (N.legLift): the base's underside at 64.8
+        # four legs, the pistons lengthened 27 cm (N.legLift): their tops under the base's skirt (charger-3: 60)
         self.assertEqual(len(d["legs"]["angles"]) * 2, 4)
         self.assertAlmostEqual(d["legs"]["hip"][1], b["bottom"], delta=0.5)
 
@@ -120,7 +121,7 @@ class ChargerAsset(unittest.TestCase):
         self.assertEqual(mats, SURFACES)
         # the pivots: the carrier on the crystal's axis at its rim, the ring at the deck (glTF: x u, y h, z d)
         self.assertEqual([round(x, 3) for x in carrier["translation"]], [0.0, round(d["carrier"]["top"] / 100, 3), ax])
-        self.assertEqual([round(x, 3) for x in nodes["track_ring"]["translation"]], [0.0, round(d["base"]["deck"] / 100, 3), ax])
+        self.assertEqual([round(x, 3) for x in nodes["track_ring"]["translation"]], [0.0, round(d["base"]["well"] / 100, 3), ax])
         self.assertAlmostEqual(nodes["crystal_anchor"]["translation"][1],
                                (d["slot"]["tip"] - d["carrier"]["top"]) / 100, places=4)
 

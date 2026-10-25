@@ -24,14 +24,19 @@ const METAL := preload("console_metal.gdshader")
 const CHARGER_LAYER := 1 << 19   # render layer 20: the crystal's own light skips it (seat_crystal)
 const RISE := 0.06               # the carrier's travel up (m; the drawing's RISE)
 const TRAVEL := 0.01             # the button's travel in (m)
-const CYAN := Color(0.0, 0.62, 1.0)
-const AMBER := Color(1.0, 0.22, 0.0)  # deep: AgX and the glow pale a bright amber toward yellow-white
+const CYAN := Color(0.0, 0.45, 1.0)  # charger-3: deeper (b5 0.62 read pale blue-white in the room)
+const AMBER := Color(1.0, 0.42, 0.0)  # charger-3: toward the socket's (1, 0.5, 0); b5's 0.22 read red
 ## per state: the cyan lights' energy, the amber lights', the button lens's, the glow light's
-## (charger-2: the strips are wider, so each glows less: 3 to 4.6 bleached them white under AgX and the glow)
-const STATES := {"idle": [1.5, 1.9, 1.6, 0.0], "charging": [2.3, 2.1, 0.8, 0.5], "charged": [2.1, 1.3, 2.0, 0.25]}
-## the bronze: the crystal socket's (art#263 socket-2: a greyer gold, darker and more metallic than the console's)
-const BRONZE := Color(0.56, 0.46, 0.32)
+## (charger-2: 3 to 4.6 bleached the wide strips white under AgX; charger-3: brighter again, a deeper cyan)
+const STATES := {"idle": [2.4, 2.2, 2.2, 0.0], "charging": [3.2, 2.4, 1.2, 0.5], "charged": [3.0, 1.6, 2.6, 0.25]}
+## the bronze: the crystal socket's step 3 (art#263 socket-3: socket.gd BRONZE and BRONZE_FINISH on the shared
+## console_metal.gdshader), so the three stations match: a warmer polished copper-bronze, the faces lighter or darker
+## by their facing, a broad wave for glints, the chamfers worn bright
+const BRONZE := Color(0.5, 0.38, 0.24)
 const BRONZE_EDGE := Color(1.0, 0.9, 0.7)
+const BRONZE_FINISH := {"metallic": 0.75, "roughness": 0.3, "wear": 1.4, "lift": 0.08, "mottle": 0.3, "grain": 0.06,
+	"rough_grain": 0.06, "rough_mottle": 0.15, "edge_polish": 0.25, "shade": 0.3, "dent": 0.0, "dent_scale": 45.0,
+	"wave": 0.3, "wave_scale": 8.0}
 
 
 ## Puts the charger's materials on every surface under root and finds its leaves; returns the look: {"cyan",
@@ -42,10 +47,8 @@ static func apply(root: Node3D) -> Dictionary:
 	bronze.shader = METAL
 	bronze.set_shader_parameter("base_color", BRONZE)
 	bronze.set_shader_parameter("worn_color", BRONZE_EDGE)
-	bronze.set_shader_parameter("metallic", 0.75)  # the socket's: 0.9 read near-black in the dark rooms
-	bronze.set_shader_parameter("roughness", 0.32)
-	bronze.set_shader_parameter("wear", 1.0)
-	bronze.set_shader_parameter("lift", 0.08)
+	for p: String in BRONZE_FINISH:
+		bronze.set_shader_parameter(p, BRONZE_FINISH[p])
 	var graphite := ShaderMaterial.new()
 	graphite.shader = METAL
 	graphite.set_shader_parameter("base_color", Color(0.272, 0.276, 0.293))
