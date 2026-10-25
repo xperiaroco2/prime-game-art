@@ -1301,11 +1301,26 @@ pilot's static premium heads"):
     of the rim is cut along the curve (`G.cut_triangle`; new vertices on the edges, every attribute interpolated), each
     piece an eyeball or lid triangle by its side; the band's border keeps its class (`clamped`), and a piece under 10 %
     of its parent snaps the cut through the nearest corner (`snapped`). The guard: `rim_bad_triangles` 0 (no piece
-    turned over or under 10 %), and the open and non-manifold welded edges unchanged (0 and 0), or the build fails.
+    turned over or under 10 %), the open and non-manifold welded edges unchanged (0 and 0), and (R2) each eye's
+    eyeball area within `RIM_CUT_MAX_AREA_PCT` (3 %) of its area before the cut, or the build fails; lively.json's
+    `rim_cut` reports the pieces each way, the eyeball triangles, the mask texels, the trimmed rim positions per eye and
+    `eyeball_area`. `--rim-cut` with `--no-pit-fix` is refused (the cut runs inside the pit fix). The GLB's buffers are
+    compacted after the cut (`G.compact_buffers`: no old views, no `UNUSED_OBJECT`).
   - The mask follows: the build repaints the eye mask on the cut's triangles (each texel a band triangle covers takes
-    its class's median mask texel, two rings of gutter too) and writes `<head>_mask.png` with lively.json's `mask`;
-    `alien_clip_run.py` (`lively_mask()`) puts it into each head job. `alien_char_run.py`'s own head jobs still take
-    the static head's mask: its shots need the same override (R1 ran them through a wrapper).
+    its class's median mask texel, two rings of gutter too) and writes `<head>_mask.png` with lively.json's `mask`.
+    Since R2 every head job and the character build take the mask from the character's own lively build
+    (`alien_char_run.eye_mask()`: char.json's `lively` folder for the head jobs, HEADS' lively build for the character
+    build), the static head's mask only when that build wrote none. R1's shots ran through a wrapper instead.
+  - The back-face test (R2, `alien_clip_run.py --from <build> --out DIR --backface`, `godot/alien/backface_shots.gd`):
+    every mesh unshaded with culling off, the head's back faces red, others orange, the background blue; per head the
+    gazes rest, up, down, left, right, lead (8 frames into a 40 degree turn) and jog (Jog_Fwd under the controller,
+    10 frames in), each from the front, both three-quarters, both sides, 25 degrees above and below; red counted in
+    the head's framing (0.42 m) and each facing eye's close-up (0.14 m); `backface.json`, `backface_<head>.jpg`,
+    `<head>_4x/`. On R1's builds (`anim_bare/r2/backface_before_b/`): the chameleon 0 red in every shot; the axolotl
+    0 round both eyes, its only red a sliver (up to 29 px at 0.14 m) on the wall of its right nostril's pit. The head
+    is closed (0 open edges), so no gap shows daylight either: neither head has a line of sight past a lid into the
+    hollow head. (A close-up of the eye on the head's far side put the camera inside the head and counted it red:
+    since R2b only an eye facing the camera is counted.)
   - The first trial measured the angle from the eye centre's axis: the chameleon's opening spans 28 to 117 degrees
     about it and order 6 left 4 mm (median) between the rim and the curve, so the cut followed the old edges; the
     head-on radius at order 8 leaves 2.2 mm (the sawtooth itself) and the cut lies 0.05 mm (median) from the curve.
