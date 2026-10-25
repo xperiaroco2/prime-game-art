@@ -1,0 +1,128 @@
+# The ship's crystal charger as numbers, in centimetres (art#263's stations; two of them, one on each lens room's aft
+# wall: layouts/ship/ship.toml [[stations.spot]] renewer_e, renewer_w). From its drawing, prime-game-design commit
+# 5458033 (ideas/ship-components/stations-final/charger-drawing/drawing.js, `node drawing.js`: its N object and the
+# traced outlines mapped through its H()), which is itself drawn over the approved sheet charger.jpg's front view
+# raised to the hip (the engineer, 2026-10-25: "Підняти до стегна", "raise it to the hip"; "Зрізати сзаду", "cut at
+# the back"). The sheet's top view is wrong (the engineer, 2026-10-25): no number here comes from it.
+# Frame: u across the front (0 the crystal's axis, + to the right as you face it), d out of the wall along the spot's
+# normal (0 the wall's face), h up from the floor. The model's origin is (u 0, d 0, h 0): the spot's `at` on the
+# floor. tools/blender/charger_build.py builds from these; tools/blender/charger_drawing.py draws them.
+# Sizes the drawing does not give (seams, bevels, bezels, block angles, the ring's height) are read off the sheet's
+# front view at its scale (9.4 px per cm) and marked "sheet".
+
+[frame]
+width = 120.0                    # across the two side feet (drawing WIDTH)
+depth = 89.5                     # the wall to the front foot's face (N.depth; the spot's budget 90)
+top = 130.1                      # the outer prongs' tops (N.top)
+axis_d = 27.3                    # the crystal's axis from the wall (N.axisD)
+wall_gap = 2.0                   # the flat back off the wall's face (WALL_GAP)
+# The spot sits on a vertex of the lens room's 12-sided wall (tools/blender/ship_interior.py tip_vertices: facets of
+# 21.954 deg at r 2.05 m), so the wall folds toward the room by half a facet, 10.977 deg, either side of u 0: 9.3 cm
+# in at the back's corners. A flat back at d 2 would sink 7 cm into the wall there; the back is cut as two planes,
+# each 2 cm off its facet (a shallow V that meets at d 2 on the axis). The drawing's flat back assumed a flat wall.
+back_fold_deg = 10.977
+
+[tiers]                          # the round base: the drawing's levels, raised (N.bottom ... N.deck)
+bottom = 11.7                    # the lower tier's bottom, on the feet
+widest = 26.3                    # its widest girth, where the straight drum band starts
+widest_top = 51.3                # the drum band's top (+25, DRUM)
+rim = 60.7                       # the lower tier's rim; the middle tier's foot
+bevel = 82.9                     # the middle tier's top, the deck's bevel starts
+deck = 85.0                      # the deck with the slot (DECK)
+r_bottom = 49.5
+r_widest = 54.2                  # the drum (diameter 108.4)
+r_lower_top = 51.1               # the rim's radius
+r_tier2 = 47.6                   # the middle tier
+r_deck = 45.8                    # the deck's edge after the bevel
+r_core = 42.0                    # sheet: the graphite drum inside the blocks, seen in the seams
+seam = 0.55                      # sheet: the dark joint between two blocks
+band_split = 79.8                # sheet: the middle tier's upper band (its deck slots and the bevel) above this
+
+[blocks]                         # sheet: the blocks' edges, degrees round the axis from the front (mirrored)
+skirt = [22.0, 48.0, 80.0, 115.0]      # the lower taper, 11.7 .. 26.3 (the front block is the panel block)
+drum = [22.0, 62.0, 115.0]             # the drum band and the upper taper, 26.3 .. 60.7
+middle = [24.0, 64.0, 115.0]           # the middle tier, 60.7 .. band_split
+band = [12.0, 29.0, 41.0, 75.0, 115.0] # the upper band, band_split .. deck (a block either side of 0)
+chamfer = 1.1                    # sheet: the broad chamfer on every block edge
+edge = 0.28                      # sheet: the small bright bevel on its folds
+
+[facet]                          # the drum's tall front facet where the sheet's button was (N.facet)
+top = [16.9, 55.9]               # half width, h
+bottom = [8.1, 17.3]
+light = [2.4, 22.0, 50.0]        # the vertical amber light: width, h0, h1
+recess = 1.6                     # sheet: how far the graphite facet sits behind the block's face
+half_deg = 22.0                  # the panel block's half angle
+r_face = 53.6                    # sheet: its flat front at this distance from the axis (inside the drum's 54.2)
+
+[panel]                          # the button's panel on the middle tier's front (N.panel)
+top = [16.9, 77.1]
+bottom = [8.1, 63.5]
+recess = 3.4                     # sheet: deep enough for the lens to press 1 cm clear of the plate
+half_deg = 24.0
+r_face = 47.6
+
+[button]                         # the start button (N.button)
+h = 72.0
+ring = 12.7                      # the bezel ring's diameter
+lens = 9.6                       # the cyan lens
+travel = 1.0                     # pressed in along its normal
+face_d = 73.3                    # the lens's face from the wall (the drawing's buttonD: axis + r_tier2 - 1.5)
+
+[strips]                         # the light slots on the round half (N.strips; the angles each side of the front)
+lower_cyan = { h = [54.7, 56.6], deg = [28.2, 55.4] }
+lower_amber = { h = [30.3, 47.3], deg = [48.3, 56.6] }
+mid_amber = { h = [70.4, 73.6], deg = [43.1, 58.3] }
+deck_amber = [{ h = [80.8, 82.3], deg = [30.8, 38.1] }, { h = [80.8, 82.3], deg = [16.3, 26.8] }]
+bezel = 0.6                      # sheet: the graphite bezel round a light
+proud = 0.9                      # sheet: the bezel's face out of its block
+inset = 0.55                     # how far the light sits in its bezel (0.35 still out of the block)
+
+[slot]                           # the crystal's slot (N.collar, N.bore, N.tip)
+collar_outer = 19.0
+collar_bore = 15.0
+collar_h = [85.0, 87.0]
+bore_bottom = 76.0
+tip = 82.5                       # the built crystal's tip at rest (its point ring on the collar's top)
+
+[carrier]                        # the carrier under the crystal (N.carrier): a leaf, rises and spins
+d = 14.0
+top = 84.5                       # its pivot: the middle of its top
+h = 8.0
+seat = 2.0                       # the hexagonal seat for the crystal's point
+rise = 6.0                       # RISE
+
+[ring]                           # the track ring with the inner prongs (N.ring): a leaf, spins
+r0 = 16.5
+r1 = 24.5
+h = 3.0                          # sheet: its depth into the deck
+groove = 0.3                     # the deck's clearance round it
+light = [19.2, 21.0]             # sheet: the cyan channel on its top (radii)
+
+[outer]                          # the fixed outer prongs, left (mirrored), traced (u, h) from the front view
+depth = 12.0
+outline = [[-42.7, 85.0], [-42.7, 117.9], [-33.0, 129.1], [-31.4, 130.1], [-21.7, 130.1], [-20.0, 128.3],
+           [-20.0, 117.9], [-26.0, 115.3], [-26.0, 85.0]]
+split = [115.5, 126.2]           # sheet: the joints between the column, the bend and the cap
+cyan = [[-35.3, 88.2], [-35.3, 117.9], [-29.1, 126.6]]
+amber = [[-28.9, 87.1], [-28.9, 116.3]]
+strip_w = [1.3, 1.3]             # the cyan and amber strips' widths (outer.cyan, outer.amber)
+
+[inner]                          # the inner prongs on the ring, left (mirrored), traced (u, h)
+thick = 7.0
+outline = [[-24.5, 85.0], [-24.5, 109.4], [-21.9, 112.6], [-17.6, 113.7], [-13.8, 112.8], [-13.8, 109.6],
+           [-16.8, 107.3], [-16.8, 85.0]]
+split = 107.3                    # sheet: the column's top, the head above
+amber = [[-19.6, 89.2], [-19.6, 106.2]]
+amber_w = 1.3
+electrode = [-15.0, 111.0, 1.1] # u, h, radius
+
+[foot]                           # the three feet at 0 and +-75 deg (N.foot, FOOT_ANGLE)
+angles = [-75.0, 0.0, 75.0]
+r0 = 39.5                        # where it starts under the tier (the drawing's side view: rBottom - 10)
+r_top0 = 43.5                    # its top's inner edge (rBottom - 6)
+reach = 62.2
+w_top = 32.7
+w_bottom = 29.7
+top = 11.7
+face = 9.9
+slot = [13.8, 5.1, 7.4]          # the amber slot on the face: width, h0, h1

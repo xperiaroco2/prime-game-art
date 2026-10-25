@@ -596,3 +596,48 @@ They are copied to `<raw>/start-console/ref/`.
    ```
 
 `tools/tests/test_props_start_console.py` checks the drawing's numbers in the dims file and the committed asset.
+
+## A station from its drawing: the ship's crystal charger (art#263)
+
+`assets/prop/crystal_charger/`: two of them, one on each lens room's aft wall (`layouts/ship/ship.toml`
+`[[stations.spot]]` `renewer_e`, `renewer_w`), where a player recharges a spent energy crystal. The engineer approved
+the sheet on 2026-10-25 (prime-game-design `ideas/ship-components/stations-final/charger.jpg`; its top view is
+wrong, he said, and nothing is taken from it) and the drawing in cm (`charger-drawing/drawing.js` at commit
+5458033: the base cut flat at the back, raised to the hip). They are copied to `<raw>/ship/v4/charger/ref/`.
+
+1. **The numbers.** `tools/blender/charger_dims.toml`: the drawing's own (the tiers' heights and radii, the axis
+   27.3 cm from the wall, the feet, the slot, the carrier, the ring, the prongs' traced outlines mapped through the
+   drawing's raise, the strips' heights and angles) and the smaller ones read off the sheet at its scale (the seams,
+   the two bevels, the bezels, the blocks' angles). **The wall is not flat there**: the spot sits on a vertex of the
+   lens room's 12-sided wall, whose facets fold toward the room by 10.98 degrees either side; the drawing's flat back
+   at d 2 would sink 7 cm into the wall at its corners. The back is cut by two planes, each 2 cm off its facet (a
+   shallow V; the test checks the angle against `ship.toml`).
+2. **Build from the numbers.** `tools/blender/charger_build.py` (headless Blender): every tier is a ring of bronze
+   blocks round a graphite drum (flat chord faces; the drum must stay inside each block's chord, so its radius steps
+   per tier), thin dark seams between them, two bevels per block (a broad chamfer, UV0 u 0.45, and a small bright
+   bevel on its folds, u 1: `console_metal.gdshader` brightens both, the sheet's worn edges). The front's two panels
+   (the drum's tall facet with its amber light, the middle tier's button panel) are trapezoid recesses between bronze
+   wedge blocks. Lights sit in graphite bezels, inset. The leaves are their own objects, pivots on their axes, children
+   of the body: `carrier` (with the empty `crystal_anchor` at the crystal's tip), `track_ring` (with the inner prongs
+   and their electrodes), `button`. Convex colliders (`*-convcolonly`): the base, the feet, the outer prongs, and the
+   inner prongs on the ring. The build checks the clearances numerically (`build.json` `checks`): every vertex in
+   front of the wall's facets, the ring's full turn in 5 degree steps against the body (BVH overlaps), the carrier's
+   rise in 1 cm steps, the crystal at rest and risen.
+3. **The look in Godot**: `godot/charger/charger.gd` (`apply`, `set_state` idle / charging / charged, `set_carrier`,
+   `set_ring`, `set_pressed`, `seat_crystal`). The bronze and graphite are the console's `console_metal.gdshader`,
+   shared (the asset's `export/` carries the same file; the test checks it is byte-identical). The charger draws on
+   render layer 20 alone and `seat_crystal` takes that layer off the crystal's own light, which otherwise burns the
+   bronze white a few centimetres away (the socket's way); a soft cyan light of the charger's own stands in while
+   charging.
+4. **The shots**: `godot/charger/room.gd` extends `godot/ship/ship.gd`'s shoot mode with the charger on `renewer_e`
+   and the crystal seated; `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's
+   neutral render at its angle, Godot in the room), `room_sheet.png` (the states, the straight views, the wall's
+   corner, the ring's full turn from above) and `closeups.png` (Blender's close-ups of the edges and seams), and
+   measures the GPU cost.
+
+   ```bash
+   $PYTHON_BIN tools/blender/charger_run.py --tag <tag> --res 900 --samples 64 --asset assets/prop/crystal_charger
+   ```
+
+`tools/tests/test_props_crystal_charger.py` checks the drawing's numbers, the back's fold against the ship's layout
+and the committed asset.
