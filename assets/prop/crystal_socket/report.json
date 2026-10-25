@@ -1,16 +1,16 @@
 {
   "asset": "crystal_socket",
-  "built_by": "tools/blender/socket_run.py --tag b4 --asset assets/prop/crystal_socket",
+  "built_by": "tools/blender/socket_run.py --tag b5 --asset assets/prop/crystal_socket",
   "mesh": {
-    "triangles": 2338,
+    "triangles": 3930,
     "triangles_by_material": {
-      "socket_bronze": 1212,
+      "socket_graphite": 312,
+      "socket_bronze": 2940,
       "socket_cyan": 176,
-      "socket_graphite": 480,
-      "socket_amber": 88,
+      "socket_amber": 120,
       "socket_lamp": 382
     },
-    "vertices": 1205,
+    "vertices": 2023,
     "size_cm": {
       "u": 46.78,
       "d": 22.2,
@@ -104,5 +104,5 @@
     "numInfos": 6,
     "numHints": 0
   },
-  "review": "<raw>/ship/v4/socket/b4/hall/sheet.png"
+  "review": "<raw>/ship/v4/socket/b5/hall/sheet.png"
 }
