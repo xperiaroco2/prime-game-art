@@ -1,0 +1,108 @@
+# The ship's crystal socket as numbers, in centimetres (art#263's stations: four on the hall's walls, each holding one
+# energy crystal; the engineer, 2026-10-25: "the main thing is that we now draw everything precisely, by
+# coordinates"). The headline sizes are the drawing's: prime-game-design commit ea27a81,
+# ideas/ship-components/stations-final/socket-drawing/drawing.js, run through node (its N object), traced over the
+# picked sheet's straight views front-ortho.jpg and side-ortho.jpg (the look: ../socket.jpg). The smaller sizes (the
+# chamfers, the layers' insets, the slots' bezels, the strip's groove) were read off the same views at the drawing's
+# scale (14.61 px per cm on the front view, 13.78 on the side view).
+# Axes: u across the front (0 the centre line, + to the right as you face the socket), d out of the wall (0 the wall's
+# face), h up from the hall's floor. In Blender x = u, y = -d (glTF +Z out of the wall), z = h; the origin on the
+# wall's face at floor level under the crystal's axis.
+# Polygons are right halves from the top of the centre line round to its bottom ([u, h]), mirrored for the left
+# (socket_drawing.loop), except the claw, a whole polygon mirrored as the left claw.
+# Every h below is drawn with the crystal's middle at [mount] drawn_at; the build moves them all by h - drawn_at, so
+# moving the socket (the engineer may still lower it to 120) is the one number [mount] h.
+# tools/blender/socket_build.py builds the model from these numbers; tools/blender/socket_drawing.py draws them.
+
+[mount]
+h = 140.0                        # MOUNT: the crystal's middle (its tip plus half of 34.9) above the hall's floor
+drawn_at = 140.0                 # the h the numbers below were drawn at
+axis_d = 17.0                    # the crystal's axis out of the wall
+crystal = 34.9                   # the built crystal, tip to the loop's top (tools/blender/crystal_dims.toml)
+cap = [24.3, 26.8, 13.5]         # its cap's band above the tip (z0, z1) and its width across flats (an octagon)
+cap_built = 13.62                # the built cap across at its band, measured in Blender (its bronze rims stand out)
+
+[measure]                        # where the drawing measured its straight views (drawing.js F and SD; px)
+front = { cx = 511.5, bottom = 1370.0, px_per_cm = 14.613 }   # the bottom row is the frame's bottom, h `bottom_h`
+side = { wall = 345.0, bottom = 1330.0, px_per_cm = 13.778 }  # x = the wall's face
+bottom_h = 87.38
+
+[depth]                          # out of the wall (cm)
+plate = 6.7                      # drawing: the back plate's face
+layer = 12.2                     # drawing: the middle layer, the outer blocks' face
+lip = 19.4                       # the lip between the bay and the strip, a step under the ring
+ring = 19.6                      # the inner ring with the cyan strip (side view: its lower part at 615 px)
+strip = 19.2                     # the strip's light, sunk in its groove
+front = 21.1                     # drawing: the frame's face, the bottom block
+header = 20.6                    # the block over the bay the claws hang from (under the claws' 22.2)
+claw = [13.0, 22.2]              # drawing: the claws' tips at 22.2 (top view: from 10; 13 keeps them arms, not a hood)
+bay = 9.5                        # drawing: the bay's floor behind the crystal, deepened so the cap fits
+collar = [9.4, 21.4]             # the cup under the crystal's tip (side view: its front at 640 px), on the axis
+                                 # (its depth 2 x 4.4); its stem from 9.4 back to the bay's floor
+
+[outline]                        # the back plate: drawing.js OUTLINE (46.7 wide, the waist 39.1 at h 131.2)
+pts = [[0.0, 168.3], [11.54, 168.3], [23.39, 154.9], [23.39, 137.06], [19.55, 131.24], [23.39, 126.1],
+       [23.39, 106.9], [6.4, 87.4], [0.0, 87.4]]
+plate_chamfer = 0.5
+inset = 0.8                      # the outer blocks inside the plate's edge: the plate shows as a dark step
+layer_chamfer = 2.0              # the outer blocks' wide front chamfer
+
+[bay]                            # the bay round the crystal: drawing.js STRIP (the bay runs along the cyan strip:
+                                 # 28.9 wide at its top, 20.1 at the collar), down beside the bottom block to 104.5
+pts = [[0.0, 159.45], [5.65, 159.45], [10.58, 158.8], [12.9, 156.6], [14.49, 153.2], [14.49, 132.5], [12.9, 129.2],
+       [10.03, 126.4], [10.03, 116.85], [6.68, 112.7], [5.38, 104.5], [0.0, 104.5]]
+
+[ring]                           # the inner ring round the bay: its outer edge, one point per bay point (the
+                                 # outer blocks' amber slots stay clear of it)
+pts = [[0.0, 163.0], [5.65, 163.0], [11.8, 162.6], [15.2, 159.8], [16.85, 155.0], [16.85, 131.0], [15.0, 128.4],
+       [13.9, 126.6], [14.2, 116.0], [11.6, 108.5], [10.6, 100.0], [0.0, 100.0]]
+lip = 0.4                        # the lip between the bay and the strip
+strip = 1.3                      # the strip's outer edge from the bay's edge (the strip 0.9 wide)
+chamfer = 0.5
+lip_chamfer = 0.25
+
+[header]                         # the block over the bay (under the neck), the claws' root
+pts = [[0.0, 164.6], [10.6, 164.6], [12.0, 162.6], [11.4, 158.4], [0.0, 158.4]]
+chamfer = 1.2
+
+[claw]                           # the right claw (drawing.js CLAW), mirrored for the left. Two changes for the built
+                                 # crystal: its inner jaw at u 6.84 (the built cap 6.81 out, 0.3 mm clear: the sheet
+                                 # drew 6.88 for the concept's 15.1 cap, the drawing's "close 0.8 a side"), and the
+                                 # jaw reaching down to 148.0 (drawn 149.0), so it holds 1.4 of the cap's 2.5 band
+pts = [[5.03, 163.1], [9.83, 163.3], [13.73, 158.6], [13.73, 152.5], [9.83, 149.2], [6.84, 148.0], [6.84, 155.2],
+       [5.03, 158.6]]
+chamfer = 0.7
+
+[block]                          # the bottom block, the frame's face; its sides along the bay down to 104.5
+pts = [[0.0, 112.74], [6.73, 112.74], [5.43, 104.5], [6.2, 88.4], [0.0, 88.4]]
+chamfer = 1.2
+
+[collar]                         # the cup the crystal's tip sits on: drawing.js COLLAR (14.4 wide, 112.7 ... 122.4)
+pts = [[0.0, 122.47], [7.2, 122.47], [7.2, 116.85], [2.9, 112.74], [0.0, 112.74]]
+chamfer = 0.5
+window_h = [118.4, 120.9]        # its amber band, sunk between two bronze rims
+
+[slots]                          # the amber windows: on the outer blocks (right side; mirrored) and the bottom block
+outer = [[17.36, 19.83, 140.1, 150.0], [16.2, 18.05, 109.3, 118.6]]   # drawing.js SLOTS (u0, u1, h0, h1)
+bottom = [[-1.47, 1.4, 95.3, 103.15]]                                  # drawing.js SLOT_BOTTOM
+bezel = 0.4                      # the graphite frame round each
+proud = 0.25                     # the bezel's face ahead of its block's face; the light 0.1 behind the bezel's
+
+[neck]                           # under the lamp (drawing: 11.3 wide), an octagon prism on the header
+h = [164.6, 167.7]
+ru = 5.65
+rd = 4.5
+d = 11.2                         # centred under the lamp
+
+[lamp_ring]                      # the dark ring under the dome (drawing.js RING)
+h = [167.7, 170.0]
+ru = 5.1
+rd = 4.05
+
+[lamp]                           # the red problem-lamp's dome: drawing 7.7 across, its top at 174.8, at d 8.0 ... 14.4
+h = [170.0, 174.8]
+ru = 3.85
+rd = 3.2
+d = 11.2
+wall = 2.3                       # the dome's straight side before it rounds over
+sides = 24
