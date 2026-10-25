@@ -1210,7 +1210,7 @@ pilot's static premium heads"):
   - `alien_lively.gd`: `eye_mode` `free` (the default since A3d: A1-A2's follow as far as the lids allow, the
     web module's way; every proof that never sets it, such as `eye_pit_shots.gd`, keeps its turning eyes), `fixed`
     (the pupils centred in the head, the gaze the head's forward, the darts without effect; the clip reels' job
-    default) or `lead` (the eyes reach the look target first, at most `EYE_LEAD_DEG` 8 off the head's forward); any
+    default until R1) or `lead` (the eyes reach the look target first, at most `EYE_LEAD_DEG` 8 off the head's forward); any
     other value is a `push_error`; `darts` stays 0 by default and draws from a generator seeded with `rng_seed` (196) at the first
     step or `reseed()`; the yaw counter is scaled by the head's horizontal facing (no roll near +-90 pitch) and
     low-passed over `YAW_COUNTER_TAU` 0.25 s (the reels: 0.3, not 0.55); on a clip each spring's drive is scaled by
@@ -1288,6 +1288,30 @@ pilot's static premium heads"):
     window's 0.8 height (`CROP_Y`) on the lower rim, because A3b's centre crops missed it.
   - `tools/web/lively/lively.js` draws the same eye but never applied the painted limbal ring (no `limbal` in it), so
     it needs no `gaze_limbal`; the rim rule, being off, is not ported.
+- **R1: the eye rim as one clean edge, the eyes lead a head turn (2026-10-25, art #196; proof `anim_bare/r1/`):**
+  - The eye mode: the engineer chose `lead`
+    ([art #196, comment 6391652501](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6391652501)):
+    the eyes lead a head turn by at most 8 degrees, then re-centre; no darts. It is the alien's mode wherever the
+    character is shown: `alien_clip_run.py --eye-mode` and `clip_reels.gd`'s job default are `lead`;
+    `alien_lively.gd`'s own default stays `free` for the old proofs.
+  - The rim cut (`alien_lively_build.py --rim-cut ORDER`, `rim_cut()`; `alien_lively_run.py --rim-cut`): the
+    eyeball/lid boundary re-meshed along one smooth curve per eye, no vertex moved. The rim's positions are seen
+    head-on (the plane fitted to them, polar about their centroid) and their radius against the azimuth is fitted by a
+    periodic Fourier series (`G.fourier_fit_trimmed`, spurs left out). Every triangle within `RIM_CUT_RINGS` (2) rings
+    of the rim is cut along the curve (`G.cut_triangle`; new vertices on the edges, every attribute interpolated), each
+    piece an eyeball or lid triangle by its side; the band's border keeps its class (`clamped`), and a piece under 10 %
+    of its parent snaps the cut through the nearest corner (`snapped`). The guard: `rim_bad_triangles` 0 (no piece
+    turned over or under 10 %), and the open and non-manifold welded edges unchanged (0 and 0), or the build fails.
+  - The mask follows: the build repaints the eye mask on the cut's triangles (each texel a band triangle covers takes
+    its class's median mask texel, two rings of gutter too) and writes `<head>_mask.png` with lively.json's `mask`;
+    `alien_clip_run.py` (`lively_mask()`) puts it into each head job. `alien_char_run.py`'s own head jobs still take
+    the static head's mask: its shots need the same override (R1 ran them through a wrapper).
+  - The first trial measured the angle from the eye centre's axis: the chameleon's opening spans 28 to 117 degrees
+    about it and order 6 left 4 mm (median) between the rim and the curve, so the cut followed the old edges; the
+    head-on radius at order 8 leaves 2.2 mm (the sawtooth itself) and the cut lies 0.05 mm (median) from the curve.
+  - Chameleon (`lively/v8cut_r1e`, order 8): zigzag 3.41 to 1.00 mm median, 18.44 to 12.90 max; rim junctions 20 to 0
+    (one loop per eye); 4112 band triangles into 4760 pieces, 350 new vertices; 68 clamped and 179 snapped positions
+    (the cut 0.41 mm median, 13.4 max off the curve there); largest move 0; bad pieces 0; open/non-manifold 0/0.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and
