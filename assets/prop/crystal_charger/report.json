@@ -1,16 +1,17 @@
 {
   "asset": "crystal_charger",
-  "built_by": "tools/blender/charger_run.py --tag b4 --asset assets/prop/crystal_charger",
+  "built_by": "tools/blender/charger_run.py --tag b5 --asset assets/prop/crystal_charger",
   "mesh": {
-    "triangles": 36804,
+    "triangles": 40764,
     "by_object": {
       "body": {
-        "triangles": 22488,
+        "triangles": 26670,
         "by_material": {
-          "charger_graphite": 11986,
-          "charger_bronze": 10458,
-          "charger_amber": 32,
-          "charger_cyan": 12
+          "charger_graphite": 8560,
+          "charger_bronze": 17242,
+          "charger_cyan": 532,
+          "charger_amber": 96,
+          "charger_steel": 240
         },
         "pivot_cm": [
           0.0,
@@ -20,30 +21,30 @@
         "open_edges": 0
       },
       "carrier": {
-        "triangles": 2880,
+        "triangles": 2618,
         "by_material": {
-          "charger_bronze": 2496,
-          "charger_cyan": 384
+          "charger_bronze": 2298,
+          "charger_cyan": 320
         },
         "pivot_cm": [
           0.0,
-          27.3,
-          84.5
+          53.5,
+          97.4
         ],
         "open_edges": 0
       },
       "ring": {
-        "triangles": 11184,
+        "triangles": 11224,
         "by_material": {
-          "charger_bronze": 9280,
-          "charger_cyan": 1344,
-          "charger_graphite": 556,
+          "charger_bronze": 9744,
+          "charger_cyan": 1440,
+          "charger_graphite": 36,
           "charger_amber": 4
         },
         "pivot_cm": [
           0.0,
-          27.3,
-          85.0
+          53.5,
+          94.0
         ],
         "open_edges": 0
       },
@@ -54,24 +55,24 @@
         },
         "pivot_cm": [
           0.0,
-          73.3,
-          72.0
+          99.07,
+          75.9
         ],
         "open_edges": 0
       }
     },
     "size_cm": {
       "u": [
-        -63.57,
-        63.57
+        -59.51,
+        59.51
       ],
       "d": [
-        2.04,
-        89.75
+        3.73,
+        105.25
       ],
       "h": [
         0.0,
-        130.1
+        139.7
       ]
     },
     "front": "+Z (out of the wall, along the spot's normal)",
@@ -79,8 +80,8 @@
   },
   "anchor_cm": [
     0.0,
-    27.3,
-    82.5
+    53.5,
+    95.1
   ],
   "colliders": [
     "crystal_charger_col0-convcolonly",
@@ -89,15 +90,16 @@
     "crystal_charger_col3-convcolonly",
     "crystal_charger_col4-convcolonly",
     "crystal_charger_col5-convcolonly",
+    "crystal_charger_col6-convcolonly",
     "track_ring_col0-convcolonly",
     "track_ring_col1-convcolonly"
   ],
   "checks": {
-    "wall_min_cm_body": 2.0,
+    "wall_min_cm_body": 3.358,
     "ring_turn": {
       "steps_deg": 5,
       "overlaps": 0,
-      "wall_min_cm": 2.129,
+      "wall_min_cm": 29.019,
       "worst": []
     },
     "carrier_rise": {
@@ -145,12 +147,12 @@
       "body": 0,
       "ring": 0
     },
-    "crystal_top_cm_rise0": 117.4,
+    "crystal_top_cm_rise0": 130.0,
     "crystal_overlaps_rise6": {
       "body": 0,
       "ring": 0
     },
-    "crystal_top_cm_rise6": 123.4
+    "crystal_top_cm_rise6": 136.0
   },
   "states": {
     "idle": "charger.gd set_state(look, \"idle\"): carrier down, ring still, lights at rest",
@@ -161,15 +163,15 @@
   "gltf_validator": {
     "numErrors": 0,
     "numWarnings": 0,
-    "numInfos": 12,
+    "numInfos": 13,
     "numHints": 0
   },
   "godot_cost": {
-    "draw_calls_charger": 11,
-    "gpu_ms_charger": 0.094,
-    "gpu_ms_with": 0.478,
-    "gpu_ms_without": 0.384,
+    "draw_calls_charger": 12,
+    "gpu_ms_charger": 0.1,
+    "gpu_ms_with": 0.483,
+    "gpu_ms_without": 0.383,
     "view": "1280x720, eye 1.6 m, 1.6 m away, charging"
   },
-  "review": "<raw>/ship/v4/charger/b4/sheets/"
+  "review": "<raw>/ship/v4/charger/b5/sheets/"
 }

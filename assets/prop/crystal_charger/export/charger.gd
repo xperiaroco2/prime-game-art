@@ -25,9 +25,13 @@ const CHARGER_LAYER := 1 << 19   # render layer 20: the crystal's own light skip
 const RISE := 0.06               # the carrier's travel up (m; the drawing's RISE)
 const TRAVEL := 0.01             # the button's travel in (m)
 const CYAN := Color(0.0, 0.62, 1.0)
-const AMBER := Color(1.0, 0.3, 0.0)   # deep: AgX and the glow pale a bright amber toward yellow-white
+const AMBER := Color(1.0, 0.22, 0.0)  # deep: AgX and the glow pale a bright amber toward yellow-white
 ## per state: the cyan lights' energy, the amber lights', the button lens's, the glow light's
-const STATES := {"idle": [2.2, 3.2, 1.6, 0.0], "charging": [3.4, 3.6, 0.8, 0.5], "charged": [3.0, 1.8, 2.0, 0.25]}
+## (charger-2: the strips are wider, so each glows less: 3 to 4.6 bleached them white under AgX and the glow)
+const STATES := {"idle": [1.5, 1.9, 1.6, 0.0], "charging": [2.3, 2.1, 0.8, 0.5], "charged": [2.1, 1.3, 2.0, 0.25]}
+## the bronze: the crystal socket's (art#263 socket-2: a greyer gold, darker and more metallic than the console's)
+const BRONZE := Color(0.56, 0.46, 0.32)
+const BRONZE_EDGE := Color(1.0, 0.9, 0.7)
 
 
 ## Puts the charger's materials on every surface under root and finds its leaves; returns the look: {"cyan",
@@ -36,16 +40,22 @@ const STATES := {"idle": [2.2, 3.2, 1.6, 0.0], "charging": [3.4, 3.6, 0.8, 0.5],
 static func apply(root: Node3D) -> Dictionary:
 	var bronze := ShaderMaterial.new()
 	bronze.shader = METAL
-	bronze.set_shader_parameter("metallic", 0.35)  # fully metallic, it mirrors the dark room and reads black
-	bronze.set_shader_parameter("roughness", 0.42)
+	bronze.set_shader_parameter("base_color", BRONZE)
+	bronze.set_shader_parameter("worn_color", BRONZE_EDGE)
+	bronze.set_shader_parameter("metallic", 0.75)  # the socket's: 0.9 read near-black in the dark rooms
+	bronze.set_shader_parameter("roughness", 0.32)
 	bronze.set_shader_parameter("wear", 1.0)
-	bronze.set_shader_parameter("lift", 0.12)
+	bronze.set_shader_parameter("lift", 0.08)
 	var graphite := ShaderMaterial.new()
 	graphite.shader = METAL
 	graphite.set_shader_parameter("base_color", Color(0.272, 0.276, 0.293))
 	graphite.set_shader_parameter("worn_color", Color(0.634, 0.626, 0.618))
 	graphite.set_shader_parameter("metallic", 0.75)
 	graphite.set_shader_parameter("roughness", 0.38)
+	var steel := StandardMaterial3D.new()  # the legs' piston rods: polished dark steel
+	steel.albedo_color = Color(0.5, 0.52, 0.56)
+	steel.metallic = 0.85
+	steel.roughness = 0.2
 	var cyan := _light(CYAN)
 	var amber := _light(AMBER)
 	var lens := _light(Color(0.05, 0.75, 1.0))
@@ -53,7 +63,7 @@ static func apply(root: Node3D) -> Dictionary:
 	lens.clearcoat_enabled = true
 	lens.clearcoat = 1.0
 	var by_name := {"charger_bronze": bronze, "charger_graphite": graphite, "charger_cyan": cyan,
-		"charger_amber": amber, "charger_lens": lens}
+		"charger_amber": amber, "charger_lens": lens, "charger_steel": steel}
 	for m: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
 		if m.mesh == null:
 			continue
@@ -81,7 +91,7 @@ static func apply(root: Node3D) -> Dictionary:
 	glow.omni_attenuation = 1.6
 	glow.shadow_enabled = false
 	root.add_child(glow)
-	glow.position = Vector3(0.0, 1.02, 0.273)  # at the crystal's middle (the model's frame: front +Z, metres)
+	glow.position = Vector3(0.0, 1.13, 0.535)  # at the crystal's middle (the model's frame: front +Z, metres)
 	var look := {"cyan": cyan, "amber": amber, "lens": lens, "glow": glow, "carrier": carrier, "ring": ring,
 		"button": button, "anchor": anchor, "carrier_rest": carrier.position if carrier else Vector3.ZERO,
 		"button_rest": button.position if button else Vector3.ZERO, "state": "idle"}
