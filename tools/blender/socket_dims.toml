@@ -34,8 +34,10 @@ lip = 20.0                       # socket-2: the inner bezel round the bay, rais
 ring = 19.0                      # the inner ring's rim outside the strip (side view: its lower part at 615 px)
 strip = 19.3                     # the strip's light between the bezel and the rim, a step proud of the rim
 front = 21.1                     # drawing: the frame's face, the bottom block
-header = 20.6                    # the block over the bay the claws hang from (under the claws' 22.2)
-claw = [13.0, 22.2]              # drawing: the claws' tips at 22.2 (top view: from 10; 13 keeps them arms, not a hood)
+header = 20.4                    # socket-3: the neck block between the claws' hinges, a step proud of the lip's
+                                 # 20.0 (step 2's header, 20.6 and 24 wide, ran under both claws: one hoop)
+claw = [13.0, 22.2]              # drawing: the claws' tips at 22.2; 13.0 the jaw finger's back beside the cap
+claw_plate = 20.15               # socket-3: the claw's arm is a plate in front of the lip (20.0): it swings clear
 bay = 9.5                        # drawing: the bay's floor behind the crystal, deepened so the cap fits
 collar = [9.4, 21.4]             # the cup under the crystal's tip (side view: its front at 640 px), on the axis
                                  # (its depth 2 x 4.4); its stem from 9.4 back to the bay's floor
@@ -68,17 +70,34 @@ strip = 2.0                      # the strip's outer edge from the bay's edge (t
 chamfer = 0.25                   # the rim's (it is 0.36 wide at the upper sides)
 lip_chamfer = 0.2                # each side of the bezel (and a fine bevel of 0.06): its front 0.28 wide
 
-[header]                         # the block over the bay (under the neck), the claws' root
-pts = [[0.0, 164.6], [10.6, 164.6], [12.0, 162.6], [11.4, 158.4], [0.0, 158.4]]
-chamfer = 1.2
+[header]                         # socket-3: the neck block under the turned neck, between the claws' hinges (u
+                                 # +-5.37) with a dark gap to each barrel: two claws, not one hoop with a header;
+                                 # its bottom keeps step 2's 0.95 over the crystal's loop
+pts = [[0.0, 164.6], [4.2, 164.6], [4.2, 160.2], [3.3, 158.4], [0.0, 158.4]]
+chamfer = 0.8
 
 [claw]                           # the right claw (drawing.js CLAW), mirrored for the left. Two changes for the built
                                  # crystal: its inner jaw at u 6.84 (the built cap 6.81 out, 0.3 mm clear: the sheet
                                  # drew 6.88 for the concept's 15.1 cap, the drawing's "close 0.8 a side"), and the
-                                 # jaw reaching down to 148.0 (drawn 149.0), so it holds 1.4 of the cap's 2.5 band
-pts = [[5.03, 163.1], [9.83, 163.3], [13.73, 158.6], [13.73, 152.5], [9.83, 149.2], [6.84, 148.0], [6.84, 155.2],
-       [5.03, 158.6]]
-chamfer = 0.7
+                                 # jaw reaching down to 148.0 (drawn 149.0), so it holds 1.4 of the cap's 2.5 band;
+                                 # socket-3: its two outer corners cut (12.6, 161.3; 12.2, 150.6), a curved arm
+pts = [[5.03, 163.1], [9.83, 163.3], [12.6, 161.3], [13.73, 158.6], [13.73, 152.5], [12.2, 150.6], [9.83, 149.2],
+       [6.84, 148.0], [6.84, 155.2], [5.03, 158.6]]
+chamfer = 0.6
+# socket-3: the claws open (the engineer, 2026-10-25, prime-game#1095 comment 6392150248; prime-game-design 1df9a42,
+# drawing.js HINGE [590, 268], OPEN 35, PULL 15): each claw a leaf (claw_r; claw_l mirrored) swinging round its root
+# on the neck in the wall's plane, up and outward; the crystal slides straight out along +d, free after `pull`
+hinge = [5.37, 162.79]           # drawing.js HINGE through its uF, hF
+open_drawn = 35.0                # drawing.js OPEN, a placeholder
+open = 25.0                      # built: the jaw finger reaches the bay's lip at 29 degrees (the build's swing
+                                 # check: clear to 28, swing_clear_deg); at 35 it would cut the lip and the strip
+pull = 15.0                      # drawing.js PULL
+knuckle = 1.0                    # the barrel round the hinge (radius), turning on a graphite pin out of the ring
+# the arm in two segments (the sheet's knuckled claw), cut on the line through these two points, cut_gap wide
+cut = [[6.6, 156.2], [13.73, 155.0]]
+cut_gap = 0.4
+# the jaw finger behind the arm's lower segment, d claw[0] .. claw_plate: it holds the cap's band from the side
+finger = [[6.84, 153.6], [8.0, 153.6], [8.0, 148.47], [6.84, 148.0]]
 
 [block]                          # the bottom block, the frame's face; its sides along the bay down to 104.5
 pts = [[0.0, 112.74], [6.73, 112.74], [5.43, 104.5], [6.2, 88.4], [0.0, 88.4]]

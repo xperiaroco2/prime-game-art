@@ -15,7 +15,7 @@ Everything goes under <raw>/ship/v4/socket/<tag>/. --asset DIR then writes the a
 (assets/prop/crystal_socket): the GLB and the look's files in export/, the .blend in source/, report.json and
 manifest.toml with the raw files' hashes.
 
-    $PYTHON_BIN tools/blender/socket_run.py [--tag build1] [--no-build] [--no-shots] [--samples 32]
+    $PYTHON_BIN tools/blender/socket_run.py [--tag build1] [--no-build] [--no-shots] [--samples 32] [--pieces DIR]
         [--asset assets/prop/crystal_socket]
 """
 from __future__ import annotations
@@ -45,17 +45,23 @@ REFS = {"socket.jpg": DESIGN / "socket.jpg", "front-ortho.jpg": DESIGN / "socket
         "side-ortho.jpg": DESIGN / "socket-drawing" / "side-ortho.jpg",
         "drawing.js": DESIGN / "socket-drawing" / "drawing.js"}
 CRYSTAL = ROOT / "assets" / "prop" / "energy_crystal" / "export" / "energy_crystal.glb"
-MATERIAL_FILES = ("socket.gd", "socket_metal.gdshader")
+# socket-3: the ship's current build (docs/ship.md: the vents' b5b, the raise's 1.2 m deck). ship.toml's raw_dir
+# pieces/ (ship/v3/pieces) were built before the raise with their deck at 0.6 m (hall_grate's top 0.600 m): the
+# step 1 and 2 hall shots stood the sockets 0.6 m above that deck
+PIECES = RAW / "ship" / "v4" / "vents-b" / "pieces_b5b"
+MATERIAL_FILES = ("socket.gd", "socket_metal.gdshader", "socket_bay.gdshader")
 SPOTS = ("socket_e", "socket_w", "socket_fe", "socket_fw")
 SHOT_SPOT = "socket_e"
 # the hall views on SHOT_SPOT: name, title, yaw from the front (+ toward +u), elevation (deg), target (u, d, h - mount
-# in cm), distance (m), fov, state
+# in cm), distance (m), fov, state (a name, or hall.gd's dict: socket-3's "claws" 0..1 and "pull" cm)
+OPEN = {"socket": "charged", "claws": 1.0, "pull": 15.0}
 HALL_VIEWS = [
     ("hero_charged", "charged", -28.0, 4.0, (0.0, 12.0, -6.0), 1.55, 42.0, "charged"),
     ("front_spent", "spent: the lamp lit", 0.0, 2.0, (0.0, 12.0, -6.0), 1.5, 42.0, "spent"),
     ("side_charged", "side", -78.0, 3.0, (0.0, 12.0, -6.0), 1.25, 46.0, "charged"),
     ("empty", "empty: the lamp lit", 22.0, 4.0, (0.0, 12.0, -6.0), 1.5, 42.0, "empty"),
     ("eye", "a player 2 m away", -10.0, 2.0, (0.0, 10.0, -10.0), 2.0, 70.0, "charged"),
+    ("open_pulled", "claws open, crystal 15 cm out", -28.0, 4.0, (0.0, 16.0, -6.0), 1.55, 42.0, OPEN),
 ]
 CLOSE_VIEWS = [
     ("claws", "claws on the cap", -30.0, 14.0, (0.0, 17.0, 10.0), 0.42, 32.0, "charged"),
@@ -70,6 +76,9 @@ CLOSE_VIEWS = [
     ("bottom", "bottom block", 22.0, -16.0, (0.0, 12.0, -42.0), 0.55, 36.0, "charged"),
     ("bay", "into the bay, empty", -42.0, 6.0, (0.0, 10.0, 0.0), 0.5, 40.0, "empty"),
     ("strip_low", "strips beside the block", 30.0, -6.0, (-6.0, 15.0, -32.0), 0.45, 34.0, "charged"),
+    ("claws_open", "claws open, crystal 15 cm out", -25.0, 12.0, (0.0, 22.0, 10.0), 0.55, 34.0, OPEN),
+    ("hinge", "hinge, neck block, claw seam", 35.0, 20.0, (6.0, 20.0, 14.0), 0.3, 34.0, "charged"),
+    ("open_side", "open claws from the side", -70.0, 10.0, (8.0, 17.0, 14.0), 0.42, 34.0, OPEN),
 ]
 # the four spots in place: eye and target in the ship's plan (x, y, h above the deck, m), fov, state
 PLACE_VIEWS = [
@@ -87,6 +96,7 @@ def main() -> int:
     ap.add_argument("--asset", type=Path, help="write the asset folder here from this build")
     ap.add_argument("--grid", type=Path, help="a JSON list of bronze variants for the studio's grid.png")
     ap.add_argument("--studio-only", action="store_true", help="only the studio shots of an existing build")
+    ap.add_argument("--pieces", type=Path, default=PIECES, help="the built ship pieces for the hall shots")
     args = ap.parse_args()
     if args.studio_only:
         out = HOME / args.tag
@@ -94,7 +104,7 @@ def main() -> int:
         return studio(out, args.grid)
     copy_refs()
     layout = ship_layout.load()
-    pieces = ship_cmd.raw(layout) / "pieces"
+    pieces = args.pieces
     out = HOME / args.tag
     if not args.no_build:
         r = blender.run_script("socket_build.py", ["--out", str(out), "--crystal", str(CRYSTAL), "--refs", str(REF),
@@ -159,7 +169,7 @@ def view_rows(views: list) -> list:
         eye = (u + math.sin(y) * math.cos(e) * dist * 100.0, d + math.cos(y) * math.cos(e) * dist * 100.0,
                h + mount + math.sin(e) * dist * 100.0)
         rows.append([name, title, to_godot(SHOT_SPOT, *eye), to_godot(SHOT_SPOT, u, d, h + mount), fov,
-                     {"socket": state}])
+                     state if isinstance(state, dict) else {"socket": state}])
     return rows
 
 
@@ -175,6 +185,11 @@ def hall_rows() -> list:
 def shots(layout: dict, pieces: Path, glb: Path, folder: Path, views: list, compare: list) -> int:
     """The sockets in the ship's hall at night: ship.gd's shoot request (every built piece, the night light, the
     rooms' probes) plus a socket on each socket spot, shot by godot/socket/hall.gd."""
+    deck = deck_top(pieces / "hall_grate.glb")
+    if abs(deck - layout["deck"]["floor_h"]) > 0.05:
+        raise common.Failure(f"the pieces in {pieces} have their hall deck at {deck:.3f} m, not floor_h "
+                             f"{layout['deck']['floor_h']} (built before the raise?): pass --pieces")
+    print(f"pieces: {pieces} (hall deck {deck:.3f} m)", flush=True)
     req, staged = ship_cmd.built_request(layout, pieces)
     req["pieces"]["crystal_socket"] = "res://import/crystal_socket.glb"
     for sid in SPOTS:
@@ -221,6 +236,15 @@ def studio(out: Path, grid: Path | None) -> int:
         return code or 1
     shutil.copyfile(folder / "compare_sheet.png", out / "compare_sheet.png")
     return 0
+
+
+def deck_top(glb: Path) -> float:
+    """A built piece's highest point (metres, glTF +Y up): the accessors' max in its GLB's JSON chunk."""
+    data = glb.read_bytes()
+    size = int.from_bytes(data[12:16], "little")
+    doc = json.loads(data[20:20 + size])
+    acc = doc["accessors"]
+    return max(acc[p["attributes"]["POSITION"]]["max"][1] for m in doc["meshes"] for p in m["primitives"])
 
 
 def sha256(path: Path) -> str:
@@ -274,8 +298,8 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         "title = \"The ship's crystal socket\"",
         ("notes = \"The wall socket that holds one energy crystal, four of them on the ship's hall walls: a bronze and "
          f'graphite frame {size["u"]:.1f} cm wide and {size["h"]:.1f} cm tall with its red problem-lamp, '
-         f'{size["d"]:.1f} cm out of the wall, two fixed claws holding the built crystal\'s cap, a cyan strip round '
-         f'the bay and amber windows; {build["triangles"]:,} triangles in five surfaces, convex colliders, the '
+         f'{size["d"]:.1f} cm out of the wall, two claws (claw_r, claw_l) holding the built crystal\'s cap that '
+         f'open round their hinges, a cyan strip round the bay and amber windows; {build["triangles"]:,} triangles in six surfaces, convex colliders, the '
          'crystal_anchor node at the crystal\'s pivot. Front +Z, origin on the wall at floor level under the axis. '
          'States: export/socket.gd set_state (HANDOFF.md). From the sheet the engineer picked on 2026-10-25 and its '
          'drawing in cm (prime-game-design ea27a81, ideas/ship-components/stations-final: socket.jpg, '

@@ -36,7 +36,42 @@ def load(path: Path = DIMS_FILE) -> dict:
         d[name]["h"] = [h + s for h in d[name]["h"]]
     d["measure"]["bottom_h"] += s
     d["mount"]["tip_h"] = d["mount"]["h"] - d["mount"]["crystal"] / 2.0
+    c = d["claw"]
+    c["hinge"] = [c["hinge"][0], c["hinge"][1] + s]
+    c["cut"] = [[u, h + s] for u, h in c["cut"]]
+    c["finger"] = [[u, h + s] for u, h in c["finger"]]
     return d
+
+
+def swing(pts: list, hinge: list, deg: float) -> list:
+    """socket-3: points of the right claw turned deg round the hinge in the wall's plane, counter-clockwise as you
+    face the socket (positive: up and outward; the left claw is the mirror)."""
+    a = math.radians(deg)
+    ca, sa = math.cos(a), math.sin(a)
+    hu, hh = hinge
+    return [(hu + (u - hu) * ca - (h - hh) * sa, hh + (u - hu) * sa + (h - hh) * ca) for u, h in pts]
+
+
+def clip(pts: list, a: tuple, b: tuple, keep_left: bool, gap: float = 0.0) -> list:
+    """socket-3: the convex or concave polygon pts cut by the line a -> b moved gap / 2 to the kept side; the part
+    left of the line (as you walk a -> b) or right of it (Sutherland-Hodgman)."""
+    du, dh = b[0] - a[0], b[1] - a[1]
+    ln = math.hypot(du, dh)
+    sgn = 1.0 if keep_left else -1.0
+
+    def side(p) -> float:
+        return sgn * (du * (p[1] - a[1]) - dh * (p[0] - a[0])) / ln - gap / 2.0
+    out = []
+    n = len(pts)
+    for i in range(n):
+        p, q = pts[i], pts[(i + 1) % n]
+        sp, sq = side(p), side(q)
+        if sp >= 0:
+            out.append(tuple(p))
+        if (sp >= 0) != (sq >= 0):
+            t = sp / (sp - sq)
+            out.append((p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t))
+    return out
 
 
 def loop(half: list) -> list:
@@ -108,6 +143,9 @@ def lines(d: dict) -> dict:
              ("collar", loop(d["collar"]["pts"]), True)]
     claw = [tuple(p) for p in d["claw"]["pts"]]
     front += [("claw", claw, True), ("claw", [(-u, h) for u, h in claw], True)]
+    # socket-3: the claws open by [claw] open round their hinges
+    opened = swing(claw, d["claw"]["hinge"], d["claw"]["open"])
+    front += [("open", opened, True), ("open", [(-u, h) for u, h in opened], True)]
     for u0, u1, h0, h1 in d["slots"]["outer"] + [[-b, -a, c, e] for a, b, c, e in d["slots"]["outer"]] + d["slots"]["bottom"]:
         front.append(("slot", [(u0, h0), (u1, h0), (u1, h1), (u0, h1)], True))
     for name in ("neck", "lamp_ring", "lamp"):
@@ -159,7 +197,7 @@ def svg(d: dict, under: dict) -> str:
         out.append(f'<g transform="translate({x0} 8)"><image xlink:href="{href}" width="{fw}" height="{fh}"/>')
         out.append(f'<text x="1" y="-2" font-size="3" fill="#e8eef5">{view} over the {kind}</text>')
         for name, pts, closed in lines(d)[view]:
-            colour = {"axis": "#7fe6ff", "slot": "#ffb347", "bay": "#ff8a3c"}.get(name, "#ffd27a")
+            colour = {"axis": "#7fe6ff", "slot": "#ffb347", "bay": "#ff8a3c", "open": "#ff7ad9"}.get(name, "#ffd27a")
             p = " ".join(f"{u - left:.2f},{top - hh:.2f}" for u, hh in pts)
             tag = "polygon" if closed else "polyline"
             out.append(f'<{tag} points="{p}" fill="none" stroke="{colour}" stroke-width="0.18"/>')

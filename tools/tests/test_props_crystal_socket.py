@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import struct
 import sys
 import tomllib
@@ -22,8 +23,9 @@ ASSET = common.ROOT / "assets" / "prop" / "crystal_socket"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "socket_dims.toml"
 TRIANGLES = 6000  # a wall station: 2,138 at b4, 3,9xx at b5 (socket-2: blocks, two bevels, turned parts)
-SURFACES = {"socket_bronze", "socket_graphite", "socket_cyan", "socket_amber", "socket_lamp"}
-MATERIAL_FILES = ("socket.gd", "socket_metal.gdshader")
+SURFACES = {"socket_bronze", "socket_graphite", "socket_cyan", "socket_amber", "socket_lamp", "socket_bay"}
+MATERIAL_FILES = ("socket.gd", "socket_metal.gdshader", "socket_bay.gdshader")
+CLAWS = ("claw_r", "claw_l")
 
 
 def lfs_pointer(path) -> bool:
@@ -93,6 +95,37 @@ class CrystalSocketDrawing(unittest.TestCase):
                 self.assertAlmostEqual(q[1], p[1] - 20.0)
         self.assertAlmostEqual(b["lamp"]["h"][1], a["lamp"]["h"][1] - 20.0)
 
+    def test_claws_open_round_the_drawings_hinge(self) -> None:
+        # prime-game-design 1df9a42 drawing.js: HINGE [590, 268] px, OPEN 35 (a placeholder), PULL 15
+        d = socket_drawing.load()
+        k = d["claw"]
+        self.assertAlmostEqual(k["hinge"][0], (590 - 511.5) / 14.613, delta=0.01)
+        self.assertAlmostEqual(k["hinge"][1], 87.38 + (1370 - 268) / 14.613, delta=0.02)
+        self.assertEqual((k["open_drawn"], k["pull"]), (35.0, 15.0))
+        self.assertTrue(0.0 < k["open"] <= k["open_drawn"])
+        # the right claw's tip turns up and outward; the hinge stays
+        tip = max(k["pts"], key=lambda p: (p[0], -p[1]))
+        (u, h), (hu, hh) = socket_drawing.swing([tip, k["hinge"]], k["hinge"], k["open"])
+        self.assertGreater(u, tip[0])
+        self.assertGreater(h, tip[1])
+        self.assertAlmostEqual(hu, k["hinge"][0])
+        self.assertAlmostEqual(hh, k["hinge"][1])
+        # the arm's plate in front of the lip and the neck block, the finger behind it beside the cap
+        dp = d["depth"]
+        self.assertGreater(dp["claw_plate"], max(dp["lip"], dp["ring"], dp["strip"]))
+        self.assertLess(max(u for u, _h in d["header"]["pts"]), k["hinge"][0] - k["knuckle"])
+        # the game's look opens them by the same angle and pulls by the same length
+        look = (common.ROOT / "godot" / "socket" / "socket.gd").read_text(encoding="utf-8")
+        self.assertEqual(float(re.search(r"CLAW_OPEN_DEG := ([\d.]+)", look).group(1)), k["open"])
+        self.assertEqual(float(re.search(r"PULL_CM := ([\d.]+)", look).group(1)), k["pull"])
+
+    def test_clip_cuts_a_square_in_two(self) -> None:
+        sq = [(0.0, 10.0), (10.0, 10.0), (10.0, 0.0), (0.0, 0.0)]
+        up = socket_drawing.clip(sq, (0.0, 5.0), (10.0, 5.0), True, 1.0)
+        down = socket_drawing.clip(sq, (0.0, 5.0), (10.0, 5.0), False, 1.0)
+        self.assertEqual(sorted({round(h, 6) for _u, h in up}), [5.5, 10.0])
+        self.assertEqual(sorted({round(h, 6) for _u, h in down}), [0.0, 4.5])
+
     def test_offset_moves_a_clockwise_loop_outward(self) -> None:
         sq = socket_drawing.loop([[0.0, 10.0], [10.0, 10.0], [10.0, 0.0], [0.0, 0.0]])
         out = socket_drawing.offset(sq, 1.0)
@@ -118,11 +151,24 @@ class CrystalSocketAsset(unittest.TestCase):
         doc = glb_json(glb)
         nodes = {n["name"]: n for n in doc["nodes"]}
         body = doc["meshes"][nodes["crystal_socket"]["mesh"]]
-        prims = body["primitives"]
-        self.assertEqual({doc["materials"][p["material"]]["name"] for p in prims}, SURFACES)
+        self.assertEqual({doc["materials"][p["material"]]["name"] for p in body["primitives"]}, SURFACES)
+        # socket-3: the claws are leaves on their hinges, closed (no rotation), each with its own collider
+        placed = [(body["primitives"], [0.0, 0.0, 0.0])]
+        for name in CLAWS:
+            claw = nodes[name]
+            self.assertNotIn("rotation", claw)
+            self.assertAlmostEqual(abs(claw["translation"][0]), 0.0537, delta=1e-4)
+            self.assertAlmostEqual(claw["translation"][1], 1.6279, delta=1e-4)
+            kids = [doc["nodes"][i]["name"] for i in claw.get("children", [])]
+            self.assertTrue(any(k.startswith("crystal_socket_col") and k.endswith("-convcolonly") for k in kids), kids)
+            placed.append((doc["meshes"][claw["mesh"]]["primitives"], claw["translation"]))
+        self.assertGreater(nodes["claw_r"]["translation"][0], 0.0)
+        prims = [p for ps, _t in placed for p in ps]
         self.assertLessEqual(sum(doc["accessors"][p["indices"]]["count"] // 3 for p in prims), TRIANGLES)
-        lo = [min(doc["accessors"][p["attributes"]["POSITION"]]["min"][i] for p in prims) for i in range(3)]
-        hi = [max(doc["accessors"][p["attributes"]["POSITION"]]["max"][i] for p in prims) for i in range(3)]
+        lo = [min(doc["accessors"][p["attributes"]["POSITION"]]["min"][i] + t[i] for ps, t in placed for p in ps)
+              for i in range(3)]
+        hi = [max(doc["accessors"][p["attributes"]["POSITION"]]["max"][i] + t[i] for ps, t in placed for p in ps)
+              for i in range(3)]
         self.assertAlmostEqual(lo[2], 0.0, delta=0.0005)  # glTF +Z out of the wall: the back on the wall's face
         self.assertAlmostEqual(hi[2], 0.222, delta=0.002)  # the claws' tips, 22.2 cm
         self.assertAlmostEqual(hi[0] - lo[0], 0.467, delta=0.002)
@@ -161,6 +207,14 @@ class CrystalSocketAsset(unittest.TestCase):
         self.assertEqual(set(c["pull_out_pairs_per_2cm"]), {0})  # it slides straight out
         self.assertEqual(c["parts_touching_nothing"], [])
         self.assertEqual(c["coplanar_overlaps"], [])
+        # socket-3: the claws swing clear of the frame to past their open angle, clear of the crystal, and the
+        # crystal slides out past them open
+        self.assertGreaterEqual(c["swing_clear_deg"], c["open_deg"])
+        self.assertEqual(c["closed_vs_body_pairs"], 0)
+        self.assertEqual(c["open_vs_body_pairs"], 0)
+        self.assertEqual(c["open_vs_crystal_pairs"], 0)
+        self.assertGreater(c["open_gap_cm"], 0.0)
+        self.assertEqual(set(c["open_pull_pairs_per_2cm"]), {0})
 
     def test_shipped_look_matches_the_godot_files(self) -> None:
         for name in MATERIAL_FILES:

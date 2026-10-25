@@ -5,7 +5,8 @@ extends "res://ship/ship.gd"
 ## additions: each socket wears socket.gd's look, the built crystal (the request's "crystal") is parented on each
 ## socket's crystal_anchor with crystal.gd's look, and a view's sixth element may name the state
 ## ({"socket": "charged" | "spent" | "empty" | "mixed"}; charged without it; mixed: the spots in order charged,
-## spent, empty, charged). Started by the runner through `_godot.window()` like ship.gd:
+## spent, empty, charged; socket-3: "claws" 0..1 opens the claws, "pull" pulls the crystals out, cm). Started by
+## the runner through `_godot.window()` like ship.gd:
 ##   godot <_godot.window() flags> -s res://socket/hall.gd -- <request.json> <out>
 
 const Socket = preload("res://socket/socket.gd")
@@ -54,3 +55,6 @@ func _ab(off: Dictionary) -> void:
 		Socket.set_state(s["look"], st)
 		(s["crystal"] as Node3D).visible = st != "empty"
 		Crystal.set_charge(s["crystal_look"], 0.0 if st == "spent" else 1.0)
+		# socket-3: the claws open (0..1) and the crystal pulled out along its anchor's +Z (cm)
+		Socket.set_claws(s["look"], float(off.get("claws", 0.0)))
+		(s["crystal"] as Node3D).position = Vector3(0.0, 0.0, float(off.get("pull", 0.0)) * 0.01)

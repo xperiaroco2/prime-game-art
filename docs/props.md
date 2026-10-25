@@ -623,16 +623,30 @@ They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, f
    `crystal_socket_col<n>-convcolonly` leave the crystal's room and the lamp free; the `crystal_anchor` empty sits at
    the crystal's pivot (its tip: MOUNT minus 17.45) on its axis with no rotation, so the game parents
    `energy_crystal.glb` there and slides it out along +Z.
+   **The claws open** (socket-3; the engineer's decision of 2026-10-25, prime-game#1095 comment 6392150248; the
+   drawing's `HINGE`, `OPEN`, `PULL` at prime-game-design 1df9a42): each claw is its own object (`claw_leaf`:
+   `claw_r`, `claw_l`) with its origin on its hinge (u +-5.37, h 162.79) and its collider parented, turning in the
+   wall's plane round its local glTF +Z. A moving part must not pass through the frame, so the claw is a plate in
+   front of the lip (`[depth] claw_plate` 20.15 .. 22.2, the drawing's outline cut in two knuckled segments, a barrel
+   round the hinge on a graphite pin) and only a small jaw finger reaches back beside the cap; the header became a
+   narrow neck block between the hinges (a dark gap to each claw: two arms, not one hoop). The swing check turns the
+   claws 0 .. 40 degrees and counts their triangles against the body's: the finger cuts the bay's lip past
+   28 (it touches at 29), so `[claw] open` is 25 (the drawing's 35 was a placeholder).
 3. **The checks with the crystal.** The build imports the crystal onto the anchor and measures what a picture
    hides: the claws' gap to the cap, the tip over the collar, triangle overlaps of the crystal with the socket and
    its colliders at rest and pulled out in 2 cm steps, parts touching no other part, open edges, and coplanar faces
-   of two parts facing the same way (z-fighting). They go into `build.json` and the asset's `report.json`.
+   of two parts facing the same way (z-fighting); socket-3: the claws' swing per degree, the open claws' gap to the
+   body and the crystal pulled out past the open claws. They go into `build.json` and the asset's `report.json`.
 4. **The look and the states.** `godot/socket/socket.gd`: the console's bronze and graphite
    (`socket_metal.gdshader` is `console_metal.gdshader`, unchanged; socket-2 sets the bronze darker and more metallic
    than the console's, a greyer gold at metallic 0.75 and roughness 0.32, picked from the studio's variant grids (0.9 read near-black in the hall): the console's 0.35 read
    as matte brown plastic beside the sheet), cyan and amber glow, the red dome
    `socket_lamp` with its own light; `set_state(look, "charged" | "spent" | "empty")` lights the lamp for spent and
-   empty. `seat_crystal(crystal_look)` keeps the crystal's own light off the socket (the socket draws on render
+   empty, and the bay's floor (`socket_bay.gdshader`) glows cyan round a charged crystal; `set_claws(look, 0..1)`
+   opens the claws. socket-3 gave the shared metal shader parameters whose defaults keep the console's pixels (the
+   colour's mottle and grain, the roughness's, the worn edges' polish, and off by default: `shade`, faces lighter or
+   darker by their facing, and `dent` / `wave`, a hammered and a broad bend of the normal); `socket.gd`
+   `BRONZE_FINISH` holds the socket's values, the ones the other stations' bronze matches. `seat_crystal(crystal_look)` keeps the crystal's own light off the socket (the socket draws on render
    layer 20 alone, the crystal's light leaves that layer out of its cull mask): in the niche it burned the frame
    white-cyan, and moved 30 cm out it washed the whole face mint (the hall shots b2 and b4).
 5. **Check against the drawing and in the hall.** `tools/blender/socket_run.py` renders the front and side
@@ -641,13 +655,15 @@ They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, f
    `ship.gd`'s shoot mode: a socket on each of the four spots (yaw `atan2(normal x, normal y)`), the crystal on each
    anchor, the hall views and the sheet beside `socket.jpg` (`<tag>/hall/`), the close-ups of every edge and seam
    (`<tag>/close/`). `godot/socket/studio.gd` then shoots the socket on a neutral backdrop at the sheet's
-   three-quarter angle beside `socket.jpg` (`<tag>/compare_sheet.png`); `--grid FILE` adds one render per bronze
-   variant (`[{"title", "bronze": {shader parameter: value}}]`, `<tag>/studio/grid.png`); `--studio-only` shoots only
-   that from an existing build.
+   three-quarter angle beside `socket.jpg` (`<tag>/compare_sheet.png`; the claws open and the crystal pulled out:
+   `studio/studio_open.png`); `--grid FILE` adds one render per variant of the look's materials
+   (`[{"title", "bronze": {shader parameter: value}, "amber": {property: value}}]`, `<tag>/studio/grid.png`);
+   `--studio-only` shoots only that from an existing build.
 
    ```bash
    $PYTHON_BIN tools/blender/socket_run.py --tag <tag> [--grid FILE] --asset assets/prop/crystal_socket
    ```
 
 `tools/tests/test_props_crystal_socket.py` checks the drawing's numbers, the one-number MOUNT, the claws against the
-built cap and the committed asset (anchor, colliders, the report's checks).
+built cap, the claws' hinge, angle and pull against the drawing and `socket.gd`, and the committed asset (anchor,
+the claws' nodes and colliders, the report's checks).

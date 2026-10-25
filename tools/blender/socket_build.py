@@ -32,7 +32,7 @@ import socket_drawing as sd  # noqa: E402
 
 D = sd.load()
 CM = 0.01
-ORDER = ["socket_bronze", "socket_graphite", "socket_cyan", "socket_amber", "socket_lamp"]
+ORDER = ["socket_bronze", "socket_graphite", "socket_cyan", "socket_amber", "socket_lamp", "socket_bay"]
 PART = "socket_part"
 EDGE = "socket_chamfer"
 PARTS: list = []
@@ -208,7 +208,8 @@ def build_mesh() -> bpy.types.Object:
     seams = [tuple(p) for p in o["seams"]] + [(-u, h) for u, h in o["seams"]]
     ring_out, ring_in = sd.match(sd.offset(outline, -o["inset"]), bay, c, seams)
     blocks(bm, ring_out, ring_in, c, seams, dp["plate"] - 0.1, dp["layer"], o["layer_chamfer"], o["seam"])
-    slab(bm, "bay", "socket_graphite", sd.offset(bay, -0.02), None, dp["plate"] - 0.2, dp["bay"])
+    # socket-3: the bay's floor its own surface (socket_bay): socket.gd glows it round a charged crystal
+    slab(bm, "bay", "socket_bay", sd.offset(bay, -0.02), None, dp["plate"] - 0.2, dp["bay"])
     # socket-2: the inner bezel round the bay (raised), the cyan strip beside it, the ring's rim outside the strip
     lip, strip = sd.offset(bay, r["lip"]), sd.offset(bay, r["strip"])
     slab(bm, "lip", "socket_bronze", lip, bay, dp["layer"], dp["lip"], r["lip_chamfer"], "both")
@@ -216,9 +217,11 @@ def build_mesh() -> bpy.types.Object:
     slab(bm, "ring", "socket_bronze", sd.loop(r["pts"]), strip, dp["layer"] - 0.1, dp["ring"], r["chamfer"], "outer")
     slab(bm, "header", "socket_bronze", sd.loop(D["header"]["pts"]), None, dp["plate"] - 0.3, dp["header"],
          D["header"]["chamfer"])
-    claw = [tuple(p) for p in D["claw"]["pts"]]
-    slab(bm, "claws", "socket_bronze", claw, None, *dp["claw"], D["claw"]["chamfer"])
-    slab(bm, "claws", "socket_bronze", [(-u, h) for u, h in reversed(claw)], None, *dp["claw"], D["claw"]["chamfer"])
+    # socket-3: the claws are their own leaves (claw_leaf); here the graphite pins they turn on, out of the ring
+    k = D["claw"]
+    for sgn in (1, -1):
+        slab(bm, "pins", "socket_graphite", circle(sgn * k["hinge"][0], k["hinge"][1], 0.45, 12), None,
+             dp["ring"] - 0.05, dp["claw_plate"] + 0.85)
     slab(bm, "block", "socket_bronze", sd.loop(D["block"]["pts"]), None, dp["plate"] - 0.4, dp["front"],
          D["block"]["chamfer"])
     # the collar: an octagon cup on the crystal's axis (drawing.js COLLAR's outline in front), its amber band
@@ -268,7 +271,53 @@ def build_mesh() -> bpy.types.Object:
         prof.append((math.cos(a), h0 + lp["wall"] + top * math.sin(a)))
     prof.append((0.0, h1))
     prism(bm, "lamp", "socket_lamp", prof, lp["ru"], lp["rd"], lp["d"], lp["sides"], rot=0.0)
-    me = bpy.data.meshes.new("crystal_socket")
+    return to_object(bm, "crystal_socket")
+
+
+def circle(cu: float, ch: float, r: float, n: int) -> list:
+    """n points round (cu, ch), clockwise from the top as you face the socket (the polygons' order)."""
+    return [(cu + r * math.sin(2 * math.pi * i / n), ch + r * math.cos(2 * math.pi * i / n)) for i in range(n)]
+
+
+def claw_leaf(sgn: int) -> bpy.types.Object:
+    """socket-3: one claw as its own object, claw_r (sgn 1) or claw_l (-1, the mirror), its origin on the hinge, no
+    rotation (closed); the game turns it OPEN round its local glTF +Z (socket.gd set_claws). The drawing's CLAW as a
+    plate in front of the lip (claw_plate .. claw[1]) cut in two segments, a barrel round the hinge, and the jaw
+    finger behind the lower segment beside the cap (claw[0] .. claw_plate)."""
+    k, dp = D["claw"], D["depth"]
+    bm = bmesh.new()
+    bm.faces.layers.int.new(PART)
+    bm.faces.layers.int.new(EDGE)
+
+    def side(pts: list) -> list:
+        return [tuple(p) for p in pts] if sgn > 0 else [(-u, h) for u, h in reversed(pts)]
+    claw = [tuple(p) for p in k["pts"]]
+    a, b = (tuple(p) for p in k["cut"])
+    d0, d1 = dp["claw_plate"], dp["claw"][1]
+    for keep in (True, False):
+        slab(bm, "claws", "socket_bronze", side(sd.clip(claw, a, b, keep, k["cut_gap"])), None, d0, d1, k["chamfer"])
+    hu, hh = k["hinge"]
+    slab(bm, "claws", "socket_bronze", circle(sgn * hu, hh, k["knuckle"], 16), None, d0 + 0.05, d1 - 0.1,
+         (0.25, 0.08))
+    slab(bm, "claws", "socket_bronze", side(k["finger"]), None, dp["claw"][0], d0 + 0.05)
+    ob = to_object(bm, "claw_r" if sgn > 0 else "claw_l")
+    pivot = P(sgn * hu, d0, hh)
+    for v in ob.data.vertices:
+        v.co -= pivot
+    ob.location = pivot
+    # its collider turns with it: the arm's hull kept 0.06 out of the cap (u >= 6.9), parented
+    pts = [(sgn * max(u, 6.9), d, h) for u, h in claw for d in dp["claw"]]
+    col = hull(f"crystal_socket_col{5 if sgn > 0 else 6}-convcolonly", pts)
+    for v in col.data.vertices:
+        v.co -= pivot
+    col.parent = ob
+    return ob
+
+
+def to_object(bm, name: str) -> bpy.types.Object:
+    """The bmesh as a mesh object: UV0 u the faces' edge level (LEVEL_U), v a random number per face, the surfaces
+    in ORDER, flat shading but the lamp's dome."""
+    me = bpy.data.meshes.new(name)
     uv = bm.loops.layers.uv.new("UVMap")
     edge = bm.faces.layers.int[EDGE]
     rng = random.Random(263)
@@ -278,11 +327,11 @@ def build_mesh() -> bpy.types.Object:
             lp_[uv].uv = (LEVEL_U.get(f[edge], 0.0), v)
     bm.to_mesh(me)
     bm.free()
-    for name in ORDER:
-        me.materials.append(MATS[name])
+    for surface in ORDER:
+        me.materials.append(MATS[surface])
     for p in me.polygons:
         p.use_smooth = ORDER[p.material_index] == "socket_lamp"
-    ob = bpy.data.objects.new("crystal_socket", me)
+    ob = bpy.data.objects.new(name, me)
     bpy.context.collection.objects.link(ob)
     return ob
 
@@ -320,10 +369,8 @@ def colliders() -> list:
            for d in (dp["bay"], dp["front"])]
     low += [(sgn * u, d, h) for sgn in (1, -1) for u, h in ((6.4, min(hs)), (14.0, 112.0 + (tip - 122.55)))
             for d in (dp["bay"], max(dp["ring"], dp["lip"]))]
-    hh = [h for _, h in D["header"]["pts"]]
-    claw = D["claw"]["pts"]
-    up = [(sgn * u, d, h) for sgn in (1, -1) for u, h in claw if h >= min(hh) for d in dp["claw"]]
-    up += [(u, d, h) for u, h in sd.loop(D["header"]["pts"]) for d in (dp["plate"], dp["header"])]
+    # socket-3: the neck block and the lamp's collar; the claws have their own colliders (claw_leaf)
+    up = [(u, d, h) for u, h in sd.loop(D["header"]["pts"]) for d in (dp["plate"], dp["header"])]
     lr = D["lamp_ring"]
     up += [(sgn * lr["ru"], D["neck"]["d"] + k * lr["rd"], lr["h"][1]) for sgn in (1, -1) for k in (1, -1)]
     return [hull(f"crystal_socket_col{i}-convcolonly", pts) for i, pts in enumerate([back, *side, low, up])]
@@ -347,6 +394,8 @@ SPEC = {
     "socket_amber": dict(base=(0.06, 0.04, 0.01), metallic=0.0, rough=0.3, emit=(1.0, 0.55, 0.08), strength=4.0),
     # the GLB's fallback is the usual state, charged: the lamp's red glass unlit (socket.gd lights it)
     "socket_lamp": dict(base=(0.45, 0.02, 0.015), metallic=0.0, rough=0.12),
+    # socket-3: the bay's floor, dark (socket.gd glows it cyan round a charged crystal)
+    "socket_bay": dict(base=(0.03, 0.035, 0.045), metallic=0.2, rough=0.55),
 }
 
 
@@ -379,6 +428,64 @@ def bvh(ob) -> BVHTree:
     return BVHTree.FromPolygons(v, f)
 
 
+def bvh_parts(obs: list, skip: tuple = ()) -> tuple:
+    """One tree of several objects' faces in the world (but the faces of the parts named in skip) and each face's
+    part name."""
+    verts, faces, names = [], [], []
+    for ob in obs:
+        v, f = world_tris(ob)
+        attr = ob.data.attributes.get(PART)
+        base = len(verts)
+        verts += v
+        for i, poly in enumerate(f):
+            name = PARTS[attr.data[i].value] if attr else "?"
+            if name in skip:
+                continue
+            faces.append(tuple(base + j for j in poly))
+            names.append(name)
+    return BVHTree.FromPolygons(verts, faces), names
+
+
+def turn(claws: list, deg: float) -> None:
+    """socket-3: both claws opened deg (claw_r round -Y = glTF +Z, claw_l the mirror)."""
+    for c in claws:
+        c.rotation_euler = (0.0, math.radians(-deg if c.name == "claw_r" else deg), 0.0)
+    bpy.context.view_layer.update()
+
+
+def swing(ob, claws: list, crystal) -> dict:
+    """socket-3: the claws turned 0 .. 40 degrees by 1 (and at [claw] open): their faces against the body's (the pins
+    they turn on left out) and the crystal's; the largest angle reached with none, the closest gap of an open claw's
+    vertices to the body, the crystal pulled out with the claws open."""
+    body, _ = bvh_parts([ob], skip=("pins",))
+    cry = bvh(crystal)
+    per_deg, clear = [], None
+    for deg in range(0, 41):
+        turn(claws, deg)
+        n = sum(len(bvh(c).overlap(body)) for c in claws)
+        per_deg.append(n)
+        if n and clear is None:
+            clear = deg - 1
+    k = D["claw"]
+    turn(claws, k["open"])
+    gap = min((body.find_nearest(c.matrix_world @ v.co)[3] or 1.0) / CM for c in claws for v in c.data.vertices)
+    out = {"swing_pairs_per_deg": per_deg, "swing_clear_deg": 40 if clear is None else clear,
+           "open_deg": k["open"], "open_vs_body_pairs": sum(len(bvh(c).overlap(body)) for c in claws),
+           "open_gap_cm": round(gap, 2), "open_vs_crystal_pairs": sum(len(bvh(c).overlap(cry)) for c in claws)}
+    socket, _ = bvh_parts([ob, *claws])
+    base = crystal.location.copy()
+    pulled = []
+    for step in range(0, 16):
+        crystal.location = base + Vector((0.0, -2.0 * step * CM, 0.0))
+        bpy.context.view_layer.update()
+        pulled.append(len(socket.overlap(bvh(crystal))))
+    crystal.location = base
+    turn(claws, 0.0)
+    out["open_pull_pairs_per_2cm"] = pulled
+    out["closed_vs_body_pairs"] = sum(len(bvh(c).overlap(body)) for c in claws)
+    return out
+
+
 def import_crystal(path: Path, at: Vector) -> bpy.types.Object:
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=str(path))
@@ -391,7 +498,7 @@ def import_crystal(path: Path, at: Vector) -> bpy.types.Object:
     return meshes[0]
 
 
-def checks(ob, cols: list, crystal) -> dict:
+def checks(ob, claws: list, cols: list, crystal) -> dict:
     out = {}
     cv = [crystal.matrix_world @ v.co for v in crystal.data.vertices]
     m = D["mount"]
@@ -408,14 +515,12 @@ def checks(ob, cols: list, crystal) -> dict:
     out["crystal_top_cm"] = round(max(v.z for v in cv) / CM, 2)
     out["header_clear_cm"] = round(min(h for _, h in D["header"]["pts"]) - max(v.z for v in cv) / CM, 2)
     out["crystal_back_cm"] = round(-max(v.y for v in cv) / CM, 2)
-    sock = bvh(ob)
+    sock, names = bvh_parts([ob, *claws])
     pairs = sock.overlap(bvh(crystal))
     out["crystal_vs_socket_pairs"] = len(pairs)
-    attr = ob.data.attributes.get(PART)
     by = {}
     for i, _j in pairs:
-        name = PARTS[attr.data[i].value] if attr else "?"
-        by[name] = by.get(name, 0) + 1
+        by[names[i]] = by.get(names[i], 0) + 1
     out["crystal_vs_socket_by_part"] = by
     out["crystal_vs_colliders_pairs"] = sum(len(bvh(c).overlap(bvh(crystal))) for c in cols)
     pulled = []
@@ -427,10 +532,13 @@ def checks(ob, cols: list, crystal) -> dict:
     crystal.location = base
     bpy.context.view_layer.update()
     out["pull_out_pairs_per_2cm"] = pulled
-    # parts: each part's box touches another's; open edges; coplanar overlapping faces of two parts
-    me = ob.data
+    # parts: each part's box touches another's; open edges; coplanar overlapping faces of two parts (the claws closed,
+    # in place)
     bm = bmesh.new()
-    bm.from_mesh(me)
+    for o in (ob, *claws):
+        before = set(bm.verts)
+        bm.from_mesh(o.data)
+        bmesh.ops.transform(bm, matrix=o.matrix_world, verts=[v for v in bm.verts if v not in before])
     lay = bm.faces.layers.int[PART]
     boxes = {}
     for f in bm.faces:
@@ -482,18 +590,21 @@ def export(out: Path) -> None:
                               export_materials="EXPORT", export_vertex_color="NONE", export_extras=False)
 
 
-def mesh_info(ob) -> dict:
+def mesh_info(ob, claws: list) -> dict:
+    """The body's and the closed claws' triangles per surface, vertices and extent (cm)."""
+    tris, co = {}, []
+    for o in (ob, *claws):
+        for p in o.data.polygons:
+            name = ORDER[p.material_index]
+            tris[name] = tris.get(name, 0) + len(p.vertices) - 2
+        co += [o.matrix_world @ v.co for v in o.data.vertices]
     me = ob.data
-    tris = {}
-    for p in me.polygons:
-        name = ORDER[p.material_index]
-        tris[name] = tris.get(name, 0) + len(p.vertices) - 2
     lay = None
-    co = [v.co for v in me.vertices]
     lo = [min(c[i] for c in co) / CM for i in range(3)]
     hi = [max(c[i] for c in co) / CM for i in range(3)]
     del lay
-    return {"triangles": sum(tris.values()), "triangles_by_material": tris, "vertices": len(me.vertices),
+    return {"triangles": sum(tris.values()), "triangles_by_material": tris,
+            "vertices": sum(len(o.data.vertices) for o in (ob, *claws)),
             "size_cm": {"u": round(hi[0] - lo[0], 2), "d": round(hi[1] - lo[1], 2), "h": round(hi[2] - lo[2], 2)},
             "u_cm": [round(lo[0], 2), round(hi[0], 2)], "d_cm": [round(-hi[1], 2), round(-lo[1], 2)],
             "h_cm": [round(lo[2], 2), round(hi[2], 2)]}
@@ -599,7 +710,7 @@ def overlays(folder: Path) -> list:
     four side by side (overlay.png)."""
     import numpy as np
 
-    colours = {"axis": (0.5, 0.9, 1.0), "slot": (1.0, 0.7, 0.28), "bay": (1.0, 0.45, 0.2)}
+    colours = {"axis": (0.5, 0.9, 1.0), "slot": (1.0, 0.7, 0.28), "bay": (1.0, 0.45, 0.2), "open": (1.0, 0.48, 0.85)}
     files, panels = [], []
     for view in ("front", "side"):
         left, top, w, h = sd.frame(D, view)
@@ -650,19 +761,26 @@ def main() -> None:
         bpy.data.objects.remove(o)
     build_materials()
     ob = build_mesh()
+    claws = [claw_leaf(1), claw_leaf(-1)]
+    bpy.context.view_layer.update()
     cols = colliders()
     anc = anchor()
     export(out)
-    info = mesh_info(ob)
+    info = mesh_info(ob, claws)
     info["anchor_cm"] = {"u": 0.0, "d": D["mount"]["axis_d"], "h": D["mount"]["tip_h"]}
     info["mount_cm"] = D["mount"]["h"]
-    info["colliders"] = {c.name: len(c.data.polygons) for c in cols}
+    info["colliders"] = {c.name: len(c.data.polygons) for c in cols + [c.children[0] for c in claws]}
+    k = D["claw"]
+    info["claws"] = {"nodes": [c.name for c in claws], "hinge_cm": {"u": k["hinge"][0], "h": k["hinge"][1]},
+                     "open_deg": k["open"], "open_drawn_deg": k["open_drawn"], "pull_cm": k["pull"],
+                     "axis": "local glTF +Z (out of the wall): claw_r +open, claw_l -open"}
     bpy.ops.wm.save_as_mainfile(filepath=str(out / "crystal_socket.blend"), compress=True)
     renders = []
     if a["crystal"]:
         crystal = import_crystal(Path(a["crystal"]), anc.location.copy())
-        info["checks"] = checks(ob, cols, crystal)
-        for c in cols:
+        info["checks"] = checks(ob, claws, cols, crystal)
+        info["checks"].update(swing(ob, claws, crystal))
+        for c in cols + [c.children[0] for c in claws]:
             c.hide_render = True
         anc.hide_render = True
         folder = out / "renders"
