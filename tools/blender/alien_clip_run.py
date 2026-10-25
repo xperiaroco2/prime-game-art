@@ -5,7 +5,7 @@ and encodes one MP4 per clip and head with Blender's FFmpeg.
 
     $PYTHON_BIN tools/blender/alien_clip_run.py --from <tag dir> --out <proof dir> [--heads chameleon,axolotl]
         [--on-clip auto|yes|no] [--split] [--head60 Jog_Fwd,Sprint_Fwd] [--yaw-counter 0.3] [--darts 0]
-        [--eye-mode fixed|lead|free] [--eyes]
+        [--eye-mode lead|fixed|free] [--eyes]
 
 The frames go to tools/out/alien_clips/<out's name>/ (temporary); the MP4s, sheets and reels.json into --out, never
 overwritten (an --out holding reels.json is refused). Long: run it in the background.
@@ -26,6 +26,16 @@ from runner.commands import _godot  # noqa: E402
 import alien_char_run as R  # noqa: E402
 
 
+def lively_mask(head: dict, h: str) -> dict:
+    """R1: a head job's eye mask from its lively build when the build wrote one (lively.json "mask": the rim cut's
+    repainted mask), else the static head's as before."""
+    lj = R.HEADS[h]["lively"] / "lively.json"
+    name = json.loads(lj.read_text(encoding="utf-8")).get("mask") if lj.exists() else None
+    if name:
+        head["mask"] = str(R.HEADS[h]["lively"] / name)
+    return head
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--from", dest="src", required=True)
@@ -38,8 +48,9 @@ def main() -> int:
     ap.add_argument("--head60", default="", help="A2: clips that also get a 60 fps head reel, e.g. Jog_Fwd,Sprint_Fwd")
     ap.add_argument("--yaw-counter", type=float, default=0.0, help="A2: the controller's yaw_counter on the locomotion")
     ap.add_argument("--darts", type=float, default=0.0, help="A2: the controller's eye darts (degrees)")
-    ap.add_argument("--eye-mode", choices=("fixed", "lead", "free"), default="fixed",
-                    help="A3: the controller's eye_mode in the clip reels (fixed: the pupils centred in the head)")
+    ap.add_argument("--eye-mode", choices=("fixed", "lead", "free"), default="lead",
+                    help="A3: the controller's eye_mode in the clip reels (R1: lead, the engineer's choice, art #196"
+                         " comment 6391652501: the eyes lead a head turn by at most 8 degrees; fixed: the pupils centred)")
     ap.add_argument("--eyes", action="store_true",
                     help="A3: the eyes' proof instead of the clip reels (godot/alien/eye_reels.gd): the lower rim's "
                          "close-ups (rim_<head>.jpg, rim_<head>_4x/) and the look-around per eye mode "
@@ -59,6 +70,8 @@ def main() -> int:
     job = {"hdri": str(R.HDRI), "out": str(out), "fix": dict(R.FIX), "frames": str(frames), "sheet_out": str(out),
            "heads": {h: R.head_job(h, src / h, json.loads((src / h / "bases.json").read_text(encoding="utf-8")),
                                    slots_job) for h in heads}}
+    for h in heads:
+        lively_mask(job["heads"][h], h)
     edited = all("clip_edits" in json.loads((src / h / "char.json").read_text(encoding="utf-8")) for h in heads)
     job["on_clip"] = edited if args.on_clip == "auto" else args.on_clip == "yes"
     job.update(split=args.split, head60=[c for c in args.head60.split(",") if c], yaw_counter=args.yaw_counter,

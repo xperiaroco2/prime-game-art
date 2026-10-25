@@ -182,7 +182,7 @@ func _run() -> void:
 				live.on_clip = bool(job.get("on_clip", true))
 				live.reset_motion()
 			if "eye_mode" in live:  # A3
-				live.eye_mode = String(job.get("eye_mode", "fixed"))
+				live.eye_mode = String(job.get("eye_mode", "lead"))
 				live.reseed()
 			if "yaw_counter" in live:  # A2
 				live.yaw_counter = float(job.get("yaw_counter", 0.0)) if clip in LOCOMOTION else 0.0
