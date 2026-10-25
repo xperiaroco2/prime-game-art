@@ -406,9 +406,11 @@ def rim_smooth(P, N, T, I, eyeball, centres, r, iters):
 
 RIM_CUT_SNAPS = 40  # R1: at most this many rounds of snapping slivers through a corner (the build fails beyond)
 RIM_CUT_RINGS = 2  # R1: the cut's band, rings of triangles round the rim (1: a lid tooth two triangles deep stays)
-RIM_CUT_MAX_AREA_PCT = 3.0  # R2: the largest net change of an eye's eyeball area by the cut (%): a fair curve through a
-# one-triangle sawtooth gives as much area to the lid as it takes, so the net stays near 0 (the test's sawtooth discs);
-# R1's chameleon cut (v8cut_r1e's settings) changes one eye by 4.15 % and fails here: its trimmed fit is biased
+RIM_CUT_MAX_AREA_PCT = 5.0  # R2: the largest net change of an eye's eyeball area by the cut (%): a fair curve through a
+# one-triangle sawtooth gives as much area to the lid as it takes, so the net stays near 0 (the test's sawtooth discs).
+# The bound is set from measured cuts (the manager's decision, R2b): R1's chameleon cut (v8cut_r1e's settings) changes
+# one eye by 4.149 %, as its trimmed fit drops 51 of the right eye's 256 rim positions and leans the curve inward (a
+# recorded follow-up, docs/godot.md); 5 % passes that cut and still fails a cut that eats into the opening
 
 
 def rim_graph(P, I, cls, near_t):

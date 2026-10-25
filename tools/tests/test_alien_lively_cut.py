@@ -87,14 +87,23 @@ class LivelyCut(unittest.TestCase):
         self.assertLess(rep["zigzag_after"]["p50_mm"], rep["zigzag_before"]["p50_mm"] * 0.5)
         for key in ("left", "right"):
             self.assertLess(abs(rep["eyeball_area"][key]["change_pct"]), self.B.RIM_CUT_MAX_AREA_PCT)
-        # the new rim: within 1.5 mm of one circle about each eye (the sawtooth's teeth were 3 mm)
-        weld, nodes, _nbr = self.B.rim_graph(A1["POSITION"], I1, cls1, np.ones(len(I1), bool))
-        Q = np.zeros((int(weld.max()) + 1, 3))
-        Q[weld] = A1["POSITION"]
-        for s, c in centres.items():
-            q = Q[nodes][np.sign(Q[nodes][:, 0]) == s] - c
-            rad = np.hypot(q[:, 0], q[:, 1])
-            self.assertLess(float(rad.max() - rad.min()), 0.0015 + 1e-9)
+        # the new rim: its radial spread about each eye under half the stepped rim's and under the teeth's 3 mm. Not
+        # tighter: a sliver's cut is snapped through a grid corner (RIM_CUT_MIN_SHARE), up to about a third of a 4 mm
+        # grid edge off the curve, so the nodes spread about 2 mm round a curve that is itself near a circle
+        def spread(P_, I_, cls_):
+            weld, nodes, _nbr = self.B.rim_graph(P_, I_, cls_, np.ones(len(I_), bool))
+            Q = np.zeros((int(weld.max()) + 1, 3))
+            Q[weld] = P_
+            out = {}
+            for s, c in centres.items():
+                q = Q[nodes][np.sign(Q[nodes][:, 0]) == s] - c
+                rad = np.hypot(q[:, 0], q[:, 1])
+                out[s] = float(rad.max() - rad.min())
+            return out
+        before, after = spread(A["POSITION"], I, eyeball), spread(A1["POSITION"], I1, cls1)
+        for s in centres:
+            self.assertLess(after[s], 0.5 * before[s])
+            self.assertLess(after[s], 0.003)
         tn = A1["NORMAL"][n:]
         self.assertTrue(np.allclose(np.linalg.norm(tn, axis=1), 1.0))
         self.assertTrue(np.array_equal(band1, np.arange(len(I1) - len(band1), len(I1))))  # the pieces come last
