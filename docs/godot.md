@@ -1210,7 +1210,7 @@ pilot's static premium heads"):
   - `alien_lively.gd`: `eye_mode` `free` (the default since A3d: A1-A2's follow as far as the lids allow, the
     web module's way; every proof that never sets it, such as `eye_pit_shots.gd`, keeps its turning eyes), `fixed`
     (the pupils centred in the head, the gaze the head's forward, the darts without effect; the clip reels' job
-    default) or `lead` (the eyes reach the look target first, at most `EYE_LEAD_DEG` 8 off the head's forward); any
+    default until R1) or `lead` (the eyes reach the look target first, at most `EYE_LEAD_DEG` 8 off the head's forward); any
     other value is a `push_error`; `darts` stays 0 by default and draws from a generator seeded with `rng_seed` (196) at the first
     step or `reseed()`; the yaw counter is scaled by the head's horizontal facing (no roll near +-90 pitch) and
     low-passed over `YAW_COUNTER_TAU` 0.25 s (the reels: 0.3, not 0.55); on a clip each spring's drive is scaled by
@@ -1288,6 +1288,87 @@ pilot's static premium heads"):
     window's 0.8 height (`CROP_Y`) on the lower rim, because A3b's centre crops missed it.
   - `tools/web/lively/lively.js` draws the same eye but never applied the painted limbal ring (no `limbal` in it), so
     it needs no `gaze_limbal`; the rim rule, being off, is not ported.
+- **R1: the eye rim as one clean edge, the eyes lead a head turn (2026-10-25, art #196; proof `anim_bare/r1/`):**
+  - The eye mode: the engineer chose `lead`
+    ([art #196, comment 6391652501](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6391652501)):
+    the eyes lead a head turn by at most 8 degrees, then re-centre; no darts. It is the alien's mode wherever the
+    character is shown: `alien_clip_run.py --eye-mode` and `clip_reels.gd`'s job default are `lead`;
+    `alien_lively.gd`'s own default stays `free` for the old proofs.
+  - The rim cut (`alien_lively_build.py --rim-cut ORDER`, `rim_cut()`; `alien_lively_run.py --rim-cut`): the
+    eyeball/lid boundary re-meshed along one smooth curve per eye, no vertex moved. The rim's positions are seen
+    head-on (the plane fitted to them, polar about their centroid) and their radius against the azimuth is fitted by a
+    periodic Fourier series (`G.fourier_fit_trimmed`, spurs left out). Every triangle within `RIM_CUT_RINGS` (2) rings
+    of the rim is cut along the curve (`G.cut_triangle`; new vertices on the edges, every attribute interpolated), each
+    piece an eyeball or lid triangle by its side; the band's border keeps its class (`clamped`), and a piece under 10 %
+    of its parent snaps the cut through the nearest corner (`snapped`). The guard: `rim_bad_triangles` 0 (no piece
+    turned over or under 10 %), the open and non-manifold welded edges unchanged (0 and 0), and (R2) each eye's
+    eyeball area within `RIM_CUT_MAX_AREA_PCT` (5 % since R2b; R2's 3 % failed R1's own cut) of its area before the cut, or the build fails; lively.json's
+    `rim_cut` reports the pieces each way, the eyeball triangles, the mask texels, the trimmed rim positions per eye and
+    `eyeball_area`. `--rim-cut` with `--no-pit-fix` is refused (the cut runs inside the pit fix). The GLB's buffers are
+    compacted after the cut (`G.compact_buffers`: no old views, no `UNUSED_OBJECT`).
+  - The mask follows: the build repaints the eye mask on the cut's triangles (each texel a band triangle covers takes
+    its class's median mask texel, two rings of gutter too) and writes `<head>_mask.png` with lively.json's `mask`.
+    Since R2 every head job and the character build take the mask from the character's own lively build
+    (`alien_char_run.eye_mask()`: char.json's `lively` folder for the head jobs, HEADS' lively build for the character
+    build), the static head's mask only when that build wrote none. The exception is the whole-head gate's reference,
+    the uncut static v5 head in `char_shots.gd`: it keeps its own mask (the head job's `static_mask`; R2b's review: the
+    cut mask on the uncut head painted skin notches and sclera specks on the reference). R1's shots ran through a
+    wrapper instead.
+  - The back-face test (R2, `alien_clip_run.py --from <build> --out DIR --backface`, `godot/alien/backface_shots.gd`):
+    every mesh unshaded with culling off, the head's back faces red, others orange, the background blue; per head the
+    gazes rest, up, down, left, right, lead (8 frames into a 40 degree turn) and jog (Jog_Fwd under the controller,
+    10 frames in), each from the front, both three-quarters, both sides, 25 degrees above and below; red counted in
+    the head's framing (0.42 m) and each facing eye's close-up (0.14 m); `backface.json`, `backface_<head>.jpg`,
+    `<head>_4x/`. On R1's builds (`anim_bare/r2/backface_before_b/`): the chameleon 0 red in every shot; the axolotl
+    0 round both eyes, its only red a sliver (up to 29 px at 0.14 m) on the wall of its right nostril's pit. The head
+    is closed (0 open edges), so no gap shows daylight either: neither head has a line of sight past a lid into the
+    hollow head. (A close-up of the eye on the head's far side put the camera inside the head and counted it red:
+    since R2b only an eye facing the camera is counted.)
+  - The first trial measured the angle from the eye centre's axis: the chameleon's opening spans 28 to 117 degrees
+    about it and order 6 left 4 mm (median) between the rim and the curve, so the cut followed the old edges; the
+    head-on radius at order 8 leaves 2.2 mm (the sawtooth itself) and the cut lies 0.05 mm (median) from the curve.
+  - Chameleon (`lively/v8cut_r1e`, order 8): zigzag 3.41 to 1.00 mm median, 18.44 to 12.90 max; rim junctions 20 to 0
+    (one loop per eye); 4112 band triangles into 4760 pieces, 350 new vertices; 68 clamped and 179 snapped positions
+    (the cut 0.41 mm median, 13.4 max off the curve there); largest move 0; bad pieces 0; open/non-manifold 0/0.
+  - Axolotl (`lively/axolotl_v8cut_r1`, order 8): zigzag 2.20 to 0.63 mm median, 8.16 to 3.05 max; junctions 6 to 0;
+    1143 band triangles into 1285 pieces, 75 new vertices; 0 clamped, 105 snapped (0.24 mm median, 1.15 max off the
+    curve); largest move 0; bad pieces 0; open/non-manifold 0/0.
+  - Whole-head gate on `anim_bare/r1/build` vs r5 (front, left, back, right): chameleon 0.303, 0.219, 0.111, 0.306
+    (A3d 0.311, 0.221, 0.111, 0.306); axolotl 0.077, 0.027, 0.065, 0.027 (A3d 0.079, 0.027, 0.065, 0.027). The back
+    view is unchanged; the views that show the eyes moved by up to 0.008, closer to r5.
+  - Left: the lid's lip still catches light along its own faces (geometry, not the mask); the cut does not reshape it.
+- **R2b: the lid's lip and the outer corner (2026-10-25, art #196; proof `anim_bare/r2b/`):**
+  - The area bound is 5 % (the manager's decision from measured cuts): R1's chameleon cut changes the right eye's
+    eyeball area by 4.149 % and the left by 3.809 %. Follow-up, not fixed: the trimmed fit's bias, it drops 51 of the
+    right eye's 256 rim positions (29 of the left's 238) and leans the curve inward.
+  - `test_alien_lively_cut.py`'s rim check expected the cut rim within 1.5 mm of a circle and measured 2.04 mm: a
+    sliver's cut snaps through a grid corner, up to about a third of the 4 mm grid edge off the curve. It now asks for
+    under half the stepped rim's spread and under the teeth's 3 mm.
+  - The white fringe (the lower lid's serrated lip catching the key light): grid on the chameleon, all with the rim
+    cut at order 8 and `--rim-split`: `normals 4` (`lively/v9_r2c_n4`: 764 lip positions, 1111 vertices, normals
+    turned 8.5 degrees median, positions not moved), Taubin 4 and 8 (`v9_r2c_t4g`, `v9_r2c_t8g`: the new fold guard
+    halved the move to 1/16, largest move 0.47 mm; `v9_r2c_t4`/`t8` without the guard failed: a lip triangle turned,
+    face dot -0.96). In the 4x crops (`r2b/grid_<v>/eyes/rim_chameleon_4x/` beside `r1/eyes/rim_chameleon_4x/`) all
+    three lose R1's bright serrated line and its white specks, and the guarded Taubin ones look the same as normals 4.
+    The pick: `normals 4`, which moves no position, so the lid's shape is unchanged by construction. glTF-Validator
+    on the cut GLBs: 0 errors, 0 warnings (no `UNUSED_OBJECT`: `compact_buffers` works).
+  - The dark wedge at the outer corner: it shows as built, with SSAO off and with the key light's shadow off
+    (`eye_reels.gd`'s new `corner_<head>.jpg`: as built | albedo | geometry | SSAO off | shadow off | the mask; and
+    `corner_<head>_4x/`), not in the albedo, so it is the normals. The vertices an eyeball and a lid triangle share
+    carry one normal, Meshy's, bent into the lid's fold, and `eyeball_fix` fades the radial normal in only from 6 % of
+    r off the lid; at the sharp corner the eyeball's triangles fan out from a few of them, so that normal spreads
+    over a wedge. `rim_split()` (`--rim-split`) copies the shared vertices for the eyeball's triangles (positions,
+    UVs and skin alike, no edge opens) and gives every eyeball vertex its sphere's radial normal in full; the lid keeps
+    its own. Chameleon: 597 copied, 3631 eyeball vertices, their normals turned 10.4 degrees median, 116.6 at p99.
+  - Whole-head gate on `anim_bare/r2b/build` vs r5 (front, left, back, right; `build/gate_fix/`, the static head with
+    its own mask): chameleon 0.393, 0.238, 0.110, 0.340 (R1 0.303, 0.219, 0.111, 0.306); axolotl 0.118, 0.038, 0.065,
+    0.041 (R1 0.077, 0.027, 0.065, 0.027). The back views are unchanged, so the head is not reshaped; the views that
+    show the eyes moved because `rim_split` gives the whole eyeball its sphere's normal (the shading of the eyeball,
+    not its shape). The back-face test on the r2b builds (`r2b/backface_after/`): the chameleon 0 red; the axolotl's
+    red only its nostril pit's sliver. godot-check `--profile alien --strict-contract --textured`: exit 0 on both.
+  - Follow-ups from R2b's review: bound the share of eyeball normals `rim_split` turns past 90 degrees (about 1 % of
+    the chameleon's, likely inside the lid fold), or keep the faded normal far off the sphere; bound the area change
+    each way, not only the net; tests for `lip_smooth`, `rim_split`, `compact_buffers` and the area guard raising.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and

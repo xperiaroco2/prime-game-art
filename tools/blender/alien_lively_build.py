@@ -404,6 +404,482 @@ def rim_smooth(P, N, T, I, eyeball, centres, r, iters):
     return P1, N1, T1, rep
 
 
+RIM_CUT_SNAPS = 40  # R1: at most this many rounds of snapping slivers through a corner (the build fails beyond)
+RIM_CUT_RINGS = 2  # R1: the cut's band, rings of triangles round the rim (1: a lid tooth two triangles deep stays)
+RIM_CUT_MAX_AREA_PCT = 5.0  # R2: the largest net change of an eye's eyeball area by the cut (%): a fair curve through a
+# one-triangle sawtooth gives as much area to the lid as it takes, so the net stays near 0 (the test's sawtooth discs).
+# The bound is set from measured cuts (the manager's decision, R2b): R1's chameleon cut (v8cut_r1e's settings) changes
+# one eye by 4.149 %, as its trimmed fit drops 51 of the right eye's 256 rim positions and leans the curve inward (a
+# recorded follow-up, docs/godot.md); 5 % passes that cut and still fails a cut that eats into the opening
+
+
+def rim_graph(P, I, cls, near_t):
+    """R1: the eye rim of a triangle class (cls: True an eyeball triangle) as a graph of welded positions: the welded
+    edges of the triangles near the eyes with an eyeball triangle on one side and a lid one on the other. Returns the
+    weld (per vertex its position id), the rim's position ids and each one's rim neighbours (indices into them)."""
+    weld = np.unique(np.round(P * 1e5).astype(np.int64), axis=0, return_inverse=True)[1].ravel()
+    nw = int(weld.max()) + 1
+    E = np.concatenate([I[:, [0, 1]], I[:, [1, 2]], I[:, [2, 0]]])
+    tri = np.tile(np.arange(len(I)), 3)
+    we = np.sort(weld[E], axis=1)
+    keep = near_t[tri] & (we[:, 0] != we[:, 1])
+    we, tri = we[keep], tri[keep]
+    uk, inv = np.unique(we[:, 0].astype(np.int64) * nw + we[:, 1], return_inverse=True)
+    inv = inv.ravel()
+    has_e, has_l = np.zeros(len(uk), bool), np.zeros(len(uk), bool)
+    np.logical_or.at(has_e, inv, cls[tri])
+    np.logical_or.at(has_l, inv, ~cls[tri])
+    rim_k = uk[has_e & has_l]
+    a, b = rim_k // nw, rim_k % nw
+    nodes = np.unique(np.concatenate([a, b]))
+    idx = {int(n): k for k, n in enumerate(nodes)}
+    nbr = [[] for _ in nodes]
+    for x, y in zip(a, b):
+        nbr[idx[int(x)]].append(idx[int(y)])
+        nbr[idx[int(y)]].append(idx[int(x)])
+    return weld, nodes, nbr
+
+
+def zigzag_stats(Q, nbr):
+    """R1: the rim's sawtooth as rim_smooth measures it (each rim position with two rim neighbours: its distance from
+    their midpoint, mm) and the positions where the rim is no simple loop (one or three or more rim neighbours)."""
+    free = np.array([len(n) == 2 for n in nbr])
+    nb = np.array([n if len(n) == 2 else [k, k] for k, n in enumerate(nbr)])
+    z = np.linalg.norm(Q[free] - Q[nb[free]].mean(1), axis=1) if free.any() else np.zeros(1)
+    return {"nodes": int(len(nbr)), "junctions": int((~free).sum()), "p50_mm": round(float(np.median(z)) * 1000, 3),
+            "max_mm": round(float(z.max()) * 1000, 3)}
+
+
+def tri_areas(P, I):
+    """R2: each triangle's area."""
+    return 0.5 * np.linalg.norm(np.cross(P[I[:, 1]] - P[I[:, 0]], P[I[:, 2]] - P[I[:, 0]]), axis=1)
+
+
+def tri_side(P, I, centres):
+    """R2: each triangle's eye, 1 (left) or -1 (right), by the nearer eye centre."""
+    c = P[I].mean(1)
+    return np.where(np.linalg.norm(c - centres[1], axis=1) < np.linalg.norm(c - centres[-1], axis=1), 1, -1)
+
+
+def edge_faults(P, I):
+    """R1: the welded edges with one triangle (open) and with three or more (non-manifold)."""
+    weld = np.unique(np.round(P * 1e5).astype(np.int64), axis=0, return_inverse=True)[1].ravel()
+    nw = int(weld.max()) + 1
+    we = np.sort(weld[np.concatenate([I[:, [0, 1]], I[:, [1, 2]], I[:, [2, 0]]])], axis=1)
+    we = we[we[:, 0] != we[:, 1]]
+    _, cnt = np.unique(we[:, 0].astype(np.int64) * nw + we[:, 1], return_counts=True)
+    return {"open": int((cnt == 1).sum()), "non_manifold": int((cnt > 2).sum())}
+
+
+def rim_cut(A, I, eyeball, centres, r, order):
+    """R1: the eyeball/lid boundary cut along one smooth curve per eye. Meshy's boundary steps in and out by one
+    triangle (the sawtooth), and the eye mask, which follows the triangles, drew white sclera teeth on the lid's lip;
+    moving the rim's vertices folded triangles (A3b, A3d). Here no vertex moves:
+    - the curve: per eye, the rim's positions seen head-on (projected onto the plane fitted to them, polar about
+      their centroid: the radius against the azimuth), fitted by a periodic Fourier series up to `order`
+      (G.fourier_fit_trimmed, a junction's spur left out). The first trial measured the angle from the eye centre's
+      axis instead: the chameleon's opening spans 28 to 117 degrees about it, so order 6 left 4 mm (median) off;
+    - the band: the triangles near the eye within RIM_CUT_RINGS rings of a rim position. Each band position gets g,
+      its radius in that view minus the curve's (under 0 inside the opening). A position on the band's border keeps
+      its class's side: where the curve says the other side, g is 0 and the cut runs through it (`clamped`), so the
+      new boundary never leaves the band;
+    - the cut: every band triangle split along g's zero line (G.cut_triangle; a quad by its better diagonal), each
+      piece an eyeball triangle inside, a lid one outside. A piece under G.RIM_CUT_MIN_SHARE of its parent's area or
+      turned over snaps the cut through the parent's corner nearest the cut (`snapped`, g 0 there), until none is left.
+      The new vertices sit on their edges (the surface as it was) and take every attribute by interpolation along the
+      edge (normals renormalised, tangents made orthogonal again, their sign kept); one per edge and side of a seam.
+    A is the primitive's attributes by name (numpy rows). Returns A, I, the class, the band's new triangles' indices
+    and the report (the zigzag before and after, the curve's residual, the largest move: 0, the snaps' distance from
+    the curve, the bad pieces: 0, the open and non-manifold edges before and after)."""
+    P = A["POSITION"]
+    near_t = np.minimum(*(np.linalg.norm(P[I].mean(1) - c, axis=1) for c in centres.values())) < 1.4 * r
+    weld, nodes, nbr = rim_graph(P, I, eyeball, near_t)
+    nw = int(weld.max()) + 1
+    Qw = np.zeros((nw, 3))
+    Qw[weld] = P
+    rep = {"order": order, "zigzag_before": zigzag_stats(Qw[nodes], nbr), "edges_before": edge_faults(P, I)}
+    pe, pl = np.zeros(nw, bool), np.zeros(nw, bool)
+    for k in range(3):
+        np.logical_or.at(pe, weld[I[near_t, k]], eyeball[near_t])
+        np.logical_or.at(pl, weld[I[near_t, k]], ~eyeball[near_t])
+    mixed = pe & pl
+    band = near_t & mixed[weld[I]].any(1)
+    for _ in range(RIM_CUT_RINGS - 1):
+        grown = np.zeros(nw, bool)
+        grown[weld[I[band]].ravel()] = True
+        band = near_t & grown[weld[I]].any(1)
+    bw = np.unique(weld[I[band]].ravel())
+    border = np.zeros(nw, bool)
+    border[weld[I[~band]].ravel()] = True
+    side_w = np.where(np.linalg.norm(Qw - centres[1], axis=1) < np.linalg.norm(Qw - centres[-1], axis=1), 1, -1)
+    gw = np.zeros(nw)
+    curves = {}
+    for s, c in centres.items():
+        key = "left" if s > 0 else "right"
+        mine = nodes[side_w[nodes] == s]
+        m0 = Qw[mine].mean(0)
+        F = np.linalg.svd(Qw[mine] - m0)[2][2]
+        F = F if F @ (m0 - c) > 0 else -F
+        _f, S, U = (np.array(v) for v in G.eye_frame(tuple(F)))
+
+        def angles(Q, m0=m0, S=S, U=U):  # the radius about the centroid in the rim's plane, and the azimuth
+            q = Q - m0
+            return np.hypot(q @ S, q @ U), np.arctan2(q @ U, q @ S)
+        th, ph = angles(Qw[mine])
+        coef, kept = G.fourier_fit_trimmed(ph.tolist(), th.tolist(), order)
+
+        def curve(ph_, coef=coef):
+            return np.array([G.fourier_eval(coef, float(p)) for p in ph_])
+        curves[s] = (angles, curve)
+        res = np.abs(th - curve(ph))
+        b_s = bw[side_w[bw] == s]
+        tb, pb = angles(Qw[b_s])
+        gw[b_s] = tb - curve(pb)
+        rep[key] = {"rim_positions": int(len(mine)), "fit_kept": int(sum(kept)),
+                    "radius_mm": [round(float(th.min()) * 1000, 1), round(float(th.max()) * 1000, 1)],
+                    "rim_off_curve_mm": {"p50": round(float(np.median(res)) * 1000, 3),
+                                         "p90": round(float(np.percentile(res, 90)) * 1000, 3),
+                                         "max": round(float(res.max()) * 1000, 3)},
+                    "p50_mm_by_order": {}}
+        for o in (2, 4, 8, 12):  # the fit's order against the rim's spread about it (a diagnostic)
+            co, _k = G.fourier_fit_trimmed(ph.tolist(), th.tolist(), o)
+            rep[key]["p50_mm_by_order"][o] = round(float(np.median(np.abs(th - curve(ph, co)))) * 1000, 3)
+    forced = bw[border[bw] & ~mixed[bw]]
+    wrong = gw[forced] * np.where(pe[forced], -1.0, 1.0) < 0
+    g_fit = gw.copy()
+    gw[forced[wrong]] = 0.0
+    bt = np.nonzero(band)[0]
+    n_par = np.cross(P[I[bt, 1]] - P[I[bt, 0]], P[I[bt, 2]] - P[I[bt, 0]])
+    a_par = np.linalg.norm(n_par, axis=1)
+
+    def at(t, ref):
+        if ref[0] == "v":
+            return P[I[t, ref[1]]]
+        return P[I[t, ref[1]]] * (1 - ref[3]) + P[I[t, ref[2]]] * ref[3]
+
+    def quality(j, t, tr):  # the piece's share of its parent's area, -1 turned over
+        pa, pb_, pc = (at(t, x) for x in tr)
+        n = np.cross(pb_ - pa, pc - pa)
+        if a_par[j] <= 1e-14:
+            return 1.0
+        return np.linalg.norm(n) / a_par[j] if (n @ n_par[j]) > 0 else -1.0
+
+    def pieces_of(j, t):
+        out_, worst = [], 1.0
+        for poly, side in G.cut_triangle(tuple(gw[weld[I[t]]])):
+            opts = [[poly]] if len(poly) == 3 else [[[poly[0], poly[1], poly[2]], [poly[0], poly[2], poly[3]]],
+                                                     [[poly[0], poly[1], poly[3]], [poly[1], poly[2], poly[3]]]]
+            best = max(opts, key=lambda tris: min(quality(j, t, tr) for tr in tris))
+            out_ += [(tr, side) for tr in best]
+            worst = min(worst, min(quality(j, t, tr) for tr in best))
+        return out_, worst
+    snapped = set()
+    for _ in range(RIM_CUT_SNAPS):
+        cut, zero = [], set()
+        for j, t in enumerate(bt):
+            pcs, worst = pieces_of(j, t)
+            cut.append(pcs)
+            if worst < G.RIM_CUT_MIN_SHARE:
+                cand = [(x[3], x[1]) for tr, _s in pcs for x in tr if x[0] == "e"]
+                cand += [(1 - x[3], x[2]) for tr, _s in pcs for x in tr if x[0] == "e"]
+                zero.add(int(weld[I[t, min(cand)[1]]]))
+        if not zero:
+            break
+        gw[list(zero)] = 0.0
+        snapped |= zero
+    else:
+        raise SystemExit(f"LIVELY rim cut: slivers left after {RIM_CUT_SNAPS} rounds of snapping")
+    bad = sum(int(quality(j, t, tr) < G.RIM_CUT_MIN_SHARE) for j, t in enumerate(bt) for tr, _s in cut[j])
+    # the new vertices: one per edge (its two vertex indices), every attribute interpolated along it
+    new_key, rows = {}, []
+    tris_new, cls_new = [], []
+    nv = len(P)
+    lid_to_eye = eye_to_lid = 0
+    for j, t in enumerate(bt):
+        for tr, side in cut[j]:
+            ids = []
+            for x in tr:
+                if x[0] == "v":
+                    ids.append(int(I[t, x[1]]))
+                    continue
+                i0, i1, tt = int(I[t, x[1]]), int(I[t, x[2]]), float(x[3])
+                if i0 > i1:
+                    i0, i1, tt = i1, i0, 1.0 - tt
+                if (i0, i1) not in new_key:
+                    new_key[(i0, i1)] = nv + len(rows)
+                    rows.append((i0, i1, tt))
+                ids.append(new_key[(i0, i1)])
+            tris_new.append(ids)
+            c_new = bool(eyeball[t]) if side == 0 else side < 0
+            cls_new.append(c_new)
+            lid_to_eye += int(c_new and not eyeball[t])
+            eye_to_lid += int(eyeball[t] and not c_new)
+    lo = np.array([rw[0] for rw in rows], dtype=np.int64)
+    hi = np.array([rw[1] for rw in rows], dtype=np.int64)
+    tt = np.array([rw[2] for rw in rows])[:, None]
+    B = {}
+    for name, X in A.items():
+        Xn = X[lo] * (1 - tt) + X[hi] * tt
+        if name == "NORMAL":
+            Xn = Xn / np.linalg.norm(Xn, axis=1)[:, None]
+        B[name] = Xn
+    if "TANGENT" in B:
+        T = B["TANGENT"]
+        T[:, 3] = A["TANGENT"][lo, 3]
+        for k in range(len(T)):
+            T[k] = G.orthogonal_tangent(tuple(B["NORMAL"][k]), tuple(T[k]))
+    A1 = {name: np.concatenate([X, B[name]]) for name, X in A.items()}
+    I1 = np.concatenate([I[~band], np.array(tris_new, dtype=I.dtype).reshape(-1, 3)])
+    cls1 = np.concatenate([eyeball[~band], np.array(cls_new, bool)])
+    band1 = np.arange(int((~band).sum()), len(I1))
+    P1 = A1["POSITION"]
+    near1 = np.minimum(*(np.linalg.norm(P1[I1].mean(1) - c, axis=1) for c in centres.values())) < 1.4 * r
+    weld1, nodes1, nbr1 = rim_graph(P1, I1, cls1, near1)
+    Q1 = np.zeros((int(weld1.max()) + 1, 3))
+    Q1[weld1] = P1
+    off = []
+    for s, (angles, curve) in curves.items():
+        q = Q1[nodes1]
+        sel = np.linalg.norm(q - centres[s], axis=1) < np.linalg.norm(q - centres[-s], axis=1)
+        th, ph = angles(q[sel])
+        off.append(np.abs(th - curve(ph)))
+    off = np.concatenate(off)
+    sn = np.array(sorted(snapped | set(int(x) for x in forced[wrong])), dtype=np.int64)
+    rep.update({"zigzag_after": zigzag_stats(Q1[nodes1], nbr1), "edges_after": edge_faults(P1, I1),
+                "band_triangles": int(len(bt)), "pieces": int(len(tris_new)), "new_vertices": int(len(rows)),
+                "pieces_lid_to_eye": lid_to_eye, "pieces_eye_to_lid": eye_to_lid,
+                "clamped": int(wrong.sum()), "snapped": int(len(snapped)), "max_move_mm": 0.0,
+                "cut_off_curve_mm": {"p50": round(float(np.median(off)) * 1000, 3), "max": round(float(off.max()) * 1000, 3)},
+                "snaps_off_curve_mm": ({"p50": round(float(np.median(np.abs(g_fit[sn]))) * 1000, 3),
+                                        "max": round(float(np.abs(g_fit[sn]).max() * 1000), 3)} if len(sn) else None),
+                "bad_triangles": bad, "eyeball_triangles": {"before": int(eyeball.sum()), "after": int(cls1.sum())}})
+    # R2: the eye opening's change, each eye's eyeball area (the cut's eyeball triangles against the class before)
+    rep["eyeball_area"] = {}
+    for s, key in ((1, "left"), (-1, "right")):
+        a0 = tri_areas(P, I[eyeball & (tri_side(P, I, centres) == s)]).sum()
+        a1 = tri_areas(P1, I1[cls1 & (tri_side(P1, I1, centres) == s)]).sum()
+        rep["eyeball_area"][key] = {"before": round(float(a0) * 1e6, 3), "after": round(float(a1) * 1e6, 3),
+                                    "change_pct": round(float(100 * (a1 - a0) / max(a0, 1e-12)), 3)}
+        rep[key]["trimmed"] = rep[key]["rim_positions"] - rep[key]["fit_kept"]
+    worst = max(abs(v["change_pct"]) for v in rep["eyeball_area"].values())
+    if bad or rep["edges_after"] != rep["edges_before"] or worst > RIM_CUT_MAX_AREA_PCT:
+        raise SystemExit(f"LIVELY rim cut: {bad} bad pieces, edges {rep['edges_before']} -> {rep['edges_after']}, "
+                         f"eyeball area change {worst} % (bound {RIM_CUT_MAX_AREA_PCT})")
+    return A1, I1, cls1, band1, rep
+
+
+LIP_RINGS = 3  # R2: the lid's lip, rings of welded positions outside the rim that the lip smoothing moves
+LIP_CAP = 0.04  # R2: no lip position moves further than this share of the eye radius
+LIP_FLIP_DOT = 0.5  # R2: a lip triangle whose normal turns further than 60 degrees fails the build
+
+
+def lip_smooth(A, I, cls, centres, r, steps, mode):
+    """R2: the lid's lip round each eye smoothed, the white fringe under the eye: Meshy's lid edge steps in and out by
+    a triangle, and the steps' upper faces catch the key light, a light serrated line along the lower lid (the rim
+    sheet's geometry-only column; the cut left the mask's edge straight). The lid positions within LIP_RINGS rings of
+    the rim move (welded, every copy alike); the rim itself and the eyeball stay, so the cut's curve and the eye opening
+    are kept.
+    - mode "normals": the positions kept, the lip's normals averaged over their welded neighbours `steps` times;
+    - mode "taubin": `steps` Taubin steps (RIM_LAMBDA, RIM_MU) of the lip's positions over the lid's welded edges, each
+      move capped at LIP_CAP of the radius, then the lip's normals from its faces (area-weighted), half-blended on the
+      outer ring so the shading meets the untouched lid without a seam.
+    Tangents are made orthogonal again. Returns A (new arrays) and the report (moved positions, largest move, the
+    largest normal turn of a lip triangle). R2b: the fold guard halves the whole Taubin move (down to 1/64, "scale" in
+    the report) until no lip triangle turns past LIP_FLIP_DOT; the build fails when one still does."""
+    P, N = A["POSITION"], A["NORMAL"]
+    near_t = np.minimum(*(np.linalg.norm(P[I].mean(1) - c, axis=1) for c in centres.values())) < 1.4 * r
+    weld, nodes, _nbr = rim_graph(P, I, cls, near_t)
+    nw = int(weld.max()) + 1
+    lid_t = near_t & ~cls
+    E = np.concatenate([I[lid_t][:, [0, 1]], I[lid_t][:, [1, 2]], I[lid_t][:, [2, 0]]])
+    we = weld[E]
+    we = np.unique(np.sort(we[we[:, 0] != we[:, 1]], axis=1), axis=0)
+    ring = np.full(nw, 1 << 20)
+    ring[nodes] = 0
+    for _ in range(LIP_RINGS):
+        a, b = ring[we[:, 0]].copy(), ring[we[:, 1]].copy()
+        np.minimum.at(ring, we[:, 0], b + 1)
+        np.minimum.at(ring, we[:, 1], a + 1)
+    fixed = np.zeros(nw, bool)  # the eyeball's and the far head's positions never move
+    fixed[weld[I[cls | ~near_t]].ravel()] = True
+    free = (ring > 0) & (ring <= LIP_RINGS) & ~fixed
+    deg = np.bincount(we.ravel(), minlength=nw).astype(float)
+
+    def lap(X):
+        acc = np.zeros_like(X)
+        np.add.at(acc, we[:, 0], X[we[:, 1]])
+        np.add.at(acc, we[:, 1], X[we[:, 0]])
+        return acc / np.maximum(deg, 1)[:, None] - X
+    Qw = np.zeros((nw, 3))
+    Qw[weld] = P
+    Nw = np.zeros((nw, 3))
+    np.add.at(Nw, weld, N)
+    Nw /= np.maximum(np.linalg.norm(Nw, axis=1), 1e-12)[:, None]
+    Q0 = Qw.copy()
+    if mode == "taubin":
+        for _ in range(steps):
+            for f in (RIM_LAMBDA, RIM_MU):
+                d = lap(Qw)
+                Qw[free] += f * d[free]
+        mv = Qw - Q0
+        m = np.linalg.norm(mv, axis=1)
+        mv = mv * np.minimum(1.0, LIP_CAP * r / np.maximum(m, 1e-12))[:, None]
+        aff0 = free[weld[I]].any(1)
+        n_a = np.cross(P[I[aff0, 1]] - P[I[aff0, 0]], P[I[aff0, 2]] - P[I[aff0, 0]])
+        scale = 1.0
+        while True:  # R2b: the fold guard, the whole move halved until no lip triangle turns past LIP_FLIP_DOT
+            Qw = Q0 + mv * scale
+            P1 = Qw[weld]
+            n_b = np.cross(P1[I[aff0, 1]] - P1[I[aff0, 0]], P1[I[aff0, 2]] - P1[I[aff0, 0]])
+            dt = np.sum(n_a * n_b, 1) / np.maximum(np.linalg.norm(n_a, axis=1) * np.linalg.norm(n_b, axis=1), 1e-24)
+            if not len(dt) or dt.min() >= LIP_FLIP_DOT or scale <= 1.0 / 64:
+                break
+            scale *= 0.5
+        fn = np.cross(P1[I[:, 1]] - P1[I[:, 0]], P1[I[:, 2]] - P1[I[:, 0]])
+        acc = np.zeros((nw, 3))
+        for k in range(3):
+            np.add.at(acc, weld[I[lid_t, k]], fn[lid_t])
+        Nf = acc / np.maximum(np.linalg.norm(acc, axis=1), 1e-12)[:, None]
+        w = np.where(ring == LIP_RINGS, 0.5, 1.0)[:, None]
+        Nn = Nw * (1 - w) + Nf * w
+    else:
+        P1 = P.copy()
+        Nn = Nw.copy()
+        for _ in range(steps):
+            d = lap(Nn)
+            Nn[free] += 0.5 * d[free]
+            Nn /= np.maximum(np.linalg.norm(Nn, axis=1), 1e-12)[:, None]
+    Nn /= np.maximum(np.linalg.norm(Nn, axis=1), 1e-12)[:, None]
+    hit = free[weld]
+    N1 = N.copy()
+    N1[hit] = Nn[weld[hit]]
+    aff = free[weld[I]].any(1)
+    n0 = np.cross(P[I[:, 1]] - P[I[:, 0]], P[I[:, 2]] - P[I[:, 0]])[aff]
+    n1 = np.cross(P1[I[:, 1]] - P1[I[:, 0]], P1[I[:, 2]] - P1[I[:, 0]])[aff]
+    dots = np.sum(n0 * n1, 1) / np.maximum(np.linalg.norm(n0, axis=1) * np.linalg.norm(n1, axis=1), 1e-24)
+    out = dict(A)
+    out["POSITION"], out["NORMAL"] = P1, N1
+    if "TANGENT" in A:
+        T = A["TANGENT"].copy()
+        for k in np.nonzero(hit)[0]:
+            T[k] = G.orthogonal_tangent(tuple(N1[k]), tuple(T[k]))
+        out["TANGENT"] = T
+    turn = np.degrees(np.arccos(np.clip(np.sum(N[hit] * N1[hit], 1), -1, 1)))
+    rep = {"mode": mode, "steps": steps, "rings": LIP_RINGS, "positions": int(free.sum()), "vertices": int(hit.sum()),
+           "scale": scale if mode == "taubin" else 1.0,
+           "max_move_mm": round(float(np.linalg.norm(Qw - Q0, axis=1).max()) * 1000, 3),
+           "normal_turn_deg": {"p50": round(float(np.median(turn)), 2) if len(turn) else 0.0,
+                               "max": round(float(turn.max()), 2) if len(turn) else 0.0},
+           "min_face_dot": round(float(dots.min()), 4) if len(dots) else 1.0}
+    if rep["min_face_dot"] < LIP_FLIP_DOT:
+        raise SystemExit(f"LIVELY lip smooth: a lip triangle turned (face dot {rep['min_face_dot']})")
+    return out, rep
+
+
+def rim_split(A, I, cls, views):
+    """R2b: the dark wedge at the eye's outer corner. A vertex that an eyeball and a lid triangle share carries one
+    normal for both: Meshy's, bent into the lid's fold, and eyeball_fix fades the sphere's radial normal in only from
+    6 % of r off the lid line. Where the lid meets the eyeball at a sharp corner the eyeball's triangles fan out from
+    a few such vertices, so the bent normal is interpolated over a wide grey wedge that reads as a hole. Here every
+    vertex shared by both classes is copied for the eyeball's triangles (the same position, UV and every other
+    attribute, so no edge opens), and every eyeball vertex, the copies too, takes its eye's sphere's radial normal
+    in full (views: eyeball_fix's per-eye fitted sphere); the lid keeps its own normals. Tangents are made orthogonal
+    again. Returns A (new arrays), I and the report."""
+    eb_v = np.zeros(len(A["POSITION"]), bool)
+    lid_v = np.zeros(len(A["POSITION"]), bool)
+    eb_v[I[cls].ravel()] = True
+    lid_v[I[~cls].ravel()] = True
+    shared = np.nonzero(eb_v & lid_v)[0]
+    remap = np.arange(len(A["POSITION"]))
+    remap[shared] = len(A["POSITION"]) + np.arange(len(shared))
+    out = {k: np.concatenate([v, v[shared]]) for k, v in A.items()}
+    I1 = I.copy()
+    I1[cls] = remap[I[cls]]
+    P = out["POSITION"]
+    spheres = [(np.asarray(cl), rl) for (_sel, _r0, cl, rl, *_rest) in views.values()]
+    own = np.zeros(len(P), bool)
+    own[I1[cls].ravel()] = True
+    idx = np.nonzero(own)[0]
+    d = np.stack([np.linalg.norm(P[idx] - c, axis=1) - rl for c, rl in spheres], 1)
+    k = np.argmin(np.abs(d), 1)
+    cen = np.stack([spheres[j][0] for j in k])
+    rad = P[idx] - cen
+    rad /= np.maximum(np.linalg.norm(rad, axis=1), 1e-12)[:, None]
+    N = out["NORMAL"].copy()
+    turn = np.degrees(np.arccos(np.clip(np.sum(N[idx] * rad, 1), -1, 1)))
+    N[idx] = rad
+    out["NORMAL"] = N
+    if "TANGENT" in out:
+        T = out["TANGENT"].copy()
+        for i in idx:
+            T[i] = G.orthogonal_tangent(tuple(N[i]), tuple(T[i]))
+        out["TANGENT"] = T
+    rep = {"copied": int(len(shared)), "eyeball_vertices": int(len(idx)),
+           "normal_turn_deg": {"p50": round(float(np.median(turn)), 2), "p99": round(float(np.percentile(turn, 99)), 2),
+                               "max": round(float(turn.max()), 2)}}
+    return out, I1, rep
+
+
+def rim_mask(mask, UV, I, cls, band):
+    """R1: the eye mask repainted on the rim cut's triangles, so its edge is the cut's: each texel a band triangle
+    covers takes its class's median mask texel (taken where the mask already agrees) when the mask says the other
+    class; then two rings of uncovered gutter round a changed texel take the change (the texture filter reads them)."""
+    H, W = mask.shape[:2]
+    cls_map = np.full((H, W), -1, np.int8)
+
+    def cover(tris, fill):
+        for t in tris:
+            uv = UV[I[t]] * [W, H]
+            x0, y0 = np.maximum(np.floor(uv.min(0)).astype(int), 0)
+            x1, y1 = np.minimum(np.ceil(uv.max(0)).astype(int), [W - 1, H - 1])
+            (ax_, ay_), (bx, by), (cx, cy) = uv
+            den = (by - cy) * (ax_ - cx) + (cx - bx) * (ay_ - cy)
+            if x1 < x0 or y1 < y0 or abs(den) < 1e-12:
+                continue
+            gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+            l1 = ((by - cy) * (gx - cx) + (cx - bx) * (gy - cy)) / den
+            l2 = ((cy - ay_) * (gx - cx) + (ax_ - cx) * (gy - cy)) / den
+            ins = (l1 >= 0) & (l2 >= 0) & (1.0 - l1 - l2 >= 0)
+            fill(t, gy[ins].astype(int), gx[ins].astype(int))
+
+    def put(t, yy, xx):
+        cls_map[yy, xx] = 1 if cls[t] else 0
+    cover(band, put)
+    eye = mask[..., 0] < 0.5
+    to_eye, to_skin = (cls_map == 1) & ~eye, (cls_map == 0) & eye
+    out = mask.copy()
+    for m, keep in ((to_eye, (cls_map == 1) & eye), (to_skin, (cls_map == 0) & ~eye)):
+        if m.any() and keep.any():
+            out[m] = np.median(mask[keep], 0)
+    changed = to_eye | to_skin
+    rep = {"to_eye": int(to_eye.sum()), "to_skin": int(to_skin.sum()), "gutter": 0}
+    ys, xs = np.nonzero(changed)
+    if not len(ys):
+        return out, rep
+    y0, y1, x0, x1 = ys.min() - 3, ys.max() + 3, xs.min() - 3, xs.max() + 3
+    uvt = UV[I] * [W, H]
+    hit = np.nonzero((uvt[:, :, 0].max(1) >= x0) & (uvt[:, :, 0].min(1) <= x1 + 1)
+                     & (uvt[:, :, 1].max(1) >= y0) & (uvt[:, :, 1].min(1) <= y1 + 1))[0]
+    cov = np.zeros((H, W), bool)
+
+    def mark(_t, yy, xx):
+        cov[yy, xx] = True
+    cover(hit, mark)
+    for _ in range(2):
+        grow = dilate(changed, 1) & ~cov & ~changed
+        add = np.zeros((H, W), bool)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                src = np.roll(np.roll(changed, dy, 0), dx, 1)
+                val = np.roll(np.roll(out, dy, 0), dx, 1)
+                m = grow & src & ~add
+                out[m] = val[m]
+                add |= m
+        rep["gutter"] += int(add.sum())
+        changed = changed | add
+    return out, rep
+
+
 def residual_view(path, P, I, views, size=640):
     """eye_residual.png (1280 x 1280): per eye (rows: left, right) its eyeball seen along the old iris's axis, before
     (left column) and after (right) the fix, each surface point coloured by its distance from the ring sphere in % of
@@ -480,9 +956,25 @@ def main():
                          " controller's 1.0); 0 drops the old iris's concentric rings, which live in the normal map")
     ap.add_argument("--rim-smooth", type=int, default=0,
                     help="A3b: Taubin steps along the eye rim (rim_smooth; 0: the rim as Meshy left it, the v6 builds)")
+    ap.add_argument("--rim-cut", type=int, default=0,
+                    help="R1: the eye rim cut along one smooth curve per eye, this Fourier order (rim_cut; 0: no cut);"
+                         " writes <name>_mask.png, the eye mask repainted on the cut, and lively.json's mask")
+    ap.add_argument("--lip-smooth", type=int, default=0,
+                    help="R2: with --rim-cut, the lid's lip smoothed this many steps (lip_smooth; 0: as cut)")
+    ap.add_argument("--lip-mode", choices=("normals", "taubin"), default="normals",
+                    help="R2: lip_smooth's mode: the normals alone, or Taubin steps of the positions and the normals")
+    ap.add_argument("--rim-split", action="store_true",
+                    help="R2b: with --rim-cut, the eyeball's rim vertices split from the lid's and every eyeball vertex"
+                         " given its sphere's radial normal (rim_split: the outer corner's dark wedge)")
     ap.add_argument("--skull-margin", type=float, default=0.06,
                     help="the crest weight fades in over this distance below the crest root's radius from the head centre")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
+    if args.rim_cut > 0 and args.no_pit_fix:  # R2: the cut runs inside the pit fix; without it it did nothing
+        raise SystemExit("LIVELY --rim-cut needs the pit fix: drop --no-pit-fix or --rim-cut")
+    if args.lip_smooth > 0 and args.rim_cut <= 0:
+        raise SystemExit("LIVELY --lip-smooth needs --rim-cut")
+    if args.rim_split and args.rim_cut <= 0:
+        raise SystemExit("LIVELY --rim-split needs --rim-cut")
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     data = Path(args.glb).read_bytes()
@@ -515,14 +1007,39 @@ def main():
             P, N1, T1, rim = rim_smooth(P, N1, T1, I, eyeball, centres, r, args.rim_smooth)
             report["rim"] = rim
             print(f"LIVELY rim: {json.dumps(rim)}", flush=True)
-        G.write_vec3(doc, binary, prim["attributes"]["POSITION"], P.tolist())
-        G.write_vec3(doc, binary, prim["attributes"]["NORMAL"], N1.tolist())
-        G.write_floats(doc, binary, prim["attributes"]["TANGENT"], T1.tolist())
+        if args.rim_cut > 0:  # R1: new vertices and triangles, so every attribute and the indices are rewritten
+            A = {k: accessor(doc, binary, i) for k, i in prim["attributes"].items()}
+            A.update(POSITION=P, NORMAL=N1, TANGENT=T1)
+            A, I, eyeball, band_new, cut = rim_cut(A, I, eyeball, centres, r, args.rim_cut)
+            if args.lip_smooth > 0:  # R2: the lid's lip, the white fringe under the eye
+                A, cut["lip"] = lip_smooth(A, I, eyeball, centres, r, args.lip_smooth, args.lip_mode)
+                print(f"LIVELY lip: {json.dumps(cut['lip'])}", flush=True)
+            if args.rim_split:  # R2b: the outer corner's dark wedge, the eyeball shaded as its sphere up to the lid
+                A, I, cut["split"] = rim_split(A, I, eyeball, views)
+                print(f"LIVELY rim split: {json.dumps(cut['split'])}", flush=True)
+            P, N1, T1, UV = A["POSITION"], A["NORMAL"], A["TANGENT"], A["TEXCOORD_0"]
+            for k, i in prim["attributes"].items():
+                G.replace_accessor(doc, binary, i, A[k].tolist())
+            G.replace_accessor(doc, binary, prim["indices"], I.ravel().tolist(), 5125)
+            binary = G.compact_buffers(doc, binary)  # R2: no old views left (UNUSED_OBJECT)
+            mask, cut["mask"] = rim_mask(mask, UV, I, eyeball, band_new)
+            tri_eye = eyeball.copy()  # the eye triangles from here on: the cut's classes
+            G.write_png(out / f"{args.name}_mask.png", W, H, (np.clip(mask, 0, 1) * 255 + 0.5).astype(np.uint8).tobytes())
+            report["mask"] = f"{args.name}_mask.png"
+            report["vertices_after_cut"] = len(P)
+            report["rim_cut"] = cut
+            print(f"LIVELY rim cut: {json.dumps(cut)}", flush=True)
+        else:
+            G.write_vec3(doc, binary, prim["attributes"]["POSITION"], P.tolist())
+            G.write_vec3(doc, binary, prim["attributes"]["NORMAL"], N1.tolist())
+            G.write_floats(doc, binary, prim["attributes"]["TANGENT"], T1.tolist())
         data = G.write_glb(doc, binary)
         cen = P[I].mean(1)
         residual_view(out / "eye_residual.png", P, I, views)
         if args.rim_smooth > 0:
             pit["rim_bad_triangles"] = rim["bad_triangles"]  # A3d: flipped or collapsed (under 10 %) round the rim
+        if args.rim_cut > 0:
+            pit["rim_bad_triangles"] = cut["bad_triangles"]  # R1: the cut's pieces turned over or under 10 % of their parent
         report["pit_geometry"] = pit
         for k in ("left", "right"):
             print(f"LIVELY pit {k}: " + json.dumps({n: (b["before_median_pct"], b["after_median_pct"], b["before_min_pct"],
@@ -1349,4 +1866,5 @@ def crest_view(path, P, w, head_c, r_skull, size=640):
     G.write_png(path, 2 * size, size, img.tobytes())
 
 
-main()
+if __name__ == "__main__":  # R2: test_alien_lively_cut imports the module
+    main()

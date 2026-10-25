@@ -62,9 +62,9 @@ var yaw_counter := 0.0
 ## does not follow; the eyes are the static head's only life at rest
 var darts := 0.0
 ## A3: the eyes. "free" (the default, A1-A2's way and the web module's): the eyes follow the target as far as the
-## lids allow; "fixed": the pupils stay centred in the head, the gaze is the head's forward, and darts are off (the
-## clip reels' job default); "lead": the eyes reach a new look target first, by at most EYE_LEAD_DEG off the head's
-## forward, and re-centre as the head follows. Another value is an error (push_error) and acts as "free".
+## lids allow; "fixed": the pupils stay centred in the head, the gaze is the head's forward, and darts are off;
+## "lead": the eyes reach a new look target first, by at most EYE_LEAD_DEG off the head's forward, and re-centre as
+## the head follows (R1: the alien's mode wherever it is shown, the clip reels' job default; the engineer's choice). Another value is an error (push_error) and acts as "free".
 var eye_mode := "free"
 const EYE_LEAD_DEG := 8.0
 ## A3: the yaw counter low-passed over this time constant (s), so the head does not snap against the chest's swivel

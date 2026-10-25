@@ -153,5 +153,6 @@ tests = ["test_ship_*"]
 [area.alien_lively]
 sources = [
   "tools/blender/alien_lively_geom.py", "tools/web/lively/*", "godot/alien/alien_lively.gd", "godot/alien/lively_check.gd",
+  "tools/blender/alien_lively_build.py",  # R2: its rim cut, mask and lip smoothing (test_alien_lively_cut)
 ]  # the static head's liveliness proof's pure formulas (#196, lively)
 tests = ["test_alien_lively_*"]

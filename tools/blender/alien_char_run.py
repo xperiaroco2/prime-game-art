@@ -58,16 +58,26 @@ def bases(head: str) -> dict:
     return out
 
 
+def eye_mask(lv: Path, static: Path, h: str) -> Path:
+    """The eye mask that goes with the lively build lv: its own when it wrote one (lively.json "mask", the rim cut's
+    repainted mask, art #196 R2), else the static head's."""
+    name = json.loads((lv / "lively.json").read_text(encoding="utf-8")).get("mask")
+    return lv / name if name else static / f"{h}_mask.png"
+
+
 def head_job(h: str, hd: Path, b: dict, slots_job: dict) -> dict:
-    """One head's entry in a Godot job (char_shots.gd, clip_reels.gd): its built character in hd, staged."""
+    """One head's entry in a Godot job (char_shots.gd, clip_reels.gd): its built character in hd, staged; the eye
+    mask and sclera from the character's own lively build (char.json "lively", R2); the uncut static v5 head of the
+    whole-head gate keeps its own mask ("static_mask")."""
     static = PILOT / "static_v5" / h
-    lv = HEADS[h]["lively"]
     char = json.loads((hd / "char.json").read_text(encoding="utf-8"))
+    lv = Path(char["lively"]).parent
     return {
         "char": _godot.stage(hd / f"{h}_char.glb", f"char_{h}"),
         "static": _godot.stage(static / f"{h}_static.glb", f"static_{h}"),
         "lively": str(hd / f"{h}_char_lively.json"), "sclera": str(lv / f"{h}_sclera.png"),
-        "mask": str(static / f"{h}_mask.png"), "detail": str(static / f"{h}_detail.png"),
+        "mask": str(eye_mask(lv, static, h)), "static_mask": str(static / f"{h}_mask.png"),
+        "detail": str(static / f"{h}_detail.png"),
         "plain": str(static / f"{h}_albedo_plain.png"), "accent": str(SLOTS / "maps" / f"{h}_accent.png"),
         "gill": str(SLOTS / "maps" / f"{h}_gill.png"), "body_albedo": str(hd / f"{h}_body_albedo.png"),
         "body_mask": str(hd / f"{h}_body_mask.png"), "body_detail": str(hd / f"{h}_body_detail.png"),
@@ -108,7 +118,7 @@ def main() -> int:
             (hd / "bases.json").write_text(json.dumps(b, indent=1), encoding="utf-8", newline="\n")
             res = blender.run_script("alien_char_build.py", [
                 "--head", h, "--lively", str(lv / f"{h}_lively.glb"), "--lively-json", str(lv / "lively.json"),
-                "--body", str(BODY), "--albedo", str(static / f"{h}_albedo.png"), "--mask", str(static / f"{h}_mask.png"),
+                "--body", str(BODY), "--albedo", str(static / f"{h}_albedo.png"), "--mask", str(eye_mask(lv, static, h)),
                 "--accent", str(SLOTS / "maps" / f"{h}_accent.png"),
                 "--detail", str(static / f"{h}_detail.png"), "--bases", str(hd / "bases.json"),
                 "--out", str(hd), *(["--clip-edits", str(Path(args.clip_edits).resolve())] if args.clip_edits else [])],

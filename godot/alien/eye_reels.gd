@@ -11,6 +11,10 @@ extends "res://alien/char_shots.gd"
 ## - <frames>/<head>_look_<mode>/0000.png...: per eye mode (fixed, lead) 8 s at 24 fps of the same scripted look-around (a
 ##   player turning their camera: yaw +-40, pitch +-15, holds), Idle underneath, head and shoulders, 1280x720;
 ## - <frames>/<head>_look_side/0000.png...: the two modes side by side (fixed | lead), the middle 640 px of each;
+## - corner_<head>.jpg (R2b): each eye's outer corner at rest (the eye's side away from the head's middle), rows
+##   front, three-quarters (CORNER_VIEWS degrees toward the outer side), side, each eye; columns as built | albedo only |
+##   geometry only | SSAO off | the key light's shadow off | the eye mask's share (debug_mode 7);
+##   corner_<head>_4x/<view>_<eye>.png: the as-built cell at 4x round the corner (nearest);
 ## eyes.json: per head and mode the eyes' largest and mean turn off the head's forward (degrees).
 ## Args after "--": <job.json>
 
@@ -26,6 +30,9 @@ const RING_SIZE := 0.06  # m: the rings' close-up height, the eye front on
 ## the rings' isolation (A3c): one shader parameter per column, as built first
 const RING_COLS := [["gaze_limbal", 1.0], ["debug_mode", 0], ["limbal", 0.0], ["eye_coat", 0.0], ["sclera_normal_map", 0.0],
 	["normal_strength", 0.0], ["debug_mode", 9], ["debug_mode", 10], ["debug_mode", 11]]
+## R2b: the outer corner's isolation: [debug_mode, SSAO, the key light's shadow], as built first
+const CORNER_COLS := [[0, true, true], [3, true, true], [2, true, true], [0, false, true], [0, true, false], [7, true, true]]
+const CORNER_VIEWS := [["front", 0.0], ["q", 40.0], ["side", 75.0]]  # degrees from the eye's front toward its outer side
 const LOOK := Vector2i(1280, 720)
 const LOOK_S := 8.0
 ## the look-around's keys: (time s, yaw deg toward +X, pitch deg up); smoothstep between, so the holds stay still
@@ -115,6 +122,48 @@ func _run() -> void:
 						for k: int in mats.size():
 							mats[k].set_shader_parameter(tweak[0], keep[k])
 					_cam.size = RIM_SIZE
+		# R2b: the outer corner (the dark wedge between lid and sclera), the gaze at rest
+		live.target = sk.global_transform * (mid + (GAZES[0][1] as Vector3))
+		for i: int in 30:
+			live.step(1.0 / 24.0)
+		var corner_cells: Array[Image] = []
+		var corner_crops := out.path_join("corner_%s_4x" % name)
+		DirAccess.make_dir_recursive_absolute(corner_crops)
+		var mid_w: Vector3 = live.mesh.global_transform * mid
+		for v: Array in CORNER_VIEWS:
+			for side: String in ["right", "left"]:
+				var e: Dictionary = lively["eyes"][side]
+				var to_world: Transform3D = live.mesh.global_transform
+				var centre: Vector3 = to_world * Lively._v(e["centre"])
+				var fwd: Vector3 = (to_world.basis * Lively._v(e["rest"])).normalized()
+				var out_dir: Vector3 = centre - mid_w
+				out_dir.y = 0.0
+				out_dir = (out_dir - fwd * out_dir.dot(fwd)).normalized()  # the outer side, across the eye's front
+				var corner: Vector3 = to_world * live.eye_front(side) + out_dir * float(e["radius"]) * 0.75
+				var view_dir: Vector3 = fwd * cos(deg_to_rad(float(v[1]))) + out_dir * sin(deg_to_rad(float(v[1])))
+				_cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+				_cam.size = RIM_SIZE
+				_cam.position = corner + view_dir.normalized() * 1.0
+				_cam.look_at(corner)
+				for col: int in CORNER_COLS.size():
+					for sm: ShaderMaterial in mats:
+						sm.set_shader_parameter("debug_mode", CORNER_COLS[col][0])
+					_env.ssao_enabled = CORNER_COLS[col][1]
+					_key.shadow_enabled = CORNER_COLS[col][2]
+					corner_cells.append(await _grab(RIM_CELL))
+					if col == 0:
+						var big: Image = root.get_texture().get_image()
+						big.convert(Image.FORMAT_RGB8)
+						var w: int = big.get_width() / 4
+						var hh: int = big.get_height() / 4
+						var z: Image = big.get_region(Rect2i((big.get_width() - w) / 2, (big.get_height() - hh) / 2, w, hh))
+						z.resize(w * 4, hh * 4, Image.INTERPOLATE_NEAREST)
+						z.save_png(corner_crops.path_join("%s_%s.png" % [v[0], side]))
+				for sm: ShaderMaterial in mats:
+					sm.set_shader_parameter("debug_mode", 0)
+				_env.ssao_enabled = true
+				_key.shadow_enabled = true
+		_sheet(corner_cells, RIM_CELL, CORNER_COLS.size()).save_jpg(out.path_join("corner_%s.jpg" % name), 0.92)
 		_sheet(rings, RIM_CELL, RING_COLS.size()).save_jpg(out.path_join("rings_%s.jpg" % name), 0.92)
 		_sheet(cells, RIM_CELL, RIM_COLS.size()).save_jpg(out.path_join("rim_%s.jpg" % name), 0.92)
 		_cam.projection = Camera3D.PROJECTION_PERSPECTIVE

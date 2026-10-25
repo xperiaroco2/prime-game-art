@@ -5,7 +5,7 @@ and encodes one MP4 per clip and head with Blender's FFmpeg.
 
     $PYTHON_BIN tools/blender/alien_clip_run.py --from <tag dir> --out <proof dir> [--heads chameleon,axolotl]
         [--on-clip auto|yes|no] [--split] [--head60 Jog_Fwd,Sprint_Fwd] [--yaw-counter 0.3] [--darts 0]
-        [--eye-mode fixed|lead|free] [--eyes]
+        [--eye-mode lead|fixed|free] [--eyes | --backface]
 
 The frames go to tools/out/alien_clips/<out's name>/ (temporary); the MP4s, sheets and reels.json into --out, never
 overwritten (an --out holding reels.json is refused). Long: run it in the background.
@@ -38,15 +38,22 @@ def main() -> int:
     ap.add_argument("--head60", default="", help="A2: clips that also get a 60 fps head reel, e.g. Jog_Fwd,Sprint_Fwd")
     ap.add_argument("--yaw-counter", type=float, default=0.0, help="A2: the controller's yaw_counter on the locomotion")
     ap.add_argument("--darts", type=float, default=0.0, help="A2: the controller's eye darts (degrees)")
-    ap.add_argument("--eye-mode", choices=("fixed", "lead", "free"), default="fixed",
-                    help="A3: the controller's eye_mode in the clip reels (fixed: the pupils centred in the head)")
+    ap.add_argument("--eye-mode", choices=("fixed", "lead", "free"), default="lead",
+                    help="A3: the controller's eye_mode in the clip reels (R1: lead, the engineer's choice, art #196"
+                         " comment 6391652501: the eyes lead a head turn by at most 8 degrees; fixed: the pupils centred)")
     ap.add_argument("--eyes", action="store_true",
                     help="A3: the eyes' proof instead of the clip reels (godot/alien/eye_reels.gd): the lower rim's "
                          "close-ups (rim_<head>.jpg, rim_<head>_4x/) and the look-around per eye mode "
                          "(<head>_look_fixed.mp4, <head>_look_lead.mp4, <head>_look_side.mp4), eyes.json")
+    ap.add_argument("--backface", action="store_true",
+                    help="R2: the back-face test instead (godot/alien/backface_shots.gd): the head's back faces red, "
+                         "the red pixels counted per gaze and view (backface.json, backface_<head>.jpg, <head>_4x/)")
     args = ap.parse_args()
+    if args.eyes and args.backface:
+        ap.error("--eyes and --backface are two runs")
     src, out = Path(args.src), Path(args.out)
-    done = out / ("eyes.json" if args.eyes else "reels.json")
+    stem = "eyes" if args.eyes else "backface" if args.backface else "reels"
+    done = out / f"{stem}.json"
     if done.exists():
         print(f"{done} exists: pick a new --out", flush=True)
         return 2
@@ -64,10 +71,10 @@ def main() -> int:
     job.update(split=args.split, head60=[c for c in args.head60.split(",") if c], yaw_counter=args.yaw_counter,
                darts=args.darts, eye_mode=args.eye_mode)
     print(f"on_clip {job['on_clip']}", flush=True)
-    stem = "eyes" if args.eyes else "reels"
     (out / f"{stem}_job.json").write_text(json.dumps(job, indent=1), encoding="utf-8", newline="\n")
     _godot.import_project()
-    script = "res://alien/eye_reels.gd" if args.eyes else "res://alien/clip_reels.gd"
+    script = {"eyes": "res://alien/eye_reels.gd", "backface": "res://alien/backface_shots.gd"}.get(stem,
+                                                                                               "res://alien/clip_reels.gd")
     code, output = _godot.window(["--path", str(_godot.PROJECT), "-s", script, "--", str(out / f"{stem}_job.json")],
                                  (1280, 720), 3000 * (4 if args.split else 1))
     (out / f"{stem}_godot.log").write_text(output, encoding="utf-8", newline="\n")
