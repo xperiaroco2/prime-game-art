@@ -24,6 +24,7 @@ border_d = 24.0                  # its face; the inner panel's face at body_d
 body_d = 21.0
 inner_chamfer = 6.0              # the inner panel's corners
 seam = 0.5                       # the dark joint between two bronze blocks
+border_chamfer = 1.8             # board-3: the border blocks' chunky bevel (the sheet's; board-2: 1.2)
 notch = { half = 9.6, h = 124.9 }   # the border's seat for the beacon, at the top's middle
 
 [mount]                          # board-2: how the board stands on the corridor's wall (rays on the built ship, b5b)
@@ -69,6 +70,13 @@ w = 21.3
 knuckle = 5.3                    # the shell's own knuckle: |u| under this
 fixed = [5.6, 9.9]               # the two fixed knuckles, |u| from the bay's centre
 cap = { r = 3.2, to = 10.65 }    # their end caps
+# board-3, a look call against the sheet (its knuckles are big turned barrels): the fixed knuckles and the shell's
+# own are lathe profiles, [|u| from the bay's centre, radius] pairs (two equal |u| make a step), instead of the
+# drawing's plain r 2.9 / cap 3.2 cylinders. The shell's bottom edge stands 3.3 over the axis only at |u| < 5.2 and
+# rises 1:1 along its cut corners, so the barrel grows past |u| 6.6 (the closed and swinging shell keep 0.8 clear)
+turned = [[5.6, 3.4], [6.2, 3.4], [6.2, 3.0], [6.6, 3.0], [6.6, 3.9], [9.3, 3.9], [9.3, 3.2], [9.7, 3.2],
+          [9.7, 4.3], [10.65, 4.3]]
+leaf_turned = [[0.0, 3.25], [4.4, 3.25], [4.4, 3.6], [5.3, 3.6]]   # the shell's own, mirrored about the bay's centre
 
 [core]                           # the crystal core in its socket, fixed, glowing cyan
 w = 10.3

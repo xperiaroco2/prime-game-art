@@ -20,30 +20,42 @@ const TRIP := deg_to_rad(110.0)                         # a shell's local rotati
 const ENAMEL := {"red": Color(0.78, 0.09, 0.07), "yellow": Color(0.93, 0.68, 0.08),
 	"green": Color(0.13, 0.55, 0.22), "blue": Color(0.12, 0.25, 0.75)}
 const CYAN := Color(0.0, 0.62, 1.0)
-const CYAN_ENERGY := 3.6         # board-2: the sheet's bright lines (step 1: 2.4; the socket's 4.0)
-const BRONZE := Color(0.56, 0.46, 0.32)       # sRGB, the socket's (socket.gd BRONZE, BRONZE_EDGE)
+const CYAN_ENERGY := 2.5         # board-3: saturated, still over the bloom threshold (the socket's 5.0 and 3.5 read white-blue here)
+# board-3: the socket's step 3 bronze (socket.gd BRONZE, BRONZE_FINISH on the shared console_metal.gdshader), so the
+# three stations match: sRGB colours, then the finish's parameters
+const BRONZE := Color(0.5, 0.38, 0.24)
 const BRONZE_EDGE := Color(1.0, 0.9, 0.7)
-const LAMP := [Color(0.02, 0.02, 0.02), Color(1.0, 0.62, 0.02), Color(0.1, 1.0, 0.22)]   # dark, yellow, green
-const LAMP_ENERGY := 2.2
-const BEACON := Color(1.0, 0.06, 0.03)
-const BEACON_ENERGY := 3.0
-const BEACON_LIGHT := 0.6
-const BEACON_RANGE := 0.45
+const BRONZE_FINISH := {"metallic": 0.75, "roughness": 0.3, "wear": 1.4, "lift": 0.08, "mottle": 0.3, "grain": 0.06,
+	"rough_grain": 0.06, "rough_mottle": 0.15, "edge_polish": 0.25, "shade": 0.3, "wave": 0.3, "wave_scale": 8.0,
+	"dent": 0.0}
+# board-3: the inner panel behind the shells, a darker bronze (the sheet's; b4's one tan slab), the same finish
+const PANEL := Color(0.3, 0.22, 0.14)
+const PANEL_EDGE := Color(0.78, 0.64, 0.46)
+const LAMP := [Color(0.02, 0.02, 0.02), Color(1.0, 0.55, 0.0), Color(0.0, 1.0, 0.12)]   # dark, yellow, green
+const LAMP_ENERGY := 1.8         # board-3: a saturated green (b4: (0.1, 1.0, 0.22) x 2.2 read pale)
+const BEACON := Color(1.0, 0.02, 0.0)      # board-3: purer and lower (b4 (1.0, 0.06, 0.03) x 3 read salmon under AgX)
+const BEACON_ENERGY := 1.3       # board-3: at 2 and 3 the dome read salmon close up (AgX)
+const BEACON_LIGHT := 1.2
+const BEACON_RANGE := 0.9
+const BEACON_ANGLE := 55.0       # board-3: a spot out of the wall and down (see apply())
 
 
 ## Returns the look: {"shells" (Node3D x4), "cores" (ShaderMaterial x4), "lamps" (StandardMaterial3D x4), "beacon"
-## (StandardMaterial3D), "beacon_light" (OmniLight3D), "open" (float x4), "lamp" (int x4), "problem"}.
+## (StandardMaterial3D), "beacon_light" (SpotLight3D), "open" (float x4), "lamp" (int x4), "problem"}.
 static func apply(root: Node3D) -> Dictionary:
-	# board-2: the crystal socket's bronze and graphite (godot/socket/socket.gd, socket-2 build b5), one metal for
-	# the stations (step 1: the console's (0.774, 0.556, 0.349), metallic 0.4, lift 0.1 read flat tan)
+	# the crystal socket's bronze and graphite (godot/socket/socket.gd, socket-3 build b6), one metal for the
+	# stations (step 1: the console's (0.774, 0.556, 0.349), metallic 0.4, lift 0.1 read flat tan)
 	var bronze := ShaderMaterial.new()
 	bronze.shader = METAL
 	bronze.set_shader_parameter("base_color", BRONZE)
 	bronze.set_shader_parameter("worn_color", BRONZE_EDGE)
-	bronze.set_shader_parameter("metallic", 0.75)
-	bronze.set_shader_parameter("roughness", 0.32)
-	bronze.set_shader_parameter("wear", 1.0)
-	bronze.set_shader_parameter("lift", 0.08)
+	var panel := ShaderMaterial.new()
+	panel.shader = METAL
+	panel.set_shader_parameter("base_color", PANEL)
+	panel.set_shader_parameter("worn_color", PANEL_EDGE)
+	for k: String in BRONZE_FINISH:
+		bronze.set_shader_parameter(k, BRONZE_FINISH[k])
+		panel.set_shader_parameter(k, BRONZE_FINISH[k])
 	var graphite := ShaderMaterial.new()
 	graphite.shader = METAL
 	graphite.set_shader_parameter("base_color", Color(0.272, 0.276, 0.293))
@@ -59,7 +71,7 @@ static func apply(root: Node3D) -> Dictionary:
 	cable.albedo_color = Color(0.05, 0.05, 0.055)
 	cable.roughness = 0.42
 	cable.metallic = 0.2
-	var by_name := {"board_bronze": bronze, "board_graphite": graphite, "board_cyan": cyan, "board_cable": cable}
+	var by_name := {"board_bronze": bronze, "board_panel": panel, "board_graphite": graphite, "board_cyan": cyan, "board_cable": cable}
 	for c: String in COLOURS:
 		var e := StandardMaterial3D.new()
 		e.albedo_color = ENAMEL[c]
@@ -114,17 +126,21 @@ static func apply(root: Node3D) -> Dictionary:
 	if old != null:
 		root.remove_child(old)
 		old.free()
-	var light := OmniLight3D.new()
+	# board-3: a spot, not an omni. The omni (step 1: 1.6 m, streaks on the wall's seams; board-2: 0.45 m) also lit
+	# the corridor's wall slanting out right above the dome red at close range; the spot looks out of the wall and
+	# down (its cone 55 degrees round 25 degrees below level), so it reddens the shells, the lamps and the floor in
+	# front and never the wall above or behind it; the dome's own glow and the bloom carry the halo
+	var light := SpotLight3D.new()
 	light.name = "BoardBeaconLight"
 	light.light_color = BEACON
-	# board-2: a short reach. At 1.6 m it caught the corridor wall's panel seams over the board as red streaks (the
-	# step 1 shots); now it reddens the board's top and the wall just round the dome, and its specular is low
-	light.omni_range = BEACON_RANGE
-	light.omni_attenuation = 2.0
+	light.spot_range = BEACON_RANGE
+	light.spot_angle = BEACON_ANGLE
+	light.spot_attenuation = 1.5
 	light.light_specular = 0.2
 	light.shadow_enabled = false
 	root.add_child(light)
-	light.position = Vector3(0.0, 1.38, 0.2)  # over the dome, a little out of the wall (metres, the board's frame)
+	light.position = Vector3(0.0, 1.37, 0.2)  # at the dome, a little out of the wall (metres, the board's frame)
+	light.rotation = Vector3(deg_to_rad(-25.0), PI, 0.0)  # its -Z out of the wall (+Z) and 25 degrees down
 	look["beacon_light"] = light
 	for i: int in 4:
 		set_shell(look, i, 0.0)
@@ -151,7 +167,7 @@ static func set_lamp(look: Dictionary, index: int, state: int) -> void:
 	var m: StandardMaterial3D = look["lamps"][index]
 	m.emission = LAMP[s]
 	m.emission_energy_multiplier = 0.0 if s == 0 else LAMP_ENERGY
-	m.albedo_color = Color(0.12, 0.03, 0.02) if s == 0 else Color(0.03, 0.03, 0.03)
+	m.albedo_color = Color(0.12, 0.03, 0.02) if s == 0 else (LAMP[s] as Color).darkened(0.65)  # board-3: a coloured lens, not black glass
 	look["lamp"][index] = s
 
 
@@ -159,7 +175,7 @@ static func set_lamp(look: Dictionary, index: int, state: int) -> void:
 static func set_problem(look: Dictionary, on: bool) -> void:
 	var m: StandardMaterial3D = look["beacon"]
 	m.emission_energy_multiplier = BEACON_ENERGY if on else 0.08
-	var light: OmniLight3D = look["beacon_light"]
+	var light: SpotLight3D = look["beacon_light"]
 	light.light_energy = BEACON_LIGHT
 	light.visible = on
 	look["problem"] = on

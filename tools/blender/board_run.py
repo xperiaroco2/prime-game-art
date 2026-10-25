@@ -72,6 +72,12 @@ CLOSE = [  # the edges and seams, close
     ("close_clamp", 35.0, 12.0, (-37.3, 10.0, 24.0), 0.5, 50.0, ON),
     ("close_plate", -72.0, 10.0, (-78.0, 4.0, 62.0), 0.55, 50.0, ON),
     ("close_corner", 32.0, 22.0, (62.0, 22.0, 124.0), 0.55, 50.0, ON),
+    # board-3: the border's seams (the mitred corner blocks, the top's and bottom's cuts, the notch) and the panel's
+    ("close_seam_corner_bl", -15.0, -10.0, (-68.0, 24.0, 60.0), 0.45, 45.0, ON),
+    ("close_seam_corner_tr", 20.0, 15.0, (70.0, 24.0, 122.0), 0.45, 45.0, ON),
+    ("close_seam_top", 10.0, 15.0, (-30.0, 24.0, 124.0), 0.5, 45.0, ON),
+    ("close_seam_bottom", -10.0, -12.0, (40.0, 24.0, 57.0), 0.45, 45.0, ON),
+    ("close_seam_panel", 8.0, 6.0, (0.0, 21.0, 110.0), 0.45, 45.0, ON),
     # board-2: the board against the wall from the side: the beacon and the top border under the slant, the plate's
     # top and bottom edges on the wall's pillow panels
     ("close_beacon_side", 82.0, 4.0, (0.0, 10.0, 132.0), 0.55, 50.0, TRIPPED),

@@ -44,7 +44,8 @@ FR, BAY, SH, HG, CO, LA, BE, ST, CA = (DIMS[k] for k in ("frame", "bays", "shell
                                                           "strips", "cables"))
 COLOURS = BAY["colours"]
 CHAMFER_BLOCK, CHAMFER_SMALL = 0.5, 0.2      # cm
-CHAMFER_BROAD, BROAD_U = 1.2, 0.55           # board-2: the border, panel and bezel blocks' broad bevel, half-bright (UV0 u)
+CHAMFER_BROAD, BROAD_U = 1.2, 0.35           # the border, panel and bezel blocks' broad bevel, part-bright (UV0 u; board-2
+                                             # 0.55, under the socket-3 wear 1.4 the broad bevels went cream, board-3)
 SQ = 2.0 - math.sqrt(2.0)
 
 
@@ -175,6 +176,23 @@ def cyl(bm, p0: Vector, p1: Vector, r: float, sides: int = 20, mi: int = 0) -> N
     cap(bm, l1, mi)
 
 
+def lathe(bm, uc: float, d: float, h: float, profile: list, sgn: int = 1, sides: int = 28, mi: int = 0) -> None:
+    """board-3: a turned solid along u, capped: profile [(|u| from uc, r), ...] outward by sgn; two equal |u| make a
+    flat step (a sharp edge the chamfer marks bright), equal radii a smooth barrel."""
+    loops = [ring_verts(bm, C((uc + sgn * du, d, h)), Vector((1, 0, 0)), r, sides, ref=Vector((0, 0, 1)))
+             for du, r in profile]
+    for i in range(len(loops) - 1):
+        bridge(bm, loops[i], loops[i + 1], mi, smooth=profile[i][1] == profile[i + 1][1])
+    cap(bm, list(reversed(loops[0])), mi)
+    cap(bm, loops[-1], mi)
+
+
+def mirrored(profile: list) -> list:
+    """A profile from 0 outward made symmetric: from -end through 0 to +end (as signed u)."""
+    left = [(-du, r) for du, r in reversed(profile) if du > 0]
+    return left + [(du, r) for du, r in profile]
+
+
 def C(p) -> Vector:
     """(u, d, h) in cm -> Blender's axes in cm."""
     return Vector((p[0], -p[1], p[2]))
@@ -214,21 +232,36 @@ def build_mount(bm) -> None:
     prism(bm, inset(0.0, FR["h0"], FR["h1"], FR["width"], FR["chamfer"], m["inset"]), -(m["d"] + m["back"]), 0.0)
 
 
-def build_border(bm) -> None:
-    d0, d1, g = FR["plate_d"], FR["border_d"], SEAM / 2
+def border_blocks() -> list:
+    """board-3: the sheet's octagonal border as a ring of mitred blocks between the outline and the inner panel's
+    octagon: the four big cut corners are blocks of their own (diagonal seams from corner to corner), the bottom
+    and top cut again at u +-47.5 and the top's middle (the beacon's seat, lower) at the notch."""
+    g = SEAM / 2
+
+    def along(a, b, t):
+        L = math.hypot(b[0] - a[0], b[1] - a[1])
+        return (a[0] + (b[0] - a[0]) * t / L, a[1] + (b[1] - a[1]) * t / L)
+
     nh, nu = FR["notch"]["h"], FR["notch"]["half"]
-    pieces = [cut(OUTER, u1=-47.5 - g, h1=IN_H0), cut(OUTER, u0=-47.5 + g, u1=47.5 - g, h1=IN_H0),
-              cut(OUTER, u0=47.5 + g, h1=IN_H0),
-              cut(OUTER, u1=-IN_U, h0=IN_H0 + SEAM, h1=IN_H1 - SEAM), cut(OUTER, u0=IN_U, h0=IN_H0 + SEAM, h1=IN_H1 - SEAM),
-              cut(OUTER, u1=-47.5 - g, h0=IN_H1), cut(OUTER, u0=47.5 + g, h0=IN_H1),
-              cut(OUTER, u0=-47.5 + g, u1=-nu, h0=IN_H1), cut(OUTER, u0=nu, u1=47.5 - g, h0=IN_H1),
-              cut(OUTER, u0=-nu, u1=nu, h0=IN_H1, h1=nh)]
-    c = FR["inner_chamfer"]
-    for su in (-1, 1):  # the inner panel's cut corners: the border fills them
-        for h, sh in ((IN_H0, 1), (IN_H1, -1)):
-            pieces.append([(su * IN_U, h), (su * (IN_U - c), h), (su * IN_U, h + sh * c)])
-    for p in pieces:
-        prism(bm, p, d0, d1)
+    pieces = []
+    for i in range(8):
+        j = (i + 1) % 8
+        o0, o1, n0, n1 = OUTER[i], OUTER[j], INNER[i], INNER[j]
+        quad = [along(o0, o1, g), along(o1, o0, g), along(n1, n0, g), along(n0, n1, g)]
+        if i == 0:
+            pieces += split_u(quad, [-47.5, 47.5], SEAM)
+        elif i == 4:
+            for q in split_u(quad, [-47.5, -nu, nu, 47.5], SEAM):
+                mid = sum(p[0] for p in q) / len(q)
+                pieces.append(cut(q, h1=nh) if abs(mid) < nu else q)
+        else:
+            pieces.append(quad)
+    return [p for p in pieces if p]
+
+
+def build_border(bm) -> None:
+    for p in border_blocks():
+        prism(bm, p, FR["plate_d"], FR["border_d"])
 
 
 def pockets() -> list:
@@ -286,11 +319,10 @@ def build_surrounds(bm) -> None:
 
 
 def build_knuckles(bm) -> None:
-    h, d = HG["h"], HG["d"]
+    # board-3: turned barrels with grooves and a big end cap (the sheet's), [hinge] turned
     for c in BAY["u"]:
         for sgn in (-1, 1):
-            cyl(bm, (c + sgn * HG["fixed"][0], d, h), (c + sgn * HG["fixed"][1], d, h), HG["r"], 24)
-            cyl(bm, (c + sgn * HG["fixed"][1], d, h), (c + sgn * HG["cap"]["to"], d, h), HG["cap"]["r"], 24)
+            lathe(bm, c, HG["d"], HG["h"], HG["turned"], sgn)
 
 
 def build_holders(bm) -> None:
@@ -325,20 +357,24 @@ def strip_rects() -> list:
 
 
 def build_bezels(bm) -> None:
-    d = FR["border_d"]
+    # board-3: a raised graphite frame round each strip (the sheet's thick lit channels), the strip sunk 0.4 in it
+    d, t = FR["border_d"], 0.9
     for u0, u1, h0, h1 in strip_rects():
-        box(bm, u0 - 0.6, u1 + 0.6, h0 - 0.6, h1 + 0.6, d - 0.4, d + 0.3)
+        box(bm, u0 - t, u1 + t, h0 - t, h0, d - 0.4, d + 1.4)
+        box(bm, u0 - t, u1 + t, h1, h1 + t, d - 0.4, d + 1.4)
+        box(bm, u0 - t, u0, h0, h1, d - 0.4, d + 1.4)
+        box(bm, u1, u1 + t, h0, h1, d - 0.4, d + 1.4)
 
 
 def build_strips(bm) -> None:
     d = FR["border_d"]
     for u0, u1, h0, h1 in strip_rects():
-        box(bm, u0, u1, h0, h1, d - 0.4, d + 0.45)
+        box(bm, u0, u1, h0, h1, d - 0.4, d + 1.0)
     s = BAY["strip"]
     for c in BAY["u"]:
         for sgn in (-1, 1):
             a, b = sorted((c + sgn * s["u"][0], c + sgn * s["u"][1]))
-            box(bm, a, b, s["h"][0], s["h"][1], s["d"] - 0.5, s["d"])
+            box(bm, a, b, s["h"][0], s["h"][1], s["d"] - 0.5, s["d"] + 0.6)  # board-3: thicker, its sides lit
 
 
 R_LOOP = CA["outer_half"] - CA["bundle"] / 2.0
@@ -376,16 +412,25 @@ def build_clamp_plates(bm) -> None:
 
 def build_core(c: float):
     def make(bm) -> None:
+        # board-3: a cut gem like the energy crystal's (step 2: a plain hexagonal prism read as a pale bar): three
+        # rings, the middle one turned half a facet, so the sides are triangles that catch the light one by one;
+        # still inside the drawing's 10.3 x 6.8 (the closed shell's back clears it by 0.6)
         d, half_w, half_d = CO["d"], CO["w"] / 2, CO["depth"] / 2
-        ha, hb = CO["h0"] + 3.2, CO["h1"] - 3.2
-        hexa = [(half_w * math.cos(k * math.pi / 3), half_d * math.sin(k * math.pi / 3) / math.sin(math.pi / 3))
-                for k in range(6)]
-        la = [bm.verts.new(P(c + x, d + y, ha)) for x, y in hexa]
-        lb = [bm.verts.new(P(c + x * 0.92, d + y * 0.92, hb)) for x, y in hexa]
+
+        def ring(h: float, s: float, phase: float) -> list:
+            ang = [phase + k * math.pi / 3 for k in range(6)]
+            top_cos, top_sin = max(abs(math.cos(a)) for a in ang), max(abs(math.sin(a)) for a in ang)
+            return [bm.verts.new(P(c + s * half_w * math.cos(a) / top_cos, d + s * half_d * math.sin(a) / top_sin, h))
+                    for a in ang]
+
+        hm = (CO["h0"] + CO["h1"]) / 2
+        la, lm, lb = ring(CO["h0"] + 4.0, 0.84, 0.0), ring(hm + 1.2, 1.0, math.pi / 6), ring(CO["h1"] - 3.4, 0.8, 0.0)
         bot, top = bm.verts.new(P(c, d, CO["h0"])), bm.verts.new(P(c, d, CO["h1"]))
         for i in range(6):
             j = (i + 1) % 6
-            bm.faces.new((la[i], la[j], lb[j], lb[i]))
+            for lo in (la, lb):  # lm[i] sits between lo[i] and lo[j]
+                bm.faces.new((lo[i], lo[j], lm[i]))
+                bm.faces.new((lm[i], lo[j], lm[j]))
             bm.faces.new((lb[i], lb[j], top))
             bm.faces.new((la[j], la[i], bot))
     return make
@@ -460,7 +505,7 @@ def build_shell(c: float):
         for s in SH["ribs"]:
             box(bm, c - half, c + half, HG["h"] + s, HG["h"] + s + 1.0, SH["cup_floor_d"] - 1.2, SH["cup_floor_d"] + 0.05, 2)
         box(bm, c - 5.0, c + 5.0, HG["h"], HG["h"] + SH["bottom"] + 0.7, SH["back_d"] + 0.5, HG["d"] + 2.0, 0)
-        cyl(bm, (c - HG["knuckle"], HG["d"], HG["h"]), (c + HG["knuckle"], HG["d"], HG["h"]), HG["r"], 24, 0)
+        lathe(bm, c, HG["d"], HG["h"], mirrored(HG["leaf_turned"]), 1, 28, 0)  # board-3: turned, collared ends
     return make
 
 
@@ -489,6 +534,7 @@ def principled(name: str, base, metallic=0.0, rough=0.4, emit=None, strength=0.0
 
 def build_materials() -> None:
     principled("board_bronze", (0.50, 0.30, 0.15), 1.0, 0.32)
+    principled("board_panel", (0.22, 0.12, 0.06), 1.0, 0.36)  # board-3: the darker inner panel behind the shells
     principled("board_graphite", (0.07, 0.072, 0.08), 0.85, 0.4)
     principled("board_cyan", (0.02, 0.05, 0.06), 0.0, 0.2, CYAN, 6.0)
     principled("board_cable", (0.03, 0.03, 0.032), 0.0, 0.45)
@@ -602,12 +648,12 @@ def build() -> dict:
     body = make_object("board_body", [
         (build_plate, "board_graphite", CHAMFER_SMALL),
         (build_mount, "board_graphite", 0.0),
-        (build_border, "board_bronze", CHAMFER_BROAD),
+        (build_border, "board_bronze", FR["border_chamfer"]),
         (build_slab, "board_graphite", CHAMFER_SMALL),
-        (build_panel, "board_bronze", CHAMFER_BROAD),
+        (build_panel, "board_panel", CHAMFER_BROAD),  # board-3: its own darker bronze
         (build_liners, "board_graphite", CHAMFER_SMALL),
         (build_surrounds, "board_bronze", CHAMFER_BROAD),  # board-2: the chunky bezels' broad bevel
-        (build_knuckles, "board_bronze", 0.0),
+        (build_knuckles, "board_bronze", CHAMFER_SMALL),  # board-3: the turned steps' edges worn bright
         (build_holders, "board_bronze", 0.0),
         (build_lamp_rings, "board_bronze", CHAMFER_SMALL),
         (build_collar, "board_bronze", CHAMFER_SMALL),

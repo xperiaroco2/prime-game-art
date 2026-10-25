@@ -1,15 +1,16 @@
 {
   "asset": "breaker_board",
-  "built_by": "tools/blender/board_run.py --tag b4 --asset assets/prop/breaker_board",
+  "built_by": "tools/blender/board_run.py --tag b5 --asset assets/prop/breaker_board",
   "mesh": {
-    "triangles": 17450,
+    "triangles": 27726,
     "triangles_by_material": {
-      "board_graphite": 2800,
-      "board_bronze": 7432,
+      "board_graphite": 3460,
+      "board_bronze": 16280,
+      "board_panel": 752,
       "board_cyan": 156,
       "board_cable": 3864,
       "board_enamel_red": 134,
-      "board_core": 464,
+      "board_core": 480,
       "board_lamp": 1336,
       "board_enamel_yellow": 134,
       "board_enamel_green": 134,
@@ -17,18 +18,18 @@
       "board_beacon": 862
     },
     "triangles_by_object": {
-      "board_body": 12100,
-      "shell_red": 672,
-      "core_red": 116,
+      "board_body": 20216,
+      "shell_red": 1208,
+      "core_red": 120,
       "lamp_red": 334,
-      "shell_yellow": 672,
-      "core_yellow": 116,
+      "shell_yellow": 1208,
+      "core_yellow": 120,
       "lamp_yellow": 334,
-      "shell_green": 672,
-      "core_green": 116,
+      "shell_green": 1208,
+      "core_green": 120,
       "lamp_green": 334,
-      "shell_blue": 672,
-      "core_blue": 116,
+      "shell_blue": 1208,
+      "core_blue": 120,
       "lamp_blue": 334,
       "beacon": 862
     },
@@ -37,10 +38,10 @@
       "board_col1-convcolonly": 8,
       "board_col2-convcolonly": 8,
       "board_col3-convcolonly": 8,
-      "shell_red_col-convcolonly": 98,
-      "shell_yellow_col-convcolonly": 98,
-      "shell_green_col-convcolonly": 98,
-      "shell_blue_col-convcolonly": 98
+      "shell_red_col-convcolonly": 104,
+      "shell_yellow_col-convcolonly": 104,
+      "shell_green_col-convcolonly": 104,
+      "shell_blue_col-convcolonly": 104
     },
     "size_m": [
       1.6,
@@ -113,12 +114,12 @@
         -6.6
       ],
       "d": [
-        22.11,
-        60.91
+        21.42,
+        60.92
       ],
       "h": [
         53.85,
-        70.59
+        71.28
       ]
     },
     "beacon_top_h": 140.4,
@@ -159,8 +160,8 @@
   "gltf_validator": {
     "numErrors": 0,
     "numWarnings": 0,
-    "numInfos": 25,
+    "numInfos": 26,
     "numHints": 0
   },
-  "review": "<raw>/ship/v4/board/b4/corridor/sheet.png"
+  "review": "<raw>/ship/v4/board/b5/corridor/sheet.png"
 }

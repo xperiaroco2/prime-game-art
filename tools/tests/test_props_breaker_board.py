@@ -19,7 +19,7 @@ EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "board_dims.toml"
 COLOURS = ("red", "yellow", "green", "blue")
 TRIANGLES = 30000
-SURFACES = {"board_bronze", "board_graphite", "board_cyan", "board_cable", "board_core", "board_lamp",
+SURFACES = {"board_bronze", "board_panel", "board_graphite", "board_cyan", "board_cable", "board_core", "board_lamp",
             "board_beacon"} | {f"board_enamel_{c}" for c in COLOURS}
 MATERIAL_FILES = ("board.gd", "board_metal.gdshader", "board_core.gdshader")
 

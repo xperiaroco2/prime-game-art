@@ -628,7 +628,7 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
    straight views at the drawing's scale.
 4. **The states** are node rotations and material values: `godot/board/board.gd` `set_shell(look, i, open01)`,
    `set_on` / `set_lamp` (dark, yellow, green), `set_problem` (the beacon and its red light), `set_core`; the cores'
-   shader is kin to the energy crystal's core (`board_core.gdshader`), the metal is the console's (copied, so the
+   shader is kin to the energy crystal's core (`board_core.gdshader`), the metal is the console's (a byte-identical copy, so the
    board's files stand alone). The sparks and smoke at a tripped core are the game's.
 5. **The shots** are taken in the east corridor itself: `godot/board/corridor.gd` extends `ship.gd`'s shoot mode, puts
    a board on both spots (yaw from the spot's normal), keeps them out of the dressing pass and sets each view's state;
@@ -653,6 +653,20 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
 7. **The look (board-2).** The bronze and graphite are the crystal socket's values (socket-2), the bays' surrounds
    are thickened from the drawing's 1.15 cm sides to 3.0 (the sheet's chunky bezels, a look call), the shells' bronze
    lips carry the bright-edge mark, the beacon's light reaches 0.45 m at 0.6 energy (at 1.6 m and 0.9 it streaked the wall's panel seams red).
+8. **The look (board-3), toward the sheet.**
+   - The bronze is the socket's step 3 (`socket.gd` `BRONZE`, `BRONZE_FINISH`) on the shared metal shader:
+     `board_metal.gdshader` is the console's `console_metal.gdshader` byte for byte, as the socket's copy is.
+   - The inner panel behind the shells is a seventh body surface, `board_panel`: the same finish in a darker bronze.
+   - The border is a ring of mitred blocks between the outline and the inner panel's octagon: the four big cut
+     corners are blocks of their own, the bottom and top cut again at u +-47.5, the beacon's seat at the notch;
+     their bevel is `[frame] border_chamfer` (1.8 cm). The broad bevels are marked u 0.35 (0.55 went cream).
+   - The hinge knuckles are turned (`[hinge] turned`, `leaf_turned`: lathe profiles with grooves and a big end cap).
+     The shell's bottom edge stands 3.3 cm over the axis only in its middle, so the barrels grow past |u| 6.6.
+   - The cores are cut gems: three rings, the middle one turned half a facet; deep blue with bright cyan edges.
+   - The strips stand 1 cm proud in raised graphite frames, the lamps are saturated green on a coloured lens.
+   - The beacon's light is a spot out of the wall and 25 degrees down (55 degree cone, 0.9 m). The omni lit the
+     corridor's slanted wall right above the dome red at close range; the spot leaves the wall above and behind it
+     dark.
 
 `tools/tests/test_props_breaker_board.py` checks the drawing's numbers, the leaves' pivots and colliders, the clean
 sweep, the mount and the committed asset.

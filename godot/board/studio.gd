@@ -54,8 +54,8 @@ func _run() -> void:
 func _stage() -> void:
 	var env := Environment.new()
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color(0.16, 0.2, 0.3)
-	sky_mat.sky_horizon_color = Color(0.36, 0.32, 0.28)
+	sky_mat.sky_top_color = Color(0.3, 0.24, 0.18)  # board-3: warm, so the bronze mirrors warm, not grey
+	sky_mat.sky_horizon_color = Color(0.5, 0.4, 0.3)
 	sky_mat.ground_horizon_color = Color(0.3, 0.27, 0.25)
 	sky_mat.ground_bottom_color = Color(0.06, 0.06, 0.08)
 	var sky := Sky.new()
@@ -63,20 +63,22 @@ func _stage() -> void:
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.35
+	env.ambient_light_energy = 0.2  # board-3: a darker studio so the glow reads (b4's 0.35 and key 2.4 washed it)
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
-	env.glow_enabled = true
-	env.glow_intensity = 0.6
-	env.glow_bloom = 0.03
-	env.glow_hdr_threshold = 1.0
-	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
+	env.glow_enabled = true  # board-3: the socket's studio bloom (socket-3: screen, 0.5, threshold 1.1, levels 2..5)
+	env.glow_intensity = 0.5
+	env.glow_bloom = 0.0
+	env.glow_hdr_threshold = 1.1
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	for lv: int in 7:
+		env.set_glow_level(lv, 1.0 if lv >= 1 and lv <= 4 else 0.0)
 	env.ssao_enabled = true
 	var world := WorldEnvironment.new()
 	world.environment = env
 	root.add_child(world)
 	var backdrop := StandardMaterial3D.new()
-	backdrop.albedo_color = Color(0.09, 0.12, 0.22)
+	backdrop.albedo_color = Color(0.06, 0.08, 0.15)
 	backdrop.roughness = 0.85
 	for b: Array in [[Vector3(8.0, 4.0, 0.02), Vector3(0.0, 2.0, -0.01)], [Vector3(8.0, 0.02, 6.0), Vector3(0.0, -0.01, 3.0)]]:
 		var mesh := BoxMesh.new()
@@ -88,13 +90,13 @@ func _stage() -> void:
 		node.position = b[1]
 	var key := DirectionalLight3D.new()
 	key.light_color = Color(1.0, 0.9, 0.78)
-	key.light_energy = 2.4
+	key.light_energy = 1.5
 	key.shadow_enabled = true
 	root.add_child(key)
 	key.look_at_from_position(Vector3(-1.6, 2.6, 2.2), TARGET)
 	var fill := OmniLight3D.new()
 	fill.light_color = Color(0.6, 0.72, 1.0)
-	fill.light_energy = 1.2
+	fill.light_energy = 0.7
 	fill.omni_range = 5.0
 	root.add_child(fill)
 	fill.position = Vector3(1.8, 1.2, 1.8)
