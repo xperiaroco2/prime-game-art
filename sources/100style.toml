@@ -1,0 +1,47 @@
+id = "100style"
+title = "100STYLE: stylised locomotion motion capture, 100 styles as BVH takes (60 fps, 23-joint skeleton)"
+author = "The 100STYLE dataset's authors (the creators listed on the Zenodo record)"
+url = "https://zenodo.org/records/8127870"
+licence = "CC-BY-4.0"
+licence_url = "https://creativecommons.org/licenses/by/4.0/"
+public_repo_ok = true
+ai_generated = false
+downloaded_at = 2026-10-26
+credit = "The 100STYLE Dataset - Ian Mason (CC BY 4.0, https://doi.org/10.5281/zenodo.8127870)"
+notes = """Only 100STYLE.zip (1,468,515,354 bytes; md5 3cf627852fd8192024c04a8d0ef49583 as the record lists) from the \
+official Zenodo record, linked from the dataset's page https://www.ianxmason.com/100style/; not the 14.75 GB \
+labelled data. The record and the page give CC BY 4.0; the page asks creative or commercial work to credit it as \
+the credit line above. The zip holds one folder per style with its takes <Style>_<BR|BW|FR|FW|ID|SR|SW|TR1..3>.bvh \
+(backward run and walk, forward run and walk, idle, sidestep run and walk, transitions), Dataset_List.csv (the style \
+descriptions) and Frame_Cuts.csv (each take's usable frames), plus macOS __MACOSX metadata. The BVH files are read as \
+data only. The strafe pilot (art #196) uses the Neutral style ("Normal walking"): Neutral_BR, Neutral_SR, Neutral_FR \
+and Neutral_BW, retargeted onto the alien by tools/blender/alien_mocap.py with \
+tools/blender/retarget_maps/100style_contract.toml (docs/animations.md)."""
+
+[[raw]]
+file = "downloads/100style/100STYLE.zip"
+sha256 = "2c3b4017f8e2397ee6904c9b9f43551d8b426d39ddc3558d121fee9e55cb2d58"
+
+[[raw]]
+file = "downloads/100style/extracted/100STYLE/Neutral/Neutral_BR.bvh"
+sha256 = "5661951058a5ec50e02a6708a5f9d3ccd09ff768051584cac9611aee8402ea13"
+
+[[raw]]
+file = "downloads/100style/extracted/100STYLE/Neutral/Neutral_SR.bvh"
+sha256 = "804046d4d29109515fa3f6268f85873bab1dc3d08b87dabbe644eddbf00aec71"
+
+[[raw]]
+file = "downloads/100style/extracted/100STYLE/Neutral/Neutral_FR.bvh"
+sha256 = "f46ca526027a3654c8939a0123413f6008906fb32125d5e885eafcaa830831cb"
+
+[[raw]]
+file = "downloads/100style/extracted/100STYLE/Neutral/Neutral_BW.bvh"
+sha256 = "cfa225ff3a29a38d11ecd1b72fa0d917ca6c3dc3b24b3d09a4cb5c28ee9dc5b9"
+
+[[raw]]
+file = "downloads/100style/extracted/100STYLE/Frame_Cuts.csv"
+sha256 = "e3c1d2beab6486e083622cef6a5402fe9b20edc75a9963ea30675c67ec29ee82"
+
+[[raw]]
+file = "downloads/100style/extracted/100STYLE/Dataset_List.csv"
+sha256 = "f4db941e17b11f698d577044ca75543a72ba6e4cef77c6054de37e5ecd8c859c"
