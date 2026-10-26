@@ -638,7 +638,8 @@ They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, f
    of two parts facing the same way (z-fighting); socket-3: the claws' swing per degree, the open claws' gap to the
    body and the crystal pulled out past the open claws. They go into `build.json` and the asset's `report.json`.
 4. **The look and the states.** `godot/socket/socket.gd`: the console's bronze and graphite
-   (`socket_metal.gdshader` is `console_metal.gdshader`, unchanged; socket-2 sets the bronze darker and more metallic
+   (`socket_metal.gdshader` is `console_metal.gdshader`, extended by socket-3 with parameters that default to the
+   console's look; the socket's values are `socket.gd` `BRONZE_FINISH`; socket-2 set the bronze darker and more metallic
    than the console's, a greyer gold at metallic 0.75 and roughness 0.32, picked from the studio's variant grids (0.9 read near-black in the hall): the console's 0.35 read
    as matte brown plastic beside the sheet), cyan and amber glow, the red dome
    `socket_lamp` with its own light; `set_state(look, "charged" | "spent" | "empty")` lights the lamp for spent and

@@ -36,8 +36,9 @@ The back plate lies flat on the wall's face (0 to 6.7 cm); the claws' tips are 2
 the crystal's axis 17 cm out of the wall, at MOUNT - 17.45 cm (MOUNT, the crystal's middle, 140 cm above the floor:
 the anchor at 1.2255 m). It has no rotation: parent the crystal there with an identity transform and it stands in the
 socket, its front +Z out of the hall's wall, its tip on the collar and its cap between the claws (0.3 mm clear a side).
-**The pull-out is straight out along the anchor's +Z**: nothing of the socket is in the way (checked in 2 cm steps to
-30 cm, with the claws closed and open; it is free `Socket.PULL_CM`, 15 cm, out). After `Crystal.apply(crystal)`, call `Socket.seat_crystal(crystal_look)`: the crystal's own light then skips the
+**The pull-out is straight out along the anchor's +Z**: nothing of the socket is in the way (checked in 2 cm steps out
+to 30 cm, with the claws closed and open). `Socket.PULL_CM` (15 cm) is how far out the crystal must slide to be free
+of the socket. After `Crystal.apply(crystal)`, call `Socket.seat_crystal(crystal_look)`: the crystal's own light then skips the
 socket (the socket's meshes draw on render layer 20 alone, `socket.gd` `SOCKET_LAYER`; the crystal's light leaves that
 layer out of its cull mask), which it otherwise burns white-cyan. Keep render layer 20 free for this, or change
 `SOCKET_LAYER`.
@@ -66,7 +67,7 @@ Socket.set_claws(look, 0.0)   # closed on the crystal's cap
 
 `claw_r` and `claw_l` turn round their own local Z (the wall's normal): `claw_r` +angle, `claw_l` -angle, rotation 0
 closed. Their hinges sit on the neck block at u +-5.37 cm, h 162.79 cm (the drawing's HINGE, prime-game-design
-1df9a42). The game animates `open01` and plays the sounds; the drawing's timing: open in 0.25 s with a metal sound
+1df9a42) at MOUNT 140; like every height of the socket they move with `[mount] h`. The game animates `open01` and plays the sounds; the drawing's timing: open in 0.25 s with a metal sound
 as the crystal is pulled, closed in 0.15 s with a click as a charged one is seated. The drawing's 35 degrees was a
 placeholder: each claw's jaw finger (beside the cap, behind the arm) cuts the bay's lip past 28 degrees
 (`report.json` `checks.swing_clear_deg`), so the built opening is 25; the crystal slides out between the open claws
