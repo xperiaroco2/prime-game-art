@@ -774,3 +774,113 @@ def mirror(skel: dict, clip: dict) -> dict:
                 prev = out["rot"][b][f - 1] if f else clip["rot"][pairs[b]][0]
                 out["rot"][b][f] = M.q_hemi(q, prev)
     return out
+
+
+# ----------------------------------------------------------------------------------------------- orient warp
+# the counter-twist above the Hips (strafe pilot, art #196): each bone's share of the hips' yaw turned back, from the
+# hips up; the shares sum to 1, so the Neck's child (the Head) faces the aim again
+ORIENT_SPLIT = (("Spine", 0.2), ("Chest", 0.25), ("UpperChest", 0.3), ("Neck", 0.25))
+UP = (0.0, 0.0, 1.0)
+
+
+def _yaw(q, deg: float):
+    """A world rotation turned by deg about the vertical (positive: counter-clockwise seen from above)."""
+    return M.q_mul(M.q_axis_angle(UP, deg), q)
+
+
+def heading_deg(v) -> float:
+    """The heading of a horizontal vector, degrees, 0 at the front (-Y), positive toward the left (+X)."""
+    return math.degrees(math.atan2(v[0], -v[1]))
+
+
+def hips_facing_deg(skel: dict, clip: dict, f: int) -> float:
+    """The hips' heading on frame f (heading_deg of their forward: the hip joints' left-right line x up)."""
+    P = fk(skel, clip, f)
+    lr = M._v_sub(pos(P["LeftUpperLeg"]), pos(P["RightUpperLeg"]))
+    return heading_deg((lr[1] * UP[2] - lr[2] * UP[1], lr[2] * UP[0] - lr[0] * UP[2]))
+
+
+def bone_heading_deg(skel: dict, clip: dict, f: int, bone: str) -> float:
+    """A bone's heading on frame f: its rest front (-Y in armature space) carried by its pose's turn from the rest."""
+    skel = prepare(skel)
+    P = fk(skel, clip, f)
+    q = M.q_mul(mat_q(P[bone]), M.q_conj(mat_q(skel["rest"][bone])))
+    return heading_deg(M.q_rotate(q, (0.0, -1.0, 0.0)))
+
+
+def orient_warp(skel: dict, clip: dict, hip_yaw: float, travel_deg: float = 0.0, split=ORIENT_SPLIT,
+                feet_yaw: float | None = None) -> tuple[dict, dict]:
+    """The hips turned toward the travel with the chest and head kept on the aim (orientation warping, the strafe
+    pilot): per frame
+    1. the Hips turned by `hip_yaw` degrees about the vertical (positive: counter-clockwise seen from above, the
+       front -Y toward the left +X), their position turned by `travel_deg` about the vertical through the origin;
+    2. the chain above them counter-twisted: each bone of `split` ((bone, share), ...) ends turned by hip_yaw x (1 -
+       the shares up to it), so with shares summing to 1 the Neck and the Head keep their own world rotation (on the
+       aim); bones missing from the skeleton are skipped; everything else follows its parent;
+    3. each foot re-planted: the ankle's goal is the clip's own ankle turned by `travel_deg` about the vertical through
+       the origin (the feet travel along the clip's own direction turned by travel_deg: 0 keeps it, a forward run
+       into a left strafe is 90), shifted by one constant per foot, the loop's mean of its hip joint's place (turned
+       with the hips) less that joint turned by travel_deg: the foot stays under its own hip joint, so the leg keeps
+       its reach where hip_yaw and travel_deg differ, and a constant keeps a planted foot planted; the foot's world
+       rotation turned by `feet_yaw` (default hip_yaw: the toes point with the hips), the leg solved again with
+       `two_bone` (the knee in its own plane), the toes following the foot.
+    hip_yaw = travel_deg = 0 gives the clip back; hip_yaw = travel_deg = d with split () turns the whole clip by d.
+    Returns (the clip, the report: the asked yaws, the split, the hips' and head's heading change measured on frame
+    0, the ankles' largest miss, mm)."""
+    skel = prepare(skel)
+    feet_yaw = hip_yaw if feet_yaw is None else feet_yaw
+    chain, left = {}, hip_yaw
+    for b, share in split:
+        left -= hip_yaw * share
+        if b in skel["parent"]:
+            chain[b] = left
+    Rt = M.q_axis_angle(UP, travel_deg)
+    out = copy_clip(clip)
+    T = frames(clip)
+    miss = 0.0
+    orig, turned = [], []
+    for f in range(T + 1):
+        P = fk(skel, clip, f)
+        orig.append(P)
+        new = dict(P)
+        new["Hips"] = m4(M.q_rotate(Rt, pos(P["Hips"])), _yaw(mat_q(P["Hips"]), hip_yaw))
+        out["loc"]["Hips"][f], q = basis_of(skel, new, "Hips")
+        out["rot"]["Hips"][f] = M.q_hemi(q, clip["rot"]["Hips"][f])
+        for b, yaw in chain.items():  # the rotation part only: the chain keeps its own basis locations
+            new[b] = m4(pos(P[b]), _yaw(mat_q(P[b]), yaw))
+            out["rot"][b][f] = M.q_hemi(basis_of(skel, new, b)[1], clip["rot"][b][f])
+        turned.append(fk(skel, out, f))  # the legs carried by the turned hips
+    n = max(T, 1)
+    shift = {s: tuple(sum(M._v_sub(pos(turned[f][f"{s}UpperLeg"]), M.q_rotate(Rt, pos(orig[f][f"{s}UpperLeg"])))[i]
+                          for f in range(n)) / n for i in range(3)) for s in SIDES}
+    for f in range(T + 1):
+        P, Q = orig[f], turned[f]
+        for side in SIDES:
+            u, lo, ft = (f"{side}{x}" for x in LEG)
+            H, K, A = pos(Q[u]), pos(Q[lo]), pos(Q[ft])
+            goal = M._v_add(M.q_rotate(Rt, pos(P[ft])), (shift[side][0], shift[side][1], 0.0))
+            delta = M._v_sub(goal, A)
+            K2 = M._v_add(two_bone(H, K, A, M._v_sub(H, delta)), delta)
+            du = rot_between(M._v_sub(K, H), M._v_sub(K2, H))
+            dl = rot_between(M.q_rotate(du, M._v_sub(A, K)), M._v_sub(goal, K2))
+            leg = dict(Q)
+            leg[u] = m4(H, M.q_mul(du, mat_q(Q[u])))
+            leg[lo] = m4(K2, M.q_mul(dl, M.q_mul(du, mat_q(Q[lo]))))
+            leg[ft] = m4(goal, _yaw(mat_q(P[ft]), feet_yaw))
+            for b in (u, lo, ft):
+                q = basis_of(skel, leg, b)[1]
+                out["rot"][b][f] = M.q_hemi(q, clip["rot"][b][f])
+            got = pos(fk(skel, out, f)[ft])
+            miss = max(miss, _len(M._v_sub(got, goal)))
+    rep = {"hip_yaw": hip_yaw, "travel_deg": travel_deg, "feet_yaw": feet_yaw, "split": [list(s) for s in split],
+           "hips_turn_deg": round(_wrap(hips_facing_deg(skel, out, 0) - hips_facing_deg(skel, clip, 0)), 3),
+           "ankle_miss_mm": round(miss * 1000.0, 3),
+           "feet_shift_mm": {k: [round(v[0] * 1000.0, 1), round(v[1] * 1000.0, 1)] for k, v in shift.items()}}
+    if "Head" in skel["parent"]:
+        rep["head_turn_deg"] = round(_wrap(bone_heading_deg(skel, out, 0, "Head")
+                                           - bone_heading_deg(skel, clip, 0, "Head")), 3)
+    return out, rep
+
+
+def _wrap(deg: float) -> float:
+    return (deg + 180.0) % 360.0 - 180.0
