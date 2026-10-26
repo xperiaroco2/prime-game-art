@@ -400,7 +400,7 @@ def retime(clip: dict, rate: float) -> tuple[dict, float]:
 # --------------------------------------------------------------------------------------------------- stride
 def stride(skel: dict, clip: dict, cadence: float | None = None, rate: float | None = None,
            speed: float | None = None, scale: float | None = None, window: float = CONTACT_M,
-           blend: int = 2) -> tuple[dict, dict]:
+           blend: int = 2, bend_min_deg: float | None = None, widen_m: float = 0.0) -> tuple[dict, dict]:
     """A loop's cadence and stride length changed with its feet kept planted:
     1. retimed to `cadence` steps/s (or by `rate`; neither: unchanged);
     2. the stride scaled by `scale`, or by anim_edit_math's stride_scale so the loop covers `speed` m/s at rate 1
@@ -408,7 +408,10 @@ def stride(skel: dict, clip: dict, cadence: float | None = None, rate: float | N
        hips along it (scale_offset), each ankle's contact windows then laid on a straight line at the new ground
        velocity (plant);
     3. each leg solved again per frame (two_bone: the hip kept, the knee in the clip's own knee plane), the foot keeping
-       its world rotation, the toes following it.
+       its world rotation, the toes following it; `widen_m`: each ankle moved this far outward across the travel axis
+       on every frame (a constant, so a planted foot stays planted: knees that cross get room); `bend_min_deg`: on
+       the swing frames (the foot off the ground) a leg straighter than this knee bend has its ankle drawn toward
+       the hip until the knee bends that much (no locked knee at a kick's extension; planted frames left as solved).
     Returns (the clip, the report: before and after, the scale, the effective rate, the planted ankles' slide)."""
     skel = prepare(skel)
     m0 = measure(skel, clip, window)
@@ -457,10 +460,21 @@ def stride(skel: dict, clip: dict, cadence: float | None = None, rate: float | N
         flat = plant_foot(_xy(ank[:-1]), _xy(toe[:-1]), pts[:-1], mk["a"], mk["t"], g2, fps, blend)
         # the end frame is the start a loop on: a loop that travels (a root-motion bake) carries its feet with it
         flat.append((flat[0][0] + hip[-1][0] - hip[0][0], flat[0][1] + hip[-1][1] - hip[0][1]))
+        if widen_m:
+            u0 = pos(posed[0][u])
+            side_x = (u0[0] - hip[0][0]) * -d[1] + (u0[1] - hip[0][1]) * d[0]  # the leg's side across the axis
+            w = math.copysign(widen_m, side_x)
+            flat = [(x - w * d[1], y + w * d[0]) for x, y in flat]
+        down = fill_gaps([a or t for a, t in zip(mk["a"], mk["t"])])
+        moved = 0.0
         for f in range(T + 1):
             P = posed[f]
             H, K, A = pos(P[u]), pos(P[lo]), pos(P[ft])
             goal = (flat[f][0], flat[f][1], A[2])
+            if bend_min_deg is not None and not down[f % T]:
+                floored = _knee_floor(H, K, A, goal, bend_min_deg)
+                moved = max(moved, _len(M._v_sub(floored, goal)))
+                goal = floored
             delta = M._v_sub(goal, A)
             K2 = M._v_add(two_bone(H, K, A, M._v_sub(H, delta)), delta)
             du = rot_between(M._v_sub(K, H), M._v_sub(K2, H))
@@ -473,11 +487,154 @@ def stride(skel: dict, clip: dict, cadence: float | None = None, rate: float | N
                 out["loc"][b][f], q = basis_of(skel, new, b)
                 out["rot"][b][f] = M.q_hemi(q, out["rot"][b][f])
         after = tracks(skel, out, [ft])[ft]
-        miss = max(math.hypot(a[0] - p[0], a[1] - p[1]) for a, p in zip(after, flat)) * 1000.0
+        miss = max(math.hypot(a[0] - p[0], a[1] - p[1]) for f, (a, p) in enumerate(zip(after, flat))
+                   if bend_min_deg is None or down[f % T]) * 1000.0  # the planted frames (the floor moves the rest)
         report["ankle_miss_mm"] = round(max(report["ankle_miss_mm"], miss), 3)
+        report.setdefault("knee_floor_mm", {})[side] = round(moved * 1000.0, 1)
     report["after"] = measure(skel, out, window)
     report["planted_slide_mm"] = max(report["after"]["foot_slide_mm"].values())
     return out, report
+
+
+def _knee_floor(H, K, A, goal, bend_min_deg: float):
+    """The ankle goal of a leg (hip H, knee K, ankle A: its thigh and shin lengths) drawn toward the hip along their
+    line until the knee bends at least bend_min_deg (0: straight): the least move that bends the knee."""
+    la, lb = _len(M._v_sub(K, H)), _len(M._v_sub(A, K))
+    reach = math.sqrt(la * la + lb * lb + 2.0 * la * lb * math.cos(math.radians(bend_min_deg)))
+    v = M._v_sub(goal, H)
+    if _len(v) <= reach:
+        return goal
+    return M._v_add(H, tuple(c * reach / _len(v) for c in v))
+
+
+def _len(v) -> float:
+    return math.sqrt(sum(c * c for c in v))
+
+
+def _angle(u, v) -> float:
+    n = _len(u) * _len(v)
+    return 0.0 if n < 1e-12 else math.degrees(math.acos(max(-1.0, min(1.0, sum(a * b for a, b in zip(u, v)) / n))))
+
+
+def knee_bend(skel: dict, clip: dict) -> dict:
+    """Per leg the knee's bend over the loop (degrees between the thigh and the shin; 0 = a locked straight knee):
+    the least over all frames and over its swing frames (the foot off the ground), and the frame of the least."""
+    skel = prepare(skel)
+    T = frames(clip)
+    out = {}
+    tr = tracks(skel, clip, [f"{s}{x}" for s in SIDES for x in LEG] + [f"{s}Toes" for s in SIDES])
+    _, mk = foot_contacts({f"{s}{p}": tr[f"{s}{p}"][:-1] for s in SIDES for p in ("Foot", "Toes")},
+                          float(clip["fps"]))
+    for s in SIDES:
+        down = fill_gaps([a or t for a, t in zip(mk[f"{s}Foot"], mk[f"{s}Toes"])])
+        bends = [_angle(M._v_sub(tr[f"{s}LowerLeg"][f], tr[f"{s}UpperLeg"][f]),
+                        M._v_sub(tr[f"{s}Foot"][f], tr[f"{s}LowerLeg"][f])) for f in range(T)]
+        swing = [b for b, d in zip(bends, down) if not d] or bends
+        f0 = min(range(T), key=lambda f: bends[f])
+        out[s] = {"min_deg": round(bends[f0], 1), "min_frame": f0, "swing_min_deg": round(min(swing), 1)}
+    return out
+
+
+HONEST_HEIGHT_M = 0.01  # honest_slide: a foot point is down while within 1 cm of its lowest height in the loop ...
+HONEST_SPEED_M_S = 0.5  # ... and moving under 0.5 m/s against the ground (absolute, whatever the clip's speed)
+
+
+def honest_slide(skel: dict, clip: dict, ground=None, height: float = HONEST_HEIGHT_M,
+                 speed: float = HONEST_SPEED_M_S) -> dict:
+    """The planted feet's slide from the per-frame foot heights and speeds alone (no gap filling, no tolerance that
+    grows with the clip's speed, so a swing frame never joins a contact), per foot point (ankle, toes):
+    - drift_mm: in each run of planted frames (within `height` of the point's lowest, under `speed` m/s against the
+      ground, cyclic) the point's horizontal stray from the run's first frame after the ground's travel is taken
+      off (`ground`, m/s; default the measure's ground velocity);
+    - skate_m_s: the fastest the point moves against the ground on any frame within `height` of its lowest (a heel
+      or toe that skims the floor while it lands or lifts).
+    Per foot the worst of its two points, and the number of planted runs."""
+    skel = prepare(skel)
+    T = frames(clip)
+    fps = float(clip["fps"])
+    if ground is None:
+        ground = measure(skel, clip)["ground_m_s"]
+    step = (ground[0] / fps, ground[1] / fps)
+    names = [p for s in SIDES for p in _foot_points(s)]
+    tr = tracks(skel, clip, names)
+    out = {}
+    for s in SIDES:
+        drift = skate = 0.0
+        runs = 0
+        for p in _foot_points(s):
+            t = tr[p][:-1]
+            lowest = min(q[2] for q in t)
+
+            def slip(i):  # the speed against the ground around frame i (central difference, cyclic)
+                a, b = t[(i - 1) % T], t[(i + 1) % T]
+                return math.hypot(b[0] - a[0] - 2 * step[0], b[1] - a[1] - 2 * step[1]) * fps / 2.0
+            low = [q[2] <= lowest + height for q in t]
+            for i in range(T):
+                if low[i]:
+                    skate = max(skate, slip(i))
+            for win in M.contact_windows([low[i] and slip(i) <= speed for i in range(T)], cyclic=True):
+                if len(win) < 2:
+                    continue
+                runs += 1
+                a = t[win[0]]
+                for k, i in enumerate(win):
+                    drift = max(drift, math.hypot(t[i][0] - a[0] - k * step[0], t[i][1] - a[1] - k * step[1]))
+        out[s] = {"drift_mm": round(drift * 1000.0, 1), "skate_m_s": round(skate, 3), "runs": runs}
+    return out
+
+
+def hand_clearance(skel: dict, clip: dict) -> dict:
+    """Per hand its least distance (m) over the loop from the torso's axis (the segment Hips to Neck): a hand that
+    swings into the belly or the ribs comes close to it."""
+    skel = prepare(skel)
+    T = frames(clip)
+    tr = tracks(skel, clip, ["Hips", "Neck", "LeftHand", "RightHand"])
+    out = {}
+    for s in SIDES:
+        best = math.inf
+        for f in range(T):
+            a, b, h = tr["Hips"][f], tr["Neck"][f], tr[f"{s}Hand"][f]
+            ab = M._v_sub(b, a)
+            t = max(0.0, min(1.0, sum(x * y for x, y in zip(M._v_sub(h, a), ab)) / max(sum(x * x for x in ab), 1e-12)))
+            best = min(best, _len(M._v_sub(h, M._v_add(a, tuple(c * t for c in ab)))))
+        out[s] = round(best, 4)
+    return out
+
+
+def _q_conj(q):
+    return (q[0], -q[1], -q[2], -q[3])
+
+
+def arms_from(clip: dict, donor: dict, k: float = 1.0, w: float = 1.0, sides=SIDES) -> tuple[dict, dict]:
+    """The arms (UpperArm, LowerArm, Hand per side) given another loop's swing: the donor sampled over the clip's
+    frames (both loops start on the same foot's contact, so the swing keeps its phase to the feet), each bone's
+    pose = the donor's swing about its own mean, scaled by k, on a held pose blended from the clip's mean (w 0) to
+    the donor's mean (w 1). Returns (clip, per bone the largest swing from the mean before and after, degrees)."""
+    out = copy_clip(clip)
+    T, Td = frames(clip), frames(donor)
+    ident = (1.0, 0.0, 0.0, 0.0)
+    rep = {}
+    for s in sides:
+        for part in ARM:
+            b = f"{s}{part}"
+            own, dv = clip["rot"][b], donor["rot"][b]
+            m_own, m_d = q_mean(own[:-1]), q_mean(dv[:-1])
+            hold = M.q_slerp(m_own, M.q_hemi(m_d, m_own), w)
+            inv = _q_conj(m_d)
+            new = []
+            for f in range(T + 1):
+                u = f * Td / T
+                i = min(int(u), Td - 1)
+                q = M.q_slerp(M.q_norm(dv[i]), M.q_hemi(M.q_norm(dv[i + 1]), dv[i]), u - i)
+                delta = M.q_mul(M.q_hemi(M.q_norm(q), m_d), inv)
+                delta = M.q_slerp(ident, M.q_hemi(M.q_norm(delta), ident), k)
+                new.append(M.q_hemi(M.q_norm(M.q_mul(delta, hold)), own[f]))
+            new[T] = new[0]
+            out["rot"][b] = new
+            mean = q_mean(new[:-1])
+            rep[b] = [round(max(M.q_angle(m_own, M.q_norm(q)) for q in own), 2),
+                      round(max(M.q_angle(mean, q) for q in new), 2)]
+    return out, {"k": k, "w": w, "swing_deg": rep}
 
 
 # ---------------------------------------------------------------------------------------------------- cycle

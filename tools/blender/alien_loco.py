@@ -63,19 +63,30 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
             c = S.copy_clip(srcs[j["source"]])
             rep["before"] = S.measure(skel, c)
             c, rep["cycle"] = S.cycle(skel, c, foot=foot, loop=True)
+            # step 2's bakes keep the source's world travel and place in the Hips' basis: every loop is cut in place
+            # before the stride, so the stride plants its feet in the frame the measure was made for (step 4b)
+            c, rep["in_place_first"] = L.in_place(skel, c)
             rate = S.frames(c) / j["frames"] if j.get("frames") else None
+            if j.get("max_scale") and j.get("speed"):
+                rate = L.capped_rate(j["speed"], S.measure(skel, c)["v0"], j["max_scale"], rate)
             if rate is not None or j.get("speed") is not None:
-                c, st = S.stride(skel, c, rate=rate, speed=j.get("speed"))
+                c, st = S.stride(skel, c, rate=rate, speed=j.get("speed"), bend_min_deg=j.get("bend_min_deg"))
                 rep["stride"] = {k: st[k] for k in ("rate_eff", "intervals", "scale", "fit", "ankle_miss_mm",
-                                                    "planted_slide_mm", "slide_bound_mm")}
+                                                    "planted_slide_mm", "slide_bound_mm", "knee_floor_mm")}
             if j.get("arm_swing", 1.0) != 1.0:
                 c, rep["arm_swing_report"] = S.arm_swing(c, j["arm_swing"])
+            if j.get("arms_from"):
+                af = j["arms_from"]
+                c, rep["arms_from_report"] = S.arms_from(c, clips[af["clip"]], k=af.get("k", 1.0), w=af.get("w", 1.0))
         if not j.get("pick"):
-            # step 2's bakes keep the source's world travel and place in the Hips' basis: cut every loop in place
             c, rep["in_place"] = L.in_place(skel, c)
         c["name"] = j["name"] + L.LOOP
         if not j.get("pick"):
             rep["after"] = S.measure(skel, c)
+            # the honest numbers (step 4b): the planted feet by height and speed alone, the knees, the hands
+            rep["honest_slide"] = S.honest_slide(skel, c, rep["after"]["ground_m_s"])
+            rep["knee"] = S.knee_bend(skel, c)
+            rep["hands_m"] = S.hand_clearance(skel, c)
         rep["hips"] = L.hips_extent(skel, c)
         a = rep["after"]
         scale = (rep.get("stride") or {}).get("scale")
@@ -85,9 +96,12 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
                        "ground": L.godot_xz(a["ground_m_s"]), "hips": L.godot_xz(a["hips_m_s"]),
                        "contacts": a["contacts"]}
         clips[j["name"]], reps[j["name"]] = c, rep
-        print(f"CLIP {j['name']} v0 {a['v0']} c0 {a['c0']} scale {scale} flag {rep['stride_flag']} slide "
-              f"{a['foot_slide_mm']} seam_before {(rep.get('cycle') or {}).get('seam_deg')} "
-              f"play {[(p['speed'], p['rate']) for p in rep['play']]} in_place {rep.get('in_place')} hips {rep['hips']}",
+        hs = rep["honest_slide"]
+        print(f"CLIP {j['name']} v0 {a['v0']} c0 {a['c0']} scale {scale} rate "
+              f"{(rep.get('stride') or {}).get('rate_eff')} flag {rep['stride_flag']} slide {a['foot_slide_mm']} honest "
+              f"{[(hs[s]['drift_mm'], hs[s]['skate_m_s']) for s in hs]} knee "
+              f"{[(v['min_deg'], v['swing_min_deg']) for v in rep['knee'].values()]} hands {rep['hands_m']} "
+              f"play {[(p['speed'], p['rate'], p['step_s'], p['beat_s']) for p in rep['play']]} hips {rep['hips']}",
               flush=True)
     return clips, reps
 
@@ -160,7 +174,7 @@ def _reels(a, cfg: dict) -> int:
         print(f"{reels_dir / 'reels.json'} exists: move it aside first", flush=True)
         return 2
     reels_dir.mkdir(parents=True, exist_ok=True)
-    frames = ROOT / "tools" / "out" / "loco" / "s3" / "frames"
+    frames = ROOT / "tools" / "out" / "loco" / "frames"
     shutil.rmtree(frames, ignore_errors=True)  # our own temporary frames
     frames.mkdir(parents=True)
     char = "chameleon"

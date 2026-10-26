@@ -60,7 +60,9 @@ def expand(cfg: dict) -> list[dict]:
             for i, s in enumerate(speeds):
                 made.append({"name": speed_name(c["name"], s, i == 0) if s is not None else c["name"],
                              "base": c["name"], "source": c["source"], "speed": s, "frames": c.get("frames"),
-                             "arm_swing": c.get("arm_swing", 1.0), "play_at": list(c.get("play_at", []))})
+                             "arm_swing": c.get("arm_swing", 1.0), "play_at": list(c.get("play_at", [])),
+                             "max_scale": c.get("max_scale"), "bend_min_deg": c.get("bend_min_deg"),
+                             "arms_from": c.get("arms_from")})
         by_base[c["name"]] = made
         jobs.extend(made)
     seen = set()
@@ -102,6 +104,15 @@ def play_rows(v0: float, c0: float | None, play_at: list[float], cfg: dict) -> l
     return rows
 
 
+def capped_rate(speed: float, v0: float, max_scale: float, rate: float | None = None) -> float | None:
+    """The playback rate a stride fit needs so its stride scale stays at most max_scale: the rest of the speed goes
+    into the cadence (rate = speed / (v0 x max_scale)); `rate` (or None, 1.0) when the scale is already within it."""
+    r = 1.0 if rate is None else rate
+    if speed / (v0 * r) <= max_scale:
+        return rate
+    return speed / (v0 * max_scale)
+
+
 def stride_flag(scale: float | None, cfg: dict) -> bool:
     """A stride scaled over the set's bound (2x) either way is flagged."""
     if not scale:
@@ -119,19 +130,22 @@ def pick_default(rows: list[dict], beat_cadence: float, slide_bound_mm: float, d
 
 
 def reel_plan(jobs: list[dict]) -> list[dict]:
-    """The treadmill reels: per game slot one reel at its speed (side view); a strafe or Jog_Bwd as a pair, the clip
-    fitted to 3.0 beside the one fitted to 4.5 (strafes seen from the front); the jog grid as a 2x3 sheet (no video);
-    Idle -> Jog_Fwd at 4.5 with the game's 0.15 s cross-fade."""
+    """The treadmill reels: per game slot one reel at its speed (side view); a clip with one speed variant
+    (<name>__s<..>: a strafe at 3.0 beside 4.5, Jog_Bwd at 3.0 beside 2.5) as a pair (strafes seen from the front); the
+    jog grid as a 2x3 sheet (no video); Idle -> Jog_Fwd at 4.5 with the game's 0.15 s cross-fade (its sheet: 8 frames
+    around the switch)."""
     names = {j["name"]: j for j in jobs}
     reels = []
     for j in jobs:
         if j.get("grid") or j["name"] != j["base"]:
             continue
-        pair = speed_name(j["name"], 3.0, False)
+        variants = [v for v in names.values() if v["base"] == j["name"] and v["name"] != j["name"]
+                    and not v.get("grid") and v.get("speed") is not None]
         view = "front" if j["name"].startswith("Strafe") else "side"
-        if pair in names:
+        if len(variants) == 1:
             reels.append({"name": j["name"], "view": view, "video": True,
-                          "clips": [{"clip": pair, "speed": 3.0}, {"clip": j["name"], "speed": j["speed"]}]})
+                          "clips": [{"clip": j["name"], "speed": j["speed"]},
+                                    {"clip": variants[0]["name"], "speed": variants[0]["speed"]}]})
         else:
             sp = j["speed"] if j["speed"] is not None else (j["play_at"] or [None])[0]
             if j["name"] == "Walk":

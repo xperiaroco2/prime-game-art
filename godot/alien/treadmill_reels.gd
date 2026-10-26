@@ -5,12 +5,14 @@ extends "res://alien/char_shots.gd"
 ## Per reel the character stays in place (the hips' travel per loop taken off the node), the floor's stripes move
 ## under it at the slot's speed against the travel, the clip plays at rate = speed / v0 as the game's TimeScale does;
 ## a disc flashes under each foot at its contact (left blue, right orange) and the timeline at the bottom marks the
-## game's footstep beat (white ticks) beside the contacts, a red playhead running over it. Side view (from the
-## character's left), strafes from the front.
-## - <frames>/<reel>/0000.png...: 1280x720 at 24 fps; a pair (the 3.0 fit beside the 4.5 fit) is two 640 px halves;
+## game's footstep beat (white ticks, the clip's own contacts as yellow ticks under them) beside each foot's contacts,
+## a red playhead running over it. Side view (from the character's left), strafes from the front.
+## - <frames>/<reel>/0000.png...: 1280x720 at 24 fps; a pair (the game's clip beside its speed variant) is two 640 px
+##   halves;
 ## - <out>/<reel>.png: the key-frame sheet, 8 frames over one cycle per clip (a row each, 1280 px); the grid reel
 ##   (no video): a 2x3 sheet of its clips, 4 phases each (both contacts and the passes between);
 ## - Idle_to_Jog_Fwd: the idle, then the jog at its speed with the game's cross-fade, played by the mixer itself;
+##   its sheet: 8 frames from 0.25 s before the switch to 0.8 s after (START_KEYS);
 ## - <out>/reels.json: per reel its clips, rate, speed, contacts and beats shown, frames written.
 ## Args after "--": <job.json>
 
@@ -21,6 +23,8 @@ const STRIPE_M := 0.5
 const FLASH_S := 0.12
 const L_COL := Color(0.25, 0.55, 1.0)
 const R_COL := Color(1.0, 0.55, 0.15)
+const CONTACT_TICK := Color(1.0, 0.9, 0.1)
+const START_KEYS := [-0.25, -0.1, 0.05, 0.2, 0.35, 0.5, 0.65, 0.8]  # the start's sheet: seconds from the switch
 
 var _ch: Node3D
 var _sk: Skeleton3D
@@ -127,6 +131,11 @@ func _lane_for(tl: Dictionary, seconds: float, x0: float, x1: float) -> void:
 		r.position = Vector2(x0 + (x1 - x0) * t / seconds - w * 0.5, y + row * 12.0)
 		r.size = Vector2(w, 10.0 if row else 10.0)
 		_lane.add_child(r)
+	# the clip's own contacts (both feet) as yellow ticks on the beat's row, under the white beats: a footstep clock
+	# that does not match the feet shows as ticks that drift apart (step 4b)
+	for side: String in ["Left", "Right"]:
+		for t: float in tl["contacts"][side]:
+			mk.call(t, 0, CONTACT_TICK, 2.0)
 	for t: float in tl["beats"]:
 		mk.call(t, 0, Color.WHITE, 3.0)
 	for t: float in tl["contacts"]["Left"]:
@@ -224,11 +233,14 @@ func _reel(reel: Dictionary, job: Dictionary) -> Dictionary:
 		var cyc: float = length / float(tl["rate"])
 		var keys := {}
 		var nk: int = 4 if grid else 8
+		var start: Dictionary = reel.get("start", {})
 		for k: int in nk:
-			keys[int(round(cyc * k / nk * FPS))] = k
+			if start.is_empty():
+				keys[int(round(cyc * k / nk * FPS))] = k
+			else:
+				keys[int(round((float(start["at"]) + START_KEYS[k]) * FPS))] = k
 		var row: Array[Image] = []
 		row.resize(nk)
-		var start: Dictionary = reel.get("start", {})
 		if not start.is_empty():
 			_ap.play(_names[start["from"]])
 			_ap.seek(0.0, true)
@@ -253,7 +265,7 @@ func _reel(reel: Dictionary, job: Dictionary) -> Dictionary:
 				_ground(tl, t - float(start["at"]))
 			_flash(tl, t)
 			var img: Image = await _shot()
-			if keys.has(f) and start.is_empty():
+			if keys.has(f):
 				row[keys[f]] = _crop(img, SHEET_CROP, CELL4 if grid else CELL8)
 			if not reel["video"]:
 				continue
@@ -266,8 +278,7 @@ func _reel(reel: Dictionary, job: Dictionary) -> Dictionary:
 				both.save_png(dir_out.path_join("%04d.png" % f))
 			else:
 				img.save_png(dir_out.path_join("%04d.png" % f))
-		if start.is_empty():
-			rows.append(_strip(row))
+		rows.append(_strip(row))
 		info["clips"].append({"clip": c["clip"], "speed": tl["speed"], "rate": tl["rate"], "beat_s": tl["beat_s"],
 			"beats": tl["beats"].size(), "contacts": tl["contacts"]["Left"].size() + tl["contacts"]["Right"].size(),
 			"travel_per_loop_m": snappedf(d.length(), 0.001), "length_s": snappedf(length, 0.001)})
