@@ -873,6 +873,156 @@ in place, so steps 1's numbers stand): `cycle` turning a loop to start on the co
 the start (and, at start 0, the end frame) a loop's travel on, where they went back to the start; `stride`'s end frame
 plants the feet a loop's travel on, where the legs reached back a whole loop at the seam.
 
+### 100STYLE onto the alien, and the orientation warp (art #196, the strafe pilot)
+The strafe pilot's mocap source is 100STYLE (`sources/100style.toml`: CC BY 4.0, the credit line there; one 1.47 GB
+zip of BVH takes, 60 fps, a 23-joint skeleton in centimetres, extracted under `<raw>/downloads/100style/extracted/`).
+Its Neutral style ("Normal walking") gives the backward run (BR), the sidestep run (SR), the forward run (FR, the
+speed and sanity reference) and the backward walk (BW). `tools/blender/retarget_maps/100style_contract.toml` maps it
+onto the contract skeleton (FK legs as `smpl_contract.toml`; Chest, Chest2, Chest4 -> Spine, Chest, UpperChest,
+Chest3 unused; Collar/Shoulder/Elbow/Wrist -> Shoulder/UpperArm/LowerArm/Hand; Hip/Knee/Ankle/Toe -> UpperLeg/
+LowerLeg/Foot/Toes; fingers, Jaw and eyes at rest): the source rest gives the target rest exactly (rest check 0.001 mm,
+0 deg; both rests are T-poses facing the front, so no `[align]`).
+
+`$PYTHON_BIN tools/blender/alien_mocap.py --raw D:/prime-art-raw [--char chameleon] [--clips Neutral_BR,...]`
+(about 2 min) imports each take with Blender's own BVH importer (bundled `io_anim_bvh`: scale 0.01, the file's +Z
+front onto -Y, quaternions; the rig lifted onto the floor for the retarget as `retarget_smpl` does), picks the
+steadiest 3 s window inside the take's `Frame_Cuts.csv` range (`pick_window`: the travel straight, the hips' facing
+against it near the clip's own: BR 180, SR 90, FR 0, BW 180 degrees), bakes it at the character's 24 fps, puts its
+planted level on the floor, turns it to face -Y, cuts one loop from a left contact (`cycle`) and takes it in place
+(`in_place`). Into `<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/loco/p1/`: `mocap.json` (per clip the
+window, the rest check, the numbers), `chameleon_char_100s.blend` (actions `CharacterArmature|MC_<clip>`, the faced
+window, and `CharacterArmature|MC_<clip>_Loop`; the axolotl shares the skeleton) and `check_sheet.png` (the 100STYLE
+skeleton as sticks above the alien, BR from the side and SR from the front, the same moments). The takes run slowly
+on the alien (loop v0: BR 0.90, SR 1.24, FR 1.60, BW 0.65 m/s), so the game's speeds need the stride and cadence
+of `stride`.
+
+`alien_stride_math.orient_warp(skel, clip, hip_yaw, travel_deg=0, split=ORIENT_SPLIT, feet_yaw=None)` turns the Hips
+by `hip_yaw` degrees about the vertical (positive: toward the left, +X), counter-twists Spine, Chest, UpperChest and
+Neck by `split` (0.2, 0.25, 0.3, 0.25: the shares of the yaw turned back, so the head keeps its world rotation), and
+re-plants each ankle on the clip's own track turned by `travel_deg` (0 keeps the travel; a forward run into a left
+strafe is 90), shifted by one constant per foot that keeps it under its turned hip joint (a constant keeps a planted
+foot planted), the leg solved again with `two_bone`, the foot turned by `feet_yaw` (default the hips'). Zero and zero
+give the clip back; `hip_yaw = travel_deg = d` with `split=()` turns the whole clip (how `alien_mocap.py` faces a
+take). Tests: `tools/tests/test_alien_stride_orient.py`.
+
+### The side, diagonal and back clips (art #196, the strafe pilot P2)
+P2 rebuilt the strafes and the back run from step 4b's text-to-motion clips into a forward run turned toward the
+travel and a mocap backpedal, all through `anim_sets/alien_loco.toml` and `alien_loco.py` (out: `loco/p2`). The set
+file's new keys:
+- `[set] mocap`: a second source blend, P1's `loco/p1/chameleon_char_100s.blend`; its `MC_<style>_<take>_Loop`
+  actions are read like the `ttm` blend's `TM_` loops;
+- `from`: a made clip of the set as the source (the approved `Jog_Fwd`: its 22-frame cycle, its arms), not cut again;
+- `orient = { hips, travel, split? }`: `alien_loco_math.orient`, `orient_warp` with **absolute** headings (degrees, 0
+  at the aim, positive toward the left): a clip whose head looks more than 0.5 degrees off the aim is first turned
+  whole onto it (a 100STYLE take's head, hips and travel each sit 15-30 degrees apart), then its hips' mean heading
+  goes to `hips` and its feet's travel to `travel`. After the stride the planted feet's measured travel is set
+  exactly by `trim_travel` (the feet's tracks alone turned: they roll heel to toe along their own heading, which
+  pulled the measured travel 5 degrees toward the hips). The side runs' `split` puts more of the twist into the neck
+  and head (Spine 0.1, Chest 0.15, UpperChest 0.15, Neck 0.35, Head 0.25): with the hips at 60 the upper chest is 36
+  toward the travel, so the arms swing with the turned body, and the head stays on the aim;
+- `cadence`: the steps per second the loop is retimed to before the stride takes the rest of the speed (the backpedal:
+  4.0, short quick steps);
+- `lean_deg`: the trunk leant forward (`LEAN_SPLIT`, Spine 0.4, Chest 0.35, UpperChest 0.25; the backpedal: 8, the
+  take ran upright; 6/10/14 tried: the hanging hands come closer to the belly as it leans);
+- `head_level`: `alien_stride_math.level_head`, the neck and head lifted by one constant so the head's mean front
+  pitch over the loop is this many degrees (the crouch: -5, the take looked 48 down; the backpedal: -10, from 34
+  down);
+- `[[reel]]`: the reels by hand (`alien_loco_math.reel_plan(jobs, reels)`): per entry its `views` (one reel each,
+  `<name>__<view>`: `front`, `three_quarter` from the front left, `back`, `side` from the character's left), its
+  clips with a speed, an optional `travel` (the stripes' heading: the game's pure side clip carried along a
+  diagonal shows its skate) and `label`; `video = false` gives a sheet of four phases per clip in `cols` columns.
+  Without `[[reel]]` the old automatic plan runs.
+
+`alien_stride_math.facing(skel, clip)` reports per clip (`loco.json`'s `facing`, the build log's `CLIP` lines) the
+hips' and the head's mean heading, the head's swing about it, the head's and the upper chest's front pitch, and
+`travel_heading_deg` the planted feet's travel. `pitch(skel, clip, deg, split)` leans a chain about the left-right
+axis (positive: the front down). Tests: `tools/tests/test_alien_stride_p2.py`.
+
+The clips (game names; `__` names are review variants):
+- `Strafe_Left` / `Strafe_Right` (mirror): `Jog_Fwd` turned to a 90 degree travel with the hips at 60, fitted to 3.0
+  m/s at rate 1 (the same 22-frame cycle: stride 0.69); `Strafe_Left__h45`, `__h60`, `__h75` the hip grid;
+  `Strafe_Left__100s` the mocap side run with its hips turned to 60 too (4 steps/s); `Strafe_Left__s4b` step 4b's;
+- `Jog_Fwd_Left` / `Jog_Fwd_Right`: `Jog_Fwd` turned to a 45 degree travel, hips 35, at 3.5 m/s (the speed ellipse
+  through 4.5 ahead and 3.0 aside at 45 degrees);
+- `Jog_Bwd`: the 100STYLE Neutral BR at 4 steps/s and 2.5 m/s, its head and travel set straight, its head lifted to
+  -10; `Jog_Bwd__c20`, `__c25`, `__c30` the back cap's grid (2.0, 2.5, 3.0 m/s, all at 4 steps/s, the stride 1.7,
+  2.1, 2.5x the take's, its trunk leant 8 degrees); `Jog_Bwd__s4b` step 4b's; `Jog_Bwd_Left` / `Jog_Bwd_Right`: the backpedal toward the back
+  left with the hips at -45 (turned away from the travel), 2.5 m/s;
+- `Crouch_Fwd`, `Crouch_Run`: their heads lifted (`head_level -5`); `Crouch_Run__s4b` the before.
+The other plain 100STYLE styles' BR takes run no clearly faster than Neutral at a plain look (a root-speed scan of
+seven: 0.6-1.1 m/s; the faster ones are the "big steps", "bent forward" and "checking behind" styles), so P2 keeps
+Neutral.
+
+### The critic's fixes (art #196, the strafe pilot P3)
+P3 answers P2's fresh critic (out: `loco/p3`; P2's clips stay in the set as `<name>__p2`, the reels' before rows).
+New set keys, read by `alien_loco._make` in this order after the stride (tests: `tools/tests/test_alien_stride_p3.py`):
+- `widen_m`: `stride`'s ankle widening across the travel (each ankle that far outward on every frame);
+- `lift_m`, `bob_m`, `flight_m`: `alien_stride_math.lift_hips`: the Hips raised (`lift_m` > 0: straighter legs) or
+  lowered on the **kept** feet, less `bob_m` on the single-support frames (a raised cosine: the hips dip at
+  mid-stance), each leg solved again on its own ankle and foot rotation; then the whole body raised by `flight_m`
+  over the handover frames (both feet down or both up), a short hop with both feet off the floor;
+- `arms_from.phase`: the donor's swing sampled that fraction of its loop later (0.5: a backpedal's arm swings against
+  its own leg, as in a forward run);
+- `arms_in_deg`: `arms_in`, each upper arm turned toward the body about the chest's front axis (a flaring elbow in);
+- `pin = true`: `pin_feet`, the planted feet pinned by `honest_slide`'s own test (within 1 cm of the lowest, under
+  0.5 m/s against the ground): the foot held flat while its heel and toe are both down, then the point that is down
+  kept where it landed, carried by the ground, fading out over two frames (the stride's own contact test differs:
+  the backpedal's left foot still drifted 16-21 mm); when the point that is down switches inside a run (ankle to
+  toe or back), the new one starts where the previous frame's correction put it (`_pin_run`, P5), so the correction
+  never jumps (before P5 each point started at its own uncorrected place and the correction fell to 0 at the switch;
+  on the set's game backpedal clips the switch frames carried under 0.2 mm, so their P5 build equals P4's; only P3's
+  before rows `Jog_Bwd__p3` and `Jog_Bwd_Left__p3` moved, at most 3.4 mm in `measure`'s toe slide);
+- `orient = { whole = true, travel = T }`: the clip turned as a whole until its feet travel along `T` (default 0), its
+  pose in its own space unchanged (the crouch take ran 13.6 degrees off the aim).
+
+`loco.json` adds per clip `airborne_frames` (neither foot down by the honest test), `legs_m` (`leg_spacing`: the
+ankles' and knees' least signed room along the hips' axis, the ankles' room across the travel where they pass) and
+`elbow_deg` (`elbow_bend`: mean, least, most).
+
+The clips after P3 (`Strafe_Left__100s` and the hip grid dropped: h60 is `Strafe_Left`):
+- `Strafe_Left` / `Strafe_Right`: hips 5 cm up (3 and 4 cm left the deeper knee at 40 and 35 degrees), ankles 3 cm
+  wider, arms 14 degrees in;
+- `Jog_Fwd_Left` / `Jog_Fwd_Right`: hips 3 cm up, arms 14 degrees in;
+- `Jog_Bwd` (= `__c25`), `__c20`, `__c30`: 3.4 steps/s (a 14-frame cycle, the back family's), the stride 1.94, 2.43,
+  2.91x the take's; hips 3 cm down with a 3 cm dip and a 2 cm flight; pinned feet; `Jog_Fwd`'s arms at half swing,
+  half a loop on. The take's small steps (0.30 m) leave no way to keep both the critic's cadence (about 3.3) and a
+  stride under 2.0x above 2.0 m/s: only `__c20` meets both;
+- `Jog_Bwd_Left` / `Jog_Bwd_Right`: the same, with the side runs' twist split (the chest turns with the hips) and 3
+  cm wider ankles;
+- `Crouch_Fwd`, `Crouch_Run`: turned back as a whole (`travel = -2.0`: the feet at -2.5 and the head at +3.0; after
+  the head lift the take's head looks 5.5 degrees left of its feet, which no whole turn removes).
+
+### The backpedal's arms and even steps (art #196, the strafe pilot P4)
+P4 answers the manager's look at P3's backpedal (out: `loco/p4`; P3's back clips stay as `Jog_Bwd__p3` and
+`Jog_Bwd_Left__p3`, the reels' before rows). Two new set keys (`alien_loco_math.P4_KEYS`; tests:
+`tools/tests/test_alien_stride_p4.py`):
+- `even_steps = true`: `alien_stride_math.even_steps`, right after the source's cycle is cut in place: the loop
+  retimed by a smooth warp (frame u samples u - a sin^2(pi u / T), a = T/2 less the other foot's contact start, kept
+  monotonic: |a| < T / pi, else refused) so the other foot lands half a cycle on. The backpedal take's steps were 7
+  and 9 of its 16 frames, 6 and 8 of the 14-frame game loop; now 8 and 8, so 7 and 7;
+- `arms_carry = { side_m, front_m, dz_m, swing_m, rise, out_deg }`: `arms_carry`, last before the clip is put in
+  place: each wrist (the Hand bone's head) put on a target in the trunk's frame (the UpperChest's front laid level,
+  world up): the Spine's head (the waist) + `side_m` outward + `front_m` forward + `dz_m` up, swung +-`swing_m`
+  forward (and `rise` times that up) against the same-side ankle's fore-aft place under the hips; the arm solved as
+  two bones with its own lengths, the elbow in the plane through shoulder, wrist and a pole pointing back and
+  `out_deg` outward; the hand keeps its pose on the forearm (`arms_from`'s, Jog_Fwd's hands).
+  `arm_carriage` measures it (`loco.json`'s `arms_m`): per side the elbow bend, the hand's least distance from the
+  torso axis, its least distance from the midline plane, the wrist's height over and place in front of the waist,
+  the elbow's least distance from the torso axis.
+
+Tuned on P2's dump in plain Python (two grids, 32 and 16 tries, about 15 s each): side 0.15-0.21, front 0.10-0.18,
+dz -0.02-0.04, swing 0.04-0.07, out 10-25. The hand's distance from the torso axis is less than hypot(side, front):
+the trunk leans 8 degrees, the axis passes in front of the waist; dz sets the elbow (-0.02: about 84, 0.04: about
+102); `out_deg` moves only the elbow (10: 0.22 m from the axis, 25: 0.26). Picked: side 0.20, front 0.17, dz 0.01,
+swing 0.05, rise 0.35, out 12 on `Jog_Bwd` (`__c20`, `__c25`, `__c30`) and `Jog_Bwd_Left`: hands 0.246/0.237 m from
+the torso axis (P3: 0.386/0.372), elbows 89/87 deg (least 85/84), 0.20 m from the midline, the wrists -0.7 to +2.4 cm
+about the waist and 0.12-0.21 m in front of it, the elbows 0.23/0.22 m from the axis (P3: 0.33/0.30).
+
+The stride's factor reads higher after the warp (c25 2.43 -> 2.69x, c20 1.94 -> 2.15x, c30 2.91 -> 3.23x): the
+warped take's measured speed is lower; the step on the floor is the same (speed / cadence, 0.735 m at 2.5 m/s). The
+strafe's swing shin crossing the stance leg from the front is left as it is: the legs travel along the picture plane
+there and overlap at passing whatever the track (P3's 3 cm wider ankles are kept).
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]

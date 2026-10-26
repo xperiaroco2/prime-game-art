@@ -26,7 +26,8 @@
 raw_base = "research/2026-10-22-roster/design/pilot3d/anim_bare"  # under the raw root
 build = "r2b/build"  # <build>/<char>/<char>_char.blend
 ttm = "loco/s2/chameleon_char_ttm.blend"  # step 2's loops (the axolotl shares the skeleton)
-out = "loco/s4b"  # build/<char>/ and reels/ (step 3: loco/s3)
+mocap = "loco/p1/chameleon_char_100s.blend"  # the strafe pilot P1's 100STYLE loops MC_Neutral_<take>_Loop
+out = "loco/p5"  # build/<char>/ and reels/ (step 3: loco/s3, step 4b: loco/s4b, P2: loco/p2, P3: loco/p3, P4: loco/p4)
 chars = ["chameleon", "axolotl"]
 foot = "Left"
 stride_flag = 2.0  # a stride scaled more than this is flagged
@@ -63,10 +64,39 @@ name = "Crouch_Fwd"
 source = "TM_crouch-run_Loop"
 speeds = [2.0]
 bend_min_deg = 20.0  # the heel strike's straight knee (3.5 degrees) bent
+head_level = -5.0  # the eyes on the way ahead, not the floor (the take: 48 degrees down; P2)
+orient = { whole = true, travel = -2.0 }  # the take turned 13.6 degrees as a whole, turned back (P3; -2: the head at +2)
 play_at = [2.0]
 
 [[clip]]
 name = "Crouch_Run"  # the 2.0 clip at a higher cadence (rate about 1.3), not a longer stride (step 4's critic)
+source = "TM_crouch-run_Loop"
+speeds = [2.8]
+max_scale = 1.15
+bend_min_deg = 20.0
+head_level = -5.0
+orient = { whole = true, travel = -2.0 }
+play_at = [2.8]
+
+[[clip]]
+name = "Crouch_Fwd__p2"  # P2's crouch clips (turned 13 degrees as a whole), the facing reel's before
+source = "TM_crouch-run_Loop"
+speeds = [2.0]
+bend_min_deg = 20.0
+head_level = -5.0
+play_at = [2.0]
+
+[[clip]]
+name = "Crouch_Run__p2"
+source = "TM_crouch-run_Loop"
+speeds = [2.8]
+max_scale = 1.15
+bend_min_deg = 20.0
+head_level = -5.0
+play_at = [2.8]
+
+[[clip]]
+name = "Crouch_Run__s4b"  # step 4b's Crouch_Run (its head on the floor), the reels' before
 source = "TM_crouch-run_Loop"
 speeds = [2.8]
 max_scale = 1.15
@@ -78,25 +108,279 @@ name = "Crouch_Fwd__ual"  # the baseline row: the build's UAL crouch as it is
 source = "Crouch_Fwd_Loop"
 play_at = [2.0, 2.8]
 
+# ---- the strafe pilot P2: the side, diagonal and back clips (art #196). orient: absolute headings (degrees, 0 at the
+# aim, positive toward the left): the hips' mean turned to `hips`, the feet's travel to `travel`, the chest and head
+# counter-twisted back to the aim (alien_loco_math.orient, orient_warp); from: a made clip of the set as the source;
+# cadence: the steps per second the loop is retimed to before the stride takes the rest of the speed; lean_deg: the
+# trunk leant forward (alien_loco_math.LEAN_SPLIT); head_level: the head's mean front pitch brought to this (degrees).
+
+# step 4b's clips, kept for the reels only (today's behaviour beside the new clips)
 [[clip]]
-name = "Strafe_Left"  # the game's strafe at the proposed 3.0 cap; the 4.5 fit kept as a review variant (__s45)
+name = "Strafe_Left__s4b"
 source = "TM_b5-strafe-left_Loop"
-speeds = [3.0, 4.5]
-arms_from = { clip = "Jog_Fwd", k = 0.75, w = 1.0 }  # its own hands clamp at the belt (step 4's critic)
-play_at = [3.0, 4.5]
+speeds = [3.0]
+arms_from = { clip = "Jog_Fwd", k = 0.75, w = 1.0 }
+play_at = [3.0]
+
+[[clip]]
+name = "Jog_Bwd__s4b"
+source = "TM_b6-backward-run_Loop"
+speeds = [3.0]
+max_scale = 1.5
+bend_min_deg = 20.0
+arms_from = { clip = "Jog_Fwd", k = 0.75, w = 1.0 }
+play_at = [3.0, 2.5]
+
+# the side run: the approved Jog_Fwd (22 frames, left contact first) turned toward the travel, fitted to 3.0; P2's
+# hip grid (45/60/75) picked 60. P3 (the critic): the hips lifted 5 cm on the kept feet (lift_m: the least knee bend
+# 45-52 -> 20-30; 3 and 4 cm left 40 and 35), the ankles 3 cm wider apart (widen_m), the upper arms 14 degrees in
+# (arms_in_deg: the hands 0.39/0.36 m from the torso -> about 0.32/0.29)
+[[clip]]
+name = "Strafe_Left"
+from = "Jog_Fwd"
+speeds = [3.0]
+orient = { hips = 60.0, travel = 90.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
+bend_min_deg = 20.0
+lift_m = 0.05
+widen_m = 0.03
+arms_in_deg = 14.0
+play_at = [3.0]
 
 [[clip]]
 name = "Strafe_Right"
 mirror = "Strafe_Left"
-play_at = [3.0, 4.5]
-
-# the shuffle strafe (TM_strafe-left-shuffle_Loop) is dropped: a squat and a split at both speeds (step 4's critic)
+play_at = [3.0]
 
 [[clip]]
-name = "Jog_Bwd"  # at the proposed 3.0 cap, and 2.5 beside it; the stride at most 1.5x, the rest a higher cadence
-source = "TM_b6-backward-run_Loop"
-speeds = [3.0, 2.5]
-max_scale = 1.5
-bend_min_deg = 20.0  # no goose-step kick: the front leg keeps a bend
-arms_from = { clip = "Jog_Fwd", k = 0.75, w = 1.0 }
-play_at = [3.0, 2.5]
+name = "Strafe_Left__p2"  # P2's side run, the reels' before
+from = "Jog_Fwd"
+speeds = [3.0]
+orient = { hips = 60.0, travel = 90.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
+bend_min_deg = 20.0
+play_at = [3.0]
+
+# the forward diagonals: Jog_Fwd turned to a 45 degree travel at 3.5 (the speed ellipse through 4.5 ahead, 3.0 aside);
+# P3: the hips 3 cm up (the knees 41/37 -> 27/21), the arms 14 degrees in
+[[clip]]
+name = "Jog_Fwd_Left"
+from = "Jog_Fwd"
+speeds = [3.5]
+orient = { hips = 35.0, travel = 45.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
+bend_min_deg = 20.0
+lift_m = 0.03
+arms_in_deg = 14.0
+play_at = [3.5]
+
+[[clip]]
+name = "Jog_Fwd_Right"
+mirror = "Jog_Fwd_Left"
+play_at = [3.5]
+
+[[clip]]
+name = "Jog_Fwd_Left__p2"  # P2's diagonal, the reels' before
+from = "Jog_Fwd"
+speeds = [3.5]
+orient = { hips = 35.0, travel = 45.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
+bend_min_deg = 20.0
+play_at = [3.5]
+
+# the backpedal: the mocap back run (0.90 m/s, 3 steps/s), its travel set straight back (the take's runs 15 degrees
+# off its hips), its head on the aim, the trunk leant 8 degrees. P3 (the critic): 3.4 steps/s (a 14-frame cycle; P2:
+# 4.0, 12 frames: a nervous walk), the rest of the speed in the stride; the hips 3 cm down on the kept feet with a 3 cm
+# dip at mid-stance (lift_m, bob_m: bent knees, a bob) and a 2 cm rise over the handover (flight_m: both feet off the
+# floor); the feet pinned by the honest test (pin: the left foot drifted 21 mm); Jog_Fwd's arms at half swing, half a
+# cycle on (arms_from phase 0.5: the arm against the leg; the take's arms hung, the hands 0.13 m from the torso)
+# P4: the take's steps evened (even_steps: 7 and 9 of its 16 frames -> 8 and 8, so 7 and 7 of 14; P3: 6 and 8) and
+# the arms solved onto a running carriage (arms_carry: the wrists 0.20 m out, 0.17 m in front of the waist and 1 cm
+# over it, +-5 cm against the leg, the elbows behind the trunk, 12 degrees out; P3's arms swung out to the sides)
+[[clip]]
+name = "Jog_Bwd__c20"
+speeds = [2.0]
+source = "MC_Neutral_BR_Loop"
+orient = { hips = 0.0, travel = 180.0 }
+cadence = 3.4
+lean_deg = 8.0
+bend_min_deg = 20.0
+head_level = -10.0
+lift_m = -0.03
+bob_m = 0.03
+flight_m = 0.02
+pin = true
+arms_from = { clip = "Jog_Fwd", k = 0.5, w = 1.0, phase = 0.5 }
+even_steps = true
+arms_carry = { side_m = 0.20, front_m = 0.17, dz_m = 0.01, swing_m = 0.05, rise = 0.35, out_deg = 12.0 }
+play_at = [2.0]
+
+[[clip]]
+name = "Jog_Bwd__c25"
+speeds = [2.5]
+source = "MC_Neutral_BR_Loop"
+orient = { hips = 0.0, travel = 180.0 }
+cadence = 3.4
+lean_deg = 8.0
+bend_min_deg = 20.0
+head_level = -10.0
+lift_m = -0.03
+bob_m = 0.03
+flight_m = 0.02
+pin = true
+arms_from = { clip = "Jog_Fwd", k = 0.5, w = 1.0, phase = 0.5 }
+even_steps = true
+arms_carry = { side_m = 0.20, front_m = 0.17, dz_m = 0.01, swing_m = 0.05, rise = 0.35, out_deg = 12.0 }
+play_at = [2.5]
+
+[[clip]]
+name = "Jog_Bwd__c30"
+speeds = [3.0]
+source = "MC_Neutral_BR_Loop"
+orient = { hips = 0.0, travel = 180.0 }
+cadence = 3.4
+lean_deg = 8.0
+bend_min_deg = 20.0
+head_level = -10.0
+lift_m = -0.03
+bob_m = 0.03
+flight_m = 0.02
+pin = true
+arms_from = { clip = "Jog_Fwd", k = 0.5, w = 1.0, phase = 0.5 }
+even_steps = true
+arms_carry = { side_m = 0.20, front_m = 0.17, dz_m = 0.01, swing_m = 0.05, rise = 0.35, out_deg = 12.0 }
+play_at = [3.0]
+
+[[clip]]
+name = "Jog_Bwd"  # = __c25 until the engineer picks the back cap
+speeds = [2.5]
+source = "MC_Neutral_BR_Loop"
+orient = { hips = 0.0, travel = 180.0 }
+cadence = 3.4
+lean_deg = 8.0
+bend_min_deg = 20.0
+head_level = -10.0
+lift_m = -0.03
+bob_m = 0.03
+flight_m = 0.02
+pin = true
+arms_from = { clip = "Jog_Fwd", k = 0.5, w = 1.0, phase = 0.5 }
+even_steps = true
+arms_carry = { side_m = 0.20, front_m = 0.17, dz_m = 0.01, swing_m = 0.05, rise = 0.35, out_deg = 12.0 }
+play_at = [2.5]
+
+[[clip]]
+name = "Jog_Bwd__p2"  # P2's backpedal (4.0 steps/s, the take's arms), the reels' before
+speeds = [2.5]
+source = "MC_Neutral_BR_Loop"
+orient = { hips = 0.0, travel = 180.0 }
+cadence = 4.0
+lean_deg = 8.0
+bend_min_deg = 20.0
+head_level = -10.0
+play_at = [2.5]
+
+[[clip]]
+name = "Jog_Bwd__p3"  # P3's backpedal (6/8-frame steps, the arms out wide), the reels' before
+speeds = [2.5]
+source = "MC_Neutral_BR_Loop"
+orient = { hips = 0.0, travel = 180.0 }
+cadence = 3.4
+lean_deg = 8.0
+bend_min_deg = 20.0
+head_level = -10.0
+lift_m = -0.03
+bob_m = 0.03
+flight_m = 0.02
+pin = true
+arms_from = { clip = "Jog_Fwd", k = 0.5, w = 1.0, phase = 0.5 }
+play_at = [2.5]
+
+# the backpedal toward the back left: the hips turned away from the travel; P3: the side runs' split (the chest turns
+# with the hips, the turn shows) and the ankles 3 cm wider apart
+[[clip]]
+name = "Jog_Bwd_Left"
+speeds = [2.5]
+source = "MC_Neutral_BR_Loop"
+orient = { hips = -45.0, travel = 135.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
+cadence = 3.4
+lean_deg = 8.0
+bend_min_deg = 20.0
+head_level = -10.0
+lift_m = -0.03
+bob_m = 0.03
+flight_m = 0.02
+pin = true
+arms_from = { clip = "Jog_Fwd", k = 0.5, w = 1.0, phase = 0.5 }
+even_steps = true
+arms_carry = { side_m = 0.20, front_m = 0.17, dz_m = 0.01, swing_m = 0.05, rise = 0.35, out_deg = 12.0 }
+widen_m = 0.03
+play_at = [2.5]
+
+[[clip]]
+name = "Jog_Bwd_Right"
+mirror = "Jog_Bwd_Left"
+play_at = [2.5]
+
+[[clip]]
+name = "Jog_Bwd_Left__p2"  # P2's, the reels' before
+speeds = [2.5]
+source = "MC_Neutral_BR_Loop"
+orient = { hips = -45.0, travel = 135.0 }
+cadence = 4.0
+lean_deg = 8.0
+bend_min_deg = 20.0
+head_level = -10.0
+play_at = [2.5]
+
+[[clip]]
+name = "Jog_Bwd_Left__p3"  # P3's, the reels' before
+speeds = [2.5]
+source = "MC_Neutral_BR_Loop"
+orient = { hips = -45.0, travel = 135.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
+cadence = 3.4
+lean_deg = 8.0
+bend_min_deg = 20.0
+head_level = -10.0
+lift_m = -0.03
+bob_m = 0.03
+flight_m = 0.02
+pin = true
+arms_from = { clip = "Jog_Fwd", k = 0.5, w = 1.0, phase = 0.5 }
+widen_m = 0.03
+play_at = [2.5]
+
+# ---- the reels (P3; P4: the back clips' rows P3's above P4's): one per view, <name>__<view>; travel: the stripes' heading (a clip carried along another
+# direction than its own); the treadmill_reels.gd cameras front, three_quarter (front left), back, side (its left);
+# each pair: P2's clip (before) above P3's
+[[reel]]
+name = "Strafe_Left"
+views = ["front", "three_quarter", "back"]
+clips = [{ clip = "Strafe_Left__p2", speed = 3.0 }, { clip = "Strafe_Left", speed = 3.0 }]
+
+[[reel]]
+name = "Diagonal_45"
+views = ["front", "three_quarter", "back"]
+clips = [{ clip = "Jog_Fwd_Left__p2", speed = 3.5 }, { clip = "Jog_Fwd_Left", speed = 3.5 }]
+
+[[reel]]
+name = "Jog_Bwd"
+views = ["side", "front", "three_quarter", "back"]
+clips = [{ clip = "Jog_Bwd__p3", speed = 2.5 }, { clip = "Jog_Bwd", speed = 2.5 }]
+
+[[reel]]
+name = "Jog_Bwd_caps"  # the back cap's grid, the engineer's call (no video)
+views = ["side", "three_quarter"]
+video = false
+cols = 3
+clips = [{ clip = "Jog_Bwd__c20", speed = 2.0 }, { clip = "Jog_Bwd__c25", speed = 2.5 },
+         { clip = "Jog_Bwd__c30", speed = 3.0 }]
+
+[[reel]]
+name = "Jog_Bwd_Left"
+views = ["front", "three_quarter", "back", "side"]
+clips = [{ clip = "Jog_Bwd_Left__p3", speed = 2.5 }, { clip = "Jog_Bwd_Left", speed = 2.5 }]
+
+[[reel]]
+name = "Crouch_facing"  # P2's crouch clips (turned 13 degrees) above P3's (turned back whole)
+views = ["front", "side"]
+cols = 2
+clips = [{ clip = "Crouch_Fwd__p2", speed = 2.0 }, { clip = "Crouch_Run__p2", speed = 2.8 },
+         { clip = "Crouch_Fwd", speed = 2.0 }, { clip = "Crouch_Run", speed = 2.8 }]
+

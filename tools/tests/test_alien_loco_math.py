@@ -37,13 +37,12 @@ class SetFile(unittest.TestCase):
         right = {j["name"]: j for j in self.jobs if j["base"] == "Strafe_Right"}
         self.assertEqual(right["Strafe_Right"]["mirror"], "Strafe_Left")
         self.assertEqual(right["Strafe_Right"]["speed"], 3.0)  # the game's strafe at the 3.0 cap (step 4b)
-        self.assertEqual(right["Strafe_Right__s45"]["mirror"], "Strafe_Left__s45")
-        self.assertEqual(right["Strafe_Right__s45"]["speed"], 4.5)
+        self.assertEqual(list(right), ["Strafe_Right"])  # P2: no 4.5 review variant
         self.assertFalse([n for n in self.names if "shuffle" in n])  # dropped (step 4's critic)
         bwd = {j["name"]: j for j in self.jobs if j["base"] == "Jog_Bwd"}
-        self.assertEqual({n: j["speed"] for n, j in bwd.items()}, {"Jog_Bwd": 3.0, "Jog_Bwd__s25": 2.5})
-        self.assertEqual(bwd["Jog_Bwd"]["max_scale"], 1.5)
-        self.assertEqual(self.jobs[self.names.index("Strafe_Left")]["arms_from"]["clip"], "Jog_Fwd")
+        self.assertEqual({n: j["speed"] for n, j in bwd.items()}, {"Jog_Bwd": 2.5})  # P2: the 2.5 until he picks
+        self.assertEqual(bwd["Jog_Bwd"]["cadence"], 3.4)  # P3: a 14-frame cycle (P2's 4.0 read as a walk)
+        self.assertEqual(self.jobs[self.names.index("Strafe_Left__s4b")]["arms_from"]["clip"], "Jog_Fwd")
         for j in self.jobs:  # a mirror comes after the clip it mirrors
             if j.get("mirror"):
                 self.assertLess(self.names.index(j["mirror"]), self.names.index(j["name"]))
@@ -53,6 +52,24 @@ class SetFile(unittest.TestCase):
             L.expand({"clip": [{"name": "Strafe_Right", "mirror": "Strafe_Left"}]})
         with self.assertRaises(ValueError):
             L.expand({"clip": [{"name": "A", "source": "x"}, {"name": "A", "source": "y"}]})
+
+    def test_even_steps_on_a_clip_made_from_another_is_refused(self):
+        with self.assertRaises(ValueError):  # _make moves the contacts only on a source's cycle (P5's review)
+            L.expand({"clip": [{"name": "A", "source": "x"}, {"name": "B", "from": "A", "even_steps": True}]})
+
+    def test_a_cadence_without_a_measured_one_is_a_clear_error(self):
+        self.assertAlmostEqual(L.cadence_rate("A", 3.0, 2.0), 1.5)
+        for c0 in (None, 0.0):
+            with self.assertRaisesRegex(ValueError, "no measured cadence"):
+                L.cadence_rate("A", 3.0, c0)
+
+    def test_pick_window_averages_the_facing_across_the_seam(self):
+        import alien_mocap
+        # a take run along +X (travel 90 deg) facing about 180 deg, its facing flickering 179 / -179: the facing's
+        # mean is 180 (not 0), so travel - facing is -90 everywhere (P5's review)
+        rows = [(3.0 * f, 0.0, 0.0, 179.0 if (f // 6) % 2 else -179.0) for f in range(120)]
+        best = alien_mocap.pick_window(rows, 30.0, (0, 119), -90.0, window_s=1.0, span_s=0.2, step=6)
+        self.assertLess(best["facing_miss_deg"], 2.0)
 
 
 class GameNumbers(unittest.TestCase):
@@ -94,7 +111,13 @@ class CappedRate(unittest.TestCase):
 
 class Reels(unittest.TestCase):
     def test_the_plan_pairs_the_capped_speed_beside_the_game_speed(self):
-        plan = {r["name"]: r for r in L.reel_plan(L.expand(CFG))}
+        # the old plan (no [[reel]]: steps 3 and 4b) on step 4b's clips
+        old = {"grid": CFG["grid"], "clip": [
+            {"name": "Walk", "source": "w", "play_at": [2.0]},
+            {"name": "Strafe_Left", "source": "s", "speeds": [3.0, 4.5]},
+            {"name": "Strafe_Right", "mirror": "Strafe_Left"},
+            {"name": "Jog_Bwd", "source": "b", "speeds": [3.0, 2.5]}]}
+        plan = {r["name"]: r for r in L.reel_plan(L.expand(old))}
         self.assertEqual([c["speed"] for c in plan["Strafe_Left"]["clips"]], [3.0, 4.5])
         self.assertEqual(plan["Strafe_Left"]["view"], "front")
         self.assertEqual(plan["Jog_Bwd"]["view"], "side")

@@ -60,24 +60,51 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
             c, cyc = S.cycle(skel, S.mirror(skel, clips[j["mirror"]]), foot=foot, loop=True)
             rep.update(before=reps[j["mirror"]]["before"], cycle=cyc, stride=reps[j["mirror"]].get("stride"))
         else:
-            c = S.copy_clip(srcs[j["source"]])
-            rep["before"] = S.measure(skel, c)
-            c, rep["cycle"] = S.cycle(skel, c, foot=foot, loop=True)
-            # step 2's bakes keep the source's world travel and place in the Hips' basis: every loop is cut in place
-            # before the stride, so the stride plants its feet in the frame the measure was made for (step 4b)
-            c, rep["in_place_first"] = L.in_place(skel, c)
+            if j.get("from"):  # a made clip of the set (the approved Jog_Fwd) turned into another direction (P2)
+                c = S.copy_clip(clips[j["from"]])
+                rep["before"] = reps[j["from"]]["after"]
+            else:
+                c = S.copy_clip(srcs[j["source"]])
+                rep["before"] = S.measure(skel, c)
+                c, rep["cycle"] = S.cycle(skel, c, foot=foot, loop=True)
+                # step 2's bakes keep the source's world travel and place in the Hips' basis: every loop is cut in
+                # place before the stride, so the stride plants its feet in the frame the measure was made for (4b)
+                c, rep["in_place_first"] = L.in_place(skel, c)
+                if j.get("even_steps"):  # the other foot's contact moved to half the cycle (P4: 6/8 -> 7/7)
+                    c, rep["even_steps"] = S.even_steps(skel, c, foot)
+            if j.get("lean_deg"):  # the trunk leant forward over the feet (the backpedal, P2)
+                c = S.pitch(skel, c, j["lean_deg"], L.LEAN_SPLIT)
+            if j.get("orient"):  # the hips toward the travel, the head on the aim (orient_warp; absolute headings)
+                c, rep["orient"] = L.orient(S, skel, c, j["orient"])
             rate = S.frames(c) / j["frames"] if j.get("frames") else None
+            if j.get("cadence"):
+                rate = L.cadence_rate(j["name"], j["cadence"], S.measure(skel, c)["c0"])
             if j.get("max_scale") and j.get("speed"):
                 rate = L.capped_rate(j["speed"], S.measure(skel, c)["v0"], j["max_scale"], rate)
             if rate is not None or j.get("speed") is not None:
-                c, st = S.stride(skel, c, rate=rate, speed=j.get("speed"), bend_min_deg=j.get("bend_min_deg"))
+                c, st = S.stride(skel, c, rate=rate, speed=j.get("speed"), bend_min_deg=j.get("bend_min_deg"),
+                                 widen_m=j.get("widen_m") or 0.0)
                 rep["stride"] = {k: st[k] for k in ("rate_eff", "intervals", "scale", "fit", "ankle_miss_mm",
                                                     "planted_slide_mm", "slide_bound_mm", "knee_floor_mm")}
+            if j.get("lift_m") or j.get("bob_m") or j.get("flight_m"):  # the hips' height, its bob, a flight (P3)
+                c, rep["lift"] = S.lift_hips(skel, c, j.get("lift_m") or 0.0, j.get("bob_m") or 0.0,
+                                             j.get("flight_m") or 0.0)
             if j.get("arm_swing", 1.0) != 1.0:
                 c, rep["arm_swing_report"] = S.arm_swing(c, j["arm_swing"])
             if j.get("arms_from"):
                 af = j["arms_from"]
-                c, rep["arms_from_report"] = S.arms_from(c, clips[af["clip"]], k=af.get("k", 1.0), w=af.get("w", 1.0))
+                c, rep["arms_from_report"] = S.arms_from(c, clips[af["clip"]], k=af.get("k", 1.0), w=af.get("w", 1.0),
+                                                         phase=af.get("phase", 0.0))
+            if j.get("arms_in_deg"):  # the elbows brought in toward the body (P3)
+                c = S.arms_in(skel, c, j["arms_in_deg"])
+            if j.get("head_level") is not None:  # the eyes on the way ahead (the crouch, P2)
+                c, rep["head"] = S.level_head(skel, c, j["head_level"])
+            if j.get("orient") and not j["orient"].get("whole"):  # the planted feet's travel set to the asked heading
+                c, rep["trim"] = L.trim_travel(S, skel, c, j["orient"]["travel"])
+            if j.get("pin"):  # the planted feet pinned by the honest test (P3: the backpedal)
+                c, rep["pin"] = S.pin_feet(skel, c)
+            if j.get("arms_carry"):  # the arms solved onto a running carriage in the trunk's frame (P4: the backpedal)
+                c, rep["arms_carry"] = S.arms_carry(skel, c, **j["arms_carry"])
         if not j.get("pick"):
             c, rep["in_place"] = L.in_place(skel, c)
         c["name"] = j["name"] + L.LOOP
@@ -87,6 +114,11 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
             rep["honest_slide"] = S.honest_slide(skel, c, rep["after"]["ground_m_s"])
             rep["knee"] = S.knee_bend(skel, c)
             rep["hands_m"] = S.hand_clearance(skel, c)
+            rep["airborne_frames"] = S.airborne_frames(skel, c)  # P3: a run's flight, the legs' room, the elbows
+            rep["legs_m"] = S.leg_spacing(skel, c)
+            rep["elbow_deg"] = S.elbow_bend(skel, c)
+            rep["arms_m"] = S.arm_carriage(skel, c)  # P4: midline, wrist height and place, elbows from the axis
+            rep["facing"] = {**S.facing(skel, c), "travel_deg": round(S.travel_heading_deg(rep["after"]), 2)}
         rep["hips"] = L.hips_extent(skel, c)
         a = rep["after"]
         scale = (rep.get("stride") or {}).get("scale")
@@ -101,7 +133,8 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
               f"{(rep.get('stride') or {}).get('rate_eff')} flag {rep['stride_flag']} slide {a['foot_slide_mm']} honest "
               f"{[(hs[s]['drift_mm'], hs[s]['skate_m_s']) for s in hs]} knee "
               f"{[(v['min_deg'], v['swing_min_deg']) for v in rep['knee'].values()]} hands {rep['hands_m']} "
-              f"play {[(p['speed'], p['rate'], p['step_s'], p['beat_s']) for p in rep['play']]} hips {rep['hips']}",
+              f"play {[(p['speed'], p['rate'], p['step_s'], p['beat_s']) for p in rep['play']]} hips {rep['hips']} "
+              f"facing {rep.get('facing')}",
               flush=True)
     return clips, reps
 
@@ -130,10 +163,12 @@ def _blender_main(argv: list[str]) -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--raw", required=True)
     ap.add_argument("--chars", default="")
+    ap.add_argument("--dump", default="", help="only write the first character's skeleton and sampled sources here")
     a = ap.parse_args(argv)
     cfg = L.load()
     jobs = L.expand(cfg)
     build, ttm, out = _paths(a.raw, cfg)
+    mocap = Path(a.raw) / cfg["set"]["raw_base"] / cfg["set"]["mocap"] if cfg["set"].get("mocap") else None
     made = None
     for char in a.chars.split(",") if a.chars else cfg["set"]["chars"]:
         bpy.ops.wm.open_mainfile(filepath=str(build / char / f"{char}_char.blend"))
@@ -142,10 +177,17 @@ def _blender_main(argv: list[str]) -> None:
         need = L.sources(jobs)
         with bpy.data.libraries.load(str(ttm), link=False) as (src, dst):
             dst.actions = [n for n in src.actions if n.startswith(PREFIX + "TM_") and n[len(PREFIX):] in need]
+        if mocap is not None:  # P1's 100STYLE loops MC_<style>_<take>_Loop (the axolotl shares the skeleton)
+            with bpy.data.libraries.load(str(mocap), link=False) as (src, dst):
+                dst.actions = [n for n in src.actions if n.startswith(PREFIX + "MC_") and n[len(PREFIX):] in need]
         srcs = {n: ST.sample(arm, bpy.data.actions[PREFIX + n]) for n in need}
         for n in need:
-            if n.startswith("TM_"):
+            if n.startswith(("TM_", "MC_")):
                 bpy.data.actions.remove(bpy.data.actions[PREFIX + n])
+        if a.dump:  # the plain-Python tuning's input (grids on dumped data, no Blender per try)
+            Path(a.dump).write_text(json.dumps({"skel": sk, "srcs": srcs}), encoding="utf-8", newline="\n")
+            print(f"DUMP {a.dump} {len(srcs)} sources", flush=True)
+            return
         if made and _same_skeleton(made[0], sk):  # the same skeleton: the same clips (step 1 measured them equal)
             clips, reps = made[1], json.loads(json.dumps(made[2]))
             print(f"CHAR {char}: the skeleton equals {made[3]}'s, its clips reused", flush=True)
@@ -180,14 +222,14 @@ def _reels(a, cfg: dict) -> int:
     char = "chameleon"
     hd = out / "build" / char
     slots_job = json.loads((R.SLOTS / "job.json").read_text(encoding="utf-8"))["heads"]
-    plan = L.reel_plan(L.expand(cfg))
+    plan = L.reel_plan(L.expand(cfg), cfg.get("reel"))
     if a.only:
         plan = [r for r in plan if r["name"] in a.only.split(",")]
     loco = json.loads((hd / "loco.json").read_text(encoding="utf-8"))["clips"]
     for r in plan:
         for c in r["clips"]:
             c["timeline"] = L.reel_timeline(loco[c["clip"]]["reel"], c["speed"], r.get("seconds", L.REEL_S), cfg,
-                                            r.get("start", {}).get("at", 0.0))
+                                            r.get("start", {}).get("at", 0.0), c.get("travel"))
     job = {"hdri": str(R.HDRI), "fix": dict(R.FIX), "out": str(reels_dir), "frames": str(frames),
            "head": R.head_job(char, hd, json.loads((hd / "bases.json").read_text(encoding="utf-8")), slots_job),
            "reels": plan,
@@ -219,10 +261,16 @@ def main() -> int:
     ap.add_argument("--chars", default="")
     ap.add_argument("--reels", action="store_true")
     ap.add_argument("--only", default="", help="--reels: only these reels (names from alien_loco_math.reel_plan)")
+    ap.add_argument("--dump", default="", help="write the chameleon's skeleton and sampled sources as JSON, no build")
     a = ap.parse_args()
     cfg = L.load()
     if a.reels:
         return _reels(a, cfg)
+    if a.dump:
+        res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", "chameleon", "--dump", a.dump],
+                                 timeout=1200)
+        print(*[x for x in (res.stdout or "").splitlines() if x.startswith("DUMP")], sep="\n", flush=True)
+        return res.returncode
     build, _, out = _paths(a.raw, cfg)
     chars = a.chars.split(",") if a.chars else cfg["set"]["chars"]
     for c in chars:

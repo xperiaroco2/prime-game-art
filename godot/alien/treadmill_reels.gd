@@ -109,7 +109,10 @@ func _floor() -> void:
 
 func _aim(view: String) -> void:
 	var at := Vector3(0.0, 0.85, 0.0)
-	_cam.position = Vector3(0.0, 1.3, 5.4) if view == "front" else Vector3(5.4, 1.3, 0.0)
+	# the character faces +Z, its left +X; P2's cameras: front, three-quarter (front left), back, side (its left)
+	var at_view := {"front": Vector3(0.0, 1.3, 5.4), "three_quarter": Vector3(3.82, 1.3, 3.82),
+		"back": Vector3(0.0, 1.3, -5.4)}
+	_cam.position = at_view.get(view, Vector3(5.4, 1.3, 0.0))
 	_cam.look_at(at)
 
 
@@ -227,7 +230,8 @@ func _reel(reel: Dictionary, job: Dictionary) -> Dictionary:
 		var x0 := 330.0 if pair else 40.0
 		var x1 := 950.0 if pair else 1240.0
 		_lane_for(tl, seconds, x0, x1)
-		_title.text = "%s\n%.2f m/s  rate %.2f  beat %.3f s" % [c["clip"], tl["speed"], tl["rate"], tl["beat_s"]]
+		_title.text = "%s\n%.2f m/s  rate %.2f  beat %.3f s" % [c.get("label", c["clip"]), tl["speed"], tl["rate"],
+			tl["beat_s"]]
 		_title.position = Vector2(x0, 14.0)
 		_title.size = Vector2(x1 - x0, 50.0)
 		var cyc: float = length / float(tl["rate"])
@@ -283,7 +287,7 @@ func _reel(reel: Dictionary, job: Dictionary) -> Dictionary:
 			"beats": tl["beats"].size(), "contacts": tl["contacts"]["Left"].size() + tl["contacts"]["Right"].size(),
 			"travel_per_loop_m": snappedf(d.length(), 0.001), "length_s": snappedf(length, 0.001)})
 	if not rows.is_empty():
-		_sheet_of(rows, 3 if grid else 1).save_png(job["out"].path_join(reel["name"] + ".png"))
+		_sheet_of(rows, int(reel.get("cols", 3)) if grid else 1).save_png(job["out"].path_join(reel["name"] + ".png"))
 	info["frames"] = n if reel["video"] else 0
 	print("REEL %s %s" % [reel["name"], JSON.stringify(info["clips"])])
 	return info
