@@ -72,7 +72,7 @@ class LivelyCut(unittest.TestCase):
         """E1: the area bounds each way are set from the heads' cuts (5.0 % to the lid, 1.5 % to the eyeball); the
         sheets' sawtooth is deeper than a head's (teeth up to 3 mm on a 20 mm opening) and trades about 5.2 % and 6.7 %
         each way, so the sheets are cut under 10 % bounds; the guard's own test sets them under the sheets' values."""
-        for name in ("RIM_CUT_MAX_TO_LID_PCT", "RIM_CUT_MAX_TO_EYE_PCT"):
+        for name in ("RIM_CUT_MAX_TO_LID_PCT", "RIM_CUT_MAX_TO_EYE_PCT", "RIM_CUT_FIT_MAX_TO_EYE_PCT"):  # E2: the last a --rim-fit candidate's
             patch = mock.patch.object(self.B, name, 10.0)
             patch.start()
             self.addCleanup(patch.stop)
@@ -171,12 +171,13 @@ class LivelyCut(unittest.TestCase):
         worst_lid = max(v["to_lid_pct"] for v in rep["eyeball_area"].values())
         worst_eye = max(v["to_eye_pct"] for v in rep["eyeball_area"].values())
         worst_net = max(abs(v["change_pct"]) for v in rep["eyeball_area"].values())
-        for name, value in (("RIM_CUT_MAX_TO_LID_PCT", worst_lid), ("RIM_CUT_MAX_TO_EYE_PCT", worst_eye),
-                            ("RIM_CUT_MAX_AREA_PCT", worst_net)):
+        for name, value, field in (("RIM_CUT_MAX_TO_LID_PCT", worst_lid, "to_lid"),
+                                   ("RIM_CUT_MAX_TO_EYE_PCT", worst_eye, "to_eye"),
+                                   ("RIM_CUT_MAX_AREA_PCT", worst_net, "net change")):
             with self.subTest(name), mock.patch.object(self.B, name, value * 0.9):
                 with self.assertRaises(SystemExit) as e:
                     self.cut()
-                self.assertIn("bound", str(e.exception))
+                self.assertIn(field, str(e.exception))  # E2: the field that failed, not only "bound"
         area = {"left": {"change_pct": 0.5, "to_lid_pct": 0.2, "to_eye_pct": 0.7}}
         self.assertEqual(self.B.area_faults(area), [])
         area["left"]["to_lid_pct"] = self.B.RIM_CUT_MAX_TO_LID_PCT + 0.01
@@ -211,7 +212,47 @@ class LivelyCut(unittest.TestCase):
                     self.B.lip_smooth({k: v.copy() for k, v in A1.items()}, I1, cls1, centres, R_EYE, 4, mode)
                 self.assertIn("turned", str(e.exception))
 
-    def split(self, flip: int = 0):
+    def test_lip_smooth_fails_a_triangle_really_turned(self):
+        """E2: a lip triangle that really turns under the real LIP_FLIP_DOT fails. Taubin mode with LIP_CAP patched
+        large and one lid position one ring off the rim spiked far out of the sheet: the steps pull its neighbours up
+        toward it, and even the fold guard's smallest move (1/64) stands their small triangles on edge. The same
+        patch without the spike passes (the control)."""
+        A1, I1, cls1, centres, _rep = self.cut()
+        P = A1["POSITION"]
+        eb = np.zeros(len(P), bool)
+        eb[I1[cls1].ravel()] = True
+        lid_t = ~cls1 & eb[I1].any(1)  # the lid triangles on the rim
+        cand = [int(v) for v in I1[lid_t].ravel() if not eb[v]]
+        self.assertTrue(cand)
+        spiked = np.all(np.isclose(P, P[cand[0]]), axis=1)  # every copy of that position (lip_smooth welds them)
+        with mock.patch.object(self.B, "LIP_CAP", 1e6):
+            _A, ok = self.B.lip_smooth({k: v.copy() for k, v in A1.items()}, I1, cls1, centres, R_EYE, 4, "taubin")
+            self.assertGreaterEqual(ok["min_face_dot"], self.B.LIP_FLIP_DOT)
+            A2 = {k: v.copy() for k, v in A1.items()}
+            A2["POSITION"][spiked] += [0.0, 0.0, 1e4 * R_EYE]
+            with self.assertRaises(SystemExit) as e:
+                self.B.lip_smooth(A2, I1, cls1, centres, R_EYE, 4, "taubin")
+        self.assertIn("turned", str(e.exception))
+        self.assertLess(float(str(e.exception).split("face dot ")[1].rstrip(")")), self.B.LIP_FLIP_DOT)
+
+    def test_rim_cut_fit_all_keeps_every_rim_position(self):
+        """E2 candidate B (--rim-fit, off by default): "all" fits through every rim position and names its fit in the
+        report; the default trimmed cut's report has no "fit"."""
+        trimmed = self.cut()[4]
+        self.assertNotIn("fit", trimmed)
+        A, I, eyeball, centres = sheets()
+        for fit in ("all", "outer"):
+            with self.subTest(fit):
+                rep = self.B.rim_cut({k: v.copy() for k, v in A.items()}, I, eyeball, centres, R_EYE, 8, fit)[4]
+                self.assertEqual(rep["fit"], fit)
+                for key in ("left", "right"):
+                    self.assertGreaterEqual(rep[key]["fit_kept"], trimmed[key]["fit_kept"])
+                    if fit == "all":
+                        self.assertEqual(rep[key]["fit_kept"], rep[key]["rim_positions"])
+                self.assertEqual(rep["bad_triangles"], 0)
+                self.assertEqual(rep["edges_after"], rep["edges_before"])
+
+    def split(self, flip: int = 0, sphere_only: bool = False, stray: int = 0):
         """rim_split on the cut sheets, each eye's sphere the eye centre 1 cm behind with radius R_EYE (eyeball_fix's
         views: only the centre and radius are read); flip: that many eyeball-only vertices per eye given a normal
         facing away (-z) before the split, so their radial normal turns past 90 degrees."""
@@ -224,8 +265,28 @@ class LivelyCut(unittest.TestCase):
                 d = np.linalg.norm(A1["POSITION"] - centres[s] * [1, 1, 0], axis=1)
                 pick = np.nonzero(~lid & (d < RHO / 2))[0][:flip]
                 A1["NORMAL"][pick] = [0.0, 0.0, -1.0]
-        A2, I2, rep = self.B.rim_split({k: v.copy() for k, v in A1.items()}, I1, cls1, views)
+        self._stray = []
+        if stray:  # E2: that many eyeball-only vertices per eye moved 3 radii below their sphere's centre (a stray)
+            for s in (1, -1):
+                d = np.linalg.norm(A1["POSITION"] - centres[s] * [1, 1, 0], axis=1)
+                pick = np.nonzero(~lid & (d < RHO / 2))[0][-stray:]
+                A1["POSITION"][pick] = centres[s] + [0.0, -3.0 * R_EYE, 0.0]
+                self._stray += [int(x) for x in pick]
+        A2, I2, rep = self.B.rim_split({k: v.copy() for k, v in A1.items()}, I1, cls1, views, sphere_only)
         return A1, I1, cls1, centres, A2, I2, rep
+
+    def test_rim_split_sphere_only_leaves_the_strays(self):
+        """E2 candidate A (--rim-split-sphere-only, off by default): an eyeball vertex over RIM_SPLIT_SPHERE_BAND radii
+        from its sphere's centre keeps its own normal; the default gives it the radial one and has no "sphere_only"."""
+        A1, _I1, _c, _centres, A2, _I2, rep = self.split(stray=2, sphere_only=True)
+        pick = self._stray  # eyeball-only vertices: rim_split copies none of them, so their indices stay
+        self.assertEqual(len(pick), 4)
+        self.assertTrue(np.array_equal(A2["NORMAL"][pick], A1["NORMAL"][pick]))  # their own normals
+        self.assertEqual(sum(v["vertices"] for v in rep["sphere_only"]["kept_own"].values()), 4)
+        self.assertEqual(rep["sphere_only"]["band_r"], self.B.RIM_SPLIT_SPHERE_BAND)
+        A0, rep0 = (lambda r: (r[4], r[6]))(self.split(stray=2))
+        self.assertNotIn("sphere_only", rep0)
+        self.assertLess(np.abs(A0["NORMAL"][pick] - [0.0, -1.0, 0.0]).max(), 1e-9)  # the default: the radial normal
 
     def test_rim_split_opens_no_edge_and_gives_the_eyeball_its_sphere(self):
         A1, I1, cls1, centres, A2, I2, rep = self.split()
@@ -297,7 +358,7 @@ class InBlender(unittest.TestCase):
             res = json.loads((Path(tmp) / "out.json").read_text(encoding="utf-8"))
         self.assertEqual(res["bad"], [])
         self.assertEqual(res["skipped"], 0)
-        self.assertEqual(res["run"], 9)
+        self.assertEqual(res["run"], 12)
 
 
 if __name__ == "__main__":
