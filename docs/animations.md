@@ -905,6 +905,54 @@ foot planted), the leg solved again with `two_bone`, the foot turned by `feet_ya
 give the clip back; `hip_yaw = travel_deg = d` with `split=()` turns the whole clip (how `alien_mocap.py` faces a
 take). Tests: `tools/tests/test_alien_stride_orient.py`.
 
+### The side, diagonal and back clips (art #196, the strafe pilot P2)
+P2 rebuilt the strafes and the back run from step 4b's text-to-motion clips into a forward run turned toward the
+travel and a mocap backpedal, all through `anim_sets/alien_loco.toml` and `alien_loco.py` (out: `loco/p2`). The set
+file's new keys:
+- `[set] mocap`: a second source blend, P1's `loco/p1/chameleon_char_100s.blend`; its `MC_<style>_<take>_Loop`
+  actions are read like the `ttm` blend's `TM_` loops;
+- `from`: a made clip of the set as the source (the approved `Jog_Fwd`: its 22-frame cycle, its arms), not cut again;
+- `orient = { hips, travel, split? }`: `alien_loco_math.orient`, `orient_warp` with **absolute** headings (degrees, 0
+  at the aim, positive toward the left): a clip whose head looks more than 0.5 degrees off the aim is first turned
+  whole onto it (a 100STYLE take's head, hips and travel each sit 15-30 degrees apart), then its hips' mean heading
+  goes to `hips` and its feet's travel to `travel`. After the stride the planted feet's measured travel is set
+  exactly by `trim_travel` (the feet's tracks alone turned: they roll heel to toe along their own heading, which
+  pulled the measured travel 5 degrees toward the hips). The side runs' `split` puts more of the twist into the neck
+  and head (Spine 0.1, Chest 0.15, UpperChest 0.15, Neck 0.35, Head 0.25): with the hips at 60 the upper chest is 36
+  toward the travel, so the arms swing with the turned body, and the head stays on the aim;
+- `cadence`: the steps per second the loop is retimed to before the stride takes the rest of the speed (the backpedal:
+  4.0, short quick steps);
+- `lean_deg`: the trunk leant forward (`LEAN_SPLIT`, Spine 0.4, Chest 0.35, UpperChest 0.25; the backpedal: 8, the
+  take ran upright; 6/10/14 tried: the hanging hands come closer to the belly as it leans);
+- `head_level`: `alien_stride_math.level_head`, the neck and head lifted by one constant so the head's mean front
+  pitch over the loop is this many degrees (the crouch: -5, the take looked 48 down; the backpedal: -10, from 34
+  down);
+- `[[reel]]`: the reels by hand (`alien_loco_math.reel_plan(jobs, reels)`): per entry its `views` (one reel each,
+  `<name>__<view>`: `front`, `three_quarter` from the front left, `back`, `side` from the character's left), its
+  clips with a speed, an optional `travel` (the stripes' heading: the game's pure side clip carried along a
+  diagonal shows its skate) and `label`; `video = false` gives a sheet of four phases per clip in `cols` columns.
+  Without `[[reel]]` the old automatic plan runs.
+
+`alien_stride_math.facing(skel, clip)` reports per clip (`loco.json`'s `facing`, the build log's `CLIP` lines) the
+hips' and the head's mean heading, the head's swing about it, the head's and the upper chest's front pitch, and
+`travel_heading_deg` the planted feet's travel. `pitch(skel, clip, deg, split)` leans a chain about the left-right
+axis (positive: the front down). Tests: `tools/tests/test_alien_stride_p2.py`.
+
+The clips (game names; `__` names are review variants):
+- `Strafe_Left` / `Strafe_Right` (mirror): `Jog_Fwd` turned to a 90 degree travel with the hips at 60, fitted to 3.0
+  m/s at rate 1 (the same 22-frame cycle: stride 0.69); `Strafe_Left__h45`, `__h60`, `__h75` the hip grid;
+  `Strafe_Left__100s` the mocap side run with its hips turned to 60 too (4 steps/s); `Strafe_Left__s4b` step 4b's;
+- `Jog_Fwd_Left` / `Jog_Fwd_Right`: `Jog_Fwd` turned to a 45 degree travel, hips 35, at 3.5 m/s (the speed ellipse
+  through 4.5 ahead and 3.0 aside at 45 degrees);
+- `Jog_Bwd`: the 100STYLE Neutral BR at 4 steps/s and 2.5 m/s, its head and travel set straight, its head lifted to
+  -10; `Jog_Bwd__c20`, `__c25`, `__c30` the back cap's grid (2.0, 2.5, 3.0 m/s, all at 4 steps/s, the stride 1.7,
+  2.1, 2.5x the take's, its trunk leant 8 degrees); `Jog_Bwd__s4b` step 4b's; `Jog_Bwd_Left` / `Jog_Bwd_Right`: the backpedal toward the back
+  left with the hips at -45 (turned away from the travel), 2.5 m/s;
+- `Crouch_Fwd`, `Crouch_Run`: their heads lifted (`head_level -5`); `Crouch_Run__s4b` the before.
+The other plain 100STYLE styles' BR takes run no clearly faster than Neutral at a plain look (a root-speed scan of
+seven: 0.6-1.1 m/s; the faster ones are the "big steps", "bent forward" and "checking behind" styles), so P2 keeps
+Neutral.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
