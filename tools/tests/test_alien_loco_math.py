@@ -108,6 +108,26 @@ class CappedRate(unittest.TestCase):
         self.assertEqual(L.capped_rate(2.0, 1.9, 1.15, 1.1), 1.1)
         self.assertAlmostEqual(L.capped_rate(2.8, 1.9, 1.15) * 1.9 * 1.15, 2.8)
 
+    def test_the_cap_holds_after_the_whole_frame_rounding(self):
+        import anim_edit_math as M
+        # PR #326's case (Jog_Bwd__s4b: 26 intervals, max_scale 1.5 at 3.0 m/s): the capped rate 1.3075 rounds to
+        # 20 frames, rate 1.3, the scale 1.509 over the cap; with the intervals the count is floored to keep it
+        v0 = 3.0 / (1.3 * 1.5087)
+        r = L.capped_rate(3.0, v0, 1.5, intervals=26)
+        t2, eff = M.retime_count(26, r)
+        self.assertLessEqual(3.0 / (eff * v0), 1.5 + 1e-9)
+        self.assertEqual(t2, 19)
+        # an asked rate within the cap before the rounding but over it after: also floored
+        t2, eff = M.retime_count(20, L.capped_rate(2.0, 1.0, 2.0, rate=1.02, intervals=20))
+        self.assertLessEqual(2.0 / (eff * 1.0), 2.0 + 1e-9)
+        self.assertIsNone(L.capped_rate(2.0, 1.9, 1.15, intervals=20))  # no retime asked and none needed
+
+    def test_a_scale_over_the_cap_is_refused(self):
+        L.check_max_scale("A", 1.5, 1.5)
+        L.check_max_scale("A", 3.0, None)
+        with self.assertRaises(ValueError):
+            L.check_max_scale("A", 1.5087, 1.5)
+
 
 class Reels(unittest.TestCase):
     def test_the_plan_pairs_the_capped_speed_beside_the_game_speed(self):

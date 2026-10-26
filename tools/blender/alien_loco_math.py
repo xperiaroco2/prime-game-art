@@ -159,13 +159,30 @@ def play_rows(v0: float, c0: float | None, play_at: list[float], cfg: dict) -> l
     return rows
 
 
-def capped_rate(speed: float, v0: float, max_scale: float, rate: float | None = None) -> float | None:
+def capped_rate(speed: float, v0: float, max_scale: float, rate: float | None = None,
+                intervals: int | None = None) -> float | None:
     """The playback rate a stride fit needs so its stride scale stays at most max_scale: the rest of the speed goes
-    into the cadence (rate = speed / (v0 x max_scale)); `rate` (or None, 1.0) when the scale is already within it."""
+    into the cadence (rate = speed / (v0 x max_scale)); `rate` (or None, 1.0) when the scale is already within it.
+    With the loop's frame `intervals`, the whole-frame rounding of the retime (anim_edit_math.retime_count) is
+    counted too (PR #326's follow-up: Jog_Bwd__s4b's capped 1.3075 rounded to 1.3, the scale 1.509 over its 1.5): a
+    rounded count over the cap is floored to the largest count within it and its exact rate T / T2 returned."""
     r = 1.0 if rate is None else rate
     if speed / (v0 * r) <= max_scale:
-        return rate
-    return speed / (v0 * max_scale)
+        out = rate
+    else:
+        out = r = speed / (v0 * max_scale)
+    if intervals is None or out is None:
+        return out
+    t2 = max(1, round(intervals / r))
+    if speed * t2 / (intervals * v0) > max_scale + 1e-12:  # the rounded count lengthens the loop past the cap
+        t2 = max(1, math.floor(max_scale * intervals * v0 / speed + 1e-9))
+    return intervals / t2
+
+
+def check_max_scale(name: str, scale: float, max_scale: float | None) -> None:
+    """Refuses a stride scaled over its clip's max_scale (after the retime's whole-frame rounding)."""
+    if max_scale is not None and scale > max_scale + 1e-6:
+        raise ValueError(f"{name}: the stride scaled {scale:.4f}x, over its max_scale {max_scale}")
 
 
 def stride_flag(scale: float | None, cfg: dict) -> bool:
