@@ -41,7 +41,7 @@ class SetFile(unittest.TestCase):
         self.assertFalse([n for n in self.names if "shuffle" in n])  # dropped (step 4's critic)
         bwd = {j["name"]: j for j in self.jobs if j["base"] == "Jog_Bwd"}
         self.assertEqual({n: j["speed"] for n, j in bwd.items()}, {"Jog_Bwd": 2.5})  # P2: the 2.5 until he picks
-        self.assertEqual(bwd["Jog_Bwd"]["cadence"], 4.0)
+        self.assertEqual(bwd["Jog_Bwd"]["cadence"], 3.4)  # P3: a 14-frame cycle (P2's 4.0 read as a walk)
         self.assertEqual(self.jobs[self.names.index("Strafe_Left__s4b")]["arms_from"]["clip"], "Jog_Fwd")
         for j in self.jobs:  # a mirror comes after the clip it mirrors
             if j.get("mirror"):

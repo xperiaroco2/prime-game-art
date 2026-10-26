@@ -90,9 +90,8 @@ class SetKeys(unittest.TestCase):
 
     def test_the_real_set_has_the_p2_clips(self):
         jobs = {j["name"]: j for j in L.expand(L.load())}
-        for n in ("Strafe_Left__h45", "Strafe_Left__h60", "Strafe_Left__h75", "Strafe_Left__100s", "Strafe_Left__s4b",
-                  "Jog_Fwd_Left", "Jog_Fwd_Right", "Jog_Bwd__c20", "Jog_Bwd__c25", "Jog_Bwd__c30", "Jog_Bwd__s4b",
-                  "Jog_Bwd_Left", "Jog_Bwd_Right"):
+        for n in ("Strafe_Left__p2", "Strafe_Left__s4b", "Jog_Fwd_Left", "Jog_Fwd_Right", "Jog_Bwd__c20",
+                  "Jog_Bwd__c25", "Jog_Bwd__c30", "Jog_Bwd__s4b", "Jog_Bwd_Left", "Jog_Bwd_Right"):  # P3's set
             self.assertIn(n, jobs)
         self.assertEqual(jobs["Strafe_Left"]["from"], "Jog_Fwd")
         self.assertEqual(jobs["Strafe_Left"]["orient"]["travel"], 90.0)
@@ -110,7 +109,7 @@ class ReelPlan(unittest.TestCase):
         for v in ("front", "three_quarter", "back"):
             self.assertIn(f"Strafe_Left__{v}", plan)
             self.assertIn(f"Diagonal_45__{v}", plan)
-        self.assertEqual(plan["Diagonal_45__front"]["clips"][0]["travel"], 45.0)
+        self.assertEqual(plan["Diagonal_45__front"]["clips"][0]["clip"], "Jog_Fwd_Left__p2")  # P3: P2's as the before
         with self.assertRaises(ValueError):
             L.reel_plan(L.expand(cfg), [{"name": "x", "views": ["front"], "clips": [{"clip": "Nope", "speed": 1.0}]}])
         with self.assertRaises(ValueError):
