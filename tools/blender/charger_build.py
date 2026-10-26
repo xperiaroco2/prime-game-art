@@ -23,7 +23,7 @@ on the floor at the wall's face under the crystal's axis (the spot's `at`).
   dark steel piston rod (lengthened 27 cm), a bronze ankle sleeve, a faceted pad with two amber bars on three faces.
 - The leaves (own objects, pivot on their axes, children of the body): `carrier` (the cup under the crystal with
   the pit for its point; rises 6 cm and spins; the empty `crystal_anchor` on it where the crystal's tip sits),
-  `track_ring` (spins, carries the inner prong pair with their electrodes), `button` (presses 1 cm in along +d).
+  `track_ring` (spins, carries the inner prong pair with their electrodes), `button` (presses 1 cm in toward -d, into the charger).
   Convex colliders `*-convcolonly`: the base, the outer prongs, each leg; the inner prongs (on the ring).
 
 Writes into --out: crystal_charger.glb (plain-PBR fallback), crystal_charger.blend (the look materials), build.json
