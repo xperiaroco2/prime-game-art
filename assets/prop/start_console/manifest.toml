@@ -11,9 +11,9 @@ licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
 public_repo_ok = true
 ai_generated = false
-approved_by = []
-approved_at = ""
-approval_pr = ""
+approved_by = ["xperiaroco2"]
+approved_at = 2026-10-26
+approval_pr = "https://github.com/xperiaroco2/prime-game-art/pull/325"
 
 [source]
 service = "own"
