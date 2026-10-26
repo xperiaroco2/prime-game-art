@@ -698,8 +698,9 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
    side: a body down to the axis crossed them on the way.
 3. **The sweep check.** The build turns every shell through its trip in tenths and counts the triangles it crosses
    on the body, the cores, the lamps and its neighbours (`build.json` `sweep_check`; empty is clean, and the test holds
-   it). `board_drawing.py` compares 23 of the drawing's numbers with the model's own vertices (`drawing/compare.json`,
-   0.5 cm tolerance) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
+   it). `board_drawing.py` compares 23 of the drawing's numbers with the model's (`drawing/compare.json`, 0.5 cm
+   tolerance): 20 measured off its own vertices, 3 set (the lamp ring from the dims, the hinge's h and d from the
+   leaves' pivots; `board_drawing.SET`) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
    straight views at the drawing's scale.
 4. **The states** are node rotations and material values: `godot/board/board.gd` `set_shell(look, i, open01)`,
    `set_on` / `set_lamp` (dark, yellow, green), `set_problem` (the beacon and its red light), `set_core`; the cores'
