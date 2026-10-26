@@ -867,10 +867,12 @@ ms when bronze fills the frame.
 now takes the gradient noise's analytic derivative, `gnoised()`, one pass over the cell's 8 corners per octave, 16
 hashes per slope; same lattice, hashes, quintic fade, turns, octaves, strengths, parameters, defaults and guards. The
 gradient is taken at the old forward difference's midpoint (`p + 0.15 / s`), so most glints stay near where they were,
-but the exact slope is not the forward difference's smoothed one: the glints move a little and change shape (accepted).
+but the exact slope is not the forward difference's smoothed one: the glints move and change shape, visibly in close-ups (a mean pixel change up to 8/255, about as much as switching
+the bend off; `cost.md`), the same at a player's distance (accepted by the engineer, 2026-10-26).
 The console (`dent` = `wave` = 0) skips the slope and stays pixel-identical (`console_*__solo_compare.png`, max 0).
 Measured once (2026-10-26, `<raw>/ship/v4/bronze-a/cost/cost.md`, RTX 4060), GPU ms before -> after: board player's
 view 4.849 -> 4.641 (-0.21), charger player's view 4.932 -> 4.688 (-0.24), the bronze-filled close-ups -0.59 (socket),
 -0.84 (board) and -1.04 (charger). This run's noise reaches about 0.5 ms (the GPU clock drifted between rounds: the
 console control's views, where both shaders draw the same pixels, read the new one 0.47 ms slower and 0.21 ms faster), so a single row under
-about 0.3 ms is noise; the player's-view savings match fix pass 2's prediction (0.26 and 0.34 ms).
+about 0.3 ms is noise; the player's-view savings (0.21 board, 0.24 charger) are consistent, within that noise, with fix pass 2's
+prediction (0.26 and 0.34 ms).

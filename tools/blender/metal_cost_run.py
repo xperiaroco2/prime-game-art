@@ -89,7 +89,7 @@ def table(cost: dict) -> str:
         if "solo_identical" in r:
             solo = f"{'yes' if r['solo_identical'] else 'NO'} (max {r['solo_px_max']:.0f})"
         lines.append(f"| {r['view']} | {r['gpu_ms_finite']:.3f} | {r['gpu_ms_shipped']:.3f} | "
-                     f"{r['analytic_saves_ms']:+.3f} | {r['gpu_ms_flat']:.3f} | {r['noise_ms']:+.3f} | "
+                     f"{r['saves_ms']:+.3f} | {r['gpu_ms_flat']:.3f} | {r['noise_ms']:+.3f} | "
                      f"{r['gpu_ms_one_octave']:.3f} | {r['octave2_ms']:+.3f} | {r['gpu_ms_hidden']:.3f} | "
                      f"{r['station_ms']:+.3f} | "
                      f"{r['px_mean_flat']:.2f} / {r['px_mean_one_octave']:.2f} / {r['px_mean_finite']:.2f} | {solo} |")

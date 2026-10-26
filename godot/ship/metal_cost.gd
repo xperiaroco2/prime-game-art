@@ -166,7 +166,7 @@ func _shoot() -> void:
 		row["noise_ms"] = snappedf(row["gpu_ms_shipped"] - row["gpu_ms_flat"], 0.001)
 		row["octave2_ms"] = snappedf(row["gpu_ms_shipped"] - row["gpu_ms_one_octave"], 0.001)
 		row["station_ms"] = snappedf(row["gpu_ms_shipped"] - row["gpu_ms_hidden"], 0.001)
-		row["analytic_saves_ms"] = snappedf(row["gpu_ms_finite"] - row["gpu_ms_shipped"], 0.001)
+		row["saves_ms"] = snappedf(row["gpu_ms_finite"] - row["gpu_ms_shipped"], 0.001)
 		_compare(images["finite"], images["shipped"]).save_png(_out.path_join("%s__compare.png" % v[0]))
 		_compare(images["finite"], images["shipped"], true).save_png(_out.path_join("%s__compare_crop.png" % v[0]))
 		if str(v[1]) == "console":  # the control: dent = wave = 0, so option A must leave its pixels alone
