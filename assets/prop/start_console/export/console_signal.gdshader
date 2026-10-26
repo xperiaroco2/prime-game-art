@@ -1,12 +1,12 @@
-// The start console's signal lights (console.gd): mode 0 the three stage strips (the first `passed` green, the
-// rest a dim white), mode 1 the hologram's eight order lamps (each its colour by index mod 4, from the hall outward
+// The start console's signal lights (console.gd): mode 0 the three stage strips, one bar filled green from `charge`
+// 0..1 (strip k is its k-th third; UV0 u the share across a strip, left to right; the rest a dim white), mode 1 the hologram's eight order lamps (each its colour by index mod 4, from the hall outward
 // red, yellow, green, blue; the lamp `lit` bright, the others dimmed while the order plays). The strip's or lamp's
 // index is the build's UV0 v (glTF flips v: index = 1 - UV.y).
 shader_type spatial;
 render_mode unshaded, cull_back;
 
 uniform int mode = 0;
-uniform float passed = 1.0;
+uniform float charge = 0.333333;
 uniform float lit = -1.0;
 uniform float order = 0.0;
 uniform float strip_on = 1.1;
@@ -33,7 +33,8 @@ void fragment() {
 	vec3 col;
 	float e;
 	if (mode == 0) {
-		float on = step(idx, passed - 0.5);
+		float fill = clamp(charge * 3.0 - round(idx), 0.0, 1.0);
+		float on = (fill >= 0.999 || UV.x < fill) ? 1.0 : 0.0;
 		col = mix(WHITE, GREEN, on);
 		e = mix(strip_off, strip_on, on);
 	} else {

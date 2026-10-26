@@ -10,6 +10,15 @@ extends RefCounted
 ##   const Console = preload("console.gd")
 ##   var look: Dictionary = Console.apply(model)
 ##   Console.set_state(look, "order")        # or set_passed(look, 2), set_lit(look, 5)
+##
+## The spin-up (art#263, step 1): the hologram's turbines, the stations' wiring, the charge ring and the countdown,
+## all values on the same mesh, and a clock of their own (a tween on the console's clock uniform, no _process):
+##   Console.set_calling(look, true)          # before the start: the turbines pulse orange every CALL_PERIOD s,
+##   Console.call_phase(look)                 #   the button glows; 0..1 (0 the pulse's onset: play the beep there)
+##   Console.set_charge(look, 0.4)            # the strips and the ring fill as one bar (stage k is a third)
+##   Console.set_spin(look, 1.0)              # the turbines' fans in turns per second (each broken station halves it)
+##   Console.set_station(look, "vent_e", "broken", 2.0)   # "ok" | "broken" (its blink per second) | "fixed" | "off"
+##   Console.set_countdown(look, 7.3)         # the nearest failure's seconds over the hologram; -1 hides it
 
 const METAL := preload("console_metal.gdshader")  # relative: the same files work where the game keeps them
 const SIGNAL := preload("console_signal.gdshader")
@@ -21,6 +30,18 @@ const CYAN_ENERGY := 2.4         # the channels, the ring and the core (HDR: the
 const BUTTON_ENERGY := 0.8
 const HOLO_ENERGY := 2.6         # the hologram's lines at full brightness
 const STATES := {"idle": [1, -1, false], "order": [1, 1, true], "stage": [2, -1, false]}
+# the spin-up: the stations in the wiring's order (the build's UV0 v; 8 the manifold to the turbines)
+const STATIONS := ["socket_w", "socket_e", "socket_fw", "socket_fe", "breaker_w", "breaker_e", "vent_w", "vent_e"]
+const STATION_STATES := {"off": 0.0, "ok": 1.0, "broken": 2.0, "fixed": 1.0}
+const CALL_PERIOD := 3.0         # s from one call to the next (the turbines' orange pulse, the button's glow)
+const CALL_GLOW := 2.5           # the button's glow over BUTTON_ENERGY at a call's peak
+const CALLING_ENERGY := 1.4      # the button's glow while calling, between the pulses
+const SLOW := 0.5                # each broken station multiplies the turbines' spin by this
+const CLOCK_SPAN := 100000.0     # s: the clock's run (it restarts at reset_spinup)
+# the fans' centres and axis in the GLB's frame (the build's build.json "spinup" "turbines"; the test checks them)
+const FAN_CENTRES := [Vector3(0.18365, 1.55792, -0.62014), Vector3(-0.18365, 1.55792, -0.62014),
+	Vector3(0.0, 1.59086, -0.61314)]
+const FAN_AXIS := Vector3(0.0, -0.20791, 0.97815)
 
 
 ## Puts the console's materials on every surface under root; returns the look: {"signal" (the strips),
@@ -75,9 +96,17 @@ static func apply(root: Node3D) -> Dictionary:
 	beam.set_shader_parameter("mode", 2)
 	beam.set_shader_parameter("colour", Color(0.3, 0.78, 1.0))
 	beam.set_shader_parameter("energy", 0.5)
+	var turbine := _holo(3, Color(0.06, 0.42, 1.0), HOLO_ENERGY)  # mode 0's look at rest
+	turbine.set_shader_parameter("fan_centre", PackedVector3Array(FAN_CENTRES))
+	turbine.set_shader_parameter("fan_axis", FAN_AXIS)
+	turbine.set_shader_parameter("call_period", CALL_PERIOD)
+	var wire := _holo(4, Color(0.06, 0.42, 1.0), 1.5)
+	var ring := _holo(5, Color(0.06, 0.5, 1.0), 2.2)
+	var digit := _holo(6, Color(0.2, 0.7, 1.0), 2.6)
 	var by_name := {"console_bronze": bronze, "console_graphite": graphite, "console_cyan": cyan,
 		"console_button": button, "console_stage": strips, "console_lamp": lamps, "console_holo_line": holo,
-		"console_holo_shell": shell, "console_beam": beam}
+		"console_holo_shell": shell, "console_beam": beam, "console_holo_turbine": turbine,
+		"console_holo_wire": wire, "console_holo_ring": ring, "console_holo_digit": digit}
 	for old_name: String in ["ConsoleGlow", "ConsoleButtonLight"]:  # a second apply() replaces the lights
 		var old: Node = root.get_node_or_null(NodePath(old_name))
 		if old != null:
@@ -113,8 +142,11 @@ static func apply(root: Node3D) -> Dictionary:
 	root.add_child(lamp)
 	lamp.position = Vector3(0.0, 0.814, 0.58)
 	var look := {"signal": strips, "lamps": lamps, "holo": holo, "shell": shell, "beam": beam, "glow": glow,
-		"button_light": lamp, "passed": 1, "lit": -1, "order": false}
+		"button_light": lamp, "passed": 1, "lit": -1, "order": false, "button": button, "turbine": turbine,
+		"wire": wire, "ring": ring, "digit": digit, "root": root, "tween": null, "clock": 0.0, "calling": false,
+		"call_t0": 0.0, "spin": 0.0, "stations": {}, "charge": 0.0, "countdown": -1.0}
 	set_state(look, "idle")
+	reset_spinup(look)
 	return look
 
 
@@ -129,7 +161,7 @@ static func set_state(look: Dictionary, state: String) -> void:
 ## How many stage strips are green (0..3).
 static func set_passed(look: Dictionary, n: int) -> void:
 	look["passed"] = clampi(n, 0, 3)
-	(look["signal"] as ShaderMaterial).set_shader_parameter("passed", float(look["passed"]))
+	(look["signal"] as ShaderMaterial).set_shader_parameter("charge", look["passed"] / 3.0)  # the strips only
 
 
 ## The order lamp lit bright (-1 none; 0..3 west from the hall outward, 4..7 east); playing: the others dim.
@@ -139,3 +171,180 @@ static func set_lit(look: Dictionary, index: int, playing: bool = true) -> void:
 	var lamps: ShaderMaterial = look["lamps"]
 	lamps.set_shader_parameter("lit", float(look["lit"]))
 	lamps.set_shader_parameter("order", 1.0 if look["order"] else 0.0)
+
+
+static func _holo(mode: int, colour: Color, energy: float) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = HOLO
+	m.set_shader_parameter("mode", mode)
+	m.set_shader_parameter("colour", colour)
+	m.set_shader_parameter("energy", energy)
+	return m
+
+
+## The spin-up at rest: not calling, no charge, the fans still, every station off (its point dim, its line still),
+## no countdown. The clock restarts at 0 and runs (a tween bound to the console) while the console is in the tree.
+static func reset_spinup(look: Dictionary) -> void:
+	var old: Tween = look["tween"]
+	if old != null:
+		old.kill()
+	look["tween"] = null
+	look["calling"] = false
+	look["call_t0"] = 0.0
+	look["spin"] = 0.0
+	var stations := {}
+	for id: String in STATIONS:
+		stations[id] = {"state": "off", "blink": 1.0, "fixed_at": -1.0e6}
+	look["stations"] = stations
+	var t: ShaderMaterial = look["turbine"]
+	t.set_shader_parameter("calling", 0.0)
+	t.set_shader_parameter("call_t0", 0.0)
+	t.set_shader_parameter("spin_phase", 0.0)
+	t.set_shader_parameter("spin_t0", 0.0)
+	t.set_shader_parameter("spin_rate", 0.0)
+	_tick(look, 0.0)
+	set_charge(look, 0.0)
+	set_countdown(look, -1.0)
+	_stations(look)
+	_respin(look)
+	var tree := Engine.get_main_loop() as SceneTree
+	var root: Node = look["root"]
+	if tree != null and is_instance_valid(root):
+		var tw: Tween = tree.create_tween().bind_node(root)
+		tw.tween_method(func(c: float) -> void: _tick(look, c), 0.0, CLOCK_SPAN, CLOCK_SPAN)
+		look["tween"] = tw
+
+
+## The console's clock in seconds (the spin-up shaders' time).
+static func clock(look: Dictionary) -> float:
+	return float(look["clock"])
+
+
+## Stops the running clock and sets it (reviews, recordings and tests step it themselves).
+static func set_clock(look: Dictionary, seconds: float) -> void:
+	var t: Tween = look["tween"]
+	if t != null:
+		t.kill()
+		look["tween"] = null
+	_tick(look, seconds)
+
+
+static func _tick(look: Dictionary, c: float) -> void:
+	look["clock"] = c
+	for m: String in ["turbine", "wire", "ring", "digit"]:
+		(look[m] as ShaderMaterial).set_shader_parameter("clock", c)
+	var button: StandardMaterial3D = look["button"]
+	var light: OmniLight3D = look["button_light"]
+	if look["calling"]:
+		var p := call_pulse(call_phase(look))
+		button.emission_energy_multiplier = CALLING_ENERGY + BUTTON_ENERGY * CALL_GLOW * p
+		light.light_energy = 0.08 * (1.0 + 2.0 * p)
+	else:
+		button.emission_energy_multiplier = BUTTON_ENERGY
+		light.light_energy = 0.08
+
+
+## Before the start the ship calls: the turbines pulse orange every CALL_PERIOD s and the button glows; the first
+## pulse starts when calling starts.
+static func set_calling(look: Dictionary, on: bool) -> void:
+	if on and not look["calling"]:
+		look["call_t0"] = clock(look)
+	look["calling"] = on
+	var t: ShaderMaterial = look["turbine"]
+	t.set_shader_parameter("calling", 1.0 if on else 0.0)
+	t.set_shader_parameter("call_t0", float(look["call_t0"]))
+	_tick(look, clock(look))
+
+
+## Where the call is in its period, 0..1 (0 the pulse's onset, the moment for the beep); -1 when not calling.
+static func call_phase(look: Dictionary) -> float:
+	if not look["calling"]:
+		return -1.0
+	return fposmod((clock(look) - float(look["call_t0"])) / CALL_PERIOD, 1.0)
+
+
+## The call's light at a phase (the shader's call_pulse): up in 0.15 s, gone by 1.35 s.
+static func call_pulse(phase: float) -> float:
+	if phase < 0.0:
+		return 0.0
+	return smoothstep(0.0, 0.05, phase) * (1.0 - smoothstep(0.05, 0.45, phase))
+
+
+## The charge 0..1 as one bar: the three stage strips fill one after another (stage k is a third) and the ring
+## round the hologram's hall fills with them.
+static func set_charge(look: Dictionary, charge: float) -> void:
+	var c := clampf(charge, 0.0, 1.0)
+	look["charge"] = c
+	(look["signal"] as ShaderMaterial).set_shader_parameter("charge", c)
+	(look["ring"] as ShaderMaterial).set_shader_parameter("charge", c)
+
+
+## The turbines' spin in turns per second (0 still); each broken station multiplies it by SLOW. The fans keep their
+## angle through a change.
+static func set_spin(look: Dictionary, turns_per_s: float) -> void:
+	look["spin"] = maxf(turns_per_s, 0.0)
+	_respin(look)
+
+
+## The fans' rate now (after the broken stations' slowing), turns per second.
+static func spin_rate(look: Dictionary) -> float:
+	return float((look["turbine"] as ShaderMaterial).get_shader_parameter("spin_rate"))
+
+
+static func _respin(look: Dictionary) -> void:
+	var t: ShaderMaterial = look["turbine"]
+	var now := clock(look)
+	var turns: float = float(t.get_shader_parameter("spin_phase")) \
+		+ (now - float(t.get_shader_parameter("spin_t0"))) * float(t.get_shader_parameter("spin_rate"))
+	var broken := 0
+	for id: String in STATIONS:
+		broken += 1 if look["stations"][id]["state"] == "broken" else 0
+	t.set_shader_parameter("spin_phase", fposmod(turns, 1.0))
+	t.set_shader_parameter("spin_t0", now)
+	t.set_shader_parameter("spin_rate", float(look["spin"]) * pow(SLOW, broken))
+	(look["wire"] as ShaderMaterial).set_shader_parameter("flow", 1.0 if float(look["spin"]) > 0.0 else 0.0)
+
+
+## A station's state on the hologram: "off" (its point dim, its line still: before the start), "ok" (the line lit,
+## flowing toward the turbines), "broken" (the point blinks red blink_hz times a second, its line dark, the turbines
+## slow), "fixed" (the line flashes back bright, then reads ok).
+static func set_station(look: Dictionary, id: String, state: String, blink_hz: float = 1.0) -> void:
+	if not id in STATIONS or not STATION_STATES.has(state):
+		push_warning("console.gd: no station '%s' or state '%s'" % [id, state])
+		return
+	var s: Dictionary = look["stations"][id]
+	s["state"] = "ok" if state == "fixed" else state
+	s["blink"] = maxf(blink_hz, 0.0)
+	if state == "fixed":
+		s["fixed_at"] = clock(look)
+	_stations(look)
+	_respin(look)
+
+
+static func _stations(look: Dictionary) -> void:
+	var st := PackedFloat32Array()
+	var blink := PackedFloat32Array()
+	var fixed := PackedFloat32Array()
+	var on := 0
+	var ok := 0
+	for id: String in STATIONS:
+		var s: Dictionary = look["stations"][id]
+		st.append(STATION_STATES[s["state"]])
+		blink.append(float(s["blink"]))
+		fixed.append(float(s["fixed_at"]))
+		on += 0 if s["state"] == "off" else 1
+		ok += 1 if s["state"] == "ok" else 0
+	st.append(1.0 if on == 0 else float(ok) / on)  # the manifold: the share of the lines not broken
+	blink.append(0.0)
+	fixed.append(-1.0e6)
+	var w: ShaderMaterial = look["wire"]
+	w.set_shader_parameter("st_state", st)
+	w.set_shader_parameter("st_blink", blink)
+	w.set_shader_parameter("st_fixed_at", fixed)
+
+
+## The countdown over the hologram: the nearest failure's seconds (shown rounded up; orange in the last 5, red in
+## the last 3, each second ticking); below 0 hidden.
+static func set_countdown(look: Dictionary, seconds: float) -> void:
+	look["countdown"] = seconds
+	(look["digit"] as ShaderMaterial).set_shader_parameter("countdown", seconds)
