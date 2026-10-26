@@ -5,7 +5,8 @@ extends "res://ship/ship.gd"
 ## additions: the console wears console.gd's look, and a view's sixth element may name the console's state
 ## ({"console": "idle" | "order" | "stage"}; idle without it), its spin-up ({"spin": {"clock", "calling", "charge",
 ## "spin", "stations": {id: [state, blink_hz, fixed_s_ago]}, "countdown"}}; at rest without it) and
-## {"hide_spinup": true} (the spin-up's four surfaces hidden: the before/after diff against an older GLB).
+## {"hide_spinup": true} (the spin-up's four surfaces hidden: the before/after diff against an older GLB), "fill"
+## (console.gd FILLS) and "ring" (RING_STYLES; step 2's variant grid). With "spin" the strips show the bar alone.
 ## The "video" mode is the spin-up's scripted round (console_run.py --spinup): the camera through the request's keys
 ## as ship.gd's video, the console driven by round() frame by frame on its own clock, a caption per phase.
 ## Started by the runner through `_godot.window()` like ship.gd:
@@ -43,7 +44,11 @@ func _ab(off: Dictionary) -> void:
 	var look: Dictionary = _console_look
 	Console.set_state(look, str(off.get("console", "idle")))
 	Console.reset_spinup(look)
+	Console.set_fill(look, str(off.get("fill", Console.FILL)))
+	Console.set_ring_style(look, str(off.get("ring", Console.RING_STYLE)))
 	var s: Dictionary = off.get("spin", {})
+	if not s.is_empty():
+		Console.set_passed(look, 0)  # the spin-up's states: the strips show the bar alone
 	var t: float = float(s.get("clock", 0.0))
 	Console.set_clock(look, 0.0)
 	Console.set_calling(look, bool(s.get("calling", false)))
@@ -165,6 +170,7 @@ func _video() -> void:
 	_camera.look_at_from_position(_v(keys[0][0]), _v(keys[0][1]), UP)
 	var look: Dictionary = _console_look
 	Console.reset_spinup(look)
+	Console.set_passed(look, 0)  # the round drives the bar alone
 	var last: Dictionary = {}
 	round_state(look, 0.0, last)
 	for i: int in 30:  # the probes, SSAO and glow settle

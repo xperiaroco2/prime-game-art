@@ -19,6 +19,12 @@ extends RefCounted
 ##   Console.set_spin(look, 1.0)              # the turbines' fans in turns per second (each broken station halves it)
 ##   Console.set_station(look, "vent_e", "broken", 2.0)   # "ok" | "broken" (its blink per second) | "fixed" | "off"
 ##   Console.set_countdown(look, 7.3)         # the nearest failure's seconds over the hologram; -1 hides it
+## Step 2 (read from the hall): the call floods the turbines orange with a glow round the pods and a wash over the
+## shell; a broken point shows a big red bead and a red pillar blinking at its rate; the bar runs on the hologram's
+## band and again on the emitter deck; its colour and the ring's look are choices with defaults:
+##   Console.set_fill(look, "cyan")           # or "green": the strips' and the rings' lit colour (FILL)
+##   Console.set_ring_style(look, "both")     # "band" | "deck" | "both" | "step1" (RING_STYLE)
+## The strips show max(passed / 3, charge): a game driving the bar alone calls set_passed(look, 0) first.
 
 const METAL := preload("console_metal.gdshader")  # relative: the same files work where the game keeps them
 const SIGNAL := preload("console_signal.gdshader")
@@ -34,10 +40,20 @@ const STATES := {"idle": [1, -1, false], "order": [1, 1, true], "stage": [2, -1,
 const STATIONS := ["socket_w", "socket_e", "socket_fw", "socket_fe", "breaker_w", "breaker_e", "vent_w", "vent_e"]
 const STATION_STATES := {"off": 0.0, "ok": 1.0, "broken": 2.0, "fixed": 1.0}
 const CALL_PERIOD := 3.0         # s from one call to the next (the turbines' orange pulse, the button's glow)
-const CALL_GLOW := 2.5           # the button's glow over BUTTON_ENERGY at a call's peak
+const CALL_GLOW := 4.0           # the button's glow over BUTTON_ENERGY at a call's peak (step 1: 2.5)
 const CALLING_ENERGY := 1.4      # the button's glow while calling, between the pulses
 const SLOW := 0.5                # each broken station multiplies the turbines' spin by this
 const CLOCK_SPAN := 100000.0     # s: the clock's run (it restarts at reset_spinup)
+const BLINK_MIN := 0.5           # a broken station blinks at least this often per second (0 would read solid red)
+# the bar's lit colour on the strips and the rings (set_fill; sRGB)
+const FILLS := {"cyan": Color(0.06, 0.5, 1.0), "green": Color(0.02, 1.0, 0.1)}
+const FILL := "green"            # step 2's pick from the review's grid: cyan vanishes into the cyan hologram
+# the charge ring's look (set_ring_style): [band_top: the share of the built band drawn, band_gain: its lit
+# brightness, deck: the bar's second ring on the emitter deck 0/1]; "step1" the band as step 1 drew it
+const RING_STYLES := {"band": [1.0, 1.6, 0.0], "deck": [0.5, 1.0, 1.0], "both": [1.0, 1.6, 1.0],
+	"step1": [0.5, 1.0, 0.0]}
+const RING_STYLE := "both"       # step 2's pick from the review's grid
+const CALL_SHELL := ["calling", "call_t0", "call_period"]  # the call's uniforms on the turbines and the shell
 # the fans' centres and axis in the GLB's frame (the build's build.json "spinup" "turbines"; the test checks them)
 const FAN_CENTRES := [Vector3(0.18365, 1.55792, -0.62014), Vector3(-0.18365, 1.55792, -0.62014),
 	Vector3(0.0, 1.59086, -0.61314)]
@@ -91,6 +107,7 @@ static func apply(root: Node3D) -> Dictionary:
 	shell.set_shader_parameter("mode", 1)
 	shell.set_shader_parameter("colour", Color(0.12, 0.5, 1.0))
 	shell.set_shader_parameter("energy", 0.45)
+	shell.set_shader_parameter("call_period", CALL_PERIOD)  # the call washes the shell orange (step 2)
 	var beam := ShaderMaterial.new()
 	beam.shader = HOLO
 	beam.set_shader_parameter("mode", 2)
@@ -107,6 +124,11 @@ static func apply(root: Node3D) -> Dictionary:
 		"console_button": button, "console_stage": strips, "console_lamp": lamps, "console_holo_line": holo,
 		"console_holo_shell": shell, "console_beam": beam, "console_holo_turbine": turbine,
 		"console_holo_wire": wire, "console_holo_ring": ring, "console_holo_digit": digit}
+	if root.has_meta("console_tween"):  # a second apply(): the first look's clock stops (it drove the old materials)
+		var prior: Tween = root.get_meta("console_tween") as Tween
+		if prior != null and prior.is_valid():
+			prior.kill()
+		root.remove_meta("console_tween")
 	for old_name: String in ["ConsoleGlow", "ConsoleButtonLight"]:  # a second apply() replaces the lights
 		var old: Node = root.get_node_or_null(NodePath(old_name))
 		if old != null:
@@ -144,8 +166,11 @@ static func apply(root: Node3D) -> Dictionary:
 	var look := {"signal": strips, "lamps": lamps, "holo": holo, "shell": shell, "beam": beam, "glow": glow,
 		"button_light": lamp, "passed": 1, "lit": -1, "order": false, "button": button, "turbine": turbine,
 		"wire": wire, "ring": ring, "digit": digit, "root": root, "tween": null, "clock": 0.0, "calling": false,
-		"call_t0": 0.0, "spin": 0.0, "stations": {}, "charge": 0.0, "countdown": -1.0}
+		"call_t0": 0.0, "spin": 0.0, "stations": {}, "charge": 0.0, "countdown": -1.0, "fill": FILL,
+		"ring_style": RING_STYLE}
 	set_state(look, "idle")
+	set_fill(look, FILL)
+	set_ring_style(look, RING_STYLE)
 	reset_spinup(look)
 	return look
 
@@ -158,10 +183,11 @@ static func set_state(look: Dictionary, state: String) -> void:
 	set_lit(look, s[1], s[2])
 
 
-## How many stage strips are green (0..3).
+## How many stage strips are lit (0..3). Its own uniform beside the spin-up's charge: the strips show
+## max(passed / 3, charge), the ring the charge alone; reset_spinup() leaves it.
 static func set_passed(look: Dictionary, n: int) -> void:
 	look["passed"] = clampi(n, 0, 3)
-	(look["signal"] as ShaderMaterial).set_shader_parameter("charge", look["passed"] / 3.0)  # the strips only
+	(look["signal"] as ShaderMaterial).set_shader_parameter("passed", float(look["passed"]))
 
 
 ## The order lamp lit bright (-1 none; 0..3 west from the hall outward, 4..7 east); playing: the others dim.
@@ -213,6 +239,7 @@ static func reset_spinup(look: Dictionary) -> void:
 		var tw: Tween = tree.create_tween().bind_node(root)
 		tw.tween_method(func(c: float) -> void: _tick(look, c), 0.0, CLOCK_SPAN, CLOCK_SPAN)
 		look["tween"] = tw
+		root.set_meta("console_tween", tw)
 
 
 ## The console's clock in seconds (the spin-up shaders' time).
@@ -231,14 +258,14 @@ static func set_clock(look: Dictionary, seconds: float) -> void:
 
 static func _tick(look: Dictionary, c: float) -> void:
 	look["clock"] = c
-	for m: String in ["turbine", "wire", "ring", "digit"]:
+	for m: String in ["turbine", "wire", "ring", "digit", "shell"]:
 		(look[m] as ShaderMaterial).set_shader_parameter("clock", c)
 	var button: StandardMaterial3D = look["button"]
 	var light: OmniLight3D = look["button_light"]
 	if look["calling"]:
 		var p := call_pulse(call_phase(look))
 		button.emission_energy_multiplier = CALLING_ENERGY + BUTTON_ENERGY * CALL_GLOW * p
-		light.light_energy = 0.08 * (1.0 + 2.0 * p)
+		light.light_energy = 0.08 * (1.0 + 4.0 * p)
 	else:
 		button.emission_energy_multiplier = BUTTON_ENERGY
 		light.light_energy = 0.08
@@ -250,9 +277,10 @@ static func set_calling(look: Dictionary, on: bool) -> void:
 	if on and not look["calling"]:
 		look["call_t0"] = clock(look)
 	look["calling"] = on
-	var t: ShaderMaterial = look["turbine"]
-	t.set_shader_parameter("calling", 1.0 if on else 0.0)
-	t.set_shader_parameter("call_t0", float(look["call_t0"]))
+	for m: String in ["turbine", "shell"]:  # the turbines flood orange and glow; the shell takes a wash of it
+		var t: ShaderMaterial = look[m]
+		t.set_shader_parameter("calling", 1.0 if on else 0.0)
+		t.set_shader_parameter("call_t0", float(look["call_t0"]))
 	_tick(look, clock(look))
 
 
@@ -277,6 +305,34 @@ static func set_charge(look: Dictionary, charge: float) -> void:
 	look["charge"] = c
 	(look["signal"] as ShaderMaterial).set_shader_parameter("charge", c)
 	(look["ring"] as ShaderMaterial).set_shader_parameter("charge", c)
+
+
+## The bar's lit colour on the strips and both rings: "cyan" (the hologram's, a white head where it fills) or
+## "green" (the strips' old green).
+static func set_fill(look: Dictionary, name: String) -> void:
+	if not FILLS.has(name):
+		push_warning("console.gd: no fill '%s'" % name)
+		return
+	look["fill"] = name
+	var c: Color = FILLS[name]
+	var strips: ShaderMaterial = look["signal"]
+	strips.set_shader_parameter("fill_colour", c.srgb_to_linear() if name == "cyan" else c)  # step 1's green as was
+	strips.set_shader_parameter("head", 1.0)
+	(look["ring"] as ShaderMaterial).set_shader_parameter("fill", c)
+
+
+## The charge ring's look: "band" (the band on the hologram twice as tall and brighter when lit), "deck" (step 1's
+## band and the bar again as a ring on the emitter deck), "both", or "step1".
+static func set_ring_style(look: Dictionary, name: String) -> void:
+	if not RING_STYLES.has(name):
+		push_warning("console.gd: no ring style '%s'" % name)
+		return
+	look["ring_style"] = name
+	var s: Array = RING_STYLES[name]
+	var ring: ShaderMaterial = look["ring"]
+	ring.set_shader_parameter("band_top", s[0])
+	ring.set_shader_parameter("band_gain", s[1])
+	ring.set_shader_parameter("deck", s[2])
 
 
 ## The turbines' spin in turns per second (0 still); each broken station multiplies it by SLOW. The fans keep their
@@ -314,7 +370,7 @@ static func set_station(look: Dictionary, id: String, state: String, blink_hz: f
 		return
 	var s: Dictionary = look["stations"][id]
 	s["state"] = "ok" if state == "fixed" else state
-	s["blink"] = maxf(blink_hz, 0.0)
+	s["blink"] = maxf(blink_hz, BLINK_MIN)
 	if state == "fixed":
 		s["fixed_at"] = clock(look)
 	_stations(look)
