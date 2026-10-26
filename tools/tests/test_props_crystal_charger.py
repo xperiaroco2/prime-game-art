@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import struct
 import tomllib
 import unittest
@@ -136,6 +137,63 @@ class ChargerAsset(unittest.TestCase):
                          [0.0, round(pivot[2] / 100, 4), round(pivot[1] / 100, 4)])
         src = (common.ROOT / "godot" / "charger" / "charger.gd").read_text(encoding="utf-8")
         self.assertIn('(look["button_rest"] as Vector3) - Vector3(0.0, 0.0, TRAVEL if on else 0.0)', src)
+
+    def test_leaves_move_round_their_pivots(self) -> None:
+        """fix2 (#323's review, minor 6): each leaf's mesh sits round its pivot the way charger.gd moves it (the GLB's
+        own bounds, node-local, glTF x u, y h, z d), and charger.gd moves it by the dims' numbers: the carrier rises
+        along +Y from its rim and spins round its own axis, the ring spins round its own axis, the button presses
+        toward -Z, into the charger, from its lens's face."""
+        glb = EXPORT / "crystal_charger.glb"
+        if not glb.is_file() or lfs_pointer(glb):
+            self.skipTest("no GLB (LFS)")
+        d = dims()
+        doc = glb_json(glb)
+        nodes = {n["name"]: n for n in doc["nodes"]}
+
+        def bounds(name: str) -> tuple[list[float], list[float]]:
+            node = nodes[name]
+            self.assertIn("mesh", node, name)
+            self.assertNotIn("rotation", node, name)  # a turned pivot would turn its axis
+            self.assertNotIn("scale", node, name)
+            prims = doc["meshes"][node["mesh"]]["primitives"]
+            acc = [doc["accessors"][p["attributes"]["POSITION"]] for p in prims]
+            self.assertTrue(acc, name)
+            return ([min(a["min"][i] for a in acc) for i in range(3)], [max(a["max"][i] for a in acc) for i in range(3)])
+
+        # the carrier: round its axis (it spins on it), all under its rim's pivot (it rises from there), its radius
+        lo, hi = bounds("carrier")
+        for i in (0, 2):
+            self.assertAlmostEqual(lo[i], -hi[i], places=3)
+            self.assertAlmostEqual(hi[i], d["carrier"]["r"] / 100, places=3)
+        self.assertLessEqual(hi[1], 0.002)
+        self.assertAlmostEqual(lo[1], -d["carrier"]["h"] / 100, places=3)
+        # the ring: round its axis, from the well's floor up
+        lo, hi = bounds("track_ring")
+        for i in (0, 2):
+            self.assertAlmostEqual(lo[i], -hi[i], places=3)
+        self.assertLess(lo[1], 0.0)
+        self.assertGreater(hi[1], 0.0)
+        # the button: round its centre across and up, its lens's face at the pivot, its body behind it (-Z): a press
+        # toward -Z goes into the charger
+        lo, hi = bounds("button")
+        for i in (0, 1):
+            self.assertAlmostEqual(lo[i], -hi[i], places=3)
+            self.assertAlmostEqual(hi[i], d["button"]["lens"] / 200, places=3)
+        self.assertLess(lo[2], 0.0)
+        self.assertLessEqual(hi[2], 0.002)
+        self.assertGreater(-lo[2], hi[2])
+        # charger.gd: the travel numbers from the dims, the moves along the axes the meshes sit round
+        src = (common.ROOT / "godot" / "charger" / "charger.gd").read_text(encoding="utf-8")
+        rise = re.search(r"^const RISE := ([0-9.]+)", src, re.M)
+        travel = re.search(r"^const TRAVEL := ([0-9.]+)", src, re.M)
+        self.assertIsNotNone(rise)
+        self.assertIsNotNone(travel)
+        self.assertAlmostEqual(float(rise.group(1)), d["carrier"]["rise"] / 100, places=6)
+        self.assertAlmostEqual(float(travel.group(1)), d["button"]["travel"] / 100, places=6)
+        self.assertIn('Vector3(0.0, RISE * clampf(rise01, 0.0, 1.0), 0.0)', src)   # up, +Y
+        self.assertIn("c.rotation = Vector3(0.0, angle, 0.0)", src)                 # the carrier round Y
+        self.assertIn("r.rotation = Vector3(0.0, angle, 0.0)", src)                 # the ring round Y
+        self.assertIn('(look["button_rest"] as Vector3) - Vector3(0.0, 0.0, TRAVEL if on else 0.0)', src)  # -Z
 
     def test_report_checks(self) -> None:
         if not (ASSET / "report.json").is_file():

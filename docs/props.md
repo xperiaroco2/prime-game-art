@@ -729,7 +729,10 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
    side: a body down to the axis crossed them on the way.
 3. **The sweep check.** The build turns every shell through its trip in tenths and counts the triangles it crosses
    on the body, the cores, the lamps and its neighbours (`build.json` `sweep_check`; empty is clean, and the test holds
-   it). `board_drawing.py` compares 23 of the drawing's numbers with the model's (`drawing/compare.json`, 0.5 cm
+   it). It checks 11 poses 11 degrees apart and triangle crossings only, not volumes: a thin part that passes wholly
+   between two poses, or a shell that sits inside another part without one triangle crossing, would not count (at the
+   shell's top, about 40 cm from its axis, one step moves it about 7 cm). Finer steps need a rebuild of the asset's
+   report; the Godot sweep shots (0, 1/4, 1/2, 3/4, 1) are the eye's check between the poses. `board_drawing.py` compares 23 of the drawing's numbers with the model's (`drawing/compare.json`, 0.5 cm
    tolerance): 20 measured off its own vertices, 3 set (the lamp ring from the dims, the hinge's h and d from the
    leaves' pivots; `board_drawing.SET`) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
    straight views at the drawing's scale.
@@ -841,3 +844,20 @@ the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the
 `tools/tests/test_props_crystal_charger.py` checks the drawing's numbers, the base's gap to the wall, the wall's fold
 against the ship's layout and the committed asset. The pass behind a player (`ship_layout.check_spots` with the
 spot's depth at the charger's 1.04 m): 2.17 m of free floor behind the capsule, against `pass_m` 1.6.
+
+## What the stations' bronze costs (art#263, fix pass 2)
+
+The shared metal shader's `dent` and `wave` slopes (fix1's smooth gradient noise) were measured, not guessed:
+`tools/blender/metal_cost_run.py` places the four approved exports in the built ship at night as their own drivers do
+(no crystals) and runs `godot/ship/metal_cost.gd` (ship.gd's shoot mode, `_godot.window()`, 1920x1080, vsync off).
+Per view (each station's own close view, its player's view and a close-up where bronze fills the frame) it takes the
+median GPU ms of 3 alternating rounds of 120 frames with the shader as shipped, with `dent` = `wave` = 0, with one
+octave, with the slope from the noise's analytic derivative (a proposal, `metal_cost.gd` `ANALYTIC`; not shipped) and
+with that view's station hidden, and saves each variant's frame and a before/after strip (`<view>__compare.png`).
+
+On an RTX 4060 (2026-10-26, `<raw>/ship/v4/stations-fix2/cost3/`): the stations ship `wave` 0.3 and `dent` 0, so one
+slope (64 hashes) runs on their bronze. In the player's views it costs 0.03 to 0.05 (socket, at the noise floor),
+0.35 (board) and 0.46 ms (charger), 0.18 to 0.33 in the stations' close views, 1.3 to 1.6 ms when bronze fills the
+frame; the console (both 0) is the control at 0.02 to 0.07 (the measurement's noise floor and the hall's sockets). One octave halves it; the analytic slope cuts it by about 70 %
+with the same noise field, but its glints fall in other places (the shipped forward difference over 0.3 and 0.65 of
+a cell is a smoothed slope), so it is a look change for the engineer. Nothing changes until he picks.

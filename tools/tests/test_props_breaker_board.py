@@ -146,6 +146,10 @@ class BreakerBoardAsset(unittest.TestCase):
         m = report["measured_cm"]
         self.assertAlmostEqual(m["beacon_top_h"], 140.4, delta=0.1)
         self.assertAlmostEqual(m["all_closed"]["d"][1], 31.0, delta=0.1)
+        # fix2 (#322's review, minor 4): the closed board's back is the mount block's, [mount] back into the wall
+        # behind the face plane the board stands [mount] d out of
+        mount = tomllib.loads(DIMS.read_text(encoding="utf-8"))["mount"]
+        self.assertAlmostEqual(m["all_closed"]["d"][0], -(mount["d"] + mount["back"]), places=2)
         self.assertAlmostEqual(m["shell_tripped"]["d"][1], 60.9, delta=0.5)  # the drawing's tripped reach
         self.assertAlmostEqual(m["shell_tripped"]["h"][0], 53.9, delta=0.5)
         self.assertAlmostEqual(m["cable_low_h"], 17.8, delta=0.1)

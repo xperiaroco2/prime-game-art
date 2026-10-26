@@ -199,6 +199,14 @@ class CrystalSocketAsset(unittest.TestCase):
         self.assertEqual(report["gltf_validator"]["numErrors"], 0)
         self.assertEqual(report["gltf_validator"]["numWarnings"], 0)
         c = report["checks"]
+        # fix2 (#321's review, minor 8): every number present and every sweep and list as long as the build makes
+        # it, so a check that never ran fails here instead of passing as clean
+        for key in ("claw_gap_cm", "tip_gap_cm", "header_clear_cm", "swing_clear_deg", "open_deg", "open_gap_cm"):
+            self.assertIsInstance(c.get(key), (int, float), key)
+        self.assertEqual(len(c["pull_out_pairs_per_2cm"]), 15)       # 2 .. 30 cm out
+        self.assertEqual(len(c["open_pull_pairs_per_2cm"]), 16)      # 0 .. 30 cm out, the claws open
+        self.assertEqual(len(c["swing_pairs_per_deg"]), 41)          # 0 .. 40 degrees
+        self.assertTrue(set(c["parts"]) >= {"plate", "claws", "collar"}, c.get("parts"))  # the parts checked
         self.assertTrue(0.0 <= c["claw_gap_cm"] <= 0.06, c["claw_gap_cm"])
         self.assertTrue(0.0 <= c["tip_gap_cm"] <= 0.6, c["tip_gap_cm"])
         self.assertGreater(c["header_clear_cm"], 0.0)
@@ -209,6 +217,11 @@ class CrystalSocketAsset(unittest.TestCase):
         self.assertEqual(c["coplanar_overlaps"], [])
         # socket-3: the claws swing clear of the frame to past their open angle, clear of the crystal, and the
         # crystal slides out past them open
+        # the sweep met the frame (one that met nothing proves nothing: socket_build.swing() records None then), and
+        # the clear angle is the last one before it
+        first = next((i for i, n in enumerate(c["swing_pairs_per_deg"]) if n), None)
+        self.assertIsNotNone(first, "the claws' sweep met nothing up to 40 degrees: the check did not run")
+        self.assertEqual(c["swing_clear_deg"], first - 1)
         self.assertGreaterEqual(c["swing_clear_deg"], c["open_deg"])
         self.assertEqual(c["closed_vs_body_pairs"], 0)
         self.assertEqual(c["open_vs_body_pairs"], 0)
@@ -226,6 +239,9 @@ class CrystalSocketAsset(unittest.TestCase):
         look = (EXPORT / "socket.gd").read_text(encoding="utf-8")
         for surface in SURFACES:
             self.assertIn(f'"{surface}"', look)
+        # fix2 (#321's review, minor 9): apply() closes the claws on every call, just before the state
+        apply = look[look.index("static func apply("):look.index("static func set_claws(")]
+        self.assertRegex(apply, r'set_claws\(look, 0\.0\)[^\n]*\n\tset_state\(look, "charged"\)')
 
 
 if __name__ == "__main__":

@@ -115,6 +115,7 @@ static func apply(root: Node3D) -> Dictionary:
 		if claw == null:
 			push_warning("socket.gd: no %s node" % side)
 		look[side] = claw
+	set_claws(look, 0.0)  # fix2: closed on every call (a second apply() on an opened socket left its claws open)
 	set_state(look, "charged")
 	return look
 

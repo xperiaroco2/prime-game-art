@@ -455,8 +455,9 @@ def turn(claws: list, deg: float) -> None:
 
 def swing(ob, claws: list, crystal) -> dict:
     """socket-3: the claws turned 0 .. 40 degrees by 1 (and at [claw] open): their faces against the body's (the pins
-    they turn on left out) and the crystal's; the largest angle reached with none, the closest gap of an open claw's
-    vertices to the body, the crystal pulled out with the claws open."""
+    they turn on left out) and the crystal's; the largest angle reached with none (None when nothing met the frame by
+    40: fix2, a sweep that never meets anything proves nothing, so the test fails on it), the closest gap of an open
+    claw's vertices to the body, the crystal pulled out with the claws open."""
     body, _ = bvh_parts([ob], skip=("pins",))
     cry = bvh(crystal)
     per_deg, clear = [], None
@@ -469,7 +470,7 @@ def swing(ob, claws: list, crystal) -> dict:
     k = D["claw"]
     turn(claws, k["open"])
     gap = min((body.find_nearest(c.matrix_world @ v.co)[3] or 1.0) / CM for c in claws for v in c.data.vertices)
-    out = {"swing_pairs_per_deg": per_deg, "swing_clear_deg": 40 if clear is None else clear,
+    out = {"swing_pairs_per_deg": per_deg, "swing_clear_deg": clear,
            "open_deg": k["open"], "open_vs_body_pairs": sum(len(bvh(c).overlap(body)) for c in claws),
            "open_gap_cm": round(gap, 2), "open_vs_crystal_pairs": sum(len(bvh(c).overlap(cry)) for c in claws)}
     socket, _ = bvh_parts([ob, *claws])
