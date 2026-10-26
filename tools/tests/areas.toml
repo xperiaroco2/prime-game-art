@@ -93,6 +93,18 @@ tests = ["test_ragdoll_*", "test_slice_*"]
 sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
 tests = ["test_faces_*"]
 
+[area.alien_stride]
+sources = ["tools/blender/alien_stride.py", "tools/blender/alien_stride_math.py"]  # the alien locomotion clip tool (#196, option A); before light's alien_*
+tests = ["test_alien_stride_*"]
+
+[area.alien_loco]
+sources = ["tools/blender/alien_loco.py", "tools/blender/alien_loco_math.py", "tools/blender/anim_sets/alien_loco.toml", "godot/alien/treadmill_reels.gd"]  # the alien's locomotion set and treadmill reels (#196, option A step 3); before light's alien_*
+tests = ["test_alien_loco_*", "test_alien_stride_*"]
+
+[area.alien_ttm]
+sources = ["tools/blender/alien_ttm.py", "tools/blender/alien_ttm_math.py", "tools/blender/retarget_maps/smpl_contract.toml"]  # text-to-motion on the alien (#196, option A step 2); before light's alien_*
+tests = ["test_alien_ttm_*", "test_alien_stride_*"]
+
 [area.alien_fit]
 sources = ["tools/blender/alien_fit_geom.py", "tools/blender/alien_socket_fit.py"]  # M15's eye socket fit (#196); before light's alien_*
 tests = ["test_alien_fit_*"]

@@ -1,0 +1,117 @@
+# Meshy text to motion's SMPL-H skeleton (52 bones; smpl_um.toml's head describes the rig, its floor shift and its
+# fingers) -> the character contract's skeleton (contract/humanoid.json: Godot's SkeletonProfileHumanoid, 56 bones),
+# the alien characters' armature (art #196, option A step 2). Read by tools/blender/retarget_map.py, the format in
+# ual_um.toml's head; used by tools/blender/alien_ttm.py (docs/animations.md, "The alien locomotion clip tool").
+#
+# - FK legs: the contract's feet are children of the lower legs (no IK foot target, no pole bones). The retarget's leg
+#   solve (retarget_core.Retargeter._leg_ik) works on armature-space poses and turns them back into each bone's basis
+#   under its own parent, so it needs no IK bones: [follow] names the foot's own parent, which puts the foot where the
+#   lower leg's FK already puts it, and the two-bone solve bends the knee so the ankle reaches the source ankle scaled
+#   by the hip-height ratio. Checked on the alien: the source rest gives the target rest exactly (rest_check 0).
+# - No root: Root stays at rest on the floor and Hips, carried in the frame of the SMPL-H Pelvis, takes the travel.
+# - The toes: L_Foot and R_Foot, the ball joints, drive LeftToes and RightToes.
+# - The fingers 1:1: SMPL-H's phalanges 1..3 are the contract's Proximal, Intermediate, Distal; its Thumb1..3 the
+#   contract's ThumbMetacarpal, ThumbProximal, ThumbDistal. SMPL-H's Pinky is the contract's Little.
+# - The face bones (Jaw, LeftEye, RightEye) stay at rest: text to motion has none.
+
+title = "Meshy text to motion (SMPL-H) -> the contract skeleton (FK legs)"
+hips = ["Pelvis", "Hips"]
+
+[height]  # the hip joints: their mean rest height above the floor (after the floor shift) gives the translation scale
+source = ["L_Hip", "R_Hip"]
+target = ["LeftUpperLeg", "RightUpperLeg"]
+
+[bones]
+Pelvis = "Hips"
+Spine1 = "Spine"
+Spine2 = "Chest"
+Spine3 = "UpperChest"
+Neck = "Neck"
+Head = "Head"
+L_Collar = "LeftShoulder"
+L_Shoulder = "LeftUpperArm"
+L_Elbow = "LeftLowerArm"
+L_Wrist = "LeftHand"
+L_Index1 = "LeftIndexProximal"
+L_Index2 = "LeftIndexIntermediate"
+L_Index3 = "LeftIndexDistal"
+L_Middle1 = "LeftMiddleProximal"
+L_Middle2 = "LeftMiddleIntermediate"
+L_Middle3 = "LeftMiddleDistal"
+L_Ring1 = "LeftRingProximal"
+L_Ring2 = "LeftRingIntermediate"
+L_Ring3 = "LeftRingDistal"
+L_Pinky1 = "LeftLittleProximal"
+L_Pinky2 = "LeftLittleIntermediate"
+L_Pinky3 = "LeftLittleDistal"
+L_Thumb1 = "LeftThumbMetacarpal"
+L_Thumb2 = "LeftThumbProximal"
+L_Thumb3 = "LeftThumbDistal"
+L_Hip = "LeftUpperLeg"
+L_Knee = "LeftLowerLeg"
+L_Ankle = "LeftFoot"
+L_Foot = "LeftToes"
+R_Collar = "RightShoulder"
+R_Shoulder = "RightUpperArm"
+R_Elbow = "RightLowerArm"
+R_Wrist = "RightHand"
+R_Index1 = "RightIndexProximal"
+R_Index2 = "RightIndexIntermediate"
+R_Index3 = "RightIndexDistal"
+R_Middle1 = "RightMiddleProximal"
+R_Middle2 = "RightMiddleIntermediate"
+R_Middle3 = "RightMiddleDistal"
+R_Ring1 = "RightRingProximal"
+R_Ring2 = "RightRingIntermediate"
+R_Ring3 = "RightRingDistal"
+R_Pinky1 = "RightLittleProximal"
+R_Pinky2 = "RightLittleIntermediate"
+R_Pinky3 = "RightLittleDistal"
+R_Thumb1 = "RightThumbMetacarpal"
+R_Thumb2 = "RightThumbProximal"
+R_Thumb3 = "RightThumbDistal"
+R_Hip = "RightUpperLeg"
+R_Knee = "RightLowerLeg"
+R_Ankle = "RightFoot"
+R_Foot = "RightToes"
+
+[follow]  # FK legs: each foot follows its own parent, the lower leg (see the head)
+"LeftFoot" = "LeftLowerLeg"
+"RightFoot" = "RightLowerLeg"
+
+[[legs]]
+target = ["LeftUpperLeg", "LeftLowerLeg", "LeftFoot"]
+source_foot = "L_Ankle"
+
+[[legs]]
+target = ["RightUpperLeg", "RightLowerLeg", "RightFoot"]
+source_foot = "R_Ankle"
+
+[rest]  # Root (no source root: Hips carries the travel) and the face bones
+bones = ["Root", "Jaw", "LeftEye", "RightEye"]
+
+[unused]  # none: SMPL-H has no leaf or end bones
+bones = []
+
+[source_rig]  # the 52 bones of every text-to-motion FBX (smpl_um.toml's list)
+bones = [
+  "Pelvis", "L_Hip", "L_Knee", "L_Ankle", "L_Foot", "R_Hip", "R_Knee", "R_Ankle", "R_Foot", "Spine1", "Spine2",
+  "Spine3", "Neck", "Head", "L_Collar", "L_Shoulder", "L_Elbow", "L_Wrist", "L_Index1", "L_Index2", "L_Index3",
+  "L_Middle1", "L_Middle2", "L_Middle3", "L_Pinky1", "L_Pinky2", "L_Pinky3", "L_Ring1", "L_Ring2", "L_Ring3",
+  "L_Thumb1", "L_Thumb2", "L_Thumb3", "R_Collar", "R_Shoulder", "R_Elbow", "R_Wrist", "R_Index1", "R_Index2",
+  "R_Index3", "R_Middle1", "R_Middle2", "R_Middle3", "R_Pinky1", "R_Pinky2", "R_Pinky3", "R_Ring1", "R_Ring2",
+  "R_Ring3", "R_Thumb1", "R_Thumb2", "R_Thumb3"
+]
+
+[target_rig]  # the contract skeleton's 56 bones (contract/humanoid.json, in its order)
+bones = [
+  "Root", "Hips", "Spine", "Chest", "UpperChest", "Neck", "Head", "LeftEye", "RightEye", "Jaw", "LeftShoulder",
+  "LeftUpperArm", "LeftLowerArm", "LeftHand", "LeftThumbMetacarpal", "LeftThumbProximal", "LeftThumbDistal",
+  "LeftIndexProximal", "LeftIndexIntermediate", "LeftIndexDistal", "LeftMiddleProximal", "LeftMiddleIntermediate",
+  "LeftMiddleDistal", "LeftRingProximal", "LeftRingIntermediate", "LeftRingDistal", "LeftLittleProximal",
+  "LeftLittleIntermediate", "LeftLittleDistal", "RightShoulder", "RightUpperArm", "RightLowerArm", "RightHand",
+  "RightThumbMetacarpal", "RightThumbProximal", "RightThumbDistal", "RightIndexProximal", "RightIndexIntermediate",
+  "RightIndexDistal", "RightMiddleProximal", "RightMiddleIntermediate", "RightMiddleDistal", "RightRingProximal",
+  "RightRingIntermediate", "RightRingDistal", "RightLittleProximal", "RightLittleIntermediate", "RightLittleDistal",
+  "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "LeftToes", "RightUpperLeg", "RightLowerLeg", "RightFoot", "RightToes"
+]

@@ -747,6 +747,132 @@ float 2.95 cm to 0.0). Idle: UAL's 2.5 s cycle three times (7.5 s), a 3 cm weigh
 counter. Jump_Start's crouch goes into the tuck over 4 frames (`cut_gap` 6 leaves the 4-frame gap whole; A2 3).
 Jump_Air's arms 30 degrees down and 8 forward, its fingers 30; Talk_Upper's hands 34 (thumb 24), arms out 5.
 
+### The alien locomotion clip tool (art #196, option A)
+`alien_stride.py`, `alien_ttm.py` and `alien_loco.py` run Blender or Godot for minutes: an agent starts each with
+`run_in_background` and a log, and checks it with `tools/run.sh wait <log>` (the 180 s rule, `docs/agents.md`).
+
+The stride warp above (`stride_warp`) works on the UM rig only (Root, Body, the IK feet). The alien's clips live on the
+contract skeleton (Root, Hips, LeftUpperLeg ... LeftToes), so its own tool is `tools/blender/alien_stride_math.py` (pure,
+no bpy: FK from the rest matrices and the pose basis, the edits, the measures) and `tools/blender/alien_stride.py`
+(Blender: reads an action into the plain clip form, writes an edit back as a new action keyed on every frame, the
+proof sheet). It reuses `anim_edit_math` (contact masks and windows, ground velocity, cadence, retime count and
+Catmull-Rom sampling, `stride_scale`, `scale_offset`, the loop closing, `mirror_correction`/`mirror_pose`) and
+`alien_clip_edit.two_bone`. The ops:
+- `measure(skel, clip)`: the ground velocity under the planted feet, v0 (the body's speed over the ground, m/s), the
+  contact windows per foot (the ankle or the toes within 2 cm of their lowest **and** moving with the ground within
+  max(0.35 m/s, 35 %), breaks of up to 2 frames filled), c0 (steps/s), the stride (m/step), the feet's slide
+  (`foot_slide_mm`: over each contact the point on the ground, the ankle and then the toes through the roll,
+  against the ground's line) and the seam; `game_table` puts the game's speeds against them.
+- `stride(skel, clip, cadence= | rate=, speed= | scale=)`: retimed to a cadence (whole frames on the clip's grid), the
+  stride scaled (the hips' travel and each ankle's offset from the hips along the travel axis; `speed` picks the
+  scale that covers it at rate 1), each contact re-planted (`plant_foot`: the point on the ground moves with the
+  ground, handed from the ankle to the toes as the foot rolls), the legs solved again with `two_bone`, the foot keeping
+  its world rotation. Bound: a planted foot slides at most `SLIDE_BOUND_MM` = 5 mm over a contact.
+- `cycle(skel, clip, foot=)`: a `*_Loop` keeps its length, its seam spread over it (`close_quats`, `close_vectors`),
+  started on the foot's first contact frame; any other clip is cut at the best pair (best_cycle's cost) whose start is
+  a contact of that foot, the seam reported in degrees before closing.
+- `arm_swing(clip, k)`: UpperArm, LowerArm and Hand per side slerped toward their own mean over the loop (1 unchanged,
+  0 still).
+- `mirror(skel, clip)`: the contract's side rule (`Left<X>` <-> `Right<X>`, a clip name's Left and Right swapped), each
+  bone from its partner reflected on X; twice gives the clip back.
+
+`$PYTHON_BIN tools/blender/alien_stride.py --blend <char.blend>... --out <dir> [--measure] [--proof] [--check]`: the
+measures (`measure.json`), the proof (Jog_Fwd_Loop at the footstep beat and 4.5 m/s, arm swing 0.75, `proof.json`,
+`proof_sheet.png`) and the FK and read-back check (`check.json`, `tools/tests/test_alien_stride_blender.py`).
+
+Measured on the R2b build (2026-10-26; both characters carry the same clips; 24 fps, as the GLB plays them):
+
+| Clip | v0 m/s | c0 steps/s | stride m | cycle s | foot slide mm (L/R) |
+|---|---|---|---|---|---|
+| Idle_Loop | 0.0001 | - (planted) | - | 7.5 | drift 2.0/2.6 |
+| Walk_Loop | 0.834 | 1.50 | 0.556 | 1.333 | 20/24 |
+| Jog_Fwd_Loop | 5.147 | 2.18 | 2.359 | 0.917 (seam 3.1 deg) | 17/20 |
+| Sprint_Fwd_Loop | 7.801 | 3.00 | 2.600 | 0.667 | 11/0 |
+| Crouch_Fwd_Loop | 0.639 | 1.00 | 0.639 | 2.0 | 66/33 |
+
+At the game's speeds (rate = speed / v0, the cadence seen = rate x c0): walk 4.5 on Jog_Fwd rate 0.87, 1.91 steps/s
+(0.52 s a step, the footstep beat 0.45); sprint 7.0 rate 0.90, 2.69 (0.37 s, beat 0.32); crouch 2.0 rate 3.13, 3.13;
+crouch run 2.8 rate 4.39 (over the game's 4.0 clamp), 4.39; the sneak 2.0 on Jog_Fwd rate 0.39, 0.85 steps/s. The
+proof: Jog_Fwd's seam closed (3.1 deg), started on the left contact, cadence 2.22 asked (22 frames stay 22 at 24 fps:
+21 would be 2.29), stride x 0.878, v0 5.13 -> 4.50 (rate 1.00 at 4.5 m/s), foot slide 17/19 -> 0/0 mm, arms' swing
+x 0.75.
+
+#### Text to motion onto the alien (option A step 2)
+`tools/blender/retarget_maps/smpl_contract.toml` maps Meshy text to motion's SMPL-H rig onto the contract skeleton
+(Pelvis -> Hips, Spine1..3 -> Spine, Chest, UpperChest, the phalanges 1:1 with Pinky -> Little, L_Foot -> LeftToes;
+Root and the face bones at rest). **No FK leg mode was needed**: `retarget_core.Retargeter`'s leg solve works on
+armature-space poses and turns them back into each bone's basis under its own parent, so the contract's FK feet only
+need `[follow]` to name the foot's own parent (the lower leg). Checked on the alien: the source rest gives the target
+rest exactly (`rest_check` 0.001 mm, 0 deg), the ankles miss their goals by at most 16 mm over the ten clips.
+
+`$PYTHON_BIN tools/blender/alien_ttm.py --blend <char.blend> --raw D:/prime-art-raw --out <dir> [--items a,b]
+[--no-sheets]` bakes each FBX (`ITEMS`: the seven clips of `batches/2026-10-25-alien-locomotion-ttm.toml` and three
+baseline rows of batches 5 and 6) at the character's fps as `CharacterArmature|TM_<item>`, cuts its loop
+(`cycle`, bounds from the clip's own cadence: one cycle of two steps) as `CharacterArmature|TM_<item>_Loop`, mirrors
+the best left strafe (and the best new one) into a right one, and writes `candidates.json` (per candidate v0, c0,
+stride, the travel direction against the hips' mean facing, their yaw wobble, the cut's seam, foot slide, the floor,
+the hands against the torso, the hips' height; faults and a ranking per slot by `alien_ttm_math.faults`), one
+8-frame sheet per candidate (side view, strafes from the front, the camera following the hips), `overview.png` and
+`<char>_ttm.blend`. Two corrections it makes, both measured in the report:
+- the floor: the retarget scales the source by the hip height and the alien's ankles sit lower over its soles than the
+  scaled source's, so its planted feet hovered 4-37 mm; each bake and each loop is lowered so its planted level (the
+  10th percentile of each frame's lowest sole point) is the floor (`floor_fit`, `hover_before_fit_mm`);
+- the loop closing (`alien_stride_math._close`) keeps the hips' travel in armature space: a Blender bone's Y axis
+  runs along it, so the alien's Hips carry forward travel on their basis z; read as the floor's axes, a cut loop of a
+  forward or backward run lost its travel (step 1's loops were in place, so its numbers stand).
+
+### The alien's locomotion set (art #196, option A steps 3 and 4b)
+`tools/blender/anim_sets/alien_loco.toml` is the set as data: per game clip (`avatar_clips.gd`'s names: `Jog_Fwd`,
+`Sprint_Fwd`, `Jog_Bwd`, `Strafe_Left`, `Strafe_Right`, `Crouch_Fwd`, plus `Walk` and a new `Crouch_Run`) its source
+(the build's UAL clip or a step 2 loop `TM_<item>_Loop`) or the clip it mirrors, the speeds its stride is fitted to
+at rate 1.0, a retime to a frame count, the arm swing (`arm_swing`, or `arms_from` another made clip: its swing on a
+pose blended toward its mean, for a clip whose hands clamp at the belt), `max_scale` (the stride scaled at most this
+much, the rest of the speed in a higher cadence: `alien_loco_math.capped_rate`), `bend_min_deg` (a knee bend floor on
+the swing frames: `stride` draws the ankle toward the hip, no locked knee at a kick) and the game speeds it is played
+at; `[[grid]]` makes a clip's
+variants (arm swing x frames) and picks the default by the numbers (`alien_loco_math.pick_default`: the cadence
+nearest the game's footstep beat with the planted feet within 5 mm; ties to `default_arm_swing`). Every loop starts on
+the left foot's contact. A clip's action is `CharacterArmature|<name>_Loop` (Godot imports it as `<name>`, looping;
+a game clip replaces the build's action of that name); variants and alternatives are `<name>__<variant>`, a second
+speed `__s<speed x 10>`. Since step 4b the strafes and `Jog_Bwd` under the game's names are fitted to 3.0 m/s (the
+proposed back and side cap, the engineer's call), with `Strafe_*__s45` and `Jog_Bwd__s25` beside them for review; the
+shuffle strafe is dropped (a squat and a split at both speeds). `alien_loco_math` also holds the game's footstep clock
+(`footstep_interval`, `footstep_cadence.gd`'s), the rates at the game's speeds against its 0.25-4.0 clamp
+(`play_rows`), the stride flag (scaled over 2x either way) and the reels' plan and timelines.
+
+`$PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw [--chars chameleon,axolotl]` (about 2 min) opens each
+R2b character, appends step 2's loops, makes the set (`_make`: cycle, in place, stride, arms, mirror; the cut in place
+comes before the stride since step 4b, so the stride plants the feet in the frame its measure was made for), writes
+the actions,
+exports one GLB with `export_glb.py`'s textured options (no morph targets, as the character build), runs
+glTF-Validator and writes `loco.json` (per clip the edits' reports, the numbers before and after, the rates) into
+`<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/<out>/build/<char>/` (`[set] out`, `loco/s4b` now), with
+the build's support files
+copied beside the GLB. Then `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
+`... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...]` runs `godot/alien/treadmill_reels.gd` in the
+off-screen window on the chameleon: the character held in place (the hips' travel per loop taken off its node), the
+floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot
+at its contact and a timeline of the game's footstep beat (white ticks, the clip's own contacts as yellow ticks
+under them, so a footstep clock that does not match the feet shows) beside each foot's contacts (left blue, right
+orange); one 1280x720 MP4 per slot (a clip with a speed variant as a pair), one 8-frame sheet per slot, the jog grid's
+2x3 sheet and `Idle_to_Jog_Fwd` with the game's 0.15 s cross-fade (its sheet: 8 frames from 0.25 s before the switch
+to 0.8 s after), into `<out>/reels/`.
+
+The honest numbers (step 4b; `loco.json` per clip and the `CLIP` lines): `measure`'s foot slide counts a foot as down
+by a speed tolerance that grows with the clip's speed and fills short gaps, so on a sideways or backward clip a low
+swing can join a contact (step 3's 6691 mm and 1313 mm). `alien_stride_math.honest_slide` takes a foot point (ankle,
+toes) as planted only by its height (within 1 cm of its lowest) and its speed against the ground (under 0.5 m/s),
+no gap filling: `drift_mm` in each planted run, and `skate_m_s`, the fastest a point within 1 cm of the floor moves
+(a heel or toe that skims the floor; a touch-down frame also counts, so read it beside the reel). `knee_bend` gives
+each leg's least knee bend (all frames and swing frames), `hand_clearance` each hand's least distance from the
+torso's axis (a hand into the belly comes close). `play_rows` gives per game speed the step interval beside the
+footstep beat: the interval the game's footsteps should use is the clip's step interval at that speed.
+
+Two fixes in `alien_stride_math` found here, both for loops that travel (step 2's root-motion bakes; the UAL loops are
+in place, so steps 1's numbers stand): `cycle` turning a loop to start on the contact now carries the frames from before
+the start (and, at start 0, the end frame) a loop's travel on, where they went back to the start; `stride`'s end frame
+plants the feet a loop's travel on, where the legs reached back a whole loop at the seam.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
