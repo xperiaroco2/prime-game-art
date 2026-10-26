@@ -953,6 +953,41 @@ The other plain 100STYLE styles' BR takes run no clearly faster than Neutral at 
 seven: 0.6-1.1 m/s; the faster ones are the "big steps", "bent forward" and "checking behind" styles), so P2 keeps
 Neutral.
 
+### The critic's fixes (art #196, the strafe pilot P3)
+P3 answers P2's fresh critic (out: `loco/p3`; P2's clips stay in the set as `<name>__p2`, the reels' before rows).
+New set keys, read by `alien_loco._make` in this order after the stride (tests: `tools/tests/test_alien_stride_p3.py`):
+- `widen_m`: `stride`'s ankle widening across the travel (each ankle that far outward on every frame);
+- `lift_m`, `bob_m`, `flight_m`: `alien_stride_math.lift_hips`: the Hips raised (`lift_m` > 0: straighter legs) or
+  lowered on the **kept** feet, less `bob_m` on the single-support frames (a raised cosine: the hips dip at
+  mid-stance), each leg solved again on its own ankle and foot rotation; then the whole body raised by `flight_m`
+  over the handover frames (both feet down or both up), a short hop with both feet off the floor;
+- `arms_from.phase`: the donor's swing sampled that fraction of its loop later (0.5: a backpedal's arm swings against
+  its own leg, as in a forward run);
+- `arms_in_deg`: `arms_in`, each upper arm turned toward the body about the chest's front axis (a flaring elbow in);
+- `pin = true`: `pin_feet`, the planted feet pinned by `honest_slide`'s own test (within 1 cm of the lowest, under
+  0.5 m/s against the ground): the foot held flat while its heel and toe are both down, then the point that is down
+  kept where it landed, carried by the ground, fading out over two frames (the stride's own contact test differs:
+  the backpedal's left foot still drifted 16-21 mm);
+- `orient = { whole = true, travel = T }`: the clip turned as a whole until its feet travel along `T` (default 0), its
+  pose in its own space unchanged (the crouch take ran 13.6 degrees off the aim).
+
+`loco.json` adds per clip `airborne_frames` (neither foot down by the honest test), `legs_m` (`leg_spacing`: the
+ankles' and knees' least signed room along the hips' axis, the ankles' room across the travel where they pass) and
+`elbow_deg` (`elbow_bend`: mean, least, most).
+
+The clips after P3 (`Strafe_Left__100s` and the hip grid dropped: h60 is `Strafe_Left`):
+- `Strafe_Left` / `Strafe_Right`: hips 5 cm up (3 and 4 cm left the deeper knee at 40 and 35 degrees), ankles 3 cm
+  wider, arms 14 degrees in;
+- `Jog_Fwd_Left` / `Jog_Fwd_Right`: hips 3 cm up, arms 14 degrees in;
+- `Jog_Bwd` (= `__c25`), `__c20`, `__c30`: 3.4 steps/s (a 14-frame cycle, the back family's), the stride 1.94, 2.43,
+  2.91x the take's; hips 3 cm down with a 3 cm dip and a 2 cm flight; pinned feet; `Jog_Fwd`'s arms at half swing,
+  half a loop on. The take's small steps (0.30 m) leave no way to keep both the critic's cadence (about 3.3) and a
+  stride under 2.0x above 2.0 m/s: only `__c20` meets both;
+- `Jog_Bwd_Left` / `Jog_Bwd_Right`: the same, with the side runs' twist split (the chest turns with the hips) and 3
+  cm wider ankles;
+- `Crouch_Fwd`, `Crouch_Run`: turned back as a whole (`travel = -2.0`: the feet at -2.5 and the head at +3.0; after
+  the head lift the take's head looks 5.5 degrees left of its feet, which no whole turn removes).
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
