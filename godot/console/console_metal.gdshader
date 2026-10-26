@@ -71,33 +71,52 @@ vec3 ghash(vec3 p) {
 	return fract(sin(p) * 43758.5453) * 2.0 - 1.0;
 }
 
-float gnoise(vec3 p) {
+// the gradient noise and its exact derivative: x the value, yzw the gradient (d/dp), from one pass over the cell's 8
+// corners (8 hashes). Option A (art#263, the engineer 2026-10-26): the slope below used to be a forward difference of
+// four noise passes per octave (64 hashes per slope); the derivative gives the same field's slope at a quarter of it
+vec4 gnoised(vec3 p) {
 	vec3 i = floor(p);
 	vec3 f = fract(p);
 	vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-	float x00 = mix(dot(ghash(i), f), dot(ghash(i + vec3(1.0, 0.0, 0.0)), f - vec3(1.0, 0.0, 0.0)), u.x);
-	float x10 = mix(dot(ghash(i + vec3(0.0, 1.0, 0.0)), f - vec3(0.0, 1.0, 0.0)),
-		dot(ghash(i + vec3(1.0, 1.0, 0.0)), f - vec3(1.0, 1.0, 0.0)), u.x);
-	float x01 = mix(dot(ghash(i + vec3(0.0, 0.0, 1.0)), f - vec3(0.0, 0.0, 1.0)),
-		dot(ghash(i + vec3(1.0, 0.0, 1.0)), f - vec3(1.0, 0.0, 1.0)), u.x);
-	float x11 = mix(dot(ghash(i + vec3(0.0, 1.0, 1.0)), f - vec3(0.0, 1.0, 1.0)),
-		dot(ghash(i + vec3(1.0, 1.0, 1.0)), f - vec3(1.0, 1.0, 1.0)), u.x);
-	return mix(mix(x00, x10, u.y), mix(x01, x11, u.y), u.z);
+	vec3 du = 30.0 * f * f * (f * (f - 2.0) + 1.0);
+	vec3 ga = ghash(i);
+	vec3 gb = ghash(i + vec3(1.0, 0.0, 0.0));
+	vec3 gc = ghash(i + vec3(0.0, 1.0, 0.0));
+	vec3 gd = ghash(i + vec3(1.0, 1.0, 0.0));
+	vec3 ge = ghash(i + vec3(0.0, 0.0, 1.0));
+	vec3 gf = ghash(i + vec3(1.0, 0.0, 1.0));
+	vec3 gg = ghash(i + vec3(0.0, 1.0, 1.0));
+	vec3 gh = ghash(i + vec3(1.0, 1.0, 1.0));
+	float va = dot(ga, f);
+	float vb = dot(gb, f - vec3(1.0, 0.0, 0.0));
+	float vc = dot(gc, f - vec3(0.0, 1.0, 0.0));
+	float vd = dot(gd, f - vec3(1.0, 1.0, 0.0));
+	float ve = dot(ge, f - vec3(0.0, 0.0, 1.0));
+	float vf = dot(gf, f - vec3(1.0, 0.0, 1.0));
+	float vg = dot(gg, f - vec3(0.0, 1.0, 1.0));
+	float vh = dot(gh, f - vec3(1.0, 1.0, 1.0));
+	float v = va + u.x * (vb - va) + u.y * (vc - va) + u.z * (ve - va) + u.x * u.y * (va - vb - vc + vd)
+		+ u.y * u.z * (va - vc - ve + vg) + u.z * u.x * (va - vb - ve + vf)
+		+ u.x * u.y * u.z * (-va + vb + vc - vd + ve - vf - vg + vh);
+	vec3 d = ga + u.x * (gb - ga) + u.y * (gc - ga) + u.z * (ge - ga) + u.x * u.y * (ga - gb - gc + gd)
+		+ u.y * u.z * (ga - gc - ge + gg) + u.z * u.x * (ga - gb - ge + gf)
+		+ u.x * u.y * u.z * (-ga + gb + gc - gd + ge - gf - gg + gh)
+		+ du * (vec3(vb - va, vc - va, ve - va) + u.yzx * vec3(va - vb - vc + vd, va - vc - ve + vg, va - vb - ve + vf)
+		+ u.zxy * vec3(va - vb - ve + vf, va - vb - vc + vd, va - vc - ve + vg)
+		+ u.yzx * u.zxy * (-va + vb + vc - vd + ve - vf - vg + vh));
+	return vec4(v, d);
 }
 
-// the height field, s cycles per metre: two octaves, each in its own turned space; 0.69 keeps the slope's strength
-// the old value noise's (its RMS over a face)
-float field(vec3 p, float s) {
-	vec3 q = TURN * (p * s);
-	return (gnoise(q) + 0.35 * gnoise(TURN * q * 2.17 + vec3(5.2, 1.3, 7.7))) * 0.69;
-}
-
-// the field's slope along the face (model space, about unit size)
+// the height field's slope along the face (model space, about unit size), s cycles per metre: two octaves of the
+// gradient noise, each in its own turned space; 0.69 keeps the slope's strength the old value noise's (its RMS over a
+// face). The gradient divided by s (the old forward difference over 0.3 of a cell, divided by 0.3), taken at that
+// difference's midpoint so most glints stay near where they were
 vec3 slope(vec3 p, vec3 nrm, float s) {
-	float e = 0.3 / s;
-	float h0 = field(p, s);
-	vec3 g = vec3(field(p + vec3(e, 0.0, 0.0), s), field(p + vec3(0.0, e, 0.0), s), field(p + vec3(0.0, 0.0, e), s)) - h0;
-	g /= 0.3;
+	vec3 q = TURN * ((p + vec3(0.15 / s)) * s);
+	mat3 t = transpose(TURN);
+	vec3 g = t * gnoised(q).yzw;
+	g += 0.35 * 2.17 * (t * (t * gnoised(TURN * q * 2.17 + vec3(5.2, 1.3, 7.7)).yzw));
+	g *= 0.69;
 	return g - nrm * dot(g, nrm);
 }
 
