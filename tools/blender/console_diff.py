@@ -4,6 +4,7 @@ with the new one (the spin-up's surfaces hidden), compared pixel by pixel in hea
 more than 2/255, about 1280 px wide) and one CONSOLE_DIFF line: the share of changed pixels and their box.
 
     blender -b --python console_diff.py -- --before DIR --after DIR --out DIR
+    blender -b --python console_diff.py -- --before DIR --after DIR --pairs a,b,c --out FILE.png   (step 2)
 """
 
 import json
@@ -40,8 +41,22 @@ def save(arr: np.ndarray, path: Path) -> None:
     bpy.data.images.remove(img)
 
 
+def pairs(before: Path, after: Path, names: list, out: Path) -> None:
+    """Step 2's before_after.png: per name a row of before | after (the same view, two builds), about 1280 px wide."""
+    rows = []
+    for name in names:
+        x, y = load(before / f"{name}.png"), load(after / f"{name}.png")
+        step = max(1, int(round(x.shape[1] * 2 / 1280)))
+        rows.append(np.concatenate([x[::step, ::step], y[::step, ::step]], axis=1))
+    save(np.concatenate(rows[::-1], axis=0), out)  # Blender's pixels run bottom-up: the first name on top
+    print("CONSOLE_PAIRS " + json.dumps({"out": str(out), "rows": names}), flush=True)
+
+
 def main() -> None:
     a = argv()
+    if "pairs" in a:
+        pairs(Path(a["before"]), Path(a["after"]), a["pairs"].split(","), Path(a["out"]))
+        return
     before, after, out = Path(a["before"]), Path(a["after"]), Path(a["out"])
     out.mkdir(parents=True, exist_ok=True)
     result = {}

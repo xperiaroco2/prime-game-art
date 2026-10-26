@@ -224,9 +224,17 @@ SPIN_CLOSE = [
     ("close_fans_calling", "calling", (-0.3, 2.9, 0.25), (0.0, 2.76, 1.22), 30.0),
     ("close_points", "failures", (1.0, 3.45, -0.45), (0.0, 2.58, 0.62), 42.0),
     ("close_ring", "charging", (-1.05, 2.9, -0.35), (0.0, 2.6, 0.6), 36.0),
-    ("close_digits", "failures", (0.45, 3.0, -0.9), (0.0, 3.18, 0.6), 28.0),
+    ("close_digits", "failures", (0.45, 3.0, -1.2), (0.0, 3.2, 0.6), 30.0),
     ("close_fixed", "fixed", (0.9, 3.3, -0.6), (0.0, 2.6, 0.6), 40.0),
+    # step 2's parts: the call's glow and wash, a broken point's bead and pillar, the deck ring
+    ("close_call_glow", "calling", (0.0, 2.95, -0.9), (0.0, 2.75, 1.1), 44.0),
+    ("close_broken", "failures", (0.0, 2.85, -1.1), (0.0, 2.68, 0.6), 40.0),
+    ("close_deck", "charging", (0.85, 2.8, -0.45), (0.0, 2.3, 0.6), 40.0),
 ]
+SPIN2_BEFORE = RAW / "start-console" / "spinup1" / "review"  # step 1's stills: before_after.png's left column
+GRID_STATE = "charging"      # the variant grid: the ring's style x the bar's colour, from the hall's four eyes
+GRID_STYLES = ("band", "deck", "both")
+GRID_FILLS = ("cyan", "green")
 VIDEO = {"fps": 24, "fov": 52.0, "size": (1280, 720), "max_mb": 15.0,
          "keys": [[(0.0, 2.8, -3.0), (0.0, 2.75, 0.6), 0.0], [(0.0, 2.8, -3.0), (0.0, 2.75, 0.6), 9.0],
                   [(2.2, 2.8, -2.3), (0.0, 2.75, 0.6), 7.0], [(3.4, 2.8, -0.6), (0.0, 2.75, 0.6), 8.0],
@@ -255,9 +263,24 @@ def spinup_rows() -> list:
     return rows
 
 
+def grid_rows() -> list:
+    """Step 2's variant grid: the charge ring's styles x the bar's colours, the charging state, the four eyes."""
+    look = [G_SPOT[0], DECK_H + 1.5, G_SPOT[1]]
+    rows = []
+    for style in GRID_STYLES:
+        for fill in GRID_FILLS:
+            for eye, ((x, y), fov) in SPIN_EYES.items():
+                rows.append([f"{style}_{fill}_{eye}", f"{style}, {fill}, {eye.replace('_', ' ')}",
+                             [x, DECK_H + EYE_H, y], look, fov,
+                             {"spin": spin_state(GRID_STATE), "ring": style, "fill": fill}])
+    return rows
+
+
 def diff_rows() -> list:
-    """The before/after views with the spin-up's surfaces hidden: the old hall views of the hologram and body."""
-    return [r[:5] + [{"console": "idle", "hide_spinup": True}] for r in view_rows() if r[0] in ("q34", "front", "holo")]
+    """The before/after views with the spin-up's surfaces hidden: the old hall views of the hologram and body (the
+    strips in their old green)."""
+    return [r[:5] + [{"console": "idle", "hide_spinup": True, "fill": "green", "ring": "step1"}]
+            for r in view_rows() if r[0] in ("q34", "front", "holo")]
 
 
 def deck_ok(layout: dict, pieces: Path) -> str:
@@ -279,6 +302,14 @@ def spinup_review(layout: dict, pieces: Path, glb: Path, out: Path, video: bool)
         print(f"refused: {why}")
         return 1
     code = hall_shots(layout, pieces, glb, out / "review", spinup_rows(), log="godot_review.log")
+    if code == 0:
+        code = hall_shots(layout, pieces, glb, out / "grid", grid_rows(), log="godot_grid.log")
+    names = [f"{s}_throat" for s in SPIN_STATES]
+    if code == 0 and all((SPIN2_BEFORE / f"{n}.png").is_file() for n in names):
+        r = blender.run_script("console_diff.py", ["--before", str(SPIN2_BEFORE), "--after", str(out / "review"),
+                                                   "--pairs", ",".join(names), "--out",
+                                                   str(out / "before_after.png")], timeout=300)
+        print(*[x for x in (r.stdout or "").splitlines() if x.startswith("CONSOLE_PAIRS")], sep="\n")
     for tag, model in (("before", BEFORE), ("after", glb)):
         if code == 0:
             code = hall_shots(layout, pieces, model, out / tag, diff_rows(), log=f"godot_{tag}.log")

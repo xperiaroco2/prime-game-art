@@ -112,6 +112,9 @@ plan_z = 1.25                    # m: the rooms' plan (the hall's disc, the tip 
                                  # frame, drawn at the hologram's 1:16.3; cm: the console's)
 ring_r = 4.45                    # m: the charge ring round the hall's disc, where the dashed ring was
 ring_h = 0.75                    # m: the ring's band, upright over the plan (it reads from the throat and the corridors)
+ring_h_tall = 1.5                # m: the band as built (step 2): the shader draws ring_h of it, or all ("band" style)
+deck_ring = [44.0, 108.05, 46.9, 113.0]  # cm: the bar's second ring on the emitter deck (step 2): foot (r, h), top
+                                 # (r, h); leaning out, it faces up and out, its top 3.7 cm over the rim's flat top
 ring_dashes = 10                 # dashes per stage (three stages, one bar)
 ring_stage_gap = 5.0             # deg between two stages
 ring_dash_gap = 1.6              # deg between two dashes
@@ -122,11 +125,14 @@ point = 3.6                      # cm: a station's point (a bead) diameter
 halo = 0.75                      # m: the ring round a station's point
 fan_blades = 7                   # each turbine's fan at its front, spinning
 fan_r = 0.62                     # the fan's radius as a share of the pod's half width
-digit_h = 30.0                   # cm: the countdown's digits over the hologram (two, seven segments each)
-digit_w = 16.0
-digit_t = 3.0                    # a segment's thickness
-digit_gap = 5.5                  # between the two digits
-digit_z = 202.0                  # their middle over the floor
+digit_h = 45.0                   # cm: the countdown's digits over the hologram (two, seven segments each; step 2: 1.5x)
+digit_w = 24.0
+digit_t = 4.5                    # a segment's thickness
+digit_gap = 8.25                 # between the two digits
+digit_z = 206.0                  # their middle over the floor (the hologram's top 174.5; the hall's apex 380)
+fx_w0 = 0.5                      # cm: the half size the camera-facing sprites and the pillars are built at (the shader
+                                 # sizes them: the broken points' red glow and pillar, the turbines' calling glow)
+pillar_h = 16.0                  # cm: a broken station's red pillar over its point
 digit_slant = 0.1                # the digits' lean (x per z)
 
 [spinup.lanes]                   # each station kind's lane: [radius round the hall's centre, x of its run aft] (m)

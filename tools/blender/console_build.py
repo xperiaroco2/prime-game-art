@@ -60,14 +60,16 @@ LIFT = [0.0]  # m: the raise the ship's pieces were built with ([deck] lift_m); 
 def argv() -> dict:
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     out = {"out": None, "pieces": None, "render": None, "res": 900, "samples": 64, "views": None, "hdri": None,
-           "lift": 0.0}
+           "lift": None}
     i = 0
     while i < len(a):
         out[a[i].lstrip("-")] = a[i + 1]
         i += 2
     out["res"] = int(out["res"])
     out["samples"] = int(out["samples"])
-    out["lift"] = float(out["lift"])
+    if out["pieces"] and out["lift"] is None:  # the pieces stand lifted: without it the hologram would sit 0.6 m high
+        raise SystemExit("console_build.py: --pieces needs --lift (layouts/ship/ship.toml [deck] lift_m)")
+    out["lift"] = float(out["lift"] or 0.0)
     LIFT[0] = out["lift"]
     return out
 
@@ -497,7 +499,13 @@ def hull_bmesh(pieces: Path) -> bmesh.types.BMesh:
 
 
 def pod_bmeshes(pieces: Path) -> list:
-    """The three nozzle pods in the pieces' frame (their shells, collars and bells; the inner throat left out)."""
+    """The three nozzle pods in the pieces' frame (their shells, collars and bells; the inner throat left out). The
+    pod GLBs are built lifted (ship_build.lifted) and placed at exterior.toml's design heights: PODS must be those
+    places, and h - LIFT brings them back to the hull's frame."""
+    ext = tomllib.loads((SHIP_TOML.parent / "exterior.toml").read_text(encoding="utf-8"))["place"]
+    for name, (x, y, h) in PODS:
+        if not any(p[0] == name and [round(v, 3) for v in p[1]] == [x, y, h] for p in ext):
+            raise SystemExit(f"console_build.py: PODS {name} {(x, y, h)} is not in exterior.toml's place list")
     out = []
     for name, (x, y, h) in PODS:
         obs = import_glb(pieces / f"{name}.glb")
@@ -826,6 +834,7 @@ BUS = len(STATIONS)
 SHIP_TOML = Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml"
 THROAT_E = (Vector((2.915, 3.252)), Vector((1.65, 7.1)))  # the throat's east wall (the entrance lines), pieces' frame
 FAN_U = 5.0
+GLOW_U, GLOW_V = 7.0, 200.0  # the turbines' calling glow sprites (u 7 +- FX_SPREAD, v 200 +- FX_SPREAD)
 SEGMENTS = "abcdefg"
 SPINUP: dict = {}
 
@@ -860,6 +869,36 @@ def fx_sphere(bm, centre: Vector, radius: float, uv: tuple, layers: tuple) -> in
         for lp in f.loops:
             lp[layers[1]].uv = uv
     return sum(len(f.verts) - 2 for f in faces)
+
+
+FX_SPREAD = 0.3  # a sprite's or pillar's corner offset in its UV0 (the shader reads it back: sx, sy in -1..1)
+
+
+def fx_quad(bm, corners: list, uvs: list, layers: tuple) -> int:
+    """One quad (Blender frame) with its UV0 per corner."""
+    f = bm.faces.new([bm.verts.new(c) for c in corners])
+    for lp, uv in zip(f.loops, uvs):
+        lp[layers[1]].uv = uv
+    return 2
+
+
+def fx_sprite(bm, centre: Vector, u0: float, v0: float, layers: tuple) -> int:
+    """A camera-facing sprite (step 2): a quad of half size fx_w0 in the GLB's x/y plane (Blender x/z) round the
+    centre, UV0 (u0 + FX_SPREAD sx, v0 + FX_SPREAD sy) at its corner (sx, sy); the shader moves the corners to face the
+    eye at its own size (or folds them to the centre: no pixels)."""
+    w = SPIN["fx_w0"] * CM
+    sq = ((-1, -1), (1, -1), (1, 1), (-1, 1))
+    return fx_quad(bm, [centre + Vector((sx * w, 0.0, sy * w)) for sx, sy in sq],
+                   [(u0 + FX_SPREAD * sx, v0 + FX_SPREAD * sy) for sx, sy in sq], layers)
+
+
+def fx_pillar(bm, foot: Vector, v0: float, layers: tuple) -> int:
+    """A broken station's pillar (step 2): an upright quad of half width fx_w0 and pillar_h tall from the foot, UV0
+    (-3 - its height share, v0 + FX_SPREAD sx); the shader turns it about the vertical to the eye."""
+    w, h = SPIN["fx_w0"] * CM, SPIN["pillar_h"] * CM
+    cs = ((-1, 0.0), (1, 0.0), (1, 1.0), (-1, 1.0))
+    return fx_quad(bm, [foot + Vector((sx * w, 0.0, t * h)) for sx, t in cs],
+                   [(-3.0 - t, v0 + FX_SPREAD * sx) for sx, t in cs], layers)
 
 
 def station_path(sid: str, at: list) -> list:
@@ -939,6 +978,7 @@ def build_spinup(M: Matrix, k: float, turbines: list, line_w: float, grid_w: flo
                              c.z + r * (0.24 + 0.76 * f) * math.sin(a0 + 0.6 * f))) for f in (i / 5 for i in range(6))]
             tris["fans"] += fx_tube(bm, [M @ p for p in blade], [FAN_U] * 6, 90, grid_w * 0.8, lay)
         centres.append(to_gltf(M @ Vector((c.x, y, c.z))))
+        tris["fans"] += fx_sprite(bm, M @ c, GLOW_U, GLOW_V, lay)  # step 2: the call's orange glow round the pod
     HOLO_PARTS.update({"turbines": tris["cuts"], "fans": tris["fans"]})
     lo, hi = HULL_STATS["bounds_cm"]  # the hologram's box takes the turbines in, as before they had their own surface
     HULL_STATS["bounds_cm"] = [[round(min(lo[i], min(v.co[i] for v in bm.verts) / CM), 2) for i in range(3)],
@@ -962,6 +1002,8 @@ def build_spinup(M: Matrix, k: float, turbines: list, line_w: float, grid_w: flo
         tris += fx_tube(bm, halo, [-2.0] * len(halo), i, grid_w * 1.2, lay)
         pt = M @ p + Vector((0.0, 0.0, SPIN["point"] * 0.6 * CM))
         tris += fx_sphere(bm, pt, SPIN["point"] * 0.5 * CM, (-1.0, float(i)), lay)
+        tris += fx_pillar(bm, pt, float(i), lay)  # step 2: shown only while broken (the shader folds them away)
+        tris += fx_sprite(bm, pt, -5.0, float(i), lay)
         SPINUP["stations"][sid] = {"index": i, "plan": at, "point": to_gltf(pt),
                                    "line_dm": round(lengths(line)[-1], 3)}
     ym = -SPIN["manifold_y"]
@@ -980,31 +1022,42 @@ def build_spinup(M: Matrix, k: float, turbines: list, line_w: float, grid_w: flo
     # above); an upright band over the plan, so it reads from the throat and the corridors
     bm = bmesh.new()
     idx, fx = fx_layers(bm)
-    r, h = SPIN["ring_r"], SPIN["ring_h"]
+    # Step 2: the band is built ring_h_tall (v its height share of that; the shader draws band_top of it) and the
+    # same bar runs a second time as a ring on the emitter deck (v 2 at its foot, 3 at its top), leaning out: it is
+    # seen from every side at hip height. The same angles: the console's frame is the hologram's turned 180 degrees.
+    r, h = SPIN["ring_r"], SPIN["ring_h_tall"]
+    dr0, dh0, dr1, dh1 = (x * CM for x in SPIN["deck_ring"])
     gap, dgap, nd = SPIN["ring_stage_gap"], SPIN["ring_dash_gap"], int(SPIN["ring_dashes"])
     span = 120.0 - gap
     dash = (span - (nd - 1) * dgap) / nd
-    tris = 0
+    tris = {"band": 0, "deck": 0}
     for st in range(3):
         start = 90.0 - 120.0 * st - 0.5 * gap
         for d in range(nd):
             a0 = d * (dash + dgap)
             steps = max(1, math.ceil(dash / 2.5))
-            col = []
+            col, deck = [], []
             for j in range(steps + 1):
                 along = a0 + dash * j / steps
                 a = math.radians(start - along)
+                share = (st + along / span) / 3.0
                 foot = M @ Vector((HALL.x + r * math.cos(a), HALL.y + r * math.sin(a), z))
                 top = M @ Vector((HALL.x + r * math.cos(a), HALL.y + r * math.sin(a), z + h))
-                col.append((bm.verts.new(foot), bm.verts.new(top), (st + along / span) / 3.0))
-            for (f0, t0, u0), (f1, t1, u1) in zip(col, col[1:]):
-                f = bm.faces.new((f0, f1, t1, t0))
-                for lp, uv in zip(f.loops, ((u0, 0.0), (u1, 0.0), (u1, 1.0), (u0, 1.0))):
-                    lp[fx].uv = uv
-                tris += 2
-    HOLO_PARTS["ring"] = tris
+                col.append((bm.verts.new(foot), bm.verts.new(top), share))
+                ca, sa = -math.cos(a), -math.sin(a)
+                deck.append((bm.verts.new(Vector((dr0 * ca, dr0 * sa, dh0))),
+                             bm.verts.new(Vector((dr1 * ca, dr1 * sa, dh1))), share))
+            for part, rows, v0 in (("band", col, 0.0), ("deck", deck, 2.0)):
+                for (f0, t0, u0), (f1, t1, u1) in zip(rows, rows[1:]):
+                    f = bm.faces.new((f0, f1, t1, t0))
+                    for lp, uv in zip(f.loops, ((u0, v0), (u1, v0), (u1, v0 + 1.0), (u0, v0 + 1.0))):
+                        lp[fx].uv = uv
+                    tris[part] += 2
+    HOLO_PARTS["ring"] = tris["band"] + tris["deck"]
     obs.append(mesh_object("holo_ring", bm, "console_holo_ring"))
-    SPINUP["ring"] = {"radius_cm": round(r * k / CM, 2), "height_cm": round(h * k / CM, 2), "dashes": 3 * nd}
+    SPINUP["ring"] = {"radius_cm": round(r * k / CM, 2), "height_cm": round(SPIN["ring_h"] * k / CM, 2),
+                      "built_height_cm": round(h * k / CM, 2), "band_top": round(SPIN["ring_h"] / h, 4),
+                      "dashes": 3 * nd, "deck_ring_cm": SPIN["deck_ring"], "triangles": tris}
 
     # the countdown: two seven-segment digits over the hologram, upright, facing the front (the shader turns them)
     bm = bmesh.new()
@@ -1034,6 +1087,8 @@ def build_spinup(M: Matrix, k: float, turbines: list, line_w: float, grid_w: flo
     obs.append(mesh_object("holo_digits", bm, "console_holo_digit"))
     SPINUP["countdown"] = {"centre_cm": [0.0, 0.0, SPIN["digit_z"]], "digit_h_cm": H, "segments": SEGMENTS}
     SPINUP["order"] = list(STATIONS) + ["bus"]
+    SPINUP["fx"] = {"w0_m": round(SPIN["fx_w0"] * CM, 5), "spread": FX_SPREAD, "pillar_h_cm": SPIN["pillar_h"],
+                    "glow_uv": [GLOW_U, GLOW_V], "sprite_u": -5.0, "pillar_u": [-3.0, -4.0]}
     return obs
 
 
@@ -1275,11 +1330,20 @@ def build_materials() -> None:
     MATS["console_beam"] = mat
 
     # the spin-up's parts (Blender's look: their resting glow; the states are the game's, console_holo.gdshader)
+    # step 2's state-only parts stay dark here: the turbines' glow sprites (u > 6), the broken points' pillars and
+    # sprites (u < -2.5), the tall band over ring_h and the deck ring (v over ring_h's share)
+    masks = {"console_holo_turbine": ("LESS_THAN", 0, 6.0), "console_holo_wire": ("GREATER_THAN", 0, -2.5),
+             "console_holo_ring": ("LESS_THAN", 1, SPIN["ring_h"] / SPIN["ring_h_tall"] + 1e-3)}
     for name, strength in (("console_holo_turbine", 2.0), ("console_holo_wire", 1.2), ("console_holo_ring", 0.8),
                            ("console_holo_digit", 0.0)):
         mat = bpy.data.materials.new(name)
         nd = Nodes(mat)
-        nd.output(additive(nd, (0.01, 0.28, 1.0, 1.0), strength))
+        shader = additive(nd, (0.01, 0.28, 1.0, 1.0), strength)
+        if name in masks:
+            op, axis, edge = masks[name]
+            em = next(n for n in nd.nt.nodes if n.bl_idname == "ShaderNodeEmission")
+            nd.set(em, "Strength", nd.math("MULTIPLY", nd.math(op, nd.uv()[axis], edge), strength))
+        nd.output(shader)
         blended(mat)
         MATS[name] = mat
 
