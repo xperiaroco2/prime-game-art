@@ -1069,12 +1069,30 @@ def airborne_frames(skel: dict, clip: dict) -> int:
     return sum(not any(m[f] for m in masks.values()) for f in range(frames(clip)))
 
 
+def _pin_run(run: list[int], masks: dict, tr: dict, step: tuple, pa: str, pt: str) -> dict:
+    """pin_feet's correction (x, y) per frame of one contact run: the point that is down (the ankle pa first, else
+    the toe pt) held where it started, carried by the ground's `step` per frame. A point that becomes the anchor
+    starts at its own place on the run's first frame, else at its place moved by the previous frame's correction, so
+    the correction is continuous when the anchor switches (P5: it fell to 0 there, ~21 mm in one frame)."""
+    out: dict[int, tuple[float, float]] = {}
+    anchor, k0, q0 = None, 0, (0.0, 0.0)
+    for k, f in enumerate(run):
+        pnt = pa if masks[pa][f] else pt
+        q = tr[pnt][f]
+        if pnt != anchor:
+            cp = out[run[k - 1]] if k else (0.0, 0.0)
+            anchor, k0, q0 = pnt, k, (q[0] + cp[0], q[1] + cp[1])
+        out[f] = (q0[0] + (k - k0) * step[0] - q[0], q0[1] + (k - k0) * step[1] - q[1])
+    return out
+
+
 def pin_feet(skel: dict, clip: dict, passes: int = 2, decay: int = 2) -> tuple[dict, dict]:
     """The planted feet pinned to the ground by honest_slide's own test (P3: the backpedal's left foot drifted 21 mm
     after the stride, whose contact test differs): per foot, over each cyclic run of frames with its ankle or toe
     down, the ankle moved so the point that is down (the ankle first, else the toe) stays where it was on its first
-    down frame of the run, carried by the ground; the correction fades out over `decay` frames after the run; the leg
-    solved again (two_bone, the foot's world rotation kept). Returns (the clip, the honest drift before and after)."""
+    down frame of the run, carried by the ground (_pin_run: an anchor switch inside a run keeps the correction
+    continuous); the correction fades out over `decay` frames after the run; the leg solved
+    again (two_bone, the foot's world rotation kept). Returns (the clip, the honest drift before and after)."""
     skel = prepare(skel)
     T = frames(clip)
     before = honest_slide(skel, clip)
@@ -1097,14 +1115,8 @@ def pin_feet(skel: dict, clip: dict, passes: int = 2, decay: int = 2) -> tuple[d
                         h[g] = (q0, 1.0 - d / (decay + 1.0))
             hold[side] = h
             for run in M.contact_windows(down, cyclic=True):
-                first = {}
-                for k, f in enumerate(run):
-                    pnt = pa if masks[pa][f] else pt
-                    if pnt not in first:
-                        first[pnt] = (k, tr[pnt][f])
-                    k0, q0 = first[pnt]
-                    q = tr[pnt][f]
-                    c[f] = (q0[0] + (k - k0) * step[0] - q[0], q0[1] + (k - k0) * step[1] - q[1])
+                for f, x in _pin_run(run, masks, tr, step, pa, pt).items():
+                    c[f] = x
                 last = c[run[-1]]
                 for d in range(1, decay + 1):
                     g = (run[-1] + d) % T
@@ -1128,13 +1140,8 @@ def pin_feet(skel: dict, clip: dict, passes: int = 2, decay: int = 2) -> tuple[d
         for side in SIDES:  # the corrections again on the held feet
             pa, pt = _foot_points(side)
             for run in M.contact_windows([masks[pa][f] or masks[pt][f] for f in range(T)], cyclic=True):
-                first = {}
-                for k, f in enumerate(run):
-                    pnt = pa if masks[pa][f] else pt
-                    if pnt not in first:
-                        first[pnt] = (k, tr[pnt][f])
-                    k0, q0 = first[pnt]
-                    corr[side][f] = (q0[0] + (k - k0) * step[0] - tr[pnt][f][0], q0[1] + (k - k0) * step[1] - tr[pnt][f][1])
+                for f, x in _pin_run(run, masks, tr, step, pa, pt).items():
+                    corr[side][f] = x
         new_clip = copy_clip(out)
         for f in range(T + 1):
             P = fk(skel, out, f)

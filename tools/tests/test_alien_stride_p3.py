@@ -60,6 +60,39 @@ class PinAndArms(unittest.TestCase):
         a, b = S.tracks(self.skel, self.clip, ["Hips"]), S.tracks(self.skel, out, ["Hips"])
         self.assertLess(max(dist(x, y) for x, y in zip(a["Hips"], b["Hips"])), 1e-9)
 
+    def test_pin_run_keeps_the_correction_continuous_when_the_anchor_switches(self):
+        # P5's review: the ankle slides 3 mm a frame while down, then the toe (sliding 1 mm a frame) takes over; each
+        # anchor is held still, and the correction never jumps at the switch (it fell to 0 there: 12 mm in a frame)
+        run = list(range(10))
+        tr = {"A": [(0.003 * f, 0.0, 0.0) for f in run], "T": [(0.1 + 0.001 * f, 0.0, 0.0) for f in run]}
+        masks = {"A": [f < 5 for f in run], "T": [True] * 10}
+        c = S._pin_run(run, masks, tr, (0.0, 0.0), "A", "T")
+        for f in run:
+            p = "A" if f < 5 else "T"
+            self.assertAlmostEqual(tr[p][f][0] + c[f][0], tr[p][0 if f < 5 else 5][0] + c[0 if f < 5 else 5][0])
+        self.assertAlmostEqual(c[0][0], 0.0)
+        self.assertLessEqual(max(abs(c[f + 1][0] - c[f][0]) for f in run[:-1]), 0.003 + 1e-12)
+        self.assertAlmostEqual(c[5][0], c[4][0])
+
+    def test_pin_feet_takes_out_a_known_ankle_slide_without_a_jump(self):
+        masks, _, step = S._honest_down(self.skel, self.clip)
+        T = S.frames(self.clip)
+        down = [masks["LeftFoot"][f] or masks["LeftToes"][f] for f in range(T)]
+        run = max(S.M.contact_windows(down, cyclic=True), key=len)
+        slid = S.copy_clip(self.clip)  # the left thigh turned 0.6 degrees more each planted frame: the ankle slides
+        for k, f in enumerate(run):
+            for g in ([f, T] if f == 0 else [f]):
+                q = slid["rot"]["LeftUpperLeg"][g]
+                slid["rot"]["LeftUpperLeg"][g] = S.M.q_mul(q, S.M.q_axis_angle((1.0, 0.0, 0.0), 0.6 * k))
+        out, rep = S.pin_feet(self.skel, slid)
+        before, after = rep["drift_mm"]["Left"]
+        self.assertGreater(before, 3.0)
+        self.assertLess(after, 0.5 * before)
+        a = S.tracks(self.skel, out, ["LeftFoot"])["LeftFoot"]
+        jumps = [math.hypot(a[f + 1][0] - a[f][0] - step[0], a[f + 1][1] - a[f][1] - step[1]) * 1000.0
+                 for f in run[:-1]]
+        self.assertLess(max(jumps), 3.0)
+
     def test_arms_in_brings_the_hands_toward_the_torso(self):
         h0 = S.hand_clearance(self.skel, self.clip)
         h1 = S.hand_clearance(self.skel, S.arms_in(self.skel, self.clip, 30.0))
