@@ -37,13 +37,12 @@ class SetFile(unittest.TestCase):
         right = {j["name"]: j for j in self.jobs if j["base"] == "Strafe_Right"}
         self.assertEqual(right["Strafe_Right"]["mirror"], "Strafe_Left")
         self.assertEqual(right["Strafe_Right"]["speed"], 3.0)  # the game's strafe at the 3.0 cap (step 4b)
-        self.assertEqual(right["Strafe_Right__s45"]["mirror"], "Strafe_Left__s45")
-        self.assertEqual(right["Strafe_Right__s45"]["speed"], 4.5)
+        self.assertEqual(list(right), ["Strafe_Right"])  # P2: no 4.5 review variant
         self.assertFalse([n for n in self.names if "shuffle" in n])  # dropped (step 4's critic)
         bwd = {j["name"]: j for j in self.jobs if j["base"] == "Jog_Bwd"}
-        self.assertEqual({n: j["speed"] for n, j in bwd.items()}, {"Jog_Bwd": 3.0, "Jog_Bwd__s25": 2.5})
-        self.assertEqual(bwd["Jog_Bwd"]["max_scale"], 1.5)
-        self.assertEqual(self.jobs[self.names.index("Strafe_Left")]["arms_from"]["clip"], "Jog_Fwd")
+        self.assertEqual({n: j["speed"] for n, j in bwd.items()}, {"Jog_Bwd": 2.5})  # P2: the 2.5 until he picks
+        self.assertEqual(bwd["Jog_Bwd"]["cadence"], 4.0)
+        self.assertEqual(self.jobs[self.names.index("Strafe_Left__s4b")]["arms_from"]["clip"], "Jog_Fwd")
         for j in self.jobs:  # a mirror comes after the clip it mirrors
             if j.get("mirror"):
                 self.assertLess(self.names.index(j["mirror"]), self.names.index(j["name"]))
@@ -94,7 +93,13 @@ class CappedRate(unittest.TestCase):
 
 class Reels(unittest.TestCase):
     def test_the_plan_pairs_the_capped_speed_beside_the_game_speed(self):
-        plan = {r["name"]: r for r in L.reel_plan(L.expand(CFG))}
+        # the old plan (no [[reel]]: steps 3 and 4b) on step 4b's clips
+        old = {"grid": CFG["grid"], "clip": [
+            {"name": "Walk", "source": "w", "play_at": [2.0]},
+            {"name": "Strafe_Left", "source": "s", "speeds": [3.0, 4.5]},
+            {"name": "Strafe_Right", "mirror": "Strafe_Left"},
+            {"name": "Jog_Bwd", "source": "b", "speeds": [3.0, 2.5]}]}
+        plan = {r["name"]: r for r in L.reel_plan(L.expand(old))}
         self.assertEqual([c["speed"] for c in plan["Strafe_Left"]["clips"]], [3.0, 4.5])
         self.assertEqual(plan["Strafe_Left"]["view"], "front")
         self.assertEqual(plan["Jog_Bwd"]["view"], "side")
