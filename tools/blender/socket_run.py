@@ -303,7 +303,9 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
          'States: export/socket.gd set_state (HANDOFF.md). From the sheet the engineer picked on 2026-10-25 and its '
          'drawing in cm (prime-game-design ea27a81, ideas/ship-components/stations-final: socket.jpg, '
          'socket-drawing/; copied to the raw folder). The sheet and the drawing\'s straight views are AI images '
-         '(OpenAI gpt-image, batch 2026-10-25-ship-socket-drawing), used only as references; the model is built '
+         '(OpenAI gpt-image, batch 2026-10-25-ship-socket-drawing, recorded in prime-game-design: '
+         'https://github.com/xperiaroco2/prime-game-design/blob/main/ideas/batches/2026-10-25-ship-socket-drawing.toml), '
+         'used only as references; the model is built '
          'from code in headless Blender (tools/blender/socket_build.py from socket_dims.toml): no part of it was '
          'generated or downloaded."'),
         f'tools = ["blender {pins.BLENDER}", "prime-game-art socket_build.py, socket_run.py", '
