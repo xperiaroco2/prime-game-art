@@ -729,7 +729,10 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
    side: a body down to the axis crossed them on the way.
 3. **The sweep check.** The build turns every shell through its trip in tenths and counts the triangles it crosses
    on the body, the cores, the lamps and its neighbours (`build.json` `sweep_check`; empty is clean, and the test holds
-   it). `board_drawing.py` compares 23 of the drawing's numbers with the model's (`drawing/compare.json`, 0.5 cm
+   it). It checks 11 poses 11 degrees apart and triangle crossings only, not volumes: a thin part that passes wholly
+   between two poses, or a shell that sits inside another part without one triangle crossing, would not count (at the
+   shell's top, about 40 cm from its axis, one step moves it about 7 cm). Finer steps need a rebuild of the asset's
+   report; the Godot sweep shots (0, 1/4, 1/2, 3/4, 1) are the eye's check between the poses. `board_drawing.py` compares 23 of the drawing's numbers with the model's (`drawing/compare.json`, 0.5 cm
    tolerance): 20 measured off its own vertices, 3 set (the lamp ring from the dims, the hinge's h and d from the
    leaves' pivots; `board_drawing.SET`) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
    straight views at the drawing's scale.
