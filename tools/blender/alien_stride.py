@@ -104,28 +104,43 @@ def _blender_fk_mm(arm, act, skel, clip, bones) -> float:
     return worst
 
 
-def sheet(arm, acts, path: Path, cols: int = 8) -> None:
-    """One row per action: cols frames over its loop, the side view (from the character's left), on a grey floor."""
+def sheet(arm, acts, path: Path, cols: int = 8, views=None, follow: bool = False) -> None:
+    """One row per action: cols frames over its loop, on a grey floor, each row seen from views[row]: "side" (from
+    the character's left, the default) or "front"; with follow the camera and the floor keep the Hips over the frame's
+    middle (a clip that travels, such as a text-to-motion bake). The camera and floor are made once per file."""
     import bpy
     import numpy as np
+    from mathutils import Vector
     sc = bpy.context.scene
     mesh = [o for o in bpy.data.objects if o.type == "MESH" and o.parent == arm]
-    zs = [(o.matrix_world @ __import__("mathutils").Vector(c)).z for o in mesh for c in o.bound_box]
+    zs = [(o.matrix_world @ Vector(c)).z for o in mesh for c in o.bound_box]
     height = max(zs)
-    bpy.ops.mesh.primitive_plane_add(size=6.0, location=(0.0, 0.0, 0.0))
-    floor = bpy.context.active_object
+    floor = bpy.data.objects.get("stride_floor")
+    if floor is None:
+        bpy.ops.mesh.primitive_plane_add(size=6.0, location=(0.0, 0.0, 0.0))
+        floor = bpy.context.active_object
+        floor.name = "stride_floor"
     floor.color = (0.55, 0.55, 0.55, 1.0)
     for o in mesh:
         o.color = (0.85, 0.62, 0.45, 1.0)
-    cam_data = bpy.data.cameras.new("stride_cam")
-    cam_data.type = "ORTHO"
-    cam_data.ortho_scale = height * 1.25
-    cam = bpy.data.objects.new("stride_cam", cam_data)
-    sc.collection.objects.link(cam)
+    cam = bpy.data.objects.get("stride_cam")
+    if cam is None:
+        cam_data = bpy.data.cameras.new("stride_cam")
+        cam_data.type = "ORTHO"
+        cam = bpy.data.objects.new("stride_cam", cam_data)
+        sc.collection.objects.link(cam)
+    cam.data.ortho_scale = height * 1.25
     tilt = math.radians(8.0)  # a little from above, so the floor reads as a band under the feet
-    cam.location = (6.0, 0.0, height * 0.45 + 6.0 * math.tan(tilt))
-    cam.rotation_euler = (math.pi / 2 - tilt, 0.0, math.pi / 2)
     sc.camera = cam
+    views = views or ["side"] * len(acts)
+
+    def aim(view, x=0.0, y=0.0):
+        z = height * 0.45 + 6.0 * math.tan(tilt)
+        if view == "front":  # from the character's front (-Y), looking at +Y
+            cam.location, cam.rotation_euler = (x, y - 6.0, z), (math.pi / 2 - tilt, 0.0, 0.0)
+        else:  # from its left (+X), looking at -X
+            cam.location, cam.rotation_euler = (x + 6.0, y, z), (math.pi / 2 - tilt, 0.0, math.pi / 2)
+        floor.location = (x, y, 0.0)
     sc.render.engine = "BLENDER_WORKBENCH"
     sc.display.shading.light = "STUDIO"
     sc.display.shading.color_type = "OBJECT"
@@ -141,6 +156,8 @@ def sheet(arm, acts, path: Path, cols: int = 8) -> None:
         f0, f1 = _assign(arm, act)
         for c in range(cols):
             sc.frame_set(f0 + round(c * (f1 - f0) / cols))
+            hips = arm.matrix_world @ arm.pose.bones["Hips"].head if follow else Vector()
+            aim(views[row], hips.x, hips.y)
             sc.render.filepath = str(tmp)
             bpy.ops.render.render(write_still=True)
             img = bpy.data.images.load(str(tmp), check_existing=False)

@@ -485,19 +485,25 @@ def _features(clip: dict, bones) -> list:
     return [[c for b in bones for c in M.q_hemi(M.q_norm(clip["rot"][b][f]), ref[b])] for f in range(frames(clip) + 1)]
 
 
-def _close(clip: dict, i: int, j: int) -> dict:
+def _close(clip: dict, i: int, j: int, skel: dict | None = None) -> dict:
     """Frames i..j as a closed loop: each channel's residual spread over it (close_quats, close_vectors), the Root's
-    and the Hips' horizontal travel kept (only what is left beside its linear trend is closed)."""
+    and the Hips' horizontal travel kept (only what is left beside its linear trend is closed). The travel is
+    horizontal in armature space: a bone's basis location turns by its rest rotation (skel; a Blender bone's Y axis
+    runs along it, so the alien's Hips carry the travel on their basis x and z), the bones above it at rest."""
     out = copy_clip(clip)
     for b, v in clip["rot"].items():
         out["rot"][b] = M.close_quats(v[i:j + 1])
     for b, v in clip["loc"].items():
         seg = v[i:j + 1]
         if b in ("Root", "Hips"):
+            r = skel["rest"][b] if skel else [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+            to_arm = [[r[a][c] for c in range(3)] for a in range(3)]
+            seg = [tuple(sum(to_arm[a][c] * p[c] for c in range(3)) for a in range(3)) for p in seg]
             n = len(seg) - 1
             tr = [((seg[-1][0] - seg[0][0]) * k / n, (seg[-1][1] - seg[0][1]) * k / n, 0.0) for k in range(n + 1)]
             res = M.close_vectors([M._v_sub(p, x) for p, x in zip(seg, tr)])
-            out["loc"][b] = [M._v_add(p, x) for p, x in zip(res, tr)]
+            arm = [M._v_add(p, x) for p, x in zip(res, tr)]
+            out["loc"][b] = [tuple(sum(to_arm[c][a] * p[c] for c in range(3)) for a in range(3)) for p in arm]
         else:
             out["loc"][b] = M.close_vectors(seg)
     return out
@@ -521,7 +527,7 @@ def cycle(skel: dict, clip: dict, foot: str = "Left", min_s: float | None = None
         a, t = (mk[p] for p in _foot_points(foot))
         wins = M.contact_windows(fill_gaps([x or y for x, y in zip(a, t)]), cyclic=True)
         c = wins[0][0] if wins else 0
-        out = _close(clip, 0, T)
+        out = _close(clip, 0, T, skel)
         for ch in (out["loc"], out["rot"]):
             for b, v in ch.items():
                 ch[b] = v[c:-1] + v[:c] + [v[c]]
@@ -546,7 +552,7 @@ def cycle(skel: dict, clip: dict, foot: str = "Left", min_s: float | None = None
         raise ValueError(f"{clip['name']}: no {foot} contact with a cycle of {min_s}-{max_s} s after it")
     i, j, cost = best
     seam = seam_deg(clip, i, j)
-    out = _close(clip, i, j)
+    out = _close(clip, i, j, skel)
     return out, {"closed": False, "start": i, "end": j, "intervals": j - i, "cost": round(cost, 5),
                  "seam_deg": round(seam, 3), "seam_after_deg": round(seam_deg(out), 3)}
 
