@@ -1,8 +1,9 @@
 // The start console's metal, warm bronze or graphite (console.gd sets the colours): a fine brushed grain and a broad
 // mottle in model space, and the bright edges the stations' concepts show: the build's chamfer faces (UV0 u = 1),
-// broken up a little. No textures. The stations share it (the crystal socket's socket_metal.gdshader is this file):
-// the parameters after `lift` (art#263, socket-3) default to the console's look; the socket raises them for the
-// sheet's machined bronze (light-to-dark faces, glints, worn edges).
+// broken up a little. No textures. The stations share it byte for byte (art#263; test_props_metal_shader.py): the
+// start console's export copy, the crystal socket's socket_metal.gdshader, the breaker board's board_metal.gdshader
+// and the crystal charger's export copy. The parameters after `lift` (socket-3) default to the console's look; the
+// stations raise them for the sheet's machined bronze (light-to-dark faces, glints, worn edges).
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
 
@@ -60,17 +61,42 @@ vec2 layer(vec2 uv) {
 	return vec2(g, m);
 }
 
-// a height field in model space, projected on the three planes (w: the planes' weights), s cycles per metre
-float field(vec3 p, vec3 w, float s) {
-	return noise(p.zy * s) * w.x + noise(p.xz * s) * w.y + noise(p.xy * s) * w.z;
+// fix1 (art#263): the dent and wave height field, a smooth 3D gradient noise with a quintic fade (its slope has no
+// creases) in a turned model space (its lattice runs along no face). The value noise above, projected on the three
+// planes, drew square tone patches on the stations' big flat faces: its slope steps at every cell edge
+const mat3 TURN = mat3(vec3(0.0, 0.8, 0.6), vec3(-0.8, 0.36, -0.48), vec3(-0.6, -0.48, 0.64));
+
+vec3 ghash(vec3 p) {
+	p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)), dot(p, vec3(113.5, 271.9, 124.6)));
+	return fract(sin(p) * 43758.5453) * 2.0 - 1.0;
+}
+
+float gnoise(vec3 p) {
+	vec3 i = floor(p);
+	vec3 f = fract(p);
+	vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+	float x00 = mix(dot(ghash(i), f), dot(ghash(i + vec3(1.0, 0.0, 0.0)), f - vec3(1.0, 0.0, 0.0)), u.x);
+	float x10 = mix(dot(ghash(i + vec3(0.0, 1.0, 0.0)), f - vec3(0.0, 1.0, 0.0)),
+		dot(ghash(i + vec3(1.0, 1.0, 0.0)), f - vec3(1.0, 1.0, 0.0)), u.x);
+	float x01 = mix(dot(ghash(i + vec3(0.0, 0.0, 1.0)), f - vec3(0.0, 0.0, 1.0)),
+		dot(ghash(i + vec3(1.0, 0.0, 1.0)), f - vec3(1.0, 0.0, 1.0)), u.x);
+	float x11 = mix(dot(ghash(i + vec3(0.0, 1.0, 1.0)), f - vec3(0.0, 1.0, 1.0)),
+		dot(ghash(i + vec3(1.0, 1.0, 1.0)), f - vec3(1.0, 1.0, 1.0)), u.x);
+	return mix(mix(x00, x10, u.y), mix(x01, x11, u.y), u.z);
+}
+
+// the height field, s cycles per metre: two octaves, each in its own turned space; 0.69 keeps the slope's strength
+// the old value noise's (its RMS over a face)
+float field(vec3 p, float s) {
+	vec3 q = TURN * (p * s);
+	return (gnoise(q) + 0.35 * gnoise(TURN * q * 2.17 + vec3(5.2, 1.3, 7.7))) * 0.69;
 }
 
 // the field's slope along the face (model space, about unit size)
-vec3 slope(vec3 p, vec3 w, vec3 nrm, float s) {
+vec3 slope(vec3 p, vec3 nrm, float s) {
 	float e = 0.3 / s;
-	float h0 = field(p, w, s);
-	vec3 g = vec3(field(p + vec3(e, 0.0, 0.0), w, s), field(p + vec3(0.0, e, 0.0), w, s),
-		field(p + vec3(0.0, 0.0, e), w, s)) - h0;
+	float h0 = field(p, s);
+	vec3 g = vec3(field(p + vec3(e, 0.0, 0.0), s), field(p + vec3(0.0, e, 0.0), s), field(p + vec3(0.0, 0.0, e), s)) - h0;
 	g /= 0.3;
 	return g - nrm * dot(g, nrm);
 }
@@ -88,7 +114,13 @@ void fragment() {
 	}
 	if (dent > 0.0 || wave > 0.0) {
 		vec3 nm = normalize(mnrm);
-		vec3 bend = slope(mpos, n, nm, dent_scale) * dent + slope(mpos, n, nm, wave_scale) * wave;
+		vec3 bend = vec3(0.0);
+		if (dent > 0.0) {
+			bend += slope(mpos, nm, dent_scale) * dent;
+		}
+		if (wave > 0.0) {
+			bend += slope(mpos, nm, wave_scale) * wave;
+		}
 		NORMAL = normalize(NORMAL - (VIEW_MATRIX * (MODEL_MATRIX * vec4(bend, 0.0))).xyz);
 	}
 	ALBEDO = col;

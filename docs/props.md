@@ -645,7 +645,10 @@ They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, f
    empty, and the bay's floor (`socket_bay.gdshader`) glows cyan round a charged crystal; `set_claws(look, 0..1)`
    opens the claws. socket-3 gave the shared metal shader parameters whose defaults keep the console's pixels (the
    colour's mottle and grain, the roughness's, the worn edges' polish, and off by default: `shade`, faces lighter or
-   darker by their facing, and `dent` / `wave`, a hammered and a broad bend of the normal); `socket.gd`
+   darker by their facing, and `dent` / `wave`, a hammered and a broad bend of the normal; the fix pass made their
+   height field a smooth 3D gradient noise in a turned model space, each slope behind its own `if`: the value noise
+   before drew square tone patches on the big flat faces of all three stations, and the console's pixels stay the
+   same, 0 of 409,600 differ; every copy of the shader is the same bytes, `tools/tests/test_props_metal_shader.py`); `socket.gd`
    `BRONZE_FINISH` holds the socket's values, the ones the other stations' bronze matches. `seat_crystal(crystal_look)` keeps the crystal's own light off the socket (the socket draws on render
    layer 20 alone, the crystal's light leaves that layer out of its cull mask): in the niche it burned the frame
    white-cyan, and moved 30 cm out it washed the whole face mint (the hall shots b2 and b4).
