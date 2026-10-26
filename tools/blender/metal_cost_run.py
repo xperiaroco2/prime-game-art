@@ -1,11 +1,13 @@
-"""What the stations' shared bronze noise costs on the GPU (art#263, fix pass 2): the driver (plain Python, outside
-Blender). Places the four stations' approved exports (assets/prop/*/export: the start console, a crystal socket on each
-socket spot, a breaker board on each breaker spot, the crystal charger on renewer_e) in the built ship at night, as
-their own drivers place them, and runs godot/ship/metal_cost.gd through the runner's _godot.window() (off-screen,
-1920x1080): per view the median GPU ms with the metal shader as shipped, with dent and wave off, with one octave of
-the noise, with the slope from the noise's analytic derivative (a proposal, not shipped: metal_cost.gd ANALYTIC), and
-with the view's station hidden. The views are the stations' own (their drivers' view rows): a close
-view and the player's. Writes <out>/request.json, cost.json, cost.md (the table) and the variants' frames.
+"""What the stations' shared bronze noise costs on the GPU (art#263, fix pass 2; option A shipped): the driver (plain
+Python, outside Blender). Places the four stations' approved exports (assets/prop/*/export: the start console, a
+crystal socket on each socket spot, a breaker board on each breaker spot, the crystal charger on renewer_e) in the
+built ship at night, as their own drivers place them, and runs godot/ship/metal_cost.gd through the runner's
+_godot.window() (off-screen, 1920x1080): per view the median GPU ms with the metal shader as shipped (the slope from
+the noise's exact derivative), with dent and wave off, with one octave of the noise, with the slope as it shipped
+before option A (the forward difference, metal_cost.gd FINITE), and with the view's station hidden; per console view
+also the console alone before and after option A, which must match pixel for pixel. The views are the stations' own
+(their drivers' view rows): a close view and the player's. Writes <out>/request.json, cost.json, cost.md (the table),
+the variants' frames and the before/after strips.
 
     $PYTHON_BIN tools/blender/metal_cost_run.py [--out DIR] [--rounds 3] [--frames 120] [--pieces DIR]
 """
@@ -77,21 +79,26 @@ def request(pieces: Path, spec: dict) -> tuple[dict, dict[str, Path]]:
 
 def table(cost: dict) -> str:
     lines = [f"GPU ms, median of {int(cost['spec']['rounds'])} rounds x {int(cost['spec']['frames'])} frames, "
-             f"{cost['size'][0]}x{cost['size'][1]}, {cost['adapter']}", "",
-             "| view | shipped | dent = wave = 0 | noise | one octave | 2nd octave | analytic slope | saves | "
-             "station hidden | station | px mean: flat / one oct. / analytic |",
-             "|---|---|---|---|---|---|---|---|---|---|---|"]
+             f"{cost['size'][0]}x{cost['size'][1]}, {cost['adapter']}; before = the forward-difference slope, "
+             "shipped = option A's exact derivative", "",
+             "| view | before | shipped | saves | dent = wave = 0 | noise | one octave | 2nd octave | station hidden | "
+             "station | px mean vs shipped: flat / one oct. / before | console alone identical |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in cost["views"]:
-        lines.append(f"| {r['view']} | {r['gpu_ms_shipped']:.3f} | {r['gpu_ms_flat']:.3f} | {r['noise_ms']:+.3f} | "
-                     f"{r['gpu_ms_one_octave']:.3f} | {r['octave2_ms']:+.3f} | {r['gpu_ms_analytic']:.3f} | "
-                     f"{r['analytic_saves_ms']:+.3f} | {r['gpu_ms_hidden']:.3f} | {r['station_ms']:+.3f} | "
-                     f"{r['px_mean_flat']:.2f} / {r['px_mean_one_octave']:.2f} / {r['px_mean_analytic']:.2f} |")
+        solo = "-"
+        if "solo_identical" in r:
+            solo = f"{'yes' if r['solo_identical'] else 'NO'} (max {r['solo_px_max']:.0f})"
+        lines.append(f"| {r['view']} | {r['gpu_ms_finite']:.3f} | {r['gpu_ms_shipped']:.3f} | "
+                     f"{r['analytic_saves_ms']:+.3f} | {r['gpu_ms_flat']:.3f} | {r['noise_ms']:+.3f} | "
+                     f"{r['gpu_ms_one_octave']:.3f} | {r['octave2_ms']:+.3f} | {r['gpu_ms_hidden']:.3f} | "
+                     f"{r['station_ms']:+.3f} | "
+                     f"{r['px_mean_flat']:.2f} / {r['px_mean_one_octave']:.2f} / {r['px_mean_finite']:.2f} | {solo} |")
     return "\n".join(lines) + "\n"
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", type=Path, default=RAW / "ship" / "v4" / "stations-fix2" / "cost")
+    ap.add_argument("--out", type=Path, default=RAW / "ship" / "v4" / "bronze-a" / "cost")
     ap.add_argument("--pieces", type=Path, default=RAW / ship_layout.load()["raw_dir"] / "pieces")
     ap.add_argument("--rounds", type=int, default=3)
     ap.add_argument("--frames", type=int, default=120)
