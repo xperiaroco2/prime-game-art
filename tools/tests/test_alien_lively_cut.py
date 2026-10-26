@@ -214,9 +214,10 @@ class LivelyCut(unittest.TestCase):
 
     def test_lip_smooth_fails_a_triangle_really_turned(self):
         """E2: a lip triangle that really turns under the real LIP_FLIP_DOT fails. Taubin mode with LIP_CAP patched
-        large and one lid position one ring off the rim spiked far out of the sheet: the steps pull its neighbours up
-        toward it, and even the fold guard's smallest move (1/64) stands their small triangles on edge. The same
-        patch without the spike passes (the control)."""
+        large and one lid position one ring off the rim spiked: moved just past the far edge of one of its triangles
+        (1e-6 of the radius), so the steps pull it back across that edge and even the fold guard's smallest move
+        (1/64) turns the triangle over. (A spike far out of the sheet does not do it: its triangles leave the eye's
+        reach and every position on them is held.) The same patch without the spike passes (the control)."""
         A1, I1, cls1, centres, _rep = self.cut()
         P = A1["POSITION"]
         eb = np.zeros(len(P), bool)
@@ -229,7 +230,11 @@ class LivelyCut(unittest.TestCase):
             _A, ok = self.B.lip_smooth({k: v.copy() for k, v in A1.items()}, I1, cls1, centres, R_EYE, 4, "taubin")
             self.assertGreaterEqual(ok["min_face_dot"], self.B.LIP_FLIP_DOT)
             A2 = {k: v.copy() for k, v in A1.items()}
-            A2["POSITION"][spiked] += [0.0, 0.0, 1e4 * R_EYE]
+            v = cand[0]
+            tri = next(t for t in I1[~cls1] if v in t)
+            a, b = (P[x] for x in tri if x != v)
+            m = (a + b) / 2
+            A2["POSITION"][spiked] = m + (m - P[v]) / np.linalg.norm(m - P[v]) * 1e-6 * R_EYE
             with self.assertRaises(SystemExit) as e:
                 self.B.lip_smooth(A2, I1, cls1, centres, R_EYE, 4, "taubin")
         self.assertIn("turned", str(e.exception))
