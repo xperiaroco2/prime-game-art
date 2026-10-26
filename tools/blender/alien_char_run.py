@@ -102,6 +102,11 @@ def main() -> int:
     args = ap.parse_args()
     heads = args.heads.split(",")
     lively = {h: Path(d) for h, d in (x.split("=", 1) for x in args.lively.split(",") if x)}
+    for h, d in lively.items():  # a mistyped head or folder would build the default look without a word
+        if h not in heads:
+            ap.error(f"--lively {h}: not one of --heads ({','.join(heads)})")
+        if not (d / "lively.json").is_file():
+            ap.error(f"--lively {h}={d}: no lively.json there")
     out = PILOT / args.tag
     shots_out = out / args.shots_sub if args.shots_sub else out
     why = refusal(out, heads, not args.no_build, False) or refusal(shots_out, [], False, not args.no_shots)

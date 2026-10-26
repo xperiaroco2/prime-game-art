@@ -872,7 +872,7 @@ def rim_split(A, I, cls, views, sphere_only=False, past90_bound=None):
     in full (views: eyeball_fix's per-eye fitted sphere); the lid keeps its own normals. Tangents are made orthogonal
     again. sphere_only (E2 candidate A, `--rim-split-sphere-only`, off by default): an eyeball vertex further than
     RIM_SPLIT_SPHERE_BAND radii from its sphere's centre (an eyeball-class stray off the eye) keeps its own normal and
-    tangent; the report's `sphere_only` counts them per eye and the turns are over the vertices that changed.
+    tangent; the report's `sphere_only` counts them per eye; a kept vertex counts as a 0-degree turn, and the shares stay over every eyeball vertex.
     past90_bound: E2, a --rim-fit candidate's own bound instead of RIM_SPLIT_MAX_PAST90_PCT.
     Returns A (new arrays), I and the report."""
     bound = RIM_SPLIT_MAX_PAST90_PCT if past90_bound is None else past90_bound
@@ -938,7 +938,7 @@ def split_past_90(P, idx, k, turn, lid_line, views, spheres):
                if len(lid_line) else np.full(int(past.sum()), np.inf))
         rl = spheres[j][1]
         cr = np.linalg.norm(P[idx[past]] - spheres[j][0], axis=1) / rl  # from the sphere's centre, in its radius
-        far = np.linalg.norm(P[idx[m]] - spheres[j][0], axis=1) / rl > 1.5  # eyeball-class vertices off the eye
+        far = np.linalg.norm(P[idx[m]] - spheres[j][0], axis=1) / rl > RIM_SPLIT_SPHERE_BAND  # eyeball-class vertices off the eye
         eyes[key] = {"vertices": int(m.sum()), "past_90": int(past.sum()), "beyond_1_5_r": int(far.sum()),
                      "past_90_pct": round(float(100 * past.sum() / max(m.sum(), 1)), 3),
                      "past_90_on_lid_line": int((off < 1e-9).sum()),
@@ -951,7 +951,7 @@ def split_past_90(P, idx, k, turn, lid_line, views, spheres):
                                                ("to_1.5", 0.25, 1.5), ("beyond", 1.5, np.inf))},
                      "past_90_from_centre_r": ({"p50": round(float(np.median(cr)), 3), "min": round(float(cr.min()), 3),
                                                 "max": round(float(cr.max()), 3)} if past.any() else None),
-                     "past_90_beyond_1_5_r_at": np.round(P[idx[past]][cr > 1.5], 4).tolist()}
+                     "past_90_beyond_1_5_r_at": np.round(P[idx[past]][cr > RIM_SPLIT_SPHERE_BAND], 4).tolist()}
     return eyes
 
 
