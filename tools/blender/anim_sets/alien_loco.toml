@@ -151,8 +151,8 @@ name = "Strafe_Right"
 mirror = "Strafe_Left"
 play_at = [3.0]
 
-# F2's review grid (art #196, awaiting the engineer's look): the swing shin crossing the stance leg (the strafe reel's
-# column 6), each variant Strafe_Left with one setting changed; the game's Strafe_Left / Strafe_Right stay as above
+# F2's review grid (art #196, awaiting the engineer's look): the swing shin crossing the stance leg (column 6 of the
+# older strafe reels, column 5 of F2's), each variant Strafe_Left with one setting changed; the game's Strafe_Left / Strafe_Right stay as above
 # (measured in plain Python on a dump: widen 0.05 and hips 55 tried too, hips 55 crosses more)
 [[clip]]
 name = "Strafe_Left__w07"  # the ankles 7 cm wider (Strafe_Left: 3)

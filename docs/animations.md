@@ -1051,7 +1051,9 @@ plays them, and the game's clips since P3 are pinned (`pin`: 0.0-0.3 mm at F1).
 ### The strafe's shin crossing, a review grid (art #196, F2)
 In the strafe's reels the swing shin briefly passes behind the stance leg. F2 measured it (per frame of the 22-frame
 cycle, in the hips' frame: the swing ankle's and the swing shin's midpoint's distance along the hips' left-right axis
-from the stance shin at the same height, + on the swing leg's own side) and built four review variants of
+from the stance shin at the same height, + on the swing leg's own side; joint centres against the bone's line, so 0
+means the meshes still touch, the limbs having thickness; not `loco.json`'s `legs_m`, which measures ankle against
+ankle; the measurement was a plain-Python pass over the GLB, not committed) and built four review variants of
 `Strafe_Left`, each one setting changed, beside it (out: `loco/f2`; the reels `Strafe_F2_<variant>__three_quarter`
 and `__back`, Strafe_Left above the variant). They await the engineer's look; `Strafe_Left` / `Strafe_Right` and
 every other game clip are unchanged (their `loco.json` reports and GLB animation bytes equal `loco/f1`'s):
@@ -1066,8 +1068,10 @@ every other game clip are unchanged (their `loco.json` reports and GLB animation
 
 Tried on a dump in plain Python and not built: `widen_m` 0.05 (-5.6 / +1.3 cm), hips 55 (-13.7 / -4.4 cm: more
 crossing), `lift_m` 0.03 (the crossing unchanged, the knees deeper) and `bend_min_deg` 30 (no change: the floor does
-not bite). The builder's pick is `__w09`: it keeps the engineer's hips at 60 and takes the swing ankle off the stance
-shin; `__h70` clears it furthest but moves the hips toward the 75 he passed over.
+not bite). The builder's pick is `__w09`: it keeps the engineer's hips at 60 and brings the swing ankle's centre from 8.4 cm past
+the stance shin to its line (0.0 cm), so the meshes still graze; `__h70` is the only one with clearance (+2.9 cm) but
+moves the hips toward the 75 he passed over. In F2's reels the tuck shows in column 5 (the older reels: column 6);
+the enlarged column sheets `Strafe_F2_col5.png` and `col6.png` were cut by hand from the reels.
 
 ### The head follows the aim (art #196, H1)
 So players can nod yes and shake no without a microphone, the alien's trunk, neck and head bones turn toward the
@@ -1101,7 +1105,7 @@ turns with the mouse (`rotate_y`), so the relative yaw is always 0 and a "no" sh
 `body_follow` the body's yaw and the aim's yaw become two numbers to sync.
 
 `$PYTHON_BIN tools/blender/alien_headlook_run.py --check` runs `godot/alien/head_look_check.gd` headless on both
-characters (the newest loco build, `loco/f1`): the head bone's facing within 1 degree of the asked yaw and pitch
+characters (F1's build, `loco/f1`, whose game clips equal F2's): the head bone's facing within 1 degree of the asked yaw and pitch
 inside the clamps, at the clamps beyond them, the Neck turned by `aim_turn` of its cumulative share of the split
 (summed in the check from the skeleton's parents), a fresh modifier's default clamps (yaw 100, pitch -80 give 70,
 -35), no drift over 10 frames, on Idle and Jog_Fwd the clip's facing turned by the aim, the smoothing, `body_follow`'s
