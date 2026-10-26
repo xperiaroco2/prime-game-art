@@ -1,0 +1,100 @@
+# The alien's locomotion set (art #196, option A step 3): the game's move clips made from the built R2b characters'
+# UAL clips and step 2's text-to-motion loops (alien_ttm.py), with step 1's edits (alien_stride_math: cycle, stride,
+# arm_swing, mirror), written onto each character by tools/blender/alien_loco.py (docs/animations.md, "The alien's
+# locomotion set"). Every loop starts on the left foot's contact (cycle, foot "Left").
+#
+# Per [[clip]]:
+# - name: the game's clip name (avatar_clips.gd); the action is CharacterArmature|<name>_Loop, which Godot imports as
+#   <name>, looping; a name with "__" is a variant or an alternative beside the game's clip;
+# - source: the action it is made from (the build's UAL clip, or a step 2 loop TM_<item>_Loop from `ttm`);
+#   mirror: instead, the clip of that name mirrored left to right (each of its speeds);
+# - speeds: the stride fitted so the loop covers each speed (m/s) at rate 1.0 (stride's scale = speed / v0); the
+#   first under the name, each further one under <name>__s<speed x 10> (or <name>_s<..> for a name with "__");
+#   none: the clip at its own speed;
+# - frames: the loop retimed to this many frames (24 fps) before the stride;
+# - arm_swing: the arms' swing scaled toward the clip's mean (1.0: unchanged);
+# - play_at: the game's speeds it is played at, each reported with its rate (speed / v0) and the footstep beat.
+# [[grid]]: a clip's variants (arm_swing x frames), each <name>__arm<k x 100>_f<frames>; the one written under the
+# name is picked by the numbers (alien_loco_math.pick_default): the cadence nearest the footstep beat at its speed,
+# its planted feet within the slide bound; arm_swing has no number to pick by, the ties go to default_arm_swing.
+
+[set]
+raw_base = "research/2026-10-22-roster/design/pilot3d/anim_bare"  # under the raw root
+build = "r2b/build"  # <build>/<char>/<char>_char.blend
+ttm = "loco/s2/chameleon_char_ttm.blend"  # step 2's loops (the axolotl shares the skeleton)
+out = "loco/s3"  # build/<char>/ and reels/
+chars = ["chameleon", "axolotl"]
+foot = "Left"
+stride_flag = 2.0  # a stride scaled more than this is flagged
+rate_clamp = [0.25, 4.0]  # the game's rate clamp
+# the game's footstep clock (prime-game client/world/footstep_cadence.gd): 0.45 s per step at the walk, 0.32 at the
+# sprint, the stride between them lerped by speed, interval = stride / speed
+walk_mps = 4.5
+sprint_mps = 7.0
+walk_interval_s = 0.45
+sprint_interval_s = 0.32
+
+[[clip]]
+name = "Walk"  # the game never plays it yet; at its own speed, the 2.0 sneak's rate reported
+source = "Walk_Loop"
+play_at = [2.0]
+
+[[grid]]
+name = "Jog_Fwd"
+source = "Jog_Fwd_Loop"
+speeds = [4.5]
+arm_swing = [1.0, 0.75, 0.6]
+frames = [22, 21]
+default_arm_swing = 0.75  # step 1's proof and the plan's 0.65-0.75
+play_at = [4.5, 2.0]
+
+[[clip]]
+name = "Sprint_Fwd"
+source = "Sprint_Fwd_Loop"  # the build's 4 degree lean kept: stride moves only the hips' travel and the legs
+speeds = [7.0]
+play_at = [7.0]
+
+[[clip]]
+name = "Crouch_Fwd"
+source = "TM_crouch-run_Loop"
+speeds = [2.0]
+play_at = [2.0]
+
+[[clip]]
+name = "Crouch_Run"
+source = "TM_crouch-run_Loop"
+speeds = [2.8]
+play_at = [2.8]
+
+[[clip]]
+name = "Crouch_Fwd__ual"  # the baseline row: the build's UAL crouch as it is
+source = "Crouch_Fwd_Loop"
+play_at = [2.0, 2.8]
+
+[[clip]]
+name = "Strafe_Left"
+source = "TM_b5-strafe-left_Loop"
+speeds = [4.5, 3.0]  # today's game (no cap), then the proposed cap (2/3 of the walk)
+play_at = [4.5, 3.0]
+
+[[clip]]
+name = "Strafe_Right"
+mirror = "Strafe_Left"
+play_at = [4.5, 3.0]
+
+[[clip]]
+name = "Strafe_Left__shuffle"
+source = "TM_strafe-left-shuffle_Loop"
+speeds = [4.5, 3.0]
+play_at = [4.5, 3.0]
+
+[[clip]]
+name = "Strafe_Right__shuffle"
+mirror = "Strafe_Left__shuffle"
+play_at = [4.5, 3.0]
+
+[[clip]]
+name = "Jog_Bwd"
+source = "TM_b6-backward-run_Loop"
+speeds = [4.5, 3.0]
+play_at = [4.5, 3.0]
