@@ -49,7 +49,7 @@
       1.254
     ],
     "front": "+Z (out of the wall)",
-    "origin": "on the wall's face at the floor under the centre line"
+    "origin": "on the plate's back (d 0, placed [mount] d = 0.07 m out of the wall's face) at the floor under the centre line"
   },
   "leaves": {
     "shell_red": {

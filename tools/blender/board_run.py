@@ -257,7 +257,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         "mesh": {"triangles": build["triangles"], "triangles_by_material": build["triangles_by_material"],
                  "triangles_by_object": build["triangles_by_object"], "colliders": build["colliders"],
                  "size_m": build["size_m"], "front": "+Z (out of the wall)",
-                 "origin": "on the wall's face at the floor under the centre line"},
+                 "origin": "on the plate's back (d 0, placed [mount] d = 0.07 m out of the wall's face) at the floor under the centre line"},
         "leaves": {f"shell_{c}": {"hinge_cm": h, "axis": "local X", "closed_deg": 0.0, "tripped_deg": build["trip_deg"]}
                    for c, h in zip(("red", "yellow", "green", "blue"), m["hinges"])},
         "measured_cm": {"all_closed": m["all_closed"], "shell_tripped": m["shell_tripped"],
@@ -289,7 +289,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
          'in each a glowing crystal core behind an enamel shell on a bottom hinge (four leaves shell_<colour>, their '
          'origin on the hinge axis, local X rotation 0 closed, 110 degrees tripped, each with its convex collider), a '
          'lamp over each bay, the red problem beacon on top, cyan strips and two cable loops into the wall; '
-         f'{build["triangles"]:,} triangles, front +Z, origin on the wall face at the floor. States: '
+         f'{build["triangles"]:,} triangles, front +Z, origin on the plate's back at the floor (placed 0.07 m out of the wall's face). States: '
          'export/board.gd (HANDOFF.md). From the sheet the engineer picked on 2026-10-25 and its drawing in cm '
          f'(prime-game-design {DESIGN_COMMIT}, ideas/ship-components/stations-final: board-variants/v3-shell-final.jpg, '
          'board-drawing/; copied to the raw folder; the AI concept used only as a reference), built from code in '
