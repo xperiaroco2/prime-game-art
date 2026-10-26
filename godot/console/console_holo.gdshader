@@ -15,7 +15,7 @@ uniform vec3 colour : source_color = vec3(0.06, 0.42, 1.0);
 uniform float energy = 1.6;
 uniform float clock = 0.0;
 uniform vec3 orange : source_color = vec3(1.0, 0.11, 0.0);  // deep: the glow and AgX pale it to orange
-uniform vec3 red : source_color = vec3(1.0, 0.03, 0.02);
+uniform vec3 red : source_color = vec3(1.0, 0.012, 0.0);  // deep: bright red blooms to pink
 uniform float calling = 0.0;
 uniform float call_t0 = 0.0;
 uniform float call_period = 3.0;
@@ -96,7 +96,7 @@ void fragment() {
 			float halo = UV.x < -1.5 ? 0.6 : 1.0;
 			if (broken) {
 				col = red;
-				a = (0.2 + 4.5 * blink) * halo;
+				a = (0.15 + 2.2 * blink) * (UV.x < -1.5 ? 1.2 : 1.0);
 			} else {
 				col = wire_colour;
 				a = (st > 0.5 ? 2.0 : 0.8) * halo;
