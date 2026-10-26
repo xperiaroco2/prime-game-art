@@ -94,6 +94,8 @@ def main() -> int:
     ap.add_argument("--asset", type=Path, help="write the asset folder here from this build")
     ap.add_argument("--pieces", type=Path, default=PIECES, help="the built ship pieces for the corridor shots")
     args = ap.parse_args()
+    if args.asset and args.no_shots:  # fix2 (#322's review): the asset's report cites this build's corridor sheet
+        ap.error("--asset needs the shots: the asset's review is this build's corridor sheet (drop --no-shots)")
     copy_refs()
     out = BASE / args.tag
     if not args.no_build:

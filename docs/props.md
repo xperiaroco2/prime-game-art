@@ -566,7 +566,8 @@ They are copied to `<raw>/start-console/ref/`.
    through its middle as a dark column. Every block edge over 30 degrees gets a 9 mm chamfer marked in UV0 u, which
    the metal brightens (the concept's bright edges).
 3. **The hologram from the ship's own mesh.** The built hull pieces (`skin_top`, `skin_belly`, `skin_mouth`,
-   `skin_cheeks`, the three nozzle pods; `<raw>/ship/v3/pieces/`) are joined, turned so the nose points at the
+   `skin_cheeks`, the three nozzle pods; `<raw>/<ship.toml raw_dir>/pieces/`, since v5 built on the raised
+   deck: `console_run.py` passes `[deck] lift_m` and the build lowers them back by it) are joined, turned so the nose points at the
    button, scaled to 1:16.3 (the 26.1 m span to the drawing's 159.8 cm), the hall's centre put over the core at
    145.7 cm and leaned 12 degrees nose down. **Its plates' own edges do not make a hologram**: the hull is built of
    separate plates, so its open and creased edges are a dense grid that read as white noise (the first trial,
@@ -595,7 +596,37 @@ They are copied to `<raw>/start-console/ref/`.
    $PYTHON_BIN tools/blender/console_run.py --tag <tag> --res 900 --samples 64 --asset assets/prop/start_console
    ```
 
-`tools/tests/test_props_start_console.py` checks the drawing's numbers in the dims file and the committed asset.
+6. **The engine's spin-up** (step 1; prime-game#1095 c6392050112): four parts on the hologram, each a surface on
+   `console_holo.gdshader`'s modes 3 to 6 with its ids in UV0 (`console_dims.toml` `[spinup]`): the pods' lines and a
+   fan at each pod's front (`console_holo_turbine`: u the angle round the pod, the fans u 5, turned in the vertex
+   shader round their centre, `console.gd` `FAN_CENTRES` and `FAN_AXIS` from `build.json`), the wiring
+   (`console_holo_wire`: v the station's index in `STATIONS`, 8 the manifold; u the distance along the line toward the
+   turbines in dm, the points -1, their halos -2), the charge ring where the dashed ring was (`console_holo_ring`: u
+   the bar's share, v foot 0 and top 1) and the countdown (`console_holo_digit`: v digit x 10 + segment, turned to the
+   eye about the console's axis). The strips' UV0 u is their fill's share across, so the three fill as one bar. The
+   stations' lines run in one lane each (`[spinup.lanes]`: a radius round the hall's centre and an x for the run aft),
+   ordered so none crosses another: a back socket on the outermost lane, a vent on the innermost; a breaker comes in
+   along its corridor beside the order lamps, a vent along the throat's wall. The time is the console's own clock (a
+   tween on a uniform, so the game can read the call's phase for its beep and the fans keep their angle through a
+   change of rate). `console_run.py --spinup` shoots the four states from the console's front, the throat and both
+   corridors' mouths and the close-ups on the current pieces (it refuses a deck other than 1.2 m), the before/after
+   against the shipped build2 GLB with the spin-up hidden (`console_diff.py`, numpy in headless Blender) and the
+   scripted round's MP4 (`hall.gd`'s video mode). The API: `assets/prop/start_console/HANDOFF.md`.
+7. **The spin-up read from the hall** (step 2): what reads at 6 m is light that grows, not lines that change colour.
+   The call floods the turbines (brighter, the lines swelling along their normals, in `call_colour`: the sRGB
+   `orange` is nearly red in linear and reads pink under AgX) with a camera-facing glow sprite round each pod and a
+   wash over the shell; a broken point adds a big red bead (a sprite) and a red pillar turned about the vertical to
+   the eye, both blinking at its rate. The sprites and pillars are tiny quads in the GLB (`fx_w0`, their corners
+   `FX_SPREAD` off their ids in UV0) that the vertex stage sizes, or folds onto their centre while off: no pixels.
+   The charge ring's band is built twice as tall (`ring_h_tall`) and the shader draws a share (`band_top`); the
+   same bar runs again as a ring on the emitter deck (`deck_ring`, v 2..3), leaning out so it is seen from every
+   side. `console.gd` `set_ring_style` ("band", "deck", "both", "step1") and `set_fill` ("cyan", "green") keep the
+   choices open; `console_run.py --spinup` shoots their grid (`<tag>/grid/`) and step 1's throat stills beside
+   step 2's (`before_after.png`, `console_diff.py --pairs`). A NaN in an additive shader (a `pow` of a negative
+   behind a zero factor) blooms the whole frame black: clamp before `pow`.
+
+`tools/tests/test_props_start_console.py` checks the drawing's numbers in the dims file, the committed asset, the
+spin-up's ids in UV0, the report's stations against `ship.toml` and `console.gd`'s API and constants.
 
 ## A wall station from its drawing: the ship's crystal socket (art#263)
 
@@ -698,7 +729,10 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
    side: a body down to the axis crossed them on the way.
 3. **The sweep check.** The build turns every shell through its trip in tenths and counts the triangles it crosses
    on the body, the cores, the lamps and its neighbours (`build.json` `sweep_check`; empty is clean, and the test holds
-   it). `board_drawing.py` compares 23 of the drawing's numbers with the model's (`drawing/compare.json`, 0.5 cm
+   it). It checks 11 poses 11 degrees apart and triangle crossings only, not volumes: a thin part that passes wholly
+   between two poses, or a shell that sits inside another part without one triangle crossing, would not count (at the
+   shell's top, about 40 cm from its axis, one step moves it about 7 cm). Finer steps need a rebuild of the asset's
+   report; the Godot sweep shots (0, 1/4, 1/2, 3/4, 1) are the eye's check between the poses. `board_drawing.py` compares 23 of the drawing's numbers with the model's (`drawing/compare.json`, 0.5 cm
    tolerance): 20 measured off its own vertices, 3 set (the lamp ring from the dims, the hinge's h and d from the
    leaves' pivots; `board_drawing.SET`) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
    straight views at the drawing's scale.
@@ -810,3 +844,20 @@ the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the
 `tools/tests/test_props_crystal_charger.py` checks the drawing's numbers, the base's gap to the wall, the wall's fold
 against the ship's layout and the committed asset. The pass behind a player (`ship_layout.check_spots` with the
 spot's depth at the charger's 1.04 m): 2.17 m of free floor behind the capsule, against `pass_m` 1.6.
+
+## What the stations' bronze costs (art#263, fix pass 2)
+
+The shared metal shader's `dent` and `wave` slopes (fix1's smooth gradient noise) were measured, not guessed:
+`tools/blender/metal_cost_run.py` places the four approved exports in the built ship at night as their own drivers do
+(no crystals) and runs `godot/ship/metal_cost.gd` (ship.gd's shoot mode, `_godot.window()`, 1920x1080, vsync off).
+Per view (each station's own close view, its player's view and a close-up where bronze fills the frame) it takes the
+median GPU ms of 3 alternating rounds of 120 frames with the shader as shipped, with `dent` = `wave` = 0, with one
+octave, with the slope from the noise's analytic derivative (a proposal, `metal_cost.gd` `ANALYTIC`; not shipped) and
+with that view's station hidden, and saves each variant's frame and a before/after strip (`<view>__compare.png`).
+
+On an RTX 4060 (2026-10-26, `<raw>/ship/v4/stations-fix2/cost3/`): the stations ship `wave` 0.3 and `dent` 0, so one
+slope (64 hashes) runs on their bronze. In the player's views it costs 0.03 to 0.05 (socket, at the noise floor),
+0.35 (board) and 0.46 ms (charger), 0.18 to 0.33 in the stations' close views, 1.3 to 1.6 ms when bronze fills the
+frame; the console (both 0) is the control at 0.02 to 0.07 (the measurement's noise floor and the hall's sockets). One octave halves it; the analytic slope cuts it by about 70 %
+with the same noise field, but its glints fall in other places (the shipped forward difference over 0.3 and 0.65 of
+a cell is a smoothed slope), so it is a look change for the engineer. Nothing changes until he picks.

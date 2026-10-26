@@ -54,17 +54,23 @@ from mathutils.bvhtree import BVHTree
 DIMS = tomllib.loads((Path(__file__).with_name("console_dims.toml")).read_text(encoding="utf-8"))
 CM = 0.01
 CHAMFER_BLOCK, CHAMFER_SMALL = 0.009, 0.003
+LIFT = [0.0]  # m: the raise the ship's pieces were built with ([deck] lift_m); the hologram takes it off again
 
 
 def argv() -> dict:
     a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    out = {"out": None, "pieces": None, "render": None, "res": 900, "samples": 64, "views": None, "hdri": None}
+    out = {"out": None, "pieces": None, "render": None, "res": 900, "samples": 64, "views": None, "hdri": None,
+           "lift": None}
     i = 0
     while i < len(a):
         out[a[i].lstrip("-")] = a[i + 1]
         i += 2
     out["res"] = int(out["res"])
     out["samples"] = int(out["samples"])
+    if out["pieces"] and out["lift"] is None:  # the pieces stand lifted: without it the hologram would sit 0.6 m high
+        raise SystemExit("console_build.py: --pieces needs --lift (layouts/ship/ship.toml [deck] lift_m)")
+    out["lift"] = float(out["lift"] or 0.0)
+    LIFT[0] = out["lift"]
     return out
 
 
@@ -480,7 +486,7 @@ def hull_bmesh(pieces: Path) -> bmesh.types.BMesh:
             if o.type == "MESH" and not any(m.startswith(("ext_seam", "jamb")) for m in mats) \
                     and not o.name.startswith("jamb"):
                 me = o.data.copy()
-                me.transform(o.matrix_world)
+                me.transform(Matrix.Translation(Vector((0.0, 0.0, -LIFT[0]))) @ o.matrix_world)
                 bm.from_mesh(me)
                 bpy.data.meshes.remove(me)
         for o in obs:
@@ -493,7 +499,13 @@ def hull_bmesh(pieces: Path) -> bmesh.types.BMesh:
 
 
 def pod_bmeshes(pieces: Path) -> list:
-    """The three nozzle pods in the pieces' frame (their shells, collars and bells; the inner throat left out)."""
+    """The three nozzle pods in the pieces' frame (their shells, collars and bells; the inner throat left out). The
+    pod GLBs are built lifted (ship_build.lifted) and placed at exterior.toml's design heights: PODS must be those
+    places, and h - LIFT brings them back to the hull's frame."""
+    ext = tomllib.loads((SHIP_TOML.parent / "exterior.toml").read_text(encoding="utf-8"))["place"]
+    for name, (x, y, h) in PODS:
+        if not any(p[0] == name and [round(v, 3) for v in p[1]] == [x, y, h] for p in ext):
+            raise SystemExit(f"console_build.py: PODS {name} {(x, y, h)} is not in exterior.toml's place list")
     out = []
     for name, (x, y, h) in PODS:
         obs = import_glb(pieces / f"{name}.glb")
@@ -501,7 +513,7 @@ def pod_bmeshes(pieces: Path) -> list:
         for o in obs:
             if o.type == "MESH" and not o.name.startswith("pod_throat"):
                 me = o.data.copy()
-                me.transform(Matrix.Translation(Vector((x, -y, h))) @ o.matrix_world)
+                me.transform(Matrix.Translation(Vector((x, -y, h - LIFT[0]))) @ o.matrix_world)
                 bm.from_mesh(me)
                 bpy.data.meshes.remove(me)
         for o in obs:
@@ -704,9 +716,7 @@ def build_hologram(pieces: Path) -> list:
     add("hall disc", flat(circle2(HALL, 4.0, 64)), 100, line_w * 1.25)
     add("hall disc", flat(circle2(HALL, 2.7, 48)), 70, grid_w)
     add("hall disc", flat(circle2(HALL, 1.3, 32)), 70, grid_w)
-    for q in range(36):  # the dashed ring round the disc
-        if q % 2 == 0:
-            add("hall disc", flat(circle2(HALL, 4.45, 3, 10.0 * q, 10.0 * q + 6.0)), 85, grid_w * 1.3)
+    # (the dashed ring round the disc at 4.45 m is the spin-up's charge ring now: build_spinup)
     for a in range(0, 360, 45):
         d = Vector((math.cos(math.radians(a)), math.sin(math.radians(a)), 0.0))
         p0, p1 = HALL + d * 1.3, HALL + d * 4.0
@@ -734,19 +744,25 @@ def build_hologram(pieces: Path) -> list:
     for q in range(8):  # its dashed middle line
         y0 = 4.4 + q * 0.34
         add("entrance", flat([(0.0, y0), (0.0, y0 + 0.2)]), 80, grid_w * 1.3)
-    # the turbines: rings along each pod (bright at its ends) and lines down its length, all cut from its mesh
+    # the turbines: rings along each pod (bright at its ends) and lines down its length, all cut from its mesh; they
+    # are the spin-up's own surface (console_holo_turbine: they pulse and spin), drawn by build_spinup
+    turbines = []
     for pod in pods:
         lo = min(v.co.y for v in pod.verts)
         hi = max(v.co.y for v in pod.verts)
         cx = sum(v.co.x for v in pod.verts) / len(pod.verts)
         cz = sum(v.co.z for v in pod.verts) / len(pod.verts)
+        cuts = []
         for i in range(1, 6):
             y = lo + (hi - lo) * i / 6.0
-            add("turbines", section_lines(pod, Vector((0.0, y, 0.0)), Vector((0.0, 1.0, 0.0))),
-                100 if i in (1, 5) else 55, line_w if i in (1, 5) else grid_w)
+            cuts += [(ln, 100 if i in (1, 5) else 55, line_w if i in (1, 5) else grid_w)
+                     for ln in section_lines(pod, Vector((0.0, y, 0.0)), Vector((0.0, 1.0, 0.0)))]
         for a in range(0, 180, 45):
             n = Vector((math.cos(math.radians(a)), 0.0, math.sin(math.radians(a))))
-            add("turbines", section_lines(pod, Vector((cx, 0.0, cz)), n), 70 if a in (0, 90) else 45, grid_w)
+            cuts += [(ln, 70 if a in (0, 90) else 45, grid_w) for ln in section_lines(pod, Vector((cx, 0.0, cz)), n)]
+        half = 0.5 * (max(v.co.x for v in pod.verts) - min(v.co.x for v in pod.verts))
+        turbines.append({"centre": Vector((cx, hi, cz)), "lo": lo, "half": half,
+                         "cuts": [c for c in cuts if len(c[0]) > 1]})
 
     # the line tubes, in the console's frame
     bm = bmesh.new()
@@ -796,10 +812,284 @@ def build_hologram(pieces: Path) -> list:
     HOLO_PARTS["lamps"] = sum(len(f.verts) - 2 for f in lb.faces)
     lamps_ob = mesh_object("holo_lamps", lb, "console_lamp")
     HULL_STATS.update({"lamps": len(lamps), "scale": round(1.0 / k, 2)})
+    spin = build_spinup(M, k, turbines, line_w, grid_w)
     hull.free()
     for p in pods:
         p.free()
-    return [lines, shell_ob, lamps_ob]
+    return [lines, shell_ob, lamps_ob] + spin
+
+
+# --- the spin-up (art#263, step 1: the engineer's prime-game#1095 c6392050112) -------------------------------------
+# Four parts on the hologram, each its own surface on console_holo.gdshader's modes, their ids in UV0 (as the strips'
+# and lamps' indices): the turbines (console_holo_turbine: the pods' cuts, u their angle round the pod; and a fan at
+# each pod's front, u 5, that the shader turns round the pod's axis), the stations' wiring (console_holo_wire: v the
+# station's index, BUS the manifold; u the distance along its line in console dm, toward the turbines; the points
+# u -1 and their halos u -2), the charge ring (console_holo_ring: u the bar's share 0..1, v 0 at its foot, 1 at its
+# top) and the countdown (console_holo_digit: v digit x 10 + segment, a..g; the shader turns it to the eye).
+SPIN = DIMS["spinup"]
+FX = "console_fx"
+FX_MATS = {"console_holo_turbine", "console_holo_wire", "console_holo_ring", "console_holo_digit"}
+STATIONS = ("socket_w", "socket_e", "socket_fw", "socket_fe", "breaker_w", "breaker_e", "vent_w", "vent_e")
+BUS = len(STATIONS)
+SHIP_TOML = Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml"
+THROAT_E = (Vector((2.915, 3.252)), Vector((1.65, 7.1)))  # the throat's east wall (the entrance lines), pieces' frame
+FAN_U = 5.0
+GLOW_U, GLOW_V = 7.0, 200.0  # the turbines' calling glow sprites (u 7 +- FX_SPREAD, v 200 +- FX_SPREAD)
+SEGMENTS = "abcdefg"
+SPINUP: dict = {}
+
+
+def to_gltf(p: Vector) -> list:
+    return [round(p.x, 5), round(p.z, 5), round(-p.y, 5)]
+
+
+def fx_layers(bm) -> tuple:
+    return bm.faces.layers.int.new(IDX), bm.loops.layers.uv.new(FX)
+
+
+def fx_tube(bm, line: list, us: list, v: float, radius: float, layers: tuple, sides: int = 3) -> int:
+    """tube() with its UV0 as built: (us[i], v) at the line's point i."""
+    idx, fx = layers
+    first = len(bm.faces)
+    tris = tube(bm, line, radius, 0, idx, sides)
+    bm.faces.ensure_lookup_table()
+    for n in range(first, len(bm.faces)):
+        i = (n - first) // sides
+        for lp, uu in zip(bm.faces[n].loops, (us[i], us[i], us[i + 1], us[i + 1])):
+            lp[fx].uv = (uu, v)
+    return tris
+
+
+def fx_sphere(bm, centre: Vector, radius: float, uv: tuple, layers: tuple) -> int:
+    res = bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=6, radius=radius)
+    faces = {f for v in res["verts"] for f in v.link_faces}
+    for v in res["verts"]:
+        v.co += centre
+    for f in faces:
+        for lp in f.loops:
+            lp[layers[1]].uv = uv
+    return sum(len(f.verts) - 2 for f in faces)
+
+
+FX_SPREAD = 0.3  # a sprite's or pillar's corner offset in its UV0 (the shader reads it back: sx, sy in -1..1)
+
+
+def fx_quad(bm, corners: list, uvs: list, layers: tuple) -> int:
+    """One quad (Blender frame) with its UV0 per corner."""
+    f = bm.faces.new([bm.verts.new(c) for c in corners])
+    for lp, uv in zip(f.loops, uvs):
+        lp[layers[1]].uv = uv
+    return 2
+
+
+def fx_sprite(bm, centre: Vector, u0: float, v0: float, layers: tuple) -> int:
+    """A camera-facing sprite (step 2): a quad of half size fx_w0 in the GLB's x/y plane (Blender x/z) round the
+    centre, UV0 (u0 + FX_SPREAD sx, v0 + FX_SPREAD sy) at its corner (sx, sy); the shader moves the corners to face the
+    eye at its own size (or folds them to the centre: no pixels)."""
+    w = SPIN["fx_w0"] * CM
+    sq = ((-1, -1), (1, -1), (1, 1), (-1, 1))
+    return fx_quad(bm, [centre + Vector((sx * w, 0.0, sy * w)) for sx, sy in sq],
+                   [(u0 + FX_SPREAD * sx, v0 + FX_SPREAD * sy) for sx, sy in sq], layers)
+
+
+def fx_pillar(bm, foot: Vector, v0: float, layers: tuple) -> int:
+    """A broken station's pillar (step 2): an upright quad of half width fx_w0 and pillar_h tall from the foot, UV0
+    (-3 - its height share, v0 + FX_SPREAD sx); the shader turns it about the vertical to the eye."""
+    w, h = SPIN["fx_w0"] * CM, SPIN["pillar_h"] * CM
+    cs = ((-1, 0.0), (1, 0.0), (1, 1.0), (-1, 1.0))
+    return fx_quad(bm, [foot + Vector((sx * w, 0.0, t * h)) for sx, t in cs],
+                   [(-3.0 - t, v0 + FX_SPREAD * sx) for sx, t in cs], layers)
+
+
+def station_path(sid: str, at: list) -> list:
+    """A station's line on the plan (the pieces' frame, metres, 2D) from its point to the manifold: in to its lane's
+    radius round the hall's centre (a breaker along its corridor, a vent along the throat's wall), round the hall's
+    wall to the back, then aft beside the others. Built on the east side and mirrored for the west."""
+    s = 1.0 if at[0] > 0 else -1.0
+    c = Vector((HALL.x, HALL.y))
+    p = Vector((abs(at[0]), -at[1]))
+    kind = "breaker" if sid.startswith("breaker") else "vent" if sid.startswith("vent") else \
+        "socket_back" if p.y < c.y else "socket_front"
+    r, lx = SPIN["lanes"][kind]
+    pts = [p]
+    if kind.startswith("socket"):
+        pts.append(c + (p - c).normalized() * r)
+    elif kind == "breaker":
+        a = (Vector((TIPS[1].x, TIPS[1].y)) - c).normalized()
+        n = Vector((-a.y, a.x))
+        n = n if n.dot(p - c) > 0 else -n
+        o = SPIN["breaker_offset"]
+        pts.append(c + a * (p - c).dot(a) + n * o)
+        pts.append(c + a * math.sqrt(r * r - o * o) + n * o)
+    else:
+        a, b = THROAT_E
+        t = (a - b).normalized()
+        m = Vector((-t.y, t.x))
+        m = m if m.x < 0 else -m
+        q = p + m * SPIN["vent_offset"]
+        w = q - c  # along the wall into the hall's disc (4 m), then in to the lane: no other line is crossed there
+        bb, cc = w.dot(t), w.dot(w) - 16.0
+        e = q + t * (-bb - math.sqrt(bb * bb - cc))
+        pts += [q, e, c + (e - c).normalized() * r]
+    e = pts[-1] - c
+    a0 = math.degrees(math.atan2(e.y, e.x))
+    a1 = math.degrees(math.atan2(-math.sqrt(r * r - lx * lx), lx))
+    n = max(2, int(abs(a0 - a1) / 4.0))
+    pts += [Vector((c.x + r * math.cos(math.radians(a0 + (a1 - a0) * i / n)),
+                    c.y + r * math.sin(math.radians(a0 + (a1 - a0) * i / n)))) for i in range(1, n + 1)]
+    pts.append(Vector((lx, -SPIN["manifold_y"])))
+    return [Vector((s * q.x, q.y)) for q in pts]
+
+
+def lengths(line: list) -> list:
+    """The distance along a line (console metres) in decimetres."""
+    out = [0.0]
+    for a, b in zip(line, line[1:]):
+        out.append(out[-1] + (b - a).length * 10.0)
+    return out
+
+
+def build_spinup(M: Matrix, k: float, turbines: list, line_w: float, grid_w: float) -> list:
+    z = HOLO["plan_z"]
+    obs = []
+    # the turbines: the pods' cuts (u their angle round the pod, unwrapped along each cut) and a fan at each front
+    bm = bmesh.new()
+    lay = fx_layers(bm)
+    tris = {"cuts": 0, "fans": 0}
+    centres = []
+    for t in turbines:
+        c = t["centre"]
+        for ln, bright, width in t["cuts"]:
+            us = []
+            for p in ln:
+                a = math.atan2(p.z - c.z, p.x - c.x) / (2.0 * math.pi) % 1.0
+                if us:
+                    a += round(us[-1] - a)
+                us.append(a)
+            tris["cuts"] += fx_tube(bm, [M @ p for p in ln], us, bright, width * 0.5, lay)
+        y = c.y - 0.25
+        r = SPIN["fan_r"] * t["half"]
+        ring = [Vector((c.x + 0.2 * r * math.cos(a), y, c.z + 0.2 * r * math.sin(a)))
+                for a in (2.0 * math.pi * i / 16 for i in range(17))]
+        tris["fans"] += fx_tube(bm, [M @ p for p in ring], [FAN_U] * len(ring), 80, grid_w * 0.75, lay)
+        for b in range(int(SPIN["fan_blades"])):
+            a0 = 2.0 * math.pi * b / SPIN["fan_blades"]
+            blade = [Vector((c.x + r * (0.24 + 0.76 * f) * math.cos(a0 + 0.6 * f), y,
+                             c.z + r * (0.24 + 0.76 * f) * math.sin(a0 + 0.6 * f))) for f in (i / 5 for i in range(6))]
+            tris["fans"] += fx_tube(bm, [M @ p for p in blade], [FAN_U] * 6, 90, grid_w * 0.8, lay)
+        centres.append(to_gltf(M @ Vector((c.x, y, c.z))))
+        tris["fans"] += fx_sprite(bm, M @ c, GLOW_U, GLOW_V, lay)  # step 2: the call's orange glow round the pod
+    HOLO_PARTS.update({"turbines": tris["cuts"], "fans": tris["fans"]})
+    lo, hi = HULL_STATS["bounds_cm"]  # the hologram's box takes the turbines in, as before they had their own surface
+    HULL_STATS["bounds_cm"] = [[round(min(lo[i], min(v.co[i] for v in bm.verts) / CM), 2) for i in range(3)],
+                               [round(max(hi[i], max(v.co[i] for v in bm.verts) / CM), 2) for i in range(3)]]
+    obs.append(mesh_object("holo_turbines", bm, "console_holo_turbine"))
+    axis = (M.to_3x3() @ Vector((0.0, 1.0, 0.0))).normalized()
+    SPINUP["turbines"] = {"centres": centres, "axis": to_gltf(axis), "fan_u": FAN_U}
+
+    # the wiring: each station's point and halo, its line to the manifold, the manifold and its feeds to the fans
+    spots = {s["id"]: s["at"] for s in tomllib.loads(SHIP_TOML.read_text(encoding="utf-8"))["stations"]["spot"]}
+    bm = bmesh.new()
+    lay = fx_layers(bm)
+    tris = 0
+    SPINUP["stations"] = {}
+    for i, sid in enumerate(STATIONS):
+        at = spots[sid]
+        line = [M @ Vector((q.x, q.y, z)) for q in station_path(sid, at)]
+        tris += fx_tube(bm, line, lengths(line), i, line_w * 0.8, lay)
+        p = Vector((at[0], -at[1], z))
+        halo = [M @ Vector((x, y, z)) for x, y in circle2(p, SPIN["halo"], 24)]
+        tris += fx_tube(bm, halo, [-2.0] * len(halo), i, grid_w * 1.2, lay)
+        pt = M @ p + Vector((0.0, 0.0, SPIN["point"] * 0.6 * CM))
+        tris += fx_sphere(bm, pt, SPIN["point"] * 0.5 * CM, (-1.0, float(i)), lay)
+        tris += fx_pillar(bm, pt, float(i), lay)  # step 2: shown only while broken (the shader folds them away)
+        tris += fx_sprite(bm, pt, -5.0, float(i), lay)
+        SPINUP["stations"][sid] = {"index": i, "plan": at, "point": to_gltf(pt),
+                                   "line_dm": round(lengths(line)[-1], 3)}
+    ym = -SPIN["manifold_y"]
+    for t in turbines:
+        c = t["centre"]
+        y = c.y - 0.25
+        path = [Vector((0.0, ym, z)), Vector((c.x, ym, z)), Vector((c.x, 0.5 * (ym + y), z)), Vector((c.x, y, c.z))]
+        if abs(c.x) < 0.01:
+            path = path[1:]
+        line = [M @ q for q in path]
+        tris += fx_tube(bm, line, lengths(line), BUS, line_w * 0.9, lay)
+    HOLO_PARTS["wiring"] = tris
+    obs.append(mesh_object("holo_wiring", bm, "console_holo_wire"))
+
+    # the charge ring: three stages of dashes round the hall's disc, one bar from the nose clockwise (seen from
+    # above); an upright band over the plan, so it reads from the throat and the corridors
+    bm = bmesh.new()
+    idx, fx = fx_layers(bm)
+    # Step 2: the band is built ring_h_tall (v its height share of that; the shader draws band_top of it) and the
+    # same bar runs a second time as a ring on the emitter deck (v 2 at its foot, 3 at its top), leaning out: it is
+    # seen from every side at hip height. The same angles: the console's frame is the hologram's turned 180 degrees.
+    r, h = SPIN["ring_r"], SPIN["ring_h_tall"]
+    dr0, dh0, dr1, dh1 = (x * CM for x in SPIN["deck_ring"])
+    gap, dgap, nd = SPIN["ring_stage_gap"], SPIN["ring_dash_gap"], int(SPIN["ring_dashes"])
+    span = 120.0 - gap
+    dash = (span - (nd - 1) * dgap) / nd
+    tris = {"band": 0, "deck": 0}
+    for st in range(3):
+        start = 90.0 - 120.0 * st - 0.5 * gap
+        for d in range(nd):
+            a0 = d * (dash + dgap)
+            steps = max(1, math.ceil(dash / 2.5))
+            col, deck = [], []
+            for j in range(steps + 1):
+                along = a0 + dash * j / steps
+                a = math.radians(start - along)
+                share = (st + along / span) / 3.0
+                foot = M @ Vector((HALL.x + r * math.cos(a), HALL.y + r * math.sin(a), z))
+                top = M @ Vector((HALL.x + r * math.cos(a), HALL.y + r * math.sin(a), z + h))
+                col.append((bm.verts.new(foot), bm.verts.new(top), share))
+                ca, sa = -math.cos(a), -math.sin(a)
+                deck.append((bm.verts.new(Vector((dr0 * ca, dr0 * sa, dh0))),
+                             bm.verts.new(Vector((dr1 * ca, dr1 * sa, dh1))), share))
+            for part, rows, v0 in (("band", col, 0.0), ("deck", deck, 2.0)):
+                for (f0, t0, u0), (f1, t1, u1) in zip(rows, rows[1:]):
+                    f = bm.faces.new((f0, f1, t1, t0))
+                    for lp, uv in zip(f.loops, ((u0, v0), (u1, v0), (u1, v0 + 1.0), (u0, v0 + 1.0))):
+                        lp[fx].uv = uv
+                    tris[part] += 2
+    HOLO_PARTS["ring"] = tris["band"] + tris["deck"]
+    obs.append(mesh_object("holo_ring", bm, "console_holo_ring"))
+    SPINUP["ring"] = {"radius_cm": round(r * k / CM, 2), "height_cm": round(SPIN["ring_h"] * k / CM, 2),
+                      "built_height_cm": round(h * k / CM, 2), "band_top": round(SPIN["ring_h"] / h, 4),
+                      "dashes": 3 * nd, "deck_ring_cm": SPIN["deck_ring"], "triangles": tris}
+
+    # the countdown: two seven-segment digits over the hologram, upright, facing the front (the shader turns them)
+    bm = bmesh.new()
+    idx, fx = fx_layers(bm)
+    W, H, T = SPIN["digit_w"], SPIN["digit_h"], SPIN["digit_t"]
+    x0, x1, z0, z1 = -(W - T) / 2, (W - T) / 2, -(H - T) / 2, (H - T) / 2
+    segs = {"a": ((x0, z1), (x1, z1)), "b": ((x1, z1), (x1, 0.0)), "c": ((x1, 0.0), (x1, z0)),
+            "d": ((x0, z0), (x1, z0)), "e": ((x0, 0.0), (x0, z0)), "f": ((x0, z1), (x0, 0.0)),
+            "g": ((x0, 0.0), (x1, 0.0))}
+    tris = 0
+    for dg in range(2):
+        cx = (dg - 0.5) * (W + SPIN["digit_gap"])
+        for sn, name in enumerate(SEGMENTS):
+            (ax, az), (bx, bz) = segs[name]
+            a, b = Vector((ax, az)), Vector((bx, bz))
+            dv = (b - a).normalized()
+            a, b = a + dv * 0.45, b - dv * 0.45  # a hair's gap at the segments' tips
+            nv = Vector((-dv.y, dv.x)) * (T / 2)
+            ring = [a, a + dv * (T / 2) + nv, b - dv * (T / 2) + nv, b, b - dv * (T / 2) - nv, a + dv * (T / 2) - nv]
+            verts = [bm.verts.new(((cx + q.x + q.y * SPIN["digit_slant"]) * CM, 0.0, (SPIN["digit_z"] + q.y) * CM))
+                     for q in ring]
+            f = bm.faces.new(verts)
+            for lp in f.loops:
+                lp[fx].uv = (0.0, float(dg * 10 + sn))
+            tris += 4
+    HOLO_PARTS["digits"] = tris
+    obs.append(mesh_object("holo_digits", bm, "console_holo_digit"))
+    SPINUP["countdown"] = {"centre_cm": [0.0, 0.0, SPIN["digit_z"]], "digit_h_cm": H, "segments": SEGMENTS}
+    SPINUP["order"] = list(STATIONS) + ["bus"]
+    SPINUP["fx"] = {"w0_m": round(SPIN["fx_w0"] * CM, 5), "spread": FX_SPREAD, "pillar_h_cm": SPIN["pillar_h"],
+                    "glow_uv": [GLOW_U, GLOW_V], "sprite_u": -5.0, "pillar_u": [-3.0, -4.0]}
+    return obs
 
 
 def mesh_object(name: str, bm, mat_name: str) -> bpy.types.Object:
@@ -1039,11 +1329,30 @@ def build_materials() -> None:
     blended(mat)
     MATS["console_beam"] = mat
 
+    # the spin-up's parts (Blender's look: their resting glow; the states are the game's, console_holo.gdshader)
+    # step 2's state-only parts stay dark here: the turbines' glow sprites (u > 6), the broken points' pillars and
+    # sprites (u < -2.5), the tall band over ring_h and the deck ring (v over ring_h's share)
+    masks = {"console_holo_turbine": ("LESS_THAN", 0, 6.0), "console_holo_wire": ("GREATER_THAN", 0, -2.5),
+             "console_holo_ring": ("LESS_THAN", 1, SPIN["ring_h"] / SPIN["ring_h_tall"] + 1e-3)}
+    for name, strength in (("console_holo_turbine", 2.0), ("console_holo_wire", 1.2), ("console_holo_ring", 0.8),
+                           ("console_holo_digit", 0.0)):
+        mat = bpy.data.materials.new(name)
+        nd = Nodes(mat)
+        shader = additive(nd, (0.01, 0.28, 1.0, 1.0), strength)
+        if name in masks:
+            op, axis, edge = masks[name]
+            em = next(n for n in nd.nt.nodes if n.bl_idname == "ShaderNodeEmission")
+            nd.set(em, "Strength", nd.math("MULTIPLY", nd.math(op, nd.uv()[axis], edge), strength))
+        nd.output(shader)
+        blended(mat)
+        MATS[name] = mat
+
     MATS["_chamfer"] = bpy.data.materials.new("_chamfer")  # a marker slot: the bevel's faces, sorted in join()
 
 
 ORDER = ["console_bronze", "console_graphite", "console_cyan", "console_button", "console_stage", "console_lamp",
-         "console_holo_line", "console_holo_shell", "console_beam"]
+         "console_holo_line", "console_holo_shell", "console_beam", "console_holo_turbine", "console_holo_wire",
+         "console_holo_ring", "console_holo_digit"]
 
 
 # --- assembly ------------------------------------------------------------------------------------------------------
@@ -1071,6 +1380,7 @@ def join(objs: list) -> bpy.types.Object:
         bm.from_mesh(me)
         uv = bm.loops.layers.uv.get("UVMap") or bm.loops.layers.uv.new("UVMap")
         idx = bm.faces.layers.int.get(IDX)
+        fx = bm.loops.layers.uv.get(FX)
         for f in bm.faces:
             slot = me.materials[f.material_index].name if f.material_index < len(me.materials) else own
             is_chamfer = slot == "_chamfer"
@@ -1079,9 +1389,21 @@ def join(objs: list) -> bpy.types.Object:
             v = float(f[idx]) if (idx is not None and name in INDEXED) else facet_random(f.calc_center_median())
             if name in ("console_stage", "console_lamp"):
                 INDEX_SEEN.setdefault(name, set()).add(int(v))
+            if name in FX_MATS and fx is not None:  # the spin-up's parts: (u, v) as built
+                for lp in f.loops:
+                    lp[uv].uv = tuple(lp[fx].uv)
+                continue
+            if name == "console_stage":  # u: the fill's share across the strip, left to right (the charge bar)
+                u0, u1 = DIMS["strips"]["u"][int(v)]
+                for lp in f.loops:
+                    x = (ob.matrix_world @ lp.vert.co).x / CM
+                    lp[uv].uv = (min(1.0, max(0.0, (x - u0) / (u1 - u0))), v)
+                continue
             for lp in f.loops:
                 lp[uv].uv = (1.0 if is_chamfer else 0.0, v)
         stats[ob.name] = stats.get(ob.name, 0) + sum(len(f.verts) - 2 for f in bm.faces)
+        if fx is not None:
+            bm.loops.layers.uv.remove(fx)
         tmp = bpy.data.meshes.new("tmp")
         bm.to_mesh(tmp)
         bm.free()
@@ -1145,6 +1467,9 @@ def plain_materials() -> dict:
                                    strength=0.3, blend=True),
         "console_beam": dict(base=(0.1, 0.6, 1.0, 0.12), metallic=0.0, rough=0.5, emit=(0.1, 0.6, 1.0),
                              strength=0.6, blend=True),
+        **{name: dict(base=(0.1, 0.6, 1.0, a), metallic=0.0, rough=0.5, emit=(0.12, 0.66, 1.0), strength=e, blend=True)
+           for name, a, e in (("console_holo_turbine", 0.85, 4.0), ("console_holo_wire", 0.6, 2.0),
+                              ("console_holo_ring", 0.3, 1.0), ("console_holo_digit", 0.0, 0.0))},
     }
     out = {}
     for name, s in spec.items():
@@ -1196,6 +1521,7 @@ def export(ob, out: Path) -> dict:
            if me.materials[p.material_index].name in ("console_bronze", "console_graphite") for i in p.vertices]
     return {"triangles": sum(tris.values()), "triangles_by_material": tris,
             "triangles_by_part": json.loads(ob["part_triangles"]), "hologram": {**HULL_STATS, "lines": HOLO_PARTS},
+            "spinup": SPINUP,
             "indices": {k: sorted(v) for k, v in INDEX_SEEN.items()},
             "vertices": len(me.vertices), "size_m": [round(hi[i] - lo[i], 4) for i in range(3)],
             "min_m": [round(x, 4) for x in lo], "max_m": [round(x, 4) for x in hi],
