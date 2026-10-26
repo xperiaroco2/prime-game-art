@@ -1,0 +1,67 @@
+# Option A of the alien's locomotion (art #196): text-to-motion candidates for the clips the alien lacks or plays
+# badly at the game's speeds. The engineer chose option A for the run (comment 6383107295); Meshy generation within the
+# plan's credits is a standing permission (2026-10-03, docs/decisions/2026-10-03-trust-model.md).
+# What each item is for (the A plan, 2026-10-25; the game's speeds: walk 4.5, sprint 7.0, crouch 2.0, crouch+Shift 2.8):
+#   jog-fwd-a, jog-fwd-b         beside the UAL jog, whose 2.8 steps/s disagree with the 0.45 s footstep beat at 4.5
+#   strafe-left-shuffle, -cross  the alien has no strafe; UAL has none; batch 5/6's strafes were unusable (a gallop,
+#                                a run turned 50 degrees); Right is the mirror
+#   backward-run-a, -b           the alien has no Jog_Bwd (today the forward jog plays reversed)
+#   crouch-run                   the crouch+Shift speed of 2.8, which the UAL crouch cannot reach
+# The clips go from their SMPL-H FBX onto the contract skeleton (a new retarget map); they are candidates beside the
+# UAL clips, judged in treadmill reels before any swap. Prompts name no game, film or character.
+#
+# Credits (docs/meshy.md: text to motion prime 10 each): 70, cap 80. Balance 2465 on 2026-10-26.
+#   tools/run.py meshy estimate 2026-10-25-alien-locomotion-ttm
+#   tools/run.py meshy run 2026-10-25-alien-locomotion-ttm
+
+id = "2026-10-25-alien-locomotion-ttm"
+purpose = "Option A of the alien's locomotion: seven prime text-to-motion candidates (two jogs, two left strafes, two backward runs, a crouch run) for the contract skeleton (art #196)."
+plan = "Meshy Pro (monthly)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); text-to-motion clips are AI-generated"
+credit_cap = 80
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-24"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6383107295"
+
+[[items]]
+id = "jog-fwd-a"
+kind = "text_to_motion"
+prompt = "A person jogs straight forward at an easy, steady pace in a straight line, upright chest, relaxed shoulders, the arms bent and swinging in a small, relaxed arc beside the body, light even footfalls of identical length. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 6, mode = "prime" }
+
+[[items]]
+id = "jog-fwd-b"
+kind = "text_to_motion"
+prompt = "A person jogs straight forward at a brisk pace in a straight line, chest up and slightly ahead, the bent arms pumping in a compact motion close to the sides and never crossing in front of the chest, quick even steps of identical length. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 6, mode = "prime" }
+
+[[items]]
+id = "strafe-left-shuffle"
+kind = "text_to_motion"
+prompt = "A person moves quickly exactly sideways to the left in a straight line with side shuffle steps, the feet never crossing, hips, chest and head facing straight ahead the whole time, knees a little bent, arms bent and held loosely in front of the body. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 6, mode = "prime" }
+
+[[items]]
+id = "strafe-left-cross"
+kind = "text_to_motion"
+prompt = "A person runs exactly sideways to the left in a straight line, the trailing leg crossing over in front in even, rhythmic steps of identical length, hips, chest and head facing straight ahead the whole time, arms bent and swinging a little. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 6, mode = "prime" }
+
+[[items]]
+id = "backward-run-a"
+kind = "text_to_motion"
+prompt = "A person runs backwards in a straight line with long, quick backward strides, the chest slightly ahead of the hips, head facing straight ahead the whole time, knees bent, arms pumping in rhythm with the legs. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 6, mode = "prime" }
+
+[[items]]
+id = "backward-run-b"
+kind = "text_to_motion"
+prompt = "A person backpedals quickly in a straight line, staying low with bent knees, short fast backward steps on the balls of the feet, chest and head facing straight ahead the whole time, arms bent in front for balance. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 6, mode = "prime" }
+
+[[items]]
+id = "crouch-run"
+kind = "text_to_motion"
+prompt = "A person moves quickly straight forward in a low crouch, knees deeply bent and hips low, chest up and head looking ahead, quick even steps of identical length, arms bent and held close to the body. An even, repeating cycle that starts and ends in the same pose."
+params = { duration = 6, mode = "prime" }
