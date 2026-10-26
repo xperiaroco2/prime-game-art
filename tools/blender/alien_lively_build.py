@@ -413,6 +413,8 @@ RIM_CUT_MAX_AREA_PCT = 5.0  # R2: the largest net change of an eye's eyeball are
 # recorded follow-up, docs/godot.md); 5 % passes that cut and still fails a cut that eats into the opening
 RIM_CUT_MAX_TO_LID_PCT = 5.0  # E1: the eyeball triangles' area the cut gives to the lid, per eye (% of its eyeball area)
 RIM_CUT_MAX_TO_EYE_PCT = 1.5  # E1: the lid triangles' area the cut gives to the eyeball, per eye (%)
+RIM_CUT_FIT_MAX_TO_EYE_PCT = 4.0  # E2: the same for a --rim-fit candidate (all, outer), which widens the opening by
+# design: "all" gave the chameleon's eyeball 2.544 % (left) and 3.384 % (right), over the trimmed cut's 1.5 %
 # Each way set just above the approved R2b builds' worst eye (E1, measured): to the lid the chameleon's right eye
 # 4.911 % (left 4.784, the axolotl 1.017 and 0.997), to the eyeball the axolotl's left 1.222 % (right 1.068, the
 # chameleon 0.974 and 0.762). The net bound alone let a cut trade area both ways; these fail a cut that takes or
@@ -689,23 +691,26 @@ def rim_cut(A, I, eyeball, centres, r, order, fit="trimmed"):
         rep[key]["trimmed"] = rep[key]["rim_positions"] - rep[key]["fit_kept"]
     if fit != "trimmed":
         rep["fit"] = fit  # E2: only a candidate's report names it (the approved build's lively.json unchanged)
+    to_eye_bound = RIM_CUT_MAX_TO_EYE_PCT if fit == "trimmed" else RIM_CUT_FIT_MAX_TO_EYE_PCT
     rep["eyeball_area_bounds_pct"] = {"net": RIM_CUT_MAX_AREA_PCT, "to_lid": RIM_CUT_MAX_TO_LID_PCT,
-                                      "to_eye": RIM_CUT_MAX_TO_EYE_PCT}
-    why = area_faults(rep["eyeball_area"])
+                                      "to_eye": to_eye_bound}
+    why = area_faults(rep["eyeball_area"], to_eye_bound)
     if bad or rep["edges_after"] != rep["edges_before"] or why:
         raise SystemExit(f"LIVELY rim cut: {bad} bad pieces, edges {rep['edges_before']} -> {rep['edges_after']}, "
                          f"eyeball area: {'; '.join(why) or 'within its bounds'}")
     return A1, I1, cls1, band1, rep
 
 
-def area_faults(area):
+def area_faults(area, to_eye=None):
     """E1: the rim cut's area guard over lively.json's eyeball_area (per eye change_pct, to_lid_pct, to_eye_pct): the
-    net change against RIM_CUT_MAX_AREA_PCT and each way against its own bound. Returns the faults (empty: within)."""
+    net change against RIM_CUT_MAX_AREA_PCT and each way against its own bound (to_eye: E2, a --rim-fit candidate's
+    own bound instead of RIM_CUT_MAX_TO_EYE_PCT). Returns the faults (empty: within)."""
     why = []
     for key, v in area.items():
         if abs(v["change_pct"]) > RIM_CUT_MAX_AREA_PCT:
             why.append(f"{key} net change {v['change_pct']} % (bound {RIM_CUT_MAX_AREA_PCT})")
-        for f, bound in (("to_lid_pct", RIM_CUT_MAX_TO_LID_PCT), ("to_eye_pct", RIM_CUT_MAX_TO_EYE_PCT)):
+        for f, bound in (("to_lid_pct", RIM_CUT_MAX_TO_LID_PCT),
+                         ("to_eye_pct", RIM_CUT_MAX_TO_EYE_PCT if to_eye is None else to_eye)):
             if bound is not None and v.get(f, 0.0) > bound:
                 why.append(f"{key} {f[:-4]} {v[f]} % (bound {bound})")
     return why
@@ -853,7 +858,11 @@ RIM_SPLIT_SPHERE_BAND = 1.5  # E2 candidate A: with sphere_only, only eyeball ve
 # radius from its centre take the radial normal (the strays on the chameleon's bust edge, 6.8 r off, keep their own)
 
 
-def rim_split(A, I, cls, views, sphere_only=False):
+RIM_SPLIT_FIT_MAX_PAST90_PCT = 10.0  # E2: the same bound for a --rim-fit candidate: its wider opening takes in more of
+# the lid's fold, so more radial normals turn past 90 degrees ("outer": 8.589 % on the chameleon's worst eye)
+
+
+def rim_split(A, I, cls, views, sphere_only=False, past90_bound=None):
     """R2b: the dark wedge at the eye's outer corner. A vertex that an eyeball and a lid triangle share carries one
     normal for both: Meshy's, bent into the lid's fold, and eyeball_fix fades the sphere's radial normal in only from
     6 % of r off the lid line. Where the lid meets the eyeball at a sharp corner the eyeball's triangles fan out from
@@ -864,7 +873,9 @@ def rim_split(A, I, cls, views, sphere_only=False):
     again. sphere_only (E2 candidate A, `--rim-split-sphere-only`, off by default): an eyeball vertex further than
     RIM_SPLIT_SPHERE_BAND radii from its sphere's centre (an eyeball-class stray off the eye) keeps its own normal and
     tangent; the report's `sphere_only` counts them per eye and the turns are over the vertices that changed.
+    past90_bound: E2, a --rim-fit candidate's own bound instead of RIM_SPLIT_MAX_PAST90_PCT.
     Returns A (new arrays), I and the report."""
+    bound = RIM_SPLIT_MAX_PAST90_PCT if past90_bound is None else past90_bound
     eb_v = np.zeros(len(A["POSITION"]), bool)
     lid_v = np.zeros(len(A["POSITION"]), bool)
     eb_v[I[cls].ravel()] = True
@@ -902,15 +913,15 @@ def rim_split(A, I, cls, views, sphere_only=False):
     rep = {"copied": int(len(shared)), "eyeball_vertices": int(len(idx)),
            "normal_turn_deg": {"p50": round(float(np.median(turn)), 2), "p99": round(float(np.percentile(turn, 99)), 2),
                                "max": round(float(turn.max()), 2)},
-           "eyes": eyes, "past_90_bound_pct": RIM_SPLIT_MAX_PAST90_PCT}
+           "eyes": eyes, "past_90_bound_pct": bound}
     if sphere_only:  # E2: only a candidate's report has it (the approved build's lively.json unchanged)
         rep["sphere_only"] = {"band_r": RIM_SPLIT_SPHERE_BAND, "kept_own": {
             key: {"vertices": int((keep & (k == j)).sum()),
                   "at": np.round(P[idx[keep & (k == j)]], 4).tolist()} for j, key in enumerate(views)}}
     worst = max((v["past_90_pct"] for v in eyes.values()), default=0.0)
-    if RIM_SPLIT_MAX_PAST90_PCT is not None and worst > RIM_SPLIT_MAX_PAST90_PCT:
+    if bound is not None and worst > bound:
         raise SystemExit(f"LIVELY rim split: {worst} % of an eye's eyeball normals turned past 90 degrees"
-                         f" (bound {RIM_SPLIT_MAX_PAST90_PCT})")
+                         f" (bound {bound})")
     return out, I1, rep
 
 
@@ -1149,7 +1160,8 @@ def main():
                 A, cut["lip"] = lip_smooth(A, I, eyeball, centres, r, args.lip_smooth, args.lip_mode)
                 print(f"LIVELY lip: {json.dumps(cut['lip'])}", flush=True)
             if args.rim_split:  # R2b: the outer corner's dark wedge, the eyeball shaded as its sphere up to the lid
-                A, I, cut["split"] = rim_split(A, I, eyeball, views, args.rim_split_sphere_only)
+                A, I, cut["split"] = rim_split(A, I, eyeball, views, args.rim_split_sphere_only,
+                                               None if args.rim_fit == "trimmed" else RIM_SPLIT_FIT_MAX_PAST90_PCT)
                 print(f"LIVELY rim split: {json.dumps(cut['split'])}", flush=True)
             P, N1, T1, UV = A["POSITION"], A["NORMAL"], A["TANGENT"], A["TEXCOORD_0"]
             for k, i in prim["attributes"].items():
