@@ -93,6 +93,10 @@ tests = ["test_ragdoll_*", "test_slice_*"]
 sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
 tests = ["test_faces_*"]
 
+[area.alien_stride]
+sources = ["tools/blender/alien_stride.py", "tools/blender/alien_stride_math.py"]  # the alien locomotion clip tool (#196, option A); before light's alien_*
+tests = ["test_alien_stride_*"]
+
 [area.alien_fit]
 sources = ["tools/blender/alien_fit_geom.py", "tools/blender/alien_socket_fit.py"]  # M15's eye socket fit (#196); before light's alien_*
 tests = ["test_alien_fit_*"]
