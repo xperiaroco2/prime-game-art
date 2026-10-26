@@ -1373,14 +1373,14 @@ pilot's static premium heads"):
     - `rim_split`'s normals past 90 degrees: the review's "about 1 %" was the turn's p99 (116.6 degrees); the share
       past 90 is 5.863 % of the chameleon's left eyeball vertices (106 of 1808) and 6.199 % of the right (113 of
       1823), none of the axolotl's (0 of 384 each). Where (in the sphere's radius off the lid line, the split's
-      copies): 57 and 62 on it, 43 and 44 within 0.06 r (eyeball_fix's fade zone, the lid fold), 3 and 2 within 0.25
-      r, and 3 and 5 beyond 1.5 r: eyeball-class vertices off the eye, all but one on the bust's bottom edge (y about
+      copies): 57 and 62 on it, 43 and 44 within 0.06 of the ring sphere's radius (about eyeball_fix's fade zone, which is 0.06 of the head's eye radius, 2.5-4 % larger; the lid fold), 3 and 2 within 0.25
+      r, and 3 and 5 more than 1.5 r off the lid line (not `beyond_1_5_r`, which counts every eyeball vertex over 1.5 r from the sphere's centre: 6 and 9): eyeball-class vertices off the eye, all but one on the bust's bottom edge (y about
       -0.95, 6.8 r from the eye centre), given that eye's radial normal (lively.json `rim_cut.split.eyes`, with their
       positions). `RIM_SPLIT_MAX_PAST90_PCT` = 6.5 % per eye fails the build beyond it: just above the worst eye, so
-      about 5 more of an eye's normals past 90 degrees fail. Left for his look: a stray eyeball vertex's radial normal
+      6 more on the right eye or 12 more on the left fail. The bounds are set from the chameleon's worst eye, so they barely guard the axolotl (0 past 90, 1.0 % to the lid). Left for his look: a stray eyeball vertex's radial normal
       (classify the strays as lid, or give rim_split's radial normal only within the sphere) and keeping the faded
       normal near the lid line both change the shading.
-    - The area each way (`eyeball_area.<eye>.to_lid_pct`, `to_eye_pct`, and mm2): the chameleon's cut gives the lid
+    - The area each way (`rim_cut.eyeball_area.<eye>.to_lid_pct`, `to_eye_pct`, and mm2): the chameleon's cut gives the lid
       4.784 % (left) and 4.911 % (right) of the eyeball's area and the eyeball 0.974 % and 0.762 %; the axolotl's
       1.017 % and 0.997 % to the lid, 1.222 % and 1.068 % to the eyeball (net change = to_eye - to_lid, the pieces
       tile). `RIM_CUT_MAX_TO_LID_PCT` = 5.0 % and `RIM_CUT_MAX_TO_EYE_PCT` = 1.5 %, each just above its worst eye,
@@ -1390,7 +1390,7 @@ pilot's static premium heads"):
       median and 45.7 mm (0.245 r) at most (left: 0.61 mm median, 31.0 mm at most); of the dropped positions 45 of 51
       (left 21 of 29) lie outside the trimmed curve, 11.2 mm median (left 10.9), up to 140.9 mm (left 103.3). So
       the spurs are mostly the rim's outer steps, and trimming them is why the cut gives the lid 4.9 % and the eyeball
-      only 0.8 % (net -4.1 %). Keeping them would change the cut: 242 of the right eye's 1269 band positions (left 166
+      only 0.8 % (net -4.1 %). Keeping them would move the curve (measured on the cut's g before the border clamping and the snaps): 242 of the right eye's 1269 band positions (left 166
       of 1233) change side, g by 2.7 mm median and 45.7 mm at most. The axolotl's lean is under 1.4 mm (19 and 8
       positions change side). Left for his look: a fit with the spurs kept (or a trim one side only) widens the
       chameleon's opening.
