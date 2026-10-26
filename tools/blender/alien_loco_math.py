@@ -59,7 +59,10 @@ def expand(cfg: dict) -> list[dict]:
             speeds = c.get("speeds") or [None]
             for i, s in enumerate(speeds):
                 made.append({"name": speed_name(c["name"], s, i == 0) if s is not None else c["name"],
-                             "base": c["name"], "source": c["source"], "speed": s, "frames": c.get("frames"),
+                             "base": c["name"], "source": c.get("source"), "from": c.get("from"), "speed": s,
+                             "frames": c.get("frames"), "orient": c.get("orient"), "cadence": c.get("cadence"),
+                             "lean_deg": c.get("lean_deg"), "head_level": c.get("head_level"),
+                             "reel": c.get("reel"),
                              "arm_swing": c.get("arm_swing", 1.0), "play_at": list(c.get("play_at", [])),
                              "max_scale": c.get("max_scale"), "bend_min_deg": c.get("bend_min_deg"),
                              "arms_from": c.get("arms_from")})
@@ -69,8 +72,34 @@ def expand(cfg: dict) -> list[dict]:
     for j in jobs:
         if j["name"] in seen:
             raise ValueError(f"two clips named {j['name']}")
+        if j.get("from") and j["from"] not in seen:
+            raise ValueError(f"{j['name']}: made from {j['from']}, which is not made before it")
         seen.add(j["name"])
     return jobs
+
+
+AIM_TOL_DEG = 0.5  # orient: a clip whose head looks further off the aim is first turned whole onto it
+LEAN_SPLIT = (("Spine", 0.4), ("Chest", 0.35), ("UpperChest", 0.25))  # lean_deg: the trunk's forward lean, shared
+
+
+def orient(S, skel: dict, clip: dict, o: dict) -> tuple[dict, dict]:
+    """orient_warp with absolute headings (degrees, 0 at the aim -Y, positive toward the left): o = {hips, travel,
+    split?}: the hips' mean heading turned to `hips`, the feet's travel to `travel`, whatever the clip's own (a mocap
+    take's hips sit off its travel); split: [[bone, share], ...] (default orient_warp's)."""
+    fac = S.facing(skel, clip)
+    aim = 0.0
+    if abs(fac["head_yaw_deg"]) > AIM_TOL_DEG:  # first the whole clip turned so its head looks along the aim (a take's
+        aim = -fac["head_yaw_deg"]               # head sits off its hips' and its travel's own heading)
+        clip, _ = S.orient_warp(skel, clip, aim, aim, split=())
+        fac = S.facing(skel, clip)
+    m = S.measure(skel, clip)
+    travel0 = S.travel_heading_deg(m)
+    hip_yaw = S._wrap(o["hips"] - fac["hips_yaw_deg"])
+    travel = S._wrap(o["travel"] - travel0)
+    split = tuple(tuple(x) for x in o["split"]) if o.get("split") else S.ORIENT_SPLIT
+    out, rep = S.orient_warp(skel, clip, hip_yaw, travel, split=split)
+    return out, {**rep, "asked": dict(o), "aim_turn_deg": round(aim, 2), "travel_before_deg": round(travel0, 2),
+                 "hips_before_deg": fac["hips_yaw_deg"]}
 
 
 def sources(jobs: list[dict]) -> list[str]:
@@ -132,7 +161,27 @@ def pick_default(rows: list[dict], beat_cadence: float, slide_bound_mm: float, d
     return min(ok, key=lambda r: (round(abs(r["c0"] - beat_cadence), 6), abs(r["arm_swing"] - default_arm)))
 
 
-def reel_plan(jobs: list[dict]) -> list[dict]:
+VIEWS = ("front", "three_quarter", "back", "side")  # treadmill_reels.gd's cameras (side: from the character's left)
+
+
+def reel_plan(jobs: list[dict], reels: list[dict] | None = None) -> list[dict]:
+    """With the set's [[reel]] entries (P2): those, one reel per view (<name>__<view>), each clip at its speed, an
+    optional travel (degrees, the stripes' heading: a clip carried along another direction than its own, the game's
+    pure side clip on a diagonal) and label; their clips must be made by the set. Without them, the old plan (steps 3
+    and 4b): """
+    if reels:
+        names = {j["name"] for j in jobs}
+        out = []
+        for r in reels:
+            for c in r["clips"]:
+                if c["clip"] not in names:
+                    raise ValueError(f"reel {r['name']}: {c['clip']} is not made by the set")
+            for v in r["views"]:
+                if v not in VIEWS:
+                    raise ValueError(f"reel {r['name']}: no camera {v}")
+                out.append({"name": f"{r['name']}__{v}", "view": v, "video": r.get("video", True),
+                            "cols": r.get("cols", 3), "clips": [dict(c) for c in r["clips"]]})
+        return out
     """The treadmill reels: per game slot one reel at its speed (side view); a clip with one speed variant
     (<name>__s<..>: a strafe at 3.0 beside 4.5, Jog_Bwd at 3.0 beside 2.5) as a pair (strafes seen from the front); the
     jog grid as a 2x3 sheet (no video); Idle -> Jog_Fwd at 4.5 with the game's 0.15 s cross-fade (its sheet: 8 frames
@@ -170,7 +219,8 @@ def godot_xz(v) -> list[float]:
     return [round(v[0], 5), round(-v[1], 5)]
 
 
-def reel_timeline(info: dict, speed: float | None, seconds: float, cfg: dict, offset: float = 0.0) -> dict:
+def reel_timeline(info: dict, speed: float | None, seconds: float, cfg: dict, offset: float = 0.0,
+                  travel_deg: float | None = None) -> dict:
     """One clip on the treadmill: its rate at `speed` (None: its own v0, rate 1), the stripes' direction (Godot x, z:
     the planted feet's way relative to the hips, ground minus hips), the game's footstep interval at that speed and
     the reel times (s) of the beats and of each foot's contacts, the clip starting at `offset`. info: loco.json's
@@ -182,6 +232,9 @@ def reel_timeline(info: dict, speed: float | None, seconds: float, cfg: dict, of
     rel = (info["ground"][0] - info["hips"][0], info["ground"][1] - info["hips"][1])
     n = math.hypot(*rel)
     d = [round(rel[0] / n, 5), round(rel[1] / n, 5)] if n > 1e-9 else [0.0, -1.0]
+    if travel_deg is not None:  # the ground against a travel of this heading (Godot x, z: Blender's (x, -y))
+        h = math.radians(travel_deg)
+        d = [round(-math.sin(h), 5), round(-math.cos(h), 5)]
     contacts = {}
     for side, frames in info["contacts"].items():
         ts = []
@@ -235,3 +288,23 @@ def hips_extent(skel: dict, clip: dict, bone: str = "Hips") -> dict:
     track = S.tracks(S.prepare(skel), clip, [bone])[bone]
     return {"max_xy_m": round(max(math.hypot(p[0], p[1]) for p in track), 4),
             "z_m": [round(min(p[2] for p in track), 4), round(max(p[2] for p in track), 4)]}
+
+
+TRIM_TOL_DEG = 0.5  # trim_travel: the measured travel within this of the asked
+
+
+def trim_travel(S, skel: dict, clip: dict, want_deg: float, passes: int = 3) -> tuple[dict, dict]:
+    """The feet's tracks alone turned (orient_warp with no hip yaw and no chain: the hips, the trunk and the feet's own
+    rotation kept) until the planted feet's measured travel is `want_deg`: after orient_warp the feet roll heel to toe
+    along their own heading, which pulls the measured travel a few degrees toward the hips (P2: 85 for an asked 90),
+    and the stride's re-plant follows that axis. Returns (the clip, the report: the travel before, after, the turns)."""
+    t0 = S.travel_heading_deg(S.measure(skel, clip))
+    out, turns, t = clip, [], t0
+    for _ in range(passes):
+        miss = S._wrap(want_deg - t)
+        if abs(miss) <= TRIM_TOL_DEG:
+            break
+        out, _ = S.orient_warp(skel, out, 0.0, miss, split=(), feet_yaw=0.0)
+        turns.append(round(miss, 2))
+        t = S.travel_heading_deg(S.measure(skel, out))
+    return out, {"want_deg": want_deg, "before_deg": round(t0, 2), "after_deg": round(t, 2), "turns_deg": turns}

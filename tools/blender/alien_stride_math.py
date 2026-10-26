@@ -884,3 +884,89 @@ def orient_warp(skel: dict, clip: dict, hip_yaw: float, travel_deg: float = 0.0,
 
 def _wrap(deg: float) -> float:
     return (deg + 180.0) % 360.0 - 180.0
+
+
+# ------------------------------------------------------------------ the strafe pilot, step P2: facing, pitch, head
+LATERAL = (1.0, 0.0, 0.0)  # the character's left-right axis (it faces -Y): a turn about it pitches the front
+HEAD_SPLIT = (("Neck", 0.5), ("Head", 0.5))  # `level_head`: the lift shared by the neck and the head
+
+
+def _mean_deg(values) -> float:
+    """The circular mean of angles in degrees."""
+    s = sum(math.sin(math.radians(v)) for v in values)
+    c = sum(math.cos(math.radians(v)) for v in values)
+    return math.degrees(math.atan2(s, c))
+
+
+def bone_front(skel: dict, poses: dict, bone: str):
+    """A bone's rest front (-Y in armature space) carried by its pose's turn from the rest, in armature space."""
+    q = M.q_mul(mat_q(poses[bone]), M.q_conj(mat_q(skel["rest"][bone])))
+    return M.q_rotate(q, (0.0, -1.0, 0.0))
+
+
+def pitch_of(v) -> float:
+    """A direction's pitch above the horizontal, degrees (positive: up)."""
+    return math.degrees(math.atan2(v[2], math.hypot(v[0], v[1])))
+
+
+def travel_heading_deg(m: dict) -> float:
+    """The heading of a measured clip's travel (measure's hips minus ground velocity: an in-place loop's feet move
+    against it), 0 at the front, positive toward the left."""
+    g, h = m["ground_m_s"], m["hips_m_s"]
+    return heading_deg((h[0] - g[0], h[1] - g[1]))
+
+
+def facing(skel: dict, clip: dict) -> dict:
+    """Over the loop (circular means, degrees; headings 0 at the front -Y, positive toward the left): the hips' heading,
+    the head's heading and its largest miss from its mean, the head's front pitch (positive: up; the eyes look level
+    at 0) and the upper chest's front pitch (negative: the trunk leaning forward)."""
+    skel = prepare(skel)
+    T = frames(clip)
+    hips, head, hp, cp = [], [], [], []
+    for f in range(T):
+        P = fk(skel, clip, f)
+        lr = M._v_sub(pos(P["LeftUpperLeg"]), pos(P["RightUpperLeg"]))
+        hips.append(heading_deg((lr[1] * UP[2] - lr[2] * UP[1], lr[2] * UP[0] - lr[0] * UP[2])))
+        hf = bone_front(skel, P, "Head")
+        head.append(heading_deg(hf))
+        hp.append(pitch_of(hf))
+        cp.append(pitch_of(bone_front(skel, P, "UpperChest")))
+    hm = _mean_deg(head)
+    return {"hips_yaw_deg": round(_mean_deg(hips), 2), "head_yaw_deg": round(hm, 2),
+            "head_yaw_swing_deg": round(max(abs(_wrap(h - hm)) for h in head), 2),
+            "head_pitch_deg": round(sum(hp) / len(hp), 2), "head_pitch_range_deg": [round(min(hp), 2), round(max(hp), 2)],
+            "chest_pitch_deg": round(sum(cp) / len(cp), 2)}
+
+
+def pitch(skel: dict, clip: dict, deg: float, split) -> dict:
+    """The chain of `split` ((bone, share), ...) pitched about the character's left-right axis: each bone's world
+    rotation turned by deg x (the shares up to it), positive leaning the front down (a forward lean), negative lifting
+    it; the bones below and their places kept, every child following. Returns the clip."""
+    skel = prepare(skel)
+    out = copy_clip(clip)
+    for f in range(frames(clip) + 1):
+        P = fk(skel, clip, f)
+        new, turn = dict(P), 0.0
+        for b, share in split:
+            turn += deg * share
+            if b not in skel["parent"]:
+                continue
+            new[b] = m4(pos(P[b]), M.q_mul(M.q_axis_angle(LATERAL, turn), mat_q(P[b])))
+            out["rot"][b][f] = M.q_hemi(basis_of(skel, new, b)[1], clip["rot"][b][f])
+    return out
+
+
+def level_head(skel: dict, clip: dict, target_deg: float = 0.0, split=HEAD_SPLIT, passes: int = 2) -> tuple[dict, dict]:
+    """The neck and head lifted (or lowered) by one constant so the head's front pitch, its mean over the loop, comes
+    to `target_deg` (0: the eyes look level ahead): the crouch's eyes on the way ahead, not on the floor. Returns (the
+    clip, the report: the head's pitch before and after, the turn applied)."""
+    before = facing(skel, clip)
+    out, turn = clip, 0.0
+    for _ in range(passes):
+        miss = facing(skel, out)["head_pitch_deg"] - target_deg
+        turn += miss
+        out = pitch(skel, clip, turn, split)
+    after = facing(skel, out)
+    return out, {"target_deg": target_deg, "turn_deg": round(turn, 2), "split": [list(s) for s in split],
+                 "head_pitch_before_deg": before["head_pitch_deg"], "head_pitch_after_deg": after["head_pitch_deg"],
+                 "range_before_deg": before["head_pitch_range_deg"], "range_after_deg": after["head_pitch_range_deg"]}
