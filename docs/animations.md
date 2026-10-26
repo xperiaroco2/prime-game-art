@@ -967,7 +967,11 @@ New set keys, read by `alien_loco._make` in this order after the stride (tests: 
 - `pin = true`: `pin_feet`, the planted feet pinned by `honest_slide`'s own test (within 1 cm of the lowest, under
   0.5 m/s against the ground): the foot held flat while its heel and toe are both down, then the point that is down
   kept where it landed, carried by the ground, fading out over two frames (the stride's own contact test differs:
-  the backpedal's left foot still drifted 16-21 mm);
+  the backpedal's left foot still drifted 16-21 mm); when the point that is down switches inside a run (ankle to
+  toe or back), the new one starts where the previous frame's correction put it (`_pin_run`, P5), so the correction
+  never jumps (before P5 each point started at its own uncorrected place and the correction fell to 0 at the switch;
+  on the set's game backpedal clips the switch frames carried under 0.2 mm, so their P5 build equals P4's; only P3's
+  before rows `Jog_Bwd__p3` and `Jog_Bwd_Left__p3` moved, at most 3.4 mm in `measure`'s toe slide);
 - `orient = { whole = true, travel = T }`: the clip turned as a whole until its feet travel along `T` (default 0), its
   pose in its own space unchanged (the crouch take ran 13.6 degrees off the aim).
 

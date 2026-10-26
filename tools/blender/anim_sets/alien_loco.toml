@@ -27,7 +27,7 @@ raw_base = "research/2026-10-22-roster/design/pilot3d/anim_bare"  # under the ra
 build = "r2b/build"  # <build>/<char>/<char>_char.blend
 ttm = "loco/s2/chameleon_char_ttm.blend"  # step 2's loops (the axolotl shares the skeleton)
 mocap = "loco/p1/chameleon_char_100s.blend"  # the strafe pilot P1's 100STYLE loops MC_Neutral_<take>_Loop
-out = "loco/p4"  # build/<char>/ and reels/ (step 3: loco/s3, step 4b: loco/s4b, P2: loco/p2, P3: loco/p3)
+out = "loco/p5"  # build/<char>/ and reels/ (step 3: loco/s3, step 4b: loco/s4b, P2: loco/p2, P3: loco/p3, P4: loco/p4)
 chars = ["chameleon", "axolotl"]
 foot = "Left"
 stride_flag = 2.0  # a stride scaled more than this is flagged
@@ -374,7 +374,7 @@ clips = [{ clip = "Jog_Bwd__c20", speed = 2.0 }, { clip = "Jog_Bwd__c25", speed 
 
 [[reel]]
 name = "Jog_Bwd_Left"
-views = ["front", "three_quarter", "back"]
+views = ["front", "three_quarter", "back", "side"]
 clips = [{ clip = "Jog_Bwd_Left__p3", speed = 2.5 }, { clip = "Jog_Bwd_Left", speed = 2.5 }]
 
 [[reel]]
