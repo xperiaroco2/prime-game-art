@@ -845,19 +845,32 @@ the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the
 against the ship's layout and the committed asset. The pass behind a player (`ship_layout.check_spots` with the
 spot's depth at the charger's 1.04 m): 2.17 m of free floor behind the capsule, against `pass_m` 1.6.
 
-## What the stations' bronze costs (art#263, fix pass 2)
+## What the stations' bronze costs (art#263, fix pass 2; option A shipped)
 
-The shared metal shader's `dent` and `wave` slopes (fix1's smooth gradient noise) were measured, not guessed:
+The shared metal shader's `dent` and `wave` slopes (fix1's smooth gradient noise) are measured, not guessed:
 `tools/blender/metal_cost_run.py` places the four approved exports in the built ship at night as their own drivers do
 (no crystals) and runs `godot/ship/metal_cost.gd` (ship.gd's shoot mode, `_godot.window()`, 1920x1080, vsync off).
 Per view (each station's own close view, its player's view and a close-up where bronze fills the frame) it takes the
 median GPU ms of 3 alternating rounds of 120 frames with the shader as shipped, with `dent` = `wave` = 0, with one
-octave, with the slope from the noise's analytic derivative (a proposal, `metal_cost.gd` `ANALYTIC`; not shipped) and
-with that view's station hidden, and saves each variant's frame and a before/after strip (`<view>__compare.png`).
+octave, with the slope as it shipped before option A (`metal_cost.gd` `FINITE`, the forward difference) and with that
+view's station hidden. It saves each variant's frame, a before/after strip per view (`<view>__compare.png`: before
+option A | shipped | difference x8, the whole frame; `<view>__compare_crop.png`: the frame's middle 640x360 at 1:1)
+and, per console view, the console alone before and after (`<view>__solo_compare.png`) with `solo_identical` in
+`cost.json`.
 
-On an RTX 4060 (2026-10-26, `<raw>/ship/v4/stations-fix2/cost3/`): the stations ship `wave` 0.3 and `dent` 0, so one
-slope (64 hashes) runs on their bronze. In the player's views it costs 0.03 to 0.05 (socket, at the noise floor),
-0.35 (board) and 0.46 ms (charger), 0.18 to 0.33 in the stations' close views, 1.3 to 1.6 ms when bronze fills the
-frame; the console (both 0) is the control at 0.02 to 0.07 (the measurement's noise floor and the hall's sockets). One octave halves it; the analytic slope cuts it by about 70 %
-with the same noise field, but its glints fall in other places (the shipped forward difference over 0.3 and 0.65 of
-a cell is a smoothed slope), so it is a look change for the engineer. Nothing changes until he picks.
+Fix pass 2 measured the slope as fix1 shipped it (`<raw>/ship/v4/stations-fix2/cost3/`, RTX 4060): a forward
+difference of the two-octave field, four field() calls of 16 hashes, 64 hashes per slope. The stations ship `wave` 0.3
+and `dent` 0, so one slope runs on their bronze: 0.35 (board) and 0.46 ms (charger) in the player's views, 1.3 to 1.6
+ms when bronze fills the frame.
+
+**Option A** (the engineer, 2026-10-26: "the same noise through the exact derivative, a quarter of the cost"): slope()
+now takes the gradient noise's analytic derivative, `gnoised()`, one pass over the cell's 8 corners per octave, 16
+hashes per slope; same lattice, hashes, quintic fade, turns, octaves, strengths, parameters, defaults and guards. The
+gradient is taken at the old forward difference's midpoint (`p + 0.15 / s`), so most glints stay near where they were,
+but the exact slope is not the forward difference's smoothed one: the glints move a little and change shape (accepted).
+The console (`dent` = `wave` = 0) skips the slope and stays pixel-identical (`console_*__solo_compare.png`, max 0).
+Measured once (2026-10-26, `<raw>/ship/v4/bronze-a/cost/cost.md`, RTX 4060), GPU ms before -> after: board player's
+view 4.849 -> 4.641 (-0.21), charger player's view 4.932 -> 4.688 (-0.24), the bronze-filled close-ups -0.59 (socket),
+-0.84 (board) and -1.04 (charger). This run's noise reaches about 0.5 ms (the GPU clock drifted between rounds: the
+console control's views, where both shaders draw the same pixels, read the new one 0.47 ms slower and 0.21 ms faster), so a single row under
+about 0.3 ms is noise; the player's-view savings match fix pass 2's prediction (0.26 and 0.34 ms).
