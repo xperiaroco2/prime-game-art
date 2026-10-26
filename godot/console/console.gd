@@ -53,7 +53,7 @@ const FILL := "green"            # step 2's pick from the review's grid: cyan va
 const RING_STYLES := {"band": [1.0, 1.6, 0.0], "deck": [0.5, 1.0, 1.0], "both": [1.0, 1.6, 1.0],
 	"step1": [0.5, 1.0, 0.0]}
 const RING_STYLE := "both"       # step 2's pick from the review's grid
-const CALL_SHELL := ["calling", "call_t0", "call_period"]  # the call's uniforms on the turbines and the shell
+const CALL_ON := ["turbine", "shell"]  # the materials the call drives: the turbines flood orange, the shell a wash
 # the fans' centres and axis in the GLB's frame (the build's build.json "spinup" "turbines"; the test checks them)
 const FAN_CENTRES := [Vector3(0.18365, 1.55792, -0.62014), Vector3(-0.18365, 1.55792, -0.62014),
 	Vector3(0.0, 1.59086, -0.61314)]
@@ -222,9 +222,11 @@ static func reset_spinup(look: Dictionary) -> void:
 	for id: String in STATIONS:
 		stations[id] = {"state": "off", "blink": 1.0, "fixed_at": -1.0e6}
 	look["stations"] = stations
+	for m: String in CALL_ON:  # the shell too, or a reset mid-call leaves its orange wash pulsing
+		var c: ShaderMaterial = look[m]
+		c.set_shader_parameter("calling", 0.0)
+		c.set_shader_parameter("call_t0", 0.0)
 	var t: ShaderMaterial = look["turbine"]
-	t.set_shader_parameter("calling", 0.0)
-	t.set_shader_parameter("call_t0", 0.0)
 	t.set_shader_parameter("spin_phase", 0.0)
 	t.set_shader_parameter("spin_t0", 0.0)
 	t.set_shader_parameter("spin_rate", 0.0)
@@ -277,7 +279,7 @@ static func set_calling(look: Dictionary, on: bool) -> void:
 	if on and not look["calling"]:
 		look["call_t0"] = clock(look)
 	look["calling"] = on
-	for m: String in ["turbine", "shell"]:  # the turbines flood orange and glow; the shell takes a wash of it
+	for m: String in CALL_ON:
 		var t: ShaderMaterial = look[m]
 		t.set_shader_parameter("calling", 1.0 if on else 0.0)
 		t.set_shader_parameter("call_t0", float(look["call_t0"]))
@@ -316,7 +318,9 @@ static func set_fill(look: Dictionary, name: String) -> void:
 	look["fill"] = name
 	var c: Color = FILLS[name]
 	var strips: ShaderMaterial = look["signal"]
-	strips.set_shader_parameter("fill_colour", c.srgb_to_linear() if name == "cyan" else c)  # step 1's green as was
+	# the green goes raw (linear) to the strips, as approved on 2026-10-26: a mintier green than the ring's
+	# source_color green; both read as the one bar
+	strips.set_shader_parameter("fill_colour", c.srgb_to_linear() if name == "cyan" else c)
 	strips.set_shader_parameter("head", 1.0)
 	(look["ring"] as ShaderMaterial).set_shader_parameter("fill", c)
 

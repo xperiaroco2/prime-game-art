@@ -66,7 +66,7 @@ float spin_turns() {
 }
 
 float blink_at(int i) {
-	return pow(0.5 + 0.5 * cos(TAU * clock * st_blink[i]), 2.0);
+	return pow(max(0.5 + 0.5 * cos(TAU * clock * st_blink[i]), 0.0), 2.0);  // cos may undershoot -1: no NaN
 }
 
 vec3 eye_model(mat4 model, vec3 cam) {
@@ -146,7 +146,7 @@ void fragment() {
 			float chase = 1.0 + 0.5 * amount;
 			if (UV.x < 4.5) {  // three bright arcs running round each pod with its fan
 				float w = 0.5 + 0.5 * cos(TAU * 3.0 * (UV.x + spin_turns()));
-				chase = mix(1.0, 0.5 + 1.8 * pow(w, 4.0), amount);
+				chase = mix(1.0, 0.5 + 1.8 * pow(max(w, 0.0), 4.0), amount);
 			}
 			col = mix(colour, call_colour, p);
 			a = k * energy * chase * (1.0 + call_flood * p);
@@ -182,7 +182,7 @@ void fragment() {
 				a = st > 0.5 ? (is_halo ? 0.9 : 2.0) : (is_halo ? 0.48 : 0.8);  // ok: a calmer halo than step 1's 1.2
 			}
 		} else {
-			float dash = pow(0.5 + 0.5 * cos(TAU * (UV.x * 1.25 - clock * 1.4)), 6.0);
+			float dash = pow(max(0.5 + 0.5 * cos(TAU * (UV.x * 1.25 - clock * 1.4)), 0.0), 6.0);
 			float lit = i == 8 ? st : (st > 0.5 ? 1.0 : 0.0);
 			if (broken) {
 				col = mix(colour, red, 0.5);
