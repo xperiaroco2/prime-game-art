@@ -227,6 +227,20 @@ class StartConsoleAsset(unittest.TestCase):
         self.assertIn("BLINK_MIN", body("set_station"))  # a broken station never reads solid red
         self.assertIn("console_tween", body("apply"))  # a second apply() stops the first look's clock
 
+    def test_the_call_is_set_and_reset_on_the_same_materials(self) -> None:
+        # review 2 of PR #325: set_calling drove the turbines and the shell, reset_spinup only the turbines, so a
+        # reset mid-call left the shell's orange wash pulsing. A text pin (no Godot here): both go through CALL_ON.
+        look = (common.ROOT / "godot" / "console" / "console.gd").read_text(encoding="utf-8")
+        self.assertIn('const CALL_ON := ["turbine", "shell"]', look)
+        body = lambda fn: look[look.index(f"static func {fn}("):].split("\n\n\n")[0]  # noqa: E731
+        for fn in ("set_calling", "reset_spinup"):
+            self.assertIn("for m: String in CALL_ON:", body(fn), fn)
+        self.assertNotIn('t.set_shader_parameter("calling"', body("reset_spinup"))
+        shader = (common.ROOT / "godot" / "console" / "console_holo.gdshader").read_text(encoding="utf-8")
+        for line in shader.splitlines():  # a pow() of a cos()-built base is clamped: a NaN blooms the frame black
+            if "pow(" in line and "cos(" in line:
+                self.assertIn("pow(max(", line)
+
     def test_build_pods_are_the_exteriors_places(self) -> None:
         # review 1 of PR #325: the hologram takes the raise off the pods (h - LIFT); PODS must be exterior.toml's
         # design-frame places, and --pieces without --lift is refused (else the hologram's pods sit 0.6 m high)
