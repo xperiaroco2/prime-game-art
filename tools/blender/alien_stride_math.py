@@ -455,7 +455,8 @@ def stride(skel: dict, clip: dict, cadence: float | None = None, rate: float | N
             pts.append((h[0] + o[0], h[1] + o[1]))
         _, mk = foot_contacts({"a": ank[:-1], "t": toe[:-1]}, fps, window)
         flat = plant_foot(_xy(ank[:-1]), _xy(toe[:-1]), pts[:-1], mk["a"], mk["t"], g2, fps, blend)
-        flat.append(flat[0])
+        # the end frame is the start a loop on: a loop that travels (a root-motion bake) carries its feet with it
+        flat.append((flat[0][0] + hip[-1][0] - hip[0][0], flat[0][1] + hip[-1][1] - hip[0][1]))
         for f in range(T + 1):
             P = posed[f]
             H, K, A = pos(P[u]), pos(P[lo]), pos(P[ft])
@@ -528,10 +529,19 @@ def cycle(skel: dict, clip: dict, foot: str = "Left", min_s: float | None = None
         wins = M.contact_windows(fill_gaps([x or y for x, y in zip(a, t)]), cyclic=True)
         c = wins[0][0] if wins else 0
         out = _close(clip, 0, T, skel)
+        h0, h1 = (pos(fk(skel, out, f)["Hips"]) for f in (0, T))
+        travel = (h1[0] - h0[0], h1[1] - h0[1])  # a loop that travels (a root-motion bake) keeps going after the turn
         for ch in (out["loc"], out["rot"]):
             for b, v in ch.items():
                 ch[b] = v[c:-1] + v[:c] + [v[c]]
-        return out, {"closed": True, "start": c, "intervals": T, "seam_deg": round(seam0, 3)}
+        if "Hips" in out["loc"] and math.hypot(*travel) > 1e-9:
+            for f in range(T - c, T + 1):  # the frames from before the start and the end (start 0: the end), a loop on
+                poses = fk(skel, out, f)
+                poses["Hips"] = M.mat_mul([[1, 0, 0, travel[0]], [0, 1, 0, travel[1]], [0, 0, 1, 0], [0, 0, 0, 1]],
+                                          poses["Hips"])
+                out["loc"]["Hips"][f] = basis_of(skel, poses, "Hips")[0]
+        return out, {"closed": True, "start": c, "intervals": T, "seam_deg": round(seam0, 3),
+                     "travel_m": [round(x, 4) for x in travel]}
     _, mk = foot_contacts(pts, fps, window, cyclic=False)
     a, t = (mk[p] for p in _foot_points(foot))
     mask = fill_gaps([x or y for x, y in zip(a, t)], cyclic=False)

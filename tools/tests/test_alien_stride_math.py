@@ -191,6 +191,42 @@ class Cycle(unittest.TestCase):
         self.assertLess(S.seam_deg(out), 1e-9)
         self.assertEqual(S.frames(out), 24)
 
+    def test_a_travelling_loop_keeps_its_travel_when_turned_to_the_contact(self):
+        # a root-motion loop (step 2's bakes): the frames before the contact go to the end one loop's travel on, so
+        # the turned loop covers the same ground (step 3 found its speed collapsed to the wobble without this)
+        clip = gait(self.skel)
+        clip["loc"]["Hips"] = [(0.0, -0.05 * f, 0.0) for f in range(25)]
+        out, rep = S.cycle(self.skel, clip, foot="Right")
+        self.assertGreater(rep["start"], 0)
+        a, b = (S.pos(S.fk(self.skel, out, f)["Hips"]) for f in (0, 24))
+        self.assertAlmostEqual(b[1] - a[1], -1.2, places=6)
+        steps = [S.pos(S.fk(self.skel, out, f + 1)["Hips"])[1] - S.pos(S.fk(self.skel, out, f)["Hips"])[1]
+                 for f in range(24)]
+        self.assertTrue(all(abs(s + 0.05) < 1e-6 for s in steps))  # no jump back at the old seam
+        self.assertEqual(S.measure(self.skel, out)["hips_m_s"], S.measure(self.skel, clip)["hips_m_s"])
+        starts = set()
+        for k in range(24):  # the loop rolled to every phase: the end frame a loop on, never the start's copy
+            rolled = S.copy_clip(clip)
+            for ch in (rolled["loc"], rolled["rot"]):
+                for bone, v in ch.items():
+                    ch[bone] = v[k:-1] + v[:k] + [v[k]]
+            rolled["loc"]["Hips"] = [(0.0, -0.05 * f, 0.0) for f in range(25)]
+            turned, rk = S.cycle(self.skel, rolled, foot="Right")
+            starts.add(rk["start"])
+            a, b = (S.pos(S.fk(self.skel, turned, f)["Hips"]) for f in (0, 24))
+            self.assertAlmostEqual(b[1] - a[1], -1.2, places=6)
+        self.assertGreater(len(starts), 10)  # (b5's strafe on the alien starts on 0: checked in alien_loco's build)
+
+    def test_a_travelling_loop_strided_keeps_its_seam(self):
+        # stride's end frame: the start's feet a loop on, else the legs reach back a whole loop at the seam (step 3:
+        # the strafes' mirrors showed a 108 degree seam)
+        clip = gait(self.skel)
+        clip["loc"]["Hips"] = [(0.0, -0.05 * f, 0.0) for f in range(25)]
+        loop, _ = S.cycle(self.skel, clip, foot="Left")
+        out, rep = S.stride(self.skel, loop, scale=1.5)
+        self.assertLess(S.seam_deg(out), 1e-6)
+        self.assertLess(S.seam_deg(S.mirror(self.skel, out)), 1e-6)
+
     def test_an_open_clip_is_cut_on_a_contact_with_no_seam(self):
         clip = gait(self.skel, T=24, frames=40, name="Walk_Start")
         self.assertGreater(S.seam_deg(clip), 5.0)
