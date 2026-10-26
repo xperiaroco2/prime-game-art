@@ -97,8 +97,11 @@ def main() -> int:
     ap.add_argument("--shots-sub", default="", help="B3: the shots into this subfolder of the tag (a trial)")
     ap.add_argument("--fix", default="{}", help="B3: JSON render settings after the front isolation sheet "
                     "(shadow_quality 0-5, default 5; taa, angular_deg, sss_scale)")
+    ap.add_argument("--lively", default="", help="E2: head=DIR[,head=DIR]: build on these lively build folders instead"
+                    " of HEADS' (a candidate's look)")
     args = ap.parse_args()
     heads = args.heads.split(",")
+    lively = {h: Path(d) for h, d in (x.split("=", 1) for x in args.lively.split(",") if x)}
     out = PILOT / args.tag
     shots_out = out / args.shots_sub if args.shots_sub else out
     why = refusal(out, heads, not args.no_build, False) or refusal(shots_out, [], False, not args.no_shots)
@@ -111,7 +114,7 @@ def main() -> int:
     for h in heads:
         hd = out / h
         static = PILOT / "static_v5" / h
-        lv = HEADS[h]["lively"]
+        lv = lively.get(h, HEADS[h]["lively"])
         b = bases(h)
         if not args.no_build:
             hd.mkdir(parents=True, exist_ok=True)
