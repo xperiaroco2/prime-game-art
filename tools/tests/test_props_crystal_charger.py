@@ -45,6 +45,7 @@ class ChargerDrawing(unittest.TestCase):
         f, b = d["frame"], d["base"]
         self.assertEqual((f["top"], f["wall_gap"]), (139.7, 2.0))
         self.assertEqual((b["bottom"], b["widest"]), (60.0, 72.8))  # charger-3: a skirt 4.8 under N.baseBottom 64.8
+        self.assertEqual(b["drawn_bottom"], 64.8)  # the drawing's, labelled beside the built 60 (charger_drawing.py)
         self.assertAlmostEqual(b["r_widest"] * 2, 100.4, delta=0.05)
         self.assertAlmostEqual(b["r_deck_edge"] * 2, 82.0, delta=0.05)  # N.tierTop: the upper tier's top edge
         self.assertEqual((b["deck"], b["well"]), (99.1, 94.0))  # N.top: the deck; the slot sunk in its well (charger-3)
