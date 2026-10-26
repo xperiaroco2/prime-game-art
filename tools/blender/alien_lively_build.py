@@ -411,6 +411,12 @@ RIM_CUT_MAX_AREA_PCT = 5.0  # R2: the largest net change of an eye's eyeball are
 # The bound is set from measured cuts (the manager's decision, R2b): R1's chameleon cut (v8cut_r1e's settings) changes
 # one eye by 4.149 %, as its trimmed fit drops 51 of the right eye's 256 rim positions and leans the curve inward (a
 # recorded follow-up, docs/godot.md); 5 % passes that cut and still fails a cut that eats into the opening
+RIM_CUT_MAX_TO_LID_PCT = 5.0  # E1: the eyeball triangles' area the cut gives to the lid, per eye (% of its eyeball area)
+RIM_CUT_MAX_TO_EYE_PCT = 1.5  # E1: the lid triangles' area the cut gives to the eyeball, per eye (%)
+# Each way set just above the approved R2b builds' worst eye (E1, measured): to the lid the chameleon's right eye
+# 4.911 % (left 4.784, the axolotl 1.017 and 0.997), to the eyeball the axolotl's left 1.222 % (right 1.068, the
+# chameleon 0.974 and 0.762). The net bound alone let a cut trade area both ways; these fail a cut that takes or
+# gives more than today's, either way, even when the net stays small
 
 
 def rim_graph(P, I, cls, near_t):
@@ -535,7 +541,8 @@ def rim_cut(A, I, eyeball, centres, r, order):
         b_s = bw[side_w[bw] == s]
         tb, pb = angles(Qw[b_s])
         gw[b_s] = tb - curve(pb)
-        rep[key] = {"rim_positions": int(len(mine)), "fit_kept": int(sum(kept)),
+        bias = trim_bias(th, ph, kept, curve, order, gw[b_s], tb, pb)
+        rep[key] = {"rim_positions": int(len(mine)), "fit_kept": int(sum(kept)), "trim_bias": bias,
                     "radius_mm": [round(float(th.min()) * 1000, 1), round(float(th.max()) * 1000, 1)],
                     "rim_off_curve_mm": {"p50": round(float(np.median(res)) * 1000, 3),
                                          "p90": round(float(np.percentile(res, 90)) * 1000, 3),
@@ -592,7 +599,7 @@ def rim_cut(A, I, eyeball, centres, r, order):
     bad = sum(int(quality(j, t, tr) < G.RIM_CUT_MIN_SHARE) for j, t in enumerate(bt) for tr, _s in cut[j])
     # the new vertices: one per edge (its two vertex indices), every attribute interpolated along it
     new_key, rows = {}, []
-    tris_new, cls_new = [], []
+    tris_new, cls_new, par_new = [], [], []
     nv = len(P)
     lid_to_eye = eye_to_lid = 0
     for j, t in enumerate(bt):
@@ -612,6 +619,7 @@ def rim_cut(A, I, eyeball, centres, r, order):
             tris_new.append(ids)
             c_new = bool(eyeball[t]) if side == 0 else side < 0
             cls_new.append(c_new)
+            par_new.append(bool(eyeball[t]))
             lid_to_eye += int(c_new and not eyeball[t])
             eye_to_lid += int(eyeball[t] and not c_new)
     lo = np.array([rw[0] for rw in rows], dtype=np.int64)
@@ -654,18 +662,72 @@ def rim_cut(A, I, eyeball, centres, r, order):
                                         "max": round(float(np.abs(g_fit[sn]).max() * 1000), 3)} if len(sn) else None),
                 "bad_triangles": bad, "eyeball_triangles": {"before": int(eyeball.sum()), "after": int(cls1.sum())}})
     # R2: the eye opening's change, each eye's eyeball area (the cut's eyeball triangles against the class before)
+    # E1: and each way, the eyeball pieces that became lid and the lid pieces that became eyeball (mm2 and %)
     rep["eyeball_area"] = {}
+    par1 = np.array(par_new, bool)
+    a_new = tri_areas(P1, I1[band1])
+    s_new = tri_side(P1, I1[band1], centres)
     for s, key in ((1, "left"), (-1, "right")):
         a0 = tri_areas(P, I[eyeball & (tri_side(P, I, centres) == s)]).sum()
         a1 = tri_areas(P1, I1[cls1 & (tri_side(P1, I1, centres) == s)]).sum()
+        to_lid = a_new[(s_new == s) & par1 & ~cls1[band1]].sum()
+        to_eye = a_new[(s_new == s) & ~par1 & cls1[band1]].sum()
         rep["eyeball_area"][key] = {"before": round(float(a0) * 1e6, 3), "after": round(float(a1) * 1e6, 3),
-                                    "change_pct": round(float(100 * (a1 - a0) / max(a0, 1e-12)), 3)}
+                                    "change_pct": round(float(100 * (a1 - a0) / max(a0, 1e-12)), 3),
+                                    "to_lid_mm2": round(float(to_lid) * 1e6, 3), "to_eye_mm2": round(float(to_eye) * 1e6, 3),
+                                    "to_lid_pct": round(float(100 * to_lid / max(a0, 1e-12)), 3),
+                                    "to_eye_pct": round(float(100 * to_eye / max(a0, 1e-12)), 3)}
         rep[key]["trimmed"] = rep[key]["rim_positions"] - rep[key]["fit_kept"]
-    worst = max(abs(v["change_pct"]) for v in rep["eyeball_area"].values())
-    if bad or rep["edges_after"] != rep["edges_before"] or worst > RIM_CUT_MAX_AREA_PCT:
+    rep["eyeball_area_bounds_pct"] = {"net": RIM_CUT_MAX_AREA_PCT, "to_lid": RIM_CUT_MAX_TO_LID_PCT,
+                                      "to_eye": RIM_CUT_MAX_TO_EYE_PCT}
+    why = area_faults(rep["eyeball_area"])
+    if bad or rep["edges_after"] != rep["edges_before"] or why:
         raise SystemExit(f"LIVELY rim cut: {bad} bad pieces, edges {rep['edges_before']} -> {rep['edges_after']}, "
-                         f"eyeball area change {worst} % (bound {RIM_CUT_MAX_AREA_PCT})")
+                         f"eyeball area: {'; '.join(why) or 'within its bounds'}")
     return A1, I1, cls1, band1, rep
+
+
+def area_faults(area):
+    """E1: the rim cut's area guard over lively.json's eyeball_area (per eye change_pct, to_lid_pct, to_eye_pct): the
+    net change against RIM_CUT_MAX_AREA_PCT and each way against its own bound. Returns the faults (empty: within)."""
+    why = []
+    for key, v in area.items():
+        if abs(v["change_pct"]) > RIM_CUT_MAX_AREA_PCT:
+            why.append(f"{key} net change {v['change_pct']} % (bound {RIM_CUT_MAX_AREA_PCT})")
+        for f, bound in (("to_lid_pct", RIM_CUT_MAX_TO_LID_PCT), ("to_eye_pct", RIM_CUT_MAX_TO_EYE_PCT)):
+            if bound is not None and v.get(f, 0.0) > bound:
+                why.append(f"{key} {f[:-4]} {v[f]} % (bound {bound})")
+    return why
+
+
+def trim_bias(th, ph, kept, curve, order, g_band, tb, pb):
+    """E1: the trimmed fit's bias, measured only (rim_cut keeps the trimmed curve): the curve fitted to every rim
+    position (the spurs kept) against the trimmed one. th, ph: the rim positions' radius and azimuth; kept: which the
+    trimmed fit kept; curve(ph[, coef]): the trimmed curve; g_band, tb, pb: the band positions' g (from the trimmed
+    curve), radius and azimuth. Returns the trimmed curve's lean against the full fit (mm over 360 azimuths, under 0
+    inward), the dropped positions' offset from the trimmed curve (over 0: outside it) and the band positions whose
+    side the full fit would change (the cut would move there)."""
+    full = G.fourier_fit(ph.tolist(), th.tolist(), order)
+    az = np.linspace(-math.pi, math.pi, 360, endpoint=False)
+    d = (curve(az) - curve(az, full)) * 1000
+    drop = ~np.array(kept, bool)
+    off = (th[drop] - curve(ph[drop])) * 1000
+    g_full = tb - curve(pb, full)
+    flip = (np.sign(g_full) != np.sign(g_band)) & (g_band != 0)
+    return {"lean_mm": {"p50": round(float(np.median(d)), 3), "min": round(float(d.min()), 3),
+                        "max": round(float(d.max()), 3), "inward_share": round(float((d < 0).mean()), 3)},
+            "dropped": int(drop.sum()),
+            "dropped_off_curve_mm": ({"p50": round(float(np.median(off)), 3), "min": round(float(off.min()), 3),
+                                      "max": round(float(off.max()), 3), "outside": int((off > 0).sum())}
+                                     if drop.any() else None),
+            "band_positions": int(len(g_band)), "band_side_changes": int(flip.sum()),
+            "band_g_change_mm": {"p50": round(float(np.median(np.abs(g_full - g_band))) * 1000, 3),
+                                 "max": round(float(np.abs(g_full - g_band).max()) * 1000, 3)}}
+
+
+RIM_SPLIT_MAX_PAST90_PCT = 6.5  # E1: the share of an eye's eyeball vertices whose radial normal turns past 90 degrees (%)
+# just above the approved R2b build's worst eye, the chameleon's right 6.199 % (113 of 1823; left 5.863 %, 106 of 1808;
+# the axolotl none): a later change that turns about 5 more of an eye's normals past 90 degrees fails the build
 
 
 LIP_RINGS = 3  # R2: the lid's lip, rings of welded positions outside the rim that the lip smoothing moves
@@ -807,6 +869,7 @@ def rim_split(A, I, cls, views):
     rad /= np.maximum(np.linalg.norm(rad, axis=1), 1e-12)[:, None]
     N = out["NORMAL"].copy()
     turn = np.degrees(np.arccos(np.clip(np.sum(N[idx] * rad, 1), -1, 1)))
+    eyes = split_past_90(P, idx, k, turn, P[len(A["POSITION"]):], views, spheres)
     N[idx] = rad
     out["NORMAL"] = N
     if "TANGENT" in out:
@@ -816,8 +879,43 @@ def rim_split(A, I, cls, views):
         out["TANGENT"] = T
     rep = {"copied": int(len(shared)), "eyeball_vertices": int(len(idx)),
            "normal_turn_deg": {"p50": round(float(np.median(turn)), 2), "p99": round(float(np.percentile(turn, 99)), 2),
-                               "max": round(float(turn.max()), 2)}}
+                               "max": round(float(turn.max()), 2)},
+           "eyes": eyes, "past_90_bound_pct": RIM_SPLIT_MAX_PAST90_PCT}
+    worst = max((v["past_90_pct"] for v in eyes.values()), default=0.0)
+    if RIM_SPLIT_MAX_PAST90_PCT is not None and worst > RIM_SPLIT_MAX_PAST90_PCT:
+        raise SystemExit(f"LIVELY rim split: {worst} % of an eye's eyeball normals turned past 90 degrees"
+                         f" (bound {RIM_SPLIT_MAX_PAST90_PCT})")
     return out, I1, rep
+
+
+def split_past_90(P, idx, k, turn, lid_line, views, spheres):
+    """E1: per eye (views' keys, k each eyeball vertex's sphere) the eyeball vertices whose radial normal turns more
+    than 90 degrees from the one they had (turn, degrees, for P[idx]): how many, their share, and their distance from
+    the lid line (lid_line: the positions the eyeball shares with the lid, the split's copies) in the sphere's radius
+    and in mm."""
+    eyes = {}
+    for j, key in enumerate(views):
+        m = k == j
+        past = m & (turn > 90.0)
+        off = (np.array([np.linalg.norm(lid_line - P[i], axis=1).min() for i in idx[past]])
+               if len(lid_line) else np.full(int(past.sum()), np.inf))
+        rl = spheres[j][1]
+        cr = np.linalg.norm(P[idx[past]] - spheres[j][0], axis=1) / rl  # from the sphere's centre, in its radius
+        far = np.linalg.norm(P[idx[m]] - spheres[j][0], axis=1) / rl > 1.5  # eyeball-class vertices off the eye
+        eyes[key] = {"vertices": int(m.sum()), "past_90": int(past.sum()), "beyond_1_5_r": int(far.sum()),
+                     "past_90_pct": round(float(100 * past.sum() / max(m.sum(), 1)), 3),
+                     "past_90_on_lid_line": int((off < 1e-9).sum()),
+                     "past_90_off_lid_r": ({"p50": round(float(np.median(off)) / rl, 4), "max": round(float(off.max()) / rl, 4)}
+                                           if past.any() else None),
+                     "past_90_off_lid_mm": ({"p50": round(float(np.median(off)) * 1000, 3),
+                                             "max": round(float(off.max()) * 1000, 3)} if past.any() else None),
+                     "past_90_by_off_lid_r": {name: int(((off / rl > lo) & (off / rl <= hi)).sum()) for name, lo, hi in
+                                              (("on", -1, 0.0), ("to_0.06", 0.0, 0.06), ("to_0.25", 0.06, 0.25),
+                                               ("to_1.5", 0.25, 1.5), ("beyond", 1.5, np.inf))},
+                     "past_90_from_centre_r": ({"p50": round(float(np.median(cr)), 3), "min": round(float(cr.min()), 3),
+                                                "max": round(float(cr.max()), 3)} if past.any() else None),
+                     "past_90_beyond_1_5_r_at": np.round(P[idx[past]][cr > 1.5], 4).tolist()}
+    return eyes
 
 
 def rim_mask(mask, UV, I, cls, band):
