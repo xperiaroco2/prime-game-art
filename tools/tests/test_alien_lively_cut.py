@@ -10,6 +10,7 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -66,6 +67,15 @@ class LivelyCut(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = load("alien_lively_build")
+
+    def setUp(self):
+        """E1: the area bounds each way are set from the heads' cuts (5.0 % to the lid, 1.5 % to the eyeball); the
+        sheets' sawtooth is deeper than a head's (teeth up to 3 mm on a 20 mm opening) and trades about 5.2 % and 6.7 %
+        each way, so the sheets are cut under 10 % bounds; the guard's own test sets them under the sheets' values."""
+        for name in ("RIM_CUT_MAX_TO_LID_PCT", "RIM_CUT_MAX_TO_EYE_PCT"):
+            patch = mock.patch.object(self.B, name, 10.0)
+            patch.start()
+            self.addCleanup(patch.stop)
 
     def test_edge_faults_counts_open_and_non_manifold_edges(self):
         P = np.array([[0.0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
@@ -126,6 +136,140 @@ class LivelyCut(unittest.TestCase):
         eye_now = out[px[:, 1], px[:, 0], 0] < 0.5
         self.assertTrue(np.array_equal(eye_now, cls1[band1]))  # every band triangle's middle texel says its class
 
+    # ---- E1: R2b's review follow-ups, the guards of rim_cut, lip_smooth and rim_split
+    def cut(self, seed: int = 3):
+        """The sheets cut at order 4 with a lid to smooth: the lid's normals and heights jittered (seeded), a skin
+        (JOINTS_0, WEIGHTS_0) on every vertex, so a copy's attributes can be told from its neighbours'."""
+        A, I, eyeball, centres = sheets()
+        rng = np.random.default_rng(seed)
+        n = len(A["POSITION"])
+        lid_only = np.ones(n, bool)
+        lid_only[I[eyeball].ravel()] = False
+        A["POSITION"][lid_only, 2] += rng.uniform(-3e-4, 3e-4, int(lid_only.sum()))
+        Nj = A["NORMAL"] + rng.normal(0, 0.15, (n, 3)) * [1, 1, 0]
+        A["NORMAL"] = Nj / np.linalg.norm(Nj, axis=1)[:, None]
+        A["JOINTS_0"] = rng.integers(0, 6, (n, 4)).astype(float)
+        W = rng.uniform(0, 1, (n, 4))
+        A["WEIGHTS_0"] = W / W.sum(1)[:, None]
+        A1, I1, cls1, _band1, rep = self.B.rim_cut(A, I, eyeball, centres, R_EYE, 4)
+        return A1, I1, cls1, centres, rep
+
+    def test_rim_cut_reports_the_area_each_way(self):
+        _A1, _I1, _cls1, _c, rep = self.cut()
+        for key in ("left", "right"):
+            v = rep["eyeball_area"][key]
+            self.assertGreater(v["to_lid_pct"], 0.0)  # the sawtooth's teeth go to the lid
+            self.assertGreater(v["to_eye_pct"], 0.0)  # and its gaps to the eyeball
+            self.assertAlmostEqual(v["change_pct"], v["to_eye_pct"] - v["to_lid_pct"], delta=0.01)  # the pieces tile
+            self.assertLess(v["to_lid_pct"], self.B.RIM_CUT_MAX_TO_LID_PCT)
+            self.assertLess(v["to_eye_pct"], self.B.RIM_CUT_MAX_TO_EYE_PCT)
+            self.assertIn("lean_mm", rep[key]["trim_bias"])
+
+    def test_rim_cut_area_guard_raises_each_way(self):
+        """A cut over a bound fails the build: the sheets' cut against bounds set just under its own areas."""
+        rep = self.cut()[4]
+        worst_lid = max(v["to_lid_pct"] for v in rep["eyeball_area"].values())
+        worst_eye = max(v["to_eye_pct"] for v in rep["eyeball_area"].values())
+        worst_net = max(abs(v["change_pct"]) for v in rep["eyeball_area"].values())
+        for name, value in (("RIM_CUT_MAX_TO_LID_PCT", worst_lid), ("RIM_CUT_MAX_TO_EYE_PCT", worst_eye),
+                            ("RIM_CUT_MAX_AREA_PCT", worst_net)):
+            with self.subTest(name), mock.patch.object(self.B, name, value * 0.9):
+                with self.assertRaises(SystemExit) as e:
+                    self.cut()
+                self.assertIn("bound", str(e.exception))
+        area = {"left": {"change_pct": 0.5, "to_lid_pct": 0.2, "to_eye_pct": 0.7}}
+        self.assertEqual(self.B.area_faults(area), [])
+        area["left"]["to_lid_pct"] = self.B.RIM_CUT_MAX_TO_LID_PCT + 0.01
+        self.assertEqual(len(self.B.area_faults(area)), 1)
+
+    def test_lip_smooth_keeps_the_rim_and_the_eyeball(self):
+        A1, I1, cls1, centres, _rep = self.cut()
+        eb = np.zeros(len(A1["POSITION"]), bool)
+        eb[I1[cls1].ravel()] = True  # the eyeball's vertices, the rim's among them
+        for mode, steps in (("normals", 4), ("taubin", 4)):
+            with self.subTest(mode):
+                A2, rep = self.B.lip_smooth({k: v.copy() for k, v in A1.items()}, I1, cls1, centres, R_EYE, steps, mode)
+                self.assertGreater(rep["vertices"], 0)
+                self.assertTrue(np.array_equal(A2["POSITION"][eb], A1["POSITION"][eb]))
+                self.assertTrue(np.array_equal(A2["NORMAL"][eb], A1["NORMAL"][eb]))
+                move = np.linalg.norm(A2["POSITION"] - A1["POSITION"], axis=1)
+                self.assertLessEqual(move.max(), self.B.LIP_CAP * R_EYE * (1 + 1e-9))
+                if mode == "normals":
+                    self.assertEqual(move.max(), 0.0)  # the normals alone: no position moves
+                    self.assertGreater(np.abs(A2["NORMAL"] - A1["NORMAL"]).max(), 1e-3)  # but the lip's normals do
+                else:
+                    self.assertGreater(move.max(), 0.0)
+                self.assertGreaterEqual(rep["min_face_dot"], self.B.LIP_FLIP_DOT)
+
+    def test_lip_smooth_fails_a_turned_triangle(self):
+        """The fold check: a lip triangle turned past LIP_FLIP_DOT fails. The sheets' lip turns its triangles a few
+        degrees at most (face dot near 1), so a bound over that dot stands for a turned one."""
+        A1, I1, cls1, centres, _rep = self.cut()
+        for mode in ("normals", "taubin"):
+            with self.subTest(mode), mock.patch.object(self.B, "LIP_FLIP_DOT", 1.5):
+                with self.assertRaises(SystemExit) as e:
+                    self.B.lip_smooth({k: v.copy() for k, v in A1.items()}, I1, cls1, centres, R_EYE, 4, mode)
+                self.assertIn("turned", str(e.exception))
+
+    def split(self, flip: int = 0):
+        """rim_split on the cut sheets, each eye's sphere the eye centre 1 cm behind with radius R_EYE (eyeball_fix's
+        views: only the centre and radius are read); flip: that many eyeball-only vertices per eye given a normal
+        facing away (-z) before the split, so their radial normal turns past 90 degrees."""
+        A1, I1, cls1, centres, _rep = self.cut()
+        views = {"left": (None, None, centres[1], R_EYE), "right": (None, None, centres[-1], R_EYE)}
+        lid = np.zeros(len(A1["POSITION"]), bool)
+        lid[I1[~cls1].ravel()] = True
+        if flip:
+            for s in (1, -1):
+                d = np.linalg.norm(A1["POSITION"] - centres[s] * [1, 1, 0], axis=1)
+                pick = np.nonzero(~lid & (d < RHO / 2))[0][:flip]
+                A1["NORMAL"][pick] = [0.0, 0.0, -1.0]
+        A2, I2, rep = self.B.rim_split({k: v.copy() for k, v in A1.items()}, I1, cls1, views)
+        return A1, I1, cls1, centres, A2, I2, rep
+
+    def test_rim_split_opens_no_edge_and_gives_the_eyeball_its_sphere(self):
+        A1, I1, cls1, centres, A2, I2, rep = self.split()
+        n = len(A1["POSITION"])
+        eb, lid = np.zeros(n, bool), np.zeros(n, bool)
+        eb[I1[cls1].ravel()] = True
+        lid[I1[~cls1].ravel()] = True
+        shared = np.nonzero(eb & lid)[0]
+        self.assertEqual(rep["copied"], len(shared))
+        self.assertGreater(len(shared), 0)
+        for k in ("POSITION", "TEXCOORD_0", "JOINTS_0", "WEIGHTS_0"):  # every copy equals its source
+            self.assertTrue(np.array_equal(A2[k][n:], A1[k][shared]), k)
+            self.assertTrue(np.array_equal(A2[k][:n], A1[k]), k)
+        self.assertTrue(np.array_equal(A2["TANGENT"][n:, 3], A1["TANGENT"][shared, 3]))
+        self.assertTrue(np.array_equal(A2["POSITION"][I2], A1["POSITION"][I1]))  # every corner where it was
+        self.assertEqual(self.B.edge_faults(A2["POSITION"], I2), self.B.edge_faults(A1["POSITION"], I1))
+        self.assertTrue(np.array_equal(I2[~cls1], I1[~cls1]))
+        self.assertFalse(np.isin(I2[cls1], shared).any())  # the eyeball's triangles use the copies
+        own = np.unique(I2[cls1].ravel())
+        P = A2["POSITION"][own]
+        c = np.where((P[:, 0] > 0)[:, None], centres[1], centres[-1])
+        rad = (P - c) / np.linalg.norm(P - c, axis=1)[:, None]
+        self.assertTrue(np.allclose(A2["NORMAL"][own], rad, atol=1e-12))  # the sphere's radial normal in full
+        lid_v = np.unique(I2[~cls1].ravel())
+        self.assertTrue(np.array_equal(A2["NORMAL"][lid_v], A1["NORMAL"][lid_v]))  # the lid keeps its own
+        T = A2["TANGENT"][own]
+        self.assertLess(np.abs((T[:, :3] * A2["NORMAL"][own]).sum(1)).max(), 1e-9)
+        for key in ("left", "right"):
+            self.assertEqual(rep["eyes"][key]["past_90"], 0)
+
+    def test_rim_split_counts_and_bounds_normals_past_90(self):
+        *_rest, rep = self.split(flip=5)
+        for key in ("left", "right"):
+            e = rep["eyes"][key]
+            self.assertEqual(e["past_90"], 5)
+            self.assertAlmostEqual(e["past_90_pct"], 100 * 5 / e["vertices"], places=2)
+            self.assertGreater(e["past_90_off_lid_r"]["p50"], 0.0)  # inside the eye, off the lid line
+        worst = max(v["past_90_pct"] for v in rep["eyes"].values())
+        self.assertLess(worst, self.B.RIM_SPLIT_MAX_PAST90_PCT)  # 5 of a few hundred: under the bound
+        with mock.patch.object(self.B, "RIM_SPLIT_MAX_PAST90_PCT", worst * 0.9):
+            with self.assertRaises(SystemExit) as e:
+                self.split(flip=5)
+            self.assertIn("past 90", str(e.exception))
+
 
 SCRIPT = '''
 import json, sys, unittest
@@ -149,11 +293,11 @@ class InBlender(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             script = Path(tmp) / "cut_check.py"
             script.write_text(SCRIPT, encoding="utf-8", newline="\n")
-            blender.run_script(script, [str(Path(__file__).resolve().parent), str(Path(tmp) / "out.json")], timeout=300)
+            blender.run_script(script, [str(Path(__file__).resolve().parent), str(Path(tmp) / "out.json")], timeout=900)
             res = json.loads((Path(tmp) / "out.json").read_text(encoding="utf-8"))
         self.assertEqual(res["bad"], [])
         self.assertEqual(res["skipped"], 0)
-        self.assertEqual(res["run"], 3)
+        self.assertEqual(res["run"], 9)
 
 
 if __name__ == "__main__":

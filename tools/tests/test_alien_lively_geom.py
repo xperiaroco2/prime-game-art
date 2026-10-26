@@ -453,6 +453,52 @@ class RimCutTest(unittest.TestCase):
         self.assertEqual(struct.unpack_from("<6I", binary, v["byteOffset"]), (0, 1, 2, 2, 1, 3))
         self.assertEqual(doc["buffers"][0]["byteLength"], len(binary))
 
+    def test_compact_buffers_drops_unused_views_and_keeps_the_data(self):
+        """E1: after replace_accessor (the old views left unused) and with a sparse accessor and an image in views of
+        odd lengths, compact_buffers leaves no view unused, every kept view's bytes as they were, 4-byte aligned."""
+        doc, binary = G.read_glb(tiny_glb(3))
+        doc["accessors"].append({"bufferView": 0, "componentType": 5123, "count": 3, "type": "SCALAR"})
+        G.replace_accessor(doc, binary, 0, [(0, 0, 0), (1, 2, 3), (-1, 5, 0), (2, 2, 2)])
+        G.replace_accessor(doc, binary, 1, [0, 1, 2, 2, 1, 3], 5125)  # view 0 is now unused
+
+        def add_view(payload):
+            binary.extend(bytes(-len(binary) % 4))
+            doc["bufferViews"].append({"buffer": 0, "byteOffset": len(binary), "byteLength": len(payload)})
+            binary.extend(payload)
+            return len(doc["bufferViews"]) - 1
+        add_view(b"\x07" * 12)  # never used
+        si, sv = add_view(struct.pack("<H", 1) + b"\x00"), add_view(struct.pack("<3f", 9, 8, 7))
+        doc["accessors"][0]["sparse"] = {"count": 1, "indices": {"bufferView": si, "componentType": 5121},
+                                         "values": {"bufferView": sv}}
+        doc["images"] = [{"bufferView": add_view(b"PNG-ish!x"), "mimeType": "image/png"}]
+        doc["buffers"][0]["byteLength"] = len(binary)
+
+        def payloads(d, b):
+            out = {}
+            for k, a in enumerate(d["accessors"]):
+                v = d["bufferViews"][a["bufferView"]]
+                out[f"a{k}"] = bytes(b[v["byteOffset"]:v["byteOffset"] + v["byteLength"]])
+                for part in ("indices", "values"):
+                    if "sparse" in a:
+                        v = d["bufferViews"][a["sparse"][part]["bufferView"]]
+                        out[f"a{k}{part}"] = bytes(b[v["byteOffset"]:v["byteOffset"] + v["byteLength"]])
+            v = d["bufferViews"][d["images"][0]["bufferView"]]
+            out["image"] = bytes(b[v["byteOffset"]:v["byteOffset"] + v["byteLength"]])
+            return out
+        before = payloads(doc, binary)
+        views_before = len(doc["bufferViews"])
+        out = G.compact_buffers(doc, binary)
+        self.assertEqual(payloads(doc, out), before)
+        used = {a["bufferView"] for a in doc["accessors"]} | {doc["images"][0]["bufferView"]}
+        used |= {doc["accessors"][0]["sparse"][p]["bufferView"] for p in ("indices", "values")}
+        self.assertEqual(used, set(range(len(doc["bufferViews"]))))  # no unused view left
+        self.assertEqual(len(doc["bufferViews"]), views_before - 2)  # the old shared view and the stray one
+        self.assertTrue(all(v["byteOffset"] % 4 == 0 for v in doc["bufferViews"]))
+        self.assertEqual(doc["buffers"][0]["byteLength"], len(out))
+        self.assertLess(len(out), len(binary))
+        doc2, bin2 = G.read_glb(G.write_glb(doc, out))  # and it round-trips as a GLB
+        self.assertEqual(G.read_vec3(doc2, bin2, 0)[3], (2.0, 2.0, 2.0))
+
 
 if __name__ == "__main__":
     unittest.main()
