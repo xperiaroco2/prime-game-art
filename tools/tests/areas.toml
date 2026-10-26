@@ -30,6 +30,7 @@ light = [
   "godot/socket/*", "tools/blender/socket_*",  # the crystal socket's build and shot scripts (#263): no runner command or heavy test uses them
   "godot/board/*", "tools/blender/board_*",  # the breaker board's build and shot scripts (#263): no runner command or heavy test uses them
   "godot/charger/*", "tools/blender/charger_*",  # the crystal charger's build and shot scripts (#263): no runner command or heavy test uses them
+  "tools/blender/metal_cost_run.py",  # the stations' bronze cost measurement (#263 fix2): no runner command or heavy test uses it
 ]
 
 [area.anim]

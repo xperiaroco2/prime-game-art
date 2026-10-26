@@ -856,8 +856,8 @@ octave, with the slope from the noise's analytic derivative (a proposal, `metal_
 with that view's station hidden, and saves each variant's frame and a before/after strip (`<view>__compare.png`).
 
 On an RTX 4060 (2026-10-26, `<raw>/ship/v4/stations-fix2/cost3/`): the stations ship `wave` 0.3 and `dent` 0, so one
-slope (64 hashes) runs on their bronze. In the player's views it costs 0.05 (socket), 0.35 (board) and 0.46 ms
-(charger), up to 1.3 to 1.6 ms when bronze fills the frame; the console (both 0) is the control at 0.02 (the
-measurement's noise floor and the hall's sockets). One octave halves it; the analytic slope cuts it by about 70 %
+slope (64 hashes) runs on their bronze. In the player's views it costs 0.03 to 0.05 (socket, at the noise floor),
+0.35 (board) and 0.46 ms (charger), 0.18 to 0.33 in the stations' close views, 1.3 to 1.6 ms when bronze fills the
+frame; the console (both 0) is the control at 0.02 to 0.07 (the measurement's noise floor and the hall's sockets). One octave halves it; the analytic slope cuts it by about 70 %
 with the same noise field, but its glints fall in other places (the shipped forward difference over 0.3 and 0.65 of
 a cell is a smoothed slope), so it is a look change for the engineer. Nothing changes until he picks.
