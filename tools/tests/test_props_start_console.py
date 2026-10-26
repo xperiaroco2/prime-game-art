@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import struct
 import tomllib
 import unittest
@@ -16,9 +17,12 @@ from runner.commands import _manifest
 ASSET = common.ROOT / "assets" / "prop" / "start_console"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "console_dims.toml"
-TRIANGLES = 60000  # the whole console: 55,661 at build2, the hologram's lines and shell 43k of them (0.10 ms GPU)
+TRIANGLES = 62000  # the whole console: 55,661 at build2; the spin-up's parts (turbines, wiring, ring, digits) on top
 SURFACES = {"console_bronze", "console_graphite", "console_cyan", "console_button", "console_stage", "console_lamp",
-            "console_holo_line", "console_holo_shell", "console_beam"}
+            "console_holo_line", "console_holo_shell", "console_beam", "console_holo_turbine", "console_holo_wire",
+            "console_holo_ring", "console_holo_digit"}
+STATIONS = ["socket_w", "socket_e", "socket_fw", "socket_fe", "breaker_w", "breaker_e", "vent_w", "vent_e"]
+SHIP = common.ROOT / "layouts" / "ship" / "ship.toml"
 MATERIAL_FILES = ("console.gd", "console_metal.gdshader", "console_signal.gdshader", "console_holo.gdshader")
 
 
@@ -100,7 +104,7 @@ class StartConsoleAsset(unittest.TestCase):
         hi = [max(doc["accessors"][p["attributes"]["POSITION"]]["max"][i] for p in prims) for i in range(3)]
         self.assertAlmostEqual(lo[1], 0.0, delta=0.001)  # glTF is Y-up: the origin on the floor
         self.assertAlmostEqual(hi[0] - lo[0], 1.598, delta=0.03)  # the hologram's span, the drawing's 159.8 cm
-        self.assertTrue(1.65 < hi[1] < 1.85, hi[1])  # the hologram's top over the rim's 1.093 m
+        self.assertTrue(2.1 < hi[1] < 2.25, hi[1])  # the countdown's digits over the hologram (2.02 m their middle)
         self.assertNotIn("images", doc)  # no textures
         # UV0 carries the chamfer flag (u) and the strip's or lamp's index (v); the exporter writes 1 - v and the
         # shaders read 1 - UV.y, so the indices come back from 1 - v
@@ -111,6 +115,31 @@ class StartConsoleAsset(unittest.TestCase):
         self.assertEqual(index("console_holo_line") - set(range(101)), set())  # brightness x 100
         bronze_u = {round(u) for u, _v in glb_uvs(glb, doc, by_name["console_bronze"])}
         self.assertEqual(bronze_u, {0, 1})  # the chamfer faces are flagged, the metal brightens them
+
+    def test_spinup_ids_in_uv0(self) -> None:
+        # the spin-up's parts carry their ids in UV0 (console_holo.gdshader modes 3..6); glTF writes 1 - v
+        glb = EXPORT / "start_console.glb"
+        if lfs_pointer(glb):
+            self.skipTest("LFS file not fetched")
+        doc = glb_json(glb)
+        by_name = {doc["materials"][p["material"]]["name"]: p for p in doc["meshes"][0]["primitives"]}
+        uvs = lambda name: glb_uvs(glb, doc, by_name[name])  # noqa: E731
+        stage_u = [u for u, _v in uvs("console_stage")]  # the fill's share across each strip
+        self.assertAlmostEqual(min(stage_u), 0.0, delta=1e-4)
+        self.assertAlmostEqual(max(stage_u), 1.0, delta=1e-4)
+        wire = uvs("console_holo_wire")
+        self.assertEqual({round(1.0 - v) for _u, v in wire}, set(range(9)))  # 8 stations and the manifold
+        self.assertEqual({round(u) for u, _v in wire if u < -0.5}, {-1, -2})  # the points and their halos
+        self.assertTrue(all(u >= -1e-4 for u, _v in wire if u > -0.5))  # the lines' distance toward the turbines
+        ring = uvs("console_holo_ring")
+        self.assertEqual({round(1.0 - v, 3) for _u, v in ring}, {0.0, 1.0})  # the band's foot and top
+        self.assertAlmostEqual(min(u for u, _v in ring), 0.0, delta=1e-4)
+        self.assertAlmostEqual(max(u for u, _v in ring), 1.0, delta=1e-4)
+        digits = {round(1.0 - v) for _u, v in uvs("console_holo_digit")}
+        self.assertEqual(digits, {d * 10 + s for d in range(2) for s in range(7)})
+        turbine = uvs("console_holo_turbine")
+        self.assertIn(5.0, {round(u, 3) for u, _v in turbine})  # the fans, turned by the shader
+        self.assertTrue(all(0 <= round(1.0 - v) <= 100 for _u, v in turbine))  # brightness x 100
 
     def test_shipped_glb_is_the_recorded_build(self) -> None:
         glb = EXPORT / "start_console.glb"
@@ -129,6 +158,45 @@ class StartConsoleAsset(unittest.TestCase):
         self.assertAlmostEqual(ped[0], 1.20, delta=0.01)
         self.assertAlmostEqual(ped[2], 1.105, delta=0.01)  # the emitter's collar, a little over the rim's 109.3
         self.assertEqual(report["mesh"]["hologram"]["lamps"], 8)
+
+    def test_report_records_the_spinup(self) -> None:
+        report = json.loads((ASSET / "report.json").read_text(encoding="utf-8"))
+        spin = report["spinup"]
+        self.assertEqual(spin["order"], STATIONS + ["bus"])
+        spots = {s["id"]: s["at"] for s in tomllib.loads(SHIP.read_text(encoding="utf-8"))["stations"]["spot"]}
+        for sid in STATIONS:  # each station's point at its real place (ship.toml's spot)
+            self.assertEqual(spin["stations"][sid]["plan"], spots[sid], sid)
+        self.assertEqual(len(spin["turbines"]["centres"]), 3)
+        self.assertEqual(spin["ring"]["dashes"], 30)
+
+    def test_console_gd_spinup_api_and_constants(self) -> None:
+        look = (common.ROOT / "godot" / "console" / "console.gd").read_text(encoding="utf-8")
+        for fn in ("set_calling", "call_phase", "set_charge", "set_spin", "set_station", "set_countdown",
+                   "reset_spinup", "set_clock", "clock", "set_state", "set_passed", "set_lit"):
+            self.assertRegex(look, rf"static func {fn}\(")
+        m = re.search(r"const STATIONS := (\[[^\]]*\])", look)
+        self.assertEqual(json.loads(m.group(1)), STATIONS)  # the order of the build's UV0 v
+        report = json.loads((ASSET / "report.json").read_text(encoding="utf-8"))
+        turb = report["spinup"]["turbines"]
+        found = [[float(x) for x in v.split(",")] for v in
+                 re.findall(r"Vector3\(([-0-9., ]+)\)", look[look.index("const FAN_CENTRES"):look.index("const FAN_AXIS")])]
+        for got, want in zip(found, turb["centres"], strict=True):  # the fans turn round the GLB's own centres
+            for a, b in zip(got, want):
+                self.assertAlmostEqual(a, b, delta=1e-4)
+        axis = [float(x) for x in re.search(r"const FAN_AXIS := Vector3\(([^)]*)\)", look).group(1).split(",")]
+        for a, b in zip(axis, turb["axis"]):
+            self.assertAlmostEqual(a, b, delta=1e-4)
+        shader = (common.ROOT / "godot" / "console" / "console_holo.gdshader").read_text(encoding="utf-8")
+        for mode in range(3, 6):
+            self.assertIn(f"mode == {mode}", shader)
+
+    def test_dims_spinup(self) -> None:
+        d = tomllib.loads(DIMS.read_text(encoding="utf-8"))["spinup"]
+        self.assertEqual(d["ring_r"], 4.45)  # where the dashed ring was round the hall's disc
+        self.assertEqual(set(d["lanes"]), {"socket_back", "socket_front", "breaker", "vent"})
+        radii = sorted(r for r, _x in d["lanes"].values())
+        self.assertEqual(len(set(radii)), 4)  # one lane each: the lines never share a path
+        self.assertLess(max(radii), 4.0)  # inside the hall's disc
 
     def test_shipped_look_matches_the_godot_files(self) -> None:
         for name in MATERIAL_FILES:

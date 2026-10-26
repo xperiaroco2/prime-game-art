@@ -566,7 +566,8 @@ They are copied to `<raw>/start-console/ref/`.
    through its middle as a dark column. Every block edge over 30 degrees gets a 9 mm chamfer marked in UV0 u, which
    the metal brightens (the concept's bright edges).
 3. **The hologram from the ship's own mesh.** The built hull pieces (`skin_top`, `skin_belly`, `skin_mouth`,
-   `skin_cheeks`, the three nozzle pods; `<raw>/ship/v3/pieces/`) are joined, turned so the nose points at the
+   `skin_cheeks`, the three nozzle pods; `<raw>/<ship.toml raw_dir>/pieces/`, since v5 built on the raised
+   deck: `console_run.py` passes `[deck] lift_m` and the build lowers them back by it) are joined, turned so the nose points at the
    button, scaled to 1:16.3 (the 26.1 m span to the drawing's 159.8 cm), the hall's centre put over the core at
    145.7 cm and leaned 12 degrees nose down. **Its plates' own edges do not make a hologram**: the hull is built of
    separate plates, so its open and creased edges are a dense grid that read as white noise (the first trial,
@@ -595,7 +596,25 @@ They are copied to `<raw>/start-console/ref/`.
    $PYTHON_BIN tools/blender/console_run.py --tag <tag> --res 900 --samples 64 --asset assets/prop/start_console
    ```
 
-`tools/tests/test_props_start_console.py` checks the drawing's numbers in the dims file and the committed asset.
+6. **The engine's spin-up** (step 1; prime-game#1095 c6392050112): four parts on the hologram, each a surface on
+   `console_holo.gdshader`'s modes 3 to 6 with its ids in UV0 (`console_dims.toml` `[spinup]`): the pods' lines and a
+   fan at each pod's front (`console_holo_turbine`: u the angle round the pod, the fans u 5, turned in the vertex
+   shader round their centre, `console.gd` `FAN_CENTRES` and `FAN_AXIS` from `build.json`), the wiring
+   (`console_holo_wire`: v the station's index in `STATIONS`, 8 the manifold; u the distance along the line toward the
+   turbines in dm, the points -1, their halos -2), the charge ring where the dashed ring was (`console_holo_ring`: u
+   the bar's share, v foot 0 and top 1) and the countdown (`console_holo_digit`: v digit x 10 + segment, turned to the
+   eye about the console's axis). The strips' UV0 u is their fill's share across, so the three fill as one bar. The
+   stations' lines run in one lane each (`[spinup.lanes]`: a radius round the hall's centre and an x for the run aft),
+   ordered so none crosses another: a back socket on the outermost lane, a vent on the innermost; a breaker comes in
+   along its corridor beside the order lamps, a vent along the throat's wall. The time is the console's own clock (a
+   tween on a uniform, so the game can read the call's phase for its beep and the fans keep their angle through a
+   change of rate). `console_run.py --spinup` shoots the four states from the console's front, the throat and both
+   corridors' mouths and the close-ups on the current pieces (it refuses a deck other than 1.2 m), the before/after
+   against the shipped build2 GLB with the spin-up hidden (`console_diff.py`, numpy in headless Blender) and the
+   scripted round's MP4 (`hall.gd`'s video mode). The API: `assets/prop/start_console/HANDOFF.md`.
+
+`tools/tests/test_props_start_console.py` checks the drawing's numbers in the dims file, the committed asset, the
+spin-up's ids in UV0, the report's stations against `ship.toml` and `console.gd`'s API and constants.
 
 ## A wall station from its drawing: the ship's crystal socket (art#263)
 
