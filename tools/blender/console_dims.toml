@@ -106,3 +106,31 @@ band_width = 1.9                 # m: the wing band's width (the corridor's 3 m,
 plan_z = 1.25                    # m: the rooms' plan (the hall's disc, the tip discs, the bands, the lamps, the entrance
                                  # channel) drawn flat at the deck inside the hull, not on its curved top (the engineer's
                                  # review, 2026-10-24: the disc sat over the hull and the rooms climbed its hump)
+
+[spinup]                         # the engine's spin-up states, step 1 (art#263; prime-game#1095 c6392050112): the charge
+                                 # ring, the stations' wiring, the turbines' fans and the countdown (m: in the ship's
+                                 # frame, drawn at the hologram's 1:16.3; cm: the console's)
+ring_r = 4.45                    # m: the charge ring round the hall's disc, where the dashed ring was
+ring_h = 0.75                    # m: the ring's band, upright over the plan (it reads from the throat and the corridors)
+ring_dashes = 10                 # dashes per stage (three stages, one bar)
+ring_stage_gap = 5.0             # deg between two stages
+ring_dash_gap = 1.6              # deg between two dashes
+manifold_y = 8.7                 # m: plan y (aft) of the bar the stations' lines feed, before the turbines (pods at 9.6)
+breaker_offset = 0.55            # m: a breaker's line beside the corridor's axis (the order lamps sit on the axis)
+vent_offset = 0.35               # m: a vent's line inside the throat's wall
+point = 3.6                      # cm: a station's point (a bead) diameter
+halo = 0.75                      # m: the ring round a station's point
+fan_blades = 7                   # each turbine's fan at its front, spinning
+fan_r = 0.62                     # the fan's radius as a share of the pod's half width
+digit_h = 30.0                   # cm: the countdown's digits over the hologram (two, seven segments each)
+digit_w = 16.0
+digit_t = 3.0                    # a segment's thickness
+digit_gap = 5.5                  # between the two digits
+digit_z = 202.0                  # their middle over the floor
+digit_slant = 0.1                # the digits' lean (x per z)
+
+[spinup.lanes]                   # each station kind's lane: [radius round the hall's centre, x of its run aft] (m)
+socket_back = [3.7, 1.15]
+breaker = [3.45, 0.9]
+socket_front = [3.2, 0.65]
+vent = [2.95, 0.4]
