@@ -78,7 +78,7 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
                 c, rep["orient"] = L.orient(S, skel, c, j["orient"])
             rate = S.frames(c) / j["frames"] if j.get("frames") else None
             if j.get("cadence"):
-                rate = j["cadence"] / S.measure(skel, c)["c0"]
+                rate = L.cadence_rate(j["name"], j["cadence"], S.measure(skel, c)["c0"])
             if j.get("max_scale") and j.get("speed"):
                 rate = L.capped_rate(j["speed"], S.measure(skel, c)["v0"], j["max_scale"], rate)
             if rate is not None or j.get("speed") is not None:

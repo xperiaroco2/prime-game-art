@@ -74,7 +74,7 @@ def pick_window(rows: list, fps: float, cuts: tuple, want_deg: float, window_s: 
             speeds.append(math.hypot(dx, dz) / 100.0 / span_s)
             h = math.degrees(math.atan2(dx, dz))
             heads.append(h)
-            rels.append(_wrap(h - 0.5 * (p[3] + q[3])))
+            rels.append(_wrap(h - (p[3] + 0.5 * _wrap(q[3] - p[3]))))  # the facing's mean across the +-180 seam
         mean_h = math.degrees(math.atan2(sum(math.sin(math.radians(h)) for h in heads),
                                          sum(math.cos(math.radians(h)) for h in heads)))
         swing = max(abs(_wrap(h - mean_h)) for h in heads)

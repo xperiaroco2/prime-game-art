@@ -53,6 +53,24 @@ class SetFile(unittest.TestCase):
         with self.assertRaises(ValueError):
             L.expand({"clip": [{"name": "A", "source": "x"}, {"name": "A", "source": "y"}]})
 
+    def test_even_steps_on_a_clip_made_from_another_is_refused(self):
+        with self.assertRaises(ValueError):  # _make moves the contacts only on a source's cycle (P5's review)
+            L.expand({"clip": [{"name": "A", "source": "x"}, {"name": "B", "from": "A", "even_steps": True}]})
+
+    def test_a_cadence_without_a_measured_one_is_a_clear_error(self):
+        self.assertAlmostEqual(L.cadence_rate("A", 3.0, 2.0), 1.5)
+        for c0 in (None, 0.0):
+            with self.assertRaisesRegex(ValueError, "no measured cadence"):
+                L.cadence_rate("A", 3.0, c0)
+
+    def test_pick_window_averages_the_facing_across_the_seam(self):
+        import alien_mocap
+        # a take run along +X (travel 90 deg) facing about 180 deg, its facing flickering 179 / -179: the facing's
+        # mean is 180 (not 0), so travel - facing is -90 everywhere (P5's review)
+        rows = [(3.0 * f, 0.0, 0.0, 179.0 if (f // 6) % 2 else -179.0) for f in range(120)]
+        best = alien_mocap.pick_window(rows, 30.0, (0, 119), -90.0, window_s=1.0, span_s=0.2, step=6)
+        self.assertLess(best["facing_miss_deg"], 2.0)
+
 
 class GameNumbers(unittest.TestCase):
     def test_the_footstep_interval_matches_the_game_clock(self):

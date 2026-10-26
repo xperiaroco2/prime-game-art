@@ -1,6 +1,6 @@
 id = "100style"
 title = "100STYLE: stylised locomotion motion capture, 100 styles as BVH takes (60 fps, 23-joint skeleton)"
-author = "The 100STYLE dataset's authors (the creators listed on the Zenodo record)"
+author = "Ian Mason, Sebastian Starke, Taku Komura (the creators listed on the Zenodo record)"
 url = "https://zenodo.org/records/8127870"
 licence = "CC-BY-4.0"
 licence_url = "https://creativecommons.org/licenses/by/4.0/"

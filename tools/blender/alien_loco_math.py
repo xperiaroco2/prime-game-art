@@ -77,10 +77,20 @@ def expand(cfg: dict) -> list[dict]:
     for j in jobs:
         if j["name"] in seen:
             raise ValueError(f"two clips named {j['name']}")
+        if j.get("from") and j.get("even_steps"):  # _make moves the contacts only on a source's cycle
+            raise ValueError(f"{j['name']}: even_steps needs a source, not from = {j['from']}")
         if j.get("from") and j["from"] not in seen:
             raise ValueError(f"{j['name']}: made from {j['from']}, which is not made before it")
         seen.add(j["name"])
     return jobs
+
+
+def cadence_rate(name: str, cadence: float, c0: float | None) -> float:
+    """A clip's playback rate for its asked `cadence` (steps/s): cadence / c0, its measured cadence at rate 1; a clip
+    with no measured cadence (no steps found) cannot take one."""
+    if not c0:
+        raise ValueError(f"{name}: cadence = {cadence} asked, but the clip has no measured cadence (c0 = {c0})")
+    return cadence / c0
 
 
 AIM_TOL_DEG = 0.5  # orient: a clip whose head looks further off the aim is first turned whole onto it
@@ -181,7 +191,10 @@ def reel_plan(jobs: list[dict], reels: list[dict] | None = None) -> list[dict]:
     """With the set's [[reel]] entries (P2): those, one reel per view (<name>__<view>), each clip at its speed, an
     optional travel (degrees, the stripes' heading: a clip carried along another direction than its own, the game's
     pure side clip on a diagonal) and label; their clips must be made by the set. Without them, the old plan (steps 3
-    and 4b): """
+    and 4b): the treadmill reels: per game slot one reel at its speed (side view); a clip with one speed variant
+    (<name>__s<..>: a strafe at 3.0 beside 4.5, Jog_Bwd at 3.0 beside 2.5) as a pair (strafes seen from the front); the
+    jog grid as a 2x3 sheet (no video); Idle -> Jog_Fwd at 4.5 with the game's 0.15 s cross-fade (its sheet: 8 frames
+    around the switch)."""
     if reels:
         names = {j["name"] for j in jobs}
         out = []
@@ -195,10 +208,6 @@ def reel_plan(jobs: list[dict], reels: list[dict] | None = None) -> list[dict]:
                 out.append({"name": f"{r['name']}__{v}", "view": v, "video": r.get("video", True),
                             "cols": r.get("cols", 3), "clips": [dict(c) for c in r["clips"]]})
         return out
-    """The treadmill reels: per game slot one reel at its speed (side view); a clip with one speed variant
-    (<name>__s<..>: a strafe at 3.0 beside 4.5, Jog_Bwd at 3.0 beside 2.5) as a pair (strafes seen from the front); the
-    jog grid as a 2x3 sheet (no video); Idle -> Jog_Fwd at 4.5 with the game's 0.15 s cross-fade (its sheet: 8 frames
-    around the switch)."""
     names = {j["name"]: j for j in jobs}
     reels = []
     for j in jobs:
