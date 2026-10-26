@@ -241,7 +241,7 @@ def main() -> int:
     res = blender.run_script(Path(__file__).resolve(), sys.argv[1:], timeout=1800)
     print(*[x for x in (res.stdout or "").splitlines() if x.split(" ", 1)[0] in ("MEASURE", "GAME", "PROOF", "CHECK")],
           sep="\n", flush=True)
-    return 0
+    return res.returncode
 
 
 if __name__ == "__main__":

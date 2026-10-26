@@ -748,6 +748,9 @@ counter. Jump_Start's crouch goes into the tuck over 4 frames (`cut_gap` 6 leave
 Jump_Air's arms 30 degrees down and 8 forward, its fingers 30; Talk_Upper's hands 34 (thumb 24), arms out 5.
 
 ### The alien locomotion clip tool (art #196, option A)
+`alien_stride.py`, `alien_ttm.py` and `alien_loco.py` run Blender or Godot for minutes: an agent starts each with
+`run_in_background` and a log, and checks it with `tools/run.sh wait <log>` (the 180 s rule, `docs/agents.md`).
+
 The stride warp above (`stride_warp`) works on the UM rig only (Root, Body, the IK feet). The alien's clips live on the
 contract skeleton (Root, Hips, LeftUpperLeg ... LeftToes), so its own tool is `tools/blender/alien_stride_math.py` (pure,
 no bpy: FK from the rest matrices and the pose basis, the edits, the measures) and `tools/blender/alien_stride.py`

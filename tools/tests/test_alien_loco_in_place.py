@@ -1,5 +1,5 @@
 """The alien locomotion set plays in place (art #196, option A step 3b): alien_loco_math.in_place on a synthetic
-travelling loop under a rotated Hips rest, and every clip of the built GLBs (the raw folder's step-3 build; skipped
+travelling loop under a rotated Hips rest, and every clip of the built GLBs (the raw folder's build at the set's `out`; skipped
 when it is missing) keeps its hips within 0.3 m of the origin on the floor plane and at a standing or crouching
 height. Step 3 wrote step 2's text-to-motion loops with their source's world travel and place (hips 2 to 15 m off):
 the alien left every such treadmill reel."""
@@ -15,9 +15,12 @@ sys.path.insert(0, str(ROOT / "tools" / "blender"))
 import alien_loco_math as L  # noqa: E402
 import alien_stride_math as S  # noqa: E402
 
+sys.path.insert(0, str(ROOT / "tools"))
+from runner import common  # noqa: E402
+
 M = S.M
 ID = (1.0, 0.0, 0.0, 0.0)
-RAW = Path("D:/prime-art-raw")
+RAW = common.raw_dir()
 XY_M = 0.3
 HEIGHT_M = (0.3, 1.3)
 

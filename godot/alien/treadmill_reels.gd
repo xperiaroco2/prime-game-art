@@ -129,7 +129,7 @@ func _lane_for(tl: Dictionary, seconds: float, x0: float, x1: float) -> void:
 		var r := ColorRect.new()
 		r.color = c
 		r.position = Vector2(x0 + (x1 - x0) * t / seconds - w * 0.5, y + row * 12.0)
-		r.size = Vector2(w, 10.0 if row else 10.0)
+		r.size = Vector2(w, 10.0)
 		_lane.add_child(r)
 	# the clip's own contacts (both feet) as yellow ticks on the beat's row, under the white beats: a footstep clock
 	# that does not match the feet shows as ticks that drift apart (step 4b)

@@ -7,6 +7,8 @@
 #                                a run turned 50 degrees); Right is the mirror
 #   backward-run-a, -b           the alien has no Jog_Bwd (today the forward jog plays reversed)
 #   crouch-run                   the crouch+Shift speed of 2.8, which the UAL crouch cannot reach
+# This header is the plan at the run. The outcome (docs/animations.md): only crouch-run entered the set; the new jogs
+# barely travel, and batch 5's strafe and batch 6's backward run beat the new strafes and backward runs.
 # The clips go from their SMPL-H FBX onto the contract skeleton (a new retarget map); they are candidates beside the
 # UAL clips, judged in treadmill reels before any swap. Prompts name no game, film or character.
 #

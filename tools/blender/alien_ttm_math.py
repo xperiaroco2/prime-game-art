@@ -215,6 +215,8 @@ def faults(c: dict, slot: str) -> tuple[list, float]:
     if hand > BOUND["hand_cm"]:
         out.append(f"a hand {hand:.1f} cm into the torso")
         score += 1.0 + hand
+    if not c["v0"]:
+        return out + ["no travel"], score + 99.0
     rate = speed / c["v0"]
     r = abs(math.log(rate)) / math.log(BOUND["rate_ratio"])
     score += r

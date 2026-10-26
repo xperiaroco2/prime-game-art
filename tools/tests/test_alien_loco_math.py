@@ -59,6 +59,7 @@ class GameNumbers(unittest.TestCase):
     def test_the_footstep_interval_matches_the_game_clock(self):
         self.assertAlmostEqual(L.footstep_interval(4.5, CFG), 0.45)
         self.assertAlmostEqual(L.footstep_interval(7.0, CFG), 0.32)
+        self.assertEqual(L.footstep_interval(0.4, CFG), math.inf)  # the game is silent under 0.5 m/s
         self.assertAlmostEqual(L.footstep_interval(3.0, CFG), 4.5 * 0.45 / 3.0)  # under the walk: the walk's stride
         self.assertEqual(L.footstep_interval(0.0, CFG), math.inf)
 

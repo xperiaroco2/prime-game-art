@@ -77,11 +77,14 @@ def sources(jobs: list[dict]) -> list[str]:
     return sorted({j["source"] for j in jobs if j.get("source")})
 
 
+MIN_FOOTSTEP_MPS = 0.5  # footstep_cadence.gd MIN_SPEED_MPS: no footsteps below it
+
+
 def footstep_interval(speed: float, cfg: dict) -> float:
     """The game's footstep interval (s) at `speed` (footstep_cadence.gd interval_s): the stride lerped between the
     walk's and the sprint's by speed, over the speed."""
     s = cfg["set"]
-    if speed <= 0:
+    if speed < MIN_FOOTSTEP_MPS:
         return math.inf
     t = min(1.0, max(0.0, (speed - s["walk_mps"]) / (s["sprint_mps"] - s["walk_mps"])))
     stride = s["walk_mps"] * s["walk_interval_s"] + t * (s["sprint_mps"] * s["sprint_interval_s"]
