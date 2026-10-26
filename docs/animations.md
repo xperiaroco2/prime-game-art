@@ -1023,6 +1023,41 @@ warped take's measured speed is lower; the step on the floor is the same (speed 
 strafe's swing shin crossing the stance leg from the front is left as it is: the legs travel along the picture plane
 there and overlap at passing whatever the track (P3's 3 cm wider ankles are kept).
 
+### The head follows the aim (art #196, H1)
+So players can nod yes and shake no without a microphone, the alien's trunk, neck and head bones turn toward the
+player's aim on top of any clip; the head's mesh stays as it is (no face rig). `godot/alien/head_look.gd` is the
+reference `SkeletonModifier3D` the game copies (a child of the character's `Skeleton3D`; Godot runs every modifier
+after the `AnimationMixer`, so it works over Idle, the jogs and the strafes alike):
+- inputs `aim_yaw` (radians, the aim relative to the body, + to the character's left) and `aim_pitch` (+ up);
+- clamps `yaw_limit_deg` 70, `pitch_down_deg` 35, `pitch_up_deg` 40 (H1's recommendation for both aliens: at 50 down
+  the face hides under the crown from the front and the jaw sinks into the chest, worst at full yaw and on the jog's
+  forward lean; R1 had proposed 50);
+- the split `yaw_split` Spine 15 / Chest 20 / UpperChest 20 / Neck 25 / Head 20 and `pitch_split` Chest 10 /
+  UpperChest 20 / Neck 35 / Head 35 (H1's "trunk" split; R1's Spine 10 / Chest 15 / UpperChest 15 / Neck 25 / Head 35
+  and UpperChest 15 / Neck 35 / Head 50 put more twist into the neck's skin); shares are normalised, missing bones
+  skipped; each bone of the chain takes its share as a turn about skeleton space's up and the yawed right axis, so
+  the head bone ends turned by exactly the aim (on the rest pose; on a clip, the clip's own facing turned by it);
+- `smoothing_s` 0.05: the applied angles close 63 % of their gap in that time (a 2 Hz nod keeps about 85 % of its
+  amplitude); `snap()` jumps to the target;
+- `body_follow(body_yaw, aim_world_yaw, dead_zone)` (static): the body-lag rule as a demo (the game-design call is
+  the engineer's): the body keeps its yaw while the aim is within the dead zone and turns to keep the aim on its
+  edge beyond it; `aim_yaw` is then the aim relative to that body.
+
+What the game needs: the pitch is already in the network pose (`pose.pitch`, today put on a `Head` node, not on the
+skeleton): feed it to `aim_pitch`. The yaw relative to the body only exists with a dead zone: today the whole body
+turns with the mouse (`rotate_y`), so the relative yaw is always 0 and a "no" shake spins the whole body; with
+`body_follow` the body's yaw and the aim's yaw become two numbers to sync.
+
+`$PYTHON_BIN tools/blender/alien_headlook_run.py --check` runs `godot/alien/head_look_check.gd` headless on both
+characters (the strafe pilot's build, `loco/p5`): the head bone's facing within 1 degree of the asked yaw and pitch
+inside the clamps, at the clamps beyond them, no drift over 10 frames, on Idle and Jog_Fwd the clip's facing turned
+by the aim, the smoothing, `body_follow`'s cases (`HEADLOOK` lines, exit 1 on a failure). `... --shots [--chars]
+[--no-video]` runs `godot/alien/head_look_shots.gd` in the off-screen window (`--fixed-fps 24`) into
+`<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/headlook/<char>/`: `grid_{Idle,Jog_Fwd}.png` (yaw
+-70..+70 x pitch +40/0/-50, three-quarter), `extremes_{r1,trunk,rec}.png` (the clamps' corners and edges close from
+the front and the side under R1's split, the trunk split, and the recommendation), and the reels (MP4 in `mp4/`
+plus an 8-frame sheet): `nod_<clip>` and `shake_<clip>` on Idle, Jog_Fwd and Strafe_Left, `lag_dz45` and `lag_dz60`.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
