@@ -794,6 +794,30 @@ proof: Jog_Fwd's seam closed (3.1 deg), started on the left contact, cadence 2.2
 21 would be 2.29), stride x 0.878, v0 5.13 -> 4.50 (rate 1.00 at 4.5 m/s), foot slide 17/19 -> 0/0 mm, arms' swing
 x 0.75.
 
+#### Text to motion onto the alien (option A step 2)
+`tools/blender/retarget_maps/smpl_contract.toml` maps Meshy text to motion's SMPL-H rig onto the contract skeleton
+(Pelvis -> Hips, Spine1..3 -> Spine, Chest, UpperChest, the phalanges 1:1 with Pinky -> Little, L_Foot -> LeftToes;
+Root and the face bones at rest). **No FK leg mode was needed**: `retarget_core.Retargeter`'s leg solve works on
+armature-space poses and turns them back into each bone's basis under its own parent, so the contract's FK feet only
+need `[follow]` to name the foot's own parent (the lower leg). Checked on the alien: the source rest gives the target
+rest exactly (`rest_check` 0.001 mm, 0 deg), the ankles miss their goals by at most 16 mm over the ten clips.
+
+`$PYTHON_BIN tools/blender/alien_ttm.py --blend <char.blend> --raw D:/prime-art-raw --out <dir> [--items a,b]
+[--no-sheets]` bakes each FBX (`ITEMS`: the seven clips of `batches/2026-10-25-alien-locomotion-ttm.toml` and three
+baseline rows of batches 5 and 6) at the character's fps as `CharacterArmature|TM_<item>`, cuts its loop
+(`cycle`, bounds from the clip's own cadence: one cycle of two steps) as `CharacterArmature|TM_<item>_Loop`, mirrors
+the best left strafe (and the best new one) into a right one, and writes `candidates.json` (per candidate v0, c0,
+stride, the travel direction against the hips' mean facing, their yaw wobble, the cut's seam, foot slide, the floor,
+the hands against the torso, the hips' height; faults and a ranking per slot by `alien_ttm_math.faults`), one
+8-frame sheet per candidate (side view, strafes from the front, the camera following the hips), `overview.png` and
+`<char>_ttm.blend`. Two corrections it makes, both measured in the report:
+- the floor: the retarget scales the source by the hip height and the alien's ankles sit lower over its soles than the
+  scaled source's, so its planted feet hovered 4-37 mm; each bake and each loop is lowered so its planted level (the
+  10th percentile of each frame's lowest sole point) is the floor (`floor_fit`, `hover_before_fit_mm`);
+- the loop closing (`alien_stride_math._close`) keeps the hips' travel in armature space: a Blender bone's Y axis
+  runs along it, so the alien's Hips carry forward travel on their basis z; read as the floor's axes, a cut loop of a
+  forward or backward run lost its travel (step 1's loops were in place, so its numbers stand).
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
