@@ -118,8 +118,10 @@ class CappedRate(unittest.TestCase):
         self.assertLessEqual(3.0 / (eff * v0), 1.5 + 1e-9)
         self.assertEqual(t2, 19)
         # an asked rate within the cap before the rounding but over it after: also floored
-        t2, eff = M.retime_count(20, L.capped_rate(2.0, 1.0, 2.0, rate=1.02, intervals=20))
-        self.assertLessEqual(2.0 / (eff * 1.0), 2.0 + 1e-9)
+        # (2.0 / 1.02 = 1.96 is within 1.99, but 20 frames give rate 1.0 and the scale 2.0)
+        t2, eff = M.retime_count(20, L.capped_rate(2.0, 1.0, 1.99, rate=1.02, intervals=20))
+        self.assertLessEqual(2.0 / (eff * 1.0), 1.99 + 1e-9)
+        self.assertEqual(t2, 19)
         self.assertIsNone(L.capped_rate(2.0, 1.9, 1.15, intervals=20))  # no retime asked and none needed
 
     def test_a_scale_over_the_cap_is_refused(self):

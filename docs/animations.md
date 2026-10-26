@@ -834,10 +834,9 @@ variants (arm swing x frames) and picks the default by the numbers (`alien_loco_
 nearest the game's footstep beat with the planted feet within 5 mm; ties to `default_arm_swing`). Every loop starts on
 the left foot's contact. A clip's action is `CharacterArmature|<name>_Loop` (Godot imports it as `<name>`, looping;
 a game clip replaces the build's action of that name); variants and alternatives are `<name>__<variant>`, a second
-speed `__s<speed x 10>`. Since step 4b the strafes and `Jog_Bwd` under the game's names are fitted to 3.0 m/s (the
-proposed back and side cap), with `Strafe_*__s45` and `Jog_Bwd__s25` beside them for review (the caps since F1: the
-side 3.0, the back 2.0 m/s, the engineer's pick of 2026-10-26; "F1" below); the
-shuffle strafe is dropped (a squat and a split at both speeds). `alien_loco_math` also holds the game's footstep clock
+speed `__s<speed x 10>`. The strafes under the game's names are fitted to the side cap, 3.0 m/s (since step 4b), and
+`Jog_Bwd` with the back diagonals to the back cap, 2.0 m/s (since F1, the engineer's pick of 2026-10-26; "F1" below),
+with `Strafe_*__s45` and `Jog_Bwd__s25` beside them for review; the shuffle strafe is dropped (a squat and a split at both speeds). `alien_loco_math` also holds the game's footstep clock
 (`footstep_interval`, `footstep_cadence.gd`'s), the rates at the game's speeds against its 0.25-4.0 clamp
 (`play_rows`), the stride flag (scaled over 2x either way) and the reels' plan and timelines.
 

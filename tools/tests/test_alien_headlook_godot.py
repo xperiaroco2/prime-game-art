@@ -18,11 +18,11 @@ from runner import common, pins  # noqa: E402
 from runner.commands import _godot  # noqa: E402,F401  (the Godot runner the driver uses)
 
 HAVE_GODOT = common.tool_path(pins.GODOT_ENV, None) is not None
-try:
-    import alien_headlook_run as H  # noqa: E402
+import alien_headlook_run as H  # noqa: E402  (outside the try: a broken driver fails, it does not skip)
 
+try:
     HAVE_BUILD = all((H.BUILD / c / f"{c}_char.glb").is_file() for c in H.CHARS)
-except Exception:  # the raw root unset or unreadable
+except OSError:  # the raw root unreadable
     HAVE_BUILD = False
 
 
