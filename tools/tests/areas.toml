@@ -95,8 +95,12 @@ sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
 tests = ["test_faces_*"]
 
 [area.alien_stride]
-sources = ["tools/blender/alien_stride.py", "tools/blender/alien_stride_math.py"]  # the alien locomotion clip tool (#196, option A); before light's alien_*
+sources = ["tools/blender/alien_stride.py", "tools/blender/alien_stride_math.py", "tools/blender/anim_edit_math.py", "tools/blender/alien_clip_edit.py"]  # the alien locomotion clip tool (#196, option A); before light's alien_*
 tests = ["test_alien_stride_*"]
+
+[area.alien_headlook]
+sources = ["godot/alien/head_look.gd", "godot/alien/head_look_check.gd", "godot/alien/head_look_shots.gd", "tools/blender/alien_headlook_run.py"]  # the head follows the aim (#196, H1, F1); before light's alien_*
+tests = ["test_alien_headlook_*"]
 
 [area.alien_loco]
 sources = ["tools/blender/alien_loco.py", "tools/blender/alien_loco_math.py", "tools/blender/anim_sets/alien_loco.toml", "godot/alien/treadmill_reels.gd"]  # the alien's locomotion set and treadmill reels (#196, option A step 3); before light's alien_*
