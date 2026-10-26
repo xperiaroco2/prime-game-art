@@ -17,7 +17,7 @@ from runner.commands import _manifest
 ASSET = common.ROOT / "assets" / "prop" / "start_console"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "console_dims.toml"
-TRIANGLES = 62000  # the whole console: 55,661 at build2; the spin-up's parts (turbines, wiring, ring, digits) on top
+TRIANGLES = 58700  # the whole console: 55,661 at build2; spin-up step 1 58,217, step 2 58,555 (the deck ring, sprites)
 SURFACES = {"console_bronze", "console_graphite", "console_cyan", "console_button", "console_stage", "console_lamp",
             "console_holo_line", "console_holo_shell", "console_beam", "console_holo_turbine", "console_holo_wire",
             "console_holo_ring", "console_holo_digit"}
@@ -104,7 +104,7 @@ class StartConsoleAsset(unittest.TestCase):
         hi = [max(doc["accessors"][p["attributes"]["POSITION"]]["max"][i] for p in prims) for i in range(3)]
         self.assertAlmostEqual(lo[1], 0.0, delta=0.001)  # glTF is Y-up: the origin on the floor
         self.assertAlmostEqual(hi[0] - lo[0], 1.598, delta=0.03)  # the hologram's span, the drawing's 159.8 cm
-        self.assertTrue(2.1 < hi[1] < 2.25, hi[1])  # the countdown's digits over the hologram (2.02 m their middle)
+        self.assertTrue(2.27 < hi[1] < 2.30, hi[1])  # the countdown's digits (step 2: 45 cm, 2.06 m their middle)
         self.assertNotIn("images", doc)  # no textures
         # UV0 carries the chamfer flag (u) and the strip's or lamp's index (v); the exporter writes 1 - v and the
         # shaders read 1 - UV.y, so the indices come back from 1 - v
@@ -129,17 +129,27 @@ class StartConsoleAsset(unittest.TestCase):
         self.assertAlmostEqual(max(stage_u), 1.0, delta=0.02)
         wire = uvs("console_holo_wire")
         self.assertEqual({round(1.0 - v) for _u, v in wire}, set(range(9)))  # 8 stations and the manifold
-        self.assertEqual({round(u) for u, _v in wire if u < -0.5}, {-1, -2})  # the points and their halos
+        # the points and their halos; step 2: a broken point's pillar (u -3 - its height share) and glow (u -5)
+        self.assertEqual({round(u) for u, _v in wire if u < -0.5}, {-1, -2, -3, -4, -5})
         self.assertTrue(all(u >= -1e-4 for u, _v in wire if u > -0.5))  # the lines' distance toward the turbines
+        fx = [(u, 1.0 - v) for u, v in wire if u < -2.5]  # each corner FX_SPREAD off its station's index
+        self.assertEqual({round(abs(v - round(v)), 3) for _u, v in fx}, {0.3})
+        self.assertEqual({round(v) for _u, v in fx}, set(range(8)))
         ring = uvs("console_holo_ring")
-        self.assertEqual({round(1.0 - v, 3) for _u, v in ring}, {0.0, 1.0})  # the band's foot and top
+        # the band's foot and built top (step 2: built 2x tall, the shader draws a share), the deck ring's foot, top
+        self.assertEqual({round(1.0 - v, 3) for _u, v in ring}, {0.0, 1.0, 2.0, 3.0})
         self.assertAlmostEqual(min(u for u, _v in ring), 0.0, delta=1e-4)
         self.assertAlmostEqual(max(u for u, _v in ring), 1.0, delta=1e-4)
         digits = {round(1.0 - v) for _u, v in uvs("console_holo_digit")}
         self.assertEqual(digits, {d * 10 + s for d in range(2) for s in range(7)})
         turbine = uvs("console_holo_turbine")
         self.assertIn(5.0, {round(u, 3) for u, _v in turbine})  # the fans, turned by the shader
-        self.assertTrue(all(0 <= round(1.0 - v) <= 100 for _u, v in turbine))  # brightness x 100
+        lines = [(u, 1.0 - v) for u, v in turbine if u < 6.0]
+        self.assertTrue(all(0 <= round(v) <= 100 for _u, v in lines))  # brightness x 100
+        glow = [(u, 1.0 - v) for u, v in turbine if u > 6.0]  # step 2: the call's glow sprites, one per pod
+        self.assertEqual(len(glow), 3 * 4)
+        self.assertEqual({(round(u, 3), round(v, 3)) for u, v in glow},
+                         {(7.0 + 0.3 * sx, 200.0 + 0.3 * sy) for sx in (-1, 1) for sy in (-1, 1)})
 
     def test_shipped_glb_is_the_recorded_build(self) -> None:
         glb = EXPORT / "start_console.glb"
@@ -187,8 +197,46 @@ class StartConsoleAsset(unittest.TestCase):
         for a, b in zip(axis, turb["axis"]):
             self.assertAlmostEqual(a, b, delta=1e-4)
         shader = (common.ROOT / "godot" / "console" / "console_holo.gdshader").read_text(encoding="utf-8")
-        for mode in range(3, 6):
+        for mode in range(3, 7):
             self.assertIn(f"mode == {mode}", shader)
+        for fn in ("set_fill", "set_ring_style"):  # step 2's choices
+            self.assertRegex(look, rf"static func {fn}\(")
+        fx = report["spinup"]["fx"]  # the sprites' and pillars' build size and corner spread match the shader's
+        w0 = float(re.search(r"uniform float fx_w0 = ([0-9.]+);", shader).group(1))
+        self.assertAlmostEqual(w0, fx["w0_m"], delta=1e-6)
+        self.assertEqual(float(re.search(r"const float FX_SPREAD = ([0-9.]+);", shader).group(1)), fx["spread"])
+        self.assertEqual(fx["glow_uv"], [7.0, 200.0])
+        ring = report["spinup"]["ring"]  # step 1's band is the "step1" and "deck" styles' share of the built band
+        styles = re.search(r"const RING_STYLES := (\{[^}]*\})", look).group(1)
+        self.assertIn(f'"step1": [{ring["band_top"]}, 1.0, 0.0]', styles.replace("\n\t", " "))
+        self.assertRegex(look, r'const RING_STYLE := "(band|deck|both)"')
+        self.assertRegex(look, r'const FILL := "(cyan|green)"')
+
+    def test_passed_and_charge_are_separate_uniforms(self) -> None:
+        # review 1 of PR #325: reset_spinup's set_charge(0) wiped set_passed's strips; the strips show
+        # max(passed / 3, charge), the ring the charge alone, and reset_spinup leaves passed alone
+        look = (common.ROOT / "godot" / "console" / "console.gd").read_text(encoding="utf-8")
+        signal = (common.ROOT / "godot" / "console" / "console_signal.gdshader").read_text(encoding="utf-8")
+        self.assertIn("uniform float passed", signal)
+        self.assertIn("max(clamp(passed, 0.0, 3.0) / 3.0, charge)", signal)
+        body = lambda fn: look[look.index(f"static func {fn}("):].split("\n\n\n")[0]  # noqa: E731
+        self.assertIn('set_shader_parameter("passed"', body("set_passed"))
+        self.assertNotIn('"charge"', body("set_passed"))
+        self.assertNotIn("passed", body("set_charge"))
+        self.assertNotIn("set_passed", body("reset_spinup"))
+        self.assertIn("BLINK_MIN", body("set_station"))  # a broken station never reads solid red
+        self.assertIn("console_tween", body("apply"))  # a second apply() stops the first look's clock
+
+    def test_build_pods_are_the_exteriors_places(self) -> None:
+        # review 1 of PR #325: the hologram takes the raise off the pods (h - LIFT); PODS must be exterior.toml's
+        # design-frame places, and --pieces without --lift is refused (else the hologram's pods sit 0.6 m high)
+        src = (common.ROOT / "tools" / "blender" / "console_build.py").read_text(encoding="utf-8")
+        pods = re.findall(r'\("(nozzle_pod_\w+)", \(([-0-9.]+), ([-0-9.]+), ([-0-9.]+)\)\)', src)
+        self.assertEqual(len(pods), 3)
+        place = tomllib.loads((common.ROOT / "layouts" / "ship" / "exterior.toml").read_text(encoding="utf-8"))["place"]
+        for name, x, y, h in pods:
+            self.assertIn([name, [float(x), float(y), float(h)], 0.0], place)
+        self.assertIn('--pieces needs --lift', src)
 
     def test_dims_spinup(self) -> None:
         d = tomllib.loads(DIMS.read_text(encoding="utf-8"))["spinup"]
