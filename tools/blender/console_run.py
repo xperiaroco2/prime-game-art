@@ -12,12 +12,16 @@
    with every built ship piece and the console on its station spot, its button toward the mouth) through the
    runner's _godot.window(), into <tag>/hall/;
 6. godot/console/sheet.gd: the review sheet beside the concept and the console's GPU cost, into <tag>/godot/.
-Everything goes under <raw>/start-console/<tag>/. --asset DIR then writes the asset folder
+Everything goes under <raw>/start-console/<tag>/. --spinup: the spin-up's review on the current pieces (the deck at
+1.2 m, refused on another): its four states from the console's front, the throat and both corridors' mouths and the
+close-ups into <tag>/review/ (sheet.png), the before/after against the shipped build2 GLB with the spin-up hidden
+(<tag>/before/, after/, diff/), and the scripted round's MP4 (<tag>/round/round.mp4; --no-video skips it).
+--asset DIR then writes the asset folder
 (assets/prop/start_console): the GLB and the look's files in export/, the .blend in source/, report.json and
 manifest.toml with the raw files' hashes.
 
     $PYTHON_BIN tools/blender/console_run.py [--tag build] [--no-build] [--no-shots] [--res 900] [--samples 64]
-        [--asset assets/prop/start_console]
+        [--asset assets/prop/start_console] [--spinup [--no-video]]
 """
 from __future__ import annotations
 
@@ -75,6 +79,8 @@ def main() -> int:
     ap.add_argument("--asset", type=Path, help="write the asset folder here from this build")
     ap.add_argument("--approved", nargs=3, metavar=("LOGIN", "DATE", "PR_URL"),
                     help="the look's approval for the manifest (docs/manifest.md: all three together)")
+    ap.add_argument("--spinup", action="store_true", help="the spin-up's review shots, before/after and round MP4")
+    ap.add_argument("--no-video", action="store_true", help="--spinup without the round's MP4")
     args = ap.parse_args()
     if args.asset and args.no_shots:
         ap.error("--asset needs this run's shots (report.json takes their GPU cost)")
@@ -86,7 +92,8 @@ def main() -> int:
     if not args.no_build:
         r = blender.run_script("console_build.py", ["--out", str(out), "--pieces", str(pieces), "--render",
                                                     str(renders), "--res", str(args.res), "--samples",
-                                                    str(args.samples), "--views", str(REF), "--hdri", str(HDRI)], timeout=1800)
+                                                    str(args.samples), "--views", str(REF), "--hdri", str(HDRI),
+                                                    "--lift", str(layout["deck"].get("lift_m", 0.0))], timeout=1800)
         for line in (r.stdout or "").splitlines():
             if line.startswith("CONSOLE_BUILD"):
                 info = json.loads(line[len("CONSOLE_BUILD "):])
@@ -114,6 +121,9 @@ def main() -> int:
                                          log=out / "godot_sheet.log")
             print(*[x for x in output.splitlines() if x.startswith("CONSOLE ")], sep="\n")
             print(f"godot sheet: exit {code} {shots}", flush=True)
+    if args.spinup and code == 0:
+        code = spinup_review(layout, pieces, glb, out, not args.no_video)
+        print(f"spinup review: exit {code} {out}", flush=True)
     if args.asset and ok and code == 0:
         write_asset(args.asset, out, args.tag, report, args.approved)
         print(f"asset: {args.asset}", flush=True)
@@ -158,7 +168,8 @@ def view_rows() -> list:
     return rows
 
 
-def hall_shots(layout: dict, pieces: Path, glb: Path, folder: Path) -> int:
+def hall_shots(layout: dict, pieces: Path, glb: Path, folder: Path, views: list | None = None,
+               log: str = "godot_hall.log") -> int:
     """The console in the ship's hall at night: ship.gd's shoot request (every built piece, the night light, the
     rooms' probes) plus the console, shot by godot/console/hall.gd."""
     req, staged = ship_cmd.built_request(layout, pieces)
@@ -167,8 +178,9 @@ def hall_shots(layout: dict, pieces: Path, glb: Path, folder: Path) -> int:
     staged["start_console"] = glb
     req.update({"mode": "shoot", "watchdog_s": 280.0, "nav_blink": False, "compare": [],
                 "light": {**layout["light"], "lamps": [[*ship_cmd._g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
-                "views": view_rows(), "rooms": ship_cmd.room_boxes(layout),
-                "top": {"name": "plan", "title": "", "size_m": 12.0}})
+                "views": views or view_rows(), "rooms": ship_cmd.room_boxes(layout)})
+    if views is None:
+        req["top"] = {"name": "plan", "title": "", "size_m": 12.0}
     errors = ship_cmd._stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / "request.json"
@@ -176,8 +188,8 @@ def hall_shots(layout: dict, pieces: Path, glb: Path, folder: Path) -> int:
     (folder / "shots.json").unlink(missing_ok=True)
     code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s",
                                   "res://console/hall.gd", "--", path.as_posix(), folder.as_posix()],
-                                 ship_cmd.VIEW_SIZE, ship_cmd.GODOT_TIMEOUT, log=folder.parent / "godot_hall.log")
-    (folder.parent / "godot_hall.log").write_text(output, encoding="utf-8")
+                                 ship_cmd.VIEW_SIZE, ship_cmd.GODOT_TIMEOUT, log=folder.parent / log)
+    (folder.parent / log).write_text(output, encoding="utf-8")
     print(*[x for x in output.splitlines() if x.startswith(("CONSOLE", "SHIP"))], sep="\n")
     for line in errors[:10]:
         print(f"  import: {line}")
@@ -187,6 +199,167 @@ def hall_shots(layout: dict, pieces: Path, glb: Path, folder: Path) -> int:
     result = json.loads((folder / "shots.json").read_text(encoding="utf-8"))
     print(f"hall shots: {len(result['shots'])} in {folder}", flush=True)
     return 0
+
+
+# --- the spin-up's review (art#263, step 1) ------------------------------------------------------------------------
+BEFORE = RAW / "start-console" / "build2" / "start_console.glb"  # the shipped console before the spin-up
+DECK_H = 1.2                 # the raise: the deck the console stands on (refuse shots on another)
+G_SPOT = (0.0, 0.6)          # the console's spot (plan x, y): Godot (x, h, y)
+EYE_H = 1.6
+SPIN_STATES = {
+    "calling": {"clock": 3.15, "calling": True, "charge": 0.0},
+    "charging": {"clock": 5.0, "spin": 1.2, "charge": 0.55, "stations": {}},
+    "failures": {"clock": 10.0, "spin": 1.2, "charge": 0.55, "countdown": 4.3,
+                 "stations": {"vent_e": ["broken", 1.2], "breaker_w": ["broken", 2.5]}},
+    "full": {"clock": 6.0, "spin": 1.2, "charge": 1.0, "stations": {}},
+}
+ALL_OK = {sid: ["ok", 1.0] for sid in ("socket_w", "socket_e", "socket_fw", "socket_fe", "breaker_w", "breaker_e",
+                                       "vent_w", "vent_e")}
+# the stills' eyes (plan x, y; at eye height) and fov: the console's front, the throat, the corridors' mouths
+SPIN_EYES = {"front": ((0.0, -1.6), 62.0), "throat": ((0.0, -4.6), 50.0), "corridor_e": ((4.3, 0.25), 50.0),
+             "corridor_w": ((-4.3, 0.25), 50.0)}
+# the close-ups: name, state, eye (Godot), look (Godot), fov
+SPIN_CLOSE = [
+    ("close_turbines", "charging", (0.32, 2.92, 0.2), (0.0, 2.76, 1.22), 34.0),
+    ("close_fans_calling", "calling", (-0.3, 2.9, 0.25), (0.0, 2.76, 1.22), 30.0),
+    ("close_points", "failures", (1.0, 3.45, -0.45), (0.0, 2.58, 0.62), 42.0),
+    ("close_ring", "charging", (-1.05, 2.9, -0.35), (0.0, 2.6, 0.6), 36.0),
+    ("close_digits", "failures", (0.45, 3.0, -1.2), (0.0, 3.2, 0.6), 30.0),
+    ("close_fixed", "fixed", (0.9, 3.3, -0.6), (0.0, 2.6, 0.6), 40.0),
+    # step 2's parts: the call's glow and wash, a broken point's bead and pillar, the deck ring
+    ("close_call_glow", "calling", (0.0, 2.95, -0.9), (0.0, 2.75, 1.1), 44.0),
+    ("close_broken", "failures", (0.0, 2.85, -1.1), (0.0, 2.68, 0.6), 40.0),
+    ("close_deck", "charging", (0.85, 2.8, -0.45), (0.0, 2.3, 0.6), 40.0),
+]
+SPIN2_BEFORE = RAW / "start-console" / "spinup1" / "review"  # step 1's stills: before_after.png's left column
+GRID_STATE = "charging"      # the variant grid: the ring's style x the bar's colour, from the hall's four eyes
+GRID_STYLES = ("band", "deck", "both")
+GRID_FILLS = ("cyan", "green")
+VIDEO = {"fps": 24, "fov": 52.0, "size": (1280, 720), "max_mb": 15.0,
+         "keys": [[(0.0, 2.8, -3.0), (0.0, 2.75, 0.6), 0.0], [(0.0, 2.8, -3.0), (0.0, 2.75, 0.6), 9.0],
+                  [(2.2, 2.8, -2.3), (0.0, 2.75, 0.6), 7.0], [(3.4, 2.8, -0.6), (0.0, 2.75, 0.6), 8.0],
+                  [(3.4, 2.8, -0.6), (0.0, 2.75, 0.6), 4.0], [(1.6, 2.9, -2.6), (0.0, 2.75, 0.6), 8.0],
+                  [(0.0, 2.8, -3.0), (0.0, 2.75, 0.6), 8.0]]}
+
+
+def spin_state(name: str) -> dict:
+    s = json.loads(json.dumps(SPIN_STATES.get(name, SPIN_STATES["charging"])))
+    if name == "fixed":
+        s["stations"] = {**ALL_OK, "vent_e": ["fixed", 1.0, 0.25]}
+    elif "stations" in s:
+        s["stations"] = {**ALL_OK, **s["stations"]}
+    return s
+
+
+def spinup_rows() -> list:
+    look = [G_SPOT[0], DECK_H + 1.5, G_SPOT[1]]
+    rows = []
+    for state in SPIN_STATES:
+        for eye, ((x, y), fov) in SPIN_EYES.items():
+            rows.append([f"{state}_{eye}", f"{state}, {eye.replace('_', ' ')}", [x, DECK_H + EYE_H, y], look, fov,
+                         {"spin": spin_state(state)}])
+    for name, state, eye, at, fov in SPIN_CLOSE:
+        rows.append([name, name.replace("_", " "), list(eye), list(at), fov, {"spin": spin_state(state)}])
+    return rows
+
+
+def grid_rows() -> list:
+    """Step 2's variant grid: the charge ring's styles x the bar's colours, the charging state, the four eyes."""
+    look = [G_SPOT[0], DECK_H + 1.5, G_SPOT[1]]
+    rows = []
+    for style in GRID_STYLES:
+        for fill in GRID_FILLS:
+            for eye, ((x, y), fov) in SPIN_EYES.items():
+                rows.append([f"{style}_{fill}_{eye}", f"{style}, {fill}, {eye.replace('_', ' ')}",
+                             [x, DECK_H + EYE_H, y], look, fov,
+                             {"spin": spin_state(GRID_STATE), "ring": style, "fill": fill}])
+    return rows
+
+
+def diff_rows() -> list:
+    """The before/after views with the spin-up's surfaces hidden: the old hall views of the hologram and body (the
+    strips in their old green)."""
+    return [r[:5] + [{"console": "idle", "hide_spinup": True, "fill": "green", "ring": "step1"}]
+            for r in view_rows() if r[0] in ("q34", "front", "holo")]
+
+
+def deck_ok(layout: dict, pieces: Path) -> str:
+    """'' when the pieces stand on the raised deck (floor_h 1.2: the hall floor's top), else why not."""
+    if abs(layout["deck"]["floor_h"] - DECK_H) > 1e-6:
+        return f"ship.toml deck floor_h {layout['deck']['floor_h']} is not {DECK_H}"
+    glb = pieces / "hall_flat_floor_socket.glb"
+    data = glb.read_bytes()
+    n = int.from_bytes(data[12:16], "little")
+    doc = json.loads(data[20:20 + n])
+    top = max(doc["accessors"][p["attributes"]["POSITION"]]["max"][1] + node.get("translation", [0, 0, 0])[1]
+              for node in doc["nodes"] if "mesh" in node for p in doc["meshes"][node["mesh"]]["primitives"])
+    return "" if abs(top - DECK_H) < 0.02 else f"{glb.name}'s top at {top:.3f} m, not the deck's {DECK_H}"
+
+
+def spinup_review(layout: dict, pieces: Path, glb: Path, out: Path, video: bool) -> int:
+    why = deck_ok(layout, pieces)
+    if why:
+        print(f"refused: {why}")
+        return 1
+    code = hall_shots(layout, pieces, glb, out / "review", spinup_rows(), log="godot_review.log")
+    if code == 0:
+        code = hall_shots(layout, pieces, glb, out / "grid", grid_rows(), log="godot_grid.log")
+    names = [f"{s}_throat" for s in SPIN_STATES]
+    if code == 0 and all((SPIN2_BEFORE / f"{n}.png").is_file() for n in names):
+        r = blender.run_script("console_diff.py", ["--before", str(SPIN2_BEFORE), "--after", str(out / "review"),
+                                                   "--pairs", ",".join(names), "--out",
+                                                   str(out / "before_after.png")], timeout=300)
+        print(*[x for x in (r.stdout or "").splitlines() if x.startswith("CONSOLE_PAIRS")], sep="\n")
+    elif code == 0:
+        print(f"before_after.png skipped: no step 1 stills in {SPIN2_BEFORE}")
+    for tag, model in (("before", BEFORE), ("after", glb)):
+        if code == 0:
+            code = hall_shots(layout, pieces, model, out / tag, diff_rows(), log=f"godot_{tag}.log")
+    if code == 0:
+        r = blender.run_script("console_diff.py", ["--before", str(out / "before"), "--after", str(out / "after"),
+                                                   "--out", str(out / "diff")], timeout=300)
+        print(*[x for x in (r.stdout or "").splitlines() if x.startswith("CONSOLE_DIFF")], sep="\n")
+    if code == 0 and video:
+        code = round_video(layout, pieces, glb, out / "round")
+    return code
+
+
+def round_video(layout: dict, pieces: Path, glb: Path, folder: Path) -> int:
+    """The scripted round in an off-screen window (hall.gd's video mode), frames to an MP4 in headless Blender."""
+    req, staged = ship_cmd.built_request(layout, pieces)
+    req["pieces"]["start_console"] = "res://import/start_console.glb"
+    req["place"].append(["start_console", to_godot(0.0, 0.0, 0.0), YAW])
+    staged["start_console"] = glb
+    req.update({"mode": "video", "watchdog_s": 1400.0, "nav_blink": False,
+                "light": {**layout["light"], "lamps": [[*ship_cmd._g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": ship_cmd.room_boxes(layout),
+                "video": {"fps": VIDEO["fps"], "fov": VIDEO["fov"],
+                          "keys": [[list(e), list(t), s] for e, t, s in VIDEO["keys"]]}})
+    errors = ship_cmd._stage(staged)
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / "request.json"
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    (folder / "video.json").unlink(missing_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s",
+                                  "res://console/hall.gd", "--", path.as_posix(), folder.as_posix()],
+                                 VIDEO["size"], 1500, log=folder / "godot_round.log")
+    if code != 0 or not (folder / "video.json").is_file():
+        print("round failed:\n" + "\n".join(output.splitlines()[-20:]))
+        return code or 1
+    clip = folder / "round.mp4"
+    clip.unlink(missing_ok=True)
+    blender.run_script(ship_cmd.VIDEO_SCRIPT, ["--frames", str(folder / "frames"), "--out", str(clip), "--fps",
+                                               str(VIDEO["fps"]), "--max-mb", str(VIDEO["max_mb"])], timeout=1500)
+    if not clip.is_file():
+        print(f"no {clip}")
+        return 1
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    info = json.loads((folder / "video.json").read_text(encoding="utf-8"))
+    mb = clip.stat().st_size / 2 ** 20
+    print(f"round: {clip} {info['seconds']:.1f} s, {info['frames']} frames, {mb:.1f} MB, {len(errors)} import errors; "
+          f"phases {info['phases']}", flush=True)
+    return 0 if mb <= VIDEO["max_mb"] else 1
 
 
 def sha256(path: Path) -> str:
@@ -215,7 +388,10 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict, approved: lis
                  "triangles_by_part": build["triangles_by_part"], "hologram": build["hologram"],
                  "size_m": size, "pedestal_size_m": build["pedestal_size_m"], "front": "+Z",
                  "origin": "on the floor under the console's middle"},
+        "spinup": build.get("spinup", {}),
         "states": {"idle": "console.gd set_state(look, \"idle\"): set_passed(look, 1), set_lit(look, -1)",
+                   "spinup": "set_calling, call_phase, set_charge, set_spin, set_station, set_countdown, reset_spinup "
+                             "(HANDOFF.md)",
                    "order": "set_lit(look, i) while the order plays (0..3 west, 4..7 east, from the hall outward)",
                    "stage": "set_passed(look, n): n strips green"},
         "placement": "on the ship's console spot (layouts/ship/ship.toml: plan (0, 0.6), 1 m aft of the hall's centre) on "
@@ -240,8 +416,11 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict, approved: lis
          f'({build["pedestal_size_m"][0]:.2f} m across, {build["pedestal_size_m"][2]:.3f} m tall) with the orange '
          'start button at hip height, three stage strips, two cyan strips and the hologram emitter, and over it the '
          "hologram of the ship from the built hull's own mesh at 1:16.3 (lines, a faint shell, eight order lamps), "
-         f'{build["triangles"]:,} triangles in nine surfaces, front +Z, origin on the floor under the middle. '
-         'States on one mesh: export/console.gd set_state, set_passed, set_lit (HANDOFF.md). From the concept the '
+         f'{build["triangles"]:,} triangles in thirteen surfaces, front +Z, origin on the floor under the middle; the '
+         "engine's spin-up on the hologram (the turbines' fans and calling glow, the stations' wiring with a broken "
+         "point's pillar, the charge ring and its second ring on the emitter deck, the countdown). "
+         'States on one mesh: export/console.gd set_state, set_passed, set_lit and the spin-up\'s set_calling, '
+         'set_charge, set_spin, set_station, set_countdown, set_fill, set_ring_style (HANDOFF.md). From the concept the '
          'engineer picked on 2026-10-24 and its drawing in cm (prime-game-design ideas/ship-components/stations-final: '
          'console-final.jpg, holo14-diamond-2.jpg, console-drawing/; copied to the raw folder; 2D concepts used only '
          'as references), built from code in headless Blender (tools/blender/console_build.py from '

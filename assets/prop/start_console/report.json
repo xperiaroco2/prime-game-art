@@ -1,9 +1,9 @@
 {
   "asset": "start_console",
-  "built_by": "tools/blender/console_run.py --tag build2 --asset assets/prop/start_console",
+  "built_by": "tools/blender/console_run.py --tag spinup2 --asset assets/prop/start_console",
   "mesh": {
-    "triangles": 55661,
-    "vertices": 30966,
+    "triangles": 58555,
+    "vertices": 33045,
     "triangles_by_material": {
       "console_graphite": 7310,
       "console_bronze": 2112,
@@ -11,9 +11,13 @@
       "console_stage": 6,
       "console_button": 510,
       "console_beam": 384,
-      "console_holo_line": 26340,
-      "console_holo_shell": 16929,
-      "console_lamp": 800
+      "console_holo_line": 20940,
+      "console_holo_shell": 14639,
+      "console_lamp": 800,
+      "console_holo_turbine": 6804,
+      "console_holo_wire": 3124,
+      "console_holo_ring": 600,
+      "console_holo_digit": 56
     },
     "triangles_by_part": {
       "core": 380,
@@ -31,20 +35,24 @@
       "collar": 1152,
       "core_light": 478,
       "beam": 384,
-      "holo_lines": 26340,
-      "holo_shell": 16938,
-      "holo_lamps": 800
+      "holo_lines": 20940,
+      "holo_shell": 14643,
+      "holo_lamps": 800,
+      "holo_turbines": 6804,
+      "holo_wiring": 3124,
+      "holo_ring": 600,
+      "holo_digits": 56
     },
     "hologram": {
-      "source_triangles": 19505,
+      "source_triangles": 13993,
       "bounds_cm": [
         [
-          -79.99,
-          -39.04,
-          127.0
+          -80.01,
+          -39.62,
+          126.96
         ],
         [
-          80.0,
+          80.01,
           93.75,
           174.54
         ]
@@ -52,24 +60,28 @@
       "lamps": 8,
       "scale": 16.34,
       "lines": {
-        "outline": 1902,
-        "contours": 2760,
+        "outline": 1704,
+        "contours": 2628,
         "keel": 462,
-        "creases": 1080,
-        "grid": 11946,
-        "hall disc": 1236,
+        "creases": 3012,
+        "grid": 11148,
+        "hall disc": 912,
         "tip discs": 984,
         "bands": 24,
         "entrance": 66,
+        "shell": 14643,
+        "lamps": 800,
         "turbines": 5880,
-        "shell": 16938,
-        "lamps": 800
+        "fans": 924,
+        "wiring": 3124,
+        "ring": 600,
+        "digits": 56
       }
     },
     "size_m": [
-      1.6,
+      1.6002,
       1.4721,
-      1.7454
+      2.285
     ],
     "pedestal_size_m": [
       1.1939,
@@ -79,8 +91,193 @@
     "front": "+Z",
     "origin": "on the floor under the console's middle"
   },
+  "spinup": {
+    "turbines": {
+      "centres": [
+        [
+          0.18365,
+          1.55792,
+          -0.62014
+        ],
+        [
+          -0.18365,
+          1.55792,
+          -0.62014
+        ],
+        [
+          0.0,
+          1.59086,
+          -0.61314
+        ]
+      ],
+      "axis": [
+        -0.0,
+        -0.20791,
+        0.97815
+      ],
+      "fan_u": 5.0
+    },
+    "stations": {
+      "socket_w": {
+        "index": 0,
+        "plan": [
+          -1.8,
+          3.112
+        ],
+        "point": [
+          0.11019,
+          1.44885,
+          -0.22621
+        ],
+        "line_dm": 3.926
+      },
+      "socket_e": {
+        "index": 1,
+        "plan": [
+          1.8,
+          3.112
+        ],
+        "point": [
+          -0.11019,
+          1.44885,
+          -0.22621
+        ],
+        "line_dm": 3.926
+      },
+      "socket_fw": {
+        "index": 2,
+        "plan": [
+          -3.4261,
+          -2.3578
+        ],
+        "point": [
+          0.20974,
+          1.37923,
+          0.10132
+        ],
+        "line_dm": 7.802
+      },
+      "socket_fe": {
+        "index": 3,
+        "plan": [
+          3.4261,
+          -2.3578
+        ],
+        "point": [
+          -0.20974,
+          1.37923,
+          0.10132
+        ],
+        "line_dm": 7.802
+      },
+      "breaker_w": {
+        "index": 4,
+        "plan": [
+          -6.6638,
+          -0.9019
+        ],
+        "point": [
+          0.40794,
+          1.39776,
+          0.01414
+        ],
+        "line_dm": 8.793
+      },
+      "breaker_e": {
+        "index": 5,
+        "plan": [
+          6.6638,
+          -0.9019
+        ],
+        "point": [
+          -0.40794,
+          1.39776,
+          0.01414
+        ],
+        "line_dm": 8.793
+      },
+      "vent_w": {
+        "index": 6,
+        "plan": [
+          -2.409,
+          -4.7912
+        ],
+        "point": [
+          0.14747,
+          1.34826,
+          0.24704
+        ],
+        "line_dm": 9.597
+      },
+      "vent_e": {
+        "index": 7,
+        "plan": [
+          2.409,
+          -4.7912
+        ],
+        "point": [
+          -0.14747,
+          1.34826,
+          0.24704
+        ],
+        "line_dm": 9.597
+      }
+    },
+    "ring": {
+      "radius_cm": 27.24,
+      "height_cm": 4.59,
+      "built_height_cm": 9.18,
+      "band_top": 0.5,
+      "dashes": 30,
+      "deck_ring_cm": [
+        44.0,
+        108.05,
+        46.9,
+        113.0
+      ],
+      "triangles": {
+        "band": 300,
+        "deck": 300
+      }
+    },
+    "countdown": {
+      "centre_cm": [
+        0.0,
+        0.0,
+        206.0
+      ],
+      "digit_h_cm": 45.0,
+      "segments": "abcdefg"
+    },
+    "order": [
+      "socket_w",
+      "socket_e",
+      "socket_fw",
+      "socket_fe",
+      "breaker_w",
+      "breaker_e",
+      "vent_w",
+      "vent_e",
+      "bus"
+    ],
+    "fx": {
+      "w0_m": 0.005,
+      "spread": 0.3,
+      "pillar_h_cm": 16.0,
+      "glow_uv": [
+        7.0,
+        200.0
+      ],
+      "sprite_u": -5.0,
+      "pillar_u": [
+        -3.0,
+        -4.0
+      ]
+    }
+  },
   "states": {
     "idle": "console.gd set_state(look, \"idle\"): set_passed(look, 1), set_lit(look, -1)",
+    "spinup": "set_calling, call_phase, set_charge, set_spin, set_station, set_countdown, reset_spinup (HANDOFF.md)",
     "order": "set_lit(look, i) while the order plays (0..3 west, 4..7 east, from the hall outward)",
     "stage": "set_passed(look, n): n strips green"
   },
@@ -88,15 +285,15 @@
   "gltf_validator": {
     "numErrors": 0,
     "numWarnings": 0,
-    "numInfos": 9,
+    "numInfos": 13,
     "numHints": 0
   },
   "godot_cost": {
-    "draw_calls_console": 9,
-    "gpu_ms_console": 0.134,
-    "gpu_ms_with": 0.662,
-    "gpu_ms_without": 0.528,
+    "draw_calls_console": 13,
+    "gpu_ms_console": 0.112,
+    "gpu_ms_with": 0.675,
+    "gpu_ms_without": 0.563,
     "view": "1280x720, eye 1.6 m, 2.1 m away"
   },
-  "review": "<raw>/start-console/build2/godot/sheet.png"
+  "review": "<raw>/start-console/spinup2/godot/sheet.png"
 }
