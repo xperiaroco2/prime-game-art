@@ -612,6 +612,18 @@ They are copied to `<raw>/start-console/ref/`.
    corridors' mouths and the close-ups on the current pieces (it refuses a deck other than 1.2 m), the before/after
    against the shipped build2 GLB with the spin-up hidden (`console_diff.py`, numpy in headless Blender) and the
    scripted round's MP4 (`hall.gd`'s video mode). The API: `assets/prop/start_console/HANDOFF.md`.
+7. **The spin-up read from the hall** (step 2): what reads at 6 m is light that grows, not lines that change colour.
+   The call floods the turbines (brighter, the lines swelling along their normals, in `call_colour`: the sRGB
+   `orange` is nearly red in linear and reads pink under AgX) with a camera-facing glow sprite round each pod and a
+   wash over the shell; a broken point adds a big red bead (a sprite) and a red pillar turned about the vertical to
+   the eye, both blinking at its rate. The sprites and pillars are tiny quads in the GLB (`fx_w0`, their corners
+   `FX_SPREAD` off their ids in UV0) that the vertex stage sizes, or folds onto their centre while off: no pixels.
+   The charge ring's band is built twice as tall (`ring_h_tall`) and the shader draws a share (`band_top`); the
+   same bar runs again as a ring on the emitter deck (`deck_ring`, v 2..3), leaning out so it is seen from every
+   side. `console.gd` `set_ring_style` ("band", "deck", "both", "step1") and `set_fill` ("cyan", "green") keep the
+   choices open; `console_run.py --spinup` shoots their grid (`<tag>/grid/`) and step 1's throat stills beside
+   step 2's (`before_after.png`, `console_diff.py --pairs`). A NaN in an additive shader (a `pow` of a negative
+   behind a zero factor) blooms the whole frame black: clamp before `pow`.
 
 `tools/tests/test_props_start_console.py` checks the drawing's numbers in the dims file, the committed asset, the
 spin-up's ids in UV0, the report's stations against `ship.toml` and `console.gd`'s API and constants.

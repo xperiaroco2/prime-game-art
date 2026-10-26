@@ -72,7 +72,24 @@ Console.reset_spinup(look)                     # a new round: all at rest, the c
   reads it with `Console.clock(look)`, the call's phase with `call_phase`. `set_clock(look, t)` stops it and sets it
   (recordings, tests). The fans keep their angle through a change of rate.
 - The countdown turns orange in its last 5 s and red in its last 3, each second ticking; the game feeds it the nearest
-  failure's own timer (the placeholders 10 s and 30 s), as often as it likes.
+  failure's own timer (the placeholders 10 s and 30 s), as often as it likes. It shows whole seconds rounded up:
+  below 0 hides it, above 99 shows 99.
+- A broken station's `blink_hz` is at least `BLINK_MIN` (0.5): 0 would read as a solid red point.
 - What the look does not do: the timers, which station fails, the sound. The game calls the beep at `call_phase` 0.
-- `set_state`, `set_passed` and `set_lit` work as before (`set_passed(n)` fills the strips to n thirds; it leaves the
-  ring alone).
+- `set_state`, `set_passed` and `set_lit` work as before. `passed` and the spin-up's `charge` are two uniforms: the
+  strips show `max(passed / 3, charge)`, the ring the charge alone, and `reset_spinup` leaves `passed` as it was. A
+  fresh console is idle (`passed` 1: the first strip lit); a game that drives the bar with `set_charge` calls
+  `set_passed(look, 0)` first.
+- A second `apply()` on the same model stops the first look's clock.
+
+## Step 2: read from the hall (art#263)
+
+- Calling: at each pulse the turbines flood orange (brighter, their lines swelling), a soft orange glow blooms round
+  each pod and the shell takes an orange wash; the button's glow pulses with it. Calm between the pulses.
+- Broken: a big red bead with a halo and a red pillar (16 cm) over the station's point, both blinking at its
+  `blink_hz`; its line stays dark. OK points keep a small calm halo.
+- The charge: the bar on the hologram's band (now drawn twice as tall) and again as a ring on the emitter deck,
+  seen from every side. `Console.set_ring_style(look, "both")` is the default (`RING_STYLE`); "band", "deck" and
+  "step1" are the alternatives. `Console.set_fill(look, "green")` (`FILL`): the strips and both rings fill in the
+  strips' green; "cyan" is the alternative (it vanishes into the cyan hologram from the hall).
+- The countdown's digits are 45 cm tall, their middle 2.06 m over the floor.
