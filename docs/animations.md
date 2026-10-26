@@ -818,31 +818,52 @@ the hands against the torso, the hips' height; faults and a ranking per slot by 
   runs along it, so the alien's Hips carry forward travel on their basis z; read as the floor's axes, a cut loop of a
   forward or backward run lost its travel (step 1's loops were in place, so its numbers stand).
 
-### The alien's locomotion set (art #196, option A step 3)
+### The alien's locomotion set (art #196, option A steps 3 and 4b)
 `tools/blender/anim_sets/alien_loco.toml` is the set as data: per game clip (`avatar_clips.gd`'s names: `Jog_Fwd`,
 `Sprint_Fwd`, `Jog_Bwd`, `Strafe_Left`, `Strafe_Right`, `Crouch_Fwd`, plus `Walk` and a new `Crouch_Run`) its source
 (the build's UAL clip or a step 2 loop `TM_<item>_Loop`) or the clip it mirrors, the speeds its stride is fitted to
-at rate 1.0, a retime to a frame count, the arm swing and the game speeds it is played at; `[[grid]]` makes a clip's
+at rate 1.0, a retime to a frame count, the arm swing (`arm_swing`, or `arms_from` another made clip: its swing on a
+pose blended toward its mean, for a clip whose hands clamp at the belt), `max_scale` (the stride scaled at most this
+much, the rest of the speed in a higher cadence: `alien_loco_math.capped_rate`), `bend_min_deg` (a knee bend floor on
+the swing frames: `stride` draws the ankle toward the hip, no locked knee at a kick) and the game speeds it is played
+at; `[[grid]]` makes a clip's
 variants (arm swing x frames) and picks the default by the numbers (`alien_loco_math.pick_default`: the cadence
 nearest the game's footstep beat with the planted feet within 5 mm; ties to `default_arm_swing`). Every loop starts on
 the left foot's contact. A clip's action is `CharacterArmature|<name>_Loop` (Godot imports it as `<name>`, looping;
 a game clip replaces the build's action of that name); variants and alternatives are `<name>__<variant>`, a second
-speed `__s30` (3.0 m/s, the proposed cap beside today's 4.5). `alien_loco_math` also holds the game's footstep clock
+speed `__s<speed x 10>`. Since step 4b the strafes and `Jog_Bwd` under the game's names are fitted to 3.0 m/s (the
+proposed back and side cap, the engineer's call), with `Strafe_*__s45` and `Jog_Bwd__s25` beside them for review; the
+shuffle strafe is dropped (a squat and a split at both speeds). `alien_loco_math` also holds the game's footstep clock
 (`footstep_interval`, `footstep_cadence.gd`'s), the rates at the game's speeds against its 0.25-4.0 clamp
 (`play_rows`), the stride flag (scaled over 2x either way) and the reels' plan and timelines.
 
 `$PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw [--chars chameleon,axolotl]` (about 2 min) opens each
-R2b character, appends step 2's loops, makes the set (`_make`: cycle, stride, arm_swing, mirror), writes the actions,
+R2b character, appends step 2's loops, makes the set (`_make`: cycle, in place, stride, arms, mirror; the cut in place
+comes before the stride since step 4b, so the stride plants the feet in the frame its measure was made for), writes
+the actions,
 exports one GLB with `export_glb.py`'s textured options (no morph targets, as the character build), runs
 glTF-Validator and writes `loco.json` (per clip the edits' reports, the numbers before and after, the rates) into
-`<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/loco/s3/build/<char>/`, with the build's support files
+`<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/<out>/build/<char>/` (`[set] out`, `loco/s4b` now), with
+the build's support files
 copied beside the GLB. Then `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
 `... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...]` runs `godot/alien/treadmill_reels.gd` in the
 off-screen window on the chameleon: the character held in place (the hips' travel per loop taken off its node), the
 floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot
-at its contact and a timeline of the game's footstep beat (white) beside the contacts (left blue, right orange); one
-1280x720 MP4 per slot (strafes and `Jog_Bwd` as a pair, 3.0 beside 4.5), one 8-frame sheet per slot, the jog grid's
-2x3 sheet and `Idle_to_Jog_Fwd` with the game's 0.15 s cross-fade, into `loco/s3/reels/`.
+at its contact and a timeline of the game's footstep beat (white ticks, the clip's own contacts as yellow ticks
+under them, so a footstep clock that does not match the feet shows) beside each foot's contacts (left blue, right
+orange); one 1280x720 MP4 per slot (a clip with a speed variant as a pair), one 8-frame sheet per slot, the jog grid's
+2x3 sheet and `Idle_to_Jog_Fwd` with the game's 0.15 s cross-fade (its sheet: 8 frames from 0.25 s before the switch
+to 0.8 s after), into `<out>/reels/`.
+
+The honest numbers (step 4b; `loco.json` per clip and the `CLIP` lines): `measure`'s foot slide counts a foot as down
+by a speed tolerance that grows with the clip's speed and fills short gaps, so on a sideways or backward clip a low
+swing can join a contact (step 3's 6691 mm and 1313 mm). `alien_stride_math.honest_slide` takes a foot point (ankle,
+toes) as planted only by its height (within 1 cm of its lowest) and its speed against the ground (under 0.5 m/s),
+no gap filling: `drift_mm` in each planted run, and `skate_m_s`, the fastest a point within 1 cm of the floor moves
+(a heel or toe that skims the floor; a touch-down frame also counts, so read it beside the reel). `knee_bend` gives
+each leg's least knee bend (all frames and swing frames), `hand_clearance` each hand's least distance from the
+torso's axis (a hand into the belly comes close). `play_rows` gives per game speed the step interval beside the
+footstep beat: the interval the game's footsteps should use is the clip's step interval at that speed.
 
 Two fixes in `alien_stride_math` found here, both for loops that travel (step 2's root-motion bakes; the UAL loops are
 in place, so steps 1's numbers stand): `cycle` turning a loop to start on the contact now carries the frames from before
