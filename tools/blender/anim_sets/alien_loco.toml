@@ -182,6 +182,7 @@ source = "MC_Neutral_BR_Loop"
 speeds = [2.0]
 orient = { hips = 0.0, travel = 180.0 }
 cadence = 4.0
+lean_deg = 8.0  # the trunk over the feet (upright in the take; 6/10/14 tried: the hands come in as it leans)
 bend_min_deg = 20.0
 head_level = -10.0  # the take looks 34 degrees down: the eyes back toward the way
 play_at = [2.0]
@@ -192,6 +193,7 @@ source = "MC_Neutral_BR_Loop"
 speeds = [2.5]
 orient = { hips = 0.0, travel = 180.0 }
 cadence = 4.0
+lean_deg = 8.0
 bend_min_deg = 20.0
 head_level = -10.0  # the take looks 34 degrees down: the eyes back toward the way
 play_at = [2.5]
@@ -202,6 +204,7 @@ source = "MC_Neutral_BR_Loop"
 speeds = [3.0]
 orient = { hips = 0.0, travel = 180.0 }
 cadence = 4.0
+lean_deg = 8.0
 bend_min_deg = 20.0
 head_level = -10.0
 play_at = [3.0]
@@ -212,6 +215,7 @@ source = "MC_Neutral_BR_Loop"
 speeds = [2.5]
 orient = { hips = 0.0, travel = 180.0 }
 cadence = 4.0
+lean_deg = 8.0
 bend_min_deg = 20.0
 head_level = -10.0  # the take looks 34 degrees down: the eyes back toward the way
 play_at = [2.5]
@@ -222,6 +226,7 @@ source = "MC_Neutral_BR_Loop"
 speeds = [2.5]
 orient = { hips = -45.0, travel = 135.0 }
 cadence = 4.0
+lean_deg = 8.0
 bend_min_deg = 20.0
 head_level = -10.0  # the take looks 34 degrees down: the eyes back toward the way
 play_at = [2.5]
