@@ -988,6 +988,37 @@ The clips after P3 (`Strafe_Left__100s` and the hip grid dropped: h60 is `Strafe
 - `Crouch_Fwd`, `Crouch_Run`: turned back as a whole (`travel = -2.0`: the feet at -2.5 and the head at +3.0; after
   the head lift the take's head looks 5.5 degrees left of its feet, which no whole turn removes).
 
+### The backpedal's arms and even steps (art #196, the strafe pilot P4)
+P4 answers the manager's look at P3's backpedal (out: `loco/p4`; P3's back clips stay as `Jog_Bwd__p3` and
+`Jog_Bwd_Left__p3`, the reels' before rows). Two new set keys (`alien_loco_math.P4_KEYS`; tests:
+`tools/tests/test_alien_stride_p4.py`):
+- `even_steps = true`: `alien_stride_math.even_steps`, right after the source's cycle is cut in place: the loop
+  retimed by a smooth warp (frame u samples u - a sin^2(pi u / T), a = T/2 less the other foot's contact start, kept
+  monotonic: |a| < T / pi, else refused) so the other foot lands half a cycle on. The backpedal take's steps were 7
+  and 9 of its 16 frames, 6 and 8 of the 14-frame game loop; now 8 and 8, so 7 and 7;
+- `arms_carry = { side_m, front_m, dz_m, swing_m, rise, out_deg }`: `arms_carry`, last before the clip is put in
+  place: each wrist (the Hand bone's head) put on a target in the trunk's frame (the UpperChest's front laid level,
+  world up): the Spine's head (the waist) + `side_m` outward + `front_m` forward + `dz_m` up, swung +-`swing_m`
+  forward (and `rise` times that up) against the same-side ankle's fore-aft place under the hips; the arm solved as
+  two bones with its own lengths, the elbow in the plane through shoulder, wrist and a pole pointing back and
+  `out_deg` outward; the hand keeps its pose on the forearm (`arms_from`'s, Jog_Fwd's hands).
+  `arm_carriage` measures it (`loco.json`'s `arms_m`): per side the elbow bend, the hand's least distance from the
+  torso axis, its least distance from the midline plane, the wrist's height over and place in front of the waist,
+  the elbow's least distance from the torso axis.
+
+Tuned on P2's dump in plain Python (two grids, 32 and 16 tries, about 15 s each): side 0.15-0.21, front 0.10-0.18,
+dz -0.02-0.04, swing 0.04-0.07, out 10-25. The hand's distance from the torso axis is less than hypot(side, front):
+the trunk leans 8 degrees, the axis passes in front of the waist; dz sets the elbow (-0.02: about 84, 0.04: about
+102); `out_deg` moves only the elbow (10: 0.22 m from the axis, 25: 0.26). Picked: side 0.20, front 0.17, dz 0.01,
+swing 0.05, rise 0.35, out 12 on `Jog_Bwd` (`__c20`, `__c25`, `__c30`) and `Jog_Bwd_Left`: hands 0.246/0.237 m from
+the torso axis (P3: 0.386/0.372), elbows 89/87 deg (least 85/84), 0.20 m from the midline, the wrists -0.7 to +2.4 cm
+about the waist and 0.12-0.21 m in front of it, the elbows 0.23/0.22 m from the axis (P3: 0.33/0.30).
+
+The stride's factor reads higher after the warp (c25 2.43 -> 2.69x, c20 1.94 -> 2.15x, c30 2.91 -> 3.23x): the
+warped take's measured speed is lower; the step on the floor is the same (speed / cadence, 0.735 m at 2.5 m/s). The
+strafe's swing shin crossing the stance leg from the front is left as it is: the legs travel along the picture plane
+there and overlap at passing whatever the track (P3's 3 cm wider ankles are kept).
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
