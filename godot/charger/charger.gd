@@ -4,7 +4,7 @@ extends RefCounted
 ## console's console_metal.gdshader, shared, not forked), finds its leaves and drives them. The leaves, each a node
 ## with its pivot on its axis: `carrier` (under the crystal; rises RISE and spins round its vertical axis; its child
 ## `crystal_anchor` is where the crystal's tip sits), `track_ring` (spins round the crystal's axis with the inner
-## prong pair), `button` (presses TRAVEL in along its +Z, the spot's normal). The lightning and the crystal's glow are
+## prong pair), `button` (presses TRAVEL in along its -Z, into the charger; its +Z is the spot's normal). The lightning and the crystal's glow are
 ## the game's; the crystal is the built energy_crystal.glb with its own crystal.gd look.
 ## The charger draws on render layer 20 alone (CHARGER_LAYER): seat_crystal() takes that layer off the crystal's own
 ## light, which otherwise burns the bronze white a few centimetres away (the socket's way, art#263); the charger's
@@ -111,8 +111,11 @@ static func _light(colour: Color) -> StandardMaterial3D:
 	return m
 
 
-## The charger's state: "idle" (no charging: the carrier down, the lights at rest), "charging" (the cyan bright, the
-## glow on; the game moves the carrier and the ring), "charged" (the carrier down, the cyan full, the amber low).
+## The charger's state: "idle" (no charging: the carrier down, the lights at rest, the glow off), "charging" (the
+## cyan bright, the glow on; the game moves the carrier and the ring), "charged" (the carrier down, the cyan full, the
+## amber low, the glow kept faint at 0.25: the charged crystal's light round it). Leaving "charging" puts the carrier
+## down and unturned at once (set_carrier(look, 0, 0)); for a soft landing the game eases set_carrier to 0 itself
+## before it sets the next state. The ring keeps its angle.
 static func set_state(look: Dictionary, state: String) -> void:
 	var s: Array = STATES[state]
 	look["state"] = state
@@ -152,7 +155,10 @@ static func set_pressed(look: Dictionary, on: bool) -> void:
 ## Puts a crystal (its root, with its crystal.gd look) on the carrier's anchor, its tip on the anchor, and takes the
 ## charger's layer off the crystal's own light.
 static func seat_crystal(look: Dictionary, crystal: Node3D, crystal_look: Dictionary) -> void:
-	var anchor: Node3D = look["anchor"]
+	var anchor: Node3D = look.get("anchor")
+	if anchor == null:
+		push_error("charger.gd: no crystal_anchor in the look (apply() on a charger model first)")
+		return
 	if crystal.get_parent() != null:
 		crystal.get_parent().remove_child(crystal)
 	anchor.add_child(crystal)

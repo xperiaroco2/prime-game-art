@@ -638,14 +638,18 @@ They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, f
    of two parts facing the same way (z-fighting); socket-3: the claws' swing per degree, the open claws' gap to the
    body and the crystal pulled out past the open claws. They go into `build.json` and the asset's `report.json`.
 4. **The look and the states.** `godot/socket/socket.gd`: the console's bronze and graphite
-   (`socket_metal.gdshader` is `console_metal.gdshader`, unchanged; socket-2 sets the bronze darker and more metallic
+   (`socket_metal.gdshader` is `console_metal.gdshader`, extended by socket-3 with parameters that default to the
+   console's look; the socket's values are `socket.gd` `BRONZE_FINISH`; socket-2 set the bronze darker and more metallic
    than the console's, a greyer gold at metallic 0.75 and roughness 0.32, picked from the studio's variant grids (0.9 read near-black in the hall): the console's 0.35 read
    as matte brown plastic beside the sheet), cyan and amber glow, the red dome
    `socket_lamp` with its own light; `set_state(look, "charged" | "spent" | "empty")` lights the lamp for spent and
    empty, and the bay's floor (`socket_bay.gdshader`) glows cyan round a charged crystal; `set_claws(look, 0..1)`
    opens the claws. socket-3 gave the shared metal shader parameters whose defaults keep the console's pixels (the
    colour's mottle and grain, the roughness's, the worn edges' polish, and off by default: `shade`, faces lighter or
-   darker by their facing, and `dent` / `wave`, a hammered and a broad bend of the normal); `socket.gd`
+   darker by their facing, and `dent` / `wave`, a hammered and a broad bend of the normal; the fix pass made their
+   height field a smooth 3D gradient noise in a turned model space, each slope behind its own `if`: the value noise
+   before drew square tone patches on the big flat faces of all three stations, and the console's pixels stay the
+   same, 0 of 409,600 differ; every copy of the shader is the same bytes, `tools/tests/test_props_metal_shader.py`); `socket.gd`
    `BRONZE_FINISH` holds the socket's values, the ones the other stations' bronze matches. `seat_crystal(crystal_look)` keeps the crystal's own light off the socket (the socket draws on render
    layer 20 alone, the crystal's light leaves that layer out of its cull mask): in the niche it burned the frame
    white-cyan, and moved 30 cm out it washed the whole face mint (the hall shots b2 and b4).
@@ -694,8 +698,9 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
    side: a body down to the axis crossed them on the way.
 3. **The sweep check.** The build turns every shell through its trip in tenths and counts the triangles it crosses
    on the body, the cores, the lamps and its neighbours (`build.json` `sweep_check`; empty is clean, and the test holds
-   it). `board_drawing.py` compares 23 of the drawing's numbers with the model's own vertices (`drawing/compare.json`,
-   0.5 cm tolerance) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
+   it). `board_drawing.py` compares 23 of the drawing's numbers with the model's (`drawing/compare.json`, 0.5 cm
+   tolerance): 20 measured off its own vertices, 3 set (the lamp ring from the dims, the hinge's h and d from the
+   leaves' pivots; `board_drawing.SET`) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
    straight views at the drawing's scale.
 4. **The states** are node rotations and material values: `godot/board/board.gd` `set_shell(look, i, open01)`,
    `set_on` / `set_lamp` (dark, yellow, green), `set_problem` (the beacon and its red light), `set_core`; the cores'
@@ -712,10 +717,11 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
    ```bash
    $PYTHON_BIN tools/blender/board_run.py --tag <tag> [--pieces DIR] --asset assets/prop/breaker_board
    ```
-6. **The wall (board-2).** Shoot on a ship build with the raised deck: `--pieces` defaults to the vents' b5b build
-   (`<raw>/ship/v4/vents-b/pieces_b5b`), and the run refuses pieces whose corridor deck (the grate's top, read from
-   the GLB) is not `floor_h`. `ship.toml`'s `raw_dir` pieces (`<raw>/ship/v3/pieces/`) predate the raise (deck 0.6):
-   step 1 shot the board on them, 0.6 m above their deck, and its beacon stood in the slanted upper wall. Rays on the
+6. **The wall (board-2).** Shoot on a ship build with the raised deck: `--pieces` defaults to `ship.toml`'s
+   `raw_dir` pieces (`<raw>/ship/v5/pieces/` since the fix pass; board-2 and -3 shot on the vents' b5b build,
+   `<raw>/ship/v4/vents-b/pieces_b5b`, the same bytes), and the run refuses pieces whose corridor deck (the grate's
+   top, read from the GLB) is not `floor_h`. The old `raw_dir` pieces (`<raw>/ship/v3/pieces/`) predate the raise
+   (deck 0.6): step 1 shot the board on them, 0.6 m above their deck, and its beacon stood in the slanted upper wall. Rays on the
    b5b build at both spots: the deck at 1.200; the wall's face plane through the spot's `at` (its seams at d 0); its
    pillow panels 4.4 .. 7.0 cm proud of it inside the board's outline; vertical to 2.65 (1.45 over the deck), slanting
    above. So the board's d 0 stands `[mount] d` (7.0 cm) out of the face plane on the panels' crowns, and a graphite
@@ -789,8 +795,9 @@ the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the
    stations match. The Blender review render is a darker studio under AgX Punchy (the plain AgX and a bright studio
    paled the amber to cream and the bronze to tan).
 4. **The shots**: `godot/charger/room.gd` extends `godot/ship/ship.gd`'s shoot mode with the charger on `renewer_e`
-   and the crystal seated, on the ship's current build (`--pieces`, default `<raw>/ship/v4/vents-b/pieces_b5b`; the
-   run refuses pieces whose deck is not at `floor_h`: `ship.toml`'s `raw_dir` pieces predate the deck's raise); `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's
+   and the crystal seated, on the ship's current build (`--pieces`, default `ship.toml`'s `raw_dir` pieces,
+   `<raw>/ship/v5/pieces/`; steps 2 and 3 shot on the same bytes in `<raw>/ship/v4/vents-b/pieces_b5b`; the run
+   refuses pieces whose lens room floor, `tip_floor_rim`'s top through its nodes' transforms, is not at `floor_h`); `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's
    neutral render at its angle, Godot in the room), `room_sheet.png` (the states, a player's view, the pass behind
    them, the straight views, the back toward the wall, the legs, the ring's turn from above) and `closeups.png`
    (Blender's close-ups of the seams: the prongs' roots and caps, the hips, knees and feet, the slot, the button), and

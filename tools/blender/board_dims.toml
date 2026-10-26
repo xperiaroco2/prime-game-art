@@ -4,9 +4,9 @@
 # the picked sheet's straight views (front-ortho.jpg, side-ortho.jpg; the look: ../board-variants/v3-shell-final.jpg).
 # The smaller sizes (the frame's border, the blocks' seams, the hinge's knuckles, the shell's facets, the couplings)
 # were read off the same views at the drawing's scale (7.75 px per cm on the front view, 6.15 on the side view).
-# Axes: u across the face (0 the centre line, + to the right as you face it), d out of the wall (0 the wall's face),
-# h up from the floor; in Blender x = u, y = -d (the front at -Y; glTF +Z), z = h; the origin on the wall's face at
-# the floor under the centre line.
+# Axes: u across the face (0 the centre line, + to the right as you face it), d out of the wall (0 the plate's back,
+# which [mount] d places 7.0 cm out of the wall's face), h up from the floor; in Blender x = u, y = -d (the front at
+# -Y; glTF +Z), z = h; the origin on the plate's back at the floor under the centre line.
 # tools/blender/board_build.py builds the model from these numbers; tools/blender/board_drawing.py draws them.
 
 [measure]                        # where the drawing measured the straight views (drawing.js F, S; px of 1536 x 1024)
