@@ -5,7 +5,7 @@
 # Plan coordinates from the ship's centre in metres: x east, y south, h up from the ground. Godot: (x, h, y).
 # `tools/run.py ship --check` checks every rule below (tools/runner/ship_layout.py, docs/ship.md).
 version = 3                                  # lens step 1 (art#263 c6344490367): the lens rooms, the vault
-raw_dir = "ship/v3"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
+raw_dir = "ship/v5"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
 interior = "layouts/ship/interior.toml"      # the INTERIOR lane's pieces and placements
 exterior = "layouts/ship/exterior.toml"      # the EXTERIOR lane's pieces and placements
 plan_ref = "D:/prime-game-design/ideas/ship-components/2d/plan-3.jpg"

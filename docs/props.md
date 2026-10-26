@@ -712,10 +712,11 @@ breaker is switched back on by lifting its shell. The engineer picked variant 3,
    ```bash
    $PYTHON_BIN tools/blender/board_run.py --tag <tag> [--pieces DIR] --asset assets/prop/breaker_board
    ```
-6. **The wall (board-2).** Shoot on a ship build with the raised deck: `--pieces` defaults to the vents' b5b build
-   (`<raw>/ship/v4/vents-b/pieces_b5b`), and the run refuses pieces whose corridor deck (the grate's top, read from
-   the GLB) is not `floor_h`. `ship.toml`'s `raw_dir` pieces (`<raw>/ship/v3/pieces/`) predate the raise (deck 0.6):
-   step 1 shot the board on them, 0.6 m above their deck, and its beacon stood in the slanted upper wall. Rays on the
+6. **The wall (board-2).** Shoot on a ship build with the raised deck: `--pieces` defaults to `ship.toml`'s
+   `raw_dir` pieces (`<raw>/ship/v5/pieces/` since the fix pass; board-2 and -3 shot on the vents' b5b build,
+   `<raw>/ship/v4/vents-b/pieces_b5b`, the same bytes), and the run refuses pieces whose corridor deck (the grate's
+   top, read from the GLB) is not `floor_h`. The old `raw_dir` pieces (`<raw>/ship/v3/pieces/`) predate the raise
+   (deck 0.6): step 1 shot the board on them, 0.6 m above their deck, and its beacon stood in the slanted upper wall. Rays on the
    b5b build at both spots: the deck at 1.200; the wall's face plane through the spot's `at` (its seams at d 0); its
    pillow panels 4.4 .. 7.0 cm proud of it inside the board's outline; vertical to 2.65 (1.45 over the deck), slanting
    above. So the board's d 0 stands `[mount] d` (7.0 cm) out of the face plane on the panels' crowns, and a graphite
@@ -789,8 +790,9 @@ the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the
    stations match. The Blender review render is a darker studio under AgX Punchy (the plain AgX and a bright studio
    paled the amber to cream and the bronze to tan).
 4. **The shots**: `godot/charger/room.gd` extends `godot/ship/ship.gd`'s shoot mode with the charger on `renewer_e`
-   and the crystal seated, on the ship's current build (`--pieces`, default `<raw>/ship/v4/vents-b/pieces_b5b`; the
-   run refuses pieces whose deck is not at `floor_h`: `ship.toml`'s `raw_dir` pieces predate the deck's raise); `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's
+   and the crystal seated, on the ship's current build (`--pieces`, default `ship.toml`'s `raw_dir` pieces,
+   `<raw>/ship/v5/pieces/`; steps 2 and 3 shot on the same bytes in `<raw>/ship/v4/vents-b/pieces_b5b`; the run
+   refuses pieces whose lens room floor, `tip_floor_rim`'s top through its nodes' transforms, is not at `floor_h`); `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's
    neutral render at its angle, Godot in the room), `room_sheet.png` (the states, a player's view, the pass behind
    them, the straight views, the back toward the wall, the legs, the ring's turn from above) and `closeups.png`
    (Blender's close-ups of the seams: the prongs' roots and caps, the hips, knees and feet, the slot, the button), and

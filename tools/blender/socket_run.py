@@ -45,10 +45,9 @@ REFS = {"socket.jpg": DESIGN / "socket.jpg", "front-ortho.jpg": DESIGN / "socket
         "side-ortho.jpg": DESIGN / "socket-drawing" / "side-ortho.jpg",
         "drawing.js": DESIGN / "socket-drawing" / "drawing.js"}
 CRYSTAL = ROOT / "assets" / "prop" / "energy_crystal" / "export" / "energy_crystal.glb"
-# socket-3: the ship's current build (docs/ship.md: the vents' b5b, the raise's 1.2 m deck). ship.toml's raw_dir
-# pieces/ (ship/v3/pieces) were built before the raise with their deck at 0.6 m (hall_grate's top 0.600 m): the
-# step 1 and 2 hall shots stood the sockets 0.6 m above that deck
-PIECES = RAW / "ship" / "v4" / "vents-b" / "pieces_b5b"
+# fix1 (art#263): the layout's raw_dir pieces, the current build (ship/v5/pieces, deck at floor_h 1.2; the same bytes
+# as the vents' b5b build the station steps shot on). The deck check below still refuses pieces built before the raise
+PIECES = RAW / ship_layout.load()["raw_dir"] / "pieces"
 MATERIAL_FILES = ("socket.gd", "socket_metal.gdshader", "socket_bay.gdshader")
 SPOTS = ("socket_e", "socket_w", "socket_fe", "socket_fw")
 SHOT_SPOT = "socket_e"

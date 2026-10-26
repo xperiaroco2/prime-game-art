@@ -45,10 +45,9 @@ REFS = {"v3-shell-final.jpg": "board-variants/v3-shell-final.jpg", "front-ortho.
         "side-ortho.jpg": "board-drawing/side-ortho.jpg", "drawing.js": "board-drawing/drawing.js"}
 MATERIAL_FILES = ("board.gd", "board_metal.gdshader", "board_core.gdshader")
 SPOTS = ("breaker_e", "breaker_w")
-# board-2: the ship's current build (docs/ship.md: the vents' b5b, the raise's 1.2 m deck). ship.toml's raw_dir
-# pieces/ (ship/v3/pieces, 2026-10-23 13:05) were built before the raise with their deck at 0.6 m: step 1 shot the
-# board on them, 0.6 m above that deck, so its beacon stood in the slanted upper wall.
-PIECES = RAW / "ship" / "v4" / "vents-b" / "pieces_b5b"
+# fix1 (art#263): the layout's raw_dir pieces, the current build (ship/v5/pieces, deck at floor_h 1.2; the same bytes
+# as the vents' b5b build the station steps shot on). The deck check below still refuses pieces built before the raise
+PIECES = RAW / ship_layout.load()["raw_dir"] / "pieces"
 SHOT_SPOT = "breaker_e"
 ON = {"open": [0, 0, 0, 0], "on": [True] * 4, "problem": False}
 TRIPPED = {"open": [0, 1, 1, 0], "on": [True, False, False, True], "problem": True}
