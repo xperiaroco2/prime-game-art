@@ -48,6 +48,11 @@ func _follow_cases() -> bool:
 		var good := absf(wrapf(got - float(c[2]), -180.0, 180.0)) < 0.01
 		ok = ok and good
 		print("FOLLOW body %.0f aim %.0f -> %.2f (expected %.0f) %s" % [c[0], c[1], got, c[2], "ok" if good else "FAIL"])
+	# the default third argument exercised: no dead zone passed, DEAD_ZONE (45) applies (PR #331's review, minor 3)
+	var got_default := rad_to_deg(HeadLook.body_follow(0.0, deg_to_rad(60.0)))
+	var good_default := absf(got_default - 15.0) < 0.01
+	ok = ok and good_default
+	print("FOLLOW default arg body 0 aim 60 -> %.2f (expected 15) %s" % [got_default, "ok" if good_default else "FAIL"])
 	return ok
 
 
