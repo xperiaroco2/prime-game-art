@@ -125,8 +125,8 @@ class StartConsoleAsset(unittest.TestCase):
         by_name = {doc["materials"][p["material"]]["name"]: p for p in doc["meshes"][0]["primitives"]}
         uvs = lambda name: glb_uvs(glb, doc, by_name[name])  # noqa: E731
         stage_u = [u for u, _v in uvs("console_stage")]  # the fill's share across each strip
-        self.assertAlmostEqual(min(stage_u), 0.0, delta=1e-4)
-        self.assertAlmostEqual(max(stage_u), 1.0, delta=1e-4)
+        self.assertAlmostEqual(min(stage_u), 0.0, delta=0.02)  # the light face sits inside its 3 mm chamfer
+        self.assertAlmostEqual(max(stage_u), 1.0, delta=0.02)
         wire = uvs("console_holo_wire")
         self.assertEqual({round(1.0 - v) for _u, v in wire}, set(range(9)))  # 8 stations and the manifold
         self.assertEqual({round(u) for u, _v in wire if u < -0.5}, {-1, -2})  # the points and their halos
