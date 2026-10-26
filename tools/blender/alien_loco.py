@@ -80,12 +80,13 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
             if j.get("cadence"):
                 rate = L.cadence_rate(j["name"], j["cadence"], S.measure(skel, c)["c0"])
             if j.get("max_scale") and j.get("speed"):
-                rate = L.capped_rate(j["speed"], S.measure(skel, c)["v0"], j["max_scale"], rate)
+                rate = L.capped_rate(j["speed"], S.measure(skel, c)["v0"], j["max_scale"], rate, S.frames(c))
             if rate is not None or j.get("speed") is not None:
                 c, st = S.stride(skel, c, rate=rate, speed=j.get("speed"), bend_min_deg=j.get("bend_min_deg"),
                                  widen_m=j.get("widen_m") or 0.0)
                 rep["stride"] = {k: st[k] for k in ("rate_eff", "intervals", "scale", "fit", "ankle_miss_mm",
                                                     "planted_slide_mm", "slide_bound_mm", "knee_floor_mm")}
+                L.check_max_scale(j["name"], st["scale"], j.get("max_scale"))
             if j.get("lift_m") or j.get("bob_m") or j.get("flight_m"):  # the hips' height, its bob, a flight (P3)
                 c, rep["lift"] = S.lift_hips(skel, c, j.get("lift_m") or 0.0, j.get("bob_m") or 0.0,
                                              j.get("flight_m") or 0.0)

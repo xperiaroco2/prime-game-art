@@ -151,7 +151,8 @@ func _grid(clip: String, out: String) -> Dictionary:
 			for _i: int in 3:
 				await process_frame
 			var c: Vector3 = (_bone_at("UpperChest") + _bone_at("Head")) * 0.5 + Vector3(0.0, 0.12, 0.0)
-			_label.text = "%s  yaw %+d  pitch %+d" % [clip, int(y), int(p)]
+			var tg: Vector2 = _m.target() * (180.0 / PI)  # the clamped angles the head is shown at, not the asked ones
+			_label.text = "%s  yaw %+d  pitch %+d" % [clip, roundi(tg.x), roundi(tg.y)]
 			_label.position = Vector2(385.0, 8.0)
 			cells.append(await _cell(c, 1.4, 45.0, GRID_CELL))
 	_sheet(cells, GRID_CELL, YAWS.size()).save_png(out.path_join("grid_%s.png" % clip))
@@ -169,7 +170,9 @@ func _extremes(out: String, tag: String) -> Dictionary:
 				for _i: int in 3:
 					await process_frame
 				var c: Vector3 = _bone_at("Neck") + Vector3(0.0, 0.14, 0.0)
-				_label.text = "%s %s  yaw %+d  pitch %+d" % [tag, "front" if view == 0.0 else "side", int(e[0]), int(e[1])]
+				var tg: Vector2 = _m.target() * (180.0 / PI)  # the clamped angles (rec: -50 asked is shown at -35)
+				_label.text = "%s %s  yaw %+d  pitch %+d" % [tag, "front" if view == 0.0 else "side", roundi(tg.x),
+					roundi(tg.y)]
 				_label.position = Vector2(290.0, 8.0)
 				cells.append(await _cell(c, 0.8, view, CLOSE_CELL))
 	_sheet(cells, CLOSE_CELL, 4).save_png(out.path_join("extremes_%s.png" % tag))

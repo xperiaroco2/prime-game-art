@@ -40,7 +40,7 @@ class SetFile(unittest.TestCase):
         self.assertEqual(list(right), ["Strafe_Right"])  # P2: no 4.5 review variant
         self.assertFalse([n for n in self.names if "shuffle" in n])  # dropped (step 4's critic)
         bwd = {j["name"]: j for j in self.jobs if j["base"] == "Jog_Bwd"}
-        self.assertEqual({n: j["speed"] for n, j in bwd.items()}, {"Jog_Bwd": 2.5})  # P2: the 2.5 until he picks
+        self.assertEqual({n: j["speed"] for n, j in bwd.items()}, {"Jog_Bwd": 2.0})  # F1: the 2.0 cap, his pick
         self.assertEqual(bwd["Jog_Bwd"]["cadence"], 3.4)  # P3: a 14-frame cycle (P2's 4.0 read as a walk)
         self.assertEqual(self.jobs[self.names.index("Strafe_Left__s4b")]["arms_from"]["clip"], "Jog_Fwd")
         for j in self.jobs:  # a mirror comes after the clip it mirrors
@@ -107,6 +107,28 @@ class CappedRate(unittest.TestCase):
         self.assertIsNone(L.capped_rate(2.0, 1.9, 1.15))  # 1.05x: within the cap, unchanged
         self.assertEqual(L.capped_rate(2.0, 1.9, 1.15, 1.1), 1.1)
         self.assertAlmostEqual(L.capped_rate(2.8, 1.9, 1.15) * 1.9 * 1.15, 2.8)
+
+    def test_the_cap_holds_after_the_whole_frame_rounding(self):
+        import anim_edit_math as M
+        # PR #326's case (Jog_Bwd__s4b: 26 intervals, max_scale 1.5 at 3.0 m/s): the capped rate 1.3075 rounds to
+        # 20 frames, rate 1.3, the scale 1.509 over the cap; with the intervals the count is floored to keep it
+        v0 = 3.0 / (1.3 * 1.5087)
+        r = L.capped_rate(3.0, v0, 1.5, intervals=26)
+        t2, eff = M.retime_count(26, r)
+        self.assertLessEqual(3.0 / (eff * v0), 1.5 + 1e-9)
+        self.assertEqual(t2, 19)
+        # an asked rate within the cap before the rounding but over it after: also floored
+        # (2.0 / 1.02 = 1.96 is within 1.99, but 20 frames give rate 1.0 and the scale 2.0)
+        t2, eff = M.retime_count(20, L.capped_rate(2.0, 1.0, 1.99, rate=1.02, intervals=20))
+        self.assertLessEqual(2.0 / (eff * 1.0), 1.99 + 1e-9)
+        self.assertEqual(t2, 19)
+        self.assertIsNone(L.capped_rate(2.0, 1.9, 1.15, intervals=20))  # no retime asked and none needed
+
+    def test_a_scale_over_the_cap_is_refused(self):
+        L.check_max_scale("A", 1.5, 1.5)
+        L.check_max_scale("A", 3.0, None)
+        with self.assertRaises(ValueError):
+            L.check_max_scale("A", 1.5087, 1.5)
 
 
 class Reels(unittest.TestCase):

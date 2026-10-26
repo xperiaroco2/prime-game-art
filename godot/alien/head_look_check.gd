@@ -6,7 +6,10 @@ extends SceneTree
 ## - beyond them (yaw +-100, pitch -80 / +80): at the clamps;
 ## - held for 10 frames: no drift (the modifier must not add to its own last result);
 ## - on the Idle and Jog_Fwd clips: the clip's own head facing turned by the aim, within TOL_DEG;
-## - the smoothing reaches a step's target; body_follow() on the dead zone's cases.
+## - a middle bone (Neck) turned by aim_turn() of its cumulative share of the split, the shares summed here from the
+##   modifier's yaw_split and pitch_split along the skeleton's own parents (a wrong share between bones fails it);
+## - a fresh modifier with its defaults clamps at them (pitch -80 gives -35, yaw 100 gives 70);
+## - the smoothing reaches a step's target; body_follow() on the dead zone's cases (its default, DEAD_ZONE, 45).
 ## Prints HEADLOOK <json> per character and exits 1 on any failure. Args after "--": <res://...glb>...
 
 const HeadLook = preload("res://alien/head_look.gd")
@@ -15,6 +18,8 @@ const TOL_DEG := 1.0
 var _head_q := Quaternion.IDENTITY
 var _sk: Skeleton3D
 var _hb := -1
+var _neck_q := Quaternion.IDENTITY
+var _nb := -1
 
 
 func _initialize() -> void:
@@ -36,7 +41,8 @@ func _follow_cases() -> bool:
 	var dz := deg_to_rad(45.0)
 	var cases := [[0.0, 30.0, 0.0], [0.0, 45.0, 0.0], [0.0, 60.0, 15.0], [0.0, -90.0, -45.0], [10.0, 120.0, 75.0],
 		[170.0, -170.0, 170.0], [170.0, -100.0, -145.0]]  # body, aim, expected body (degrees)
-	var ok := true
+	var ok := absf(HeadLook.DEAD_ZONE - dz) < 1e-6  # the default: the engineer's pick (2026-10-26)
+	print("FOLLOW default dead zone %.1f deg %s" % [rad_to_deg(HeadLook.DEAD_ZONE), "ok" if ok else "FAIL"])
 	for c: Array in cases:
 		var got := rad_to_deg(HeadLook.body_follow(deg_to_rad(c[0]), deg_to_rad(c[1]), dz))
 		var good := absf(wrapf(got - float(c[2]), -180.0, 180.0)) < 0.01
@@ -47,6 +53,8 @@ func _follow_cases() -> bool:
 
 func _on_done() -> void:
 	_head_q = _sk.get_bone_global_pose(_hb).basis.get_rotation_quaternion()
+	if _nb >= 0:
+		_neck_q = _sk.get_bone_global_pose(_nb).basis.get_rotation_quaternion()
 
 
 ## The head's global rotation after n frames: the modifier's result when it runs (read at modification_processed), the
@@ -66,6 +74,7 @@ func _check(path: String) -> Dictionary:
 	root.add_child(ch)
 	_sk = ch.find_children("*", "Skeleton3D", true, false)[0]
 	_hb = _sk.find_bone("Head")
+	_nb = _sk.find_bone("Neck")
 	var ap: AnimationPlayer = ch.find_children("*", "AnimationPlayer", true, false)[0]
 	ap.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	var names := {}
@@ -85,6 +94,14 @@ func _check(path: String) -> Dictionary:
 	_sk.reset_bone_poses()
 	m.active = false
 	var ref: Quaternion = await _settle(3, false)
+	var ref_neck := Quaternion.IDENTITY
+	if _nb >= 0:
+		ref_neck = _sk.get_bone_global_pose(_nb).basis.get_rotation_quaternion()
+	var share := _neck_share(m)
+	r["neck_share"] = [snappedf(share.x, 0.001), snappedf(share.y, 0.001)]
+	r["neck_max_err_deg"] = 0.0
+	if _nb < 0:
+		r["fails"].append("no Neck bone")
 	m.active = true
 	for y: float in [-70.0, -35.0, 0.0, 35.0, 70.0]:
 		for p: float in [-50.0, -25.0, 0.0, 20.0, 40.0]:
@@ -97,6 +114,12 @@ func _check(path: String) -> Dictionary:
 			r["inside_max_err_deg"] = maxf(r["inside_max_err_deg"], e)
 			if e > TOL_DEG:
 				r["fails"].append("inside %s,%s -> %.2f,%.2f" % [y, p, a.x, a.y])
+			if _nb >= 0:  # the middle bone: its cumulative share of the aim
+				var want: Quaternion = HeadLook.aim_turn(m.aim_yaw * share.x, m.aim_pitch * share.y)
+				var en := rad_to_deg((_neck_q * ref_neck.inverse()).angle_to(want))
+				r["neck_max_err_deg"] = maxf(r["neck_max_err_deg"], en)
+				if en > TOL_DEG:
+					r["fails"].append("neck %s,%s off by %.2f deg" % [y, p, en])
 	for c: Array in [[100.0, 0.0, 70.0, 0.0], [-100.0, 0.0, -70.0, 0.0], [0.0, -80.0, 0.0, -50.0],
 			[0.0, 80.0, 0.0, 40.0], [100.0, -80.0, 70.0, -50.0], [-100.0, 80.0, -70.0, 40.0]]:
 		m.aim_yaw = deg_to_rad(c[0])
@@ -152,8 +175,42 @@ func _check(path: String) -> Dictionary:
 	r["smoothing"] = {"after_1_frame_deg": snappedf(early, 0.01), "after_91_frames_deg": snappedf(late, 0.01)}
 	if early >= 59.0 or absf(late - 60.0) > TOL_DEG:
 		r["fails"].append("smoothing %.2f then %.2f" % [early, late])
+	# a fresh modifier with its defaults (70 / 35 down / 40 up, smoothing on: its first frame snaps)
+	_sk.remove_child(m)
+	m.free()
+	var d: SkeletonModifier3D = HeadLook.new()
+	d.aim_yaw = deg_to_rad(100.0)
+	d.aim_pitch = deg_to_rad(-80.0)
+	_sk.add_child(d)
+	d.modification_processed.connect(_on_done)
+	ap.stop()
+	_sk.reset_bone_poses()
+	var qd: Quaternion = await _settle()
+	var ad := _angles(qd * ref.inverse() * HeadLook.FORWARD)
+	r["default_clamp_deg"] = [snappedf(ad.x, 0.01), snappedf(ad.y, 0.01)]
+	if maxf(absf(ad.x - 70.0), absf(ad.y + 35.0)) > TOL_DEG:
+		r["fails"].append("default clamp 100,-80 -> %.2f,%.2f (want 70,-35)" % [ad.x, ad.y])
 	r["pass"] = (r["fails"] as Array).is_empty()
-	for k: String in ["inside_max_err_deg", "clamp_max_err_deg", "drift_deg"]:
+	for k: String in ["inside_max_err_deg", "clamp_max_err_deg", "drift_deg", "neck_max_err_deg"]:
 		r[k] = snappedf(r[k], 0.001)
 	ch.queue_free()
 	return r
+
+
+## The Neck's cumulative share (yaw, pitch) of the split, summed independently of the modifier's chain: each split bone
+## from the Neck up its parents, over every split bone the skeleton has.
+func _neck_share(m: SkeletonModifier3D) -> Vector2:
+	var tot := Vector2.ZERO
+	for n: String in m.yaw_split:
+		if _sk.find_bone(n) >= 0:
+			tot.x += float(m.yaw_split[n])
+	for n: String in m.pitch_split:
+		if _sk.find_bone(n) >= 0:
+			tot.y += float(m.pitch_split[n])
+	var cum := Vector2.ZERO
+	var b := _nb
+	while b >= 0:
+		var n: String = _sk.get_bone_name(b)
+		cum += Vector2(float(m.yaw_split.get(n, 0.0)), float(m.pitch_split.get(n, 0.0)))
+		b = _sk.get_bone_parent(b)
+	return Vector2(cum.x / tot.x if tot.x > 0.0 else 0.0, cum.y / tot.y if tot.y > 0.0 else 0.0)
