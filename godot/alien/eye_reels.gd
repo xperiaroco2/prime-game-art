@@ -15,6 +15,9 @@ extends "res://alien/char_shots.gd"
 ##   front, three-quarters (CORNER_VIEWS degrees toward the outer side), side, each eye; columns as built | albedo only |
 ##   geometry only | SSAO off | the key light's shadow off | the eye mask's share (debug_mode 7);
 ##   corner_<head>_4x/<view>_<eye>.png: the as-built cell at 4x round the corner (nearest);
+## - spots_<head>.jpg (E2, only with the job's "spots": per head [label, [x, y, z] in the character mesh's space]):
+##   each spot at rest from the front, both three-quarters (SPOT_VIEWS), below and above, as built, the spot at each
+##   cell's centre; spots_<head>_4x/<label>_<view>.png: the cell at 4x round the spot (nearest);
 ## eyes.json: per head and mode the eyes' largest and mean turn off the head's forward (degrees).
 ## Args after "--": <job.json>
 
@@ -33,6 +36,9 @@ const RING_COLS := [["gaze_limbal", 1.0], ["debug_mode", 0], ["limbal", 0.0], ["
 ## R2b: the outer corner's isolation: [debug_mode, SSAO, the key light's shadow], as built first
 const CORNER_COLS := [[0, true, true], [3, true, true], [2, true, true], [0, false, true], [0, true, false], [7, true, true]]
 const CORNER_VIEWS := [["front", 0.0], ["q", 40.0], ["side", 75.0]]  # degrees from the eye's front toward its outer side
+## E2: the spots' views: [name, yaw degrees from the head's forward toward +X, pitch degrees up]
+const SPOT_VIEWS := [["front", 0.0, 0.0], ["q_pos_x", 40.0, 0.0], ["q_neg_x", -40.0, 0.0], ["below", 0.0, -25.0],
+	["above", 0.0, 25.0]]
 const LOOK := Vector2i(1280, 720)
 const LOOK_S := 8.0
 ## the look-around's keys: (time s, yaw deg toward +X, pitch deg up); smoothstep between, so the holds stay still
@@ -166,6 +172,34 @@ func _run() -> void:
 		_sheet(corner_cells, RIM_CELL, CORNER_COLS.size()).save_jpg(out.path_join("corner_%s.jpg" % name), 0.92)
 		_sheet(rings, RIM_CELL, RING_COLS.size()).save_jpg(out.path_join("rings_%s.jpg" % name), 0.92)
 		_sheet(cells, RIM_CELL, RIM_COLS.size()).save_jpg(out.path_join("rim_%s.jpg" % name), 0.92)
+		# E2: the job's spots (an eyeball-class stray off the eye), each from the game's angles, the gaze at rest
+		var spots: Array = (job.get("spots", {}) as Dictionary).get(name, [])
+		if not spots.is_empty():
+			var spot_cells: Array[Image] = []
+			var spot_crops := out.path_join("spots_%s_4x" % name)
+			DirAccess.make_dir_recursive_absolute(spot_crops)
+			var tw: Transform3D = live.mesh.global_transform
+			var f0: Vector3 = tw.basis * (Lively._v(lively["eyes"]["left"]["rest"]) + Lively._v(lively["eyes"]["right"]["rest"]))
+			f0.y = 0.0
+			f0 = f0.normalized()
+			for sp: Array in spots:
+				var at: Vector3 = tw * Vector3(float(sp[1][0]), float(sp[1][1]), float(sp[1][2]))
+				for v: Array in SPOT_VIEWS:
+					var d: Vector3 = f0.rotated(Vector3.UP, deg_to_rad(float(v[1])))
+					d = (d * cos(deg_to_rad(float(v[2]))) + Vector3.UP * sin(deg_to_rad(float(v[2])))).normalized()
+					_cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+					_cam.size = RIM_SIZE
+					_cam.position = at + d * 1.0
+					_cam.look_at(at)
+					spot_cells.append(await _grab(RIM_CELL))
+					var big: Image = root.get_texture().get_image()
+					big.convert(Image.FORMAT_RGB8)
+					var w: int = big.get_width() / 4
+					var hh: int = big.get_height() / 4
+					var z: Image = big.get_region(Rect2i((big.get_width() - w) / 2, (big.get_height() - hh) / 2, w, hh))
+					z.resize(w * 4, hh * 4, Image.INTERPOLATE_NEAREST)
+					z.save_png(spot_crops.path_join("%s_%s.png" % [sp[0], v[0]]))
+			_sheet(spot_cells, RIM_CELL, SPOT_VIEWS.size()).save_jpg(out.path_join("spots_%s.jpg" % name), 0.92)
 		_cam.projection = Camera3D.PROJECTION_PERSPECTIVE
 		# the look-around per eye mode, Idle underneath
 		live.on_clip = true

@@ -1400,6 +1400,32 @@ pilot's static premium heads"):
       radial, the lid's unchanged, the past-90 bound raises), the area guard raising each way and its report; the
       sheets' deep sawtooth (5.2 % and 6.7 % each way) is cut under 10 % bounds. `test_alien_lively_geom.py`:
       `compact_buffers` leaves no unused view (sparse and image views kept) and every view's bytes as they were.
+  - E2, E1's two look candidates (2026-10-26; proof `anim_bare/e2/`; **both flags off by default, awaiting his
+    look**; the default build unchanged: `e2/default_final/` built on E2's final code with R2b's flags, `same.py`
+    against `e1/final/`: both heads' GLBs, masks, sclera PNGs the same bytes, lively.json the same bytes too):
+    - The strays: of the chameleon's 6 and 9 eyeball-class vertices over 1.5 r from their sphere's centre, the 3
+      and 6 on the bust's bottom edge (y about -0.95) sit below the waist, so the character build deletes them
+      (`alien_char_build.py`: the bust below the waist is cut); the other 3 and 3 sit in the mouth's lip crease
+      (left corner and right front). `eye_reels.gd`'s new spots (`alien_clip_run.py --eyes --spots FILE`:
+      points in the character mesh, from the front, both three-quarters, below and above, 4x crops,
+      `spots_<head>.jpg`) show them, and with or without their radial normal they read the same at 4x
+      (`e2/sheets/strays_chameleon.jpg`). The axolotl has none.
+    - Candidate A, `--rim-split-sphere-only` (`RIM_SPLIT_SPHERE_BAND` 1.5 r): the 6 and 9 strays keep their own
+      normals (lively.json `rim_cut.split.sphere_only`); past 90 degrees 103 (5.697 %) and 108 (5.924 %), from
+      106 and 113. The whole-head gate the same as R2b's to three decimals on both heads; the axolotl's GLB the
+      same bytes as the default's.
+    - Candidate B, `--rim-fit all|outer`: "all" fails the to-eye bound (2.544 % and 3.384 %, bound 1.5);
+      "outer" (the trimmed fit refitted with the dropped positions outside it: the chameleon keeps 230 of 238 and
+      250 of 256) fails it too (2.973 % and 3.594 %; the axolotl's right eye 1.622 %) and the past-90 bound
+      (7.101 % and 8.589 %, bound 6.5), so a `--rim-fit` candidate has its own bounds
+      (`RIM_CUT_FIT_MAX_TO_EYE_PCT` 4.0, `RIM_SPLIT_FIT_MAX_PAST90_PCT` 10.0). The net change -1.009 % and
+      +0.223 % (trimmed -3.809 %, -4.149 %); to the lid 3.982 % and 3.372 % (trimmed 4.784 %, 4.911 %). The
+      zigzag after the cut 1.449 mm median, 18.699 mm at most (trimmed 1.001 and 12.896, before 3.406 and
+      18.439): the cut follows a spur again. Gate (front, left, back, right) chameleon 0.412, 0.240, 0.111, 0.344
+      (R2b 0.393, 0.238, 0.110, 0.340); axolotl the same as R2b's. In the 4x crops (`e2/sheets/B_<head>.jpg`,
+      R2b left) the opening reads wider, and new: a notch in the chameleon's right lower lid at rest, bright
+      specks on its left upper lid's edge.
+    - `alien_char_run.py --lively head=DIR` builds the character on a candidate's lively build.
 ## The alien parts kit (`godot/alien/`, art #196, step S3)
 The parts-kit alien (not plasticine: a smooth, soft-matte designer-toy look) as one GLB from
 `tools/blender/alien_assemble.py`: the body and head welded into one skinned mesh, every eye design, mouth piece and

@@ -6,7 +6,8 @@ Blender's FFmpeg (encode_clips.py). godot-check runs separately (`tools/run.sh g
 static head's folder is only read.
 
     $PYTHON_BIN tools/blender/alien_lively_run.py [--head chameleon|axolotl] [--out DIR] [--no-build] [--seconds 20]
-        [--neck y0,y1] [--tag v3] [--pit-before DIR] [--no-pit-fix] [--rim-smooth N] [--rim-cut ORDER] [--lip-smooth N] [--lip-mode normals|taubin] [--rim-split] [--web-with <other head's build folder>]
+        [--neck y0,y1] [--tag v3] [--pit-before DIR] [--no-pit-fix] [--rim-smooth N] [--rim-cut ORDER] [--lip-smooth N] [--lip-mode normals|taubin] [--rim-split] [--rim-fit trimmed|all|outer]
+        [--rim-split-sphere-only] [--web-with <other head's build folder>]
 
 --head (AL1, 2026-10-23): the chameleon (a painted iris that moves, the crest) or the axolotl (dark beads with a catch
 light fixed to the light, no gaze, six gills on springs); the build's files are named by the head (<head>_lively.glb,
@@ -108,6 +109,11 @@ def main() -> int:
     ap.add_argument("--lip-mode", choices=("normals", "taubin"), default="normals", help="R2: lip_smooth's mode")
     ap.add_argument("--rim-split", action="store_true",
                     help="R2b: with --rim-cut, the eyeball shaded as its sphere up to the lid (alien_lively_build.py --rim-split)")
+    ap.add_argument("--rim-fit", choices=("trimmed", "all", "outer"), default="trimmed",
+                    help="E2 candidate B, off by default: the rim cut's fit (alien_lively_build.py --rim-fit)")
+    ap.add_argument("--rim-split-sphere-only", action="store_true",
+                    help="E2 candidate A, off by default: rim_split's radial normal only near the sphere"
+                         " (alien_lively_build.py --rim-split-sphere-only)")
     args = ap.parse_args()
     head = args.head
     static = PILOT / "static_v5" / head
@@ -130,6 +136,8 @@ def main() -> int:
         extra += ["--rim-cut", str(args.rim_cut)] if args.rim_cut else []
         extra += ["--lip-smooth", str(args.lip_smooth), "--lip-mode", args.lip_mode] if args.lip_smooth else []
         extra += ["--rim-split"] if args.rim_split else []
+        extra += ["--rim-fit", args.rim_fit] if args.rim_fit != "trimmed" else []
+        extra += ["--rim-split-sphere-only"] if args.rim_split_sphere_only else []
         extra += ["--sclera-normal-map", str(args.sclera_normal_map)] if args.sclera_normal_map is not None else []
         extra += ["--gill-lift", args.gill_lift] if head == "axolotl" else []
         result = blender.run_script("alien_lively_build.py", [

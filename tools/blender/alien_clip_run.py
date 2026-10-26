@@ -48,7 +48,11 @@ def main() -> int:
     ap.add_argument("--backface", action="store_true",
                     help="R2: the back-face test instead (godot/alien/backface_shots.gd): the head's back faces red, "
                          "the red pixels counted per gaze and view (backface.json, backface_<head>.jpg, <head>_4x/)")
+    ap.add_argument("--spots", default="", help="E2: with --eyes, a JSON file {head: [[label, [x, y, z]], ...]} of points"
+                    " in the character mesh's space, each shot from the game's angles (spots_<head>.jpg, _4x/)")
     args = ap.parse_args()
+    if args.spots and not args.eyes:
+        ap.error("--spots needs --eyes")
     if args.eyes and args.backface:
         ap.error("--eyes and --backface are two runs")
     src, out = Path(args.src), Path(args.out)
@@ -70,6 +74,8 @@ def main() -> int:
     job["on_clip"] = edited if args.on_clip == "auto" else args.on_clip == "yes"
     job.update(split=args.split, head60=[c for c in args.head60.split(",") if c], yaw_counter=args.yaw_counter,
                darts=args.darts, eye_mode=args.eye_mode)
+    if args.spots:
+        job["spots"] = json.loads(Path(args.spots).read_text(encoding="utf-8"))
     print(f"on_clip {job['on_clip']}", flush=True)
     (out / f"{stem}_job.json").write_text(json.dumps(job, indent=1), encoding="utf-8", newline="\n")
     _godot.import_project()
