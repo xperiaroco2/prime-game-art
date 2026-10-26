@@ -177,3 +177,44 @@ def reel_timeline(info: dict, speed: float | None, seconds: float, cfg: dict, of
     beats = [round(offset + i * beat, 4) for i in range(int((seconds - offset) / beat) + 1)] if beat < math.inf else []
     return {"speed": round(sp, 4), "rate": round(rate, 4), "dir": d, "beat_s": round(beat, 4), "length_s": round(length, 4),
             "contacts": contacts, "beats": beats}
+
+
+IN_PLACE_TRAVEL_M = 0.01  # a loop whose hips travel more than this per loop is cut in place
+IN_PLACE_OFFSET_M = 0.05  # ... and one whose hips' mean sits further than this off the origin, recentred
+
+
+def in_place(skel: dict, clip: dict, bone: str = "Hips") -> tuple[dict, dict]:
+    """The loop with its hips' horizontal travel and offset taken off (the game moves the body; its clips play in
+    place, as the UAL loops do): per frame the hips' armature-space x, y lose the loop's linear travel and then its
+    mean, so they sway about the origin; height, every rotation and the other bones' bases stay. A loop already in
+    place (travel and offset under the bounds above) comes back unchanged. Returns (clip, report: the travel and
+    the offset removed, m)."""
+    import alien_stride_math as S
+    skel = S.prepare(skel)
+    T = S.frames(clip)
+    track = S.tracks(skel, clip, [bone])[bone]
+    d = (track[T][0] - track[0][0], track[T][1] - track[0][1])
+    flat = [(p[0] - f / T * d[0], p[1] - f / T * d[1]) for f, p in enumerate(track)]
+    mean = (sum(p[0] for p in flat[:-1]) / T, sum(p[1] for p in flat[:-1]) / T)
+    rep = {"travel_m": [round(x, 4) for x in d], "offset_m": [round(x, 4) for x in mean]}
+    if math.hypot(*d) <= IN_PLACE_TRAVEL_M and math.hypot(*mean) <= IN_PLACE_OFFSET_M:
+        return clip, {**rep, "cut": False}
+    out = S.copy_clip(clip)
+    locs = []
+    for f in range(T + 1):
+        poses = S.fk(skel, clip, f)
+        m = [list(r) for r in poses[bone]]
+        m[0][3] -= f / T * d[0] + mean[0]
+        m[1][3] -= f / T * d[1] + mean[1]
+        locs.append(S.basis_of(skel, {**poses, bone: m}, bone)[0])
+    out["loc"] = {**out["loc"], bone: locs}
+    return out, {**rep, "cut": True}
+
+
+def hips_extent(skel: dict, clip: dict, bone: str = "Hips") -> dict:
+    """The hips over the loop in armature space: the furthest horizontal distance from the origin and the lowest and
+    highest height (m)."""
+    import alien_stride_math as S
+    track = S.tracks(S.prepare(skel), clip, [bone])[bone]
+    return {"max_xy_m": round(max(math.hypot(p[0], p[1]) for p in track), 4),
+            "z_m": [round(min(p[2] for p in track), 4), round(max(p[2] for p in track), 4)]}

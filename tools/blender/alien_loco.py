@@ -70,9 +70,13 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
                                                     "planted_slide_mm", "slide_bound_mm")}
             if j.get("arm_swing", 1.0) != 1.0:
                 c, rep["arm_swing_report"] = S.arm_swing(c, j["arm_swing"])
+        if not j.get("pick"):
+            # step 2's bakes keep the source's world travel and place in the Hips' basis: cut every loop in place
+            c, rep["in_place"] = L.in_place(skel, c)
         c["name"] = j["name"] + L.LOOP
         if not j.get("pick"):
             rep["after"] = S.measure(skel, c)
+        rep["hips"] = L.hips_extent(skel, c)
         a = rep["after"]
         scale = (rep.get("stride") or {}).get("scale")
         rep["stride_flag"] = L.stride_flag(scale, cfg)
@@ -83,7 +87,8 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
         clips[j["name"]], reps[j["name"]] = c, rep
         print(f"CLIP {j['name']} v0 {a['v0']} c0 {a['c0']} scale {scale} flag {rep['stride_flag']} slide "
               f"{a['foot_slide_mm']} seam_before {(rep.get('cycle') or {}).get('seam_deg')} "
-              f"play {[(p['speed'], p['rate']) for p in rep['play']]}", flush=True)
+              f"play {[(p['speed'], p['rate']) for p in rep['play']]} in_place {rep.get('in_place')} hips {rep['hips']}",
+              flush=True)
     return clips, reps
 
 
