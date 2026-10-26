@@ -873,6 +873,38 @@ in place, so steps 1's numbers stand): `cycle` turning a loop to start on the co
 the start (and, at start 0, the end frame) a loop's travel on, where they went back to the start; `stride`'s end frame
 plants the feet a loop's travel on, where the legs reached back a whole loop at the seam.
 
+### 100STYLE onto the alien, and the orientation warp (art #196, the strafe pilot)
+The strafe pilot's mocap source is 100STYLE (`sources/100style.toml`: CC BY 4.0, the credit line there; one 1.47 GB
+zip of BVH takes, 60 fps, a 23-joint skeleton in centimetres, extracted under `<raw>/downloads/100style/extracted/`).
+Its Neutral style ("Normal walking") gives the backward run (BR), the sidestep run (SR), the forward run (FR, the
+speed and sanity reference) and the backward walk (BW). `tools/blender/retarget_maps/100style_contract.toml` maps it
+onto the contract skeleton (FK legs as `smpl_contract.toml`; Chest, Chest2, Chest4 -> Spine, Chest, UpperChest,
+Chest3 unused; Collar/Shoulder/Elbow/Wrist -> Shoulder/UpperArm/LowerArm/Hand; Hip/Knee/Ankle/Toe -> UpperLeg/
+LowerLeg/Foot/Toes; fingers, Jaw and eyes at rest): the source rest gives the target rest exactly (rest check 0.001 mm,
+0 deg; both rests are T-poses facing the front, so no `[align]`).
+
+`$PYTHON_BIN tools/blender/alien_mocap.py --raw D:/prime-art-raw [--char chameleon] [--clips Neutral_BR,...]`
+(about 2 min) imports each take with Blender's own BVH importer (bundled `io_anim_bvh`: scale 0.01, the file's +Z
+front onto -Y, quaternions; the rig lifted onto the floor for the retarget as `retarget_smpl` does), picks the
+steadiest 3 s window inside the take's `Frame_Cuts.csv` range (`pick_window`: the travel straight, the hips' facing
+against it near the clip's own: BR 180, SR 90, FR 0, BW 180 degrees), bakes it at the character's 24 fps, puts its
+planted level on the floor, turns it to face -Y, cuts one loop from a left contact (`cycle`) and takes it in place
+(`in_place`). Into `<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/loco/p1/`: `mocap.json` (per clip the
+window, the rest check, the numbers), `chameleon_char_100s.blend` (actions `CharacterArmature|MC_<clip>`, the faced
+window, and `CharacterArmature|MC_<clip>_Loop`; the axolotl shares the skeleton) and `check_sheet.png` (the 100STYLE
+skeleton as sticks above the alien, BR from the side and SR from the front, the same moments). The takes run slowly
+on the alien (loop v0: BR 0.90, SR 1.24, FR 1.60, BW 0.65 m/s), so the game's speeds need the stride and cadence
+of `stride`.
+
+`alien_stride_math.orient_warp(skel, clip, hip_yaw, travel_deg=0, split=ORIENT_SPLIT, feet_yaw=None)` turns the Hips
+by `hip_yaw` degrees about the vertical (positive: toward the left, +X), counter-twists Spine, Chest, UpperChest and
+Neck by `split` (0.2, 0.25, 0.3, 0.25: the shares of the yaw turned back, so the head keeps its world rotation), and
+re-plants each ankle on the clip's own track turned by `travel_deg` (0 keeps the travel; a forward run into a left
+strafe is 90), shifted by one constant per foot that keeps it under its turned hip joint (a constant keeps a planted
+foot planted), the leg solved again with `two_bone`, the foot turned by `feet_yaw` (default the hips'). Zero and zero
+give the clip back; `hip_yaw = travel_deg = d` with `split=()` turns the whole clip (how `alien_mocap.py` faces a
+take). Tests: `tools/tests/test_alien_stride_orient.py`.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
