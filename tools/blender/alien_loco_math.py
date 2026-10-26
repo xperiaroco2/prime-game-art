@@ -30,6 +30,9 @@ def grid_name(name: str, arm: float, frames: int) -> str:
     return f"{name}__arm{round(arm * 100):d}_f{frames:d}"
 
 
+P3_KEYS = ("lift_m", "bob_m", "flight_m", "widen_m", "arms_in_deg", "pin")  # the strafe pilot P3's keys (alien_loco._make)
+
+
 def expand(cfg: dict) -> list[dict]:
     """The clips to make, in an order where each clip's inputs come first: per clip its name (the game's, or a
     variant's), base (the [[clip]]/[[grid]] name), source or mirror (the clip it mirrors), speed (None: its own),
@@ -65,7 +68,8 @@ def expand(cfg: dict) -> list[dict]:
                              "reel": c.get("reel"),
                              "arm_swing": c.get("arm_swing", 1.0), "play_at": list(c.get("play_at", [])),
                              "max_scale": c.get("max_scale"), "bend_min_deg": c.get("bend_min_deg"),
-                             "arms_from": c.get("arms_from")})
+                             "arms_from": c.get("arms_from"),
+                             **{k: c.get(k) for k in P3_KEYS}})
         by_base[c["name"]] = made
         jobs.extend(made)
     seen = set()
@@ -85,9 +89,17 @@ LEAN_SPLIT = (("Spine", 0.4), ("Chest", 0.35), ("UpperChest", 0.25))  # lean_deg
 def orient(S, skel: dict, clip: dict, o: dict) -> tuple[dict, dict]:
     """orient_warp with absolute headings (degrees, 0 at the aim -Y, positive toward the left): o = {hips, travel,
     split?}: the hips' mean heading turned to `hips`, the feet's travel to `travel`, whatever the clip's own (a mocap
-    take's hips sit off its travel); split: [[bone, share], ...] (default orient_warp's)."""
+    take's hips sit off its travel); split: [[bone, share], ...] (default orient_warp's); whole = true instead: the
+    clip turned as a whole until its feet travel along `travel` (default 0, the aim; P3: the crouch, its take turned
+    13 degrees, the head with it)."""
     fac = S.facing(skel, clip)
     aim = 0.0
+    if o.get("whole"):  # the whole clip turned so its feet travel along `travel` (default 0), its pose unchanged
+        t0 = S.travel_heading_deg(S.measure(skel, clip))
+        turn = S._wrap(o.get("travel", 0.0) - t0)
+        out, rep = S.orient_warp(skel, clip, turn, turn, split=())
+        return out, {**rep, "asked": dict(o), "whole_turn_deg": round(turn, 2), "travel_before_deg": round(t0, 2),
+                     "head_before_deg": fac["head_yaw_deg"], "hips_before_deg": fac["hips_yaw_deg"]}
     if abs(fac["head_yaw_deg"]) > AIM_TOL_DEG:  # first the whole clip turned so its head looks along the aim (a take's
         aim = -fac["head_yaw_deg"]               # head sits off its hips' and its travel's own heading)
         clip, _ = S.orient_warp(skel, clip, aim, aim, split=())

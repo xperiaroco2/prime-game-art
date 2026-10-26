@@ -80,18 +80,27 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
             if j.get("max_scale") and j.get("speed"):
                 rate = L.capped_rate(j["speed"], S.measure(skel, c)["v0"], j["max_scale"], rate)
             if rate is not None or j.get("speed") is not None:
-                c, st = S.stride(skel, c, rate=rate, speed=j.get("speed"), bend_min_deg=j.get("bend_min_deg"))
+                c, st = S.stride(skel, c, rate=rate, speed=j.get("speed"), bend_min_deg=j.get("bend_min_deg"),
+                                 widen_m=j.get("widen_m") or 0.0)
                 rep["stride"] = {k: st[k] for k in ("rate_eff", "intervals", "scale", "fit", "ankle_miss_mm",
                                                     "planted_slide_mm", "slide_bound_mm", "knee_floor_mm")}
+            if j.get("lift_m") or j.get("bob_m") or j.get("flight_m"):  # the hips' height, its bob, a flight (P3)
+                c, rep["lift"] = S.lift_hips(skel, c, j.get("lift_m") or 0.0, j.get("bob_m") or 0.0,
+                                             j.get("flight_m") or 0.0)
             if j.get("arm_swing", 1.0) != 1.0:
                 c, rep["arm_swing_report"] = S.arm_swing(c, j["arm_swing"])
             if j.get("arms_from"):
                 af = j["arms_from"]
-                c, rep["arms_from_report"] = S.arms_from(c, clips[af["clip"]], k=af.get("k", 1.0), w=af.get("w", 1.0))
+                c, rep["arms_from_report"] = S.arms_from(c, clips[af["clip"]], k=af.get("k", 1.0), w=af.get("w", 1.0),
+                                                         phase=af.get("phase", 0.0))
+            if j.get("arms_in_deg"):  # the elbows brought in toward the body (P3)
+                c = S.arms_in(skel, c, j["arms_in_deg"])
             if j.get("head_level") is not None:  # the eyes on the way ahead (the crouch, P2)
                 c, rep["head"] = S.level_head(skel, c, j["head_level"])
-            if j.get("orient"):  # the planted feet's travel set to the asked heading (after the stride's re-plant)
+            if j.get("orient") and not j["orient"].get("whole"):  # the planted feet's travel set to the asked heading
                 c, rep["trim"] = L.trim_travel(S, skel, c, j["orient"]["travel"])
+            if j.get("pin"):  # the planted feet pinned by the honest test (P3: the backpedal)
+                c, rep["pin"] = S.pin_feet(skel, c)
         if not j.get("pick"):
             c, rep["in_place"] = L.in_place(skel, c)
         c["name"] = j["name"] + L.LOOP
@@ -101,6 +110,9 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
             rep["honest_slide"] = S.honest_slide(skel, c, rep["after"]["ground_m_s"])
             rep["knee"] = S.knee_bend(skel, c)
             rep["hands_m"] = S.hand_clearance(skel, c)
+            rep["airborne_frames"] = S.airborne_frames(skel, c)  # P3: a run's flight, the legs' room, the elbows
+            rep["legs_m"] = S.leg_spacing(skel, c)
+            rep["elbow_deg"] = S.elbow_bend(skel, c)
             rep["facing"] = {**S.facing(skel, c), "travel_deg": round(S.travel_heading_deg(rep["after"]), 2)}
         rep["hips"] = L.hips_extent(skel, c)
         a = rep["after"]

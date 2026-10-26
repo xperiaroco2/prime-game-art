@@ -605,11 +605,14 @@ def _q_conj(q):
     return (q[0], -q[1], -q[2], -q[3])
 
 
-def arms_from(clip: dict, donor: dict, k: float = 1.0, w: float = 1.0, sides=SIDES) -> tuple[dict, dict]:
+def arms_from(clip: dict, donor: dict, k: float = 1.0, w: float = 1.0, sides=SIDES,
+              phase: float = 0.0) -> tuple[dict, dict]:
     """The arms (UpperArm, LowerArm, Hand per side) given another loop's swing: the donor sampled over the clip's
     frames (both loops start on the same foot's contact, so the swing keeps its phase to the feet), each bone's
     pose = the donor's swing about its own mean, scaled by k, on a held pose blended from the clip's mean (w 0) to
-    the donor's mean (w 1). Returns (clip, per bone the largest swing from the mean before and after, degrees)."""
+    the donor's mean (w 1); `phase`: the donor sampled that fraction of its loop later (0.5: the swing against the
+    other foot, a backpedal's counter-swing, P3). Returns (clip, per bone the largest swing from the mean before and
+    after, degrees)."""
     out = copy_clip(clip)
     T, Td = frames(clip), frames(donor)
     ident = (1.0, 0.0, 0.0, 0.0)
@@ -623,7 +626,7 @@ def arms_from(clip: dict, donor: dict, k: float = 1.0, w: float = 1.0, sides=SID
             inv = _q_conj(m_d)
             new = []
             for f in range(T + 1):
-                u = f * Td / T
+                u = (f * Td / T + phase * Td) % Td
                 i = min(int(u), Td - 1)
                 q = M.q_slerp(M.q_norm(dv[i]), M.q_hemi(M.q_norm(dv[i + 1]), dv[i]), u - i)
                 delta = M.q_mul(M.q_hemi(M.q_norm(q), m_d), inv)
@@ -634,7 +637,7 @@ def arms_from(clip: dict, donor: dict, k: float = 1.0, w: float = 1.0, sides=SID
             mean = q_mean(new[:-1])
             rep[b] = [round(max(M.q_angle(m_own, M.q_norm(q)) for q in own), 2),
                       round(max(M.q_angle(mean, q) for q in new), 2)]
-    return out, {"k": k, "w": w, "swing_deg": rep}
+    return out, {"k": k, "w": w, "phase": phase, "swing_deg": rep}
 
 
 # ---------------------------------------------------------------------------------------------------- cycle
@@ -970,3 +973,243 @@ def level_head(skel: dict, clip: dict, target_deg: float = 0.0, split=HEAD_SPLIT
     return out, {"target_deg": target_deg, "turn_deg": round(turn, 2), "split": [list(s) for s in split],
                  "head_pitch_before_deg": before["head_pitch_deg"], "head_pitch_after_deg": after["head_pitch_deg"],
                  "range_before_deg": before["head_pitch_range_deg"], "range_after_deg": after["head_pitch_range_deg"]}
+
+
+# ------------------------------------------------------------------------------------------- the strafe pilot P3
+def _down_masks(skel: dict, clip: dict) -> dict:
+    """Per foot its planted frames 0..T-1 (heel or toe within the contact window, short gaps filled; knee_bend's)."""
+    tr = tracks(skel, clip, [f"{s}{p}" for s in SIDES for p in ("Foot", "Toes")])
+    _, mk = foot_contacts({k: v[:-1] for k, v in tr.items()}, float(clip["fps"]))
+    return {s: fill_gaps([a or t for a, t in zip(mk[f"{s}Foot"], mk[f"{s}Toes"])]) for s in SIDES}
+
+
+def _bump(mask: list) -> list:
+    """Per frame a raised-cosine weight over each cyclic run of True frames: 1 in the run's middle, 0 outside it."""
+    T = len(mask)
+    w = [0.0] * T
+    for run in M.contact_windows(mask, cyclic=True):
+        n = len(run)
+        for k, i in enumerate(run):
+            w[i] = 0.5 - 0.5 * math.cos(2.0 * math.pi * (k + 0.5) / n) if n > 1 else 1.0
+    return w
+
+
+def lift_hips(skel: dict, clip: dict, lift_m: float = 0.0, bob_m: float = 0.0, flight_m: float = 0.0
+              ) -> tuple[dict, dict]:
+    """The hips' height changed with the feet kept where they are (P3): per frame the Hips raised by lift_m (a
+    constant: + straightens the legs, - bends them) less bob_m on the single-support frames (a raised cosine over each
+    run with one foot down: the hips dip at mid-stance), each leg solved again on its own ankle and foot rotation
+    (two_bone, the knee in its own plane, the toes following the foot); then the whole body raised by flight_m on
+    the frames with both feet down or both up (a raised cosine over each run): the handover turned into a short
+    flight, both feet off the floor. Returns (the clip, the report: the asked values, the hips' height range before
+    and after, mm, and the frames with neither foot within 1 cm of its lowest before and after)."""
+    skel = prepare(skel)
+    T = frames(clip)
+    down = _down_masks(skel, clip)
+    single = [down["Left"][f] != down["Right"][f] for f in range(T)]
+    dip = _bump(single)
+    hand = _bump([not s for s in single])
+    out = copy_clip(clip)
+    for f in range(T + 1):
+        P = fk(skel, clip, f)
+        dz = lift_m - bob_m * dip[f % T]
+        new = dict(P)
+        new["Hips"] = M.mat_mul([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, dz], [0, 0, 0, 1]], P["Hips"])
+        for side in SIDES:
+            u, lo, ft = (f"{side}{x}" for x in LEG)
+            H, K, A = pos(P[u]), pos(P[lo]), pos(P[ft])
+            H2 = (H[0], H[1], H[2] + dz)
+            K2 = two_bone(H, K, A, H2)
+            du = rot_between(M._v_sub(K, H), M._v_sub(K2, H2))
+            dl = rot_between(M.q_rotate(du, M._v_sub(A, K)), M._v_sub(A, K2))
+            new[u] = m4(H2, M.q_mul(du, mat_q(P[u])))
+            new[lo] = m4(K2, M.q_mul(dl, M.q_mul(du, mat_q(P[lo]))))
+            new[ft] = m4(A, mat_q(P[ft]))
+        if flight_m:
+            rise = flight_m * hand[f % T]
+            new["Hips"] = M.mat_mul([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, rise], [0, 0, 0, 1]], new["Hips"])
+            for side in SIDES:
+                for b in (f"{side}{x}" for x in LEG):
+                    new[b] = M.mat_mul([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, rise], [0, 0, 0, 1]], new[b])
+        for b in ["Hips"] + [f"{s}{x}" for s in SIDES for x in LEG]:
+            out["loc"][b][f], q = basis_of(skel, new, b)
+            out["rot"][b][f] = M.q_hemi(q, out["rot"][b][f])
+    hz0 = [p[2] for p in tracks(skel, clip, ["Hips"])["Hips"][:-1]]
+    hz1 = [p[2] for p in tracks(skel, out, ["Hips"])["Hips"][:-1]]
+    return out, {"lift_m": lift_m, "bob_m": bob_m, "flight_m": flight_m,
+                 "hips_bob_mm": [round((max(hz0) - min(hz0)) * 1000.0, 1), round((max(hz1) - min(hz1)) * 1000.0, 1)],
+                 "airborne": [airborne_frames(skel, clip), airborne_frames(skel, out)]}
+
+
+def _honest_down(skel: dict, clip: dict, ground=None, height: float = HONEST_HEIGHT_M,
+                 speed: float = HONEST_SPEED_M_S) -> tuple[dict, dict, tuple]:
+    """honest_slide's planted frames per foot point (within `height` of its lowest, under `speed` m/s against the
+    ground, frames 0..T-1): (masks by point, tracks by point 0..T, the ground's step per frame)."""
+    skel = prepare(skel)
+    T = frames(clip)
+    fps = float(clip["fps"])
+    if ground is None:
+        ground = measure(skel, clip)["ground_m_s"]
+    step = (ground[0] / fps, ground[1] / fps)
+    tr = tracks(skel, clip, [p for s in SIDES for p in _foot_points(s)])
+    masks = {}
+    for p, v in tr.items():
+        t = v[:-1]
+        lowest = min(q[2] for q in t)
+        masks[p] = [t[i][2] <= lowest + height and math.hypot(t[(i + 1) % T][0] - t[(i - 1) % T][0] - 2 * step[0],
+                                                               t[(i + 1) % T][1] - t[(i - 1) % T][1] - 2 * step[1])
+                    * fps / 2.0 <= speed for i in range(T)]
+    return masks, tr, step
+
+
+def airborne_frames(skel: dict, clip: dict) -> int:
+    """The frames of the loop with neither foot planted (no ankle or toe down by honest_slide's test): a run's
+    flight."""
+    masks, _, _ = _honest_down(skel, clip)
+    return sum(not any(m[f] for m in masks.values()) for f in range(frames(clip)))
+
+
+def pin_feet(skel: dict, clip: dict, passes: int = 2, decay: int = 2) -> tuple[dict, dict]:
+    """The planted feet pinned to the ground by honest_slide's own test (P3: the backpedal's left foot drifted 21 mm
+    after the stride, whose contact test differs): per foot, over each cyclic run of frames with its ankle or toe
+    down, the ankle moved so the point that is down (the ankle first, else the toe) stays where it was on its first
+    down frame of the run, carried by the ground; the correction fades out over `decay` frames after the run; the leg
+    solved again (two_bone, the foot's world rotation kept). Returns (the clip, the honest drift before and after)."""
+    skel = prepare(skel)
+    T = frames(clip)
+    before = honest_slide(skel, clip)
+    out = clip
+    for _ in range(passes):
+        masks, tr, step = _honest_down(skel, out)
+        corr, hold = {}, {}
+        for side in SIDES:
+            pa, pt = _foot_points(side)
+            down = [masks[pa][f] or masks[pt][f] for f in range(T)]
+            c = [None] * T
+            h = [None] * T  # (the held foot rotation, weight): flat on the ground while its heel and toe are both down
+            for run in M.contact_windows([masks[pa][f] and masks[pt][f] for f in range(T)], cyclic=True):
+                q0 = mat_q(fk(skel, out, run[0])[f"{side}{LEG[2]}"])
+                for f in run:
+                    h[f] = (q0, 1.0)
+                for d in range(1, decay + 1):
+                    g = (run[-1] + d) % T
+                    if h[g] is None:
+                        h[g] = (q0, 1.0 - d / (decay + 1.0))
+            hold[side] = h
+            for run in M.contact_windows(down, cyclic=True):
+                first = {}
+                for k, f in enumerate(run):
+                    pnt = pa if masks[pa][f] else pt
+                    if pnt not in first:
+                        first[pnt] = (k, tr[pnt][f])
+                    k0, q0 = first[pnt]
+                    q = tr[pnt][f]
+                    c[f] = (q0[0] + (k - k0) * step[0] - q[0], q0[1] + (k - k0) * step[1] - q[1])
+                last = c[run[-1]]
+                for d in range(1, decay + 1):
+                    g = (run[-1] + d) % T
+                    if c[g] is None and not down[g]:
+                        w = 1.0 - d / (decay + 1.0)
+                        c[g] = (last[0] * w, last[1] * w)
+            corr[side] = [x or (0.0, 0.0) for x in c]
+        held = copy_clip(out)  # first the held foot rotations (about the ankle), then the ankles moved
+        for f in range(T + 1):
+            P = fk(skel, out, f)
+            new = dict(P)
+            for side in SIDES:
+                ft = f"{side}{LEG[2]}"
+                if hold[side][f % T] is not None:
+                    q0, w = hold[side][f % T]
+                    q = mat_q(P[ft])
+                    new[ft] = m4(pos(P[ft]), M.q_slerp(q, M.q_hemi(q0, q), w))
+                    held["rot"][ft][f] = M.q_hemi(basis_of(skel, new, ft)[1], out["rot"][ft][f])
+        out = held
+        masks, tr, step = _honest_down(skel, out)
+        for side in SIDES:  # the corrections again on the held feet
+            pa, pt = _foot_points(side)
+            for run in M.contact_windows([masks[pa][f] or masks[pt][f] for f in range(T)], cyclic=True):
+                first = {}
+                for k, f in enumerate(run):
+                    pnt = pa if masks[pa][f] else pt
+                    if pnt not in first:
+                        first[pnt] = (k, tr[pnt][f])
+                    k0, q0 = first[pnt]
+                    corr[side][f] = (q0[0] + (k - k0) * step[0] - tr[pnt][f][0], q0[1] + (k - k0) * step[1] - tr[pnt][f][1])
+        new_clip = copy_clip(out)
+        for f in range(T + 1):
+            P = fk(skel, out, f)
+            new = dict(P)
+            for side in SIDES:
+                u, lo, ft = (f"{side}{x}" for x in LEG)
+                H, K, A = pos(P[u]), pos(P[lo]), pos(P[ft])
+                cx, cy = corr[side][f % T]
+                goal = (A[0] + cx, A[1] + cy, A[2])
+                delta = M._v_sub(goal, A)
+                K2 = M._v_add(two_bone(H, K, A, M._v_sub(H, delta)), delta)
+                du = rot_between(M._v_sub(K, H), M._v_sub(K2, H))
+                dl = rot_between(M.q_rotate(du, M._v_sub(A, K)), M._v_sub(goal, K2))
+                new[u] = m4(H, M.q_mul(du, mat_q(P[u])))
+                new[lo] = m4(K2, M.q_mul(dl, M.q_mul(du, mat_q(P[lo]))))
+                new[ft] = m4(goal, mat_q(P[ft]))
+                for b in (u, lo, ft):
+                    new_clip["loc"][b][f], q = basis_of(skel, new, b)
+                    new_clip["rot"][b][f] = M.q_hemi(q, out["rot"][b][f])
+        out = new_clip
+    after = honest_slide(skel, out)
+    return out, {"drift_mm": {s: [before[s]["drift_mm"], after[s]["drift_mm"]] for s in SIDES}}
+
+
+def arms_in(skel: dict, clip: dict, deg: float) -> dict:
+    """Each upper arm turned `deg` toward the body (negative: away) about the chest's front axis through its shoulder
+    joint, every frame; the forearm and hand follow. A flaring elbow brought in (the side runs, P3). Returns the clip."""
+    skel = prepare(skel)
+    out = copy_clip(clip)
+    for f in range(frames(clip) + 1):
+        P = fk(skel, clip, f)
+        front = bone_front(skel, P, "UpperChest")
+        new = dict(P)
+        for side, sign in (("Left", -1.0), ("Right", 1.0)):  # the left arm (+X) comes in turning about -front
+            b = f"{side}UpperArm"
+            new[b] = m4(pos(P[b]), M.q_mul(M.q_axis_angle(front, sign * deg), mat_q(P[b])))
+            out["rot"][b][f] = M.q_hemi(basis_of(skel, new, b)[1], clip["rot"][b][f])
+    return out
+
+
+def leg_spacing(skel: dict, clip: dict) -> dict:
+    """The legs' room (m), least over the loop: the ankles' and the knees' signed distance along the hips' left-right
+    axis (left joint minus right; negative: the legs cross), and the ankles' distance across the travel on the frames
+    they pass each other (along the travel within 0.10 m)."""
+    skel = prepare(skel)
+    T = frames(clip)
+    m = measure(skel, clip)
+    g = m["ground_m_s"]
+    n = math.hypot(*g) or 1.0
+    d = (-g[0] / n, -g[1] / n)  # the travel (the ground runs back under the feet)
+    tr = tracks(skel, clip, [f"{s}{x}" for s in SIDES for x in LEG])
+    ank = knee = math.inf
+    passing = []
+    for f in range(T):
+        lr = M._v_sub(tr["LeftUpperLeg"][f], tr["RightUpperLeg"][f])
+        ln = math.hypot(lr[0], lr[1]) or 1.0
+        ax = (lr[0] / ln, lr[1] / ln)
+        da = M._v_sub(tr["LeftFoot"][f], tr["RightFoot"][f])
+        dk = M._v_sub(tr["LeftLowerLeg"][f], tr["RightLowerLeg"][f])
+        ank = min(ank, da[0] * ax[0] + da[1] * ax[1])
+        knee = min(knee, dk[0] * ax[0] + dk[1] * ax[1])
+        if abs(da[0] * d[0] + da[1] * d[1]) < 0.10:
+            passing.append(abs(da[0] * -d[1] + da[1] * d[0]))
+    return {"ankle_min_m": round(ank, 3), "knee_min_m": round(knee, 3),
+            "pass_lateral_m": round(min(passing), 3) if passing else None}
+
+
+def elbow_bend(skel: dict, clip: dict) -> dict:
+    """Per arm the elbow's bend (degrees between the upper arm and the forearm; 0 straight): mean, least, most."""
+    skel = prepare(skel)
+    T = frames(clip)
+    tr = tracks(skel, clip, [f"{s}{x}" for s in SIDES for x in ARM])
+    out = {}
+    for s in SIDES:
+        b = [_angle(M._v_sub(tr[f"{s}LowerArm"][f], tr[f"{s}UpperArm"][f]),
+                    M._v_sub(tr[f"{s}Hand"][f], tr[f"{s}LowerArm"][f])) for f in range(T)]
+        out[s] = [round(sum(b) / T, 1), round(min(b), 1), round(max(b), 1)]
+    return out
