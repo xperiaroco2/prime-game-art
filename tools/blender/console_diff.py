@@ -46,6 +46,8 @@ def pairs(before: Path, after: Path, names: list, out: Path) -> None:
     rows = []
     for name in names:
         x, y = load(before / f"{name}.png"), load(after / f"{name}.png")
+        if x.shape != y.shape:
+            raise SystemExit(f"pairs: {name} is {x.shape} before and {y.shape} after: shoot both at one size")
         step = max(1, int(round(x.shape[1] * 2 / 1280)))
         rows.append(np.concatenate([x[::step, ::step], y[::step, ::step]], axis=1))
     save(np.concatenate(rows[::-1], axis=0), out)  # Blender's pixels run bottom-up: the first name on top

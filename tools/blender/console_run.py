@@ -310,6 +310,8 @@ def spinup_review(layout: dict, pieces: Path, glb: Path, out: Path, video: bool)
                                                    "--pairs", ",".join(names), "--out",
                                                    str(out / "before_after.png")], timeout=300)
         print(*[x for x in (r.stdout or "").splitlines() if x.startswith("CONSOLE_PAIRS")], sep="\n")
+    elif code == 0:
+        print(f"before_after.png skipped: no step 1 stills in {SPIN2_BEFORE}")
     for tag, model in (("before", BEFORE), ("after", glb)):
         if code == 0:
             code = hall_shots(layout, pieces, model, out / tag, diff_rows(), log=f"godot_{tag}.log")
