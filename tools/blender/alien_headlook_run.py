@@ -1,7 +1,7 @@
 """The head follows the player's aim (art #196, H1): the plain-Python driver of the head-look proof.
 
 `$PYTHON_BIN tools/blender/alien_headlook_run.py --check` runs godot/alien/head_look_check.gd headless on both
-characters' GLBs (the strafe pilot's build, loco/p5): the modifier's unit check (HEADLOOK lines, exit 1 on a failure).
+characters' GLBs (the animations' newest build, loco/f1): the modifier's unit check (HEADLOOK lines, exit 1 on a failure).
 `... --shots [--chars chameleon,axolotl] [--no-video]` runs godot/alien/head_look_shots.gd in the runner's off-screen
 window: per character the range grids (yaw x pitch on Idle and Jog_Fwd from three-quarter), the extremes' close-ups
 (front and side), and the motion reels (the nod and the shake on Idle, Jog_Fwd and Strafe_Left; the body-lag demo at
@@ -23,7 +23,7 @@ from runner import blender  # noqa: E402
 from runner.commands import _godot  # noqa: E402
 import alien_char_run as R  # noqa: E402
 
-BUILD = R.PILOT / "anim_bare" / "loco" / "p5" / "build"
+BUILD = R.PILOT / "anim_bare" / "loco" / "f1" / "build"  # the newest loco build (F1: the back cap at 2.0)
 OUT = R.PILOT / "anim_bare" / "headlook"
 CHARS = ("chameleon", "axolotl")
 # the extremes' variants (at R1's clamps, 70 / 50 down / 40 up): R1's split, and the modifier's defaults (H1's "trunk"

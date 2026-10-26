@@ -834,9 +834,9 @@ variants (arm swing x frames) and picks the default by the numbers (`alien_loco_
 nearest the game's footstep beat with the planted feet within 5 mm; ties to `default_arm_swing`). Every loop starts on
 the left foot's contact. A clip's action is `CharacterArmature|<name>_Loop` (Godot imports it as `<name>`, looping;
 a game clip replaces the build's action of that name); variants and alternatives are `<name>__<variant>`, a second
-speed `__s<speed x 10>`. Since step 4b the strafes and `Jog_Bwd` under the game's names are fitted to 3.0 m/s (the
-proposed back and side cap, the engineer's call), with `Strafe_*__s45` and `Jog_Bwd__s25` beside them for review; the
-shuffle strafe is dropped (a squat and a split at both speeds). `alien_loco_math` also holds the game's footstep clock
+speed `__s<speed x 10>`. The strafes under the game's names are fitted to the side cap, 3.0 m/s (since step 4b), and
+`Jog_Bwd` with the back diagonals to the back cap, 2.0 m/s (since F1, the engineer's pick of 2026-10-26; "F1" below),
+with `Strafe_*__s45` and `Jog_Bwd__s25` beside them for review; the shuffle strafe is dropped (a squat and a split at both speeds). `alien_loco_math` also holds the game's footstep clock
 (`footstep_interval`, `footstep_cadence.gd`'s), the rates at the game's speeds against its 0.25-4.0 clamp
 (`play_rows`), the stride flag (scaled over 2x either way) and the reels' plan and timelines.
 
@@ -1023,6 +1023,31 @@ warped take's measured speed is lower; the step on the floor is the same (speed 
 strafe's swing shin crossing the stance leg from the front is left as it is: the legs travel along the picture plane
 there and overlap at passing whatever the track (P3's 3 cm wider ankles are kept).
 
+### The back cap at 2.0 and the follow-ups (art #196, F1)
+The engineer picked the back cap **2.0 m/s** (2026-10-26) from P5's grid (2.0, 2.5, 3.0 m/s: the take's stride
+stretched 2.15, 2.69, 3.23x after the warp); the side cap stays 3.0. `Jog_Bwd` and the back diagonals `Jog_Bwd_Left` /
+`Jog_Bwd_Right` are fitted to 2.0 (their other settings P4's); the grid clips `Jog_Bwd__c20`, `__c25`, `__c30` and
+their reel `Jog_Bwd_caps` are dropped (out: `loco/f1`; the reels' before rows, `Jog_Bwd__p3` and `Jog_Bwd_Left__p3`,
+stay at P3's 2.5). The clips at 2.0 (`loco.json`, the chameleon; the axolotl shares the skeleton):
+
+| Clip | Steps/s | Step | Stride x the take's | Planted drift (honest, L / R) | Least knee bend (all / swing) | Hands from the torso axis |
+|---|---|---|---|---|---|---|
+| `Jog_Bwd` | 3.43 (14 frames, rate 1.14) | 0.58 m | 2.15 (warn: over 2x) | 0.0 / 0.3 mm | 33 / 37 deg | 0.25 / 0.24 m |
+| `Jog_Bwd_Left` (`_Right` its mirror) | 3.43 | 0.58 m | 2.04 (warn) | 0.0 / 0.0 mm | 34 / 37 deg | 0.24 / 0.25 m |
+
+The stride stays over 2x at the cap: the take's own steps are small (0.30 m); 2.0 is the least stretched of the
+grid, and the slide stays inside the 5 mm bound.
+
+`max_scale` holds after the retime's whole-frame rounding (PR #326's follow-up): `capped_rate` takes the loop's frame
+intervals and floors a rounded count that would stretch the stride past the cap (`Jog_Bwd__s4b`: its capped rate
+1.3075 rounded to 26/20 = 1.3 and its scale to 1.509, over its 1.5; now 26/19, 1.433), and `alien_loco` refuses a
+stride over its `max_scale` (`check_max_scale`). Step 4b's `arms_from = { clip = "Jog_Fwd", k = 0.75 }` (on
+`Strafe_Left__s4b` and `Jog_Bwd__s4b`) scales a donor whose swing is already its grid's pick 0.75 of the take's, so
+those arms swing 0.75 x 0.75 = 0.56 of the take's own. Step 4b's slides stand over the 5 mm bound (`SLIDE_BOUND_MM`,
+"The alien locomotion clip tool"): `honest_slide`'s planted drift on `Strafe_Left__s4b` is 6.2 / 5.6 mm and on
+`Jog_Bwd__s4b` 7.7 / 16.5 mm (F1's build; 4b read about 6 and 12-18); both are kept as step 4b's record only, no reel
+plays them, and the game's clips since P3 are pinned (`pin`: 0.0-0.3 mm at F1).
+
 ### The head follows the aim (art #196, H1)
 So players can nod yes and shake no without a microphone, the alien's trunk, neck and head bones turn toward the
 player's aim on top of any clip; the head's mesh stays as it is (no face rig). `godot/alien/head_look.gd` is the
@@ -1039,9 +1064,15 @@ after the `AnimationMixer`, so it works over Idle, the jogs and the strafes alik
   the head bone ends turned by exactly the aim (on the rest pose; on a clip, the clip's own facing turned by it);
 - `smoothing_s` 0.05: the applied angles close 63 % of their gap in that time (a 2 Hz nod keeps about 85 % of its
   amplitude); `snap()` jumps to the target;
-- `body_follow(body_yaw, aim_world_yaw, dead_zone)` (static): the body-lag rule as a demo (the game-design call is
-  the engineer's): the body keeps its yaw while the aim is within the dead zone and turns to keep the aim on its
-  edge beyond it; `aim_yaw` is then the aim relative to that body.
+- `body_follow(body_yaw, aim_world_yaw, dead_zone = DEAD_ZONE)` (static): the body-lag rule: the body keeps its yaw
+  while the aim is within the dead zone and turns to keep the aim on its edge beyond it; `aim_yaw` is then the aim
+  relative to that body. `DEAD_ZONE` is 45 degrees, the engineer's pick (2026-10-26; the shots' `lag_dz60` stays as
+  a comparison).
+
+The pitch turns about the yawed body's right axis (skeleton space's right turned by the yaw), not the head bone's own
+right axis: on a clip that tilts the head, the nod stays level with the body. Fed without `body_follow`, an aim
+relative to the body that crosses +-180 degrees jumps from +PI to -PI, and the clamped head swings from +70 to -70 in
+one go.
 
 What the game needs: the pitch is already in the network pose (`pose.pitch`, today put on a `Head` node, not on the
 skeleton): feed it to `aim_pitch`. The yaw relative to the body only exists with a dead zone: today the whole body
@@ -1049,9 +1080,12 @@ turns with the mouse (`rotate_y`), so the relative yaw is always 0 and a "no" sh
 `body_follow` the body's yaw and the aim's yaw become two numbers to sync.
 
 `$PYTHON_BIN tools/blender/alien_headlook_run.py --check` runs `godot/alien/head_look_check.gd` headless on both
-characters (the strafe pilot's build, `loco/p5`): the head bone's facing within 1 degree of the asked yaw and pitch
-inside the clamps, at the clamps beyond them, no drift over 10 frames, on Idle and Jog_Fwd the clip's facing turned
-by the aim, the smoothing, `body_follow`'s cases (`HEADLOOK` lines, exit 1 on a failure). `... --shots [--chars]
+characters (the newest loco build, `loco/f1`): the head bone's facing within 1 degree of the asked yaw and pitch
+inside the clamps, at the clamps beyond them, the Neck turned by `aim_turn` of its cumulative share of the split
+(summed in the check from the skeleton's parents), a fresh modifier's default clamps (yaw 100, pitch -80 give 70,
+-35), no drift over 10 frames, on Idle and Jog_Fwd the clip's facing turned by the aim, the smoothing, `body_follow`'s
+cases and its default dead zone (`HEADLOOK` lines, exit 1 on a failure); `tools/tests/test_alien_headlook_godot.py`
+runs it (heavy; the area `alien_headlook`). The shots' labels print `target()`, the clamped angles. `... --shots [--chars]
 [--no-video]` runs `godot/alien/head_look_shots.gd` in the off-screen window (`--fixed-fps 24`) into
 `<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/headlook/<char>/`: `grid_{Idle,Jog_Fwd}.png` (yaw
 -70..+70 x pitch +40/0/-50, three-quarter), `extremes_{r1,trunk,rec}.png` (the clamps' corners and edges close from

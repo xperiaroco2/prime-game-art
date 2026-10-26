@@ -90,12 +90,15 @@ class SetKeys(unittest.TestCase):
 
     def test_the_real_set_has_the_p2_clips(self):
         jobs = {j["name"]: j for j in L.expand(L.load())}
-        for n in ("Strafe_Left__p2", "Strafe_Left__s4b", "Jog_Fwd_Left", "Jog_Fwd_Right", "Jog_Bwd__c20",
-                  "Jog_Bwd__c25", "Jog_Bwd__c30", "Jog_Bwd__s4b", "Jog_Bwd_Left", "Jog_Bwd_Right"):  # P3's set
+        for n in ("Strafe_Left__p2", "Strafe_Left__s4b", "Jog_Fwd_Left", "Jog_Fwd_Right",
+                  "Jog_Bwd__s4b", "Jog_Bwd_Left", "Jog_Bwd_Right"):  # P3's set
             self.assertIn(n, jobs)
         self.assertEqual(jobs["Strafe_Left"]["from"], "Jog_Fwd")
         self.assertEqual(jobs["Strafe_Left"]["orient"]["travel"], 90.0)
-        self.assertEqual(jobs["Jog_Bwd"]["speed"], jobs["Jog_Bwd__c25"]["speed"])  # the 2.5 until he picks
+        self.assertEqual(jobs["Jog_Bwd"]["speed"], 2.0)  # F1: the back cap, the engineer's pick (2026-10-26)
+        self.assertEqual(jobs["Jog_Bwd_Left"]["speed"], 2.0)
+        for n in ("Jog_Bwd__c20", "Jog_Bwd__c25", "Jog_Bwd__c30"):  # the cap's grid, dropped after the pick
+            self.assertNotIn(n, jobs)
         self.assertEqual(jobs["Jog_Bwd_Right"]["mirror"], "Jog_Bwd_Left")
         self.assertIsNotNone(jobs["Crouch_Run"]["head_level"])
         for n in ("Walk", "Jog_Fwd", "Sprint_Fwd"):  # approved: no P2 edit on them

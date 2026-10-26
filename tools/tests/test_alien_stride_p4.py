@@ -99,7 +99,7 @@ class RealSet(unittest.TestCase):
     def test_the_real_set_has_the_p4_back_clips(self):
         cfg = L.load()
         jobs = {j["name"]: j for j in L.expand(cfg)}
-        for n in ("Jog_Bwd", "Jog_Bwd__c20", "Jog_Bwd__c25", "Jog_Bwd__c30", "Jog_Bwd_Left"):
+        for n in ("Jog_Bwd", "Jog_Bwd_Left"):
             self.assertTrue(jobs[n]["even_steps"])
             ac = jobs[n]["arms_carry"]
             self.assertGreaterEqual(math.hypot(ac["side_m"], ac["front_m"]), 0.22)

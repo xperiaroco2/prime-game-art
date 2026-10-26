@@ -11,12 +11,19 @@ extends SkeletonModifier3D
 ## skeleton space's up (UP) and, for the pitch, about the yawed right axis: the head's facing reaches the asked yaw and
 ## pitch exactly on the rest pose, and on a clip it is the clip's own facing turned by them.
 ##
-## The body-lag rule (a demo, the game-design call is the engineer's): body_follow() keeps the body's yaw while the
-## aim is within a dead zone of it and turns the body just enough to keep the aim at the zone's edge beyond it; the
-## modifier's aim_yaw is then the aim relative to the new body yaw (at most the dead zone).
+## The pitch turns about the yawed body's right axis (skeleton space's right turned by the yaw), not the head bone's own
+## right axis: on a clip that tilts the head, the nod stays level with the body.
+##
+## The body-lag rule: body_follow() keeps the body's yaw while the aim is within a dead zone of it and turns the body
+## just enough to keep the aim at the zone's edge beyond it; the modifier's aim_yaw is then the aim relative to the
+## new body yaw (at most the dead zone). The dead zone's default DEAD_ZONE is 45 degrees, the engineer's pick
+## (2026-10-26). Fed without body_follow, an aim relative to the body that crosses +-180 degrees jumps from +PI to
+## -PI, and the clamped head swings from +70 to -70 in one go.
 
 const UP := Vector3.UP
 const FORWARD := Vector3.BACK  # the GLB's character faces +Z in skeleton space (glTF's forward)
+## The body-lag rule's dead zone (radians): 45 degrees, the engineer's pick (2026-10-26).
+const DEAD_ZONE := PI / 4.0
 
 ## The aim's turn relative to the body (radians): + to the character's left, - to its right.
 @export var aim_yaw := 0.0
@@ -69,9 +76,10 @@ func snap() -> void:
 	_started = true
 
 
-## The body-lag rule: the body's new yaw (radians, world) for an aim yaw (radians, world) and a dead zone (radians).
-## Within the zone the body keeps its yaw; beyond it the body turns so the aim sits on the zone's edge.
-static func body_follow(body_yaw: float, aim_world_yaw: float, dead_zone: float) -> float:
+## The body-lag rule: the body's new yaw (radians, world) for an aim yaw (radians, world) and a dead zone (radians,
+## default DEAD_ZONE). Within the zone the body keeps its yaw; beyond it the body turns so the aim sits on the zone's
+## edge.
+static func body_follow(body_yaw: float, aim_world_yaw: float, dead_zone: float = DEAD_ZONE) -> float:
 	var rel := wrapf(aim_world_yaw - body_yaw, -PI, PI)
 	if absf(rel) <= dead_zone:
 		return body_yaw

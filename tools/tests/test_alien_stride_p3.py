@@ -135,7 +135,7 @@ class RealSet(unittest.TestCase):
         self.assertNotIn("Strafe_Left__100s", jobs)  # dropped (P2's critic)
         for n in ("Crouch_Fwd", "Crouch_Run"):
             self.assertTrue(jobs[n]["orient"]["whole"])
-        for n in ("Jog_Bwd", "Jog_Bwd__c20", "Jog_Bwd__c25", "Jog_Bwd__c30", "Jog_Bwd_Left"):
+        for n in ("Jog_Bwd", "Jog_Bwd_Left"):
             self.assertTrue(jobs[n]["pin"])
             self.assertEqual(jobs[n]["arms_from"]["phase"], 0.5)
         for n in ("Strafe_Left", "Jog_Fwd_Left"):
