@@ -415,9 +415,10 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict, approved: lis
          'start button at hip height, three stage strips, two cyan strips and the hologram emitter, and over it the '
          "hologram of the ship from the built hull's own mesh at 1:16.3 (lines, a faint shell, eight order lamps), "
          f'{build["triangles"]:,} triangles in thirteen surfaces, front +Z, origin on the floor under the middle; the '
-         "engine's spin-up on the hologram (the turbines' fans, the stations' wiring, the charge ring, the countdown). "
+         "engine's spin-up on the hologram (the turbines' fans and calling glow, the stations' wiring with a broken "
+         "point's pillar, the charge ring and its second ring on the emitter deck, the countdown). "
          'States on one mesh: export/console.gd set_state, set_passed, set_lit and the spin-up\'s set_calling, '
-         'set_charge, set_spin, set_station, set_countdown (HANDOFF.md). From the concept the '
+         'set_charge, set_spin, set_station, set_countdown, set_fill, set_ring_style (HANDOFF.md). From the concept the '
          'engineer picked on 2026-10-24 and its drawing in cm (prime-game-design ideas/ship-components/stations-final: '
          'console-final.jpg, holo14-diamond-2.jpg, console-drawing/; copied to the raw folder; 2D concepts used only '
          'as references), built from code in headless Blender (tools/blender/console_build.py from '
