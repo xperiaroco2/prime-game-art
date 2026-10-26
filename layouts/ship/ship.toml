@@ -5,7 +5,7 @@
 # Plan coordinates from the ship's centre in metres: x east, y south, h up from the ground. Godot: (x, h, y).
 # `tools/run.py ship --check` checks every rule below (tools/runner/ship_layout.py, docs/ship.md).
 version = 3                                  # lens step 1 (art#263 c6344490367): the lens rooms, the vault
-raw_dir = "ship/v3"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
+raw_dir = "ship/v5"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
 interior = "layouts/ship/interior.toml"      # the INTERIOR lane's pieces and placements
 exterior = "layouts/ship/exterior.toml"      # the EXTERIOR lane's pieces and placements
 plan_ref = "D:/prime-game-design/ideas/ship-components/2d/plan-3.jpg"
@@ -202,16 +202,17 @@ room = "corridor_w"
 [[stations.spot]]
 id = "renewer_e"                              # lens step 1: on the lens's aft wall at its vertex 87.82 deg round the
 at = [10.2686, 3.2369]                        # axis, clear of the window band (rebuild E: (9.922, 4.381) on the axis);
-normal = [0.1129, -0.9936]                    # the player stands 1.3 m in, the pass behind runs forward across the room
+normal = [0.1129, -0.9936]                    # the player stands 1.453 m in, the pass behind runs forward across the room
 room = "tip_e"
-depth_m = 0.9
+depth_m = 1.053                               # the crystal charger's reach from the wall's face (its report's d 105.25 cm;
+                                              # fix1: was 0.9, which stood the player inside its front pads)
 
 [[stations.spot]]
 id = "renewer_w"
 at = [-10.2686, 3.2369]
 normal = [-0.1129, -0.9936]
 room = "tip_w"
-depth_m = 0.9
+depth_m = 1.053
 
 [ramp]                                       # the mouth ramp, north at the centre; it meets the ground
 width_m = 3.3                                # rebuild C: the mouth's width

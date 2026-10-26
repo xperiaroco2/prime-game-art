@@ -45,6 +45,7 @@ class ChargerDrawing(unittest.TestCase):
         f, b = d["frame"], d["base"]
         self.assertEqual((f["top"], f["wall_gap"]), (139.7, 2.0))
         self.assertEqual((b["bottom"], b["widest"]), (60.0, 72.8))  # charger-3: a skirt 4.8 under N.baseBottom 64.8
+        self.assertEqual(b["drawn_bottom"], 64.8)  # the drawing's, labelled beside the built 60 (charger_drawing.py)
         self.assertAlmostEqual(b["r_widest"] * 2, 100.4, delta=0.05)
         self.assertAlmostEqual(b["r_deck_edge"] * 2, 82.0, delta=0.05)  # N.tierTop: the upper tier's top edge
         self.assertEqual((b["deck"], b["well"]), (99.1, 94.0))  # N.top: the deck; the slot sunk in its well (charger-3)
@@ -124,6 +125,17 @@ class ChargerAsset(unittest.TestCase):
         self.assertEqual([round(x, 3) for x in nodes["track_ring"]["translation"]], [0.0, round(d["base"]["well"] / 100, 3), ax])
         self.assertAlmostEqual(nodes["crystal_anchor"]["translation"][1],
                                (d["slot"]["tip"] - d["carrier"]["top"]) / 100, places=4)
+        # fix1 (#323's review): the button's pivot on the centre line at the dims' h, on its lens's face (the report's
+        # pivot, d 99.07), in front of the base and inside the charger's reach; charger.gd presses it toward -Z
+        report = json.loads((ASSET / "report.json").read_text(encoding="utf-8"))
+        pivot = report["mesh"]["by_object"]["button"]["pivot_cm"]
+        self.assertEqual(pivot[0], 0.0)
+        self.assertEqual(pivot[2], d["button"]["h"])
+        self.assertLess(pivot[1], report["mesh"]["size_cm"]["d"][1])
+        self.assertEqual([round(x, 4) for x in nodes["button"]["translation"]],
+                         [0.0, round(pivot[2] / 100, 4), round(pivot[1] / 100, 4)])
+        src = (common.ROOT / "godot" / "charger" / "charger.gd").read_text(encoding="utf-8")
+        self.assertIn('(look["button_rest"] as Vector3) - Vector3(0.0, 0.0, TRAVEL if on else 0.0)', src)
 
     def test_report_checks(self) -> None:
         if not (ASSET / "report.json").is_file():
@@ -137,8 +149,12 @@ class ChargerAsset(unittest.TestCase):
         self.assertGreaterEqual(c["ring_turn"]["wall_min_cm"], 1.9)
         self.assertEqual(r["gltf_validator"]["numErrors"], 0)
         self.assertLess(r["mesh"]["triangles"], 45000)
-        # the depth a player's stand counts from: the pass behind them was measured at 1.04 m (2.17 m free, pass_m 1.6)
-        self.assertLessEqual(r["mesh"]["size_cm"]["d"][1], 106.0)
+        # the depth a player's stand counts from: ship.toml's renewer spots' depth_m (fix1: 1.053 m), which the layout's
+        # stand and pass checks use; a deeper charger would stand the player inside its pads
+        spots = {s["id"]: s for s in tomllib.loads((common.ROOT / "layouts" / "ship" / "ship.toml")
+                                                   .read_text(encoding="utf-8"))["stations"]["spot"]}
+        self.assertLessEqual(r["mesh"]["size_cm"]["d"][1], spots["renewer_e"]["depth_m"] * 100)
+        self.assertLessEqual(r["mesh"]["size_cm"]["d"][1], spots["renewer_w"]["depth_m"] * 100)
 
     def test_look_files(self) -> None:
         if not (EXPORT / "charger.gd").is_file():

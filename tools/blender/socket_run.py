@@ -45,10 +45,9 @@ REFS = {"socket.jpg": DESIGN / "socket.jpg", "front-ortho.jpg": DESIGN / "socket
         "side-ortho.jpg": DESIGN / "socket-drawing" / "side-ortho.jpg",
         "drawing.js": DESIGN / "socket-drawing" / "drawing.js"}
 CRYSTAL = ROOT / "assets" / "prop" / "energy_crystal" / "export" / "energy_crystal.glb"
-# socket-3: the ship's current build (docs/ship.md: the vents' b5b, the raise's 1.2 m deck). ship.toml's raw_dir
-# pieces/ (ship/v3/pieces) were built before the raise with their deck at 0.6 m (hall_grate's top 0.600 m): the
-# step 1 and 2 hall shots stood the sockets 0.6 m above that deck
-PIECES = RAW / "ship" / "v4" / "vents-b" / "pieces_b5b"
+# fix1 (art#263): the layout's raw_dir pieces, the current build (ship/v5/pieces, deck at floor_h 1.2; the same bytes
+# as the vents' b5b build the station steps shot on). The deck check below still refuses pieces built before the raise
+PIECES = RAW / ship_layout.load()["raw_dir"] / "pieces"
 MATERIAL_FILES = ("socket.gd", "socket_metal.gdshader", "socket_bay.gdshader")
 SPOTS = ("socket_e", "socket_w", "socket_fe", "socket_fw")
 SHOT_SPOT = "socket_e"
@@ -304,7 +303,9 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
          'States: export/socket.gd set_state (HANDOFF.md). From the sheet the engineer picked on 2026-10-25 and its '
          'drawing in cm (prime-game-design ea27a81, ideas/ship-components/stations-final: socket.jpg, '
          'socket-drawing/; copied to the raw folder). The sheet and the drawing\'s straight views are AI images '
-         '(OpenAI gpt-image, batch 2026-10-25-ship-socket-drawing), used only as references; the model is built '
+         '(OpenAI gpt-image, batch 2026-10-25-ship-socket-drawing, recorded in prime-game-design: '
+         'https://github.com/xperiaroco2/prime-game-design/blob/main/ideas/batches/2026-10-25-ship-socket-drawing.toml), '
+         'used only as references; the model is built '
          'from code in headless Blender (tools/blender/socket_build.py from socket_dims.toml): no part of it was '
          'generated or downloaded."'),
         f'tools = ["blender {pins.BLENDER}", "prime-game-art socket_build.py, socket_run.py", '

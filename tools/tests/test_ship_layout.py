@@ -42,7 +42,7 @@ class ShipLayoutTest(unittest.TestCase):
         """The spots as built (rebuild F): the vents on the throat's slanted walls at (+-2.409, -4.791), the console
         at (0, 0.6), the back sockets at (+-1.8, 3.112), the front sockets about (+-3.5, -2.4), the breaker boards on
         the corridors' front wall in their middle (+-6.664, -0.902; lens step 1), the renewers on the lens rooms' aft
-        walls at (+-10.269, 3.237), their players 1.3 m in."""
+        walls at (+-10.269, 3.237), their players 1.453 m in (fix1: the charger's reach, was 1.3)."""
         spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
         # rebuild C: the vents on the throat's slanted walls (asked (+-2.3, -5.8)), four sockets (the front two beside
         # the throat, asked (+-3.5, -3.0)). rebuild E: the inside 0.4 m forward of step A (the hall's full rim), the
@@ -63,8 +63,21 @@ class ShipLayoutTest(unittest.TestCase):
             self.assertLess(math.dist(spots[f"breaker_{sid}"]["at"], (sx * 6.45, -0.93)), 0.25)   # asked "about"
             self.assertLess(math.dist(spots[f"renewer_{sid}"]["at"], (sx * 10.3, 3.2)), 0.06)
             stand = sl.spot_stand(LAYOUT, spots[f"renewer_{sid}"])
-            self.assertAlmostEqual(stand[0], sx * 10.415, places=2)
-            self.assertAlmostEqual(stand[1], 1.945, places=2)
+            self.assertAlmostEqual(stand[0], sx * 10.433, places=2)
+            self.assertAlmostEqual(stand[1], 1.793, places=2)
+
+    def test_the_renewer_spots_reach_the_chargers_front(self) -> None:
+        """fix1 (art#263, #323's review): the renewer spots' depth_m is the crystal charger's reach from the wall's face
+        (its report's d max, 105.25 cm, rounded up to the mm), so the layout's own stand and pass checks put the player
+        in front of its pads, not inside them."""
+        import json
+        from runner import common
+        report = common.ROOT / "assets" / "prop" / "crystal_charger" / "report.json"
+        reach = json.loads(report.read_text(encoding="utf-8"))["mesh"]["size_cm"]["d"][1] / 100
+        spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
+        for sid in ("renewer_e", "renewer_w"):
+            self.assertGreaterEqual(spots[sid]["depth_m"], reach)
+            self.assertLess(spots[sid]["depth_m"] - reach, 0.001)
 
     def test_the_rooms_are_5a_mirrored(self) -> None:
         r = sl.rooms(LAYOUT)

@@ -1,5 +1,6 @@
 """The breaker board's drawing check (art#263's stations). Plain Python, no Blender: the built numbers (build.json's
-measured_cm, read off the model's own vertices by board_build.py) against the drawing's (prime-game-design 6b0e83e,
+measured_cm, read off the model's own vertices by board_build.py; 20 of the 23 measured, 3 set: SET, the lamp ring
+from the dims and the hinge's h and d from the leaves' pivots) against the drawing's (prime-game-design 6b0e83e,
 stations-final/board-drawing/drawing.js, its N and D objects, copied below), and the front and side views in cm: the
 picked sheet's straight views at the drawing's scale (board_dims.toml [measure]), the drawing's boxes (cyan, dashed)
 and the built model's boxes (orange) over them, so a mismatch shows as two outlines apart. board_build.py's
@@ -28,6 +29,9 @@ DRAWING = {
 }
 REF = "../../ref/{view}-ortho.jpg"
 IMG_W, IMG_H = 1536, 1024
+
+
+SET = ("lamp_ring", "hinge_h", "hinge_d")  # not read off the vertices: the dims' ring, the pivots the build placed
 
 
 def built(m: dict) -> dict:
@@ -100,7 +104,8 @@ def main() -> None:
     off = [k for k, r in rows.items() if abs(r["delta"]) > TOLERANCE_CM]
     for k in off:
         print(f"BOARD drawing mismatch {k}: drawing {rows[k]['drawing']} built {rows[k]['built']}", flush=True)
-    print(f"BOARD drawing: {len(rows) - len(off)}/{len(rows)} numbers within {TOLERANCE_CM} cm", flush=True)
+    print(f"BOARD drawing: {len(rows) - len(off)}/{len(rows)} numbers within {TOLERANCE_CM} cm "
+          f"({len(rows) - len(SET)} measured, {len(SET)} set: {', '.join(SET)})", flush=True)
     table = "".join(f'<text x="10" y="{180 + i * 4.2:.1f}" class="r">{k}: drawing {r["drawing"]}, built {r["built"]}'
                     f'{" (off)" if k in off else ""}</text>' for i, (k, r) in enumerate(rows.items()))
     svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="-110 0 340 280" width="1700" height="1400">'

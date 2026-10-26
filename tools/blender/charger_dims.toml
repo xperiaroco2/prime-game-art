@@ -22,6 +22,7 @@ wall_gap = 2.0                   # the least gap to the wall's facets (the base,
 back_fold_deg = 10.977
 
 [base]                           # the squat stepped dome (N.baseBottom, N.widestH, N.widest, N.tierTop)
+drawn_bottom = 64.8              # fix1: the drawing's N.baseBottom, for the drawing's label (the build uses bottom)
 bottom = 60.0                    # the lower tier's underside, the legs' tops (charger-3: a skirt 4.8 under
                                  # N.baseBottom 64.8: the base's mass dominates, the legs read as struts, as on the sheet)
 widest = 72.8                    # the widest girth (N.widestH)

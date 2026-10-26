@@ -7,8 +7,8 @@ background only:
   blender -b --factory-startup --python-exit-code 1 --python tools/blender/board_build.py -- \
       --out <dir> [--views <dir with front-ortho.jpg, side-ortho.jpg>] [--res 1024]
 
-Blender axes: Z up, x = u, the board's front (out of the wall) -Y (glTF: Y up, front +Z); the origin on the wall's
-face at the floor under the centre line.
+Blender axes: Z up, x = u, the board's front (out of the wall) -Y (glTF: Y up, front +Z); the origin on the plate's
+back (d 0; board_dims.toml [mount] d places it 7.0 cm out of the wall's face) at the floor under the centre line.
 
 Objects (the GLB's nodes, the game drives them by name):
 - `board_body`: the wall plate, the raised border and the inner panel in bronze blocks with dark joints, the four

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import struct
 import tomllib
 import unittest
@@ -59,6 +60,17 @@ class BreakerBoardDrawing(unittest.TestCase):
         self.assertEqual(d["core"]["d"], 18.0)
         self.assertAlmostEqual(d["lamp"]["h"], 114.6, delta=0.05)
         self.assertAlmostEqual(d["cables"]["low"], 17.8, delta=0.05)
+
+    def test_board_gd_trips_by_the_dims_angle(self) -> None:
+        """fix1 (#322's review): board.gd's TRIP, the angle the game turns a tripped shell, is board_dims.toml's
+        trip_deg, the angle the build swept clean (in godot/board and in the asset's export)."""
+        want = tomllib.loads(DIMS.read_text(encoding="utf-8"))["shell"]["trip_deg"]
+        for path in (common.ROOT / "godot" / "board" / "board.gd", EXPORT / "board.gd"):
+            if not path.is_file():
+                continue
+            m = re.search(r"^const TRIP := deg_to_rad\(([0-9.]+)\)", path.read_text(encoding="utf-8"), re.M)
+            self.assertIsNotNone(m, path)
+            self.assertEqual(float(m.group(1)), want, path)
 
     def test_mount_clears_the_wall(self) -> None:
         """board-2: rays on the built ship (b5b) at both spots: the wall's pillow panels stand up to 7.0 cm proud of

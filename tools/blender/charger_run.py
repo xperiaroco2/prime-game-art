@@ -17,7 +17,7 @@ Everything goes under <raw>/ship/v4/charger/<tag>/. --asset DIR writes the asset
 (assets/prop/crystal_charger).
 
     $PYTHON_BIN tools/blender/charger_run.py [--tag build] [--no-build] [--no-shots] [--res 900] [--samples 64]
-        [--asset assets/prop/crystal_charger] [--pieces <raw>/ship/v4/vents-b/pieces_b5b]
+        [--asset assets/prop/crystal_charger] [--pieces <raw>/<ship.toml raw_dir>/pieces]
 """
 from __future__ import annotations
 
@@ -53,9 +53,9 @@ CRYSTAL = ROOT / "assets" / "prop" / "energy_crystal" / "export" / "energy_cryst
 METAL = ROOT / "godot" / "console" / "console_metal.gdshader"  # shared with the console, not forked
 HDRI = RAW / "env" / "polyhaven" / "studio_small_09" / "studio_small_09_2k.hdr"  # CC0, sources/polyhaven_hdris_2k.toml
 SPOT = "renewer_e"
-# charger-2: the ship's current build (docs/ship.md: the vents' b5b, the raise's 1.2 m deck). ship.toml's raw_dir
-# pieces/ (ship/v3/pieces) were built before the raise with their deck at 0.6 m (the board's step 1 found it).
-PIECES = RAW / "ship" / "v4" / "vents-b" / "pieces_b5b"
+# fix1 (art#263): the layout's raw_dir pieces, the current build (ship/v5/pieces, deck at floor_h 1.2; the same bytes
+# as the vents' b5b build the station steps shot on). The deck check below still refuses pieces built before the raise
+PIECES = RAW / ship_layout.load()["raw_dir"] / "pieces"
 # the room shots: name, yaw from the front, elevation (deg), target (u, d, h cm), distance (m), fov, state
 CHARGING = {"charger": "charging", "ring": 35.0, "rise": 1.0, "carrier": 20.0, "crystal": True, "charge": 0.5}
 IDLE = {"charger": "idle", "crystal": False}
@@ -170,22 +170,55 @@ def view_rows() -> list:
     return rows
 
 
+def _node_matrix(node: dict) -> list[list[float]]:
+    """A glTF node's local matrix (row-major 4x4) from its matrix or its translation, rotation and scale."""
+    if "matrix" in node:
+        m = node["matrix"]  # column-major
+        return [[m[c * 4 + r] for c in range(4)] for r in range(4)]
+    tx, ty, tz = node.get("translation", (0.0, 0.0, 0.0))
+    x, y, z, w = node.get("rotation", (0.0, 0.0, 0.0, 1.0))
+    sx, sy, sz = node.get("scale", (1.0, 1.0, 1.0))
+    rot = [[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+           [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+           [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]]
+    return [[rot[r][0] * sx, rot[r][1] * sy, rot[r][2] * sz, (tx, ty, tz)[r]] for r in range(3)] + [[0.0, 0.0, 0.0, 1.0]]
+
+
+def _mul(a: list[list[float]], b: list[list[float]]) -> list[list[float]]:
+    return [[sum(a[r][k] * b[k][c] for k in range(4)) for c in range(4)] for r in range(4)]
+
+
 def deck_top(glb: Path) -> float:
-    """A built piece's highest point (metres, glTF +Y up): the accessors' max in its GLB's JSON chunk."""
+    """A built piece's highest point (metres, glTF +Y up): each mesh's POSITION bounds (the accessors' min and max in
+    the GLB's JSON chunk) through its node's world transform (fix1: node transforms were ignored)."""
     data = glb.read_bytes()
     size = int.from_bytes(data[12:16], "little")
     doc = json.loads(data[20:20 + size])
-    acc = doc["accessors"]
-    return max(acc[p["attributes"]["POSITION"]]["max"][1] for m in doc["meshes"] for p in m["primitives"])
+    acc, nodes = doc["accessors"], doc["nodes"]
+    top = -math.inf
+    ident = [[float(r == c) for c in range(4)] for r in range(4)]
+    stack = [(i, ident) for i in doc["scenes"][doc.get("scene", 0)]["nodes"]]
+    while stack:
+        i, parent = stack.pop()
+        world = _mul(parent, _node_matrix(nodes[i]))
+        if "mesh" in nodes[i]:
+            for prim in doc["meshes"][nodes[i]["mesh"]]["primitives"]:
+                a = acc[prim["attributes"]["POSITION"]]
+                for cx in (a["min"][0], a["max"][0]):
+                    for cy in (a["min"][1], a["max"][1]):
+                        for cz in (a["min"][2], a["max"][2]):
+                            top = max(top, world[1][0] * cx + world[1][1] * cy + world[1][2] * cz + world[1][3])
+        stack.extend((c, world) for c in nodes[i].get("children", ()))
+    return top
 
 
 def room_shots(glb: Path, folder: Path, pieces: Path) -> int:
     layout = ship_layout.load()
-    deck = deck_top(pieces / "cor_grate.glb")
+    deck = deck_top(pieces / "tip_floor_rim.glb")  # fix1: the lens room's own floor ring (was the corridor's grate)
     if abs(deck - layout["deck"]["floor_h"]) > 0.05:
-        raise common.Failure(f"the pieces in {pieces} have their corridor deck at {deck:.3f} m, not floor_h "
+        raise common.Failure(f"the pieces in {pieces} have their lens room deck at {deck:.3f} m, not floor_h "
                              f"{layout['deck']['floor_h']} (built before the raise?): pass --pieces")
-    print(f"pieces: {pieces} (corridor deck {deck:.3f} m)", flush=True)
+    print(f"pieces: {pieces} (lens room deck {deck:.3f} m)", flush=True)
     req, staged = ship_cmd.built_request(layout, pieces)
     req["pieces"]["crystal_charger"] = "res://import/crystal_charger.glb"
     req["pieces"]["energy_crystal"] = "res://import/energy_crystal.glb"

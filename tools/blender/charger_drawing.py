@@ -105,7 +105,8 @@ def svg(feats: dict, d: dict, mode: str) -> str:
     pz = lambda h: project("front", (0, 0, h))[1]  # noqa: E731
     px = lambda u: project("front", (u, 0, 0))[0]  # noqa: E731
     x = X0["front"] + 4.0
-    for h, label in ((t["bottom"], "base"), (t["widest"], "widest"), (t["lower_top"], ""), (t["deck"], "deck"),
+    # fix1: the underside at 60 departs from the drawing's 64.8 (charger-3's skirt): the label says both
+    for h, label in ((t["bottom"], f"underside (drawing {fmt(t['drawn_bottom'])})"), (t["widest"], "widest"), (t["lower_top"], ""), (t["deck"], "deck"),
                      (sl["collar_top"], "slot"), (fr["top"], "prongs")):
         s.dim((x, pz(0.0)), (x, pz(h)), f"{fmt(h)} {label}".strip())
         x += 3.6

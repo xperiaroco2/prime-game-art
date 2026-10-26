@@ -28,7 +28,7 @@ origin at `(at.x, floor_h, at.y)` (the deck, `floor_h` 1.2 m) and turn it `rotat
 
 The charger is round and stands clear of the wall: the crystal's axis is 53.5 cm out, the base's widest circle
 (Ø 100.4) 2.3 cm off the wall's two facets (they fold 10.98 degrees toward the room either side of the vertex), the
-back legs' pads 3.4 cm. It reaches 105.3 cm into the room (the front pads), more than the spot's `depth_m` 0.9: a
+back legs' pads 3.4 cm. It reaches 105.3 cm into the room (the front pads), the spots' `depth_m` 1.053 (the layout's own stand check): a
 player at the button stands about 1.45 m out and still has 2.17 m of free floor behind (the layout's `pass_m` 1.6).
 
 ## The leaves
