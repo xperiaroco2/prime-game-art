@@ -1048,6 +1048,27 @@ those arms swing 0.75 x 0.75 = 0.56 of the take's own. Step 4b's slides stand ov
 `Jog_Bwd__s4b` 7.7 / 16.5 mm (F1's build; 4b read about 6 and 12-18); both are kept as step 4b's record only, no reel
 plays them, and the game's clips since P3 are pinned (`pin`: 0.0-0.3 mm at F1).
 
+### The strafe's shin crossing, a review grid (art #196, F2)
+In the strafe's reels the swing shin briefly passes behind the stance leg. F2 measured it (per frame of the 22-frame
+cycle, in the hips' frame: the swing ankle's and the swing shin's midpoint's distance along the hips' left-right axis
+from the stance shin at the same height, + on the swing leg's own side) and built four review variants of
+`Strafe_Left`, each one setting changed, beside it (out: `loco/f2`; the reels `Strafe_F2_<variant>__three_quarter`
+and `__back`, Strafe_Left above the variant). They await the engineer's look; `Strafe_Left` / `Strafe_Right` and
+every other game clip are unchanged (their `loco.json` reports and GLB animation bytes equal `loco/f1`'s):
+
+| Clip | Change | Ankle / shin least | Frames under 0 / under 3 cm | Least knee bend L / R | Planted drift L / R | Hips / head |
+|---|---|---|---|---|---|---|
+| `Strafe_Left` | (widen 0.03, hips 60) | -8.4 / -0.7 cm | 7 / 8 (frames 4-11) | 30.4 / 19.7 deg | 0.6 / 0.9 mm | 60.0 / 0.2 |
+| `Strafe_Left__w07` | `widen_m` 0.07 | -2.8 / +3.4 cm | 4 / 6 | 27.9 / 19.6 | 0.6 / 0.9 | 60.0 / 0.2 |
+| `Strafe_Left__w09` | `widen_m` 0.09 | 0.0 / +5.4 cm | 0 / 5 | 26.1 / 18.7 | 0.6 / 0.9 | 60.0 / 0.2 |
+| `Strafe_Left__h65` | hips 65 | -2.9 / +3.3 cm | 6 / 6 | 30.4 / 21.1 | 0.5 / 0.8 | 65.0 / 0.2 |
+| `Strafe_Left__h70` | hips 70 | +2.9 / +7.4 cm | 0 / 1 | 30.3 / 22.4 | 0.4 / 0.7 | 70.0 / 0.2 |
+
+Tried on a dump in plain Python and not built: `widen_m` 0.05 (-5.6 / +1.3 cm), hips 55 (-13.7 / -4.4 cm: more
+crossing), `lift_m` 0.03 (the crossing unchanged, the knees deeper) and `bend_min_deg` 30 (no change: the floor does
+not bite). The builder's pick is `__w09`: it keeps the engineer's hips at 60 and takes the swing ankle off the stance
+shin; `__h70` clears it furthest but moves the hips toward the 75 he passed over.
+
 ### The head follows the aim (art #196, H1)
 So players can nod yes and shake no without a microphone, the alien's trunk, neck and head bones turn toward the
 player's aim on top of any clip; the head's mesh stays as it is (no face rig). `godot/alien/head_look.gd` is the
@@ -1084,7 +1105,8 @@ characters (the newest loco build, `loco/f1`): the head bone's facing within 1 d
 inside the clamps, at the clamps beyond them, the Neck turned by `aim_turn` of its cumulative share of the split
 (summed in the check from the skeleton's parents), a fresh modifier's default clamps (yaw 100, pitch -80 give 70,
 -35), no drift over 10 frames, on Idle and Jog_Fwd the clip's facing turned by the aim, the smoothing, `body_follow`'s
-cases and its default dead zone (`HEADLOOK` lines, exit 1 on a failure); `tools/tests/test_alien_headlook_godot.py`
+cases and its default dead zone (the constant, and a call without the third argument: aim 60 gives 15, F2)
+(`HEADLOOK` lines, exit 1 on a failure); `tools/tests/test_alien_headlook_godot.py`
 runs it (heavy; the area `alien_headlook`). The shots' labels print `target()`, the clamped angles. `... --shots [--chars]
 [--no-video]` runs `godot/alien/head_look_shots.gd` in the off-screen window (`--fixed-fps 24`) into
 `<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/headlook/<char>/`: `grid_{Idle,Jog_Fwd}.png` (yaw
