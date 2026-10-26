@@ -31,6 +31,7 @@ def grid_name(name: str, arm: float, frames: int) -> str:
 
 
 P3_KEYS = ("lift_m", "bob_m", "flight_m", "widen_m", "arms_in_deg", "pin")  # the strafe pilot P3's keys (alien_loco._make)
+P4_KEYS = ("even_steps", "arms_carry")  # P4's: the backpedal's even steps and running arms (alien_loco._make)
 
 
 def expand(cfg: dict) -> list[dict]:
@@ -69,7 +70,7 @@ def expand(cfg: dict) -> list[dict]:
                              "arm_swing": c.get("arm_swing", 1.0), "play_at": list(c.get("play_at", [])),
                              "max_scale": c.get("max_scale"), "bend_min_deg": c.get("bend_min_deg"),
                              "arms_from": c.get("arms_from"),
-                             **{k: c.get(k) for k in P3_KEYS}})
+                             **{k: c.get(k) for k in P3_KEYS + P4_KEYS}})
         by_base[c["name"]] = made
         jobs.extend(made)
     seen = set()

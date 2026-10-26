@@ -70,6 +70,8 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
                 # step 2's bakes keep the source's world travel and place in the Hips' basis: every loop is cut in
                 # place before the stride, so the stride plants its feet in the frame the measure was made for (4b)
                 c, rep["in_place_first"] = L.in_place(skel, c)
+                if j.get("even_steps"):  # the other foot's contact moved to half the cycle (P4: 6/8 -> 7/7)
+                    c, rep["even_steps"] = S.even_steps(skel, c, foot)
             if j.get("lean_deg"):  # the trunk leant forward over the feet (the backpedal, P2)
                 c = S.pitch(skel, c, j["lean_deg"], L.LEAN_SPLIT)
             if j.get("orient"):  # the hips toward the travel, the head on the aim (orient_warp; absolute headings)
@@ -101,6 +103,8 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
                 c, rep["trim"] = L.trim_travel(S, skel, c, j["orient"]["travel"])
             if j.get("pin"):  # the planted feet pinned by the honest test (P3: the backpedal)
                 c, rep["pin"] = S.pin_feet(skel, c)
+            if j.get("arms_carry"):  # the arms solved onto a running carriage in the trunk's frame (P4: the backpedal)
+                c, rep["arms_carry"] = S.arms_carry(skel, c, **j["arms_carry"])
         if not j.get("pick"):
             c, rep["in_place"] = L.in_place(skel, c)
         c["name"] = j["name"] + L.LOOP
@@ -113,6 +117,7 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
             rep["airborne_frames"] = S.airborne_frames(skel, c)  # P3: a run's flight, the legs' room, the elbows
             rep["legs_m"] = S.leg_spacing(skel, c)
             rep["elbow_deg"] = S.elbow_bend(skel, c)
+            rep["arms_m"] = S.arm_carriage(skel, c)  # P4: midline, wrist height and place, elbows from the axis
             rep["facing"] = {**S.facing(skel, c), "travel_deg": round(S.travel_heading_deg(rep["after"]), 2)}
         rep["hips"] = L.hips_extent(skel, c)
         a = rep["after"]

@@ -1213,3 +1213,145 @@ def elbow_bend(skel: dict, clip: dict) -> dict:
                     M._v_sub(tr[f"{s}Hand"][f], tr[f"{s}LowerArm"][f])) for f in range(T)]
         out[s] = [round(sum(b) / T, 1), round(min(b), 1), round(max(b), 1)]
     return out
+
+
+# ------------------------------------------------------------------------------------------- P4: the backpedal
+def even_steps(skel: dict, clip: dict, foot: str = "Left") -> tuple[dict, dict]:
+    """A loop starting on `foot`'s contact retimed so the other foot's contact starts half a cycle on (P4: the
+    backpedal take's steps were 6 and 8 of 14 frames): each frame u samples the clip at u - a sin^2(pi u / T), with
+    a = T/2 - (the other contact's start), a smooth monotonic warp (|a| < T / pi) that keeps frames 0 and T, on the
+    same frame grid (Catmull-Rom over the seam, as `retime`). Returns (the clip, the report: the other foot's contact
+    starts before and after, frames of T)."""
+    T = frames(clip)
+    other = "Right" if foot == "Left" else "Left"
+    before = measure(skel, clip)["contacts"][other]
+    start = min(before, key=lambda s: abs(s - T / 2.0)) if before else T / 2.0
+    a = T / 2.0 - start
+    if abs(a) >= T / math.pi:
+        raise ValueError(f"even_steps: the other contact at {start} of {T} is too far from half to warp smoothly")
+    out = copy_clip(clip, loc={}, rot={})
+    for u in range(T):
+        t = (u - a * math.sin(math.pi * u / T) ** 2) % T
+        i, fr = M.split_index(t, T)
+        idx = M.neighbours(i, T, closed=True)
+        w = M.catmull_rom(fr)
+        for b, v in clip["loc"].items():
+            out["loc"].setdefault(b, []).append(tuple(sum(wk * v[k][c] for wk, k in zip(w, idx)) for c in range(3)))
+        for b, v in clip["rot"].items():
+            qs = [M.q_hemi(v[k], v[i]) for k in idx]
+            out["rot"].setdefault(b, []).append(M.q_norm(tuple(sum(wk * q[c] for wk, q in zip(w, qs))
+                                                               for c in range(4))))
+    for ch in (out["loc"], out["rot"]):
+        for b in ch:
+            ch[b].append(ch[b][0])
+    return out, {"other": other, "start_before": before, "start_after": measure(skel, out)["contacts"][other],
+                 "frames": T}
+
+
+def _norm(v):
+    n = _len(v)
+    return tuple(c / n for c in v) if n > 1e-12 else v
+
+
+def _cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+
+
+def _body_axes(skel: dict, P: dict):
+    """(front, left, up) of the trunk on one pose: the UpperChest's front laid level, world up, left = up x front."""
+    fr = bone_front(skel, P, "UpperChest")
+    front = _norm((fr[0], fr[1], 0.0))
+    up = (0.0, 0.0, 1.0)
+    return front, _cross(up, front), up
+
+
+def arms_carry(skel: dict, clip: dict, side_m: float = 0.17, front_m: float = 0.14, dz_m: float = 0.0,
+               swing_m: float = 0.06, rise: float = 0.35, out_deg: float = 15.0) -> tuple[dict, dict]:
+    """A running carriage for the arms (P4, the backpedal): each wrist (the Hand bone's head) put on a target in the
+    trunk's own frame and the arm solved again as two bones (its own upper arm and forearm lengths). The target: the
+    Spine's head (the waist) + side_m outward + front_m forward + dz_m up, swung +-swing_m forward (and rise times
+    that up) against the same-side ankle's fore-aft place under the hips (the hand forward while its leg is back);
+    the elbow in the plane through the shoulder, the wrist and a pole pointing back and out_deg outward (elbows near
+    the ribs, behind the trunk). The hand keeps its pose on the forearm. Returns (the clip, the report: the asked
+    values and `arm_carriage`'s numbers)."""
+    skel = prepare(skel)
+    T = frames(clip)
+    P0 = fk(skel, clip, 0)
+    lens = {s: (_len(M._v_sub(pos(P0[f"{s}LowerArm"]), pos(P0[f"{s}UpperArm"]))),
+                _len(M._v_sub(pos(P0[f"{s}Hand"]), pos(P0[f"{s}LowerArm"])))) for s in SIDES}
+    # the swing's phase: each ankle's place along the trunk's front relative to the hips, scaled to -1..1
+    lead = {s: [] for s in SIDES}
+    for f in range(T):
+        P = fk(skel, clip, f)
+        front = _body_axes(skel, P)[0]
+        for s in SIDES:
+            lead[s].append(M._v_dot(M._v_sub(pos(P[f"{s}Foot"]), pos(P["Hips"])), front))
+    for s in SIDES:
+        m = sum(lead[s]) / T
+        amp = max(abs(x - m) for x in lead[s]) or 1.0
+        lead[s] = [(x - m) / amp for x in lead[s]]
+    out = copy_clip(clip)
+    o = math.radians(out_deg)
+    for f in range(T + 1):
+        P = fk(skel, clip, f)
+        front, left, up = _body_axes(skel, P)
+        waist = pos(P["Spine"])
+        new = dict(P)
+        for s, sign in (("Left", 1.0), ("Right", -1.0)):
+            ua, la, hd = (f"{s}{x}" for x in ARM)
+            S0, E0, W0 = pos(P[ua]), pos(P[la]), pos(P[hd])
+            sw = -swing_m * lead[s][f % T]
+            W = tuple(waist[c] + sign * side_m * left[c] + (front_m + sw) * front[c] + (dz_m + rise * sw) * up[c]
+                      for c in range(3))
+            a, b = lens[s]
+            v = M._v_sub(W, S0)
+            d = min(max(_len(v), abs(a - b) + 1e-4), a + b - 1e-4)
+            u = _norm(v)
+            W = M._v_add(S0, tuple(c * d for c in u))
+            pole = tuple(-front[c] * math.cos(o) + sign * left[c] * math.sin(o) for c in range(3))
+            p = _norm(M._v_sub(pole, tuple(c * M._v_dot(pole, u) for c in u)))
+            x = (a * a - b * b + d * d) / (2.0 * d)
+            h = math.sqrt(max(a * a - x * x, 0.0))
+            E = tuple(S0[c] + x * u[c] + h * p[c] for c in range(3))
+            du = rot_between(M._v_sub(E0, S0), M._v_sub(E, S0))
+            dl = rot_between(M.q_rotate(du, M._v_sub(W0, E0)), M._v_sub(W, E))
+            new[ua] = m4(S0, M.q_mul(du, mat_q(P[ua])))
+            new[la] = m4(E, M.q_mul(dl, M.q_mul(du, mat_q(P[la]))))
+            new[hd] = m4(W, M.q_mul(dl, M.q_mul(du, mat_q(P[hd]))))
+        for b in (f"{s}{x}" for s in SIDES for x in ARM):
+            loc, q = basis_of(skel, new, b)
+            if b in out["loc"]:
+                out["loc"][b][f] = loc
+            out["rot"][b][f] = M.q_hemi(q, clip["rot"][b][f])
+    return out, {"side_m": side_m, "front_m": front_m, "dz_m": dz_m, "swing_m": swing_m, "rise": rise,
+                 "out_deg": out_deg, **arm_carriage(skel, out)}
+
+
+def arm_carriage(skel: dict, clip: dict) -> dict:
+    """The arms' carriage numbers (P4), per side: the elbow bend (mean, least, most), the hand's least distance from
+    the torso axis (`hand_clearance`), its least distance outward from the trunk's midline plane (negative: it
+    crossed), the wrist's height over the waist (the Spine's head; least, most) and its place in front of it (least,
+    most), the elbow's least distance from the torso axis, m."""
+    skel = prepare(skel)
+    T = frames(clip)
+    hands = hand_clearance(skel, clip)
+    elbows = elbow_bend(skel, clip)
+    out = {}
+    for s, sign in (("Left", 1.0), ("Right", -1.0)):
+        mid, hz, hf, el = [], [], [], []
+        for f in range(T):
+            P = fk(skel, clip, f)
+            front, left, up = _body_axes(skel, P)
+            waist, W, E = pos(P["Spine"]), pos(P[f"{s}Hand"]), pos(P[f"{s}LowerArm"])
+            r = M._v_sub(W, waist)
+            mid.append(sign * M._v_dot(r, left))
+            hz.append(M._v_dot(r, up))
+            hf.append(M._v_dot(r, front))
+            a, b = pos(P["Hips"]), pos(P["Neck"])
+            ab = M._v_sub(b, a)
+            t = max(0.0, min(1.0, M._v_dot(M._v_sub(E, a), ab) / max(M._v_dot(ab, ab), 1e-12)))
+            el.append(_len(M._v_sub(E, M._v_add(a, tuple(c * t for c in ab)))))
+        out[s] = {"elbow_deg": elbows[s], "hand_axis_m": hands[s], "midline_m": round(min(mid), 3),
+                  "wrist_dz_m": [round(min(hz), 3), round(max(hz), 3)],
+                  "wrist_front_m": [round(min(hf), 3), round(max(hf), 3)], "elbow_axis_m": round(min(el), 3)}
+    return out
