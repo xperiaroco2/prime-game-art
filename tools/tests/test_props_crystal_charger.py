@@ -137,8 +137,12 @@ class ChargerAsset(unittest.TestCase):
         self.assertGreaterEqual(c["ring_turn"]["wall_min_cm"], 1.9)
         self.assertEqual(r["gltf_validator"]["numErrors"], 0)
         self.assertLess(r["mesh"]["triangles"], 45000)
-        # the depth a player's stand counts from: the pass behind them was measured at 1.04 m (2.17 m free, pass_m 1.6)
-        self.assertLessEqual(r["mesh"]["size_cm"]["d"][1], 106.0)
+        # the depth a player's stand counts from: ship.toml's renewer spots' depth_m (fix1: 1.053 m), which the layout's
+        # stand and pass checks use; a deeper charger would stand the player inside its pads
+        spots = {s["id"]: s for s in tomllib.loads((common.ROOT / "layouts" / "ship" / "ship.toml")
+                                                   .read_text(encoding="utf-8"))["stations"]["spot"]}
+        self.assertLessEqual(r["mesh"]["size_cm"]["d"][1], spots["renewer_e"]["depth_m"] * 100)
+        self.assertLessEqual(r["mesh"]["size_cm"]["d"][1], spots["renewer_w"]["depth_m"] * 100)
 
     def test_look_files(self) -> None:
         if not (EXPORT / "charger.gd").is_file():
