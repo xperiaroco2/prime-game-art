@@ -1,9 +1,9 @@
 {
   "asset": "start_console",
-  "built_by": "tools/blender/console_run.py --tag spinup1 --asset assets/prop/start_console",
+  "built_by": "tools/blender/console_run.py --tag spinup2 --asset assets/prop/start_console",
   "mesh": {
-    "triangles": 58217,
-    "vertices": 32609,
+    "triangles": 58555,
+    "vertices": 33045,
     "triangles_by_material": {
       "console_graphite": 7310,
       "console_bronze": 2112,
@@ -14,9 +14,9 @@
       "console_holo_line": 20940,
       "console_holo_shell": 14639,
       "console_lamp": 800,
-      "console_holo_turbine": 6798,
-      "console_holo_wire": 3092,
-      "console_holo_ring": 300,
+      "console_holo_turbine": 6804,
+      "console_holo_wire": 3124,
+      "console_holo_ring": 600,
       "console_holo_digit": 56
     },
     "triangles_by_part": {
@@ -38,9 +38,9 @@
       "holo_lines": 20940,
       "holo_shell": 14643,
       "holo_lamps": 800,
-      "holo_turbines": 6798,
-      "holo_wiring": 3092,
-      "holo_ring": 300,
+      "holo_turbines": 6804,
+      "holo_wiring": 3124,
+      "holo_ring": 600,
       "holo_digits": 56
     },
     "hologram": {
@@ -72,16 +72,16 @@
         "shell": 14643,
         "lamps": 800,
         "turbines": 5880,
-        "fans": 918,
-        "wiring": 3092,
-        "ring": 300,
+        "fans": 924,
+        "wiring": 3124,
+        "ring": 600,
         "digits": 56
       }
     },
     "size_m": [
       1.6002,
       1.4721,
-      2.17
+      2.285
     ],
     "pedestal_size_m": [
       1.1939,
@@ -226,15 +226,27 @@
     "ring": {
       "radius_cm": 27.24,
       "height_cm": 4.59,
-      "dashes": 30
+      "built_height_cm": 9.18,
+      "band_top": 0.5,
+      "dashes": 30,
+      "deck_ring_cm": [
+        44.0,
+        108.05,
+        46.9,
+        113.0
+      ],
+      "triangles": {
+        "band": 300,
+        "deck": 300
+      }
     },
     "countdown": {
       "centre_cm": [
         0.0,
         0.0,
-        202.0
+        206.0
       ],
-      "digit_h_cm": 30.0,
+      "digit_h_cm": 45.0,
       "segments": "abcdefg"
     },
     "order": [
@@ -247,7 +259,21 @@
       "vent_w",
       "vent_e",
       "bus"
-    ]
+    ],
+    "fx": {
+      "w0_m": 0.005,
+      "spread": 0.3,
+      "pillar_h_cm": 16.0,
+      "glow_uv": [
+        7.0,
+        200.0
+      ],
+      "sprite_u": -5.0,
+      "pillar_u": [
+        -3.0,
+        -4.0
+      ]
+    }
   },
   "states": {
     "idle": "console.gd set_state(look, \"idle\"): set_passed(look, 1), set_lit(look, -1)",
@@ -264,10 +290,10 @@
   },
   "godot_cost": {
     "draw_calls_console": 13,
-    "gpu_ms_console": 0.11,
-    "gpu_ms_with": 0.673,
+    "gpu_ms_console": 0.112,
+    "gpu_ms_with": 0.675,
     "gpu_ms_without": 0.563,
     "view": "1280x720, eye 1.6 m, 2.1 m away"
   },
-  "review": "<raw>/start-console/spinup1/godot/sheet.png"
+  "review": "<raw>/start-console/spinup2/godot/sheet.png"
 }
