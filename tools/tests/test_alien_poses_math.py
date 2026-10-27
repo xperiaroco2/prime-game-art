@@ -126,6 +126,62 @@ class RigAndLayers(unittest.TestCase):
         self.assertEqual(S.frames(clip), 2)
 
 
+class Silhouettes(unittest.TestCase):
+    def test_mask_diff_and_flip(self):
+        a = [0b1100, 0b1100]
+        self.assertEqual(A.mask_diff(a, a), 0.0)
+        self.assertEqual(A.mask_diff(a, [0b0011, 0b0011]), 1.0)
+        self.assertAlmostEqual(A.mask_diff(a, [0b1000, 0b1000]), 0.5)
+        self.assertEqual(A.hflip([0b1100, 0b0001], 4), [0b0011, 0b1000])
+        self.assertEqual(A.mask_diff([0], [0]), 0.0)
+
+    def test_table_finds_the_least_distinct_parts(self):
+        # legs L1, L2 differ in one pixel of four; arms A1, A2 differ fully; L1's right view is A's left mirrored
+        m = {}
+        for lg, base in (("L1", 0b1111), ("L2", 0b1110)):
+            for am, top in (("A1", 0b1000), ("A2", 0b0001)):
+                for face in A.FACINGS:
+                    m[(lg, am, face)] = [top, base]
+        m[("L1", "A1", "right")] = A.hflip(m[("L1", "A1", "left")], 4)
+        t = A.silhouette_table(m, ["L1", "L2"], ["A1", "A2"], 4, lopsided=("A1",))
+        self.assertEqual(t["legs"]["front"][0]["a"], "L1")
+        self.assertAlmostEqual(t["legs"]["front"][0]["min"], 0.2)
+        self.assertGreater(t["arms"]["front"][0]["min"], 0.3)
+        self.assertEqual(t["lr"]["L1+A1"]["diff"], 0.0)
+        self.assertTrue(t["lr"]["L1+A1"]["lopsided"])
+        self.assertGreater(t["lr"]["L2+A2"]["diff"], 0.0)
+
+
+class GlbClips(unittest.TestCase):
+    def _glb(self, path, values):
+        import struct
+        times = struct.pack("<2f", 0.0, 1.0)
+        vals = struct.pack("<8f", *values)
+        bn = times + vals
+        js = {"asset": {"version": "2.0"}, "nodes": [{"name": "Hips"}], "buffers": [{"byteLength": len(bn)}],
+              "bufferViews": [{"buffer": 0, "byteOffset": 0, "byteLength": 8},
+                              {"buffer": 0, "byteOffset": 8, "byteLength": 32}],
+              "accessors": [{"bufferView": 0, "componentType": 5126, "count": 2, "type": "SCALAR"},
+                            {"bufferView": 1, "componentType": 5126, "count": 2, "type": "VEC4"}],
+              "animations": [{"name": "Idle", "samplers": [{"input": 0, "output": 1}],
+                              "channels": [{"sampler": 0, "target": {"node": 0, "path": "rotation"}}]}]}
+        j = json.dumps(js).encode()
+        j += b" " * (-len(j) % 4)
+        body = struct.pack("<I4s", len(j), b"JSON") + j + struct.pack("<I4s", len(bn), b"BIN\0") + bn
+        Path(path).write_bytes(struct.pack("<4sII", b"glTF", 2, 12 + len(body)) + body)
+
+    def test_same_keys_same_hash_and_a_change_shows(self):
+        import tempfile
+        import alien_poses as AP
+        with tempfile.TemporaryDirectory() as d:
+            self._glb(Path(d) / "a.glb", [0, 0, 0, 1, 0, 0, 0, 1])
+            self._glb(Path(d) / "b.glb", [0, 0, 0, 1, 0, 0, 0, 1])
+            self._glb(Path(d) / "c.glb", [0, 0, 0, 1, 0, 0, 0.1, 1])
+            a, b, c = (AP.glb_clips(Path(d) / f"{k}.glb") for k in "abc")
+        self.assertEqual(a, b)
+        self.assertNotEqual(a["Idle"], c["Idle"])
+
+
 @unittest.skipUnless(DUMP.is_file(), "the s1 skin dump is not on this machine")
 class OnTheChameleon(unittest.TestCase):
     @classmethod
