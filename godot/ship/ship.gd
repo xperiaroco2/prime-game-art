@@ -68,10 +68,12 @@ const METAL_KEYS: Array = ["metallic", "roughness", "grain", "seams", "scratches
 ## gills step 2 (art #263): the gills' bronze is the stations' shared bronze, console.gd's `bronze` on
 ## console_metal.gdshader (its metallic, roughness, wear and lift); the crowns a little darker, the lit chamfers its
 ## worn colour as base, smoother. By glTF material name: [base sRGB, metallic, roughness, wear, lift].
+## gills step 3: the faces a darker, richer bronze (more metal, less lift: they mirror the throat's warm lamps), the
+## lit chamfers brighter and smoother, so the ribs read dark with thin bright edges as in the concept
 const GILL_BRONZE: Dictionary = {
-	"gill_bronze": [Color(0.774, 0.556, 0.349), 0.35, 0.42, 1.0, 0.12],
-	"gill_bronze2": [Color(0.70, 0.50, 0.31), 0.35, 0.46, 1.0, 0.10],
-	"gill_edge": [Color(1.0, 0.854, 0.665), 0.5, 0.26, 0.4, 0.2],
+	"gill_bronze": [Color(0.56, 0.35, 0.18), 0.62, 0.33, 1.0, 0.04],
+	"gill_bronze2": [Color(0.50, 0.31, 0.16), 0.62, 0.36, 1.0, 0.03],
+	"gill_edge": [Color(1.0, 0.82, 0.56), 0.75, 0.18, 0.4, 0.32],
 }
 var _gill_mats: Dictionary = {}
 const LIGHT_CELL_M: float = 1.6

@@ -416,12 +416,12 @@ int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
 int_halo__vent_heat = {c = [1.0, 0.13, 0.0], e = 0.6, l = 0.0}     # station 1: the vents' heat (vents-b3: a deep red-orange, b2's read peach)
 int_halo__vent_seam = {c = [1.0, 0.13, 0.0], l = 0.0}             # the blades' lit seams, the heat's colour (dark calm: vent_anim.gd, ship.py VENT_STATES)
-int_cyan__vent_cool = {c = [0.0, 0.5, 1.0], e = 1.0, l = 0.0}       # station 1: the vents' calm glow behind the slats (hidden for the problem; vents-b2: strength 3, its own well lights, vent_glow.gd)
+int_cyan__vent_cool = {c = [0.0, 0.46, 1.0], e = 0.8, l = 0.0}      # station 1: the vents' calm glow behind the slats (hidden for the problem; vents-b2: strength 3, its own well lights, vent_glow.gd; gills step 3: deeper, under the bloom's white)
 vent_b_bronze = {v = 1.55}                                           # the vents' bronze, lifted in the night light (vents-b3: darker, patinated; the b3 colour at 1.25 read near black)
 vent_b_bronze2 = {v = 1.55}                                          # vents-b3: the frame's second panel tone
 vent_b_edge = {v = 1.0}                                              # the vents' chamfers (vents-b3: duller, no blown highlights)
 # the vents' look step (vents-a4): each light its own clean piece; they glow and light nothing
-glow_cyan__vent_strip = {c = [0.0, 0.62, 1.0], e = 0.6, l = 0.0}     # the frame's strips (vents-b3: a saturated cyan)
+glow_cyan__vent_strip = {c = [0.0, 0.55, 1.0], e = 0.5, l = 0.0}     # the frame's strips (vents-b3: a saturated cyan; gills step 3: the slits' jambs, deeper)
 glow_cyan__vent_hand = {c = [0.0, 0.62, 1.0], e = 0.7, l = 0.0}      # the scanner's hand outline (vents-b3: neon cyan on the black screen)
 
 glow_amber__vent_bar = {c = [1.0, 0.36, 0.0], e = 0.9, l = 0.0}      # the light bar's amber (vents-b2: saturated, past the glow threshold)
