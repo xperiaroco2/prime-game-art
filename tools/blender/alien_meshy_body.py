@@ -27,6 +27,11 @@ M1b (art #196), each only when its key is in the target file (`axolotl_m1b.toml`
    and the hand weighted afresh: a finger's vertices by its own chain only, the palm by the chains' lines.
 10. `bends`: the joints' weights replaced by rings across each joint (the child's share a smoothstep along the
    child bone), faded out at the band's ends and the limb's radius.
+M1c (art #196, `axolotl_m1c.toml`: M1b's keys and these; M1's and M1b's files have none):
+8b. `notch`: the knee's inner notch found by its concavity in a box (each side) and smoothed about it.
+9b. `fingers.thumb_falloff`: the palm's share for the thumb by its distance from the thumb's line alone (a soft
+   thenar into the palm); `fingers.base_band` / `base_smooth`: the free fingers' vertices near their web smoothed with
+   the palm (the ring's strip and the middle's gap at their bases).
 --from-body <alien_body.blend>: steps 6 to 10 only, on a body this script built before (M1's).
 """
 from __future__ import annotations
@@ -274,6 +279,41 @@ def fix_smooth_rest(mb, cfg, rep):
     set_co(mb.data, co2)
 
 
+def fix_notch(mb, cfg, rep):
+    """M1c: the knee's notch found where it is (the most concave vertex in the box, each side: its offset from its
+    neighbours' mean along its normal, smoothed depth_smooth times; only vertices whose normal faces the midline by at
+    least `medial`) and smoothed in a soft sphere about it (box [|x|0, |x|1, y0, y1, z0, z1], r, passes; rest
+    pose)."""
+    co = get_co(mb.data)
+    E = edge_array(mb.data)
+    nb = np.zeros_like(co)
+    deg = np.bincount(E.ravel(), minlength=len(co)).astype(float)
+    np.add.at(nb, E[:, 0], co[E[:, 1]])
+    np.add.at(nb, E[:, 1], co[E[:, 0]])
+    nb /= np.maximum(deg, 1)[:, None]
+    nrm = np.array([v.normal for v in mb.data.vertices])
+    depth = ((nb - co) * nrm).sum(1)  # > 0: the vertex lies inward of its neighbours (a dent)
+    for _ in range(cfg.get("depth_smooth", 2)):  # one decimated vertex is noise: the dent's mean over its ring
+        avg = np.zeros(len(co))
+        np.add.at(avg, E[:, 0], depth[E[:, 1]])
+        np.add.at(avg, E[:, 1], depth[E[:, 0]])
+        depth = 0.5 * depth + 0.5 * avg / np.maximum(deg, 1)
+    x0, x1, y0, y1, z0, z1 = cfg["box"]
+    w, npv, found = np.zeros(len(co)), np.zeros(len(co), dtype=int), []
+    for s in (1.0, -1.0):
+        inb = np.where((co[:, 0] * s >= x0) & (co[:, 0] * s <= x1) & (co[:, 1] >= y0) & (co[:, 1] <= y1)
+                       & (co[:, 2] >= z0) & (co[:, 2] <= z1) & (nrm[:, 0] * s <= -cfg.get("medial", 0.0)))[0]
+        c = np.array(F.notch_pick([(float(depth[i]), tuple(co[i])) for i in inb]))
+        found.append([round(float(v), 4) for v in c] + [round(float(depth[inb].max()) * 1000, 2)])
+        ws = np.array([M.soft_sphere(p, c, cfg["r"]) for p in co])
+        npv = np.where(ws > 0, np.maximum(npv, cfg["passes"]), npv)
+        w = np.maximum(w, ws)
+    co2 = laplace(co, E, w, npv)
+    rep["notch"] = {"found_xyz_depth_mm": found, "moved_mm": round(float(np.linalg.norm(co2 - co, axis=1).max()) * 1000, 2)}
+    set_co(mb.data, co2)
+    log(f"notch {rep['notch']}")
+
+
 def finger_slices(pts, seg, c, d, step):
     """Cross-sections of a finger across its line (c, d) every `step`: the points where its edges (seg: [k, 2, 3],
     the finger's own edges) cross each plane; [(s, centre xyz, thickness along the palm normal)]. The decimated mesh's
@@ -361,7 +401,7 @@ def fix_fingers(arm, mb, cfg, rep, W, names):
                 heads = [c + s1 * d, c + s2 * d, c + s3 * d]
                 half = cfg["half"]
             tails = heads[1:] + [c + end * d]
-            chains[f] = {"idx": idx, "c": c, "d": d, "js": js, "half": half, "bones": bn,
+            chains[f] = {"idx": idx, "c": c, "d": d, "js": js, "half": half, "bones": bn, "s_base": s_base,
                          "sigma": cfg["thumb_sigma"] if f == "Thumb" else cfg["sigma"]}
             for n, h, t_ in zip(bn, heads, tails):
                 plan[n] = (h, t_, np.array(arm.data.bones[n].matrix_local.to_3x3().col[2]))
@@ -384,6 +424,13 @@ def fix_fingers(arm, mb, cfg, rep, W, names):
             g = np.array([F.ownership(F.off_line(p, chains[f]["c"], chains[f]["d"]), chains[f]["sigma"]) for f in fs])
             if i in lab:
                 g = np.ones(1)
+            elif "thumb_falloff" in cfg:  # M1c: the thumb's share first, by its distance alone (a soft thenar)
+                t = F.thumb_share(F.off_line(p, chains["Thumb"]["c"], chains["Thumb"]["d"]), cfg["thumb_falloff"])
+                fs = [f for f in chains if f != "Thumb"]
+                g_o, h = F.split_palm([F.ownership(F.off_line(p, chains[f]["c"], chains[f]["d"]), chains[f]["sigma"])
+                                       for f in fs], F.ownership(cfg["palm_r"], 0.0), t)
+                fs, g = fs + ["Thumb"], np.array(g_o + [t])
+                new[gi[f"{side}Hand"]] += h
             else:  # the palm's own pull (pure Hand): far from every line the hand holds it
                 g = g / (g.sum() + F.ownership(cfg["palm_r"], 0.0))
                 new[gi[f"{side}Hand"]] += 1.0 - g.sum()
@@ -394,14 +441,19 @@ def fix_fingers(arm, mb, cfg, rep, W, names):
                     new[gi[n]] += o * w_
             W[i, hgroups] = 0.0
             W[i] += new * tot
-        # the palm's weights smoothed along its edges (the free fingers' held): no step at the webs
-        palm = np.array([i for i in hand if i not in lab and W[i, hgroups].sum() > 1e-6])
+        # the palm's weights smoothed along its edges (the free fingers' held): no step at the webs; M1c: the free
+        # fingers' vertices within base_band of their web smoothed with it (the ring's strip, the middle's gap)
+        band = cfg.get("base_band", 0.0)
+        base = {i for i in lab if F.in_base_band(F.along(co[i], chains[lab[i]]["c"], chains[lab[i]]["d"]),
+                                                 chains[lab[i]]["s_base"], band)} if band > 0 else set()
+        out[f"{side}_base_band_verts"] = len(base)
+        palm = np.array([i for i in hand if (i not in lab or i in base) and W[i, hgroups].sum() > 1e-6])
         on = np.zeros(len(co), dtype=bool)
         on[palm] = True
         e = E[on[E[:, 0]] | on[E[:, 1]]]
         deg = np.maximum(np.bincount(e.ravel(), minlength=len(co)), 1)[:, None]
         tot = W[:, hgroups].sum(1, keepdims=True)
-        for _ in range(cfg["palm_smooth"]):
+        for _ in range(cfg.get("base_smooth", cfg["palm_smooth"])):
             Wh = W[:, hgroups]
             avg = np.zeros_like(Wh)
             np.add.at(avg, e[:, 0], Wh[e[:, 1]])
@@ -464,7 +516,7 @@ def fix_bends(arm, mb, cfg, W, names, rep):
 
 
 def fixes(arm, mb, T, rep):
-    if not any(k in T for k in M.KEYS_M1B):
+    if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C):
         return
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
@@ -474,6 +526,8 @@ def fixes(arm, mb, T, rep):
         fix_arms(arm, mb, T["arm_thicken"], rep)
     if "smooth_rest" in T:
         fix_smooth_rest(mb, T["smooth_rest"], rep)
+    if "notch" in T:
+        fix_notch(mb, T["notch"], rep)
     W, names = read_weights(mb)
     if "fingers" in T:
         fix_fingers(arm, mb, T["fingers"], rep, W, names)

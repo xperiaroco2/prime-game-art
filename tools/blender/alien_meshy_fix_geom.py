@@ -190,3 +190,30 @@ def profile(stations: list[list[float]], x: float) -> float:
         if x <= x1:
             return f0 + (f1 - f0) * (x - x0) / (x1 - x0)
     return stations[-1][1]
+
+
+# M1c (art #196): the thumb's base, the fingers' bases and the knee's notch.
+
+def thumb_share(dist: float, falloff: list[float]) -> float:
+    """A palm vertex's share for the thumb's chain by its distance from the thumb's line: 1 inside falloff[0], a
+    smoothstep down to 0 at falloff[1] (the thenar follows the metacarpal softly into the palm, no step to stretch)."""
+    return 1.0 - sstep(falloff[0], falloff[1], dist)
+
+
+def split_palm(g_others: list[float], palm_pull: float, t: float) -> tuple[list[float], float]:
+    """The palm vertex's ownership with the thumb's share t taken first: the other chains' pulls normalised against
+    the palm's own pull, scaled by 1 - t; returns (their shares, the pure Hand share). The shares and t sum to 1 with
+    the Hand's."""
+    tot = sum(g_others) + palm_pull
+    rest = [(1.0 - t) * g / tot for g in g_others]
+    return rest, 1.0 - t - sum(rest)
+
+
+def in_base_band(s: float, s_base: float, band: float) -> bool:
+    """A free finger's vertex within `band` of its web (s along its line): it joins the palm's smoothing."""
+    return s < s_base + band
+
+
+def notch_pick(cands: list[tuple[float, tuple]]) -> tuple:
+    """The notch's centre: the candidate (depth, xyz) with the deepest inward offset from its neighbours' mean."""
+    return max(cands, key=lambda c: c[0])[1]

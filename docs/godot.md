@@ -3171,6 +3171,17 @@ a time, by visibility.
     (`FINGER_LENS`), `--bends` a leg-back pose (`hip_back`).
   - Linear blend skinning still pinches a 110 to 115 degree elbow or knee to a point on the bend's inside whatever
     the ring's width (M1b's bends sheet): the fix needs helper bones or corrective shapes, outside the contract.
+  - M1c (output under `bodies_a/m1c/`): `--targets alien_meshy_targets/axolotl_m1c.toml --from-body
+    m1/body/alien_body.blend`, M1b's keys and numbers with M1c's on top: the knee's notch found by its concavity in a
+    box and smoothed there (`notch`), the palm's share for the thumb by its distance from the thumb's line alone
+    (`fingers.thumb_falloff`) and the fingers' bases smoothed with the palm (`fingers.base_band`, `base_smooth`); M1's
+    and M1b's files have none of them. `alien_body_refit_review.py --only fingers --finger-curl D --thumb-curl a,b,c`
+    renders the fingers sheet alone at other angles. `alien_body_clip_bends.py --blend <char> --clips <loco build
+    char.blend> --out DIR` plays the game's clips (the loco build's actions without `__`, TM_ or MC_) on a character
+    and measures per clip the deepest knee, elbow, hip, shoulder and finger frames (`clip_bends.json`), then renders
+    each joint's deepest frame from the bend's inside and in profile (`clip_frames.png`). The game's deepest (M1b's
+    rig, the f3 build): knee 132 degrees (Jump_Start), hip 111 (Jump_Land), elbow 108 (Talk_Upper), shoulder 77
+    (Jog_Bwd_Right), the thumb's metacarpal 52 (the crouch clips); the fingers curl together (at most 50 degrees).
 - **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in

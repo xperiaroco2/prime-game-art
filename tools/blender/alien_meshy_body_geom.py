@@ -17,12 +17,15 @@ KEYS = {"name", "meshy", "rig_body", "wrap_z", "arm_x", "arm_band_z", "arm_blend
         "body_tris", "smooth", "bust", "keep_hands", "smooth_after", "weight_smooth"}
 # M1b (art #196): the fixes, each optional (alien_meshy_body.py steps 6 to 10; M1's file has none)
 KEYS_M1B = {"degenerate", "arm_thicken", "smooth_rest", "fingers", "bends"}
+# M1c (art #196): the knee notch found by its concavity (`notch`); the fingers' M1c keys live inside `fingers`
+KEYS_M1C = {"notch"}
+FINGER_KEYS_M1C = {"thumb_falloff", "base_band", "base_smooth"}
 
 
 def load(path: str | Path) -> dict:
     """A Meshy body target file (alien_meshy_targets/*.toml), its keys checked."""
     d = tomllib.loads(Path(path).read_text(encoding="utf-8"))
-    bad = set(d) - KEYS - KEYS_M1B
+    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C
     if bad:
         raise ValueError(f"unknown keys {sorted(bad)}")
     missing = KEYS - set(d)

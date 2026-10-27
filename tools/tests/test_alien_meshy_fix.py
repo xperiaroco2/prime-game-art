@@ -131,8 +131,63 @@ class Targets(unittest.TestCase):
     def test_m1_has_no_fix(self):
         self.assertFalse(set(M.load(M.TARGETS / "axolotl_m1.toml")) & M.KEYS_M1B)
         src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
-        self.assertIn("if not any(k in T for k in M.KEYS_M1B):", src)
+        self.assertIn("if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C):", src)
         self.assertIn('ap.add_argument("--from-body", default=""', src)
+
+
+class M1c(unittest.TestCase):
+    """M1c: the thumb's soft base, the fingers' base band, the notch's pick and her M1c file."""
+
+    def test_thumb_share(self):
+        f = [0.006, 0.030]
+        self.assertEqual(F.thumb_share(0.0, f), 1.0)
+        self.assertEqual(F.thumb_share(0.006, f), 1.0)
+        self.assertEqual(F.thumb_share(0.030, f), 0.0)
+        xs = [F.thumb_share(0.006 + k * 0.001, f) for k in range(25)]
+        self.assertEqual(xs, sorted(xs, reverse=True))  # falls off monotonically
+        steps = [a - b for a, b in zip(xs, xs[1:])]
+        self.assertLess(max(steps), 0.07)  # no step: at most 7 % per mm
+
+    def test_split_palm(self):
+        rest, h = F.split_palm([2.0, 1.0], 1.0, 0.25)
+        self.assertAlmostEqual(sum(rest) + h + 0.25, 1.0)
+        self.assertAlmostEqual(rest[0], 0.75 * 0.5)
+        self.assertAlmostEqual(h, 0.75 * 0.25)
+        rest, h = F.split_palm([5.0], 1.0, 1.0)  # on the thumb's line: all the thumb's
+        self.assertEqual((rest, h), ([0.0], 0.0))
+
+    def test_base_band(self):
+        self.assertTrue(F.in_base_band(0.010, 0.008, 0.006))
+        self.assertFalse(F.in_base_band(0.015, 0.008, 0.006))
+
+    def test_notch_pick(self):
+        self.assertEqual(F.notch_pick([(0.1, (0, 0, 1)), (0.4, (1, 0, 0)), (-0.2, (0, 1, 0))]), (1, 0, 0))
+
+    def test_m1c_file(self):
+        t = M.load(M.TARGETS / "axolotl_m1c.toml")
+        b = M.load(M.TARGETS / "axolotl_m1b.toml")
+        self.assertEqual(t["name"], "axolotl_m1c")
+        self.assertIn("notch", t)
+        self.assertEqual(set(t["fingers"]) - set(b["fingers"]), M.FINGER_KEYS_M1C)
+        lo, hi = t["fingers"]["thumb_falloff"]
+        self.assertLess(lo, hi)
+        x0, x1, y0, y1, z0, z1 = t["notch"]["box"]
+        self.assertTrue(x0 < x1 and y0 < y1 and z0 < 0.45 < z1)  # the notch at about z 0.45 (M1b's close-ups)
+        for k in set(b) - {"name", "fingers"}:  # M1b's numbers, M1c's only on top
+            self.assertEqual(t[k], b[k], k)
+        for k, v in b["fingers"].items():
+            if k not in ("thumb_half", "sigma"):
+                self.assertEqual(t["fingers"][k], v, k)
+
+    def test_m1_m1b_have_no_m1c(self):
+        for n in ("axolotl_m1.toml", "axolotl_m1b.toml"):
+            t = M.load(M.TARGETS / n)
+            self.assertFalse(set(t) & M.KEYS_M1C, n)
+            self.assertFalse(set(t.get("fingers", {})) & M.FINGER_KEYS_M1C, n)
+
+    def test_clip_filter(self):
+        src = (BL / "alien_body_clip_bends.py").read_text(encoding="utf-8")
+        self.assertIn('return "__" not in n and not n.startswith(("TM_", "MC_"))', src)
 
 
 if __name__ == "__main__":
