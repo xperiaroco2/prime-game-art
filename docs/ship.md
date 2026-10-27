@@ -1376,7 +1376,35 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
     28 x 24 grid. Every well point keeps 17 cm of hull or stays inside the old wall's 20 cm body.
   - *Tests:* `tools/tests/test_ship_gills.py` (pure Python): the drawing's numbers, the covers' outline, the mirror,
     the hinges on the cover edges either side, neighbouring covers clear through 0..70 deg, the well inside the hull.
-- **Step 3** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, instead of
+- **The second form pass (gills step 3, 2026-10-27; a variant grid, static, calm).** The manager's verdict on
+  step 2: the covers were flat across their width (nothing glowed from c_close's view), cover and crown read as two
+  parts, and the tone was pale.
+  - *The rib:* `rib_section` is convex across its width: a parabolic front from the edges up to the crest, with the
+    edges `SETBACK` 5 cm behind the crest (at least `EDGE_MIN` 2.5 cm out of the wall). The flanks lean in `UNDERCUT`
+    2 cm to the back, so the groove under each edge shows past it. The crest is `cover_front`: 3 cm proud at the foot,
+    about 11.4 at mid-height, and `TOP_RISE` 6 cm at the top.
+  - *The crown:* the crowns over the four covers are the same rib (`rib_crown_mesh`): the cover's full 30 cm and its
+    6 cm crest at the foot, narrowing 3 cm a side and to a 4 cm crest at `CROWN_TOP`, in `gill_bronze` like the
+    covers. The fifth arch's crown stays flat (the timing bar and the lamp sit on it).
+  - *The grooves:* a groove 5.5 cm wide and 1.2 cm deep in the band under every rib edge (five: cover 1's mouth edge
+    and the gap after each cover; `groove_u`). Each has its cyan strip in the `<id>_cool` mesh (hidden for the
+    problem) and its red `<id>_seam<k>` (k 1..5 from the mouth) behind the cyan. `vent_glow.gd` adds 3 small lights
+    per groove 3 cm in front of its floor (`GAP_LOOK`, energy 0.45, range 0.35 m), on the inside layer only.
+  - *Tone:* `GILL_BRONZE` darker and more metallic (base (0.56, 0.35, 0.18), metallic 0.62, roughness 0.33, lift
+    0.04); the chamfers brighter and smoother. The cyan is deeper: `int_cyan__vent_cool` (0, 0.46, 1) at e 0.8, the
+    jambs (0, 0.55, 1) at e 0.5, the slit lights (0, 0.48, 1) at energy 1.0, range 0.6 m, 3 cm deeper than the jambs (`SLIT_IN_M`: from the cut
+    they lit the convex covers' fronts through the covers).
+  - *The grid* (`SHIP_GILLS_HINGE`, `SHIP_GILLS_CALM` or the piece's `args.calm`): V1 hall hinge 16 deg, V2 hall hinge
+    22 deg, V3 mouth hinge 16 deg (`<raw>/ship/v5/gills/r4/`). **V1 is the default.** The hall hinge shows the cyan
+    from the ramp and from the throat's middle; the mouth hinge shows it from c_close's view and from the hall. No
+    variant shows the cyan from every view: at 16 deg each cover's face hides the gap on its hinge side.
+  - *Deviations from the drawing:* the crest's bow and its 6 cm top (the drawing: 3 cm proud), the edges set back
+    5 cm, the flanks undercut 2 cm, the crowns 30 cm wide at their foot (the drawing: 3 and 6 cm insets), the five
+    grooves in the band.
+  - *The animation's rule:* neighbouring covers clear each other while they stay within `NEIGHBOUR_DEG` (20 deg)
+    of each other; from 22 deg a rib's deep middle near its hinge swings into its shut neighbour's edge
+    (`test_covers_clear_at_mixed_angles`).
+- **Step 4** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, instead of
   the blades' `rotation.x`), the seams and jambs red for the problem, the lamp, the bar's marker.
 
 ## The export (art #335)
