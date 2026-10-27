@@ -107,7 +107,7 @@ sources = ["tools/blender/alien_loco.py", "tools/blender/alien_loco_math.py", "t
 tests = ["test_alien_loco_*", "test_alien_stride_*", "test_alien_headlook_*"]  # F3: the head-look check runs on the loco build
 
 [area.alien_poses]
-sources = ["tools/blender/alien_poses.py", "tools/blender/alien_pose_math.py", "tools/blender/anim_sets/alien_poses.toml"]  # the photo poses on the alien (#196); before light's alien_*
+sources = ["tools/blender/alien_poses.py", "tools/blender/alien_pose_math.py", "tools/blender/anim_sets/alien_poses.toml", "tools/blender/alien_poses_run.py", "godot/alien/pose_layers.gd", "godot/alien/pose_layers_check.gd", "godot/alien/pose_shots.gd"]  # the photo poses on the alien (#196); before light's alien_*
 tests = ["test_alien_poses_*"]
 
 [area.alien_ttm]
