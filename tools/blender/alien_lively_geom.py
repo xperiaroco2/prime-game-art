@@ -410,3 +410,147 @@ def png_bytes(width: int, height: int, rgb: bytes) -> bytes:
 
 def write_png(path: Path, width: int, height: int, rgb: bytes) -> None:
     Path(path).write_bytes(png_bytes(width, height, rgb))
+
+
+# R1: the eye rim cut along one smooth curve (alien_lively_build.rim_cut). A cut piece under this share of its parent
+# triangle's area is a sliver: the cut is snapped through the nearest corner instead (no vertex moves).
+RIM_CUT_MIN_SHARE = 0.10
+
+
+def _fourier_row(p: float, order: int) -> list[float]:
+    row = [1.0]
+    for k in range(1, order + 1):
+        row += [math.cos(k * p), math.sin(k * p)]
+    return row
+
+
+def fourier_eval(coef, p: float) -> float:
+    """a0 + sum over k of a_k cos(k p) + b_k sin(k p), the coefficients as fourier_fit returns them."""
+    return sum(c * x for c, x in zip(coef, _fourier_row(p, (len(coef) - 1) // 2)))
+
+
+def fourier_fit(phi, val, order: int) -> list[float]:
+    """The least squares periodic fit of val against the angle phi up to `order` (a0, a1, b1, ..., aK, bK): the
+    normal equations solved by Gaussian elimination with partial pivoting. Needs more points than 2 order + 1."""
+    m = 2 * order + 1
+    if len(phi) <= m:
+        raise ValueError(f"{m + 1} points at least for order {order}")
+    A = [[0.0] * (m + 1) for _ in range(m)]
+    for p, v in zip(phi, val):
+        row = _fourier_row(p, order)
+        for i in range(m):
+            ri = row[i]
+            for j in range(m):
+                A[i][j] += ri * row[j]
+            A[i][m] += ri * v
+    for c in range(m):
+        piv = max(range(c, m), key=lambda i: abs(A[i][c]))
+        A[c], A[piv] = A[piv], A[c]
+        if abs(A[c][c]) < 1e-12:
+            raise ValueError("the angles do not span the fit (singular)")
+        for i in range(m):
+            if i != c:
+                f = A[i][c] / A[c][c]
+                A[i] = [a - f * b for a, b in zip(A[i], A[c])]
+    return [A[i][m] / A[i][i] for i in range(m)]
+
+
+def fourier_fit_trimmed(phi, val, order: int, k: float = 3.0, rounds: int = 3) -> tuple[list[float], list[bool]]:
+    """fourier_fit, then `rounds` times refitted without the points whose residual is over k times the median absolute
+    residual (a junction's spur, a stray rim edge). Returns the coefficients and which points the last fit kept."""
+    keep = [True] * len(phi)
+    coef = fourier_fit(phi, val, order)
+    for _ in range(rounds):
+        res = [abs(v - fourier_eval(coef, p)) for p, v in zip(phi, val)]
+        med = sorted(res)[len(res) // 2]
+        new = [x <= max(k * med, 1e-12) for x in res]
+        if new == keep or sum(new) <= 2 * order + 1:
+            break
+        keep = new
+        coef = fourier_fit([p for p, w in zip(phi, keep) if w], [v for v, w in zip(val, keep) if w], order)
+    return coef, keep
+
+
+def cut_triangle(g) -> list[tuple[list, int]]:
+    """A triangle cut along the zero line of a value g given at its three corners (linear over the triangle): the
+    pieces in the parent's winding, each a polygon (3 or 4 refs) and its side (-1 where g < 0, +1 where g > 0, 0 for
+    a triangle all on the line). A ref is ("v", k), corner k, or ("e", k, m, t), the point t of the way from corner k
+    to corner m (g there 0). A corner with g == 0 is on the line: the cut runs through it."""
+    g = [float(x) for x in g]
+    s = [(x > 0) - (x < 0) for x in g]
+    if not any(s):
+        return [([("v", 0), ("v", 1), ("v", 2)], 0)]
+    if all(x >= 0 for x in s) or all(x <= 0 for x in s):
+        return [([("v", 0), ("v", 1), ("v", 2)], max(s) if max(s) > 0 else min(s))]
+
+    def x(k, m):
+        return ("e", k, m, g[k] / (g[k] - g[m]))
+    if 0 in s:  # one corner on the line, the other two on either side: two triangles through it
+        z = s.index(0)
+        b, c = (z + 1) % 3, (z + 2) % 3
+        return [([("v", z), ("v", b), x(b, c)], s[b]), ([("v", z), x(b, c), ("v", c)], s[c])]
+    a = next(k for k in range(3) if s.count(s[k]) == 1)  # the corner alone on its side
+    b, c = (a + 1) % 3, (a + 2) % 3
+    return [([("v", a), x(a, b), x(a, c)], s[a]), ([x(a, b), ("v", b), ("v", c), x(a, c)], s[b])]
+
+
+def replace_accessor(doc: dict, binary: bytearray, i: int, rows, component: int = 5126) -> None:
+    """Accessor i rewritten with new rows (any count): a new tightly packed buffer view appended (float32, or uint32
+    indices with component 5125), its count, and its min and max when it had them. The old view stays unused:
+    compact_buffers drops it."""
+    a = doc["accessors"][i]
+    n = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[a["type"]]
+    flat = [c for r in rows for c in (r if n > 1 else (r,))]
+    if len(flat) % n:
+        raise ValueError(f"rows of {n} expected")
+    fmt = "f" if component == 5126 else "I"
+    payload = struct.pack(f"<{len(flat)}{fmt}", *[float(c) if fmt == "f" else int(c) for c in flat])
+    a["bufferView"] = _append_view(doc, binary, payload, 34963 if component == 5125 else 34962)
+    a["byteOffset"] = 0
+    a["componentType"] = component
+    a["count"] = len(flat) // n
+    a.pop("sparse", None)
+    if "min" in a:  # R2: as stored (float32), so the validator's bounds check matches the bytes
+        vals = struct.unpack(f"<{len(flat)}{fmt}", payload)
+        a["min"] = [min(vals[j::n]) for j in range(n)]
+        a["max"] = [max(vals[j::n]) for j in range(n)]
+
+
+def compact_buffers(doc: dict, binary: bytearray) -> bytearray:
+    """R2: the buffer views no accessor, sparse accessor or image uses dropped (replace_accessor leaves the old ones,
+    the validator's UNUSED_OBJECT and the mesh bytes twice in the GLB), the rest packed in order, 4-byte aligned, and
+    every index into bufferViews renumbered. Returns the new binary (buffer 0's byteLength set)."""
+    used = set()
+    for a in doc.get("accessors", []):
+        if "bufferView" in a:
+            used.add(a["bufferView"])
+        sp = a.get("sparse")
+        if sp:
+            used.add(sp["indices"]["bufferView"])
+            used.add(sp["values"]["bufferView"])
+    for im in doc.get("images", []):
+        if "bufferView" in im:
+            used.add(im["bufferView"])
+    views = doc.get("bufferViews", [])
+    remap, out, kept = {}, bytearray(), []
+    for k in sorted(used):
+        v = dict(views[k])
+        out.extend(bytes(-len(out) % 4))
+        start = v.get("byteOffset", 0)
+        out.extend(binary[start:start + v["byteLength"]])
+        v["byteOffset"] = len(out) - v["byteLength"]
+        remap[k] = len(kept)
+        kept.append(v)
+    doc["bufferViews"] = kept
+    for a in doc.get("accessors", []):
+        if "bufferView" in a:
+            a["bufferView"] = remap[a["bufferView"]]
+        sp = a.get("sparse")
+        if sp:
+            sp["indices"]["bufferView"] = remap[sp["indices"]["bufferView"]]
+            sp["values"]["bufferView"] = remap[sp["values"]["bufferView"]]
+    for im in doc.get("images", []):
+        if "bufferView" in im:
+            im["bufferView"] = remap[im["bufferView"]]
+    doc["buffers"][0]["byteLength"] = len(out)
+    return out

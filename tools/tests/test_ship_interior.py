@@ -33,9 +33,13 @@ class ShipInteriorTest(unittest.TestCase):
 
     def test_every_piece_builds_a_valid_mesh(self) -> None:
         for piece in INTERIOR["pieces"]:
-            parts = getattr(S, piece["builder"])(piece.get("args", {}), SHIP)
+            mod = next(m for m in [S, *S.MODULES] if hasattr(m, piece["builder"]))   # as the harness looks it up
+            parts = getattr(mod, piece["builder"])(piece.get("args", {}), SHIP)
             self.assertTrue(parts, piece["id"])
             for p in parts:
+                if p.get("glb"):   # a part made elsewhere (the vents' Meshy body): its GLB, imported by the harness
+                    self.assertTrue(p["glb"].endswith(".glb"), piece["id"])
+                    continue
                 n = len(p["verts"])
                 self.assertTrue(p["faces"], piece["id"])
                 self.assertTrue(all(0 <= i < n for f in p["faces"] for i in f), piece["id"])

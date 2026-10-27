@@ -58,16 +58,26 @@ def bases(head: str) -> dict:
     return out
 
 
+def eye_mask(lv: Path, static: Path, h: str) -> Path:
+    """The eye mask that goes with the lively build lv: its own when it wrote one (lively.json "mask", the rim cut's
+    repainted mask, art #196 R2), else the static head's."""
+    name = json.loads((lv / "lively.json").read_text(encoding="utf-8")).get("mask")
+    return lv / name if name else static / f"{h}_mask.png"
+
+
 def head_job(h: str, hd: Path, b: dict, slots_job: dict) -> dict:
-    """One head's entry in a Godot job (char_shots.gd, clip_reels.gd): its built character in hd, staged."""
+    """One head's entry in a Godot job (char_shots.gd, clip_reels.gd): its built character in hd, staged; the eye
+    mask and sclera from the character's own lively build (char.json "lively", R2); the uncut static v5 head of the
+    whole-head gate keeps its own mask ("static_mask")."""
     static = PILOT / "static_v5" / h
-    lv = HEADS[h]["lively"]
     char = json.loads((hd / "char.json").read_text(encoding="utf-8"))
+    lv = Path(char["lively"]).parent
     return {
         "char": _godot.stage(hd / f"{h}_char.glb", f"char_{h}"),
         "static": _godot.stage(static / f"{h}_static.glb", f"static_{h}"),
         "lively": str(hd / f"{h}_char_lively.json"), "sclera": str(lv / f"{h}_sclera.png"),
-        "mask": str(static / f"{h}_mask.png"), "detail": str(static / f"{h}_detail.png"),
+        "mask": str(eye_mask(lv, static, h)), "static_mask": str(static / f"{h}_mask.png"),
+        "detail": str(static / f"{h}_detail.png"),
         "plain": str(static / f"{h}_albedo_plain.png"), "accent": str(SLOTS / "maps" / f"{h}_accent.png"),
         "gill": str(SLOTS / "maps" / f"{h}_gill.png"), "body_albedo": str(hd / f"{h}_body_albedo.png"),
         "body_mask": str(hd / f"{h}_body_mask.png"), "body_detail": str(hd / f"{h}_body_detail.png"),
@@ -89,8 +99,16 @@ def main() -> int:
                     "refit route: bodies_a/pilot/refit/alien_body.blend)")
     ap.add_argument("--fix", default="{}", help="B3: JSON render settings after the front isolation sheet "
                     "(shadow_quality 0-5, default 5; taa, angular_deg, sss_scale)")
+    ap.add_argument("--lively", default="", help="E2: head=DIR[,head=DIR]: build on these lively build folders instead"
+                    " of HEADS' (a candidate's look)")
     args = ap.parse_args()
     heads = args.heads.split(",")
+    lively = {h: Path(d) for h, d in (x.split("=", 1) for x in args.lively.split(",") if x)}
+    for h, d in lively.items():  # a mistyped head or folder would build the default look without a word
+        if h not in heads:
+            ap.error(f"--lively {h}: not one of --heads ({','.join(heads)})")
+        if not (d / "lively.json").is_file():
+            ap.error(f"--lively {h}={d}: no lively.json there")
     out = PILOT / args.tag
     shots_out = out / args.shots_sub if args.shots_sub else out
     why = refusal(out, heads, not args.no_build, False) or refusal(shots_out, [], False, not args.no_shots)
@@ -103,14 +121,15 @@ def main() -> int:
     for h in heads:
         hd = out / h
         static = PILOT / "static_v5" / h
-        lv = HEADS[h]["lively"]
+        lv = lively.get(h, HEADS[h]["lively"])
         b = bases(h)
         if not args.no_build:
             hd.mkdir(parents=True, exist_ok=True)
             (hd / "bases.json").write_text(json.dumps(b, indent=1), encoding="utf-8", newline="\n")
             res = blender.run_script("alien_char_build.py", [
                 "--head", h, "--lively", str(lv / f"{h}_lively.glb"), "--lively-json", str(lv / "lively.json"),
-                "--body", str(Path(args.body).resolve()), "--albedo", str(static / f"{h}_albedo.png"), "--mask", str(static / f"{h}_mask.png"),
+                "--body", str(Path(args.body).resolve()), "--albedo", str(static / f"{h}_albedo.png"),
+                "--mask", str(eye_mask(lv, static, h)),
                 "--accent", str(SLOTS / "maps" / f"{h}_accent.png"),
                 "--detail", str(static / f"{h}_detail.png"), "--bases", str(hd / "bases.json"),
                 "--out", str(hd), *(["--clip-edits", str(Path(args.clip_edits).resolve())] if args.clip_edits else [])],

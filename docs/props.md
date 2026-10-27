@@ -475,3 +475,404 @@ concept in four steps, each shown to him before the next.
 Lessons for the next hero prop: shoot 720 px close-ups of every part and give them to a fresh critic before calling a
 step done; decide colours in 3D, not per texel; check a feature that sits in a crease from above and below (the smile
 reads in full from 10 degrees below, mostly its corners from above, where the player usually stands).
+
+## A hero prop from code: the ship engine's energy crystal (art#263)
+
+`assets/prop/energy_crystal/`: the cartridge of the ship's engine (prime-game#1033, the engineer's comment
+6361383461): a faceted energy crystal in a bronze and graphite cap with a hexagonal carry loop. Players pull a spent
+one from its socket, recharge it at a charger and put it back; the sockets and chargers are built later to fit it.
+The concept is prime-game-design's `ideas/ship-components/cartridge-v2/`: `crystal-views.jpg`, the straight views
+of the crystal alone, charged and spent (front, side, top, 3/4), made for this build; `socket-claws.jpg` and
+`charge.jpg` show it in its socket and charger (the spent crystal's cracks there are not wanted). They are copied to
+`<raw>/energy-crystal/ref/`.
+
+**Drawing first, then the model** (the engineer, 2026-10-24: "like engineering drawings at university: the part
+from different sides, in centimetres, everything exact"):
+
+1. **Measure.** `tools/blender/crystal_dims.toml` holds every size in centimetres: the crystal's corners at its top
+   and point rings, the point's length, the body, the shoulder, the skirt, rim, groove, band, windows, notches, dome,
+   disc, lens and the loop's size, bar and depth. They were read off `crystal-views.jpg`'s spent front view (the
+   silhouette's width per pixel row; the charged views glow, which widens them), the cap's plan from its top view and
+   the loop's depth from its side view, scaled so that the whole is 35 cm. The sheet's views disagree in places (its
+   side view draws the band 20 % narrower; its top view puts the windows on the side faces, the other views on the
+   diagonal ones): the front view wins, and the file says so. A hexagon's front-view width is across its corners,
+   an octagon's (a flat to the front) across its flats.
+2. **Build from the numbers.** `tools/blender/crystal_build.py` reads the file and builds every part from it in
+   headless Blender. Before the chamfers it writes `features.json`, the model's own edges (the folds and open
+   edges, each with its faces' normals).
+3. **Draw.** `tools/blender/crystal_drawing.py` (plain Python) projects those edges into the front, side and top
+   views and dimensions them from the same file: `drawing/drawing.svg` on paper, `drawing_concept.svg` over the
+   concept's views and `drawing_model.svg` over the model's orthographic renders. The frames match
+   `crystal_build.py`'s `ORTHO` frames at 16 px per cm, and the concept's views are cut to the same frames from
+   the points they were measured at. So the drawing lies exactly over both, and a size that is wrong shows as a
+   line off the picture.
+
+`tools/blender/crystal_run.py` (the driver) runs the build, glTF-Validator, the drawing and the Godot shots:
+
+```
+$PYTHON_BIN tools/blender/crystal_run.py [--tag drawn] [--res 900] [--samples 64] [--no-build] [--no-shots]
+    [--asset assets/prop/energy_crystal]
+```
+
+- **The crystal** is a hexagonal column whose corners run straight up and narrow a little toward the point; each
+  face holds a column of long diamonds (the face's middle line has a vertex every other step, 12 % outside the flat
+  face, so the facets fold and catch the light). Neighbouring faces are staggered by a step, so the diamonds' sides
+  run on across the corners. Below is a point of twelve facets, above a shoulder into the skirt. Every facet edge
+  has a 0.6 mm chamfer, the visible line. The chamfer blunts the point a little: the model's origin stays at the
+  drawing's tip, a few millimetres below the lowest vertex.
+- **The core**, a slimmer copy turned 30 degrees inside it, is what the charged crystal glows from: seen through
+  the translucent shell it gives the depth and the second set of lines the concept paints.
+- **The cap** is an octagon with a flat to the front. Over the crystal's shoulder sit a bronze lip and a graphite
+  hexagonal skirt with inset panels. Then a bronze rim, a dark groove, and the upright bronze band, with four cyan
+  windows on its diagonal faces and a graphite notch at the foot of each straight face. On top are a bevelled
+  bronze dome, the graphite top disc with a cyan lens, and the hexagonal carry loop, a chunky bar. Metal edges over
+  30 degrees get a 1.2 mm chamfer (0.8 mm on the small parts, 2 mm on the loop).
+- **UV0 carries data, not a layout**: u = 1 on every chamfer face (the materials brighten them: the bronze's worn
+  edges, the crystal's glinting edges), v = a per-facet random value (the facet-by-facet shade). No textures.
+- **Two states, one mesh**: the charge. Blender's look reads the node group `crystal_charge` (the `.blend` keeps it
+  at 1); the game's look is `godot/crystal/crystal.gd` (`apply(model)` puts `crystal_shell.gdshader`,
+  `crystal_core.gdshader`, `crystal_metal.gdshader` and the lights' material on the surfaces by their glTF names and
+  adds a small cyan OmniLight3D; `set_charge(look, c)`): 1 a translucent cyan gem glowing from inside, 0 a matte
+  grey stone, opaque, no glow, the cap's lights at 22 %. The GLB's own materials are a plain-PBR fallback of the
+  charged state.
+- **Colours across the two looks**: Blender's Principled colours are linear; Godot's `source_color` uniforms are
+  sRGB, so the Godot metal holds the sRGB of Blender's numbers (bronze (0.42, 0.29, 0.17) linear is (0.68, 0.578,
+  0.454)). Passing the linear numbers made the Godot bronze nearly black. AgX bleaches bright pale cyan to white:
+  keep the glow colours saturated ((0, 0.72..0.78, 1)) and the emissive strengths moderate.
+
+`godot/crystal/shots.gd` shoots both states in an off-screen window under the ship interior's night light rebuilt
+from `godot/ship/ship.gd` and `layouts/ship/ship.toml` (AgX 1.0, the dark blue ambient, the glow settings, SSAO,
+SSIL, a warm interior lamp, the cool night key, a cyan strip's rim): the 3/4, front and top views, close-ups of the
+cap, loop and facets, the crystal on a 1 m post seen from 1 m (its glow on the wall) and carried in the first-person
+view, and `sheet.png`, the concept beside Blender's and Godot's views. `tools/tests/test_props_energy_crystal.py`
+checks the committed asset.
+
+## A station from its drawing: the ship engine's start console (art#263)
+
+`assets/prop/start_console/`: the console in the middle of the ship's hall where a player presses the start button
+and, while breakers are tripped, the hologram plays the order to switch them back on, one lamp at a time. The
+engineer picked the concept on 2026-10-24 (prime-game-design `ideas/ship-components/stations-final/console-final.jpg`,
+the hologram in the style of `holo14-diamond-2.jpg`) and had its drawing made in cm (`console-drawing/`: the
+concept's straight views and `drawing.js`, whose numbers stretch the body 40 cm so the button sits at hip height).
+They are copied to `<raw>/start-console/ref/`.
+
+1. **The numbers.** `tools/blender/console_dims.toml` holds every size in cm: the drawing's own (the plinth, the
+   body, the rim, the button, the strips, the emitter, the hologram's span, height and tilt) and the smaller ones read
+   off the same views at the drawing's scale (the blocks' bevels, the bezels, the emitter's steps).
+2. **Build from the numbers.** `tools/blender/console_build.py` (headless Blender): the plinth, the body and the rim
+   are rings of bronze blocks round a graphite drum, each block a profile swept straight between two angles, so its
+   faces are flat chords; the body's front block is one wide flat face for the button, a cyan channel either side.
+   The drum must stay inside the front block's chord (47.9 cm from the axis at the top): a 51 cm drum first poked
+   through its middle as a dark column. Every block edge over 30 degrees gets a 9 mm chamfer marked in UV0 u, which
+   the metal brightens (the concept's bright edges).
+3. **The hologram from the ship's own mesh.** The built hull pieces (`skin_top`, `skin_belly`, `skin_mouth`,
+   `skin_cheeks`, the three nozzle pods; `<raw>/<ship.toml raw_dir>/pieces/`, since v5 built on the raised
+   deck: `console_run.py` passes `[deck] lift_m` and the build lowers them back by it) are joined, turned so the nose points at the
+   button, scaled to 1:16.3 (the 26.1 m span to the drawing's 159.8 cm), the hall's centre put over the core at
+   145.7 cm and leaned 12 degrees nose down. **Its plates' own edges do not make a hologram**: the hull is built of
+   separate plates, so its open and creased edges are a dense grid that read as white noise (the first trial,
+   78,900 triangles of lines). The lines are cut from the mesh instead: a level cut through the widest edge (the
+   outline), contour cuts over the top, the keel's profile, the long creases inside the plates, a section grid over
+   the top every 1.62 m (two module lines), rings and lengthwise cuts on the pods; and the rooms with the concept's
+   elements as one flat plan at the deck inside the hull: the hall's disc with a dashed ring, the entrance channel to
+   the nose, the bands to the tip discs with the eight order lamps. Laid on the curved top by rays
+   from above (the first try), the disc sat over the hull and the rooms climbed its hump (the engineer's review,
+   2026-10-24). Each line is a three-sided tube (it reads from every side), its brightness in UV0 v; a faint additive
+   shell gives the volume.
+4. **The states** are values, not meshes: the stage strips' and lamps' indices sit in UV0 v and
+   `godot/console/console_signal.gdshader` lights them from `passed`, `lit` and `order` (`console.gd` `set_state`,
+   `set_passed`, `set_lit`). The hologram and the light column are additive, both sides, no depth write
+   (`console_holo.gdshader`).
+5. **Check against the concept.** `tools/blender/console_run.py` renders the states in Blender, the orthographic
+   views at 4 px per cm and the concept's straight views cut and stretched as the drawing stretches them;
+   `console_drawing.py` draws the model's edges and the sizes over both (`<tag>/drawing/*.svg`). The Godot shots are
+   taken in the ship's hall itself: `godot/console/hall.gd` extends `godot/ship/ship.gd`'s shoot mode, adds the
+   console to the built ship on its station spot (`ship.toml`: (0, 0.6); yaw 180, the button to the mouth), keeps it
+   out of `ship.gd`'s dressing pass (that pass would give the GLB's plain emissive fallbacks strip lights the game
+   never has) and puts `console.gd`'s look and each view's state on it; `godot/console/sheet.gd` makes the sheet
+   beside the concept and measures the GPU cost.
+
+   ```bash
+   $PYTHON_BIN tools/blender/console_run.py --tag <tag> --res 900 --samples 64 --asset assets/prop/start_console
+   ```
+
+6. **The engine's spin-up** (step 1; prime-game#1095 c6392050112): four parts on the hologram, each a surface on
+   `console_holo.gdshader`'s modes 3 to 6 with its ids in UV0 (`console_dims.toml` `[spinup]`): the pods' lines and a
+   fan at each pod's front (`console_holo_turbine`: u the angle round the pod, the fans u 5, turned in the vertex
+   shader round their centre, `console.gd` `FAN_CENTRES` and `FAN_AXIS` from `build.json`), the wiring
+   (`console_holo_wire`: v the station's index in `STATIONS`, 8 the manifold; u the distance along the line toward the
+   turbines in dm, the points -1, their halos -2), the charge ring where the dashed ring was (`console_holo_ring`: u
+   the bar's share, v foot 0 and top 1) and the countdown (`console_holo_digit`: v digit x 10 + segment, turned to the
+   eye about the console's axis). The strips' UV0 u is their fill's share across, so the three fill as one bar. The
+   stations' lines run in one lane each (`[spinup.lanes]`: a radius round the hall's centre and an x for the run aft),
+   ordered so none crosses another: a back socket on the outermost lane, a vent on the innermost; a breaker comes in
+   along its corridor beside the order lamps, a vent along the throat's wall. The time is the console's own clock (a
+   tween on a uniform, so the game can read the call's phase for its beep and the fans keep their angle through a
+   change of rate). `console_run.py --spinup` shoots the four states from the console's front, the throat and both
+   corridors' mouths and the close-ups on the current pieces (it refuses a deck other than 1.2 m), the before/after
+   against the shipped build2 GLB with the spin-up hidden (`console_diff.py`, numpy in headless Blender) and the
+   scripted round's MP4 (`hall.gd`'s video mode). The API: `assets/prop/start_console/HANDOFF.md`.
+7. **The spin-up read from the hall** (step 2): what reads at 6 m is light that grows, not lines that change colour.
+   The call floods the turbines (brighter, the lines swelling along their normals, in `call_colour`: the sRGB
+   `orange` is nearly red in linear and reads pink under AgX) with a camera-facing glow sprite round each pod and a
+   wash over the shell; a broken point adds a big red bead (a sprite) and a red pillar turned about the vertical to
+   the eye, both blinking at its rate. The sprites and pillars are tiny quads in the GLB (`fx_w0`, their corners
+   `FX_SPREAD` off their ids in UV0) that the vertex stage sizes, or folds onto their centre while off: no pixels.
+   The charge ring's band is built twice as tall (`ring_h_tall`) and the shader draws a share (`band_top`); the
+   same bar runs again as a ring on the emitter deck (`deck_ring`, v 2..3), leaning out so it is seen from every
+   side. `console.gd` `set_ring_style` ("band", "deck", "both", "step1") and `set_fill` ("cyan", "green") keep the
+   choices open; `console_run.py --spinup` shoots their grid (`<tag>/grid/`) and step 1's throat stills beside
+   step 2's (`before_after.png`, `console_diff.py --pairs`). A NaN in an additive shader (a `pow` of a negative
+   behind a zero factor) blooms the whole frame black: clamp before `pow`.
+
+`tools/tests/test_props_start_console.py` checks the drawing's numbers in the dims file, the committed asset, the
+spin-up's ids in UV0, the report's stations against `ship.toml` and `console.gd`'s API and constants.
+
+## A wall station from its drawing: the ship's crystal socket (art#263)
+
+`assets/prop/crystal_socket/`: the wall socket that holds one energy crystal, four of them on the ship's hall walls
+(`layouts/ship/ship.toml` spots `socket_e`, `socket_w`, `socket_fe`, `socket_fw`). The engineer picked the sheet on
+2026-10-25 (prime-game-design `ideas/ship-components/stations-final/socket.jpg`: charged, spent with the lamp lit,
+side) and had its drawing made in cm (`socket-drawing/` at ea27a81: the sheet's straight views and `drawing.js`).
+They are copied to `<raw>/ship/v4/socket/ref/`. Built the start console's way, file for file:
+
+1. **The numbers.** `tools/blender/socket_dims.toml`: the drawing's polygons (the outline, the bay along the cyan
+   strip, the claws, the collar, the slots) and depths (back plate 6.7, middle layer 12.2, frame face 21.1, claw tips
+   22.2, the bay's floor 9.5, the crystal's axis 17.0), plus the smaller sizes read off the views. **Every h is drawn
+   at `[mount] drawn_at`; `[mount] h` (MOUNT, the crystal's middle, 140) is the one number that moves the socket**
+   (`socket_drawing.load` shifts them all; the engineer may lower it to 120).
+2. **Build from the numbers.** `tools/blender/socket_build.py` (headless Blender): each layer a polygon, or a polygon
+   with a hole, extruded between two depths, its front edges bevelled twice (socket-2, `bevel2`: a broad chamfer,
+   then a fine bevel on both its edges), marked in UV0 u (0 flat, 0.5 the broad chamfer, 1 the fine bevels: the
+   console's metal wears them brighter, so each block reads as machined bronze with bright edges). The outer frame
+   is separate blocks (`[outline] seams`: the matched ring cut on rays from the bay's middle, each block pulled back
+   `seam / 2` square to its ray, the graphite plate dark in the gaps and round the edge); a raised inner bezel round
+   the bay carries the cyan strip (1.2 wide, proud of the ring's rim); the amber windows sit sunk in bronze bezels;
+   the neck, the lamp's collar and the crystal's cup are turned (16 sides, grooves and bevelled rims). The claws fit the
+   **built** crystal, not the concept's: its cap measures 13.62 across at its band (its bronze rims), so the jaws sit
+   at u 6.84 and reach down to 148.0 (the drawing's 149.0 held only 0.4 cm of the band). Convex colliders
+   `crystal_socket_col<n>-convcolonly` leave the crystal's room and the lamp free; the `crystal_anchor` empty sits at
+   the crystal's pivot (its tip: MOUNT minus 17.45) on its axis with no rotation, so the game parents
+   `energy_crystal.glb` there and slides it out along +Z.
+   **The claws open** (socket-3; the engineer's decision of 2026-10-25, prime-game#1095 comment 6392150248; the
+   drawing's `HINGE`, `OPEN`, `PULL` at prime-game-design 1df9a42): each claw is its own object (`claw_leaf`:
+   `claw_r`, `claw_l`) with its origin on its hinge (u +-5.37, h 162.79) and its collider parented, turning in the
+   wall's plane round its local glTF +Z. A moving part must not pass through the frame, so the claw is a plate in
+   front of the lip (`[depth] claw_plate` 20.15 .. 22.2, the drawing's outline cut in two knuckled segments, a barrel
+   round the hinge on a graphite pin) and only a small jaw finger reaches back beside the cap; the header became a
+   narrow neck block between the hinges (a dark gap to each claw: two arms, not one hoop). The swing check turns the
+   claws 0 .. 40 degrees and counts their triangles against the body's: the finger cuts the bay's lip past
+   28 (it touches at 29), so `[claw] open` is 25 (the drawing's 35 was a placeholder).
+3. **The checks with the crystal.** The build imports the crystal onto the anchor and measures what a picture
+   hides: the claws' gap to the cap, the tip over the collar, triangle overlaps of the crystal with the socket and
+   its colliders at rest and pulled out in 2 cm steps, parts touching no other part, open edges, and coplanar faces
+   of two parts facing the same way (z-fighting); socket-3: the claws' swing per degree, the open claws' gap to the
+   body and the crystal pulled out past the open claws. They go into `build.json` and the asset's `report.json`.
+4. **The look and the states.** `godot/socket/socket.gd`: the console's bronze and graphite
+   (`socket_metal.gdshader` is `console_metal.gdshader`, extended by socket-3 with parameters that default to the
+   console's look; the socket's values are `socket.gd` `BRONZE_FINISH`; socket-2 set the bronze darker and more metallic
+   than the console's, a greyer gold at metallic 0.75 and roughness 0.32, picked from the studio's variant grids (0.9 read near-black in the hall): the console's 0.35 read
+   as matte brown plastic beside the sheet), cyan and amber glow, the red dome
+   `socket_lamp` with its own light; `set_state(look, "charged" | "spent" | "empty")` lights the lamp for spent and
+   empty, and the bay's floor (`socket_bay.gdshader`) glows cyan round a charged crystal; `set_claws(look, 0..1)`
+   opens the claws. socket-3 gave the shared metal shader parameters whose defaults keep the console's pixels (the
+   colour's mottle and grain, the roughness's, the worn edges' polish, and off by default: `shade`, faces lighter or
+   darker by their facing, and `dent` / `wave`, a hammered and a broad bend of the normal; the fix pass made their
+   height field a smooth 3D gradient noise in a turned model space, each slope behind its own `if`: the value noise
+   before drew square tone patches on the big flat faces of all three stations, and the console's pixels stay the
+   same, 0 of 409,600 differ; every copy of the shader is the same bytes, `tools/tests/test_props_metal_shader.py`); `socket.gd`
+   `BRONZE_FINISH` holds the socket's values, the ones the other stations' bronze matches. `seat_crystal(crystal_look)` keeps the crystal's own light off the socket (the socket draws on render
+   layer 20 alone, the crystal's light leaves that layer out of its cull mask): in the niche it burned the frame
+   white-cyan, and moved 30 cm out it washed the whole face mint (the hall shots b2 and b4).
+5. **Check against the drawing and in the hall.** `tools/blender/socket_run.py` renders the front and side
+   orthographic views with the crystal, cuts the drawing's straight views to the same frames and draws the built
+   numbers over both (`renders/overlay.png`; `socket_drawing.py` the same as an SVG). `godot/socket/hall.gd` extends
+   `ship.gd`'s shoot mode: a socket on each of the four spots (yaw `atan2(normal x, normal y)`), the crystal on each
+   anchor, the hall views and the sheet beside `socket.jpg` (`<tag>/hall/`), the close-ups of every edge and seam
+   (`<tag>/close/`). `godot/socket/studio.gd` then shoots the socket on a neutral backdrop at the sheet's
+   three-quarter angle beside `socket.jpg` (`<tag>/compare_sheet.png`; the claws open and the crystal pulled out:
+   `studio/studio_open.png`); `--grid FILE` adds one render per variant of the look's materials
+   (`[{"title", "bronze": {shader parameter: value}, "amber": {property: value}}]`, `<tag>/studio/grid.png`);
+   `--studio-only` shoots only that from an existing build.
+
+   ```bash
+   $PYTHON_BIN tools/blender/socket_run.py --tag <tag> [--grid FILE] --asset assets/prop/crystal_socket
+   ```
+
+`tools/tests/test_props_crystal_socket.py` checks the drawing's numbers, the one-number MOUNT, the claws against the
+built cap, the claws' hinge, angle and pull against the drawing and `socket.gd`, and the committed asset (anchor,
+the claws' nodes and colliders, the report's checks).
+
+## A station with moving leaves: the ship's breaker board, the shells (art#263)
+
+`assets/prop/breaker_board/`: the board on each corridor's front wall (`breaker_e`, `breaker_w`) where a tripped
+breaker is switched back on by lifting its shell. The engineer picked variant 3, the shells, on 2026-10-25
+(prime-game-design `ideas/ship-components/stations-final/board-variants/v3-shell-final.jpg`) and its drawing in cm
+(`board-drawing/`: the sheet's straight views and `drawing.js`, at commit 6b0e83e). They are copied to
+`<raw>/ship/v4/board/ref/`. The way is the console's, file for file; what differs:
+
+1. **The numbers.** `tools/blender/board_dims.toml`: the drawing's own (160 wide, the frame h 52 to 131.4, the beacon's
+   top 140.4 under the wall's slant at 145, the bays at u +-16.8 and +-50.4, the shell 20.4 wide and 37.2 from its
+   hinge axis at h 67.7, d 25, the trip of 110 degrees, the core 10.3 x 17.4 at h 87.2, d 18) and the smaller ones read
+   off the straight views at 7.75 px per cm (the border's widths, the seams, the knuckles, the facets, the couplings).
+   Two numbers had to move: the core is flattened to 6.8 deep (round, its 10.3 would cross the closed shell's back at
+   d 22), and the shell's flat top facet runs only from 9 to 24 cm up its length, because the drawing's face is a
+   dome (26 + 5 sin(pi s / 37.2)); a table to the top dropped the tripped shell's lowest point to h 51.1 against the
+   drawing's 53.9.
+2. **Build from the numbers.** `tools/blender/board_build.py` (headless Blender) cuts the octagon into convex blocks
+   (clipped polygons extruded in d) with half-centimetre joints over a graphite slab, so the border and the inner
+   panel read as the sheet's bronze blocks; each bay's surround is eight trapezoids, its bottom rail open in the
+   middle where the hinge sits. Each **leaf is its own object with its origin on its hinge axis** (local X rotation,
+   0 closed, +110 degrees tripped: the top out of the wall and down), its convex collider its child; the cores, the
+   lamps' lenses and the beacon are their own objects, so the game can light each alone. The leaf's body starts 3.3
+   cm over the axis and a lug carries it down to its own knuckle, which leaves 0.3 cm to the fixed knuckles either
+   side: a body down to the axis crossed them on the way.
+3. **The sweep check.** The build turns every shell through its trip in tenths and counts the triangles it crosses
+   on the body, the cores, the lamps and its neighbours (`build.json` `sweep_check`; empty is clean, and the test holds
+   it). It checks 11 poses 11 degrees apart and triangle crossings only, not volumes: a thin part that passes wholly
+   between two poses, or a shell that sits inside another part without one triangle crossing, would not count (at the
+   shell's top, about 40 cm from its axis, one step moves it about 7 cm). Finer steps need a rebuild of the asset's
+   report; the Godot sweep shots (0, 1/4, 1/2, 3/4, 1) are the eye's check between the poses. `board_drawing.py` compares 23 of the drawing's numbers with the model's (`drawing/compare.json`, 0.5 cm
+   tolerance): 20 measured off its own vertices, 3 set (the lamp ring from the dims, the hinge's h and d from the
+   leaves' pivots; `board_drawing.SET`) and `drawing_front.png` and `drawing_side.png` show the model's ink and outlines over the
+   straight views at the drawing's scale.
+4. **The states** are node rotations and material values: `godot/board/board.gd` `set_shell(look, i, open01)`,
+   `set_on` / `set_lamp` (dark, yellow, green), `set_problem` (the beacon and its red light), `set_core`; the cores'
+   shader is kin to the energy crystal's core (`board_core.gdshader`), the metal is the console's (a byte-identical copy, so the
+   board's files stand alone). The sparks and smoke at a tripped core are the game's.
+5. **The shots** are taken in the east corridor itself: `godot/board/corridor.gd` extends `ship.gd`'s shoot mode, puts
+   a board on both spots (yaw from the spot's normal), keeps them out of the dressing pass and sets each view's state;
+   the views are the sheet's (all on, yellow and green tripped, `compare_*.png` beside the sheet), the yellow shell
+   at 0, 1/4, 1/2, 3/4 and 1, and close-ups of every edge and seam.
+
+   `godot/board/studio.gd` then shoots the board on a neutral backdrop at the sheet's hero angle, `compare_sheet.png`
+   beside the sheet (the socket's studio).
+
+   ```bash
+   $PYTHON_BIN tools/blender/board_run.py --tag <tag> [--pieces DIR] --asset assets/prop/breaker_board
+   ```
+6. **The wall (board-2).** Shoot on a ship build with the raised deck: `--pieces` defaults to `ship.toml`'s
+   `raw_dir` pieces (`<raw>/ship/v5/pieces/` since the fix pass; board-2 and -3 shot on the vents' b5b build,
+   `<raw>/ship/v4/vents-b/pieces_b5b`, the same bytes), and the run refuses pieces whose corridor deck (the grate's
+   top, read from the GLB) is not `floor_h`. The old `raw_dir` pieces (`<raw>/ship/v3/pieces/`) predate the raise
+   (deck 0.6): step 1 shot the board on them, 0.6 m above their deck, and its beacon stood in the slanted upper wall. Rays on the
+   b5b build at both spots: the deck at 1.200; the wall's face plane through the spot's `at` (its seams at d 0); its
+   pillow panels 4.4 .. 7.0 cm proud of it inside the board's outline; vertical to 2.65 (1.45 over the deck), slanting
+   above. So the board's d 0 stands `[mount] d` (7.0 cm) out of the face plane on the panels' crowns, and a graphite
+   mount block inside the plate's outline (and the cable clamps) reaches back 0.5 cm into the wall's body: no gap.
+   Its h 0 is the deck.
+7. **The look (board-2).** The bronze and graphite are the crystal socket's values (socket-2), the bays' surrounds
+   are thickened from the drawing's 1.15 cm sides to 3.0 (the sheet's chunky bezels, a look call), the shells' bronze
+   lips carry the bright-edge mark, the beacon's light reaches 0.45 m at 0.6 energy (at 1.6 m and 0.9 it streaked the wall's panel seams red).
+8. **The look (board-3), toward the sheet.**
+   - The bronze is the socket's step 3 (`socket.gd` `BRONZE`, `BRONZE_FINISH`) on the shared metal shader:
+     `board_metal.gdshader` is the console's `console_metal.gdshader` byte for byte, as the socket's copy is.
+   - The inner panel behind the shells is a seventh body surface, `board_panel`: the same finish in a darker bronze.
+   - The border is a ring of mitred blocks between the outline and the inner panel's octagon: the four big cut
+     corners are blocks of their own, the bottom and top cut again at u +-47.5, the beacon's seat at the notch;
+     their bevel is `[frame] border_chamfer` (1.8 cm). The broad bevels are marked u 0.35 (0.55 went cream).
+   - The hinge knuckles are turned (`[hinge] turned`, `leaf_turned`: lathe profiles with grooves and a big end cap).
+     The shell's bottom edge stands 3.3 cm over the axis only in its middle, so the barrels grow past |u| 6.6.
+   - The cores are cut gems: three rings, the middle one turned half a facet; deep blue with bright cyan edges.
+   - The strips stand 1 cm proud in raised graphite frames, the lamps are saturated green on a coloured lens.
+   - The beacon's light is a spot out of the wall and 25 degrees down (55 degree cone, 0.9 m). The omni lit the
+     corridor's slanted wall right above the dome red at close range; the spot leaves the wall above and behind it
+     dark.
+
+`tools/tests/test_props_breaker_board.py` checks the drawing's numbers, the leaves' pivots and colliders, the clean
+sweep, the mount and the committed asset.
+
+## A station from its drawing: the ship's crystal charger (art#263)
+
+`assets/prop/crystal_charger/`: two of them, one on each lens room's aft wall (`layouts/ship/ship.toml`
+`[[stations.spot]]` `renewer_e`, `renewer_w`), where a player recharges a spent energy crystal. The engineer's pick of
+2026-10-25 (prime-game#1095 comment 6401197371): the squat base raised on four long legs like the ship's own
+(prime-game-design `ideas/ship-components/stations-final/charger-legs.jpg`) and its drawing in cm
+(`charger-drawing/drawing.js` at commit a53ce6f over `front-ortho.jpg` and `top-ortho.jpg`; the generated side view
+was wrong and is not used: the charger is round). They are copied to `<raw>/ship/v4/charger/ref-legs/` (`ref/` keeps
+the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the back) is history.
+
+1. **The numbers.** `tools/blender/charger_dims.toml`: the drawing's own (the deck at its "base top" 99.1, the widest
+   Ø 100.4 at 72.8, the upper tier's top edge Ø 82, the slot at 95.7, the button Ø 8 at 75.9, the outer prongs to
+   139.7 at u 23.9.., the inner pair to 123.1 on the track ring of r 19, the legs lengthened 27 cm in their pistons)
+   and the smaller ones
+   read off the sheet (block angles, seams, bevels, bezels, strip widths, the legs' joints). **The wall is not flat
+   there**: the spot sits on a vertex of the lens room's 12-sided wall, whose facets fold toward the room by 10.98
+   degrees either side. The round base stands clear of it (the axis 53.5 cm out, the widest circle 2.3 cm off the
+   facets); the back legs turn to 120 degrees and tuck in to r 52 so their pads stay 3 cm off (at 135 they would
+   stand in the wall). Step 3 (build b6) made the base heavy, as on the sheet (b5, its deck at 94 and its underside at
+   the drawing's 64.8, read as a thin table on stilts): the deck at 99.1 with the slot sunk in a well whose floor is
+   b5's deck (94: the track ring, the slot ring, the collar's foot; the well's wall is the deck ring's inner chords);
+   the lower tier taller (a skirt down to 60, 4.8 under the drawing's underside, so the legs read as struts under
+   it; its band to 83) and broader (the underside's edge r 45, the upper tier r 43). The slot, the button, the prongs'
+   tops, the footprint and the clearances are unchanged.
+2. **Build from the numbers.** `tools/blender/charger_build.py` (headless Blender): each tier is a ring of bronze
+   blocks, a profile swept straight between two angles (flat chord faces), thin dark seams onto a graphite core, two
+   bevels per block (a broad chamfer, UV0 u 0.45, and a small bright bevel on its folds, u 1:
+   `console_metal.gdshader` brightens both). The front block's pieces (strips and wedges round the button's
+   trapezoid facet) lie on the block's own chords, one planar prism per band of the profile, so nothing juts out of
+   its neighbours (b4's panels did). The prongs are (r, h) claw profiles swept round the crystal's axis over a few
+   degrees (their end faces toward the room carry the strips); the legs are octagonal prisms along each leg's axis
+   (strut, glands, the steel rod, the ankle sleeve) on a faceted pad. Lights sit in graphite bezels, inset, unbevelled
+   (the bevels on 70 small boxes cost 11k triangles). The leaves are their own objects, pivots on their axes, children
+   of the body: `carrier` (the cup with the pit for the crystal's point; the empty `crystal_anchor` at the tip),
+   `track_ring` (with the inner prongs and their electrodes), `button`. Convex colliders (`*-convcolonly`): the base,
+   the outer prongs, each leg, and the inner prongs on the ring. The build checks the clearances numerically
+   (`build.json` `checks`): every vertex in front of the wall's facets, the ring's full turn in 5 degree steps against
+   the body (BVH overlaps), the carrier's rise in 1 cm steps, the button pressed, the crystal at rest and risen.
+3. **The look in Godot**: `godot/charger/charger.gd` (`apply`, `set_state` idle / charging / charged, `set_carrier`,
+   `set_ring`, `set_pressed`, `seat_crystal`). The bronze and graphite are the console's `console_metal.gdshader`,
+   shared (the asset's `export/` carries the same file; the test checks it is byte-identical). The charger draws on
+   render layer 20 alone and `seat_crystal` takes that layer off the crystal's own light, which otherwise burns the
+   bronze white a few centimetres away (the socket's way); a soft cyan light of the charger's own stands in while
+   charging. The bronze is the socket's step 3 (`BRONZE`, `BRONZE_FINISH`: the same numbers as `socket.gd`), so the
+   stations match. The Blender review render is a darker studio under AgX Punchy (the plain AgX and a bright studio
+   paled the amber to cream and the bronze to tan).
+4. **The shots**: `godot/charger/room.gd` extends `godot/ship/ship.gd`'s shoot mode with the charger on `renewer_e`
+   and the crystal seated, on the ship's current build (`--pieces`, default `ship.toml`'s `raw_dir` pieces,
+   `<raw>/ship/v5/pieces/`; steps 2 and 3 shot on the same bytes in `<raw>/ship/v4/vents-b/pieces_b5b`; the run
+   refuses pieces whose lens room floor, `tip_floor_rim`'s top through its nodes' transforms, is not at `floor_h`); `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's
+   neutral render at its angle, Godot in the room), `room_sheet.png` (the states, a player's view, the pass behind
+   them, the straight views, the back toward the wall, the legs, the ring's turn from above) and `closeups.png`
+   (Blender's close-ups of the seams: the prongs' roots and caps, the hips, knees and feet, the slot, the button), and
+   measures the GPU cost.
+
+   ```bash
+   $PYTHON_BIN tools/blender/charger_run.py --tag <tag> --res 900 --samples 64 --asset assets/prop/crystal_charger
+   ```
+
+`tools/tests/test_props_crystal_charger.py` checks the drawing's numbers, the base's gap to the wall, the wall's fold
+against the ship's layout and the committed asset. The pass behind a player (`ship_layout.check_spots` with the
+spot's depth at the charger's 1.04 m): 2.17 m of free floor behind the capsule, against `pass_m` 1.6.
+
+## What the stations' bronze costs (art#263, fix pass 2; option A shipped)
+
+The shared metal shader's `dent` and `wave` slopes (fix1's smooth gradient noise) are measured, not guessed:
+`tools/blender/metal_cost_run.py` places the four approved exports in the built ship at night as their own drivers do
+(no crystals) and runs `godot/ship/metal_cost.gd` (ship.gd's shoot mode, `_godot.window()`, 1920x1080, vsync off).
+Per view (each station's own close view, its player's view and a close-up where bronze fills the frame) it takes the
+median GPU ms of 3 alternating rounds of 120 frames with the shader as shipped, with `dent` = `wave` = 0, with one
+octave, with the slope as it shipped before option A (`metal_cost.gd` `FINITE`, the forward difference) and with that
+view's station hidden. It saves each variant's frame, a before/after strip per view (`<view>__compare.png`: before
+option A | shipped | difference x8, the whole frame; `<view>__compare_crop.png`: the frame's middle 640x360 at 1:1)
+and, per console view, the console alone before and after (`<view>__solo_compare.png`) with `solo_identical` in
+`cost.json`.
+
+Fix pass 2 measured the slope as fix1 shipped it (`<raw>/ship/v4/stations-fix2/cost3/`, RTX 4060): a forward
+difference of the two-octave field, four field() calls of 16 hashes, 64 hashes per slope. The stations ship `wave` 0.3
+and `dent` 0, so one slope runs on their bronze: 0.35 (board) and 0.46 ms (charger) in the player's views, 1.3 to 1.6
+ms when bronze fills the frame.
+
+**Option A** (the engineer, 2026-10-26: "the same noise through the exact derivative, a quarter of the cost"): slope()
+now takes the gradient noise's analytic derivative, `gnoised()`, one pass over the cell's 8 corners per octave, 16
+hashes per slope; same lattice, hashes, quintic fade, turns, octaves, strengths, parameters, defaults and guards. The
+gradient is taken at the old forward difference's midpoint (`p + 0.15 / s`), so most glints stay near where they were,
+but the exact slope is not the forward difference's smoothed one: the glints move and change shape, visibly in close-ups (a mean pixel change up to 8/255, about as much as switching
+the bend off; `cost.md`), the same at a player's distance (accepted by the engineer, 2026-10-26).
+The console (`dent` = `wave` = 0) skips the slope and stays pixel-identical (`console_*__solo_compare.png`, max 0).
+Measured once (2026-10-26, `<raw>/ship/v4/bronze-a/cost/cost.md`, RTX 4060), GPU ms before -> after: board player's
+view 4.849 -> 4.641 (-0.21), charger player's view 4.932 -> 4.688 (-0.24), the bronze-filled close-ups -0.59 (socket),
+-0.84 (board) and -1.04 (charger). This run's noise reaches about 0.5 ms (the GPU clock drifted between rounds: the
+console control's views, where both shaders draw the same pixels, read the new one 0.47 ms slower and 0.21 ms faster), so a single row under
+about 0.3 ms is noise; the player's-view savings (0.21 board, 0.24 charger) are consistent, within that noise, with fix pass 2's
+prediction (0.26 and 0.34 ms).

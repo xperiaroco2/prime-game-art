@@ -1,0 +1,91 @@
+# 100STYLE's BVH skeleton (23 joints, sources/100style.toml) -> the character contract's skeleton (contract/humanoid.json,
+# 56 bones), the alien characters' armature (art #196, the strafe pilot). Read by tools/blender/retarget_map.py, the
+# format in ual_um.toml's head; used by tools/blender/alien_mocap.py (docs/animations.md, "100STYLE onto the alien").
+#
+# - Imported with Blender's own BVH importer (io_anim_bvh, bundled): centimetres scaled by 0.01, the file's +Z front
+#   onto Blender's -Y (the importer's default axes), quaternion rotations. Its rest is a T-pose centred on the Hips
+#   (the feet 0.98 m under the origin) while the motion stands on the floor, so alien_mocap.py lifts the rig as
+#   retarget_smpl does for SMPL-H (the floor shift, anim_libs.Shifted).
+# - FK legs, as smpl_contract.toml: [follow] names each foot's own parent, the lower leg.
+# - No root: Root stays at rest; Hips takes the travel.
+# - The spine: five source bones (Chest, Chest2, Chest3, Chest4, Neck) onto four (Spine, Chest, UpperChest, Neck):
+#   Chest4 carries the collars, so it drives UpperChest; Chest3 is unused (its turn reaches UpperChest through
+#   Chest4's world rotation, which is what the retarget transfers).
+# - No fingers and no face in the source: the fingers, Jaw and the eyes stay at rest.
+
+title = "100STYLE BVH -> the contract skeleton (FK legs)"
+hips = ["Hips", "Hips"]
+
+[height]  # the hip joints: their mean rest height above the floor (after the floor shift) gives the translation scale
+source = ["LeftHip", "RightHip"]
+target = ["LeftUpperLeg", "RightUpperLeg"]
+
+[bones]
+Hips = "Hips"
+Chest = "Spine"
+Chest2 = "Chest"
+Chest4 = "UpperChest"
+Neck = "Neck"
+Head = "Head"
+LeftCollar = "LeftShoulder"
+LeftShoulder = "LeftUpperArm"
+LeftElbow = "LeftLowerArm"
+LeftWrist = "LeftHand"
+RightCollar = "RightShoulder"
+RightShoulder = "RightUpperArm"
+RightElbow = "RightLowerArm"
+RightWrist = "RightHand"
+LeftHip = "LeftUpperLeg"
+LeftKnee = "LeftLowerLeg"
+LeftAnkle = "LeftFoot"
+LeftToe = "LeftToes"
+RightHip = "RightUpperLeg"
+RightKnee = "RightLowerLeg"
+RightAnkle = "RightFoot"
+RightToe = "RightToes"
+
+[follow]  # FK legs: each foot follows its own parent, the lower leg
+"LeftFoot" = "LeftLowerLeg"
+"RightFoot" = "RightLowerLeg"
+
+[[legs]]
+target = ["LeftUpperLeg", "LeftLowerLeg", "LeftFoot"]
+source_foot = "LeftAnkle"
+
+[[legs]]
+target = ["RightUpperLeg", "RightLowerLeg", "RightFoot"]
+source_foot = "RightAnkle"
+
+[rest]  # Root (Hips carries the travel), the face bones and the fingers (none in the source)
+bones = [
+  "Root", "Jaw", "LeftEye", "RightEye",
+  "LeftThumbMetacarpal", "LeftThumbProximal", "LeftThumbDistal", "LeftIndexProximal", "LeftIndexIntermediate",
+  "LeftIndexDistal", "LeftMiddleProximal", "LeftMiddleIntermediate", "LeftMiddleDistal", "LeftRingProximal",
+  "LeftRingIntermediate", "LeftRingDistal", "LeftLittleProximal", "LeftLittleIntermediate", "LeftLittleDistal",
+  "RightThumbMetacarpal", "RightThumbProximal", "RightThumbDistal", "RightIndexProximal", "RightIndexIntermediate",
+  "RightIndexDistal", "RightMiddleProximal", "RightMiddleIntermediate", "RightMiddleDistal", "RightRingProximal",
+  "RightRingIntermediate", "RightRingDistal", "RightLittleProximal", "RightLittleIntermediate", "RightLittleDistal"
+]
+
+[unused]  # the third of the four chest bones (see the head)
+bones = ["Chest3"]
+
+[source_rig]  # the 23 joints of every 100STYLE BVH file
+bones = [
+  "Hips", "Chest", "Chest2", "Chest3", "Chest4", "Neck", "Head", "RightCollar", "RightShoulder", "RightElbow",
+  "RightWrist", "LeftCollar", "LeftShoulder", "LeftElbow", "LeftWrist", "RightHip", "RightKnee", "RightAnkle",
+  "RightToe", "LeftHip", "LeftKnee", "LeftAnkle", "LeftToe"
+]
+
+[target_rig]  # the contract skeleton's 56 bones (contract/humanoid.json, in its order)
+bones = [
+  "Root", "Hips", "Spine", "Chest", "UpperChest", "Neck", "Head", "LeftEye", "RightEye", "Jaw", "LeftShoulder",
+  "LeftUpperArm", "LeftLowerArm", "LeftHand", "LeftThumbMetacarpal", "LeftThumbProximal", "LeftThumbDistal",
+  "LeftIndexProximal", "LeftIndexIntermediate", "LeftIndexDistal", "LeftMiddleProximal", "LeftMiddleIntermediate",
+  "LeftMiddleDistal", "LeftRingProximal", "LeftRingIntermediate", "LeftRingDistal", "LeftLittleProximal",
+  "LeftLittleIntermediate", "LeftLittleDistal", "RightShoulder", "RightUpperArm", "RightLowerArm", "RightHand",
+  "RightThumbMetacarpal", "RightThumbProximal", "RightThumbDistal", "RightIndexProximal", "RightIndexIntermediate",
+  "RightIndexDistal", "RightMiddleProximal", "RightMiddleIntermediate", "RightMiddleDistal", "RightRingProximal",
+  "RightRingIntermediate", "RightRingDistal", "RightLittleProximal", "RightLittleIntermediate", "RightLittleDistal",
+  "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "LeftToes", "RightUpperLeg", "RightLowerLeg", "RightFoot", "RightToes"
+]

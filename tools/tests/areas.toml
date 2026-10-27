@@ -25,6 +25,12 @@ light = [
   "godot/alien_look/*",  # research shaders and their proof script; no runner command or test uses them yet (#196)
   "godot/alien/*", "tools/blender/alien_*",  # the alien parts kit's build and proof scripts (#196): no runner command or test uses them yet
   "godot/plush/*", "tools/blender/plush_*",  # the vault plush's build and shot scripts (#297): no runner command or heavy test uses them
+  "godot/crystal/*", "tools/blender/crystal_*",  # the energy crystal's build and shot scripts (#263): no runner command or heavy test uses them
+  "godot/console/*", "tools/blender/console_*",  # the start console's build and shot scripts (#263): no runner command or heavy test uses them
+  "godot/socket/*", "tools/blender/socket_*",  # the crystal socket's build and shot scripts (#263): no runner command or heavy test uses them
+  "godot/board/*", "tools/blender/board_*",  # the breaker board's build and shot scripts (#263): no runner command or heavy test uses them
+  "godot/charger/*", "tools/blender/charger_*",  # the crystal charger's build and shot scripts (#263): no runner command or heavy test uses them
+  "tools/blender/metal_cost_run.py",  # the stations' bronze cost measurement (#263 fix2): no runner command or heavy test uses it
 ]
 
 [area.anim]
@@ -88,6 +94,22 @@ tests = ["test_ragdoll_*", "test_slice_*"]
 sources = ["faces/*", "tools/blender/faces_*", "tools/runner/commands/faces.py"]
 tests = ["test_faces_*"]
 
+[area.alien_stride]
+sources = ["tools/blender/alien_stride.py", "tools/blender/alien_stride_math.py", "tools/blender/anim_edit_math.py", "tools/blender/alien_clip_edit.py"]  # the alien locomotion clip tool (#196, option A); before light's alien_*
+tests = ["test_alien_stride_*"]
+
+[area.alien_headlook]
+sources = ["godot/alien/head_look.gd", "godot/alien/head_look_check.gd", "godot/alien/head_look_shots.gd", "tools/blender/alien_headlook_run.py"]  # the head follows the aim (#196, H1, F1); before light's alien_*
+tests = ["test_alien_headlook_*"]
+
+[area.alien_loco]
+sources = ["tools/blender/alien_loco.py", "tools/blender/alien_loco_math.py", "tools/blender/anim_sets/alien_loco.toml", "godot/alien/treadmill_reels.gd"]  # the alien's locomotion set and treadmill reels (#196, option A step 3); before light's alien_*
+tests = ["test_alien_loco_*", "test_alien_stride_*", "test_alien_headlook_*"]  # F3: the head-look check runs on the loco build
+
+[area.alien_ttm]
+sources = ["tools/blender/alien_ttm.py", "tools/blender/alien_ttm_math.py", "tools/blender/retarget_maps/smpl_contract.toml"]  # text-to-motion on the alien (#196, option A step 2); before light's alien_*
+tests = ["test_alien_ttm_*", "test_alien_stride_*"]
+
 [area.alien_fit]
 sources = ["tools/blender/alien_fit_geom.py", "tools/blender/alien_socket_fit.py"]  # M15's eye socket fit (#196); before light's alien_*
 tests = ["test_alien_fit_*"]
@@ -149,5 +171,8 @@ sources = [
 tests = ["test_ship_*"]
 
 [area.alien_lively]
-sources = ["tools/blender/alien_lively_geom.py", "tools/web/lively/*"]  # the static head's liveliness proof's pure formulas (#196, lively)
+sources = [
+  "tools/blender/alien_lively_geom.py", "tools/web/lively/*", "godot/alien/alien_lively.gd", "godot/alien/lively_check.gd",
+  "tools/blender/alien_lively_build.py",  # R2: its rim cut, mask and lip smoothing (test_alien_lively_cut)
+]  # the static head's liveliness proof's pure formulas (#196, lively)
 tests = ["test_alien_lively_*"]

@@ -43,6 +43,12 @@ def clear() -> None:
         bpy.data.objects.remove(obj, do_unlink=True)
     for mesh in list(bpy.data.meshes):
         bpy.data.meshes.remove(mesh)
+    # and the materials and images, so a GLB imported again (the vents' body, east then west) keeps its materials'
+    # names, which the game drives (`vent_a_body__lamp`, not `.001`)
+    for mat in list(bpy.data.materials):
+        bpy.data.materials.remove(mat)
+    for img in list(bpy.data.images):
+        bpy.data.images.remove(img)
 
 
 def make(p: dict):
@@ -51,6 +57,12 @@ def make(p: dict):
     mesh.validate()
     bm = bmesh.new()
     bm.from_mesh(mesh)
+    if p.get("uv"):   # per face, its corners' UVs (a textured part: the vents' blades)
+        layer = bm.loops.layers.uv.new("UVMap")
+        bm.faces.ensure_lookup_table()
+        for f, uvs in zip(bm.faces, p["uv"]):
+            for loop, uv in zip(f.loops, uvs):
+                loop[layer].uv = uv
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
     if p["solid"]:
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -74,12 +86,101 @@ def make(p: dict):
 def lifted(parts: list, piece: dict, layout: dict) -> list:
     """The raise (2026-10-23, art#263): every piece but a grounded one (ship.toml `grounded = true`: the clearing,
     the ramp and its lights and stripes, the legs, the ground lamps, built at the real heights) is built in the design
-    frame (deck at floor_h - lift_m) and lifted here by [deck] lift_m."""
+    frame (deck at floor_h - lift_m) and lifted here by [deck] lift_m: a part's verts, and a moving or imported part's
+    "origin", "offset" (a GLB part's place) and "hull" (its box's corners for the checks)."""
     dz = 0.0 if piece.get("grounded") else float(layout["deck"].get("lift_m", 0.0))
     if dz:
         for p in parts:
-            p["verts"] = [(x, y, h + dz) for x, y, h in p["verts"]]
+            for key in ("verts", "hull"):
+                if key in p:
+                    p[key] = [(x, y, h + dz) for x, y, h in p[key]]
+            for key in ("origin", "offset"):
+                if key in p:
+                    x, y, h = p[key]
+                    p[key] = (x, y, h + dz)
     return parts
+
+
+def import_glb(p: dict) -> list:
+    """A part made elsewhere (way A of station 1: Meshy's cleaned vent body): {"name", "glb", "offset": (x, y, h),
+    "mirror_u": bool, "rot_u": rad}. Every mesh of the GLB, its own materials and textures kept, joined into one object
+    named p["name"], turned by rot_u about the u axis, moved by offset (plan x, y, h) and mirrored in x when mirror_u
+    (its normals flipped back)."""
+    from mathutils import Matrix
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=p["glb"])
+    new = [o for o in bpy.data.objects if o not in before]
+    meshes = [o for o in new if o.type == "MESH"]
+    for o in meshes:
+        o.data.transform(o.matrix_world)
+        o.parent = None
+        o.matrix_world = Matrix.Identity(4)
+    for o in new:
+        if o not in meshes:
+            bpy.data.objects.remove(o, do_unlink=True)
+    obj = meshes[0]
+    if len(meshes) > 1:
+        with bpy.context.temp_override(active_object=obj, selected_editable_objects=meshes):
+            bpy.ops.object.join()
+    # a GLB imported again (the vents' seven blades) shares the first copy's materials, not `.001` copies
+    for slot in obj.material_slots:
+        m0 = slot.material
+        base = m0.name.rsplit(".", 1)[0] if m0 and m0.name[-4:-3] == "." and m0.name[-3:].isdigit() else None
+        if base and base in bpy.data.materials:
+            slot.material = bpy.data.materials[base]
+            if m0.users == 0:
+                bpy.data.materials.remove(m0)
+    x, y, h = p.get("offset", (0.0, 0.0, 0.0))
+    m = Matrix.Translation((x, -y, h))
+    if p.get("rot_u"):   # turned about the piece's u axis through the GLB's origin (positive: +v swings up)
+        m = m @ Matrix.Rotation(-p["rot_u"], 4, "X")
+    if p.get("mirror_u"):
+        m = m @ Matrix.Scale(-1.0, 4, (1.0, 0.0, 0.0))
+    me = obj.data
+    if p.get("mirror_u"):
+        # vents-b5b: the GLB's shading normals (its smooth groups) kept through the mirror. flip_normals() reverses each
+        # face's corners but not the custom normals stored against them, so a mirrored smooth part (the west vent's
+        # blades) came out with a patchwork of facets. Each corner's normal is read per (face, vertex), turned by m's
+        # linear part (rotation and mirror: orthonormal) and set back on the same (face, vertex) after the flip.
+        lin = m.to_3x3()
+        cn = [lin @ c.vector for c in me.corner_normals]
+        keep = {(f.index, me.loops[li].vertex_index): cn[li].normalized() for f in me.polygons for li in f.loop_indices}
+    me.transform(m)
+    if p.get("mirror_u"):
+        me.flip_normals()
+        per_corner = [None] * len(me.loops)
+        for f in me.polygons:
+            for li in f.loop_indices:
+                per_corner[li] = keep[(f.index, me.loops[li].vertex_index)]
+        me.normals_split_custom_set(per_corner)
+    obj.name = obj.data.name = p["name"]
+    for c in obj.users_collection:
+        if c is not bpy.context.scene.collection:
+            c.objects.unlink(obj)
+    if obj.name not in bpy.context.scene.collection.objects:
+        bpy.context.scene.collection.objects.link(obj)
+    return obj
+
+
+def rig(objs: list, parts: list[dict]) -> None:
+    """Moving parts (step 2, the stations; docs/props.md "Conventions"): a part with "origin" (plan x, y, h in the
+    piece's frame) gets its object's origin there, its hinge or rest point, the mesh kept in place; a part with
+    "parent" (another part's name) is parented to that part's object, its place kept. Parts without either are
+    unchanged."""
+    from mathutils import Matrix
+    for o, p in zip(objs, parts):
+        if p.get("origin"):
+            x, y, h = p["origin"]
+            o.data.transform(Matrix.Translation((-x, y, -h)))
+            o.location = (x, -y, h)
+    bpy.context.view_layer.update()
+    by_name = {p["name"]: o for o, p in zip(objs, parts)}
+    for o, p in zip(objs, parts):
+        if p.get("parent"):
+            par = by_name[p["parent"]]
+            o.parent = par
+            o.matrix_parent_inverse = par.matrix_world.inverted()
+    bpy.context.view_layer.update()
 
 
 def build(piece: dict, layout: dict, out: Path) -> dict:
@@ -88,7 +189,8 @@ def build(piece: dict, layout: dict, out: Path) -> dict:
     for p in parts:  # Godot's importer gives a `-col` mesh a static body with its trimesh (one-sided: solids face out)
         if piece.get("collide"):
             p["name"] += "-col"
-    objs = [make(p) for p in parts]
+    objs = [import_glb(p) if p.get("glb") else make(p) for p in parts]
+    rig(objs, parts)
     glb = out / f"{piece['id']}.glb"
     bpy.ops.export_scene.gltf(filepath=str(glb), **EXPORT)
     pts = [o.matrix_world @ v.co for o in objs for v in o.data.vertices]
@@ -96,7 +198,7 @@ def build(piece: dict, layout: dict, out: Path) -> dict:
     hi = [max(p[k] for p in pts) for k in range(3)]
     return {"glb": glb.as_posix(), "lane": piece["lane"],
             "triangles": sum(len(pl.vertices) - 2 for o in objs for pl in o.data.polygons),
-            "objects": [o.name for o in objs], "materials": sorted({p["mat"] for p in parts}),
+            "objects": [o.name for o in objs], "materials": sorted({p["mat"] for p in parts if p.get("mat")} | {m.name for o in objs for m in o.data.materials if m}),
             "bounds": {"min": [lo[0], lo[2], -hi[1]], "max": [hi[0], hi[2], -lo[1]]}}
 
 

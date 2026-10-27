@@ -1,0 +1,89 @@
+"""The throat vent's animation controller (art #263, vents-anim1; docs/ship.md "Station 1", "The animation"): the
+constants at the top of `godot/ship/vent_anim.gd` keep the blades in their safe range (vents-b3: shut 20 deg below calm,
+the first cut 60 deg below it; the cough's kicks at most 20 deg above calm; the top blade never above calm, its crest
+under the header sill), the calm pose is the builder's (`ship_interior_vent.CLOSED_DEG`), the timings are the brief's
+(a breath every 3-4 s, the slam 0.12-0.2 s) and the runner offers `--vent-anim`. Pure Python: reads the script as
+text; every frame of the demo is checked in Godot by `ship --motion DIR` (the blades against each other and the
+opening, the hinge, the marker) and shot in place by `ship --vent-anim DIR`."""
+
+
+from __future__ import annotations
+
+import ast
+import re
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "tools" / "blender"))
+sys.path.insert(0, str(ROOT / "tools"))
+
+import ship_interior_vent as v  # noqa: E402
+
+SCRIPT = ROOT / "godot" / "ship" / "vent_anim.gd"
+SAFE_DEG = 20.0
+
+
+def consts() -> dict:
+    out = {}
+    for m in re.finditer(r"^const (\w+) := (.+?)(?:\s+#.*)?$", SCRIPT.read_text(encoding="utf-8"), re.M):
+        try:
+            out[m.group(1)] = ast.literal_eval(m.group(2).strip())
+        except (ValueError, SyntaxError):
+            pass
+    return out
+
+
+class VentAnimTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.c = consts()
+
+    def test_calm_is_the_builders(self) -> None:
+        self.assertEqual(self.c["CALM_DEG"], v.CLOSED_DEG)
+        self.assertEqual(self.c["SLATS"], v.SLATS)
+
+    def test_blades_within_the_safe_range(self) -> None:
+        c = self.c
+        kicks = [k[1] for k in c["COUGH"]]
+        self.assertLessEqual(max(kicks), SAFE_DEG)
+        self.assertGreaterEqual(c["CALM_DEG"] - c["BREATH_DEG"], 0.0)   # a breath never closes past shut
+        self.assertLessEqual(c["BOUNCE_DEG"] + c["TREMBLE_DEG"] * 2, c["CALM_DEG"])
+        self.assertLessEqual(c["COUGH_TOP"], 0.0)                        # the top blade never rises above calm
+        self.assertGreaterEqual(c["CALM_DEG"] + c["COUGH_TOP"] * max(kicks), 0.0)
+        self.assertEqual(c["COUGH"][0], [0.0, 0.0])
+        self.assertEqual(c["COUGH"][-1][1], 0.0)                          # ends at calm: the breath takes over
+        self.assertAlmostEqual(c["COUGH"][-1][0], c["COUGH_S"])
+        times = [k[0] for k in c["COUGH"]]
+        self.assertEqual(times, sorted(times))
+
+    def test_every_bar_part_is_driven(self) -> None:
+        """vents-b4c: the light bar is four meshes (ship_interior_vent.BAR); a part the controller does not take over
+        (bar_top once stayed at full emission in calm, bar_hot never reacted) shows as an uneven bar."""
+        text = SCRIPT.read_text(encoding="utf-8")
+        parts = [name for name, *_ in v.BAR]
+        self.assertEqual(set(parts), {"bar_hot", "bar", "band", "bar_top"})
+        for name in parts:
+            self.assertIn('"%s"' % name, text, "vent_anim.gd never takes over the bar part %s" % name)
+        self.assertEqual(self.c["BAR_PARTS"], ["bar", "bar_top"])
+        self.assertIn("for e: Array in _bar + _bar_hot:", text)   # bar_hot rides the bar's calm / problem scale
+
+    def test_timings(self) -> None:
+        c = self.c
+        self.assertTrue(3.0 <= c["BREATH_PERIOD_S"] <= 4.0)
+        self.assertTrue(0.12 <= c["SLAM_S"] <= 0.2)
+        self.assertGreater(c["DEMO_HOLD"][1] - c["DEMO_HOLD"][0], 4.0)
+        self.assertGreaterEqual(c["DEMO_PROBLEM_S"], 6.0)
+        self.assertTrue(20.0 <= c["DEMO_S"] <= 25.0)
+
+    def test_runner_offers_the_clip(self) -> None:
+        from runner.commands import ship
+        self.assertEqual(ship.VENT_ANIM["size"], (1280, 720))
+        self.assertLessEqual(ship.VENT_ANIM["max_mb"], 15)
+        self.assertEqual(ship.MOTION["seconds"], self.c["DEMO_S"])
+        text = (ROOT / "tools" / "runner" / "commands" / "ship.py").read_text(encoding="utf-8")
+        self.assertIn('"--vent-anim"', text)
+
+
+if __name__ == "__main__":
+    unittest.main()

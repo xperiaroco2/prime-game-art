@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import random
 import struct
 import sys
 import unittest
@@ -369,6 +370,134 @@ class RunTest(unittest.TestCase):
             (d / "video" / "lively_v8").mkdir(parents=True)
             self.assertIn("lively_v8", R.run_refusal(d, "v8", False, True, 20.0))
             self.assertIsNone(R.run_refusal(d, "v8", False, True, 0.0))
+
+
+class RimCutTest(unittest.TestCase):
+    """R1: the rim cut's pure maths (alien_lively_build.rim_cut): the curve's fit and one triangle's cut."""
+
+    def test_fourier_fit_recovers_a_series(self):
+        coef = [0.5, 0.1, -0.05, 0.0, 0.02]
+        phi = [2 * math.pi * k / 60 for k in range(60)]
+        got = G.fourier_fit(phi, [G.fourier_eval(coef, p) for p in phi], 2)
+        for a, b in zip(got, coef):
+            self.assertAlmostEqual(a, b, places=9)
+        with self.assertRaises(ValueError):
+            G.fourier_fit(phi[:5], [0.0] * 5, 2)
+
+    def test_fourier_fit_smooths_a_sawtooth_and_drops_a_spur(self):
+        """R2: an irregular sawtooth (steps in and out of uneven depth, as the rim's triangles leave them), not a
+        Nyquist alternation, which no order below 40 can see."""
+        rng = random.Random(7)
+        phi = [2 * math.pi * k / 80 for k in range(80)]
+        truth = [0.6 + 0.1 * math.cos(p) for p in phi]
+        step = [rng.uniform(-0.02, 0.02) for _ in phi]
+        val = [t + e for t, e in zip(truth, step)]
+        val[10] += 0.5  # a junction's spur
+        coef, keep = G.fourier_fit_trimmed(phi, val, 4)
+        self.assertFalse(keep[10])
+        self.assertEqual(sum(keep), 79)
+        err = [G.fourier_eval(coef, p) - t for p, t in zip(phi, truth)]
+        rms = math.sqrt(sum(e * e for e in err) / len(err))
+        rms_in = math.sqrt(sum(e * e for k, e in enumerate(step) if k != 10) / 79)
+        self.assertLess(rms, 0.55 * rms_in)  # the steps averaged out (about sqrt(9 / 79) of them stays, 0.45 here)
+        self.assertLess(max(abs(e) for e in err), 0.012)  # and the spur left no bump
+
+    def test_cut_one_corner_alone(self):
+        pieces = G.cut_triangle((-1.0, 1.0, 3.0))
+        self.assertEqual([s for _p, s in pieces], [-1, 1])
+        corner, quad = pieces[0][0], pieces[1][0]
+        self.assertEqual(corner[0], ("v", 0))
+        self.assertEqual(corner[1], ("e", 0, 1, 0.5))
+        self.assertEqual(corner[2], ("e", 0, 2, 0.25))
+        self.assertEqual(quad, [("e", 0, 1, 0.5), ("v", 1), ("v", 2), ("e", 0, 2, 0.25)])
+
+    def test_cut_keeps_the_winding(self):
+        """Every piece turns the parent's way (its signed area in 2D positive for a counter-clockwise parent)."""
+        tri = [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]
+
+        def at(ref):
+            if ref[0] == "v":
+                return tri[ref[1]]
+            a, b, t = tri[ref[1]], tri[ref[2]], ref[3]
+            return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+        for g in ((-1.0, 1.0, 3.0), (2.0, -1.0, 1.0), (1.0, 2.0, -0.5), (0.0, -1.0, 1.0), (1.0, 0.0, -2.0)):
+            total = 0.0
+            for poly, _s in G.cut_triangle(g):
+                pts = [at(x) for x in poly]
+                area = sum(pts[k][0] * pts[(k + 1) % len(pts)][1] - pts[(k + 1) % len(pts)][0] * pts[k][1]
+                           for k in range(len(pts))) / 2
+                self.assertGreater(area, 0.0, g)
+                total += area
+            self.assertAlmostEqual(total, 0.5, places=12)
+
+    def test_cut_through_a_corner_and_no_cut(self):
+        pieces = G.cut_triangle((0.0, -1.0, 1.0))
+        self.assertEqual([s for _p, s in pieces], [-1, 1])
+        self.assertEqual(pieces[0][0], [("v", 0), ("v", 1), ("e", 1, 2, 0.5)])
+        self.assertEqual(G.cut_triangle((0.0, 1.0, 2.0)), [([("v", 0), ("v", 1), ("v", 2)], 1)])
+        self.assertEqual(G.cut_triangle((0.0, -1.0, 0.0)), [([("v", 0), ("v", 1), ("v", 2)], -1)])
+        self.assertEqual(G.cut_triangle((0.0, 0.0, 0.0)), [([("v", 0), ("v", 1), ("v", 2)], 0)])
+
+    def test_replace_accessor_grows_the_rows(self):
+        doc, binary = G.read_glb(tiny_glb(3))
+        doc["accessors"][0]["min"], doc["accessors"][0]["max"] = [0, 0, 0], [0, 0, 0]
+        G.replace_accessor(doc, binary, 0, [(0, 0, 0), (1, 2, 3), (-1, 5, 0), (2, 2, 2)])
+        a = doc["accessors"][0]
+        self.assertEqual(a["count"], 4)
+        self.assertEqual((a["min"], a["max"]), ([-1, 0, 0], [2, 5, 3]))
+        self.assertEqual(G.read_vec3(doc, binary, 0)[3], (2.0, 2.0, 2.0))
+        doc["accessors"].append({"bufferView": 0, "componentType": 5123, "count": 3, "type": "SCALAR"})
+        G.replace_accessor(doc, binary, 1, [0, 1, 2, 2, 1, 3], 5125)
+        v = doc["bufferViews"][doc["accessors"][1]["bufferView"]]
+        self.assertEqual((doc["accessors"][1]["count"], doc["accessors"][1]["componentType"], v["target"]), (6, 5125, 34963))
+        self.assertEqual(struct.unpack_from("<6I", binary, v["byteOffset"]), (0, 1, 2, 2, 1, 3))
+        self.assertEqual(doc["buffers"][0]["byteLength"], len(binary))
+
+    def test_compact_buffers_drops_unused_views_and_keeps_the_data(self):
+        """E1: after replace_accessor (the old views left unused) and with a sparse accessor and an image in views of
+        odd lengths, compact_buffers leaves no view unused, every kept view's bytes as they were, 4-byte aligned."""
+        doc, binary = G.read_glb(tiny_glb(3))
+        doc["accessors"].append({"bufferView": 0, "componentType": 5123, "count": 3, "type": "SCALAR"})
+        G.replace_accessor(doc, binary, 0, [(0, 0, 0), (1, 2, 3), (-1, 5, 0), (2, 2, 2)])
+        G.replace_accessor(doc, binary, 1, [0, 1, 2, 2, 1, 3], 5125)  # view 0 is now unused
+
+        def add_view(payload):
+            binary.extend(bytes(-len(binary) % 4))
+            doc["bufferViews"].append({"buffer": 0, "byteOffset": len(binary), "byteLength": len(payload)})
+            binary.extend(payload)
+            return len(doc["bufferViews"]) - 1
+        add_view(b"\x07" * 12)  # never used
+        si, sv = add_view(struct.pack("<H", 1) + b"\x00"), add_view(struct.pack("<3f", 9, 8, 7))
+        doc["accessors"][0]["sparse"] = {"count": 1, "indices": {"bufferView": si, "componentType": 5121},
+                                         "values": {"bufferView": sv}}
+        doc["images"] = [{"bufferView": add_view(b"PNG-ish!x"), "mimeType": "image/png"}]
+        doc["buffers"][0]["byteLength"] = len(binary)
+
+        def payloads(d, b):
+            out = {}
+            for k, a in enumerate(d["accessors"]):
+                v = d["bufferViews"][a["bufferView"]]
+                out[f"a{k}"] = bytes(b[v["byteOffset"]:v["byteOffset"] + v["byteLength"]])
+                for part in ("indices", "values"):
+                    if "sparse" in a:
+                        v = d["bufferViews"][a["sparse"][part]["bufferView"]]
+                        out[f"a{k}{part}"] = bytes(b[v["byteOffset"]:v["byteOffset"] + v["byteLength"]])
+            v = d["bufferViews"][d["images"][0]["bufferView"]]
+            out["image"] = bytes(b[v["byteOffset"]:v["byteOffset"] + v["byteLength"]])
+            return out
+        before = payloads(doc, binary)
+        views_before = len(doc["bufferViews"])
+        out = G.compact_buffers(doc, binary)
+        self.assertEqual(payloads(doc, out), before)
+        used = {a["bufferView"] for a in doc["accessors"]} | {doc["images"][0]["bufferView"]}
+        used |= {doc["accessors"][0]["sparse"][p]["bufferView"] for p in ("indices", "values")}
+        self.assertEqual(used, set(range(len(doc["bufferViews"]))))  # no unused view left
+        self.assertEqual(len(doc["bufferViews"]), views_before - 2)  # the old shared view and the stray one
+        self.assertTrue(all(v["byteOffset"] % 4 == 0 for v in doc["bufferViews"]))
+        self.assertEqual(doc["buffers"][0]["byteLength"], len(out))
+        self.assertLess(len(out), len(binary))
+        doc2, bin2 = G.read_glb(G.write_glb(doc, out))  # and it round-trips as a GLB
+        self.assertEqual(G.read_vec3(doc2, bin2, 0)[3], (2.0, 2.0, 2.0))
 
 
 if __name__ == "__main__":

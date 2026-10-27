@@ -14,6 +14,9 @@ extends SceneTree
 ##   sheet.png (1280 px wide) and shots.json; prints SHIP saved <dir>.
 ## video (off-screen window, as shoot): "video": {"fps", "fov", "keys": [[eye, look, seconds]]} (Godot coordinates):
 ##   the camera through the keys (cubic in time), one PNG per frame in <out>/frames/, video.json; "watchdog_s".
+## vent_anim (off-screen window, as shoot; vents-anim1): "anim": {"piece", "eye", "look", "fov", "fps", "mark_travel"}:
+##   vent_anim.gd's controller on the placed piece through its demo inputs, the camera still; one PNG per frame in
+##   <out>/frames/, the key moments labelled in <out>/keys/, keys_sheet.png (1280 px) and anim.json.
 ## play (an on-screen window, for the engineer only: `ship --play`): the night scene as shoot dresses it and a
 ##   first-person capsule (player.gd) at "spawn" [x, h, y] facing "spawn_yaw" degrees; P saves <out>/shot_*.png and a
 ##   line in <out>/shots.txt. With "test": true the runner opens it off-screen (`ship --play-test`): the capsule walks
@@ -21,6 +24,8 @@ extends SceneTree
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const Player = preload("res://ship/player.gd")
+const VentGlow = preload("res://ship/vent_glow.gd")
+const VentAnim = preload("res://ship/vent_anim.gd")
 const WATCHDOG_S: float = 240.0
 const UP := Vector3.UP
 const SPEED: float = 3.0
@@ -80,7 +85,7 @@ func _initialize() -> void:
 	nav_blink = bool(_req.get("nav_blink", true))
 	DirAccess.make_dir_recursive_absolute(_out)
 	var test_play: bool = _req["mode"] == "play" and bool(_req.get("test", false))
-	if _req["mode"] in ["shoot", "video"] or test_play:
+	if _req["mode"] in ["shoot", "video", "vent_anim"] or test_play:
 		if DisplayServer.get_name() == "headless":
 			_fail("shoot needs a window (off-screen), not --headless")
 			return
@@ -97,6 +102,8 @@ func _initialize() -> void:
 		_check()
 	elif _req["mode"] == "video":
 		_video()
+	elif _req["mode"] == "vent_anim":
+		_vent_anim()
 	else:
 		_shoot()
 
@@ -402,7 +409,12 @@ func _dress(ship: Node3D) -> int:
 		dump.append([_r3(omni.position), snappedf(omni.light_energy, 0.001), snappedf(omni.omni_range, 0.001),
 			omni.light_color.to_html(false)])
 	_write("lights.json", {"cells": list.size(), "strip_lights": dump})  # where the emissive cells' lights stand (the hall disc's spot, inside-3)
-	return mini(list.size(), MAX_LIGHTS)
+	# vents-b2: the vents' well lights, children of their glow panels; calm by default (the heat panel and its lights
+	# hidden; ship --shoot's problem state shows them, _stations)
+	var vents: int = VentGlow.add(ship, _lk("vent_well_scale", 1.0))
+	for n: Node in ship.find_children("station_vent_*_heat", "Node3D", true, false):
+		(n as Node3D).visible = false
+	return mini(list.size(), MAX_LIGHTS) + vents
 
 
 ## Every mesh under n on the render layers bits.
@@ -476,7 +488,9 @@ func _probes() -> void:
 
 func _shoot() -> void:
 	_environment()
-	var lights: int = _dress(_build())
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
+	_stations(ship)
 	_probes()
 	print("SHIP look: %d emissive lights" % lights)
 	if nav_blink:
@@ -504,13 +518,14 @@ func _shoot() -> void:
 		_ab(v[5] if v.size() > 5 else {})
 		images[v[0]] = await _shot(v[0], v[1], shots)
 		_ab({})
-	var top: Dictionary = _req["top"]
-	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	_camera.size = float(top["size_m"])
-	_camera.keep_aspect = Camera3D.KEEP_WIDTH
-	# looking straight down with +z (south) up the picture: east falls on the left, as plan-3.jpg
-	_camera.look_at_from_position(Vector3(0, 60, 0), Vector3.ZERO, Vector3(0, 0, 1))
-	images[top["name"]] = await _shot(top["name"], top["title"], shots)
+	if _req.has("top"):  # (a --views prefix set alone has no plan view)
+		var top: Dictionary = _req["top"]
+		_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+		_camera.size = float(top["size_m"])
+		_camera.keep_aspect = Camera3D.KEEP_WIDTH
+		# looking straight down with +z (south) up the picture: east falls on the left, as plan-3.jpg
+		_camera.look_at_from_position(Vector3(0, 60, 0), Vector3.ZERO, Vector3(0, 0, 1))
+		images[top["name"]] = await _shot(top["name"], top["title"], shots)
 	if _req.has("top_full"):  # the whole ship from straight above, nose to nozzles, framed by its height
 		var full: Dictionary = _req["top_full"]
 		_camera.size = float(full["size_m"])
@@ -547,6 +562,48 @@ func _shoot() -> void:
 	_write("shots.json", {"shots": shots})
 	print("SHIP saved %s" % _out)
 	quit(0)
+
+
+## The stations' states for the shots (station 1, the vents; ship --shoot --vent-states): the request's "stations"
+## {piece: {"slats": t, "show": [suffix], "hide": [suffix], "dim": [suffix], "dark": [suffix]}} and "open_rad": each placed piece's leaves `<piece>_slat<k>`
+## turned to rotation.x = -open_rad * t, its `<piece>_<suffix>` nodes hidden (the calm glow `cool` for the problem),
+## dimmed (a lamp's glow at a tenth, calm; "<part>:<material suffix>" one surface) or dark (vents-b3: the glow off and
+## the colour dark bronze, the blades' seams calm, as vent_anim.gd's SEAM_DARK), as the game drives them.
+func _stations(ship: Node3D) -> void:
+	var states: Dictionary = _req.get("stations", {})
+	for node: Node in ship.get_children():
+		var pid: String = String(node.name).rsplit("_", true, 1)[0]
+		if not states.has(pid):
+			continue
+		var st: Dictionary = states[pid]
+		for leaf: Node in node.find_children("%s_slat*" % pid, "Node3D", true, false):
+			(leaf as Node3D).rotation.x = -float(_req["open_rad"]) * float(st.get("slats", 0.0))
+		for suffix: String in st.get("show", []):   # vents-b2: the problem shows the heat panel and its lights
+			for n: Node in node.find_children("%s_%s" % [pid, suffix], "Node3D", true, false):
+				(n as Node3D).visible = true
+		for suffix: String in st.get("hide", []):
+			for n: Node in node.find_children("%s_%s" % [pid, suffix], "Node3D", true, false):
+				(n as Node3D).visible = false
+		for key: String in ["dim", "dark"]:
+			for spec: String in st.get(key, []):
+				# "<part>" every surface of the part; "<part>:<material suffix>" only the surfaces whose material
+				# ends with it (way A: the lamp is the body's `vent_a_body__lamp` surface, "body:__lamp")
+				var suffix: String = spec.get_slice(":", 0)
+				var mat_suffix: String = spec.get_slice(":", 1) if spec.contains(":") else ""
+				for n: Node in node.find_children("%s_%s" % [pid, suffix], "MeshInstance3D", true, false):
+					var mi: MeshInstance3D = n
+					for i: int in mi.mesh.get_surface_count():
+						var src: Material = mi.mesh.surface_get_material(i)
+						if src == null or (mat_suffix != "" and not src.resource_name.ends_with(mat_suffix)):
+							continue
+						var m: BaseMaterial3D = (src as BaseMaterial3D).duplicate()
+						if key == "dim":
+							m.emission_energy_multiplier *= 0.1
+						else:
+							m.emission_enabled = false
+							m.albedo_color = VentAnim.SEAM_DARK
+						mi.set_surface_override_material(i, m)
+
 
 
 ## The engineer's walk (mode "play"): an on-screen window of its own (the project opens every window borderless and
@@ -671,6 +728,87 @@ func _video() -> void:
 	_write("video.json", {"frames": count, "fps": fps, "seconds": times[-1], "lights": lights,
 		"render_s": (Time.get_ticks_msec() - started) / 1000.0})
 	print("SHIP video %d frames" % count)
+	quit(0)
+
+
+## vents-anim1: one vent's animation in place at night (the game's look), from a still camera at the player's eye:
+## the controller (vent_anim.gd) steps 1 / fps per frame through VentAnim.demo; the demo's key moments are shot again
+## with their label (the clip's frames have none) for the sheet.
+func _vent_anim() -> void:
+	_environment()
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
+	_probes()
+	var a: Dictionary = _req["anim"]
+	var piece: Node3D = null
+	for n: Node in ship.get_children():
+		if String(n.name).begins_with(String(a["piece"]) + "_") or String(n.name) == String(a["piece"]):
+			piece = n
+			break
+	if piece == null:
+		_fail("no placed %s" % a["piece"])
+		return
+	var anim: Node = VentAnim.new()
+	anim.manual = true
+	piece.add_child(anim)
+	anim.setup(piece, String(a["piece"]), float(a["mark_travel"]))
+	_camera = Camera3D.new()
+	_camera.near = 0.05
+	_camera.far = 500.0
+	_camera.fov = float(a["fov"])
+	root.add_child(_camera)
+	_camera.make_current()
+	_camera.look_at_from_position(_v(a["eye"]), _v(a["look"]), UP)
+	var layer: CanvasLayer = CanvasLayer.new()
+	_label = Label.new()
+	_label.position = Vector2(16, 10)
+	_label.add_theme_font_size_override("font_size", 30)
+	_label.add_theme_color_override("font_color", Color(1, 1, 1))
+	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_label.add_theme_constant_override("outline_size", 8)
+	layer.add_child(_label)
+	root.add_child(layer)
+	for i: int in 30:  # the probes, SSAO and glow settle
+		await process_frame
+	var fps: float = float(a["fps"])
+	var count: int = int(VentAnim.DEMO_S * fps)
+	var dir: String = _out.path_join("frames")
+	DirAccess.make_dir_recursive_absolute(dir)
+	DirAccess.make_dir_recursive_absolute(_out.path_join("keys"))
+	var keys: Array = VentAnim.demo_keys()
+	var key_frames: Dictionary = {}
+	for kv: Array in keys:
+		key_frames[int(round(float(kv[0]) * fps))] = kv[1]
+	var tiles: Array = []
+	var started: int = Time.get_ticks_msec()
+	var states: Array = []
+	for f: int in count:
+		var inp: Array = VentAnim.demo(f / fps)
+		anim.problem = inp[0]
+		anim.hold = inp[1]
+		anim.step(1.0 / fps)
+		await RenderingServer.frame_post_draw
+		var image: Image = root.get_texture().get_image()
+		image.convert(Image.FORMAT_RGB8)
+		_save(image, dir.path_join("%05d.png" % f))
+		if states.is_empty() or states[-1][1] != anim.state:
+			states.append([snappedf(f / fps, 0.01), anim.state])
+		if key_frames.has(f):
+			_label.text = "%.2f s  %s" % [f / fps, key_frames[f]]
+			await RenderingServer.frame_post_draw
+			var shot: Image = root.get_texture().get_image()
+			shot.convert(Image.FORMAT_RGB8)
+			_save(shot, _out.path_join("keys/%05d.png" % f))
+			shot.resize(320, 180, Image.INTERPOLATE_LANCZOS)
+			tiles.append(shot)
+			_label.text = ""
+	var sheet: Image = Image.create(1280, 180 * ceili(tiles.size() / 4.0), false, Image.FORMAT_RGB8)
+	for i: int in tiles.size():
+		sheet.blit_rect(tiles[i], Rect2i(0, 0, 320, 180), Vector2i((i % 4) * 320, (i / 4) * 180))
+	_save(sheet, _out.path_join("keys_sheet.png"))
+	_write("anim.json", {"frames": count, "fps": fps, "seconds": VentAnim.DEMO_S, "lights": lights, "states": states,
+		"render_s": (Time.get_ticks_msec() - started) / 1000.0})
+	print("SHIP vent_anim %d frames" % count)
 	quit(0)
 
 

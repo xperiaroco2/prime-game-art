@@ -5,7 +5,7 @@
 # Plan coordinates from the ship's centre in metres: x east, y south, h up from the ground. Godot: (x, h, y).
 # `tools/run.py ship --check` checks every rule below (tools/runner/ship_layout.py, docs/ship.md).
 version = 3                                  # lens step 1 (art#263 c6344490367): the lens rooms, the vault
-raw_dir = "ship/v3"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
+raw_dir = "ship/v5"                          # under the raw folder: pieces/, shots/, plan/, logs/, notes/
 interior = "layouts/ship/interior.toml"      # the INTERIOR lane's pieces and placements
 exterior = "layouts/ship/exterior.toml"      # the EXTERIOR lane's pieces and placements
 plan_ref = "D:/prime-game-design/ideas/ship-components/2d/plan-3.jpg"
@@ -148,12 +148,20 @@ at = [2.4090, -4.7912]                        # rebuild F: on the line between w
 normal = [-0.9500, 0.3123]                    # from the mouth (1.65, -7.1) to the hall's vertex (2.915, -3.252)), so
                                               # its 1.6 m plain band lies on those two plain modules, off the jamb
 room = "throat"
+recess_m = 0.0                                # vents-b5: back on the wall's face (b4 0.08 into it)
+depth_m = 0.6                                 # the vents' BUDGET from the wall's face, not the unit's depth: the unit is
+                                              # 0.50 (ship_interior_vent.UNIT; the column's foot), the rest is slack
+                                              # (b3: the calm gill blades 19 cm
+                                              # past the frame, the engineer, art#263 comment 6363588759); vents-b5: the
+                                              # blades inside the frame, the unit 0.50 deep; the other wall units 0.5
 
 [[stations.spot]]
 id = "vent_w"
 at = [-2.4090, -4.7912]
 normal = [0.9500, 0.3123]
 room = "throat"
+recess_m = 0.0
+depth_m = 0.6
 
 [[stations.spot]]
 id = "socket_e"                               # the hall wall east of the back; rebuild A: the corridor's opening
@@ -194,16 +202,17 @@ room = "corridor_w"
 [[stations.spot]]
 id = "renewer_e"                              # lens step 1: on the lens's aft wall at its vertex 87.82 deg round the
 at = [10.2686, 3.2369]                        # axis, clear of the window band (rebuild E: (9.922, 4.381) on the axis);
-normal = [0.1129, -0.9936]                    # the player stands 1.3 m in, the pass behind runs forward across the room
+normal = [0.1129, -0.9936]                    # the player stands 1.453 m in, the pass behind runs forward across the room
 room = "tip_e"
-depth_m = 0.9
+depth_m = 1.053                               # the crystal charger's reach from the wall's face (its report's d 105.25 cm;
+                                              # fix1: was 0.9, which stood the player inside its front pads)
 
 [[stations.spot]]
 id = "renewer_w"
 at = [-10.2686, 3.2369]
 normal = [-0.1129, -0.9936]
 room = "tip_w"
-depth_m = 0.9
+depth_m = 1.053
 
 [ramp]                                       # the mouth ramp, north at the centre; it meets the ground
 width_m = 3.3                                # rebuild C: the mouth's width
@@ -285,6 +294,7 @@ exposure = 1.0                                 # AgX exposure (was 1.2)
 emission_scale = 0.12                          # every emissive glTF material's strength x this (keeps the hue)
 strip_light_scale = 1.5                        # the OmniLight per emissive cell (from the unscaled strength)
 strip_whiten = 0.0                             # those lights' colour lightened by this (was 0.15)
+vent_well_scale = 1.0                          # the vents' well lights (vents-b2, godot/ship/vent_glow.gd) x this
 lamp_scale = 0.25                              # the lamps below
 probe_intensity = 0.15                         # every room's reflection probe, the tip rooms too (no windows since rebuild A); the throat, open to the sky, keeps 1.0
 int_value = 0.55                               # the int_silver_* base colour x this
@@ -402,6 +412,21 @@ int_amber = {c = [1.0, 0.42, 0.06], e = 0.14, l = 2.0, rr = 0.5}    # e 0.14: th
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
+int_halo__vent_heat = {c = [1.0, 0.13, 0.0], e = 0.6, l = 0.0}     # station 1: the vents' heat (vents-b3: a deep red-orange, b2's read peach)
+int_halo__vent_seam = {c = [1.0, 0.13, 0.0], l = 0.0}             # the blades' lit seams, the heat's colour (dark calm: vent_anim.gd, ship.py VENT_STATES)
+int_cyan__vent_cool = {c = [0.0, 0.5, 1.0], e = 1.0, l = 0.0}       # station 1: the vents' calm glow behind the slats (hidden for the problem; vents-b2: strength 3, its own well lights, vent_glow.gd)
+vent_b_bronze = {v = 1.55}                                           # the vents' bronze, lifted in the night light (vents-b3: darker, patinated; the b3 colour at 1.25 read near black)
+vent_b_bronze2 = {v = 1.55}                                          # vents-b3: the frame's second panel tone
+vent_b_edge = {v = 1.0}                                              # the vents' chamfers (vents-b3: duller, no blown highlights)
+# the vents' look step (vents-a4): each light its own clean piece; they glow and light nothing
+glow_cyan__vent_strip = {c = [0.0, 0.62, 1.0], e = 0.6, l = 0.0}     # the frame's strips (vents-b3: a saturated cyan)
+glow_cyan__vent_hand = {c = [0.0, 0.62, 1.0], e = 0.7, l = 0.0}      # the scanner's hand outline (vents-b3: neon cyan on the black screen)
+
+glow_amber__vent_bar = {c = [1.0, 0.36, 0.0], e = 0.9, l = 0.0}      # the light bar's amber (vents-b2: saturated, past the glow threshold)
+glow_nav_green__vent_band = {c = [0.0, 1.0, 0.08], e = 0.9, l = 0.0}    # the bar's green band (vents-b2: a clear green)
+glow_nav_white__vent_bar_hot = {c = [1.0, 0.93, 0.75], e = 0.7, l = 0.0}  # the bar's white-hot foot
+int_dark__vent_screen = {c = [0.0, 0.0, 0.0], e = 0.0, l = 0.0}      # the hand's dark screen
+glow_nav_red__vent_lamp = {c = [0.9, 0.0, 0.0], e = 2.4, l = 0.0}    # station 1: the problem beacon, a deep red (vents-b2: no green, it read salmon; a glow)
 int_plate = {v = 1.0, r = 0.45, m = 0.3}                            # join 2: at metallic 0.8 the hall's centre disc mirrored the dark lamp cap (a black hole); diffuse now
 int_grate = {v = 1.2, r = 0.1, m = 0.6}
 int_glass = {a = 0.05, r = -0.03}
@@ -483,6 +508,35 @@ views = [
   ["out_fair_lead_w_below", "outside: the west lens's lead fairing from below", [-11.6, -3.8, 0.85], [-10.2, -1.6, 1.50], 50.0],
   ["out_fair_trail_w", "outside: the west lens's trail fairing from the side", [-13.58, 7.16, 1.60], [-10.7, 4.4, 1.40], 45.0],
   ["out_fair_trail_w_below", "outside: the west lens's trail fairing from below", [-12.2, 5.9, 0.85], [-10.6, 4.3, 1.50], 50.0],
+  # step 2, station 1: the throat vents in place (ship --shoot --views in_vent_) and their edges against the
+  # real wall and floor close up (--views cu_vent_); the raise: +0.6 m in h
+  ["in_vent_hall", "vents: the throat from the hall, both vents", [0, -2.4, 2.8], [0, -6.4, 1.9], 72.0],
+  ["in_vent_ramp", "vents: the throat from the ramp, both vents", [0, -8.8, 2.6], [0, -4, 2], 68.0],
+  ["in_vent_e_2m", "vents: e vent from 2 m", [0.665, -3.692, 2.8], [2.108, -4.745, 2.2], 60.0],
+  ["in_vent_e_4m", "vents: e vent from 4 m at an angle", [-0.134, -1.639, 2.85], [2.108, -4.745, 2.2], 55.0],
+  ["in_vent_w_2m", "vents: w vent from 2 m", [-0.665, -3.692, 2.8], [-2.108, -4.745, 2.2], 60.0],
+  ["in_vent_w_4m", "vents: w vent from 4 m at an angle", [0.134, -1.639, 2.85], [-2.108, -4.745, 2.2], 55.0],
+  ["cu_vent_e_box_floor_l", "vents: e box floor l", [1.164, -5.698, 1.65], [1.928, -5.454, 1.2], 50.0],
+  ["cu_vent_e_box_side_bend_l", "vents: e box side bend l", [1.291, -5.792, 2.85], [2.023, -5.485, 2.65], 50.0],
+  ["cu_vent_e_box_top_l", "vents: e box top l", [1.131, -5.476, 2.5], [1.908, -5.258, 2.72], 50.0],
+  ["cu_vent_e_box_top_mid", "vents: e box top mid", [1.412, -4.621, 2.5], [2.074, -4.786, 2.74], 50.0],
+  ["cu_vent_e_col_top", "vents: e col top", [1.803, -3.592, 2.7], [2.327, -4.08, 2.78], 50.0],
+  ["cu_vent_e_col_side_bend_r", "vents: e col side bend r", [2.102, -3.322, 2.85], [2.51, -4.003, 2.65], 50.0],
+  ["cu_vent_e_col_floor_r", "vents: e col floor r", [1.944, -3.323, 1.65], [2.415, -3.972, 1.2], 50.0],
+  ["cu_vent_e_box_col_top", "vents: e box col top", [1.506, -4.336, 2.55], [2.233, -4.239, 2.7], 50.0],
+  ["cu_vent_e_lamp", "vents: e lamp", [2.06, -3.803, 2.67], [2.36, -4.109, 2.77], 50.0],
+  ["cu_vent_e_slats", "vents: e slats", [1.633, -4.431, 2.55], [2.014, -4.872, 2.3], 50.0],
+  ["cu_vent_e_slat_ends", "vents: e slat ends l", [1.397, -4.669, 2.25], [1.924, -5.21, 1.9], 50.0],
+  ["cu_vent_e_box_bottom", "vents: e box bottom, opening floor", [1.5232, -4.6053, 2.4], [1.9978, -4.7613, 1.42], 50.0],
+  ["cu_vent_e_frame_left", "vents: e frame left panels", [1.2552, -4.7522, 2.5], [1.7849, -5.2808, 2.0], 50.0],
+  ["cu_vent_e_bezel", "vents: e bezel in the column", [1.8127, -3.9799, 2.8], [2.1876, -4.0237, 2.4], 50.0],
+  ["cu_vent_w_slats", "vents: w slats", [-1.633, -4.431, 2.55], [-2.014, -4.872, 2.3], 50.0],
+  ["cu_vent_w_box_floor_l", "vents: w box floor l", [-1.164, -5.698, 1.65], [-1.928, -5.454, 1.2], 50.0],
+  ["cu_vent_w_box_side_bend_l", "vents: w box side bend l", [-1.291, -5.792, 2.85], [-2.023, -5.485, 2.65], 50.0],
+  ["cu_vent_w_box_top_l", "vents: w box top l", [-1.131, -5.476, 2.5], [-1.908, -5.258, 2.72], 50.0],
+  ["cu_vent_w_col_top", "vents: w col top", [-1.803, -3.592, 2.7], [-2.327, -4.08, 2.78], 50.0],
+  ["cu_vent_w_col_side_bend_r", "vents: w col side bend r", [-2.102, -3.322, 2.85], [-2.51, -4.003, 2.65], 50.0],
+  ["cu_vent_w_col_floor_r", "vents: w col floor r", [-1.944, -3.323, 1.65], [-2.415, -3.972, 1.2], 50.0],
 ]
 # details 1: views shot by day after the night ones (ship.gd _day: the sun, a pale sky; the moon and key off)
 day_views = [

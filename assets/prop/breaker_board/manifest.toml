@@ -1,0 +1,48 @@
+# The ship's breaker board, the shells (art#263's stations).
+# Built by tools/blender/board_run.py --tag b5 --asset assets/prop/breaker_board; a rebuild
+# changes the hashes below.
+id = "breaker_board"
+kind = "prop"
+slot = ""
+title = "The ship's breaker board, the shells"
+notes = "The breaker board on each corridor's front wall (breaker_e, breaker_w): an octagonal bronze board 1.60 m wide on a graphite wall plate, four bays left to right red, yellow, green, blue, in each a glowing crystal core behind an enamel shell on a bottom hinge (four leaves shell_<colour>, their origin on the hinge axis, local X rotation 0 closed, 110 degrees tripped, each with its convex collider), a lamp over each bay, the red problem beacon on top, cyan strips and two cable loops into the wall; 27,726 triangles, front +Z, origin on the plate's back at the floor (placed 0.07 m out of the wall's face). States: export/board.gd (HANDOFF.md). From the sheet the engineer picked on 2026-10-25 and its drawing in cm (prime-game-design 6b0e83e, ideas/ship-components/stations-final: board-variants/v3-shell-final.jpg, board-drawing/; copied to the raw folder; the AI concept used only as a reference), built from code in headless Blender (tools/blender/board_build.py from board_dims.toml): no part of the model was generated or downloaded."
+tools = ["blender 5.2.2", "prime-game-art board_build.py, board_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-25
+url = "https://github.com/xperiaroco2/prime-game-art/issues/263"
+
+[[raw]]
+file = "ship/v4/board/ref/v3-shell-final.jpg"
+sha256 = "4499ed7743c1493defc8769e46dc3c99b6059cbb6a4a1de6e9b698064e0d7111"
+
+[[raw]]
+file = "ship/v4/board/ref/front-ortho.jpg"
+sha256 = "8654823a5a5ab2250a85aec1879e5d730962f530841161d164d1a7c240473e9e"
+
+[[raw]]
+file = "ship/v4/board/ref/side-ortho.jpg"
+sha256 = "a03510e90fa217ef4b1a7fef90b78acd335ebd63b0e07a8ab0611dc825c1ae8e"
+
+[[raw]]
+file = "ship/v4/board/ref/drawing.js"
+sha256 = "5d9e3c7abf1f91a3fa2c8ce72c41c0518e4a45c0965458bc7aa5d75b2a7ff633"
+
+[[raw]]
+file = "ship/v4/board/b5/breaker_board.glb"
+sha256 = "a9bca5ab1bedb85b66be56d5c8896917b88ea85fc4af957d3cb867e8f4e87731"
+
+[[raw]]
+file = "ship/v4/board/b5/breaker_board.blend"
+sha256 = "f07e2d43aafece9cacf45be344e2784ac6080631161767ea1fa05e9429ad3cfc"
