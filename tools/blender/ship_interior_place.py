@@ -119,9 +119,9 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "throat_ceil": ("throat_ceil", {}, True),
     "th_wall_low_a": ("cor_wall_low", {"length": TH_MOD, "tone": "a", "prof": "throat"}, True),
     "th_wall_low_b": ("cor_wall_low", {"length": TH_MOD, "tone": "b", "prof": "throat"}, True),
-    "th_channel": ("cor_channel", {"length": TH_MOD, "prof": "throat"}, True),
-    "th_cables": ("cor_cables", {"length": TH_MOD, "prof": "throat"}, False),
-    "th_clip_h": ("clip_h", {"prof": "throat"}, False),
+    # gills step 2: the throat's cable bay (th_channel, th_cables, th_clip_h) is gone: its coloured cables read as a
+    # stray strip beside the fifth arch, and the concept's throat walls are plain; the pillow panel fills its place
+    "th_wall_mid": ("cor_wall_mid", {"length": TH_MOD, "prof": "throat"}, True),
     # the raise step 3 (art#263 bug 1): the last module at each hall corner, its chamfer mitred into the header
     "th_wall_up_end_e": ("cor_wall_up", {"length": TH_MOD, "tone": "a", "prof": "throat", "end": 1}, True),
     "th_wall_up_end_w": ("cor_wall_up", {"length": TH_MOD, "tone": "b", "prof": "throat", "end": -1}, True),
@@ -377,7 +377,7 @@ def placements() -> list[tuple[str, list[float], float]]:
             for pid in ("cor_arch", "arch_strip_l", "arch_strip_r"):
                 put(pid, p, yaw)
     # rebuild C: the throat's two slanted walls, four modules each from the mouth to the hall's corner (a piece's wall
-    # at local -y, TH_HALF from its origin): plain where the vent hangs, a cable bay elsewhere, the chamfer under the
+    # at local -y, TH_HALF from its origin): plain where the vent hangs (gills step 2: no cable bay), the chamfer under the
     # roof; amber floor lights along each wall
     for sx in (1, -1):
         mx, my = sx * _TM[0], _TM[1]
@@ -402,13 +402,7 @@ def placements() -> list[tuple[str, list[float], float]]:
                 continue
             if i not in TH_PLAIN:   # gills step 1: the vent's band is the gills piece's own wall, low to top
                 put(f"th_wall_low_{tone}", o, yw)
-            if i in TH_PLAIN:
-                pass
-            else:
-                put("th_channel", o, yw)
-                put("th_cables", o, yw)
-                for dx in (-0.25, 0.25):
-                    put("th_clip_h", local(o, yw, dx, 0.0), yw)
+                put("th_wall_mid", o, yw)   # gills step 2: in the cable bay's place
             if i == TH_N - 1:   # the raise step 3: the hall corner's module (tone a east, b west, as before)
                 put("th_wall_up_end_" + ("e" if sx > 0 else "w"), o, yw)
             elif i in TH_COVER and i not in TH_PLAIN:
