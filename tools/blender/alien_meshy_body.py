@@ -624,7 +624,10 @@ def main():
     co = co2
     log(f"smoothed {rep['smoothed']}")
 
-    # 3. onto the skeleton
+    # 3. onto the skeleton (M2: the whole surface first moved along y by `shift_y`; the spots above stay in the GLB's frame)
+    if "shift_y" in T:
+        co[:, 1] += T["shift_y"]
+        rep["shift_y"] = T["shift_y"]
     wz = T["wrap_z"]
     ax = np.abs(co[:, 0])
     side = np.where(co[:, 0] >= 0, 1.0, -1.0)
@@ -719,9 +722,12 @@ def main():
     # the chest's apexes smoothed again after the push (rig frame): the push's peak sits on them and points them
     sa = T["smooth_after"]
     ws = [np.array([M.soft_sphere(p, sp[:3], sp[3]) for p in co]) for sp in sa["spheres"]]
-    w = np.max(ws, 0)
-    npv = np.max([np.where(wi > 0, sp[4], 0) for wi, sp in zip(ws, sa["spheres"])], 0)
-    co2 = laplace(co, edges, w, npv)
+    if ws:  # M2: none for a chest without a push
+        w = np.max(ws, 0)
+        npv = np.max([np.where(wi > 0, sp[4], 0) for wi, sp in zip(ws, sa["spheres"])], 0)
+        co2 = laplace(co, edges, w, npv)
+    else:
+        co2 = co.copy()
     rep["smoothed_after_mm"] = round(float(np.linalg.norm(co2 - co, axis=1).max()) * 1000, 1)
     co = co2
     set_co(me, co)
@@ -807,7 +813,19 @@ def main():
                    "mesh_y": [round(float(hand[:, 1].min()), 3), round(float(hand[:, 1].max()), 3)] if len(hand) else None,
                    "mesh_z": [round(float(hand[:, 2].min()), 3), round(float(hand[:, 2].max()), 3)] if len(hand) else None,
                    "kept": "meshy" if T["keep_hands"] else "none"}
-    log(f"weights {rep['weights']} hand {rep['hand']}")
+    # the toes (M2): the vertices ahead of each Toes bone's head and their mean weight on it
+    W_, names_ = read_weights(mb)
+    toes = {}
+    for pre in ("Left", "Right"):
+        bn = arm.data.bones.get(f"{pre}Toes")
+        if bn is None or f"{pre}Toes" not in names_:
+            continue
+        hx = bn.head_local
+        ahead = (co[:, 1] < hx.y - 0.02) & (co[:, 2] < 0.10) & (co[:, 0] * hx.x > 0)
+        toes[pre] = {"vertices": int(ahead.sum()),
+                     "mean_weight": round(float(W_[ahead, names_.index(f"{pre}Toes")].mean()), 3) if ahead.any() else None}
+    rep["toes"] = toes
+    log(f"weights {rep['weights']} hand {rep['hand']} toes {toes}")
     bpy.data.objects.remove(rig)
     mb.name = mb.data.name = "Body"
     if mat:

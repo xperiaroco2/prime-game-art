@@ -20,12 +20,15 @@ KEYS_M1B = {"degenerate", "arm_thicken", "smooth_rest", "fingers", "bends"}
 # M1c (art #196): the knee notch found by its concavity (`notch`); the fingers' M1c keys live inside `fingers`
 KEYS_M1C = {"notch"}
 FINGER_KEYS_M1C = {"thumb_falloff", "base_band", "base_smooth"}
+# M2 (art #196, the chameleon): `shift_y`, the Meshy surface moved along y before the map (his Meshy body stands about
+# 8 cm in front of his skeleton's trunk line); the axolotl's files have none
+KEYS_M2 = {"shift_y"}
 
 
 def load(path: str | Path) -> dict:
     """A Meshy body target file (alien_meshy_targets/*.toml), its keys checked."""
     d = tomllib.loads(Path(path).read_text(encoding="utf-8"))
-    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C
+    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C - KEYS_M2
     if bad:
         raise ValueError(f"unknown keys {sorted(bad)}")
     missing = KEYS - set(d)

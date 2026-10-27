@@ -3182,6 +3182,13 @@ a time, by visibility.
     each joint's deepest frame from the bend's inside and in profile (`clip_frames.png`). The game's deepest (M1b's
     rig, the f3 build): knee 132 degrees (Jump_Start), hip 111 (Jump_Land), elbow 108 (Talk_Upper), shoulder 77
     (Jog_Bwd_Right), the thumb's metacarpal 52 (the crouch clips); the fingers curl together (at most 50 degrees).
+  - M2 (output under `bodies_a/m2/`): the chameleon by the same route, the full build (no `--from-body`):
+    `--targets alien_meshy_targets/chameleon_m2.toml`, his Meshy body (`chameleon_t`, 185k triangles) on H4b's
+    skeleton and weights (`h4b/body2`), M1c's finger and bend numbers. His Meshy trunk stands about 8 cm in front of
+    the skeleton's, so `shift_y` (M2's only new key; the axolotl's files have none) moves the whole surface back
+    before the map; no chest push (`bust.push` 0, `smooth_after.spheres` empty); the hand kept at its size (Meshy's
+    0.265 m against H4b's 0.262); the cut at H4b's ring (1.443) with its half-width, so the weld scales his head as
+    H4b's. `body.json`'s `toes`: the vertices ahead of each Toes bone and their mean weight on it.
 - **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in

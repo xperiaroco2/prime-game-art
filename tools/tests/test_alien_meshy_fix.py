@@ -185,6 +185,32 @@ class M1c(unittest.TestCase):
             self.assertFalse(set(t) & M.KEYS_M1C, n)
             self.assertFalse(set(t.get("fingers", {})) & M.FINGER_KEYS_M1C, n)
 
+    def test_m2_file(self):
+        """M2 (the chameleon): his target file loads; his skeleton is H4b's, his ring H4b's, the fingers and bends
+        the axolotl's final M1c numbers; the wrap and arm maps increase; no chest push."""
+        t = M.load(M.TARGETS / "chameleon_m2.toml")
+        c = M.load(M.TARGETS / "axolotl_m1c.toml")
+        self.assertEqual(t["name"], "chameleon_m2")
+        self.assertIn("chameleon_t/", t["meshy"])
+        self.assertTrue(t["rig_body"].endswith("h4b/body2/alien_body.blend"))
+        self.assertIn("shift_y", t)
+        self.assertAlmostEqual(t["ring_z"], 1.443, places=3)
+        self.assertEqual(t["fingers"], c["fingers"])
+        self.assertEqual(t["bends"], c["bends"])
+        self.assertEqual(t["bust"]["push"], 0.0)
+        self.assertEqual(t["smooth_after"]["spheres"], [])
+        for pairs in (t["wrap_z"], t["arm_x"]):
+            for (a0, b0), (a1, b1) in zip(pairs, pairs[1:]):
+                self.assertTrue(a0 < a1 and b0 < b1)
+        self.assertLess(t["neck_scale_from_z"], t["ring_z"])
+        self.assertLess(t["body_tris"], 31800)  # his head with its bridge is about 28,100 of the 60,000
+
+    def test_axolotl_files_have_no_m2(self):
+        for n in ("axolotl_m1.toml", "axolotl_m1b.toml", "axolotl_m1c.toml"):
+            self.assertFalse(set(M.load(M.TARGETS / n)) & M.KEYS_M2, n)
+        src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
+        self.assertIn('if "shift_y" in T:', src)
+
     def test_clip_filter(self):
         src = (BL / "alien_body_clip_bends.py").read_text(encoding="utf-8")
         self.assertIn('return "__" not in n and not n.startswith(("TM_", "MC_"))', src)
