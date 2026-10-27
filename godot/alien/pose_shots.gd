@@ -2,9 +2,10 @@ extends "res://alien/char_shots.gd"
 ## The photo poses' review pictures (art #196): tools/blender/alien_poses_run.py --shots writes the job (the head's
 ## entry as char_shots.gd's, the legs, arms and starting pairs) and runs this in the runner's off-screen window. The
 ## character in the game's look (char_shots.gd's _setup and studio), posed by pose_layers.gd (the reference the game
-## copies), standing at the origin; the photographer's camera: 1.5 m high, 7 m away, level turn only (FOV 19, the
-## whole body framed). Facings are where the camera stands: front (+Z, the character faces it), left (the
-## character's left, +X), right, back; the three-quarter view from front-left (35 deg). Outlines: every mesh drawn
+## copies), standing at the origin; the photographer's camera: 1.5 m high, 7 m away, level turn only (the far
+## shots' FOV 2 atan(FRAME_H / 2 / CAM_D) = 21.8 deg, the whole body framed; the close-ups 2.6 m away, their own
+## FOV). Facings are where the camera stands: front (+Z, the character faces it), left (the character's left, +X),
+## right, back; the three-quarter view from front-left (35 deg). Outlines: every mesh drawn
 ## flat black on white. Into <out>/, per character <c>:
 ## - starting_<c>.png: the 6 starting pairs (rows) x front, left, right, back rendered, then the same four outlines;
 ## - grid_front_<c>.png, grid_34_<c>.png: all 48 pairs, rows the legs, columns the arms, each cell labelled;
@@ -83,7 +84,8 @@ func _run() -> void:
 	_cam.projection = Camera3D.PROJECTION_PERSPECTIVE
 	var c: String = job["char_name"]
 	var out: String = job["out"]
-	var report := {"char": h["char"], "camera": {"height_m": CAM_H, "distance_m": CAM_D, "fov_deg": 19.0},
+	var report := {"char": h["char"], "camera": {"height_m": CAM_H, "distance_m": CAM_D, "fov_deg": snappedf(rad_to_deg(2.0 * atan(FRAME_H * 0.5 / CAM_D)), 0.1),
+		"close_up_distance_m": 2.6},
 		"facings": FACINGS, "three_quarter_deg": VIEW_34}
 	# the 6 starting pairs: four facings rendered, then their four outlines
 	var cells: Array[Image] = []

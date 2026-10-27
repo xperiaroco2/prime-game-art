@@ -72,6 +72,12 @@ func _check(c: Dictionary) -> Dictionary:
 	layers.setup(ap)
 	var r := {"glb": c["glb"], "tol_cm": TOL_CM, "poses": layers.poses(), "pairs": {}, "max_err_cm": 0.0,
 		"worst": "", "hold_max_cm": 0.0, "fails": [], "look": {}}
+	# the player's Idle before any pose: what stop() must give back (every bone's position and rotation)
+	var idle: String = "CharacterArmature|Idle_Loop" if ap.has_animation("CharacterArmature|Idle_Loop") else ap.get_animation_list()[0]
+	ap.play(idle)
+	ap.seek(0.0, true)
+	await process_frame
+	var idle_ref := _heads()
 	for pair: String in ref["pairs"]:
 		var p: Dictionary = ref["pairs"][pair]
 		if not layers.play_pair(p["legs"], p["arms"]):
@@ -104,10 +110,18 @@ func _check(c: Dictionary) -> Dictionary:
 			r["fails"].append("%s: moves %.3f cm while held" % [pair, hold])
 	# stop() gives the skeleton back to the player
 	layers.stop()
-	ap.play(ap.get_animation_list()[0] if not ap.has_animation("CharacterArmature|Idle_Loop") else "CharacterArmature|Idle_Loop")
-	ap.advance(0.0)
+	ap.play(idle)
+	ap.seek(0.0, true)
 	await process_frame
-	r["stop_gives_back"] = not layers.is_posing() and ap.is_playing()
+	var back := _heads()
+	var back_cm := 0.0
+	var back_deg := 0.0
+	for b: String in idle_ref:  # every bone, the leaves (toes, eyes, jaw, fingertips) too: a channel leak shows
+		back_cm = maxf(back_cm, (back[b].origin - idle_ref[b].origin).length() * 100.0)
+		back_deg = maxf(back_deg, rad_to_deg((idle_ref[b].basis.inverse() * back[b].basis).get_rotation_quaternion().get_angle()))
+	r["stop_back_cm"] = snappedf(back_cm, 0.0001)
+	r["stop_back_deg"] = snappedf(back_deg, 0.0001)
+	r["stop_gives_back"] = not layers.is_posing() and back_cm < 0.001 and back_deg < 0.01
 	if not r["stop_gives_back"]:
 		r["fails"].append("stop() did not give the skeleton back")
 	# the head look on the contact pairs

@@ -33,12 +33,20 @@ var _clips := {}  # "PoseLegs_Stand" -> the library's full name ("CharacterArmat
 ## Builds the tree for this player's character. The skeleton is the first Skeleton3D under the player's root node.
 func setup(p: AnimationPlayer) -> void:
 	player = p
+	_clips.clear()
 	for n: String in player.get_animation_list():
 		var short: String = n.get_slice("|", n.get_slice_count("|") - 1).trim_suffix("_Loop")
 		if short.begins_with(LEGS_PREFIX) or short.begins_with(ARMS_PREFIX):
 			_clips[short] = n
 	var root: Node = player.get_node(player.root_node)
-	var sk: Skeleton3D = root.find_children("*", "Skeleton3D", true, false)[0]
+	var found: Array[Node] = root.find_children("*", "Skeleton3D", true, false)
+	if found.is_empty():
+		push_error("pose_layers: no Skeleton3D under the player's root node")
+		return
+	if tree != null:  # a second setup() replaces the first tree, it does not add a second one
+		tree.queue_free()
+		tree = null
+	var sk: Skeleton3D = found[0]
 	var bt := AnimationNodeBlendTree.new()
 	_legs_node = AnimationNodeAnimation.new()
 	_arms_node = AnimationNodeAnimation.new()
