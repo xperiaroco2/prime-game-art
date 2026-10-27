@@ -72,18 +72,36 @@ class ShipGillsTest(unittest.TestCase):
             self.assertLess(G.COVER_W, G.DRAWING_COVER_W)
 
     def test_cover_outline(self):
-        """Shut, each cover is COVER_W x 137 from the front; step 4: PROUD at its foot, 15..20 cm at mid-height,
-        BEND_PROUD at its top, one smooth arch with its crown (ARCH: C1, no kink at the bend)."""
+        """Shut, each cover is COVER_W x 136 from the front; step 5: one monotone convex arc (the concept's ")"): PROUD
+        at its foot, PEAK near PEAK_H, CROWN_PROUD at the crown's top; the crest's horizontal distance convex and C2
+        (one quartic: no corner at the bend), its proud rising to the bend and falling after it, no dip."""
         self.assertAlmostEqual(G.cover_front(G.COVER_H[0]), G.PROUD)
         self.assertAlmostEqual(G.cover_front(G.PEAK_H), G.PEAK)
-        self.assertTrue(0.15 <= G.PEAK <= 0.20)
+        self.assertTrue(0.15 <= G.PEAK <= 0.20 and 1.3 <= G.PEAK_H <= G.COVER_H[1])
         self.assertAlmostEqual(G.cover_front(G.COVER_H[1]), G.BEND_PROUD)
         self.assertAlmostEqual(G.rib_proud(G.CROWN_TOP), G.CROWN_PROUD)
-        for k in range(1, len(G.ARCH) - 1):   # the slope is the same either side of every knot
-            h = G.ARCH[k][0]
-            self.assertAlmostEqual(G.arch(h - 1e-6)[1], G.arch(h + 1e-6)[1], places=3)
-        hs = [G.BEND + (G.CROWN_TOP - G.BEND) * k / 40 for k in range(41)]
-        self.assertGreaterEqual(min(G.rib_proud(h) for h in hs), 0.03)   # the crown stays proud of the leaning wall
+        n = 400
+        hs = [G.COVER_H[0] + (G.CROWN_TOP - G.COVER_H[0]) * k / n for k in range(n + 1)]
+        x = [G.arch(h)[0] for h in hs]
+        self.assertGreaterEqual(min(a - 2 * b + c for a, b, c in zip(x, x[1:], x[2:])), 0.0)   # convex: no S
+        pr = [G.rib_proud(h) for h in hs]
+        top = max(range(n + 1), key=lambda k: pr[k])
+        self.assertTrue(G.PEAK_H - 0.05 <= hs[top] <= G.BEND + 0.01, hs[top])
+        self.assertTrue(all(b >= a for a, b in zip(pr[:top], pr[1:top + 1])))     # rising to the bend
+        self.assertTrue(all(b <= a for a, b in zip(pr[top:], pr[top + 1:])))      # falling over the crown, no dip
+        self.assertLessEqual(max(pr), 0.20)
+        self.assertLessEqual(G.ARCH_TOP_SLOPE, G.IN / (G.TOP - G.BEND))           # never steeper than the wall
+        self.assertGreaterEqual(min(G.rib_proud(h) for h in hs if h >= G.CROWN_FOOT), 0.03)
+
+    def test_joint_groove(self):
+        """Step 5: the cover's top and the crown's foot rounded, a 2 cm groove between them across the bend."""
+        self.assertAlmostEqual(G.CROWN_FOOT - G.COVER_H[1], 0.02)
+        self.assertTrue(G.COVER_H[1] < G.BEND < G.CROWN_FOOT)
+        v, _ = G.rib_crown_mesh(G.cover_u(1), G.cover_u(1) + G.COVER_W)
+        self.assertAlmostEqual(min(p[2] for p in v), G.CROWN_FOOT, places=6)
+        rows = G.cover_rows(G.cover_u(1), G.cover_u(1) + G.COVER_W)
+        top = rows[-1][1]
+        self.assertAlmostEqual(min(u for u, _ in top) - G.cover_u(1), G.ROUND, places=6)   # inset ROUND at the top
         for hinge in ("hall", "mouth"):
             for i in range(G.COVERS):
                 v, _ = G.cover_mesh(i, 0.0, hinge)
@@ -149,7 +167,7 @@ class ShipGillsTest(unittest.TestCase):
         self.assertGreaterEqual(max(v for _, v in mid) - mid[3][1] - G.CH, G.SETBACK - 1e-9)   # mid-height: 5 cm
         rows = G.rib_crown_rows(0.0, G.COVER_W, G.CALM_DEG)
         self.assertEqual((rows[0][1], rows[0][2]), (0.0, G.COVER_W))
-        self.assertAlmostEqual(rows[0][3], G.cover_front(G.COVER_H[1]), places=2)
+        self.assertLess(abs(rows[0][3] - G.BEND_PROUD), 0.01)   # over the 2 cm groove, the same arch
         self.assertAlmostEqual(rows[-1][2] - rows[-1][1], G.COVER_W - 2 * G.CROWN_INSET)
         self.assertEqual((rows[0][5], rows[-1][5]), (G.CALM_DEG, 0.0))   # its foot turned as the calm cover
 
@@ -180,10 +198,42 @@ class ShipGillsTest(unittest.TestCase):
                         self.assertTrue(G.BAND_PLATE[0] - 1e-6 <= u <= G.BAND_PLATE[1] + 1e-6, f"{side} {name} {u}")
 
     def test_gaps(self):
-        """Step 4 (option A): the slots between ribs 8..10 cm at the peak shut and calm, wider at the exhale."""
-        for deg in (0.0, G.CALM_DEG):
-            self.assertTrue(0.08 <= G.neighbour_gap(deg) <= 0.10, (deg, G.neighbour_gap(deg)))
-        self.assertGreater(G.neighbour_gap(G.OPEN_DEG), G.neighbour_gap(0.0))
+        """Step 5: the slot between ribs 11..12.5 cm at calm for either variant (a: the mouth hinge at 12 deg, b: the
+        hall hinge at 10), about 0.5..0.6 of the rib's width; 10.5..14 shut and at the exhale (at 1.4 the ribs' 17 cm
+        crests keep the clear distance under 14 as they turn)."""
+        for hinge, deg in (("mouth", 12.0), ("hall", 10.0), (G.HINGE, G.CALM_DEG)):
+            g = G.neighbour_gap(deg, hinge=hinge)
+            self.assertTrue(0.11 <= g <= 0.125 and 0.5 <= g / G.COVER_W <= 0.6, (hinge, deg, g))
+        for hinge in ("mouth", "hall"):
+            for deg in (0.0, G.OPEN_DEG):
+                self.assertTrue(0.105 <= G.neighbour_gap(deg, hinge=hinge) <= 0.14, (hinge, deg))
+
+    def test_glow_bands_and_slots(self):
+        """Step 5: the well's back in bands fading up from the foot, no honeycomb; the slots lit on up the leaning wall
+        to SLOT_TOP between the crowns (never over a crown's middle), the cool's children; the flanks a weak cyan."""
+        es = [b[3] for b in G.COOL_BANDS + G.SLOT_BANDS]
+        self.assertEqual(es, sorted(es, reverse=True))
+        self.assertEqual(G.COOL_BANDS[0][0], G.WELL_H[0])
+        self.assertEqual(G.COOL_BANDS[-1][1], G.WELL_H[1])
+        self.assertAlmostEqual(G.SLOT_TOP, 1.95)
+        parts = build("e")
+        self.assertNotIn("mesh", parts)
+        for name in ["cool" + b[2] for b in G.COOL_BANDS[1:]] + ["slots6", "slots7"]:
+            self.assertEqual(parts[name]["parent"], "station_vent_e_cool", name)
+        self.assertEqual(parts["heat_slots"]["parent"], "station_vent_e_heat")
+        self.assertAlmostEqual(max(p[2] for p in parts["slots7"]["verts"]) - S.FLOOR, G.SLOT_TOP)
+        for k in range(G.COVERS + 1):
+            for h in (G.BEND, 1.7, G.SLOT_TOP):
+                lo, hi = G.slot_span(k, h)
+                self.assertGreater(hi - lo, 0.05 if k in (0, G.COVERS) else 0.10, (k, h))   # the ends: half gaps
+                t = min(max((h - G.CROWN_FOOT - G.ROUND) / (G.CROWN_TOP - G.CROWN_FOOT - G.ROUND), 0.0), 1.0)
+                a = G.CROWN_INSET * t * t
+                for i in range(G.COVERS):   # under a crown's edge 4 mm at most
+                    c0, c1 = G.cover_u(i) + a, G.cover_u(i) + G.COVER_W - a
+                    self.assertLessEqual(min(hi, c1) - max(lo, c0), 0.0041, (k, i, h))
+        for i in range(1, G.COVERS + 1):
+            self.assertEqual(parts[f"flank{i}"]["mat"], "int_cyan__vent_flank")
+            self.assertEqual(parts[f"flank{i}u"]["mat"], "int_cyan__vent_flank")
 
     def test_covers_clear_of_the_well(self):
         """Every cover (its lit chamfers and flank liners too) stays in front of the wall's face through 0..70 deg."""
@@ -238,7 +288,7 @@ class ShipGillsTest(unittest.TestCase):
         for side in "ew":
             s = -1.0 if side == "w" else 1.0
             parts = build(side)
-            for name in ("well", "cool", "heat", "mesh"):
+            for name in ["well", "heat"] + ["cool" + b[2] for b in G.COOL_BANDS]:
                 for x, v, z in parts[name]["verts"]:
                     u, d, h = s * x, -v, z - S.FLOOR
                     skin = G.skin_at(LAYOUT, side, u, d, h)
