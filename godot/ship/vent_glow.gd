@@ -29,7 +29,16 @@ const SLIT_IN_M := 0.03
 const GAP_ROWS := 3
 const GAP_IN_M := 0.015
 const GAP_FRAC := [0.25, 0.5, 0.72]
-const GAP_LOOK := {"cool": [Color(0.18, 0.66, 1.0), 0.9, 0.36], "heat": [Color(1.0, 0.2, 0.02), 0.9, 0.36]}
+## gills step 5: the cool a deep cyan at 0.3 (step 4's 0.9 clipped the pale flanks to white)
+const GAP_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.3, 0.36], "heat": [Color(1.0, 0.2, 0.02), 0.9, 0.36]}
+## gills step 5: per gap a small light at its foot FOOT_OUT_M out of the wall (a little cyan on the floor, as the
+## concept), and one SLOT_OUT_M off the leaning wall in front of the lit slot between the crowns (`<id>_slots6`, the
+## cool's child) lighting the crowns' flanks
+const FOOT_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.25, 0.5], "heat": [Color(1.0, 0.2, 0.02), 0.25, 0.5]}
+const FOOT_H_M := 0.06
+const FOOT_OUT_M := 0.10
+const SLOT_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.2, 0.35], "heat": [Color(1.0, 0.2, 0.02), 0.3, 0.35]}
+const SLOT_OUT_M := 0.05
 ## Every well light lights the inside's render layer only (ship.gd's INSIDE_LAYER): none leaks onto the hull's
 ## outside behind a shallow well (omni lights pass through walls)
 const INSIDE_MASK := 1
@@ -106,12 +115,30 @@ static func _slits(mi: MeshInstance3D, suffix: String, put: bool = false, scale:
 		if not (g is MeshInstance3D):
 			break
 		if not put:
-			count += GAP_ROWS
+			count += GAP_ROWS + 1 + (1 if mi.get_node_or_null(NodePath("%s_slots6" % pid)) != null else 0)
 			continue
 		var gm: MeshInstance3D = g
 		var gb: AABB = gm.mesh.get_aabb()
 		var inv2: Transform3D = mi.transform.affine_inverse()
 		var look: Array = GAP_LOOK[suffix]
+		var extra: Array = [[FOOT_LOOK[suffix], Vector3(gb.get_center().x, gb.position.y - FOOT_H_M, -FOOT_OUT_M), "foot"]]
+		var slots: Node = mi.get_node_or_null(NodePath("%s_slots6" % pid))
+		if slots is MeshInstance3D:   # the slot's middle up the leaning wall, SLOT_OUT_M out (Godot -z)
+			var sb: AABB = (slots as MeshInstance3D).mesh.get_aabb()
+			extra.append([SLOT_LOOK[suffix], Vector3(gb.get_center().x, sb.end.y, sb.position.z - SLOT_OUT_M), "slot"])
+		for x: Array in extra:
+			var spec2: Array = x[0]
+			var o3: OmniLight3D = OmniLight3D.new()
+			o3.name = "%s_gap%d_%s" % [mi.name, k, x[2]]
+			o3.position = inv2 * (gm.transform * (x[1] as Vector3))
+			o3.light_color = spec2[0]
+			o3.light_energy = float(spec2[1]) * scale
+			o3.omni_range = float(spec2[2])
+			o3.omni_attenuation = 1.2
+			o3.shadow_enabled = false
+			o3.light_cull_mask = INSIDE_MASK
+			mi.add_child(o3)
+			count += 1
 		for r: int in GAP_ROWS:
 			var c: Vector3 = gb.get_center()
 			var y2: float = gb.position.y + gb.size.y * float(GAP_FRAC[r])

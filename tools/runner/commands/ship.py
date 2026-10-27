@@ -336,7 +336,8 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
 # vents-b3: "dark" turns a surface's glow off and its colour to dark bronze, as vent_anim.gd does the seams calm (b2's
 # "dim" kept their orange colour: the seams read lit in the calm shots)
 VENT_STATES = {"calm": {"slats": 1.0, "show": [], "hide": ["heat"], "dim": ["lamp"], "dark": ["slat*:__vent_seam", "seam*:__vent_seam"]},
-               "problem": {"slats": 0.0, "show": ["heat"], "hide": ["cool"], "dim": [], "dark": []}}
+               "problem": {"slats": 0.0, "show": ["heat"], "hide": ["cool"], "dim": [],
+                           "dark": ["flank*:__vent_flank"]}}   # gills step 5: the cyan flanks dark for the problem
 
 
 
