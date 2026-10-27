@@ -1137,6 +1137,50 @@ runs it (heavy; the area `alien_headlook`). The shots' labels print `target()`, 
 the front and the side under R1's split, the trunk split, and the recommendation), and the reels (MP4 in `mp4/`
 plus an 8-frame sheet): `nod_<clip>` and `shake_<clip>` on Idle, Jog_Fwd and Strafe_Left, `lag_dz45` and `lag_dz60`.
 
+### The photo poses (art #196)
+
+The photo task's poses (prime-game `docs/GDD.md` section 8 "Photo") on the alien: **held poses in two layers**, so any
+legs pose goes with any arms pose (6 x 8 = 48 pairs).
+
+- **Names.** `CharacterArmature|PoseLegs_<Name>_Loop` (Stand, OneLeg, Squat, Kneel, Lunge, Sit) and
+  `CharacterArmature|PoseArms_<Name>_Loop` (HandsOnHips, Plane, Flex, Heart, FingerUp, HandsBehindHead, PalmsOut,
+  Salute); Godot keeps the names (`pose_layers.gd` strips the prefix and `_Loop`). Each clip is a loop of identical
+  keys (the game holds it) keying only its own layer's bones.
+- **The bone split** (`alien_pose_math.owner`): the legs own `Root`, `Hips` (translation and rotation), `Spine` and
+  both legs to the toes; the arms own `Chest` and everything under it (neck, head, shoulders, arms, fingers). A pair
+  is the legs' channels plus the arms', nothing else; no per-pair corrective clip.
+- **Data plus a solver.** `tools/blender/anim_sets/alien_poses.toml` holds the poses (authored directions, contact
+  goals on landmarks, grips); `alien_pose_math.py` (no bpy) solves them per character on its own rest skeleton (two-bone
+  IK, feet planted flat, the kneeling knee and the seat fitted to the floor, hands touched onto the skin). New bodies
+  on the same skeleton: re-run `$PYTHON_BIN tools/blender/alien_poses.py --raw D:/prime-art-raw --step <new> --glb
+  --masks` (background, about 25 min for both), then `alien_poses_run.py --step <new> --check --shots`.
+- **Measures and limits** (every pair, both characters, `build/<char>/poses.json`): the lowest skin point within
+  0.5 cm of the floor; the centre of mass at least 1 cm inside the support area for Stand, OneLeg, Squat, Lunge, Kneel;
+  skin through skin at most 1.5 cm (the tube proxy's own error on the rest skin is reported; the folded groin skin is
+  skipped); a contact's gap at most 1 cm. Step 3: 0 of 48 over a limit on both.
+- **The silhouette table** (`silhouettes_<char>.json`): per facing (front, left, right, back), for pairs that differ
+  only in the legs or only in the arms, 1 - IoU of the outlines aligned on the feet; the least over the other part
+  is what the photographer can still tell apart. Below 0.10 is a finding. Left vs mirrored right is about 0.05 for any
+  pose (perspective only): orthographically a left outline is always the mirror of the right one, so a lopsided pose
+  cannot differ there beyond that; that line of the table is informative, not a goal.
+- **The GLB.** On top of `loco/f3`'s `<char>_char.blend`: the 37 f3 clips unchanged (F-curve hash and GLB key bytes,
+  `clips_proof.json`), 14 pose clips added. `godot-check --profile alien --strict-contract --textured` passes:
+  `held_poses_hold` checks that the `PoseLegs_`/`PoseArms_` clips keep every bone still (they are exempt from
+  `animations_move`).
+- **The game side.** `godot/alien/pose_layers.gd` (the reference the game copies): an `AnimationTree` beside the
+  character's `AnimationPlayer` with one `Blend2` (legs in, arms blend, the filter on `Chest` and its descendants,
+  amount 1); `play_pair(legs, arms)`, `stop()`. `godot/alien/pose_layers_check.gd` (`alien_poses_run.py --check`,
+  test `test_alien_poses_godot`): all 48 pairs within 0.0002 cm of the Blender-composed pose (tolerance 0.5 cm), held
+  (0 cm after 0.7 s), `stop()` gives the skeleton back. The game's rules: the pose holds while the player stands;
+  turning on the spot keeps it (the node turns, the clips stay); a step drops it (`stop()`, then locomotion).
+- **The head look during a pose** (measured at yaw +-70, the contact in its target bone's frame, cm, chameleon /
+  axolotl): with head_look.gd's defaults (yaw into Spine, Chest, UpperChest too) the hands on the hips slide 12.7, the
+  hands behind the head 21 / 15, the salute's fingertip 12 / 11; with only Neck and Head turning (0.4 / 0.6) the hip
+  hands stay (0.0) but the head leaves the hands behind it (45 / 32) and the salute (25 / 24). The heart's
+  fingertips never part (0.0). **Recommendation:** during a pose the game sets the head look's split to Neck and Head
+  only (its defaults stay for locomotion), and for HandsBehindHead and Salute it turns the look off
+  (`influence = 0`): the outline the photographer matches is the pose's own.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
