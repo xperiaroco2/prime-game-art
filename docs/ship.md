@@ -1353,7 +1353,30 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
   24,000 triangles a vent, the honeycomb about half), `--godot` (sizes, colliders: the band's box and the upper
   wall's prism, the walk). Shots: `ship --shoot DIR --views <raw>/ship/v5/gills/views.json --vent-states
   e=calm,w=calm` (the concept's two views, the throat's middle, the hall, four close-ups).
-- **Step 2** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, instead of
+- **The form pass (gills step 2, 2026-10-27; the manager's verdict on step 1: far from the concept).**
+  - *Covers:* the outline stays the drawing's (30 x 137, pitch 31.75, 3 cm proud at the foot and the top), the front
+    bows `BOW` 8 cm out up the middle (`cover_front`), with two raised edge bands 3.5 cm wide (`RIM_W`, 8 mm over the
+    crowned field) and 1.1 cm lit chamfers: thin `gill_edge` strips over every long front chamfer of the covers (the
+    leaf's child `<id>_lip<k>`), the crowns (`<id>_crown<k>_edge`) and the fifth arch (`<id>_fixed_edge`).
+  - *Bronze:* the stations' shared bronze. `gill_bronze` (covers, fifth arch), `gill_bronze2` (crowns) and
+    `gill_edge` carry console.gd's bronze in the GLB, and `ship.gd` (`GILL_BRONZE`) puts `console_metal.gdshader` with
+    those values on them (metallic 0.35, roughness 0.42, wear 1.0, lift 0.12). The ship's metal is unchanged.
+  - *Hinge side:* a parameter, the piece's `args.hinge` or `SHIP_GILLS_HINGE` (`hall`, the drawing's, or `mouth`).
+    Both were built and shot (`<raw>/ship/v5/gills/r3/sheets/hinge_b.png`): the hall side shows every gap's cyan
+    from c_ramp's view and from the throat's middle; the mouth side shows them from c_close's view and the hall
+    only. **The drawing's hall side stays** (2 of the 3 views); from c_close's angle the covers' faces hide the gaps.
+  - *The glow:* `vent_glow.gd` gives a gills panel 3 lights per slit, between its two jambs (energy 1.6, range
+    0.8 m), and every well light lights `INSIDE_LAYER` only (no light on the hull's outside behind a shallow well).
+  - *The fifth arch:* the timing bar is white over and under its green band (`glow_white__vent_bar`). The coloured
+    horizontal strip beside it in step 1 was the throat's cable bay (`th_channel`, `th_cables`, `th_clip_h` on the
+    hall-end module): it is gone from the throat, `th_wall_mid` fills its place.
+  - *The well's depth* (`ship --check`, `test_ship_gills`): the 45 cm box keeps 17 cm of hull over 47% of its face;
+    built per slit (min / mean / max cm) slit 1 6 / 6 / 6, slit 2 6 / 29 / 45, slit 3 6 / 32 / 45, slit 4 6 / 36 / 45.
+    `_depth` never goes deeper than its cell's shallowest corner (bilinear passed the 17 cm skin by 1.4 cm), on a
+    28 x 24 grid. Every well point keeps 17 cm of hull or stays inside the old wall's 20 cm body.
+  - *Tests:* `tools/tests/test_ship_gills.py` (pure Python): the drawing's numbers, the covers' outline, the mirror,
+    the hinges on the cover edges either side, neighbouring covers clear through 0..70 deg, the well inside the hull.
+- **Step 3** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, instead of
   the blades' `rotation.x`), the seams and jambs red for the problem, the lamp, the bar's marker.
 
 ## The export (art #335)
