@@ -99,6 +99,8 @@ def main() -> int:
                     "refit route: bodies_a/pilot/refit/alien_body.blend)")
     ap.add_argument("--fix", default="{}", help="B3: JSON render settings after the front isolation sheet "
                     "(shadow_quality 0-5, default 5; taa, angular_deg, sss_scale)")
+    ap.add_argument("--no-flare", action="store_true", help="M1: the build without the neck flare (a Meshy body)")
+    ap.add_argument("--gill-ratio", type=float, default=1.0, help="M1: the gills' triangles kept (1.0: all)")
     ap.add_argument("--lively", default="", help="E2: head=DIR[,head=DIR]: build on these lively build folders instead"
                     " of HEADS' (a candidate's look)")
     args = ap.parse_args()
@@ -132,7 +134,9 @@ def main() -> int:
                 "--mask", str(eye_mask(lv, static, h)),
                 "--accent", str(SLOTS / "maps" / f"{h}_accent.png"),
                 "--detail", str(static / f"{h}_detail.png"), "--bases", str(hd / "bases.json"),
-                "--out", str(hd), *(["--clip-edits", str(Path(args.clip_edits).resolve())] if args.clip_edits else [])],
+                "--out", str(hd), *(["--no-flare"] if args.no_flare else []),
+                *(["--gill-ratio", str(args.gill_ratio)] if args.gill_ratio < 1.0 else []),
+                *(["--clip-edits", str(Path(args.clip_edits).resolve())] if args.clip_edits else [])],
                 timeout=1500)
             (hd / "build.log").write_text((res.stdout or "") + (res.stderr or ""), encoding="utf-8", newline="\n")
             print(*[x for x in (res.stdout or "").splitlines() if x.startswith("CHAR ")], sep="\n", flush=True)

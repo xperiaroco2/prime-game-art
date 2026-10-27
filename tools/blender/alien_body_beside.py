@@ -59,6 +59,8 @@ def main():
     p.add_argument("--concept", default="", help="H3: the concept turnaround (front | side | back)")
     p.add_argument("--concept-px-m", type=float, default=0.001965 * 0.9912)
     p.add_argument("--concept-sole-row", type=int, default=986)
+    p.add_argument("--concept-panels", type=int, default=3, help="M1: the concept's panel count (front | side"
+                   " | back: 3; the axolotl's ax_turn_c: 2)")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
     os.makedirs(a.out, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -114,7 +116,7 @@ def main():
     cmask = None
     if a.concept:
         cim = R.load(a.concept)
-        pw = cim.shape[1] // 3
+        pw = cim.shape[1] // a.concept_panels
         top = max(top, (a.concept_sole_row - 20) * a.concept_px_m)
     paths = []
     ncol = len(groups) + (1 if a.concept else 0)

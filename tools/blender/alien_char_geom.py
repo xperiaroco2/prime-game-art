@@ -239,3 +239,11 @@ def monotone_angles(angles: list[float]) -> list[float]:
         out.append(max(v, out[-1]) if out else v)
     end = out[0] + tau
     return [(v if v < end else end - 1e-9) % tau for v in out]
+
+
+def gill_decimate_ratio(tris: int, gill_tris: int, keep: float) -> float:
+    """M1 (art #196): the whole mesh's collapse ratio that keeps `keep` of the gills' triangles when only the gills
+    may collapse (the decimate modifier's ratio counts every face)."""
+    if not 0.0 < keep <= 1.0 or tris <= 0 or not 0 <= gill_tris <= tris:
+        raise ValueError("keep in (0, 1], 0 <= gill_tris <= tris")
+    return (tris - gill_tris * (1.0 - keep)) / tris
