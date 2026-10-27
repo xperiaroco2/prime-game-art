@@ -280,7 +280,7 @@ class ShipVentTest(unittest.TestCase):
         bad = copy.deepcopy(LAYOUT)
         for p in bad["pieces"]:
             if p["id"] == "station_vent_e":
-                p["unit"] = [-0.9, 0.78, -0.01, 0.62, -0.02, 2.4]
+                p["unit"] = [-0.9, 0.78, -0.01, 0.62, -0.02, 3.3]   # gills step 9: over the hall's rim (to_rim: 3.2)
         for q in bad["place"]:
             if q[0] == "station_vent_w":
                 q[2] += 5.0

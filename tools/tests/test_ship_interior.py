@@ -193,7 +193,8 @@ class ShipInteriorTest(unittest.TestCase):
         segment (facet, flat chord, opening) has exactly one plate centred on it, of its kind; every tip-room edge
         its rim plate (the door's three)."""
         kinds = {"facet": "hall_floor_rim", "flat": "hall_flat_floor", "flat_lo": "hall_flat_floor",
-                 "opening": "hall_threshold", "door": "hall_floor_rim_back"}
+                 "opening": "hall_threshold", "door": "hall_floor_rim_back",
+                 "gills": "hall_flat_floor"}   # gills step 8: the gills chord's own plate (the wall is the station piece)
         plates = [(pid, math.degrees(math.atan2(y - S.HALL_C[1], x - S.HALL_C[0]))) for pid, (x, y, _), _yaw
                   in INTERIOR["place"] if pid.startswith(("hall_floor_rim", "hall_flat_floor", "hall_threshold"))
                   and pid != "hall_floor_rim_throat"]
