@@ -39,8 +39,8 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertGreater(lens["overall"], lens["nozzles"])
 
     def test_the_station_spots_are_the_design_docs(self) -> None:
-        """The spots as built (rebuild F): the vents on the throat's slanted walls at (+-2.409, -4.791), the console
-        at (0, 0.6), the back sockets at (+-1.8, 3.112), the front sockets about (+-3.5, -2.4), the breaker boards on
+        """The spots as built (gills step 8/9): the vents on the hall's back wall beside the vault's door at
+        (+-1.6305, 3.2475), the console at (0, 0.6), the back sockets one chord out at (+-2.9339, 2.3119), the front sockets about (+-3.5, -2.4), the breaker boards on
         the corridors' front wall in their middle (+-6.664, -0.902; lens step 1), the renewers on the lens rooms' aft
         walls at (+-10.269, 3.237), their players 1.453 m in (fix1: the charger's reach, was 1.3)."""
         spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
@@ -53,18 +53,71 @@ class ShipLayoutTest(unittest.TestCase):
         self.assertEqual(tuple(spots["console"]["at"]), (0.0, 0.6))
         for sx in (1, -1):
             sid = "e" if sx > 0 else "w"
-            self.assertEqual(spots[f"vent_{sid}"]["room"], "throat")
-            (mx, my), (kx, ky) = S.TH_PTS[1], S.TH_PTS[2]
-            self.assertLess(math.dist(spots[f"vent_{sid}"]["at"], (sx * (mx + 0.6 * (kx - mx)), my + 0.6 * (ky - my))),
-                            1e-3)
+            # gills step 8 (the engineer's option A): the vents on the hall, the back sockets one chord out
+            self.assertEqual(spots[f"vent_{sid}"]["room"], "hall")
+            self.assertEqual(tuple(spots[f"vent_{sid}"]["at"]), (sx * 1.6305, 3.2475))
             self.assertLess(math.dist(spots[f"socket_f{sid}"]["at"], (sx * 3.5, -2.4)), 0.15)
-            self.assertEqual(tuple(spots[f"socket_{sid}"]["at"]), (sx * 1.8, 3.112))
+            self.assertEqual(tuple(spots[f"socket_{sid}"]["at"]), (sx * 2.9339, 2.3119))
             self.assertEqual(tuple(spots[f"breaker_{sid}"]["at"]), (sx * 6.6638, -0.9019))
             self.assertLess(math.dist(spots[f"breaker_{sid}"]["at"], (sx * 6.45, -0.93)), 0.25)   # asked "about"
             self.assertLess(math.dist(spots[f"renewer_{sid}"]["at"], (sx * 10.3, 3.2)), 0.06)
             stand = sl.spot_stand(LAYOUT, spots[f"renewer_{sid}"])
             self.assertAlmostEqual(stand[0], sx * 10.433, places=2)
             self.assertAlmostEqual(stand[1], 1.793, places=2)
+
+    def test_the_hall_back_wall_is_split_into_two_equal_chords(self) -> None:
+        """Gills step 8/9: the arc from the east corridor's chord end (31.164 deg) to the vault's door (77.5 deg) split
+        equally at GILL_A0 (54.332): two flat chords of 1.638 m on the 16-gon's vertex circle; each spot in its
+        chord's middle (on its apothem) with its normal to the hall's centre; the vents by the door, the back sockets
+        outside; the west spots mirror the east."""
+        import ship_interior as SI
+        spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
+        hc = SI.HALL_C
+        a1 = 90.0 - SI.BACK_DEG
+        a0 = SI.COR_ANG + 2 * math.degrees(SI.PHI)
+        self.assertAlmostEqual(SI.GILL_A0, (a0 + a1) / 2, places=6)
+        for sid, (lo, hi) in (("vent_e", (SI.GILL_A0, a1)), ("socket_e", (a0, SI.GILL_A0))):
+            half = math.radians(hi - lo) / 2
+            self.assertAlmostEqual(2 * SI.HV * math.sin(half), 1.638, places=3)
+            mid, apo = math.radians((lo + hi) / 2), SI.HV * math.cos(half)
+            s = spots[sid]
+            self.assertLess(math.dist(s["at"], (hc[0] + apo * math.cos(mid), hc[1] + apo * math.sin(mid))), 2e-4, sid)
+            self.assertLess(math.dist(s["normal"], (-math.cos(mid), -math.sin(mid))), 2e-4, sid)
+            w = spots[sid.replace("_e", "_w")]
+            self.assertEqual((w["at"][0], w["at"][1]), (-s["at"][0], s["at"][1]))
+            self.assertEqual((w["normal"][0], w["normal"][1]), (-s["normal"][0], s["normal"][1]))
+
+    def test_the_back_sockets_band_is_their_own_and_clears_the_pilaster(self) -> None:
+        """Gills step 9: the moved back sockets carry their own plain band (plain_width_m 1.16, narrower than
+        [stations]' 1.6), and check_spots, check_units and check_bands read it; the corridor portal's pilaster foot
+        (0.4 m box) stays outside the band, and the crystal socket's 0.468 m unit keeps >= 0.3 m to it."""
+        st = LAYOUT["stations"]
+        foot = next(p["foot"] for p in LAYOUT["pieces"] if p["id"] == "hall_pilaster")
+        pil = [(at, yaw) for pid, at, yaw in LAYOUT["place"] if pid == "hall_pilaster"]
+        for sid in ("socket_e", "socket_w"):
+            s = next(x for x in st["spot"] if x["id"] == sid)
+            self.assertEqual(s["plain_width_m"], 1.16)
+            self.assertEqual(sl.plain_width(LAYOUT, s), 1.16)
+            self.assertLess(s["plain_width_m"], st["plain_width_m"])
+            n = sl._unit(s["normal"])
+            t = (-n[1], n[0])
+            near = 9.0   # the least |u| along the chord where the pilaster's foot starts, out to 0.3 m off the wall
+            for at, yaw in pil:
+                for k in range(-1000, 1001):
+                    u = k / 1000
+                    for v in (0.02, 0.15, 0.3):
+                        q = (s["at"][0] + t[0] * u + n[0] * v, s["at"][1] + t[1] * u + n[1] * v)
+                        lx, ly = sl.to_local(q, at, yaw)
+                        if foot[0] <= lx <= foot[1] and foot[2] <= ly <= foot[3]:
+                            near = min(near, abs(u))
+            self.assertGreater(near, s["plain_width_m"] / 2, sid)
+            self.assertGreaterEqual(near - 0.468 / 2, 0.3, sid)
+        self.assertEqual([p for p in sl.check_spots(LAYOUT) if "socket" in p], [])
+        # the shared 1.6 m band would cross the pilaster: the per-spot band is what lets it pass
+        wide = copy.deepcopy(LAYOUT)
+        for s in wide["stations"]["spot"]:
+            s.pop("plain_width_m", None)
+        self.assertTrue(any("socket_e: hall_pilaster" in p for p in sl.check_spots(wide)))
 
     def test_the_renewer_spots_reach_the_chargers_front(self) -> None:
         """fix1 (art#263, #323's review): the renewer spots' depth_m is the crystal charger's reach from the wall's face
