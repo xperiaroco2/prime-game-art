@@ -1,9 +1,9 @@
 {
   "asset": "start_console",
-  "built_by": "tools/blender/console_run.py --tag spinup2 --asset assets/prop/start_console",
+  "built_by": "tools/blender/console_run.py --tag spinup3 --asset assets/prop/start_console",
   "mesh": {
-    "triangles": 58555,
-    "vertices": 33045,
+    "triangles": 58195,
+    "vertices": 32865,
     "triangles_by_material": {
       "console_graphite": 7310,
       "console_bronze": 2112,
@@ -15,7 +15,7 @@
       "console_holo_shell": 14639,
       "console_lamp": 800,
       "console_holo_turbine": 6804,
-      "console_holo_wire": 3124,
+      "console_holo_wire": 2764,
       "console_holo_ring": 600,
       "console_holo_digit": 56
     },
@@ -39,7 +39,7 @@
       "holo_shell": 14643,
       "holo_lamps": 800,
       "holo_turbines": 6804,
-      "holo_wiring": 3124,
+      "holo_wiring": 2764,
       "holo_ring": 600,
       "holo_digits": 56
     },
@@ -73,7 +73,7 @@
         "lamps": 800,
         "turbines": 5880,
         "fans": 924,
-        "wiring": 3124,
+        "wiring": 2764,
         "ring": 600,
         "digits": 56
       }
@@ -121,28 +121,28 @@
       "socket_w": {
         "index": 0,
         "plan": [
-          -1.8,
-          3.112
+          -2.9339,
+          2.3119
         ],
         "point": [
-          0.11019,
-          1.44885,
-          -0.22621
+          0.17961,
+          1.43867,
+          -0.1783
         ],
-        "line_dm": 3.926
+        "line_dm": 4.751
       },
       "socket_e": {
         "index": 1,
         "plan": [
-          1.8,
-          3.112
+          2.9339,
+          2.3119
         ],
         "point": [
-          -0.11019,
-          1.44885,
-          -0.22621
+          -0.17961,
+          1.43867,
+          -0.1783
         ],
-        "line_dm": 3.926
+        "line_dm": 4.751
       },
       "socket_fw": {
         "index": 2,
@@ -199,28 +199,28 @@
       "vent_w": {
         "index": 6,
         "plan": [
-          -2.409,
-          -4.7912
+          -1.6305,
+          3.2475
         ],
         "point": [
-          0.14747,
-          1.34826,
-          0.24704
+          0.09982,
+          1.45057,
+          -0.23432
         ],
-        "line_dm": 9.597
+        "line_dm": 3.396
       },
       "vent_e": {
         "index": 7,
         "plan": [
-          2.409,
-          -4.7912
+          1.6305,
+          3.2475
         ],
         "point": [
-          -0.14747,
-          1.34826,
-          0.24704
+          -0.09982,
+          1.45057,
+          -0.23432
         ],
-        "line_dm": 9.597
+        "line_dm": 3.396
       }
     },
     "ring": {
@@ -290,10 +290,10 @@
   },
   "godot_cost": {
     "draw_calls_console": 13,
-    "gpu_ms_console": 0.112,
-    "gpu_ms_with": 0.675,
-    "gpu_ms_without": 0.563,
+    "gpu_ms_console": 0.126,
+    "gpu_ms_with": 0.669,
+    "gpu_ms_without": 0.543,
     "view": "1280x720, eye 1.6 m, 2.1 m away"
   },
-  "review": "<raw>/start-console/spinup2/godot/sheet.png"
+  "review": "<raw>/start-console/spinup3/godot/sheet.png"
 }

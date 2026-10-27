@@ -52,6 +52,10 @@ real place, `layouts/ship/ship.toml`'s spots, with a line to the turbines along 
 ring** (three stages of dashes round the hologram's hall disc, upright, so it reads from the throat and the
 corridors) and the **countdown** (two seven-segment digits over the hologram, turned to each player's eye).
 
+The marks moved with the gills (art #263, 2026-10-28, the `spinup3` rebuild): `vent_w`/`vent_e` now sit on the hall's
+back wall beside the aft door (plan (+-1.6305, 3.2475)); their lines step 23 cm aft to their own run, the outermost
+(x 1.4 m), and go straight aft; `socket_w`/`socket_e` sit at (+-2.9339, 2.3119). Nothing else changed.
+
 ```gdscript
 var look: Dictionary = Console.apply(model)   # apply() once the model is in the tree: its clock starts there
 Console.set_calling(look, true)                # before the start: the turbines pulse orange every CALL_PERIOD (3 s)

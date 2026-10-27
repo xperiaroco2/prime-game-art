@@ -1,11 +1,11 @@
 # The ship engine's start console (art#263's stations).
-# Built by tools/blender/console_run.py --tag spinup2 --asset assets/prop/start_console; a rebuild
+# Built by tools/blender/console_run.py --tag spinup3 --asset assets/prop/start_console; a rebuild
 # changes the hashes below.
 id = "start_console"
 kind = "prop"
 slot = ""
 title = "The ship engine's start console"
-notes = "The engine's start console in the ship's hall: a round bronze and graphite pedestal (1.19 m across, 1.105 m tall) with the orange start button at hip height, three stage strips, two cyan strips and the hologram emitter, and over it the hologram of the ship from the built hull's own mesh at 1:16.3 (lines, a faint shell, eight order lamps), 58,555 triangles in thirteen surfaces, front +Z, origin on the floor under the middle; the engine's spin-up on the hologram (the turbines' fans and calling glow, the stations' wiring with a broken point's pillar, the charge ring and its second ring on the emitter deck, the countdown). States on one mesh: export/console.gd set_state, set_passed, set_lit and the spin-up's set_calling, set_charge, set_spin, set_station, set_countdown, set_fill, set_ring_style (HANDOFF.md). From the concept the engineer picked on 2026-10-24 and its drawing in cm (prime-game-design ideas/ship-components/stations-final: console-final.jpg, holo14-diamond-2.jpg, console-drawing/; copied to the raw folder; 2D concepts used only as references), built from code in headless Blender (tools/blender/console_build.py from console_dims.toml): no part of the model was generated or downloaded."
+notes = "The engine's start console in the ship's hall: a round bronze and graphite pedestal (1.19 m across, 1.105 m tall) with the orange start button at hip height, three stage strips, two cyan strips and the hologram emitter, and over it the hologram of the ship from the built hull's own mesh at 1:16.3 (lines, a faint shell, eight order lamps), 58,195 triangles in thirteen surfaces, front +Z, origin on the floor under the middle; the engine's spin-up on the hologram (the turbines' fans and calling glow, the stations' wiring with a broken point's pillar, the charge ring and its second ring on the emitter deck, the countdown). States on one mesh: export/console.gd set_state, set_passed, set_lit and the spin-up's set_calling, set_charge, set_spin, set_station, set_countdown, set_fill, set_ring_style (HANDOFF.md). From the concept the engineer picked on 2026-10-24 and its drawing in cm (prime-game-design ideas/ship-components/stations-final: console-final.jpg, holo14-diamond-2.jpg, console-drawing/; copied to the raw folder; 2D concepts used only as references), built from code in headless Blender (tools/blender/console_build.py from console_dims.toml): no part of the model was generated or downloaded. Rebuilt 2026-10-28 (spinup3) only to move the station marks with the gills (art #263): the vents' points to the hall's back wall (their lines step to their own run and go straight aft) and the back sockets' points beside the pilasters; the look approved in PR #325 is otherwise unchanged."
 tools = ["blender 5.2.2", "prime-game-art console_build.py, console_run.py", "glTF-Validator 2.0.0-dev.3.10", "Godot 4.7.2 (shots)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -20,7 +20,7 @@ service = "own"
 plan = "own-work"
 model_version = ""
 task_ids = []
-generated_at = 2026-10-26
+generated_at = 2026-10-28
 url = "https://github.com/xperiaroco2/prime-game-art/issues/263"
 
 [[raw]]
@@ -48,9 +48,9 @@ file = "start-console/ref/drawing.js"
 sha256 = "dfee5e2220385b220d421e0771fc9543fc1876b15e1e9b443709a0a9b23c2575"
 
 [[raw]]
-file = "start-console/spinup2/start_console.glb"
-sha256 = "203860cd78fc7869355a9d42b394263a1cf006affd58e9c8757f6e9a4619b21b"
+file = "start-console/spinup3/start_console.glb"
+sha256 = "5b0e9b31d5f4d6a1a43178a95229a8df591c9a67590e9bb107e517a6c8cc45d7"
 
 [[raw]]
-file = "start-console/spinup2/start_console.blend"
-sha256 = "74df11fe1afd7e9ce53ef2b46a270d80468754ccd62fde3bca846fe6caaad711"
+file = "start-console/spinup3/start_console.blend"
+sha256 = "cde60456a2284125d7e290f62168f2035ae79adc7d0624fddaecb7782c8749f7"
