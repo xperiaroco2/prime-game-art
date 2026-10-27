@@ -165,7 +165,8 @@ tests = ["test_house_*", "test_kit_*", "test_props_*"]
 
 [area.ship]
 sources = [
-  "layouts/ship/*", "tools/runner/ship_*.py", "tools/runner/commands/ship.py", "tools/blender/ship_*",
+  "layouts/ship/*", "tools/runner/ship_*.py", "tools/runner/commands/ship.py",
+  "tools/runner/commands/_ship_export.py", "tools/blender/ship_*",
   "godot/ship/*",
 ]
 tests = ["test_ship_*"]

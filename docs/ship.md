@@ -26,6 +26,7 @@ arrangement, the numbers give the sizes. A gentle curve is fine only where the n
 | `tools/blender/ship_interior*.py` | the interior builders | INTERIOR lane |
 | `tools/blender/ship_hull*.py` | the exterior builders | EXTERIOR lane |
 | `godot/ship/` | `ship.gd`: assembly, headless check and walk, night shots, the walk-through frames | EXTERIOR lane |
+| `tools/runner/ship_export.py`, `tools/runner/commands/_ship_export.py`, `godot/ship/export_scene.gd`, `godot/ship/export_check.gd` | the game's package (`--export`, art #335; "The export" below) | shared |
 | `tools/blender/ship_video.py` | encodes the walk-through MP4 under its size cap | EXTERIOR lane |
 | `tools/tests/test_ship_*.py` | fast: `test_ship_layout.py`, `test_ship_interior.py`, `test_ship_hull_detail.py`, `test_ship_exterior.py`, `test_ship_clearing.py`; heavy (Blender): `test_ship_build.py` | either lane adds its own file |
 
@@ -1307,3 +1308,46 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
     the face the same run fails with 0.0150 m outside, so the farthest tip is 2.5 cm behind the face. `ship --vent-anim DIR` (ship.gd mode `vent_anim`) renders it on the whole ship at night
     from about 3 m across the throat at the player's eye (`VENT_ANIM` in `ship.py`), 1280x720, and shoots the demo's
     key moments again with their labels into `keys/` and `keys_sheet.png`.
+
+## The export (art #335)
+
+```
+tools/run.sh ship --export DIR [--no-compare]
+```
+
+writes the ship's game-ready package (for prime-game#1225 and #1285) from `layouts/ship/` and the built pieces
+(`<raw>/ship/v5/pieces`) into `DIR` (the raw folder's `ship/v5/export/v<n>/`, never git), shaped like the game's tree
+(its ARCHITECTURE 11.1), as the House's export (`docs/house.md` "The export"):
+
+- `assets/environment/ship/`: the 168 pieces' GLBs, each with a minimal `.import` (11.2's options); `metal.gdshader`
+  and `night_sky.gdshader` (copies of `godot/ship/`'s); `materials/metal_<name>.tres` (one per shared metal of
+  `ship.gd` METALS), `night_sky.tres`, `night_env.tres` (the night environment: AgX, glow, SSAO, SSIL, fog, the star
+  sky); the vents' normal maps the GLBs' import extracts (`station_vent_<e|w>_vent_a_normal.png`). Data only.
+- `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the 1092
+  placements as GLB instances), `Environment` (the WorldEnvironment), `Lights` (the moon, the key, the layout's lamps
+  and the glow cells' omni lights, as `ship.gd` places them), `Probes` (one reflection probe per room), `Ground` (the
+  world boundary under the clearing), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
+  `SocketE`, `SocketW`, `SocketFE`, `SocketFW`, `BreakerE`, `BreakerW`, `RenewerE`, `RenewerW`; on the deck, +Z the
+  spot's normal, the console turned 180 degrees; `metadata/spot`, `package`, `kind`) and `Markers/Spawn` (the walk's
+  first point at the ramp's foot, facing the ship).
+- `package.json`: every file with its SHA-256 and bytes, the station spots, the spawn and the open questions.
+
+How the scene is made: `godot/ship/export_scene.gd` extends `ship.gd` and runs its own assembly (`_environment`,
+`_build`, `_dress`, `_probes`) headless in `godot/`, then packs the tree. Each piece is instantiated in edit state, so
+the pack saves only what the look changed inside it, as overrides on editable instances (the game's 11.2 rule): every
+glTF material's night value (`[light.mats]`, changed in place by `ship.gd`) as a copy on its surface, the metals,
+the outside pieces' render layer 2, the vents' heat panel hidden and their well lights. Without the edit state the
+pack saved every mesh and shape of every instance (a 14 MB scene); with it the scene is about 0.8 MB. A vec3
+`source_color` uniform set from a `Vector3` saves as null, so the metals' and the sky's are stored as the `Color`
+that renders the same (its sRGB). `ship_export.relocate` moves the art project's `res://` paths to the package's and
+drops the uids; `leftovers` refuses an art path, a script or a sub-resource path. The nav lamps keep their static
+glow (the blink is the shots' script).
+
+The check, on the package opened as its own Godot project (`godot/ship/export_check.gd`, copied to `DIR/_check/`):
+the headless import and load; each piece's bounds against Blender's `build_report.json` (0.01 m); a layer-1 collider
+on every colliding piece; no script on any node; the station spots; the 1.36 m capsule from `Markers/Spawn` through
+`[walk]`'s points (both tip rooms and back) on the exported scene. Then, unless `--no-compare`, `ship --shoot` of
+`out_hero`, `in_hall` and `in_tip_e` into `DIR/_check/ref/` (kept when newer than the build) and the same views from
+the package in an off-screen window: the mean absolute difference (0..255, at most 2.0) and the share of pixels off
+by more than 16, with each view's draw calls, primitives and GPU ms. `DIR/_check/report.json` holds the numbers;
+`assets/environment/ship/` commits the manifest (the files' hashes), `report.json` and `HANDOFF.md`, not the GLBs.

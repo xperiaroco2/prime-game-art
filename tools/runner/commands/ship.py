@@ -52,6 +52,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--vent-anim", type=Path, metavar="DIR",
                         help="the east vent's animation in place at night (godot/ship/vent_anim.gd through its demo: calm, "
                              "the problem, a hold, the cough, calm) from the player's eye off-screen: MP4 and key sheet into DIR")
+    parser.add_argument("--export", type=Path, metavar="DIR",
+                        help="the game-ready package into DIR (art #335; assets/environment/ship/, levels/ship/ship.tscn, "
+                             "package.json): then its headless load, sizes and walk, and its views beside --shoot's")
+    parser.add_argument("--no-compare", action="store_true", help="--export without the off-screen views and compare")
     parser.add_argument("--play", type=Path, nargs="?", const=PLAY_DEFAULT, metavar="DIR",
                         help="FOR THE ENGINEER ONLY (an on-screen window; agents never run it): walk the built ship in "
                              "first person at night; P saves a screenshot and its position into DIR "
@@ -108,6 +112,10 @@ def run(args: argparse.Namespace) -> int:
             return code
     if args.shoot:
         code = shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states)
+        if code:
+            return code
+    if args.export:
+        code = export(layout, out, args.export.resolve(), not args.no_compare)
         if code:
             return code
     if args.play_test:
@@ -373,6 +381,46 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         common.bad(f"ship --shoot: {len(errors)} import errors")
         return 1
     common.ok(f"ship --shoot: {len(result['shots'])} shots, sheet {(folder / 'sheet.png').as_posix()}")
+    return 0
+
+
+# --- the game's package (art #335) ----------------------------------------------------------------------------------
+def export(layout: dict, out: Path, folder: Path, compare: bool = True) -> int:
+    """`--export DIR`: the scene (godot/ship/export_scene.gd), the package (ship_export.write), its headless check and,
+    unless compare is off, the views beside --shoot's; <DIR>/_check/report.json (outside the package's files)."""
+    from .. import ship_export
+    from . import _ship_export
+    req, staged = built_request(layout, out)
+    missing = sorted({p["id"] for p in layout["pieces"]} - set(req["pieces"]))
+    if missing:
+        raise common.Failure(f"ship --export: pieces not built (ship --build): {', '.join(missing)}")
+    req.update({"light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    folder.mkdir(parents=True, exist_ok=True)
+    built = _ship_export.scene(layout, out, req, staged, folder)
+    try:
+        summary = ship_export.write(layout, out, built, common.ROOT / "godot" / "ship", folder)
+    except ValueError as e:
+        raise common.Failure(f"ship --export: {e}") from e
+    common.say(f"  package: {len(summary['files'])} files, {summary['bytes'] / 1e6:.1f} MB -> {folder.as_posix()}")
+    problems, load = _ship_export.check(layout, out, folder)
+    shots: dict = {}
+    if compare:
+        more, shots = _ship_export.compare(layout, out, folder)
+        problems += more
+    report = {"package": {k: summary[k] for k in ("version", "scene", "pieces", "placements", "bytes")},
+              "files": len(summary["files"]), "stations": len(summary["stations"]),
+              "load": {k: load[k] for k in ("pieces", "bodies", "lights", "size_worst_m", "walk")}, "views": shots,
+              "problems": problems}
+    path = folder / _ship_export.CHECK_DIR / "report.json"
+    path.write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
+    for p in problems:
+        common.say(f"  {p}")
+    if problems:
+        common.bad(f"ship --export: {len(problems)} problems")
+        return 1
+    common.ok(f"ship --export: the package loads headless, sizes and walk hold"
+              + (", the views match --shoot's" if compare else "") + f" ({folder.as_posix()})")
     return 0
 
 
