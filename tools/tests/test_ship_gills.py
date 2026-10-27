@@ -62,14 +62,18 @@ def apart(a, b, gap: float = 0.0) -> bool:
 class ShipGillsTest(unittest.TestCase):
     def test_drawing_numbers(self):
         self.assertEqual((G.DRAWING_COVER_W, G.PROUD), (0.30, 0.035))
-        self.assertEqual((G.BAND, G.FIXED, G.CROWN_TOP, G.RIB_H), ((-0.80, 0.80), (0.47, 0.80), 2.05, (0.08, 2.05)))
-        self.assertAlmostEqual(G.BAND[0] + G.COVERS * G.PITCH, G.FIXED[0], places=5)
+        self.assertEqual((G.BAND, G.FIXED, G.CROWN_TOP, G.RIB_H), ((-0.80, 0.80), (0.52, 0.80), 2.05, (0.08, 2.05)))
+        # step 7: the concept's 4 ribs of 22 cm, 12 cm slots, an equal end gap at both ends of the rib band
+        self.assertEqual((G.COVERS, G.COVER_W, G.SLOT_W), (4, 0.22, 0.12))
+        self.assertAlmostEqual(G.cover_u(0) - G.BAND[0], G.END_GAP, places=9)
+        self.assertAlmostEqual(G.FIXED[0] - G.cover_u(G.COVERS - 1) - G.COVER_W, G.END_GAP, places=9)
+        self.assertGreaterEqual(G.END_GAP, 0.035)
+        self.assertGreaterEqual(G.FIXED[1] - G.FIXED[0] - 2 * G.CH, 2 * G.HAND_HW)   # the scanner fits the fifth arch
         self.assertEqual((G.BAR_W, G.BAR_H, G.BAR_GREEN), (0.05, (1.36, 1.88), (1.78, 1.84)))
         self.assertEqual((round(2 * G.LAMP_R, 3), G.LAMP_H), (0.172, (1.92, 2.02)))
-        for i in range(G.COVERS):   # step 4: each rib centred in its pitch cell, narrower than the drawing's 30 cm
-            cell = G.BAND[0] + i * G.PITCH
-            self.assertAlmostEqual(G.cover_u(i) - cell, cell + G.PITCH - G.cover_u(i) - G.COVER_W)
-            self.assertLess(G.COVER_W, G.DRAWING_COVER_W)
+        for i in range(1, G.COVERS):   # every slot SLOT_W, the ribs narrower than the drawing's 30 cm
+            self.assertAlmostEqual(G.cover_u(i) - G.cover_u(i - 1) - G.COVER_W, G.SLOT_W, places=9)
+        self.assertLess(G.COVER_W, G.DRAWING_COVER_W)
 
     def test_rib_profile(self):
         """Step 6: one profile from the foot to the top (the concept's chunky bow): PROUD at the foot, LOW at LOW_H (the
@@ -79,7 +83,7 @@ class ShipGillsTest(unittest.TestCase):
         self.assertAlmostEqual(G.cover_front(G.LOW_H), G.LOW)
         self.assertAlmostEqual(G.cover_front(G.PEAK_H), G.PEAK)
         self.assertAlmostEqual(G.rib_proud(G.CROWN_TOP), G.CROWN_PROUD)
-        self.assertGreaterEqual(G.LOW, 0.11)    # the lower half bows too (step 5: 7.7 cm at 0.74)
+        self.assertGreaterEqual(G.LOW, 0.13)    # the lower half bows too (step 5: 7.7 cm at 0.74, step 6: 12.5)
         n = 400
         hs = [G.RIB_H[0] + (G.CROWN_TOP - G.RIB_H[0]) * k / n for k in range(n + 1)]
         pr = [G.rib_proud(h) for h in hs]
@@ -87,7 +91,7 @@ class ShipGillsTest(unittest.TestCase):
         self.assertTrue(G.PEAK_H <= hs[top] <= G.BEND + 0.01, hs[top])
         self.assertTrue(all(b >= a for a, b in zip(pr[:top], pr[1:top + 1])))     # rising to the bend
         self.assertTrue(all(b <= a for a, b in zip(pr[top:], pr[top + 1:])))      # falling over the leaning wall
-        self.assertLessEqual(max(pr), 0.20)
+        self.assertTrue(0.19 <= max(pr) <= 0.20, max(pr))   # step 7: the fuller ")", about 20 cm at the bend
         self.assertLessEqual(G.ARCH_TOP_SLOPE, G.IN / (G.TOP - G.BEND))
         self.assertGreaterEqual(min(G.rib_proud(h) for h in hs if h >= G.BEND), 0.04)
 
@@ -191,14 +195,14 @@ class ShipGillsTest(unittest.TestCase):
             self.assertAlmostEqual(g, G.PITCH - G.COVER_W, places=6)
 
     def test_glow_bands_and_slots(self):
-        """Step 6: the well's back dark, in bands fading up from the foot; the ribs' flanks the brightest cyan (their
-        front half), dim behind: the glow brightest at the slot's edges; the slots lit on up the leaning wall to
+        """Step 7: the well's back full of cyan (0.25..0.4 low, fading up from 40 cm), the lowest band a darker pocket
+        under it; the ribs' flank fronts still the brightest (the slot's edges); the slots lit on up the leaning wall to
         SLOT_TOP between the ribs (never more than 4 mm under one), the cool's children."""
         es = [b[3] for b in G.COOL_BANDS + G.SLOT_BANDS]
-        self.assertEqual(es, sorted(es, reverse=True))
-        self.assertLessEqual(max(es), 0.10)
-        self.assertGreater(G.FLANK_E, 3 * max(es))
-        self.assertTrue(max(es) <= G.FLANK2_E < G.FLANK_E)
+        self.assertEqual(es[1:], sorted(es[1:], reverse=True))
+        self.assertTrue(0.25 <= es[0] < es[1] <= 0.40, es)
+        self.assertGreater(G.FLANK_E, max(es))
+        self.assertTrue(G.FLANK2_E < G.FLANK_E)
         self.assertEqual(G.COOL_BANDS[0][0], G.WELL_H[0])
         self.assertEqual(G.COOL_BANDS[-1][1], G.WELL_H[1])
         parts = build("e")
@@ -209,10 +213,44 @@ class ShipGillsTest(unittest.TestCase):
         for k in range(G.COVERS + 1):
             for h in (G.BEND, 1.7, G.SLOT_TOP):
                 lo, hi = G.slot_span(k, h)
-                self.assertGreater(hi - lo, 0.04 if k in (0, G.COVERS) else 0.09, (k, h))
+                self.assertGreater(hi - lo, G.END_GAP - 0.01 if k in (0, G.COVERS) else 0.09, (k, h))
                 for i in range(G.COVERS):
                     c0, c1 = G.cover_u(i), G.cover_u(i) + G.COVER_W
                     self.assertLessEqual(min(hi, c1) - max(lo, c0), 0.0041, (k, i, h))
+
+    def test_hood_and_sill(self):
+        """Step 7: the arched hood over the slots: its lip an arch over the rib band, lowest at the ends, stepping up
+        over the fifth arch above its lamp; every rib runs on up into it (its top above the lip) and its crest stays
+        1 cm behind the hood's face there (the rib flows in, no square-cut top shows); the ribs' and the fifth arch's
+        feet seated on the bronze sill."""
+        mid = (G.BAND[0] + G.FIXED[0]) / 2
+        self.assertAlmostEqual(G.hood_lip(mid), G.HOOD_HI, places=6)
+        self.assertAlmostEqual(G.hood_lip(G.BAND[0]), G.HOOD_LO, places=6)
+        self.assertAlmostEqual(G.hood_lip(G.HOOD_U[1]), G.HOOD_LIP5, places=6)
+        self.assertGreater(G.HOOD_LIP5, G.LAMP_H[1] + 0.03)
+        us = G.hood_us()
+        self.assertEqual(us, sorted(us))
+        for i in range(G.COVERS):
+            for u in (G.cover_u(i), G.cover_u(i) + G.COVER_W / 2, G.cover_u(i) + G.COVER_W):
+                h0 = G.hood_lip(u)
+                self.assertLess(h0, G.RIB_H[1] - G.TOP_R - 0.05, (i, u))
+                h1 = h0 + (G.HOOD_R + 0.002) * G.LEAN_H   # over the nose, every row up to the rounded top under the hood's face
+                for k in range(11):
+                    h = h1 + (G.RIB_H[1] - h1) * k / 10
+                    crest = (G.cover_front(h) - G.V.cv(h)) * G.NORM_V   # out of the leaning wall's face
+                    self.assertLess(crest, G.hood_front(u, h) - 0.008, (i, u, h))
+        self.assertLessEqual(G.RIB_H[0], G.SILL_H - 0.005)
+        self.assertGreaterEqual(G.SILL_P, max(G.PROUD, G.edge_front(G.PROUD, G.wall_back(G.RIB_H[0]))) + 0.01)
+        parts = build("e")
+        for name in ("hood", "hood_edge", "sill"):
+            self.assertIn(name, parts)
+        for k in range(1, G.COVERS + 2):
+            for st in G.FLOOR_STEPS:
+                p = parts[f"{st[0]}{k}"]
+                self.assertEqual(p["parent"], "station_vent_e_cool")
+                self.assertTrue(all(S.FLOOR < z < S.FLOOR + 0.004 for _, _, z in p["verts"]))
+        es = [st[1] for st in G.FLOOR_STEPS]
+        self.assertEqual(es, sorted(es))   # the edge faded: dimmest outside
 
     def test_rock_clear(self):
         """The motion built in (option b): a rib rocked +-RIB_ROCK_DEG about its axis stays 2 cm clear of its
@@ -227,6 +265,12 @@ class ShipGillsTest(unittest.TestCase):
                             p = G.rock((u, v, h), i, deg)
                             self.assertLessEqual(p[1], G.wall_v(p[2]) + 0.0005, (deg, i, h, u))
                             self.assertGreaterEqual(p[1], G.wall_v(p[2]) - 0.03, (deg, i, h, u))
+            for i in (0, G.COVERS - 1):   # step 7: the end ribs 2 cm clear of the casing at either end
+                for k in range(0, len(G.RIB_HS), 5):
+                    h = rows[i][k][0]
+                    us = [G.rock((u, v, h), i, deg)[0] for u, v in rows[i][k][1]]
+                    self.assertGreater(min(us), G.BAND[0] + 0.02 if i == 0 else -9.0, (deg, i, h))
+                    self.assertLess(max(us), G.FIXED[0] - 0.02 if i else 9.0, (deg, i, h))
             for i in range(G.COVERS - 1):
                 for d2 in (-deg, 0.0, deg):
                     for k in range(0, len(G.RIB_HS), 5):
