@@ -416,15 +416,18 @@ int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
 int_halo__vent_heat = {c = [1.0, 0.13, 0.0], e = 0.6, l = 0.0}     # station 1: the vents' heat (vents-b3: a deep red-orange, b2's read peach)
 int_halo__vent_seam = {c = [1.0, 0.13, 0.0], l = 0.0}             # the blades' lit seams, the heat's colour (dark calm: vent_anim.gd, ship.py VENT_STATES)
-int_cyan__vent_cool = {c = [0.05, 0.55, 1.0], e = 0.1, v = 0.15, l = 0.0}   # station 1: the vents' calm glow behind the slats (hidden for the problem); gills step 5: a flat deep cyan, brightest at the foot, fading up in bands (cool2..7, the gills' builder's COOL_BANDS, SLOT_BANDS)
-int_cyan__vent_cool2 = {c = [0.05, 0.55, 1.0], e = 0.08, v = 0.15, l = 0.0}
-int_cyan__vent_cool3 = {c = [0.05, 0.55, 1.0], e = 0.065, v = 0.15, l = 0.0}
-int_cyan__vent_cool4 = {c = [0.05, 0.55, 1.0], e = 0.05, v = 0.15, l = 0.0}
-int_cyan__vent_cool5 = {c = [0.05, 0.55, 1.0], e = 0.04, v = 0.15, l = 0.0}
-int_cyan__vent_cool6 = {c = [0.05, 0.55, 1.0], e = 0.035, v = 0.15, l = 0.0}   # the slots up the leaning wall between the crowns
-int_cyan__vent_cool7 = {c = [0.05, 0.55, 1.0], e = 0.03, v = 0.15, l = 0.0}
+int_cyan__vent_cool = {c = [0.05, 0.55, 1.0], e = 0.25, v = 0.08, l = 0.0}   # gills step 7: the slots full of cyan (0.25 the lower pocket, 0.36 over it fading up to 0.08; v 0.08, the lights no longer paint it pale); station 1: the vents' calm glow behind the slats (hidden for the problem); gills step 5: a flat deep cyan, brightest at the foot, fading up in bands (cool2..7, the gills' builder's COOL_BANDS, SLOT_BANDS)
+int_cyan__vent_cool2 = {c = [0.05, 0.55, 1.0], e = 0.36, v = 0.08, l = 0.0}
+int_cyan__vent_cool3 = {c = [0.05, 0.55, 1.0], e = 0.3, v = 0.08, l = 0.0}
+int_cyan__vent_cool4 = {c = [0.05, 0.55, 1.0], e = 0.24, v = 0.08, l = 0.0}
+int_cyan__vent_cool5 = {c = [0.05, 0.55, 1.0], e = 0.18, v = 0.08, l = 0.0}
+int_cyan__vent_cool6 = {c = [0.05, 0.55, 1.0], e = 0.13, v = 0.08, l = 0.0}   # the slots up the leaning wall between the crowns
+int_cyan__vent_cool7 = {c = [0.05, 0.55, 1.0], e = 0.08, v = 0.08, l = 0.0}
 int_cyan__vent_flank = {c = [0.05, 0.55, 1.0], e = 0.45, l = 0.0}   # gills step 5: the ribs' flanks facing the slots (dark for the problem: ship.py VENT_STATES); step 6: their front half brighter, the slot's edges
 int_cyan__vent_flank2 = {c = [0.05, 0.55, 1.0], e = 0.12, l = 0.0}  # gills step 6: the flanks' back half, dim (the glow fades into the slot's depth)
+int_cyan__vent_floor = {c = [0.05, 0.55, 1.0], e = 0.45, l = 0.0}   # gills step 7: the strip on the deck at each slot's foot (the concept's), its edge faded in steps (floor2, floor3)
+int_cyan__vent_floor2 = {c = [0.05, 0.55, 1.0], e = 0.18, l = 0.0}
+int_cyan__vent_floor3 = {c = [0.05, 0.55, 1.0], e = 0.06, l = 0.0}
 vent_b_bronze = {v = 1.55}                                           # the vents' bronze, lifted in the night light (vents-b3: darker, patinated; the b3 colour at 1.25 read near black)
 vent_b_bronze2 = {v = 1.55}                                          # vents-b3: the frame's second panel tone
 vent_b_edge = {v = 1.0}                                              # the vents' chamfers (vents-b3: duller, no blown highlights)

@@ -36,7 +36,8 @@ const GAP_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.2, 0.36], "heat": [Color(1
 ## concept), and one SLOT_OUT_M off the leaning wall in front of the lit slot between the crowns (`<id>_slots6`, the
 ## cool's child) lighting the crowns' flanks
 ## gills step 6: the foot's light 0.1 over 0.4 m (step 5's 0.25 read as a strip of spilled paint)
-const FOOT_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.1, 0.4], "heat": [Color(1.0, 0.2, 0.02), 0.15, 0.4]}
+## gills step 7: 0.15 over 0.45 m, the wash round the floor strips (the builder's FLOOR_STEPS)
+const FOOT_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.15, 0.45], "heat": [Color(1.0, 0.2, 0.02), 0.15, 0.4]}
 const FOOT_H_M := 0.06
 const FOOT_OUT_M := 0.10
 ## gills step 6: the slot light weaker and 2 cm off the wall, deep between the ribs (at 5 cm it left blobs on their edges)
