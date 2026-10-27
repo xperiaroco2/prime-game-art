@@ -425,6 +425,7 @@ glow_cyan__vent_strip = {c = [0.0, 0.62, 1.0], e = 0.6, l = 0.0}     # the frame
 glow_cyan__vent_hand = {c = [0.0, 0.62, 1.0], e = 0.7, l = 0.0}      # the scanner's hand outline (vents-b3: neon cyan on the black screen)
 
 glow_amber__vent_bar = {c = [1.0, 0.36, 0.0], e = 0.9, l = 0.0}      # the light bar's amber (vents-b2: saturated, past the glow threshold)
+glow_white__vent_bar = {c = [0.88, 0.95, 1.0], e = 0.9, l = 0.0}     # gills step 2: the timing bar white over and under its green band
 glow_nav_green__vent_band = {c = [0.0, 1.0, 0.08], e = 0.9, l = 0.0}    # the bar's green band (vents-b2: a clear green)
 glow_nav_white__vent_bar_hot = {c = [1.0, 0.93, 0.75], e = 0.7, l = 0.0}  # the bar's white-hot foot
 int_dark__vent_screen = {c = [0.0, 0.0, 0.0], e = 0.0, l = 0.0}      # the hand's dark screen
