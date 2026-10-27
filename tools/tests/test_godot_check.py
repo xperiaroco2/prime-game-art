@@ -89,6 +89,19 @@ class EvaluateTest(unittest.TestCase):
                 mutate(d)
                 self.assertEqual(statuses(d)[check], "fail")
 
+    def test_held_pose_clips_must_hold_still(self) -> None:  # art #196: the photo poses are identical keys
+        d, e = dump(), expect()
+        still = {"max_rotation_deg": 0.0, "max_translation_m": 0.0, "most_moved_bone": "Hips"}
+        for name in ("CharacterArmature|PoseLegs_Squat_Loop", "CharacterArmature|PoseArms_Flex_Loop"):
+            d["players"][0]["animations"][name] = dict(d["players"][0]["animations"]["CharacterArmature|Idle"],
+                                                       motion=dict(still))
+            e["animations"][name] = ANIMS["CharacterArmature|Idle"]
+        got = statuses(d, e)
+        self.assertEqual((got["animations_move"], got["held_poses_hold"]), ("pass", "pass"))
+        d["players"][0]["animations"]["CharacterArmature|PoseArms_Flex_Loop"]["motion"]["max_rotation_deg"] = 3.0
+        self.assertEqual(statuses(d, e)["held_poses_hold"], "fail")
+        self.assertNotIn("held_poses_hold", statuses(dump()))
+
     def test_unresolved_track_warnings_and_errors_in_godots_output_fail(self) -> None:
         got = statuses(dump(), output=["WARNING: AnimationMixer: 'Walk', couldn't resolve track: 'x:Toe'.", "ERROR: boom"])
         self.assertEqual((got["tracks_resolve"], got["godot_output"]), ("fail", "fail"))
