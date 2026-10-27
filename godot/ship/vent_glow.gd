@@ -21,11 +21,15 @@ const SLIT_LOOK := {"cool": [Color(0.0, 0.48, 1.0), 1.0, 0.6], "heat": [Color(1.
 ## gills step 3: the slit lights SLIT_IN_M deeper than the jambs, inside the well: from the cut they lit the convex
 ## covers' fronts through the covers (no shadows); from there the fronts face away from them
 const SLIT_IN_M := 0.03
-## gills step 3: per groove under a rib edge (its seam `<id>_seam<k>`) GAP_ROWS small lights GAP_OUT_M in front of the
-## groove's floor, between the ribs' flanks: they light the flanks cyan, the concept's slit at both edges of each rib
+## gills step 3: per groove under a rib edge (its seam `<id>_seam<k>`) GAP_ROWS small lights between the ribs' flanks;
+## gills step 4 (the window: every gap a slot into the well): per gap's seam GAP_ROWS lights GAP_IN_M behind the wall's
+## face (in the plate's cut, behind the ribs' backs, so no cover front faces them: no blob on the faces), at GAP_FRAC of the seam's height
+## (the top row low enough to leave the crowns' feet dark), lighting the ribs' pale flanks and the well; the cyan a
+## little less saturated (the floor wash)
 const GAP_ROWS := 3
-const GAP_OUT_M := 0.03
-const GAP_LOOK := {"cool": [Color(0.0, 0.55, 1.0), 0.45, 0.28], "heat": [Color(1.0, 0.2, 0.02), 0.45, 0.28]}   # 0.28: short of the crowns
+const GAP_IN_M := 0.015
+const GAP_FRAC := [0.25, 0.5, 0.72]
+const GAP_LOOK := {"cool": [Color(0.18, 0.66, 1.0), 0.9, 0.36], "heat": [Color(1.0, 0.2, 0.02), 0.9, 0.36]}
 ## Every well light lights the inside's render layer only (ship.gd's INSIDE_LAYER): none leaks onto the hull's
 ## outside behind a shallow well (omni lights pass through walls)
 const INSIDE_MASK := 1
@@ -109,11 +113,12 @@ static func _slits(mi: MeshInstance3D, suffix: String, put: bool = false, scale:
 		var inv2: Transform3D = mi.transform.affine_inverse()
 		var look: Array = GAP_LOOK[suffix]
 		for r: int in GAP_ROWS:
-			var y2: float = gb.position.y + gb.size.y * (r + 0.5) / GAP_ROWS - gb.get_center().y
+			var c: Vector3 = gb.get_center()
+			var y2: float = gb.position.y + gb.size.y * float(GAP_FRAC[r])
 			var o2: OmniLight3D = OmniLight3D.new()
 			o2.name = "%s_gap%d_light%d" % [mi.name, k, r + 1]
-			# out of the wall: the piece's -z (Godot (x, h, -v))
-			o2.position = inv2 * (gm.transform * (gb.get_center() + Vector3(0.0, y2, -GAP_OUT_M)))
+			# GAP_IN_M behind the wall's face: the piece's +z (Godot (x, h, -v))
+			o2.position = inv2 * (gm.transform * Vector3(c.x, y2, GAP_IN_M))
 			o2.light_color = look[0]
 			o2.light_energy = float(look[1]) * scale
 			o2.omni_range = float(look[2])
