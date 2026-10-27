@@ -72,9 +72,9 @@ const METAL_KEYS: Array = ["metallic", "roughness", "grain", "seams", "scratches
 ## lit chamfers brighter and smoother, so the ribs read dark with thin bright edges as in the concept; step 4: the
 ## chamfers nearer the bronze, less lift (the pale gold lines looked pasted on)
 const GILL_BRONZE: Dictionary = {
-	"gill_bronze": [Color(0.64, 0.42, 0.22), 0.70, 0.30, 1.0, 0.04],   # gills step 5: glossier, a little lighter
+	"gill_bronze": [Color(0.64, 0.42, 0.22), 0.70, 0.30, 1.0, 0.06],   # gills step 5: glossier, a little lighter; step 6: lift 0.06
 	"gill_bronze2": [Color(0.58, 0.38, 0.20), 0.70, 0.32, 1.0, 0.03],
-	"gill_edge": [Color(0.74, 0.52, 0.30), 0.85, 0.18, 0.6, 0.0],     # step 5: a glossy bevel, not a tan stripe
+	"gill_edge": [Color(0.86, 0.64, 0.40), 0.85, 0.14, 0.6, 0.10],    # step 5: a glossy bevel; step 6: lighter and lifted, the rim highlight at night
 }
 var _gill_mats: Dictionary = {}
 const LIGHT_CELL_M: float = 1.6

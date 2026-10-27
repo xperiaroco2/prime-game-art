@@ -30,15 +30,18 @@ const GAP_ROWS := 3
 const GAP_IN_M := 0.015
 const GAP_FRAC := [0.25, 0.5, 0.72]
 ## gills step 5: the cool a deep cyan at 0.3 (step 4's 0.9 clipped the pale flanks to white)
-const GAP_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.3, 0.36], "heat": [Color(1.0, 0.2, 0.02), 0.9, 0.36]}
+## gills step 6: 0.2 (the well's back darker, the glow on the flanks)
+const GAP_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.2, 0.36], "heat": [Color(1.0, 0.2, 0.02), 0.9, 0.36]}
 ## gills step 5: per gap a small light at its foot FOOT_OUT_M out of the wall (a little cyan on the floor, as the
 ## concept), and one SLOT_OUT_M off the leaning wall in front of the lit slot between the crowns (`<id>_slots6`, the
 ## cool's child) lighting the crowns' flanks
-const FOOT_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.25, 0.5], "heat": [Color(1.0, 0.2, 0.02), 0.25, 0.5]}
+## gills step 6: the foot's light 0.1 over 0.4 m (step 5's 0.25 read as a strip of spilled paint)
+const FOOT_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.1, 0.4], "heat": [Color(1.0, 0.2, 0.02), 0.15, 0.4]}
 const FOOT_H_M := 0.06
 const FOOT_OUT_M := 0.10
-const SLOT_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.2, 0.35], "heat": [Color(1.0, 0.2, 0.02), 0.3, 0.35]}
-const SLOT_OUT_M := 0.05
+## gills step 6: the slot light weaker and 2 cm off the wall, deep between the ribs (at 5 cm it left blobs on their edges)
+const SLOT_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.08, 0.3], "heat": [Color(1.0, 0.2, 0.02), 0.2, 0.3]}
+const SLOT_OUT_M := 0.02
 ## Every well light lights the inside's render layer only (ship.gd's INSIDE_LAYER): none leaks onto the hull's
 ## outside behind a shallow well (omni lights pass through walls)
 const INSIDE_MASK := 1
@@ -133,6 +136,7 @@ static func _slits(mi: MeshInstance3D, suffix: String, put: bool = false, scale:
 			o3.position = inv2 * (gm.transform * (x[1] as Vector3))
 			o3.light_color = spec2[0]
 			o3.light_energy = float(spec2[1]) * scale
+			o3.light_specular = 0.0   # gills step 6: no highlight blobs on the ribs' edges and flanks
 			o3.omni_range = float(spec2[2])
 			o3.omni_attenuation = 1.2
 			o3.shadow_enabled = false
@@ -148,6 +152,7 @@ static func _slits(mi: MeshInstance3D, suffix: String, put: bool = false, scale:
 			o2.position = inv2 * (gm.transform * Vector3(c.x, y2, GAP_IN_M))
 			o2.light_color = look[0]
 			o2.light_energy = float(look[1]) * scale
+			o2.light_specular = 0.0   # gills step 6: no highlight blobs on the ribs' edges and flanks
 			o2.omni_range = float(look[2])
 			o2.omni_attenuation = 1.2
 			o2.shadow_enabled = false
