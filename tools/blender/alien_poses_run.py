@@ -36,11 +36,23 @@ def reference(dump: dict, cfg: dict) -> dict:
     model = A.Model(dump["skel"], dump["skin"], cfg)
     legs = {n: model.legs(n) for n in cfg["legs"]}
     arms = {n: model.arms(n) for n in cfg["arms"]}
+    arms.update(model.variants(legs, arms))
     pairs = {}
     for lg, am in P.pairs_of(cfg, "all"):
-        Pm = A.compose(legs[lg], arms[am]).P()
+        Pm = A.compose(legs[lg], A.arms_for(arms, am, lg)).P()
         pairs[f"{lg}+{am}"] = {"legs": lg, "arms": am, "heads": {b: gltf(A.S.pos(m)) for b, m in Pm.items()}}
     return {"pairs": pairs}
+
+
+def built_data(hd: Path, cfg: dict) -> tuple[dict, str]:
+    """The pose data a build's clips were solved from (its `pose_data.json`, written by alien_poses.py; an older
+    build without one: the TOML's) and the top-level parts of it that differ from the TOML's ("" when none)."""
+    f = hd / "pose_data.json"
+    if not f.is_file():
+        return cfg, ""
+    built = json.loads(f.read_text(encoding="utf-8"))
+    now = json.loads(json.dumps(cfg))
+    return built, ", ".join(k for k in sorted(set(built) | set(now)) if built.get(k) != now.get(k))
 
 
 def newest_step(raw: str, cfg: dict) -> str:
@@ -75,8 +87,12 @@ def main() -> int:
         job = {"chars": []}
         for c in chars:
             dump = json.loads((out / f"{c}_dump.json").read_text(encoding="utf-8"))
+            built, stale = built_data(out / "build" / c, cfg)
+            if stale:
+                print(f"NOTE {c}: the build's pose data differs from the TOML ({stale}); the reference follows the "
+                      f"build's (rebuild with alien_poses.py --glb)", flush=True)
             ref = out / f"ref_{c}.json"
-            ref.write_text(json.dumps(reference(dump, cfg)), encoding="utf-8", newline="\n")
+            ref.write_text(json.dumps(reference(dump, built)), encoding="utf-8", newline="\n")
             job["chars"].append({"glb": _godot.stage(out / "build" / c / f"{c}_char.glb", f"poses_{c}"),
                                  "ref": str(ref), "out": str(out / f"layers_{c}.json")})
         (out / "check_job.json").write_text(json.dumps(job, indent=1), encoding="utf-8", newline="\n")

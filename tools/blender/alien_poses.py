@@ -52,9 +52,10 @@ def solve(dump: dict, cfg: dict, which: str) -> tuple[A.Model, dict, dict, list]
     pairs = pairs_of(cfg, which)
     legs = {n: model.legs(n) for n in dict.fromkeys(p[0] for p in pairs)}
     arms = {n: model.arms(n) for n in dict.fromkeys(p[1] for p in pairs)}
+    arms.update(model.variants(legs, arms))
     rows = []
     for lg, am in pairs:
-        m = A.measure(model, A.compose(legs[lg], arms[am]), lg, am)
+        m = A.measure(model, A.compose(legs[lg], A.arms_for(arms, am, lg)), lg, am, f"{am}{A.VARIANT}{lg}" in arms)
         rows.append(m)
         print(f"PAIR {m['pair']} floor {m['floor_cm']} com {m['com_margin_cm']} touch {m['touch_cm']} contacts "
               f"{m['contacts_cm']} marks {m.get('marks_cm', {})} through-max {max(m['through_cm'].values())} fails {m['fails']}", flush=True)
@@ -238,14 +239,14 @@ def _masks(arm, char: str, model, legs: dict, arms: dict, out: Path) -> None:
     stage = _stage(arm)
     tmp = out / "_cell.png"
     w, h = MASK
-    ln, an = list(legs), list(arms)
+    ln, an = list(legs), [n for n in arms if A.VARIANT not in n]
     grids = {f: np.ones((h * len(ln), w * len(an), 4), dtype=np.float32) for f, _ in FACINGS}
     shaded = {k: np.ones((h * len(ln), w * len(an), 4), dtype=np.float32) for k in ("front", "34")}
     masks = {}
     pad = 8 * ((w + 7) // 8) - w
     for i, lg in enumerate(ln):
         for j, am in enumerate(an):
-            _apply(arm, A.compose(legs[lg], arms[am]))
+            _apply(arm, A.compose(legs[lg], A.arms_for(arms, am, lg)))
             y0, x0 = (len(ln) - 1 - i) * h, j * w
             for face, yaw in FACINGS:
                 px = _shot(stage, yaw, True, MASK, 100.0, tmp)
@@ -352,11 +353,14 @@ def _blender_main(argv: list[str]) -> None:
         # the pure skinning against Blender's own evaluated mesh: the lowest point of every measured pair
         for m in rows:
             lg, am = m["pair"].split("+")
-            _apply(arm, A.compose(legs[lg], arms[am]))
+            _apply(arm, A.compose(legs[lg], A.arms_for(arms, am, lg)))
             m["floor_blender_cm"] = round(_lowest_blender(arm) * 100.0, 2)
         worst = max(abs(m["floor_blender_cm"] - m["floor_cm"]) for m in rows)
         print(f"CHECK {char} lowest point, pure skinning vs Blender: at most {worst:.3f} cm apart", flush=True)
         added = sorted(set(after) - set(before))
+        # the pose data these clips were solved from: the layers check composes its reference from it, so a later
+        # change to the TOML is not read as Godot's error on an older build
+        (hd / "pose_data.json").write_text(json.dumps(cfg, indent=1), encoding="utf-8", newline="\n")
         bpy.ops.wm.save_as_mainfile(filepath=str(hd / f"{char}_char.blend"), compress=True)
         (hd / "poses.json").write_text(json.dumps({
             "char": char, "marks": model.marks, "leg_len": model.leg_len, "proxy_rest_cm": proxy_error(model),
@@ -371,7 +375,7 @@ def _blender_main(argv: list[str]) -> None:
             print(f"GLB {char} {hd / (char + '_char.glb')}", flush=True)
         if a.sheet:
             st = [tuple(p) for p in cfg["set"]["starting"]]
-            _sheet(arm, model, [A.compose(legs[lg], arms[am]) for lg, am in st], [f"{lg}+{am}" for lg, am in st],
+            _sheet(arm, model, [A.compose(legs[lg], A.arms_for(arms, am, lg)) for lg, am in st], [f"{lg}+{am}" for lg, am in st],
                    out / f"sheet_{char}.png")
         if a.masks:
             _masks(arm, char, model, legs, arms, out)

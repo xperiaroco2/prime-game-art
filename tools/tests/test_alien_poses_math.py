@@ -218,6 +218,22 @@ class GlbClips(unittest.TestCase):
         self.assertNotEqual(a["Idle"], c["Idle"])
 
 
+class BuiltData(unittest.TestCase):
+    def test_the_check_composes_from_the_builds_own_data(self):
+        """verify went red when the TOML changed after the newest build: the reference follows the build's data."""
+        import tempfile
+        import alien_poses_run as PR
+        cfg = A.load()
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(PR.built_data(Path(d), cfg), (cfg, ""))  # an older build: the TOML's
+            old = json.loads(json.dumps(cfg))
+            old["arms"]["Heart"]["both"]["offset"] = [0.4, 1.9, 0.9]
+            (Path(d) / "pose_data.json").write_text(json.dumps(old), encoding="utf-8")
+            built, stale = PR.built_data(Path(d), cfg)
+        self.assertEqual(built["arms"]["Heart"]["both"]["offset"], [0.4, 1.9, 0.9])
+        self.assertEqual(stale, "arms")
+
+
 @unittest.skipUnless(DUMP.is_file(), "the s1 skin dump is not on this machine")
 class OnTheChameleon(unittest.TestCase):
     @classmethod
