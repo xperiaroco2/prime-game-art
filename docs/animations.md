@@ -1156,8 +1156,17 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   --masks` (background, about 25 min for both), then `alien_poses_run.py --step <new> --check --shots`.
 - **Measures and limits** (every pair, both characters, `build/<char>/poses.json`): the lowest skin point within
   0.5 cm of the floor; the centre of mass at least 1 cm inside the support area for Stand, OneLeg, Squat, Lunge, Kneel;
-  skin through skin at most 1.5 cm (the tube proxy's own error on the rest skin is reported; the folded groin skin is
-  skipped); a contact's gap at most 1 cm. Step 3: 0 of 48 over a limit on both.
+  skin through skin at most 1.5 cm, and at most 0.5 cm for a hand or forearm (the hand's proxy reads 0.0 cm on the
+  rest skin, so a hand's reading is real; the thighs' and upper arms' proxies read several cm at rest, the folded
+  groin and armpit skin is skipped); a contact's gap at most 1 cm; a hand on a landmark (`mark`: the hip hand of
+  HandsOnHips, FingerUp and Salute on the waist's side) has its palm's centre within 5 cm of it (the landmark rides
+  on the Spine), so "touching the body" alone (the belly's front) no longer passes. A goal arm's `touch_by` names
+  the skin that touches (the palm's bone: the thumb kept off the body).
+  Step 4: the landmark check passes on all 48 (the hip palm 4.6 cm from the waist's side, its skin 0.2-0.3 cm
+  off the body); the hand limit flags the hip hand on every hip-hand pair (hand into torso 2.3 cm) and on Sit
+  (hand into thigh 8.1 cm), and the axolotl's salute and behind-head hand (into the head about 0.6 cm): 18
+  (chameleon) and 24 (axolotl) of 48 pairs; judged on the close-ups (see the step's handoff), the torso tube's slice
+  at the waist spans the wider pelvis, so the waist reading is partly the proxy's.
 - **The silhouette table** (`silhouettes_<char>.json`): per facing (front, left, right, back), for pairs that differ
   only in the legs or only in the arms, 1 - IoU of the outlines aligned on the feet; the least over the other part
   is what the photographer can still tell apart. Below 0.10 is a finding. Left vs mirrored right is about 0.05 for any
@@ -1174,9 +1183,10 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   (0 cm after 0.7 s), `stop()` gives the skeleton back. The game's rules: the pose holds while the player stands;
   turning on the spot keeps it (the node turns, the clips stay); a step drops it (`stop()`, then locomotion).
 - **The head look during a pose** (measured at yaw +-70, the contact in its target bone's frame, cm, chameleon /
-  axolotl): with head_look.gd's defaults (yaw into Spine, Chest, UpperChest too) the hands on the hips slide 12.7, the
-  hands behind the head 21 / 15, the salute's fingertip 12 / 11; with only Neck and Head turning (0.4 / 0.6) the hip
-  hands stay (0.0) but the head leaves the hands behind it (45 / 32) and the salute (25 / 24). The heart's
+  axolotl, step 4's poses): with head_look.gd's defaults (yaw into Spine, Chest, UpperChest too) the hands on the hips
+  slide 11.8, the hands behind the head 14.6 / 9.0, the salute's fingertip 11.9 / 11.4; with only Neck and Head
+  turning (0.4 / 0.6) the hip hands stay (0.0) but the head leaves the hands behind it (31 / 20) and the salute
+  (25 / 24). The heart's
   fingertips never part (0.0). **Recommendation:** during a pose the game sets the head look's split to Neck and Head
   only (its defaults stay for locomotion), and for HandsBehindHead and Salute it turns the look off
   (`influence = 0`): the outline the photographer matches is the pose's own.

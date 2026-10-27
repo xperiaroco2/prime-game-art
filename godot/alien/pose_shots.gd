@@ -94,7 +94,7 @@ func _run() -> void:
 				_label.text = "%s
 %s
 %s" % [p[0], p[1], f] if f == "front" else f
-				cells.append(await _shot(FACINGS[f], _frame(), FRAME_H, START_CELL, mask))
+				cells.append(await _shot(FACINGS[f], _centre(), FRAME_H, START_CELL, mask))
 	_save(cells, START_CELL, 8, out.path_join("starting_%s.png" % c))
 	report["starting"] = {"rows": job["starting"], "cols": ["front", "left", "right", "back", "outline front", "outline left", "outline right", "outline back"]}
 	# the 48 pairs: front and three-quarter rendered, then one outline grid per facing
@@ -105,7 +105,7 @@ func _run() -> void:
 			for am: String in job["arms"]:
 				_pose(lg, am)
 				_label.text = "%s\n%s" % [lg, am]
-				cells.append(await _shot(g[1], _frame(), FRAME_H, GRID_CELL, g[2]))
+				cells.append(await _shot(g[1], _centre(), FRAME_H, GRID_CELL, g[2]))
 		_save(cells, GRID_CELL, job["arms"].size(), out.path_join("grid_%s_%s.png" % [g[0], c]))
 	report["grids"] = {"rows": job["legs"], "cols": job["arms"]}
 	# close-ups: the arms where hands meet or touch (on Stand), the legs' contacts (with HandsOnHips)
@@ -140,15 +140,15 @@ func _bone(b: String) -> Vector3:
 	return _sk.global_transform * _sk.get_bone_global_pose(_sk.find_bone(b)).origin
 
 
-## The photographer's camera at yaw (degrees, where it stands) and CAM_H toward c, framing height h (the far shots);
-## a close-up (h under 1.5 m) stands nearer, level with c.
 ## The far shots' centre: the scale is fixed (FRAME_H), the centre follows the pose: half the head's height (a
 ## seated pose is not left in the cell's lower half) and half the hips' sideways shift (the lunge stays in the cell).
-func _frame() -> Vector3:
+func _centre() -> Vector3:
 	var hips := _bone("Hips")
 	return Vector3(hips.x * 0.5, maxf(0.62, minf(FRAME_C.y, (_bone("Head").y + 0.3) * 0.5)), hips.z * 0.5)
 
 
+## The photographer's camera at yaw (degrees, where it stands) and CAM_H toward c, framing height h (the far shots);
+## a close-up (h under 1.5 m) stands nearer, level with c.
 func _shot(yaw_deg: float, c: Vector3, h: float, size: Vector2i, mask: bool) -> Image:
 	for mi: MeshInstance3D in _meshes:
 		mi.material_override = _black if mask else _keep[mi]
