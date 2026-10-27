@@ -1509,6 +1509,33 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
   - *The bronze and the casing:* `gill_edge` lighter and lifted ((0.86, 0.64, 0.40), roughness 0.14, lift 0.10 in
     `ship.gd`), the rim highlight at night; `gill_bronze` lift 0.06. The band plate and the upper panel are
     `gill_bronze2` (step 5: `vent_b_dark`, a black frame): the casing reads as bronze round the ribs.
+- **The concept pass (gills step 7, 2026-10-27; static, calm).** A fresh critic on r7: from c_close it read as 2 heavy
+  ribs beside a dark pocket, dark navy slots with thin edge lines, ribs ending bluntly like cut boards under a flat
+  panel. Toward the concept (`<raw>/ship/v5/gills/r8/`, the hand-off `<raw>/ship/v5/notes/gills-7.md`):
+  - *4 ribs, as the concept:* `COVERS` 4 of `COVER_W` 22 cm, `SLOT_W` 12 cm slots (pitch 34 cm), the same `END_GAP`
+    4 cm at both ends of the rib band (`cover_u`: the mouth end, then every pitch), so no rib folds into the casing
+    (`test_rock_clear`: rocked, the end ribs stay 2 cm clear of it). The fifth arch narrowed to `FIXED` 0.52..0.80
+    (28 cm; the scanner's 22.4 cm bezel fits inside its chamfers), its crown's insets `CROWN_IN` 2..4 cm (the lamp sits
+    on it); the well runs to u 0.51. The throat's wall modules beside the band were left as they are.
+  - *The fuller ")":* `LOW` 14 cm at h 0.74, `PEAK` 19 at 1.4, 19.8 at the bend (its most); the lit chamfers `CH` 1.6 cm.
+  - *The hood* (`<id>_hood` `gill_bronze2`, `<id>_hood_edge` `gill_edge`): a bronze visor on the leaning wall across
+    the band, `HOOD_P` 7.5 cm proud with a 3 cm rounded nose and a lit edge on it; its full face 16 cm up from the nose,
+    then sloping back into the wall at `HOOD_TOP` 2.16. Its lip is an arch over the rib band (`hood_lip`: 1.80 at the
+    ends, 1.90 in the middle, a square-root sine), stepping up with a cosine over the end gap to 2.065 over the fifth
+    arch (a short visor over the lamp, `hood_span`). Its proud tapers to 15 % over its last 4 cm at either end
+    (`hood_scale`), so it dies into the casing. The ribs run on up into it: from its nose up to their tops each rib's
+    crest stays at least 8 mm behind the hood's face (`hood_front`, `test_hood_and_sill`), so no square-cut top shows.
+  - *The sill* (`<id>_sill`, `gill_bronze2`): 5 cm proud, 8.8 cm tall with a 1.2 cm chamfer, along the band's foot; the
+    ribs' and the fifth arch's feet (h 0.08) sit on it, no gap under them.
+  - *The glow:* the slots full of cyan again: `COOL_BANDS` e 0.25 (h 0.12..0.40, the darker pocket), 0.36, 0.30,
+    0.24, 0.18 up to the bend, the slots up the leaning wall 0.13, 0.08; `ship.toml` v 0.08. The flank liners stay
+    (front 0.45, back 0.12); the back part now runs 3 % under the front one, 0.2 mm lower (`FLANK_PARTS`,
+    `FLANK_OFF`): no dashed seam where they meet.
+  - *The floor strips* (`<id>_floor<k>`, `floor2<k>`, `floor3<k>`, the cool's children, hidden for the problem): on
+    the deck at each slot's foot in front of the sill, three nested steps fading out (`FLOOR_STEPS`: e 0.45 over 7 cm,
+    0.18 over 12, 0.06 over 17, each a little narrower than the one under it); the foot light 0.15 over 0.45 m
+    (`vent_glow.gd`).
+  - The two vents are 55,296 triangles together (r7: 35,632).
 - **The motion step** drives the four states on the ribs (each `<id>_cover<k>` rocked about `rib_axis`), the glows, the
   seams red for the problem, the lamp, the bar's marker.
 
