@@ -54,6 +54,7 @@ def scene(layout: dict, pieces: Path, request: dict, staged: dict[str, Path], fo
 def project(folder: Path) -> None:
     """The package's project.godot (the House export's: Forward Plus, the off-screen window) and the check script."""
     _house_export.project(folder)
+    _godot.install_offscreen(folder)  # export_check.gd preloads lib/offscreen.gd, also in the headless check
     shutil.copyfile(CHECK_SCRIPT, folder / CHECK_DIR / CHECK_SCRIPT.name)
 
 

@@ -12,6 +12,7 @@ extends SceneTree
 ## request.json: {"scene", "pieces": {id: res}, "walk": {"r", "h", "points"}, "views": [[name, title, eye, look, fov]],
 ##   "refs": dir of the reference PNGs}.
 
+const Offscreen = preload("res://lib/offscreen.gd")
 const SPEED: float = 3.0
 const DIFF_PX: int = 16
 
@@ -29,7 +30,7 @@ func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(_out)
 	create_timer(240.0).timeout.connect(_fail.bind("not done within 240 s"))
 	if args[0] == "shoot":
-		var placed: String = load("res://lib/offscreen.gd").place()
+		var placed: String = Offscreen.place()
 		if placed != "":
 			_fail(placed)
 			return
