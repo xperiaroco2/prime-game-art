@@ -46,12 +46,12 @@ placement `[piece, [x, y, h], yaw]` puts a piece's local origin there, turned by
 |---|---|---|
 | Footprint | the hull P, live since lens step 2: span 26.11 m, 22.1 m long with the nozzle pods (blockout6 measured 22.15); `[hull] shape = "P"`, its rows `ship_hull_shape.outline_rows("P")` | the manager's pick P under the engineer's standing instruction (art#263 comment 6344490367) |
 | Deck | floor at h 1.2 on standing legs (the raise, 2026-10-23; launch 3: 0.6, before it 1.0), slabs 0.25, walls 0.2; the builders work in the design frame (deck 0.6) and the build lifts every piece but the grounded ones by `lift_m` 0.6 (see "Raised 0.6 m") | the belly clears the ground; the inside unchanged |
-| Hall | circle r 4.0 at (0, -0.4) (rebuild E; C (0, -1), v2 (0, 0), v1 r 3.4); 3.2 m to the ceiling's rim all round (rebuild E; C had 2.75 m round its front), 3.8 m to its apex (faceted, 16 sides, the four diagonal pairs of facets made one flat chord each for the vents and sockets) | 5a mirrored: round, 8 m across |
+| Hall | circle r 4.0 at (0, -0.4) (rebuild E; C (0, -1), v2 (0, 0), v1 r 3.4); 3.2 m to the ceiling's rim all round (rebuild E; C had 2.75 m round its front), 3.8 m to its apex (faceted, 16 sides; gills step 8/9: the back wall from each corridor's chord end (31.16 deg) to the vault's door (77.5) two equal flat chords of 1.638 m, the gills by the door and the back socket outside; the front sockets on one flat chord each) | 5a mirrored: round, 8 m across |
 | Throat (rebuild C; v2's mouth passage x -1.3..1.3, y -4.6..-3.9) | the funnel from the mouth (x +-1.65 at y -7.1, J's nose edge; 5a: y -8) to the hall's vertices (+-2.915, -3.252), 4.051 m walls in five modules of 0.810 (rebuild E); open to the sky forward of y -5.561 (the walls there are the hull's jambs, `skin_cheeks`), a 2.3 m ceiling aft of it; since the raise's step 2 the entry tunnel (`tunnel_y` -8.1) runs the mouth 1 m on past the nose and its hood roofs the notch (see "Raised 0.6 m") | the only way in or out (5a's side hatch is dropped, see below) |
 | Ramp | 3.3 m wide (the mouth), hinge (0, -8.1) at the tunnel's front, foot (0, -12.6) on the ground: 14.9 deg, 4.66 m long (the raise, step 2; step 1 hinge -7.1, foot -11.6; rebuild C: foot -9.9, 12.1 deg, 2.86 m; v2 2.6 m from (0, -4.6)) | north at the centre |
 | Corridors | `strip` rooms on the axes from the hall's centre (0, -0.4) to the lens rooms' (+-10.5, 1.2) (lens step 1): 10.621 m, 8.66 deg aft; floor 3.708..9.298 along the axis (5.59 m), 3 m wide, straight, 2.4 m high (walls vertical to 1.45, then chamfered) | 5a mirrored: straight, about 3 m wide |
 | Lens rooms (ids `tip_e`, `tip_w`) | circles r 2.0 at (+-10.5, 1.2), the outer wall at +-12.5; the ceiling slants down outward (P's: clear 2.4455 at the corridor's wall face, 2.3545 at the outer one; `clear_h` 2.35, `clear_h_in` 2.45); the window band -65..+45 deg round the outward axis, + aft, sill 1.0, head 2.2 (`band`); one round roof window, the oculus (`oculus`, 1.4 m clear, 32 sides; details 1, was three 0.9 x 0.7 m) | P's lens (art#263 comment 6344490367) |
-| Stations (not built) | console (0, 0.6) clear floor; vents on the throat's slanted walls (+-2.409, -4.791); sockets (+-1.800, 3.112) and the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.664, -0.902) in the middle of the corridors' front wall; renewers (+-10.269, 3.237) on the lens rooms' aft wall (a vertex, 87.82 deg aft of the axis), the player at (+-10.433, 1.793) (the fix pass: `depth_m` 1.053, the crystal charger's reach; was 0.9, the player at (+-10.415, 1.945), inside its front pads) | lens step 1; the vents as in "Rebuild F" |
+| Stations (not built) | console (0, 0.6) clear floor; vents (the gills) on the hall's back wall beside the vault's door (+-1.6305, 3.2475), normal (-+0.4081, -0.9129) (gills step 8/9; were on the throat's slanted walls (+-2.409, -4.791)); back sockets one chord out (+-2.9339, 2.3119), normal (-+0.7343, -0.6788), their own 1.16 m plain band; the front two on the hall's flats (+-3.426, -2.358); breaker boards (+-6.664, -0.902) in the middle of the corridors' front wall; renewers (+-10.269, 3.237) on the lens rooms' aft wall (a vertex, 87.82 deg aft of the axis), the player at (+-10.433, 1.793) (the fix pass: `depth_m` 1.053, the crystal charger's reach; was 0.9, the player at (+-10.415, 1.945), inside its front pads) | lens step 1; the vents as in "Rebuild F" |
 | Vault (lens step 1) | `rect` x +-0.9, y 3.85..5.85 (1.8 x 2 m clear), `closed`: its shut door (1 m) in the hall's back wall at (0, 3.6), no exit, no link, not walkable floor (`check_closed`); ceiling 2.3 m at the door, 1.6 at the back (`clear_h_back`) | a shell only: no item, card or lock |
 | Player | capsule r 0.4, 1.8 m; every room keeps 0.5 m above it | the game's capsule |
 
@@ -98,7 +98,8 @@ The numbers (version 2 rebuilt for the hull variant J, rebuild A of 2026-10-22; 
 - hall: 16 facets' look, every vertex on the circle 4.078 (inner faces at about 4.0), rim 3.2 m, apex 3.8 m
   (ship.toml `clear_h`, `apex_h`); the segments round the ring (`hall_segments`, counter-clockwise from the mouth):
   the mouth's opening -112.5..-67.5 deg, the vent's flat chord -67.5..-22.5, one facet -22.5..3.23 (25.7 deg), the
-  corridor's opening 3.23..48.23 (centred on the corridor's axis, 25.73 deg), the socket's flat chord 48.23..77.5
+  corridor's opening 3.23..48.23 (centred on the corridor's axis, 25.73 deg), the socket's flat chord 48.23..77.5 (since gills step 8 two equal chords
+  31.16..54.33..77.5, the gills by the door: "The back wall" under the gills)
   (2.06 m, apothem 3.946, all plain: too narrow for the diamond side panels), two back facets 77.5..90..102.5
   (12.5 deg each, the back's one cable trunk at 90), then the west half mirrored. Each opening is two facets' chord
   (3.768, half width 1.561) framed by a portal 0.15 m deep; each flat a plain centre panel (`hall_panel_flat`, the
@@ -1536,6 +1537,34 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
     0.18 over 12, 0.06 over 17, each a little narrower than the one under it); the foot light 0.15 over 0.45 m
     (`vent_glow.gd`).
   - The two vents are 55,296 triangles together (r7: 35,632).
+- **The back wall (gills steps 8 and 9, 2026-10-28; the engineer's option A, static, calm).** The gills left the
+  throat for the hall's back wall on either side of the vault's door, where the wall is straight from the deck to the
+  rim; the r8 form carries over (`<raw>/ship/v5/gills/r9/`, the hand-off `<raw>/ship/v5/notes/gills-9.md`).
+  - *The chords:* the arc from the corridor's chord end (31.164 deg round the hall's centre (0, -0.4)) to the door
+    (77.5) is split equally at `GILL_A0` 54.332: two flat chords of 23.17 deg, 1.638 m, apothem 3.9953 (vertex circle
+    4.078). `hall_segments` east: ... opening, (31.164, 54.332, "flat"), (54.332, 77.5, "gills"), door; the kind
+    "gills" lays only the chord's floor plate (`hall_flat_floor_socket`): the station piece is the wall. The old side
+    facet's pieces are gone. The throat's five modules are plain walls again (`TH_PLAIN` empty).
+  - *The spots:* `vent_e` (1.6305, 3.2475), normal (-0.4081, -0.9129), the gills' chord's middle; `socket_e` (2.9339,
+    2.3119), normal (-0.7343, -0.6788), the outer chord's middle; the west ones mirrored. The scanner column is on the
+    door's side of each unit (u 0.52..0.80 of the band +-0.819), so the controls flank the door, mirrored.
+  - *The sockets' own band:* a wall spot may carry `plain_width_m` (`ship_layout.plain_width`, read by `check_spots`,
+    `check_units`, `check_bands`). The back sockets take 1.16 m: the corridor portal's pilaster stands on the outer
+    chord's end vertex and its 0.4 m check foot starts 0.585 m along the chord from the socket's middle, so neither the
+    shared 1.6 m nor 1.34 m clears it. The crystal socket (0.468 m wide) keeps 0.35 m to that foot
+    (`test_the_back_sockets_band_is_their_own_and_clears_the_pilaster`).
+  - *The builder on a vertical wall:* `TOP` 3.2, `IN` 0; `BEND` 2.70 is only the well's top. The ribs h 0.08..2.97 in
+    one piece each, the ")" fullest 20.2 cm at h 1.43; the well u -0.81..0.51, h 0.12..2.70, 45 cm deep over all of its
+    face, the vault 0.449 m behind it (`vault_gap`); the column's scanner at h 1.20, timing bar 1.36..1.88, lamp
+    1.92..2.02, all on the flat plate.
+  - *The hood meets the rim (step 9):* its lip arches 2.78..2.86, its face 16 cm up from the nose, then its slope meets
+    the wall at `HOOD_TOP` = the rim, 3.2 m (step 8's 3.14 left a 6 cm strip of wall over it). The two station pieces
+    carry `to_rim` (generated), so `check_units` lets them reach the room's clear height instead of 5 cm under it;
+    `test_hood_meets_the_rim` holds the hood, the upper wall and its panel at or under the rim and within the hood's
+    7.5 cm proud, where the ceiling rises inward from the rim. A soffit (3.20..3.28) closes the ceiling behind the
+    chord.
+  - *Built and walked:* `ship --check` clean, `--build` 159 GLBs (185,689 triangles), `--godot` 196 colliders and the
+    walk 14/14.
 - **The motion step** drives the four states on the ribs (each `<id>_cover<k>` rocked about `rib_axis`), the glows, the
   seams red for the problem, the lamp, the bar's marker.
 
