@@ -1503,6 +1503,9 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
   - *The lights* (`vent_glow.gd`): the gap lights 0.2 and the foot light 0.1 over 0.4 m (step 5's 0.25 read as a strip
     of spilled paint); the slot light 0.08, 2 cm off the leaning wall (at 5 cm it left blobs on the edges); the gap and
     slot lights have no specular (`light_specular` 0: no highlight dots on the ribs).
+  - *The stray stick:* the red seams `<id>_seam<k>` sit 2 mm behind the well's cyan back, but where the well's depth
+    jumps their coarse grid poked through it, and calm made them dark bronze: the "stick" in the slots. Calm now hides
+    them (`VENT_STATES` "hide" `seam*`); the problem shows them with the heat (the cyan back is hidden then).
   - *The bronze and the casing:* `gill_edge` lighter and lifted ((0.86, 0.64, 0.40), roughness 0.14, lift 0.10 in
     `ship.gd`), the rim highlight at night; `gill_bronze` lift 0.06. The band plate and the upper panel are
     `gill_bronze2` (step 5: `vent_b_dark`, a black frame): the casing reads as bronze round the ribs.
