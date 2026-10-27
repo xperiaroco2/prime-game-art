@@ -57,8 +57,9 @@ TOE_YAW = [-4.0, 0.0, 18.0]
 THUMB_R0 = 0.0160
 THUMB_OUT = 0.015
 
-# 6. The bends: the knee's and the hip's front fold weights spread wider (|x| boxes on both sides).
+# 6. The bends: the knee's and the hip's front fold weights spread wider (|x| boxes on both sides; the grid of
+# 4, 8 and 14 passes: 14 the softest fold, no change at rest).
 WEIGHT_ZONES = [
-    [0.03, 0.22, -0.15, 0.15, 0.42, 0.64, 8],   # the knee
-    [0.02, 0.24, -0.22, 0.03, 0.70, 0.96, 8],   # the hip's front fold
+    [0.03, 0.22, -0.15, 0.15, 0.42, 0.64, 14],  # the knee
+    [0.02, 0.24, -0.22, 0.03, 0.70, 0.96, 14],  # the hip's front fold
 ]
