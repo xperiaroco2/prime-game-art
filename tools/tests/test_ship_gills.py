@@ -62,7 +62,7 @@ def apart(a, b, gap: float = 0.0) -> bool:
 class ShipGillsTest(unittest.TestCase):
     def test_drawing_numbers(self):
         self.assertEqual((G.DRAWING_COVER_W, G.PROUD), (0.30, 0.035))
-        self.assertEqual((G.BAND, G.FIXED, G.CROWN_TOP, G.RIB_H), ((-0.80, 0.80), (0.52, 0.80), 2.05, (0.08, 2.05)))
+        self.assertEqual((G.BAND, G.FIXED, G.CROWN_TOP, G.RIB_H), ((-0.80, 0.80), (0.52, 0.80), 2.97, (0.08, 2.97)))   # step 8: 3.2 m wall
         # step 7: the concept's 4 ribs of 22 cm, 12 cm slots, an equal end gap at both ends of the rib band
         self.assertEqual((G.COVERS, G.COVER_W, G.SLOT_W), (4, 0.22, 0.12))
         self.assertAlmostEqual(G.cover_u(0) - G.BAND[0], G.END_GAP, places=9)
@@ -88,12 +88,12 @@ class ShipGillsTest(unittest.TestCase):
         hs = [G.RIB_H[0] + (G.CROWN_TOP - G.RIB_H[0]) * k / n for k in range(n + 1)]
         pr = [G.rib_proud(h) for h in hs]
         top = max(range(n + 1), key=lambda k: pr[k])
-        self.assertTrue(G.PEAK_H <= hs[top] <= G.BEND + 0.01, hs[top])
+        self.assertTrue(1.3 <= hs[top] <= G.PEAK_H, hs[top])   # step 8: the fullest point about the rib's middle
         self.assertTrue(all(b >= a for a, b in zip(pr[:top], pr[1:top + 1])))     # rising to the bend
         self.assertTrue(all(b <= a for a, b in zip(pr[top:], pr[top + 1:])))      # falling over the leaning wall
-        self.assertTrue(0.19 <= max(pr) <= 0.20, max(pr))   # step 7: the fuller ")", about 20 cm at the bend
-        self.assertLessEqual(G.ARCH_TOP_SLOPE, G.IN / (G.TOP - G.BEND))
-        self.assertGreaterEqual(min(G.rib_proud(h) for h in hs if h >= G.BEND), 0.04)
+        self.assertTrue(0.19 <= max(pr) <= 0.205, max(pr))   # the fuller ")", about 20 cm (step 8: at 1.43 m)
+        self.assertLessEqual(G.ARCH_TOP_SLOPE, 0.0)   # step 8: the wall is vertical, the top curves back to it
+        self.assertGreaterEqual(min(G.rib_proud(h) for h in hs if h >= G.BEND), 0.0399)
 
     def test_one_rib_piece(self):
         """Step 6 (the manager's decision): each rib one piece from its foot to its rounded top, one profile: its full

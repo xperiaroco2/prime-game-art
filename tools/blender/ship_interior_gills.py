@@ -35,12 +35,28 @@ import ship_interior_geom as G
 import ship_lib as L
 import ship_interior_vent as V   # its helpers, read at build time (ship_interior imports both modules at its end)
 
-BEND, IN, TOP = S.TH_BEND, S.TH_IN, S.TH_H      # the throat wall: vertical to 1.45, then 0.55 in at 2.3
-UNIT = [-0.80, 0.80, -0.45, 0.42, 0.0, 2.06]  # the covers and fixed arch, the well 45 cm behind, the crowns' lamp
+# gills step 8 (the engineer's option A): on the hall's back wall beside the vault's door (ship_interior.GILL_A0), a
+# flat chord straight from the deck to the ceiling (S.H_HALL, 3.2 m). The throat's leaning upper wall is gone: IN 0,
+# so the old "leaning wall" over BEND is the same vertical face (cv 0) and BEND is only the well's top now
+TOP, IN = S.H_HALL, 0.0
+BEND = 2.70                          # the well's (and the band plate's window's) top; the plain upper wall over it
+HOOD_TOP = 3.14                      # the hood's top, under the hall's clear height less ship --check's 5 cm (3.15)
+UNIT = [-0.80, 0.80, -0.45, 0.42, 0.0, HOOD_TOP]   # the ribs and the column, the well 45 cm behind, the hood
+
+
+def cv(h: float) -> float:
+    """The upper wall's face at h (v): vertical on the hall's chord (the throat's leaning wall, ship_interior_vent.cv,
+    until gills step 7)."""
+    return 0.0
+
+
+_GILL_HALF = (90.0 - S.BACK_DEG - S.GILL_A0) / 2
+CHORD_HALF = S.HV * math.sin(math.radians(_GILL_HALF))       # 0.819: the gills' chord (1.638 m)
+CHORD_APO = S.HV * math.cos(math.radians(_GILL_HALF))        # 3.995
 
 # --- the drawing (cm in drawing.js, metres here) ---------------------------------------------------------------------
 BAND = (-0.80, 0.80)                 # the plain band the vent sits on
-BAND_PLATE = (-0.81012, 0.81012)     # the band as built: the two wall modules it replaces (0.81012 each)
+BAND_PLATE = (-round(CHORD_HALF, 5), round(CHORD_HALF, 5))   # the band as built: the whole chord (gills step 8)
 # gills step 6: the rib count and width a variant's (SHIP_GILLS_RIBS, SHIP_GILLS_RIB_W), the pitch filling the band
 # from its mouth end to the fifth arch (the drawing's 4 at 31.75 cm)
 # gills step 7 (the concept's count): 4 ribs of 22 cm with 12 cm slots, an equal END_GAP at both ends of the rib band
@@ -57,23 +73,23 @@ PITCH = round(COVER_W + SLOT_W, 6)
 # gills step 6 (the manager's decision, the engineer's "static and pretty wins"): each rib ONE static piece from its
 # foot to CROWN_TOP, one profile (no groove, no step, no collar, no width change); its back RIB_SINK into the wall's
 # face (into the well's window below the bend, into the leaning wall above it), so no gap shows behind its flanks
-COVER_H = (0.08, 1.44)               # the well's window's height (the old hinged cover's; the well and seams use it)
-RIB_H = (0.08, 2.05)                 # the rib: 8 cm over the deck to its rounded top on the leaning wall
+COVER_H = (0.08, BEND)               # the well's window's height (the old hinged cover's; the well and seams use it)
+RIB_H = (0.08, 2.97)                 # the rib: 8 cm over the deck (on the sill) to its rounded top inside the hood
 RIB_SINK = 0.015
 TOP_R = 0.03                         # the rib's top rounded off over its last 3 cm
-CROWN_TOP = 2.05
+CROWN_TOP = RIB_H[1]
 PROUD = 0.035                        # the rib's crest out of the wall's face at its foot
 # gills step 5: the well up to 1 cm under the bend (the drawing's box to 1.41), the lit slots run on up the leaning wall
 FIXED = (0.52, 0.80)                 # the fifth arch, fixed (gills step 7: 28 cm, step 6's 33 for the fourth rib)
 END_GAP = round((FIXED[0] - BAND[0] - COVERS * COVER_W - (COVERS - 1) * SLOT_W) / 2, 6)
-WELL_U, WELL_H, WELL_D = (-0.81, FIXED[0] - 0.01), (0.12, 1.44), 0.45   # the box behind the ribs (132 x 132 x 45)
+WELL_U, WELL_H, WELL_D = (-0.81, FIXED[0] - 0.01), (0.12, BEND), 0.45   # the box behind the ribs (132 x 132 x 45)
 # gills step 4: one window through the band plate over the well (the drawing's four slits and step 3's grooves are
 # gone): every gap between two ribs is a slot into the lit well, the concept's "wide slots with light"
 WIN_U, WIN_H = (BAND[0] + 0.006, WELL_U[1]), WELL_H
 WELL_MIN = 0.06                      # the well's least depth from the wall's face (the plate 3 cm and 3 cm of light)
 SKIN_M = 0.17                        # the hull kept behind the well (the design's 17 cm skin)
 PLATE_T = 0.03                       # the band plate's thickness
-FIXED_TOP = 1.446                    # its plate's top, 4 mm under its crown (no groove: it does not turn)
+FIXED_TOP = BEND + 0.006                    # its plate's top, 4 mm under its crown (no groove: it does not turn)
 HAND_C, HAND_HW, HAND_HH = 1.20, 0.112, 0.142   # the scanner's bezel: middle 1.20, 22.4 x 28.4
 BAR_W, BAR_H, BAR_GREEN = 0.05, (1.36, 1.88), (1.78, 1.84)
 LAMP_R, LAMP_H = 0.086, (1.92, 2.02)
@@ -83,12 +99,14 @@ LAMP_R, LAMP_H = 0.086, (1.92, 2.02)
 # chunky ")"; step 5 had 7.7 cm at 0.74): 3.5 cm proud at the foot, 12.5 at 0.74, 16.5 at 1.4, its most at the bend,
 # CROWN_PROUD at the top; the proud rises to the bend and falls after it, no dip.
 # gills step 7: the fuller ")" (about 20 cm at the bend; step 6 16.5 at 1.4, 12.5 at 0.74)
-PEAK_H, PEAK = 1.40, 0.19
-LOW_H, LOW = 0.74, 0.14
-CROWN_PROUD = 0.045                  # the rib's top, off the leaning wall
-ARCH_FOOT_SLOPE, ARCH_TOP_SLOPE = 0.20, 0.64
-ARCH_KNOTS = ((RIB_H[0], PROUD), (LOW_H, LOW), (PEAK_H, PEAK),
-              (CROWN_TOP, CROWN_PROUD + (CROWN_TOP - BEND) / (TOP - BEND) * IN))
+# gills step 8: the ")" on the 2.9 m rib, its fullest 20 cm at PEAK_H (about the middle), back to 4.5 cm at its top
+# inside the hood
+PEAK_H, PEAK = 1.55, 0.20
+LOW_H, LOW = 0.80, 0.155
+HIGH_H, HIGH = 2.35, 0.12
+CROWN_PROUD = 0.040                  # the rib's top, off the wall inside the hood
+ARCH_FOOT_SLOPE, ARCH_TOP_SLOPE = 0.20, -0.14
+ARCH_KNOTS = ((RIB_H[0], PROUD), (LOW_H, LOW), (PEAK_H, PEAK), (HIGH_H, HIGH), (CROWN_TOP, CROWN_PROUD))
 
 
 def _solve(a, b):
@@ -209,7 +227,17 @@ def _frame(layout: dict, side: str):
 def skin_at(layout: dict, side: str, u: float, d: float, h: float) -> float:
     """The hull behind the point d behind the wall's face (u along the wall, h over the deck)."""
     at, n, t = _frame(layout, side)
-    return H.skin((at[0] + t[0] * u - n[0] * d, at[1] + t[1] * u - n[1] * d, S.FLOOR + h))
+    p = (at[0] + t[0] * u - n[0] * d, at[1] + t[1] * u - n[1] * d)
+    return min(H.skin((*p, S.FLOOR + h)), vault_gap(layout, p))
+
+
+def vault_gap(layout: dict, p) -> float:
+    """gills step 8: the plan distance from p to the vault's clear floor (the closed room behind the hall's back wall,
+    beside the gills): the well keeps SKIN_M of wall to it as to the hull."""
+    v = next(r for r in layout["rooms"] if r["id"] == "vault")
+    dx = max(v["x"][0] - p[0], 0.0, p[0] - v["x"][1])
+    dy = max(v["y"][0] - p[1], 0.0, p[1] - v["y"][1])
+    return math.hypot(dx, dy)
 
 
 def room(layout: dict, side: str, u: float, h: float, skin: float = SKIN_M) -> float:
@@ -260,7 +288,7 @@ def _depth(w: dict, u: float, h: float) -> float:
 # --- meshes ----------------------------------------------------------------------------------------------------------
 def wall_v(h: float) -> float:
     """The wall's face at h (v): the vertical wall to the bend, the leaning wall over it."""
-    return 0.0 if h <= BEND else V.cv(h)
+    return 0.0 if h <= BEND else cv(h)
 
 
 def wall_back(h: float) -> float:
@@ -311,8 +339,8 @@ BEND_PROUD = arch(COVER_H[1])[0]     # the cover's top (18 cm)
 
 
 def rib_proud(h: float) -> float:
-    """The rib's crest out of the wall's face at h (horizontally; over the bend the leaning wall's face is V.cv(h))."""
-    return arch(h)[0] - V.cv(h)
+    """The rib's crest out of the wall's face at h (horizontally; over the bend the leaning wall's face is cv(h))."""
+    return arch(h)[0] - cv(h)
 
 
 def cover_front(h: float) -> float:
@@ -343,7 +371,7 @@ def rib_section(u0: float, u1: float, f: float, back: float = 0.006, n: int = 13
 
 # gills step 6: the rib's rows up its one profile (the bend among them, so the back's kink is exact), then its top
 # rounded off over TOP_R
-RIB_HS = sorted({round(RIB_H[0] + (BEND - RIB_H[0]) * k / 30, 6) for k in range(31)} |
+RIB_HS = sorted({round(RIB_H[0] + (BEND - RIB_H[0]) * k / 45, 6) for k in range(46)} |   # gills step 8: 45 rows (2.6 m)
                 {round(BEND + (RIB_H[1] - TOP_R - BEND) * k / 20, 6) for k in range(21)})
 TOP_A = (25.0, 50.0, 70.0, 84.0)     # the rounded top's rows (deg round its quarter circle)
 
@@ -407,7 +435,7 @@ def upper_mesh():
     body = V.loft([[(u, v, h) for v, h in prof] for u in BAND_PLATE])
     # gills step 5: the dark panel's top corners rounded (R 12 cm) and its edges a soft 1.5 cm slope from the wall's
     # face up to its 2 mm (step 4's hard straight rectangle)
-    top, rad, soft = 2.10, 0.12, 0.015
+    top, rad, soft = HOOD_TOP - 0.06, 0.12, 0.015
     u0, u1 = BAND[0] - 0.005, BAND[1] + 0.005
     outline = [(u0, BEND), (u1, BEND)]
     for cu, a0 in ((u1 - rad, 0), (u0 + rad, 90)):
@@ -416,7 +444,7 @@ def upper_mesh():
     inner = [(u, h) for u, h in V.shrink(outline, soft)]
     inner = [(u, max(h, BEND)) for u, h in inner]
     n = len(outline)
-    lift = lambda u, h, w: (u, V.cv(h) + w * NORM_V, h + w * NORM_H)
+    lift = lambda u, h, w: (u, cv(h) + w * NORM_V, h + w * NORM_H)
     verts = [lift(u, h, 0.0004) for u, h in outline] + [lift(u, h, 0.002) for u, h in inner]
     faces = [(j, (j + 1) % n, n + (j + 1) % n, n + j) for j in range(n)] + [tuple(range(n, 2 * n))]
     return body, (verts, faces)
@@ -480,7 +508,7 @@ def crown_mesh(u0: float, u1: float):
     for k in range(5):
         h = BEND + (CROWN_TOP - BEND) * k / 4
         a = CROWN_IN[0] + (CROWN_IN[1] - CROWN_IN[0]) * k / 4
-        w0 = V.cv(h)
+        w0 = cv(h)
         sec = plate_section(u0 + a, u1 - a, lambda q: 0.035 + 0.004 * (1 - q * q), back=-0.01, ch=0.007, n=5)
         loops.append([(u, w0 + v, h) for u, v in sec])
     return V.loft(loops)
@@ -500,7 +528,7 @@ def crown_strips(u0: float, u1: float):
                 o, f, ch = 0.0012 / math.sqrt(2), 0.035, 0.007
                 pa, pb = (eu - du * o, f - ch + o), (eu + du * (ch - o), f + o)
                 pc, pd = (pb[0] + du * 0.0008, pb[1] - 0.0008), (pa[0] + du * 0.0008, pa[1] - 0.0008)
-                w0 = V.cv(h)
+                w0 = cv(h)
                 loops.append([(q[0], w0 + q[1], h) for q in ((pa, pb, pc, pd) if du > 0 else (pb, pa, pd, pc))])
             out.append(V.loft(loops))
     return L.merge(*out)
@@ -534,7 +562,7 @@ def flat(poly, v: float, dv: float = 0.0012):
 
 def on_crown(u: float, h: float, w: float):
     """A point on the fixed arch's crown face at height h (on the leaning wall), w out of the crown's face."""
-    return (u, V.cv(h) + 0.039 + w * NORM_V, h + w * NORM_H)
+    return (u, cv(h) + 0.039 + w * NORM_V, h + w * NORM_H)
 
 
 # gills step 5: the well's back a flat deep cyan (the concept's), brightest at the foot and fading up in bands, each its
@@ -545,10 +573,11 @@ GLOW_C = (0.05, 0.55, 1.0)
 # flanks instead, brightest at their front edges (FLANK_E) and dim behind (FLANK2_E): a dark slot with bright cyan edges
 # gills step 7: the slots full of cyan again (the concept's glowing slots; step 6's read dark navy with thin edge
 # lines): 0.40 from 40 cm fading up to 0.22 at the bend, the lower pocket darker (0.25) for depth
-COOL_BANDS = ((0.12, 0.40, "", 0.25), (0.40, 0.70, "2", 0.36), (0.70, 1.00, "3", 0.30), (1.00, 1.25, "4", 0.24),
-              (1.25, 1.44, "5", 0.18))
-SLOT_TOP = 1.95                      # the lit slots run up the leaning wall between the ribs to here
-SLOT_BANDS = ((1.438, 1.70, "6", 0.13), (1.70, SLOT_TOP, "7", 0.08))
+# gills step 8: the bands spread over the taller well (to BEND, 2.70), the slots lit on up the wall into the hood
+COOL_BANDS = ((0.12, 0.40, "", 0.25), (0.40, 0.95, "2", 0.36), (0.95, 1.55, "3", 0.30), (1.55, 2.15, "4", 0.24),
+              (2.15, BEND, "5", 0.18))
+SLOT_TOP = 2.95                      # the lit slots run on up the wall between the ribs to here (inside the hood)
+SLOT_BANDS = ((BEND - 0.002, 2.84, "6", 0.13), (2.84, SLOT_TOP, "7", 0.08))
 FLANK_E, FLANK2_E = 0.45, 0.12
 # gills step 7: a cyan strip on the deck at each slot's foot (the concept's), its edge faded in three nested steps
 # FLOOR_STEPS: (material suffix, emission, inset from the slot's flanks, depth out from the sill's front)
@@ -602,7 +631,7 @@ def slot_strips(h0: float, h1: float, w_off: float):
         loops = []
         for j in range(n + 1):
             h = h0 + (h1 - h0) * j / n
-            v = (0.0 if h < BEND else V.cv(h)) + w_off
+            v = (0.0 if h < BEND else cv(h)) + w_off
             lo, hi = slot_span(k, max(h, BEND))
             loops.append([(lo, v, h), (hi, v, h), (hi, v - 0.0008, h), (lo, v - 0.0008, h)])
         out.append(V.loft(loops))
@@ -638,8 +667,9 @@ def seam_mesh(w: dict, k: int, off: float = -0.002):
 # a bronze casing HOOD_P proud of the leaning wall from its lip up to HOOD_TOP, its lip an arch across the rib band
 # (HOOD_LO at the band's ends, HOOD_HI in its middle), stepping up over the fifth arch to HOOD_LIP5 (a visor over the
 # red lamp); a rounded nose (HOOD_R) with a lit edge; the ribs run on up into it (their tops inside it)
-HOOD_P, HOOD_R, HOOD_TOP = 0.075, 0.03, 2.16
-HOOD_LO, HOOD_HI, HOOD_LIP5 = 1.80, 1.90, 2.065
+HOOD_P, HOOD_R = 0.075, 0.03
+HOOD_LO, HOOD_HI = 2.78, 2.86        # gills step 8: the lip's arch on the 3.2 m wall (step 7: 1.80, 1.90)
+HOOD_LIP5 = HOOD_LO                  # gills step 8: no visor step over the column (its lamp is at 2 m, far under it)
 HOOD_U = (BAND_PLATE[0], BAND_PLATE[1])
 HOOD_FACE = 0.16                     # the face's full proud over this much above the nose, then it slopes back to the wall
 HOOD_END = 0.04                      # the hood's proud tapers to HOOD_END_F of itself over its last 4 cm at either end
@@ -661,7 +691,7 @@ def hood_lip(u: float) -> float:
 
 def on_lean(h: float, n: float):
     """(v, h) of the point n out of the leaning wall's face at height h (on the face)."""
-    return V.cv(h) + n * NORM_V, h + n * NORM_H
+    return cv(h) + n * NORM_V, h + n * NORM_H
 
 
 def hood_scale(u: float) -> float:
@@ -786,6 +816,11 @@ def station_gills(args, layout):
     add("heat", hh(heat), "int_halo__vent_heat")
     upper, dark = upper_mesh()
     add("upper", hh(upper), "int_silver_b")
+    # gills step 8: the soffit closing the ceiling's rim behind the chord (ship_interior.flat_panel's)
+    back = S.HV - CHORD_APO
+    sv = [(u, v, S.FLOOR + h) for h in (TOP, TOP + 0.08) for u, v in ((BAND_PLATE[0], 0.0), (0.0, -back),
+                                                                    (BAND_PLATE[1], 0.0))]
+    add("soffit", (sv, [(2, 1, 0), (3, 4, 5), (0, 1, 4, 3), (1, 2, 5, 4), (2, 0, 3, 5)]), "int_silver_b")
     add("upper_panel", hh(dark), "gill_bronze2")
     # gills step 5: the slots lit on up the leaning wall between the crowns to SLOT_TOP (the cool's children; the
     # heat's red one 3 mm behind them, the heat's child)
@@ -886,6 +921,7 @@ def station_gills(args, layout):
         if "__vent_cool" in p.get("mat", ""):   # gills step 6: the well's back smooth (step 5's read faceted)
             p["smooth_deg"] = 80.0
     # the collider: the band's wall and the shut covers (a cover's swing stays inside the player's 0.6 m pass)
-    add("col0-convcolonly", L.box(BAND_PLATE[0], BAND_PLATE[1], -0.2, PROUD + 0.005, S.FLOOR, S.FLOOR + BEND), "int_dark")
+    # gills step 8: the box 15 cm out over the ribs' bow (their crests 3.5..20 cm), the column's front under it
+    add("col0-convcolonly", L.box(BAND_PLATE[0], BAND_PLATE[1], -0.2, 0.15, S.FLOOR, S.FLOOR + BEND), "int_dark")
     add("col1-convcolonly", hh(upper), "int_dark")
     return parts

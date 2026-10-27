@@ -114,18 +114,22 @@ BACK_DEG = 12.5   # each of the two back facets either side of the back's trunk 
 # lens step 1: the back sockets' flat chord stays where rebuild A put it (48.23..77.5 deg, the old corridor chord's end
 # at rebuild A's 25.73 + 22.5; the corridors are at 8.66 deg now), the sockets unchanged
 SOCK_A0 = 25.7299 + 2 * math.degrees(PHI)
+# gills step 8 (art #263, the engineer's option A): the gills on the hall's back wall beside the vault's door, where the
+# wall is straight for its full height. The arc from the corridor's chord end to the door (31.16..77.5 deg) is split
+# into two equal flat chords (23.17 deg, 1.638 m each): the back socket's on the outer one, the gills' by the door
+GILL_A0 = (COR_ANG + 2 * math.degrees(PHI) + 90.0 - BACK_DEG) / 2
 
 
 def hall_segments() -> list[tuple[float, float, str]]:
     """The hall's wall round the ring, (a0, a1, kind) counter-clockwise from the mouth: kind "opening" (two facets'
-    chord, a portal: the mouth and the corridors), "flat" (a station's plain chord over two sub-facets: the vents and
-    sockets), "facet" (one wall facet) or "door" (the vault's shut door, a flat chord over the two back facets). Every
+    chord, a portal: the mouth and the corridors), "flat" (a station's plain chord over two sub-facets: the sockets),
+    "gills" (gills step 8: the vent's chord, its wall the gills piece itself), "facet" (one wall facet) or "door" (the vault's shut door, a flat chord over the two back facets). Every
     vertex on the circle HV, so the openings keep their chord (HC, HCH)."""
     e0, e1 = COR_ANG - 2 * math.degrees(PHI), COR_ANG + 2 * math.degrees(PHI)   # the east corridor's chord ends
     # lens step 1: the corridors' openings at +-8.66 deg; the front socket's flat from the throat's corner to the
     # opening (30.54 deg), one side facet from the opening to the back socket's flat, the vault's door at the back
     east = [(-180.0 - TH_CORNER, TH_CORNER, "throat"), (TH_CORNER, e0, "flat"), (e0, e1, "opening"),
-            (e1, SOCK_A0, "facet"), (SOCK_A0, 90.0 - BACK_DEG, "flat")]
+            (e1, GILL_A0, "flat"), (GILL_A0, 90.0 - BACK_DEG, "gills")]
     west = [(180.0 - b, 180.0 - a, k) for a, b, k in reversed(east[1:])]
     return east + [(90.0 - BACK_DEG, 90.0 + BACK_DEG, "door")] + west
 

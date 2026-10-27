@@ -68,27 +68,25 @@ place = [
   ["hall_portal", [3.7249, 0.1676, 0.0], -8.664],
   ["portal_strip_l", [3.7249, 0.1676, 0.0], -8.664],
   ["portal_strip_r", [3.7249, 0.1676, 0.0], -8.664],
-  ["hall_ceil_side_a", [3.1033, 2.1761, 0.0], -39.697],
-  ["hall_floor_rim_side", [2.7153, 1.8541, 0.0], -39.697],
-  ["rim_bolts", [2.7153, 1.8541, 0.0], -39.697],
-  ["hall_panel_side_a", [3.1033, 2.1761, 0.0], -39.697],
-  ["hall_ceil_socket_b", [2.2884, 2.9356, 0.0], -55.547],
-  ["hall_ceil_socket_a", [1.3714, 3.4056, 0.0], -70.182],
-  ["hall_panel_flat_socket", [1.7997, 3.1117, 0.0], -62.865],
-  ["hall_flat_floor_socket", [1.7997, 3.1117, 0.0], -62.865],
-  ["hall_ceil_back_b", [0.4414, 3.63, 0.0], -83.75],
-  ["hall_ceil_back_a", [-0.4414, 3.63, 0.0], -96.25],
+  ["hall_ceil_socket_a", [3.2424, 2.0394, 0.0], -36.956],
+  ["hall_ceil_socket_b", [2.6865, 2.6408, 0.0], -48.54],
+  ["hall_panel_flat_socket", [2.9339, 2.3119, 0.0], -42.748],
+  ["hall_flat_floor_socket", [2.9339, 2.3119, 0.0], -42.748],
+  ["hall_ceil_socket_a", [2.0212, 3.1183, 0.0], -60.124],
+  ["hall_ceil_socket_b", [1.2735, 3.4525, 0.0], -71.708],
+  ["hall_flat_floor_socket", [1.6304, 3.2475, 0.0], -65.916],
+  ["hall_ceil_back_a", [0.4414, 3.63, 0.0], -83.75],
+  ["hall_ceil_back_b", [-0.4414, 3.63, 0.0], -96.25],
   ["hall_door", [0.0, 3.5817, 0.0], -90.0],
   ["hall_floor_rim_back", [0.3842, 3.108, 0.0], -83.75],
   ["hall_floor_rim_back", [-0.3842, 3.108, 0.0], -96.25],
-  ["hall_ceil_socket_b", [-1.3714, 3.4056, 0.0], -109.818],
-  ["hall_ceil_socket_a", [-2.2884, 2.9356, 0.0], -124.453],
-  ["hall_panel_flat_socket", [-1.7997, 3.1117, 0.0], -117.135],
-  ["hall_flat_floor_socket", [-1.7997, 3.1117, 0.0], -117.135],
-  ["hall_ceil_side_b", [-3.1033, 2.1761, 0.0], -140.303],
-  ["hall_floor_rim_side", [-2.7153, 1.8541, 0.0], -140.303],
-  ["rim_bolts", [-2.7153, 1.8541, 0.0], -140.303],
-  ["hall_panel_side_b", [-3.1033, 2.1761, 0.0], -140.303],
+  ["hall_ceil_socket_a", [-1.2735, 3.4525, 0.0], -108.292],
+  ["hall_ceil_socket_b", [-2.0212, 3.1183, 0.0], -119.876],
+  ["hall_flat_floor_socket", [-1.6304, 3.2475, 0.0], -114.084],
+  ["hall_ceil_socket_a", [-2.6865, 2.6408, 0.0], -131.46],
+  ["hall_ceil_socket_b", [-3.2424, 2.0394, 0.0], -143.044],
+  ["hall_panel_flat_socket", [-2.9339, 2.3119, 0.0], -137.252],
+  ["hall_flat_floor_socket", [-2.9339, 2.3119, 0.0], -137.252],
   ["hall_ceil_panel_a", [-3.7608, 0.9624, 0.0], -160.086],
   ["hall_ceil_panel_b", [-3.9959, -0.5805, 0.0], 177.414],
   ["hall_threshold", [-3.7249, 0.1676, 0.0], -171.336],
@@ -133,20 +131,24 @@ place = [
   ["hall_rib_strip", [3.4898, 1.7105, 0.0], -31.164],
   ["hall_pilaster", [3.4898, 1.7105, 0.0], -31.164],
   ["hall_pilaster_strip", [3.4898, 1.7105, 0.0], -31.164],
-  ["hall_rib", [2.7168, 2.6417, 0.0], -48.23],
-  ["hall_rib_strip", [2.7168, 2.6417, 0.0], -48.23],
-  ["hall_rib", [1.8601, 3.2295, 0.0], -62.865],
-  ["hall_rib_strip", [1.8601, 3.2295, 0.0], -62.865],
+  ["hall_rib", [2.9949, 2.3683, 0.0], -42.748],
+  ["hall_rib_strip", [2.9949, 2.3683, 0.0], -42.748],
+  ["hall_rib", [2.378, 2.9133, 0.0], -54.332],
+  ["hall_rib_strip", [2.378, 2.9133, 0.0], -54.332],
+  ["hall_rib", [1.6643, 3.3233, 0.0], -65.916],
+  ["hall_rib_strip", [1.6643, 3.3233, 0.0], -65.916],
   ["hall_rib", [0.8827, 3.5817, 0.0], -77.5],
   ["hall_rib_strip", [0.8827, 3.5817, 0.0], -77.5],
   ["hall_rib", [0.0, 3.6784, 0.0], -90.0],
   ["hall_rib_strip", [0.0, 3.6784, 0.0], -90.0],
   ["hall_rib", [-0.8827, 3.5817, 0.0], -102.5],
   ["hall_rib_strip", [-0.8827, 3.5817, 0.0], -102.5],
-  ["hall_rib", [-1.8601, 3.2295, 0.0], -117.135],
-  ["hall_rib_strip", [-1.8601, 3.2295, 0.0], -117.135],
-  ["hall_rib", [-2.7168, 2.6417, 0.0], -131.77],
-  ["hall_rib_strip", [-2.7168, 2.6417, 0.0], -131.77],
+  ["hall_rib", [-1.6643, 3.3233, 0.0], -114.084],
+  ["hall_rib_strip", [-1.6643, 3.3233, 0.0], -114.084],
+  ["hall_rib", [-2.378, 2.9133, 0.0], -125.668],
+  ["hall_rib_strip", [-2.378, 2.9133, 0.0], -125.668],
+  ["hall_rib", [-2.9949, 2.3683, 0.0], -137.252],
+  ["hall_rib_strip", [-2.9949, 2.3683, 0.0], -137.252],
   ["hall_rib", [-3.4898, 1.7105, 0.0], -148.836],
   ["hall_rib_strip", [-3.4898, 1.7105, 0.0], -148.836],
   ["hall_pilaster", [-3.4898, 1.7105, 0.0], -148.836],
@@ -334,11 +336,23 @@ place = [
   ["arch_strip_l", [-8.7735, 0.9369, 0.0], -171.336],
   ["arch_strip_r", [-8.7735, 0.9369, 0.0], -171.336],
   ["floor_light", [1.618, -6.2367, 0.0], -71.802],
+  ["th_wall_low_a", [1.3325, -4.8637, 0.0], -71.802],
+  ["th_wall_mid", [1.3325, -4.8637, 0.0], -71.802],
+  ["th_wall_up_a", [1.3325, -4.8637, 0.0], -71.802],
+  ["th_wall_low_b", [1.5855, -4.0941, 0.0], -71.802],
+  ["th_wall_mid", [1.5855, -4.0941, 0.0], -71.802],
+  ["th_wall_up_b", [1.5855, -4.0941, 0.0], -71.802],
   ["floor_light", [2.4894, -3.5859, 0.0], -71.802],
   ["th_wall_low_a", [1.8385, -3.3245, 0.0], -71.802],
   ["th_wall_mid", [1.8385, -3.3245, 0.0], -71.802],
   ["th_wall_up_end_e", [1.8385, -3.3245, 0.0], -71.802],
   ["floor_light", [-1.618, -6.2367, 0.0], 71.802],
+  ["th_wall_low_b", [-1.3325, -4.8637, 0.0], 71.802],
+  ["th_wall_mid", [-1.3325, -4.8637, 0.0], 71.802],
+  ["th_wall_up_b", [-1.3325, -4.8637, 0.0], 71.802],
+  ["th_wall_low_a", [-1.5855, -4.0941, 0.0], 71.802],
+  ["th_wall_mid", [-1.5855, -4.0941, 0.0], 71.802],
+  ["th_wall_up_a", [-1.5855, -4.0941, 0.0], 71.802],
   ["floor_light", [-2.4894, -3.5859, 0.0], 71.802],
   ["th_wall_low_b", [-1.8385, -3.3245, 0.0], 71.802],
   ["th_wall_mid", [-1.8385, -3.3245, 0.0], 71.802],
@@ -503,8 +517,8 @@ place = [
   ["cable_coil", [6.8782, 1.6597, 0.0], 11.336],
   ["floor_patch_a", [-0.3605, 3.0301, 0.0], -88.0],
   ["floor_patch_b", [1.6192, -3.4453, 0.0], 57.0],
-  ["station_vent_e", [2.409, -4.7912, 0.0], -71.802],
-  ["station_vent_w", [-2.409, -4.7912, 0.0], 71.802],
+  ["station_vent_e", [1.6305, 3.2475, 0.0], -155.914],
+  ["station_vent_w", [-1.6305, 3.2475, 0.0], 155.914],
 ]
 
 [[pieces]]
@@ -546,7 +560,7 @@ args = { radius = 3.035, thin = true }
 id = "hall_flat_floor_socket"
 builder = "hall_flat_floor"
 collide = true
-args = { phi_deg = 14.635 }
+args = { phi_deg = 11.584 }
 
 [[pieces]]
 id = "hall_flat_floor_sockf"
@@ -615,24 +629,6 @@ collide = false
 args = { tone = "b" }
 
 [[pieces]]
-id = "hall_panel_side_a"
-builder = "wall_panel"
-collide = true
-args = { half = 0.60514, height = 3.2, tone = "a" }
-
-[[pieces]]
-id = "hall_panel_side_b"
-builder = "wall_panel"
-collide = true
-args = { half = 0.60514, height = 3.2, tone = "b" }
-
-[[pieces]]
-id = "hall_floor_rim_side"
-builder = "hall_floor_rim"
-collide = true
-args = { phi_deg = 8.5329 }
-
-[[pieces]]
 id = "hall_floor_rim_back"
 builder = "hall_floor_rim"
 collide = true
@@ -643,18 +639,6 @@ id = "hall_floor_rim_throat"
 builder = "hall_floor_rim"
 collide = true
 args = { phi_deg = 11.4065 }
-
-[[pieces]]
-id = "hall_ceil_side_a"
-builder = "hall_ceil_panel"
-collide = false
-args = { tone = "a", phi_deg = 8.5329 }
-
-[[pieces]]
-id = "hall_ceil_side_b"
-builder = "hall_ceil_panel"
-collide = false
-args = { tone = "b", phi_deg = 8.5329 }
 
 [[pieces]]
 id = "hall_ceil_back_a"
@@ -672,13 +656,13 @@ args = { tone = "b", phi_deg = 6.25 }
 id = "hall_ceil_socket_a"
 builder = "hall_ceil_panel"
 collide = false
-args = { tone = "a", phi_deg = 7.3175 }
+args = { tone = "a", phi_deg = 5.792 }
 
 [[pieces]]
 id = "hall_ceil_socket_b"
 builder = "hall_ceil_panel"
 collide = false
-args = { tone = "b", phi_deg = 7.3175 }
+args = { tone = "b", phi_deg = 5.792 }
 
 [[pieces]]
 id = "hall_ceil_sockf_a"
@@ -731,6 +715,18 @@ id = "th_wall_mid"
 builder = "cor_wall_mid"
 collide = true
 args = { length = 0.81012, prof = "throat" }
+
+[[pieces]]
+id = "th_wall_up_a"
+builder = "cor_wall_up"
+collide = true
+args = { length = 0.81012, tone = "a", prof = "throat" }
+
+[[pieces]]
+id = "th_wall_up_b"
+builder = "cor_wall_up"
+collide = true
+args = { length = 0.81012, tone = "b", prof = "throat" }
 
 [[pieces]]
 id = "th_wall_up_end_e"
@@ -874,7 +870,7 @@ collide = false
 id = "hall_panel_flat_socket"
 builder = "flat_panel"
 collide = true
-args = { half = 1.03044, apo = 3.94604, height = 3.2, plain = 0.8 }
+args = { half = 0.81895, apo = 3.99529, height = 3.2, plain = 0.8 }
 plain = [-0.25, 0.25, -0.8, 0.8]
 
 [[pieces]]
@@ -1091,24 +1087,19 @@ collide = false
 args = { u = 0.36, v = 0.3 }
 
 [[pieces]]
-id = "rim_bolts"
-builder = "rim_bolts"
-collide = false
-
-[[pieces]]
 id = "station_vent_e"
 builder = "station_gills"
 collide = false
 args = { id = "station_vent_e", side = "e" }
-plain = [-0.81012, 0.81012, -0.05, 0.05]
+plain = [-0.81895, 0.81895, -0.05, 0.05]
 spot = "vent_e"
-unit = [-0.8, 0.8, -0.45, 0.42, 0.0, 2.06]
+unit = [-0.8, 0.8, -0.45, 0.42, 0.0, 3.14]
 
 [[pieces]]
 id = "station_vent_w"
 builder = "station_gills"
 collide = false
 args = { id = "station_vent_w", side = "w" }
-plain = [-0.81012, 0.81012, -0.05, 0.05]
+plain = [-0.81895, 0.81895, -0.05, 0.05]
 spot = "vent_w"
-unit = [-0.8, 0.8, -0.45, 0.42, 0.0, 2.06]
+unit = [-0.8, 0.8, -0.45, 0.42, 0.0, 3.14]
