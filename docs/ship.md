@@ -1438,8 +1438,40 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
   - *Deviations from the drawing:* ribs 23.6 cm (30), centred in their cells; the crest 17 cm at mid-height and 12 at the
     top (3); the mouth-side hinge (hall); the calm angle 12 deg (inside the drawing's 10..16); one window instead of
     four slits; the crowns as wide as the ribs at the foot and turned with the calm cover.
-- **Step 5** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, sign
-  `swing(hinge)`, instead of the blades' `rotation.x`), the seams red for the problem, the lamp, the bar's marker.
+- **The form and glow pass (gills step 5, 2026-10-27; static, calm).** A fresh critic's findings on r5, toward the
+  concept (`<raw>/ship/v5/gills/r6/`, the hand-off `<raw>/ship/v5/notes/gills-5.md`):
+  - *The arc:* the crest is one monotone convex arc (step 4's was an S: 17 cm at mid-height, a dip to 3.8 on the
+    crown, a lean in again). Its horizontal distance out of the vertical wall's plane is one quartic (`ARCH_C`,
+    fitted to `ARCH_KNOTS` and the end slopes `ARCH_FOOT_SLOPE` 0.06, `ARCH_TOP_SLOPE` 0.64, under the leaning
+    wall's 0.647), so it is C2 with no corner at the bend. Proud: 3 cm at the foot, 7.7 at h 0.74, 17 at h 1.4, 17.9 at
+    the cover's top (its most), 12.7 at h 1.6, 4.5 at the crown's top; rising to the bend, falling after it, no dip.
+  - *The joint:* a 2 cm groove across the rib, from the cover's top (h 1.44) to the crown's foot (`CROWN_FOOT` 1.46),
+    both rounded `ROUND` 8 mm (step 4's 4 mm gap showed a thin pink seam and a faceted top). The fifth arch's
+    plate still runs to 1.446 (it does not turn).
+  - *The ribs and the slots:* `COVER_W` 21 cm in the 31.75 cm pitch (half gaps 5.4 cm at the ends). The A/B: a) the
+    mouth hinge at 12 deg, b) the hall hinge at 10 deg, both vents alike; built first at 18.5 cm (14 cm slots, which
+    read wider than the ribs), then at 21 cm. **b is the pick** (`HINGE` "hall", `CALM_DEG` 10): every slot shows cyan
+    from the ramp on both walls. The slot at h 1.4 (`neighbour_gap`): shut 10.8 cm, calm 11.2 (0.53 of the rib),
+    exhale 70 deg 13.6; the mouth hinge 10.8 / 12.0 at 12 deg / 13.6. Every clearance rule of step 3 still holds.
+  - *The glow:* the honeycomb is gone (it read busy, and where the well's depth jumps its bars tore into long
+    diagonals). The well's back is a flat deep cyan (0.05, 0.55, 1.0) in five bands fading up from the foot
+    (`COOL_BANDS`: `int_cyan__vent_cool` e 0.30 at h 0.12..0.40, then `cool2..cool5` 0.24, 0.18, 0.14, 0.10 to h 1.44,
+    the children of `<id>_cool`, so the problem hides them with it). The well and the window now reach h 1.44, and the
+    lit slots run on up the leaning wall between the crowns to `SLOT_TOP` 1.95 (`<id>_slots6`, `<id>_slots7`, e 0.08
+    and 0.06, the cool's children; `<id>_heat_slots` the heat's red behind them). The ribs' flanks facing the slots
+    glow a weak cyan (`int_cyan__vent_flank` e 0.3, on the covers' liners `<id>_flank<k>` and the crowns' `<id>_flank<k>u`;
+    dark for the problem, `VENT_STATES`).
+  - *The lights* (`vent_glow.gd`): the gap lights (0.05, 0.55, 1.0) at energy 0.3 (step 4: 0.9, which clipped the
+    flanks to white); per gap a foot light (`FOOT_LOOK` 0.25, 10 cm out, 6 cm under the seam) for a little floor
+    cyan, and a slot light 5 cm off the leaning wall at h 1.7 (`SLOT_LOOK` 0.2) lighting the crowns' flanks.
+  - *The bronze:* `gill_bronze` (0.64, 0.42, 0.22), metallic 0.70, roughness 0.30 (step 4: (0.56, 0.35, 0.18), 0.62,
+    0.33); `gill_edge` the same family as a glossy bevel ((0.74, 0.52, 0.30), metallic 0.85, roughness 0.18, no lift)
+    on the 1.1 cm chamfers, instead of the flat tan stripe.
+  - *The upper panel:* the dark panel behind the crowns has rounded top corners (R 12 cm) and a soft 1.5 cm sloped
+    edge instead of a hard straight rectangle.
+- **Step 6** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, sign
+  `swing(hinge)`, now the hall hinge, instead of the blades' `rotation.x`), the seams red for the problem, the lamp,
+  the bar's marker.
 
 ## The export (art #335)
 
