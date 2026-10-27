@@ -17,7 +17,10 @@ the raw folder until approved.
 | `levels/ship/ship.tscn` | the level: `Ship` > `Pieces`, `Environment`, `Lights`, `Probes`, `Ground`, `Stations`, `Markers` |
 | `package.json` | every file with SHA-256 and bytes, the spots, the spawn, the questions |
 
-182 files, 24.0 MB. No GDScript: the look the art sets by code is saved in the scene as
+182 files, 24.0 MB. Copy only the files `package.json` lists: the export folder also holds the art check's own
+`_check/`, `project.godot`, `lib/`, `.godot/` and the `.uid` files Godot writes, none of them for the game. The two
+vent normal maps are byte-identical copies (3.8 MB each); sharing one needs a change to the vents' material, left for
+their rebuild as the throat gills (art#263). No GDScript: the look the art sets by code is saved in the scene as
 overrides inside the pieces' instances (each piece an editable instance, 11.2's rule).
 
 ## Placement
@@ -25,7 +28,7 @@ overrides inside the pieces' instances (each piece an editable instance, 11.2's 
 The scene's origin is the ship's plan origin on the ground (the clearing's ground piece at y 0); Godot x = plan x,
 z = plan y, +Z aft; the deck is at y 1.2 m. `metadata/size_m` is the plan's width and length with the nozzles;
 `metadata/deck_h` the deck. `Markers/Spawn` stands at the ramp's foot ([0.0, 0.0, -14.0]), turned
-180.0 degrees: facing the mouth.
+180.0 degrees: its +Z (aft) looks up the ramp into the ship.
 
 ## Station spots (`Stations`, Marker3D: origin on the deck, +Z the spot's normal into the room)
 
