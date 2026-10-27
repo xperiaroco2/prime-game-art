@@ -32,6 +32,7 @@ from mathutils import Matrix, Quaternion, Vector
 
 ARM_DOWN = math.radians(72)
 FINGER_CURL = 60.0  # degrees per joint in fingers.png
+FINGER_LENS = 85  # mm (M1b; 60 before: the hand filled a third of the frame)
 BODY_RGB = (0.16, 0.42, 0.40)
 
 
@@ -293,9 +294,9 @@ def main():
 def fingers(arm, cam, sc, out, bones, tails):
     """H1: the left hand at rest, then each finger chain curled alone (FINGER_CURL at every joint) about the axis
     across its proximal bone and the palm's normal (-Z in the T-pose), seen from the thumb side and a little below."""
-    hc = (bones["LeftHand"] + bones["LeftMiddleDistal"]) / 2
+    hc = (bones["LeftHand"] + tails["LeftMiddleDistal"]) / 2
     shots = []
-    look(cam, hc + Vector((0.05, -0.5, -0.22)), hc, lens=60)
+    look(cam, hc + Vector((0.05, -0.5, -0.22)), hc, lens=FINGER_LENS)
     shots.append(shot(sc, os.path.join(out, "finger_rest.png"), (768, 768)))
     for f in ("Index", "Middle", "Ring", "Little", "Thumb"):
         chain = [f"Left{f}{s}" for s in (("Metacarpal", "Proximal", "Distal") if f == "Thumb"
@@ -312,9 +313,21 @@ def fingers(arm, cam, sc, out, bones, tails):
             arm.pose.bones[n].rotation_quaternion = Quaternion(loc_axis, math.radians(FINGER_CURL))
         bpy.context.view_layer.update()
         shots.append(shot(sc, os.path.join(out, f"finger_{f.lower()}.png"), (768, 768)))
+    # M1b: then a fist, every chain curled at once
+    for f in ("Index", "Middle", "Ring", "Little", "Thumb"):
+        chain = [f"Left{f}{s}" for s in (("Metacarpal", "Proximal", "Distal") if f == "Thumb"
+                                         else ("Proximal", "Intermediate", "Distal"))]
+        d = (tails[chain[0]] - bones[chain[0]]).normalized()
+        axis = d.cross(Vector((0.0, 0.0, -1.0))).normalized()
+        for n in chain:
+            b = arm.data.bones[n]
+            loc_axis = (b.matrix_local.to_3x3().inverted() @ axis).normalized()
+            arm.pose.bones[n].rotation_quaternion = Quaternion(loc_axis, math.radians(FINGER_CURL))
+    bpy.context.view_layer.update()
+    shots.append(shot(sc, os.path.join(out, "finger_fist.png"), (768, 768)))
     for pb in arm.pose.bones:
         pb.rotation_quaternion = (1, 0, 0, 0)
-    stitch(shots, 3, os.path.join(out, "fingers.png"), cell=(512, 512))
+    stitch(shots, 4, os.path.join(out, "fingers.png"), cell=(320, 320))
     print("REVIEW fingers", len(shots), flush=True)
 
 
@@ -326,6 +339,7 @@ BENDS = [
     ("shoulder_forward", [("LeftUpperArm", "Z", -80)], "LeftUpperArm", [(0.55, -0.45, 0.25), (0.45, 0.45, 0.30)]),
     ("elbow", [("LeftLowerArm", "Z", -110)], "LeftLowerArm", [(0.10, -0.55, 0.45), (0.10, 0.05, -0.70)]),
     ("hip", [("LeftUpperLeg", "X", -85)], "LeftUpperLeg", [(0.80, -0.20, 0.05), (0.25, -0.70, -0.25)]),
+    ("hip_back", [("LeftUpperLeg", "X", 35)], "LeftUpperLeg", [(0.80, 0.10, 0.0), (0.30, 0.70, -0.15)]),  # M1b
     ("knee", [("LeftLowerLeg", "X", 115)], "LeftLowerLeg", [(0.80, 0.0, 0.05), (0.30, 0.65, 0.20)]),
 ]
 
