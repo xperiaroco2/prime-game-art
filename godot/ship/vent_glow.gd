@@ -13,6 +13,14 @@ const LOOK := {                 # suffix: [colour, energy, range m]
 	"heat": [Color(1.0, 0.2, 0.02), 0.7, 0.75],    # vents-b3: a deep red-orange
 
 }
+## gills step 2 (2026-10-27): the gills' panels light their four slits instead: per slit (the middle of its two cyan
+## jambs `<id>_jamb<k>a/b`, inside the 3 cm cut) SLIT_ROWS lights, so the light pours out of each gap onto the
+## covers' backs and sides and back onto the well's walls and honeycomb
+const SLIT_ROWS := 3
+const SLIT_LOOK := {"cool": [Color(0.0, 0.66, 1.0), 1.6, 0.8], "heat": [Color(1.0, 0.2, 0.02), 1.6, 0.8]}
+## Every well light lights the inside's render layer only (ship.gd's INSIDE_LAYER): none leaks onto the hull's
+## outside behind a shallow well (omni lights pass through walls)
+const INSIDE_MASK := 1
 
 
 ## Adds the lights under every `<id>_cool` and `<id>_heat` mesh below n; `scale` multiplies their energy. Returns
@@ -23,6 +31,9 @@ static func add(n: Node, scale: float = 1.0) -> int:
 		for found: Node in n.find_children("*_" + suffix, "MeshInstance3D", true, false):
 			var mi: MeshInstance3D = found
 			if not String(mi.name).begins_with("station_vent_") or mi.mesh == null:
+				continue
+			if _slits(mi, suffix) > 0:
+				count += _slits(mi, suffix, true, scale)
 				continue
 			var box: AABB = mi.mesh.get_aabb()
 			var spec: Array = LOOK[suffix]
@@ -36,6 +47,46 @@ static func add(n: Node, scale: float = 1.0) -> int:
 				o.omni_range = float(spec[2])
 				o.omni_attenuation = 1.2
 				o.shadow_enabled = false
+				o.light_cull_mask = INSIDE_MASK
 				mi.add_child(o)
 				count += 1
+	return count
+
+
+## The gills' slit lights under the glow panel mi (its piece's jambs, siblings of mi); returns how many there are
+## (put: adds them).
+static func _slits(mi: MeshInstance3D, suffix: String, put: bool = false, scale: float = 1.0) -> int:
+	var pid: String = String(mi.name).trim_suffix("_" + suffix)
+	var parent: Node = mi.get_parent()
+	if parent == null:
+		return 0
+	var count: int = 0
+	var spec: Array = SLIT_LOOK[suffix]
+	for k: int in range(1, 9):
+		var a: Node = parent.get_node_or_null(NodePath("%s_jamb%da" % [pid, k]))
+		var b: Node = parent.get_node_or_null(NodePath("%s_jamb%db" % [pid, k]))
+		if not (a is MeshInstance3D and b is MeshInstance3D):
+			break
+		if not put:
+			count += SLIT_ROWS
+			continue
+		var ja: MeshInstance3D = a
+		var jb: MeshInstance3D = b
+		var inv: Transform3D = mi.transform.affine_inverse()
+		var ba: AABB = ja.mesh.get_aabb()
+		var pa: Vector3 = inv * (ja.transform * ba.get_center())
+		var pb: Vector3 = inv * (jb.transform * jb.mesh.get_aabb().get_center())
+		for r: int in SLIT_ROWS:
+			var o: OmniLight3D = OmniLight3D.new()
+			o.name = "%s_slit%d_light%d" % [mi.name, k, r + 1]
+			var y: float = ba.position.y + ba.size.y * (r + 0.5) / SLIT_ROWS - ba.get_center().y
+			o.position = (pa + pb) * 0.5 + Vector3(0.0, y, 0.0)
+			o.light_color = spec[0]
+			o.light_energy = float(spec[1]) * scale
+			o.omni_range = float(spec[2])
+			o.omni_attenuation = 1.2
+			o.shadow_enabled = false
+			o.light_cull_mask = INSIDE_MASK
+			mi.add_child(o)
+			count += 1
 	return count
