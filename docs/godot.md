@@ -3161,6 +3161,16 @@ a time, by visibility.
   The weld: `alien_char_run.py --body DIR/alien_body.blend --no-flare --gill-ratio 0.7` (both off by default; the
   flare is for the cage bodies, the gill ratio keeps that share of the head's gill triangles). `alien_body_beside.py
   --concept-panels 2` for a two-panel concept.
+  - M1b (the fixes; output under `bodies_a/m1b/`): `--targets alien_meshy_targets/axolotl_m1b.toml --from-body
+    m1/body/alien_body.blend` runs only steps 6 to 10 of the script on M1's body (without `--from-body`, after a full
+    build): the ring's slivers merged (`degenerate`), the arms thickened about their section centres toward the
+    concept's arm-to-waist ratios (`arm_thicken`), the knees' notch smoothed (`smooth_rest`), the finger bones moved
+    onto Meshy's own fingers and the hands weighted afresh (`fingers`: each free finger found by cuts swept down the
+    hand, `alien_meshy_fix_geom.py`), and ring weights across the shoulder, elbow, hip and knee (`bends`). The keys
+    are optional; M1's file has none. `alien_body_refit_review.py --fingers` adds a fist and frames the hand closer
+    (`FINGER_LENS`), `--bends` a leg-back pose (`hip_back`).
+  - Linear blend skinning still pinches a 110 to 115 degree elbow or knee to a point on the bend's inside whatever
+    the ring's width (M1b's bends sheet): the fix needs helper bones or corrective shapes, outside the contract.
 - **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in

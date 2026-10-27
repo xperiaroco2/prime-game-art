@@ -1,0 +1,139 @@
+"""M1b (art #196): the plain maths of tools/blender/alien_meshy_fix_geom.py (the fingers' labels, lines, chain
+weights, creases and rolls; the joints' rings; the arms' profile), her M1b target file, and M1's file unchanged by
+the new optional keys. No Blender."""
+import math
+import sys
+import unittest
+from pathlib import Path
+
+BL = Path(__file__).resolve().parents[1] / "blender"
+sys.path.insert(0, str(BL))
+import alien_meshy_body_geom as M  # noqa: E402
+import alien_meshy_fix_geom as F  # noqa: E402
+
+
+def comb(n_fingers=2, length=10, palm=4):
+    """A toy hand along x: a palm strip (x 0..palm-1, one column of vertices per finger) and fingers past it."""
+    x, adj, vid = {}, {}, {}
+    k = 0
+    for f in range(n_fingers):
+        for i in range(palm + length):
+            vid[f, i] = k
+            x[k] = float(i)
+            k += 1
+    for (f, i), v in vid.items():
+        for g, j in ((f, i + 1), (f + 1, i)):
+            if (g, j) in vid and (j < palm or g == f):
+                adj.setdefault(v, []).append(vid[g, j])
+                adj.setdefault(vid[g, j], []).append(v)
+    return x, adj, vid
+
+
+class Fingers(unittest.TestCase):
+    def test_label_each_free_finger(self):
+        x, adj, vid = comb()
+        lab, stop = F.label_fingers(x, adj, step=0.5, min_part=2)
+        self.assertEqual(len(stop), 2)
+        tips = {lab[vid[0, 13]], lab[vid[1, 13]]}
+        self.assertEqual(len(tips), 2)  # one tip each
+        for f in range(2):
+            for i in range(4, 14):
+                self.assertEqual(lab[vid[f, i]], lab[vid[f, 13]])  # the whole free finger, its own label
+            for i in range(0, 3):
+                self.assertNotIn(vid[f, i], lab)  # the palm: no finger's
+        self.assertTrue(all(2.5 <= v <= 3.5 for v in stop.values()))  # stopped at the web
+
+    def test_fit_line(self):
+        pts = [(0.01 * i, 0.002 * i + 0.1, 1.2) for i in range(10)]
+        c, d = F.fit_line(pts)
+        n = math.sqrt(1 + 0.04)
+        for a, b in zip(d, (1 / n, 0.2 / n, 0.0)):
+            self.assertAlmostEqual(a, b, places=6)
+        self.assertAlmostEqual(F.off_line((0.05, 0.11, 1.2), c, d), 0.0, places=9)
+        self.assertGreater(F.along(pts[-1], c, d), F.along(pts[0], c, d))
+
+    def test_chain_weights(self):
+        js, h = [0.0, 0.03, 0.055], [0.008, 0.004, 0.0035]
+        for s in (-0.02, -0.004, 0.0, 0.02, 0.03, 0.05, 0.07):
+            w = F.chain_weights(s, js, h)
+            self.assertEqual(len(w), 4)
+            self.assertAlmostEqual(sum(w), 1.0)
+            self.assertTrue(sum(v > 1e-9 for v in w) <= 2)  # never more than two bones at once
+        self.assertEqual(F.chain_weights(-0.02, js, h)[0], 1.0)  # the palm
+        self.assertEqual(F.chain_weights(0.015, js, h)[1], 1.0)  # mid proximal
+        self.assertAlmostEqual(F.chain_weights(0.03, js, h)[2], 0.5)  # on the joint: half each
+        self.assertEqual(F.chain_weights(0.07, js, h)[3], 1.0)  # the tip
+
+    def test_ownership_smooth(self):
+        a, b = F.ownership(0.01, 0.003), F.ownership(0.03, 0.003)
+        self.assertGreater(a, b)
+        self.assertLess(a / b, 100.0)  # no step: a Gaussian's ratio here would be e^8
+
+    def test_pick_crease(self):
+        samples = [(0.002 * i, 0.016 - (0.004 if i == 7 else 0.0)) for i in range(20)]
+        self.assertAlmostEqual(F.pick_crease(samples, 0.015, 0.005), 0.014)
+        flat = [(0.002 * i, 0.016 - 0.0001 * i) for i in range(20)]  # thinning to the tip: no crease
+        self.assertEqual(F.pick_crease(flat, 0.015, 0.005), 0.015)
+
+    def test_keep_roll_z(self):
+        z = F.keep_roll_z([0.0, 0.0, -1.0], [1.0, 0.0, -0.2])
+        self.assertAlmostEqual(sum(a * b for a, b in zip(z, [1.0, 0.0, -0.2])), 0.0)
+        self.assertAlmostEqual(math.sqrt(sum(v * v for v in z)), 1.0)
+        self.assertLess(z[2], -0.9)  # still pointing down
+        self.assertAlmostEqual(math.sqrt(sum(v * v for v in F.keep_roll_z([1.0, 0, 0], [1.0, 0, 0]))), 1.0)
+
+    def test_names(self):
+        self.assertEqual(F.chain_names("Left", "Thumb"), ["LeftThumbMetacarpal", "LeftThumbProximal", "LeftThumbDistal"])
+        self.assertEqual(F.chain_names("Right", "Ring")[1], "RightRingIntermediate")
+
+
+class Rings(unittest.TestCase):
+    def test_share(self):
+        self.assertEqual(F.ring_share(-0.1, 0.05), 0.0)
+        self.assertEqual(F.ring_share(0.1, 0.05), 1.0)
+        self.assertAlmostEqual(F.ring_share(0.01, 0.05, 0.01), 0.5)
+
+    def test_blend(self):
+        old = {"LeftUpperLeg": 0.7, "LeftLowerLeg": 0.3}
+        fam = {"LeftLowerLeg", "LeftFoot"}
+        w = F.ring_blend(old, fam, "LeftUpperLeg", "LeftLowerLeg", 0.5, 1.0)
+        self.assertAlmostEqual(w["LeftLowerLeg"], 0.5)
+        self.assertAlmostEqual(sum(w.values()), 1.0)
+        self.assertEqual(F.ring_blend(old, fam, "LeftUpperLeg", "LeftLowerLeg", 0.9, 0.0), old)  # blend 0: the old
+        # a side holding none takes the named bone; other groups keep their proportions
+        w = F.ring_blend({"Hips": 0.5, "Spine": 0.5}, {"LeftUpperLeg"}, "Hips", "LeftUpperLeg", 0.4, 1.0)
+        self.assertAlmostEqual(w["LeftUpperLeg"], 0.4)
+        self.assertAlmostEqual(w["Hips"], 0.3)
+
+    def test_profile(self):
+        st = [[0.17, 1.0], [0.3, 1.4], [0.69, 1.0]]
+        self.assertEqual(F.profile(st, 0.1), 1.0)
+        self.assertAlmostEqual(F.profile(st, 0.235), 1.2)
+        self.assertEqual(F.profile(st, 0.8), 1.0)
+
+
+class Targets(unittest.TestCase):
+    def test_m1b_file(self):
+        t = M.load(M.TARGETS / "axolotl_m1b.toml")
+        self.assertEqual(t["name"], "axolotl_m1b")
+        self.assertEqual(set(t) & M.KEYS_M1B, M.KEYS_M1B)
+        prof = t["arm_thicken"]["profile"]
+        self.assertEqual([p[0] for p in prof], sorted(p[0] for p in prof))
+        self.assertEqual(prof[0][1], 1.0)  # the torso keeps its size
+        self.assertEqual(prof[-1][1], 1.0)  # the hands keep theirs
+        self.assertLess(max(p[1] for p in prof), 1.5)
+        self.assertEqual({b["child"] for b in t["bends"]}, {"UpperArm", "LowerArm", "UpperLeg", "LowerLeg"})
+        m1 = M.load(M.TARGETS / "axolotl_m1.toml")
+        for k in M.KEYS:  # M1's numbers, the fixes only on top
+            if k != "name":
+                self.assertEqual(t[k], m1[k], k)
+
+    def test_m1_has_no_fix(self):
+        self.assertFalse(set(M.load(M.TARGETS / "axolotl_m1.toml")) & M.KEYS_M1B)
+        src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
+        self.assertIn("if not any(k in T for k in M.KEYS_M1B):", src)
+        self.assertIn('ap.add_argument("--from-body", default=""', src)
+
+
+if __name__ == "__main__":
+    unittest.main()

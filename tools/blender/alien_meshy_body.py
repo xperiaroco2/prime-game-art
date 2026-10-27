@@ -16,6 +16,18 @@ route (`alien_cage.py`), which wraps a cage round the skeleton and projects it o
    (`weight_smooth`), normalises them (at most 4 per vertex) and replaces the rig body: `Body` under `CharacterArmature`, the rig body's material.
 Writes <out>/alien_body.blend (what alien_char_run.py --body takes), <out>/neck_ring.json (the rig body's, copied)
 and <out>/body.json (the numbers). --hi: no final collapse (the before of the before/after renders).
+
+M1b (art #196), each only when its key is in the target file (`axolotl_m1b.toml`; M1's file has none), after step 5:
+6. `degenerate`: the ring's near-coincident vertices merged and the slivers dissolved (the weld's bridge took their
+   wrong normals: the small grey triangles on the seam).
+7. `arm_thicken`: the arms scaled about their section centres (front width by the profile, the depth by its power).
+8. `smooth_rest`: spots smoothed in the rest pose (the knees' inner notch), mirrored.
+9. `fingers`: the finger bones moved onto Meshy's own fingers (each free finger found by cuts swept down the hand,
+   its straight centre line, the joints by the old proportions and the thinnest slice near them, the rolls kept)
+   and the hand weighted afresh: a finger's vertices by its own chain only, the palm by the chains' lines.
+10. `bends`: the joints' weights replaced by rings across each joint (the child's share a smoothstep along the
+   child bone), faded out at the band's ends and the limb's radius.
+--from-body <alien_body.blend>: steps 6 to 10 only, on a body this script built before (M1's).
 """
 from __future__ import annotations
 
@@ -29,9 +41,11 @@ from pathlib import Path
 import bmesh
 import bpy
 import numpy as np
+from mathutils import Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_meshy_body_geom as M  # noqa: E402
+import alien_meshy_fix_geom as F  # noqa: E402
 
 
 def log(msg):
@@ -160,18 +174,346 @@ def islands(bm) -> list[list]:
     return out
 
 
+# M1b (art #196): the fixes, each only when its key is in the target file
+def read_weights(obj) -> tuple[np.ndarray, list[str]]:
+    names = [g.name for g in obj.vertex_groups]
+    W = np.zeros((len(obj.data.vertices), len(names)))
+    for v in obj.data.vertices:
+        for g in v.groups:
+            W[v.index, g.group] = g.weight
+    return W, names
+
+
+def write_weights(obj, W: np.ndarray, limit: int = 4):
+    """W (vertices x groups) into the groups: each vertex's `limit` largest, normalised, weights under 1e-4 out."""
+    keep = np.argsort(-W, axis=1)[:, :limit]
+    W2 = np.zeros_like(W)
+    rows = np.arange(len(W))[:, None]
+    W2[rows, keep] = W[rows, keep]
+    W2[W2 < 1e-4] = 0.0
+    W2 /= np.maximum(W2.sum(1, keepdims=True), 1e-12)
+    for c, vg in enumerate(obj.vertex_groups):
+        vg.remove(list(range(len(W))))
+        for i in np.where(W2[:, c] > 0)[0]:
+            vg.add([int(i)], float(W2[i, c]), "REPLACE")
+
+
+def edge_array(me) -> np.ndarray:
+    e = np.empty(len(me.edges) * 2, dtype=np.int64)
+    me.edges.foreach_get("vertices", e)
+    return e.reshape(-1, 2)
+
+
+def slivers(bm, area=1e-7) -> int:
+    return sum(1 for f in bm.faces if f.calc_area() < area)
+
+
+def fix_degenerate(mb, cfg, rep):
+    """The ring's vertices closer than ring_merge merged, then every edge under dist collapsed (bmesh)."""
+    bm = bmesh.new()
+    bm.from_mesh(mb.data)
+    ring = [v for v in bm.verts if any(e.is_boundary for e in v.link_edges)]
+    re_ = [e for e in bm.edges if e.is_boundary]
+    r0 = {"slivers": slivers(bm), "ring_vertices": len(ring),
+          "ring_edge_min_mm": round(min(e.calc_length() for e in re_) * 1000, 3)}
+    bmesh.ops.remove_doubles(bm, verts=ring, dist=cfg["ring_merge"])
+    bmesh.ops.dissolve_degenerate(bm, dist=cfg["dist"], edges=bm.edges[:])
+    re_ = [e for e in bm.edges if e.is_boundary]
+    r1 = {"slivers": slivers(bm), "ring_vertices": len({v for e in re_ for v in e.verts}),
+          "ring_edge_min_mm": round(min(e.calc_length() for e in re_) * 1000, 3), "open_edges": len(re_),
+          "non_manifold": sum(1 for e in bm.edges if len(e.link_faces) > 2)}
+    bm.to_mesh(mb.data)
+    bm.free()
+    mb.data.update()
+    rep["degenerate"] = {"before": r0, "after": r1}
+    log(f"degenerate {rep['degenerate']}")
+
+
+def fix_arms(arm, mb, cfg, rep):
+    """Each arm's vertices (|x| past from_x, above band_z) scaled about the arm's section centre at their |x|: z
+    (the front view's width in the A pose) by the profile, y by the profile to `y_power`."""
+    co = get_co(mb.data)
+    out = {}
+    for s, pre in ((1.0, "Left"), (-1.0, "Right")):
+        sel = (co[:, 0] * s > cfg["from_x"]) & (co[:, 2] > cfg["band_z"])
+        hx = abs(arm.data.bones[f"{pre}Hand"].head_local.x)
+        xs = np.arange(cfg["from_x"], hx + 1e-9, 0.01)
+        mid = smooth3(smooth3(slab_mid(co, sel, np.abs(co[:, 0]), xs, cfg["slab"], (1, 2))))
+
+        def ext(c_):
+            return [float(np.ptp(c_[sel & (np.abs(np.abs(c_[:, 0]) - x) < cfg["slab"]), 2])) for x in xs[::4]]
+        before = ext(co)
+        for i in np.where(sel)[0]:
+            x = abs(co[i, 0])
+            k = F.profile(cfg["profile"], x)
+            if k == 1.0:
+                continue
+            cy, cz = np.interp(x, xs, mid[:, 0]), np.interp(x, xs, mid[:, 1])
+            co[i, 1] = cy + (co[i, 1] - cy) * k ** cfg["y_power"]
+            co[i, 2] = cz + (co[i, 2] - cz) * k
+        out[pre] = {"x": [round(float(x), 2) for x in xs[::4]], "z_mm_before": [round(v * 1000) for v in before],
+                    "z_mm_after": [round(v * 1000) for v in ext(co)]}
+    set_co(mb.data, co)
+    waist = co[(np.abs(co[:, 2] - cfg["waist_z"]) < 0.004) & (np.abs(co[:, 0]) < 0.25)]
+    out["waist_m"] = round(float(np.ptp(waist[:, 0])), 4)
+    rep["arm_thicken"] = out
+    log(f"arms {out}")
+
+
+def fix_smooth_rest(mb, cfg, rep):
+    """Soft spheres [|x|, y, z, r, passes] smoothed on both sides (a Laplacian, the rest pose)."""
+    co = get_co(mb.data)
+    w, npv = np.zeros(len(co)), np.zeros(len(co), dtype=int)
+    for x, y, z, r, n in cfg["spheres"]:
+        for sx in (x, -x):
+            ws = np.array([M.soft_sphere(p, (sx, y, z), r) for p in co])
+            npv = np.where(ws > 0, np.maximum(npv, n), npv)
+            w = np.maximum(w, ws)
+    co2 = laplace(co, edge_array(mb.data), w, npv)
+    rep["smooth_rest_mm"] = round(float(np.linalg.norm(co2 - co, axis=1).max()) * 1000, 2)
+    set_co(mb.data, co2)
+
+
+def finger_slices(pts, seg, c, d, step):
+    """Cross-sections of a finger across its line (c, d) every `step`: the points where its edges (seg: [k, 2, 3],
+    the finger's own edges) cross each plane; [(s, centre xyz, thickness along the palm normal)]. The decimated mesh's
+    vertices alone are too sparse for a 2 mm slab."""
+    e2 = np.array([0.0, 0.0, 1.0]) - d * d[2]
+    e2 /= np.linalg.norm(e2)
+    e1 = np.cross(d, e2)
+    s = (pts - c) @ d
+    sa, sb = (seg[:, 0] - c) @ d, (seg[:, 1] - c) @ d
+    out = []
+    for s0 in np.arange(s.min() + step / 2, s.max(), step):
+        x = (sa - s0) * (sb - s0) < 0
+        t = ((s0 - sa[x]) / (sb[x] - sa[x]))[:, None]
+        q = seg[x, 0] + t * (seg[x, 1] - seg[x, 0])
+        if len(q) < 3:
+            continue
+        a, b = (q - c) @ e1, (q - c) @ e2
+        out.append((float(s0), c + s0 * d + e1 * (a.min() + a.max()) / 2 + e2 * (b.min() + b.max()) / 2,
+                    float(np.ptp(b))))
+    return out
+
+
+def fix_fingers(arm, mb, cfg, rep, W, names):
+    """The finger bones onto Meshy's fingers and the hands weighted afresh (the module's step 9)."""
+    co = get_co(mb.data)
+    adj: dict = {}
+    E = edge_array(mb.data)
+    for a_, b_ in E:
+        adj.setdefault(int(a_), []).append(int(b_))
+        adj.setdefault(int(b_), []).append(int(a_))
+    gi = {n: k for k, n in enumerate(names)}
+    plan, out = {}, {}
+    for s, side in ((1.0, "Left"), (-1.0, "Right")):
+        wx = abs(arm.data.bones[f"{side}Hand"].head_local.x)
+        hand = [i for i in range(len(co)) if co[i, 0] * s > wx]
+        label, stop = F.label_fingers({i: abs(co[i, 0]) for i in hand}, adj, cfg["step"], cfg["min_part"])
+        tips = list(stop)
+        # each chain's tip: the free tip nearest its old fingertip (greedy over all pairs)
+        pairs = sorted((float(np.linalg.norm(co[t] - np.array(arm.data.bones[F.chain_names(side, f)[-1]].tail_local))),
+                        f, t) for f in F.FINGERS for t in tips)
+        own, used = {}, set()
+        for _, f, t in pairs:
+            if f not in own and t not in used:
+                own[f] = t
+                used.add(t)
+        if len(own) != 5:
+            raise RuntimeError(f"{side}: {len(tips)} free fingers found, {sorted(own)} matched")
+        chains = {}
+        for f, t in own.items():
+            idx = np.array([i for i, l_ in label.items() if l_ == t])
+            pts = co[idx]
+            inn = np.zeros(len(co), dtype=bool)
+            inn[idx] = True
+            seg = co[E[inn[E[:, 0]] & inn[E[:, 1]]]]
+            c0, d0 = (np.array(v) for v in F.fit_line(pts.tolist()))
+            if float((co[t] - c0) @ d0) < 0:
+                d0 = -d0
+            sl = finger_slices(pts, seg, c0, d0, cfg["slice"])
+            n_ = len(sl)
+            lo = int(n_ * 0.15)
+            cen = [list(x[1]) for x in sl[lo:max(int(n_ * 0.9), lo + 2)]]
+            c, d = (np.array(v) for v in F.fit_line(cen))
+            if float((co[t] - c) @ d) < 0:
+                d = -d
+            sl = finger_slices(pts, seg, c, d, cfg["slice"])
+            thick = [(a_, b_) for a_, _, b_ in sl]
+            sv = (pts - c) @ d
+            s_base, s_tip = float(sv.min()), float(sv.max())
+            bn = F.chain_names(side, f)
+            bones = [arm.data.bones[n] for n in bn]
+            lens = [b.length for b in bones]
+            end = s_tip - cfg["tip_inset"]
+            if f == "Thumb":
+                s_root = F.along(bones[0].head_local, c, d)  # the metacarpal's head stays where it is
+                s1 = s_base - cfg["thumb_mcp_back"]
+                s2 = F.pick_crease(thick, s1 + (end - s1) * lens[1] / (lens[1] + lens[2]), cfg["crease_window"])
+                js = [s_root, s1, s2]
+                heads = [np.array(bones[0].head_local), c + s1 * d, c + s2 * d]
+                half = cfg["thumb_half"]
+            else:
+                s1 = F.along(bones[0].head_local, c, d)
+                s2 = F.pick_crease(thick, s1 + lens[0] * (end - s1) / sum(lens), cfg["crease_window"])
+                s3 = F.pick_crease(thick, s2 + lens[1] * (end - s2) / (lens[1] + lens[2]), cfg["crease_window"])
+                js = [s1, s2, s3]
+                heads = [c + s1 * d, c + s2 * d, c + s3 * d]
+                half = cfg["half"]
+            tails = heads[1:] + [c + end * d]
+            chains[f] = {"idx": idx, "c": c, "d": d, "js": js, "half": half, "bones": bn,
+                         "sigma": cfg["thumb_sigma"] if f == "Thumb" else cfg["sigma"]}
+            for n, h, t_ in zip(bn, heads, tails):
+                plan[n] = (h, t_, np.array(arm.data.bones[n].matrix_local.to_3x3().col[2]))
+            out[f"{side}{f}"] = {"verts": int(len(idx)), "web": round(s_base, 4), "tip": round(s_tip, 4),
+                                 "joints": [round(j, 4) for j in js],
+                                 "moved_mm": [round(float(np.linalg.norm(h - np.array(arm.data.bones[n].head_local))) * 1000, 1)
+                                              for n, h in zip(bn, heads)],
+                                 "dir": [round(float(v), 3) for v in d]}
+        # the weights: a free finger's vertices by its own chain; the palm by every chain, owned by the lines by their
+        # inverse squared distance (a Gaussian's ratios turn into steps far from the lines: the first build's thumb ribbon)
+        hgroups = [gi[f"{side}Hand"]] + [gi[n] for ch in chains.values() for n in ch["bones"]]
+        lab = {int(i): f for f, ch in chains.items() for i in ch["idx"]}
+        for i in hand:
+            tot = W[i, hgroups].sum()
+            if tot < 1e-6:
+                continue
+            p = co[i]
+            new = np.zeros(len(names))
+            fs = [lab[i]] if i in lab else list(chains)
+            g = np.array([F.ownership(F.off_line(p, chains[f]["c"], chains[f]["d"]), chains[f]["sigma"]) for f in fs])
+            if i in lab:
+                g = np.ones(1)
+            else:  # the palm's own pull (pure Hand): far from every line the hand holds it
+                g = g / (g.sum() + F.ownership(cfg["palm_r"], 0.0))
+                new[gi[f"{side}Hand"]] += 1.0 - g.sum()
+            for f, o in zip(fs, g):
+                ch = chains[f]
+                cw = F.chain_weights(F.along(p, ch["c"], ch["d"]), ch["js"], ch["half"])
+                for n, w_ in zip([f"{side}Hand"] + ch["bones"], cw):
+                    new[gi[n]] += o * w_
+            W[i, hgroups] = 0.0
+            W[i] += new * tot
+        # the palm's weights smoothed along its edges (the free fingers' held): no step at the webs
+        palm = np.array([i for i in hand if i not in lab and W[i, hgroups].sum() > 1e-6])
+        on = np.zeros(len(co), dtype=bool)
+        on[palm] = True
+        e = E[on[E[:, 0]] | on[E[:, 1]]]
+        deg = np.maximum(np.bincount(e.ravel(), minlength=len(co)), 1)[:, None]
+        tot = W[:, hgroups].sum(1, keepdims=True)
+        for _ in range(cfg["palm_smooth"]):
+            Wh = W[:, hgroups]
+            avg = np.zeros_like(Wh)
+            np.add.at(avg, e[:, 0], Wh[e[:, 1]])
+            np.add.at(avg, e[:, 1], Wh[e[:, 0]])
+            avg /= deg
+            avg *= tot / np.maximum(avg.sum(1, keepdims=True), 1e-12)
+            W[np.ix_(palm, hgroups)] = 0.5 * Wh[palm] + 0.5 * avg[palm]
+    # the bones (edit mode): heads, tails, the rolls kept
+    select_only([arm], arm)
+    bpy.ops.object.mode_set(mode="EDIT")
+    for n, (h, t_, oz) in plan.items():
+        eb = arm.data.edit_bones[n]
+        eb.head, eb.tail = Vector(h), Vector(t_)
+        eb.align_roll(Vector(F.keep_roll_z(list(oz), list(t_ - h))))
+    bpy.ops.object.mode_set(mode="OBJECT")
+    rep["fingers"] = out
+    log(f"fingers {out}")
+
+
+def fix_bends(arm, mb, cfg, W, names, rep):
+    """Each joint's ring (the module's step 10) on both sides."""
+    co = get_co(mb.data)
+    gi = {n: k for k, n in enumerate(names)}
+    out = {}
+    for j in cfg:
+        for s, side in ((1.0, "Left"), (-1.0, "Right")):
+            cb = arm.data.bones[f"{side}{j['child']}"]
+            J, T_ = np.array(cb.head_local), np.array(cb.tail_local)
+            d = (T_ - J) / np.linalg.norm(T_ - J)
+            fam = {cb.name, *[c.name for c in cb.children_recursive]}
+            parent = j["parent"] if j["parent"] in gi else f"{side}{j['parent']}"
+            m = j["margin"]
+            wmax = max(j["width"], j.get("inside_width", 0.0))
+            n_ = 0
+            for i in np.where(co[:, 0] * s > 0.0)[0]:
+                p = co[i] - J
+                u = float(p @ d)
+                r = float(np.linalg.norm(p - u * d))
+                if abs(u) > wmax + m or r > j["radius"]:
+                    continue
+                off = j.get("offset", 0.0) + j.get("tilt", 0.0) * (co[i, 1] - J[1])
+                wd = j["width"]
+                if "inside" in j:  # the bend's inside (where LBS pinches): a wider band
+                    t = F.sstep(0.0, 0.6 * j["radius"], float((p - u * d) @ np.array(j["inside"])))
+                    wd += (j["inside_width"] - wd) * t
+                blend = (1.0 - F.sstep(wd, wd + m, abs(u))) * (1.0 - F.sstep(j["radius"] - j["fade"], j["radius"], r))
+                if "mid_x" in j:
+                    blend *= F.sstep(j["mid_x"][0], j["mid_x"][1], abs(co[i, 0]))
+                if blend <= 0.0:
+                    continue
+                wv = {names[k]: W[i, k] for k in np.where(W[i] > 0)[0]}
+                nw = F.ring_blend(wv, fam, parent, cb.name, F.ring_share(u, wd, off), blend)
+                W[i] = 0.0
+                for g_, v in nw.items():
+                    W[i, gi[g_]] = v
+                n_ += 1
+            out[f"{side}{j['child']}"] = n_
+    rep["bends"] = out
+    log(f"bends {out}")
+
+
+def fixes(arm, mb, T, rep):
+    if not any(k in T for k in M.KEYS_M1B):
+        return
+    arm.data.pose_position = "REST"
+    bpy.context.view_layer.update()
+    if "degenerate" in T:
+        fix_degenerate(mb, T["degenerate"], rep)
+    if "arm_thicken" in T:
+        fix_arms(arm, mb, T["arm_thicken"], rep)
+    if "smooth_rest" in T:
+        fix_smooth_rest(mb, T["smooth_rest"], rep)
+    W, names = read_weights(mb)
+    if "fingers" in T:
+        fix_fingers(arm, mb, T["fingers"], rep, W, names)
+    if "bends" in T:
+        fix_bends(arm, mb, T["bends"], W, names, rep)
+    write_weights(mb, W)
+    rep["weights_m1b"] = {"unweighted": sum(1 for v in mb.data.vertices if not v.groups),
+                          "max_groups": max(len(v.groups) for v in mb.data.vertices)}
+    for p in mb.data.polygons:
+        p.use_smooth = True
+    arm.data.pose_position = "POSE"
+    bm = bmesh.new()
+    bm.from_mesh(mb.data)
+    bnd = [e for e in bm.edges if e.is_boundary]
+    rep["body_m1b"] = {"tris": tris(mb.data), "vertices": len(mb.data.vertices), "open_edges": len(bnd),
+                       "non_manifold": sum(1 for e in bm.edges if len(e.link_faces) > 2), "parts": len(islands(bm)),
+                       "slivers": slivers(bm)}
+    bm.free()
+    log(f"m1b body {rep['body_m1b']} weights {rep['weights_m1b']}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--targets", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--raw", default="D:/prime-art-raw")
     ap.add_argument("--hi", action="store_true", help="no final collapse (the before/after's before)")
+    ap.add_argument("--from-body", default="", help="M1b: only the fixes, on a body built before")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     T = M.load(a.targets)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     raw = Path(a.raw)
     rep = {"targets": T["name"], "hi": a.hi}
+    if a.from_body:
+        bpy.ops.wm.open_mainfile(filepath=a.from_body)
+        rep["from_body"] = a.from_body
+        finish(bpy.data.objects["CharacterArmature"], bpy.data.objects["Body"], T, rep, out,
+               Path(a.from_body).parent / "neck_ring.json")
+        return
     rig_path = raw / T["rig_body"]
     bpy.ops.wm.open_mainfile(filepath=str(rig_path))
     arm, rig = bpy.data.objects["CharacterArmature"], bpy.data.objects["Body"]
@@ -424,7 +766,11 @@ def main():
         mb.data.uv_layers[0].name = "UVMap"
     else:
         mb.data.uv_layers.new(name="UVMap")
-    ring_json = rig_path.parent / "neck_ring.json"
+    finish(arm, mb, T, rep, out, rig_path.parent / "neck_ring.json")
+
+
+def finish(arm, mb, T, rep, out, ring_json):
+    fixes(arm, mb, T, rep)
     if ring_json.exists():
         shutil.copyfile(ring_json, out / "neck_ring.json")
     (out / "body.json").write_text(json.dumps(rep, indent=1), encoding="utf-8", newline="\n")

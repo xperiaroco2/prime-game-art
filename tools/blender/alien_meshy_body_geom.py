@@ -15,12 +15,14 @@ TARGETS = Path(__file__).resolve().parent / "alien_meshy_targets"
 KEYS = {"name", "meshy", "rig_body", "wrap_z", "arm_x", "arm_band_z", "arm_blend_x", "arm_station_x", "hand",
         "leg_fade_z", "leg_station_z", "foot_z", "ring_z", "ring_half_x", "neck_scale_from_z", "decimate_pre",
         "body_tris", "smooth", "bust", "keep_hands", "smooth_after", "weight_smooth"}
+# M1b (art #196): the fixes, each optional (alien_meshy_body.py steps 6 to 10; M1's file has none)
+KEYS_M1B = {"degenerate", "arm_thicken", "smooth_rest", "fingers", "bends"}
 
 
 def load(path: str | Path) -> dict:
     """A Meshy body target file (alien_meshy_targets/*.toml), its keys checked."""
     d = tomllib.loads(Path(path).read_text(encoding="utf-8"))
-    bad = set(d) - KEYS
+    bad = set(d) - KEYS - KEYS_M1B
     if bad:
         raise ValueError(f"unknown keys {sorted(bad)}")
     missing = KEYS - set(d)
