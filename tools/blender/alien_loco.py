@@ -212,7 +212,8 @@ def _reels(a, cfg: dict) -> int:
     from runner.commands import _godot
     import alien_char_run as R
     build, _, out = _paths(a.raw, cfg)
-    reels_dir = out / "reels"
+    char = a.char
+    reels_dir = out / "reels" if char == "chameleon" else out / "reels" / char  # F3: the axolotl's beside them
     if (reels_dir / "reels.json").exists():
         print(f"{reels_dir / 'reels.json'} exists: move it aside first", flush=True)
         return 2
@@ -220,7 +221,6 @@ def _reels(a, cfg: dict) -> int:
     frames = ROOT / "tools" / "out" / "loco" / "frames"
     shutil.rmtree(frames, ignore_errors=True)  # our own temporary frames
     frames.mkdir(parents=True)
-    char = "chameleon"
     hd = out / "build" / char
     slots_job = json.loads((R.SLOTS / "job.json").read_text(encoding="utf-8"))["heads"]
     plan = L.reel_plan(L.expand(cfg), cfg.get("reel"))
@@ -262,6 +262,7 @@ def main() -> int:
     ap.add_argument("--chars", default="")
     ap.add_argument("--reels", action="store_true")
     ap.add_argument("--only", default="", help="--reels: only these reels (names from alien_loco_math.reel_plan)")
+    ap.add_argument("--char", default="chameleon", help="--reels: the character (not the chameleon: into reels/<char>/)")
     ap.add_argument("--dump", default="", help="write the chameleon's skeleton and sampled sources as JSON, no build")
     a = ap.parse_args()
     cfg = L.load()
