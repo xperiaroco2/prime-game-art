@@ -110,6 +110,17 @@ class RigAndLayers(unittest.TestCase):
         want = A.M.q_mul(q, r.rest_q("LeftLowerLeg"))
         self.assertGreater(abs(sum(a * b for a, b in zip(got, want))), 1 - 1e-9)
 
+    def test_palm_centre_and_a_landmark_riding_on_the_spine(self):
+        P = {"LeftHand": _eye(0.2, 0.0, 1.0), "LeftMiddleProximal": _eye(0.2, -0.1, 0.9)}
+        self.assertEqual(A.palm_centre(P, "Left"), (0.2, -0.05, 0.95))
+        from types import SimpleNamespace
+        model = SimpleNamespace(skel={"rest": {"Spine": _eye(z=1.0)}}, marks={"waist_Left": (0.15, 0.0, 1.0)})
+        q = A.turn_q(yaw=90)  # the Spine turned a quarter about up, and lifted 0.1
+        m = A.M.mat_mul(_eye(z=1.1), [list(r) + [0.0] for r in A.rot3(q)] + [[0.0, 0.0, 0.0, 1.0]])
+        got = A.mark_posed(model, {"Spine": m}, "waist_Left")
+        want = A.add((0.0, 0.0, 1.1), A.M.q_rotate(q, (0.15, 0.0, 0.0)))
+        self.assertLess(math.dist(got, want), 1e-9)
+
     def test_compose_takes_each_layer_bones_only(self):
         skel = _leg_skel()
         skel["rest"]["Chest"] = _eye(z=1.2)

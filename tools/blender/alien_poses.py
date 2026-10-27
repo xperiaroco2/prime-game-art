@@ -56,7 +56,7 @@ def solve(dump: dict, cfg: dict, which: str) -> tuple[A.Model, dict, dict, list]
         m = A.measure(model, A.compose(legs[lg], arms[am]), lg, am)
         rows.append(m)
         print(f"PAIR {m['pair']} floor {m['floor_cm']} com {m['com_margin_cm']} touch {m['touch_cm']} contacts "
-              f"{m['contacts_cm']} through-max {max(m['through_cm'].values())} fails {m['fails']}", flush=True)
+              f"{m['contacts_cm']} marks {m.get('marks_cm', {})} through-max {max(m['through_cm'].values())} fails {m['fails']}", flush=True)
     return model, legs, arms, rows
 
 

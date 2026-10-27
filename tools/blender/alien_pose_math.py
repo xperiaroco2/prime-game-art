@@ -556,8 +556,10 @@ class Model:
             if not arm.get("touch") or it == 6:
                 break
             pz = Posed(self.skel, self.skin, r.P())
-            gap = nearest_gap(pz.group(f"hand_{side}"), pz.groups(arm["touch"]), reach=0.15)
-            depth = max(tube_depth(self.tubes[b], r.P(), pz.group(f"hand_{side}"))
+            # the skin that touches: the whole hand, or `touch_by` (the palm's own bone: a thumb kept off the body)
+            by = arm.get("touch_by", "hand_{side}").format(side=side)
+            gap = nearest_gap(pz.group(by), pz.groups(arm["touch"]), reach=0.15)
+            depth = max(tube_depth(self.tubes[b], r.P(), pz.group(by))
                         for b in tube_bones(arm["touch"][0], self.tubes))
             # inside the volume: back out by the depth; outside: in by the gap (the point sets' gap is never 0)
             # (a depth counts only where the skins touch: a small bone's tube misreads from afar)
@@ -653,9 +655,22 @@ def centre_of_mass(model: Model, P: dict):
     return tuple(a / tot for a in acc)
 
 
+def palm_centre(P: dict, side: str) -> tuple:
+    """The palm's centre: halfway from the wrist to the middle finger's knuckle."""
+    return mul(add(S.pos(P[f"{side}Hand"]), S.pos(P[f"{side}MiddleProximal"])), 0.5)
+
+
+def mark_posed(model: Model, P: dict, mark: str) -> tuple:
+    """A rest landmark (Model.marks) carried by the Spine's pose (the waist's side rides on the Spine)."""
+    m = M.mat_mul(P["Spine"], S.rigid_inv(model.skel["rest"]["Spine"]))
+    x, y, z = model.marks[mark]
+    return tuple(m[i][0] * x + m[i][1] * y + m[i][2] * z + m[i][3] for i in range(3))
+
+
 def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
     """A pair's numbers: the floor (cm), the centre of mass over the support (cm inside the hull of the skin within
-    1 cm of the floor), the deepest skin-through-skin per checked pair of groups (cm), the contacts' gaps (cm)."""
+    1 cm of the floor), the deepest skin-through-skin per checked pair of groups (cm), the contacts' gaps (cm), the
+    hands' distance to their landmarks (cm: a `mark` contact, the palm's centre to the posed landmark)."""
     d = model.data
     P = r.P()
     pz = Posed(model.skel, model.skin, P)
@@ -683,9 +698,13 @@ def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
         first = THIGH_SKIP if b.startswith("thigh") else 0
         dep = max((tube_depth(model.tubes[t], P, pts, first) for t in tube_bones(b, model.tubes)), default=0.0)
         through[f"{a}>{b}"] = round(dep * 100.0, 2)
-    contacts = {}
+    contacts, marks = {}, {}
     for c in d["arms"][arms].get("contacts", []) + d["legs"][legs].get("contacts", []):
         if c.get("measure") is False:  # a solve's helper (the hands' meet): its own contacts are measured
+            continue
+        if c.get("mark"):  # the palm's centre to a landmark carried by the Spine (the hip hand on the waist's side)
+            marks[f"{c['a']}@{c['mark']}"] = round(length(sub(palm_centre(P, c["a"].split("_")[1]),
+                                                              mark_posed(model, P, c["mark"]))) * 100, 2)
             continue
         contacts[f"{c['a']}~{c['b']}"] = round(nearest_gap(pz.group(c["a"]), pz.groups([c["b"]]), reach=0.3) * 100, 2)
     floor = {g: round(pz.lowest([g]) * 100.0, 2) for g in d["legs"][legs].get("floor", [])}
@@ -699,13 +718,17 @@ def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
     if legs in lim["balance_legs"] and margin * 100 < lim["com_margin_cm"]:
         fails.append(f"com {margin * 100:.1f} cm")
     for k, v in through.items():
-        if v > lim["through_cm"]:
+        if v > (lim.get("through_hand_cm", lim["through_cm"]) if k.startswith(("hand", "forearm")) else lim["through_cm"]):
             fails.append(f"through {k} {v} cm")
+    for k, v in marks.items():
+        if v > lim["mark_cm"]:
+            fails.append(f"mark {k} {v} cm")
     for k, v in contacts.items():
         if v > lim["contact_gap_cm"]:
             fails.append(f"gap {k} {v} cm")
     return {"pair": f"{legs}+{arms}", "floor_cm": round(low * 100, 2), "com_margin_cm": round(margin * 100, 2),
-            "support_pts": len(sup), "com": [round(c, 4) for c in com], "touch_cm": floor, "through_cm": through, "contacts_cm": contacts, "fails": fails}
+            "support_pts": len(sup), "com": [round(c, 4) for c in com], "touch_cm": floor, "through_cm": through, "contacts_cm": contacts,
+            "marks_cm": marks, "fails": fails}
 
 
 # --------------------------------------------------------------------------------------------- silhouettes
