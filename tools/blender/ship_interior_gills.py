@@ -584,7 +584,7 @@ SLOT_BANDS = ((1.438, 1.70, "6", 0.08), (1.70, SLOT_TOP, "7", 0.06))
 FLANK_E = 0.30
 for _sfx, _e in [(b[2], b[3]) for b in COOL_BANDS + SLOT_BANDS] + [("flank", FLANK_E)]:
     _n = "int_cyan__vent_" + ("cool" + _sfx if _sfx != "flank" else "flank")
-    L.MATERIALS[_n] = {**L.MATERIALS["int_cyan__vent_cool"], "base": (*GLOW_C, 1.0), "emission": GLOW_C,
+    L.MATERIALS[_n] = {**L.MATERIALS["int_cyan"], "base": (*GLOW_C, 1.0), "emission": GLOW_C,   # the root: import order
                        "strength": 4.0 * _e}
 
 
