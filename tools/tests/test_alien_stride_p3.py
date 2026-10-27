@@ -144,6 +144,23 @@ class RealSet(unittest.TestCase):
         plan = {r["name"] for r in L.reel_plan(L.expand(cfg), cfg["reel"])}
         self.assertTrue({"Crouch_facing__front", "Jog_Bwd__front", "Jog_Bwd_Left__back"} <= plan)
 
+    def test_the_strafe_takes_f2s_w09(self):
+        """F3: the engineer's pick from F2's grid, widen_m 0.09 at hips 60; P3's 0.03 kept as __w03, the grid dropped."""
+        cfg = L.load()
+        jobs = {j["name"]: j for j in L.expand(cfg)}
+        game, old = jobs["Strafe_Left"], jobs["Strafe_Left__w03"]
+        self.assertEqual(game["widen_m"], 0.09)
+        self.assertEqual(game["orient"]["hips"], 60.0)
+        self.assertEqual(old["widen_m"], 0.03)
+        skip = {"name", "base", "widen_m"}
+        self.assertEqual({k: v for k, v in old.items() if k not in skip},
+                         {k: v for k, v in game.items() if k not in skip})
+        self.assertEqual(jobs["Strafe_Right"]["mirror"], "Strafe_Left")
+        for v in ("w07", "w09", "h65", "h70"):
+            self.assertNotIn(f"Strafe_Left__{v}", jobs)
+        plan = {r["name"] for r in L.reel_plan(L.expand(cfg), cfg["reel"])}
+        self.assertTrue({"Strafe_F3__three_quarter", "Strafe_F3__back"} <= plan)
+
 
 if __name__ == "__main__":
     unittest.main()
