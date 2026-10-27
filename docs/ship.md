@@ -1469,9 +1469,45 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
     on the 1.1 cm chamfers, instead of the flat tan stripe.
   - *The upper panel:* the dark panel behind the crowns has rounded top corners (R 12 cm) and a soft 1.5 cm sloped
     edge instead of a hard straight rectangle.
-- **Step 6** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, sign
-  `swing(hinge)`, now the hall hinge, instead of the blades' `rotation.x`), the seams red for the problem, the lamp,
-  the bar's marker.
+- **The one-rib pass (gills step 6, 2026-10-27; static, calm).** A fresh critic on r6 found the rib two stiff pieces
+  (a straight cover, a leaning crown, a break and an offset at the 2 cm groove), black wedges along the crowns, a stray
+  stick in slot 3, a flat light-blue slot with no depth, thin straight ribs in a black rectangular frame. The manager's
+  decision, under the engineer's "if pretty and animated conflict, static and pretty wins": each rib one static piece
+  (`<raw>/ship/v5/gills/r7/`, the hand-off `<raw>/ship/v5/notes/gills-6.md`):
+  - *One rib:* `<id>_cover<k>` (the old name) is the whole rib, one loft from h 0.08 to its top at `CROWN_TOP` 2.05,
+    one plan section all the way (no groove, step, collar or width change; the crowns `<id>_crown1..n`, their edges and
+    their flank liners `<id>_flank<k>u` are gone; the fifth arch keeps `crown5`). Its rows (`RIB_HS`) include the bend,
+    so the back's kink is exact; its top rounded off over `TOP_R` 3 cm. Its back sits `RIB_SINK` 1.5 cm into the
+    wall's face (into the well's window under the bend, into the leaning wall over it) and its flanks are square to the
+    wall (`UNDERCUT` 0; step 5's 2 cm undercut left the black wedges): no gap shows behind it.
+  - *The profile:* the crest's horizontal distance out of the vertical wall's plane is one quintic (`ARCH_C` through
+    `ARCH_KNOTS`, end slopes 0.20 and 0.64), the fuller lower bow: proud 3.5 cm at the foot, 12.5 at h 0.74
+    (`LOW`; step 5 had 7.7), 16.5 at h 1.4 (`PEAK`), 17.4 at the bend (its most), 11.6 at 1.6, 6.6 at 1.8, 4.5 at the top;
+    rising to the bend, falling after it, no dip. Edges `SETBACK` 5 cm behind the crest, the lit chamfers `CH` 1.4 cm.
+  - *The ribs and the slots (the A/B, `SHIP_GILLS_RIBS`, `SHIP_GILLS_RIB_W`):* a) 4 ribs of 22 cm (pitch 31.75, slot
+    9.75); b) 3 ribs of 28 cm (pitch 42.33, slot 14.33, 0.51 of the rib). **b is the pick** (`COVERS` 3, `COVER_W`
+    0.28): from the ramp a's packed ribs hid the far slots, b shows cyan in every slot on both walls and its ribs read
+    chunky, as the concept's. The flanks are parallel, so the slot is the same at every height (`neighbour_gap`).
+  - *The motion, built in (option b; this pass static):* each rib rocks as a rigid whole about `rib_axis(i)`, the line
+    through its back's middle at its foot and at its top (its origin the axis's foot), at most `RIB_ROCK_DEG` 4 deg
+    either way: the rib moves at most 1.9 cm sideways (the slot 14.3 cm), its back's edges at most the 1.5 cm sink, so no
+    gap opens and the rib never breaks (`test_rock_clear`: 2 cm clear of its neighbours either way). Calm 0, hold -4
+    (the slots narrower), exhale +4 with the cyan, the problem 0 with the red: the states read by their light. Option
+    a (shutters in the well) was not taken: the well is 6 cm deep where the hull is thin, too shallow for a shutter
+    turning on its own axis behind a 14 cm slot.
+  - *The glow:* the well's back much darker (`COOL_BANDS` e 0.10, 0.08, 0.065, 0.05, 0.04; the slots up the leaning wall
+    0.035, 0.03; `ship.toml` v 0.15 so the lights no longer make it a light-blue plate; smooth shaded). The glow is on
+    the ribs' flanks, brightest at the front: each flank liner in two parts, `<id>_flank<k>` the front half
+    (`int_cyan__vent_flank` e 0.45) and `<id>_flank<k>b` the back half (`int_cyan__vent_flank2` e 0.12), both the
+    rib's children and dark for the problem (`VENT_STATES`).
+  - *The lights* (`vent_glow.gd`): the gap lights 0.2 and the foot light 0.1 over 0.4 m (step 5's 0.25 read as a strip
+    of spilled paint); the slot light 0.08, 2 cm off the leaning wall (at 5 cm it left blobs on the edges); the gap and
+    slot lights have no specular (`light_specular` 0: no highlight dots on the ribs).
+  - *The bronze and the casing:* `gill_edge` lighter and lifted ((0.86, 0.64, 0.40), roughness 0.14, lift 0.10 in
+    `ship.gd`), the rim highlight at night; `gill_bronze` lift 0.06. The band plate and the upper panel are
+    `gill_bronze2` (step 5: `vent_b_dark`, a black frame): the casing reads as bronze round the ribs.
+- **The motion step** drives the four states on the ribs (each `<id>_cover<k>` rocked about `rib_axis`), the glows, the
+  seams red for the problem, the lamp, the bar's marker.
 
 ## The export (art #335)
 
