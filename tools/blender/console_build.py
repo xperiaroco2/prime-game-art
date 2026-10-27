@@ -832,7 +832,6 @@ FX_MATS = {"console_holo_turbine", "console_holo_wire", "console_holo_ring", "co
 STATIONS = ("socket_w", "socket_e", "socket_fw", "socket_fe", "breaker_w", "breaker_e", "vent_w", "vent_e")
 BUS = len(STATIONS)
 SHIP_TOML = Path(__file__).resolve().parents[2] / "layouts" / "ship" / "ship.toml"
-THROAT_E = (Vector((2.915, 3.252)), Vector((1.65, 7.1)))  # the throat's east wall (the entrance lines), pieces' frame
 FAN_U = 5.0
 GLOW_U, GLOW_V = 7.0, 200.0  # the turbines' calling glow sprites (u 7 +- FX_SPREAD, v 200 +- FX_SPREAD)
 SEGMENTS = "abcdefg"
@@ -903,8 +902,8 @@ def fx_pillar(bm, foot: Vector, v0: float, layers: tuple) -> int:
 
 def station_path(sid: str, at: list) -> list:
     """A station's line on the plan (the pieces' frame, metres, 2D) from its point to the manifold: in to its lane's
-    radius round the hall's centre (a breaker along its corridor, a vent along the throat's wall), round the hall's
-    wall to the back, then aft beside the others. Built on the east side and mirrored for the west."""
+    radius round the hall's centre (a breaker along its corridor), round the hall's wall to the back, then aft beside
+    the others; a vent (on the hall's back wall since the gills) steps in to its own run and goes straight aft. Built on the east side and mirrored for the west."""
     s = 1.0 if at[0] > 0 else -1.0
     c = Vector((HALL.x, HALL.y))
     p = Vector((abs(at[0]), -at[1]))
@@ -921,16 +920,11 @@ def station_path(sid: str, at: list) -> list:
         o = SPIN["breaker_offset"]
         pts.append(c + a * (p - c).dot(a) + n * o)
         pts.append(c + a * math.sqrt(r * r - o * o) + n * o)
-    else:
-        a, b = THROAT_E
-        t = (a - b).normalized()
-        m = Vector((-t.y, t.x))
-        m = m if m.x < 0 else -m
-        q = p + m * SPIN["vent_offset"]
-        w = q - c  # along the wall into the hall's disc (4 m), then in to the lane: no other line is crossed there
-        bb, cc = w.dot(t), w.dot(w) - 16.0
-        e = q + t * (-bb - math.sqrt(bb * bb - cc))
-        pts += [q, e, c + (e - c).normalized() * r]
+    else:  # the gills (art #263, step 9) stand on the hall's back wall beside the aft door, outside every other
+        # lane's run aft: a short step in to the vent's own run (lx, the outermost), then straight aft; nothing crossed
+        d = SPIN["vent_step"]
+        pts += [Vector((lx, p.y - d)), Vector((lx, -SPIN["manifold_y"]))]
+        return [Vector((s * q.x, q.y)) for q in pts]
     e = pts[-1] - c
     a0 = math.degrees(math.atan2(e.y, e.x))
     a1 = math.degrees(math.atan2(-math.sqrt(r * r - lx * lx), lx))
