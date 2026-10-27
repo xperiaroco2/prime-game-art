@@ -27,8 +27,11 @@ THUMB_OUT = 0.022
 THUMB_LEN = 0.065
 
 # 3. The trunk's relief: the projection keeps more of the target's form on the chest, belly and shoulders' front
-# (clavicles, the deltoid's front edge, the pectoral planes, a light abdomen; the back is left out), the trunk a little
+# (clavicles, the deltoid's front edge, the pectoral planes; the abdomen lighter; the back is left out), the trunk a little
 # thicker, and the sculpted pectoral planes softer, with a long lower border (H4's short rise read as a line).
-PROJECT_DETAIL = [[0.0, 0.22, -0.30, 0.04, 0.80, 1.36, 0.7]]
+PROJECT_DETAIL = [
+    [0.0, 0.22, -0.30, 0.04, 0.80, 1.14, 0.3],  # the abdomen: light (0.7 there read as horizontal bands)
+    [0.0, 0.22, -0.30, 0.04, 1.12, 1.36, 0.7],  # the chest, clavicles and the deltoid's front edge
+]
 PROJECT_THICK = { trunk = 1.03, arm = 1.0, leg = 1.05 }
 SCULPT_PEC = [0.008, 0.135, 1.12, 1.28, 0.006, 0.030]
