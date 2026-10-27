@@ -552,14 +552,24 @@ class Model:
             goal = add(r.head("UpperChest"), M.q_rotate(F, sub(goal, S.pos(self.skel["rest"]["UpperChest"]))))
         pole = M.q_rotate(F, body(side, arm.get("elbow", (1.0, -0.3, 0.0))))
         push = norm(M.q_rotate(F, body(side, arm.get("push", (-1.0, 0.0, 0.0)))))
-        for it in range(7):
+        lift = M.q_rotate(F, (0.0, 0.0, 1.0))  # `clear` moves the wrist up the chest
+        clear = [t for g in arm.get("clear", ()) for t in tube_bones(g.format(side=side), self.tubes)]
+        for it in range(9):
             sh = r.head(up)
             el = ik_mid(sh, goal, la, lb, pole)
             r.limb(up, lo, sub(el, sh), sub(goal, el))
             self._hand(r, side, arm)
-            if not arm.get("touch") or it == 6:
+            if not (arm.get("touch") or clear) or it == 8:
                 break
             pz = Posed(self.skel, self.skin, r.P())
+            # `clear`: the hand out of those groups (a raised thigh) by moving the wrist up the body, then touch again
+            cd = max((tube_depth(self.tubes[t], r.P(), pz.group(f"hand_{side}"), THIGH_SKIP if "UpperLeg" in t else 0)
+                      for t in clear), default=0.0)
+            if cd > 0.002:
+                goal = add(goal, mul(lift, cd + 0.004))
+                continue
+            if not arm.get("touch"):
+                break
             # the skin that touches: the whole hand, or `touch_by` (the palm's own bone: a thumb kept off the body)
             by = arm.get("touch_by", "hand_{side}").format(side=side)
             gap = nearest_gap(pz.group(by), pz.groups(arm["touch"]), reach=0.15)
@@ -573,6 +583,28 @@ class Model:
             goal = add(goal, mul(push, move))
         r._goal = getattr(r, "_goal", {})
         r._goal[side] = goal
+
+    def variants(self, legs: dict, arms: dict) -> dict:
+        """Per-legs variants of the arms poses with a `clear` arm (the hip hand), "<Arms>__<Legs>": solved over those
+        legs (not the reference's) where the shared clip's hand goes into a clear group beyond the hand limit; the
+        layers play the variant with those legs (pose_layers.gd). Nothing else gets a per-pair clip."""
+        lim = self.data["limits"].get("through_hand_cm", self.data["limits"]["through_cm"]) / 100.0
+        out = {}
+        for am, spec in self.data["arms"].items():
+            arms_ = [spec.get(s) or spec.get("both") for s in SIDES]
+            groups = {(g.format(side=s), s) for a, s in zip(arms_, SIDES) if a for g in a.get("clear", ())}
+            if not groups or am not in arms:
+                continue
+            for lg in legs:
+                if lg == self.data["reference_legs"]:
+                    continue
+                P = compose(legs[lg], arms[am]).P()
+                pz = Posed(self.skel, self.skin, P)
+                d = max(tube_depth(self.tubes[t], P, pz.group(f"hand_{s}"), THIGH_SKIP if "UpperLeg" in t else 0)
+                        for g, s in groups for t in tube_bones(g, self.tubes))
+                if d > lim:
+                    out[f"{am}{VARIANT}{lg}"] = self.arms(am, ref=self.legs(lg))
+        return out
 
     def _meet(self, r: Rig, spec: dict, c: dict) -> None:
         """Two hands moved together along the body's left-right axis until c's two bones' skin meet (gap_cm)."""
@@ -594,6 +626,14 @@ class Model:
 
 
 # ---------------------------------------------------------------------------------------------- pairs and clips
+VARIANT = "__"  # an arms pose's per-legs variant: "<Arms>__<Legs>" (Model.variants)
+
+
+def arms_for(arms: dict, am: str, lg: str) -> "Rig":
+    """The arms rig a pair plays: the per-legs variant when there is one, else the arms pose's own."""
+    return arms.get(f"{am}{VARIANT}{lg}", arms[am])
+
+
 def compose(legs: Rig, arms: Rig) -> Rig:
     """A pair: the legs' channels on the legs' bones, the arms' on the arms' (SPLIT), nothing else."""
     r = Rig(legs.skel)
@@ -673,20 +713,27 @@ def mark_posed(model: Model, P: dict, mark: str) -> tuple:
 
 # a's skin shares a joint with b (the groin, the armpit, the knee's back): only how much deeper it goes than at rest
 REST_BASED = ("thigh", "upperarm", "shin")
+# per part the joint its kept skin is measured from, the next joint, and the share skipped (through_keep)
+KEEP_FROM = {"thigh": ("UpperLeg", "LowerLeg", 0.3), "upperarm": ("UpperArm", "LowerArm", 0.5),
+             "shin": ("LowerLeg", "Foot", 0.3)}
+# a thigh into the torso reads the belly's tubes, not the pelvis's: the Hips tube is the thigh's own joint (its flare
+# read 5.4 cm on OneLeg's straight standing leg, s5), the belly in Squat, Sit and Kneel is the Spine's and up
+THIGH_TORSO_SKIP = ("Hips",)
 
 
 def through_keep(P: dict, a: str, pts: list) -> list:
     """Which of a's posed points the through check reads: a thigh beyond its groin (the hip's 30 %: the belly's
     contact in Squat and Sit is the thigh's front from there on), an upper arm's elbow half (the armpit's skin is
-    shared); every point of the other groups."""
+    shared), a shin beyond its knee's 30 % (the knee's back folds into the thigh's end in every bent knee: s5's
+    calibration read 3.2-5.8 cm there and 0 beyond on all six legs poses); every point of the other groups."""
     part = a.split("_")[0]
-    if part not in ("thigh", "upperarm"):
+    if part not in KEEP_FROM:
         return [True] * len(pts)
     side = a.split("_")[1]
-    j0, j1 = (f"{side}UpperLeg", f"{side}LowerLeg") if part == "thigh" else (f"{side}UpperArm", f"{side}LowerArm")
-    o, e = S.pos(P[j0]), S.pos(P[j1])
+    j0, j1, k = KEEP_FROM[part]
+    o, e = S.pos(P[side + j0]), S.pos(P[side + j1])
     ax = sub(e, o)
-    cut = (0.3 if part == "thigh" else 0.5) * dot(ax, ax)
+    cut = k * dot(ax, ax)
     return [dot(sub(p, o), ax) > cut for p in pts]
 
 
@@ -705,6 +752,8 @@ def through_depth(model: Model, P: dict, pz: Posed, a: str, b: str) -> float:
         rest = [p for p, k in zip(rp.groups([a]), keep) if k]
     worst = 0.0
     for t in tube_bones(b, model.tubes):
+        if a.startswith("thigh") and b == "torso" and t in THIGH_TORSO_SKIP:
+            continue
         dep = tube_depths(model.tubes[t], P, sel, first)
         if based:
             base = tube_depths(model.tubes[t], rp.P, rest, first)
@@ -725,7 +774,7 @@ def flat_feet(data: dict, pz: Posed, legs: str) -> dict:
     return out
 
 
-def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
+def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -> dict:
     """A pair's numbers: the floor (cm), the centre of mass over the support (cm inside the hull of the skin within
     1 cm of the floor), the deepest skin-through-skin per checked pair of groups (cm), the contacts' gaps (cm), the
     hands' distance to their landmarks (cm: a `mark` contact, the palm's centre to the posed landmark)."""
@@ -768,7 +817,7 @@ def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
         if v > (lim.get("through_hand_cm", lim["through_cm"]) if k.startswith(("hand", "forearm")) else lim["through_cm"]):
             fails.append(f"through {k} {v} cm")
     for k, v in marks.items():
-        if v > lim["mark_cm"]:
+        if v > lim["mark_cm"] and not variant:
             fails.append(f"mark {k} {v} cm")
     for k, v in contacts.items():
         if v > lim["contact_gap_cm"]:

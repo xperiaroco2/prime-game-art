@@ -14,10 +14,15 @@ extends Node
 ## character node turns, the clips do not change); a step drops it (the game calls stop() and plays its locomotion).
 ## The head look during a pose: docs/animations.md, "The photo poses (art #196)" (measured by pose_layers_check.gd).
 ##
+## A per-legs variant of an arms pose, PoseArms_<Arms>__<Legs> (the hip hand solved over a legs pose whose raised thigh
+## the hand would go into: Sit, Squat, Kneel, OneLeg), is played instead of PoseArms_<Arms> with those legs when the
+## character has it (the game copies this rule); no other pair has its own clip.
+##
 ## Use: var layers := PoseLayers.new(); character.add_child(layers); layers.setup(anim_player)
 ##      layers.play_pair("OneLeg", "Plane") ... layers.stop()
 
 const LEGS_PREFIX := "PoseLegs_"
+const VARIANT := "__"  # PoseArms_<Arms>__<Legs>: the arms pose solved over those legs
 const ARMS_PREFIX := "PoseArms_"
 const ARMS_ROOT := "Chest"  # the arms layer: this bone and every bone under it
 
@@ -83,7 +88,7 @@ func poses() -> Dictionary:
 	for short: String in _clips:
 		if short.begins_with(LEGS_PREFIX):
 			out["legs"].append(short.trim_prefix(LEGS_PREFIX))
-		else:
+		elif not short.contains(VARIANT):
 			out["arms"].append(short.trim_prefix(ARMS_PREFIX))
 	return out
 
@@ -91,7 +96,8 @@ func poses() -> Dictionary:
 ## Holds the pair (any legs with any arms); false if either clip is missing.
 func play_pair(legs_name: String, arms_name: String) -> bool:
 	var l: String = _clips.get(LEGS_PREFIX + legs_name, "")
-	var a: String = _clips.get(ARMS_PREFIX + arms_name, "")
+	var a: String = _clips.get(ARMS_PREFIX + arms_name + VARIANT + legs_name,
+			_clips.get(ARMS_PREFIX + arms_name, ""))
 	if l == "" or a == "":
 		return false
 	legs = legs_name

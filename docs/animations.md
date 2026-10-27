@@ -1148,7 +1148,17 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   keys (the game holds it) keying only its own layer's bones.
 - **The bone split** (`alien_pose_math.owner`): the legs own `Root`, `Hips` (translation and rotation), `Spine` and
   both legs to the toes; the arms own `Chest` and everything under it (neck, head, shoulders, arms, fingers). A pair
-  is the legs' channels plus the arms', nothing else; no per-pair corrective clip.
+  is the legs' channels plus the arms', nothing else; no per-pair corrective clip, with one exception (round 2, the
+  manager's decision): the hip hand. No hip grip both cleared a raised thigh (Sit, Squat, Kneel, OneLeg: 5-8 cm
+  into it on six grips, s5) and still sat on the waist on Stand, so an arm with `clear = ["thigh_{side}"]` (the hip
+  hand of HandsOnHips, FingerUp, Salute) gets a per-legs variant `PoseArms_<Arms>__<Legs>` (Godot name) wherever
+  the shared clip's hand goes into that thigh beyond the hand limit: solved over those legs, the wrist lifted up the
+  chest until the hand clears the thigh, then touched onto the waist again (`Model.variants`). `pose_layers.gd`
+  plays the variant with those legs when the character has it; `poses()` does not list variants; the game copies
+  this rule. A variant's palm-to-waist distance is reported, not limited (the hand rides up the waist to clear).
+- **The check composes from the build's own data.** The build writes `build/<char>/pose_data.json` (the TOML as
+  solved); `alien_poses_run.py --check` composes the Blender reference from it and prints a `NOTE` when the TOML has
+  changed since, so editing the TOML without a rebuild no longer turns verify red (round 2's red verify).
 - **Data plus a solver.** `tools/blender/anim_sets/alien_poses.toml` holds the poses (authored directions, contact
   goals on landmarks, grips); `alien_pose_math.py` (no bpy) solves them per character on its own rest skeleton (two-bone
   IK, feet planted flat, the kneeling knee and the seat fitted to the floor, hands touched onto the skin). New bodies
@@ -1163,10 +1173,13 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   on the Spine), so "touching the body" alone (the belly's front) no longer passes. A goal arm's `touch_by` names
   the skin that touches (the palm's bone: the thumb kept off the body).
   - **What the through check reads.** A hand or forearm: its raw depth (its proxy reads 0.0 cm on the rest skin).
-    A thigh (beyond its groin's 30 %), an upper arm (its elbow half) and a shin: only the depth beyond the same
-    point's at rest, so the groin, armpit and knee skin the tubes share at rest reads 0 and a thigh pressed into the
+    A thigh (beyond its groin's 30 %), an upper arm (its elbow half) and a shin (beyond its knee's 30 %: the knee's
+    back folds into the thigh's end in every bent knee, 3.2-5.8 cm there and 0 beyond on all six legs poses, s5's
+    calibration): only the depth beyond the same point's at rest, so the groin, armpit and knee skin the tubes share at rest reads 0 and a thigh pressed into the
     belly (Squat, Sit, Kneel's front leg) or a calf into its thigh (`shin>thigh`) reads what it adds. Into a thigh
     the hip third is skipped (the buttock skin skinning folds into the pelvis; a hand there is the torso's check).
+    A thigh into the torso reads the belly's tubes (Spine and up), not the Hips tube: the pelvis is the thigh's own
+    joint, and its flare read 5.4 cm on OneLeg's straight standing leg and 4.5 cm on Kneel's (s5).
     `proxy_rest_cm` in `poses.json` is this same check on the rest pose: the floor under the limits.
   - **The hip hand is really inside** (the fix round's measure, not the proxy): the hip hand's 2.3 cm into the
     torso grows to 3.1 and 3.2 cm with 16 and 32 tube slices instead of 8, so it is the curled fingers inside the
