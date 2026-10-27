@@ -393,7 +393,7 @@ def check_bands(layout: dict[str, Any]) -> list[str]:
             if s["room"] != r["id"] or not s.get("normal"):
                 continue
             a = math.degrees(math.atan2(s["at"][1] - r["centre"][1], s["at"][0] - r["centre"][0]))
-            half = math.degrees(st["plain_width_m"] / 2 / r["radius"])
+            half = math.degrees(plain_width(layout, s) / 2 / r["radius"])
             if any(a - half + k < a1 and a + half + k > a0 for k in (-360.0, 0.0, 360.0)):
                 problems.append(f"station {s['id']}: its plain wall overlaps {r['id']}'s window band")
     return problems
@@ -521,6 +521,12 @@ def spot_stand(layout: dict[str, Any], s: dict[str, Any]) -> tuple[float, float]
     return s["at"][0] + n[0] * d, s["at"][1] + n[1] * d
 
 
+def plain_width(layout: dict[str, Any], s: dict[str, Any]) -> float:
+    """A wall spot's plain band: its own plain_width_m when it has one (gills step 9: the back sockets' 1.16 m, the
+    unit 0.468 m wide, beside the corridor portal's pilaster), else [stations] plain_width_m."""
+    return s.get("plain_width_m", layout["stations"]["plain_width_m"])
+
+
 def check_spots(layout: dict[str, Any]) -> list[str]:
     """The station spots (5a mirrored): a floor spot's footprint inside its room; a wall spot on its room's wall, its
     plain panel free of every piece with a `foot` (trunks, cable bays, arches, pilasters) and, rebuild F, laid on plain
@@ -547,7 +553,8 @@ def check_spots(layout: dict[str, Any]) -> list[str]:
         if not -0.2 <= wall <= 0.3:
             problems.append(f"station {s['id']}: {wall - 0.05:.2f} m from the wall of {room['id']}, wants it on the wall")
         t = (-n[1], n[0])
-        half = st["plain_width_m"] / 2
+        width = plain_width(layout, s)
+        half = width / 2
         band = [(s["at"][0] + t[0] * u + n[0] * v, s["at"][1] + t[1] * u + n[1] * v)
                 for u in [half * (k / 8 - 1) for k in range(17)] for v in (0.02, 0.15, 0.3)]
         hits = set()
@@ -561,7 +568,7 @@ def check_spots(layout: dict[str, Any]) -> list[str]:
                     hits.add(pid)
                     break
         for pid in sorted(hits):
-            problems.append(f"station {s['id']}: {pid} sticks out over its plain wall ({st['plain_width_m']:g} m)")
+            problems.append(f"station {s['id']}: {pid} sticks out over its plain wall ({width:g} m)")
         # rebuild F: a plain wall piece's face (a piece's `plain` box) under every point of the band, on the wall
         bare = [u for u in [half * (k / 8 - 1) for k in range(17)]
                 if not any(f[0] - 0.005 <= lx <= f[1] + 0.005 and f[2] - 0.005 <= ly <= f[3] + 0.005
@@ -611,7 +618,7 @@ def check_units(layout: dict[str, Any]) -> list[str]:
             problems.append(f"station piece {p['id']}: not on its spot {s['id']} (at {at[0][1][:2]}, yaw {at[0][2]:g}, "
                             f"wants {s['at']} and {want:.3f})")
         u0, u1, v0, v1, h0, h1 = p["unit"]
-        half, depth = st["plain_width_m"] / 2, s.get("depth_m", st["depth_m"])
+        half, depth = plain_width(layout, s) / 2, s.get("depth_m", st["depth_m"])
         clear = by_id[s["room"]]["clear_h"]
         if u0 < -half - TOL or u1 > half + TOL:
             problems.append(f"station piece {p['id']}: {u0:g}..{u1:g} m along the wall, wants within +-{half:g}")

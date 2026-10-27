@@ -165,12 +165,14 @@ id = "socket_e"                               # the hall wall east of the back; 
 at = [2.9339, 2.3119]                         # of the outer flat chord 31.16..54.33 deg (1.638 m, apothem 3.9953), from
 normal = [-0.7343, -0.6788]                   # the corridor's chord end to the gills' (was (1.800, 3.112) on 48.23..77.5)
 room = "hall"
+plain_width_m = 1.16                          # gills step 9: its own band (the unit 0.468 m), clear of the pilaster foot (0.585)
 
 [[stations.spot]]
 id = "socket_w"
 at = [-2.9339, 2.3119]
 normal = [0.7343, -0.6788]
 room = "hall"
+plain_width_m = 1.16                          # gills step 9: its own band (the unit 0.468 m), clear of the pilaster foot (0.585)
 
 [[stations.spot]]
 id = "socket_fe"                              # rebuild C: the front sockets beside the throat (asked (3.5, -3.0)), on a
