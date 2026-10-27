@@ -17,12 +17,15 @@ const LOOK := {                 # suffix: [colour, energy, range m]
 ## jambs `<id>_jamb<k>a/b`, inside the 3 cm cut) SLIT_ROWS lights, so the light pours out of each gap onto the
 ## covers' backs and sides and back onto the well's walls and honeycomb
 const SLIT_ROWS := 3
-const SLIT_LOOK := {"cool": [Color(0.0, 0.55, 1.0), 1.3, 0.8], "heat": [Color(1.0, 0.2, 0.02), 1.6, 0.8]}
+const SLIT_LOOK := {"cool": [Color(0.0, 0.48, 1.0), 1.0, 0.6], "heat": [Color(1.0, 0.2, 0.02), 1.6, 0.6]}
+## gills step 3: the slit lights SLIT_IN_M deeper than the jambs, inside the well: from the cut they lit the convex
+## covers' fronts through the covers (no shadows); from there the fronts face away from them
+const SLIT_IN_M := 0.03
 ## gills step 3: per groove under a rib edge (its seam `<id>_seam<k>`) GAP_ROWS small lights GAP_OUT_M in front of the
 ## groove's floor, between the ribs' flanks: they light the flanks cyan, the concept's slit at both edges of each rib
 const GAP_ROWS := 3
 const GAP_OUT_M := 0.03
-const GAP_LOOK := {"cool": [Color(0.0, 0.55, 1.0), 0.45, 0.35], "heat": [Color(1.0, 0.2, 0.02), 0.45, 0.35]}
+const GAP_LOOK := {"cool": [Color(0.0, 0.55, 1.0), 0.45, 0.28], "heat": [Color(1.0, 0.2, 0.02), 0.45, 0.28]}   # 0.28: short of the crowns
 ## Every well light lights the inside's render layer only (ship.gd's INSIDE_LAYER): none leaks onto the hull's
 ## outside behind a shallow well (omni lights pass through walls)
 const INSIDE_MASK := 1
@@ -85,7 +88,7 @@ static func _slits(mi: MeshInstance3D, suffix: String, put: bool = false, scale:
 			var o: OmniLight3D = OmniLight3D.new()
 			o.name = "%s_slit%d_light%d" % [mi.name, k, r + 1]
 			var y: float = ba.position.y + ba.size.y * (r + 0.5) / SLIT_ROWS - ba.get_center().y
-			o.position = (pa + pb) * 0.5 + Vector3(0.0, y, 0.0)
+			o.position = (pa + pb) * 0.5 + Vector3(0.0, y, SLIT_IN_M)   # +z: into the wall
 			o.light_color = spec[0]
 			o.light_energy = float(spec[1]) * scale
 			o.omni_range = float(spec[2])
