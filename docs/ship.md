@@ -1404,8 +1404,42 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
   - *The animation's rule:* neighbouring covers clear each other while they stay within `NEIGHBOUR_DEG` (20 deg)
     of each other; from 22 deg a rib's deep middle near its hinge swings into its shut neighbour's edge
     (`test_covers_clear_at_mixed_angles`).
-- **Step 4** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, instead of
-  the blades' `rotation.x`), the seams and jambs red for the problem, the lamp, the bar's marker.
+- **The third form pass (gills step 4, 2026-10-27; static, calm).** The engineer picked option A: **the concept wins
+  over the drawing** ("ribs stand out, wide slots with light"). The drawing (`drawing.js`) is now a reference only.
+  - *The ribs:* `COVER_W` 23.6 cm (the drawing: 30; `SHIP_GILLS_RIB_W` for a grid), centred in the drawing's 31.75 cm
+    pitch cells, so half a gap stays at the band's mouth end and by the fifth arch. The crest in side view is one
+    arch from the deck to `CROWN_TOP` (`ARCH`, a C1 cubic Hermite; `rib_proud`): 3 cm proud at the foot, 17 at
+    mid-height (h 0.74), 12 at the cover's top, 4 at the crown's top off the leaning wall. It is smooth through the
+    bend (no kink). The convex section, the 5 cm setback and the 2 cm undercut stay. Each cover's two flanks carry a
+    pale steel liner, `<id>_flank<k>` (`gill_flank`, a child of the cover), which takes the well's cyan.
+  - *The joint:* each crown's foot is turned as its calm cover (`crown_twist`: `CALM_DEG` at the foot, 0 at 40% up the
+    crown), so cover and crown are one section in the calm pose. Shut or exhaling, the joint opens by the angle
+    difference.
+  - *The window:* the band plate is cut by one window over the well (u -0.794..0.46, h 0.12..1.41). The drawing's four
+    slits, their cyan jambs and step 3's grooves are gone. Every gap is a slot into the lit well. The red
+    `<id>_seam<k>` (k 1..5 from the mouth: the two half gaps and the three between ribs) lie on the well's back, 2 mm
+    behind the cyan.
+  - *The light:* `vent_glow.gd` puts 3 lights per seam in the plate's cut (`GAP_IN_M` 1.5 cm behind the wall's face,
+    behind the ribs' backs, so no cover front faces them). They sit at 25/50/72% of the window's height, so the
+    crowns' feet stay dark. Colour (0.18, 0.66, 1), energy 0.9, range 0.36 m. The slit lights are gone with the jambs.
+  - *The grid* (`<raw>/ship/v5/gills/r5/`, calm 12 deg): V1 23 cm, hall hinge; V2 23 cm, mouth hinge; V3 21 cm, hall
+    hinge. All three show cyan in every view. **V2 is the pick:** it is nearest c_close (bright slots between every
+    rib) and still glows from the ramp, the throat's middle and the hall. V3's wider slots read thinner-ribbed than
+    the concept. The final build widened the ribs to 23.6 cm (the slot under 10 cm at calm 12 deg, which shows more
+    cyan from the ramp than 10 deg). Defaults: `HINGE` "mouth", `CALM_DEG` 12, `COVER_W` 0.236.
+  - *The gaps* (`neighbour_gap`, the clear distance between covers 2 and 3 at the peak): shut 8.2 cm, calm (12 deg)
+    9.9, exhale (70 deg) 13.5 (the hall hinge: 8.2, 8.6, 13.5). Neighbours stay clear while they are within `NEIGHBOUR_DEG` (20 deg) of each other
+    (they touch only from 54 deg apart). Every cover, lip and flank stays in front of the wall's face through
+    0..70 deg on either hinge (`test_covers_clear_of_the_well`).
+  - *Tone fixes:* the well's back is dimmer and deeper (`int_cyan__vent_cool` (0, 0.40, 0.95), e 0.35), so the
+    slots read deep and the light sits on the ribs' flanks. The timing bar's glass is teal (`glow_white__vent_bar` (0.10, 0.80, 0.70), e 0.45; the white
+    bloomed). `gill_edge` is nearer the bronze ((0.86, 0.62, 0.36), less lift): the pale gold lines looked pasted
+    on.
+  - *Deviations from the drawing:* ribs 23.6 cm (30), centred in their cells; the crest 17 cm at mid-height and 12 at the
+    top (3); the mouth-side hinge (hall); the calm angle 12 deg (inside the drawing's 10..16); one window instead of
+    four slits; the crowns as wide as the ribs at the foot and turned with the calm cover.
+- **Step 5** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, sign
+  `swing(hinge)`, instead of the blades' `rotation.x`), the seams red for the problem, the lamp, the bar's marker.
 
 ## The export (art #335)
 
