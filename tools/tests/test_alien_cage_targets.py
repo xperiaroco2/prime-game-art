@@ -3,7 +3,9 @@ loader and the S1c-to-new-skeleton remap are checked here with stub Blender modu
 path is off (S4b's numbers stay), chameleon_h1.toml loads with its four-finger hand and two toe groups and keeps the
 whole character under the height cap, and the remap's piecewise maps hit the new skeleton's stations. H2:
 chameleon_h2.toml is H1's numbers (by `include`) with the projection onto the target on. H3: chameleon_h3.toml is
-H2's with the shaping after the projection, the toes turned out and the new hand; the shaping is off by default."""
+H2's with the shaping after the projection, the toes turned out and the new hand; the shaping is off by default. H4:
+chameleon_h4.toml is H3's with the neck's back cleaned on the target, the trunk and chest shaped and the knee's and
+hip's weights spread; all three are off by default."""
 from __future__ import annotations
 
 import importlib.util
@@ -22,6 +24,9 @@ H3 = BLENDER / "alien_cage_targets" / "chameleon_h3.toml"
 H3_KEYS = {"PROJECT_THICK", "PROJECT_NECK", "SCULPT_ARM", "SCULPT_DELTOID", "SCULPT_THIGH", "NECK_RELAX", "TOE",
            "TOE_LEN", "TOE_YAW", "HAND", "FINGER_R", "FINGER_RINGS", "THUMB_R0", "THUMB_R", "THUMB_OUT", "THUMB_LEN",
            "THUMB_DIR"}
+H4 = BLENDER / "alien_cage_targets" / "chameleon_h4.toml"
+H4_KEYS = {"TARGET_CLEAN", "SCULPT_ARM", "SCULPT_TRUNK", "TRUNK_X", "SCULPT_PEC", "TOE", "TOE_YAW", "THUMB_R0",
+           "THUMB_OUT", "WEIGHT_ZONES"}
 
 
 class _Any:
@@ -69,6 +74,7 @@ class CageTargets(unittest.TestCase):
         self.assertFalse(c.PROJECT)
         self.assertEqual((c.SCULPT_ARM, c.SCULPT_DELTOID, c.SCULPT_THIGH, c.NECK_RELAX), ([], [], [], []))
         self.assertEqual(tuple(c.TOE_YAW), (0.0, 0.0, 0.0))
+        self.assertEqual((c.SCULPT_TRUNK, c.SCULPT_PEC, c.WEIGHT_ZONES), ([], [], []))  # H4: off
         self.assertEqual(c.NECK_END, 1.374)
         self.assertEqual(c.WRAP_X, [(0.15, 0.185), (0.413, 0.355), (0.605, 0.525)])
 
@@ -131,6 +137,29 @@ class CageTargets(unittest.TestCase):
         xs = [r[0] for r in c.HAND]
         self.assertEqual(xs, sorted(xs))
         self.assertTrue(0.3 <= (xs[1] + xs[2]) / 2 / xs[-1] <= 0.4)  # the thumb's root quad at about 35 % of the palm
+
+    def test_h4_is_h3_with_the_close_range_fixes(self):
+        h3 = _load()
+        h3.apply_cage_targets(H3)
+        c = self.c
+        self.assertEqual(c.apply_cage_targets(H4), "chameleon_h4")
+        for k in h3.CAGE_KEYS:
+            if k not in H4_KEYS:
+                self.assertEqual(getattr(c, k), getattr(h3, k), k)
+        self.assertEqual(c.TARGET_CLEAN[:len(h3.TARGET_CLEAN)], h3.TARGET_CLEAN)  # H1's boxes kept, one added
+        self.assertEqual(len(c.TARGET_CLEAN), len(h3.TARGET_CLEAN) + 1)
+        x0, x1, y0, y1, z0, z1, _ = c.TARGET_CLEAN[-1]
+        self.assertTrue(x1 > 0 and y1 > 0.1 and z0 < 1.3 < z1)  # the neck's back on the kept +x half
+        zs = [r[0] for r in c.SCULPT_TRUNK]
+        self.assertEqual(zs, sorted(zs))
+        self.assertEqual(c.SCULPT_TRUNK[0][1:], [1.0, 1.0])  # nothing moves at the crotch or the armpits
+        self.assertEqual(c.SCULPT_TRUNK[-1][1:], [1.0, 1.0])
+        self.assertTrue(all(1.0 <= r[1] <= 1.12 and 1.0 <= r[2] <= 1.1 for r in c.SCULPT_TRUNK))
+        x0, x1, z0, z1, push, edge = c.SCULPT_PEC
+        self.assertTrue(0 <= x0 < x1 < 0.2 and z0 + edge < z1 and 0 < push <= 0.02)
+        self.assertLess(c.TOE_YAW[2], h3.TOE_YAW[2])  # the outer toe group turned out less
+        self.assertLess(c.THUMB_R0, h3.THUMB_R0)
+        self.assertTrue(all(len(b) == 7 and b[0] < b[1] and b[4] < b[5] for b in c.WEIGHT_ZONES))
 
     def test_h1_height_under_the_cap(self):
         c = self.c

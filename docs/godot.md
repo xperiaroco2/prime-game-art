@@ -3153,7 +3153,7 @@ a time, by visibility.
     stays below the 2D's 36 on this flat lower face: the rest is form (Test B), not material.
   - The pick is not in `alien.gd` or `look_presets.json`: the look needs the engineer's yes (the values are in the
     handoff and `TD/final/spec.json`).
-- **Bodies A, H1, H2 and H3: the chameleon's hybrid body** (art #196; output under
+- **Bodies A, H1 to H4: the chameleon's hybrid body** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in
     `tools/blender/alien_cage_targets/`; a file's `include` (a file beside it) is applied first. Without a file every
@@ -3179,6 +3179,14 @@ a time, by visibility.
     band (Taubin, nothing within 15 mm of the ring). The feet's toes turn out along their length (`TOE_YAW`); the
     thumb roots at 35 % of the palm. `alien_body_beside.py --apose --views 0,90 --concept <png>` puts welded
     characters A-posed beside the concept's front and side at one scale.
+  - H4 (H3's defects at close range): `chameleon_h4.toml` adds a `TARGET_CLEAN` box on the target's neck back and
+    trapezius (their lumps came from the target, not the cage), a gentler forearm rise past the elbow, and three new
+    knobs, all off by default: `SCULPT_TRUNK` scales the trunk (|x| under `TRUNK_X`) about each height's centre per
+    row (a fuller waist and belly), `SCULPT_PEC` pushes the chest's front forward between the sternum and the side
+    with a short rise at the pectoral's lower border (soft planes, no nipples), and `WEIGHT_ZONES` gives soft
+    |x| boxes (the knee, the hip's front fold) extra weight smoothing after `WEIGHT_SMOOTH`, so a bend folds wider.
+    The outer toe group turns out less and the thumb root is thinner. `alien_body_refit_review.py` also shoots the
+    chest (`close_chest_front`, `close_chest_three_quarter`).
 
 ## Findings for later tasks
 

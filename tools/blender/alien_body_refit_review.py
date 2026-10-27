@@ -263,6 +263,9 @@ def main():
     cl("neck_front", nk + Vector((0, -0.85, 0.08)), nk, 50)
     cl("neck_side", nk + Vector((0.85, 0, 0.08)), nk, 50)
     cl("neck_back", nk + Vector((0, 0.85, 0.08)), nk, 50)
+    ch = Vector((0, bones["Neck"].y - 0.04, bones["LeftUpperArm"].z - 0.12))  # H4: the chest's planes
+    cl("chest_front", ch + Vector((0, -0.9, 0.15)), ch, 50)
+    cl("chest_three_quarter", ch + Vector((0.6, -0.65, 0.1)), ch, 50)
     cz = bones["LeftUpperLeg"].z - 0.05
     cr = Vector((0, 0.03, cz))
     cl("crotch_front", cr + Vector((0, -0.8, -0.15)), cr, 50)

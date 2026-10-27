@@ -264,6 +264,13 @@ SCULPT_DELTOID = []  # [s0, s_peak, s1, push m]: the arm's top and sides (not it
 SCULPT_THIGH = []  # [z0, z1, margin m, x max]: the leg's outer side pulled in to x max between z0 and z1 (soft margin)
 NECK_RELAX = []  # [lo, hi, passes]: Taubin smoothing of the band lo..hi m below the ring (a bump: none at either end)
 TOE_YAW = (0.0, 0.0, 0.0)  # degrees per toe slot (inner, middle, outer): + turns the toe out (+x), growing along it
+# H4: the trunk and chest (sculpt) and the joints' weights; off by default (S4b and H1 to H3 unchanged).
+SCULPT_TRUNK = []  # [[z, x scale, y scale], ...]: the trunk (|x| < TRUNK_X) scaled about its centre per height, linear
+TRUNK_X = (0.17, 0.03)  # m: the trunk's soft side limit for SCULPT_TRUNK (x, soft width), so the arms and legs stay
+SCULPT_PEC = []  # [x0, x1, z0, z1, push m, edge m]: the chest's front pushed forward between |x| x0..x1 and z0..z1,
+#                  full from the lower edge (z0 + edge, a short rise: the pectoral's lower border) fading to z1
+WEIGHT_ZONES = []  # [[x0, x1, y0, y1, z0, z1, passes], ...]: extra weight smoothing in soft boxes (|x|, both sides)
+WEIGHT_ZONE_MARGIN = 0.02  # m: each weight box's soft edge
 # S1c's skeleton, the cage numbers' frame (CAGE_REMAP): heights, the arm's x and the foot's y of its joints.
 REF_Z = {"LeftFoot": 0.115, "LeftLowerLeg": 0.5181, "LeftUpperLeg": 0.8409, "Chest": 1.0283, "UpperChest": 1.1491,
          "LeftUpperArm": 1.2765}
@@ -279,7 +286,8 @@ CAGE_KEYS = ("TRUNK", "NECK_END", "CROTCH", "CROTCH_Z", "ARM_HOLE", "ARM", "ARM_
              "TARGET_WELD", "TARGET_MIRROR", "TARGET_CLEAN", "TARGET_CLEAN_MARGIN", "PROJECT", "PROJECT_THICK",
              "PROJECT_K", "PROJECT_MAX", "PROJECT_NORMAL_MIN", "PROJECT_HAND", "PROJECT_NECK", "PROJECT_SOLE",
              "PROJECT_FOOT", "PROJECT_SMOOTH", "PROJECT_RELAX", "PROJECT_PASSES", "SCULPT_ARM", "SCULPT_DELTOID",
-             "SCULPT_THIGH", "NECK_RELAX", "TOE_YAW")
+             "SCULPT_THIGH", "NECK_RELAX", "TOE_YAW", "SCULPT_TRUNK", "TRUNK_X", "SCULPT_PEC", "WEIGHT_ZONES",
+             "WEIGHT_ZONE_MARGIN")
 
 
 def apply_cage_targets(path):
@@ -299,7 +307,7 @@ def apply_cage_targets(path):
         if k == "CROTCH_Z":
             v = {int(a): b for a, b in v.items()}
         elif k in ("FINGERS", "FINGER_CURL", "TOE_SET", "ARM_GUESS", "NECK_END_ELLIPSE", "CROTCH", "THUMB_DIR",
-                   "PROJECT_HAND", "PROJECT_NECK", "PROJECT_FOOT", "TOE_YAW"):
+                   "PROJECT_HAND", "PROJECT_NECK", "PROJECT_FOOT", "TOE_YAW", "TRUNK_X"):
             v = tuple(v)
         elif k in ("FINGER_RINGS", "THUMB_RINGS"):
             v = [tuple(tuple(x) if isinstance(x, list) else x for x in row) for row in v]
@@ -1053,7 +1061,9 @@ def sculpt(body, bones, ring_z):
       vertices within 12 mm, scaled about the section's middle toward the rows' targets (the scale linear between rows, 1 outside them);
     - SCULPT_DELTOID: the arm's top and sides pushed out from the upper arm's line, a smooth bump over s;
     - SCULPT_THIGH: the leg's outer side (past LeftUpperLeg's x) pulled in so its widest point is at x max;
-    - NECK_RELAX: Taubin smoothing of the neck band below the ring (none at the ring: the weld stays exact).
+    - NECK_RELAX: Taubin smoothing of the neck band below the ring (none at the ring: the weld stays exact);
+    - SCULPT_TRUNK (H4): the trunk's x and y scaled about each height's centre (a fuller trunk);
+    - SCULPT_PEC (H4): the chest's soft planes, its front pushed forward with a short rise at the lower border.
     Every arm move fades out with the projection's hand mask. Returns the report."""
     bm = bmesh.new()
     bm.from_mesh(body.data)
@@ -1137,6 +1147,52 @@ def sculpt(body, bones, ring_z):
             k = 1.0 - (1.0 - (xmax - hx) / span) * wz * smooth01(dx / span)
             v.co.x = math.copysign(hx + dx * k, v.co.x)
         out["thigh_x_max"] = [round(before, 4), round(max(abs(v.co.x) for v in legs), 4)]
+    if SCULPT_TRUNK:
+        rows = sorted(SCULPT_TRUNK)
+        xl, xs = TRUNK_X
+        core = [v for v in vs if abs(v.co.x) < 0.1 and rows[0][0] - 0.01 < v.co.z < rows[-1][0] + 0.01]
+        mid = {}
+        for v in core:
+            b = round(v.co.z / 0.01)
+            lo_, hi_ = mid.get(b, (9.0, -9.0))
+            mid[b] = (min(lo_, v.co.y), max(hi_, v.co.y))
+
+        def trunk_at(z):
+            if z <= rows[0][0] or z >= rows[-1][0]:
+                return 1.0, 1.0
+            for (z0, a0, b0), (z1, a1, b1) in zip(rows, rows[1:]):
+                if z <= z1:
+                    t = (z - z0) / (z1 - z0)
+                    return a0 + (a1 - a0) * t, b0 + (b1 - b0) * t
+        n = 0
+        for v in vs:
+            a, b = trunk_at(v.co.z)
+            if (a, b) == (1.0, 1.0):
+                continue
+            w = smooth01((xl - abs(v.co.x)) / xs)
+            if w <= 0:
+                continue
+            key = min(mid, key=lambda k: abs(k - v.co.z / 0.01))
+            yc = 0.5 * sum(mid[key])
+            v.co.x *= 1 + (a - 1) * w
+            v.co.y = yc + (v.co.y - yc) * (1 + (b - 1) * w)
+            n += 1
+        out["trunk_verts"] = n
+    if SCULPT_PEC:
+        x0, x1, z0, z1, push, edge = SCULPT_PEC
+        bm.normal_update()
+        n = 0
+        for v in vs:
+            ax, z = abs(v.co.x), v.co.z
+            if not (x0 < ax < x1 and z0 < z < z1) or v.normal.y > -0.2:
+                continue
+            mg = 0.25 * (x1 - x0)
+            wx = smooth01((ax - x0) / mg) * smooth01((x1 - ax) / mg)
+            wz = smooth01((z - z0) / edge) if z < z0 + edge else smooth01((z1 - z) / (z1 - z0 - edge))
+            wn = smooth01((-v.normal.y - 0.2) / 0.5)
+            v.co.y -= push * wx * wz * wn
+            n += 1
+        out["pec_verts"] = n
     if NECK_RELAX:
         lo, hi, passes = NECK_RELAX
         band = [(v, smooth01((v.co.z - (ring_z - lo)) / (0.5 * (lo - hi)))
@@ -1308,7 +1364,7 @@ def main():
     if wrap and PROJECT:  # H2: the target's forms after the subdivision
         report["project"] = wrap.project(body, ring["z"])
         print("project:", json.dumps(report["project"]), flush=True)
-    if SCULPT_ARM or SCULPT_DELTOID or SCULPT_THIGH or NECK_RELAX:  # H3
+    if SCULPT_ARM or SCULPT_DELTOID or SCULPT_THIGH or NECK_RELAX or SCULPT_TRUNK or SCULPT_PEC:  # H3, H4
         report["sculpt"] = sculpt(body, bones, ring["z"])
         print("sculpt:", json.dumps(report["sculpt"]), flush=True)
     report["cage_trunk"] = [[t[0]] + [round(x, 4) for x in t[1:]] for t in trunk]
@@ -1450,6 +1506,39 @@ def main():
                 del d[g]
             for g, w in acc.items():
                 d[g] = w
+    zones = {}
+    for box in WEIGHT_ZONES:  # H4: the knee and hip folds' weights spread wider, so a bend folds softly
+        x0, x1, y0, y1, z0, z1, passes = box
+        mg = WEIGHT_ZONE_MARGIN
+
+        def zw(co):
+            t = 1.0
+            for c, a, b in ((abs(co.x), x0, x1), (co.y, y0, y1), (co.z, z0, z1)):
+                d_ = min(c - a, b - c)
+                if d_ <= 0:
+                    return 0.0
+                t = min(t, d_ / mg)
+            return smooth01(t)
+        sel = [(v, zw(v.co)) for v in free]
+        sel = [(v, w) for v, w in sel if w > 0]
+        for _ in range(int(passes)):
+            new = []
+            for v, w in sel:
+                nbs = [e.other_vert(v) for e in v.link_edges]
+                acc = {g: (1 - 0.5 * w) * x for g, x in v[deform].items()}
+                for nb in nbs:
+                    for g, x in nb[deform].items():
+                        acc[g] = acc.get(g, 0.0) + 0.5 * w * x / len(nbs)
+                new.append(acc)
+            for (v, _), acc in zip(sel, new):
+                d = v[deform]
+                for g in list(d.keys()):
+                    del d[g]
+                for g, x in acc.items():
+                    d[g] = x
+        zones[str(box)] = len(sel)
+    if zones:
+        report["weight_zones"] = zones
     for v in bm.verts:
         d = v[deform]
         if v.index in ring_ids:
