@@ -17,7 +17,12 @@ const LOOK := {                 # suffix: [colour, energy, range m]
 ## jambs `<id>_jamb<k>a/b`, inside the 3 cm cut) SLIT_ROWS lights, so the light pours out of each gap onto the
 ## covers' backs and sides and back onto the well's walls and honeycomb
 const SLIT_ROWS := 3
-const SLIT_LOOK := {"cool": [Color(0.0, 0.66, 1.0), 1.6, 0.8], "heat": [Color(1.0, 0.2, 0.02), 1.6, 0.8]}
+const SLIT_LOOK := {"cool": [Color(0.0, 0.55, 1.0), 1.3, 0.8], "heat": [Color(1.0, 0.2, 0.02), 1.6, 0.8]}
+## gills step 3: per groove under a rib edge (its seam `<id>_seam<k>`) GAP_ROWS small lights GAP_OUT_M in front of the
+## groove's floor, between the ribs' flanks: they light the flanks cyan, the concept's slit at both edges of each rib
+const GAP_ROWS := 3
+const GAP_OUT_M := 0.03
+const GAP_LOOK := {"cool": [Color(0.0, 0.55, 1.0), 0.45, 0.35], "heat": [Color(1.0, 0.2, 0.02), 0.45, 0.35]}
 ## Every well light lights the inside's render layer only (ship.gd's INSIDE_LAYER): none leaks onto the hull's
 ## outside behind a shallow well (omni lights pass through walls)
 const INSIDE_MASK := 1
@@ -88,5 +93,30 @@ static func _slits(mi: MeshInstance3D, suffix: String, put: bool = false, scale:
 			o.shadow_enabled = false
 			o.light_cull_mask = INSIDE_MASK
 			mi.add_child(o)
+			count += 1
+	for k: int in range(1, 9):
+		var g: Node = parent.get_node_or_null(NodePath("%s_seam%d" % [pid, k]))
+		if not (g is MeshInstance3D):
+			break
+		if not put:
+			count += GAP_ROWS
+			continue
+		var gm: MeshInstance3D = g
+		var gb: AABB = gm.mesh.get_aabb()
+		var inv2: Transform3D = mi.transform.affine_inverse()
+		var look: Array = GAP_LOOK[suffix]
+		for r: int in GAP_ROWS:
+			var y2: float = gb.position.y + gb.size.y * (r + 0.5) / GAP_ROWS - gb.get_center().y
+			var o2: OmniLight3D = OmniLight3D.new()
+			o2.name = "%s_gap%d_light%d" % [mi.name, k, r + 1]
+			# out of the wall: the piece's -z (Godot (x, h, -v))
+			o2.position = inv2 * (gm.transform * (gb.get_center() + Vector3(0.0, y2, -GAP_OUT_M)))
+			o2.light_color = look[0]
+			o2.light_energy = float(look[1]) * scale
+			o2.omni_range = float(look[2])
+			o2.omni_attenuation = 1.2
+			o2.shadow_enabled = false
+			o2.light_cull_mask = INSIDE_MASK
+			mi.add_child(o2)
 			count += 1
 	return count
