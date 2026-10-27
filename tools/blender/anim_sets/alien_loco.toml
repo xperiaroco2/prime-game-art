@@ -27,7 +27,7 @@ raw_base = "research/2026-10-22-roster/design/pilot3d/anim_bare"  # under the ra
 build = "r2b/build"  # <build>/<char>/<char>_char.blend
 ttm = "loco/s2/chameleon_char_ttm.blend"  # step 2's loops (the axolotl shares the skeleton)
 mocap = "loco/p1/chameleon_char_100s.blend"  # the strafe pilot P1's 100STYLE loops MC_Neutral_<take>_Loop
-out = "loco/f2"  # build/<char>/ and reels/ (step 3: loco/s3, step 4b: loco/s4b, P2: loco/p2, P3: loco/p3, P4: loco/p4, P5: loco/p5, F1: loco/f1)
+out = "loco/f3"  # build/<char>/ and reels/ (step 3: loco/s3, step 4b: loco/s4b, P2: loco/p2, P3: loco/p3, P4: loco/p4, P5: loco/p5, F1: loco/f1, F2: loco/f2)
 chars = ["chameleon", "axolotl"]
 foot = "Left"
 stride_flag = 2.0  # a stride scaled more than this is flagged
@@ -133,40 +133,12 @@ play_at = [3.0, 2.5]
 
 # the side run: the approved Jog_Fwd (22 frames, left contact first) turned toward the travel, fitted to 3.0; P2's
 # hip grid (45/60/75) picked 60. P3 (the critic): the hips lifted 5 cm on the kept feet (lift_m: the least knee bend
-# 45-52 -> 20-30; 3 and 4 cm left 40 and 35), the ankles 3 cm wider apart (widen_m), the upper arms 14 degrees in
-# (arms_in_deg: the hands 0.39/0.36 m from the torso -> about 0.32/0.29)
+# 45-52 -> 20-30; 3 and 4 cm left 40 and 35), the ankles wider apart (widen_m), the upper arms 14 degrees in
+# (arms_in_deg: the hands 0.39/0.36 m from the torso -> about 0.32/0.29). F3: widen_m 0.09 (P3's 0.03, kept as
+# Strafe_Left__w03), the engineer's pick from F2's grid (2026-10-27): the swing ankle's centre on the stance shin's
+# line instead of 8.4 cm past it
 [[clip]]
 name = "Strafe_Left"
-from = "Jog_Fwd"
-speeds = [3.0]
-orient = { hips = 60.0, travel = 90.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
-bend_min_deg = 20.0
-lift_m = 0.05
-widen_m = 0.03
-arms_in_deg = 14.0
-play_at = [3.0]
-
-[[clip]]
-name = "Strafe_Right"
-mirror = "Strafe_Left"
-play_at = [3.0]
-
-# F2's review grid (art #196, awaiting the engineer's look): the swing shin crossing the stance leg (column 6 of the
-# older strafe reels, column 5 of F2's), each variant Strafe_Left with one setting changed; the game's Strafe_Left / Strafe_Right stay as above
-# (measured in plain Python on a dump: widen 0.05 and hips 55 tried too, hips 55 crosses more)
-[[clip]]
-name = "Strafe_Left__w07"  # the ankles 7 cm wider (Strafe_Left: 3)
-from = "Jog_Fwd"
-speeds = [3.0]
-orient = { hips = 60.0, travel = 90.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
-bend_min_deg = 20.0
-lift_m = 0.05
-widen_m = 0.07
-arms_in_deg = 14.0
-play_at = [3.0]
-
-[[clip]]
-name = "Strafe_Left__w09"  # the ankles 9 cm wider
 from = "Jog_Fwd"
 speeds = [3.0]
 orient = { hips = 60.0, travel = 90.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
@@ -177,21 +149,16 @@ arms_in_deg = 14.0
 play_at = [3.0]
 
 [[clip]]
-name = "Strafe_Left__h65"  # the hips turned 65 toward the travel (Strafe_Left: 60)
-from = "Jog_Fwd"
-speeds = [3.0]
-orient = { hips = 65.0, travel = 90.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
-bend_min_deg = 20.0
-lift_m = 0.05
-widen_m = 0.03
-arms_in_deg = 14.0
+name = "Strafe_Right"
+mirror = "Strafe_Left"
 play_at = [3.0]
 
+# the strafe before F3 (P3's widen_m 0.03), the reels' before; F2's grid (__w07, __w09, __h65, __h70) dropped
 [[clip]]
-name = "Strafe_Left__h70"  # the hips turned 70
+name = "Strafe_Left__w03"  # the ankles 3 cm wider (Strafe_Left: 9)
 from = "Jog_Fwd"
 speeds = [3.0]
-orient = { hips = 70.0, travel = 90.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
+orient = { hips = 60.0, travel = 90.0, split = [["Spine", 0.1], ["Chest", 0.15], ["UpperChest", 0.15], ["Neck", 0.35], ["Head", 0.25]] }
 bend_min_deg = 20.0
 lift_m = 0.05
 widen_m = 0.03
@@ -371,28 +338,9 @@ cols = 2
 clips = [{ clip = "Crouch_Fwd__p2", speed = 2.0 }, { clip = "Crouch_Run__p2", speed = 2.8 },
          { clip = "Crouch_Fwd", speed = 2.0 }, { clip = "Crouch_Run", speed = 2.8 }]
 
-# F2's grid: Strafe_Left (before) above each variant, from the three-quarter and the back
-
+# F3: the strafe before (Strafe_Left__w03) above the game's (widen 0.09), from the three-quarter and the back
 [[reel]]
-name = "Strafe_F2_w07"
+name = "Strafe_F3"
 views = ["three_quarter", "back"]
-clips = [{ clip = "Strafe_Left", speed = 3.0, label = "Strafe_Left (widen 0.03, hips 60)" },
-         { clip = "Strafe_Left__w07", speed = 3.0, label = "Strafe_Left__w07 (widen 0.07)" }]
-
-[[reel]]
-name = "Strafe_F2_w09"
-views = ["three_quarter", "back"]
-clips = [{ clip = "Strafe_Left", speed = 3.0, label = "Strafe_Left (widen 0.03, hips 60)" },
-         { clip = "Strafe_Left__w09", speed = 3.0, label = "Strafe_Left__w09 (widen 0.09)" }]
-
-[[reel]]
-name = "Strafe_F2_h65"
-views = ["three_quarter", "back"]
-clips = [{ clip = "Strafe_Left", speed = 3.0, label = "Strafe_Left (widen 0.03, hips 60)" },
-         { clip = "Strafe_Left__h65", speed = 3.0, label = "Strafe_Left__h65 (hips 65)" }]
-
-[[reel]]
-name = "Strafe_F2_h70"
-views = ["three_quarter", "back"]
-clips = [{ clip = "Strafe_Left", speed = 3.0, label = "Strafe_Left (widen 0.03, hips 60)" },
-         { clip = "Strafe_Left__h70", speed = 3.0, label = "Strafe_Left__h70 (hips 70)" }]
+clips = [{ clip = "Strafe_Left__w03", speed = 3.0, label = "Strafe_Left__w03 (widen 0.03, F2's)" },
+         { clip = "Strafe_Left", speed = 3.0, label = "Strafe_Left (widen 0.09, F3)" }]

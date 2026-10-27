@@ -67,6 +67,7 @@ class LivelyCut(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = load("alien_lively_build")
+        cls.ORIG = {n: getattr(cls.B, n) for n in ("RIM_CUT_MAX_TO_EYE_PCT", "RIM_CUT_FIT_MAX_TO_EYE_PCT")}  # before setUp's patch
 
     def setUp(self):
         """E1: the area bounds each way are set from the heads' cuts (5.0 % to the lid, 1.5 % to the eyeball); the
@@ -242,20 +243,68 @@ class LivelyCut(unittest.TestCase):
 
     def test_rim_cut_fit_all_keeps_every_rim_position(self):
         """E2 candidate B (--rim-fit, off by default): "all" fits through every rim position and names its fit in the
-        report; the default trimmed cut's report has no "fit"."""
-        trimmed = self.cut()[4]
-        self.assertNotIn("fit", trimmed)
+        report; the default trimmed cut's report has no "fit". Like with like (F3): the same sheets at the same order,
+        only the fit changed. The sheets have no spur, so the trimmed fit is made to drop the outermost 5 % of each
+        eye's rim positions (they lie outside its curve): "all" and "outer" must keep them, and "trimmed" must not."""
         A, I, eyeball, centres = sheets()
+        G, real = self.B.G, self.B.G.fourier_fit_trimmed
+
+        def drop_outer(phi, val, order, *args, **kw):
+            _coef, kept = real(phi, val, order, *args, **kw)
+            edge = sorted(val)[-max(1, len(val) // 20)]
+            kept = [bool(w) and v < edge for w, v in zip(kept, val)]
+            return G.fourier_fit([p for p, w in zip(phi, kept) if w], [v for v, w in zip(val, kept) if w], order), kept
+        patch = mock.patch.object(G, "fourier_fit_trimmed", drop_outer)
+        patch.start()
+        self.addCleanup(patch.stop)
+        cut = {fit: self.B.rim_cut({k: v.copy() for k, v in A.items()}, I, eyeball, centres, R_EYE, 8, fit)[4]
+               for fit in ("trimmed", "all", "outer")}
+        trimmed = cut["trimmed"]
+        self.assertNotIn("fit", trimmed)
+        self.assertGreater(sum(trimmed[k]["trimmed"] for k in ("left", "right")), 0)  # the trim bites
         for fit in ("all", "outer"):
             with self.subTest(fit):
-                rep = self.B.rim_cut({k: v.copy() for k, v in A.items()}, I, eyeball, centres, R_EYE, 8, fit)[4]
+                rep = cut[fit]
                 self.assertEqual(rep["fit"], fit)
                 for key in ("left", "right"):
+                    self.assertEqual(rep[key]["rim_positions"], trimmed[key]["rim_positions"])  # the same rim
                     self.assertGreaterEqual(rep[key]["fit_kept"], trimmed[key]["fit_kept"])
                     if fit == "all":
                         self.assertEqual(rep[key]["fit_kept"], rep[key]["rim_positions"])
+                        self.assertEqual(rep[key]["trimmed"], 0)
                 self.assertEqual(rep["bad_triangles"], 0)
                 self.assertEqual(rep["edges_after"], rep["edges_before"])
+        for fit in ("all", "outer"):
+            self.assertGreater(sum(cut[fit][k]["fit_kept"] for k in ("left", "right")),
+                               sum(trimmed[k]["fit_kept"] for k in ("left", "right")), fit)
+
+    def test_each_path_takes_its_own_bounds(self):
+        """E2: the default (trimmed) path keeps the approved build's bounds, a --rim-fit candidate takes its own: the
+        constants pinned, rim_cut's to-eye bound per fit, rim_split's past-90 bound (None: the default's), and the
+        build's main passing the candidate's past-90 bound only under a --rim-fit candidate."""
+        O = self.ORIG
+        self.assertEqual((O["RIM_CUT_MAX_TO_EYE_PCT"], O["RIM_CUT_FIT_MAX_TO_EYE_PCT"]), (1.5, 4.0))
+        self.assertEqual((self.B.RIM_SPLIT_MAX_PAST90_PCT, self.B.RIM_SPLIT_FIT_MAX_PAST90_PCT), (6.5, 10.0))
+        A, I, eyeball, centres = sheets()
+        with (mock.patch.object(self.B, "RIM_CUT_MAX_TO_EYE_PCT", 9.0),
+              mock.patch.object(self.B, "RIM_CUT_FIT_MAX_TO_EYE_PCT", 9.5)):  # both over the sheets' 6.7 %, told apart
+            for fit, want in (("trimmed", 9.0), ("all", 9.5), ("outer", 9.5)):
+                with self.subTest(fit):
+                    rep = self.B.rim_cut({k: v.copy() for k, v in A.items()}, I, eyeball, centres, R_EYE, 8, fit)[4]
+                    self.assertEqual(rep["eyeball_area_bounds_pct"]["to_eye"], want)
+        *_rest, rep = self.split(flip=5)
+        self.assertEqual(rep["past_90_bound_pct"], self.B.RIM_SPLIT_MAX_PAST90_PCT)
+        A1, I1, cls1, centres, _rep = self.cut()
+        views = {"left": (None, None, centres[1], R_EYE), "right": (None, None, centres[-1], R_EYE)}
+        rep = self.B.rim_split({k: v.copy() for k, v in A1.items()}, I1, cls1, views, False,
+                               self.B.RIM_SPLIT_FIT_MAX_PAST90_PCT)[2]
+        self.assertEqual(rep["past_90_bound_pct"], 10.0)
+        src = (BLENDER / "alien_lively_build.py").read_text(encoding="utf-8")
+        self.assertIn('None if args.rim_fit == "trimmed" else RIM_SPLIT_FIT_MAX_PAST90_PCT', src)  # main's wiring
+        self.assertIn("rim_cut(A, I, eyeball, centres, r, args.rim_cut, args.rim_fit)", src)
+        for name in ("alien_lively_build.py", "alien_lively_run.py"):  # the approved build stays the default
+            self.assertIn('"--rim-fit", choices=("trimmed", "all", "outer"), default="trimmed"',
+                          (BLENDER / name).read_text(encoding="utf-8"), name)
 
     def split(self, flip: int = 0, sphere_only: bool = False, stray: int = 0):
         """rim_split on the cut sheets, each eye's sphere the eye centre 1 cm behind with radius R_EYE (eyeball_fix's
@@ -363,7 +412,7 @@ class InBlender(unittest.TestCase):
             res = json.loads((Path(tmp) / "out.json").read_text(encoding="utf-8"))
         self.assertEqual(res["bad"], [])
         self.assertEqual(res["skipped"], 0)
-        self.assertEqual(res["run"], 12)
+        self.assertEqual(res["run"], 13)
 
 
 if __name__ == "__main__":

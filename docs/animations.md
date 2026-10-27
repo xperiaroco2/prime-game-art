@@ -846,11 +846,11 @@ comes before the stride since step 4b, so the stride plants the feet in the fram
 the actions,
 exports one GLB with `export_glb.py`'s textured options (no morph targets, as the character build), runs
 glTF-Validator and writes `loco.json` (per clip the edits' reports, the numbers before and after, the rates) into
-`<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/<out>/build/<char>/` (`[set] out`, `loco/s4b` now), with
+`<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/<out>/build/<char>/` (`[set] out`, `loco/f3` now), with
 the build's support files
 copied beside the GLB. Then `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
-`... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...]` runs `godot/alien/treadmill_reels.gd` in the
-off-screen window on the chameleon: the character held in place (the hips' travel per loop taken off its node), the
+`... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
+off-screen window on the chameleon (`--char`: another character, into `<out>/reels/<char>/`): the character held in place (the hips' travel per loop taken off its node), the
 floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot
 at its contact and a timeline of the game's footstep beat (white ticks, the clip's own contacts as yellow ticks
 under them, so a footstep clock that does not match the feet shows) beside each foot's contacts (left blue, right
@@ -1071,7 +1071,26 @@ crossing), `lift_m` 0.03 (the crossing unchanged, the knees deeper) and `bend_mi
 not bite). The builder's pick is `__w09`: it keeps the engineer's hips at 60 and brings the swing ankle's centre from 8.4 cm past
 the stance shin to its line (0.0 cm), so the meshes still graze; `__h70` is the only one with clearance (+2.9 cm) but
 moves the hips toward the 75 he passed over. In F2's reels the tuck shows in column 5 (the older reels: column 6);
-the enlarged column sheets `Strafe_F2_col5.png` and `col6.png` were cut by hand from the reels.
+the enlarged column sheets `Strafe_F2_col5.png` and `col6.png` were cut by hand from the reels. The engineer took
+`__w09` for the game (2026-10-27): F3 below.
+
+### The strafe at `widen_m` 0.09 (art #196, F3)
+`Strafe_Left` takes `widen_m` 0.09 (hips 60, the rest of P3's settings unchanged; `Strafe_Right` mirrors it). P3's
+strafe stays beside it as the review variant `Strafe_Left__w03` (`loco.json` report and GLB animation bytes equal to
+`loco/f2`'s `Strafe_Left`); F2's four variants and their reels are dropped. Out: `loco/f3`; the reels
+`Strafe_F3__three_quarter` and `__back` (`Strafe_Left__w03` above `Strafe_Left`) on both characters (the axolotl's in
+`reels/axolotl/`). Every other game clip's `loco.json` report and GLB animation bytes equal `loco/f2`'s, and the
+strafes' speed, rate, cycle, stride and contacts did not move (3.0 m/s, rate 1.014, 22 frames, 0.917 s, contacts
+left 0 / right 11, step 0.452 s). The strafe at 0.09 (F2's measure, on a dump of F3's build):
+
+| Clip | Ankle / shin least | Frames under 0 / under 3 cm | Least knee bend L / R | Planted drift L / R | `legs_m` ankle / knee / pass |
+|---|---|---|---|---|---|
+| `Strafe_Left` (0.09) | 0.0 / +5.4 cm | 0 / 5 (frames 5, 7-10) | 26.1 / 18.7 deg | 0.6 / 0.9 mm | -0.046 / 0.122 / 0.352 m |
+| `Strafe_Left__w03` | -8.4 / -0.7 cm | 7 / 8 (frames 4-11) | 30.4 / 19.7 deg | 0.6 / 0.9 mm | -0.149 / 0.087 / 0.232 m |
+| `Jog_Fwd_Left` / `_Right` | +8.7 / +11.8 cm | 0 / 0 | 27.2 / 20.6 deg | 0.2 / 0.3 mm | 0.061 / 0.152 / 0.218 m |
+
+The forward diagonals do not cross: at 45 degrees of travel the swing ankle stays 8.7 cm or more outside the stance
+shin (they have no `widen_m`), so they stay as they are.
 
 ### The head follows the aim (art #196, H1)
 So players can nod yes and shake no without a microphone, the alien's trunk, neck and head bones turn toward the
@@ -1105,7 +1124,7 @@ turns with the mouse (`rotate_y`), so the relative yaw is always 0 and a "no" sh
 `body_follow` the body's yaw and the aim's yaw become two numbers to sync.
 
 `$PYTHON_BIN tools/blender/alien_headlook_run.py --check` runs `godot/alien/head_look_check.gd` headless on both
-characters (F1's build, `loco/f1`, whose game clips equal F2's): the head bone's facing within 1 degree of the asked yaw and pitch
+characters (F3's build, `loco/f3`): the head bone's facing within 1 degree of the asked yaw and pitch
 inside the clamps, at the clamps beyond them, the Neck turned by `aim_turn` of its cumulative share of the split
 (summed in the check from the skeleton's parents), a fresh modifier's default clamps (yaw 100, pitch -80 give 70,
 -35), no drift over 10 frames, on Idle and Jog_Fwd the clip's facing turned by the aim, the smoothing, `body_follow`'s
