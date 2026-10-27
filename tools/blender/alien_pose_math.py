@@ -283,6 +283,7 @@ def nearest_gap(A: list, B: list, reach: float = 0.06, cell: float = 0.02) -> fl
 
 # ---------------------------------------------------------------------------------------- the body's volumes
 TUBE_SLICES, TUBE_SECTORS = 8, 12
+THIGH_SKIP = 3  # of the thigh tube's slices from the hip, not counted when skin goes into a thigh (measure)
 
 
 def tube(skel: dict, skin: dict, bone: str) -> dict | None:
@@ -314,15 +315,16 @@ def tube(skel: dict, skin: dict, bone: str) -> dict | None:
     return {"bone": bone, "y0": y0, "dy": dy, "radius": radius, "volume": vol, "centroid_local": c}
 
 
-def tube_depth(t: dict, P: dict, pts: list) -> float:
-    """The deepest any point goes inside the posed tube (m; 0 when none is inside)."""
+def tube_depth(t: dict, P: dict, pts: list, first: int = 0) -> float:
+    """The deepest any point goes inside the posed tube (m; 0 when none is inside); `first`: its slices from that one
+    on (the ones before skipped)."""
     inv = S.rigid_inv(P[t["bone"]])
     worst = 0.0
     y0, dy = t["y0"], t["dy"]
     for p in pts:
         y = inv[1][0] * p[0] + inv[1][1] * p[1] + inv[1][2] * p[2] + inv[1][3]
         s = (y - y0) / dy
-        if s < 0 or s >= TUBE_SLICES:
+        if s < first or s >= TUBE_SLICES:
             continue
         x = inv[0][0] * p[0] + inv[0][1] * p[1] + inv[0][2] * p[2] + inv[0][3]
         z = inv[2][0] * p[0] + inv[2][1] * p[1] + inv[2][2] * p[2] + inv[2][3]
@@ -366,6 +368,10 @@ class Model:
             out[f"waist_{side}"] = max(band, key=lambda p: p[0] * s)
             back = [p for p in headp if abs(p[2] - ze) < 0.03 and abs(p[0]) < 0.02]
             out["head_back"] = max(back, key=lambda p: p[1])
+            # the brow over the eye: the head's most forward skin a little above the eye, at the eye's side
+            eye = S.pos(self.skel["rest"][f"{side}Eye"])
+            brow = [p for p in headp if abs(p[2] - (eye[2] + 0.025)) < 0.015 and abs(p[0] - eye[0] * 0.7) < 0.02]
+            out[f"brow_{side}"] = min(brow, key=lambda p: p[1])
         front = [p for p in torso if abs(p[2] - zc) < 0.02 and abs(p[0]) < 0.03]
         out["chest_front"] = min(front, key=lambda p: p[1])
         return {k: tuple(round(c, 5) for c in v) for k, v in out.items()}
@@ -672,7 +678,10 @@ def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
             sj, el = S.pos(P[f"{side}UpperArm"]), S.pos(P[f"{side}LowerArm"])
             ax = sub(el, sj)
             pts = [p for p in pts if dot(sub(p, sj), ax) > 0.5 * dot(ax, ax)]
-        dep = max((tube_depth(model.tubes[t], P, pts) for t in tube_bones(b, model.tubes)), default=0.0)
+        # into a thigh: its hip third skipped (the buttock and groin skin that skinning folds into the pelvis when
+        # the thigh rises: a hand there is on the hip, the torso's check covers it)
+        first = THIGH_SKIP if b.startswith("thigh") else 0
+        dep = max((tube_depth(model.tubes[t], P, pts, first) for t in tube_bones(b, model.tubes)), default=0.0)
         through[f"{a}>{b}"] = round(dep * 100.0, 2)
     contacts = {}
     for c in d["arms"][arms].get("contacts", []) + d["legs"][legs].get("contacts", []):
@@ -697,3 +706,51 @@ def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
             fails.append(f"gap {k} {v} cm")
     return {"pair": f"{legs}+{arms}", "floor_cm": round(low * 100, 2), "com_margin_cm": round(margin * 100, 2),
             "support_pts": len(sup), "com": [round(c, 4) for c in com], "touch_cm": floor, "through_cm": through, "contacts_cm": contacts, "fails": fails}
+
+
+# --------------------------------------------------------------------------------------------- silhouettes
+# A mask is a flat outline seen from one facing: a list of rows, each an int bitset (the leftmost pixel the highest
+# bit of a row `w` pixels wide). Every pair is shot by the same camera relative to the character's ground spot (Root
+# at the origin, the floor at 0), so the masks are aligned on the feet as rendered.
+FACINGS = ("front", "left", "right", "back")
+
+
+def mask_diff(a: list, b: list) -> float:
+    """The outline difference 1 - IoU of two masks of one size (0: the same outline, 1: no overlap)."""
+    inter = sum((x & y).bit_count() for x, y in zip(a, b))
+    union = sum((x | y).bit_count() for x, y in zip(a, b))
+    return 1.0 - inter / union if union else 0.0
+
+
+def hflip(rows: list, w: int) -> list:
+    """A mask mirrored left to right."""
+    return [int(format(r, f"0{w}b")[::-1], 2) for r in rows]
+
+
+def silhouette_table(masks: dict, legs: list, arms: list, w: int, lopsided: tuple = ()) -> dict:
+    """How well each part reads per facing. masks[(leg, arm, facing)] -> rows.
+
+    legs: per facing and per two leg poses, the outline difference of the pairs that differ only in the legs: the
+    least over the arm poses (the worst case, and its arm) and the mean. arms: the same per two arm poses over the leg
+    poses. lr: per pair, the left facing against the mirrored right facing (a symmetric pose reads 0: its left and
+    right outlines are mirror images; a lopsided one must differ, so its facing can be told)."""
+    out = {"legs": {}, "arms": {}, "lr": {}}
+    for face in FACINGS:
+        for kind, parts, others in (("legs", legs, arms), ("arms", arms, legs)):
+            rows = []
+            for i, p in enumerate(parts):
+                for q in parts[i + 1:]:
+                    ds = []
+                    for o in others:
+                        a = masks[(p, o, face)] if kind == "legs" else masks[(o, p, face)]
+                        b = masks[(q, o, face)] if kind == "legs" else masks[(o, q, face)]
+                        ds.append((mask_diff(a, b), o))
+                    lo = min(ds)
+                    rows.append({"a": p, "b": q, "min": round(lo[0], 3), "at": lo[1],
+                                 "mean": round(sum(d for d, _ in ds) / len(ds), 3)})
+            out[kind][face] = sorted(rows, key=lambda r: r["min"])
+    for lg in legs:
+        for am in arms:
+            d = mask_diff(masks[(lg, am, "left")], hflip(masks[(lg, am, "right")], w))
+            out["lr"][f"{lg}+{am}"] = {"diff": round(d, 3), "lopsided": lg in lopsided or am in lopsided}
+    return out
