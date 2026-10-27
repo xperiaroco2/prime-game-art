@@ -5,7 +5,9 @@ whole character under the height cap, and the remap's piecewise maps hit the new
 chameleon_h2.toml is H1's numbers (by `include`) with the projection onto the target on. H3: chameleon_h3.toml is
 H2's with the shaping after the projection, the toes turned out and the new hand; the shaping is off by default. H4:
 chameleon_h4.toml is H3's with the neck's back cleaned on the target, the trunk and chest shaped and the knee's and
-hip's weights spread; all three are off by default."""
+hip's weights spread; all three are off by default. H4b: chameleon_h4b.toml is H4's with the feet rebuilt (the last
+foot ring's columns: FOOT_END), the thumb along the palm's side and more of the target's relief on the trunk
+(PROJECT_DETAIL); both new knobs are off by default."""
 from __future__ import annotations
 
 import importlib.util
@@ -27,6 +29,9 @@ H3_KEYS = {"PROJECT_THICK", "PROJECT_NECK", "SCULPT_ARM", "SCULPT_DELTOID", "SCU
 H4 = BLENDER / "alien_cage_targets" / "chameleon_h4.toml"
 H4_KEYS = {"TARGET_CLEAN", "SCULPT_ARM", "SCULPT_TRUNK", "TRUNK_X", "SCULPT_PEC", "TOE", "TOE_YAW", "THUMB_R0",
            "THUMB_OUT", "WEIGHT_ZONES"}
+H4B = BLENDER / "alien_cage_targets" / "chameleon_h4b.toml"
+H4B_KEYS = {"FOOT", "FOOT_END", "TOE", "TOE_YAW", "THUMB_DIR", "THUMB_OUT", "THUMB_LEN", "PROJECT_DETAIL", "PROJECT_THICK",
+            "SCULPT_PEC"}
 
 
 class _Any:
@@ -75,6 +80,7 @@ class CageTargets(unittest.TestCase):
         self.assertEqual((c.SCULPT_ARM, c.SCULPT_DELTOID, c.SCULPT_THIGH, c.NECK_RELAX), ([], [], [], []))
         self.assertEqual(tuple(c.TOE_YAW), (0.0, 0.0, 0.0))
         self.assertEqual((c.SCULPT_TRUNK, c.SCULPT_PEC, c.WEIGHT_ZONES), ([], [], []))  # H4: off
+        self.assertEqual((c.FOOT_END, c.PROJECT_DETAIL), ([], []))  # H4b: off
         self.assertEqual(c.NECK_END, 1.374)
         self.assertEqual(c.WRAP_X, [(0.15, 0.185), (0.413, 0.355), (0.605, 0.525)])
 
@@ -160,6 +166,47 @@ class CageTargets(unittest.TestCase):
         self.assertLess(c.TOE_YAW[2], h3.TOE_YAW[2])  # the outer toe group turned out less
         self.assertLess(c.THUMB_R0, h3.THUMB_R0)
         self.assertTrue(all(len(b) == 7 and b[0] < b[1] and b[4] < b[5] for b in c.WEIGHT_ZONES))
+
+    def test_h4b_is_h4_with_the_feet_thumb_and_trunk(self):
+        h4 = _load()
+        h4.apply_cage_targets(H4)
+        c = self.c
+        self.assertEqual(c.apply_cage_targets(H4B), "chameleon_h4b")
+        for k in h4.CAGE_KEYS:
+            if k not in H4B_KEYS:
+                self.assertEqual(getattr(c, k), getattr(h4, k), k)
+        self.assertEqual(len(c.FOOT), len(h4.FOOT))
+        self.assertGreater(c.FOOT[-1][0], h4.FOOT[-1][0])  # the toes split further back (y: + is the heel)
+        self.assertEqual([r[0] for r in c.FOOT], sorted((r[0] for r in c.FOOT), reverse=True))
+        u, top_mid, top_side, bottom_side = c.FOOT_END
+        self.assertTrue(0 < u < 0.4)  # a slit, not H1's wedge quad (0.4)
+        self.assertTrue(0 < top_side <= top_mid <= 1.0 and 0 < bottom_side <= 1.0)
+        fwd = [r[0] for r in c.TOE]
+        self.assertEqual(fwd, sorted(fwd))
+        self.assertGreater(fwd[-1], h4.TOE[-1][0])  # longer toes
+        widths = [r[1] for r in c.TOE]
+        self.assertEqual(widths, sorted(widths, reverse=True))  # tapering to the tip
+        self.assertLess(c.TOE_YAW[2], h4.TOE_YAW[2])  # nearly parallel
+        dx, dy, dz = c.THUMB_DIR
+        self.assertGreater(dx, h4.THUMB_DIR[0])  # more down the hand, less at the camera
+        self.assertGreater(dy, h4.THUMB_DIR[1])
+        self.assertGreater(c.THUMB_OUT, h4.THUMB_OUT)  # the root further out (a short one folds)
+        self.assertGreater(c.THUMB_LEN, h4.THUMB_LEN)
+        self.assertTrue(all(len(b) == 7 and b[0] < b[1] and b[2] < b[3] and b[4] < b[5] and 0 < b[6] <= 1.0
+                            for b in c.PROJECT_DETAIL))
+        self.assertTrue(all(b[3] < 0.1 for b in c.PROJECT_DETAIL))  # the back (+y) left out
+
+    def test_detail_gain(self):
+        c = self.c
+        P = types.SimpleNamespace
+        smooth = lambda t: max(0.0, min(1.0, t)) ** 2 * (3 - 2 * max(0.0, min(1.0, t)))  # noqa: E731
+        c.smooth01 = getattr(c, "smooth01", smooth)
+        self.assertEqual(c.detail_gain(P(x=0.1, y=0.0, z=1.0)), 0.0)  # off: no boxes
+        c.PROJECT_DETAIL = [[0.0, 0.2, -0.3, 0.04, 0.8, 1.36, 0.8]]
+        self.assertAlmostEqual(c.detail_gain(P(x=-0.1, y=-0.1, z=1.1)), 0.8)  # inside, mirrored in x
+        self.assertEqual(c.detail_gain(P(x=0.1, y=0.1, z=1.1)), 0.0)  # the back
+        mid = c.detail_gain(P(x=0.1, y=0.03, z=1.1))  # inside the soft edge
+        self.assertTrue(0.0 < mid < 0.8)
 
     def test_h1_height_under_the_cap(self):
         c = self.c

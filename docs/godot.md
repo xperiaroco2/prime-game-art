@@ -3153,7 +3153,7 @@ a time, by visibility.
     stays below the 2D's 36 on this flat lower face: the rest is form (Test B), not material.
   - The pick is not in `alien.gd` or `look_presets.json`: the look needs the engineer's yes (the values are in the
     handoff and `TD/final/spec.json`).
-- **Bodies A, H1 to H4: the chameleon's hybrid body** (art #196; output under
+- **Bodies A, H1 to H4b: the chameleon's hybrid body** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in
     `tools/blender/alien_cage_targets/`; a file's `include` (a file beside it) is applied first. Without a file every
@@ -3187,6 +3187,15 @@ a time, by visibility.
     |x| boxes (the knee, the hip's front fold) extra weight smoothing after `WEIGHT_SMOOTH`, so a bend folds wider.
     The outer toe group turns out less and the thumb root is thinner. `alien_body_refit_review.py` also shoots the
     chest (`close_chest_front`, `close_chest_three_quarter`).
+  - H4b (the feet, thumb and trunk that H4's numbers did not fix): `chameleon_h4b.toml` and two new knobs, both off
+    by default. `FOOT_END` rebuilds the last foot ring's columns, the two toes' bases: the inner columns at a small
+    share of the half width (a slit between the toes instead of H1's wide capped quad, which read as a wedge and a "Y"
+    from above), level tops and a flatter sole; the last two `FOOT` rings move about 2.6 cm back and lower, so the
+    toes split further back, and the toes are longer, wider, nearly parallel and taper to a low tip. The thumb points
+    down the hand and toward the palm instead of at the viewer, its root further out of the palm's side (a short
+    `THUMB_OUT` folds the root: the hand's max fold jumped past 150 degrees in the grid). `PROJECT_DETAIL` gives soft
+    |x| boxes where the projection's step keeps a share of its unsmoothed part (the trunk's front: the target's
+    clavicles, pectoral planes and abdomen survive `PROJECT_SMOOTH`); `SCULPT_PEC` has a long lower border.
 
 ## Findings for later tasks
 

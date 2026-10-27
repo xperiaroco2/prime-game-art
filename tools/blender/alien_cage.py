@@ -271,6 +271,14 @@ SCULPT_PEC = []  # [x0, x1, z0, z1, push m, edge m]: the chest's front pushed fo
 #                  full from the lower edge (z0 + edge, a short rise: the pectoral's lower border) fading to z1
 WEIGHT_ZONES = []  # [[x0, x1, y0, y1, z0, z1, passes], ...]: extra weight smoothing in soft boxes (|x|, both sides)
 WEIGHT_ZONE_MARGIN = 0.02  # m: each weight box's soft edge
+# H4b: the chameleon's feet and trunk relief; off by default (S4b and H1 to H4 unchanged).
+FOOT_END = []  # [u mid, top mid, top side, bottom side]: the last foot ring's columns rebuilt, the two toes' bases: the
+#                inner columns at +-u mid of the half width (default 0.4: a wide cleft quad, the wedge), the tops at
+#                top mid and top side of the ring's height (1.0 and FOOT_SIDE_H), the sole's outer corners at bottom
+#                side of its depth (0.6); a small u mid makes the cleft a slit between two wide, flat toe bases
+PROJECT_DETAIL = []  # [[x0, x1, y0, y1, z0, z1, gain], ...]: in soft |x| boxes the projection's step keeps gain of its
+#                      unsmoothed part (0: PROJECT_SMOOTH's step, 1: the raw step), so more of the target's relief stays
+PROJECT_DETAIL_MARGIN = 0.02  # m: each detail box's soft edge
 # S1c's skeleton, the cage numbers' frame (CAGE_REMAP): heights, the arm's x and the foot's y of its joints.
 REF_Z = {"LeftFoot": 0.115, "LeftLowerLeg": 0.5181, "LeftUpperLeg": 0.8409, "Chest": 1.0283, "UpperChest": 1.1491,
          "LeftUpperArm": 1.2765}
@@ -287,7 +295,7 @@ CAGE_KEYS = ("TRUNK", "NECK_END", "CROTCH", "CROTCH_Z", "ARM_HOLE", "ARM", "ARM_
              "PROJECT_K", "PROJECT_MAX", "PROJECT_NORMAL_MIN", "PROJECT_HAND", "PROJECT_NECK", "PROJECT_SOLE",
              "PROJECT_FOOT", "PROJECT_SMOOTH", "PROJECT_RELAX", "PROJECT_PASSES", "SCULPT_ARM", "SCULPT_DELTOID",
              "SCULPT_THIGH", "NECK_RELAX", "TOE_YAW", "SCULPT_TRUNK", "TRUNK_X", "SCULPT_PEC", "WEIGHT_ZONES",
-             "WEIGHT_ZONE_MARGIN")
+             "WEIGHT_ZONE_MARGIN", "FOOT_END", "PROJECT_DETAIL", "PROJECT_DETAIL_MARGIN")
 
 
 def apply_cage_targets(path):
@@ -643,7 +651,7 @@ def build_cage(sole_drop, trunk, bones=None):
     # feet: the ankle ring's j at -22.5 + 45 j degrees; front four (7, 0, 1, 2) become the top, back four the sole
     role = {7: (-1.0, FOOT_SIDE_H, 1), 0: (-0.4, 1.0, 1), 1: (0.4, 1.0, 1), 2: (1.0, FOOT_SIDE_H, 1),
             3: (1.0, -0.6, -1), 4: (0.4, -1.0, -1), 5: (-0.4, -1.0, -1), 6: (-1.0, -0.6, -1)}
-    for y, zc, tilt, w, ht, hb in FOOT:
+    for fi, (y, zc, tilt, w, ht, hb) in enumerate(FOOT):
         al = math.radians(tilt)
         v = Vector((0, -math.cos(al), math.sin(al)))
         ring = []
@@ -653,6 +661,9 @@ def build_cage(sole_drop, trunk, bones=None):
                 off = Vector((w * math.sin(ph), 0, 0)) + v * ((ht if math.cos(ph) > 0 else hb) * math.cos(ph))
             else:
                 u, h, sgn = role[j]
+                if FOOT_END and fi == len(FOOT) - 1:  # H4b: the toes' bases (see FOOT_END)
+                    u = math.copysign(FOOT_END[0], u) if abs(u) < 0.99 else u
+                    h = (FOOT_END[1] if abs(u) < 0.99 else FOOT_END[2]) if sgn > 0 else                         (-1.0 if abs(u) < 0.99 else -FOOT_END[3])
                 off = Vector((u * w, 0, h * (ht if sgn > 0 else hb)))
             co = Vector((FOOT_X, y, zc)) + off
             if co.z < 0.004:
@@ -993,12 +1004,17 @@ class Wrap:
                     dv *= PROJECT_MAX / dv.length
                 step.append(dv)
                 known.append(True)
+            raw = list(step)
             for _ in range(PROJECT_SMOOTH + 2):  # the refused steps filled from their neighbours first
                 new = []
                 for i, dv in enumerate(step):
                     avg = sum((step[j] for j in nbs[i]), Vector()) / max(len(nbs[i]), 1)
                     new.append(avg if not known[i] else dv * 0.5 + avg * 0.5)
                 step = new
+            if PROJECT_DETAIL:  # H4b: the unsmoothed part of the step kept in the detail boxes
+                gains = [detail_gain(v.co) for v in vs]
+                step = [dv + g * (r - dv) if (g > 0 and k) else dv for dv, r, g, k in zip(step, raw, gains, known)]
+                out["detail_verts"] = sum(1 for g in gains if g > 0)
             moved = []
             for v, m, dv in zip(vs, mask, step):
                 dv = dv * m
@@ -1048,6 +1064,21 @@ class Wrap:
         self.report.setdefault("fit_worst_mm", []).append(round(worst * 1000, 2))
         self.report.setdefault("fit_mean_mm", []).append(round(1000 * sum(errs) / max(len(errs), 1), 2))
         return worst
+
+
+def detail_gain(co):
+    """H4b: PROJECT_DETAIL's gain at a point (the largest of its soft |x| boxes; 0 outside them)."""
+    best = 0.0
+    for x0, x1, y0, y1, z0, z1, gain in PROJECT_DETAIL:
+        t = 1.0
+        for c, a, b in ((abs(co.x), x0, x1), (co.y, y0, y1), (co.z, z0, z1)):
+            d_ = min(c - a, b - c)
+            if d_ <= 0:
+                t = 0.0
+                break
+            t = min(t, d_ / PROJECT_DETAIL_MARGIN)
+        best = max(best, gain * smooth01(t) if t > 0 else 0.0)
+    return best
 
 
 def smooth01(t):
