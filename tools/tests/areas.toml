@@ -96,7 +96,7 @@ tests = ["test_faces_*"]
 
 [area.alien_stride]
 sources = ["tools/blender/alien_stride.py", "tools/blender/alien_stride_math.py", "tools/blender/anim_edit_math.py", "tools/blender/alien_clip_edit.py"]  # the alien locomotion clip tool (#196, option A); before light's alien_*
-tests = ["test_alien_stride_*"]
+tests = ["test_alien_stride_*", "test_alien_poses_*"]  # the poses build on its FK
 
 [area.alien_headlook]
 sources = ["godot/alien/head_look.gd", "godot/alien/head_look_check.gd", "godot/alien/head_look_shots.gd", "tools/blender/alien_headlook_run.py"]  # the head follows the aim (#196, H1, F1); before light's alien_*
@@ -105,6 +105,10 @@ tests = ["test_alien_headlook_*"]
 [area.alien_loco]
 sources = ["tools/blender/alien_loco.py", "tools/blender/alien_loco_math.py", "tools/blender/anim_sets/alien_loco.toml", "godot/alien/treadmill_reels.gd"]  # the alien's locomotion set and treadmill reels (#196, option A step 3); before light's alien_*
 tests = ["test_alien_loco_*", "test_alien_stride_*", "test_alien_headlook_*"]  # F3: the head-look check runs on the loco build
+
+[area.alien_poses]
+sources = ["tools/blender/alien_poses.py", "tools/blender/alien_pose_math.py", "tools/blender/anim_sets/alien_poses.toml"]  # the photo poses on the alien (#196); before light's alien_*
+tests = ["test_alien_poses_*"]
 
 [area.alien_ttm]
 sources = ["tools/blender/alien_ttm.py", "tools/blender/alien_ttm_math.py", "tools/blender/retarget_maps/smpl_contract.toml"]  # text-to-motion on the alien (#196, option A step 2); before light's alien_*
