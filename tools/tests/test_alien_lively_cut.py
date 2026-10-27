@@ -286,7 +286,8 @@ class LivelyCut(unittest.TestCase):
         self.assertEqual((O["RIM_CUT_MAX_TO_EYE_PCT"], O["RIM_CUT_FIT_MAX_TO_EYE_PCT"]), (1.5, 4.0))
         self.assertEqual((self.B.RIM_SPLIT_MAX_PAST90_PCT, self.B.RIM_SPLIT_FIT_MAX_PAST90_PCT), (6.5, 10.0))
         A, I, eyeball, centres = sheets()
-        with mock.patch.object(self.B, "RIM_CUT_MAX_TO_EYE_PCT", 9.0),                 mock.patch.object(self.B, "RIM_CUT_FIT_MAX_TO_EYE_PCT", 9.5):  # both over the sheets' 6.7 %, told apart
+        with (mock.patch.object(self.B, "RIM_CUT_MAX_TO_EYE_PCT", 9.0),
+              mock.patch.object(self.B, "RIM_CUT_FIT_MAX_TO_EYE_PCT", 9.5)):  # both over the sheets' 6.7 %, told apart
             for fit, want in (("trimmed", 9.0), ("all", 9.5), ("outer", 9.5)):
                 with self.subTest(fit):
                     rep = self.B.rim_cut({k: v.copy() for k, v in A.items()}, I, eyeball, centres, R_EYE, 8, fit)[4]
@@ -301,6 +302,9 @@ class LivelyCut(unittest.TestCase):
         src = (BLENDER / "alien_lively_build.py").read_text(encoding="utf-8")
         self.assertIn('None if args.rim_fit == "trimmed" else RIM_SPLIT_FIT_MAX_PAST90_PCT', src)  # main's wiring
         self.assertIn("rim_cut(A, I, eyeball, centres, r, args.rim_cut, args.rim_fit)", src)
+        for name in ("alien_lively_build.py", "alien_lively_run.py"):  # the approved build stays the default
+            self.assertIn('"--rim-fit", choices=("trimmed", "all", "outer"), default="trimmed"',
+                          (BLENDER / name).read_text(encoding="utf-8"), name)
 
     def split(self, flip: int = 0, sphere_only: bool = False, stray: int = 0):
         """rim_split on the cut sheets, each eye's sphere the eye centre 1 cm behind with radius R_EYE (eyeball_fix's

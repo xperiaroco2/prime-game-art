@@ -3,16 +3,17 @@ anim_sets/alien_loco.toml (alien_loco_math.expand) made with step 1's edits (ali
 foot's contact, stride, arm_swing, mirror) from each R2b character's UAL clips and step 2's text-to-motion loops,
 written as CharacterArmature|<name>_Loop (a game clip replaces the build's action of that name), one GLB per
 character with export_glb.py's fixed options (textured, the build's morph-free export), glTF-Validator; then the
-treadmill reels of the chameleon (godot/alien/treadmill_reels.gd in the runner's off-screen window, MP4s with
+treadmill reels of one character (godot/alien/treadmill_reels.gd in the runner's off-screen window, MP4s with
 Blender's FFmpeg).
 
     $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw [--chars chameleon,axolotl]   # the GLBs
-    $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...]      # the reels
+    $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char NAME]  # reels
 
 Into <raw>/<raw_base>/<out>/build/<char>/: <char>_char.blend, <char>_char.glb, its validator report, loco.json (per
 clip the edits' reports, the numbers before and after, the rates at the game's speeds), the build's support files
-(bases, char.json, lively, body maps) copied beside it for the reels; reels into <out>/reels/ (never overwritten:
-an --out holding reels.json is refused). Long: run it in the background.
+(bases, char.json, lively, body maps) copied beside it for the reels; the chameleon's reels into <out>/reels/, the
+axolotl's into <out>/reels/axolotl/ (never overwritten: an --out holding reels.json is refused). Long: run it in
+the background.
 """
 from __future__ import annotations
 
@@ -262,7 +263,8 @@ def main() -> int:
     ap.add_argument("--chars", default="")
     ap.add_argument("--reels", action="store_true")
     ap.add_argument("--only", default="", help="--reels: only these reels (names from alien_loco_math.reel_plan)")
-    ap.add_argument("--char", default="chameleon", help="--reels: the character (not the chameleon: into reels/<char>/)")
+    ap.add_argument("--char", default="chameleon", choices=("chameleon", "axolotl"),
+                    help="--reels: the character (not the chameleon: into reels/<char>/)")
     ap.add_argument("--dump", default="", help="write the chameleon's skeleton and sampled sources as JSON, no build")
     a = ap.parse_args()
     cfg = L.load()
