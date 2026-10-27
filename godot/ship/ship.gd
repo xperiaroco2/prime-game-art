@@ -65,6 +65,15 @@ const METALS: Dictionary = {
 	"ext_seam": [Color(0.035, 0.037, 0.04), 0.6, 0.6, 0.0, 0.0, 0.0, 0.0],
 }
 const METAL_KEYS: Array = ["metallic", "roughness", "grain", "seams", "scratches", "grime"]
+## gills step 2 (art #263): the gills' bronze is the stations' shared bronze, console.gd's `bronze` on
+## console_metal.gdshader (its metallic, roughness, wear and lift); the crowns a little darker, the lit chamfers its
+## worn colour as base, smoother. By glTF material name: [base sRGB, metallic, roughness, wear, lift].
+const GILL_BRONZE: Dictionary = {
+	"gill_bronze": [Color(0.774, 0.556, 0.349), 0.35, 0.42, 1.0, 0.12],
+	"gill_bronze2": [Color(0.70, 0.50, 0.31), 0.35, 0.46, 1.0, 0.10],
+	"gill_edge": [Color(1.0, 0.854, 0.665), 0.5, 0.26, 0.4, 0.2],
+}
+var _gill_mats: Dictionary = {}
 const LIGHT_CELL_M: float = 1.6
 const INSIDE_LAYER: int = 1   # render layer bits: the inside's pieces (default) and the outside's (inside-2)
 const OUTSIDE_LAYER: int = 2
@@ -332,6 +341,21 @@ func _lk(key: String, default: float) -> float:
 	return float((_req["light"] as Dictionary).get(key, default))
 
 
+## The gills' bronze for a GILL_BRONZE name (one ShaderMaterial per name).
+func _gill(name: String) -> Material:
+	if not _gill_mats.has(name):
+		var spec: Array = GILL_BRONZE[name]
+		var sm := ShaderMaterial.new()
+		sm.shader = load("res://console/console_metal.gdshader") as Shader
+		sm.set_shader_parameter("base_color", spec[0])
+		sm.set_shader_parameter("metallic", spec[1])
+		sm.set_shader_parameter("roughness", spec[2])
+		sm.set_shader_parameter("wear", spec[3])
+		sm.set_shader_parameter("lift", spec[4])
+		_gill_mats[name] = sm
+	return _gill_mats[name]
+
+
 ## The shared metal for a library material name (one ShaderMaterial per name, shared by every piece).
 func _metal(name: String) -> Material:
 	if not _metals.has(name):
@@ -365,7 +389,9 @@ func _dress(ship: Node3D) -> int:
 			var mat: Material = mi.mesh.surface_get_material(i)
 			if mat == null:
 				continue
-			if METALS.has(mat.resource_name):
+			if GILL_BRONZE.has(mat.resource_name):
+				mi.set_surface_override_material(i, _gill(mat.resource_name))
+			elif METALS.has(mat.resource_name):
 				mi.set_surface_override_material(i, _metal(mat.resource_name))
 			elif mat is BaseMaterial3D and not seen.has(mat) and not (mat as BaseMaterial3D).emission_enabled:
 				seen[mat] = 0.0
