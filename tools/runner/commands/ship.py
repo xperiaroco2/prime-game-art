@@ -64,6 +64,24 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="the --play scene off-screen: the capsule walks 2 s, saves one shot and DIR/play.json")
 
 
+def vent_well(layout: dict) -> list[str]:
+    """Gills step 1: the vents' well against the hull (tools/blender/ship_interior_gills.py): the share of the
+    drawing's 127 x 129 x 45 cm box with SKIN_M of hull behind it, the hull behind the full box and behind the built
+    back (which follows the hull, at least WELL_MIN deep)."""
+    import importlib
+    import sys
+    sys.path.insert(0, str(blender.SCRIPTS))
+    g = importlib.import_module("ship_interior_gills")
+    out = []
+    for side in "ew":
+        w = g.well_depth(layout, side)
+        deep = [d for row in w["d"] for d in row]
+        out.append(f"  vent well {side}: the drawing's 45 cm box keeps {g.SKIN_M * 100:.0f} cm of hull over "
+                   f"{w['full'] * 100:.0f}% of its face (least skin behind it {w['least_skin']:+.3f} m); built "
+                   f"{min(deep) * 100:.0f}..{max(deep) * 100:.0f} cm deep, the hull behind it {w['least_built']:+.3f} m")
+    return out
+
+
 def raw(layout: dict) -> Path:
     return common.raw_dir() / layout["raw_dir"]
 
@@ -79,6 +97,8 @@ def run(args: argparse.Namespace) -> int:
     skins = ship_layout.room_skin(layout)
     if skins:
         common.say("  least skin: " + ", ".join(f"{r} {s:.3f} ({w})" for r, (s, w) in skins.items()))
+    for line in vent_well(layout):
+        common.say(line)
     for p in problems:
         common.say(f"  {p}")
     if problems:
@@ -315,7 +335,7 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
 # vents-b2: each glow panel carries its well lights (godot/ship/vent_glow.gd): calm hides the heat, the problem the cool.
 # vents-b3: "dark" turns a surface's glow off and its colour to dark bronze, as vent_anim.gd does the seams calm (b2's
 # "dim" kept their orange colour: the seams read lit in the calm shots)
-VENT_STATES = {"calm": {"slats": 1.0, "show": [], "hide": ["heat"], "dim": ["lamp"], "dark": ["slat*:__vent_seam"]},
+VENT_STATES = {"calm": {"slats": 1.0, "show": [], "hide": ["heat"], "dim": ["lamp"], "dark": ["slat*:__vent_seam", "seam*:__vent_seam"]},
                "problem": {"slats": 0.0, "show": ["heat"], "hide": ["cool"], "dim": [], "dark": []}}
 
 

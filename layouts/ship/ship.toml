@@ -149,6 +149,7 @@ normal = [-0.9500, 0.3123]                    # from the mouth (1.65, -7.1) to t
                                               # its 1.6 m plain band lies on those two plain modules, off the jamb
 room = "throat"
 recess_m = 0.0                                # vents-b5: back on the wall's face (b4 0.08 into it)
+well_m = 0.45                                 # gills step 1: the well behind the wall's face (the drawing's box; it follows the hull)
 depth_m = 0.6                                 # the vents' BUDGET from the wall's face, not the unit's depth: the unit is
                                               # 0.50 (ship_interior_vent.UNIT; the column's foot), the rest is slack
                                               # (b3: the calm gill blades 19 cm
@@ -161,6 +162,7 @@ at = [-2.4090, -4.7912]
 normal = [0.9500, 0.3123]
 room = "throat"
 recess_m = 0.0
+well_m = 0.45
 depth_m = 0.6
 
 [[stations.spot]]

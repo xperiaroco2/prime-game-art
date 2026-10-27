@@ -1355,3 +1355,6 @@ def scratches(args, layout):
 # step 2, station 1: the throat vents' builder (imported last: it reads this module's numbers)
 import ship_interior_vent  # noqa: E402
 MODULES.append(ship_interior_vent)
+# gills step 1 (2026-10-27): the vents rebuilt as the ray's gills, sunk into the throat's wall
+import ship_interior_gills  # noqa: E402
+MODULES.append(ship_interior_gills)
