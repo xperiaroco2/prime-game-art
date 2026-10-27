@@ -21,6 +21,7 @@ const VIEW_34 := 35.0
 const CAM_H := 1.5
 const CAM_D := 7.0
 const FRAME_C := Vector3(0.0, 0.92, 0.0)
+const FRAME_H := 2.7  # the far shots' framed height (m): Plane's span fits the cell
 const START_CELL := Vector2i(220, 330)
 const GRID_CELL := Vector2i(200, 300)
 const CLOSE_CELL := Vector2i(300, 300)
@@ -93,7 +94,7 @@ func _run() -> void:
 				_label.text = "%s
 %s
 %s" % [p[0], p[1], f] if f == "front" else f
-				cells.append(await _shot(FACINGS[f], FRAME_C, 2.3, START_CELL, mask))
+				cells.append(await _shot(FACINGS[f], _frame(), FRAME_H, START_CELL, mask))
 	_save(cells, START_CELL, 8, out.path_join("starting_%s.png" % c))
 	report["starting"] = {"rows": job["starting"], "cols": ["front", "left", "right", "back", "outline front", "outline left", "outline right", "outline back"]}
 	# the 48 pairs: front and three-quarter rendered, then one outline grid per facing
@@ -104,7 +105,7 @@ func _run() -> void:
 			for am: String in job["arms"]:
 				_pose(lg, am)
 				_label.text = "%s\n%s" % [lg, am]
-				cells.append(await _shot(g[1], FRAME_C, 2.3, GRID_CELL, g[2]))
+				cells.append(await _shot(g[1], _frame(), FRAME_H, GRID_CELL, g[2]))
 		_save(cells, GRID_CELL, job["arms"].size(), out.path_join("grid_%s_%s.png" % [g[0], c]))
 	report["grids"] = {"rows": job["legs"], "cols": job["arms"]}
 	# close-ups: the arms where hands meet or touch (on Stand), the legs' contacts (with HandsOnHips)
@@ -114,7 +115,7 @@ func _run() -> void:
 		for v: float in [0.0, 90.0, VIEW_34]:
 			_label.text = "%s
 %s" % [am, {0.0: "front", 90.0: "left", VIEW_34: "3/4"}[v]]
-			cells.append(await _shot(v, _bone("UpperChest") + Vector3(0.0, 0.08, 0.0), 0.95, CLOSE_CELL, false))
+			cells.append(await _shot(v, _bone("Neck") + Vector3(0.0, 0.02, 0.0), 1.25, CLOSE_CELL, false))
 	_save(cells, CLOSE_CELL, 3, out.path_join("close_arms_%s.png" % c))
 	cells = []
 	for lg: String in job["legs"]:
@@ -141,6 +142,13 @@ func _bone(b: String) -> Vector3:
 
 ## The photographer's camera at yaw (degrees, where it stands) and CAM_H toward c, framing height h (the far shots);
 ## a close-up (h under 1.5 m) stands nearer, level with c.
+## The far shots' centre: the scale is fixed (FRAME_H), the centre follows the pose: half the head's height (a
+## seated pose is not left in the cell's lower half) and half the hips' sideways shift (the lunge stays in the cell).
+func _frame() -> Vector3:
+	var hips := _bone("Hips")
+	return Vector3(hips.x * 0.5, maxf(0.62, minf(FRAME_C.y, (_bone("Head").y + 0.3) * 0.5)), hips.z * 0.5)
+
+
 func _shot(yaw_deg: float, c: Vector3, h: float, size: Vector2i, mask: bool) -> Image:
 	for mi: MeshInstance3D in _meshes:
 		mi.material_override = _black if mask else _keep[mi]
@@ -150,7 +158,7 @@ func _shot(yaw_deg: float, c: Vector3, h: float, size: Vector2i, mask: bool) -> 
 	var far: bool = h > 1.5
 	var d: float = CAM_D if far else 2.6
 	_cam.fov = rad_to_deg(2.0 * atan(h * 0.5 / d))
-	_cam.position = Vector3(sin(yaw) * d, CAM_H if far else c.y + 0.1, cos(yaw) * d)
+	_cam.position = Vector3(c.x + sin(yaw) * d, CAM_H if far else c.y + 0.1, c.z + cos(yaw) * d)  # moved with c: no turn
 	_cam.look_at(c)
 	_label.position = Vector2(406.0, 4.0)
 	return await _grab(size)
