@@ -1,0 +1,130 @@
+# The photo poses on the alien (art #196; prime-game docs/GDD.md section 8 "Photo"): held poses in two layers, the
+# legs (Root, Hips, Spine, the legs to the toes) and the arms (Chest up: the neck, head, shoulders, arms, fingers).
+# Read by tools/blender/alien_pose_math.py; docs/animations.md, "The photo poses (art #196)".
+#
+# Directions are (out, fwd, up): "out" toward the side the bone is on, the character's front, world up. The legs
+# are in the world's axes; the arms in the chest's (they follow the legs' Spine). Lengths: `ankle`, `shift` and
+# `drop` in leg lengths (thigh + shin), an arm's `offset` in hand lengths (wrist to the middle finger's tip).
+# Turns: [pitch, roll, yaw] degrees (pitch + leans forward, roll + toward the side's out, yaw + turns toward it).
+
+reference_legs = "Stand"      # the arms are solved over these legs (their Spine at rest)
+
+[set]
+out = "poses"
+raw_base = "research/2026-10-22-roster/design/pilot3d/anim_bare"
+build = "loco/f3/build"       # the characters the poses go on: <raw_base>/<build>/<char>/<char>_char.blend
+chars = ["chameleon", "axolotl"]
+starting = [["OneLeg", "Plane"], ["Lunge", "FingerUp"], ["Kneel", "Heart"], ["Squat", "Flex"],
+            ["Sit", "HandsBehindHead"], ["Stand", "HandsOnHips"]]
+
+[limits]
+floor_cm = 0.5        # the lowest skin point within this of the floor
+support_cm = 1.0      # skin within this of the lowest point makes the support area
+com_margin_cm = 1.0   # the centre of mass at least this far inside the support area (the standing poses)
+balance_legs = ["Stand", "OneLeg", "Squat", "Lunge", "Kneel"]
+through_cm = 1.5      # skin through skin (the tube proxy's own error on the rest skin is in the report)
+contact_gap_cm = 1.0  # a contact's skin gap (hand to hip, index tip to index tip) at most this
+
+# [a, b]: how deep a's skin goes into b's volume (b's bone tubes)
+through_pairs = [
+  ["hand_Left", "torso"], ["hand_Right", "torso"], ["forearm_Left", "torso"], ["forearm_Right", "torso"],
+  ["upperarm_Left", "torso"], ["upperarm_Right", "torso"], ["hand_Left", "head"], ["hand_Right", "head"],
+  ["forearm_Left", "head"], ["forearm_Right", "head"],
+  ["hand_Left", "thigh_Left"], ["hand_Right", "thigh_Right"], ["forearm_Left", "thigh_Left"],
+  ["forearm_Right", "thigh_Right"], ["thigh_Left", "torso"], ["thigh_Right", "torso"], ["thigh_Left", "thigh_Right"],
+]  # hand into hand is judged on the close-ups: the hand's tube (a short bone under curled fingers) misreads
+
+# ------------------------------------------------------------------------------------------------- the grips
+# per finger [base, middle, tip] curl in degrees (the thumb: metacarpal, proximal, distal); `all` for the rest
+[grips.relaxed]
+all = [16, 22, 12]
+Thumb = [6, 10, 8]
+spread = 2
+[grips.flat]
+all = [4, 4, 2]
+Thumb = [0, 4, 4]
+[grips.hip]
+all = [28, 36, 22]
+Thumb = [10, 16, 10]
+[grips.fist]
+all = [82, 96, 62]
+Thumb = [28, 38, 34]
+[grips.point]
+all = [82, 96, 62]
+Index = [0, 2, 0]
+Thumb = [28, 38, 34]
+[grips.heart]
+all = [76, 92, 56]
+Index = [38, 52, 30]
+Thumb = [-12, 4, 4]
+
+# ---------------------------------------------------------------------------------------------- the legs (6)
+# a leg: mode "plant" (the ankle's goal at its rest place + `ankle` [out, fwd], the foot turned by toe_out,
+# foot_pitch (+ toes up) and foot_roll, its height solved so the sole meets the floor, the knee toward `knee`),
+# "fk" (thigh, shin directions, `foot` the ankle-to-ball direction) or "kneel" (thigh, `foot`, the shin's pitch
+# solved so the ball of the foot is on the floor, the toes laid flat). hips.fit: groups whose lowest skin goes onto
+# the floor (the kneeling knee, the seat). `floor`: groups that must touch the floor (measured).
+[legs.Stand]
+hips = { drop = 0.004 }
+both = { mode = "plant", ankle = [0.02, 0.0], toe_out = 7, knee = [0.0, 1.0, 0.0] }
+floor = ["foot_Left", "foot_Right"]
+
+[legs.OneLeg]
+hips = { drop = 0.01, shift = [0.12, 0.0], turn = [0, 3, 0] }
+Left = { mode = "plant", ankle = [-0.04, 0.0], toe_out = 6, knee = [0.0, 1.0, 0.0] }
+Right = { mode = "fk", thigh = [0.4, 0.8, 0.12], shin = [-0.3, -0.15, -1.0], foot = [-0.1, 0.3, -1.0] }
+floor = ["foot_Left"]
+
+[legs.Squat]
+hips = { drop = 0.56, shift = [0.0, -0.08], turn = [14, 0, 0] }
+spine = { turn = [-4, 0, 0] }
+both = { mode = "plant", ankle = [0.22, 0.04], toe_out = 28, knee = [0.75, 0.7, 0.0] }
+floor = ["foot_Left", "foot_Right"]
+
+[legs.Kneel]
+hips = { drop = 0.45, fit = ["shin_Right"] }
+Right = { mode = "kneel", thigh = [0.05, -0.08, -1.0], foot = [0.0, -0.25, -1.0] }
+Left = { mode = "plant", ankle = [0.04, 0.52], toe_out = 6, knee = [0.1, 1.0, 0.3] }
+floor = ["shin_Right", "foot_Right", "foot_Left"]
+
+[legs.Lunge]
+hips = { drop = 0.30, shift = [-0.4, 0.0], turn = [6, -4, 0] }
+Right = { mode = "plant", ankle = [0.36, 0.0], toe_out = 35, knee = [0.6, 0.8, 0.0] }
+Left = { mode = "plant", ankle = [0.37, 0.0], toe_out = 12, knee = [0.0, 1.0, 0.2] }
+floor = ["foot_Left", "foot_Right"]
+
+[legs.Sit]
+hips = { drop = 0.6, turn = [12, 0, 0], fit = ["torso", "thigh_Left", "thigh_Right"] }
+spine = { turn = [6, 0, 0] }
+both = { mode = "plant", ankle = [0.25, 0.7], toe_out = 15, foot_pitch = 50, knee = [0.3, 0.0, 1.0] }
+floor = ["torso", "foot_Left", "foot_Right"]
+
+# ---------------------------------------------------------------------------------------------- the arms (8)
+# an arm: mode "fk" (upper, lower directions) or "goal" (the wrist at the landmark `at` + `offset`, the elbow toward
+# `elbow`; `touch`: the hand's skin brought to gap_cm of that group's along `push`); the hand: `fingers_dir` (wrist
+# to fingers), `palm` (the palm's normal), `grip`; `shoulder` a turn of the shoulder bone. contacts: measured skin
+# gaps; solve = "meet" moves both hands toward each other until a and b touch.
+[arms.HandsOnHips]
+both = { mode = "goal", at = "waist", offset = [0.5, 0.1, 0.4], elbow = [1.0, -0.45, 0.0], fingers_dir = [0.15, 0.55, -0.8], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], push = [-1.0, 0.0, 0.0], gap_cm = 0.3 }
+contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Right", b = "torso" }]
+
+[arms.Plane]
+Left = { mode = "fk", upper = [1.0, 0.0, 0.17], lower = [1.0, 0.03, 0.15], fingers_dir = [1.0, 0.0, 0.14], palm = [0.0, 0.0, -1.0], grip = "flat" }
+Right = { mode = "fk", upper = [1.0, 0.0, -0.17], lower = [1.0, 0.03, -0.19], fingers_dir = [1.0, 0.0, -0.2], palm = [0.0, 0.0, -1.0], grip = "flat" }
+
+[arms.Flex]
+both = { mode = "fk", upper = [1.0, 0.1, 0.12], lower = [0.12, 0.15, 1.0], fingers_dir = [-0.15, 0.1, 1.0], palm = [-1.0, 0.0, 0.0], grip = "fist" }
+
+[arms.Heart]
+both = { mode = "goal", at = "chest_front", offset = [0.35, 1.3, -0.4], elbow = [0.7, 0.0, -1.0], fingers_dir = [-0.55, 0.15, 0.8], palm = [0.0, -1.0, 0.0], hand_roll = 55, grip = "heart" }
+contacts = [{ a = "LeftIndexDistal", b = "RightIndexDistal", solve = "meet", gap_cm = 0.2 }, { a = "LeftThumbDistal", b = "RightThumbDistal" }]
+
+[arms.FingerUp]
+Head = [-8, 0, 0]
+Right = { mode = "fk", shoulder = [0, 8, 0], upper = [0.3, 0.1, 1.0], lower = [0.15, 0.05, 1.0], fingers_dir = [0.05, 0.05, 1.0], palm = [-0.6, 0.8, 0.0], grip = "point" }
+Left = { mode = "goal", at = "waist", offset = [0.5, 0.1, 0.45], elbow = [1.0, -0.45, 0.0], fingers_dir = [0.15, 0.8, -0.45], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], push = [-1.0, 0.0, 0.0], gap_cm = 0.3 }
+contacts = [{ a = "hand_Left", b = "torso" }]
+
+[arms.HandsBehindHead]
+both = { mode = "goal", at = "head_back", offset = [0.75, -0.1, 0.0], elbow = [1.0, -0.2, 0.6], fingers_dir = [-1.0, 0.0, 0.2], palm = [0.0, 1.0, 0.0], grip = "relaxed", touch = ["head"], push = [0.0, 1.0, 0.0], gap_cm = 0.3 }
+contacts = [{ a = "hand_Left", b = "head" }, { a = "hand_Right", b = "head" }]
