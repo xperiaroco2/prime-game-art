@@ -315,24 +315,28 @@ def tube(skel: dict, skin: dict, bone: str) -> dict | None:
     return {"bone": bone, "y0": y0, "dy": dy, "radius": radius, "volume": vol, "centroid_local": c}
 
 
-def tube_depth(t: dict, P: dict, pts: list, first: int = 0) -> float:
-    """The deepest any point goes inside the posed tube (m; 0 when none is inside); `first`: its slices from that one
-    on (the ones before skipped)."""
+def tube_depths(t: dict, P: dict, pts: list, first: int = 0) -> list:
+    """Per point how deep it is inside the posed tube (m; 0 when outside); `first`: its slices from that one on (the
+    ones before skipped)."""
     inv = S.rigid_inv(P[t["bone"]])
-    worst = 0.0
+    out = []
     y0, dy = t["y0"], t["dy"]
     for p in pts:
         y = inv[1][0] * p[0] + inv[1][1] * p[1] + inv[1][2] * p[2] + inv[1][3]
         s = (y - y0) / dy
         if s < first or s >= TUBE_SLICES:
+            out.append(0.0)
             continue
         x = inv[0][0] * p[0] + inv[0][1] * p[1] + inv[0][2] * p[2] + inv[0][3]
         z = inv[2][0] * p[0] + inv[2][1] * p[1] + inv[2][2] * p[2] + inv[2][3]
         a = int(((math.atan2(z, x) + math.pi) / (2 * math.pi)) * TUBE_SECTORS) % TUBE_SECTORS
-        d = t["radius"][int(s)][a] - math.hypot(x, z)
-        if d > worst:
-            worst = d
-    return worst
+        out.append(max(0.0, t["radius"][int(s)][a] - math.hypot(x, z)))
+    return out
+
+
+def tube_depth(t: dict, P: dict, pts: list, first: int = 0) -> float:
+    """The deepest any point goes inside the posed tube (m; 0 when none is inside)."""
+    return max(tube_depths(t, P, pts, first), default=0.0)
 
 
 # ------------------------------------------------------------------------------------------------ the model
@@ -667,6 +671,60 @@ def mark_posed(model: Model, P: dict, mark: str) -> tuple:
     return tuple(m[i][0] * x + m[i][1] * y + m[i][2] * z + m[i][3] for i in range(3))
 
 
+# a's skin shares a joint with b (the groin, the armpit, the knee's back): only how much deeper it goes than at rest
+REST_BASED = ("thigh", "upperarm", "shin")
+
+
+def through_keep(P: dict, a: str, pts: list) -> list:
+    """Which of a's posed points the through check reads: a thigh beyond its groin (the hip's 30 %: the belly's
+    contact in Squat and Sit is the thigh's front from there on), an upper arm's elbow half (the armpit's skin is
+    shared); every point of the other groups."""
+    part = a.split("_")[0]
+    if part not in ("thigh", "upperarm"):
+        return [True] * len(pts)
+    side = a.split("_")[1]
+    j0, j1 = (f"{side}UpperLeg", f"{side}LowerLeg") if part == "thigh" else (f"{side}UpperArm", f"{side}LowerArm")
+    o, e = S.pos(P[j0]), S.pos(P[j1])
+    ax = sub(e, o)
+    cut = (0.3 if part == "thigh" else 0.5) * dot(ax, ax)
+    return [dot(sub(p, o), ax) > cut for p in pts]
+
+
+def through_depth(model: Model, P: dict, pz: Posed, a: str, b: str) -> float:
+    """How deep a's skin goes into b's volume (m): the deepest point inside b's tubes; for a REST_BASED group the
+    depth beyond the same point's at rest (0 on the rest pose by construction, so the groin, armpit and knee skin
+    the tubes share at rest does not read). Into a thigh: its hip third skipped (THIGH_SKIP: the buttock and groin
+    skin that skinning folds into the pelvis when the thigh rises; the torso's check covers a hand there)."""
+    pts = pz.groups([a])
+    keep = through_keep(P, a, pts)
+    sel = [p for p, k in zip(pts, keep) if k]
+    first = THIGH_SKIP if b.startswith("thigh") else 0
+    based = a.split("_")[0] in REST_BASED
+    if based:
+        rp = model.rest_posed
+        rest = [p for p, k in zip(rp.groups([a]), keep) if k]
+    worst = 0.0
+    for t in tube_bones(b, model.tubes):
+        dep = tube_depths(model.tubes[t], P, sel, first)
+        if based:
+            base = tube_depths(model.tubes[t], rp.P, rest, first)
+            dep = [x - y for x, y in zip(dep, base)]
+        worst = max(worst, max(dep, default=0.0))
+    return worst
+
+
+def flat_feet(data: dict, pz: Posed, legs: str) -> dict:
+    """A planted foot without `foot_pitch`: its heel's (the Foot bone's skin) and ball's (Toes) lowest points, the
+    higher of the two (cm): a foot on one corner reads its other end's height."""
+    out = {}
+    spec = data["legs"][legs]
+    for side in SIDES:
+        leg = spec.get(side) or spec.get("both")
+        if leg and leg.get("mode") == "plant" and not leg.get("foot_pitch"):
+            out[side] = round(max(abs(pz.lowest([f"{side}Foot"])), abs(pz.lowest([f"{side}Toes"]))) * 100.0, 2)
+    return out
+
+
 def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
     """A pair's numbers: the floor (cm), the centre of mass over the support (cm inside the hull of the skin within
     1 cm of the floor), the deepest skin-through-skin per checked pair of groups (cm), the contacts' gaps (cm), the
@@ -682,22 +740,7 @@ def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
     margin = inside_margin(poly, (com[0], com[1]))
     through = {}
     for a, b in d["limits"]["through_pairs"]:
-        pts = pz.groups([a])
-        if a.startswith("thigh"):  # the thigh's half by the hip is inside the pelvis by build: the knee's half only
-            side = a.split("_")[1]
-            hipj, kn = S.pos(P[f"{side}UpperLeg"]), S.pos(P[f"{side}LowerLeg"])
-            ax = sub(kn, hipj)
-            pts = [p for p in pts if dot(sub(p, hipj), ax) > 0.55 * dot(ax, ax)]
-        if a.startswith("upperarm"):  # the armpit's skin is shared: the elbow's half only
-            side = a.split("_")[1]
-            sj, el = S.pos(P[f"{side}UpperArm"]), S.pos(P[f"{side}LowerArm"])
-            ax = sub(el, sj)
-            pts = [p for p in pts if dot(sub(p, sj), ax) > 0.5 * dot(ax, ax)]
-        # into a thigh: its hip third skipped (the buttock and groin skin that skinning folds into the pelvis when
-        # the thigh rises: a hand there is on the hip, the torso's check covers it)
-        first = THIGH_SKIP if b.startswith("thigh") else 0
-        dep = max((tube_depth(model.tubes[t], P, pts, first) for t in tube_bones(b, model.tubes)), default=0.0)
-        through[f"{a}>{b}"] = round(dep * 100.0, 2)
+        through[f"{a}>{b}"] = round(through_depth(model, P, pz, a, b) * 100.0, 2)
     contacts, marks = {}, {}
     for c in d["arms"][arms].get("contacts", []) + d["legs"][legs].get("contacts", []):
         if c.get("measure") is False:  # a solve's helper (the hands' meet): its own contacts are measured
@@ -708,8 +751,12 @@ def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
             continue
         contacts[f"{c['a']}~{c['b']}"] = round(nearest_gap(pz.group(c["a"]), pz.groups([c["b"]]), reach=0.3) * 100, 2)
     floor = {g: round(pz.lowest([g]) * 100.0, 2) for g in d["legs"][legs].get("floor", [])}
+    flat = flat_feet(d, pz, legs)
     lim = d["limits"]
     fails = []
+    for k, v in flat.items():
+        if v > lim["flat_cm"]:
+            fails.append(f"flat {k} foot {v} cm")
     for k, v in floor.items():
         if abs(v) > lim["floor_cm"]:
             fails.append(f"touch {k} {v} cm")
@@ -727,7 +774,7 @@ def measure(model: Model, r: Rig, legs: str, arms: str) -> dict:
         if v > lim["contact_gap_cm"]:
             fails.append(f"gap {k} {v} cm")
     return {"pair": f"{legs}+{arms}", "floor_cm": round(low * 100, 2), "com_margin_cm": round(margin * 100, 2),
-            "support_pts": len(sup), "com": [round(c, 4) for c in com], "touch_cm": floor, "through_cm": through, "contacts_cm": contacts,
+            "support_pts": len(sup), "com": [round(c, 4) for c in com], "touch_cm": floor, "flat_cm": flat, "through_cm": through, "contacts_cm": contacts,
             "marks_cm": marks, "fails": fails}
 
 

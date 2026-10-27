@@ -9,7 +9,8 @@ from the four facings with their outlines.
 
 Into <raw>/<raw_base>/<out>/<step>/: build/<char>/<char>_char.blend (the f3 build plus the pose clips),
 build/<char>/poses.json (per pair the numbers, the fails, the landmarks), <char>_dump.json (the skin the solve
-reads), sheet_<char>.png. A step folder that holds a build is refused (never over a raw folder). Long: run it in
+reads), sheet_<char>.png. A step folder that holds a build (or, for --dump, a dump) is refused (never over a
+raw folder; alien_poses_run.py's --check and --shots add their own files to the step and replace only those). Long: run it in
 the background.
 """
 from __future__ import annotations
@@ -61,14 +62,11 @@ def solve(dump: dict, cfg: dict, which: str) -> tuple[A.Model, dict, dict, list]
 
 
 def proxy_error(model: A.Model) -> dict:
-    """The tube proxy's reading on the rest skin itself (cm): the floor under the through limits."""
+    """The through check (alien_pose_math.through_depth, the same filters and the rest baseline) read on the rest
+    pose itself (cm): the floor under the through limits. 0 for the thighs, upper arms and shins by construction."""
     rp = model.rest_posed
-    P = A.Rig(model.skel).P()
-    out = {}
-    for a, b in (("thigh_Left", "torso"), ("upperarm_Left", "torso"), ("hand_Left", "torso")):
-        out[f"{a}>{b}"] = round(max(A.tube_depth(model.tubes[t], P, rp.group(a))
-                                    for t in A.tube_bones(b, model.tubes)) * 100, 2)
-    return out
+    return {f"{a}>{b}": round(A.through_depth(model, rp.P, rp, a, b) * 100, 2)
+            for a, b in model.data["limits"]["through_pairs"]}
 
 
 def _solve_main(a, cfg: dict) -> int:
@@ -434,8 +432,8 @@ def main() -> int:
     import alien_loco as LO
     build, out = _dirs(a.raw, a.step, cfg)
     out = Path(a.out) if a.out else out  # a scratch folder for tuning (tools/out/poses/...)
-    if (out / "build").exists() and not a.dump:
-        print(f"{out / 'build'} exists: a new --step folder, never over a raw folder", flush=True)
+    if (out / "build").exists() or (a.dump and any(out.glob("*_dump.json"))):
+        print(f"{out} holds a build or a dump: a new --step folder, never over a raw folder", flush=True)
         return 2
     chars = a.chars.split(",") if a.chars else cfg["set"]["chars"]
     if a.glb:  # the build's side files beside the GLB, as alien_loco.py copies them

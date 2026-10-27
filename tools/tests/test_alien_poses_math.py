@@ -90,6 +90,31 @@ class Geometry(unittest.TestCase):
         self.assertEqual(A.nearest_gap([(0, 0, 0)], [(1, 0, 0)], reach=0.1), 0.1)
 
 
+class TubeVolumes(unittest.TestCase):
+    """tube() and tube_depths() on known geometry: a cylinder of radius 0.1 m along a bone's y, 0.8 m long."""
+
+    @classmethod
+    def setUpClass(cls):
+        pts = [(0.1 * math.cos(2 * math.pi * k / 48), 0.8 * (j + 0.5) / 40, 0.1 * math.sin(2 * math.pi * k / 48))
+               for j in range(40) for k in range(48)]
+        cls.skel = {"rest": {"Spine": _eye()}, "parent": {"Spine": None}}
+        cls.t = A.tube(cls.skel, {"points": pts, "by_bone": {"Spine": list(range(len(pts)))}}, "Spine")
+
+    def test_radius_is_the_surface(self):
+        for row in self.t["radius"]:
+            for r in row:
+                self.assertAlmostEqual(r, 0.1, places=6)
+
+    def test_depth_inside_outside_and_moved(self):
+        P = {"Spine": _eye()}
+        d = A.tube_depths(self.t, P, [(0.0, 0.4, 0.0), (0.06, 0.4, 0.0), (0.2, 0.4, 0.0), (0.0, -0.1, 0.0)])
+        self.assertAlmostEqual(d[0], 0.1, places=6)
+        self.assertAlmostEqual(d[1], 0.04, places=6)
+        self.assertEqual(d[2:], [0.0, 0.0])
+        self.assertAlmostEqual(A.tube_depth(self.t, {"Spine": _eye(x=0.05)}, [(0.0, 0.4, 0.0)]), 0.05, places=6)
+        self.assertEqual(A.tube_depth(self.t, P, [(0.0, 0.05, 0.0)], first=3), 0.0)  # slice 0 skipped
+
+
 class RigAndLayers(unittest.TestCase):
     def test_limb_shares_a_hinge_and_reaches(self):
         r = A.Rig(_leg_skel())

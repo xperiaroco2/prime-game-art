@@ -27,6 +27,7 @@ through_cm = 1.5      # skin through skin (the tube proxy's own error on the res
 through_hand_cm = 0.5 # a hand or forearm into the body: the hand's proxy reads 0.0 cm on the rest skin
 mark_cm = 5.0        # a hand on a landmark (the hip hand on the waist's side): the palm's centre within this
 contact_gap_cm = 1.0  # a contact's skin gap (hand to hip, index tip to index tip) at most this
+flat_cm = 1.0         # a planted foot (no foot_pitch): its heel's and ball's lowest skin both within this of the floor
 
 # [a, b]: how deep a's skin goes into b's volume (b's bone tubes)
 through_pairs = [
@@ -35,7 +36,9 @@ through_pairs = [
   ["forearm_Left", "head"], ["forearm_Right", "head"],
   ["hand_Left", "thigh_Left"], ["hand_Right", "thigh_Right"], ["forearm_Left", "thigh_Left"],
   ["forearm_Right", "thigh_Right"], ["thigh_Left", "torso"], ["thigh_Right", "torso"], ["thigh_Left", "thigh_Right"],
-]  # hand into hand is judged on the close-ups: the hand's tube (a short bone under curled fingers) misreads
+  ["shin_Left", "thigh_Left"], ["shin_Right", "thigh_Right"],
+]  # thigh, upper arm, shin: the depth beyond the rest's (through_depth). Hand into hand is judged on the
+#   close-ups: the hand's tube (a short bone under curled fingers) misreads
 
 # ------------------------------------------------------------------------------------------------- the grips
 # per finger [base, middle, tip] curl in degrees (the thumb: metacarpal, proximal, distal); `all` for the rest
@@ -128,7 +131,7 @@ Right = { mode = "fk", upper = [1.0, -0.42, -0.15], lower = [1.0, -0.38, -0.17],
 both = { mode = "fk", upper = [1.0, 0.4, 0.12], lower = [0.05, 0.25, 1.0], fingers_dir = [-0.2, 0.2, 1.0], palm = [-1.0, 0.0, 0.0], grip = "fist" }
 
 [arms.Heart]
-both = { mode = "goal", at = "chest_front", offset = [0.4, 1.9, 0.9], elbow = [1.0, 0.0, -0.5], fingers_dir = [-0.6, 0.2, 0.8], palm = [0.0, -1.0, 0.0], hand_roll = 55, grip = "heart" }
+both = { mode = "goal", at = "chest_front", offset = [0.4, 1.9, 0.15], elbow = [1.0, 0.0, -0.5], fingers_dir = [-0.6, 0.2, 0.8], palm = [0.0, -1.0, 0.0], hand_roll = 55, grip = "heart" }
 contacts = [{ a = "LeftIndexDistal", b = "RightIndexDistal", solve = "meet", gap_cm = 0.2 }, { a = "LeftThumbDistal", b = "RightThumbDistal" }]
 
 [arms.FingerUp]
