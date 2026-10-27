@@ -279,6 +279,14 @@ FOOT_END = []  # [u mid, top mid, top side, bottom side]: the last foot ring's c
 PROJECT_DETAIL = []  # [[x0, x1, y0, y1, z0, z1, gain], ...]: in soft |x| boxes the projection's step keeps gain of its
 #                      unsmoothed part (0: PROJECT_SMOOTH's step, 1: the raw step), so more of the target's relief stays
 PROJECT_DETAIL_MARGIN = 0.02  # m: each detail box's soft edge
+# H5: the axolotl's five short toes; off by default (S4b and H1 to H4b unchanged).
+TOE_SPLIT = {}  # {dy = m, cols = [[u, top share, bottom share], ...]}: one more foot ring dy m past the last FOOT ring
+#               whose top and sole have len(cols) columns (u: share of the last ring's half width, inner -1 to outer
+#               +1; the shares of its height above and depth below the centre), bridged from the last ring's three top
+#               and three sole edges (1, n - 2, 1 edges: two quads and an n-gon each side), so len(cols) - 1 toes
+SCULPT_BUST = []  # [x, z, push m, radius m]: the chest's front pushed forward about (+-x, z), push at the centre
+#                   falling smoothly to 0 at radius (front-facing vertices only): a fuller, soft chest, no detail
+TOE_LENS = []  # per toe slot, a factor on its forward steps (empty: 1; TOE_MID still adds to slot 1 of three)
 # S1c's skeleton, the cage numbers' frame (CAGE_REMAP): heights, the arm's x and the foot's y of its joints.
 REF_Z = {"LeftFoot": 0.115, "LeftLowerLeg": 0.5181, "LeftUpperLeg": 0.8409, "Chest": 1.0283, "UpperChest": 1.1491,
          "LeftUpperArm": 1.2765}
@@ -295,7 +303,8 @@ CAGE_KEYS = ("TRUNK", "NECK_END", "CROTCH", "CROTCH_Z", "ARM_HOLE", "ARM", "ARM_
              "PROJECT_K", "PROJECT_MAX", "PROJECT_NORMAL_MIN", "PROJECT_HAND", "PROJECT_NECK", "PROJECT_SOLE",
              "PROJECT_FOOT", "PROJECT_SMOOTH", "PROJECT_RELAX", "PROJECT_PASSES", "SCULPT_ARM", "SCULPT_DELTOID",
              "SCULPT_THIGH", "NECK_RELAX", "TOE_YAW", "SCULPT_TRUNK", "TRUNK_X", "SCULPT_PEC", "WEIGHT_ZONES",
-             "WEIGHT_ZONE_MARGIN", "FOOT_END", "PROJECT_DETAIL", "PROJECT_DETAIL_MARGIN")
+             "WEIGHT_ZONE_MARGIN", "FOOT_END", "PROJECT_DETAIL", "PROJECT_DETAIL_MARGIN", "TOE_SPLIT", "TOE_LENS",
+             "SCULPT_BUST")
 
 
 def apply_cage_targets(path):
@@ -674,7 +683,29 @@ def build_cage(sole_drop, trunk, bones=None):
         prev = ring
     top = [prev[7], prev[0], prev[1], prev[2]]
     bot = [prev[6], prev[5], prev[4], prev[3]]
-    for i in range(3):
+    if TOE_SPLIT:  # H5: the split ring (see TOE_SPLIT): its columns become the toes' bases
+        y, zc, _, w, ht, hb = FOOT[-1]
+        cols = TOE_SPLIT["cols"]
+        a = [V(Vector((FOOT_X + u * w, y - TOE_SPLIT["dy"], zc + t * ht))) for u, t, _ in cols]
+        b = []
+        for u, _, d in cols:
+            co = Vector((FOOT_X + u * w, y - TOE_SPLIT["dy"], zc - d * hb))
+            if co.z < 0.004:
+                co.z -= sole_drop
+            b.append(V(co))
+        n = len(cols)
+        # the same winding as the rings' quads (prev[j], prev[j + 1], ring[j + 1], ring[j]) along the loop
+        # 7, 0, 1, 2 (top, inner to outer), 3, 4, 5, 6 (sole, outer to inner)
+        bm.faces.new((prev[7], prev[0], a[1], a[0]))
+        bm.faces.new([prev[0], prev[1]] + [a[k] for k in range(n - 2, 0, -1)])
+        bm.faces.new((prev[1], prev[2], a[n - 1], a[n - 2]))
+        bm.faces.new((prev[2], prev[3], b[n - 1], a[n - 1]))
+        bm.faces.new((prev[3], prev[4], b[n - 2], b[n - 1]))
+        bm.faces.new([prev[4], prev[5]] + [b[k] for k in range(1, n - 1)])
+        bm.faces.new((prev[5], prev[6], b[0], b[1]))
+        bm.faces.new((prev[6], prev[7], a[0], b[0]))
+        top, bot = a, b
+    for i in range(len(top) - 1):
         base = [top[i], top[i + 1], bot[i + 1], bot[i]]
         if i not in TOE_SET:  # H1: no toe here (the cleft between two toe groups): the end quad capped
             bm.faces.new(base)
@@ -683,7 +714,8 @@ def build_cage(sole_drop, trunk, bones=None):
         last = base
         for r, (fwd, sw, sh, drop) in enumerate(TOE):
             fwd, sw, sh = toe_ring(r, fwd, sw, sh)
-            f = fwd + (TOE_MID * fwd / (TOE[-1][0] * TOE_LEN) if i == 1 else 0.0)
+            f = fwd + (TOE_MID * fwd / (TOE[-1][0] * TOE_LEN) if i == 1 and len(top) == 4 else 0.0)
+            f *= TOE_LENS[i] if TOE_LENS else 1.0
             yaw = math.radians(TOE_YAW[i]) * fwd / (TOE[-1][0] * TOE_LEN)  # H3: the toe turned out along its length
             ring = []
             for p in base:
@@ -1224,6 +1256,17 @@ def sculpt(body, bones, ring_z):
             v.co.y -= push * wx * wz * wn
             n += 1
         out["pec_verts"] = n
+    if SCULPT_BUST:  # H5: a soft round push about each side's centre (see SCULPT_BUST)
+        bx, bz, push, rad = SCULPT_BUST
+        bm.normal_update()
+        n = 0
+        for v in vs:
+            d = math.hypot(abs(v.co.x) - bx, v.co.z - bz)
+            if d >= rad or v.normal.y > -0.2:
+                continue
+            v.co.y -= push * smooth01(1.0 - d / rad) * smooth01((-v.normal.y - 0.2) / 0.5)
+            n += 1
+        out["bust_verts"] = n
     if NECK_RELAX:
         lo, hi, passes = NECK_RELAX
         band = [(v, smooth01((v.co.z - (ring_z - lo)) / (0.5 * (lo - hi)))
@@ -1395,7 +1438,7 @@ def main():
     if wrap and PROJECT:  # H2: the target's forms after the subdivision
         report["project"] = wrap.project(body, ring["z"])
         print("project:", json.dumps(report["project"]), flush=True)
-    if SCULPT_ARM or SCULPT_DELTOID or SCULPT_THIGH or NECK_RELAX or SCULPT_TRUNK or SCULPT_PEC:  # H3, H4
+    if SCULPT_ARM or SCULPT_DELTOID or SCULPT_THIGH or NECK_RELAX or SCULPT_TRUNK or SCULPT_PEC or SCULPT_BUST:  # H3 to H5
         report["sculpt"] = sculpt(body, bones, ring["z"])
         print("sculpt:", json.dumps(report["sculpt"]), flush=True)
     report["cage_trunk"] = [[t[0]] + [round(x, 4) for x in t[1:]] for t in trunk]

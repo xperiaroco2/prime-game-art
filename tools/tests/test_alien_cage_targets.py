@@ -7,7 +7,10 @@ H2's with the shaping after the projection, the toes turned out and the new hand
 chameleon_h4.toml is H3's with the neck's back cleaned on the target, the trunk and chest shaped and the knee's and
 hip's weights spread; all three are off by default. H4b: chameleon_h4b.toml is H4's with the feet rebuilt (the last
 foot ring's columns: FOOT_END), the thumb along the palm's side and more of the target's relief on the trunk
-(PROJECT_DETAIL); both new knobs are off by default."""
+(PROJECT_DETAIL); both new knobs are off by default. H5: axolotl_h5.toml is the axolotl woman's body on H4b's chain,
+her Meshy body's stations and her own hand and feet: five short toes from one split foot ring (TOE_SPLIT, TOE_LENS)
+and the soft chest push (SCULPT_BUST); the three new knobs are off by default and the chameleon's files keep them
+off."""
 from __future__ import annotations
 
 import importlib.util
@@ -30,6 +33,7 @@ H4 = BLENDER / "alien_cage_targets" / "chameleon_h4.toml"
 H4_KEYS = {"TARGET_CLEAN", "SCULPT_ARM", "SCULPT_TRUNK", "TRUNK_X", "SCULPT_PEC", "TOE", "TOE_YAW", "THUMB_R0",
            "THUMB_OUT", "WEIGHT_ZONES"}
 H4B = BLENDER / "alien_cage_targets" / "chameleon_h4b.toml"
+AX5 = BLENDER / "alien_cage_targets" / "axolotl_h5.toml"
 H4B_KEYS = {"FOOT", "FOOT_END", "TOE", "TOE_YAW", "THUMB_DIR", "THUMB_OUT", "THUMB_LEN", "PROJECT_DETAIL", "PROJECT_THICK",
             "SCULPT_PEC"}
 
@@ -195,6 +199,50 @@ class CageTargets(unittest.TestCase):
         self.assertTrue(all(len(b) == 7 and b[0] < b[1] and b[2] < b[3] and b[4] < b[5] and 0 < b[6] <= 1.0
                             for b in c.PROJECT_DETAIL))
         self.assertTrue(all(b[3] < 0.1 for b in c.PROJECT_DETAIL))  # the back (+y) left out
+
+    def test_h5_new_knobs_off_by_default_and_for_the_chameleon(self):
+        c = self.c
+        self.assertEqual((c.TOE_SPLIT, c.TOE_LENS, c.SCULPT_BUST), ({}, [], []))
+        c.apply_cage_targets(H4B)
+        self.assertEqual((c.TOE_SPLIT, c.TOE_LENS, c.SCULPT_BUST), ({}, [], []))
+        self.assertEqual(tuple(c.TOE_SET), (0, 2))  # his two toe groups stay
+
+    def test_axolotl_h5(self):
+        h4b = _load()
+        h4b.apply_cage_targets(H4B)
+        c = self.c
+        self.assertEqual(c.apply_cage_targets(AX5), "axolotl_h5")
+        self.assertEqual(c.BODY_SCALE, 1.0)  # her refit stands at her height
+        self.assertTrue(c.CAGE_REMAP and c.PROJECT and c.HAND_REL)  # H4b's chain kept
+        own = {k for k in tomllib.loads(AX5.read_text(encoding="utf-8")) if k.isupper()}
+        for k in ("WRAP_Z", "WRAP_X", "ARM_GUESS", "TARGET_CLEAN", "HAND", "FOOT", "TOE", "TOE_YAW", "SCULPT_PEC"):
+            self.assertIn(k, own)  # every number of his Meshy body, concept or skeleton set again
+        zs = [b for _, b in c.WRAP_Z]
+        self.assertEqual(zs, sorted(zs))
+        self.assertTrue(1.40 < c.WRAP_Z[-1][1] < 1.50)  # her Meshy neck's narrowest
+        # five toes: six split columns, inner to outer, one length and one yaw per toe
+        cols = c.TOE_SPLIT["cols"]
+        self.assertEqual(len(cols), 6)
+        self.assertEqual(tuple(c.TOE_SET), tuple(range(len(cols) - 1)))
+        self.assertEqual(len(c.TOE_LENS), len(cols) - 1)
+        self.assertEqual(len(c.TOE_YAW), len(cols) - 1)
+        us = [u for u, _, _ in cols]
+        self.assertEqual(us, sorted(us))
+        self.assertEqual((us[0], us[-1]), (-1.0, 1.0))
+        self.assertTrue(all(0 < t <= 1.0 and 0 < d <= 1.0 for _, t, d in cols))
+        self.assertTrue(0.0 < c.TOE_SPLIT["dy"] < 0.03)
+        self.assertEqual(c.TOE_YAW, tuple(sorted(c.TOE_YAW)))  # fanned out toward the little toe
+        self.assertLess(c.TOE[-1][0] * c.TOE_LEN, 0.05)  # short toes (his reach 0.177 m)
+        self.assertLess(c.TOE[-1][0] * c.TOE_LEN, 0.5 * h4b.TOE[-1][0] * h4b.TOE_LEN)
+        self.assertEqual(c.FOOT_END, [])
+        # the chest: about 10 mm forward with a 9 cm falloff, no relief kept there, his pectoral planes off
+        x, z, push, rad = c.SCULPT_BUST
+        self.assertTrue(0.008 <= push <= 0.012 and 0.08 <= rad <= 0.10 and 0.04 < x < 0.12 and 1.0 < z < 1.3)
+        self.assertEqual((c.SCULPT_PEC, c.PROJECT_DETAIL), ([], []))
+        # the thumb's root far enough out of the palm (closer than 0.015 m folded his hand)
+        self.assertGreaterEqual(c.THUMB_OUT, 0.015)
+        self.assertLess(c.HAND[-1][0], h4b.HAND[-1][0])  # a smaller hand than his
+        self.assertTrue(all(len(b) == 7 and b[0] < b[1] and b[2] < b[3] and b[4] < b[5] for b in c.TARGET_CLEAN))
 
     def test_detail_gain(self):
         c = self.c

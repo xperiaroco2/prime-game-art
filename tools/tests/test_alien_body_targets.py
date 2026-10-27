@@ -85,6 +85,30 @@ class Targets(unittest.TestCase):
         self.assertAlmostEqual(0.2435 * h3["LENGTH"]["lowerarm"] * scale, 0.25, places=3)
 
 
+    def test_axolotl_h5(self):
+        """H5: her own refit targets: the standard ring at 1.390 m (her eyes near the game's camera, her top under the
+        body's 1.80 m), her concept's arm and legs, five fingers; the chameleon's files unchanged."""
+        ab = self.ab
+        ab.apply_targets(TARGETS / "u1.toml")
+        neck_u1 = ab.NECK
+        self.assertEqual(ab.apply_targets(TARGETS / "axolotl_h5.toml"), "axolotl_h5")
+        self.assertEqual(ab.NECK, neck_u1)
+        self.assertEqual(ab.FINGERS, 5)
+        self.assertAlmostEqual(ab.RING_Z, 1.390)
+        self.assertTrue(1.70 <= ab.RING_Z + 0.369 <= 1.80)  # the r5 axolotl head stands about 0.369 m above its ring
+        self.assertAlmostEqual(ab.Z(1.39), ab.RING_Z)
+        zs = [ab.Z(h / 100) for h in range(0, 200)]
+        self.assertEqual(zs, sorted(zs))
+        self.assertAlmostEqual(0.251 * ab.LENGTH["upperarm"], 0.28, places=2)
+        self.assertAlmostEqual(0.2435 * ab.LENGTH["lowerarm"], 0.235, places=2)
+        self.assertLess(ab.LENGTH["thigh"], ab.LENGTH["calf"])  # her short thighs, long shins
+        self.assertTrue(all(0 <= (w or 0) < 0.45 and 0.1 < d < 0.3 for _, w, d in ab.BANDS))
+        self.assertEqual([b[0] for b in ab.BANDS], sorted(b[0] for b in ab.BANDS))
+        self.assertLess(ab.NECK_FLARE_Z, ab.RING_Z)
+        ab.apply_targets(TARGETS / "chameleon_h3.toml")
+        self.assertAlmostEqual(ab.RING_Z, 1.456)  # his file untouched
+
+
 class Measure(unittest.TestCase):
     def test_png_decode_with_filters(self):
         me = _load("alien_body_measure")

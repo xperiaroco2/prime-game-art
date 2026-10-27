@@ -3153,7 +3153,7 @@ a time, by visibility.
     stays below the 2D's 36 on this flat lower face: the rest is form (Test B), not material.
   - The pick is not in `alien.gd` or `look_presets.json`: the look needs the engineer's yes (the values are in the
     handoff and `TD/final/spec.json`).
-- **Bodies A, H1 to H4b: the chameleon's hybrid body** (art #196; output under
+- **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in
     `tools/blender/alien_cage_targets/`; a file's `include` (a file beside it) is applied first. Without a file every
@@ -3196,6 +3196,19 @@ a time, by visibility.
     `THUMB_OUT` folds the root: the hand's max fold jumped past 150 degrees in the grid). `PROJECT_DETAIL` gives soft
     |x| boxes where the projection's step keeps a share of its unsmoothed part (the trunk's front: the target's
     clavicles, pectoral planes and abdomen survive `PROJECT_SMOOTH`); `SCULPT_PEC` has a long lower border.
+  - H5, the axolotl woman's body on the same code: her refit on `alien_body_targets/axolotl_h5.toml`, measured
+    from `ax_turn_c` (front | side, `alien_body_measure.py --panels 2`). At her head's own scale she would stand
+    1.62 m with her eyes near 1.42 m, far under the game's camera, so her body below the ring keeps the concept's
+    proportions with the ring at the standard 1.390 m (eyes about 1.56 m, top about 1.76 m). Then
+    `alien_cage_targets/axolotl_h5.toml`: it includes the chameleon's H4b chain, sets again every number of his
+    Meshy body, concept and skeleton (her Meshy body's stations and cleaning boxes, her smaller hand, his sculpt
+    rows and trunk relief off), and uses three new knobs, all off by default and off in his files. `TOE_SPLIT` adds
+    one foot ring past the last whose top and sole have more columns (two quads and an n-gon each side bridge the
+    last ring's three edges), so the forefoot ends in five toe bases (`TOE_SET` 0 to 4). `TOE_LENS` gives each toe
+    its length factor (with `TOE_YAW` the fan). `SCULPT_BUST` pushes the chest's front-facing vertices forward
+    about each side's centre with a smooth falloff to its radius: the engineer's "a bit fuller" chest, 10 mm with a
+    9 cm falloff, no detail. `alien_body_beside.py --concept-px-m 0.0018362 --concept-sole-row 1001` puts her
+    beside her two-panel concept.
 
 ## Findings for later tasks
 
