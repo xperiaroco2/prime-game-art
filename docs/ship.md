@@ -1037,6 +1037,8 @@ narrow close-ups, the nose and the ramp's lamps) are `<raw>/ship/v4/fix2/views.j
 `<raw>/ship/v4/fix2/mkviews.py`.
 
 ## Station 1: the throat vents (step 2, 2026-10-23)
+Superseded on 2026-10-27 by the ray's gills sunk into the wall ("Station 1 rebuilt: the ray's gills" below); this
+section is the free-standing unit's record.
 The first station (art #263, the design session's item 1, comment 6361476098): `station_vent_e` and `station_vent_w`
 (`tools/blender/ship_interior_vent.py`, interior lane pieces placed by `ship_interior_place.py`, so `interior.toml`
 lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`pieces/`, `motion/`, `shots/`,
@@ -1308,6 +1310,51 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
     the face the same run fails with 0.0150 m outside, so the farthest tip is 2.5 cm behind the face. `ship --vent-anim DIR` (ship.gd mode `vent_anim`) renders it on the whole ship at night
     from about 3 m across the throat at the player's eye (`VENT_ANIM` in `ship.py`), 1280x720, and shoots the demo's
     key moments again with their labels into `keys/` and `keys_sheet.png`.
+
+## Station 1 rebuilt: the ray's gills (gills step 1, 2026-10-27)
+The engineer approved the design track's look, its four states and its drawing in cm and said "build it"
+(2026-10-27; the hand-over, art #263 comment 6439910674; the drawing `ideas/ship-components/vent-wall/drawing/drawing.js`
+in the private design repo holds every number). `station_vent_e` and `station_vent_w` keep their ids and spots; their
+builder is now `station_gills` (`tools/blender/ship_interior_gills.py`, plain Python); the free-standing unit
+(`station_vent`, `ship_vent_b.py`, the sections above) stays in the tree for the record and builds nothing placed.
+Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the notes `<raw>/ship/v5/notes/gills-*.md`.
+- **Sunk into the wall.** The piece is the band itself: it replaces the throat's low, middle and upper wall modules
+  under the 160 cm band (two modules of 0.81 m a side; `th_wall_mid`, `th_wall_up_a/b` are gone from
+  `interior.toml`, `th_wall_low_a/b` stay on the other modules). Its parts (u along the wall, + toward the hall, 0 the
+  band's middle; h over the deck): a dark plate (`vent_b_dark`) 3 cm thick flush with the wall's face with four slits
+  22 x 123 (h 0.15..1.38) behind the covers; the wall's 20 cm body round the well (`int_silver_b`); the leaning upper
+  wall (`upper`, its 20 cm body) with a dark panel from the bend to 2.10 under the crowns; the piece's `plain` box
+  holds the band check (`check_spots`), its `unit` the covers and the fixed arch (u +-0.80; the plate runs 1.2 cm on
+  as wall).
+- **Four gill covers**, `<id>_cover1..4` from the mouth: curved bronze plates (`vent_b_bronze`) 30 x 137 (h 0.08 to
+  1.446), pitch 31.75 from u -0.80, 2.2 cm proud at the edges and bowed 1.6 cm across and 2.4 cm up the middle, both
+  front corners chamfered, each with a bright lip on its free edge (`<id>_lip<k>`, `vent_b_edge`, a child of the
+  cover). Each cover is a leaf with its origin on its hinge: a vertical line at its hall-side edge (u = -0.80 +
+  0.3175 (k - 1) + 0.30, v 1.5 cm, h 0.08), so turning it about Godot's y swings the free edge out toward the mouth.
+  Built in the calm pose, 16 deg (`CALM_DEG`, the calm breathing's widest; shut 0, exhale 70). Behind each seam a red
+  strip `<id>_seam<k>` (`int_halo__vent_seam`; calm darkens it: `ship.py` `VENT_STATES` "seam*:__vent_seam"); each
+  slit's two jambs glow cyan (`<id>_jamb<k>a/b`, `glow_cyan__vent_strip`).
+- **The crowns** `<id>_crown1..5` (`vent_b_bronze2`): fixed, from the bend to 2.05 on the leaning wall, 3.5 cm proud of
+  it (plus a 4 mm bow), 24 cm wide at the foot narrowing to 18 (the drawing's 3 and 6 cm insets).
+- **The fifth arch** (u 0.47..0.80, `<id>_fixed`): the scanner (a bezel ring 22.4 x 28.4, middle h 1.20, its dark
+  screen and the four-fingered hand's cyan stroke, `hand_outline` reused), the timing bar (5 cm wide, h 1.36..1.88,
+  over the bend onto the crown: amber, green 1.78..1.84) on a dark channel, and the red lamp on its crown (17 cm wide,
+  h 1.92..2.02 seen from the front, a squat dome on a bronze collar).
+- **The well** behind the slits: one box over u -0.81..0.46, h 0.12..1.41 (the drawing's 127 x 129, behind the four
+  covers), its back the calm glow (`<id>_cool`) with the heat (`<id>_heat`) 4 mm behind it, so `vent_glow.gd` keeps
+  its well lights, a honeycomb mesh of 3.5 cm cells 0.4..1.6 cm in front of the back (`vent_b_dark`), dark walls
+  (`vent_b_well`). **The hull is too thin for the drawing's 45 cm box** (`ship --check` prints it per side): the belly
+  rises behind the wall's foot and the mouth's open notch lies behind its mouth end, so the full box keeps 17 cm of
+  hull over only 46% of its face (the hull behind it down to -0.44 m), and sliding the vent inside its band cannot
+  help (the four covers and the fixed arch fill the whole 160 cm). The built back follows the hull
+  (`well_depth`): 45 cm where the hull allows, never under 6 cm (the plate and 3 cm of light); where even that has
+  less than 17 cm of hull (the mouth end, the foot), the well stays inside the 20 cm the old wall body took.
+- **Checks:** `ship --check` (the band, the unit, the well's depth line), `--build` (glTF-Validator clean, about
+  24,000 triangles a vent, the honeycomb about half), `--godot` (sizes, colliders: the band's box and the upper
+  wall's prism, the walk). Shots: `ship --shoot DIR --views <raw>/ship/v5/gills/views.json --vent-states
+  e=calm,w=calm` (the concept's two views, the throat's middle, the hall, four close-ups).
+- **Step 2** drives the four states in `vent_anim.gd` on the covers (`rotation.y` about each leaf's hinge, instead of
+  the blades' `rotation.x`), the seams and jambs red for the problem, the lamp, the bar's marker.
 
 ## The export (art #335)
 
