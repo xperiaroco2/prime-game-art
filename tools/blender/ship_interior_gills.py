@@ -50,20 +50,27 @@ FIXED = (0.47, 0.80)                 # the fifth arch, fixed
 HAND_C, HAND_HW, HAND_HH = 1.20, 0.112, 0.142   # the scanner's bezel: middle 1.20, 22.4 x 28.4
 BAR_W, BAR_H, BAR_GREEN = 0.05, (1.36, 1.88), (1.78, 1.84)
 LAMP_R, LAMP_H = 0.086, (1.92, 2.02)
-BOW = 0.080                          # gills step 2: a cover's front bows out up its height, PROUD at its foot and top
-RIM_W, RIM_UP, CH = 0.035, 0.008, 0.011   # its raised edge bands' width, their rise over the field, the lit chamfer
-FIELD_CROWN = 0.004                  # the field between the bands crowns a little across
+BOW = 0.080                          # gills step 2: a cover's front bows out up its height, PROUD at its foot
+TOP_RISE = 0.030                     # gills step 3: its top stands 3 cm more (6 cm), the crown's foot (one rib)
+SETBACK = 0.050                      # gills step 3: convex across its width, the edges 5 cm behind its crest
+CH = 0.011                           # the lit chamfer on each edge
+EDGE_MIN = 0.025                     # an edge's least height out of the wall's face (the back 6 mm, the chamfer)
+UNDERCUT = 0.020                     # the flanks lean in: the back 2 cm narrower each side, the grooves show under the edges
 HINGE = "hall"                       # the drawing's side: each cover hinged on its hall-side edge ("mouth": the other)
 CALM_DEG = 16.0                      # the static pose: the calm breathing's widest (10..16 deg; the concept's open gaps)
+# gills step 3: a groove 1.2 cm deep in the band under every rib edge (the gaps' middles and cover 1's mouth edge),
+# lit cyan calm (part of `<id>_cool`), its red seam behind the cyan (the problem): the concept's lit slits
+GROOVE_W, GROOVE_D, GROOVE_H = 0.055, 0.012, (0.10, 1.43)
 OPEN_DEG = 70.0                      # the exhale (step 2)
+NEIGHBOUR_DEG = 20.0                 # gills step 3: neighbouring covers clear while within this of each other (22: touch)
 HINGE_V = PROUD / 2
 
 # gills step 2: the stations' shared bronze (godot/console/console.gd's `bronze` on console_metal.gdshader: base
 # sRGB (0.774, 0.556, 0.349), worn (1.0, 0.854, 0.665), metallic 0.35, roughness 0.42); ship.gd swaps these three for
 # that shader by name (GILL_BRONZE), the GLB keeps the same colours for any other viewer (linear here)
-for _n, (_c, _m, _r) in {"gill_bronze": ((0.774, 0.556, 0.349), 0.35, 0.42),
-                         "gill_bronze2": ((0.70, 0.50, 0.31), 0.35, 0.46),
-                         "gill_edge": ((1.0, 0.854, 0.665), 0.5, 0.26)}.items():
+for _n, (_c, _m, _r) in {"gill_bronze": ((0.56, 0.35, 0.18), 0.62, 0.33),       # gills step 3: darker, ship.gd's
+                         "gill_bronze2": ((0.50, 0.31, 0.16), 0.62, 0.36),
+                         "gill_edge": ((1.0, 0.82, 0.56), 0.75, 0.18)}.items():
     L.MATERIALS.setdefault(_n, {"base": (*(x ** 2.2 for x in _c), 1.0), "metallic": _m, "roughness": _r})
 L.MATERIALS.setdefault("glow_white__vent_bar", {**L.MATERIALS["glow_amber"], "base": (1.0, 1.0, 1.0, 1.0),
                                                 "emission": (0.88, 0.95, 1.0)})
@@ -91,6 +98,25 @@ def hinge_side(args: dict | None = None) -> str:
     if h not in ("hall", "mouth"):
         raise ValueError(f"gills: hinge {h!r}, not 'hall' or 'mouth'")
     return h
+
+
+def calm_deg(args: dict | None = None) -> float:
+    """The built calm angle: the piece's args, else SHIP_GILLS_CALM (the step 3 grid), else CALM_DEG."""
+    d = float((args or {}).get("calm") or os.environ.get("SHIP_GILLS_CALM") or CALM_DEG)
+    if not 0.0 <= d <= OPEN_DEG:
+        raise ValueError(f"gills: calm {d} deg, not in 0..{OPEN_DEG}")
+    return d
+
+
+def groove_u() -> list[float]:
+    """The grooves' middles: cover 1's mouth edge's gap, then the gap after each cover (the last by the fifth arch)."""
+    gap = PITCH - COVER_W
+    return [cover_u(k) - gap / 2 for k in range(COVERS + 1)]
+
+
+def groove(k: int) -> tuple[float, float]:
+    g = groove_u()[k]
+    return max(g - GROOVE_W / 2, BAND_PLATE[0]), min(g + GROOVE_W / 2, BAND_PLATE[1])
 
 
 def hinge_u(i: int, hinge: str = HINGE) -> float:
@@ -192,21 +218,35 @@ def plate_section(u0: float, u1: float, front, back: float = 0.006, ch: float = 
 
 
 def cover_front(h: float) -> float:
-    """A shut cover's rim height out of the wall's face at h: PROUD at its foot and top, PROUD + BOW at mid-height."""
-    t = (h - COVER_H[0]) / (COVER_H[1] - COVER_H[0])
-    return PROUD + BOW * math.sin(math.pi * min(max(t, 0.0), 1.0))
+    """A shut cover's crest out of the wall's face at h: PROUD at its foot, PROUD + BOW about mid-height, PROUD +
+    TOP_RISE at its top (the crown's foot)."""
+    t = min(max((h - COVER_H[0]) / (COVER_H[1] - COVER_H[0]), 0.0), 1.0)
+    return PROUD + BOW * math.sin(math.pi * t) + TOP_RISE * t ** 3
 
 
-def cover_section(u0: float, u1: float, f: float, back: float = 0.006, n: int = 9):
-    """A cover's plan section (counter-clockwise from +h): its back flat at v = back; its front two raised edge bands
-    RIM_W wide at f, their outer corners chamfered CH (the lit chamfers), the field between RIM_UP lower, crowned."""
-    mid, half = (u0 + u1) / 2, (u1 - u0) / 2 - RIM_W
-    pts = [(u0 + 0.003, back), (u1 - 0.003, back), (u1, back + 0.004), (u1, f - CH), (u1 - CH, f),
-           (u1 - RIM_W + 0.006, f)]
+def edge_front(f: float, back: float = 0.006) -> float:
+    """A rib's edge height for the crest f: SETBACK behind it, at least EDGE_MIN (over the back and its chamfer)."""
+    return max(f - SETBACK, back + EDGE_MIN - 0.006)
+
+
+def rib_section(u0: float, u1: float, f: float, back: float = 0.006, n: int = 13, e: float | None = None):
+    """gills step 3: a rib's plan section (counter-clockwise from +h), convex across its width: its back flat at v =
+    back, its two sides straight up to the edges at edge_front(f), each edge chamfered CH (the lit chamfers), the
+    front a parabolic arc from the edges up to the crest f in the middle; the flanks lean in UNDERCUT to the back (the
+    lit groove under each edge shows past it)."""
+    e = edge_front(f, back) if e is None else e
+    a0, a1 = u0 + CH, u1 - CH
+    uc = min(UNDERCUT, max(e - CH - back - 0.004, 0.0))   # no more in than the flank is tall (45 deg at most)
+    pts = [(u0 + uc + 0.003, back), (u1 - uc - 0.003, back), (u1 - uc, back + 0.004), (u1, e - CH)]
     for k in range(n):
         q = 1.0 - 2.0 * k / (n - 1)
-        pts.append((mid + q * half, f - RIM_UP + FIELD_CROWN * (1 - q * q)))
-    return pts + [(u0 + RIM_W - 0.006, f), (u0 + CH, f), (u0, f - CH), (u0, back + 0.004)]
+        pts.append(((a0 + a1) / 2 + q * (a1 - a0) / 2, e + (f - e) * (1.0 - q * q)))
+    return pts + [(u0, e - CH), (u0 + uc, back + 0.004)]
+
+
+def cover_section(u0: float, u1: float, f: float, back: float = 0.006, n: int = 13):
+    """A cover's plan section: the convex rib (step 2's flat field between raised bands is gone)."""
+    return rib_section(u0, u1, f, back, n)
 
 
 COVER_HS = [COVER_H[0] + (COVER_H[1] - COVER_H[0]) * k / 18 for k in range(19)]
@@ -221,12 +261,16 @@ def cover_mesh(i: int, deg: float, hinge: str = HINGE):
 
 def chamfer_strips(u0: float, u1: float, rows, ch: float, place):
     """The lit chamfers: a thin bright ribbon 1.2 mm over each front chamfer of a plate's two long edges. rows: (h, the
-    front's height f) up the plate; place(u, v, h) -> the point in the piece's frame."""
+    edge's height f) up the plate, or (h, f, u0, u1) where the edges move; place(u, v, h) -> the point in the piece's
+    frame."""
     o = 0.0012 / math.sqrt(2)
     out = []
-    for e, du in ((u0, 1.0), (u1, -1.0)):
+    for side in (0, 1):
         loops = []
-        for h, f in rows:
+        for row in rows:
+            h, f = row[0], row[1]
+            e = (row[2] if len(row) > 2 else u0) if side == 0 else (row[3] if len(row) > 2 else u1)
+            du = 1.0 if side == 0 else -1.0
             a, b = (e - du * o, f - ch + o), (e + du * (ch - o), f + o)          # on the chamfer, o out along its normal
             c, d = (b[0] + du * 0.0008, b[1] - 0.0008), (a[0] + du * 0.0008, a[1] - 0.0008)   # 1.1 mm back into it
             loops.append([place(*q, h) for q in ((a, b, c, d) if du > 0 else (b, a, d, c))])
@@ -237,7 +281,7 @@ def chamfer_strips(u0: float, u1: float, rows, ch: float, place):
 def lip_mesh(i: int, deg: float, hinge: str = HINGE):
     """Cover i's two lit chamfers, turned with it (a child of the cover)."""
     u0, u1, hu = cover_u(i), cover_u(i) + COVER_W, hinge_u(i, hinge)
-    return chamfer_strips(u0, u1, [(h, cover_front(h)) for h in COVER_HS], CH,
+    return chamfer_strips(u0, u1, [(h, edge_front(cover_front(h))) for h in COVER_HS], CH,
                           lambda u, v, h: (*rot((u, v), hu, swing(hinge) * deg), h))
 
 
@@ -257,6 +301,35 @@ def fixed_mesh():
     """The fifth arch's plate: flat-faced, 3 cm proud, chamfered."""
     sec = plate_section(FIXED[0], FIXED[1], lambda q: PROUD, ch=CH)
     return V.loft([[(u, v, h) for u, v in sec] for h in (COVER_H[0], COVER_H[1])])
+
+
+CROWN_ROWS = 9
+CROWN_INSET = 0.03       # gills step 3: a rib crown is the cover's full 30 cm at its foot, 3 cm in each side at its top
+CROWN_CREST = 0.040      # its crest out of the leaning wall at its top (the foot: the cover's top, cover_front)
+
+
+def rib_crown_rows(u0: float, u1: float):
+    """A rib crown's rows up the leaning wall: (h, its edges u0, u1, its crest, its edges' height)."""
+    rows = []
+    for k in range(CROWN_ROWS):
+        t = k / (CROWN_ROWS - 1)
+        h = BEND + (CROWN_TOP - BEND) * t
+        a = CROWN_INSET * t * t
+        f = cover_front(COVER_H[1]) + (CROWN_CREST - cover_front(COVER_H[1])) * (1 - (1 - t) ** 2)
+        rows.append((h, u0 + a, u1 - a, f, edge_front(f)))
+    return rows
+
+
+def rib_crown_mesh(u0: float, u1: float):
+    """gills step 3: a cover's crown as the same convex rib, continuing the shut cover's top up the leaning wall (its
+    back 1 cm into the wall's panel), so cover and crown read as one arch."""
+    return V.loft([[(u, V.cv(h) + v, h) for u, v in rib_section(a, b, f, back=-0.01, e=e)]
+                   for h, a, b, f, e in rib_crown_rows(u0, u1)])
+
+
+def rib_crown_strips(u0: float, u1: float):
+    return chamfer_strips(u0, u1, [(h, e, a, b) for h, a, b, f, e in rib_crown_rows(u0, u1)], CH,
+                          lambda u, v, h: (u, V.cv(h) + v, h))
 
 
 def crown_mesh(u0: float, u1: float):
@@ -373,25 +446,40 @@ def well_meshes(w: dict):
 
 
 def plate_meshes():
-    """The band plate flush with the wall: dark, 3 cm thick round the four slits; behind it outside the well the
-    wall's 20 cm body (the low and middle modules it replaces)."""
-    v0, v1 = -PLATE_T, 0.0
-    cuts = [(slit_c(i) - SLIT_W / 2, slit_c(i) + SLIT_W / 2) for i in range(COVERS)]
-    boxes = [L.box(BAND_PLATE[0], BAND_PLATE[1], v0, v1, S.FLOOR, S.FLOOR + SLIT_H[0]),
-             L.box(BAND_PLATE[0], BAND_PLATE[1], v0, v1, S.FLOOR + SLIT_H[1], S.FLOOR + BEND)]
-    edges = [BAND_PLATE[0]] + [x for c in cuts for x in c] + [BAND_PLATE[1]]
-    for a, b in zip(edges[::2], edges[1::2]):
-        boxes.append(L.box(a, b, v0, v1, S.FLOOR + SLIT_H[0], S.FLOOR + SLIT_H[1]))
+    """The band plate flush with the wall: dark, 3 cm thick round the four slits, a groove GROOVE_D deep under each
+    rib edge (step 3); behind it outside the well the wall's 20 cm body (the low and middle modules it replaces)."""
+    v0 = -PLATE_T
+    cuts = sorted([(slit_c(i) - SLIT_W / 2, slit_c(i) + SLIT_W / 2, "slit") for i in range(COVERS)]
+                  + [(*groove(k), "groove") for k in range(COVERS + 1)])
+    runs = {"slit": [(0.0, SLIT_H[0], 0.0), (SLIT_H[1], BEND, 0.0)],
+            "groove": [(0.0, GROOVE_H[0], 0.0), (GROOVE_H[0], GROOVE_H[1], -GROOVE_D), (GROOVE_H[1], BEND, 0.0)],
+            "full": [(0.0, BEND, 0.0)]}
+    spans, x = [], BAND_PLATE[0]
+    for a, b, kind in cuts:
+        if a - x > 1e-6:
+            spans.append((x, a, "full"))
+        spans.append((a, b, kind))
+        x = b
+    if BAND_PLATE[1] - x > 1e-6:
+        spans.append((x, BAND_PLATE[1], "full"))
+    boxes = [L.box(a, b, v0, v1, S.FLOOR + h0, S.FLOOR + h1) for a, b, kind in spans for h0, h1, v1 in runs[kind]]
     body = [L.box(WELL_U[1], BAND_PLATE[1], -0.2, v0, S.FLOOR, S.FLOOR + BEND),
             L.box(BAND_PLATE[0], WELL_U[1], -0.2, v0, S.FLOOR, S.FLOOR + WELL_H[0]),
             L.box(BAND_PLATE[0], WELL_U[1], -0.2, v0, S.FLOOR + WELL_H[1], S.FLOOR + BEND)]
     return L.merge(*boxes), L.merge(*body)
 
 
+def groove_strips(k: int, v: float):
+    """Groove k's lit strip at v (the cyan 4.5 mm off its floor, the red seam 1 mm off it), 2 mm in from its sides."""
+    a, b = groove(k)
+    return L.box(a + 0.002, b - 0.002, -GROOVE_D + v, -GROOVE_D + v + 0.001, GROOVE_H[0] + 0.004, GROOVE_H[1] - 0.004)
+
+
 def station_gills(args, layout):
     pid, side = args["id"], args.get("side", "e")
     s = -1.0 if side == "w" else 1.0
     hinge = hinge_side(args)
+    calm = calm_deg(args)
     parts = []
 
     def add(name, vf, mat, **extra):
@@ -412,25 +500,25 @@ def station_gills(args, layout):
     add("body", body, "int_silver_b")
     walls, back, heat, mesh = well_meshes(well_depth(layout, side))
     add("well", hh(walls), "vent_b_well")
-    add("cool", hh(back), "int_cyan__vent_cool")
+    add("cool", hh(L.merge(back, *(groove_strips(k, 0.0045) for k in range(COVERS + 1)))), "int_cyan__vent_cool")
     add("heat", hh(heat), "int_halo__vent_heat")
     add("mesh", hh(mesh), "vent_b_dark")
     upper, dark = upper_mesh()
     add("upper", hh(upper), "int_silver_b")
     add("upper_panel", hh(dark), "vent_b_dark")
     for i in range(COVERS):
-        add(f"cover{i + 1}", hh(cover_mesh(i, CALM_DEG, hinge)), "gill_bronze",
+        add(f"cover{i + 1}", hh(cover_mesh(i, calm, hinge)), "gill_bronze",
             origin=(hinge_u(i, hinge), HINGE_V, S.FLOOR + COVER_H[0]))
-        add(f"lip{i + 1}", hh(lip_mesh(i, CALM_DEG, hinge)), "gill_edge", parent=f"{pid}_cover{i + 1}")
+        add(f"lip{i + 1}", hh(lip_mesh(i, calm, hinge)), "gill_edge", parent=f"{pid}_cover{i + 1}")
         # the slit's two jambs lit cyan down their 3 cm cut (the concept's bright lines in each gap)
         for k, x in enumerate((slit_c(i) - SLIT_W / 2, slit_c(i) + SLIT_W / 2)):
             d = 0.0015 if k == 0 else -0.0015
             add(f"jamb{i + 1}{'ab'[k]}", hh(L.box(min(x, x + d), max(x, x + d), -PLATE_T + 0.004, -0.004, SLIT_H[0] + 0.01,
                                                   SLIT_H[1] - 0.01)), "glow_cyan__vent_strip")
-        add(f"crown{i + 1}", hh(crown_mesh(cover_u(i), cover_u(i) + COVER_W)), "gill_bronze2")
-        add(f"crown{i + 1}_edge", hh(crown_strips(cover_u(i), cover_u(i) + COVER_W)), "gill_edge")
-        su = cover_u(i) + COVER_W + (PITCH - COVER_W) / 2   # the seam: the gap's middle, either hinge side
-        add(f"seam{i + 1}", hh(L.box(su - 0.006, su + 0.006, 0.0, 0.0015, 0.10, 1.43)), "int_halo__vent_seam")
+        add(f"crown{i + 1}", hh(rib_crown_mesh(cover_u(i), cover_u(i) + COVER_W)), "gill_bronze")
+        add(f"crown{i + 1}_edge", hh(rib_crown_strips(cover_u(i), cover_u(i) + COVER_W)), "gill_edge")
+    for k in range(COVERS + 1):   # step 3: the red seam on each groove's floor, behind its cyan (k 1 at cover 1's mouth edge)
+        add(f"seam{k + 1}", hh(groove_strips(k, 0.001)), "int_halo__vent_seam")
     add("fixed", hh(fixed_mesh()), "gill_bronze")
     add("fixed_edge", hh(chamfer_strips(FIXED[0], FIXED[1], [(COVER_H[0], PROUD), (COVER_H[1], PROUD)], CH,
                                         lambda u, v, h: (u, v, h))), "gill_edge")
