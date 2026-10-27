@@ -3153,6 +3153,14 @@ a time, by visibility.
     stays below the 2D's 36 on this flat lower face: the rest is form (Test B), not material.
   - The pick is not in `alien.gd` or `look_presets.json`: the look needs the engineer's yes (the values are in the
     handoff and `TD/final/spec.json`).
+- **Bodies A, M1: the axolotl's body from her Meshy surface as it is** (art #196; output under
+  `research/2026-10-22-roster/design/pilot3d/bodies_a/m1/`). `tools/blender/alien_meshy_body.py --targets
+  alien_meshy_targets/axolotl_m1.toml --out DIR [--hi]` takes the rig body (H5 v1: skeleton, clips, weights), moves
+  the Meshy GLB onto its bones (`alien_meshy_body_geom.py`: the heights, legs, arms, hands, neck ring), smooths the
+  nipples, navel and crotch, cuts the head at the ring, collapses it to `body_tris` and transfers the weights.
+  The weld: `alien_char_run.py --body DIR/alien_body.blend --no-flare --gill-ratio 0.7` (both off by default; the
+  flare is for the cage bodies, the gill ratio keeps that share of the head's gill triangles). `alien_body_beside.py
+  --concept-panels 2` for a two-panel concept.
 - **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in
