@@ -159,9 +159,12 @@ def main():
     p.add_argument("--out", required=True)
     p.add_argument("--concept", default="")
     p.add_argument("--bands", default="")
-    p.add_argument("--only", default="", help="turn: the turnaround only")
+    p.add_argument("--only", default="", help="turn: the turnaround only; fingers: the fingers sheet only")
     p.add_argument("--fingers", action="store_true", help="H1: fingers.png, each finger curled alone")
     p.add_argument("--bends", action="store_true", help="H2: bends.png, the left shoulder, elbow, hip and knee bent")
+    p.add_argument("--finger-curl", type=float, default=FINGER_CURL, help="M1c: degrees per finger joint")
+    p.add_argument("--thumb-curl", default="", help="M1c: the thumb's three joints' degrees (metacarpal, proximal, "
+                   "distal), e.g. the clips' deepest; default --finger-curl at each")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
     os.makedirs(a.out, exist_ok=True)
     bpy.ops.wm.open_mainfile(filepath=a.blend)
@@ -186,6 +189,12 @@ def main():
     deps = bpy.context.evaluated_depsgraph_get()
     top = max((o.evaluated_get(deps).matrix_world @ v.co).z for o in meshes
               for v in o.evaluated_get(deps).to_mesh().vertices)
+    if a.only == "fingers":  # M1c: the fingers sheet alone (at --finger-curl / --thumb-curl)
+        rest(arm)
+        thumb = [float(v) for v in a.thumb_curl.split(",")] if a.thumb_curl else [a.finger_curl] * 3
+        fingers(arm, cam, sc, a.out, {b.name: arm.matrix_world @ b.head_local for b in arm.data.bones},
+                {b.name: arm.matrix_world @ b.tail_local for b in arm.data.bones}, a.finger_curl, thumb)
+        return
     a_pose(arm, ARM_DOWN)
     # 1. The turnaround.
     paths = []
@@ -286,14 +295,16 @@ def main():
     stitch(close, 5, os.path.join(a.out, "close_sheet.png"), cell=(256, 256))
     print("REVIEW done", len(close), "close-ups", flush=True)
     if a.fingers:
-        fingers(arm, cam, sc, a.out, bones, tails)
+        thumb = [float(v) for v in a.thumb_curl.split(",")] if a.thumb_curl else [a.finger_curl] * 3
+        fingers(arm, cam, sc, a.out, bones, tails, a.finger_curl, thumb)
     if a.bends:
         bends(arm, cam, sc, a.out)
 
 
-def fingers(arm, cam, sc, out, bones, tails):
-    """H1: the left hand at rest, then each finger chain curled alone (FINGER_CURL at every joint) about the axis
-    across its proximal bone and the palm's normal (-Z in the T-pose), seen from the thumb side and a little below."""
+def fingers(arm, cam, sc, out, bones, tails, curl=FINGER_CURL, thumb=(FINGER_CURL,) * 3):
+    """H1: the left hand at rest, then each finger chain curled alone (`curl` degrees at every joint; the thumb's
+    joints by `thumb`) about the axis across its proximal bone and the palm's normal (-Z in the T-pose), seen from the
+    thumb side and a little below."""
     hc = (bones["LeftHand"] + tails["LeftMiddleDistal"]) / 2
     shots = []
     look(cam, hc + Vector((0.05, -0.5, -0.22)), hc, lens=FINGER_LENS)
@@ -307,10 +318,11 @@ def fingers(arm, cam, sc, out, bones, tails):
         for pb in arm.pose.bones:
             pb.rotation_mode = "QUATERNION"
             pb.rotation_quaternion = (1, 0, 0, 0)
-        for n in chain:
+        for k, n in enumerate(chain):
             b = arm.data.bones[n]
             loc_axis = (b.matrix_local.to_3x3().inverted() @ axis).normalized()
-            arm.pose.bones[n].rotation_quaternion = Quaternion(loc_axis, math.radians(FINGER_CURL))
+            deg = thumb[k] if f == "Thumb" else curl
+            arm.pose.bones[n].rotation_quaternion = Quaternion(loc_axis, math.radians(deg))
         bpy.context.view_layer.update()
         shots.append(shot(sc, os.path.join(out, f"finger_{f.lower()}.png"), (768, 768)))
     # M1b: then a fist, every chain curled at once
@@ -319,10 +331,11 @@ def fingers(arm, cam, sc, out, bones, tails):
                                          else ("Proximal", "Intermediate", "Distal"))]
         d = (tails[chain[0]] - bones[chain[0]]).normalized()
         axis = d.cross(Vector((0.0, 0.0, -1.0))).normalized()
-        for n in chain:
+        for k, n in enumerate(chain):
             b = arm.data.bones[n]
             loc_axis = (b.matrix_local.to_3x3().inverted() @ axis).normalized()
-            arm.pose.bones[n].rotation_quaternion = Quaternion(loc_axis, math.radians(FINGER_CURL))
+            deg = thumb[k] if f == "Thumb" else curl
+            arm.pose.bones[n].rotation_quaternion = Quaternion(loc_axis, math.radians(deg))
     bpy.context.view_layer.update()
     shots.append(shot(sc, os.path.join(out, "finger_fist.png"), (768, 768)))
     for pb in arm.pose.bones:
