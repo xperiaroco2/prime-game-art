@@ -1093,7 +1093,8 @@ collide = false
 args = { id = "station_vent_e", side = "e" }
 plain = [-0.81895, 0.81895, -0.05, 0.05]
 spot = "vent_e"
-unit = [-0.8, 0.8, -0.45, 0.42, 0.0, 3.14]
+unit = [-0.8, 0.8, -0.45, 0.42, 0.0, 3.2]
+to_rim = true
 
 [[pieces]]
 id = "station_vent_w"
@@ -1102,4 +1103,5 @@ collide = false
 args = { id = "station_vent_w", side = "w" }
 plain = [-0.81895, 0.81895, -0.05, 0.05]
 spot = "vent_w"
-unit = [-0.8, 0.8, -0.45, 0.42, 0.0, 3.14]
+unit = [-0.8, 0.8, -0.45, 0.42, 0.0, 3.2]
+to_rim = true

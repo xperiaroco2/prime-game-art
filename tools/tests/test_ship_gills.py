@@ -252,6 +252,31 @@ class ShipGillsTest(unittest.TestCase):
         es = [st[1] for st in G.FLOOR_STEPS]
         self.assertEqual(es, sorted(es))   # the edge faded: dimmest outside
 
+    def test_hood_meets_the_rim(self):
+        """Gills step 9: the hood's sloped top meets the wall at the hall's rim (3.2 m, the ceiling panels' and the
+        soffit's underside), so no strip of wall shows over it; it never pokes through the rim or the ceiling: no
+        vertex of the hood or the station piece's wall over the rim, the hood within HOOD_P of the wall's face (where
+        the ceiling rises inward from the rim: APEX over the rim) and at most 1 cm into the wall's body; the layout
+        lets only this piece reach the rim (to_rim)."""
+        rim = S.FLOOR + S.H_HALL
+        self.assertEqual(G.HOOD_TOP, S.H_HALL)
+        self.assertGreater(S.APEX_HALL, S.H_HALL)
+        for side in "ew":
+            parts = build(side)
+            hood = parts["hood"]["verts"]
+            self.assertLessEqual(max(z for _, _, z in hood), rim + 1e-6)
+            self.assertGreaterEqual(max(z for _, _, z in hood), rim - 0.002)
+            self.assertLessEqual(max(v for _, v, _ in hood), G.HOOD_P + 1e-6)
+            self.assertGreaterEqual(min(v for _, v, _ in hood), -0.0101)
+            for name in ("hood_edge", "upper", "upper_panel"):
+                self.assertLessEqual(max(z for _, _, z in parts[name]["verts"]), rim + 1e-6, (side, name))
+            soff = parts["soffit"]["verts"]
+            self.assertAlmostEqual(min(z for _, _, z in soff), rim, places=6)
+        rims = [p for p in LAYOUT["pieces"] if p.get("to_rim")]
+        self.assertEqual(sorted(p["id"] for p in rims), ["station_vent_e", "station_vent_w"])
+        for p in rims:
+            self.assertEqual(p["unit"][5], S.H_HALL)
+
     def test_rock_clear(self):
         """The motion built in (option b): a rib rocked +-RIB_ROCK_DEG about its axis stays 2 cm clear of its
         neighbours (rocked either way or not), its back never lifts off the wall's face (no gap opens) and digs at most

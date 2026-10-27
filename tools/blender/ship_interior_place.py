@@ -206,6 +206,9 @@ PIECES |= {
 # step 2: a station piece's spot and its box [u0, u1, v0, v1, h0, h1] in the spot's frame (u along the wall, v out
 # of it, h over the deck): `ship --check` holds it inside the spot's plain band, depth and the room's height
 UNITS: dict[str, tuple[str, list[float]]] = {"station_vent_e": ("vent_e", GL.UNIT), "station_vent_w": ("vent_w", GL.UNIT)}
+# gills step 9: the station pieces whose unit may reach the room's clear height (the rim's underside), not 5 cm under
+# it: the gills' hood meets the rim (`to_rim`; test_ship_gills holds the hood under the rim and the ceiling)
+TO_RIM = {"station_vent_e", "station_vent_w"}
 # v2: the plan box [x0, x1, y0, y1] in its own frame of every piece that stands out from a wall: `ship --check` keeps
 # them off the station spots' plain panels (layouts/ship/ship.toml [stations])
 _V = [-0.2, 0.2, -0.2, 0.2]
@@ -530,6 +533,8 @@ def render() -> str:
             lines.append("plain = [" + ", ".join(fmt(v) for v in PLAIN[pid]) + "]")
         if pid in UNITS:
             lines += [f'spot = "{UNITS[pid][0]}"', "unit = [" + ", ".join(fmt(v) for v in UNITS[pid][1]) + "]"]
+        if pid in TO_RIM:
+            lines.append("to_rim = true")
     return "\n".join(lines) + "\n"
 
 

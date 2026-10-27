@@ -626,8 +626,10 @@ def check_units(layout: dict[str, Any]) -> list[str]:
         back = -0.05 - s.get("recess_m", 0.0) - s.get("well_m", 0.0)
         if v0 < back or v1 > depth + TOL:
             problems.append(f"station piece {p['id']}: {v0:g}..{v1:g} m from the wall, wants {back:g}..{depth:g}")
-        if h0 < -0.05 or h1 > clear - 0.05:
-            problems.append(f"station piece {p['id']}: up to {h1:g} m, wants under {clear - 0.05:g} (the room's clear "
+        # gills step 9: a `to_rim` piece (the gills' hood) may meet the rim's underside, the room's clear height
+        top = clear if p.get("to_rim") else clear - 0.05
+        if h0 < -0.05 or h1 > top + TOL:
+            problems.append(f"station piece {p['id']}: up to {h1:g} m, wants under {top:g} (the room's clear "
                             "height)")
     return problems
 

@@ -40,7 +40,8 @@ import ship_interior_vent as V   # its helpers, read at build time (ship_interio
 # so the old "leaning wall" over BEND is the same vertical face (cv 0) and BEND is only the well's top now
 TOP, IN = S.H_HALL, 0.0
 BEND = 2.70                          # the well's (and the band plate's window's) top; the plain upper wall over it
-HOOD_TOP = 3.14                      # the hood's top, under the hall's clear height less ship --check's 5 cm (3.15)
+HOOD_TOP = S.H_HALL                  # gills step 9: the hood's slope meets the wall at the rim (3.2; step 8 3.14 left a
+                                     # 6 cm wall strip over it); ship --check lets this piece reach the rim (to_rim)
 UNIT = [-0.80, 0.80, -0.45, 0.42, 0.0, HOOD_TOP]   # the ribs and the column, the well 45 cm behind, the hood
 
 
