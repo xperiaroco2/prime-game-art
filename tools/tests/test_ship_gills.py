@@ -73,10 +73,11 @@ class ShipGillsTest(unittest.TestCase):
             self.assertLess(G.slit_c(i) + G.SLIT_W / 2, G.cover_u(i) + G.COVER_W)
 
     def test_cover_outline(self):
-        """Shut, each cover is 30 x 137 from the front, PROUD at its foot and top, bowed out up its middle."""
+        """Shut, each cover is 30 x 137 from the front, PROUD at its foot, bowed out up its middle, PROUD + TOP_RISE
+        at its top (step 3: the crown's foot)."""
         self.assertAlmostEqual(G.cover_front(G.COVER_H[0]), G.PROUD)
-        self.assertAlmostEqual(G.cover_front(G.COVER_H[1]), G.PROUD)
-        self.assertAlmostEqual(G.cover_front(sum(G.COVER_H) / 2), G.PROUD + G.BOW)
+        self.assertAlmostEqual(G.cover_front(G.COVER_H[1]), G.PROUD + G.TOP_RISE)
+        self.assertAlmostEqual(G.cover_front(sum(G.COVER_H) / 2), G.PROUD + G.BOW + G.TOP_RISE / 8)
         for hinge in ("hall", "mouth"):
             for i in range(G.COVERS):
                 v, _ = G.cover_mesh(i, 0.0, hinge)
@@ -125,6 +126,82 @@ class ShipGillsTest(unittest.TestCase):
         finally:
             if was is not None:
                 os.environ["SHIP_GILLS_HINGE"] = was
+
+    def test_ribs_convex_edges_set_back(self):
+        """Step 3: each cover's section is convex across its width, its two edges SETBACK behind the crest (at least
+        EDGE_MIN out of the wall) and inside its 30 cm; the crown continues the cover's top section."""
+        for h in G.COVER_HS:
+            f = G.cover_front(h)
+            sec = G.cover_section(0.0, G.COVER_W, f)
+            front = [p for p in sec if p[1] > G.edge_front(f) - G.CH - 1e-9]
+            self.assertAlmostEqual(max(v for _, v in sec), f, places=6)
+            self.assertAlmostEqual(G.edge_front(f), max(f - G.SETBACK, G.EDGE_MIN), places=9)
+            self.assertTrue(all(0.0 <= u <= G.COVER_W for u, _ in sec))
+            edges = [v for u, v in front if u < 1e-9 or u > G.COVER_W - 1e-9]
+            self.assertTrue(edges and max(edges) <= f - min(G.SETBACK, f - G.EDGE_MIN) + 1e-9, h)
+        mid = G.cover_section(0.0, G.COVER_W, G.cover_front(sum(G.COVER_H) / 2))
+        self.assertGreaterEqual(max(v for _, v in mid) - mid[3][1] - G.CH, G.SETBACK - 1e-9)   # mid-height: 5 cm
+        rows = G.rib_crown_rows(0.0, G.COVER_W)
+        self.assertEqual((rows[0][1], rows[0][2]), (0.0, G.COVER_W))
+        self.assertAlmostEqual(rows[0][3], G.cover_front(G.COVER_H[1]))
+        self.assertAlmostEqual(rows[-1][2] - rows[-1][1], G.COVER_W - 2 * G.CROWN_INSET)
+
+    def test_grooves_inside_the_band(self):
+        """A groove under every rib edge (five), inside the band plate, clear of the slits; its cyan in `cool`, its
+        red seam behind the cyan, both inside the plate; every new part inside the hull."""
+        self.assertEqual(len(G.groove_u()), G.COVERS + 1)
+        for k in range(G.COVERS + 1):
+            a, b = G.groove(k)
+            self.assertGreaterEqual(a, G.BAND_PLATE[0])
+            self.assertLessEqual(b, G.BAND_PLATE[1])
+            for i in range(G.COVERS):
+                lo, hi = G.slit_c(i) - G.SLIT_W / 2, G.slit_c(i) + G.SLIT_W / 2
+                self.assertTrue(b < lo or a > hi, (k, i))
+        for k, g in enumerate(G.groove_u()[1:]):   # each gap's middle
+            self.assertAlmostEqual(g, G.cover_u(k) + G.COVER_W + (G.PITCH - G.COVER_W) / 2)
+        for side in "ew":
+            s = -1.0 if side == "w" else 1.0
+            parts = build(side)
+            self.assertEqual(sorted(n for n in parts if n.startswith("seam")), [f"seam{k}" for k in range(1, 6)])
+            for k in range(1, 6):
+                vs = [p[1] for p in parts[f"seam{k}"]["verts"]]
+                self.assertLess(max(vs), -G.GROOVE_D + 0.004)   # behind the cyan (4.5 mm off the floor)
+                self.assertGreater(min(vs), -G.PLATE_T)
+            for name, p in parts.items():
+                if name.startswith(("cover", "lip", "crown", "seam", "band", "cool", "fixed")):
+                    for x, v, z in p["verts"]:
+                        u, d, h = s * x, -v, z - S.FLOOR
+                        if d > 0:   # as the well: inside the hull, or inside the old wall's 20 cm body where the
+                            #             hull's face itself is thin (the mouth end's foot)
+                            self.assertTrue(G.skin_at(LAYOUT, side, u, d, h) > 0.0 or d <= 0.2 + 1e-6,
+                                            f"{side} {name} {u:.2f} {h:.2f}")
+                        self.assertTrue(G.BAND_PLATE[0] - 1e-6 <= u <= G.BAND_PLATE[1] + 1e-6, f"{side} {name} {u}")
+
+    def test_calm_choice(self):
+        self.assertEqual(G.calm_deg({"calm": 22}), 22.0)
+        with self.assertRaises(ValueError):
+            G.calm_deg({"calm": 80})
+        was = os.environ.pop("SHIP_GILLS_CALM", None)
+        try:
+            self.assertEqual(G.calm_deg({}), G.CALM_DEG)
+        finally:
+            if was is not None:
+                os.environ["SHIP_GILLS_CALM"] = was
+
+    def test_covers_clear_at_mixed_angles(self):
+        """Step 3: neighbours at different angles (the calm wave, the slam one after another, the exhale) never
+        touch, at the foot, the bow and the top of the convex ribs, while they stay within NEIGHBOUR_DEG of each other
+        (the animation's rule: a rib's deep middle near its hinge swings into its shut neighbour's edge from 22 deg)."""
+        angles = range(0, 71, 4)
+        for hinge in ("hall", "mouth"):
+            for h in (G.COVER_H[0], sum(G.COVER_H) / 2, G.COVER_H[1]):
+                for da in angles:
+                    for db in (d for d in angles if abs(d - da) <= G.NEIGHBOUR_DEG):
+                        secs = []
+                        for i, deg in ((1, da), (2, db)):
+                            sec = G.cover_section(G.cover_u(i), G.cover_u(i) + G.COVER_W, G.cover_front(h))
+                            secs.append(hull2([G.rot(p, G.hinge_u(i, hinge), G.swing(hinge) * deg) for p in sec]))
+                        self.assertTrue(apart(*secs, 0.002), f"{hinge} h {h:.2f} {da}/{db} deg")
 
     def test_covers_clear_through_the_swing(self):
         """Neighbouring covers at the same angle, 0 to the exhale's 70 deg, never touch (plan sections at the bow)."""
