@@ -1155,23 +1155,40 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   on the same skeleton: re-run `$PYTHON_BIN tools/blender/alien_poses.py --raw D:/prime-art-raw --step <new> --glb
   --masks` (background, about 25 min for both), then `alien_poses_run.py --step <new> --check --shots`.
 - **Measures and limits** (every pair, both characters, `build/<char>/poses.json`): the lowest skin point within
-  0.5 cm of the floor; the centre of mass at least 1 cm inside the support area for Stand, OneLeg, Squat, Lunge, Kneel;
-  skin through skin at most 1.5 cm, and at most 0.5 cm for a hand or forearm (the hand's proxy reads 0.0 cm on the
-  rest skin, so a hand's reading is real; the thighs' and upper arms' proxies read several cm at rest, the folded
-  groin and armpit skin is skipped); a contact's gap at most 1 cm; a hand on a landmark (`mark`: the hip hand of
+  0.5 cm of the floor; a planted foot without `foot_pitch` flat (its heel's and ball's lowest skin both within 1 cm
+  of the floor); the centre of mass at least 1 cm inside the support area for Stand, OneLeg, Squat, Lunge, Kneel;
+  skin through skin (`alien_pose_math.through_depth`, the bone tubes as the proxy) at most 1.5 cm, and at most
+  0.5 cm for a hand or forearm; a contact's gap at most 1 cm; a hand on a landmark (`mark`: the hip hand of
   HandsOnHips, FingerUp and Salute on the waist's side) has its palm's centre within 5 cm of it (the landmark rides
   on the Spine), so "touching the body" alone (the belly's front) no longer passes. A goal arm's `touch_by` names
   the skin that touches (the palm's bone: the thumb kept off the body).
-  Step 4: the landmark check passes on all 48 (the hip palm 4.6 cm from the waist's side, its skin 0.2-0.3 cm
-  off the body); the hand limit flags the hip hand on every hip-hand pair (hand into torso 2.3 cm) and on Sit
-  (hand into thigh 8.1 cm), and the axolotl's salute and behind-head hand (into the head about 0.6 cm): 18
-  (chameleon) and 24 (axolotl) of 48 pairs; judged on the close-ups (see the step's handoff), the torso tube's slice
-  at the waist spans the wider pelvis, so the waist reading is partly the proxy's.
+  - **What the through check reads.** A hand or forearm: its raw depth (its proxy reads 0.0 cm on the rest skin).
+    A thigh (beyond its groin's 30 %), an upper arm (its elbow half) and a shin: only the depth beyond the same
+    point's at rest, so the groin, armpit and knee skin the tubes share at rest reads 0 and a thigh pressed into the
+    belly (Squat, Sit, Kneel's front leg) or a calf into its thigh (`shin>thigh`) reads what it adds. Into a thigh
+    the hip third is skipped (the buttock skin skinning folds into the pelvis; a hand there is the torso's check).
+    `proxy_rest_cm` in `poses.json` is this same check on the rest pose: the floor under the limits.
+  - **The hip hand is really inside** (the fix round's measure, not the proxy): the hip hand's 2.3 cm into the
+    torso grows to 3.1 and 3.2 cm with 16 and 32 tube slices instead of 8, so it is the curled fingers inside the
+    waist, while the palm's skin is 0.24 cm off it (the touch solve reads the palm's bone, `touch_by`). Not fixed yet:
+    the hand's shape (grip, `fingers_dir`) needs a round with close-ups.
+  - **The layers' limit.** The arms are solved once over `reference_legs` (Stand), so an arm cannot make room for
+    a raised thigh: the hip hand goes 7 to 8 cm into it on Sit, Squat and Kneel's front leg, OneLeg's raised one
+    included (HandsOnHips, FingerUp, Salute), on every variant of its offset and finger direction tried
+    (`tools/out/poses/fix/hipgrid_c.log`). A pose that keeps clear of every legs pose (fingers back, the hand
+    higher) or a per-legs arms variant is the open choice.
 - **The silhouette table** (`silhouettes_<char>.json`): per facing (front, left, right, back), for pairs that differ
   only in the legs or only in the arms, 1 - IoU of the outlines aligned on the feet; the least over the other part
-  is what the photographer can still tell apart. Below 0.10 is a finding. Left vs mirrored right is about 0.05 for any
-  pose (perspective only): orthographically a left outline is always the mirror of the right one, so a lopsided pose
-  cannot differ there beyond that; that line of the table is informative, not a goal.
+  is what the photographer can still tell apart. Below 0.10 is a finding. The table is measured on Blender workbench
+  masks (lens 100 mm, one fixed frame for every pair); the review pictures are Godot renders whose camera centre
+  follows each pose (`pose_shots.gd`): the numbers and the pictures' outlines are not the same camera. Left vs
+  mirrored right: orthographically a left outline is the mirror of the right one, so only perspective and the
+  pose's own lopsidedness separate them; measured, 0.08 to 0.10 on the least lopsided pairs and up to 0.31 / 0.35
+  (Lunge+Plane, Kneel+Plane): that line of the table is informative, not a goal.
+- **What the layers freeze.** `owner()` gives every bone that is not the legs' to the arms, so the arms clip keys
+  Jaw, the eyes and the crest at rest and the game's `Blend2` filter takes the whole Chest subtree: a face or crest
+  layer of the game must sit after the pose's tree (or the pose's arms filter must drop those bones) to move during
+  a pose.
 - **The GLB.** On top of `loco/f3`'s `<char>_char.blend`: the 37 f3 clips unchanged (F-curve hash and GLB key bytes,
   `clips_proof.json`), 14 pose clips added. `godot-check --profile alien --strict-contract --textured` passes:
   `held_poses_hold` checks that the `PoseLegs_`/`PoseArms_` clips keep every bone still (they are exempt from
