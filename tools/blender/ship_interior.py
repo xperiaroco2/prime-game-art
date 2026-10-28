@@ -141,7 +141,8 @@ def hall_vertices() -> list[float]:
             out |= {round(a0 + (a1 - a0) * i / TH_SUBS, 6) for i in range(TH_SUBS + 1)}
             continue
         out |= {round(a0, 6), round(a1, 6)} | ({round((a0 + a1) / 2, 6)} if k != "facet" else set())
-    return sorted(((a + 180.0) % 360.0) - 180.0 for a in out)
+    return sorted({round(((a + 180.0) % 360.0) - 180.0, 6) for a in out})   # the gills: once each (the west
+    # throat corner came twice)
 # the corridors: profile (u across, v up from the deck), the five modules between the portals
 H_COR = _ROOM["corridor_e"]["clear_h"]
 COR_HALF = _ROOM["corridor_e"]["width"] / 2          # v2: 1.5 (3 m wide; v1 1.25)
@@ -1367,3 +1368,6 @@ MODULES.append(ship_interior_vent)
 # lens room C, step 1: the charger's alcove and conduits, the east lounge
 import ship_interior_lens  # noqa: E402
 MODULES.append(ship_interior_lens)
+# the gills (2026-10-28): the throat's clean walls, slits and button
+import ship_interior_gills  # noqa: E402
+MODULES.append(ship_interior_gills)

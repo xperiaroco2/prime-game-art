@@ -15,7 +15,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ship_interior as S  # noqa: E402
-import ship_interior_vent as V  # noqa: E402
+import ship_interior_vent as V  # noqa: E402,F401
+import ship_interior_gills as G_  # noqa: E402
 import ship_interior_lens as LN  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -117,18 +118,8 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     # rebuild C: the throat (its floor and ceiling in hall-relative plan coordinates; the walls in modules)
     "throat_floor": ("throat_floor", {}, True),
     "throat_ceil": ("throat_ceil", {}, True),
-    "th_wall_low_a": ("cor_wall_low", {"length": TH_MOD, "tone": "a", "prof": "throat"}, True),
-    "th_wall_low_b": ("cor_wall_low", {"length": TH_MOD, "tone": "b", "prof": "throat"}, True),
     # vents-b5: the pillow panels behind the vents again (b4's flat plates were for the recess, undone)
-    "th_wall_mid": ("cor_wall_mid", {"length": TH_MOD, "prof": "throat"}, True),
-    "th_channel": ("cor_channel", {"length": TH_MOD, "prof": "throat"}, True),
-    "th_cables": ("cor_cables", {"length": TH_MOD, "prof": "throat"}, False),
-    "th_clip_h": ("clip_h", {"prof": "throat"}, False),
-    "th_wall_up_a": ("cor_wall_up", {"length": TH_MOD, "tone": "a", "prof": "throat"}, True),
-    "th_wall_up_b": ("cor_wall_up", {"length": TH_MOD, "tone": "b", "prof": "throat"}, True),
     # the raise step 3 (art#263 bug 1): the last module at each hall corner, its chamfer mitred into the header
-    "th_wall_up_end_e": ("cor_wall_up", {"length": TH_MOD, "tone": "a", "prof": "throat", "end": 1}, True),
-    "th_wall_up_end_w": ("cor_wall_up", {"length": TH_MOD, "tone": "b", "prof": "throat", "end": -1}, True),
     # rebuild D: the cyan arch at the throat's roof line (its ceiling and chamfers: the vents' walls stay plain)
     "th_arch": ("th_arch", {"half": round(TH_ARCH_HALF, 4), "k": round(TH_LEN / (_TK[1] - _TM[1]), 4)}, False),
     "hall_rib": ("rib", {"rv": S.HV, "rim": F + S.H_HALL, "r_in": S.R_RING, "h_in": H_IN_HALL}, False),
@@ -206,8 +197,10 @@ PIECES |= {
     "floor_patch_b": ("floor_patch", {"u": 0.36, "v": 0.3}, False),
     "rim_bolts": ("rim_bolts", {}, False),
     # step 2, station 1: the throat vents (ship_interior_vent.py), each on its spot
-    "station_vent_e": ("station_vent", {"id": "station_vent_e", "side": "e"}, False),
-    "station_vent_w": ("station_vent", {"id": "station_vent_w", "side": "w"}, False),
+    # the gills (2026-10-28, prime-game#1095 c6470177717): each throat side's clean wall under the roof, its five
+    # slits and its button (ship_interior_gills.py); they replace the wall modules there and the vent cabinets
+    "th_gills_e": ("th_gills", {"side": "e"}, False),
+    "th_gills_w": ("th_gills", {"side": "w"}, False),
 }
 # lens room C, step 1 (ship_interior_lens.py): the charger's alcove and conduits in both lens rooms, the two facets
 # beside it plain; the east room's lounge on its facets -109.77..+21.95 (their panels' relief above the sofa's spine,
@@ -245,7 +238,8 @@ SOFA_PILLOWS = {2: "lounge_pillow_red", 5: "lounge_pillow_dark"}
 SOFA_THROWS = {4: "lounge_throw"}   # step 4
 # step 2: a station piece's spot and its box [u0, u1, v0, v1, h0, h1] in the spot's frame (u along the wall, v out
 # of it, h over the deck): `ship --check` holds it inside the spot's plain band, depth and the room's height
-UNITS: dict[str, tuple[str, list[float]]] = {"station_vent_e": ("vent_e", V.UNIT), "station_vent_w": ("vent_w", V.UNIT)}
+# the gills (2026-10-28): the vent cabinets are no longer placed (ship_interior_vent.py stays for the record)
+UNITS: dict[str, tuple[str, list[float]]] = {}
 # v2: the plan box [x0, x1, y0, y1] in its own frame of every piece that stands out from a wall: `ship --check` keeps
 # them off the station spots' plain panels (layouts/ship/ship.toml [stations])
 _V = [-0.2, 0.2, -0.2, 0.2]
@@ -350,7 +344,7 @@ def placements() -> list[tuple[str, list[float], float]]:
             edges += [norm(a0), norm(a1)]
         if kind != "facet":
             claimed.add(round(norm(mid), 4))
-    corners = {round(S.TH_CORNER, 4), round(norm(-180.0 - S.TH_CORNER), 4)}
+    corners = {norm(S.TH_CORNER), norm(-180.0 - S.TH_CORNER)}   # the gills: norm's own rounding (the east had none)
     for v in S.hall_vertices():
         put("hall_rib", polar(S.HV, v), -v)
         put("hall_rib_strip", polar(S.HV, v), -v)
@@ -437,22 +431,12 @@ def placements() -> list[tuple[str, list[float], float]]:
                           round(w[1] + d[1] * TH_MOD * 0.5 + inward[1] * 0.3, 4)]
                     put("floor_light", lp, yw)
                 continue
-            put(f"th_wall_low_{tone}", o, yw)
-            if i in TH_PLAIN:
-                put("th_wall_mid", o, yw)
-            else:
-                put("th_channel", o, yw)
-                put("th_cables", o, yw)
-                for dx in (-0.25, 0.25):
-                    put("th_clip_h", local(o, yw, dx, 0.0), yw)
-            if i == TH_N - 1:   # the raise step 3: the hall corner's module (tone a east, b west, as before)
-                put("th_wall_up_end_" + ("e" if sx > 0 else "w"), o, yw)
-            elif i in TH_COVER:
-                put(f"th_wall_up_{tone}", o, yw)
-            if i in (0, 3):   # rebuild E: two a side, at 1/5 and 4/5 of the wall; station 1: the hall's one 0.36 m
-                sh = TH_MOD * 0.5 + (0.36 if i == 3 else 0.0)   # on, its 0.7 m bar 4 cm clear of the vent column
+            # the gills: under the roof the wall is th_gills_<side>'s (placed once a side below), no modules
+            if i in (0, 3):   # rebuild E: two a side, at 1/5 and 4/5 of the wall (the vent's 0.36 m shift went with it)
+                sh = TH_MOD * 0.5
                 lp = [round(w[0] + d[0] * sh + inward[0] * 0.3, 4), round(w[1] + d[1] * sh + inward[1] * 0.3, 4)]
                 put("floor_light", lp, yw)
+        put("th_gills_" + ("e" if sx > 0 else "w"), [round(mx, 4), round(my, 4)], -sx * G_.WALL_YAW)
 
     put("th_arch", [0.0, TH_ARCH_Y], 90.0)
 
@@ -554,7 +538,10 @@ def placements() -> list[tuple[str, list[float], float]]:
 # plain pieces cover every wall spot's whole band (the vents stood half on the throat's hull jamb, rebuild E)
 _FACE = 0.25
 PLAIN: dict[str, list[float]] = {
-    "th_wall_mid": [-TH_MOD / 2, TH_MOD / 2, -S.TH_HALF - _FACE, -S.TH_HALF + 0.05],
+    # the gills: the clean wall's face under the roof (its frame: x along the wall from the mouth's corner, the face
+    # at y 0; the west mirrored), the station's 1.6 m band on it
+    "th_gills_e": [G_.S0, G_.WALL_LEN, -_FACE, 0.05],
+    "th_gills_w": [-G_.WALL_LEN, -G_.S0, -_FACE, 0.05],
     "cor_wall_board": [-(BOARD_X[1] - BOARD_X[0]) / 2, (BOARD_X[1] - BOARD_X[0]) / 2, -S.COR_HALF - _FACE,
                        -S.COR_HALF + 0.05],
     **{pid: [-_FACE, _FACE, -PIECES[pid][1]["plain"], PIECES[pid][1]["plain"]]
