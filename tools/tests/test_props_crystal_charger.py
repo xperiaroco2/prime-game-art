@@ -65,10 +65,23 @@ class ChargerDrawing(unittest.TestCase):
         o = d["outer"]
         cu = math.cos(math.radians(o["half_deg"]))
         self.assertAlmostEqual(o["root"][0][0] * cu, 23.9, delta=0.1)
-        self.assertAlmostEqual(max(h for _r, h in o["cap"]), f["top"], delta=0.01)
+        # antennas-1 (the plate stack): the middle line rises from the root's top, bends inward by its turn; the
+        # bend's outside reaches the top, its inside the lowest point over the inner pair
+        r0, foot, hb = o["spine"]
+        rad, turn = o["bend"]
+        hw = o["half"][0]
+        self.assertEqual(foot, max(h for _r, h in o["root"]))
+        self.assertEqual(turn, 90.0)  # the tip's face upright toward the crystal
+        self.assertAlmostEqual(hb + rad + hw, f["top"], delta=0.01)
         # the outer pair clears the turning ring and the inner pair
-        self.assertGreater(min(r for prof in (o["root"], o["column"]) for r, _h in prof), d["ring"]["r1"] + 0.5)
-        self.assertGreater(min(h for _r, h in o["cap"]), max(h for _r, h in i["head"]) + 3.0)
+        self.assertGreater(min(min(r for r, _h in o["root"]), r0 - hw), d["ring"]["r1"] + 0.5)
+        self.assertGreater(hb + rad - hw, max(h for _r, h in i["head"]) + 3.0)
+        # the glow brighter toward the tip: wider gaps, the cores nearer the faces
+        self.assertLess(o["gaps"][0], o["gaps"][1])
+        self.assertGreater(o["core_inset"][0], o["core_inset"][1])
+        for key in ("cyan", "amber", "cap", "column", "strip_w"):
+            self.assertNotIn(key, o)  # the flat strips and the swept claw are gone
+        self.assertNotIn("amber", i)
         # the risen crystal's loop under the prongs' tops
         self.assertLess(d["slot"]["tip"] + CRYSTAL + d["carrier"]["rise"], f["top"])
         # the dome on legs is gone (lens room C)
