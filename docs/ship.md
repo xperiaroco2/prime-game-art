@@ -156,6 +156,7 @@ tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsul
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
 tools/run.sh ship --motion DIR          # step 2: the vents' moving parts on their GLBs off-screen: numbers, MP4, sheets
 tools/run.sh ship --vent-anim DIR       # the east vent's animation in place at night from the player's eye: MP4, key sheet
+tools/run.sh ship --charger-cycle DIR   # the east crystal charger's cycle at night from the player's eye: cycle.mp4, key sheet
 tools/run.sh ship --play [DIR]          # the engineer's own walk (an on-screen window; agents run --play-test DIR)
 ```
 
@@ -1444,3 +1445,17 @@ table (`test_ship_lens`). The warm strips are `int_amber__lens` (`[light.mats]` 
   the charger wore its GLB's plain fallback and ship.gd's pass made strip lights of its emissive strips. A full
   crystal's light floods the lens room cyan (`r4-charged/`): an open question for the crystal's light in this room.
 - Shots: `<raw>/ship/v5/lens-c/r4/` (pieces `lens-c/pieces-r4`).
+
+## The charger's cycle in lens room C (2026-10-28)
+
+`ship --charger-cycle DIR` (`godot/charger/cycle.gd`, extending `charger/room.gd` in ship.gd's off-screen "shoot"
+mode) films one full cycle of the east charger at night: the eye at the player's 1.6 m, 1.5 m in front of the
+charger's front (2.2 m out of `renewer_e`'s vertex), fov 60, so the whole charger and the alcove are in the frame.
+A fixed clock (`step(dt)` at 1/30 s; every value a pure function of the time, eased, never linear) drives only what
+the charger and the crystal have: `set_state` (idle 0..5.9 s, charging to 17.0, charged to 20.3, idle), `set_pressed`
+(5.6..6.3 s, eased in by a share of its `TRAVEL`), `set_carrier` (rise 6.4..7.6, 4 whole turns 6.9..15.6 with eased
+speed, down 15.8..17.0), `set_ring` (3 turns the other way) and crystal.gd's `set_charge` (0 to 1, 7.4..15.4). Two
+stand-ins, as the game has no hand: the crystal's way into the cup and out (an eased Bezier from above the player,
+its last leg down the axis). Not shown, as not built: the lightning arcs and any conduit pulse (the game's).
+Output: `cycle.mp4` (1280x720, 30 fps, 24 s, 7.3 MB), `keys/` and `keys_sheet.png` (ten labelled beats) in
+`<raw>/ship/v5/charger-cycle/` (pieces `lens-c-main/pieces`; `--out` names them). The frames take about 4 min.
