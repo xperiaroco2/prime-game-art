@@ -99,11 +99,15 @@ const SEAM_DARK := Color(0.16, 0.09, 0.05)   # ship --shoot --vent-states' "dark
 const STEAM_PER_SLOT := 6           # the problem's steam, rising (continuous)
 const MIST_PER_SLOT := 12           # the exhale's cyan mist (one burst)
 const COUGH_PER_SLOT := 10          # the miss's and the throw's steam (one burst)
-const STEAM_COLOUR := Color(1.0, 0.82, 0.78, 0.14)
-const MIST_COLOUR := Color(0.55, 0.86, 1.0, 0.18)
-const COUGH_COLOUR := Color(0.95, 0.92, 0.9, 0.24)
-const PUFF_M := 0.26                # a sprite's size
+const STEAM_COLOUR := Color(1.0, 0.86, 0.82, 0.16)
+const MIST_COLOUR := Color(0.55, 0.86, 1.0, 0.11)
+const COUGH_COLOUR := Color(0.95, 0.92, 0.9, 0.13)
+const PUFF_M := 0.22                # a sprite's size (r11 first clip: 0.26 at higher alpha read as cotton balls)
+const FADE_M := 0.05                # the sprites fade within this of a surface (0.2 hid the steam by the wall)
 const EMIT_OUT_M := 0.06            # the emitters this far out of the wall's face, between the ribs
+# The unit's frame in its GLB: x along the wall, y up, +z out of the wall (the builder's v); the builder's (u, v, h)
+# maps to (x, z, y), a mirror, so its +RIB_ROCK_DEG about h is -ROCK_DEG about y here (SIDE: e -1, w +1, mirrored)
+const OUT := Vector3(0.0, 0.0, 1.0)
 
 var vent_id: String = ""
 var problem: bool = false
@@ -157,7 +161,7 @@ func _process(delta: float) -> void:
 ## overrides); makes the marker and the particle emitters.
 func setup(root: Node3D, id: String) -> void:
 	vent_id = id
-	_side = -1.0 if id.ends_with("_w") else 1.0
+	_side = 1.0 if id.ends_with("_w") else -1.0
 	_ribs.clear()
 	for k: int in range(1, RIBS + 1):
 		var n: Node3D = _leaf(root, id, "cover%d" % k) as Node3D
@@ -176,6 +180,11 @@ func setup(root: Node3D, id: String) -> void:
 	if _cool != null:
 		_cool.visible = true
 		var meshes: Array = [_cool] + _cool.find_children("*", "MeshInstance3D", true, false)
+		for k: int in range(1, RIBS + 1):   # the ribs' lit flanks (the covers' children) turn with the slots
+			for part: String in ["flank%d" % k, "flank%db" % k]:
+				var f: Node = root.find_child("%s_%s" % [id, part], true, false)
+				if f is MeshInstance3D:
+					meshes.append(f)
 		var ys: Array = []
 		for mi: Node in meshes:
 			if mi is MeshInstance3D and (mi as MeshInstance3D).mesh != null:
@@ -287,7 +296,7 @@ func _make_marker(root: Node3D, id: String) -> void:
 	mesh.material = m
 	_marker.mesh = mesh
 	_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_marker.position = Vector3(box.get_center().x, _bar_y.x, box.position.z - float(MARKER_SIZE[2]) / 2.0)
+	_marker.position = Vector3(box.get_center().x, _bar_y.x, box.end.z + float(MARKER_SIZE[2]) / 2.0 + 0.001)
 	root.add_child(_marker)
 	_made.append(_marker)
 
@@ -296,9 +305,10 @@ func _make_marker(root: Node3D, id: String) -> void:
 func _make_particles(root: Node3D, id: String) -> void:
 	var soft: GradientTexture2D = GradientTexture2D.new()
 	var g: Gradient = Gradient.new()
-	g.set_color(0, Color(1, 1, 1, 1))
+	g.set_color(0, Color(1, 1, 1, 1))     # a soft falloff, no edge (a disc reads as a ball)
 	g.set_color(1, Color(1, 1, 1, 0))
-	g.add_point(0.45, Color(1, 1, 1, 0.45))
+	g.add_point(0.25, Color(1, 1, 1, 0.6))
+	g.add_point(0.6, Color(1, 1, 1, 0.15))
 	soft.gradient = g
 	soft.fill = GradientTexture2D.FILL_RADIAL
 	soft.fill_from = Vector2(0.5, 0.5)
@@ -310,12 +320,12 @@ func _make_particles(root: Node3D, id: String) -> void:
 		if seam == null or seam.mesh == null:
 			break
 		var b: AABB = _frame(root, seam) * seam.mesh.get_aabb()
-		var c: Vector3 = Vector3(b.get_center().x, b.get_center().y, -EMIT_OUT_M)
+		var c: Vector3 = Vector3(b.get_center().x, b.get_center().y, 0.0) + OUT * EMIT_OUT_M
 		var half_h: float = b.size.y * 0.42
 		_emit["steam"].append(_emitter(root, "%s_steam%d" % [id, k], c, half_h, STEAM_PER_SLOT, false, STEAM_COLOUR,
-			2.6, [0.04, 0.12], 0.32, soft))
+			2.6, [0.12, 0.25], 0.32, soft))
 		_emit["mist"].append(_emitter(root, "%s_mist%d" % [id, k], c, half_h, MIST_PER_SLOT, true, MIST_COLOUR,
-			1.6, [0.35, 0.6], 0.12, soft))
+			1.6, [0.5, 0.9], 0.12, soft))
 		_emit["cough"].append(_emitter(root, "%s_cough%d" % [id, k], c, half_h * 0.8, COUGH_PER_SLOT, true,
 			COUGH_COLOUR, 1.4, [0.5, 0.9], 0.25, soft))
 
@@ -337,7 +347,7 @@ func _emitter(root: Node3D, name: String, at: Vector3, half_h: float, amount: in
 	var pm: ParticleProcessMaterial = ParticleProcessMaterial.new()
 	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 	pm.emission_box_extents = Vector3(0.025, half_h, 0.015)
-	pm.direction = Vector3(0.0, 0.25, -1.0)   # out of the wall (the unit's -z), a little up
+	pm.direction = OUT + Vector3(0.0, 0.25, 0.0)   # out of the wall, a little up
 	pm.spread = 18.0
 	pm.initial_velocity_min = float(speed[0])
 	pm.initial_velocity_max = float(speed[1])
@@ -373,7 +383,7 @@ func _emitter(root: Node3D, name: String, at: Vector3, half_h: float, amount: in
 	m.vertex_color_use_as_albedo = true
 	m.albedo_texture = soft
 	m.proximity_fade_enabled = true
-	m.proximity_fade_distance = 0.2
+	m.proximity_fade_distance = FADE_M
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	quad.material = m
 	p.draw_pass_1 = quad
