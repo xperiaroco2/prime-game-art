@@ -51,6 +51,7 @@ brackets = [[13.0, 21.0], [55.0, 63.0]]   # lens C step 4 (a_power.jpg's riveted
                                  # across each of the four front corners on the lower and the upper course
 bracket = [6.0, 2.6, 1.0]        # its width across the corner, its depth (into the corner's fold) and how far it
                                  # stands proud of the corner (front corners: 68.9 < the reach 70)
+bracket_side = [3.4, 2.0, 0.4]   # the side/chamfer folds' smaller ones: they stay inside the lips' u +-45.5 (45.0)
 chamfer = 1.1                    # sheet: the broad chamfer on every plate edge
 edge = 0.28                      # sheet: the small bright bevel on its folds
 
