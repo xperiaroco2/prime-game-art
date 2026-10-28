@@ -343,6 +343,29 @@ class M1c(unittest.TestCase):
             self.assertFalse(set(t.get("arm_thicken", {})) & M.ARM_KEYS_M1D, n)
             self.assertFalse(set(t.get("fingers", {}).get("shape", {})) & M.SHAPE_KEYS_M1D, n)
 
+    def test_m1e_file(self):
+        t = M.load(M.TARGETS / "axolotl_m1e.toml")
+        d = M.load(M.TARGETS / "axolotl_m1d.toml")
+        self.assertEqual(t["name"], "axolotl_m1e")
+        self.assertEqual(set(t), set(d))
+        self.assertEqual(set(t["arm_thicken"]) - set(d["arm_thicken"]), M.ARM_KEYS_M1E)
+        self.assertEqual(set(t["smooth_rest"]) - set(d["smooth_rest"]), M.SMOOTH_KEYS_M1E)
+        self.assertEqual(t["arm_thicken"]["widths"], d["arm_thicken"]["widths"])
+        for k in ("meshy", "rig_body", "wrap_z", "ring_z", "ring_half_x", "body_tris", "smooth", "bust",
+                  "smooth_after", "notch", "bust_round", "fingers"):
+            self.assertEqual(t[k], d[k], k)  # the head's ring, the chest's size, her hips and the hands as M1d's
+        self.assertNotIn("seat", t)  # her seat kept (the engineer's decision)
+        for b in t["smooth_rest"]["boxes"]:
+            self.assertIn(len(b), (7, 8))
+            self.assertLessEqual(b[5] + t["smooth_rest"]["margin"], t["ring_z"] - 0.015)  # the seam untouched
+        for x, y, z, r, n in t["smooth_rest"]["spheres"]:
+            self.assertLessEqual(z + r, t["ring_z"] - 0.015)
+        ua = [b for b in t["bends"] if b["child"] == "UpperArm"][0]
+        self.assertGreater(ua["width"], 0.085)
+        self.assertLess(ua["offset"], 0.0)  # the hook: the band starts inboard of the joint
+        self.assertEqual([b for b in t["bends"] if b["child"] != "UpperArm"],
+                         [b for b in d["bends"] if b["child"] != "UpperArm"])
+
     def test_older_files_have_no_m1e(self):
         for n in ("axolotl_m1.toml", "axolotl_m1b.toml", "axolotl_m1c.toml", "axolotl_m1d.toml", "chameleon_m2.toml",
                   "chameleon_m2b.toml"):

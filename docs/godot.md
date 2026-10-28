@@ -3204,6 +3204,17 @@ a time, by visibility.
     about it by a Gaussian, then lifts the blend so the volume stays (the most forward vertex was not the read
     point). `arm_thicken.widths` scales the arm toward target front widths (mm per |x|) instead of a fixed factor, so
     a lump and a pinch in Meshy's arm come out even. Her hips and seat stay as they are (the engineer's decision).
+  - M1e (output under `bodies_a/m1e/`): M1d's regressions, `axolotl_m1e.toml` (M1d's file plus
+    `arm_thicken.disp_smooth` / `rounds` and `smooth_rest.disp_smooth`; the older files have none, tested). Every
+    build now logs each fix step's faces flipped against the body before the fixes (`flips` in `body.json`): a fold
+    renders as a dark speck or slit. M1d's specks and armpit slits were such folds: its per-vertex arm factors (up
+    to 1.65) and its smoothing boxes' 20-mm margins over the cleft moved neighbours apart faster than their spacing.
+    `disp_smooth` smooths a step's move over the mesh (the open ring pinned) before it is applied, and `rounds`
+    repeats measure, scale and smooth so the arm still reaches its widths. Too many passes reach the ring's
+    near-degenerate faces (25 folded one; 10 do not). A bright point on a smooth form is found from the close-up's
+    pixel (`world_to_camera_view` plus a ray cast); hers was a knot of short-edged vertices, not the apex. The A
+    pose's shoulder hook goes with a wider UpperArm band that starts inboard of the joint and covers the deltoid cap
+    (`radius` 0.12).
   - The fingers review (`alien_body_refit_review.py --fingers`) curls the thumb about the game clips' own axes
     (`THUMB_AXES_HAND`, read in the hand bone's frame off the deepest clip thumb, Crouch_Run), by default at their
     angles 51.5/28.8/34.7: the tip sweeps under the palm toward the little finger. The old axis, d x (-Z), turned it
