@@ -3215,6 +3215,14 @@ a time, by visibility.
     pixel (`world_to_camera_view` plus a ray cast); hers was a knot of short-edged vertices, not the apex. The A
     pose's shoulder hook goes with a wider UpperArm band that starts inboard of the joint and covers the deltoid cap
     (`radius` 0.12).
+  - M1f (output under `bodies_a/m1f/`): M1e's leftovers, `axolotl_m1f.toml` (M1e's file plus `seam_band` and
+    `relax`, the arm's `width_clamp` from 0.9 and 5 `rounds`; the older files have none, tested). M1e's thin dark mark
+    at the neck's back came from `smooth_rest.disp_smooth`: the smoothed move reached the ring's first neighbours
+    (1.75 mm; M1d 0) and thinned the seam's faces (smallest angle 3.76 -> 2.25 degrees); `arm_thicken`'s did not.
+    `seam_band` pins every vertex within it below the ring at its own move in `disp_smooth`. A small correction
+    inside a step with `disp_smooth` is spread thin; `relax` runs after every shape step (tangent spread plus a
+    Taubin pair along the normal). A heightfield fill does not close a deep cleft's fold: the cleft overlaps itself
+    across the fill's direction (uncapped it filled 47 mm and flipped 45 faces; capped it flipped one).
   - M2c (output under `bodies_a/m2c/`): M2b's leftovers, `chameleon_m2c.toml` (M2b's keys with new values only;
     tested). `disp_smooth` is wrong for a smoothing step: it smooths the step's move, and a smoothing's move is the
     noise it removed, so the noise comes back (grid g1..g3: every torso region rougher than M2b). Where

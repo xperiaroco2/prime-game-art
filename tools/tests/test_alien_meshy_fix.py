@@ -400,6 +400,23 @@ class M1c(unittest.TestCase):
             self.assertFalse(set(t.get("arm_thicken", {})) & M.ARM_KEYS_M1E, n)
             self.assertFalse(set(t.get("smooth_rest", {})) & M.SMOOTH_KEYS_M1E, n)
 
+    def test_m1f_file(self):
+        """M1f: M1e's file plus seam_band and relax; the arm's clamp and rounds changed; the rest as M1e's."""
+        t = M.load(M.TARGETS / "axolotl_m1f.toml")
+        e = M.load(M.TARGETS / "axolotl_m1e.toml")
+        self.assertEqual(t["name"], "axolotl_m1f")
+        self.assertEqual(set(t) - set(e), M.KEYS_M1F)
+        self.assertEqual(set(e) - set(t), set())
+        for k in set(e) - {"name", "arm_thicken"}:
+            self.assertEqual(t[k], e[k], k)  # the head's ring, the chest, her hips, the hands and bends as M1e's
+        self.assertNotIn("seat", t)  # her seat kept (the engineer's decision)
+        ar = dict(t["arm_thicken"], width_clamp=e["arm_thicken"]["width_clamp"], rounds=e["arm_thicken"]["rounds"])
+        self.assertEqual(ar, e["arm_thicken"])
+        self.assertLess(t["arm_thicken"]["width_clamp"][0], 1.0)  # the lump may shrink back toward its target
+        self.assertGreater(t["seam_band"], 0.015)
+        for x, y, z, r, n in t["relax"]["spheres"]:
+            self.assertLessEqual(z + r, t["ring_z"] - 0.1)  # the breasts only, far off the seam
+
     def test_older_files_have_no_m1f(self):
         for p in sorted(M.TARGETS.glob("*.toml")):
             if p.name != "axolotl_m1f.toml":
