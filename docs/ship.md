@@ -1457,7 +1457,7 @@ the charger and the crystal have: `set_state` (idle 0..5.9 s, charging to 17.0, 
 (5.6..6.3 s, eased in by a share of its `TRAVEL`), `set_carrier` (rise 6.4..7.6, 4 whole turns 6.9..15.6 with eased
 speed, down 15.8..17.0), `set_ring` (3 turns the other way) and crystal.gd's `set_charge` (0 to 1, 7.4..15.4). Two
 stand-ins, as the game has no hand: the crystal's way into the cup and out (an eased Bezier from above the player,
-its last leg down the axis). Not shown, as not built: the lightning arcs and any conduit pulse (the game's).
+its last leg down the axis). Since the charger zap the electricity runs too (below).
 Output: `cycle.mp4` (1280x720, 30 fps, 24 s, 7.3 MB), `keys/` and `keys_sheet.png` (thirteen labelled beats since
 the traces) in `<raw>/ship/v5/charger-cycle/` (pieces `lens-c-main/pieces`; `--out` names them). The frames take
 about 4 min. `cycle.json`'s `trace_surfaces` counts the traces the east charger drives (3).
@@ -1492,3 +1492,41 @@ The engineer's pick for both lens rooms (prime-game#1095 c6468773545; the concep
 - Tests: `test_ship_charger_traces.py` (mirrored, orthogonal and 45 degrees, apart and inside the panel, the ring on
   the crystal's axis, the fill 0..1 and the junctions, faces toward the room, the export's shader).
 - Output: `<raw>/ship/v5/charger-traces/` (`pieces/`: lens-c-main's with the new `lens_alcove`; `cycle/`).
+
+## The charger's electricity (2026-10-28)
+
+The engineer on the cycle (prime-game#1095): "no effects at all ... some electricity there". `godot/charger/zap.gd`
+is the reference the game copies (not in charger.gd, whose copy ships byte-equal in `assets/prop/crystal_charger`):
+`bind(look, ship, crystal)` after `Charger.apply` and `seat_crystal`, then `step(look, dt, charge, flash, lit)` each
+frame. Everything follows the charger look's state and the charge:
+- **Arcs** from the four electrodes (two per inner prong: `charger_dims.toml` `[inner] electrodes`, placed as
+  `charger_build.build_electrodes` does, on the track ring) into the crystal: each leaves its electrode's surface and
+  lands on the crystal's surface (a radius profile by height from its meshes), a little above the electrode (the low
+  pair 9 cm up the crystal), jittered round the axis. A bolt is midpoint displacement (16 segments, the ends fixed)
+  with 0..2 fading branches; the shapes re-roll every 50..80 ms from a seeded generator and are rebuilt every frame on
+  the electrodes' and the crystal's current places, so they follow the turning ring and the rising, turning crystal.
+  The low pair skips about half its ticks, the tip pair a tenth (the flicker). Drawn as camera-facing ribbons
+  (`godot/charger/arc.gdshader`: unshaded, additive, a white-cyan core over a cyan halo, HDR for the glow) in one
+  `ImmediateMesh` under the charger's root.
+- **Lights**: one small `OmniLight3D` per arc at its hit (range 0.2 m, 0.25..0.45 flickering, the whiter cyan
+  (0.45, 0.82, 1) that stays neutral on the bronze; the charged glow rule: light around, not a brighter surface).
+- **Sparks** at the hits each tick (1..3) and now and then at an electrode: short streaks (0.1..0.28 s, gravity,
+  drag) simulated in `step` on the caller's dt (not GPUParticles3D), so the fixed-clock cycle draws the same frames
+  every run.
+- **The flash** (`flash` 0..1, `cycle.gd` `FLASH` 15.4..15.62 s, with the ring's flare): every arc on, 2.2 times
+  wider, four branches each, re-rolled every 30 ms, a burst of 28 sparks, the lights to 1.8 over 0.42 m. Then quiet.
+- **Gating**: arcs only while the state is "charging" and 0 < charge < 1, or during the flash (still "charging");
+  never idle or charged.
+- **The conduits** (`lens_conduits_e/w`, material `int_cyan__lens_core`): the cores' UV x runs 0 where a conduit
+  leaves the jamb to 1 at the deck or the ceiling, UV y (Godot) is the run's length (`ship_interior_lens.py`
+  `core_uvs`). `bind` puts one `godot/charger/conduit.gdshader` copy on the cores near the crystal (`CONDUIT_REACH`
+  1.2 m), its base the surface's own glow: while the arcs run, bright bands (0.45 m apart, 1.1 m/s) run from the deck
+  and the ceiling into the jambs; once full the core glows steady a little brighter; `lit` (the traces' fade) brings
+  it back to the base.
+- **The export** ships `charger_arc.gdshader` and `charger_conduit.gdshader` (`ship_export.SHADERS`) beside the
+  pieces for the game's copy of zap.gd; the ship scene itself does not use them.
+- `cycle.json` adds `conduit_surfaces` (1), `arc_frames` and `arc_ends_off` (frames whose arc ends left an electrode
+  or the crystal's surface: 0). Keys: "4 charging: the arcs" (12.6 s) and "5 full: the big flash" (15.5 s).
+- Tests: `test_ship_charger_zap.py` (the electrodes are the build's, the ends, the gating, the flash inside
+  "charging", the conduits' UV, the shaders shipped).
+- Output: `<raw>/ship/v5/charger-zap/` (`pieces/`: charger-traces' with the new `lens_conduits_e/w`; `cycle/`).

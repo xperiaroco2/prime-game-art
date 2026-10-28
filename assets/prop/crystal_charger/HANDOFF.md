@@ -71,7 +71,11 @@ layout's own stand check).
 | `button` | (0, 0.759, 0.698): the lens's face | 1 cm in along -Z: `set_pressed(look, on)` |
 
 The outer prongs and the pedestal are part of the body. The lightning (arcs from the inner prongs' electrodes into the
-crystal while it charges) and the crystal's glow are the game's.
+crystal while it charges) and the crystal's glow are the game's; the art repo's reference for the lightning is
+`godot/charger/zap.gd` with `arc.gdshader` (shipped with the ship package as `charger_arc.gdshader`): arcs from the
+four electrodes (`charger_dims.toml` `[inner] electrodes`: per inner prong one under the hook's lip at r 11, h 116,
+one on the column at r 16.8, h 101), sparks at the hits, a flash at full charge (`docs/ship.md`, "The charger's
+electricity").
 
 ## The crystal
 
