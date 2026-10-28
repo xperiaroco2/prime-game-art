@@ -3,7 +3,8 @@ extends SceneTree
 ## this. Per character (the job's "chars": {glb, ref, out}):
 ## - pose_layers.gd plays every pair of the reference (the 48) as its two filtered layers; each bone's head in the
 ##   skeleton's space against the Blender-composed pose (the ref: the plain-Python composition of the same clips,
-##   equal to Blender's evaluated pose; heads in glTF axes), the largest error in cm, a failure over TOL_CM;
+##   equal to Blender's evaluated pose; heads in glTF axes), the largest error in cm, a failure over TOL_CM; and each
+##   bone's world turn from its rest against the reference's, a failure over TOL_DEG (a leaf's roll shows);
 ## - the pair holds: the same pose after the tree has run 0.7 s more (HOLD_CM);
 ## - stop() hands the skeleton back to the player (Idle plays again);
 ## - the head look (head_look.gd) on the contact pairs at yaw -70 and +70 per split (the modifier's defaults; Neck and
@@ -13,6 +14,7 @@ extends SceneTree
 const PoseLayers = preload("res://alien/pose_layers.gd")
 const HeadLook = preload("res://alien/head_look.gd")
 const TOL_CM := 0.5
+const TOL_DEG := 0.5  # a bone's world turn from its rest against the reference's (float keys, the importer's rounding)
 const HOLD_CM := 0.01
 const SPLITS := {
 	"default": {},
@@ -30,6 +32,7 @@ const CONTACTS := [
 
 var _sk: Skeleton3D
 var _snap := {}
+var _rest := {}
 
 
 func _initialize() -> void:
@@ -65,13 +68,16 @@ func _check(c: Dictionary) -> Dictionary:
 	var ch: Node3D = (load(c["glb"]) as PackedScene).instantiate()
 	root.add_child(ch)
 	_sk = ch.find_children("*", "Skeleton3D", true, false)[0]
+	_rest = {}
+	for b: int in _sk.get_bone_count():
+		_rest[_sk.get_bone_name(b)] = _sk.get_bone_global_rest(b)
 	var ap: AnimationPlayer = ch.find_children("*", "AnimationPlayer", true, false)[0]
 	ap.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	var layers = PoseLayers.new()
 	ch.add_child(layers)
 	layers.setup(ap)
 	var r := {"glb": c["glb"], "tol_cm": TOL_CM, "poses": layers.poses(), "pairs": {}, "max_err_cm": 0.0,
-		"worst": "", "hold_max_cm": 0.0, "fails": [], "look": {}}
+		"worst": "", "tol_deg": TOL_DEG, "max_err_deg": 0.0, "worst_deg": "", "hold_max_cm": 0.0, "fails": [], "look": {}}
 	# the player's Idle before any pose: what stop() must give back (every bone's position and rotation)
 	var idle: String = "CharacterArmature|Idle_Loop" if ap.has_animation("CharacterArmature|Idle_Loop") else ap.get_animation_list()[0]
 	ap.play(idle)
@@ -93,13 +99,31 @@ func _check(c: Dictionary) -> Dictionary:
 			if e > worst:
 				worst = e
 				wb = b
+		# every bone's world turn from its rest, the leaves too: a roll keeps the head where it was
+		var worst_deg := 0.0
+		var wbd := ""
+		for b: String in p.get("turns", {}):
+			var t: Array = p["turns"][b]
+			var want := Quaternion(t[0], t[1], t[2], t[3]).normalized()
+			var have := (got[b].basis * _rest[b].basis.inverse()).get_rotation_quaternion()
+			var d: float = rad_to_deg((want.inverse() * have).normalized().get_angle())
+			d = minf(d, 360.0 - d)
+			if d > worst_deg:
+				worst_deg = d
+				wbd = b
 		layers.tree.advance(0.7)
 		await process_frame
 		var held := _heads()
 		var hold := 0.0
 		for b: String in held:
 			hold = maxf(hold, (held[b].origin - got[b].origin).length() * 100.0)
-		r["pairs"][pair] = {"max_err_cm": snappedf(worst, 0.0001), "bone": wb, "hold_cm": snappedf(hold, 0.0001)}
+		r["pairs"][pair] = {"max_err_cm": snappedf(worst, 0.0001), "bone": wb, "hold_cm": snappedf(hold, 0.0001),
+			"max_err_deg": snappedf(worst_deg, 0.001), "bone_deg": wbd}
+		if worst_deg > r["max_err_deg"]:
+			r["max_err_deg"] = snappedf(worst_deg, 0.001)
+			r["worst_deg"] = "%s %s" % [pair, wbd]
+		if worst_deg > TOL_DEG:
+			r["fails"].append("%s: %s turned %.3f deg off" % [pair, wbd, worst_deg])
 		if worst > r["max_err_cm"]:
 			r["max_err_cm"] = snappedf(worst, 0.0001)
 			r["worst"] = "%s %s" % [pair, wb]

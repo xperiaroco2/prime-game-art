@@ -3,7 +3,7 @@
 `$PYTHON_BIN tools/blender/alien_poses_run.py [--raw D:/prime-art-raw] [--step s3] --check [--chars ...]` (the
 default step: the newest with both GLBs) writes per
 character the Blender-composed reference of all 48 pairs (`ref_<char>.json`: the plain-Python composition of the
-same clips, every bone's head in glTF axes; pure skinning equals Blender's evaluated pose, step 2) and runs
+same clips, every bone's head and world turn from the rest in glTF axes; pure skinning equals Blender's evaluated pose, step 2) and runs
 godot/alien/pose_layers_check.gd headless on the step's GLBs: pose_layers.gd's two filtered layers against the
 reference, the hold, stop(), the head look's slide on the contact pairs (`layers_<char>.json`; POSES lines, exit 1 on
 a failure).
@@ -31,16 +31,29 @@ def gltf(v) -> list:
     return [round(v[0], 6), round(v[2], 6), round(-v[1], 6)]
 
 
+def gltf_q(q) -> list:
+    """A rotation (w, x, y, z) in Blender's armature space as glTF's (x, y, z, w), Godot's Quaternion order."""
+    return [round(q[1], 6), round(q[3], 6), round(-q[2], 6), round(q[0], 6)]
+
+
+def turn(Pm: dict, R: dict, b: str) -> list:
+    """The bone's world turn from its rest (pose * rest^-1): free of how an exporter orients the bones' own axes."""
+    return gltf_q(A.M.q_mul(A.S.mat_q(Pm[b]), A.M.q_conj(A.S.mat_q(R[b]))))
+
+
 def reference(dump: dict, cfg: dict) -> dict:
-    """Every pair's bone heads, composed from its two layers as the GLB's clips are (alien_pose_math.compose)."""
+    """Every pair's bone heads and world turns from the rest, composed from its two layers as the GLB's clips are
+    (alien_pose_math.compose)."""
     model = A.Model(dump["skel"], dump["skin"], cfg)
+    R = A.Rig(dump["skel"]).P()
     legs = {n: model.legs(n) for n in cfg["legs"]}
     arms = {n: model.arms(n) for n in cfg["arms"]}
     arms.update(model.variants(legs, arms))
     pairs = {}
     for lg, am in P.pairs_of(cfg, "all"):
         Pm = A.compose(legs[lg], A.arms_for(arms, am, lg)).P()
-        pairs[f"{lg}+{am}"] = {"legs": lg, "arms": am, "heads": {b: gltf(A.S.pos(m)) for b, m in Pm.items()}}
+        pairs[f"{lg}+{am}"] = {"legs": lg, "arms": am, "heads": {b: gltf(A.S.pos(m)) for b, m in Pm.items()},
+                                "turns": {b: turn(Pm, R, b) for b in Pm}}
     return {"pairs": pairs}
 
 
