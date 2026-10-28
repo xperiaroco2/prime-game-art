@@ -52,16 +52,22 @@ KICK_H = 0.08
 LINE_H = (PLINTH_H - 0.036, PLINTH_H - 0.012)              # step 5: the plinth's cyan line, 2.4 cm (was 1.2: thin
                                                         # and dim beside the concept's)
 CORNICE_H, CORNICE_W = 0.06, 0.032                      # step 5: the cornice along the band's top, under the ceiling
-CORNICE_MAT = "int_silver_a"                            # step 6: the lighter metal (silver_c read dark on dark), 3.2 cm proud
+CORNICE_MAT = "hull_silver"                             # step 6: the lighter metal, 3.2 cm proud (the int_silver_a/b/c
+                                                        # share one look: silver_c read dark on dark)
+COLUMN_MAT = "int_silver_a"                             # step 6: the corner column
 GAP_H = 0.014                                           # step 6: the dark shadow line under the cornice
 COL_U0 = 3.88                                           # step 6: the hall end's column: its mouth face meets the wall
                                                         # here (clear of the button's recess, 3.84)
 COL_E_LO, COL_E_HI = 3.80, 3.58                         # its front edge's u on the header's plane: to the bend (the button
                                                         # stays in view from the throat), and at the ceiling (past the lean)
-COL_PROUD = 0.004                                       # its front 4 mm on the hall side of the band's end caps (no z-fight)
+COL_PROUD = 0.026                                       # its front 2.6 cm hall-ward of the header clip (1.6 cm past the header's
+                                                        # hall face: one clean face to the hall too; was 4 mm)
 PLINTH_S0 = 0.02                                        # the plinth from the mouth's corner (under the ramp roof too, as the concept)
-MOUTH_W = 0.003                                         # step 4: the band's mouth part (s 0.02-1.62, under the ramp roof, to
-                                                        # the bend) 3 mm proud of the jambs' plates it covers (no z-fighting)
+MOUTH_W = 0.0                                           # the band's mouth part (s 0.02-1.62, under the ramp roof, to the
+                                                        # bend): step 4 laid it 3 mm proud of the jambs' plates; step 5 cut
+                                                        # them to start at the bend, so step 6 lays it flush with the band
+                                                        # (its 3 mm end step read as a dashed light line at the roof line)
+MOUTH_TOP = 0.002                                       # step 6: it stops this far under the bend, where the jamb starts
 BAND = (1.70, 3.95)                                     # the clean band's seams (design: s 1.70-3.95)
 SEAM_W = 0.006
 
@@ -423,9 +429,12 @@ def band_mouth() -> list:
     """Step 4: the band's mouth part, under the ramp roof from the mouth's corner to the roof line, the plinth's top to
     the bend (the tunnel's chamfer leans in over it): the band's own metal over the jambs' bluish hull plates, so the
     concept's one clean band runs from the ramp roof's edge to the hall's corner. Its aft end steps the 3 mm back."""
-    face = _poly([(PLINTH_S0, PLINTH_H), (S0, PLINTH_H), (S0, BEND), (PLINTH_S0, BEND)], MOUTH_W)
-    end = _sheet([[(S0, t, MOUTH_W), (S0, t, 0.0)] for t in (PLINTH_H, BEND)], flip=True)
-    front = _sheet([[(PLINTH_S0, t, 0.0), (PLINTH_S0, t, MOUTH_W)] for t in (PLINTH_H, BEND)], flip=True)
+    top = BEND - MOUTH_TOP
+    face = _poly([(PLINTH_S0, PLINTH_H), (S0, PLINTH_H), (S0, top), (PLINTH_S0, top)], MOUTH_W)
+    if MOUTH_W <= 0.0:   # step 6: flush, one face
+        return [P("band_mouth", M(face), BAND_MAT)]
+    end = _sheet([[(S0, t, MOUTH_W), (S0, t, 0.0)] for t in (PLINTH_H, top)], flip=True)
+    front = _sheet([[(PLINTH_S0, t, 0.0), (PLINTH_S0, t, MOUTH_W)] for t in (PLINTH_H, top)], flip=True)
     return [P("band_mouth", M(face, end, front), BAND_MAT)]
 
 
@@ -470,7 +479,7 @@ def corner_column() -> list:
         for i in range(4):
             j = (i + 1) % 4
             faces.append((r + i, r + j, r + 4 + j, r + 4 + i))
-    return [P("corner-col", (verts, faces), CORNICE_MAT)]   # the lighter metal: its faces turn from the throat's lights
+    return [P("corner-col", (verts, faces), COLUMN_MAT)]
 
 
 def seams() -> list:

@@ -720,6 +720,7 @@ def cor_wall_up(args, layout):
 
 
 TH_HEAD_D = 0.2    # the throat ceiling's header under the hall's rim: its depth hall-ward of the sub-facet's chord
+TH_GILLS_COLUMN = True   # the gills step 6: the gills' corner column covers the header's seat (no trim there)
 TH_SKIN = 0.008   # the gills step 5: the header's skin under the throat's ceiling by the corners (the band's cut is 1 cm in)
 
 
@@ -950,7 +951,9 @@ def throat_ceil(args, layout):
                 d = min(-(a * x + b * y - c) for a, b, c in (_wall_line(1), _wall_line(-1)))
                 return TH_BEND + (TH_H - TH_BEND) * d / TH_IN if 0.0 <= d <= TH_IN else None
             sq = [ln * k / 40 for k in range(41)]
-            for s0, s1 in zip(sq, sq[1:]):
+            # the gills step 6: the gills' corner column (its front 1.6 cm hall-ward of this face) now covers the
+            # seat from both sides; the trim showed past its edge from the throat as a slanted strip ending in the air
+            for s0, s1 in zip(sq, sq[1:]) if not TH_GILLS_COLUMN else ():
                 h0, h1 = seat(s0), seat(s1)
                 if h0 is not None and h1 is not None:
                     trim.append(G.slab(fv, [(s0, h0 - 0.03), (s1, h1 - 0.03), (s1, h1 + 0.035), (s0, h0 + 0.035)],
@@ -969,7 +972,7 @@ def throat_ceil(args, layout):
             panel.append(pyramid(fh, poly if G.area2(poly) > 0 else poly[::-1], 0.0, 0.03, 0.065, 0.012))
     return [P("body", M(*body), "int_silver_b"), P("panels", M(*panels), "int_silver_a"),
             P("spine", M(*spine), "int_dark"), P("header", M(*head), "int_silver_b"),
-            P("trim", M(*trim), "int_silver_c"), P("corner_panel", M(*panel), "int_silver_a")]
+            *([P("trim", M(*trim), "int_silver_c")] if trim else []), P("corner_panel", M(*panel), "int_silver_a")]
 
 
 # --- the tip rooms (built for the east room, centre at the origin; the west one is turned 180) ----------------------

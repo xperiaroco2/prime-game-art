@@ -198,9 +198,9 @@ class Ceiling(unittest.TestCase):
             self.assertLessEqual(ha * x + hb * y, hc + 1e-6)
 
     def test_cornice_reads(self):
-        """Step 6: the cornice is the lighter metal over a dark shadow line (dark on dark did not read)."""
+        """Step 6: the cornice is the lighter hull metal over a dark shadow line (dark on dark did not read)."""
         p = parts("e")
-        self.assertEqual(p["cornice"]["mat"], "int_silver_a")
+        self.assertEqual(p["cornice"]["mat"], "hull_silver")
         self.assertEqual(p["cornice_gap"]["mat"], G.DARK)
         under = G.point(0.0, G.T_TOP - G.CORNICE_H, 0.0015)[2]   # the gap's top is the cornice's bottom edge
         self.assertAlmostEqual(max(v[2] for v in p["cornice_gap"]["verts"]), under, places=9)
