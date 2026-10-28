@@ -888,6 +888,9 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
     for k, v in through.items():
         if v > (lim.get("through_hand_cm", lim["through_cm"]) if k.startswith(("hand", "forearm")) else lim["through_cm"]):
             fails.append(f"through {k} {v} cm")
+    for k, v in proxy.items():  # review 3: a depth with a skin gap still fails past its own limit (a hand deep in b
+        if v > lim.get("proxy_hand_cm", lim["through_cm"]):  # with no vertex of b's skin within TOUCH_CM)
+            fails.append(f"through (no touch) {k} {v} cm")
     for k, v in marks.items():  # a per-legs variant rides off the waist to clear the thigh: its own, looser limit
         if v > (lim.get("variant_mark_cm", lim["mark_cm"]) if variant else lim["mark_cm"]):
             fails.append(f"mark {k} {v} cm")
@@ -901,8 +904,9 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
 
 # --------------------------------------------------------------------------------------------- silhouettes
 # A mask is a flat outline seen from one facing: a list of rows, each an int bitset (the leftmost pixel the highest
-# bit of a row `w` pixels wide). Every pair is shot by the same camera relative to the character's ground spot (Root
-# at the origin, the floor at 0), so the masks are aligned on the feet as rendered.
+# bit of a row `w` pixels wide). Every pair is shot by the same camera fixed on the character's ground spot (Root at
+# the origin, the floor at 0), not re-aligned per pose: where a pose moves the feet and hips (Sit, Kneel, Lunge) a
+# legs difference includes that shift.
 FACINGS = ("front", "left", "right", "back")
 
 
@@ -923,8 +927,10 @@ def silhouette_table(masks: dict, legs: list, arms: list, w: int, lopsided: tupl
 
     legs: per facing and per two leg poses, the outline difference of the pairs that differ only in the legs: the
     least over the arm poses (the worst case, and its arm) and the mean. arms: the same per two arm poses over the leg
-    poses. lr: per pair, the left facing against the mirrored right facing (a symmetric pose reads 0: its left and
-    right outlines are mirror images; a lopsided one must differ, so its facing can be told)."""
+    poses. lr: per pair, the left facing against the mirrored right facing (a symmetric pose reads near 0: its left and
+    right outlines are mirror images up to perspective). `lopsided` only labels the pairs whose facing should be
+    told apart; nothing fails on it (a limit would not separate them: s11's unlisted Squat+Plane reads 0.18, the
+    listed Stand+Salute 0.07)."""
     out = {"legs": {}, "arms": {}, "lr": {}}
     for face in FACINGS:
         for kind, parts, others in (("legs", legs, arms), ("arms", arms, legs)):

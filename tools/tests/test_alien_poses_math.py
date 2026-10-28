@@ -356,6 +356,32 @@ class OnTheChameleon(unittest.TestCase):
             self.assertGreater(m["contacts_cm"][f"hand_{s}~head"], A.TOUCH_CM)
         self.assertEqual(m["fails"], [])
 
+    def test_a_hand_pushed_into_the_head_fails(self):
+        """Review 3: a hand 3 cm deeper into the skull than HandsBehindHead's solve fails, read as through (its skin
+        then touches the head's) and, with the touch rule forced on every reading, as through with no touch
+        (proxy_cm past `proxy_hand_cm`): the gap rule never hides a deep hand."""
+        mo = self.model
+
+        def pushed():
+            r = A.compose(mo.legs("Stand"), mo.arms("HandsBehindHead"))
+            hp, hd = S.pos(r.P()["LeftHand"]), S.pos(r.P()["Head"])
+            d = A.norm(A.sub(hd, hp))
+            r.set_world("LeftHand", r.world_q("LeftHand"), at=A.add(hp, A.mul(A.norm((d[0], d[1], 0.0)), 0.03)))
+            return A.measure(mo, r, "Stand", "HandsBehindHead")
+
+        m = pushed()
+        self.assertGreater(m["through_cm"]["hand_Left>head"], mo.data["limits"]["through_hand_cm"])
+        self.assertIn("through hand_Left>head", " ".join(m["fails"]))
+        old = A.TOUCH_CM
+        try:
+            A.TOUCH_CM = -1.0  # every hand reading goes to proxy_cm, as a deep hand with no skin near b's would
+            m = pushed()
+        finally:
+            A.TOUCH_CM = old
+        self.assertEqual(m["through_cm"]["hand_Left>head"], 0.0)
+        self.assertGreater(m["proxy_cm"]["hand_Left>head"], mo.data["limits"]["proxy_hand_cm"])
+        self.assertIn("through (no touch) hand_Left>head", " ".join(m["fails"]))
+
     def test_one_leg_tips_out_of_balance_when_pushed(self):
         """The centre of mass check reads a body shifted off its one foot as outside the support."""
         legs = self.model.legs("OneLeg")

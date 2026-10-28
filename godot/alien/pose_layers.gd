@@ -43,14 +43,16 @@ func setup(p: AnimationPlayer) -> void:
 		var short: String = n.get_slice("|", n.get_slice_count("|") - 1).trim_suffix("_Loop")
 		if short.begins_with(LEGS_PREFIX) or short.begins_with(ARMS_PREFIX):
 			_clips[short] = n
+	if tree != null:  # a second setup() replaces the first tree: out of the scene now (its name free), freed later
+		if tree.get_parent() != null:
+			tree.get_parent().remove_child(tree)
+		tree.queue_free()
+		tree = null
 	var root: Node = player.get_node(player.root_node)
 	var found: Array[Node] = root.find_children("*", "Skeleton3D", true, false)
 	if found.is_empty():
 		push_error("pose_layers: no Skeleton3D under the player's root node")
 		return
-	if tree != null:  # a second setup() replaces the first tree, it does not add a second one
-		tree.queue_free()
-		tree = null
 	var sk: Skeleton3D = found[0]
 	var bt := AnimationNodeBlendTree.new()
 	_legs_node = AnimationNodeAnimation.new()
@@ -95,6 +97,8 @@ func poses() -> Dictionary:
 
 ## Holds the pair (any legs with any arms); false if either clip is missing.
 func play_pair(legs_name: String, arms_name: String) -> bool:
+	if tree == null:  # setup() found no skeleton
+		return false
 	var l: String = _clips.get(LEGS_PREFIX + legs_name, "")
 	var a: String = _clips.get(ARMS_PREFIX + arms_name + VARIANT + legs_name,
 			_clips.get(ARMS_PREFIX + arms_name, ""))
@@ -112,7 +116,8 @@ func play_pair(legs_name: String, arms_name: String) -> bool:
 
 ## Hands the skeleton back to the AnimationPlayer (a step drops the pose).
 func stop() -> void:
-	tree.active = false
+	if tree != null:
+		tree.active = false
 	legs = ""
 	arms = ""
 

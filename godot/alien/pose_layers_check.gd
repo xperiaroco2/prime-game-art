@@ -76,8 +76,12 @@ func _check(c: Dictionary) -> Dictionary:
 	var layers = PoseLayers.new()
 	ch.add_child(layers)
 	layers.setup(ap)
+	layers.setup(ap)  # a second setup() replaces the tree: one "PoseLayers" beside the player, not a renamed second
 	var r := {"glb": c["glb"], "tol_cm": TOL_CM, "poses": layers.poses(), "pairs": {}, "max_err_cm": 0.0,
 		"worst": "", "tol_deg": TOL_DEG, "max_err_deg": 0.0, "worst_deg": "", "hold_max_cm": 0.0, "fails": [], "look": {}}
+	var trees: Array = ap.get_parent().get_children().filter(func(n: Node) -> bool: return n is AnimationTree)
+	if trees.size() != 1 or trees[0].name != "PoseLayers":
+		r["fails"].append("a second setup() left %d trees (%s)" % [trees.size(), trees.map(func(n: Node) -> String: return n.name)])
 	# the player's Idle before any pose: what stop() must give back (every bone's position and rotation)
 	var idle: String = "CharacterArmature|Idle_Loop" if ap.has_animation("CharacterArmature|Idle_Loop") else ap.get_animation_list()[0]
 	ap.play(idle)

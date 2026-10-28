@@ -16,7 +16,8 @@ build = "loco/f3/build"       # the characters the poses go on: <raw_base>/<buil
 chars = ["chameleon", "axolotl"]
 starting = [["OneLeg", "Plane"], ["Lunge", "FingerUp"], ["Kneel", "Heart"], ["Squat", "Flex"],
             ["Sit", "HandsBehindHead"], ["Stand", "HandsOnHips"]]
-lopsided = ["OneLeg", "Kneel", "Lunge", "FingerUp", "Salute"]  # their left and right outlines must differ
+lopsided = ["OneLeg", "Kneel", "Lunge", "FingerUp", "Salute"]  # a label in the silhouette table's left/right line
+                                                               # (their facing should read), not a check
 
 [limits]
 floor_cm = 0.5        # the lowest skin point within this of the floor
@@ -25,6 +26,8 @@ com_margin_cm = 1.0   # the centre of mass at least this far inside the support 
 balance_legs = ["Stand", "OneLeg", "Squat", "Lunge", "Kneel"]
 through_cm = 1.5      # skin through skin (the tube proxy's own error on the rest skin is in the report)
 through_hand_cm = 0.5 # a hand or forearm into the body: the hand's proxy reads 0.0 cm on the rest skin
+proxy_hand_cm = 1.5   # a hand's or forearm's depth where no skin of b's is within TOUCH_CM (proxy_cm: the tube's
+                      # bulge past the skin, s11 at most 0.74 cm): past this it fails all the same (review 3)
 mark_cm = 6.0        # a hand on a landmark (the hip hand on the waist's side): the palm's centre within this
                      # (round 2: the hand 0.8 cm off the waist, the fingers turned out with the belly, s6 grid)
 variant_mark_cm = 10.0 # a hip hand's per-legs variant (moved off the waist to clear a raised thigh): within this
@@ -41,7 +44,9 @@ through_pairs = [
   ["forearm_Right", "thigh_Right"], ["thigh_Left", "torso"], ["thigh_Right", "torso"], ["thigh_Left", "thigh_Right"],
   ["shin_Left", "thigh_Left"], ["shin_Right", "thigh_Right"],
 ]  # thigh, upper arm, shin: the depth beyond the rest's (through_depth). Hand into hand is judged on the
-#   close-ups: the hand's tube (a short bone under curled fingers) misreads
+#   close-ups: the hand's tube (a short bone under curled fingers) misreads. Not measured (review 3): an arm into a
+#   shin, an upper arm into a thigh, a hand into the other side's thigh (Flex, Heart, Plane on Squat, Sit, Kneel):
+#   judged on the close-ups
 
 # ------------------------------------------------------------------------------------------------- the grips
 # per finger [base, middle, tip] curl in degrees (the thumb: metacarpal, proximal, distal); `all` for the rest
@@ -152,6 +157,9 @@ both = { mode = "goal", at = "chest_front", offset = [0.4, 1.0, 0.25], elbow = [
 contacts = [{ a = "LeftIndexDistal", b = "RightIndexDistal", solve = "meet", gap_cm = 0.2 }, { a = "LeftThumbDistal", b = "RightThumbDistal" }]
 
 [arms.FingerUp]
+# FingerUp's and Salute's hip hand keep s10's elbow [1, -0.6, 0] with s11's hip curl (review 3: wrist bend 88.7 deg
+# vs HandsOnHips' 67; mark 5.0 cm, gap 0.55 cm): on close_arms s11 the hand wraps the waist, not limp; the elbow
+# stays apart from HandsOnHips' (pulled back) so the left outlines differ
 Head = [-8, 9, 0]
 Right = { mode = "fk", shoulder = [0, 8, 0], upper = [0.45, 0.35, 1.0], lower = [0.15, 0.3, 1.0], fingers_dir = [0.05, 0.25, 1.0], palm = [-0.6, 0.8, 0.0], grip = "point" }
 Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2] } }
