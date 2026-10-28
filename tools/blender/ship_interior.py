@@ -265,7 +265,9 @@ def wedge(r0, r1, a0, a1):
 
 # --- walls: panels, pilasters, portals -----------------------------------------------------------------------------
 def wall_panel(args, layout):
-    """A wall facet (the hall's or a tip room's): body, kick plate, folded main panel, belt, upper panel."""
+    """A wall facet (the hall's or a tip room's): body, kick plate, folded main panel, belt, upper panel. Lens room C:
+    `plain` a flat main and upper plate (the charger's alcove covers the facet), `v0` the main panel's foot (the
+    lounge's sofa spine stands in front of it up to 0.88 m)."""
     hw, h, tone = args.get("half", HW), args.get("height", H_HALL), args.get("tone", "a")
     fr = G.wall_frame(FLOOR)
     lo, hi = ("int_silver_a", "int_silver_b") if tone == "a" else ("int_silver_b", "int_silver_a")
@@ -273,7 +275,7 @@ def wall_panel(args, layout):
     e = hw - 0.135
     # hall_in-3's faceted wall: a raised diamond folded up to a ridge point, four chamfered corner plates round it
     # (seams 12 mm), the upper panel split on its diagonal into two folds (alternating with the tone)
-    v0, v1, g = 0.2, belt - 0.05, 0.012
+    v0, v1, g = args.get("v0", 0.2), belt - 0.05, 0.012
     vm = (v0 + v1) / 2
     dia = [(0.0, v0 + g), (e - g, vm), (0.0, v1 - g), (-e + g, vm)]
     corners = [[(-e, v0), (-g, v0), (-e, vm - g)], [(g, v0), (e, v0), (e, vm - g)],
@@ -286,6 +288,12 @@ def wall_panel(args, layout):
     if args.get("soffit"):  # a flat chord over two hall facets: close the ceiling's rim behind it
         tri = [(0.0, -hw), (HV - HC, 0.0), (0.0, hw)]
         out.append(P("soffit", G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08), "int_silver_b"))
+    if args.get("plain"):
+        return out + [P("body", G.slab(fr, G.rect(-hw, hw, 0.0, h), -0.2, 0.0), "int_silver_b"),
+                      P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.16), 0.0, 0.015), "int_dark"),
+                      P("plain", G.slab(fr, G.rect(-e, e, 0.2, belt - 0.05), 0.0, 0.02, 0.008), lo),
+                      P("belt", G.slab(fr, G.rect(-hw, hw, belt, belt + 0.12), 0.0, 0.05, 0.012), "int_silver_c"),
+                      P("upper", G.slab(fr, G.rect(-e, e, belt + 0.17, h - 0.04), 0.0, 0.03, 0.01), hi)]
     return out + [P("body", G.slab(fr, G.rect(-hw, hw, 0.0, h), -0.2, 0.0), "int_silver_b"),
             P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.16), 0.0, 0.015), "int_dark"),
             P("diamond", pyramid(fr, dia, 0.0, 0.035, 0.1, 0.012), lo),
@@ -1131,15 +1139,18 @@ TIP_RIBS = ((-1.55, 0.05), (-1.12, 0.025), (1.12, 0.025), (1.55, 0.05))
 
 def tip_window(args, layout):
     """lens step 1 (revived from v2's tip_window_frame, one facet): a window facet of the lens room's band: the low
-    wall and its panel under the sill, the sill ledge, the header over the head and its trim (the glass: tip_glass)."""
+    wall and its panel under the sill, the sill ledge, the header over the head and its trim (the glass: tip_glass).
+    Lens room C: `ledge` the sill's depth from the wall's face (0.16; the lounge's facets 0.03, its spine the shelf)."""
     hw, tone = R_TIP * math.sin(D(TIP_STEP / 2)), args.get("tone", "a")
+    ledge = args.get("ledge", 0.16)
     fr = G.wall_frame(FLOOR)
     lo, hi = ("int_silver_a", "int_silver_b") if tone == "a" else ("int_silver_b", "int_silver_a")
     return [P("body", M(G.slab(fr, G.rect(-hw, hw, 0.0, SILL), -0.2, 0.0), G.slab(fr, G.rect(-hw, hw, HEAD, H_TIP), -0.2, 0.0)),
               "int_silver_b"),
             P("kick", G.slab(fr, G.rect(-hw + 0.04, hw - 0.04, 0.0, 0.16), 0.0, 0.015), "int_dark"),
             P("panel", G.slab(fr, G.rect(-hw + 0.04, hw - 0.04, 0.2, SILL - 0.12), 0.0, 0.03, 0.01), lo),
-            P("sill", G.slab(fr, G.rect(-hw - 0.01, hw + 0.01, SILL - 0.1, SILL), 0.0, 0.16, 0.03), "int_silver_c"),
+            P("sill", G.slab(fr, G.rect(-hw - 0.01, hw + 0.01, SILL - 0.1, SILL), 0.0, ledge, min(0.03, ledge / 3)),
+              "int_silver_c"),
             P("trim", G.slab(fr, G.rect(-hw, hw, HEAD, H_TIP - 0.02), 0.0, 0.06, 0.012), hi)]
 
 
@@ -1159,10 +1170,10 @@ def tip_mullion(args, layout):
 
 
 def tip_sill_strip(args, layout):
-    """The cyan strip along one window facet's sill ledge (revived from v2)."""
-    hw = R_TIP * math.sin(D(TIP_STEP / 2))
-    return [P("strip", G.slab(G.wall_frame(FLOOR), G.rect(-hw + 0.03, hw - 0.03, SILL - 0.075, SILL - 0.045), 0.16,
-                              0.17), "int_cyan")]
+    """The cyan strip along one window facet's sill ledge (revived from v2); `ledge` the ledge's depth (lens C)."""
+    hw, w = R_TIP * math.sin(D(TIP_STEP / 2)), args.get("ledge", 0.16)
+    return [P("strip", G.slab(G.wall_frame(FLOOR), G.rect(-hw + 0.03, hw - 0.03, SILL - 0.075, SILL - 0.045), w,
+                              w + 0.01), "int_cyan")]
 
 
 # --- the vault (lens step 1): the hall's shut door and the closet behind it, a shell only ---------------------------
@@ -1355,3 +1366,6 @@ def scratches(args, layout):
 # step 2, station 1: the throat vents' builder (imported last: it reads this module's numbers)
 import ship_interior_vent  # noqa: E402
 MODULES.append(ship_interior_vent)
+# lens room C, step 1: the charger's alcove and conduits, the east lounge
+import ship_interior_lens  # noqa: E402
+MODULES.append(ship_interior_lens)
