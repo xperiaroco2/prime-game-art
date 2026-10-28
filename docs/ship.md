@@ -1453,9 +1453,16 @@ profile (vertical to 1.45 m, leaning 0.55 m in to 2.30 m) from the roof line (s 
 its top 3 cm into the ceiling; the plinth and its line run on under the ramp roof from the mouth's corner (s 0.02),
 as the approved concept `<raw>/ship/v5/gills-throat/concept/side_right.jpg` draws one plinth, and so does the band
 (step 4): its mouth part (`band_mouth`, s 0.02-1.62, the plinth's top to the bend, where the tunnel's chamfer leans
-over it) lies 3 mm over the jambs' bluish hull plates, so one clean band runs from the ramp roof's edge to the hall's
-corner. The throat's ceiling keeps only its two middle panels: the corner wedges' panels hung 3 cm under the ceiling
-by the hall's corners, where the header cuts the band back. Five slits (s 1.95-3.43,
+over it) lies 3 mm in front of the jambs, so one clean band runs from the ramp roof's edge to the hall's corner. The
+throat's ceiling keeps only its two middle panels: the corner wedges' panels hung 3 cm under the ceiling by the hall's
+corners. Step 5 (the engineer: "around the gills textures climb onto textures"): the header under the hall's rim stops
+at the throat's ceiling; by the corners only an 8 mm skin on its hall face (`TH_SKIN`) still closes the chamfer's
+triangle from the hall, behind the band, whose lean now runs on to that face (the full 20 cm drop stood over the band
+as a dark slanted block). A cornice (6 cm, 2.2 cm proud, `int_silver_c`) runs along the band's top under the ceiling;
+the plinth's line is 2.4 cm at emission 0.4 (was 1.2 cm at 0.12). The mouth's column (the tunnel's wall forward of the
+nose, `mouth_tunnel_in`) is the band's metal with the plinth, kick and line run on to the tunnel's front; the jambs'
+inner faces start at the bend (below it the band and plinth are the wall) and the tunnel's 10 cm hull-silver strip
+under the bend is gone, so each surface there is one piece. Five slits (s 1.95-3.43,
 37 cm apart) are true crescents after the concept (step 3): both arcs through the same tips 1.20 m apart up the band,
 the outer arc sagging 0.27 toward the mouth, the inner 0.06 (21 cm wide at the middle, about 1/6 of the chord), a
 thick bevelled rim (5 cm, 2.2 cm proud) on the convex side. Each recess (13 cm) holds a glowing back and 36 fine
