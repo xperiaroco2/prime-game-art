@@ -15,8 +15,10 @@ extends "res://ship/ship.gd"
 const Charger = preload("res://charger/charger.gd")
 const Crystal = preload("res://crystal/crystal.gd")
 const Traces = preload("res://charger/traces.gd")
+const Zap = preload("res://charger/zap.gd")
 
-## {"charger": look, "crystal": Node3D or null, "crystal_look": Dictionary, "traces": its bound trace surfaces}
+## {"charger": look, "crystal": Node3D or null, "crystal_look": Dictionary, "traces": its bound trace surfaces,
+## "conduits": its alcove's conduit cores bound by zap.gd (the electricity, prime-game#1095)}
 var _pairs: Array[Dictionary] = []
 
 
@@ -54,6 +56,7 @@ func _dress(ship: Node3D) -> int:
 		best["crystal"] = c
 		best["crystal_look"] = Crystal.apply(c)
 		Charger.seat_crystal(best["charger"], c, best["crystal_look"])
+		best["conduits"] = Zap.bind(best["charger"], ship, c)   # the arcs, sparks and conduit pulses
 		print("CHARGER crystal %s seated on %s (%.2f m)" % [c.name, (best["node"] as Node3D).name, best_d])
 	return lights
 
@@ -72,6 +75,7 @@ func _ab(off: Dictionary) -> void:
 			continue
 		crystal.visible = bool(off.get("crystal", false))
 		Crystal.set_charge(p["crystal_look"], float(off.get("charge", 1.0)))
+		Zap.step(look, 0.0, float(off.get("charge", 1.0)) if state != "idle" else 0.0)   # a still: one tick's arcs
 		# set_charge hides the omni when spent; a hidden crystal never lights the room
 		var omni: OmniLight3D = p["crystal_look"]["omni"]
 		omni.visible = omni.visible and crystal.visible

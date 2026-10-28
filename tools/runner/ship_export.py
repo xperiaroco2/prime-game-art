@@ -31,9 +31,12 @@ BUILT = "ship_export"  # godot/import/ship_export/: export_scene.gd's output
 # the art shaders the scene uses (their path in the godot/ project -> the package's file beside the pieces); lens room
 # C: the lens bronze (ship.gd LENS_BRONZE: lens_bronze, lens_bronze2, lens_edge) is the console's console_metal.gdshader,
 # shipped as a copy; the lens alcoves' charger traces (ship.gd TRACE_MAT, lens_trace) are charger/traces.gdshader
+# the charger's electricity (charger/zap.gd, bound at run time: the arcs and sparks, and the lens_conduits pieces'
+# int_cyan__lens_core cores' pulses) ships its two shaders beside them for the game's copy of zap.gd
 SHADERS = {"ship/metal.gdshader": "metal.gdshader", "ship/night_sky.gdshader": "night_sky.gdshader",
            "console/console_metal.gdshader": "console_metal.gdshader",
-           "charger/traces.gdshader": "charger_traces.gdshader"}
+           "charger/traces.gdshader": "charger_traces.gdshader",
+           "charger/arc.gdshader": "charger_arc.gdshader", "charger/conduit.gdshader": "charger_conduit.gdshader"}
 CONSOLE_YAW = 180.0  # the console's front (+Z, the button) faces the mouth (-Z): assets/prop/start_console/HANDOFF.md
 # spot id prefix -> (the station package that goes there, the kind); the vents are ship pieces in the scene
 PACKAGES = {"console": ("start_console", "console"), "vent": ("ship:station_vent_{side}", "vent"),

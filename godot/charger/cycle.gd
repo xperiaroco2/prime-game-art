@@ -5,8 +5,10 @@ extends "res://charger/room.gd"
 ## 1 / fps per frame, every value a pure function of the time, eased, never linear), one PNG per frame and the beats'
 ## key moments again with their label for the sheet. Only what the charger and the crystal have: Charger.set_state,
 ## set_carrier, set_ring, set_pressed (eased in by a fraction of its TRAVEL), Crystal.set_charge. Two stand-ins, as
-## the game has no hand yet: the crystal's way into the cup and out of it (an eased path on the anchor's axis). Not
-## shown, as not built (the game's): the lightning arcs from the inner prongs and any conduit pulse.
+## the game has no hand yet: the crystal's way into the cup and out of it (an eased path on the anchor's axis).
+## The electricity (prime-game#1095 "some electricity there", Zap.step on the cycle's clock): arcs from the inner
+## prongs' electrodes into the crystal and sparks at their hits while the charge runs, pulses up the four conduits,
+## one big flash with the ring's flare (FLASH), then quiet: the conduits steady, the crystal glowing.
 ## The back panel's traces (prime-game#1095 c6468773545, Traces.set_panel): dim until the charge starts, then a
 ## bright front runs along every trace from its outer end to the ring at the charge fraction; at full the ring flares
 ## once (FLARE) and the pattern holds full while the crystal waits; once the crystal leaves the cup it fades to dim
@@ -35,19 +37,23 @@ const RISE_DOWN := [15.8, 17.0]
 const TAKE := [20.0, 22.4]
 const FLARE := [15.4, 15.7]   # the ring's flare as the fronts reach it (CHARGE's end), about 0.3 s
 const FADE := 0.5             # the traces back to dim once the crystal is out of the cup
+const FLASH := [15.4, 15.62]  # the full charge's last big arc burst and light pop (zap.gd), with the flare
 const KEYS := [[1.0, "1 idle, empty"], [3.4, "2 crystal put in (stand-in path)"], [5.0, "2 seated, spent"],
 	[5.8, "3 button pressed"], [7.6, "4 charging: carrier up"], [9.0, "4 charging: the traces fill"],
-	[11.0, "4 charging: carrier and ring turn"],
-	[15.0, "4 charging: nearly full"], [15.55, "5 full: the ring flares"], [18.5, "5 charged, waiting"],
+	[11.0, "4 charging: carrier and ring turn"], [12.6, "4 charging: the arcs"],
+	[15.0, "4 charging: nearly full"], [15.5, "5 full: the big flash, the ring flares"], [18.5, "5 charged, waiting"],
 	[20.5, "6 lifted: the traces fade"], [20.9, "6 taken out (stand-in path)"],
 	[23.5, "6 back to idle"]]
 
 var _t: float = 0.0
 var _pair: Dictionary = {}
+var _dt: float = 0.0
+var _arc_frames: int = 0
+var _zap_bad: int = 0
 
 
 ## The cycle's values at time t: {"state", "rise", "carrier", "ring", "press", "charge", "crystal" (anchor-frame
-## position), "shown", and the traces' "fill", "flare", "lit" (Traces.set_panel)}.
+## position), "shown", the traces' "fill", "flare", "lit" (Traces.set_panel) and the electricity's "flash" (Zap.step)}.
 static func at(t: float) -> Dictionary:
 	var state := "idle"
 	if t >= CHARGING_AT and t < RISE_DOWN[1]:
@@ -65,10 +71,11 @@ static func at(t: float) -> Dictionary:
 	var fill: float = _ss(CHARGE, t) if t < out else (1.0 if t < out + FADE else 0.0)
 	var flare: float = sin(PI * _u(FLARE, t)) if t > FLARE[0] and t < FLARE[1] else 0.0
 	var lit: float = 1.0 - smoothstep(out, out + FADE, t)
+	var flash: float = sin(PI * _u(FLASH, t)) if t > FLASH[0] and t < FLASH[1] else 0.0
 	return {"state": state, "rise": rise, "carrier": TURNS * TAU * _glide(_u(SPIN, t), 0.2),
 		"ring": RING_TURNS * TAU * _glide(_u(RING, t), 0.25), "press": press,
 		"charge": _ss(CHARGE, t), "crystal": _bezier(s), "shown": t >= INSERT[0] and t < TAKE[1],
-		"fill": fill, "flare": flare, "lit": lit}
+		"fill": fill, "flare": flare, "lit": lit, "flash": flash}
 
 
 ## The moment the crystal's tip leaves the cup on its way out (the charger goes back to idle).
@@ -113,6 +120,7 @@ static func _bezier(w: float) -> Vector3:
 ## One clock tick: the time moves on by dt and the charger and the crystal take the cycle's values.
 func step(dt: float) -> void:
 	_t += dt
+	_dt = dt
 	_apply(at(_t))
 
 
@@ -135,6 +143,28 @@ func _apply(v: Dictionary) -> void:
 	Crystal.set_charge(_pair["crystal_look"], v["charge"])
 	var omni: OmniLight3D = _pair["crystal_look"]["omni"]
 	omni.visible = omni.visible and crystal.visible
+	Zap.step(look, _dt, v["charge"], v["flash"], v["lit"])
+	if bool(look["zap"]["active"]):
+		_arc_frames += 1
+		_check_ends(look)
+
+
+## The arcs leave the electrodes and land on the crystal: each start within its electrode's radius + 2 mm of an
+## electrode's centre, each hit within 1 cm of the crystal's axis-to-surface (in the crystal's frame). Fails the run.
+func _check_ends(look: Dictionary) -> void:
+	var z: Dictionary = look["zap"]
+	var model: Node3D = z["model"]
+	var ct: Transform3D = Zap._rel(z["crystal"], model)
+	for ends: Array in Zap.endpoints(look):
+		var best := INF
+		for i: int in (z["locals"] as Array).size():
+			var e: Vector3 = Zap._rel(z["ring"], model) * (z["locals"][i] as Vector3)
+			best = minf(best, absf((ends[0] as Vector3).distance_to(e) - float(z["radii"][i])))
+		var hc: Vector3 = ct.affine_inverse() * (ends[1] as Vector3)
+		var r: float = Zap._radius(z["profile"], hc.y)
+		var off: float = absf(Vector2(hc.x, hc.z).length() - r * 0.97)
+		if best > 0.002 or off > 0.01:
+			_zap_bad += 1
 
 
 ## ship.gd's "shoot" mode runs the cycle instead of the views.
@@ -205,7 +235,8 @@ func _shoot() -> void:
 		sheet.blit_rect(tiles[i], Rect2i(0, 0, 640, 360), Vector2i((i % 2) * 640, (i / 2) * 360))
 	_save(sheet, _out.path_join("keys_sheet.png"))
 	_write("cycle.json", {"frames": count, "fps": fps, "seconds": SECONDS, "lights": lights, "states": states,
-		"trace_surfaces": _pair.get("traces", 0),
+		"trace_surfaces": _pair.get("traces", 0), "conduit_surfaces": _pair.get("conduits", 0),
+		"arc_frames": _arc_frames, "arc_ends_off": _zap_bad,
 		"keys": KEYS, "render_s": (Time.get_ticks_msec() - started) / 1000.0})
 	print("CHARGER cycle %d frames" % count)
 	quit(0)
