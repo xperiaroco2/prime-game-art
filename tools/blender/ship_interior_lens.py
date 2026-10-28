@@ -26,12 +26,14 @@ APO = S.R_TIP * math.cos(D(HALF))                      # the facets' apothem (2.
 TAN = math.tan(D(HALF))
 
 L.MATERIALS.update({
-    # the alcove's back panel and the speaker's face: graphite (darker than int_dark's steel, a satin sheen)
-    "lens_graphite": {"base": (0.045, 0.047, 0.052, 1.0), "metallic": 0.55, "roughness": 0.38},
-    "lens_graphite2": {"base": (0.07, 0.073, 0.08, 1.0), "metallic": 0.55, "roughness": 0.46},
+    # the alcove's back panel and the speaker's face: the drawing's graphite, a dark grey; lens C step 3: rough and
+    # nearly dielectric (metallic 0.55 / rough 0.38 mirrored the room's probe: the panel read light grey)
+    "lens_graphite": {"base": (0.05, 0.052, 0.058, 1.0), "metallic": 0.12, "roughness": 0.66},
+    "lens_graphite2": {"base": (0.075, 0.078, 0.086, 1.0), "metallic": 0.12, "roughness": 0.7},
     # the sofa's upholstery (c_lounge: terracotta seats and backs, one charcoal module), matte fabric; lens C step 2:
-    # a deeper, warmer terracotta (step 1's 0.30/0.075/0.045 read salmon under the room's warm light)
-    "lens_cushion_red": {"base": (0.17, 0.036, 0.020, 1.0), "metallic": 0.0, "roughness": 0.92},
+    # a deeper, warmer terracotta (step 1's 0.30/0.075/0.045 read salmon under the room's warm light); step 3: darker
+    # and browner still (step 2's 0.17/0.036/0.020 read orange-salmon under the lamp)
+    "lens_cushion_red": {"base": (0.075, 0.015, 0.010, 1.0), "metallic": 0.0, "roughness": 0.92},
     "lens_cushion_dark": {"base": (0.05, 0.05, 0.055, 1.0), "metallic": 0.0, "roughness": 0.9},
     "lens_leaf": {"base": (0.05, 0.16, 0.04, 1.0), "metallic": 0.0, "roughness": 0.6},
     # the warm strips (sofa base, table rings, the alcove's): amber that glows and lights nothing (ship.toml
