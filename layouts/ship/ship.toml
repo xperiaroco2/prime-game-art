@@ -304,8 +304,8 @@ hull_rough_add = 0.12                          # + the hull silvers' roughness (
 # its "<group>_lamp" number below (a row without a group by lamp_scale).
 lamps = [
   [2.772, 0.748, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [1.148, 2.372, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [-1.148, 2.372, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
+  [1.148, 2.372, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false, 75.0],  # hall, by the wall: a spot down (gills step 10: an omni here left a hot spot on the hood 1 m away)
+  [-1.148, 2.372, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false, 75.0],  # hall, by the wall: a spot down (gills step 10: an omni here left a hot spot on the hood 1 m away)
   [-2.772, 0.748, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
   [-2.772, -1.548, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
   [-1.148, -3.172, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
@@ -519,26 +519,23 @@ views = [
   ["out_fair_lead_w_below", "outside: the west lens's lead fairing from below", [-11.6, -3.8, 0.85], [-10.2, -1.6, 1.50], 50.0],
   ["out_fair_trail_w", "outside: the west lens's trail fairing from the side", [-13.58, 7.16, 1.60], [-10.7, 4.4, 1.40], 45.0],
   ["out_fair_trail_w_below", "outside: the west lens's trail fairing from below", [-12.2, 5.9, 0.85], [-10.6, 4.3, 1.50], 50.0],
-  # step 2, station 1: the throat vents in place (ship --shoot --views in_vent_) and their edges against the
-  # real wall and floor close up (--views cu_vent_); the raise: +0.6 m in h
-  ["in_vent_hall", "vents: the throat from the hall, both vents", [0, -2.4, 2.8], [0, -6.4, 1.9], 72.0],
-  ["in_vent_ramp", "vents: the throat from the ramp, both vents", [0, -8.8, 2.6], [0, -4, 2], 68.0],
-  ["in_vent_e_2m", "vents: e vent from 2 m", [0.665, -3.692, 2.8], [2.108, -4.745, 2.2], 60.0],
-  ["in_vent_e_4m", "vents: e vent from 4 m at an angle", [-0.134, -1.639, 2.85], [2.108, -4.745, 2.2], 55.0],
-  ["in_vent_w_2m", "vents: w vent from 2 m", [-0.665, -3.692, 2.8], [-2.108, -4.745, 2.2], 60.0],
-  ["in_vent_w_4m", "vents: w vent from 4 m at an angle", [0.134, -1.639, 2.85], [-2.108, -4.745, 2.2], 55.0],
-  ["cu_vent_e_box_floor_l", "vents: e box floor l", [1.164, -5.698, 1.65], [1.928, -5.454, 1.2], 50.0],
-  ["cu_vent_e_box_side_bend_l", "vents: e box side bend l", [1.291, -5.792, 2.85], [2.023, -5.485, 2.65], 50.0],
-  ["cu_vent_e_box_top_l", "vents: e box top l", [1.131, -5.476, 2.5], [1.908, -5.258, 2.72], 50.0],
-  ["cu_vent_e_box_top_mid", "vents: e box top mid", [1.412, -4.621, 2.5], [2.074, -4.786, 2.74], 50.0],
-  ["cu_vent_e_col_top", "vents: e col top", [1.803, -3.592, 2.7], [2.327, -4.08, 2.78], 50.0],
-  ["cu_vent_e_col_side_bend_r", "vents: e col side bend r", [2.102, -3.322, 2.85], [2.51, -4.003, 2.65], 50.0],
-  ["cu_vent_e_col_floor_r", "vents: e col floor r", [1.944, -3.323, 1.65], [2.415, -3.972, 1.2], 50.0],
-  ["cu_vent_e_box_col_top", "vents: e box col top", [1.506, -4.336, 2.55], [2.233, -4.239, 2.7], 50.0],
-  ["cu_vent_e_lamp", "vents: e lamp", [2.06, -3.803, 2.67], [2.36, -4.109, 2.77], 50.0],
-  ["cu_vent_e_slats", "vents: e slats", [1.633, -4.431, 2.55], [2.014, -4.872, 2.3], 50.0],
-  ["cu_vent_e_slat_ends", "vents: e slat ends l", [1.397, -4.669, 2.25], [1.924, -5.21, 1.9], 50.0],
-  ["cu_vent_e_box_bottom", "vents: e box bottom, opening floor", [1.5232, -4.6053, 2.4], [1.9978, -4.7613, 1.42], 50.0],
+  # gills step 10 (art #263): the gills on the hall's back wall in place (ship --shoot --views in_vent_) and close up
+  # (--views cu_vent_); vent e at plan (1.6305, 3.2475), its normal (-0.4081, -0.9129); the raise: +0.6 m in h
+  ["in_vent_throat", "gills: from the throat into the hall (the concept's view)", [0, -6.4, 2.8], [0, 3.0, 2.6], 70.0],
+  ["in_vent_ramp", "gills: from the ramp's top", [0, -8.0, 2.85], [0, 3.0, 2.5], 62.0],
+  ["in_vent_e_2m", "gills: e unit from 2 m", [0.814, 1.422, 2.8], [1.6305, 3.2475, 2.6], 60.0],
+  ["in_vent_e_4m", "gills: e unit from 4 m at an angle", [-1.689, 1.016, 2.8], [1.6305, 3.2475, 2.65], 58.0],
+  ["in_vent_w_2m", "gills: w unit from 2 m", [-0.814, 1.422, 2.8], [-1.6305, 3.2475, 2.6], 60.0],
+  ["in_vent_w_4m", "gills: w unit from 4 m at an angle", [1.689, 1.016, 2.8], [-1.6305, 3.2475, 2.65], 58.0],
+  ["in_vent_e_scanner", "gills: the e scanner from a player's stance, 1.3 m out", [0.498, 2.33, 2.8], [1.028, 3.517, 2.4], 60.0],
+  ["cu_vent_e_hood_rim", "gills close: the hood against the rim", [0.938, 2.188, 3.75], [1.701, 3.161, 4.2], 48.0],
+  ["cu_vent_e_column_door", "gills close: the scanner column against the door's lining", [0.994, 2.437, 2.9], [0.883, 3.581, 2.5], 50.0],
+  ["cu_vent_e_sill_floor", "gills close: the sill and the floor strips", [1.298, 2.136, 2.15], [1.727, 3.095, 1.25], 55.0],
+  ["cu_vent_e_slot", "gills close: a slot", [1.477, 2.659, 2.8], [1.85, 3.15, 2.65], 32.0],
+  ["cu_vent_e_column_top", "gills close: the column, hood and ribs' tops", [0.675, 2.579, 3.4], [1.336, 3.324, 4.0], 50.0],
+  ["cu_vent_e_well_top", "gills close: up into the slots' tops under the hood", [1.304, 2.517, 2.8], [1.6305, 3.2475, 4.0], 50.0],
+  ["cu_vent_e_well_foot", "gills close: down into the slots' feet", [1.304, 2.517, 2.8], [1.6305, 3.2475, 1.35], 50.0],
+  ["cu_vent_e_socket_pilaster", "gills close: the moved socket against the pilaster", [1.964, 0.857, 2.8], [3.212, 2.011, 2.0], 55.0],
   ["cu_vent_e_frame_left", "vents: e frame left panels", [1.2552, -4.7522, 2.5], [1.7849, -5.2808, 2.0], 50.0],
   ["cu_vent_e_bezel", "vents: e bezel in the column", [1.8127, -3.9799, 2.8], [2.1876, -4.0237, 2.4], 50.0],
   ["cu_vent_w_slats", "vents: w slats", [-1.633, -4.431, 2.55], [-2.014, -4.872, 2.3], 50.0],

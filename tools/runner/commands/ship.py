@@ -593,7 +593,8 @@ def motion_request(layout: dict) -> dict:
 
 
 # vents-anim1: the east vent from about 3 m across the throat at the player's eye (deck 1.2 + 1.6), plan (x, y, h)
-VENT_ANIM = {"piece": "station_vent_e", "eye": [-0.25, -3.05, 2.8], "look": [2.108, -4.745, 2.12], "fov": 50.0,
+# gills step 10: the e unit on the hall's back wall from 2.6 m across the hall, at a player's eye
+VENT_ANIM = {"piece": "station_vent_e", "eye": [-0.86, 1.57, 2.8], "look": [1.6305, 3.2475, 2.65], "fov": 50.0,
              "size": (1280, 720), "fps": 24, "max_mb": 15}
 
 
