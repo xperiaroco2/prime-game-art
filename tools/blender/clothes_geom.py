@@ -70,16 +70,16 @@ def fit_lines(cloth: dict[str, float], body: dict[str, float]) -> dict[str, dict
     return out
 
 
-def colour_cut(zs: list[float], strong: list[bool], floor: float = 0.04, step: float = 0.01,
-               share: float = 0.5) -> float:
-    """The height (m) where the shoes end and a hem sitting on them begins: the bottom of the lowest step-tall band
-    above floor (under it the soles) in which more than share of the faces are strong (saturated: the hem's colour,
-    not the white shoes). Falls back to floor when no band is."""
-    top = max(zs) if zs else floor
-    z = floor
-    while z < top:
-        votes = [s for h, s in zip(zs, strong) if z <= h < z + step]
-        if len(votes) >= 8 and majority(votes, share):
-            return round(z, 4)
-        z += step
-    return floor
+def centre_run(xs: list[float], gap: float = 0.02) -> tuple[float, float] | None:
+    """The (min, max) of the run of xs around x = 0 with no gap wider than gap: the torso's width at one height,
+    without the arms hanging beside it."""
+    if not xs:
+        return None
+    xs = sorted(xs)
+    i = min(range(len(xs)), key=lambda k: abs(xs[k]))
+    lo = hi = i
+    while lo > 0 and xs[lo] - xs[lo - 1] <= gap:
+        lo -= 1
+    while hi < len(xs) - 1 and xs[hi + 1] - xs[hi] <= gap:
+        hi += 1
+    return xs[lo], xs[hi]

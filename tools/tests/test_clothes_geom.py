@@ -54,11 +54,10 @@ class ClothesGeomTest(unittest.TestCase):
         self.assertEqual(out["height"], {"cloth": 1.9, "body": 2.0, "diff": -0.1, "ratio": 0.95})
         self.assertEqual(sorted(out), ["height", "hip"])
 
-    def test_colour_cut_finds_the_hem_above_the_soles(self):
-        zs = [i * 0.001 for i in range(300)]
-        strong = [z < 0.02 or z >= 0.13 for z in zs]  # a dark sole stripe, white shoe, then the hem
-        self.assertAlmostEqual(G.colour_cut(zs, strong), 0.13, places=3)
-        self.assertEqual(G.colour_cut(zs, [False] * 300), 0.04)
+    def test_centre_run_leaves_out_the_arms(self):
+        xs = [-0.30, -0.29, -0.15 + 0.001, -0.10, -0.05, 0.0, 0.06, 0.12, 0.16, 0.27, 0.31]
+        self.assertEqual(G.centre_run(xs, gap=0.06), (-0.149, 0.16))
+        self.assertIsNone(G.centre_run([]))
 
 
 if __name__ == "__main__":
