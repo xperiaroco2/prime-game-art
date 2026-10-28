@@ -243,10 +243,12 @@ def lighten_gills(skin, keep: float) -> dict:
     me.vertices.foreach_get("co", co)
     _, c_after = _rows(me, [False] * len(me.vertices))
     moved = G.missing_rows(v_before, co.reshape(-1, 3).tolist())
-    corners = G.missing_rows(c_before, c_after)
+    corners = G.missing_rows(c_before, c_after)  # F1: counts too (a multiset), not only the set of rows
+    v_out_after, c_out_after = _rows(me, own_a)
     rep = {"keep": keep, "tris_before": tris, "gill_tris_before": gill_tris, "tris_after": after,
            "gill_tris_after": gill_after, "gill_keep_measured": round(gill_after / max(gill_tris, 1), 4),
-           "outside_vertices": len(v_before), "outside_moved": moved, "outside_corners": len(c_before),
+           "outside_vertices": len(v_before), "outside_vertices_after": len(v_out_after), "outside_moved": moved,
+           "outside_corners": len(c_before), "outside_corners_after": len(c_out_after),
            "outside_corners_changed": corners}
     if moved or corners:
         raise RuntimeError(f"lighten_gills: {moved} vertices and {corners} corners outside the gills changed {rep}")

@@ -16,6 +16,7 @@ tools/tests/test_alien_char_geom.py; alien_char_build.py runs it inside Blender.
 from __future__ import annotations
 
 import math
+from collections import Counter
 
 # the pale front on the body, measured on u1's front view (part_0; sole row 967, 0.0019 m a pixel): the shield's
 # half-width per height (z m, half-width m); 0 below the crotch and above the ring
@@ -318,6 +319,8 @@ def gill_decimate_ratio(tris: int, gill_tris: int, keep: float) -> float:
 
 def missing_rows(before, after) -> int:
     """R1 (art #196): how many of `before`'s rows (tuples of floats: a vertex's position, or a corner's position and
-    UVs) are not found exactly in `after`. The gills' decimation must leave every row outside the gills in place: 0."""
-    have = set(map(tuple, after))
-    return sum(1 for r in map(tuple, before) if r not in have)
+    UVs) are not found exactly in `after`. The gills' decimation must leave every row outside the gills in place: 0.
+    F1: counted as a multiset, so a row `before` holds n times must be in `after` n times (a deleted outside corner
+    with a twin, the same position, UVs and normal, is missed by a set)."""
+    have = Counter(map(tuple, after))
+    return sum(max(0, n - have[r]) for r, n in Counter(map(tuple, before)).items())
