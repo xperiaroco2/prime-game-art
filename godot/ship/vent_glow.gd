@@ -26,12 +26,14 @@ const SLIT_IN_M := 0.03
 ## face (in the plate's cut, behind the ribs' backs, so no cover front faces them: no blob on the faces), at GAP_FRAC of the seam's height
 ## (the top row low enough to leave the crowns' feet dark), lighting the ribs' pale flanks and the well; the cyan a
 ## little less saturated (the floor wash)
-const GAP_ROWS := 3
+const GAP_ROWS := 5
 const GAP_IN_M := 0.015
-const GAP_FRAC := [0.25, 0.5, 0.72]
+## gills step 10: five rows over the 2.7 m well, evenly up to its roof (the old three stopped at 2 m: the top dark)
+const GAP_FRAC := [0.1, 0.3, 0.5, 0.7, 0.9]
 ## gills step 5: the cool a deep cyan at 0.3 (step 4's 0.9 clipped the pale flanks to white)
 ## gills step 6: 0.2 (the well's back darker, the glow on the flanks)
-const GAP_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.2, 0.36], "heat": [Color(1.0, 0.2, 0.02), 0.9, 0.36]}
+## gills step 10: +30 % with the glow, a little longer reach (the rows 0.54 m apart), no specular (no blobs)
+const GAP_LOOK := {"cool": [Color(0.05, 0.55, 1.0), 0.26, 0.42], "heat": [Color(1.0, 0.2, 0.02), 0.9, 0.42]}
 ## gills step 5: per gap a small light at its foot FOOT_OUT_M out of the wall (a little cyan on the floor, as the
 ## concept), and one SLOT_OUT_M off the leaning wall in front of the lit slot between the crowns (`<id>_slots6`, the
 ## cool's child) lighting the crowns' flanks
