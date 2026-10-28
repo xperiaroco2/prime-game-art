@@ -14,6 +14,16 @@ body source stays whole: only this build's copy loses them). Then the GLB with e
   (clothes_fit_geom.covered_faces, one ring of erosion), so the cut's edge stays under the cloth. A vertex up to
   --outside m outside the cloth (one ray along its reversed normal) is tested from just inside the cloth instead,
   so a shoulder or a toe that crosses the cloth at rest is cut too.
+- Under the cloth for certain (clothes_fit_geom.under_cloth): a body vertex inside the cloth at rest (its nearest
+  cloth face within --near m) and farther than --away m from every opening, on no neck, head or hand bone, is cut
+  without the erosion, also where a ray escapes: a clip would move it out through the cloth.
+- The shoes: the shoes are rigid on the feet, so a foot vertex inside one is cut for certain (no erosion): below the
+  shoe's lowest top less --shoe-margin, under the shoe or its toe box, or below the opening's rim where it stands
+  (the rim points within --rim-reach across the floor, less --rim-margin: the rim is low on the sides and high at the
+  heel and the tongue), or through the shoe's wall (clothes_fit_geom.through_shoe: outside the shoe by 1 to 30 mm,
+  its nearest shoe point over 1 cm from the rim); a face with such a vertex goes when all its vertices are on the
+  foot below the rim's high point where they stand (clothes_fit_geom.shoe_face), so no face of the foot's side is
+  left half through the shoe's coarse faces.
 
     blender -b --factory-startup --python tools/blender/clothes_dress.py -- --char CHAR.blend --fit FIT.blend
         --name chameleon --out DIR [--body-from F1.blend --body-to F2.blend] [--reach 0.12]
@@ -99,6 +109,13 @@ def main() -> int:
     ap.add_argument("--outside", type=float, default=0.03, help="a body vertex this far outside the cloth still counts")
     ap.add_argument("--opening", type=float, default=0.04, help="no outside cut this near an opening (m)")
     ap.add_argument("--shoe-margin", type=float, default=0.01, help="the foot cut stays this far below the shoe's top")
+    ap.add_argument("--near", type=float, default=0.06, help="the cloth this near a body vertex at rest (m)")
+    ap.add_argument("--away", type=float, default=0.08,
+                    help="a body vertex inside the cloth and this far from every opening is cut for certain (m)")
+    ap.add_argument("--rim-margin", type=float, default=0.004,
+                    help="the foot cut stays this far below the shoe opening's rim where the vertex stands (m)")
+    ap.add_argument("--rim-reach", type=float, default=0.03,
+                    help="the rim points this near a foot vertex across the floor give its local rim (m)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     glb = out / f"{args.name}_char.glb"
@@ -170,6 +187,7 @@ def main() -> int:
                                "followed_nearest_face": followed,
                                "unmatched": len(char.data.vertices) - matched}
         say("body variant", rep["body_variant"])
+    gname = {g.index: g.name for g in char.vertex_groups}
     # the covered faces
     tree = cloth_tree(cloth)
     me = char.data
@@ -192,6 +210,7 @@ def main() -> int:
     shoe = next((o for o in cloth if o.name == "shoes"), None)
     top_z = {1.0: None, -1.0: None}
     stree = None
+    rim_kd, rim_pts = None, []
     if shoe is not None:
         bm = bmesh.new()
         bm.from_mesh(shoe.data)
@@ -199,12 +218,22 @@ def main() -> int:
         bm.free()
         for sgn in top_z:
             top_z[sgn] = F.shoe_top([q.z for q in bz if q.x * sgn > 0], args.shoe_margin)
+        # the opening's rim across the floor (x, y): each foot vertex is cut below the rim where it stands
+        rim_pts = [q for q in bz if q.z > 0.05]
+        rim_kd = KDTree(max(1, len(rim_pts)))
+        for i, q in enumerate(rim_pts):
+            rim_kd.insert((q.x, q.y, 0.0), i)
+        rim_kd.balance()
+        rim_kd3 = KDTree(max(1, len(rim_pts)))
+        for i, q in enumerate(rim_pts):
+            rim_kd3.insert(q, i)
+        rim_kd3.balance()
         sv = [shoe.matrix_world @ v.co for v in shoe.data.vertices]
         stree = BVHTree.FromPolygons(sv, [list(p.vertices) for p in shoe.data.polygons])
     rep["shoe_top_z"] = {("left" if k > 0 else "right"): (None if t is None else round(t, 4)) for k, t in top_z.items()}
     up = Vector((0.0, 0.0, 1.0))
-    gname = {g.index: g.name for g in char.vertex_groups}
-    cov, outside, in_shoe = [], 0, 0
+    cov, sure, outside, in_shoe, by_rim, by_wall, n_under = [], [], 0, 0, 0, 0, 0
+    thru, low_foot = [False] * len(me.vertices), [False] * len(me.vertices)
     for v in me.vertices:
         p = mw @ v.co
         n = (nmat @ v.normal).normalized()
@@ -212,10 +241,33 @@ def main() -> int:
         toes = sum(g.weight for g in v.groups if gname.get(g.group, "").endswith("Toes"))
         top = top_z[1.0 if p.x > 0 else -1.0]
         under = foot >= 0.5 and stree is not None and stree.ray_cast(p + up * 1e-4, up, 0.15)[0] is not None
-        if F.in_shoe(foot, p.z, top, under=under, toes_weight=toes, shoe=stree is not None):
+        rim = None
+        if foot >= 0.5 and rim_pts:
+            near_rim = [rim_pts[j].z for _c, j, _d in rim_kd.find_range((p.x, p.y, 0.0), args.rim_reach)
+                        if rim_pts[j].x * p.x > 0]
+            rim = F.local_rim(near_rim, args.rim_margin)
+            low_foot[v.index] = bool(near_rim) and p.z < max(near_rim)
+        through = False
+        if foot >= 0.5 and stree is not None and rim_pts:
+            sloc, snor, _sf, _sd = stree.find_nearest(p)
+            if sloc is not None:
+                through = F.through_shoe((p - sloc).dot(snor), rim_kd3.find(sloc)[2])
+                thru[v.index] = through
+        if through or F.in_shoe(foot, p.z, top, under=under, toes_weight=toes, shoe=stree is not None, rim=rim):
             cov.append(True)
+            sure.append(True)
             in_shoe += 1
+            by_rim += not F.in_shoe(foot, p.z, top, under=under, toes_weight=toes, shoe=stree is not None)
+            by_wall += through
             continue
+        top_bone = gname.get(max(v.groups, key=lambda g: g.weight).group, "") if v.groups else ""
+        loc, nor, _fi, _d = tree.find_nearest(p, args.near)
+        if loc is not None and F.under_cloth((p - loc).dot(nor), ekd.find(p)[2], top_bone, away=args.away):
+            cov.append(True)
+            sure.append(True)
+            n_under += 1
+            continue
+        sure.append(False)
         hit = all(tree.ray_cast(p + d * 1e-4, d, args.reach)[0] is not None for d in rays(n))
         if not hit:  # the body outside the cloth (a shoulder): covered if the cloth lies within --outside behind it
             loc, _nor, _fi, t = tree.ray_cast(p, -n, args.outside)
@@ -226,13 +278,20 @@ def main() -> int:
         cov.append(hit)
     rep["covered_from_outside"] = outside
     rep["covered_in_shoes"] = in_shoe
+    rep["covered_in_shoes_by_rim"] = by_rim
+    rep["covered_through_shoe_walls"] = by_wall
+    rep["covered_under_the_cloth"] = n_under
     faces = [list(p.vertices) for p in me.polygons]
     by_edge: dict[tuple[int, int], list[int]] = {}
     for fi, p in enumerate(me.polygons):
         for ek in p.edge_keys:
             by_edge.setdefault(ek, []).append(fi)
     nbrs = [sorted({j for ek in p.edge_keys for j in by_edge[ek] if j != fi}) for fi, p in enumerate(me.polygons)]
-    gone = F.covered_faces(faces, cov, nbrs, erode=1)
+    gone = F.covered_faces(faces, cov, nbrs, erode=1, vert_sure=sure)
+    shoe_faces = [not g and F.shoe_face([thru[k] for k in f], [low_foot[k] or sure[k] for k in f])
+                  for g, f in zip(gone, faces)]
+    gone = [g or x for g, x in zip(gone, shoe_faces)]
+    rep["faces_removed_through_shoe_walls"] = sum(shoe_faces)
     bm = bmesh.new()
     bm.from_mesh(me)
     bm.faces.ensure_lookup_table()
@@ -246,7 +305,10 @@ def main() -> int:
     rep["tris"] = {"body": tris(char), **{o.name: tris(o) for o in cloth}}
     rep["tris"]["cloth"] = sum(tris(o) for o in cloth)
     rep["tris"]["total"] = rep["tris"]["body"] + rep["tris"]["cloth"]
-    say("covered", sum(cov), "vertices,", sum(gone), "faces removed; tris", rep["tris"])
+    say("covered", sum(cov), "vertices,", in_shoe, "in the shoes (", by_rim, "by the rim,", by_wall,
+        "through the walls ),", n_under,
+        "under the cloth for certain,", sum(gone),
+        "faces removed; tris", rep["tris"])
     blend = out / f"{args.name}_char.blend"
     bpy.ops.wm.save_as_mainfile(filepath=str(blend), compress=True)
     import alien_loco

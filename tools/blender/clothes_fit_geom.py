@@ -122,12 +122,16 @@ def unskin(p: Vec, row: dict[str, float], mats: dict[str, Mat]) -> Vec:
 
 
 def covered_faces(faces: list[list[int]], vert_covered: list[bool], face_nbrs: list[list[int]],
-                  erode: int = 1) -> list[bool]:
+                  erode: int = 1, vert_sure: list[bool] | None = None) -> list[bool]:
     """The body faces to remove under the cloth: a face whose vertices are all covered, then eroded by erode rings
-    (a face beside a kept one is kept), so the cut's edge stays under the cloth, never at an opening."""
+    (a face beside a kept one is kept), so the cut's edge stays under the cloth, never at an opening. vert_sure: the
+    vertices hidden for certain (inside a rigid shoe, below its rim): a face whose vertices are all sure goes without
+    the erosion, so the cut reaches the rim and no foot skin is left to poke through the shoe's sides."""
     cov = [all(vert_covered[v] for v in f) for f in faces]
     for _ in range(erode):
         cov = [c and all(cov[j] for j in face_nbrs[i]) for i, c in enumerate(cov)]
+    if vert_sure is not None:
+        cov = [c or all(vert_sure[v] for v in f) for c, f in zip(cov, faces)]
     return cov
 
 
@@ -184,18 +188,61 @@ def shoe_top(boundary_z: list[float], margin: float = 0.01, above: float = 0.05)
     return min(tops) - margin if tops else None
 
 
+def local_rim(rim_z: list[float], margin: float = 0.004) -> float | None:
+    """The height under which a shoe hides a foot vertex where it stands: the lowest of the shoe opening's boundary
+    points close above it (rim_z, those within a few cm across the floor) less margin; None when the opening is not
+    above it (the toe box, the heel's back). The opening dips low on a shoe's sides and rises at the heel and the
+    tongue, so one height for the whole shoe (shoe_top, the lowest point) leaves the foot by the heel and the tongue
+    to poke through the shoe's sides."""
+    if margin < 0:
+        raise ValueError(f"margin {margin} is negative")
+    return min(rim_z) - margin if rim_z else None
+
+
+def through_shoe(s: float, rim_dist: float, tol: float = 0.001, most: float = 0.03, rim: float = 0.01) -> bool:
+    """A foot vertex through a shoe's wall: outside the shoe by more than tol and at most most (s, the signed
+    distance from the nearest shoe face, + out), with that nearest shoe point farther than rim from the opening's
+    rim (rim_dist), where the ankle above the rim is meant to show. The shoe is rigid on the foot, so such a vertex
+    is the foot's side bulging through a shoe narrower than it, the teal on the shoes' outer sides (r12)."""
+    return tol < s <= most and rim_dist > rim
+
+
+UNCUT_BONES = ("Neck", "Head", "Hand", "Eye")
+
+
+def under_cloth(s: float, edge_dist: float, bone: str, deep: float = 0.001, away: float = 0.08) -> bool:
+    """A body vertex hidden under the cloth for certain: inside it at rest by more than deep (s, the signed distance
+    from the nearest cloth face within the proof's reach, + out) and farther than away (m) from every opening
+    (edge_dist), on no bone that leaves the cloth through an opening (the neck, the hands: UNCUT_BONES, by suffix).
+    The rays' cover test keeps some of these (the upper back between the straps, the crotch), and a clip then moves
+    them out through the cloth (r12: 48 vertices up to 52 mm in a crouch); cut, the cloth shows instead."""
+    return s < -deep and edge_dist > away and not bone.endswith(UNCUT_BONES)
+
+
+def shoe_face(through: list[bool], low_foot: list[bool]) -> bool:
+    """A body face cut from a shoe: one of its vertices through the shoe's wall (through_shoe) and every one on the
+    foot below the rim's high point where it stands, or cut already (low_foot). The face of a foot vertex through
+    the wall also holds vertices inside the shoe that no rule cuts, and the shoe's coarse faces show it as a teal
+    triangle on the shoe's side (r12 to r15)."""
+    if len(through) != len(low_foot):
+        raise ValueError("through and low_foot differ in length")
+    return any(through) and all(low_foot)
+
+
 def in_shoe(foot_weight: float, z: float, top: float | None, min_weight: float = 0.5, under: bool = False,
-            toes_weight: float = 0.0, shoe: bool | None = None) -> bool:
+            toes_weight: float = 0.0, shoe: bool | None = None, rim: float | None = None) -> bool:
     """A body vertex inside a shoe: mostly on Foot and Toes (foot_weight, the sum of their weights) and below the
     shoe's top (shoe_top), or under the shoe (under: a ray straight up hits it, the toes under the toe box, while
     the ankle seen through the opening has none), or mostly on Toes (toes_weight): a closed shoe's toe box always
-    hides the toes, also where they bulge through its coarse faces. shoe: whether the build has shoes at all (None:
-    told by top). Such a vertex is always cut from the dressed build."""
+    hides the toes, also where they bulge through its coarse faces, or below the opening's rim where it stands
+    (rim, local_rim). shoe: whether the build has shoes at all (None: told by top). Such a vertex is always cut from
+    the dressed build."""
     if shoe is None:
         shoe = top is not None
     if not shoe or foot_weight < min_weight:
         return False
-    return under or toes_weight >= min_weight or (top is not None and z < top)
+    return (under or toes_weight >= min_weight or (top is not None and z < top)
+            or (rim is not None and z < rim))
 
 
 def rest_poke(signed_mm: list[float], at_opening: list[bool], tol_mm: float = 1.0) -> int:
@@ -204,6 +251,19 @@ def rest_poke(signed_mm: list[float], at_opening: list[bool], tol_mm: float = 1.
     if len(signed_mm) != len(at_opening):
         raise ValueError("signed_mm and at_opening differ in length")
     return sum(1 for s, o in zip(signed_mm, at_opening) if s > tol_mm and not o)
+
+
+def exposed_skin(depth: float, cloth_z: float, cloth_nz: float, above_z: float, deep: float = 0.02,
+                 up: float = 0.3) -> bool:
+    """A watched body vertex outside the cloth that is exposed skin, not poke-through: more than deep (m) outside,
+    its nearest cloth point (height cloth_z) above above_z (the top of the chest, the UpperChest bone's head in that
+    frame), and that cloth face turned up (the z of its normal, cloth_nz, at least up): the neck over the collar's
+    thick roll, whose nearest cloth point lies too far from the collar's boundary loop for the opening rule. A real
+    crossing is never that deep, and the upper back's or the crotch's cloth faces sideways or lies lower (r13: the
+    neck 36 to 79 mm over a collar face of normal z 0.36 to 0.83)."""
+    if deep < 0:
+        raise ValueError(f"deep {deep} is negative")
+    return depth > deep and cloth_z > above_z and cloth_nz >= up
 
 
 def long_edges(lengths: list[float], max_len: float) -> list[int]:

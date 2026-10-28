@@ -5,6 +5,9 @@ and, per clip, measures the poke-through and shoots the contact sheet; then the 
   cloth's face there, and farther than --opening m from every opening, where moving out of the cuff is no fault) are
   followed through every frame of each clip; a frame counts those that end up outside the
   cloth by more than --tol m and the deepest; the clip's numbers are the frame maximum (clothes_fit_geom.frame_max).
+  A vertex outside by more than --exposed m whose nearest cloth point is above the chest (the UpperChest bone's head
+  in that frame) on a cloth face turned up is exposed skin, not poke-through (clothes_fit_geom.exposed_skin: the
+  neck over the collar's roll); the clip's frame maximum of those is exposed_skin_max.
 - The contact sheet: per clip (rows) the front, side and back at two moments of the clip (Workbench, the textures,
   orthographic), about 1280 px wide.
 - The close-ups: in Idle's first frame, the collar and neck, the cuffs and hands, the crotch, the hems and shoes,
@@ -64,13 +67,16 @@ def cloth_tree(cloth, polys) -> BVHTree:
     return BVHTree.FromPolygons([tuple(c) for c in co], polys)
 
 
-def side(tree: BVHTree, pts: np.ndarray) -> np.ndarray:
-    """Per point its signed distance from the cloth along the nearest cloth face's normal (+: outside)."""
-    s = np.zeros(len(pts))
+def side(tree: BVHTree, pts: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Per point its signed distance from the cloth along the nearest cloth face's normal (+: outside), the height
+    of that nearest cloth point and the z of that face's normal."""
+    s, z, nz = np.zeros(len(pts)), np.zeros(len(pts)), np.zeros(len(pts))
     for i, p in enumerate(pts):
         loc, nor, _fi, _d = tree.find_nearest(Vector(p))
         s[i] = (Vector(p) - loc).dot(nor) if loc is not None else -1.0
-    return s
+        z[i] = loc.z if loc is not None else 0.0
+        nz[i] = nor.z if loc is not None else 0.0
+    return s, z, nz
 
 
 def render_tile(sc, path: Path) -> np.ndarray:
@@ -107,6 +113,8 @@ def main() -> int:
     ap.add_argument("--tol", type=float, default=0.001)
     ap.add_argument("--opening", type=float, default=0.04, help="body vertices this near an opening are left out")
     ap.add_argument("--tile", type=int, default=213)
+    ap.add_argument("--exposed", type=float, default=0.02,
+                    help="outside the cloth by more than this over an upward collar face: exposed skin (m)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -183,14 +191,18 @@ def main() -> int:
             continue
         arm.animation_data.action = act
         f0, f1 = (int(round(x)) for x in act.frame_range)
-        frames = []
+        frames, skin = [], 0
         for f in range(f0, max(f0 + 1, f1 + 1)):
             sc.frame_set(f)
             ctree = cloth_tree(cloth, polys)
-            s = side(ctree, world(body)[near]) if len(near) else np.zeros(0)
-            bad = s > args.tol
+            s, cz, cnz = side(ctree, world(body)[near]) if len(near) else (np.zeros(0),) * 3
+            chest = (arm.matrix_world @ arm.pose.bones["UpperChest"].head).z
+            exposed = np.array([F.exposed_skin(d, z, nz, chest, args.exposed) for d, z, nz in zip(s, cz, cnz)],
+                               dtype=bool)
+            bad = (s > args.tol) & ~exposed
+            skin = max(skin, int(exposed.sum()))
             frames.append((int(bad.sum()), float(s[bad].max()) if bad.any() else 0.0))
-        poke[clip] = {"action": act.name, **F.frame_max(frames)}
+        poke[clip] = {"action": act.name, **F.frame_max(frames), "exposed_skin_max": skin}
         say("poke", clip, poke[clip])
         row = []
         for k in (0.25, 0.6):
