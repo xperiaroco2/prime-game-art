@@ -1,0 +1,69 @@
+# art#196, the clothes, step 1b: the guy (the engineer, 2026-10-28, chat: he liked the axolotl's dungarees; start with
+# one kind of outfit, a full set covering top and bottom; the guy needs outfits too; one garment should fit both bodies;
+# recorded in the approval_ref comment). Our chameleon body (anim_bare/loco/f3, Idle_Loop's first frame; the same S4b
+# body as the axolotl's) rendered front, left and back, and each full-set outfit an edit of those three renders into one
+# front / side / back turnaround, his head, proportions and colours kept, four digits per hand. The first item is the
+# axolotl's dungarees (batch 2026-10-28-alien-clothes-s1, ax_overall), the garment worded the same (the body lines and
+# a full-set sentence differ), the unisex test. Medium
+# (exploration), one image per concept, 1536x1024. No game, film, studio, character or real-person names; no style
+# names of other works; no brand marks.
+id = "2026-10-28-alien-clothes-s1b"
+service = "openai-images"
+purpose = "art#196: four full-set outfits drawn on our own chameleon body (front / side / back turnarounds, four-digit hands), the first the axolotl's dungarees, for the engineer to pick the guy's outfit."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 1.5
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-28"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6468716635"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+[[items]]
+id = "ch_overall"
+kind = "edit"
+prompt = "The three reference images are the front, left side and back views of one finished 3D character, the chameleon man, an adult alien. Keep him exactly as he is: the same height, the same body proportions, limb lengths and limb thickness, the same tall rounded head crest with its soft bands, the same big heavy-lidded bored eyes, the two nostril dots, the wide closed lips, the same teal skin with the paler throat, and the same smooth soft-matte toy finish and soft studio light. Each hand has exactly four digits: three rounded fingers and a thumb, never a fifth finger, relaxed open. Now dress him in just some nice present-day casual clothes: slim dark-indigo denim dungarees with neat straps and a bib pocket, over a fitted long-sleeve top with thin navy and white stripes, the trouser legs rolled once at the ankle, and clean off-white canvas low-top sneakers. The clothes are one full outfit covering top and bottom, well made and well fitted, following his body closely so they move with it, a cool grown-up look, not childish, nothing old or worn. Show one character turnaround: three full-length views of him side by side at the same scale and height, left to right the front view, the left side profile and the back view, each in the same neutral standing pose as the references, arms hanging a little away from the body, feet on the same ground line, a little space above the head and below the feet. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/0_000_front.png", provenance = "our chameleon character (anim_bare/loco/f3 build), Idle_Loop first frame, front view, rendered by tools/run.py render", sha256 = "4b00eb355f5b9c7e786c9babc72fb8f4564b3208decb0e504777d82ff18eeb19" },
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "e3bd700fb47ee735127fcc45ed451a28012a8dc3a2d6db91e11d0355d287e9b1" },
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "6fd2b43d03c241d35112310d64e4acb027af6fe3ce3284dda464714baee1715a" },
+]
+
+[[items]]
+id = "ch_boiler"
+kind = "edit"
+prompt = "The three reference images are the front, left side and back views of one finished 3D character, the chameleon man, an adult alien. Keep him exactly as he is: the same height, the same body proportions, limb lengths and limb thickness, the same tall rounded head crest with its soft bands, the same big heavy-lidded bored eyes, the two nostril dots, the wide closed lips, the same teal skin with the paler throat, and the same smooth soft-matte toy finish and soft studio light. Each hand has exactly four digits: three rounded fingers and a thumb, never a fifth finger, relaxed open. Now dress him in a present-day one-piece utility boilersuit in muted olive-green cotton twill, zipped up the front to a neat shirt collar, with chest pockets, a self-fabric belt at the waist, the sleeves rolled once to the forearm, and dark-brown leather work boots. The clothes are one full outfit covering top and bottom, well made and well fitted, following his body closely so they move with it, a cool grown-up look, not childish, nothing old or worn. Show one character turnaround: three full-length views of him side by side at the same scale and height, left to right the front view, the left side profile and the back view, each in the same neutral standing pose as the references, arms hanging a little away from the body, feet on the same ground line, a little space above the head and below the feet. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/0_000_front.png", provenance = "our chameleon character (anim_bare/loco/f3 build), Idle_Loop first frame, front view, rendered by tools/run.py render", sha256 = "4b00eb355f5b9c7e786c9babc72fb8f4564b3208decb0e504777d82ff18eeb19" },
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "e3bd700fb47ee735127fcc45ed451a28012a8dc3a2d6db91e11d0355d287e9b1" },
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "6fd2b43d03c241d35112310d64e4acb027af6fe3ce3284dda464714baee1715a" },
+]
+
+[[items]]
+id = "ch_track"
+kind = "edit"
+prompt = "The three reference images are the front, left side and back views of one finished 3D character, the chameleon man, an adult alien. Keep him exactly as he is: the same height, the same body proportions, limb lengths and limb thickness, the same tall rounded head crest with its soft bands, the same big heavy-lidded bored eyes, the two nostril dots, the wide closed lips, the same teal skin with the paler throat, and the same smooth soft-matte toy finish and soft studio light. Each hand has exactly four digits: three rounded fingers and a thumb, never a fifth finger, relaxed open. Now dress him in a present-day matching tracksuit set: a fitted zip-up track jacket and tapered track trousers in the same deep burgundy with a thin off-white stripe down the sleeves and the outer legs, the jacket zipped to a soft stand-up collar, and clean white running sneakers. The clothes are one full outfit covering top and bottom, well made and well fitted, following his body closely so they move with it, a cool grown-up look, not childish, nothing old or worn. Show one character turnaround: three full-length views of him side by side at the same scale and height, left to right the front view, the left side profile and the back view, each in the same neutral standing pose as the references, arms hanging a little away from the body, feet on the same ground line, a little space above the head and below the feet. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/0_000_front.png", provenance = "our chameleon character (anim_bare/loco/f3 build), Idle_Loop first frame, front view, rendered by tools/run.py render", sha256 = "4b00eb355f5b9c7e786c9babc72fb8f4564b3208decb0e504777d82ff18eeb19" },
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "e3bd700fb47ee735127fcc45ed451a28012a8dc3a2d6db91e11d0355d287e9b1" },
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "6fd2b43d03c241d35112310d64e4acb027af6fe3ce3284dda464714baee1715a" },
+]
+
+[[items]]
+id = "ch_work"
+kind = "edit"
+prompt = "The three reference images are the front, left side and back views of one finished 3D character, the chameleon man, an adult alien. Keep him exactly as he is: the same height, the same body proportions, limb lengths and limb thickness, the same tall rounded head crest with its soft bands, the same big heavy-lidded bored eyes, the two nostril dots, the wide closed lips, the same teal skin with the paler throat, and the same smooth soft-matte toy finish and soft studio light. Each hand has exactly four digits: three rounded fingers and a thumb, never a fifth finger, relaxed open. Now dress him in a present-day matching workwear set in the same sand-beige heavy cotton canvas: a boxy chore jacket with three patch pockets, worn open over a plain charcoal crew-neck T-shirt, and straight work trousers with a turned-up hem, and dark suede lace-up shoes. The clothes are one full outfit covering top and bottom, well made and well fitted, following his body closely so they move with it, a cool grown-up look, not childish, nothing old or worn. Show one character turnaround: three full-length views of him side by side at the same scale and height, left to right the front view, the left side profile and the back view, each in the same neutral standing pose as the references, arms hanging a little away from the body, feet on the same ground line, a little space above the head and below the feet. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/0_000_front.png", provenance = "our chameleon character (anim_bare/loco/f3 build), Idle_Loop first frame, front view, rendered by tools/run.py render", sha256 = "4b00eb355f5b9c7e786c9babc72fb8f4564b3208decb0e504777d82ff18eeb19" },
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "e3bd700fb47ee735127fcc45ed451a28012a8dc3a2d6db91e11d0355d287e9b1" },
+  { file = "raw:2026-10-28-alien-clothes-s1b/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "6fd2b43d03c241d35112310d64e4acb027af6fe3ce3284dda464714baee1715a" },
+]
+
+# Ran 2026-10-28: 4 of 4 items done, $0.1470 of the $1.50 cap (`openai-images status`). Every view checked shows four
+# digits per hand. They are on the same pick page as step 1 (its source in <raw>/2026-10-28-alien-clothes-s1/page/),
+# with the plan for one garment on two bodies; the engineer picks the guy's set.
