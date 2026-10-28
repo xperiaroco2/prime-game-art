@@ -1796,3 +1796,20 @@ table (`test_ship_lens`). The warm strips are `int_amber__lens` (`[light.mats]` 
   `renewer_e`/`_w` (review only; the package keeps the spots as markers), and a `--views` JSON row may carry a
   reference image's path as its 6th element, shot and compared side by side (`compare_<view>.png`). Shots:
   `<raw>/ship/v5/lens-c/r3/` (pieces `lens-c/pieces-r3`).
+
+## Lens room C, step 3: the look fixes before the review (2026-10-28)
+
+- **The "double charger"** in step 2's `lc_w_door` was the review sheet, not the scene: the sheet put `lc_e_door`
+  and `lc_w_door` edge to edge, and the two rooms are mirror images, so the east shot's charger at its right edge
+  met the west shot's at its left (the "dark wedge" was the cell join). The single shot shows one charger. Review
+  sheets now keep gutters between cells.
+- **The alcove's back panel** (`lens_graphite`, `lens_graphite2`): metallic 0.55 at roughness 0.38 mirrored the
+  room's reflection probe and read light grey. Now the drawing's graphite: dark grey, metallic 0.12, roughness 0.66
+  (the plate 0.7). The sofa's toe and fill and the table's inset share it.
+- **The cushions**: `lens_cushion_red` (0.075, 0.015, 0.010), darker and browner (step 2's 0.17 read orange-salmon).
+- **The charger**: the pedestal's detail and darker plates (`docs/props.md`, build `lens2`).
+- **`ship --shoot --charger`** runs `godot/charger/room.gd` (ship.gd plus `charger.gd` and `crystal.gd`): the charger
+  in its game look, idle, the crystal seated and spent (`"charge": 0.0`; a row's own dict can say otherwise). Before,
+  the charger wore its GLB's plain fallback and ship.gd's pass made strip lights of its emissive strips. A full
+  crystal's light floods the lens room cyan (`r4-charged/`): an open question for the crystal's light in this room.
+- Shots: `<raw>/ship/v5/lens-c/r4/` (pieces `lens-c/pieces-r4`).
