@@ -1284,6 +1284,22 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     wrist (the hand to the forearm 67 degrees, was 89) and part the side outline from Salute's. The palm stays about
     5 cm from the waist's mark: the palm's centre sits inside the hand, 1.5 to 2 cm off its skin, and a higher or
     lower wrist read 5.4 to 7.5 cm (the mark limit stays 6 cm).
+    p1 (the manager: the s11 wrap read as small fists beside the hips from the front; Blender grid of curl x
+    `fingers_dir` on the s11 dumps, `tools/out/poses/p1/grid`): the curl again changes no number; the fingers turned
+    down ([0.4, 0.7, -0.6]) put the palm flat on the waist's side, fingers together and forward-down, with a slight
+    curl (`grips.hip` [14, 18, 12], no spread), but at `gap_cm` 0.5 went 1.3 cm into the waist ([0.25, 0.6, -0.75]:
+    2.0); at 1.5 cm off the skin Stand reads no through, the contact 0.8 cm, the mark 5.3 cm (2.5 cm: the mark 6.3,
+    a failure). The thumb is not behind the waist yet: its curl turns it about one axis only.
+    p2 (the review of #342: p1's grid tested Stand only, and its build failed three Lunge pairs on both
+    characters): Lunge's HandsOnHips is a per-legs variant (the shared clip's hand goes into the front thigh), at
+    `variant.gap_cm` 0.5 its hands 0.68 and 0.84 cm into the waist. A grid of the variants' gap on both p1 dumps,
+    front and three-quarter close-ups of Lunge+HandsOnHips (`tools/out/poses/p2/grid`): 0.5 through 0.68/0.84,
+    0.8 through 0.37/0.40 (contact 0.46/0.37), 1.0 no through (contact 0.63), 1.2 a 1.03 cm gap; the close-ups
+    differ by millimetres. Kept: 0.8, the value checked on every legs pose (the other variants' waist side, OneLeg's
+    left and Kneel's right hand, reads 0.81). FingerUp's and Salute's hip hand has no Lunge variant: at `gap_cm`
+    1.5 the shared clip reads a 1.06 cm gap on Lunge (the limit 1.0). 1.4 passes every legs pose (Stand 0.83,
+    Lunge 0.97, OneLeg 0.78); 1.3 goes 0.54 cm into the waist on OneLeg and 1.45 reads 1.02 on Lunge, a narrow
+    window that a change to this hand must re-measure on Lunge and OneLeg.
 - **The back of the skull** (`head_back`, round 2, s7): the landmark is the head's back at HEAD_BACK_UP (0.6) of the
   way from the Head bone up to the eyes, not at the eyes' height: there the chameleon's crest put the wrists 32 cm
   behind the head and the arms nearly straight, the elbows forward along the face ("head in hands"). At the skull
@@ -1305,8 +1321,11 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
 - **The Heart** (s7): the hands one hand length in front of the chest's front (`offset` fwd 1.0, was 1.9: from the
   side the arms read straight out, a sleepwalker), the elbows out and down ([1, -0.3, -0.3]), so the front outline
   has its elbow wings and the side view stays compact. s11 (critic 3: a guard from the side): the elbows lifted to
-  about the hands' height ([1, -0.1, 0.05]). Flex's upper arms go more forward ([0.9, 0.7, 0.12]) and Salute's elbow
-  clearly forward ([0.5, 1.2, -0.1]): the side outlines apart (the table below).
+  about the hands' height ([1, -0.1, 0.05]). p1 (the manager: from the front a flat T; a grid of five elbows on both
+  characters, front, left and three-quarter): the elbows down and out ([1, -0.2, -0.6]), the forearms rising to the
+  hands as in the reference; [0.6, -0.1, -1.0] (the elbows at the sides) read as a boxer's guard from the side.
+  Flex's upper arms go more forward ([0.9, 0.7, 0.12]) and Salute's elbow clearly forward ([0.5, 1.2, -0.1]): the
+  side outlines apart (the table below).
   - **The layers' limit.** The arms are solved once over `reference_legs` (Stand), so an arm cannot make room for
     a raised thigh: the shared hip hand goes 7 to 8 cm into it on Sit, Squat and Kneel's front leg, OneLeg's raised
     one included, on every offset and finger direction tried (`tools/out/poses/fix/hipgrid_c.log`, s5's six
