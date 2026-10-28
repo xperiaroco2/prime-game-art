@@ -385,7 +385,6 @@ def build_brackets(bm) -> None:
     """Step 4 (a_power.jpg): a bronze bracket across each of the four front corners (the side/chamfer and the
     chamfer/front folds), on the lower and the upper course: a block square to the fold's bisector, its back sunk
     into the fold, its face `proud` out of the corner."""
-    w, depth, proud = BA["bracket"]
     up = Vector((0.0, 0.0, 1.0))
     quads = plate_quads()
     for k in range(4):   # the folds between plates k and k+1: +u side/chamfer, +u chamfer/front, front/-u chamfer, -u chamfer/side
@@ -394,6 +393,7 @@ def build_brackets(bm) -> None:
         bu, bd = n0[0] + n1[0], n0[1] + n1[1]
         ln = math.hypot(bu, bd)
         bu, bd = bu / ln, bd / ln
+        w, depth, proud = BA["bracket"] if k in (1, 2) else BA["bracket_side"]   # the side folds' inside u +-45.5
         normal = Vector((bu, -bd, 0.0))      # P() turns d into -y
         across = normal.cross(up).normalized()
         basis = Matrix((across, normal, up)).transposed()
