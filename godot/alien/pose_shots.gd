@@ -13,6 +13,8 @@ extends "res://alien/char_shots.gd"
 ## - close_arms_<c>.png: the arms where hands meet or touch (HandsOnHips, Heart, FingerUp, HandsBehindHead, Salute;
 ##   on Stand) and PalmsOut, close on the upper body from the front, the left and the three-quarter;
 ## - close_legs_<c>.png: every legs pose (with HandsOnHips) close on the lower body, front, left, three-quarter;
+## - starting_<c>_big_<n>.png: starting pair n (1-6) alone, its four facings rendered about 700 px tall, the four
+##   outlines under them;
 ## - a *_1280.png copy of every sheet wider than 1280 px; shots_<c>.json: what each shows.
 ## Args after "--": <job.json>
 
@@ -25,6 +27,7 @@ const FRAME_C := Vector3(0.0, 0.92, 0.0)
 const FRAME_H := 2.7  # the far shots' framed height (m): Plane's span fits the cell
 const START_CELL := Vector2i(220, 330)
 const GRID_CELL := Vector2i(200, 300)
+const BIG_CELL := Vector2i(470, 700)  # starting_<c>_big_<n>.png: one starting pair large
 const CLOSE_CELL := Vector2i(300, 300)
 const CLOSE_ARMS := ["HandsOnHips", "Heart", "FingerUp", "HandsBehindHead", "Salute", "PalmsOut"]
 
@@ -99,6 +102,19 @@ func _run() -> void:
 				cells.append(await _shot(FACINGS[f], _centre(), FRAME_H, START_CELL, mask))
 	_save(cells, START_CELL, 8, out.path_join("starting_%s.png" % c))
 	report["starting"] = {"rows": job["starting"], "cols": ["front", "left", "right", "back", "outline front", "outline left", "outline right", "outline back"]}
+	# each starting pair large (round 2's page): its four facings rendered at about 700 px tall, their outlines under
+	var n := 0
+	for p: Array in job["starting"]:
+		n += 1
+		_pose(p[0], p[1])
+		var big: Array[Image] = []
+		for mask: bool in [false, true]:
+			for f: String in FACINGS:
+				_label.text = "%s + %s   %s" % [p[0], p[1], f] if f == "front" and not mask else f
+				big.append(await _shot(FACINGS[f], _centre(), FRAME_H, BIG_CELL, mask))
+		_save(big, BIG_CELL, 4, out.path_join("starting_%s_big_%d.png" % [c, n]))
+	report["starting_big"] = {"files": "starting_<c>_big_<n>.png, n = the starting pair's row", "rows": ["rendered", "outline"],
+		"cols": FACINGS.keys()}
 	# the 48 pairs: front and three-quarter rendered, then one outline grid per facing
 	for g: Array in [["front", 0.0, false], ["34", VIEW_34, false], ["outline_front", 0.0, true],
 			["outline_left", 90.0, true], ["outline_right", -90.0, true], ["outline_back", 180.0, true]]:
