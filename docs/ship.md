@@ -1320,7 +1320,8 @@ writes the ship's game-ready package (for prime-game#1225 and #1285) from `layou
 (its ARCHITECTURE 11.1), as the House's export (`docs/house.md` "The export"):
 
 - `assets/environment/ship/`: the 168 pieces' GLBs, each with a minimal `.import` (11.2's options); `metal.gdshader`
-  and `night_sky.gdshader` (copies of `godot/ship/`'s); `materials/metal_<name>.tres` (one per shared metal of
+  and `night_sky.gdshader` (copies of `godot/ship/`'s), `console_metal.gdshader` (`godot/console/`'s, the lens
+  bronze's shader); `materials/metal_<name>.tres` (one per shared metal of
   `ship.gd` METALS), `night_sky.tres`, `night_env.tres` (the night environment: AgX, glow, SSAO, SSIL, fog, the star
   sky); the vents' normal maps the GLBs' import extracts (`station_vent_<e|w>_vent_a_normal.png`). Data only.
 - `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the 1092

@@ -5,7 +5,7 @@ res://import/ship_<id>.glb) and saves it as res://import/ship_export/ship.tscn w
 module turns that into the package, shaped like the game's tree (its ARCHITECTURE 11.1):
 
   assets/environment/ship/<id>.glb (+ a minimal .import, 11.2), metal.gdshader, night_sky.gdshader,
-                          materials/metal_<name>.tres, night_sky.tres, night_env.tres
+                          console_metal.gdshader, materials/metal_<name>.tres, night_sky.tres, night_env.tres
   levels/ship/ship.tscn   the pieces at their placements, the night lights, environment and probes, Stations, Markers
   package.json            files with SHA-256 and bytes, the station spots, the spawn, the open questions
 
@@ -93,7 +93,8 @@ def relocate(text: str) -> str:
 
 
 def leftovers(text: str) -> list[str]:
-    """What a relocated text must not hold: an art-project path, a script, a sub-resource path of an imported file."""
+    """What a relocated text must not hold: an art-project path, a script, a sub-resource path of an imported file,
+    any res:// path outside the package."""
     bad = []
     for pat, why in ((r"res://import/", "an art-project import path"), (r'"res://ship/', "an art-project ship path"),
                      (r'type="Script"', "a script"), (r"^script = ", "a script"), (r'path="[^"]*::', "a sub-resource path"),
