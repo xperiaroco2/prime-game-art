@@ -5,7 +5,7 @@ and origins (each blade's on the caps' axis, the marker's at the bar's bottom), 
 the way, their calm reach past the frame and their seams calm and closed (the blade cleaner's numbers), the west
 piece the east one's mirror, and
 `ship --check` holding a station piece to its spot and depth. Pure Python: needs neither Blender, Godot nor the raw
-files (the motion proof on the GLBs: `ship --motion DIR`)."""
+files (the motion proof on the GLBs was `ship --motion DIR`, retired with the blades in gills step 12)."""
 
 from __future__ import annotations
 

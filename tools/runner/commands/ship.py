@@ -18,7 +18,7 @@ from .. import blender, common, ship_layout
 from . import _export, _godot
 
 NAME = "ship"
-HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts); --vent-anim DIR (the vents' animation in place); --play (the engineer's walk)"
+HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR; --vent-anim DIR (the gills' animation in place); --play (the engineer's walk)"
 BUILD_SCRIPT = blender.SCRIPTS / "ship_build.py"
 GODOT_SCRIPT = "res://ship/ship.gd"
 BUILD_TIMEOUT = 900
@@ -47,8 +47,6 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              " ship.toml's view names (no plan view), e.g. in_vent_,cu_vent_")
     parser.add_argument("--vent-states", default="", help="--shoot with the vents in a state each, e.g. e=problem,w=calm "
                         "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
-    parser.add_argument("--motion", type=Path, metavar="DIR",
-                        help="the stations' motion proof (step 2: the vents) off-screen: checks, MP4, sheets into DIR")
     parser.add_argument("--vent-anim", type=Path, metavar="DIR",
                         help="the east vent's animation in place at night (godot/ship/vent_anim.gd through its demo: calm, "
                              "the problem, a hold, the cough, calm) from the player's eye off-screen: MP4 and key sheet into DIR")
@@ -120,10 +118,6 @@ def run(args: argparse.Namespace) -> int:
             return code
     if args.walk and not args.no_video:
         code = walk_video(layout, out, args.walk.resolve())
-        if code:
-            return code
-    if args.motion:
-        code = motion(layout, out, args.motion.resolve())
         if code:
             return code
     if args.vent_anim:
@@ -542,56 +536,6 @@ def walk_video(layout: dict, out: Path, folder: Path) -> int:
     return 0
 
 
-# --- step 2: the stations' motion proof ----------------------------------------------------------------------------
-MOTION_SCRIPT = "res://ship/vent_motion.gd"
-MOTION_TIMEOUT = 900
-MOTION = {"size": (1280, 720), "fps": 24, "seconds": 22.0, "max_mb": 15}   # vents-anim1: vent_anim.gd's demo, 22 s
-
-
-def motion_request(layout: dict) -> dict:
-    """The vents' numbers for ship/vent_motion.gd from their builder (tools/blender/ship_interior_vent.py), in the
-    piece's Godot frame (x along the wall, y up, z out of it): the opening the slats keep to, the glass the marker
-    keeps to, the close-ups' cameras."""
-    import importlib
-    import sys
-    sys.path.insert(0, str(blender.SCRIPTS))
-    v = importlib.import_module("ship_interior_vent")
-    f = v.FLOOR + float(layout["deck"].get("lift_m", 0.0))   # the raise: the built GLBs stand lifted (ship_build.lifted)
-    vents = {}
-    r = v.RECESS   # vents-b4: the piece's parts stand RECESS behind the wall's face (ship_interior_vent.station_vent)
-    for pid, s in (("station_vent_e", 1.0), ("station_vent_w", -1.0)):
-        # way A: the blades keep between the cap rows (their ends sit in the caps), in front of the well's glow
-        u = sorted((s * v.CAP_U[0], s * v.CAP_U[1]))
-        g = sorted((s * v.GLASS_U[0], s * v.GLASS_U[1]))
-        # vents-b5c: the blades stay inside the opening in every plane and behind the frame's face (+5 mm)
-        vents[pid] = {"opening": {"u0": u[0], "u1": u[1], "h0": f + v.OPEN_H[0], "h1": f + v.OPEN_H[1],
-                                  "v_back": v.COOL_V + 0.002 - r,
-                                  # v_max: the unit's depth (the body's check); v_front: the frame's face plus
-                                  # 5 mm, the plane no blade vertex may pass (vents-b5c; b5 left it at v_max)
-                                  "v_max": v.UNIT[3], "v_front": v.BOX_FACE - r + 0.005},
-                      "glass": {"u0": g[0], "u1": g[1], "h0": f + v.GLASS_H[0], "h1": f + v.GLASS_H[1]},
-                      # each blade's pivot on the caps' axis (Godot x, y, z)
-                      "pivots": [[s * (v.CAP_U[0] + v.CAP_U[1]) / 2, f + v.PIVOT_TOP - k * v.PITCH, v.PIVOT_V - r]
-                                 for k in range(v.SLATS)]}
-    # way B (vents-b1): re-aimed on the built body (four of way A's framed empty air)
-    # vents-b4: the looks RECESS back, the column's top and the scanner COL_DROP down; vents-b5: the box's right side
-    # BOX_DU along, the blades' ends on their hinge line, the opening's floor lower, the scanner and lamp SCAN_U, LAMP_U
-    d, du = v.COL_DROP, v.BOX_DU
-    cu = [["frame_corner_tl", [-0.30, f + 1.62, 1.05], [-0.64, f + 1.40, 0.41 - r]],
-          ["opening_corner_br", [0.5 + du, f + 0.35, 1.0], [0.2 + du, f + 0.28, 0.40 - r]],
-          ["slat_ends_l", [-0.3 + du, f + 1.3, 0.9], [-0.50 + du, f + 1.13, v.PIVOT_V + 0.08 - r]],
-          ["box_column_top", [0.85, f + 1.85 - d, 1.0], [0.47 + du, f + 1.56 - d, 0.36 - r]],
-          ["lamp_base", [0.95, f + 1.95 - d, 0.85], [v.LAMP_U, f + 1.77 - d, 0.335 - r]],
-          ["scanner", [0.72, f + v.SCAN_H + 0.02, 0.85], [v.SCAN_U, f + v.SCAN_H, 0.43 - r]],
-          ["box_floor_l", [-1.2, f + 0.35, 1.0], [-0.70, f + 0.10, 0.40 - r]],
-          ["box_wall_top", [-0.2, f + 1.95, 0.95], [-0.2, f + 1.58, 0.15 - r]],
-          ["column_wall_r", [1.4, f + 0.5, 0.8], [0.78, f + 0.3, 0.2 - r]]]
-    return {"ids": list(vents), "vents": vents, "slats": v.SLATS, "open_rad": v.OPEN_RAD, "mark_travel": v.MARK_TRAVEL, "gap_m": 3.0,
-            "nose_r": v.NOSE_R, "min_tip_swing": 0.04,
-            "fps": MOTION["fps"], "seconds": MOTION["seconds"], "closeups": cu, "watchdog_s": MOTION_TIMEOUT - 60,
-            "wall": {"floor": f, "bend": v.BEND, "in": v.IN, "top": v.TOP}}
-
-
 # vents-anim1: the east vent from about 3 m across the throat at the player's eye (deck 1.2 + 1.6), plan (x, y, h)
 # gills step 10: the e unit on the hall's back wall from 2.6 m across the hall, at a player's eye
 # gills step 12: the whole unit, sill to hood, with the scanner column, from 2.8 m at a player's eye; a cut to 2.2 m
@@ -652,47 +596,4 @@ def vent_anim(layout: dict, out: Path, folder: Path) -> int:
         return 1
     common.ok(f"ship --vent-anim: {clip.as_posix()} {a['size'][0]}x{a['size'][1]}, {info['seconds']:.1f} s, "
               f"{info['frames']} frames, {mb:.1f} MB; states {info['states']}; signals {info.get('signals')}; sheet {(folder / 'keys_sheet.png').as_posix()}")
-    return 0
-
-
-def motion(layout: dict, out: Path, folder: Path) -> int:
-    """The vents' motion proof on the exported GLBs (art #263 step 2): ship/vent_motion.gd in the off-screen window
-    checks the leaves by their names and numbers and renders the frames, sheets and shots; headless Blender encodes
-    the MP4 (ship_video.py, under max_mb)."""
-    import shutil
-    ids = ["station_vent_e", "station_vent_w"]
-    missing = [pid for pid in ids if not (out / f"{pid}.glb").is_file()]
-    if missing:
-        raise common.Failure(f"ship --motion: build {', '.join(missing)} first (--build --only)")
-    errors = _stage({f"ship_{pid}": out / f"{pid}.glb" for pid in ids})
-    shutil.rmtree(folder / "frames", ignore_errors=True)
-    folder.mkdir(parents=True, exist_ok=True)
-    path = common.OUT / "ship" / "motion_request.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(motion_request(layout), indent=1), encoding="utf-8", newline="\n")
-    (folder / "motion.json").unlink(missing_ok=True)
-    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", MOTION_SCRIPT, "--",
-                                  path.as_posix(), folder.as_posix()], MOTION["size"], MOTION_TIMEOUT)
-    for line in output.splitlines():
-        if line.startswith("VENT"):
-            common.say(f"  {line}")
-    if not (folder / "motion.json").is_file():
-        raise common.Failure(f"vent_motion.gd failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
-    result = json.loads((folder / "motion.json").read_text(encoding="utf-8"))
-    clip = folder / "vent_motion.mp4"
-    clip.unlink(missing_ok=True)
-    blender.run_script(VIDEO_SCRIPT, ["--frames", str(folder / "frames"), "--out", str(clip), "--fps",
-                                      str(MOTION["fps"]), "--max-mb", str(MOTION["max_mb"])], timeout=MOTION_TIMEOUT)
-    mb = clip.stat().st_size / 2 ** 20 if clip.is_file() else 0.0
-    if clip.is_file():
-        shutil.rmtree(folder / "frames", ignore_errors=True)
-    for pid, r in result["vents"].items():
-        common.say(f"  {pid}: {r.get('triangles')} triangles, {r.get('convex_colliders')} convex colliders, hinge edge "
-                   f"drift {r.get('hinge_edge_drift_m', -1):.4f} m, tip swing {r.get('tip_swing_m', -1):.3f} m, "
-                   f"{len(r.get('slat_cuts', []))} cuts, {len(r.get('slat_outside_opening', []))} outside; "
-                   f"problems {r['problems']}")
-    if code != 0 or errors or not result.get("ok") or not clip.is_file() or mb > MOTION["max_mb"]:
-        common.bad(f"ship --motion: exit {code}, {len(errors)} import errors, ok {result.get('ok')}, video {mb:.1f} MB")
-        return 1
-    common.ok(f"ship --motion: the leaves hold; {clip.as_posix()} {mb:.1f} MB, sheets in {folder.as_posix()}")
     return 0
