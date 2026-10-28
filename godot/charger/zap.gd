@@ -38,37 +38,49 @@ const SKIP := [0.1, 0.45]        # per electrode: the share of ticks it does not
 const TICK := [0.05, 0.08]       # s between re-rolls
 const FLASH_TICK := 0.03
 ## the ribbons' half widths (m) and the bolts' roughness (the largest sideways step as a share of the bolt's length)
-const HALF_WIDTH := [0.011, 0.008]   # zap-2: 4.2 mm drew a sub-pixel core at the player's 2 m
+const HALF_WIDTH := [0.02, 0.015]    # zap-4: 1.1 cm still read as fine squiggles at 2.2 m
 const BRANCH_WIDTH := 0.55       # a branch's share of its bolt's width
 const ROUGH := 0.28
 const FLASH_WIDTH := 2.2
 const FLASH_BRANCHES := 4
-## the lights at the hits: small, a whiter cyan that stays neutral on the bronze (charger.gd SEATED_OMNI_COLOUR)
-const LIGHT_COLOUR := Color(0.45, 0.82, 1.0)
-const LIGHT_ENERGY := [0.45, 0.25]
-const LIGHT_RANGE := 0.2
-const FLASH_ENERGY := 1.8
-const FLASH_RANGE := 0.42
+## the lights at the hits: a near-white blue (zap-4: the cyan 0.45, 0.82, 1 times the bronze's orange is olive),
+## reaching the prongs so the bronze flickers with the arcs
+const LIGHT_COLOUR := Color(0.78, 0.88, 1.0)
+const LIGHT_ENERGY := [0.7, 0.45]   # zap-5: 0.8 washed the inner prongs to chrome
+const LIGHT_RANGE := 0.32
+const FLASH_ENERGY := 2.4
+const FLASH_RANGE := 0.6
 ## sparks: per tick per hit and at an electrode, their speed (m/s), life (s), the flash's burst
-const SPARKS_HIT := [1, 3]
+const SPARKS_HIT := [2, 5]
 const SPARK_ELECTRODE := 0.18
 const SPARK_SPEED := [0.35, 1.1]
-const SPARK_LIFE := [0.1, 0.28]
-const SPARK_BURST := 28
-const SPARK_HALF_WIDTH := 0.003
+const SPARK_LIFE := [0.15, 0.4]
+const SPARK_BURST := 60
+const SPARK_HALF_WIDTH := 0.006
 const GRAVITY := 5.0
-const MAX_SPARKS := 200
+const MAX_SPARKS := 320
 ## zap-3 (the engineer: "lightning, white, around the crystal, spinning"): per prong a wrap arc that leaves the tip
 ## electrode and crawls round the crystal's surface (WRAP_SWEEP rad, the ring's way, up or down WRAP_RISE m) and a
 ## crawler between two points on the surface; glints orbit the crystal the ring's way and spiral out
 const WRAP_SWEEP := [1.2, 3.0]
 const WRAP_RISE := 0.05
-const WRAP_OUT := 1.12           # the wrap's distance from the axis, a share of the crystal's radius there
+const WRAP_OUT := [1.5, 2.3]     # zap-4: the wrap's distance from the axis, a share of the crystal's radius there
 const CRAWL_CHANCE := 0.7
-const GLINTS := [3, 6]           # per tick
+const GLINTS := [6, 10]          # per tick
 const GLINT_SPEED := [5.0, 10.0] # rad/s round the axis
-const GLINT_LIFE := [0.3, 0.7]
-const GLINT_BURST := 40
+const GLINT_LIFE := [0.4, 0.9]
+const GLINT_BURST := 70
+const GLINT_HALF_WIDTH := 0.012
+const GLINT_TRAIL := 0.7         # rad of trail behind a glint's head
+## zap-4: halo loops, the spinning cage: per tick HALOS jagged loops that leave the crystal's surface, arch out into
+## the air (HALO_OUT of its radius at their middle) and land again HALO_SWEEP rad round; all of them turn round the
+## axis the ring's way at HALO_SPIN rad/s between re-rolls, so the cage spins
+const HALOS := [3, 5]
+const FLASH_HALOS := 8
+const HALO_SWEEP := [1.2, 2.6]
+const HALO_OUT := [2.0, 3.4]   # zap-5: 1.6..2.6 stayed inside the inner prongs' shadow at 2.2 m
+const HALO_RISE := 0.12   # zap-6: level loops at 6 cm read as flat strokes; tilted, they swirl
+const HALO_SPIN := 9.0
 ## the conduits' flow and steady glow ease toward their targets at this rate (1/s)
 const EASE := 3.0
 
@@ -115,7 +127,7 @@ static func bind(look: Dictionary, scene: Node, crystal: Node3D) -> int:
 		arcs.append({"on": false, "seed": 0, "lift": 0.0, "angle": 0.0, "flicker": 1.0})
 	var z := {"model": model, "ring": ring, "crystal": crystal, "locals": locals, "radii": radii, "mesh": mesh,
 		"node": node, "mat": mat, "lights": lights, "rng": rng, "clock": 0.0, "next": 0.0, "arcs": arcs,
-		"sparks": [], "flow": 0.0, "steady": 0.0, "flashed": false, "conduits": null, "profile": _profile(crystal),
+		"sparks": [], "halos": [], "flow": 0.0, "steady": 0.0, "flashed": false, "conduits": null, "profile": _profile(crystal),
 		"active": false, "ends": []}
 	look["zap"] = z
 	# the conduits: every int_cyan__lens_core surface whose mesh's box centre is near the crystal's middle
@@ -224,6 +236,15 @@ static func _reroll(z: Dictionary, flashing: bool) -> void:
 			_spark(z, ends[0], -out, 0.7)
 	for k: int in rng.randi_range(GLINTS[0], GLINTS[1]) * (3 if flashing else 1):
 		_glint(z)
+	var halos: Array = []
+	var p: Dictionary = z["profile"]
+	for k: int in (FLASH_HALOS if flashing else rng.randi_range(HALOS[0], HALOS[1])):
+		halos.append({"seed": rng.randi(), "a": rng.randf_range(0.0, TAU), "t0": float(z["clock"]),
+			"sweep": rng.randf_range(HALO_SWEEP[0], HALO_SWEEP[1]) * (1.4 if flashing else 1.0),
+			"h": rng.randf_range(float(p["min"]) + 0.02, float(p["max"]) - 0.02),
+			"dh": rng.randf_range(-HALO_RISE, HALO_RISE),
+			"out": rng.randf_range(HALO_OUT[0], HALO_OUT[1]) * (1.2 if flashing else 1.0)})
+	z["halos"] = halos
 
 
 ## Arc i's start (on its electrode's surface, toward the hit) and its hit on the crystal's surface, in the model's
@@ -325,8 +346,8 @@ static func _draw(z: Dictionary, arcing: bool, flashing: bool, flash: float, ram
 			var to: Vector3 = from + (along.normalized() * 0.5 + side.normalized() * 0.8).normalized() \
 				* along.length() * rng.randf_range(0.3, 0.6) * (1.4 if flashing else 1.0)
 			strips.append([_bolt(rng, from, to, 3, ROUGH * 1.3), w * BRANCH_WIDTH, 0.85, 0.0])
+		strips.append([_wrap(z, rng, ends[0], flashing), w * 0.8, 1.0, 0.25])
 		if kind == 0:
-			strips.append([_wrap(z, rng, ends[0], flashing), w * 0.8, 1.0, 0.25])
 			if flashing or rng.randf() < CRAWL_CHANCE:
 				strips.append([_crawl(z, rng), w * 0.6, 0.9, 0.9])
 		var out: Vector3 = ((ends[0] as Vector3) - (ends[1] as Vector3)).normalized()
@@ -335,13 +356,29 @@ static func _draw(z: Dictionary, arcing: bool, flashing: bool, flash: float, ram
 		l.light_energy = (FLASH_ENERGY * flash if flashing else float(LIGHT_ENERGY[kind]) * float(a["flicker"]) \
 			* minf(ramp, 1.0))
 	z["ends"] = ends_out
+	if arcing:
+		for h: Dictionary in z["halos"]:
+			var hw: float = float(HALF_WIDTH[0]) * 0.8 * (FLASH_WIDTH * 0.7 if flashing else 1.0)
+			var loop: Array[Vector3] = _halo(z, h)
+			strips.append([loop, hw, 0.95, 0.95])
+			# zap-6: a fork off the loop's apex into the air, outward and up or down, so it reads as lightning
+			var frng := RandomNumberGenerator.new()
+			frng.seed = int(h["seed"]) + 1
+			if flashing or frng.randf() < 0.6:
+				var from: Vector3 = loop[loop.size() / 2 + frng.randi_range(-3, 3)]
+				var c: Vector3 = z["centre"]
+				var out := Vector3(from.x - c.x, 0.0, from.z - c.z).normalized()
+				var to: Vector3 = from + out * frng.randf_range(0.025, 0.05) 					+ Vector3(0.0, frng.randf_range(-0.035, 0.035), 0.0)
+				strips.append([_bolt(frng, from, to, 2, ROUGH * 1.4), hw * BRANCH_WIDTH, 0.9, 0.0])
 	for s: Dictionary in z["sparks"]:
 		if s.has("orbit"):
 			var g: float = (1.0 - float(s["age"]) / float(s["life"])) * minf(1.0, float(s["age"]) * 20.0)
 			var a1: float = float(s["a"])
-			var tw: float = 0.35 * signf(float(s["w"]))
-			strips.append([[_orbit_at(z, s, a1 - tw), _orbit_at(z, s, a1 - tw * 0.4), _orbit_at(z, s, a1)],
-				SPARK_HALF_WIDTH * 1.2, 0.0, g])
+			var tw: float = GLINT_TRAIL * signf(float(s["w"]))
+			var trail: Array[Vector3] = []
+			for k: int in 6:
+				trail.append(_orbit_at(z, s, a1 - tw * (1.0 - k / 5.0)))
+			strips.append([trail, GLINT_HALF_WIDTH, 0.0, g])
 			continue
 		var p: Vector3 = s["p"]
 		var v: Vector3 = s["v"]
@@ -370,14 +407,37 @@ static func _wrap(z: Dictionary, rng: RandomNumberGenerator, start: Vector3, fla
 		* -float(z.get("sense", -1.0))
 	var h0: float = clampf(ec.y - 0.01, float(p["min"]) + 0.01, float(p["max"]) - 0.01)
 	var dh: float = rng.randf_range(-WRAP_RISE, WRAP_RISE)
+	var out: float = rng.randf_range(WRAP_OUT[0], WRAP_OUT[1])
 	var pts: Array[Vector3] = [start]
 	var n := 14
 	for k: int in range(1, n + 1):
 		var f: float = float(k) / n
 		var h: float = clampf(h0 + dh * f, float(p["min"]) + 0.01, float(p["max"]) - 0.01)
-		var r: float = _radius(p, h) * WRAP_OUT + rng.randf_range(-0.004, 0.006)
+		var r: float = _radius(p, h) * out * (1.0 + 0.12 * sin(3.0 * PI * f + out * 7.0)) 			+ rng.randf_range(-0.006, 0.008)
 		var a: float = a0 + sweep * f
 		pts.append(ct * Vector3(cos(a) * r, h + rng.randf_range(-0.006, 0.006), sin(a) * r))
+	return pts
+
+
+## A halo loop: from the crystal's surface out into the air (its middle at "out" x the radius there) and back onto
+## the surface "sweep" rad round, jagged by its seed; turned round the axis the ring's way at HALO_SPIN rad/s since
+## its tick began. The model's frame.
+static func _halo(z: Dictionary, h: Dictionary) -> Array[Vector3]:
+	var ct: Transform3D = _rel(z["crystal"], z["model"])
+	var p: Dictionary = z["profile"]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(h["seed"])
+	var a0: float = float(h["a"]) - float(z.get("sense", -1.0)) * HALO_SPIN * (float(z["clock"]) - float(h["t0"]))
+	var sweep: float = float(h["sweep"]) * -float(z.get("sense", -1.0))
+	var pts: Array[Vector3] = []
+	var n := 14   # zap-6: fewer, sharper kinks (18 points at 7-8 mm read as a smooth stroke)
+	for k: int in n + 1:
+		var f: float = float(k) / n
+		var hh: float = clampf(float(h["h"]) + float(h["dh"]) * f, float(p["min"]) + 0.01, float(p["max"]) - 0.01)
+		var bulge: float = sin(PI * f)
+		var r: float = _radius(p, hh) * lerpf(1.0, float(h["out"]), bulge) 			+ rng.randf_range(-0.014, 0.014) * bulge
+		var a: float = a0 + sweep * f
+		pts.append(ct * Vector3(cos(a) * r, hh + rng.randf_range(-0.018, 0.018) * bulge, sin(a) * r))
 	return pts
 
 

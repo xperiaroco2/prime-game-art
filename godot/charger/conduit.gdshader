@@ -19,12 +19,12 @@ uniform float flow : hint_range(0.0, 1.0) = 0.0;
 uniform float steady : hint_range(0.0, 1.0) = 0.0;
 uniform float lit : hint_range(0.0, 1.0) = 1.0;
 uniform float clock = 0.0;
-uniform vec3 pulse_color : source_color = vec3(0.55, 0.9, 1.0);
-uniform float pulse_energy : hint_range(0.0, 16.0) = 5.0;
+uniform vec3 pulse_color : source_color = vec3(0.8, 0.93, 1.0);
+uniform float pulse_energy : hint_range(0.0, 16.0) = 9.0;
 // the pulses: m apart, m/s, their length (m)
-uniform float spacing = 0.45;
+uniform float spacing = 0.6;
 uniform float speed = 1.1;
-uniform float band = 0.12;
+uniform float band = 0.22;   // zap-4: 12 cm did not read in the 2.2 m shot
 // charged: the base's share added
 uniform float steady_gain : hint_range(0.0, 4.0) = 0.8;
 
@@ -38,7 +38,8 @@ void fragment() {
 	float x = ph / band;
 	float pulse = x < 1.0 ? (1.0 - x) * (1.0 - x) * smoothstep(0.0, 0.08, x) : 0.0;
 	float k = flow * lit;
-	vec3 e = base_emission * (1.0 + steady_gain * steady * lit + 0.4 * k);
+	// zap-4: the base dims while the pulses run, so the bright bands stand out of a dark core
+	vec3 e = base_emission * (1.0 + steady_gain * steady * lit - 0.6 * k);
 	e += pulse_color * pulse * pulse_energy * k;
 	EMISSION = e;
 }

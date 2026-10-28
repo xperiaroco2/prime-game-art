@@ -11,11 +11,11 @@ shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_disabled, skip_vertex_transform, shadows_disabled, fog_disabled;
 
 uniform vec3 core_color : source_color = vec3(1.0, 1.0, 1.0);   // zap-3: white (the engineer)
-uniform vec3 glow_color : source_color = vec3(0.1, 0.62, 1.0);
+uniform vec3 glow_color : source_color = vec3(0.3, 0.6, 1.0);   // zap-4: a bluer white edge, less cyan
 uniform float core_energy : hint_range(0.0, 32.0) = 9.0;
-uniform float glow_energy : hint_range(0.0, 16.0) = 1.8;
+uniform float glow_energy : hint_range(0.0, 16.0) = 2.8;   // zap-5: a blue haze round each bolt reads from 2 m
 // the core's half width as a share of the ribbon's
-uniform float core_share : hint_range(0.01, 1.0) = 0.32;   // zap-3: a wide white core, cyan only its edge
+uniform float core_share : hint_range(0.01, 1.0) = 0.4;   // zap-3/4: a wide white core, blue only its edge
 // zap.gd: 0 .. 1 the whole effect (the fade), above 1 the full-charge flash
 uniform float strength : hint_range(0.0, 4.0) = 1.0;
 
