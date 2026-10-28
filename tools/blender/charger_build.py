@@ -243,7 +243,13 @@ def build_core(bm) -> None:
 
 
 def build_plinth(bm) -> None:
-    block(bm, LIPPED, 0.0, BA["plinth"])
+    """The graphite plinth (step 3, a_power.jpg's stepped foot): a toe set back at the floor (a shadow line), the
+    lipped block, its top bevelled back to the plates' faces over plinth_bevel."""
+    (th, tin), bev = BA["plinth_toe"], BA["plinth_bevel"]
+    toe = offset(LIPPED, [0.0] + [-tin] * 5)
+    rings = [[bm.verts.new(P(u, d, h)) for u, d in pts] for pts, h in
+             ((toe, 0.0), (toe, th), (LIPPED, th), (LIPPED, BA["plinth"] - bev), (OUTLINE, BA["plinth"]))]
+    ring_faces(bm, rings)
 
 
 def plate_quads() -> list:
@@ -265,11 +271,15 @@ def plate_quads() -> list:
     return out
 
 
+COURSES = ((BA["plinth"], BA["band"][0]), (BA["band"][1], BA["frieze"] - SEAM * 0.5),
+           (BA["frieze"] + SEAM * 0.5, BA["body"]))
+
+
 def build_plates(bm) -> None:
-    """The body's plates in two courses (h plinth..band, band..body), the seams between them onto the core."""
-    s = SEAM * 0.5
+    """The body's plates in three courses (step 3): the lower course, the recessed band (the core shows, 1.9 deep),
+    the upper course, a seam, the frieze under the deck slab; the vertical seams between the plates onto the core."""
     for a, b, ia, ib, _n in plate_quads():
-        for h0, h1 in ((BA["plinth"], BA["band"] - s), (BA["band"] + s, BA["body"])):
+        for h0, h1 in COURSES:
             block(bm, [ia, ib, b, a], h0, h1)
 
 
@@ -331,11 +341,24 @@ def build_pedestal_lights(bm) -> None:
     li = DIMS["lights"]
     up = Vector((0.0, 0.0, 1.0))
     quads = plate_quads()
-    for k in (1, 3):  # the chamfers
+    for k in (1, 3):  # the chamfers, one strip per course (step 3: the recessed band between them)
         a, b, _ia, _ib, (nu, nd) = quads[k]
-        h0, h1 = li["chamfer_cyan"]
-        light_box(bm, P((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (h0 + h1) / 2), Vector((nu, -nd, 0.0)), up, h1 - h0,
-                  li["width"], 4)
+        for h0, h1 in li["chamfer_cyan"]:
+            light_box(bm, P((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (h0 + h1) / 2), Vector((nu, -nd, 0.0)), up,
+                      h1 - h0, li["width"], 4)
+    # step 3: the thin cyan line in the recessed band, on the core's face of every plate (inside the seams)
+    hb = sum(BA["band"]) / 2
+    for i in range(1, 6):
+        a, b = CORE[i], CORE[(i + 1) % 6]
+        eu, ed = b[0] - a[0], b[1] - a[1]
+        n = math.hypot(eu, ed)
+        start = 0.0 if i == 1 else 2.0
+        end = 0.0 if i == 5 else 2.0
+        tu, td = eu / n, ed / n
+        mid = n * 0.5 + (start - end) * 0.5
+        length = n - start - end - 2 * li["bezel"] - 1.0
+        light_box(bm, P(a[0] + tu * mid, a[1] + td * mid, hb), Vector((td, tu, 0.0)), Vector((tu, -td, 0.0)),
+                  length, li["band_cyan"], 4)
     u, (h0, h1) = li["front_amber"]
     for sx in (-1.0, 1.0):
         light_box(bm, P(sx * u, BA["front_d"], (h0 + h1) / 2), Vector((0.0, -1.0, 0.0)), up, h1 - h0, li["width"], 3)
@@ -620,6 +643,9 @@ def emissive(name: str, colour, strength: float):
 
 def build_materials() -> None:
     MATS["charger_bronze"] = metal_material("charger_bronze", (0.56, 0.27, 0.10, 1.0), (1.0, 0.70, 0.40, 1.0), 0.28, 1.0)
+    # step 3: the pedestal's plates a darker, rougher bronze (the bright one read hot orange under the lens lamp)
+    MATS["charger_bronze2"] = metal_material("charger_bronze2", (0.24, 0.12, 0.05, 1.0), (0.62, 0.42, 0.24, 1.0), 0.42,
+                                             0.9)
     MATS["charger_graphite"] = metal_material("charger_graphite", (0.06, 0.062, 0.07, 1.0), (0.36, 0.35, 0.34, 1.0),
                                               0.38, 0.85)
     MATS["charger_steel"] = metal_material("charger_steel", (0.40, 0.42, 0.45, 1.0), (0.85, 0.86, 0.88, 1.0), 0.16,
@@ -632,7 +658,7 @@ def build_materials() -> None:
     MATS["_edge"] = bpy.data.materials.new("_edge")
 
 
-ORDER = ["charger_bronze", "charger_graphite", "charger_amber", "charger_cyan", "charger_lens", "charger_steel"]
+ORDER = ["charger_bronze", "charger_bronze2", "charger_graphite", "charger_amber", "charger_cyan", "charger_lens", "charger_steel"]
 FLAG = {"_broad": 0.45, "_edge": 1.0}
 
 
@@ -728,7 +754,7 @@ def build(crystal: str | None) -> dict:
     body_parts = [
         part("core", build_core, "charger_graphite", bevel=False),
         part("plinth", build_plinth, "charger_graphite"),
-        part("plates", build_plates, "charger_bronze"),
+        part("plates", build_plates, "charger_bronze2"),
         part("deck", build_deck, "charger_bronze"),
         part("button_seat", build_button_seat, "charger_graphite", small=True),
         part("pedestal_lights", build_pedestal_lights, "charger_graphite", bevel=False, drawn=False),
@@ -867,6 +893,7 @@ def open_edges(ob) -> int:
 # --- export --------------------------------------------------------------------------------------------------------
 PLAIN = {
     "charger_bronze": dict(base=(0.50, 0.30, 0.15, 1.0), metallic=1.0, rough=0.3),
+    "charger_bronze2": dict(base=(0.26, 0.15, 0.07, 1.0), metallic=0.9, rough=0.42),
     "charger_graphite": dict(base=(0.07, 0.072, 0.08, 1.0), metallic=0.85, rough=0.38),
     "charger_steel": dict(base=(0.55, 0.57, 0.6, 1.0), metallic=1.0, rough=0.18),
     "charger_amber": dict(base=(0.05, 0.03, 0.01, 1.0), metallic=0.0, rough=0.25, emit=AMBER[:3], strength=5.0),

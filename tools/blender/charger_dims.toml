@@ -42,7 +42,11 @@ lip = [1.5, 3.0, 2.0]            # the plinth's and the deck slab's overhang on 
                                  # front 2 to keep the unit inside the reach 70
 plate = 2.0                      # sheet: the body's bronze plates on a graphite core; the seams between them show it
 seam = 0.55                      # sheet: the dark joint between two plates
-band = 48.0                      # sheet: the plates' horizontal joint
+band = [46.0, 52.0]              # sheet (lens C step 3, a_power.jpg): a recessed band round the body between the
+                                 # lower and upper courses, the graphite core 1.9 behind the plates, a cyan line in it
+frieze = 66.0                    # sheet (step 3): the upper course's joint, a frieze course under the deck slab
+plinth_toe = [1.5, 1.0]          # sheet (step 3): the plinth's toe: h 0..1.5 set back 1.0 (a shadow line on the floor)
+plinth_bevel = 3.0               # sheet (step 3): the plinth's top bevelled over its last 3 cm, back to the plates
 chamfer = 1.1                    # sheet: the broad chamfer on every plate edge
 edge = 0.28                      # sheet: the small bright bevel on its folds
 
@@ -54,7 +58,9 @@ travel = 1.0                     # pressed in along its normal
 
 [lights]                         # sheet: the strips on the pedestal's plates (graphite bezels, the light inset)
 width = 2.2
-chamfer_cyan = [22.0, 80.0]      # h: a cyan strip up each chamfer plate's middle
+chamfer_cyan = [[18.0, 42.0], [56.0, 82.0]]   # h: a cyan strip up each chamfer plate's middle, one per course
+                                 # (step 3: split by the recessed band)
+band_cyan = 1.2                  # sheet (step 3): the thin cyan line in the recessed band (height), on every plate
 front_amber = [16.0, [18.0, 44.0]]   # u, h: an amber pair on the front plate's lower half
 side_amber = [[18.0, 40.0], 80.0]    # d, h: an amber strip along each side plate under the deck slab
 bezel = 0.6                      # the graphite bezel round a light

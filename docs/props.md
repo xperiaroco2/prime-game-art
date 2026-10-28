@@ -801,18 +801,21 @@ is replaced by the lens room drawing's faceted pedestal (prime-game-design 7f335
 | Part | Numbers |
 |---|---|
 | Plan | back u ±44 at d 10 (on the alcove's back panel), sides to d 46, chamfers (±44, 46) -> (±22, 68), front face u ±22 at d 68 |
-| Plinth | graphite, h 0..10, overhanging 1.5 (sides), 3 (chamfers), 2 (front) |
-| Body | five bronze plates (2 cm) in two courses (joint at h 48) on a graphite core, 0.55 seams; h 10..86 |
+| Plinth | graphite, h 0..10, overhanging 1.5 (sides), 3 (chamfers), 2 (front); step 3: a toe set back 1.0 at h 0..1.5, its top bevelled back to the plates over h 7..10 |
+| Body | five plates (2 cm) on a graphite core, 0.55 seams; h 10..86; step 3: the plates `charger_bronze2` (a darker, rougher bronze), three courses: h 10..46, a recessed band 46..52 (the core 1.9 deep, a thin cyan line in it), 52..66, a seam, the frieze 66..86 |
 | Deck slab | bronze, h 86..99.1, the plinth's overhang; the well r 24.2 down to 94 round the slot |
 | Crystal axis | d 38 (was 53.5): the track ring (r 23.6) clears the back panel by 4.4 |
 | Button | Ø 8 at h 75.9 on the front plate; its lens's face d 69.8 |
-| Lights | cyan up each chamfer (h 22..80), an amber pair on the front (u ±16, h 18..44), amber along each side (d 18..40, h 80) |
+| Lights | cyan up each chamfer (step 3: one per course, h 18..42 and 56..82), the band's cyan line (1.2 high, every plate), an amber pair on the front (u ±16, h 18..44), amber along each side (d 18..40, h 80) |
 
 The drawing's lip is 3 all round; the sides keep 1.5 so the plinth and slab clear the opening's cheeks (u ±46 at the
 back panel) by 0.5, the front 2 so nothing passes the reach 70 (the drawing's own "виступ 70"). `build.json`'s
 checks: `wall_min_cm_body` (to the back panel, 0: it stands on it), `cheek_min_cm_body`, `reach_cm`, the ring's turn.
-The legs' charger's renders and shots stay in `<raw>/ship/v4/charger/b6/`; the pedestal's build is `lens1/`.
-`tools/run.sh ship --shoot DIR --charger` places this GLB (and a crystal) on both renewer spots for the look review.
+The legs' charger's renders and shots stay in `<raw>/ship/v4/charger/b6/`; the pedestal's build is `lens1/`, its
+step 3 detail (lens C, after `a_power.jpg`: the band, the frieze, the plinth's bevel, the darker plates) `lens2/`.
+The head and its deck slab keep `charger_bronze`; `charger.gd` maps `charger_bronze2` to `BRONZE2`.
+`tools/run.sh ship --shoot DIR --charger` places this GLB (and a crystal) on both renewer spots for the look review,
+in its game look (`ship.gd` applies `charger.gd`, idle, on the room's render layers; since lens C step 3).
 
 1. **The numbers.** `tools/blender/charger_dims.toml`: the drawing's own (the deck at its "base top" 99.1, the widest
    Ø 100.4 at 72.8, the upper tier's top edge Ø 82, the slot at 95.7, the button Ø 8 at 75.9, the outer prongs to

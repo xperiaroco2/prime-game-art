@@ -17,7 +17,7 @@ from runner.commands import _manifest
 ASSET = common.ROOT / "assets" / "prop" / "crystal_charger"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "charger_dims.toml"
-SURFACES = {"charger_bronze", "charger_graphite", "charger_cyan", "charger_amber", "charger_lens"}  # lens C: no steel (the legs)
+SURFACES = {"charger_bronze", "charger_bronze2", "charger_graphite", "charger_cyan", "charger_amber", "charger_lens"}  # lens C: no steel (the legs)
 LEAVES = {"carrier", "track_ring", "button", "crystal_anchor"}
 CRYSTAL = 34.9  # the built crystal, its tip to its loop's top (prime-game-art#316)
 
