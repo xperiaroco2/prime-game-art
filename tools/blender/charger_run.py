@@ -312,8 +312,9 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         "title = \"The ship's crystal charger\"",
         ("notes = \"The crystal charger, one in each lens room's alcove on the aft wall (renewer_e, renewer_w): a "
          "faceted pedestal (lens room C, 2026-10-28: the back u +-44 on the alcove's back panel at d 10, chamfers to "
-         "the front face u +-22 at d 68, a graphite plinth h 0..10, bronze plates on a graphite core, a deck slab "
-         "h 86..99.1 overhanging it), the crystal's axis 38 cm out, the slot at 95.7 cm, the fixed outer prongs to "
+         "the front face u +-22 at d 68, a graphite plinth h 0..10 with a toe and a bevelled top, darker bronze "
+         "plates on a graphite core in three courses with a recessed lit band at h 46..52 and a frieze from h 66 "
+         "(step 3, after the lens room's a_power.jpg), a deck slab h 86..99.1 overhanging it), the crystal's axis 38 cm out, the slot at 95.7 cm, the fixed outer prongs to "
          "139.7 cm, the start button at 75.9 cm; leaves: the carrier cup under the crystal (rises 6 cm, spins; "
          "crystal_anchor), the track ring with the inner prongs (spins), the button (presses 1 cm). "
          f"{build['triangles']:,} triangles, front +Z, origin on the floor at the spot's vertex. The head from the "
