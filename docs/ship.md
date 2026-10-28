@@ -1542,7 +1542,8 @@ frame. Everything follows the charger look's state and the charge:
 - **The export** ships `charger_arc.gdshader` and `charger_conduit.gdshader` (`ship_export.SHADERS`) beside the
   pieces for the game's copy of zap.gd; the ship scene itself does not use them.
 - `cycle.json` adds `conduit_surfaces` (1), `arc_frames` and `arc_ends_off` (frames whose arc ends left an electrode
-  or the crystal's surface: 0). Keys: "4 charging: the arcs" (12.6 s) and "5 full: the big flash" (15.5 s).
+  or the crystal's surface: 0; the runner fails the run on any; the start lies on an electrode by zap.gd's
+  construction, so only the hits are a real check). Keys: "4 charging: the arcs" (12.6 s) and "5 full: the big flash" (15.5 s).
 - Tests: `test_ship_charger_zap.py` (the electrodes are the build's, the ends, the gating, the flash inside
   "charging", the conduits' UV, the shaders shipped).
 - Output: `<raw>/ship/v5/charger-zap/` (`pieces/`: charger-traces' with the new `lens_conduits_e/w`; `cycle/`).

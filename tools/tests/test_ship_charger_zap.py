@@ -21,6 +21,7 @@ from runner import ship_export as X  # noqa: E402
 
 CHARGER = ROOT / "godot" / "charger"
 ZAP = (CHARGER / "zap.gd").read_text(encoding="utf-8")
+SHIP = (ROOT / "tools" / "runner" / "commands" / "ship.py").read_text(encoding="utf-8")
 CYCLE = (CHARGER / "cycle.gd").read_text(encoding="utf-8")
 with (ROOT / "tools" / "blender" / "charger_dims.toml").open("rb") as _f:
     DIMS = tomllib.load(_f)
@@ -71,9 +72,11 @@ class EndpointsTest(unittest.TestCase):
         self.assertIn("var pts: Array[Vector3] = [a, b]", bolt)
         self.assertIn("next.append(pts[-1])", bolt)
 
-    def test_the_cycle_checks_the_ends(self) -> None:
+    def test_the_cycle_counts_the_ends(self) -> None:
+        # the hits are checked against the crystal; the start lies on an electrode by construction (zap.gd)
         self.assertIn("Zap.endpoints(look)", CYCLE)
         self.assertIn('"arc_ends_off": _zap_bad', CYCLE)
+        self.assertIn('if info.get("arc_ends_off"):', SHIP)  # the runner fails the run on any
 
 
 class GatingTest(unittest.TestCase):
