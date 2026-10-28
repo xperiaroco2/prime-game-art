@@ -151,13 +151,13 @@ func _run() -> void:
 			cells.append(await _shot(v, Vector3(0.0, 0.45, 0.0), 1.15, CLOSE_CELL, false))
 	_save(cells, CLOSE_CELL, 3, out.path_join("close_legs_%s.png" % c))
 	cells = []
-	for h: Array in CLOSE_HANDS:
-		_pose("Stand", h[0])
-		var at: Vector3 = (_bone("LeftHand") + _bone("RightHand")) * 0.5 if h[1] == "" else _bone(h[1] + "Hand")
-		var span: float = 0.62 if h[1] == "" else 0.36
-		for v: float in [h[2], h[3]]:
+	for hc: Array in CLOSE_HANDS:
+		_pose("Stand", hc[0])
+		var at: Vector3 = (_bone("LeftHand") + _bone("RightHand")) * 0.5 if hc[1] == "" else _bone(hc[1] + "Hand")
+		var span: float = 0.62 if hc[1] == "" else 0.36
+		for v: float in [hc[2], hc[3]]:
 			_label.text = "%s %s
-%s" % [h[0], h[1], "front" if v == 0.0 else ("back" if v == 180.0 else "%d deg" % v)]
+%s" % [hc[0], hc[1], "front" if v == 0.0 else ("back" if v == 180.0 else "%d deg" % v)]
 			cells.append(await _shot(v, at, span, CLOSE_CELL, false))
 	_save(cells, CLOSE_CELL, 4, out.path_join("close_hands_%s.png" % c))
 	report["close_hands"] = {"cells": CLOSE_HANDS, "legs": "Stand", "cols": "two arms poses per row, two views each"}
