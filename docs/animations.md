@@ -1189,7 +1189,13 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   - **What the through check reads.** A hand or forearm: its raw depth (its proxy reads 0.0 cm on the rest skin),
     counted only where its skin is within `TOUCH_CM` (0.5 cm) of the other group's (round 3): a depth with a skin
     gap is the tube's bulge beyond the skin (HandsBehindHead's hands read 0.5-0.7 cm into the skull's tube with a
-    1 cm gap to its skin) and goes into `proxy_cm` instead.
+    1 cm gap to its skin) and goes into `proxy_cm` instead. `proxy_cm` has its own limit, `proxy_hand_cm` (1.5 cm;
+    s11 at most 0.74): a hand deep in a volume with no vertex of its skin near reads there and fails (review 3;
+    test `test_a_hand_pushed_into_the_head_fails`: a hand 3 cm deeper into the skull fails either way).
+    **Not measured** (`through_pairs`): an arm into a shin, an upper arm into its thigh, a hand or forearm into the
+    other side's thigh (Flex, Heart, Plane over Squat, Sit, Kneel); these are judged on the close-ups (review 3).
+    A one-off sweep of those pairs over Squat, Sit and Kneel with all eight arms on both characters (s11's dumps)
+    read at most 0.27 cm (the hip hand on Sit's thigh touching the shin by the knee), nothing over a limit.
     A thigh (beyond its groin's 30 %), an upper arm (its elbow half) and a shin (beyond its knee's 30 %: the knee's
     back folds into the thigh's end in every bent knee, 3.2-5.8 cm there and 0 beyond on all six legs poses, s5's
     calibration): only the depth beyond the same point's at rest, so the groin, armpit and knee skin the tubes share at rest reads 0 and a thigh pressed into the
@@ -1257,13 +1263,16 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     one included, on every offset and finger direction tried (`tools/out/poses/fix/hipgrid_c.log`, s5's six
     grips): hence the per-legs variants above.
 - **The silhouette table** (`silhouettes_<char>.json`): per facing (front, left, right, back), for pairs that differ
-  only in the legs or only in the arms, 1 - IoU of the outlines aligned on the feet; the least over the other part
+  only in the legs or only in the arms, 1 - IoU of the outlines from one camera fixed on the Root's ground spot (not
+  re-aligned per pose: where Sit, Kneel and Lunge move the feet and hips, a legs difference includes that shift); the least over the other part
   is what the photographer can still tell apart. Below 0.10 is a finding. The table is measured on Blender workbench
   masks (lens 100 mm, one fixed frame for every pair); the review pictures are Godot renders whose camera centre
   follows each pose (`pose_shots.gd`): the numbers and the pictures' outlines are not the same camera. Left vs
   mirrored right: orthographically a left outline is the mirror of the right one, so only perspective and the
-  pose's own lopsidedness separate them; measured, 0.08 to 0.10 on the least lopsided pairs and up to 0.31 / 0.35
-  (Lunge+Plane, Kneel+Plane): that line of the table is informative, not a goal.
+  pose's own lopsidedness separate them; measured in s11 (chameleon / axolotl), 0.066 / 0.085 on the least lopsided
+  pairs (Stand+Salute, Stand+FingerUp) and up to 0.33 / 0.38 (Kneel+Plane). The TOML's `lopsided` list only labels
+  these pairs in the table; **it is not a check**, nothing fails on it, and a limit would not separate the lists
+  (the unlisted Squat+Plane, its banked arms, reads 0.18 / 0.21): that line of the table is informative, not a goal.
   s11's table (both characters): every arms pair 0.10 or more apart from the front and the back (the least 0.108
   chameleon, 0.116 axolotl); from the sides the least are HandsOnHips/Salute 0.061 left (on Squat, where both near
   hands rest on the thigh and the saluting hand is behind the head) and HandsOnHips/HandsBehindHead 0.079 right
@@ -1293,10 +1302,10 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   (0 cm after 0.7 s), `stop()` gives the skeleton back. The game's rules: the pose holds while the player stands;
   turning on the spot keeps it (the node turns, the clips stay); a step drops it (`stop()`, then locomotion).
 - **The head look during a pose** (measured at yaw +-70, the contact in its target bone's frame, cm, chameleon /
-  axolotl; chameleon figures from step 7, the axolotl's from step 4): with head_look.gd's defaults (yaw into Spine,
-  Chest, UpperChest too) the hands on the hips slide 12.3, the hands behind the head 17.8 to 18.2 / 9.0, the salute's
-  fingertip 12.0 / 11.4; with only Neck and Head turning (0.4 / 0.6) the hip hands stay (0.0) but the head leaves the
-  hands behind it (38 to 39 / 20) and the salute (25 / 24). `OneLeg+Plane LeftHand~Hips` in
+  axolotl; s11's `layers_<char>.json`): with head_look.gd's defaults (yaw into Spine, Chest, UpperChest too) the
+  hands on the hips slide 10.9 to 11.8 (both), the hands behind the head 9.6 to 10.0 / 9.6 to 10.6, the salute's
+  fingertip 12.1 / 10.1; with only Neck and Head turning (0.4 / 0.6) the hip hands stay (0.0) but the head leaves the
+  hands behind it (20.6 to 21.4 / 20.5 to 22.6) and the salute's fingertip (24.8 to 25.5 / 20.5 to 21.1). `OneLeg+Plane LeftHand~Hips` in
   `pose_layers_check.gd`'s list is a control, not a contact: a free hand, it slides 43.6 cm at the default split and
   0 with Neck and Head only, so the probe is shown to read a slide. The heart's
   fingertips never part (0.0). **Recommendation:** during a pose the game sets the head look's split to Neck and Head
