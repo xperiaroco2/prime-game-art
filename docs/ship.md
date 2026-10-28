@@ -636,7 +636,8 @@ frames, `ship_interior_place.put` adds HALL_C to every placement; the throat's f
 side of a grate strip, the dark slab) and ceiling (`throat_ceil`: the flat ceiling between the chamfers and the header
 under the low rim) are built in hall-relative plan coordinates; its walls are the corridors' modules (`th_*`, prof
 `throat`): plain (`cor_wall_mid`) over the vent's 1.6 m band, a cable bay in the last module, chamfers under the roof.
-The v2 mouth passage's pieces, the mouth frame and lights are gone.
+The v2 mouth passage's pieces, the mouth frame and lights are gone. (Superseded: gills steps 8-9 moved the vents to the
+hall's back wall; the throat is plain, and the vents' spots in the table above are history.)
 
 
 ## Rebuild D: the review's findings and the throat's look (2026-10-22)
@@ -1592,15 +1593,24 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
     the vents' lines step to their own run, x 1.4 m, and go straight aft).
 
 ### The gills' animation (gills step 11, 2026-10-28)
+
+*Values as of step 11; step 12 changes them (the particles, the exhale's timing, the floor and the demo: the next
+section), and step 13 the release's judgement (below). The controller's header is the current reference.*
+
 The engineer approved the states on 2026-10-27 (prime-game's `docs/GDD.md`): the four ribs rock at most 4 deg and
 never open, so light, colour and mist carry the states. `godot/ship/vent_anim.gd` is the controller the game copies
 (the old blades' controller is gone; the section "The animation" under Station 1 is history). Its header is the API:
 - **Inputs:** `problem: bool`, `hold: float 0..1` (the scanner hold's progress while a palm is on it), `release()`
   when the palm leaves. **Signals:** `fixed` (released in the green; the game clears `problem`), `too_early` (below
   it; the game plays its sound), `missed` (past it), `thrown` (the hold reached the top; the game throws the player).
-  The release is judged on the drawn marker (`hold` followed over `HOLD_FOLLOW_S` 0.06 s). `setup(unit_root, id)`
-  after the scene's materials and `vent_glow.gd`'s lights; `manual` and `step(dt)` for proofs; `restore(root)` puts
-  the materials back.
+  The release is judged on the drawn marker (`hold` followed over `HOLD_FOLLOW_S` 0.06 s); since step 13 on
+  `judged`, the marker of the last step with a palm (`hold` >= 0.002), so a `step()` between the game zeroing `hold`
+  and its `release()` (the marker sinks about 24 % in one 60 Hz step) no longer turns a good release into
+  `too_early`. GREEN's ends count as in. `thrown` fires when the marker reaches `TOP` 0.995: `hold` at 1.0 for about
+  0.2-0.3 s; the game sends exactly 1.0 at the top. Per frame: set `problem` and `hold`, `release()` if the palm left,
+  then `step(dt)`. `setup(unit_root, id)` after the scene's materials and `vent_glow.gd`'s lights; `manual` and
+  `step(dt)` for proofs; `restore(root)` puts the materials, the heat and cool panels and a GLB marker back, clears
+  every list and detaches (`step()` is then a no-op).
 - **What it drives:** each rib `<id>_cover<k>` about its vertical axis through its origin (`rib_axis`: the wall is
   vertical, so the axis is the piece's up), clamped to `ROCK_DEG` 4. The GLB's frame is x along the wall, y up and
   +z out of the wall (the builder's v): (u, v, h) to (x, z, y) is a mirror, so the builder's +4 deg is -4 about y on
@@ -1629,7 +1639,10 @@ never open, so light, colour and mist carry the states. `godot/ship/vent_anim.gd
   weight eases in and out exponentially; angles always clamped to +-4.
 - **Checks:** `godot/ship/vent_anim_check.gd` (headless, run by `test_ship_vent_anim.py`) drives a stand-in unit
   through every transition at 60 steps a second: the states and signals, the six clicks climbing from the foot, the
-  ribs still while held, the exhale's +4, every angle within 4 deg. The Python test checks the constants against the
+  ribs still while held, the exhale's +4, every angle within 4 deg (since step 13 the pose before the clamp,
+  `raw_angles`, and the foot-first read on the cool2 and cool6 bands; and the cases: the release at GREEN's ends and
+  just outside, the latch, `hold` to 0 with no release, `fixed` with `problem` kept, a release after `problem`
+  cleared mid-hold, `hold` jitter around 0.002, `restore()`). The Python test checks the constants against the
   builder (ribs, range, the green band) and the ribs 2 cm clear of each other and the casing at every pair of angles
   (1 deg steps).
 - **The proof:** `ship --vent-anim DIR` runs the demo (`DEMO_*`: pass 1 calm, the problem at 4.5 s, a hold 8.5..13.5 s
