@@ -1,10 +1,11 @@
-# The ship's game-ready package (art #335), written by `ship --export <raw>/ship/v5/export/v1` on 2026-10-27;
-# a rebuild changes the hashes below (`manifest-check --hashes` finds it). The GLBs stay in the raw folder until approved.
+# The ship's game-ready package (art #335; the gills, art #263 gills step 13), written by
+# `ship --export <raw>/ship/v5/export/v2` on 2026-10-28; a rebuild changes the hashes below (`manifest-check --hashes`
+# finds it). The GLBs stay in the raw folder until approved (the engineer's look yes on the gills is pending).
 id = "ship"
 kind = "environment"
 slot = ""
 title = "The ship: the empty metal manta at night, its pieces, scene and station spots"
-notes = "The empty ship of art #263 (layouts/ship, built by tools/blender/ship_build.py into ship/v5/pieces) as the game's package: 168 piece GLBs, the shared metal and night sky shaders with their .tres, levels/ship/ship.tscn (1092 placements, the night lights, environment and probes, Stations with 11 spots, Markers/Spawn) and package.json. Built from code in headless Blender and Godot; no part generated or downloaded. Own work. HANDOFF.md for the game track."
+notes = "The empty ship of art #263 (layouts/ship, built by tools/blender/ship_build.py into ship/v5/pieces) as the game's package: 159 piece GLBs (the gills on the hall's back wall, the throat plain), the shared metal, night sky and gills' bronze (console_metal) shaders with the metals' and night .tres, levels/ship/ship.tscn (1088 placements, the night lights, environment and probes, Stations with 11 spots, Markers/Spawn) and package.json. Built from code in headless Blender and Godot; no part generated or downloaded. Own work. HANDOFF.md for the game track."
 tools = ["blender 5.2.2", "Godot 4.7.2", "glTF-Validator 2.0.0-dev.3.10", "prime-game-art ship --export (godot/ship/export_scene.gd)"]
 licence = "own-work"
 licence_url = "https://github.com/xperiaroco2/prime-game"
@@ -19,915 +20,865 @@ service = "own"
 plan = "own-work"
 model_version = ""
 task_ids = []
-generated_at = 2026-10-27
+generated_at = 2026-10-28
 url = "https://github.com/xperiaroco2/prime-game-art/issues/335"
 
 [[files]]
 name = "assets/environment/ship/arch_strip_l.glb"
-file = "ship/v5/export/v1/assets/environment/ship/arch_strip_l.glb"
+file = "ship/v5/export/v2/assets/environment/ship/arch_strip_l.glb"
 sha256 = "7d8338f51dc687c2cc424926030944200055cfec454f6a75cbd3754828df021a"
 
 [[files]]
 name = "assets/environment/ship/arch_strip_r.glb"
-file = "ship/v5/export/v1/assets/environment/ship/arch_strip_r.glb"
+file = "ship/v5/export/v2/assets/environment/ship/arch_strip_r.glb"
 sha256 = "beec42fe4ea49a67343bfcc4274a9cf12d7352ebf567af04aca697afb50c8ec0"
 
 [[files]]
 name = "assets/environment/ship/bush_l.glb"
-file = "ship/v5/export/v1/assets/environment/ship/bush_l.glb"
+file = "ship/v5/export/v2/assets/environment/ship/bush_l.glb"
 sha256 = "92b6a7c0b69663f9b2963700781413e8b39670393f01236eccfc63124395546c"
 
 [[files]]
 name = "assets/environment/ship/bush_m.glb"
-file = "ship/v5/export/v1/assets/environment/ship/bush_m.glb"
+file = "ship/v5/export/v2/assets/environment/ship/bush_m.glb"
 sha256 = "177cd2296a26c68f9fa91449e07e8e549af7f3b7f8d5413d7634baaac2bf9c68"
 
 [[files]]
 name = "assets/environment/ship/bush_s.glb"
-file = "ship/v5/export/v1/assets/environment/ship/bush_s.glb"
+file = "ship/v5/export/v2/assets/environment/ship/bush_s.glb"
 sha256 = "cabc7bfb4b8895e13e132ec7350ab609d83ec7cbe09aad9e0bd18500a94f578a"
 
 [[files]]
 name = "assets/environment/ship/cable_coil.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cable_coil.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cable_coil.glb"
 sha256 = "78dd92e145e426c74861450137003e6a65e1d935ab58fdb2bbfe7248c3ad504b"
 
 [[files]]
 name = "assets/environment/ship/canopy_fairing_e.glb"
-file = "ship/v5/export/v1/assets/environment/ship/canopy_fairing_e.glb"
+file = "ship/v5/export/v2/assets/environment/ship/canopy_fairing_e.glb"
 sha256 = "09a3937684805fa8eb7eacbca5af13e58b50638d2f650db4f79a0b14fc2b82d4"
 
 [[files]]
 name = "assets/environment/ship/canopy_fairing_w.glb"
-file = "ship/v5/export/v1/assets/environment/ship/canopy_fairing_w.glb"
+file = "ship/v5/export/v2/assets/environment/ship/canopy_fairing_w.glb"
 sha256 = "78d718102ca59723eaeb95d17d89294129452b262e1d70b3e71de4f9910bf116"
 
 [[files]]
 name = "assets/environment/ship/canopy_glass_e.glb"
-file = "ship/v5/export/v1/assets/environment/ship/canopy_glass_e.glb"
+file = "ship/v5/export/v2/assets/environment/ship/canopy_glass_e.glb"
 sha256 = "6c0320bbcd20b5f5988fdef606207196935735b3e2a2b219bcc6022a4313ff97"
 
 [[files]]
 name = "assets/environment/ship/canopy_glass_w.glb"
-file = "ship/v5/export/v1/assets/environment/ship/canopy_glass_w.glb"
+file = "ship/v5/export/v2/assets/environment/ship/canopy_glass_w.glb"
 sha256 = "00367a37869835db6e8bd29b4585e1fc5011624dcd36861c7d2415db87d9e5f5"
 
 [[files]]
 name = "assets/environment/ship/canopy_glow_e.glb"
-file = "ship/v5/export/v1/assets/environment/ship/canopy_glow_e.glb"
+file = "ship/v5/export/v2/assets/environment/ship/canopy_glow_e.glb"
 sha256 = "399f3744cd3f45d9fc1759cd57dd19edc394c5c69b6e8b5965afb0bd7a2bbe5e"
 
 [[files]]
 name = "assets/environment/ship/canopy_glow_w.glb"
-file = "ship/v5/export/v1/assets/environment/ship/canopy_glow_w.glb"
+file = "ship/v5/export/v2/assets/environment/ship/canopy_glow_w.glb"
 sha256 = "b1f64fece055c64ab8929fe3be645799bd42754819ea192195ad6d7350525d4e"
 
 [[files]]
 name = "assets/environment/ship/clip_h.glb"
-file = "ship/v5/export/v1/assets/environment/ship/clip_h.glb"
+file = "ship/v5/export/v2/assets/environment/ship/clip_h.glb"
 sha256 = "8eef03df091495e7637070a18566703aa6b1219bb62251cf2e1e40e05a8055ac"
 
 [[files]]
+name = "assets/environment/ship/console_metal.gdshader"
+file = "ship/v5/export/v2/assets/environment/ship/console_metal.gdshader"
+sha256 = "552188e5db1ac789ae5669194be5aeabab7d4124aa03a4d1fbf2dd403dfd0037"
+
+[[files]]
 name = "assets/environment/ship/cor_arch.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_arch.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_arch.glb"
 sha256 = "04ba7c9077780d8c4cff8d596076c9b61281eb4115be00d428e74f0ccd8f57d5"
 
 [[files]]
 name = "assets/environment/ship/cor_bay_in.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_bay_in.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_bay_in.glb"
 sha256 = "dcc4aa5b5a2133d6b4894b512d8d308907b17a372abff23d8cf38070475cb9a6"
 
 [[files]]
 name = "assets/environment/ship/cor_bay_in_cables.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_bay_in_cables.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_bay_in_cables.glb"
 sha256 = "2e89654f981f754d52556fa62143766967657c97e85b28068a2b15ab7da94bc9"
 
 [[files]]
 name = "assets/environment/ship/cor_bay_out.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_bay_out.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_bay_out.glb"
 sha256 = "fcbd0e75e41af25c47073523e8dd8b462179a3173216f777c1f290bbe2b321d5"
 
 [[files]]
 name = "assets/environment/ship/cor_bay_out_cables.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_bay_out_cables.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_bay_out_cables.glb"
 sha256 = "f2a572826633251d846a1d8cdc3b7a50fc385d88eadee94e0199189eee8c355e"
 
 [[files]]
 name = "assets/environment/ship/cor_cables.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_cables.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_cables.glb"
 sha256 = "30c67f2778cf97ecdba7c8cca0523a19b7922ace3d49b432eb94a4501f4093c7"
 
 [[files]]
 name = "assets/environment/ship/cor_ceil.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_ceil.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_ceil.glb"
 sha256 = "45ac8af4164b385696c03273cddd88dbf1f891e1177714d44e46477f80cf4e69"
 
 [[files]]
 name = "assets/environment/ship/cor_ceil_rib.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_ceil_rib.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_ceil_rib.glb"
 sha256 = "e18623464460b132eecf7b403e92993167c658041b90356aff89af836fd2428b"
 
 [[files]]
 name = "assets/environment/ship/cor_channel.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_channel.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_channel.glb"
 sha256 = "801acca031d7f3ddb8b25f5cab998d71f7646f34acd9910ae8bfc934c875523c"
 
 [[files]]
 name = "assets/environment/ship/cor_floor_base.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_floor_base.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_floor_base.glb"
 sha256 = "61012f98b3d3d69846c7a2b295402e302e805c833afe7bee55c64e06479cc3e2"
 
 [[files]]
 name = "assets/environment/ship/cor_grate.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_grate.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_grate.glb"
 sha256 = "68c6c199b20f35d79ea6fd587bcc21ef1b42c681a65c50dc09743616add93323"
 
 [[files]]
 name = "assets/environment/ship/cor_gutter.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_gutter.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_gutter.glb"
 sha256 = "f988f178ccaa638db6175acdca8bd2fb9ed334fc0b1594fc4341ae83bcd1b8f5"
 
 [[files]]
 name = "assets/environment/ship/cor_wall_board.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_wall_board.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_wall_board.glb"
 sha256 = "9951ad4a6443c30346e0f84f11e15056466f5882db9f433f9224ff1e2cd4cacb"
 
 [[files]]
 name = "assets/environment/ship/cor_wall_low_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_wall_low_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_wall_low_a.glb"
 sha256 = "63d6fc75685e234ac59599300bff217aa91e2955eb82ced556e0e0e789a8aff9"
 
 [[files]]
 name = "assets/environment/ship/cor_wall_low_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_wall_low_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_wall_low_b.glb"
 sha256 = "efeb12394ce4b09970444923881af5802f63bb9ea25d2d646699139e03cfea48"
 
 [[files]]
 name = "assets/environment/ship/cor_wall_up_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_wall_up_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_wall_up_a.glb"
 sha256 = "d18d4222c148a4c6f11df453f5d6ec7398a86d31897b8dfa2f9e796ffae7487f"
 
 [[files]]
 name = "assets/environment/ship/cor_wall_up_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cor_wall_up_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cor_wall_up_b.glb"
 sha256 = "2baed15cb62d383f7c13b2d9af60a70da3979a5269b412d9918cca883d131e7f"
 
 [[files]]
 name = "assets/environment/ship/cup_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cup_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cup_a.glb"
 sha256 = "a6d7f4c82e6bc5435bc421c0c43bc5e0f6ef03d69bea7969a6f58b0676ff8558"
 
 [[files]]
 name = "assets/environment/ship/cup_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cup_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cup_b.glb"
 sha256 = "b177e7efc191b9d5d2ec5494c5ac38699ed6ef0b0c81c6e7ad04178ef3762a41"
 
 [[files]]
 name = "assets/environment/ship/cup_c.glb"
-file = "ship/v5/export/v1/assets/environment/ship/cup_c.glb"
+file = "ship/v5/export/v2/assets/environment/ship/cup_c.glb"
 sha256 = "e9b1197c6a04a0e7d42563f620d49db1d44abcf525256fb1737b6a5e8966b67e"
 
 [[files]]
 name = "assets/environment/ship/dirt_patch.glb"
-file = "ship/v5/export/v1/assets/environment/ship/dirt_patch.glb"
+file = "ship/v5/export/v2/assets/environment/ship/dirt_patch.glb"
 sha256 = "d56509dfabcc19e5b3abb27024796c30076c8ed28d074c4d353c01eb3495c113"
 
 [[files]]
 name = "assets/environment/ship/dirt_path.glb"
-file = "ship/v5/export/v1/assets/environment/ship/dirt_path.glb"
+file = "ship/v5/export/v2/assets/environment/ship/dirt_path.glb"
 sha256 = "08dcd31b89707d3e9c5525d873914271f2ffe4b5ec709a4c755bed63015b0179"
 
 [[files]]
 name = "assets/environment/ship/edge_light.glb"
-file = "ship/v5/export/v1/assets/environment/ship/edge_light.glb"
+file = "ship/v5/export/v2/assets/environment/ship/edge_light.glb"
 sha256 = "b026a5ee12454652365ecc0d94a3a71fc11b4718f0f0189aa7a001f87a100432"
 
 [[files]]
 name = "assets/environment/ship/fern_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/fern_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/fern_a.glb"
 sha256 = "10167a9dc500faedd7181ce4f497f08a47c8a95711463ebcbb661bab55338a51"
 
 [[files]]
 name = "assets/environment/ship/fern_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/fern_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/fern_b.glb"
 sha256 = "ff69a14050ff06fa023bceeb994b6f5a1a940c29b1539de73517023d73dd51d5"
 
 [[files]]
 name = "assets/environment/ship/floor_light.glb"
-file = "ship/v5/export/v1/assets/environment/ship/floor_light.glb"
+file = "ship/v5/export/v2/assets/environment/ship/floor_light.glb"
 sha256 = "266f7cd06b846772929064d914f946ff9f13e7a779bb49f23b8269396696c444"
 
 [[files]]
 name = "assets/environment/ship/floor_patch_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/floor_patch_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/floor_patch_a.glb"
 sha256 = "3079e11081c41bac1e5d1ff5cef4c00231adf003cefd03be6e7dee7b40ef2907"
 
 [[files]]
 name = "assets/environment/ship/floor_patch_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/floor_patch_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/floor_patch_b.glb"
 sha256 = "8500513489fc41361b81036e07ccbf1cdbdbe34d83b5f5b348e1a594a4b4569b"
 
 [[files]]
 name = "assets/environment/ship/ground.glb"
-file = "ship/v5/export/v1/assets/environment/ship/ground.glb"
+file = "ship/v5/export/v2/assets/environment/ship/ground.glb"
 sha256 = "2aa74fe8aba9ccdac83771a96e3e3e70084b5116f76b6f8ebb3bdc9147d9899d"
 
 [[files]]
 name = "assets/environment/ship/ground_lamp.glb"
-file = "ship/v5/export/v1/assets/environment/ship/ground_lamp.glb"
+file = "ship/v5/export/v2/assets/environment/ship/ground_lamp.glb"
 sha256 = "d1f70fe258fbdc73889b6064d7028916e22a04a5e911d4196ebc0ce764788db9"
 
 [[files]]
 name = "assets/environment/ship/hall_amber_arc.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_amber_arc.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_amber_arc.glb"
 sha256 = "a7537be2a8a346a094fad72ff412ef441180764e6ae7b938d9e0621f1513ab4f"
 
 [[files]]
 name = "assets/environment/ship/hall_amber_arc_thin.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_amber_arc_thin.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_amber_arc_thin.glb"
 sha256 = "12ebcfb814544fb5bbfef5b419b3e12f8027621d4ac6069147edece4b4397826"
 
 [[files]]
 name = "assets/environment/ship/hall_ceil_back_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_back_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_back_a.glb"
 sha256 = "220eb2b02d054f5db2710d262c5e9f6f9412ee4fd57dcca71e48e14c4767dfef"
 
 [[files]]
 name = "assets/environment/ship/hall_ceil_back_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_back_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_back_b.glb"
 sha256 = "865a7614bf366e4a518e578f13951e21c0890139b4fef18e5c7f998fcbb9afb2"
 
 [[files]]
 name = "assets/environment/ship/hall_ceil_panel_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_panel_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_panel_a.glb"
 sha256 = "aac107dfce98bced8e3dd15b0034a0e90fa8220aa4c6c37e32d344dc0c6fe5ac"
 
 [[files]]
 name = "assets/environment/ship/hall_ceil_panel_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_panel_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_panel_b.glb"
 sha256 = "1f6924f3e44efc80be4bf0e8c0e7e3efb41a415ce700157cda55816c27ef2d59"
 
 [[files]]
-name = "assets/environment/ship/hall_ceil_side_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_side_a.glb"
-sha256 = "a4d8a965156918f9ce1d5b61a84ab3e8f1880f7b3ff554ce21c3a70a700ef033"
-
-[[files]]
-name = "assets/environment/ship/hall_ceil_side_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_side_b.glb"
-sha256 = "b1db984dd13eae8127c073d66c7981bcafb94bcd7ac14186fb6ed7776dd52346"
-
-[[files]]
 name = "assets/environment/ship/hall_ceil_socket_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_socket_a.glb"
-sha256 = "2076458264f90c705e986cba617c3a8330fc5be1bc24df56fd99e86a08169f16"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_socket_a.glb"
+sha256 = "cea985314308616f4fb873a5f72af4d08c6f31e920868858dd41315c7ba5ca70"
 
 [[files]]
 name = "assets/environment/ship/hall_ceil_socket_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_socket_b.glb"
-sha256 = "89501d41131c92572b686d0ca93a933e302e5c248e02829e49d5a85150f03d30"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_socket_b.glb"
+sha256 = "23c70296225dff5158687a25efdf7988d92d970a6371ad9fee04672d8979ca91"
 
 [[files]]
 name = "assets/environment/ship/hall_ceil_sockf_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_sockf_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_sockf_a.glb"
 sha256 = "7968cf8841fd3f0faa8939b6496b125102301ea37beb9f1721301986af69dfd1"
 
 [[files]]
 name = "assets/environment/ship/hall_ceil_sockf_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_sockf_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_sockf_b.glb"
 sha256 = "bbd93cf93d9e9a7bec7b2bfb0d853f2961c78830d95a255d008507afe0e221a4"
 
 [[files]]
 name = "assets/environment/ship/hall_ceil_throat_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_throat_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_throat_a.glb"
 sha256 = "24ae97a4c5390866d76de6e1cd63228acf814aa14b54a4d6675bd6201c5b739c"
 
 [[files]]
 name = "assets/environment/ship/hall_ceil_throat_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_ceil_throat_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_ceil_throat_b.glb"
 sha256 = "a72e909091030382792d62684d890c1fa9faf99cc0592f1f5c63c3c6b2d31b29"
 
 [[files]]
 name = "assets/environment/ship/hall_door.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_door.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_door.glb"
 sha256 = "0f29113b3bd3e25cc8b4aac701a9245cb9f520f2e276693fe60d07d836379e9b"
 
 [[files]]
 name = "assets/environment/ship/hall_flat_floor_socket.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_flat_floor_socket.glb"
-sha256 = "7766729a977c375e204998bc4d8de034f0477ff3db26f6fe5a4449733ae435fd"
+file = "ship/v5/export/v2/assets/environment/ship/hall_flat_floor_socket.glb"
+sha256 = "6f044aac5101443e97f2a1f7239a470b6d9e9eab32eb74fdb2e778720b6f722e"
 
 [[files]]
 name = "assets/environment/ship/hall_flat_floor_sockf.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_flat_floor_sockf.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_flat_floor_sockf.glb"
 sha256 = "5bb44f29fcdef6b8beeab9df26633979dbbd847e55bd27aeefbf45f93e48a65a"
 
 [[files]]
 name = "assets/environment/ship/hall_floor_base.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_floor_base.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_floor_base.glb"
 sha256 = "f4c7316ea81f5af00c11cb6d04f2eadc5a4427f6a864601655ce9090b1af5c44"
 
 [[files]]
 name = "assets/environment/ship/hall_floor_disc.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_floor_disc.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_floor_disc.glb"
 sha256 = "36b5ad0f4a57c0e1c3caeac30509e9c042ac098b362fcb6053b349be9ce05a52"
 
 [[files]]
 name = "assets/environment/ship/hall_floor_rim_back.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_floor_rim_back.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_floor_rim_back.glb"
 sha256 = "8234d3e819886cef417211e53e179e56ce1d40686dbc7131efa376db55794ad0"
 
 [[files]]
-name = "assets/environment/ship/hall_floor_rim_side.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_floor_rim_side.glb"
-sha256 = "8f13b04b3413efd5f0a53807641f161c6c73bd6de5e54504dccea782c8b504fe"
-
-[[files]]
 name = "assets/environment/ship/hall_floor_rim_throat.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_floor_rim_throat.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_floor_rim_throat.glb"
 sha256 = "ea61f6d2ea932f47ed03a2e4089c36e32af7fdc23d76068e2f9e2933e7d325b9"
 
 [[files]]
 name = "assets/environment/ship/hall_grate.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_grate.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_grate.glb"
 sha256 = "cc2a9caf2d4b26567a0277d21eb06143196d8e40de18c94064b3df8cf020606f"
 
 [[files]]
 name = "assets/environment/ship/hall_lamp.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_lamp.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_lamp.glb"
 sha256 = "0435b33f9fb8302cf12ca9109ba44e8602ce7390cf7a918bf4006ba4d5e89573"
 
 [[files]]
 name = "assets/environment/ship/hall_lamp_ring.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_lamp_ring.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_lamp_ring.glb"
 sha256 = "d3371d4b15985d83872c4ad8d6b37d08fe70b8cb27b2b1c0024e0c28a854d791"
 
 [[files]]
 name = "assets/environment/ship/hall_panel_flat_socket.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_panel_flat_socket.glb"
-sha256 = "a709182f3cdf938ee22fac736ee3b0ddd24ca8053afb39a0ddd0453e591dd31a"
+file = "ship/v5/export/v2/assets/environment/ship/hall_panel_flat_socket.glb"
+sha256 = "6a2bbd495ff96861ece9e8545c872da41a1d7a7e68817c6dbe87fbec6d245603"
 
 [[files]]
 name = "assets/environment/ship/hall_panel_flat_sockf.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_panel_flat_sockf.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_panel_flat_sockf.glb"
 sha256 = "0366b2b20ff0a21bf2a156c6e0893f0fe4d5e44f82c4c7a0507c18717e955b99"
 
 [[files]]
-name = "assets/environment/ship/hall_panel_side_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_panel_side_a.glb"
-sha256 = "ae67fb0c33b4356d07e778490718f8253ac23ea2f9a4501a49ed044602293b16"
-
-[[files]]
-name = "assets/environment/ship/hall_panel_side_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_panel_side_b.glb"
-sha256 = "e32bd4ec07ba48835b19f44d67a85dc7b6cbb3183db0f0e288bfa552f5024d48"
-
-[[files]]
 name = "assets/environment/ship/hall_pilaster.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_pilaster.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_pilaster.glb"
 sha256 = "f9d9028261a82c7e0c7da4a9cdb7d2d3f913b74722a3391168848a623e9105c2"
 
 [[files]]
 name = "assets/environment/ship/hall_pilaster_strip.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_pilaster_strip.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_pilaster_strip.glb"
 sha256 = "401e365235de5f15a7c59aac101172eb931f98dfdc2b0324b095a527711f440c"
 
 [[files]]
 name = "assets/environment/ship/hall_portal.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_portal.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_portal.glb"
 sha256 = "c8292bf956125c157a1e1b0271de81c4208fb1c3130b947f13db9ed88ed19204"
 
 [[files]]
 name = "assets/environment/ship/hall_rib.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_rib.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_rib.glb"
 sha256 = "41d03d6e72e01e9cccddf804f211ed0be635c3870becb374ec1291da1e0172d1"
 
 [[files]]
 name = "assets/environment/ship/hall_rib_strip.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_rib_strip.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_rib_strip.glb"
 sha256 = "8b8601a5309ad572f869e6a091d07d92cf5d42733cf51da65df04411eb7487e4"
 
 [[files]]
 name = "assets/environment/ship/hall_spoke.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_spoke.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_spoke.glb"
 sha256 = "f2fb0e82df2ea1bafd57b7974e17eeb20c8edd108e22a575e65efba9bc5991c0"
 
 [[files]]
 name = "assets/environment/ship/hall_threshold.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hall_threshold.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hall_threshold.glb"
 sha256 = "d34ac644f07cecac06b68fb1a9a64ff7dd33c866b3949da8e2112bdec4639eca"
 
 [[files]]
 name = "assets/environment/ship/hazard_stripes.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hazard_stripes.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hazard_stripes.glb"
 sha256 = "6ccaeda2284216feb4bdedabd04e84930ccfa15a973ca95d4d48edea9304abf1"
 
 [[files]]
 name = "assets/environment/ship/hump_sensors.glb"
-file = "ship/v5/export/v1/assets/environment/ship/hump_sensors.glb"
+file = "ship/v5/export/v2/assets/environment/ship/hump_sensors.glb"
 sha256 = "53edb03bbdbed7f3cb2aefaeba081fa6fe5530a0a86d9fb76012dbe4514fa999"
 
 [[files]]
 name = "assets/environment/ship/landing_lamp.glb"
-file = "ship/v5/export/v1/assets/environment/ship/landing_lamp.glb"
+file = "ship/v5/export/v2/assets/environment/ship/landing_lamp.glb"
 sha256 = "c610be2d46f69d860b71c224e7ec2d1c802d468fd23bbcd41481a53401c993c9"
 
 [[files]]
 name = "assets/environment/ship/leg_front.glb"
-file = "ship/v5/export/v1/assets/environment/ship/leg_front.glb"
+file = "ship/v5/export/v2/assets/environment/ship/leg_front.glb"
 sha256 = "3bff3b6deb24a24da1994aed861d5d4669502ced957390e09c48d9cb4a5ec868"
 
 [[files]]
 name = "assets/environment/ship/leg_rear.glb"
-file = "ship/v5/export/v1/assets/environment/ship/leg_rear.glb"
+file = "ship/v5/export/v2/assets/environment/ship/leg_rear.glb"
 sha256 = "3e9a825350b043401f70b81eaa79e720227f87a89800dda4a93f5df7ea492c40"
 
 [[files]]
 name = "assets/environment/ship/leg_stern.glb"
-file = "ship/v5/export/v1/assets/environment/ship/leg_stern.glb"
+file = "ship/v5/export/v2/assets/environment/ship/leg_stern.glb"
 sha256 = "4b54a84901259de5b2fe0f0fd4ec002ae819e0c54fe877fed5bae1a015190c50"
 
 [[files]]
 name = "assets/environment/ship/lens_frames.glb"
-file = "ship/v5/export/v1/assets/environment/ship/lens_frames.glb"
+file = "ship/v5/export/v2/assets/environment/ship/lens_frames.glb"
 sha256 = "6ce2ed699cf917f43cdad3d9ed2baeccaa584fbfcbebdd75e6e62a38ce540119"
 
 [[files]]
 name = "assets/environment/ship/litter.glb"
-file = "ship/v5/export/v1/assets/environment/ship/litter.glb"
+file = "ship/v5/export/v2/assets/environment/ship/litter.glb"
 sha256 = "93b3f95571d57862b07a110e0ce8861a8d252ad021eb00c43813a3190aed7ace"
 
 [[files]]
 name = "assets/environment/ship/log_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/log_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/log_a.glb"
 sha256 = "c840c38bf2a70998675cead6ac8c784787070869d1632007103dc69566769279"
 
 [[files]]
 name = "assets/environment/ship/log_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/log_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/log_b.glb"
 sha256 = "22c1c541125ec7aabfb6638d7f54a963bc78839b1c924b4b45b2a36ee0a32c4d"
 
 [[files]]
 name = "assets/environment/ship/log_c.glb"
-file = "ship/v5/export/v1/assets/environment/ship/log_c.glb"
+file = "ship/v5/export/v2/assets/environment/ship/log_c.glb"
 sha256 = "fcb127d4ccce2cc1067db3088140f4aef2747614fa89d828d88c9b2133221616"
 
 [[files]]
 name = "assets/environment/ship/materials/metal_ext_frame.tres"
-file = "ship/v5/export/v1/assets/environment/ship/materials/metal_ext_frame.tres"
+file = "ship/v5/export/v2/assets/environment/ship/materials/metal_ext_frame.tres"
 sha256 = "54bd4e60eaba8822da79989375ad8e4d287d62eea4659d8f24c7ea3058eacf8e"
 
 [[files]]
 name = "assets/environment/ship/materials/metal_ext_seam.tres"
-file = "ship/v5/export/v1/assets/environment/ship/materials/metal_ext_seam.tres"
+file = "ship/v5/export/v2/assets/environment/ship/materials/metal_ext_seam.tres"
 sha256 = "f6344cf03b501c35b719b4713009d9c502be0c391d40a2d9481744a9f9be6a37"
 
 [[files]]
 name = "assets/environment/ship/materials/metal_ext_silver_b.tres"
-file = "ship/v5/export/v1/assets/environment/ship/materials/metal_ext_silver_b.tres"
+file = "ship/v5/export/v2/assets/environment/ship/materials/metal_ext_silver_b.tres"
 sha256 = "45dbb5478668bd8016c3162ba96bc8b81abf8f9927904527be7c66ff8e5c7803"
 
 [[files]]
 name = "assets/environment/ship/materials/metal_ext_silver_c.tres"
-file = "ship/v5/export/v1/assets/environment/ship/materials/metal_ext_silver_c.tres"
+file = "ship/v5/export/v2/assets/environment/ship/materials/metal_ext_silver_c.tres"
 sha256 = "b75b651453268ece294814edca202fe50dd8d36a46327b237822b313026bd81a"
 
 [[files]]
 name = "assets/environment/ship/materials/metal_hull_dark.tres"
-file = "ship/v5/export/v1/assets/environment/ship/materials/metal_hull_dark.tres"
+file = "ship/v5/export/v2/assets/environment/ship/materials/metal_hull_dark.tres"
 sha256 = "0969856ddfc217f4067f82c350fc41d5474fe2116c6ae8ced81b4b57a0116acc"
 
 [[files]]
 name = "assets/environment/ship/materials/metal_hull_silver.tres"
-file = "ship/v5/export/v1/assets/environment/ship/materials/metal_hull_silver.tres"
+file = "ship/v5/export/v2/assets/environment/ship/materials/metal_hull_silver.tres"
 sha256 = "efdd94bd49554b5124d396b663be88add2f679ff011a2501ceaaab4f9cafe705"
 
 [[files]]
 name = "assets/environment/ship/materials/metal_leg_metal.tres"
-file = "ship/v5/export/v1/assets/environment/ship/materials/metal_leg_metal.tres"
+file = "ship/v5/export/v2/assets/environment/ship/materials/metal_leg_metal.tres"
 sha256 = "05a06df74ce13ef0513809038755a09262874c57482c8f8f981cd99e6707ccbf"
 
 [[files]]
 name = "assets/environment/ship/materials/night_env.tres"
-file = "ship/v5/export/v1/assets/environment/ship/materials/night_env.tres"
+file = "ship/v5/export/v2/assets/environment/ship/materials/night_env.tres"
 sha256 = "367176d7af0d456dc121dc900751c96efa1c0b8ca388067eb8edf42b4b58210f"
 
 [[files]]
 name = "assets/environment/ship/materials/night_sky.tres"
-file = "ship/v5/export/v1/assets/environment/ship/materials/night_sky.tres"
+file = "ship/v5/export/v2/assets/environment/ship/materials/night_sky.tres"
 sha256 = "250cd9b72c32db1dd99a0588d887b80273bf0b1c92e44fb4d67ba5a45c5aa97a"
 
 [[files]]
 name = "assets/environment/ship/metal.gdshader"
-file = "ship/v5/export/v1/assets/environment/ship/metal.gdshader"
+file = "ship/v5/export/v2/assets/environment/ship/metal.gdshader"
 sha256 = "223149293b885eb7936aa3f8f644292af94b48e4b398f1c8584f9108a9ea55bb"
 
 [[files]]
 name = "assets/environment/ship/moss_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/moss_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/moss_a.glb"
 sha256 = "164659af52ea5b555cdcda48325f8e1513e40d76d3aab07f637b8c6df192b92b"
 
 [[files]]
 name = "assets/environment/ship/moss_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/moss_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/moss_b.glb"
 sha256 = "ad5702bd126f116d94eed9bdaf3e4d5faed9d9ca69c2360a3d24cdd7a0551c1a"
 
 [[files]]
 name = "assets/environment/ship/mouth_tunnel.glb"
-file = "ship/v5/export/v1/assets/environment/ship/mouth_tunnel.glb"
+file = "ship/v5/export/v2/assets/environment/ship/mouth_tunnel.glb"
 sha256 = "b098c04be728362de8dc596fd89200486b07579c4606c4bed27446f8a17b61ef"
 
 [[files]]
 name = "assets/environment/ship/mouth_tunnel_in.glb"
-file = "ship/v5/export/v1/assets/environment/ship/mouth_tunnel_in.glb"
+file = "ship/v5/export/v2/assets/environment/ship/mouth_tunnel_in.glb"
 sha256 = "8e0874b293a0847e4d84605972d8989ac62d7cbcd0978bfadaffd9ab431520fa"
 
 [[files]]
 name = "assets/environment/ship/nav_white.glb"
-file = "ship/v5/export/v1/assets/environment/ship/nav_white.glb"
+file = "ship/v5/export/v2/assets/environment/ship/nav_white.glb"
 sha256 = "ea9e7f9a646edf0b15938ea14963efcb396bd53ebbd117c4ac9b8d18010065fe"
 
 [[files]]
 name = "assets/environment/ship/night_sky.gdshader"
-file = "ship/v5/export/v1/assets/environment/ship/night_sky.gdshader"
+file = "ship/v5/export/v2/assets/environment/ship/night_sky.gdshader"
 sha256 = "cd5516f5a15a747d3341ed003bb0e20866aceb38421724fb0d248488f7a42e87"
 
 [[files]]
 name = "assets/environment/ship/nozzle_pod_mid.glb"
-file = "ship/v5/export/v1/assets/environment/ship/nozzle_pod_mid.glb"
+file = "ship/v5/export/v2/assets/environment/ship/nozzle_pod_mid.glb"
 sha256 = "17cd032b51b6188f3993ac97fc8f534c5b954d17a4c1c26e0e816fdf38e80af0"
 
 [[files]]
 name = "assets/environment/ship/nozzle_pod_outer.glb"
-file = "ship/v5/export/v1/assets/environment/ship/nozzle_pod_outer.glb"
+file = "ship/v5/export/v2/assets/environment/ship/nozzle_pod_outer.glb"
 sha256 = "9e1ca6bb485940968d19bb9a82ed3d1a1088c726fa1368d5b5871df78a54ef7d"
 
 [[files]]
 name = "assets/environment/ship/party_lights.glb"
-file = "ship/v5/export/v1/assets/environment/ship/party_lights.glb"
+file = "ship/v5/export/v2/assets/environment/ship/party_lights.glb"
 sha256 = "93528530e6f38095fe7beeb040468b4ffe2fd00f35c8eda4067ff7387d4e2d8e"
 
 [[files]]
 name = "assets/environment/ship/party_post.glb"
-file = "ship/v5/export/v1/assets/environment/ship/party_post.glb"
+file = "ship/v5/export/v2/assets/environment/ship/party_post.glb"
 sha256 = "29798275c180b6e4f37dd1c8f473962ec38a7d3b5e05fc3cdcbd84d068820a51"
 
 [[files]]
 name = "assets/environment/ship/pine_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pine_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pine_a.glb"
 sha256 = "7b4b86cf12efdd74aefc308d88a65c044a6aa37a0876cc3bcf685f0c98313ee7"
 
 [[files]]
 name = "assets/environment/ship/pine_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pine_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pine_b.glb"
 sha256 = "9d3de8cfec0cdd2f4638c3d0a2e6a69314913a7afb7bc7ce37387afc256755f1"
 
 [[files]]
 name = "assets/environment/ship/pine_c.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pine_c.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pine_c.glb"
 sha256 = "f2e22aa45338f848b00e798e553f20ba4ee5466e1cf1b24e581df5a0f2029cb9"
 
 [[files]]
 name = "assets/environment/ship/pine_d.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pine_d.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pine_d.glb"
 sha256 = "d001c3a4b34b2103d3eaff17a1d177e8ffc753430b04fbad3a2fec804707aa97"
 
 [[files]]
 name = "assets/environment/ship/pine_e.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pine_e.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pine_e.glb"
 sha256 = "0181c0604631872ee5832bdaefb0da950b8e51beff5986ecf4dcf78552196b1a"
 
 [[files]]
 name = "assets/environment/ship/pine_f.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pine_f.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pine_f.glb"
 sha256 = "69fcb9b091ce0c523ab90ef7a16fa52ca45953bcf644a5f6b50f9822e487f1af"
 
 [[files]]
 name = "assets/environment/ship/pine_g.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pine_g.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pine_g.glb"
 sha256 = "43d1612d5e613fe7fc3e9aca27d6374e67c55e4a5e30b73fc67962a4629595a7"
 
 [[files]]
 name = "assets/environment/ship/pine_s.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pine_s.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pine_s.glb"
 sha256 = "4d3ddab00387703d3cefce94159cf3a49bedda0a8527f1be86be10759f0bfafb"
 
 [[files]]
 name = "assets/environment/ship/pod_ring_mid.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pod_ring_mid.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pod_ring_mid.glb"
 sha256 = "96b6d61aea95b309261c3330e66cbb7d91cd8188a43223f9e75376acb16ef132"
 
 [[files]]
 name = "assets/environment/ship/pod_ring_outer.glb"
-file = "ship/v5/export/v1/assets/environment/ship/pod_ring_outer.glb"
+file = "ship/v5/export/v2/assets/environment/ship/pod_ring_outer.glb"
 sha256 = "6f8c3e19d278a4611a5c85fefda0e2fa793ef36c19362c610d9f7444e6c7da41"
 
 [[files]]
 name = "assets/environment/ship/portal_strip_l.glb"
-file = "ship/v5/export/v1/assets/environment/ship/portal_strip_l.glb"
+file = "ship/v5/export/v2/assets/environment/ship/portal_strip_l.glb"
 sha256 = "45fe709647ae4771de78467bad7a94d2e786f51316346746f4c1ff9a5df5d1e6"
 
 [[files]]
 name = "assets/environment/ship/portal_strip_r.glb"
-file = "ship/v5/export/v1/assets/environment/ship/portal_strip_r.glb"
+file = "ship/v5/export/v2/assets/environment/ship/portal_strip_r.glb"
 sha256 = "bd12889db3ae9ba2799e28e425ab411a36de3d0862540df2fa2908b5f94f7880"
 
 [[files]]
 name = "assets/environment/ship/portholes.glb"
-file = "ship/v5/export/v1/assets/environment/ship/portholes.glb"
+file = "ship/v5/export/v2/assets/environment/ship/portholes.glb"
 sha256 = "cb167a16d230c3eca036ac7e0e496f7ff8342d648ca916cdfee34c9c89b0b8a4"
 
 [[files]]
 name = "assets/environment/ship/ramp.glb"
-file = "ship/v5/export/v1/assets/environment/ship/ramp.glb"
+file = "ship/v5/export/v2/assets/environment/ship/ramp.glb"
 sha256 = "3cbde00d7ffd58004883c9dc079d4c1af705db740ee3716cc64356c536efc0c4"
 
 [[files]]
 name = "assets/environment/ship/ramp_lights.glb"
-file = "ship/v5/export/v1/assets/environment/ship/ramp_lights.glb"
+file = "ship/v5/export/v2/assets/environment/ship/ramp_lights.glb"
 sha256 = "4ca2b938743692d9cb534c795706baaf62d6148666d5e6870fa21af24826005d"
 
 [[files]]
-name = "assets/environment/ship/rim_bolts.glb"
-file = "ship/v5/export/v1/assets/environment/ship/rim_bolts.glb"
-sha256 = "bc12a8de16fb9099e498bee06c1c30ee9192ca57b0adaf70da300103b9579846"
-
-[[files]]
 name = "assets/environment/ship/rock_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/rock_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/rock_a.glb"
 sha256 = "c1877eea96925f17df5a2096e24fc8d7d6aaf19fd29574a6c65f1abdf28241a0"
 
 [[files]]
 name = "assets/environment/ship/rock_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/rock_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/rock_b.glb"
 sha256 = "75449986aa8dede84ae5e2a635da9b7a7fb5ceea97869166497c4a3f8c3d7eb6"
 
 [[files]]
 name = "assets/environment/ship/rock_c.glb"
-file = "ship/v5/export/v1/assets/environment/ship/rock_c.glb"
+file = "ship/v5/export/v2/assets/environment/ship/rock_c.glb"
 sha256 = "226044ad3bdb40aa62be30ee2537f11c9d5a387703ba1a1762e527232386a7ad"
 
 [[files]]
 name = "assets/environment/ship/rock_pile_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/rock_pile_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/rock_pile_a.glb"
 sha256 = "c808e42c8eacc7a2f480f471b7e28b994c228a53532399995475e877f1744834"
 
 [[files]]
 name = "assets/environment/ship/rock_pile_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/rock_pile_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/rock_pile_b.glb"
 sha256 = "a45a732dbcbccf6fbd5ff093a2d85f222e1f6472415a35eb28118cb12b6a17b8"
 
 [[files]]
 name = "assets/environment/ship/service_hatches.glb"
-file = "ship/v5/export/v1/assets/environment/ship/service_hatches.glb"
+file = "ship/v5/export/v2/assets/environment/ship/service_hatches.glb"
 sha256 = "5e38509145802319042b6dbe0b670a4b9c9c58fbab125f2fc68976deb2e51c87"
 
 [[files]]
 name = "assets/environment/ship/skin_belly.glb"
-file = "ship/v5/export/v1/assets/environment/ship/skin_belly.glb"
+file = "ship/v5/export/v2/assets/environment/ship/skin_belly.glb"
 sha256 = "2b92c031e79f1b2d883a08184fb0dd9a98ae64254ee858f9a8d3bc9f5c13bbe4"
 
 [[files]]
 name = "assets/environment/ship/skin_cheeks.glb"
-file = "ship/v5/export/v1/assets/environment/ship/skin_cheeks.glb"
+file = "ship/v5/export/v2/assets/environment/ship/skin_cheeks.glb"
 sha256 = "facdf46d505ff781a1bdb3480dbd536ca29bfb4a7cc6fd1b8c4a8c9d6284e48e"
 
 [[files]]
 name = "assets/environment/ship/skin_mouth.glb"
-file = "ship/v5/export/v1/assets/environment/ship/skin_mouth.glb"
+file = "ship/v5/export/v2/assets/environment/ship/skin_mouth.glb"
 sha256 = "5ad0459bf015dc0e05be1d456b7739cc846f60390fffb3f2a9291b6c1ba9d500"
 
 [[files]]
 name = "assets/environment/ship/skin_top.glb"
-file = "ship/v5/export/v1/assets/environment/ship/skin_top.glb"
+file = "ship/v5/export/v2/assets/environment/ship/skin_top.glb"
 sha256 = "27ecadbcaf41ba9554a3f63f88add37584795e030d863a5ec256520f128711cd"
 
 [[files]]
 name = "assets/environment/ship/spill_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/spill_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/spill_a.glb"
 sha256 = "83b9de363bca264a42a6a065ebeccdfd3b0b27bbbab07c61642bdff69386467f"
 
 [[files]]
 name = "assets/environment/ship/spill_c.glb"
-file = "ship/v5/export/v1/assets/environment/ship/spill_c.glb"
+file = "ship/v5/export/v2/assets/environment/ship/spill_c.glb"
 sha256 = "b8e314c21f1755b9f4b371b5b9cd1c486ac26c0b9c8531a7728ed4cc3a84de08"
 
 [[files]]
 name = "assets/environment/ship/station_vent_e.glb"
-file = "ship/v5/export/v1/assets/environment/ship/station_vent_e.glb"
-sha256 = "bb5b0df92c6a6ab2f79a2d902e1167355292d93ba442e4570f405fb7f308732a"
-
-[[files]]
-name = "assets/environment/ship/station_vent_e_vent_a_normal.png"
-file = "ship/v5/export/v1/assets/environment/ship/station_vent_e_vent_a_normal.png"
-sha256 = "88f66062ebc3b75a306dedf61f8e5d451ae8f2184a8ae5b3fdf6896180fb1f87"
+file = "ship/v5/export/v2/assets/environment/ship/station_vent_e.glb"
+sha256 = "746e0269a0d1cf1f183e2bba881b42b8390f9b90d0cbf13ad6e8e283f286398c"
 
 [[files]]
 name = "assets/environment/ship/station_vent_w.glb"
-file = "ship/v5/export/v1/assets/environment/ship/station_vent_w.glb"
-sha256 = "458716f3a9aebc530d670462a12346ccd40f0e748160c5a4ca1313021cb350ed"
-
-[[files]]
-name = "assets/environment/ship/station_vent_w_vent_a_normal.png"
-file = "ship/v5/export/v1/assets/environment/ship/station_vent_w_vent_a_normal.png"
-sha256 = "88f66062ebc3b75a306dedf61f8e5d451ae8f2184a8ae5b3fdf6896180fb1f87"
+file = "ship/v5/export/v2/assets/environment/ship/station_vent_w.glb"
+sha256 = "8d54a24338f9a37916e11b5bbcd7587f1e5b4b67f815abbbf09c2634f6ea5513"
 
 [[files]]
 name = "assets/environment/ship/stump.glb"
-file = "ship/v5/export/v1/assets/environment/ship/stump.glb"
+file = "ship/v5/export/v2/assets/environment/ship/stump.glb"
 sha256 = "ee140bf8a653f126a33ab0d40033b14254bf8f2b98898c5e8dcbb39eb20550fd"
 
 [[files]]
 name = "assets/environment/ship/tail_vents.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tail_vents.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tail_vents.glb"
 sha256 = "ba3215dee094e01d77bab5945842e5bd359d0453516e310fcf45b2628185d11b"
 
 [[files]]
 name = "assets/environment/ship/th_arch.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_arch.glb"
+file = "ship/v5/export/v2/assets/environment/ship/th_arch.glb"
 sha256 = "e0dc96d91b9f92af457dcd1440d0861388cb36755cac97a1e8a78c784fb11815"
 
 [[files]]
-name = "assets/environment/ship/th_cables.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_cables.glb"
-sha256 = "513ea1010c8eaad8524caf9129370bb5de572cfb98f346ba3307294f79844cd5"
-
-[[files]]
-name = "assets/environment/ship/th_channel.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_channel.glb"
-sha256 = "3af6afb12ab828e36268fa1ed234299645a30c1fd3427099301a66dd968c4efc"
-
-[[files]]
-name = "assets/environment/ship/th_clip_h.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_clip_h.glb"
-sha256 = "a9a8b9bc9d695ce56d48b769440d180f5bdbaaef8275c8ad3ae1c1db8e8eed5d"
-
-[[files]]
 name = "assets/environment/ship/th_wall_low_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_wall_low_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/th_wall_low_a.glb"
 sha256 = "5f1bceaffe717ddd87bdc9f3f174ff386ff96728e9a7713988aa4e22d2544cf3"
 
 [[files]]
 name = "assets/environment/ship/th_wall_low_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_wall_low_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/th_wall_low_b.glb"
 sha256 = "b706cd53ac95e0fc30afe877a861eec0e121aa5d7ea1cca5c23f277252a28f43"
 
 [[files]]
 name = "assets/environment/ship/th_wall_mid.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_wall_mid.glb"
+file = "ship/v5/export/v2/assets/environment/ship/th_wall_mid.glb"
 sha256 = "c20b01681063039c22c3215e532dc4ed99668b89c3816de0ad3480993f59e45d"
 
 [[files]]
 name = "assets/environment/ship/th_wall_up_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_wall_up_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/th_wall_up_a.glb"
 sha256 = "cb81c4f10494dbb94874f901b6b35afaf8694e1cb4a2a99853df62c96d2c619e"
 
 [[files]]
 name = "assets/environment/ship/th_wall_up_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_wall_up_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/th_wall_up_b.glb"
 sha256 = "1a36641f07f7238aae83efb300645c6a681c65e5b5b3ac7e1f2f312e11ef30d5"
 
 [[files]]
 name = "assets/environment/ship/th_wall_up_end_e.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_wall_up_end_e.glb"
+file = "ship/v5/export/v2/assets/environment/ship/th_wall_up_end_e.glb"
 sha256 = "856231877b1d2edb08b083305fcfa3cd57c552c1717cfe990f7095977b0a6c9f"
 
 [[files]]
 name = "assets/environment/ship/th_wall_up_end_w.glb"
-file = "ship/v5/export/v1/assets/environment/ship/th_wall_up_end_w.glb"
+file = "ship/v5/export/v2/assets/environment/ship/th_wall_up_end_w.glb"
 sha256 = "eca314f36e414dc8ec9172716419ae84ae845889fa45b5be2bbf0b2232f75916"
 
 [[files]]
 name = "assets/environment/ship/throat_ceil.glb"
-file = "ship/v5/export/v1/assets/environment/ship/throat_ceil.glb"
+file = "ship/v5/export/v2/assets/environment/ship/throat_ceil.glb"
 sha256 = "f919466eb44a3fbc26b85389a1644027fe5776c643e1f71f1bcb98c61d5e58fe"
 
 [[files]]
 name = "assets/environment/ship/throat_floor.glb"
-file = "ship/v5/export/v1/assets/environment/ship/throat_floor.glb"
+file = "ship/v5/export/v2/assets/environment/ship/throat_floor.glb"
 sha256 = "c65c382919f9d77e9ff23266f2dc189f68677951f4f27c9358980b2666b6eac4"
 
 [[files]]
 name = "assets/environment/ship/tip_ceiling.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_ceiling.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_ceiling.glb"
 sha256 = "0455051aabec0b105361bc1686e66bf52117297b1a584e22e8c5da8bdbcccb6d"
 
 [[files]]
 name = "assets/environment/ship/tip_floor_base.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_floor_base.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_floor_base.glb"
 sha256 = "ed6100ee83298929ff7d7612c40b7917388c2494986cf55c48d7177c1eb68587"
 
 [[files]]
 name = "assets/environment/ship/tip_floor_disc.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_floor_disc.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_floor_disc.glb"
 sha256 = "6f3926efcf706d72fdfe7621eb0285db2023ebf39941072f447f58936b0bf6f4"
 
 [[files]]
 name = "assets/environment/ship/tip_floor_rim.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_floor_rim.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_floor_rim.glb"
 sha256 = "649cd4e31cb9aabfc518b52719d9ebabfee4f7d9abbc3d25487adc6774023e7a"
 
 [[files]]
 name = "assets/environment/ship/tip_glass.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_glass.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_glass.glb"
 sha256 = "32880894b2cb8dcc739e398da196e1f2b456d68c78cc2456fba3e95628ecde3a"
 
 [[files]]
 name = "assets/environment/ship/tip_grate.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_grate.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_grate.glb"
 sha256 = "8f8f570eb019ccd3730adeaae57cc35162c910d2280daa882780a4c4645e63c0"
 
 [[files]]
 name = "assets/environment/ship/tip_light.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_light.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_light.glb"
 sha256 = "ec8a3d4b4b0e5f8ed1887910ee97a8eb6ce4376db7e39e80fa0302bf43e95cc7"
 
 [[files]]
 name = "assets/environment/ship/tip_mullion.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_mullion.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_mullion.glb"
 sha256 = "7b1d6d9df6df6bf1413bdb87f9d9f763eaba33fcd7d25b824c12e368eef193fe"
 
 [[files]]
 name = "assets/environment/ship/tip_panel_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_panel_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_panel_a.glb"
 sha256 = "6d4178fb6265559065a601b12e253707f4edac79fb5656e420ba90c1d8d651ba"
 
 [[files]]
 name = "assets/environment/ship/tip_panel_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_panel_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_panel_b.glb"
 sha256 = "269bf4ff94a0f893ef6f71e8d0441cece2aa9a8905518b29e46692f5cee4a851"
 
 [[files]]
 name = "assets/environment/ship/tip_pilaster.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_pilaster.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_pilaster.glb"
 sha256 = "76e26e3a8108d6aa74821ef1b0d3f2ab0440ac303d5bb2a1e8e3d79d7c6de967"
 
 [[files]]
 name = "assets/environment/ship/tip_pilaster_strip.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_pilaster_strip.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_pilaster_strip.glb"
 sha256 = "bf66f1f4c0bc95c138f49f0604b46b494126b85c2a2e23939ae9d20d0d014205"
 
 [[files]]
 name = "assets/environment/ship/tip_portal.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_portal.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_portal.glb"
 sha256 = "3e129390e668d2608b2b89e1f5887fe41b6dfba058dfd2174a6090bca29bb777"
 
 [[files]]
 name = "assets/environment/ship/tip_sill_strip.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_sill_strip.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_sill_strip.glb"
 sha256 = "4ac289436269cfcd20f9e01212d0d87978aeb73a1b5e152c39bbbfa58a6260f1"
 
 [[files]]
 name = "assets/environment/ship/tip_spoke.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_spoke.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_spoke.glb"
 sha256 = "8f52165ba8a83db21b25194c9a41c81e65cb41dd634c3a7e9933a63170574499"
 
 [[files]]
 name = "assets/environment/ship/tip_trunk.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_trunk.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_trunk.glb"
 sha256 = "6450aca1564368c95475f03cb116d49d257291447875dcea3bbff546796279fd"
 
 [[files]]
 name = "assets/environment/ship/tip_trunk_cables.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_trunk_cables.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_trunk_cables.glb"
 sha256 = "4d7fa47e73b6d020240cb06ee9e3868833e6264df07c83c2fe9fa71c82258e14"
 
 [[files]]
 name = "assets/environment/ship/tip_trunk_clip.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_trunk_clip.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_trunk_clip.glb"
 sha256 = "86347f01812559b0d5b93321ea33c7eba66addb10a337a91d907b95ff18de214"
 
 [[files]]
 name = "assets/environment/ship/tip_window_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_window_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_window_a.glb"
 sha256 = "a94e285654f8df9be062b7ef01eff38eb55eddc86f3217d19f1fc5fa26753760"
 
 [[files]]
 name = "assets/environment/ship/tip_window_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tip_window_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tip_window_b.glb"
 sha256 = "da7068066bc74c18befebea1c7f95ecb90affd8dd881812d849abc0b05570794"
 
 [[files]]
 name = "assets/environment/ship/tuft_a.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tuft_a.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tuft_a.glb"
 sha256 = "3f3edd9fd80ab73ffcf931a85b0d38b7e130056726d443b4249a44ac2dd2e780"
 
 [[files]]
 name = "assets/environment/ship/tuft_b.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tuft_b.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tuft_b.glb"
 sha256 = "64e51e09d789ac8e4eae784ca4638b61fcd0e363f19c68b6958e8b0a530137fc"
 
 [[files]]
 name = "assets/environment/ship/tuft_dry.glb"
-file = "ship/v5/export/v1/assets/environment/ship/tuft_dry.glb"
+file = "ship/v5/export/v2/assets/environment/ship/tuft_dry.glb"
 sha256 = "743c83c95f2b9cf8aa09c6ad8a20e3ce6123c9ab8912f028310afa5a625a4643"
 
 [[files]]
 name = "assets/environment/ship/vault_shell.glb"
-file = "ship/v5/export/v1/assets/environment/ship/vault_shell.glb"
+file = "ship/v5/export/v2/assets/environment/ship/vault_shell.glb"
 sha256 = "1a700e2281527c0baa8660acd0f03c31f30411dfffa37aa765ff2eb128ddcc08"
 
 [[files]]
 name = "levels/ship/ship.tscn"
-file = "ship/v5/export/v1/levels/ship/ship.tscn"
-sha256 = "7d6599bb2cf7ef818e4fc070b36a5f9415bc29be2f42173fa8fa44f45a992114"
+file = "ship/v5/export/v2/levels/ship/ship.tscn"
+sha256 = "28c85f1d291761607409c029ced17e9085ea0155b73e05a57e9fadca1283a1a5"

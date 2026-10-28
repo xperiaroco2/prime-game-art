@@ -1693,11 +1693,14 @@ writes the ship's game-ready package (for prime-game#1225 and #1285) from `layou
 (`<raw>/ship/v5/pieces`) into `DIR` (the raw folder's `ship/v5/export/v<n>/`, never git), shaped like the game's tree
 (its ARCHITECTURE 11.1), as the House's export (`docs/house.md` "The export"):
 
-- `assets/environment/ship/`: the 168 pieces' GLBs, each with a minimal `.import` (11.2's options); `metal.gdshader`
-  and `night_sky.gdshader` (copies of `godot/ship/`'s); `materials/metal_<name>.tres` (one per shared metal of
+- `assets/environment/ship/`: the pieces' GLBs (159 since gills step 13; v1 168), each with a minimal `.import`
+  (11.2's options); the art shaders `ship_export.SHADERS` lists, copied from `godot/`: `metal.gdshader` and
+  `night_sky.gdshader` (`godot/ship/`'s) and, since gills step 13, `console_metal.gdshader` (`godot/console/`'s, the
+  gills' bronze: without it the package's scene did not load); `materials/metal_<name>.tres` (one per shared metal of
   `ship.gd` METALS), `night_sky.tres`, `night_env.tres` (the night environment: AgX, glow, SSAO, SSIL, fog, the star
-  sky); the vents' normal maps the GLBs' import extracts (`station_vent_<e|w>_vent_a_normal.png`). Data only.
-- `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the 1092
+  sky); any texture the GLBs' import extracts that a material uses (v1: the old vents' two normal maps; the gills
+  have none). Data only.
+- `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the 1088
   placements as GLB instances), `Environment` (the WorldEnvironment), `Lights` (the moon, the key, the layout's lamps
   and the glow cells' omni lights, as `ship.gd` places them), `Probes` (one reflection probe per room), `Ground` (the
   world boundary under the clearing), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
@@ -1714,7 +1717,8 @@ the outside pieces' render layer 2, the vents' heat panel hidden and their well 
 pack saved every mesh and shape of every instance (a 14 MB scene); with it the scene is about 0.8 MB. A vec3
 `source_color` uniform set from a `Vector3` saves as null, so the metals' and the sky's are stored as the `Color`
 that renders the same (its sRGB). `ship_export.relocate` moves the art project's `res://` paths to the package's and
-drops the uids; `leftovers` refuses an art path, a script or a sub-resource path. The nav lamps keep their static
+drops the uids; `leftovers` refuses an art path, a script, a sub-resource path or any `res://` path outside the
+package. The nav lamps keep their static
 glow (the blink is the shots' script).
 
 The check, on the package opened as its own Godot project (`godot/ship/export_check.gd`, copied to `DIR/_check/`):
