@@ -10,12 +10,12 @@
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_disabled, skip_vertex_transform, shadows_disabled, fog_disabled;
 
-uniform vec3 core_color : source_color = vec3(0.86, 0.97, 1.0);
+uniform vec3 core_color : source_color = vec3(1.0, 1.0, 1.0);   // zap-3: white (the engineer)
 uniform vec3 glow_color : source_color = vec3(0.1, 0.62, 1.0);
-uniform float core_energy : hint_range(0.0, 32.0) = 6.0;
-uniform float glow_energy : hint_range(0.0, 16.0) = 1.6;
+uniform float core_energy : hint_range(0.0, 32.0) = 9.0;
+uniform float glow_energy : hint_range(0.0, 16.0) = 1.8;
 // the core's half width as a share of the ribbon's
-uniform float core_share : hint_range(0.01, 1.0) = 0.22;
+uniform float core_share : hint_range(0.01, 1.0) = 0.32;   // zap-3: a wide white core, cyan only its edge
 // zap.gd: 0 .. 1 the whole effect (the fade), above 1 the full-charge flash
 uniform float strength : hint_range(0.0, 4.0) = 1.0;
 
@@ -33,6 +33,6 @@ void fragment() {
 	float y = abs(UV.y);
 	float core = 1.0 - smoothstep(core_share * 0.6, core_share, y);
 	float halo = (1.0 - y) * (1.0 - y);
-	halo *= halo;
+	halo *= (1.0 - y);   // (1 - y)^3: zap-2, the 4th power left no halo
 	ALBEDO = (core_color * core * core_energy + glow_color * halo * glow_energy) * COLOR.a * strength;
 }

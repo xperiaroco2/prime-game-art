@@ -1501,8 +1501,9 @@ is the reference the game copies (not in charger.gd, whose copy ships byte-equal
 frame. Everything follows the charger look's state and the charge:
 - **Arcs** from the four electrodes (two per inner prong: `charger_dims.toml` `[inner] electrodes`, placed as
   `charger_build.build_electrodes` does, on the track ring) into the crystal: each leaves its electrode's surface and
-  lands on the crystal's surface (a radius profile by height from its meshes), a little above the electrode (the low
-  pair 9 cm up the crystal), jittered round the axis. A bolt is midpoint displacement (16 segments, the ends fixed)
+  lands on the crystal's surface (a radius profile by height from its meshes), the tip pair 4.5 cm below its electrode
+  (level, 2.5 cm long, they read as nothing from 2 m), the low pair 9 cm above, jittered up and down and round the
+  axis. Ribbons 2.2 cm wide (the tip pair; 1.6 the low), a white core of a fifth of that. A bolt is midpoint displacement (16 segments, the ends fixed)
   with 0..2 fading branches; the shapes re-roll every 50..80 ms from a seeded generator and are rebuilt every frame on
   the electrodes' and the crystal's current places, so they follow the turning ring and the rising, turning crystal.
   The low pair skips about half its ticks, the tip pair a tenth (the flicker). Drawn as camera-facing ribbons
@@ -1520,7 +1521,7 @@ frame. Everything follows the charger look's state and the charge:
 - **The conduits** (`lens_conduits_e/w`, material `int_cyan__lens_core`): the cores' UV x runs 0 where a conduit
   leaves the jamb to 1 at the deck or the ceiling, UV y (Godot) is the run's length (`ship_interior_lens.py`
   `core_uvs`). `bind` puts one `godot/charger/conduit.gdshader` copy on the cores near the crystal (`CONDUIT_REACH`
-  1.2 m), its base the surface's own glow: while the arcs run, bright bands (0.45 m apart, 1.1 m/s) run from the deck
+  1.2 m), its base the surface's own glow: while the arcs run, bright bands (12 cm, 0.45 m apart, 1.1 m/s) run from the deck
   and the ceiling into the jambs; once full the core glows steady a little brighter; `lit` (the traces' fade) brings
   it back to the base.
 - **The export** ships `charger_arc.gdshader` and `charger_conduit.gdshader` (`ship_export.SHADERS`) beside the

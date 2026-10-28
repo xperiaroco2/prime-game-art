@@ -31,16 +31,16 @@ const HALF_DEG := 12.0
 const ELECTRODES := [[11.0, 116.0, 1.5], [16.8, 101.0, 1.0]]
 const AXIS_D := 0.38
 ## per electrode: where on the crystal its arcs land (m up the crystal from the electrode's height) and the jitter
-const LIFT := [0.0, 0.09]
-const LIFT_JITTER := [0.025, 0.045]
-const ANGLE_JITTER := 0.5        # rad round the crystal's axis, either side of the electrode's own direction
+const LIFT := [-0.045, 0.09]   # zap-2: the tip pair dives down the crystal (level, 2.5 cm, read as nothing at 2 m)
+const LIFT_JITTER := [0.04, 0.045]
+const ANGLE_JITTER := 0.7        # rad round the crystal's axis, either side of the electrode's own direction
 const SKIP := [0.1, 0.45]        # per electrode: the share of ticks it does not arc (the flicker's gaps)
 const TICK := [0.05, 0.08]       # s between re-rolls
 const FLASH_TICK := 0.03
 ## the ribbons' half widths (m) and the bolts' roughness (the largest sideways step as a share of the bolt's length)
-const HALF_WIDTH := [0.0042, 0.003]
+const HALF_WIDTH := [0.011, 0.008]   # zap-2: 4.2 mm drew a sub-pixel core at the player's 2 m
 const BRANCH_WIDTH := 0.55       # a branch's share of its bolt's width
-const ROUGH := 0.2
+const ROUGH := 0.28
 const FLASH_WIDTH := 2.2
 const FLASH_BRANCHES := 4
 ## the lights at the hits: small, a whiter cyan that stays neutral on the bronze (charger.gd SEATED_OMNI_COLOUR)
@@ -55,9 +55,20 @@ const SPARK_ELECTRODE := 0.18
 const SPARK_SPEED := [0.35, 1.1]
 const SPARK_LIFE := [0.1, 0.28]
 const SPARK_BURST := 28
-const SPARK_HALF_WIDTH := 0.0014
+const SPARK_HALF_WIDTH := 0.003
 const GRAVITY := 5.0
-const MAX_SPARKS := 96
+const MAX_SPARKS := 200
+## zap-3 (the engineer: "lightning, white, around the crystal, spinning"): per prong a wrap arc that leaves the tip
+## electrode and crawls round the crystal's surface (WRAP_SWEEP rad, the ring's way, up or down WRAP_RISE m) and a
+## crawler between two points on the surface; glints orbit the crystal the ring's way and spiral out
+const WRAP_SWEEP := [1.2, 3.0]
+const WRAP_RISE := 0.05
+const WRAP_OUT := 1.12           # the wrap's distance from the axis, a share of the crystal's radius there
+const CRAWL_CHANCE := 0.7
+const GLINTS := [3, 6]           # per tick
+const GLINT_SPEED := [5.0, 10.0] # rad/s round the axis
+const GLINT_LIFE := [0.3, 0.7]
+const GLINT_BURST := 40
 ## the conduits' flow and steady glow ease toward their targets at this rate (1/s)
 const EASE := 3.0
 
@@ -145,6 +156,12 @@ static func step(look: Dictionary, dt: float, charge: float, flash: float = 0.0,
 	var flashing: bool = charging and seated and flash > 0.0
 	var arcing: bool = flashing or (charging and seated and charge > 0.0 and charge < 1.0)
 	z["active"] = arcing
+	var ring_y: float = (z["ring"] as Node3D).rotation.y
+	if dt > 0.0 and absf(ring_y - float(z.get("ring_y", ring_y))) > 1e-5:
+		z["sense"] = signf(ring_y - float(z.get("ring_y", ring_y)))
+	z["ring_y"] = ring_y
+	if crystal != null:
+		z["centre"] = _rel(crystal, z["model"]).origin
 	var rng: RandomNumberGenerator = z["rng"]
 	z["clock"] = float(z["clock"]) + dt
 	if not arcing:
@@ -158,6 +175,8 @@ static func step(look: Dictionary, dt: float, charge: float, flash: float = 0.0,
 			var i: int = k % (z["locals"] as Array).size()
 			var ends: Array = _ends(z, i, flashing)
 			_spark(z, ends[1], ((ends[0] as Vector3) - (ends[1] as Vector3)).normalized(), 1.4)
+		for k: int in GLINT_BURST:
+			_glint(z)
 	if not charging:
 		z["flashed"] = false
 	_fly(z, dt)
@@ -203,6 +222,8 @@ static func _reroll(z: Dictionary, flashing: bool) -> void:
 			_spark(z, ends[1], out, 1.0)
 		if rng.randf() < SPARK_ELECTRODE:
 			_spark(z, ends[0], -out, 0.7)
+	for k: int in rng.randi_range(GLINTS[0], GLINTS[1]) * (3 if flashing else 1):
+		_glint(z)
 
 
 ## Arc i's start (on its electrode's surface, toward the hit) and its hit on the crystal's surface, in the model's
@@ -234,11 +255,36 @@ static func _spark(z: Dictionary, at: Vector3, out: Vector3, speed: float) -> vo
 	sparks.append({"p": at, "v": v, "age": 0.0, "life": rng.randf_range(SPARK_LIFE[0], SPARK_LIFE[1])})
 
 
+## A glint: a bright speck orbiting the crystal's axis the ring's way, spiralling out and drifting up or down.
+static func _glint(z: Dictionary) -> void:
+	var sparks: Array = z["sparks"]
+	if sparks.size() >= MAX_SPARKS or not z.has("centre"):
+		return
+	var rng: RandomNumberGenerator = z["rng"]
+	var p: Dictionary = z["profile"]
+	var h: float = rng.randf_range(float(p["min"]) + 0.02, float(p["max"]) - 0.02)
+	sparks.append({"orbit": true, "a": rng.randf_range(0.0, TAU), "R": _radius(p, h) * rng.randf_range(1.1, 1.5),
+		"h": h, "w": float(z.get("sense", -1.0)) * rng.randf_range(GLINT_SPEED[0], GLINT_SPEED[1]),
+		"dr": rng.randf_range(0.03, 0.12), "dh": rng.randf_range(-0.03, 0.06), "age": 0.0,
+		"life": rng.randf_range(GLINT_LIFE[0], GLINT_LIFE[1])})
+
+
+static func _orbit_at(z: Dictionary, s: Dictionary, a: float) -> Vector3:
+	return (z["centre"] as Vector3) + Basis(Vector3.UP, a) * Vector3(float(s["R"]), 0.0, 0.0) \
+		+ Vector3(0.0, float(s["h"]), 0.0)
+
+
 static func _fly(z: Dictionary, dt: float) -> void:
 	var keep: Array = []
 	for s: Dictionary in z["sparks"]:
 		s["age"] = float(s["age"]) + dt
 		if float(s["age"]) >= float(s["life"]):
+			continue
+		if s.has("orbit"):
+			s["a"] = float(s["a"]) + float(s["w"]) * dt
+			s["R"] = float(s["R"]) + float(s["dr"]) * dt
+			s["h"] = float(s["h"]) + float(s["dh"]) * dt
+			keep.append(s)
 			continue
 		var v: Vector3 = s["v"]
 		v.y -= GRAVITY * dt
@@ -279,6 +325,10 @@ static func _draw(z: Dictionary, arcing: bool, flashing: bool, flash: float, ram
 			var to: Vector3 = from + (along.normalized() * 0.5 + side.normalized() * 0.8).normalized() \
 				* along.length() * rng.randf_range(0.3, 0.6) * (1.4 if flashing else 1.0)
 			strips.append([_bolt(rng, from, to, 3, ROUGH * 1.3), w * BRANCH_WIDTH, 0.85, 0.0])
+		if kind == 0:
+			strips.append([_wrap(z, rng, ends[0], flashing), w * 0.8, 1.0, 0.25])
+			if flashing or rng.randf() < CRAWL_CHANCE:
+				strips.append([_crawl(z, rng), w * 0.6, 0.9, 0.9])
 		var out: Vector3 = ((ends[0] as Vector3) - (ends[1] as Vector3)).normalized()
 		l.position = (ends[1] as Vector3) + out * 0.015
 		l.omni_range = lerpf(LIGHT_RANGE, FLASH_RANGE, flash) if flashing else LIGHT_RANGE
@@ -286,6 +336,13 @@ static func _draw(z: Dictionary, arcing: bool, flashing: bool, flash: float, ram
 			* minf(ramp, 1.0))
 	z["ends"] = ends_out
 	for s: Dictionary in z["sparks"]:
+		if s.has("orbit"):
+			var g: float = (1.0 - float(s["age"]) / float(s["life"])) * minf(1.0, float(s["age"]) * 20.0)
+			var a1: float = float(s["a"])
+			var tw: float = 0.35 * signf(float(s["w"]))
+			strips.append([[_orbit_at(z, s, a1 - tw), _orbit_at(z, s, a1 - tw * 0.4), _orbit_at(z, s, a1)],
+				SPARK_HALF_WIDTH * 1.2, 0.0, g])
+			continue
 		var p: Vector3 = s["p"]
 		var v: Vector3 = s["v"]
 		var tail: Vector3 = v * 0.02 if v.length() * 0.02 > 0.004 else v.normalized() * 0.004
@@ -300,6 +357,42 @@ static func _draw(z: Dictionary, arcing: bool, flashing: bool, flash: float, ram
 	for st: Array in strips:
 		_strip(im, st[0], st[1], st[2], st[3])
 	im.surface_end()
+
+
+## A wrap arc: from the electrode's start round the crystal's surface (WRAP_OUT of its radius), the ring's way,
+## jagged; in the model's frame.
+static func _wrap(z: Dictionary, rng: RandomNumberGenerator, start: Vector3, flashing: bool) -> Array[Vector3]:
+	var ct: Transform3D = _rel(z["crystal"], z["model"])
+	var p: Dictionary = z["profile"]
+	var ec: Vector3 = ct.affine_inverse() * start
+	var a0: float = atan2(ec.z, ec.x)
+	var sweep: float = rng.randf_range(WRAP_SWEEP[0], WRAP_SWEEP[1]) * (1.5 if flashing else 1.0) \
+		* -float(z.get("sense", -1.0))
+	var h0: float = clampf(ec.y - 0.01, float(p["min"]) + 0.01, float(p["max"]) - 0.01)
+	var dh: float = rng.randf_range(-WRAP_RISE, WRAP_RISE)
+	var pts: Array[Vector3] = [start]
+	var n := 14
+	for k: int in range(1, n + 1):
+		var f: float = float(k) / n
+		var h: float = clampf(h0 + dh * f, float(p["min"]) + 0.01, float(p["max"]) - 0.01)
+		var r: float = _radius(p, h) * WRAP_OUT + rng.randf_range(-0.004, 0.006)
+		var a: float = a0 + sweep * f
+		pts.append(ct * Vector3(cos(a) * r, h + rng.randf_range(-0.006, 0.006), sin(a) * r))
+	return pts
+
+
+## A crawler: a short jagged bolt between two points on the crystal's surface, a quarter to half a turn apart.
+static func _crawl(z: Dictionary, rng: RandomNumberGenerator) -> Array[Vector3]:
+	var ct: Transform3D = _rel(z["crystal"], z["model"])
+	var p: Dictionary = z["profile"]
+	var ends: Array[Vector3] = []
+	var a: float = rng.randf_range(0.0, TAU)
+	for k: int in 2:
+		var h: float = rng.randf_range(float(p["min"]) + 0.02, float(p["max"]) - 0.02)
+		var r: float = _radius(p, h) * 1.03
+		ends.append(ct * Vector3(cos(a) * r, h, sin(a) * r))
+		a += rng.randf_range(0.8, 1.8)
+	return _bolt(rng, ends[0], ends[1], 3, ROUGH)
 
 
 ## A bolt from a to b: midpoint displacement `levels` times (2^levels segments), each level's sideways step at most

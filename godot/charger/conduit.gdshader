@@ -20,11 +20,11 @@ uniform float steady : hint_range(0.0, 1.0) = 0.0;
 uniform float lit : hint_range(0.0, 1.0) = 1.0;
 uniform float clock = 0.0;
 uniform vec3 pulse_color : source_color = vec3(0.55, 0.9, 1.0);
-uniform float pulse_energy : hint_range(0.0, 16.0) = 3.0;
+uniform float pulse_energy : hint_range(0.0, 16.0) = 5.0;
 // the pulses: m apart, m/s, their length (m)
 uniform float spacing = 0.45;
 uniform float speed = 1.1;
-uniform float band = 0.07;
+uniform float band = 0.12;
 // charged: the base's share added
 uniform float steady_gain : hint_range(0.0, 4.0) = 0.8;
 
