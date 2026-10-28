@@ -22,6 +22,7 @@ NAME = "ship"
 HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts); --vent-anim DIR (the vents' animation in place); --play (the engineer's walk)"
 BUILD_SCRIPT = blender.SCRIPTS / "ship_build.py"
 GODOT_SCRIPT = "res://ship/ship.gd"
+CHARGER_SCRIPT = "res://charger/room.gd"   # --shoot --charger (lens C step 3)
 BUILD_TIMEOUT = 900
 GODOT_TIMEOUT = 300
 VIEW_SIZE = (1920, 1080)
@@ -398,13 +399,21 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         for key in ("top", "top_full", "day_views"):
             req.pop(key)
         req["compare"] = []
+    script = GODOT_SCRIPT
+    if charger:   # lens C step 3: charger/room.gd (ship.gd plus the charger's and the crystal's game looks: charger.gd,
+        # crystal.gd seated on its anchor) instead of the GLBs' plain materials, which ship.gd's pass made strip lights
+        # of; the charger idle and the crystal spent (a full one's light floods the lens room cyan), unless a row says
+        script = CHARGER_SCRIPT
+        for v in req["views"]:
+            off = v[5] if len(v) > 5 else {}
+            v[5:6] = [{"charger": "idle", "crystal": True, "charge": 0.0, **off}]
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "shoot_request.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "shots.json").unlink(missing_ok=True)
-    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", script, "--",
                                   path.as_posix(), folder.as_posix()], VIEW_SIZE, GODOT_TIMEOUT)
     if code != 0 or not (folder / "shots.json").is_file():
         raise common.Failure(f"ship.gd shoot failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
