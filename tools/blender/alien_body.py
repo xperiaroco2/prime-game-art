@@ -85,6 +85,12 @@ def apply_targets(path):
     missing = [k for k in TARGET_KEYS if k not in t]
     if missing:
         raise SystemExit(f"{path}: missing {missing}")
+    unknown = sorted(set(t) - set(TARGET_KEYS) - {"name"})  # R1: a typo would otherwise be ignored
+    if unknown:
+        raise SystemExit(f"{path}: unknown keys {unknown}")
+    za = [a for a, _ in t["Z_ANCHORS"]]
+    if any(b <= a for a, b in zip(za, za[1:])):  # R1: two anchors at one height made Z() divide by zero
+        raise SystemExit(f"{path}: Z_ANCHORS' heights must increase strictly, got {za}")
     g = globals()
     for k in TARGET_KEYS:
         v = t[k]
@@ -100,6 +106,8 @@ def Z(h):
     """A height of u1's body (the code's fixed heights: seat, belly, neck) on this target's, by Z_ANCHORS."""
     pts = Z_ANCHORS
     for (a0, b0), (a1, b1) in zip(pts, pts[1:]):
+        if a1 <= a0:  # R1: apply_targets refuses it; a zero-length span never divides
+            raise ValueError(f"Z_ANCHORS' heights must increase strictly: {a0} then {a1}")
         if h <= a1 or a1 == pts[-1][0]:
             return b0 + (b1 - b0) * (h - a0) / (a1 - a0)
     return h
