@@ -273,5 +273,39 @@ class FootIK(unittest.TestCase):
         self.assertAlmostEqual(G.knee_angle((0, 0, 1), (0, 0, 0.5), (0, 0.5, 0.5)), 90.0, places=6)
 
 
+
+def _trs(t=(0.0, 0.0, 0.0), yaw_deg=0.0, s=1.0):
+    c, n = math.cos(math.radians(yaw_deg)) * s, math.sin(math.radians(yaw_deg)) * s
+    return [[c, -n, 0.0, t[0]], [n, c, 0.0, t[1]], [0.0, 0.0, s, t[2]], [0.0, 0.0, 0.0, 1.0]]
+
+
+class ChainWorld(unittest.TestCase):
+    """F1: the leg fit's donor world frame from saved transforms, not from an unevaluated matrix_world."""
+    I = _trs()
+
+    def close(self, a, b):
+        for ra, rb in zip(a, b):
+            for x, y in zip(ra, rb):
+                self.assertAlmostEqual(x, y, places=9)
+
+    def test_root_is_its_basis(self):
+        b = _trs((0.1, -2.0, 0.5), 30.0, 1.2)
+        self.close(G.chain_world([(self.I, b)]), b)
+
+    def test_parent_chain(self):
+        parent, child = _trs((1.0, 0.0, 0.0), 90.0), _trs((0.0, 2.0, 0.0))
+        w = G.chain_world([(self.I, parent), (self.I, child)])
+        self.close(w, _trs((-1.0, 0.0, 0.0), 90.0))  # the child's +y 2 m turned onto -x by the parent
+        # parented with the parent's inverse kept (Blender's Ctrl+P): the child stays where its basis puts it
+        inv = _trs((0.0, 0.0, 0.0), -90.0)
+        inv[0][3], inv[1][3] = 0.0, 1.0  # the inverse of a 90 deg turn about z after a 1 m move along x
+        self.close(G.mat_mul(parent, inv), self.I)
+        self.close(G.chain_world([(self.I, parent), (inv, child)]), child)
+
+    def test_no_object(self):
+        with self.assertRaises(ValueError):
+            G.chain_world([])
+
+
 if __name__ == "__main__":
     unittest.main()

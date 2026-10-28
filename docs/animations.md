@@ -883,6 +883,16 @@ the Hips keep the clip's (scaled) keys. The build's char.json records `leg_fit.m
 same mode to the loops it appends. Per action the report gives the ankles' worst miss, the frames out of reach, the
 knee's largest per-frame change beside S4b's own (a pop), the knee flips and the feet's lowest point against S4b's.
 The default mode (`lowest`) is T2's, so r2e and loco/t2b rebuild as they were.
+
+A build made with the first, scale-only leg fit (commit `ba1f4233`: `r2d`, behind `loco/t2`) mixes methods when
+`alien_loco.py` is re-run on it at a later commit: its char.json's `leg_fit` has no `mode` and no `foot_match`, so the
+loops `alien_loco.py` appends get the default `lowest` fit (the scale and the foot match) while the build's own actions
+kept the scale alone. Do not re-run the loco set on such a build: rebuild the character (`alien_char_run.py --leg-fit`,
+into a new build folder) and run the loco set on that. Since F1 (art #196) the donor's world frame is built from its
+saved transforms (`matrix_basis` and the parent chain, `alien_char_geom.chain_world`) and checked after linking, and
+the report records it (`donor_matrix_world`). A headless Blender probe (F1) showed the old read was wrong: on
+an appended, unlinked object `matrix_world` reads the identity (a parented, turned and scaled test rig: 0.75 off the
+file's; now 1.2e-7); S4b's rig is the identity in its file, so the builds made so far are unchanged.
 `tools/blender/alien_body_clips.py --char <c> --rows r2b=loco/f3/build,<tag>=<loco>/build --out <dir>` shoots the
 full-body clip frames of one character's builds side by side (`godot/alien/body_clips.gd` in the off-screen window,
 the game look of `char_shots.gd`, a floor, the camera following the Hips): a row per build, six clips (idle, walk,
