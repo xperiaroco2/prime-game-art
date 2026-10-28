@@ -1152,8 +1152,9 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   manager's decision): the hip hand. No hip grip both cleared a raised thigh (Sit, Squat, Kneel, OneLeg: 5-8 cm
   into it on six grips, s5) and still sat on the waist on Stand, so an arm with `clear = ["thigh_{side}"]` (the hip
   hand of HandsOnHips, FingerUp, Salute) gets a per-legs variant `PoseArms_<Arms>__<Legs>` (Godot name) wherever
-  the shared clip's hand goes into that thigh beyond the hand limit: solved over those legs, the wrist lifted up the
-  chest until the hand clears the thigh, then touched onto the waist again (`Model.variants`). `pose_layers.gd`
+  the shared clip's hand goes into that thigh beyond the hand limit: solved over those legs, the wrist moved along
+  the arm's `clear_dir` (chest axes; default up the chest, s7: back along the hip's side and a little up, [0, -1,
+  0.2]) until the hand clears the thigh, then touched onto the waist again (`Model.variants`). `pose_layers.gd`
   plays the variant with those legs when the character has it; `poses()` does not list variants; the game copies
   this rule. A variant's palm-to-waist distance is reported, not limited (the hand rides up the waist to clear). An
   arm's `variant` table (TOML) overrides its settings in its variants only (for example the fingers level).
@@ -1187,7 +1188,21 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     0.24 cm off it (the touch solve reads the palm's bone, `touch_by`). Round 2 (s6 grid, plain Python on the s5
     dumps): the fingers turned out with the belly (`fingers_dir` [0.5, 0.8, -0.4]) and the palm 0.8 cm off the
     waist take it to 0.44 cm on Stand, the contact 0.94 cm, the palm's centre 5.7 cm from the waist mark (so
-    `mark_cm` 6).
+    `mark_cm` 6). Round 2, s7 (a Blender close-up grid of five grips, `tools/out/poses/s7/grid1`, `grid2`): s6's
+    turned-out fingers read as a limp hand hanging off the waist, so the hand now lies on the waist's side with the
+    fingers forward and a little down (`fingers_dir` [0.1, 0.9, -0.45], the palm 0.5 cm off, the elbow wide [1,
+    -0.6, 0]): the palm's centre 4.0 cm from the mark on Stand, but the fingertips meet the belly's forward bulge
+    (hand>torso about 1.9 cm, the same with 16 and 24 tube slices: real, not the proxy). Every grip that kept the
+    fingers forward read 1.9 to 5.8 cm; a grip that cleared it hung off the waist. The pictures were judged better
+    than the number; the number stays a reported failure.
+- **The back of the skull** (`head_back`, round 2, s7): the landmark is the head's back at HEAD_BACK_UP (0.6) of the
+  way from the Head bone up to the eyes, not at the eyes' height: there the chameleon's crest put the wrists 32 cm
+  behind the head and the arms nearly straight, the elbows forward along the face ("head in hands"). At the skull
+  the wrists sit 0.34 m from the shoulder of a 0.49 m arm, so the elbow pole (`elbow` [1, -0.6, 0.2]) takes the
+  elbows out to the sides.
+- **The Heart** (s7): the hands one hand length in front of the chest's front (`offset` fwd 1.0, was 1.9: from the
+  side the arms read straight out, a sleepwalker), the elbows out and down ([1, -0.3, -0.3]), so the front outline
+  has its elbow wings and the side view stays compact.
   - **The layers' limit.** The arms are solved once over `reference_legs` (Stand), so an arm cannot make room for
     a raised thigh: the shared hip hand goes 7 to 8 cm into it on Sit, Squat and Kneel's front leg, OneLeg's raised
     one included, on every offset and finger direction tried (`tools/out/poses/fix/hipgrid_c.log`, s5's six
@@ -1200,6 +1215,12 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   mirrored right: orthographically a left outline is the mirror of the right one, so only perspective and the
   pose's own lopsidedness separate them; measured, 0.08 to 0.10 on the least lopsided pairs and up to 0.31 / 0.35
   (Lunge+Plane, Kneel+Plane): that line of the table is informative, not a goal.
+  s7's table (both characters): every arms pair 0.10 or more apart from the front and the back (s6's front low,
+  HandsOnHips/Heart 0.028 on Sit, is 0.107 now); from the sides the hip-hand poses stay close: HandsOnHips/Salute
+  0.056 left (Lunge) and 0.075 right (Kneel), Flex/Salute 0.085 / 0.079 (chameleon), HandsOnHips/FingerUp 0.079 /
+  0.090 (axolotl). Only the raised arm's hand differs there and it is in front of the head from the side. **The
+  game's silhouette list avoids** (HandsOnHips, Salute), (Flex, Salute) and (HandsOnHips, FingerUp) as the two
+  sides of one outline from the left or right; legs: Stand/OneLeg from the sides (0.21 to 0.26) is fine.
 - **What the layers freeze.** `owner()` gives every bone that is not the legs' to the arms, so the arms clip keys
   Jaw, the eyes and the crest at rest and the game's `Blend2` filter takes the whole Chest subtree: a face or crest
   layer of the game must sit after the pose's tree (or the pose's arms filter must drop those bones) to move during
