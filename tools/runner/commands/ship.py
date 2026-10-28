@@ -599,7 +599,8 @@ VENT_ANIM = {"piece": "station_vent_e", "eye": [-0.86, 1.57, 2.8], "look": [1.63
 
 
 def vent_anim(layout: dict, out: Path, folder: Path) -> int:
-    """The vent's animation in place (art #263, vents-anim1): ship.gd mode "vent_anim" renders the controller's demo
+    """The gills' animation in place (art #263, vents-anim1; gills step 11): ship.gd mode "vent_anim" renders the
+    controller's demo (two passes: the fix, the throw)
     on the whole ship at night in the off-screen window, the key moments labelled into keys_sheet.png; headless
     Blender encodes the MP4 (ship_video.py, under max_mb); the frames are deleted."""
     import importlib
@@ -621,8 +622,10 @@ def vent_anim(layout: dict, out: Path, folder: Path) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "anim.json").unlink(missing_ok=True)
-    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
-                                  path.as_posix(), folder.as_posix()], a["size"], VIDEO_TIMEOUT)
+    # gills step 11: --fixed-fps, so the particles (the engine's clock) keep the controller's (1 / fps a frame)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "--fixed-fps",
+                                  str(a["fps"]), "-s", GODOT_SCRIPT, "--", path.as_posix(), folder.as_posix()],
+                                 a["size"], VIDEO_TIMEOUT)
     if code != 0 or not (folder / "anim.json").is_file():
         raise common.Failure(f"ship.gd vent_anim failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
@@ -638,7 +641,7 @@ def vent_anim(layout: dict, out: Path, folder: Path) -> int:
         common.bad(f"ship --vent-anim: video {mb:.1f} MB (max {a['max_mb']}), {len(errors)} import errors")
         return 1
     common.ok(f"ship --vent-anim: {clip.as_posix()} {a['size'][0]}x{a['size'][1]}, {info['seconds']:.1f} s, "
-              f"{info['frames']} frames, {mb:.1f} MB; states {info['states']}; sheet {(folder / 'keys_sheet.png').as_posix()}")
+              f"{info['frames']} frames, {mb:.1f} MB; states {info['states']}; signals {info.get('signals')}; sheet {(folder / 'keys_sheet.png').as_posix()}")
     return 0
 
 

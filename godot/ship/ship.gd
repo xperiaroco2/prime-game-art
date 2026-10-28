@@ -780,7 +780,10 @@ func _vent_anim() -> void:
 	var anim: Node = VentAnim.new()
 	anim.manual = true
 	piece.add_child(anim)
-	anim.setup(piece, String(a["piece"]), float(a["mark_travel"]))
+	anim.setup(piece, String(a["piece"]))
+	var signals: Array = []   # [time s, signal]: what the game would hear
+	for sig: String in ["fixed", "too_early", "missed", "thrown"]:
+		anim.connect(sig, func() -> void: signals.append([snappedf(anim._t, 0.01), sig]))
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	_camera.far = 500.0
@@ -815,13 +818,16 @@ func _vent_anim() -> void:
 		var inp: Array = VentAnim.demo(f / fps)
 		anim.problem = inp[0]
 		anim.hold = inp[1]
+		for r: float in VentAnim.DEMO_RELEASES:   # gills step 11: the palm leaves (before the step, as the game)
+			if f / fps >= r and (f - 1) / fps < r:
+				anim.release()
 		anim.step(1.0 / fps)
 		await RenderingServer.frame_post_draw
 		var image: Image = root.get_texture().get_image()
 		image.convert(Image.FORMAT_RGB8)
 		_save(image, dir.path_join("%05d.png" % f))
-		if states.is_empty() or states[-1][1] != anim.state:
-			states.append([snappedf(f / fps, 0.01), anim.state])
+		if states.is_empty() or states[-1][1] != VentAnim.STATE_NAMES[anim.state]:
+			states.append([snappedf(f / fps, 0.01), VentAnim.STATE_NAMES[anim.state]])
 		if key_frames.has(f):
 			_label.text = "%.2f s  %s" % [f / fps, key_frames[f]]
 			await RenderingServer.frame_post_draw
@@ -836,7 +842,7 @@ func _vent_anim() -> void:
 		sheet.blit_rect(tiles[i], Rect2i(0, 0, 320, 180), Vector2i((i % 4) * 320, (i / 4) * 180))
 	_save(sheet, _out.path_join("keys_sheet.png"))
 	_write("anim.json", {"frames": count, "fps": fps, "seconds": VentAnim.DEMO_S, "lights": lights, "states": states,
-		"render_s": (Time.get_ticks_msec() - started) / 1000.0})
+		"signals": signals, "render_s": (Time.get_ticks_msec() - started) / 1000.0})
 	print("SHIP vent_anim %d frames" % count)
 	quit(0)
 
