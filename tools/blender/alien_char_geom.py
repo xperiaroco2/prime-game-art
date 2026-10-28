@@ -343,3 +343,40 @@ def missing_rows(before, after) -> int:
     with a twin, the same position, UVs and normal, is missed by a set)."""
     have = Counter(map(tuple, after))
     return sum(max(0, n - have[r]) for r, n in Counter(map(tuple, before)).items())
+
+
+# Clothes step 2 (art #196): the weld's seam softened. The bridge between the body's neck ring and the head's cut
+# (a zip of thin triangles over GAP, 24 ring vertices to the head's 56) read as a thin sewn line with a dent at each
+# ring vertex in close-ups. After the bridge is closed, every vertex within SEAM_SMOOTH of the bridge's middle height
+# is smoothed by Taubin steps (a Laplacian step lam, then an inflating step mu, so the neck keeps its girth), each
+# move scaled by seam_weight (1 at the bridge, falling to 0 at SEAM_SMOOTH): the line and the dents go, the head
+# above and the body below are untouched.
+SEAM_SMOOTH = (0.022, 0.016)  # m below and above the bridge's middle height
+SEAM_ITERS = 12
+SEAM_LAM, SEAM_MU = 0.5, -0.53
+
+
+def seam_weight(z: float, mid: float, below: float = SEAM_SMOOTH[0], above: float = SEAM_SMOOTH[1]) -> float:
+    """1 at the bridge's middle height, smoothly 0 at mid - below and mid + above, 0 outside."""
+    t = (mid - z) / below if z < mid else (z - mid) / above
+    if t >= 1.0:
+        return 0.0
+    return (1.0 - t * t) ** 2
+
+
+def taubin(co: list, nbrs: list, w: list, iters: int = SEAM_ITERS, lam: float = SEAM_LAM,
+           mu: float = SEAM_MU) -> list:
+    """Taubin smoothing of the points co (lists of 3) over their neighbour index lists nbrs, each point's move scaled
+    by w (0: pinned); returns the new points (co is not changed)."""
+    p = [list(c) for c in co]
+    for _ in range(iters):
+        for k in (lam, mu):
+            nxt = [q[:] for q in p]
+            for i, (ns, wi) in enumerate(zip(nbrs, w)):
+                if wi <= 0.0 or not ns:
+                    continue
+                avg = [sum(p[j][a] for j in ns) / len(ns) for a in range(3)]
+                for a in range(3):
+                    nxt[i][a] = p[i][a] + wi * k * (avg[a] - p[i][a])
+            p = nxt
+    return p

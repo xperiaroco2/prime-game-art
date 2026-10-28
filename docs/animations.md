@@ -922,6 +922,47 @@ in place, so steps 1's numbers stand): `cycle` turning a loop to start on the co
 the start (and, at start 0, the end frame) a loop's travel on, where they went back to the start; `stride`'s end frame
 plants the feet a loop's travel on, where the legs reached back a whole loop at the seam.
 
+### The clothed alien's two bodies (art #196, clothes step 2)
+The aliens are always clothed (the route of the engineer's yes to step 2, 2026-10-28, art #196 comment
+6469797321): our own body stays the functional base, Meshy makes only the clothes, and each garment is fitted once on
+the base body and carried to the female variant. The base is S4b's cage body (`D:/prime-art-raw/review/char/alien-parts-kit/S4b/build/alien_body.blend`,
+`tools/blender/alien_cage.py --target`), the body under both characters of `loco/f3`.
+- **Four digits.** The engineer, 2026-10-28 (comment 6467823137): three fingers and a thumb, never a fifth. The cage
+  body already builds that hand (`alien_cage.py`'s `FINGERS = ("Index", "Middle", "Ring")`: three finger tubes and a
+  thumb on one surface with the arm; the Little groups present and empty, 0 vertices). `[kinds.alien]` lists
+  `fingers_unweighted = ["Little"]` again (`docs/contract.md`; the ADR
+  `2026-10-19-alien-overlaid-face-four-fingers.md`, amendment of 2026-10-28).
+- **The female variant** is the same mesh with only vertex positions moved: `tools/blender/alien_body_female.py`
+  (headless Blender) applies `alien_female_geom.py`'s fields from a target file (`alien_female_targets/<name>.toml`,
+  every nested key checked) and proves the result on the saved file: the vertex, edge and face counts and the hashes
+  of the faces' and edges' vertex indices, the weights and the UVs equal the base's; `female.json` holds the
+  per-vertex delta report and the half widths and depths per height. The fields (each a product of
+  `(1 - t^2)^2` kernels, exactly 0 outside its box, scaled by the vertex's weight on the trunk and upper-leg bones):
+  two soft chest rounds pushed forward on the front half (no nipples), the hips' sides out linearly in x, two seat
+  rounds pushed back on the back half, the waist's sides in; nothing above 1.25 m or below 0.70 m moves, so the
+  height, neck, arms, hands, legs below the thigh and feet are the base's. f1 (`body_f1`, under
+  `<raw>/research/2026-10-22-roster/design/pilot3d/clothes/a/`): 1,044 of 9,814 vertices moved, at most 21.8 mm;
+  half width at 0.86 m 135 -> 157 mm, the seat 13 mm further back at 0.86 m, the waist at 1.00 m 106 -> 96 mm, the
+  chest 12 mm further forward on the midline at 1.14 m (20 mm at the rounds' centres).
+
+      blender -b --factory-startup --python tools/blender/alien_body_female.py -- --body <S4b alien_body.blend>           --target tools/blender/alien_female_targets/f1.toml --out <dir>
+
+  A character on it: `alien_char_run.py --body <dir>/alien_body.blend` (the legs are the base's, so no `--leg-fit`).
+- **The weld's seam.** In close-ups the bridge between the body's neck ring and the head's cut (`alien_char_build.py`:
+  24 ring vertices zipped to the head's cut loop over 8 mm) read as a thin sewn line with a dent at each ring vertex.
+  Since this step the build smooths the vertices round it after it closes (`alien_char_geom.taubin`, 12 Taubin steps,
+  each move scaled by `seam_weight`: 1 at the bridge's middle height, 0 at 22 mm below and 16 mm above; only within
+  1.5 ring radii of the neck's axis); char.json's `seam_smooth` records it, `--no-seam-smooth` builds as before.
+- **Close-ups.** `tools/blender/alien_closeups.py --blend <char>_char.blend --tag <t> --out <dir>` (headless Blender,
+  Workbench) shoots `neck_<t>.png` (the joint at 1.9 m, lens 70, and 0.8 m, lens 50; 3/4 front, side, 3/4 back of the
+  character's left; Idle and the head turned 40 degrees; texture colours beside a flat colour with cavity) and
+  `hands_<t>.png` (the left hand at 0.45 m from outside and the front in Idle, Jog_Fwd, Jump_Start and Talk_Upper, at
+  each clip's first and middle frame).
+- **The game build** is f3's: `alien_char_run.py --heads <c> --tag <tag>/build --no-shots --clip-edits
+  tools/blender/anim_sets/alien.toml --lively <c>=<lively>/v9_r2c_n4 (axolotl: axolotl_v9_r2c_n4) [--body <female>]`,
+  then `alien_loco.py --raw D:/prime-art-raw --build ../<tag>/build --out ../<loco>` (paths under the set's
+  `raw_base`), then `godot-check <glb> --profile alien --strict-contract --textured`.
+
 ### 100STYLE onto the alien, and the orientation warp (art #196, the strafe pilot)
 The strafe pilot's mocap source is 100STYLE (`sources/100style.toml`: CC BY 4.0, the credit line there; one 1.47 GB
 zip of BVH takes, 60 fps, a 23-joint skeleton in centimetres, extracted under `<raw>/downloads/100style/extracted/`).
@@ -1193,7 +1234,8 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
 
 - **Names.** `CharacterArmature|PoseLegs_<Name>_Loop` (Stand, OneLeg, Squat, Kneel, Lunge, Sit) and
   `CharacterArmature|PoseArms_<Name>_Loop` (HandsOnHips, Plane, Flex, Heart, FingerUp, HandsBehindHead, PalmsOut,
-  Salute), plus the hip hand's per-legs variants `CharacterArmature|PoseArms_<Arms>__<Legs>_Loop` (below); Godot
+  Victory; p3: Victory replaced the Salute, the engineer's call; prime-game's GDD section 8 and the design repo's pose
+  sheet still say "salute"), plus the hip hand's per-legs variants `CharacterArmature|PoseArms_<Arms>__<Legs>_Loop` (below); Godot
   keeps the names (`pose_layers.gd` strips the prefix and `_Loop`). Each clip is a loop of identical
   keys (the game holds it) keying only its own layer's bones.
 - **The bone split** (`alien_pose_math.owner`): the legs own `Root`, `Hips` (translation and rotation), `Spine` and
@@ -1201,7 +1243,7 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   is the legs' channels plus the arms', nothing else; no per-pair corrective clip, with one exception (round 2, the
   manager's decision): the hip hand. No hip grip both cleared a raised thigh (Sit, Squat, Kneel, OneLeg: 5-8 cm
   into it on six grips, s5) and still sat on the waist on Stand, so an arm with `clear = ["thigh_{side}"]` (the hip
-  hand of HandsOnHips, FingerUp, Salute) gets a per-legs variant `PoseArms_<Arms>__<Legs>` (Godot name) wherever
+  hand of HandsOnHips, FingerUp; p3: always, `per_legs`, below) gets a per-legs variant `PoseArms_<Arms>__<Legs>` (Godot name) wherever
   the shared clip's hand goes into that thigh beyond the hand limit: solved over those legs, the wrist moved along
   the arm's `clear_dir` (chest axes; default up the chest, s7: back along the hip's side and a little up, [0, -1,
   0.2]) until the hand clears the thigh, then touched onto the waist again (`Model.variants`). `pose_layers.gd`
@@ -1219,6 +1261,80 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   each** (`sides`: OneLeg's raised right thigh, Kneel's raised left one, `alien_pose_math.thigh_side`; `along` 0.45):
   their waist variants (`clear_dir`) still went 1.1 to 1.7 cm into the belly (s10's 4 failing pairs); the other hand
   stays on the waist. The thigh hand's grip is `flat` (s10's `relaxed` read as a pinch on the thigh).
+- **p3: the hand shapes, the Victory and the fist akimbo** (the engineer's look at p2: the salute out, "hands on
+  hips like just arms", "fingers a mess"; numbers in `tools/out/poses/p3/grid*.log`, pictures in
+  `anim_bare/poses/p3/q1/`):
+  - **One hand-shape library**, `[grips]`: `fist` (the fingers curled tight, the thumb over the index), `point` (the
+    index straight, the rest the fist), `flat` (the fingers together, slightly curved, the thumb alongside),
+    `heart`; no per-pose finger values. `ThumbTurn` [roll, swing] turns the thumb's base about its length and toward
+    the palm before its curl (a curl alone turns it about one axis, p1); the left hand's values, the right's mirrored.
+    The thumbs come from a search on both dumps for the turn and curl that put the thumb's tip on its target (the
+    fist: 1.6 cm off the index's and middle's middle bones on the palm's side, reached within 0.3 cm, its bones 2.5 cm
+    clear of the fingers' bones). Plane, PalmsOut, HandsBehindHead: flat; Flex, Victory, the hip hands: fist;
+    FingerUp's raised hand: point; Heart: heart.
+  - **A straight wrist**: `fingers_dir = "forearm"` lays the hand along its forearm (the fists of Victory and the
+    akimbo).
+  - **Victory**: FK, both arms up in a wide V (`upper` [0.6, 0.2, 1.0], the elbows nearly straight; q2: a little
+    forward, so the side outline shows the arms in front of the crest, not hidden behind it), fists, the
+    shoulders shrugged a little (`shoulder` [0, -12, 0]). The arms cannot lift the whole fist over the crest: its
+    lowest skin stays 18 to 24 cm under the head's top on every V tried (`gridBC.log`), 17 to 26 cm outside it; the
+    fists' tops reach the head's top (q4, `tools/out/poses/p3/q4/victory.log`: 1.2 cm under it on Stand, 0.5 cm over
+    on Sit, the inner skin 20 cm outside the head's side), so "the hands above the head" reads as level with the crown.
+  - **The fist akimbo** (HandsOnHips and FingerUp's hip hand, one arm): the wrist goal at the waist's side, out and a
+    little up (`offset` [0.9, -0.2, 0.6] since q3; q1 [0.9, -0.1, 0.6]; q2: 0.3 sat by the hip bone, not above it), the
+    elbow wide and back ([1.0, -0.7, 0.15] since q3; q1 [1.0, -0.4, 0.1]: 22 cm out of the shoulder, 5 to 10 cm behind
+    it), the fist's skin (`touch_by` the whole hand) touched onto the torso at 0.5 cm
+    (variants 0.8), `passes` 16 (the clear-then-touch loop settles later than 9). `per_legs = true`: a variant on
+    every legs pose but the reference, since the shared clip's fist went into the waist or off it wherever the legs
+    lean the Spine; `[thigh_hand]` has no legs any more (the fists stay on the waist over Squat's and Sit's thighs).
+    A mark contact with `by = "knuckles"` measures the four base knuckles' centre (a fist's palm centre stands a
+    fist's depth off the waist), with its own `mark_cm` (9 cm: the knuckles sit about 2 cm off the skin and the fist
+    rides above the waist's mark, which is at the Spine's height; read 5.7 to 8.5 cm in q1, 6.3 on Lunge and 7.1 on
+    Stand since q3) and, since q4, `legs_mark_cm` for the legs poses whose `legs_variant` lifts the fist (below).
+- **p3 q2: arms that keep their meaning in the world, OneLeg's knee, the fist's thumb** (pictures in
+  `anim_bare/poses/p3/q2/`, numbers in `tools/out/poses/p3/q2/grid2.log`):
+  - **`spine.level`** (a legs pose's setting): the Spine counter-turned that part of the way to a chest upright in
+    the world. The arms' directions are in the chest's axes, so on a leaning legs pose every arm leaned with it
+    (Plane tilted on Squat and Lunge, the raised arms crooked). Levelled in the legs layer (the Spine is the legs'),
+    so every arms pose keeps its world meaning with no per-legs arms variants: Lunge 1.0 (was 6 degrees forward and
+    4 rolled), OneLeg 1.0 (3 rolled), Squat 0.7 (10 forward to 3: fully upright left FingerUp's centre of mass 1.0 cm
+    inside the feet, at the limit); Kneel's chest is already upright; Sit keeps its 6 degrees back (sitting, the
+    lean reads natural and opens the arms).
+  - **OneLeg**: the raised knee forward and a little out (6 cm), the foot by the inside of the standing knee (10 cm
+    to its side, 14 cm in front); it hung low across the standing shin.
+  - **The fist** (q2 only; q3's below) `[90, 60, 20]` (the base knuckle bent most; `[86, 100, 70]` curled the long finger tubes into
+    closed rings) and the thumb's base turned in, the rest nearly straight (`Thumb` [40, 10, 0], `ThumbTurn` [20,
+    45]): across the front of the curled fingers (the searched thumb hooked into an "O"). q2's flat hand's `spread`
+    -10 was meant to draw the fingers together (it did on one hand only; q3's `mirror`, below).
+  - **`close_hands_<char>.png`** (`pose_shots.gd`): one hand per arms pose on Stand, front and three-quarter
+    (HandsBehindHead from behind), the hand-shape library's judge.
+- **p3 q3: the critic's ranking fixed** (a fresh critic ranked the 48 pairs of the q2 build: 11 good, 33 weak, 4
+  ugly; variant grids in `anim_bare/poses/p3/q3/`, numbers in `tools/out/poses/p3/q3/`):
+  - **Plane level**: one `both` arm, the wings level (`upper` [1.0, -0.4, 0.04]); the old bank (13 degrees, one arm
+    up and one down) read as a droop on every legs pose, worst on Sit and Squat (ugly on Sit).
+  - **Heart**: the wrists 0.75 hand lengths lower and further forward (`offset` [0.4, 1.3, -0.5]): the heart in front
+    of the chest, not at the chin. The `heart` grip: the index curled into the lobes, the other three fingers a fist
+    behind it, the thumbs pointing down and in to the tip (a search of 36 turns and curls, `thumb.log`: the straight
+    thumbs stood 10 cm apart). Two pinched fists at the chin were ugly on OneLeg and Kneel.
+  - **The fist** `[100, 100, 30]`, the thumb `[40, 40, 30]` turned `[30, 60]`: the base and middle knuckles fully
+    bent and the thumb over the fingers' front (q2's left a ring and the thumb standing out as a nub).
+  - **`spread` mirrored per hand** (`_fingers`): the left hand's sign was the right's, so q2's -10 drew the right
+    hand's fingers together and the left's apart (PalmsOut's "claw"). A grip's `mirror = true` makes one sign mean
+    together on both hands (`flat`, `behind`: 18; the library is the brief's four shapes and this fifth); a flag, so `--check` still composes older builds' `pose_data.json`
+    as built (the first q3 verify went red on s11's right fingers); the test checks the index and little tips mirror.
+  - **`behind`**, the HandsBehindHead grip: the flat hand's fingers curled round the skull (`[35, 45, 30]`) and drawn
+    together; the back view showed a blob of spread fingers.
+  - **The akimbo**: the elbows further back (`elbow` [1.0, -0.7, 0.15]: the akimbo reads from the side), and
+    **`legs_variant`** (an arm's settings for one legs pose's variant, on top of `variant`): the fist up the waist's
+    side where the thighs rise to it (Squat 1.1, Sit, OneLeg and Kneel 1.0 hand lengths up, was 0.6; Sit's lift
+    1.0, 1.15 and 1.3 read 10.9, 13.7 and 16.4 cm, `tools/out/poses/p3/q4/marks.log`): on Sit and
+    Squat the fists had landed on the thighs (Sit+HandsOnHips ugly), on OneLeg and Kneel on the raised knee. The
+    knuckles stand 10.9 to 12.7 cm from the waist's mark there. q3 set one `mark_cm` 13 for every legs pose; q4
+    (review 1: a fist 4 cm up or on the ribs passed on Stand) makes the limit per legs pose: `mark_cm` 9 (Stand 7.1,
+    Lunge 6.3) and `legs_mark_cm` Sit, OneLeg and Kneel 12 (10.9), Squat 13.5 (12.7). A contact's own limit wins
+    outright over `variant_mark_cm` (it was the larger of the two, 10 cm on Stand's variant).
+  - **Flex**: the upper arms more out and the forearms leaning out (`upper` [1.0, 0.45, 0.15], `lower` [0.3, 0.2,
+    1.0]): in 3/4 the near fist sat on the cheek.
 - **The check composes from the build's own data.** The build writes `build/<char>/pose_data.json` (the TOML as
   solved); `alien_poses_run.py --check` composes the Blender reference from it and prints a `NOTE` when the TOML has
   changed since, so editing the TOML without a rebuild no longer turns verify red (round 2's red verify).
@@ -1377,7 +1493,8 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   `pose_layers_check.gd`'s list is a control, not a contact: a free hand, it slides 43.6 cm at the default split and
   0 with Neck and Head only, so the probe is shown to read a slide. The heart's
   fingertips never part (0.0). **Recommendation:** during a pose the game sets the head look's split to Neck and Head
-  only (its defaults stay for locomotion), and for HandsBehindHead and Salute it turns the look off
+  only (its defaults stay for locomotion), and for HandsBehindHead it turns the look off (the Salute, measured
+  above, is gone since p3)
   (`influence = 0`): the outline the photographer matches is the pose's own.
 
 ## The review

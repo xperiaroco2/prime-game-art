@@ -111,14 +111,17 @@ they pass under `check --slot eyes`; any other shape key on a separate part warn
 **The alien (exception).** The alien's face is overlaid rigid parts, not morphs: eyeballs with rotating lid shells and
 replacement mouth pieces on the Head bone's sockets, never mesh deformation (the engineer, 2026-10-19; art #221,
 `docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md`, which supersedes "Faces" above for the alien). It has
-five weighted fingers, as the body: the engineer, 2026-10-24 (art #196 comment 6386685364: "Так: мізинець з вагами,
-судити алієна за лімітом персонажа 40k/60k", yes: the Little finger with weights, judge the alien by the character's
-limit 40k/60k) gave the A concept's Little finger back, ending that decision's four fingers with an unweighted Little.
+four fingers, three fingers and a thumb, with the Little chain present and unweighted: the engineer, 2026-10-28 (art
+#196 [comment 6467823137](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6467823137): "Four
+fingers, not five ... Four is the rule from now on"). His 2026-10-24 yes (comment 6386685364: "Так: мізинець з вагами,
+судити алієна за лімітом персонажа 40k/60k") had given the Little finger weights for five fingers; that part is
+reversed, the character budget stands (the ADR's amendment of 2026-10-28).
 The alien is checked with `check --kind alien` (`[kinds.alien]` in `contract.toml`, art #223): every body rule, with
 two differences of its own besides the spring bones and the head top below. Its `budget` is `"character"` (40,000
 triangles target, 60,000 cap), not the body's 22,000/30,000, because an alien file is the welded body and head in
-one mesh. The finger rule is the body's: every finger chain present and weighted. `fingers_unweighted` stays a rule
-any kind may carry (default none, no kind lists one now): the fingers whose bones must be present and unweighted;
+one mesh. Its finger rule is `fingers_unweighted = ["Little"]`: every finger chain present, the Thumb, Index, Middle
+and Ring chains weighted, the Little chain without weights (a weighted Little fails). `fingers_unweighted` is a rule
+any kind may carry (default none; only the alien lists one): the fingers whose bones must be present and unweighted;
 `contract --check` refuses a finger outside `skeleton.fingers` or a list that leaves no weighted finger.
 
 **The alien's spring bones and head top.** The engineer's words (2026-10-23, art #196 comment 6374319309: "Кістки
@@ -246,7 +249,7 @@ measured).
 | eyes near 1.6 m (from the eye bones) | warn | | | |
 | facing: toes towards +Z, left hand at +X | fail | | | |
 | one armature, skinned; no extra bones (alien: whole spring sets under Head allowed); parents as in the profile; duplicate names after the map | yes | yes | | |
-| every profile bone present; the 22 weighted bones carry weights; five weighted finger chains (the alien too, art #196 comment 6386685364) | yes | | | |
+| every profile bone present; the 22 weighted bones carry weights; five weighted finger chains (the alien: four, its Little chain unweighted, art #196 comment 6467823137) | yes | | | |
 | at most 4 weights per vertex, no unweighted vertex, nothing on Root | yes | yes | | |
 | no armature and no skin (a rigid piece) | | | yes | yes |
 | shape keys that move skin off the head bones (body-shape morphs; `Neck` skin up to 2 mm excepted): fail; face morphs on the head bones pass, more than 64 on one mesh warn | yes | | | |

@@ -1,0 +1,58 @@
+# art #196, clothes step 2 (builder B): the two outfits as Meshy multi-image-to-3D models, of which only the cloth and
+# the shoes are kept. The engineer's route (art #196 comment 6469797321): the aliens are always clothed, our own shared
+# body stays the base, Meshy makes only the clothes; two outfits, each worn by both characters, the shoes part of each
+# set. Meshy generation within the plan's credits is a standing permission (2026-10-03); this batch's cap is 80.
+#
+# Input: the front, left profile and back cut out of each outfit's turnaround on the chameleon base body (batch
+# 2026-10-28-alien-clothes-s1b, items ch_overall and ch_track; gpt-image-2.5-sunburst), each padded to one square with
+# the sheet's grey at the sheet's scale and ground line (tools/blender/clothes_views.py). meshy-7.1 at 2k geometry,
+# textured (4k, PBR, lighting removed), Meshy's remesh to 30,000 triangles with the dense original kept; the head, hands
+# and skin are cut off in Blender (tools/blender/clothes_clean.py). Price: 20 mesh + 5 for 2k + 10 texture = 35 each,
+# 70 in all. No game, film, studio, brand, character or person names (the images are the prompt). Schema:
+# docs/meshy.md.
+
+id = "2026-10-28-alien-clothes-m1"
+purpose = "art#196 clothes step 2: the dungarees and the tracksuit outfits (cloth and shoes only) as Meshy multi-image-to-3D models from their turnarounds on the chameleon base body."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 80
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-28"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6469797321"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = true
+enable_pbr = true
+texture_resolution = "4k"
+remove_lighting = true
+should_remesh = true
+topology = "triangle"
+target_polycount = 30000
+save_pre_remeshed_model = true
+target_formats = ["glb"]
+
+[[items]]
+id = "dungarees"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-28-alien-clothes-m1/views/dungarees/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-28-alien-clothes-s1b item ch_overall (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "7b14a791732260e3af48595efd2c8a21b673a74a2f24448dc0aaec3115dba184" },
+  { file = "raw:2026-10-28-alien-clothes-m1/views/dungarees/left.png", provenance = "left profile (facing left) cut from our own OpenAI generation, batch 2026-10-28-alien-clothes-s1b item ch_overall (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "f5c923c017610d3eaecf5da1f6eb43074f218f11557724e0f8d5624ecac88868" },
+  { file = "raw:2026-10-28-alien-clothes-m1/views/dungarees/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-28-alien-clothes-s1b item ch_overall (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "8c959da5d4a7fa6ca11179f2ffe516d6adc4195aa3845a5b8f95651c461bb6d7" },
+]
+
+[[items]]
+id = "tracksuit"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-28-alien-clothes-m1/views/tracksuit/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-28-alien-clothes-s1b item ch_track (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "25a6782f05086d276ed882dbef3fd33cb980986e4d87a52466659601440fa762" },
+  { file = "raw:2026-10-28-alien-clothes-m1/views/tracksuit/left.png", provenance = "left profile (facing left) cut from our own OpenAI generation, batch 2026-10-28-alien-clothes-s1b item ch_track (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "7c492998f0edce81aee67af1888c3d481d9a36ca51b54a76fdadc49a1e4833ec" },
+  { file = "raw:2026-10-28-alien-clothes-m1/views/tracksuit/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-28-alien-clothes-s1b item ch_track (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "95685d4a422b96050b09e1b77f7d156c297589fb0f7cabeab5b7652ea331c7d4" },
+]
+
+# Run 2026-10-28 (builder B): balance 2395 before, 2325 after: 70 credits (35 each, as estimated), about 4 minutes a
+# task. Each item has model.glb (remeshed to about 30,900 triangles, textured 4k PBR) and pre_remeshed_model.glb (the
+# dense original, untextured). Both came back as one fused figure (skin, cloth and shoes one surface); the cloth and
+# shoes are cut out in Blender (docs/clothes.md).

@@ -327,7 +327,8 @@ class EvaluateTest(unittest.TestCase):
 
 
 def four_finger_alien(profile: dict) -> dict:
-    """A good body whose Little chains are present and carry no weights (the 2026-10-19 four-finger alien, art #223)."""
+    """A good body whose Little chains are present and carry no weights (the four-finger alien: art #223, and again
+    since art #196 comment 6467823137)."""
     measure = good_body(profile)
     painted = measure["meshes"][0]["weights"]["weighted_bones"]
     for name in [n for n in painted if "Little" in n]:
@@ -336,8 +337,8 @@ def four_finger_alien(profile: dict) -> dict:
 
 
 class AlienFingersTest(unittest.TestCase):
-    """kinds.alien: all five fingers weighted, as the body's, and the character budget (the engineer, art #196
-    comment 6386685364); fingers_unweighted stays a rule any kind may carry."""
+    """kinds.alien: four fingers, the Little chain present and unweighted (the engineer, art #196 comment
+    6467823137), and the character budget (comment 6386685364); the body keeps five weighted fingers."""
 
     setUp = EvaluateTest.setUp
     evaluate = EvaluateTest.evaluate
@@ -346,31 +347,37 @@ class AlienFingersTest(unittest.TestCase):
     def finger_check(self, measure: dict, kind: str = "alien") -> dict:
         return next(r for r in self.evaluate(measure, kind)["results"] if r["check"] == "finger_chains")
 
-    def test_five_weighted_fingers_pass(self) -> None:
-        report = self.evaluate(good_body(self.profile), "alien")
+    def test_four_fingers_pass_the_alien(self) -> None:
+        report = self.evaluate(four_finger_alien(self.profile), "alien")
         failures = [r for r in report["results"] if r["status"] != _checks.PASS]
         self.assertEqual(failures, [])
         self.assertEqual(report["verdict"], _checks.PASS)
-        self.assertEqual(self.finger_check(good_body(self.profile))["detail"], "five weighted fingers per hand")
+        self.assertIn("4 weighted fingers per hand (Thumb, Index, Middle, Ring)",
+                      self.finger_check(four_finger_alien(self.profile))["detail"])
 
-    def test_a_bare_little_fails_the_alien_now(self) -> None:
-        for kind in ("alien", "body"):
-            result = self.finger_check(four_finger_alien(self.profile), kind)
-            self.assertEqual(result["status"], _checks.FAIL, kind)
-            self.assertIn("LeftLittle is not weighted on LeftLittleProximal", result["detail"])
+    def test_a_weighted_little_fails_the_alien(self) -> None:
+        result = self.finger_check(good_body(self.profile))
+        self.assertEqual(result["status"], _checks.FAIL)
+        self.assertIn("LeftLittle must carry no weights but is weighted on LeftLittleProximal", result["detail"])
+
+    def test_the_body_keeps_five_weighted_fingers(self) -> None:
+        self.assertEqual(self.finger_check(good_body(self.profile), "body")["detail"], "five weighted fingers per hand")
+        result = self.finger_check(four_finger_alien(self.profile), "body")
+        self.assertEqual(result["status"], _checks.FAIL)
+        self.assertIn("LeftLittle is not weighted on LeftLittleProximal", result["detail"])
 
     def test_the_alien_is_held_to_the_character_budget(self) -> None:
         budget = self.contract["budgets"]["character"]
         self.assertEqual((budget["triangles_target"], budget["triangles_cap"]), (40000, 60000))
-        measure = good_body(self.profile)
         for tris, alien, body in ((29000, _checks.PASS, _checks.WARN), (45000, _checks.WARN, _checks.FAIL),
                                   (60001, _checks.FAIL, _checks.FAIL)):
-            measure["meshes"][0]["triangles"] = tris
-            self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["triangles"], alien, tris)
-            self.assertEqual(self.statuses(self.evaluate(measure, "body"))["triangles"], body, tris)
+            for measure, kind, want in ((four_finger_alien(self.profile), "alien", alien),
+                                        (good_body(self.profile), "body", body)):
+                measure["meshes"][0]["triangles"] = tris
+                self.assertEqual(self.statuses(self.evaluate(measure, kind))["triangles"], want, (tris, kind))
 
     def test_a_missing_little_bone_fails(self) -> None:
-        measure = good_body(self.profile)
+        measure = four_finger_alien(self.profile)
         bones = measure["armatures"][0]["bones"]
         bones[:] = [b for b in bones if b["name"] != "RightLittleDistal"]
         result = self.finger_check(measure)
@@ -391,7 +398,7 @@ class AlienFingersTest(unittest.TestCase):
         self.assertIn("LeftLittle must carry no weights but is weighted on LeftLittleIntermediate", result["detail"])
 
     def test_another_unweighted_finger_fails(self) -> None:
-        measure = good_body(self.profile)
+        measure = four_finger_alien(self.profile)
         del measure["meshes"][0]["weights"]["weighted_bones"]["RightRingProximal"]
         result = self.finger_check(measure)
         self.assertEqual(result["status"], _checks.FAIL)
@@ -456,8 +463,8 @@ REAL_KIT = common.raw_dir() / "review/char/alien-parts-kit/S9d/export/cage/chara
 
 
 def alien_kit(profile: dict, part_triangles: dict[str, int] | None = None) -> dict:
-    """A good five-finger alien Body plus every kit part as a rigid mesh off its socket (not at the origin)."""
-    measure = good_body(profile)
+    """A good four-finger alien Body plus every kit part as a rigid mesh off its socket (not at the origin)."""
+    measure = four_finger_alien(profile)
     kit = _checks.kit_parts({"nodes": KIT_NODES})
     for name in sorted({n for choices in kit.values() for members in choices.values() for n in members}):
         part = rigid_piece((part_triangles or {}).get(name, 1000))["meshes"][0]

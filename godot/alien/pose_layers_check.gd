@@ -25,7 +25,6 @@ const CONTACTS := [
 	["Stand+HandsOnHips", "LeftHand", "Hips"], ["Stand+HandsOnHips", "RightHand", "Hips"],
 	["Lunge+FingerUp", "LeftHand", "Hips"],
 	["Sit+HandsBehindHead", "LeftHand", "Head"], ["Sit+HandsBehindHead", "RightHand", "Head"],
-	["Stand+Salute", "RightIndexDistal", "Head"], ["Stand+Salute", "LeftHand", "Hips"],
 	["Kneel+Heart", "LeftIndexDistal", "RightIndexDistal"],
 	["OneLeg+Plane", "LeftHand", "Hips"],
 ]

@@ -31,6 +31,7 @@ light = [
   "godot/board/*", "tools/blender/board_*",  # the breaker board's build and shot scripts (#263): no runner command or heavy test uses them
   "godot/charger/*", "tools/blender/charger_*",  # the crystal charger's build and shot scripts (#263): no runner command or heavy test uses them
   "tools/blender/metal_cost_run.py",  # the stations' bronze cost measurement (#263 fix2): no runner command or heavy test uses it
+  "tools/blender/clothes_*",  # the clothes step's view cutter, cleaner and measure (#196): no runner command or heavy test uses them
 ]
 
 [area.anim]

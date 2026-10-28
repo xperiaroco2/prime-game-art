@@ -1,0 +1,42 @@
+# The shared alien body's female variant f1 (art #196, clothes step 2; alien_female_geom.py): a little chest (soft,
+# round, no nipples), wider hips and seat, a slightly narrower waist; height, limbs, hands, feet and neck unchanged.
+# Subtle: an adult cartoon figure (the axolotl's sketches, 2026-10-28-alien-clothes-s1/ax_overall and ax_turtle).
+# Heights on the S4b body: crotch about 0.82 m, navel 1.00, chest 1.14, armpit 1.30, neck ring 1.39.
+name = "f1"
+note = "the first female shape: chest 2.0 cm, hips 2.2 cm a side, seat 1.8 cm, waist 1.0 cm a side"
+
+[chest]        # two rounds pushed forward on the front half
+amount_m = 0.020
+z = 1.12
+half_z = 0.09
+x = 0.058
+half_x = 0.07
+ramp_m = 0.04
+
+[seat]         # two rounds pushed back on the back half
+amount_m = 0.018
+z = 0.84
+half_z = 0.11
+x = 0.065
+half_x = 0.09
+ramp_m = 0.05
+
+[hips]         # the sides out, linear in x: amount_m at ref_x
+amount_m = 0.022
+z = 0.87
+half_z = 0.13
+ref_x = 0.135
+
+[waist]        # the sides in
+amount_m = 0.010
+z = 1.00
+half_z = 0.07
+ref_x = 0.106
+
+[mask]         # a vertex moves by its summed weight on these bones
+bones = ["Hips", "Spine", "Chest", "UpperChest", "LeftUpperLeg", "RightUpperLeg"]
+
+[limits]
+still_above_z = 1.25   # nothing above moves (shoulders, neck, head)
+still_below_z = 0.70   # nothing below moves (knees, shins, feet)
+max_delta_m = 0.03
