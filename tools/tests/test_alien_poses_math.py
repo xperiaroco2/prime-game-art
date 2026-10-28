@@ -338,12 +338,15 @@ class OnTheChameleon(unittest.TestCase):
         self.assertEqual({k for k in arms if A.VARIANT in k},
                          {f"HandsOnHips{A.VARIANT}{lg}" for lg in legs if lg != mo.data["reference_legs"]})
         lim = mo.data["limits"]
-        for lg in ("Squat", "Sit"):
+        cs = {c["a"]: c for c in mo.data["arms"]["HandsOnHips"]["contacts"] if c.get("mark")}
+        for lg in ("Squat", "Sit", "OneLeg", "Kneel", "Lunge"):  # q4 (review 6): every variant, not only two
             m = A.measure(mo, A.compose(legs[lg], arms[f"HandsOnHips{A.VARIANT}{lg}"]), lg, "HandsOnHips", True)
             self.assertEqual(set(m["marks_cm"]), {f"hand_{s}@waist_{s}" for s in A.SIDES}, lg)
             self.assertFalse([k for k in m["contacts_cm"] if "thigh" in k], lg)
             self.assertEqual(m["fails"], [], lg)
             for s in A.SIDES:
+                c = cs[f"hand_{s}"]  # q4 (review 1): the knuckles within the legs pose's own limit (9 on Lunge)
+                self.assertLessEqual(m["marks_cm"][f"hand_{s}@waist_{s}"], c.get("legs_mark_cm", {}).get(lg, c["mark_cm"]), (lg, s))
                 for b in ("torso", f"thigh_{s}"):
                     self.assertLessEqual(m["through_cm"][f"hand_{s}>{b}"], lim["through_hand_cm"], (lg, s, b))
         self.assertFalse(any(A.thigh_side(mo.data, lg, s) for lg in legs for s in A.SIDES))
@@ -351,8 +354,71 @@ class OnTheChameleon(unittest.TestCase):
         self.assertTrue(A.thigh_side(th, "Kneel", "Left"))
         self.assertFalse(A.thigh_side(th, "Kneel", "Right"))
 
-    def test_the_hand_library_four_shapes_mirrored_thumbs_straight_fists(self):
-        """p3: every arm takes one of the four hand shapes; the fist's thumb turn (ThumbTurn) mirrors on the right
+    def test_the_akimbo_limit_is_per_legs_and_wins_over_the_variant_one(self):
+        """q4 (review 1): the fist's mark limit is the contact's own per legs pose (`legs_mark_cm`, else `mark_cm`),
+        not max()-ed with `variant_mark_cm`: Stand's knuckles (7 cm) fail at a 6 cm limit even as a variant, and
+        Squat's lifted fist (12.7 cm) passes its own 13.5 but fails Stand's 9."""
+        mo = self.model
+        cs = mo.data["arms"]["HandsOnHips"]["contacts"]
+        old = [dict(c) for c in cs]
+        try:
+            st = A.compose(mo.legs("Stand"), mo.arms("HandsOnHips"))
+            for c in cs:
+                if c.get("mark"):
+                    c["mark_cm"] = 6.0
+            self.assertTrue(any(f.startswith("mark") for f in A.measure(mo, st, "Stand", "HandsOnHips", True)["fails"]))
+            for c, o in zip(cs, old):
+                c.update(o)
+            sq = mo.legs("Squat")
+            r = A.compose(sq, mo.arms("HandsOnHips", ref=sq, legs="Squat"))
+            self.assertEqual(A.measure(mo, r, "Squat", "HandsOnHips", True)["fails"], [])
+            for c in cs:
+                c.pop("legs_mark_cm", None)
+            self.assertTrue(any(f.startswith("mark") for f in A.measure(mo, r, "Squat", "HandsOnHips", True)["fails"]))
+        finally:
+            cs[:] = old
+
+    def test_legs_variant_lifts_the_sit_fist(self):
+        """q3's `legs_variant` (review 5): Sit's own offset puts the akimbo knuckles higher than the shared variant's."""
+        mo = self.model
+        both = mo.data["arms"]["HandsOnHips"]["both"]
+        sit = mo.legs("Sit")
+        hi = A.knuckles(A.compose(sit, mo.arms("HandsOnHips", ref=sit, legs="Sit")).P(), "Left")
+        lv = both.pop("legs_variant")
+        try:
+            lo = A.knuckles(A.compose(sit, mo.arms("HandsOnHips", ref=sit, legs="Sit")).P(), "Left")
+        finally:
+            both["legs_variant"] = lv
+        self.assertGreater(hi[2] - lo[2], 0.02)
+
+    def test_spine_level_keeps_the_chest_upright(self):
+        """q2's `spine.level` (review 5): on Lunge and OneLeg (level 1.0) the chest's up is the world's within 1.5
+        degrees after the legs' fit; Squat's (0.7) leans under 5 degrees (10 unlevelled)."""
+        for lg, most in (("Lunge", 1.5), ("OneLeg", 1.5), ("Squat", 5.0)):
+            r = self.model.legs(lg)
+            F = A.M.q_mul(r.world_q("UpperChest"), A.M.q_conj(r.rest_q("UpperChest")))
+            u = A.M.q_rotate(F, (0.0, 0.0, 1.0))
+            self.assertLess(math.degrees(math.acos(max(-1.0, min(1.0, u[2])))), most, lg)
+
+    def test_a_thigh_hand_is_measured_on_its_thigh(self):
+        """`[thigh_hand]` (no legs since p3; review 5 kept its test): on its legs and side the hip hand's contacts
+        are the thigh's skin, not the waist's mark nor the torso."""
+        th = self.model.data["thigh_hand"]
+        old = dict(th)
+        try:
+            th["legs"] = ["Kneel"]
+            kn = self.model.legs("Kneel")
+            r = A.compose(kn, self.model.arms("HandsOnHips", ref=kn, legs="Kneel"))
+            m = A.measure(self.model, r, "Kneel", "HandsOnHips", True)
+        finally:
+            th.clear()
+            th.update(old)
+        self.assertIn("hand_Left~thigh_Left", m["contacts_cm"])
+        self.assertNotIn("hand_Left@waist_Left", m["marks_cm"])
+        self.assertIn("hand_Right@waist_Right", m["marks_cm"])
+
+    def test_the_hand_library_five_shapes_mirrored_thumbs_straight_fists(self):
+        """p3: every arm takes one of the library's hand shapes (the brief's four and q3's `behind`); the fist's thumb turn (ThumbTurn) mirrors on the right
         hand (the thumb tips mirror images on the rest skeleton within 1 mm); a `fingers_dir = "forearm"` hand (the
         Victory's and the akimbo's fists) keeps its wrist straight (within 1 degree)."""
         d = self.model.data
@@ -366,11 +432,17 @@ class OnTheChameleon(unittest.TestCase):
             self.model._fingers(r, side, "fist")
         tl, tr = (A.S.pos(r.P()[f"{s}ThumbDistal"]) for s in A.SIDES)
         self.assertLess(A.length(A.sub(tl, (-tr[0], tr[1], tr[2]))), 0.001)
-        for side in A.SIDES:  # q3: the flat hand's `spread` mirrors too (q2's drew one hand's fingers apart)
-            self.model._fingers(r, side, "flat")
-        for f in ("Index", "Little"):
-            tl, tr = (A.S.pos(r.P()[f"{s}{f}Distal"]) for s in A.SIDES)
-            self.assertLess(A.length(A.sub(tl, (-tr[0], tr[1], tr[2]))), 0.001, f)
+        for g in ("flat", "behind"):  # q3: a `mirror` grip's `spread` mirrors too (q2's drew one hand's fingers apart)
+            for side in A.SIDES:
+                self.model._fingers(r, side, g)
+            for f in ("Index", "Little"):
+                tl, tr = (A.S.pos(r.P()[f"{s}{f}Distal"]) for s in A.SIDES)
+                self.assertLess(A.length(A.sub(tl, (-tr[0], tr[1], tr[2]))), 0.001, (g, f))
+        for am in ("PalmsOut", "Victory"):  # q4 (review 7): mirrored on a solved pose too, not only the rest one
+            P = A.compose(self.model.legs("Stand"), self.model.arms(am)).P()
+            for f in ("Index", "Little", "Thumb"):
+                tl, tr = (A.S.pos(P[f"{s}{f}Distal"]) for s in A.SIDES)
+                self.assertLess(A.length(A.sub(tl, (-tr[0], tr[1], tr[2]))), 0.005, (am, f))
         for am, legs in (("Victory", "Stand"), ("HandsOnHips", "Stand")):
             P = A.compose(self.model.legs(legs), self.model.arms(am)).P()
             for s in A.SIDES:

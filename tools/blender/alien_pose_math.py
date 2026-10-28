@@ -900,8 +900,10 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
             continue
         if c.get("mark"):  # the palm's centre to a landmark carried by the Spine (the hip hand on the waist's side)
             at = knuckles if c.get("by") == "knuckles" else palm_centre  # p3: a fist's knuckles
-            if c.get("mark_cm"):  # the contact's own limit (p3: the akimbo fist rides above the waist's mark)
-                mark_lim[f"{c['a']}@{c['mark']}"] = c["mark_cm"]
+            if c.get("mark_cm"):  # the contact's own limit (p3: the akimbo fist rides above the waist's mark), per
+                # legs pose where it has one (q4, review 1: `legs_mark_cm`, the fist lifted up the waist's side on
+                # the legs whose thighs rise to it; the others keep the tight one)
+                mark_lim[f"{c['a']}@{c['mark']}"] = c.get("legs_mark_cm", {}).get(legs, c["mark_cm"])
             marks[f"{c['a']}@{c['mark']}"] = round(length(sub(at(P, c["a"].split("_")[1]),
                                                               mark_posed(model, P, c["mark"]))) * 100, 2)
             continue
@@ -926,8 +928,9 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
     for k, v in proxy.items():  # review 3: a depth with a skin gap still fails past its own limit (a hand deep in b
         if v > lim.get("proxy_hand_cm", lim["through_cm"]):  # with no vertex of b's skin within TOUCH_CM)
             fails.append(f"through (no touch) {k} {v} cm")
-    for k, v in marks.items():  # a per-legs variant rides off the waist to clear the thigh: its own, looser limit
-        if v > max(mark_lim.get(k, 0.0), lim.get("variant_mark_cm", lim["mark_cm"]) if variant else lim["mark_cm"]):
+    for k, v in marks.items():  # a per-legs variant rides off the waist to clear the thigh: its own, looser limit;
+        # a contact's own limit wins outright (q4: it was max()-ed with variant_mark_cm, 10 cm on Stand's variant)
+        if v > (mark_lim[k] if k in mark_lim else lim.get("variant_mark_cm", lim["mark_cm"]) if variant else lim["mark_cm"]):
             fails.append(f"mark {k} {v} cm")
     for k, v in contacts.items():
         if v > lim["contact_gap_cm"]:

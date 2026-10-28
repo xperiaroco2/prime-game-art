@@ -159,12 +159,14 @@ floor = ["torso", "foot_Left", "foot_Right"]
 # off the skin and rides above the mark): `mark_cm` 9 for the fist. q3 (grid of three, anim_bare/poses/p3/q3/q3_akimbo_*;
 # the critic: the fists on the thighs on Sit and Squat, on the raised knee on OneLeg and Kneel): the elbows further back
 # ([1.0, -0.7, 0.15], the akimbo from the side) and `legs_variant`, the fist up the waist's side where the thighs
-# rise to it (Squat 1.1, Sit, OneLeg and Kneel 1.0 hand lengths up; Sit 1.15 read 15.9 cm, sit.py): the knuckles 10.8-12.7 cm from the mark
-# there, `mark_cm` 13
+# rise to it (Squat 1.1, Sit, OneLeg and Kneel 1.0 hand lengths up; Sit's lift 1.0/1.15/1.3 read 10.9/13.7/16.4 cm,
+# q4/marks.log): the knuckles 10.9-12.7 cm from the mark there. q4 (review 1): the limit per legs pose, `mark_cm` 9 on
+# Stand and Lunge (read 7.1 and 6.3: a fist 2 cm higher or at the ribs fails), `legs_mark_cm` 12 on Sit, OneLeg and
+# Kneel (10.9), 13.5 on Squat (12.7)
 per_legs = true
 both = { mode = "goal", at = "waist", offset = [0.9, -0.2, 0.6], elbow = [1.0, -0.7, 0.15], fingers_dir = "forearm", palm = [0.0, -0.3, -1.0], grip = "fist", touch = ["torso"], touch_by = "hand_{side}", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], passes = 16, variant = { gap_cm = 0.8 }, legs_variant = { Sit = { offset = [1.0, -0.3, 1.0] }, Squat = { offset = [1.0, -0.3, 1.1] }, OneLeg = { offset = [1.0, -0.4, 1.0] }, Kneel = { offset = [1.0, -0.4, 1.0] } } }
 contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Right", b = "torso" },
-            { a = "hand_Left", mark = "waist_Left", by = "knuckles", mark_cm = 13.0 }, { a = "hand_Right", mark = "waist_Right", by = "knuckles", mark_cm = 13.0 }]
+            { a = "hand_Left", mark = "waist_Left", by = "knuckles", mark_cm = 9.0, legs_mark_cm = { Sit = 12.0, OneLeg = 12.0, Kneel = 12.0, Squat = 13.5 } }, { a = "hand_Right", mark = "waist_Right", by = "knuckles", mark_cm = 9.0, legs_mark_cm = { Sit = 12.0, OneLeg = 12.0, Kneel = 12.0, Squat = 13.5 } }]
 
 [arms.Plane]
 # q3 (the critic: a banked line 8-10 degrees off reads as a droop, not a bank, on all six legs): both wings level
@@ -190,7 +192,7 @@ per_legs = true
 Head = [-8, 9, 0]
 Right = { mode = "fk", shoulder = [0, 8, 0], upper = [0.45, 0.35, 1.0], lower = [0.15, 0.3, 1.0], fingers_dir = [0.05, 0.25, 1.0], palm = [-0.6, 0.8, 0.0], grip = "point" }
 Left = { mode = "goal", at = "waist", offset = [0.9, -0.2, 0.6], elbow = [1.0, -0.7, 0.15], fingers_dir = "forearm", palm = [0.0, -0.3, -1.0], grip = "fist", touch = ["torso"], touch_by = "hand_{side}", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], passes = 16, variant = { gap_cm = 0.8 }, legs_variant = { Sit = { offset = [1.0, -0.3, 1.0] }, Squat = { offset = [1.0, -0.3, 1.1] }, OneLeg = { offset = [1.0, -0.4, 1.0] }, Kneel = { offset = [1.0, -0.4, 1.0] } } }
-contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left", by = "knuckles", mark_cm = 13.0 }]
+contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left", by = "knuckles", mark_cm = 9.0, legs_mark_cm = { Sit = 12.0, OneLeg = 12.0, Kneel = 12.0, Squat = 13.5 } }]
 
 [arms.HandsBehindHead]
 # round 3 (s9 grid): the shoulders shrugged up lift the elbows toward the ears, wide (27 cm out), the forearms going

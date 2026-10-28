@@ -1235,17 +1235,21 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     akimbo).
   - **Victory**: FK, both arms up in a wide V (`upper` [0.6, 0.2, 1.0], the elbows nearly straight; q2: a little
     forward, so the side outline shows the arms in front of the crest, not hidden behind it), fists, the
-    shoulders shrugged a little (`shoulder` [0, -12, 0]). The arms cannot lift the hands over the crest: their
-    lowest skin stays 18 to 24 cm under the head's top on every V tried (`gridBC.log`), 17 to 26 cm outside it.
+    shoulders shrugged a little (`shoulder` [0, -12, 0]). The arms cannot lift the whole fist over the crest: its
+    lowest skin stays 18 to 24 cm under the head's top on every V tried (`gridBC.log`), 17 to 26 cm outside it; the
+    fists' tops reach the head's top (q4, `tools/out/poses/p3/q4/victory.log`: 1.2 cm under it on Stand, 0.5 cm over
+    on Sit, the inner skin 20 cm outside the head's side), so "the hands above the head" reads as level with the crown.
   - **The fist akimbo** (HandsOnHips and FingerUp's hip hand, one arm): the wrist goal at the waist's side, out and a
-    little up (`offset` [0.9, -0.1, 0.6]; q2: 0.3 sat by the hip bone, not above it), the elbow wide and a little back ([1.0, -0.4, 0.1]: 22 cm out of the
-    shoulder, 5 to 10 cm behind it), the fist's skin (`touch_by` the whole hand) touched onto the torso at 0.5 cm
+    little up (`offset` [0.9, -0.2, 0.6] since q3; q1 [0.9, -0.1, 0.6]; q2: 0.3 sat by the hip bone, not above it), the
+    elbow wide and back ([1.0, -0.7, 0.15] since q3; q1 [1.0, -0.4, 0.1]: 22 cm out of the shoulder, 5 to 10 cm behind
+    it), the fist's skin (`touch_by` the whole hand) touched onto the torso at 0.5 cm
     (variants 0.8), `passes` 16 (the clear-then-touch loop settles later than 9). `per_legs = true`: a variant on
     every legs pose but the reference, since the shared clip's fist went into the waist or off it wherever the legs
     lean the Spine; `[thigh_hand]` has no legs any more (the fists stay on the waist over Squat's and Sit's thighs).
     A mark contact with `by = "knuckles"` measures the four base knuckles' centre (a fist's palm centre stands a
     fist's depth off the waist), with its own `mark_cm` (9 cm: the knuckles sit about 2 cm off the skin and the fist
-    rides above the waist's mark, which is at the Spine's height; read 5.7 to 8.5 cm).
+    rides above the waist's mark, which is at the Spine's height; read 5.7 to 8.5 cm in q1, 6.3 on Lunge and 7.1 on
+    Stand since q3) and, since q4, `legs_mark_cm` for the legs poses whose `legs_variant` lifts the fist (below).
 - **p3 q2: arms that keep their meaning in the world, OneLeg's knee, the fist's thumb** (pictures in
   `anim_bare/poses/p3/q2/`, numbers in `tools/out/poses/p3/q2/grid2.log`):
   - **`spine.level`** (a legs pose's setting): the Spine counter-turned that part of the way to a chest upright in
@@ -1257,10 +1261,10 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     lean reads natural and opens the arms).
   - **OneLeg**: the raised knee forward and a little out (6 cm), the foot by the inside of the standing knee (10 cm
     to its side, 14 cm in front); it hung low across the standing shin.
-  - **The fist** `[90, 60, 20]` (the base knuckle bent most; `[86, 100, 70]` curled the long finger tubes into
+  - **The fist** (q2 only; q3's below) `[90, 60, 20]` (the base knuckle bent most; `[86, 100, 70]` curled the long finger tubes into
     closed rings) and the thumb's base turned in, the rest nearly straight (`Thumb` [40, 10, 0], `ThumbTurn` [20,
-    45]): across the front of the curled fingers (the searched thumb hooked into an "O"). The flat hand's `spread`
-    -10 draws the fingers together.
+    45]): across the front of the curled fingers (the searched thumb hooked into an "O"). q2's flat hand's `spread`
+    -10 was meant to draw the fingers together (it did on one hand only; q3's `mirror`, below).
   - **`close_hands_<char>.png`** (`pose_shots.gd`): one hand per arms pose on Stand, front and three-quarter
     (HandsBehindHead from behind), the hand-shape library's judge.
 - **p3 q3: the critic's ranking fixed** (a fresh critic ranked the 48 pairs of the q2 build: 11 good, 33 weak, 4
@@ -1275,16 +1279,19 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     bent and the thumb over the fingers' front (q2's left a ring and the thumb standing out as a nub).
   - **`spread` mirrored per hand** (`_fingers`): the left hand's sign was the right's, so q2's -10 drew the right
     hand's fingers together and the left's apart (PalmsOut's "claw"). A grip's `mirror = true` makes one sign mean
-    together on both hands (`flat`, `behind`: 18); a flag, so `--check` still composes older builds' `pose_data.json`
+    together on both hands (`flat`, `behind`: 18; the library is the brief's four shapes and this fifth); a flag, so `--check` still composes older builds' `pose_data.json`
     as built (the first q3 verify went red on s11's right fingers); the test checks the index and little tips mirror.
   - **`behind`**, the HandsBehindHead grip: the flat hand's fingers curled round the skull (`[35, 45, 30]`) and drawn
     together; the back view showed a blob of spread fingers.
   - **The akimbo**: the elbows further back (`elbow` [1.0, -0.7, 0.15]: the akimbo reads from the side), and
     **`legs_variant`** (an arm's settings for one legs pose's variant, on top of `variant`): the fist up the waist's
-    side where the thighs rise to it (Squat 1.1, Sit, OneLeg and Kneel 1.0 hand lengths up, was 0.6; Sit at 1.15
-    read 16 cm, `sit.py`): on Sit and
+    side where the thighs rise to it (Squat 1.1, Sit, OneLeg and Kneel 1.0 hand lengths up, was 0.6; Sit's lift
+    1.0, 1.15 and 1.3 read 10.9, 13.7 and 16.4 cm, `tools/out/poses/p3/q4/marks.log`): on Sit and
     Squat the fists had landed on the thighs (Sit+HandsOnHips ugly), on OneLeg and Kneel on the raised knee. The
-    knuckles stand 10.8 to 12.7 cm from the waist's mark there: the mark contact's `mark_cm` is 13.
+    knuckles stand 10.9 to 12.7 cm from the waist's mark there. q3 set one `mark_cm` 13 for every legs pose; q4
+    (review 1: a fist 4 cm up or on the ribs passed on Stand) makes the limit per legs pose: `mark_cm` 9 (Stand 7.1,
+    Lunge 6.3) and `legs_mark_cm` Sit, OneLeg and Kneel 12 (10.9), Squat 13.5 (12.7). A contact's own limit wins
+    outright over `variant_mark_cm` (it was the larger of the two, 10 cm on Stand's variant).
   - **Flex**: the upper arms more out and the forearms leaning out (`upper` [1.0, 0.45, 0.15], `lower` [0.3, 0.2,
     1.0]): in 3/4 the near fist sat on the cheek.
 - **The check composes from the build's own data.** The build writes `build/<char>/pose_data.json` (the TOML as

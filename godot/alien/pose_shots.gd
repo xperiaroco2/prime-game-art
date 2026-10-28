@@ -31,10 +31,12 @@ const START_CELL := Vector2i(220, 330)
 const GRID_CELL := Vector2i(200, 300)
 const BIG_CELL := Vector2i(470, 700)  # starting_<c>_big_<n>.png: one starting pair large
 const CLOSE_CELL := Vector2i(300, 300)
-## close_hands: per arms pose the hand framed (its side) and the two views (yaw degrees)
+## close_hands: per arms pose the hand framed (its side) and the two views (yaw degrees); q4 (review 9): the right
+## hands of Plane, Flex and PalmsOut too, so a mirrored-hand regression (q2's spread) shows on the sheet
 const CLOSE_HANDS := [["Flex", "Left", 0.0, 35.0], ["Victory", "Left", 0.0, 35.0], ["FingerUp", "Right", 0.0, -35.0],
 	["FingerUp", "Left", 0.0, 35.0], ["Plane", "Left", 0.0, 50.0], ["PalmsOut", "Left", 0.0, 35.0],
-	["Heart", "", 0.0, 35.0], ["HandsOnHips", "Left", 0.0, 35.0], ["HandsBehindHead", "", 180.0, 145.0]]
+	["Heart", "", 0.0, 35.0], ["HandsOnHips", "Left", 0.0, 35.0], ["HandsBehindHead", "", 180.0, 145.0],
+	["Plane", "Right", 0.0, -50.0], ["Flex", "Right", 0.0, -35.0], ["PalmsOut", "Right", 0.0, -35.0]]
 const CLOSE_ARMS := ["HandsOnHips", "Heart", "FingerUp", "HandsBehindHead", "Victory", "PalmsOut"]
 
 var _ch: Node3D
