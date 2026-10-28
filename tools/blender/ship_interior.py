@@ -292,12 +292,10 @@ def wall_panel(args, layout):
     if args.get("soffit"):  # a flat chord over two hall facets: close the ceiling's rim behind it
         tri = [(0.0, -hw), (HV - HC, 0.0), (0.0, hw)]
         out.append(P("soffit", G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08), "int_silver_b"))
-    if args.get("plain"):
+    if args.get("plain"):   # lens C: under 8 mm of relief, behind the alcove's back panel (d 10 at the vertex)
         return out + [P("body", G.slab(fr, G.rect(-hw, hw, 0.0, h), -0.2, 0.0), "int_silver_b"),
-                      P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.16), 0.0, 0.015), "int_dark"),
-                      P("plain", G.slab(fr, G.rect(-e, e, 0.2, belt - 0.05), 0.0, 0.02, 0.008), lo),
-                      P("belt", G.slab(fr, G.rect(-hw, hw, belt, belt + 0.12), 0.0, 0.05, 0.012), "int_silver_c"),
-                      P("upper", G.slab(fr, G.rect(-e, e, belt + 0.17, h - 0.04), 0.0, 0.03, 0.01), hi)]
+                      P("kick", G.slab(fr, G.rect(-hw, hw, 0.0, 0.16), 0.0, 0.008), "int_dark"),
+                      P("plain", G.slab(fr, G.rect(-hw + 0.02, hw - 0.02, 0.2, h - 0.04), 0.0, 0.006, 0.003), lo)]
     return out + [P("body", G.slab(fr, G.rect(-hw, hw, 0.0, h), -0.2, 0.0), "int_silver_b"),
             P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.16), 0.0, 0.015), "int_dark"),
             P("diamond", pyramid(fr, dia, 0.0, 0.035, 0.1, 0.012), lo),
