@@ -69,6 +69,14 @@ class Maths(unittest.TestCase):
             with self.assertRaises(ValueError):
                 G.gill_decimate_ratio(*bad)
 
+    def test_gill_check_rows(self):
+        # R1: the gills' decimation is checked on the result: a moved vertex or a changed corner UV is counted
+        before = [(0.0, 0.0, 1.0), (0.1, 0.2, 1.3)]
+        self.assertEqual(G.missing_rows(before, before + [(9.0, 9.0, 9.0)]), 0)
+        self.assertEqual(G.missing_rows(before, [(0.0, 0.0, 1.0), (0.1, 0.2, 1.3000001)]), 1)
+        corners = [(0.0, 0.0, 1.0, 0.25, 0.5)]
+        self.assertEqual(G.missing_rows(corners, [(0.0, 0.0, 1.0, 0.25, 0.51)]), 1)
+
 
 class HerTargets(unittest.TestCase):
     def test_keys_and_numbers(self):

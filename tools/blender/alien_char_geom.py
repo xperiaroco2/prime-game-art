@@ -314,3 +314,10 @@ def gill_decimate_ratio(tris: int, gill_tris: int, keep: float) -> float:
     if not 0.0 < keep <= 1.0 or tris <= 0 or not 0 <= gill_tris <= tris:
         raise ValueError("keep in (0, 1], 0 <= gill_tris <= tris")
     return (tris - gill_tris * (1.0 - keep)) / tris
+
+
+def missing_rows(before, after) -> int:
+    """R1 (art #196): how many of `before`'s rows (tuples of floats: a vertex's position, or a corner's position and
+    UVs) are not found exactly in `after`. The gills' decimation must leave every row outside the gills in place: 0."""
+    have = set(map(tuple, after))
+    return sum(1 for r in map(tuple, before) if r not in have)

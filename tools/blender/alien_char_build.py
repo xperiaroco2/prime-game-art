@@ -189,16 +189,44 @@ def corner_normals(me):
 GILL_ZETA_ON_BODY = 0.55  # A2: the axolotl's gills on the walking body (anim_bare/a2: Jog and Sprint jitter 205-267 deg/s)
 
 
+def _rows(me, owned):
+    """The vertices outside the gills (positions) and their corners (position, every UV layer's uv, head_n)."""
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    cols = [co[lv]]
+    for layer in me.uv_layers:
+        uv = np.empty(len(me.loops) * 2)
+        layer.data.foreach_get("uv", uv)
+        cols.append(uv.reshape(-1, 2))
+    if "head_n" in me.attributes:
+        hn = np.empty(len(me.loops) * 3)
+        me.attributes["head_n"].data.foreach_get("vector", hn)
+        cols.append(hn.reshape(-1, 3))
+    keep = ~np.asarray(owned, dtype=bool)
+    return co[keep].tolist(), np.hstack(cols)[keep[lv]].tolist()
+
+
+def _owned(skin) -> list[bool]:
+    """Each vertex: is its largest weight a Gill* group's."""
+    gills = {g.index for g in skin.vertex_groups if g.name.startswith("Gill")}
+    return [bool(v.groups) and max(v.groups, key=lambda g: g.weight).group in gills for v in skin.data.vertices]
+
+
 def lighten_gills(skin, keep: float) -> dict:
     """M1 (art #196): collapse-decimate the faces whose vertices the Gill* groups own (each vertex's largest weight),
-    down to `keep` of their triangles; every other vertex has weight 0 in the decimation group, so the skull, the face
-    and the neck keep their vertices, UVs and corner normals exactly. The ratio is the whole mesh's, from the gills'
-    share (G.gill_decimate_ratio)."""
+    down to `keep` of their triangles; every other vertex has weight 0 in the decimation group. The ratio is the
+    whole mesh's, from the gills' share (G.gill_decimate_ratio).
+    R1: measured, not assumed. Every vertex outside the gills must keep its position, and each of its corners its
+    UVs and head_n, exactly (G.missing_rows); the build fails if one moved. The gills' triangles after are counted
+    on the result (the faces whose vertices the Gill* groups own)."""
     me = skin.data
-    gills = {g.index for g in skin.vertex_groups if g.name.startswith("Gill")}
-    own = [bool(v.groups) and max(v.groups, key=lambda g: g.weight).group in gills for v in me.vertices]
+    own = _owned(skin)
     tris = sum(len(p.vertices) - 2 for p in me.polygons)
     gill_tris = sum(len(p.vertices) - 2 for p in me.polygons if all(own[i] for i in p.vertices))
+    v_before, c_before = _rows(me, own)
     vg = skin.vertex_groups.new(name="_gill_dec")
     vg.add([i for i, o in enumerate(own) if o], 1.0, "REPLACE")
     mod = skin.modifiers.new("gill_dec", "DECIMATE")
@@ -207,9 +235,22 @@ def lighten_gills(skin, keep: float) -> dict:
     bpy.ops.object.modifier_move_to_index(modifier=mod.name, index=0)  # before the armature's
     bpy.ops.object.modifier_apply(modifier=mod.name)
     skin.vertex_groups.remove(skin.vertex_groups["_gill_dec"])  # (vg is stale after the apply: M1d's run read junk)
-    after = sum(len(p.vertices) - 2 for p in skin.data.polygons)
-    return {"keep": keep, "tris_before": tris, "gill_tris_before": gill_tris, "tris_after": after,
-            "gill_tris_after": gill_tris - (tris - after)}
+    me = skin.data
+    after = sum(len(p.vertices) - 2 for p in me.polygons)
+    own_a = _owned(skin)
+    gill_after = sum(len(p.vertices) - 2 for p in me.polygons if all(own_a[i] for i in p.vertices))
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    _, c_after = _rows(me, [False] * len(me.vertices))
+    moved = G.missing_rows(v_before, co.reshape(-1, 3).tolist())
+    corners = G.missing_rows(c_before, c_after)
+    rep = {"keep": keep, "tris_before": tris, "gill_tris_before": gill_tris, "tris_after": after,
+           "gill_tris_after": gill_after, "gill_keep_measured": round(gill_after / max(gill_tris, 1), 4),
+           "outside_vertices": len(v_before), "outside_moved": moved, "outside_corners": len(c_before),
+           "outside_corners_changed": corners}
+    if moved or corners:
+        raise RuntimeError(f"lighten_gills: {moved} vertices and {corners} corners outside the gills changed {rep}")
+    return rep
 
 
 def main():
