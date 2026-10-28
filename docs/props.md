@@ -792,6 +792,28 @@ sweep, the mount and the committed asset.
 was wrong and is not used: the charger is round). They are copied to `<raw>/ship/v4/charger/ref-legs/` (`ref/` keeps
 the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the back) is history.
 
+**Lens room C (2026-10-28): the pedestal in the wall's alcove.** The engineer's look C for the lens rooms sets the
+charger into an alcove in the aft wall (`docs/ship.md`, "Lens room C"). The head is unchanged; the dome on four legs
+is replaced by the lens room drawing's faceted pedestal (prime-game-design 7f335c2,
+`ideas/ship-components/lens-room/drawing/drawing.js` `C.ped`, copied with `c_lounge.jpg` to
+`<raw>/ship/v4/charger/ref-lens/`). In `charger_dims.toml` `[frame]` and `[base]` (cm, the spot's vertex the origin):
+
+| Part | Numbers |
+|---|---|
+| Plan | back u ±44 at d 10 (on the alcove's back panel), sides to d 46, chamfers (±44, 46) -> (±22, 68), front face u ±22 at d 68 |
+| Plinth | graphite, h 0..10, overhanging 1.5 (sides), 3 (chamfers), 2 (front) |
+| Body | five bronze plates (2 cm) in two courses (joint at h 48) on a graphite core, 0.55 seams; h 10..86 |
+| Deck slab | bronze, h 86..99.1, the plinth's overhang; the well r 24.2 down to 94 round the slot |
+| Crystal axis | d 38 (was 53.5): the track ring (r 23.6) clears the back panel by 4.4 |
+| Button | Ø 8 at h 75.9 on the front plate; its lens's face d 69.8 |
+| Lights | cyan up each chamfer (h 22..80), an amber pair on the front (u ±16, h 18..44), amber along each side (d 18..40, h 80) |
+
+The drawing's lip is 3 all round; the sides keep 1.5 so the plinth and slab clear the opening's cheeks (u ±46 at the
+back panel) by 0.5, the front 2 so nothing passes the reach 70 (the drawing's own "виступ 70"). `build.json`'s
+checks: `wall_min_cm_body` (to the back panel, 0: it stands on it), `cheek_min_cm_body`, `reach_cm`, the ring's turn.
+The legs' charger's renders and shots stay in `<raw>/ship/v4/charger/b6/`; the pedestal's build is `lens1/`.
+`tools/run.sh ship --shoot DIR --charger` places this GLB (and a crystal) on both renewer spots for the look review.
+
 1. **The numbers.** `tools/blender/charger_dims.toml`: the drawing's own (the deck at its "base top" 99.1, the widest
    Ø 100.4 at 72.8, the upper tier's top edge Ø 82, the slot at 95.7, the button Ø 8 at 75.9, the outer prongs to
    139.7 at u 23.9.., the inner pair to 123.1 on the track ring of r 19, the legs lengthened 27 cm in their pistons)
@@ -841,9 +863,9 @@ the first drawing's, b4's). Build b4 (a tall drum on three feet, cut flat at the
    $PYTHON_BIN tools/blender/charger_run.py --tag <tag> --res 900 --samples 64 --asset assets/prop/crystal_charger
    ```
 
-`tools/tests/test_props_crystal_charger.py` checks the drawing's numbers, the base's gap to the wall, the wall's fold
-against the ship's layout and the committed asset. The pass behind a player (`ship_layout.check_spots` with the
-spot's depth at the charger's 1.04 m): 2.17 m of free floor behind the capsule, against `pass_m` 1.6.
+`tools/tests/test_props_crystal_charger.py` checks the drawings' numbers, the pedestal inside the alcove (the ring's
+gap to the back panel, the lips inside the cheeks and the reach, the alcove's `AXIS_D` and `REACH`), the wall's fold
+against the ship's layout and the committed asset (its reach at most 70 cm, the spots' `depth_m` 0.70).
 
 ## What the stations' bronze costs (art#263, fix pass 2; option A shipped)
 
