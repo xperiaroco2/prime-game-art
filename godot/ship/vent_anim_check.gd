@@ -147,7 +147,7 @@ func _check() -> void:
 	r = _run(1.2, false)
 	_ok(r[1] > VentAnim.ROCK_DEG - 0.01, "exhale: peak %.3f" % r[1])
 	_ok(absf(anim.angles[0] - anim.angles[3]) < 1e-3, "exhale: the ribs not together")
-	_run(VentAnim.EXHALE_OUT_S + VentAnim.EXHALE_HOLD_S + VentAnim.EXHALE_BACK_S, false)
+	_run(VentAnim.EXHALE_S, false)
 	_ok(_st() == "calm", "after the exhale: state %s" % _st())
 	anim.release()   # a release in calm: nothing
 	_ok(heard == ["fixed"], "calm release: heard %s" % [heard])
@@ -188,7 +188,7 @@ func _check() -> void:
 	_ok(_st() == "reset", "cleared: state %s" % _st())
 	_run(VentAnim.RESET_S + 0.1, false)
 	_ok(_st() == "calm" and anim.red < 0.05, "cleared: %s red %.2f" % [_st(), anim.red])
-	# the demo: fixed in pass 1, thrown in pass 2, nothing else
+	# the demo (gills step 12): fixed, too early, missed, thrown, in that order, nothing else
 	heard.clear()
 	var a2: Node = anim
 	var f: int = 0
@@ -204,5 +204,5 @@ func _check() -> void:
 		for k: int in a2.angles.size():
 			worst = maxf(worst, absf(a2.angles[k]))
 		f += 1
-	_ok(heard == ["fixed", "thrown"], "demo: heard %s" % [heard])
+	_ok(heard == VentAnim.DEMO_HEARD, "demo: heard %s" % [heard])
 	_ok(worst <= VentAnim.ROCK_DEG + 1e-4, "a rib reached %.4f deg" % worst)

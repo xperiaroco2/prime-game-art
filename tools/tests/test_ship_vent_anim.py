@@ -121,11 +121,22 @@ class VentAnimTest(unittest.TestCase):
         c = self.c
         self.assertTrue(3.5 <= c["BREATH_PERIOD_S"] <= 5.0)
         self.assertTrue(3.0 <= c["SHUDDER_HZ"][0] <= 6.0)
-        self.assertTrue(20.0 <= c["DEMO_S"] <= 30.0)
+        self.assertTrue(30.0 <= c["DEMO_S"] <= 40.0)                 # gills step 12: at most 40 s
         self.assertEqual(len(c["DEMO_RELEASES"]), len(c["DEMO_HOLD"]))
-        green = c["DEMO_HOLD"][0][2]
-        self.assertTrue(c["GREEN"][0] < green < c["GREEN"][1])   # pass 1 releases in the green
-        self.assertEqual(c["DEMO_HOLD"][1][2], 1.0)                # pass 2 holds to the top
+        held = [h[2] for h in c["DEMO_HOLD"]]
+        self.assertTrue(c["GREEN"][0] < held[0] < c["GREEN"][1])      # released in the green: the exhale
+        self.assertLess(held[1], c["GREEN"][0])                         # released too early
+        self.assertTrue(c["GREEN"][1] < held[2] < c["TOP"])             # past the green: missed
+        self.assertEqual(held[3], 1.0)                                  # held to the top: thrown
+        self.assertEqual(c["DEMO_HEARD"], ["fixed", "too_early", "missed", "thrown"])
+        for a, b in zip(c["DEMO_RELEASES"], c["DEMO_RELEASES"][1:]):
+            self.assertLess(a, b)
+        # the exhale: the peak at ROCK_DEG, the settle under it, the mist landing on the peak
+        self.assertLess(c["EXHALE_SETTLE_DEG"], c["ROCK_DEG"])
+        self.assertTrue(c["EXHALE_SETTLE_DEG"] > c["ROCK_DEG"] - 1.0)  # a tiny overshoot
+        self.assertLess(c["EXHALE_OUT_S"], 0.4)                         # quick out ...
+        self.assertGreater(c["EXHALE_BACK_S"], 4 * c["EXHALE_OUT_S"])   # ... slow back
+        self.assertLess(c["EXHALE_MIST_AT_S"], c["EXHALE_OUT_S"])
         for name in ("STEAM_PER_SLOT", "MIST_PER_SLOT", "COUGH_PER_SLOT"):
             self.assertLessEqual(c[name], 16, name)
 

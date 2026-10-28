@@ -65,11 +65,18 @@ const CLICK_TAU_S := 0.05           # a band's colour after a click (exponential
 const FADE_TAU_S := 0.3             # a band's colour after a state change
 const CLICK_POP := 0.6              # the cyan flares by this on each click ...
 const CLICK_POP_S := 0.25           # ... and settles over this
-# EXHALE: all four swing out together to ROCK_DEG, the slots at their brightest, mist from every slot; then calm
-const EXHALE_OUT_S := 0.55          # out (cubic ease-out)
-const EXHALE_HOLD_S := 1.2          # held out
-const EXHALE_BACK_S := 1.8          # back to rest (smoothstep)
-const EXHALE_GLOW := 1.2            # the cyan at (1 + this) at the exhale's peak
+# EXHALE: all four swing out together to ROCK_DEG, the slots at their brightest, mist from every slot; then calm.
+# gills step 12: sold by timing (the range stays): a quick ease-out to ROCK_DEG, a tiny overshoot past the held pose
+# (EXHALE_SETTLE_DEG, so the peak never passes the limit), the cyan flaring to its brightest and the mist landing at
+# the same moment, a slow return
+const EXHALE_OUT_S := 0.3           # out to ROCK_DEG (cubic ease-out): the peak
+const EXHALE_SETTLE_DEG := 3.4      # settles back to this after the peak (the overshoot: ROCK_DEG - this)
+const EXHALE_SETTLE_S := 0.35       # over this (smoothstep)
+const EXHALE_HOLD_S := 0.9          # held out (after the settle)
+const EXHALE_BACK_S := 2.4          # back to rest (smoothstep)
+const EXHALE_GLOW := 1.6            # the cyan at (1 + this) at the peak ...
+const EXHALE_GLOW_HELD := 0.5       # ... falling to (1 + this) while held
+const EXHALE_MIST_AT_S := 0.18      # the mist's burst (its sprites fade in over ~0.15 s: they land on the peak)
 # RETRY (too early): the shudder grows back, the colour falls back to red
 const RETRY_S := 0.9
 const RETRY_TAU_S := 0.45
@@ -80,6 +87,7 @@ const COUGH_S := 0.62
 const THROW_S := 1.2
 const THROW_HZ := [8.0, 13.0]
 const THROW_FLASH := 0.9            # the red at (1 + this) at the throw, falling over THROW_S
+const EXHALE_S := EXHALE_OUT_S + EXHALE_SETTLE_S + EXHALE_HOLD_S + EXHALE_BACK_S
 const RESET_S := 1.0                # problem cleared without a fix: back to rest, the colour back to cyan
 # --- the light (multipliers of each material's or light's energy as the scene set it) ------------------------------
 const RED_GAIN := 1.0               # a band's red: the heat's energy x (the band's cyan / the brightest band's)
@@ -96,15 +104,18 @@ const MARKER_E := 3.0
 const MARKER_RETURN_S := 0.5        # after a release the marker sinks back (exponential)
 const SEAM_DARK := Color(0.16, 0.09, 0.05)   # ship --shoot --vent-states' "dark" (ship.gd); unused by the gills
 # --- the particles (per slot; five slots) -------------------------------------------------------------------------
-const STEAM_PER_SLOT := 6           # the problem's steam, rising (continuous)
-const MIST_PER_SLOT := 12           # the exhale's cyan mist (one burst)
-const COUGH_PER_SLOT := 10          # the miss's and the throw's steam (one burst)
-const STEAM_COLOUR := Color(1.0, 0.86, 0.82, 0.16)
-const MIST_COLOUR := Color(0.55, 0.86, 1.0, 0.11)
-const COUGH_COLOUR := Color(0.95, 0.92, 0.9, 0.13)
-const PUFF_M := 0.22                # a sprite's size (r11 first clip: 0.26 at higher alpha read as cotton balls)
-const FADE_M := 0.05                # the sprites fade within this of a surface (0.2 hid the steam by the wall)
-const EMIT_OUT_M := 0.06            # the emitters this far out of the wall's face, between the ribs
+# gills step 12: vapour, not specks (r11's 22 cm sprites read as dots): few large, very soft sprites at low alpha that
+# grow and fade over their life and overlap; the steam curls a little (turbulence)
+const STEAM_PER_SLOT := 3           # the problem's steam, rising (continuous)
+const MIST_PER_SLOT := 5            # the exhale's cyan-white breath (one burst)
+const COUGH_PER_SLOT := 4           # the miss's and the throw's steam (one burst)
+const STEAM_COLOUR := Color(0.86, 0.66, 0.6, 0.075)   # warm grey, tinted by the red
+const MIST_COLOUR := Color(0.78, 0.95, 1.0, 0.085)    # cyan-white
+const COUGH_COLOUR := Color(0.88, 0.8, 0.76, 0.1)
+const PUFF_M := 0.42                # a sprite's size at scale 1 (it grows from PUFF_GROW[0] to [1] of this)
+const PUFF_GROW := [0.45, 1.7]
+const FADE_M := 0.14                # the sprites fade within this of a surface (no hard line where a puff cuts a rib)
+const EMIT_OUT_M := 0.09            # the emitters this far out of the wall's face, between the ribs
 # The unit's frame in its GLB: x along the wall, y up, +z out of the wall (the builder's v); the builder's (u, v, h)
 # maps to (x, z, y), a mirror, so its +RIB_ROCK_DEG about h is -ROCK_DEG about y here (SIDE: e -1, w +1, mirrored)
 const OUT := Vector3(0.0, 0.0, 1.0)
@@ -130,6 +141,7 @@ var _shake: float = 0.0
 var _pop: float = 0.0
 var _active: float = 0.0
 var _over: float = 0.0
+var _mist_due: bool = false
 var _side: float = 1.0
 var _from: PackedFloat32Array = PackedFloat32Array()
 var _ribs: Array = []                # [node, rest basis]
@@ -305,16 +317,18 @@ func _make_marker(root: Node3D, id: String) -> void:
 func _make_particles(root: Node3D, id: String) -> void:
 	var soft: GradientTexture2D = GradientTexture2D.new()
 	var g: Gradient = Gradient.new()
-	g.set_color(0, Color(1, 1, 1, 1))     # a soft falloff, no edge (a disc reads as a ball)
+	g.set_color(0, Color(1, 1, 1, 1))     # a gaussian-like falloff, no edge and no core (a disc reads as a ball)
 	g.set_color(1, Color(1, 1, 1, 0))
-	g.add_point(0.25, Color(1, 1, 1, 0.6))
-	g.add_point(0.6, Color(1, 1, 1, 0.15))
+	g.add_point(0.2, Color(1, 1, 1, 0.82))
+	g.add_point(0.42, Color(1, 1, 1, 0.45))
+	g.add_point(0.66, Color(1, 1, 1, 0.14))
+	g.add_point(0.85, Color(1, 1, 1, 0.03))
 	soft.gradient = g
 	soft.fill = GradientTexture2D.FILL_RADIAL
 	soft.fill_from = Vector2(0.5, 0.5)
 	soft.fill_to = Vector2(1.0, 0.5)
-	soft.width = 64
-	soft.height = 64
+	soft.width = 128
+	soft.height = 128
 	for k: int in range(1, 9):
 		var seam: MeshInstance3D = root.find_child("%s_seam%d" % [id, k], true, false) as MeshInstance3D
 		if seam == null or seam.mesh == null:
@@ -322,24 +336,27 @@ func _make_particles(root: Node3D, id: String) -> void:
 		var b: AABB = _frame(root, seam) * seam.mesh.get_aabb()
 		var c: Vector3 = Vector3(b.get_center().x, b.get_center().y, 0.0) + OUT * EMIT_OUT_M
 		var half_h: float = b.size.y * 0.42
-		_emit["steam"].append(_emitter(root, "%s_steam%d" % [id, k], c, half_h, STEAM_PER_SLOT, false, STEAM_COLOUR,
-			2.6, [0.12, 0.25], 0.32, soft))
-		_emit["mist"].append(_emitter(root, "%s_mist%d" % [id, k], c, half_h, MIST_PER_SLOT, true, MIST_COLOUR,
-			1.6, [0.5, 0.9], 0.12, soft))
-		_emit["cough"].append(_emitter(root, "%s_cough%d" % [id, k], c, half_h * 0.8, COUGH_PER_SLOT, true,
-			COUGH_COLOUR, 1.4, [0.5, 0.9], 0.25, soft))
+		# [life s, speed m/s, rise m/s2, damping, curl]: the steam slow, rising and curling; the mist a breath out
+		# that slows to a drift; the cough a harder puff
+		_emit["steam"].append(_emitter(root, "%s_steam%d" % [id, k], c, half_h * 0.7, STEAM_PER_SLOT, false, STEAM_COLOUR,
+			3.2, [0.06, 0.14], 0.14, [0.1, 0.2], 0.12, soft))
+		_emit["mist"].append(_emitter(root, "%s_mist%d" % [id, k], c, half_h * 0.8, MIST_PER_SLOT, true, MIST_COLOUR,
+			2.4, [0.45, 0.7], 0.03, [0.9, 1.2], 0.06, soft))
+		_emit["cough"].append(_emitter(root, "%s_cough%d" % [id, k], c, half_h * 0.6, COUGH_PER_SLOT, true,
+			COUGH_COLOUR, 1.9, [0.55, 0.85], 0.12, [1.0, 1.4], 0.1, soft))
 
 
 func _emitter(root: Node3D, name: String, at: Vector3, half_h: float, amount: int, burst: bool, colour: Color,
-		life: float, speed: Array, rise: float, soft: Texture2D) -> GPUParticles3D:
+		life: float, speed: Array, rise: float, damp: Array, curl: float, soft: Texture2D) -> GPUParticles3D:
 	var p: GPUParticles3D = GPUParticles3D.new()
 	p.name = name
 	p.position = at
 	p.amount = amount
 	p.lifetime = life
 	p.one_shot = burst
-	p.explosiveness = 0.85 if burst else 0.0
+	p.explosiveness = 0.9 if burst else 0.0
 	p.randomness = 0.4
+	p.draw_order = GPUParticles3D.DRAW_ORDER_VIEW_DEPTH
 	p.local_coords = false
 	p.emitting = false
 	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -348,27 +365,38 @@ func _emitter(root: Node3D, name: String, at: Vector3, half_h: float, amount: in
 	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 	pm.emission_box_extents = Vector3(0.025, half_h, 0.015)
 	pm.direction = OUT + Vector3(0.0, 0.25, 0.0)   # out of the wall, a little up
-	pm.spread = 18.0
+	pm.spread = 14.0
 	pm.initial_velocity_min = float(speed[0])
 	pm.initial_velocity_max = float(speed[1])
 	pm.gravity = Vector3(0.0, rise, 0.0)     # rising: warm air
-	pm.damping_min = 0.4
-	pm.damping_max = 0.8
+	pm.damping_min = float(damp[0])
+	pm.damping_max = float(damp[1])
 	pm.angle_min = -180.0
 	pm.angle_max = 180.0
-	pm.scale_min = 0.6
+	pm.angular_velocity_min = -14.0     # a slow turn: the sprite's texture never sits still
+	pm.angular_velocity_max = 14.0
+	pm.scale_min = 0.8
 	pm.scale_max = 1.0
-	var sc: Curve = Curve.new()
-	sc.add_point(Vector2(0.0, 0.35))
-	sc.add_point(Vector2(1.0, 1.0), 0.0, 0.0)
+	pm.turbulence_enabled = curl > 0.0  # a light curl
+	pm.turbulence_noise_strength = 1.0
+	pm.turbulence_noise_scale = 2.5
+	pm.turbulence_noise_speed_random = 0.3
+	pm.turbulence_influence_min = curl * 0.5
+	pm.turbulence_influence_max = curl
+	var sc: Curve = Curve.new()   # grows over its life, fastest at first (a puff spreading)
+	sc.max_value = float(PUFF_GROW[1])
+	sc.add_point(Vector2(0.0, float(PUFF_GROW[0])))
+	sc.add_point(Vector2(0.35, lerpf(float(PUFF_GROW[0]), float(PUFF_GROW[1]), 0.62)))
+	sc.add_point(Vector2(1.0, float(PUFF_GROW[1])), 0.0, 0.0)
 	var sct: CurveTexture = CurveTexture.new()
 	sct.curve = sc
 	pm.scale_curve = sct
 	var ramp: Gradient = Gradient.new()
 	ramp.set_color(0, Color(1, 1, 1, 0))
 	ramp.set_color(1, Color(1, 1, 1, 0))
-	ramp.add_point(0.18, Color(1, 1, 1, 1))
-	ramp.add_point(0.55, Color(1, 1, 1, 0.6))
+	ramp.add_point(0.15, Color(1, 1, 1, 0.85))   # fades in quickly, thins as it grows, gone at the end
+	ramp.add_point(0.3, Color(1, 1, 1, 1))
+	ramp.add_point(0.65, Color(1, 1, 1, 0.45))
 	var rt: GradientTexture1D = GradientTexture1D.new()
 	rt.gradient = ramp
 	pm.color_ramp = rt
@@ -433,7 +461,7 @@ func release() -> void:
 	elif marker <= float(GREEN[1]):
 		_armed = false
 		_go(State.EXHALE)
-		_burst("mist")
+		_mist_due = true
 		fixed.emit()
 	else:
 		_go(State.COUGH)
@@ -463,7 +491,10 @@ func step(dt: float) -> void:
 			if not problem:
 				_go(State.RESET)
 		State.EXHALE:
-			if _since >= EXHALE_OUT_S + EXHALE_HOLD_S + EXHALE_BACK_S:
+			if _mist_due and _since >= EXHALE_MIST_AT_S:
+				_mist_due = false
+				_burst("mist")
+			if _since >= EXHALE_S:
 				_breath_t0 = _t
 				_go(State.CALM)
 		State.RETRY:
@@ -562,8 +593,10 @@ func _pose(k: int) -> float:
 		State.EXHALE:
 			if _since < EXHALE_OUT_S:
 				return lerpf(_from[k], ROCK_DEG, _ease_out(_since / EXHALE_OUT_S))
-			var back: float = (_since - EXHALE_OUT_S - EXHALE_HOLD_S) / EXHALE_BACK_S
-			return ROCK_DEG * (1.0 - smoothstep(0.0, 1.0, back))
+			var settle: float = lerpf(ROCK_DEG, EXHALE_SETTLE_DEG,
+				smoothstep(0.0, 1.0, (_since - EXHALE_OUT_S) / EXHALE_SETTLE_S))
+			var back: float = (_since - EXHALE_OUT_S - EXHALE_SETTLE_S - EXHALE_HOLD_S) / EXHALE_BACK_S
+			return settle * (1.0 - smoothstep(0.0, 1.0, back))
 		State.RETRY:
 			return _from[k]
 		State.COUGH:
@@ -586,13 +619,15 @@ func _keys(keys: Array, s: float) -> float:
 	return float(keys[-1][1])
 
 
-## The exhale's swell 0..1 (the ribs' swing out, as a share of ROCK_DEG).
+## The exhale's flare as the cyan's extra gain: up to EXHALE_GLOW at the swing's peak, EXHALE_GLOW_HELD while held,
+## gone with the return.
 func _exhale() -> float:
 	if state != State.EXHALE:
 		return 0.0
 	if _since < EXHALE_OUT_S:
-		return _ease_out(_since / EXHALE_OUT_S)
-	return 1.0 - smoothstep(0.0, 1.0, (_since - EXHALE_OUT_S - EXHALE_HOLD_S) / EXHALE_BACK_S)
+		return EXHALE_GLOW * _ease_out(_since / EXHALE_OUT_S)
+	var held: float = lerpf(EXHALE_GLOW, EXHALE_GLOW_HELD, 1.0 - exp(-(_since - EXHALE_OUT_S) / 0.25))
+	return held * (1.0 - smoothstep(0.0, 1.0, (_since - EXHALE_OUT_S - EXHALE_SETTLE_S - EXHALE_HOLD_S) / EXHALE_BACK_S))
 
 
 func _apply() -> void:
@@ -611,7 +646,7 @@ func _apply() -> void:
 	if state == State.CALM:
 		var amp: float = smoothstep(0.0, 1.0, (_t - _breath_t0) / BREATH_IN_S)
 		breath = BREATH_GLOW * amp * (0.5 + 0.5 * sin(TAU * (_t - _breath_t0) / BREATH_PERIOD_S))
-	var cyan_gain: float = 1.0 + breath + EXHALE_GLOW * _exhale() + CLICK_POP * _pop
+	var cyan_gain: float = 1.0 + breath + _exhale() + CLICK_POP * _pop
 	var flash: float = 1.0 + THROW_FLASH * (1.0 - smoothstep(0.0, THROW_S, _since)) if state == State.THROWN else 1.0
 	var red_gain: float = (1.0 + RED_THROB * (pulse - 0.5)) * flash
 	for b: Array in _bands:
@@ -635,14 +670,17 @@ func _apply() -> void:
 		(e[0] as BaseMaterial3D).emission_energy_multiplier = float(e[1]) * lerpf(bar, GREEN_GAIN, near)
 
 
-# --- the proofs' input script (ship --vent-anim): pass 1 calm, the problem, a hold with its six clicks, the release in
-# the green (the exhale), calm; pass 2 the problem, a hold to the top, thrown ---------------------------------------
-const DEMO_S := 30.0
-const DEMO_PROBLEM_S := 4.5                          # pass 1's problem begins
-const DEMO_PROBLEM := [[4.5, 14.0], [21.0, 30.0]]    # problem on from .. to (pass 1: the game clears it on `fixed`)
-const DEMO_HOLD := [[8.5, 13.5, 0.865], [23.0, 27.0, 1.0]]   # the palm from .. to: hold 0 -> the value (the game's
-                                                             # clock: linear), then kept until the release
-const DEMO_RELEASES := [14.0, 27.6]                  # the palm leaves (pass 2: after `thrown`, ignored)
+# --- the proofs' input script (ship --vent-anim; gills step 12): calm; the problem; a hold with its six clicks and the
+# release in the green (the exhale); calm; the problem again; a release too early; a hold past the green (missed: a
+# cough); a hold to the top (thrown) ---------------------------------------------------------------------------------
+const DEMO_S := 36.0
+const DEMO_PROBLEM_S := 3.5                          # pass 1's problem begins
+const DEMO_PROBLEM := [[3.5, 11.6], [18.0, 36.0]]    # problem on from .. to (pass 1: the game clears it on `fixed`)
+const DEMO_HOLD := [[6.5, 11.0, 0.865], [20.0, 22.0, 0.5], [24.5, 27.5, 0.96], [30.0, 33.0, 1.0]]
+                                                     # the palm from .. to: hold 0 -> the value (the game's clock:
+                                                     # linear), then kept until the release
+const DEMO_RELEASES := [11.6, 22.4, 28.0, 34.0]      # the palm leaves (the last: after `thrown`, ignored)
+const DEMO_HEARD := ["fixed", "too_early", "missed", "thrown"]   # what the game hears, in order
 
 
 ## The demo's inputs at time s: [problem, hold].
@@ -658,8 +696,9 @@ static func demo(s: float) -> Array:
 	return [p, h]
 
 
-## The demo's key moments [time s, label] for the frame sheet: one per state.
+## The demo's key moments [time s, label] for the frame sheet: one per state and event.
 static func demo_keys() -> Array:
-	return [[3.0, "calm: breathing"], [6.6, "problem: shudder, red, steam"], [10.3, "hold: two clicks"],
-		[13.8, "hold: six clicks, in the green"], [14.5, "release in the green: the exhale"],
-		[19.5, "calm again"], [26.9, "pass 2: past the green"], [27.4, "held to the top: thrown"]]
+	return [[2.5, "calm: breathing"], [5.5, "problem: shudder, red, steam"], [8.0, "hold: two clicks"],
+		[10.9, "hold: six clicks, in the green"], [11.92, "release in the green: the exhale's peak"],
+		[16.5, "calm again"], [22.7, "released too early: back to the problem"], [28.3, "held past the green: missed, a cough"],
+		[33.45, "held to the top: thrown"]]
