@@ -1362,3 +1362,6 @@ MODULES.append(ship_interior_vent)
 # gills step 1 (2026-10-27): the vents rebuilt as the ray's gills, sunk into the throat's wall
 import ship_interior_gills  # noqa: E402
 MODULES.append(ship_interior_gills)
+# the gills pilot (art #263): one slit cut into the hall's back wall (ship_gills_slit.py), on the east spot
+import ship_gills_slit  # noqa: E402
+MODULES.append(ship_gills_slit)

@@ -200,7 +200,7 @@ PIECES |= {
     # gills step 8: "rim_bolts" (the facets' floor rims' bolts) gone with the last plain facet (the side facet)
     # step 2, station 1: the throat vents (ship_interior_vent.py), each on its spot
     # gills step 1 (2026-10-27): the ray's gills sunk into the wall, the band's own wall (vents-b5: station_vent)
-    "station_vent_e": ("station_gills", {"id": "station_vent_e", "side": "e"}, False),
+    "station_vent_e": ("station_gills_slit", {"id": "station_vent_e", "side": "e"}, False),   # the gills pilot
     "station_vent_w": ("station_gills", {"id": "station_vent_w", "side": "w"}, False),
 }
 # step 2: a station piece's spot and its box [u0, u1, v0, v1, h0, h1] in the spot's frame (u along the wall, v out

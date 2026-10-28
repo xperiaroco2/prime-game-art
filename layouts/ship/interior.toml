@@ -1088,7 +1088,7 @@ args = { u = 0.36, v = 0.3 }
 
 [[pieces]]
 id = "station_vent_e"
-builder = "station_gills"
+builder = "station_gills_slit"   # the gills pilot: one slit (ship_gills_slit.py)
 collide = false
 args = { id = "station_vent_e", side = "e" }
 plain = [-0.81895, 0.81895, -0.05, 0.05]

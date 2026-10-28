@@ -666,6 +666,24 @@ func _stations(ship: Node3D) -> void:
 							m.emission_enabled = false
 							m.albedo_color = VentAnim.SEAM_DARK
 						mi.set_surface_override_material(i, m)
+		# the gills pilot (ship_gills_slit.py): "turn" {suffix: [ax, ay, az, deg]} sets a node's rotation about its
+		# own origin (the lip on its hinge); "omni" [[suffix, dx, dy, dz, r, g, b, energy, range]] adds an unshadowed
+		# light beside that node, offset from its origin in the piece's frame
+		var turns: Dictionary = st.get("turn", {})
+		for suffix: String in turns:
+			var a: Array = turns[suffix]
+			for n: Node in node.find_children("%s_%s" % [pid, suffix], "Node3D", true, false):
+				(n as Node3D).basis = Basis(Vector3(float(a[0]), float(a[1]), float(a[2])).normalized(),
+					deg_to_rad(float(a[3])))
+		for o: Array in st.get("omni", []):
+			for n: Node in node.find_children("%s_%s" % [pid, String(o[0])], "Node3D", true, false):
+				var lamp: OmniLight3D = OmniLight3D.new()
+				lamp.position = (n as Node3D).position + Vector3(float(o[1]), float(o[2]), float(o[3]))
+				lamp.light_color = Color(float(o[4]), float(o[5]), float(o[6]))
+				lamp.light_energy = float(o[7])
+				lamp.omni_range = float(o[8])
+				lamp.shadow_enabled = false
+				(n.get_parent() as Node3D).add_child(lamp)
 
 
 

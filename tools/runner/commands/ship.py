@@ -338,14 +338,23 @@ VENT_STATES = {"calm": {"show": [], "hide": ["heat", "seam*"], "dim": ["lamp"], 
 
 
 
+def slit_states() -> dict:
+    """The gills pilot's states (ship_gills_slit.slit_states: slit_shut, slit_half, slit_open; the east spot)."""
+    import importlib
+    import sys
+    sys.path.insert(0, str(common.ROOT / "tools" / "blender"))
+    return importlib.import_module("ship_gills_slit").slit_states("e")
+
+
 def vent_states(spec: str) -> dict:
     """--vent-states "e=problem,w=calm" as ship.gd's "stations" request: {piece: {"show", "hide", "dim", "dark"}}."""
     states = {}
+    known = {**VENT_STATES, **slit_states()}
     for item in (i for i in spec.split(",") if i):
         side, _, state = item.partition("=")
-        if side not in ("e", "w") or state not in VENT_STATES:
-            raise common.Failure(f"ship --vent-states: {item!r}, wants e=<state> or w=<state>, states {sorted(VENT_STATES)}")
-        states[f"station_vent_{side}"] = VENT_STATES[state]
+        if side not in ("e", "w") or state not in known:
+            raise common.Failure(f"ship --vent-states: {item!r}, wants e=<state> or w=<state>, states {sorted(known)}")
+        states[f"station_vent_{side}"] = known[state]
     return states
 
 
