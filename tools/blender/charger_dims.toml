@@ -47,6 +47,10 @@ band = [46.0, 52.0]              # sheet (lens C step 3, a_power.jpg): a recesse
 frieze = 66.0                    # sheet (step 3): the upper course's joint, a frieze course under the deck slab
 plinth_toe = [1.5, 1.0]          # sheet (step 3): the plinth's toe: h 0..1.5 set back 1.0 (a shadow line on the floor)
 plinth_bevel = 3.0               # sheet (step 3): the plinth's top bevelled over its last 3 cm, back to the plates
+brackets = [[13.0, 21.0], [55.0, 63.0]]   # lens C step 4 (a_power.jpg's riveted brackets): h, a bronze bracket
+                                 # across each of the four front corners on the lower and the upper course
+bracket = [6.0, 2.6, 1.0]        # its width across the corner, its depth (into the corner's fold) and how far it
+                                 # stands proud of the corner (front corners: 68.9 < the reach 70)
 chamfer = 1.1                    # sheet: the broad chamfer on every plate edge
 edge = 0.28                      # sheet: the small bright bevel on its folds
 
@@ -58,8 +62,11 @@ travel = 1.0                     # pressed in along its normal
 
 [lights]                         # sheet: the strips on the pedestal's plates (graphite bezels, the light inset)
 width = 2.2
-chamfer_cyan = [[18.0, 42.0], [56.0, 82.0]]   # h: a cyan strip up each chamfer plate's middle, one per course
-                                 # (step 3: split by the recessed band)
+chamfer_cyan = [[18.0, 42.0], [55.0, 64.0]]   # h: a cyan strip up each chamfer plate's middle, one per course
+                                 # (step 3: split by the recessed band; step 4: the upper one ends under the frieze)
+windows = [76.0, 6.0, 2.6]       # step 4 (a_power.jpg's short lit windows under the deck): h, length, height of the
+                                 # frieze's cyan windows, two per chamfer plate and two on the front beside the button
+window_u = [7.0, 13.5]           # the windows' centres: from the chamfer plate's middle, and u on the front plate
 band_cyan = 1.2                  # sheet (step 3): the thin cyan line in the recessed band (height), on every plate
 front_amber = [16.0, [18.0, 44.0]]   # u, h: an amber pair on the front plate's lower half
 side_amber = [[18.0, 40.0], 80.0]    # d, h: an amber strip along each side plate under the deck slab
