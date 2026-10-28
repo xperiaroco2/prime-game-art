@@ -1492,6 +1492,10 @@ to +z), not -z. Both now stand in front of the slit, the lights at a third of th
 0.8 m; at the old values the whole band went cyan) and the mist a soft additive puff 22 cm out and 20 cm toward the
 mouth (`MIST`, `MIST_OUT`). The matched camera for design's concept is `gill_view(2.25, 1.23, 4.3, 0, 0)` at a 52 degree
 vertical field of view: level, as the concept's verticals are, the band's top and the floor line at its heights.
+Step 6b: the mist from a three-way grid (`<raw>/ship/v5/gills-throat/sheets/mist_grid_6b.png`; a view's gills pose
+takes `"mist": {"k": strength factor, "w", "h": puff size factors}`): the pick is 0.6 open (calm 0.375, gasp 0.49) on a
+0.68 x 1.04 m puff swaying slower. From 2.5 m it reads as a soft puff on the mouth side of each open slit, not a fog
+wall, and the band stays its metal. It is still an additive billboard, with no volumetrics.
 
 - `godot/ship/gill_row.gd` drives a row: calm and open (leaves open, cyan, a soft additive mist toward the mouth), gasp
   (60 % open, red-orange), shut (closed, dim cyan line) and fault (closed, red line), and the button ring's white
