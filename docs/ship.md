@@ -1778,3 +1778,21 @@ ledge stood over the spine where the lamp, the speaker and the plant stand), and
 -87.82 are gone (the concept has none; they stood through the spine). The floor lights at r 108 keep at least 8 cm
 from every footprint, and the line from the door to the charger's stand keeps a capsule's radius from the sofa and the
 table (`test_ship_lens`). The warm strips are `int_amber__lens` (`[light.mats]` l 0: they glow and light nothing).
+
+## Lens room C, step 2: the charger's pedestal in its alcove, the look fixes (2026-10-28)
+
+- **The charger** (`assets/prop/crystal_charger`, `docs/props.md`): the dome on legs is replaced by the drawing's
+  faceted pedestal; the crystal's axis is at d 38, the unit reaches 70 cm (the spots' `depth_m` 0.70), 0.65 cm
+  inside the opening's cheeks, its back on the back panel. `test_ship_layout` reads the charger's report again.
+- **The conduits** (deviation from the drawing): their axis moves from d 21 to **d 38** (the tubes' front at 43.5,
+  2.5 behind the jambs' face line at 46), so head-on from 2.5 m they stand beside the jambs instead of behind them;
+  u ±68, the elbows and the collars are unchanged. The cyan core is Ø 4.4 (the drawing's 3) on its own
+  `int_cyan__lens_core` (e 0.45, `l` 0: glows, lights nothing; `int_cyan` stays 0.05).
+- **The cushions**: `lens_cushion_red` a deeper terracotta (0.17, 0.036, 0.020; was 0.30, 0.075, 0.045, salmon under
+  the warm light), roughness 0.92; `cushion_block` rounds their edges (r 3 on the back, 4 on the seat, half that
+  underneath) and crowns their tops (0.8 and 1.2 cm over a plateau a third of the way in); the heights at the middle
+  are the drawing's (80, 44). The charcoal module and pillows are unchanged.
+- **The review with the charger**: `ship --shoot DIR --charger` places the charger's GLB and a crystal on
+  `renewer_e`/`_w` (review only; the package keeps the spots as markers), and a `--views` JSON row may carry a
+  reference image's path as its 6th element, shot and compared side by side (`compare_<view>.png`). Shots:
+  `<raw>/ship/v5/lens-c/r3/` (pieces `lens-c/pieces-r3`).
