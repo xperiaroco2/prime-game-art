@@ -222,3 +222,20 @@ def first_exit(hits: list[tuple[float, float]]) -> int | None:
         if dot > 0:
             return k
     return None
+
+
+def deep_exit(depth: float, travel: float, slack: float = 0.03, most: float = 0.05) -> bool:
+    """Whether a cloth point inside a limb takes the way out along its own normal (travel, m) instead of the plain
+    push to its nearest face (depth, m, that face on the far side): a point past the limb's middle is nearer the far
+    side, and its way out the near side is at most twice that plus a slack; a longer way crosses the limb."""
+    return travel <= min(most, 2.0 * depth + slack)
+
+
+def boundary_verts(faces: list[list[int]]) -> set[int]:
+    """The vertices on the mesh's open edges (an edge used by one face only): the openings' rims."""
+    count: dict[tuple[int, int], int] = {}
+    for f in faces:
+        for k in range(len(f)):
+            e = tuple(sorted((f[k], f[(k + 1) % len(f)])))
+            count[e] = count.get(e, 0) + 1
+    return {v for e, n in count.items() if n == 1 for v in e}

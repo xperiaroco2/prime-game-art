@@ -68,7 +68,13 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
      offset + keep x (s - offset) beyond the offset (`--offset` 0.010 m, `--keep` 0.30), s itself between the floor
      and the offset, the floor (`--floor` 0.005 m) when closer or inside; where the cloth bridges (s past `--bridge`
      0.045..0.09 m: the crotch, under the arms) more of the looseness is kept, up to all of it; the moves are
-     smoothed over the cloth's edges, then every vertex is put outside the floor. Each shoe moves onto its posed
+     smoothed over the cloth's edges, then every vertex is put outside the floor. Every push out of the body
+     (here, the shoes, the clearance and the female fit) takes a cloth point that is inside the body out along the
+     cloth's own outward normal, to where that ray leaves the body (`first_exit`), when the way is short
+     (`deep_exit`: at most twice the plain push's depth plus 3 cm, never over 5 cm) and the point is over 5 cm from
+     an opening (`boundary_verts`; the collar folds there); else along the nearest body face's normal. A point deeper
+     than half the arm has its nearest face on the arm's far side, and the plain push carried the sleeve's front
+     through the elbow (C1b's r7: 37 mm through at rest; r8 without the bounds left shards at the collar and hems). Each shoe moves onto its posed
      foot and is only pushed out where the foot pokes through;
    - the weights: per cloth vertex the body's weights at its nearest posed body point that faces the same way as
      the cloth (`pick_facing`: the inner sleeve takes the arm, not the torso beside it; an inner trouser leg its own
@@ -94,7 +100,8 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    outside the cloth, the cloth behind it no nearer than `--opening` 0.04 m to an opening, is tested from just inside
    the cloth; the foot inside a shoe always goes: a mostly Foot and Toes vertex below its own shoe's top opening less
    `--shoe-margin` (`shoe_top`, per side), or with that shoe straight above it (the toes under the toe box; the ankle
-   seen through the opening has none; `in_shoe`);
+   seen through the opening has none), or mostly on Toes (a closed shoe's toe box hides the toes, also
+   where they bulge through its coarse faces; `in_shoe`);
    one ring of erosion keeps the cut under the cloth); the GLB with `export_glb.py`'s fixed textured options. Then glTF-Validator and
    `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
 9. **The proof.** `tools/blender/clothes_proof.py -- --blend <char>_char.blend --name <char> --out DIR`: per clip

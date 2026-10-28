@@ -41,6 +41,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
 
 PIECES = ("garment", "shoes")
+OPENING_PLAIN = 0.05  # m: a cloth point this near an opening keeps the plain push (push_out)
 
 
 def say(*a) -> None:
@@ -214,7 +215,10 @@ def push_out(pts: np.ndarray, tree: BVHTree, floor, faces=None) -> tuple[np.ndar
     """Every point closer to the body than floor (m, a number or one per point) moved out along the face normal.
     With faces (the cloth's), a point inside the body leaves it along the cloth's own outward normal instead: a
     point deeper than half the limb has its nearest face on the limb's far side, and the plain push would carry the
-    sleeve's front through the arm to its back (r7: the left elbow 37 mm through a sleeve folded behind it)."""
+    sleeve's front through the arm to its back (r7: the left elbow 37 mm through a sleeve folded behind it). Only
+    where the way out is short (deep_exit): a fold of the collar, its normal into the neck, would else cross the
+    whole neck (r8: shards at the collar and the hems); and never within OPENING_PLAIN of an opening, where the
+    cloth folds (r11: a ragged collar front)."""
     s, n = signed(pts, tree)
     fl = np.broadcast_to(np.asarray(floor, dtype=float), s.shape)
     bad = s < fl
@@ -224,9 +228,15 @@ def push_out(pts: np.ndarray, tree: BVHTree, floor, faces=None) -> tuple[np.ndar
         nrm = vertex_normals(pts, faces)
         if float(np.mean(np.sum(nrm * n, axis=1))) < 0:  # the cloth's faces wound inward
             nrm = -nrm
-        for i in np.where(s < 0)[0]:
+        edge = np.array(sorted(F.boundary_verts(faces)), dtype=int)
+        plain = np.zeros(len(pts), dtype=bool)
+        if len(edge):  # by an opening (collar, cuffs, hems) the cloth folds, and its normal is no guide
+            for a in range(0, len(pts), 2048):
+                d = np.linalg.norm(pts[a:a + 2048, None, :] - pts[None, edge, :], axis=2).min(axis=1)
+                plain[a:a + 2048] = d < OPENING_PLAIN
+        for i in np.where((s < 0) & ~plain)[0]:
             hit = exit_point(tree, Vector(pts[i]), Vector(nrm[i]))
-            if hit is not None:
+            if hit is not None and F.deep_exit(float(-s[i]), float((hit[0] - Vector(pts[i])).length)):
                 pts[i] = np.array(hit[0] + hit[1] * float(fl[i]))
                 deep[i] = True
     rest = bad & ~deep

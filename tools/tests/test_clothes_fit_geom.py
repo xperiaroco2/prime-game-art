@@ -190,5 +190,22 @@ class FirstExit(unittest.TestCase):
         self.assertIsNone(F.first_exit([]))
 
 
+class DeepExit(unittest.TestCase):
+    def test_short_way_out_only(self):
+        self.assertTrue(F.deep_exit(0.015, 0.025))    # the elbow: 15 mm to the back, 25 mm out the front
+        self.assertTrue(F.deep_exit(0.005, 0.035))    # a forearm crossed at a slant
+        self.assertFalse(F.deep_exit(0.002, 0.04))    # past twice the depth and the slack
+        self.assertFalse(F.deep_exit(0.002, 0.08))    # a collar fold: across the whole neck
+        self.assertFalse(F.deep_exit(0.04, 0.06))     # never past 5 cm
+
+
+class BoundaryVerts(unittest.TestCase):
+    def test_open_edges(self):
+        self.assertEqual(F.boundary_verts([[0, 1, 2], [0, 2, 3]]), {0, 1, 2, 3})  # a quad of two triangles: its rim
+        tet = [[0, 1, 2], [0, 3, 1], [1, 3, 2], [2, 3, 0]]
+        self.assertEqual(F.boundary_verts(tet), set())  # closed
+        self.assertEqual(F.boundary_verts(tet[:3]), {0, 2, 3})  # the missing face's rim
+
+
 if __name__ == "__main__":
     unittest.main()
