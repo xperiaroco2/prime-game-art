@@ -32,7 +32,10 @@ SHAPES = ("chest", "seat", "hips", "waist")
 
 def load(path: str | Path) -> dict:
     """A female target file, every key and nested key checked; ValueError names the first problem."""
-    return check(tomllib.loads(Path(path).read_text(encoding="utf-8")), str(path))
+    d = check(tomllib.loads(Path(path).read_text(encoding="utf-8")), str(path))
+    if d["name"] != Path(path).stem:
+        raise ValueError(f"{path}: name {d['name']!r} is not the file's stem {Path(path).stem!r}")
+    return d
 
 
 def check(d: dict, name: str = "target") -> dict:
@@ -54,9 +57,15 @@ def check(d: dict, name: str = "target") -> dict:
                     raise ValueError(f"{name}: mask.bones must be a list of bone names")
             elif not isinstance(v, (int, float)) or isinstance(v, bool):
                 raise ValueError(f"{name}: {table}.{k} is not a number")
+            elif not math.isfinite(v):
+                raise ValueError(f"{name}: {table}.{k} is not finite")
             elif k not in ("amount_m", "z") and v <= 0:
                 raise ValueError(f"{name}: {table}.{k} must be > 0")
+    if not isinstance(d["name"], str) or not d["name"]:
+        raise ValueError(f"{name}: name must be a non-empty string")
     lim = d["limits"]
+    if lim["still_below_z"] >= lim["still_above_z"]:
+        raise ValueError(f"{name}: limits.still_below_z must be below limits.still_above_z")
     for table in SHAPES:
         t = d[table]
         if not 0 <= t["amount_m"] <= lim["max_delta_m"]:
