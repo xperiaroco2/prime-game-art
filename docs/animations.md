@@ -849,6 +849,16 @@ glTF-Validator and writes `loco.json` (per clip the edits' reports, the numbers 
 `<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/<out>/build/<char>/` (`[set] out`, `loco/f3` now), with
 the build's support files
 copied beside the GLB. Then `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
+`--build DIR --out DIR` (T1, art #196) take another character build and output under `raw_base` for one run, the
+set file unchanged (`alien_loco_math.with_paths`; a new build into the set's own `out` is refused, and so is an out
+whose character folder already holds a GLB): the new bodies' build `r2c/build` (the chameleon on M2c's body, the
+axolotl on M1f's) into `loco/t1`, `... alien_loco.py --raw D:/prime-art-raw --build r2c/build --out loco/t1`. On T1
+the chameleon's set is made (31 clips; Jog_Fwd v0 5.44 m/s, Sprint_Fwd 8.34, f3's 5.15 and 7.80 on the taller body).
+The axolotl's is not: on M1f's body her Jog_Fwd and Sprint_Fwd touch the floor for 2 frames a step (a toe within
+2 cm of its lowest), so `measure` finds no ground velocity (v0 0, c0 None) and `stride` divides by zero. The build's
+floor edit lifts those clips 4.4 and 5.2 cm (the S4b body's 2.7 and 3.6): her legs are longer for the clips' hip
+height. A wider contact window does not help (at 4 cm the sprint's v0 is 4.6 m/s, below the jog's 5.05). The
+fix is in the build (the hips' keys fitted to the body's leg length), not in the loco set.
 `... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
 off-screen window on the chameleon (`--char`: another character, into `<out>/reels/<char>/`): the character held in place (the hips' travel per loop taken off its node), the
 floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot

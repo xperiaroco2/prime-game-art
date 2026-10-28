@@ -3236,6 +3236,15 @@ a time, by visibility.
     (`THUMB_AXES_HAND`, read in the hand bone's frame off the deepest clip thumb, Crouch_Run), by default at their
     angles 51.5/28.8/34.7: the tip sweeps under the palm toward the little finger. The old axis, d x (-Z), turned it
     down along the palm's normal so no fist could close (`--thumb-axes palm` keeps it for a before).
+  - T1 (the game build on the new bodies, tag `anim_bare/r2c/build`): r2b's command (`--clip-edits
+    tools/blender/anim_sets/alien.toml`, `--lively` r2b's `v9_r2c_n4` heads) with `--body` M2c's body for the
+    chameleon (`--no-flare`) and M1f's for the axolotl (`--no-flare --gill-ratio 0.7`), one head per run under the same
+    tag. `alien_char_build.py` unwraps every body and paints its maps from the head's bases, so the skin carries over
+    with no new bake (uv_cover 0.40, r2b's 0.41). 57,784 and 55,713 triangles, one material, glTF-Validator 0 errors.
+    Whole-head gate (share over 8/255, front, left, back, right): the chameleon 1.257 / 0.549 / 0.175 / 0.954 %
+    (r2b 1.264 / 0.524 / 0.18 / 0.939); the axolotl 1.049 / 0.121 / 0.932 / 0.136 % (r2b 0.291 / 0.063 / 0.137 /
+    0.056; M1f 0.889 / 0.075 / 0.932 / 0.094, the same 10 % larger head and 70 % gills). The loco set on them:
+    `docs/animations.md` (`alien_loco.py --build r2c/build --out loco/t1`; the axolotl's is not made yet).
 - **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in
