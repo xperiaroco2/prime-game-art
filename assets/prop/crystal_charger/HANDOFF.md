@@ -4,6 +4,17 @@ The charger where a player recharges a spent energy crystal (art#263's stations)
 the aft wall: a faceted bronze pedestal set into the alcove under the head the engineer picked on 2026-10-25
 (prime-game#1095 comment 6401197371). Not yet approved by the engineer: the new pedestal's look waits for his yes.
 
+## What changed (antennas-1, 2026-10-28, build `lens4`)
+
+The four prongs (the two outer antennas and the inner pair on the track ring) are stacks of chamfered bronze plates
+with thin cyan-lit gaps (the engineer's pick, concept b_fins); the flat cyan and amber strips on them are gone. The
+outer pair keeps its place, its top 139.7 and its inward bend, now a tight elbow ending in a small cyan emitter
+toward the crystal; the inner pair keeps its hook head, with a cyan emitter over the tip electrode. For the game:
+nothing to change. The node names, pivots, leaves, collider names and the electrodes (`zap.gd`) are unchanged; the
+gaps' glow is `charger_cyan`, so `charger.gd`'s states drive it with the other cyan lights. The ring's surfaces no
+longer include `charger_graphite` or `charger_amber` (the strips' bezels and light). Not approved yet: the antennas
+changed after the 2026-10-28 approval and await the engineer's yes.
+
 ## What changed (lens room C, 2026-10-28)
 
 The stepped dome on four legs is gone; the head is unchanged (the slot, the carrier, the track ring, the four

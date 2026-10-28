@@ -808,13 +808,15 @@ is replaced by the lens room drawing's faceted pedestal (prime-game-design 7f335
 | Button | Ø 8 at h 75.9 on the front plate; its lens's face d 69.8 |
 | Lights | cyan up each chamfer (step 3: one per course, h 18..42 and 56..82; step 4: 55..64), the band's cyan line (1.2 high, every plate), an amber pair on the front (u ±16, h 18..44), amber along each side (d 18..40, h 80); step 4: the frieze's short cyan windows under the deck (6 x 2.6 at h 76, two per chamfer, two on the front at u ±13.5) |
 | Brackets | step 4 (`a_power.jpg`): a bronze bracket across each of the four front corners, h 13..21 and 55..63, 6 wide, 1 proud (the front ones reach 68.9) |
+| Antennas | antennas-1 (2026-10-28, the engineer's pick: concept b_fins, the stack of plates; build `lens4`): the flat cyan and amber strips on the four prongs are gone. Outer pair: on the root block a stack of 13 chamfered bronze plates (half width 6.7 across their middle line, ±7.5 along d, extruded straight: flat front faces) along a middle line at r 33.6 from h 104 up to 124, a tight 90 degree elbow of radius 9 (wedge plates), then 5 cm on toward the crystal: the top 139.7, the tip's face at r 19.6, the elbow's inside at 126.3 (3.2 over the inner heads); the gaps 0.3 at the foot to 0.6 under the thicker tip plate, a `charger_cyan` core in each, 0.7 to 0.3 inside the plates' faces (the glow wider and brighter toward the tip); a small cyan emitter on the tip's face toward the crystal. Inner pair: a 4.6 foot on the ring, six plates to 115 with gaps 0.3 to 0.55, the hook head over its own gap, ±4.2 along d; a cyan emitter on the head's inner face over the tip electrode (h 117.9..120.6). The electrodes are unchanged (`zap.gd`'s `ELECTRODES`) |
 
 The drawing's lip is 3 all round; the sides keep 1.5 so the plinth and slab clear the opening's cheeks (u ±46 at the
 back panel) by 0.5 cm in the design, 0.556 as built (`cheek_min_cm_body`), the front 2 so nothing passes the reach 70 (the drawing's own "виступ 70"). `build.json`'s
 checks: `wall_min_cm_body` (to the back panel, 0: it stands on it), `cheek_min_cm_body`, `reach_cm`, the ring's turn.
 The legs' charger's renders and shots stay in `<raw>/ship/v4/charger/b6/`; the pedestal's build is `lens1/`, its
 step 3 detail (lens C, after `a_power.jpg`: the band, the frieze, the plinth's bevel, the darker plates) `lens2/`,
-step 4's (the frieze's windows, the corner brackets, lighter plates with a low mottle: `charger.gd` `BRONZE2`) `lens3/`.
+step 4's (the frieze's windows, the corner brackets, lighter plates with a low mottle: `charger.gd` `BRONZE2`) `lens3/`,
+the plate-stack antennas `lens4/`.
 The head and its deck slab keep `charger_bronze`; `charger.gd` maps `charger_bronze2` to `BRONZE2`.
 `tools/run.sh ship --shoot DIR --charger` places this GLB (and a crystal) on both renewer spots for the look review,
 in its game look (`ship.gd` applies `charger.gd`, idle, on the room's render layers; since lens C step 3).
@@ -838,8 +840,10 @@ in its game look (`ship.gd` applies `charger.gd`, idle, on the room's render lay
    bevels per block (a broad chamfer, UV0 u 0.45, and a small bright bevel on its folds, u 1:
    `console_metal.gdshader` brightens both). The front block's pieces (strips and wedges round the button's
    trapezoid facet) lie on the block's own chords, one planar prism per band of the profile, so nothing juts out of
-   its neighbours (b4's panels did). The prongs are (r, h) claw profiles swept round the crystal's axis over a few
-   degrees (their end faces toward the room carry the strips); the legs are octagonal prisms along each leg's axis
+   its neighbours (b4's panels did). The prongs were (r, h) claw profiles swept round the crystal's axis over a few
+   degrees (their end faces toward the room carried the strips); since antennas-1 they are stacks of plates, each an
+   (r, h) outline extruded straight along d, with `charger_cyan` cores in the gaps (`charger.gd`'s cyan state energy
+   dims them at idle and brightens them charging); the legs are octagonal prisms along each leg's axis
    (strut, glands, the steel rod, the ankle sleeve) on a faceted pad. Lights sit in graphite bezels, inset, unbevelled
    (the bevels on 70 small boxes cost 11k triangles). The leaves are their own objects, pivots on their axes, children
    of the body: `carrier` (the cup with the pit for the crystal's point; the empty `crystal_anchor` at the tip),
