@@ -51,7 +51,11 @@ PLINTH_H, PLINTH_W = 0.60, 0.03                        # the plinth: 0-60 cm, 3 
 KICK_H = 0.08
 LINE_H = (PLINTH_H - 0.036, PLINTH_H - 0.012)              # step 5: the plinth's cyan line, 2.4 cm (was 1.2: thin
                                                         # and dim beside the concept's)
-CORNICE_H, CORNICE_W = 0.06, 0.022                      # step 5: the cornice along the band's top, under the ceiling
+CORNICE_H, CORNICE_W = 0.06, 0.032                      # step 5: the cornice along the band's top, under the ceiling
+CORNICE_MAT = "int_silver_a"                            # step 6: the lighter metal (silver_c read dark on dark), 3.2 cm proud
+GAP_H = 0.014                                           # step 6: the dark shadow line under the cornice
+COL_U0, COL_U_TOP = 3.88, 3.60                          # step 6: the hall end's column: its mouth face at the wall (clear
+                                                        # of the button's recess, 3.84) and at the lean's top
 PLINTH_S0 = 0.02                                        # the plinth from the mouth's corner (under the ramp roof too, as the concept)
 MOUTH_W = 0.003                                         # step 4: the band's mouth part (s 0.02-1.62, under the ramp roof, to
                                                         # the bend) 3 mm proud of the jambs' plates it covers (no z-fighting)
@@ -341,8 +345,9 @@ def slit(k: int) -> tuple[list, tuple]:
         if s1 < 0.012:
             continue
         box = []
+        e = 0.15   # step 6: the blade tapers to its inner end (its end face read as a step at the leaf's edge)
         for w in (-DEPTH + 0.001, FIL_W):
-            box += [(a0[0] - nu, a0[1] - nt, w), (a1[0] - nu, a1[1] - nt, w), (a1[0] + nu, a1[1] + nt, w),
+            box += [(a0[0] - nu, a0[1] - nt, w), (a1[0] - e * nu, a1[1] - e * nt, w), (a1[0] + e * nu, a1[1] + e * nt, w),
                     (a0[0] + nu, a0[1] + nt, w)]
         fil.append(([point(*q) for q in box],
                     [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]))
@@ -434,7 +439,23 @@ def cornice() -> list:
     for r, u, flip in ((rows[0], S0, True), (rows[1], WALL_LEN, False)):
         vs = [point(*p) for p in r] + [point(*at(u, T_TOP + T_OVER, 0.001))]
         ends.append((vs, [(0, 1, 2, 3)[::-1] if flip else (0, 1, 2, 3)]))
-    return [P("cornice", M(body, *ends), RIM_MAT)]
+    gap = _sheet([[(u, t, 0.0015) for u in (S0, u_max(t, 0.0015))] for t in (T_TOP - CORNICE_H - GAP_H, T_TOP - CORNICE_H)])
+    return [P("cornice", M(body, *ends), CORNICE_MAT), P("cornice_gap", gap, DARK)]
+
+
+def corner_column() -> list:
+    """Step 6: the concept's one clean column at the band's hall end, the floor to the ceiling. Its mouth face is a
+    vertical plane from s COL_U0 at the wall to COL_U_TOP at the lean's top; its hall face is the header's cut plane.
+    So the band's profile (vertical, then the lean) ends on it in one clean edge, and the K pilaster's top and the
+    header's trim no longer show from the throat. A `-col` part: the wedge (0.6 m deep at its edge) is a collider."""
+    a, b, c = header_clip()
+    v_top = v_of(T_TOP + T_OVER)
+    k = (COL_U0 - COL_U_TOP) / v_top                      # the mouth face: u = COL_U0 - k v
+    v_edge = (c - a * COL_U0) / (b - a * k)               # where it meets the header's plane: the column's edge
+    foot = [(COL_U0, -0.02), (WALL_LEN, -0.02), (WALL_LEN, (c - a * WALL_LEN) / b), (COL_U0 - k * v_edge, v_edge)]
+    fr = G.Frame((0.0, 0.0, FLOOR), (1, 0, 0), (0, 1, 0), (0, 0, 1))
+    body = G.slab(fr, foot, 0.0, TOP + T_OVER)
+    return [P("corner-col", body, CORNICE_MAT)]   # the lighter metal: its faces turn from the throat's lights
 
 
 def seams() -> list:
@@ -490,8 +511,8 @@ def th_gills(args, layout):
     parts += ps
     holes.append(hole)
     parts.append(P("band", M(*_band_faces(holes)), BAND_MAT))
-    parts += plinth() + band_mouth() + cornice() + seams() + back_and_ends()
-    closed = ("_fil", "_rim", "_leaf_a", "_leaf_b", "plinth", "kick", "plinth_line")
+    parts += plinth() + band_mouth() + cornice() + seams() + back_and_ends() + corner_column()
+    closed = ("_fil", "_rim", "_leaf_a", "_leaf_b", "plinth", "kick", "plinth_line", "-col")
     for p in parts:   # the open sheets keep their winding (recalc_face_normals guesses on an open sheet)
         p["solid"] = p["name"].endswith(closed)
     return parts if side == "e" else mirror(parts)

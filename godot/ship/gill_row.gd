@@ -22,7 +22,8 @@ const WHITE := Color(0.95, 0.97, 1.0)
 const FIL_GAIN := {"calm": 1.0, "open": 1.3, "gasp": 1.2, "shut": 0.0, "fault": 0.0}
 const SEAM_GAIN := {"calm": 0.0, "open": 0.0, "gasp": 0.6, "shut": 0.25, "fault": 1.6}
 const LIGHT_ENERGY := {"calm": 0.25, "open": 0.4, "gasp": 0.4, "shut": 0.0, "fault": 0.03}
-const MIST := {"calm": 0.10, "open": 0.16, "gasp": 0.14, "shut": 0.0, "fault": 0.0}
+## step 6: the mist was invisible (0.10-0.16, and faded out by the wall 16 cm behind it): stronger, a short fade
+const MIST := {"calm": 0.34, "open": 0.46, "gasp": 0.36, "shut": 0.0, "fault": 0.0}
 
 var _root: Node3D
 var _mats: Dictionary = {}       # node name -> [StandardMaterial3D override, its built emission energy]
@@ -84,7 +85,7 @@ func _make_mist(piece: Node3D, at: Vector3) -> Array:
 	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	m.proximity_fade_enabled = true
-	m.proximity_fade_distance = 0.25
+	m.proximity_fade_distance = 0.07
 	m.no_depth_test = false
 	m.albedo_texture = tex
 	m.albedo_color = Color(0, 0, 0, 0)
@@ -266,7 +267,7 @@ func play_row(t: float) -> String:
 			elif d < 0.9:
 				set_slit(k, "open", 1.0, lerpf(1.04, 1.0, _ease_in_out((d - 0.45) / 0.45)))
 			else:
-				set_slit(k, "open" if k == on else "calm", 1.0, 1.0, fmod(t * 0.3 + k * 0.2, 1.0))
+				set_slit(k, "open" if k == on else "calm", 1.0, 1.0, 0.5 + 0.5 * sin(t * 1.9 + k * 1.3))   # no wrap: the mist sways
 			if d < 0.5:
 				label = "press: %d opens" % k
 		elif k == on:
