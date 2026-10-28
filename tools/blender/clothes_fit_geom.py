@@ -139,3 +139,37 @@ def frame_max(per_frame: list[tuple[int, float]]) -> dict[str, float]:
     worst = max(range(len(per_frame)), key=lambda i: per_frame[i][0])
     return {"frames": len(per_frame), "max_count": max(c for c, _ in per_frame),
             "max_depth_m": round(max(d for _, d in per_frame), 4), "worst_frame": worst}
+
+
+def pick_facing(cands: list[tuple[float, Vec, int]], n: Vec, min_dot: float = 0.2) -> int | None:
+    """The body face a cloth vertex takes its weights from: among cands (distance, the body face's outward normal,
+    the face index) the nearest whose normal faces the same way as the cloth's outward normal n (dot >= min_dot).
+    So the inner side of a sleeve takes the arm, not the torso beside it, and an inner trouser leg its own thigh.
+    None when no face qualifies (the caller falls back to the plain nearest)."""
+    if not -1.0 <= min_dot <= 1.0:
+        raise ValueError(f"min_dot {min_dot} outside -1..1")
+    best = None
+    for d, nor, fi in cands:
+        if dot(unit(nor), unit(n)) >= min_dot and (best is None or d < best[0]):
+            best = (d, fi)
+    return None if best is None else best[1]
+
+
+def rigid(row: dict[str, float], bones: tuple[str, ...], default: str) -> dict[str, float]:
+    """A row of skin weights kept to bones only and summed to 1 (a shoe on its Foot and Toes, nothing of the shin);
+    {default: 1} when row has none of them."""
+    if default not in bones:
+        raise ValueError(f"default {default} not in {bones}")
+    kept = {b: w for b, w in row.items() if b in bones and w > 0}
+    total = sum(kept.values())
+    return {b: w / total for b, w in kept.items()} if total > 0 else {default: 1.0}
+
+
+def hug_weight(front_diff: float, start: float = 0.003, full: float = 0.010) -> float:
+    """How much a cloth vertex hugs the female body (0..1) from the forward part of the body's base-to-female
+    difference at its nearest body point (m): 0 up to start, 1 from full, smooth between. The bib and the top
+    follow the chest the female shape adds; the rest of the cloth keeps its fit."""
+    if full <= start:
+        raise ValueError(f"full {full} must exceed start {start}")
+    t = min(1.0, max(0.0, (front_diff - start) / (full - start)))
+    return t * t * (3.0 - 2.0 * t)

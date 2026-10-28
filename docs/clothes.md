@@ -65,27 +65,39 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
      0.045..0.09 m: the crotch, under the arms) more of the looseness is kept, up to all of it; the moves are
      smoothed over the cloth's edges, then every vertex is put outside the floor. Each shoe moves onto its posed
      foot and is only pushed out where the foot pokes through;
-   - the weights: per cloth vertex the body's weights at its nearest posed body point (barycentric over that face),
-     lightly smoothed everywhere and strongly where the cloth bridges, four bones at most;
+   - the weights: per cloth vertex the body's weights at its nearest posed body point that faces the same way as
+     the cloth (`pick_facing`: the inner sleeve takes the arm, not the torso beside it; an inner trouser leg its own
+     thigh), barycentric over that face, lightly smoothed everywhere and strongly only where the cloth bridges (past
+     `--bridge`), four bones at most; a loose sleeve smoothed across the shoulder and elbow let the arm poke through
+     (C1's r3). The shoes are stiff: Foot and Toes only (`rigid`), never the shin;
    - the rest pose: each vertex's linear blend skinning is undone (`unskin`), so the cloth's bind pose is the body's
      rest pose; the armature modifier re-poses it and the error goes into `fit.json` (`reskin_error_mm`);
+   - the clearance in both poses (`--clear-iters` 3 rounds): the rested cloth pushed out of the rest body, then
+     re-posed and pushed out of the fitted body (the push unskinned back); the floor is `--floor-arm` (0.008 m) on
+     the sleeves, `--floor` elsewhere;
    - the female fit: each cloth vertex follows the body's per-vertex difference (base to f2) at its nearest rest
      body point, smoothed, then is pushed out of f2 where needed: the same cloth, wider at the hips and over the
-     chest, no hand edit. Out: `fit_base.blend`, `fit_body_f2.blend`, `fit.json`.
+     chest, no hand edit. Then the bib and the top hug her chest: where the body's difference at the nearest f2
+     point goes forward (`hug_weight`: 3 mm none, 10 mm full) the cloth comes in to `--hug` (0.010 m) from f2,
+     smoothed, so the chest reads through the bib (a flat bib hid it in C1's r3). Out: `fit_base.blend`, `fit_body_f2.blend`, `fit.json`.
 8. **The dressed game builds.** `tools/blender/clothes_dress.py -- --char <char>_char.blend --fit fit_*.blend
    --name <char> --out DIR [--body-from F1.blend --body-to F2.blend]`: on a game build's character (the loco set's
    31 clips) the cloth goes on as separate skinned meshes on its armature (the fit's rest must equal the
    character's); a character built on f1 moves to f2 vertex by vertex (each character vertex on an f1 vertex takes
    that vertex's difference; the head and the neck weld stay); the body faces the cloth fully covers are removed in
-   this build only (five rays from each vertex hit the cloth within 0.12 m; one ring of erosion keeps the cut under
-   the cloth); the GLB with `export_glb.py`'s fixed textured options. Then glTF-Validator and
+   this build only (five rays from each vertex hit the cloth within 0.12 m; a vertex up to `--outside` 0.03 m
+   outside the cloth, the cloth behind it no nearer than `--opening` 0.04 m to an opening, is tested from just inside
+   the cloth; the foot inside a shoe, Foot and Toes below the shoe's top opening less `--shoe-margin`, always goes;
+   one ring of erosion keeps the cut under the cloth); the GLB with `export_glb.py`'s fixed textured options. Then glTF-Validator and
    `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
 9. **The proof.** `tools/blender/clothes_proof.py -- --blend <char>_char.blend --name <char> --out DIR`: per clip
    (Idle, Walk, Jog_Fwd, Sprint_Fwd, Strafe_Left, Crouch_Fwd, Jump_Start, Jump_Air, Talk_Upper) the poke-through
-   (the body vertices under the cloth at rest, followed through every frame: those outside the cloth by more than
-   1 mm, the frame maximum, `poke.json`) and a contact sheet (front, side, back at two moments); the close-ups at
+   (the body vertices the cloth hides at rest, within 0.06 m of it and not by an opening, inside it or already
+   outside it, `outside_cloth_at_rest`; followed through every frame: those outside the cloth by more than 1 mm,
+   the frame maximum, `poke.json`) and a contact sheet (front, side, back at two moments); the close-ups at
    0.8 m (collar and neck, cuffs and hands, crotch, hems and shoes); then `tools/run.sh render <glb> --pose
-   "CharacterArmature|Idle_Loop" --no-outline` and a defect hunt.
+   "CharacterArmature|Idle_Loop" --no-outline`, a Godot frame sheet (`tools/run.sh frames <glb> --clips Idle
+   --compare ""`: the denim's matte look is judged there, Workbench ignores roughness) and a defect hunt.
 
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).

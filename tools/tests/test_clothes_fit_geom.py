@@ -107,5 +107,43 @@ class Covered(unittest.TestCase):
         self.assertEqual(F.frame_max([])["frames"], 0)
 
 
+class Facing(unittest.TestCase):
+    def test_inner_sleeve_takes_the_arm(self):
+        # the torso's side faces +x (outward), nearer; the arm's inner side faces -x, like the sleeve's inner side
+        cands = [(0.02, (1.0, 0.0, 0.0), 7), (0.03, (-1.0, 0.0, 0.0), 9)]
+        self.assertEqual(F.pick_facing(cands, (-1.0, 0.0, 0.0)), 9)
+        self.assertEqual(F.pick_facing(cands, (1.0, 0.0, 0.0)), 7)
+
+    def test_none_and_bad(self):
+        self.assertIsNone(F.pick_facing([(0.01, (0.0, 0.0, 1.0), 1)], (0.0, 0.0, -1.0)))
+        self.assertIsNone(F.pick_facing([], (0.0, 0.0, 1.0)))
+        with self.assertRaises(ValueError):
+            F.pick_facing([], (0.0, 0.0, 1.0), 2.0)
+
+
+class Rigid(unittest.TestCase):
+    def test_foot_and_toes_only(self):
+        r = F.rigid({"LeftFoot": 0.3, "LeftToes": 0.1, "LeftLowerLeg": 0.6}, ("LeftFoot", "LeftToes"), "LeftFoot")
+        self.assertAlmostEqual(r["LeftFoot"], 0.75)
+        self.assertAlmostEqual(r["LeftToes"], 0.25)
+        self.assertNotIn("LeftLowerLeg", r)
+
+    def test_default_and_bad(self):
+        self.assertEqual(F.rigid({"LeftLowerLeg": 1.0}, ("LeftFoot",), "LeftFoot"), {"LeftFoot": 1.0})
+        with self.assertRaises(ValueError):
+            F.rigid({}, ("LeftFoot",), "LeftToes")
+
+
+class Hug(unittest.TestCase):
+    def test_ramp(self):
+        self.assertEqual(F.hug_weight(0.0), 0.0)
+        self.assertEqual(F.hug_weight(-0.02), 0.0)
+        self.assertEqual(F.hug_weight(0.02), 1.0)
+        self.assertTrue(0.0 < F.hug_weight(0.006) < 1.0)
+        self.assertLess(F.hug_weight(0.005), F.hug_weight(0.007))
+        with self.assertRaises(ValueError):
+            F.hug_weight(0.01, 0.01, 0.01)
+
+
 if __name__ == "__main__":
     unittest.main()

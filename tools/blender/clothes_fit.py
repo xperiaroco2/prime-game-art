@@ -145,11 +145,36 @@ def body_weights(body, arm) -> list[dict[str, float]]:
             for v in body.data.vertices]
 
 
-def nearest_rows(pts: np.ndarray, tree: BVHTree, polys, bco: np.ndarray, rows: list[dict]) -> list[dict]:
-    """Per point the body's weights at its nearest body point, interpolated over that face."""
-    out = []
-    for p in pts:
+def vertex_normals(pts: np.ndarray, faces: list[list[int]]) -> np.ndarray:
+    """Per vertex its area-weighted normal from faces (fan-triangulated), unit length."""
+    acc = np.zeros_like(pts)
+    for f in faces:
+        for k in range(1, len(f) - 1):
+            a, b, c = f[0], f[k], f[k + 1]
+            n = np.cross(pts[b] - pts[a], pts[c] - pts[a])
+            acc[a] += n
+            acc[b] += n
+            acc[c] += n
+    ln = np.linalg.norm(acc, axis=1)
+    ln[ln == 0] = 1.0
+    return acc / ln[:, None]
+
+
+def nearest_rows(pts: np.ndarray, tree: BVHTree, polys, bco: np.ndarray, rows: list[dict],
+                 nrm: np.ndarray | None = None, reach: float = 0.10) -> tuple[list[dict], int]:
+    """Per point the body's weights at its nearest body point, interpolated over that face. With nrm (the cloth's
+    outward vertex normals) the nearest body face facing the same way within reach (clothes_fit_geom.pick_facing):
+    the inner sleeve takes the arm, not the torso beside it. Also returns how many points took another face than
+    the plain nearest."""
+    out, other = [], 0
+    for i, p in enumerate(pts):
         loc, _n, fi, _d = tree.find_nearest(Vector(p))
+        if nrm is not None:
+            cands = tree.find_nearest_range(Vector(p), reach)
+            pick = F.pick_facing([(c[3], tuple(c[1]), c[2]) for c in cands], tuple(nrm[i]))
+            if pick is not None and pick != fi:
+                loc, fi = next(c[0] for c in cands if c[2] == pick), pick
+                other += 1
         vs = polys[fi]
         bary = poly_3d_calc([Vector(bco[v]) for v in vs], loc)
         acc: dict[str, float] = {}
@@ -157,7 +182,7 @@ def nearest_rows(pts: np.ndarray, tree: BVHTree, polys, bco: np.ndarray, rows: l
             for name, w in rows[v].items():
                 acc[name] = acc.get(name, 0.0) + b * w
         out.append(acc)
-    return out
+    return out, other
 
 
 def signed(pts: np.ndarray, tree: BVHTree) -> tuple[np.ndarray, np.ndarray]:
@@ -170,11 +195,13 @@ def signed(pts: np.ndarray, tree: BVHTree) -> tuple[np.ndarray, np.ndarray]:
     return s, n
 
 
-def push_out(pts: np.ndarray, tree: BVHTree, floor: float) -> tuple[np.ndarray, int]:
+def push_out(pts: np.ndarray, tree: BVHTree, floor) -> tuple[np.ndarray, int]:
+    """Every point closer to the body than floor (m, a number or one per point) moved out along the face normal."""
     s, n = signed(pts, tree)
-    bad = s < floor
+    fl = np.broadcast_to(np.asarray(floor, dtype=float), s.shape)
+    bad = s < fl
     pts = pts.copy()
-    pts[bad] += (floor - s[bad])[:, None] * n[bad]
+    pts[bad] += (fl[bad] - s[bad])[:, None] * n[bad]
     return pts, int(bad.sum())
 
 
@@ -231,6 +258,9 @@ def main() -> int:
     ap.add_argument("--floor", type=float, default=0.005)
     ap.add_argument("--bridge", default="0.045,0.09", help="from..to m: the looseness kept whole beyond to")
     ap.add_argument("--smooth", type=int, default=12)
+    ap.add_argument("--floor-arm", type=float, default=0.008, help="the floor on the sleeves (m)")
+    ap.add_argument("--clear-iters", type=int, default=3, help="rounds of the clearance in rest and fitted pose")
+    ap.add_argument("--hug", type=float, default=0.010, help="the female's chest: the bib's clearance there (m)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     if (out / "fit.json").exists():
@@ -335,26 +365,75 @@ def main() -> int:
     rows = body_weights(body, arm)
     mats = deform_mats(arm)
     rep["weights"] = {}
+    weights, floors = {}, {}
     for name, o in cloth.items():
         pts = fitted[name]
-        cr = nearest_rows(pts, tree, polys, pco, rows)
+        faces = [list(p.vertices) for p in o.data.polygons]
+        nrm = vertex_normals(pts, faces)
+        _s_n, n_n = signed(pts, tree)
+        if float(np.mean(np.sum(nrm * n_n, axis=1))) < 0:  # the cloth's faces wound inward
+            nrm = -nrm
+        cr, other = nearest_rows(pts, tree, polys, pco, rows, nrm)
         s_now, _ = signed(pts, tree)
-        bridge_mask = [smoothstep((si - 0.02) / 0.04) for si in s_now]
+        # only where the cloth truly bridges (the fit's --bridge: the crotch, under the arms); a loose sleeve keeps
+        # the body's own weights, else its shoulder and elbow blend across the joint and the arm pokes through
+        bridge_mask = [smoothstep((si - bridge[0]) / (bridge[1] - bridge[0])) for si in s_now]
         keys = sorted({b for r in cr for b in r})
         vals = [[r.get(b, 0.0) for b in keys] for r in cr]
         nb = neighbours(o.data)
         vals = F.smooth(vals, nb, 2, 0.3)
         vals = F.smooth(vals, nb, 20, 0.6, mask=bridge_mask)
         cr = [F.limit(dict(zip(keys, v))) for v in vals]
+        if name == "shoes":  # a shoe is stiff: its Foot and Toes only, never the shin
+            for prefix in ("Left", "Right"):
+                for i in np.where(pts[:, 0] * side_of(arm, prefix) > 0)[0]:
+                    cr[i] = F.rigid(cr[i], (prefix + "Foot", prefix + "Toes"), prefix + "Foot")
+        arm_w = np.array([sum(w for b, w in r.items() if b.endswith(("UpperArm", "LowerArm"))) for r in cr])
+        floors[name] = np.where(arm_w > 0.5, args.floor_arm, args.floor)
+        weights[name] = cr
         rest = np.array([F.unskin(tuple(p), r, mats) for p, r in zip(pts, cr)])
         set_co(o, rest)
         write_groups(o, cr, arm)
         rep["weights"][name] = {"bones": len(keys), "bridged": int(sum(m > 0.5 for m in bridge_mask)),
-                                "unweighted": sum(1 for r in cr if not r)}
+                                "unweighted": sum(1 for r in cr if not r), "took_facing_face": other,
+                                "arm_floor_vertices": int((arm_w > 0.5).sum())}
     bpy.context.view_layer.update()
     rep["reskin_error_mm"] = {n: round(float(np.linalg.norm(evaluated_co(o) - fitted[n], axis=1).max()) * 1000, 3)
                               for n, o in cloth.items()}
     say("reskin error mm", rep["reskin_error_mm"])
+    # 4b. the clearance in both poses: the weights are the body's, but blended over a face they are not its vertex
+    # weights, so the rested cloth can cross the rest body (the shoulders, the toes). Push out in rest, re-check in
+    # the fitted pose (a push there is unskinned back), a few rounds.
+    fitted_pose = {pb.name: pb.matrix_basis.copy() for pb in arm.pose.bones}
+    rep["clearance"] = []
+    for it in range(args.clear_iters):
+        for pb in arm.pose.bones:
+            pb.matrix_basis = Matrix()
+        bpy.context.view_layer.update()
+        rtree = bvh_of(body)[0]
+        rnd = {}
+        for name, o in cloth.items():
+            new, n_rest = push_out(evaluated_co(o), rtree, floors[name])
+            set_co(o, new)
+            rnd[name] = {"rest": n_rest}
+        for pb in arm.pose.bones:
+            pb.matrix_basis = fitted_pose[pb.name]
+        bpy.context.view_layer.update()
+        ptree = bvh_of(body)[0]
+        mats = deform_mats(arm)
+        for name, o in cloth.items():
+            posed = evaluated_co(o)
+            new, n_fit = push_out(posed, ptree, floors[name])
+            moved = np.where(np.linalg.norm(new - posed, axis=1) > 1e-7)[0]
+            if len(moved):
+                restc = np.array([(o.matrix_world @ v.co)[:] for v in o.data.vertices])
+                for i in moved:
+                    restc[i] = F.unskin(tuple(new[i]), weights[name][i], mats)
+                set_co(o, restc)
+            rnd[name]["fitted"] = n_fit
+        bpy.context.view_layer.update()
+        rep["clearance"].append(rnd)
+        say("clearance round", it, rnd)
     for pb in arm.pose.bones:
         pb.matrix_basis = Matrix()
     bpy.context.view_layer.update()
@@ -384,11 +463,27 @@ def main() -> int:
                 bary = poly_3d_calc([Vector(base_rest[v]) for v in vs], loc)
                 d.append(sum(b * diff[v] for v, b in zip(vs, bary)).tolist())
             d = np.array(F.smooth(d, neighbours(o.data), 6, 0.5))
-            new, pushed = push_out(pts + d, ftree, args.floor)
+            new, pushed = push_out(pts + d, ftree, floors[name])
+            hugged = 0
+            if name == "garment":  # the bib and the top follow the chest the female shape adds (art #196)
+                fd = []
+                for p in new:
+                    loc, _n, fi, _dd = ftree.find_nearest(Vector(p))
+                    vs = polys[fi]
+                    bary = poly_3d_calc([Vector(fco[v]) for v in vs], loc)
+                    fd.append(float(sum(b * diff[v][1] for v, b in zip(vs, bary)) * front))
+                w = np.array([F.hug_weight(x) for x in fd])
+                s_f, n_f = signed(new, ftree)
+                disp = (-(w * np.maximum(0.0, s_f - args.hug)))[:, None] * n_f
+                disp = np.array(F.smooth(disp.tolist(), neighbours(o.data), 8, 0.5))
+                hugged = int((w > 0.5).sum())
+                new, pushed2 = push_out(new + disp, ftree, floors[name])
+                pushed += pushed2
+                rep["female"]["hug_pull_max_mm"] = round(float(np.linalg.norm(disp, axis=1).max()) * 1000, 1)
             set_co(o, new)
             mv = np.linalg.norm(new - pts, axis=1)
             rep["female"][name] = {"moved": int((mv > 1e-4).sum()), "max_mm": round(float(mv.max()) * 1000, 1),
-                                   "pushed": pushed}
+                                   "pushed": pushed, "hugged": hugged}
         bpy.data.objects.remove(fem)
         say("female", rep["female"])
         stem = Path(args.female).parent.name
