@@ -20,8 +20,8 @@ on the floor at the wall's face under the crystal's axis (the spot's `at`).
   bronze plates with chamfered edges along a middle line that rises, then bends inward over the crystal in a smooth
   arc (antennas-2); the thin gaps between the plates are parallel-sided slots that glow cyan (cores in charger_cyan,
   wider and nearer the faces toward the tip), the tip plate's face toward the crystal a recessed, chamfered cyan
-  emitter. The inner prongs on the ring the same family: a foot, plates with glowing gaps, a small plate cap whose
-  slanted inner edge is a recessed light, the tip electrode on its inner face. No flat strips on the prongs.
+  emitter. The inner prongs on the ring the same family: a foot, plates with glowing gaps, a small plate cap split
+  by a glowing slot along its slanted inner edge (the lip), the tip electrode on the lip's inner face. No flat strips on the prongs.
 - The leaves (own objects, pivot on their axes, children of the body): `carrier` (the cup under the crystal with
   the pit for its point; rises 6 cm and spins; the empty `crystal_anchor` on it where the crystal's tip sits),
   `track_ring` (spins, carries the inner prong pair with their electrodes), `button` (presses 1 cm in toward -d, into the charger).
@@ -612,24 +612,61 @@ def inner_stack() -> tuple:
     return plates, holes
 
 
+def clip(poly: list, a: tuple, n: tuple, lo: float) -> list:
+    """The convex (r, h) polygon's part where dot(p - a, n) >= lo (Sutherland-Hodgman, one half-plane)."""
+    def dist(p):
+        return (p[0] - a[0]) * n[0] + (p[1] - a[1]) * n[1]
+    out = []
+    for k, p in enumerate(poly):
+        q = poly[(k + 1) % len(poly)]
+        dp, dq = dist(p) - lo, dist(q) - lo
+        if dp >= 0.0:
+            out.append(p)
+        if (dp >= 0.0) != (dq >= 0.0):
+            t = dp / (dp - dq)
+            out.append((p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t))
+    return out
+
+
+def edge_frame(poly: list, k: int) -> tuple:
+    """The polygon's side k (poly[k] to poly[k + 1]; counter-clockwise in (r, h)): its start and inward normal."""
+    (ar, ah), (br, bh) = poly[k], poly[(k + 1) % len(poly)]
+    ln = math.hypot(br - ar, bh - ah)
+    return (ar, ah), (-(bh - ah) / ln, (br - ar) / ln)
+
+
+def cap_pieces() -> tuple:
+    """antennas-2: the cap split by a glowing slot parallel to its slanted inner edge (cap_edge): the lip plate along
+    the edge (the tip electrode on its inner face), the cap's main plate, and the slot's cyan core (inset core_inset
+    from every face). Returns (lip, main, core) outlines."""
+    i = DIMS["inner"]
+    head = [tuple(p) for p in i["head"]]
+    lip_w, gap, ins = i["cap_lip"]
+    a, n = edge_frame(head, i["cap_edge"])
+    main = clip(head, a, n, lip_w + gap / 2)
+    lip = clip(head, a, (-n[0], -n[1]), -(lip_w - gap / 2))
+    core = head
+    for k in range(len(head)):
+        ak, nk = edge_frame(head, k)
+        core = clip(core, ak, nk, ins)
+    core = clip(clip(core, a, n, lip_w - gap / 2 - 0.3), a, (-n[0], -n[1]), -(lip_w + gap / 2 + 0.3))
+    return lip, main, core
+
+
 def inner_pieces() -> list:
-    """The inner prong's outlines: its column's plates and its head (the colliders take their hull)."""
+    """The inner prong's outlines: its column's plates, the cap's lip and main plate (the colliders take their hull)."""
     i = DIMS["inner"]
     r0, r1 = i["column"][0][0], i["column"][1][0]
-    return [[(r0, a), (r1, a), (r1, b), (r0, b)] for a, b in inner_stack()[0]] + [[tuple(p) for p in i["head"]]]
+    lip, main, _core = cap_pieces()
+    return [[(r0, a), (r1, a), (r1, b), (r0, b)] for a, b in inner_stack()[0]] + [lip, main]
 
 
 def build_inner_prongs(bm) -> None:
-    """The column's plates and the cap (antennas-2: the concept's small plate cap instead of the big hook); the cap's
-    slanted inner edge toward the crystal a recessed, chamfered cyan light (its side cap_edge)."""
-    i = DIMS["inner"]
-    pieces = inner_pieces()
+    """The column's plates and the cap (antennas-2: the concept's small plate cap instead of the big hook): its lip
+    along the slanted inner edge and its main plate, the glowing slot between them (build_inner_cores)."""
     for a_mid in SIDES:
-        for k, prof in enumerate(pieces):
-            faces = xprism(bm, prof, a_mid, i["depth"])
-            if k == len(pieces) - 1:
-                bmesh.ops.recalc_face_normals(bm, faces=faces)
-                pocket(bm, faces[i["cap_edge"]], *i["cap_light"])
+        for prof in inner_pieces():
+            xprism(bm, prof, a_mid, DIMS["inner"]["depth"])
 
 
 def build_inner_cores(bm) -> None:
@@ -640,6 +677,7 @@ def build_inner_cores(bm) -> None:
             ins = lerp(i["core_inset"][0], i["core_inset"][1], t)
             xprism(bm, [(r0 + ins, h0 - 0.3), (r1 - ins, h0 - 0.3), (r1 - ins, h1 + 0.3), (r0 + ins, h1 + 0.3)],
                    a_mid, i["depth"] - ins)
+        xprism(bm, cap_pieces()[2], a_mid, i["depth"] - i["cap_lip"][2])  # the cap's slot along its slanted edge
 
 
 def build_electrodes(bm) -> None:
@@ -1094,6 +1132,9 @@ VIEWS = {
     "cu_prong_cap": (-35.0, 22.0, (-28.0, AX + 5.0, 134.0), 26.0, "idle"),
     "cu_prong_strips": (-18.0, 8.0, (-33.0, AX + 8.0, 116.0), 44.0, "idle"),
     "cu_inner_head": (25.0, 18.0, (-18.0, AX + 4.0, 117.0), 26.0, "charging"),
+    # antennas-2: the arc square on (its gaps even?), the recessed tip emitter from the crystal's side
+    "cu_bend": (0.0, 6.0, (-28.0, AX, 131.0), 30.0, "idle"),
+    "cu_tip": (-55.0, 8.0, (18.6, AX, 136.0), 20.0, "charging"),
     "cu_deck_edge": (-40.0, 12.0, (-30.0, 60.0, 92.0), 40.0, "idle"),
     "cu_plinth": (-40.0, 10.0, (-30.0, 60.0, 8.0), 40.0, "idle"),
     "cu_side": (-80.0, 8.0, (-44.0, 28.0, 60.0), 90.0, "idle"),

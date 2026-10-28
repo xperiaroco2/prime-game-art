@@ -71,6 +71,15 @@ class ChargerDrawing(unittest.TestCase):
         self.assertEqual(tip_e[0], min(r for r, _h in head))
         self.assertTrue(min(h for _r, h in head) < tip_e[1] < bh)
         self.assertNotIn("emitter", i)
+        # the lip: a glowing slot parallel to the slanted edge splits it off the cap; the tip electrode on the lip
+        # (its distance from the edge's line under the lip's width), the slot's core inside the faces
+        lip_w, gap, ins = i["cap_lip"]
+        ln = math.hypot(br - ar, bh - ah)
+        n = (-(bh - ah) / ln, (br - ar) / ln)
+        dist = (tip_e[0] - ar) * n[0] + (tip_e[1] - ah) * n[1]
+        self.assertTrue(0.0 < dist < lip_w - gap / 2)
+        self.assertTrue(0.0 < ins < 0.45 and 0.0 < gap < 1.0)
+        self.assertNotIn("cap_light", i)
         # the outer pair: in front, u = r cos(half_deg); its inner edge at the drawing's 23.9, its top 142
         o = d["outer"]
         cu = math.cos(math.radians(o["half_deg"]))
@@ -86,11 +95,11 @@ class ChargerDrawing(unittest.TestCase):
         # the outer pair clears the turning ring and the inner pair
         self.assertGreater(min(min(r for r, _h in o["root"]), r0 - hw), d["ring"]["r1"] + 0.5)
         self.assertGreater(hb + rad - hw, max(h for _r, h in i["head"]) + 3.0)
-        # the glow brighter toward the tip: wider gaps, the cores nearer the faces (antennas-2: at the tip nearly
+        # the glow brighter toward the tip: wider gaps, the cores nearer the faces (antennas-2: at the tip partly
         # flush, filling the chamfers' V)
         self.assertLess(o["gaps"][0], o["gaps"][1])
         self.assertGreater(o["core_inset"][0], o["core_inset"][1])
-        self.assertLessEqual(o["core_inset"][1], 0.15)
+        self.assertLessEqual(o["core_inset"][1], 0.35)  # r2 b1: 0.1 filled the V with wide bands
         # antennas-2: a smooth arc, not antennas-1's tight elbow (radius 9, 13 plates): the radius at least twice the
         # plates' half width, and over it at least seven plates of the 16..18
         self.assertGreaterEqual(rad, 2 * hw)

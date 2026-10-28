@@ -116,16 +116,17 @@ half = [5.8, 7.5]                # the plates' half width across the middle line
                                  # half depth along d (the old sector's +-13 deg at r 33.6)
 plates = 18                      # antennas-2: 18 thinner plates (antennas-1: 13) along the concept's smooth curve
 end_plates = [1.0, 1.5]          # the first and the last (tip) plate's thickness against the others'
-gaps = [0.3, 0.42]               # the glowing gaps: under the first plate, under the tip plate; antennas-2: each gap a
+gaps = [0.25, 0.42]              # the glowing gaps: under the first plate, under the tip plate; antennas-2: each gap a
                                  # slot with parallel sides square to the middle line, as wide outside the bend as inside
                                  # (b1: 0.5..1.0 and the cores in the chamfers' V read as wide cyan bands)
-core_inset = [0.8, 0.1]          # how far each gap's cyan core sits inside the plates' faces, at the foot, at the tip
+core_inset = [0.9, 0.35]         # how far each gap's cyan core sits inside the plates' faces, at the foot, at the tip
                                  # (the plates' chamfer 0.45: deeper shows only the slot, shallower fills the V: the
-                                 # glow brighter toward the tip; antennas-1 0.7 -> 0.3 read too even)
-emitter = [3.6, 0.7, 1.0]        # antennas-2: the tip plate's end face a recessed, chamfered cyan emitter: its flat
+                                 # glow brighter toward the tip; antennas-1 0.7 -> 0.3 read too even; r2 b1 0.8 -> 0.1
+                                 # filled the arc's V with cyan bands half a plate wide)
+emitter = [1.4, 1.4, 1.2]        # antennas-2: the tip plate's end face a recessed, chamfered cyan emitter: its flat
                                  # bronze frame, the sloped wall's run across and its depth (antennas-1: a flat lit
-                                 # square standing out of the face read as a window; a5: a 1.4 frame lit nearly the
-                                 # whole face, the same window): a 3 x 6.4 slot
+                                 # square standing out of the face read as a window; r2 b1 [3.6, 0.7, 1.0]: a 3 x 6.4
+                                 # slot in a wide flat frame, a picture frame): a 6 x 9.4 floor down a deep funnel
 
 [inner]                          # the inner prongs on the track ring (N.inner, N.innerTop), the same family
 half_deg = 12.0                  # charger-3: 11 read spindly beside the sheet's hooks (zap.gd's electrode frame)
@@ -133,7 +134,8 @@ column = [[16.8, 94.0], [22.8, 94.0], [22.8, 115.0], [16.8, 115.0]]   # charger-
 head = [[13.6, 115.6], [22.8, 115.6], [22.8, 119.6], [21.4, 121.2], [16.6, 121.2], [13.6, 118.2]]
 # antennas-2: the concept's small plate cap instead of antennas-1's big bronze hook (r 11.0..22.6, h 113.4..123.1):
 # one plate a little thicker than the column's, over the column's last gap, reaching in 3.2 toward the crystal, its
-# top's inner edge chamfered toward the crystal and lit (cap_edge, cap_light), the tip electrode on its inner face
+# top's inner edge chamfered toward the crystal; a glowing slot parallel to that edge splits off a lip (cap_edge,
+# cap_lip), the tip electrode on the lip's inner face
 # antennas-1: the column a stack of plates like the outer pair's (a thick foot on the ring, then plates with glowing
 # gaps, the last gap under the head); column and head extruded straight across, +-depth along d
 depth = 4.2                      # half depth along d (the old sector's +-12 deg at r 19.8)
@@ -141,7 +143,8 @@ foot = 4.6                       # the foot plate on the ring, h 94..98.6
 plates = 6                       # above the foot, up to the column's top (115), each over its gap
 gaps = [0.3, 0.55]               # the gaps: over the foot, under the last plate (the head's own gap: 115..115.6)
 core_inset = [0.6, 0.2]          # antennas-2: nearer the faces at the top (antennas-1 0.3)
-cap_edge = 4                     # the head's side (from head[4] to head[5]) that is lit: the slanted inner edge
-cap_light = [0.3, 0.2, 0.45]     # its recessed light: the flat frame, the sloped wall's run across and its depth
+cap_edge = 4                     # the head's slanted inner edge (from head[4] to head[5])
+cap_lip = [1.2, 0.4, 0.25]       # the lip's width square to that edge, the glowing slot's width, its core's inset (r2 b1:
+                                 # a recessed light in the slanted face, eaten by the bevel and unseen from the room)
 electrodes = [[13.6, 117.2, 1.3], [16.8, 101.0, 1.0]]   # r of the face, h, radius (antennas-2: the tip one
                                  # on the cap's inner face, was [11.0, 116.0, 1.5] under the hook's lip)
