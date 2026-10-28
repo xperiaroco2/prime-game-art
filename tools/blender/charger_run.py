@@ -283,7 +283,9 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
                                    "pivot_cm": build[k]["pivot_cm"], "open_edges": build[k]["open_edges"]}
                                for k in ("body", "carrier", "ring", "button")},
                  "size_cm": build["size_cm"], "front": "+Z (out of the wall, along the spot's normal)",
-                 "origin": "on the floor at the wall's face under the crystal's axis (the spot's `at`)"},
+                 # lens C step 4 (the review's minor 6): the origin is the spot's vertex, the axis 38 cm out
+                 "origin": "on the floor at the spot's vertex (the spot's `at`, d 0); the crystal's axis is "
+                           f"{DIMS['frame']['axis_d']:g} cm out along +Z"},
         "anchor_cm": build["anchor_cm"],
         "colliders": build["colliders"],
         "checks": build["checks"],

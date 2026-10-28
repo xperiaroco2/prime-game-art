@@ -806,13 +806,15 @@ is replaced by the lens room drawing's faceted pedestal (prime-game-design 7f335
 | Deck slab | bronze, h 86..99.1, the plinth's overhang; the well r 24.2 down to 94 round the slot |
 | Crystal axis | d 38 (was 53.5): the track ring (r 23.6) clears the back panel by 4.4 |
 | Button | Ø 8 at h 75.9 on the front plate; its lens's face d 69.8 |
-| Lights | cyan up each chamfer (step 3: one per course, h 18..42 and 56..82), the band's cyan line (1.2 high, every plate), an amber pair on the front (u ±16, h 18..44), amber along each side (d 18..40, h 80) |
+| Lights | cyan up each chamfer (step 3: one per course, h 18..42 and 56..82; step 4: 55..64), the band's cyan line (1.2 high, every plate), an amber pair on the front (u ±16, h 18..44), amber along each side (d 18..40, h 80); step 4: the frieze's short cyan windows under the deck (6 x 2.6 at h 76, two per chamfer, two on the front at u ±13.5) |
+| Brackets | step 4 (`a_power.jpg`): a bronze bracket across each of the four front corners, h 13..21 and 55..63, 6 wide, 1 proud (the front ones reach 68.9) |
 
 The drawing's lip is 3 all round; the sides keep 1.5 so the plinth and slab clear the opening's cheeks (u ±46 at the
-back panel) by 0.5, the front 2 so nothing passes the reach 70 (the drawing's own "виступ 70"). `build.json`'s
+back panel) by 0.5 cm in the design, 0.556 as built (`cheek_min_cm_body`), the front 2 so nothing passes the reach 70 (the drawing's own "виступ 70"). `build.json`'s
 checks: `wall_min_cm_body` (to the back panel, 0: it stands on it), `cheek_min_cm_body`, `reach_cm`, the ring's turn.
 The legs' charger's renders and shots stay in `<raw>/ship/v4/charger/b6/`; the pedestal's build is `lens1/`, its
-step 3 detail (lens C, after `a_power.jpg`: the band, the frieze, the plinth's bevel, the darker plates) `lens2/`.
+step 3 detail (lens C, after `a_power.jpg`: the band, the frieze, the plinth's bevel, the darker plates) `lens2/`,
+step 4's (the frieze's windows, the corner brackets, lighter plates with a low mottle: `charger.gd` `BRONZE2`) `lens3/`.
 The head and its deck slab keep `charger_bronze`; `charger.gd` maps `charger_bronze2` to `BRONZE2`.
 `tools/run.sh ship --shoot DIR --charger` places this GLB (and a crystal) on both renewer spots for the look review,
 in its game look (`ship.gd` applies `charger.gd`, idle, on the room's render layers; since lens C step 3).
@@ -853,8 +855,10 @@ in its game look (`ship.gd` applies `charger.gd`, idle, on the room's render lay
    charging. The bronze is the socket's step 3 (`BRONZE`, `BRONZE_FINISH`: the same numbers as `socket.gd`), so the
    stations match. The Blender review render is a darker studio under AgX Punchy (the plain AgX and a bright studio
    paled the amber to cream and the bronze to tan).
-4. **The shots**: `godot/charger/room.gd` extends `godot/ship/ship.gd`'s shoot mode with the charger on `renewer_e`
-   and the crystal seated, on the ship's current build (`--pieces`, default `ship.toml`'s `raw_dir` pieces,
+4. **The shots**: `godot/charger/room.gd` extends `godot/ship/ship.gd`'s shoot mode; every charger in the request wears
+   `charger.gd`'s look with a crystal (`crystal.gd`'s look) seated on its own anchor, the nearest. `charger_run.py`
+   puts the charger on `renewer_e`; `ship --shoot --charger` puts one on both spots, `renewer_e` and `renewer_w`. Both
+   run on the ship's current build (`--pieces`, default `ship.toml`'s `raw_dir` pieces,
    `<raw>/ship/v5/pieces/`; steps 2 and 3 shot on the same bytes in `<raw>/ship/v4/vents-b/pieces_b5b`; the run
    refuses pieces whose lens room floor, `tip_floor_rim`'s top through its nodes' transforms, is not at `floor_h`); `godot/charger/sheet.gd` makes `compare_sheet.png` (the sheet's hero view, Blender's
    neutral render at its angle, Godot in the room), `room_sheet.png` (the states, a player's view, the pass behind
