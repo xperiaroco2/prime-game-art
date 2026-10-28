@@ -101,14 +101,23 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    the cloth; the foot inside a shoe always goes: a mostly Foot and Toes vertex below its own shoe's top opening less
    `--shoe-margin` (`shoe_top`, per side), or with that shoe straight above it (the toes under the toe box; the ankle
    seen through the opening has none), or mostly on Toes (a closed shoe's toe box hides the toes, also
-   where they bulge through its coarse faces; `in_shoe`);
-   one ring of erosion keeps the cut under the cloth); the GLB with `export_glb.py`'s fixed textured options. Then glTF-Validator and
+   where they bulge through its coarse faces; `in_shoe`), or below the opening's rim where it stands (`local_rim`:
+   the rim points within `--rim-reach` 0.03 m across the floor, less `--rim-margin` 0.004 m; the rim dips on the
+   sides and rises at the heel and the tongue), or through the shoe's wall (`through_shoe`: 1 to 30 mm outside it,
+   its nearest shoe point over 1 cm from the rim), and a face of such a vertex goes when all its vertices are on the
+   foot below the rim's high point (`shoe_face`; r12 to r15 showed a teal triangle on each shoe's outer side); a
+   body vertex inside the cloth at rest, over `--away` 0.08 m from every opening and on no neck, head or hand bone,
+   always goes too (`under_cloth`: the rays miss some on the upper back and the crotch, and a crouch or a strafe
+   moved them out through the cloth); one ring of erosion keeps the rays' cut under the cloth, the certain cuts
+   (the shoes, `under_cloth`) skip it); the GLB with `export_glb.py`'s fixed textured options. Then glTF-Validator and
    `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
 9. **The proof.** `tools/blender/clothes_proof.py -- --blend <char>_char.blend --name <char> --out DIR`: per clip
    (Idle, Walk, Jog_Fwd, Sprint_Fwd, Strafe_Left, Crouch_Fwd, Jump_Start, Jump_Air, Talk_Upper) the poke-through
    (the body vertices the cloth hides at rest, within 0.06 m of it and not by an opening, inside it or already
    outside it, `outside_cloth_at_rest`; followed through every frame: those outside the cloth by more than 1 mm,
-   the frame maximum, `poke.json`) and a contact sheet (front, side, back at two moments); the close-ups at
+   the frame maximum, `poke.json`; a vertex over `--exposed` 0.02 m outside whose nearest cloth face lies above the
+   chest, the UpperChest bone's head, and is turned up is the neck over the collar's roll, exposed skin, counted
+   apart as `exposed_skin_max`: `exposed_skin`) and a contact sheet (front, side, back at two moments); the close-ups at
    0.8 m (collar and neck, cuffs and hands, crotch, hems and shoes); then `tools/run.sh render <glb> --pose
    "CharacterArmature|Idle_Loop" --no-outline`, a Godot frame sheet (`tools/run.sh frames <glb> --clips Idle
    --compare ""`: the denim's matte look is judged there, Workbench ignores roughness) and a defect hunt.
