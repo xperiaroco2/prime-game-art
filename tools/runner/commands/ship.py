@@ -44,7 +44,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--views", default="", metavar="FILE|PREFIXES",
                         help="--shoot only these views: a JSON file (a list of [name, title, eye [x, y, h], look [x, y, h],"
                              " fov] in plan coordinates, an optional 6th {\"ssil\"|\"ssao\"|\"glow\"|\"shadows\": false}"
-                             " A/B switch) and the plan view, no compares or day views; or comma-separated prefixes of"
+                             " A/B switch or a reference image's path to compare it with) and the plan view, no day views;"
+                             " or comma-separated prefixes of"
                              " ship.toml's view names (no plan view), e.g. in_vent_,cu_vent_")
     parser.add_argument("--charger", action="store_true",
                         help="--shoot with the crystal charger's GLB (assets/prop/crystal_charger) and a crystal on "
@@ -385,7 +386,11 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
     views, compares = shot_views(layout)
     prefixes: tuple = ()
     if only and (only.endswith(".json") or Path(only).is_file()):   # the raise (2026-10-23): a review's own views
-        views, compares = json.loads(Path(only).read_text(encoding="utf-8")), []
+        views = json.loads(Path(only).read_text(encoding="utf-8"))
+        # lens C step 2: a row whose 6th element is a string names a reference image (an absolute path) to compare
+        # the shot with side by side (an A/B dict there stays the night look's switch)
+        compares = [[v[0], v[5]] for v in views if len(v) > 5 and isinstance(v[5], str)]
+        views = [v[:5] if len(v) > 5 and isinstance(v[5], str) else v for v in views]
         layout = {**layout, "shots": {**layout["shots"], "day_views": []}}
     elif only:   # step 2: a view set alone by name prefix (the vents' in-place shots and close-ups), no plan view
         prefixes = tuple(p for p in only.split(",") if p)
