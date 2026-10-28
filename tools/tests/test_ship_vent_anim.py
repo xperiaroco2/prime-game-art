@@ -3,7 +3,9 @@ top of `godot/ship/vent_anim.gd` agree with the gills' builder (`ship_interior_g
 bar's green band), the ribs stay clear of each other and the casing at every pair of angles the controller can give
 (the builder's own test checks the extremes), the timings and the demo are the brief's, the runner offers
 `--vent-anim` with a fixed clock, and `godot/ship/vent_anim_check.gd` passes headless (the states, the signals, the six
-clicks, the stillness, the range on every step). The Godot part skips without Godot."""
+clicks from a real foot band, the stillness, the pose before the clamp on every step; gills step 13: the release at
+GREEN's ends, the latched marker, hold to 0 without a release, `fixed` with `problem` kept, a release after `problem`
+cleared, hold jitter, restore()). The Godot part skips without Godot."""
 
 
 from __future__ import annotations
