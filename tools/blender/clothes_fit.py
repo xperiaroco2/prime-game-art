@@ -222,6 +222,28 @@ def fit_piece(pts: np.ndarray, nb, tree, offset: float, keep: float, floor: floa
                  "moved_max_mm": round(float(np.linalg.norm(out - pts, axis=1).max()) * 1000, 1)}
 
 
+def split_long(o, max_len: float, rounds: int = 4) -> dict:
+    """Splits o's edges longer than max_len at their middles (clothes_fit_geom.long_edges), a few rounds, and
+    triangulates. Flat faces split flat, so the surface and its UVs (the baked texture) stay as they were."""
+    before = len(o.data.polygons)
+    done = 0
+    for _ in range(rounds):
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        bm.edges.ensure_lookup_table()
+        idx = F.long_edges([e.calc_length() for e in bm.edges], max_len)
+        if idx:
+            bmesh.ops.subdivide_edges(bm, edges=[bm.edges[i] for i in idx], cuts=1, use_grid_fill=False)
+            bmesh.ops.triangulate(bm, faces=bm.faces[:])
+            bm.to_mesh(o.data)
+            done += len(idx)
+        bm.free()
+        if not idx:
+            break
+    o.data.update()
+    return {"max_edge_m": max_len, "edges_split": done, "tris_before": before, "tris_after": len(o.data.polygons)}
+
+
 def set_co(o, pts: np.ndarray) -> None:
     inv = o.matrix_world.inverted()
     for v, p in zip(o.data.vertices, pts):
@@ -260,7 +282,8 @@ def main() -> int:
     ap.add_argument("--smooth", type=int, default=12)
     ap.add_argument("--floor-arm", type=float, default=0.008, help="the floor on the sleeves (m)")
     ap.add_argument("--clear-iters", type=int, default=3, help="rounds of the clearance in rest and fitted pose")
-    ap.add_argument("--hug", type=float, default=0.010, help="the female's chest: the bib's clearance there (m)")
+    ap.add_argument("--max-edge", type=float, default=0.04, help="the garment's edges split to this length (m)")
+    ap.add_argument("--hug", type=float, default=0.006, help="the female's chest: the bib's clearance there (m)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     if (out / "fit.json").exists():
@@ -306,6 +329,10 @@ def main() -> int:
     dy = mid_y(bco) - mid_y(gco)
     g.data.transform(Matrix.Translation((0, dy, 0)))
     rep["garment_shift_y_m"] = round(float(dy), 4)
+    # 0. the coarse cloth split where its edges are long (the sleeves): a flat face cannot wrap the arm, the arm
+    # shows through between its vertices however far they are pushed out (r6: the left elbow 47 mm through)
+    rep["split"] = split_long(g, args.max_edge)
+    say("split", rep["split"])
     # 1. the pose
     loops = boundary_loops(g)
     rep["loops"] = [{"edges": lp["edges"], "centre": lp["centre"].round(4).tolist(), "size": lp["size"].round(4).tolist()}
@@ -475,7 +502,7 @@ def main() -> int:
                 w = np.array([F.hug_weight(x) for x in fd])
                 s_f, n_f = signed(new, ftree)
                 disp = (-(w * np.maximum(0.0, s_f - args.hug)))[:, None] * n_f
-                disp = np.array(F.smooth(disp.tolist(), neighbours(o.data), 8, 0.5))
+                disp = np.array(F.smooth(disp.tolist(), neighbours(o.data), 4, 0.5))
                 hugged = int((w > 0.5).sum())
                 new, pushed2 = push_out(new + disp, ftree, floors[name])
                 pushed += pushed2
