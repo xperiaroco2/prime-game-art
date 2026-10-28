@@ -137,10 +137,12 @@ floor = ["torso", "foot_Left", "foot_Right"]
 [arms.HandsOnHips]
 # p1 (grid: curl x fingers_dir on the s11 dumps): the palm on the waist's side, the fingers together forward and
 # down ([0.4, 0.7, -0.6], also FingerUp's and Salute's hip hand); the palm 1.5 cm off the skin (at 0.5 the hand went
-# 1.3 cm into the waist), the variants' 0.5 kept
+# 1.3 cm into the waist)
+# p2 (review of #342: p1's Lunge variant went 0.68/0.84 cm into the waist at 0.5; grid 0.5/0.8/1.0/1.2 on both p1
+# dumps, Lunge close-ups): the variants' gap 0.8 (through 0.37/0.40, contact 0.46/0.37; 1.2: a 1.03 cm gap)
 # round 3 s11: the elbows back (were [1.0, -0.6, 0.0]): the left/right outline apart from Salute's hip arm, the wrist
 # straighter (the hand to the forearm 89 -> 67 degrees)
-both = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [0.8, -1.3, 0.0], fingers_dir = [0.4, 0.7, -0.6], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 1.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2], gap_cm = 0.5 } }
+both = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [0.8, -1.3, 0.0], fingers_dir = [0.4, 0.7, -0.6], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 1.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2], gap_cm = 0.8 } }
 contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Right", b = "torso" },
             { a = "hand_Left", mark = "waist_Left" }, { a = "hand_Right", mark = "waist_Right" }]
 
@@ -164,9 +166,11 @@ contacts = [{ a = "LeftIndexDistal", b = "RightIndexDistal", solve = "meet", gap
 # FingerUp's and Salute's hip hand keep s10's elbow [1, -0.6, 0] with s11's hip curl (review 3: wrist bend 88.7 deg
 # vs HandsOnHips' 67; mark 5.0 cm, gap 0.55 cm): on close_arms s11 the hand wraps the waist, not limp; the elbow
 # stays apart from HandsOnHips' (pulled back) so the left outlines differ
+# p2: the hip hand 1.4 cm off the skin (p1's 1.5 read a 1.06 cm gap on Lunge, no variant there; 1.4: Lunge 0.97,
+# OneLeg 0.78; 1.3: OneLeg 0.54 cm through), also Salute's hip hand
 Head = [-8, 9, 0]
 Right = { mode = "fk", shoulder = [0, 8, 0], upper = [0.45, 0.35, 1.0], lower = [0.15, 0.3, 1.0], fingers_dir = [0.05, 0.25, 1.0], palm = [-0.6, 0.8, 0.0], grip = "point" }
-Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.4, 0.7, -0.6], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 1.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2], gap_cm = 0.5 } }
+Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.4, 0.7, -0.6], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 1.4, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2], gap_cm = 0.5 } }
 contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
 
 [arms.HandsBehindHead]
@@ -184,7 +188,7 @@ both = { mode = "fk", upper = [0.6, 0.6, -0.6], lower = [0.25, 0.7, 0.7], finger
 [arms.Salute]
 # round 3 s11: the saluting elbow clearly forward (was [0.8, 0.9, -0.1]): the left/right outline apart from HandsOnHips
 Right = { mode = "goal", at = "brow", offset = [0.8, 0.6, 0.2], elbow = [0.5, 1.2, -0.1], fingers_dir = [-0.8, -0.5, 0.25], palm = [0.0, 0.45, -1.0], grip = "salute", touch = ["head"], push = [-0.8, -0.6, 0.0], gap_cm = 0.6 }
-Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.4, 0.7, -0.6], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 1.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2], gap_cm = 0.5 } }
+Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.4, 0.7, -0.6], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 1.4, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2], gap_cm = 0.5 } }
 contacts = [{ a = "RightIndexDistal", b = "head" }, { a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
 
 # round 3 (s10 grid on OneLeg and Kneel): the variants' fingers turned out with the belly like the shared clip's, a
