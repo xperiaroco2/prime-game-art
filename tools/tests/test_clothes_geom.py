@@ -59,6 +59,28 @@ class ClothesGeomTest(unittest.TestCase):
         self.assertEqual(G.centre_run(xs, gap=0.06), (-0.149, 0.16))
         self.assertIsNone(G.centre_run([]))
 
+    def test_centre_run_default_gap_spans_a_decimated_torso(self):
+        # vertices 4-5 cm apart across the torso (B's 2 cm gap stopped after one step); the arm 9 cm off stays out
+        xs = [-0.30, -0.24, -0.165, -0.12, -0.07, -0.02, 0.03, 0.08, 0.125, 0.17, 0.26]
+        self.assertEqual(G.CENTRE_GAP, 0.06)
+        self.assertEqual(G.centre_run(xs), (-0.165, 0.17))
+
+    def test_span(self):
+        self.assertEqual(G.span([]), 0.0)
+        self.assertAlmostEqual(G.span([0.1, -0.2, 0.05]), 0.3)
+
+    def test_skin_mask_matches_is_skin(self):
+        try:
+            import numpy as np
+        except ImportError:
+            self.skipTest("numpy is not installed")
+        import random
+        rnd = random.Random(7)
+        rgb = [(rnd.random(), rnd.random(), rnd.random()) for _ in range(4000)]
+        rgb += [(0.2, 0.6, 0.55), (0.12, 0.15, 0.2), (0.9, 0.9, 0.9), (0.0, 0.0, 0.0)]
+        got = G.skin_mask(np.array(rgb)).tolist()
+        self.assertEqual(got, [G.is_skin(*c) for c in rgb])
+
 
 if __name__ == "__main__":
     unittest.main()

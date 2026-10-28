@@ -2,12 +2,13 @@
 figure, skin and all) and welds its UV seams, tells skin from cloth per face by its texels' colour (clothes_geom.is_skin: teal and mint),
 deletes the skin (head, hands, neck and ankles) and the cloth specks left on it (the eye whites), keeps the garment
 and the shoes as pieces (the shoes are the pieces below the ankle band, or the pale faces low down when the hems sit on them; with --split-z the garment is cut at that
-height into a top and a bottom), drops floaters, decimates each piece to its triangle target and keeps Meshy's
-texture. The openings at the collar, cuffs and ankles stay open (nothing is filled). Scaled so the whole figure is
+height into a top and a bottom), drops floaters, removes the openings' spikes and fills small holes, decimates each piece to its triangle target
+and bakes Meshy's texture onto fresh UVs (matte: the roughness has a fabric floor). The openings at the collar, cuffs and ankles stay open (nothing is filled). Scaled so the whole figure is
 --height m tall, its feet on z = 0 and its footprint centred, facing -Y as imported.
 
     blender -b --factory-startup --python tools/blender/clothes_clean.py -- MODEL.glb OUT_DIR --height 1.80
         [--garment-tris 8000] [--shoe-tris 1600] [--split-z 0.0] [--top-tris 4500]
+        [--ray 0.01] [--rough-floor 0.85] [--spike-deg 40] [--hole-sides 10]
 
 Writes OUT_DIR/cloth.blend, cloth.glb and cloth.json (per piece its triangles, faces dropped and why); prints
 CLOTHES_CLEAN lines.
@@ -31,18 +32,6 @@ def say(*a) -> None:
     print("CLOTHES_CLEAN", *a, flush=True)
 
 
-def skin_mask(rgb: np.ndarray) -> np.ndarray:
-    """clothes_geom.is_skin over an (n, 3) array (the same HSV rule, vectorised)."""
-    mx, mn = rgb.max(axis=1), rgb.min(axis=1)
-    d = mx - mn
-    s = np.where(mx > 0, d / np.maximum(mx, 1e-9), 0.0)
-    r, g, b = rgb[:, 0], rgb[:, 1], rgb[:, 2]
-    dd = np.maximum(d, 1e-9)
-    h = np.where(mx == r, ((g - b) / dd) % 6.0, np.where(mx == g, (b - r) / dd + 2.0, (r - g) / dd + 4.0)) * 60.0
-    h = np.where(d > 0, h, 0.0)
-    return (h >= cg.SKIN_HUE[0]) & (h <= cg.SKIN_HUE[1]) & (s >= cg.SKIN_SAT) & (mx >= cg.SKIN_VAL)
-
-
 def base_image(obj) -> bpy.types.Image:
     for slot in obj.material_slots:
         nt = slot.material.node_tree
@@ -60,13 +49,15 @@ def face_skin(me, img) -> tuple[np.ndarray, np.ndarray]:
     px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)[:, :, :3]
     uv = np.zeros(len(me.loops) * 2, dtype=np.float32)
     me.uv_layers.active.data.foreach_get("uv", uv)
-    uv = uv.reshape(-1, 3, 2)  # triangles only
+    if any(p.loop_total != 3 for p in me.polygons):
+        raise SystemExit("CLOTHES_CLEAN the model is not all triangles (the texel samples assume three loops a face)")
+    uv = uv.reshape(-1, 3, 2)
     c = uv.mean(axis=1, keepdims=True)
     samples = np.concatenate([c, (c + uv) / 2.0], axis=1).reshape(-1, 2)
     x = np.clip((samples[:, 0] % 1.0) * w, 0, w - 1).astype(int)
     y = np.clip((samples[:, 1] % 1.0) * h, 0, h - 1).astype(int)
     rgb = px[y, x]
-    votes = skin_mask(rgb).reshape(-1, 4)
+    votes = cg.skin_mask(rgb).reshape(-1, 4)
     cen = rgb.reshape(-1, 4, 3)[:, 0]
     sat = (cen.max(axis=1) - cen.min(axis=1)) / np.maximum(cen.max(axis=1), 1e-9)
     return votes.sum(axis=1) > 2, sat > 0.35
@@ -104,10 +95,58 @@ def decimate(obj, target: int) -> None:
     bpy.ops.object.modifier_apply(modifier=mod.name)
 
 
-def bake_low(hi, target: int, size: int):
+def despike(bm, angle_deg: float, rounds: int = 4) -> int:
+    """Removes the thin spikes the skin cut leaves on the openings (the collar's top edge, the cuffs' ends): a
+    boundary vertex whose two boundary edges meet at less than angle_deg and that has at most two faces is a spike's
+    tip; its faces go, for a few rounds (a spike two triangles long). Returns the faces removed."""
+    import math
+    gone = 0
+    for _ in range(rounds):
+        tips = []
+        for v in bm.verts:
+            be = [e for e in v.link_edges if e.is_boundary]
+            if len(be) != 2 or len(v.link_faces) > 2:
+                continue
+            a, b = (e.other_vert(v).co - v.co for e in be)
+            if a.length > 0 and b.length > 0 and math.degrees(a.angle(b)) < angle_deg:
+                tips.append(v)
+        faces = list({f for v in tips for f in v.link_faces})
+        if not faces:
+            break
+        gone += len(faces)
+        bmesh.ops.delete(bm, geom=faces, context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    return gone
+
+
+def fill_holes(bm, sides: int, start: int) -> int:
+    """Fills the small holes inside the cloth (boundary loops of at most sides edges; the collar, cuffs and hems are
+    far longer), each new face's UVs taken from the same vertex in a face beside it. The new faces get the indices
+    from start on (the old faces keep theirs: the per-face masks are read by index). Returns the faces added."""
+    uv = bm.loops.layers.uv.active
+    old = set(bm.faces)
+    bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=sides)
+    new = [f for f in bm.faces if f not in old]
+    if uv is not None:
+        for f in new:
+            for loop in f.loops:
+                src = next((lp for lp in loop.vert.link_loops if lp.face in old), None)
+                if src is not None:
+                    loop[uv].uv = src[uv].uv
+    if new:
+        bmesh.ops.triangulate(bm, faces=new)
+    new = [f for f in bm.faces if f not in old]
+    for k, f in enumerate(new):
+        f.index = start + k
+    return len(new)
+
+
+def bake_low(hi, target: int, size: int, ray: float, rough_floor: float):
     """A decimated copy of hi with fresh UVs and hi's base colour, roughness and normal baked onto it (Cycles,
     selected to active). Decimating Meshy's own UVs in place garbles the stripes and the laces (texels pulled across
-    islands), so the low mesh never keeps them."""
+    islands), so the low mesh never keeps them. ray is the bake's reach: B's 0.04 m reached the denim beside the
+    arm and left a dark smear on the inner right sleeve. The baked roughness is raised to at least rough_floor
+    (fabric: Meshy's map read as leather gloss) and the specular is lowered, so the denim stays matte."""
     lo = hi.copy()
     lo.data = hi.data.copy()
     bpy.context.collection.objects.link(lo)
@@ -126,6 +165,7 @@ def bake_low(hi, target: int, size: int):
     nt = mat.node_tree
     bsdf = nt.nodes["Principled BSDF"]
     bsdf.inputs["Metallic"].default_value = 0.0
+    bsdf.inputs["Specular IOR Level"].default_value = 0.3
     lo.data.materials.append(mat)
     imgs = {}
     sc = bpy.context.scene
@@ -134,8 +174,8 @@ def bake_low(hi, target: int, size: int):
     sc.cycles.device = "CPU"
     bk = sc.render.bake
     bk.use_selected_to_active = True
-    bk.cage_extrusion = 0.01
-    bk.max_ray_distance = 0.04
+    bk.cage_extrusion = min(0.01, ray)
+    bk.max_ray_distance = ray
     bk.margin = 8
     hi.select_set(True)
     lo.select_set(True)
@@ -151,6 +191,11 @@ def bake_low(hi, target: int, size: int):
         else:
             bpy.ops.object.bake(type=kind)
         imgs[kind] = node
+        if kind == "ROUGHNESS" and rough_floor > 0:
+            px = np.array(img.pixels[:], dtype=np.float32).reshape(-1, 4)
+            px[:, :3] = np.maximum(px[:, :3], rough_floor)
+            img.pixels[:] = px.ravel()
+            img.update()
     nt.links.new(imgs["DIFFUSE"].outputs["Color"], bsdf.inputs["Base Color"])
     nt.links.new(imgs["ROUGHNESS"].outputs["Color"], bsdf.inputs["Roughness"])
     nm = nt.nodes.new("ShaderNodeNormalMap")
@@ -177,6 +222,10 @@ def main() -> None:
     ap.add_argument("--bake", type=int, default=2048, help="the baked maps' size in px")
     ap.add_argument("--skin-speck", type=float, default=0.004,
                     help="skin pieces under this share of the faces become cloth (the ankle bands are larger)")
+    ap.add_argument("--ray", type=float, default=0.01, help="the bake's max ray distance in m (0.04 smeared the sleeve)")
+    ap.add_argument("--rough-floor", type=float, default=0.85, help="the baked roughness's floor (fabric, matte)")
+    ap.add_argument("--spike-deg", type=float, default=40.0, help="a boundary tip sharper than this is a spike (0: keep)")
+    ap.add_argument("--hole-sides", type=int, default=10, help="fill holes of at most this many edges (0: none)")
     ap.add_argument("--speck", type=float, default=0.02, help="pieces under this share of the faces are dropped (the eye whites are about 1 %%)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
 
@@ -214,6 +263,9 @@ def main() -> None:
     welded = len(bm.verts)
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
     welded -= len(bm.verts)
+    # a weld that collapses a face would shift every later face's index against skin[] and strong[]
+    if len(bm.faces) != total:
+        raise SystemExit(f"CLOTHES_CLEAN the UV weld removed {total - len(bm.faces)} faces: the per-face masks would shift")
     bm.faces.ensure_lookup_table()
     bm.faces.index_update()
     report = {"welded_verts": welded, "model": str(args.model), "tris_in": total, "scale": scale, "height": args.height}
@@ -231,6 +283,10 @@ def main() -> None:
     bmesh.ops.delete(bm, geom=dead, context="FACES")
     loose = [v for v in bm.verts if not v.link_faces]
     bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    report["spike_faces"] = despike(bm, args.spike_deg) if args.spike_deg > 0 else 0
+    report["hole_faces"] = fill_holes(bm, args.hole_sides, total) if args.hole_sides > 0 else 0
+    strong = np.concatenate([strong, np.zeros(report["hole_faces"], dtype=bool)])  # a filled hole is garment
+    say(f"spikes={report['spike_faces']} faces removed, holes={report['hole_faces']} faces added")
     bm.faces.ensure_lookup_table()
     groups = components(bm, list(bm.faces))
     groups.sort(key=len, reverse=True)
@@ -289,7 +345,7 @@ def main() -> None:
     for name, o in pieces.items():
         before = len(o.data.polygons)
         if before > targets[name]:
-            o = pieces[name] = bake_low(o, targets[name], args.bake)
+            o = pieces[name] = bake_low(o, targets[name], args.bake, args.ray, args.rough_floor)
         cs = np.zeros(len(o.data.vertices) * 3)
         o.data.vertices.foreach_get("co", cs)
         cs = cs.reshape(-1, 3)

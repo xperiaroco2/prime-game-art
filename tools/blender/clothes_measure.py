@@ -33,8 +33,13 @@ def world_co(o) -> np.ndarray:
 
 def width(co: np.ndarray, z: float, half: float = 0.01, xmax: float = 9.0) -> float:
     sel = co[(np.abs(co[:, 2] - z) <= half) & (np.abs(co[:, 0]) <= xmax)]
-    w = cg.centre_run(sel[:, 0].tolist(), gap=0.02) if len(sel) else None
+    w = cg.centre_run(sel[:, 0].tolist()) if len(sel) else None
     return round(w[1] - w[0], 4) if w else 0.0
+
+
+def depth(co: np.ndarray, z: float, half: float = 0.01) -> float:
+    """The front-to-back depth of the vertices within half of z (0.0 where there are none)."""
+    return round(cg.span(co[np.abs(co[:, 2] - z) <= half][:, 1].tolist()), 4)
 
 
 def loops(o) -> list[dict]:
@@ -90,25 +95,27 @@ def main() -> None:
     allc = np.concatenate(list(cco.values()))
     garment = np.concatenate([v for k, v in cco.items() if k != "shoes"])
     shoulder_x = bones["shoulder"]["head"][0] if "shoulder" in bones else 0.25
-    body_lines = {"height": float(bco[:, 2].max()), "neck": bones.get("neck", {}).get("head", [0, 0, 0])[2],
-                  "shoulder_z": bones["shoulder"]["head"][2], "hip_z": bones["hip"]["head"][2],
-                  "ankle_z": bones["ankle"]["head"][2],
-                  "shoulder_width": 2 * shoulder_x,
-                  "hip_width": width(bco, bones["hip"]["head"][2], xmax=0.4),
+    # only like things are paired (mesh widths and depths at one height); the bones' heights and the cloth's
+    # edges are reported on their own (B's lines paired the garment's top with the neck bone and the body's height,
+    # and the hem with the ankle bone)
+    chest_z = bones["shoulder"]["head"][2] - 0.12
+    body_only = {"height": float(bco[:, 2].max()), "neck_bone_z": bones.get("neck", {}).get("head", [0, 0, 0])[2],
+                 "shoulder_z": bones["shoulder"]["head"][2], "hip_z": bones["hip"]["head"][2],
+                 "ankle_bone_z": bones["ankle"]["head"][2], "shoulder_joints_width": 2 * shoulder_x}
+    body_lines = {"hip_width": width(bco, bones["hip"]["head"][2], xmax=0.4),
                   "chest_width": width(bco, bones["shoulder"]["head"][2] - 0.12, xmax=shoulder_x + 0.02),
-                  "depth_chest": float(np.ptp(bco[np.abs(bco[:, 2] - (bones["shoulder"]["head"][2] - 0.12)) < 0.01][:, 1]))}
-    cloth_lines = {"height": float(garment[:, 2].max()), "neck": float(garment[:, 2].max()),
-                   "hip_width": width(garment, bones["hip"]["head"][2], xmax=0.4),
+                  "depth_chest": depth(bco, chest_z)}
+    cloth_lines = {"hip_width": width(garment, bones["hip"]["head"][2], xmax=0.4),
                    "chest_width": width(garment, bones["shoulder"]["head"][2] - 0.12, xmax=shoulder_x + 0.02),
-                   "depth_chest": float(np.ptp(garment[np.abs(garment[:, 2] - (bones["shoulder"]["head"][2] - 0.12)) < 0.01][:, 1])),
-                   "shoulder_width": width(garment, bones["shoulder"]["head"][2] - 0.03, xmax=0.6),
-                   "ankle_z": float(garment[:, 2].min())}
+                   "depth_chest": depth(garment, chest_z),
+                   "collar_top_z": float(garment[:, 2].max()), "hem_bottom_z": float(garment[:, 2].min()),
+                   "shoulder_span": width(garment, bones["shoulder"]["head"][2] - 0.03, xmax=0.6)}
     if "shoes" in cco:
         s = cco["shoes"]
         cloth_lines.update({"shoe_top": float(s[:, 2].max()), "shoe_length": float(np.ptp(s[:, 1])),
                             "shoe_span": float(np.ptp(s[:, 0]))})
     fit = {"cloth": str(cloth_path), "body": str(body_path), "bones": bones,
-           "lines": cg.fit_lines(cloth_lines, body_lines),
+           "lines": cg.fit_lines(cloth_lines, body_lines), "body_only": {k: round(v, 4) for k, v in body_only.items()},
            "cloth_only": {k: round(v, 4) for k, v in cloth_lines.items() if k not in body_lines},
            "cloth_box": [allc.min(axis=0).round(4).tolist(), allc.max(axis=0).round(4).tolist()],
            "body_box": [bco.min(axis=0).round(4).tolist(), bco.max(axis=0).round(4).tolist()],
