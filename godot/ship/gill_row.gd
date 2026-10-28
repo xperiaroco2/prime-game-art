@@ -26,7 +26,8 @@ const SEAM_GAIN := {"calm": 0.0, "open": 0.0, "gasp": 0.6, "shut": 0.25, "fault"
 const LIGHT_ENERGY := {"calm": 0.08, "open": 0.13, "gasp": 0.13, "shut": 0.0, "fault": 0.02}
 ## step 6: the mist and the slit's light hung behind the wall: the throat is the piece's +z (the band leans to +z),
 ## not -z. Now both stand in front of the slit, the mist a soft add MIST_OUT out from the glow's middle.
-const MIST := {"calm": 0.2, "open": 0.32, "gasp": 0.26, "shut": 0.0, "fault": 0.0}
+## step 6b: the grid's pick C (sheets/mist_grid_6b.png): 0.6 open and a 1.5 x 1.3 wider puff, seen from 2.5 m, no fog wall
+const MIST := {"calm": 0.375, "open": 0.6, "gasp": 0.49, "shut": 0.0, "fault": 0.0}
 const MIST_OUT := 0.22
 
 var _root: Node3D
@@ -35,6 +36,8 @@ var _leaves: Dictionary = {}     # slit -> {"a": Node3D, "b": Node3D}
 var _rest: Dictionary = {}       # leaf node -> its built (open) position
 var _lights: Dictionary = {}     # slit -> OmniLight3D
 var _mists: Dictionary = {}      # slit -> [MeshInstance3D, its material]
+var _mist_k: float = 1.0         # step 6b: a pose's mist strength factor and puff size (the variant grid)
+var _mist_size: Vector2 = Vector2.ONE
 var _mirror: float = 1.0
 
 
@@ -88,13 +91,14 @@ func _make_mist(piece: Node3D, at: Vector3) -> Array:
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.billboard_keep_scale = true
 	m.proximity_fade_enabled = true
 	m.proximity_fade_distance = 0.15
 	m.no_depth_test = false
 	m.albedo_texture = tex
 	m.albedo_color = Color(0, 0, 0, 0)
 	var q: QuadMesh = QuadMesh.new()
-	q.size = Vector2(0.45, 0.8)
+	q.size = Vector2(0.68, 1.04)
 	var mi: MeshInstance3D = MeshInstance3D.new()
 	mi.mesh = q
 	mi.material_override = m
@@ -155,7 +159,8 @@ func set_slit(k: int, state: String, mix: float = 0.0, open_x: float = -1.0, puf
 	if _mists.has(k):
 		var mi: MeshInstance3D = _mists[k][0]
 		var m: StandardMaterial3D = _mists[k][1]
-		var a: float = float(MIST[state]) * open_x
+		var a: float = float(MIST[state]) * open_x * _mist_k
+		mi.scale = Vector3(_mist_size.x, _mist_size.y, 1.0)
 		mi.visible = a > 0.001
 		m.albedo_color = Color(colour.r * a, colour.g * a, colour.b * a, 1.0)
 		mi.position = (_mists[k][2] as Vector3) + Vector3(-0.08 * puff * _mirror, 0.03 * puff, 0.04 * puff)
@@ -166,9 +171,12 @@ func flash_ring(t: float) -> void:
 	_glow("btn_ring", CYAN.lerp(WHITE, t), 1.0 + 2.5 * t)
 
 
-## A view's pose: {"slits": {"3": "open", ...}, "ring": 0..1} (a slit left out: calm).
+## A view's pose: {"slits": {"3": "open", ...}, "ring": 0..1, "mist": {"k": 1.5, "w": 1.2, "h": 1.2}} (a slit left out: calm).
 func pose(spec: Dictionary) -> void:
 	var slits: Dictionary = spec.get("slits", {})
+	var mist: Dictionary = spec.get("mist", {})   # step 6b: {"k": strength factor, "w", "h": puff size factors}
+	_mist_k = float(mist.get("k", 1.0))
+	_mist_size = Vector2(float(mist.get("w", 1.0)), float(mist.get("h", 1.0)))
 	for k: int in range(1, 6):
 		set_slit(k, String(slits.get(str(k), "calm")))
 	flash_ring(float(spec.get("ring", 0.0)))
@@ -271,7 +279,7 @@ func play_row(t: float) -> String:
 			elif d < 0.9:
 				set_slit(k, "open", 1.0, lerpf(1.04, 1.0, _ease_in_out((d - 0.45) / 0.45)))
 			else:
-				set_slit(k, "open" if k == on else "calm", 1.0, 1.0, 0.5 + 0.5 * sin(t * 1.9 + k * 1.3))   # no wrap: the mist sways
+				set_slit(k, "open" if k == on else "calm", 1.0, 1.0, 0.5 + 0.5 * sin(t * 1.2 + k * 1.3))   # no wrap: the mist sways (6b: slower)
 			if d < 0.5:
 				label = "press: %d opens" % k
 		elif k == on:
