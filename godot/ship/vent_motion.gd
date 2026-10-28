@@ -438,7 +438,7 @@ func _run() -> void:
 	var anim: Node = VentAnim.new()
 	anim.manual = true
 	root.add_child(anim)
-	anim.setup(_vents[id0], id0, float(_req["mark_travel"]))
+	anim.setup(_vents[id0], id0)
 	var clip: Dictionary = {"max_penetration_m": 0.0, "max_outside_m": 0.0, "max_past_depth_m": 0.0,
 		"min_clearance_m": 1e9, "deg_min": 1e9, "deg_max": -1e9, "worst": ""}
 	var keep: Dictionary = {}   # frame -> the blades' angles (the close-ups' moments)
@@ -464,7 +464,7 @@ func _run() -> void:
 		keep[i] = [a.duplicate(), anim.marker]
 		var img: Image = await _grab(1)
 		img.save_png(_out.path_join("frames/%05d.png" % i))
-	anim.release(_vents[id0])
+	anim.restore(_vents[id0])
 	anim.queue_free()
 	result["clip"] = clip
 	print("VENT clip: max penetration %.4f m, max outside the opening %.4f m, past the depth %.4f m, least clearance "
