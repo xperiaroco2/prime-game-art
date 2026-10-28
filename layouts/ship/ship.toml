@@ -419,7 +419,7 @@ int_cyan__gill_seam = {c = [1.0, 0.06, 0.02], e = 0.12, l = 0.0}  # the shut lea
 int_dark__gill_btn = {l = 0.0}                                      # the gills' button dome (lights nothing)
 int_dark__gill_leaf = {l = 0.0}                                     # the slits' shutter leaves
 int_cyan__gill_ring = {c = [0.05, 0.8, 1.0], e = 0.5, l = 0.0}   # the button's light ring (step 3: bright, as the concept)
-int_cyan__gill_plinth = {c = [0.05, 0.8, 1.0], e = 0.12, l = 0.0} # the plinth's line
+int_cyan__gill_plinth = {c = [0.05, 0.8, 1.0], e = 0.4, l = 0.0}  # the plinth's line (step 5: 0.4, 2.4 cm, as thick and bright as the concept's; 0.12 read thin)
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing

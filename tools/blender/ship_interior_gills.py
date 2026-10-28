@@ -49,6 +49,9 @@ _MOD = WALL_LEN / 5
 S0 = min(i * _MOD for i in range(5) if _MK[1] + (_KK[1] - _MK[1]) * i / 5 >= S.TH_ROOF - 1e-6)   # 1.620: under the roof
 PLINTH_H, PLINTH_W = 0.60, 0.03                        # the plinth: 0-60 cm, 3 cm proud of the band
 KICK_H = 0.08
+LINE_H = (PLINTH_H - 0.036, PLINTH_H - 0.012)              # step 5: the plinth's cyan line, 2.4 cm (was 1.2: thin
+                                                        # and dim beside the concept's)
+CORNICE_H, CORNICE_W = 0.06, 0.022                      # step 5: the cornice along the band's top, under the ceiling
 PLINTH_S0 = 0.02                                        # the plinth from the mouth's corner (under the ramp roof too, as the concept)
 MOUTH_W = 0.003                                         # step 4: the band's mouth part (s 0.02-1.62, under the ramp roof, to
                                                         # the bend) 3 mm proud of the jambs' plates it covers (no z-fighting)
@@ -98,7 +101,7 @@ for _name, _base, _upd in (
         ("int_cyan__gill_glow", "int_cyan", dict(base=(0.05, 0.7, 1.0, 1.0), emission=(0.05, 0.7, 1.0), strength=1.6)),
         ("int_cyan__gill_seam", "int_cyan", dict(base=(1.0, 0.1, 0.03, 1.0), emission=(1.0, 0.1, 0.03), strength=1.6)),
         ("int_cyan__gill_ring", "int_cyan", dict(base=(0.1, 0.85, 1.0, 1.0), emission=(0.1, 0.85, 1.0), strength=2.4)),
-        ("int_cyan__gill_plinth", "int_cyan", dict(base=(0.1, 0.8, 1.0, 1.0), emission=(0.1, 0.8, 1.0), strength=1.4)),
+        ("int_cyan__gill_plinth", "int_cyan", dict(base=(0.1, 0.8, 1.0, 1.0), emission=(0.1, 0.8, 1.0), strength=2.4)),
         ("int_dark__gill_btn", "int_dark", dict(base=(0.035, 0.04, 0.045, 1.0), metallic=0.6, roughness=0.38)),
         ("int_dark__gill_leaf", "int_dark", dict(base=(0.05, 0.05, 0.055, 1.0), metallic=0.5, roughness=0.45))):
     L.MATERIALS[_name] = {**L.MATERIALS[_base], **_upd}
@@ -404,7 +407,7 @@ def plinth() -> list:
     fr = G.Frame((0.0, 0.0, FLOOR), (1, 0, 0), (0, 0, 1), (0, 1, 0))
     body = G.slab(fr, G.rect(PLINTH_S0, WALL_LEN, KICK_H, PLINTH_H), -0.2, PLINTH_W, 0.008)
     kick = G.slab(fr, G.rect(PLINTH_S0, WALL_LEN, 0.0, KICK_H), -0.2, PLINTH_W - 0.012)
-    line = G.slab(fr, G.rect(PLINTH_S0, WALL_LEN, PLINTH_H - 0.024, PLINTH_H - 0.012), PLINTH_W - 0.001, PLINTH_W + 0.003)
+    line = G.slab(fr, G.rect(PLINTH_S0, WALL_LEN, *LINE_H), PLINTH_W - 0.001, PLINTH_W + 0.004)
     return [P("plinth", body, BAND_MAT), P("kick", kick, DARK), P("plinth_line", line, "int_cyan__gill_plinth")]
 
 
@@ -416,6 +419,22 @@ def band_mouth() -> list:
     end = _sheet([[(S0, t, MOUTH_W), (S0, t, 0.0)] for t in (PLINTH_H, BEND)], flip=True)
     front = _sheet([[(PLINTH_S0, t, 0.0), (PLINTH_S0, t, MOUTH_W)] for t in (PLINTH_H, BEND)], flip=True)
     return [P("band_mouth", M(face, end, front), BAND_MAT)]
+
+
+def cornice() -> list:
+    """Step 5: a strip along the band's top edge under the ceiling (the concept's clean line where the band meets it),
+    from the roof line to the header's face at the hall's corner, its end cut on that face."""
+    a, b, c = header_clip()
+    def at(u, t, w):   # the point's u, cut back on the header's face
+        return (min(u, (c - b * v_of(t, w)) / a), t, w)
+    prof = [(T_TOP - CORNICE_H, 0.001), (T_TOP - CORNICE_H, CORNICE_W), (T_TOP + T_OVER, CORNICE_W)]
+    rows = [[at(u, t, w) for t, w in prof] for u in (S0, WALL_LEN)]
+    body = _sheet(rows)   # bottom face down, front face toward the room
+    ends = []
+    for r, u, flip in ((rows[0], S0, True), (rows[1], WALL_LEN, False)):
+        vs = [point(*p) for p in r] + [point(*at(u, T_TOP + T_OVER, 0.001))]
+        ends.append((vs, [(0, 1, 2, 3)[::-1] if flip else (0, 1, 2, 3)]))
+    return [P("cornice", M(body, *ends), RIM_MAT)]
 
 
 def seams() -> list:
@@ -471,7 +490,7 @@ def th_gills(args, layout):
     parts += ps
     holes.append(hole)
     parts.append(P("band", M(*_band_faces(holes)), BAND_MAT))
-    parts += plinth() + band_mouth() + seams() + back_and_ends()
+    parts += plinth() + band_mouth() + cornice() + seams() + back_and_ends()
     closed = ("_fil", "_rim", "_leaf_a", "_leaf_b", "plinth", "kick", "plinth_line")
     for p in parts:   # the open sheets keep their winding (recalc_face_normals guesses on an open sheet)
         p["solid"] = p["name"].endswith(closed)

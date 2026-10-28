@@ -175,10 +175,33 @@ class Ceiling(unittest.TestCase):
         self.assertGreaterEqual(tops[-1], u_cut - 1e-6)
         self.assertLessEqual(max(b - a for a, b in zip(tops, tops[1:])), 0.37 + 1e-6)
 
+    def test_header_stops_at_the_ceiling(self):
+        """Step 5: under the throat's ceiling the hall's header is only its skin on the hall face (by the corners),
+        behind the band's cut 1 cm in, so no header face stands over the band's lean."""
+        head = {q["name"]: q for q in S.throat_ceil({}, None)}["header"]["verts"]
+        k, _v, m, dist = S.th_corner_chord()
+        low = [v for v in head if v[2] < S.FLOOR + S.TH_H - 1e-6 and v[0] > 0]
+        self.assertTrue(low)   # the skin is there
+        for x, y, _h in low:
+            self.assertLessEqual(m[0] * x + m[1] * y, dist - S.TH_HEAD_D + S.TH_SKIN + 5e-4)   # (the slabs mitre)
+        ha, hb, hc = G.header_clip()   # the band's cut lies in front of the skin
+        self.assertAlmostEqual(-(hc - (m[0] * G._MK[0] + m[1] * G._MK[1])), dist - S.TH_HEAD_D + 0.01, places=9)
+        self.assertLess(S.TH_SKIN, 0.01)
+
+    def test_cornice(self):
+        """Step 5: the cornice along the band's top, from the roof line, its end cut on the header's face."""
+        c = parts("e")["cornice"]["verts"]
+        ha, hb, hc = G.header_clip()
+        self.assertGreaterEqual(max(v[2] for v in c), S.FLOOR + S.TH_H)
+        for x, y, _h in c:
+            self.assertGreaterEqual(x, G.S0 - 1e-9)
+            self.assertLessEqual(ha * x + hb * y, hc + 1e-6)
+
     def test_plinth(self):
         p = parts("e")
         self.assertAlmostEqual(max(v[2] for v in p["plinth"]["verts"]) - S.FLOOR, G.PLINTH_H, places=9)
         self.assertLessEqual(max(v[2] for v in p["plinth_line"]["verts"]) - S.FLOOR, G.PLINTH_H)
+        self.assertGreaterEqual(G.LINE_H[1] - G.LINE_H[0], 0.024 - 1e-9)   # step 5: as thick as the concept's
 
 
 if __name__ == "__main__":

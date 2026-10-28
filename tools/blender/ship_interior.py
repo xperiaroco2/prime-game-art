@@ -720,6 +720,7 @@ def cor_wall_up(args, layout):
 
 
 TH_HEAD_D = 0.2    # the throat ceiling's header under the hall's rim: its depth hall-ward of the sub-facet's chord
+TH_SKIN = 0.008   # the gills step 5: the header's skin under the throat's ceiling by the corners (the band's cut is 1 cm in)
 
 
 def th_corner_chord():
@@ -901,7 +902,7 @@ def throat_floor(args, layout):
 def throat_ceil(args, layout):
     """The throat's ceiling from its roof line aft to the hall's rim: the corridors' flat ceiling (a body, panels and
     a dark spine) between the walls' chamfer tops, and the header under the hall's rim over each sub-facet, down
-    to the ceiling (to the chamfer near the corners)."""
+    to the ceiling; near the corners only its hall face's skin goes on down to the chamfer (the gills step 5)."""
     top = FLOOR + TH_H
     fr = G.Frame((0.0, 0.0, top), (1, 0, 0), (0, 1, 0), (0, 0, -1))
     fl = lambda q: [(x, y) for x, y in q]
@@ -931,8 +932,18 @@ def throat_ceil(args, layout):
         for s in [ln * k / 12 for k in range(1, 12)]:
             ss.append(s)
         ss = sorted(ss)
+        def low_hall(s):   # the chamfer's height where it meets the header's hall face (clamped as low)
+            x, y = p0[0] + ex[0] * s - nrm[0] * TH_HEAD_D, p0[1] + ex[1] * s - nrm[1] * TH_HEAD_D
+            d = min(-(a * x + b * y - c) for a, b, c in (_wall_line(1), _wall_line(-1)))
+            return TH_BEND + (TH_H - TH_BEND) * min(1.0, max(0.0, d) / TH_IN)
         for s0, s1 in zip(ss, ss[1:]):
-            head.append(G.slab(fv, [(s0, low(s0)), (s1, low(s1)), (s1, H_HALL), (s0, H_HALL)], -TH_HEAD_D, 0.0))
+            # the gills step 5: the header stops at the throat's ceiling; below it, by the hall's corners, only a skin
+            # on its hall face (TH_SKIN) closes the chamfer's triangle from the hall, behind the gills' band, whose
+            # lean now runs on to the hall face (the full-depth drop stood over the band as a dark slanted block)
+            head.append(G.slab(fv, [(s0, TH_H), (s1, TH_H), (s1, H_HALL), (s0, H_HALL)], -TH_HEAD_D, 0.0))
+            if min(low_hall(s0), low_hall(s1)) < TH_H - 1e-6:
+                head.append(G.slab(fv, [(s0, low_hall(s0)), (s1, low_hall(s1)), (s1, TH_H), (s0, TH_H)],
+                                   -TH_HEAD_D, -TH_HEAD_D + TH_SKIN))
         if i in (0, TH_SUBS - 1):   # the raise step 3 (bug 1): a trim where the mitred chamfer meets the header
             def seat(s):   # the chamfer's height where it meets the header's hall face, None off the chamfer
                 x, y = p0[0] + ex[0] * s - nrm[0] * TH_HEAD_D, p0[1] + ex[1] * s - nrm[1] * TH_HEAD_D
