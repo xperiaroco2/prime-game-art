@@ -140,7 +140,9 @@ class LensLoungeTest(unittest.TestCase):
         self.assertAlmostEqual(max(v[2] for v in p["spine"]["verts"]) - S.FLOOR, 0.88)
         self.assertAlmostEqual(max(v[2] for v in p["seat"]["verts"]) - S.FLOOR, 0.44)
         self.assertAlmostEqual(max(v[2] for v in p["back"]["verts"]) - S.FLOOR, 0.80)
-        self.assertAlmostEqual(max(v[2] for v in p["arm"]["verts"]) - S.FLOOR, 0.58)
+        # step 4: a slimmer arm, a bronze post to 48 under a charcoal pad to 54 (was one bronze block to 58)
+        self.assertAlmostEqual(max(v[2] for v in p["arm"]["verts"]) - S.FLOOR, 0.48)
+        self.assertAlmostEqual(max(v[2] for v in p["arm_pad"]["verts"]) - S.FLOOR, 0.54)
         self.assertAlmostEqual(-min(v[0] for v in parts("lounge_sofa_base")["base"]["verts"]), 0.76)
 
     def test_the_lounge_stays_inside_tip_e(self) -> None:
