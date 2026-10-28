@@ -1,0 +1,63 @@
+# art#196, the axolotl's clothes, step 1 (the engineer, 2026-10-28, chat: "Так, запускай крок 1: наше тіло аксолотля з 4
+# пальцями, 3–4 варіанти одягу в 2D спереду/збоку/ззаду, я оберу"; recorded in the approval_ref comment). The Meshy-surface
+# bodies were rejected; our own Blender body stays as the functional base and the aliens are always clothed, so Meshy will
+# make only the clothes (step 2, after his pick). Here: our axolotl body (anim_bare/loco/f3, Idle_Loop's first frame)
+# rendered front, left and back, and each outfit an edit of those three renders into one front / side / back turnaround,
+# her head, proportions and colours kept, four digits per hand. Medium (exploration), one image per concept, 1536x1024.
+# No game, film, studio, character or real-person names; no style names of other works; no brand marks.
+id = "2026-10-28-alien-clothes-s1"
+service = "openai-images"
+purpose = "art#196: four present-day outfits drawn on our own axolotl body (front / side / back turnarounds, four-digit hands), for the engineer to pick the outfit Meshy then models."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 1.5
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-28"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6468050503"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+[[items]]
+id = "ax_knit"
+kind = "edit"
+prompt = "The three reference images are the front, left side and back views of one finished 3D character, the axolotl woman, an adult alien. Keep her exactly as she is: the same height, the same body proportions, limb lengths and limb thickness, the same wide rounded head with the three feathery gill stalks on each side, the small glossy black eyes, the freckle-like dots, the wide gentle smile, the same teal skin with the paler throat, and the same smooth soft-matte toy finish and soft studio light. Each hand has exactly four digits: three rounded fingers and a thumb, never a fifth finger, relaxed open. Now dress her in just some nice present-day casual clothes: a soft cream ribbed knit cardigan, buttoned, slightly cropped at the waist, over a fitted plain white top, high-waisted wide-leg trousers in warm coral, and clean white low-top sneakers. The pale throat shows at the open neckline. The clothes are well made and well fitted, following her body closely so they move with it, a cool grown-up look, not childish, nothing old or worn. Show one character turnaround: three full-length views of her side by side at the same scale and height, left to right the front view, the left side profile and the back view, each in the same neutral standing pose as the references, arms hanging a little away from the body, feet on the same ground line, a little space above the gills and below the feet. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/0_000_front.png", provenance = "our axolotl character (anim_bare/loco/f3 build), Idle_Loop first frame, front view, rendered by tools/run.py render", sha256 = "2d1daad61805cc224d7940b54fd651f74322edbaef16c4eab538f4fe7d7b8495" },
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "93189d1d635d4b5babaa4b041e788c43825ee140fbfa63129d2888990110b074" },
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "901e253003dd13077ca12d71c23242eb8fe714951771a13af9eccde29fb12d3b" },
+]
+
+[[items]]
+id = "ax_sport"
+kind = "edit"
+prompt = "The three reference images are the front, left side and back views of one finished 3D character, the axolotl woman, an adult alien. Keep her exactly as she is: the same height, the same body proportions, limb lengths and limb thickness, the same wide rounded head with the three feathery gill stalks on each side, the small glossy black eyes, the freckle-like dots, the wide gentle smile, the same teal skin with the paler throat, and the same smooth soft-matte toy finish and soft studio light. Each hand has exactly four digits: three rounded fingers and a thumb, never a fifth finger, relaxed open. Now dress her in just some nice present-day sporty clothes: a fitted zip-up track jacket in deep teal-green and off-white panels, zipped to a soft stand-up collar that wraps the base of her neck, slim tapered jogger trousers in charcoal with a cuffed ankle, and chunky white running sneakers. The clothes are well made and well fitted, following her body closely so they move with it, a cool grown-up look, not childish, nothing old or worn. Show one character turnaround: three full-length views of her side by side at the same scale and height, left to right the front view, the left side profile and the back view, each in the same neutral standing pose as the references, arms hanging a little away from the body, feet on the same ground line, a little space above the gills and below the feet. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/0_000_front.png", provenance = "our axolotl character (anim_bare/loco/f3 build), Idle_Loop first frame, front view, rendered by tools/run.py render", sha256 = "2d1daad61805cc224d7940b54fd651f74322edbaef16c4eab538f4fe7d7b8495" },
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "93189d1d635d4b5babaa4b041e788c43825ee140fbfa63129d2888990110b074" },
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "901e253003dd13077ca12d71c23242eb8fe714951771a13af9eccde29fb12d3b" },
+]
+
+[[items]]
+id = "ax_turtle"
+kind = "edit"
+prompt = "The three reference images are the front, left side and back views of one finished 3D character, the axolotl woman, an adult alien. Keep her exactly as she is: the same height, the same body proportions, limb lengths and limb thickness, the same wide rounded head with the three feathery gill stalks on each side, the small glossy black eyes, the freckle-like dots, the wide gentle smile, the same teal skin with the paler throat, and the same smooth soft-matte toy finish and soft studio light. Each hand has exactly four digits: three rounded fingers and a thumb, never a fifth finger, relaxed open. Now dress her in just some nice present-day casual clothes: a fitted mustard-yellow fine-knit turtleneck sweater whose soft rolled collar covers the lower half of her neck, tucked into high-waisted straight-leg mid-blue jeans with a slim brown belt, and short brown leather ankle boots. The clothes are well made and well fitted, following her body closely so they move with it, a cool grown-up look, not childish, nothing old or worn. Show one character turnaround: three full-length views of her side by side at the same scale and height, left to right the front view, the left side profile and the back view, each in the same neutral standing pose as the references, arms hanging a little away from the body, feet on the same ground line, a little space above the gills and below the feet. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/0_000_front.png", provenance = "our axolotl character (anim_bare/loco/f3 build), Idle_Loop first frame, front view, rendered by tools/run.py render", sha256 = "2d1daad61805cc224d7940b54fd651f74322edbaef16c4eab538f4fe7d7b8495" },
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "93189d1d635d4b5babaa4b041e788c43825ee140fbfa63129d2888990110b074" },
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "901e253003dd13077ca12d71c23242eb8fe714951771a13af9eccde29fb12d3b" },
+]
+
+[[items]]
+id = "ax_overall"
+kind = "edit"
+prompt = "The three reference images are the front, left side and back views of one finished 3D character, the axolotl woman, an adult alien. Keep her exactly as she is: the same height, the same body proportions, limb lengths and limb thickness, the same wide rounded head with the three feathery gill stalks on each side, the small glossy black eyes, the freckle-like dots, the wide gentle smile, the same teal skin with the paler throat, and the same smooth soft-matte toy finish and soft studio light. Each hand has exactly four digits: three rounded fingers and a thumb, never a fifth finger, relaxed open. Now dress her in just some nice present-day casual clothes: slim dark-indigo denim dungarees with neat straps and a bib pocket, over a fitted long-sleeve top with thin navy and white stripes, the trouser legs rolled once at the ankle, and clean off-white canvas low-top sneakers. The clothes are well made and well fitted, following her body closely so they move with it, a cool grown-up look, not childish, nothing old or worn. Show one character turnaround: three full-length views of her side by side at the same scale and height, left to right the front view, the left side profile and the back view, each in the same neutral standing pose as the references, arms hanging a little away from the body, feet on the same ground line, a little space above the gills and below the feet. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/0_000_front.png", provenance = "our axolotl character (anim_bare/loco/f3 build), Idle_Loop first frame, front view, rendered by tools/run.py render", sha256 = "2d1daad61805cc224d7940b54fd651f74322edbaef16c4eab538f4fe7d7b8495" },
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "93189d1d635d4b5babaa4b041e788c43825ee140fbfa63129d2888990110b074" },
+  { file = "raw:2026-10-28-alien-clothes-s1/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "901e253003dd13077ca12d71c23242eb8fe714951771a13af9eccde29fb12d3b" },
+]
