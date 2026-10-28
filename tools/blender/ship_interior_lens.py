@@ -333,7 +333,7 @@ def lounge_pillow(args, layout):
     # bottom seams to 14 in the middle, its corners pinched; each ring a 12-point outline (front and back bulge)
     rings = []
     for h in (0.0, 0.03, 0.09, 0.18, 0.27, 0.33, 0.36):
-        t = math.sin(math.pi * h / 0.36)
+        t = max(0.0, math.sin(math.pi * h / 0.36))   # never a hair under 0 at the top (a complex root)
         hw = 0.18 + 0.03 * t ** 0.5
         pts = []
         for k in range(12):
