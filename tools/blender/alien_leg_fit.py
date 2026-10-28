@@ -41,26 +41,47 @@ LEGS = [(f"{s}UpperLeg", f"{s}LowerLeg", f"{s}Foot") for s in ("Left", "Right")]
 MODES = ("lowest", "ik")
 
 
+def _saved_world(obj) -> Matrix:
+    """F1: obj's world matrix from its saved transforms (matrix_basis and matrix_parent_inverse up its parent chain,
+    alien_char_geom.chain_world): an appended object is in no view layer, so its matrix_world is whatever was last
+    evaluated (the review of #340: perhaps the identity). A bone parent or a constraint would need an evaluation:
+    refused."""
+    chain, o = [], obj
+    while o is not None:
+        if o.constraints or (o.parent is not None and o.parent_type != "OBJECT"):
+            raise SystemExit(f"--leg-fit: {o.name} has a constraint or a {o.parent_type} parent; the donor's world "
+                             "frame is read from object parents only")
+        chain.append(([list(r) for r in o.matrix_parent_inverse], [list(r) for r in o.matrix_basis]))
+        o = o.parent
+    return Matrix(G.chain_world(chain[::-1]))
+
+
 def _donor(path: str):
-    """The donor file's one armature object, with its own matrix_world (R1: the donor's world frame, compared with
-    the body's; an object made anew around the armature data would sit at the origin whatever the file says). The
-    file's other objects are dropped."""
+    """The donor file's one armature object, with its own world matrix (R1: the donor's world frame, compared with
+    the body's; an object made anew around the armature data would sit at the origin whatever the file says). F1: the
+    matrix is built from the saved transforms (_saved_world), set on the unparented object, linked, the view layer
+    updated, and checked: the object's evaluated matrix_world must equal it (1e-6). The file's other objects are
+    dropped."""
     with bpy.data.libraries.load(str(Path(path).resolve()), link=False) as (src, dst):
         dst.objects = list(src.objects)
     arms = [o for o in dst.objects if o is not None and o.type == "ARMATURE"]
     if len(arms) != 1:
         raise SystemExit(f"--leg-fit {path}: {len(arms)} armature objects, expected one")
     obj = arms[0]
-    mw = obj.matrix_world.copy()  # as saved, parent included
+    mw = _saved_world(obj)  # as saved, parent chain included
     for o in [o for o in dst.objects if o is not None and o is not obj]:
         data = o.data
         bpy.data.objects.remove(o)
         if isinstance(data, bpy.types.Mesh) and data.users == 0:
             bpy.data.meshes.remove(data)
     obj.parent = None
-    obj.matrix_world = mw
+    obj.matrix_basis = mw
     obj.name = "leg_fit_donor"
     bpy.context.scene.collection.objects.link(obj)
+    bpy.context.view_layer.update()
+    miss = max(abs(obj.matrix_world[i][j] - mw[i][j]) for i in range(4) for j in range(4))
+    if miss > 1e-6:
+        raise SystemExit(f"--leg-fit {path}: the donor's matrix_world reads {miss} off its saved transforms")
     return obj
 
 
@@ -183,6 +204,7 @@ def fit(arm, donor_path: str, actions: list, mode: str = "lowest") -> dict:
         raise ValueError(f"leg fit mode {mode!r}: not one of {MODES}")
     donor = _donor(donor_path)
     donor_identity = all(abs(donor.matrix_world[i][j] - (i == j)) < 1e-9 for i in range(4) for j in range(4))
+    donor_mw = [[round(x, 6) for x in r] for r in donor.matrix_world]  # F1: recorded in the report
     rep = G.leg_fit({b.name: tuple(arm.matrix_world @ b.head_local) for b in arm.data.bones},
                     {b.name: tuple(donor.matrix_world @ b.head_local) for b in donor.data.bones})
     theirs = {}
@@ -214,4 +236,6 @@ def fit(arm, donor_path: str, actions: list, mode: str = "lowest") -> dict:
     data = donor.data
     bpy.data.objects.remove(donor)
     bpy.data.armatures.remove(data)
-    return {**rep, "donor": str(donor_path), "donor_world_identity": donor_identity, "mode": mode, "actions": len(actions), "keys": keys, "foot_match": match}
+    return {**rep, "donor": str(donor_path), "donor_world_identity": donor_identity,
+            "donor_matrix_world": donor_mw, "mode": mode, "actions": len(actions), "keys": keys,
+            "foot_match": match}

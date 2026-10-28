@@ -43,6 +43,25 @@ def leg_fit(own: dict, donor: dict) -> dict:
     return {"leg_m": [round(legs[0], 4), round(legs[1], 4)], "scale": round(legs[1] / legs[0], 6)}
 
 
+def mat_mul(a, b) -> list[list[float]]:
+    """4x4 matrices (rows) multiplied."""
+    return [[sum(a[i][k] * b[k][j] for k in range(4)) for j in range(4)] for i in range(4)]
+
+
+def chain_world(links) -> list[list[float]]:
+    """F1 (art #196): an object's world matrix from its saved transforms, root first: links holds per object of the
+    parent chain its (matrix_parent_inverse, matrix_basis) as 4x4 rows; the root's world is its basis, each child's
+    its parent's world @ its parent inverse @ its basis (an object parent, no constraints). alien_leg_fit.py builds the
+    donor's world frame this way instead of reading matrix_world on an appended, unlinked object, which nothing
+    evaluates."""
+    if not links:
+        raise ValueError("chain_world: no object")
+    world = [list(map(float, r)) for r in links[0][1]]
+    for inv, basis in links[1:]:
+        world = mat_mul(mat_mul(world, inv), basis)
+    return world
+
+
 def foot_target(own_rest, donor_rest, donor_now, scale: float) -> tuple:
     """T3: where a foot (its ankle) goes on a body with its own legs: its own rest place plus the donor's move from
     the donor's rest, scaled by the legs' ratio (world, z up). A planted donor foot gives a planted target, and the
