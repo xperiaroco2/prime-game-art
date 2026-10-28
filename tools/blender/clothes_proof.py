@@ -13,7 +13,8 @@ and, per clip, measures the poke-through and shoots the contact sheet; then the 
     blender -b --factory-startup --python tools/blender/clothes_proof.py -- --blend DRESSED.blend --name chameleon
         --out DIR [--clips Idle,Walk,...]
 
-Writes DIR/poke.json, DIR/<name>_motion.png and DIR/<name>_closeups.png. Prints CLOTHES_PROOF lines.
+Writes DIR/poke.json, DIR/<name>_motion.png, DIR/<name>_closeups.png and DIR/<name>_cloth_alone.png (the cloth
+alone in Idle: front, side, back). Prints CLOTHES_PROOF lines.
 """
 from __future__ import annotations
 
@@ -216,6 +217,17 @@ def main() -> int:
             row.append(render_tile(sc, tmp / f"close_{spot}_{vname}.png"))
         crow.append(row)
     save_sheet(crow, out / f"{args.name}_closeups.png")
+    # the cloth alone in Idle (the body hidden): teal on the cloth here is the texture, not the body poking through
+    body.hide_render = True
+    cam.data.type = "ORTHO"
+    cam.data.ortho_scale = 1.9
+    sc.render.resolution_x, sc.render.resolution_y = 400, 600
+    alone = []
+    for vname, eye in views.items():
+        look(cam, Vector((0, 0, 0.8)) + eye, Vector((0, 0, 0.8)))
+        alone.append(render_tile(sc, tmp / f"alone_{vname}.png"))
+    save_sheet([alone], out / f"{args.name}_cloth_alone.png")
+    body.hide_render = False
     (out / "poke.json").write_text(json.dumps({"blend": args.blend, "under_cloth_at_rest": int(len(near)),
                                                "tol_m": args.tol, "clips": poke}, indent=1),
                                    encoding="utf-8", newline="\n")
