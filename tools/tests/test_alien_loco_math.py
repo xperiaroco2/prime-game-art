@@ -189,5 +189,17 @@ class Reels(unittest.TestCase):
         self.assertEqual(L.godot_xz((0.5, -2.0)), [0.5, 2.0])
 
 
+class CharJson(unittest.TestCase):
+    """R1: a build without char.json reads as {} (no leg fit), one with it as written."""
+
+    def test_missing_and_present(self):
+        import tempfile
+        import alien_loco  # plain Python at import (bpy only inside its Blender main)
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(alien_loco.char_json(Path(d)), {})
+            (Path(d) / "char.json").write_text('{"leg_fit": {"mode": "ik"}}', encoding="utf-8")
+            self.assertEqual(alien_loco.char_json(Path(d))["leg_fit"]["mode"], "ik")
+
+
 if __name__ == "__main__":
     unittest.main()

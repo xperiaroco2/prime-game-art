@@ -35,6 +35,12 @@ COPY = ("bases.json", "char.json", "{c}_char_lively.json", "{c}_body_albedo.png"
         "{c}_body_detail.png", "{c}_body_accent.png", "{c}_body_normal.png")
 
 
+
+def char_json(char_dir: Path) -> dict:
+    """R1 (art #196): a build's char.json, {} when the build has none (an older build, a head built elsewhere)."""
+    p = Path(char_dir) / "char.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else {}
+
 def _paths(raw: str, cfg: dict) -> tuple[Path, Path, Path]:
     base = Path(raw) / cfg["set"]["raw_base"]
     return base / cfg["set"]["build"], base / cfg["set"]["ttm"], base / cfg["set"]["out"]
@@ -186,8 +192,8 @@ def _blender_main(argv: list[str]) -> None:
             with bpy.data.libraries.load(str(mocap), link=False) as (src, dst):
                 dst.actions = [n for n in src.actions if n.startswith(PREFIX + "MC_") and n[len(PREFIX):] in need]
         # T2: a build fitted to its body's legs (char.json leg_fit) gets the same fit on the loops appended from the
-        # S4b rig's files (alien_leg_fit.py); a build without it: untouched
-        fitted = json.loads((build / char / "char.json").read_text(encoding="utf-8")).get("leg_fit")
+        # S4b rig's files (alien_leg_fit.py); a build without it (or without a char.json, R1): untouched
+        fitted = char_json(build / char).get("leg_fit")
         if fitted:
             import alien_leg_fit
             lf = alien_leg_fit.fit(arm, fitted["donor"], [bpy.data.actions[PREFIX + n] for n in need
