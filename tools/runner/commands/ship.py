@@ -404,7 +404,9 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         views = json.loads(Path(only).read_text(encoding="utf-8"))
         # lens C step 2: a row whose 6th element is a string names a reference image (an absolute path) to compare
         # the shot with side by side (an A/B dict there stays the night look's switch)
-        compares = [[v[0], v[5]] for v in views if len(v) > 5 and isinstance(v[5], str)]
+        # (the gills, 2026-10-28: a dict's "ref" does the same beside its pose)
+        compares = [[v[0], v[5] if isinstance(v[5], str) else v[5]["ref"]] for v in views
+                    if len(v) > 5 and (isinstance(v[5], str) or (isinstance(v[5], dict) and "ref" in v[5]))]
         views = [v[:5] if len(v) > 5 and isinstance(v[5], str) else v for v in views]
         layout = {**layout, "shots": {**layout["shots"], "day_views": []}}
     elif only:   # step 2: a view set alone by name prefix (the vents' in-place shots and close-ups), no plan view
