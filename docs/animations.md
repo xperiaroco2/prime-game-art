@@ -855,7 +855,7 @@ whose character folder already holds a GLB): the new bodies' build `r2c/build` (
 axolotl on M1f's) into `loco/t1`, `... alien_loco.py --raw D:/prime-art-raw --build r2c/build --out loco/t1`. On T1
 the chameleon's set is made (31 clips; Jog_Fwd v0 5.44 m/s, Sprint_Fwd 8.34, f3's 5.15 and 7.80 on the taller body).
 The axolotl's is not: on M1f's body her Jog_Fwd and Sprint_Fwd touch the floor for 2 frames a step (a toe within
-2 cm of its lowest), so `measure` finds no ground velocity (v0 0, c0 None) and `stride` divides by zero. The build's
+2 cm of its lowest), so `measure` finds no ground velocity (v0 0, c0 None) and `stride` divided by zero (since R1 the set skips such a clip instead: `SKIP <clip>: speed ... asked, but the measure found no ground velocity`, `skipped` in its `loco.json` row, and so every clip made from it; `alien_loco_math.unmeasured`). The build's
 floor edit lifts those clips 4.4 and 5.2 cm (the S4b body's 2.7 and 3.6). M1f's legs are shorter than S4b's, not
 longer (T2: 0.774 m against 0.845; thigh 0.255 m against 0.323, shin 0.420 against 0.403, the foot 3.6 cm shorter, the
 bones' rest orientations equal), so the same bone-local rotations sweep her feet on another arc: the jog's planted

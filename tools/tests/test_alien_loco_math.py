@@ -201,5 +201,15 @@ class CharJson(unittest.TestCase):
             self.assertEqual(alien_loco.char_json(Path(d))["leg_fit"]["mode"], "ik")
 
 
+class Unmeasured(unittest.TestCase):
+    """R1: a speed or cadence asked of a clip with no ground velocity or cadence is named, not divided by."""
+
+    def test_skip_messages(self):
+        self.assertIsNone(L.unmeasured("Jog_Fwd", {"speed": 4.6}, {"v0": 4.2, "c0": 2.8}))
+        self.assertIsNone(L.unmeasured("Idle", {}, {"v0": 0.0, "c0": None}))
+        self.assertIn("Jog_Fwd", L.unmeasured("Jog_Fwd", {"speed": 4.6}, {"v0": 0.0, "c0": None}))
+        self.assertIn("cadence", L.unmeasured("Walk", {"cadence": 1.8}, {"v0": 1.2, "c0": None}))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -99,6 +99,18 @@ def expand(cfg: dict) -> list[dict]:
     return jobs
 
 
+def unmeasured(name: str, job: dict, m: dict) -> str | None:
+    """R1 (art #196): why a clip cannot be retimed or stride-fitted, or None. A job asking a speed (the stride's scale
+    and capped_rate divide by v0) or a cadence (divides by c0) on a clip whose measure found no ground velocity
+    (v0 0: its feet touch the floor too briefly, the axolotl's T1) is skipped by alien_loco.py with this message
+    instead of dividing by zero."""
+    if job.get("speed") is not None and not m.get("v0"):
+        return f"{name}: speed {job['speed']} asked, but the measure found no ground velocity (v0 = {m.get('v0')})"
+    if job.get("cadence") and not m.get("c0"):
+        return f"{name}: cadence {job['cadence']} asked, but the clip has no measured cadence (c0 = {m.get('c0')})"
+    return None
+
+
 def cadence_rate(name: str, cadence: float, c0: float | None) -> float:
     """A clip's playback rate for its asked `cadence` (steps/s): cadence / c0, its measured cadence at rate 1; a clip
     with no measured cadence (no steps found) cannot take one."""

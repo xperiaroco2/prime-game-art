@@ -57,6 +57,13 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
     foot = cfg["set"]["foot"]
     for j in jobs:
         rep = {k: j.get(k) for k in ("base", "source", "mirror", "speed", "frames", "arm_swing", "play_at")}
+        # R1: a clip made from a skipped one is skipped too (its name in the message)
+        gone = [n for n in [j.get("from"), j.get("mirror"), *(j.get("pick") or [])] if n and n in reps
+                and reps[n].get("skipped")]
+        if gone:
+            reps[j["name"]] = {"skipped": f"{j['name']}: made from the skipped {gone}"}
+            print(f"SKIP {reps[j['name']]['skipped']}", flush=True)
+            continue
         if j.get("pick"):
             beat = 1.0 / L.footstep_interval(j["speed"], cfg)
             rows = [{"name": n, "c0": reps[n]["after"]["c0"], "arm_swing": reps[n]["arm_swing"],
@@ -84,6 +91,11 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
                 c = S.pitch(skel, c, j["lean_deg"], L.LEAN_SPLIT)
             if j.get("orient"):  # the hips toward the travel, the head on the aim (orient_warp; absolute headings)
                 c, rep["orient"] = L.orient(S, skel, c, j["orient"])
+            why = L.unmeasured(j["name"], j, S.measure(skel, c))
+            if why:  # R1: no ground velocity or cadence: the stride would divide by zero
+                reps[j["name"]] = {**rep, "skipped": why}
+                print(f"SKIP {why}", flush=True)
+                continue
             rate = S.frames(c) / j["frames"] if j.get("frames") else None
             if j.get("cadence"):
                 rate = L.cadence_rate(j["name"], j["cadence"], S.measure(skel, c)["c0"])
