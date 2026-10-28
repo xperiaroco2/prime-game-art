@@ -1,59 +1,103 @@
 extends Node
 ## The throat gills' reference controller (art #263, 2026-10-28; docs/ship.md "The throat's gills"): one throat
-## side's row of five slits and its button (tools/blender/ship_interior_gills.py, piece th_gills_e / th_gills_w).
-## The game copies it. Each slit shows a state; the east's slit 3 has the working lip (two leaves, `gill3_lip_lo`
-## and `gill3_lip_hi`, each with its origin on its piece of the hinge):
-##   calm    shut, the gap's seam dim cyan, the filaments dark
-##   fault   shut, the seam red (the slit needs a repair)
-##   gasp    the lip at GASP_DEG, the filaments and a small light red (it snatches air)
-##   open    the lip at OPEN_DEG, the filaments and the light cyan
+## side's row of five crescent slits and its button (tools/blender/ship_interior_gills.py, piece th_gills_e /
+## th_gills_w). The game copies it. Each slit has two dark shutter leaves (`gill<k>_leaf_a`, the inner one, and
+## `gill<k>_leaf_b`, under the rim), built open; they slide SLIDE along the wall to meet over the glowing filaments.
+##   calm    open, the filaments and the back cyan, a soft cyan mist
+##   open    the same, brighter (the vent blowing)
+##   gasp    the leaves 60 % open, the filaments red-orange, an orange mist (it snatches air)
+##   shut    the leaves closed: a dark crescent, its seam line dim cyan
+##   fault   the leaves closed, the seam line bright red (the slit needs a repair)
 ## Use: add as a child of the placed piece (after the scene's materials are set), setup(piece_root), then pose()
-## or set_slit() / set_lip() / flash_ring(). demo(t) is the 6 s proof's timeline on a fixed clock.
+## or set_slit() / set_open() / flash_ring(). demo(t) is the 6 s proof's timeline on a fixed clock.
 
-const OPEN_DEG := 25.0
-const GASP_DEG := 8.0
-const OVERSHOOT_DEG := 28.0
+const SLIDE := 0.123
+const GASP_OPEN := 0.6
 const WORKING := 3
-## the leaves' hinge axes in the east piece's frame (Godot x, y up, z into the throat): the lower leaf's hinge is
-## vertical, the upper one's runs up the lean (ship_interior_gills.lip_hinges; the test checks they match)
-const AXIS_LO := Vector3(0.0, 1.0, 0.0)
-const AXIS_HI := Vector3(0.0, 0.8395702, 0.5432513)
-const CYAN := Color(0.0, 0.62, 1.0)
-const RED := Color(1.0, 0.09, 0.02)
+const CYAN := Color(0.05, 0.72, 1.0)
+const RED := Color(1.0, 0.16, 0.03)
+const SEAM_CYAN := Color(0.1, 0.6, 1.0)
+const SEAM_RED := Color(1.0, 0.06, 0.02)
 const WHITE := Color(0.95, 0.97, 1.0)
-const FIL_GAIN := {"calm": 0.0, "fault": 0.15, "gasp": 2.2, "open": 1.6}
-const SEAM_GAIN := {"calm": 1.0, "fault": 6.0, "gasp": 6.0, "open": 2.0}
-const LIGHT_ENERGY := {"calm": 0.0, "fault": 0.0, "gasp": 0.5, "open": 0.35}
+const FIL_GAIN := {"calm": 1.0, "open": 1.3, "gasp": 1.2, "shut": 0.0, "fault": 0.0}
+const SEAM_GAIN := {"calm": 0.0, "open": 0.0, "gasp": 0.6, "shut": 0.25, "fault": 1.6}
+const LIGHT_ENERGY := {"calm": 0.25, "open": 0.4, "gasp": 0.4, "shut": 0.0, "fault": 0.03}
+const MIST := {"calm": 0.10, "open": 0.16, "gasp": 0.14, "shut": 0.0, "fault": 0.0}
 
 var _root: Node3D
 var _mats: Dictionary = {}       # node name -> [StandardMaterial3D override, its built emission energy]
-var _leaves: Dictionary = {}     # "lo"/"hi" -> Node3D
+var _leaves: Dictionary = {}     # slit -> {"a": Node3D, "b": Node3D}
+var _rest: Dictionary = {}       # leaf node -> its built (open) position
 var _lights: Dictionary = {}     # slit -> OmniLight3D
+var _mists: Dictionary = {}      # slit -> [MeshInstance3D, its material]
 var _mirror: float = 1.0
 
 
 func setup(piece: Node3D) -> void:
 	_root = piece
 	_mirror = -1.0 if String(piece.name).begins_with("th_gills_w") else 1.0
-	for leaf: String in ["lo", "hi"]:
-		var n: Node = piece.find_child("gill%d_lip_%s*" % [WORKING, leaf], true, false)
-		if n != null:
-			_leaves[leaf] = n
 	for k: int in range(1, 6):
-		for part: String in ["fil", "seam"]:
+		_leaves[k] = {}
+		for side: String in ["a", "b"]:
+			var n: Node3D = piece.find_child("gill%d_leaf_%s*" % [k, side], true, false) as Node3D
+			if n != null:
+				_leaves[k][side] = n
+				_rest[n] = n.position
+			_own("gill%d_seam_%s" % [k, side])
+		for part: String in ["fil", "glow"]:
 			_own("gill%d_%s" % [k, part])
-		var fil: MeshInstance3D = piece.find_child("gill%d_fil*" % k, true, false) as MeshInstance3D
-		if fil != null:
-			var light: OmniLight3D = OmniLight3D.new()
-			var box: AABB = fil.get_aabb()
-			light.position = fil.position + box.get_center() + Vector3(0, 0, 0.12)
-			light.omni_range = 0.9
-			light.omni_attenuation = 1.6
-			light.light_energy = 0.0
-			light.shadow_enabled = false
-			piece.add_child(light)
-			_lights[k] = light
+		var glow: MeshInstance3D = piece.find_child("gill%d_glow*" % k, true, false) as MeshInstance3D
+		if glow == null:
+			continue
+		var box: AABB = glow.get_aabb()
+		var at: Vector3 = glow.position + box.get_center()
+		at.y = glow.position.y + box.position.y + box.size.y * 0.42   # the slit's middle, below the bend
+		var out: Vector3 = Vector3(0.0, 0.0, -1.0)                     # out of the wall into the throat (Blender +y)
+		var light: OmniLight3D = OmniLight3D.new()
+		light.position = at + out * 0.3
+		light.omni_range = 1.1
+		light.omni_attenuation = 1.4
+		light.light_energy = 0.0
+		light.shadow_enabled = false
+		piece.add_child(light)
+		_lights[k] = light
+		_mists[k] = _make_mist(piece, at + out * 0.16 + Vector3(-0.14 * _mirror, 0.0, 0.0))
 	_own("btn_ring")
+
+
+## A soft billboard puff in front of the slit, drifting toward the mouth (the convex side), additive.
+func _make_mist(piece: Node3D, at: Vector3) -> Array:
+	var tex: GradientTexture2D = GradientTexture2D.new()
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	var g: Gradient = Gradient.new()
+	g.set_color(0, Color(1, 1, 1, 1))
+	g.set_color(1, Color(1, 1, 1, 0))
+	g.add_point(0.45, Color(1, 1, 1, 0.35))
+	tex.gradient = g
+	tex.width = 128
+	tex.height = 128
+	var m: StandardMaterial3D = StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.proximity_fade_enabled = true
+	m.proximity_fade_distance = 0.25
+	m.no_depth_test = false
+	m.albedo_texture = tex
+	m.albedo_color = Color(0, 0, 0, 0)
+	var q: QuadMesh = QuadMesh.new()
+	q.size = Vector2(0.55, 0.95)
+	var mi: MeshInstance3D = MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = at
+	mi.visible = false
+	piece.add_child(mi)
+	return [mi, m, at]
 
 
 func _own(pname: String) -> void:
@@ -65,7 +109,7 @@ func _own(pname: String) -> void:
 		return
 	var m: BaseMaterial3D = (src as BaseMaterial3D).duplicate()
 	mi.material_override = m
-	_mats[pname] = [m, m.emission_energy_multiplier, m.emission, m.albedo_color]
+	_mats[pname] = [m, m.emission_energy_multiplier]
 
 
 func _glow(pname: String, colour: Color, gain: float) -> void:
@@ -74,28 +118,42 @@ func _glow(pname: String, colour: Color, gain: float) -> void:
 	var e: Array = _mats[pname]
 	var m: BaseMaterial3D = e[0]
 	m.emission = colour
-	m.albedo_color = Color(colour.r * 0.25, colour.g * 0.25, colour.b * 0.25) if gain > 0.0 else Color(0.02, 0.02, 0.025)
+	m.albedo_color = Color(colour.r * 0.3, colour.g * 0.3, colour.b * 0.3) if gain > 0.0 else Color(0.02, 0.02, 0.025)
 	m.emission_energy_multiplier = float(e[1]) * gain
 
 
-## The working lip's angle in degrees from shut (both leaves).
-func set_lip(deg: float) -> void:
-	for leaf: String in _leaves:
-		var axis: Vector3 = AXIS_LO if leaf == "lo" else AXIS_HI
-		axis.x *= _mirror
-		(_leaves[leaf] as Node3D).transform.basis = Basis(axis.normalized(), deg_to_rad(deg) * _mirror)
+## Slit k's leaves: 0 shut, 1 open (as built).
+func set_open(k: int, x: float) -> void:
+	var shut: float = SLIDE * (1.0 - x) * _mirror
+	for side: String in _leaves.get(k, {}):
+		var n: Node3D = _leaves[k][side]
+		n.position = _rest[n] + Vector3((-shut if side == "a" else shut), 0.0, 0.0)
 
 
-## Slit k's state: "calm", "fault", "gasp" or "open"; mix (0..1) blends a gasp's red toward the open cyan.
-func set_slit(k: int, state: String, mix: float = 0.0) -> void:
-	var colour: Color = CYAN if state in ["calm", "open"] else RED
-	if state == "gasp" and mix > 0.0:
-		colour = RED.lerp(CYAN, mix)
-	_glow("gill%d_fil" % k, colour, float(FIL_GAIN[state]))
-	_glow("gill%d_seam" % k, colour, float(SEAM_GAIN[state]))
+## Slit k's look: state "calm", "open", "gasp", "shut" or "fault"; mix (0..1) blends a gasp's red toward cyan;
+## open_x (-1: the state's own) the leaves' opening; puff (0..1) the mist's drift.
+func set_slit(k: int, state: String, mix: float = 0.0, open_x: float = -1.0, puff: float = 0.0) -> void:
+	var colour: Color = RED.lerp(CYAN, mix) if state == "gasp" else CYAN
+	var fil: float = float(FIL_GAIN[state])
+	_glow("gill%d_fil" % k, colour, fil)
+	_glow("gill%d_glow" % k, colour, fil)
+	var seam: Color = SEAM_CYAN if state == "shut" else SEAM_RED
+	for side: String in ["a", "b"]:
+		_glow("gill%d_seam_%s" % [k, side], seam, float(SEAM_GAIN[state]))
+	if open_x < 0.0:
+		open_x = 1.0 if state in ["calm", "open"] else (GASP_OPEN if state == "gasp" else 0.0)
+	set_open(k, open_x)
 	if _lights.has(k):
-		(_lights[k] as OmniLight3D).light_color = colour
-		(_lights[k] as OmniLight3D).light_energy = float(LIGHT_ENERGY[state])
+		var l: OmniLight3D = _lights[k]
+		l.light_color = colour if fil > 0.0 else SEAM_RED
+		l.light_energy = float(LIGHT_ENERGY[state]) * (open_x if fil > 0.0 else 1.0)
+	if _mists.has(k):
+		var mi: MeshInstance3D = _mists[k][0]
+		var m: StandardMaterial3D = _mists[k][1]
+		var a: float = float(MIST[state]) * open_x
+		mi.visible = a > 0.001
+		m.albedo_color = Color(colour.r * a, colour.g * a, colour.b * a, 1.0)
+		mi.position = (_mists[k][2] as Vector3) + Vector3(-0.08 * puff * _mirror, 0.03 * puff, -0.04 * puff)
 
 
 ## The button's ring: 0 its calm cyan, 1 the press's white flash.
@@ -103,9 +161,8 @@ func flash_ring(t: float) -> void:
 	_glow("btn_ring", CYAN.lerp(WHITE, t), 1.0 + 2.5 * t)
 
 
-## A view's pose: {"lip": deg, "slits": {"3": "open", ...}, "ring": 0..1}.
+## A view's pose: {"slits": {"3": "open", ...}, "ring": 0..1} (a slit left out: calm).
 func pose(spec: Dictionary) -> void:
-	set_lip(float(spec.get("lip", 0.0)))
 	var slits: Dictionary = spec.get("slits", {})
 	for k: int in range(1, 6):
 		set_slit(k, String(slits.get(str(k), "calm")))
@@ -122,43 +179,41 @@ static func _ease_in_out(x: float) -> float:
 
 
 const DEMO_S := 6.0
-## The proof's timeline: [lip deg, slit 3's state, its red-to-cyan mix, ring flash 0..1, label] at t seconds.
-## shut (fault) -> the gasp (8 deg, red) -> shut -> the press (ring white) -> open, over to 28 deg -> settle at 25.
+## The proof's timeline: [opening 0..1, slit 3's state, its red-to-cyan mix, ring flash 0..1, label] at t seconds.
+## fault (shut, red line) -> the gasp (half open, red, fluttering) -> shut -> the press (ring white) -> open, a
+## touch past 1 -> settle.
 static func demo(t: float) -> Array:
 	if t < 0.9:
-		return [0.0, "fault", 0.0, 0.0, "shut, fault seam"]
+		return [0.0, "fault", 0.0, 0.0, "shut, fault line"]
 	if t < 1.2:
-		return [GASP_DEG * _ease_out((t - 0.9) / 0.3), "gasp", 0.0, 0.0, "gasp"]
+		return [GASP_OPEN * _ease_out((t - 0.9) / 0.3), "gasp", 0.0, 0.0, "gasp"]
 	if t < 1.8:
-		return [GASP_DEG + 0.6 * sin((t - 1.2) * TAU * 2.0), "gasp", 0.0, 0.0, "gasp"]
+		return [GASP_OPEN + 0.06 * sin((t - 1.2) * TAU * 2.0), "gasp", 0.0, 0.0, "gasp"]
 	if t < 2.1:
-		return [GASP_DEG * (1.0 - _ease_in_out((t - 1.8) / 0.3)), "fault", 0.0, 0.0, "shut"]
-	if t < 2.8:
-		return [0.0, "fault", 0.0, 0.0, "shut"]
+		return [GASP_OPEN * (1.0 - _ease_in_out((t - 1.8) / 0.3)), "gasp", 0.0, 0.0, "shut"]
 	var flash: float = 0.0
 	if t >= 2.8 and t < 3.3:
 		flash = 1.0 - _ease_in_out((t - 2.8) / 0.5)
 	if t < 3.0:
-		return [0.0, "fault", 0.0, flash, "press"]
+		return [0.0, "fault", 0.0, flash, "shut" if t < 2.8 else "press"]
 	if t < 3.75:
 		var x: float = _ease_out((t - 3.0) / 0.75)
-		return [OVERSHOOT_DEG * x, "gasp", x, flash, "open, over to 28"]
+		return [1.04 * x, "gasp", x, flash, "open, a touch past"]
 	if t < 4.3:
 		var y: float = _ease_in_out((t - 3.75) / 0.55)
-		return [lerpf(OVERSHOOT_DEG, OPEN_DEG, y), "open", 1.0, flash, "settle at 25"]
-	return [OPEN_DEG + 0.3 * sin((t - 4.3) * TAU * 0.5), "open", 1.0, 0.0, "open"]
+		return [lerpf(1.04, 1.0, y), "open", 1.0, flash, "settle"]
+	return [1.0, "open", 1.0, 0.0, "open"]
 
 
 ## Applies demo(t) to the working slit (the others calm).
 func play_demo(t: float) -> String:
 	var d: Array = demo(t)
-	set_lip(float(d[0]))
 	for k: int in range(1, 6):
 		if k != WORKING:
-			set_slit(k, "calm")
+			set_slit(k, "calm", 0.0, -1.0, fmod(t * 0.3 + k * 0.2, 1.0))
 	var st: String = d[1]
-	set_slit(WORKING, "gasp" if st == "gasp" else st, float(d[2]))
-	if st == "gasp" and float(d[2]) >= 1.0:
-		set_slit(WORKING, "open")
+	var open_x: float = float(d[0])
+	var puff: float = clampf((t - 3.0) / 3.0, 0.0, 1.0) if open_x > 0.5 else 0.0
+	set_slit(WORKING, st, float(d[2]), open_x, puff)
 	flash_ring(float(d[3]))
 	return String(d[4])

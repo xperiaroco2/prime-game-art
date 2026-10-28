@@ -38,14 +38,14 @@ def key(verts, sx: float = 1.0) -> list:
 
 class SlitNumbers(unittest.TestCase):
     def test_slit(self):
-        self.assertAlmostEqual(G.CHORD, 1.20)
-        self.assertAlmostEqual(G.SAG, 0.16)
-        self.assertAlmostEqual(G.arc_off(0.0), G.SAG, places=9)              # the arc sags 16 at the middle
-        self.assertAlmostEqual(G.arc_off(G.CHORD / 2), 0.0, places=9)         # and meets the chord at its ends
-        self.assertAlmostEqual(G.arc_off(G.TAU_C), G.CHAMFER, places=9)       # the tips cut at a 2 cm flat
-        self.assertEqual((G.DEPTH, G.GAP, G.LIP_T), (0.18, 0.015, 0.06))
-        self.assertAlmostEqual(G.LIP_T + G.FIL_D, G.DEPTH)                    # the filaments fill the recess behind the lip
-        self.assertEqual((G.OPEN_DEG, G.GASP_DEG), (25.0, 8.0))
+        self.assertAlmostEqual(G.CHORD, 1.20)                                   # design's chord stays
+        self.assertEqual((G.SAG, G.SAG_IN), (0.27, 0.06))                       # the concept's crescent
+        for f in (G.arc_off, G.arc_in):
+            self.assertAlmostEqual(f(G.CHORD / 2), 0.0, places=9)                # both arcs through the same tips
+        self.assertAlmostEqual(G.width(0.0), 0.21, places=9)                    # 21 cm at the middle
+        self.assertTrue(0.15 < G.width(0.0) / G.CHORD < 0.2)                    # about 1/6 of the chord
+        self.assertAlmostEqual(G.width(G.TAU_C), G.TIP, places=6)               # the tips cut at a 1.2 cm flat
+        self.assertTrue(G.SLOT[0] > G.LEAF_F > G.LEAF_B > G.FLANGE_B > G.SLOT[1] > G.POCKET_W > G.FIL_W > -G.DEPTH)
         n = G.numbers()
         self.assertAlmostEqual(n["t_lo"], 0.75)
         self.assertAlmostEqual(n["t_hi"], 1.95)
@@ -56,30 +56,47 @@ class SlitNumbers(unittest.TestCase):
 
     def test_filaments(self):
         fil = parts("e")["gill3_fil"]
-        self.assertEqual(G.FILS, 24)
-        self.assertEqual(len(fil["verts"]), 8 * G.FILS)
-        checked = 0
-        for j in range(G.FILS):
-            box = fil["verts"][8 * j: 8 * j + 8]
-            hs = sorted({round(v[2], 9) for v in box})
-            if hs[-1] < S.FLOOR + G.BEND:   # a filament on the vertical part: 2 cm thick, 12 deep
-                self.assertAlmostEqual(hs[-1] - hs[0], G.FIL_T, places=6)
-                ys = [v[1] for v in box]
-                self.assertAlmostEqual(max(ys) - min(ys), G.FIL_D - 0.002, places=6)
-                checked += 1
-        self.assertGreater(checked, 10)
-
-    def test_lip_gap(self):
-        lip = parts("e")["gill3_lip_lo"]
+        self.assertEqual(len(fil["verts"]), 8 * G.FILS)                       # 36 blades, none dropped
         uc = G.slit_chord(G.SLITS[2])
-        rows = 0
-        for tau in G.taus():   # the lip's free edge stands GAP in from the cut's arc, row by row
-            if G.T_MID + tau > G.BEND or abs(tau) >= G.TAU_C - 1e-9:
+        for j in range(G.FILS):   # each blade inside the crescent (on the vertical part: x is u)
+            box = fil["verts"][8 * j: 8 * j + 8]
+            for x, _y, h in box:
+                tau = h - S.FLOOR - G.T_MID
+                if h < S.FLOOR + G.BEND:
+                    self.assertGreater(x, uc - G.arc_off(tau) - 0.004)
+                    self.assertLess(x, uc - G.arc_in(tau) + 0.004)
+
+    def test_leaves(self):
+        e = parts("e")
+        uc = G.slit_chord(G.SLITS[2])
+        a, b = e["gill3_leaf_a"]["verts"], e["gill3_leaf_b"]["verts"]
+        lo = [v for v in a + b if v[2] < S.FLOOR + G.BEND - 1e-6]   # the vertical part: x is u, y is w
+        self.assertTrue(lo)
+        for x, y, h in lo:   # built open: both leaves out of the crescent, in their pockets under the band
+            tau = h - S.FLOOR - G.T_MID
+            self.assertTrue(x <= uc - G.arc_off(tau) + 1e-9 or x >= uc - G.arc_in(tau) - 1e-9, (x, h))
+            self.assertTrue(G.POCKET_W < y < G.SLOT[0])
+        for tau in (0.0, -0.3):   # shut (moved SLIDE together) they cover the crescent, the gap 2 * MEET
+            h = S.FLOOR + G.T_MID + tau
+            ra = [v[0] - G.SLIDE for v in a if abs(v[2] - h) < 1e-9 and v[1] == G.LEAF_F]
+            rb = [v[0] + G.SLIDE for v in b if abs(v[2] - h) < 1e-9 and v[1] == G.LEAF_F]
+            if not ra:
                 continue
-            row = [v for v in lip["verts"] if abs(v[2] - (S.FLOOR + G.T_MID + tau)) < 1e-9]
-            self.assertAlmostEqual(min(v[0] for v in row), uc - G.arc_off(tau) + G.GAP, places=6)
-            rows += 1
-        self.assertGreater(rows, 5)
+            self.assertLess(min(rb), uc - G.arc_off(tau))
+            self.assertGreater(max(ra), uc - G.arc_in(tau))
+            self.assertAlmostEqual(min(ra) - max(rb), 2 * G.MEET, places=9)
+        for k in range(1, 5):   # open, a slit's leaves stay clear of the neighbours' crescents (2 cm)
+            u_k, u_n = G.slit_chord(G.SLITS[k - 1]), G.slit_chord(G.SLITS[k])
+            for tau in G.taus():
+                self.assertLess(u_k - G.arc_in(tau) + G.TUCK + G.SLIDE, u_n - G.arc_off(tau) - 0.02)
+                self.assertGreater(u_n - G.arc_off(tau) - G.TUCK - G.SLIDE, u_k - G.arc_in(tau) + 0.02)
+        self.assertLess(G.OCT_D, -G.SLOT[0])                                  # slit 5's pocket passes behind the button
+        for side in ("a", "b"):
+            self.assertIn("origin", e[f"gill3_leaf_{side}"])
+            self.assertEqual(e[f"gill3_seam_{side}"]["parent"], f"gill3_leaf_{side}")
+        gd = (ROOT / "godot" / "ship" / "gill_row.gd").read_text(encoding="utf-8")
+        self.assertIn(f"const SLIDE := {G.SLIDE:.3f}", gd)
+        self.assertIn(f"const GASP_OPEN := {G.GASP_OPEN}", gd)
 
     def test_row_on_designs_spots(self):
         self.assertEqual([round(b - a, 6) for a, b in zip(G.SLITS, G.SLITS[1:])], [0.37] * 4)
@@ -87,34 +104,20 @@ class SlitNumbers(unittest.TestCase):
             self.assertLess(math.dist(plan(G.SLITS[k - 1]), xy), 0.002, k)
         self.assertLess(math.dist(plan(G.BUTTON_S), BUTTON), 0.002)
         self.assertLess(G.BUTTON_T, G.BEND)                                   # the button on the vertical part
-        self.assertTrue(G.BAND[0] < G.SLITS[0] - G.SAG and G.BUTTON_S + G.OCT_FLATS / 2 + 0.1 < G.BAND[1])   # seam clear
+        self.assertTrue(G.BAND[0] < G.slit_chord(G.SLITS[0]) - G.SAG - G.RIM_W and G.BUTTON_S + G.OCT_FLATS / 2 + 0.1 < G.BAND[1])   # seam clear
         self.assertAlmostEqual(G.WALL_LEN, 4.051, places=3)
 
     def test_button(self):
         p = parts("e")
         floor = p["btn_floor"]["verts"]
         xs = [v[0] for v in floor]
-        self.assertAlmostEqual(max(xs) - min(xs), G.OCT_FLATS, places=6)     # 16 across the flats
-        self.assertAlmostEqual(min(v[1] for v in floor), -G.OCT_D, places=6)  # 3 deep
+        self.assertAlmostEqual(max(xs) - min(xs), G.OCT_FLATS, places=6)     # 24 across the flats
+        self.assertAlmostEqual(min(v[1] for v in floor), -G.OCT_D, places=6)  # 2.5 deep
         dome = p["btn_dome"]["verts"]
-        self.assertAlmostEqual(max(v[1] for v in dome), G.DOME_UP, places=6)  # 2.5 proud
+        self.assertAlmostEqual(max(v[1] for v in dome), G.DOME_UP, places=6)  # 3.5 proud
         self.assertAlmostEqual(max(v[0] for v in dome) - min(v[0] for v in dome), 2 * G.DOME_R, places=3)
         r = [math.hypot(v[0] - G.BUTTON_S, v[2] - S.FLOOR - G.BUTTON_T) for v in p["btn_ring"]["verts"]]
         self.assertAlmostEqual(max(r) - min(r), G.RING_W, places=6)
-
-    def test_working_lip(self):
-        e, w = parts("e"), parts("w")
-        for leaf, (origin, axis) in G.lip_hinges().items():
-            self.assertEqual(e[f"gill3_lip_{leaf}"]["origin"], origin)
-            self.assertAlmostEqual(math.hypot(*axis), 1.0)
-        self.assertFalse([n for n in w if "_lip_" in n])                     # the west's lips are all shut, built in
-        gd = (ROOT / "godot" / "ship" / "gill_row.gd").read_text(encoding="utf-8")
-        hi = [float(x) for x in re.search(r"AXIS_HI := Vector3\(([^)]*)\)", gd).group(1).split(",")]
-        for a, b in zip(hi, G.lip_hinges()["hi"][1]):
-            self.assertAlmostEqual(a, b, places=6)
-        self.assertIn(f"const OPEN_DEG := {G.OPEN_DEG}", gd)
-        self.assertIn(f"const GASP_DEG := {G.GASP_DEG}", gd)
-
 
 class Mirror(unittest.TestCase):
     def test_west_mirrors_east(self):
@@ -123,9 +126,10 @@ class Mirror(unittest.TestCase):
         self.assertGreater(len(shared), 30)
         for n in shared:
             self.assertEqual(key(e[n]["verts"], -1.0), key(w[n]["verts"]), n)
-        lips = [n for n in e if n.startswith(("gill3_lip_", "gill3_line_"))]
-        self.assertEqual(key([v for n in lips for v in e[n]["verts"]], -1.0),
-                         key(w["gill3_lip"]["verts"] + w["gill3_line"]["verts"]))
+        self.assertEqual(set(e), set(w))
+        for n in e:
+            if "origin" in e[n]:
+                self.assertEqual(w[n]["origin"], (-e[n]["origin"][0], *e[n]["origin"][1:]), n)
 
     def test_placed_mirrored(self):
         got = {p[0]: p for p in PLACE if p[0].startswith("th_gills_")}

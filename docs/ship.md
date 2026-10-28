@@ -1450,14 +1450,24 @@ table (`test_ship_lens`). The warm strips are `int_amber__lens` (`[light.mats]` 
 The throat's wall modules and vent cabinets gave way to one gills piece per side (`th_gills_e`, `th_gills_w`, mirrored;
 `tools/blender/ship_interior_gills.py`): a plinth 0-60 cm with its cyan line, then a clean band on the throat's own
 profile (vertical to 1.45 m, leaning 0.55 m in to 2.30 m) from the roof line (s 1.62) to the hall corner (s 4.05),
-its top 3 cm into the ceiling. Five crescent slits (s 1.95-3.43, chord 1.20 m up the band, sag 0.16 m) bulge toward the
-mouth, as the approved concept `<raw>/ship/v5/gills-throat/concept/side_right.jpg` draws them (design's text said
-the hall; the image wins). Each slit is a recess with 24 glowing filaments behind a lip of the wall's metal; the lip
-crosses the 1.45 bend, so it is two leaves. Slit 3 is the working vent (the vent spots in `ship.toml` moved there); its
-leaves are separate nodes hinged on the chord. The button sits at s 3.72, h 1.15, clear of the band's 3.95 seam.
+its top 3 cm into the ceiling; the plinth and its line run on under the ramp roof from the mouth's corner (s 0.02),
+as the approved concept `<raw>/ship/v5/gills-throat/concept/side_right.jpg` draws one plinth. Five slits (s 1.95-3.43,
+37 cm apart) are true crescents after the concept (step 3): both arcs through the same tips 1.20 m apart up the band,
+the outer arc sagging 0.27 toward the mouth, the inner 0.06 (21 cm wide at the middle, about 1/6 of the chord), a
+thick bevelled rim (5 cm, 2.2 cm proud) on the convex side. Each recess (13 cm) holds a glowing back and 36 fine
+filaments radiating from the outer arc's centre. Two dark shutter leaves close over it, meeting on the crescent's
+middle line, each meeting edge a thin light line (a fault: red); they slide 12.3 cm apart along the wall through
+slots in the recess walls into pockets under the band. Sliding along u is the same move on both planes of the 1.45
+bend, so each leaf is one rigid node; the leaves are built open, so the GLB's rest is the calm glowing row. (Hinged
+lips, step 2, hid the filaments: the calm row read as thin scratches.) Neighbouring slits' open leaves stay 2 cm
+clear of each other's crescents, which caps the crescent at about 21 cm. The button (s 3.72, h 1.15): a dark dome
+13 cm across, rough enough (0.38) to show no blocky reflections, in a bright cyan ring, in a 24 cm octagonal recess.
+The vent stations' spots stay at design's 3/5 of the wall (`ship.toml`); the export's vent package is the gills piece
+(`ship:th_gills_<side>`).
 
-- `godot/ship/gill_row.gd` drives a row: calm, fault (red), gasp (lip 8 deg) and open (25 deg), and the button
-  ring's white flash; `ship.gd` takes a per-view pose (`{"gills": {"e": {"lip": 25, "slits": {"3": "open"}}}}`).
+- `godot/ship/gill_row.gd` drives a row: calm and open (leaves open, cyan, a soft additive mist toward the mouth), gasp
+  (60 % open, red-orange), shut (closed, dim cyan line) and fault (closed, red line), and the button ring's white
+  flash; `ship.gd` takes a per-view pose (`{"gills": {"e": {"slits": {"3": "gasp", "2": "fault"}}}}`).
 - `ship --gill-anim DIR`: the 6 s proof (shut, gasp, shut, open with an overshoot, settle) as `gill_anim.mp4` and a
   key-frame sheet, off-screen.
 - A `--views` file's 6th element may be a dict with a pose and a `"ref"` image path: the shot is also saved beside
