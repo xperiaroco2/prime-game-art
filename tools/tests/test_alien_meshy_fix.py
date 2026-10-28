@@ -131,7 +131,7 @@ class Targets(unittest.TestCase):
     def test_m1_has_no_fix(self):
         self.assertFalse(set(M.load(M.TARGETS / "axolotl_m1.toml")) & M.KEYS_M1B)
         src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
-        self.assertIn("if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C):", src)
+        self.assertIn("if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B):", src)
         self.assertIn('ap.add_argument("--from-body", default=""', src)
 
 
@@ -210,6 +210,67 @@ class M1c(unittest.TestCase):
             self.assertFalse(set(M.load(M.TARGETS / n)) & M.KEYS_M2, n)
         src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
         self.assertIn('if "shift_y" in T:', src)
+
+    def test_finger_radial(self):
+        """M2b: 1 at the web, 1 - slim past the ramp, the tip's last tip_len a further 1 - tip."""
+        sh = {"slim": 0.15, "ramp": 0.012, "tip": 0.12, "tip_len": 0.016}
+        self.assertAlmostEqual(F.finger_radial(0.0, 0.0, 0.08, sh), 1.0)
+        self.assertAlmostEqual(F.finger_radial(0.04, 0.0, 0.08, sh), 0.85)
+        self.assertAlmostEqual(F.finger_radial(0.079, 0.0, 0.08, sh), 0.85 * 0.88)
+        ks = [F.finger_radial(s / 1000, 0.0, 0.08, sh) for s in range(81)]
+        self.assertTrue(all(a >= b - 1e-12 for a, b in zip(ks, ks[1:])))  # never wider toward the tip
+
+    def test_finger_point(self):
+        """M2b: the offset from the slice's centre scaled; the centre moved toward the web by the length factor."""
+        q = F.finger_point([0.05, 0.01, 0.0], [0.05, 0.0, 0.0], [0.0, 0.0, 0.0], 0.8, 0.85)
+        for a_, b_ in zip(q, [0.0425, 0.008, 0.0]):
+            self.assertAlmostEqual(a_, b_)
+        self.assertEqual(F.finger_point([1.0, 2.0, 3.0], [1.0, 2.0, 2.5], [0.0, 0.0, 0.0], 1.0, 1.0), [1.0, 2.0, 3.0])
+
+    def test_seat_y(self):
+        """M2b: in front of the line unchanged; far behind it the depth scaled; continuous at the line."""
+        self.assertEqual(F.seat_y(0.05, 0.08, 1.0, 0.7, 0.01), 0.05)
+        self.assertAlmostEqual(F.seat_y(0.14, 0.08, 1.0, 0.7, 0.01), 0.08 + 0.06 * 0.7)
+        self.assertAlmostEqual(F.seat_y(0.08 + 1e-6, 0.08, 1.0, 0.7, 0.01), 0.08 + 1e-6, places=9)
+        self.assertAlmostEqual(F.seat_y(0.14, 0.08, 0.0, 0.7, 0.01), 0.14)
+
+    def test_m2b_file(self):
+        """M2b: M2's file plus the fixes; each fix key at the level the build reads it (M2 lost arm_thicken inside
+        the last [[bends]])."""
+        t = M.load(M.TARGETS / "chameleon_m2b.toml")
+        m2 = M.load(M.TARGETS / "chameleon_m2.toml")
+        self.assertEqual(t["name"], "chameleon_m2b")
+        self.assertTrue({"seat", "arm_thicken", "smooth_rest"} <= set(t))
+        self.assertEqual(set(t) - set(m2), {"seat", "arm_thicken", "smooth_rest"})
+        for b in t["bends"]:
+            self.assertFalse(set(b) & (M.KEYS | M.KEYS_M1B | M.KEYS_M2B))
+        self.assertEqual(set(t["fingers"]) - set(m2["fingers"]), M.FINGER_KEYS_M2B)
+        self.assertEqual(t["fingers"]["shape"]["thumb_shorten"], 0.15)
+        self.assertTrue(set(t["smooth_rest"]) - {"spheres"} <= M.SMOOTH_KEYS_M2B)
+        self.assertNotIn("mu", t["smooth"])  # a first build's Taubin there pinched a facet
+        self.assertEqual(t["bends"], m2["bends"])
+        for k in ("meshy", "rig_body", "shift_y", "wrap_z", "arm_x", "ring_z", "ring_half_x", "body_tris"):
+            self.assertEqual(t[k], m2[k], k)
+        for b in t["smooth_rest"]["boxes"]:
+            self.assertIn(len(b), (7, 8))
+            self.assertTrue(b[0] < b[1] and b[2] < b[3] and b[4] < b[5])
+            self.assertLessEqual(b[5], t["ring_z"] + 0.01)
+        self.assertLess(t["seat"]["depth"], 1.0)
+
+    def test_older_files_have_no_m2b(self):
+        for n in ("axolotl_m1.toml", "axolotl_m1b.toml", "axolotl_m1c.toml", "chameleon_m2.toml"):
+            t = M.load(M.TARGETS / n)
+            self.assertFalse(set(t) & M.KEYS_M2B, n)
+            self.assertFalse(set(t.get("fingers", {})) & M.FINGER_KEYS_M2B, n)
+            self.assertFalse(set(t.get("smooth_rest", {})) & M.SMOOTH_KEYS_M2B, n)
+            self.assertNotIn("mu", t["smooth"], n)
+        src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
+        self.assertIn('if "boxes" in cfg:', src)  # the ring held only for M2b's boxes
+        self.assertIn('if "shape" in cfg:', src)
+
+    def test_clip_view_outside(self):
+        src = (BL / "alien_body_clip_bends.py").read_text(encoding="utf-8")
+        self.assertIn("v, turned = clear_view(sc, c, v,", src)
 
     def test_clip_filter(self):
         src = (BL / "alien_body_clip_bends.py").read_text(encoding="utf-8")

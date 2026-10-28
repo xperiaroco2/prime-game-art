@@ -3189,6 +3189,15 @@ a time, by visibility.
     before the map; no chest push (`bust.push` 0, `smooth_after.spheres` empty); the hand kept at its size (Meshy's
     0.265 m against H4b's 0.262); the cut at H4b's ring (1.443) with its half-width, so the weld scales his head as
     H4b's. `body.json`'s `toes`: the vertices ahead of each Toes bone and their mean weight on it.
+  - M2b (output under `bodies_a/m2b/`): the fresh critic's fixes on M2, `chameleon_m2b.toml` (M2's file plus
+    `seat`, `arm_thicken`, `smooth_rest` with boxes; the older files have none of M2b's keys, tested): `fingers.shape`
+    (slimmer, smaller tips, the thumb 15 % shorter, applied about each finger's slice centres before its bones are
+    placed); `seat` (the depth behind the thigh-to-back line scaled); `smooth_rest.boxes` hold the open ring (the
+    weld and his head's scale unchanged), `mu` is Taubin's step back, a box's eighth value its own (0: plain).
+    Taubin's passes keep forms a few cm wide, so a ridge or dent that must go (the throat's V, the belly's groove)
+    needs a plain Laplacian; a first build's Taubin on the navel box pinched a bright facet there.
+    `alien_body_clip_bends.py` turns a view about the bone (45 degree steps) until the camera sees the joint from
+    outside the body (M2's elbow tile was shot from inside his chest).
 - **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in

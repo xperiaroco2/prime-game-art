@@ -32,6 +32,12 @@ M1c (art #196, `axolotl_m1c.toml`: M1b's keys and these; M1's and M1b's files ha
 9b. `fingers.thumb_falloff`: the palm's share for the thumb by its distance from the thumb's line alone (a soft
    thenar into the palm); `fingers.base_band` / `base_smooth`: the free fingers' vertices near their web smoothed with
    the palm (the ring's strip and the middle's gap at their bases).
+M2b (art #196, `chameleon_m2b.toml`; the older files have none):
+2b. `smooth.mu`: Taubin's step back after each pass (the volume kept).
+7b. `seat`: the seat's depth behind the line from the thigh's back to the small of the back scaled down.
+8c. `smooth_rest.boxes` (with `margin`, `mu`): soft boxes on both sides, the open ring held (the weld unchanged).
+9c. `fingers.shape`: the free fingers slimmer and their tips smaller about their slices' centres, the thumb shorter
+   (its centre line scaled about its web), before the bones are placed on them.
 --from-body <alien_body.blend>: steps 6 to 10 only, on a body this script built before (M1's).
 """
 from __future__ import annotations
@@ -91,20 +97,26 @@ def collapse(obj, ratio: float, group: str = ""):
     bpy.ops.object.modifier_apply(modifier=mod.name)
 
 
-def laplace(co: np.ndarray, edges: np.ndarray, w: np.ndarray, npv: np.ndarray) -> np.ndarray:
+def laplace(co: np.ndarray, edges: np.ndarray, w: np.ndarray, npv: np.ndarray, mu: float = 0.0) -> np.ndarray:
     """A Laplacian of factor 0.5 * w per pass on the vertices with w > 0 (the others are the boundary), each vertex for
-    its own pass count npv."""
+    its own pass count npv. M2b: mu < 0 adds Taubin's step back after each pass (factor mu * w): the volume kept;
+    mu a number or one per vertex."""
     passes = int(npv.max()) if len(npv) else 0
     on = w > 0
     e = edges[on[edges[:, 0]] | on[edges[:, 1]]]
     n = len(co)
     deg = np.bincount(e.ravel(), minlength=n).astype(float)
-    for k_ in range(passes):
-        avg = np.zeros_like(co)
+    def mean(c_):
+        avg = np.zeros_like(c_)
         for k in range(3):
-            avg[:, k] = (np.bincount(e[:, 0], co[e[:, 1], k], n) + np.bincount(e[:, 1], co[e[:, 0], k], n))
-        avg = np.where(deg[:, None] > 0, avg / np.maximum(deg, 1.0)[:, None], co)
-        co = co + (0.5 * w * (npv > k_))[:, None] * (avg - co)
+            avg[:, k] = (np.bincount(e[:, 0], c_[e[:, 1], k], n) + np.bincount(e[:, 1], c_[e[:, 0], k], n))
+        return np.where(deg[:, None] > 0, avg / np.maximum(deg, 1.0)[:, None], c_)
+    mu_v = np.broadcast_to(np.asarray(mu, dtype=float), (n,))[:, None]
+    for k_ in range(passes):
+        on_k = (npv > k_)[:, None]
+        co = co + 0.5 * w[:, None] * on_k * (mean(co) - co)
+        if np.any(mu_v):
+            co = co + mu_v * w[:, None] * on_k * (mean(co) - co)
     return co
 
 
@@ -274,9 +286,56 @@ def fix_smooth_rest(mb, cfg, rep):
             ws = np.array([M.soft_sphere(p, (sx, y, z), r) for p in co])
             npv = np.where(ws > 0, np.maximum(npv, n), npv)
             w = np.maximum(w, ws)
-    co2 = laplace(co, edge_array(mb.data), w, npv)
+    # M2b: soft boxes [|x|0, |x|1, y0, y1, z0, z1, passes(, mu)] (both sides, margin m), the open ring held (the
+    # weld's ring and so his head's scale unchanged), Taubin's mu (a box's own eighth value wins: 0 a plain Laplacian)
+    ax = np.abs(co)
+    ax[:, 1:] = co[:, 1:]
+    mu = np.full(len(co), float(cfg.get("mu", 0.0)))
+    for b in cfg.get("boxes", []):
+        ws = np.array([M.soft_box(p, b[:6], cfg.get("margin", 0.02)) for p in ax])
+        npv = np.where(ws > 0, np.maximum(npv, b[6]), npv)
+        w = np.maximum(w, ws)
+        if len(b) > 7:
+            mu = np.where(ws > 0, b[7], mu)
+    if "boxes" in cfg:  # (M1b's spheres-only files: as they were built)
+        bm = bmesh.new()
+        bm.from_mesh(mb.data)
+        ring = [v.index for v in bm.verts if any(e.is_boundary for e in v.link_edges)]
+        bm.free()
+        w[ring] = 0.0
+    co2 = laplace(co, edge_array(mb.data), w, npv, mu)
     rep["smooth_rest_mm"] = round(float(np.linalg.norm(co2 - co, axis=1).max()) * 1000, 2)
+    rep["smooth_rest_vertices"] = int((w > 0).sum())
     set_co(mb.data, co2)
+
+
+def fix_seat(mb, cfg, rep):
+    """M2b: the seat's depth behind its base line scaled (rest pose): the base line runs from the back's furthest y at
+    z[0] (the thigh under the seat) to that at z[1] (the small of the back), over |x| < x (the back's outermost
+    within it); each vertex behind it moved by F.seat_y, weighted by smoothsteps in z (fade_z) and |x| (fade_x)."""
+    co = get_co(mb.data)
+    z0, z1 = cfg["z"]
+
+    def back(z):
+        s_ = co[(np.abs(co[:, 2] - z) < 0.005) & (np.abs(co[:, 0]) > 0.02) & (np.abs(co[:, 0]) < cfg["x"])]
+        return float(s_[:, 1].max())
+    y0, y1 = back(z0), back(z1)
+    before = max(back(z) - (y0 + (y1 - y0) * (z - z0) / (z1 - z0)) for z in np.arange(z0, z1, 0.01))
+    n_ = 0
+    for i in range(len(co)):
+        x, y, z = abs(co[i, 0]), co[i, 1], co[i, 2]
+        if not (z0 < z < z1 and x < cfg["x"] and y > 0):
+            continue
+        w = (F.sstep(z0, z0 + cfg["fade_z"], z) * (1.0 - F.sstep(z1 - cfg["fade_z"], z1, z))
+             * (1.0 - F.sstep(cfg["x"] - cfg["fade_x"], cfg["x"], x)))
+        y2 = F.seat_y(y, y0 + (y1 - y0) * (z - z0) / (z1 - z0), w, cfg["depth"], cfg["ramp"])
+        n_ += y2 != y
+        co[i, 1] = y2
+    set_co(mb.data, co)
+    after = max(back(z) - (y0 + (y1 - y0) * (z - z0) / (z1 - z0)) for z in np.arange(z0, z1, 0.01))
+    rep["seat"] = {"base_y": [round(y0, 4), round(y1, 4)], "depth_mm_before": round(before * 1000, 1),
+                   "depth_mm_after": round(after * 1000, 1), "vertices": int(n_)}
+    log(f"seat {rep['seat']}")
 
 
 def fix_notch(mb, cfg, rep):
@@ -346,6 +405,7 @@ def fix_fingers(arm, mb, cfg, rep, W, names):
         adj.setdefault(int(b_), []).append(int(a_))
     gi = {n: k for k, n in enumerate(names)}
     plan, out = {}, {}
+    shaped = False
     for s, side in ((1.0, "Left"), (-1.0, "Right")):
         wx = abs(arm.data.bones[f"{side}Hand"].head_local.x)
         hand = [i for i in range(len(co)) if co[i, 0] * s > wx]
@@ -379,6 +439,21 @@ def fix_fingers(arm, mb, cfg, rep, W, names):
             if float((co[t] - c) @ d) < 0:
                 d = -d
             sl = finger_slices(pts, seg, c, d, cfg["slice"])
+            if "shape" in cfg:  # M2b: slimmer, smaller tips, the thumb shorter; then measured again
+                shp = cfg["shape"]
+                sv = (pts - c) @ d
+                s_base, s_tip = float(sv.min()), float(sv.max())
+                ss = np.array([x[0] for x in sl])
+                cs = smooth3(smooth3(np.array([x[1] for x in sl])))
+                cb = cs[0]
+                ln = 1.0 - shp.get("thumb_shorten", 0.0) if f == "Thumb" else 1.0
+                for j, i in enumerate(idx):
+                    cen_s = [float(np.interp(sv[j], ss, cs[:, k])) for k in range(3)]
+                    co[i] = F.finger_point(co[i], cen_s, cb, F.finger_radial(sv[j], s_base, s_tip, shp), ln)
+                pts = co[idx]
+                seg = co[E[inn[E[:, 0]] & inn[E[:, 1]]]]
+                sl = finger_slices(pts, seg, c, d, cfg["slice"])
+                shaped = True
             thick = [(a_, b_) for a_, _, b_ in sl]
             sv = (pts - c) @ d
             s_base, s_tip = float(sv.min()), float(sv.max())
@@ -461,6 +536,8 @@ def fix_fingers(arm, mb, cfg, rep, W, names):
             avg /= deg
             avg *= tot / np.maximum(avg.sum(1, keepdims=True), 1e-12)
             W[np.ix_(palm, hgroups)] = 0.5 * Wh[palm] + 0.5 * avg[palm]
+    if shaped:
+        set_co(mb.data, co)
     # the bones (edit mode): heads, tails, the rolls kept
     select_only([arm], arm)
     bpy.ops.object.mode_set(mode="EDIT")
@@ -516,7 +593,7 @@ def fix_bends(arm, mb, cfg, W, names, rep):
 
 
 def fixes(arm, mb, T, rep):
-    if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C):
+    if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B):
         return
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
@@ -524,6 +601,8 @@ def fixes(arm, mb, T, rep):
         fix_degenerate(mb, T["degenerate"], rep)
     if "arm_thicken" in T:
         fix_arms(arm, mb, T["arm_thicken"], rep)
+    if "seat" in T:
+        fix_seat(mb, T["seat"], rep)
     if "smooth_rest" in T:
         fix_smooth_rest(mb, T["smooth_rest"], rep)
     if "notch" in T:
@@ -616,7 +695,7 @@ def main():
         npv = np.where(ws > 0, np.maximum(npv, n), npv)
         w = np.maximum(w, ws)
     passes = int(npv.max())
-    co2 = laplace(co, edges, w, npv)
+    co2 = laplace(co, edges, w, npv, sm.get("mu", 0.0))
     mv = np.linalg.norm(co2 - co, axis=1)
     rep['smoothed_by_spot_mm'] = [round(float(mv[[M.soft_sphere(p, s_[:3], s_[3]) > 0 for p in co]].max()) * 1000, 1) for s_ in sm['spheres']] + [round(float(mv[[M.soft_box(p, b_[:6], sm['margin']) > 0 for p in co]].max()) * 1000, 1) for b_ in sm['boxes']]
     rep["smoothed"] = {"vertices": int((w > 0).sum()), "passes": passes,

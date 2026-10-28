@@ -217,3 +217,31 @@ def in_base_band(s: float, s_base: float, band: float) -> bool:
 def notch_pick(cands: list[tuple[float, tuple]]) -> tuple:
     """The notch's centre: the candidate (depth, xyz) with the deepest inward offset from its neighbours' mean."""
     return max(cands, key=lambda c: c[0])[1]
+
+
+# M2b (art #196): the fingers' shape and the seat's depth.
+
+def finger_radial(s: float, s_base: float, s_tip: float, shape: dict) -> float:
+    """A free finger's radial factor at s along its line: 1 at the web, 1 - slim past `ramp` (m), and the tip's
+    last `tip_len` (m) a further 1 - tip (smaller tip balls; reached at half tip_len before the end)."""
+    k = 1.0 - shape.get("slim", 0.0) * sstep(s_base, s_base + shape["ramp"], s)
+    tl = shape.get("tip_len", 0.0)
+    if tl > 0:
+        k *= 1.0 - shape.get("tip", 0.0) * sstep(s_tip - tl, s_tip - tl / 2, s)
+    return k
+
+
+def finger_point(p, centre_s, centre_base, k: float, length: float):
+    """A finger vertex moved: its offset from its slice's centre scaled by k, the centre moved toward the web's
+    centre by the length factor (1: the finger's length kept; the thumb's 1 - thumb_shorten)."""
+    c = [b + (a - b) * length for a, b in zip(centre_s, centre_base)]
+    return [ci + (pi - ai) * k for ci, pi, ai in zip(c, p, centre_s)]
+
+
+def seat_y(y: float, base: float, w: float, depth: float, ramp: float) -> float:
+    """The seat's back y: its depth d behind the base line scaled to `depth` (weight w), eased in over `ramp` (m) so
+    the surface keeps its slope at the line (d - w (1 - depth) d sstep(0, ramp, d))."""
+    d = y - base
+    if d <= 0 or w <= 0:
+        return y
+    return base + d - w * (1.0 - depth) * d * sstep(0.0, ramp, d)

@@ -23,12 +23,19 @@ FINGER_KEYS_M1C = {"thumb_falloff", "base_band", "base_smooth"}
 # M2 (art #196, the chameleon): `shift_y`, the Meshy surface moved along y before the map (his Meshy body stands about
 # 8 cm in front of his skeleton's trunk line); the axolotl's files have none
 KEYS_M2 = {"shift_y"}
+# M2b (art #196, the chameleon's fixes): `seat` (the seat's depth behind the line from the thigh to the small of the
+# back scaled down); inside `fingers` the `shape` table (the fingers slimmer, the tips smaller, the thumb shorter);
+# inside `smooth` and `smooth_rest` the optional `mu` (Taubin's step back: the smoothing keeps the volume), in
+# `smooth_rest` also `boxes` and `margin`; the axolotl's and M2's files have none
+KEYS_M2B = {"seat"}
+FINGER_KEYS_M2B = {"shape"}
+SMOOTH_KEYS_M2B = {"mu", "boxes", "margin"}
 
 
 def load(path: str | Path) -> dict:
     """A Meshy body target file (alien_meshy_targets/*.toml), its keys checked."""
     d = tomllib.loads(Path(path).read_text(encoding="utf-8"))
-    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C - KEYS_M2
+    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C - KEYS_M2 - KEYS_M2B
     if bad:
         raise ValueError(f"unknown keys {sorted(bad)}")
     missing = KEYS - set(d)
