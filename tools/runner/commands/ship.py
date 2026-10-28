@@ -461,7 +461,7 @@ def export(layout: dict, out: Path, folder: Path, compare: bool = True) -> int:
     folder.mkdir(parents=True, exist_ok=True)
     built = _ship_export.scene(layout, out, req, staged, folder)
     try:
-        summary = ship_export.write(layout, out, built, common.ROOT / "godot" / "ship", folder)
+        summary = ship_export.write(layout, out, built, common.ROOT / "godot", folder)
     except ValueError as e:
         raise common.Failure(f"ship --export: {e}") from e
     common.say(f"  package: {len(summary['files'])} files, {summary['bytes'] / 1e6:.1f} MB -> {folder.as_posix()}")

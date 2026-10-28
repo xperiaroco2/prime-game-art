@@ -27,7 +27,11 @@ ASSET_DIR = "assets/environment/ship"
 MATERIAL_DIR = f"{ASSET_DIR}/materials"
 SCENE = "levels/ship/ship.tscn"
 BUILT = "ship_export"  # godot/import/ship_export/: export_scene.gd's output
-SHADERS = ("metal.gdshader", "night_sky.gdshader")  # godot/ship/'s, shipped beside the pieces
+# the art shaders the scene uses (their path in the godot/ project -> the package's file beside the pieces); lens room
+# C: the lens bronze (ship.gd LENS_BRONZE: lens_bronze, lens_bronze2, lens_edge) is the console's console_metal.gdshader,
+# shipped as a copy
+SHADERS = {"ship/metal.gdshader": "metal.gdshader", "ship/night_sky.gdshader": "night_sky.gdshader",
+           "console/console_metal.gdshader": "console_metal.gdshader"}
 CONSOLE_YAW = 180.0  # the console's front (+Z, the button) faces the mouth (-Z): assets/prop/start_console/HANDOFF.md
 # spot id prefix -> (the station package that goes there, the kind); the vents are ship pieces in the scene
 PACKAGES = {"console": ("start_console", "console"), "vent": ("ship:station_vent_{side}", "vent"),
@@ -83,8 +87,8 @@ def relocate(text: str) -> str:
     """A scene or resource saved in the art project, with its paths moved to the package's and its uids dropped."""
     text = text.replace(f"res://import/{BUILT}/", f"res://{MATERIAL_DIR}/")
     text = _PIECE.sub(lambda m: f"res://{ASSET_DIR}/{m.group(1)}", text)
-    for name in SHADERS:
-        text = text.replace(f"res://ship/{name}", f"res://{ASSET_DIR}/{name}")
+    for src, name in SHADERS.items():
+        text = text.replace(f"res://{src}", f"res://{ASSET_DIR}/{name}")
     return _UID.sub("", text)
 
 
@@ -92,15 +96,17 @@ def leftovers(text: str) -> list[str]:
     """What a relocated text must not hold: an art-project path, a script, a sub-resource path of an imported file."""
     bad = []
     for pat, why in ((r"res://import/", "an art-project import path"), (r'"res://ship/', "an art-project ship path"),
-                     (r'type="Script"', "a script"), (r"^script = ", "a script"), (r'path="[^"]*::', "a sub-resource path")):
+                     (r'type="Script"', "a script"), (r"^script = ", "a script"), (r'path="[^"]*::', "a sub-resource path"),
+                     (rf'"res://(?!{ASSET_DIR}/|{SCENE.rsplit("/", 1)[0]}/)', "a path outside the package")):
         if re.search(pat, text, re.M):
             bad.append(why)
     return bad
 
 
 def write(layout: dict, pieces: Path, built: Path, shaders: Path, out: Path) -> dict:
-    """Writes the package into out from the pieces folder, export_scene.gd's folder (built) and godot/ship/
-    (shaders); returns the summary that also goes to out/package.json. ValueError on a missing file or a leftover."""
+    """Writes the package into out from the pieces folder, export_scene.gd's folder (built) and the godot/ project
+    (shaders: SHADERS' paths are under it); returns the summary that also goes to out/package.json. ValueError on a
+    missing file or a leftover."""
     out = Path(out)
     ids = sorted({p["id"] for p in layout["pieces"]})
     lost = [i for i in ids if not (pieces / f"{i}.glb").is_file()]
@@ -119,9 +125,9 @@ def write(layout: dict, pieces: Path, built: Path, shaders: Path, out: Path) -> 
         shutil.copyfile(pieces / f"{pid}.glb", out / rel)
         (out / f"{rel}.import").write_text(house_export.import_text(out / rel), encoding="utf-8", newline="\n")
         add(rel)
-    for name in SHADERS:
+    for src, name in SHADERS.items():
         rel = f"{ASSET_DIR}/{name}"
-        (out / rel).write_text((shaders / name).read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
+        (out / rel).write_text((shaders / src).read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
         add(rel)
     texts = {f"{MATERIAL_DIR}/{f.name}": f for f in sorted(built.glob("*.tres"))}
     # the textures the pieces' import extracted beside them (the vents' normal maps) that the scene's materials use:

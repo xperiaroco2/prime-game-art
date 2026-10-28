@@ -1363,9 +1363,10 @@ unchanged head, came in step 2: `assets/prop/crystal_charger`, `tools/blender/ch
 The bronze (jambs, conduits, sofa, table, lamp, plant pot) is the stations' shared bronze: `lens_bronze`,
 `lens_bronze2` and `lens_edge` in `ship_interior_lens.py`, which `godot/ship/ship.gd` swaps by name (`LENS_BRONZE`)
 for `godot/console/console_metal.gdshader`. (Built on the gills branch with its `gill_*` materials; those were
-rejected, and the lens rooms came to `main` with the same values under their own names.) Open: `ship --export`
-ships only `godot/ship/`'s shaders (`tools/runner/ship_export.py` `SHADERS`), so the next package export has to ship
-`console_metal.gdshader` too, or its scene keeps a `res://console/` path the game does not have.
+rejected, and the lens rooms came to `main` with the same values under their own names.) `ship --export` ships
+it: `tools/runner/ship_export.py` `SHADERS` maps each art shader's path in the `godot/` project to its file beside the
+pieces (`console/console_metal.gdshader` -> `assets/environment/ship/console_metal.gdshader`), and `leftovers()`
+refuses any `res://` path outside the package.
 
 **The alcove (both rooms, `lens_alcove`, a collider; `lens_conduits_e`/`_w`, none).** On each renewer spot's vertex
 (87.82 deg aft of the room's outward axis), in the charger's frame (`charger_dims.toml`: u across, d out of the wall
