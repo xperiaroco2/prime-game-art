@@ -134,7 +134,7 @@ class ChargerAsset(unittest.TestCase):
         self.assertAlmostEqual(nodes["crystal_anchor"]["translation"][1],
                                (d["slot"]["tip"] - d["carrier"]["top"]) / 100, places=4)
         # fix1 (#323's review): the button's pivot on the centre line at the dims' h, on its lens's face (the report's
-        # pivot, d 99.07), in front of the base and inside the charger's reach; charger.gd presses it toward -Z
+        # pivot, d 69.8 since lens C), in front of the base and inside the charger's reach; charger.gd presses it toward -Z
         report = json.loads((ASSET / "report.json").read_text(encoding="utf-8"))
         pivot = report["mesh"]["by_object"]["button"]["pivot_cm"]
         self.assertEqual(pivot[0], 0.0)
@@ -218,8 +218,8 @@ class ChargerAsset(unittest.TestCase):
         self.assertLessEqual(c["reach_cm"], 70.0)
         self.assertEqual(r["gltf_validator"]["numErrors"], 0)
         self.assertLess(r["mesh"]["triangles"], 45000)
-        # the depth a player's stand counts from: ship.toml's renewer spots' depth_m (fix1: 1.053 m), which the layout's
-        # stand and pass checks use; a deeper charger would stand the player inside its pads
+        # the depth a player's stand counts from: ship.toml's renewer spots' depth_m (0.70 since lens C), which the
+        # layout's stand and pass checks use; a deeper charger would stand the player inside its pads
         spots = {s["id"]: s for s in tomllib.loads((common.ROOT / "layouts" / "ship" / "ship.toml")
                                                    .read_text(encoding="utf-8"))["stations"]["spot"]}
         # lens room C (2026-10-28): the pedestal in the wall's alcove reaches at most 70 cm (the spots' 0.70)
@@ -228,6 +228,37 @@ class ChargerAsset(unittest.TestCase):
         self.assertGreater(reach, 69.0)  # the plinth's and the slab's front lips
         self.assertLessEqual(reach, spots["renewer_e"]["depth_m"] * 100)
         self.assertLessEqual(reach, spots["renewer_w"]["depth_m"] * 100)
+
+    def test_body_inside_the_alcove(self) -> None:
+        """Lens C step 4 (the review's minor 1): the committed GLB's body mesh, by its POSITION accessors' bounds
+        (glTF x u, y h, z d, metres, the origin on the spot's vertex): its back on the alcove's panel (d 10), its front
+        inside the reach (d 70), its sides inside the lips (u +-45.5), not the report's numbers but the file's."""
+        glb = EXPORT / "crystal_charger.glb"
+        if not glb.is_file() or lfs_pointer(glb):
+            self.skipTest("no GLB (LFS)")
+        d = dims()
+        doc = glb_json(glb)
+        node = next(n for n in doc["nodes"] if n["name"] == "crystal_charger")
+        self.assertNotIn("rotation", node)
+        self.assertNotIn("scale", node)
+        self.assertEqual([round(x, 6) for x in node.get("translation", [0.0, 0.0, 0.0])], [0.0, 0.0, 0.0])
+        acc = [doc["accessors"][p["attributes"]["POSITION"]] for p in doc["meshes"][node["mesh"]]["primitives"]]
+        lo = [min(a["min"][i] for a in acc) for i in range(3)]
+        hi = [max(a["max"][i] for a in acc) for i in range(3)]
+        self.assertLessEqual(hi[2], d["frame"]["reach"] / 100 + 1e-6)
+        self.assertGreaterEqual(lo[2], d["frame"]["back"] / 100 - 1e-6)
+        side = (d["base"]["side"] + d["base"]["lip"][0]) / 100
+        self.assertAlmostEqual(side, 0.455, places=6)
+        self.assertGreaterEqual(lo[0], -side - 1e-6)
+        self.assertLessEqual(hi[0], side + 1e-6)
+        self.assertGreaterEqual(lo[1], -1e-6)   # nothing under the deck's floor
+
+    def test_glow_on_the_axis(self) -> None:
+        """Lens C step 4 (minor 1): charger.gd's glow light sits on the crystal's axis, axis_d out of the wall."""
+        src = (common.ROOT / "godot" / "charger" / "charger.gd").read_text(encoding="utf-8")
+        m = re.search(r"glow\.position = Vector3\(0\.0, ([0-9.]+), ([0-9.]+)\)", src)
+        self.assertIsNotNone(m)
+        self.assertAlmostEqual(float(m.group(2)), dims()["frame"]["axis_d"] / 100, places=6)
 
     def test_look_files(self) -> None:
         if not (EXPORT / "charger.gd").is_file():
