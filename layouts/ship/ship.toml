@@ -438,7 +438,7 @@ glass_window = {a = 0.05, r = -0.03}                                # polish 4: 
 ext_ground = {s = 0.1}                                              # polish 4: low specular, the ground no longer mirrors
 ext_dirt = {s = 0.1}                                                # the bright horizon at grazing angles (snow-white
 ext_path = {s = 0.1}                                                # through the mouth)
-glow_edge = {c = [0.85, 0.92, 1.0], l = 0.6, rr = 1.0, cull = "inside"}  # light layer: its strip lights light only the inside
+glow_edge = {c = [0.85, 0.92, 1.0], l = 0.0, rr = 1.0, cull = "inside"}  # light layer: its strip lights light only the inside. lens C step 5: l 0.6 -> 0 (glows, lights nothing; 0.1 still left a spot): the lens rim's cell light stands at its arc's centroid, 0.15 m inside each lens room under the sill (lights.json (+-12.354, 2.07, 0.698), 2.4, the clamp): the west's hot spot (the east's sofa hides its own)
 # (through the lens windows, the lens rooms' look as approved); on the hull they left hot spots: the "edge" spots pool it
 glow_nav_red = {l = 0.0}                                             # light layer: the nav lamps and landing lenses glow;
 glow_nav_green = {l = 0.0}                                           # their lights are the "nav", "nav_tail" and "land"
