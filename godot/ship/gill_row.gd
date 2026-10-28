@@ -21,11 +21,13 @@ const SEAM_RED := Color(1.0, 0.06, 0.02)
 const WHITE := Color(0.95, 0.97, 1.0)
 const FIL_GAIN := {"calm": 1.0, "open": 1.3, "gasp": 1.2, "shut": 0.0, "fault": 0.0}
 const SEAM_GAIN := {"calm": 0.0, "open": 0.0, "gasp": 0.6, "shut": 0.25, "fault": 1.6}
-const LIGHT_ENERGY := {"calm": 0.25, "open": 0.4, "gasp": 0.4, "shut": 0.0, "fault": 0.03}
-## step 6: the mist was invisible: it hung 3 cm in front of the wall (16 cm out from the recess's back, 13 cm deep),
-## faded out by the proximity fade. Now 30 cm out from the back (17 cm in front of the wall), a soft add.
-const MIST := {"calm": 0.22, "open": 0.30, "gasp": 0.24, "shut": 0.0, "fault": 0.0}
-const MIST_OUT := 0.30
+## step 6: the lights stand in front of the wall now (they hung behind it), so a third as strong: at the old values
+## the whole band went cyan
+const LIGHT_ENERGY := {"calm": 0.08, "open": 0.13, "gasp": 0.13, "shut": 0.0, "fault": 0.02}
+## step 6: the mist and the slit's light hung behind the wall: the throat is the piece's +z (the band leans to +z),
+## not -z. Now both stand in front of the slit, the mist a soft add MIST_OUT out from the glow's middle.
+const MIST := {"calm": 0.2, "open": 0.32, "gasp": 0.26, "shut": 0.0, "fault": 0.0}
+const MIST_OUT := 0.22
 
 var _root: Node3D
 var _mats: Dictionary = {}       # node name -> [StandardMaterial3D override, its built emission energy]
@@ -55,16 +57,16 @@ func setup(piece: Node3D) -> void:
 		var box: AABB = glow.get_aabb()
 		var at: Vector3 = glow.position + box.get_center()
 		at.y = glow.position.y + box.position.y + box.size.y * 0.42   # the slit's middle, below the bend
-		var out: Vector3 = Vector3(0.0, 0.0, -1.0)                     # out of the wall into the throat (Blender +y)
+		var out: Vector3 = Vector3(0.0, 0.0, 1.0)                      # out of the wall into the throat (the GLB's +z)
 		var light: OmniLight3D = OmniLight3D.new()
 		light.position = at + out * 0.3
-		light.omni_range = 1.1
+		light.omni_range = 0.8
 		light.omni_attenuation = 1.4
 		light.light_energy = 0.0
 		light.shadow_enabled = false
 		piece.add_child(light)
 		_lights[k] = light
-		_mists[k] = _make_mist(piece, at + out * MIST_OUT + Vector3(-0.14 * _mirror, 0.0, 0.0))
+		_mists[k] = _make_mist(piece, at + out * MIST_OUT + Vector3(-0.2 * _mirror, 0.0, 0.0))
 	_own("btn_ring")
 
 
@@ -92,7 +94,7 @@ func _make_mist(piece: Node3D, at: Vector3) -> Array:
 	m.albedo_texture = tex
 	m.albedo_color = Color(0, 0, 0, 0)
 	var q: QuadMesh = QuadMesh.new()
-	q.size = Vector2(0.55, 0.95)
+	q.size = Vector2(0.45, 0.8)
 	var mi: MeshInstance3D = MeshInstance3D.new()
 	mi.mesh = q
 	mi.material_override = m
@@ -156,7 +158,7 @@ func set_slit(k: int, state: String, mix: float = 0.0, open_x: float = -1.0, puf
 		var a: float = float(MIST[state]) * open_x
 		mi.visible = a > 0.001
 		m.albedo_color = Color(colour.r * a, colour.g * a, colour.b * a, 1.0)
-		mi.position = (_mists[k][2] as Vector3) + Vector3(-0.08 * puff * _mirror, 0.03 * puff, -0.04 * puff)
+		mi.position = (_mists[k][2] as Vector3) + Vector3(-0.08 * puff * _mirror, 0.03 * puff, 0.04 * puff)
 
 
 ## The button's ring: 0 its calm cyan, 1 the press's white flash.
