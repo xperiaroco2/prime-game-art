@@ -824,6 +824,9 @@ def flat_feet(data: dict, pz: Posed, legs: str) -> dict:
     return out
 
 
+TOUCH_CM = 0.5  # a hand's or forearm's through reading counts only where its skin is within this of the other's
+
+
 def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -> dict:
     """A pair's numbers: the floor (cm), the centre of mass over the support (cm inside the hull of the skin within
     1 cm of the floor), the deepest skin-through-skin per checked pair of groups (cm), the contacts' gaps (cm), the
@@ -837,9 +840,15 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
     poly = hull(sup)
     com = centre_of_mass(model, P)
     margin = inside_margin(poly, (com[0], com[1]))
-    through = {}
+    through, proxy = {}, {}
     for a, b in d["limits"]["through_pairs"]:
-        through[f"{a}>{b}"] = round(through_depth(model, P, pz, a, b) * 100.0, 2)
+        v = round(through_depth(model, P, pz, a, b) * 100.0, 2)
+        # round 3: a hand or forearm reads through only where its skin touches b's (gap under TOUCH_CM); a depth
+        # with a skin gap is the tube's own bulge beyond the skin (the skull's back under the crest: 0.5-0.7 cm
+        # "through" with a 1 cm gap), reported in `proxy_cm`
+        if v > 0 and a.startswith(("hand", "forearm")) and nearest_gap(pz.group(a), pz.groups([b]), reach=0.05) * 100.0 > TOUCH_CM:
+            proxy[f"{a}>{b}"], v = v, 0.0
+        through[f"{a}>{b}"] = v
     contacts, marks = {}, {}
     cs = d["arms"][arms].get("contacts", [])
     if variant and legs in d.get("thigh_hand", {}).get("legs", ()):  # the hip hand on the thigh: its contact is the
@@ -879,7 +888,7 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
         if v > lim["contact_gap_cm"]:
             fails.append(f"gap {k} {v} cm")
     return {"pair": f"{legs}+{arms}", "floor_cm": round(low * 100, 2), "com_margin_cm": round(margin * 100, 2),
-            "support_pts": len(sup), "com": [round(c, 4) for c in com], "touch_cm": floor, "flat_cm": flat, "through_cm": through, "contacts_cm": contacts,
+            "support_pts": len(sup), "com": [round(c, 4) for c in com], "touch_cm": floor, "flat_cm": flat, "through_cm": through, "proxy_cm": proxy, "contacts_cm": contacts,
             "marks_cm": marks, "fails": fails}
 
 

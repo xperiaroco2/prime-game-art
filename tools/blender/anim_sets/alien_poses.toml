@@ -67,6 +67,9 @@ Thumb = [28, 38, 34]
 all = [12, 16, 12]
 Thumb = [-2, 6, 6]
 spread = 3
+[grips.palm]  # round 3: PalmsOut, the fingers together and slightly curved
+all = [8, 12, 8]
+Thumb = [-2, 6, 6]
 [grips.salute]
 all = [6, 6, 2]
 Thumb = [14, 8, 4]
@@ -112,9 +115,11 @@ Left = { mode = "plant", ankle = [0.37, 0.0], toe_out = 12, knee = [0.0, 1.0, 0.
 floor = ["foot_Left", "foot_Right"]
 
 [legs.Sit]
-hips = { drop = 0.6, turn = [-4, 0, 0], fit = ["torso", "thigh_Left", "thigh_Right"] }
+# round 3: the pelvis rolled back 6 degrees more and the feet 0.14 leg further out: the knees 7 cm lower, the thighs'
+# front off the belly (thigh>torso 2.99 -> 1.28 cm; the head 5 cm behind the hips, still upright)
+hips = { drop = 0.6, turn = [-10, 0, 0], fit = ["torso", "thigh_Left", "thigh_Right"] }
 spine = { turn = [4, 0, 0] }
-both = { mode = "plant", ankle = [0.12, 0.78], toe_out = 8, foot_pitch = 50, knee = [0.3, 0.0, 1.0] }
+both = { mode = "plant", ankle = [0.12, 0.92], toe_out = 8, foot_pitch = 50, knee = [0.3, 0.0, 1.0] }
 floor = ["torso", "foot_Left", "foot_Right"]
 
 # ---------------------------------------------------------------------------------------------- the arms (8)
@@ -126,7 +131,7 @@ floor = ["torso", "foot_Left", "foot_Right"]
 # `clear_dir` (default up the chest) and the arm's `variant` table on top; contacts: measured skin
 # gaps; solve = "meet" moves both hands toward each other until a and b touch.
 [arms.HandsOnHips]
-both = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
+both = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2] } }
 contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Right", b = "torso" },
             { a = "hand_Left", mark = "waist_Left" }, { a = "hand_Right", mark = "waist_Right" }]
 
@@ -144,23 +149,27 @@ contacts = [{ a = "LeftIndexDistal", b = "RightIndexDistal", solve = "meet", gap
 [arms.FingerUp]
 Head = [-8, 9, 0]
 Right = { mode = "fk", shoulder = [0, 8, 0], upper = [0.45, 0.35, 1.0], lower = [0.15, 0.3, 1.0], fingers_dir = [0.05, 0.25, 1.0], palm = [-0.6, 0.8, 0.0], grip = "point" }
-Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
+Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2] } }
 contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
 
 [arms.HandsBehindHead]
 # round 3 (s9 grid): the shoulders shrugged up lift the elbows toward the ears, wide (27 cm out), the forearms going
 # back behind the skull under the crest; the axolotl's wider head has its own wrists (`[chars.axolotl]` below)
-both = { mode = "goal", at = "head_back", shoulder = [0, -30, 0], offset = [0.4, -0.2, -0.3], elbow = [1.0, 0.3, 0.8], fingers_dir = [-1.0, -0.2, 0.3], palm = [0.0, 1.0, 0.0], grip = "relaxed", touch = ["head"], push = [-0.3, 1.0, 0.0], gap_cm = 0.95 }
+both = { mode = "goal", at = "head_back", shoulder = [0, -30, 0], offset = [0.4, -0.2, -0.3], elbow = [1.0, 0.3, 0.8], fingers_dir = [-1.0, -0.2, 0.3], palm = [0.0, 1.0, 0.0], grip = "relaxed", touch = ["head"], push = [-0.3, 1.0, 0.0], gap_cm = 0.8 }
 contacts = [{ a = "hand_Left", b = "head" }, { a = "hand_Right", b = "head" }]
 
 [arms.PalmsOut]
-both = { mode = "fk", upper = [1.0, 0.45, -0.3], lower = [0.35, 0.7, 0.85], fingers_dir = [0.2, 0.35, 1.0], palm = [0.1, 1.0, -0.1], grip = "open" }
+# round 3: the palms to the camera at about shoulder height, a little forward and out, the elbows bent and low,
+# the fingers together (s7's hands beside the head with spread fingers read as "hands up")
+both = { mode = "fk", upper = [0.65, 0.35, -0.7], lower = [0.3, 0.45, 0.85], fingers_dir = [0.2, 0.35, 1.0], palm = [0.1, 1.0, -0.1], grip = "palm" }
 
 [arms.Salute]
 Right = { mode = "goal", at = "brow", offset = [0.8, 0.6, 0.2], elbow = [0.8, 0.9, -0.1], fingers_dir = [-0.8, -0.5, 0.25], palm = [0.0, 0.45, -1.0], grip = "salute", touch = ["head"], push = [-0.8, -0.6, 0.0], gap_cm = 0.6 }
-Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
+Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2] } }
 contacts = [{ a = "RightIndexDistal", b = "head" }, { a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
 
+# round 3 (s10 grid on OneLeg and Kneel): the variants' fingers turned out with the belly like the shared clip's, a
+# little less down ([0.6, 0.7, -0.2], were level forward [0.1, 0.85, -0.05]: their tips 2.3 to 3.2 cm into the belly)
 # round 3: on these legs the hip hand's per-legs variant (PoseArms_<Arms>__<Legs>) rests on the top of its thigh by
 # the hip crease, not on the waist (Model._arm_thigh); measured as a contact with the thigh (gap and through)
 [thigh_hand]

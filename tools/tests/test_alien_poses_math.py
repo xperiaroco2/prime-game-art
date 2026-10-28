@@ -340,6 +340,16 @@ class OnTheChameleon(unittest.TestCase):
                 for b in ("torso", f"thigh_{s}"):
                     self.assertLessEqual(m["through_cm"][f"hand_{s}>{b}"], lim["through_hand_cm"], (lg, s, b))
 
+    def test_a_hand_reads_through_only_where_the_skins_touch(self):
+        """Round 3: HandsBehindHead's hands 0.8 cm off the skull: a tube depth there is the proxy's (proxy_cm), not a
+        through reading; the contacts within the limit and no failure."""
+        m = A.measure(self.model, A.compose(self.model.legs("Stand"), self.model.arms("HandsBehindHead")), "Stand",
+                      "HandsBehindHead")
+        for s in ("Left", "Right"):
+            self.assertLessEqual(m["through_cm"][f"hand_{s}>head"], self.model.data["limits"]["through_hand_cm"])
+            self.assertGreater(m["contacts_cm"][f"hand_{s}~head"], A.TOUCH_CM)
+        self.assertEqual(m["fails"], [])
+
     def test_one_leg_tips_out_of_balance_when_pushed(self):
         """The centre of mass check reads a body shifted off its one foot as outside the support."""
         legs = self.model.legs("OneLeg")

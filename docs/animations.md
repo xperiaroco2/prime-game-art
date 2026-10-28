@@ -1245,12 +1245,13 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   s7's table (both characters): every arms pair 0.10 or more apart from the front and the back (s6's front low,
   HandsOnHips/Heart 0.028 on Sit, is 0.107 now); from the sides the hip-hand poses stay close: HandsOnHips/Salute
   0.056 left (Lunge) and 0.075 right (Kneel), Flex/Salute 0.085 / 0.079 (chameleon), HandsOnHips/FingerUp 0.079 /
-  0.090 (axolotl). Only the raised arm's hand differs there and it is in front of the head from the side. **The
-  game's silhouette list avoids** these arms pairs as the two sides of one outline from the left or right (every
-  side pair under 0.10 in s7's chameleon table, the axolotl's within 0.01 of it): (HandsOnHips, Salute), (Flex,
-  Salute), (HandsOnHips, FingerUp), (HandsOnHips, Flex), (Heart, PalmsOut), (Plane, Flex), (Flex, Heart), (Flex,
-  PalmsOut); legs: Stand/OneLeg from the sides (0.21 to 0.26) is fine. Every one of the 48 pairs is meant to look
-  good (round 3): the pose list avoids no pair; the hip hand on Squat and Sit rests on the thigh (above).
+  0.090 (axolotl). Only the raised arm's hand differs there and it is in front of the head from the side. **A note
+  to the design, not a rule** (round 3): these arms pairs are the weakest as the two sides of one outline seen from
+  the left or right (every side pair under 0.10 in s7's chameleon table, the axolotl's within 0.01 of it):
+  (HandsOnHips, Salute), (Flex, Salute), (HandsOnHips, FingerUp), (HandsOnHips, Flex), (Heart, PalmsOut), (Plane,
+  Flex), (Flex, Heart), (Flex, PalmsOut); a silhouette list may prefer the front or back for them. The game avoids no
+  pair and no facing: every one of the 48 pairs is meant to look good (round 3); legs: Stand/OneLeg from the sides
+  (0.21 to 0.26) is fine; the hip hand on Squat and Sit rests on the thigh (above).
 - **What the layers freeze.** `owner()` gives every bone that is not the legs' to the arms, so the arms clip keys
   Jaw, the eyes and the crest at rest and the game's `Blend2` filter takes the whole Chest subtree: a face or crest
   layer of the game must sit after the pose's tree (or the pose's arms filter must drop those bones) to move during
