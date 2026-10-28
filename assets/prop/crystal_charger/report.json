@@ -1,16 +1,16 @@
 {
   "asset": "crystal_charger",
-  "built_by": "tools/blender/charger_run.py --tag lens2 --asset assets/prop/crystal_charger",
+  "built_by": "tools/blender/charger_run.py --tag lens3 --asset assets/prop/crystal_charger",
   "mesh": {
-    "triangles": 30520,
+    "triangles": 32144,
     "by_object": {
       "body": {
-        "triangles": 16054,
+        "triangles": 17678,
         "by_material": {
-          "charger_graphite": 5378,
+          "charger_graphite": 5486,
           "charger_bronze2": 2820,
-          "charger_bronze": 7298,
-          "charger_cyan": 542,
+          "charger_bronze": 8802,
+          "charger_cyan": 554,
           "charger_amber": 16
         },
         "pivot_cm": [
@@ -76,7 +76,7 @@
       ]
     },
     "front": "+Z (out of the wall, along the spot's normal)",
-    "origin": "on the floor at the wall's face under the crystal's axis (the spot's `at`)"
+    "origin": "on the floor at the spot's vertex (the spot's `at`, d 0); the crystal's axis is 38 cm out along +Z"
   },
   "anchor_cm": [
     0.0,
@@ -166,10 +166,10 @@
   },
   "godot_cost": {
     "draw_calls_charger": 12,
-    "gpu_ms_charger": 0.111,
-    "gpu_ms_with": 0.495,
-    "gpu_ms_without": 0.384,
+    "gpu_ms_charger": 0.114,
+    "gpu_ms_with": 0.499,
+    "gpu_ms_without": 0.385,
     "view": "1280x720, eye 1.6 m, 1.6 m away, charging"
   },
-  "review": "<raw>/ship/v4/charger/lens2/sheets/"
+  "review": "<raw>/ship/v4/charger/lens3/sheets/"
 }
