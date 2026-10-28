@@ -62,7 +62,7 @@ def apart(a, b, gap: float = 0.0) -> bool:
 class ShipGillsTest(unittest.TestCase):
     def test_drawing_numbers(self):
         self.assertEqual((G.DRAWING_COVER_W, G.PROUD), (0.30, 0.035))
-        self.assertEqual((G.BAND, G.FIXED, G.CROWN_TOP, G.RIB_H), ((-0.80, 0.80), (0.52, 0.80), 2.97, (0.08, 2.97)))   # step 8: 3.2 m wall
+        self.assertEqual((G.BAND, G.FIXED, G.CROWN_TOP, G.RIB_H), ((-0.80, 0.80), (0.52, 0.80), 2.97, (0.05, 2.97)))   # step 8: 3.2 m wall; step 10: the foot 1 cm into the 6 cm sill
         # step 7: the concept's 4 ribs of 22 cm, 12 cm slots, an equal end gap at both ends of the rib band
         self.assertEqual((G.COVERS, G.COVER_W, G.SLOT_W), (4, 0.22, 0.12))
         self.assertAlmostEqual(G.cover_u(0) - G.BAND[0], G.END_GAP, places=9)
@@ -195,16 +195,24 @@ class ShipGillsTest(unittest.TestCase):
             self.assertAlmostEqual(g, G.PITCH - G.COVER_W, places=6)
 
     def test_glow_bands_and_slots(self):
-        """Step 7: the well's back full of cyan (0.25..0.4 low, fading up from 40 cm), the lowest band a darker pocket
-        under it; the ribs' flank fronts still the brightest (the slot's edges); the slots lit on up the leaning wall to
-        SLOT_TOP between the ribs (never more than 4 mm under one), the cool's children."""
-        es = [b[3] for b in G.COOL_BANDS + G.SLOT_BANDS]
-        self.assertEqual(es[1:], sorted(es[1:], reverse=True))
-        self.assertTrue(0.25 <= es[0] < es[1] <= 0.40, es)
-        self.assertGreater(G.FLANK_E, max(es))
+        """Step 10: the well's back one smooth gradient of thin bands (step 9's five stepped and read near-black at the
+        foot and the top): contiguous from the well's foot to its roof, never under 60 % of the peak, the foot 60..75 %,
+        no step between two bands over 6 % of the peak; the ribs' flank fronts still the brightest (the slot's edges);
+        the slots lit on up the wall to SLOT_TOP between the ribs (never more than 4 mm under one), the cool's
+        children."""
+        es = [b[3] for b in G.COOL_BANDS]
+        peak = max(es)
+        self.assertGreaterEqual(len(es), 15)
+        self.assertGreaterEqual(min(es), 0.6 * peak)
+        self.assertTrue(0.6 * peak <= es[0] <= 0.75 * peak, es)
+        self.assertLessEqual(max(abs(a - b) for a, b in zip(es, es[1:])), 0.06 * peak)
+        for a, b in zip(G.COOL_BANDS, G.COOL_BANDS[1:]):
+            self.assertAlmostEqual(a[1], b[0], places=6)
+        self.assertGreater(peak, 0.36 * 1.25)   # step 10: about 30 % over step 9's peak
+        self.assertGreater(G.FLANK_E, max(es + [b[3] for b in G.SLOT_BANDS]))
         self.assertTrue(G.FLANK2_E < G.FLANK_E)
-        self.assertEqual(G.COOL_BANDS[0][0], G.WELL_H[0])
-        self.assertEqual(G.COOL_BANDS[-1][1], G.WELL_H[1])
+        self.assertAlmostEqual(G.COOL_BANDS[0][0], G.WELL_H[0], places=6)
+        self.assertAlmostEqual(G.COOL_BANDS[-1][1], G.WELL_H[1], places=6)
         parts = build("e")
         for name in ["cool" + b[2] for b in G.COOL_BANDS[1:]] + ["slots6", "slots7"]:
             self.assertEqual(parts[name]["parent"], "station_vent_e_cool", name)
@@ -225,7 +233,18 @@ class ShipGillsTest(unittest.TestCase):
         feet seated on the bronze sill."""
         mid = (G.BAND[0] + G.FIXED[0]) / 2
         self.assertAlmostEqual(G.hood_lip(mid), G.HOOD_HI, places=6)
-        self.assertAlmostEqual(G.hood_lip(G.BAND[0]), G.HOOD_LO, places=6)
+        self.assertAlmostEqual(G.hood_lip(G.HOOD_U[0]), G.HOOD_LO, places=6)
+        # step 10: one smooth arc, no kink (step 9's fell steeply into a step at the column): the slope between
+        # neighbouring 1 cm samples changes by under 2 cm per metre
+        lips = [G.hood_lip(G.HOOD_U[0] + (G.HOOD_U[1] - G.HOOD_U[0]) * k / 160) for k in range(161)]
+        du = (G.HOOD_U[1] - G.HOOD_U[0]) / 160
+        slopes = [(b - a) / du for a, b in zip(lips, lips[1:])]
+        self.assertLess(max(abs(a - b) for a, b in zip(slopes, slopes[1:])), 0.02)
+        # every rib's crest stays behind the hood's nose at the lip and 2 cm under it (none peeks over the lip)
+        for i in range(G.COVERS):
+            for u in (G.cover_u(i), G.cover_u(i) + G.COVER_W / 2, G.cover_u(i) + G.COVER_W):
+                for dh in (0.0, -0.02):
+                    self.assertLess(G.rib_proud(G.hood_lip(u) + dh), G.HOOD_P - 0.008, (i, u, dh))
         self.assertAlmostEqual(G.hood_lip(G.HOOD_U[1]), G.HOOD_LIP5, places=6)
         self.assertGreater(G.HOOD_LIP5, G.LAMP_H[1] + 0.03)
         us = G.hood_us()
@@ -251,6 +270,26 @@ class ShipGillsTest(unittest.TestCase):
                 self.assertTrue(all(S.FLOOR < z < S.FLOOR + 0.004 for _, _, z in p["verts"]))
         es = [st[1] for st in G.FLOOR_STEPS]
         self.assertEqual(es, sorted(es))   # the edge faded: dimmest outside
+
+    def test_well_roof_behind_the_hood(self):
+        """Step 10: the well's roof runs on over the bend to WELL_TOP, behind the hood's lip (no dark bar under it):
+        no plate or wall body across the window up to it; the lit walls reach the roof (the last band's)."""
+        self.assertTrue(G.HOOD_LO - 0.01 <= G.WELL_TOP <= G.HOOD_LO + 0.05, G.WELL_TOP)
+        self.assertGreater(G.WELL_TOP, G.BEND)
+        parts = build("e")
+        u0, u1 = G.WIN_U[0] + 0.01, G.WIN_U[1] - 0.01
+        for name in ("band", "upper"):
+            vs = parts[name]["verts"]
+            faces = parts[name]["faces"]
+            for f in faces:
+                pts = [vs[k] for k in f]
+                if all(u0 < x < u1 for x, _, _ in pts) and all(G.WELL_H[0] + 0.01 < z - S.FLOOR < G.WELL_TOP - 0.01
+                                                                 for _, _, z in pts):
+                    self.fail(f"{name} face across the window: {pts}")
+        top = parts["cool" + G.COOL_BANDS[-1][2]]["verts"]
+        self.assertAlmostEqual(max(z for _, _, z in top) - S.FLOOR, G.WELL_TOP, places=4)
+        foot = parts["cool"]["verts"]
+        self.assertAlmostEqual(min(z for _, _, z in foot) - S.FLOOR, G.WELL_H[0], places=4)
 
     def test_hood_meets_the_rim(self):
         """Gills step 9: the hood's sloped top meets the wall at the hall's rim (3.2 m, the ceiling panels' and the

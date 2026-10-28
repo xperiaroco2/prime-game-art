@@ -74,8 +74,8 @@ PITCH = round(COVER_W + SLOT_W, 6)
 # gills step 6 (the manager's decision, the engineer's "static and pretty wins"): each rib ONE static piece from its
 # foot to CROWN_TOP, one profile (no groove, no step, no collar, no width change); its back RIB_SINK into the wall's
 # face (into the well's window below the bend, into the leaning wall above it), so no gap shows behind its flanks
-COVER_H = (0.08, BEND)               # the well's window's height (the old hinged cover's; the well and seams use it)
-RIB_H = (0.08, 2.97)                 # the rib: 8 cm over the deck (on the sill) to its rounded top inside the hood
+COVER_H = (0.05, BEND)               # the well's window's height (the old hinged cover's; the well and seams use it)
+RIB_H = (0.05, 2.97)                 # the rib: 5 cm over the deck (1 cm into the sill, step 10) to its top in the hood
 RIB_SINK = 0.015
 TOP_R = 0.03                         # the rib's top rounded off over its last 3 cm
 CROWN_TOP = RIB_H[1]
@@ -83,7 +83,8 @@ PROUD = 0.035                        # the rib's crest out of the wall's face at
 # gills step 5: the well up to 1 cm under the bend (the drawing's box to 1.41), the lit slots run on up the leaning wall
 FIXED = (0.52, 0.80)                 # the fifth arch, fixed (gills step 7: 28 cm, step 6's 33 for the fourth rib)
 END_GAP = round((FIXED[0] - BAND[0] - COVERS * COVER_W - (COVERS - 1) * SLOT_W) / 2, 6)
-WELL_U, WELL_H, WELL_D = (-0.81, FIXED[0] - 0.01), (0.12, BEND), 0.45   # the box behind the ribs (132 x 132 x 45)
+WELL_TOP = 2.82                      # gills step 10: the well's roof behind the hood's lip (2.78..2.86), over the bend
+WELL_U, WELL_H, WELL_D = (-0.81, FIXED[0] - 0.01), (0.12, WELL_TOP), 0.45   # the box behind the ribs (132 x 132 x 45)
 # gills step 4: one window through the band plate over the well (the drawing's four slits and step 3's grooves are
 # gone): every gap between two ribs is a slot into the lit well, the concept's "wide slots with light"
 WIN_U, WIN_H = (BAND[0] + 0.006, WELL_U[1]), WELL_H
@@ -432,18 +433,21 @@ def lip_mesh(i: int, deg: float = 0.0):
 def upper_mesh():
     """The leaning wall over the band (the upper modules it replaces): its 20 cm body and, under the crowns, a dark
     panel 2 mm proud of its face from the bend to 2.10."""
-    prof = [(0.0, BEND), (IN, TOP), (IN - 0.2 * NORM_V, TOP - 0.2 * NORM_H), (-0.2 * NORM_V, BEND - 0.2 * NORM_H)]
-    body = V.loft([[(u, v, h) for v, h in prof] for u in BAND_PLATE])
+    # gills step 10: the wall's body round the well's window, which runs on over the bend to WELL_TOP (the wall is
+    # upright on the chord: IN 0)
+    wt = max(BEND, WELL_TOP)
+    body = L.merge(L.box(BAND_PLATE[0], WIN_U[0], -0.2, 0.0, BEND, TOP), L.box(WIN_U[1], BAND_PLATE[1], -0.2, 0.0, BEND, TOP),
+                   L.box(WIN_U[0], WIN_U[1], -0.2, 0.0, wt, TOP))
     # gills step 5: the dark panel's top corners rounded (R 12 cm) and its edges a soft 1.5 cm slope from the wall's
     # face up to its 2 mm (step 4's hard straight rectangle)
     top, rad, soft = HOOD_TOP - 0.06, 0.12, 0.015
     u0, u1 = BAND[0] - 0.005, BAND[1] + 0.005
-    outline = [(u0, BEND), (u1, BEND)]
+    outline = [(u0, wt), (u1, wt)]
     for cu, a0 in ((u1 - rad, 0), (u0 + rad, 90)):
         outline += [(cu + rad * math.cos(math.radians(a0 + d)), top - rad + rad * math.sin(math.radians(a0 + d)))
                     for d in range(0, 91, 10)]
     inner = [(u, h) for u, h in V.shrink(outline, soft)]
-    inner = [(u, max(h, BEND)) for u, h in inner]
+    inner = [(u, max(h, wt)) for u, h in inner]
     n = len(outline)
     lift = lambda u, h, w: (u, cv(h) + w * NORM_V, h + w * NORM_H)
     verts = [lift(u, h, 0.0004) for u, h in outline] + [lift(u, h, 0.002) for u, h in inner]
@@ -575,17 +579,37 @@ GLOW_C = (0.05, 0.55, 1.0)
 # gills step 7: the slots full of cyan again (the concept's glowing slots; step 6's read dark navy with thin edge
 # lines): 0.40 from 40 cm fading up to 0.22 at the bend, the lower pocket darker (0.25) for depth
 # gills step 8: the bands spread over the taller well (to BEND, 2.70), the slots lit on up the wall into the hood
-COOL_BANDS = ((0.12, 0.40, "", 0.25), (0.40, 0.95, "2", 0.36), (0.95, 1.55, "3", 0.30), (1.55, 2.15, "4", 0.24),
-              (2.15, BEND, "5", 0.18))
+# gills step 10: one smooth gradient (step 9's five bands stepped and read near-black at the foot and the top): GLOW_N
+# thin bands, each at glow_e of its middle: 0.70 of the peak at the foot, the peak at GLOW_PEAK_H, easing down to 0.64
+# under the roof; the peak 30 % over step 9's 0.36 (the gills read from the throat and the ramp). The well's floor,
+# roof and ends are lit with the band at their height (no dark wall shows anywhere)
+GLOW_PEAK, GLOW_PEAK_H, GLOW_FOOT, GLOW_TOP, GLOW_N = 0.47, 1.0, 0.70, 0.64, 24
+
+
+def glow_e(h: float) -> float:
+    """The well's back glow (emission share) at h: a smoothstep up from the foot to the peak, a cosine down to the roof."""
+    if h <= GLOW_PEAK_H:
+        t = min(max((h - WELL_H[0]) / (GLOW_PEAK_H - WELL_H[0]), 0.0), 1.0)
+        return GLOW_PEAK * (GLOW_FOOT + (1.0 - GLOW_FOOT) * t * t * (3 - 2 * t))
+    t = min(max((h - GLOW_PEAK_H) / (WELL_H[1] - GLOW_PEAK_H), 0.0), 1.0)
+    return GLOW_PEAK * (GLOW_TOP + (1.0 - GLOW_TOP) * (0.5 + 0.5 * math.cos(math.pi * t)))
+
+
+_GH = [WELL_H[0] + (WELL_H[1] - WELL_H[0]) * k / GLOW_N for k in range(GLOW_N + 1)]
+COOL_BANDS = tuple((round(a, 6), round(b, 6), "" if k == 0 else str(k + 1), round(glow_e((a + b) / 2), 4))
+                   for k, (a, b) in enumerate(zip(_GH, _GH[1:])))
 SLOT_TOP = 2.95                      # the lit slots run on up the wall between the ribs to here (inside the hood)
-SLOT_BANDS = ((BEND - 0.002, 2.84, "6", 0.13), (2.84, SLOT_TOP, "7", 0.08))
-FLANK_E, FLANK2_E = 0.45, 0.12
+SLOT_BANDS = ((WELL_TOP - 0.002, 2.885, "6", round(GLOW_PEAK * 0.58, 4)),
+              (2.885, SLOT_TOP, "7", round(GLOW_PEAK * 0.45, 4)))   # parts slots6, slots7 (materials vent_slot6, 7)
+FLANK_E, FLANK2_E = 0.585, 0.156   # gills step 10: +30 % (0.45, 0.12)
 # gills step 7: a cyan strip on the deck at each slot's foot (the concept's), its edge faded in three nested steps
 # FLOOR_STEPS: (material suffix, emission, inset from the slot's flanks, depth out from the sill's front)
-FLOOR_STEPS = (("floor3", 0.06, 0.0, 0.17), ("floor2", 0.18, 0.008, 0.12), ("floor", 0.45, 0.018, 0.07))
-for _sfx, _e in ([(b[2], b[3]) for b in COOL_BANDS + SLOT_BANDS] + [("flank", FLANK_E), ("flank2", FLANK2_E)]
-                 + [(f[0], f[1]) for f in FLOOR_STEPS]):
-    _n = "int_cyan__vent_" + ("cool" + _sfx if not _sfx.startswith(("flank", "floor")) else _sfx)
+# gills step 10: a soft light spill, not hard decals: the core the slot's full 12 cm, the outer steps 5 and 2.5 cm wider
+# each side (onto the ribs' feet), dimmer and longer (step 9: 8.4 cm cores at 0.45)
+FLOOR_STEPS = (("floor3", 0.05, -0.05, 0.24), ("floor2", 0.13, -0.025, 0.16), ("floor", 0.30, 0.0, 0.09))
+for _sfx, _e in ([("cool" + b[2], b[3]) for b in COOL_BANDS] + [("slot" + b[2], b[3]) for b in SLOT_BANDS]
+                 + [("flank", FLANK_E), ("flank2", FLANK2_E)] + [(f[0], f[1]) for f in FLOOR_STEPS]):
+    _n = "int_cyan__vent_" + _sfx
     L.MATERIALS[_n] = {**L.MATERIALS["int_cyan"], "base": (*GLOW_C, 1.0), "emission": GLOW_C,   # the root: import order
                        "strength": 4.0 * _e}
 
@@ -609,8 +633,32 @@ def well_meshes(w: dict):
         for (ua, ha), (ub, hb) in zip(e, e[1:]):
             walls.append(([(ua, -PLATE_T + 0.001, ha), (ub, -PLATE_T + 0.001, hb), (ub, -_depth(w, ub, hb) - 0.006, hb),
                            (ua, -_depth(w, ua, ha) - 0.006, ha)], [(0, 1, 2, 3)]))
-    bands = [(sfx, field(0.0, h0, h1, max(2, round((h1 - h0) / 0.065)))) for h0, h1, sfx, _ in COOL_BANDS]
-    return L.merge(*walls), bands, field(-0.004)
+    # gills step 10: the well's floor, roof and ends lit (step 9's dark floor and roof read as black bands from above
+    # and below): a glow wall `inset` inside each dark one, from behind the plate's face to the back; the cool's with
+    # the band at its height, the heat's (1.5 mm inside) merged into the heat
+    def lit_walls(inset: float, back: float, h0: float, h1: float, foot: bool, roof: bool):
+        u0, u1 = WELL_U[0] + inset, WELL_U[1] - inset
+        a, b = max(h0, WELL_H[0] + inset), min(h1, WELL_H[1] - inset)
+        n = max(1, round((b - a) / 0.065))
+        hs_ = [a + (b - a) * j / n for j in range(n + 1)]
+        us_ = [u0 + (u1 - u0) * i / 20 for i in range(21)]
+        es = [[(u0, h) for h in hs_][::-1], [(u1, h) for h in hs_]]
+        if foot:
+            es.append([(u, a) for u in us_])
+        if roof:
+            es.append([(u, b) for u in us_][::-1])
+        out = []
+        for e in es:
+            for (ua, ha), (ub, hb) in zip(e, e[1:]):
+                out.append(([(ua, -0.002, ha), (ub, -0.002, hb), (ub, -_depth(w, ub, hb) + back, hb),
+                             (ua, -_depth(w, ua, ha) + back, ha)], [(0, 1, 2, 3)]))
+        return L.merge(*out)
+    last = len(COOL_BANDS) - 1
+    bands = [(sfx, L.merge(field(0.0, h0, h1, max(2, round((h1 - h0) / 0.065))),
+                           lit_walls(0.003, 0.0, h0, h1, k == 0, k == last)))
+             for k, (h0, h1, sfx, _) in enumerate(COOL_BANDS)]
+    heat = L.merge(field(-0.004), lit_walls(0.0015, -0.004, WELL_H[0], WELL_H[1], True, True))
+    return L.merge(*walls), bands, heat
 
 
 def slot_span(k: int, h: float) -> tuple[float, float]:
@@ -646,11 +694,13 @@ def plate_meshes():
     v0 = -PLATE_T
     boxes = [L.box(BAND_PLATE[0], WIN_U[0], v0, 0.0, S.FLOOR, S.FLOOR + BEND),
              L.box(WIN_U[1], BAND_PLATE[1], v0, 0.0, S.FLOOR, S.FLOOR + BEND),
-             L.box(WIN_U[0], WIN_U[1], v0, 0.0, S.FLOOR, S.FLOOR + WIN_H[0]),
-             L.box(WIN_U[0], WIN_U[1], v0, 0.0, S.FLOOR + WIN_H[1], S.FLOOR + BEND)]
+             L.box(WIN_U[0], WIN_U[1], v0, 0.0, S.FLOOR, S.FLOOR + WIN_H[0])]
+    if WIN_H[1] < BEND:
+        boxes.append(L.box(WIN_U[0], WIN_U[1], v0, 0.0, S.FLOOR + WIN_H[1], S.FLOOR + BEND))
     body = [L.box(WELL_U[1], BAND_PLATE[1], -0.2, v0, S.FLOOR, S.FLOOR + BEND),
-            L.box(BAND_PLATE[0], WELL_U[1], -0.2, v0, S.FLOOR, S.FLOOR + WELL_H[0]),
-            L.box(BAND_PLATE[0], WELL_U[1], -0.2, v0, S.FLOOR + WELL_H[1], S.FLOOR + BEND)]
+            L.box(BAND_PLATE[0], WELL_U[1], -0.2, v0, S.FLOOR, S.FLOOR + WELL_H[0])]
+    if WELL_H[1] < BEND:
+        body.append(L.box(BAND_PLATE[0], WELL_U[1], -0.2, v0, S.FLOOR + WELL_H[1], S.FLOOR + BEND))
     return L.merge(*boxes), L.merge(*body)
 
 
@@ -675,19 +725,16 @@ HOOD_U = (BAND_PLATE[0], BAND_PLATE[1])
 HOOD_FACE = 0.16                     # the face's full proud over this much above the nose, then it slopes back to the wall
 HOOD_END = 0.04                      # the hood's proud tapers to HOOD_END_F of itself over its last 4 cm at either end
 HOOD_END_F = 0.15
-HOOD_STEP = (FIXED[0] - END_GAP / 2, FIXED[0] + CROWN_IN[0] + 0.006)   # the lip's rise to the fifth arch's visor
+HOOD_APEX = (BAND[0] + FIXED[0]) / 2   # gills step 10: the lip one smooth arc, its apex over the rib band's middle
+HOOD_GROOVE = (0.02, 0.006)          # gills step 10: a 2 cm shadow line 6 mm deep across the face's middle
 
 
 def hood_lip(u: float) -> float:
-    """The hood's lip height at u: the arch over the rib band, the cosine step up to the fifth arch's visor."""
-    t = min(max((u - BAND[0]) / (FIXED[0] - BAND[0]), 0.0), 1.0)
-    arch_h = HOOD_LO + (HOOD_HI - HOOD_LO) * math.sin(math.pi * t) ** 0.5
-    if u <= HOOD_STEP[0]:
-        return arch_h
-    a = min((u - HOOD_STEP[0]) / (HOOD_STEP[1] - HOOD_STEP[0]), 1.0)
-    h0 = HOOD_LO + (HOOD_HI - HOOD_LO) * math.sin(math.pi * min(max((HOOD_STEP[0] - BAND[0]) / (FIXED[0] - BAND[0]),
-                                                                       0.0), 1.0)) ** 0.5
-    return h0 + (HOOD_LIP5 - h0) * (0.5 - 0.5 * math.cos(math.pi * a))
+    """The hood's lip height at u: one smooth arc (gills step 10; step 9's arch fell steeply into a step at the
+    column): two half parabolas meeting level at HOOD_APEX (HOOD_HI), HOOD_LO at the hood's two ends."""
+    half = (HOOD_APEX - HOOD_U[0]) if u <= HOOD_APEX else (HOOD_U[1] - HOOD_APEX)
+    x = min(abs(u - HOOD_APEX) / half, 1.0)
+    return HOOD_LO + (HOOD_HI - HOOD_LO) * (1.0 - x * x)
 
 
 def on_lean(h: float, n: float):
@@ -705,9 +752,7 @@ def hood_scale(u: float) -> float:
 
 def hood_us():
     us = [HOOD_U[0] + HOOD_END * k / 6 for k in range(6)]
-    us += [HOOD_U[0] + HOOD_END + (HOOD_STEP[0] - HOOD_U[0] - HOOD_END) * k / 40 for k in range(41)]
-    us += [HOOD_STEP[0] + (HOOD_STEP[1] - HOOD_STEP[0]) * k / 10 for k in range(1, 11)]
-    us += [HOOD_STEP[1] + (HOOD_U[1] - HOOD_END - HOOD_STEP[1]) * k / 4 for k in range(1, 5)]
+    us += [HOOD_U[0] + HOOD_END + (HOOD_U[1] - HOOD_U[0] - 2 * HOOD_END) * k / 56 for k in range(57)]
     return us + [HOOD_U[1] - HOOD_END + HOOD_END * k / 6 for k in range(1, 7)]
 
 
@@ -722,6 +767,9 @@ def hood_profile(u: float, n_arc: int = 7):
     for k in range(n_arc):   # the nose: a quarter round of HOOD_R, from the lip's underside up onto the face
         a = math.radians(-90 + 90 * k / (n_arc - 1))
         sn.append((HOOD_R + HOOD_R * math.sin(a), (HOOD_P - HOOD_R + HOOD_R * math.cos(a)) * f))
+    gm, (gw, gd) = HOOD_R + face / 2, HOOD_GROOVE
+    sn += [(gm - gw / 2, HOOD_P * f), (gm - gw / 2 + 0.004, (HOOD_P - gd) * f), (gm + gw / 2 - 0.004, (HOOD_P - gd) * f),
+           (gm + gw / 2, HOOD_P * f)]
     sn += [(HOOD_R + face, HOOD_P * f), (s_top, 0.004), (s_top, -0.01)]
     return [on_lean(h0 + s * LEAN_H, n) for s, n in sn]
 
@@ -742,7 +790,7 @@ def hood_front(u: float, h: float) -> float:
     if s_ < HOOD_R:
         return 0.0
     if s_ <= HOOD_R + face:
-        return HOOD_P * f
+        return (HOOD_P - (HOOD_GROOVE[1] if abs(s_ - HOOD_R - face / 2) < HOOD_GROOVE[0] / 2 else 0.0)) * f
     t = min((s_ - HOOD_R - face) / (s_top - HOOD_R - face), 1.0)
     return HOOD_P * f + (0.004 - HOOD_P * f) * t
 
@@ -770,11 +818,13 @@ def hood_edge_mesh(n_arc: int = 7):
 
 # gills step 7: a bronze sill along the band's foot, SILL_P proud, the ribs' and the fifth arch's feet seated on it
 # (step 6's stood on a strip 8 cm over the deck with a gap under them)
-SILL_P, SILL_H, SILL_CH = 0.05, 0.088, 0.012
+SILL_P, SILL_H, SILL_CH = 0.05, 0.06, 0.016   # gills step 10: lower (was 8.8 cm), a rounder top edge, the ribs' bronze
 
 
 def sill_mesh():
-    prof = [(-0.03, 0.0), (SILL_P, 0.0), (SILL_P, SILL_H - SILL_CH), (SILL_P - SILL_CH, SILL_H), (-0.03, SILL_H)]
+    edge = [(SILL_P - SILL_CH + SILL_CH * math.cos(math.radians(a)), SILL_H - SILL_CH + SILL_CH * math.sin(math.radians(a)))
+            for a in (0, 22.5, 45, 67.5, 90)]
+    prof = [(-0.03, 0.0), (SILL_P - 0.004, 0.0), (SILL_P, 0.004)] + edge + [(-0.03, SILL_H)]
     return V.prism(BAND_PLATE[0], BAND_PLATE[1], prof)
 
 
@@ -783,6 +833,7 @@ def floor_glow(k: int, step):
     sfx, _e, inset, depth = step
     lo = BAND[0] if k == 0 else cover_u(k - 1) + COVER_W
     hi = FIXED[0] if k == COVERS else cover_u(k)
+    lo, hi = max(lo + inset, BAND_PLATE[0] + 0.01) - inset, min(hi - inset, FIXED[0] + 0.01) + inset
     lift = {"floor3": 0.0012, "floor2": 0.0020, "floor": 0.0028}[sfx]
     return L.box(lo + inset, hi - inset, SILL_P - 0.002, SILL_P + depth, S.FLOOR + lift - 0.0006, S.FLOOR + lift)
 
@@ -826,7 +877,7 @@ def station_gills(args, layout):
     # gills step 5: the slots lit on up the leaning wall between the crowns to SLOT_TOP (the cool's children; the
     # heat's red one 3 mm behind them, the heat's child)
     for h0, h1, sfx, _ in SLOT_BANDS:
-        add(f"slots{sfx}", hh(slot_strips(h0, h1, 0.0070)), f"int_cyan__vent_cool{sfx}", parent=f"{pid}_cool")
+        add(f"slots{sfx}", hh(slot_strips(h0, h1, 0.0070)), f"int_cyan__vent_slot{sfx}", parent=f"{pid}_cool")
     add("heat_slots", hh(slot_strips(SLOT_BANDS[0][0], SLOT_TOP, 0.0040)), "int_halo__vent_heat",
         parent=f"{pid}_heat")
     for i in range(COVERS):   # gills step 6: each rib one static piece, its origin at the foot of its rocking axis
@@ -838,7 +889,7 @@ def station_gills(args, layout):
         add(f"seam{k + 1}", hh(seam_mesh(w, k)), "int_halo__vent_seam")
     add("hood", hh(hood_mesh()), "gill_bronze2")
     add("hood_edge", hh(hood_edge_mesh()), "gill_edge")
-    add("sill", hh(sill_mesh()), "gill_bronze2")
+    add("sill", hh(sill_mesh()), "gill_bronze")
     for k in range(COVERS + 1):   # the floor strips, the cool's children (hidden for the problem)
         for st in FLOOR_STEPS:
             add(f"{st[0]}{k + 1}", floor_glow(k, st), f"int_cyan__vent_{st[0]}", parent=f"{pid}_cool")
