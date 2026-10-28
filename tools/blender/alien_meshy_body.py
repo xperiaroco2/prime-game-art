@@ -47,6 +47,10 @@ M1e (art #196, `axolotl_m1e.toml`; the older files have none):
    20-mm margins over deep creases moved neighbours apart faster than their spacing: faces folded over (the dark
    specks at the cleft and the shoulder's back, the slits under the upper arms). Every build reports each step's
    flipped faces against the body before the fixes (`flips`).
+M1f (art #196, `axolotl_m1f.toml`; the older files have none):
+7e. `seam_band` (m): the steps' smoothed moves (disp_smooth) pinned within it below the ring (the seam's faces kept).
+8f. `relax`: the vertex spacing relaxed in soft spheres, after every shape step (the breasts' bright knot of short
+   edges: M1e's sphere in smooth_rest was smeared by its disp_smooth).
 --from-body <alien_body.blend>: steps 6 to 10 only, on a body this script built before (M1's).
 """
 from __future__ import annotations
@@ -127,12 +131,17 @@ def ring_verts(me) -> list[int]:
     return ring
 
 
-def smooth_disp(me, co0: np.ndarray, co1: np.ndarray, passes: int) -> np.ndarray:
+def smooth_disp(me, co0: np.ndarray, co1: np.ndarray, passes: int, band: float = 0.0) -> np.ndarray:
     """M1e: the move co1 - co0 smoothed over the mesh's edges by `passes` Laplacians (factor 0.5), the open ring's
-    vertices pinned at their own move; the smooth part of a move stays, its jumps between neighbours go."""
+    vertices pinned at their own move; the smooth part of a move stays, its jumps between neighbours go. M1f: `band`
+    (m) also pins every vertex within band below the ring's lowest point at its own move (the seam's band: M1e's
+    smoothed moves reached the ring's neighbours and thinned the seam's faces)."""
     d = co1 - co0
     w = np.ones(len(co0))
-    w[ring_verts(me)] = 0.0
+    ring = ring_verts(me)
+    w[ring] = 0.0
+    if band > 0.0:
+        w[co0[:, 2] > co0[ring, 2].min() - band] = 0.0
     return co0 + laplace(d, edge_array(me), w, np.full(len(co0), int(passes)))
 
 
@@ -324,7 +333,7 @@ def fix_arms(arm, mb, cfg, rep):
                 out[pre] = {"x": [round(float(x), 2) for x in xs[::4]],
                             "z_mm_before": [round(v * 1000) for v in before], "z_mm_after": [round(v * 1000) for v in ext(co)]}
         if cfg.get("disp_smooth"):  # M1e: the factors' jumps between neighbours folded faces (the armpits' slits)
-            co = smooth_disp(mb.data, co0, co, cfg["disp_smooth"])
+            co = smooth_disp(mb.data, co0, co, cfg["disp_smooth"], cfg.get("seam_band", 0.0))
     if cfg.get("disp_smooth"):
         for s, pre in ((1.0, "Left"), (-1.0, "Right")):
             sel = (co[:, 0] * s > cfg["from_x"]) & (co[:, 2] > cfg["band_z"])
@@ -366,10 +375,66 @@ def fix_smooth_rest(mb, cfg, rep):
         w[ring] = 0.0
     co2 = laplace(co, edge_array(mb.data), w, npv, mu)
     if cfg.get("disp_smooth"):  # M1e: the boxes' margins over deep creases folded faces (the cleft's specks)
-        co2 = smooth_disp(mb.data, co, co2, cfg["disp_smooth"])
+        co2 = smooth_disp(mb.data, co, co2, cfg["disp_smooth"], cfg.get("seam_band", 0.0))
     rep["smooth_rest_mm"] = round(float(np.linalg.norm(co2 - co, axis=1).max()) * 1000, 2)
     rep["smooth_rest_vertices"] = int((w > 0).sum())
     set_co(mb.data, co2)
+
+
+def vertex_normals(me, co: np.ndarray) -> np.ndarray:
+    """M1f: each vertex's unit normal at the positions co (its faces' normals weighted by their areas)."""
+    n = len(me.polygons)
+    ls, lt = np.empty(n, dtype=np.int64), np.empty(n, dtype=np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    me.polygons.foreach_get("loop_total", lt)
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    a, b, c = co[lv[ls]], co[lv[ls + 1]], co[lv[ls + lt - 1]]
+    fn = np.cross(b - a, c - a)
+    vn = np.zeros_like(co)
+    for k in range(int(lt.max())):
+        on = lt > k
+        np.add.at(vn, lv[ls[on] + k], fn[on])
+    return vn / np.maximum(np.linalg.norm(vn, axis=1), 1e-20)[:, None]
+
+
+def fix_relax(mb, cfg, rep):
+    """M1f: the vertex spacing relaxed in soft spheres [|x|, y, z, r, iterations] (both sides), the open ring held:
+    per iteration each vertex moves toward its neighbours' mean within its tangent plane (factor `tangent`: a knot of
+    short edges spread even, the surface kept), then the normal part by a Taubin pair (factor `normal`, step back
+    `mu`: a vertex standing out of its neighbours brought back into the surface, the volume kept)."""
+    me = mb.data
+    co = get_co(me)
+    E = edge_array(me)
+    w, npv = np.zeros(len(co)), np.zeros(len(co), dtype=int)
+    for x, y, z, r, n in cfg["spheres"]:
+        for sx in (x, -x):
+            ws = np.array([M.soft_sphere(p, (sx, y, z), r) for p in co])
+            npv = np.where(ws > 0, np.maximum(npv, n), npv)
+            w = np.maximum(w, ws)
+    w[ring_verts(me)] = 0.0
+    deg = np.maximum(np.bincount(E.ravel(), minlength=len(co)), 1).astype(float)
+
+    def mean(c_):
+        s_ = np.zeros_like(c_)
+        np.add.at(s_, E[:, 0], c_[E[:, 1]])
+        np.add.at(s_, E[:, 1], c_[E[:, 0]])
+        return s_ / deg[:, None]
+    co0 = co.copy()
+    for k in range(int(npv.max()) if len(npv) else 0):
+        on = (w * (npv > k))[:, None]
+        nv = vertex_normals(me, co)
+        d = mean(co) - co
+        dn = (d * nv).sum(1)[:, None] * nv
+        co = co + on * cfg.get("tangent", 0.5) * (d - dn)
+        for f_ in (cfg.get("normal", 0.5), cfg.get("mu", -0.53)):
+            d = mean(co) - co
+            co = co + on * f_ * (d * nv).sum(1)[:, None] * nv
+    set_co(me, co)
+    me.update()
+    rep["relax"] = {"vertices": int((w > 0).sum()),
+                    "max_move_mm": round(float(np.linalg.norm(co - co0, axis=1).max()) * 1000, 2)}
+    log(f"relax {rep['relax']}")
 
 
 def fix_seat(mb, cfg, rep):
@@ -730,7 +795,7 @@ def fix_bends(arm, mb, cfg, W, names, rep):
 
 
 def fixes(arm, mb, T, rep):
-    if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B | M.KEYS_M1D):
+    if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B | M.KEYS_M1D | M.KEYS_M1F):
         return
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
@@ -751,9 +816,9 @@ def fixes(arm, mb, T, rep):
         log(f"flips after {step}: {len(bad)}")
     for key, fn in (("arm_thicken", lambda c: fix_arms(arm, mb, c, rep)), ("seat", lambda c: fix_seat(mb, c, rep)),
                     ("smooth_rest", lambda c: fix_smooth_rest(mb, c, rep)), ("notch", lambda c: fix_notch(mb, c, rep)),
-                    ("bust_round", lambda c: fix_bust_round(mb, c, rep))):
+                    ("bust_round", lambda c: fix_bust_round(mb, c, rep)), ("relax", lambda c: fix_relax(mb, c, rep))):
         if key in T:
-            fn(T[key])
+            fn(dict(T[key], seam_band=T["seam_band"]) if "seam_band" in T else T[key])
             flips(key)
     W, names = read_weights(mb)
     if "fingers" in T:

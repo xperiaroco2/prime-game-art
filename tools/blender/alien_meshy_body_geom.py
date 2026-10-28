@@ -41,12 +41,15 @@ SHAPE_KEYS_M1D = {"thumb_thick"}
 # also `rounds` (measure, scale, smooth, repeated: the widths reached despite the smoothing); the older files have none
 ARM_KEYS_M1E = {"disp_smooth", "rounds"}
 SMOOTH_KEYS_M1E = {"disp_smooth"}
+# M1f (art #196, the axolotl's last leftovers): `seam_band` (the steps' smoothed moves held off the seam), `relax`
+# (the vertex spacing relaxed in spheres after the shape steps); the older files have none
+KEYS_M1F = {"seam_band", "relax"}
 
 
 def load(path: str | Path) -> dict:
     """A Meshy body target file (alien_meshy_targets/*.toml), its keys checked."""
     d = tomllib.loads(Path(path).read_text(encoding="utf-8"))
-    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C - KEYS_M2 - KEYS_M2B - KEYS_M1D
+    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C - KEYS_M2 - KEYS_M2B - KEYS_M1D - KEYS_M1F
     if bad:
         raise ValueError(f"unknown keys {sorted(bad)}")
     missing = KEYS - set(d)

@@ -131,7 +131,7 @@ class Targets(unittest.TestCase):
     def test_m1_has_no_fix(self):
         self.assertFalse(set(M.load(M.TARGETS / "axolotl_m1.toml")) & M.KEYS_M1B)
         src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
-        self.assertIn("if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B | M.KEYS_M1D):", src)
+        self.assertIn("if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B | M.KEYS_M1D | M.KEYS_M1F):", src)
         self.assertIn('ap.add_argument("--from-body", default=""', src)
 
 
@@ -399,6 +399,18 @@ class M1c(unittest.TestCase):
             t = M.load(M.TARGETS / n)
             self.assertFalse(set(t.get("arm_thicken", {})) & M.ARM_KEYS_M1E, n)
             self.assertFalse(set(t.get("smooth_rest", {})) & M.SMOOTH_KEYS_M1E, n)
+
+    def test_older_files_have_no_m1f(self):
+        for p in sorted(M.TARGETS.glob("*.toml")):
+            if p.name != "axolotl_m1f.toml":
+                self.assertFalse(set(M.load(p)) & M.KEYS_M1F, p.name)
+
+    def test_seam_band_and_late_steps(self):
+        src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
+        self.assertIn("w[co0[:, 2] > co0[ring, 2].min() - band] = 0.0", src)  # the band pinned at its own move
+        self.assertEqual(src.count('cfg.get("seam_band", 0.0))'), 2)  # both disp_smooth steps take it
+        i = src.index('("bust_round", lambda c: fix_bust_round(mb, c, rep))')
+        self.assertLess(i, src.index('("relax", lambda c: fix_relax(mb, c, rep))'))  # relaxed after the shapes
 
     def test_fixes_report_flips_and_smooth_moves(self):
         src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
