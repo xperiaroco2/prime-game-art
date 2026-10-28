@@ -8,26 +8,24 @@ Blender from its drawing, tools/blender/charger_dims.toml (centimetres; charger_
 Blender axes: X = u (across, + to the right as you face it), -Y = d (out of the wall, glTF +Z), Z = h; the origin
 on the floor at the wall's face under the crystal's axis (the spot's `at`).
 
-- The squat stepped dome, round and clear of the wall: the lower tier (a flared ring of bronze blocks: the underside
-  slant, the widest straight band, the top bevel), the upper tier (Ø 82, its bevel to the deck), the deck's inner
-  course of blocks; every block a profile swept straight between two angles (flat chord faces), the joints thin dark
-  seams onto the graphite core. Each block has two bevels: a broad chamfer (UV0 u 0.45) and a small bright bevel on
-  its folds (UV0 u 1), which the metal brightens (the sheet's worn edges).
-- The front block: the button's trapezoid facet (a graphite plate behind the block's chords, the bezel and the lens)
-  between a strip under it, a strip over it and a wedge either side, every face on the block's chords (flush with its
-  neighbours). The amber and cyan slots in graphite bezels on the blocks, thick enough to read at 3 m.
+- The faceted pedestal set into the lens room's alcove (lens room C, 2026-10-28; it replaced the stepped dome on
+  four legs): in plan the back on the alcove's back panel (u +-44 at d 10), the sides to d 46, chamfers to the front
+  face (u +-22 at d 68); a graphite plinth (h 0..10) and a bronze deck slab (h 86..99.1) overhanging it, the body
+  between them five bronze plates in two courses on a graphite core (the seams show it). Each plate has two bevels:
+  a broad chamfer (UV0 u 0.45) and a small bright bevel on its folds (UV0 u 1), which the metal brightens. The button
+  (bezel and lens) on the front plate at h 75.9; cyan strips up the chamfers, an amber pair on the front, amber along
+  the sides under the slab, in graphite bezels.
 - The deck: the collar of the slot, the cyan slot ring, the fixed outer prongs on the u axis (the hero: an (r, h)
   claw profile swept round the axis: a root block, a column that bows out, a chunky cap hooking in, graphite joint
   plates; a cyan and an amber strip up the front face, amber up the inner face).
-- Four legs like the ship's landing legs, angled out: a bronze upper strut with an amber slot, a graphite gland, the
-  dark steel piston rod (lengthened 27 cm), a bronze ankle sleeve, a faceted pad with two amber bars on three faces.
 - The leaves (own objects, pivot on their axes, children of the body): `carrier` (the cup under the crystal with
   the pit for its point; rises 6 cm and spins; the empty `crystal_anchor` on it where the crystal's tip sits),
   `track_ring` (spins, carries the inner prong pair with their electrodes), `button` (presses 1 cm in toward -d, into the charger).
-  Convex colliders `*-convcolonly`: the base, the outer prongs, each leg; the inner prongs (on the ring).
+  Convex colliders `*-convcolonly`: the pedestal, the outer prongs; the inner prongs (on the ring).
 
 Writes into --out: crystal_charger.glb (plain-PBR fallback), crystal_charger.blend (the look materials), build.json
-(triangles, size, pivots, the anchor, colliders, the clearance checks: the wall's facets, the ring's full turn,
+(triangles, size, pivots, the anchor, colliders, the clearance checks: the alcove's back panel and cheeks, the
+reach, the ring's full turn,
 the carrier's rise), features.json (the blocks' edges for the drawing). With --render: the review renders into that folder
 (hero, the states, the orthographic views at PX_PER_CM, the close-ups of the edges and seams).
 """
@@ -80,9 +78,17 @@ def seam_deg(r: float) -> float:
 
 
 def wall_dist(u: float, d: float) -> float:
-    """A point's distance (cm) in front of the lens room's wall: its two facets fold toward the room by FOLD either
-    side of the spot's vertex (u 0, d 0)."""
-    return -abs(u) * math.sin(FOLD) + d * math.cos(FOLD)
+    """A point's distance (cm) in front of the alcove's back panel (lens room C: a flat chord at d FR["back"] across
+    the spot's vertex, which hides the wall's fold there)."""
+    return d - FR["back"]
+
+
+def cheek_dist(u: float, d: float) -> float:
+    """A point's distance (cm) inside the alcove's opening across u: its cheeks splay from FR["open"][0] at the back
+    panel to [1] at the jambs' face (d [2])."""
+    b, f, face = FR["open"]
+    t = min(max((d - FR["back"]) / (face - FR["back"]), 0.0), 1.0)
+    return b + (f - b) * t - abs(u)
 
 
 # --- mesh helpers --------------------------------------------------------------------------------------------------
@@ -186,167 +192,124 @@ def disc(bm, prof: list, centre: Vector, axis: Vector, sides: int, closed: bool 
     ring_faces(bm, rings, closed=closed, caps=not closed)
 
 
-# --- the base ------------------------------------------------------------------------------------------------------
-# the tiers' outer profiles, bottom to top [(r, h)]
-LOWER = [(BA["r_bottom"], BA["bottom"]), (BA["r_widest"], BA["widest"]), (BA["r_widest"], BA["band_top"]),
-         (BA["r_lower_top"], BA["lower_top"])]
-UPPER = [(BA["r_upper"], BA["lower_top"]), (BA["r_upper"], BA["upper_band"]), (BA["r_deck_edge"], BA["deck"])]
-R_LOWER_IN = 37.0                # the lower tier's blocks reach in to here (the core behind them)
-R_CORE = 37.6                    # the graphite core seen in the lower tier's seams and under it
-R_WELL = 24.0                    # charger-3: the well's graphite wall behind the deck ring's inner chords (r 24.2)
+# --- the pedestal --------------------------------------------------------------------------------------------------
+# lens room C (art#263, 2026-10-28): the faceted pedestal set into the alcove, from the lens room's drawing (C.ped).
+# Its plan outline (u, d), counter-clockwise from above: the back on the alcove's back panel, the +u side, the +u
+# chamfer, the front, the -u chamfer, the -u side; LIPS the plinth's and the deck slab's overhang per edge (the back
+# none).
+OUTLINE = [(-BA["side"], FR["back"]), (BA["side"], FR["back"]), (BA["side"], BA["chamfer_d"]),
+           (BA["front"], BA["front_d"]), (-BA["front"], BA["front_d"]), (-BA["side"], BA["chamfer_d"])]
+LIPS = [0.0, BA["lip"][0], BA["lip"][1], BA["lip"][2], BA["lip"][1], BA["lip"][0]]
 
 
-def r_of(prof: list, h: float) -> float:
-    """A profile's radius at h (linear between its points)."""
-    for (r0, h0), (r1, h1) in zip(prof, prof[1:]):
-        if h0 <= h <= h1 and h1 > h0:
-            return r0 + (r1 - r0) * (h - h0) / (h1 - h0)
-    return prof[-1][0] if h > prof[-1][1] else prof[0][0]
-
-
-def blocks(edges: list) -> list:
-    """[(a0, a1)] round the axis from a tier's block edges (deg; the first the front block's half angle)."""
-    out = [(-edges[0], edges[0])]
-    for a0, a1 in zip(edges, edges[1:]):
-        out += [(a0, a1), (-a1, -a0)]
+def offset(poly: list, offs: list) -> list:
+    """A convex counter-clockwise (u, d) polygon with edge i (poly[i] -> poly[i+1]) moved offs[i] outward."""
+    lines = []
+    for i, (a, b) in enumerate(zip(poly, poly[1:] + poly[:1])):
+        eu, ed = b[0] - a[0], b[1] - a[1]
+        n = math.hypot(eu, ed)
+        nu, nd = ed / n, -eu / n
+        lines.append(((a[0] + nu * offs[i], a[1] + nd * offs[i]), (eu, ed)))
+    out = []
+    for i in range(len(lines)):
+        (p, e), (q, f) = lines[i - 1], lines[i]
+        den = e[0] * f[1] - e[1] * f[0]
+        t = ((q[0] - p[0]) * f[1] - (q[1] - p[1]) * f[0]) / den
+        out.append((p[0] + e[0] * t, p[1] + e[1] * t))
     return out
 
 
-def tier_seam(prof: list) -> float:
-    return seam_deg(max(r for r, _ in prof))
+def block(bm, outline: list, h0: float, h1: float) -> list:
+    """A vertical prism of a (u, d) outline from h0 to h1."""
+    return loft(bm, [P(u, d, h0) for u, d in outline], [P(u, d, h1) for u, d in outline])
 
 
-def tier(bm, edges: list, prof: list, r_in: float, skip_front: bool) -> None:
-    """A tier: a ring of blocks, each the profile (closed at r_in) swept straight between two angles (chords)."""
-    full = [(r_in, prof[0][1])] + prof + [(r_in, prof[-1][1])]
-    g = tier_seam(prof)
-    for a0, a1 in blocks(edges):
-        if skip_front and a0 == -edges[0]:
-            continue
-        sector(bm, a0 + g, a1 - g, full)
+CORE = offset(OUTLINE, [0.0] + [-(BA["plate"] - 0.1)] * 5)  # the graphite core, just inside the plates
+LIPPED = offset(OUTLINE, LIPS)
 
 
 def build_core(bm) -> None:
-    """The graphite core: the underside, the drum seen in the seams, the deck under its rings, the track ring's
-    groove, the slot's bore."""
+    """The graphite core: the pedestal's body behind its plates (seen in the seams), the well's floor with the track
+    ring's groove and the slot's bore."""
     s, rg = DIMS["slot"], DIMS["ring"]
-    deck, well = BA["deck"] - 0.3, BA["well"] - 0.3
+    block(bm, CORE, BA["plinth"] - 0.2, BA["body"] + 0.2)
+    well = BA["well"] - 0.3
     g0, g1 = rg["r0"] - rg["groove"], rg["r1"] + rg["groove"]
     floor = BA["well"] - rg["h"] - rg["groove"]
-    prof = [(2.0, BA["bottom"] + 0.4), (R_CORE, BA["bottom"] + 0.4), (R_CORE, BA["lower_top"] - 0.4),
-            (BA["r_inner"] + 0.6, BA["lower_top"] + 0.4), (BA["r_inner"] + 0.6, deck), (R_WELL, deck),
-            (R_WELL, well), (g1, well), (g1, floor),
-            (g0, floor), (g0, well), (s["collar"][0], well), (s["collar"][0], s["bore_bottom"]),
-            (2.0, s["bore_bottom"])]
+    r_wall = BA["well_r"] - 0.2
+    prof = [(2.0, BA["body"]), (r_wall, BA["body"]), (r_wall, well), (g1, well), (g1, floor), (g0, floor), (g0, well),
+            (s["collar"][0], well), (s["collar"][0], s["bore_bottom"]), (2.0, s["bore_bottom"])]
     lathe(bm, prof, 96)
 
 
-def build_lower(bm) -> None:
-    tier(bm, BA["lower_edges"], LOWER, R_LOWER_IN, True)
+def build_plinth(bm) -> None:
+    block(bm, LIPPED, 0.0, BA["plinth"])
 
 
-def build_upper(bm) -> None:
-    tier(bm, BA["upper_edges"], UPPER, BA["r_inner"], False)
-
-
-def build_deck_ring(bm) -> None:
-    """The deck's inner course of blocks round the track ring, flush with the upper tier's top; their inner chords are
-    the well's wall down to its floor (charger-3)."""
-    r0, r1 = BA["deck_ring"]
-    n, top, bot = 16, BA["deck"], BA["well"] - 0.3
-    g = seam_deg(r1)
-    for k in range(n):
-        a0 = 11.25 + 22.5 * k
-        sector(bm, a0 + g, a0 + 22.5 - g, [(r0 / math.cos(math.radians(11.25)), bot), (r1, bot),
-                                           (r1, top), (r0 / math.cos(math.radians(11.25)), top)])
-
-
-# --- the front block: the button's trapezoid facet -----------------------------------------------------------------
-def clip_band(poly: list, h0: float, h1: float) -> list:
-    """The part of a (u, h) polygon between h0 and h1 (Sutherland-Hodgman), without repeated points."""
-    def clip(pts: list, keep, cut: float) -> list:
-        out = []
-        for i, p in enumerate(pts):
-            q = pts[i - 1]
-            if keep(p) != keep(q):
-                t = (cut - q[1]) / (p[1] - q[1])
-                out.append((q[0] + t * (p[0] - q[0]), cut))
-            if keep(p):
-                out.append(p)
-        return out
-    pts = clip(poly, lambda p: p[1] >= h0 - 1e-9, h0)
-    pts = clip(pts, lambda p: p[1] <= h1 + 1e-9, h1) if pts else []
-    out = []
-    for p in pts:
-        if not out or (abs(p[0] - out[-1][0]) > 1e-6 or abs(p[1] - out[-1][1]) > 1e-6):
-            out.append(p)
-    if len(out) > 1 and abs(out[0][0] - out[-1][0]) < 1e-6 and abs(out[0][1] - out[-1][1]) < 1e-6:
-        out.pop()
+def plate_quads() -> list:
+    """The five bronze plates round the core (0 the +u side, 1 the +u chamfer, 2 the front, 3 the -u chamfer, 4 the
+    -u side): per plate its outer edge (a, b), its inner edge (a, b), trimmed by half a seam at each end (the seams
+    show the core), and its outward normal (u, d)."""
+    inner = offset(OUTLINE, [0.0] + [-BA["plate"]] * 5)
+    out, s = [], SEAM * 0.5
+    for i in range(1, 6):
+        a, b = OUTLINE[i], OUTLINE[(i + 1) % 6]
+        ia, ib = inner[i], inner[(i + 1) % 6]
+        eu, ed = b[0] - a[0], b[1] - a[1]
+        n = math.hypot(eu, ed)
+        tu, td = eu / n, ed / n
+        sa = 0.0 if i == 1 else s   # the side plates run to the back panel
+        sb = 0.0 if i == 5 else s
+        out.append(((a[0] + tu * sa, a[1] + td * sa), (b[0] - tu * sb, b[1] - td * sb),
+                    (ia[0] + tu * sa, ia[1] + td * sa), (ib[0] - tu * sb, ib[1] - td * sb), (td, -tu)))
     return out
 
 
-FRONT_HALF = DIMS["panel"]["half_deg"] - tier_seam(LOWER)  # the front block's chord ends (deg)
-
-
-def chord_d(h: float, inset: float = 0.0) -> float:
-    """The front block's chord face at h: its d (it is flat across u)."""
-    return AX + r_of(LOWER, h) * math.cos(math.radians(FRONT_HALF)) - inset
-
-
-def chord_w(h: float) -> float:
-    return r_of(LOWER, h) * math.sin(math.radians(FRONT_HALF))
-
-
-def chord_piece(bm, poly: list, inset: float = 0.0, depth: float = 9.0) -> None:
-    """A piece of the front block whose outline poly [(u, h)] lies on its chord faces, `inset` cm behind them: one
-    planar prism per band of the lower tier's profile (the faces fold where the profile does)."""
-    for (_r0, h0), (_r1, h1) in zip(LOWER, LOWER[1:]):
-        part = clip_band(poly, h0, h1)
-        if len(part) < 3:
-            continue
-        loft(bm, [P(u, chord_d(h, inset) - depth, h) for u, h in part], [P(u, chord_d(h, inset), h) for u, h in part])
-
-
-def trap_x(h: float) -> float:
-    (tw, th), (bw, bh) = DIMS["panel"]["top"], DIMS["panel"]["bottom"]
-    return bw + (tw - bw) * (h - bh) / (th - bh)
-
-
-def build_front_block(bm) -> None:
-    """The lower tier's front block round the trapezoid facet: a strip under it, a strip over it, a wedge either side,
-    seams between them; every face on the block's chords (flush with its neighbours' corners, b4's panels jutted)."""
-    (_tw, th), (_bw, bh) = DIMS["panel"]["top"], DIMS["panel"]["bottom"]
+def build_plates(bm) -> None:
+    """The body's plates in two courses (h plinth..band, band..body), the seams between them onto the core."""
     s = SEAM * 0.5
-    breaks = [h for _r, h in LOWER]
-
-    def w(h: float) -> float:
-        return chord_w(h) - 0.01
-
-    def strip(h0: float, h1: float) -> list:
-        hs = sorted({h0, h1} | {h for h in breaks if h0 < h < h1})
-        return [(w(h), h) for h in hs] + [(-w(h), h) for h in reversed(hs)]
-
-    chord_piece(bm, strip(BA["bottom"], bh - s))
-    chord_piece(bm, strip(th + s, BA["lower_top"]))
-    hs = sorted({bh + s, th - s} | {h for h in breaks if bh + s < h < th - s})
-    for sx in (-1.0, 1.0):
-        chord_piece(bm, [(sx * w(h), h) for h in hs] + [(sx * (trap_x(h) + s), h) for h in reversed(hs)])
+    for a, b, ia, ib, _n in plate_quads():
+        for h0, h1 in ((BA["plinth"], BA["band"] - s), (BA["band"] + s, BA["body"])):
+            block(bm, [ia, ib, b, a], h0, h1)
 
 
-def build_facet(bm) -> None:
-    """The plate at the bottom of the trapezoid facet (bronze), `recess` behind the chords."""
-    (tw, th), (bw, bh) = DIMS["panel"]["top"], DIMS["panel"]["bottom"]
-    m = 0.8
-    chord_piece(bm, [(-bw - m, bh - m), (bw + m, bh - m), (tw + m, th + m), (-tw - m, th + m)],
-                inset=DIMS["panel"]["recess"], depth=4.0)
+def build_deck(bm) -> None:
+    """The deck slab (h body..deck) over the lipped outline, its well (r well_r) round the slot down to the well's
+    floor: the outline and the well's circle sampled at the same angles round the axis (the outline's corners
+    included), so its top is quads between them."""
+    cu = [(u, d - AX) for u, d in LIPPED]
+    corners = {round(math.degrees(math.atan2(u, d)), 4) for u, d in cu}
+    angs = sorted(corners | {round(-180.0 + 3.75 * k, 4) for k in range(96)})
+    angs = [a for a in angs if a in corners or all(abs(a - c) > 0.6 for c in corners)]
+
+    def hit(a: float) -> tuple:
+        du, dd = math.sin(math.radians(a)), math.cos(math.radians(a))
+        best = None
+        for p, q in zip(cu, cu[1:] + cu[:1]):
+            eu, ed = q[0] - p[0], q[1] - p[1]
+            den = du * ed - dd * eu
+            if abs(den) < 1e-12:
+                continue
+            t = (p[0] * ed - p[1] * eu) / den
+            s = (p[0] * dd - p[1] * du) / den
+            if t > 0 and -1e-9 <= s <= 1 + 1e-9 and (best is None or t < best):
+                best = t
+        return du * best, AX + dd * best
+
+    outer = [hit(a) for a in angs]
+    rw = BA["well_r"]
+    ring = [(rw * math.sin(math.radians(a)), AX + rw * math.cos(math.radians(a))) for a in angs]
+    rings = [[bm.verts.new(P(u, d, h)) for u, d in pts] for pts, h in
+             ((outer, BA["body"]), (outer, BA["deck"]), (ring, BA["deck"]), (ring, BA["well"] - 0.3))]
+    ring_faces(bm, rings, closed=True)
 
 
-BUTTON_PLATE = chord_d(DIMS["button"]["h"], DIMS["panel"]["recess"])
-BUTTON_D = BUTTON_PLATE + 1.8    # the lens's face (the bezel's lip at +1.4; the chord at +2.2)
+BUTTON_PLATE = BA["front_d"]     # the bezel sits on the front plate's face
+BUTTON_D = BUTTON_PLATE + 1.8    # the lens's face (the bezel's lip at +1.4): 69.95 with its dome, inside the reach
 
 
 def build_button_seat(bm) -> None:
-    """The button's bezel ring on the facet's plate (graphite, a bronze-bright lip)."""
+    """The button's bezel ring on the front plate (graphite, a bronze-bright lip)."""
     b = DIMS["button"]
     c = P(0.0, BUTTON_PLATE, b["h"])
     rr, rl = b["ring"] / 2, b["lens"] / 2 + 0.25
@@ -362,48 +325,25 @@ def build_button(bm) -> None:
          Vector((0.0, -1.0, 0.0)), 32)
 
 
-# --- the lights on the tiers ---------------------------------------------------------------------------------------
-def block_frame(edges: list, prof: list, deg: tuple, h: float) -> tuple:
-    """(centre, normal, up, along, length cm) of a light between two angles at height h on the block of a tier that
-    holds them (the block's chord face there)."""
-    a0, a1 = next((a, b) for a, b in zip(edges, edges[1:]) if a <= deg[0] and deg[1] <= b)
-    g = tier_seam(prof)
-
-    def chord(hh: float) -> tuple:
-        p0, p1 = polar(a0 + g, r_of(prof, hh), hh), polar(a1 - g, r_of(prof, hh), hh)
-        return p0, (p1 - p0).normalized()
-
-    p0, along = chord(h)
-    ends = [p0 + along * (polar(a, r_of(prof, h), h) - p0).dot(along) for a in deg]
-    lo, _ = chord(h - 0.4)
-    hi, _ = chord(h + 0.4)
-    up = hi - lo
-    up = (up - along * up.dot(along)).normalized()
-    normal = along.cross(up).normalized()
-    if normal.dot(polar(0.5 * (a0 + a1), 1.0, 0.0) - polar(0.0, 0.0, 0.0)) < 0:
-        normal = -normal
-    return (ends[0] + ends[1]) * 0.5, normal, up, along, (ends[1] - ends[0]).length / CM
-
-
-def build_tier_lights(bm) -> None:
-    """The cyan and amber slots on the tiers, mirrored across u 0: graphite bezels, the light inset (slot 3 amber,
-    4 cyan)."""
+def build_pedestal_lights(bm) -> None:
+    """The strips on the plates: cyan up each chamfer's middle, an amber pair on the front's lower half, amber along
+    each side under the deck slab (graphite bezels, the light inset; slot 3 amber, 4 cyan)."""
     li = DIMS["lights"]
-    jobs = [(BA["lower_edges"], LOWER, x, 4, False) for x in li["cyan_lower"]]
-    jobs += [(BA["lower_edges"], LOWER, x, 3, True) for x in li["amber_lower"]]
-    jobs += [(BA["upper_edges"], UPPER, x, 3, False) for x in li["amber_upper"]]
-    hd = BA["upper_band"] + 0.5 * (BA["deck"] - BA["upper_band"])
-    jobs += [(BA["upper_edges"], UPPER, {"deg": d, "h": [hd - 0.7, hd + 0.7]}, 3, False) for d in li["amber_deck"]]
-    for edges, prof, spec, light, vertical in jobs:
-        h0, h1 = spec["h"]
-        c, n, up, along, length = block_frame(edges, prof, tuple(spec["deg"]), (h0 + h1) / 2)
-        for sx in (1.0, -1.0):
-            def m(v: Vector) -> Vector:
-                return Vector((sx * v.x, v.y, v.z))
-            if vertical:
-                light_box(bm, m(c), m(n), m(up), h1 - h0, length, light)
-            else:
-                light_box(bm, m(c), m(n), m(along), length, h1 - h0, light)
+    up = Vector((0.0, 0.0, 1.0))
+    quads = plate_quads()
+    for k in (1, 3):  # the chamfers
+        a, b, _ia, _ib, (nu, nd) = quads[k]
+        h0, h1 = li["chamfer_cyan"]
+        light_box(bm, P((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (h0 + h1) / 2), Vector((nu, -nd, 0.0)), up, h1 - h0,
+                  li["width"], 4)
+    u, (h0, h1) = li["front_amber"]
+    for sx in (-1.0, 1.0):
+        light_box(bm, P(sx * u, BA["front_d"], (h0 + h1) / 2), Vector((0.0, -1.0, 0.0)), up, h1 - h0, li["width"], 3)
+    (d0, d1), h = li["side_amber"]
+    for k, sx in ((0, 1.0), (4, -1.0)):
+        _a, _b, _ia, _ib, (nu, nd) = quads[k]
+        light_box(bm, P(sx * BA["side"], (d0 + d1) / 2, h), Vector((nu, -nd, 0.0)), Vector((0.0, -1.0, 0.0)),
+                  d1 - d0, li["width"], 3)
 
 
 # --- the slot ------------------------------------------------------------------------------------------------------
@@ -553,124 +493,6 @@ def build_electrodes(bm) -> None:
             res = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=er * CM)
             for v in res["verts"]:
                 v.co += c
-
-
-# --- the legs ------------------------------------------------------------------------------------------------------
-LG = DIMS["legs"]
-LEG_ANGLES = [a * sx for a in LG["angles"] for sx in (-1.0, 1.0)]
-
-
-def pad_s(a: float) -> float:
-    """A leg's pad centre from the crystal's axis: the front pair's, or the back pair's (tucked off the wall)."""
-    return LG["pad_s"][0] if abs(a) < 90.0 else LG["pad_s"][1]
-
-
-def leg_s(a: float, h: float) -> float:
-    """A leg's axis: its distance from the crystal's axis at height h (the hip down to the pad's centre)."""
-    (s0, h0), s1, h1 = LG["hip"], pad_s(a), LG["ankle_h"]
-    return s1 + (s0 - s1) * (h - h1) / (h0 - h1)
-
-
-def leg_basis(a: float) -> tuple:
-    """(radial, tangential, axis up the leg, across-the-leg normal toward the outside) for a leg at a deg."""
-    ra = math.radians(a)
-    radial = Vector((math.sin(ra), -math.cos(ra), 0.0))
-    tang = Vector((math.cos(ra), math.sin(ra), 0.0))
-    (s0, h0), s1, h1 = LG["hip"], pad_s(a), LG["ankle_h"]
-    axis = (radial * (s0 - s1) + Vector((0.0, 0.0, h0 - h1))).normalized()
-    out = tang.cross(axis).normalized()
-    if out.dot(radial) < 0:
-        out = -out
-    return radial, tang, axis, out
-
-
-def octagon(centre: Vector, x: Vector, y: Vector, w: float, t: float) -> list:
-    """An octagon (a w x t rectangle with chamfered corners, cm) round centre in the plane of x, y."""
-    c = 0.24 * min(w, t)
-    pts = [(w / 2, t / 2 - c), (w / 2 - c, t / 2), (-w / 2 + c, t / 2), (-w / 2, t / 2 - c), (-w / 2, -t / 2 + c),
-           (-w / 2 + c, -t / 2), (w / 2 - c, -t / 2), (w / 2, -t / 2 + c)]
-    return [centre + (x * px + y * py) * CM for px, py in pts]
-
-
-def leg_at(a: float, h: float) -> Vector:
-    return polar(a, leg_s(a, h), h)
-
-
-def leg_prism(bm, a: float, h0: float, h1: float, size0: list, size1: list) -> None:
-    """An octagonal prism along the leg's axis from h0 to h1, cut square to the axis."""
-    _r, tang, axis, out = leg_basis(a)
-    p0, p1 = leg_at(a, h0), leg_at(a, h1)
-    loft(bm, octagon(p0, tang, out, *size0), octagon(p1, tang, out, *size1))
-
-
-def build_struts(bm) -> None:
-    for a in LEG_ANGLES:
-        (w0, t0), (w1, t1) = LG["strut_size"]
-        leg_prism(bm, a, LG["strut"][0], LG["strut"][1], [w0, t0], [w1, t1])
-        (w0, t0), (w1, t1) = LG["sleeve_size"]
-        leg_prism(bm, a, LG["sleeve"][0], LG["sleeve"][1], [w0, t0], [w1, t1])
-
-
-def build_glands(bm) -> None:
-    """The graphite glands where the rod leaves the strut and enters the ankle's sleeve, and the hip brackets."""
-    for a in LEG_ANGLES:
-        (w0, t0), _ = LG["strut_size"]
-        g0, g1 = LG["gland"]
-        leg_prism(bm, a, g0, g1, [w0 + 1.0, t0 + 1.0], [w0 + 1.0, t0 + 1.0])
-        (_w, _t), (w1, t1) = LG["sleeve_size"]
-        h = LG["sleeve"][1]
-        leg_prism(bm, a, h - 0.6, h + 1.0, [w1 + 0.9, t1 + 0.9], [w1 + 0.9, t1 + 0.9])
-        radial, tang, _axis, _out = leg_basis(a)
-        basis = Matrix((tang, radial, Vector((0.0, 0.0, 1.0)))).transposed()
-        box(bm, polar(a, LG["hip"][0] + 0.5, BA["bottom"] - 1.4), (17.0 * CM, 15.0 * CM, 3.4 * CM), basis)
-
-
-def build_rods(bm) -> None:
-    for a in LEG_ANGLES:
-        _r, _t, axis, _o = leg_basis(a)
-        p0, p1 = leg_at(a, LG["rod"][0]), leg_at(a, LG["rod"][1])
-        length = (p1 - p0).length / CM
-        disc(bm, [(LG["rod_r"], 0.0), (LG["rod_r"], length)], p0, axis, 16)
-
-
-def pad_square(a: float, w: float, h: float) -> list:
-    radial, tang, _axis, _out = leg_basis(a)
-    c = polar(a, pad_s(a), h)
-    return [c + (radial * x + tang * y) * (w / 2) * CM for x, y in ((1, -1), (1, 1), (-1, 1), (-1, -1))]
-
-
-def build_pads(bm) -> None:
-    """The feet: a square plinth, then a faceted taper to the top the sleeve stands on."""
-    foot, top, plinth, top_h = LG["pad"]
-    for a in LEG_ANGLES:
-        rings = [[bm.verts.new(p) for p in pad_square(a, w, h)]
-                 for w, h in ((foot, 0.0), (foot, plinth), (top, top_h), (top - 1.6, top_h + 0.6))]
-        ring_faces(bm, rings)
-
-
-def build_leg_lights(bm) -> None:
-    """The amber slot on each strut's outer face; two amber bars on each pad's outer and side faces."""
-    foot, top, plinth, top_h = LG["pad"]
-    h0, h1, w = LG["strut_light"]
-    (_w0, t0), (_w1, t1) = LG["strut_size"]
-    s0, s1 = LG["strut"]
-    for a in LEG_ANGLES:
-        radial, tang, axis, out = leg_basis(a)
-
-        def t_at(h: float) -> float:
-            return t0 + (t1 - t0) * (h - s0) / (s1 - s0)
-        segment_light(bm, leg_at(a, h0) + out * (t_at(h0) / 2) * CM, leg_at(a, h1) + out * (t_at(h1) / 2) * CM,
-                      out, w)
-        c = polar(a, pad_s(a), 0.0)
-        rise, run = top_h - plinth, (foot - top) / 2
-        for side in (radial, tang, -tang):
-            normal = (side * rise + Vector((0.0, 0.0, run))).normalized()
-            along = Vector((0.0, 0.0, 1.0)).cross(side).normalized()
-            for hb, bw in LG["pad_bars"]:
-                off = foot / 2 - run * (hb - plinth) / rise
-                half_w = off - 1.6
-                centre = c + side * off * CM + Vector((0.0, 0.0, hb * CM))
-                light_box(bm, centre, normal, along, 2 * half_w - 1.2, bw, 3, proud=0.5, inset=0.3)
 
 
 # --- parts, materials, assembly ------------------------------------------------------------------------------------
@@ -884,21 +706,14 @@ def hull_object(name: str, points: list, parent, mesh_name: str | None = None) -
 
 
 def colliders(body, ring) -> list:
-    """Convex colliders: the base (both tiers to the deck), each outer prong, each leg (strut to pad); on the ring,
+    """Convex colliders: the pedestal (the plinth's outline to the deck), each outer prong; on the ring,
     each inner prong. Godot's importer turns `-convcolonly` nodes into static bodies."""
     out = []
-    pts = [polar(5.0 * k, r, h) for k in range(72) for r, h in LOWER + UPPER]
+    pts = [P(u, d, h) for u, d in LIPPED for h in (0.0, BA["deck"])]
     out.append(hull_object("crystal_charger_col0-convcolonly", pts, body))
     for i, a_mid in enumerate(SIDES):
         pts = [polar(a_mid + sx * half, r, h) for prof, half, _ in outer_pieces() for r, h in prof for sx in (-1, 1)]
         out.append(hull_object(f"crystal_charger_col{1 + i}-convcolonly", pts, body))
-    foot, top, _plinth, top_h = LG["pad"]
-    for i, a in enumerate(LEG_ANGLES):
-        _r, tang, _axis, out_n = leg_basis(a)
-        (w1, t1) = LG["strut_size"][1]
-        pts = octagon(leg_at(a, BA["bottom"]), tang, out_n, w1, t1) + pad_square(a, foot, 0.0) + \
-            pad_square(a, top, top_h)
-        out.append(hull_object(f"crystal_charger_col{3 + i}-convcolonly", pts, body))
     th = DIMS["inner"]["half_deg"]
     for i, a_mid in enumerate(SIDES):
         pts = [polar(a_mid + sx * th, r, h) for prof in inner_pieces() for r, h in prof for sx in (-1, 1)]
@@ -912,23 +727,16 @@ def build(crystal: str | None) -> dict:
     build_materials()
     body_parts = [
         part("core", build_core, "charger_graphite", bevel=False),
-        part("lower", build_lower, "charger_bronze"),
-        part("front_block", build_front_block, "charger_bronze"),
-        part("facet", build_facet, "charger_bronze", small=True),  # b5: graphite read as a black hole in Godot
+        part("plinth", build_plinth, "charger_graphite"),
+        part("plates", build_plates, "charger_bronze"),
+        part("deck", build_deck, "charger_bronze"),
         part("button_seat", build_button_seat, "charger_graphite", small=True),
-        part("upper", build_upper, "charger_bronze"),
-        part("deck_ring", build_deck_ring, "charger_bronze", small=True),
-        part("tier_lights", build_tier_lights, "charger_graphite", bevel=False, drawn=False),
+        part("pedestal_lights", build_pedestal_lights, "charger_graphite", bevel=False, drawn=False),
         part("collar", build_collar, "charger_bronze", small=True),
         part("slot_glow", build_slot_glow, "charger_cyan", bevel=False, drawn=False),
         part("outer_prongs", build_outer_prongs, "charger_bronze"),
         part("prong_joints", build_prong_joints, "charger_graphite", small=True, drawn=False),
         part("outer_lights", build_outer_lights, "charger_graphite", bevel=False, drawn=False),
-        part("struts", build_struts, "charger_bronze"),
-        part("glands", build_glands, "charger_graphite", small=True),
-        part("rods", build_rods, "charger_steel", bevel=False),
-        part("pads", build_pads, "charger_bronze"),
-        part("leg_lights", build_leg_lights, "charger_graphite", bevel=False, drawn=False),
     ]
     body = join("crystal_charger", body_parts, Vector((0.0, 0.0, 0.0)))
     c = DIMS["carrier"]
@@ -996,6 +804,8 @@ def checks(o: dict) -> dict:
     def wall_min(obs) -> float:
         return min(wall_dist(p.x / CM, -p.y / CM) for ob in obs for p in world_verts(ob))
     out["wall_min_cm_body"] = round(wall_min([body]), 3)
+    out["cheek_min_cm_body"] = round(min(cheek_dist(p.x / CM, -p.y / CM) for p in world_verts(body)), 3)
+    out["reach_cm"] = round(max(-p.y / CM for ob in (body, ring, carrier, button) for p in world_verts(ob)), 3)
     turn = []
     body_tree = bvh([body])
     for k in range(0, 360, 5):
@@ -1109,23 +919,22 @@ VIEWS = {
     "hero_idle": (-14.0, 12.0, (0.0, AX, 70.0), 196.0, "idle"),
     "charging": (-30.0, 12.0, (0.0, AX, 114.0), 72.0, "charging"),
     "side_q": (-70.0, 14.0, (0.0, AX, 70.0), 196.0, "idle"),
-    "cu_button": (-20.0, 6.0, (0.0, AX + 46.0, 75.9), 30.0, "idle"),
-    "cu_facet": (18.0, 4.0, (0.0, AX + 44.0, 73.0), 46.0, "idle"),
-    "cu_seams": (-58.0, 8.0, (-38.0, AX + 28.0, 78.0), 40.0, "idle"),
+    "cu_button": (-20.0, 6.0, (0.0, BA["front_d"], 75.9), 30.0, "idle"),
+    "cu_front": (18.0, 4.0, (0.0, BA["front_d"], 52.0), 70.0, "idle"),
+    "cu_seams": (-50.0, 8.0, (-33.0, 57.0, 50.0), 40.0, "idle"),
     "cu_deck": (-25.0, 58.0, (0.0, AX, 95.0), 62.0, "idle"),
     "cu_slot": (8.0, 70.0, (0.0, AX, 95.0), 28.0, "idle"),
     "cu_prong_root": (-35.0, 25.0, (-31.0, AX + 6.0, 100.0), 30.0, "idle"),
     "cu_prong_cap": (-35.0, 22.0, (-28.0, AX + 5.0, 134.0), 26.0, "idle"),
     "cu_prong_strips": (-18.0, 8.0, (-33.0, AX + 8.0, 116.0), 44.0, "idle"),
     "cu_inner_head": (25.0, 18.0, (-18.0, AX + 4.0, 117.0), 26.0, "charging"),
-    "cu_hip": (-40.0, -8.0, (-30.0, AX + 25.0, 60.0), 40.0, "idle"),
-    "cu_knee": (-40.0, 6.0, (-35.8, AX + 30.0, 36.0), 32.0, "idle"),
-    "cu_feet": (-40.0, 16.0, (-44.0, AX + 37.0, 7.0), 40.0, "idle"),
-    "cu_back_leg": (-55.0, 10.0, (-45.0, AX - 26.0, 24.0), 50.0, "idle"),
+    "cu_deck_edge": (-40.0, 12.0, (-30.0, 60.0, 92.0), 40.0, "idle"),
+    "cu_plinth": (-40.0, 10.0, (-30.0, 60.0, 8.0), 40.0, "idle"),
+    "cu_side": (-80.0, 8.0, (-44.0, 28.0, 60.0), 90.0, "idle"),
     "cu_low": (-30.0, 2.0, (0.0, AX, 45.0), 110.0, "idle"),
 }
 ORTHO = {"front": (0.0, 0.0, (0.0, 0.0, 75.0), 160.0), "side": (-90.0, 0.0, (0.0, 60.0, 75.0), 160.0),
-         "top": (0.0, 90.0, (0.0, 55.0, 0.0), 160.0)}
+         "top": (0.0, 90.0, (0.0, 40.0, 0.0), 160.0)}
 
 
 def stage(samples: int, hdri: str | None) -> None:
