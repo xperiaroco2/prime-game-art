@@ -283,6 +283,7 @@ def nearest_gap(A: list, B: list, reach: float = 0.06, cell: float = 0.02) -> fl
 
 # ---------------------------------------------------------------------------------------- the body's volumes
 TUBE_SLICES, TUBE_SECTORS = 8, 12
+HEAD_BACK_UP = 0.6  # the back of the skull's landmark: this far from the Head bone's head up to the eyes
 THIGH_SKIP = 3  # of the thigh tube's slices from the hip, not counted when skin goes into a thigh (measure)
 
 
@@ -358,7 +359,7 @@ class Model:
 
     def _landmarks(self) -> dict:
         """Rest skin points the arms reach for: per side the waist's side (the torso's outermost point at the Spine's
-        head height), the back of the head (at the eyes' height), the chest's front (the UpperChest's middle)."""
+        head height), the back of the skull (HEAD_BACK_UP), the chest's front (the UpperChest's middle)."""
         rp = self.rest_posed
         torso = rp.groups(["torso"])
         headp = rp.group("head")
@@ -366,11 +367,15 @@ class Model:
         zs = S.pos(self.skel["rest"]["Spine"])[2]
         zc = (S.pos(self.skel["rest"]["UpperChest"])[2] + S.pos(self.skel["rest"]["Neck"])[2]) / 2
         ze = S.pos(self.skel["rest"]["LeftEye"])[2]
+        zh = S.pos(self.skel["rest"]["Head"])[2]
         for side in SIDES:
             s = 1.0 if side == "Left" else -1.0
             band = [p for p in torso if abs(p[2] - zs) < 0.02 and p[0] * s > 0]
             out[f"waist_{side}"] = max(band, key=lambda p: p[0] * s)
-            back = [p for p in headp if abs(p[2] - ze) < 0.03 and abs(p[0]) < 0.02]
+            # the skull's back, not a crest's: HEAD_BACK_UP of the way from the Head bone up to the eyes (round 2: the
+            # chameleon's crest at the eyes' height put the wrists 32 cm behind the head, the arms straight up)
+            zb = zh + HEAD_BACK_UP * (ze - zh)
+            back = [p for p in headp if abs(p[2] - zb) < 0.015 and abs(p[0]) < 0.02]
             out["head_back"] = max(back, key=lambda p: p[1])
             # the brow over the eye: the head's most forward skin a little above the eye, at the eye's side
             eye = S.pos(self.skel["rest"][f"{side}Eye"])
@@ -554,7 +559,8 @@ class Model:
             goal = add(r.head("UpperChest"), M.q_rotate(F, sub(goal, S.pos(self.skel["rest"]["UpperChest"]))))
         pole = M.q_rotate(F, body(side, arm.get("elbow", (1.0, -0.3, 0.0))))
         push = norm(M.q_rotate(F, body(side, arm.get("push", (-1.0, 0.0, 0.0)))))
-        lift = M.q_rotate(F, (0.0, 0.0, 1.0))  # `clear` moves the wrist up the chest
+        # `clear` moves the wrist up the chest, or along `clear_dir` (chest axes: back along the hip's side)
+        lift = norm(M.q_rotate(F, body(side, arm.get("clear_dir", (0.0, 0.0, 1.0)))))
         clear = [t for g in arm.get("clear", ()) for t in tube_bones(g.format(side=side), self.tubes)]
         for it in range(9):
             sh = r.head(up)
