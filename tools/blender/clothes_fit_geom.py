@@ -184,10 +184,13 @@ def shoe_top(boundary_z: list[float], margin: float = 0.01, above: float = 0.05)
     return min(tops) - margin if tops else None
 
 
-def in_shoe(foot_weight: float, z: float, top: float | None, min_weight: float = 0.5) -> bool:
+def in_shoe(foot_weight: float, z: float, top: float | None, min_weight: float = 0.5, under: bool = False) -> bool:
     """A body vertex inside a shoe: mostly on Foot and Toes (foot_weight, the sum of their weights) and below the
-    shoe's top (shoe_top). Such a vertex is always cut from the dressed build."""
-    return top is not None and foot_weight >= min_weight and z < top
+    shoe's top (shoe_top), or under the shoe (under: a ray straight up hits it, the toes under the toe box, while
+    the ankle seen through the opening has none). Such a vertex is always cut from the dressed build."""
+    if foot_weight < min_weight:
+        return False
+    return under or (top is not None and z < top)
 
 
 def rest_poke(signed_mm: list[float], at_opening: list[bool], tol_mm: float = 1.0) -> int:
@@ -196,3 +199,12 @@ def rest_poke(signed_mm: list[float], at_opening: list[bool], tol_mm: float = 1.
     if len(signed_mm) != len(at_opening):
         raise ValueError("signed_mm and at_opening differ in length")
     return sum(1 for s, o in zip(signed_mm, at_opening) if s > tol_mm and not o)
+
+
+def long_edges(lengths: list[float], max_len: float) -> list[int]:
+    """The edges to split before the fit (their indices): longer than max_len (m). A coarse sleeve's flat faces cut a
+    chord through the arm's curve, and the arm shows through between its vertices; split to max_len, the chord's sag
+    on a 5.5 cm arm stays under 4 mm, inside the sleeve's clearance."""
+    if max_len <= 0:
+        raise ValueError(f"max_len {max_len} must be positive")
+    return [i for i, x in enumerate(lengths) if x > max_len]

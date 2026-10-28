@@ -159,6 +159,8 @@ class Shoe(unittest.TestCase):
         self.assertFalse(F.in_shoe(1.0, 0.12, 0.10))   # the ankle above the top shows
         self.assertFalse(F.in_shoe(0.3, 0.05, 0.10))   # mostly shin
         self.assertFalse(F.in_shoe(1.0, 0.05, None))   # no shoe
+        self.assertTrue(F.in_shoe(1.0, 0.12, 0.10, under=True))   # a toe under the toe box, above the top's low point
+        self.assertFalse(F.in_shoe(0.3, 0.05, 0.10, under=True))
 
 
 class RestPoke(unittest.TestCase):
@@ -167,6 +169,14 @@ class RestPoke(unittest.TestCase):
         self.assertEqual(F.rest_poke([], []), 0)
         with self.assertRaises(ValueError):
             F.rest_poke([1.0], [])
+
+
+class LongEdges(unittest.TestCase):
+    def test_split_only_the_long(self):
+        self.assertEqual(F.long_edges([0.01, 0.05, 0.04, 0.081], 0.04), [1, 3])
+        self.assertEqual(F.long_edges([], 0.04), [])
+        with self.assertRaises(ValueError):
+            F.long_edges([0.1], 0.0)
 
 
 if __name__ == "__main__":
