@@ -14,7 +14,7 @@ from pathlib import Path
 from runner import common, ship_export as X, ship_layout as sl
 
 LAYOUT = sl.load()
-PACKAGE = common.raw_dir() / LAYOUT["raw_dir"] / "export" / "v1"
+PACKAGE = common.raw_dir() / LAYOUT["raw_dir"] / "export" / "v2"   # gills step 13: the package with the gills
 SCENE_TEXT = """[gd_scene load_steps=4 format=3 uid="uid://b1abc"]
 
 [ext_resource type="PackedScene" uid="uid://c2def" path="res://import/ship_hall_floor.glb" id="1_a"]
@@ -69,6 +69,16 @@ class RelocateTest(unittest.TestCase):
         self.assertIn("a script", X.leftovers('[ext_resource type="Script" path="res://a.gd" id="1"]'))
         self.assertIn("a script", X.leftovers("[node name=\"A\" type=\"Node\"]\nscript = ExtResource(\"1\")\n"))
         self.assertIn("a sub-resource path", X.leftovers('[ext_resource path="res://a.glb::Mesh_1" id="1"]'))
+        # gills step 13: the console's shader the gills' bronze uses left the package's scene unloadable
+        self.assertIn("a path outside the package",
+                      X.leftovers('[ext_resource type="Shader" path="res://console/other.gdshader" id="1"]'))
+
+    def test_the_gills_bronze_shader_moves_into_the_package(self) -> None:
+        text = X.relocate('[ext_resource type="Shader" path="res://console/console_metal.gdshader" id="9_c"]\n')
+        self.assertIn('path="res://assets/environment/ship/console_metal.gdshader"', text)
+        self.assertEqual(X.leftovers(text), [])
+        for src in X.SHADERS:
+            self.assertTrue((Path(__file__).resolve().parents[2] / "godot" / src).is_file(), src)
 
 
 class WriteTest(unittest.TestCase):
@@ -80,8 +90,9 @@ class WriteTest(unittest.TestCase):
                 d.mkdir()
             for p in LAYOUT["pieces"]:
                 (pieces / f"{p['id']}.glb").write_bytes(b"glb")
-            for name in X.SHADERS:
-                (shaders / name).write_text("shader_type spatial;\n", encoding="utf-8")
+            for src in X.SHADERS:
+                (shaders / src).parent.mkdir(parents=True, exist_ok=True)
+                (shaders / src).write_text("shader_type spatial;\n", encoding="utf-8")
             (built / "ship.tscn").write_text(SCENE_TEXT, encoding="utf-8")
             (built / "metal_hull_silver.tres").write_text('[gd_resource uid="uid://x"]\n', encoding="utf-8")
             summary = X.write(LAYOUT, pieces, built, shaders, out)
