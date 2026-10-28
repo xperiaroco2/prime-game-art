@@ -38,6 +38,11 @@ const BRONZE_FINISH := {"metallic": 0.75, "roughness": 0.3, "wear": 1.4, "lift":
 	"rough_grain": 0.06, "rough_mottle": 0.15, "edge_polish": 0.25, "shade": 0.3, "dent": 0.0, "dent_scale": 45.0,
 	"wave": 0.3, "wave_scale": 8.0}
 
+## lens C step 3 (art#263): the pedestal's plates, the same bronze family a value darker and rougher, so the big flat
+## faces hold under the lens room's warm lamp (the bright bronze read hot orange there); the deck and head keep BRONZE
+const BRONZE2 := Color(0.33, 0.235, 0.15)
+const BRONZE2_FINISH := {"metallic": 0.7, "roughness": 0.44, "wear": 1.0, "lift": 0.02}
+
 
 ## Puts the charger's materials on every surface under root and finds its leaves; returns the look: {"cyan",
 ## "amber", "lens" (StandardMaterial3D), "glow" (OmniLight3D), "carrier", "ring", "button", "anchor" (Node3D),
@@ -49,6 +54,12 @@ static func apply(root: Node3D) -> Dictionary:
 	bronze.set_shader_parameter("worn_color", BRONZE_EDGE)
 	for p: String in BRONZE_FINISH:
 		bronze.set_shader_parameter(p, BRONZE_FINISH[p])
+	var bronze2 := ShaderMaterial.new()  # lens C step 3: the pedestal's plates, a darker, rougher bronze
+	bronze2.shader = METAL
+	bronze2.set_shader_parameter("base_color", BRONZE2)
+	bronze2.set_shader_parameter("worn_color", BRONZE_EDGE)
+	for p: String in BRONZE_FINISH:
+		bronze2.set_shader_parameter(p, BRONZE2_FINISH.get(p, BRONZE_FINISH[p]))
 	var graphite := ShaderMaterial.new()
 	graphite.shader = METAL
 	graphite.set_shader_parameter("base_color", Color(0.272, 0.276, 0.293))
@@ -65,7 +76,7 @@ static func apply(root: Node3D) -> Dictionary:
 	lens.albedo_color = Color(0.05, 0.4, 0.6)
 	lens.clearcoat_enabled = true
 	lens.clearcoat = 1.0
-	var by_name := {"charger_bronze": bronze, "charger_graphite": graphite, "charger_cyan": cyan,
+	var by_name := {"charger_bronze": bronze, "charger_bronze2": bronze2, "charger_graphite": graphite, "charger_cyan": cyan,
 		"charger_amber": amber, "charger_lens": lens, "charger_steel": steel}
 	for m: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
 		if m.mesh == null:

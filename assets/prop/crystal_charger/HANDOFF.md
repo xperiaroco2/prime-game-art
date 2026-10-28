@@ -19,6 +19,19 @@ deck slab h 86..99.1 overhanging the body (1.5 on the sides, 3 on the chamfers, 
 - `charger_steel` is no longer in the GLB (it was the legs' piston rods); `charger.gd` still knows it, harmlessly;
 - `charger.gd`'s own cyan light (`look["glow"]`) sits on the new axis (0, 1.13, 0.38).
 
+Step 3 (lens C, 2026-10-28, build `lens2`): the pedestal's detail after the lens room's `a_power.jpg`, inside the
+same plan and heights (the head, the pivots, the colliders and the reach 70 unchanged):
+
+- the plates in three courses: h 10..46, a **recessed band** h 46..52 (the graphite core 1.9 behind the plates, a
+  thin cyan line on every plate), 52..66, a seam, the frieze 66..86; the chamfers' cyan strips split per course
+  (h 18..42 and 56..82);
+- the plinth has a toe set back 1 cm at h 0..1.5 and its top bevelled back to the plates over h 7..10;
+- the plates are a new surface, **`charger_bronze2`**: a darker, rougher bronze (`charger.gd` `BRONZE2`,
+  `BRONZE2_FINISH`), so the big faces hold under the lens room's warm lamp; the deck slab and the head keep
+  `charger_bronze`. A game copy of `charger.gd` must take this version (an older one warns "no look for surface
+  material 'charger_bronze2'" and leaves the plates on the GLB's plain fallback);
+- 30,520 triangles (was 29,080).
+
 Node names, the leaves, `charger.gd`'s functions and the render layer are unchanged.
 
 ## Files
