@@ -359,6 +359,18 @@ def build_pedestal_lights(bm) -> None:
         length = n - start - end - 2 * li["bezel"] - 1.0
         light_box(bm, P(a[0] + tu * mid, a[1] + td * mid, hb), Vector((td, tu, 0.0)), Vector((tu, -td, 0.0)),
                   length, li["band_cyan"], 4)
+    # step 4: the frieze's short cyan windows under the deck slab (a_power.jpg), lying along their plate
+    wh, wl, ww = li["windows"]
+    wc, wf = li["window_u"]
+    for k in (1, 3):
+        a, b, _ia, _ib, (nu, nd) = quads[k]
+        n = math.hypot(b[0] - a[0], b[1] - a[1])
+        tu, td = (b[0] - a[0]) / n, (b[1] - a[1]) / n
+        for sx in (-1.0, 1.0):
+            cu, cd = (a[0] + b[0]) / 2 + tu * wc * sx, (a[1] + b[1]) / 2 + td * wc * sx
+            light_box(bm, P(cu, cd, wh), Vector((nu, -nd, 0.0)), Vector((tu, -td, 0.0)), wl, ww, 4)
+    for sx in (-1.0, 1.0):
+        light_box(bm, P(sx * wf, BA["front_d"], wh), Vector((0.0, -1.0, 0.0)), Vector((1.0, 0.0, 0.0)), wl, ww, 4)
     u, (h0, h1) = li["front_amber"]
     for sx in (-1.0, 1.0):
         light_box(bm, P(sx * u, BA["front_d"], (h0 + h1) / 2), Vector((0.0, -1.0, 0.0)), up, h1 - h0, li["width"], 3)
@@ -367,6 +379,27 @@ def build_pedestal_lights(bm) -> None:
         _a, _b, _ia, _ib, (nu, nd) = quads[k]
         light_box(bm, P(sx * BA["side"], (d0 + d1) / 2, h), Vector((nu, -nd, 0.0)), Vector((0.0, -1.0, 0.0)),
                   d1 - d0, li["width"], 3)
+
+
+def build_brackets(bm) -> None:
+    """Step 4 (a_power.jpg): a bronze bracket across each of the four front corners (the side/chamfer and the
+    chamfer/front folds), on the lower and the upper course: a block square to the fold's bisector, its back sunk
+    into the fold, its face `proud` out of the corner."""
+    w, depth, proud = BA["bracket"]
+    up = Vector((0.0, 0.0, 1.0))
+    quads = plate_quads()
+    for k in range(4):   # the folds between plates k and k+1: +u side/chamfer, +u chamfer/front, front/-u chamfer, -u chamfer/side
+        _a, b, _ia, _ib, n0 = quads[k]
+        n1 = quads[k + 1][4]
+        bu, bd = n0[0] + n1[0], n0[1] + n1[1]
+        ln = math.hypot(bu, bd)
+        bu, bd = bu / ln, bd / ln
+        normal = Vector((bu, -bd, 0.0))      # P() turns d into -y
+        across = normal.cross(up).normalized()
+        basis = Matrix((across, normal, up)).transposed()
+        for h0, h1 in BA["brackets"]:
+            c = P(b[0], b[1], (h0 + h1) / 2) + normal * (proud - depth / 2) * CM
+            box(bm, c, (w * CM, depth * CM, (h1 - h0) * CM), basis)
 
 
 # --- the slot ------------------------------------------------------------------------------------------------------
@@ -644,7 +677,7 @@ def emissive(name: str, colour, strength: float):
 def build_materials() -> None:
     MATS["charger_bronze"] = metal_material("charger_bronze", (0.56, 0.27, 0.10, 1.0), (1.0, 0.70, 0.40, 1.0), 0.28, 1.0)
     # step 3: the pedestal's plates a darker, rougher bronze (the bright one read hot orange under the lens lamp)
-    MATS["charger_bronze2"] = metal_material("charger_bronze2", (0.24, 0.12, 0.05, 1.0), (0.62, 0.42, 0.24, 1.0), 0.42,
+    MATS["charger_bronze2"] = metal_material("charger_bronze2", (0.34, 0.17, 0.07, 1.0), (0.62, 0.42, 0.24, 1.0), 0.4,
                                              0.9)
     MATS["charger_graphite"] = metal_material("charger_graphite", (0.06, 0.062, 0.07, 1.0), (0.36, 0.35, 0.34, 1.0),
                                               0.38, 0.85)
@@ -756,6 +789,7 @@ def build(crystal: str | None) -> dict:
         part("plinth", build_plinth, "charger_graphite"),
         part("plates", build_plates, "charger_bronze2"),
         part("deck", build_deck, "charger_bronze"),
+        part("brackets", build_brackets, "charger_bronze", small=True),
         part("button_seat", build_button_seat, "charger_graphite", small=True),
         part("pedestal_lights", build_pedestal_lights, "charger_graphite", bevel=False, drawn=False),
         part("collar", build_collar, "charger_bronze", small=True),
