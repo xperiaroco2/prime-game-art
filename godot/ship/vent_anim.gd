@@ -4,17 +4,26 @@ extends Node
 ##
 ## Inputs (set them each frame):
 ##   problem: bool   the unit is broken (the round's task is live)
-##   hold: 0..1      the scanner hold's progress while a palm is on the scanner (0 without a palm)
+##   hold: 0..1      the scanner hold's progress while a palm is on the scanner (0 without a palm; under 0.002 counts
+##                   as 0); send exactly 1.0 once the hold is at the bar's top (TOP is 0.995: a hold capped below it
+##                   never throws)
 ##   release()       call it once when the palm leaves the scanner
 ## Signals:
-##   fixed           released with the marker inside GREEN: the exhale plays; the game clears `problem`
+##   fixed           released with the marker inside GREEN (both ends included): the exhale plays; the game clears
+##                   `problem`
 ##   too_early       released below GREEN: the game plays its "try again" sound; the look falls back to the problem
 ##   missed          released past GREEN (below TOP): the unit coughs steam and stays broken
-##   thrown          the hold reached TOP: a hard red shudder and a cough; the game throws the player back a few
-##                   metres (and lifts the palm: a release() after `thrown` is ignored)
-## The release is judged on `marker` (the drawn marker: hold followed over HOLD_FOLLOW_S), so what the player sees on
-## the bar is what counts. After `fixed` the controller re-arms only once the game has set `problem` false; after a
-## release or `thrown` a new hold starts only once `hold` has been back to 0.
+##   thrown          the drawn marker reached TOP, i.e. `hold` stayed at 1.0 (at or above TOP) for about 0.2-0.3 s
+##                   (the marker follows hold over HOLD_FOLLOW_S): a hard red shudder and a cough; the game throws the
+##                   player back a few metres (and lifts the palm: a release() after `thrown` is ignored)
+## The release is judged on the marker of the last step that had a palm on the scanner (hold >= 0.002, latched), so
+## what the player saw on the bar is what counts, whatever the order of the game's calls in the frame the palm leaves:
+## release() then hold = 0, or hold = 0 and a step() before release(), judge the same. The order the game should use
+## each frame: set problem and hold, call release() if the palm left this frame, then step(dt) (or let _process run).
+## `hold` falling to 0 with no release() judges nothing: the controller stays in HOLD with the marker sinking until
+## release() comes (judged on the latch) or the hold climbs again. After `fixed` the controller re-arms only once the
+## game has set `problem` false; after a release or `thrown` a new hold starts only once `hold` has been back to 0. A
+## release() outside HOLD (calm, the exhale, after `problem` cleared mid-hold, after `thrown`) is ignored.
 ##
 ## Use: add it as a child of the placed unit (its GLB root), after the scene's materials and vent_glow.gd's lights are
 ## set; call setup(unit_root, "station_vent_e") (or set vent_id and let _ready find the parent). `manual = true` stops
@@ -102,7 +111,8 @@ const MARKER_SIZE := [0.07, 0.012, 0.012]   # the marker made here (m: across, u
 const MARKER_COLOUR := Color(1.0, 0.96, 0.88)
 const MARKER_E := 3.0
 const MARKER_RETURN_S := 0.5        # after a release the marker sinks back (exponential)
-const SEAM_DARK := Color(0.16, 0.09, 0.05)   # ship --shoot --vent-states' "dark" (ship.gd); unused by the gills
+const SEAM_DARK := Color(0.16, 0.09, 0.05)   # the colour of ship --shoot --vent-states' "dark" (ship.gd: the problem's
+                                             # flanks with their glow off); the controller itself never uses it
 # --- the particles (per slot; five slots) -------------------------------------------------------------------------
 # gills step 12: vapour, not specks (r11's 22 cm sprites read as dots): few large, very soft sprites at low alpha that
 # grow and fade over their life and overlap; the steam curls a little (turbulence)
@@ -128,7 +138,9 @@ var particles: bool = true
 
 var state: int = State.CALM
 var angles: PackedFloat32Array = PackedFloat32Array()   # each rib's angle now (degrees), for checks
+var raw_angles: PackedFloat32Array = PackedFloat32Array()   # each rib's pose before the +-ROCK_DEG clamp, for checks
 var marker: float = 0.0                                  # the marker 0..1 now
+var judged: float = 0.0                                  # the marker release() judges: the last step with a palm
 var clicks: int = 0                                      # the clicks passed in this hold
 var red: float = 0.0                                     # the bands' mean red now (0 cyan .. 1 red)
 
@@ -155,6 +167,7 @@ var _bar: Array = []
 var _green: Array = []
 var _marker: MeshInstance3D
 var _made: Array = []                # nodes made here (restore() frees them)
+var _vis: Array = []                 # [node, visible, transform] of the GLB's nodes setup shows, hides or moves
 var _bar_y: Vector2 = Vector2.ZERO   # the bar's foot and top (unit frame)
 var _emit: Dictionary = {"steam": [], "mist": [], "cough": []}
 
@@ -180,6 +193,10 @@ func setup(root: Node3D, id: String) -> void:
 		_ribs.append([n, n.transform.basis if n != null else Basis()])
 	_cool = _leaf(root, id, "cool") as Node3D
 	_heat = _leaf(root, id, "heat") as Node3D
+	_vis.clear()
+	for n: Node3D in [_cool, _heat]:
+		if n != null:
+			_vis.append([n, n.visible, n.transform])
 	var red_e: float = 1.0
 	if _heat is MeshInstance3D:
 		var hm: Material = _mat(_heat as MeshInstance3D, 0)
@@ -226,10 +243,14 @@ func setup(root: Node3D, id: String) -> void:
 	if particles:
 		_make_particles(root, id)
 	angles.resize(RIBS)
+	raw_angles.resize(RIBS)
 	_from.resize(RIBS)
 	for k: int in RIBS:
 		angles[k] = 0.0
+		raw_angles[k] = 0.0
 		_from[k] = 0.0
+	marker = 0.0
+	judged = 0.0
 	state = State.CALM
 	_since = 0.0
 	_breath_t0 = _t - BREATH_IN_S   # the first breath at full amplitude
@@ -294,6 +315,8 @@ func _make_marker(root: Node3D, id: String) -> void:
 		first = false
 	_bar_y = Vector2(box.position.y, box.end.y)
 	_marker = root.find_child("%s_marker" % id, true, false) as MeshInstance3D
+	if _marker != null:   # the GLB's own marker: restore() puts it back
+		_vis.append([_marker, _marker.visible, _marker.transform])
 	if _marker != null or first:
 		return
 	_marker = MeshInstance3D.new()
@@ -433,10 +456,28 @@ func restore(root: Node3D) -> void:
 	for r: Array in _ribs:
 		if r[0] != null:
 			(r[0] as Node3D).transform.basis = r[1]
+	for v: Array in _vis:
+		if is_instance_valid(v[0]):
+			(v[0] as Node3D).visible = bool(v[1])
+			(v[0] as Node3D).transform = v[2]
 	for n: Node in _made:
 		n.queue_free()
 	_made.clear()
 	_ribs.clear()
+	_vis.clear()
+	vent_id = ""   # detached: _ready does not set it up again
+	_bands.clear()
+	_lights.clear()
+	_lamp.clear()
+	_bar.clear()
+	_green.clear()
+	_emit = {"steam": [], "mist": [], "cough": []}
+	_cool = null
+	_heat = null
+	_marker = null
+	angles.clear()
+	raw_angles.clear()
+	_from.clear()
 
 
 func _go(s: int) -> void:
@@ -450,15 +491,16 @@ func _burst(kind: String) -> void:
 		p.restart()
 
 
-## The palm left the scanner: judges the hold by the marker and emits too_early, fixed or missed.
+## The palm left the scanner: judges the hold by `judged` (the marker of the last step with a palm) and emits
+## too_early, fixed or missed. Ignored outside HOLD.
 func release() -> void:
 	if state != State.HOLD:
 		return
 	_need_zero = true
-	if marker < float(GREEN[0]):
+	if judged < float(GREEN[0]):
 		_go(State.RETRY)
 		too_early.emit()
-	elif marker <= float(GREEN[1]):
+	elif judged <= float(GREEN[1]):
 		_armed = false
 		_go(State.EXHALE)
 		_mist_due = true
@@ -469,8 +511,10 @@ func release() -> void:
 		missed.emit()
 
 
-## Advances the controller by dt seconds and sets every driven part.
+## Advances the controller by dt seconds and sets every driven part (nothing before setup() or after restore()).
 func step(dt: float) -> void:
+	if _ribs.is_empty():
+		return
 	_t += dt
 	_since += dt
 	var h_in: float = clampf(hold, 0.0, 1.0)
@@ -513,6 +557,8 @@ func step(dt: float) -> void:
 	# the marker and the clicks
 	if state == State.HOLD:
 		marker += (h_in - marker) * (1.0 - exp(-dt / HOLD_FOLLOW_S))
+		if h_in >= 0.002:   # the latch: a step after the palm left (hold 0) sinks the marker but not what is judged
+			judged = marker
 		var c: int = 0
 		for k: int in range(1, STEPS + 1):
 			if marker >= float(GREEN[0]) * k / STEPS - 1e-6:
@@ -540,6 +586,7 @@ func step(dt: float) -> void:
 	_active += ((1.0 if busy else 0.0) - _active) * (1.0 - exp(-dt / FADE_TAU_S))
 	for k: int in RIBS:
 		var a: float = _shake * ROCK_DEG * _shudder(k, SHUDDER_HZ, SHUDDER_MIX, SHUDDER_PHASE) + (1.0 - _shake) * _pose(k)
+		raw_angles[k] = a
 		angles[k] = clampf(a, -ROCK_DEG, ROCK_DEG)
 	# the colours: each band's red eases toward its target
 	var red_to: float = 1.0 if state in [State.PROBLEM, State.RETRY, State.COUGH, State.THROWN] else 0.0
