@@ -27,6 +27,8 @@ through_cm = 1.5      # skin through skin (the tube proxy's own error on the res
 through_hand_cm = 0.5 # a hand or forearm into the body: the hand's proxy reads 0.0 cm on the rest skin
 mark_cm = 6.0        # a hand on a landmark (the hip hand on the waist's side): the palm's centre within this
                      # (round 2: the hand 0.8 cm off the waist, the fingers turned out with the belly, s6 grid)
+variant_mark_cm = 10.0 # a hip hand's per-legs variant (moved off the waist to clear a raised thigh): within this
+                     # (review 2: Sit's 23 cm read no failure; beyond it the pair is a named failure the game avoids)
 contact_gap_cm = 1.0  # a contact's skin gap (hand to hip, index tip to index tip) at most this
 flat_cm = 1.0         # a planted foot (no foot_pitch): its heel's and ball's lowest skin both within this of the floor
 
@@ -124,7 +126,7 @@ floor = ["torso", "foot_Left", "foot_Right"]
 # `clear_dir` (default up the chest) and the arm's `variant` table on top; contacts: measured skin
 # gaps; solve = "meet" moves both hands toward each other until a and b touch.
 [arms.HandsOnHips]
-both = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.1, 0.9, -0.45], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
+both = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
 contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Right", b = "torso" },
             { a = "hand_Left", mark = "waist_Left" }, { a = "hand_Right", mark = "waist_Right" }]
 
@@ -142,7 +144,7 @@ contacts = [{ a = "LeftIndexDistal", b = "RightIndexDistal", solve = "meet", gap
 [arms.FingerUp]
 Head = [-8, 9, 0]
 Right = { mode = "fk", shoulder = [0, 8, 0], upper = [0.45, 0.35, 1.0], lower = [0.15, 0.3, 1.0], fingers_dir = [0.05, 0.25, 1.0], palm = [-0.6, 0.8, 0.0], grip = "point" }
-Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.1, 0.9, -0.45], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
+Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
 contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
 
 [arms.HandsBehindHead]
@@ -154,5 +156,5 @@ both = { mode = "fk", upper = [1.0, 0.45, -0.3], lower = [0.35, 0.7, 0.85], fing
 
 [arms.Salute]
 Right = { mode = "goal", at = "brow", offset = [0.8, 0.6, 0.2], elbow = [0.8, 0.9, -0.1], fingers_dir = [-0.8, -0.5, 0.25], palm = [0.0, 0.45, -1.0], grip = "salute", touch = ["head"], push = [-0.8, -0.6, 0.0], gap_cm = 0.6 }
-Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.1, 0.9, -0.45], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
+Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
 contacts = [{ a = "RightIndexDistal", b = "head" }, { a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]

@@ -6,7 +6,7 @@ character the Blender-composed reference of all 48 pairs (`ref_<char>.json`: the
 same clips, every bone's head and world turn from the rest in glTF axes; pure skinning equals Blender's evaluated pose, step 2) and runs
 godot/alien/pose_layers_check.gd headless on the step's GLBs: pose_layers.gd's two filtered layers against the
 reference, the hold, stop(), the head look's slide on the contact pairs (`layers_<char>.json`; POSES lines, exit 1 on
-a failure).
+a failure), into tools/out/poses/check/<step>/ (`--check-out`): never inside the raw step.
 `... --shots [--chars ...]` runs godot/alien/pose_shots.gd in the runner's off-screen window: the review pictures of
 docs/animations.md, "The photo poses (art #196)", into <raw>/<poses>/<step>/ (`shots_<char>.json` says what each
 sheet shows).
@@ -84,6 +84,8 @@ def main() -> int:
     ap.add_argument("--chars", default="")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--shots", action="store_true")
+    ap.add_argument("--check-out", default="", help="the check's files (default tools/out/poses/check/<step>: "
+                    "never inside the raw step, which a test run and the nightly would rewrite)")
     a = ap.parse_args()
     cfg = A.load()
     if not a.raw:
@@ -97,6 +99,8 @@ def main() -> int:
     _, out = P._dirs(a.raw, a.step, cfg)
     code = 0
     if a.check:
+        cout = Path(a.check_out) if a.check_out else ROOT / "tools" / "out" / "poses" / "check" / a.step
+        cout.mkdir(parents=True, exist_ok=True)
         job = {"chars": []}
         for c in chars:
             dump = json.loads((out / f"{c}_dump.json").read_text(encoding="utf-8"))
@@ -104,19 +108,23 @@ def main() -> int:
             if stale:
                 print(f"NOTE {c}: the build's pose data differs from the TOML ({stale}); the reference follows the "
                       f"build's (rebuild with alien_poses.py --glb)", flush=True)
-            ref = out / f"ref_{c}.json"
+            ref = cout / f"ref_{c}.json"
             ref.write_text(json.dumps(reference(dump, built)), encoding="utf-8", newline="\n")
             job["chars"].append({"glb": _godot.stage(out / "build" / c / f"{c}_char.glb", f"poses_{c}"),
-                                 "ref": str(ref), "out": str(out / f"layers_{c}.json")})
-        (out / "check_job.json").write_text(json.dumps(job, indent=1), encoding="utf-8", newline="\n")
+                                 "ref": str(ref), "out": str(cout / f"layers_{c}.json")})
+        (cout / "check_job.json").write_text(json.dumps(job, indent=1), encoding="utf-8", newline="\n")
         _godot.import_project()
         rc, output = _godot.godot(["--headless", "--path", str(_godot.PROJECT), "-s", "res://alien/pose_layers_check.gd",
-                                   "--", str(out / "check_job.json")], 900)
-        (out / "check_godot.log").write_text(output, encoding="utf-8", newline="\n")
+                                   "--", str(cout / "check_job.json")], 900)
+        (cout / "check_godot.log").write_text(output, encoding="utf-8", newline="\n")
         print(*[x for x in output.splitlines() if x.startswith(("POSES", "ERROR", "SCRIPT ERROR"))], sep="\n", flush=True)
         code |= rc
     if a.shots:
         import alien_char_run as R
+        done = [c for c in chars if (out / f"starting_{c}.png").is_file()]
+        if done:  # a step's reviewed pictures are never shot over: a new step (alien_poses.py --step sN) instead
+            print(f"refused: {out} already holds the shots of {', '.join(done)}", flush=True)
+            return 1
         slots_job = json.loads((R.SLOTS / "job.json").read_text(encoding="utf-8"))["heads"]
         for c in chars:
             hd = out / "build" / c

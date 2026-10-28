@@ -244,6 +244,13 @@ class GlbClips(unittest.TestCase):
         self.assertNotEqual(a["Idle"], c["Idle"])
 
 
+class Variants(unittest.TestCase):
+    def test_arms_for_picks_the_per_legs_variant(self):
+        arms = {"HandsOnHips": "shared", f"HandsOnHips{A.VARIANT}Sit": "sit"}
+        self.assertEqual(A.arms_for(arms, "HandsOnHips", "Sit"), "sit")
+        self.assertEqual(A.arms_for(arms, "HandsOnHips", "Stand"), "shared")
+
+
 class BuiltData(unittest.TestCase):
     def test_the_check_composes_from_the_builds_own_data(self):
         """verify went red when the TOML changed after the newest build: the reference follows the build's data."""
@@ -289,6 +296,22 @@ class OnTheChameleon(unittest.TestCase):
             self.assertLessEqual(v, lim["contact_gap_cm"], k)
         for k, v in m["marks_cm"].items():
             self.assertLessEqual(v, lim["mark_cm"], k)
+        self.assertEqual(m["fails"], [])  # review 2: the through limits too (the fingertips were 1.9 cm in)
+
+    def test_a_variant_has_its_own_mark_limit(self):
+        """A per-legs variant's palm-to-waist distance fails beyond variant_mark_cm, not mark_cm."""
+        d = self.model.data
+        r = A.compose(self.model.legs("Stand"), self.model.arms("HandsOnHips"))
+        old = dict(d["limits"])
+        try:
+            d["limits"]["mark_cm"] = d["limits"]["variant_mark_cm"] = 0.1
+            self.assertTrue(any(f.startswith("mark") for f in A.measure(self.model, r, "Stand", "HandsOnHips", True)["fails"]))
+            d["limits"]["variant_mark_cm"] = 50.0
+            self.assertFalse(any(f.startswith("mark") for f in A.measure(self.model, r, "Stand", "HandsOnHips", True)["fails"]))
+            self.assertTrue(any(f.startswith("mark") for f in A.measure(self.model, r, "Stand", "HandsOnHips")["fails"]))
+        finally:
+            d["limits"].clear()
+            d["limits"].update(old)
 
     def test_one_leg_tips_out_of_balance_when_pushed(self):
         """The centre of mass check reads a body shifted off its one foot as outside the support."""

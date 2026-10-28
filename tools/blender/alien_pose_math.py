@@ -824,8 +824,8 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
     for k, v in through.items():
         if v > (lim.get("through_hand_cm", lim["through_cm"]) if k.startswith(("hand", "forearm")) else lim["through_cm"]):
             fails.append(f"through {k} {v} cm")
-    for k, v in marks.items():
-        if v > lim["mark_cm"] and not variant:
+    for k, v in marks.items():  # a per-legs variant rides off the waist to clear the thigh: its own, looser limit
+        if v > (lim.get("variant_mark_cm", lim["mark_cm"]) if variant else lim["mark_cm"]):
             fails.append(f"mark {k} {v} cm")
     for k, v in contacts.items():
         if v > lim["contact_gap_cm"]:
