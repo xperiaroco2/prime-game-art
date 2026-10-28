@@ -26,6 +26,7 @@ const Offscreen = preload("res://lib/offscreen.gd")
 const Player = preload("res://ship/player.gd")
 const VentGlow = preload("res://ship/vent_glow.gd")
 const VentAnim = preload("res://ship/vent_anim.gd")
+const GillRow = preload("res://ship/gill_row.gd")
 const WATCHDOG_S: float = 240.0
 const UP := Vector3.UP
 const SPEED: float = 3.0
@@ -94,7 +95,7 @@ func _initialize() -> void:
 	nav_blink = bool(_req.get("nav_blink", true))
 	DirAccess.make_dir_recursive_absolute(_out)
 	var test_play: bool = _req["mode"] == "play" and bool(_req.get("test", false))
-	if _req["mode"] in ["shoot", "video", "vent_anim"] or test_play:
+	if _req["mode"] in ["shoot", "video", "vent_anim", "gill_anim"] or test_play:
 		if DisplayServer.get_name() == "headless":
 			_fail("shoot needs a window (off-screen), not --headless")
 			return
@@ -113,6 +114,8 @@ func _initialize() -> void:
 		_video()
 	elif _req["mode"] == "vent_anim":
 		_vent_anim()
+	elif _req["mode"] == "gill_anim":
+		_gill_anim()
 	else:
 		_shoot()
 
@@ -542,6 +545,7 @@ func _shoot() -> void:
 		_camera.fov = float(v[4])
 		_camera.look_at_from_position(_v(v[2]), _v(v[3]), UP)
 		_ab(v[5] if v.size() > 5 else {})
+		_gills(ship, (v[5] as Dictionary).get("gills", {}) if v.size() > 5 and v[5] is Dictionary else {})
 		images[v[0]] = await _shot(v[0], v[1], shots)
 		_ab({})
 	if _req.has("top"):  # (a --views prefix set alone has no plan view)
@@ -946,3 +950,65 @@ func _write(name: String, data: Dictionary) -> void:
 func _fail(why: String) -> void:
 	printerr("SHIP error %s" % why)
 	quit(1)
+
+
+# --- the gills (art #263, 2026-10-28; gill_row.gd) -----------------------------------------------------------------
+var _gill_rows: Dictionary = {}
+
+
+## A view's gills pose ({"e": {"lip": deg, "slits": {"3": "open"}, "ring": 0..1}, "w": {...}}; a side left out:
+## every slit calm, the lip shut), applied to each placed th_gills_<side>.
+func _gills(ship: Node3D, spec: Dictionary) -> void:
+	for n: Node in ship.get_children():
+		var nm: String = String(n.name)
+		if not nm.begins_with("th_gills_"):
+			continue
+		var side: String = nm.substr(9, 1)
+		if not _gill_rows.has(nm):
+			var row: Node = GillRow.new()
+			n.add_child(row)
+			row.setup(n as Node3D)
+			_gill_rows[nm] = row
+		_gill_rows[nm].pose(spec.get(side, {}))
+
+
+## The gills' proof (ship.py --gill-anim): gill_row.gd's demo on the east row from a fixed camera, one PNG a frame.
+func _gill_anim() -> void:
+	_environment()
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
+	_probes()
+	var a: Dictionary = _req["anim"]
+	_gills(ship, {})
+	var row: Node = null
+	for nm: String in _gill_rows:
+		if nm.begins_with("th_gills_e"):
+			row = _gill_rows[nm]
+	if row == null:
+		_fail("no placed th_gills_e")
+		return
+	_camera = Camera3D.new()
+	_camera.near = 0.05
+	_camera.far = 500.0
+	_camera.fov = float(a["fov"])
+	root.add_child(_camera)
+	_camera.make_current()
+	_camera.look_at_from_position(_v(a["eye"]), _v(a["look"]), UP)
+	for i: int in 30:  # the probes, SSAO and glow settle
+		await process_frame
+	var fps: float = float(a["fps"])
+	var count: int = int(GillRow.DEMO_S * fps)
+	var dir: String = _out.path_join("frames")
+	DirAccess.make_dir_recursive_absolute(dir)
+	var beats: Array = []
+	for f: int in count:
+		var beat: String = row.play_demo(f / fps)
+		await RenderingServer.frame_post_draw
+		var image: Image = root.get_texture().get_image()
+		image.convert(Image.FORMAT_RGB8)
+		_save(image, dir.path_join("%05d.png" % f))
+		if beats.is_empty() or beats[-1][1] != beat:
+			beats.append([snappedf(f / fps, 0.01), beat])
+	_write("anim.json", {"frames": count, "fps": fps, "seconds": GillRow.DEMO_S, "lights": lights, "states": beats})
+	print("SHIP gill_anim %d frames" % count)
+	quit(0)

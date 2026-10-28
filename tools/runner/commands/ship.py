@@ -55,6 +55,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
     parser.add_argument("--motion", type=Path, metavar="DIR",
                         help="the stations' motion proof (step 2: the vents) off-screen: checks, MP4, sheets into DIR")
+    parser.add_argument("--gill-anim", type=Path, metavar="DIR",
+                        help="the throat gills' proof (godot/ship/gill_row.gd's 6 s demo on the east row's working slit: "
+                             "shut, the gasp, shut, the press, open over to 28 deg, settle at 25) off-screen: MP4 into DIR")
     parser.add_argument("--vent-anim", type=Path, metavar="DIR",
                         help="the east vent's animation in place at night (godot/ship/vent_anim.gd through its demo: calm, "
                              "the problem, a hold, the cough, calm) from the player's eye off-screen: MP4 and key sheet into DIR")
@@ -113,6 +116,10 @@ def run(args: argparse.Namespace) -> int:
             return code
     if args.motion:
         code = motion(layout, out, args.motion.resolve())
+        if code:
+            return code
+    if getattr(args, "gill_anim", None):
+        code = gill_anim(layout, out, args.gill_anim.resolve())
         if code:
             return code
     if args.vent_anim:
@@ -634,6 +641,67 @@ def motion_request(layout: dict) -> dict:
 # vents-anim1: the east vent from about 3 m across the throat at the player's eye (deck 1.2 + 1.6), plan (x, y, h)
 VENT_ANIM = {"piece": "station_vent_e", "eye": [-0.25, -3.05, 2.8], "look": [2.108, -4.745, 2.12], "fov": 50.0,
              "size": (1280, 720), "fps": 24, "max_mb": 15}
+
+
+def gill_view(layout: dict, s: float, t: float, back: float, along: float = 0.0, up: float = 0.0) -> tuple:
+    """(eye, look) in plan (x, y, h) for a point on the east gills' wall (s along it from the mouth's corner, t up its
+    vertical part), the eye `back` m into the throat, `along` m toward the hall and `up` m higher."""
+    import importlib
+    import sys
+    sys.path.insert(0, str(blender.SCRIPTS))
+    g = importlib.import_module("ship_interior_gills")
+    m = [g.S.TH_PTS[1][0] + g.S.HALL_C[0], g.S.TH_PTS[1][1] + g.S.HALL_C[1]]
+    d, n = g.WALL_D, (-g.WALL_D[1], g.WALL_D[0])
+    h = layout["deck"]["floor_h"] + t
+    look = [m[0] + d[0] * s, m[1] + d[1] * s, h]
+    eye = [look[0] + n[0] * back + d[0] * along, look[1] + n[1] * back + d[1] * along, h + up]
+    return [round(v, 4) for v in eye], [round(v, 4) for v in look]
+
+
+GILL_ANIM = {"s": 2.66, "t": 1.32, "back": 0.95, "along": -0.45, "up": 0.08, "fov": 50.0, "fps": 30,
+             "size": (1280, 720), "max_mb": 8}
+
+
+def gill_anim(layout: dict, out: Path, folder: Path) -> int:
+    """The gills' proof (art #263, 2026-10-28): ship.gd mode "gill_anim" renders gill_row.gd's demo on the east row's
+    working slit at night in the off-screen window; headless Blender encodes the MP4; the frames are deleted."""
+    import shutil
+    a = GILL_ANIM
+    eye, look = gill_view(layout, a["s"], a["t"], a["back"], a["along"], a["up"])
+    req, staged = built_request(layout, out)
+    req.update({"mode": "gill_anim", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
+                "anim": {"eye": _g(eye), "look": _g(look), "fov": a["fov"], "fps": a["fps"]},
+                "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    errors = _stage(staged)
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "gill_anim_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="
+")
+    (folder / "anim.json").unlink(missing_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
+                                  path.as_posix(), folder.as_posix()], a["size"], VIDEO_TIMEOUT)
+    if code != 0 or not (folder / "anim.json").is_file():
+        raise common.Failure(f"ship.gd gill_anim failed (exit code {code}):
+" + "
+".join(output.splitlines()[-20:]))
+    info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
+    clip = folder / "gill_anim.mp4"
+    clip.unlink(missing_ok=True)
+    blender.run_script(VIDEO_SCRIPT, ["--frames", str(folder / "frames"), "--out", str(clip), "--fps", str(a["fps"]),
+                                      "--max-mb", str(a["max_mb"])], timeout=VIDEO_TIMEOUT)
+    if not clip.is_file():
+        raise common.Failure(f"{VIDEO_SCRIPT} wrote no {clip}")
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    mb = clip.stat().st_size / 2 ** 20
+    if errors or mb > a["max_mb"]:
+        common.bad(f"ship --gill-anim: video {mb:.1f} MB (max {a['max_mb']}), {len(errors)} import errors")
+        return 1
+    common.ok(f"ship --gill-anim: {clip.as_posix()}, {info['seconds']:.1f} s, {info['frames']} frames, {mb:.1f} MB; "
+              f"beats {info['states']}")
+    return 0
 
 
 def vent_anim(layout: dict, out: Path, folder: Path) -> int:
