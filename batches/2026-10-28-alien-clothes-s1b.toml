@@ -62,3 +62,7 @@ images = [
   { file = "raw:2026-10-28-alien-clothes-s1b/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "e3bd700fb47ee735127fcc45ed451a28012a8dc3a2d6db91e11d0355d287e9b1" },
   { file = "raw:2026-10-28-alien-clothes-s1b/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "6fd2b43d03c241d35112310d64e4acb027af6fe3ce3284dda464714baee1715a" },
 ]
+
+# Ran 2026-10-28: 4 of 4 items done, $0.1470 of the $1.50 cap (`openai-images status`). Every view checked shows four
+# digits per hand. They are on the same pick page as step 1 (its source in <raw>/2026-10-28-alien-clothes-s1/page/),
+# with the plan for one garment on two bodies; the engineer picks the guy's set.
