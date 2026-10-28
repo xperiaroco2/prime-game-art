@@ -268,6 +268,9 @@ Blender's FFmpeg as H.264 in MP4 (480 x 600, 24 fps, constant quality, the cycle
 4 cm) at the clip's first frame, front and three-quarter from the character's right (yaw -35 degrees, as the faces
 sheets), cells of 316 x 395 px; `--face-beside` puts crops of an approved sheet (`--face-rects`, pixels) to their left,
 for the faces gate's before/after (docs/faces.md). `slice` runs it with the first review clip.
+`--yaw DEG` turns the clip sheets' camera (0 the front, 90 the character's left side, -90 its right, 180 its back;
+default the three-quarter, 35) and the three studio lights with it (the spec's `light_turn_deg`), so a turnaround in
+Godot's look is lit as the three-quarter view is (art #196: the clothes beside their sketch, one run per view).
 
 **Measured** on whole frames (2026-10-03, every clip of m1_rex and w1_ivy, 62 joints and 124 axis points): Godot and
 Blender agree within 0.017 mm everywhere. Before the optimizer was turned off they differed by up to 16.7 mm (m1_rex

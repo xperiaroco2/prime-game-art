@@ -109,7 +109,16 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    body vertex inside the cloth at rest, over `--away` 0.08 m from every opening and on no neck, head or hand bone,
    always goes too (`under_cloth`: the rays miss some on the upper back and the crotch, and a crouch or a strafe
    moved them out through the cloth); one ring of erosion keeps the rays' cut under the cloth, the certain cuts
-   (the shoes, `under_cloth`) skip it); the GLB with `export_glb.py`'s fixed textured options. Then glTF-Validator and
+   (the shoes, `under_cloth`) skip it); on the Shoulder bones the limit is `--away-shoulder` 0.04 m (the skin under
+   the straps' base, near the collar). The cloth's maps (`clothes_texture.py`): the cleaner's bake leaves about 60 % of the garment's
+   2048 px maps black between its small UV islands, and a game camera's mipmaps bled it into thin pieces (the
+   straps); `fill` grows each map's islands into the empty texels (push-pull, `--no-fill` keeps them black). The
+   bake's denim was near-black (the legs' stored sRGB median 23, 31, 45; Godot's frame 28, 36, 50 against the
+   sketch's 44, 55, 73), and with a little specular it read as wet leather: `--denim-gain R,G,B` scales the denim's
+   linear colour (`shift`, weighted by `denim_weight`: blue over red and green; the stripes and the orange stitching
+   keep theirs). C1d's 2.15, 2.15, 2.1 (Godot's frame over the sketch's, per channel) brought Godot's legs to 42, 54,
+   72. Blender's `Image.pixels` of an 8-bit map are its stored sRGB values, not linear. The GLB with `export_glb.py`'s
+   fixed textured options. Then glTF-Validator and
    `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
 9. **The proof.** `tools/blender/clothes_proof.py -- --blend <char>_char.blend --name <char> --out DIR`: per clip
    (Idle, Walk, Jog_Fwd, Sprint_Fwd, Strafe_Left, Crouch_Fwd, Jump_Start, Jump_Air, Talk_Upper) the poke-through
@@ -120,7 +129,9 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    apart as `exposed_skin_max`: `exposed_skin`) and a contact sheet (front, side, back at two moments); the close-ups at
    0.8 m (collar and neck, cuffs and hands, crotch, hems and shoes); then `tools/run.sh render <glb> --pose
    "CharacterArmature|Idle_Loop" --no-outline`, a Godot frame sheet (`tools/run.sh frames <glb> --clips Idle
-   --compare ""`: the denim's matte look is judged there, Workbench ignores roughness) and a defect hunt.
+   --compare ""`: the denim's matte look is judged there, Workbench ignores roughness) and a defect hunt. For the
+   engineer: the sketch beside Godot's front, side and back (`frames --clips Idle --compare "" --yaw 0`, `-90`,
+   `180`; each sheet's first cell), one row about 1280 px wide, `look/<rN>/<char>_vs_sketch.png`.
 
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).

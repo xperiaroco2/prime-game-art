@@ -198,6 +198,11 @@ class UnderCloth(unittest.TestCase):
         self.assertFalse(F.under_cloth(-0.005, 0.05, "Chest"))        # by an opening
         self.assertFalse(F.under_cloth(-0.005, 0.15, "RightHand"))    # leaves the cuff when the wrist bends
         self.assertFalse(F.under_cloth(-0.005, 0.15, "Neck"))         # the neck over the collar
+        # the skin under a strap's base: 5 cm from the collar, cut on a Shoulder bone only with its own limit
+        self.assertFalse(F.under_cloth(-0.005, 0.05, "LeftShoulder"))
+        self.assertTrue(F.under_cloth(-0.005, 0.05, "LeftShoulder", away_shoulder=0.04))
+        self.assertFalse(F.under_cloth(-0.005, 0.03, "RightShoulder", away_shoulder=0.04))
+        self.assertFalse(F.under_cloth(-0.005, 0.05, "Chest", away_shoulder=0.04))
 
     def test_shoe_face(self):
         self.assertTrue(F.shoe_face([True, False, False], [True, True, True]))    # half through the shoe's side

@@ -210,13 +210,17 @@ def through_shoe(s: float, rim_dist: float, tol: float = 0.001, most: float = 0.
 UNCUT_BONES = ("Neck", "Head", "Hand", "Eye")
 
 
-def under_cloth(s: float, edge_dist: float, bone: str, deep: float = 0.001, away: float = 0.08) -> bool:
+def under_cloth(s: float, edge_dist: float, bone: str, deep: float = 0.001, away: float = 0.08,
+                away_shoulder: float | None = None) -> bool:
     """A body vertex hidden under the cloth for certain: inside it at rest by more than deep (s, the signed distance
     from the nearest cloth face within the proof's reach, + out) and farther than away (m) from every opening
     (edge_dist), on no bone that leaves the cloth through an opening (the neck, the hands: UNCUT_BONES, by suffix).
     The rays' cover test keeps some of these (the upper back between the straps, the crotch), and a clip then moves
-    them out through the cloth (r12: 48 vertices up to 52 mm in a crouch); cut, the cloth shows instead."""
-    return s < -deep and edge_dist > away and not bone.endswith(UNCUT_BONES)
+    them out through the cloth (r12: 48 vertices up to 52 mm in a crouch); cut, the cloth shows instead.
+    away_shoulder, when given, is the limit on a Shoulder bone: the skin under a strap's base lies within 8 cm of the
+    collar, and the clips moved it out beside the strap (r16: the collar fleck, up to 58 mm in Jump_Start)."""
+    limit = away_shoulder if away_shoulder is not None and bone.endswith("Shoulder") else away
+    return s < -deep and edge_dist > limit and not bone.endswith(UNCUT_BONES)
 
 
 def shoe_face(through: list[bool], low_foot: list[bool]) -> bool:

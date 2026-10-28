@@ -16,7 +16,8 @@ body source stays whole: only this build's copy loses them). Then the GLB with e
   so a shoulder or a toe that crosses the cloth at rest is cut too.
 - Under the cloth for certain (clothes_fit_geom.under_cloth): a body vertex inside the cloth at rest (its nearest
   cloth face within --near m) and farther than --away m from every opening, on no neck, head or hand bone, is cut
-  without the erosion, also where a ray escapes: a clip would move it out through the cloth.
+  without the erosion, also where a ray escapes: a clip would move it out through the cloth; on the Shoulder bones
+  farther than --away-shoulder m (the skin under the straps' base, near the collar).
 - The shoes: the shoes are rigid on the feet, so a foot vertex inside one is cut for certain (no erosion): below the
   shoe's lowest top less --shoe-margin, under the shoe or its toe box, or below the opening's rim where it stands
   (the rim points within --rim-reach across the floor, less --rim-margin: the rim is low on the sides and high at the
@@ -24,6 +25,9 @@ body source stays whole: only this build's copy loses them). Then the GLB with e
   its nearest shoe point over 1 cm from the rim); a face with such a vertex goes when all its vertices are on the
   foot below the rim's high point where they stand (clothes_fit_geom.shoe_face), so no face of the foot's side is
   left half through the shoe's coarse faces.
+- The cloth's maps (clothes_texture): every piece's albedo, roughness and normal map grown from its UV islands into
+  the empty texels, so a far camera's mipmaps average cloth, not the bake's black (unless --no-fill); the garment's
+  denim scaled by --denim-gain (linear R,G,B; the stripes and the orange stitching kept).
 
     blender -b --factory-startup --python tools/blender/clothes_dress.py -- --char CHAR.blend --fit FIT.blend
         --name chameleon --out DIR [--body-from F1.blend --body-to F2.blend] [--reach 0.12]
@@ -48,6 +52,7 @@ from mathutils.kdtree import KDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
+import clothes_texture as T  # noqa: E402
 
 PIECES = ("garment", "shoes")
 
@@ -97,6 +102,41 @@ def rays(n: Vector) -> list[Vector]:
     return [n] + [(n + k * s * t).normalized() for t in (t1, t2) for s in (1, -1)]
 
 
+def maps(cloth, grow: bool, gain: tuple[float, float, float]) -> dict:
+    """Each cloth piece's image maps filled from its UV islands (grow) and the garment's albedo shifted by gain;
+    re-packed so the .blend and the GLB carry them. Returns per image the share of texels filled."""
+    rep = {}
+    for o in cloth:
+        me = o.data
+        uv = me.uv_layers.active.data
+        tri = np.array([[uv[t.loops[i]].uv[:] for i in range(3)] for t in me.loop_triangles] if me.loop_triangles
+                       else [], dtype=np.float64)
+        if not len(tri):
+            me.calc_loop_triangles()
+            tri = np.array([[uv[t.loops[i]].uv[:] for i in range(3)] for t in me.loop_triangles], dtype=np.float64)
+        imgs = {n.image for s in o.material_slots if s.material and s.material.node_tree
+                for n in s.material.node_tree.nodes if n.type == "TEX_IMAGE" and n.image}
+        masks = {}
+        for img in sorted(imgs, key=lambda i: i.name):
+            w, h = img.size
+            px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
+            entry = {}
+            if grow:
+                valid = masks.setdefault((w, h), T.island_mask(tri, w, h))
+                px[..., :3] = T.fill(px[..., :3], valid)
+                entry["filled_share"] = round(float((~valid).mean()), 4)
+            if o.name == "garment" and "diffuse" in img.name and gain != (1.0, 1.0, 1.0):
+                px[..., :3] = T.shift(px[..., :3], gain)
+                entry["denim_gain"] = list(gain)
+            if entry:
+                img.pixels[:] = px.ravel()
+                img.update()
+                img.pack()
+                rep[img.name] = entry
+                say("map", img.name, entry)
+    return rep
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--char", required=True)
@@ -116,6 +156,10 @@ def main() -> int:
                     help="the foot cut stays this far below the shoe opening's rim where the vertex stands (m)")
     ap.add_argument("--rim-reach", type=float, default=0.03,
                     help="the rim points this near a foot vertex across the floor give its local rim (m)")
+    ap.add_argument("--away-shoulder", type=float, default=0.04,
+                    help="--away on the Shoulder bones (m): the skin under the straps' base, near the collar")
+    ap.add_argument("--no-fill", action="store_true", help="leave the maps' empty texels black (the r16 build)")
+    ap.add_argument("--denim-gain", default="1,1,1", help="the garment denim's linear gain R,G,B (1,1,1: as baked)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     glb = out / f"{args.name}_char.glb"
@@ -262,7 +306,8 @@ def main() -> int:
             continue
         top_bone = gname.get(max(v.groups, key=lambda g: g.weight).group, "") if v.groups else ""
         loc, nor, _fi, _d = tree.find_nearest(p, args.near)
-        if loc is not None and F.under_cloth((p - loc).dot(nor), ekd.find(p)[2], top_bone, away=args.away):
+        if loc is not None and F.under_cloth((p - loc).dot(nor), ekd.find(p)[2], top_bone, away=args.away,
+                                              away_shoulder=args.away_shoulder):
             cov.append(True)
             sure.append(True)
             n_under += 1
@@ -309,6 +354,7 @@ def main() -> int:
         "through the walls ),", n_under,
         "under the cloth for certain,", sum(gone),
         "faces removed; tris", rep["tris"])
+    rep["maps"] = maps(cloth, not args.no_fill, tuple(float(v) for v in args.denim_gain.split(",")))
     blend = out / f"{args.name}_char.blend"
     bpy.ops.wm.save_as_mainfile(filepath=str(blend), compress=True)
     import alien_loco
