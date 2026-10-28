@@ -68,7 +68,9 @@ import numpy as np
 from mathutils import Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import alien_meshy_body_geom as M  # noqa: E402
+from runner import common  # noqa: E402
 import alien_meshy_fix_geom as F  # noqa: E402
 
 
@@ -845,7 +847,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--targets", required=True)
     ap.add_argument("--out", required=True)
-    ap.add_argument("--raw", default="D:/prime-art-raw")
+    ap.add_argument("--raw", default=str(common.raw_dir()), help="the raw folder (default: common.raw_dir(), "
+                    "ART_RAW_DIR or the pinned default)")
     ap.add_argument("--hi", action="store_true", help="no final collapse (the before/after's before)")
     ap.add_argument("--from-body", default="", help="M1b: only the fixes, on a body built before")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
