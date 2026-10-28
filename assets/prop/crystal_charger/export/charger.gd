@@ -40,8 +40,10 @@ const BRONZE_FINISH := {"metallic": 0.75, "roughness": 0.3, "wear": 1.4, "lift":
 
 ## lens C step 3 (art#263): the pedestal's plates, the same bronze family a value darker and rougher, so the big flat
 ## faces hold under the lens room's warm lamp (the bright bronze read hot orange there); the deck and head keep BRONZE
-const BRONZE2 := Color(0.33, 0.235, 0.15)
-const BRONZE2_FINISH := {"metallic": 0.7, "roughness": 0.44, "wear": 1.0, "lift": 0.02}
+## step 4: lighter, toward the head's bronze, and the mottle low (0.3 read as brown marble on the big plates)
+const BRONZE2 := Color(0.42, 0.31, 0.2)
+const BRONZE2_FINISH := {"metallic": 0.72, "roughness": 0.4, "wear": 1.0, "lift": 0.04, "mottle": 0.1, "rough_mottle": 0.06,
+	"wave": 0.15}
 
 
 ## Puts the charger's materials on every surface under root and finds its leaves; returns the look: {"cyan",
