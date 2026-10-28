@@ -224,7 +224,8 @@ PIECES |= {
     "lounge_sofa_mid_dark": ("lounge_sofa", {"tone": "dark"}, False),
     "lounge_sofa_aft": ("lounge_sofa", {"arm": 1}, False),
     "lounge_pillow_red": ("lounge_pillow", {"y": -0.1}, False),
-    "lounge_pillow_dark": ("lounge_pillow", {"y": 0.08, "fabric": "lens_cushion_dark"}, False),
+    "lounge_pillow_dark": ("lounge_pillow", {"y": 0.08, "fabric": "lens_pillow_slate"}, False),   # step 4: slate
+    "lounge_throw": ("lounge_throw", {}, False),   # step 4: c_lounge's folded charcoal throw
     "lounge_table": ("lounge_table", {}, True),
     "lounge_cans": ("lounge_cans", {}, False),
     "lounge_lamp": ("lounge_lamp", {}, False),
@@ -236,6 +237,7 @@ SOFA_LO, SOFA_HI = LN.SOFA_K[0] * S.TIP_STEP, LN.SOFA_K[1] * S.TIP_STEP
 SOFA_MODULES = {1: "lounge_sofa_fore", 2: "lounge_sofa_mid", 3: "lounge_sofa_mid_dark", 4: "lounge_sofa_mid",
                 5: "lounge_sofa_mid", 6: "lounge_sofa_aft"}
 SOFA_PILLOWS = {2: "lounge_pillow_red", 5: "lounge_pillow_dark"}
+SOFA_THROWS = {4: "lounge_throw"}   # step 4
 # step 2: a station piece's spot and its box [u0, u1, v0, v1, h0, h1] in the spot's frame (u along the wall, v out
 # of it, h over the deck): `ship --check` holds it inside the spot's plain band, depth and the room's height
 UNITS: dict[str, tuple[str, list[float]]] = {"station_vent_e": ("vent_e", GL.UNIT), "station_vent_w": ("vent_w", GL.UNIT)}
@@ -485,6 +487,8 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put(SOFA_MODULES[i], polar(apo, a, c, room), room - a)
                 if i in SOFA_PILLOWS:
                     put(SOFA_PILLOWS[i], polar(apo, a, c, room), room - a)
+                if i in SOFA_THROWS:
+                    put(SOFA_THROWS[i], polar(apo, a, c, room), room - a)
         for a in tv:
             v = round(a, 4)
             if abs(abs(a) - door) < 1e-6 or v in ends:

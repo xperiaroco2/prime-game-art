@@ -411,7 +411,9 @@ sky_horizon = 10.0                             # inside 3-1 (grid_in31 C; was 5)
 int_cyan = {c = [0.05, 0.8, 1.0], e = 0.05, l = 0.0}                # inside 3-1 (grid_in31 C): glows only; 0.04 still washed the corridors teal
 int_amber = {c = [1.0, 0.42, 0.06], e = 0.14, l = 2.0, rr = 0.5}    # e 0.14: the strips pass the glow threshold, still amber
 int_amber__lens = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.0}   # lens C: the lounge's and the alcove's warm strips glow, light nothing (decor)
-int_cyan__lens_core = {c = [0.05, 0.8, 1.0], e = 0.45, l = 0.0}   # lens C step 2: the conduits' cyan core, brighter than int_cyan (0.05: it read weak beside the concept's bright tubes); glows, lights nothing
+int_amber__lens_toe = {c = [1.0, 0.42, 0.06], e = 0.047, l = 0.0}   # lens C step 4: the sofa's underside strip at a third of int_amber__lens
+int_amber__lens_ring = {c = [1.0, 0.42, 0.06], e = 0.3, l = 0.0}   # lens C step 4: the coffee table's lit edge ring
+int_cyan__lens_core = {c = [0.0, 0.5, 1.0], e = 0.2, l = 0.0}   # lens C step 2: the conduits' cyan core, brighter than int_cyan (0.05: it read weak beside the concept's bright tubes); glows, lights nothing
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
