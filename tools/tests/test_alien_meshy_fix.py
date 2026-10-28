@@ -131,7 +131,7 @@ class Targets(unittest.TestCase):
     def test_m1_has_no_fix(self):
         self.assertFalse(set(M.load(M.TARGETS / "axolotl_m1.toml")) & M.KEYS_M1B)
         src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
-        self.assertIn("if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B):", src)
+        self.assertIn("if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B | M.KEYS_M1D):", src)
         self.assertIn('ap.add_argument("--from-body", default=""', src)
 
 
@@ -276,7 +276,73 @@ class M1c(unittest.TestCase):
         src = (BL / "alien_body_clip_bends.py").read_text(encoding="utf-8")
         self.assertIn('return "__" not in n and not n.startswith(("TM_", "MC_"))', src)
 
-    # M1d (art #196): the review's thumb about the game clips' axes (across the palm).
+    # M1d (art #196): the axolotl's fixes from the fresh critic, and the review's thumb about the clips' axes.
+    def test_thumb_radial(self):
+        shp = {"ramp": 0.012, "thumb_thick": 1.2}
+        self.assertEqual(F.thumb_radial(0.0, 0.0, shp), 1.0)
+        self.assertAlmostEqual(F.thumb_radial(0.012, 0.0, shp), 1.2)
+        self.assertAlmostEqual(F.thumb_radial(0.05, 0.0, shp), 1.2)
+        self.assertEqual(F.thumb_radial(0.05, 0.0, {"ramp": 0.012}), 1.0)
+
+    def test_height_smooth_and_keep_volume(self):
+        uv, h, a = [], [], []
+        for i in range(-12, 13):
+            for j in range(-12, 13):
+                u, v = i * 0.004, j * 0.004
+                uv.append((u, v))
+                h.append(-0.5 * math.hypot(u, v))
+                a.append(1.6e-5)
+        hs = F.height_smooth(uv, h, a, 0.012)
+        k = uv.index((0.0, 0.0))
+        self.assertLess(hs[k], h[k])  # the point comes down
+        flat = F.height_smooth(uv, [0.01] * len(uv), a, 0.012)
+        self.assertTrue(all(abs(x - 0.01) < 1e-12 for x in flat))
+        w = [1.0 - F.sstep(0.025, 0.05, math.hypot(u, v)) for u, v in uv]
+        dh = F.keep_volume([wi * (x - y) for wi, x, y in zip(w, hs, h)], w, a)
+        self.assertAlmostEqual(sum(ai * d for ai, d in zip(a, dh)), 0.0, places=12)  # the volume kept
+        self.assertLess(h[k] + dh[k], 0.0 + 1e-12)
+
+    def test_tip_radius(self):
+        rho = 0.03
+        r = [i * 0.001 for i in range(25)]
+        h = [-x * x / (2 * rho) for x in r]
+        self.assertAlmostEqual(F.tip_radius(r, h, 0.025), rho, places=6)
+        self.assertEqual(F.tip_radius(r, [0.0] * 25, 0.025), math.inf)
+
+    def test_width_factor(self):
+        xs, meas = [0.2, 0.3, 0.4], [0.06, 0.05, 0.08]
+        tgt = [[0.2, 0.09], [0.4, 0.09]]
+        self.assertAlmostEqual(F.width_factor(0.3, xs, meas, tgt, 1.0, 2.0), 1.8)
+        self.assertEqual(F.width_factor(0.4, xs, meas, tgt, 1.0, 2.0), 1.125)
+        self.assertEqual(F.width_factor(0.3, xs, [0.1, 0.1, 0.1], tgt, 1.0, 2.0), 1.0)  # never thinner
+        self.assertIsNone(F.width_factor(0.45, xs, meas, tgt, 1.0, 2.0))
+
+    def test_m1d_file(self):
+        t = M.load(M.TARGETS / "axolotl_m1d.toml")
+        c = M.load(M.TARGETS / "axolotl_m1c.toml")
+        self.assertEqual(t["name"], "axolotl_m1d")
+        self.assertEqual(set(t) - set(c), M.KEYS_M1D)
+        self.assertEqual(set(t["arm_thicken"]) - set(c["arm_thicken"]), M.ARM_KEYS_M1D)
+        self.assertEqual(set(t["fingers"]) - set(c["fingers"]), M.FINGER_KEYS_M2B)
+        self.assertEqual(set(t["fingers"]["shape"]) & M.SHAPE_KEYS_M1D, M.SHAPE_KEYS_M1D)
+        self.assertEqual(t["fingers"]["shape"]["thumb_shorten"], 0.15)
+        self.assertEqual(t["fingers"]["shape"]["slim"], 0.0)
+        for k in ("meshy", "rig_body", "wrap_z", "ring_z", "ring_half_x", "body_tris", "smooth", "bust",
+                  "smooth_after", "notch"):
+            self.assertEqual(t[k], c[k], k)  # the head's ring, the chest's size and her hips as M1c's
+        self.assertNotIn("seat", t)  # her seat kept (the engineer's decision)
+        for b in t["smooth_rest"]["boxes"]:
+            self.assertEqual(len(b), 7)
+            self.assertLessEqual(b[5] + t["smooth_rest"]["margin"], t["ring_z"] - 0.015)  # the seam untouched
+
+    def test_older_files_have_no_m1d(self):
+        for n in ("axolotl_m1.toml", "axolotl_m1b.toml", "axolotl_m1c.toml", "chameleon_m2.toml",
+                  "chameleon_m2b.toml"):
+            t = M.load(M.TARGETS / n)
+            self.assertFalse(set(t) & M.KEYS_M1D, n)
+            self.assertFalse(set(t.get("arm_thicken", {})) & M.ARM_KEYS_M1D, n)
+            self.assertFalse(set(t.get("fingers", {}).get("shape", {})) & M.SHAPE_KEYS_M1D, n)
+
     def test_review_thumb_axes(self):
         src = (BL / "alien_body_refit_review.py").read_text(encoding="utf-8")
         self.assertIn('if f == "Thumb" and axes == "clip":', src)

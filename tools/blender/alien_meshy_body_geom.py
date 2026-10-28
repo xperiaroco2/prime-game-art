@@ -30,12 +30,18 @@ KEYS_M2 = {"shift_y"}
 KEYS_M2B = {"seat"}
 FINGER_KEYS_M2B = {"shape"}
 SMOOTH_KEYS_M2B = {"mu", "boxes", "margin"}
+# M1d (art #196, the axolotl's fixes from the fresh critic): `bust_round` (each breast's tip rounded, its volume kept);
+# inside `arm_thicken` the optional `widths` and `width_clamp` (the arm toward target front widths), inside
+# `fingers.shape` the optional `thumb_thick` (the thumb thicker); the older files have none
+KEYS_M1D = {"bust_round"}
+ARM_KEYS_M1D = {"widths", "width_clamp"}
+SHAPE_KEYS_M1D = {"thumb_thick"}
 
 
 def load(path: str | Path) -> dict:
     """A Meshy body target file (alien_meshy_targets/*.toml), its keys checked."""
     d = tomllib.loads(Path(path).read_text(encoding="utf-8"))
-    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C - KEYS_M2 - KEYS_M2B
+    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C - KEYS_M2 - KEYS_M2B - KEYS_M1D
     if bad:
         raise ValueError(f"unknown keys {sorted(bad)}")
     missing = KEYS - set(d)

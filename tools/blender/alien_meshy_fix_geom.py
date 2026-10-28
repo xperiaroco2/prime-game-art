@@ -245,3 +245,63 @@ def seat_y(y: float, base: float, w: float, depth: float, ramp: float) -> float:
     if d <= 0 or w <= 0:
         return y
     return base + d - w * (1.0 - depth) * d * sstep(0.0, ramp, d)
+
+
+def thumb_radial(s: float, s_base: float, shape: dict) -> float:
+    """M1d: the thumb's radial factor at s along its line: 1 at the web, `thumb_thick` past `ramp` (m) from it (a
+    thicker thumb, eased in so the thenar keeps its join)."""
+    return 1.0 + (shape.get("thumb_thick", 1.0) - 1.0) * sstep(s_base, s_base + shape["ramp"], s)
+
+
+def height_smooth(uv, h, area, sigma: float) -> list[float]:
+    """M1d: a heightfield's heights h over the points uv blurred by a Gaussian of `sigma` (m), each point weighted by
+    its area: the tip spreads and the volume (the sum of area * h) stays near what it was."""
+    out = []
+    for u0, v0 in uv:
+        num = den = 0.0
+        for (u, v), hj, aj in zip(uv, h, area):
+            g = aj * math.exp(-((u - u0) ** 2 + (v - v0) ** 2) / (2.0 * sigma * sigma))
+            num += g * hj
+            den += g
+        out.append(num / den if den > 0 else 0.0)
+    return out
+
+
+def tip_radius(r: list[float], h: list[float], r_max: float) -> float:
+    """M1d: the tip's radius of curvature from its heights h (<= 0 below the apex) at planar distances r: the least
+    squares fit h = h0 - r^2 / (2 rho) over r < r_max; returns rho (m), inf for a flat tip."""
+    pts = [(ri * ri, hi) for ri, hi in zip(r, h) if ri < r_max]
+    n = len(pts)
+    if n < 3:
+        return math.inf
+    mx = sum(p[0] for p in pts) / n
+    my = sum(p[1] for p in pts) / n
+    sxx = sum((p[0] - mx) ** 2 for p in pts)
+    sxy = sum((p[0] - mx) * (p[1] - my) for p in pts)
+    if sxx <= 0 or sxy >= 0:
+        return math.inf
+    return -1.0 / (2.0 * sxy / sxx)
+
+
+def width_factor(x: float, xs: list[float], measured: list[float], target: list[list[float]], lo: float,
+                 hi: float) -> float | None:
+    """M1d: the arm's scale at |x| toward a target front width: target(x) / measured(x) (both interpolated), clamped
+    to [lo, hi]; None outside the target's range (the profile then rules)."""
+    tx = [p[0] for p in target]
+    if x < tx[0] or x > tx[-1]:
+        return None
+    t = profile(target, x)
+    m = profile([[a, b] for a, b in zip(xs, measured)], x)
+    if m <= 0:
+        return None
+    return min(hi, max(lo, t / m))
+
+
+def keep_volume(dh: list[float], w: list[float], area: list[float]) -> list[float]:
+    """M1d: the blur's moves dh (a convex tip only comes down) lifted by c * w, the blend's own shares, so that the
+    sum of area * dh is 0: the tip keeps its volume, the core (w 1) lifted evenly and its rounding kept."""
+    den = sum(a * x for a, x in zip(area, w))
+    if den <= 0:
+        return list(dh)
+    c = -sum(a * d for a, d in zip(area, dh)) / den
+    return [d + c * x for d, x in zip(dh, w)]

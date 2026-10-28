@@ -3198,6 +3198,16 @@ a time, by visibility.
     needs a plain Laplacian; a first build's Taubin on the navel box pinched a bright facet there.
     `alien_body_clip_bends.py` turns a view about the bone (45 degree steps) until the camera sees the joint from
     outside the body (M2's elbow tile was shot from inside his chest).
+  - M1d (output under `bodies_a/m1d/`): the fresh critic's fixes on M1c, `axolotl_m1d.toml` (M1c's file plus
+    `bust_round`; `arm_thicken.widths` / `width_clamp`, `fingers.shape` with `thumb_thick`; the older files have none
+    of M1d's keys, tested). `bust_round` finds each breast's most pointed front-facing vertex and blurs the heights
+    about it by a Gaussian, then lifts the blend so the volume stays (the most forward vertex was not the read
+    point). `arm_thicken.widths` scales the arm toward target front widths (mm per |x|) instead of a fixed factor, so
+    a lump and a pinch in Meshy's arm come out even. Her hips and seat stay as they are (the engineer's decision).
+  - The fingers review (`alien_body_refit_review.py --fingers`) curls the thumb about the game clips' own axes
+    (`THUMB_AXES_HAND`, read in the hand bone's frame off the deepest clip thumb, Crouch_Run), by default at their
+    angles 51.5/28.8/34.7: the tip sweeps under the palm toward the little finger. The old axis, d x (-Z), turned it
+    down along the palm's normal so no fist could close (`--thumb-axes palm` keeps it for a before).
 - **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
   `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
   - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in

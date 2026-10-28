@@ -38,6 +38,9 @@ M2b (art #196, `chameleon_m2b.toml`; the older files have none):
 8c. `smooth_rest.boxes` (with `margin`, `mu`): soft boxes on both sides, the open ring held (the weld unchanged).
 9c. `fingers.shape`: the free fingers slimmer and their tips smaller about their slices' centres, the thumb shorter
    (its centre line scaled about its web), before the bones are placed on them.
+M1d (art #196, `axolotl_m1d.toml`; the older files have none):
+8d. `bust_round`: each breast's tip (its most pointed vertex) rounded by a heightfield blur, the volume kept.
+7c. `arm_thicken.widths`: the arms toward target front widths; 9d. `fingers.shape.thumb_thick`: the thumb thicker.
 --from-body <alien_body.blend>: steps 6 to 10 only, on a body this script built before (M1's).
 """
 from __future__ import annotations
@@ -260,9 +263,18 @@ def fix_arms(arm, mb, cfg, rep):
         def ext(c_):
             return [float(np.ptp(c_[sel & (np.abs(np.abs(c_[:, 0]) - x) < cfg["slab"]), 2])) for x in xs[::4]]
         before = ext(co)
+        meas = None
+        if "widths" in cfg:  # M1d: toward target front widths (mm) over their range, measured per 1 cm
+            meas = smooth3(np.array([float(np.ptp(co[sel & (np.abs(np.abs(co[:, 0]) - x) < cfg["slab"]), 2]))
+                                     if (sel & (np.abs(np.abs(co[:, 0]) - x) < cfg["slab"])).any() else 0.0
+                                     for x in xs]))
+            tgt = [[w[0], w[1] / 1000.0] for w in cfg["widths"]]
         for i in np.where(sel)[0]:
             x = abs(co[i, 0])
             k = F.profile(cfg["profile"], x)
+            if meas is not None:
+                kw = F.width_factor(x, list(xs), list(meas), tgt, *cfg.get("width_clamp", [1.0, 2.0]))
+                k = k if kw is None else kw
             if k == 1.0:
                 continue
             cy, cz = np.interp(x, xs, mid[:, 0]), np.interp(x, xs, mid[:, 1])
@@ -336,6 +348,78 @@ def fix_seat(mb, cfg, rep):
     rep["seat"] = {"base_y": [round(y0, 4), round(y1, 4)], "depth_mm_before": round(before * 1000, 1),
                    "depth_mm_after": round(after * 1000, 1), "vertices": int(n_)}
     log(f"seat {rep['seat']}")
+
+
+def fix_bust_round(mb, cfg, rep):
+    """M1d: each breast's tip rounded (rest pose): the apex, the most forward vertex (least y) in the box
+    [|x|0, |x|1, z0, z1] (pick "point": the front-facing vertex standing out most from its neighbours; `at`: the
+    vertex nearest the given point per side); its direction n, the mean normal within r of it; the front-facing vertices (normal . n over
+    `front`) within `blend` (m) of the apex as heights along n over the plane across n, blurred by a Gaussian of
+    `sigma` (F.height_smooth: the volume kept), the blur's share 1 within r and down to 0 at `blend` by a smoothstep,
+    and faded in over 0.2 of the facing; then lifted by the blend's shares so the volume stays (F.keep_volume). Reports each tip's radius of curvature (F.tip_radius within r) before and
+    after, the apex's move and the volume's change."""
+    me = mb.data
+    co = get_co(me)
+    nrm = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("normal", nrm)
+    nrm = nrm.reshape(-1, 3)
+    area = np.zeros(len(co))
+    for p in me.polygons:
+        for v in p.vertices:
+            area[v] += p.area / len(p.vertices)
+    out = {}
+    x0, x1, z0, z1 = cfg["box"]
+    E = edge_array(me)
+    deg = np.maximum(np.bincount(E.ravel(), minlength=len(co)), 1).astype(float)
+    nb = np.zeros_like(co)
+    np.add.at(nb, E[:, 0], co[E[:, 1]])
+    np.add.at(nb, E[:, 1], co[E[:, 0]])
+    bulge = ((co - nb / deg[:, None]) * nrm).sum(1)  # > 0: the vertex stands out of its neighbours (a point)
+    for _ in range(2):
+        avg = np.zeros(len(co))
+        np.add.at(avg, E[:, 0], bulge[E[:, 1]])
+        np.add.at(avg, E[:, 1], bulge[E[:, 0]])
+        bulge = 0.5 * bulge + 0.5 * avg / deg
+    for s, side in ((1.0, "Left"), (-1.0, "Right")):
+        inb = np.where((co[:, 0] * s > x0) & (co[:, 0] * s < x1) & (co[:, 2] > z0) & (co[:, 2] < z1)
+                       & (nrm[:, 1] < -0.5))[0]
+        # the apex: the most forward vertex, or (pick "point") the most pointed, the read nipple's spot
+        if "at" in cfg:  # the read point given, [x, y, z] per side (left first): its nearest vertex in the box
+            a = int(inb[np.argmin(np.linalg.norm(co[inb] - np.array(cfg["at"][0 if s > 0 else 1]), axis=1))])
+        else:
+            a = int(inb[np.argmax(bulge[inb])] if cfg.get("pick") == "point" else inb[np.argmin(co[inb, 1])])
+        A = co[a].copy()
+        near = np.linalg.norm(co - A, axis=1) < cfg["r"]
+        n = nrm[near].mean(0)
+        n /= np.linalg.norm(n)
+        u = np.cross(n, [0.0, 0.0, 1.0])
+        u /= np.linalg.norm(u)
+        v = np.cross(n, u)
+        rel = co - A
+        h = rel @ n
+        uv = np.stack([rel @ u, rel @ v], 1)
+        rr = np.linalg.norm(uv, axis=1)
+        face = nrm @ n
+        idx = np.where((np.linalg.norm(rel, axis=1) < cfg["blend"] + 3 * cfg["sigma"]) & (face > cfg["front"]))[0]
+        hs = np.array(F.height_smooth(uv[idx].tolist(), h[idx].tolist(), area[idx].tolist(), cfg["sigma"]))
+        w = np.array([(1.0 - F.sstep(cfg["r"], cfg["blend"], float(rr[i]))) * F.sstep(cfg["front"], cfg["front"] + 0.2,
+                                                                                       float(face[i])) for i in idx])
+        dh = np.array(F.keep_volume((w * (hs - h[idx])).tolist(), w.tolist(), area[idx].tolist()))
+        rho0 = F.tip_radius(rr[idx].tolist(), h[idx].tolist(), cfg["r"])
+        co[idx] += dh[:, None] * n
+        h2 = h[idx] + dh
+        top = int(idx[np.argmax(h2)])
+        rho1 = F.tip_radius(np.linalg.norm(uv[idx] - uv[top], axis=1).tolist(), (h2 - h2.max()).tolist(), cfg["r"])
+        out[side] = {"apex": [round(float(c), 4) for c in A], "n": [round(float(c), 3) for c in n],
+                     "vertices": int((w > 0).sum()), "radius_mm_before": round(rho0 * 1000, 1),
+                     "radius_mm_after": round(rho1 * 1000, 1), "apex_move_mm": round(float(-dh[idx == a].sum()) * 1000
+                                                                                    if (idx == a).any() else 0.0, 2),
+                     "volume_change_cm3": round(float((area[idx] * dh).sum()) * 1e6, 2),
+                     "max_move_mm": round(float(np.abs(dh).max()) * 1000, 2)}
+    set_co(me, co)
+    me.update()
+    rep["bust_round"] = out
+    log(f"bust_round {out}")
 
 
 def fix_notch(mb, cfg, rep):
@@ -449,7 +533,9 @@ def fix_fingers(arm, mb, cfg, rep, W, names):
                 ln = 1.0 - shp.get("thumb_shorten", 0.0) if f == "Thumb" else 1.0
                 for j, i in enumerate(idx):
                     cen_s = [float(np.interp(sv[j], ss, cs[:, k])) for k in range(3)]
-                    co[i] = F.finger_point(co[i], cen_s, cb, F.finger_radial(sv[j], s_base, s_tip, shp), ln)
+                    k_ = (F.thumb_radial(sv[j], s_base, shp) if f == "Thumb" and "thumb_thick" in shp
+                          else F.finger_radial(sv[j], s_base, s_tip, shp))  # M1d: the thumb thicker
+                    co[i] = F.finger_point(co[i], cen_s, cb, k_, ln)
                 pts = co[idx]
                 seg = co[E[inn[E[:, 0]] & inn[E[:, 1]]]]
                 sl = finger_slices(pts, seg, c, d, cfg["slice"])
@@ -593,7 +679,7 @@ def fix_bends(arm, mb, cfg, W, names, rep):
 
 
 def fixes(arm, mb, T, rep):
-    if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B):
+    if not any(k in T for k in M.KEYS_M1B | M.KEYS_M1C | M.KEYS_M2B | M.KEYS_M1D):
         return
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
@@ -607,6 +693,8 @@ def fixes(arm, mb, T, rep):
         fix_smooth_rest(mb, T["smooth_rest"], rep)
     if "notch" in T:
         fix_notch(mb, T["notch"], rep)
+    if "bust_round" in T:
+        fix_bust_round(mb, T["bust_round"], rep)
     W, names = read_weights(mb)
     if "fingers" in T:
         fix_fingers(arm, mb, T["fingers"], rep, W, names)
