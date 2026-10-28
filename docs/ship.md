@@ -1458,8 +1458,8 @@ the charger and the crystal have: `set_state` (idle 0..5.9 s, charging to 17.0, 
 speed, down 15.8..17.0), `set_ring` (3 turns the other way) and crystal.gd's `set_charge` (0 to 1, 7.4..15.4). Two
 stand-ins, as the game has no hand: the crystal's way into the cup and out (an eased Bezier from above the player,
 its last leg down the axis). Since the charger zap the electricity runs too (below).
-Output: `cycle.mp4` (1280x720, 30 fps, 24 s, 7.3 MB), `keys/` and `keys_sheet.png` (thirteen labelled beats since
-the traces) in `<raw>/ship/v5/charger-cycle/` (pieces `lens-c-main/pieces`; `--out` names them). The frames take
+Output: `cycle.mp4` (1280x720, 30 fps, 24 s, under `max_mb` 15), `keys/` and `keys_sheet.png` (fourteen labelled beats, `cycle.gd` `KEYS`, since
+the traces) in `<raw>/ship/v5/charger-cycle/` (`--out` names the pieces: a set built from this tree with `ship --build --out DIR`; lens-c-main's `lens_alcove` predates the traces and films a pale panel, art#263 cycle2). The frames take
 about 4 min. `cycle.json`'s `trace_surfaces` counts the traces the east charger drives (3).
 Since zap-4 (the manager, 2026-10-28) a second camera films every frame again about 1.0 m from the crystal (1.4 m out
 of the vertex, eye 1.5 m, `CHARGER_CYCLE["close"]`): `close/cycle.mp4` and `close/keys_sheet.png`, for the
