@@ -324,21 +324,27 @@ class OnTheChameleon(unittest.TestCase):
 
     def test_the_hip_hand_rests_on_the_thigh_on_squat_and_sit(self):
         """Round 3: on [thigh_hand]'s legs the hip hand's variant touches its thigh (the gap within the contact limit,
-        the hand neither in the thigh nor in the torso); the waist's mark is not measured there."""
+        the hand neither in the thigh nor in the torso); the waist's mark is not measured there. s11: on OneLeg and
+        Kneel only the raised thigh's side (`sides`) rests on it, the other hand stays on the waist's mark."""
         mo = self.model
-        legs = {lg: mo.legs(lg) for lg in ("Stand", "Squat", "Sit")}
+        legs = {lg: mo.legs(lg) for lg in ("Stand", "Squat", "Sit", "OneLeg", "Kneel")}
         arms = {"HandsOnHips": mo.arms("HandsOnHips")}
         arms.update(mo.variants(legs, arms))
         lim = mo.data["limits"]
-        for lg in ("Squat", "Sit"):
+        for lg, on in (("Squat", A.SIDES), ("Sit", A.SIDES), ("OneLeg", ("Right",)), ("Kneel", ("Left",))):
             m = A.measure(mo, A.compose(legs[lg], arms[f"HandsOnHips{A.VARIANT}{lg}"]), lg, "HandsOnHips", True)
-            self.assertEqual(m["marks_cm"], {})
-            self.assertEqual(set(m["contacts_cm"]), {"hand_Left~thigh_Left", "hand_Right~thigh_Right"})
+            off = [s for s in A.SIDES if s not in on]
+            self.assertEqual(set(m["marks_cm"]), {f"hand_{s}@waist_{s}" for s in off}, lg)
+            self.assertEqual({k for k in m["contacts_cm"] if "thigh" in k}, {f"hand_{s}~thigh_{s}" for s in on}, lg)
+            self.assertEqual(not m["fails"], True, (lg, m["fails"]))
             for k, v in m["contacts_cm"].items():
                 self.assertLessEqual(v, lim["contact_gap_cm"], (lg, k))
             for s in ("Left", "Right"):
                 for b in ("torso", f"thigh_{s}"):
                     self.assertLessEqual(m["through_cm"][f"hand_{s}>{b}"], lim["through_hand_cm"], (lg, s, b))
+        self.assertTrue(A.thigh_side(mo.data, "Kneel", "Left"))
+        self.assertFalse(A.thigh_side(mo.data, "Kneel", "Right"))
+        self.assertFalse(A.thigh_side(mo.data, "Stand", "Left"))
 
     def test_a_hand_reads_through_only_where_the_skins_touch(self):
         """Round 3: HandsBehindHead's hands 0.8 cm off the skull: a tube depth there is the proxy's (proxy_cm), not a

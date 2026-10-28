@@ -110,7 +110,8 @@ func _run() -> void:
 		var big: Array[Image] = []
 		for mask: bool in [false, true]:
 			for f: String in FACINGS:
-				_label.text = "%s + %s   %s" % [p[0], p[1], f] if f == "front" and not mask else f
+				_label.text = "%s + %s
+%s" % [p[0], p[1], f] if f == "front" and not mask else f  # s11: two lines (the title ran over "front")
 				big.append(await _shot(FACINGS[f], _centre(), FRAME_H, BIG_CELL, mask))
 		_save(big, BIG_CELL, 4, out.path_join("starting_%s_big_%d.png" % [c, n]))
 	report["starting_big"] = {"files": "starting_<c>_big_<n>.png, n = the starting pair's row", "rows": ["rendered", "outline"],

@@ -497,7 +497,7 @@ class Model:
                 r.turn_world(f"{side}Shoulder", turn_q(*arm["shoulder"], side=side))
             if arm["mode"] == "fk":
                 self._arm_fk(r, side, arm)
-            elif ref is not None and arm.get("clear") and legs in self.data.get("thigh_hand", {}).get("legs", ()):
+            elif ref is not None and arm.get("clear") and thigh_side(self.data, legs, side):
                 self._arm_thigh(r, side, arm, legs)
             else:
                 self._arm_goal(r, side, arm)
@@ -631,7 +631,7 @@ class Model:
             for lg in legs:
                 if lg == self.data["reference_legs"]:
                     continue
-                if lg in self.data.get("thigh_hand", {}).get("legs", ()):  # round 3: the hand on the thigh, always
+                if any(thigh_side(self.data, lg, s) for _, s in groups):  # round 3: the hand on the thigh, always
                     out[f"{am}{VARIANT}{lg}"] = self.arms(am, ref=self.legs(lg), legs=lg)
                     continue
                 P = compose(legs[lg], arms[am]).P()
@@ -663,6 +663,13 @@ class Model:
 
 # ---------------------------------------------------------------------------------------------- pairs and clips
 VARIANT = "__"  # an arms pose's per-legs variant: "<Arms>__<Legs>" (Model.variants)
+
+
+def thigh_side(data: dict, legs: str, side: str) -> bool:
+    """Whether the hip hand of `side` rests on its thigh on these legs (`[thigh_hand]`: its `legs`, and `sides`
+    per legs pose where only one thigh is raised: s11, OneLeg's right knee up, Kneel's left)."""
+    th = data.get("thigh_hand", {})
+    return legs in th.get("legs", ()) and side in th.get("sides", {}).get(legs, SIDES)
 
 
 def arms_for(arms: dict, am: str, lg: str) -> "Rig":
@@ -853,7 +860,7 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
     cs = d["arms"][arms].get("contacts", [])
     if variant and legs in d.get("thigh_hand", {}).get("legs", ()):  # the hip hand on the thigh: its contact is the
         hip = [f"hand_{s}" for s in SIDES  # thigh's skin (gap and through), not the waist's mark nor the torso
-               if (d["arms"][arms].get(s) or d["arms"][arms].get("both") or {}).get("clear")]
+               if (d["arms"][arms].get(s) or d["arms"][arms].get("both") or {}).get("clear") and thigh_side(d, legs, s)]
         cs = [c for c in cs if not (c["a"] in hip and (c.get("mark") or c.get("b") == "torso"))]
         cs += [{"a": h, "b": f"thigh_{h.split('_')[1]}"} for h in hip]
     for c in cs + d["legs"][legs].get("contacts", []):
