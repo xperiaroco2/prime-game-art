@@ -1,16 +1,16 @@
 {
   "asset": "crystal_charger",
-  "built_by": "tools/blender/charger_run.py --tag lens4 --asset assets/prop/crystal_charger",
+  "built_by": "tools/blender/charger_run.py --out <raw>/ship/v5/charger-antennas/r2 --asset assets/prop/crystal_charger",
   "mesh": {
-    "triangles": 36240,
+    "triangles": 38488,
     "by_object": {
       "body": {
-        "triangles": 20318,
+        "triangles": 22526,
         "by_material": {
           "charger_graphite": 4298,
           "charger_bronze2": 2820,
-          "charger_bronze": 12314,
-          "charger_cyan": 878,
+          "charger_bronze": 14422,
+          "charger_cyan": 978,
           "charger_amber": 8
         },
         "pivot_cm": [
@@ -34,9 +34,9 @@
         "open_edges": 0
       },
       "ring": {
-        "triangles": 13072,
+        "triangles": 13112,
         "by_material": {
-          "charger_bronze": 11440,
+          "charger_bronze": 11480,
           "charger_cyan": 1632
         },
         "pivot_cm": [
@@ -70,7 +70,7 @@
       ],
       "h": [
         0.0,
-        139.7
+        141.98
       ]
     },
     "front": "+Z (out of the wall, along the spot's normal)",
@@ -165,9 +165,9 @@
   "godot_cost": {
     "draw_calls_charger": 10,
     "gpu_ms_charger": 0.123,
-    "gpu_ms_with": 0.493,
-    "gpu_ms_without": 0.37,
+    "gpu_ms_with": 0.508,
+    "gpu_ms_without": 0.385,
     "view": "1280x720, eye 1.6 m, 1.6 m away, charging"
   },
-  "review": "<raw>/ship/v4/charger/lens4/sheets/"
+  "review": "<raw>/ship/v5/charger-antennas/r2/sheets/"
 }
