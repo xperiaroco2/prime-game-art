@@ -1461,6 +1461,11 @@ its last leg down the axis). Since the charger zap the electricity runs too (bel
 Output: `cycle.mp4` (1280x720, 30 fps, 24 s, 7.3 MB), `keys/` and `keys_sheet.png` (thirteen labelled beats since
 the traces) in `<raw>/ship/v5/charger-cycle/` (pieces `lens-c-main/pieces`; `--out` names them). The frames take
 about 4 min. `cycle.json`'s `trace_surfaces` counts the traces the east charger drives (3).
+Since zap-4 (the manager, 2026-10-28) a second camera films every frame again about 1.0 m from the crystal (1.4 m out
+of the vertex, eye 1.5 m, `CHARGER_CYCLE["close"]`): `close/cycle.mp4` and `close/keys_sheet.png`, for the
+engineer; the frames take about twice as long. `zoom_sheet.png` crops four charging frames of the 2.2 m camera
+(9.6, 11.4, 13.2, 14.6 s; `cycle.gd` `ZOOM`) to 320x180 px round the crystal, scaled 2x, to judge the electricity at
+the player's distance.
 
 ## The charger traces on the alcove's back panel (2026-10-28)
 
@@ -1503,26 +1508,36 @@ frame. Everything follows the charger look's state and the charge:
   `charger_build.build_electrodes` does, on the track ring) into the crystal: each leaves its electrode's surface and
   lands on the crystal's surface (a radius profile by height from its meshes), the tip pair 4.5 cm below its electrode
   (level, 2.5 cm long, they read as nothing from 2 m), the low pair 9 cm above, jittered up and down and round the
-  axis. Ribbons 2.2 cm wide (the tip pair; 1.6 the low), a white core of a fifth of that. A bolt is midpoint displacement (16 segments, the ends fixed)
+  axis. Ribbons 4 cm wide (the tip pair; 3 the low; zap-4: 2.2 cm still read as fine squiggles from 2.2 m), a white
+  core of 40 % of that, a blue haze round it. A bolt is midpoint displacement (16 segments, the ends fixed)
   with 0..2 fading branches; the shapes re-roll every 50..80 ms from a seeded generator and are rebuilt every frame on
   the electrodes' and the crystal's current places, so they follow the turning ring and the rising, turning crystal.
   The low pair skips about half its ticks, the tip pair a tenth (the flicker). Drawn as camera-facing ribbons
   (`godot/charger/arc.gdshader`: unshaded, additive, a white-cyan core over a cyan halo, HDR for the glow) in one
   `ImmediateMesh` under the charger's root.
-- **Lights**: one small `OmniLight3D` per arc at its hit (range 0.2 m, 0.25..0.45 flickering, the whiter cyan
-  (0.45, 0.82, 1) that stays neutral on the bronze; the charged glow rule: light around, not a brighter surface).
-- **Sparks** at the hits each tick (1..3) and now and then at an electrode: short streaks (0.1..0.28 s, gravity,
+- **Wrap arcs and halo loops** (zap-3, zap-4/5; the engineer: "lightning, white, around the crystal, spinning"): from
+  every electrode a wrap arc leaps into the air round the crystal (1.5..2.3 times its radius) and runs 1.2..3 rad round
+  it the ring's way; each tick 3..5 halo loops (8 in the flash) leave the crystal's surface, arch out to 2..3.4 times
+  its radius, tilted up to 12 cm, jagged by 1.4 cm and 1.8 cm, and land again 1.2..2.6 rad round, most with a fork
+  off the apex into the air (2.5..5 cm), and the whole cage turns round the axis at 9 rad/s between re-rolls,
+  so it spins; a crawler runs between two surface points of the tip pair. Glints (6..10 per tick, 70 in the flash)
+  orbit the crystal the ring's way and spiral out, a 2.4 cm head with a 0.7 rad trail.
+- **Lights**: one small `OmniLight3D` per arc at its hit (range 0.32 m, 0.45..0.7 flickering, a near-white blue
+  (0.78, 0.88, 1): zap-4, the old cyan (0.45, 0.82, 1) times the bronze's orange is olive; 0.8 washed the inner prongs
+  to chrome).
+- **Sparks** at the hits each tick (2..5) and now and then at an electrode: short streaks (0.15..0.4 s, gravity,
   drag) simulated in `step` on the caller's dt (not GPUParticles3D), so the fixed-clock cycle draws the same frames
   every run.
 - **The flash** (`flash` 0..1, `cycle.gd` `FLASH` 15.4..15.62 s, with the ring's flare): every arc on, 2.2 times
-  wider, four branches each, re-rolled every 30 ms, a burst of 28 sparks, the lights to 1.8 over 0.42 m. Then quiet.
+  wider, four branches each, re-rolled every 30 ms, a burst of 60 sparks, the lights to 2.4 over 0.6 m. Then quiet.
 - **Gating**: arcs only while the state is "charging" and 0 < charge < 1, or during the flash (still "charging");
   never idle or charged.
 - **The conduits** (`lens_conduits_e/w`, material `int_cyan__lens_core`): the cores' UV x runs 0 where a conduit
   leaves the jamb to 1 at the deck or the ceiling, UV y (Godot) is the run's length (`ship_interior_lens.py`
   `core_uvs`). `bind` puts one `godot/charger/conduit.gdshader` copy on the cores near the crystal (`CONDUIT_REACH`
-  1.2 m), its base the surface's own glow: while the arcs run, bright bands (12 cm, 0.45 m apart, 1.1 m/s) run from the deck
-  and the ceiling into the jambs; once full the core glows steady a little brighter; `lit` (the traces' fade) brings
+  1.2 m), its base the surface's own glow: while the arcs run, the base dims to 40 % and near-white bands (22 cm,
+  0.6 m apart, 1.1 m/s, energy 9; zap-4: 12 cm at 5 over the full base did not read) run from the deck and the
+  ceiling into the jambs; once full the core glows steady a little brighter; `lit` (the traces' fade) brings
   it back to the base.
 - **The export** ships `charger_arc.gdshader` and `charger_conduit.gdshader` (`ship_export.SHADERS`) beside the
   pieces for the game's copy of zap.gd; the ship scene itself does not use them.
