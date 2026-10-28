@@ -304,8 +304,8 @@ hull_rough_add = 0.12                          # + the hull silvers' roughness (
 # its "<group>_lamp" number below (a row without a group by lamp_scale).
 lamps = [
   [2.772, 0.748, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
-  [1.148, 2.372, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false, 75.0],  # hall, by the wall: a spot down (gills step 10: an omni here left a hot spot on the hood 1 m away)
-  [-1.148, 2.372, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false, 75.0],  # hall, by the wall: a spot down (gills step 10: an omni here left a hot spot on the hood 1 m away)
+  [1.148, 2.372, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false, 88.0],  # hall, by the wall: a spot down (gills step 10: an omni here left a hot spot on the hood 1 m away; step 12: 88 deg, so the hood gets a grazing wash)
+  [-1.148, 2.372, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false, 88.0],  # hall, by the wall: a spot down (gills step 10: an omni here left a hot spot on the hood 1 m away; step 12: 88 deg, so the hood gets a grazing wash)
   [-2.772, 0.748, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
   [-2.772, -1.548, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall
   [-1.148, -3.172, 4.2, 0.5, 3.2, 1.0, 0.7, 0.42, "hall", false],  # hall, by the wall

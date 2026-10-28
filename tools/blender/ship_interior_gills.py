@@ -91,6 +91,7 @@ WIN_U, WIN_H = (BAND[0] + 0.006, WELL_U[1]), WELL_H
 WELL_MIN = 0.06                      # the well's least depth from the wall's face (the plate 3 cm and 3 cm of light)
 SKIN_M = 0.17                        # the hull kept behind the well (the design's 17 cm skin)
 PLATE_T = 0.03                       # the band plate's thickness
+COLUMN_STRIP_W = 0.010                       # gills step 12: the bronze strip on the column's door side
 FIXED_TOP = BEND + 0.006                    # its plate's top, 4 mm under its crown (no groove: it does not turn)
 HAND_C, HAND_HW, HAND_HH = 1.20, 0.112, 0.142   # the scanner's bezel: middle 1.20, 22.4 x 28.4
 BAR_W, BAR_H, BAR_GREEN = 0.05, (1.36, 1.88), (1.78, 1.84)
@@ -896,6 +897,10 @@ def station_gills(args, layout):
     add("fixed", hh(fixed_mesh()), "gill_bronze")
     add("fixed_edge", hh(chamfer_strips(FIXED[0], FIXED[1], [(COVER_H[0], PROUD), (FIXED_TOP, PROUD)], CH,
                                         lambda u, v, h: (u, v, h))), "gill_edge")
+    # gills step 12: a 1 cm bronze strip up the column's door side (r9's critic: its side met the band's plain plate
+    # with no edge), the glossy edge bronze, 3 mm short of the column's face
+    add("column_strip", hh(L.box(FIXED[1], FIXED[1] + COLUMN_STRIP_W, -0.002, PROUD - 0.003, COVER_H[0], FIXED_TOP)),
+        "gill_edge")
     add("crown5", hh(crown_mesh(*FIXED)), "gill_bronze2")
     add("crown5_edge", hh(crown_strips(*FIXED)), "gill_edge")
     # the scanner: the bezel ring 1.4 cm proud of the arch, its dark screen 6 mm in, the hand's cyan stroke on it
