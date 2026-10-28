@@ -1565,6 +1565,31 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
     chord.
   - *Built and walked:* `ship --check` clean, `--build` 159 GLBs (185,689 triangles), `--godot` 196 colliders and the
     walk 14/14.
+- **The polish (gills step 10, 2026-10-28; static, calm; `<raw>/ship/v5/gills/r10/`, the hand-off
+  `<raw>/ship/v5/notes/gills-10.md`).** A fresh critic on r9 found no blocker; the fixes:
+  - *One smooth glow:* the well's back is `GLOW_N` 24 thin bands (`COOL_BANDS`, materials `int_cyan__vent_cool`,
+    `cool2..cool24`), each at `glow_e` of its middle: 0.70 of the peak at the foot, the peak `GLOW_PEAK` 0.47 (30 %
+    over step 9's 0.36) at h 1.0, easing to 0.64 under the roof; neighbours differ by under 6 % of the peak
+    (`test_glow_bands_and_slots`). The flanks +30 % too (`FLANK_E` 0.585, `FLANK2_E` 0.156).
+  - *No dark wall in the well:* its floor, roof and ends carry glow walls 3 mm inside the dark ones, each merged into
+    the band at its height (the heat's 1.5 mm inside, merged into the heat, for the problem).
+  - *The roof behind the hood:* `WELL_TOP` 2.82 (was `BEND` 2.70): the window runs on over the bend, the plate's top
+    strip and the upper wall's body across it are gone, the dark upper panel starts at 2.82; the lit slot strips
+    (`slots6`, `slots7`, materials `vent_slot6`, `vent_slot7`) run 2.818..2.95 inside the hood
+    (`test_well_roof_behind_the_hood`).
+  - *The hood's lip one smooth arc:* two half parabolas meeting level at `HOOD_APEX` (the rib band's middle, 2.86),
+    2.78 at the hood's ends, no step at the column (2.82 at its inner edge); every rib's crest at most 6.3 cm proud at
+    the lip, behind the 7.5 cm nose. The face has a 2 cm shadow line 6 mm deep at its middle (`HOOD_GROOVE`). The two
+    hall lamps by the gills (`[light] lamps`, (+-1.148, 2.372)) are downward spots (75 deg): as omnis 1 m in front of
+    the hood at its height they left a hot spot on its face.
+  - *The foot:* the sill 6 cm tall (was 8.8), a rounded top edge, in the ribs' bronze (`gill_bronze`); the ribs' and
+    the column's feet at 5 cm, 1 cm into it. The floor strips a soft spill: the core the slot's full 12 cm at 0.30,
+    the outer steps 2.5 and 5 cm wider each side, 0.13 and 0.05, out to 24 cm (`FLOOR_STEPS`).
+  - *The lights* (`vent_glow.gd`): per gap five rows at 0.1..0.9 of the well's height (`GAP_FRAC`; the old three
+    stopped at 2 m), 0.26 over 0.42 m, no specular.
+  - *The views:* `ship.toml`'s `in_vent_*` and `cu_vent_*` and `VENT_ANIM` (`--vent-anim`'s camera) aim at the hall's
+    spot. The start console's hologram moved its vent and back socket marks with the gills (its `spinup3` rebuild;
+    the vents' lines step to their own run, x 1.4 m, and go straight aft).
 - **The motion step** drives the four states on the ribs (each `<id>_cover<k>` rocked about `rib_axis`), the glows, the
   seams red for the problem, the lamp, the bar's marker.
 
