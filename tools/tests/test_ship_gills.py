@@ -197,6 +197,34 @@ class Ceiling(unittest.TestCase):
             self.assertGreaterEqual(x, G.S0 - 1e-9)
             self.assertLessEqual(ha * x + hb * y, hc + 1e-6)
 
+    def test_cornice_reads(self):
+        """Step 6: the cornice is the lighter metal over a dark shadow line (dark on dark did not read)."""
+        p = parts("e")
+        self.assertEqual(p["cornice"]["mat"], "int_silver_a")
+        self.assertEqual(p["cornice_gap"]["mat"], G.DARK)
+        under = G.point(0.0, G.T_TOP - G.CORNICE_H, 0.0015)[2]   # the gap's top is the cornice's bottom edge
+        self.assertAlmostEqual(max(v[2] for v in p["cornice_gap"]["verts"]), under, places=9)
+        self.assertGreater(G.GAP_H, 0.01)
+
+    def test_corner_column(self):
+        """Step 6: one column at the band's hall end, the floor to past the ceiling: its front on the header's plane
+        (just on the hall side of the band's caps), its edge clear of the button below the bend and past the lean's
+        end at the ceiling; its mouth face meets the wall clear of the button's recess."""
+        col = parts("e")["corner-col"]
+        v = col["verts"]
+        ha, hb, hc = G.header_clip()
+        self.assertTrue(col["solid"])
+        self.assertAlmostEqual(min(q[2] for q in v), S.FLOOR, places=9)
+        self.assertGreaterEqual(max(q[2] for q in v), S.FLOOR + S.TH_H)
+        for x, y, _h in v:   # all on the throat's side of the plane moved COL_PROUD toward the hall
+            self.assertLessEqual(ha * x + hb * y, hc + G.COL_PROUD + 1e-6)
+        low = [q for q in v if q[2] <= S.FLOOR + S.TH_BEND + 1e-9]
+        self.assertGreater(min(q[0] for q in low if q[1] < 0), G.BUTTON_S + G.OCT_FLATS / 2)   # the button's recess
+        top = [q for q in v if q[2] > S.FLOOR + S.TH_BEND + 1e-9]
+        self.assertLess(min(q[0] for q in top), G.u_max(G.T_TOP))                         # past the lean's end
+        self.assertGreaterEqual(max(q[1] for q in top), G.v_of(G.T_TOP))                  # in front of it
+        self.assertLess(max(q[1] for q in low), 0.5)                                       # the walk: under 0.5 deep
+
     def test_plinth(self):
         p = parts("e")
         self.assertAlmostEqual(max(v[2] for v in p["plinth"]["verts"]) - S.FLOOR, G.PLINTH_H, places=9)

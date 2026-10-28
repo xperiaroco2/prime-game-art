@@ -54,8 +54,11 @@ LINE_H = (PLINTH_H - 0.036, PLINTH_H - 0.012)              # step 5: the plinth'
 CORNICE_H, CORNICE_W = 0.06, 0.032                      # step 5: the cornice along the band's top, under the ceiling
 CORNICE_MAT = "int_silver_a"                            # step 6: the lighter metal (silver_c read dark on dark), 3.2 cm proud
 GAP_H = 0.014                                           # step 6: the dark shadow line under the cornice
-COL_U0, COL_U_TOP = 3.88, 3.60                          # step 6: the hall end's column: its mouth face at the wall (clear
-                                                        # of the button's recess, 3.84) and at the lean's top
+COL_U0 = 3.88                                           # step 6: the hall end's column: its mouth face meets the wall
+                                                        # here (clear of the button's recess, 3.84)
+COL_E_LO, COL_E_HI = 3.80, 3.58                         # its front edge's u on the header's plane: to the bend (the button
+                                                        # stays in view from the throat), and at the ceiling (past the lean)
+COL_PROUD = 0.004                                       # its front 4 mm on the hall side of the band's end caps (no z-fight)
 PLINTH_S0 = 0.02                                        # the plinth from the mouth's corner (under the ramp roof too, as the concept)
 MOUTH_W = 0.003                                         # step 4: the band's mouth part (s 0.02-1.62, under the ramp roof, to
                                                         # the bend) 3 mm proud of the jambs' plates it covers (no z-fighting)
@@ -444,18 +447,30 @@ def cornice() -> list:
 
 
 def corner_column() -> list:
-    """Step 6: the concept's one clean column at the band's hall end, the floor to the ceiling. Its mouth face is a
-    vertical plane from s COL_U0 at the wall to COL_U_TOP at the lean's top; its hall face is the header's cut plane.
-    So the band's profile (vertical, then the lean) ends on it in one clean edge, and the K pilaster's top and the
-    header's trim no longer show from the throat. A `-col` part: the wedge (0.6 m deep at its edge) is a collider."""
+    """Step 6: the concept's one clean column at the band's hall end, the floor to the ceiling, in the band's frame.
+    Its front lies on the header's plane (COL_PROUD toward the hall), from the wall's end at K to its front edge; that
+    edge stands vertical to the bend at u COL_E_LO and then leans out with the wall to COL_E_HI at the ceiling, so the
+    front stays clear of the lean and the column reads full height from the throat. Its mouth face keeps one direction
+    in plan (the wall at COL_U0 to the low edge): two parallel lines, one flat face, which cuts the band in a clean
+    line, vertical below the bend and slanted over the lean (the concept's line). A `-col` part: the column is a
+    collider (0.43 m deep at the floor)."""
     a, b, c = header_clip()
-    v_top = v_of(T_TOP + T_OVER)
-    k = (COL_U0 - COL_U_TOP) / v_top                      # the mouth face: u = COL_U0 - k v
-    v_edge = (c - a * COL_U0) / (b - a * k)               # where it meets the header's plane: the column's edge
-    foot = [(COL_U0, -0.02), (WALL_LEN, -0.02), (WALL_LEN, (c - a * WALL_LEN) / b), (COL_U0 - k * v_edge, v_edge)]
-    fr = G.Frame((0.0, 0.0, FLOOR), (1, 0, 0), (0, 1, 0), (0, 0, 1))
-    body = G.slab(fr, foot, 0.0, TOP + T_OVER)
-    return [P("corner-col", body, CORNICE_MAT)]   # the lighter metal: its faces turn from the throat's lights
+    c += COL_PROUD * math.hypot(a, b)
+    def on_plane(u):
+        return (u, (c - a * u) / b)
+    e_lo, e_hi = on_plane(COL_E_LO), on_plane(COL_E_HI)
+    du, dv = e_lo[0] - COL_U0, e_lo[1]                     # the mouth face's direction in plan (from the wall)
+    back = -0.02
+    def section(e, h):
+        wb = (e[0] + du * (back - e[1]) / dv, back)
+        return [(*wb, FLOOR + h), (WALL_LEN, back, FLOOR + h), (*on_plane(WALL_LEN), FLOOR + h), (*e, FLOOR + h)]
+    verts = section(e_lo, 0.0) + section(e_lo, BEND) + section(e_hi, TOP + T_OVER)
+    faces = [(3, 2, 1, 0), (8, 9, 10, 11)]
+    for r in (0, 4):
+        for i in range(4):
+            j = (i + 1) % 4
+            faces.append((r + i, r + j, r + 4 + j, r + 4 + i))
+    return [P("corner-col", (verts, faces), CORNICE_MAT)]   # the lighter metal: its faces turn from the throat's lights
 
 
 def seams() -> list:

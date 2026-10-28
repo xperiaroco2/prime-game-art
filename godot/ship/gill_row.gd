@@ -22,8 +22,10 @@ const WHITE := Color(0.95, 0.97, 1.0)
 const FIL_GAIN := {"calm": 1.0, "open": 1.3, "gasp": 1.2, "shut": 0.0, "fault": 0.0}
 const SEAM_GAIN := {"calm": 0.0, "open": 0.0, "gasp": 0.6, "shut": 0.25, "fault": 1.6}
 const LIGHT_ENERGY := {"calm": 0.25, "open": 0.4, "gasp": 0.4, "shut": 0.0, "fault": 0.03}
-## step 6: the mist was invisible (0.10-0.16, and faded out by the wall 16 cm behind it): stronger, a short fade
-const MIST := {"calm": 0.34, "open": 0.46, "gasp": 0.36, "shut": 0.0, "fault": 0.0}
+## step 6: the mist was invisible: it hung 3 cm in front of the wall (16 cm out from the recess's back, 13 cm deep),
+## faded out by the proximity fade. Now 30 cm out from the back (17 cm in front of the wall), a soft add.
+const MIST := {"calm": 0.22, "open": 0.30, "gasp": 0.24, "shut": 0.0, "fault": 0.0}
+const MIST_OUT := 0.30
 
 var _root: Node3D
 var _mats: Dictionary = {}       # node name -> [StandardMaterial3D override, its built emission energy]
@@ -62,7 +64,7 @@ func setup(piece: Node3D) -> void:
 		light.shadow_enabled = false
 		piece.add_child(light)
 		_lights[k] = light
-		_mists[k] = _make_mist(piece, at + out * 0.16 + Vector3(-0.14 * _mirror, 0.0, 0.0))
+		_mists[k] = _make_mist(piece, at + out * MIST_OUT + Vector3(-0.14 * _mirror, 0.0, 0.0))
 	_own("btn_ring")
 
 
@@ -85,7 +87,7 @@ func _make_mist(piece: Node3D, at: Vector3) -> Array:
 	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	m.proximity_fade_enabled = true
-	m.proximity_fade_distance = 0.07
+	m.proximity_fade_distance = 0.15
 	m.no_depth_test = false
 	m.albedo_texture = tex
 	m.albedo_color = Color(0, 0, 0, 0)
