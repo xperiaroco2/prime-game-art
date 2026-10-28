@@ -20,7 +20,7 @@ import os
 import sys
 
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alien_body_refit_review as R  # noqa: E402
@@ -56,6 +56,22 @@ def bend_views(arm, side, parent, child, dist):
     b = u + v
     b = b.normalized() if b.length > 1e-3 else -n
     return [(b + 0.35 * n).normalized() * dist, (n - 0.15 * b).normalized() * dist]
+
+
+def clear_view(sc, c, v, axis, near=0.10):
+    """M2b: the camera offset v turned about the bone's axis (45 deg steps) until the line from the camera to the joint
+    c meets the mesh only within `near` (m) of the joint (the limb's own surface): never from inside the body (M2's
+    elbow tile at Talk_Upper was rendered from inside the chest). Returns (offset, turned deg); v itself if none is
+    clear."""
+    dg = bpy.context.evaluated_depsgraph_get()
+    ax = axis.normalized()
+    for k in range(8):
+        w = Matrix.Rotation(math.radians(45 * k), 3, ax) @ v
+        o = c + w
+        hit, loc, *_ = sc.ray_cast(dg, o, (c - o).normalized(), distance=w.length)
+        if not hit or (loc - o).length >= w.length - near:
+            return w, 45 * k
+    return v, -1
 
 
 def ang(u, v):
@@ -154,7 +170,10 @@ def main():
         sc.frame_set(e["frame"])
         bpy.context.view_layer.update()
         c = arm.matrix_world @ arm.pose.bones[f"{e['side']}{bone}"].head
+        axis = arm.pose.bones[f"{e['side']}{child}"].tail - arm.pose.bones[f"{e['side']}{child}"].head
         for k, v in enumerate(bend_views(arm, e["side"], parent, child, dist)):
+            v, turned = clear_view(sc, c, v, arm.matrix_world.to_3x3() @ axis)
+            e.setdefault("views_turned_deg", []).append(turned)
             R.look(cam, c + v, c, lens=60)
             name = f"clip_{j}_{k}_{e['clip']}_f{e['frame']}_{round(e['deg'])}deg.png"
             shots.append(R.shot(sc, os.path.join(a.out, name), (640, 640)))
