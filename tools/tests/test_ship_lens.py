@@ -84,11 +84,14 @@ class LensAlcoveTest(unittest.TestCase):
 
     def test_the_conduits_match_the_drawing(self) -> None:
         K = LN.CONDUIT
+        # lens C step 2: forward from the drawing's d 21 so they read beside the jambs head-on, still behind their face
+        self.assertEqual(K["d"], 38.0)
+        self.assertLessEqual(K["d"] + K["r"], LN.ALCOVE["face"] - 2.0)
         for side in "ew":
             for s in (-1, 1):
                 low, high = LN.conduit_paths(side, s)
                 for path, h, sign in ((low, K["low"], -1), (high, K["high"], 1)):
-                    self.assertTrue(all(abs(-x * 100 - K["d"]) < 1e-9 for x, _, _ in path))   # axis d 21
+                    self.assertTrue(all(abs(-x * 100 - K["d"]) < 1e-9 for x, _, _ in path))   # axis d 38
                     self.assertAlmostEqual(abs(path[0][1]) * 100, LN.ALCOVE["jamb_out"] - 1.0)  # from inside the jamb
                     self.assertAlmostEqual((path[0][2] - S.FLOOR) * 100, h)
                     self.assertAlmostEqual(abs(path[-1][1]) * 100, K["u"])                     # axis u 68
