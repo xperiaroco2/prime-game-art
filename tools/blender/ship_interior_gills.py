@@ -50,6 +50,8 @@ S0 = min(i * _MOD for i in range(5) if _MK[1] + (_KK[1] - _MK[1]) * i / 5 >= S.T
 PLINTH_H, PLINTH_W = 0.60, 0.03                        # the plinth: 0-60 cm, 3 cm proud of the band
 KICK_H = 0.08
 PLINTH_S0 = 0.02                                        # the plinth from the mouth's corner (under the ramp roof too, as the concept)
+MOUTH_W = 0.003                                         # step 4: the band's mouth part (s 0.02-1.62, under the ramp roof, to
+                                                        # the bend) 3 mm proud of the jambs' plates it covers (no z-fighting)
 BAND = (1.70, 3.95)                                     # the clean band's seams (design: s 1.70-3.95)
 SEAM_W = 0.006
 
@@ -72,7 +74,9 @@ MEET = 0.002                                            # half the gap between t
 FLANGE = 0.015                                          # leaf a's flange reaches this far under leaf b
 SLIDE = WIDTH / 2 + FLANGE + 0.003                      # each leaf's travel from shut to open (0.123)
 SEAM_W = 0.007                                          # the light line on each leaf's meeting edge
-FILS, FIL_T, FIL_W = 36, 0.006, -0.055                  # the filaments: count, thickness, their front w (back: the recess)
+FILS, FIL_T, FIL_W = 36, 0.003, -0.108                  # the filaments: count, thickness, their front w (back: the recess)
+# step 4: 3 mm ribs standing 2.2 cm off the glowing back (step 3's 6 mm blades 7.5 cm deep read as coarse sawteeth in
+# perspective, worst on the lean, where the eye looks down their sides)
 GASP_OPEN = 0.6                                         # the gasp: the leaves 60 % open
 N_ROWS = 28                                             # rows along the chord
 
@@ -404,6 +408,16 @@ def plinth() -> list:
     return [P("plinth", body, BAND_MAT), P("kick", kick, DARK), P("plinth_line", line, "int_cyan__gill_plinth")]
 
 
+def band_mouth() -> list:
+    """Step 4: the band's mouth part, under the ramp roof from the mouth's corner to the roof line, the plinth's top to
+    the bend (the tunnel's chamfer leans in over it): the band's own metal over the jambs' bluish hull plates, so the
+    concept's one clean band runs from the ramp roof's edge to the hall's corner. Its aft end steps the 3 mm back."""
+    face = _poly([(PLINTH_S0, PLINTH_H), (S0, PLINTH_H), (S0, BEND), (PLINTH_S0, BEND)], MOUTH_W)
+    end = _sheet([[(S0, t, MOUTH_W), (S0, t, 0.0)] for t in (PLINTH_H, BEND)], flip=True)
+    front = _sheet([[(PLINTH_S0, t, 0.0), (PLINTH_S0, t, MOUTH_W)] for t in (PLINTH_H, BEND)], flip=True)
+    return [P("band_mouth", M(face, end, front), BAND_MAT)]
+
+
 def seams() -> list:
     out = []
     for u in BAND:
@@ -457,7 +471,7 @@ def th_gills(args, layout):
     parts += ps
     holes.append(hole)
     parts.append(P("band", M(*_band_faces(holes)), BAND_MAT))
-    parts += plinth() + seams() + back_and_ends()
+    parts += plinth() + band_mouth() + seams() + back_and_ends()
     closed = ("_fil", "_rim", "_leaf_a", "_leaf_b", "plinth", "kick", "plinth_line")
     for p in parts:   # the open sheets keep their winding (recalc_face_normals guesses on an open sheet)
         p["solid"] = p["name"].endswith(closed)

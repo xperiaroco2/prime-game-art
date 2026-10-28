@@ -413,8 +413,8 @@ int_amber__lens = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.0}   # lens C: the lou
 int_amber__lens_toe = {c = [1.0, 0.42, 0.06], e = 0.047, l = 0.0}   # lens C step 4: the sofa's underside strip at a third of int_amber__lens
 int_amber__lens_ring = {c = [1.0, 0.42, 0.06], e = 0.3, l = 0.0}   # lens C step 4: the coffee table's lit edge ring
 int_cyan__lens_core = {c = [0.0, 0.5, 1.0], e = 0.2, l = 0.0}   # lens C step 2: the conduits' cyan core, brighter than int_cyan (0.05: it read weak beside the concept's bright tubes); glows, lights nothing
-int_cyan__gill_fil = {c = [0.3, 0.9, 1.0], e = 0.6, l = 0.0}     # the gills (step 3): the slits' radiating filaments (gill_row.gd sets the state's colour)
-int_cyan__gill_glow = {c = [0.0, 0.62, 1.0], e = 0.3, l = 0.0}    # the slits' glowing back behind the filaments
+int_cyan__gill_fil = {c = [0.05, 0.72, 1.0], e = 0.3, l = 0.0}   # the gills (step 4: 0.3, saturated; 0.6 washed to blue-white): the slits' radiating filaments (gill_row.gd sets the state's colour)
+int_cyan__gill_glow = {c = [0.0, 0.62, 1.0], e = 0.15, l = 0.0}   # the slits' glowing back behind the filaments (step 4: 0.15, under the filaments)
 int_cyan__gill_seam = {c = [1.0, 0.06, 0.02], e = 0.12, l = 0.0}  # the shut leaves' meeting line: a fault's red (shut: dim cyan, gill_row.gd)
 int_dark__gill_btn = {l = 0.0}                                      # the gills' button dome (lights nothing)
 int_dark__gill_leaf = {l = 0.0}                                     # the slits' shutter leaves

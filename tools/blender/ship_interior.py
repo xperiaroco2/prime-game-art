@@ -906,8 +906,10 @@ def throat_ceil(args, layout):
     fr = G.Frame((0.0, 0.0, top), (1, 0, 0), (0, 1, 0), (0, 0, -1))
     fl = lambda q: [(x, y) for x, y in q]
     body = [G.slab(G.floor_frame(0.0), q, top, top + 0.12) for q in throat_pieces(TH_IN, TH_ROOF, None)]
+    # the gills step 4: only the two middle wedges' panels (on the spine); the corner wedges' small panels hung 3 cm
+    # under the ceiling by the hall's corners, where the header cuts the gills' band back, and read as floating plates
     panels = [G.slab(G.floor_frame(0.0), G.inset(q, 0.03), top - 0.03, top, 0.01)
-              for q in throat_pieces(TH_IN + 0.02, TH_ROOF + 0.03, None, 0.05)]
+              for q in throat_pieces(TH_IN + 0.02, TH_ROOF + 0.03, None, 0.05) if min(abs(x) for x, _ in q) < 0.06]
     spine = [G.slab(G.floor_frame(0.0), q, top - 0.02, top) for q in throat_pieces(TH_IN, TH_ROOF, None)
              if min(abs(x) for x, _ in q) < 0.05]
     spine = [G.slab(G.floor_frame(0.0), G.rect(-0.03, 0.03, TH_ROOF, -HV), top - 0.02, top)]
