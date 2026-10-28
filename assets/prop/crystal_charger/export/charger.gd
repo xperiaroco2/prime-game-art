@@ -94,7 +94,7 @@ static func apply(root: Node3D) -> Dictionary:
 	glow.omni_attenuation = 1.6
 	glow.shadow_enabled = false
 	root.add_child(glow)
-	glow.position = Vector3(0.0, 1.13, 0.535)  # at the crystal's middle (the model's frame: front +Z, metres)
+	glow.position = Vector3(0.0, 1.13, 0.38)  # at the crystal's middle (the model's frame: front +Z, metres)
 	var look := {"cyan": cyan, "amber": amber, "lens": lens, "glow": glow, "carrier": carrier, "ring": ring,
 		"button": button, "anchor": anchor, "carrier_rest": carrier.position if carrier else Vector3.ZERO,
 		"button_rest": button.position if button else Vector3.ZERO, "state": "idle"}
