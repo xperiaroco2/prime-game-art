@@ -25,6 +25,8 @@ INSPECT_TIMEOUT = 300
 # Thresholds of the assertions (docs/godot.md).
 MOVE_MIN_DEG = 0.5  # an animation moves a bone by at least this much between its samples at 0, 1/3 and 2/3 ...
 MOVE_MIN_M = 0.002  # ... or translates one by at least this much
+HELD_CLIP = re.compile(r"(^|\|)Pose(Legs|Arms)_")  # held poses (art #196, the photo poses): identical keys by design,
+# so they must NOT move; every other animation must
 SIZE_TOLERANCE_M = 0.002  # Godot's rest-pose height equals Blender's
 JOINT_TOLERANCE_M = 0.001  # Godot's rest joints equal Blender's bone heads
 LENGTH_TOLERANCE_S = 1e-3
@@ -422,13 +424,23 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
     c.add("tracks_resolve", not unresolved and not warned,
           f"all {tracks} tracks of {len(anims)} animations resolve to a node and bone" if not unresolved and not warned else
           "; ".join(f"{n}: {len(p)} unresolved, e.g. {p[0]}" for n, p in sorted(unresolved.items())) + "; ".join(warned[:3]))
-    still = [n for n, a in sorted(anims.items()) if not a["motion"] or
-             (a["motion"]["max_rotation_deg"] < MOVE_MIN_DEG and a["motion"]["max_translation_m"] < MOVE_MIN_M)]
-    least = min(anims.items(), key=lambda kv: kv[1]["motion"].get("max_rotation_deg", 0.0)) if anims else None
-    c.add("animations_move", not still and bool(anims),
+    def _still(a: dict) -> bool:
+        return not a["motion"] or (a["motion"]["max_rotation_deg"] < MOVE_MIN_DEG and
+                                   a["motion"]["max_translation_m"] < MOVE_MIN_M)
+
+    held = {n: a for n, a in anims.items() if HELD_CLIP.search(n)}
+    moving = {n: a for n, a in anims.items() if n not in held}
+    still = [n for n, a in sorted(moving.items()) if _still(a)]
+    least = min(moving.items(), key=lambda kv: kv[1]["motion"].get("max_rotation_deg", 0.0)) if moving else None
+    c.add("animations_move", not still and bool(moving),
           (f"every animation moves bones between 0, 1/3 and 2/3 of its length (least: {least[0]}, "
            f"{least[1]['motion']['max_rotation_deg']:.1f} deg on {least[1]['motion']['most_moved_bone']})") if not still and least else
           f"no bone moves {MOVE_MIN_DEG} deg or {MOVE_MIN_M * 1000:.0f} mm in: {', '.join(still)}")
+    if held:
+        drift = [n for n, a in sorted(held.items()) if not _still(a)]
+        c.add("held_poses_hold", not drift,
+              f"all {len(held)} held pose clips (PoseLegs_/PoseArms_) keep every bone still" if not drift else
+              f"held pose clips that move: {', '.join(drift)}")
 
     _loops(c, anims, expect.get("seams", {}))
     if expect.get("loop_suffix"):  # animations named as loops: Godot must import them looping (art #33)
