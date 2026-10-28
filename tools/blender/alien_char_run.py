@@ -103,9 +103,13 @@ def main() -> int:
     ap.add_argument("--gill-ratio", type=float, default=1.0, help="M1: the gills' triangles kept (1.0: all)")
     ap.add_argument("--leg-fit", action="store_true", help="T2: the clips fitted to the body's own legs against "
                     "S4b's rig, the one they were made on (alien_leg_fit.py: the hip keys scaled, the feet matched)")
+    ap.add_argument("--leg-ik", action="store_true", help="T3: with --leg-fit, the feet on S4b's foot paths "
+                    "scaled to the legs by IK in place of the lowest-point match (--leg-fit-mode ik)")
     ap.add_argument("--lively", default="", help="E2: head=DIR[,head=DIR]: build on these lively build folders instead"
                     " of HEADS' (a candidate's look)")
     args = ap.parse_args()
+    if args.leg_ik and not args.leg_fit:
+        ap.error("--leg-ik needs --leg-fit")
     heads = args.heads.split(",")
     lively = {h: Path(d) for h, d in (x.split("=", 1) for x in args.lively.split(",") if x)}
     for h, d in lively.items():  # a mistyped head or folder would build the default look without a word
@@ -139,6 +143,7 @@ def main() -> int:
                 "--out", str(hd), *(["--no-flare"] if args.no_flare else []),
                 *(["--gill-ratio", str(args.gill_ratio)] if args.gill_ratio < 1.0 else []),
                 *(["--leg-fit", str(BODY)] if args.leg_fit else []),
+                *(["--leg-fit-mode", "ik"] if args.leg_fit and args.leg_ik else []),
                 *(["--clip-edits", str(Path(args.clip_edits).resolve())] if args.clip_edits else [])],
                 timeout=1500)
             (hd / "build.log").write_text((res.stdout or "") + (res.stderr or ""), encoding="utf-8", newline="\n")

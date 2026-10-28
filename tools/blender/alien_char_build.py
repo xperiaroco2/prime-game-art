@@ -222,6 +222,8 @@ def main():
     ap.add_argument("--no-flare", action="store_true", help="M1: no neck flare (a Meshy body has its own trapezius)")
     ap.add_argument("--leg-fit", default="", help="T2: the .blend of the rig the clips were made on (S4b's body): "
                     "the clips' hip keys scaled to this body's leg length and the feet's lowest point matched per frame (alien_leg_fit.py)")
+    ap.add_argument("--leg-fit-mode", default="lowest", choices=("lowest", "ik"), help="T3: with --leg-fit, "
+                    "'ik' puts the feet on the donor's foot paths scaled to the legs (alien_leg_fit.py)")
     ap.add_argument("--gill-ratio", type=float, default=1.0, help="M1: the gills' share of their triangles kept "
                     "(collapse decimation on the faces the Gill* groups own; 1.0: untouched)")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -637,7 +639,8 @@ def main():
     if a.leg_fit:  # T2: the clips fitted to this body's legs (alien_leg_fit.py), before the clip edits
         import alien_leg_fit
         rep["leg_fit"] = alien_leg_fit.fit(arm, a.leg_fit, [x for x in bpy.data.actions
-                                                            if x.name.startswith("CharacterArmature|")])
+                                                            if x.name.startswith("CharacterArmature|")],
+                                           mode=a.leg_fit_mode)
         log(f"leg fit {json.dumps(rep['leg_fit'])}")
     if a.clip_edits:  # A1: the clips edited for the bare alien body (alien_clip_edit.py) before the export
         import alien_clip_edit

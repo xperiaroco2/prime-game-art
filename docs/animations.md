@@ -873,6 +873,16 @@ clips, glTF-Validator 0 errors, but its numbers are not sane yet: the Sprint_Fwd
 7.80), so its stride scales 1.52 and its feet slide 67 mm; Jog_Fwd 4.63 m/s (5.15) slides 17 mm (f3: 0). Matching
 the lowest point's height is not enough: the horizontal sweep differs too. The next step is the feet themselves: the
 ankles and toes on S4b's trajectories scaled by the leg ratio, the legs solved by two-bone IK (`alien_clip_edit.two_bone`).
+
+`alien_char_run.py --leg-fit --leg-ik` (T3; `alien_char_build.py --leg-fit-mode ik`) is that step, in place of the
+lowest-point match: after the scale, per frame each ankle's target is its own rest place plus S4b's ankle move from
+its rest, scaled by the leg ratio (`alien_char_geom.foot_target`: a planted foot stays planted, the stance width is
+the body's own), the foot's world turn S4b's, the thigh and shin solved to it with the knee in the clip's own bending
+plane (`alien_char_geom.reach_knee`), the UpperLeg, LowerLeg and Foot rotations keyed on every frame; the Toes and
+the Hips keep the clip's (scaled) keys. The build's char.json records `leg_fit.mode` and `alien_loco.py` applies the
+same mode to the loops it appends. Per action the report gives the ankles' worst miss, the frames out of reach, the
+knee's largest per-frame change beside S4b's own (a pop), the knee flips and the feet's lowest point against S4b's.
+The default mode (`lowest`) is T2's, so r2e and loco/t2b rebuild as they were.
 `... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
 off-screen window on the chameleon (`--char`: another character, into `<out>/reels/<char>/`): the character held in place (the hips' travel per loop taken off its node), the
 floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot

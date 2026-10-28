@@ -11,6 +11,7 @@ tools/tests/test_alien_char_geom.py; alien_char_build.py runs it inside Blender.
 - `gltf_to_blender`, `blender_to_gltf`, `fit_point`, `fit_lively`: the lively head's data (glTF, Y up) under the fit.
 - `sstep`: a smoothstep from a to b (either order).
 - `leg_fit` (T2): the leg scale of a body with its own leg length (`--leg-fit`, alien_leg_fit.py).
+- `foot_target`, `reach_knee`, `knee_angle` (T3): the feet on the donor's paths by IK (`--leg-fit-mode ik`).
 """
 from __future__ import annotations
 
@@ -39,6 +40,54 @@ def leg_fit(own: dict, donor: dict) -> dict:
     if legs[0] <= 0:
         raise ValueError(f"the donor's leg length is {legs[0]} m")
     return {"leg_m": [round(legs[0], 4), round(legs[1], 4)], "scale": round(legs[1] / legs[0], 6)}
+
+
+def foot_target(own_rest, donor_rest, donor_now, scale: float) -> tuple:
+    """T3: where a foot (its ankle) goes on a body with its own legs: its own rest place plus the donor's move from
+    the donor's rest, scaled by the legs' ratio (world, z up). A planted donor foot gives a planted target, and the
+    stance width stays the body's own."""
+    return tuple(o + scale * (n - d) for o, d, n in zip(own_rest, donor_rest, donor_now))
+
+
+def reach_knee(hip, knee, target, la: float, lb: float, fallback_pole=None, slack: float = 0.9995):
+    """T3: the knee of a thigh la and a shin lb from a fixed hip to target (plain tuples), in the plane through the
+    hip-target line and the leg's own knee (its offset off that line is the pole: the knee bends the way the clip
+    bends it, no flip). fallback_pole: for a knee on the line (a straight leg). Returns (knee, reached), reached False
+    when the target lies beyond slack of the leg's reach (the knee then straight towards it)."""
+    def sub(a, b): return tuple(x - y for x, y in zip(a, b))
+    def add(a, b): return tuple(x + y for x, y in zip(a, b))
+    def mul(a, k): return tuple(x * k for x in a)
+    def dot(a, b): return sum(x * y for x, y in zip(a, b))
+    def norm(a):
+        n = math.sqrt(dot(a, a))
+        return mul(a, 1.0 / n) if n > 1e-12 else None
+    dv = sub(target, hip)
+    full = math.sqrt(dot(dv, dv))
+    axis = norm(dv)
+    if axis is None:
+        raise ValueError("the target sits on the hip")
+    d = min(full, (la + lb) * slack)
+    d = max(d, abs(la - lb) * 1.0005)
+    pole = None
+    for cand in (sub(knee, hip), fallback_pole):
+        if cand is not None:
+            pole = norm(sub(cand, mul(axis, dot(cand, axis))))
+            if pole is not None:
+                break
+    if pole is None:
+        raise ValueError("no pole: the knee on the hip-target line and no fallback")
+    x = (la * la - lb * lb + d * d) / (2.0 * d)
+    h = math.sqrt(max(0.0, la * la - x * x))
+    return add(add(hip, mul(axis, x)), mul(pole, h)), full <= (la + lb) * slack
+
+
+def knee_angle(hip, knee, ankle) -> float:
+    """T3: the knee's bend in degrees (0 straight): the angle between the thigh and the shin."""
+    a = tuple(k - h for k, h in zip(knee, hip))
+    b = tuple(x - k for x, k in zip(ankle, knee))
+    na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(x * x for x in b))
+    c = sum(x * y for x, y in zip(a, b)) / (na * nb)
+    return math.degrees(math.acos(max(-1.0, min(1.0, c))))
 
 
 def sstep(a: float, b: float, x: float) -> float:

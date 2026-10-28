@@ -191,7 +191,8 @@ def _blender_main(argv: list[str]) -> None:
         if fitted:
             import alien_leg_fit
             lf = alien_leg_fit.fit(arm, fitted["donor"], [bpy.data.actions[PREFIX + n] for n in need
-                                                         if n.startswith(("TM_", "MC_"))])
+                                                         if n.startswith(("TM_", "MC_"))],
+                                  mode=fitted.get("mode", "lowest"))
             print(f"CHAR {char}: leg fit {lf['scale']} on the appended loops ({lf['keys']} keys), foot match "
                   f"{json.dumps(lf['foot_match'])}", flush=True)
         srcs = {n: ST.sample(arm, bpy.data.actions[PREFIX + n]) for n in need}

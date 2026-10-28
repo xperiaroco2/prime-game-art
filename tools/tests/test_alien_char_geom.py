@@ -222,5 +222,56 @@ class LegFit(unittest.TestCase):
         with self.assertRaises(ValueError):
             G.leg_fit(rig, _rig(0.4, 0.4, 0.08))
 
+
+class FootIK(unittest.TestCase):
+    """T3: the feet on the donor's paths by IK (alien_leg_fit.py --leg-fit-mode ik)."""
+
+    def test_planted_donor_foot_gives_a_planted_target(self):
+        own, donor = (0.09, 0.0, 0.06), (0.1, 0.0, 0.08)
+        a = G.foot_target(own, donor, (0.1, 0.3, 0.08), 0.9)
+        b = G.foot_target(own, donor, (0.1, 0.3, 0.08), 0.9)
+        self.assertEqual(a, b)
+        for x, y in zip(a, (0.09, 0.27, 0.06)):
+            self.assertAlmostEqual(x, y, places=9)
+
+    def test_moves_scale_with_the_legs(self):
+        own, donor = (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)
+        p = G.foot_target(own, donor, (0.0, 1.0, 0.2), 0.5)
+        self.assertAlmostEqual(p[1], 0.5)
+        self.assertAlmostEqual(p[2], 0.1)
+
+    def test_knee_reaches_the_target_with_its_lengths(self):
+        hip, knee, target = (0.0, 0.0, 1.0), (0.0, -0.1, 0.6), (0.0, 0.1, 0.3)
+        k, ok = G.reach_knee(hip, knee, target, 0.4, 0.42)
+        self.assertTrue(ok)
+        self.assertAlmostEqual(math.dist(hip, k), 0.4, places=9)
+        self.assertAlmostEqual(math.dist(k, target), 0.42, places=9)
+
+    def test_knee_keeps_the_clips_side(self):
+        # the clip's knee in front (-y): the solved knee stays in front, never flips behind
+        hip, target = (0.0, 0.0, 1.0), (0.0, 0.0, 0.35)
+        k, _ = G.reach_knee(hip, (0.0, -0.05, 0.6), target, 0.4, 0.42)
+        self.assertLess(k[1], 0.0)
+        k, _ = G.reach_knee(hip, (0.0, 0.05, 0.6), target, 0.4, 0.42)
+        self.assertGreater(k[1], 0.0)
+
+    def test_out_of_reach_is_reported_and_straight(self):
+        hip, target = (0.0, 0.0, 1.0), (0.0, 0.0, 0.0)
+        k, ok = G.reach_knee(hip, (0.0, -0.01, 0.6), target, 0.4, 0.42)
+        self.assertFalse(ok)
+        self.assertLess(G.knee_angle(hip, k, (0.0, 0.0, 1.0 - 0.82 * 0.9995)), 5.0)
+
+    def test_straight_knee_uses_the_fallback_pole(self):
+        hip, target = (0.0, 0.0, 1.0), (0.0, 0.0, 0.3)
+        k, _ = G.reach_knee(hip, (0.0, 0.0, 0.6), target, 0.4, 0.42, fallback_pole=(0.0, -1.0, 0.0))
+        self.assertLess(k[1], 0.0)
+        with self.assertRaises(ValueError):
+            G.reach_knee(hip, (0.0, 0.0, 0.6), target, 0.4, 0.42)
+
+    def test_knee_angle(self):
+        self.assertAlmostEqual(G.knee_angle((0, 0, 1), (0, 0, 0.5), (0, 0, 0)), 0.0, places=6)
+        self.assertAlmostEqual(G.knee_angle((0, 0, 1), (0, 0, 0.5), (0, 0.5, 0.5)), 90.0, places=6)
+
+
 if __name__ == "__main__":
     unittest.main()
