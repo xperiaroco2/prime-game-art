@@ -10,7 +10,7 @@ extends "res://alien/char_shots.gd"
 ## - starting_<c>.png: the 6 starting pairs (rows) x front, left, right, back rendered, then the same four outlines;
 ## - grid_front_<c>.png, grid_34_<c>.png: all 48 pairs, rows the legs, columns the arms, each cell labelled;
 ## - grid_outline_<facing>_<c>.png: the 48 outlines per facing;
-## - close_arms_<c>.png: the arms where hands meet or touch (HandsOnHips, Heart, FingerUp, HandsBehindHead, Salute;
+## - close_arms_<c>.png: the arms where hands meet or touch (HandsOnHips, Heart, FingerUp, HandsBehindHead, Victory;
 ##   on Stand) and PalmsOut, close on the upper body from the front, the left and the three-quarter;
 ## - close_legs_<c>.png: every legs pose (with HandsOnHips) close on the lower body, front, left, three-quarter;
 ## - starting_<c>_big_<n>.png: starting pair n (1-6) alone, its four facings rendered about 700 px tall, the four
@@ -29,7 +29,7 @@ const START_CELL := Vector2i(220, 330)
 const GRID_CELL := Vector2i(200, 300)
 const BIG_CELL := Vector2i(470, 700)  # starting_<c>_big_<n>.png: one starting pair large
 const CLOSE_CELL := Vector2i(300, 300)
-const CLOSE_ARMS := ["HandsOnHips", "Heart", "FingerUp", "HandsBehindHead", "Salute", "PalmsOut"]
+const CLOSE_ARMS := ["HandsOnHips", "Heart", "FingerUp", "HandsBehindHead", "Victory", "PalmsOut"]
 
 var _ch: Node3D
 var _sk: Skeleton3D

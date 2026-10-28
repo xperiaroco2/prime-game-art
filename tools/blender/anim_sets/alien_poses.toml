@@ -16,7 +16,7 @@ build = "loco/f3/build"       # the characters the poses go on: <raw_base>/<buil
 chars = ["chameleon", "axolotl"]
 starting = [["OneLeg", "Plane"], ["Lunge", "FingerUp"], ["Kneel", "Heart"], ["Squat", "Flex"],
             ["Sit", "HandsBehindHead"], ["Stand", "HandsOnHips"]]
-lopsided = ["OneLeg", "Kneel", "Lunge", "FingerUp", "Salute"]  # a label in the silhouette table's left/right line
+lopsided = ["OneLeg", "Kneel", "Lunge", "FingerUp"]         # a label in the silhouette table's left/right line
                                                                # (their facing should read), not a check
 
 [limits]
@@ -49,35 +49,26 @@ through_pairs = [
 #   judged on the close-ups
 
 # ------------------------------------------------------------------------------------------------- the grips
-# per finger [base, middle, tip] curl in degrees (the thumb: metacarpal, proximal, distal); `all` for the rest
-[grips.relaxed]
-all = [16, 22, 12]
-Thumb = [6, 10, 8]
-spread = 2
-[grips.flat]
-all = [8, 10, 6]
-Thumb = [0, 4, 4]
-[grips.hip]  # p1: the fingers together, a slight curl (s11's [36, 46, 32] wrap read as small fists from the front)
-all = [14, 18, 12]
-Thumb = [-20, 0, 4]
-[grips.fist]
-all = [82, 96, 62]
-Thumb = [28, 38, 34]
-[grips.point]
-all = [82, 96, 62]
+# The hand-shape library (p3: the engineer's "fingers are a mess"; four shapes, no per-pose finger values): per finger
+# [base, middle, tip] curl in degrees (the thumb: metacarpal, proximal, distal); `all` for the rest; `ThumbTurn`
+# [roll, swing] turns the thumb's base about its length and toward the palm (the left hand's; the right mirrored).
+# The thumbs: a search on both p2 dumps for the turn and curl that put the thumb's tip on its target (the fist: over
+# the index's and middle's middle bones; the flat hand: beside the index), 1.4 cm or more off the fingers' bones
+# (tools/out/poses/p3/gridA.log: the fist 0.3 cm from its target, 2.5 cm clear)
+[grips.fist]   # Victory, Flex, HandsOnHips and FingerUp's hip hand: the fingers curled tight, the thumb over the index
+all = [86, 100, 70]
+Thumb = [10, 30, 50]
+ThumbTurn = [45, 20]
+[grips.point]  # FingerUp's raised hand: the index straight, the rest the fist
+all = [86, 100, 70]
 Index = [0, 2, 0]
-Thumb = [28, 38, 34]
-[grips.open]  # round 2: less spread, a soft curl (s6's straight spread fingers read as a rake from the side)
-all = [12, 16, 12]
-Thumb = [-2, 6, 6]
-spread = 3
-[grips.palm]  # round 3: PalmsOut, the fingers together and slightly curved
-all = [8, 12, 8]
-Thumb = [-2, 6, 6]
-[grips.salute]
-all = [6, 6, 2]
-Thumb = [14, 8, 4]
-[grips.heart]
+Thumb = [10, 30, 50]
+ThumbTurn = [45, 20]
+[grips.flat]   # Plane, PalmsOut, HandsBehindHead, a hand on a thigh: the fingers together, slightly curved, the thumb alongside
+all = [6, 8, 4]
+Thumb = [0, 10, 10]
+ThumbTurn = [0, -30]
+[grips.heart]  # Heart: the index tips and the thumb tips meeting (the `meet` solve)
 all = [40, 50, 35]
 Index = [35, 50, 40]
 Thumb = [10, 20, 10]
@@ -135,16 +126,16 @@ floor = ["torso", "foot_Left", "foot_Right"]
 # `clear_dir` (default up the chest) and the arm's `variant` table on top; contacts: measured skin
 # gaps; solve = "meet" moves both hands toward each other until a and b touch.
 [arms.HandsOnHips]
-# p1 (grid: curl x fingers_dir on the s11 dumps): the palm on the waist's side, the fingers together forward and
-# down ([0.4, 0.7, -0.6], also FingerUp's and Salute's hip hand); the palm 1.5 cm off the skin (at 0.5 the hand went
-# 1.3 cm into the waist)
-# p2 (review of #342: p1's Lunge variant went 0.68/0.84 cm into the waist at 0.5; grid 0.5/0.8/1.0/1.2 on both p1
-# dumps, Lunge close-ups): the variants' gap 0.8 (through 0.37/0.40, contact 0.46/0.37; 1.2: a 1.03 cm gap)
-# round 3 s11: the elbows back (were [1.0, -0.6, 0.0]): the left/right outline apart from Salute's hip arm, the wrist
-# straighter (the hand to the forearm 89 -> 67 degrees)
-both = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [0.8, -1.3, 0.0], fingers_dir = [0.4, 0.7, -0.6], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 1.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2], gap_cm = 0.8 } }
+# p3 (the engineer: p2's flat hands "like just arms", limp beside the thighs): the cartoon akimbo, fists on the
+# waist, the knuckles pressed into its side above the hip bone, the wrist straight (the hand along the forearm), the
+# elbows wide out and a little back (22 cm out, 5-10 back of the shoulder). The history of the flat hip hand (s5-p2):
+# docs/animations.md. `per_legs`: a variant on every legs pose (the fist rides on the Spine the legs lean). Grid on
+# both p2 dumps (tools/out/poses/p3/gridC*.log): the knuckles' centre 5.7-8.5 cm from the waist's mark (it sits 2 cm
+# off the skin and rides above the mark): `mark_cm` 9 for the fist
+per_legs = true
+both = { mode = "goal", at = "waist", offset = [0.9, -0.1, 0.3], elbow = [1.0, -0.4, 0.1], fingers_dir = "forearm", palm = [0.0, -0.3, -1.0], grip = "fist", touch = ["torso"], touch_by = "hand_{side}", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], passes = 16, variant = { gap_cm = 0.8 } }
 contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Right", b = "torso" },
-            { a = "hand_Left", mark = "waist_Left" }, { a = "hand_Right", mark = "waist_Right" }]
+            { a = "hand_Left", mark = "waist_Left", by = "knuckles", mark_cm = 9.0 }, { a = "hand_Right", mark = "waist_Right", by = "knuckles", mark_cm = 9.0 }]
 
 [arms.Plane]
 Left = { mode = "fk", upper = [1.0, -0.42, 0.26], lower = [1.0, -0.38, 0.24], fingers_dir = [1.0, -0.36, 0.22], palm = [0.0, 0.0, -1.0], grip = "flat" }
@@ -163,33 +154,29 @@ both = { mode = "goal", at = "chest_front", offset = [0.4, 1.0, 0.25], elbow = [
 contacts = [{ a = "LeftIndexDistal", b = "RightIndexDistal", solve = "meet", gap_cm = 0.2 }, { a = "LeftThumbDistal", b = "RightThumbDistal" }]
 
 [arms.FingerUp]
-# FingerUp's and Salute's hip hand keep s10's elbow [1, -0.6, 0] with s11's hip curl (review 3: wrist bend 88.7 deg
-# vs HandsOnHips' 67; mark 5.0 cm, gap 0.55 cm): on close_arms s11 the hand wraps the waist, not limp; the elbow
-# stays apart from HandsOnHips' (pulled back) so the left outlines differ
-# p2: the hip hand 1.4 cm off the skin (p1's 1.5 read a 1.06 cm gap on Lunge, no variant there; 1.4: Lunge 0.97,
-# OneLeg 0.78; 1.3: OneLeg 0.54 cm through), also Salute's hip hand
+# p3: the hip hand is HandsOnHips' fist akimbo (the same arm; its own variants)
+per_legs = true
 Head = [-8, 9, 0]
 Right = { mode = "fk", shoulder = [0, 8, 0], upper = [0.45, 0.35, 1.0], lower = [0.15, 0.3, 1.0], fingers_dir = [0.05, 0.25, 1.0], palm = [-0.6, 0.8, 0.0], grip = "point" }
-Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.4, 0.7, -0.6], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 1.4, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2], gap_cm = 0.5 } }
-contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
+Left = { mode = "goal", at = "waist", offset = [0.9, -0.1, 0.3], elbow = [1.0, -0.4, 0.1], fingers_dir = "forearm", palm = [0.0, -0.3, -1.0], grip = "fist", touch = ["torso"], touch_by = "hand_{side}", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], passes = 16, variant = { gap_cm = 0.8 } }
+contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left", by = "knuckles", mark_cm = 9.0 }]
 
 [arms.HandsBehindHead]
 # round 3 (s9 grid): the shoulders shrugged up lift the elbows toward the ears, wide (27 cm out), the forearms going
 # back behind the skull under the crest; the axolotl's wider head has its own wrists (`[chars.axolotl]` below)
-both = { mode = "goal", at = "head_back", shoulder = [0, -30, 0], offset = [0.4, -0.2, -0.3], elbow = [1.0, 0.3, 0.8], fingers_dir = [-1.0, -0.2, 0.3], palm = [0.0, 1.0, 0.0], grip = "relaxed", touch = ["head"], push = [-0.3, 1.0, 0.0], gap_cm = 0.8 }
+both = { mode = "goal", at = "head_back", shoulder = [0, -30, 0], offset = [0.4, -0.2, -0.3], elbow = [1.0, 0.3, 0.8], fingers_dir = [-1.0, -0.2, 0.3], palm = [0.0, 1.0, 0.0], grip = "flat", touch = ["head"], push = [-0.3, 1.0, 0.0], gap_cm = 0.8 }
 contacts = [{ a = "hand_Left", b = "head" }, { a = "hand_Right", b = "head" }]
 
 [arms.PalmsOut]
 # round 3: the palms to the camera at about shoulder height, a little forward and out, the elbows bent and low,
 # the fingers together (s7's hands beside the head with spread fingers read as "hands up")
 # s11: the arms further forward (were upper [0.65, 0.35, -0.7], lower [0.3, 0.45, 0.85]): apart from Heart from the side
-both = { mode = "fk", upper = [0.6, 0.6, -0.6], lower = [0.25, 0.7, 0.7], fingers_dir = [0.2, 0.35, 1.0], palm = [0.1, 1.0, -0.1], grip = "palm" }
+both = { mode = "fk", upper = [0.6, 0.6, -0.6], lower = [0.25, 0.7, 0.7], fingers_dir = [0.2, 0.35, 1.0], palm = [0.1, 1.0, -0.1], grip = "flat" }
 
-[arms.Salute]
-# round 3 s11: the saluting elbow clearly forward (was [0.8, 0.9, -0.1]): the left/right outline apart from HandsOnHips
-Right = { mode = "goal", at = "brow", offset = [0.8, 0.6, 0.2], elbow = [0.5, 1.2, -0.1], fingers_dir = [-0.8, -0.5, 0.25], palm = [0.0, 0.45, -1.0], grip = "salute", touch = ["head"], push = [-0.8, -0.6, 0.0], gap_cm = 0.6 }
-Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.4, 0.7, -0.6], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 1.4, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2], gap_cm = 0.5 } }
-contacts = [{ a = "RightIndexDistal", b = "head" }, { a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
+[arms.Victory]
+# p3 (the engineer replaced the Salute): both arms up in a wide V, the elbows nearly straight, fists, the wrists
+# straight, the hands outside the head; the shoulders shrugged a little (the arms longer up)
+both = { mode = "fk", shoulder = [0, -12, 0], upper = [0.6, 0.05, 1.0], lower = [0.62, 0.12, 1.0], fingers_dir = "forearm", palm = [-0.4, 1.0, 0.0], grip = "fist" }
 
 # round 3 (s10 grid on OneLeg and Kneel): the variants' fingers turned out with the belly like the shared clip's, a
 # little less down ([0.6, 0.7, -0.2], were level forward [0.1, 0.85, -0.05]: their tips 2.3 to 3.2 cm into the belly)
@@ -198,7 +185,7 @@ contacts = [{ a = "RightIndexDistal", b = "head" }, { a = "hand_Left", b = "tors
 # s11: also the raised thigh's hand on OneLeg (the right) and Kneel (the left, the knee up), `sides`: their waist variant
 # went 1.1-1.7 cm into the belly (s10); the hand flat (s10's relaxed grip read as a pinch on the thigh)
 [thigh_hand]
-legs = ["Squat", "Sit", "OneLeg", "Kneel"]
+legs = []  # p3: none (the fist akimbo stays on the waist on every legs pose); was Squat, Sit, OneLeg, Kneel
 sides = { OneLeg = ["Right"], Kneel = ["Left"] }  # only the raised thigh's side; default both
 along = { Squat = 0.25, Sit = 0.55, OneLeg = 0.45, Kneel = 0.45 }  # of the way from the hip to the knee (the wrist)
 lift = 0.3

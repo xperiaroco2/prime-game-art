@@ -303,8 +303,10 @@ class OnTheChameleon(unittest.TestCase):
         self.assertEqual(set(m["marks_cm"]), {"hand_Left@waist_Left", "hand_Right@waist_Right"})
         for k, v in m["contacts_cm"].items():
             self.assertLessEqual(v, lim["contact_gap_cm"], k)
-        for k, v in m["marks_cm"].items():
-            self.assertLessEqual(v, lim["mark_cm"], k)
+        own = {f"{c['a']}@{c['mark']}": c.get("mark_cm", lim["mark_cm"])
+               for c in self.model.data["arms"]["HandsOnHips"]["contacts"] if c.get("mark")}
+        for k, v in m["marks_cm"].items():  # p3: the fist's knuckles, the contact's own limit
+            self.assertLessEqual(v, own[k], k)
         self.assertEqual(m["fails"], [])  # review 2: the through limits too (the fingertips were 1.9 cm in)
 
     def test_a_variant_has_its_own_mark_limit(self):
@@ -312,6 +314,8 @@ class OnTheChameleon(unittest.TestCase):
         d = self.model.data
         r = A.compose(self.model.legs("Stand"), self.model.arms("HandsOnHips"))
         old = dict(d["limits"])
+        cs = d["arms"]["HandsOnHips"]["contacts"]
+        d["arms"]["HandsOnHips"]["contacts"] = [{k: v for k, v in c.items() if k != "mark_cm"} for c in cs]
         try:
             d["limits"]["mark_cm"] = d["limits"]["variant_mark_cm"] = 0.1
             self.assertTrue(any(f.startswith("mark") for f in A.measure(self.model, r, "Stand", "HandsOnHips", True)["fails"]))
@@ -321,30 +325,52 @@ class OnTheChameleon(unittest.TestCase):
         finally:
             d["limits"].clear()
             d["limits"].update(old)
+            d["arms"]["HandsOnHips"]["contacts"] = cs
 
-    def test_the_hip_hand_rests_on_the_thigh_on_squat_and_sit(self):
-        """Round 3: on [thigh_hand]'s legs the hip hand's variant touches its thigh (the gap within the contact limit,
-        the hand neither in the thigh nor in the torso); the waist's mark is not measured there. s11: on OneLeg and
-        Kneel only the raised thigh's side (`sides`) rests on it, the other hand stays on the waist's mark."""
+    def test_the_fist_akimbo_stays_on_the_waist_over_raised_thighs(self):
+        """p3: the akimbo fist (`per_legs`) has a variant on every legs pose but the reference; on Squat and Sit, where
+        the thighs rise to the hips, both fists stay on the waist (its marks measured, no thigh contact), neither in a
+        thigh nor in the torso, no failure. thigh_side is off everywhere (`[thigh_hand]` has no legs)."""
         mo = self.model
-        legs = {lg: mo.legs(lg) for lg in ("Stand", "Squat", "Sit", "OneLeg", "Kneel")}
+        legs = {lg: mo.legs(lg) for lg in mo.data["legs"]}
         arms = {"HandsOnHips": mo.arms("HandsOnHips")}
         arms.update(mo.variants(legs, arms))
+        self.assertEqual({k for k in arms if A.VARIANT in k},
+                         {f"HandsOnHips{A.VARIANT}{lg}" for lg in legs if lg != mo.data["reference_legs"]})
         lim = mo.data["limits"]
-        for lg, on in (("Squat", A.SIDES), ("Sit", A.SIDES), ("OneLeg", ("Right",)), ("Kneel", ("Left",))):
+        for lg in ("Squat", "Sit"):
             m = A.measure(mo, A.compose(legs[lg], arms[f"HandsOnHips{A.VARIANT}{lg}"]), lg, "HandsOnHips", True)
-            off = [s for s in A.SIDES if s not in on]
-            self.assertEqual(set(m["marks_cm"]), {f"hand_{s}@waist_{s}" for s in off}, lg)
-            self.assertEqual({k for k in m["contacts_cm"] if "thigh" in k}, {f"hand_{s}~thigh_{s}" for s in on}, lg)
-            self.assertEqual(not m["fails"], True, (lg, m["fails"]))
-            for k, v in m["contacts_cm"].items():
-                self.assertLessEqual(v, lim["contact_gap_cm"], (lg, k))
-            for s in ("Left", "Right"):
+            self.assertEqual(set(m["marks_cm"]), {f"hand_{s}@waist_{s}" for s in A.SIDES}, lg)
+            self.assertFalse([k for k in m["contacts_cm"] if "thigh" in k], lg)
+            self.assertEqual(m["fails"], [], lg)
+            for s in A.SIDES:
                 for b in ("torso", f"thigh_{s}"):
                     self.assertLessEqual(m["through_cm"][f"hand_{s}>{b}"], lim["through_hand_cm"], (lg, s, b))
-        self.assertTrue(A.thigh_side(mo.data, "Kneel", "Left"))
-        self.assertFalse(A.thigh_side(mo.data, "Kneel", "Right"))
-        self.assertFalse(A.thigh_side(mo.data, "Stand", "Left"))
+        self.assertFalse(any(A.thigh_side(mo.data, lg, s) for lg in legs for s in A.SIDES))
+        th = {"thigh_hand": {"legs": ["Kneel"], "sides": {"Kneel": ["Left"]}}}
+        self.assertTrue(A.thigh_side(th, "Kneel", "Left"))
+        self.assertFalse(A.thigh_side(th, "Kneel", "Right"))
+
+    def test_the_hand_library_four_shapes_mirrored_thumbs_straight_fists(self):
+        """p3: every arm takes one of the four hand shapes; the fist's thumb turn (ThumbTurn) mirrors on the right
+        hand (the thumb tips mirror images on the rest skeleton within 1 mm); a `fingers_dir = "forearm"` hand (the
+        Victory's and the akimbo's fists) keeps its wrist straight (within 1 degree)."""
+        d = self.model.data
+        self.assertEqual(set(d["grips"]), {"fist", "point", "flat", "heart"})
+        for am, spec in d["arms"].items():
+            for side in ("Left", "Right", "both"):
+                if isinstance(spec.get(side), dict):
+                    self.assertIn(spec[side].get("grip", "flat"), d["grips"], (am, side))
+        r = A.Rig(self.model.skel)
+        for side in A.SIDES:
+            self.model._fingers(r, side, "fist")
+        tl, tr = (A.S.pos(r.P()[f"{s}ThumbDistal"]) for s in A.SIDES)
+        self.assertLess(A.length(A.sub(tl, (-tr[0], tr[1], tr[2]))), 0.001)
+        for am, legs in (("Victory", "Stand"), ("HandsOnHips", "Stand")):
+            P = A.compose(self.model.legs(legs), self.model.arms(am)).P()
+            for s in A.SIDES:
+                fa = A.norm(A.sub(A.S.pos(P[f"{s}Hand"]), A.S.pos(P[f"{s}LowerArm"])))
+                self.assertGreater(A.dot(fa, A.axis(P, f"{s}Hand", 1)), math.cos(math.radians(1.0)), (am, s))
 
     def test_a_hand_reads_through_only_where_the_skins_touch(self):
         """Round 3: HandsBehindHead's hands 0.8 cm off the skull: a tube depth there is the proxy's (proxy_cm), not a
