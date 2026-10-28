@@ -182,3 +182,7 @@ sources = [
   "tools/blender/alien_lively_build.py",  # R2: its rim cut, mask and lip smoothing (test_alien_lively_cut)
 ]  # the static head's liveliness proof's pure formulas (#196, lively)
 tests = ["test_alien_lively_*"]
+
+[area.clothes]
+sources = ["tools/blender/clothes_texture.py"]  # the cloth maps' fill and the denim's shift (#196, C1d)
+tests = ["test_clothes_texture_*"]
