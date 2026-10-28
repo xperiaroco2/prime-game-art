@@ -25,11 +25,18 @@ import ship_lib as L
 D = math.radians
 FLOOR = S.FLOOR
 CM = 0.01
-HW, TAN = LN.HW, LN.TAN
-BRONZE, BRONZE2, EDGE = LN.BRONZE, LN.BRONZE2, LN.EDGE
+# (ship_interior imports this module at its end, so a run that starts from ship_interior_lens finds it half made:
+# its names are used inside the builders only, these are its numbers again)
+HALF = S.TIP_STEP / 2
+HW = S.R_TIP * math.sin(D(HALF))
+TAN = math.tan(D(HALF))
+BRONZE, BRONZE2, EDGE = "lens_bronze", "lens_bronze2", "lens_edge"
 GRAPH, GRAPH2 = "lens_graphite", "lens_graphite2"
-P = LN.P
 M = L.merge
+
+
+def P(name, vf, mat, solid=True):
+    return L.part(name, *vf, mat, solid=solid)
 
 _GREEN = (0.42, 1.0, 0.08)
 _CYAN = (0.1, 0.85, 1.0)
@@ -81,7 +88,7 @@ RUG = {"d": 66.0, "r": 110.0}   # the drawing's D80 at r 95 covered the floor li
 LAMP = {"base": 18.0, "head": 140.0}
 # the free items in the WEST room's frame (a_w = -a_e of the drawing): (piece, r m, a_w deg, face deg); the robot,
 # cradles and lamp at the drawing's tip_w points (r, theta), the rug moved out to clear the floor lights
-_LAMP_FACE = -LN.facet_mid(-100.0)
+_LAMP_FACE = -(round((-100.0 - HALF) / S.TIP_STEP) * S.TIP_STEP + HALF)   # LN.facet_mid(-100)
 ITEMS = [("ws_rail", 0.0, 0.0, 0.0),
          ("ws_rug", RUG["r"] * CM, 67.5, 67.5),
          ("ws_robot_body", 1.0494, 67.5, 67.5),
@@ -272,7 +279,7 @@ def fblock(d0, d1, h0, h1, e=0.0, top=0.0, bot=0.0):
     return LN.facet_block(d0, d1, h0, h1, e, e, top=top, bot=bot)
 
 
-def stile(d0, d1, h0, h1, y_in, side, e=LN.SEAM):
+def stile(d0, d1, h0, h1, y_in, side, e=0.15):   # e: LN.SEAM
     """A block from a module's end (its bisector, in by e cm) to the line y = side * y_in (m), d0..d1, h0..h1 (cm)."""
     if side < 0:
         q = [(-d0 * CM, -(half(d0) - e * CM)), (-d0 * CM, -y_in), (-d1 * CM, -y_in), (-d1 * CM, -(half(d1) - e * CM))]
