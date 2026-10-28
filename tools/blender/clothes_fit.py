@@ -195,18 +195,50 @@ def signed(pts: np.ndarray, tree: BVHTree) -> tuple[np.ndarray, np.ndarray]:
     return s, n
 
 
-def push_out(pts: np.ndarray, tree: BVHTree, floor) -> tuple[np.ndarray, int]:
-    """Every point closer to the body than floor (m, a number or one per point) moved out along the face normal."""
+def exit_point(tree: BVHTree, p: Vector, d: Vector, reach: float = 0.15):
+    """Where a ray from p (inside the body) along d leaves the body: the first hit whose face faces along d
+    (clothes_fit_geom.first_exit), as (location, normal), or None within reach."""
+    hits, o, gone = [], p.copy(), 0.0
+    for _ in range(8):
+        loc, nor, _fi, dist = tree.ray_cast(o, d, reach - gone)
+        if loc is None:
+            break
+        gone += dist
+        hits.append((gone, float(nor.dot(d)), loc, nor))
+        o = loc + d * 1e-5
+    k = F.first_exit([(h[0], h[1]) for h in hits])
+    return None if k is None else (hits[k][2], hits[k][3])
+
+
+def push_out(pts: np.ndarray, tree: BVHTree, floor, faces=None) -> tuple[np.ndarray, int]:
+    """Every point closer to the body than floor (m, a number or one per point) moved out along the face normal.
+    With faces (the cloth's), a point inside the body leaves it along the cloth's own outward normal instead: a
+    point deeper than half the limb has its nearest face on the limb's far side, and the plain push would carry the
+    sleeve's front through the arm to its back (r7: the left elbow 37 mm through a sleeve folded behind it)."""
     s, n = signed(pts, tree)
     fl = np.broadcast_to(np.asarray(floor, dtype=float), s.shape)
     bad = s < fl
     pts = pts.copy()
-    pts[bad] += (fl[bad] - s[bad])[:, None] * n[bad]
+    deep = np.zeros(len(pts), dtype=bool)
+    if faces is not None and (s < 0).any():
+        nrm = vertex_normals(pts, faces)
+        if float(np.mean(np.sum(nrm * n, axis=1))) < 0:  # the cloth's faces wound inward
+            nrm = -nrm
+        for i in np.where(s < 0)[0]:
+            hit = exit_point(tree, Vector(pts[i]), Vector(nrm[i]))
+            if hit is not None:
+                pts[i] = np.array(hit[0] + hit[1] * float(fl[i]))
+                deep[i] = True
+    rest = bad & ~deep
+    pts[rest] += (fl[rest] - s[rest])[:, None] * n[rest]
     return pts, int(bad.sum())
 
 
 def fit_piece(pts: np.ndarray, nb, tree, offset: float, keep: float, floor: float, bridge: tuple[float, float],
-              iters: int) -> tuple[np.ndarray, dict]:
+              iters: int, faces=None) -> tuple[np.ndarray, dict]:
+    s0, _ = signed(pts, tree)
+    if faces is not None:  # out of the body first, along the cloth's normal, so no fit step pulls a deep point through
+        pts, _ = push_out(pts, tree, 0.0, faces)
     s, n = signed(pts, tree)
     target = np.array([F.fit_distance(si, offset, keep + (1.0 - keep) * smoothstep((si - bridge[0]) /
                                                                               (bridge[1] - bridge[0])), floor)
@@ -214,11 +246,11 @@ def fit_piece(pts: np.ndarray, nb, tree, offset: float, keep: float, floor: floa
     disp = ((target - s)[:, None] * n).tolist()
     disp = np.array(F.smooth(disp, nb, iters, 0.5))
     out = pts + disp
-    out, pushed = push_out(out, tree, floor)
+    out, pushed = push_out(out, tree, floor, faces)
     s2, _ = signed(out, tree)
-    return out, {"s_before_mm": [round(float(np.percentile(s, q)) * 1000, 1) for q in (5, 50, 95)],
+    return out, {"s_before_mm": [round(float(np.percentile(s0, q)) * 1000, 1) for q in (5, 50, 95)],
                  "s_after_mm": [round(float(np.percentile(s2, q)) * 1000, 1) for q in (5, 50, 95)],
-                 "inside_before": int((s < 0).sum()), "inside_after": int((s2 < 0).sum()), "pushed": pushed,
+                 "inside_before": int((s0 < 0).sum()), "inside_after": int((s2 < 0).sum()), "pushed": pushed,
                  "moved_max_mm": round(float(np.linalg.norm(out - pts, axis=1).max()) * 1000, 1)}
 
 
@@ -242,6 +274,10 @@ def split_long(o, max_len: float, rounds: int = 4) -> dict:
             break
     o.data.update()
     return {"max_edge_m": max_len, "edges_split": done, "tris_before": before, "tris_after": len(o.data.polygons)}
+
+
+def faces_of(o) -> list[list[int]]:
+    return [list(p.vertices) for p in o.data.polygons]
 
 
 def set_co(o, pts: np.ndarray) -> None:
@@ -359,7 +395,7 @@ def main() -> int:
     gpts = evaluated_co(g)
     fitted = {}
     fitted["garment"], rep["garment_fit"] = fit_piece(gpts, neighbours(g.data), tree, args.offset, args.keep,
-                                                      args.floor, bridge, args.smooth)
+                                                      args.floor, bridge, args.smooth, faces_of(g))
     say("garment", rep["garment_fit"])
     if "shoes" in cloth:
         s = cloth["shoes"]
@@ -382,9 +418,9 @@ def main() -> int:
                              toe_f + front * 0.015 - toe_s, fp[:, 2].min() - 0.004 - sp[:, 2].min()])
             spts[idx] = sp + move
             rep["shoe_moves_m"][prefix] = {"scale": round(float(k), 4), "move": move.round(4).tolist()}
-        sfit, pushed = push_out(spts, tree, args.floor)
+        sfit, pushed = push_out(spts, tree, args.floor, faces_of(s))
         sfit = pts_s = np.array(F.smooth((sfit - spts).tolist(), neighbours(s.data), 4, 0.5)) + spts
-        sfit, pushed2 = push_out(pts_s, tree, args.floor)
+        sfit, pushed2 = push_out(pts_s, tree, args.floor, faces_of(s))
         fitted["shoes"] = sfit
         rep["shoes_fit"] = {"pushed": pushed, "pushed_after_smooth": pushed2}
         say("shoes", rep["shoe_moves_m"], rep["shoes_fit"])
@@ -440,7 +476,7 @@ def main() -> int:
         rtree = bvh_of(body)[0]
         rnd = {}
         for name, o in cloth.items():
-            new, n_rest = push_out(evaluated_co(o), rtree, floors[name])
+            new, n_rest = push_out(evaluated_co(o), rtree, floors[name], faces_of(o))
             set_co(o, new)
             rnd[name] = {"rest": n_rest}
         for pb in arm.pose.bones:
@@ -450,7 +486,7 @@ def main() -> int:
         mats = deform_mats(arm)
         for name, o in cloth.items():
             posed = evaluated_co(o)
-            new, n_fit = push_out(posed, ptree, floors[name])
+            new, n_fit = push_out(posed, ptree, floors[name], faces_of(o))
             moved = np.where(np.linalg.norm(new - posed, axis=1) > 1e-7)[0]
             if len(moved):
                 restc = np.array([(o.matrix_world @ v.co)[:] for v in o.data.vertices])
@@ -490,7 +526,7 @@ def main() -> int:
                 bary = poly_3d_calc([Vector(base_rest[v]) for v in vs], loc)
                 d.append(sum(b * diff[v] for v, b in zip(vs, bary)).tolist())
             d = np.array(F.smooth(d, neighbours(o.data), 6, 0.5))
-            new, pushed = push_out(pts + d, ftree, floors[name])
+            new, pushed = push_out(pts + d, ftree, floors[name], faces_of(o))
             hugged = 0
             if name == "garment":  # the bib and the top follow the chest the female shape adds (art #196)
                 fd = []
@@ -504,7 +540,7 @@ def main() -> int:
                 disp = (-(w * np.maximum(0.0, s_f - args.hug)))[:, None] * n_f
                 disp = np.array(F.smooth(disp.tolist(), neighbours(o.data), 4, 0.5))
                 hugged = int((w > 0.5).sum())
-                new, pushed2 = push_out(new + disp, ftree, floors[name])
+                new, pushed2 = push_out(new + disp, ftree, floors[name], faces_of(o))
                 pushed += pushed2
                 rep["female"]["hug_pull_max_mm"] = round(float(np.linalg.norm(disp, axis=1).max()) * 1000, 1)
             set_co(o, new)

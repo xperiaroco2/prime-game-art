@@ -209,9 +209,10 @@ def main() -> int:
         p = mw @ v.co
         n = (nmat @ v.normal).normalized()
         foot = sum(g.weight for g in v.groups if gname.get(g.group, "").endswith(("Foot", "Toes")))
+        toes = sum(g.weight for g in v.groups if gname.get(g.group, "").endswith("Toes"))
         top = top_z[1.0 if p.x > 0 else -1.0]
         under = foot >= 0.5 and stree is not None and stree.ray_cast(p + up * 1e-4, up, 0.15)[0] is not None
-        if F.in_shoe(foot, p.z, top, under=under):
+        if F.in_shoe(foot, p.z, top, under=under, toes_weight=toes, shoe=stree is not None):
             cov.append(True)
             in_shoe += 1
             continue

@@ -161,6 +161,9 @@ class Shoe(unittest.TestCase):
         self.assertFalse(F.in_shoe(1.0, 0.05, None))   # no shoe
         self.assertTrue(F.in_shoe(1.0, 0.12, 0.10, under=True))   # a toe under the toe box, above the top's low point
         self.assertFalse(F.in_shoe(0.3, 0.05, 0.10, under=True))
+        self.assertTrue(F.in_shoe(1.0, 0.12, 0.10, toes_weight=0.9))  # a toe through the toe box's coarse faces
+        self.assertFalse(F.in_shoe(1.0, 0.05, None, toes_weight=0.9))  # no shoe: the bare toes show
+        self.assertTrue(F.in_shoe(1.0, 0.05, None, toes_weight=0.9, shoe=True))  # a shoe without a top found
 
 
 class RestPoke(unittest.TestCase):
@@ -177,6 +180,14 @@ class LongEdges(unittest.TestCase):
         self.assertEqual(F.long_edges([], 0.04), [])
         with self.assertRaises(ValueError):
             F.long_edges([0.1], 0.0)
+
+
+class FirstExit(unittest.TestCase):
+    def test_the_first_leaving_face(self):
+        self.assertEqual(F.first_exit([(0.02, 0.9)]), 0)               # out through the near side
+        self.assertEqual(F.first_exit([(0.01, -0.5), (0.03, 0.7)]), 1)  # an entering face first (a fold), then out
+        self.assertIsNone(F.first_exit([(0.01, -0.2)]))
+        self.assertIsNone(F.first_exit([]))
 
 
 if __name__ == "__main__":

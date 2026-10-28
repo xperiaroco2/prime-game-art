@@ -184,13 +184,18 @@ def shoe_top(boundary_z: list[float], margin: float = 0.01, above: float = 0.05)
     return min(tops) - margin if tops else None
 
 
-def in_shoe(foot_weight: float, z: float, top: float | None, min_weight: float = 0.5, under: bool = False) -> bool:
+def in_shoe(foot_weight: float, z: float, top: float | None, min_weight: float = 0.5, under: bool = False,
+            toes_weight: float = 0.0, shoe: bool | None = None) -> bool:
     """A body vertex inside a shoe: mostly on Foot and Toes (foot_weight, the sum of their weights) and below the
     shoe's top (shoe_top), or under the shoe (under: a ray straight up hits it, the toes under the toe box, while
-    the ankle seen through the opening has none). Such a vertex is always cut from the dressed build."""
-    if foot_weight < min_weight:
+    the ankle seen through the opening has none), or mostly on Toes (toes_weight): a closed shoe's toe box always
+    hides the toes, also where they bulge through its coarse faces. shoe: whether the build has shoes at all (None:
+    told by top). Such a vertex is always cut from the dressed build."""
+    if shoe is None:
+        shoe = top is not None
+    if not shoe or foot_weight < min_weight:
         return False
-    return under or (top is not None and z < top)
+    return under or toes_weight >= min_weight or (top is not None and z < top)
 
 
 def rest_poke(signed_mm: list[float], at_opening: list[bool], tol_mm: float = 1.0) -> int:
@@ -208,3 +213,12 @@ def long_edges(lengths: list[float], max_len: float) -> list[int]:
     if max_len <= 0:
         raise ValueError(f"max_len {max_len} must be positive")
     return [i for i, x in enumerate(lengths) if x > max_len]
+
+
+def first_exit(hits: list[tuple[float, float]]) -> int | None:
+    """The hits of a ray from a point inside the body, in order along it, as (distance, the hit face's normal dotted
+    with the ray): the index of the first where the ray leaves the body (the face faces along the ray), or None."""
+    for k, (_t, dot) in enumerate(hits):
+        if dot > 0:
+            return k
+    return None
