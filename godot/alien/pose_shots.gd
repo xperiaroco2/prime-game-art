@@ -2,7 +2,7 @@ extends "res://alien/char_shots.gd"
 ## The photo poses' review pictures (art #196): tools/blender/alien_poses_run.py --shots writes the job (the head's
 ## entry as char_shots.gd's, the legs, arms and starting pairs) and runs this in the runner's off-screen window. The
 ## character in the game's look (char_shots.gd's _setup and studio), posed by pose_layers.gd (the reference the game
-## copies), standing at the origin; the photographer's camera: 1.5 m high, 7 m away, level turn only (the far
+## copies), standing at the origin; the photographer's camera: 1.5 m high, 7 m away, turned to the pose and pitched down to its centre (the far
 ## shots' FOV 2 atan(FRAME_H / 2 / CAM_D) = 21.8 deg, the whole body framed; the close-ups 2.6 m away, their own
 ## FOV). Facings are where the camera stands: front (+Z, the character faces it), left (the character's left, +X),
 ## right, back; the three-quarter view from front-left (35 deg). Outlines: every mesh drawn

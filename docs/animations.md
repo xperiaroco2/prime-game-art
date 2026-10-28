@@ -1144,7 +1144,8 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
 
 - **Names.** `CharacterArmature|PoseLegs_<Name>_Loop` (Stand, OneLeg, Squat, Kneel, Lunge, Sit) and
   `CharacterArmature|PoseArms_<Name>_Loop` (HandsOnHips, Plane, Flex, Heart, FingerUp, HandsBehindHead, PalmsOut,
-  Salute); Godot keeps the names (`pose_layers.gd` strips the prefix and `_Loop`). Each clip is a loop of identical
+  Salute), plus the hip hand's per-legs variants `CharacterArmature|PoseArms_<Arms>__<Legs>_Loop` (below); Godot
+  keeps the names (`pose_layers.gd` strips the prefix and `_Loop`). Each clip is a loop of identical
   keys (the game holds it) keying only its own layer's bones.
 - **The bone split** (`alien_pose_math.owner`): the legs own `Root`, `Hips` (translation and rotation), `Spine` and
   both legs to the toes; the arms own `Chest` and everything under it (neck, head, shoulders, arms, fingers). A pair
@@ -1156,7 +1157,9 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   the arm's `clear_dir` (chest axes; default up the chest, s7: back along the hip's side and a little up, [0, -1,
   0.2]) until the hand clears the thigh, then touched onto the waist again (`Model.variants`). `pose_layers.gd`
   plays the variant with those legs when the character has it; `poses()` does not list variants; the game copies
-  this rule. A variant's palm-to-waist distance is reported, not limited (the hand rides up the waist to clear). An
+  this rule. A variant's palm-to-waist distance has its own, looser limit, `variant_mark_cm` (10 cm: the hand rides
+  off the waist to clear; review 2 found Sit's 23 cm read no failure under the old "reported, not limited"); a
+  variant beyond it is a named failure, and the game's pose list avoids that pair (below). An
   arm's `variant` table (TOML) overrides its settings in its variants only (for example the fingers level).
 - **The check composes from the build's own data.** The build writes `build/<char>/pose_data.json` (the TOML as
   solved); `alien_poses_run.py --check` composes the Blender reference from it and prints a `NOTE` when the TOML has
@@ -1182,7 +1185,9 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     the hip third is skipped (the buttock skin skinning folds into the pelvis; a hand there is the torso's check).
     A thigh into the torso reads the belly's tubes (Spine and up), not the Hips tube: the pelvis is the thigh's own
     joint, and its flare read 5.4 cm on OneLeg's straight standing leg and 4.5 cm on Kneel's (s5).
-    `proxy_rest_cm` in `poses.json` is this same check on the rest pose: the floor under the limits.
+    `proxy_rest_cm` in `poses.json` is this same check on the rest pose. It reads 0.0 everywhere (the thighs, upper
+    arms and shins by construction, the hands and forearms because no hand is near a body in the rest T pose), so it
+    says nothing about the proxy's error where a hand touches: the evidence for that is the slice count below.
   - **The hip hand was really inside** (the fix round's measure, not the proxy): its 2.3 cm into the torso grew to
     3.1 and 3.2 cm with 16 and 32 tube slices instead of 8: the curled fingers inside the waist, the palm's skin
     0.24 cm off it (the touch solve reads the palm's bone, `touch_by`). Round 2 (s6 grid, plain Python on the s5
@@ -1195,6 +1200,13 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     (hand>torso about 1.9 cm, the same with 16 and 24 tube slices: real, not the proxy). Every grip that kept the
     fingers forward read 1.9 to 5.8 cm; a grip that cleared it hung off the waist. The pictures were judged better
     than the number; the number stays a reported failure.
+    Review 2 (fix2, plain-Python grid on the s5 dumps, `fingers_dir` x `curl` x `gap_cm`): the curl changes nothing;
+    the fingers turned out with the belly's curve, `fingers_dir` [0.6, 0.7, -0.35] (about 40 degrees out from
+    straight forward, still pointing forward and down), take Stand's hand>torso from 1.94 cm to under 0.3 (no
+    failure), the palm 5.0 cm from the mark, the contact 0.55 cm; Lunge then needs no variant. The variants keep
+    `clear_dir` [0, -1, 0.2] and their level fingers: OneLeg about 1.2 cm into the belly, Kneel within the limits,
+    Squat (about 4 cm in, the palm 12 cm from the mark) and Sit (the hand on the thigh, 13-15 cm from the mark) stay
+    failures the game avoids (below); no grip or clear direction tried put Squat's or Sit's hand on the hip.
 - **The back of the skull** (`head_back`, round 2, s7): the landmark is the head's back at HEAD_BACK_UP (0.6) of the
   way from the Head bone up to the eyes, not at the eyes' height: there the chameleon's crest put the wrists 32 cm
   behind the head and the arms nearly straight, the elbows forward along the face ("head in hands"). At the skull
@@ -1219,29 +1231,35 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   HandsOnHips/Heart 0.028 on Sit, is 0.107 now); from the sides the hip-hand poses stay close: HandsOnHips/Salute
   0.056 left (Lunge) and 0.075 right (Kneel), Flex/Salute 0.085 / 0.079 (chameleon), HandsOnHips/FingerUp 0.079 /
   0.090 (axolotl). Only the raised arm's hand differs there and it is in front of the head from the side. **The
-  game's silhouette list avoids** (HandsOnHips, Salute), (Flex, Salute) and (HandsOnHips, FingerUp) as the two
-  sides of one outline from the left or right; legs: Stand/OneLeg from the sides (0.21 to 0.26) is fine.
+  game's silhouette list avoids** these arms pairs as the two sides of one outline from the left or right (every
+  side pair under 0.10 in s7's chameleon table, the axolotl's within 0.01 of it): (HandsOnHips, Salute), (Flex,
+  Salute), (HandsOnHips, FingerUp), (HandsOnHips, Flex), (Heart, PalmsOut), (Plane, Flex), (Flex, Heart), (Flex,
+  PalmsOut); legs: Stand/OneLeg from the sides (0.21 to 0.26) is fine. **The game's pose list also avoids** the
+  hip hand on Squat and Sit (HandsOnHips, FingerUp and Salute over those legs: the variants' failures above).
 - **What the layers freeze.** `owner()` gives every bone that is not the legs' to the arms, so the arms clip keys
   Jaw, the eyes and the crest at rest and the game's `Blend2` filter takes the whole Chest subtree: a face or crest
   layer of the game must sit after the pose's tree (or the pose's arms filter must drop those bones) to move during
   a pose.
 - **The GLB.** On top of `loco/f3`'s `<char>_char.blend`: the 37 f3 clips unchanged (F-curve hash and GLB key bytes,
-  `clips_proof.json`), 14 pose clips added. `godot-check --profile alien --strict-contract --textured` passes:
+  `clips_proof.json`), 24 pose clips added (14 poses, 10 hip-hand variants). `godot-check --profile alien --strict-contract --textured` passes:
   `held_poses_hold` checks that the `PoseLegs_`/`PoseArms_` clips keep every bone still (they are exempt from
   `animations_move`).
 - **The game side.** `godot/alien/pose_layers.gd` (the reference the game copies): an `AnimationTree` beside the
   character's `AnimationPlayer` with one `Blend2` (legs in, arms blend, the filter on `Chest` and its descendants,
   amount 1); `play_pair(legs, arms)`, `stop()`. `godot/alien/pose_layers_check.gd` (`alien_poses_run.py --check`,
   test `test_alien_poses_godot`): all 48 pairs within 0.0002 cm of the Blender-composed pose (tolerance 0.5 cm), and
-  every bone's world turn from its rest within 0.5 degrees of the reference's (`turns`: pose * rest^-1 in glTF axes,
+  every bone's world turn from its rest within 0.5 degrees of the reference's (`max_err_deg` 0.0 is float32
+  `get_angle`'s floor, about 0.04 degrees, not a proof of identical keys; `turns`: pose * rest^-1 in glTF axes,
   free of how the exporter orients the bones' own axes; a leaf's roll keeps its head in place, round 1's minor 8), held
   (0 cm after 0.7 s), `stop()` gives the skeleton back. The game's rules: the pose holds while the player stands;
   turning on the spot keeps it (the node turns, the clips stay); a step drops it (`stop()`, then locomotion).
 - **The head look during a pose** (measured at yaw +-70, the contact in its target bone's frame, cm, chameleon /
-  axolotl, step 4's poses): with head_look.gd's defaults (yaw into Spine, Chest, UpperChest too) the hands on the hips
-  slide 11.8, the hands behind the head 14.6 / 9.0, the salute's fingertip 11.9 / 11.4; with only Neck and Head
-  turning (0.4 / 0.6) the hip hands stay (0.0) but the head leaves the hands behind it (31 / 20) and the salute
-  (25 / 24). The heart's
+  axolotl; chameleon figures from step 7, the axolotl's from step 4): with head_look.gd's defaults (yaw into Spine,
+  Chest, UpperChest too) the hands on the hips slide 12.3, the hands behind the head 17.8 to 18.2 / 9.0, the salute's
+  fingertip 12.0 / 11.4; with only Neck and Head turning (0.4 / 0.6) the hip hands stay (0.0) but the head leaves the
+  hands behind it (38 to 39 / 20) and the salute (25 / 24). `OneLeg+Plane LeftHand~Hips` in
+  `pose_layers_check.gd`'s list is a control, not a contact: a free hand, it slides 43.6 cm at the default split and
+  0 with Neck and Head only, so the probe is shown to read a slide. The heart's
   fingertips never part (0.0). **Recommendation:** during a pose the game sets the head look's split to Neck and Head
   only (its defaults stay for locomotion), and for HandsBehindHead and Salute it turns the look off
   (`influence = 0`): the outline the photographer matches is the pose's own.
