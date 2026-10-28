@@ -13,10 +13,10 @@
    _godot.window(), into <tag>/room/;
 6. godot/charger/sheet.gd: the sheets (compare_sheet.png beside the approved sheet, room_sheet.png, closeups.png)
    and the charger's GPU cost, into <tag>/sheets/.
-Everything goes under <raw>/ship/v4/charger/<tag>/. --asset DIR writes the asset folder
+Everything goes under <raw>/ship/v4/charger/<tag>/ (or --out DIR). --asset DIR writes the asset folder
 (assets/prop/crystal_charger).
 
-    $PYTHON_BIN tools/blender/charger_run.py [--tag build] [--no-build] [--no-shots] [--res 900] [--samples 64]
+    $PYTHON_BIN tools/blender/charger_run.py [--tag build | --out DIR] [--no-build] [--no-shots] [--res 900] [--samples 64]
         [--asset assets/prop/crystal_charger] [--pieces <raw>/<ship.toml raw_dir>/pieces]
 """
 from __future__ import annotations
@@ -88,6 +88,7 @@ PASS = ("pass", (130.0, 360.0, 150.0), (-10.0, 150.0, 40.0), 70.0)
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", default="build", help="the output folder under <raw>/ship/v4/charger/")
+    ap.add_argument("--out", type=Path, help="the output folder instead (antennas-2: under <raw>/ship/v5/...)")
     ap.add_argument("--no-build", action="store_true")
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--res", type=int, default=900)
@@ -98,7 +99,7 @@ def main() -> int:
     if args.asset and args.no_shots:
         ap.error("--asset needs this run's shots (report.json takes their GPU cost)")
     copy_refs()
-    out = BASE / args.tag
+    out = args.out.resolve() if args.out else BASE / args.tag
     renders = out / "renders"
     if not args.no_build:
         r = blender.run_script("charger_build.py", ["--out", str(out), "--crystal", str(CRYSTAL), "--render",
@@ -128,7 +129,7 @@ def main() -> int:
             print(*[x for x in output.splitlines() if x.startswith("CHARGER ")], sep="\n")
             print(f"godot sheets: exit {code} {sheets}", flush=True)
     if args.asset and ok and code == 0:
-        write_asset(args.asset, out, args.tag, report)
+        write_asset(args.asset, out, f"--out <raw>/{raw_rel(out)}" if args.out else f"--tag {args.tag}", report)
         print(f"asset: {args.asset}", flush=True)
     return 0 if ok and code == 0 else 1
 
@@ -267,7 +268,17 @@ def exported_look() -> str:
     return src.replace('preload("res://console/console_metal.gdshader")', 'preload("console_metal.gdshader")')
 
 
-def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
+def raw_rel(path: Path) -> str:
+    """A path under the raw folder as <raw>-relative posix (the manifest's form); else as given."""
+    try:
+        return path.resolve().relative_to(RAW.resolve()).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def write_asset(asset: Path, out: Path, how: str, validator: dict) -> None:
+    """how: the run's output argument as given (--tag NAME or --out DIR), for built_by."""
+    rel = raw_rel(out)
     asset = asset if asset.is_absolute() else ROOT / asset
     (asset / "export").mkdir(parents=True, exist_ok=True)
     (asset / "source").mkdir(parents=True, exist_ok=True)
@@ -280,7 +291,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
     counts = validator.get("issues", {})
     report = {
         "asset": "crystal_charger",
-        "built_by": f"tools/blender/charger_run.py --tag {tag} --asset {asset.relative_to(ROOT).as_posix()}",
+        "built_by": f"tools/blender/charger_run.py {how} --asset {asset.relative_to(ROOT).as_posix()}",
         "mesh": {"triangles": build["triangles"],
                  "by_object": {k: {"triangles": build[k]["triangles"], "by_material": build[k]["by_material"],
                                    "pivot_cm": build[k]["pivot_cm"], "open_edges": build[k]["open_edges"]}
@@ -300,16 +311,16 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
                      "rotation.y = atan2(normal.x, normal.y)",
         "gltf_validator": {k: counts.get(k, 0) for k in ("numErrors", "numWarnings", "numInfos", "numHints")},
         "godot_cost": cost,
-        "review": f"<raw>/ship/v4/charger/{tag}/sheets/",
+        "review": f"<raw>/{rel}/sheets/",
     }
     (asset / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
     raws = [f"ship/v4/charger/{REF.name}/{name}" for name in REFS] + \
         [f"ship/v4/charger/{REF_LENS.name}/{name}" for name in REFS_LENS] + \
-        [CONCEPT_ANTENNAS, f"ship/v4/charger/{tag}/crystal_charger.glb", f"ship/v4/charger/{tag}/crystal_charger.blend"]
+        [CONCEPT_ANTENNAS, f"{rel}/crystal_charger.glb", f"{rel}/crystal_charger.blend"]
     today = datetime.date.today().isoformat()
     lines = [
         "# The ship's crystal charger (art#263's stations).",
-        f"# Built by tools/blender/charger_run.py --tag {tag} --asset {asset.relative_to(ROOT).as_posix()}; a rebuild",
+        f"# Built by tools/blender/charger_run.py {how} --asset {asset.relative_to(ROOT).as_posix()}; a rebuild",
         "# changes the hashes below.",
         'id = "crystal_charger"',
         'kind = "prop"',
@@ -335,7 +346,8 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
          "batches/2026-10-28-ship-charger-antennas.toml, used only as a reference). Built from code in headless "
          "Blender (tools/blender/charger_build.py from "
          "charger_dims.toml): no part of the model was generated or downloaded. Approval: pending; the antennas "
-         "changed (the plate stacks) after the 2026-10-28 approval and await the engineer's yes (art#263).\""),
+         "changed (the plate stacks) after the 2026-10-28 approval; antennas round 2 (the smooth arc, the recessed tip "
+         "emitters, the plate caps) awaits the engineer's look (art#263).\""),
         f'tools = ["blender {pins.BLENDER}", "prime-game-art charger_build.py, charger_run.py", '
         f'"glTF-Validator {pins.GLTF_VALIDATOR}", "Godot {pins.GODOT} (shots)"]',
         'licence = "own-work"',
