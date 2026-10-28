@@ -50,6 +50,16 @@ class ChargerCycle(unittest.TestCase):
         self.assertGreater(eye[2], look[2])                   # looking down at the charger
         self.assertLess(math.hypot(look[0] - x, look[1] - y), reach)
 
+    def test_close_eye_a_metre_from_the_charger(self) -> None:
+        """zap-4: the engineer's second camera, about 1.0 m from the crystal (its axis 0.38 m out of the spot's
+        vertex), still at the spot's middle, inside the 2.2 m camera."""
+        spot = next(s for s in LAYOUT["stations"]["spot"] if s["id"] == "renewer_e")
+        eye, look = ship_cmd.cycle_view(LAYOUT, close=True)
+        (x, y), (nx, ny) = spot["at"], spot["normal"]
+        self.assertAlmostEqual((eye[0] - x) * nx + (eye[1] - y) * ny - 0.38, 1.0, delta=0.05)
+        self.assertAlmostEqual((eye[0] - x) * -ny + (eye[1] - y) * nx, 0.0, places=3)
+        self.assertGreater(eye[2], look[2])
+
 
 if __name__ == "__main__":
     unittest.main()

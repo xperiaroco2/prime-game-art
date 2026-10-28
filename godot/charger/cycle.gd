@@ -17,6 +17,10 @@ extends "res://charger/room.gd"
 ## ship.gd's "shoot" mode (the off-screen window), with the request's "cycle": {"eye", "look", "fov", "fps"}:
 ##   godot <_godot.window() flags> -s res://charger/cycle.gd -- <request.json> <out>
 ## Writes <out>/frames/%05d.png, <out>/keys/%05d.png (labelled), <out>/keys_sheet.png (1280 px) and <out>/cycle.json.
+## With the request's "cycle" "close": {"eye", "look"} (zap-4: a second camera about 1 m from the charger, for the
+## engineer) every frame is drawn again from it into <out>/close/frames/%05d.png and its key shots into
+## <out>/close/keys_sheet.png. <out>/zoom_sheet.png: the main camera's ZOOM frames cropped round the crystal (2x), a
+## 2x2 sheet to judge the electricity from the player's distance.
 
 const SECONDS := 24.0
 const TURNS := 4.0          # the carrier's whole turns while charging (ending on a whole turn: no jump at "charged")
@@ -48,6 +52,9 @@ const KEYS := [[1.0, "1 idle, empty"], [3.4, "2 crystal put in (stand-in path)"]
 var _t: float = 0.0
 var _pair: Dictionary = {}
 var _dt: float = 0.0
+## zap-4: the charging frames (s) of zoom_sheet.png and the crop round the crystal (px of the 1280x720 frame)
+const ZOOM := [9.6, 11.4, 13.2, 14.6]
+const ZOOM_CROP := Vector2i(320, 180)
 var _arc_frames: int = 0
 var _zap_bad: int = 0
 
@@ -209,6 +216,20 @@ func _shoot() -> void:
 	for kv: Array in KEYS:
 		key_frames[int(round(float(kv[0]) * fps))] = kv[1]
 	var tiles: Array = []
+	var close_tiles: Array = []
+	var zooms: Array = []
+	var zoom_frames: Array = []
+	for z: float in ZOOM:
+		zoom_frames.append(int(round(z * fps)))
+	var close_cam: Camera3D = null
+	if c.has("close"):
+		close_cam = Camera3D.new()
+		close_cam.near = 0.05
+		close_cam.far = 500.0
+		close_cam.fov = float(c["fov"])
+		root.add_child(close_cam)
+		close_cam.look_at_from_position(_v(c["close"]["eye"]), _v(c["close"]["look"]), UP)
+		DirAccess.make_dir_recursive_absolute(_out.path_join("close/frames"))
 	var states: Array = []
 	var started: int = Time.get_ticks_msec()
 	for f: int in count:
@@ -218,6 +239,8 @@ func _shoot() -> void:
 		var image: Image = root.get_texture().get_image()
 		image.convert(Image.FORMAT_RGB8)
 		_save(image, dir.path_join("%05d.png" % f))
+		if zoom_frames.has(f):
+			zooms.append(_zoom(image))
 		var state: String = _pair["charger"]["state"]
 		if states.is_empty() or states[-1][1] != state:
 			states.append([snappedf(f / fps, 0.01), state])
@@ -230,13 +253,51 @@ func _shoot() -> void:
 			shot.resize(640, 360, Image.INTERPOLATE_LANCZOS)
 			tiles.append(shot)
 			_label.text = ""
+		if close_cam != null:
+			close_cam.make_current()
+			_label.text = ("%.1f s  %s" % [f / fps, key_frames[f]]) if key_frames.has(f) else ""
+			await RenderingServer.frame_post_draw
+			var near: Image = root.get_texture().get_image()
+			near.convert(Image.FORMAT_RGB8)
+			_save(near, _out.path_join("close/frames/%05d.png" % f))
+			if key_frames.has(f):
+				near.resize(640, 360, Image.INTERPOLATE_LANCZOS)
+				close_tiles.append(near)
+			_label.text = ""
+			_camera.make_current()
 	var sheet: Image = Image.create(1280, 360 * ceili(tiles.size() / 2.0), false, Image.FORMAT_RGB8)
 	for i: int in tiles.size():
 		sheet.blit_rect(tiles[i], Rect2i(0, 0, 640, 360), Vector2i((i % 2) * 640, (i / 2) * 360))
 	_save(sheet, _out.path_join("keys_sheet.png"))
+	if not close_tiles.is_empty():
+		_save(_two_up(close_tiles), _out.path_join("close/keys_sheet.png"))
+	if not zooms.is_empty():
+		_save(_two_up(zooms), _out.path_join("zoom_sheet.png"))
 	_write("cycle.json", {"frames": count, "fps": fps, "seconds": SECONDS, "lights": lights, "states": states,
 		"trace_surfaces": _pair.get("traces", 0), "conduit_surfaces": _pair.get("conduits", 0),
 		"arc_frames": _arc_frames, "arc_ends_off": _zap_bad,
 		"keys": KEYS, "render_s": (Time.get_ticks_msec() - started) / 1000.0})
 	print("CHARGER cycle %d frames" % count)
 	quit(0)
+
+
+## Tiles of 640x360 two to a row.
+static func _two_up(tiles: Array) -> Image:
+	var sheet: Image = Image.create(1280, 360 * ceili(tiles.size() / 2.0), false, Image.FORMAT_RGB8)
+	for i: int in tiles.size():
+		sheet.blit_rect(tiles[i], Rect2i(0, 0, 640, 360), Vector2i((i % 2) * 640, (i / 2) * 360))
+	return sheet
+
+
+## The frame cropped to ZOOM_CROP round the crystal's middle (its profile's mid height on its axis), scaled to 640x360.
+func _zoom(image: Image) -> Image:
+	var crystal: Node3D = _pair["crystal"]
+	var p: Dictionary = Zap._profile(crystal)
+	var mid: Vector3 = crystal.global_transform * Vector3(0.0, (float(p["min"]) + float(p["max"])) * 0.5, 0.0)
+	var at: Vector2 = _camera.unproject_position(mid)
+	var size: Vector2i = image.get_size()
+	var x: int = clampi(int(at.x) - ZOOM_CROP.x / 2, 0, size.x - ZOOM_CROP.x)
+	var y: int = clampi(int(at.y) - ZOOM_CROP.y / 2, 0, size.y - ZOOM_CROP.y)
+	var crop: Image = image.get_region(Rect2i(Vector2i(x, y), ZOOM_CROP))
+	crop.resize(640, 360, Image.INTERPOLATE_LANCZOS)
+	return crop

@@ -692,14 +692,18 @@ def vent_anim(layout: dict, out: Path, folder: Path) -> int:
 # of its front (its reach 0.70 + 1.5 out of the spot's vertex), looking at its axis's middle; fov wide enough for the
 # whole charger and the alcove round it (h 0..2 m)
 CHARGER_CYCLE = {"spot": "renewer_e", "eye_d": 2.2, "eye_h": 1.6, "look_d": 0.3, "look_h": 0.98, "fov": 60.0,
-                 "size": (1280, 720), "fps": 30, "max_mb": 15}
+                 "size": (1280, 720), "fps": 30, "max_mb": 15,
+                 # zap-4: the engineer's close camera, about 1.0 m from the crystal (its axis 0.38 m out of the
+                 # spot's vertex, the charger's front at depth_m 0.7), at a player's eye, looking at the crystal
+                 "close": {"eye_d": 1.4, "eye_h": 1.5, "look_d": 0.38, "look_h": 1.05}}
 CYCLE_SCRIPT = "res://charger/cycle.gd"
 
 
-def cycle_view(layout: dict) -> tuple[list[float], list[float]]:
-    """The cycle camera's eye and look point, plan (x, y, h), from the spot's vertex along its normal."""
-    c = CHARGER_CYCLE
-    spot = next(s for s in layout["stations"]["spot"] if s["id"] == c["spot"])
+def cycle_view(layout: dict, close: bool = False) -> tuple[list[float], list[float]]:
+    """The cycle camera's eye and look point, plan (x, y, h), from the spot's vertex along its normal; `close`: the
+    close camera's (CHARGER_CYCLE["close"])."""
+    c = CHARGER_CYCLE["close"] if close else CHARGER_CYCLE
+    spot = next(s for s in layout["stations"]["spot"] if s["id"] == CHARGER_CYCLE["spot"])
     (x, y), (nx, ny) = spot["at"], spot["normal"]
     floor = layout["deck"]["floor_h"]
     return ([round(x + nx * c["eye_d"], 4), round(y + ny * c["eye_d"], 4), round(floor + c["eye_h"], 4)],
@@ -719,13 +723,16 @@ def charger_cycle(layout: dict, out: Path, folder: Path) -> int:
     req["place"] += [p for p in charger_places(layout) if p[0] == "crystal_charger" or p[1][0] > 0]
     c = CHARGER_CYCLE
     eye, look = cycle_view(layout)
+    near_eye, near_look = cycle_view(layout, close=True)
     req.update({"mode": "shoot", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
-                "cycle": {"eye": _g(eye), "look": _g(look), "fov": c["fov"], "fps": c["fps"]},
+                "cycle": {"eye": _g(eye), "look": _g(look), "fov": c["fov"], "fps": c["fps"],
+                          "close": {"eye": _g(near_eye), "look": _g(near_look)}},
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "rooms": room_boxes(layout)})
     errors = _stage(staged)
     shutil.rmtree(folder / "frames", ignore_errors=True)
     shutil.rmtree(folder / "keys", ignore_errors=True)
+    shutil.rmtree(folder / "close", ignore_errors=True)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "charger_cycle_request.json"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -736,19 +743,25 @@ def charger_cycle(layout: dict, out: Path, folder: Path) -> int:
     if code != 0 or not (folder / "cycle.json").is_file():
         raise common.Failure(f"charger/cycle.gd failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     info = json.loads((folder / "cycle.json").read_text(encoding="utf-8"))
-    clip = folder / "cycle.mp4"
-    clip.unlink(missing_ok=True)
-    blender.run_script(VIDEO_SCRIPT, ["--frames", str(folder / "frames"), "--out", str(clip), "--fps", str(c["fps"]),
-                                      "--max-mb", str(c["max_mb"])], timeout=VIDEO_TIMEOUT)
-    if not clip.is_file():
-        raise common.Failure(f"{VIDEO_SCRIPT} wrote no {clip}")
-    shutil.rmtree(folder / "frames", ignore_errors=True)
-    mb = clip.stat().st_size / 2 ** 20
-    if errors or mb > c["max_mb"]:
-        common.bad(f"ship --charger-cycle: video {mb:.1f} MB (max {c['max_mb']}), {len(errors)} import errors")
+    sizes = {}
+    for frames, clip in ((folder / "frames", folder / "cycle.mp4"), (folder / "close" / "frames",
+                                                                     folder / "close" / "cycle.mp4")):
+        clip.unlink(missing_ok=True)
+        blender.run_script(VIDEO_SCRIPT, ["--frames", str(frames), "--out", str(clip), "--fps", str(c["fps"]),
+                                          "--max-mb", str(c["max_mb"])], timeout=VIDEO_TIMEOUT)
+        if not clip.is_file():
+            raise common.Failure(f"{VIDEO_SCRIPT} wrote no {clip}")
+        shutil.rmtree(frames, ignore_errors=True)
+        sizes[clip] = clip.stat().st_size / 2 ** 20
+    if errors or max(sizes.values()) > c["max_mb"]:
+        common.bad(f"ship --charger-cycle: videos {', '.join(f'{mb:.1f}' for mb in sizes.values())} MB "
+                   f"(max {c['max_mb']}), {len(errors)} import errors")
         return 1
-    common.ok(f"ship --charger-cycle: {clip.as_posix()} {c['size'][0]}x{c['size'][1]}, {info['seconds']:.1f} s, "
-              f"{info['frames']} frames, {mb:.1f} MB; states {info['states']}; sheet {(folder / 'keys_sheet.png').as_posix()}")
+    for clip, mb in sizes.items():
+        common.ok(f"ship --charger-cycle: {clip.as_posix()} {c['size'][0]}x{c['size'][1]}, {info['seconds']:.1f} s, "
+                  f"{info['frames']} frames, {mb:.1f} MB")
+    common.ok(f"ship --charger-cycle: states {info['states']}; sheets {(folder / 'keys_sheet.png').as_posix()}, "
+              f"{(folder / 'close' / 'keys_sheet.png').as_posix()}, {(folder / 'zoom_sheet.png').as_posix()}")
     return 0
 
 
