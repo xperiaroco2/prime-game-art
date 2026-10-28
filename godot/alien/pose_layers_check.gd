@@ -105,7 +105,9 @@ func _check(c: Dictionary) -> Dictionary:
 		for b: String in p.get("turns", {}):
 			var t: Array = p["turns"][b]
 			var want := Quaternion(t[0], t[1], t[2], t[3]).normalized()
-			var have := (got[b].basis * _rest[b].basis.inverse()).get_rotation_quaternion()
+			var gb: Transform3D = got[b]
+			var rb: Transform3D = _rest[b]
+			var have: Quaternion = (gb.basis * rb.basis.inverse()).get_rotation_quaternion()
 			var d: float = rad_to_deg((want.inverse() * have).normalized().get_angle())
 			d = minf(d, 360.0 - d)
 			if d > worst_deg:
