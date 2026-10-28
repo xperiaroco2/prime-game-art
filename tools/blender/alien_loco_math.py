@@ -111,6 +111,44 @@ def unmeasured(name: str, job: dict, m: dict) -> str | None:
     return None
 
 
+def made_from(job: dict) -> list[str]:
+    """F1 (art #196): the set's clips a job is made from: its from, mirror, pick and arms_from's clip."""
+    return [n for n in [job.get("from"), job.get("mirror"), *(job.get("pick") or []),
+                        (job.get("arms_from") or {}).get("clip")] if n]
+
+
+def skipped_from(job: dict, reps: dict) -> list[str]:
+    """R1, F1: the clips job is made from that alien_loco.py skipped (reps: the reports so far, a skipped clip's
+    holding "skipped"); a job made from one is skipped too, not stopped by a KeyError on the missing clip."""
+    return [n for n in made_from(job) if n in reps and reps[n].get("skipped")]
+
+
+def skipped_names(reps: dict) -> list[str]:
+    """F1: the set's skipped clips, in the reports' order."""
+    return [n for n, r in reps.items() if r.get("skipped")]
+
+
+def reels_without_skipped(plan: list[dict], loco: dict) -> tuple[list[dict], list[str]]:
+    """F1 (art #196): the reel plan without the clips loco.json (loco: its "clips") records as skipped (they have no
+    "reel" row): such a clip leaves its reel, a reel left with no clip (or whose start's from or to is skipped) is
+    dropped. Returns the plan and one message per change."""
+    gone = {n for n, r in loco.items() if r.get("skipped")}
+    out, notes = [], []
+    for r in plan:
+        start = r.get("start") or {}
+        lost = [c["clip"] for c in r["clips"] if c["clip"] in gone]
+        lost += [n for n in (start.get("from"), start.get("to")) if n in gone and n not in lost]
+        clips = [c for c in r["clips"] if c["clip"] not in gone]
+        if not lost:
+            out.append(r)
+        elif not clips or any(n in gone for n in (start.get("from"), start.get("to"))):
+            notes.append(f"SKIP reel {r['name']}: its clips {lost} were skipped")
+        else:
+            out.append({**r, "clips": clips})
+            notes.append(f"SKIP reel {r['name']}: without the skipped {lost}")
+    return out, notes
+
+
 def cadence_rate(name: str, cadence: float, c0: float | None) -> float:
     """A clip's playback rate for its asked `cadence` (steps/s): cadence / c0, its measured cadence at rate 1; a clip
     with no measured cadence (no steps found) cannot take one."""
