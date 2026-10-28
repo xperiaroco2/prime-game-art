@@ -4,7 +4,7 @@ extends SceneTree
 ## runner opens the window off-screen like the game's `tools\run.cmd shot`:
 ##   PRIME_WINDOW=480x600 godot --path godot --position 30000,30000 --resolution 1x1 -s res://frames/frames.gd
 ##       -- <res://import/x.glb> <out folder> <spec.json>
-## spec.json: {"character": id, "cell": [w, h], "yaw_deg": 35, "pitch_deg": 8, "fps": 24,
+## spec.json: {"character": id, "cell": [w, h], "yaw_deg": 35, "pitch_deg": 8, "light_turn_deg": 0, "fps": 24,
 ##             "clips": [{"name": animation, "label": short name, "times": [s, ...], "note": title text,
 ##                        "video_frames": n, "keep": bool, "video": bool}]}
 ## For each clip, one fixed orthographic three-quarter camera frames the whole character over all its sample times;
@@ -28,6 +28,7 @@ var _scene: Node
 var _skeleton: Skeleton3D
 var _player: AnimationPlayer
 var _camera: Camera3D
+var _rig: Node3D  # the three studio lights; turned by the spec's light_turn_deg so they keep their place to the camera
 
 
 func _initialize() -> void:
@@ -65,6 +66,7 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 	_skeleton = skeletons[0] as Skeleton3D
 	_player = players[0] as AnimationPlayer
 	_stage()
+	_rig.rotation.y = deg_to_rad(float(spec.get("light_turn_deg", 0.0)))
 	await process_frame
 	var size: Vector2i = root.get_visible_rect().size
 	var cell: Vector2i = Vector2i(int(spec["cell"][0]), int(spec["cell"][1]))
@@ -147,6 +149,8 @@ func _stage() -> void:
 	var world: WorldEnvironment = WorldEnvironment.new()
 	world.environment = env
 	root.add_child(world)
+	_rig = Node3D.new()
+	root.add_child(_rig)
 	# Soft specular: the pack's materials are metallic 0.4, roughness 0.42, and a full-strength highlight turns single
 	# flat faces white (a checkerboard of glints on dark clothes and faces) that hides the motion.
 	_light(Vector3(-2.0, 3.2, 3.0), 1.05, true, 0.15)
@@ -177,7 +181,7 @@ func _stage() -> void:
 
 func _light(at: Vector3, energy: float, shadow: bool, specular: float) -> void:
 	var light: DirectionalLight3D = DirectionalLight3D.new()
-	root.add_child(light)
+	_rig.add_child(light)
 	light.look_at_from_position(at, Vector3(0, 0.9, 0))
 	light.light_energy = energy
 	light.light_specular = specular

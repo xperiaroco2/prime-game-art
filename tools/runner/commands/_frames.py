@@ -72,10 +72,12 @@ def times(length: float, short: str, fps: int = FPS, open_cycle: bool = False, l
 
 def spec(character: str, animations: dict[str, float], compare: list[str], video: list[str],
          seams: dict[str, dict[str, float]] | None = None, fps: int = FPS,
-         loops: set[str] | None = None) -> dict[str, Any]:
+         loops: set[str] | None = None, yaw_deg: float = YAW_DEG) -> dict[str, Any]:
     """The spec frames.gd reads: every animation (name -> length in seconds), sorted by name; seams from export.json;
     fps the export's (whole frames of a 30 fps animation set, art #33); `loops` the animations Godot loops because
-    of their name (an animation set's _Loop clips), beside the pack's idles and locomotion."""
+    of their name (an animation set's _Loop clips), beside the pack's idles and locomotion. yaw_deg the clip sheets'
+    camera (0 the front, 90 the character's left side, -90 its right, 180 its back); the studio light turns with it
+    (light_turn_deg), so every view is lit as the three-quarter view is (art #196: a turnaround in Godot's look)."""
     clips = []
     for name in sorted(animations):
         short = label(name)
@@ -84,8 +86,8 @@ def spec(character: str, animations: dict[str, float], compare: list[str], video
         clips.append({"name": name, "label": short, **how,
                       "times": times(animations[name], short, fps, open_cycle=how["open_cycle"], loop=how["loop"]),
                       "keep": short in compare, "video": short in video})
-    return {"character": character, "cell": list(CELL), "yaw_deg": YAW_DEG, "pitch_deg": PITCH_DEG, "fps": fps,
-            "clips": clips}
+    return {"character": character, "cell": list(CELL), "yaw_deg": float(yaw_deg), "pitch_deg": PITCH_DEG,
+            "light_turn_deg": float(yaw_deg) - YAW_DEG, "fps": fps, "clips": clips}
 
 
 FACE_YAWS = (0.0, -YAW_DEG)  # the face close-up: front and three-quarter from the right, as the faces sheets

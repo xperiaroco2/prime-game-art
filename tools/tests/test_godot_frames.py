@@ -45,6 +45,14 @@ class TimesTest(unittest.TestCase):
         self.assertEqual((run["loop"], run["keep"], run["video"], run["video_frames"]), (True, False, True, 19))
         self.assertEqual((wave["loop"], wave["keep"], wave["video"]), (False, True, False))
         self.assertEqual(spec["cell"], list(_frames.CELL))
+        self.assertEqual((spec["yaw_deg"], spec["light_turn_deg"]), (_frames.YAW_DEG, 0.0))  # the three-quarter
+
+    def test_spec_turned(self) -> None:
+        """--yaw: the camera turns to the side or the back, and the studio light turns with it (art #196)."""
+        for yaw in (0.0, -90.0, 180.0):
+            spec = _frames.spec("x", {"CharacterArmature|Idle": 2.0}, [], [], yaw_deg=yaw)
+            self.assertEqual(spec["yaw_deg"], yaw)
+            self.assertEqual(spec["light_turn_deg"], yaw - _frames.YAW_DEG)
 
     def test_compare_joints(self) -> None:
         godot = {"clips": {"Wave": {"times": [0.0, 0.5], "joints": [{"Head": [0, 1.6, 0]}, {"Head": [0, 1.6, 0.012]}]}}}

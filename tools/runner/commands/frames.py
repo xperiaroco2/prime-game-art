@@ -24,6 +24,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--compare", default="all",
                         help="clips Blender renders beside Godot's frames, joints compared (default all the rendered clips; '' for none)")
     parser.add_argument("--video", default="", help=f"clips to encode as looping MP4 (e.g. {','.join(_frames.VIDEO)}; default none)")
+    parser.add_argument("--yaw", type=float, default=_frames.YAW_DEG,
+                        help="the clip sheets' camera yaw in degrees: 0 the front, 90 the character's left side, -90 its "
+                             "right, 180 its back (default the three-quarter, 35); the studio light turns with the camera")
     parser.add_argument("--blend", type=Path, help="the character .blend for the comparison (default: the one the export names)")
     parser.add_argument("--face", default="", help="also a face close-up sheet (sheets/face.png, front and three-quarter) "
                         "at the first frame of this clip, e.g. Idle")
@@ -55,7 +58,7 @@ def run(args: argparse.Namespace) -> int:
         shutil.rmtree(out / sub, ignore_errors=True)
     out.mkdir(parents=True, exist_ok=True)
     spec = _frames.spec(glb.stem, animations, compare, video, expect.get("seams"), expect.get("fps", _frames.FPS),
-                        set(expect.get("loop_suffix", [])))
+                        set(expect.get("loop_suffix", [])), yaw_deg=args.yaw)
     if args.face:
         if args.face not in by_label:
             raise common.Failure(f"unknown clip {args.face} for --face; {glb.name} has: {', '.join(sorted(by_label))}")
