@@ -60,16 +60,19 @@ class ChargerDrawing(unittest.TestCase):
         rs = [r for prof in (i["column"], i["head"]) for r, _h in prof]
         self.assertGreaterEqual(min(rs), d["ring"]["r0"] - 2.5)
         self.assertAlmostEqual(max(rs), 22.8, delta=0.05)
-        # antennas-2: the small plate cap (the hook's top was 123.1), its lit side the slanted inner edge, the tip
-        # electrode on its inner face
-        self.assertAlmostEqual(max(h for prof in (i["column"], i["head"]) for _r, h in prof), 121.2, delta=0.05)
+        # antennas-2b: the slim wedge cap (the hook's top was 123.1, r2's blocky cap 121.2), its top sloping down
+        # toward the crystal, cap_edge its inner face; the tip electrode half sunk in that face (its centre on it)
+        self.assertAlmostEqual(max(h for prof in (i["column"], i["head"]) for _r, h in prof), 120.0, delta=0.05)
         head = i["head"]
         (ar, ah), (br, bh) = head[i["cap_edge"]], head[(i["cap_edge"] + 1) % len(head)]
-        self.assertLess(br, ar)  # toward the crystal
-        self.assertLess(bh, ah)  # and down: it faces up and in
+        self.assertEqual(br, ar)  # an upright face toward the crystal
+        self.assertLess(bh, ah)
+        self.assertEqual(ar, min(r for r, _h in head))
+        self.assertLess(max(h for r, h in head if r == ar), max(h for _r, h in head))  # the wedge slopes down inward
         tip_e = i["electrodes"][0]
-        self.assertEqual(tip_e[0], min(r for r, _h in head))
-        self.assertTrue(min(h for _r, h in head) < tip_e[1] < bh)
+        centre = tip_e[0] * math.cos(math.radians(i["half_deg"] / 3)) - 0.45 * tip_e[2]
+        self.assertAlmostEqual(centre, ar, delta=0.02)
+        self.assertTrue(bh < tip_e[1] - tip_e[2] and tip_e[1] + tip_e[2] < ah)
         self.assertNotIn("emitter", i)
         # the lip: a glowing slot parallel to the slanted edge splits it off the cap; the tip electrode on the lip
         # (its distance from the edge's line under the lip's width), the slot's core inside the faces

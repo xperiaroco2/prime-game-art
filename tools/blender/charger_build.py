@@ -46,6 +46,8 @@ from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
 DIMS = tomllib.loads((Path(__file__).with_name("charger_dims.toml")).read_text(encoding="utf-8"))
+if "--tip" in sys.argv:  # antennas-2b: build a tip variant instead of the dims' (outer.tip)
+    DIMS["outer"]["tip"] = sys.argv[sys.argv.index("--tip") + 1]
 CM = 0.01
 FR, BA = DIMS["frame"], DIMS["base"]
 AX = FR["axis_d"]
@@ -549,17 +551,63 @@ def outer_gaps() -> list:
     return [((s0 + s1) / 2, s1 - s0, t) for s0, s1, t in outer_stack()[1]]
 
 
+def plate_sizes() -> list:
+    """Each outer plate's (half width, half depth): the dims' half; tip t2 tapers the last plates (tip_t2)."""
+    o = DIMS["outer"]
+    n = o["plates"]
+    out = [tuple(o["half"])] * n
+    if o.get("tip") == "t2":
+        t = o["tip_t2"]
+        for j, (fw, fd) in enumerate(zip(t["taper"], t["depth"])):
+            out[n - len(t["taper"]) + j] = (o["half"][0] * fw, o["half"][1] * fd)
+    return out
+
+
 def outer_plate_outlines() -> list:
     """The plates between the slots (the tip plate to the stack's end), as band's order: the lower cut's inside and
     outside, the upper cut's outside and inside (side 2 the plate's upper face, the tip's end face)."""
-    hw = DIMS["outer"]["half"][0]
     gaps = outer_gaps()
+    sizes = plate_sizes()
     out = []
     for k, (s, g, _t) in enumerate(gaps):
+        hw = sizes[k][0]
         lo = cut(s, g / 2, hw)
         hi = cut(gaps[k + 1][0], -gaps[k + 1][1] / 2, hw) if k + 1 < len(gaps) else cut(spine_length(), 0.0, hw)
         out.append([lo[0], lo[1], hi[1], hi[0]])
+    if DIMS["outer"].get("tip") == "t2":  # a thin slit across the end face toward the crystal
+        w, dn = DIMS["outer"]["tip_t2"]["slit"]
+        (pr, ph), (tr, th), (nr, nh) = spine(spine_length())
+        def at(a, b):
+            return (pr + nr * a - tr * b, ph + nh * a - th * b)
+        lo0, lo1, hi1, hi0 = out[-1]
+        out[-1] = [lo0, lo1, hi1, at(w / 2, 0.0), at(w / 2, dn), at(-w / 2, dn), at(-w / 2, 0.0), hi0]
     return out
+
+
+def steps(bm, face, seq: list, scale: float = 1.0) -> None:
+    """antennas-2b t1: insets in turn [(thickness, depth cm)] (depth > 0 out of the face), the last face cyan,
+    scaled about its centre (the insets on a sloped step come out smaller than their thickness)."""
+    for th, dz in seq:
+        bmesh.ops.inset_individual(bm, faces=[face], thickness=th * CM, depth=dz * CM)
+    c = face.calc_center_median()
+    for v in face.verts:
+        v.co = c + (v.co - c) * scale
+    face.material_index = 4
+
+
+def ellipse(a_mid: float, a: float, b: float, off: float, n: int = 32) -> list:
+    """An oval on the outer tip's end face: a across (the middle line's normal), b along d, off cm out of it."""
+    (pr, ph), (tr, th), (nr, nh) = spine(spine_length())
+    sx = 1.0 if a_mid > 0 else -1.0
+    pts = []
+    for j in range(n):
+        c, s = math.cos(2 * math.pi * j / n), math.sin(2 * math.pi * j / n)
+        pts.append(P(sx * (pr + nr * a * c + tr * off), AX + b * s, ph + nh * a * c + th * off))
+    return pts
+
+
+def lens_disc(bm, a_mid: float, a: float, b: float, proud: float) -> None:
+    loft(bm, ellipse(a_mid, a, b, -0.3), ellipse(a_mid, a, b, proud))
 
 
 def pocket(bm, face, frame: float, run: float, depth: float) -> None:
@@ -583,10 +631,16 @@ def build_outer_plates(bm) -> None:
     outlines = outer_plate_outlines()
     for a_mid in SIDES:
         for k, prof in enumerate(outlines):
-            faces = xprism(bm, prof, a_mid, o["half"][1])
-            if k == len(outlines) - 1:
+            faces = xprism(bm, prof, a_mid, plate_sizes()[k][1])
+            if k == len(outlines) - 1 and o.get("tip", "r2") in ("r2", "t1"):
                 bmesh.ops.recalc_face_normals(bm, faces=faces)
-                pocket(bm, faces[2], *o["emitter"])
+                if o.get("tip", "r2") == "r2":
+                    pocket(bm, faces[2], *o["emitter"])
+                else:
+                    steps(bm, faces[2], o["tip_t1"], o["tip_t1_scale"])
+        if o.get("tip") == "t3":  # the lens's bronze bezel between the lit ring and the lens
+            a, b, gap, _w = o["tip_t3"]
+            lens_disc(bm, a_mid, a + gap, b + gap, 0.2)
 
 
 def build_outer_cores(bm) -> None:
@@ -594,11 +648,24 @@ def build_outer_cores(bm) -> None:
     core_inset (deep at the foot, nearly flush at the tip, filling the chamfers' V: the glow brighter toward the tip)."""
     o = DIMS["outer"]
     hw, dp = o["half"]
+    sizes = plate_sizes()
     for a_mid in SIDES:
-        for s, g, t in outer_gaps():
+        for k, (s, g, t) in enumerate(outer_gaps()):
             ins = lerp(o["core_inset"][0], o["core_inset"][1], t)
+            hw, dp = min(sizes[max(k - 1, 0)], sizes[k])  # under a tapered plate the smaller
             lo, hi = cut(s, -g / 2 - 0.3, hw - ins), cut(s, g / 2 + 0.3, hw - ins)
             xprism(bm, [lo[0], lo[1], hi[1], hi[0]], a_mid, dp - ins)
+        if o.get("tip") == "t2":  # the slit's core, just in front of the notch's floor
+            w, dn = o["tip_t2"]["slit"]
+            (pr, ph), (tr, th), (nr, nh) = spine(spine_length())
+            q = [(pr + nr * a - tr * b, ph + nh * a - th * b)
+                 for a, b in ((-w / 2 - 0.2, dn + 0.3), (w / 2 + 0.2, dn + 0.3), (w / 2 + 0.2, dn - 0.15),
+                              (-w / 2 - 0.2, dn - 0.15))]
+            xprism(bm, q, a_mid, sizes[-1][1] - 0.3)
+        if o.get("tip") == "t3":  # the lit ring under the bezel and the lens on it
+            a, b, gap, rw = o["tip_t3"]
+            lens_disc(bm, a_mid, a + gap + rw, b + gap + rw, 0.1)
+            lens_disc(bm, a_mid, a, b, 0.3)
 
 
 def inner_stack() -> tuple:
@@ -664,9 +731,17 @@ def inner_pieces() -> list:
 def build_inner_prongs(bm) -> None:
     """The column's plates and the cap (antennas-2: the concept's small plate cap instead of the big hook): its lip
     along the slanted inner edge and its main plate, the glowing slot between them (build_inner_cores)."""
+    i = DIMS["inner"]
     for a_mid in SIDES:
         for prof in inner_pieces():
-            xprism(bm, prof, a_mid, DIMS["inner"]["depth"])
+            xprism(bm, prof, a_mid, i["depth"])
+        # antennas-2b: the tip electrode half sunk in the lip's inner face, a bronze socket collar round it
+        r, h, er = i["electrodes"][0]
+        c = polar(a_mid, r * math.cos(math.radians(i["half_deg"] / 3)) - er * 0.45, h)
+        axis = Vector((-c.x, 0.0, 0.0)).normalized()
+        sw, sh = i["socket"]
+        disc(bm, [(er + 0.1, -0.3), (er + 0.1 + sw, -0.3), (er + 0.1 + sw, sh), (er + 0.1, sh)], c, axis, 20,
+             closed=True)
 
 
 def build_inner_cores(bm) -> None:
@@ -1135,6 +1210,7 @@ VIEWS = {
     # antennas-2: the arc square on (its gaps even?), the recessed tip emitter from the crystal's side
     "cu_bend": (0.0, 6.0, (-28.0, AX, 131.0), 30.0, "idle"),
     "cu_tip": (-55.0, 8.0, (18.6, AX, 136.0), 20.0, "charging"),
+    "cu_socket": (70.0, 35.0, (-15.0, AX, 117.5), 14.0, "idle"),  # antennas-2b: the electrode in its socket
     "cu_deck_edge": (-40.0, 12.0, (-30.0, 60.0, 92.0), 40.0, "idle"),
     "cu_plinth": (-40.0, 10.0, (-30.0, 60.0, 8.0), 40.0, "idle"),
     "cu_side": (-80.0, 8.0, (-44.0, 28.0, 60.0), 90.0, "idle"),
@@ -1253,10 +1329,13 @@ def place_camera(co, yaw: float, elev: float, target: Vector, frame: float, orth
 
 def shoot(o: dict, folder: Path, res: int) -> list:
     sc = bpy.context.scene
+    only = argv().get("views")  # antennas-2b: a variant's few views, no orthographic ones
     co = sc.camera
     folder.mkdir(parents=True, exist_ok=True)
     files = []
     for name, (yaw, elev, (u, d, h), frame, state) in VIEWS.items():
+        if only and name not in only.split(","):
+            continue
         set_state(o, state)
         sc.render.resolution_x = res if not name.startswith("cu_") else int(res * 0.7)
         sc.render.resolution_y = sc.render.resolution_x
@@ -1265,7 +1344,7 @@ def shoot(o: dict, folder: Path, res: int) -> list:
         bpy.ops.render.render(write_still=True)
         files.append(name)
     set_state(o, "idle")
-    for name, (yaw, elev, (u, d, h), frame) in ORTHO.items():
+    for name, (yaw, elev, (u, d, h), frame) in (ORTHO.items() if not only else ()):
         sc.render.resolution_x = sc.render.resolution_y = int(frame * PX_PER_CM)
         place_camera(co, yaw, elev, P(u, d, h), frame, True)
         sc.render.filepath = str(folder / f"ortho_{name}.png")

@@ -26,9 +26,9 @@ const CONDUIT_REACH := 1.2   # m: a core mesh whose box centre is this near the 
 
 ## The electrodes on the track ring: tools/blender/charger_dims.toml [inner] electrodes [r, h, er] (cm), placed as
 ## charger_build.build_electrodes does: at u ±(r cos(HALF_DEG / 3) - 0.45 er), h, on the crystal's axis (AXIS_D out
-## of the wall). Index 0 the tip electrode on the cap's inner face (antennas-2), 1 the low one on the column's inner face.
+## of the wall). Index 0 the tip electrode half sunk in the cap's inner face (antennas-2b), 1 the low one on the column's inner face.
 const HALF_DEG := 12.0
-const ELECTRODES := [[13.6, 117.2, 1.3], [16.8, 101.0, 1.0]]
+const ELECTRODES := [[14.84, 117.0, 0.9], [16.8, 101.0, 1.0]]
 const AXIS_D := 0.38
 ## per electrode: where on the crystal its arcs land (m up the crystal from the electrode's height) and the jitter
 const LIFT := [-0.045, 0.09]   # zap-2: the tip pair dives down the crystal (level, 2.5 cm, read as nothing at 2 m)
