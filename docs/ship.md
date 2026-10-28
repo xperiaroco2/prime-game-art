@@ -1437,7 +1437,8 @@ table (`test_ship_lens`). The warm strips are `int_amber__lens` (`[light.mats]` 
   sheets now keep gutters between cells.
 - **The alcove's back panel** (`lens_graphite`, `lens_graphite2`): metallic 0.55 at roughness 0.38 mirrored the
   room's reflection probe and read light grey. Now the drawing's graphite: dark grey, metallic 0.12, roughness 0.66
-  (the plate 0.7). The sofa's toe and fill and the table's inset share it.
+  (the plate 0.7). The sofa's toe and fill and the table's inset share it. (Since the charger traces the panel is
+  `lens_panel`, navy, and the plate is gone.)
 - **The cushions**: `lens_cushion_red` (0.075, 0.015, 0.010), darker and browner (step 2's 0.17 read orange-salmon).
 - **The charger**: the pedestal's detail and darker plates (`docs/props.md`, build `lens2`).
 - **`ship --shoot --charger`** runs `godot/charger/room.gd` (ship.gd plus `charger.gd` and `crystal.gd`): the charger
@@ -1457,5 +1458,37 @@ the charger and the crystal have: `set_state` (idle 0..5.9 s, charging to 17.0, 
 speed, down 15.8..17.0), `set_ring` (3 turns the other way) and crystal.gd's `set_charge` (0 to 1, 7.4..15.4). Two
 stand-ins, as the game has no hand: the crystal's way into the cup and out (an eased Bezier from above the player,
 its last leg down the axis). Not shown, as not built: the lightning arcs and any conduit pulse (the game's).
-Output: `cycle.mp4` (1280x720, 30 fps, 24 s, 7.3 MB), `keys/` and `keys_sheet.png` (ten labelled beats) in
-`<raw>/ship/v5/charger-cycle/` (pieces `lens-c-main/pieces`; `--out` names them). The frames take about 4 min.
+Output: `cycle.mp4` (1280x720, 30 fps, 24 s, 7.3 MB), `keys/` and `keys_sheet.png` (thirteen labelled beats since
+the traces) in `<raw>/ship/v5/charger-cycle/` (pieces `lens-c-main/pieces`; `--out` names them). The frames take
+about 4 min. `cycle.json`'s `trace_surfaces` counts the traces the east charger drives (3).
+
+## The charger traces on the alcove's back panel (2026-10-28)
+
+The engineer's pick for both lens rooms (prime-game#1095 c6468773545; the concept
+`<raw>/ship/v5/charger-traces/concept/a_circuit.jpg`): glowing cyan circuit traces on the back panel, lit by the charge.
+- **The panel** (`back`, d 0..10, u +-46, h 0..200) is `lens_panel`, a matte dark navy (#0b1a2e, roughness 0.82). The
+  graphite plate on it (`back_plate`) went: the traces run edge to edge.
+- **The traces** (`ship_interior_lens.py` `TRACE`, `trace_layout()`, `trace_parts()`; material `lens_trace`, no
+  collider of their own beyond the piece's `-col`): lines 1.2 cm wide, orthogonal with 45-degree bends, mirrored left
+  to right (one centre line on the axis). Trunks run from an outer end to the ring behind the crystal (centre u 0, h
+  115, radius 18 to the line's middle, a 1.5 cm line): the centre line and two lines from under the head strip, two
+  lines from hollow dots (Ø 4) beside the centre line, and the low conduit's line from the side edge at h 92 (behind
+  the pedestal, then up the gap between the outer prong and the cheek, into the ring's side). Branches end on the top
+  lane's trunk at 45 degrees: one down from the lintel and the high conduit's pair from the side edge at h 167 and 173.
+  Each kind sits a hair proud of the panel (branch 0.6 mm, trunk 0.8, dots 1.0, ring 1.2), so a branch's end tucks
+  under its trunk and a trunk's under the ring; nothing is coplanar.
+- **The fill coordinate**: each corner's UV x runs 0 at the line's outer end to 1 at the ring (a trunk: its arc length
+  over its length; a branch reaches its trunk's value at the junction, so the fronts meet there); UV y (Godot's, after
+  the glTF exporter's v -> 1 - v) is the line's metres per unit of fill, -1 on the ring.
+- **The look** (`godot/charger/traces.gdshader`, emission only: no strip light, it lights nothing). ship.gd swaps
+  every `lens_trace` surface for one idle copy (`TRACE_MAT`); `godot/charger/traces.gd`'s `bind(look, scene)` gives
+  the traces near a charger's crystal (`PANEL_REACH` 1.2 m) their own copy in its charger.gd look, `set_panel(look,
+  fill, flare, lit)` drives it (not in charger.gd: its copy ships in `assets/prop/crystal_charger`, the panel is the
+  ship's): idle every line at 13 % and the ring at 18 % (full: emission 1.3 of (0, 0.6, 1); 3.0 and 1.5 read pale under AgX); charging a full cyan behind the front at the charge fraction, dim
+  ahead, a small white-cyan head on it, the ring building to 35 %; full the ring flares (`flare`, a 0.3 s pulse,
+  white-cyan) and everything holds full; `lit` 1 -> 0 fades it back to dim. The cycle drives them (`cycle.gd` `FLARE` 15.4..15.7 s, `FADE` 0.5 s from the crystal leaving the
+  cup); `--shoot --charger` sets the fill from a view's state and charge.
+- **The export** ships the shader as `assets/environment/ship/charger_traces.gdshader` (`ship_export.SHADERS`).
+- Tests: `test_ship_charger_traces.py` (mirrored, orthogonal and 45 degrees, apart and inside the panel, the ring on
+  the crystal's axis, the fill 0..1 and the junctions, faces toward the room, the export's shader).
+- Output: `<raw>/ship/v5/charger-traces/` (`pieces/`: lens-c-main's with the new `lens_alcove`; `cycle/`).
