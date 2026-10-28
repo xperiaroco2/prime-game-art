@@ -527,6 +527,13 @@ def plain_width(layout: dict[str, Any], s: dict[str, Any]) -> float:
     return s.get("plain_width_m", layout["stations"]["plain_width_m"])
 
 
+def spot_units(layout: dict[str, Any], s: dict[str, Any]) -> list[float]:
+    """The widths along the wall of what stands on a spot: each layout piece's `unit` box on it (u1 - u0) and the
+    spot's own unit_width_m (a station package that is not a ship piece: the crystal socket's 0.468 m)."""
+    widths = [p["unit"][1] - p["unit"][0] for p in layout["pieces"] if p.get("spot") == s["id"] and p.get("unit")]
+    return widths + ([s["unit_width_m"]] if "unit_width_m" in s else [])
+
+
 def check_spots(layout: dict[str, Any]) -> list[str]:
     """The station spots (5a mirrored): a floor spot's footprint inside its room; a wall spot on its room's wall, its
     plain panel free of every piece with a `foot` (trunks, cable bays, arches, pilasters) and, rebuild F, laid on plain
@@ -554,6 +561,14 @@ def check_spots(layout: dict[str, Any]) -> list[str]:
             problems.append(f"station {s['id']}: {wall - 0.05:.2f} m from the wall of {room['id']}, wants it on the wall")
         t = (-n[1], n[0])
         width = plain_width(layout, s)
+        if "plain_width_m" in s:   # gills step 13: a spot's own band at least as wide as the widest unit on it
+            units = spot_units(layout, s)
+            if not units:
+                problems.append(f"station {s['id']}: its own plain_width_m with no unit on it to bound it "
+                                "(a piece with this spot or the spot's unit_width_m)")
+            elif width < max(units) - TOL:
+                problems.append(f"station {s['id']}: plain_width_m {width:g} m narrower than its widest unit "
+                                f"({max(units):g} m)")
         half = width / 2
         band = [(s["at"][0] + t[0] * u + n[0] * v, s["at"][1] + t[1] * u + n[1] * v)
                 for u in [half * (k / 8 - 1) for k in range(17)] for v in (0.02, 0.15, 0.3)]
@@ -603,6 +618,9 @@ def check_units(layout: dict[str, Any]) -> list[str]:
     st, by_id = layout["stations"], rooms(layout)
     spots = {s["id"]: s for s in st["spot"]}
     for p in layout["pieces"]:
+        # gills step 13: only the gills' units (their hood) may reach the rim's underside
+        if p.get("to_rim") and not p["id"].startswith("station_vent_"):
+            problems.append(f"piece {p['id']}: to_rim is for the gills (station_vent_*) only")
         if not p.get("spot"):
             continue
         s = spots.get(p["spot"])

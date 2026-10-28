@@ -268,6 +268,24 @@ class ShipLayoutTest(unittest.TestCase):
             layout["place"].append(["tip_trunk", [3.505, -2.403, 0.0], 29.745])   # rebuild E: on a front socket
         self.assertTrue(any("socket_fe: tip_trunk sticks out" in p for p in problems_after(trunk)))
 
+    def test_a_spot_band_narrower_than_its_unit_is_refused(self) -> None:
+        """gills step 13: a spot's own plain_width_m is at least its widest unit (a piece on it or unit_width_m), and
+        an own band needs a unit to bound it."""
+        def spot(layout, sid):
+            return next(s for s in layout["stations"]["spot"] if s["id"] == sid)
+        self.assertTrue(any("socket_e: plain_width_m 0.4 m narrower than its widest unit (0.468 m)" in p
+                            for p in problems_after(lambda lay: spot(lay, "socket_e").update(plain_width_m=0.4))))
+        self.assertTrue(any("vent_e: plain_width_m 1.5 m narrower than its widest unit (1.6 m)" in p
+                            for p in problems_after(lambda lay: spot(lay, "vent_e").update(plain_width_m=1.5))))
+        self.assertTrue(any("socket_w: its own plain_width_m with no unit" in p
+                            for p in problems_after(lambda lay: spot(lay, "socket_w").pop("unit_width_m"))))
+
+    def test_to_rim_off_the_gills_is_refused(self) -> None:
+        """gills step 13: only the gills' units (station_vent_*) may set to_rim."""
+        def rim(layout):
+            next(p for p in layout["pieces"] if not p["id"].startswith("station_vent_"))["to_rim"] = True
+        self.assertTrue(any("to_rim is for the gills" in p for p in problems_after(rim)))
+
     def test_a_vent_on_the_throat_jamb_is_refused(self) -> None:
         """rebuild F: no plain wall piece under a wall spot's band is refused (rebuild E's vents stood half on the
         hull's jamb, forward of the throat's interior wall modules)."""
