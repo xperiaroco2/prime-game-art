@@ -276,6 +276,12 @@ class M1c(unittest.TestCase):
         src = (BL / "alien_body_clip_bends.py").read_text(encoding="utf-8")
         self.assertIn('return "__" not in n and not n.startswith(("TM_", "MC_"))', src)
 
+    # M1d (art #196): the review's thumb about the game clips' axes (across the palm).
+    def test_review_thumb_axes(self):
+        src = (BL / "alien_body_refit_review.py").read_text(encoding="utf-8")
+        self.assertIn('if f == "Thumb" and axes == "clip":', src)
+        self.assertIn('p.add_argument("--thumb-axes", default="clip"', src)
+
 
 if __name__ == "__main__":
     unittest.main()
