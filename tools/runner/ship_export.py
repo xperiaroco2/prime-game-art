@@ -42,9 +42,13 @@ QUESTIONS = [
     "crystal_anchor, breaker_board, crystal_charger) get their look from their own GDScript (apply()), which an asset "
     "may not carry (11.1), so the game's station scenes instance them at the markers. Each package's HANDOFF.md "
     "'Placement' holds its own offset (the breaker board 0.07 m out along the normal).",
-    "S2: the throat vents (VentE, VentW) are part of the ship: the pieces station_vent_e and station_vent_w under "
-    "Pieces, calm (the heat panel hidden). Their states (slats, the heat and cool panels and their well lights) are "
-    "art code today (godot/ship/vent_anim.gd, vent_glow.gd): the game's vent station drives the nodes by name.",
+    "S2: the gills (VentE, VentW, on the hall's back wall beside the vault door; the throat is plain) are part of the "
+    "ship: the pieces station_vent_e and station_vent_w under Pieces, calm (the heat panel hidden, the floor steps "
+    "hidden under soft spills). Their states are art code today: godot/ship/vent_anim.gd (inputs problem, hold, "
+    "release(); signals fixed, too_early, missed, thrown) drives the four ribs <id>_cover1..4, the cool glow with its "
+    "bands and well lights, the bar's marker and the lamp by name, vent_glow.gd sets the well lights and spills. The "
+    "gills' meshes are on render layer 4 (VENT_LAYER), left out of the doorways' red-orange strip lights within 1.6 m "
+    "of a unit (the scene's cull masks): the game's own lights need the same rule.",
     "S3: the look the art sets by code is baked into the scene as overrides inside each piece's instance (the glTF "
     "materials' night values, the outside pieces' render layer 2, the vents' well lights), every piece an editable "
     "instance; the shared metal is metal.gdshader with one .tres per metal. The shaders are art code shipped as files "
