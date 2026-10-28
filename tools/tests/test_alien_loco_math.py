@@ -11,6 +11,28 @@ import alien_loco_math as L  # noqa: E402
 CFG = L.load()
 
 
+class Paths(unittest.TestCase):
+    """T1: the new bodies' build and output by flags, the committed set file's r2b/f3 untouched."""
+
+    def test_the_committed_paths_stay_r2b_and_f3(self):
+        self.assertEqual((CFG["set"]["build"], CFG["set"]["out"]), ("r2b/build", "loco/f3"))
+        self.assertEqual(L.with_paths(CFG)["set"], CFG["set"])
+
+    def test_flags_replace_build_and_out_only(self):
+        cfg = L.with_paths(CFG, "r2c/build", "loco/t1")
+        self.assertEqual((cfg["set"]["build"], cfg["set"]["out"]), ("r2c/build", "loco/t1"))
+        self.assertEqual({k: v for k, v in cfg["set"].items() if k not in ("build", "out")},
+                         {k: v for k, v in CFG["set"].items() if k not in ("build", "out")})
+        self.assertEqual(cfg["clip"], CFG["clip"])
+        self.assertEqual(CFG["set"]["out"], "loco/f3")  # the loaded set is not changed in place
+
+    def test_a_new_build_into_the_old_out_is_refused(self):
+        with self.assertRaises(ValueError):
+            L.with_paths(CFG, "r2c/build")
+        with self.assertRaises(ValueError):
+            L.with_paths(CFG, "r2c/build", "loco/f3")
+
+
 class SetFile(unittest.TestCase):
     def setUp(self):
         self.jobs = L.expand(CFG)

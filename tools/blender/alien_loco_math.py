@@ -18,6 +18,20 @@ def load(path: Path | str = SET) -> dict:
         return tomllib.load(fh)
 
 
+def with_paths(cfg: dict, build: str = "", out: str = "") -> dict:
+    """The set with [set] build and out replaced (each under raw_base; empty: the file's): T1's new bodies (r2c/build
+    into loco/t1) beside the committed r2b/f3 builds, the file unchanged. An out equal to the file's while the build
+    differs is refused (the new build would land in the old folder)."""
+    s = dict(cfg["set"])
+    if build:
+        s["build"] = build
+    if out:
+        s["out"] = out
+    if s["build"] != cfg["set"]["build"] and s["out"] == cfg["set"]["out"]:
+        raise ValueError(f"--build {s['build']} needs its own --out (not the set's {s['out']})")
+    return {**cfg, "set": s}
+
+
 def speed_name(name: str, speed: float, first: bool) -> str:
     """The clip fitted to `speed`: the name itself for the first speed, else <name>__s<speed x 10> (a name that is
     already a variant: <name>_s<..>)."""

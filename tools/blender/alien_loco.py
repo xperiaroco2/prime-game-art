@@ -8,6 +8,7 @@ Blender's FFmpeg).
 
     $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw [--chars chameleon,axolotl]   # the GLBs
     $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char NAME]  # reels
+    $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw --build r2c/build --out loco/t1  # T1: new bodies
 
 Into <raw>/<raw_base>/<out>/build/<char>/: <char>_char.blend, <char>_char.glb, its validator report, loco.json (per
 clip the edits' reports, the numbers before and after, the rates at the game's speeds), the build's support files
@@ -166,8 +167,10 @@ def _blender_main(argv: list[str]) -> None:
     ap.add_argument("--raw", required=True)
     ap.add_argument("--chars", default="")
     ap.add_argument("--dump", default="", help="only write the first character's skeleton and sampled sources here")
+    ap.add_argument("--build", default="")
+    ap.add_argument("--out", default="")
     a = ap.parse_args(argv)
-    cfg = L.load()
+    cfg = L.with_paths(L.load(), a.build, a.out)
     jobs = L.expand(cfg)
     build, ttm, out = _paths(a.raw, cfg)
     mocap = Path(a.raw) / cfg["set"]["raw_base"] / cfg["set"]["mocap"] if cfg["set"].get("mocap") else None
@@ -266,17 +269,25 @@ def main() -> int:
     ap.add_argument("--char", default="chameleon", choices=("chameleon", "axolotl"),
                     help="--reels: the character (not the chameleon: into reels/<char>/)")
     ap.add_argument("--dump", default="", help="write the chameleon's skeleton and sampled sources as JSON, no build")
+    ap.add_argument("--build", default="", help="T1: the characters' build instead of [set] build (under raw_base, "
+                    "e.g. r2c/build); needs --out")
+    ap.add_argument("--out", default="", help="T1: the output instead of [set] out (under raw_base, e.g. loco/t1)")
     a = ap.parse_args()
-    cfg = L.load()
+    cfg = L.with_paths(L.load(), a.build, a.out)
+    paths = [*(["--build", a.build] if a.build else []), *(["--out", a.out] if a.out else [])]
     if a.reels:
         return _reels(a, cfg)
     if a.dump:
-        res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", "chameleon", "--dump", a.dump],
+        res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", "chameleon", "--dump", a.dump, *paths],
                                  timeout=1200)
         print(*[x for x in (res.stdout or "").splitlines() if x.startswith("DUMP")], sep="\n", flush=True)
         return res.returncode
     build, _, out = _paths(a.raw, cfg)
     chars = a.chars.split(",") if a.chars else cfg["set"]["chars"]
+    for c in chars:  # a run never overwrites in the raw folder
+        if (out / "build" / c / f"{c}_char.glb").exists():
+            print(f"{out / 'build' / c} holds a build: pick a new --out", flush=True)
+            return 2
     for c in chars:
         hd = out / "build" / c
         hd.mkdir(parents=True, exist_ok=True)
@@ -284,7 +295,8 @@ def main() -> int:
             p = build / c / f.format(c=c)
             if p.exists():
                 shutil.copy2(p, hd / p.name)
-    res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", ",".join(chars)], timeout=3600)
+    res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", ",".join(chars), *paths],
+                             timeout=3600)
     (out / "build" / "build.log").write_text((res.stdout or "") + (res.stderr or ""), encoding="utf-8", newline="\n")
     print(*[x for x in (res.stdout or "").splitlines() if x.startswith(("CLIP", "CHAR"))], sep="\n", flush=True)
     if res.returncode != 0:
