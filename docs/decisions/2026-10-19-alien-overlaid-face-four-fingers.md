@@ -1,6 +1,7 @@
 # The alien's overlaid face and four fingers
 
-- Status: accepted (the engineer, 2026-10-19, in chat with the art manager, restated in art#196 comments)
+- Status: accepted (the engineer, 2026-10-19, in chat with the art manager, restated in art#196 comments); decision 2
+  superseded on 2026-10-24 (see "Amendment of 2026-10-24")
 - Issue: [#221](https://github.com/xperiaroco2/prime-game-art/issues/221); the stage: art#196
 - Changes: the character contract for the alien (`docs/contract.md`; `contract/contract.toml` follows, see
   "Consequences"). Supersedes the face part of `2026-10-18-faces-as-morphs.md` for the alien.
@@ -37,7 +38,7 @@ Two things moved on in art#196:
 
    Godot imports the sockets under `BoneAttachment3D`, three.js under the Head bone (`docs/godot.md`, "The alien
    parts kit").
-2. **Four fingers.** The alien has four fingers per hand: Index, Middle, Ring and Thumb. The Little finger's three
+2. **Four fingers.** *Superseded on 2026-10-24: five weighted fingers (see "Amendment of 2026-10-24").* The alien has four fingers per hand: Index, Middle, Ring and Thumb. The Little finger's three
    bones stay in the skeleton and carry no weights. The 56-bone contract skeleton and every clip are unchanged.
 3. **Scope.** Both decisions are for the alien. The human characters, the pack bodies and the face kit's stage-1
    heads keep the contract as written until the engineer decides otherwise.
@@ -65,6 +66,18 @@ Two things moved on in art#196:
   Moving to five fingers later means weighting the Little bones, with no skeleton or clip change.
 - **Reversible.** Neither decision touches the skeleton, so either can be revisited cheaply.
 
+## Amendment of 2026-10-24: five weighted fingers, the character budget
+
+The engineer, 2026-10-24, in chat, recorded in art#196
+[comment 6386685364](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6386685364):
+- **Five fingers.** The alien's Little finger carries weights, as in the A concept: five weighted finger chains per
+  hand, as the human body. Decision 2 (four fingers, the Little chain unweighted) is superseded; the skeleton and the
+  clips are unchanged, as decision 2's last consequence foresaw. `[kinds.alien]` in `contract/contract.toml` no longer
+  has `fingers_unweighted = ["Little"]`; `check --kind alien` wants every finger chain weighted (`docs/contract.md`).
+- **The character budget.** The alien is judged against the character budget of `2026-10-18-character-budgets.md`,
+  40,000 triangles as the target and 60,000 as the cap (`[kinds.alien] budget = "character"`).
+- Decision 1 (the overlaid face) and decision 3 (the scope) stand.
+
 ## Links
 
 - The engineer's words and the stage, art#196 comments:
@@ -73,7 +86,9 @@ Two things moved on in art#196:
   approved),
   [6269113887](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6269113887) (the second test's
   verdict, the finger question),
-  [6269178628](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6269178628) ("Four fingers").
+  [6269178628](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6269178628) ("Four fingers"),
+  [6386685364](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6386685364) (five weighted
+  fingers, the character budget: the amendment).
 - `2026-10-18-faces-as-morphs.md` (superseded in part), `2026-10-18-character-budgets.md`,
   `2026-10-02-art-repo-foundation.md`.
 - `docs/contract.md`, `docs/godot.md` ("The alien parts kit").
