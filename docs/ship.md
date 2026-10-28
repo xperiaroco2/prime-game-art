@@ -1729,3 +1729,52 @@ on every colliding piece; no script on any node; the station spots; the 1.36 m c
 the package in an off-screen window: the mean absolute difference (0..255, at most 2.0) and the share of pixels off
 by more than 16, with each view's draw calls, primitives and GPU ms. `DIR/_check/report.json` holds the numbers;
 `assets/environment/ship/` commits the manifest (the files' hashes), `report.json` and `HANDOFF.md`, not the GLBs.
+
+## Lens room C, step 1: the charger's alcove and the east lounge (2026-10-28)
+
+The engineer's look C for the lens rooms (prime-game#1095, 2026-10-27: "the charger in the wall and a lounge corner"),
+built from the design's cm drawing (prime-game-design `ideas/ship-components/lens-room/drawing/drawing.js`; the concept
+`c_lounge.jpg`). Static decor, `tools/blender/ship_interior_lens.py`; placed by `ship_interior_place.py`; checked by
+`tools/tests/test_ship_lens.py`. The charger unit itself (a faceted pedestal under the unchanged head) is the next
+step's (`assets/prop/crystal_charger`, `tools/blender/charger_*.py`).
+
+**The alcove (both rooms, `lens_alcove`, a collider; `lens_conduits_e`/`_w`, none).** On each renewer spot's vertex
+(87.82 deg aft of the room's outward axis), in the charger's frame (`charger_dims.toml`: u across, d out of the wall
+from the vertex, h up; cm), the piece's origin the vertex on the deck:
+
+| Part | Numbers (cm) |
+|---|---|
+| Back panel | graphite, a chord at d 10 across u +-46, h 0..200; a raised plate +-40, h 10..188 |
+| Opening | u +-46 at the back (d 10), +-50 at the front (d 46), top 200, its top corners cut (+-50, 182) -> (+-34, 200) |
+| Jambs | bronze, u +-50..60, face d 46, h 0..200, a 1 cm face plate; the lintel u +-60, h 200..226, d 0..46 |
+| Warm strips | on each cheek (d 22..34, h 104..196), under the head (u +-26, h 194..198), on the lintel (u +-14, h 210..214) |
+| Conduits | four, Ø 11, axes at u +-68, d 21; the lower leaves the jamb's outer face at h 92 and turns down (r 8) into the deck; the upper leaves at 170 and turns up into the ceiling; a 3 cm cyan core on the room side |
+| Collars | Ø 14 x 4 at the jamb's face and on the straight runs at h 40 and 210; flanges Ø 16 x 3 at the deck and the ceiling |
+
+The ceiling slants, so the two sides' conduits reach it at different heights: one piece per room (the east room's +u
+runs toward the door, 2.414 m; the west room's, turned not mirrored, outward, 2.383 m). The two facets behind the
+alcove are `tip_panel_plain` (flat plates, no diamond: the back panel stands 10 cm off the vertex and the diamonds'
+relief stood 17 cm). `renewer_e`/`_w` `depth_m` is 0.70 (the charger's reach from the vertex; the crystal's axis moves to
+d 38, the charger step's), so the player stands at (+-10.393, 2.144); the walk goes there and back in both rooms
+(18 points, was 14).
+
+**The east lounge (tip_e only; tip_w waits for the engineer's pick).** theta from the room's outward axis, + aft.
+
+| Part | Numbers (cm, d from a facet's face) |
+|---|---|
+| Sofa | six modules, one per facet, theta -109.77..+21.95, each ending on its vertices' bisectors (3 mm joints, the cushions 1 cm) |
+| Spine | bronze, d 0..18, h 0..88, a bright edge strip under its top |
+| Back cushion | d 18..32, h 44..80, its top 4 back; terracotta |
+| Base | `lounge_sofa_base`, the collider: d 18..76, h 10..30 over a graphite toe recess d 18..72, h 0..10; the warm strip on the recess at h 7..9 |
+| Seat cushion | d 32..76, h 30..44; terracotta, the third module charcoal |
+| Arms | 14 wide, h 30..58 on the base, d 18..76, at both ends |
+| Table | `lounge_table`, the collider: Ø 56, h 48 at (10.297, 0.375) (theta -112.5, r 85): a plinth with a warm ring, a 12-sided drum, the top with a warm edge ring and a graphite inset; two cans |
+| On the spine | the lamp Ø 18 x 36 at (11.706, -0.307), the speaker 34 x 22 x 16 at (12.183, 0.254), the plant (pot Ø 16 x 14, blades to 40) at (12.414, 0.954), each at d 9, facing its facet |
+| Pillows | two throw pillows (c_lounge), on the second (terracotta) and fifth (charcoal) modules |
+
+The lounge's facets change round it: their panels' diamonds start at 0.92 m (`tip_panel_low_a`/`_b`, above the
+spine), their windows' sill is a flush 3 cm trim (`tip_window_lounge_a`/`_b`, `tip_sill_strip_lounge`: the 16 cm
+ledge stood over the spine where the lamp, the speaker and the plant stand), and the two cable trunks at -109.77 and
+-87.82 are gone (the concept has none; they stood through the spine). The floor lights at r 108 keep at least 8 cm
+from every footprint, and the line from the door to the charger's stand keeps a capsule's radius from the sofa and the
+table (`test_ship_lens`). The warm strips are `int_amber__lens` (`[light.mats]` l 0: they glow and light nothing).
