@@ -856,9 +856,23 @@ axolotl on M1f's) into `loco/t1`, `... alien_loco.py --raw D:/prime-art-raw --bu
 the chameleon's set is made (31 clips; Jog_Fwd v0 5.44 m/s, Sprint_Fwd 8.34, f3's 5.15 and 7.80 on the taller body).
 The axolotl's is not: on M1f's body her Jog_Fwd and Sprint_Fwd touch the floor for 2 frames a step (a toe within
 2 cm of its lowest), so `measure` finds no ground velocity (v0 0, c0 None) and `stride` divides by zero. The build's
-floor edit lifts those clips 4.4 and 5.2 cm (the S4b body's 2.7 and 3.6): her legs are longer for the clips' hip
-height. A wider contact window does not help (at 4 cm the sprint's v0 is 4.6 m/s, below the jog's 5.05). The
-fix is in the build (the hips' keys fitted to the body's leg length), not in the loco set.
+floor edit lifts those clips 4.4 and 5.2 cm (the S4b body's 2.7 and 3.6). M1f's legs are shorter than S4b's, not
+longer (T2: 0.774 m against 0.845; thigh 0.255 m against 0.323, shin 0.420 against 0.403, the foot 3.6 cm shorter, the
+bones' rest orientations equal), so the same bone-local rotations sweep her feet on another arc: the jog's planted
+toes rise 4.6 cm over the stance (S4b's 1.4 cm).
+
+`alien_char_run.py --leg-fit` (T2, art #196; `alien_char_build.py --leg-fit <S4b body.blend>`,
+`tools/blender/alien_leg_fit.py`) fits the clips to a body with its own leg proportions before the clip edits:
+every action's Root and Hips location keys scale by the body's leg length over S4b's rig (`alien_char_geom.leg_fit`,
+slice `--own-proportions`' rule; 0.917 on M1f), then per frame the Hips move along the world's up so the feet's
+lowest point (each Foot and Toes head, each toe tip) is as high as on S4b's rig playing the clip as made. The build
+records `leg_fit` in its char.json and `alien_loco.py` gives the loops it appends (`TM_`, `MC_`, made on the S4b rig)
+the same fit; a build without the flag is unchanged (r2b, r2c, f3, the chameleon's loco t1). On T2 (`r2e/build`,
+`loco/t2b`; `r2d` and `loco/t2` hold the scale-only try, which still divided by zero) the axolotl's set is made, 31
+clips, glTF-Validator 0 errors, but its numbers are not sane yet: the Sprint_Fwd source measures 4.60 m/s (S4b's
+7.80), so its stride scales 1.52 and its feet slide 67 mm; Jog_Fwd 4.63 m/s (5.15) slides 17 mm (f3: 0). Matching
+the lowest point's height is not enough: the horizontal sweep differs too. The next step is the feet themselves: the
+ankles and toes on S4b's trajectories scaled by the leg ratio, the legs solved by two-bone IK (`alien_clip_edit.two_bone`).
 `... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
 off-screen window on the chameleon (`--char`: another character, into `<out>/reels/<char>/`): the character held in place (the hips' travel per loop taken off its node), the
 floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot

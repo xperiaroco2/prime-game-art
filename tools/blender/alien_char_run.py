@@ -101,8 +101,8 @@ def main() -> int:
                     "(shadow_quality 0-5, default 5; taa, angular_deg, sss_scale)")
     ap.add_argument("--no-flare", action="store_true", help="M1: the build without the neck flare (a Meshy body)")
     ap.add_argument("--gill-ratio", type=float, default=1.0, help="M1: the gills' triangles kept (1.0: all)")
-    ap.add_argument("--leg-fit", action="store_true", help="T2: the clips' Root and Hips keys scaled by the body's leg "
-                    "length over S4b's (the rig they were made on): a body with its own leg length")
+    ap.add_argument("--leg-fit", action="store_true", help="T2: the clips fitted to the body's own legs against "
+                    "S4b's rig, the one they were made on (alien_leg_fit.py: the hip keys scaled, the feet matched)")
     ap.add_argument("--lively", default="", help="E2: head=DIR[,head=DIR]: build on these lively build folders instead"
                     " of HEADS' (a candidate's look)")
     args = ap.parse_args()

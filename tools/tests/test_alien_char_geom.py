@@ -222,12 +222,5 @@ class LegFit(unittest.TestCase):
         with self.assertRaises(ValueError):
             G.leg_fit(rig, _rig(0.4, 0.4, 0.08))
 
-    def test_build_scale_from_char_json(self):
-        # a build without the fit (r2b, r2c, the chameleon's loco t1): the appended loops are left as they are
-        self.assertEqual(G.leg_fit_scale({}), 1.0)
-        self.assertEqual(G.leg_fit_scale({"leg_fit": None}), 1.0)
-        self.assertEqual(G.leg_fit_scale({"leg_fit": {"leg_m": [0.8447, 0.7743], "scale": 0.916657}}), 0.916657)
-
-
 if __name__ == "__main__":
     unittest.main()

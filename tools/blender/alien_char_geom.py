@@ -10,8 +10,7 @@ tools/tests/test_alien_char_geom.py; alien_char_build.py runs it inside Blender.
 - `walk_loop`, `monotone_angles`, `bridge_outward`: the seam's bridge in walk order, its angles, its facing.
 - `gltf_to_blender`, `blender_to_gltf`, `fit_point`, `fit_lively`: the lively head's data (glTF, Y up) under the fit.
 - `sstep`: a smoothstep from a to b (either order).
-- `leg_fit`, `leg_fit_scale` (T2): the clips' hip keys fitted to a body's own leg length (`--leg-fit`), the scale a
-  build recorded in its char.json.
+- `leg_fit` (T2): the leg scale of a body with its own leg length (`--leg-fit`, alien_leg_fit.py).
 """
 from __future__ import annotations
 
@@ -40,12 +39,6 @@ def leg_fit(own: dict, donor: dict) -> dict:
     if legs[0] <= 0:
         raise ValueError(f"the donor's leg length is {legs[0]} m")
     return {"leg_m": [round(legs[0], 4), round(legs[1], 4)], "scale": round(legs[1] / legs[0], 6)}
-
-
-def leg_fit_scale(char: dict) -> float:
-    """The leg scale a character build applied to its clips (char.json "leg_fit"; 1.0 for a build without it), which
-    alien_loco.py applies to the loops it appends from other files (step 2's, P1's: made on the S4b rig)."""
-    return float((char.get("leg_fit") or {}).get("scale", 1.0))
 
 
 def sstep(a: float, b: float, x: float) -> float:
