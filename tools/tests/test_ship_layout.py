@@ -63,17 +63,18 @@ class ShipLayoutTest(unittest.TestCase):
             self.assertLess(math.dist(spots[f"breaker_{sid}"]["at"], (sx * 6.45, -0.93)), 0.25)   # asked "about"
             self.assertLess(math.dist(spots[f"renewer_{sid}"]["at"], (sx * 10.3, 3.2)), 0.06)
             stand = sl.spot_stand(LAYOUT, spots[f"renewer_{sid}"])
-            self.assertAlmostEqual(stand[0], sx * 10.433, places=2)
-            self.assertAlmostEqual(stand[1], 1.793, places=2)
+            # lens C: the charger in its alcove reaches 0.70 m (was the legs' charger's 1.053: stand (10.433, 1.793))
+            self.assertAlmostEqual(stand[0], sx * 10.393, places=2)
+            self.assertAlmostEqual(stand[1], 2.144, places=2)
 
     def test_the_renewer_spots_reach_the_chargers_front(self) -> None:
-        """fix1 (art#263, #323's review): the renewer spots' depth_m is the crystal charger's reach from the wall's face
-        (its report's d max, 105.25 cm, rounded up to the mm), so the layout's own stand and pass checks put the player
-        in front of its pads, not inside them."""
-        import json
-        from runner import common
-        report = common.ROOT / "assets" / "prop" / "crystal_charger" / "report.json"
-        reach = json.loads(report.read_text(encoding="utf-8"))["mesh"]["size_cm"]["d"][1] / 100
+        """fix1 (art#263, #323's review): the renewer spots' depth_m is the crystal charger's reach from the wall's face,
+        so the layout's own stand and pass checks put the player in front of it, not inside it. Lens room C: the
+        charger stands in its alcove and reaches 70 cm from the vertex (the drawing's plan, ship_interior_lens.REACH;
+        the legs' charger's report said 105.25 cm; the charger step rebuilds the unit to the alcove's numbers)."""
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools" / "blender"))
+        import ship_interior_lens
+        reach = ship_interior_lens.REACH / 100
         spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
         for sid in ("renewer_e", "renewer_w"):
             self.assertGreaterEqual(spots[sid]["depth_m"], reach)
