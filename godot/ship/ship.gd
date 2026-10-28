@@ -629,11 +629,11 @@ func _shoot() -> void:
 	quit(0)
 
 
-## The stations' states for the shots (station 1, the vents; ship --shoot --vent-states): the request's "stations"
-## {piece: {"slats": t, "show": [suffix], "hide": [suffix], "dim": [suffix], "dark": [suffix]}} and "open_rad": each placed piece's leaves `<piece>_slat<k>`
-## turned to rotation.x = -open_rad * t, its `<piece>_<suffix>` nodes hidden (the calm glow `cool` for the problem),
-## dimmed (a lamp's glow at a tenth, calm; "<part>:<material suffix>" one surface) or dark (vents-b3: the glow off and
-## the colour dark bronze, the blades' seams calm, as vent_anim.gd's SEAM_DARK), as the game drives them.
+## The stations' states for the shots (station 1, the gills; ship --shoot --vent-states): the request's "stations"
+## {piece: {"show": [suffix], "hide": [suffix], "dim": [suffix], "dark": [suffix]}}: each placed piece's
+## `<piece>_<suffix>` nodes shown (the problem's heat and seams), hidden (the calm glow `cool` for the problem), dimmed
+## (a lamp's glow at a tenth, calm; "<part>:<material suffix>" one surface) or dark (the glow off and the colour
+## vent_anim.gd's SEAM_DARK: the problem's cyan flanks). Gills step 13: the old blades' `<piece>_slat<k>` angles gone.
 func _stations(ship: Node3D) -> void:
 	var states: Dictionary = _req.get("stations", {})
 	for node: Node in ship.get_children():
@@ -641,8 +641,6 @@ func _stations(ship: Node3D) -> void:
 		if not states.has(pid):
 			continue
 		var st: Dictionary = states[pid]
-		for leaf: Node in node.find_children("%s_slat*" % pid, "Node3D", true, false):
-			(leaf as Node3D).rotation.x = -float(_req["open_rad"]) * float(st.get("slats", 0.0))
 		for suffix: String in st.get("show", []):   # vents-b2: the problem shows the heat panel and its lights
 			for n: Node in node.find_children("%s_%s" % [pid, suffix], "Node3D", true, false):
 				(n as Node3D).visible = true

@@ -46,7 +46,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              " A/B switch) and the plan view, no compares or day views; or comma-separated prefixes of"
                              " ship.toml's view names (no plan view), e.g. in_vent_,cu_vent_")
     parser.add_argument("--vent-states", default="", help="--shoot with the vents in a state each, e.g. e=problem,w=calm "
-                        "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
+                        "(calm: the cyan glow, the lamp dim; problem: the red heat and seams, the flanks dark, the lamp lit)")
     parser.add_argument("--vent-anim", type=Path, metavar="DIR",
                         help="the east vent's animation in place at night (godot/ship/vent_anim.gd through its demo: calm, "
                              "the problem, a hold, the cough, calm) from the player's eye off-screen: MP4 and key sheet into DIR")
@@ -331,14 +331,15 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
 # "dim" kept their orange colour: the seams read lit in the calm shots)
 # gills step 6: the seams hidden when calm (dark, they poked through the well's cyan back where its depth jumps: the
 # "stray stick" in the slots), shown with the heat for the problem
-VENT_STATES = {"calm": {"slats": 1.0, "show": [], "hide": ["heat", "seam*"], "dim": ["lamp"], "dark": ["slat*:__vent_seam"]},
-               "problem": {"slats": 0.0, "show": ["heat", "seam*"], "hide": ["cool"], "dim": [],
+# gills step 13: the old blades' "slats" (their angle) and calm "dark" seams went with the blades
+VENT_STATES = {"calm": {"show": [], "hide": ["heat", "seam*"], "dim": ["lamp"], "dark": []},
+               "problem": {"show": ["heat", "seam*"], "hide": ["cool"], "dim": [],
                            "dark": ["flank*:__vent_flank", "flank*:__vent_flank2"]}}   # gills step 5: the cyan flanks dark for the problem
 
 
 
 def vent_states(spec: str) -> dict:
-    """--vent-states "e=problem,w=calm" as ship.gd's "stations" request: {piece: {"slats", "show", "hide", "dim"}}."""
+    """--vent-states "e=problem,w=calm" as ship.gd's "stations" request: {piece: {"show", "hide", "dim", "dark"}}."""
     states = {}
     for item in (i for i in spec.split(",") if i):
         side, _, state = item.partition("=")
@@ -351,10 +352,7 @@ def vent_states(spec: str) -> dict:
 def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "") -> int:
     req, staged = built_request(layout, out)
     if states:   # step 3: the vents calm or in their problem state, as the game drives them
-        import importlib
-        import sys
-        sys.path.insert(0, str(blender.SCRIPTS))
-        req.update({"stations": vent_states(states), "open_rad": importlib.import_module("ship_interior_vent").OPEN_RAD})
+        req["stations"] = vent_states(states)
     views, compares = shot_views(layout)
     prefixes: tuple = ()
     if only and (only.endswith(".json") or Path(only).is_file()):   # the raise (2026-10-23): a review's own views
