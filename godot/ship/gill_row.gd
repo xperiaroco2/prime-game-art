@@ -217,3 +217,61 @@ func play_demo(t: float) -> String:
 	set_slit(WORKING, st, float(d[2]), open_x, puff)
 	flash_ring(float(d[3]))
 	return String(d[4])
+
+
+const ROW_S := 10.0
+const ROW_T0 := 0.4                 # the first breath's start (s)
+const ROW_BEAT := 0.42              # one slit's breath (s)
+const ROW_ORDER := [1, 2, 3, 4, 5, 4, 3, 2, 1, 2, 3, 4, 5, 4, 3, 2, 1]   # the breath runs 1-2-3-4-5-4-3-2...
+const ROW_PRESS := [2, 7, 11, 12, 16]    # the beats (indices into ROW_ORDER) the player presses in: each a shut slit's gasp
+const ROW_PRESS_AT := 0.45          # where in the gasp the press lands (its fraction)
+const ROW_EXHALE := 0.5             # the exhale this long after the fifth slit opened
+
+
+## The press times: slit k -> when it was pressed open.
+static func row_presses() -> Dictionary:
+	var out: Dictionary = {}
+	for i: int in ROW_PRESS:
+		out[int(ROW_ORDER[i])] = ROW_T0 + (i + ROW_PRESS_AT) * ROW_BEAT
+	return out
+
+
+## The engineer's mechanic on the whole row (a scripted 10 s demo): all five shut; the breath runs along the row
+## (1-2-3-4-5-4-3-2...), each shut slit it reaches gasps (half open, red-orange); a press during a shut slit's gasp
+## opens it for good (red to cyan, a touch past, settle; the ring flashes white); an open slit the breath reaches
+## brightens; all five open, the row exhales (the mist puffs out) and rests calm. -> the beat's label.
+func play_row(t: float) -> String:
+	var pressed: Dictionary = row_presses()
+	var last: float = 0.0
+	for k: int in pressed:
+		last = maxf(last, float(pressed[k]))
+	var exhale: float = last + ROW_EXHALE
+	var beat: int = int(floor((t - ROW_T0) / ROW_BEAT)) if t >= ROW_T0 else -1
+	var on: int = int(ROW_ORDER[beat]) if beat >= 0 and beat < ROW_ORDER.size() and t < exhale else 0
+	var p: float = (t - ROW_T0 - beat * ROW_BEAT) / ROW_BEAT
+	var ring: float = 0.0
+	var label: String = "breath %d" % on if on > 0 else "shut"
+	for k: int in range(1, 6):
+		if t >= exhale:
+			var e: float = t - exhale
+			var x: float = 1.0 + 0.04 * sin(clampf(e / 1.2, 0.0, 1.0) * PI)
+			set_slit(k, "open" if e < 1.6 else "calm", 1.0, x, clampf(e / 1.6, 0.0, 1.0))
+			label = "exhale" if e < 1.6 else "calm"
+		elif pressed.has(k) and t >= float(pressed[k]):
+			var d: float = t - float(pressed[k])
+			ring = maxf(ring, 1.0 - _ease_in_out(d / 0.5))
+			if d < 0.45:
+				var y: float = _ease_out(d / 0.45)
+				set_slit(k, "gasp", y, lerpf(GASP_OPEN * sin(ROW_PRESS_AT * PI), 1.04, y))
+			elif d < 0.9:
+				set_slit(k, "open", 1.0, lerpf(1.04, 1.0, _ease_in_out((d - 0.45) / 0.45)))
+			else:
+				set_slit(k, "open" if k == on else "calm", 1.0, 1.0, fmod(t * 0.3 + k * 0.2, 1.0))
+			if d < 0.5:
+				label = "press: %d opens" % k
+		elif k == on:
+			set_slit(k, "gasp", 0.0, GASP_OPEN * sin(clampf(p, 0.0, 1.0) * PI))
+		else:
+			set_slit(k, "fault", 0.0, 0.0)
+	flash_ring(ring)
+	return label

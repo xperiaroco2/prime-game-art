@@ -997,18 +997,20 @@ func _gill_anim() -> void:
 	for i: int in 30:  # the probes, SSAO and glow settle
 		await process_frame
 	var fps: float = float(a["fps"])
-	var count: int = int(GillRow.DEMO_S * fps)
+	var row_demo: bool = String(a.get("demo", "slit")) == "row"   # the gills step 4: the whole row's mechanic
+	var seconds: float = GillRow.ROW_S if row_demo else GillRow.DEMO_S
+	var count: int = int(seconds * fps)
 	var dir: String = _out.path_join("frames")
 	DirAccess.make_dir_recursive_absolute(dir)
 	var beats: Array = []
 	for f: int in count:
-		var beat: String = row.play_demo(f / fps)
+		var beat: String = row.play_row(f / fps) if row_demo else row.play_demo(f / fps)
 		await RenderingServer.frame_post_draw
 		var image: Image = root.get_texture().get_image()
 		image.convert(Image.FORMAT_RGB8)
 		_save(image, dir.path_join("%05d.png" % f))
 		if beats.is_empty() or beats[-1][1] != beat:
 			beats.append([snappedf(f / fps, 0.01), beat])
-	_write("anim.json", {"frames": count, "fps": fps, "seconds": GillRow.DEMO_S, "lights": lights, "states": beats})
+	_write("anim.json", {"frames": count, "fps": fps, "seconds": seconds, "lights": lights, "states": beats})
 	print("SHIP gill_anim %d frames" % count)
 	quit(0)

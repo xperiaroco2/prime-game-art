@@ -1451,11 +1451,16 @@ The throat's wall modules and vent cabinets gave way to one gills piece per side
 `tools/blender/ship_interior_gills.py`): a plinth 0-60 cm with its cyan line, then a clean band on the throat's own
 profile (vertical to 1.45 m, leaning 0.55 m in to 2.30 m) from the roof line (s 1.62) to the hall corner (s 4.05),
 its top 3 cm into the ceiling; the plinth and its line run on under the ramp roof from the mouth's corner (s 0.02),
-as the approved concept `<raw>/ship/v5/gills-throat/concept/side_right.jpg` draws one plinth. Five slits (s 1.95-3.43,
+as the approved concept `<raw>/ship/v5/gills-throat/concept/side_right.jpg` draws one plinth, and so does the band
+(step 4): its mouth part (`band_mouth`, s 0.02-1.62, the plinth's top to the bend, where the tunnel's chamfer leans
+over it) lies 3 mm over the jambs' bluish hull plates, so one clean band runs from the ramp roof's edge to the hall's
+corner. The throat's ceiling keeps only its two middle panels: the corner wedges' panels hung 3 cm under the ceiling
+by the hall's corners, where the header cuts the band back. Five slits (s 1.95-3.43,
 37 cm apart) are true crescents after the concept (step 3): both arcs through the same tips 1.20 m apart up the band,
 the outer arc sagging 0.27 toward the mouth, the inner 0.06 (21 cm wide at the middle, about 1/6 of the chord), a
 thick bevelled rim (5 cm, 2.2 cm proud) on the convex side. Each recess (13 cm) holds a glowing back and 36 fine
-filaments radiating from the outer arc's centre. Two dark shutter leaves close over it, meeting on the crescent's
+filaments radiating from the outer arc's centre (step 4: 3 mm ribs 2.2 cm off the back, emission 0.3 over the back's
+0.15; step 3's 6 mm blades 7.5 cm deep at 0.6 read as pale blue-white sawteeth). Two dark shutter leaves close over it, meeting on the crescent's
 middle line, each meeting edge a thin light line (a fault: red); they slide 12.3 cm apart along the wall through
 slots in the recess walls into pockets under the band. Sliding along u is the same move on both planes of the 1.45
 bend, so each leaf is one rigid node; the leaves are built open, so the GLB's rest is the calm glowing row. (Hinged
@@ -1468,8 +1473,10 @@ The vent stations' spots stay at design's 3/5 of the wall (`ship.toml`); the exp
 - `godot/ship/gill_row.gd` drives a row: calm and open (leaves open, cyan, a soft additive mist toward the mouth), gasp
   (60 % open, red-orange), shut (closed, dim cyan line) and fault (closed, red line), and the button ring's white
   flash; `ship.gd` takes a per-view pose (`{"gills": {"e": {"slits": {"3": "gasp", "2": "fault"}}}}`).
-- `ship --gill-anim DIR`: the 6 s proof (shut, gasp, shut, open with an overshoot, settle) as `gill_anim.mp4` and a
-  key-frame sheet, off-screen.
+- `ship --gill-anim DIR`: the 6 s proof (shut, gasp, shut, open with an overshoot, settle) as `gill_anim.mp4`,
+  off-screen; with `--gill-demo row` the 10 s row demo (`gill_row.gd` `play_row`) as `gill_row.mp4`: the breath runs
+  1-2-3-4-5-4-3-2..., each shut slit it reaches gasps, a press during a shut slit's gasp opens it (the ring flashes
+  white), all five open -> the exhale.
 - A `--views` file's 6th element may be a dict with a pose and a `"ref"` image path: the shot is also saved beside
   the reference as `compare_<view>.png`.
 - Tests: `tools/tests/test_ship_gills.py` (numbers, mirror, placement, corners, band to ceiling, plinth).

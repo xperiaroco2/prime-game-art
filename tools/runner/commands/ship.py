@@ -57,7 +57,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="the stations' motion proof (step 2: the vents) off-screen: checks, MP4, sheets into DIR")
     parser.add_argument("--gill-anim", type=Path, metavar="DIR",
                         help="the throat gills' proof (godot/ship/gill_row.gd's 6 s demo on the east row's working slit: "
-                             "shut, the gasp, shut, the press, open over to 28 deg, settle at 25) off-screen: MP4 into DIR")
+                             "shut, the gasp, shut, the press, open with an overshoot, settle) off-screen: MP4 into DIR")
+    parser.add_argument("--gill-demo", choices=("slit", "row"), default="slit",
+                        help="--gill-anim's demo: slit (gill_anim.mp4, 6 s) or row (gill_row.mp4, 10 s: the breath runs "
+                             "along the row, presses open the gasping slits, all five open -> the exhale)")
     parser.add_argument("--vent-anim", type=Path, metavar="DIR",
                         help="the east vent's animation in place at night (godot/ship/vent_anim.gd through its demo: calm, "
                              "the problem, a hold, the cough, calm) from the player's eye off-screen: MP4 and key sheet into DIR")
@@ -119,7 +122,7 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if getattr(args, "gill_anim", None):
-        code = gill_anim(layout, out, args.gill_anim.resolve())
+        code = gill_anim(layout, out, args.gill_anim.resolve(), getattr(args, "gill_demo", "slit"))
         if code:
             return code
     if args.vent_anim:
@@ -662,17 +665,18 @@ def gill_view(layout: dict, s: float, t: float, back: float, along: float = 0.0,
 
 GILL_ANIM = {"s": 2.66, "t": 1.32, "back": 0.95, "along": -0.45, "up": 0.08, "fov": 50.0, "fps": 30,
              "size": (1280, 720), "max_mb": 8}
+GILL_ROW = {**GILL_ANIM, "s": 2.78, "t": 1.30, "back": 2.05, "along": -0.55, "up": 0.15, "fov": 62.0}   # the whole row
 
 
-def gill_anim(layout: dict, out: Path, folder: Path) -> int:
+def gill_anim(layout: dict, out: Path, folder: Path, demo: str = "slit") -> int:
     """The gills' proof (art #263, 2026-10-28): ship.gd mode "gill_anim" renders gill_row.gd's demo on the east row's
     working slit at night in the off-screen window; headless Blender encodes the MP4; the frames are deleted."""
     import shutil
-    a = GILL_ANIM
+    a = GILL_ROW if demo == "row" else GILL_ANIM
     eye, look = gill_view(layout, a["s"], a["t"], a["back"], a["along"], a["up"])
     req, staged = built_request(layout, out)
     req.update({"mode": "gill_anim", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
-                "anim": {"eye": _g(eye), "look": _g(look), "fov": a["fov"], "fps": a["fps"]},
+                "anim": {"eye": _g(eye), "look": _g(look), "fov": a["fov"], "fps": a["fps"], "demo": demo},
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "rooms": room_boxes(layout)})
     errors = _stage(staged)
@@ -687,7 +691,7 @@ def gill_anim(layout: dict, out: Path, folder: Path) -> int:
     if code != 0 or not (folder / "anim.json").is_file():
         raise common.Failure(f"ship.gd gill_anim failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
-    clip = folder / "gill_anim.mp4"
+    clip = folder / ("gill_row.mp4" if demo == "row" else "gill_anim.mp4")
     clip.unlink(missing_ok=True)
     blender.run_script(VIDEO_SCRIPT, ["--frames", str(folder / "frames"), "--out", str(clip), "--fps", str(a["fps"]),
                                       "--max-mb", str(a["max_mb"])], timeout=VIDEO_TIMEOUT)
