@@ -1166,7 +1166,10 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   and nearer the hip the hand went 5 to 6 cm into it), the fingers along the thigh turned out by `fingers_add`, the
   palm down, the elbow out and back ([1, -0.8, 0]), then touched onto the thigh's skin. Such a pair is measured as a
   contact with the thigh (the gap within `contact_gap_cm`, the hand's through into the thigh and the torso within
-  `through_hand_cm`) in place of the waist's mark and the torso contact.
+  `through_hand_cm`) in place of the waist's mark and the torso contact. **s11: also OneLeg and Kneel, one side
+  each** (`sides`: OneLeg's raised right thigh, Kneel's raised left one, `alien_pose_math.thigh_side`; `along` 0.45):
+  their waist variants (`clear_dir`) still went 1.1 to 1.7 cm into the belly (s10's 4 failing pairs); the other hand
+  stays on the waist. The thigh hand's grip is `flat` (s10's `relaxed` read as a pinch on the thigh).
 - **The check composes from the build's own data.** The build writes `build/<char>/pose_data.json` (the TOML as
   solved); `alien_poses_run.py --check` composes the Blender reference from it and prints a `NOTE` when the TOML has
   changed since, so editing the TOML without a rebuild no longer turns verify red (round 2's red verify).
@@ -1218,6 +1221,14 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     failures; no grip or clear direction tried put Squat's or Sit's hand on the hip. Round 3 rests it on the thigh
     instead (above; grid on the s7 dumps, `along` x `fingers_add` x `elbow`, both characters read alike: the same
     body): Squat and Sit then clear the thigh and the torso, the gap to the thigh 0.2 to 0.4 cm.
+    s11 (critic 3: the hand limp, the fingers dangling off the waist; plain-Python grid on the s10 dumps, with
+    the middle fingertip's gap to the torso and the wrist's bend as measures): the
+    curl does change the look, if not the through: `grips.hip` [36, 46, 32] (was [8, 10, 6]) wraps the fingers
+    round the waist, the fingertip 5.2 cm off it (was 11.3), no through; turning `fingers_dir` forward instead put
+    the hand 1.1 to 4.1 cm into the belly. The elbows back (`elbow` [0.8, -1.3, 0], was [1, -0.6, 0]) straighten the
+    wrist (the hand to the forearm 67 degrees, was 89) and part the side outline from Salute's. The palm stays about
+    5 cm from the waist's mark: the palm's centre sits inside the hand, 1.5 to 2 cm off its skin, and a higher or
+    lower wrist read 5.4 to 7.5 cm (the mark limit stays 6 cm).
 - **The back of the skull** (`head_back`, round 2, s7): the landmark is the head's back at HEAD_BACK_UP (0.6) of the
   way from the Head bone up to the eyes, not at the eyes' height: there the chameleon's crest put the wrists 32 cm
   behind the head and the arms nearly straight, the elbows forward along the face ("head in hands"). At the skull
@@ -1231,14 +1242,16 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   character); the axolotl's wider, lower-eyed head takes the wrists further out and back, a smaller shrug and the
   elbow pole back (`[chars.axolotl.arms.HandsBehindHead.both]`: its forearms otherwise cut the head 3 to 5 cm).
 - **PalmsOut** (round 3: s7's hands beside the head, fingers spread, read "hands up"): FK with the elbows bent
-  and low (`upper` [0.65, 0.35, -0.7]: 18 cm under the shoulder, 17 cm out), the forearms up and forward, the
-  wrists at the shoulders' height, 20 cm forward and 24 cm out, the palms to the camera and the `palm` grip
-  (fingers together, a soft curl).
+  and low, the forearms up and forward, the wrists at about the shoulders' height, the palms to the camera and the
+  `palm` grip (fingers together, a soft curl). s11: the arms further forward (`upper` [0.6, 0.6, -0.6], `lower`
+  [0.25, 0.7, 0.7]; s10's [0.65, 0.35, -0.7] / [0.3, 0.45, 0.85]) so the side outline parts from Heart's.
 - **Sit** (round 3: the thighs' front 2.99 cm into the belly): the pelvis rolled back 10 degrees (was 4) and the
   feet 0.92 leg forward (was 0.78): the knees 7 cm lower, the head 5 cm behind the hips, thigh>torso 1.28 cm.
 - **The Heart** (s7): the hands one hand length in front of the chest's front (`offset` fwd 1.0, was 1.9: from the
   side the arms read straight out, a sleepwalker), the elbows out and down ([1, -0.3, -0.3]), so the front outline
-  has its elbow wings and the side view stays compact.
+  has its elbow wings and the side view stays compact. s11 (critic 3: a guard from the side): the elbows lifted to
+  about the hands' height ([1, -0.1, 0.05]). Flex's upper arms go more forward ([0.9, 0.7, 0.12]) and Salute's elbow
+  clearly forward ([0.5, 1.2, -0.1]): the side outlines apart (the table below).
   - **The layers' limit.** The arms are solved once over `reference_legs` (Stand), so an arm cannot make room for
     a raised thigh: the shared hip hand goes 7 to 8 cm into it on Sit, Squat and Kneel's front leg, OneLeg's raised
     one included, on every offset and finger direction tried (`tools/out/poses/fix/hipgrid_c.log`, s5's six
@@ -1251,16 +1264,17 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   mirrored right: orthographically a left outline is the mirror of the right one, so only perspective and the
   pose's own lopsidedness separate them; measured, 0.08 to 0.10 on the least lopsided pairs and up to 0.31 / 0.35
   (Lunge+Plane, Kneel+Plane): that line of the table is informative, not a goal.
-  s7's table (both characters): every arms pair 0.10 or more apart from the front and the back (s6's front low,
-  HandsOnHips/Heart 0.028 on Sit, is 0.107 now); from the sides the hip-hand poses stay close: HandsOnHips/Salute
-  0.056 left (Lunge) and 0.075 right (Kneel), Flex/Salute 0.085 / 0.079 (chameleon), HandsOnHips/FingerUp 0.079 /
-  0.090 (axolotl). Only the raised arm's hand differs there and it is in front of the head from the side. **A note
-  to the design, not a rule** (round 3): these arms pairs are the weakest as the two sides of one outline seen from
-  the left or right (every side pair under 0.10 in s7's chameleon table, the axolotl's within 0.01 of it):
-  (HandsOnHips, Salute), (Flex, Salute), (HandsOnHips, FingerUp), (HandsOnHips, Flex), (Heart, PalmsOut), (Plane,
-  Flex), (Flex, Heart), (Flex, PalmsOut); a silhouette list may prefer the front or back for them. The game avoids no
-  pair and no facing: every one of the 48 pairs is meant to look good (round 3); legs: Stand/OneLeg from the sides
-  (0.21 to 0.26) is fine; the hip hand on Squat and Sit rests on the thigh (above).
+  s11's table (both characters): every arms pair 0.10 or more apart from the front and the back (the least 0.108
+  chameleon, 0.116 axolotl); from the sides the least are HandsOnHips/Salute 0.061 left (on Squat, where both near
+  hands rest on the thigh and the saluting hand is behind the head) and HandsOnHips/HandsBehindHead 0.079 right
+  (chameleon; s10: 0.054 and 0.061), Flex/Salute 0.089 left and nothing under 0.10 right (axolotl). From a side only
+  the near arm and what stands out past the body read: two poses with the same near arm (the hip hand) differ only
+  by the far hand. **A note to the design, not a rule** (round 3): the weakest arms pairs as the two sides of one
+  outline seen from the left or right (under 0.10 in s11's chameleon table): (HandsOnHips, Salute), (HandsOnHips,
+  HandsBehindHead), (HandsOnHips, Plane), (Flex, Salute), (Plane, HandsBehindHead), (Heart, HandsBehindHead), (Flex,
+  Heart); a silhouette list may prefer the front or back for them. The game avoids no pair and no facing: every one
+  of the 48 pairs is meant to look good (round 3); legs: Stand/OneLeg from the sides (0.21 to 0.26) is fine; the hip
+  hand on Squat, Sit and the raised thigh of OneLeg and Kneel rests on the thigh (above).
 - **What the layers freeze.** `owner()` gives every bone that is not the legs' to the arms, so the arms clip keys
   Jaw, the eyes and the crest at rest and the game's `Blend2` filter takes the whole Chest subtree: a face or crest
   layer of the game must sit after the pose's tree (or the pose's arms filter must drop those bones) to move during
