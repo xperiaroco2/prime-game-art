@@ -33,12 +33,21 @@ L.MATERIALS.update({
     # the sofa's upholstery (c_lounge: terracotta seats and backs, one charcoal module), matte fabric; lens C step 2:
     # a deeper, warmer terracotta (step 1's 0.30/0.075/0.045 read salmon under the room's warm light); step 3: darker
     # and browner still (step 2's 0.17/0.036/0.020 read orange-salmon under the lamp)
-    "lens_cushion_red": {"base": (0.075, 0.015, 0.010, 1.0), "metallic": 0.0, "roughness": 0.92},
-    "lens_cushion_dark": {"base": (0.05, 0.05, 0.055, 1.0), "metallic": 0.0, "roughness": 0.9},
+    # step 4 (the critic: saturated orange-red, blown out under the lamp): a muted brick, rougher
+    "lens_cushion_red": {"base": (0.06, 0.016, 0.012, 1.0), "metallic": 0.0, "roughness": 0.97},
+    # step 4: the seats and the charcoal module a warm charcoal (the cold 0.05/0.05/0.055 read grey-mauve)
+    "lens_cushion_dark": {"base": (0.034, 0.029, 0.026, 1.0), "metallic": 0.0, "roughness": 0.96},
+    # step 4 (c_lounge): the throw pillows, a lighter terracotta and a slate blue-grey, and the folded charcoal throw
+    "lens_pillow_terra": {"base": (0.10, 0.03, 0.019, 1.0), "metallic": 0.0, "roughness": 0.96},
+    "lens_pillow_slate": {"base": (0.03, 0.038, 0.05, 1.0), "metallic": 0.0, "roughness": 0.95},
+    "lens_throw": {"base": (0.022, 0.02, 0.019, 1.0), "metallic": 0.0, "roughness": 0.98},
     "lens_leaf": {"base": (0.05, 0.16, 0.04, 1.0), "metallic": 0.0, "roughness": 0.6},
     # the warm strips (sofa base, table rings, the alcove's): amber that glows and lights nothing (ship.toml
     # [light.mats] int_amber__lens, l 0: no strip lights for decor)
     "int_amber__lens": {**L.MATERIALS["int_amber"]},
+    # step 4: the sofa's underside strip at a third (ship.toml e 0.047) and the table's lit edge ring (e 0.3)
+    "int_amber__lens_toe": {**L.MATERIALS["int_amber"]},
+    "int_amber__lens_ring": {**L.MATERIALS["int_amber"]},
     # lens C step 2: the conduits' cyan core, brighter than int_cyan's e 0.05 (ship.toml [light.mats], l 0)
     "int_cyan__lens_core": {**L.MATERIALS["int_cyan"]},
 })
@@ -50,11 +59,13 @@ ALCOVE = {"back": 10.0, "open_front": 50.0, "open_back": 46.0, "top": 200.0, "ch
 # lens C step 2: the conduits' axis at d 38 (the drawing's 21 hid them behind the 46 cm jambs head-on: their front
 # now at 43.5, 2.5 behind the jambs' face line) and a wider core (Ø 4.4, the drawing's 3)
 CONDUIT = {"u": 68.0, "d": 38.0, "r": 5.5, "bend": 8.0, "low": 92.0, "high": 170.0, "collar_r": 7.0, "collar_l": 4.0,
-           "collars_h": (40.0, 210.0), "flange_r": 8.0, "flange_h": 3.0, "core_r": 2.2}
+           "collars_h": (24.0, 56.0), "collars_top": (0.3, 0.7), "flange_r": 8.0, "flange_h": 3.0, "core_r": 2.2,
+           "bracket": (3.0, 5.0)}   # step 4: two collars per straight run (the upper run's at 0.3 and 0.7 of it), each
+                                    # with a bracket (3 wide, 5 tall) back to the wall
 REACH = 70.0                                           # the charger's reach (renewer_e/_w depth_m 0.70)
 AXIS_D = 38.0                                          # the crystal's axis (the charger step's)
 SOFA = {"spine": (0.0, 18.0, 88.0), "back": (18.0, 32.0, 44.0, 80.0, 4.0), "seat": (18.0, 76.0, 30.0, 44.0),
-        "cushion_d": 32.0, "toe": (4.0, 10.0), "arm": (14.0, 58.0), "strip": (7.0, 9.0)}
+        "cushion_d": 32.0, "toe": (4.0, 10.0), "arm": (9.0, 54.0), "strip": (7.0, 9.0)}   # step 4: slimmer arms (14 x 58)
 SOFA_K = (-5, 1)                                       # the sofa's end vertices (k * TIP_STEP): -109.77 .. +21.95
 ITEMS = {"lounge_table": {"th": -112.5, "r": 85.0}, "lounge_lamp": {"th": -60.0, "d": 9.0},
          "lounge_speaker": {"th": -38.0, "d": 9.0}, "lounge_plant": {"th": -16.0, "d": 9.0}}
@@ -160,12 +171,12 @@ def lens_alcove(args, layout):
     for k, s in enumerate((-1, 1)):
         jamb = [ud(s * A["open_back"], 0.0), ud(s * A["open_back"], A["back"]), ud(s * A["open_front"], A["face"]),
                 ud(s * A["jamb_out"], A["face"]), ud(s * A["jamb_out"], 0.0)]
-        out.append(P(f"jamb{k}", G.slab(fl, ccw(jamb), FLOOR, FLOOR + A["top"] * CM, 0.006), BRONZE))
+        out.append(P(f"jamb{k}", G.slab(fl, ccw(jamb), FLOOR, FLOOR + A["top"] * CM, 0.012), BRONZE))   # step 4: 0.006
         # the jamb's face plate: a bevelled plate 1 cm proud on its front, the concept's panel line
         out.append(P(f"jamb_plate{k}", G.slab(wf, G.rect(*sorted((s * (A["open_front"] + 1.5) * CM,
                                                                    s * (A["jamb_out"] - 1.5) * CM)),
                                                          0.06, A["top"] * CM - 0.06), A["face"] * CM,
-                                              (A["face"] + 1.0) * CM, 0.004), EDGE))
+                                              (A["face"] + 1.0) * CM, 0.008), EDGE))   # step 4: 0.004 aliased
         c0, c1 = A["chamfer"]
         tri = [(s * A["open_front"] * CM, c0 * CM), (s * A["open_front"] * CM, A["top"] * CM),
                (s * c1 * CM, A["top"] * CM)]
@@ -224,11 +235,23 @@ def lens_conduits(args, layout):
         for h in (K["low"], K["high"]):
             v, f = L.cylinder_y(K["collar_r"] * CM, 20, y0, y1)
             collars.append(([(px + x, py, pz + FLOOR + h * CM) for px, py, pz in v], f))
-        for h0, h1 in [(hc - K["collar_l"] / 2, hc + K["collar_l"] / 2) for hc in K["collars_h"]] + \
-                [(0.0, K["flange_h"])]:
+        top = ceiling_h(s * K["u"], side)
+        h_up0 = K["high"] + K["bend"]
+        runs = list(K["collars_h"]) + [h_up0 + f * (top / CM - h_up0) for f in K["collars_top"]]
+        for h0, h1 in [(hc - K["collar_l"] / 2, hc + K["collar_l"] / 2) for hc in runs] + [(0.0, K["flange_h"])]:
             collars.append(S.shift(L.disc((K["flange_r"] if h0 == 0.0 else K["collar_r"]) * CM, 20,
                                           FLOOR + h0 * CM, FLOOR + h1 * CM), x, s * K["u"] * CM))
-        top = ceiling_h(s * K["u"], side)
+        # step 4: a bracket from each straight run's collar back to the wall (1 cm into it) and a plate on the wall
+        bw, bh = K["bracket"]
+        dw = wall_d(K["u"])
+        for hc in runs:
+            zc = FLOOR + hc * CM
+            for d0, d1, half, hh in ((dw - 1.0, K["d"] - K["r"] + 0.5, bw / 2, bh / 2),
+                                     (dw - 1.0, dw + 0.8, bw * 1.6, bh * 1.2)):
+                ring = [(-d0 * CM, s * (K["u"] - half) * CM), (-d0 * CM, s * (K["u"] + half) * CM),
+                        (-d1 * CM, s * (K["u"] + half) * CM), (-d1 * CM, s * (K["u"] - half) * CM)]
+                collars.append(loft([[(px, py, zc - hh * CM) for px, py in ccw(ring)],
+                                     [(px, py, zc + hh * CM) for px, py in ccw(ring)]]))
         collars.append(S.shift(L.disc(K["flange_r"] * CM, 20, FLOOR + top - K["flange_h"] * CM, FLOOR + top + 0.02),
                                x, s * K["u"] * CM))
     return [P("tubes", L.merge(*tubes), BRONZE2), P("cores", L.merge(*cores), "int_cyan__lens_core"),
@@ -265,7 +288,7 @@ def lounge_sofa_base(args, layout):
     st0, st1 = SOFA["strip"]
     return [P("toe", facet_block(b0, b1 - toe_d, 0.0, toe_h, SEAM, SEAM), "lens_graphite"),
             P("base", facet_block(b0, b1, toe_h, h0, SEAM, SEAM, top=0.8), BRONZE2),
-            P("strip", facet_block(b1 - toe_d - 0.1, b1 - toe_d + 0.4, st0, st1, 1.0, 1.0), "int_amber__lens")]
+            P("strip", facet_block(b1 - toe_d - 0.1, b1 - toe_d + 0.4, st0, st1, 1.0, 1.0), "int_amber__lens_toe")]
 
 
 def lounge_sofa(args, layout):
@@ -277,13 +300,14 @@ def lounge_sofa(args, layout):
     b0, b1, h0, top = SOFA["seat"]
     aw, ah = SOFA["arm"]
     arm = args.get("arm", 0)
-    fab = "lens_cushion_dark" if args.get("tone") == "dark" else "lens_cushion_red"
+    back = "lens_cushion_dark" if args.get("tone") == "dark" else "lens_cushion_red"
+    fab = "lens_cushion_dark"   # step 4: every seat a warm charcoal (c_lounge), the backs terracotta
     e0 = (aw if arm < 0 else 0.0) + CUSHION_SEAM
     e1 = (aw if arm > 0 else 0.0) + CUSHION_SEAM
     out = [P("spine", facet_block(s0, s1, 0.0, sh, SEAM, SEAM, top=1.2), BRONZE),
            P("spine_cap", facet_block(s1 - 0.6, s1 + 0.3, sh - 3.0, sh - 1.8, SEAM, SEAM), EDGE),
            P("fill", facet_block(k0, SOFA["cushion_d"], h0, kh0, SEAM, SEAM), "lens_graphite"),
-           P("back", cushion_block(k0, k1, kh0, kh1 - 0.8, e0, e1, r=3.0, crown=0.8, lean=lean), "lens_cushion_red"),
+           P("back", cushion_block(k0, k1, kh0, kh1 - 0.8, e0, e1, r=3.0, crown=0.8, lean=lean), back),
            P("seat", cushion_block(SOFA["cushion_d"], b1, h0, top - 1.2, e0, e1, r=4.0, crown=1.2), fab)]
     if arm:
         # the arm: a bronze block on the base from the spine to the seat's front, its outer face on the bisector
@@ -292,21 +316,45 @@ def lounge_sofa(args, layout):
             q = [quad[0], (quad[0][0], quad[0][1] + aw * CM), (quad[3][0], quad[3][1] + aw * CM), quad[3]]
         else:
             q = [(quad[1][0], quad[1][1] - aw * CM), quad[1], quad[2], (quad[2][0], quad[2][1] - aw * CM)]
-        rings = [(ccw(q), h0), (ccw(q), ah - 1.5), (G.inset(ccw(q), 0.015), ah)]
+        # step 4: slimmer, the same at both ends: a bronze post to 6 cm under its top, a charcoal pad on it
+        rings = [(ccw(q), h0), (ccw(q), ah - 6.0)]
         out.append(P("arm", loft([[(x, y, FLOOR + h * CM) for x, y in r] for r, h in rings]), BRONZE))
+        pad = [(G.inset(ccw(q), 0.004), ah - 6.0), (ccw(q), ah - 4.8), (ccw(q), ah - 1.6), (G.inset(ccw(q), 0.012), ah)]
+        out.append(P("arm_pad", loft([[(x, y, FLOOR + h * CM) for x, y in r] for r, h in pad]), "lens_cushion_dark"))
     return out
 
 
 def lounge_pillow(args, layout):
     """A throw pillow leaning on the back cushion (c_lounge): 40 x 14 x 38 cm, rounded, tilted back 16 deg; `y` its
     centre along the facet (m)."""
-    y, fab = args.get("y", 0.0), args.get("fabric", "lens_cushion_red")
+    y, fab = args.get("y", 0.0), args.get("fabric", "lens_pillow_terra")
     lean = math.tan(D(16.0))
+    # step 4: a puffy pillow (the box read as a block): about 42 x 36, its thickness swelling from 3 cm at the top and
+    # bottom seams to 14 in the middle, its corners pinched; each ring a 12-point outline (front and back bulge)
     rings = []
-    for h, c in ((0.0, 0.05), (0.04, 0.0), (0.33, 0.0), (0.38, 0.05)):
-        hw, d0, d1 = 0.20 - c, 0.34 + c * 0.5, 0.47 - c * 0.5
-        rings.append([(-d + h * lean, y + u, FLOOR + 0.44 + h) for d, u in ((d0, -hw), (d0, hw), (d1, hw), (d1, -hw))])
+    for h in (0.0, 0.03, 0.09, 0.18, 0.27, 0.33, 0.36):
+        t = math.sin(math.pi * h / 0.36)
+        hw = 0.18 + 0.03 * t ** 0.5
+        pts = []
+        for k in range(12):
+            a = 2 * math.pi * k / 12
+            sa = math.sin(a)
+            th = 0.0 if abs(sa) < 1e-6 else (0.015 + 0.055 * t) * (1.0 - 0.55 * abs(math.cos(a)) ** 3) * math.copysign(1.0, sa)
+            pts.append((-(0.405 + th) + h * lean, y + hw * math.cos(a), FLOOR + 0.44 + h))
+        rings.append(pts)
     return [P("pillow", loft([r if G.area2([(p[0], p[1]) for p in r]) > 0 else r[::-1] for r in rings]), fab)]
+
+
+def lounge_throw(args, layout):
+    """Step 4 (c_lounge): a folded charcoal throw on a seat, over its front edge: 34 cm wide along the facet (`y`
+    its centre), 3 cm thick, from d 44 on the seat over the front down to h 33."""
+    y, w, t = args.get("y", 0.12), 0.17, 3.0
+    b1, top = SOFA["seat"][1], SOFA["seat"][3] - 1.2 + 0.3
+    path = [(44.0, top), (b1 - 3.0, top), (b1 + 0.6, top - 3.2), (b1 + 1.0, 33.0)]   # (d, h) cm along its inside
+    outer = [(d + dd, h + dh) for (d, h), (dd, dh) in zip(path, ((0.0, t), (0.6, t), (t * 0.8, t * 0.4), (t, 0.0)))]
+    prof = path + outer[::-1]                                  # a closed (d, h) section
+    rings = [[(-d * CM, y + e, FLOOR + h * CM) for d, h in prof] for e in (-w, w)]
+    return [P("throw", loft(rings), "lens_throw")]
 
 
 def lounge_table(args, layout):
@@ -316,8 +364,9 @@ def lounge_table(args, layout):
             P("drum", L.disc(0.20, 12, FLOOR + 0.04, FLOOR + 0.42), BRONZE2),
             P("top", L.disc(0.28, 40, FLOOR + 0.42, FLOOR + 0.48), BRONZE),
             P("inset", L.disc(0.245, 40, FLOOR + 0.47, FLOOR + 0.482), "lens_graphite"),
-            P("rings", L.merge(L.disc(0.226, 32, FLOOR + 0.04, FLOOR + 0.052),
-                               L.disc(0.2815, 40, FLOOR + 0.445, FLOOR + 0.459)), "int_amber__lens")]
+            P("rings", L.disc(0.226, 32, FLOOR + 0.04, FLOOR + 0.052), "int_amber__lens"),
+            # step 4: the top's lit edge ring (c_lounge), a 2.4 cm band 4 mm proud (was 1.4 cm x 1.5 mm, unseen)
+            P("edge_ring", L.disc(0.284, 40, FLOOR + 0.438, FLOOR + 0.462), "int_amber__lens_ring")]
 
 
 def lounge_cans(args, layout):
@@ -325,7 +374,8 @@ def lounge_cans(args, layout):
     out = []
     for k, (x, y) in enumerate(((0.07, -0.06), (-0.05, 0.09))):
         out += [P(f"can{k}", S.shift(L.disc(0.033, 16, FLOOR + 0.482, FLOOR + 0.602), x, y), "int_silver_c"),
-                P(f"band{k}", S.shift(L.disc(0.0336, 16, FLOOR + 0.53, FLOOR + 0.55), x, y), "int_cyan")]
+                P(f"band{k}", S.shift(L.disc(0.0336, 16, FLOOR + 0.525, FLOOR + 0.555), x, y),
+                  "int_cyan__lens_core")]   # step 4: the conduits' cyan (int_cyan's e 0.05 read grey)
     return out
 
 

@@ -408,6 +408,7 @@ place = [
   ["tip_sill_strip_lounge", [12.3347, 0.3729, 0.0], 24.267],
   ["lounge_sofa_base", [12.3347, 0.3729, 0.0], 24.267],
   ["lounge_sofa_mid", [12.3347, 0.3729, 0.0], 24.267],
+  ["lounge_throw", [12.3347, 0.3729, 0.0], 24.267],
   ["tip_window_lounge_a", [12.5109, 1.1188, 0.0], 2.313],
   ["tip_glass", [12.5109, 1.1188, 0.0], 2.313],
   ["tip_sill_strip_lounge", [12.5109, 1.1188, 0.0], 2.313],
@@ -1265,7 +1266,12 @@ args = { y = -0.1 }
 id = "lounge_pillow_dark"
 builder = "lounge_pillow"
 collide = false
-args = { y = 0.08, fabric = "lens_cushion_dark" }
+args = { y = 0.08, fabric = "lens_pillow_slate" }
+
+[[pieces]]
+id = "lounge_throw"
+builder = "lounge_throw"
+collide = false
 
 [[pieces]]
 id = "lounge_table"
