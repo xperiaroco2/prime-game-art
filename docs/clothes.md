@@ -59,6 +59,11 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
      the wrist points at its sleeve's cuff (the cloth's lowest side boundary loop), each upper leg until the ankle
      points at its hem, the feet kept flat; the garment moves front to back onto the body's torso centre; the
      cloth's front comes from its shoes (the ankle opening sits toward the heel);
+   - first the garment's edges longer than `--max-edge` (0.04 m) are split at their middles (`long_edges`, a few
+     rounds, then triangulated; flat faces split flat, so the surface and the baked texture's UVs stay): a coarse
+     sleeve's flat faces cut chords through the arm, and the arm showed through between their vertices however far
+     they were pushed out (C1b's r6: the left elbow 47 mm through at rest); with 4 cm edges the chord's sag on the
+     arm stays under 4 mm, inside the sleeve's clearance;
    - the fit on the posed body: per garment vertex its signed distance s from the body becomes `fit_distance(s)`:
      offset + keep x (s - offset) beyond the offset (`--offset` 0.010 m, `--keep` 0.30), s itself between the floor
      and the offset, the floor (`--floor` 0.005 m) when closer or inside; where the cloth bridges (s past `--bridge`
@@ -78,8 +83,8 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    - the female fit: each cloth vertex follows the body's per-vertex difference (base to f2) at its nearest rest
      body point, smoothed, then is pushed out of f2 where needed: the same cloth, wider at the hips and over the
      chest, no hand edit. Then the bib and the top hug her chest: where the body's difference at the nearest f2
-     point goes forward (`hug_weight`: 3 mm none, 10 mm full) the cloth comes in to `--hug` (0.010 m) from f2,
-     smoothed, so the chest reads through the bib (a flat bib hid it in C1's r3). Out: `fit_base.blend`, `fit_body_f2.blend`, `fit.json`.
+     point goes forward (`hug_weight`: 3 mm none, 10 mm full) the cloth comes in to `--hug` (0.006 m) from f2,
+     lightly smoothed (4 passes; 8 passes and 10 mm left the pull at 7.6 mm), so the chest reads through the bib (a flat bib hid it in C1's r3). Out: `fit_base.blend`, `fit_body_f2.blend`, `fit.json`.
 8. **The dressed game builds.** `tools/blender/clothes_dress.py -- --char <char>_char.blend --fit fit_*.blend
    --name <char> --out DIR [--body-from F1.blend --body-to F2.blend]`: on a game build's character (the loco set's
    31 clips) the cloth goes on as separate skinned meshes on its armature (the fit's rest must equal the
@@ -87,7 +92,9 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    that vertex's difference; the head and the neck weld stay); the body faces the cloth fully covers are removed in
    this build only (five rays from each vertex hit the cloth within 0.12 m; a vertex up to `--outside` 0.03 m
    outside the cloth, the cloth behind it no nearer than `--opening` 0.04 m to an opening, is tested from just inside
-   the cloth; the foot inside a shoe, Foot and Toes below the shoe's top opening less `--shoe-margin`, always goes;
+   the cloth; the foot inside a shoe always goes: a mostly Foot and Toes vertex below its own shoe's top opening less
+   `--shoe-margin` (`shoe_top`, per side), or with that shoe straight above it (the toes under the toe box; the ankle
+   seen through the opening has none; `in_shoe`);
    one ring of erosion keeps the cut under the cloth); the GLB with `export_glb.py`'s fixed textured options. Then glTF-Validator and
    `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
 9. **The proof.** `tools/blender/clothes_proof.py -- --blend <char>_char.blend --name <char> --out DIR`: per clip

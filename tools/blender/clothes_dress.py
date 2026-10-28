@@ -188,20 +188,30 @@ def main() -> int:
         ekd.insert(e, i)
     ekd.balance()
     # a shoe is closed: the foot inside it (Foot and Toes, below the shoe's top opening) never shows
+    # (each shoe its own top, by side; and any foot vertex with the shoe above it, the toes under the toe box)
     shoe = next((o for o in cloth if o.name == "shoes"), None)
-    top_z = None
+    top_z = {1.0: None, -1.0: None}
+    stree = None
     if shoe is not None:
         bm = bmesh.new()
         bm.from_mesh(shoe.data)
-        top_z = F.shoe_top([(shoe.matrix_world @ v.co).z for v in bm.verts if v.is_boundary], args.shoe_margin)
+        bz = [(shoe.matrix_world @ v.co) for v in bm.verts if v.is_boundary]
         bm.free()
+        for sgn in top_z:
+            top_z[sgn] = F.shoe_top([q.z for q in bz if q.x * sgn > 0], args.shoe_margin)
+        sv = [shoe.matrix_world @ v.co for v in shoe.data.vertices]
+        stree = BVHTree.FromPolygons(sv, [list(p.vertices) for p in shoe.data.polygons])
+    rep["shoe_top_z"] = {("left" if k > 0 else "right"): (None if t is None else round(t, 4)) for k, t in top_z.items()}
+    up = Vector((0.0, 0.0, 1.0))
     gname = {g.index: g.name for g in char.vertex_groups}
     cov, outside, in_shoe = [], 0, 0
     for v in me.vertices:
         p = mw @ v.co
         n = (nmat @ v.normal).normalized()
         foot = sum(g.weight for g in v.groups if gname.get(g.group, "").endswith(("Foot", "Toes")))
-        if F.in_shoe(foot, p.z, top_z):
+        top = top_z[1.0 if p.x > 0 else -1.0]
+        under = foot >= 0.5 and stree is not None and stree.ray_cast(p + up * 1e-4, up, 0.15)[0] is not None
+        if F.in_shoe(foot, p.z, top, under=under):
             cov.append(True)
             in_shoe += 1
             continue
