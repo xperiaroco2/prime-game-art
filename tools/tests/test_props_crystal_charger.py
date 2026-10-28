@@ -110,7 +110,16 @@ class ChargerDrawing(unittest.TestCase):
         length = hb - foot + rad * math.radians(turn) + o["reach"]
         pitch = length / (o["plates"] + sum(o["end_plates"]) - 2)
         self.assertGreaterEqual(rad * math.radians(turn) / pitch, 7.0)
-        # the tip's emitter recessed in its face: a frame, a sloped wall, the floor inside the face
+        # antennas-2b: the picked tip t2: the last plates tapering, a lit slit across the end face inside it
+        self.assertEqual(o["tip"], "t2")
+        t2 = o["tip_t2"]
+        self.assertEqual(len(t2["taper"]), len(t2["depth"]))
+        self.assertEqual(sorted(t2["taper"], reverse=True), t2["taper"])
+        self.assertEqual(sorted(t2["depth"], reverse=True), t2["depth"])
+        w, dn, lift = t2["slit"]
+        self.assertLess(w, 2 * hw * t2["taper"][-1] - 2.0)
+        self.assertTrue(0.0 < lift < dn)
+        # the tip's emitter (r2, kept as a variant) recessed in its face: a frame, a sloped wall, the floor
         frame, run, depth = o["emitter"]
         self.assertGreater(depth, 0.0)
         self.assertLess(frame + run, min(o["half"]) - 1.0)

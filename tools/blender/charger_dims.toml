@@ -127,12 +127,15 @@ emitter = [1.4, 1.4, 1.2]        # antennas-2: the tip plate's end face a recess
                                  # bronze frame, the sloped wall's run across and its depth (antennas-1: a flat lit
                                  # square standing out of the face read as a window; r2 b1 [3.6, 0.7, 1.0]: a 3 x 6.4
                                  # slot in a wide flat frame, a picture frame): a 6 x 9.4 floor down a deep funnel
-tip = "r2"                       # antennas-2b: the tip's end: r2 (emitter above), t1, t2, t3 (charger_build --tip)
+tip = "t2"                       # antennas-2b: the tip's end: r2 (emitter above), t1, t2, t3 (charger_build --tip);
+                                 # the manager's pick of 2026-10-29: t2 (r2's emitter read as a monitor screen)
 tip_t1 = [[1.0, 0.8], [1.4, 0.0], [0.8, -0.7], [0.8, 0.0], [0.6, -0.7]]   # a closed chamfered cap: insets in
                                  # turn [thickness, depth] (out +), a small cyan face deep in a stepped bevel
 tip_t1_scale = 0.65               # the cyan face scaled about its centre (r2b t1a: 9.3 x 5.6, 30% of the face, read big)
-tip_t2 = { taper = [0.86, 0.72, 0.58], depth = [0.92, 0.84, 0.76], slit = [0.5, 0.9] }   # the last plates
-                                 # narrower (across, along d), a lit slit across the end face (width, depth)
+tip_t2 = { taper = [0.86, 0.72, 0.58], depth = [0.92, 0.84, 0.76], slit = [0.8, 1.0, 0.55] }   # the last
+                                 # plates narrower (across, along d), a lit slit across the end face toward the
+                                 # crystal: its width, its depth, its core's face out of the slit's floor (phase A
+                                 # [0.5, 0.9, 0.15]: a touch brighter and wider so the tip reads as a glowing end)
 tip_t3 = [2.0, 2.8, 0.6, 0.3]    # an oval lens on a closed end face: half axes (across, along d), the bronze
                                  # bezel round it, the thin lit ring round that
 

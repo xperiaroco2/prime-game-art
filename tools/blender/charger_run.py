@@ -332,9 +332,10 @@ def write_asset(asset: Path, out: Path, how: str, validator: dict) -> None:
          "plates on a graphite core in three courses with a recessed lit band at h 46..52 and a frieze from h 66 "
          "(step 3, after the lens room's a_power.jpg), the frieze's short cyan windows and bronze brackets on the "
          "four front corners (step 4), a deck slab h 86..99.1 overhanging it), the crystal's axis 38 cm out, the slot at 95.7 cm, the fixed outer prongs to "
-         "142 cm (antennas-2: stacks of 18 chamfered bronze plates with even cyan-lit gaps along a smooth arc inward "
-         "to a recessed cyan emitter at each tip; the inner prongs the same family under small plate caps with a lit "
-         "edge), the start button at 75.9 cm; leaves: the carrier cup under the crystal (rises 6 cm, spins; "
+         "142 cm (antennas-2: stacks of 18 chamfered bronze plates with even cyan-lit gaps along a smooth arc inward, "
+         "the last three plates tapering to a lit slit across each tip toward the crystal (antennas-2b t2); the inner "
+         "prongs the same family under slim wedge plate caps with a lit slot, the tip electrode half sunk in a "
+         "socket), the start button at 75.9 cm; leaves: the carrier cup under the crystal (rises 6 cm, spins; "
          "crystal_anchor), the track ring with the inner prongs (spins), the button (presses 1 cm). "
          f"{build['triangles']:,} triangles, front +Z, origin on the floor at the spot's vertex. The head from the "
          "engineer's pick of 2026-10-25 and its drawing in cm (prime-game-design commit a53ce6f, "
@@ -346,8 +347,8 @@ def write_asset(asset: Path, out: Path, how: str, validator: dict) -> None:
          "batches/2026-10-28-ship-charger-antennas.toml, used only as a reference). Built from code in headless "
          "Blender (tools/blender/charger_build.py from "
          "charger_dims.toml): no part of the model was generated or downloaded. Approval: pending; the antennas "
-         "changed (the plate stacks) after the 2026-10-28 approval; antennas round 2 (the smooth arc, the recessed tip "
-         "emitters, the plate caps) awaits the engineer's look (art#263).\""),
+         "changed (the plate stacks) after the 2026-10-28 approval; antennas round 2 (the smooth arc, the tapering tip "
+         "plates, the wedge caps) awaits the engineer's look (art#263).\""),
         f'tools = ["blender {pins.BLENDER}", "prime-game-art charger_build.py, charger_run.py", '
         f'"glTF-Validator {pins.GLTF_VALIDATOR}", "Godot {pins.GODOT} (shots)"]',
         'licence = "own-work"',

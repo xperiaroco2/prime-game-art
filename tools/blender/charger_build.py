@@ -575,7 +575,7 @@ def outer_plate_outlines() -> list:
         hi = cut(gaps[k + 1][0], -gaps[k + 1][1] / 2, hw) if k + 1 < len(gaps) else cut(spine_length(), 0.0, hw)
         out.append([lo[0], lo[1], hi[1], hi[0]])
     if DIMS["outer"].get("tip") == "t2":  # a thin slit across the end face toward the crystal
-        w, dn = DIMS["outer"]["tip_t2"]["slit"]
+        w, dn, _lift = DIMS["outer"]["tip_t2"]["slit"]
         (pr, ph), (tr, th), (nr, nh) = spine(spine_length())
         def at(a, b):
             return (pr + nr * a - tr * b, ph + nh * a - th * b)
@@ -656,11 +656,11 @@ def build_outer_cores(bm) -> None:
             lo, hi = cut(s, -g / 2 - 0.3, hw - ins), cut(s, g / 2 + 0.3, hw - ins)
             xprism(bm, [lo[0], lo[1], hi[1], hi[0]], a_mid, dp - ins)
         if o.get("tip") == "t2":  # the slit's core, just in front of the notch's floor
-            w, dn = o["tip_t2"]["slit"]
+            w, dn, lift = o["tip_t2"]["slit"]
             (pr, ph), (tr, th), (nr, nh) = spine(spine_length())
             q = [(pr + nr * a - tr * b, ph + nh * a - th * b)
-                 for a, b in ((-w / 2 - 0.2, dn + 0.3), (w / 2 + 0.2, dn + 0.3), (w / 2 + 0.2, dn - 0.15),
-                              (-w / 2 - 0.2, dn - 0.15))]
+                 for a, b in ((-w / 2 - 0.2, dn + 0.3), (w / 2 + 0.2, dn + 0.3), (w / 2 + 0.2, dn - lift),
+                              (-w / 2 - 0.2, dn - lift))]
             xprism(bm, q, a_mid, sizes[-1][1] - 0.3)
         if o.get("tip") == "t3":  # the lit ring under the bezel and the lens on it
             a, b, gap, rw = o["tip_t3"]
