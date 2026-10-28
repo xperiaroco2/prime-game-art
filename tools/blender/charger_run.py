@@ -51,6 +51,9 @@ REFS = {"charger-legs.jpg": DESIGN / "charger-legs.jpg", "drawing.js": DESIGN / 
 REF_LENS = BASE / "ref-lens"
 DESIGN_LENS = Path("D:/prime-game-design/ideas/ship-components/lens-room")
 REFS_LENS = {"c_lounge.jpg": DESIGN_LENS / "c_lounge.jpg", "drawing.js": DESIGN_LENS / "drawing" / "drawing.js"}
+# antennas-1 (art#263, 2026-10-28): the engineer's pick for the four prongs, concept b_fins (the stack of plates), an
+# OpenAI image edit of the lens3 render (batches/2026-10-28-ship-charger-antennas.toml), already in the raw folder
+CONCEPT_ANTENNAS = "2026-10-28-ship-charger-antennas/b_fins/image-0.png"
 DIMS = tomllib.loads((Path(__file__).with_name("charger_dims.toml")).read_text(encoding="utf-8"))
 AX = DIMS["frame"]["axis_d"]
 CRYSTAL = ROOT / "assets" / "prop" / "energy_crystal" / "export" / "energy_crystal.glb"
@@ -302,7 +305,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
     (asset / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
     raws = [f"ship/v4/charger/{REF.name}/{name}" for name in REFS] + \
         [f"ship/v4/charger/{REF_LENS.name}/{name}" for name in REFS_LENS] + \
-        [f"ship/v4/charger/{tag}/crystal_charger.glb", f"ship/v4/charger/{tag}/crystal_charger.blend"]
+        [CONCEPT_ANTENNAS, f"ship/v4/charger/{tag}/crystal_charger.glb", f"ship/v4/charger/{tag}/crystal_charger.blend"]
     today = datetime.date.today().isoformat()
     lines = [
         "# The ship's crystal charger (art#263's stations).",
@@ -318,16 +321,20 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
          "plates on a graphite core in three courses with a recessed lit band at h 46..52 and a frieze from h 66 "
          "(step 3, after the lens room's a_power.jpg), the frieze's short cyan windows and bronze brackets on the "
          "four front corners (step 4), a deck slab h 86..99.1 overhanging it), the crystal's axis 38 cm out, the slot at 95.7 cm, the fixed outer prongs to "
-         "139.7 cm, the start button at 75.9 cm; leaves: the carrier cup under the crystal (rises 6 cm, spins; "
+         "139.7 cm (antennas-1: stacks of chamfered bronze plates with cyan-lit gaps, bending inward to a cyan emitter "
+         "at each tip; the inner prongs the same family), the start button at 75.9 cm; leaves: the carrier cup under the crystal (rises 6 cm, spins; "
          "crystal_anchor), the track ring with the inner prongs (spins), the button (presses 1 cm). "
          f"{build['triangles']:,} triangles, front +Z, origin on the floor at the spot's vertex. The head from the "
          "engineer's pick of 2026-10-25 and its drawing in cm (prime-game-design commit a53ce6f, "
          "ideas/ship-components/stations-final: charger-legs.jpg, an AI concept used only as a reference, and "
          "charger-drawing/), the pedestal from the lens room's drawing (prime-game-design commit 7f335c2, "
          "ideas/ship-components/lens-room: c_lounge.jpg, an AI concept used only as a reference, and drawing/); "
-         "copied to the raw folder. Built from code in headless Blender (tools/blender/charger_build.py from "
-         "charger_dims.toml): no part of the model was generated or downloaded. Approval: pending; the new "
-         "pedestal waits for the engineer's look yes (art#263).\""),
+         "copied to the raw folder. The antennas from the engineer's pick of 2026-10-28, concept b_fins "
+         "(2026-10-28-ship-charger-antennas/b_fins/image-0.png, an OpenAI image edit of the lens3 render, "
+         "batches/2026-10-28-ship-charger-antennas.toml, used only as a reference). Built from code in headless "
+         "Blender (tools/blender/charger_build.py from "
+         "charger_dims.toml): no part of the model was generated or downloaded. Approval: pending; the antennas "
+         "changed (the plate stacks) after the 2026-10-28 approval and await the engineer's yes (art#263).\""),
         f'tools = ["blender {pins.BLENDER}", "prime-game-art charger_build.py, charger_run.py", '
         f'"glTF-Validator {pins.GLTF_VALIDATOR}", "Godot {pins.GODOT} (shots)"]',
         'licence = "own-work"',
