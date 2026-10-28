@@ -1233,11 +1233,12 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     FingerUp's raised hand: point; Heart: heart.
   - **A straight wrist**: `fingers_dir = "forearm"` lays the hand along its forearm (the fists of Victory and the
     akimbo).
-  - **Victory**: FK, both arms up in a wide V (`upper` [0.6, 0.05, 1.0], the elbows nearly straight), fists, the
+  - **Victory**: FK, both arms up in a wide V (`upper` [0.6, 0.2, 1.0], the elbows nearly straight; q2: a little
+    forward, so the side outline shows the arms in front of the crest, not hidden behind it), fists, the
     shoulders shrugged a little (`shoulder` [0, -12, 0]). The arms cannot lift the hands over the crest: their
     lowest skin stays 18 to 24 cm under the head's top on every V tried (`gridBC.log`), 17 to 26 cm outside it.
   - **The fist akimbo** (HandsOnHips and FingerUp's hip hand, one arm): the wrist goal at the waist's side, out and a
-    little up (`offset` [0.9, -0.1, 0.3]), the elbow wide and a little back ([1.0, -0.4, 0.1]: 22 cm out of the
+    little up (`offset` [0.9, -0.1, 0.6]; q2: 0.3 sat by the hip bone, not above it), the elbow wide and a little back ([1.0, -0.4, 0.1]: 22 cm out of the
     shoulder, 5 to 10 cm behind it), the fist's skin (`touch_by` the whole hand) touched onto the torso at 0.5 cm
     (variants 0.8), `passes` 16 (the clear-then-touch loop settles later than 9). `per_legs = true`: a variant on
     every legs pose but the reference, since the shared clip's fist went into the waist or off it wherever the legs
@@ -1245,6 +1246,23 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     A mark contact with `by = "knuckles"` measures the four base knuckles' centre (a fist's palm centre stands a
     fist's depth off the waist), with its own `mark_cm` (9 cm: the knuckles sit about 2 cm off the skin and the fist
     rides above the waist's mark, which is at the Spine's height; read 5.7 to 8.5 cm).
+- **p3 q2: arms that keep their meaning in the world, OneLeg's knee, the fist's thumb** (pictures in
+  `anim_bare/poses/p3/q2/`, numbers in `tools/out/poses/p3/q2/grid2.log`):
+  - **`spine.level`** (a legs pose's setting): the Spine counter-turned that part of the way to a chest upright in
+    the world. The arms' directions are in the chest's axes, so on a leaning legs pose every arm leaned with it
+    (Plane tilted on Squat and Lunge, the raised arms crooked). Levelled in the legs layer (the Spine is the legs'),
+    so every arms pose keeps its world meaning with no per-legs arms variants: Lunge 1.0 (was 6 degrees forward and
+    4 rolled), OneLeg 1.0 (3 rolled), Squat 0.7 (10 forward to 3: fully upright left FingerUp's centre of mass 1.0 cm
+    inside the feet, at the limit); Kneel's chest is already upright; Sit keeps its 6 degrees back (sitting, the
+    lean reads natural and opens the arms).
+  - **OneLeg**: the raised knee forward and a little out (6 cm), the foot by the inside of the standing knee (10 cm
+    to its side, 14 cm in front); it hung low across the standing shin.
+  - **The fist** `[90, 60, 20]` (the base knuckle bent most; `[86, 100, 70]` curled the long finger tubes into
+    closed rings) and the thumb's base turned in, the rest nearly straight (`Thumb` [40, 10, 0], `ThumbTurn` [20,
+    45]): across the front of the curled fingers (the searched thumb hooked into an "O"). The flat hand's `spread`
+    -10 draws the fingers together.
+  - **`close_hands_<char>.png`** (`pose_shots.gd`): one hand per arms pose on Stand, front and three-quarter
+    (HandsBehindHead from behind), the hand-shape library's judge.
 - **The check composes from the build's own data.** The build writes `build/<char>/pose_data.json` (the TOML as
   solved); `alien_poses_run.py --check` composes the Blender reference from it and prints a `NOTE` when the TOML has
   changed since, so editing the TOML without a rebuild no longer turns verify red (round 2's red verify).

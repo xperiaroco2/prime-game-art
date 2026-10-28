@@ -398,6 +398,14 @@ class Model:
         sp = spec.get("spine", {})
         if sp.get("turn"):
             r.turn_world("Spine", turn_q(*sp["turn"]))
+        if sp.get("level"):  # p3: the Spine counter-turned so the chest's up is the world's (`level` of the way):
+            # the arms' directions are in the chest's axes, so a level chest keeps their meaning in the world on
+            # every legs pose (a horizontal arm stays horizontal, an arm up stays up)
+            F = M.q_mul(r.world_q("UpperChest"), M.q_conj(r.rest_q("UpperChest")))
+            u = M.q_rotate(F, (0.0, 0.0, 1.0))
+            ang = math.degrees(math.acos(max(-1.0, min(1.0, u[2]))))
+            if ang > 0.01:
+                r.turn_world("Spine", M.q_axis_angle(norm(cross(u, (0.0, 0.0, 1.0))), ang * sp["level"]))
         legs = {side: spec.get(side) or spec.get("both") or {"mode": "plant"} for side in SIDES}
         for _ in range(4):  # free legs, the fit (the knee, the seat onto the floor), then the planted feet
             for side, leg in legs.items():
