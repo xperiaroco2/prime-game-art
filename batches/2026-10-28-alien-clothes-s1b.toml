@@ -3,7 +3,8 @@
 # recorded in the approval_ref comment). Our chameleon body (anim_bare/loco/f3, Idle_Loop's first frame; the same S4b
 # body as the axolotl's) rendered front, left and back, and each full-set outfit an edit of those three renders into one
 # front / side / back turnaround, his head, proportions and colours kept, four digits per hand. The first item is the
-# axolotl's dungarees (batch 2026-10-28-alien-clothes-s1, ax_overall), worded the same, the unisex test. Medium
+# axolotl's dungarees (batch 2026-10-28-alien-clothes-s1, ax_overall), the garment worded the same (the body lines and
+# a full-set sentence differ), the unisex test. Medium
 # (exploration), one image per concept, 1536x1024. No game, film, studio, character or real-person names; no style
 # names of other works; no brand marks.
 id = "2026-10-28-alien-clothes-s1b"
