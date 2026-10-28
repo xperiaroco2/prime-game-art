@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 from .. import blender, common, ship_layout
@@ -45,6 +46,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              " fov] in plan coordinates, an optional 6th {\"ssil\"|\"ssao\"|\"glow\"|\"shadows\": false}"
                              " A/B switch) and the plan view, no compares or day views; or comma-separated prefixes of"
                              " ship.toml's view names (no plan view), e.g. in_vent_,cu_vent_")
+    parser.add_argument("--charger", action="store_true",
+                        help="--shoot with the crystal charger's GLB (assets/prop/crystal_charger) and a crystal on "
+                             "renewer_e and renewer_w, for the look review only (the package keeps the spots as markers)")
     parser.add_argument("--vent-states", default="", help="--shoot with the vents in a state each, e.g. e=problem,w=calm "
                         "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
     parser.add_argument("--motion", type=Path, metavar="DIR",
@@ -111,7 +115,7 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.shoot:
-        code = shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states)
+        code = shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states, args.charger)
         if code:
             return code
     if args.export:
@@ -331,8 +335,33 @@ def vent_states(spec: str) -> dict:
     return states
 
 
-def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "") -> int:
+CHARGER_GLB = common.ROOT / "assets" / "prop" / "crystal_charger" / "export" / "crystal_charger.glb"
+CRYSTAL_GLB = common.ROOT / "assets" / "prop" / "energy_crystal" / "export" / "energy_crystal.glb"
+
+
+def charger_places(layout: dict) -> list:
+    """Lens room C's look review (art#263): the charger on each renewer spot (its origin on the spot's vertex at the
+    deck, its front along the spot's normal: the charger's HANDOFF) and a crystal on its anchor (the axis 38 cm out,
+    the tip at 95.1 cm). Only --shoot --charger places them; the package keeps the spots as markers."""
+    floor, out = layout["deck"]["floor_h"], []
+    for spot in layout["stations"]["spot"]:
+        if spot["id"] not in ("renewer_e", "renewer_w"):
+            continue
+        (x, y), (nx, ny) = spot["at"], spot["normal"]
+        yaw = math.degrees(math.atan2(nx, ny))
+        out.append(["crystal_charger", [round(x, 4), floor, round(y, 4)], round(yaw, 3)])
+        out.append(["energy_crystal", [round(x + nx * 0.38, 4), round(floor + 0.951, 4), round(y + ny * 0.38, 4)],
+                    round(yaw, 3)])
+    return out
+
+
+def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "", charger: bool = False) -> int:
     req, staged = built_request(layout, out)
+    if charger:
+        req["pieces"].update({"crystal_charger": "res://import/crystal_charger.glb",
+                              "energy_crystal": "res://import/energy_crystal.glb"})
+        staged.update({"crystal_charger": CHARGER_GLB, "energy_crystal": CRYSTAL_GLB})
+        req["place"] += charger_places(layout)
     if states:   # step 3: the vents calm or in their problem state, as the game drives them
         import importlib
         import sys
