@@ -22,6 +22,13 @@ extends RefCounted
 const METAL := preload("res://console/console_metal.gdshader")
 
 const CHARGER_LAYER := 1 << 19   # render layer 20: the crystal's own light skips it (seat_crystal)
+## A seated crystal's own light (lens C step 5): crystal.gd's 2.6 over 2.4 m flooded the alcove, a pale blue back
+## panel and a teal top chamfer (its (0, 0.72, 1) on the orange bronze leaves mostly green). The engineer's rule for
+## the charged crystal: light around it, not a brighter surface. Seated, a soft glow that ends inside the alcove, in
+## the charger glow's whiter cyan, which stays neutral on the bronze.
+const SEATED_OMNI_ENERGY := 0.5
+const SEATED_OMNI_RANGE := 0.9
+const SEATED_OMNI_COLOUR := Color(0.3, 0.78, 1.0)
 const RISE := 0.06               # the carrier's travel up (m; the drawing's RISE)
 const TRAVEL := 0.01             # the button's travel in (m)
 const CYAN := Color(0.0, 0.45, 1.0)  # charger-3: deeper (b5 0.62 read pale blue-white in the room)
@@ -166,7 +173,7 @@ static func set_pressed(look: Dictionary, on: bool) -> void:
 
 
 ## Puts a crystal (its root, with its crystal.gd look) on the carrier's anchor, its tip on the anchor, and takes the
-## charger's layer off the crystal's own light.
+## charger's layer off the crystal's own light and softens it (SEATED_OMNI_*).
 static func seat_crystal(look: Dictionary, crystal: Node3D, crystal_look: Dictionary) -> void:
 	var anchor: Node3D = look.get("anchor")
 	if anchor == null:
@@ -179,3 +186,7 @@ static func seat_crystal(look: Dictionary, crystal: Node3D, crystal_look: Dictio
 	var omni: OmniLight3D = crystal_look.get("omni")
 	if omni != null:
 		omni.light_cull_mask = omni.light_cull_mask & ~CHARGER_LAYER
+		omni.omni_range = SEATED_OMNI_RANGE
+		omni.light_color = SEATED_OMNI_COLOUR
+		crystal_look["omni_energy"] = SEATED_OMNI_ENERGY  # crystal.gd's set_charge scales this by the charge
+		omni.light_energy = SEATED_OMNI_ENERGY * float(crystal_look.get("charge", 1.0))

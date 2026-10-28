@@ -852,7 +852,11 @@ in its game look (`ship.gd` applies `charger.gd`, idle, on the room's render lay
    shared (the asset's `export/` carries the same file; the test checks it is byte-identical). The charger draws on
    render layer 20 alone and `seat_crystal` takes that layer off the crystal's own light, which otherwise burns the
    bronze white a few centimetres away (the socket's way); a soft cyan light of the charger's own stands in while
-   charging. The bronze is the socket's step 3 (`BRONZE`, `BRONZE_FINISH`: the same numbers as `socket.gd`), so the
+   charging. Seated, the crystal's light is also softened (lens C step 5): crystal.gd's own 2.6 over 2.4 m
+   (`OMNI_ENERGY`, `OMNI_RANGE`, kept for the crystal alone) flooded the alcove at charge 1, a pale blue back panel and a
+   teal top chamfer (cyan (0, 0.72, 1) on the orange bronze reflects mostly green). `SEATED_OMNI_ENERGY` 0.5,
+   `SEATED_OMNI_RANGE` 0.9 and the charger glow's whiter cyan (0.3, 0.78, 1) keep a glow around the crystal that ends
+   inside the alcove; `seat_crystal` writes the energy into the crystal's look (`omni_energy`), which `set_charge` scales. The bronze is the socket's step 3 (`BRONZE`, `BRONZE_FINISH`: the same numbers as `socket.gd`), so the
    stations match. The Blender review render is a darker studio under AgX Punchy (the plain AgX and a bright studio
    paled the amber to cream and the bronze to tan).
 4. **The shots**: `godot/charger/room.gd` extends `godot/ship/ship.gd`'s shoot mode; every charger in the request wears
