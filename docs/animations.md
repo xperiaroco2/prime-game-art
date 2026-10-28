@@ -1183,7 +1183,10 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   HandsOnHips, FingerUp and Salute on the waist's side) has its palm's centre within 6 cm of it (the landmark rides
   on the Spine), so "touching the body" alone (the belly's front) no longer passes. A goal arm's `touch_by` names
   the skin that touches (the palm's bone: the thumb kept off the body).
-  - **What the through check reads.** A hand or forearm: its raw depth (its proxy reads 0.0 cm on the rest skin).
+  - **What the through check reads.** A hand or forearm: its raw depth (its proxy reads 0.0 cm on the rest skin),
+    counted only where its skin is within `TOUCH_CM` (0.5 cm) of the other group's (round 3): a depth with a skin
+    gap is the tube's bulge beyond the skin (HandsBehindHead's hands read 0.5-0.7 cm into the skull's tube with a
+    1 cm gap to its skin) and goes into `proxy_cm` instead.
     A thigh (beyond its groin's 30 %), an upper arm (its elbow half) and a shin (beyond its knee's 30 %: the knee's
     back folds into the thigh's end in every bent knee, 3.2-5.8 cm there and 0 beyond on all six legs poses, s5's
     calibration): only the depth beyond the same point's at rest, so the groin, armpit and knee skin the tubes share at rest reads 0 and a thigh pressed into the
@@ -1227,6 +1230,12 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   the TOML is merged over the shared data for that character (`alien_pose_math.for_char`; the drivers pass the
   character); the axolotl's wider, lower-eyed head takes the wrists further out and back, a smaller shrug and the
   elbow pole back (`[chars.axolotl.arms.HandsBehindHead.both]`: its forearms otherwise cut the head 3 to 5 cm).
+- **PalmsOut** (round 3: s7's hands beside the head, fingers spread, read "hands up"): FK with the elbows bent
+  and low (`upper` [0.65, 0.35, -0.7]: 18 cm under the shoulder, 17 cm out), the forearms up and forward, the
+  wrists at the shoulders' height, 20 cm forward and 24 cm out, the palms to the camera and the `palm` grip
+  (fingers together, a soft curl).
+- **Sit** (round 3: the thighs' front 2.99 cm into the belly): the pelvis rolled back 10 degrees (was 4) and the
+  feet 0.92 leg forward (was 0.78): the knees 7 cm lower, the head 5 cm behind the hips, thigh>torso 1.28 cm.
 - **The Heart** (s7): the hands one hand length in front of the chest's front (`offset` fwd 1.0, was 1.9: from the
   side the arms read straight out, a sleepwalker), the elbows out and down ([1, -0.3, -0.3]), so the front outline
   has its elbow wings and the side view stays compact.
