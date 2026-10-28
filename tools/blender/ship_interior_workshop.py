@@ -39,10 +39,12 @@ L.MATERIALS.update({
     "ws_shell2": {"base": (0.42, 0.41, 0.39, 1.0), "metallic": 0.1, "roughness": 0.4},
     # the eye's dark glass and the visors (glossy, nearly black)
     "ws_glass": {"base": (0.006, 0.008, 0.01, 1.0), "metallic": 0.0, "roughness": 0.06},
+    # the sleepers' eye sockets: satin (r2's glossy glass caught two lamps as eyes over the lid's line: a smiley face)
+    "ws_socket": {"base": (0.01, 0.012, 0.014, 1.0), "metallic": 0.0, "roughness": 0.55},
     # the cradles' cushions and the rug: dark green fabric, the rug's border a shade darker
     "ws_cushion": {"base": (0.012, 0.022, 0.018, 1.0), "metallic": 0.0, "roughness": 0.96},
-    "ws_rug": {"base": (0.010, 0.040, 0.026, 1.0), "metallic": 0.0, "roughness": 0.99},
-    "ws_rug2": {"base": (0.004, 0.018, 0.012, 1.0), "metallic": 0.0, "roughness": 0.99},
+    "ws_rug": {"base": (0.022, 0.09, 0.058, 1.0), "metallic": 0.0, "roughness": 0.99},   # r1: 0.010/0.040 read black
+    "ws_rug2": {"base": (0.008, 0.038, 0.025, 1.0), "metallic": 0.0, "roughness": 0.99},
     # the main robot's insides: insulated cables (teal, orange, blue) and the hoist's steel cable
     "ws_cable_a": {"base": (0.02, 0.16, 0.12, 1.0), "metallic": 0.0, "roughness": 0.45},
     "ws_cable_b": {"base": (0.45, 0.12, 0.02, 1.0), "metallic": 0.0, "roughness": 0.45},
@@ -464,7 +466,8 @@ def _sleeper(roll, yaw, seed):
     fx = (-1.0, 0.0, 0.0)
     parts = {"core": [sphere(R - 0.008, (0, 0, 0), 14, 28)],
              "shell": [lathe(zone(R, 0.006, 0.0, 116.0, 14, 0.0025), 48, (0, 0, 0), (1.0, 0.0, 0.0))],
-             "visor": [lathe(zone(R - 0.004, 0.006, 0.0, 61.0, 10, 0.002), 48, (0, 0, 0), fx)],
+             "visor": [lathe(zone(R - 0.003, 0.006, 0.0, 25.0, 8, 0.0015), 40, (0, 0, 0), fx)],
+             "face": [lathe(zone(R, 0.006, 28.0, 64.0, 8, 0.002), 48, (0, 0, 0), fx)],
              "ears": [], "ear_caps": [], "ear_rings": [], "lid": [], "antenna": []}
     for s in (-1, 1):
         ax = (0.0, s, 0.0)
@@ -475,14 +478,14 @@ def _sleeper(roll, yaw, seed):
                                        (0, 0, 0), ax))
         parts["ear_rings"].append(lathe([(0.029, R + 0.014), (0.036, R + 0.014), (0.036, R + 0.0172),
                                          (0.029, R + 0.0172), (0.029, R + 0.014)], 32, (0, 0, 0), ax))
-    # the shut eye: a gentle downward arc on the visor, 1.4 mm over it
-    rv = R - 0.004 + 0.0014
+    # the shut eye: a short lid line sagging in its socket, 1.2 mm over the glass
+    rv = R - 0.003 + 0.0012
     arc = []
     for i in range(13):
-        u = -24.0 + 48.0 * i / 12
-        v = -6.0 - 5.0 * math.cos(D(u * 3.75))
+        u = -15.0 + 30.0 * i / 12
+        v = -0.8 + 2.0 * (u / 15.0) ** 2
         arc.append((-rv * math.cos(D(v)) * math.cos(D(u)), rv * math.cos(D(v)) * math.sin(D(u)), rv * math.sin(D(v))))
-    parts["lid"].append(G.tube(arc, 0.0032, 8))
+    parts["lid"].append(G.tube(arc, 0.0026, 8))
     tip = (0.03, 0.0, R + 0.045)
     parts["antenna"] = [capsule((0.012, 0.0, R - 0.01), tip, 0.0035, 8)]
     pitch = rot((0.0, 1.0, 0.0), 22.0)
@@ -494,7 +497,7 @@ def ws_sleeper(args, layout):
     """A small sleeping robot Ø 28 lying in its cradle's dip (origin under the cradle's centre)."""
     parts, r, tip = _sleeper(args.get("roll", 0.0), args.get("yaw", 0.0), args.get("seed", 0))
     c = (0.0, 0.0, CAB_TOP + 0.075 + SLEEPER / 200)
-    mats = {"core": GRAPH, "shell": "ws_shell", "visor": "ws_glass", "ears": GRAPH2, "ear_caps": "ws_shell",
+    mats = {"core": GRAPH, "shell": "ws_shell", "face": "ws_shell", "visor": "ws_socket", "ears": GRAPH2, "ear_caps": "ws_shell",
             "ear_rings": "ws_green__sleep", "lid": "ws_green__sleep", "antenna": "ws_shell2"}
     out = [part(k, moved(M(*v), r, c), mats[k], 40.0) for k, v in parts.items()]
     out.append(part("bead", sphere(0.0075, add(tip, c), 8, 14), "ws_green__sleep", 40.0))
@@ -504,11 +507,11 @@ def ws_sleeper(args, layout):
 # --- the main robot ------------------------------------------------------------------------------------------------
 RC = (0.0, 0.0, FLOOR + ROBOT["h"] * CM)
 RR = ROBOT["d"] / 200        # 0.30
-PANEL_P = 57.2               # the side panels' edge (deg from the side axes)
-BAND_P = 58.8                # the shell band's edge
+PANEL_P = 45.0               # the side panels' edge (deg from the side axes; r1's 57 read as two balloons)
+BAND_P = 46.6                # the shell band's edge
 HINGE_X = RR * math.sin(D(PANEL_P))
 HINGE_Y = RR * math.cos(D(PANEL_P))
-CORE_Y = 0.215               # the core's flat mechanism plates
+CORE_Y = 0.19                # the core's flat mechanism plates
 
 
 def _panel_r(s):
@@ -545,12 +548,13 @@ def _eye():
 
     def on(r, lift):
         return apex - (Rd - math.sqrt(Rd * Rd - r * r)) + lift
-    iris = [(0.027, on(0.027, 0.0011)), (0.038, on(0.038, 0.0011)), (0.05, on(0.05, 0.0011)), (0.05, on(0.05, -0.002)),
-            (0.027, on(0.027, -0.002)), (0.027, on(0.027, 0.0011))]
-    dot = [(0.0, on(0.0, 0.0013)), (0.011, on(0.011, 0.0013)), (0.011, on(0.011, -0.002)), (0.0, on(0.0, -0.002))]
+    # r3: an iris round a dark pupil (r1's and r2's rings round a dot read as a target)
+    iris = [(0.017, on(0.017, 0.0011)), (0.03, on(0.03, 0.0011)), (0.043, on(0.043, 0.0011)), (0.05, on(0.05, 0.0011)),
+            (0.05, on(0.05, -0.002)), (0.017, on(0.017, -0.002)), (0.017, on(0.017, 0.0011))]
+    dot = [(0.0, on(0.0, 0.0013)), (0.0045, on(0.0045, 0.0013)), (0.0045, on(0.0045, -0.002)), (0.0, on(0.0, -0.002))]
     return [part("eye_ring", lathe(ring, 48, RC, ex), GRAPH2, 35.0), part("eye_glass", lathe(dome, 48, RC, ex), "ws_glass", 40.0),
             part("eye_iris", lathe(iris, 48, RC, ex), "ws_cyan__eye", 40.0),
-            part("eye_dot", lathe(dot, 20, RC, ex), "ws_cyan__eye", 40.0)]
+            part("eye_dot", lathe(dot, 16, add(RC, (0.0, 0.016, 0.018)), ex), "ws_shell", 40.0)]
 
 
 def _gear(c, ax, r, teeth, t, depth=0.008):
