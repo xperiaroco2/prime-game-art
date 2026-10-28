@@ -101,6 +101,8 @@ def main() -> int:
                     "(shadow_quality 0-5, default 5; taa, angular_deg, sss_scale)")
     ap.add_argument("--no-flare", action="store_true", help="M1: the build without the neck flare (a Meshy body)")
     ap.add_argument("--gill-ratio", type=float, default=1.0, help="M1: the gills' triangles kept (1.0: all)")
+    ap.add_argument("--leg-fit", action="store_true", help="T2: the clips' Root and Hips keys scaled by the body's leg "
+                    "length over S4b's (the rig they were made on): a body with its own leg length")
     ap.add_argument("--lively", default="", help="E2: head=DIR[,head=DIR]: build on these lively build folders instead"
                     " of HEADS' (a candidate's look)")
     args = ap.parse_args()
@@ -136,6 +138,7 @@ def main() -> int:
                 "--detail", str(static / f"{h}_detail.png"), "--bases", str(hd / "bases.json"),
                 "--out", str(hd), *(["--no-flare"] if args.no_flare else []),
                 *(["--gill-ratio", str(args.gill_ratio)] if args.gill_ratio < 1.0 else []),
+                *(["--leg-fit", str(BODY)] if args.leg_fit else []),
                 *(["--clip-edits", str(Path(args.clip_edits).resolve())] if args.clip_edits else [])],
                 timeout=1500)
             (hd / "build.log").write_text((res.stdout or "") + (res.stderr or ""), encoding="utf-8", newline="\n")

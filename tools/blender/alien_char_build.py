@@ -220,6 +220,8 @@ def main():
     ap.add_argument("--shield", action="store_true")
     ap.add_argument("--clip-edits", default="", help="A1: the alien's clip edits (anim_sets/alien.toml)")
     ap.add_argument("--no-flare", action="store_true", help="M1: no neck flare (a Meshy body has its own trapezius)")
+    ap.add_argument("--leg-fit", default="", help="T2: the .blend of the rig the clips were made on (S4b's body): "
+                    "the clips' Root and Hips location keys scaled by this body's leg length over that rig's")
     ap.add_argument("--gill-ratio", type=float, default=1.0, help="M1: the gills' share of their triangles kept "
                     "(collapse decimation on the faces the Gill* groups own; 1.0: untouched)")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -632,6 +634,9 @@ def main():
     me.calc_loop_triangles()
     rep["tris"] = len(me.loop_triangles)
     log(f"tris {rep['tris']} bones {rep['bones']} springs {springs}")
+    if a.leg_fit:  # T2: the clips' hip height fitted to this body's legs, before the clip edits (their floor lift)
+        rep["leg_fit"] = fit_legs(arm, a.leg_fit)
+        log(f"leg fit {json.dumps(rep['leg_fit'])}")
     if a.clip_edits:  # A1: the clips edited for the bare alien body (alien_clip_edit.py) before the export
         import alien_clip_edit
         rep["clip_edits"] = {"settings": a.clip_edits, "clips": alien_clip_edit.apply(arm, skin, a.clip_edits)}
@@ -643,6 +648,24 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(out / f"{head}_char.blend"), compress=True)
     (out / "char.json").write_text(json.dumps(rep, indent=2, default=float), encoding="utf-8", newline="\n")
     log("done")
+
+
+def fit_legs(arm, donor_blend: str) -> dict:
+    """T2 (art #196): every action's Root and Hips location keys (and the armature object's) scaled by this rig's leg
+    length over the donor rig's (the rig in donor_blend, the one the clips were made on), as slice --own-proportions
+    does: on M1f's shorter legs S4b's hip keys left the feet only skimming the floor after the floor lift."""
+    import slice_actions
+    with bpy.data.libraries.load(str(Path(donor_blend).resolve()), link=False) as (src, dst):
+        dst.armatures = list(src.armatures)
+    if len(dst.armatures) != 1:
+        raise SystemExit(f"--leg-fit {donor_blend}: {len(dst.armatures)} armatures, expected one")
+    donor = dst.armatures[0]
+    fit = G.leg_fit({b.name: tuple(arm.matrix_world @ b.head_local) for b in arm.data.bones},
+                    {b.name: tuple(b.head_local) for b in donor.bones})
+    bpy.data.armatures.remove(donor)
+    acts = list(bpy.data.actions)
+    fit.update(donor=donor_blend, actions=len(acts), keys=slice_actions.scale_leg_keys(acts, fit["scale"]))
+    return fit
 
 
 def heights(skin, arm, springs: list[str]) -> dict:

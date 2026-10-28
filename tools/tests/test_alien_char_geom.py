@@ -194,5 +194,40 @@ class B2(unittest.TestCase):
 
 
 
+
+def _rig(thigh, shin, ankle):
+    """A rig's leg heads, both sides alike: the hip at thigh + shin + ankle over the floor, straight down."""
+    heads = {}
+    for side, x in (("Left", 0.1), ("Right", -0.1)):
+        heads[f"{side}Foot"] = (x, 0.0, ankle)
+        heads[f"{side}LowerLeg"] = (x, 0.0, ankle + shin)
+        heads[f"{side}UpperLeg"] = (x, 0.0, ankle + shin + thigh)
+    heads["Hips"] = (0.0, 0.0, ankle + shin + thigh + 0.02)
+    return heads
+
+
+class LegFit(unittest.TestCase):
+    def test_shorter_legs_scale_down(self):
+        # T2: M1f's legs (0.774 m) on S4b's clips (0.845 m)
+        fit = G.leg_fit(_rig(0.36, 0.34, 0.074), _rig(0.39, 0.37, 0.085))
+        self.assertEqual(fit["leg_m"], [0.845, 0.774])
+        self.assertAlmostEqual(fit["scale"], 0.774 / 0.845, places=6)
+
+    def test_same_legs_leave_the_keys(self):
+        self.assertEqual(G.leg_fit(_rig(0.4, 0.4, 0.08), _rig(0.4, 0.4, 0.08))["scale"], 1.0)
+
+    def test_missing_leg_bone_is_refused(self):
+        rig = _rig(0.4, 0.4, 0.08)
+        del rig["LeftFoot"]
+        with self.assertRaises(ValueError):
+            G.leg_fit(rig, _rig(0.4, 0.4, 0.08))
+
+    def test_build_scale_from_char_json(self):
+        # a build without the fit (r2b, r2c, the chameleon's loco t1): the appended loops are left as they are
+        self.assertEqual(G.leg_fit_scale({}), 1.0)
+        self.assertEqual(G.leg_fit_scale({"leg_fit": None}), 1.0)
+        self.assertEqual(G.leg_fit_scale({"leg_fit": {"leg_m": [0.8447, 0.7743], "scale": 0.916657}}), 0.916657)
+
+
 if __name__ == "__main__":
     unittest.main()

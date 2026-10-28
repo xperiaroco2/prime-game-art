@@ -28,6 +28,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
+import alien_char_geom as G  # noqa: E402
 import alien_loco_math as L  # noqa: E402
 
 PREFIX = "CharacterArmature|"
@@ -185,6 +186,14 @@ def _blender_main(argv: list[str]) -> None:
         if mocap is not None:  # P1's 100STYLE loops MC_<style>_<take>_Loop (the axolotl shares the skeleton)
             with bpy.data.libraries.load(str(mocap), link=False) as (src, dst):
                 dst.actions = [n for n in src.actions if n.startswith(PREFIX + "MC_") and n[len(PREFIX):] in need]
+        # T2: a build fitted to its body's legs (char.json leg_fit) gets the same fit on the appended loops (made on
+        # the S4b rig); a build without it: 1.0, untouched
+        legs = G.leg_fit_scale(json.loads((build / char / "char.json").read_text(encoding="utf-8")))
+        if legs != 1.0:
+            import slice_actions
+            keys = slice_actions.scale_leg_keys([bpy.data.actions[PREFIX + n] for n in need
+                                                 if n.startswith(("TM_", "MC_"))], legs)
+            print(f"CHAR {char}: leg fit {legs} on the appended loops ({keys} keys)", flush=True)
         srcs = {n: ST.sample(arm, bpy.data.actions[PREFIX + n]) for n in need}
         for n in need:
             if n.startswith(("TM_", "MC_")):

@@ -10,6 +10,8 @@ tools/tests/test_alien_char_geom.py; alien_char_build.py runs it inside Blender.
 - `walk_loop`, `monotone_angles`, `bridge_outward`: the seam's bridge in walk order, its angles, its facing.
 - `gltf_to_blender`, `blender_to_gltf`, `fit_point`, `fit_lively`: the lively head's data (glTF, Y up) under the fit.
 - `sstep`: a smoothstep from a to b (either order).
+- `leg_fit`, `leg_fit_scale` (T2): the clips' hip keys fitted to a body's own leg length (`--leg-fit`), the scale a
+  build recorded in its char.json.
 """
 from __future__ import annotations
 
@@ -21,6 +23,29 @@ SHIELD = [(0.80, 0.0), (0.83, 0.045), (0.88, 0.075), (0.98, 0.088), (1.10, 0.090
           (1.33, 0.040), (1.40, 0.040)]
 SHIELD_EDGE = 0.016  # the soft edge, m
 FRONT_FACING = (-0.15, 0.35)  # the shield only where the normal faces the front: -n.y from 0 (side) to 1
+
+
+# T2 (art #196): the alien rig's leg bones under slice_math's names (its leg length: thigh, shin, ankle height)
+LEG_NAMES = {f"{side}{bone}": f"{bone}.{s}" for side, s in (("Left", "L"), ("Right", "R"))
+             for bone in ("UpperLeg", "LowerLeg", "Foot")}
+
+
+def leg_fit(own: dict, donor: dict) -> dict:
+    """The leg fit of a body whose legs differ from the rig its clips were made on (T2: the axolotl on M1f's body,
+    the clips S4b's): own and donor are the rigs' rest heads (bone name: (x, y, z), z up, the floor at 0). Returns
+    leg_m [donor, own] and scale (own / donor), the factor for the clips' Root and Hips location keys
+    (slice_math.scales_with_legs), so the hips' bob and travel are in proportion to the legs that carry them."""
+    import slice_math
+    legs = [slice_math.leg_length({LEG_NAMES[k]: v for k, v in rig.items() if k in LEG_NAMES}) for rig in (donor, own)]
+    if legs[0] <= 0:
+        raise ValueError(f"the donor's leg length is {legs[0]} m")
+    return {"leg_m": [round(legs[0], 4), round(legs[1], 4)], "scale": round(legs[1] / legs[0], 6)}
+
+
+def leg_fit_scale(char: dict) -> float:
+    """The leg scale a character build applied to its clips (char.json "leg_fit"; 1.0 for a build without it), which
+    alien_loco.py applies to the loops it appends from other files (step 2's, P1's: made on the S4b rig)."""
+    return float((char.get("leg_fit") or {}).get("scale", 1.0))
 
 
 def sstep(a: float, b: float, x: float) -> float:
