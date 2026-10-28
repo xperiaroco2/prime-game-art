@@ -1477,6 +1477,22 @@ clear of each other's crescents, which caps the crescent at about 21 cm. The but
 The vent stations' spots stay at design's 3/5 of the wall (`ship.toml`); the export's vent package is the gills piece
 (`ship:th_gills_<side>`).
 
+Step 6 (the corner, the cornice, the mist): one clean column (`corner-col`, `int_silver_a`) stands at the band's hall
+end from the floor to past the ceiling, in the band's frame: its hall face lies 2.6 cm hall-ward of the header clip
+(`COL_PROUD`, 1.6 cm past the header's hall face), its throat edge vertical to the bend at u 3.80 (the button stays in
+view) and leaning to u 3.58 at the ceiling, so from the throat the corner reads as the concept's single column. The
+throat ceiling's corner trims (`throat_ceil`, `TH_GILLS_COLUMN`) are gone: the column covers that seat from both sides,
+and from the throat the trim hung past the column's edge as a slanted strip ending in the air. The cornice is
+`hull_silver` (3.2 cm proud) over a 1.4 cm dark shadow line (`cornice_gap`): the three `int_silver_*` share one look
+in `ship.toml`, so `int_silver_a` would not have read lighter. The band's mouth part lies flush with the band
+(`MOUTH_W` 0, its top 2 mm under the bend where the jambs start): its 3 mm end step read as a dashed light line at the
+roof line. The filament blades taper to their inner end (their square ends read as steps at the leaf's edge). In
+`gill_row.gd` the slit's light and mist were placed 0.3 m behind the wall: the throat is the GLB's +z (the band leans
+to +z), not -z. Both now stand in front of the slit, the lights at a third of their old energy (`LIGHT_ENERGY`, range
+0.8 m; at the old values the whole band went cyan) and the mist a soft additive puff 22 cm out and 20 cm toward the
+mouth (`MIST`, `MIST_OUT`). The matched camera for design's concept is `gill_view(2.25, 1.23, 4.3, 0, 0)` at a 52 degree
+vertical field of view: level, as the concept's verticals are, the band's top and the floor line at its heights.
+
 - `godot/ship/gill_row.gd` drives a row: calm and open (leaves open, cyan, a soft additive mist toward the mouth), gasp
   (60 % open, red-orange), shut (closed, dim cyan line) and fault (closed, red line), and the button ring's white
   flash; `ship.gd` takes a per-view pose (`{"gills": {"e": {"slits": {"3": "gasp", "2": "fault"}}}}`).
