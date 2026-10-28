@@ -321,6 +321,12 @@ lamps = [
   [-10.5, 1.200, 3.45, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room (rebuild A: (8.3, 0) -> (8.3, 4.0))
   [0.0, 4.75, 3.05, 0.1, 2.4, 1.0, 0.82, 0.62, "corr", true],  # lens step 2: the vault's dim lamp under its fixture
   [-11.785, 1.396, 2.6, 0.6, 3.5, 0.55, 0.68, 1.0, "tip", false],  # west tip room's cool fill (was the window's moonlight; kept for the room's look, 1.3 m out on its axis)
+  # the west lens room's workshop (docs/ship.md "The west lens room's workshop"): its acid green, the "shop" group; the
+  # strips, handles and rims glow and light nothing ([light.mats] ws_green__*), these few omnis light the room
+  [-10.692, -0.246, 2.59, 0.7, 1.4, 0.45, 1.0, 0.2, "shop", false],  # the bench lamp's light, 10 cm before its lens toward the robot
+  [-11.446, 0.308, 2.15, 0.45, 1.6, 0.45, 1.0, 0.2, "shop", false],  # the bench's wash, the window half (r 1.3, a_w 52, h 0.95)
+  [-10.651, -0.091, 2.15, 0.45, 1.6, 0.45, 1.0, 0.2, "shop", false],  # the bench's wash, the door half (a_w 92)
+  [-11.933, 1.418, 2.2, 0.3, 1.2, 0.45, 1.0, 0.2, "shop", false],  # the cradles' glow (r 1.45, a_w 0, h 1.0)
   [-27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
   [-27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
   [4.8441, 0.3381, 3.4, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling (rebuild A, as the west's)
@@ -389,6 +395,7 @@ hall_lamp = 0.7
 corr_lamp = 2.6                                # inside 3-1 (grid_in31 C; was 2.0): warm-white rows, no teal
 fill_lamp = 2.0                                 # polish 4 grid C (was 1.0)
 tip_lamp = 2.4                                 # the lens rooms' lamp group ("tip": the omni and the cool fill), not the tip_lamp piece
+shop_lamp = 1.0                                # the west workshop's green lamps ("shop")
 out_lamp = 2.5
 pool_lamp = 1.6                                # the outside lamps' groups (hull step 3; the light grid)
 party_lamp = 1.3
@@ -415,6 +422,15 @@ int_amber__lens_ring = {c = [1.0, 0.42, 0.06], e = 0.3, l = 0.0}   # lens C step
 int_cyan__lens_core = {c = [0.0, 0.5, 1.0], e = 0.2, l = 0.0}   # lens C step 2: the conduits' cyan core, brighter than int_cyan (0.05: it read weak beside the concept's bright tubes); glows, lights nothing
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
+# the west workshop: acid green glows (strips under the tops, the drawers' pulls, the cradles' rims, the lamp's lens,
+# the sleepers' faint eye lines) and the eyes' cyan; all light nothing (the "shop" lamps do)
+ws_green__strip = {c = [0.45, 1.0, 0.08], e = 0.2, l = 0.0}
+ws_green__handle = {c = [0.45, 1.0, 0.08], e = 0.25, l = 0.0}
+ws_green__rim = {c = [0.45, 1.0, 0.08], e = 0.22, l = 0.0}
+ws_green__lamp = {c = [0.55, 1.0, 0.25], e = 0.8, l = 0.0}
+ws_green__sleep = {c = [0.45, 1.0, 0.08], e = 0.06, l = 0.0}
+ws_cyan__eye = {c = [0.1, 0.8, 1.0], e = 0.12, l = 0.0}
+ws_cyan__pupil = {c = [0.1, 0.8, 1.0], e = 0.06, l = 0.0}
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
 int_halo__vent_heat = {c = [1.0, 0.13, 0.0], e = 0.6, l = 0.0}     # station 1: the vents' heat (vents-b3: a deep red-orange, b2's read peach)
 int_halo__vent_seam = {c = [1.0, 0.13, 0.0], l = 0.0}             # the blades' lit seams, the heat's colour (dark calm: vent_anim.gd, ship.py VENT_STATES)
