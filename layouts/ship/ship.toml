@@ -144,7 +144,7 @@ room = "hall"
 
 [[stations.spot]]
 id = "vent_e"                                 # rebuild C: on the throat's slanted east wall (asked (2.3, -5.8)).
-at = [2.4901, -4.5445]                        # the gills (2026-10-28): the row's working slit 3, s 2.69 m from the mouth's corner
+at = [2.4090, -4.7912]                        # rebuild F: on the line between wall modules 2 and 3 (3/5 of the wall
 normal = [-0.9500, 0.3123]                    # from the mouth (1.65, -7.1) to the hall's vertex (2.915, -3.252)), so
                                               # its 1.6 m plain band lies on those two plain modules, off the jamb
 room = "throat"
@@ -157,7 +157,7 @@ depth_m = 0.6                                 # the vents' BUDGET from the wall'
 
 [[stations.spot]]
 id = "vent_w"
-at = [-2.4901, -4.5445]                        # the gills (2026-10-28): the row's working slit 3, s 2.69 m from the mouth's corner
+at = [-2.4090, -4.7912]
 normal = [0.9500, 0.3123]
 room = "throat"
 recess_m = 0.0
@@ -413,10 +413,12 @@ int_amber__lens = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.0}   # lens C: the lou
 int_amber__lens_toe = {c = [1.0, 0.42, 0.06], e = 0.047, l = 0.0}   # lens C step 4: the sofa's underside strip at a third of int_amber__lens
 int_amber__lens_ring = {c = [1.0, 0.42, 0.06], e = 0.3, l = 0.0}   # lens C step 4: the coffee table's lit edge ring
 int_cyan__lens_core = {c = [0.0, 0.5, 1.0], e = 0.2, l = 0.0}   # lens C step 2: the conduits' cyan core, brighter than int_cyan (0.05: it read weak beside the concept's bright tubes); glows, lights nothing
-int_cyan__gill_fil = {c = [0.0, 0.62, 1.0], e = 0.35, l = 0.0}    # the gills (2026-10-28): the slits' filaments (gill_row.gd sets the state's colour)
-int_cyan__gill_seam = {c = [0.0, 0.55, 1.0], e = 0.06, l = 0.0}   # the shut gap's floor: calm dim cyan (a fault: red, gill_row.gd)
-int_cyan__gill_line = {c = [0.05, 0.75, 1.0], e = 0.12, l = 0.0}  # the lips' free edges
-int_cyan__gill_ring = {c = [0.05, 0.75, 1.0], e = 0.25, l = 0.0}  # the button's light ring
+int_cyan__gill_fil = {c = [0.3, 0.9, 1.0], e = 0.6, l = 0.0}     # the gills (step 3): the slits' radiating filaments (gill_row.gd sets the state's colour)
+int_cyan__gill_glow = {c = [0.0, 0.62, 1.0], e = 0.3, l = 0.0}    # the slits' glowing back behind the filaments
+int_cyan__gill_seam = {c = [1.0, 0.06, 0.02], e = 0.12, l = 0.0}  # the shut leaves' meeting line: a fault's red (shut: dim cyan, gill_row.gd)
+int_dark__gill_btn = {l = 0.0}                                      # the gills' button dome (lights nothing)
+int_dark__gill_leaf = {l = 0.0}                                     # the slits' shutter leaves
+int_cyan__gill_ring = {c = [0.05, 0.8, 1.0], e = 0.5, l = 0.0}   # the button's light ring (step 3: bright, as the concept)
 int_cyan__gill_plinth = {c = [0.05, 0.8, 1.0], e = 0.12, l = 0.0} # the plinth's line
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}

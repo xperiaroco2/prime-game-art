@@ -34,7 +34,7 @@ SHADERS = {"ship/metal.gdshader": "metal.gdshader", "ship/night_sky.gdshader": "
            "console/console_metal.gdshader": "console_metal.gdshader"}
 CONSOLE_YAW = 180.0  # the console's front (+Z, the button) faces the mouth (-Z): assets/prop/start_console/HANDOFF.md
 # spot id prefix -> (the station package that goes there, the kind); the vents are ship pieces in the scene
-PACKAGES = {"console": ("start_console", "console"), "vent": ("ship:station_vent_{side}", "vent"),
+PACKAGES = {"console": ("start_console", "console"), "vent": ("ship:th_gills_{side}", "vent"),
             "socket": ("crystal_socket", "socket"), "breaker": ("breaker_board", "breaker"),
             "renewer": ("crystal_charger", "renewer")}
 QUESTIONS = [
@@ -43,9 +43,10 @@ QUESTIONS = [
     "crystal_anchor, breaker_board, crystal_charger) get their look from their own GDScript (apply()), which an asset "
     "may not carry (11.1), so the game's station scenes instance them at the markers. Each package's HANDOFF.md "
     "'Placement' holds its own offset (the breaker board 0.07 m out along the normal).",
-    "S2: the throat vents (VentE, VentW) are part of the ship: the pieces station_vent_e and station_vent_w under "
-    "Pieces, calm (the heat panel hidden). Their states (slats, the heat and cool panels and their well lights) are "
-    "art code today (godot/ship/vent_anim.gd, vent_glow.gd): the game's vent station drives the nodes by name.",
+    "S2: the throat vents (VentE, VentW) are part of the ship: since the gills pilot (2026-10-28) the throat's gills "
+    "pieces th_gills_e and th_gills_w under Pieces, calm (every slit open, glowing). Their states (each slit's two "
+    "shutter leaves, the filaments' glow and colour, the button's ring) are art code today (godot/ship/gill_row.gd): "
+    "the game's vent station drives the nodes by name.",
     "S3: the look the art sets by code is baked into the scene as overrides inside each piece's instance (the glTF "
     "materials' night values, the outside pieces' render layer 2, the vents' well lights), every piece an editable "
     "instance; the shared metal is metal.gdshader with one .tres per metal. The shaders are art code shipped as files "
