@@ -380,18 +380,36 @@ def conduit_paths(side: str, s: int) -> list[list[tuple[float, float, float]]]:
     return [low, high]
 
 
+CORE_SIDES = 10
+
+
+def core_uvs(path, sides: int) -> list:
+    """A conduit core's UVs per face of G.tube(path, r, sides) (its quads ring by ring, then the two caps): x the run
+    coordinate (0 where the conduit leaves the jamb, 1 at the deck or the ceiling), y (Godot's, after the glTF
+    exporter's v -> 1 - v) the run's length in metres, for godot/charger/conduit.gdshader's pulses (charger zap)."""
+    run = [0.0]
+    for a, b in zip(path, path[1:]):
+        run.append(run[-1] + math.dist(a, b))
+    total = run[-1]
+    f = [r / total for r in run]
+    y = 1.0 - total
+    out = [[(f[i], y), (f[i], y), (f[i + 1], y), (f[i + 1], y)] for i in range(len(path) - 1) for _ in range(sides)]
+    return out + [[(f[0], y)] * sides, [(f[-1], y)] * sides]
+
+
 def lens_conduits(args, layout):
     """The four conduits (one piece per room: the ceiling slants, so the two sides reach it at different heights):
     bronze tubes of 11 cm, a 3 cm cyan core on the room side, collars of 14 x 4 where they leave the jamb and on the
     straight runs (h 40, 210), flanges of 16 x 3 at the deck and the ceiling."""
     side, K = args.get("side", "e"), CONDUIT
-    tubes, cores, collars = [], [], []
+    tubes, cores, collars, core_uv = [], [], [], []
     for s in (-1, 1):
         x = -K["d"] * CM
         for path in conduit_paths(side, s):
             tubes.append(G.tube(path, K["r"] * CM, 16))
             off = (K["r"] - K["core_r"] + 0.4) * CM
-            cores.append(G.tube([(px - off, py, pz) for px, py, pz in path], K["core_r"] * CM, 10))
+            cores.append(G.tube([(px - off, py, pz) for px, py, pz in path], K["core_r"] * CM, CORE_SIDES))
+            core_uv += core_uvs(path, CORE_SIDES)
         y0, y1 = sorted((s * ALCOVE["jamb_out"] * CM, s * (ALCOVE["jamb_out"] + K["collar_l"]) * CM))
         for h in (K["low"], K["high"]):
             v, f = L.cylinder_y(K["collar_r"] * CM, 20, y0, y1)
@@ -415,8 +433,9 @@ def lens_conduits(args, layout):
                                      [(px, py, zc + hh * CM) for px, py in ccw(ring)]]))
         collars.append(S.shift(L.disc(K["flange_r"] * CM, 20, FLOOR + top - K["flange_h"] * CM, FLOOR + top + 0.02),
                                x, s * K["u"] * CM))
-    return [P("tubes", L.merge(*tubes), BRONZE2), P("cores", L.merge(*cores), "int_cyan__lens_core"),
-            P("collars", L.merge(*collars), EDGE)]
+    core = P("cores", L.merge(*cores), "int_cyan__lens_core")
+    core["uv"] = core_uv
+    return [P("tubes", L.merge(*tubes), BRONZE2), core, P("collars", L.merge(*collars), EDGE)]
 
 
 def cushion_block(d0, d1, h0, h1, e0=0.0, e1=0.0, r=3.5, crown=1.2, lean=0.0):
