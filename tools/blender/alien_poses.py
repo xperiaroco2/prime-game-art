@@ -346,8 +346,20 @@ def _blender_main(argv: list[str]) -> None:
         model, legs, arms, rows = solve(dump, cfg, a.pairs, char)
         for n, r in legs.items():
             ST.write(arm, A.layer_clip(r, "legs", f"{A.LEGS_PREFIX}{n}_Loop"), f"{A.LEGS_PREFIX}{n}_Loop")
+        hands = cfg.get("hands", {})
+        if hands.get("keyed"):
+            # h1: the corrective shapes on the knuckles, one per keyed grip and hand, before the clips key them
+            import alien_hands as H
+            for side in ("Left", "Right"):
+                for grip in hands["keyed"]:
+                    rep = H.bake(arm, model, lambda r: _apply(arm, r), side, grip, hands["method"],
+                                 cs=tuple(hands.get("cs", (0.5, 5))), fat_cm=hands.get("fat_cm", 0.0))
+                    print(f"KEY {char} {json.dumps(rep)}", flush=True)
         for n, r in arms.items():
-            ST.write(arm, A.layer_clip(r, "arms", f"{A.ARMS_PREFIX}{n}_Loop"), f"{A.ARMS_PREFIX}{n}_Loop")
+            clip = A.layer_clip(r, "arms", f"{A.ARMS_PREFIX}{n}_Loop")
+            act = ST.write(arm, clip, f"{A.ARMS_PREFIX}{n}_Loop")
+            if hands.get("keyed"):
+                H.key_clip(arm, act, H.grip_weights(getattr(r, "grips", {}), hands["keyed"]), A.S.frames(clip))
         after = _digest()
         changed = sorted(k for k in before if after.get(k) != before[k])
         print(f"CHECK {char} the build's {len(before)} clips: {len(changed)} changed {changed}", flush=True)

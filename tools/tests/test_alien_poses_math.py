@@ -449,6 +449,25 @@ class OnTheChameleon(unittest.TestCase):
                 fa = A.norm(A.sub(A.S.pos(P[f"{s}Hand"]), A.S.pos(P[f"{s}LowerArm"])))
                 self.assertGreater(A.dot(fa, A.axis(P, f"{s}Hand", 1)), math.cos(math.radians(1.0)), (am, s))
 
+    def test_the_four_shapes_set_each_finger_on_its_own(self):
+        """h1: no `all` in the brief's four shapes (each finger its own three curls); the fist's Ring at least as curled
+        as its Index at every knuckle; a per-finger spread mirrors on the right hand (the distal heads mirror images
+        within 1 mm)."""
+        d = self.model.data
+        for g in ("fist", "point", "flat", "heart"):
+            self.assertNotIn("all", d["grips"][g], g)
+            for f in ("Index", "Middle", "Ring", "Thumb"):
+                self.assertEqual(len(d["grips"][g][f]), 3, (g, f))
+        self.assertTrue(all(r >= i for r, i in zip(d["grips"]["fist"]["Ring"], d["grips"]["fist"]["Index"])))
+        r = A.Rig(self.model.skel)
+        for g in ("fist", "point", "flat", "heart"):
+            for side in A.SIDES:
+                self.model._fingers(r, side, g)
+            for f in ("Index", "Ring", "Thumb"):
+                tl, tr = (A.S.pos(r.P()[f"{s}{f}Distal"]) for s in A.SIDES)
+                self.assertLess(A.length(A.sub(tl, (-tr[0], tr[1], tr[2]))), 0.001, (g, f))
+            self.assertEqual(r.grips, {"Left": g, "Right": g})  # what the clip's corrective shapes follow
+
     def test_a_hand_reads_through_only_where_the_skins_touch(self):
         """Round 3: HandsBehindHead's hands 0.8 cm off the skull: a tube depth there is the proxy's (proxy_cm), not a
         through reading; the contacts within the limit and no failure."""

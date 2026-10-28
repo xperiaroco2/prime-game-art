@@ -61,29 +61,57 @@ through_pairs = [
 # q2 (q1's [86, 100, 70] curled the long finger tubes into closed rings): the base knuckle bent most, the tips least
 # q3 (grid of four, anim_bare/poses/p3/q3/q3_fist2_*; the critic: "a hole and a thumb nub"): the base and middle
 # knuckles both fully bent, the thumb curled over the fingers' front (q2's [90, 60, 20] left a ring and the thumb out)
-all = [100, 100, 30]
-Thumb = [40, 40, 30]
-ThumbTurn = [30, 60]
-[grips.point]  # FingerUp's raised hand: the index straight, the rest the fist
-all = [100, 100, 30]
+# h1 (each finger on its own; grids anim_bare/poses/h1/h1/g1, g2): Ring curled tighter and drawn in toward Middle,
+# Index drawn in; `<Finger>Spread`/`<Finger>Twist` turn a base toward the thumb side / about its length (the left
+# hand's degrees, mirrored). The thumb from a search (tools/out/poses/h1/thumb.py): its tip by Middle's middle
+# phalanx on the fingers' front, its bones over the index loop's hole, 1.3 cm clear of the finger bones
+Index = [85, 110, 60]
+Middle = [90, 110, 60]
+Ring = [96, 114, 62]
+IndexSpread = -3
+RingSpread = 4
+Thumb = [15, 60, 20]
+ThumbTurn = [40, 10]
+[grips.point]  # FingerUp's raised hand: the index straight, the rest the fist, the thumb over Middle
 Index = [0, 2, 0]
-Thumb = [40, 40, 30]
-ThumbTurn = [30, 60]
+IndexSpread = 3
+Middle = [90, 110, 60]
+Ring = [96, 114, 62]
+RingSpread = 4
+Thumb = [15, 60, 20]
+ThumbTurn = [40, 10]
 [grips.flat]   # Plane, PalmsOut, HandsBehindHead, a hand on a thigh: the fingers together, slightly curved, the thumb alongside
-all = [6, 8, 4]
-mirror = true  # q3: `spread` mirrored on the right hand (one sign means together on both)
-spread = 18    # q2: the fingers drawn together (their rest gaps read as spread on PalmsOut and HandsBehindHead);
-               # q3: the sign mirrored per hand in the code (q2's -10 drew the right hand's together, the left's apart)
-Thumb = [0, 10, 10]
-ThumbTurn = [0, -30]
+# q2/q3: drawn together (the rest gaps read as spread); h1: per finger, a little more curve and drawn in further, the
+# thumb turned in along the index (h1 grid g1, row d)
+Index = [8, 10, 6]
+Middle = [9, 11, 6]
+Ring = [10, 12, 7]
+IndexSpread = -22
+MiddleSpread = -6
+RingSpread = 10
+Thumb = [5, 5, 5]
+ThumbTurn = [10, -45]
 [grips.heart]  # Heart: the index tips and the thumb tips meeting (the `meet` solve)
 # q3 (grid of four, anim_bare/poses/p3/q3/q3_heart_*; the critic: "two pinched fists at the chin"): the index curled
 # into the heart's lobes, the other three fingers a fist behind it, the thumbs pointing down and in to the tip; the
-# thumbs from a search of 36 (tools/out/poses/p3/q3/thumb.log: [0, 0, 0] turned [0, -40] stood 10 cm apart)
-all = [90, 80, 40]
-Index = [20, 70, 50]
+# thumbs from a search of 36 (tools/out/poses/p3/q3/thumb.log: [0, 0, 0] turned [0, -40] stood 10 cm apart).
+# h1: per finger, Middle and Ring folded behind (g1 row b); g1 read no heart from the front (each curled finger a
+# ring): open in the h1 handoff
+Index = [25, 75, 55]
+Middle = [95, 100, 40]
+Ring = [100, 105, 45]
+RingSpread = 4
 Thumb = [20, 20, 10]
 ThumbTurn = [0, 30]
+# h1: the corrective shapes on the knuckles (alien_hands.py): per keyed grip and hand a shape key `h1_<grip>_<side>`
+# baked from the grip on the rest arm: dual quaternion skinning plus the knuckles pushed out `fat_cm` along the
+# normals (4 w1 w2 of a finger vertex's two weights), taken back to rest space; the pose clips key it at 1 (glTF
+# morph weights on the arms layer). Settled on the h1 method grid (anim_bare/poses/h1/h1/g2/h1_method2_*: plain
+# linear skinning and a corrective smooth left the curled finger a ring with a hole; DQS + 0.6 cm closed it)
+[hands]
+method = "dqs"
+fat_cm = 0.6
+keyed = ["fist", "point", "heart", "behind"]
 [grips.behind]  # HandsBehindHead (q3): the flat hand's fingers curled round the back of the skull, drawn together
 all = [35, 45, 30]
 mirror = true

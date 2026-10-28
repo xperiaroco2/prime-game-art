@@ -552,6 +552,7 @@ class Model:
         its curl (the left hand's; the right's mirrored), so a fist's thumb lies over the index and a flat hand's beside
         it (a curl alone turns it about one axis only, p1)."""
         g = self.data["grips"][grip]
+        r.grips = {**getattr(r, "grips", {}), side: grip}  # h1: the clip's corrective shapes follow its grips
         for f in FINGERS:
             names = PHALANX.get(f, PHALANX["Index"])
             curl = g.get(f, g.get("all", [0.0, 0.0, 0.0]))
@@ -563,6 +564,12 @@ class Model:
                     # apart, the right's together); a flag, so the check still composes older builds' data as built
                     k *= -1.0 if g.get("mirror") and side == "Right" else 1.0
                     q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), g["spread"] * k), q)
+                if i == 0 and (g.get(f"{f}Spread") or g.get(f"{f}Twist")):
+                    # h1 (each finger on its own): the base turned toward the thumb side (+Spread, about z) and about
+                    # its length (+Twist, about y), the left hand's degrees, mirrored on the right
+                    k = 1.0 if side == "Left" else -1.0
+                    q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), g.get(f"{f}Spread", 0.0) * k),
+                                M.q_mul(M.q_axis_angle((0.0, 1.0, 0.0), g.get(f"{f}Twist", 0.0) * k), q))
                 if i == 0 and f == "Thumb" and g.get("ThumbTurn"):
                     roll, swing = (v * (1.0 if side == "Left" else -1.0) for v in g["ThumbTurn"])  # mirrored
                     q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), swing), M.q_mul(M.q_axis_angle((0.0, 1.0, 0.0), roll), q))
