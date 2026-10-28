@@ -307,5 +307,31 @@ class ChainWorld(unittest.TestCase):
             G.chain_world([])
 
 
+
+class SeamSmoothTest(unittest.TestCase):
+    """Clothes step 2 (art #196): the weld's seam smoothed by Taubin steps in a band round the bridge."""
+
+    def test_weight_is_one_at_the_bridge_and_zero_outside_the_band(self) -> None:
+        self.assertEqual(G.seam_weight(1.394, 1.394), 1.0)
+        self.assertEqual(G.seam_weight(1.394 - G.SEAM_SMOOTH[0], 1.394), 0.0)
+        self.assertEqual(G.seam_weight(1.394 + G.SEAM_SMOOTH[1] + 0.001, 1.394), 0.0)
+        self.assertGreater(G.seam_weight(1.40, 1.394), G.seam_weight(1.405, 1.394))
+
+    def test_taubin_flattens_a_step_and_keeps_pinned_points(self) -> None:
+        # a ring of points with one dented point: smoothing lifts the dent, pinned points stay
+        import math
+        n = 24
+        co = [[math.cos(2 * math.pi * i / n), math.sin(2 * math.pi * i / n), 0.0] for i in range(n)]
+        co[0] = [0.9, 0.0, 0.0]
+        nbrs = [[(i - 1) % n, (i + 1) % n] for i in range(n)]
+        w = [1.0] * n
+        w[12] = 0.0
+        out = G.taubin(co, nbrs, w)
+        self.assertGreater(out[0][0], 0.95)
+        self.assertEqual(out[12], co[12])
+        radii = [math.hypot(p[0], p[1]) for p in out[1:]]
+        self.assertGreater(min(radii), 0.97)  # the inflating step keeps the girth
+        self.assertEqual(co[0], [0.9, 0.0, 0.0])
+
 if __name__ == "__main__":
     unittest.main()
