@@ -559,8 +559,9 @@ class Model:
                 q = M.q_axis_angle((1.0, 0.0, 0.0), deg)
                 if i == 0 and g.get("spread") and f != "Thumb":
                     k = {"Index": -1.0, "Middle": -0.3, "Ring": 0.4, "Little": 1.0}[f]
-                    # q3: mirrored like the thumb's turn (one sign drew the left hand's fingers apart, the right's together)
-                    k *= 1.0 if side == "Left" else -1.0
+                    # q3 (`mirror` in the grip): mirrored like the thumb's turn (one sign drew the left hand's fingers
+                    # apart, the right's together); a flag, so the check still composes older builds' data as built
+                    k *= -1.0 if g.get("mirror") and side == "Right" else 1.0
                     q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), g["spread"] * k), q)
                 if i == 0 and f == "Thumb" and g.get("ThumbTurn"):
                     roll, swing = (v * (1.0 if side == "Left" else -1.0) for v in g["ThumbTurn"])  # mirrored

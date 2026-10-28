@@ -71,6 +71,7 @@ Thumb = [40, 40, 30]
 ThumbTurn = [30, 60]
 [grips.flat]   # Plane, PalmsOut, HandsBehindHead, a hand on a thigh: the fingers together, slightly curved, the thumb alongside
 all = [6, 8, 4]
+mirror = true  # q3: `spread` mirrored on the right hand (one sign means together on both)
 spread = 18    # q2: the fingers drawn together (their rest gaps read as spread on PalmsOut and HandsBehindHead);
                # q3: the sign mirrored per hand in the code (q2's -10 drew the right hand's together, the left's apart)
 Thumb = [0, 10, 10]
@@ -85,6 +86,7 @@ Thumb = [20, 20, 10]
 ThumbTurn = [0, 30]
 [grips.behind]  # HandsBehindHead (q3): the flat hand's fingers curled round the back of the skull, drawn together
 all = [35, 45, 30]
+mirror = true
 spread = 18
 Thumb = [0, 10, 10]
 ThumbTurn = [0, -30]

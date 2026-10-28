@@ -1274,8 +1274,9 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   - **The fist** `[100, 100, 30]`, the thumb `[40, 40, 30]` turned `[30, 60]`: the base and middle knuckles fully
     bent and the thumb over the fingers' front (q2's left a ring and the thumb standing out as a nub).
   - **`spread` mirrored per hand** (`_fingers`): the left hand's sign was the right's, so q2's -10 drew the right
-    hand's fingers together and the left's apart (PalmsOut's "claw"). Now one sign means together on both hands
-    (`flat` 18); the test checks the index and little tips mirror.
+    hand's fingers together and the left's apart (PalmsOut's "claw"). A grip's `mirror = true` makes one sign mean
+    together on both hands (`flat`, `behind`: 18); a flag, so `--check` still composes older builds' `pose_data.json`
+    as built (the first q3 verify went red on s11's right fingers); the test checks the index and little tips mirror.
   - **`behind`**, the HandsBehindHead grip: the flat hand's fingers curled round the skull (`[35, 45, 30]`) and drawn
     together; the back view showed a blob of spread fingers.
   - **The akimbo**: the elbows further back (`elbow` [1.0, -0.7, 0.15]: the akimbo reads from the side), and
