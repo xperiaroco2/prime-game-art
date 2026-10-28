@@ -51,7 +51,14 @@ L.MATERIALS.update({
     # lens C step 2: the conduits' cyan core, brighter than int_cyan's e 0.05 (ship.toml [light.mats], l 0)
     "int_cyan__lens_core": {**L.MATERIALS["int_cyan"]},
 })
-BRONZE, BRONZE2, EDGE = "gill_bronze", "gill_bronze2", "gill_edge"   # the stations' bronze (ship.gd swaps the shader)
+# the stations' shared bronze (godot/console/console.gd's `bronze` on console_metal.gdshader): ship.gd swaps these three
+# for that shader by name (LENS_BRONZE), the GLB keeps the same colours for any other viewer (linear here); the faces a
+# rich bronze, the second tone a little darker, the edges a glossy bevel (the values the lens C shots were judged with)
+for _n, (_c, _m, _r) in {"lens_bronze": ((0.64, 0.42, 0.22), 0.70, 0.30),
+                         "lens_bronze2": ((0.58, 0.38, 0.20), 0.70, 0.32),
+                         "lens_edge": ((0.74, 0.52, 0.30), 0.85, 0.18)}.items():
+    L.MATERIALS.setdefault(_n, {"base": (*(x ** 2.2 for x in _c), 1.0), "metallic": _m, "roughness": _r})
+BRONZE, BRONZE2, EDGE = "lens_bronze", "lens_bronze2", "lens_edge"
 
 # --- the drawing's numbers (cm) -----------------------------------------------------------------------------------
 ALCOVE = {"back": 10.0, "open_front": 50.0, "open_back": 46.0, "top": 200.0, "chamfer": (182.0, 34.0),
