@@ -1263,6 +1263,29 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     -10 draws the fingers together.
   - **`close_hands_<char>.png`** (`pose_shots.gd`): one hand per arms pose on Stand, front and three-quarter
     (HandsBehindHead from behind), the hand-shape library's judge.
+- **p3 q3: the critic's ranking fixed** (a fresh critic ranked the 48 pairs of the q2 build: 11 good, 33 weak, 4
+  ugly; variant grids in `anim_bare/poses/p3/q3/`, numbers in `tools/out/poses/p3/q3/`):
+  - **Plane level**: one `both` arm, the wings level (`upper` [1.0, -0.4, 0.04]); the old bank (13 degrees, one arm
+    up and one down) read as a droop on every legs pose, worst on Sit and Squat (ugly on Sit).
+  - **Heart**: the wrists 0.75 hand lengths lower and further forward (`offset` [0.4, 1.3, -0.5]): the heart in front
+    of the chest, not at the chin. The `heart` grip: the index curled into the lobes, the other three fingers a fist
+    behind it, the thumbs pointing down and in to the tip (a search of 36 turns and curls, `thumb.log`: the straight
+    thumbs stood 10 cm apart). Two pinched fists at the chin were ugly on OneLeg and Kneel.
+  - **The fist** `[100, 100, 30]`, the thumb `[40, 40, 30]` turned `[30, 60]`: the base and middle knuckles fully
+    bent and the thumb over the fingers' front (q2's left a ring and the thumb standing out as a nub).
+  - **`spread` mirrored per hand** (`_fingers`): the left hand's sign was the right's, so q2's -10 drew the right
+    hand's fingers together and the left's apart (PalmsOut's "claw"). Now one sign means together on both hands
+    (`flat` 18); the test checks the index and little tips mirror.
+  - **`behind`**, the HandsBehindHead grip: the flat hand's fingers curled round the skull (`[35, 45, 30]`) and drawn
+    together; the back view showed a blob of spread fingers.
+  - **The akimbo**: the elbows further back (`elbow` [1.0, -0.7, 0.15]: the akimbo reads from the side), and
+    **`legs_variant`** (an arm's settings for one legs pose's variant, on top of `variant`): the fist up the waist's
+    side where the thighs rise to it (Squat 1.1, Sit, OneLeg and Kneel 1.0 hand lengths up, was 0.6; Sit at 1.15
+    read 16 cm, `sit.py`): on Sit and
+    Squat the fists had landed on the thighs (Sit+HandsOnHips ugly), on OneLeg and Kneel on the raised knee. The
+    knuckles stand 10.8 to 12.7 cm from the waist's mark there: the mark contact's `mark_cm` is 13.
+  - **Flex**: the upper arms more out and the forearms leaning out (`upper` [1.0, 0.45, 0.15], `lower` [0.3, 0.2,
+    1.0]): in 3/4 the near fist sat on the cheek.
 - **The check composes from the build's own data.** The build writes `build/<char>/pose_data.json` (the TOML as
   solved); `alien_poses_run.py --check` composes the Blender reference from it and prints a `NOTE` when the TOML has
   changed since, so editing the TOML without a rebuild no longer turns verify red (round 2's red verify).

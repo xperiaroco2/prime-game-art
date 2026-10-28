@@ -356,7 +356,7 @@ class OnTheChameleon(unittest.TestCase):
         hand (the thumb tips mirror images on the rest skeleton within 1 mm); a `fingers_dir = "forearm"` hand (the
         Victory's and the akimbo's fists) keeps its wrist straight (within 1 degree)."""
         d = self.model.data
-        self.assertEqual(set(d["grips"]), {"fist", "point", "flat", "heart"})
+        self.assertEqual(set(d["grips"]), {"fist", "point", "flat", "heart", "behind"})  # q3: the behind-head hand
         for am, spec in d["arms"].items():
             for side in ("Left", "Right", "both"):
                 if isinstance(spec.get(side), dict):
@@ -366,6 +366,11 @@ class OnTheChameleon(unittest.TestCase):
             self.model._fingers(r, side, "fist")
         tl, tr = (A.S.pos(r.P()[f"{s}ThumbDistal"]) for s in A.SIDES)
         self.assertLess(A.length(A.sub(tl, (-tr[0], tr[1], tr[2]))), 0.001)
+        for side in A.SIDES:  # q3: the flat hand's `spread` mirrors too (q2's drew one hand's fingers apart)
+            self.model._fingers(r, side, "flat")
+        for f in ("Index", "Little"):
+            tl, tr = (A.S.pos(r.P()[f"{s}{f}Distal"]) for s in A.SIDES)
+            self.assertLess(A.length(A.sub(tl, (-tr[0], tr[1], tr[2]))), 0.001, f)
         for am, legs in (("Victory", "Stand"), ("HandsOnHips", "Stand")):
             P = A.compose(self.model.legs(legs), self.model.arms(am)).P()
             for s in A.SIDES:

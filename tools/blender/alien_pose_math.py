@@ -501,6 +501,8 @@ class Model:
                 continue
             if ref is not None and arm.get("variant"):  # a per-legs variant's own settings (the hip hand's fingers)
                 arm = {**arm, **arm["variant"]}
+            if ref is not None and legs in arm.get("legs_variant", {}):  # q3: one legs pose's own settings on top
+                arm = {**arm, **arm["legs_variant"][legs]}  # (the akimbo fist higher where the thighs rise to the waist)
             if arm.get("shoulder"):
                 r.turn_world(f"{side}Shoulder", turn_q(*arm["shoulder"], side=side))
             if arm["mode"] == "fk":
@@ -557,6 +559,8 @@ class Model:
                 q = M.q_axis_angle((1.0, 0.0, 0.0), deg)
                 if i == 0 and g.get("spread") and f != "Thumb":
                     k = {"Index": -1.0, "Middle": -0.3, "Ring": 0.4, "Little": 1.0}[f]
+                    # q3: mirrored like the thumb's turn (one sign drew the left hand's fingers apart, the right's together)
+                    k *= 1.0 if side == "Left" else -1.0
                     q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), g["spread"] * k), q)
                 if i == 0 and f == "Thumb" and g.get("ThumbTurn"):
                     roll, swing = (v * (1.0 if side == "Left" else -1.0) for v in g["ThumbTurn"])  # mirrored
