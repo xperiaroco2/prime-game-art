@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ship_interior as S  # noqa: E402
 import ship_interior_vent as V  # noqa: E402
+import ship_interior_lens as LN  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "layouts" / "ship" / "interior.toml"
@@ -208,6 +209,40 @@ PIECES |= {
     "station_vent_e": ("station_vent", {"id": "station_vent_e", "side": "e"}, False),
     "station_vent_w": ("station_vent", {"id": "station_vent_w", "side": "w"}, False),
 }
+# lens room C, step 1 (ship_interior_lens.py): the charger's alcove and conduits in both lens rooms, the two facets
+# beside it plain; the east room's lounge on its facets -109.77..+21.95 (their panels' relief above the sofa's spine,
+# their windows' sill a flush 3 cm ledge, the spine the shelf), the table and the spine's lamp, speaker and plant
+_TIP_HALF = S.R_TIP * math.sin(math.radians(S.TIP_STEP / 2))
+PIECES |= {
+    "tip_panel_plain": ("wall_panel", {"half": _TIP_HALF, "height": S.H_TIP, "tone": "a", "plain": True}, True),
+    "tip_panel_low_a": ("wall_panel", {"half": _TIP_HALF, "height": S.H_TIP, "tone": "a", "v0": 0.92}, True),
+    "tip_panel_low_b": ("wall_panel", {"half": _TIP_HALF, "height": S.H_TIP, "tone": "b", "v0": 0.92}, True),
+    "tip_window_lounge_a": ("tip_window", {"tone": "a", "ledge": 0.03}, True),
+    "tip_window_lounge_b": ("tip_window", {"tone": "b", "ledge": 0.03}, True),
+    "tip_sill_strip_lounge": ("tip_sill_strip", {"ledge": 0.03}, False),
+    "lens_alcove": ("lens_alcove", {}, True),
+    "lens_conduits_e": ("lens_conduits", {"side": "e"}, False),
+    "lens_conduits_w": ("lens_conduits", {"side": "w"}, False),
+    "lounge_sofa_base": ("lounge_sofa_base", {}, True),        # the collider: the base only (the drawing)
+    "lounge_sofa_fore": ("lounge_sofa", {"arm": -1}, False),
+    "lounge_sofa_mid": ("lounge_sofa", {}, False),
+    "lounge_sofa_mid_dark": ("lounge_sofa", {"tone": "dark"}, False),
+    "lounge_sofa_aft": ("lounge_sofa", {"arm": 1}, False),
+    "lounge_pillow_red": ("lounge_pillow", {"y": -0.1}, False),
+    "lounge_pillow_dark": ("lounge_pillow", {"y": 0.08, "fabric": "lens_pillow_slate"}, False),   # step 4: slate
+    "lounge_throw": ("lounge_throw", {}, False),   # step 4: c_lounge's folded charcoal throw
+    "lounge_table": ("lounge_table", {}, True),
+    "lounge_cans": ("lounge_cans", {}, False),
+    "lounge_lamp": ("lounge_lamp", {}, False),
+    "lounge_speaker": ("lounge_speaker", {}, False),
+    "lounge_plant": ("lounge_plant", {}, False),
+}
+# the sofa's facets (indices into tip_vertices' pairs, the east room) and each one's module and pillow
+SOFA_LO, SOFA_HI = LN.SOFA_K[0] * S.TIP_STEP, LN.SOFA_K[1] * S.TIP_STEP
+SOFA_MODULES = {1: "lounge_sofa_fore", 2: "lounge_sofa_mid", 3: "lounge_sofa_mid_dark", 4: "lounge_sofa_mid",
+                5: "lounge_sofa_mid", 6: "lounge_sofa_aft"}
+SOFA_PILLOWS = {2: "lounge_pillow_red", 5: "lounge_pillow_dark"}
+SOFA_THROWS = {4: "lounge_throw"}   # step 4
 # step 2: a station piece's spot and its box [u0, u1, v0, v1, h0, h1] in the spot's frame (u along the wall, v out
 # of it, h over the deck): `ship --check` holds it inside the spot's plain band, depth and the room's height
 UNITS: dict[str, tuple[str, list[float]]] = {"station_vent_e": ("vent_e", V.UNIT), "station_vent_w": ("vent_w", V.UNIT)}
@@ -440,12 +475,24 @@ def placements() -> list[tuple[str, list[float], float]]:
         ends = {round(tv[band[0]], 4), round(tv[band[-1] + 1], 4)}
         for i, (a0, a1) in enumerate(zip(tv, tv[1:])):
             a = (a0 + a1) / 2
+            lounge = s > 0 and SOFA_LO < a < SOFA_HI   # lens C: the east lounge's facets
             if i in band:   # lens step 1: the window band (the west room's mirrored: + aft in both)
-                put("tip_window_a" if i % 2 else "tip_window_b", polar(apo, a, c, room), room - a)
+                put(("tip_window_lounge_" if lounge else "tip_window_") + ("a" if i % 2 else "b"),
+                    polar(apo, a, c, room), room - a)
                 put("tip_glass", polar(apo, a, c, room), room - a)
-                put("tip_sill_strip", polar(apo, a, c, room), room - a)
+                put("tip_sill_strip_lounge" if lounge else "tip_sill_strip", polar(apo, a, c, room), room - a)
+            elif abs(s * a - RENEWER_DEG) < S.TIP_STEP / 2 + 0.01:   # lens C: the two facets behind the alcove
+                put("tip_panel_plain", polar(apo, a, c, room), room - a)
             else:
-                put("tip_panel_a" if i % 2 else "tip_panel_b", polar(apo, a, c, room), room - a)
+                put(("tip_panel_low_" if lounge else "tip_panel_") + ("a" if i % 2 else "b"),
+                    polar(apo, a, c, room), room - a)
+            if lounge:
+                put("lounge_sofa_base", polar(apo, a, c, room), room - a)
+                put(SOFA_MODULES[i], polar(apo, a, c, room), room - a)
+                if i in SOFA_PILLOWS:
+                    put(SOFA_PILLOWS[i], polar(apo, a, c, room), room - a)
+                if i in SOFA_THROWS:
+                    put(SOFA_THROWS[i], polar(apo, a, c, room), room - a)
         for a in tv:
             v = round(a, 4)
             if abs(abs(a) - door) < 1e-6 or v in ends:
@@ -453,6 +500,8 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put("tip_pilaster_strip", polar(S.R_TIP, a, c, room), room - a)
             elif v in band_v:
                 put("tip_mullion", polar(S.R_TIP, a, c, room), room - a)
+            elif s > 0 and SOFA_LO - 0.01 <= a <= SOFA_HI + 0.01:   # lens C: no trunk behind the east sofa
+                pass
             elif abs(a) > 70.0 and abs(s * a - RENEWER_DEG) > 25.0:   # the door's side: cable trunks, off the renewer
                 put("tip_trunk", polar(S.R_TIP, a, c, room), room - a)
                 put("tip_trunk_cables", polar(S.R_TIP, a, c, room), room - a)
@@ -461,6 +510,14 @@ def placements() -> list[tuple[str, list[float], float]]:
         p = polar(-S.TIP_CHORD, 180.0, c, room)
         for pid in ("tip_portal", "portal_strip_l", "portal_strip_r"):
             put(pid, p, room - 180.0)
+        # lens C: the charger's alcove on the renewer's vertex, its conduits; the east lounge's free pieces
+        ren = s * RENEWER_DEG
+        put("lens_alcove", polar(S.R_TIP, ren, c, room), room - ren)
+        put("lens_conduits_" + ("e" if s > 0 else "w"), polar(S.R_TIP, ren, c, room), room - ren)
+        if s > 0:
+            for pid in ("lounge_table", "lounge_cans", "lounge_lamp", "lounge_speaker", "lounge_plant"):
+                r, th, face = LN.item_polar("lounge_table" if pid == "lounge_cans" else pid)
+                put(pid, polar(r, th, c, room), room - face)
 
     # --- the vault (lens step 1): its shell behind the hall's back door (the door itself is a hall segment)
     put("vault_shell", [0.0, S._VAULT["y"][0] - S.HALL_C[1]])
@@ -503,7 +560,7 @@ PLAIN: dict[str, list[float]] = {
     **{pid: [-_FACE, _FACE, -PIECES[pid][1]["plain"], PIECES[pid][1]["plain"]]
        for pid in ("hall_panel_flat_socket", "hall_panel_flat_sockf")},
     **{f"tip_panel_{t}": [-_FACE, _FACE, -PIECES[f"tip_panel_{t}"][1]["half"], PIECES[f"tip_panel_{t}"][1]["half"]]
-       for t in "ab"},
+       for t in ("a", "b", "plain")},
 }
 
 

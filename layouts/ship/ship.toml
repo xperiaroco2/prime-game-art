@@ -204,15 +204,15 @@ id = "renewer_e"                              # lens step 1: on the lens's aft w
 at = [10.2686, 3.2369]                        # axis, clear of the window band (rebuild E: (9.922, 4.381) on the axis);
 normal = [0.1129, -0.9936]                    # the player stands 1.453 m in, the pass behind runs forward across the room
 room = "tip_e"
-depth_m = 1.053                               # the crystal charger's reach from the wall's face (its report's d 105.25 cm;
-                                              # fix1: was 0.9, which stood the player inside its front pads)
+depth_m = 0.70                                # lens C: the charger in its alcove reaches 70 cm from the vertex (the
+                                              # drawing; was 1.053, the legs' charger's front pads)
 
 [[stations.spot]]
 id = "renewer_w"
 at = [-10.2686, 3.2369]
 normal = [-0.1129, -0.9936]
 room = "tip_w"
-depth_m = 1.053
+depth_m = 0.70
 
 [ramp]                                       # the mouth ramp, north at the centre; it meets the ground
 width_m = 3.3                                # rebuild C: the mouth's width
@@ -409,6 +409,10 @@ sky_horizon = 10.0                             # inside 3-1 (grid_in31 C; was 5)
 [light.mats]
 int_cyan = {c = [0.05, 0.8, 1.0], e = 0.05, l = 0.0}                # inside 3-1 (grid_in31 C): glows only; 0.04 still washed the corridors teal
 int_amber = {c = [1.0, 0.42, 0.06], e = 0.14, l = 2.0, rr = 0.5}    # e 0.14: the strips pass the glow threshold, still amber
+int_amber__lens = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.0}   # lens C: the lounge's and the alcove's warm strips glow, light nothing (decor)
+int_amber__lens_toe = {c = [1.0, 0.42, 0.06], e = 0.047, l = 0.0}   # lens C step 4: the sofa's underside strip at a third of int_amber__lens
+int_amber__lens_ring = {c = [1.0, 0.42, 0.06], e = 0.3, l = 0.0}   # lens C step 4: the coffee table's lit edge ring
+int_cyan__lens_core = {c = [0.0, 0.5, 1.0], e = 0.2, l = 0.0}   # lens C step 2: the conduits' cyan core, brighter than int_cyan (0.05: it read weak beside the concept's bright tubes); glows, lights nothing
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
@@ -434,7 +438,7 @@ glass_window = {a = 0.05, r = -0.03}                                # polish 4: 
 ext_ground = {s = 0.1}                                              # polish 4: low specular, the ground no longer mirrors
 ext_dirt = {s = 0.1}                                                # the bright horizon at grazing angles (snow-white
 ext_path = {s = 0.1}                                                # through the mouth)
-glow_edge = {c = [0.85, 0.92, 1.0], l = 0.6, rr = 1.0, cull = "inside"}  # light layer: its strip lights light only the inside
+glow_edge = {c = [0.85, 0.92, 1.0], l = 0.0, rr = 1.0, cull = "inside"}  # light layer: its strip lights light only the inside. lens C step 5: l 0.6 -> 0 (glows, lights nothing; 0.1 still left a spot): the lens rim's cell light stands at its arc's centroid, 0.15 m inside each lens room under the sill (lights.json (+-12.354, 2.07, 0.698), 2.4, the clamp): the west's hot spot (the east's sofa hides its own)
 # (through the lens windows, the lens rooms' look as approved); on the hull they left hot spots: the "edge" spots pool it
 glow_nav_red = {l = 0.0}                                             # light layer: the nav lamps and landing lenses glow;
 glow_nav_green = {l = 0.0}                                           # their lights are the "nav", "nav_tail" and "land"
@@ -452,8 +456,10 @@ int_silver_c = {v = 0.55, r = 0.25, m = 0.45}
 # The capsule walk: up the ramp, through the hall into both tip rooms and back out. Points [x, y, h].
 [walk]
 # lens step 1: the corridor points on the axes (u 3.0 from the hall's centre), the lens rooms' 0.5 m past their centres
+# lens C: and each charger's player stand (renewer_e/_w at + normal (0.70 + 0.4), the alcove's reach) and back
 points = [[0.0, -14.0, 0.0], [0.0, -12.6, 0.0], [0.0, -6.6, 1.2], [0.0, -2.2, 1.2], [-2.966, 0.052, 1.6],
-          [-10.994, 1.275, 1.2], [-2.966, 0.052, 1.2], [2.966, 0.052, 1.2], [10.994, 1.275, 1.2], [2.966, 0.052, 1.6],
+          [-10.994, 1.275, 1.2], [-10.393, 2.144, 1.2], [-10.994, 1.275, 1.2], [-2.966, 0.052, 1.2],
+          [2.966, 0.052, 1.2], [10.994, 1.275, 1.2], [10.393, 2.144, 1.2], [10.994, 1.275, 1.2], [2.966, 0.052, 1.6],
           [0.0, -2.2, 1.2], [0.0, -6.6, 1.2], [0.0, -12.6, 0.0], [0.0, -14.0, 0.0]]
 
 # Views: [name, title, eye [x, y, h], look [x, y, h], fov]; the plan view "top" (south up, as plan-3) is added by the

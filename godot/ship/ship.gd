@@ -65,6 +65,15 @@ const METALS: Dictionary = {
 	"ext_seam": [Color(0.035, 0.037, 0.04), 0.6, 0.6, 0.0, 0.0, 0.0, 0.0],
 }
 const METAL_KEYS: Array = ["metallic", "roughness", "grain", "seams", "scratches", "grime"]
+## lens room C (art #263): the alcove's, conduits' and lounge's bronze is the stations' shared bronze, console.gd's
+## `bronze` on console_metal.gdshader (its metallic, roughness, wear and lift); the second tone a little darker, the
+## edges a glossy bevel. By glTF material name: [base sRGB, metallic, roughness, wear, lift].
+const LENS_BRONZE: Dictionary = {
+	"lens_bronze": [Color(0.64, 0.42, 0.22), 0.70, 0.30, 1.0, 0.06],
+	"lens_bronze2": [Color(0.58, 0.38, 0.20), 0.70, 0.32, 1.0, 0.03],
+	"lens_edge": [Color(0.86, 0.64, 0.40), 0.85, 0.14, 0.6, 0.10],
+}
+var _bronzes: Dictionary = {}
 const LIGHT_CELL_M: float = 1.6
 const INSIDE_LAYER: int = 1   # render layer bits: the inside's pieces (default) and the outside's (inside-2)
 const OUTSIDE_LAYER: int = 2
@@ -332,6 +341,21 @@ func _lk(key: String, default: float) -> float:
 	return float((_req["light"] as Dictionary).get(key, default))
 
 
+## The stations' bronze for a LENS_BRONZE name (one ShaderMaterial per name).
+func _bronze(name: String) -> Material:
+	if not _bronzes.has(name):
+		var spec: Array = LENS_BRONZE[name]
+		var sm := ShaderMaterial.new()
+		sm.shader = load("res://console/console_metal.gdshader") as Shader
+		sm.set_shader_parameter("base_color", spec[0])
+		sm.set_shader_parameter("metallic", spec[1])
+		sm.set_shader_parameter("roughness", spec[2])
+		sm.set_shader_parameter("wear", spec[3])
+		sm.set_shader_parameter("lift", spec[4])
+		_bronzes[name] = sm
+	return _bronzes[name]
+
+
 ## The shared metal for a library material name (one ShaderMaterial per name, shared by every piece).
 func _metal(name: String) -> Material:
 	if not _metals.has(name):
@@ -365,7 +389,9 @@ func _dress(ship: Node3D) -> int:
 			var mat: Material = mi.mesh.surface_get_material(i)
 			if mat == null:
 				continue
-			if METALS.has(mat.resource_name):
+			if LENS_BRONZE.has(mat.resource_name):
+				mi.set_surface_override_material(i, _bronze(mat.resource_name))
+			elif METALS.has(mat.resource_name):
 				mi.set_surface_override_material(i, _metal(mat.resource_name))
 			elif mat is BaseMaterial3D and not seen.has(mat) and not (mat as BaseMaterial3D).emission_enabled:
 				seen[mat] = 0.0

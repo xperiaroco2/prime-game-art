@@ -391,39 +391,44 @@ place = [
   ["tip_spoke", [11.3619, 0.566, 0.0], 36.336],
   ["tip_light", [11.37, 0.5601, 0.0], 36.336],
   ["tip_panel_b", [9.7434, -0.6648, 0.0], 112.084],
-  ["tip_panel_a", [10.4954, -0.8125, 0.0], 90.13],
-  ["tip_panel_b", [11.2482, -0.6683, 0.0], 68.176],
-  ["tip_window_a", [11.8924, -0.2531, 0.0], 46.222],
+  ["tip_panel_low_a", [10.4954, -0.8125, 0.0], 90.13],
+  ["lounge_sofa_base", [10.4954, -0.8125, 0.0], 90.13],
+  ["lounge_sofa_fore", [10.4954, -0.8125, 0.0], 90.13],
+  ["tip_panel_low_b", [11.2482, -0.6683, 0.0], 68.176],
+  ["lounge_sofa_base", [11.2482, -0.6683, 0.0], 68.176],
+  ["lounge_sofa_mid", [11.2482, -0.6683, 0.0], 68.176],
+  ["lounge_pillow_red", [11.2482, -0.6683, 0.0], 68.176],
+  ["tip_window_lounge_a", [11.8924, -0.2531, 0.0], 46.222],
   ["tip_glass", [11.8924, -0.2531, 0.0], 46.222],
-  ["tip_sill_strip", [11.8924, -0.2531, 0.0], 46.222],
-  ["tip_window_b", [12.3347, 0.3729, 0.0], 24.267],
+  ["tip_sill_strip_lounge", [11.8924, -0.2531, 0.0], 46.222],
+  ["lounge_sofa_base", [11.8924, -0.2531, 0.0], 46.222],
+  ["lounge_sofa_mid_dark", [11.8924, -0.2531, 0.0], 46.222],
+  ["tip_window_lounge_b", [12.3347, 0.3729, 0.0], 24.267],
   ["tip_glass", [12.3347, 0.3729, 0.0], 24.267],
-  ["tip_sill_strip", [12.3347, 0.3729, 0.0], 24.267],
-  ["tip_window_a", [12.5109, 1.1188, 0.0], 2.313],
+  ["tip_sill_strip_lounge", [12.3347, 0.3729, 0.0], 24.267],
+  ["lounge_sofa_base", [12.3347, 0.3729, 0.0], 24.267],
+  ["lounge_sofa_mid", [12.3347, 0.3729, 0.0], 24.267],
+  ["lounge_throw", [12.3347, 0.3729, 0.0], 24.267],
+  ["tip_window_lounge_a", [12.5109, 1.1188, 0.0], 2.313],
   ["tip_glass", [12.5109, 1.1188, 0.0], 2.313],
-  ["tip_sill_strip", [12.5109, 1.1188, 0.0], 2.313],
-  ["tip_window_b", [12.3954, 1.8765, 0.0], -19.641],
+  ["tip_sill_strip_lounge", [12.5109, 1.1188, 0.0], 2.313],
+  ["lounge_sofa_base", [12.5109, 1.1188, 0.0], 2.313],
+  ["lounge_sofa_mid", [12.5109, 1.1188, 0.0], 2.313],
+  ["lounge_pillow_dark", [12.5109, 1.1188, 0.0], 2.313],
+  ["tip_window_lounge_b", [12.3954, 1.8765, 0.0], -19.641],
   ["tip_glass", [12.3954, 1.8765, 0.0], -19.641],
-  ["tip_sill_strip", [12.3954, 1.8765, 0.0], -19.641],
+  ["tip_sill_strip_lounge", [12.3954, 1.8765, 0.0], -19.641],
+  ["lounge_sofa_base", [12.3954, 1.8765, 0.0], -19.641],
+  ["lounge_sofa_aft", [12.3954, 1.8765, 0.0], -19.641],
   ["tip_window_a", [12.005, 2.536, 0.0], -41.596],
   ["tip_glass", [12.005, 2.536, 0.0], -41.596],
   ["tip_sill_strip", [12.005, 2.536, 0.0], -41.596],
   ["tip_panel_b", [11.3964, 3.0018, 0.0], -63.55],
-  ["tip_panel_a", [10.6578, 3.2063, 0.0], -85.504],
-  ["tip_panel_b", [9.8962, 3.1198, 0.0], -107.458],
+  ["tip_panel_plain", [10.6578, 3.2063, 0.0], -85.504],
+  ["tip_panel_plain", [9.8962, 3.1198, 0.0], -107.458],
   ["tip_panel_a", [9.2223, 2.7548, 0.0], -129.413],
   ["tip_pilaster", [9.3816, -0.5181, 0.0], 123.061],
   ["tip_pilaster_strip", [9.3816, -0.5181, 0.0], 123.061],
-  ["tip_trunk", [10.1051, -0.8116, 0.0], 101.107],
-  ["tip_trunk_cables", [10.1051, -0.8116, 0.0], 101.107],
-  ["tip_trunk_clip", [10.1051, -0.8116, 0.55], 101.107],
-  ["tip_trunk_clip", [10.1051, -0.8116, 1.3], 101.107],
-  ["tip_trunk_clip", [10.1051, -0.8116, 2.05], 101.107],
-  ["tip_trunk", [10.8858, -0.8134, 0.0], 79.153],
-  ["tip_trunk_cables", [10.8858, -0.8134, 0.0], 79.153],
-  ["tip_trunk_clip", [10.8858, -0.8134, 0.55], 79.153],
-  ["tip_trunk_clip", [10.8858, -0.8134, 1.3], 79.153],
-  ["tip_trunk_clip", [10.8858, -0.8134, 2.05], 79.153],
   ["tip_pilaster", [11.6105, -0.5231, 0.0], 57.199],
   ["tip_pilaster_strip", [11.6105, -0.5231, 0.0], 57.199],
   ["tip_mullion", [12.1742, 0.017, 0.0], 35.244],
@@ -437,6 +442,13 @@ place = [
   ["tip_portal", [9.1512, 0.9945, 0.0], 171.336],
   ["portal_strip_l", [9.1512, 0.9945, 0.0], 171.336],
   ["portal_strip_r", [9.1512, 0.9945, 0.0], 171.336],
+  ["lens_alcove", [10.2686, 3.2369, 0.0], -96.481],
+  ["lens_conduits_e", [10.2686, 3.2369, 0.0], -96.481],
+  ["lounge_table", [10.2967, 0.3747, 0.0], 103.836],
+  ["lounge_cans", [10.2967, 0.3747, 0.0], 103.836],
+  ["lounge_lamp", [11.7059, -0.3071, 0.0], 46.222],
+  ["lounge_speaker", [12.1825, 0.2544, 0.0], 24.267],
+  ["lounge_plant", [12.4141, 0.9536, 0.0], 2.313],
   ["tip_floor_base", [-10.5, 1.2, 0.0], -171.336],
   ["tip_floor_disc", [-10.5, 1.2, 0.0], -171.336],
   ["tip_floor_rim", [-10.5, 1.2, 0.0], -171.336],
@@ -466,8 +478,8 @@ place = [
   ["tip_spoke", [-11.134, 2.0619, 0.0], -126.336],
   ["tip_light", [-11.1399, 2.07, 0.0], -126.336],
   ["tip_panel_b", [-9.2223, 2.7548, 0.0], -50.587],
-  ["tip_panel_a", [-9.8962, 3.1198, 0.0], -72.542],
-  ["tip_panel_b", [-10.6578, 3.2063, 0.0], -94.496],
+  ["tip_panel_plain", [-9.8962, 3.1198, 0.0], -72.542],
+  ["tip_panel_plain", [-10.6578, 3.2063, 0.0], -94.496],
   ["tip_panel_a", [-11.3964, 3.0018, 0.0], -116.45],
   ["tip_window_b", [-12.005, 2.536, 0.0], -138.404],
   ["tip_glass", [-12.005, 2.536, 0.0], -138.404],
@@ -512,6 +524,8 @@ place = [
   ["tip_portal", [-9.1512, 0.9945, 0.0], 8.664],
   ["portal_strip_l", [-9.1512, 0.9945, 0.0], 8.664],
   ["portal_strip_r", [-9.1512, 0.9945, 0.0], 8.664],
+  ["lens_alcove", [-10.2686, 3.2369, 0.0], -83.519],
+  ["lens_conduits_w", [-10.2686, 3.2369, 0.0], -83.519],
   ["vault_shell", [0.0, 3.85, 0.0], 0.0],
   ["cup_a", [0.85, -3.22, 0.0], 145.0],
   ["spill_a", [0.85, -3.22, 0.0], 145.0],
@@ -1159,3 +1173,127 @@ collide = false
 args = { id = "station_vent_w", side = "w" }
 spot = "vent_w"
 unit = [-0.8, 0.8, -0.01, 0.5, -0.02, 1.85]
+
+[[pieces]]
+id = "tip_panel_plain"
+builder = "wall_panel"
+collide = true
+args = { half = 0.39036, height = 2.35, tone = "a", plain = true }
+plain = [-0.25, 0.25, -0.39036, 0.39036]
+
+[[pieces]]
+id = "tip_panel_low_a"
+builder = "wall_panel"
+collide = true
+args = { half = 0.39036, height = 2.35, tone = "a", v0 = 0.92 }
+
+[[pieces]]
+id = "tip_panel_low_b"
+builder = "wall_panel"
+collide = true
+args = { half = 0.39036, height = 2.35, tone = "b", v0 = 0.92 }
+
+[[pieces]]
+id = "tip_window_lounge_a"
+builder = "tip_window"
+collide = true
+args = { tone = "a", ledge = 0.03 }
+
+[[pieces]]
+id = "tip_window_lounge_b"
+builder = "tip_window"
+collide = true
+args = { tone = "b", ledge = 0.03 }
+
+[[pieces]]
+id = "tip_sill_strip_lounge"
+builder = "tip_sill_strip"
+collide = false
+args = { ledge = 0.03 }
+
+[[pieces]]
+id = "lens_alcove"
+builder = "lens_alcove"
+collide = true
+
+[[pieces]]
+id = "lens_conduits_e"
+builder = "lens_conduits"
+collide = false
+args = { side = "e" }
+
+[[pieces]]
+id = "lens_conduits_w"
+builder = "lens_conduits"
+collide = false
+args = { side = "w" }
+
+[[pieces]]
+id = "lounge_sofa_base"
+builder = "lounge_sofa_base"
+collide = true
+
+[[pieces]]
+id = "lounge_sofa_fore"
+builder = "lounge_sofa"
+collide = false
+args = { arm = -1 }
+
+[[pieces]]
+id = "lounge_sofa_mid"
+builder = "lounge_sofa"
+collide = false
+
+[[pieces]]
+id = "lounge_sofa_mid_dark"
+builder = "lounge_sofa"
+collide = false
+args = { tone = "dark" }
+
+[[pieces]]
+id = "lounge_sofa_aft"
+builder = "lounge_sofa"
+collide = false
+args = { arm = 1 }
+
+[[pieces]]
+id = "lounge_pillow_red"
+builder = "lounge_pillow"
+collide = false
+args = { y = -0.1 }
+
+[[pieces]]
+id = "lounge_pillow_dark"
+builder = "lounge_pillow"
+collide = false
+args = { y = 0.08, fabric = "lens_pillow_slate" }
+
+[[pieces]]
+id = "lounge_throw"
+builder = "lounge_throw"
+collide = false
+
+[[pieces]]
+id = "lounge_table"
+builder = "lounge_table"
+collide = true
+
+[[pieces]]
+id = "lounge_cans"
+builder = "lounge_cans"
+collide = false
+
+[[pieces]]
+id = "lounge_lamp"
+builder = "lounge_lamp"
+collide = false
+
+[[pieces]]
+id = "lounge_speaker"
+builder = "lounge_speaker"
+collide = false
+
+[[pieces]]
+id = "lounge_plant"
+builder = "lounge_plant"
+collide = false

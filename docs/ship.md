@@ -1320,7 +1320,8 @@ writes the ship's game-ready package (for prime-game#1225 and #1285) from `layou
 (its ARCHITECTURE 11.1), as the House's export (`docs/house.md` "The export"):
 
 - `assets/environment/ship/`: the 168 pieces' GLBs, each with a minimal `.import` (11.2's options); `metal.gdshader`
-  and `night_sky.gdshader` (copies of `godot/ship/`'s); `materials/metal_<name>.tres` (one per shared metal of
+  and `night_sky.gdshader` (copies of `godot/ship/`'s), `console_metal.gdshader` (`godot/console/`'s, the lens
+  bronze's shader); `materials/metal_<name>.tres` (one per shared metal of
   `ship.gd` METALS), `night_sky.tres`, `night_env.tres` (the night environment: AgX, glow, SSAO, SSIL, fog, the star
   sky); the vents' normal maps the GLBs' import extracts (`station_vent_<e|w>_vent_a_normal.png`). Data only.
 - `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the 1092
@@ -1351,3 +1352,95 @@ on every colliding piece; no script on any node; the station spots; the 1.36 m c
 the package in an off-screen window: the mean absolute difference (0..255, at most 2.0) and the share of pixels off
 by more than 16, with each view's draw calls, primitives and GPU ms. `DIR/_check/report.json` holds the numbers;
 `assets/environment/ship/` commits the manifest (the files' hashes), `report.json` and `HANDOFF.md`, not the GLBs.
+
+## Lens room C, step 1: the charger's alcove and the east lounge (2026-10-28)
+
+The engineer's look C for the lens rooms (prime-game#1095, 2026-10-27: "the charger in the wall and a lounge corner"),
+built from the design's cm drawing (prime-game-design `ideas/ship-components/lens-room/drawing/drawing.js`; the concept
+`c_lounge.jpg`). Static decor, `tools/blender/ship_interior_lens.py`; placed by `ship_interior_place.py`; checked by
+`tools/tests/test_ship_lens.py`. (History, step 1's plan: the charger unit itself, a faceted pedestal under the
+unchanged head, came in step 2: `assets/prop/crystal_charger`, `tools/blender/charger_*.py`.)
+
+The bronze (jambs, conduits, sofa, table, lamp, plant pot) is the stations' shared bronze: `lens_bronze`,
+`lens_bronze2` and `lens_edge` in `ship_interior_lens.py`, which `godot/ship/ship.gd` swaps by name (`LENS_BRONZE`)
+for `godot/console/console_metal.gdshader`. (Built on the gills branch with its `gill_*` materials; those were
+rejected, and the lens rooms came to `main` with the same values under their own names.) `ship --export` ships
+it: `tools/runner/ship_export.py` `SHADERS` maps each art shader's path in the `godot/` project to its file beside the
+pieces (`console/console_metal.gdshader` -> `assets/environment/ship/console_metal.gdshader`), and `leftovers()`
+refuses any `res://` path outside the package.
+
+**The alcove (both rooms, `lens_alcove`, a collider; `lens_conduits_e`/`_w`, none).** On each renewer spot's vertex
+(87.82 deg aft of the room's outward axis), in the charger's frame (`charger_dims.toml`: u across, d out of the wall
+from the vertex, h up; cm), the piece's origin the vertex on the deck:
+
+| Part | Numbers (cm) |
+|---|---|
+| Back panel | graphite, a chord at d 10 across u +-46, h 0..200; a raised plate +-40, h 10..188 |
+| Opening | u +-46 at the back (d 10), +-50 at the front (d 46), top 200, its top corners cut (+-50, 182) -> (+-34, 200) |
+| Jambs | bronze, u +-50..60, face d 46, h 0..200, a 1 cm face plate; the lintel u +-60, h 200..226, d 0..46 |
+| Warm strips | on each cheek (d 22..34, h 104..196), under the head (u +-26, h 194..198), on the lintel (u +-14, h 210..214) |
+| Conduits | four, Ø 11, axes at u +-68, d 21; the lower leaves the jamb's outer face at h 92 and turns down (r 8) into the deck; the upper leaves at 170 and turns up into the ceiling; a 3 cm cyan core on the room side |
+| Collars | Ø 14 x 4 at the jamb's face and on the straight runs at h 40 and 210; flanges Ø 16 x 3 at the deck and the ceiling |
+
+The ceiling slants, so the two sides' conduits reach it at different heights: one piece per room (the east room's +u
+runs toward the door, 2.414 m; the west room's, turned not mirrored, outward, 2.383 m). The two facets behind the
+alcove are `tip_panel_plain` (flat plates, no diamond: the back panel stands 10 cm off the vertex and the diamonds'
+relief stood 17 cm). `renewer_e`/`_w` `depth_m` is 0.70 (the charger's reach from the vertex; the crystal's axis moves to
+d 38, the charger step's), so the player stands at (+-10.393, 2.144); the walk goes there and back in both rooms
+(18 points, was 14).
+
+**The east lounge (tip_e only; tip_w waits for the engineer's pick).** theta from the room's outward axis, + aft.
+
+| Part | Numbers (cm, d from a facet's face) |
+|---|---|
+| Sofa | six modules, one per facet, theta -109.77..+21.95, each ending on its vertices' bisectors (3 mm joints, the cushions 1 cm) |
+| Spine | bronze, d 0..18, h 0..88, a bright edge strip under its top |
+| Back cushion | d 18..32, h 44..80, its top 4 back; terracotta |
+| Base | `lounge_sofa_base`, the collider: d 18..76, h 10..30 over a graphite toe recess d 18..72, h 0..10; the warm strip on the recess at h 7..9 |
+| Seat cushion | d 32..76, h 30..44; terracotta, the third module charcoal |
+| Arms | 14 wide, h 30..58 on the base, d 18..76, at both ends |
+| Table | `lounge_table`, the collider: Ø 56, h 48 at (10.297, 0.375) (theta -112.5, r 85): a plinth with a warm ring, a 12-sided drum, the top with a warm edge ring and a graphite inset; two cans |
+| On the spine | the lamp Ø 18 x 36 at (11.706, -0.307), the speaker 34 x 22 x 16 at (12.183, 0.254), the plant (pot Ø 16 x 14, blades to 40) at (12.414, 0.954), each at d 9, facing its facet |
+| Pillows | two throw pillows (c_lounge), on the second (terracotta) and fifth (charcoal) modules |
+
+The lounge's facets change round it: their panels' diamonds start at 0.92 m (`tip_panel_low_a`/`_b`, above the
+spine), their windows' sill is a flush 3 cm trim (`tip_window_lounge_a`/`_b`, `tip_sill_strip_lounge`: the 16 cm
+ledge stood over the spine where the lamp, the speaker and the plant stand), and the two cable trunks at -109.77 and
+-87.82 are gone (the concept has none; they stood through the spine). The floor lights at r 108 keep at least 8 cm
+from every footprint, and the line from the door to the charger's stand keeps a capsule's radius from the sofa and the
+table (`test_ship_lens`). The warm strips are `int_amber__lens` (`[light.mats]` l 0: they glow and light nothing).
+
+## Lens room C, step 2: the charger's pedestal in its alcove, the look fixes (2026-10-28)
+
+- **The charger** (`assets/prop/crystal_charger`, `docs/props.md`): the dome on legs is replaced by the drawing's
+  faceted pedestal; the crystal's axis is at d 38, the unit reaches 70 cm (the spots' `depth_m` 0.70), 0.65 cm
+  inside the opening's cheeks, its back on the back panel. `test_ship_layout` reads the charger's report again.
+- **The conduits** (deviation from the drawing): their axis moves from d 21 to **d 38** (the tubes' front at 43.5,
+  2.5 behind the jambs' face line at 46), so head-on from 2.5 m they stand beside the jambs instead of behind them;
+  u ±68, the elbows and the collars are unchanged. The cyan core is Ø 4.4 (the drawing's 3) on its own
+  `int_cyan__lens_core` (e 0.45, `l` 0: glows, lights nothing; `int_cyan` stays 0.05).
+- **The cushions**: `lens_cushion_red` a deeper terracotta (0.17, 0.036, 0.020; was 0.30, 0.075, 0.045, salmon under
+  the warm light), roughness 0.92; `cushion_block` rounds their edges (r 3 on the back, 4 on the seat, half that
+  underneath) and crowns their tops (0.8 and 1.2 cm over a plateau a third of the way in); the heights at the middle
+  are the drawing's (80, 44). The charcoal module and pillows are unchanged.
+- **The review with the charger**: `ship --shoot DIR --charger` places the charger's GLB and a crystal on
+  `renewer_e`/`_w` (review only; the package keeps the spots as markers), and a `--views` JSON row may carry a
+  reference image's path as its 6th element, shot and compared side by side (`compare_<view>.png`). Shots:
+  `<raw>/ship/v5/lens-c/r3/` (pieces `lens-c/pieces-r3`).
+
+## Lens room C, step 3: the look fixes before the review (2026-10-28)
+
+- **The "double charger"** in step 2's `lc_w_door` was the review sheet, not the scene: the sheet put `lc_e_door`
+  and `lc_w_door` edge to edge, and the two rooms are mirror images, so the east shot's charger at its right edge
+  met the west shot's at its left (the "dark wedge" was the cell join). The single shot shows one charger. Review
+  sheets now keep gutters between cells.
+- **The alcove's back panel** (`lens_graphite`, `lens_graphite2`): metallic 0.55 at roughness 0.38 mirrored the
+  room's reflection probe and read light grey. Now the drawing's graphite: dark grey, metallic 0.12, roughness 0.66
+  (the plate 0.7). The sofa's toe and fill and the table's inset share it.
+- **The cushions**: `lens_cushion_red` (0.075, 0.015, 0.010), darker and browner (step 2's 0.17 read orange-salmon).
+- **The charger**: the pedestal's detail and darker plates (`docs/props.md`, build `lens2`).
+- **`ship --shoot --charger`** runs `godot/charger/room.gd` (ship.gd plus `charger.gd` and `crystal.gd`): the charger
+  in its game look, idle, the crystal seated and spent (`"charge": 0.0`; a row's own dict can say otherwise). Before,
+  the charger wore its GLB's plain fallback and ship.gd's pass made strip lights of its emissive strips. A full
+  crystal's light floods the lens room cyan (`r4-charged/`): an open question for the crystal's light in this room.
+- Shots: `<raw>/ship/v5/lens-c/r4/` (pieces `lens-c/pieces-r4`).

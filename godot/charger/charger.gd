@@ -22,6 +22,13 @@ extends RefCounted
 const METAL := preload("res://console/console_metal.gdshader")
 
 const CHARGER_LAYER := 1 << 19   # render layer 20: the crystal's own light skips it (seat_crystal)
+## A seated crystal's own light (lens C step 5): crystal.gd's 2.6 over 2.4 m flooded the alcove, a pale blue back
+## panel and a teal top chamfer (its (0, 0.72, 1) on the orange bronze leaves mostly green). The engineer's rule for
+## the charged crystal: light around it, not a brighter surface. Seated, a soft glow that ends inside the alcove, in
+## the charger glow's whiter cyan, which stays neutral on the bronze.
+const SEATED_OMNI_ENERGY := 0.5
+const SEATED_OMNI_RANGE := 0.9
+const SEATED_OMNI_COLOUR := Color(0.3, 0.78, 1.0)
 const RISE := 0.06               # the carrier's travel up (m; the drawing's RISE)
 const TRAVEL := 0.01             # the button's travel in (m)
 const CYAN := Color(0.0, 0.45, 1.0)  # charger-3: deeper (b5 0.62 read pale blue-white in the room)
@@ -38,6 +45,13 @@ const BRONZE_FINISH := {"metallic": 0.75, "roughness": 0.3, "wear": 1.4, "lift":
 	"rough_grain": 0.06, "rough_mottle": 0.15, "edge_polish": 0.25, "shade": 0.3, "dent": 0.0, "dent_scale": 45.0,
 	"wave": 0.3, "wave_scale": 8.0}
 
+## lens C step 3 (art#263): the pedestal's plates, the same bronze family a value darker and rougher, so the big flat
+## faces hold under the lens room's warm lamp (the bright bronze read hot orange there); the deck and head keep BRONZE
+## step 4: lighter, toward the head's bronze, and the mottle low (0.3 read as brown marble on the big plates)
+const BRONZE2 := Color(0.42, 0.31, 0.2)
+const BRONZE2_FINISH := {"metallic": 0.72, "roughness": 0.4, "wear": 1.0, "lift": 0.04, "mottle": 0.1, "rough_mottle": 0.06,
+	"wave": 0.15}
+
 
 ## Puts the charger's materials on every surface under root and finds its leaves; returns the look: {"cyan",
 ## "amber", "lens" (StandardMaterial3D), "glow" (OmniLight3D), "carrier", "ring", "button", "anchor" (Node3D),
@@ -49,6 +63,12 @@ static func apply(root: Node3D) -> Dictionary:
 	bronze.set_shader_parameter("worn_color", BRONZE_EDGE)
 	for p: String in BRONZE_FINISH:
 		bronze.set_shader_parameter(p, BRONZE_FINISH[p])
+	var bronze2 := ShaderMaterial.new()  # lens C step 3: the pedestal's plates, a darker, rougher bronze
+	bronze2.shader = METAL
+	bronze2.set_shader_parameter("base_color", BRONZE2)
+	bronze2.set_shader_parameter("worn_color", BRONZE_EDGE)
+	for p: String in BRONZE_FINISH:
+		bronze2.set_shader_parameter(p, BRONZE2_FINISH.get(p, BRONZE_FINISH[p]))
 	var graphite := ShaderMaterial.new()
 	graphite.shader = METAL
 	graphite.set_shader_parameter("base_color", Color(0.272, 0.276, 0.293))
@@ -65,7 +85,7 @@ static func apply(root: Node3D) -> Dictionary:
 	lens.albedo_color = Color(0.05, 0.4, 0.6)
 	lens.clearcoat_enabled = true
 	lens.clearcoat = 1.0
-	var by_name := {"charger_bronze": bronze, "charger_graphite": graphite, "charger_cyan": cyan,
+	var by_name := {"charger_bronze": bronze, "charger_bronze2": bronze2, "charger_graphite": graphite, "charger_cyan": cyan,
 		"charger_amber": amber, "charger_lens": lens, "charger_steel": steel}
 	for m: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
 		if m.mesh == null:
@@ -94,7 +114,7 @@ static func apply(root: Node3D) -> Dictionary:
 	glow.omni_attenuation = 1.6
 	glow.shadow_enabled = false
 	root.add_child(glow)
-	glow.position = Vector3(0.0, 1.13, 0.535)  # at the crystal's middle (the model's frame: front +Z, metres)
+	glow.position = Vector3(0.0, 1.13, 0.38)  # at the crystal's middle (the model's frame: front +Z, metres)
 	var look := {"cyan": cyan, "amber": amber, "lens": lens, "glow": glow, "carrier": carrier, "ring": ring,
 		"button": button, "anchor": anchor, "carrier_rest": carrier.position if carrier else Vector3.ZERO,
 		"button_rest": button.position if button else Vector3.ZERO, "state": "idle"}
@@ -153,7 +173,7 @@ static func set_pressed(look: Dictionary, on: bool) -> void:
 
 
 ## Puts a crystal (its root, with its crystal.gd look) on the carrier's anchor, its tip on the anchor, and takes the
-## charger's layer off the crystal's own light.
+## charger's layer off the crystal's own light and softens it (SEATED_OMNI_*).
 static func seat_crystal(look: Dictionary, crystal: Node3D, crystal_look: Dictionary) -> void:
 	var anchor: Node3D = look.get("anchor")
 	if anchor == null:
@@ -166,3 +186,7 @@ static func seat_crystal(look: Dictionary, crystal: Node3D, crystal_look: Dictio
 	var omni: OmniLight3D = crystal_look.get("omni")
 	if omni != null:
 		omni.light_cull_mask = omni.light_cull_mask & ~CHARGER_LAYER
+		omni.omni_range = SEATED_OMNI_RANGE
+		omni.light_color = SEATED_OMNI_COLOUR
+		crystal_look["omni_energy"] = SEATED_OMNI_ENERGY  # crystal.gd's set_charge scales this by the charge
+		omni.light_energy = SEATED_OMNI_ENERGY * float(crystal_look.get("charge", 1.0))
