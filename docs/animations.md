@@ -922,6 +922,47 @@ in place, so steps 1's numbers stand): `cycle` turning a loop to start on the co
 the start (and, at start 0, the end frame) a loop's travel on, where they went back to the start; `stride`'s end frame
 plants the feet a loop's travel on, where the legs reached back a whole loop at the seam.
 
+### The clothed alien's two bodies (art #196, clothes step 2)
+The aliens are always clothed (the route of the engineer's yes to step 2, 2026-10-28, art #196 comment
+6469797321): our own body stays the functional base, Meshy makes only the clothes, and each garment is fitted once on
+the base body and carried to the female variant. The base is S4b's cage body (`D:/prime-art-raw/review/char/alien-parts-kit/S4b/build/alien_body.blend`,
+`tools/blender/alien_cage.py --target`), the body under both characters of `loco/f3`.
+- **Four digits.** The engineer, 2026-10-28 (comment 6467823137): three fingers and a thumb, never a fifth. The cage
+  body already builds that hand (`alien_cage.py`'s `FINGERS = ("Index", "Middle", "Ring")`: three finger tubes and a
+  thumb on one surface with the arm; the Little groups present and empty, 0 vertices). `[kinds.alien]` lists
+  `fingers_unweighted = ["Little"]` again (`docs/contract.md`; the ADR
+  `2026-10-19-alien-overlaid-face-four-fingers.md`, amendment of 2026-10-28).
+- **The female variant** is the same mesh with only vertex positions moved: `tools/blender/alien_body_female.py`
+  (headless Blender) applies `alien_female_geom.py`'s fields from a target file (`alien_female_targets/<name>.toml`,
+  every nested key checked) and proves the result on the saved file: the vertex, edge and face counts and the hashes
+  of the faces' and edges' vertex indices, the weights and the UVs equal the base's; `female.json` holds the
+  per-vertex delta report and the half widths and depths per height. The fields (each a product of
+  `(1 - t^2)^2` kernels, exactly 0 outside its box, scaled by the vertex's weight on the trunk and upper-leg bones):
+  two soft chest rounds pushed forward on the front half (no nipples), the hips' sides out linearly in x, two seat
+  rounds pushed back on the back half, the waist's sides in; nothing above 1.25 m or below 0.70 m moves, so the
+  height, neck, arms, hands, legs below the thigh and feet are the base's. f1 (`body_f1`, under
+  `<raw>/research/2026-10-22-roster/design/pilot3d/clothes/a/`): 1,044 of 9,814 vertices moved, at most 21.8 mm;
+  half width at 0.86 m 135 -> 157 mm, the seat 13 mm further back at 0.86 m, the waist at 1.00 m 106 -> 96 mm, the
+  chest 12 mm further forward on the midline at 1.14 m (20 mm at the rounds' centres).
+
+      blender -b --factory-startup --python tools/blender/alien_body_female.py -- --body <S4b alien_body.blend>           --target tools/blender/alien_female_targets/f1.toml --out <dir>
+
+  A character on it: `alien_char_run.py --body <dir>/alien_body.blend` (the legs are the base's, so no `--leg-fit`).
+- **The weld's seam.** In close-ups the bridge between the body's neck ring and the head's cut (`alien_char_build.py`:
+  24 ring vertices zipped to the head's cut loop over 8 mm) read as a thin sewn line with a dent at each ring vertex.
+  Since this step the build smooths the vertices round it after it closes (`alien_char_geom.taubin`, 12 Taubin steps,
+  each move scaled by `seam_weight`: 1 at the bridge's middle height, 0 at 22 mm below and 16 mm above; only within
+  1.5 ring radii of the neck's axis); char.json's `seam_smooth` records it, `--no-seam-smooth` builds as before.
+- **Close-ups.** `tools/blender/alien_closeups.py --blend <char>_char.blend --tag <t> --out <dir>` (headless Blender,
+  Workbench) shoots `neck_<t>.png` (the joint at 1.9 m, lens 70, and 0.8 m, lens 50; 3/4 front, side, 3/4 back of the
+  character's left; Idle and the head turned 40 degrees; texture colours beside a flat colour with cavity) and
+  `hands_<t>.png` (the left hand at 0.45 m from outside and the front in Idle, Jog_Fwd, Jump_Start and Talk_Upper, at
+  each clip's first and middle frame).
+- **The game build** is f3's: `alien_char_run.py --heads <c> --tag <tag>/build --no-shots --clip-edits
+  tools/blender/anim_sets/alien.toml --lively <c>=<lively>/v9_r2c_n4 (axolotl: axolotl_v9_r2c_n4) [--body <female>]`,
+  then `alien_loco.py --raw D:/prime-art-raw --build ../<tag>/build --out ../<loco>` (paths under the set's
+  `raw_base`), then `godot-check <glb> --profile alien --strict-contract --textured`.
+
 ### 100STYLE onto the alien, and the orientation warp (art #196, the strafe pilot)
 The strafe pilot's mocap source is 100STYLE (`sources/100style.toml`: CC BY 4.0, the credit line there; one 1.47 GB
 zip of BVH takes, 60 fps, a 23-joint skeleton in centimetres, extracted under `<raw>/downloads/100style/extracted/`).

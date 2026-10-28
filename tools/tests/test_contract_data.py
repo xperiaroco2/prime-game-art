@@ -103,13 +103,15 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(any("kinds.body.height is 'error'" in e for e in errors), errors)
         self.assertTrue(any("kinds.prop.rig is 'maybe'" in e for e in errors), errors)
 
-    def test_the_alien_is_a_body_with_five_weighted_fingers_on_the_character_budget(self) -> None:
-        # the engineer, art #196 comment 6386685364: the Little finger weighted, the character's 40k/60k
+    def test_the_alien_is_a_body_with_four_fingers_on_the_character_budget(self) -> None:
+        # the engineer, art #196 comment 6467823137: four fingers, the Little chain unweighted; comment 6386685364:
+        # the character's 40k/60k
         kinds = self.contract["kinds"]
-        for kind in ("alien", "body", "clothing", "accessory", "prop"):
+        self.assertEqual(kinds["alien"]["fingers_unweighted"], ["Little"])
+        for kind in ("body", "clothing", "accessory", "prop"):
             self.assertNotIn("fingers_unweighted", kinds[kind], kind)
         self.assertEqual(kinds["alien"]["budget"], "character")
-        own = ("budget", "bones", "spring_parent", "spring_sets", "head_top_max_m")
+        own = ("budget", "bones", "spring_parent", "spring_sets", "head_top_max_m", "fingers_unweighted")
         same = {k: v for k, v in kinds["alien"].items() if k not in own}
         self.assertEqual(same, {k: v for k, v in kinds["body"].items() if k not in ("bones", "budget")})
 

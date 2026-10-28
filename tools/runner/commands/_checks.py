@@ -524,9 +524,9 @@ def _rig_checks(
 def _finger_checks(
     report: _Report, bones: dict, weights: dict[str, int], skeleton: dict, profile: dict, rules: dict
 ) -> None:
-    """Every finger chain is present. A finger in the kind's fingers_unweighted (no kind lists one since art #196
-    comment 6386685364 gave the alien its weighted Little back) carries no weights; the others carry weights when
-    skeleton.fingers_weighted is set."""
+    """Every finger chain is present. A finger in the kind's fingers_unweighted (the alien's Little since art #196
+    comment 6467823137: four fingers) carries no weights; the others carry weights when skeleton.fingers_weighted is
+    set."""
     bare = rules.get("fingers_unweighted", [])
     problems = []
     for chain, names in _contract.finger_chains(profile).items():

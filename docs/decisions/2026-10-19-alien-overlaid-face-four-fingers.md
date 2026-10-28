@@ -38,7 +38,7 @@ Two things moved on in art#196:
 
    Godot imports the sockets under `BoneAttachment3D`, three.js under the Head bone (`docs/godot.md`, "The alien
    parts kit").
-2. **Four fingers.** *Superseded on 2026-10-24: five weighted fingers (see "Amendment of 2026-10-24").* The alien has four fingers per hand: Index, Middle, Ring and Thumb. The Little finger's three
+2. **Four fingers.** *Superseded on 2026-10-24 (five weighted fingers), restored on 2026-10-28 (see the amendments).* The alien has four fingers per hand: Index, Middle, Ring and Thumb. The Little finger's three
    bones stay in the skeleton and carry no weights. The 56-bone contract skeleton and every clip are unchanged.
 3. **Scope.** Both decisions are for the alien. The human characters, the pack bodies and the face kit's stage-1
    heads keep the contract as written until the engineer decides otherwise.
@@ -78,6 +78,20 @@ The engineer, 2026-10-24, in chat, recorded in art#196
   40,000 triangles as the target and 60,000 as the cap (`[kinds.alien] budget = "character"`).
 - Decision 1 (the overlaid face) and decision 3 (the scope) stand.
 
+## Amendment of 2026-10-28: four fingers again
+
+The engineer, 2026-10-28, in chat, recorded in art#196
+[comment 6467823137](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6467823137): "Four fingers,
+not five (three fingers and a thumb). The 2026-10-24 yes (comment 6386685364) answered 'the Little finger carries
+weights'; it was not a wish for five visible fingers. Four is the rule from now on."
+- **Four fingers.** The 2026-10-24 amendment's five weighted fingers are reversed and decision 2 holds again: three
+  fingers and a thumb per hand (Index, Middle, Ring, Thumb), the Little finger's three bones present and unweighted.
+  `[kinds.alien]` lists `fingers_unweighted = ["Little"]` again, so `check --kind alien` passes a four-finger alien
+  and fails a weighted Little (`docs/contract.md`). The skeleton and the clips are unchanged.
+- **The shared body** (`tools/blender/alien_cage.py`, S4b and the bodies built on it) already has four digits with the
+  Little groups empty; the Meshy body route that showed five (#340) is rejected.
+- The 2026-10-24 amendment's character budget (40,000 / 60,000) stands, and so do decisions 1 and 3.
+
 ## Links
 
 - The engineer's words and the stage, art#196 comments:
@@ -88,7 +102,9 @@ The engineer, 2026-10-24, in chat, recorded in art#196
   verdict, the finger question),
   [6269178628](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6269178628) ("Four fingers"),
   [6386685364](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6386685364) (five weighted
-  fingers, the character budget: the amendment).
+  fingers, the character budget: the amendment),
+  [6467823137](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6467823137) (four fingers again:
+  the amendment of 2026-10-28).
 - `2026-10-18-faces-as-morphs.md` (superseded in part), `2026-10-18-character-budgets.md`,
   `2026-10-02-art-repo-foundation.md`.
 - `docs/contract.md`, `docs/godot.md` ("The alien parts kit").
