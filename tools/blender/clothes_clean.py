@@ -144,8 +144,8 @@ def fill_holes(bm, sides: int, start: int) -> int:
 def bake_low(hi, target: int, size: int, ray: float, rough_floor: float):
     """A decimated copy of hi with fresh UVs and hi's base colour, roughness and normal baked onto it (Cycles,
     selected to active). Decimating Meshy's own UVs in place garbles the stripes and the laces (texels pulled across
-    islands), so the low mesh never keeps them. ray is the bake's reach: B's 0.04 m reached the denim beside the
-    arm and left a dark smear on the inner right sleeve. The baked roughness is raised to at least rough_floor
+    islands), so the low mesh never keeps them. ray is the bake's reach, half outside and half inside: B's 4 cm
+    inward reached the denim beside the arm (a dark smear on the inner right sleeve), 1 cm left black holes. The baked roughness is raised to at least rough_floor
     (fabric: Meshy's map read as leather gloss) and the specular is lowered, so the denim stays matte."""
     lo = hi.copy()
     lo.data = hi.data.copy()
@@ -174,7 +174,7 @@ def bake_low(hi, target: int, size: int, ray: float, rough_floor: float):
     sc.cycles.device = "CPU"
     bk = sc.render.bake
     bk.use_selected_to_active = True
-    bk.cage_extrusion = min(0.01, ray)
+    bk.cage_extrusion = ray / 2  # the rays start ray/2 outside the low mesh and reach ray/2 inside it
     bk.max_ray_distance = ray
     bk.margin = 8
     hi.select_set(True)
@@ -222,7 +222,7 @@ def main() -> None:
     ap.add_argument("--bake", type=int, default=2048, help="the baked maps' size in px")
     ap.add_argument("--skin-speck", type=float, default=0.004,
                     help="skin pieces under this share of the faces become cloth (the ankle bands are larger)")
-    ap.add_argument("--ray", type=float, default=0.01, help="the bake's max ray distance in m (0.04 smeared the sleeve)")
+    ap.add_argument("--ray", type=float, default=0.03, help="the bake's reach in m, half outside and half inside the low mesh (B's 1 cm out, 4 cm in smeared the sleeve; 1 cm in all left black holes)")
     ap.add_argument("--rough-floor", type=float, default=0.85, help="the baked roughness's floor (fabric, matte)")
     ap.add_argument("--spike-deg", type=float, default=40.0, help="a boundary tip sharper than this is a spike (0: keep)")
     ap.add_argument("--hole-sides", type=int, default=10, help="fill holes of at most this many edges (0: none)")
