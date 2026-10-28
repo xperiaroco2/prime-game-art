@@ -206,7 +206,7 @@ def lighten_gills(skin, keep: float) -> dict:
     select_only([skin], active=skin)
     bpy.ops.object.modifier_move_to_index(modifier=mod.name, index=0)  # before the armature's
     bpy.ops.object.modifier_apply(modifier=mod.name)
-    skin.vertex_groups.remove(skin.vertex_groups[vg.name])
+    skin.vertex_groups.remove(skin.vertex_groups["_gill_dec"])  # (vg is stale after the apply: M1d's run read junk)
     after = sum(len(p.vertices) - 2 for p in skin.data.polygons)
     return {"keep": keep, "tris_before": tris, "gill_tris_before": gill_tris, "tris_after": after,
             "gill_tris_after": gill_tris - (tris - after)}
