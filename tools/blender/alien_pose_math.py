@@ -484,6 +484,8 @@ class Model:
             arm = spec.get(side) or spec.get("both")
             if arm is None:
                 continue
+            if ref is not None and arm.get("variant"):  # a per-legs variant's own settings (the hip hand's fingers)
+                arm = {**arm, **arm["variant"]}
             if arm.get("shoulder"):
                 r.turn_world(f"{side}Shoulder", turn_q(*arm["shoulder"], side=side))
             if arm["mode"] == "fk":
