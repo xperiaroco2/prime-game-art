@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 from .. import blender, common, ship_layout
@@ -21,6 +22,7 @@ NAME = "ship"
 HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts); --vent-anim DIR (the vents' animation in place); --play (the engineer's walk)"
 BUILD_SCRIPT = blender.SCRIPTS / "ship_build.py"
 GODOT_SCRIPT = "res://ship/ship.gd"
+CHARGER_SCRIPT = "res://charger/room.gd"   # --shoot --charger (lens C step 3)
 BUILD_TIMEOUT = 900
 GODOT_TIMEOUT = 300
 VIEW_SIZE = (1920, 1080)
@@ -43,8 +45,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--views", default="", metavar="FILE|PREFIXES",
                         help="--shoot only these views: a JSON file (a list of [name, title, eye [x, y, h], look [x, y, h],"
                              " fov] in plan coordinates, an optional 6th {\"ssil\"|\"ssao\"|\"glow\"|\"shadows\": false}"
-                             " A/B switch) and the plan view, no compares or day views; or comma-separated prefixes of"
+                             " A/B switch or a reference image's path to compare it with) and the plan view, no day views;"
+                             " or comma-separated prefixes of"
                              " ship.toml's view names (no plan view), e.g. in_vent_,cu_vent_")
+    parser.add_argument("--charger", action="store_true",
+                        help="--shoot with the crystal charger's GLB (assets/prop/crystal_charger) and a crystal on "
+                             "renewer_e and renewer_w, for the look review only (the package keeps the spots as markers)")
     parser.add_argument("--vent-states", default="", help="--shoot with the vents in a state each, e.g. e=problem,w=calm "
                         "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
     parser.add_argument("--motion", type=Path, metavar="DIR",
@@ -62,6 +68,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "(default <raw>/<raw_dir>/play)")
     parser.add_argument("--play-test", type=Path, metavar="DIR",
                         help="the --play scene off-screen: the capsule walks 2 s, saves one shot and DIR/play.json")
+    parser.set_defaults(_ship_parser=parser)   # lens C step 4: run() refuses --charger without --shoot as a usage error
 
 
 def raw(layout: dict) -> Path:
@@ -69,6 +76,8 @@ def raw(layout: dict) -> Path:
 
 
 def run(args: argparse.Namespace) -> int:
+    if getattr(args, "charger", False) and not args.shoot:
+        args._ship_parser.error("--charger only works with --shoot DIR (the look review's chargers and crystals)")
     layout = ship_layout.load()
     problems = ship_layout.check(layout)
     width, length = ship_layout.extent(layout)
@@ -111,7 +120,7 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.shoot:
-        code = shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states)
+        code = shoot(layout, out, args.shoot.resolve(), args.views, args.vent_states, args.charger)
         if code:
             return code
     if args.export:
@@ -331,8 +340,52 @@ def vent_states(spec: str) -> dict:
     return states
 
 
-def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "") -> int:
+CHARGER_GLB = common.ROOT / "assets" / "prop" / "crystal_charger" / "export" / "crystal_charger.glb"
+CRYSTAL_GLB = common.ROOT / "assets" / "prop" / "energy_crystal" / "export" / "energy_crystal.glb"
+
+
+def charger_places(layout: dict) -> list:
+    """Lens room C's look review (art#263): the charger on each renewer spot (its origin on the spot's vertex at the
+    deck, its front along the spot's normal: the charger's HANDOFF) and a crystal on its anchor (the axis 38 cm out,
+    the tip at 95.1 cm). Only --shoot --charger places them; the package keeps the spots as markers."""
+    floor, out = layout["deck"]["floor_h"], []
+    for spot in layout["stations"]["spot"]:
+        if spot["id"] not in ("renewer_e", "renewer_w"):
+            continue
+        (x, y), (nx, ny) = spot["at"], spot["normal"]
+        yaw = math.degrees(math.atan2(nx, ny))
+        out.append(["crystal_charger", [round(x, 4), floor, round(y, 4)], round(yaw, 3)])
+        out.append(["energy_crystal", [round(x + nx * 0.38, 4), round(floor + 0.951, 4), round(y + ny * 0.38, 4)],
+                    round(yaw, 3)])
+    return out
+
+
+CHARGER_STATE = {"charger": "idle", "crystal": True, "charge": 0.0}   # the game's default: idle, a spent crystal seated
+
+
+def charger_rows(views: list) -> list:
+    """--shoot --charger's views (lens C step 3): every row's 6th element becomes charger/room.gd's state, the game's
+    default (CHARGER_STATE: the charger idle, the crystal seated and spent; a full one's light floods the lens room
+    cyan) under the row's own keys."""
+    for v in views:
+        off = v[5] if len(v) > 5 else {}
+        v[5:6] = [{**CHARGER_STATE, **off}]
+    return views
+
+
+def shoot_script(charger: bool) -> str:
+    """The shoot's Godot script: charger/room.gd (ship.gd plus the charger's and the crystal's game looks) for
+    --charger, else ship.gd."""
+    return CHARGER_SCRIPT if charger else GODOT_SCRIPT
+
+
+def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "", charger: bool = False) -> int:
     req, staged = built_request(layout, out)
+    if charger:
+        req["pieces"].update({"crystal_charger": "res://import/crystal_charger.glb",
+                              "energy_crystal": "res://import/energy_crystal.glb"})
+        staged.update({"crystal_charger": CHARGER_GLB, "energy_crystal": CRYSTAL_GLB})
+        req["place"] += charger_places(layout)
     if states:   # step 3: the vents calm or in their problem state, as the game drives them
         import importlib
         import sys
@@ -341,7 +394,11 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
     views, compares = shot_views(layout)
     prefixes: tuple = ()
     if only and (only.endswith(".json") or Path(only).is_file()):   # the raise (2026-10-23): a review's own views
-        views, compares = json.loads(Path(only).read_text(encoding="utf-8")), []
+        views = json.loads(Path(only).read_text(encoding="utf-8"))
+        # lens C step 2: a row whose 6th element is a string names a reference image (an absolute path) to compare
+        # the shot with side by side (an A/B dict there stays the night look's switch)
+        compares = [[v[0], v[5]] for v in views if len(v) > 5 and isinstance(v[5], str)]
+        views = [v[:5] if len(v) > 5 and isinstance(v[5], str) else v for v in views]
         layout = {**layout, "shots": {**layout["shots"], "day_views": []}}
     elif only:   # step 2: a view set alone by name prefix (the vents' in-place shots and close-ups), no plan view
         prefixes = tuple(p for p in only.split(",") if p)
@@ -364,13 +421,18 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         for key in ("top", "top_full", "day_views"):
             req.pop(key)
         req["compare"] = []
+    # lens C step 3: --charger runs charger/room.gd instead of the GLBs' plain materials, which ship.gd's pass made
+    # strip lights of
+    script = shoot_script(charger)
+    if charger:
+        charger_rows(req["views"])
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "shoot_request.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "shots.json").unlink(missing_ok=True)
-    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", script, "--",
                                   path.as_posix(), folder.as_posix()], VIEW_SIZE, GODOT_TIMEOUT)
     if code != 0 or not (folder / "shots.json").is_file():
         raise common.Failure(f"ship.gd shoot failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
@@ -399,7 +461,7 @@ def export(layout: dict, out: Path, folder: Path, compare: bool = True) -> int:
     folder.mkdir(parents=True, exist_ok=True)
     built = _ship_export.scene(layout, out, req, staged, folder)
     try:
-        summary = ship_export.write(layout, out, built, common.ROOT / "godot" / "ship", folder)
+        summary = ship_export.write(layout, out, built, common.ROOT / "godot", folder)
     except ValueError as e:
         raise common.Failure(f"ship --export: {e}") from e
     common.say(f"  package: {len(summary['files'])} files, {summary['bytes'] / 1e6:.1f} MB -> {folder.as_posix()}")

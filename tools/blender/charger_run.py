@@ -47,6 +47,10 @@ REFS = {"charger-legs.jpg": DESIGN / "charger-legs.jpg", "drawing.js": DESIGN / 
         "drawing.html": DESIGN / "charger-drawing" / "drawing.html",
         "front-ortho.jpg": DESIGN / "charger-drawing" / "front-ortho.jpg",
         "top-ortho.jpg": DESIGN / "charger-drawing" / "top-ortho.jpg"}
+# lens room C (art#263, 2026-10-28): the pedestal in the wall's alcove, from the lens room's drawing and concept
+REF_LENS = BASE / "ref-lens"
+DESIGN_LENS = Path("D:/prime-game-design/ideas/ship-components/lens-room")
+REFS_LENS = {"c_lounge.jpg": DESIGN_LENS / "c_lounge.jpg", "drawing.js": DESIGN_LENS / "drawing" / "drawing.js"}
 DIMS = tomllib.loads((Path(__file__).with_name("charger_dims.toml")).read_text(encoding="utf-8"))
 AX = DIMS["frame"]["axis_d"]
 CRYSTAL = ROOT / "assets" / "prop" / "energy_crystal" / "export" / "energy_crystal.glb"
@@ -68,8 +72,8 @@ ROOM_VIEWS = [
     ("top_down", 0.0, 35.0, (0.0, AX + 10.0, 85.0), 1.3, 64.0, IDLE),
     ("deck_charging", -20.0, 40.0, (0.0, AX, 108.0), 1.1, 44.0, CHARGING),
     ("wall_back", -62.0, 14.0, (-40.0, 18.0, 45.0), 1.0, 60.0, IDLE),
-    ("legs_low", -28.0, 3.0, (0.0, AX, 40.0), 1.9, 50.0, IDLE),
-    ("button", -15.0, 6.0, (0.0, AX + 46.0, 76.0), 0.6, 34.0, IDLE),
+    ("low", -28.0, 3.0, (0.0, AX, 40.0), 1.9, 50.0, IDLE),
+    ("button", -15.0, 6.0, (0.0, 68.0, 76.0), 0.6, 34.0, IDLE),
 ]
 TURN = [0.0, 30.0, 60.0, 90.0, 120.0, 150.0]  # the ring's full-turn check from above (it is symmetric every 180)
 # a player at the button (the capsule's centre 1.04 + 0.4 m out, eyes at 1.6 m), and the pass behind them: from the
@@ -116,7 +120,7 @@ def main() -> int:
             sheets.mkdir(exist_ok=True)
             code, output = _godot.window(["--path", str(_godot.PROJECT), "-s", "res://charger/sheet.gd", "--",
                                           "res://import/crystal_charger.glb", str(sheets), str(renders),
-                                          str(out / "room"), str(REF / "charger-legs.jpg")], (1280, 720), 300,
+                                          str(out / "room"), str(REF_LENS / "c_lounge.jpg")], (1280, 720), 300,
                                          log=out / "godot_sheet.log")
             print(*[x for x in output.splitlines() if x.startswith("CHARGER ")], sep="\n")
             print(f"godot sheets: exit {code} {sheets}", flush=True)
@@ -127,12 +131,13 @@ def main() -> int:
 
 
 def copy_refs() -> None:
-    REF.mkdir(parents=True, exist_ok=True)
-    for name, src in REFS.items():
-        if not (REF / name).is_file():
-            if not src.is_file():
-                raise common.Failure(f"no reference {src} (prime-game-design beside this checkout, its PR branch)")
-            shutil.copyfile(src, REF / name)
+    for folder, refs in ((REF, REFS), (REF_LENS, REFS_LENS)):
+        folder.mkdir(parents=True, exist_ok=True)
+        for name, src in refs.items():
+            if not (folder / name).is_file():
+                if not src.is_file():
+                    raise common.Failure(f"no reference {src} (prime-game-design beside this checkout, its PR branch)")
+                shutil.copyfile(src, folder / name)
 
 
 def spot() -> dict:
@@ -278,7 +283,9 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
                                    "pivot_cm": build[k]["pivot_cm"], "open_edges": build[k]["open_edges"]}
                                for k in ("body", "carrier", "ring", "button")},
                  "size_cm": build["size_cm"], "front": "+Z (out of the wall, along the spot's normal)",
-                 "origin": "on the floor at the wall's face under the crystal's axis (the spot's `at`)"},
+                 # lens C step 4 (the review's minor 6): the origin is the spot's vertex, the axis 38 cm out
+                 "origin": "on the floor at the spot's vertex (the spot's `at`, d 0); the crystal's axis is "
+                           f"{DIMS['frame']['axis_d']:g} cm out along +Z"},
         "anchor_cm": build["anchor_cm"],
         "colliders": build["colliders"],
         "checks": build["checks"],
@@ -294,6 +301,7 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
     }
     (asset / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8", newline="\n")
     raws = [f"ship/v4/charger/{REF.name}/{name}" for name in REFS] + \
+        [f"ship/v4/charger/{REF_LENS.name}/{name}" for name in REFS_LENS] + \
         [f"ship/v4/charger/{tag}/crystal_charger.glb", f"ship/v4/charger/{tag}/crystal_charger.blend"]
     today = datetime.date.today().isoformat()
     lines = [
@@ -304,16 +312,22 @@ def write_asset(asset: Path, out: Path, tag: str, validator: dict) -> None:
         'kind = "prop"',
         'slot = ""',
         "title = \"The ship's crystal charger\"",
-        ("notes = \"The crystal charger, one on each lens room's aft wall (renewer_e, renewer_w): a squat stepped "
-         "bronze and graphite dome (Ø 100.4) raised on four long legs like the ship's landing legs (bronze struts, "
-         "steel pistons, lit pads), the slot at 95.7 cm, the fixed outer prongs to 139.7 cm, the start button at "
-         "75.9 cm; leaves: the carrier cup under the crystal (rises 6 cm, spins; crystal_anchor), the track ring with "
-         f"the inner prongs (spins), the button (presses 1 cm). {build['triangles']:,} triangles, front +Z, origin "
-         "on the floor at the wall's face. From the engineer's pick of 2026-10-25 and its drawing in cm "
-         "(prime-game-design commit a53ce6f, ideas/ship-components/stations-final: charger-legs.jpg, an AI concept "
-         "used only as a reference, and charger-drawing/; copied to the raw folder), built from code in headless "
-         "Blender (tools/blender/charger_build.py from charger_dims.toml): no part of the model was generated or "
-         "downloaded.\""),
+        ("notes = \"The crystal charger, one in each lens room's alcove on the aft wall (renewer_e, renewer_w): a "
+         "faceted pedestal (lens room C, 2026-10-28: the back u +-44 on the alcove's back panel at d 10, chamfers to "
+         "the front face u +-22 at d 68, a graphite plinth h 0..10 with a toe and a bevelled top, bronze "
+         "plates on a graphite core in three courses with a recessed lit band at h 46..52 and a frieze from h 66 "
+         "(step 3, after the lens room's a_power.jpg), the frieze's short cyan windows and bronze brackets on the "
+         "four front corners (step 4), a deck slab h 86..99.1 overhanging it), the crystal's axis 38 cm out, the slot at 95.7 cm, the fixed outer prongs to "
+         "139.7 cm, the start button at 75.9 cm; leaves: the carrier cup under the crystal (rises 6 cm, spins; "
+         "crystal_anchor), the track ring with the inner prongs (spins), the button (presses 1 cm). "
+         f"{build['triangles']:,} triangles, front +Z, origin on the floor at the spot's vertex. The head from the "
+         "engineer's pick of 2026-10-25 and its drawing in cm (prime-game-design commit a53ce6f, "
+         "ideas/ship-components/stations-final: charger-legs.jpg, an AI concept used only as a reference, and "
+         "charger-drawing/), the pedestal from the lens room's drawing (prime-game-design commit 7f335c2, "
+         "ideas/ship-components/lens-room: c_lounge.jpg, an AI concept used only as a reference, and drawing/); "
+         "copied to the raw folder. Built from code in headless Blender (tools/blender/charger_build.py from "
+         "charger_dims.toml): no part of the model was generated or downloaded. Approval: pending; the new "
+         "pedestal waits for the engineer's look yes (art#263).\""),
         f'tools = ["blender {pins.BLENDER}", "prime-game-art charger_build.py, charger_run.py", '
         f'"glTF-Validator {pins.GLTF_VALIDATOR}", "Godot {pins.GODOT} (shots)"]',
         'licence = "own-work"',

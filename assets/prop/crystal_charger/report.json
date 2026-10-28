@@ -1,17 +1,17 @@
 {
   "asset": "crystal_charger",
-  "built_by": "tools/blender/charger_run.py --tag b6 --asset assets/prop/crystal_charger",
+  "built_by": "tools/blender/charger_run.py --tag lens3 --asset assets/prop/crystal_charger",
   "mesh": {
-    "triangles": 41060,
+    "triangles": 32144,
     "by_object": {
       "body": {
-        "triangles": 26574,
+        "triangles": 17678,
         "by_material": {
-          "charger_graphite": 8944,
-          "charger_bronze": 16762,
-          "charger_cyan": 532,
-          "charger_amber": 96,
-          "charger_steel": 240
+          "charger_graphite": 5486,
+          "charger_bronze2": 2820,
+          "charger_bronze": 8802,
+          "charger_cyan": 554,
+          "charger_amber": 16
         },
         "pivot_cm": [
           0.0,
@@ -21,14 +21,14 @@
         "open_edges": 0
       },
       "carrier": {
-        "triangles": 2618,
+        "triangles": 2598,
         "by_material": {
-          "charger_bronze": 2298,
+          "charger_bronze": 2278,
           "charger_cyan": 320
         },
         "pivot_cm": [
           0.0,
-          53.5,
+          38.0,
           97.4
         ],
         "open_edges": 0
@@ -43,7 +43,7 @@
         },
         "pivot_cm": [
           0.0,
-          53.5,
+          38.0,
           94.0
         ],
         "open_edges": 0
@@ -55,7 +55,7 @@
         },
         "pivot_cm": [
           0.0,
-          99.07,
+          69.8,
           75.9
         ],
         "open_edges": 0
@@ -63,12 +63,12 @@
     },
     "size_cm": {
       "u": [
-        -59.51,
-        59.51
+        -45.5,
+        45.5
       ],
       "d": [
-        3.73,
-        105.25
+        10.0,
+        70.0
       ],
       "h": [
         0.0,
@@ -76,30 +76,28 @@
       ]
     },
     "front": "+Z (out of the wall, along the spot's normal)",
-    "origin": "on the floor at the wall's face under the crystal's axis (the spot's `at`)"
+    "origin": "on the floor at the spot's vertex (the spot's `at`, d 0); the crystal's axis is 38 cm out along +Z"
   },
   "anchor_cm": [
     0.0,
-    53.5,
+    38.0,
     95.1
   ],
   "colliders": [
     "crystal_charger_col0-convcolonly",
     "crystal_charger_col1-convcolonly",
     "crystal_charger_col2-convcolonly",
-    "crystal_charger_col3-convcolonly",
-    "crystal_charger_col4-convcolonly",
-    "crystal_charger_col5-convcolonly",
-    "crystal_charger_col6-convcolonly",
     "track_ring_col0-convcolonly",
     "track_ring_col1-convcolonly"
   ],
   "checks": {
-    "wall_min_cm_body": 3.357,
+    "wall_min_cm_body": 0.0,
+    "cheek_min_cm_body": 0.556,
+    "reach_cm": 70.0,
     "ring_turn": {
       "steps_deg": 5,
       "overlaps": 0,
-      "wall_min_cm": 29.019,
+      "wall_min_cm": 4.5,
       "worst": []
     },
     "carrier_rise": {
@@ -168,10 +166,10 @@
   },
   "godot_cost": {
     "draw_calls_charger": 12,
-    "gpu_ms_charger": 0.165,
-    "gpu_ms_with": 0.548,
-    "gpu_ms_without": 0.383,
+    "gpu_ms_charger": 0.114,
+    "gpu_ms_with": 0.499,
+    "gpu_ms_without": 0.385,
     "view": "1280x720, eye 1.6 m, 1.6 m away, charging"
   },
-  "review": "<raw>/ship/v4/charger/b6/sheets/"
+  "review": "<raw>/ship/v4/charger/lens3/sheets/"
 }
