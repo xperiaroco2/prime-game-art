@@ -10,6 +10,8 @@ tools/tests/test_alien_char_geom.py; alien_char_build.py runs it inside Blender.
 - `walk_loop`, `monotone_angles`, `bridge_outward`: the seam's bridge in walk order, its angles, its facing.
 - `gltf_to_blender`, `blender_to_gltf`, `fit_point`, `fit_lively`: the lively head's data (glTF, Y up) under the fit.
 - `sstep`: a smoothstep from a to b (either order).
+- `leg_fit` (T2): the leg scale of a body with its own leg length (`--leg-fit`, alien_leg_fit.py).
+- `foot_target`, `reach_knee`, `knee_angle` (T3): the feet on the donor's paths by IK (`--leg-fit-mode ik`).
 """
 from __future__ import annotations
 
@@ -21,6 +23,71 @@ SHIELD = [(0.80, 0.0), (0.83, 0.045), (0.88, 0.075), (0.98, 0.088), (1.10, 0.090
           (1.33, 0.040), (1.40, 0.040)]
 SHIELD_EDGE = 0.016  # the soft edge, m
 FRONT_FACING = (-0.15, 0.35)  # the shield only where the normal faces the front: -n.y from 0 (side) to 1
+
+
+# T2 (art #196): the alien rig's leg bones under slice_math's names (its leg length: thigh, shin, ankle height)
+LEG_NAMES = {f"{side}{bone}": f"{bone}.{s}" for side, s in (("Left", "L"), ("Right", "R"))
+             for bone in ("UpperLeg", "LowerLeg", "Foot")}
+
+
+def leg_fit(own: dict, donor: dict) -> dict:
+    """The leg fit of a body whose legs differ from the rig its clips were made on (T2: the axolotl on M1f's body,
+    the clips S4b's): own and donor are the rigs' rest heads (bone name: (x, y, z), z up, the floor at 0). Returns
+    leg_m [donor, own] and scale (own / donor), the factor for the clips' Root and Hips location keys
+    (slice_math.scales_with_legs), so the hips' bob and travel are in proportion to the legs that carry them."""
+    import slice_math
+    legs = [slice_math.leg_length({LEG_NAMES[k]: v for k, v in rig.items() if k in LEG_NAMES}) for rig in (donor, own)]
+    if legs[0] <= 0:
+        raise ValueError(f"the donor's leg length is {legs[0]} m")
+    return {"leg_m": [round(legs[0], 4), round(legs[1], 4)], "scale": round(legs[1] / legs[0], 6)}
+
+
+def foot_target(own_rest, donor_rest, donor_now, scale: float) -> tuple:
+    """T3: where a foot (its ankle) goes on a body with its own legs: its own rest place plus the donor's move from
+    the donor's rest, scaled by the legs' ratio (world, z up). A planted donor foot gives a planted target, and the
+    stance width stays the body's own."""
+    return tuple(o + scale * (n - d) for o, d, n in zip(own_rest, donor_rest, donor_now))
+
+
+def reach_knee(hip, knee, target, la: float, lb: float, fallback_pole=None, slack: float = 0.9995):
+    """T3: the knee of a thigh la and a shin lb from a fixed hip to target (plain tuples), in the plane through the
+    hip-target line and the leg's own knee (its offset off that line is the pole: the knee bends the way the clip
+    bends it, no flip). fallback_pole: for a knee on the line (a straight leg). Returns (knee, reached), reached False
+    when the target lies beyond slack of the leg's reach (the knee then straight towards it)."""
+    def sub(a, b): return tuple(x - y for x, y in zip(a, b))
+    def add(a, b): return tuple(x + y for x, y in zip(a, b))
+    def mul(a, k): return tuple(x * k for x in a)
+    def dot(a, b): return sum(x * y for x, y in zip(a, b))
+    def norm(a):
+        n = math.sqrt(dot(a, a))
+        return mul(a, 1.0 / n) if n > 1e-12 else None
+    dv = sub(target, hip)
+    full = math.sqrt(dot(dv, dv))
+    axis = norm(dv)
+    if axis is None:
+        raise ValueError("the target sits on the hip")
+    d = min(full, (la + lb) * slack)
+    d = max(d, abs(la - lb) * 1.0005)
+    pole = None
+    for cand in (sub(knee, hip), fallback_pole):
+        if cand is not None:
+            pole = norm(sub(cand, mul(axis, dot(cand, axis))))
+            if pole is not None:
+                break
+    if pole is None:
+        raise ValueError("no pole: the knee on the hip-target line and no fallback")
+    x = (la * la - lb * lb + d * d) / (2.0 * d)
+    h = math.sqrt(max(0.0, la * la - x * x))
+    return add(add(hip, mul(axis, x)), mul(pole, h)), full <= (la + lb) * slack
+
+
+def knee_angle(hip, knee, ankle) -> float:
+    """T3: the knee's bend in degrees (0 straight): the angle between the thigh and the shin."""
+    a = tuple(k - h for k, h in zip(knee, hip))
+    b = tuple(x - k for x, k in zip(ankle, knee))
+    na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(x * x for x in b))
+    c = sum(x * y for x, y in zip(a, b)) / (na * nb)
+    return math.degrees(math.acos(max(-1.0, min(1.0, c))))
 
 
 def sstep(a: float, b: float, x: float) -> float:
@@ -239,3 +306,18 @@ def monotone_angles(angles: list[float]) -> list[float]:
         out.append(max(v, out[-1]) if out else v)
     end = out[0] + tau
     return [(v if v < end else end - 1e-9) % tau for v in out]
+
+
+def gill_decimate_ratio(tris: int, gill_tris: int, keep: float) -> float:
+    """M1 (art #196): the whole mesh's collapse ratio that keeps `keep` of the gills' triangles when only the gills
+    may collapse (the decimate modifier's ratio counts every face)."""
+    if not 0.0 < keep <= 1.0 or tris <= 0 or not 0 <= gill_tris <= tris:
+        raise ValueError("keep in (0, 1], 0 <= gill_tris <= tris")
+    return (tris - gill_tris * (1.0 - keep)) / tris
+
+
+def missing_rows(before, after) -> int:
+    """R1 (art #196): how many of `before`'s rows (tuples of floats: a vertex's position, or a corner's position and
+    UVs) are not found exactly in `after`. The gills' decimation must leave every row outside the gills in place: 0."""
+    have = set(map(tuple, after))
+    return sum(1 for r in map(tuple, before) if r not in have)

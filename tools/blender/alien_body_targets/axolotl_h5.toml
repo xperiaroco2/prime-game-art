@@ -1,0 +1,66 @@
+# H5 (art #196, bodies_a): the axolotl woman's body A, her own refit targets (alien_body.py --targets).
+# Measured by tools/blender/alien_body_measure.py on D:/prime-art-raw/2026-10-24-alien-body-neck/ax_turn_c/image-0.png
+# (front | side, 1536 x 1024; --panels 2 --head-m 0.4095): the front's top row 21, ring 244, sole 1001. At the r5
+# axolotl head's own scale (0.369 m above its ring, body_v2's char.json) she would stand 1.62 m with her eyes near
+# 1.42 m, far under the game's camera (contract eye_height_m 1.6, tolerance 0.08); so the body below the ring keeps
+# her concept's proportions at 0.0018362 m per pixel, the ring at 1.390 m (the standard ring's height: her eyes about
+# 1.56 m, her top about 1.76 m, inside the contract's 1.70 to 1.80 m). Landmarks (m): shoulder top 1.302, armpit
+# (the hanging arms part from the trunk) 1.140, waist (narrowest) 1.05, hips (widest) 0.79, crotch 0.700, knee 0.494
+# to 0.53, ankle (narrowest) 0.125, foot about 0.235 long. The hanging arm (front view, rows): shoulder joint 305,
+# elbow 455, wrist 580, fingertips 680, so z 1.278 / 1.003 / 0.773 / 0.589: upper arm about 0.28 m, forearm 0.235,
+# wrist to fingertip 0.184 (palm about 0.088, fingers about 0.096).
+# BANDS: the trunk's front width and side depth; the arms' rows (1.19 to 1.30) leave the width free. The side's waist
+# rows (0.97 to 1.10) are read through the hanging forearm, so their depths come from her Meshy body (axolotl_t, its
+# heights times 1.390 / 1.455) instead.
+name = "axolotl_h5"
+PX_M = 0.0018362
+BANDS = [
+    [0.795, 0.404, 0.241],
+    [0.839, 0.391, 0.242],
+    [0.883, 0.367, 0.239],
+    [0.927, 0.331, 0.224],
+    [0.971, 0.279, 0.190],
+    [1.016, 0.217, 0.172],
+    [1.060, 0.193, 0.175],
+    [1.104, 0.217, 0.195],
+    [1.140, 0.242, 0.237],
+    [1.192, 0.0, 0.255],
+    [1.250, 0.0, 0.215],
+    [1.302, 0.0, 0.171],
+    [1.346, 0.170, 0.125],
+    [1.370, 0.135, 0.116],
+    [1.390, 0.118, 0.110],
+]
+# Lengths against the Quaternius base (thigh 0.429, calf 0.456, Hips to Neck 0.571, neck 0.079, upper arm 0.251,
+# forearm 0.2435, clavicle 0.1805): hip joint 0.77, knee 0.515, ankle 0.095; Neck 1.30, Head 1.45; the shoulder
+# joints about 0.34 m apart (her Meshy body's 0.17 a side); upper arm 0.28, forearm 0.235; a short foot.
+LENGTH = { pelvis = 0.93, spine_01 = 0.93, spine_02 = 0.93, spine_03 = 0.93, neck_01 = 1.9, clavicle = 0.8, upperarm = 1.116, lowerarm = 0.965, hand = 1.0, thigh = 0.594, calf = 0.921, foot = 1.0, ball = 1.0 }
+RADIUS = { upperarm = 0.034, lowerarm = 0.028, thigh = 0.075, calf = 0.055 }
+FINGERS = 5
+FINGER_LEN = 1.02
+FINGER_THICK = 0.9
+FINGER_SPREAD = 0.25
+HAND_SCALE = 0.88
+THUMB_ROOT = [0.95, 0.95]
+FOOT_WIDTH = 1.0
+TUBE_KEEP = 0.45
+TUBE_SIGMA = 0.05
+# The refit's forefoot: u1's three-toe paddle, short (the cage rebuilds her feet with five toes; this foot only
+# carries the weights the cage copies).
+TOE_HALF = 0.070
+TOE_LEN = 0.030
+TOE_H = 0.050
+GROOVE = 0.009
+TOE_CENTRES = [-0.6666666666666666, 0.0, 0.6666666666666666]
+TOE_SEMI = 0.3333333333333333
+NOTCHES = [-0.3333333333333333, 0.3333333333333333]
+NOTCH_W = 0.1
+TOE_SPLAY = 0.0
+TRUNK_Z = [0.62, 1.24]
+RING_Z = 1.390
+NECK = [0.059, 0.055]       # the standard ring's ellipse: unchanged (the welded heads are scaled from its x extent)
+BELLY = 0.0
+NECK_FLARE = 0.12           # m: her trapezius' half width at NECK_FLARE_Z (a slender neck, sloping shoulders)
+NECK_FLARE_Z = 1.30
+Z_ANCHORS = [[0.0, 0.0], [0.79, 0.700], [1.20, 1.140], [1.39, 1.390], [2.0, 2.0]]
+CROTCH_SMOOTH = 40          # no genitals

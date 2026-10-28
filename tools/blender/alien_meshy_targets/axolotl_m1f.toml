@@ -1,0 +1,211 @@
+# M1f (art #196, bodies_a): M1e's file with its last leftovers fixed: the steps' smoothed moves held off the seam
+# (seam_band: M1e's disp_smooth reached the ring's neighbours, the seam's smallest angle fell from 3.76 to 2.25
+# degrees and a thin dark mark showed at the neck's back), the breasts' bright knot relaxed after every shape step
+# (relax; M1e's sphere in smooth_rest was smeared by its disp_smooth), the upper arm's lump at x 0.21 let shrink back (width_clamp from 0.9, 5 rounds). Her hips and seat kept. M1e's
+# notes follow.
+# M1e (art #196, bodies_a): M1d's file with its regressions fixed: the arm widths' and the smoothing boxes' moves
+# smoothed over the mesh before they are applied (disp_smooth; M1d's folded faces were the dark specks at the cleft
+# and the shoulder's back and the slits under the upper arms), the arm widths in 3 rounds, the breasts' bright point
+# smoothed, the A pose's hook softened (the UpperArm band), the crotch box volume-kept. M1d's notes follow.
+# M1d (art #196, bodies_a): M1c's file with the fresh critic's fixes (critic-m1c-m2.md): the thumb shorter and
+# thicker with a stiffer base, the breasts' tips rounded, the upper arms thicker toward the concept with a smooth
+# deltoid join and a softer A-pose bend, the crotch's fold from below closed, the neck's base blended wider into the
+# trapezius. Her hips and seat are kept (the engineer's decision). M1c's notes follow.
+# M1c (art #196, bodies_a): M1b's axolotl (axolotl_m1b.toml, its keys and numbers unless marked M1c) run again on
+# M1's built body (alien_meshy_body.py --from-body R/m1/body/alien_body.blend), with M1c's fixes: the thumb's base
+# softened into the palm, the fingers' bases smoothed with the web, the knee's notch found where it is.
+name = "axolotl_m1f"
+# her Meshy body (T-pose, 1.897 m with Meshy's head; 466k triangles) and the skinned body whose skeleton, clips and
+# weights M1 takes (H5 v1)
+meshy = "2026-10-24-alien-body-pilot-3d/axolotl_t/multi_image_to_3d-pre_remeshed_model.glb"
+rig_body = "research/2026-10-22-roster/design/pilot3d/bodies_a/h5/v1/alien_body.blend"
+
+# The heights, [rig z, Meshy z]: H5's WRAP_Z (alien_cage_targets/axolotl_h5.toml): the ankle, knee, crotch, armpit,
+# shoulder top and the neck's narrowest.
+wrap_z = [[0.0, 0.0], [0.17, 0.15], [0.518, 0.50], [0.748, 0.735], [1.231, 1.28], [1.312, 1.38], [1.374, 1.455]]
+
+# The arm along x, [Meshy |x|, rig |x|]: the shoulder joint, the elbow (the narrowest before the forearm's swell,
+# measured per 2 cm: 0.38 to 0.42) and the wrist (the narrowest, 0.64 to 0.66) onto her bones' heads (0.176, 0.456,
+# 0.691). Past the wrist the hand keeps its scaled length (`hand`).
+arm_x = [[0.17, 0.176], [0.41, 0.456], [0.65, 0.691]]
+arm_band_z = [1.20, 1.27]  # Meshy z: the trunk's side below the armpit stays; the arm's shift fades in over this
+arm_blend_x = [0.17, 0.30]  # Meshy |x|: the arm's shift fades in from the shoulder joint to past the deltoid
+arm_station_x = [0.36, 0.66]  # Meshy |x|: the arm's section centres are measured here (inboard: the trunk mixes in)
+
+# The hand: Meshy's is 0.29 m from the wrist to the fingertip, the concept's 0.184 (H5's bones): scaled about the
+# wrist's centre by `scale` (all three axes), blended in over `blend` past the wrist.
+hand = { wrist = 0.65, scale = 0.66, blend = 0.05 }
+keep_hands = true  # Meshy's hands, weighted by H5's (false: not built yet; H5's hands would be welded on)
+
+# The legs onto their bones: the section centres measured per 2 cm in Meshy z over leg_station_z; their shift to the
+# bone line fades out over leg_fade_z (Meshy z) into the hips; below foot_z the foot moves as one with its ankle.
+leg_station_z = [0.15, 0.66]
+leg_fade_z = [0.62, 0.76]
+foot_z = 0.15
+
+# The neck ring (rig frame): the cut at H5's ring height; the neck narrowed about its axis from neck_scale_from_z to
+# the ring so the ring's half-width is ring_half_x: H5's 0.0567 times 1.11 (the cut lands about 1 % under it) (the head scaled up uniformly by about
+# 10 %, the concept's ratio; the weld scales the head's neck waist onto the ring).
+ring_z = 1.390
+ring_half_x = 0.0630
+neck_scale_from_z = 1.33
+
+# Triangles: the Meshy mesh first collapsed to decimate_pre (head included), the cut body then to body_tris.
+decimate_pre = 140000
+body_tris = 23000
+
+# The spots smoothed (Meshy frame, before the map): spheres [x, y, z, r, passes] (the nipples: each chest side's
+# most forward point, measured 0.058/-0.065, -0.112/-0.118, 1.223/1.225) and soft boxes [x0, x1, y0, y1, z0, z1,
+# passes] (the navel; the crotch's front; the perineum), margin 0.02 m; a Laplacian of factor 0.5 per pass, each
+# vertex for its spot's passes (the spheres small: a wider one flattens the breast itself).
+smooth = { margin = 0.02, spheres = [[0.058, -0.112, 1.223, 0.026, 45], [-0.065, -0.118, 1.225, 0.026, 45]], boxes = [
+    [-0.035, 0.035, -0.25, -0.05, 0.90, 1.04, 20],
+    [-0.055, 0.055, -0.20, 0.00, 0.68, 0.84, 30],
+    [-0.05, 0.05, -0.04, 0.09, 0.64, 0.74, 30],
+] }
+
+# The chest a bit fuller (the engineer, art #196), rig frame: [x, z] each side, the push along -y, the falloff radius.
+bust = { centre = [0.062, 1.18], push = 0.012, radius = 0.08 }
+# The push's peak sits on the apexes and points them (the first build's chest close-ups): each apex (rig frame, the
+# nipples' spots moved by the map and the push) smoothed again, [x, y, z, r, passes].
+smooth_after = { spheres = [[0.058, -0.124, 1.182, 0.045, 60], [-0.065, -0.130, 1.183, 0.045, 60]] }
+
+# The transferred weights smoothed per group (not the fingers'): the first build's shoulders creased in the A pose
+# and its knees pinched to a point.
+# Then the joints that still pinched, [|x|0, |x|1, y0, y1, z0, z1, repeat] in the rig frame: the knees, the hips'
+# front (H5's WEIGHT_ZONES), the shoulders.
+weight_smooth = { factor = 0.5, repeat = 4, zones = [
+    [0.03, 0.20, -0.15, 0.15, 0.42, 0.62, 12],
+    [0.02, 0.22, -0.22, 0.03, 0.64, 0.88, 12],
+    [0.12, 0.30, -0.10, 0.20, 1.12, 1.34, 10],
+] }
+
+# M1b: the ring's near-coincident vertices merged (m) and the slivers collapsed (edges under dist, m): M1's seam had
+# three bridge triangles under 0.1 mm2 at the back and the right, whose wrong normals greyed the faces round them.
+degenerate = { ring_merge = 0.0015, dist = 0.0001 }
+
+# M1b: the arms thicker toward the concept (ax_turn_c front, px 0.0018362 m): its arm's front width over its waist
+# (0.191 m at z 1.05) is 0.43 at the upper arm, 0.40 at the elbow, 0.49 at the forearm's swell; M1's (waist 0.207)
+# 0.30, 0.27 and 0.32. The profile [|x|, factor] on the front width (z in the T pose); the depth (y) by its square
+# root (M1's arms are already deeper than wide). 1.0 at the shoulder joint and the wrist: the torso and the hands keep
+# their size.
+# M1d: the upper arm toward its target front widths (mm, the left arm's M1c widths 91/90/75/88/88/77/75/82/97 at
+# x 0.17 to 0.49 per 4 cm: a lump at 0.21, a pinch at 0.25; the upper arm about 15 % thicker), the factor clamped to
+# width_clamp; the profile beyond 0.49 as M1c's.
+arm_thicken = { widths = [[0.17, 91], [0.21, 97], [0.25, 101], [0.29, 101], [0.33, 98], [0.37, 93], [0.41, 89],
+    [0.45, 87], [0.49, 97]], width_clamp = [0.9, 1.9], disp_smooth = 20, rounds = 5, from_x = 0.17, band_z = 1.10, slab = 0.008, y_power = 0.5, waist_z = 1.05, profile = [
+    [0.17, 1.0], [0.25, 1.22], [0.31, 1.36], [0.40, 1.40], [0.46, 1.42], [0.53, 1.42], [0.60, 1.28], [0.66, 1.08],
+    [0.69, 1.0],
+] }
+
+# M1f: the smoothed moves (arm_thicken's and smooth_rest's disp_smooth) pinned within seam_band (m) below the ring.
+seam_band = 0.03
+
+# M1f: the breasts' bright knot (short-edged valence-5 vertices on each breast's outer lower side, M1e's sphere at
+# [0.097, -0.107, 1.192]; its mirror at [-0.100, -0.112, 1.198]): the vertex spacing relaxed in a soft sphere
+# [|x|, y, z, r, iterations], mirrored, after bust_round: tangent spread, then a Taubin pair along the normal.
+# (Tried and dropped, R/m1f/t2, t3: a heightfield fill of the crotch's fold from below, uncapped 47 mm and 45 faces
+# flipped, capped at 3 mm one face flipped and the fold as it was; relax spheres on the upper arms' undersides and
+# an UpperArm `inside` band, no change to the A pose's inner-arm streaks.)
+relax = { spheres = [[0.098, -0.11, 1.195, 0.035, 12]], tangent = 0.3, normal = 0.5, mu = -0.53 }
+
+# M1b: the notch inside each knee (Meshy's own), smoothed in the rest pose: [|x|, y, z, r, passes].
+# M1e: a second sphere on each breast's outer lower side: the bright point (a knot of short-edged valence-5 vertices
+# standing out about 20 % of an edge, found from the chest close-up's pixel, 37 mm from bust_round's apex). The crotch
+# box 40 passes with Taubin's step back (M1d 60 plain: its faces folded at the cleft); disp_smooth 10 (25 leaked a
+# fold onto a face beside the ring).
+# M1d: soft boxes [|x|0, |x|1, y0, y1, z0, z1, passes] (plain Laplacians, the open ring held): the neck's base into
+# the trapezius (faded out 20 mm under the ring: the seam and the head untouched), the crotch's fold from below (the
+# buttock crease carried on under the body), the shoulder's top and the deltoid's join to the arm.
+smooth_rest = { spheres = [[0.072, 0.025, 0.50, 0.04, 15], [0.097, -0.107, 1.192, 0.025, 20]], margin = 0.02, disp_smooth = 10, boxes = [
+    [0.0, 0.12, -0.07, 0.12, 1.29, 1.35, 40],
+    [0.0, 0.025, 0.0, 0.10, 0.70, 0.80, 40, -0.53],
+    [0.12, 0.26, -0.08, 0.10, 1.20, 1.34, 20],
+] }
+# M1d: each breast's tip rounded (fix_bust_round): the apex the vertex nearest `at` (rig frame, left then right: the
+# read points, M1's nipple spots after the map and the push, as smooth_after's centres; a first build's most forward
+# vertex and its most pointed one both sat beside them) inside the box [|x|0, |x|1, z0, z1]; the blur's sigma and
+# full share within r, faded to 0 at blend (m), front-facing vertices only.
+bust_round = { box = [0.02, 0.12, 1.10, 1.26], at = [[0.058, -0.124, 1.182], [-0.065, -0.130, 1.183]], r = 0.025, blend = 0.055, sigma = 0.016, front = 0.3 }
+# M1c: the notch sits lower than M1b's sphere (M1b's close-ups: about z 0.45): found by its concavity, each side, in
+# the box [|x|0, |x|1, y0, y1, z0, z1] among the vertices facing the midline (normal x toward it at least `medial`),
+# then smoothed in a soft sphere of radius r about it, `passes` passes.
+notch = { box = [0.02, 0.12, -0.08, 0.08, 0.38, 0.52], medial = 0.3, depth_smooth = 2, r = 0.035, passes = 15 }
+
+# M1b: the fingers. Cuts every `step` m down the hand find each free finger (a part of at least min_part vertices);
+# its centre line through `slice`-m slices (the web's 15 % and the tip's 10 % left out); the proximal heads keep
+# their place along the line, the other joints by the old proportions moved to the thinnest slice within
+# crease_window; the last tail tip_inset inside the tip; the thumb's MCP thumb_mcp_back before its web. The weights'
+# half-widths over each joint (m: the MCP, PIP, DIP; the thumb's CMC, MCP, IP); the palm's ownership by the lines'
+# distance, 1 / (d + sigma)^4 against the palm's own pull 1 / palm_r^4 (m; pure Hand), then the palm's weights
+# smoothed palm_smooth times along its edges (the free fingers held).
+[fingers]
+step = 0.001
+min_part = 6
+slice = 0.002
+tip_inset = 0.003
+crease_window = 0.005
+half = [0.008, 0.004, 0.0035]
+thumb_half = [0.016, 0.007, 0.004]  # M1d: 16 mm (M2b's g2; M1c 20 mm: the thenar stretched)
+thumb_mcp_back = 0.006
+sigma = 0.010  # M1c: M1b's 3 mm widened (the webs' strip spread over more rows)
+thumb_sigma = 0.003
+palm_r = 0.012
+palm_smooth = 3
+# M1c: the thumb's share of a palm vertex by its distance from the thumb's line: 1 within 6 mm, a smoothstep to 0 at
+# 30 mm (M1b's 1 / (d + 3 mm)^4 against the palm's 12 mm gave a step: the thenar stretched into a web)
+thumb_falloff = [0.012, 0.030]  # M1d: the thenar follows the metacarpal fully within 12 mm (M1c 6 mm)
+# M1c: the free fingers' vertices within base_band of their web smoothed with the palm, base_smooth passes (M1b held
+# them: the ring's thin strip and the middle's dark gap at their bases). Picked from a grid of three (g1: sigma 6 mm,
+# band 12 mm, 8 passes, thumb [4, 20] mm and M1b's 12 mm metacarpal; g2: these; g3: g1's bases with M1b's thumb):
+# R/m1c/grid/grid_crop.png, grid_thumbclip.png.
+base_band = 0.015
+base_smooth = 10
+# M1d: the thumb 15 % shorter (its centre line scaled about its web) and 20 % thicker past `ramp` from its web; the
+# other fingers as they were (slim 0)
+shape = { slim = 0.0, ramp = 0.012, thumb_shorten = 0.15, thumb_thick = 1.2 }
+
+# M1b: the bends. Per joint the child's share across the joint a smoothstep over +/- width (m) along the child bone
+# (offset: its centre past the joint; tilt: m per m of y), faded to the old weights over `margin` past the band and
+# over `fade` inside `radius` from the bone's line; mid_x: faded toward the midline (the crotch keeps its weights);
+# inside: the bend's inner side (the rig frame), its band widened to inside_width (LBS pinches there).
+[[bends]]
+child = "UpperArm"
+parent = "Shoulder"
+# M1e: the A pose's hook (the shoulder level, then the arm dropping at a corner): the band wider, starting inboard of
+# the joint, over the whole deltoid cap (a grid of three, R/m1e/sheets/hook_grid.png: h1 0.10/0/0.03/0.10/0.04, h2
+# 0.12/-0.01/0.04/0.11/0.05, h3 these; M1d 0.085/0.015/0.03/0.075/0.025)
+width = 0.14
+offset = -0.02
+margin = 0.05
+radius = 0.12
+fade = 0.05
+
+[[bends]]
+child = "LowerArm"
+parent = "UpperArm"
+width = 0.05
+margin = 0.03
+radius = 0.09
+fade = 0.02
+inside = [0.0, -1.0, 0.0]
+inside_width = 0.075
+
+[[bends]]
+child = "UpperLeg"
+parent = "Hips"
+width = 0.07
+margin = 0.04
+radius = 0.13
+fade = 0.04
+mid_x = [0.03, 0.07]
+
+[[bends]]
+child = "LowerLeg"
+parent = "UpperLeg"
+width = 0.075
+margin = 0.04
+radius = 0.12
+fade = 0.03
+inside = [0.0, 1.0, 0.0]
+inside_width = 0.11

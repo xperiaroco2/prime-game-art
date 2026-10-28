@@ -11,6 +11,28 @@ import alien_loco_math as L  # noqa: E402
 CFG = L.load()
 
 
+class Paths(unittest.TestCase):
+    """T1: the new bodies' build and output by flags, the committed set file's r2b/f3 untouched."""
+
+    def test_the_committed_paths_stay_r2b_and_f3(self):
+        self.assertEqual((CFG["set"]["build"], CFG["set"]["out"]), ("r2b/build", "loco/f3"))
+        self.assertEqual(L.with_paths(CFG)["set"], CFG["set"])
+
+    def test_flags_replace_build_and_out_only(self):
+        cfg = L.with_paths(CFG, "r2c/build", "loco/t1")
+        self.assertEqual((cfg["set"]["build"], cfg["set"]["out"]), ("r2c/build", "loco/t1"))
+        self.assertEqual({k: v for k, v in cfg["set"].items() if k not in ("build", "out")},
+                         {k: v for k, v in CFG["set"].items() if k not in ("build", "out")})
+        self.assertEqual(cfg["clip"], CFG["clip"])
+        self.assertEqual(CFG["set"]["out"], "loco/f3")  # the loaded set is not changed in place
+
+    def test_a_new_build_into_the_old_out_is_refused(self):
+        with self.assertRaises(ValueError):
+            L.with_paths(CFG, "r2c/build")
+        with self.assertRaises(ValueError):
+            L.with_paths(CFG, "r2c/build", "loco/f3")
+
+
 class SetFile(unittest.TestCase):
     def setUp(self):
         self.jobs = L.expand(CFG)
@@ -165,6 +187,28 @@ class Reels(unittest.TestCase):
 
     def test_blender_floor_vectors_turn_into_godot_ones(self):
         self.assertEqual(L.godot_xz((0.5, -2.0)), [0.5, 2.0])
+
+
+class CharJson(unittest.TestCase):
+    """R1: a build without char.json reads as {} (no leg fit), one with it as written."""
+
+    def test_missing_and_present(self):
+        import tempfile
+        import alien_loco  # plain Python at import (bpy only inside its Blender main)
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(alien_loco.char_json(Path(d)), {})
+            (Path(d) / "char.json").write_text('{"leg_fit": {"mode": "ik"}}', encoding="utf-8")
+            self.assertEqual(alien_loco.char_json(Path(d))["leg_fit"]["mode"], "ik")
+
+
+class Unmeasured(unittest.TestCase):
+    """R1: a speed or cadence asked of a clip with no ground velocity or cadence is named, not divided by."""
+
+    def test_skip_messages(self):
+        self.assertIsNone(L.unmeasured("Jog_Fwd", {"speed": 4.6}, {"v0": 4.2, "c0": 2.8}))
+        self.assertIsNone(L.unmeasured("Idle", {}, {"v0": 0.0, "c0": None}))
+        self.assertIn("Jog_Fwd", L.unmeasured("Jog_Fwd", {"speed": 4.6}, {"v0": 0.0, "c0": None}))
+        self.assertIn("cadence", L.unmeasured("Walk", {"cadence": 1.8}, {"v0": 1.2, "c0": None}))
 
 
 if __name__ == "__main__":

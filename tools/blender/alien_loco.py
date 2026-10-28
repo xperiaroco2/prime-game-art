@@ -8,6 +8,7 @@ Blender's FFmpeg).
 
     $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw [--chars chameleon,axolotl]   # the GLBs
     $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char NAME]  # reels
+    $PYTHON_BIN tools/blender/alien_loco.py --raw D:/prime-art-raw --build r2c/build --out loco/t1  # T1: new bodies
 
 Into <raw>/<raw_base>/<out>/build/<char>/: <char>_char.blend, <char>_char.glb, its validator report, loco.json (per
 clip the edits' reports, the numbers before and after, the rates at the game's speeds), the build's support files
@@ -34,6 +35,12 @@ COPY = ("bases.json", "char.json", "{c}_char_lively.json", "{c}_body_albedo.png"
         "{c}_body_detail.png", "{c}_body_accent.png", "{c}_body_normal.png")
 
 
+
+def char_json(char_dir: Path) -> dict:
+    """R1 (art #196): a build's char.json, {} when the build has none (an older build, a head built elsewhere)."""
+    p = Path(char_dir) / "char.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.is_file() else {}
+
 def _paths(raw: str, cfg: dict) -> tuple[Path, Path, Path]:
     base = Path(raw) / cfg["set"]["raw_base"]
     return base / cfg["set"]["build"], base / cfg["set"]["ttm"], base / cfg["set"]["out"]
@@ -50,6 +57,13 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
     foot = cfg["set"]["foot"]
     for j in jobs:
         rep = {k: j.get(k) for k in ("base", "source", "mirror", "speed", "frames", "arm_swing", "play_at")}
+        # R1: a clip made from a skipped one is skipped too (its name in the message)
+        gone = [n for n in [j.get("from"), j.get("mirror"), *(j.get("pick") or [])] if n and n in reps
+                and reps[n].get("skipped")]
+        if gone:
+            reps[j["name"]] = {"skipped": f"{j['name']}: made from the skipped {gone}"}
+            print(f"SKIP {reps[j['name']]['skipped']}", flush=True)
+            continue
         if j.get("pick"):
             beat = 1.0 / L.footstep_interval(j["speed"], cfg)
             rows = [{"name": n, "c0": reps[n]["after"]["c0"], "arm_swing": reps[n]["arm_swing"],
@@ -77,6 +91,11 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
                 c = S.pitch(skel, c, j["lean_deg"], L.LEAN_SPLIT)
             if j.get("orient"):  # the hips toward the travel, the head on the aim (orient_warp; absolute headings)
                 c, rep["orient"] = L.orient(S, skel, c, j["orient"])
+            why = L.unmeasured(j["name"], j, S.measure(skel, c))
+            if why:  # R1: no ground velocity or cadence: the stride would divide by zero
+                reps[j["name"]] = {**rep, "skipped": why}
+                print(f"SKIP {why}", flush=True)
+                continue
             rate = S.frames(c) / j["frames"] if j.get("frames") else None
             if j.get("cadence"):
                 rate = L.cadence_rate(j["name"], j["cadence"], S.measure(skel, c)["c0"])
@@ -166,8 +185,10 @@ def _blender_main(argv: list[str]) -> None:
     ap.add_argument("--raw", required=True)
     ap.add_argument("--chars", default="")
     ap.add_argument("--dump", default="", help="only write the first character's skeleton and sampled sources here")
+    ap.add_argument("--build", default="")
+    ap.add_argument("--out", default="")
     a = ap.parse_args(argv)
-    cfg = L.load()
+    cfg = L.with_paths(L.load(), a.build, a.out)
     jobs = L.expand(cfg)
     build, ttm, out = _paths(a.raw, cfg)
     mocap = Path(a.raw) / cfg["set"]["raw_base"] / cfg["set"]["mocap"] if cfg["set"].get("mocap") else None
@@ -182,6 +203,16 @@ def _blender_main(argv: list[str]) -> None:
         if mocap is not None:  # P1's 100STYLE loops MC_<style>_<take>_Loop (the axolotl shares the skeleton)
             with bpy.data.libraries.load(str(mocap), link=False) as (src, dst):
                 dst.actions = [n for n in src.actions if n.startswith(PREFIX + "MC_") and n[len(PREFIX):] in need]
+        # T2: a build fitted to its body's legs (char.json leg_fit) gets the same fit on the loops appended from the
+        # S4b rig's files (alien_leg_fit.py); a build without it (or without a char.json, R1): untouched
+        fitted = char_json(build / char).get("leg_fit")
+        if fitted:
+            import alien_leg_fit
+            lf = alien_leg_fit.fit(arm, fitted["donor"], [bpy.data.actions[PREFIX + n] for n in need
+                                                         if n.startswith(("TM_", "MC_"))],
+                                  mode=fitted.get("mode", "lowest"))
+            print(f"CHAR {char}: leg fit {lf['scale']} on the appended loops ({lf['keys']} keys), foot match "
+                  f"{json.dumps(lf['foot_match'])}", flush=True)
         srcs = {n: ST.sample(arm, bpy.data.actions[PREFIX + n]) for n in need}
         for n in need:
             if n.startswith(("TM_", "MC_")):
@@ -266,17 +297,25 @@ def main() -> int:
     ap.add_argument("--char", default="chameleon", choices=("chameleon", "axolotl"),
                     help="--reels: the character (not the chameleon: into reels/<char>/)")
     ap.add_argument("--dump", default="", help="write the chameleon's skeleton and sampled sources as JSON, no build")
+    ap.add_argument("--build", default="", help="T1: the characters' build instead of [set] build (under raw_base, "
+                    "e.g. r2c/build); needs --out")
+    ap.add_argument("--out", default="", help="T1: the output instead of [set] out (under raw_base, e.g. loco/t1)")
     a = ap.parse_args()
-    cfg = L.load()
+    cfg = L.with_paths(L.load(), a.build, a.out)
+    paths = [*(["--build", a.build] if a.build else []), *(["--out", a.out] if a.out else [])]
     if a.reels:
         return _reels(a, cfg)
     if a.dump:
-        res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", "chameleon", "--dump", a.dump],
+        res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", "chameleon", "--dump", a.dump, *paths],
                                  timeout=1200)
         print(*[x for x in (res.stdout or "").splitlines() if x.startswith("DUMP")], sep="\n", flush=True)
         return res.returncode
     build, _, out = _paths(a.raw, cfg)
     chars = a.chars.split(",") if a.chars else cfg["set"]["chars"]
+    for c in chars:  # a run never overwrites in the raw folder
+        if (out / "build" / c / f"{c}_char.glb").exists():
+            print(f"{out / 'build' / c} holds a build: pick a new --out", flush=True)
+            return 2
     for c in chars:
         hd = out / "build" / c
         hd.mkdir(parents=True, exist_ok=True)
@@ -284,7 +323,8 @@ def main() -> int:
             p = build / c / f.format(c=c)
             if p.exists():
                 shutil.copy2(p, hd / p.name)
-    res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", ",".join(chars)], timeout=3600)
+    res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", ",".join(chars), *paths],
+                             timeout=3600)
     (out / "build" / "build.log").write_text((res.stdout or "") + (res.stderr or ""), encoding="utf-8", newline="\n")
     print(*[x for x in (res.stdout or "").splitlines() if x.startswith(("CLIP", "CHAR"))], sep="\n", flush=True)
     if res.returncode != 0:

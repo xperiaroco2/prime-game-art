@@ -1,0 +1,92 @@
+# The cage targets of H5, the axolotl woman's hybrid body (art #196, bodies_a): tools/blender/alien_cage.py --targets.
+# The chameleon's H4b chain is the base (its paths and their settings); every key that holds his Meshy body's, his
+# concept's or his skeleton's numbers is set again here for hers. The rig: her refit (alien_body.py --targets
+# alien_body_targets/axolotl_h5.toml); the shape: her Meshy t-posed body (--target:
+# 2026-10-24-alien-body-pilot-3d/axolotl_t, the pre-remeshed GLB).
+name = "axolotl_h5"
+include = "chameleon_h4b.toml"
+
+# Her refit already stands at her height (the ring at 1.390 m, the head's ring scale unchanged): no body scale.
+BODY_SCALE = 1.0
+
+# Her Meshy body (its own frame: x centred, the sole at z 0; 1.897 m with its head), measured per centimetre: the
+# ankle (narrowest leg) 0.15, the knee 0.50, the crotch 0.735 (the midline's first rows 0.69 to 0.74), the armpit
+# (the T-posed arm's underside) 1.28, the shoulder top 1.38, the neck's narrowest 1.44 to 1.47; the arm's shoulder
+# 0.17, the elbow (the section's narrowest before the forearm's swell) 0.38, the wrist 0.65 (the hands reach 0.936).
+WRAP_Z = [[0.0, 0.0], [0.17, 0.15], [0.518, 0.50], [0.748, 0.735], [1.231, 1.28], [1.312, 1.38], [1.374, 1.455]]
+WRAP_X = [[0.15, 0.17], [0.413, 0.38], [0.605, 0.65]]
+ARM_GUESS = [0.045, 1.33]
+# Her target's cleaning boxes (its frame): the perineum, the navel, the neck's front and back, the armpits' front, the
+# elbows, the knees, and the chest's front lightly (no nipples carried over; SCULPT_BUST gives the fullness back).
+TARGET_CLEAN = [
+    [-0.06, 0.06, -0.03, 0.10, 0.66, 0.80, 40],
+    [-0.04, 0.04, -0.25, -0.07, 0.90, 1.06, 30],
+    [-0.08, 0.08, -0.20, 0.00, 1.36, 1.47, 25],
+    [0.09, 0.20, -0.15, 0.00, 1.20, 1.34, 20],
+    [0.32, 0.50, -0.08, 0.12, 1.25, 1.40, 30],
+    [0.03, 0.22, -0.15, 0.09, 0.42, 0.58, 25],
+    [-0.06, 0.16, 0.00, 0.16, 1.30, 1.47, 30],
+    [0.02, 0.14, -0.17, -0.05, 1.12, 1.28, 12],
+]
+
+# The relief: none kept on her chest and abdomen (H4b's soft bands under the chameleon's pectorals); her trunk at
+# the target's own thickness; his sculpt rows (his arm, deltoid, thigh, trunk and pectoral corrections) off.
+PROJECT_DETAIL = []
+# Her Meshy hips stand further out of the cage than his: with H2's 25 mm step limit and two passes 467 vertices were
+# cut short and the hips' sides bulged over a crease at the thigh (saddlebags, `h5/body`); a 40 mm limit and a third
+# pass leave 31 cut and one smooth curve from the waist over the hips into the thighs (`h5/v1`). The leg's and
+# crotch's wrap weights raised as well (`h5/v2`) brought the bulge back.
+PROJECT_MAX = 0.04
+PROJECT_PASSES = 3
+PROJECT_THICK = { trunk = 1.0, arm = 1.0, leg = 1.0 }
+SCULPT_ARM = []
+SCULPT_DELTOID = []
+SCULPT_THIGH = []
+SCULPT_TRUNK = []
+SCULPT_PEC = []
+# The engineer (art #196): her chest a bit fuller against her large seat, about 10 mm forward with a 9 cm falloff,
+# soft, no detail; centred on her concept's chest (x 0.072, z 1.17 at her scale).
+SCULPT_BUST = [0.072, 1.17, 0.010, 0.09]
+
+# The joints' extra weight smoothing at her heights (the knee, the hip's front fold).
+WEIGHT_ZONES = [
+    [0.03, 0.20, -0.15, 0.15, 0.42, 0.62, 14],
+    [0.02, 0.22, -0.22, 0.03, 0.64, 0.88, 14],
+]
+
+# The hand: the chameleon's, scaled to hers (wrist to fingertip 0.184 m against his 0.254; the palm 0.088): the rings
+# 0.8 as long and 0.85 as wide, slimmer fingers; the thumb's root 0.020 m out of the palm (closer than 0.015 folded
+# his hand to 156 to 179 degrees).
+HAND = [
+    [-0.004, -0.002, -0.004, 0.031, 0.0200],
+    [0.016, 0.000, -0.005, 0.047, 0.0175],
+    [0.045, 0.000, -0.005, 0.053, 0.0158],
+    [0.088, 0.000, -0.005, 0.054, 0.0128],
+]
+FINGER_R = 0.0135
+THUMB_R0 = 0.0140
+THUMB_R = 0.0125
+THUMB_OUT = 0.020
+THUMB_LEN = 0.055
+
+# The feet: hers are short with five short, rounded toes fanned a little (the concept's front and side), not his two
+# long toe groups. The forefoot rings lower and narrower; one split ring (TOE_SPLIT) 12 mm past the last gives five
+# toe bases across the forefoot, the big toe's inner and tallest; the toes short domes, each a little shorter and
+# turned out more toward the little toe.
+FOOT = [
+    [0.088, 0.090, 25.0, 0.042, 0.045, 0.068],
+    [0.062, 0.055, 55.0, 0.050, 0.055, 0.072],
+    [0.000, 0.040, 90.0, 0.058, 0.044, 0.040],
+    [-0.040, 0.034, 90.0, 0.066, 0.038, 0.034],
+    [-0.068, 0.030, 90.0, 0.072, 0.034, 0.030],
+]
+FOOT_END = []
+TOE_SPLIT = { dy = 0.012, cols = [[-1.0, 0.62, 0.6], [-0.6, 0.80, 1.0], [-0.2, 0.78, 1.0], [0.2, 0.72, 1.0], [0.6, 0.64, 1.0], [1.0, 0.50, 0.6]] }
+TOE_SET = [0, 1, 2, 3, 4]
+TOE = [[0.008, 1.08, 1.0, 0.0], [0.018, 1.06, 0.95, 0.001], [0.028, 0.98, 0.85, 0.002], [0.034, 0.76, 0.65, 0.003],
+       [0.038, 0.38, 0.34, 0.003]]
+TOE_LEN = 1.0
+TOE_THICK = 1.0
+TOE_MID = 0.0
+TOE_LENS = [1.0, 1.0, 0.95, 0.88, 0.80]
+TOE_YAW = [-6.0, -2.0, 3.0, 8.0, 14.0]

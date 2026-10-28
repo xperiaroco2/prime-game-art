@@ -3153,6 +3153,154 @@ a time, by visibility.
     stays below the 2D's 36 on this flat lower face: the rest is form (Test B), not material.
   - The pick is not in `alien.gd` or `look_presets.json`: the look needs the engineer's yes (the values are in the
     handoff and `TD/final/spec.json`).
+- **Bodies A, M1: the axolotl's body from her Meshy surface as it is** (art #196; output under
+  `research/2026-10-22-roster/design/pilot3d/bodies_a/m1/`). `tools/blender/alien_meshy_body.py --targets
+  alien_meshy_targets/axolotl_m1.toml --out DIR [--hi]` takes the rig body (H5 v1: skeleton, clips, weights), moves
+  the Meshy GLB onto its bones (`alien_meshy_body_geom.py`: the heights, legs, arms, hands, neck ring), smooths the
+  nipples, navel and crotch, cuts the head at the ring, collapses it to `body_tris` and transfers the weights.
+  The weld: `alien_char_run.py --body DIR/alien_body.blend --no-flare --gill-ratio 0.7` (both off by default; the
+  flare is for the cage bodies, the gill ratio keeps that share of the head's gill triangles). `alien_body_beside.py
+  --concept-panels 2` for a two-panel concept.
+  - M1b (the fixes; output under `bodies_a/m1b/`): `--targets alien_meshy_targets/axolotl_m1b.toml --from-body
+    m1/body/alien_body.blend` runs only steps 6 to 10 of the script on M1's body (without `--from-body`, after a full
+    build): the ring's slivers merged (`degenerate`), the arms thickened about their section centres toward the
+    concept's arm-to-waist ratios (`arm_thicken`), the knees' notch smoothed (`smooth_rest`), the finger bones moved
+    onto Meshy's own fingers and the hands weighted afresh (`fingers`: each free finger found by cuts swept down the
+    hand, `alien_meshy_fix_geom.py`), and ring weights across the shoulder, elbow, hip and knee (`bends`). The keys
+    are optional; M1's file has none. `alien_body_refit_review.py --fingers` adds a fist and frames the hand closer
+    (`FINGER_LENS`), `--bends` a leg-back pose (`hip_back`).
+  - Linear blend skinning still pinches a 110 to 115 degree elbow or knee to a point on the bend's inside whatever
+    the ring's width (M1b's bends sheet): the fix needs helper bones or corrective shapes, outside the contract.
+  - M1c (output under `bodies_a/m1c/`): `--targets alien_meshy_targets/axolotl_m1c.toml --from-body
+    m1/body/alien_body.blend`, M1b's keys and numbers with M1c's on top: the knee's notch found by its concavity in a
+    box and smoothed there (`notch`), the palm's share for the thumb by its distance from the thumb's line alone
+    (`fingers.thumb_falloff`) and the fingers' bases smoothed with the palm (`fingers.base_band`, `base_smooth`); M1's
+    and M1b's files have none of them. `alien_body_refit_review.py --only fingers --finger-curl D --thumb-curl a,b,c`
+    renders the fingers sheet alone at other angles. `alien_body_clip_bends.py --blend <char> --clips <loco build
+    char.blend> --out DIR` plays the game's clips (the loco build's actions without `__`, TM_ or MC_) on a character
+    and measures per clip the deepest knee, elbow, hip, shoulder and finger frames (`clip_bends.json`), then renders
+    each joint's deepest frame from the bend's inside and in profile (`clip_frames.png`). The game's deepest (M1b's
+    rig, the f3 build): knee 132 degrees (Jump_Start), hip 111 (Jump_Land), elbow 108 (Talk_Upper), shoulder 77
+    (Jog_Bwd_Right), the thumb's metacarpal 52 (the crouch clips); the fingers curl together (at most 50 degrees).
+  - M2 (output under `bodies_a/m2/`): the chameleon by the same route, the full build (no `--from-body`):
+    `--targets alien_meshy_targets/chameleon_m2.toml`, his Meshy body (`chameleon_t`, 185k triangles) on H4b's
+    skeleton and weights (`h4b/body2`), M1c's finger and bend numbers. His Meshy trunk stands about 8 cm in front of
+    the skeleton's, so `shift_y` (M2's only new key; the axolotl's files have none) moves the whole surface back
+    before the map; no chest push (`bust.push` 0, `smooth_after.spheres` empty); the hand kept at its size (Meshy's
+    0.265 m against H4b's 0.262); the cut at H4b's ring (1.443) with its half-width, so the weld scales his head as
+    H4b's. `body.json`'s `toes`: the vertices ahead of each Toes bone and their mean weight on it.
+  - M2b (output under `bodies_a/m2b/`): the fresh critic's fixes on M2, `chameleon_m2b.toml` (M2's file plus
+    `seat`, `arm_thicken`, `smooth_rest` with boxes; the older files have none of M2b's keys, tested): `fingers.shape`
+    (slimmer, smaller tips, the thumb 15 % shorter, applied about each finger's slice centres before its bones are
+    placed); `seat` (the depth behind the thigh-to-back line scaled); `smooth_rest.boxes` hold the open ring (the
+    weld and his head's scale unchanged), `mu` is Taubin's step back, a box's eighth value its own (0: plain).
+    Taubin's passes keep forms a few cm wide, so a ridge or dent that must go (the throat's V, the belly's groove)
+    needs a plain Laplacian; a first build's Taubin on the navel box pinched a bright facet there.
+    `alien_body_clip_bends.py` turns a view about the bone (45 degree steps) until the camera sees the joint from
+    outside the body (M2's elbow tile was shot from inside his chest).
+  - M1d (output under `bodies_a/m1d/`): the fresh critic's fixes on M1c, `axolotl_m1d.toml` (M1c's file plus
+    `bust_round`; `arm_thicken.widths` / `width_clamp`, `fingers.shape` with `thumb_thick`; the older files have none
+    of M1d's keys, tested). `bust_round` finds each breast's most pointed front-facing vertex and blurs the heights
+    about it by a Gaussian, then lifts the blend so the volume stays (the most forward vertex was not the read
+    point). `arm_thicken.widths` scales the arm toward target front widths (mm per |x|) instead of a fixed factor, so
+    a lump and a pinch in Meshy's arm come out even. Her hips and seat stay as they are (the engineer's decision).
+  - M1e (output under `bodies_a/m1e/`): M1d's regressions, `axolotl_m1e.toml` (M1d's file plus
+    `arm_thicken.disp_smooth` / `rounds` and `smooth_rest.disp_smooth`; the older files have none, tested). Every
+    build now logs each fix step's faces flipped against the body before the fixes (`flips` in `body.json`): a fold
+    renders as a dark speck or slit. M1d's specks and armpit slits were such folds: its per-vertex arm factors (up
+    to 1.65) and its smoothing boxes' 20-mm margins over the cleft moved neighbours apart faster than their spacing.
+    `disp_smooth` smooths a step's move over the mesh (the open ring pinned) before it is applied, and `rounds`
+    repeats measure, scale and smooth so the arm still reaches its widths. Too many passes reach the ring's
+    near-degenerate faces (25 folded one; 10 do not). A bright point on a smooth form is found from the close-up's
+    pixel (`world_to_camera_view` plus a ray cast); hers was a knot of short-edged vertices, not the apex. The A
+    pose's shoulder hook goes with a wider UpperArm band that starts inboard of the joint and covers the deltoid cap
+    (`radius` 0.12).
+  - M1f (output under `bodies_a/m1f/`): M1e's leftovers, `axolotl_m1f.toml` (M1e's file plus `seam_band` and
+    `relax`, the arm's `width_clamp` from 0.9 and 5 `rounds`; the older files have none, tested). M1e's thin dark mark
+    at the neck's back came from `smooth_rest.disp_smooth`: the smoothed move reached the ring's first neighbours
+    (1.75 mm; M1d 0) and thinned the seam's faces (smallest angle 3.76 -> 2.25 degrees); `arm_thicken`'s did not.
+    `seam_band` pins every vertex within it below the ring at its own move in `disp_smooth`. A small correction
+    inside a step with `disp_smooth` is spread thin; `relax` runs after every shape step (tangent spread plus a
+    Taubin pair along the normal). A heightfield fill does not close a deep cleft's fold: the cleft overlaps itself
+    across the fill's direction (uncapped it filled 47 mm and flipped 45 faces; capped it flipped one).
+  - M2c (output under `bodies_a/m2c/`): M2b's leftovers, `chameleon_m2c.toml` (M2b's keys with new values only;
+    tested). `disp_smooth` is wrong for a smoothing step: it smooths the step's move, and a smoothing's move is the
+    noise it removed, so the noise comes back (grid g1..g3: every torso region rougher than M2b). Where
+    `smooth_rest` boxes overlap, a vertex takes the most passes of them and the last box's `mu`, so a plain box
+    listed after a Taubin box turns the overlap plain at the Taubin box's passes; list the box whose `mu` must hold
+    last, with its `mu` given. A plain Laplacian on the pectorals' lower edges pinches them into points; Taubin
+    holds them. The spikes between the finger bases in the curled clips soften with a wider MCP band and more base
+    smoothing (`half[0]` 16 mm, `sigma` 18 mm, `base_band` 30 mm, 40 passes) but do not go: they look like the
+    palm's skin folding between the curled fingers, not weight noise.
+  - The fingers review (`alien_body_refit_review.py --fingers`) curls the thumb about the game clips' own axes
+    (`THUMB_AXES_HAND`, read in the hand bone's frame off the deepest clip thumb, Crouch_Run), by default at their
+    angles 51.5/28.8/34.7: the tip sweeps under the palm toward the little finger. The old axis, d x (-Z), turned it
+    down along the palm's normal so no fist could close (`--thumb-axes palm` keeps it for a before).
+  - T1 (the game build on the new bodies, tag `anim_bare/r2c/build`): r2b's command (`--clip-edits
+    tools/blender/anim_sets/alien.toml`, `--lively` r2b's `v9_r2c_n4` heads) with `--body` M2c's body for the
+    chameleon (`--no-flare`) and M1f's for the axolotl (`--no-flare --gill-ratio 0.7`), one head per run under the same
+    tag. `alien_char_build.py` unwraps every body and paints its maps from the head's bases, so the skin carries over
+    with no new bake (uv_cover 0.40, r2b's 0.41). 57,784 and 55,713 triangles, one material, glTF-Validator 0 errors.
+    Whole-head gate (share over 8/255, front, left, back, right): the chameleon 1.257 / 0.549 / 0.175 / 0.954 %
+    (r2b 1.264 / 0.524 / 0.18 / 0.939); the axolotl 1.049 / 0.121 / 0.932 / 0.136 % (r2b 0.291 / 0.063 / 0.137 /
+    0.056; M1f 0.889 / 0.075 / 0.932 / 0.094, the same 10 % larger head and 70 % gills). The loco set on them:
+    `docs/animations.md` (`alien_loco.py --build r2c/build --out loco/t1`; the axolotl's is not made yet).
+- **Bodies A, H1 to H5: the chameleon's and the axolotl's hybrid bodies** (art #196; output under
+  `D:/prime-art-raw/research/2026-10-22-roster/design/pilot3d/bodies_a/`, a `HANDOFF.md` per step):
+  - `alien_cage.py --targets <toml>` sets any constant in `CAGE_KEYS` from a file in
+    `tools/blender/alien_cage_targets/`; a file's `include` (a file beside it) is applied first. Without a file every
+    H1/H2/H3 path is off and S4b's numbers stay.
+  - H1 (`chameleon_h1.toml`): the cage on the refit's chameleon skeleton (`CAGE_REMAP`), four fingers and a thumb,
+    shrink-wrapped onto the cleaned, mirrored Meshy body (`TARGET_*`). The wrap moves only the cage's coarse rings,
+    so the subdivision smooths the target's forms away (a slim mannequin).
+  - H2 (`chameleon_h2.toml`, `PROJECT`): after the subdivision every vertex is projected onto the same cleaned
+    target (`Wrap.project`). The target stands in its own frame (its stations and section centres), so a vertex is
+    first moved by the frame offset of the nearest wrap pairs, then by the closest target point's step (cut at
+    `PROJECT_MAX`, refused when the normals disagree), smoothed, masked (the hands from the wrist, the neck band
+    under the ring, the feet below the ankle, the soles' height) and relaxed tangentially. `PROJECT_THICK` sets
+    each region's thickness against the target's (the arms 1.12: ours are about 1.25 times as long as Meshy's).
+    The axolotl can reuse it with her own target and a file that includes hers.
+  - `alien_body_refit_review.py --bends` shoots the left shoulder (up, down, forward), elbow, hip and knee bent
+    (`bends.png`); `alien_body_beside.py` puts bodies and raw targets side by side at one scale (`beside.png`).
+  - H3 (a fresh critic's measure of H2 against the concept): the refit on `alien_body_targets/chameleon_h3.toml`
+    (the concept's arm: upper arm 0.22 m, forearm 0.25, wrist to fingertip 0.26; at the review's A pose the elbow
+    stands at z 1.08, the wrist 0.84, the fingertips about 0.59), then `chameleon_h3.toml`: the arms at Meshy's own
+    thickness, and after the projection `sculpt` (all off by default): `SCULPT_ARM` scales the T-posed arm's
+    height (its front width when it hangs) and depth toward per-distance targets, `SCULPT_DELTOID` pushes the
+    shoulder's top up around the joint, `SCULPT_THIGH` pulls the outer thigh in, `NECK_RELAX` smooths the neck
+    band (Taubin, nothing within 15 mm of the ring). The feet's toes turn out along their length (`TOE_YAW`); the
+    thumb roots at 35 % of the palm. `alien_body_beside.py --apose --views 0,90 --concept <png>` puts welded
+    characters A-posed beside the concept's front and side at one scale.
+  - H4 (H3's defects at close range): `chameleon_h4.toml` adds a `TARGET_CLEAN` box on the target's neck back and
+    trapezius (their lumps came from the target, not the cage), a gentler forearm rise past the elbow, and three new
+    knobs, all off by default: `SCULPT_TRUNK` scales the trunk (|x| under `TRUNK_X`) about each height's centre per
+    row (a fuller waist and belly), `SCULPT_PEC` pushes the chest's front forward between the sternum and the side
+    with a short rise at the pectoral's lower border (soft planes, no nipples), and `WEIGHT_ZONES` gives soft
+    |x| boxes (the knee, the hip's front fold) extra weight smoothing after `WEIGHT_SMOOTH`, so a bend folds wider.
+    The outer toe group turns out less and the thumb root is thinner. `alien_body_refit_review.py` also shoots the
+    chest (`close_chest_front`, `close_chest_three_quarter`).
+  - H4b (the feet, thumb and trunk that H4's numbers did not fix): `chameleon_h4b.toml` and two new knobs, both off
+    by default. `FOOT_END` rebuilds the last foot ring's columns, the two toes' bases: the inner columns at a small
+    share of the half width (a slit between the toes instead of H1's wide capped quad, which read as a wedge and a "Y"
+    from above), level tops and a flatter sole; the last two `FOOT` rings move about 2.6 cm back and lower, so the
+    toes split further back, and the toes are longer, wider, nearly parallel and taper to a low tip. The thumb points
+    down the hand and toward the palm instead of at the viewer, its root further out of the palm's side (a short
+    `THUMB_OUT` folds the root: the hand's max fold jumped past 150 degrees in the grid). `PROJECT_DETAIL` gives soft
+    |x| boxes where the projection's step keeps a share of its unsmoothed part (the trunk's front: the target's
+    clavicles, pectoral planes and abdomen survive `PROJECT_SMOOTH`); `SCULPT_PEC` has a long lower border.
+  - H5, the axolotl woman's body on the same code: her refit on `alien_body_targets/axolotl_h5.toml`, measured
+    from `ax_turn_c` (front | side, `alien_body_measure.py --panels 2`). At her head's own scale she would stand
+    1.62 m with her eyes near 1.42 m, far under the game's camera, so her body below the ring keeps the concept's
+    proportions with the ring at the standard 1.390 m (eyes about 1.56 m, top about 1.76 m). Then
+    `alien_cage_targets/axolotl_h5.toml`: it includes the chameleon's H4b chain, sets again every number of his
+    Meshy body, concept and skeleton (her Meshy body's stations and cleaning boxes, her smaller hand, his sculpt
+    rows and trunk relief off), and uses three new knobs, all off by default and off in his files. `TOE_SPLIT` adds
+    one foot ring past the last whose top and sole have more columns (two quads and an n-gon each side bridge the
+    last ring's three edges), so the forefoot ends in five toe bases (`TOE_SET` 0 to 4). `TOE_LENS` gives each toe
+    its length factor (with `TOE_YAW` the fan). `SCULPT_BUST` pushes the chest's front-facing vertices forward
+    about each side's centre with a smooth falloff to its radius: the engineer's "a bit fuller" chest, 10 mm with a
+    9 cm falloff, no detail. `alien_body_beside.py --concept-px-m 0.0018362 --concept-sole-row 1001` puts her
+    beside her two-panel concept.
 
 ## Findings for later tasks
 

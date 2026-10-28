@@ -327,7 +327,7 @@ class EvaluateTest(unittest.TestCase):
 
 
 def four_finger_alien(profile: dict) -> dict:
-    """A good body whose Little chains are present and carry no weights (the alien's four fingers, art #223)."""
+    """A good body whose Little chains are present and carry no weights (the 2026-10-19 four-finger alien, art #223)."""
     measure = good_body(profile)
     painted = measure["meshes"][0]["weights"]["weighted_bones"]
     for name in [n for n in painted if "Little" in n]:
@@ -336,8 +336,8 @@ def four_finger_alien(profile: dict) -> dict:
 
 
 class AlienFingersTest(unittest.TestCase):
-    """kinds.alien: Thumb, Index, Middle and Ring weighted; the Little bones present and unweighted
-    (docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md)."""
+    """kinds.alien: all five fingers weighted, as the body's, and the character budget (the engineer, art #196
+    comment 6386685364); fingers_unweighted stays a rule any kind may carry."""
 
     setUp = EvaluateTest.setUp
     evaluate = EvaluateTest.evaluate
@@ -346,22 +346,31 @@ class AlienFingersTest(unittest.TestCase):
     def finger_check(self, measure: dict, kind: str = "alien") -> dict:
         return next(r for r in self.evaluate(measure, kind)["results"] if r["check"] == "finger_chains")
 
-    def test_four_weighted_fingers_and_a_bare_little_pass(self) -> None:
-        report = self.evaluate(four_finger_alien(self.profile), "alien")
+    def test_five_weighted_fingers_pass(self) -> None:
+        report = self.evaluate(good_body(self.profile), "alien")
         failures = [r for r in report["results"] if r["status"] != _checks.PASS]
         self.assertEqual(failures, [])
         self.assertEqual(report["verdict"], _checks.PASS)
-        detail = self.finger_check(four_finger_alien(self.profile))["detail"]
-        self.assertIn("4 weighted fingers per hand (Thumb, Index, Middle, Ring)", detail)
-        self.assertIn("Little present and unweighted", detail)
+        self.assertEqual(self.finger_check(good_body(self.profile))["detail"], "five weighted fingers per hand")
 
-    def test_the_body_still_wants_five_weighted_fingers(self) -> None:
-        result = self.finger_check(four_finger_alien(self.profile), "body")
-        self.assertEqual(result["status"], _checks.FAIL)
-        self.assertIn("LeftLittle is not weighted on LeftLittleProximal", result["detail"])
+    def test_a_bare_little_fails_the_alien_now(self) -> None:
+        for kind in ("alien", "body"):
+            result = self.finger_check(four_finger_alien(self.profile), kind)
+            self.assertEqual(result["status"], _checks.FAIL, kind)
+            self.assertIn("LeftLittle is not weighted on LeftLittleProximal", result["detail"])
+
+    def test_the_alien_is_held_to_the_character_budget(self) -> None:
+        budget = self.contract["budgets"]["character"]
+        self.assertEqual((budget["triangles_target"], budget["triangles_cap"]), (40000, 60000))
+        measure = good_body(self.profile)
+        for tris, alien, body in ((29000, _checks.PASS, _checks.WARN), (45000, _checks.WARN, _checks.FAIL),
+                                  (60001, _checks.FAIL, _checks.FAIL)):
+            measure["meshes"][0]["triangles"] = tris
+            self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["triangles"], alien, tris)
+            self.assertEqual(self.statuses(self.evaluate(measure, "body"))["triangles"], body, tris)
 
     def test_a_missing_little_bone_fails(self) -> None:
-        measure = four_finger_alien(self.profile)
+        measure = good_body(self.profile)
         bones = measure["armatures"][0]["bones"]
         bones[:] = [b for b in bones if b["name"] != "RightLittleDistal"]
         result = self.finger_check(measure)
@@ -369,16 +378,20 @@ class AlienFingersTest(unittest.TestCase):
         self.assertIn("RightLittle lacks RightLittleDistal", result["detail"])
         self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["missing_bones"], _checks.FAIL)
 
-    def test_a_weighted_little_fails(self) -> None:
+    def test_fingers_unweighted_still_works_for_a_kind_that_lists_it(self) -> None:
+        self.contract = copy.deepcopy(self.contract)
+        self.contract["kinds"]["alien"]["fingers_unweighted"] = ["Little"]
+        result = self.finger_check(four_finger_alien(self.profile))
+        self.assertEqual(result["status"], _checks.PASS)
+        self.assertIn("4 weighted fingers per hand (Thumb, Index, Middle, Ring)", result["detail"])
         measure = four_finger_alien(self.profile)
         measure["meshes"][0]["weights"]["weighted_bones"]["LeftLittleIntermediate"] = 4
         result = self.finger_check(measure)
         self.assertEqual(result["status"], _checks.FAIL)
         self.assertIn("LeftLittle must carry no weights but is weighted on LeftLittleIntermediate", result["detail"])
-        self.assertEqual(self.finger_check(good_body(self.profile))["status"], _checks.FAIL)  # five weighted
 
     def test_another_unweighted_finger_fails(self) -> None:
-        measure = four_finger_alien(self.profile)
+        measure = good_body(self.profile)
         del measure["meshes"][0]["weights"]["weighted_bones"]["RightRingProximal"]
         result = self.finger_check(measure)
         self.assertEqual(result["status"], _checks.FAIL)
@@ -387,7 +400,7 @@ class AlienFingersTest(unittest.TestCase):
     def test_whole_spring_sets_under_head_pass_and_other_extra_bones_fail(self) -> None:
         # [kinds.alien] bones = "all_and_springs" (art #196 comment 6374319309)
         def springs(parent: str, *names: str) -> dict:
-            measure = four_finger_alien(self.profile)
+            measure = good_body(self.profile)
             for name in names:
                 measure["armatures"][0]["bones"].append({"name": name, "parent": parent, "head": [0, 1.8, 0],
                                                          "tail": [0, 1.85, 0], "deform": True})
@@ -416,13 +429,13 @@ class AlienFingersTest(unittest.TestCase):
     def test_the_alien_head_may_stand_above_the_capsule_up_to_its_cap(self) -> None:
         # [kinds.alien] head_top_max_m 1.95 (art #196 comment 6374319309); the body keeps height_max_m
         for top, alien, body in ((1.884, _checks.PASS, _checks.FAIL), (1.951, _checks.FAIL, _checks.FAIL)):
-            measure = four_finger_alien(self.profile)
+            measure = good_body(self.profile)
             measure["meshes"][0]["max"][1] = top
             self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["height"], alien, top)
             self.assertEqual(self.statuses(self.evaluate(copy.deepcopy(measure), "body"))["height"], body, top)
 
     def test_the_alien_keeps_the_body_morph_rule(self) -> None:
-        measure = with_keys(four_finger_alien(self.profile), {"belly": {"Spine": 30}})
+        measure = with_keys(good_body(self.profile), {"belly": {"Spine": 30}})
         self.assertEqual(self.statuses(self.evaluate(measure, "alien"))["body_shape_morphs"], _checks.FAIL)
 
 
@@ -443,8 +456,8 @@ REAL_KIT = common.raw_dir() / "review/char/alien-parts-kit/S9d/export/cage/chara
 
 
 def alien_kit(profile: dict, part_triangles: dict[str, int] | None = None) -> dict:
-    """A good four-finger alien Body plus every kit part as a rigid mesh off its socket (not at the origin)."""
-    measure = four_finger_alien(profile)
+    """A good five-finger alien Body plus every kit part as a rigid mesh off its socket (not at the origin)."""
+    measure = good_body(profile)
     kit = _checks.kit_parts({"nodes": KIT_NODES})
     for name in sorted({n for choices in kit.values() for members in choices.values() for n in members}):
         part = rigid_piece((part_triangles or {}).get(name, 1000))["meshes"][0]
@@ -515,7 +528,11 @@ class AlienKitTest(unittest.TestCase):
         measure["meshes"][0]["triangles"] = cap
         statuses = self.statuses(self.evaluate(measure))
         self.assertEqual(statuses["character_triangles"], _checks.FAIL)
-        self.assertEqual(statuses["triangles"], _checks.FAIL)  # and the body over its own cap
+        # the body alone at the cap: its own budget is the character's too (art #196 comment 6386685364), so it is
+        # over the target but not over the cap
+        self.assertEqual(statuses["triangles"], _checks.WARN)
+        measure["meshes"][0]["triangles"] = cap + 1
+        self.assertEqual(self.statuses(self.evaluate(measure))["triangles"], _checks.FAIL)
 
     def test_a_missing_part_warns(self) -> None:
         measure = alien_kit(self.profile)

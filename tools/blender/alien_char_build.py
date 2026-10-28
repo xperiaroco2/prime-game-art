@@ -189,6 +189,70 @@ def corner_normals(me):
 GILL_ZETA_ON_BODY = 0.55  # A2: the axolotl's gills on the walking body (anim_bare/a2: Jog and Sprint jitter 205-267 deg/s)
 
 
+def _rows(me, owned):
+    """The vertices outside the gills (positions) and their corners (position, every UV layer's uv, head_n)."""
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    co = co.reshape(-1, 3)
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    cols = [co[lv]]
+    for layer in me.uv_layers:
+        uv = np.empty(len(me.loops) * 2)
+        layer.data.foreach_get("uv", uv)
+        cols.append(uv.reshape(-1, 2))
+    if "head_n" in me.attributes:
+        hn = np.empty(len(me.loops) * 3)
+        me.attributes["head_n"].data.foreach_get("vector", hn)
+        cols.append(hn.reshape(-1, 3))
+    keep = ~np.asarray(owned, dtype=bool)
+    return co[keep].tolist(), np.hstack(cols)[keep[lv]].tolist()
+
+
+def _owned(skin) -> list[bool]:
+    """Each vertex: is its largest weight a Gill* group's."""
+    gills = {g.index for g in skin.vertex_groups if g.name.startswith("Gill")}
+    return [bool(v.groups) and max(v.groups, key=lambda g: g.weight).group in gills for v in skin.data.vertices]
+
+
+def lighten_gills(skin, keep: float) -> dict:
+    """M1 (art #196): collapse-decimate the faces whose vertices the Gill* groups own (each vertex's largest weight),
+    down to `keep` of their triangles; every other vertex has weight 0 in the decimation group. The ratio is the
+    whole mesh's, from the gills' share (G.gill_decimate_ratio).
+    R1: measured, not assumed. Every vertex outside the gills must keep its position, and each of its corners its
+    UVs and head_n, exactly (G.missing_rows); the build fails if one moved. The gills' triangles after are counted
+    on the result (the faces whose vertices the Gill* groups own)."""
+    me = skin.data
+    own = _owned(skin)
+    tris = sum(len(p.vertices) - 2 for p in me.polygons)
+    gill_tris = sum(len(p.vertices) - 2 for p in me.polygons if all(own[i] for i in p.vertices))
+    v_before, c_before = _rows(me, own)
+    vg = skin.vertex_groups.new(name="_gill_dec")
+    vg.add([i for i, o in enumerate(own) if o], 1.0, "REPLACE")
+    mod = skin.modifiers.new("gill_dec", "DECIMATE")
+    mod.decimate_type, mod.vertex_group, mod.ratio = "COLLAPSE", vg.name, G.gill_decimate_ratio(tris, gill_tris, keep)
+    select_only([skin], active=skin)
+    bpy.ops.object.modifier_move_to_index(modifier=mod.name, index=0)  # before the armature's
+    bpy.ops.object.modifier_apply(modifier=mod.name)
+    skin.vertex_groups.remove(skin.vertex_groups["_gill_dec"])  # (vg is stale after the apply: M1d's run read junk)
+    me = skin.data
+    after = sum(len(p.vertices) - 2 for p in me.polygons)
+    own_a = _owned(skin)
+    gill_after = sum(len(p.vertices) - 2 for p in me.polygons if all(own_a[i] for i in p.vertices))
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    _, c_after = _rows(me, [False] * len(me.vertices))
+    moved = G.missing_rows(v_before, co.reshape(-1, 3).tolist())
+    corners = G.missing_rows(c_before, c_after)
+    rep = {"keep": keep, "tris_before": tris, "gill_tris_before": gill_tris, "tris_after": after,
+           "gill_tris_after": gill_after, "gill_keep_measured": round(gill_after / max(gill_tris, 1), 4),
+           "outside_vertices": len(v_before), "outside_moved": moved, "outside_corners": len(c_before),
+           "outside_corners_changed": corners}
+    if moved or corners:
+        raise RuntimeError(f"lighten_gills: {moved} vertices and {corners} corners outside the gills changed {rep}")
+    return rep
+
+
 def main():
     ap = argparse.ArgumentParser()
     for k in ("--head", "--lively", "--lively-json", "--body", "--albedo", "--mask", "--accent", "--detail",
@@ -196,6 +260,13 @@ def main():
         ap.add_argument(k, required=True)
     ap.add_argument("--shield", action="store_true")
     ap.add_argument("--clip-edits", default="", help="A1: the alien's clip edits (anim_sets/alien.toml)")
+    ap.add_argument("--no-flare", action="store_true", help="M1: no neck flare (a Meshy body has its own trapezius)")
+    ap.add_argument("--leg-fit", default="", help="T2: the .blend of the rig the clips were made on (S4b's body): "
+                    "the clips' hip keys scaled to this body's leg length and the feet's lowest point matched per frame (alien_leg_fit.py)")
+    ap.add_argument("--leg-fit-mode", default="lowest", choices=("lowest", "ik"), help="T3: with --leg-fit, "
+                    "'ik' puts the feet on the donor's foot paths scaled to the legs (alien_leg_fit.py)")
+    ap.add_argument("--gill-ratio", type=float, default=1.0, help="M1: the gills' share of their triangles kept "
+                    "(collapse decimation on the faces the Gill* groups own; 1.0: untouched)")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     head, out = a.head, Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -242,7 +313,7 @@ def main():
     mw_b = np.array(body.matrix_world)
     inv_b = np.linalg.inv(mw_b)
     moved_f = 0
-    for v in body.data.vertices:
+    for v in [] if a.no_flare else body.data.vertices:
         p = bco[v.index]
         dz = ring_z - p[2]
         if dz <= 0.0 or dz > depth * 1.4:
@@ -261,7 +332,7 @@ def main():
             moved_f += 1
     body.data.update()
     bco = world(body)
-    rep["flare"] = {"depth_m": round(depth, 4), "extra_m": round(extra, 4), "moved": moved_f}
+    rep["flare"] = {"off": a.no_flare, "depth_m": round(depth, 4), "extra_m": round(extra, 4), "moved": moved_f}
     log(f"flare {rep['flare']}")
 
     log("step the head")
@@ -273,6 +344,9 @@ def main():
     skin = next(o for o in bpy.data.objects if o.type == "MESH" and o.parent == larm)
     me = skin.data
     me.attributes.new("head_n", "FLOAT_VECTOR", "CORNER").data.foreach_set("vector", corner_normals(me).ravel())
+    if a.gill_ratio < 1.0:  # M1: the gills lighter, their own corner normals (head_n) interpolated, the rest kept
+        rep["gills"] = lighten_gills(skin, a.gill_ratio)
+        log(f"gills {rep['gills']}")
     sco = world(skin)
     jn = {b.name: larm.matrix_world @ b.head_local for b in larm.data.bones}
     # the waist: the lively build's own (lively.json rig.waist, glTF y = Blender z here), measured again on the mesh
@@ -603,6 +677,12 @@ def main():
     me.calc_loop_triangles()
     rep["tris"] = len(me.loop_triangles)
     log(f"tris {rep['tris']} bones {rep['bones']} springs {springs}")
+    if a.leg_fit:  # T2: the clips fitted to this body's legs (alien_leg_fit.py), before the clip edits
+        import alien_leg_fit
+        rep["leg_fit"] = alien_leg_fit.fit(arm, a.leg_fit, [x for x in bpy.data.actions
+                                                            if x.name.startswith("CharacterArmature|")],
+                                           mode=a.leg_fit_mode)
+        log(f"leg fit {json.dumps(rep['leg_fit'])}")
     if a.clip_edits:  # A1: the clips edited for the bare alien body (alien_clip_edit.py) before the export
         import alien_clip_edit
         rep["clip_edits"] = {"settings": a.clip_edits, "clips": alien_clip_edit.apply(arm, skin, a.clip_edits)}

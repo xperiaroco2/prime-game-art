@@ -4,7 +4,13 @@ standard ring the separate head welds to), on the contract skeleton with Univers
 
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_body.py -- \
         --body <Superhero_Male_FullBody.gltf> --clips <UAL1_Standard.glb> --map contract/bone_maps/quaternius.toml \
-        --out <dir>
+        --out <dir> [--targets tools/blender/alien_body_targets/chameleon_a.toml]
+
+The targets file holds a concept's numbers (bands, bone lengths and radii, fingers, toes, ring height, neck flare,
+Z_ANCHORS mapping u1's fixed heights onto the target's): u1.toml (the default) rebuilds S1c exactly; chameleon_a.toml
+is the A chameleon body (the refit route of the bodies_a pilot), measured by alien_body_measure.py. Its new paths:
+FINGERS 5 keeps the Little finger, TOE_CENTRES with two entries gives the chameleon's two toe groups, NECK_FLARE the
+neck's concave sweep into the trapezius, CROTCH_SMOOTH flattens the base's bulge.
 
 Writes <out>/alien_body.blend (a saved character for `tools/run.py export`), <out>/neck_ring.json and
 <out>/fit.json (the measured widths before and after against the targets).
@@ -42,6 +48,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import sys
 import tomllib
 
@@ -49,60 +56,64 @@ import bmesh
 import bpy
 from mathutils import Matrix, Vector
 
-# u1 (D:/prime-art-raw/2026-10-18-alien-2d-turn2/u1, part_0 front, part_1 side), measured per pixel row; the sole is
-# row 967 and one pixel is 0.0019 m (1.75 m from the sole to the top of the head without the crest).
-PX_M = 0.0019
-# (z m, width m, depth m) of the trunk and neck; None = not constrained there (arms merge into the silhouette).
-BANDS = [
-    (0.783, 0.304, 0.198),
-    (0.859, 0.277, 0.232),
-    (0.935, 0.262, 0.252),
-    (1.011, 0.232, 0.246),
-    (1.087, 0.236, 0.224),
-    (1.125, 0.255, 0.217),
-    (1.200, None, 0.218),
-    (1.315, None, 0.135),
-    (1.353, 0.124, 0.110),
-    (1.391, 0.114, 0.106),
-]
-# Bone scales: (along, across, across) in world axes per bone, and the thickness targets (radius m) measured on u1.
-LENGTH = {
-    "pelvis": 0.907, "spine_01": 0.907, "spine_02": 0.907, "spine_03": 0.907, "neck_01": 1.25,
-    "clavicle": 0.668, "upperarm": 1.04, "lowerarm": 0.95, "hand": 1.12,
-    "thigh": 0.753, "calf": 0.884, "foot": 1.25, "ball": 1.2,
-}
-RADIUS = {"upperarm": 0.042, "lowerarm": 0.031, "thigh": 0.066, "calf": 0.054}
-# The soft designer-toy body (S1b, UPDATE 2 of the brief): shorter, thicker, spread fingers; limbs relaxed into smooth
-# tubes; the muscle relief smoothed away by a volume-keeping (Taubin) smooth; rounded three-toe paddle feet.
-FINGER_LEN = 0.8           # finger bones' length against the base's (times HAND_SCALE)
-FINGER_THICK = 1.55        # and their thickness
-FINGER_SPREAD = 0.45       # index and ring bases moved this much further from the middle finger's (across the hand)
-HAND_SCALE = 1.12
-FOOT_WIDTH = 1.3
-TUBE_KEEP = 0.3            # a limb's cross-section keeps this power of its radius against the ring's mean (0: round)
-TUBE_SIGMA = 0.05          # m: the Gaussian that smooths a limb's radius profile along its length (knee, calf, biceps)
+# The refit's targets (the u1 numbers of S1/S1c, or another concept's): a TOML file in alien_body_targets/, chosen
+# by --targets (default u1.toml); its upper-case keys become this module's constants (apply_targets).
+TARGETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "alien_body_targets")
+TARGET_KEYS = ("PX_M", "BANDS", "LENGTH", "RADIUS", "FINGERS", "FINGER_LEN", "FINGER_THICK", "FINGER_SPREAD",
+               "HAND_SCALE", "THUMB_ROOT", "FOOT_WIDTH", "TUBE_KEEP", "TUBE_SIGMA", "TOE_HALF", "TOE_LEN", "TOE_H",
+               "GROOVE", "TOE_CENTRES", "TOE_SEMI", "NOTCHES", "NOTCH_W", "TOE_SPLAY", "TRUNK_Z", "RING_Z", "NECK",
+               "BELLY", "NECK_FLARE", "NECK_FLARE_Z", "Z_ANCHORS", "CROTCH_SMOOTH")
 TAUBIN = 80                # iterations of the lambda/mu smooth over the body (not the hands)
-TOE_HALF = 0.095           # m: half the paddle's width at the toes (u1: about 0.19 m across)
-TOE_LEN = 0.034            # m: how far each of the three rounded toes reaches past the notches between them
-TOE_H = 0.062              # m: the paddle's height at the toes
-GROOVE = 0.009             # m: the crease between the toes on top
 FOOT_RINGS = 12            # rings of the rebuilt forefoot (packed towards the toe end)
 TOE_END = 0.4              # the last part of the toes' length that rounds off (a quarter ellipse seen from the side)
 TOE_TIP = 0.2              # the last ring's height against the paddle's: a small cap closes a round nose
-# S1c (UPDATE 3 of the brief): one continuous soft trunk, clean soft hands.
-TRUNK_Z = (0.70, 1.22)     # m: the trunk's sections are refitted between these heights (fading in and out over TRUNK_FADE)
 TRUNK_FADE = 0.08
 TRUNK_SIGMA = 0.05         # m: the Gaussian along the height that smooths the trunk's radius field (rows, ledges, creases)
 TRUNK_BINS = 18            # angle bins over the half section (the body is mirrored)
 TRUNK_KEEP = 0.1           # each vertex keeps this power of its own radius against its bin's mean
-THUMB_ROOT = (0.9, 1.0)    # the thumb's first bone: length and thickness factors (times HAND_SCALE): no root bulge
 HAND_TAUBIN = 30           # iterations of the volume-keeping smooth over the hands (palm and fingers)
 HAND_WEIGHT_SMOOTH = 6     # passes that blend the hand's skin weights with their neighbours' (soft, rounded bends)
-RING_Z = 1.39
 RING_N = 24
 RING_STEP = 0.008
-NECK = (0.059, 0.055)      # semi-axes of the neck section at the cut (u1: 0.114 x 0.106 m at 1.391 m)
-BELLY = 0.03
+
+
+def apply_targets(path):
+    """Loads a targets file into the module's constants: BANDS widths or depths of 0 become None (not constrained),
+    the pairs become tuples. Returns the file's name key."""
+    with open(path, "rb") as fh:
+        t = tomllib.load(fh)
+    missing = [k for k in TARGET_KEYS if k not in t]
+    if missing:
+        raise SystemExit(f"{path}: missing {missing}")
+    unknown = sorted(set(t) - set(TARGET_KEYS) - {"name"})  # R1: a typo would otherwise be ignored
+    if unknown:
+        raise SystemExit(f"{path}: unknown keys {unknown}")
+    za = [a for a, _ in t["Z_ANCHORS"]]
+    if any(b <= a for a, b in zip(za, za[1:])):  # R1: two anchors at one height made Z() divide by zero
+        raise SystemExit(f"{path}: Z_ANCHORS' heights must increase strictly, got {za}")
+    g = globals()
+    for k in TARGET_KEYS:
+        v = t[k]
+        if k == "BANDS":
+            v = [(b[0], b[1] or None, b[2] or None) for b in v]
+        elif k in ("THUMB_ROOT", "TRUNK_Z", "NECK"):
+            v = tuple(v)
+        g[k] = v
+    return t.get("name", os.path.basename(path))
+
+
+def Z(h):
+    """A height of u1's body (the code's fixed heights: seat, belly, neck) on this target's, by Z_ANCHORS."""
+    pts = Z_ANCHORS
+    for (a0, b0), (a1, b1) in zip(pts, pts[1:]):
+        if a1 <= a0:  # R1: apply_targets refuses it; a zero-length span never divides
+            raise ValueError(f"Z_ANCHORS' heights must increase strictly: {a0} then {a1}")
+        if h <= a1 or a1 == pts[-1][0]:
+            return b0 + (b1 - b0) * (h - a0) / (a1 - a0)
+    return h
+
+
+apply_targets(os.path.join(TARGETS_DIR, "u1.toml"))
 CLIPS = {  # the game's name: the Universal Animation Library's
     "Idle_Loop": "Idle_Loop", "Walk_Loop": "Walk_Loop", "Jog_Fwd_Loop": "Jog_Fwd_Loop",
     "Sprint_Fwd_Loop": "Sprint_Loop", "Crouch_Idle_Loop": "Crouch_Idle_Loop", "Crouch_Fwd_Loop": "Crouch_Fwd_Loop",
@@ -397,8 +408,10 @@ def main():
     p.add_argument("--clips", required=True)
     p.add_argument("--map", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--targets", default=os.path.join(TARGETS_DIR, "u1.toml"), help="the refit's targets (TOML)")
     args = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
-    report = {"source": args.body, "clips_source": args.clips}
+    report = {"source": args.body, "clips_source": args.clips, "targets": args.targets,
+              "target": apply_targets(args.targets)}
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=args.body, merge_vertices=True)  # one vertex per position: no seams to tear
@@ -470,7 +483,7 @@ def main():
         b = bones[n]
         par = b["parent"]
         nh = maps[par] @ b["head"] if par else b["head"].copy()
-        if n[:-2] in ("index_01", "ring_01"):  # spread: the thick fingers keep a gap
+        if n[:-2] in ("index_01", "ring_01") or (FINGERS == 5 and n[:-2] == "pinky_01"):  # spread: keep gaps
             mid = maps[par] @ bones[f"middle_01{n[-2:]}"]["head"]
             nh.y += (nh.y - mid.y) * FINGER_SPREAD
         new_head[n] = nh
@@ -527,14 +540,14 @@ def main():
         cur[z] = tuple(sum(w * m[i] for w, m in ws_) / tot for i in range(3))
     for v, w in zip(me.vertices, ws):
         s = sum(w.get(n, 0) for n in TRUNK)
-        if v.co.z > 0.80:  # the seat: the thighs carry the buttocks
-            s = min(1.0, s + sum(w.get(n, 0) for n in ("thigh_l", "thigh_r")) * min(1.0, (v.co.z - 0.80) / 0.06))
+        if v.co.z > Z(0.80):  # the seat: the thighs carry the buttocks
+            s = min(1.0, s + sum(w.get(n, 0) for n in ("thigh_l", "thigh_r")) * min(1.0, (v.co.z - Z(0.80)) / 0.06))
         if s < 0.05:
             continue
         z = round(v.co.z, 2)
         if z not in cur:
             continue
-        cw, cd, cy = cur[z] if v.co.z > 1.25 else at_cm(cur, v.co.z)  # the neck keeps S1b's sampling (its ring)
+        cw, cd, cy = cur[z] if v.co.z > Z(1.25) else at_cm(cur, v.co.z)  # the neck keeps S1b's sampling (its ring)
         tw, td = lerp_bands(v.co.z, 1), lerp_bands(v.co.z, 2)
         # Outside the trunk the arms and the outer thighs keep their shape (a soft falloff, never a cut).
         s *= max(0.0, min(1.0, (0.85 * cw - abs(v.co.x)) / (0.3 * cw)))
@@ -543,8 +556,8 @@ def main():
         if td:
             v.co.y = cy + (v.co.y - cy) * (1 + s * (min(1.25, max(0.6, td / cd)) - 1))
         # The belly: a soft forward bulge below the chest (front is -Y).
-        if 0.8 < v.co.z < 1.1 and v.co.y < cy:
-            t = (v.co.z - 0.8) / 0.3
+        if Z(0.8) < v.co.z < Z(1.1) and v.co.y < cy:
+            t = (v.co.z - Z(0.8)) / (Z(1.1) - Z(0.8))
             fall = math.sin(math.pi * t) ** 2 * math.exp(-(v.co.x / 0.09) ** 2)
             v.co.y -= s * BELLY * fall
     # 2b. The limbs become smooth tubes (no knee bumps, calf or biceps bulges).
@@ -558,19 +571,19 @@ def main():
     # 2c. The seat: the buttocks pressed into u1's depth (the front line plus the band depth) and smoothed below.
     front = {}
     for v in me.vertices:
-        if 0.6 < v.co.z < 1.05 and abs(v.co.x) < 0.2:
+        if Z(0.6) < v.co.z < Z(1.05) and abs(v.co.x) < 0.2:
             k = round(v.co.z, 2)
             front[k] = min(front.get(k, 9.0), v.co.y)
     for v in me.vertices:
         z = v.co.z
-        if not (0.66 < z < 1.02 and abs(v.co.x) < 0.2):
+        if not (Z(0.66) < z < Z(1.02) and abs(v.co.x) < 0.2):
             continue
         depth = lerp_bands(z, 2) or (BANDS[0][2] if z < BANDS[0][0] else None)
         if depth is None or round(z, 2) not in front:
             continue
         yb = at_cm(front, z) + depth
         if v.co.y > yb:
-            zw = smoothstep((z - 0.66) / 0.1) * (1 - smoothstep((z - 0.94) / 0.08))
+            zw = smoothstep((z - Z(0.66)) / 0.1) * (1 - smoothstep((z - Z(0.94)) / 0.08))
             v.co.y = yb + (v.co.y - yb) * (1 - 0.75 * zw)
     ws = weights_of(body)
     for b in BANDS:
@@ -598,6 +611,18 @@ def main():
     report["trunk"] = trunk_fit(allv, tws)
     z0, z1 = TRUNK_Z
     taubin(allv, [(tw ** 2 if z0 - 0.04 < v.co.z < z1 + 0.01 else 0.0) for v, tw in zip(allv, tws)], 10)
+    # The crotch (CROTCH_SMOOTH > 0): the base's bulge in front smoothed flat by a plain (shrinking) Laplacian
+    # around the midline between Z(0.70) and Z(0.84), fading out sideways and at both ends.
+    if CROTCH_SMOOTH:
+        zc0, zc1 = Z(0.70), Z(0.84)
+        cv = [v for v in allv if zc0 < v.co.z < zc1 + 0.06 and abs(v.co.x) < 0.1]
+        cw_ = [math.exp(-(v.co.x / 0.045) ** 2) * smoothstep((v.co.z - zc0) / 0.04)
+               * (1 - smoothstep((v.co.z - zc1) / 0.06)) for v in cv]
+        for _ in range(CROTCH_SMOOTH):
+            new = [sum((e.other_vert(v).co for e in v.link_edges), Vector()) / len(v.link_edges) for v in cv]
+            for v, n, w in zip(cv, new, cw_):
+                v.co = v.co + (n - v.co) * 0.5 * w
+        report["crotch_smoothed"] = len(cv)
     # The neck: narrowed to u1's width above 1.30 m and, near the cut, laid exactly on the NECK ellipse, so the cut is
     # an even convex loop and the zip to the standard ring is clean.
     zcut = RING_Z - 2 * RING_STEP
@@ -608,13 +633,13 @@ def main():
     report["neck_before"] = {"centre_y": ncy, "semi_axes": [nax, nay]}
     for v in bm.verts:
         z = v.co.z
-        if z < 1.29:
+        if z < Z(1.29):
             continue
         dx, dy = v.co.x, v.co.y - ncy
         r = math.hypot(dx, dy)
         if r > 0.14 or r < 1e-6:
             continue
-        w = smoothstep((z - 1.29) / 0.07) * (1 - smoothstep((r - 0.085) / 0.05))
+        w = smoothstep((z - Z(1.29)) / (Z(1.36) - Z(1.29))) * (1 - smoothstep((r - 0.085) / 0.05))
         dx *= 1 + w * (NECK[0] / nax - 1)
         dy *= 1 + w * (NECK[1] / nay - 1)
         pw = smoothstep((z - (zcut - 0.03)) / 0.02)
@@ -625,12 +650,43 @@ def main():
             rt = rn + (re - rn) * pw
             dx, dy = dx * rt / rn, dy * rt / rn
         v.co.x, v.co.y = dx, ncy + dy
-    # Hands: remove the Little finger.
+    # The neck's flare (NECK_FLARE > 0, the A concepts): under the ring the neck widens in a concave sweep into the
+    # trapezius, never a tube. Per centimetre between NECK_FLARE_Z and the cut, the neck's half width (the outermost
+    # x of its vertices, the arms' left out) moves to NECK[0] + (NECK_FLARE - NECK[0]) * t ** 2 with
+    # t = (zcut - z) / (zcut - NECK_FLARE_Z): slow under the ring, fast towards the shoulders. The depth takes a third
+    # of the width's factor; the factors are smoothed over the height and fade in over 3 cm under NECK_FLARE_Z.
+    if NECK_FLARE > 0:
+        zf, span = NECK_FLARE_Z, zcut - NECK_FLARE_Z
+        arm_names = [n for n in gi if kind(n) in ("upperarm", "lowerarm")]
+        sel = [v for v in bm.verts if zf - 0.03 < v.co.z < zcut and abs(v.co.x) < 0.22
+               and wsum(v, ["neck_01", "Head", "spine_03", "clavicle_l", "clavicle_r"]) > 0.3
+               and wsum(v, arm_names) < 0.15]
+        cur_hw = {}
+        for v in sel:
+            k = round(v.co.z, 2)
+            cur_hw[k] = max(cur_hw.get(k, 0.0), abs(v.co.x))
+        ks = sorted(cur_hw)
+        fac = {}
+        for k in ks:
+            t = max(0.0, min(1.0, (zcut - k) / span))
+            fac[k] = max(0.92, min(1.8, (NECK[0] + (NECK_FLARE - NECK[0]) * t * t) / max(cur_hw[k], 1e-4)))
+        sm = {k: sum(math.exp(-0.5 * ((k2 - k) / 0.012) ** 2) * fac[k2] for k2 in ks)
+              / sum(math.exp(-0.5 * ((k2 - k) / 0.012) ** 2) for k2 in ks) for k in ks}
+        for v in sel:
+            f = at_cm(sm, v.co.z) or 1.0
+            k = smoothstep((v.co.z - (zf - 0.03)) / 0.03) * (1 - smoothstep((v.co.z - (zcut - 0.012)) / 0.012))
+            k *= 1 - smoothstep((wsum(v, arm_names) - 0.05) / 0.1)
+            v.co.x *= 1 + k * (f - 1)
+            v.co.y = ncy + (v.co.y - ncy) * (1 + k * (f - 1) / 3)
+        taubin(sel, [0.6] * len(sel), 8)
+        report["neck_flare"] = {"half_width_before": {str(k): round(cur_hw[k], 4) for k in ks},
+                                "factor": {str(k): round(sm[k], 3) for k in ks}}
+    # Hands: remove the Little finger (FINGERS 4).
     pinky = [f"pinky_{i:02d}_{s}" for i in (1, 2, 3) for s in "lr"] + ["pinky_04_leaf_l", "pinky_04_leaf_r"]
-    gone = [v for v in bm.verts if wsum(v, pinky) > 0.5]
+    gone = [v for v in bm.verts if wsum(v, pinky) > 0.5] if FINGERS == 4 else []
     report["pinky_removed_verts"] = len(gone)
     bmesh.ops.delete(bm, geom=gone, context="VERTS")
-    holes = [e for e in bm.edges if e.is_boundary and abs(e.verts[0].co.x) > 0.5]
+    holes = [e for e in bm.edges if e.is_boundary and abs(e.verts[0].co.x) > 0.5] if gone else []
     filled = bmesh.ops.holes_fill(bm, edges=holes, sides=0)
     newf = filled["faces"]
     bmesh.ops.triangulate(bm, faces=[f for f in newf if len(f.verts) > 4])
@@ -638,7 +694,7 @@ def main():
     near = {v for v in bm.verts if v.is_valid and any((v.co - r.co).length < 0.02 for r in hand_rim)}
     for _ in range(4):
         bmesh.ops.smooth_vert(bm, verts=list(near), factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
-    for v in bm.verts:
+    for v in bm.verts if gone else []:
         d = v[deform]
         for side in "lr":
             hw = 0.0
@@ -716,12 +772,13 @@ def main():
             tw = smoothstep(s / 0.5)
             ring = []
             for u, h, w in cols:
-                scal = max(math.sqrt(max(0.0, 1 - ((u - ci) * 3) ** 2)) for ci in (-2 / 3, 0.0, 2 / 3))
+                scal = max(math.sqrt(max(0.0, 1 - ((u - ci) / TOE_SEMI) ** 2)) for ci in TOE_CENTRES)
                 reach = L - TOE_LEN * (1 - scal) * g
-                notch = math.exp(-((abs(u) - 1 / 3) / 0.1) ** 2) * smoothstep((s - 0.35) / 0.3)
+                notch = max(math.exp(-((u - n) / NOTCH_W) ** 2) for n in NOTCHES) * smoothstep((s - 0.35) / 0.3)
                 hs = (height - zb0) * (1 - 0.2 * g * u * u)
                 z = zb0 + hs / 3 + (h - 1 / 3) * hs * end - GROOVE * notch * h
-                nv = bm.verts.new((xc + u * width * (1 - 0.1 * (1 - end)), ycut - s * reach, z))
+                splay = TOE_SPLAY * smoothstep((s - 0.3) / 0.7) * max(-1.0, min(1.0, u / max(TOE_SEMI, 0.2)))
+                nv = bm.verts.new((xc + u * width * (1 - 0.1 * (1 - end)) + splay, ycut - s * reach, z))
                 d = nv[deform]
                 for gidx, wt in w.items():
                     d[gidx] = wt * (1 - tw)
@@ -790,6 +847,8 @@ def main():
     }
     bm.to_mesh(me)
     bm.free()
+    wf = weights_of(body)  # the trunk and neck measured again at the end (before the contract names)
+    report["bands_final"] = {str(b[0]): {"target": [b[1], b[2]], "after": band_measure(body, wf, b[0])} for b in BANDS}
 
     # 6. The contract skeleton.
     with open(args.map, "rb") as fh:
@@ -823,8 +882,8 @@ def main():
         g = body.vertex_groups.get(old)
         if g:
             g.name = new
-    # Little fingers: their groups stay present and empty.
-    for v in me.vertices:
+    # Little fingers (FINGERS 4): their groups stay present and empty.
+    for v in me.vertices if FINGERS == 4 else []:
         for g in body.vertex_groups:
             if "Little" in g.name:
                 g.remove([v.index])

@@ -1,0 +1,19 @@
+# The cage targets of H2, the chameleon man's body with the Meshy body's forms (art #196, bodies_a):
+# tools/blender/alien_cage.py --targets. H1's cage, topology, skeleton, weights and hands (chameleon_h1.toml, applied
+# first by `include`), and after the subdivision the body projected onto the cleaned, mirrored Meshy target
+# (Wrap.project): the deltoids, back, arms, legs and calves the cage's coarse rings smoothed away.
+name = "chameleon_h2"
+include = "chameleon_h1.toml"
+
+PROJECT = true
+# The arms at 1.12 of the Meshy arm's own thickness: ours are about 1.25 times as long (shoulder to wrist 0.53 m
+# against 0.425 m), so at the target's own thickness they read thinner than the concept's.
+PROJECT_THICK = { trunk = 1.0, arm = 1.12, leg = 1.05 }
+# Try 1 (h2/try1) projected the feet too: Meshy's feet stand wider and splay outward, which the frame offset (the
+# leg's centre shift) does not turn, so the toes came out as thin forward tips with a lip along the sole. The feet
+# stay H1's below the ankle (full projection above 0.16 m, none below 0.10 m) until a foot frame turns them.
+PROJECT_FOOT = [0.16, 0.10]
+# Try 1's chest and back showed the subdivided rings as faint horizontal bands: more smoothing of the steps and more
+# tangential relax.
+PROJECT_SMOOTH = 4
+PROJECT_RELAX = 5

@@ -18,6 +18,20 @@ def load(path: Path | str = SET) -> dict:
         return tomllib.load(fh)
 
 
+def with_paths(cfg: dict, build: str = "", out: str = "") -> dict:
+    """The set with [set] build and out replaced (each under raw_base; empty: the file's): T1's new bodies (r2c/build
+    into loco/t1) beside the committed r2b/f3 builds, the file unchanged. An out equal to the file's while the build
+    differs is refused (the new build would land in the old folder)."""
+    s = dict(cfg["set"])
+    if build:
+        s["build"] = build
+    if out:
+        s["out"] = out
+    if s["build"] != cfg["set"]["build"] and s["out"] == cfg["set"]["out"]:
+        raise ValueError(f"--build {s['build']} needs its own --out (not the set's {s['out']})")
+    return {**cfg, "set": s}
+
+
 def speed_name(name: str, speed: float, first: bool) -> str:
     """The clip fitted to `speed`: the name itself for the first speed, else <name>__s<speed x 10> (a name that is
     already a variant: <name>_s<..>)."""
@@ -83,6 +97,18 @@ def expand(cfg: dict) -> list[dict]:
             raise ValueError(f"{j['name']}: made from {j['from']}, which is not made before it")
         seen.add(j["name"])
     return jobs
+
+
+def unmeasured(name: str, job: dict, m: dict) -> str | None:
+    """R1 (art #196): why a clip cannot be retimed or stride-fitted, or None. A job asking a speed (the stride's scale
+    and capped_rate divide by v0) or a cadence (divides by c0) on a clip whose measure found no ground velocity
+    (v0 0: its feet touch the floor too briefly, the axolotl's T1) is skipped by alien_loco.py with this message
+    instead of dividing by zero."""
+    if job.get("speed") is not None and not m.get("v0"):
+        return f"{name}: speed {job['speed']} asked, but the measure found no ground velocity (v0 = {m.get('v0')})"
+    if job.get("cadence") and not m.get("c0"):
+        return f"{name}: cadence {job['cadence']} asked, but the clip has no measured cadence (c0 = {m.get('c0')})"
+    return None
 
 
 def cadence_rate(name: str, cadence: float, c0: float | None) -> float:

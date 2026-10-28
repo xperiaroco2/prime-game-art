@@ -1,0 +1,37 @@
+# The cage targets of H4b, the chameleon man's feet, thumb and trunk (art #196, bodies_a): H4's defects that numbers
+# did not fix. tools/blender/alien_cage.py --targets, on H3's refit (alien_body_targets/chameleon_h3.toml). H4's
+# targets (chameleon_h4.toml, applied first), and:
+name = "chameleon_h4b"
+include = "chameleon_h4.toml"
+
+# 1. The feet, rebuilt: the toes split from the sole about 2.6 cm further back (the last two rings moved back, lower
+# and flatter), the last ring's columns rebuilt (FOOT_END) so the two toe bases are wide, flat and level and the cleft
+# between them a slit instead of H1's wedge quad; the toes nearly parallel, longer, tapering to a low domed tip.
+FOOT = [
+    [0.088, 0.100, 25.0, 0.045, 0.050, 0.075],
+    [0.062, 0.060, 55.0, 0.055, 0.062, 0.080],
+    [0.000, 0.044, 90.0, 0.062, 0.052, 0.044],
+    [-0.028, 0.038, 90.0, 0.072, 0.046, 0.038],
+    [-0.046, 0.034, 90.0, 0.080, 0.040, 0.034],
+]
+FOOT_END = [0.10, 0.80, 0.72, 0.75]
+TOE = [[0.026, 1.43, 0.95, 0.0], [0.056, 1.364, 0.86, 0.003], [0.080, 1.254, 0.76, 0.005], [0.096, 1.056, 0.64, 0.006],
+       [0.104, 0.605, 0.38, 0.007]]
+TOE_YAW = [-5.0, 0.0, 7.0]
+
+# 2. The thumb: it leaves the palm's side further out and points down the hand and toward the palm (H4's pointed 43
+# degrees forward, at the viewer in the side view: a stub over the palm), a little longer. A shorter THUMB_OUT folds
+# its root (the grid: 156 to 179 degrees at 0.008 to 0.015 with these directions; 0.022: the hand's 121.8 stays).
+THUMB_DIR = [0.86, -0.28, -0.42]
+THUMB_OUT = 0.022
+THUMB_LEN = 0.065
+
+# 3. The trunk's relief: the projection keeps more of the target's form on the chest, belly and shoulders' front
+# (clavicles, the deltoid's front edge, the pectoral planes; the abdomen lighter; the back is left out), the trunk a little
+# thicker, and the sculpted pectoral planes softer, with a long lower border (H4's short rise read as a line).
+PROJECT_DETAIL = [
+    [0.0, 0.22, -0.30, 0.04, 0.80, 1.14, 0.3],  # the abdomen: light (0.7 there read as horizontal bands)
+    [0.0, 0.22, -0.30, 0.04, 1.12, 1.36, 0.7],  # the chest, clavicles and the deltoid's front edge
+]
+PROJECT_THICK = { trunk = 1.03, arm = 1.0, leg = 1.05 }
+SCULPT_PEC = [0.008, 0.135, 1.12, 1.28, 0.006, 0.030]

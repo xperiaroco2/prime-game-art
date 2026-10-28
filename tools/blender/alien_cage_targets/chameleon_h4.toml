@@ -1,0 +1,65 @@
+# The cage targets of H4, the chameleon man's body to release quality (art #196, bodies_a): H3's defects at close
+# range. tools/blender/alien_cage.py --targets, on H3's refit (alien_body_targets/chameleon_h3.toml). H3's cage,
+# projection, weights and sculpt (chameleon_h3.toml, applied first), and:
+name = "chameleon_h4"
+include = "chameleon_h3.toml"
+
+# 1. The neck's back and the trapezius: their lumps come from the target, so the target is smoothed there too (a soft
+# box on the kept +x half, mirrored; the target's frame). H1's boxes are kept as they were.
+TARGET_CLEAN = [
+    [-0.06, 0.06, -0.03, 0.10, 0.70, 0.86, 40],
+    [-0.04, 0.04, -0.25, -0.09, 0.92, 1.08, 30],
+    [-0.09, 0.09, -0.20, -0.02, 1.30, 1.48, 25],
+    [0.10, 0.22, -0.15, 0.00, 1.18, 1.34, 20],
+    [0.40, 0.52, -0.08, 0.12, 1.22, 1.42, 20],
+    [0.04, 0.24, -0.15, 0.09, 0.42, 0.58, 25],
+    [-0.06, 0.18, -0.01, 0.16, 1.22, 1.50, 30],   # H4: the neck's back and the trapezius
+]
+
+# 2. The forearm: a gentler rise past the elbow (H3's 0.072 -> 0.098 over 6.5 cm read as a bulb), the peak a third
+# of the way down, the same taper into the wrist.
+SCULPT_ARM = [
+    [0.06, 0.0, 0.0],
+    [0.10, 0.086, 0.0],
+    [0.15, 0.084, 0.0],
+    [0.195, 0.076, 0.0],
+    [0.225, 0.075, 0.0],
+    [0.26, 0.086, 0.072],
+    [0.30, 0.094, 0.076],
+    [0.35, 0.092, 0.073],
+    [0.40, 0.075, 0.064],
+    [0.435, 0.0, 0.0],
+]
+
+# 3. The trunk: H3's front widths against the concept's were 4 to 9 % narrow from the hips to the waist (z 0.84 to
+# 1.04; the chest matched), the side a little thin: x and y scaled about each height's centre, 1 at the crotch and
+# the armpits. The chest: soft pectoral planes (pushed forward from the sternum's groove to the side, with a short
+# rise at the lower border and a long fade to the collarbones), no nipples.
+SCULPT_TRUNK = [
+    [0.80, 1.0, 1.0],
+    [0.88, 1.05, 1.03],
+    [0.96, 1.06, 1.04],
+    [1.02, 1.07, 1.04],
+    [1.10, 1.03, 1.04],
+    [1.16, 1.0, 1.02],
+    [1.22, 1.0, 1.0],
+]
+TRUNK_X = [0.30, 0.05]
+SCULPT_PEC = [0.008, 0.135, 1.12, 1.28, 0.010, 0.014]
+
+# 4. The feet: the outer toe group turned out 18 degrees (H3: 22; the foot 0.22 m across against the concept's 0.20),
+# the pads lower, so they read flat from the front.
+TOE = [[0.022, 1.65, 0.90, 0.0], [0.048, 1.55, 0.72, 0.004], [0.068, 1.62, 0.56, 0.006], [0.080, 1.50, 0.47, 0.007],
+       [0.088, 0.85, 0.30, 0.008]]
+TOE_YAW = [-4.0, 0.0, 18.0]
+
+# 5. The hand: the thumb's root thinner and closer to the palm (H3's showed as a knob on the hand's side).
+THUMB_R0 = 0.0160
+THUMB_OUT = 0.015
+
+# 6. The bends: the knee's and the hip's front fold weights spread wider (|x| boxes on both sides; the grid of
+# 4, 8 and 14 passes: 14 the softest fold, no change at rest).
+WEIGHT_ZONES = [
+    [0.03, 0.22, -0.15, 0.15, 0.42, 0.64, 14],  # the knee
+    [0.02, 0.24, -0.22, 0.03, 0.70, 0.96, 14],  # the hip's front fold
+]

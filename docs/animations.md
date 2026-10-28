@@ -849,6 +849,45 @@ glTF-Validator and writes `loco.json` (per clip the edits' reports, the numbers 
 `<raw>/research/2026-10-22-roster/design/pilot3d/anim_bare/<out>/build/<char>/` (`[set] out`, `loco/f3` now), with
 the build's support files
 copied beside the GLB. Then `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
+`--build DIR --out DIR` (T1, art #196) take another character build and output under `raw_base` for one run, the
+set file unchanged (`alien_loco_math.with_paths`; a new build into the set's own `out` is refused, and so is an out
+whose character folder already holds a GLB): the new bodies' build `r2c/build` (the chameleon on M2c's body, the
+axolotl on M1f's) into `loco/t1`, `... alien_loco.py --raw D:/prime-art-raw --build r2c/build --out loco/t1`. On T1
+the chameleon's set is made (31 clips; Jog_Fwd v0 5.44 m/s, Sprint_Fwd 8.34, f3's 5.15 and 7.80 on the taller body).
+The axolotl's is not: on M1f's body her Jog_Fwd and Sprint_Fwd touch the floor for 2 frames a step (a toe within
+2 cm of its lowest), so `measure` finds no ground velocity (v0 0, c0 None) and `stride` divided by zero (since R1 the set skips such a clip instead: `SKIP <clip>: speed ... asked, but the measure found no ground velocity`, `skipped` in its `loco.json` row, and so every clip made from it; `alien_loco_math.unmeasured`). The build's
+floor edit lifts those clips 4.4 and 5.2 cm (the S4b body's 2.7 and 3.6). M1f's legs are shorter than S4b's, not
+longer (T2: 0.774 m against 0.845; thigh 0.255 m against 0.323, shin 0.420 against 0.403, the foot 3.6 cm shorter, the
+bones' rest orientations equal), so the same bone-local rotations sweep her feet on another arc: the jog's planted
+toes rise 4.6 cm over the stance (S4b's 1.4 cm).
+
+`alien_char_run.py --leg-fit` (T2, art #196; `alien_char_build.py --leg-fit <S4b body.blend>`,
+`tools/blender/alien_leg_fit.py`) fits the clips to a body with its own leg proportions before the clip edits:
+every action's Root and Hips location keys scale by the body's leg length over S4b's rig (`alien_char_geom.leg_fit`,
+slice `--own-proportions`' rule; 0.917 on M1f), then per frame the Hips move along the world's up so the feet's
+lowest point (each Foot and Toes head, each toe tip) is as high as on S4b's rig playing the clip as made. The build
+records `leg_fit` in its char.json and `alien_loco.py` gives the loops it appends (`TM_`, `MC_`, made on the S4b rig)
+the same fit; a build without the flag is unchanged (r2b, r2c, f3, the chameleon's loco t1). On T2 (`r2e/build`,
+`loco/t2b`; `r2d` and `loco/t2` hold the scale-only try, which still divided by zero) the axolotl's set is made, 31
+clips, glTF-Validator 0 errors, but its numbers are not sane yet: the Sprint_Fwd source measures 4.60 m/s (S4b's
+7.80), so its stride scales 1.52 and its feet slide 67 mm; Jog_Fwd 4.63 m/s (5.15) slides 17 mm (f3: 0). Matching
+the lowest point's height is not enough: the horizontal sweep differs too. The next step is the feet themselves: the
+ankles and toes on S4b's trajectories scaled by the leg ratio, the legs solved by two-bone IK (`alien_clip_edit.two_bone`).
+
+`alien_char_run.py --leg-fit --leg-ik` (T3; `alien_char_build.py --leg-fit-mode ik`) is that step, in place of the
+lowest-point match: after the scale, per frame each ankle's target is its own rest place plus S4b's ankle move from
+its rest, scaled by the leg ratio (`alien_char_geom.foot_target`: a planted foot stays planted, the stance width is
+the body's own), the foot's world turn S4b's, the thigh and shin solved to it with the knee in the clip's own bending
+plane (`alien_char_geom.reach_knee`), the UpperLeg, LowerLeg and Foot rotations keyed on every frame; the Toes and
+the Hips keep the clip's (scaled) keys. The build's char.json records `leg_fit.mode` and `alien_loco.py` applies the
+same mode to the loops it appends. Per action the report gives the ankles' worst miss, the frames out of reach, the
+knee's largest per-frame change beside S4b's own (a pop), the knee flips and the feet's lowest point against S4b's.
+The default mode (`lowest`) is T2's, so r2e and loco/t2b rebuild as they were.
+`tools/blender/alien_body_clips.py --char <c> --rows r2b=loco/f3/build,<tag>=<loco>/build --out <dir>` shoots the
+full-body clip frames of one character's builds side by side (`godot/alien/body_clips.gd` in the off-screen window,
+the game look of `char_shots.gd`, a floor, the camera following the Hips): a row per build, six clips (idle, walk,
+Jog_Fwd, Crouch_Fwd, Jump_Start at its take-off, Strafe_Left), `body_clips_<c>.jpg` and its `.json` (per cell the
+clip's time and the Hips' height).
 `... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
 off-screen window on the chameleon (`--char`: another character, into `<out>/reels/<char>/`): the character held in place (the hips' travel per loop taken off its node), the
 floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot
