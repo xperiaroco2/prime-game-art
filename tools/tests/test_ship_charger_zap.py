@@ -72,6 +72,13 @@ class EndpointsTest(unittest.TestCase):
         self.assertIn("var pts: Array[Vector3] = [a, b]", bolt)
         self.assertIn("next.append(pts[-1])", bolt)
 
+    def test_bind_is_safe_to_repeat_and_at_angle_zero(self) -> None:
+        body = func(ZAP, "bind")
+        self.assertIn("assert(absf(ring.rotation.y) < 1e-4", body)
+        self.assertIn('(old["node"] as Node).queue_free()', body)
+        self.assertIn("l.queue_free()", body)
+        self.assertIn('z["clock"] = float(z["clock"]) + minf(dt, 0.1)', ZAP)
+
     def test_the_cycle_counts_the_ends(self) -> None:
         # the hits are checked against the crystal; the start lies on an electrode by construction (zap.gd)
         self.assertIn("Zap.endpoints(look)", CYCLE)
