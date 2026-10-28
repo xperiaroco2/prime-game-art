@@ -155,8 +155,8 @@ tools/run.sh ship                       # the check and plan.txt
 tools/run.sh ship --build               # one GLB per piece (about 1 min); --only ids
 tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsule walk into DIR/check.json, then DIR/walkthrough.mp4
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
-tools/run.sh ship --motion DIR          # step 2: the vents' moving parts on their GLBs off-screen: numbers, MP4, sheets
-tools/run.sh ship --vent-anim DIR       # the east vent's animation in place at night from the player's eye: MP4, key sheet
+tools/run.sh ship --vent-anim DIR       # the east gills' animation in place at night from the player's eye: MP4, key sheet
+                                       # (`--motion`, the old blades' proof, retired in gills step 12)
 tools/run.sh ship --play [DIR]          # the engineer's own walk (an on-screen window; agents run --play-test DIR)
 ```
 
@@ -1636,6 +1636,39 @@ never open, so light, colour and mist carry the states. `godot/ship/vent_anim.gd
   to 0.865, the release at 14 s, the exhale, calm; pass 2 the problem at 21 s, a hold to the top at 27 s, thrown),
   30 s, with Godot's `--fixed-fps` so the particles keep the controller's clock; `anim.json` lists the states and the
   signals heard, `keys_sheet.png` one labelled frame per state.
+
+### The polish on the motion (gills step 12, 2026-10-28)
+The manager's look at step 11's key frames: specks for vapour, red on the ribs in calm, a small exhale, the hood
+cropped, two outcomes missing from the clip. What changed:
+- **Vapour, not specks.** Per slot three steam sprites (continuous while mostly red), five mist, four cough (60 a
+  unit, was 140), each `PUFF_M` 0.42 m at scale 1, growing from 0.45 to 1.7 of it over its life (`PUFF_GROW`), a
+  128 px gaussian-like radial sprite, alpha 0.075..0.1, fading in fast and thinning as it grows, turning slowly, drawn
+  back to front, fading within `FADE_M` 14 cm of a surface (no hard line where a puff cuts a rib); emitters 9 cm out.
+  The steam is warm grey tinted red, slow, rising and curling (turbulence); the mist a cyan-white breath out that
+  slows to a drift (damping about 1); the cough a harder grey puff.
+- **The exhale sold by timing** (the +-4 deg range stays): out to `ROCK_DEG` in `EXHALE_OUT_S` 0.3 s (cubic
+  ease-out), settling back to `EXHALE_SETTLE_DEG` 3.4 over 0.35 s (the overshoot, inside the limit), held 0.9 s, back
+  over 2.4 s; the cyan flares to x2.6 (`EXHALE_GLOW` 1.6) on the peak and falls to x1.5 while held; the mist bursts
+  at `EXHALE_MIST_AT_S` 0.18 s, so its sprites land on the peak.
+- **Calm reads cyan only.** The red on the ribs in calm came from the strip lights `ship.gd` makes for the doorways'
+  red-orange floor strips beside the units (#ff6b0f, at deck height about 1 m away). `ship.gd` now puts the gills'
+  meshes on their own render layer (`VENT_LAYER`); every inside light lights it except the red-orange strip lights
+  within `VENT_UNLIT_M` 1.6 m of a unit. The red comes with the problem from the controller's own lights. The game
+  needs the same rule if its lights do the same.
+- **The floor strips one soft spill.** `vent_glow.gd`'s `soft_floor` hides each slot's three nested steps
+  (`floor<k>`, `floor2<k>`, `floor3<k>`; still in the GLB) and lays one flat quad on the deck, centred on the
+  sill's front: an ellipse 5 cm wider each side than the outer step and 32 cm out, its glow a radial gradient as the
+  emission texture (multiplied, blended additively, no edge). It is the cool's child with the core strip's material
+  values, so the controller turns it red and back with the slots.
+- **The column's door side** has a 1 cm bronze strip (`column_strip`, `gill_edge`, `COLUMN_STRIP_W`).
+- **The hall's two lamps by the back wall** are spots at 88 deg (were 75), so the hood gets a grazing wash.
+- **The clip** (`DEMO_*`, 36 s): calm; the problem at 3.5 s; a hold 6.5..11 s to 0.865 with its six clicks and the
+  release in the green at 11.6 s (the exhale); calm; the problem at 18 s; a hold to 0.5 released at 22.4 s (too
+  early); a hold to 0.96 released at 28 s (missed: a cough); a hold to the top at 33 s (thrown). `DEMO_HEARD` is what
+  the headless check must hear, in order. The camera (`ship.py` `VENT_ANIM`, `vent_anim_cams`) frames the whole unit
+  with its column from 2.8 m at a player's eye (fov 62), cutting to 2.2 m for the hold's clicks (6..11.2 s).
+- **`ship --motion` is retired** with `godot/ship/vent_motion.gd`: it proved the old blades on their GLBs; the gills'
+  clearance is the Python test's, their motion `vent_anim_check.gd`'s and the clip's.
 
 ## The export (art #335)
 
