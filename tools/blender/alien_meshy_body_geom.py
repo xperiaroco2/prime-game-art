@@ -36,6 +36,11 @@ SMOOTH_KEYS_M2B = {"mu", "boxes", "margin"}
 KEYS_M1D = {"bust_round"}
 ARM_KEYS_M1D = {"widths", "width_clamp"}
 SHAPE_KEYS_M1D = {"thumb_thick"}
+# M1e (art #196, the axolotl's M1d regressions): inside `arm_thicken` and `smooth_rest` the optional `disp_smooth`
+# (the step's displacement field smoothed over the mesh before it is applied: no face folds over), in `arm_thicken`
+# also `rounds` (measure, scale, smooth, repeated: the widths reached despite the smoothing); the older files have none
+ARM_KEYS_M1E = {"disp_smooth", "rounds"}
+SMOOTH_KEYS_M1E = {"disp_smooth"}
 
 
 def load(path: str | Path) -> dict:

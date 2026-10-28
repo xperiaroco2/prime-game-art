@@ -343,6 +343,19 @@ class M1c(unittest.TestCase):
             self.assertFalse(set(t.get("arm_thicken", {})) & M.ARM_KEYS_M1D, n)
             self.assertFalse(set(t.get("fingers", {}).get("shape", {})) & M.SHAPE_KEYS_M1D, n)
 
+    def test_older_files_have_no_m1e(self):
+        for n in ("axolotl_m1.toml", "axolotl_m1b.toml", "axolotl_m1c.toml", "axolotl_m1d.toml", "chameleon_m2.toml",
+                  "chameleon_m2b.toml"):
+            t = M.load(M.TARGETS / n)
+            self.assertFalse(set(t.get("arm_thicken", {})) & M.ARM_KEYS_M1E, n)
+            self.assertFalse(set(t.get("smooth_rest", {})) & M.SMOOTH_KEYS_M1E, n)
+
+    def test_fixes_report_flips_and_smooth_moves(self):
+        src = (BL / "alien_meshy_body.py").read_text(encoding="utf-8")
+        self.assertIn('rep["flips"][step] = {"faces": int(len(bad)),', src)
+        self.assertIn("w[ring_verts(me)] = 0.0", src)  # the open ring pinned: the weld unchanged
+        self.assertIn('k = F.profile(cfg["profile"], x) if rnd == 0 else 1.0', src)  # the profile applied once
+
     def test_review_thumb_axes(self):
         src = (BL / "alien_body_refit_review.py").read_text(encoding="utf-8")
         self.assertIn('if f == "Thumb" and axes == "clip":', src)

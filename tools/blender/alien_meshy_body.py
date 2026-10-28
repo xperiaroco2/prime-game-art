@@ -41,6 +41,12 @@ M2b (art #196, `chameleon_m2b.toml`; the older files have none):
 M1d (art #196, `axolotl_m1d.toml`; the older files have none):
 8d. `bust_round`: each breast's tip (its most pointed vertex) rounded by a heightfield blur, the volume kept.
 7c. `arm_thicken.widths`: the arms toward target front widths; 9d. `fingers.shape.thumb_thick`: the thumb thicker.
+M1e (art #196, `axolotl_m1e.toml`; the older files have none):
+7d, 8e. `arm_thicken.disp_smooth`, `smooth_rest.disp_smooth`: the step's displacement field smoothed over the mesh
+   (passes; the open ring pinned) before it is applied. M1d's per-vertex arm factors (up to 1.65) and its boxes'
+   20-mm margins over deep creases moved neighbours apart faster than their spacing: faces folded over (the dark
+   specks at the cleft and the shoulder's back, the slits under the upper arms). Every build reports each step's
+   flipped faces against the body before the fixes (`flips`).
 --from-body <alien_body.blend>: steps 6 to 10 only, on a body this script built before (M1's).
 """
 from __future__ import annotations
@@ -98,6 +104,36 @@ def collapse(obj, ratio: float, group: str = ""):
     select_only([obj], obj)
     bpy.ops.object.modifier_move_to_index(modifier=mod.name, index=0)
     bpy.ops.object.modifier_apply(modifier=mod.name)
+
+
+def face_normals(me, co: np.ndarray) -> np.ndarray:
+    """M1e: each polygon's unit normal from its first, second and last corners at the positions co."""
+    n = len(me.polygons)
+    ls, lt = np.empty(n, dtype=np.int64), np.empty(n, dtype=np.int64)
+    me.polygons.foreach_get("loop_start", ls)
+    me.polygons.foreach_get("loop_total", lt)
+    lv = np.empty(len(me.loops), dtype=np.int64)
+    me.loops.foreach_get("vertex_index", lv)
+    a, b, c = co[lv[ls]], co[lv[ls + 1]], co[lv[ls + lt - 1]]
+    fn = np.cross(b - a, c - a)
+    return fn / np.maximum(np.linalg.norm(fn, axis=1), 1e-20)[:, None]
+
+
+def ring_verts(me) -> list[int]:
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    ring = [v.index for v in bm.verts if any(e.is_boundary for e in v.link_edges)]
+    bm.free()
+    return ring
+
+
+def smooth_disp(me, co0: np.ndarray, co1: np.ndarray, passes: int) -> np.ndarray:
+    """M1e: the move co1 - co0 smoothed over the mesh's edges by `passes` Laplacians (factor 0.5), the open ring's
+    vertices pinned at their own move; the smooth part of a move stays, its jumps between neighbours go."""
+    d = co1 - co0
+    w = np.ones(len(co0))
+    w[ring_verts(me)] = 0.0
+    return co0 + laplace(d, edge_array(me), w, np.full(len(co0), int(passes)))
 
 
 def laplace(co: np.ndarray, edges: np.ndarray, w: np.ndarray, npv: np.ndarray, mu: float = 0.0) -> np.ndarray:
@@ -254,34 +290,47 @@ def fix_arms(arm, mb, cfg, rep):
     (the front view's width in the A pose) by the profile, y by the profile to `y_power`."""
     co = get_co(mb.data)
     out = {}
-    for s, pre in ((1.0, "Left"), (-1.0, "Right")):
-        sel = (co[:, 0] * s > cfg["from_x"]) & (co[:, 2] > cfg["band_z"])
-        hx = abs(arm.data.bones[f"{pre}Hand"].head_local.x)
-        xs = np.arange(cfg["from_x"], hx + 1e-9, 0.01)
-        mid = smooth3(smooth3(slab_mid(co, sel, np.abs(co[:, 0]), xs, cfg["slab"], (1, 2))))
+    # M1e: `rounds` (with disp_smooth): each round measures the widths again, scales toward the targets and smooths
+    # its move; the profile only in the first round (beyond the widths' range the later rounds leave the arm)
+    for rnd in range(int(cfg.get("rounds", 1))):
+        co0 = co.copy()
+        for s, pre in ((1.0, "Left"), (-1.0, "Right")):
+            sel = (co[:, 0] * s > cfg["from_x"]) & (co[:, 2] > cfg["band_z"])
+            hx = abs(arm.data.bones[f"{pre}Hand"].head_local.x)
+            xs = np.arange(cfg["from_x"], hx + 1e-9, 0.01)
+            mid = smooth3(smooth3(slab_mid(co, sel, np.abs(co[:, 0]), xs, cfg["slab"], (1, 2))))
 
-        def ext(c_):
-            return [float(np.ptp(c_[sel & (np.abs(np.abs(c_[:, 0]) - x) < cfg["slab"]), 2])) for x in xs[::4]]
-        before = ext(co)
-        meas = None
-        if "widths" in cfg:  # M1d: toward target front widths (mm) over their range, measured per 1 cm
-            meas = smooth3(np.array([float(np.ptp(co[sel & (np.abs(np.abs(co[:, 0]) - x) < cfg["slab"]), 2]))
-                                     if (sel & (np.abs(np.abs(co[:, 0]) - x) < cfg["slab"])).any() else 0.0
-                                     for x in xs]))
-            tgt = [[w[0], w[1] / 1000.0] for w in cfg["widths"]]
-        for i in np.where(sel)[0]:
-            x = abs(co[i, 0])
-            k = F.profile(cfg["profile"], x)
-            if meas is not None:
-                kw = F.width_factor(x, list(xs), list(meas), tgt, *cfg.get("width_clamp", [1.0, 2.0]))
-                k = k if kw is None else kw
-            if k == 1.0:
-                continue
-            cy, cz = np.interp(x, xs, mid[:, 0]), np.interp(x, xs, mid[:, 1])
-            co[i, 1] = cy + (co[i, 1] - cy) * k ** cfg["y_power"]
-            co[i, 2] = cz + (co[i, 2] - cz) * k
-        out[pre] = {"x": [round(float(x), 2) for x in xs[::4]], "z_mm_before": [round(v * 1000) for v in before],
-                    "z_mm_after": [round(v * 1000) for v in ext(co)]}
+            def ext(c_):
+                return [float(np.ptp(c_[sel & (np.abs(np.abs(c_[:, 0]) - x) < cfg["slab"]), 2])) for x in xs[::4]]
+            before = ext(co)
+            meas = None
+            if "widths" in cfg:  # M1d: toward target front widths (mm) over their range, measured per 1 cm
+                meas = smooth3(np.array([float(np.ptp(co[sel & (np.abs(np.abs(co[:, 0]) - x) < cfg["slab"]), 2]))
+                                         if (sel & (np.abs(np.abs(co[:, 0]) - x) < cfg["slab"])).any() else 0.0
+                                         for x in xs]))
+                tgt = [[w[0], w[1] / 1000.0] for w in cfg["widths"]]
+            for i in np.where(sel)[0]:
+                x = abs(co[i, 0])
+                k = F.profile(cfg["profile"], x) if rnd == 0 else 1.0
+                if meas is not None:
+                    kw = F.width_factor(x, list(xs), list(meas), tgt, *cfg.get("width_clamp", [1.0, 2.0]))
+                    k = k if kw is None else kw
+                if k == 1.0:
+                    continue
+                cy, cz = np.interp(x, xs, mid[:, 0]), np.interp(x, xs, mid[:, 1])
+                co[i, 1] = cy + (co[i, 1] - cy) * k ** cfg["y_power"]
+                co[i, 2] = cz + (co[i, 2] - cz) * k
+            if rnd == 0:
+                out[pre] = {"x": [round(float(x), 2) for x in xs[::4]],
+                            "z_mm_before": [round(v * 1000) for v in before], "z_mm_after": [round(v * 1000) for v in ext(co)]}
+        if cfg.get("disp_smooth"):  # M1e: the factors' jumps between neighbours folded faces (the armpits' slits)
+            co = smooth_disp(mb.data, co0, co, cfg["disp_smooth"])
+    if cfg.get("disp_smooth"):
+        for s, pre in ((1.0, "Left"), (-1.0, "Right")):
+            sel = (co[:, 0] * s > cfg["from_x"]) & (co[:, 2] > cfg["band_z"])
+            hx = abs(arm.data.bones[f"{pre}Hand"].head_local.x)
+            out[pre]["z_mm_smoothed"] = [round(float(np.ptp(co[sel & (np.abs(np.abs(co[:, 0]) - x) < cfg["slab"]), 2]))
+                                               * 1000) for x in np.arange(cfg["from_x"], hx + 1e-9, 0.01)[::4]]
     set_co(mb.data, co)
     waist = co[(np.abs(co[:, 2] - cfg["waist_z"]) < 0.004) & (np.abs(co[:, 0]) < 0.25)]
     out["waist_m"] = round(float(np.ptp(waist[:, 0])), 4)
@@ -316,6 +365,8 @@ def fix_smooth_rest(mb, cfg, rep):
         bm.free()
         w[ring] = 0.0
     co2 = laplace(co, edge_array(mb.data), w, npv, mu)
+    if cfg.get("disp_smooth"):  # M1e: the boxes' margins over deep creases folded faces (the cleft's specks)
+        co2 = smooth_disp(mb.data, co, co2, cfg["disp_smooth"])
     rep["smooth_rest_mm"] = round(float(np.linalg.norm(co2 - co, axis=1).max()) * 1000, 2)
     rep["smooth_rest_vertices"] = int((w > 0).sum())
     set_co(mb.data, co2)
@@ -685,16 +736,25 @@ def fixes(arm, mb, T, rep):
     bpy.context.view_layer.update()
     if "degenerate" in T:
         fix_degenerate(mb, T["degenerate"], rep)
-    if "arm_thicken" in T:
-        fix_arms(arm, mb, T["arm_thicken"], rep)
-    if "seat" in T:
-        fix_seat(mb, T["seat"], rep)
-    if "smooth_rest" in T:
-        fix_smooth_rest(mb, T["smooth_rest"], rep)
-    if "notch" in T:
-        fix_notch(mb, T["notch"], rep)
-    if "bust_round" in T:
-        fix_bust_round(mb, T["bust_round"], rep)
+    fn0 = face_normals(mb.data, get_co(mb.data))  # M1e: each step's folds counted against this
+    rep["flips"] = {}
+
+    def flips(step):
+        co_ = get_co(mb.data)
+        bad = np.where((face_normals(mb.data, co_) * fn0).sum(1) < 0.0)[0]
+        ls = np.empty(len(mb.data.polygons), dtype=np.int64)
+        mb.data.polygons.foreach_get("loop_start", ls)
+        lv = np.empty(len(mb.data.loops), dtype=np.int64)
+        mb.data.loops.foreach_get("vertex_index", lv)
+        rep["flips"][step] = {"faces": int(len(bad)),
+                              "at": [[round(float(c), 3) for c in co_[lv[ls[f]]]] for f in bad[:24]]}
+        log(f"flips after {step}: {len(bad)}")
+    for key, fn in (("arm_thicken", lambda c: fix_arms(arm, mb, c, rep)), ("seat", lambda c: fix_seat(mb, c, rep)),
+                    ("smooth_rest", lambda c: fix_smooth_rest(mb, c, rep)), ("notch", lambda c: fix_notch(mb, c, rep)),
+                    ("bust_round", lambda c: fix_bust_round(mb, c, rep))):
+        if key in T:
+            fn(T[key])
+            flips(key)
     W, names = read_weights(mb)
     if "fingers" in T:
         fix_fingers(arm, mb, T["fingers"], rep, W, names)
