@@ -70,15 +70,19 @@ class ShipLayoutTest(unittest.TestCase):
     def test_the_renewer_spots_reach_the_chargers_front(self) -> None:
         """fix1 (art#263, #323's review): the renewer spots' depth_m is the crystal charger's reach from the wall's face,
         so the layout's own stand and pass checks put the player in front of it, not inside it. Lens room C: the
-        charger stands in its alcove and reaches 70 cm from the vertex (the drawing's plan, ship_interior_lens.REACH;
-        the legs' charger's report said 105.25 cm; the charger step rebuilds the unit to the alcove's numbers)."""
-        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools" / "blender"))
+        charger stands in its alcove: its report's reach (the pedestal, at most 70 cm from the vertex) within the
+        spots' depth_m 0.70 (the alcove's ship_interior_lens.REACH)."""
+        import json
+        root = Path(__file__).resolve().parents[2]
+        sys.path.insert(0, str(root / "tools" / "blender"))
         import ship_interior_lens
-        reach = ship_interior_lens.REACH / 100
+        report = json.loads((root / "assets" / "prop" / "crystal_charger" / "report.json").read_text(encoding="utf-8"))
+        reach = report["mesh"]["size_cm"]["d"][1] / 100
+        self.assertLessEqual(reach, ship_interior_lens.REACH / 100)
         spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
         for sid in ("renewer_e", "renewer_w"):
             self.assertGreaterEqual(spots[sid]["depth_m"], reach)
-            self.assertLess(spots[sid]["depth_m"] - reach, 0.001)
+            self.assertLess(spots[sid]["depth_m"] - ship_interior_lens.REACH / 100, 0.001)
 
     def test_the_rooms_are_5a_mirrored(self) -> None:
         r = sl.rooms(LAYOUT)

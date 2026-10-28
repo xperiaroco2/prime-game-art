@@ -17,7 +17,7 @@ from runner.commands import _manifest
 ASSET = common.ROOT / "assets" / "prop" / "crystal_charger"
 EXPORT = ASSET / "export"
 DIMS = common.ROOT / "tools" / "blender" / "charger_dims.toml"
-SURFACES = {"charger_bronze", "charger_graphite", "charger_cyan", "charger_amber", "charger_lens", "charger_steel"}
+SURFACES = {"charger_bronze", "charger_graphite", "charger_cyan", "charger_amber", "charger_lens"}  # lens C: no steel (the legs)
 LEAVES = {"carrier", "track_ring", "button", "crystal_anchor"}
 CRYSTAL = 34.9  # the built crystal, its tip to its loop's top (prime-game-art#316)
 
@@ -44,12 +44,13 @@ class ChargerDrawing(unittest.TestCase):
         # prime-game-design a53ce6f stations-final/charger-drawing/drawing.js (node: its N object)
         d = dims()
         f, b = d["frame"], d["base"]
-        self.assertEqual((f["top"], f["wall_gap"]), (139.7, 2.0))
-        self.assertEqual((b["bottom"], b["widest"]), (60.0, 72.8))  # charger-3: a skirt 4.8 under N.baseBottom 64.8
-        self.assertEqual(b["drawn_bottom"], 64.8)  # the drawing's, labelled beside the built 60 (charger_drawing.py)
-        self.assertAlmostEqual(b["r_widest"] * 2, 100.4, delta=0.05)
-        self.assertAlmostEqual(b["r_deck_edge"] * 2, 82.0, delta=0.05)  # N.tierTop: the upper tier's top edge
-        self.assertEqual((b["deck"], b["well"]), (99.1, 94.0))  # N.top: the deck; the slot sunk in its well (charger-3)
+        self.assertEqual(f["top"], 139.7)
+        # the pedestal: prime-game-design 7f335c2 lens-room/drawing/drawing.js (C.ped, C.axis, C.back, C.open)
+        self.assertEqual((f["axis_d"], f["back"], f["reach"]), (38.0, 10.0, 70.0))
+        self.assertEqual(f["open"], [46.0, 50.0, 46.0])
+        self.assertEqual((b["side"], b["chamfer_d"], b["front"], b["front_d"]), (44.0, 46.0, 22.0, 68.0))
+        self.assertEqual((b["plinth"], b["body"]), (10.0, 86.0))
+        self.assertEqual((b["deck"], b["well"], b["well_r"]), (99.1, 94.0, 24.2))  # N.top; the slot sunk in its well
         self.assertEqual((d["slot"]["collar_top"], d["slot"]["tip"]), (95.7, 95.1))
         self.assertEqual((d["button"]["h"], d["button"]["lens"], d["button"]["travel"]), (75.9, 8.0, 1.0))
         self.assertEqual(d["carrier"]["rise"], 6.0)
@@ -70,16 +71,22 @@ class ChargerDrawing(unittest.TestCase):
         self.assertGreater(min(h for _r, h in o["cap"]), max(h for _r, h in i["head"]) + 3.0)
         # the risen crystal's loop under the prongs' tops
         self.assertLess(d["slot"]["tip"] + CRYSTAL + d["carrier"]["rise"], f["top"])
-        # four legs, the pistons lengthened 27 cm (N.legLift): their tops under the base's skirt (charger-3: 60)
-        self.assertEqual(len(d["legs"]["angles"]) * 2, 4)
-        self.assertAlmostEqual(d["legs"]["hip"][1], b["bottom"], delta=0.5)
+        # the dome on legs is gone (lens room C)
+        self.assertNotIn("legs", d)
 
-    def test_base_clears_the_wall(self) -> None:
-        # round and uncut: the widest circle stays wall_gap off the lens room's two facets at the spot's vertex
+    def test_pedestal_fits_the_alcove(self) -> None:
+        # the ring clears the back panel by 4.4 (the drawing's note); the lipped plinth and slab stay inside the
+        # opening's cheeks by wall_gap and inside the reach; the alcove's numbers are ship_interior_lens's
         d = dims()
-        f = d["frame"]
-        gap = f["axis_d"] * math.cos(math.radians(f["back_fold_deg"])) - d["base"]["r_widest"]
-        self.assertGreaterEqual(gap, f["wall_gap"])
+        f, b = d["frame"], d["base"]
+        self.assertAlmostEqual(f["axis_d"] - d["ring"]["r1"] - f["back"], 4.4, places=6)
+        side_lip, _chamfer_lip, front_lip = b["lip"]
+        self.assertLessEqual(b["side"] + side_lip, f["open"][0] - f["wall_gap"])
+        self.assertLessEqual(b["front_d"] + front_lip, f["reach"])
+        self.assertLess(b["front_d"] + 1.8 + 0.15, f["reach"])  # the button's lens with its dome
+        src = (common.ROOT / "tools" / "blender" / "ship_interior_lens.py").read_text(encoding="utf-8")
+        self.assertEqual(float(re.search(r"^AXIS_D = ([0-9.]+)", src, re.M).group(1)), f["axis_d"])
+        self.assertEqual(float(re.search(r"^REACH = ([0-9.]+)", src, re.M).group(1)), f["reach"])
 
     def test_back_fold_is_the_lens_rooms_facet(self) -> None:
         # the spot sits on a vertex of the lens room's 12-sided wall: half a facet's angle either side
@@ -117,7 +124,7 @@ class ChargerAsset(unittest.TestCase):
         carrier = nodes["carrier"]
         self.assertIn("crystal_anchor", {doc["nodes"][i]["name"] for i in carrier.get("children", [])})
         cols = [n for n in nodes if n.endswith("-convcolonly")]
-        self.assertEqual(len([c for c in cols if c.startswith("crystal_charger_col")]), 7)  # base, 2 prongs, 4 legs
+        self.assertEqual(len([c for c in cols if c.startswith("crystal_charger_col")]), 3)  # pedestal, 2 prongs
         self.assertEqual(len([c for c in cols if c.startswith("track_ring_col")]), 2)
         mats = {m["name"] for m in doc["materials"]}
         self.assertEqual(mats, SURFACES)
@@ -203,21 +210,22 @@ class ChargerAsset(unittest.TestCase):
         self.assertEqual(c["ring_turn"]["overlaps"], 0)
         self.assertEqual(c["carrier_rise"]["overlaps"], 0)
         self.assertEqual(c["button_pressed_overlaps"], 0)
-        self.assertGreaterEqual(c["wall_min_cm_body"], 1.9)  # the base and the back legs' pads off the facets
-        self.assertGreaterEqual(c["ring_turn"]["wall_min_cm"], 1.9)
+        # lens room C: the pedestal stands on the alcove's back panel (d 10), inside its cheeks; the turning ring
+        # clears the panel by 4.4
+        self.assertGreaterEqual(c["wall_min_cm_body"], -0.01)
+        self.assertGreaterEqual(c["cheek_min_cm_body"], 0.45)
+        self.assertGreaterEqual(c["ring_turn"]["wall_min_cm"], 4.3)
+        self.assertLessEqual(c["reach_cm"], 70.0)
         self.assertEqual(r["gltf_validator"]["numErrors"], 0)
         self.assertLess(r["mesh"]["triangles"], 45000)
         # the depth a player's stand counts from: ship.toml's renewer spots' depth_m (fix1: 1.053 m), which the layout's
         # stand and pass checks use; a deeper charger would stand the player inside its pads
         spots = {s["id"]: s for s in tomllib.loads((common.ROOT / "layouts" / "ship" / "ship.toml")
                                                    .read_text(encoding="utf-8"))["stations"]["spot"]}
-        # lens room C (2026-10-28): the spots follow the wall alcove's charger (reach 70, axis d 38); until the charger
-        # step rebuilds the unit to it, the committed legs' charger (axis d 53.5) is held at its own reach instead
-        dims = tomllib.loads((common.ROOT / "tools" / "blender" / "charger_dims.toml").read_text(encoding="utf-8"))
+        # lens room C (2026-10-28): the pedestal in the wall's alcove reaches at most 70 cm (the spots' 0.70)
         reach = r["mesh"]["size_cm"]["d"][1]
-        if dims["frame"]["axis_d"] == 53.5:
-            self.assertEqual(reach, 105.25)   # the legs' charger, unchanged; the spots' 0.70 is the alcove's
-            return
+        self.assertLessEqual(reach, 70.0)
+        self.assertGreater(reach, 69.0)  # the plinth's and the slab's front lips
         self.assertLessEqual(reach, spots["renewer_e"]["depth_m"] * 100)
         self.assertLessEqual(reach, spots["renewer_w"]["depth_m"] * 100)
 
