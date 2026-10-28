@@ -46,9 +46,10 @@ def pairs_of(cfg: dict, which: str) -> list:
     return [(lg, am) for lg in legs for am in arms]
 
 
-def solve(dump: dict, cfg: dict, which: str) -> tuple[A.Model, dict, dict, list]:
-    """The model, its solved legs and arms rigs (by name) and the measures of the pairs."""
-    model = A.Model(dump["skel"], dump["skin"], cfg)
+def solve(dump: dict, cfg: dict, which: str, char: str = "") -> tuple[A.Model, dict, dict, list]:
+    """The model, its solved legs and arms rigs (by name) and the measures of the pairs (`char`: its
+    `[chars.<char>]` settings on top of the shared ones)."""
+    model = A.Model(dump["skel"], dump["skin"], A.for_char(cfg, char))
     pairs = pairs_of(cfg, which)
     legs = {n: model.legs(n) for n in dict.fromkeys(p[0] for p in pairs)}
     arms = {n: model.arms(n) for n in dict.fromkeys(p[1] for p in pairs)}
@@ -72,7 +73,7 @@ def proxy_error(model: A.Model) -> dict:
 
 def _solve_main(a, cfg: dict) -> int:
     dump = json.loads(Path(a.solve).read_text(encoding="utf-8"))
-    model, legs, arms, rows = solve(dump, cfg, a.pairs)
+    model, legs, arms, rows = solve(dump, cfg, a.pairs, Path(a.solve).name.split("_")[0])
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "solve.json").write_text(json.dumps({"marks": model.marks, "proxy_rest_cm": proxy_error(model),
@@ -342,7 +343,7 @@ def _blender_main(argv: list[str]) -> None:
             continue
         hd = out / "build" / char
         hd.mkdir(parents=True, exist_ok=True)
-        model, legs, arms, rows = solve(dump, cfg, a.pairs)
+        model, legs, arms, rows = solve(dump, cfg, a.pairs, char)
         for n, r in legs.items():
             ST.write(arm, A.layer_clip(r, "legs", f"{A.LEGS_PREFIX}{n}_Loop"), f"{A.LEGS_PREFIX}{n}_Loop")
         for n, r in arms.items():

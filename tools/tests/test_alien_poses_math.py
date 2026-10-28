@@ -266,6 +266,15 @@ class BuiltData(unittest.TestCase):
         self.assertEqual(built["arms"]["Heart"]["both"]["offset"], [0.4, 1.9, 0.9])
         self.assertEqual(stale, "arms")
 
+    def test_a_character_table_merges_over_the_shared_data(self):
+        """Round 3: `[chars.<char>]` overrides a setting for that character only; the shared data stays."""
+        d = {"arms": {"X": {"both": {"a": 1, "b": 2}}}, "limits": {"c": 3},
+             "chars": {"axolotl": {"arms": {"X": {"both": {"b": 5}}}}}}
+        self.assertEqual(A.for_char(d, "axolotl")["arms"]["X"]["both"], {"a": 1, "b": 5})
+        self.assertEqual(A.for_char(d, "chameleon")["arms"]["X"]["both"], {"a": 1, "b": 2})
+        self.assertEqual(A.for_char(d, "")["limits"], {"c": 3})
+        self.assertEqual(d["arms"]["X"]["both"]["b"], 2)
+
 
 @unittest.skipUnless(DUMP.is_file(), "no step's skin dump is on this machine")
 class OnTheChameleon(unittest.TestCase):
@@ -312,6 +321,24 @@ class OnTheChameleon(unittest.TestCase):
         finally:
             d["limits"].clear()
             d["limits"].update(old)
+
+    def test_the_hip_hand_rests_on_the_thigh_on_squat_and_sit(self):
+        """Round 3: on [thigh_hand]'s legs the hip hand's variant touches its thigh (the gap within the contact limit,
+        the hand neither in the thigh nor in the torso); the waist's mark is not measured there."""
+        mo = self.model
+        legs = {lg: mo.legs(lg) for lg in ("Stand", "Squat", "Sit")}
+        arms = {"HandsOnHips": mo.arms("HandsOnHips")}
+        arms.update(mo.variants(legs, arms))
+        lim = mo.data["limits"]
+        for lg in ("Squat", "Sit"):
+            m = A.measure(mo, A.compose(legs[lg], arms[f"HandsOnHips{A.VARIANT}{lg}"]), lg, "HandsOnHips", True)
+            self.assertEqual(m["marks_cm"], {})
+            self.assertEqual(set(m["contacts_cm"]), {"hand_Left~thigh_Left", "hand_Right~thigh_Right"})
+            for k, v in m["contacts_cm"].items():
+                self.assertLessEqual(v, lim["contact_gap_cm"], (lg, k))
+            for s in ("Left", "Right"):
+                for b in ("torso", f"thigh_{s}"):
+                    self.assertLessEqual(m["through_cm"][f"hand_{s}>{b}"], lim["through_hand_cm"], (lg, s, b))
 
     def test_one_leg_tips_out_of_balance_when_pushed(self):
         """The centre of mass check reads a body shifted off its one foot as outside the support."""

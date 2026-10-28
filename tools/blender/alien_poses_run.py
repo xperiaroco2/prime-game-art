@@ -41,10 +41,10 @@ def turn(Pm: dict, R: dict, b: str) -> list:
     return gltf_q(A.M.q_mul(A.S.mat_q(Pm[b]), A.M.q_conj(A.S.mat_q(R[b]))))
 
 
-def reference(dump: dict, cfg: dict) -> dict:
+def reference(dump: dict, cfg: dict, char: str = "") -> dict:
     """Every pair's bone heads and world turns from the rest, composed from its two layers as the GLB's clips are
     (alien_pose_math.compose)."""
-    model = A.Model(dump["skel"], dump["skin"], cfg)
+    model = A.Model(dump["skel"], dump["skin"], A.for_char(cfg, char))
     R = A.Rig(dump["skel"]).P()
     legs = {n: model.legs(n) for n in cfg["legs"]}
     arms = {n: model.arms(n) for n in cfg["arms"]}
@@ -109,7 +109,7 @@ def main() -> int:
                 print(f"NOTE {c}: the build's pose data differs from the TOML ({stale}); the reference follows the "
                       f"build's (rebuild with alien_poses.py --glb)", flush=True)
             ref = cout / f"ref_{c}.json"
-            ref.write_text(json.dumps(reference(dump, built)), encoding="utf-8", newline="\n")
+            ref.write_text(json.dumps(reference(dump, built, c)), encoding="utf-8", newline="\n")
             job["chars"].append({"glb": _godot.stage(out / "build" / c / f"{c}_char.glb", f"poses_{c}"),
                                  "ref": str(ref), "out": str(cout / f"layers_{c}.json")})
         (cout / "check_job.json").write_text(json.dumps(job, indent=1), encoding="utf-8", newline="\n")

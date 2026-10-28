@@ -148,7 +148,9 @@ Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -
 contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
 
 [arms.HandsBehindHead]
-both = { mode = "goal", at = "head_back", offset = [0.4, -0.2, 0.2], elbow = [1.0, -0.6, 0.2], fingers_dir = [-1.0, -0.2, 0.3], palm = [0.0, 1.0, 0.0], grip = "relaxed", touch = ["head"], push = [-0.3, 1.0, 0.0], gap_cm = 0.3 }
+# round 3 (s9 grid): the shoulders shrugged up lift the elbows toward the ears, wide (27 cm out), the forearms going
+# back behind the skull under the crest; the axolotl's wider head has its own wrists (`[chars.axolotl]` below)
+both = { mode = "goal", at = "head_back", shoulder = [0, -30, 0], offset = [0.4, -0.2, -0.3], elbow = [1.0, 0.3, 0.8], fingers_dir = [-1.0, -0.2, 0.3], palm = [0.0, 1.0, 0.0], grip = "relaxed", touch = ["head"], push = [-0.3, 1.0, 0.0], gap_cm = 0.95 }
 contacts = [{ a = "hand_Left", b = "head" }, { a = "hand_Right", b = "head" }]
 
 [arms.PalmsOut]
@@ -158,3 +160,23 @@ both = { mode = "fk", upper = [1.0, 0.45, -0.3], lower = [0.35, 0.7, 0.85], fing
 Right = { mode = "goal", at = "brow", offset = [0.8, 0.6, 0.2], elbow = [0.8, 0.9, -0.1], fingers_dir = [-0.8, -0.5, 0.25], palm = [0.0, 0.45, -1.0], grip = "salute", touch = ["head"], push = [-0.8, -0.6, 0.0], gap_cm = 0.6 }
 Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.1, 0.85, -0.05] } }
 contacts = [{ a = "RightIndexDistal", b = "head" }, { a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
+
+# round 3: on these legs the hip hand's per-legs variant (PoseArms_<Arms>__<Legs>) rests on the top of its thigh by
+# the hip crease, not on the waist (Model._arm_thigh); measured as a contact with the thigh (gap and through)
+[thigh_hand]
+legs = ["Squat", "Sit"]
+along = { Squat = 0.25, Sit = 0.55 }  # of the way from the hip to the knee (the wrist)
+lift = 0.3
+fingers_add = [0.4, 0.0, 0.0]
+palm = [0.0, 0.0, -1.0]
+elbow = [1.0, -0.8, 0.0]
+push = [0.0, 0.0, -1.0]
+gap_cm = 0.4
+grip = "relaxed"
+
+# ------------------------------------------------------------------------------------- per character (round 3)
+# a [chars.<char>] table is merged over the shared data for that character only (alien_pose_math.for_char)
+[chars.axolotl.arms.HandsBehindHead.both]  # the wider head: the wrists further out and back, the elbows back
+shoulder = [0, -15, 0]  # its eyes sit lower on the head: a smaller shrug already puts the elbows at the ears
+offset = [0.6, -0.5, -0.3]
+elbow = [1.0, -0.3, 0.8]

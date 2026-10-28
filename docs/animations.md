@@ -1159,8 +1159,14 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   plays the variant with those legs when the character has it; `poses()` does not list variants; the game copies
   this rule. A variant's palm-to-waist distance has its own, looser limit, `variant_mark_cm` (10 cm: the hand rides
   off the waist to clear; review 2 found Sit's 23 cm read no failure under the old "reported, not limited"); a
-  variant beyond it is a named failure, and the game's pose list avoids that pair (below). An
-  arm's `variant` table (TOML) overrides its settings in its variants only (for example the fingers level).
+  variant beyond it is a named failure. An arm's `variant` table (TOML) overrides its settings in its variants only
+  (for example the fingers level). **Round 3 (the manager's decision): on `[thigh_hand]`'s legs (Squat, Sit) the
+  variant rests the hand on the top of its thigh by the hip crease** (`Model._arm_thigh`): the wrist starts over the
+  thigh's top skin `along` of the way from the hip to the knee (Squat 0.25; Sit 0.55: its crease is under the belly,
+  and nearer the hip the hand went 5 to 6 cm into it), the fingers along the thigh turned out by `fingers_add`, the
+  palm down, the elbow out and back ([1, -0.8, 0]), then touched onto the thigh's skin. Such a pair is measured as a
+  contact with the thigh (the gap within `contact_gap_cm`, the hand's through into the thigh and the torso within
+  `through_hand_cm`) in place of the waist's mark and the torso contact.
 - **The check composes from the build's own data.** The build writes `build/<char>/pose_data.json` (the TOML as
   solved); `alien_poses_run.py --check` composes the Blender reference from it and prints a `NOTE` when the TOML has
   changed since, so editing the TOML without a rebuild no longer turns verify red (round 2's red verify).
@@ -1205,13 +1211,22 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     straight forward, still pointing forward and down), take Stand's hand>torso from 1.94 cm to under 0.3 (no
     failure), the palm 5.0 cm from the mark, the contact 0.55 cm; Lunge then needs no variant. The variants keep
     `clear_dir` [0, -1, 0.2] and their level fingers: OneLeg about 1.2 cm into the belly, Kneel within the limits,
-    Squat (about 4 cm in, the palm 12 cm from the mark) and Sit (the hand on the thigh, 13-15 cm from the mark) stay
-    failures the game avoids (below); no grip or clear direction tried put Squat's or Sit's hand on the hip.
+    Squat (about 4 cm in, the palm 12 cm from the mark) and Sit (the hand on the thigh, 13-15 cm from the mark) were
+    failures; no grip or clear direction tried put Squat's or Sit's hand on the hip. Round 3 rests it on the thigh
+    instead (above; grid on the s7 dumps, `along` x `fingers_add` x `elbow`, both characters read alike: the same
+    body): Squat and Sit then clear the thigh and the torso, the gap to the thigh 0.2 to 0.4 cm.
 - **The back of the skull** (`head_back`, round 2, s7): the landmark is the head's back at HEAD_BACK_UP (0.6) of the
   way from the Head bone up to the eyes, not at the eyes' height: there the chameleon's crest put the wrists 32 cm
   behind the head and the arms nearly straight, the elbows forward along the face ("head in hands"). At the skull
   the wrists sit 0.34 m from the shoulder of a 0.49 m arm, so the elbow pole (`elbow` [1, -0.6, 0.2]) takes the
-  elbows out to the sides.
+  elbows out to the sides. Round 3 (s7's front read "hands over the ears": the elbows at neck height, the forearms
+  rising by the cheeks): with the wrists at the skull's back the arm's reach leaves the elbow nowhere to go by its
+  pole (grid: three poles moved it under 1 cm), so the shoulders shrug up (`shoulder` [0, -30, 0]): the chameleon's
+  elbows 7 cm under the eyes (were 14), 27 cm out, 6 cm behind the Head bone, the hands 0.5 cm into the skull at
+  most; the wrists higher went into the crest (2 to 12 cm). **Per-character settings**: a `[chars.<char>]` table in
+  the TOML is merged over the shared data for that character (`alien_pose_math.for_char`; the drivers pass the
+  character); the axolotl's wider, lower-eyed head takes the wrists further out and back, a smaller shrug and the
+  elbow pole back (`[chars.axolotl.arms.HandsBehindHead.both]`: its forearms otherwise cut the head 3 to 5 cm).
 - **The Heart** (s7): the hands one hand length in front of the chest's front (`offset` fwd 1.0, was 1.9: from the
   side the arms read straight out, a sleepwalker), the elbows out and down ([1, -0.3, -0.3]), so the front outline
   has its elbow wings and the side view stays compact.
@@ -1234,8 +1249,8 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   game's silhouette list avoids** these arms pairs as the two sides of one outline from the left or right (every
   side pair under 0.10 in s7's chameleon table, the axolotl's within 0.01 of it): (HandsOnHips, Salute), (Flex,
   Salute), (HandsOnHips, FingerUp), (HandsOnHips, Flex), (Heart, PalmsOut), (Plane, Flex), (Flex, Heart), (Flex,
-  PalmsOut); legs: Stand/OneLeg from the sides (0.21 to 0.26) is fine. **The game's pose list also avoids** the
-  hip hand on Squat and Sit (HandsOnHips, FingerUp and Salute over those legs: the variants' failures above).
+  PalmsOut); legs: Stand/OneLeg from the sides (0.21 to 0.26) is fine. Every one of the 48 pairs is meant to look
+  good (round 3): the pose list avoids no pair; the hip hand on Squat and Sit rests on the thigh (above).
 - **What the layers freeze.** `owner()` gives every bone that is not the legs' to the arms, so the arms clip keys
   Jaw, the eyes and the crest at rest and the game's `Blend2` filter takes the whole Chest subtree: a face or crest
   layer of the game must sit after the pose's tree (or the pose's arms filter must drop those bones) to move during

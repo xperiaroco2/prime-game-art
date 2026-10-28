@@ -477,9 +477,11 @@ class Model:
             self._foot(r, side, leg)
 
     # ------------------------------------------------------------------------------------------- the arms
-    def arms(self, name: str, ref: Rig | None = None) -> Rig:
+    def arms(self, name: str, ref: Rig | None = None, legs: str = "") -> Rig:
         """The arms' pose over the reference legs (Stand): chest, neck and head turns, then per arm FK directions or
-        a goal at a landmark (two-bone IK, then the contact solved on the skin), the hand's frame and the fingers."""
+        a goal at a landmark (two-bone IK, then the contact solved on the skin), the hand's frame and the fingers.
+        `ref`, `legs`: a per-legs variant's legs (Model.variants); on `thigh_hand`'s legs the hip hand rests on the
+        thigh (round 3)."""
         spec = self.data["arms"][name]
         r = ref or self.legs(self.data["reference_legs"])
         for b in ("Chest", "UpperChest", "Neck", "Head"):
@@ -495,6 +497,8 @@ class Model:
                 r.turn_world(f"{side}Shoulder", turn_q(*arm["shoulder"], side=side))
             if arm["mode"] == "fk":
                 self._arm_fk(r, side, arm)
+            elif ref is not None and arm.get("clear") and legs in self.data.get("thigh_hand", {}).get("legs", ()):
+                self._arm_thigh(r, side, arm, legs)
             else:
                 self._arm_goal(r, side, arm)
         for c in spec.get("contacts", []):
@@ -592,6 +596,27 @@ class Model:
         r._goal = getattr(r, "_goal", {})
         r._goal[side] = goal
 
+    def _arm_thigh(self, r: Rig, side: str, arm: dict, legs: str) -> None:
+        """The hip hand on a deep legs pose (round 3: Squat, Sit): the hand rests on the top of its thigh by the hip
+        crease, the fingers forward along the thigh (`fingers_add` on top, chest axes), the palm down, the elbow out
+        and back; the wrist starts `lift` hand lengths over the thigh's top skin `along` of the way from the hip to
+        the knee (per legs pose: Sit's thighs rise steeply, its crease is under the belly), then the touch closes the gap to
+        the thigh's skin along `push` (`[thigh_hand]` in the TOML)."""
+        th = self.data["thigh_hand"]
+        hip, knee = r.head(f"{side}UpperLeg"), r.head(f"{side}LowerLeg")
+        d = norm(sub(knee, hip))
+        p = add(hip, mul(sub(knee, hip), th["along"][legs]))
+        pz = Posed(self.skel, self.skin, r.P())
+        ring = [q for q in pz.group(f"thigh_{side}") if abs(dot(sub(q, p), d)) < 0.02]
+        top = max(ring, key=lambda q: q[2]) if ring else p
+        goal = add(top, (0.0, 0.0, th.get("lift", 0.3) * self.hand_len))
+        F = self._chest(r)
+        dl = body(side, M.q_rotate(M.q_conj(F), d))  # the thigh's direction in (out, fwd, up) of the chest
+        fd = norm(add(dl, tuple(th.get("fingers_add", (0.0, 0.0, 0.0)))))
+        a = {**arm, "fingers_dir": fd, "touch": [f"thigh_{side}"], "touch_by": "hand_{side}", "clear": []}
+        a.update({k: v for k, v in th.items() if k in ("palm", "elbow", "grip", "push", "gap_cm", "hand_roll")})
+        self._arm_goal(r, side, a, goal=goal)
+
     def variants(self, legs: dict, arms: dict) -> dict:
         """Per-legs variants of the arms poses with a `clear` arm (the hip hand), "<Arms>__<Legs>": solved over those
         legs (not the reference's) where the shared clip's hand goes into a clear group beyond the hand limit; the
@@ -606,12 +631,15 @@ class Model:
             for lg in legs:
                 if lg == self.data["reference_legs"]:
                     continue
+                if lg in self.data.get("thigh_hand", {}).get("legs", ()):  # round 3: the hand on the thigh, always
+                    out[f"{am}{VARIANT}{lg}"] = self.arms(am, ref=self.legs(lg), legs=lg)
+                    continue
                 P = compose(legs[lg], arms[am]).P()
                 pz = Posed(self.skel, self.skin, P)
                 d = max(tube_depth(self.tubes[t], P, pz.group(f"hand_{s}"), THIGH_SKIP if "UpperLeg" in t else 0)
                         for g, s in groups for t in tube_bones(g, self.tubes))
                 if d > lim:
-                    out[f"{am}{VARIANT}{lg}"] = self.arms(am, ref=self.legs(lg))
+                    out[f"{am}{VARIANT}{lg}"] = self.arms(am, ref=self.legs(lg), legs=lg)
         return out
 
     def _meet(self, r: Rig, spec: dict, c: dict) -> None:
@@ -660,6 +688,20 @@ def layer_clip(r: Rig, layer: str, name: str, frames: int = 2) -> dict:
 
 def load(path: Path = DATA) -> dict:
     return tomllib.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def merged(base: dict, over: dict) -> dict:
+    """`base` with `over`'s tables merged in, key by key (a value that is not a table replaces)."""
+    out = dict(base)
+    for k, v in over.items():
+        out[k] = merged(base[k], v) if isinstance(v, dict) and isinstance(base.get(k), dict) else v
+    return out
+
+
+def for_char(data: dict, char: str | None) -> dict:
+    """The pose data for one character: its `[chars.<char>]` table merged over the shared one (round 3: the
+    axolotl's wider head gets its own hands-behind-the-head settings)."""
+    return merged(data, data.get("chars", {}).get(char or "", {}))
 
 
 # ------------------------------------------------------------------------------------------------ measures
@@ -799,7 +841,13 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
     for a, b in d["limits"]["through_pairs"]:
         through[f"{a}>{b}"] = round(through_depth(model, P, pz, a, b) * 100.0, 2)
     contacts, marks = {}, {}
-    for c in d["arms"][arms].get("contacts", []) + d["legs"][legs].get("contacts", []):
+    cs = d["arms"][arms].get("contacts", [])
+    if variant and legs in d.get("thigh_hand", {}).get("legs", ()):  # the hip hand on the thigh: its contact is the
+        hip = [f"hand_{s}" for s in SIDES  # thigh's skin (gap and through), not the waist's mark nor the torso
+               if (d["arms"][arms].get(s) or d["arms"][arms].get("both") or {}).get("clear")]
+        cs = [c for c in cs if not (c["a"] in hip and (c.get("mark") or c.get("b") == "torso"))]
+        cs += [{"a": h, "b": f"thigh_{h.split('_')[1]}"} for h in hip]
+    for c in cs + d["legs"][legs].get("contacts", []):
         if c.get("measure") is False:  # a solve's helper (the hands' meet): its own contacts are measured
             continue
         if c.get("mark"):  # the palm's centre to a landmark carried by the Spine (the hip hand on the waist's side)
