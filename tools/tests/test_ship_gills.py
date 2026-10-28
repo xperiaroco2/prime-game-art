@@ -19,7 +19,7 @@ import ship_interior_gills as G  # noqa: E402
 PLACE = tomllib.loads((ROOT / "layouts" / "ship" / "interior.toml").read_text(encoding="utf-8"))["place"]
 # design's row (drawing2, the throat's row, the east wall; the west mirrors x)
 DESIGN = {1: (2.259, -5.248), 2: (2.375, -4.896), 3: (2.490, -4.545), 4: (2.606, -4.193), 5: (2.721, -3.842)}
-BUTTON = (2.837, -3.490)
+BUTTON = (2.812, -3.566)   # the manager, 2026-10-28: s 3.72 (was 3.80), the seam clear to its right
 
 
 def parts(side: str) -> dict:
@@ -87,7 +87,7 @@ class SlitNumbers(unittest.TestCase):
             self.assertLess(math.dist(plan(G.SLITS[k - 1]), xy), 0.002, k)
         self.assertLess(math.dist(plan(G.BUTTON_S), BUTTON), 0.002)
         self.assertLess(G.BUTTON_T, G.BEND)                                   # the button on the vertical part
-        self.assertTrue(G.BAND[0] < G.SLITS[0] - G.SAG and G.BUTTON_S + G.OCT_FLATS / 2 < G.BAND[1])
+        self.assertTrue(G.BAND[0] < G.SLITS[0] - G.SAG and G.BUTTON_S + G.OCT_FLATS / 2 + 0.1 < G.BAND[1])   # seam clear
         self.assertAlmostEqual(G.WALL_LEN, 4.051, places=3)
 
     def test_button(self):

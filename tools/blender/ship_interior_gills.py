@@ -66,7 +66,7 @@ TAU_C = math.sqrt(R_ARC ** 2 - (R_ARC - SAG + CHAMFER) ** 2)   # the chamfered t
 N_ROWS = 24                                             # rows along the chord
 
 # --- the button ---
-BUTTON_S, BUTTON_T = 3.80, 1.15                         # by the hall, centre h 1.15 on the vertical part
+BUTTON_S, BUTTON_T = 3.72, 1.15                         # by the hall (s 3.72: the seam at 3.95 passes clear right of the recess), h 1.15
 OCT_FLATS, OCT_D = 0.16, 0.03                           # the octagonal recess: across the flats, deep
 DOME_R, DOME_UP = 0.045, 0.025                          # the dome: radius (9 cm across), standing proud of the wall
 RING_W = 0.012                                          # the light ring round it
