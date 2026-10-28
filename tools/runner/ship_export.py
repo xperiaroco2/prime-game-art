@@ -5,7 +5,8 @@ res://import/ship_<id>.glb) and saves it as res://import/ship_export/ship.tscn w
 module turns that into the package, shaped like the game's tree (its ARCHITECTURE 11.1):
 
   assets/environment/ship/<id>.glb (+ a minimal .import, 11.2), metal.gdshader, night_sky.gdshader,
-                          console_metal.gdshader, materials/metal_<name>.tres, night_sky.tres, night_env.tres
+                          console_metal.gdshader, charger_traces.gdshader, materials/metal_<name>.tres,
+                          night_sky.tres, night_env.tres
   levels/ship/ship.tscn   the pieces at their placements, the night lights, environment and probes, Stations, Markers
   package.json            files with SHA-256 and bytes, the station spots, the spawn, the open questions
 
@@ -29,9 +30,10 @@ SCENE = "levels/ship/ship.tscn"
 BUILT = "ship_export"  # godot/import/ship_export/: export_scene.gd's output
 # the art shaders the scene uses (their path in the godot/ project -> the package's file beside the pieces); lens room
 # C: the lens bronze (ship.gd LENS_BRONZE: lens_bronze, lens_bronze2, lens_edge) is the console's console_metal.gdshader,
-# shipped as a copy
+# shipped as a copy; the lens alcoves' charger traces (ship.gd TRACE_MAT, lens_trace) are charger/traces.gdshader
 SHADERS = {"ship/metal.gdshader": "metal.gdshader", "ship/night_sky.gdshader": "night_sky.gdshader",
-           "console/console_metal.gdshader": "console_metal.gdshader"}
+           "console/console_metal.gdshader": "console_metal.gdshader",
+           "charger/traces.gdshader": "charger_traces.gdshader"}
 CONSOLE_YAW = 180.0  # the console's front (+Z, the button) faces the mouth (-Z): assets/prop/start_console/HANDOFF.md
 # spot id prefix -> (the station package that goes there, the kind); the vents are ship pieces in the scene
 PACKAGES = {"console": ("start_console", "console"), "vent": ("ship:station_vent_{side}", "vent"),

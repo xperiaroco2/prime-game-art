@@ -7,6 +7,10 @@ extends "res://charger/room.gd"
 ## set_carrier, set_ring, set_pressed (eased in by a fraction of its TRAVEL), Crystal.set_charge. Two stand-ins, as
 ## the game has no hand yet: the crystal's way into the cup and out of it (an eased path on the anchor's axis). Not
 ## shown, as not built (the game's): the lightning arcs from the inner prongs and any conduit pulse.
+## The back panel's traces (prime-game#1095 c6468773545, Traces.set_panel): dim until the charge starts, then a
+## bright front runs along every trace from its outer end to the ring at the charge fraction; at full the ring flares
+## once (FLARE) and the pattern holds full while the crystal waits; once the crystal leaves the cup it fades to dim
+## over FADE s.
 ## Started by `ship --charger-cycle DIR` (tools/runner/commands/ship.py charger_cycle) through `_godot.window()`, in
 ## ship.gd's "shoot" mode (the off-screen window), with the request's "cycle": {"eye", "look", "fov", "fps"}:
 ##   godot <_godot.window() flags> -s res://charger/cycle.gd -- <request.json> <out>
@@ -29,9 +33,13 @@ const RING := [6.6, 15.8]
 const CHARGE := [7.4, 15.4]
 const RISE_DOWN := [15.8, 17.0]
 const TAKE := [20.0, 22.4]
+const FLARE := [15.4, 15.7]   # the ring's flare as the fronts reach it (CHARGE's end), about 0.3 s
+const FADE := 0.5             # the traces back to dim once the crystal is out of the cup
 const KEYS := [[1.0, "1 idle, empty"], [3.4, "2 crystal put in (stand-in path)"], [5.0, "2 seated, spent"],
-	[5.8, "3 button pressed"], [7.6, "4 charging: carrier up"], [11.0, "4 charging: carrier and ring turn"],
-	[15.0, "4 charging: nearly full"], [18.5, "5 charged, waiting"], [20.9, "6 taken out (stand-in path)"],
+	[5.8, "3 button pressed"], [7.6, "4 charging: carrier up"], [9.0, "4 charging: the traces fill"],
+	[11.0, "4 charging: carrier and ring turn"],
+	[15.0, "4 charging: nearly full"], [15.55, "5 full: the ring flares"], [18.5, "5 charged, waiting"],
+	[20.5, "6 lifted: the traces fade"], [20.9, "6 taken out (stand-in path)"],
 	[23.5, "6 back to idle"]]
 
 var _t: float = 0.0
@@ -39,7 +47,7 @@ var _pair: Dictionary = {}
 
 
 ## The cycle's values at time t: {"state", "rise", "carrier", "ring", "press", "charge", "crystal" (anchor-frame
-## position), "shown"}.
+## position), "shown", and the traces' "fill", "flare", "lit" (Traces.set_panel)}.
 static func at(t: float) -> Dictionary:
 	var state := "idle"
 	if t >= CHARGING_AT and t < RISE_DOWN[1]:
@@ -53,9 +61,14 @@ static func at(t: float) -> Dictionary:
 		s = _ss(INSERT, t)
 	elif t >= TAKE[0]:
 		s = 1.0 - _ss(TAKE, t)
+	var out: float = _out_of_cup()
+	var fill: float = _ss(CHARGE, t) if t < out else (1.0 if t < out + FADE else 0.0)
+	var flare: float = sin(PI * _u(FLARE, t)) if t > FLARE[0] and t < FLARE[1] else 0.0
+	var lit: float = 1.0 - smoothstep(out, out + FADE, t)
 	return {"state": state, "rise": rise, "carrier": TURNS * TAU * _glide(_u(SPIN, t), 0.2),
 		"ring": RING_TURNS * TAU * _glide(_u(RING, t), 0.25), "press": press,
-		"charge": _ss(CHARGE, t), "crystal": _bezier(s), "shown": t >= INSERT[0] and t < TAKE[1]}
+		"charge": _ss(CHARGE, t), "crystal": _bezier(s), "shown": t >= INSERT[0] and t < TAKE[1],
+		"fill": fill, "flare": flare, "lit": lit}
 
 
 ## The moment the crystal's tip leaves the cup on its way out (the charger goes back to idle).
@@ -110,6 +123,7 @@ func _apply(v: Dictionary) -> void:
 	if v["state"] == "charging":
 		Charger.set_carrier(look, v["rise"], v["carrier"])
 	Charger.set_ring(look, v["ring"])
+	Traces.set_panel(look, v["fill"], v["flare"], v["lit"])
 	var k: float = v["press"]
 	if k <= 0.0 or k >= 1.0:
 		Charger.set_pressed(look, k >= 1.0)
@@ -191,6 +205,7 @@ func _shoot() -> void:
 		sheet.blit_rect(tiles[i], Rect2i(0, 0, 640, 360), Vector2i((i % 2) * 640, (i / 2) * 360))
 	_save(sheet, _out.path_join("keys_sheet.png"))
 	_write("cycle.json", {"frames": count, "fps": fps, "seconds": SECONDS, "lights": lights, "states": states,
+		"trace_surfaces": _pair.get("traces", 0),
 		"keys": KEYS, "render_s": (Time.get_ticks_msec() - started) / 1000.0})
 	print("CHARGER cycle %d frames" % count)
 	quit(0)
