@@ -145,5 +145,29 @@ class Hug(unittest.TestCase):
             F.hug_weight(0.01, 0.01, 0.01)
 
 
+class Shoe(unittest.TestCase):
+    def test_top_skips_the_sole(self):
+        # the sole's open edge at 0.01 m is no top; the opening's lowest point 0.11 m less the margin
+        self.assertAlmostEqual(F.shoe_top([0.01, 0.12, 0.11, 0.13], 0.01), 0.10)
+        self.assertIsNone(F.shoe_top([0.0, 0.02]))
+        self.assertIsNone(F.shoe_top([]))
+        with self.assertRaises(ValueError):
+            F.shoe_top([0.1], -0.01)
+
+    def test_in_shoe(self):
+        self.assertTrue(F.in_shoe(1.0, 0.05, 0.10))
+        self.assertFalse(F.in_shoe(1.0, 0.12, 0.10))   # the ankle above the top shows
+        self.assertFalse(F.in_shoe(0.3, 0.05, 0.10))   # mostly shin
+        self.assertFalse(F.in_shoe(1.0, 0.05, None))   # no shoe
+
+
+class RestPoke(unittest.TestCase):
+    def test_counts_outside_away_from_openings(self):
+        self.assertEqual(F.rest_poke([-5.0, 0.5, 2.0, 3.0], [False, False, False, True]), 1)
+        self.assertEqual(F.rest_poke([], []), 0)
+        with self.assertRaises(ValueError):
+            F.rest_poke([1.0], [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -193,16 +193,15 @@ def main() -> int:
     if shoe is not None:
         bm = bmesh.new()
         bm.from_mesh(shoe.data)
-        tops = [(shoe.matrix_world @ v.co).z for v in bm.verts if v.is_boundary and (shoe.matrix_world @ v.co).z > 0.05]
+        top_z = F.shoe_top([(shoe.matrix_world @ v.co).z for v in bm.verts if v.is_boundary], args.shoe_margin)
         bm.free()
-        top_z = min(tops) - args.shoe_margin if tops else None
     gname = {g.index: g.name for g in char.vertex_groups}
     cov, outside, in_shoe = [], 0, 0
     for v in me.vertices:
         p = mw @ v.co
         n = (nmat @ v.normal).normalized()
         foot = sum(g.weight for g in v.groups if gname.get(g.group, "").endswith(("Foot", "Toes")))
-        if top_z is not None and foot >= 0.5 and p.z < top_z:
+        if F.in_shoe(foot, p.z, top_z):
             cov.append(True)
             in_shoe += 1
             continue

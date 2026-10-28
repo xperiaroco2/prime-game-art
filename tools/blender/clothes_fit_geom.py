@@ -173,3 +173,26 @@ def hug_weight(front_diff: float, start: float = 0.003, full: float = 0.010) -> 
         raise ValueError(f"full {full} must exceed start {start}")
     t = min(1.0, max(0.0, (front_diff - start) / (full - start)))
     return t * t * (3.0 - 2.0 * t)
+
+
+def shoe_top(boundary_z: list[float], margin: float = 0.01, above: float = 0.05) -> float | None:
+    """The height under which a closed shoe hides the foot: the lowest point of the shoe's top opening (its boundary
+    vertices above `above` m, so a sole's open edge is no top) less margin; None when the shoe has no such opening."""
+    if margin < 0:
+        raise ValueError(f"margin {margin} is negative")
+    tops = [z for z in boundary_z if z > above]
+    return min(tops) - margin if tops else None
+
+
+def in_shoe(foot_weight: float, z: float, top: float | None, min_weight: float = 0.5) -> bool:
+    """A body vertex inside a shoe: mostly on Foot and Toes (foot_weight, the sum of their weights) and below the
+    shoe's top (shoe_top). Such a vertex is always cut from the dressed build."""
+    return top is not None and foot_weight >= min_weight and z < top
+
+
+def rest_poke(signed_mm: list[float], at_opening: list[bool], tol_mm: float = 1.0) -> int:
+    """The body vertices already through the cloth at rest: outside it by more than tol (signed distance, + out)
+    and not by an opening (collar, cuffs, hems, the shoes' tops), where the body is meant to show."""
+    if len(signed_mm) != len(at_opening):
+        raise ValueError("signed_mm and at_opening differ in length")
+    return sum(1 for s, o in zip(signed_mm, at_opening) if s > tol_mm and not o)

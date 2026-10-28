@@ -151,8 +151,7 @@ def main() -> int:
     # inside: the body vertex by the opening; outside: its nearest cloth point by the opening (the hand beyond a cuff)
     at_open = np.array([kd.find(Vector(rest[i]) if s < 0 else loc)[2] < args.opening
                         for i, s, loc in zip(near, s0, locs)], dtype=bool)
-    s0 = np.array(s0)
-    rest_poke = int(((s0 > args.tol) & ~at_open).sum()) if len(near) else 0
+    rest_poke = F.rest_poke([s * 1000 for s in s0], at_open.tolist(), args.tol * 1000)
     near = np.array(near)[~at_open] if len(near) else np.array(near)
     say("hidden by the cloth at rest:", len(near), "body vertices,", rest_poke, "of them outside it;",
         int(at_open.sum()), "more by an opening, left out")
