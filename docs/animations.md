@@ -883,6 +883,11 @@ the Hips keep the clip's (scaled) keys. The build's char.json records `leg_fit.m
 same mode to the loops it appends. Per action the report gives the ankles' worst miss, the frames out of reach, the
 knee's largest per-frame change beside S4b's own (a pop), the knee flips and the feet's lowest point against S4b's.
 The default mode (`lowest`) is T2's, so r2e and loco/t2b rebuild as they were.
+`tools/blender/alien_body_clips.py --char <c> --rows r2b=loco/f3/build,<tag>=<loco>/build --out <dir>` shoots the
+full-body clip frames of one character's builds side by side (`godot/alien/body_clips.gd` in the off-screen window,
+the game look of `char_shots.gd`, a floor, the camera following the Hips): a row per build, six clips (idle, walk,
+Jog_Fwd, Crouch_Fwd, Jump_Start at its take-off, Strafe_Left), `body_clips_<c>.jpg` and its `.json` (per cell the
+clip's time and the Hips' height).
 `... alien_loco.py --raw D:/prime-art-raw --reels [--only NAME,...] [--char axolotl]` runs `godot/alien/treadmill_reels.gd` in the
 off-screen window on the chameleon (`--char`: another character, into `<out>/reels/<char>/`): the character held in place (the hips' travel per loop taken off its node), the
 floor's stripes moving at the slot's speed against the travel, the clip at rate = speed / v0, a disc under each foot
