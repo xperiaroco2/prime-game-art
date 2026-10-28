@@ -21,7 +21,8 @@ const OMNI_RANGE := 2.4
 
 
 ## Puts the crystal's materials on every surface under root; returns the look: {"shell", "core", "light"
-## (StandardMaterial3D), "omni" (OmniLight3D), "charge"}.
+## (StandardMaterial3D), "omni" (OmniLight3D), "charge"}; a holder may add "omni_energy", the omni's energy at full
+## charge in its place (charger.gd seat_crystal), which set_charge then uses instead of OMNI_ENERGY.
 static func apply(root: Node3D) -> Dictionary:
 	var shell := ShaderMaterial.new()
 	shell.shader = SHELL
@@ -82,6 +83,6 @@ static func set_charge(look: Dictionary, charge: float) -> void:
 	(look["core"] as ShaderMaterial).set_shader_parameter("charge", c)
 	(look["light"] as StandardMaterial3D).emission_energy_multiplier = LIGHT_ENERGY * lerpf(LIGHT_SPENT, 1.0, c)
 	var omni: OmniLight3D = look["omni"]
-	omni.light_energy = OMNI_ENERGY * c
+	omni.light_energy = float(look.get("omni_energy", OMNI_ENERGY)) * c  # a holder may lower it (charger.gd)
 	omni.visible = c > 0.001
 	look["charge"] = c
