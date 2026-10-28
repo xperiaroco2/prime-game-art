@@ -61,3 +61,8 @@ images = [
   { file = "raw:2026-10-28-alien-clothes-s1/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "93189d1d635d4b5babaa4b041e788c43825ee140fbfa63129d2888990110b074" },
   { file = "raw:2026-10-28-alien-clothes-s1/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "901e253003dd13077ca12d71c23242eb8fe714951771a13af9eccde29fb12d3b" },
 ]
+
+# Ran 2026-10-28: 4 of 4 items done, $0.1470 of the $1.50 cap (`openai-images status`). Every front and side view shows
+# four digits per hand; a few back views hide one finger behind another. The pick page (a private artifact) and its
+# source are in <raw>/2026-10-28-alien-clothes-s1/page/; the engineer picks one outfit for step 2 (Meshy clothes fitted
+# onto our body).
