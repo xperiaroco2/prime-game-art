@@ -13,7 +13,8 @@
 # Sizes the drawings do not give (seams, bevels, bezels, strip places) are marked "sheet".
 
 [frame]
-top = 139.7                      # the outer prongs' tops (N.outerTop)
+top = 142.0                      # the outer prongs' tops (N.outerTop 139.7; antennas-2: 2.3 taller for the concept's
+                                 # longer straight run under the arc)
 axis_d = 38.0                    # C.axis: the track ring (r 23.6) clears the alcove's back panel by 4.4
 back = 10.0                      # C.back: the alcove's back panel, a flat chord across the vertex; the pedestal's
                                  # back stands on it
@@ -105,36 +106,42 @@ root = [[24.5, 99.1], [38.4, 99.1], [40.2, 104.0], [25.5, 104.0]]   # on the dec
 # rises straight, then bends inward over the crystal; the thin gaps between the plates glow cyan, wider and nearer
 # the faces toward the tip; the tip plate's face toward the crystal a small cyan emitter. Each plate is its (r, h)
 # outline extruded straight across, +-depth along d (flat front faces toward the room).
-spine = [33.6, 104.0, 124.0]     # the middle line: its r, its foot (the root's top), where the bend starts
-bend = [9.0, 90.0]               # the bend's radius on the middle line and its turn (deg, inward): a tight elbow of
-                                 # wedge plates (b1: 14.3 fanned a dozen of them out like bellows); the top at
-                                 # 124 + 9 + 6.7 = 139.7 (N.outerTop), the bend's inside at 126.3 over the inner pair
-reach = 5.0                      # past the bend, straight on toward the crystal: the tip's face at r 19.6
-half = [6.7, 7.5]                # the plates' half width across the middle line (r 26.9..40.3 below the bend) and
+spine = [33.6, 104.0, 122.2]     # the middle line: its r, its foot (the root's top), where the bend starts
+bend = [14.0, 90.0]              # the bend's radius on the middle line and its turn (deg, inward); antennas-2: a smooth
+                                 # arc (antennas-1's elbow of 9 fanned its wedge plates out like an accordion); the top
+                                 # at 122.2 + 14 + 5.8 = 142 (frame top), the bend's inside at 130.4 over the inner caps
+reach = 1.0                      # past the bend, straight on toward the crystal: the tip's face at r 18.6
+half = [5.8, 7.5]                # the plates' half width across the middle line (r 27.8..39.4 below the bend; antennas-1
+                                 # 6.7: narrower, the arc's wedges fan less) and
                                  # half depth along d (the old sector's +-13 deg at r 33.6)
-plates = 13
-end_plates = [1.0, 1.6]          # the first and the last (tip) plate's thickness against the others'
-gaps = [0.3, 0.6]                # the glowing gaps along the middle line: under the first plate, under the tip plate
+plates = 18                      # antennas-2: 18 thinner plates (antennas-1: 13) along the concept's smooth curve
+end_plates = [1.0, 1.5]          # the first and the last (tip) plate's thickness against the others'
+gaps = [0.3, 0.42]               # the glowing gaps: under the first plate, under the tip plate; antennas-2: each gap a
+                                 # slot with parallel sides square to the middle line, as wide outside the bend as inside
                                  # (b1: 0.5..1.0 and the cores in the chamfers' V read as wide cyan bands)
-core_inset = [0.7, 0.3]          # how far each gap's cyan core sits inside the plates' faces, at the foot, at the tip
-                                 # (the plates' chamfer 0.45: deeper shows only the slot, shallower fills the V)
-emitter = [3.6, 2.8, 0.15]       # the tip's cyan emitter: its margins inside the tip plate's face (across, along d),
-                                 # how far it stands out (b1: 1.2 margins read as a big flat square; b2: 3.0, 2.2)
+core_inset = [0.8, 0.1]          # how far each gap's cyan core sits inside the plates' faces, at the foot, at the tip
+                                 # (the plates' chamfer 0.45: deeper shows only the slot, shallower fills the V: the
+                                 # glow brighter toward the tip; antennas-1 0.7 -> 0.3 read too even)
+emitter = [3.6, 0.7, 1.0]        # antennas-2: the tip plate's end face a recessed, chamfered cyan emitter: its flat
+                                 # bronze frame, the sloped wall's run across and its depth (antennas-1: a flat lit
+                                 # square standing out of the face read as a window; a5: a 1.4 frame lit nearly the
+                                 # whole face, the same window): a 3 x 6.4 slot
 
 [inner]                          # the inner prongs on the track ring (N.inner, N.innerTop), the same family
 half_deg = 12.0                  # charger-3: 11 read spindly beside the sheet's hooks (zap.gd's electrode frame)
-column = [[16.8, 94.0], [22.8, 94.0], [22.8, 115.0], [16.8, 115.0]]   # charger-3: to 115 (b5 116.2) for the bigger head
-head = [[15.0, 115.6], [22.6, 115.6], [22.6, 119.0], [20.0, 123.1], [13.2, 123.1], [11.0, 121.0], [11.0, 114.6],
-        [12.2, 113.4], [13.8, 113.4], [15.0, 114.6]]
-# charger-3: the hook bigger, as on the sheet (b5: r 13.0..22.6, h 116.8..123.1, small at distance): its top kept
-# (N.innerTop), in to r 11.0 over the crystal and its lip hanging to 113.4 with the electrode at its tip, 1 cm off the
-# crystal's widest (the cap's band, r 7.8)
+column = [[16.8, 94.0], [22.8, 94.0], [22.8, 115.0], [16.8, 115.0]]   # charger-3: to 115 (b5 116.2)
+head = [[13.6, 115.6], [22.8, 115.6], [22.8, 119.6], [21.4, 121.2], [16.6, 121.2], [13.6, 118.2]]
+# antennas-2: the concept's small plate cap instead of antennas-1's big bronze hook (r 11.0..22.6, h 113.4..123.1):
+# one plate a little thicker than the column's, over the column's last gap, reaching in 3.2 toward the crystal, its
+# top's inner edge chamfered toward the crystal and lit (cap_edge, cap_light), the tip electrode on its inner face
 # antennas-1: the column a stack of plates like the outer pair's (a thick foot on the ring, then plates with glowing
 # gaps, the last gap under the head); column and head extruded straight across, +-depth along d
 depth = 4.2                      # half depth along d (the old sector's +-12 deg at r 19.8)
 foot = 4.6                       # the foot plate on the ring, h 94..98.6
 plates = 6                       # above the foot, up to the column's top (115), each over its gap
 gaps = [0.3, 0.55]               # the gaps: over the foot, under the last plate (the head's own gap: 115..115.6)
-core_inset = [0.6, 0.3]
-emitter = [117.9, 120.6, 0.25]   # the head's cyan emitter on its inner face (r 11) over the tip electrode: h, h, out
-electrodes = [[11.0, 116.0, 1.5], [16.8, 101.0, 1.0]]   # r of the face, h, radius
+core_inset = [0.6, 0.2]          # antennas-2: nearer the faces at the top (antennas-1 0.3)
+cap_edge = 4                     # the head's side (from head[4] to head[5]) that is lit: the slanted inner edge
+cap_light = [0.3, 0.2, 0.45]     # its recessed light: the flat frame, the sloped wall's run across and its depth
+electrodes = [[13.6, 117.2, 1.3], [16.8, 101.0, 1.0]]   # r of the face, h, radius (antennas-2: the tip one
+                                 # on the cap's inner face, was [11.0, 116.0, 1.5] under the hook's lip)

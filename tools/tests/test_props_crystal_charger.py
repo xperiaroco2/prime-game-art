@@ -44,7 +44,7 @@ class ChargerDrawing(unittest.TestCase):
         # prime-game-design a53ce6f stations-final/charger-drawing/drawing.js (node: its N object)
         d = dims()
         f, b = d["frame"], d["base"]
-        self.assertEqual(f["top"], 139.7)
+        self.assertEqual(f["top"], 142.0)  # the drawing's N.outerTop 139.7, 2.3 taller since antennas-2
         # the pedestal: prime-game-design 7f335c2 lens-room/drawing/drawing.js (C.ped, C.axis, C.back, C.open)
         self.assertEqual((f["axis_d"], f["back"], f["reach"]), (38.0, 10.0, 70.0))
         self.assertEqual(f["open"], [46.0, 50.0, 46.0])
@@ -60,8 +60,18 @@ class ChargerDrawing(unittest.TestCase):
         rs = [r for prof in (i["column"], i["head"]) for r, _h in prof]
         self.assertGreaterEqual(min(rs), d["ring"]["r0"] - 2.5)
         self.assertAlmostEqual(max(rs), 22.8, delta=0.05)
-        self.assertAlmostEqual(max(h for prof in (i["column"], i["head"]) for _r, h in prof), 123.1, delta=0.05)
-        # the outer pair: in front, u = r cos(half_deg); its inner edge at the drawing's 23.9, its top 139.7
+        # antennas-2: the small plate cap (the hook's top was 123.1), its lit side the slanted inner edge, the tip
+        # electrode on its inner face
+        self.assertAlmostEqual(max(h for prof in (i["column"], i["head"]) for _r, h in prof), 121.2, delta=0.05)
+        head = i["head"]
+        (ar, ah), (br, bh) = head[i["cap_edge"]], head[(i["cap_edge"] + 1) % len(head)]
+        self.assertLess(br, ar)  # toward the crystal
+        self.assertLess(bh, ah)  # and down: it faces up and in
+        tip_e = i["electrodes"][0]
+        self.assertEqual(tip_e[0], min(r for r, _h in head))
+        self.assertTrue(min(h for _r, h in head) < tip_e[1] < bh)
+        self.assertNotIn("emitter", i)
+        # the outer pair: in front, u = r cos(half_deg); its inner edge at the drawing's 23.9, its top 142
         o = d["outer"]
         cu = math.cos(math.radians(o["half_deg"]))
         self.assertAlmostEqual(o["root"][0][0] * cu, 23.9, delta=0.1)
@@ -76,9 +86,22 @@ class ChargerDrawing(unittest.TestCase):
         # the outer pair clears the turning ring and the inner pair
         self.assertGreater(min(min(r for r, _h in o["root"]), r0 - hw), d["ring"]["r1"] + 0.5)
         self.assertGreater(hb + rad - hw, max(h for _r, h in i["head"]) + 3.0)
-        # the glow brighter toward the tip: wider gaps, the cores nearer the faces
+        # the glow brighter toward the tip: wider gaps, the cores nearer the faces (antennas-2: at the tip nearly
+        # flush, filling the chamfers' V)
         self.assertLess(o["gaps"][0], o["gaps"][1])
         self.assertGreater(o["core_inset"][0], o["core_inset"][1])
+        self.assertLessEqual(o["core_inset"][1], 0.15)
+        # antennas-2: a smooth arc, not antennas-1's tight elbow (radius 9, 13 plates): the radius at least twice the
+        # plates' half width, and over it at least seven plates of the 16..18
+        self.assertGreaterEqual(rad, 2 * hw)
+        self.assertTrue(16 <= o["plates"] <= 18)
+        length = hb - foot + rad * math.radians(turn) + o["reach"]
+        pitch = length / (o["plates"] + sum(o["end_plates"]) - 2)
+        self.assertGreaterEqual(rad * math.radians(turn) / pitch, 7.0)
+        # the tip's emitter recessed in its face: a frame, a sloped wall, the floor inside the face
+        frame, run, depth = o["emitter"]
+        self.assertGreater(depth, 0.0)
+        self.assertLess(frame + run, min(o["half"]) - 1.0)
         for key in ("cyan", "amber", "cap", "column", "strip_w"):
             self.assertNotIn(key, o)  # the flat strips and the swept claw are gone
         self.assertNotIn("amber", i)
