@@ -16,6 +16,7 @@ tools/tests/test_alien_char_geom.py; alien_char_build.py runs it inside Blender.
 from __future__ import annotations
 
 import math
+from collections import Counter
 
 # the pale front on the body, measured on u1's front view (part_0; sole row 967, 0.0019 m a pixel): the shield's
 # half-width per height (z m, half-width m); 0 below the crotch and above the ring
@@ -40,6 +41,25 @@ def leg_fit(own: dict, donor: dict) -> dict:
     if legs[0] <= 0:
         raise ValueError(f"the donor's leg length is {legs[0]} m")
     return {"leg_m": [round(legs[0], 4), round(legs[1], 4)], "scale": round(legs[1] / legs[0], 6)}
+
+
+def mat_mul(a, b) -> list[list[float]]:
+    """4x4 matrices (rows) multiplied."""
+    return [[sum(a[i][k] * b[k][j] for k in range(4)) for j in range(4)] for i in range(4)]
+
+
+def chain_world(links) -> list[list[float]]:
+    """F1 (art #196): an object's world matrix from its saved transforms, root first: links holds per object of the
+    parent chain its (matrix_parent_inverse, matrix_basis) as 4x4 rows; the root's world is its basis, each child's
+    its parent's world @ its parent inverse @ its basis (an object parent, no constraints). alien_leg_fit.py builds the
+    donor's world frame this way instead of reading matrix_world on an appended, unlinked object, which nothing
+    evaluates."""
+    if not links:
+        raise ValueError("chain_world: no object")
+    world = [list(map(float, r)) for r in links[0][1]]
+    for inv, basis in links[1:]:
+        world = mat_mul(mat_mul(world, inv), basis)
+    return world
 
 
 def foot_target(own_rest, donor_rest, donor_now, scale: float) -> tuple:
@@ -318,6 +338,8 @@ def gill_decimate_ratio(tris: int, gill_tris: int, keep: float) -> float:
 
 def missing_rows(before, after) -> int:
     """R1 (art #196): how many of `before`'s rows (tuples of floats: a vertex's position, or a corner's position and
-    UVs) are not found exactly in `after`. The gills' decimation must leave every row outside the gills in place: 0."""
-    have = set(map(tuple, after))
-    return sum(1 for r in map(tuple, before) if r not in have)
+    UVs) are not found exactly in `after`. The gills' decimation must leave every row outside the gills in place: 0.
+    F1: counted as a multiset, so a row `before` holds n times must be in `after` n times (a deleted outside corner
+    with a twin, the same position, UVs and normal, is missed by a set)."""
+    have = Counter(map(tuple, after))
+    return sum(max(0, n - have[r]) for r, n in Counter(map(tuple, before)).items())

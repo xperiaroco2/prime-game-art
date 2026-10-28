@@ -57,9 +57,8 @@ def _make(S, skel, srcs: dict, jobs: list[dict], cfg: dict) -> tuple[dict, dict]
     foot = cfg["set"]["foot"]
     for j in jobs:
         rep = {k: j.get(k) for k in ("base", "source", "mirror", "speed", "frames", "arm_swing", "play_at")}
-        # R1: a clip made from a skipped one is skipped too (its name in the message)
-        gone = [n for n in [j.get("from"), j.get("mirror"), *(j.get("pick") or [])] if n and n in reps
-                and reps[n].get("skipped")]
+        # R1: a clip made from a skipped one (F1: arms_from's clip too) is skipped too (its name in the message)
+        gone = L.skipped_from(j, reps)
         if gone:
             reps[j["name"]] = {"skipped": f"{j['name']}: made from the skipped {gone}"}
             print(f"SKIP {reps[j['name']]['skipped']}", flush=True)
@@ -227,6 +226,8 @@ def _blender_main(argv: list[str]) -> None:
         else:
             clips, reps = _make(S, S.prepare(sk), srcs, jobs, cfg)
             made = (sk, clips, reps, char)
+        if not clips:  # F1: every clip skipped: no GLB worth writing
+            raise SystemExit(f"CHAR {char}: no clip built, skipped {L.skipped_names(reps)}")
         for n, c in clips.items():
             ST.write(arm, c, n + L.LOOP)
         hd = out / "build" / char
@@ -236,7 +237,8 @@ def _blender_main(argv: list[str]) -> None:
         actions = sorted(x.name for x in bpy.data.actions)
         (hd / "loco.json").write_text(json.dumps({"char": char, "set": str(L.SET), "clips": reps, "actions": actions},
                                                  indent=1), encoding="utf-8", newline="\n")
-        print(f"CHAR {char} {len(clips)} clips, {len(actions)} actions -> {hd / f'{char}_char.glb'}", flush=True)
+        print(f"CHAR {char} {len(clips)} clips, {len(actions)} actions, skipped {L.skipped_names(reps)} -> "
+              f"{hd / f'{char}_char.glb'}", flush=True)
 
 
 def _reels(a, cfg: dict) -> int:
@@ -259,6 +261,12 @@ def _reels(a, cfg: dict) -> int:
     if a.only:
         plan = [r for r in plan if r["name"] in a.only.split(",")]
     loco = json.loads((hd / "loco.json").read_text(encoding="utf-8"))["clips"]
+    plan, notes = L.reels_without_skipped(plan, loco)  # F1: a skipped clip has no "reel" row
+    if notes:
+        print(*notes, sep="\n", flush=True)
+    if not plan:
+        print("no reel left to shoot", flush=True)
+        return 1
     for r in plan:
         for c in r["clips"]:
             c["timeline"] = L.reel_timeline(loco[c["clip"]]["reel"], c["speed"], r.get("seconds", L.REEL_S), cfg,
@@ -326,7 +334,8 @@ def main() -> int:
     res = blender.run_script(Path(__file__).resolve(), ["--raw", a.raw, "--chars", ",".join(chars), *paths],
                              timeout=3600)
     (out / "build" / "build.log").write_text((res.stdout or "") + (res.stderr or ""), encoding="utf-8", newline="\n")
-    print(*[x for x in (res.stdout or "").splitlines() if x.startswith(("CLIP", "CHAR"))], sep="\n", flush=True)
+    print(*[x for x in (res.stdout or "").splitlines() if x.startswith(("CLIP", "CHAR", "SKIP"))], sep="\n",
+          flush=True)
     if res.returncode != 0:
         print(f"blender: exit {res.returncode} (see {out / 'build' / 'build.log'})", flush=True)
         return 1
@@ -336,6 +345,10 @@ def main() -> int:
         good, text = _export.verdict(_export.validate(glb, glb.with_suffix(".validator.json")))
         print(f"validator {glb.name}: {text}", flush=True)
         ok &= good
+        reps = json.loads((out / "build" / c / "loco.json").read_text(encoding="utf-8"))["clips"]
+        skipped = L.skipped_names(reps)  # F1: the summary names them (they are absent from the GLB)
+        print(f"SUMMARY {c}: {len(reps) - len(skipped)} clips built, {len(skipped)} skipped {skipped}", flush=True)
+        ok &= len(reps) > len(skipped)
     return 0 if ok else 1
 
 

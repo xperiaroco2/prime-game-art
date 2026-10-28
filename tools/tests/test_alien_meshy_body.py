@@ -77,6 +77,16 @@ class Maths(unittest.TestCase):
         corners = [(0.0, 0.0, 1.0, 0.25, 0.5)]
         self.assertEqual(G.missing_rows(corners, [(0.0, 0.0, 1.0, 0.25, 0.51)]), 1)
 
+    def test_gill_check_counts(self):
+        # F1: rows are counted, not only looked up: one of two twin corners deleted is one missing row
+        twin = (0.0, 0.0, 1.0, 0.25, 0.5, 0.0, 0.0, 1.0)
+        other = (0.1, 0.2, 1.3, 0.75, 0.5, 0.0, 1.0, 0.0)
+        self.assertEqual(G.missing_rows([twin, twin, other], [twin, other]), 1)
+        self.assertEqual(G.missing_rows([twin, twin, other], [other, twin, twin]), 0)
+        self.assertEqual(G.missing_rows([twin, twin], [twin, twin, twin]), 0)  # extra rows (the gills') are fine
+        self.assertEqual(G.missing_rows([twin, twin], []), 2)
+        self.assertEqual(G.missing_rows([[0.0, 1.0]], [(0.0, 1.0)]), 0)  # lists and tuples alike (numpy's tolist)
+
 
 class HerTargets(unittest.TestCase):
     def test_keys_and_numbers(self):
