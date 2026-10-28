@@ -366,9 +366,36 @@ class M1c(unittest.TestCase):
         self.assertEqual([b for b in t["bends"] if b["child"] != "UpperArm"],
                          [b for b in d["bends"] if b["child"] != "UpperArm"])
 
+    def test_m2c_file(self):
+        """M2c: M2b's file with only its hand weights, thumb and torso boxes changed; no disp_smooth (it brought the
+        smoothed noise back); the under-chest box last with its own mu (in overlaps the last box's mu wins)."""
+        t = M.load(M.TARGETS / "chameleon_m2c.toml")
+        b = M.load(M.TARGETS / "chameleon_m2b.toml")
+        self.assertEqual(t["name"], "chameleon_m2c")
+        self.assertEqual(set(t), set(b))
+        for k in set(b) - {"name", "fingers", "smooth_rest"}:
+            self.assertEqual(t[k], b[k], k)  # the head's ring, the seat, the arms and the bends as M2b's
+        self.assertEqual(set(t["fingers"]), set(b["fingers"]))
+        self.assertEqual(set(t["smooth_rest"]), set(b["smooth_rest"]))
+        self.assertNotIn("disp_smooth", t["smooth_rest"])
+        self.assertEqual(t["fingers"]["shape"], dict(b["fingers"]["shape"], thumb_shorten=0.32))
+        self.assertGreater(t["fingers"]["half"][0], b["fingers"]["half"][0])
+        self.assertGreater(t["fingers"]["base_smooth"], b["fingers"]["base_smooth"])
+        boxes = t["smooth_rest"]["boxes"]
+        last = boxes[-1]
+        self.assertEqual(len(last), 8)
+        self.assertLess(last[7], 0.0)  # Taubin: a plain pass pinched the pectorals' lower edges into points
+        for bx in b["smooth_rest"]["boxes"]:
+            if bx[:6] != [0.06, 0.16, -0.10, 0.12, 0.98, 1.22]:  # the flanks' box, moved to the sides
+                self.assertIn(bx, boxes)
+        for bx in boxes:
+            self.assertIn(len(bx), (7, 8))
+            self.assertTrue(bx[0] < bx[1] and bx[2] < bx[3] and bx[4] < bx[5])
+            self.assertLessEqual(bx[5], t["ring_z"] + 0.01)
+
     def test_older_files_have_no_m1e(self):
         for n in ("axolotl_m1.toml", "axolotl_m1b.toml", "axolotl_m1c.toml", "axolotl_m1d.toml", "chameleon_m2.toml",
-                  "chameleon_m2b.toml"):
+                  "chameleon_m2b.toml", "chameleon_m2c.toml"):
             t = M.load(M.TARGETS / n)
             self.assertFalse(set(t.get("arm_thicken", {})) & M.ARM_KEYS_M1E, n)
             self.assertFalse(set(t.get("smooth_rest", {})) & M.SMOOTH_KEYS_M1E, n)

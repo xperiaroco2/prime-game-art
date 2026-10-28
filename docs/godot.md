@@ -3215,6 +3215,15 @@ a time, by visibility.
     pixel (`world_to_camera_view` plus a ray cast); hers was a knot of short-edged vertices, not the apex. The A
     pose's shoulder hook goes with a wider UpperArm band that starts inboard of the joint and covers the deltoid cap
     (`radius` 0.12).
+  - M2c (output under `bodies_a/m2c/`): M2b's leftovers, `chameleon_m2c.toml` (M2b's keys with new values only;
+    tested). `disp_smooth` is wrong for a smoothing step: it smooths the step's move, and a smoothing's move is the
+    noise it removed, so the noise comes back (grid g1..g3: every torso region rougher than M2b). Where
+    `smooth_rest` boxes overlap, a vertex takes the most passes of them and the last box's `mu`, so a plain box
+    listed after a Taubin box turns the overlap plain at the Taubin box's passes; list the box whose `mu` must hold
+    last, with its `mu` given. A plain Laplacian on the pectorals' lower edges pinches them into points; Taubin
+    holds them. The spikes between the finger bases in the curled clips soften with a wider MCP band and more base
+    smoothing (`half[0]` 16 mm, `sigma` 18 mm, `base_band` 30 mm, 40 passes) but do not go: they look like the
+    palm's skin folding between the curled fingers, not weight noise.
   - The fingers review (`alien_body_refit_review.py --fingers`) curls the thumb about the game clips' own axes
     (`THUMB_AXES_HAND`, read in the hand bone's frame off the deepest clip thumb, Crouch_Run), by default at their
     angles 51.5/28.8/34.7: the tip sweeps under the palm toward the little finger. The old axis, d x (-Z), turned it
