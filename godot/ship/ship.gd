@@ -441,9 +441,45 @@ func _dress(ship: Node3D) -> int:
 	# vents-b2: the vents' well lights, children of their glow panels; calm by default (the heat panel and its lights
 	# hidden; ship --shoot's problem state shows them, _stations)
 	var vents: int = VentGlow.add(ship, _lk("vent_well_scale", 1.0))
+	VentGlow.soft_floor(ship)
+	_vent_layer(ship)
 	for n: Node in ship.find_children("station_vent_*_heat", "Node3D", true, false):
 		(n as Node3D).visible = false
 	return mini(list.size(), MAX_LIGHTS) + vents
+
+
+## gills step 12: the gills units' meshes on their own render layer VENT_LAYER, which every light keeps lighting except
+## the red-orange strip lights within VENT_UNLIT_M of a unit (the doorways' floor strips beside it): they streaked the
+## bronze ribs red in calm, and calm must read cyan only (the controller brings the red with the problem).
+const VENT_LAYER := 1 << 3
+const VENT_UNLIT_M := 1.6
+var _vent_unlit: int = 0
+
+
+func _vent_layer(ship: Node3D) -> void:
+	var centres: Array = []
+	for n: Node in ship.find_children("station_vent_*_cool", "MeshInstance3D", true, false):
+		centres.append((_placed(n) * (n as MeshInstance3D).mesh.get_aabb()).get_center())
+	if centres.is_empty():
+		return
+	for piece: Node in ship.get_children():
+		if not String(piece.name).begins_with("station_vent_"):
+			continue
+		for n: Node in piece.find_children("*", "GeometryInstance3D", true, false):
+			(n as VisualInstance3D).layers = VENT_LAYER
+	var lights: Array = root.find_children("*", "Light3D", true, false)
+	for l: Node in lights:
+		var light: Light3D = l
+		var pos: Vector3 = light.global_position if light.is_inside_tree() else light.position
+		var warm: bool = light is OmniLight3D and light.get_parent() == root and light.light_color.r > 0.9 			and light.light_color.g < 0.55 and light.light_color.b < 0.25
+		var near: bool = false
+		for c: Vector3 in centres:
+			near = near or Vector2(pos.x - c.x, pos.z - c.z).length() < VENT_UNLIT_M
+		if warm and near:
+			light.light_cull_mask &= ~VENT_LAYER
+			_vent_unlit += 1
+		elif light.light_cull_mask & INSIDE_LAYER:   # the inside's lights light the gills too
+			light.light_cull_mask |= VENT_LAYER
 
 
 ## Every mesh under n on the render layers bits.
@@ -787,10 +823,19 @@ func _vent_anim() -> void:
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	_camera.far = 500.0
-	_camera.fov = float(a["fov"])
 	root.add_child(_camera)
 	_camera.make_current()
-	_camera.look_at_from_position(_v(a["eye"]), _v(a["look"]), UP)
+	# gills step 12: the camera cuts between still angles, "cams": [[from s, eye, look, fov]] (the whole unit; closer
+	# for the hold's clicks)
+	var cams: Array = a.get("cams", [[0.0, a["eye"], a["look"], a["fov"]]])
+	var cam_at: Callable = func(s: float) -> void:
+		var c: Array = cams[0]
+		for cc: Array in cams:
+			if s >= float(cc[0]):
+				c = cc
+		_camera.fov = float(c[3])
+		_camera.look_at_from_position(_v(c[1]), _v(c[2]), UP)
+	cam_at.call(0.0)
 	var layer: CanvasLayer = CanvasLayer.new()
 	_label = Label.new()
 	_label.position = Vector2(16, 10)
@@ -816,6 +861,7 @@ func _vent_anim() -> void:
 	var states: Array = []
 	for f: int in count:
 		var inp: Array = VentAnim.demo(f / fps)
+		cam_at.call(f / fps)
 		anim.problem = inp[0]
 		anim.hold = inp[1]
 		for r: float in VentAnim.DEMO_RELEASES:   # gills step 11: the palm leaves (before the step, as the game)
@@ -842,6 +888,7 @@ func _vent_anim() -> void:
 		sheet.blit_rect(tiles[i], Rect2i(0, 0, 320, 180), Vector2i((i % 4) * 320, (i / 4) * 180))
 	_save(sheet, _out.path_join("keys_sheet.png"))
 	_write("anim.json", {"frames": count, "fps": fps, "seconds": VentAnim.DEMO_S, "lights": lights, "states": states,
+		"unlit_by_strips": _vent_unlit,
 		"signals": signals, "render_s": (Time.get_ticks_msec() - started) / 1000.0})
 	print("SHIP vent_anim %d frames" % count)
 	quit(0)

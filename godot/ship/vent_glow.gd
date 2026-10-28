@@ -163,3 +163,83 @@ static func _slits(mi: MeshInstance3D, suffix: String, put: bool = false, scale:
 			mi.add_child(o2)
 			count += 1
 	return count
+
+
+## gills step 12: the floor strips' three nested steps (the GLB's `<id>_floor<k>`, `floor2<k>`, `floor3<k>`, the cool's
+## children) read as hard rectangles: each slot's three are hidden and one soft spill takes their place, a flat quad on
+## the deck centred on the sill's front, its glow an ellipse falling smoothly to nothing (a radial gradient as the
+## emission texture, added: no edge). It is the cool's child with the core strip's material values, so the controller
+## (vent_anim.gd) turns it red and back with the slots. The game copies this with the well lights.
+const SPILL_ACROSS_M := 0.05     # the ellipse this much wider each side than the outer step
+const SPILL_OUT_M := 0.32        # and reaching this far out from the sill's front
+const SPILL_LIFT_M := 0.0035     # over the deck (over the old steps' 2.8 mm)
+const SPILL_FALL := [[0.0, 1.0], [0.15, 0.82], [0.35, 0.45], [0.6, 0.15], [0.82, 0.035], [1.0, 0.0]]
+
+
+static func soft_floor(n: Node) -> int:
+	var count: int = 0
+	var tex: GradientTexture2D = GradientTexture2D.new()
+	var g: Gradient = Gradient.new()
+	g.set_color(0, Color(1, 1, 1))
+	g.set_color(1, Color(0, 0, 0))
+	for p: Array in SPILL_FALL.slice(1, SPILL_FALL.size() - 1):
+		var v: float = float(p[1])
+		g.add_point(float(p[0]), Color(v, v, v))
+	tex.gradient = g
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 128
+	tex.height = 128
+	for found: Node in n.find_children("station_vent_*_cool", "MeshInstance3D", true, false):
+		var cool: MeshInstance3D = found
+		var pid: String = String(cool.name).trim_suffix("_cool")
+		for k: int in range(1, 9):
+			var core: MeshInstance3D = cool.find_child("%s_floor%d" % [pid, k], true, false) as MeshInstance3D
+			var outer: MeshInstance3D = cool.find_child("%s_floor3%d" % [pid, k], true, false) as MeshInstance3D
+			if core == null or outer == null or core.mesh == null or outer.mesh == null:
+				break
+			var src: Material = core.get_surface_override_material(0)
+			if src == null:
+				src = core.mesh.surface_get_material(0)
+			if not (src is BaseMaterial3D):
+				continue
+			var box: AABB = _rel(cool, outer) * outer.mesh.get_aabb()
+			for part: String in ["floor%d" % k, "floor2%d" % k, "floor3%d" % k]:
+				var old: Node = cool.find_child("%s_%s" % [pid, part], true, false)
+				if old is Node3D:
+					(old as Node3D).visible = false
+			var m: StandardMaterial3D = StandardMaterial3D.new()
+			m.resource_name = (src as BaseMaterial3D).resource_name
+			m.albedo_color = Color(0, 0, 0)
+			m.roughness = 1.0
+			m.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+			m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+			m.disable_receive_shadows = true
+			m.emission_enabled = true
+			m.emission = (src as BaseMaterial3D).emission
+			m.emission_energy_multiplier = (src as BaseMaterial3D).emission_energy_multiplier
+			m.emission_texture = tex
+			m.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY   # the gradient scales the glow (ADD lit it all)
+			var quad: PlaneMesh = PlaneMesh.new()
+			quad.size = Vector2(box.size.x + 2.0 * SPILL_ACROSS_M, 2.0 * SPILL_OUT_M)
+			quad.material = m
+			var mi: MeshInstance3D = MeshInstance3D.new()
+			mi.name = "%s_spill%d" % [pid, k]
+			mi.mesh = quad
+			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			mi.position = Vector3(box.get_center().x, box.position.y + SPILL_LIFT_M, box.position.z)
+			cool.add_child(mi)
+			count += 1
+	return count
+
+
+## n's transform in the frame of its ancestor top.
+static func _rel(top: Node, n: Node) -> Transform3D:
+	var t: Transform3D = Transform3D.IDENTITY
+	var p: Node = n
+	while p != null and p != top:
+		if p is Node3D:
+			t = (p as Node3D).transform * t
+		p = p.get_parent()
+	return t

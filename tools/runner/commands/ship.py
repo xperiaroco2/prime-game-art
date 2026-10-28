@@ -594,8 +594,18 @@ def motion_request(layout: dict) -> dict:
 
 # vents-anim1: the east vent from about 3 m across the throat at the player's eye (deck 1.2 + 1.6), plan (x, y, h)
 # gills step 10: the e unit on the hall's back wall from 2.6 m across the hall, at a player's eye
-VENT_ANIM = {"piece": "station_vent_e", "eye": [-0.86, 1.57, 2.8], "look": [1.6305, 3.2475, 2.65], "fov": 50.0,
+# gills step 12: the whole unit, sill to hood, with the scanner column, from 2.8 m at a player's eye; a cut to 2.2 m
+# for the hold's six clicks, back to the wide one before the release. cams: [from s, eye, look, fov]
+VENT_ANIM = {"piece": "station_vent_e", "eye": [-0.30, 1.10, 2.8], "look": [1.33, 3.38, 2.68], "fov": 62.0,
+             "close": {"from_s": 6.0, "to_s": 11.2, "eye": [0.46, 1.37, 2.8], "look": [1.30, 3.40, 2.6], "fov": 62.0},
              "size": (1280, 720), "fps": 24, "max_mb": 15}
+
+
+def vent_anim_cams(a: dict = VENT_ANIM) -> list:
+    """The clip's camera cuts in Godot's frame: the wide angle, the close one for the hold's clicks, the wide again."""
+    c = a["close"]
+    wide = [_g(a["eye"]), _g(a["look"]), a["fov"]]
+    return [[0.0, *wide], [c["from_s"], _g(c["eye"]), _g(c["look"]), c["fov"]], [c["to_s"], *wide]]
 
 
 def vent_anim(layout: dict, out: Path, folder: Path) -> int:
@@ -612,7 +622,7 @@ def vent_anim(layout: dict, out: Path, folder: Path) -> int:
     a = VENT_ANIM
     req.update({"mode": "vent_anim", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
                 "anim": {"piece": a["piece"], "eye": _g(a["eye"]), "look": _g(a["look"]), "fov": a["fov"], "fps": a["fps"],
-                         "mark_travel": v.MARK_TRAVEL},
+                         "cams": vent_anim_cams(a), "mark_travel": v.MARK_TRAVEL},
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "rooms": room_boxes(layout)})
     errors = _stage(staged)
