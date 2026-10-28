@@ -11,7 +11,9 @@ body source stays whole: only this build's copy loses them). Then the GLB with e
   head, which no variant moves, stays.
 - Covered: a character vertex is covered when five rays from it (its normal and four tilted 40 degrees) all hit the
   cloth within --reach m; a face goes when all its vertices are covered and so are its neighbours
-  (clothes_fit_geom.covered_faces, one ring of erosion), so the cut's edge stays under the cloth.
+  (clothes_fit_geom.covered_faces, one ring of erosion), so the cut's edge stays under the cloth. A vertex up to
+  --outside m outside the cloth (one ray along its reversed normal) is tested from just inside the cloth instead,
+  so a shoulder or a toe that crosses the cloth at rest is cut too.
 
     blender -b --factory-startup --python tools/blender/clothes_dress.py -- --char CHAR.blend --fit FIT.blend
         --name chameleon --out DIR [--body-from F1.blend --body-to F2.blend] [--reach 0.12]
@@ -94,6 +96,9 @@ def main() -> int:
     ap.add_argument("--body-from", default="")
     ap.add_argument("--body-to", default="")
     ap.add_argument("--reach", type=float, default=0.12)
+    ap.add_argument("--outside", type=float, default=0.03, help="a body vertex this far outside the cloth still counts")
+    ap.add_argument("--opening", type=float, default=0.04, help="no outside cut this near an opening (m)")
+    ap.add_argument("--shoe-margin", type=float, default=0.01, help="the foot cut stays this far below the shoe's top")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     glb = out / f"{args.name}_char.glb"
@@ -170,11 +175,47 @@ def main() -> int:
     me = char.data
     mw = char.matrix_world
     nmat = mw.to_3x3().inverted().transposed()
-    cov = []
+    # the cloth's openings (collar, cuffs, hems, the shoes' tops): no cut reaches past them
+    import bmesh
+    edge = []
+    for o in cloth:
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        edge += [tuple(o.matrix_world @ v.co) for v in bm.verts if v.is_boundary]
+        bm.free()
+    ekd = KDTree(len(edge))
+    for i, e in enumerate(edge):
+        ekd.insert(e, i)
+    ekd.balance()
+    # a shoe is closed: the foot inside it (Foot and Toes, below the shoe's top opening) never shows
+    shoe = next((o for o in cloth if o.name == "shoes"), None)
+    top_z = None
+    if shoe is not None:
+        bm = bmesh.new()
+        bm.from_mesh(shoe.data)
+        tops = [(shoe.matrix_world @ v.co).z for v in bm.verts if v.is_boundary and (shoe.matrix_world @ v.co).z > 0.05]
+        bm.free()
+        top_z = min(tops) - args.shoe_margin if tops else None
+    gname = {g.index: g.name for g in char.vertex_groups}
+    cov, outside, in_shoe = [], 0, 0
     for v in me.vertices:
         p = mw @ v.co
         n = (nmat @ v.normal).normalized()
-        cov.append(all(tree.ray_cast(p + d * 1e-4, d, args.reach)[0] is not None for d in rays(n)))
+        foot = sum(g.weight for g in v.groups if gname.get(g.group, "").endswith(("Foot", "Toes")))
+        if top_z is not None and foot >= 0.5 and p.z < top_z:
+            cov.append(True)
+            in_shoe += 1
+            continue
+        hit = all(tree.ray_cast(p + d * 1e-4, d, args.reach)[0] is not None for d in rays(n))
+        if not hit:  # the body outside the cloth (a shoulder): covered if the cloth lies within --outside behind it
+            loc, _nor, _fi, t = tree.ray_cast(p, -n, args.outside)
+            if loc is not None and ekd.find(loc)[2] >= args.opening:
+                q = loc - n * 1e-3
+                hit = all(tree.ray_cast(q + d * 1e-4, d, args.reach)[0] is not None for d in rays(n))
+                outside += hit
+        cov.append(hit)
+    rep["covered_from_outside"] = outside
+    rep["covered_in_shoes"] = in_shoe
     faces = [list(p.vertices) for p in me.polygons]
     by_edge: dict[tuple[int, int], list[int]] = {}
     for fi, p in enumerate(me.polygons):
@@ -182,7 +223,6 @@ def main() -> int:
             by_edge.setdefault(ek, []).append(fi)
     nbrs = [sorted({j for ek in p.edge_keys for j in by_edge[ek] if j != fi}) for fi, p in enumerate(me.polygons)]
     gone = F.covered_faces(faces, cov, nbrs, erode=1)
-    import bmesh
     bm = bmesh.new()
     bm.from_mesh(me)
     bm.faces.ensure_lookup_table()

@@ -125,14 +125,15 @@ def main() -> int:
     bpy.context.view_layer.update()
     rest = world(body)
     tree = cloth_tree(cloth, polys)
-    near, s0 = [], []
+    # the body vertices the cloth is meant to hide: within --near of the cloth, inside it, or outside it at rest
+    # (already poking through) where the nearest cloth point is no opening
+    near, s0, locs = [], [], []
     for i, p in enumerate(rest):
         loc, nor, _fi, d = tree.find_nearest(Vector(p), args.near)
         if loc is not None:
-            sd = (Vector(p) - loc).dot(nor)
-            if sd < 0:
-                near.append(i)
-                s0.append(sd)
+            near.append(i)
+            s0.append((Vector(p) - loc).dot(nor))
+            locs.append(loc)
     # a body vertex whose nearest cloth point is near an opening (collar, cuffs, hems, the shoes' tops) leaves the
     # opening when it moves (the wrist out of the cuff): that is no poke-through, so it is counted apart
     import bmesh
@@ -147,9 +148,14 @@ def main() -> int:
     for i, p in enumerate(edge_pts):
         kd.insert(p, i)
     kd.balance()
-    at_open = np.array([kd.find(Vector(rest[i]))[2] < args.opening for i in near], dtype=bool)
+    # inside: the body vertex by the opening; outside: its nearest cloth point by the opening (the hand beyond a cuff)
+    at_open = np.array([kd.find(Vector(rest[i]) if s < 0 else loc)[2] < args.opening
+                        for i, s, loc in zip(near, s0, locs)], dtype=bool)
+    s0 = np.array(s0)
+    rest_poke = int(((s0 > args.tol) & ~at_open).sum()) if len(near) else 0
     near = np.array(near)[~at_open] if len(near) else np.array(near)
-    say("under the cloth at rest:", len(near), "body vertices;", int(at_open.sum()), "more by an opening, left out")
+    say("hidden by the cloth at rest:", len(near), "body vertices,", rest_poke, "of them outside it;",
+        int(at_open.sum()), "more by an opening, left out")
     head = {b.name: arm.matrix_world @ b.head_local for b in arm.data.bones}
     front = 1.0 if (head["LeftToes"] - head["LeftFoot"]).y > 0 else -1.0
     sc = bpy.context.scene
@@ -229,6 +235,7 @@ def main() -> int:
     save_sheet([alone], out / f"{args.name}_cloth_alone.png")
     body.hide_render = False
     (out / "poke.json").write_text(json.dumps({"blend": args.blend, "under_cloth_at_rest": int(len(near)),
+                                               "outside_cloth_at_rest": rest_poke,
                                                "tol_m": args.tol, "clips": poke}, indent=1),
                                    encoding="utf-8", newline="\n")
     say("wrote", out)
