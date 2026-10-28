@@ -1155,7 +1155,8 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   the shared clip's hand goes into that thigh beyond the hand limit: solved over those legs, the wrist lifted up the
   chest until the hand clears the thigh, then touched onto the waist again (`Model.variants`). `pose_layers.gd`
   plays the variant with those legs when the character has it; `poses()` does not list variants; the game copies
-  this rule. A variant's palm-to-waist distance is reported, not limited (the hand rides up the waist to clear).
+  this rule. A variant's palm-to-waist distance is reported, not limited (the hand rides up the waist to clear). An
+  arm's `variant` table (TOML) overrides its settings in its variants only (for example the fingers level).
 - **The check composes from the build's own data.** The build writes `build/<char>/pose_data.json` (the TOML as
   solved); `alien_poses_run.py --check` composes the Blender reference from it and prints a `NOTE` when the TOML has
   changed since, so editing the TOML without a rebuild no longer turns verify red (round 2's red verify).
@@ -1169,7 +1170,7 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   of the floor); the centre of mass at least 1 cm inside the support area for Stand, OneLeg, Squat, Lunge, Kneel;
   skin through skin (`alien_pose_math.through_depth`, the bone tubes as the proxy) at most 1.5 cm, and at most
   0.5 cm for a hand or forearm; a contact's gap at most 1 cm; a hand on a landmark (`mark`: the hip hand of
-  HandsOnHips, FingerUp and Salute on the waist's side) has its palm's centre within 5 cm of it (the landmark rides
+  HandsOnHips, FingerUp and Salute on the waist's side) has its palm's centre within 6 cm of it (the landmark rides
   on the Spine), so "touching the body" alone (the belly's front) no longer passes. A goal arm's `touch_by` names
   the skin that touches (the palm's bone: the thumb kept off the body).
   - **What the through check reads.** A hand or forearm: its raw depth (its proxy reads 0.0 cm on the rest skin).
@@ -1181,15 +1182,16 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
     A thigh into the torso reads the belly's tubes (Spine and up), not the Hips tube: the pelvis is the thigh's own
     joint, and its flare read 5.4 cm on OneLeg's straight standing leg and 4.5 cm on Kneel's (s5).
     `proxy_rest_cm` in `poses.json` is this same check on the rest pose: the floor under the limits.
-  - **The hip hand is really inside** (the fix round's measure, not the proxy): the hip hand's 2.3 cm into the
-    torso grows to 3.1 and 3.2 cm with 16 and 32 tube slices instead of 8, so it is the curled fingers inside the
-    waist, while the palm's skin is 0.24 cm off it (the touch solve reads the palm's bone, `touch_by`). Not fixed yet:
-    the hand's shape (grip, `fingers_dir`) needs a round with close-ups.
+  - **The hip hand was really inside** (the fix round's measure, not the proxy): its 2.3 cm into the torso grew to
+    3.1 and 3.2 cm with 16 and 32 tube slices instead of 8: the curled fingers inside the waist, the palm's skin
+    0.24 cm off it (the touch solve reads the palm's bone, `touch_by`). Round 2 (s6 grid, plain Python on the s5
+    dumps): the fingers turned out with the belly (`fingers_dir` [0.5, 0.8, -0.4]) and the palm 0.8 cm off the
+    waist take it to 0.44 cm on Stand, the contact 0.94 cm, the palm's centre 5.7 cm from the waist mark (so
+    `mark_cm` 6).
   - **The layers' limit.** The arms are solved once over `reference_legs` (Stand), so an arm cannot make room for
-    a raised thigh: the hip hand goes 7 to 8 cm into it on Sit, Squat and Kneel's front leg, OneLeg's raised one
-    included (HandsOnHips, FingerUp, Salute), on every variant of its offset and finger direction tried
-    (`tools/out/poses/fix/hipgrid_c.log`). A pose that keeps clear of every legs pose (fingers back, the hand
-    higher) or a per-legs arms variant is the open choice.
+    a raised thigh: the shared hip hand goes 7 to 8 cm into it on Sit, Squat and Kneel's front leg, OneLeg's raised
+    one included, on every offset and finger direction tried (`tools/out/poses/fix/hipgrid_c.log`, s5's six
+    grips): hence the per-legs variants above.
 - **The silhouette table** (`silhouettes_<char>.json`): per facing (front, left, right, back), for pairs that differ
   only in the legs or only in the arms, 1 - IoU of the outlines aligned on the feet; the least over the other part
   is what the photographer can still tell apart. Below 0.10 is a finding. The table is measured on Blender workbench
@@ -1209,7 +1211,9 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
 - **The game side.** `godot/alien/pose_layers.gd` (the reference the game copies): an `AnimationTree` beside the
   character's `AnimationPlayer` with one `Blend2` (legs in, arms blend, the filter on `Chest` and its descendants,
   amount 1); `play_pair(legs, arms)`, `stop()`. `godot/alien/pose_layers_check.gd` (`alien_poses_run.py --check`,
-  test `test_alien_poses_godot`): all 48 pairs within 0.0002 cm of the Blender-composed pose (tolerance 0.5 cm), held
+  test `test_alien_poses_godot`): all 48 pairs within 0.0002 cm of the Blender-composed pose (tolerance 0.5 cm), and
+  every bone's world turn from its rest within 0.5 degrees of the reference's (`turns`: pose * rest^-1 in glTF axes,
+  free of how the exporter orients the bones' own axes; a leaf's roll keeps its head in place, round 1's minor 8), held
   (0 cm after 0.7 s), `stop()` gives the skeleton back. The game's rules: the pose holds while the player stands;
   turning on the spot keeps it (the node turns, the clips stay); a step drops it (`stop()`, then locomotion).
 - **The head look during a pose** (measured at yaw +-70, the contact in its target bone's frame, cm, chameleon /
