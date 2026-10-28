@@ -29,21 +29,26 @@ L.MATERIALS.update({
     # the alcove's back panel and the speaker's face: graphite (darker than int_dark's steel, a satin sheen)
     "lens_graphite": {"base": (0.045, 0.047, 0.052, 1.0), "metallic": 0.55, "roughness": 0.38},
     "lens_graphite2": {"base": (0.07, 0.073, 0.08, 1.0), "metallic": 0.55, "roughness": 0.46},
-    # the sofa's upholstery (c_lounge: terracotta seats and backs, one charcoal module), matte fabric
-    "lens_cushion_red": {"base": (0.30, 0.075, 0.045, 1.0), "metallic": 0.0, "roughness": 0.86},
+    # the sofa's upholstery (c_lounge: terracotta seats and backs, one charcoal module), matte fabric; lens C step 2:
+    # a deeper, warmer terracotta (step 1's 0.30/0.075/0.045 read salmon under the room's warm light)
+    "lens_cushion_red": {"base": (0.17, 0.036, 0.020, 1.0), "metallic": 0.0, "roughness": 0.92},
     "lens_cushion_dark": {"base": (0.05, 0.05, 0.055, 1.0), "metallic": 0.0, "roughness": 0.9},
     "lens_leaf": {"base": (0.05, 0.16, 0.04, 1.0), "metallic": 0.0, "roughness": 0.6},
     # the warm strips (sofa base, table rings, the alcove's): amber that glows and lights nothing (ship.toml
     # [light.mats] int_amber__lens, l 0: no strip lights for decor)
     "int_amber__lens": {**L.MATERIALS["int_amber"]},
+    # lens C step 2: the conduits' cyan core, brighter than int_cyan's e 0.05 (ship.toml [light.mats], l 0)
+    "int_cyan__lens_core": {**L.MATERIALS["int_cyan"]},
 })
 BRONZE, BRONZE2, EDGE = "gill_bronze", "gill_bronze2", "gill_edge"   # the stations' bronze (ship.gd swaps the shader)
 
 # --- the drawing's numbers (cm) -----------------------------------------------------------------------------------
 ALCOVE = {"back": 10.0, "open_front": 50.0, "open_back": 46.0, "top": 200.0, "chamfer": (182.0, 34.0),
           "jamb_out": 60.0, "face": 46.0, "jamb_top": 226.0}
-CONDUIT = {"u": 68.0, "d": 21.0, "r": 5.5, "bend": 8.0, "low": 92.0, "high": 170.0, "collar_r": 7.0, "collar_l": 4.0,
-           "collars_h": (40.0, 210.0), "flange_r": 8.0, "flange_h": 3.0, "core_r": 1.5}
+# lens C step 2: the conduits' axis at d 38 (the drawing's 21 hid them behind the 46 cm jambs head-on: their front
+# now at 43.5, 2.5 behind the jambs' face line) and a wider core (Ø 4.4, the drawing's 3)
+CONDUIT = {"u": 68.0, "d": 38.0, "r": 5.5, "bend": 8.0, "low": 92.0, "high": 170.0, "collar_r": 7.0, "collar_l": 4.0,
+           "collars_h": (40.0, 210.0), "flange_r": 8.0, "flange_h": 3.0, "core_r": 2.2}
 REACH = 70.0                                           # the charger's reach (renewer_e/_w depth_m 0.70)
 AXIS_D = 38.0                                          # the crystal's axis (the charger step's)
 SOFA = {"spine": (0.0, 18.0, 88.0), "back": (18.0, 32.0, 44.0, 80.0, 4.0), "seat": (18.0, 76.0, 30.0, 44.0),
@@ -224,8 +229,24 @@ def lens_conduits(args, layout):
         top = ceiling_h(s * K["u"], side)
         collars.append(S.shift(L.disc(K["flange_r"] * CM, 20, FLOOR + top - K["flange_h"] * CM, FLOOR + top + 0.02),
                                x, s * K["u"] * CM))
-    return [P("tubes", L.merge(*tubes), BRONZE2), P("cores", L.merge(*cores), "int_cyan"),
+    return [P("tubes", L.merge(*tubes), BRONZE2), P("cores", L.merge(*cores), "int_cyan__lens_core"),
             P("collars", L.merge(*collars), EDGE)]
+
+
+def cushion_block(d0, d1, h0, h1, e0=0.0, e1=0.0, r=3.5, crown=1.2, lean=0.0):
+    """A cushion on a facet (cm), lens C step 2: its edges rounded by r in two steps (top) and r/2 (bottom), its top
+    crowned: a plateau inset by a third of the way to the middle, `crown` cm over the rounded edge; `lean` as
+    facet_block's."""
+    half = min(d1 - d0, 78.0) / 2
+    c_in = r + (half - r) / 3
+    b = r / 2
+    ring_spec = [(b, 0.0), (b * 0.29, b * 0.29), (0.0, b), (0.0, h1 - h0 - r), (r * 0.29, h1 - h0 - r * 0.29),
+                 (r, h1 - h0), (c_in, h1 - h0 + crown)]
+    rings = []
+    for i, z in ring_spec:
+        t = z / (h1 - h0 + crown)
+        rings.append((facet_quad(d0 + i, d1 - i, e0 + i, e1 + i, lean * min(t, 1.0)), h0 + z))
+    return loft([[(x, y, FLOOR + h * CM) for x, y in ccw(q)] for q, h in rings])
 
 
 # --- the east lounge ----------------------------------------------------------------------------------------------
@@ -260,8 +281,8 @@ def lounge_sofa(args, layout):
     out = [P("spine", facet_block(s0, s1, 0.0, sh, SEAM, SEAM, top=1.2), BRONZE),
            P("spine_cap", facet_block(s1 - 0.6, s1 + 0.3, sh - 3.0, sh - 1.8, SEAM, SEAM), EDGE),
            P("fill", facet_block(k0, SOFA["cushion_d"], h0, kh0, SEAM, SEAM), "lens_graphite"),
-           P("back", facet_block(k0, k1, kh0, kh1, e0, e1, top=3.0, bot=1.0, lean=lean), "lens_cushion_red"),
-           P("seat", facet_block(SOFA["cushion_d"], b1, h0, top, e0, e1, top=3.0, bot=0.8), fab)]
+           P("back", cushion_block(k0, k1, kh0, kh1 - 0.8, e0, e1, r=3.0, crown=0.8, lean=lean), "lens_cushion_red"),
+           P("seat", cushion_block(SOFA["cushion_d"], b1, h0, top - 1.2, e0, e1, r=4.0, crown=1.2), fab)]
     if arm:
         # the arm: a bronze block on the base from the spine to the seat's front, its outer face on the bisector
         quad = facet_quad(b0, b1, SEAM, SEAM)
