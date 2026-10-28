@@ -678,15 +678,12 @@ def gill_anim(layout: dict, out: Path, folder: Path) -> int:
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "gill_anim_request.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="
-")
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
     (folder / "anim.json").unlink(missing_ok=True)
     code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
                                   path.as_posix(), folder.as_posix()], a["size"], VIDEO_TIMEOUT)
     if code != 0 or not (folder / "anim.json").is_file():
-        raise common.Failure(f"ship.gd gill_anim failed (exit code {code}):
-" + "
-".join(output.splitlines()[-20:]))
+        raise common.Failure(f"ship.gd gill_anim failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
     clip = folder / "gill_anim.mp4"
     clip.unlink(missing_ok=True)
