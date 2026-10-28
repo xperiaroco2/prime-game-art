@@ -1273,8 +1273,8 @@ lists them with their `spot` and `unit`). Raw output: `<raw>/ship/v4/vents/` (`p
   - *Result.* `ship --motion` on the pieces (`motion_b5b`): 528 frames, 0 cuts, 0 outside, 0 past the depth, least
     clearance 0.0509 m. Check at the time: the blades inside the opening and under the unit's depth only; the new face
     check (b5c, below) passes on the same pieces (`motion_b5c`).
-- **The animation (vents-anim1, 2026-10-24; the engineer: "make the vents, try to animate them"; beauty over
-  motion).** `godot/ship/vent_anim.gd`, the controller the game copies: a Node per vent (`setup(root, id,
+- **The animation (vents-anim1, 2026-10-24; history: the gills' controller replaced it, "The gills' animation" below;
+  the engineer: "make the vents, try to animate them"; beauty over motion).** `godot/ship/vent_anim.gd`, the controller the game copies: a Node per vent (`setup(root, id,
   mark_travel)` after the scene's materials are set; `_process` steps it, `manual = true` and `step(dt)` for a
   proof). It takes each driven surface's material as a copy (a surface override) and drives the seven blades
   (`rotation.x = -deg_to_rad(angle)`, the angle in degrees of opening from shut, calm `CALM_DEG` 20 since vents-b3, was 9), the marker, the
@@ -1590,8 +1590,52 @@ Raw output: `<raw>/ship/v5/gills/` (`pieces/`, `shots/r<n>/`, `views.json`), the
   - *The views:* `ship.toml`'s `in_vent_*` and `cu_vent_*` and `VENT_ANIM` (`--vent-anim`'s camera) aim at the hall's
     spot. The start console's hologram moved its vent and back socket marks with the gills (its `spinup3` rebuild;
     the vents' lines step to their own run, x 1.4 m, and go straight aft).
-- **The motion step** drives the four states on the ribs (each `<id>_cover<k>` rocked about `rib_axis`), the glows, the
-  seams red for the problem, the lamp, the bar's marker.
+
+### The gills' animation (gills step 11, 2026-10-28)
+The engineer approved the states on 2026-10-27 (prime-game's `docs/GDD.md`): the four ribs rock at most 4 deg and
+never open, so light, colour and mist carry the states. `godot/ship/vent_anim.gd` is the controller the game copies
+(the old blades' controller is gone; the section "The animation" under Station 1 is history). Its header is the API:
+- **Inputs:** `problem: bool`, `hold: float 0..1` (the scanner hold's progress while a palm is on it), `release()`
+  when the palm leaves. **Signals:** `fixed` (released in the green; the game clears `problem`), `too_early` (below
+  it; the game plays its sound), `missed` (past it), `thrown` (the hold reached the top; the game throws the player).
+  The release is judged on the drawn marker (`hold` followed over `HOLD_FOLLOW_S` 0.06 s). `setup(unit_root, id)`
+  after the scene's materials and `vent_glow.gd`'s lights; `manual` and `step(dt)` for proofs; `restore(root)` puts
+  the materials back.
+- **What it drives:** each rib `<id>_cover<k>` about its vertical axis through its origin (`rib_axis`: the wall is
+  vertical, so the axis is the piece's up), clamped to `ROCK_DEG` 4. The GLB's frame is x along the wall, y up and
+  +z out of the wall (the builder's v): (u, v, h) to (x, z, y) is a mirror, so the builder's +4 deg is -4 about y on
+  the e unit and +4 on the mirrored w unit (`OUT`, `_side`); the first clip had the marker behind the glass and the
+  emitters inside the well from assuming -z out
+  (`ship_interior_gills.RIB_ROCK_DEG`). The cool glow `<id>_cool` and every mesh under it (the 24 bands, the slots,
+  the floor strips) and its well lights take a colour per height from cyan to the heat's red; the `<id>_heat` panel
+  stays hidden, its material and twin lights give the red's colour and energy. A marker (a 7 cm white-hot bar, made
+  at run time: the GLB has none) climbs the bar `bar`..`bar_top`; the bar's existing green band (`bar_green`,
+  `BAR_GREEN` 1.78..1.84 m) is `GREEN` 0.808..0.923 of the travel. Per slot (`<id>_seam1..5`) three GPUParticles3D
+  6 cm out of the wall with a soft radial sprite: steam `STEAM_PER_SLOT` 6 (continuous while mostly red), mist
+  `MIST_PER_SLOT` 12 (one cyan burst on the exhale), cough `COUGH_PER_SLOT` 10 (one burst on a miss and the throw); `PUFF_M` 0.22 m sprites, a soft falloff with no edge, alpha
+  0.11..0.16, fading within `FADE_M` 5 cm of a surface (the first clip's 0.26 m at alpha 0.24 read as cotton balls,
+  and a 20 cm fade hid the steam by the wall).
+- **The states:** *calm* (each rib sways `BREATH_DEG` 1.5 every `BREATH_PERIOD_S` 4.2 s, `BREATH_WAVE` 0.12 of a breath
+  behind its neighbour, the cyan swelling by `BREATH_GLOW` 0.15); *problem* (two sines at `SHUDDER_HZ` 4.5 and 11 Hz,
+  weights 0.8/0.2, so at most `ROCK_DEG`, each rib `SHUDDER_PHASE` 1.3 rad off; red with a `RED_THROB`, the lamp
+  `LAMP_LOW` 0.35..1 at 1.3 Hz, steam); *hold* (the ribs ease to `HOLD_DEG` -1 and stay still; six clicks at
+  `GREEN[0]` x k/6 of the marker, each turning the next sixth of the glow's height cyan from the foot, `CLICK_TAU_S`
+  0.05 s, with a `CLICK_POP` flare; the sixth lands on the green's foot; past `GREEN[1]` the red comes back from
+  the top and the lamp pulses fast); *exhale* (all four out to +4 deg in `EXHALE_OUT_S` 0.55 s, cubic ease-out, held
+  1.2 s, back over 1.8 s; the cyan up to x2.2, `EXHALE_GLOW`); *retry* (too early: the shudder and the red come back
+  over `RETRY_S` 0.9 s); *cough* (missed: a jolt of +3.5/-1.2/+2.2 deg over 0.62 s, a steam burst); *thrown* (a hard
+  shudder at 8 and 13 Hz, the red flashing x1.9, a steam burst, `THROW_S` 1.2 s); *reset* (the game cleared the
+  problem without a fix: back to rest over 1 s). Every state eases in from the angles it began with; the shudder's
+  weight eases in and out exponentially; angles always clamped to +-4.
+- **Checks:** `godot/ship/vent_anim_check.gd` (headless, run by `test_ship_vent_anim.py`) drives a stand-in unit
+  through every transition at 60 steps a second: the states and signals, the six clicks climbing from the foot, the
+  ribs still while held, the exhale's +4, every angle within 4 deg. The Python test checks the constants against the
+  builder (ribs, range, the green band) and the ribs 2 cm clear of each other and the casing at every pair of angles
+  (1 deg steps).
+- **The proof:** `ship --vent-anim DIR` runs the demo (`DEMO_*`: pass 1 calm, the problem at 4.5 s, a hold 8.5..13.5 s
+  to 0.865, the release at 14 s, the exhale, calm; pass 2 the problem at 21 s, a hold to the top at 27 s, thrown),
+  30 s, with Godot's `--fixed-fps` so the particles keep the controller's clock; `anim.json` lists the states and the
+  signals heard, `keys_sheet.png` one labelled frame per state.
 
 ## The export (art #335)
 
