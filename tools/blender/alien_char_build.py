@@ -190,7 +190,9 @@ GILL_ZETA_ON_BODY = 0.55  # A2: the axolotl's gills on the walking body (anim_ba
 
 
 def _rows(me, owned):
-    """The vertices outside the gills (positions) and their corners (position, every UV layer's uv, head_n)."""
+    """The vertices outside the gills (positions) and the corners of the faces wholly outside them (position, every
+    UV layer's uv, head_n). F1: a face on the gills' border (an outside vertex beside gill ones) is the decimation's to
+    collapse, so its corners are not counted; its outside vertices still must not move."""
     co = np.empty(len(me.vertices) * 3)
     me.vertices.foreach_get("co", co)
     co = co.reshape(-1, 3)
@@ -206,7 +208,13 @@ def _rows(me, owned):
         me.attributes["head_n"].data.foreach_get("vector", hn)
         cols.append(hn.reshape(-1, 3))
     keep = ~np.asarray(owned, dtype=bool)
-    return co[keep].tolist(), np.hstack(cols)[keep[lv]].tolist()
+    start = np.empty(len(me.polygons), dtype=np.int64)
+    me.polygons.foreach_get("loop_start", start)
+    total = np.empty(len(me.polygons), dtype=np.int64)
+    me.polygons.foreach_get("loop_total", total)
+    gill_face = np.add.reduceat((~keep[lv]).astype(np.int64), start) > 0 if len(start) else np.zeros(0, dtype=bool)
+    outside_loop = ~np.repeat(gill_face, total)
+    return co[keep].tolist(), np.hstack(cols)[outside_loop].tolist()
 
 
 def _owned(skin) -> list[bool]:
@@ -219,8 +227,8 @@ def lighten_gills(skin, keep: float) -> dict:
     """M1 (art #196): collapse-decimate the faces whose vertices the Gill* groups own (each vertex's largest weight),
     down to `keep` of their triangles; every other vertex has weight 0 in the decimation group. The ratio is the
     whole mesh's, from the gills' share (G.gill_decimate_ratio).
-    R1: measured, not assumed. Every vertex outside the gills must keep its position, and each of its corners its
-    UVs and head_n, exactly (G.missing_rows); the build fails if one moved. The gills' triangles after are counted
+    R1: measured, not assumed. Every vertex outside the gills must keep its position, and each corner of a face
+    wholly outside them its UVs and head_n, exactly (G.missing_rows, counted since F1); the build fails if one moved. The gills' triangles after are counted
     on the result (the faces whose vertices the Gill* groups own)."""
     me = skin.data
     own = _owned(skin)
