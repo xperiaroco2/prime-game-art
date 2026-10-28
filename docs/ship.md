@@ -1735,8 +1735,8 @@ by more than 16, with each view's draw calls, primitives and GPU ms. `DIR/_check
 The engineer's look C for the lens rooms (prime-game#1095, 2026-10-27: "the charger in the wall and a lounge corner"),
 built from the design's cm drawing (prime-game-design `ideas/ship-components/lens-room/drawing/drawing.js`; the concept
 `c_lounge.jpg`). Static decor, `tools/blender/ship_interior_lens.py`; placed by `ship_interior_place.py`; checked by
-`tools/tests/test_ship_lens.py`. The charger unit itself (a faceted pedestal under the unchanged head) is the next
-step's (`assets/prop/crystal_charger`, `tools/blender/charger_*.py`).
+`tools/tests/test_ship_lens.py`. (History, step 1's plan: the charger unit itself, a faceted pedestal under the
+unchanged head, came in step 2: `assets/prop/crystal_charger`, `tools/blender/charger_*.py`.)
 
 **The alcove (both rooms, `lens_alcove`, a collider; `lens_conduits_e`/`_w`, none).** On each renewer spot's vertex
 (87.82 deg aft of the room's outward axis), in the charger's frame (`charger_dims.toml`: u across, d out of the wall
