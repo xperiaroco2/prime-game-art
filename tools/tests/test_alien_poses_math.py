@@ -1,6 +1,7 @@
 """The photo poses' pure maths (art #196, tools/blender/alien_pose_math.py): the bone split, the IK middle joint, the
 limb's shared hinge, the frames, the hull and its margin, layer clips and pairs; and, when the step's skin dump is on
-this machine, every leg pose's contacts on the floor on the chameleon (skipped without the raw files)."""
+this machine (the newest step's), on the chameleon: every leg pose's contacts on the floor, measure() on a starting
+pair, the centre of mass check and the heart's meet (skipped without the raw files)."""
 from __future__ import annotations
 
 import json
@@ -16,7 +17,16 @@ import alien_pose_math as A  # noqa: E402
 import alien_stride_math as S  # noqa: E402
 
 RAW = Path(os.environ.get("PRIME_ART_RAW", "D:/prime-art-raw"))
-DUMP = RAW / "research/2026-10-22-roster/design/pilot3d/anim_bare/poses/s1/chameleon_dump.json"
+POSES = RAW / "research/2026-10-22-roster/design/pilot3d/anim_bare/poses"
+
+
+def _newest_dump() -> Path:
+    """The newest step's chameleon skin dump (s1, s2, ... by number): the tests follow the current skeleton."""
+    steps = [d for d in POSES.glob("s*") if d.name[1:].isdigit() and (d / "chameleon_dump.json").is_file()]
+    return max(steps, key=lambda d: int(d.name[1:])) / "chameleon_dump.json" if steps else POSES / "none"
+
+
+DUMP = _newest_dump()
 
 
 def _eye(x=0.0, y=0.0, z=0.0):
@@ -162,6 +172,22 @@ class RigAndLayers(unittest.TestCase):
         self.assertEqual(S.frames(clip), 2)
 
 
+class CentreOfMass(unittest.TestCase):
+    def test_volume_weighted_posed_centroids(self):
+        class Fake:
+            tubes = {"a": {"centroid_local": (0.0, 0.0, 0.0), "volume": 3.0},
+                     "b": {"centroid_local": (1.0, 0.0, 0.0), "volume": 1.0}}
+        P = {"a": _eye(), "b": _eye(z=2.0)}  # b's centroid lands at (1, 0, 2)
+        c = A.centre_of_mass(Fake(), P)
+        for got, want in zip(c, (0.25, 0.0, 0.5)):
+            self.assertAlmostEqual(got, want)
+
+    def test_inside_margin_signs(self):
+        sq = A.hull([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
+        self.assertAlmostEqual(A.inside_margin(sq, (0.5, 0.5)), 0.5)
+        self.assertLess(A.inside_margin(sq, (1.5, 0.5)), 0.0)
+
+
 class Silhouettes(unittest.TestCase):
     def test_mask_diff_and_flip(self):
         a = [0b1100, 0b1100]
@@ -234,7 +260,7 @@ class BuiltData(unittest.TestCase):
         self.assertEqual(stale, "arms")
 
 
-@unittest.skipUnless(DUMP.is_file(), "the s1 skin dump is not on this machine")
+@unittest.skipUnless(DUMP.is_file(), "no step's skin dump is on this machine")
 class OnTheChameleon(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -248,6 +274,35 @@ class OnTheChameleon(unittest.TestCase):
             pz = A.Posed(self.model.skel, self.model.skin, r.P())
             low = pz.lowest(list(self.model.skin["by_group"]))
             self.assertLessEqual(abs(low * 100), lim, name)
+
+    def test_measure_on_a_starting_pair(self):
+        """Stand+HandsOnHips: on the floor, the centre of mass inside the feet, every through pair read, the hands'
+        contacts and waist marks within the limits."""
+        lim = self.model.data["limits"]
+        r = A.compose(self.model.legs("Stand"), self.model.arms("HandsOnHips"))
+        m = A.measure(self.model, r, "Stand", "HandsOnHips")
+        self.assertLessEqual(abs(m["floor_cm"]), lim["floor_cm"])
+        self.assertGreater(m["com_margin_cm"], lim["com_margin_cm"])
+        self.assertEqual(set(m["through_cm"]), {f"{a}>{b}" for a, b in lim["through_pairs"]})
+        self.assertEqual(set(m["marks_cm"]), {"hand_Left@waist_Left", "hand_Right@waist_Right"})
+        for k, v in m["contacts_cm"].items():
+            self.assertLessEqual(v, lim["contact_gap_cm"], k)
+        for k, v in m["marks_cm"].items():
+            self.assertLessEqual(v, lim["mark_cm"], k)
+
+    def test_one_leg_tips_out_of_balance_when_pushed(self):
+        """The centre of mass check reads a body shifted off its one foot as outside the support."""
+        legs = self.model.legs("OneLeg")
+        ok = A.measure(self.model, legs, "OneLeg", "Plane")["com_margin_cm"]
+        legs.turn_world("Spine", A.turn_q(pitch=50.0))  # the upper body leant far forward over a fixed foot
+        self.assertLess(A.measure(self.model, legs, "OneLeg", "Plane")["com_margin_cm"], ok)
+
+    def test_meet_brings_the_heart_fingertips_together(self):
+        """_meet: the index tips' skin within the heart's gap (the solve's own contact)."""
+        r = A.compose(self.model.legs("Stand"), self.model.arms("Heart"))
+        pz = A.Posed(self.model.skel, self.model.skin, r.P())
+        gap = A.nearest_gap(pz.group("LeftIndexDistal"), pz.group("RightIndexDistal"), reach=0.3) * 100
+        self.assertLessEqual(gap, self.model.data["limits"]["contact_gap_cm"])
 
     def test_solve_is_repeatable(self):
         a = self.model.arms("HandsOnHips")
