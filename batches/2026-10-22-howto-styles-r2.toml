@@ -1,0 +1,125 @@
+# How-to card styles, round 2, for the UI track (prime-game#150). The engineer, 2026-10-22, UI chat: round 1's
+# direction 1 (three-ink screenprint) is the favourite; go deeper into mid-20th-century American commercial art (print
+# ads, enamel and tin signs, safety posters with a cartoon mascot), ten sub-directions. Research: prime-game-ui
+# docs/research/2026-10-22-howto-card-styles/midcentury.md. Each direction has its own mascot so the model does not fall
+# back on the stock little green alien. Two Cooking frames each, two images each, medium, text-only.
+# The standing permission for OpenAI images: art#196 comment 6291187194 (2026-10-20). No game, film, studio, brand,
+# artist or character names; no real people. Schema: docs/openai-images.md.
+
+id = "2026-10-22-howto-styles-r2"
+service = "openai-images"
+purpose = "How-to card styles round 2 (prime-game#150): ten mid-century American commercial-art sub-directions on two Cooking frames each, for the engineer to compare."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 3.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1024x768"
+n = 2
+background = "opaque"
+
+[[items]]
+id = "m01-safety-fry"
+kind = "generate"
+prompt = "1940s workplace-safety poster illustration, two-ink offset print: only signal red #D8432B and navy #23305A on cream paper #F1E4C3, their overprint making a third dark tone, thick confident brush outlines with real thick-and-thin, flat colour, a consistent slight misregistration of the red. The mascot: a pear-shaped alien with rubbery jointless limbs, white three-fingered gloves, pie-cut eyes, a huge toothy grin and two short antennae with balls. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m01-safety-plate"
+kind = "generate"
+prompt = "1940s workplace-safety poster illustration, two-ink offset print: only signal red #D8432B and navy #23305A on cream paper #F1E4C3, their overprint making a third dark tone, thick confident brush outlines with real thick-and-thin, flat colour, a consistent slight misregistration of the red. The mascot: a pear-shaped alien with rubbery jointless limbs, white three-fingered gloves, pie-cut eyes, a huge toothy grin and two short antennae with balls. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m02-adpage-fry"
+kind = "generate"
+prompt = "1950s magazine advertisement illustration, four-colour print: cyan #00A6D6, magenta #E5367A, yellow #FFD93B and black on cream #F4EBD3, one coarse Ben-Day dot size used only in a big background shape, never on the mascot or the food, fine even pen outlines. The mascot: a sleek tall alien with an egg-shaped magenta head, a neat smile, half-closed confident eyes, one curly antenna. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m02-adpage-plate"
+kind = "generate"
+prompt = "1950s magazine advertisement illustration, four-colour print: cyan #00A6D6, magenta #E5367A, yellow #FFD93B and black on cream #F4EBD3, one coarse Ben-Day dot size used only in a big background shape, never on the mascot or the food, fine even pen outlines. The mascot: a sleek tall alien with an egg-shaped magenta head, a neat smile, half-closed confident eyes, one curly antenna. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m03-enamel-fry"
+kind = "generate"
+prompt = "vintage porcelain enamel advertising sign artwork: glossy flat colours cream #F5F0E1, red #C8102E, cobalt #0B3D91, yellow #F6C700, black, a thick black rim around the frame, hard-edged shapes, two or three small chips only at the very corners. The mascot: a bold symmetrical alien with a perfectly round cobalt head, heavy black contour, big oval eyes and a wide yellow grin. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m03-enamel-plate"
+kind = "generate"
+prompt = "vintage porcelain enamel advertising sign artwork: glossy flat colours cream #F5F0E1, red #C8102E, cobalt #0B3D91, yellow #F6C700, black, a thick black rim around the frame, hard-edged shapes, two or three small chips only at the very corners. The mascot: a bold symmetrical alien with a perfectly round cobalt head, heavy black contour, big oval eyes and a wide yellow grin. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m04-screen-fry"
+kind = "generate"
+prompt = "1950s modern screenprint illustration: three flat inks teal #1FA6A0, orange #F26B4F and charcoal #232A3B on cream #F2E6C8, no outlines on the colour shapes, a loose charcoal keyline printed slightly off-register. The mascot: a minimal alien with a tilted oval orange head, two dot eyes, a tiny line mouth and a single antenna. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m04-screen-plate"
+kind = "generate"
+prompt = "1950s modern screenprint illustration: three flat inks teal #1FA6A0, orange #F26B4F and charcoal #232A3B on cream #F2E6C8, no outlines on the colour shapes, a loose charcoal keyline printed slightly off-register. The mascot: a minimal alien with a tilted oval orange head, two dot eyes, a tiny line mouth and a single antenna. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m05-newspaper-fry"
+kind = "generate"
+prompt = "1940s newspaper grocery advertisement illustration: black ink and one spot red #D63A2F on yellowed newsprint #E9DFC6, a coarse grey halftone tint in one background area, pen cross-hatching for shade. The mascot: a scrappy small alien with a big bald head, freckles, bushy eyebrows and a striped apron, drawn like a comic strip. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m05-newspaper-plate"
+kind = "generate"
+prompt = "1940s newspaper grocery advertisement illustration: black ink and one spot red #D63A2F on yellowed newsprint #E9DFC6, a coarse grey halftone tint in one background area, pen cross-hatching for shade. The mascot: a scrappy small alien with a big bald head, freckles, bushy eyebrows and a striped apron, drawn like a comic strip. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m06-atomic-fry"
+kind = "generate"
+prompt = "atomic-age 1950s illustration: a radiating starburst panel behind the action, one boomerang accent, flat turquoise #1FA6A0, coral #F26B4F, mustard #FFC93C, navy line #1D2A44, cream #F4EBD3, an even confident brush line. The mascot: a tall alien with an elongated oval coral head, thin antennae ending in little atoms, one big wink and a raised thumb. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m06-atomic-plate"
+kind = "generate"
+prompt = "atomic-age 1950s illustration: a radiating starburst panel behind the action, one boomerang accent, flat turquoise #1FA6A0, coral #F26B4F, mustard #FFC93C, navy line #1D2A44, cream #F4EBD3, an even confident brush line. The mascot: a tall alien with an elongated oval coral head, thin antennae ending in little atoms, one big wink and a raised thumb. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m07-mod-fry"
+kind = "generate"
+prompt = "1960s mod flat graphic illustration: geometric shapes, no outlines, four solid colours orange #F26B21, pink #E8508F, olive #8A9A2B and aubergine #4B2A5C on cream #F4EBD3. The mascot: an alien built from circles and semicircles, an olive dome head, two white dot eyes, stick arms. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m07-mod-plate"
+kind = "generate"
+prompt = "1960s mod flat graphic illustration: geometric shapes, no outlines, four solid colours orange #F26B21, pink #E8508F, olive #8A9A2B and aubergine #4B2A5C on cream #F4EBD3. The mascot: an alien built from circles and semicircles, an olive dome head, two white dot eyes, stick arms. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m08-leaflet-fry"
+kind = "generate"
+prompt = "1950s product instruction leaflet drawing: one confident dark pen line #202A3A of medium weight, cream paper #F3EAD2, a single orange spot colour #E8672C printed slightly offset and used only on the one object that matters. The mascot: a friendly line-drawn alien with a light-bulb-shaped head, big round eyes and clearly drawn four-fingered hands. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m08-leaflet-plate"
+kind = "generate"
+prompt = "1950s product instruction leaflet drawing: one confident dark pen line #202A3A of medium weight, cream paper #F3EAD2, a single orange spot colour #E8672C printed slightly offset and used only on the one object that matters. The mascot: a friendly line-drawn alien with a light-bulb-shaped head, big round eyes and clearly drawn four-fingered hands. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m09-diner-fry"
+kind = "generate"
+prompt = "1950s diner menu painting: opaque gouache, flat warm shapes with visible dry-brush edges, cherry red #D93A3A, mustard #F2B632, teal #3FA796, dark brown #3A2A22 on cream #F6ECD6. The mascot: a plump cheerful alien with a round teal head, rosy cheeks, a little paper cook cap and round shiny eyes. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m09-diner-plate"
+kind = "generate"
+prompt = "1950s diner menu painting: opaque gouache, flat warm shapes with visible dry-brush edges, cherry red #D93A3A, mustard #F2B632, teal #3FA796, dark brown #3A2A22 on cream #F6ECD6. The mascot: a plump cheerful alien with a round teal head, rosy cheeks, a little paper cook cap and round shiny eyes. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m10-tin-fry"
+kind = "generate"
+prompt = "vintage lithographed tin sign artwork: aged cream #E4D3A8, red #B5382A, blue #2D5C7A, yellow #EAB83A, bold black outlines, light rust and scratches only in the outer border, the centre perfectly clean. The mascot: a stout barrel-shaped blue alien with a square jaw, a big confident smile and stubby antennae. Scene: the alien mascot stands at a small barbecue grill and flips a golden-brown burger patty with a spatula at just the right moment; on a plate beside it a second patty is burnt black and sends up a curl of smoke; the mascot glances at the burnt one, embarrassed. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
+
+[[items]]
+id = "m10-tin-plate"
+kind = "generate"
+prompt = "vintage lithographed tin sign artwork: aged cream #E4D3A8, red #B5382A, blue #2D5C7A, yellow #EAB83A, bold black outlines, light rust and scratches only in the outer border, the centre perfectly clean. The mascot: a stout barrel-shaped blue alien with a square jaw, a big confident smile and stubby antennae. Scene: the same alien mascot puts the top bun on a burger on a round plate marked with three dots on its rim; the burger is a bottom bun, a brown patty, one spiky green herb leaf and the top bun, neatly stacked; the mascot is proud. Wordless how-to comic frame, 4:3, plain uncluttered background of the paper colour, nothing behind the scene. Absolutely no lettering, no text, no numbers, no logos, no signage, no photorealism, no 3D, no gradients, no glow. Not a generic little green man: draw the mascot exactly as described. Wear and print texture only where described, the centre clean. Big simple shapes that still read as a 160 by 120 pixel thumbnail."
