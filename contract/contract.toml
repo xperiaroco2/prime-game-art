@@ -339,11 +339,11 @@ facing = "fail"
 max_materials = 1
 
 # The alien (docs/decisions/2026-10-19-alien-overlaid-face-four-fingers.md): the body's rules, judged against the
-# character budget (40k target, 60k cap: the welded head and body are one file) with all five fingers weighted. The
-# engineer, 2026-10-24 (art #196 comment 6386685364): "Так: мізинець з вагами, судити алієна за лімітом персонажа
-# 40k/60k" (yes: the Little finger with weights; judge the alien by the character's limit 40k/60k); the 2026-10-19
-# four-finger rule (fingers_unweighted = ["Little"]) is gone. fingers_unweighted (any kind, default none): fingers
-# whose bones are present and unweighted; no kind uses it now.
+# character budget (40k target, 60k cap: the welded head and body are one file; the engineer, 2026-10-24, art #196
+# comment 6386685364) with four fingers: three fingers and a thumb, the Little chain present and unweighted. The
+# engineer, 2026-10-28 (art #196 comment 6467823137): "Four fingers, not five ... Four is the rule from now on"; the
+# 2026-10-24 yes answered "the Little finger carries weights", not a wish for five visible fingers.
+# fingers_unweighted (any kind, default none): fingers whose bones are present and carry no weights.
 # The engineer, 2026-10-23 (art #196 comment 6374319309): "Кістки пружин під Head дозволяю; гребені й зябра можуть
 # стирчати над 1,80 м" (spring bones under Head are allowed; crests and gills may stick out above 1.80 m).
 # bones = "all_and_springs": exactly the profile's bones plus whole sets of spring_sets; a set's chains are its bones
@@ -359,6 +359,7 @@ bones = "all_and_springs"
 spring_parent = "Head"
 head_top_max_m = 1.95
 fingers = "fail"
+fingers_unweighted = ["Little"]
 height = "fail"
 eyes = "warn"
 feet = "fail"
