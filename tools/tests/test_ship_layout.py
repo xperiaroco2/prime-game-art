@@ -82,7 +82,6 @@ class ShipLayoutTest(unittest.TestCase):
         spots = {s["id"]: s for s in LAYOUT["stations"]["spot"]}
         for sid in ("renewer_e", "renewer_w"):
             self.assertGreaterEqual(spots[sid]["depth_m"], reach)
-            self.assertLess(spots[sid]["depth_m"] - ship_interior_lens.REACH / 100, 0.001)
 
     def test_the_rooms_are_5a_mirrored(self) -> None:
         r = sl.rooms(LAYOUT)

@@ -68,6 +68,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "(default <raw>/<raw_dir>/play)")
     parser.add_argument("--play-test", type=Path, metavar="DIR",
                         help="the --play scene off-screen: the capsule walks 2 s, saves one shot and DIR/play.json")
+    parser.set_defaults(_ship_parser=parser)   # lens C step 4: run() refuses --charger without --shoot as a usage error
 
 
 def raw(layout: dict) -> Path:
@@ -75,6 +76,8 @@ def raw(layout: dict) -> Path:
 
 
 def run(args: argparse.Namespace) -> int:
+    if getattr(args, "charger", False) and not args.shoot:
+        args._ship_parser.error("--charger only works with --shoot DIR (the look review's chargers and crystals)")
     layout = ship_layout.load()
     problems = ship_layout.check(layout)
     width, length = ship_layout.extent(layout)
@@ -357,6 +360,25 @@ def charger_places(layout: dict) -> list:
     return out
 
 
+CHARGER_STATE = {"charger": "idle", "crystal": True, "charge": 0.0}   # the game's default: idle, a spent crystal seated
+
+
+def charger_rows(views: list) -> list:
+    """--shoot --charger's views (lens C step 3): every row's 6th element becomes charger/room.gd's state, the game's
+    default (CHARGER_STATE: the charger idle, the crystal seated and spent; a full one's light floods the lens room
+    cyan) under the row's own keys."""
+    for v in views:
+        off = v[5] if len(v) > 5 else {}
+        v[5:6] = [{**CHARGER_STATE, **off}]
+    return views
+
+
+def shoot_script(charger: bool) -> str:
+    """The shoot's Godot script: charger/room.gd (ship.gd plus the charger's and the crystal's game looks) for
+    --charger, else ship.gd."""
+    return CHARGER_SCRIPT if charger else GODOT_SCRIPT
+
+
 def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "", charger: bool = False) -> int:
     req, staged = built_request(layout, out)
     if charger:
@@ -399,14 +421,11 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         for key in ("top", "top_full", "day_views"):
             req.pop(key)
         req["compare"] = []
-    script = GODOT_SCRIPT
-    if charger:   # lens C step 3: charger/room.gd (ship.gd plus the charger's and the crystal's game looks: charger.gd,
-        # crystal.gd seated on its anchor) instead of the GLBs' plain materials, which ship.gd's pass made strip lights
-        # of; the charger idle and the crystal spent (a full one's light floods the lens room cyan), unless a row says
-        script = CHARGER_SCRIPT
-        for v in req["views"]:
-            off = v[5] if len(v) > 5 else {}
-            v[5:6] = [{"charger": "idle", "crystal": True, "charge": 0.0, **off}]
+    # lens C step 3: --charger runs charger/room.gd instead of the GLBs' plain materials, which ship.gd's pass made
+    # strip lights of
+    script = shoot_script(charger)
+    if charger:
+        charger_rows(req["views"])
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "ship" / "shoot_request.json"
