@@ -109,6 +109,25 @@ class HerTargets(unittest.TestCase):
         finally:
             tmp.unlink(missing_ok=True)
 
+    def test_nested_keys(self):
+        # R1: every committed target file loads; a typo inside a nested table fails instead of doing nothing
+        for f in sorted(M.TARGETS.glob("*.toml")):
+            M.load(f)
+        m1f = M.TARGETS / "axolotl_m1f.toml"
+        text = m1f.read_text(encoding="utf-8")
+        tmp = Path(__file__).resolve().parents[1] / "out" / "test_meshy_body_nested.toml"
+        tmp.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            # a fingers key, a bend's key, a key inside fingers.shape
+            for old, new in (("thumb_falloff = ", "thumb_fallof = "), ("[[bends]]\n", "[[bends]]\nchlid = 1\n"),
+                             ("shape = { slim = ", "shape = { slimm = ")):
+                self.assertIn(old, text)
+                tmp.write_text(text.replace(old, new, 1), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "unknown keys in"):
+                    M.load(tmp)
+        finally:
+            tmp.unlink(missing_ok=True)
+
 
 class FlagsOff(unittest.TestCase):
     """The welds of the cage bodies (H1 to H5, the chameleon) are unchanged: the new flags default off."""

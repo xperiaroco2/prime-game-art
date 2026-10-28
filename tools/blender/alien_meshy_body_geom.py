@@ -46,8 +46,49 @@ SMOOTH_KEYS_M1E = {"disp_smooth"}
 KEYS_M1F = {"seam_band", "relax"}
 
 
+# R1 (art #196): every nested table's keys, the ones the build reads (alien_meshy_body.py, alien_meshy_fix_geom.py);
+# `bends` is a list of tables, each checked against "bends[]". A key outside its set fails `load` (a typo would
+# otherwise do nothing)
+NESTED_KEYS = {
+    "hand": {"wrist", "scale", "blend"},
+    "bust": {"centre", "push", "radius"},
+    "smooth": {"spheres"} | SMOOTH_KEYS_M2B,
+    "smooth_after": {"spheres"},
+    "smooth_rest": {"spheres"} | SMOOTH_KEYS_M2B | SMOOTH_KEYS_M1E,
+    "weight_smooth": {"factor", "repeat", "zones"},
+    "degenerate": {"dist", "ring_merge"},
+    "arm_thicken": {"band_z", "from_x", "profile", "slab", "waist_z", "y_power"} | ARM_KEYS_M1D | ARM_KEYS_M1E,
+    "fingers": {"crease_window", "half", "min_part", "palm_r", "palm_smooth", "sigma", "slice", "step",
+                "thumb_half", "thumb_mcp_back", "thumb_sigma", "tip_inset"} | FINGER_KEYS_M1C | FINGER_KEYS_M2B,
+    "fingers.shape": {"ramp", "slim", "tip", "tip_len", "thumb_shorten"} | SHAPE_KEYS_M1D,
+    "bends[]": {"parent", "child", "mid_x", "radius", "width", "fade", "inside", "inside_width", "margin", "offset",
+                "tilt"},
+    "notch": {"box", "depth_smooth", "medial", "passes", "r"},
+    "seat": {"depth", "fade_x", "fade_z", "ramp", "x", "z"},
+    "bust_round": {"at", "blend", "box", "front", "r", "sigma", "pick"},
+    "relax": {"mu", "normal", "spheres", "tangent"},
+}
+
+
+def _nested(d: dict, path: str):
+    """The tables at a NESTED_KEYS path ("a.b", "a[]"), each with its name."""
+    head, _, rest = path.partition(".")
+    many = head.endswith("[]")
+    v = d.get(head[:-2] if many else head)
+    if v is None:
+        return []
+    items = v if many else [v]
+    name = head
+    out = []
+    for i, t in enumerate(items):
+        if not isinstance(t, dict):
+            raise ValueError(f"{name}{f' {i}' if many else ''} is not a table")
+        out += [(f"{name}.{n}" if rest else name, x) for n, x in _nested(t, rest)] if rest else [(name, t)]
+    return out
+
+
 def load(path: str | Path) -> dict:
-    """A Meshy body target file (alien_meshy_targets/*.toml), its keys checked."""
+    """A Meshy body target file (alien_meshy_targets/*.toml), its keys and its nested tables' keys checked."""
     d = tomllib.loads(Path(path).read_text(encoding="utf-8"))
     bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C - KEYS_M2 - KEYS_M2B - KEYS_M1D - KEYS_M1F
     if bad:
@@ -55,6 +96,11 @@ def load(path: str | Path) -> dict:
     missing = KEYS - set(d)
     if missing:
         raise ValueError(f"missing keys {sorted(missing)}")
+    for p, allowed in NESTED_KEYS.items():
+        for name, t in _nested(d, p):
+            bad = set(t) - allowed
+            if bad:
+                raise ValueError(f"unknown keys in {name}: {sorted(bad)}")
     return d
 
 
