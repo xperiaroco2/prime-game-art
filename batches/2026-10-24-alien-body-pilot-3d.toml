@@ -1,0 +1,64 @@
+# art#196, the 3D bodies' route pilot. The engineer picked body A for both aliens (2026-10-24, chat; recorded in
+# #196 comment 6383047155) and said "Запускай пілот" (comment 6383156211). The pilot compares two routes on the
+# chameleon: this batch's Meshy body from the A concept's views, against the S4b refit pipeline re-targeted to the same
+# views. Meshy generation within the plan's credits is a standing permission (art#16, 2026-10-03).
+#
+# Input: the front, side profile (facing left) and back cut out of the chameleon's turnaround (batch
+# 2026-10-24-alien-body-neck item ch_turn), each padded to a square on the sheet's grey. meshy-7.1 at 2k geometry,
+# untextured (the build paints the body from the head's colours), Meshy's remesh to 100,000 triangles with the dense
+# original kept. Two items: the pose as drawn, and with Meshy's t-pose preset (the contract skeleton rests in a T-pose,
+# so a T-posed mesh fits it without re-posing). Price: 20 mesh + 5 for 2k = 25 each, 50 in all. The head comes back too
+# and is cut off: the welded r5 heads stay. No game, film, studio, character or person names (the images are the
+# prompt). Schema: docs/meshy.md.
+
+id = "2026-10-24-alien-body-pilot-3d"
+purpose = "art#196 body route pilot: the chameleon's A body as a raw Meshy multi-image-to-3D mesh (as drawn and t-posed), to judge against the refit route before building both aliens."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 85
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-24"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6383047155"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = false
+should_remesh = true
+topology = "triangle"
+target_polycount = 100000
+save_pre_remeshed_model = true
+target_formats = ["glb"]
+
+[[items]]
+id = "chameleon"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-24-alien-body-pilot-3d/views/chameleon/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-24-alien-body-neck item ch_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "b9d0bcf706d29a0b6800c95dd0ed4ecde334f3f3908ab19285816ea93a45b1f4" },
+  { file = "raw:2026-10-24-alien-body-pilot-3d/views/chameleon/side.png", provenance = "side profile (facing left) cut from our own OpenAI generation, batch 2026-10-24-alien-body-neck item ch_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "8f2cc6c33e5cc9a66b9856ec8f10ee7937b6106ad010355a2152bc75ddafdcf2" },
+  { file = "raw:2026-10-24-alien-body-pilot-3d/views/chameleon/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-24-alien-body-neck item ch_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "81a199cca58981ccc723e44c9133ab5a706d5c5f2558b40c03f4f624c26f17ba" },
+]
+
+[[items]]
+id = "chameleon_t"
+kind = "multi_image_to_3d"
+params = { pose_mode = "t-pose" }
+images = [
+  { file = "raw:2026-10-24-alien-body-pilot-3d/views/chameleon/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-24-alien-body-neck item ch_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "b9d0bcf706d29a0b6800c95dd0ed4ecde334f3f3908ab19285816ea93a45b1f4" },
+  { file = "raw:2026-10-24-alien-body-pilot-3d/views/chameleon/side.png", provenance = "side profile (facing left) cut from our own OpenAI generation, batch 2026-10-24-alien-body-neck item ch_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "8f2cc6c33e5cc9a66b9856ec8f10ee7937b6106ad010355a2152bc75ddafdcf2" },
+  { file = "raw:2026-10-24-alien-body-pilot-3d/views/chameleon/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-24-alien-body-neck item ch_turn (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "81a199cca58981ccc723e44c9133ab5a706d5c5f2558b40c03f4f624c26f17ba" },
+]
+
+# The hybrid route was taken (the critic's verdict; the engineer: "продовжуй", 2026-10-24), so the axolotl's body is
+# made the same way: t-posed, from the front and side of ax_turn_c (her back view and the ax_bust sheet were refused by
+# OpenAI's moderation); the chest is made one size fuller in the build (ax_bust, the engineer's pick). 25 credits; the
+# cap raised from 60 to 85 for it, within the plan's credits.
+[[items]]
+id = "axolotl_t"
+kind = "multi_image_to_3d"
+params = { pose_mode = "t-pose" }
+images = [
+  { file = "raw:2026-10-24-alien-body-pilot-3d/views/axolotl/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-24-alien-body-neck item ax_turn_c (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "b2f28bf8f005f17f4a1b8bc9bdbd7176728a95abf7e37c0508ffd95eb6a4c746" },
+  { file = "raw:2026-10-24-alien-body-pilot-3d/views/axolotl/side.png", provenance = "side profile (facing left) cut from our own OpenAI generation, batch 2026-10-24-alien-body-neck item ax_turn_c (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "5c3386f6ea86064681ed847575919323f89b7233abaa544a47008d0bfc2288a2" },
+]

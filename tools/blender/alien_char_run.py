@@ -4,7 +4,7 @@
 godot-check runs separately (`tools/run.sh godot-check --strict-contract --humanoid --textured <glb>`).
 
     $PYTHON_BIN tools/blender/alien_char_run.py [--heads chameleon,axolotl] [--tag body_v1] [--no-build]
-        [--no-shots] [--seconds 20] [--clip-edits tools/blender/anim_sets/alien.toml]
+        [--no-shots] [--seconds 20] [--clip-edits tools/blender/anim_sets/alien.toml] [--body <alien_body.blend>]
 
 Into <raw>/research/2026-10-22-roster/design/pilot3d/<tag>/<head>/ (the build) and <tag>/ (the sheets, the gate,
 the seams, the line-up, char_<head>.mp4). A run never overwrites: a build whose head folder exists is refused, and
@@ -95,11 +95,21 @@ def main() -> int:
     ap.add_argument("--seconds", type=float, default=20.0)
     ap.add_argument("--clip-edits", default="", help="A1: the alien's clip edits, e.g. tools/blender/anim_sets/alien.toml")
     ap.add_argument("--shots-sub", default="", help="B3: the shots into this subfolder of the tag (a trial)")
+    ap.add_argument("--body", default=str(BODY), help="the shared body's .blend (default S4b's; the A body's "
+                    "refit route: bodies_a/pilot/refit/alien_body.blend)")
     ap.add_argument("--fix", default="{}", help="B3: JSON render settings after the front isolation sheet "
                     "(shadow_quality 0-5, default 5; taa, angular_deg, sss_scale)")
+    ap.add_argument("--no-flare", action="store_true", help="M1: the build without the neck flare (a Meshy body)")
+    ap.add_argument("--gill-ratio", type=float, default=1.0, help="M1: the gills' triangles kept (1.0: all)")
+    ap.add_argument("--leg-fit", action="store_true", help="T2: the clips fitted to the body's own legs against "
+                    "S4b's rig, the one they were made on (alien_leg_fit.py: the hip keys scaled, the feet matched)")
+    ap.add_argument("--leg-ik", action="store_true", help="T3: with --leg-fit, the feet on S4b's foot paths "
+                    "scaled to the legs by IK in place of the lowest-point match (--leg-fit-mode ik)")
     ap.add_argument("--lively", default="", help="E2: head=DIR[,head=DIR]: build on these lively build folders instead"
                     " of HEADS' (a candidate's look)")
     args = ap.parse_args()
+    if args.leg_ik and not args.leg_fit:
+        ap.error("--leg-ik needs --leg-fit")
     heads = args.heads.split(",")
     lively = {h: Path(d) for h, d in (x.split("=", 1) for x in args.lively.split(",") if x)}
     for h, d in lively.items():  # a mistyped head or folder would build the default look without a word
@@ -126,10 +136,15 @@ def main() -> int:
             (hd / "bases.json").write_text(json.dumps(b, indent=1), encoding="utf-8", newline="\n")
             res = blender.run_script("alien_char_build.py", [
                 "--head", h, "--lively", str(lv / f"{h}_lively.glb"), "--lively-json", str(lv / "lively.json"),
-                "--body", str(BODY), "--albedo", str(static / f"{h}_albedo.png"), "--mask", str(eye_mask(lv, static, h)),
+                "--body", str(Path(args.body).resolve()), "--albedo", str(static / f"{h}_albedo.png"),
+                "--mask", str(eye_mask(lv, static, h)),
                 "--accent", str(SLOTS / "maps" / f"{h}_accent.png"),
                 "--detail", str(static / f"{h}_detail.png"), "--bases", str(hd / "bases.json"),
-                "--out", str(hd), *(["--clip-edits", str(Path(args.clip_edits).resolve())] if args.clip_edits else [])],
+                "--out", str(hd), *(["--no-flare"] if args.no_flare else []),
+                *(["--gill-ratio", str(args.gill_ratio)] if args.gill_ratio < 1.0 else []),
+                *(["--leg-fit", str(BODY)] if args.leg_fit else []),
+                *(["--leg-fit-mode", "ik"] if args.leg_fit and args.leg_ik else []),
+                *(["--clip-edits", str(Path(args.clip_edits).resolve())] if args.clip_edits else [])],
                 timeout=1500)
             (hd / "build.log").write_text((res.stdout or "") + (res.stderr or ""), encoding="utf-8", newline="\n")
             print(*[x for x in (res.stdout or "").splitlines() if x.startswith("CHAR ")], sep="\n", flush=True)

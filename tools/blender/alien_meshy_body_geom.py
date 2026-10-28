@@ -1,0 +1,198 @@
+"""Plain-Python geometry of the Meshy body route (art #196, pilot M1; `alien_meshy_body.py`): the Meshy surface kept
+as it is and moved onto the refit skeleton. Every function here runs without Blender (tools/tests).
+
+Frames: the Meshy frame is the Meshy GLB's own (x to her left, -y her front, the sole on z 0); the rig frame is the
+refit skeleton's (the same axes). The z map (WRAP_Z, pairs [rig z, Meshy z] as in the cage targets) moves each
+height; the legs and the arms are then shifted onto their bones, the hands scaled about the wrist.
+"""
+from __future__ import annotations
+
+import math
+import tomllib
+from pathlib import Path
+
+TARGETS = Path(__file__).resolve().parent / "alien_meshy_targets"
+KEYS = {"name", "meshy", "rig_body", "wrap_z", "arm_x", "arm_band_z", "arm_blend_x", "arm_station_x", "hand",
+        "leg_fade_z", "leg_station_z", "foot_z", "ring_z", "ring_half_x", "neck_scale_from_z", "decimate_pre",
+        "body_tris", "smooth", "bust", "keep_hands", "smooth_after", "weight_smooth"}
+# M1b (art #196): the fixes, each optional (alien_meshy_body.py steps 6 to 10; M1's file has none)
+KEYS_M1B = {"degenerate", "arm_thicken", "smooth_rest", "fingers", "bends"}
+# M1c (art #196): the knee notch found by its concavity (`notch`); the fingers' M1c keys live inside `fingers`
+KEYS_M1C = {"notch"}
+FINGER_KEYS_M1C = {"thumb_falloff", "base_band", "base_smooth"}
+# M2 (art #196, the chameleon): `shift_y`, the Meshy surface moved along y before the map (his Meshy body stands about
+# 8 cm in front of his skeleton's trunk line); the axolotl's files have none
+KEYS_M2 = {"shift_y"}
+# M2b (art #196, the chameleon's fixes): `seat` (the seat's depth behind the line from the thigh to the small of the
+# back scaled down); inside `fingers` the `shape` table (the fingers slimmer, the tips smaller, the thumb shorter);
+# inside `smooth` and `smooth_rest` the optional `mu` (Taubin's step back: the smoothing keeps the volume), in
+# `smooth_rest` also `boxes` and `margin`; the axolotl's and M2's files have none
+KEYS_M2B = {"seat"}
+FINGER_KEYS_M2B = {"shape"}
+SMOOTH_KEYS_M2B = {"mu", "boxes", "margin"}
+# M1d (art #196, the axolotl's fixes from the fresh critic): `bust_round` (each breast's tip rounded, its volume kept);
+# inside `arm_thicken` the optional `widths` and `width_clamp` (the arm toward target front widths), inside
+# `fingers.shape` the optional `thumb_thick` (the thumb thicker); the older files have none
+KEYS_M1D = {"bust_round"}
+ARM_KEYS_M1D = {"widths", "width_clamp"}
+SHAPE_KEYS_M1D = {"thumb_thick"}
+# M1e (art #196, the axolotl's M1d regressions): inside `arm_thicken` and `smooth_rest` the optional `disp_smooth`
+# (the step's displacement field smoothed over the mesh before it is applied: no face folds over), in `arm_thicken`
+# also `rounds` (measure, scale, smooth, repeated: the widths reached despite the smoothing); the older files have none
+ARM_KEYS_M1E = {"disp_smooth", "rounds"}
+SMOOTH_KEYS_M1E = {"disp_smooth"}
+# M1f (art #196, the axolotl's last leftovers): `seam_band` (the steps' smoothed moves held off the seam), `relax`
+# (the vertex spacing relaxed in spheres after the shape steps); the older files have none
+KEYS_M1F = {"seam_band", "relax"}
+
+
+# R1 (art #196): every nested table's keys, the ones the build reads (alien_meshy_body.py, alien_meshy_fix_geom.py);
+# `bends` is a list of tables, each checked against "bends[]". A key outside its set fails `load` (a typo would
+# otherwise do nothing)
+NESTED_KEYS = {
+    "hand": {"wrist", "scale", "blend"},
+    "bust": {"centre", "push", "radius"},
+    "smooth": {"spheres"} | SMOOTH_KEYS_M2B,
+    "smooth_after": {"spheres"},
+    "smooth_rest": {"spheres"} | SMOOTH_KEYS_M2B | SMOOTH_KEYS_M1E,
+    "weight_smooth": {"factor", "repeat", "zones"},
+    "degenerate": {"dist", "ring_merge"},
+    "arm_thicken": {"band_z", "from_x", "profile", "slab", "waist_z", "y_power"} | ARM_KEYS_M1D | ARM_KEYS_M1E,
+    "fingers": {"crease_window", "half", "min_part", "palm_r", "palm_smooth", "sigma", "slice", "step",
+                "thumb_half", "thumb_mcp_back", "thumb_sigma", "tip_inset"} | FINGER_KEYS_M1C | FINGER_KEYS_M2B,
+    "fingers.shape": {"ramp", "slim", "tip", "tip_len", "thumb_shorten"} | SHAPE_KEYS_M1D,
+    "bends[]": {"parent", "child", "mid_x", "radius", "width", "fade", "inside", "inside_width", "margin", "offset",
+                "tilt"},
+    "notch": {"box", "depth_smooth", "medial", "passes", "r"},
+    "seat": {"depth", "fade_x", "fade_z", "ramp", "x", "z"},
+    "bust_round": {"at", "blend", "box", "front", "r", "sigma", "pick"},
+    "relax": {"mu", "normal", "spheres", "tangent"},
+}
+
+
+def _nested(d: dict, path: str):
+    """The tables at a NESTED_KEYS path ("a.b", "a[]"), each with its name."""
+    head, _, rest = path.partition(".")
+    many = head.endswith("[]")
+    v = d.get(head[:-2] if many else head)
+    if v is None:
+        return []
+    items = v if many else [v]
+    name = head
+    out = []
+    for i, t in enumerate(items):
+        if not isinstance(t, dict):
+            raise ValueError(f"{name}{f' {i}' if many else ''} is not a table")
+        out += [(f"{name}.{n}" if rest else name, x) for n, x in _nested(t, rest)] if rest else [(name, t)]
+    return out
+
+
+def load(path: str | Path) -> dict:
+    """A Meshy body target file (alien_meshy_targets/*.toml), its keys and its nested tables' keys checked."""
+    d = tomllib.loads(Path(path).read_text(encoding="utf-8"))
+    bad = set(d) - KEYS - KEYS_M1B - KEYS_M1C - KEYS_M2 - KEYS_M2B - KEYS_M1D - KEYS_M1F
+    if bad:
+        raise ValueError(f"unknown keys {sorted(bad)}")
+    missing = KEYS - set(d)
+    if missing:
+        raise ValueError(f"missing keys {sorted(missing)}")
+    for p, allowed in NESTED_KEYS.items():
+        for name, t in _nested(d, p):
+            bad = set(t) - allowed
+            if bad:
+                raise ValueError(f"unknown keys in {name}: {sorted(bad)}")
+    return d
+
+
+def sstep(a: float, b: float, x: float) -> float:
+    """0 at or below a, 1 at or above b, smooth between."""
+    if b == a:
+        return 0.0 if x < a else 1.0
+    t = min(1.0, max(0.0, (x - a) / (b - a)))
+    return t * t * (3.0 - 2.0 * t)
+
+
+def interp(xs: list[float], ys: list[float], x: float) -> float:
+    """Piecewise linear through (xs, ys), xs increasing; straight on past both ends (the end segments' slopes)."""
+    if len(xs) != len(ys) or len(xs) < 2:
+        raise ValueError("two or more points")
+    i = 1
+    while i < len(xs) - 1 and x > xs[i]:
+        i += 1
+    x0, x1, y0, y1 = xs[i - 1], xs[i], ys[i - 1], ys[i]
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+
+
+def z_to_rig(wrap_z: list[list[float]], z: float) -> float:
+    """A Meshy height in the rig's frame (WRAP_Z's pairs [rig, meshy], inverted)."""
+    return interp([p[1] for p in wrap_z], [p[0] for p in wrap_z], z)
+
+
+def z_to_meshy(wrap_z: list[list[float]], z: float) -> float:
+    """A rig height in the Meshy frame."""
+    return interp([p[0] for p in wrap_z], [p[1] for p in wrap_z], z)
+
+
+def soft_box(p, box: list[float], margin: float) -> float:
+    """1 inside [x0, x1, y0, y1, z0, z1], falling to 0 over `margin` outside each face."""
+    w = 1.0
+    for k in range(3):
+        lo, hi = box[2 * k], box[2 * k + 1]
+        w *= sstep(lo - margin, lo, p[k]) * (1.0 - sstep(hi, hi + margin, p[k]))
+    return w
+
+
+def soft_sphere(p, c, r: float) -> float:
+    """1 at the centre, 0 at and beyond r: (1 - (d / r)^2)^2."""
+    d2 = sum((p[k] - c[k]) ** 2 for k in range(3)) / (r * r)
+    return (1.0 - d2) ** 2 if d2 < 1.0 else 0.0
+
+
+def hand_factor(x: float, wrist: float, scale: float, blend: float) -> float:
+    """The hand's scale at |x| (Meshy frame): 1 up to the wrist, `scale` from wrist + blend on, smooth between."""
+    return 1.0 + (scale - 1.0) * sstep(wrist, wrist + blend, x)
+
+
+def hand_x(x: float, wrist: float, scale: float, blend: float, steps: int = 64) -> float:
+    """The scaled hand's |x|: the wrist plus the integral of hand_factor from the wrist (monotone, no fold)."""
+    if x <= wrist:
+        return x
+    h = (x - wrist) / steps
+    return wrist + sum(hand_factor(wrist + (i + 0.5) * h, wrist, scale, blend) for i in range(steps)) * h
+
+
+def neck_factor(z: float, z0: float, ring_z: float, k: float) -> float:
+    """The neck's xy scale about its axis (rig frame): 1 at and below z0, k at the ring, smooth between."""
+    return 1.0 + (k - 1.0) * sstep(z0, ring_z, z)
+
+
+def bust_push(p, n, centre, push: float, radius: float) -> float:
+    """The chest's forward push (m, along -y) of a vertex at p with normal n: `push` at the centre [x, z] (each side,
+    mirrored), falling to 0 at `radius` in the xz plane, only on front-facing vertices (n.y < 0)."""
+    dx, dz = abs(p[0]) - centre[0], p[2] - centre[1]
+    d2 = (dx * dx + dz * dz) / (radius * radius)
+    if d2 >= 1.0 or n[1] >= 0.0:
+        return 0.0
+    return push * (1.0 - d2) ** 2 * min(1.0, -n[1] / 0.5)
+
+
+def pre_ratio(tris: int, target: int) -> float:
+    """The first collapse ratio (the whole Meshy mesh down to about `target` triangles), at most 1."""
+    if tris <= 0 or target <= 0:
+        raise ValueError("positive counts")
+    return min(1.0, target / tris)
+
+
+def body_ratio(body_tris: int, target: int, protected: int = 0) -> float:
+    """The collapse ratio that brings a cut body of body_tris to about target, `protected` of them kept."""
+    if body_tris <= protected or target <= 0:
+        raise ValueError("nothing to collapse")
+    return min(1.0, max(0.0, target / body_tris))
+
+
+def angle_deg(a, b) -> float:
+    """The angle between two 3-vectors in degrees."""
+    dot = sum(a[k] * b[k] for k in range(3))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(x * x for x in b))
+    return math.degrees(math.acos(max(-1.0, min(1.0, dot / (na * nb)))))
