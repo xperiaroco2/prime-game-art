@@ -574,13 +574,6 @@ def outer_plate_outlines() -> list:
         lo = cut(s, g / 2, hw)
         hi = cut(gaps[k + 1][0], -gaps[k + 1][1] / 2, hw) if k + 1 < len(gaps) else cut(spine_length(), 0.0, hw)
         out.append([lo[0], lo[1], hi[1], hi[0]])
-    if DIMS["outer"].get("tip") == "t2":  # a thin slit across the end face toward the crystal
-        w, dn, _lift = DIMS["outer"]["tip_t2"]["slit"]
-        (pr, ph), (tr, th), (nr, nh) = spine(spine_length())
-        def at(a, b):
-            return (pr + nr * a - tr * b, ph + nh * a - th * b)
-        lo0, lo1, hi1, hi0 = out[-1]
-        out[-1] = [lo0, lo1, hi1, at(w / 2, 0.0), at(w / 2, dn), at(-w / 2, dn), at(-w / 2, 0.0), hi0]
     return out
 
 
@@ -592,6 +585,22 @@ def steps(bm, face, seq: list, scale: float = 1.0) -> None:
     c = face.calc_center_median()
     for v in face.verts:
         v.co = c + (v.co - c) * scale
+    face.material_index = 4
+
+
+def slot(bm, face, a_mid: float, width: float, depth: float, end: float) -> None:
+    """antennas-2b t2: a closed lit slot across the tip's end face toward the crystal: inset end cm from every edge
+    (the chamfer's width and a margin, so it stops short of the plate's sides: 2b's notch ran out through them and
+    read as a "C" bite), narrowed to width cm across the middle line, sunk depth cm; its floor cyan."""
+    bmesh.ops.inset_individual(bm, faces=[face], thickness=end * CM, depth=0.0)
+    _p, _t, (nr, nh) = spine(spine_length())
+    nw = Vector((nr if a_mid > 0 else -nr, 0.0, nh)).normalized()
+    c = face.calc_center_median()
+    half = max(abs((v.co - c).dot(nw)) for v in face.verts)
+    for v in face.verts:
+        x = (v.co - c).dot(nw)
+        v.co -= nw * x * (1.0 - (width / 2) * CM / half)
+    bmesh.ops.inset_individual(bm, faces=[face], thickness=0.0, depth=-depth * CM)
     face.material_index = 4
 
 
@@ -632,9 +641,11 @@ def build_outer_plates(bm) -> None:
     for a_mid in SIDES:
         for k, prof in enumerate(outlines):
             faces = xprism(bm, prof, a_mid, plate_sizes()[k][1])
-            if k == len(outlines) - 1 and o.get("tip", "r2") in ("r2", "t1"):
+            if k == len(outlines) - 1 and o.get("tip", "r2") in ("r2", "t1", "t2"):
                 bmesh.ops.recalc_face_normals(bm, faces=faces)
-                if o.get("tip", "r2") == "r2":
+                if o.get("tip") == "t2":
+                    slot(bm, faces[2], a_mid, *o["tip_t2"]["slit"])
+                elif o.get("tip", "r2") == "r2":
                     pocket(bm, faces[2], *o["emitter"])
                 else:
                     steps(bm, faces[2], o["tip_t1"], o["tip_t1_scale"])
@@ -655,13 +666,6 @@ def build_outer_cores(bm) -> None:
             hw, dp = min(sizes[max(k - 1, 0)], sizes[k])  # under a tapered plate the smaller
             lo, hi = cut(s, -g / 2 - 0.3, hw - ins), cut(s, g / 2 + 0.3, hw - ins)
             xprism(bm, [lo[0], lo[1], hi[1], hi[0]], a_mid, dp - ins)
-        if o.get("tip") == "t2":  # the slit's core, just in front of the notch's floor
-            w, dn, lift = o["tip_t2"]["slit"]
-            (pr, ph), (tr, th), (nr, nh) = spine(spine_length())
-            q = [(pr + nr * a - tr * b, ph + nh * a - th * b)
-                 for a, b in ((-w / 2 - 0.2, dn + 0.3), (w / 2 + 0.2, dn + 0.3), (w / 2 + 0.2, dn - lift),
-                              (-w / 2 - 0.2, dn - lift))]
-            xprism(bm, q, a_mid, sizes[-1][1] - 0.3)
         if o.get("tip") == "t3":  # the lit ring under the bezel and the lens on it
             a, b, gap, rw = o["tip_t3"]
             lens_disc(bm, a_mid, a + gap + rw, b + gap + rw, 0.1)

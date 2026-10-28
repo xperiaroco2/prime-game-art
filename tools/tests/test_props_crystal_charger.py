@@ -116,9 +116,10 @@ class ChargerDrawing(unittest.TestCase):
         self.assertEqual(len(t2["taper"]), len(t2["depth"]))
         self.assertEqual(sorted(t2["taper"], reverse=True), t2["taper"])
         self.assertEqual(sorted(t2["depth"], reverse=True), t2["depth"])
-        w, dn, lift = t2["slit"]
+        w, depth, end = t2["slit"]
         self.assertLess(w, 2 * hw * t2["taper"][-1] - 2.0)
-        self.assertTrue(0.0 < lift < dn)
+        self.assertTrue(0.0 < depth < 1.0)
+        self.assertGreater(end, 0.45)  # a closed slot: it stops short of the plate's chamfered sides
         # the tip's emitter (r2, kept as a variant) recessed in its face: a frame, a sloped wall, the floor
         frame, run, depth = o["emitter"]
         self.assertGreater(depth, 0.0)

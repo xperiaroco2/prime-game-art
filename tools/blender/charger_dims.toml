@@ -132,10 +132,11 @@ tip = "t2"                       # antennas-2b: the tip's end: r2 (emitter above
 tip_t1 = [[1.0, 0.8], [1.4, 0.0], [0.8, -0.7], [0.8, 0.0], [0.6, -0.7]]   # a closed chamfered cap: insets in
                                  # turn [thickness, depth] (out +), a small cyan face deep in a stepped bevel
 tip_t1_scale = 0.65               # the cyan face scaled about its centre (r2b t1a: 9.3 x 5.6, 30% of the face, read big)
-tip_t2 = { taper = [0.86, 0.72, 0.58], depth = [0.92, 0.84, 0.76], slit = [0.8, 1.0, 0.55] }   # the last
-                                 # plates narrower (across, along d), a lit slit across the end face toward the
-                                 # crystal: its width, its depth, its core's face out of the slit's floor (phase A
-                                 # [0.5, 0.9, 0.15]: a touch brighter and wider so the tip reads as a glowing end)
+tip_t2 = { taper = [0.86, 0.72, 0.58], depth = [0.92, 0.84, 0.76], slit = [0.8, 0.45, 0.6] }   # the last
+                                 # plates narrower (across, along d), a closed lit slot across the end face toward
+                                 # the crystal: its width, its cyan floor's depth, its inset from the face's edges
+                                 # (the chamfer 0.45 and a margin); 2b's slit (0.8 wide, its glow 0.45 in) ran out
+                                 # through the plate's sides and read as a "C" bite; phase A 0.5 wide, 0.75 in
 tip_t3 = [2.0, 2.8, 0.6, 0.3]    # an oval lens on a closed end face: half axes (across, along d), the bronze
                                  # bezel round it, the thin lit ring round that
 
