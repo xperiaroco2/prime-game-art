@@ -1,0 +1,209 @@
+# The photo poses on the alien (art #196; prime-game docs/GDD.md section 8 "Photo"): held poses in two layers, the
+# legs (Root, Hips, Spine, the legs to the toes) and the arms (Chest up: the neck, head, shoulders, arms, fingers).
+# Read by tools/blender/alien_pose_math.py; docs/animations.md, "The photo poses (art #196)".
+#
+# Directions are (out, fwd, up): "out" toward the side the bone is on, the character's front, world up. The legs
+# are in the world's axes; the arms in the chest's (they follow the legs' Spine). Lengths: `ankle`, `shift` and
+# `drop` in leg lengths (thigh + shin), an arm's `offset` in hand lengths (wrist to the middle finger's tip).
+# Turns: [pitch, roll, yaw] degrees (pitch + leans forward, roll + toward the side's out, yaw + turns toward it).
+
+reference_legs = "Stand"      # the arms are solved over these legs (their Spine at rest)
+
+[set]
+out = "poses"
+raw_base = "research/2026-10-22-roster/design/pilot3d/anim_bare"
+build = "loco/f3/build"       # the characters the poses go on: <raw_base>/<build>/<char>/<char>_char.blend
+chars = ["chameleon", "axolotl"]
+starting = [["OneLeg", "Plane"], ["Lunge", "FingerUp"], ["Kneel", "Heart"], ["Squat", "Flex"],
+            ["Sit", "HandsBehindHead"], ["Stand", "HandsOnHips"]]
+lopsided = ["OneLeg", "Kneel", "Lunge", "FingerUp", "Salute"]  # a label in the silhouette table's left/right line
+                                                               # (their facing should read), not a check
+
+[limits]
+floor_cm = 0.5        # the lowest skin point within this of the floor
+support_cm = 1.0      # skin within this of the lowest point makes the support area
+com_margin_cm = 1.0   # the centre of mass at least this far inside the support area (the standing poses)
+balance_legs = ["Stand", "OneLeg", "Squat", "Lunge", "Kneel"]
+through_cm = 1.5      # skin through skin (the tube proxy's own error on the rest skin is in the report)
+through_hand_cm = 0.5 # a hand or forearm into the body: the hand's proxy reads 0.0 cm on the rest skin
+proxy_hand_cm = 1.5   # a hand's or forearm's depth where no skin of b's is within TOUCH_CM (proxy_cm: the tube's
+                      # bulge past the skin, s11 at most 0.74 cm): past this it fails all the same (review 3)
+mark_cm = 6.0        # a hand on a landmark (the hip hand on the waist's side): the palm's centre within this
+                     # (round 2: the hand 0.8 cm off the waist, the fingers turned out with the belly, s6 grid)
+variant_mark_cm = 10.0 # a hip hand's per-legs variant (moved off the waist to clear a raised thigh): within this
+                     # (review 2: Sit's 23 cm read no failure; beyond it the pair is a named failure the game avoids)
+contact_gap_cm = 1.0  # a contact's skin gap (hand to hip, index tip to index tip) at most this
+flat_cm = 1.0         # a planted foot (no foot_pitch): its heel's and ball's lowest skin both within this of the floor
+
+# [a, b]: how deep a's skin goes into b's volume (b's bone tubes)
+through_pairs = [
+  ["hand_Left", "torso"], ["hand_Right", "torso"], ["forearm_Left", "torso"], ["forearm_Right", "torso"],
+  ["upperarm_Left", "torso"], ["upperarm_Right", "torso"], ["hand_Left", "head"], ["hand_Right", "head"],
+  ["forearm_Left", "head"], ["forearm_Right", "head"],
+  ["hand_Left", "thigh_Left"], ["hand_Right", "thigh_Right"], ["forearm_Left", "thigh_Left"],
+  ["forearm_Right", "thigh_Right"], ["thigh_Left", "torso"], ["thigh_Right", "torso"], ["thigh_Left", "thigh_Right"],
+  ["shin_Left", "thigh_Left"], ["shin_Right", "thigh_Right"],
+]  # thigh, upper arm, shin: the depth beyond the rest's (through_depth). Hand into hand is judged on the
+#   close-ups: the hand's tube (a short bone under curled fingers) misreads. Not measured (review 3): an arm into a
+#   shin, an upper arm into a thigh, a hand into the other side's thigh (Flex, Heart, Plane on Squat, Sit, Kneel):
+#   judged on the close-ups
+
+# ------------------------------------------------------------------------------------------------- the grips
+# per finger [base, middle, tip] curl in degrees (the thumb: metacarpal, proximal, distal); `all` for the rest
+[grips.relaxed]
+all = [16, 22, 12]
+Thumb = [6, 10, 8]
+spread = 2
+[grips.flat]
+all = [8, 10, 6]
+Thumb = [0, 4, 4]
+[grips.hip]  # round 3 s11: the fingers wrap the waist (s10's [8, 10, 6] stood 11 cm off it: a limp, dangling hand)
+all = [36, 46, 32]
+Thumb = [-20, 0, 4]
+spread = 3
+[grips.fist]
+all = [82, 96, 62]
+Thumb = [28, 38, 34]
+[grips.point]
+all = [82, 96, 62]
+Index = [0, 2, 0]
+Thumb = [28, 38, 34]
+[grips.open]  # round 2: less spread, a soft curl (s6's straight spread fingers read as a rake from the side)
+all = [12, 16, 12]
+Thumb = [-2, 6, 6]
+spread = 3
+[grips.palm]  # round 3: PalmsOut, the fingers together and slightly curved
+all = [8, 12, 8]
+Thumb = [-2, 6, 6]
+[grips.salute]
+all = [6, 6, 2]
+Thumb = [14, 8, 4]
+[grips.heart]
+all = [40, 50, 35]
+Index = [35, 50, 40]
+Thumb = [10, 20, 10]
+
+# ---------------------------------------------------------------------------------------------- the legs (6)
+# a leg: mode "plant" (the ankle's goal at its rest place + `ankle` [out, fwd], the foot turned by toe_out,
+# foot_pitch (+ toes up) and foot_roll, its height solved so the sole meets the floor, the knee toward `knee`),
+# "fk" (thigh, shin directions, `foot` the ankle-to-ball direction) or "kneel" (thigh, `foot`, the shin's pitch
+# solved so the ball of the foot is on the floor, the toes laid flat). hips.fit: groups whose lowest skin goes onto
+# the floor (the kneeling knee, the seat). `floor`: groups that must touch the floor (measured).
+[legs.Stand]
+hips = { drop = 0.004 }
+both = { mode = "plant", ankle = [0.02, 0.0], toe_out = 7, knee = [0.0, 1.0, 0.0] }
+floor = ["foot_Left", "foot_Right"]
+
+[legs.OneLeg]
+hips = { drop = 0.01, shift = [0.12, 0.0], turn = [0, 3, 0] }
+Left = { mode = "plant", ankle = [-0.04, 0.0], toe_out = 6, knee = [0.0, 1.0, 0.0] }
+Right = { mode = "fk", thigh = [0.4, 0.8, 0.12], shin = [-0.3, -0.15, -1.0], foot = [-0.05, 0.7, -0.7] }
+floor = ["foot_Left"]
+
+[legs.Squat]
+hips = { drop = 0.56, shift = [0.0, -0.08], turn = [14, 0, 0] }
+spine = { turn = [-4, 0, 0] }
+both = { mode = "plant", ankle = [0.22, 0.04], toe_out = 28, knee = [0.75, 0.7, 0.0] }
+floor = ["foot_Left", "foot_Right"]
+
+[legs.Kneel]
+hips = { drop = 0.45, turn = [-4, 0, 0], fit = ["shin_Right"] }
+spine = { turn = [4, 0, 0] }
+Right = { mode = "kneel", thigh = [0.05, -0.08, -1.0], foot = [0.0, -0.25, -1.0] }
+Left = { mode = "plant", ankle = [0.1, 0.55], toe_out = 10, knee = [0.35, 1.0, 0.3] }  # the knee a little out: off the belly
+floor = ["shin_Right", "foot_Right", "foot_Left"]
+
+[legs.Lunge]
+hips = { drop = 0.32, shift = [-0.4, 0.0], turn = [6, -4, 0] }
+Right = { mode = "plant", ankle = [0.36, 0.0], toe_out = 35, knee = [0.6, 0.8, 0.0] }
+Left = { mode = "plant", ankle = [0.37, 0.0], toe_out = 12, knee = [0.0, 1.0, 0.2] }
+floor = ["foot_Left", "foot_Right"]
+
+[legs.Sit]
+# round 3: the pelvis rolled back 6 degrees more and the feet 0.14 leg further out: the knees 7 cm lower, the thighs'
+# front off the belly (thigh>torso 2.99 -> 1.28 cm; the head 5 cm behind the hips, still upright)
+hips = { drop = 0.6, turn = [-10, 0, 0], fit = ["torso", "thigh_Left", "thigh_Right"] }
+spine = { turn = [4, 0, 0] }
+both = { mode = "plant", ankle = [0.12, 0.92], toe_out = 8, foot_pitch = 50, knee = [0.3, 0.0, 1.0] }
+floor = ["torso", "foot_Left", "foot_Right"]
+
+# ---------------------------------------------------------------------------------------------- the arms (8)
+# an arm: mode "fk" (upper, lower directions) or "goal" (the wrist at the landmark `at` + `offset`, the elbow toward
+# `elbow`; `touch`: the hand's skin brought to gap_cm of that group's along `push`); the hand: `fingers_dir` (wrist
+# to fingers), `palm` (the palm's normal), `grip`; `shoulder` a turn of the shoulder bone; `clear`: groups the hand
+# is lifted out of (up the chest) after the touch, and a legs pose whose raised thigh the shared clip's hand goes into
+# gets this arms pose's own variant, PoseArms_<Arms>__<Legs>, solved over it (Model.variants), the wrist moved along
+# `clear_dir` (default up the chest) and the arm's `variant` table on top; contacts: measured skin
+# gaps; solve = "meet" moves both hands toward each other until a and b touch.
+[arms.HandsOnHips]
+# round 3 s11: the elbows back (were [1.0, -0.6, 0.0]): the left/right outline apart from Salute's hip arm, the wrist
+# straighter (the hand to the forearm 89 -> 67 degrees)
+both = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [0.8, -1.3, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2] } }
+contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Right", b = "torso" },
+            { a = "hand_Left", mark = "waist_Left" }, { a = "hand_Right", mark = "waist_Right" }]
+
+[arms.Plane]
+Left = { mode = "fk", upper = [1.0, -0.42, 0.26], lower = [1.0, -0.38, 0.24], fingers_dir = [1.0, -0.36, 0.22], palm = [0.0, 0.0, -1.0], grip = "flat" }
+Right = { mode = "fk", upper = [1.0, -0.42, -0.26], lower = [1.0, -0.38, -0.28], fingers_dir = [1.0, -0.36, -0.30], palm = [0.0, 0.0, -1.0], grip = "flat" }
+
+[arms.Flex]
+# round 3 s11: the upper arms more forward (were [1.0, 0.4, 0.12], lower [0.05, 0.25, 1.0]): from the side the fists
+# stand in front of the head line, apart from HandsBehindHead's elbows
+both = { mode = "fk", upper = [0.9, 0.7, 0.12], lower = [0.05, 0.35, 1.0], fingers_dir = [-0.2, 0.2, 1.0], palm = [-1.0, 0.0, 0.0], grip = "fist" }
+
+[arms.Heart]
+# round 3 s11: the elbows lifted to the hands' height (were [1.0, -0.3, -0.3]): the V of the heart from the side
+both = { mode = "goal", at = "chest_front", offset = [0.4, 1.0, 0.25], elbow = [1.0, -0.1, 0.05], fingers_dir = [-0.6, 0.2, 0.8], palm = [0.0, -1.0, 0.0], hand_roll = 55, grip = "heart" }
+contacts = [{ a = "LeftIndexDistal", b = "RightIndexDistal", solve = "meet", gap_cm = 0.2 }, { a = "LeftThumbDistal", b = "RightThumbDistal" }]
+
+[arms.FingerUp]
+# FingerUp's and Salute's hip hand keep s10's elbow [1, -0.6, 0] with s11's hip curl (review 3: wrist bend 88.7 deg
+# vs HandsOnHips' 67; mark 5.0 cm, gap 0.55 cm): on close_arms s11 the hand wraps the waist, not limp; the elbow
+# stays apart from HandsOnHips' (pulled back) so the left outlines differ
+Head = [-8, 9, 0]
+Right = { mode = "fk", shoulder = [0, 8, 0], upper = [0.45, 0.35, 1.0], lower = [0.15, 0.3, 1.0], fingers_dir = [0.05, 0.25, 1.0], palm = [-0.6, 0.8, 0.0], grip = "point" }
+Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2] } }
+contacts = [{ a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
+
+[arms.HandsBehindHead]
+# round 3 (s9 grid): the shoulders shrugged up lift the elbows toward the ears, wide (27 cm out), the forearms going
+# back behind the skull under the crest; the axolotl's wider head has its own wrists (`[chars.axolotl]` below)
+both = { mode = "goal", at = "head_back", shoulder = [0, -30, 0], offset = [0.4, -0.2, -0.3], elbow = [1.0, 0.3, 0.8], fingers_dir = [-1.0, -0.2, 0.3], palm = [0.0, 1.0, 0.0], grip = "relaxed", touch = ["head"], push = [-0.3, 1.0, 0.0], gap_cm = 0.8 }
+contacts = [{ a = "hand_Left", b = "head" }, { a = "hand_Right", b = "head" }]
+
+[arms.PalmsOut]
+# round 3: the palms to the camera at about shoulder height, a little forward and out, the elbows bent and low,
+# the fingers together (s7's hands beside the head with spread fingers read as "hands up")
+# s11: the arms further forward (were upper [0.65, 0.35, -0.7], lower [0.3, 0.45, 0.85]): apart from Heart from the side
+both = { mode = "fk", upper = [0.6, 0.6, -0.6], lower = [0.25, 0.7, 0.7], fingers_dir = [0.2, 0.35, 1.0], palm = [0.1, 1.0, -0.1], grip = "palm" }
+
+[arms.Salute]
+# round 3 s11: the saluting elbow clearly forward (was [0.8, 0.9, -0.1]): the left/right outline apart from HandsOnHips
+Right = { mode = "goal", at = "brow", offset = [0.8, 0.6, 0.2], elbow = [0.5, 1.2, -0.1], fingers_dir = [-0.8, -0.5, 0.25], palm = [0.0, 0.45, -1.0], grip = "salute", touch = ["head"], push = [-0.8, -0.6, 0.0], gap_cm = 0.6 }
+Left = { mode = "goal", at = "waist", offset = [0.1, -0.3, 0.2], elbow = [1.0, -0.6, 0.0], fingers_dir = [0.6, 0.7, -0.35], palm = [-1.0, 0.0, 0.0], grip = "hip", touch = ["torso"], touch_by = "{side}Hand", push = [-1.0, 0.0, 0.0], gap_cm = 0.5, clear = ["thigh_{side}"], clear_dir = [0.0, -1.0, 0.2], variant = { fingers_dir = [0.6, 0.7, -0.2] } }
+contacts = [{ a = "RightIndexDistal", b = "head" }, { a = "hand_Left", b = "torso" }, { a = "hand_Left", mark = "waist_Left" }]
+
+# round 3 (s10 grid on OneLeg and Kneel): the variants' fingers turned out with the belly like the shared clip's, a
+# little less down ([0.6, 0.7, -0.2], were level forward [0.1, 0.85, -0.05]: their tips 2.3 to 3.2 cm into the belly)
+# round 3: on these legs the hip hand's per-legs variant (PoseArms_<Arms>__<Legs>) rests on the top of its thigh by
+# the hip crease, not on the waist (Model._arm_thigh); measured as a contact with the thigh (gap and through)
+# s11: also the raised thigh's hand on OneLeg (the right) and Kneel (the left, the knee up), `sides`: their waist variant
+# went 1.1-1.7 cm into the belly (s10); the hand flat (s10's relaxed grip read as a pinch on the thigh)
+[thigh_hand]
+legs = ["Squat", "Sit", "OneLeg", "Kneel"]
+sides = { OneLeg = ["Right"], Kneel = ["Left"] }  # only the raised thigh's side; default both
+along = { Squat = 0.25, Sit = 0.55, OneLeg = 0.45, Kneel = 0.45 }  # of the way from the hip to the knee (the wrist)
+lift = 0.3
+fingers_add = [0.4, 0.0, 0.0]
+palm = [0.0, 0.0, -1.0]
+elbow = [1.0, -0.8, 0.0]
+push = [0.0, 0.0, -1.0]
+gap_cm = 0.4
+grip = "flat"
+
+# ------------------------------------------------------------------------------------- per character (round 3)
+# a [chars.<char>] table is merged over the shared data for that character only (alien_pose_math.for_char)
+[chars.axolotl.arms.HandsBehindHead.both]  # the wider head: the wrists further out and back, the elbows back
+shoulder = [0, -15, 0]  # its eyes sit lower on the head: a smaller shrug already puts the elbows at the ears
+offset = [0.6, -0.5, -0.3]
+elbow = [1.0, -0.3, 0.8]
