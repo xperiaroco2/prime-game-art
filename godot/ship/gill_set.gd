@@ -8,7 +8,9 @@ extends Node
 ##   over open slits too;
 ## - press(): flips the slit under the white bar (shut opens with a puff of steam, open shuts again);
 ## - all five open: a big steam cloud that stays (GPUParticles3D, emitting while all are open).
-## Each niche lights the wall round it with a shadowless omni in front of it (no specular hot spot).
+## Each niche lights the wall round it with a shadowless omni in front of it (no specular hot spot); an open one also
+## spills a soft cyan glow onto the wall on its mouth side (an additive sprite, the picture's haze). A dim warm spot
+## washes the wall (shadowless, aimed at the slits' band, off the plinth). The button's ring glows cyan.
 ## API: setup(piece), step(delta), press() -> "open" / "shut", pose(open, runner), reset(), info(); `time_scale` scales
 ## the steam (the proof's frame-by-frame render sets it from the real frame time).
 
@@ -24,9 +26,18 @@ const DEMO_S := 14.0
 # "floor" at the scoop's bottom, "power" the rim's falloff), else the three bands' energies; "albedo" the niches' base
 # colour x (dark inside); bars and the groove saturated (their base colour a tenth of the glow)
 # The pick (grid_sheet.png, variant "dark"): dark bands with a saturated lip, the closest to set_plate.jpg's dark scoops
+# step 3 (a short look pass): an open niche as strong as a shut one ("cyan" a deeper cyan; "cyan_<part>" its energies'
+# factor once open), its haze on the wall ("spill" the sprite's strength, "spill_side" its offset toward the mouth,
+# "spill_w" x the niche's width; "cyan_light" the omni's factor once open), "warm" the wall's warm wash, "btn" the
+# button ring's energy, the all-open cloud ("cloud" its strength) drifting toward the mouth and down ("drift").
+# The pick (grid_sheet.png step 3, "deep_mid"): a deeper cyan at middle energies (brighter, AgX greys it toward white),
+# the strips matte; the warm wash 2.5
 const LOOK: Dictionary = {"grad": false, "rim": 1.5, "floor": 0.04, "power": 1.5, "scoop": 0.03, "glow": 0.15,
-	"edge": 1.0, "albedo": 0.015, "bar": 0.8, "white": 1.8, "groove": 0.8, "light": 0.12, "light_range": 0.75,
-	"light_out": 0.16, "puff": 0.55, "cloud": 0.42}
+	"edge": 1.0, "albedo": 0.015, "bar": 0.8, "white": 1.8, "groove": 0.7, "light": 0.12, "light_range": 0.75,
+	"light_out": 0.16, "puff": 0.55, "cloud": 0.3, "drift": 1.6, "cyan": [0.0, 0.7, 1.0], "cyan_scoop": 3.0,
+	"cyan_glow": 5.0, "cyan_edge": 2.0, "cyan_bar": 0.85, "cyan_light": 1.6, "spill": 0.3, "spill_side": 0.07,
+	"spill_w": 1.6, "warm": 2.5, "warm_specular": 0.35, "btn": 1.0}
+const WARM := Color(1.0, 0.64, 0.38)
 const NICHE_SHADER := """
 shader_type spatial;
 uniform vec3 colour : source_color = vec3(1.0, 0.12, 0.04);
@@ -65,6 +76,10 @@ var _groove: StandardMaterial3D
 var _mix: Array = [0.0, 0.0, 0.0, 0.0, 0.0]   # 0 red .. 1 cyan, easing to open[k]
 var _clock: float = 0.0
 var _mids: Array = []            # per slit the niche's middle on the wall's face, piece space
+var _mouth: Vector3 = Vector3(-1, 0, 0)   # along the wall toward the mouth, piece space
+var _spills: Array = []          # per slit the haze sprite (MeshInstance3D)
+var _warm: SpotLight3D
+var _btn: StandardMaterial3D
 var _sizes: Array = []           # per slit the niche's size (x along, y up)
 
 
@@ -109,7 +124,34 @@ func setup(piece: Node3D) -> void:
 			var n: Vector3 = (glow.global_basis.inverse() * _root.global_basis * _out).normalized()
 			sh.set_shader_parameter("plane_n", n)
 		_shaders.append(sh)
+	if _mids.size() == 5 and absf(_mids[0].x - _mids[4].x) > 0.01:
+		_mouth = Vector3(signf(_mids[0].x - _mids[4].x), 0, 0)
+	for k: int in 5:
+		var sp: MeshInstance3D = MeshInstance3D.new()
+		sp.mesh = QuadMesh.new()
+		sp.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		sp.material_override = _sprite_material()
+		piece.add_child(sp)
+		sp.basis = Basis.looking_at(-_out, Vector3.UP)   # the quad's face (+z) out of the wall
+		_spills.append(sp)
+	_warm = SpotLight3D.new()   # the wall's warm wash: from 1.8 m out at the slits' height, a narrow soft cone
+	var mid3: Vector3 = _mids[2] if _mids.size() == 5 else Vector3.ZERO
+	_warm.position = mid3 + _out * 2.0
+	piece.add_child(_warm)
+	_warm.look_at(piece.to_global(mid3 + Vector3(0, 0.1, 0)), Vector3.UP)
+	_warm.spot_range = 3.4
+	_warm.spot_angle = 38.0
+	_warm.spot_angle_attenuation = 0.5
+	_warm.spot_attenuation = 0.4
+	_warm.shadow_enabled = false
+	_warm.light_color = WARM
 	_groove = _own("groove_glow")
+	_btn = _own("btn_ring")
+	for m: StandardMaterial3D in _bars + [_groove, _btn]:   # the strips matte: no grey reflection over their colour
+		if m != null:
+			m.metallic = 0.0
+			m.metallic_specular = 0.0
+			m.roughness = 1.0
 	reset()
 	set_look({})
 
@@ -118,6 +160,26 @@ func setup(piece: Node3D) -> void:
 func set_look(over: Dictionary) -> void:
 	look = LOOK.duplicate()
 	look.merge(over, true)
+	var cy: Color = _cyan()
+	for k: int in 5:
+		var sz: Vector2 = _sizes[k]
+		var sp: MeshInstance3D = _spills[k]
+		(sp.mesh as QuadMesh).size = Vector2(sz.x * float(look["spill_w"]), sz.y * 1.15)
+		sp.position = _mids[k] + _mouth * float(look["spill_side"]) + _out * 0.012
+		var c: GPUParticles3D = _clouds[k]   # the cloud leaves the slit toward the mouth and sinks
+		var dr: float = float(look["drift"])
+		c.position = _mids[k] + _mouth * 0.06 * dr + _out * 0.04
+		var pm: ParticleProcessMaterial = c.process_material
+		pm.direction = (_out + _mouth * 0.9 * dr + Vector3(0, -0.35 * dr, 0)).normalized()
+		pm.gravity = Vector3(0, -0.02 * dr, 0)
+		var ck: float = float(look["cloud"])
+		((c.draw_pass_1 as QuadMesh).material as StandardMaterial3D).albedo_color = Color(0.55 * ck, 0.9 * ck, 1.0 * ck, 1.0)
+	_warm.light_energy = float(look["warm"])
+	_warm.light_specular = float(look["warm_specular"])
+	if _btn != null:
+		_btn.emission = cy
+		_btn.albedo_color = Color(cy.r * 0.1, cy.g * 0.1, cy.b * 0.1)
+		_btn.emission_energy_multiplier = float(look["btn"])
 	for k: int in 5:
 		for part: String in ["scoop", "glow", "edge"]:
 			var mi: MeshInstance3D = _mesh("gill%d_%s" % [k + 1, part])
@@ -183,16 +245,28 @@ func step(dt: float) -> void:
 	_apply()
 
 
+## LOOK's cyan; its red may be negative (past the gamut, so AgX's inset does not grey it): the glows only, the lights
+## and the haze take it clamped
+func _cyan() -> Color:
+	var v: Array = look["cyan"]
+	return Color(float(v[0]), float(v[1]), float(v[2]))
+
+
+func _lit(c: Color) -> Color:
+	return Color(maxf(c.r, 0.0), maxf(c.g, 0.0), maxf(c.b, 0.0))
+
+
 func _apply() -> void:
+	var cy: Color = _cyan()
 	for k: int in 5:
-		var c: Color = RED.lerp(CYAN, _mix[k])
+		var c: Color = RED.lerp(cy, _mix[k])
 		var al: float = float(look["albedo"])
 		for part: String in _mats[k]:
 			var m: StandardMaterial3D = _mats[k][part]
 			m.emission = c
 			m.albedo_color = Color(c.r * al, c.g * al, c.b * al)
 			m.metallic = 0.0
-			m.emission_energy_multiplier = float(look[part])
+			m.emission_energy_multiplier = float(look[part]) * lerpf(1.0, float(look["cyan_" + part]), _mix[k])
 		var sh: ShaderMaterial = _shaders[k]
 		sh.set_shader_parameter("colour", Vector3(c.r, c.g, c.b))
 		sh.set_shader_parameter("rim", float(look["rim"]))
@@ -200,19 +274,26 @@ func _apply() -> void:
 		sh.set_shader_parameter("power", float(look["power"]))
 		sh.set_shader_parameter("albedo", al)
 		var l: OmniLight3D = _lights[k]
-		l.light_color = c
+		l.light_color = _lit(c)
 		l.omni_range = float(look["light_range"]) * (0.8 + 0.25 * float(_sizes[k].y))
-		l.light_energy = float(look["light"]) * (1.0 + 0.3 * _mix[k])
+		l.light_energy = float(look["light"]) * lerpf(1.0, float(look["cyan_light"]), _mix[k])
+		l.position = _mids[k] + _out * float(look["light_out"]) + _mouth * float(look["spill_side"]) * _mix[k]
+		var s: float = float(look["spill"]) * _mix[k]
+		var sp: MeshInstance3D = _spills[k]
+		var sc: Color = _lit(cy)
+		(sp.material_override as StandardMaterial3D).albedo_color = Color(sc.r * s, sc.g * s, sc.b * s, 1.0)
+		sp.visible = s > 0.001
 		var bar: StandardMaterial3D = _bars[k]
 		if bar != null:
 			var white: bool = k == slit()
-			var bc: Color = WHITE if white else (CYAN if open[k] else RED)
+			var bc: Color = WHITE if white else (cy if open[k] else RED)
 			bar.emission = bc
 			bar.albedo_color = bc if white else Color(bc.r * 0.1, bc.g * 0.1, bc.b * 0.1)
-			bar.emission_energy_multiplier = float(look["white" if white else "bar"])
+			var be: float = float(look["cyan_bar"]) if open[k] and not white else 1.0
+			bar.emission_energy_multiplier = float(look["white" if white else "bar"]) * be
 	if _groove != null:
-		_groove.emission = CYAN
-		_groove.albedo_color = Color(CYAN.r * 0.1, CYAN.g * 0.1, CYAN.b * 0.1)
+		_groove.emission = cy
+		_groove.albedo_color = Color(cy.r * 0.1, cy.g * 0.1, cy.b * 0.1)
 		_groove.emission_energy_multiplier = float(look["groove"])
 
 
@@ -236,6 +317,29 @@ func _own(name: String) -> StandardMaterial3D:
 	var m: StandardMaterial3D = (src as StandardMaterial3D).duplicate() if src is StandardMaterial3D else StandardMaterial3D.new()
 	m.emission_enabled = true
 	mi.material_override = m
+	return m
+
+
+## The haze sprite: a soft radial blob, additive and unshaded, a hair in front of the wall.
+func _sprite_material() -> StandardMaterial3D:
+	var tex: GradientTexture2D = GradientTexture2D.new()
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	var rg: Gradient = Gradient.new()
+	rg.set_color(0, Color(1, 1, 1, 1))
+	rg.set_color(1, Color(1, 1, 1, 0))
+	rg.add_point(0.35, Color(1, 1, 1, 0.55))
+	rg.add_point(0.7, Color(1, 1, 1, 0.12))
+	tex.gradient = rg
+	tex.width = 128
+	tex.height = 128
+	var m: StandardMaterial3D = StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.albedo_texture = tex
+	m.disable_receive_shadows = true
 	return m
 
 

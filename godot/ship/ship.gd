@@ -1039,7 +1039,8 @@ func _gill_anim() -> void:
 	quit(0)
 
 
-## ship.py --gill-set --grid: the look variants on the first camera, posed (open 1-3, the white bar over 4):
+## ship.py --gill-set --grid: the look variants on the first camera, posed (open 1-3, the white bar over 4; or a
+## variant's own [open, at]):
 ## grid/<name>.png and grid_sheet.png beside the request's "ref" (pairs per row).
 func _gill_grid(gs: Node, a: Dictionary) -> void:
 	var cam: Array = a["cams"][0]
@@ -1053,8 +1054,10 @@ func _gill_grid(gs: Node, a: Dictionary) -> void:
 	for v: Array in a["grid"]:
 		gs.reset()
 		gs.set_look(v[1])
-		gs.pose([1, 2, 3], 4)
-		for i: int in 40:
+		var po: Array = v[2] if v.size() > 2 else [[1, 2, 3], 4]   # step 3: a variant's pose (all open: the cloud builds)
+		gs.pose(po[0], int(po[1]))
+		gs.time_scale = 1.0
+		for i: int in (150 if (po[0] as Array).size() == 5 else 40):
 			gs.step(0.0)
 			await process_frame
 		_label.text = String(v[0])

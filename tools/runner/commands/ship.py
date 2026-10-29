@@ -750,17 +750,17 @@ GILL_VIEWS = [  # name, (s, t, back, along, up) eye, (s, t) look, fov, (open, at
     ("cu_groove_left", (1.75, 1.40, 0.6, 0.0, 0.05), (1.75, 1.40), 50.0, MID),
     ("cu_groove_tail", (2.30, 0.75, 0.6, 0.0, 0.1), (2.30, 0.75), 50.0, MID),
     ("cu_bars", (2.8, 1.85, 0.9, 0.0, 0.05), (2.8, 1.85), 55.0, MID),
-    ("cu_button", (3.73, 1.15, 0.5, -0.1, 0.05), (3.73, 1.15), 45.0, MID),
+    ("cu_button", (3.72, 1.15, 0.5, -0.1, 0.05), (3.72, 1.15), 45.0, MID),
 ]
 
 
-# the look grid (step 2): gill_set.gd LOOK overrides; "next" the step-1 handoff's values in bands, "dark" darker bands,
-# "grad" one gradient over the niche (rim to floor), "grad_tight" a narrower, brighter rim
-GILL_GRID = [["next", {"grad": False, "scoop": 0.15, "glow": 0.5, "edge": 1.2}],
-             ["dark", {"grad": False, "scoop": 0.03, "glow": 0.15, "edge": 1.0, "albedo": 0.015}],
-             ["grad", {"grad": True}],
-             ["grad_tight", {"grad": True, "rim": 2.2, "floor": 0.0, "power": 3.0, "albedo": 0.015}],
-             ["grad_soft", {"grad": True, "rim": 1.1, "floor": 0.08, "power": 1.0}]]
+# the look grid (step 3; LOOK holds its pick "deep_mid", after deep_lo, halo and blue_mid lost): gill_set.gd LOOK
+# overrides and an optional pose ([open slits], white bar); "mid" LOOK posed, then the all-open cloud's strength and drift
+ALL_OPEN = [[1, 2, 3, 4, 5], 3]
+# (a grid tile holds the cloud about 2.5 s; the MP4's 6 s build is denser, hence LOOK's 0.3 and drift 1.6)
+GILL_GRID = [["mid", {}], ["cloud_04", {"cloud": 0.4, "drift": 1.0}, ALL_OPEN],
+             ["cloud_06", {"cloud": 0.6, "drift": 1.0}, ALL_OPEN], ["cloud_09", {"cloud": 0.9, "drift": 1.0}, ALL_OPEN],
+             ["cloud_06_drift14", {"cloud": 0.6, "drift": 1.4}, ALL_OPEN]]
 
 
 def gill_set(layout: dict, out: Path, folder: Path, grid: bool = False) -> int:
