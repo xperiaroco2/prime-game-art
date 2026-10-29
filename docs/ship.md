@@ -1547,7 +1547,7 @@ frame. Everything follows the charger look's state and the charge:
   "charging", the conduits' UV, the shaders shipped).
 - Output: `<raw>/ship/v5/charger-zap/` (`pieces/`: charger-traces' with the new `lens_conduits_e/w`; `cycle/`).
 
-## The west lens room's workshop (step 1, 2026-10-29)
+## The west lens room's workshop (steps 1 and 2, 2026-10-29)
 
 The engineer's pick for the west lens room (prime-game#1095: "visually I like the robot repair the most"), built as
 decor from the design's cm drawing (`<raw>/ship/v5/workshop/drawing/index.html`) and its concept `w_c_bot.jpg`
@@ -1558,34 +1558,46 @@ tests: `tools/tests/test_ship_workshop.py`.
 
 | Piece | What | Placed | Triangles |
 |---|---|---|---|
-| `ws_bench`, `ws_bench_open_top`, `ws_bench_open_low` (colliders) | a bench module per facet -109.77..-21.95 (east): graphite toe, bronze body (face d 50), two drawer fronts (h 10..45, 47..82) with lit green pulls, the green strip under the top's overhang, the bronze top d 0..55 to h 90 (continuous across modules), a graphite work mat; `open` leaves a drawer's bay (graphite back, two stiles) | 4 facets | 204 / 192 |
-| `ws_drawer_eyes`, `ws_drawer_limbs` | a drawer pulled out 25 cm on its tray, a raised graphite insert 14 cm under its top: 20 spare eyes (D8, a blue iris, a dark pupil) on the facet a_w 32.9 (top), five spare arms and legs on a_w 98.8 (low) | 1 each | 13008 / 5120 |
-| `ws_cabinet` (collider) | the cradles' cabinet module: toe, body, one drawer, pull, strip, the top d 0..59 to h 55 (the drawing's 60 reached 1 mm over the floor light's bar on the middle vertex) | 2 facets | 124 |
-| `ws_cradle` | a graphite bowl D54 x 18 with a groove and a chamfered lip, the bed D44 with a soft dark cushion dipped in the middle, the green ring on the lip | 2 | 2944 |
-| `ws_sleeper_a`, `_b` | a small robot D28 in its cradle's dip: ivory shell and face ring round a dark core (seams 3 deg), a small satin eye socket with the shut lid's dim green line, two ear discs with a faint green ring, an antenna with a green bead; tilted face-up 22 deg, each rolled and turned its own way | 1 each | 8408 |
-| `ws_robot_body` (collider) | the main robot's dark core (flat mechanism plates at y +-0.19) and its ivory shell band (the sphere D60 at h 145 between the side panels) in four panels with 6 mm seams | 1 | 5424 |
-| `ws_robot` | the eye D16 toward the room (graphite socket ring, dark glass dome, dim cyan iris round the pupil, a glint), the crown knob, the two side panels (45 deg caps) open 30 deg on their back hinges, in each bay a bronze gear and pinion, hub, silver motor and three cables looping out and back, two arms (ivory segments, graphite joints, bronze collars, three bronze claw fingers) hanging to h 95 | 1 | 14856 |
-| `ws_rail` | the bronze box rail 10 x 8 from h 228 on the arc r 105 over a_w 25..110, glossy side lips, end stops, three hangers into the slanted ceiling (theta -100, -67.5, -35 east) with plates; its top stays 1.7..3.5 cm under the ceiling | 1 (room frame) | 1872 |
-| `ws_hoist` | the trolley (20 x 12) under the rail with cheeks and wheel hubs, the cable drum, the steel cable to h 190, a shackle, the clamp (h 177..190) whose three jaws hold the crown's knob | 1 | 1636 |
+| `ws_bench`, `ws_bench_open_top`, `ws_bench_open_low` (colliders) | a bench module per facet -109.77..-21.95 (east): graphite toe and carcass (face d 50), two dark olive-bronze drawer fronts (h 10..45, 47..82) each with a chamfered raised panel and a lit green pull, the green strip under the top's overhang, the dark bronze top d 0..55 to h 90 (continuous across modules) with a glossy bronze nosing, a graphite work mat; `open` leaves a drawer's bay (graphite back, two stiles) | 4 facets | 240 / 228 |
+| `ws_drawer_eyes`, `ws_drawer_limbs` | a drawer pulled out 25 cm on its tray, a raised insert 14 cm under its top topped by a lit green felt liner, a green rim line round the walls' insides: 20 spare eyes (D8, a cyan iris, a dark pupil) on the facet a_w 32.9 (top), four spare forearms with their claws laid in a row (the main robot's arm parts) on a_w 98.8 (low) | 1 each | 13076 / 8436 |
+| `ws_cabinet` (collider) | the cradles' cabinet module, as the bench: toe, graphite body, one drawer front with its panel, pull, strip, the top d 0..59 to h 55 with its nosing (the drawing's 60 reached 1 mm over the floor light's bar on the middle vertex) | 2 facets | 172 |
+| `ws_cradle` | a graphite bowl D54 x 18 with a groove and a chamfered lip, the bed D44 with a padded dark cushion (a fat rolled edge, a dished middle with six sunk tuft buttons, a stitched groove), the green ring on the lip | 2 | 5328 |
+| `ws_sleeper_a`, `_b` | a small robot D28 in its cradle's dip: the main robot's family: an ivory shell band and two closed side shells on 2 mm seams round a dark core, one small layered eye (graphite bezel, dark glass lens D8) shut as a dim green arc, an antenna with a green bead; tilted face-up 22 deg, each rolled and turned its own way | 1 each | 10168 |
+| `ws_robot_body` (collider) | the main robot's dark core (flat mechanism plates at y +-0.205) and its thin ivory shell band (the sphere D60 at h 145 between the side shells) in four panels with 6 mm seams, a dark liner inside | 1 | 9216 |
+| `ws_robot` | the layered eye D16 toward the room (a proud graphite bezel, a bronze trim ring, a dark glass dome, a cyan iris with a brighter inner ring and a dark limbal ring round the pupil, a highlight crescent and a glint), the crown and its knob ball, the two thin side shells (40 deg caps, ivory outside, a matte graphite liner inside) open 32 deg on their back hinges, in each bay a gear train of three with hub caps, two pistons in mounts, a board with chips and a cyan light, a silver motor, two cable loops and three cables hanging under the body to loose plugs (four colours), two arms below the body (shoulder ball in a collar, ivory upper arm, graphite elbow hinge, ivory forearm, wrist ring, a claw of three two-segment fingers) hanging to h 95; every bay part stays inside the shells' sphere | 1 | 27932 |
+| `ws_rail` | the bronze box rail 10 x 8 from h 214 on the arc r 105 over a_w 25..110, glossy side lips, end stops, three hangers (5 x 2 bars, 16..18 cm showing) into the slanted ceiling (theta -100, -67.5, -35 east) with plates; step 2 lowered it 14 cm from the drawing's 228 so the hangers show; it clears the 1.8 m capsule by 34 cm | 1 (room frame) | 1896 |
+| `ws_hoist` | a chunky bronze carriage (30 x 17 x 12) under the rail with cheeks round it and four wheel hubs, a graphite motor drum on its room side, a short thick steel rod (D4.4) with bronze collars, the claw: a bronze hub (h 183..188) and three two-segment fingers on graphite knuckles whose pads grip the crown's knob ball (down to h 176.6) | 1 | 4540 |
 | `ws_rug` | dark green pile D66 x 1.1 with a rolled edge and a darker border band, at r 1.10 on a_w 67.5 (the drawing's D80 at r 0.95 covered the floor lights' bars; D66 fits between them with 1 cm to spare) | 1 | 1152 |
 | `ws_lamp` | the articulated lamp on the bench (a_w 100): bronze base D18, turntable, twin arms through graphite hubs, the shade at h 140 aimed at the robot's open bays, its green lens | 1 | 2016 |
 
-About 68.6k triangles placed. The bench's facets take the lounge's wall pieces (`tip_panel_low_*`: the relief over
+About 97k triangles placed (step 1: 68.6k). The bench's facets take the lounge's wall pieces (`tip_panel_low_*`: the relief over
 h 0.92; `tip_window_lounge_*`: a flush 3 cm sill), the cabinet's keep the plain window facets. The door side's last
 two cable trunks (`tip_trunk*`) stood on the bench's vertices and went with it; the pieces are gone from the layout.
 
-**Light.** The room reads acid green from the door: the `shop` lamp group (`ship.toml`, `shop_lamp` 1.0): the
-bench lamp's light 10 cm before its lens, two washes in front of the bench at h 0.95, the cradles' glow; the west
-room's fill turned from cool blue to a cool mint (green there flooded the walls and ceiling). The strips, pulls,
-rims, the lamp's lens and the sleepers' eye lines are `ws_green__*` glows (`[light.mats]`, `l` 0: they light
-nothing); the eyes' cyan `ws_cyan__*`.
+**Light** (step 2: step 1's broad green washes flooded the walls and ceiling). The walls and ceiling keep the ship's
+neutral silver under the tip room's own lamp and its fill (a neutral cool grey, 0.62/0.70/0.86; step 1's mint is
+gone). The acid green only pools, the `shop` lamp group (`ship.toml`, `shop_lamp` 1.0): three short omnis before the
+bench fronts (r 1.30, h 0.80, range 0.75: the strips' light on the drawers and the floor before them; step 2's first
+try, spots straight down on the bench, painted green blobs on the mat), a spot over each cradle (34 deg, range 0.95),
+the bench lamp's spot aimed at the robot's bays (24 deg, a pale green work light; a lamp row's index 11 is a spot's aim
+point [x, y, h], `godot/ship/ship.gd`), a little omni in each open drawer (range 0.42); the bays light themselves
+(their cyan boards; omnis there washed the shells' insides green).
+The strips, pulls, rims, the drawers' liners, the lamp's lens and the sleepers' eye arcs are `ws_green__*` glows
+(`[light.mats]`, `l` 0: they light nothing); the eyes' and the bays' cyan `ws_cyan__*`, the eye's highlight
+`ws_glint`. The cabinetry's dark olive bronze `ws_bronze` and its near-graphite second tone `ws_bronze2` are the
+stations' bronze shader with darker colours (`ship.gd` `LENS_BRONZE`; step 1's lens bronze read orange plastic under
+the floor lights).
 
 **Checks** (`test_ship_workshop.py`): the robot, cradles and lamp at the drawing's tip_w points; the bench and
 cabinet on their facets, their heights and depths; the robot's sphere D60 at h 145, its eye toward the room, the
-hands at h 95, the clamp 177..190 on the knob; the rail under the ceiling and clear of the oculus's light ring;
+hands at h 95, the claw 176.6..188 on the knob; the shells open 30..40 deg, the bays' mechanism inside the shells'
+sphere, the arms and loose cables below the body; the rail 15 cm and more under the ceiling, over the capsule, and
+clear of the oculus's light ring;
 every piece inside tip_w; the bench, cabinet and rug clear of the eight floor lights' bars (the open drawers float
 over two bars' outer ends at h 10+, never over their middles); the door-to-charger path clear by the capsule's
 radius; everything past a_w -24 (the alcove spans -105..-70); the colliders.
 
-Step 1's shots and sheets: `<raw>/ship/v5/workshop/` (`pieces/`, `shots1/`, `sheets/`, `views2.json`); handoff
-`<raw>/ship/v5/notes/workshop-1.md`.
+Shots and sheets: `<raw>/ship/v5/workshop/` (`pieces/`, `shots1/`, `shots2/`, `sheets/`, `grids/`, `views2.json`,
+`views3.json`); handoffs `<raw>/ship/v5/notes/workshop-1.md` and `workshop-2.md`. Step 2 was tuned by grids
+(`grids/`): the robot's shells (panel/open 40/30, 40/36, 37/42; picked 40/36, set to 32 in the room: at 36 the dark insides read as two black ears from the bench; front hinges tried, they hid the bays) in headless Blender, the light (the
+shop lamps' level 1.0/1.6/0.7 and the fill's colour, from the concept camera) in Godot.
