@@ -500,9 +500,11 @@ place = [
   ["tip_window_lounge_b", [-11.8924, -0.2531, 0.0], 133.778],
   ["tip_glass", [-11.8924, -0.2531, 0.0], 133.778],
   ["tip_sill_strip_lounge", [-11.8924, -0.2531, 0.0], 133.778],
-  ["ws_bench", [-11.8924, -0.2531, 0.0], 133.778],
+  ["ws_bench_open_low", [-11.8924, -0.2531, 0.0], 133.778],
+  ["ws_drawer_parts_a", [-11.8924, -0.2531, 0.0], 133.778],
   ["tip_panel_low_a", [-11.2482, -0.6683, 0.0], 111.824],
-  ["ws_bench", [-11.2482, -0.6683, 0.0], 111.824],
+  ["ws_bench_open_top", [-11.2482, -0.6683, 0.0], 111.824],
+  ["ws_drawer_parts_b", [-11.2482, -0.6683, 0.0], 111.824],
   ["tip_panel_low_b", [-10.4954, -0.8125, 0.0], 89.87],
   ["ws_bench_open_low", [-10.4954, -0.8125, 0.0], 89.87],
   ["ws_drawer_limbs", [-10.4954, -0.8125, 0.0], 89.87],
@@ -1286,11 +1288,6 @@ builder = "lounge_plant"
 collide = false
 
 [[pieces]]
-id = "ws_bench"
-builder = "ws_bench"
-collide = true
-
-[[pieces]]
 id = "ws_bench_open_top"
 builder = "ws_bench"
 collide = true
@@ -1313,6 +1310,18 @@ id = "ws_drawer_limbs"
 builder = "ws_drawer"
 collide = false
 args = { slot = "low", fill = "limbs" }
+
+[[pieces]]
+id = "ws_drawer_parts_a"
+builder = "ws_drawer"
+collide = false
+args = { slot = "low", fill = "parts", seed = 3 }
+
+[[pieces]]
+id = "ws_drawer_parts_b"
+builder = "ws_drawer"
+collide = false
+args = { slot = "top", fill = "parts", seed = 8 }
 
 [[pieces]]
 id = "ws_cabinet"

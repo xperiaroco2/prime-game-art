@@ -63,7 +63,11 @@ L.MATERIALS.update({
     # step 2: the cabinetry's dark bronze (the concept's olive-bronze fronts and tops; step 1's lens bronze read orange
     # plastic) and its second, darker tone; ship.gd swaps both for the stations' bronze shader (LENS_BRONZE)
     "ws_bronze": {"base": (*(x ** 2.2 for x in (0.26, 0.22, 0.14)), 1.0), "metallic": 0.55, "roughness": 0.4},
-    "ws_bronze2": {"base": (*(x ** 2.2 for x in (0.13, 0.125, 0.10)), 1.0), "metallic": 0.35, "roughness": 0.5},
+    "ws_bronze2": {"base": (*(x ** 2.2 for x in (0.13, 0.125, 0.10)), 1.0), "metallic": 0.2, "roughness": 0.6},
+    # step 3: the kick plinth's matte graphite (the fronts' feet stay dark under the warm floor lights) and the
+    # drawers' dark foam inserts
+    "ws_kick": {"base": (0.028, 0.03, 0.033, 1.0), "metallic": 0.0, "roughness": 0.88},
+    "ws_foam": {"base": (0.018, 0.02, 0.022, 1.0), "metallic": 0.0, "roughness": 0.97},
 })
 # the room's acid green (and the eyes' cyan): glows; ship.toml [light.mats] gives each its colour and strength, l 0
 # (they light nothing: the room's green light is the "shop" lamp group's few omnis and spots); step 2: the open
@@ -71,30 +75,32 @@ L.MATERIALS.update({
 for _n, _c, _s in (("ws_green__strip", _GREEN, 8.0), ("ws_green__handle", _GREEN, 8.0), ("ws_green__rim", _GREEN, 8.0),
                    ("ws_green__lamp", _GREEN, 12.0), ("ws_green__sleep", _GREEN, 4.0), ("ws_cyan__eye", _CYAN, 6.0),
                    ("ws_cyan__pupil", _CYAN, 4.0), ("ws_green__liner", _GREEN, 2.0), ("ws_cyan__core", _CYAN, 8.0),
-                   ("ws_glint", (1.0, 1.0, 1.0), 2.0)):
+                   ("ws_glint", (1.0, 1.0, 1.0), 2.0), ("ws_cyan__iris", _CYAN, 5.0)):
     L.MATERIALS[_n] = {"base": (*_c, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": _c, "strength": _s}
 L.MATERIALS["ws_green__liner"]["base"] = (0.03, 0.12, 0.02, 1.0)   # a dark green felt that glows a little
 
 # --- the drawing's numbers (cm) -----------------------------------------------------------------------------------
 # the bench: d 0..55, top 90 (a 5 cm slab), the body's face at d 50, drawer fronts 2.5 thick on it (h 10..45, 47..82),
 # the green strip under the top's overhang, a graphite work mat on the top; drawers pull out 25
-BENCH = {"d": 55.0, "top": 90.0, "slab": 5.0, "body": 50.0, "front": 2.5, "toe": (8.0, 46.0),
+BENCH = {"d": 55.0, "top": 90.0, "slab": 5.0, "body": 50.0, "front": 2.5, "toe": (9.0, 46.0),
          "drawers": ((10.0, 45.0), (47.0, 82.0)), "strip": (83.2, 84.4), "mat": 0.25, "pull": 25.0, "open_w": 26.8}
 # the cradles' cabinet: d 0..59 (the drawing's 60 reached 1 mm over the floor light's bar on its middle vertex), top
 # 55 (a 4 cm slab), one drawer per module
-CAB = {"d": 59.0, "top": 55.0, "slab": 4.0, "body": 54.0, "front": 2.5, "toe": (8.0, 49.0), "drawer": (10.0, 47.0),
+CAB = {"d": 59.0, "top": 55.0, "slab": 4.0, "body": 54.0, "front": 2.5, "toe": (9.0, 49.0), "drawer": (10.0, 47.0),
        "strip": (48.4, 49.6)}
 BENCH_K = (-5, -1)        # the bench's end vertices (k * TIP_STEP, east): -109.77 .. -21.95
 CAB_K = (-1, 1)           # the cabinet's: -21.95 .. +21.95
 # the open drawers by facet (the drawing's east angle of the facet's middle): the top one's spare eyes, the low one's
 # spare small hands and legs
-OPEN = {-32.93: ("top", "eyes"), -98.81: ("low", "limbs")}
+# step 3: two more trays of loose parts (the concept has several open drawers along the bench)
+OPEN = {-32.93: ("top", "eyes"), -54.88: ("low", "parts_a"), -76.84: ("top", "parts_b"), -98.81: ("low", "limbs")}
 CRADLE = {"d": 54.0, "h": 18.0, "bed": 44.0}
 SLEEPER = 28.0            # the sleeping robots' diameter
-# step 2: the side shells smaller (caps of 40 deg, step 1's 45 read as two big ears) and opened 32 deg (the shells'
-# grid, <raw>/ship/v5/workshop/grids/robot_grid_*.png, picked 40/36; 32 in the room: at 36 their dark insides read as
-# two black ears from the bench's front)
-ROBOT = {"d": 60.0, "h": 145.0, "eye": 16.0, "hands": 95.0, "open": 32.0, "panel": 40.0}
+# step 3: the side shells 0.7 of step 2's (caps of 28 deg; step 2's 40 read as mouse ears from the front), standing
+# 5 cm off the body on two hinge arms each and swung 30 deg on back hinges, so their dark insides and the core show from
+# the three-quarter view (the shells' grid, <raw>/ship/v5/workshop/grids/robot3_grid_*.png: 0.8 / 0.7 back hinge,
+# 0.7 front hinge; picked 0.7 back)
+ROBOT = {"d": 60.0, "h": 145.0, "eye": 16.0, "hands": 95.0, "open": 30.0, "panel": 28.0, "lift": 0.05, "hinge": "back"}
 # step 2: the rail 14 cm lower (bottom 214; at 228 its top was 1.7..3.5 cm under the ceiling and the hangers did not
 # show); it still clears the 1.8 m capsule by 34 cm; the hoist a chunky carriage, a short thick rod and a claw clamp
 RAIL = {"r": 105.0, "th": (-110.0, -25.0), "bottom": 214.0, "w": 10.0, "t": 8.0, "hangers": (-100.0, -67.5, -35.0)}
@@ -323,11 +329,14 @@ def _module(K, drawers, open_slot=None):
     seam = LN.SEAM
     # step 2: graphite carcass, dark bronze fronts with a chamfered raised panel each, a dark bronze top with a glossy
     # bronze nosing (step 1's lens bronze everywhere read as orange plastic)
-    out = [part("toe", fblock(0.0, t1, 0.0, t0, seam), GRAPH)]
+    # step 3: the toe is a flush matte graphite kick plinth (h 0..9) out to the fronts' face (the recessed toe left
+    # the fronts' feet to the floor lights, which turned the bronze brown-orange)
+    out = [part("toe", fblock(0.0, body + fr, 0.0, t0, seam), "ws_kick")]
     if open_slot:
         s0, s1 = open_slot
         w = BENCH["open_w"] * CM / 2
-        out += [part("body", M(fblock(0.0, body, t0, s0, seam, bot=0.0), fblock(0.0, body, s1, top - slab, seam)),
+        out += [part("body", M(*([fblock(0.0, body, t0, s0, seam, bot=0.0)] if s0 > t0 + 0.5 else []),
+                               fblock(0.0, body, s1, top - slab, seam)),
                      GRAPH2),
                 part("bay", fblock(0.0, 18.0, s0, s1, seam), GRAPH),
                 part("stiles", M(stile(18.0, body, s0, s1, w, -1), stile(18.0, body, s0, s1, w, 1)), "ws_bronze2")]
@@ -384,8 +393,8 @@ def _tray(h0, h1, d_front):
              L.box(-(db + 1.2) * CM, -db * CM, -w, w, FLOOR + hf * CM, FLOOR + ht * CM),
              L.box(-d_front * CM, -db * CM, -w, w, FLOOR + hf * CM, FLOOR + (hf + 1.0) * CM)]
     b, g = handle(h1 - 7.0, d_front + fr + 0.5)
-    # step 2: the insert's top is a lit green felt liner (the concept's glowing drawer insides), the tray's rim a thin
-    # green line round the inside of its walls
+    # step 3: the insert a dark foam block (step 2's lit felt liner washed the parts out), the tray's rim a thin green
+    # line round the inside of its walls (with the drawer's little omni, the green inside)
     x0, x1 = -(d_front - 0.3) * CM, -(db + 1.5) * CM
     yi = w - 0.015
     yw, xb = w - 0.012, -(db + 1.2) * CM          # the walls' inner faces: the rim sits on them
@@ -396,32 +405,35 @@ def _tray(h0, h1, d_front):
              part("panel", front(-yf + 0.03, yf - 0.03, h0 + 3.0, h1 - 3.0, d_front + fr - 0.1, d_front + fr + 0.5,
                                  0.004), "ws_bronze"),
              part("tray", M(*walls), "ws_bronze2"),
-             part("insert", G.bbox(x0, x1, -yi, yi, FLOOR + (hf + 0.5) * CM, FLOOR + (fl - 0.4) * CM, 0.004), GRAPH2),
-             part("liner", L.box(x0 + 0.003, x1 - 0.003, -yi + 0.003, yi - 0.003, FLOOR + (fl - 0.45) * CM,
-                                 FLOOR + fl * CM), "ws_green__liner"),
+             part("insert", G.bbox(x0, x1, -yi, yi, FLOOR + (hf + 0.5) * CM, FLOOR + fl * CM, 0.004), "ws_foam"),
              part("rim", rim, "ws_green__strip"),
              part("pull", b, GRAPH), part("pull_light", g, "ws_green__handle")]
     return parts, fl, w - 0.015, (db + 1.5, d_front - 0.3)
 
 
 def _eyes(fl, yin, dr):
-    """Spare eyes (balls D8, a blue iris and a dark pupil) in rows on the liner, each looking its own way."""
+    """Spare eyes (balls D8, a cyan iris and a dark pupil) sunk a third into the foam, each in its cut-out (a dark
+    recess ring round it), in rows, each looking its own way."""
     import random
     rnd = random.Random(7)
-    whites, irises, pupils = [], [], []
+    whites, irises, pupils, cuts = [], [], [], []
     r = 0.04
     pitch = 0.092
+    top = FLOOR + fl * CM
     for row in range(4):
         d = dr[1] - 7.0 - row * pitch * 100
         for k in range(5):
-            y = -yin + 0.046 + k * pitch + rnd.uniform(-0.006, 0.006)
-            c = (-d * CM + rnd.uniform(-0.006, 0.006), y, FLOOR + fl * CM + r - 0.004)
-            look = unit((rnd.uniform(-0.9, 0.3), rnd.uniform(-0.6, 0.6), rnd.uniform(0.5, 1.0)))
+            y = -yin + 0.046 + k * pitch + rnd.uniform(-0.004, 0.004)
+            c = (-d * CM + rnd.uniform(-0.004, 0.004), y, top + r * 0.35)
+            look = unit((rnd.uniform(-0.9, 0.3), rnd.uniform(-0.6, 0.6), rnd.uniform(0.6, 1.0)))
             whites.append(sphere(r, c, 10, 20))
             irises.append(cap_lens(r, 34.0, 0.0008, 0.004, c, look, 20, 4))
             pupils.append(cap_lens(r, 15.0, 0.0016, 0.004, c, look, 14, 2))
+            cuts.append(lathe([(r * 0.92, top - 0.002), (r * 1.18, top - 0.002), (r * 1.18, top + 0.0008),
+                               (r * 1.12, top + 0.0012), (r * 0.92, top + 0.0012), (r * 0.92, top - 0.002)], 28,
+                              (c[0], c[1], 0.0)))
     return [part("eyes", M(*whites), "ws_shell", 40.0), part("irises", M(*irises), "ws_cyan__pupil", 40.0),
-            part("pupils", M(*pupils), "ws_glass", 40.0)]
+            part("pupils", M(*pupils), "ws_glass", 40.0), part("cutouts", M(*cuts), "ws_inner", 40.0)]
 
 
 def seg(p0, p1, r0, r1, a=0.0, b=0.0, ch=0.003, n=16):
@@ -473,19 +485,34 @@ def _forearm(E, W, up, r=1.0, spread=0.5):
     return [shell], [drum, palm, *kn], [caps, ring], fi
 
 
+def _spare_arm(S_, E_, W_, up, r=1.0, spread=0.4):
+    """A spare robot arm lying in a drawer, the main robot's parts: a graphite shoulder ball, the ivory upper arm, a
+    graphite elbow hinge with bronze caps, the ivory forearm, a bronze wrist ring and a small three-finger claw."""
+    ua = unit(tuple(b - a for a, b in zip(S_, E_)))
+    fa = unit(tuple(b - a for a, b in zip(E_, W_)))
+    drum, caps = hinge(E_, up, 0.024 * r, 0.046 * r)
+    shells = [seg(S_, E_, 0.022 * r, 0.019 * r, 0.016 * r, 0.006 * r), seg(E_, W_, 0.019 * r, 0.017 * r, 0.006 * r, 0.003 * r)]
+    collar = torus(0.026 * r, 0.005 * r, add(S_, mul(ua, 0.012 * r)), ua, 20, 8)
+    ring = torus(0.0175 * r, 0.004 * r, add(W_, mul(fa, -0.002)), fa, 20, 8)
+    palm, kn, fi = claw(W_, fa, up, 0.95 * r, spread)
+    return shells, [sphere(0.026 * r, S_, 10, 20), drum, palm, *kn], [collar, caps, ring], fi
+
+
 def _limbs(fl, yin, dr):
-    """Spare robot forearms with their claws laid in a row across the tray (step 2: step 1's arms and legs lying at
-    angles read as a heap), the claws toward the room, each a little turned."""
+    """Spare robot arms laid in a row on the dark foam (step 3: step 2's bare forearms read as white cylinders): each
+    shoulder toward the back, bent a little at its dark elbow, the small claw toward the room; sunk 6 mm into the
+    foam."""
     import random
     rnd = random.Random(11)
-    z = FLOOR + fl * CM + 0.0245
-    xf = -(dr[1] - 4.0) * CM
+    z = FLOOR + fl * CM + 0.016
+    xb = -(dr[0] + 6.0) * CM
     shells, joints, trims, fingers = [], [], [], []
     for k, y in enumerate((-0.165, -0.055, 0.055, 0.165)):
-        dy = rnd.uniform(-0.02, 0.02)
-        E = (xf + 0.25, y - dy, z)
-        W = (xf + 0.09, y + dy, z)
-        sh, jo, tr, fi = _forearm(E, W, (0.0, 0.0, 1.0), 1.0, 0.35 + 0.15 * (k % 2))
+        bend = D(14.0 + rnd.uniform(-5.0, 5.0)) * (1 if k % 2 else -1)
+        S_ = (xb, y - 0.012 * (1 if k % 2 else -1), z)
+        E_ = (xb - 0.12, y, z)
+        W_ = (E_[0] - 0.105 * math.cos(bend), y + 0.105 * math.sin(bend), z)
+        sh, jo, tr, fi = _spare_arm(S_, E_, W_, (0.0, 0.0, 1.0), 1.0, 0.3 + 0.15 * (k % 2))
         shells += sh
         joints += jo
         trims += tr
@@ -494,11 +521,53 @@ def _limbs(fl, yin, dr):
             part("limb_trims", M(*trims), EDGE, 40.0), part("limb_tips", M(*fingers), "ws_bronze", 40.0)]
 
 
+def _parts(fl, yin, dr, seed=3):
+    """Loose robot parts on the dark foam (step 3, the concept's many open trays): bronze gears of four sizes, two
+    pistons, a small board with chips and a cyan light, a spare claw, a coil of cable."""
+    import random
+    rnd = random.Random(seed)
+    top = FLOOR + fl * CM
+    xm = -(dr[0] + dr[1]) / 2 * CM
+    gears, hubs, pist, rods, boards, chips, lights, cable = [], [], [], [], [], [], [], []
+    for (dx, y), r_, n in (((0.10, -0.15), 0.06, 14), ((0.13, -0.02), 0.04, 10), ((0.09, 0.10), 0.05, 12),
+                           ((0.15, 0.17), 0.03, 8), ((-0.02, -0.17), 0.035, 9)):
+        c = (xm + dx + rnd.uniform(-0.01, 0.01), y, top - 0.002)
+        gears.append(_gear(c, (0, 0, 1), r_, n, 0.012))
+        hubs.append(lathe([(0.0, 0.0), (r_ * 0.35, 0.0), (r_ * 0.35, 0.006), (r_ * 0.3, 0.008), (0.0, 0.008)], 18,
+                          add(c, (0.0, 0.0, 0.012)), (0, 0, 1)))
+    for y in (-0.06, 0.03):
+        a0 = (xm - 0.06, y, top + 0.012)
+        a1 = (xm + 0.03, y + rnd.uniform(-0.02, 0.02), top + 0.012)
+        a2 = add(a1, (0.045, 0.0, 0.0))
+        pist.append(seg(a0, a1, 0.0125, 0.0125, 0.0, 0.0, 0.002, 16))
+        rods.append(seg(a1, a2, 0.006, 0.006, -0.003, 0.0, 0.001, 12))
+    bx, by = xm - 0.12, 0.13
+    boards.append(G.bbox(bx - 0.05, bx + 0.05, by - 0.035, by + 0.035, top - 0.001, top + 0.005, 0.0015))
+    for cx, cy, w, h in ((-0.025, -0.012, 0.022, 0.016), (0.02, 0.015, 0.016, 0.012), (0.025, -0.018, 0.012, 0.012)):
+        chips.append(G.bbox(bx + cx - w / 2, bx + cx + w / 2, by + cy - h / 2, by + cy + h / 2, top + 0.005, top + 0.009, 0.001))
+    lights.append(lathe([(0.0, 0.0), (0.008, 0.0), (0.008, 0.003), (0.006, 0.007), (0.0, 0.008)], 16,
+                        (bx - 0.03, by + 0.018, top + 0.005), (0, 0, 1)))
+    W_ = (xm - 0.13, -0.10, top + 0.02)
+    palm, kn, fi = claw(W_, unit((-1.0, 0.3, 0.0)), (0.0, 0.0, 1.0), 1.0, 0.6)
+    pts = [(xm - 0.20 + 0.035 * math.cos(D(a)), -0.02 + 0.035 * math.sin(D(a)), top + 0.007 + 0.0035 * a / 360.0)
+           for a in range(0, 1081, 30)]
+    cable.append(G.tube(pts, 0.0055, 8))
+    return [part("gears", M(*gears), BRONZE, 35.0), part("gear_hubs", M(*hubs), EDGE, 35.0),
+            part("pistons", M(*pist), "int_silver_c", 35.0), part("rods", M(*rods), "ws_steel", 35.0),
+            part("board", M(*boards), GRAPH2, 35.0), part("chips", M(*chips), GRAPH, 35.0),
+            part("board_light", M(*lights), "ws_cyan__core", 35.0), part("claw_palm", palm, GRAPH, 40.0),
+            part("claw_joints", M(*kn), GRAPH, 40.0), part("claw_fingers", M(*fi), "ws_bronze", 40.0),
+            part("cable", M(*cable), "ws_cable_b", 40.0)]
+
+
 def ws_drawer(args, layout):
-    """A bench drawer pulled out 25 cm (`slot` top / low) with its contents (`fill` eyes / limbs)."""
+    """A bench drawer pulled out 25 cm (`slot` top / low) with its contents (`fill` eyes / limbs / parts)."""
     h0, h1 = BENCH["drawers"][1 if args["slot"] == "top" else 0]
     out, fl, yin, dr = _tray(h0, h1, BENCH["body"] + BENCH["pull"])
-    out += (_eyes if args["fill"] == "eyes" else _limbs)(fl, yin, dr)
+    if args["fill"] == "parts":
+        out += _parts(fl, yin, dr, args.get("seed", 3))
+    else:
+        out += (_eyes if args["fill"] == "eyes" else _limbs)(fl, yin, dr)
     return out
 
 
@@ -581,6 +650,7 @@ RC = (0.0, 0.0, FLOOR + ROBOT["h"] * CM)
 RR = ROBOT["d"] / 200        # 0.30
 SHELL_T, LINER_T = 0.006, 0.0035   # step 2: thin shells, ivory outside, a dark liner inside (0.5 mm behind)
 CORE_Y = 0.205               # the core's flat mechanism plates (the bays' floors)
+BAND_P = 41.6                # the bay openings' edge (step 2's 40 deg shells and a seam)
 MECH_R = RR - 0.008          # every part of the bays' mechanism stays inside this sphere (clear of the shells)
 
 
@@ -590,18 +660,30 @@ def panel_p() -> float:
 
 
 def band_p() -> float:
-    return panel_p() + 1.6
+    """The body's bay openings' edge (deg from the side axes): step 2's 40 deg shells plus a 1.6 deg seam; step 3's
+    smaller shells stand out on their hinge arms in front of these openings."""
+    return BAND_P
 
 
-def _panel_r(s):
-    return rot((0.0, 0.0, 1.0), -s * ROBOT["open"])
+def shell_xf(s):
+    """The open side shell's placement (a function of a point of the closed shell): lifted out of the body by
+    ROBOT["lift"] on its hinge arms, then swung by ROBOT["open"] round a vertical hinge at its back edge (the front
+    edge swings out) or its front edge (ROBOT["hinge"] "front": the back edge swings out and back)."""
+    back = ROBOT.get("hinge", "back") == "back"
+    lift = ROBOT.get("lift", 0.0)
+    hx = (1.0 if back else -1.0) * RR * math.sin(D(panel_p()))
+    pv = (RC[0] + hx, RC[1] + s * (RR * math.cos(D(panel_p())) + lift), RC[2])
+    r = rot((0.0, 0.0, 1.0), (-s if back else s) * ROBOT["open"])
+
+    def f(p):
+        q = (p[0] - pv[0], p[1] + s * lift - pv[1], p[2] - pv[2])
+        return add(mv(r, q), pv)
+    return f, pv
 
 
-def _panel_pivot(s):
-    """The side shells hinge at their back edge, so the bays open toward the room as in the concept (step 2 tried
-    front hinges: the shells' ivory outsides faced the room swept back like ears and hid the bays from every view but
-    the bench's)."""
-    return (RC[0] + RR * math.sin(D(panel_p())), RC[1] + s * RR * math.cos(D(panel_p())), RC[2])
+def _shell_moved(vf, s):
+    f, _ = shell_xf(s)
+    return [f(p) for p in vf[0]], vf[1]
 
 
 def _band(R, t, name):
@@ -642,14 +724,16 @@ def _eye():
         return top + [(r1, on(r1, -0.002)), (r0, on(r0, -0.002)), top[0]]
     glint = [(0.044, on(0.044, 0.0012)), (0.051, on(0.051, 0.0012)), (0.051, on(0.051, -0.001)),
              (0.044, on(0.044, -0.001)), (0.044, on(0.044, 0.0012))]
-    dot = [(0.0, on(0.0, 0.0016)), (0.0042, on(0.0042, 0.0016)), (0.0042, on(0.0042, -0.002)), (0.0, on(0.0, -0.002))]
-    return [part("eye_ring", lathe(bezel, 48, RC, ex), GRAPH2, 35.0), part("eye_trim", lathe(trim, 48, RC, ex), EDGE, 35.0),
+    # step 3: one small soft glint (step 2's crescent read as a hard white band); the room's lights add their own
+    dot = [(0.0, on(0.0, 0.0017)), (0.0035, on(0.0035, 0.0015)), (0.0045, on(0.0045, 0.0009)), (0.0045, on(0.0045, -0.002)),
+           (0.0, on(0.0, -0.002))]
+    return [part("eye_ring", lathe(bezel, 48, RC, ex), "ws_bronze", 35.0), part("eye_trim", lathe(trim, 48, RC, ex), EDGE, 35.0),
             part("eye_glass", lathe(dome, 48, RC, ex), "ws_glass", 40.0),
-            part("eye_iris", lathe(ring(0.0185, 0.032, 0.0011), 48, RC, ex), "ws_cyan__eye", 40.0),
-            part("eye_inner", lathe(ring(0.014, 0.0185, 0.0014, 2), 48, RC, ex), "ws_cyan__pupil", 40.0),
+            part("eye_iris", lathe(ring(0.026, 0.032, 0.0011, 3), 48, RC, ex), "ws_cyan__eye", 40.0),
+            part("eye_iris_mid", lathe(ring(0.0195, 0.026, 0.0013, 3), 48, RC, ex), "ws_cyan__iris", 40.0),
+            part("eye_inner", lathe(ring(0.014, 0.0195, 0.0015, 2), 48, RC, ex), "ws_cyan__pupil", 40.0),
             part("eye_limbal", lathe(ring(0.032, 0.0355, 0.0011, 2), 48, RC, ex), GRAPH, 40.0),
-            part("eye_glint", M(lathe(glint, 12, RC, ex, (0.0, 0.0, 1.0), 25.0, 75.0),
-                                lathe(dot, 12, add(RC, (0.0, 0.017, 0.019)), ex)), "ws_glint", 40.0)]
+            part("eye_glint", lathe(dot, 16, add(RC, (0.0, 0.019, 0.021)), ex), "ws_glint", 40.0)]
 
 
 def _gear(c, ax, r, teeth, t, depth=0.008):
@@ -748,17 +832,26 @@ def ws_robot(args, layout):
     neck = [(0.0, RR + 0.02), (0.018, RR + 0.02), (0.018, RR + 0.004), (0.0, RR + 0.004)]
     out += [part("crown", lathe(crown, 40, RC), EDGE, 35.0),
             part("knob", M(lathe(neck, 24, RC), sphere(0.034, add(RC, (0.0, 0.0, RR + 0.032)), 12, 24)), BRONZE, 35.0)]
-    shells, liners, hinges = [], [], []
+    shells, liners, hinges, arms, knuckles = [], [], [], [], []
     for s in (-1, 1):
         ax = (0.0, s, 0.0)
-        r, pv = _panel_r(s), _panel_pivot(s)
-        shells.append(moved(lathe(zone(RR, SHELL_T, 0.0, panel_p(), 12, 0.003), 48, RC, ax), r, pivot=pv))
-        liners.append(moved(lathe(zone(RR - SHELL_T - 0.0005, LINER_T, 0.0, panel_p() - 0.4, 12, 0.0015), 48, RC, ax),
-                            r, pivot=pv))
+        f, pv = shell_xf(s)
+        shells.append(_shell_moved(lathe(zone(RR, SHELL_T, 0.0, panel_p(), 12, 0.003), 48, RC, ax), s))
+        liners.append(_shell_moved(lathe(zone(RR - SHELL_T - 0.0005, LINER_T, 0.0, panel_p() - 0.4, 12, 0.0015), 48,
+                                         RC, ax), s))
         hinges.append(lathe([(0.0, -0.04), (0.011, -0.04), (0.012, -0.035), (0.012, 0.035), (0.011, 0.04), (0.0, 0.04)],
                             16, pv, (0, 0, 1)))
+        # step 3: two hinge arms from the core plate out to the shell's inside (the shell stands off the body on them)
+        hx = (1.0 if ROBOT.get("hinge", "back") == "back" else -1.0) * 0.6 * RR * math.sin(D(panel_p()))
+        ri = RR - SHELL_T - 0.0005 - LINER_T
+        for dz in (-0.045, 0.045):
+            q0 = (RC[0] + hx, RC[1] + s * (CORE_Y + 0.004), RC[2] + dz)
+            q1 = f((RC[0] + hx, RC[1] + s * math.sqrt(ri * ri - hx * hx - dz * dz), RC[2] + dz))
+            arms.append(seg(q0, q1, 0.0075, 0.0075, 0.0, 0.0, 0.0015, 12))
+            knuckles += [sphere(0.011, q0, 8, 14), sphere(0.0105, q1, 8, 14)]
     out += [part("panels", M(*shells), "ws_shell", 30.0), part("panel_liners", M(*liners), "ws_inner", 30.0),
-            part("hinges", M(*hinges), GRAPH2, 35.0)]
+            part("hinges", M(*hinges), GRAPH2, 35.0), part("hinge_arms", M(*arms), GRAPH2, 35.0),
+            part("hinge_knuckles", M(*knuckles), EDGE, 35.0)]
     mech: dict = {}
     for s in (-1, 1):
         for m, v in _bay(s).items():
@@ -790,14 +883,27 @@ def ws_hoist(args, layout):
     rt = rb + RAIL["t"] * CM
     cl, cw, chh = (v * CM for v in HOIST["carriage"])
     body = G.bbox(-cw / 2, cw / 2, -cl / 2, cl / 2, rb - chh, rb - 0.008, 0.014)
-    cheeks = M(G.bbox(-0.074, -0.058, -0.09, 0.09, rb - 0.03, rt + 0.012, 0.004),
-               G.bbox(0.058, 0.074, -0.09, 0.09, rb - 0.03, rt + 0.012, 0.004))
-    hubs = M(*[lathe([(0.0, 0.0), (0.022, 0.0), (0.024, 0.004), (0.024, 0.009), (0.0, 0.009)], 20,
-                     (s * 0.074, y, rt - 0.01), (s, 0, 0)) for s in (-1, 1) for y in (-0.05, 0.05)])
+    # step 3: the cheeks rise over the rail and carry two wheels riding on its top (axles through both cheeks), side
+    # panels inset on the carriage, cooling fins and a green status light on the motor drum
+    wr, wz = 0.027, rt + 0.027
+    cheeks = M(G.bbox(-0.074, -0.058, -0.095, 0.095, rb - 0.03, wz + 0.024, 0.005),
+               G.bbox(0.058, 0.074, -0.095, 0.095, rb - 0.03, wz + 0.024, 0.005))
+    wheels = M(*[lathe([(0.0, -0.014), (wr - 0.004, -0.014), (wr, -0.01), (wr, 0.01), (wr - 0.004, 0.014), (0.0, 0.014)],
+                       28, (0.0, y, wz), (1, 0, 0)) for y in (-0.055, 0.055)])
+    axles = M(*[lathe([(0.0, -0.08), (0.006, -0.08), (0.006, 0.08), (0.0, 0.08)], 12, (0.0, y, wz), (1, 0, 0))
+                for y in (-0.055, 0.055)])
+    hubs = M(*[lathe([(0.0, 0.0), (0.016, 0.0), (0.018, 0.004), (0.018, 0.008), (0.0, 0.008)], 20,
+                     (s * 0.074, y, wz), (s, 0, 0)) for s in (-1, 1) for y in (-0.055, 0.055)])
+    panels = M(*[G.bbox(-cw / 2 + 0.02, cw / 2 - 0.02, *sorted((s * (cl / 2 - 0.001), s * (cl / 2 + 0.004))),
+                        rb - chh + 0.02, rb - 0.028, 0.0015) for s in (-1, 1)])
     drum = lathe([(0.0, -0.09), (0.036, -0.09), (0.04, -0.084), (0.04, 0.084), (0.036, 0.09), (0.0, 0.09)], 28,
                  (-cw / 2 - 0.022, 0.0, rb - chh / 2 - 0.005), (0, 1, 0))
     drum_caps = M(*[lathe([(0.0, 0.0), (0.03, 0.0), (0.03, 0.006), (0.024, 0.009), (0.0, 0.009)], 24,
                           (-cw / 2 - 0.022, s * 0.0895, rb - chh / 2 - 0.005), (0, s, 0)) for s in (-1, 1)])
+    fins = M(*[torus(0.0405, 0.0035, (-cw / 2 - 0.022, y, rb - chh / 2 - 0.005), (0, 1, 0), 28, 6)
+               for y in (-0.05, -0.025, 0.0, 0.025, 0.05)])
+    status = lathe([(0.0, 0.0), (0.008, 0.0), (0.008, 0.003), (0.006, 0.006), (0.0, 0.007)], 16,
+                   (-cw / 2 - 0.022, -0.0985, rb - chh / 2 + 0.012), (0, -1, 0))
     c0, c1 = FLOOR + HOIST["clamp"][0] * CM, FLOOR + HOIST["clamp"][1] * CM
     rr = HOIST["rod"] / 2 * CM
     rod = lathe([(0.0, c1 - 0.004), (rr, c1 - 0.004), (rr, rb - chh + 0.004), (0.0, rb - chh + 0.004)], 20, (0, 0, 0))
@@ -825,6 +931,9 @@ def ws_hoist(args, layout):
                           add(p2, mul(d, 0.004)), mul(d, -1.0)))
     assert c0 < kc
     return [part("carriage", body, BRONZE2), part("cheeks", cheeks, BRONZE), part("hubs", hubs, GRAPH2, 35.0),
+            part("wheels", wheels, GRAPH, 35.0), part("axles", axles, "ws_steel", 35.0),
+            part("carriage_panels", panels, BRONZE, 35.0), part("fins", fins, GRAPH2, 35.0),
+            part("status", status, "ws_green__handle", 35.0),
             part("drum", drum, GRAPH, 35.0), part("drum_caps", drum_caps, EDGE, 35.0),
             part("rod", rod, "ws_steel", 40.0), part("collars", collars, BRONZE, 35.0),
             part("clamp", head, BRONZE2, 35.0), part("jaws", M(*seg1, *seg2), EDGE, 40.0),

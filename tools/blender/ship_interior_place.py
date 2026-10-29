@@ -242,14 +242,16 @@ SOFA_MODULES = {1: "lounge_sofa_fore", 2: "lounge_sofa_mid", 3: "lounge_sofa_mid
 SOFA_PILLOWS = {2: "lounge_pillow_red", 5: "lounge_pillow_dark"}
 SOFA_THROWS = {4: "lounge_throw"}   # step 4
 # the west room's workshop (ship_interior_workshop.py, docs/ship.md "The west lens room's workshop"): the bench's four
+# (step 3: every bench module has one drawer pulled out, so the closed module ws_bench is no longer placed)
 # facets (the lounge's wall pieces: the panels' relief over the top, a flush sill ledge) and the cabinet's two (plain
 # window facets), both by the drawing's east angles (the west room's a_w = -a_e); its free items at their points
 PIECES |= {
-    "ws_bench": ("ws_bench", {}, True),
     "ws_bench_open_top": ("ws_bench", {"open": "top"}, True),
     "ws_bench_open_low": ("ws_bench", {"open": "low"}, True),
     "ws_drawer_eyes": ("ws_drawer", {"slot": "top", "fill": "eyes"}, False),
     "ws_drawer_limbs": ("ws_drawer", {"slot": "low", "fill": "limbs"}, False),
+    "ws_drawer_parts_a": ("ws_drawer", {"slot": "low", "fill": "parts", "seed": 3}, False),
+    "ws_drawer_parts_b": ("ws_drawer", {"slot": "top", "fill": "parts", "seed": 8}, False),
     "ws_cabinet": ("ws_cabinet", {}, True),
     "ws_cradle": ("ws_cradle", {}, False),
     "ws_sleeper_a": ("ws_sleeper", {"roll": 10.0, "yaw": 12.0}, False),
