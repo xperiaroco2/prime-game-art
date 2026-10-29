@@ -1793,3 +1793,20 @@ east wall only for now (`GILL_SIDES` in ship_interior_throat.py; the west mirror
     the hall's corner K (`JAMB_U` = `WALL_LEN` - 4 mm) and ends in `end_frame` (`FRAME_MAT`, a 45 deg bevel from s 3.98 to
     3.6 cm proud, then flat to the end), the deck to the fold. `interior.toml`'s plain spot runs to 4.047.
   - Outputs `<raw>/ship/v5/gills-throat/set4/` (pieces in `set4/pieces`); handoff `<raw>/ship/v5/notes/gills-set-4.md`.
+- **Step 5, his walk's doorway joins and the gill set in `--play`** (his shots `<raw>/ship/v5/play/` 004-007):
+  - *One frame per corridor portal.* The hall pilasters at the corridor openings' edges doubled the portal's jamb and
+    strip, the portal's 10 cm band ran 4 cm past the chord into the next facet (its diamond panel), and a cyan arch
+    stood 0.38 m behind the portal. Now: no hall pilasters at all (`ship_interior_place` raises if a hall opening's
+    edge has no frame; the mouth's edges are the throat's corners), `hall_portal`'s band 6 cm (`rim` = HCH - COR_HALF -
+    2 mm, bevel 12 mm) so it ends at the facets' vertex in a bevelled reveal, its strip `hall_portal_strip_l`/`_r`
+    centred on it (`at_in`/`at_out` 17/42 mm; the tip portals keep `portal_strip_l`/`_r`), and the corridor's arches
+    only at the tip end (`ARCH_X[1:]`; the ceiling ribs keep their spacing). The tip portals still have a pilaster and
+    an arch beside them (not in his shots; the same fix would apply).
+  - *The gill set in `--play`.* `ship.gd`'s play mode puts `gill_set.gd` on the placed `th_wall_e` (the white bar
+    runs, the niches glow); `player.gd` emits `used` on E (when not flying) and shows a centred "[E] press" hint while
+    ship.gd's `can_use` is true: the eye within `REACH_M` 1.6 m of the button's middle, in front of the wall, the look
+    within `AIM_DEG` 14 deg of it. A press flips the slit under the white bar (puff, the all-open cloud).
+    `--play-test` now also stands the capsule 0.9 m in front of the button, looks at it, sends a real E key event and
+    fails unless exactly that slit opened (`play.json` `press`, a second shot with the hint).
+  - Outputs `<raw>/ship/v5/gills-throat/set5/` (pieces in `set5/pieces`, `play/` the views from his positions and
+    both portals each way, `play_before_after.png`); handoff `<raw>/ship/v5/notes/ship-step5.md`.
