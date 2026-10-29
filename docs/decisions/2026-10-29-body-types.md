@@ -30,7 +30,10 @@ sounds fine. We have to try it.) Changing the character contract to body types w
 - **Own rest skeletons, the same names, parents and rest orientations.** B's bones sit at B's joints (the shoulders
   in, the hip joints out a little, everything below the neck ring 0.953 times A's height); each bone keeps A's rest
   direction and roll, so a bone-local rotation means the same on both. `rest_turn_max_deg` is measured on every build
-  of B (0.0 on b3) and held by the contract's `[body_types.B]` (0.5 degrees).
+  of B (0.0 on b3) and held by the contract's `[body_types.B]` (0.5 degrees). Amended 2026-10-30 (art #196, D3i):
+  B's rest now comes from D3's fit to her mm table (`tools/blender/body_fit_run.py`; b3 is superseded): her shoulder
+  chains move rigidly with her arms, her hands and feet scale along their own bones, and the fit and `apply` both
+  fail a B over the limit (D3's B: 0.38 degrees, the Neck).
 - **Shared clips.** Every clip is made once on A's rig and carried to B with its Root and Hips location keys scaled by
   the leg length (the `slice --own-proportions` rule: `alien_char_build.py --leg-fit`, `alien_leg_fit.py`) and the
   feet's lowest point matched per frame; the loco set (`alien_loco.py`) then edits each clip on B's own skeleton.
