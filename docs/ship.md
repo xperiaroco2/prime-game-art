@@ -1608,6 +1608,10 @@ shop lamps' level 1.0/1.6/0.7 and the fill's colour, from the concept camera) in
 
 ## The throat's gills (pilot, 2026-10-28)
 
+**Parked since 2026-10-29**: the throat is shown without its gills (the engineer: the slits come back as hinged
+gill covers), so `th_gills_e` and `th_gills_w` are out of the layout and the throat's walls are the clean throat's
+(below, "The clean throat"). The builder, `gill_row.gd` and `--gill-anim` stay as they were; their tests skip.
+
 The throat's wall modules and vent cabinets gave way to one gills piece per side (`th_gills_e`, `th_gills_w`, mirrored;
 `tools/blender/ship_interior_gills.py`): a plinth 0-60 cm with its cyan line, then a clean band on the throat's own
 profile (vertical to 1.45 m, leaning 0.55 m in to 2.30 m) from the roof line (s 1.62) to the hall corner (s 4.05),
@@ -1667,4 +1671,40 @@ wall, and the band stays its metal. It is still an additive billboard, with no v
   white), all five open -> the exhale.
 - A `--views` file's 6th element may be a dict with a pose and a `"ref"` image path: the shot is also saved beside
   the reference as `compare_<view>.png`.
-- Tests: `tools/tests/test_ship_gills.py` (numbers, mirror, placement, corners, band to ceiling, plinth).
+- Tests: `tools/tests/test_ship_gills.py` (numbers, mirror, placement, corners, band to ceiling, plinth); skipped
+  while the gills are parked.
+
+### The clean throat (step B, 2026-10-29)
+
+The engineer approved step A's proposal ("fold at 2.10"; the drawing `<raw>/ship/v5/gills-throat/clean/drawing/
+throat_clean.png`) and asked to see the throat whole without the gills. `tools/blender/ship_interior_throat.py`:
+
+- **Profile.** ship.toml throat `chamfer = [2.10, 0.25]`: the walls stand vertical to 2.10, then a 25 cm cove leans in
+  to the flat ceiling at 2.30. 2.14 is the highest fold the hull allows with 0.25 in: the roof's outer corner keeps
+  15 cm of skin at s 1.78. `tunnel_chamfer = [1.45, 0.55]` keeps the entry tunnel and its hood (`mouth_tunnel`, the
+  notch jamb's clip) as they were, and the parked throat vents read it too (`S.TUN_BEND`, `S.TUN_IN`). The hull's
+  throat sample (`ship_hull_shape.chamfer_outer`) derives the cove's outer face from the profile; it used to be a
+  hard-coded 0.17. `ship --check`: least skin 0.150.
+- **Walls** `th_wall_e` and `th_wall_w` (mirrored, a collider each; frame as the gills'). Each is one flat panel
+  (`int_silver_b`) from the ramp frame to the hall jamb (s 1.668-3.88) and from the plinth to the fold. Below it are
+  the plinth (0-0.60, 3 cm proud) and its cyan line (2.4 cm) from s 0.02. Above it are a dark 1.4 cm line at the fold
+  and the cove in the lighter `hull_silver`, cut on the header's plane at the hall end and on the frame's plane at the
+  ramp end (cut square to the wall, its top had begun 6.8 cm aft of the frame). Under the tunnel the band reaches only
+  the tunnel's bend (1.45). Each wall is 58 triangles, with no seams, slits or button.
+- **Ramp frame** `th_frame` (hall-relative, replacing the roof line's `th_arch`). It is the plane y -5.60 .. -5.515
+  over the roof line. On each side one solid fills the step from the tunnel's profile to the room's, with an 8 cm
+  trim inside the tunnel's walls and leans; it runs 2 cm into the walls and up into the ceiling. A bar across the
+  ceiling sits 5 mm under it, so the 2.30 head room holds.
+- **Hall jambs** `th_jambs` (hall-relative, colliders, replacing the hall pilasters and their strips at the corners
+  K). Each jamb runs from the deck to the rim (3.20). Its end face is square to the wall at s 3.88, 13.1 cm deep. Its
+  front is the corner sub-facet's chord, and a reveal square to that chord runs through the header's depth. Its hall
+  face stands 1.6 cm proud of the header's. Beside it, `drop` carries the header's throat face down from the ceiling
+  to the cove, between the jamb's front corner and the cove's top line (s 3.73), so the cove's end has a face and no
+  gap opens under the header. The wall, plinth, line and cove all end on the jamb.
+- **Ceiling** `throat_ceil`. One flat body between the coves' tops from the roof line (inside the frame), a 2 mm dark
+  spine from the frame's aft face, and the header from 2.30 to the rim. The skin under the ceiling (`TH_SKIN`), the
+  corner trims and panels, the middle panels, `th_end_cut` and the old end modules' branch are gone.
+- The station spots `vent_e` and `vent_w` stay. Their 1.6 m band lies on the walls from s 1.63, 4 cm under the frame's
+  trim, where the panel runs on behind it. The export names `ship:th_wall_<side>` for them, with no vent hardware.
+- Shots, close-ups, sheets: `<raw>/ship/v5/gills-throat/clean/` (`pieces/`, `shots/`, `shots/close/`, `sheets/`);
+  handoff `<raw>/ship/v5/notes/gills-throat-clean-b.md`. Tests: `tools/tests/test_ship_throat.py`.
