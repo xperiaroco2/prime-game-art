@@ -290,3 +290,17 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
 
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
+
+## Bodies by drawing (D2, art #196)
+Bodies A and B are drawn in mm from their approved concepts before any 3D (the crystal's route, `docs/props.md`):
+`tools/blender/body_dims_probe.py` (headless Blender, read only) dumps body A's rest; `body_dims_measure.py` (plain
+Python, `body_dims_geom.py`) measures each concept's front, side and back per pixel row into
+`tools/blender/body_dims/<A|B>.toml` (the trunk every 10 mm of height, 5 mm across the neck, chest and crotch; the
+arms and legs on their own axes; hands, feet, B's chest rounds; the neck ring); `body_drawing.py` draws the sheets.
+The scale puts the concept's neck-ring line at the body's ring and the sole at 0; one height map pins the crotch to
+the body's. The side view is aligned on its edges as drawn at the crotch + 60 mm onto body A's mid-depth there.
+Where a hanging limb forms the side view's edge, the tables write "-", never an interpolated or a limb's value: the
+hand at the front (`front_y` and `depth` over `body.side_hidden_z`) and, from under the armpits down to where the seat
+comes out behind it, the arm at the back (`back_y` and `depth` over `body.side_back_hidden_z`; `back_hidden` finds it
+by the crease the back shows behind the arm). A key depth there is drawn at the nearest measured height within
+20 mm, labelled "AT", or written "-". The standard neck ring: `docs/decisions/2026-10-29-neck-ring.md`.
