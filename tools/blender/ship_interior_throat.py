@@ -133,14 +133,21 @@ def _cut_cove(q: list) -> list:
     return S._clip2(q, a, b * LV, c + b * LV * FOLD)
 
 
+def cove_start(t: float) -> float:
+    """The cove's front end at t: on the plane 1 cm inside the frame's aft face (constant plan y), not square to the
+    wall: square, its top began 6.8 cm aft of the frame and left a lit notch at the corner (step B's close-up)."""
+    return S_F1 - 0.01 - max(0.0, t - FOLD) * LV * WALL_N[1] / WALL_D[1]
+
+
 def wall_parts() -> list:
     """The east wall: band (one panel), plinth, kick, cyan line, the fold's dark line, the cove and the back skin."""
     u0, u1 = S_F0 + 0.01, JAMB_U
     band = [_poly([(PLINTH_S0, PLINTH_H), (u0, PLINTH_H), (u0, TUN_BEND - MOUTH_TOP), (PLINTH_S0, TUN_BEND - MOUTH_TOP)]),
             _poly([(u0, PLINTH_H), (u1, PLINTH_H), (u1, FOLD - GAP_H), (u0, FOLD - GAP_H)])]
     gap = _poly([(S_F1 - 0.01, FOLD - GAP_H), (u1, FOLD - GAP_H), (u1, FOLD), (S_F1 - 0.01, FOLD)], 0.0)
-    cove = [_poly(q) for q in [_cut_cove([(S_F1 - 0.01, FOLD), (u1, FOLD), (u1, T_TOP + T_OVER),
-                                          (S_F1 - 0.01, T_TOP + T_OVER)])] if len(q) >= 3]
+    tt = T_TOP + T_OVER
+    cove = [_poly(q) for q in [_cut_cove([(cove_start(FOLD), FOLD), (u1, FOLD), (u1, tt), (cove_start(tt), tt)])]
+            if len(q) >= 3]
     fr = G.Frame((0.0, 0.0, FLOOR), (1, 0, 0), (0, 0, 1), (0, 1, 0))
     body = G.slab(fr, G.rect(PLINTH_S0, JAMB_U, KICK_H, PLINTH_H), -0.2, PLINTH_W, 0.008)
     kick = G.slab(fr, G.rect(PLINTH_S0, JAMB_U, 0.0, KICK_H), -0.2, PLINTH_W - 0.012)
