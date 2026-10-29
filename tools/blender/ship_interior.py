@@ -54,6 +54,10 @@ L.MATERIALS.update({
     "int_cup_red": {"base": (0.6, 0.02, 0.02, 1.0), "metallic": 0.0, "roughness": 0.28},
     "int_cup_white": {"base": (0.86, 0.86, 0.84, 1.0), "metallic": 0.0, "roughness": 0.4},
     # the hall's amber floor ring: the corridors' amber, its own material so its strip lights get their own numbers
+    # the throat's floor lights (art #263 gill set step 2): the same amber, their own [light.mats] row (dimmer, shorter
+    # strip lights) so the pools stay off the gill set's plinth
+    "int_amber_throat": {"base": (1.0, 0.55, 0.15, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.55, 0.15),
+                          "strength": 8.0},
     "int_amber_ring": {"base": (1.0, 0.55, 0.15, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.55, 0.15),
                        "strength": 8.0},
     # a soda spill: a thin glossy dark red film
@@ -637,7 +641,8 @@ def floor_light(args, layout):
     bolts = M(hex_bolt(-hl + 0.03, 0.0, FLOOR + 0.006, 0.009), hex_bolt(hl - 0.03, 0.0, FLOOR + 0.006, 0.009))
     return [P("bezel", G.bbox(-hl, hl, -0.07, 0.07, FLOOR - 0.002, FLOOR + 0.006, 0.004), "int_silver_c"),
             P("halo", G.bbox(-hl + 0.055, hl - 0.055, -0.055, 0.055, FLOOR + 0.006, FLOOR + 0.008), "int_halo"),
-            P("light", G.bbox(-hl + 0.07, hl - 0.07, -0.032, 0.032, FLOOR + 0.008, FLOOR + 0.011), "int_amber"),
+            P("light", G.bbox(-hl + 0.07, hl - 0.07, -0.032, 0.032, FLOOR + 0.008, FLOOR + 0.011),
+              args.get("mat", "int_amber")),
             P("bolts", bolts, "int_bolt")]
 
 

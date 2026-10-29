@@ -133,6 +133,7 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "cor_grate": ("cor_grate", {"length": S.MOD_L}, True),
     "cor_gutter": ("cor_gutter", {"length": S.MOD_L}, True),
     "floor_light": ("floor_light", {"length": 0.7}, False),
+    "th_light": ("floor_light", {"length": 0.7, "mat": "int_amber_throat"}, False),   # the throat's (gill set step 2)
     "cor_wall_low_a": ("cor_wall_low", {"length": S.MOD_L, "tone": "a"}, True),
     "cor_wall_low_b": ("cor_wall_low", {"length": S.MOD_L, "tone": "b"}, True),
     "cor_channel": ("cor_channel", {"length": S.MOD_L}, True),
@@ -449,13 +450,13 @@ def placements() -> list[tuple[str, list[float], float]]:
                 if i in (0, 3):
                     lp = [round(w[0] + d[0] * TH_MOD * 0.5 + inward[0] * 0.3, 4),
                           round(w[1] + d[1] * TH_MOD * 0.5 + inward[1] * 0.3, 4)]
-                    put("floor_light", lp, yw)
+                    put("th_light", lp, yw)
                 continue
             # the clean throat: under the roof the wall is th_wall_<side>'s (placed once a side below), no modules
             if i in (0, 3):   # rebuild E: two a side, at 1/5 and 4/5 of the wall (the vent's 0.36 m shift went with it)
                 sh = TH_MOD * 0.5
                 lp = [round(w[0] + d[0] * sh + inward[0] * 0.3, 4), round(w[1] + d[1] * sh + inward[1] * 0.3, 4)]
-                put("floor_light", lp, yw)
+                put("th_light", lp, yw)
         put("th_wall_" + ("e" if sx > 0 else "w"), [round(mx, 4), round(my, 4)], -sx * T_.WALL_YAW)
 
     put("th_frame", [0.0, 0.0])

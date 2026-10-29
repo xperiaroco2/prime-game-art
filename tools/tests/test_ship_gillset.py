@@ -106,6 +106,22 @@ class Wall(unittest.TestCase):
         self.assertGreater(min(glow), 0.001)                                           # no coplanar face on the band
 
 
+class Lamps(unittest.TestCase):
+    def test_throat_floor_lights_light_nothing(self):
+        """step 2: the throat's floor lights (th_light) glow in their own amber, which lights nothing (its pools painted
+        the set's plinth); int_amber stays the ship's."""
+        import tomllib
+        ship = tomllib.loads((ROOT / "layouts" / "ship" / "ship.toml").read_text(encoding="utf-8"))
+        inter = tomllib.loads((ROOT / "layouts" / "ship" / "interior.toml").read_text(encoding="utf-8"))
+        self.assertEqual(ship["light"]["mats"]["int_amber_throat"].get("l"), 0.0)
+        self.assertEqual(ship["light"]["mats"]["int_amber"].get("l"), 2.0)
+        piece = next(p for p in inter["pieces"] if p["id"] == "th_light")
+        self.assertEqual(piece["args"]["mat"], "int_amber_throat")
+        th = [q for q in inter["place"] if q[0] == "th_light"]
+        self.assertEqual(len(th), 4)
+        self.assertTrue(all(-7.0 < q[1][1] < -3.0 and abs(q[1][0]) < 3.0 for q in th))   # all in the throat
+
+
 class Controller(unittest.TestCase):
     def const(self, name: str) -> float:
         return float(re.search(rf"^const {name} := ([-0-9.]+)", GD, re.M).group(1))
