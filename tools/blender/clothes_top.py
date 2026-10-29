@@ -58,8 +58,9 @@ def tree_of(objs) -> BVHTree:
     return BVHTree.FromPolygons(co, polys)
 
 
-def _bisect(bm, mw, pick, co, no, outer=True) -> None:
-    """Cuts the faces pick(world centre) by the world plane (co, no); clears its positive side (outer) or negative."""
+def _bisect(bm, mw, pick, co, no, outer: bool | None = True) -> None:
+    """Cuts the faces pick(world centre) by the world plane (co, no); clears its positive side (outer), its negative
+    (False) or nothing (None: the cut alone)."""
     inv = mw.inverted()
     faces = [f for f in bm.faces if pick(mw @ f.calc_center_median())]
     if not faces:
@@ -68,7 +69,7 @@ def _bisect(bm, mw, pick, co, no, outer=True) -> None:
     verts = {v for f in faces for v in f.verts}
     nl = (mw.to_3x3().transposed() @ Vector(no)).normalized()
     bmesh.ops.bisect_plane(bm, geom=list(verts) + list(edges) + faces, plane_co=inv @ Vector(co), plane_no=nl,
-                           clear_outer=outer, clear_inner=not outer)
+                           clear_outer=outer is True, clear_inner=outer is False)
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
 
 
@@ -81,8 +82,11 @@ def cut_garment(gar, args) -> dict:
     bm = bmesh.new()
     bm.from_mesh(me)
     n0 = len(bm.faces)
-    front = lambda c: c.y < 0 and c.z > z_w - 0.01
-    back = lambda c: c.y > back_y and c.z > z_w - 0.01
+    # the waist first, all round and without clearing: then the bib's and the back V's planes act only above it, so
+    # beside them the trousers' top edge is the straight cut at z_w, not the bottoms of faces crossing it
+    _bisect(bm, mw, lambda c: True, (0, 0, z_w), (0, 0, 1), outer=None)
+    front = lambda c: c.y < 0 and c.z > z_w
+    back = lambda c: c.y > back_y and c.z > z_w
     _bisect(bm, mw, front, (bib_hw, 0, 0), (1, 0, 0))
     _bisect(bm, mw, front, (-bib_hw, 0, 0), (-1, 0, 0))
     _bisect(bm, mw, front, (0, 0, bib_top), (0, 0, 1))
@@ -91,7 +95,7 @@ def cut_garment(gar, args) -> dict:
     for sgn in (1, -1):
         _bisect(bm, mw, back, (sgn * hw_w, 0, z_w), (sgn * dz / ln, 0, -dx / ln))
     _bisect(bm, mw, back, (0, 0, z_apex), (0, 0, 1))
-    side = lambda c: c.z > z_w - 0.01 and not (c.y < 0 and abs(c.x) < bib_hw) and not (c.y > back_y and abs(c.x) < hw_w)
+    side = lambda c: c.z > z_w and not (c.y < 0 and abs(c.x) < bib_hw) and not (c.y > back_y and abs(c.x) < hw_w)
     _bisect(bm, mw, side, (0, 0, z_w), (0, 0, 1))
     bm.faces.ensure_lookup_table()
     gone = [f for f in bm.faces if not H.keep_face(*(mw @ f.calc_center_median()), z_w, bib_hw + 1e-3,
@@ -344,7 +348,8 @@ def near_seam(c, reg, args, zf, share: float = 0.06, band: float = 0.025) -> boo
     else:
         u = H.arm_uv(c.x, c.y, c.z, args.cuff_x, axis_y, axis_z, u0, wd, V0[reg], args.shell_per_m)[0]
     f = (u - u0) / wd
-    sleeve = (abs(abs(c.x) - args.seam_x) < band and c.z > args.arm_z - band) or              (abs(c.x) > args.seam_x - band and abs(c.z - args.arm_z) < band)
+    sleeve = ((abs(abs(c.x) - args.seam_x) < band and c.z > args.arm_z - band)
+              or (abs(c.x) > args.seam_x - band and abs(c.z - args.arm_z) < band))
     return f < share or f > 1 - share or sleeve
 
 
