@@ -85,7 +85,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "first person at night; P saves a screenshot and its position into DIR "
                              "(default <raw>/<raw_dir>/play)")
     parser.add_argument("--play-test", type=Path, metavar="DIR",
-                        help="the --play scene off-screen: the capsule walks 2 s, saves one shot and DIR/play.json")
+                        help="the --play scene off-screen: the capsule walks 2 s, presses the gill set's button (E), saves two shots and "
+                             "DIR/play.json")
     parser.set_defaults(_ship_parser=parser)   # lens C step 4: run() refuses --charger without --shoot as a usage error
 
 
@@ -545,10 +546,13 @@ def play(layout: dict, out: Path, folder: Path, test: bool) -> int:
         if code != 0 or not (folder / "play.json").is_file():
             raise common.Failure(f"ship.gd play test failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
         result = json.loads((folder / "play.json").read_text(encoding="utf-8"))
-        if result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 1:
+        # step 5: and a scripted E press at the gill set's button flips the slit under the white bar (a second shot)
+        press = result.get("press", {})
+        if result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 2 or not press.get("ok"):
             common.bad(f"ship --play-test: {result}")
             return 1
-        common.ok(f"ship --play-test: walked {result['moved_m']} m on the floor, one shot in {folder.as_posix()}")
+        common.ok(f"ship --play-test: walked {result['moved_m']} m on the floor; E at the button flipped slit "
+                  f"{press['presses'][0]['slit']} {press['presses'][0]['state']}; two shots in {folder.as_posix()}")
         return 0
     common.say(f"ship --play: a window opens; P saves a screenshot into {folder.as_posix()}, Ctrl+Q or closing it quits")
     # ship.gd's _play sizes and centres his window itself. heavy=False: it may stay open for hours, so it does not hold

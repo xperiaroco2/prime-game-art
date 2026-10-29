@@ -4,6 +4,10 @@ extends CharacterBody3D
 ## a screenshot with where it was taken. ship.gd adds it in mode "play"; its `test` runs it alone off-screen.
 ##   W A S D walk, Shift run, Space jump, mouse look, F fly through walls (Q down, E up), P or F12 a screenshot,
 ##   F11 full screen, H the help, Esc frees the mouse (a click takes it back), Ctrl+Q quits.
+##   E uses what the player looks at within reach (step 5: the gill set's button): ship.gd sets `can_use` each frame
+##   (a centred "E" hint shows while it is true) and listens to `used`.
+
+signal used
 
 const WALK: float = 3.0
 const RUN: float = 6.0
@@ -23,6 +27,8 @@ var _hud: Label
 var _note: Label
 var _note_left: float = 0.0
 var _shape: CollisionShape3D
+var can_use: bool = false
+var _hint: Label
 
 
 func setup(radius: float, height: float, out_dir: String) -> void:
@@ -45,10 +51,14 @@ func setup(radius: float, height: float, out_dir: String) -> void:
 	var layer: CanvasLayer = CanvasLayer.new()
 	_hud = _label(Vector2(16, 10), 18)
 	_note = _label(Vector2(16, 40), 26)
+	_hint = _label(Vector2(0, 0), 28)
+	_hint.text = "[E]  press"
+	_hint.visible = false
 	layer.add_child(_hud)
 	layer.add_child(_note)
+	layer.add_child(_hint)
 	add_child(layer)
-	_note.text = "W A S D walk, Shift run, Space jump, F fly (Q/E), P screenshot, F11 full screen, H help, Esc mouse"
+	_note.text = "W A S D walk, Shift run, Space jump, E use, F fly (Q/E), P screenshot, F11 full screen, H help, Esc mouse"
 	_note_left = 12.0
 
 
@@ -83,6 +93,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			KEY_P, KEY_F12:
 				shot()
+			KEY_E:
+				if not flying:
+					used.emit()
 			KEY_F:
 				flying = not flying
 				_shape.disabled = flying
@@ -92,7 +105,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				var w: Window = get_window()
 				w.mode = Window.MODE_WINDOWED if w.mode == Window.MODE_FULLSCREEN else Window.MODE_FULLSCREEN
 			KEY_H:
-				_say("W A S D walk, Shift run, Space jump, F fly (Q/E), P screenshot, F11 full screen, Esc mouse, Ctrl+Q quit")
+				_say("W A S D walk, Shift run, Space jump, E use, F fly (Q/E), P screenshot, F11 full screen, Esc mouse, Ctrl+Q quit")
 			KEY_Q:
 				if k.ctrl_pressed:
 					get_tree().quit(0)
@@ -121,6 +134,9 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 	_hud.text = "x %.2f  y %.2f  h %.2f   facing %d°%s" % [global_position.x, global_position.z, global_position.y,
 		posmod(roundi(rad_to_deg(-rotation.y)), 360), "   FLY" if flying else ""]
+	_hint.visible = can_use and not flying
+	if _hint.visible:
+		_hint.position = get_viewport().get_visible_rect().size / 2.0 + Vector2(-48, 36)
 	if _note_left > 0.0:
 		_note_left -= delta
 		if _note_left <= 0.0:

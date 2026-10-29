@@ -11,7 +11,8 @@ extends Node
 ## Each niche lights the wall round it with a shadowless omni in front of it (no specular hot spot); an open one also
 ## spills a soft cyan glow onto the wall on its mouth side (an additive sprite, the picture's haze). A dim warm spot
 ## washes the wall (shadowless, aimed at the slits' band, off the plinth). The button's ring glows cyan.
-## API: setup(piece), step(delta), press() -> "open" / "shut", pose(open, runner), reset(), info(); `time_scale` scales
+## API: setup(piece), step(delta), press() -> "open" / "shut", pose(open, runner), reset(), info(), button_point(),
+## out_dir() (--play's reach check); `time_scale` scales
 ## the steam (the proof's frame-by-frame render sets it from the real frame time).
 
 const RED := Color(1.0, 0.12, 0.04)
@@ -191,6 +192,18 @@ func set_look(over: Dictionary) -> void:
 func info() -> Dictionary:
 	return {"open": open.duplicate(), "runner": ORDER[runner] + 1, "out": [_out.x, _out.y, _out.z],
 		"mids": _mids.map(func(v: Vector3) -> Array: return [snappedf(v.x, 0.001), snappedf(v.y, 0.001), snappedf(v.z, 0.001)])}
+
+
+## Step 5 (--play): the button's middle and the wall's outward normal in world space, for a player's reach check.
+func button_point() -> Vector3:
+	var dome: MeshInstance3D = _mesh("btn_dome")
+	if dome == null:
+		dome = _mesh("btn_ring")
+	return _root.global_transform * _centre(dome) if dome != null else _root.global_position
+
+
+func out_dir() -> Vector3:
+	return (_root.global_transform.basis * _out).normalized()
 
 
 func slit() -> int:

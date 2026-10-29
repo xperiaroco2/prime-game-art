@@ -670,17 +670,20 @@ func _play(test: bool) -> void:
 		root.move_to_center()
 		root.grab_focus()
 	_environment()
-	var lights: int = _dress(_build())
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
 	_probes()
 	if nav_blink:
 		process_frame.connect(_nav_tick)
 	var w: Dictionary = _req["walk"]
-	var p = Player.new()  # untyped: player.gd's own fields (test, shots, shot())
+	var p = Player.new()  # untyped: player.gd's own fields (test, shots, shot(), can_use, used)
 	p.test = test
 	p.setup(float(w["r"]), float(w["h"]), _out)
 	root.add_child(p)
 	p.global_position = _v(_req["spawn"]) + Vector3(0, 0.05, 0)
 	p.rotation_degrees.y = float(_req.get("spawn_yaw", 180.0))
+	_play_player = p
+	_play_gill_set(ship)
 	print("SHIP play ready: %d emissive lights, shots into %s" % [lights, _out])
 	if not test:
 		return
@@ -701,10 +704,96 @@ func _play(test: bool) -> void:
 		await physics_frame
 	await p.shot()
 	var end: Vector3 = p.global_position
+	var press: Dictionary = await _play_test_press(p)
 	_write("play.json", {"start": _r3(start), "end": _r3(end), "moved_m": snappedf(start.distance_to(end), 0.001),
-		"on_floor": p.is_on_floor(), "shots": p.shots})
+		"on_floor": p.is_on_floor(), "shots": p.shots, "press": press})
 	print("SHIP play test saved %s" % _out)
 	quit(0)
+
+
+# --- step 5: the gill set in --play (gill_set.gd on the east wall; E presses the button within reach) -----------
+const REACH_M: float = 1.6     # eye to the button's middle
+const AIM_DEG: float = 14.0    # the look's angle off the button
+var _play_player = null
+var _play_gills: Node = null
+var _play_presses: Array = []
+
+
+func _play_gill_set(ship: Node3D) -> void:
+	var piece: Node3D = null
+	for n: Node in ship.get_children():
+		if String(n.name).begins_with("th_wall_e"):
+			piece = n
+	if piece == null:
+		print("SHIP play: no placed th_wall_e, no gill set")
+		return
+	_play_gills = GillSet.new()
+	piece.add_child(_play_gills)
+	_play_gills.setup(piece)
+	process_frame.connect(_play_tick)
+	_play_player.used.connect(_play_use)
+
+
+func _play_tick() -> void:
+	_play_gills.step(root.get_process_delta_time())
+	_play_player.can_use = _in_reach()
+
+
+func _in_reach() -> bool:
+	var cam: Camera3D = _play_player.camera
+	var to: Vector3 = _play_gills.button_point() - cam.global_position
+	if to.length() > REACH_M or to.dot(_play_gills.out_dir()) > 0.0:   # too far, or behind the wall
+		return false
+	return (-cam.global_transform.basis.z).angle_to(to) < deg_to_rad(AIM_DEG)
+
+
+func _play_use() -> void:
+	if _play_gills == null or not _in_reach():
+		return
+	var k: int = _play_gills.slit()
+	var state: String = _play_gills.press()
+	_play_presses.append({"slit": k + 1, "state": state})
+	print("SHIP play press: slit %d %s" % [k + 1, state])
+
+
+## --play-test's press: the capsule set 0.9 m in front of the button on the deck, looking at it; a real E key event
+## (player.gd's `used`) must flip the slit under the white bar. Saves a second shot with the hint.
+func _play_test_press(p) -> Dictionary:
+	if _play_gills == null:
+		return {"ok": false, "why": "no gill set"}
+	var b: Vector3 = _play_gills.button_point()
+	var out: Vector3 = _play_gills.out_dir()
+	out.y = 0.0
+	out = out.normalized()
+	var stand: Vector3 = b + out * 0.9
+	stand.y = b.y - 1.15 + 0.05   # the button stands 1.15 m over the deck
+	p.velocity = Vector3.ZERO
+	p.global_position = stand
+	p.rotation.y = atan2(out.x, out.z)   # -z (the look) toward the wall
+	for i: int in 10:
+		await physics_frame
+	var to: Vector3 = b - p.camera.global_position
+	p.camera.rotation.x = atan2(to.y, Vector2(to.x, to.z).length())
+	for i: int in 3:
+		await process_frame
+	var reach: bool = _in_reach()
+	var key: InputEventKey = InputEventKey.new()
+	key.physical_keycode = KEY_E
+	key.keycode = KEY_E
+	key.pressed = true
+	Input.parse_input_event(key)
+	for i: int in 3:
+		await process_frame
+	key = key.duplicate()
+	key.pressed = false
+	Input.parse_input_event(key)
+	for i: int in 20:
+		await process_frame
+	await p.shot()
+	var open: Array = _play_gills.open.duplicate()
+	var ok: bool = reach and _play_presses.size() == 1 and _play_presses[0]["state"] == "open" 		and open.count(true) == 1 and bool(open[int(_play_presses[0]["slit"]) - 1])
+	return {"ok": ok, "in_reach": reach, "hint": p.can_use, "presses": _play_presses, "open": open,
+		"stand": _r3(p.global_position), "button": _r3(b)}
 
 
 ## The nav lamps' blink (light layer): the white tail lamp a short flash once a second (0.12 s), red and green a soft
