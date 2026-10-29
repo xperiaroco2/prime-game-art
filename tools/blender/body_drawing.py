@@ -192,8 +192,12 @@ def body_sheet(doc: dict, meas: dict, out: Path) -> Path:
              f"HAND {hand['length']:.0f} X {hand['width']:.0f}, 4 DIGITS", f"FOOT {foot['length']:.0f} X {foot['width']:.0f}",
              f"LEG AXIS {doc['legs']['axis_deg']:.0f} DEG", f"CROTCH {k['crotch_z_concept']:.0f}",
              f"ARMPIT {k['armpit_z']:.0f}"]
-    for i, e in enumerate(extra):
-        cv.text(cx["side"] + 140, int(oz - (H - 120) * s) + i * 22, e, INK)
+    ch = doc["chest"]
+    rounds = [f"CHEST ROUNDS +{ch['projection']:.0f} AT {ch['apex_z']:.0f}",
+              f"ROUNDS {2 * ch['centre_x']:.0f} APART"] if ch.get("rounds") else []
+    ex_y = int(oz - (H - 120) * s) - len(rounds) * 22   # the column moves up to keep clear of the depth labels
+    for i, e in enumerate(extra + rounds):
+        cv.text(cx["side"] + 140, ex_y + i * 22, e, RING if i >= len(extra) else INK)
     # side dimensions: depth at the chest, waist, seat
     t = doc["trunk"]
     for label, zz in (("depth chest", k["chest_z"]), ("depth waist", k["waist_z"]), ("depth seat", k["hip_z"] + 60)):
@@ -202,13 +206,17 @@ def body_sheet(doc: dict, meas: dict, out: Path) -> Path:
         y = oz - t["z"][i] * s
         cv.line((cx["side"] + f_ * s, y), (cx["side"] + b_ * s, y), DIM, 0)
         cv.text(cx["side"] + 140, int(y) - 7, f"{label} {b_ - f_:.0f}", DIM)
-    ch = doc["chest"]
     if ch.get("rounds"):
+        # no dots on the chest (they read as nipples): a tick on the side's profile, a dimension line between
+        # the rounds' centres on the front; their labels end the extras' column
         y = oz - ch["apex_z"] * s
-        cv.dot(int(cx["side"] + ch["apex_front_y"] * s), int(y), RING, 3)
-        cv.text(cx["side"] + 140, int(oz - (ch["apex_z"] + 70) * s), f"CHEST ROUND +{ch['projection']:.0f} AT {ch['apex_z']:.0f}", RING)
-        for sx in (-1, 1):
-            cv.dot(int(cx["front"] + sx * ch["centre_x"] * s), int(oz - ch["centre_z"] * s), RING, 3)
+        ax = cx["side"] + ch["apex_front_y"] * s
+        cv.line((ax - 14, y), (ax - 4, y), RING, 1)
+        yc = oz - (ch["centre_z"] + 90) * s
+        x0, x1 = cx["front"] - ch["centre_x"] * s, cx["front"] + ch["centre_x"] * s
+        cv.line((x0, yc), (x1, yc), RING, 0)
+        for xx in (x0, x1):
+            cv.line((xx, yc - 4), (xx, yc + 4), RING, 0)
     for view, lab in (("front", "FRONT"), ("side", "SIDE (FRONT TO THE LEFT)"), ("back", "BACK")):
         cv.text(cx[view] - 60, oz + 14, lab, INK)
     # the bottom row: the concept's views with the outlines over them
