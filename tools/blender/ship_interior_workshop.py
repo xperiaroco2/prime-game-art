@@ -57,13 +57,23 @@ L.MATERIALS.update({
     "ws_cable_b": {"base": (0.45, 0.12, 0.02, 1.0), "metallic": 0.0, "roughness": 0.45},
     "ws_cable_c": {"base": (0.02, 0.06, 0.28, 1.0), "metallic": 0.0, "roughness": 0.45},
     "ws_steel": {"base": (0.30, 0.31, 0.33, 1.0), "metallic": 0.9, "roughness": 0.35},
+    # step 2: a fourth cable colour (a dull yellow) and the shells' dark insides (satin graphite)
+    "ws_cable_d": {"base": (0.42, 0.30, 0.02, 1.0), "metallic": 0.0, "roughness": 0.45},
+    "ws_inner": {"base": (0.035, 0.037, 0.04, 1.0), "metallic": 0.15, "roughness": 0.72},   # matte: a satin one mirrored the green
+    # step 2: the cabinetry's dark bronze (the concept's olive-bronze fronts and tops; step 1's lens bronze read orange
+    # plastic) and its second, darker tone; ship.gd swaps both for the stations' bronze shader (LENS_BRONZE)
+    "ws_bronze": {"base": (*(x ** 2.2 for x in (0.26, 0.22, 0.14)), 1.0), "metallic": 0.55, "roughness": 0.4},
+    "ws_bronze2": {"base": (*(x ** 2.2 for x in (0.13, 0.125, 0.10)), 1.0), "metallic": 0.35, "roughness": 0.5},
 })
 # the room's acid green (and the eyes' cyan): glows; ship.toml [light.mats] gives each its colour and strength, l 0
-# (they light nothing: the room's green light is the "shop" lamp group's few omnis)
+# (they light nothing: the room's green light is the "shop" lamp group's few omnis and spots); step 2: the open
+# drawers' lit liners, the cores' small cyan lights and the eye's soft highlight
 for _n, _c, _s in (("ws_green__strip", _GREEN, 8.0), ("ws_green__handle", _GREEN, 8.0), ("ws_green__rim", _GREEN, 8.0),
                    ("ws_green__lamp", _GREEN, 12.0), ("ws_green__sleep", _GREEN, 4.0), ("ws_cyan__eye", _CYAN, 6.0),
-                   ("ws_cyan__pupil", _CYAN, 4.0)):
+                   ("ws_cyan__pupil", _CYAN, 4.0), ("ws_green__liner", _GREEN, 2.0), ("ws_cyan__core", _CYAN, 8.0),
+                   ("ws_glint", (1.0, 1.0, 1.0), 2.0)):
     L.MATERIALS[_n] = {"base": (*_c, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": _c, "strength": _s}
+L.MATERIALS["ws_green__liner"]["base"] = (0.03, 0.12, 0.02, 1.0)   # a dark green felt that glows a little
 
 # --- the drawing's numbers (cm) -----------------------------------------------------------------------------------
 # the bench: d 0..55, top 90 (a 5 cm slab), the body's face at d 50, drawer fronts 2.5 thick on it (h 10..45, 47..82),
@@ -81,9 +91,14 @@ CAB_K = (-1, 1)           # the cabinet's: -21.95 .. +21.95
 OPEN = {-32.93: ("top", "eyes"), -98.81: ("low", "limbs")}
 CRADLE = {"d": 54.0, "h": 18.0, "bed": 44.0}
 SLEEPER = 28.0            # the sleeping robots' diameter
-ROBOT = {"d": 60.0, "h": 145.0, "eye": 16.0, "hands": 95.0, "open": 30.0}
-RAIL = {"r": 105.0, "th": (-110.0, -25.0), "bottom": 228.0, "w": 10.0, "t": 8.0, "hangers": (-100.0, -67.5, -35.0)}
-HOIST = {"trolley": (20.0, 12.0), "cable": 190.0, "clamp": (177.0, 190.0)}
+# step 2: the side shells smaller (caps of 40 deg, step 1's 45 read as two big ears) and opened 32 deg (the shells'
+# grid, <raw>/ship/v5/workshop/grids/robot_grid_*.png, picked 40/36; 32 in the room: at 36 their dark insides read as
+# two black ears from the bench's front)
+ROBOT = {"d": 60.0, "h": 145.0, "eye": 16.0, "hands": 95.0, "open": 32.0, "panel": 40.0}
+# step 2: the rail 14 cm lower (bottom 214; at 228 its top was 1.7..3.5 cm under the ceiling and the hangers did not
+# show); it still clears the 1.8 m capsule by 34 cm; the hoist a chunky carriage, a short thick rod and a claw clamp
+RAIL = {"r": 105.0, "th": (-110.0, -25.0), "bottom": 214.0, "w": 10.0, "t": 8.0, "hangers": (-100.0, -67.5, -35.0)}
+HOIST = {"carriage": (30.0, 17.0, 12.0), "rod": 2.2, "clamp": (176.0, 188.0)}
 RUG = {"d": 66.0, "r": 110.0}   # the drawing's D80 at r 95 covered the floor lights' bars: D66 between them at r 110
 LAMP = {"base": 18.0, "head": 140.0}
 # the free items in the WEST room's frame (a_w = -a_e of the drawing): (piece, r m, a_w deg, face deg); the robot,
@@ -306,31 +321,35 @@ def _module(K, drawers, open_slot=None):
     t0, t1 = K["toe"]
     top, slab, body, fr = K["top"], K["slab"], K["body"], K["front"]
     seam = LN.SEAM
+    # step 2: graphite carcass, dark bronze fronts with a chamfered raised panel each, a dark bronze top with a glossy
+    # bronze nosing (step 1's lens bronze everywhere read as orange plastic)
     out = [part("toe", fblock(0.0, t1, 0.0, t0, seam), GRAPH)]
     if open_slot:
         s0, s1 = open_slot
         w = BENCH["open_w"] * CM / 2
         out += [part("body", M(fblock(0.0, body, t0, s0, seam, bot=0.0), fblock(0.0, body, s1, top - slab, seam)),
-                     BRONZE2),
+                     GRAPH2),
                 part("bay", fblock(0.0, 18.0, s0, s1, seam), GRAPH),
-                part("stiles", M(stile(18.0, body, s0, s1, w, -1), stile(18.0, body, s0, s1, w, 1)), BRONZE2)]
+                part("stiles", M(stile(18.0, body, s0, s1, w, -1), stile(18.0, body, s0, s1, w, 1)), "ws_bronze2")]
     else:
-        out.append(part("body", fblock(0.0, body, t0, top - slab, seam), BRONZE2))
+        out.append(part("body", fblock(0.0, body, t0, top - slab, seam), GRAPH2))
     yf = half(body + fr) - 0.0165
-    fronts, bezels, bars = [], [], []
+    fronts, panels, bezels, bars = [], [], [], []
     for h0, h1 in drawers:
         if open_slot and (h0, h1) == (open_slot[0] + 1.0, open_slot[1] - 1.0):
             continue
         fronts.append(front(-yf, yf, h0, h1, body, body + fr))
-        b, g = handle(h1 - 6.0, body + fr)
+        panels.append(front(-yf + 0.03, yf - 0.03, h0 + 3.0, h1 - 3.0, body + fr - 0.1, body + fr + 0.5, 0.004))
+        b, g = handle(h1 - 7.0, body + fr + 0.5)
         bezels.append(b)
         bars.append(g)
     if fronts:
-        out += [part("fronts", M(*fronts), BRONZE), part("pulls", M(*bezels), GRAPH),
-                part("pull_lights", M(*bars), "ws_green__handle")]
+        out += [part("fronts", M(*fronts), "ws_bronze2"), part("panels", M(*panels), "ws_bronze"),
+                part("pulls", M(*bezels), GRAPH), part("pull_lights", M(*bars), "ws_green__handle")]
     s0, s1 = K["strip"]
     out.append(part("strip", fblock(body - 0.1, body + 0.5, s0, s1, 1.0), "ws_green__strip"))
-    out.append(part("top", fblock(0.0, K["d"], top - slab, top, 0.0, top=1.0, bot=0.4), BRONZE))
+    out.append(part("top", fblock(0.0, K["d"] - 1.2, top - slab, top, 0.0, top=1.0, bot=0.4), "ws_bronze"))
+    out.append(part("nosing", fblock(K["d"] - 1.4, K["d"], top - slab, top, 0.0, top=0.5, bot=0.5), EDGE))
     return out
 
 
@@ -364,11 +383,23 @@ def _tray(h0, h1, d_front):
              L.box(-d_front * CM, -db * CM, w - 0.012, w, FLOOR + hf * CM, FLOOR + ht * CM),
              L.box(-(db + 1.2) * CM, -db * CM, -w, w, FLOOR + hf * CM, FLOOR + ht * CM),
              L.box(-d_front * CM, -db * CM, -w, w, FLOOR + hf * CM, FLOOR + (hf + 1.0) * CM)]
-    b, g = handle(h1 - 6.0, d_front + fr)
-    parts = [part("front", front(-yf, yf, h0, h1, d_front, d_front + fr), BRONZE),
-             part("tray", M(*walls), BRONZE2),
-             part("insert", G.bbox(-(d_front - 0.3) * CM, -(db + 1.5) * CM, -w + 0.015, w - 0.015,
-                                   FLOOR + (hf + 0.5) * CM, FLOOR + fl * CM, 0.004), GRAPH2),
+    b, g = handle(h1 - 7.0, d_front + fr + 0.5)
+    # step 2: the insert's top is a lit green felt liner (the concept's glowing drawer insides), the tray's rim a thin
+    # green line round the inside of its walls
+    x0, x1 = -(d_front - 0.3) * CM, -(db + 1.5) * CM
+    yi = w - 0.015
+    yw, xb = w - 0.012, -(db + 1.2) * CM          # the walls' inner faces: the rim sits on them
+    rim = M(L.box(x0, xb, -yw, -yw + 0.003, FLOOR + (ht - 1.6) * CM, FLOOR + (ht - 0.8) * CM),
+            L.box(x0, xb, yw - 0.003, yw, FLOOR + (ht - 1.6) * CM, FLOOR + (ht - 0.8) * CM),
+            L.box(xb - 0.003, xb, -yw + 0.003, yw - 0.003, FLOOR + (ht - 1.6) * CM, FLOOR + (ht - 0.8) * CM))
+    parts = [part("front", front(-yf, yf, h0, h1, d_front, d_front + fr), "ws_bronze2"),
+             part("panel", front(-yf + 0.03, yf - 0.03, h0 + 3.0, h1 - 3.0, d_front + fr - 0.1, d_front + fr + 0.5,
+                                 0.004), "ws_bronze"),
+             part("tray", M(*walls), "ws_bronze2"),
+             part("insert", G.bbox(x0, x1, -yi, yi, FLOOR + (hf + 0.5) * CM, FLOOR + (fl - 0.4) * CM, 0.004), GRAPH2),
+             part("liner", L.box(x0 + 0.003, x1 - 0.003, -yi + 0.003, yi - 0.003, FLOOR + (fl - 0.45) * CM,
+                                 FLOOR + fl * CM), "ws_green__liner"),
+             part("rim", rim, "ws_green__strip"),
              part("pull", b, GRAPH), part("pull_light", g, "ws_green__handle")]
     return parts, fl, w - 0.015, (db + 1.5, d_front - 0.3)
 
@@ -393,48 +424,74 @@ def _eyes(fl, yin, dr):
             part("pupils", M(*pupils), "ws_glass", 40.0)]
 
 
-def _limb(base, ang, kind, s=1.0):
-    """A spare arm or leg lying on the tray: a shell segment, a graphite joint, a second segment and a claw or a foot,
-    in the tray's plane from base along ang (rad, in the x-y plane)."""
-    dx, dy = math.cos(ang), math.sin(ang)
-    bend = ang + (0.3 if kind == "arm" else -0.2)
-    ex, ey = math.cos(bend), math.sin(bend)
-    z = base[2]
-    p0 = base
-    p1 = (p0[0] + dx * 0.085 * s, p0[1] + dy * 0.085 * s, z)
-    p2 = (p1[0] + ex * 0.075 * s, p1[1] + ey * 0.075 * s, z - 0.002)
-    shells = [capsule(p0, p1, 0.016 * s, 12), capsule(p1, p2, 0.014 * s, 12)]
-    joints = [sphere(0.019 * s, p0, 8, 14), sphere(0.018 * s, p1, 8, 14)]
-    tips = []
-    if kind == "arm":
-        for k in (-1, 0, 1):
-            a = bend + k * 0.45
-            q0 = (p2[0] + math.cos(a) * 0.012, p2[1] + math.sin(a) * 0.012, z)
-            q1 = (q0[0] + math.cos(a) * 0.022, q0[1] + math.sin(a) * 0.022, z)
-            q2 = (q1[0] + math.cos(a - k * 0.6) * 0.016, q1[1] + math.sin(a - k * 0.6) * 0.016, z - 0.003)
-            tips.append(G.tube([q0, q1, q2], 0.0055 * s, 8))
-        joints.append(sphere(0.015 * s, p2, 8, 14))
-    else:   # a foot: a rounded pad
-        tips.append(lathe([(0.0, 0.012), (0.022, 0.011), (0.03, 0.006), (0.03, -0.006), (0.0, -0.007)], 18,
-                          (p2[0] + ex * 0.02, p2[1] + ey * 0.02, z - 0.004), (0, 0, 1)))
-        joints.append(sphere(0.016 * s, p2, 8, 14))
-    return shells, joints, tips
+def seg(p0, p1, r0, r1, a=0.0, b=0.0, ch=0.003, n=16):
+    """A tapered segment from p0 to p1 (radius r0 to r1), starting a and ending b short of its ends, its end rims
+    chamfered by ch (an arm's ivory shell)."""
+    ln = math.dist(p0, p1)
+    prof = [(0.0, a), (r0 - ch, a), (r0, a + ch), (r1, ln - b - ch), (r1 - ch, ln - b), (0.0, ln - b)]
+    return lathe(prof, n, p0, tuple(y - x for x, y in zip(p0, p1)))
+
+
+def hinge(c, ax, r, w, cap=0.004, n=20):
+    """A joint's hinge: a graphite drum radius r, w wide along ax through c, and its two bronze caps."""
+    a = unit(ax)
+    drum = lathe([(0.0, -w / 2), (r - 0.002, -w / 2), (r, -w / 2 + 0.002), (r, w / 2 - 0.002), (r - 0.002, w / 2),
+                  (0.0, w / 2)], n, c, a)
+    caps = M(*[lathe([(0.0, 0.0), (r * 0.62, 0.0), (r * 0.62, cap - 0.001), (r * 0.55, cap), (0.0, cap)], n,
+                     add(c, mul(a, s * (w / 2 - 0.0005))), mul(a, s)) for s in (-1, 1)])
+    return drum, caps
+
+
+def claw(W, fa, up, r=1.0, spread=0.5):
+    """A three-finger claw at the wrist W along fa: a graphite palm, three bronze fingers of two segments each with a
+    knuckle, curled in at the tips; up picks the first finger's side. Returns (palm, knuckles, fingers)."""
+    u = unit(cross(fa, up))
+    v = cross(fa, u)
+    palm = lathe([(0.0, 0.0), (0.021 * r, 0.0), (0.024 * r, 0.006 * r), (0.024 * r, 0.018 * r), (0.018 * r, 0.024 * r),
+                  (0.0, 0.024 * r)], 18, W, fa)
+    knuckles, fingers = [], []
+    for k in range(3):
+        a = D(120 * k + 90)
+        rad = add(mul(u, math.cos(a)), mul(v, math.sin(a)))
+        q0 = add(W, add(mul(fa, 0.02 * r), mul(rad, 0.014 * r)))
+        q1 = add(q0, add(mul(fa, 0.03 * r), mul(rad, 0.014 * r * (0.5 + spread))))
+        q2 = add(q1, add(mul(fa, 0.026 * r), mul(rad, -0.016 * r)))
+        knuckles += [sphere(0.0085 * r, q1, 8, 14)]
+        fingers += [seg(q0, q1, 0.0072 * r, 0.0066 * r, 0.0, 0.0, 0.0015, 10),
+                    seg(q1, q2, 0.0064 * r, 0.0042 * r, 0.0, 0.0, 0.0012, 10)]
+    return palm, knuckles, fingers
+
+
+def _forearm(E, W, up, r=1.0, spread=0.5):
+    """A spare forearm with its claw (the drawer's): the elbow's hinge, the ivory shell, the wrist's ring."""
+    fa = unit(tuple(y - x for x, y in zip(E, W)))
+    n = unit(cross(fa, up))
+    drum, caps = hinge(E, n, 0.024 * r, 0.046 * r)
+    shell = seg(E, W, 0.021 * r, 0.018 * r, 0.008 * r, 0.004 * r)
+    ring = torus(0.018 * r, 0.004 * r, add(W, mul(fa, -0.002)), fa, 20, 8)
+    palm, kn, fi = claw(W, fa, up, r, spread)
+    return [shell], [drum, palm, *kn], [caps, ring], fi
 
 
 def _limbs(fl, yin, dr):
-    """Spare small hands and legs on the liner: three arms with claws, two legs with feet, a loose hand."""
-    z = FLOOR + fl * CM + 0.017
-    x0 = -(dr[1] - 5.0) * CM
-    lay = [((x0, -0.18), D(8), "arm", 1.0), ((x0 - 0.01, -0.09), D(-5), "leg", 1.0), ((x0, 0.0), D(4), "arm", 0.95),
-           ((x0 - 0.008, 0.09), D(-9), "leg", 1.0), ((x0 + 0.004, 0.18), D(6), "arm", 0.9)]
-    shells, joints, tips = [], [], []
-    for (x, y), a, kind, s in lay:
-        sh, jo, ti = _limb((x, y, z), a, kind, s)
+    """Spare robot forearms with their claws laid in a row across the tray (step 2: step 1's arms and legs lying at
+    angles read as a heap), the claws toward the room, each a little turned."""
+    import random
+    rnd = random.Random(11)
+    z = FLOOR + fl * CM + 0.0245
+    xf = -(dr[1] - 4.0) * CM
+    shells, joints, trims, fingers = [], [], [], []
+    for k, y in enumerate((-0.165, -0.055, 0.055, 0.165)):
+        dy = rnd.uniform(-0.02, 0.02)
+        E = (xf + 0.25, y - dy, z)
+        W = (xf + 0.09, y + dy, z)
+        sh, jo, tr, fi = _forearm(E, W, (0.0, 0.0, 1.0), 1.0, 0.35 + 0.15 * (k % 2))
         shells += sh
         joints += jo
-        tips += ti
+        trims += tr
+        fingers += fi
     return [part("limb_shells", M(*shells), "ws_shell", 40.0), part("limb_joints", M(*joints), GRAPH, 40.0),
-            part("limb_tips", M(*tips), BRONZE2, 40.0)]
+            part("limb_trims", M(*trims), EDGE, 40.0), part("limb_tips", M(*fingers), "ws_bronze", 40.0)]
 
 
 def ws_drawer(args, layout):
@@ -457,42 +514,50 @@ def ws_cradle(args, layout):
     bowl = [(rb, 0.05), (rb, H - 0.012), (rb + 0.006, H), (R - 0.008, H), (R, H - 0.008), (R, 0.098), (R - 0.004, 0.094),
             (R - 0.004, 0.084), (R - 0.001, 0.08), (R - 0.012, 0.02), (R - 0.03, 0.0), (rb - 0.02, 0.0), (rb - 0.02, 0.05),
             (rb, 0.05)]
-    cushion = [(0.0, 0.086), (0.05, 0.088), (0.10, 0.104), (0.14, 0.122), (0.17, 0.127), (0.195, 0.122),
-               (rb - 0.004, 0.108), (rb - 0.002, 0.07), (rb - 0.002, 0.048), (0.0, 0.048)]
+    # step 2: a padded cushion (step 1's read as a flat disc): a fat rolled edge round a dished, tufted middle
+    cushion = [(0.0, 0.079), (0.03, 0.0795), (0.06, 0.082), (0.09, 0.088), (0.12, 0.098), (0.145, 0.111),
+               (0.165, 0.121), (0.18, 0.126), (0.195, 0.127), (0.207, 0.123), (0.215, 0.114), (rb - 0.002, 0.10),
+               (rb - 0.002, 0.07), (rb - 0.002, 0.048), (0.0, 0.048)]
+    pad = lambda r: next(z0 + (z1 - z0) * (r - r0) / (r1 - r0)   # noqa: E731
+                         for (r0, z0), (r1, z1) in zip(cushion, cushion[1:]) if r0 <= r <= r1)
+    # the tufts: six buttons sunk in shallow dimples on the slope, a stitched groove round the roll's foot
+    tufts = [sphere(0.0065, (0.105 * math.cos(D(60 * k + 30)), 0.105 * math.sin(D(60 * k + 30)), CAB_TOP + pad(0.105) - 0.002),
+                    6, 12) for k in range(6)]
+    groove = torus(0.152, 0.0028, (0.0, 0.0, CAB_TOP + pad(0.152) + 0.0003), (0, 0, 1), 64, 6)
     rim = [(rb + 0.012, H - 0.003), (R - 0.012, H - 0.003), (R - 0.013, H + 0.004), (rb + 0.013, H + 0.004),
            (rb + 0.012, H - 0.003)]
-    return [part("bowl", lathe(bowl, 64, o), GRAPH2, 35.0), part("cushion", lathe(cushion, 48, o), "ws_cushion", 50.0),
+    return [part("bowl", lathe(bowl, 64, o), GRAPH2, 35.0), part("cushion", lathe(cushion, 64, o), "ws_cushion", 60.0),
+            part("tufts", M(*tufts), GRAPH, 60.0), part("seam", groove, GRAPH, 60.0),
             part("rim", lathe(rim, 64, o), "ws_green__rim", 35.0)]
 
 
 def _sleeper(roll, yaw, seed):
-    """The small round robot, canonical (face toward -x, up +z, centre at the origin): an ivory shell round a dark
-    core, a recessed glossy visor with the shut eye's dim green line, two ear discs with a faint green ring, a short
-    antenna; then tilted face-up 22 deg, rolled and turned."""
+    """The small round robot, canonical (face toward -x, up +z, centre at the origin), the main robot's family (step
+    2): an ivory shell band round a dark core, two closed side shells on 2 mm seams, one small layered eye (a graphite
+    bezel, a dark glass lens) shut as a dim green arc, a short antenna; then tilted face-up 22 deg, rolled and turned."""
     R = SLEEPER / 200
     fx = (-1.0, 0.0, 0.0)
-    parts = {"core": [sphere(R - 0.008, (0, 0, 0), 14, 28)],
-             "shell": [lathe(zone(R, 0.006, 0.0, 116.0, 14, 0.0025), 48, (0, 0, 0), (1.0, 0.0, 0.0))],
-             "visor": [lathe(zone(R - 0.003, 0.006, 0.0, 25.0, 8, 0.0015), 40, (0, 0, 0), fx)],
-             "face": [lathe(zone(R, 0.006, 28.0, 64.0, 8, 0.002), 48, (0, 0, 0), fx)],
-             "ears": [], "ear_caps": [], "ear_rings": [], "lid": [], "antenna": []}
-    for s in (-1, 1):
-        ax = (0.0, s, 0.0)
-        y0 = math.sqrt(R * R - 0.042 ** 2) - 0.004
-        parts["ears"].append(lathe([(0.0, y0), (0.044, y0), (0.044, R + 0.012), (0.04, R + 0.016), (0.0, R + 0.016)],
-                                   32, (0, 0, 0), ax))
-        parts["ear_caps"].append(lathe([(0.0, R + 0.015), (0.026, R + 0.015), (0.024, R + 0.02), (0.0, R + 0.02)], 28,
-                                       (0, 0, 0), ax))
-        parts["ear_rings"].append(lathe([(0.029, R + 0.014), (0.036, R + 0.014), (0.036, R + 0.0172),
-                                         (0.029, R + 0.0172), (0.029, R + 0.014)], 32, (0, 0, 0), ax))
-    # the shut eye: a short lid line sagging in its socket, 1.2 mm over the glass
-    rv = R - 0.003 + 0.0012
+    E_ANG = 17.0                                    # the eye's lens out to 17 deg round -x (D8, the main eye's ratio)
+    parts = {"core": [sphere(R - 0.007, (0, 0, 0), 14, 28)],
+             "shell": [lathe(zone(R, 0.006, 41.0, 139.0, 14, 0.0018), 64, (0, 0, 0), (0.0, 1.0, 0.0))],
+             "caps": [lathe(zone(R, 0.006, 0.0, 38.0, 10, 0.0018), 48, (0, 0, 0), (0.0, s, 0.0)) for s in (-1, 1)],
+             "bezel": [lathe([((R - 0.004) * math.sin(D(E_ANG - 0.5)), (R - 0.004) * math.cos(D(E_ANG - 0.5))),
+                              ((R + 0.0035) * math.sin(D(E_ANG - 0.5)), (R + 0.0035) * math.cos(D(E_ANG - 0.5))),
+                              ((R + 0.0045) * math.sin(D(E_ANG + 2.0)), (R + 0.0045) * math.cos(D(E_ANG + 2.0))),
+                              ((R + 0.0025) * math.sin(D(E_ANG + 5.0)), (R + 0.0025) * math.cos(D(E_ANG + 5.0))),
+                              ((R - 0.004) * math.sin(D(E_ANG + 5.0)), (R - 0.004) * math.cos(D(E_ANG + 5.0))),
+                              ((R - 0.004) * math.sin(D(E_ANG - 0.5)), (R - 0.004) * math.cos(D(E_ANG - 0.5)))],
+                             40, (0, 0, 0), fx)],
+             "glass": [cap_lens(R, E_ANG, 0.0022, 0.005, (0, 0, 0), fx, 32, 5)],
+             "lid": [], "antenna": []}
+    # the shut eye: a lid arc sagging across the lens, 1 mm over the glass
+    rv = R + 0.0022 + 0.001
     arc = []
-    for i in range(13):
-        u = -15.0 + 30.0 * i / 12
-        v = -0.8 + 2.0 * (u / 15.0) ** 2
+    for i in range(15):
+        u = -12.0 + 24.0 * i / 14
+        v = -1.5 + 4.0 * (u / 12.0) ** 2
         arc.append((-rv * math.cos(D(v)) * math.cos(D(u)), rv * math.cos(D(v)) * math.sin(D(u)), rv * math.sin(D(v))))
-    parts["lid"].append(G.tube(arc, 0.0026, 8))
+    parts["lid"].append(G.tube(arc, 0.0019, 8))
     tip = (0.03, 0.0, R + 0.045)
     parts["antenna"] = [capsule((0.012, 0.0, R - 0.01), tip, 0.0035, 8)]
     pitch = rot((0.0, 1.0, 0.0), 22.0)
@@ -504,8 +569,8 @@ def ws_sleeper(args, layout):
     """A small sleeping robot Ø 28 lying in its cradle's dip (origin under the cradle's centre)."""
     parts, r, tip = _sleeper(args.get("roll", 0.0), args.get("yaw", 0.0), args.get("seed", 0))
     c = (0.0, 0.0, CAB_TOP + 0.075 + SLEEPER / 200)
-    mats = {"core": GRAPH, "shell": "ws_shell", "face": "ws_shell", "visor": "ws_socket", "ears": GRAPH2, "ear_caps": "ws_shell",
-            "ear_rings": "ws_green__sleep", "lid": "ws_green__sleep", "antenna": "ws_shell2"}
+    mats = {"core": "ws_inner", "shell": "ws_shell", "caps": "ws_shell", "bezel": GRAPH2, "glass": "ws_glass",
+            "lid": "ws_green__sleep", "antenna": "ws_shell2"}
     out = [part(k, moved(M(*v), r, c), mats[k], 40.0) for k, v in parts.items()]
     out.append(part("bead", sphere(0.0075, add(tip, c), 8, 14), "ws_green__sleep", 40.0))
     return out
@@ -514,11 +579,18 @@ def ws_sleeper(args, layout):
 # --- the main robot ------------------------------------------------------------------------------------------------
 RC = (0.0, 0.0, FLOOR + ROBOT["h"] * CM)
 RR = ROBOT["d"] / 200        # 0.30
-PANEL_P = 45.0               # the side panels' edge (deg from the side axes; r1's 57 read as two balloons)
-BAND_P = 46.6                # the shell band's edge
-HINGE_X = RR * math.sin(D(PANEL_P))
-HINGE_Y = RR * math.cos(D(PANEL_P))
-CORE_Y = 0.19                # the core's flat mechanism plates
+SHELL_T, LINER_T = 0.006, 0.0035   # step 2: thin shells, ivory outside, a dark liner inside (0.5 mm behind)
+CORE_Y = 0.205               # the core's flat mechanism plates (the bays' floors)
+MECH_R = RR - 0.008          # every part of the bays' mechanism stays inside this sphere (clear of the shells)
+
+
+def panel_p() -> float:
+    """The side shells' edge (deg from the side axes; step 1's 45, r1's 57 read as two balloons)."""
+    return ROBOT["panel"]
+
+
+def band_p() -> float:
+    return panel_p() + 1.6
 
 
 def _panel_r(s):
@@ -526,42 +598,58 @@ def _panel_r(s):
 
 
 def _panel_pivot(s):
-    return (RC[0] + HINGE_X, RC[1] + s * HINGE_Y, RC[2])
+    """The side shells hinge at their back edge, so the bays open toward the room as in the concept (step 2 tried
+    front hinges: the shells' ivory outsides faced the room swept back like ears and hid the bays from every view but
+    the bench's)."""
+    return (RC[0] + RR * math.sin(D(panel_p())), RC[1] + s * RR * math.cos(D(panel_p())), RC[2])
+
+
+def _band(R, t, name):
+    secs = [lathe(zone(R, t, band_p(), 180.0 - band_p(), 12, 0.003 if R == RR else 0.0015), 16, RC, (0, 1, 0),
+                  (-1, 0, 0), a0 + 0.6, a1 - 0.6)
+            for a0, a1 in ((-48.0, 48.0), (48.0, 132.0), (132.0, 228.0), (228.0, 312.0))]
+    return part(name, M(*secs), "ws_shell" if name == "shell" else "ws_inner", 30.0)
 
 
 def ws_robot_body(args, layout):
-    """The main robot's body (the collider): the dark core, flat at y +-0.215 under the side panels, and the ivory
-    shell band (the sphere Ø 60 between the side panels) in four panels with 6 mm seams; the eye's socket in the front
-    panel."""
-    core = [(0.0, -CORE_Y), (math.sqrt((RR - 0.014) ** 2 - CORE_Y ** 2), -CORE_Y)]
-    core += [((RR - 0.014) * math.cos(D(a)), (RR - 0.014) * math.sin(D(a)))
-             for a in [-math.degrees(math.asin(CORE_Y / (RR - 0.014))) + i * 2 * math.degrees(math.asin(CORE_Y / (RR - 0.014))) / 16
-                       for i in range(1, 16)]]
-    core += [(math.sqrt((RR - 0.014) ** 2 - CORE_Y ** 2), CORE_Y), (0.0, CORE_Y)]
-    band = zone(RR, 0.01, BAND_P, 180.0 - BAND_P, 12, 0.003)
-    secs = [lathe(band, 16, RC, (0, 1, 0), (-1, 0, 0), a0 + 0.6, a1 - 0.6)
-            for a0, a1 in ((-48.0, 48.0), (48.0, 132.0), (132.0, 228.0), (228.0, 312.0))]
+    """The main robot's body (the collider): the dark core, flat at y +-CORE_Y under the side shells, and the ivory
+    shell band (the sphere Ø 60 between the side shells) in four panels on 6 mm seams, its dark liner inside."""
+    rc = RR - 0.014
+    a = math.degrees(math.asin(CORE_Y / rc))
+    core = [(0.0, -CORE_Y), (math.sqrt(rc ** 2 - CORE_Y ** 2), -CORE_Y)]
+    core += [(rc * math.cos(D(-a + i * 2 * a / 16)), rc * math.sin(D(-a + i * 2 * a / 16))) for i in range(1, 16)]
+    core += [(math.sqrt(rc ** 2 - CORE_Y ** 2), CORE_Y), (0.0, CORE_Y)]
     return [part("core", lathe(core, 48, RC, (0, 1, 0)), GRAPH, 35.0),
-            part("shell", M(*secs), "ws_shell", 30.0)]
+            _band(RR, SHELL_T, "shell"), _band(RR - SHELL_T - 0.0005, LINER_T, "liner")]
 
 
 def _eye():
+    """The eye Ø 16 toward the room, layered (step 2; step 1's flat discs read as a bull's-eye): a proud graphite
+    bezel, a thin bronze trim ring, a dark glass dome, on it a cyan iris with a brighter inner ring and a dark limbal
+    ring round the dark pupil, a soft highlight crescent and a glint."""
     ex = (-1.0, 0.0, 0.0)
-    ring = [(0.068, 0.27), (0.094, 0.27), (0.094, 0.286), (0.088, 0.297), (0.08, 0.3), (0.073, 0.299), (0.068, 0.293),
-            (0.068, 0.27)]
-    Rd, apex = 0.243, 0.306
-    dome = [(0.0, apex)] + [(r, apex - (Rd - math.sqrt(Rd * Rd - r * r))) for r in (0.02, 0.04, 0.055, 0.069)]
-    dome += [(0.069, 0.275), (0.0, 0.275)]
+    bezel = [(0.070, 0.262), (0.095, 0.262), (0.095, 0.287), (0.092, 0.297), (0.085, 0.303), (0.077, 0.304),
+             (0.072, 0.300), (0.070, 0.292), (0.070, 0.262)]
+    trim = [(0.0635, 0.272), (0.0705, 0.272), (0.0705, 0.300), (0.068, 0.3025), (0.0645, 0.300), (0.0635, 0.272)]
+    Rd, apex = 0.20, 0.312   # the dome stands proud of the shell (at 0.300 the shell covered all but its middle)
 
-    def on(r, lift):
+    def on(r, lift=0.0):
         return apex - (Rd - math.sqrt(Rd * Rd - r * r)) + lift
-    # r3: an iris round a dark pupil (r1's and r2's rings round a dot read as a target)
-    iris = [(0.017, on(0.017, 0.0011)), (0.03, on(0.03, 0.0011)), (0.043, on(0.043, 0.0011)), (0.05, on(0.05, 0.0011)),
-            (0.05, on(0.05, -0.002)), (0.017, on(0.017, -0.002)), (0.017, on(0.017, 0.0011))]
-    dot = [(0.0, on(0.0, 0.0013)), (0.0045, on(0.0045, 0.0013)), (0.0045, on(0.0045, -0.002)), (0.0, on(0.0, -0.002))]
-    return [part("eye_ring", lathe(ring, 48, RC, ex), GRAPH2, 35.0), part("eye_glass", lathe(dome, 48, RC, ex), "ws_glass", 40.0),
-            part("eye_iris", lathe(iris, 48, RC, ex), "ws_cyan__eye", 40.0),
-            part("eye_dot", lathe(dot, 16, add(RC, (0.0, 0.016, 0.018)), ex), "ws_shell", 40.0)]
+    dome = [(0.0, apex)] + [(r, on(r)) for r in (0.012, 0.024, 0.036, 0.048, 0.058, 0.064)] + [(0.064, 0.27), (0.0, 0.27)]
+
+    def ring(r0, r1, lift, steps=4):
+        top = [(r0 + (r1 - r0) * i / steps, on(r0 + (r1 - r0) * i / steps, lift)) for i in range(steps + 1)]
+        return top + [(r1, on(r1, -0.002)), (r0, on(r0, -0.002)), top[0]]
+    glint = [(0.044, on(0.044, 0.0012)), (0.051, on(0.051, 0.0012)), (0.051, on(0.051, -0.001)),
+             (0.044, on(0.044, -0.001)), (0.044, on(0.044, 0.0012))]
+    dot = [(0.0, on(0.0, 0.0016)), (0.0042, on(0.0042, 0.0016)), (0.0042, on(0.0042, -0.002)), (0.0, on(0.0, -0.002))]
+    return [part("eye_ring", lathe(bezel, 48, RC, ex), GRAPH2, 35.0), part("eye_trim", lathe(trim, 48, RC, ex), EDGE, 35.0),
+            part("eye_glass", lathe(dome, 48, RC, ex), "ws_glass", 40.0),
+            part("eye_iris", lathe(ring(0.0185, 0.032, 0.0011), 48, RC, ex), "ws_cyan__eye", 40.0),
+            part("eye_inner", lathe(ring(0.014, 0.0185, 0.0014, 2), 48, RC, ex), "ws_cyan__pupil", 40.0),
+            part("eye_limbal", lathe(ring(0.032, 0.0355, 0.0011, 2), 48, RC, ex), GRAPH, 40.0),
+            part("eye_glint", M(lathe(glint, 12, RC, ex, (0.0, 0.0, 1.0), 25.0, 75.0),
+                                lathe(dot, 12, add(RC, (0.0, 0.017, 0.019)), ex)), "ws_glint", 40.0)]
 
 
 def _gear(c, ax, r, teeth, t, depth=0.008):
@@ -578,116 +666,169 @@ def _gear(c, ax, r, teeth, t, depth=0.008):
     return G.slab(fr, pts, 0.0, t)
 
 
+def _bay(s):
+    """One side's mechanism on its core plate (step 2: step 1's flat plate with one gear read empty): a gear train of
+    three (the big gear on the plate, the pinion and the idler a layer out), hub caps, two pistons in their mounts, a
+    small board with chips and a cyan light, a silver motor, and cables in four colours: two loops out of the bay and
+    back, three hanging out of its lower edge to loose plugs under the body. Returns {material: [meshes]}."""
+    ax = (0.0, s, 0.0)
+    y0 = s * CORE_Y
+
+    def at(x, dy, z):
+        return (RC[0] + x, RC[1] + y0 + s * dy, RC[2] + z)
+
+    def box(x0, x1, d0, d1, z0, z1, bev):   # a block on the plate, d0..d1 out of it
+        return G.bbox(RC[0] + x0, RC[0] + x1, *sorted((RC[1] + y0 + s * d0, RC[1] + y0 + s * d1)),
+                      RC[2] + z0, RC[2] + z1, bev)
+    out = {BRONZE: [], EDGE: [], "int_silver_c": [], "ws_steel": [], GRAPH2: [], GRAPH: [], "ws_cyan__core": [],
+           "ws_cable_a": [], "ws_cable_b": [], "ws_cable_c": [], "ws_cable_d": [], "plugs": []}
+    gears = (((-0.03, 0.03), 0.072, 16, 0.0, 0.014), ((0.062, 0.079), 0.040, 10, 0.014, 0.011),
+             ((-0.099, -0.043), 0.034, 9, 0.014, 0.011))
+    for (x, z), r, n, dy, t in gears:
+        out[BRONZE].append(_gear(at(x, dy - 0.0005, z), ax, r, n, t + 0.0005))
+        out[EDGE].append(lathe([(0.0, 0.0), (r * 0.36, 0.0), (r * 0.36, 0.006), (r * 0.3, 0.009), (0.0, 0.009)], 20,
+                               at(x, dy + t, z), ax))
+    for (x0, z0), (x1, z1), (x2, z2) in (((0.02, -0.09), (0.11, -0.035), (0.15, -0.01)),
+                                         ((-0.03, -0.13), (0.06, -0.115), (0.105, -0.10))):
+        out["int_silver_c"].append(seg(at(x0, 0.016, z0), at(x1, 0.016, z1), 0.0135, 0.0135, 0.0, 0.0, 0.002, 16))
+        out["ws_steel"].append(seg(at(x1, 0.016, z1), at(x2, 0.016, z2), 0.0065, 0.0065, -0.004, 0.0, 0.001, 12))
+        for x, z in ((x0, z0), (x2, z2)):
+            out[GRAPH2].append(box(x - 0.014, x + 0.014, -0.0005, 0.026, z - 0.014, z + 0.014, 0.002))
+    # the board, its chips and its light
+    out[GRAPH2].append(box(-0.14, -0.07, -0.0005, 0.006, 0.05, 0.12, 0.0015))
+    for cx, cz, w, h in ((-0.13, 0.068, 0.014, 0.012), (-0.088, 0.106, 0.02, 0.01), (-0.085, 0.064, 0.012, 0.012)):
+        out[GRAPH].append(box(cx - w / 2, cx + w / 2, 0.0055, 0.0095, cz - h / 2, cz + h / 2, 0.001))
+    out["ws_cyan__core"].append(lathe([(0.0, 0.0), (0.011, 0.0), (0.011, 0.004), (0.008, 0.009), (0.0, 0.011)], 20,
+                                      at(-0.115, 0.005, 0.098), ax))
+    out["int_silver_c"].append(lathe([(0.0, -0.05), (0.022, -0.05), (0.024, -0.046), (0.024, 0.046), (0.022, 0.05),
+                                      (0.0, 0.05)], 24, at(-0.01, 0.026, -0.105), (1, 0, 0)))
+    cables = ("ws_cable_a", "ws_cable_b", "ws_cable_c", "ws_cable_d")
+    for k, mat in enumerate(cables[:2]):   # loops out and back
+        o = 0.02 * k
+        pts = [(0.07 + o, 0.006, -0.03 + o), (0.06 + o, 0.08, -0.08), (0.02 + o, 0.07, -0.20 - o), (0.06 + o, 0.006, -0.15)]
+        out[mat].append(G.tube([at(*p) for p in bez(pts, 16)], 0.0066, 8))
+    for k, mat in enumerate(cables[1:]):   # hanging to loose plugs
+        x = 0.03 * k - (0.005 if s > 0 else 0.0)
+        end = (x + 0.015, 0.05 - 0.008 * k, -0.30 - 0.05 * k - (0.03 if s < 0 else 0.0))
+        pts = [(x - 0.01, 0.004, -0.10 - 0.01 * k), (x - 0.01, 0.075, -0.14), (x, 0.075, -0.24), end]
+        pl = bez(pts, 18)
+        out[mat].append(G.tube([at(*p) for p in pl], 0.0062, 8))
+        d = unit(tuple(b - a for a, b in zip(at(*pl[-2]), at(*pl[-1]))))
+        out["plugs"].append(lathe([(0.0, 0.0), (0.0095, 0.0), (0.0095, 0.022), (0.006, 0.026), (0.0, 0.026)], 14,
+                                at(*pl[-1]), d))
+    return out
+
+
 def _arm(s, sh, el, wr):
-    """One arm: a graphite shoulder ball with a bronze collar, the upper arm and forearm (ivory), a graphite elbow and
-    wrist, three bronze claw fingers curled in."""
-    c = lambda p: add(RC, p)   # noqa: E731
-    S_, E_, W_ = c(sh), c(el), c(wr)
+    """One arm (step 2, visibly below the body): a graphite shoulder ball in a bronze collar, the ivory upper arm, a
+    graphite elbow hinge with bronze caps, the ivory forearm, a bronze wrist ring and a three-finger claw."""
+    S_, E_, W_ = add(RC, sh), add(RC, el), add(RC, wr)
+    up_d = unit(tuple(b - a for a, b in zip(S_, E_)))
     fa = unit(tuple(b - a for a, b in zip(E_, W_)))
-    shells = [capsule(S_, E_, 0.022, 14), capsule(E_, W_, 0.02, 14)]
-    joints = [sphere(0.033, S_, 10, 20), sphere(0.027, E_, 10, 20), sphere(0.021, W_, 8, 16)]
-    collar = torus(0.031, 0.006, S_, tuple(b - a for a, b in zip(S_, E_)), 24, 8)
-    u = unit(cross(fa, (1.0, 0.0, 0.0)))
-    v = cross(fa, u)
-    fingers = []
-    for k in range(3):
-        a = D(120 * k + 30 * s)
-        rad = add(mul(u, math.cos(a)), mul(v, math.sin(a)))
-        q0 = add(W_, add(mul(fa, 0.012), mul(rad, 0.012)))
-        q1 = add(q0, add(mul(fa, 0.022), mul(rad, 0.009)))
-        q2 = add(q1, add(mul(fa, 0.018), mul(rad, -0.011)))
-        fingers.append(G.tube(bez([q0, q1, q2], 4), 0.0058, 8))
-    return shells, joints, [collar], fingers
+    n = cross(up_d, fa)
+    n = unit(n) if math.sqrt(sum(x * x for x in n)) > 1e-6 else (0.0, 1.0, 0.0)
+    drum, caps = hinge(E_, n, 0.027, 0.054)
+    shells = [seg(S_, E_, 0.027, 0.023, 0.02, 0.006), seg(E_, W_, 0.023, 0.02, 0.006, 0.004)]
+    collar = torus(0.033, 0.006, add(S_, mul(up_d, 0.012)), up_d, 24, 8)
+    ring = torus(0.0195, 0.0045, add(W_, mul(fa, -0.002)), fa, 20, 8)
+    palm, kn, fi = claw(W_, fa, (1.0, 0.0, 0.0), 1.15, 0.55 if s > 0 else 0.3)
+    return shells, [sphere(0.034, S_, 12, 24), drum, palm, *kn], [collar, caps, ring], fi
 
 
-ARMS = {1: ((-0.02, 0.135, -0.255), (-0.06, 0.20, -0.375), (-0.05, 0.19, -0.444)),
-        -1: ((-0.02, -0.135, -0.255), (-0.09, -0.18, -0.37), (-0.12, -0.16, -0.439))}
+ARMS = {1: ((-0.04, 0.15, -0.245), (-0.12, 0.235, -0.355), (-0.135, 0.205, -0.41)),
+        -1: ((-0.04, -0.15, -0.245), (-0.10, -0.245, -0.36), (-0.15, -0.225, -0.405))}
 
 
 def ws_robot(args, layout):
-    """The main robot's details (no collider): the eye Ø 16 toward the room (a graphite socket ring, a dark glass dome,
-    a dim cyan iris and centre dot), the crown knob the hoist's clamp holds, the two side panels opened 30 deg on their
-    back hinges, the mechanism in each bay (a bronze gear and pinion, a hub, a silver motor, three cables looping out
-    and back) and the two arms hanging to h 95."""
+    """The main robot's details (no collider): the layered eye toward the room, the crown and its knob (the hoist's
+    claw grips it), the two thin side shells (ivory outside, dark liner inside) opened on their back hinges, the
+    mechanism in each bay, the two arms hanging below the body."""
     out = _eye()
-    # the crown: a bronze flange, neck and knob on the top panel
     crown = [(0.0, RR + 0.005), (0.05, RR + 0.005), (0.052, RR - 0.002), (0.05, RR - 0.012), (0.0, RR - 0.012)]
-    knob = [(0.0, RR + 0.035), (0.026, RR + 0.035), (0.032, RR + 0.03), (0.032, RR + 0.022), (0.02, RR + 0.018),
-            (0.02, RR + 0.004), (0.0, RR + 0.004)]
-    out += [part("crown", lathe(crown, 40, RC), EDGE, 35.0), part("knob", lathe(knob, 32, RC), BRONZE, 35.0)]
-    panels, hinges, gears, hubs, motors = [], [], [], [], []
-    cables = {"ws_cable_a": [], "ws_cable_b": [], "ws_cable_c": []}
+    neck = [(0.0, RR + 0.02), (0.018, RR + 0.02), (0.018, RR + 0.004), (0.0, RR + 0.004)]
+    out += [part("crown", lathe(crown, 40, RC), EDGE, 35.0),
+            part("knob", M(lathe(neck, 24, RC), sphere(0.034, add(RC, (0.0, 0.0, RR + 0.032)), 12, 24)), BRONZE, 35.0)]
+    shells, liners, hinges = [], [], []
     for s in (-1, 1):
         ax = (0.0, s, 0.0)
-        cap = lathe(zone(RR, 0.01, 0.0, PANEL_P, 12, 0.003), 48, RC, ax)
-        panels.append(moved(cap, _panel_r(s), pivot=_panel_pivot(s)))
-        hp = _panel_pivot(s)
-        hinges.append(lathe([(0.0, -0.035), (0.011, -0.035), (0.012, -0.03), (0.012, 0.03), (0.011, 0.035), (0.0, 0.035)],
-                            16, hp, (0, 0, 1)))
-        y = s * CORE_Y
-        y0 = y - s * 0.0005   # sunk half a mm into the plate
-        gears.append(_gear((RC[0] - 0.01, RC[1] + y0, RC[2] + 0.01), ax, 0.085, 18, 0.016))
-        gears.append(_gear((RC[0] + 0.095, RC[1] + y0, RC[2] + 0.085), ax, 0.045, 11, 0.012))
-        hubs.append(lathe([(0.0, 0.0), (0.03, 0.0), (0.03, 0.026), (0.024, 0.032), (0.0, 0.032)], 24,
-                          (RC[0] - 0.01, RC[1] + y, RC[2] + 0.01), ax))
-        hubs.append(lathe([(0.0, 0.0), (0.016, 0.0), (0.016, 0.02), (0.0, 0.02)], 16,
-                          (RC[0] + 0.095, RC[1] + y, RC[2] + 0.085), ax))
-        motors.append(lathe([(0.0, -0.065), (0.028, -0.065), (0.032, -0.06), (0.032, 0.06), (0.028, 0.065), (0.0, 0.065)],
-                            24, (RC[0] + 0.0, RC[1] + s * (CORE_Y + 0.031), RC[2] - 0.115), (1, 0, 0)))
-        for k, mat in enumerate(cables):
-            o = 0.018 * (k - 1)
-            sag = 0.31 + 0.035 * k + (0.02 if s > 0 else 0.0)
-            pts = [(0.06 + o, s * (CORE_Y + 0.005), -0.04 + o), (0.04 + o, s * 0.33, -0.10),
-                   (0.0 + o, s * 0.30, -sag - 0.06), (0.06 + o, s * 0.12, -sag), (0.07 + o, s * 0.1, -0.22)]
-            cables[mat].append(G.tube([add(RC, p) for p in bez(pts, 18)], 0.0068, 8))
-    out += [part("panels", M(*panels), "ws_shell", 30.0), part("hinges", M(*hinges), GRAPH2, 35.0),
-            part("gears", M(*gears), BRONZE), part("hubs", M(*hubs), EDGE, 35.0),
-            part("motors", M(*motors), "int_silver_c", 35.0)]
-    out += [part(f"cables_{m[-1]}", M(*v), m, 40.0) for m, v in cables.items()]
-    shells, joints, collars, fingers = [], [], [], []
+        r, pv = _panel_r(s), _panel_pivot(s)
+        shells.append(moved(lathe(zone(RR, SHELL_T, 0.0, panel_p(), 12, 0.003), 48, RC, ax), r, pivot=pv))
+        liners.append(moved(lathe(zone(RR - SHELL_T - 0.0005, LINER_T, 0.0, panel_p() - 0.4, 12, 0.0015), 48, RC, ax),
+                            r, pivot=pv))
+        hinges.append(lathe([(0.0, -0.04), (0.011, -0.04), (0.012, -0.035), (0.012, 0.035), (0.011, 0.04), (0.0, 0.04)],
+                            16, pv, (0, 0, 1)))
+    out += [part("panels", M(*shells), "ws_shell", 30.0), part("panel_liners", M(*liners), "ws_inner", 30.0),
+            part("hinges", M(*hinges), GRAPH2, 35.0)]
+    mech: dict = {}
+    for s in (-1, 1):
+        for m, v in _bay(s).items():
+            mech.setdefault(m, []).extend(v)
+    names = {BRONZE: "gears", EDGE: "hubs", "int_silver_c": "motors", "ws_steel": "rods", GRAPH2: "mounts",
+             GRAPH: "chips", "ws_cyan__core": "core_light", "plugs": "plugs"}
+    out += [part(names.get(m, f"cables_{m[-1]}"), M(*v), GRAPH if m == "plugs" else m,
+                 40.0 if m.startswith("ws_cable") else 35.0)
+            for m, v in mech.items() if v]
+    shells, joints, trims, fingers = [], [], [], []
     for s, (sh, el, wr) in ARMS.items():
         a, b, c, d = _arm(s, sh, el, wr)
         shells += a
         joints += b
-        collars += c
+        trims += c
         fingers += d
     out += [part("arms", M(*shells), "ws_shell", 40.0), part("joints", M(*joints), GRAPH, 40.0),
-            part("collars", M(*collars), EDGE, 40.0), part("claws", M(*fingers), BRONZE2, 40.0)]
+            part("collars", M(*trims), EDGE, 40.0), part("claws", M(*fingers), "ws_bronze", 40.0)]
     return out
 
 
 # --- the hoist, the rail, the rug, the lamp ------------------------------------------------------------------------
 def ws_hoist(args, layout):
-    """The hoist over the robot (its frame): the trolley (20 x 12, bronze, its cheeks round the rail and four wheel
-    hubs), the graphite cable drum, the steel cable down to h 190, a shackle and the clamp (h 177..190) whose three
-    jaws hold the crown's knob."""
+    """The hoist over the robot (its frame, the rail along y; step 2, step 1's thin cable read weak): a chunky bronze
+    carriage (30 x 17 x 12) under the rail with cheeks round it and four wheel hubs, a graphite motor drum on its room
+    side, a short thick steel rod (Ø 4.4) with bronze collars down to the claw: a bronze hub (h 183..188) and three
+    two-segment fingers on graphite knuckles whose pads grip the crown's knob ball."""
     rb = FLOOR + RAIL["bottom"] * CM
     rt = rb + RAIL["t"] * CM
-    L2, W2 = HOIST["trolley"][0] * CM / 2, HOIST["trolley"][1] * CM / 2
-    body = G.bbox(-W2, W2, -L2, L2, rb - 0.085, rb - 0.006, 0.008)
-    cheeks = M(L.box(-W2 - 0.006, -W2 + 0.004, -L2 + 0.015, L2 - 0.015, rb - 0.03, rt - 0.004),
-               L.box(W2 - 0.004, W2 + 0.006, -L2 + 0.015, L2 - 0.015, rb - 0.03, rt - 0.004))
-    hubs = M(*[lathe([(0.0, 0.0), (0.02, 0.0), (0.022, 0.004), (0.022, 0.008), (0.0, 0.008)], 20,
-                     (s * (W2 + 0.006), y, rb + 0.035), (s, 0, 0)) for s in (-1, 1) for y in (-0.055, 0.055)])
-    drum = lathe([(0.0, -0.07), (0.034, -0.07), (0.034, -0.062), (0.028, -0.058), (0.028, 0.058), (0.034, 0.062),
-                  (0.034, 0.07), (0.0, 0.07)], 24, (0.0, 0.0, rb - 0.118), (0, 1, 0))
+    cl, cw, chh = (v * CM for v in HOIST["carriage"])
+    body = G.bbox(-cw / 2, cw / 2, -cl / 2, cl / 2, rb - chh, rb - 0.008, 0.014)
+    cheeks = M(G.bbox(-0.074, -0.058, -0.09, 0.09, rb - 0.03, rt + 0.012, 0.004),
+               G.bbox(0.058, 0.074, -0.09, 0.09, rb - 0.03, rt + 0.012, 0.004))
+    hubs = M(*[lathe([(0.0, 0.0), (0.022, 0.0), (0.024, 0.004), (0.024, 0.009), (0.0, 0.009)], 20,
+                     (s * 0.074, y, rt - 0.01), (s, 0, 0)) for s in (-1, 1) for y in (-0.05, 0.05)])
+    drum = lathe([(0.0, -0.09), (0.036, -0.09), (0.04, -0.084), (0.04, 0.084), (0.036, 0.09), (0.0, 0.09)], 28,
+                 (-cw / 2 - 0.022, 0.0, rb - chh / 2 - 0.005), (0, 1, 0))
+    drum_caps = M(*[lathe([(0.0, 0.0), (0.03, 0.0), (0.03, 0.006), (0.024, 0.009), (0.0, 0.009)], 24,
+                          (-cw / 2 - 0.022, s * 0.0895, rb - chh / 2 - 0.005), (0, s, 0)) for s in (-1, 1)])
     c0, c1 = FLOOR + HOIST["clamp"][0] * CM, FLOOR + HOIST["clamp"][1] * CM
-    cable = G.tube([(0.0, 0.0, rb - 0.15), (0.0, 0.0, c1 + 0.028)], 0.005, 10)
-    shackle = torus(0.016, 0.0045, (0.0, 0.0, c1 + 0.016), (1, 0, 0), 20, 8)
-    head = lathe([(0.0, c1), (0.034, c1), (0.04, c1 - 0.006), (0.04, c1 - 0.04), (0.03, c1 - 0.05), (0.0, c1 - 0.05)], 6,
-                 (0, 0, 0))
-    jaws = []
-    knob_r, knob_top = 0.032, RC[2] + RR + 0.035
+    rr = HOIST["rod"] / 2 * CM
+    rod = lathe([(0.0, c1 - 0.004), (rr, c1 - 0.004), (rr, rb - chh + 0.004), (0.0, rb - chh + 0.004)], 20, (0, 0, 0))
+    collars = M(lathe([(0.0, rb - chh - 0.026), (0.034, rb - chh - 0.026), (0.036, rb - chh - 0.022),
+                       (0.036, rb - chh + 0.002), (0.0, rb - chh + 0.002)], 28, (0, 0, 0)),
+                lathe([(0.0, c1 - 0.002), (0.03, c1 - 0.002), (0.03, c1 + 0.016), (0.026, c1 + 0.02), (0.0, c1 + 0.02)],
+                      28, (0, 0, 0)))
+    head = lathe([(0.0, c1), (0.05, c1), (0.058, c1 - 0.008), (0.058, c1 - 0.04), (0.046, c1 - 0.05), (0.0, c1 - 0.05)],
+                 36, (0, 0, 0))
+    kc = RC[2] + RR + 0.032          # the knob ball's centre (r 0.034)
+    seg1, seg2, knuckles, pads = [], [], [], []
     for k in range(3):
         a = D(120 * k + 30)
-        ca, sa = math.cos(a), math.sin(a)
-        pts = [(0.026 * ca, 0.026 * sa, c1 - 0.045), (0.05 * ca, 0.05 * sa, c1 - 0.075), (0.047 * ca, 0.047 * sa, c0 + 0.016),
-               ((knob_r + 0.007) * ca, (knob_r + 0.007) * sa, c0 + 0.004), ((knob_r + 0.004) * ca, (knob_r + 0.004) * sa, c0)]
-        jaws.append(G.tube(bez(pts[:3], 6) + pts[3:], 0.0075, 8))
-    assert c0 < knob_top
-    return [part("trolley", body, BRONZE), part("cheeks", cheeks, BRONZE2), part("hubs", hubs, GRAPH2, 35.0),
-            part("drum", drum, GRAPH, 35.0), part("cable", cable, "ws_steel", 40.0),
-            part("shackle", shackle, "ws_steel", 40.0), part("clamp", head, BRONZE2), part("jaws", M(*jaws), EDGE, 40.0)]
+        d = (math.cos(a), math.sin(a), 0.0)
+        tn = (-math.sin(a), math.cos(a), 0.0)
+        p0 = add(mul(d, 0.05), (0.0, 0.0, c1 - 0.034))
+        p1 = add(mul(d, 0.088), (0.0, 0.0, c1 - 0.078))
+        p2 = add(mul(d, 0.047), (0.0, 0.0, kc - 0.004))
+        seg1.append(seg(p0, p1, 0.0115, 0.0105, 0.0, 0.0, 0.002, 12))
+        seg2.append(seg(p1, p2, 0.0095, 0.0085, 0.0, 0.0, 0.002, 12))
+        for p, r_ in ((p0, 0.013), (p1, 0.0125)):
+            dr, cp = hinge(p, tn, r_, 0.03, 0.003, 16)
+            knuckles += [dr, cp]
+        pads.append(lathe([(0.0, 0.0), (0.012, 0.0), (0.012, 0.008), (0.009, 0.011), (0.0, 0.011)], 16,
+                          add(p2, mul(d, 0.004)), mul(d, -1.0)))
+    assert c0 < kc
+    return [part("carriage", body, BRONZE2), part("cheeks", cheeks, BRONZE), part("hubs", hubs, GRAPH2, 35.0),
+            part("drum", drum, GRAPH, 35.0), part("drum_caps", drum_caps, EDGE, 35.0),
+            part("rod", rod, "ws_steel", 40.0), part("collars", collars, BRONZE, 35.0),
+            part("clamp", head, BRONZE2, 35.0), part("jaws", M(*seg1, *seg2), EDGE, 40.0),
+            part("knuckles", M(*knuckles), GRAPH, 35.0), part("pads", M(*pads), GRAPH2, 35.0)]
 
 
 def rail_points():
@@ -733,7 +874,7 @@ def ws_rail(args, layout):
         cx, cy = r * math.cos(a), r * math.sin(a)
         ceil = FLOOR + S.tip_clear(cx)
         rr = rot((0, 0, 1), math.degrees(a))
-        bars.append(moved(L.box(-0.02, 0.02, -0.0075, 0.0075, rt - 0.01, ceil + 0.03), rr, (cx, cy, 0.0)))
+        bars.append(moved(G.bbox(-0.025, 0.025, -0.01, 0.01, rt - 0.01, ceil + 0.03, 0.003), rr, (cx, cy, 0.0)))
         plates.append(moved(lathe([(0.0, ceil - 0.009), (0.05, ceil - 0.009), (0.055, ceil - 0.004), (0.055, ceil + 0.03),
                                    (0.0, ceil + 0.03)], 24, (0, 0, 0)), None, (cx, cy, 0.0)))
     out += [part("hangers", M(*bars), BRONZE), part("plates", M(*plates), EDGE, 35.0)]
