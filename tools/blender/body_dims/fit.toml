@@ -14,16 +14,24 @@ relax = { rounds = 12, lam = 0.5, refits = 3, rounds_after = 2 }
 # vertically; the fit had flared the body out right under it (A's sides 27 to 38 degrees: a turtleneck ledge). The
 # body's outline now leaves the ring at the head's angle (degrees from vertical, + out going down) over `straight` mm,
 # then eases into the fit's shoulders over `blend` mm (body_fit_geom.neck_tangent).
-neck_tangent = { straight = 18.0, blend = 30.0, side_deg = 0.0, front_deg = 0.0, back_deg = 0.0 }
+# D3g: one continuous neck. The head's neck now flares into the ring over 70 mm (body_fit_geom.neck_flare_morph,
+# NECK_FLARE_BAND and NECK_FLARE_A) and arrives at 22 (side), 17 (front) and 18.5 (back) degrees on both heads; the
+# body leaves the ring at the same angles and turns into the trapezius (D3f's 18 mm straight cylinder read as a
+# turtleneck under the heads' thin necks).
+neck_tangent = { straight = 10.0, blend = 35.0, side_deg = 22.0, front_deg = 17.0, back_deg = 18.5 }
 
 [B]
 keep_front = []
 relax = { rounds = 12, lam = 0.5, refits = 3, rounds_after = 2 }  # as A's (D3f)
-neck_tangent = { straight = 18.0, blend = 30.0, side_deg = 0.0, front_deg = 0.0, back_deg = 0.0 }  # as A's (D3f)
+neck_tangent = { straight = 10.0, blend = 35.0, side_deg = 22.0, front_deg = 17.0, back_deg = 18.5 }  # as A's (D3g)
 # Her concept sets the chest and upper back up to 50 mm ahead of A's on the same neck ring (B.toml's front_y and
 # back_y): the arms follow the trunk's centre shift over the armpit (body_fit_geom.arm_dy), their bones with them,
 # or the trunk slides past the arm root (D3c's diagonal crease from the neck to each shoulder).
 arm_follow = true
+# D3g: the shoulder girdle follows the arms' forward move too (body_fit_geom.girdle_share): a trunk vertex takes it
+# from 0 at |x| `x0` (just outside the ring) to all of it at `x1` (the shoulder joint), from `below` mm under the
+# armpit up; the lock under the ring eases it out toward the neck. D3f's diagonal from the neck base to each armpit.
+girdle = { x0 = 60.0, x1 = 130.0, below = 60.0 }
 # B's rest from A's (B1's alien_body_b_geom with these numbers; the D2 plan's point 1). The height scale is B's
 # neck ring over A's (the tables), the Neck and Head about B's ring by B.toml's neck_bone_below / head_bone_above.
 shoulder_joint_x = 129.0      # the UpperArm heads' |x|

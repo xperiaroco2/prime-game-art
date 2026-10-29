@@ -425,5 +425,46 @@ class NeckTangentTest(unittest.TestCase):
                 self.assertGreater(r, math.hypot(p[0], p[1]))
 
 
+class NeckFlareTest(unittest.TestCase):
+    """D3g: the head's neck flares into the ring (an eased trumpet), and the girdle's share of the arms' move."""
+
+    def test_flare_profile(self):
+        h = 1e-6
+        for a in (0.0, 1.0, 1.5):
+            self.assertAlmostEqual(F.flare_profile(0.0, a), 1.0)
+            self.assertAlmostEqual(F.flare_profile(1.0, a), 0.0)
+            self.assertAlmostEqual((F.flare_profile(h, a) - 1.0) / h, -a, places=4)
+            self.assertAlmostEqual((F.flare_profile(1.0, a) - F.flare_profile(1.0 - h, a)) / h, 0.0, places=4)
+            vals = [F.flare_profile(i / 50, a) for i in range(51)]
+            self.assertTrue(all(b <= c + 1e-12 for b, c in zip(vals[1:], vals)))  # monotone: no waist
+        self.assertEqual(F.flare_profile(-1.0, 1.5), 1.0)
+        self.assertEqual(F.flare_profile(2.0, 1.5), 0.0)
+
+    def test_neck_flare_morph(self):
+        ring = [(56.7 * math.sin(2 * math.pi * k / 24), -52.8 * math.cos(2 * math.pi * k / 24), 1390.0)
+                for k in range(24)]
+        verts, edges, _ = cylinder(1390.0, 1500.0, 2.5, 1.0, 1.0)
+        own = lambda k: 38.0 + max(0.0, 13.0 * (1.0 - k / 30.0))  # noqa: E731  an old 30 mm weld flare, then 38
+        head = [(x * own(z - 1390.0), y * own(z - 1390.0), z) for x, y, z in verts]
+        out, rep = F.neck_flare_morph(head, edges, ring, 70.0, 1.5)
+        side = {round(q[2] - 1390.0, 1): q[0] for q, p in zip(out, verts) if abs(p[0] - 1.0) < 1e-9}
+        self.assertAlmostEqual(side[0.0], 56.7, delta=0.2)  # the bottom on the ring
+        ks = sorted(side)
+        self.assertTrue(all(side[b] <= side[a] + 1e-6 for a, b in zip(ks, ks[1:])))  # narrows going up: no pinch
+        for p, q in zip(head, out):
+            if p[2] - 1390.0 >= 70.0:
+                self.assertEqual(q, p)  # past the band: the head's own
+        self.assertAlmostEqual(side[50.0], 38.0 + 18.7 * F.flare_profile(50 / 70, 1.5), delta=0.3)  # old flare gone
+        slope = (side[0.0] - side[2.5]) / 2.5
+        self.assertAlmostEqual(math.degrees(math.atan(slope)), math.degrees(math.atan(1.5 * 18.7 / 70)), delta=1.5)
+
+    def test_girdle_share(self):
+        gd = {"x0": 60.0, "x1": 130.0, "below": 60.0}
+        self.assertEqual(F.girdle_share(50.0, 1250.0, 1180.0, gd), 0.0)  # the neck and midline hold
+        self.assertEqual(F.girdle_share(140.0, 1250.0, 1180.0, gd), 1.0)  # the shoulder joint moves with the arm
+        self.assertEqual(F.girdle_share(140.0, 1110.0, 1180.0, gd), 0.0)  # well under the armpit
+        self.assertAlmostEqual(F.girdle_share(95.0, 1250.0, 1180.0, gd), 0.5)
+
+
 if __name__ == "__main__":
     unittest.main()

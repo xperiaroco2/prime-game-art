@@ -195,7 +195,8 @@ def frame_of(table: dict, bones: dict, armpit_u: float) -> dict:
             "trunk_z": list(table["trunk"]["z"]), "leg_z": list(table["legs"]["z"]),
             "arm_s": list(arm["s"]), "arm_u": [s_to_u(s) for s in arm["s"]],
             "keep_front": table.get("fit", {}).get("keep_front", []), "shoulder_top": sh_top, "neck_base": nb,
-            "arm_follow": bool(table.get("fit", {}).get("arm_follow", False))}
+            "arm_follow": bool(table.get("fit", {}).get("arm_follow", False)),
+            "girdle": table.get("fit", {}).get("girdle")}
 
 
 def trunk_sigma(ring: float, armpit: float, at_armpit: bool = True):
@@ -291,6 +292,16 @@ def arm_dy(r: dict, armpit: float, span: float = ARM_FOLLOW_SPAN) -> float:
     the neck to each shoulder (D3d: B's concept sets her chest up to 50 mm ahead of A's on the same neck ring)."""
     zs = [armpit + span * i / 16 for i in range(17)]
     return sum((r["f1"](z) + r["b1"](z) - r["f0"](z) - r["b0"](z)) / 2 for z in zs) / len(zs)
+
+
+def girdle_share(ax: float, z: float, armpit: float, gd: dict) -> float:
+    """D3g: how much of the arms' forward move (arm_dy) a trunk vertex at |x| `ax` and height z takes: 0 inside
+    `x0` (the neck and the midline, where the table's front and back hold), easing to 1 at `x1` (the shoulder joint),
+    and from 0 at `below` mm under the armpit to 1 at it. D3f's B kept her shoulder tops and upper chest where the
+    table put them while the arm root beside them moved 35 mm forward: the surface sheared along the arm's weight
+    boundary, a bright diagonal from the neck base to each armpit. The lock under the ring still eases it out there."""
+    gx = ramp((ax - gd["x0"]) / max(1e-9, gd["x1"] - gd["x0"]))
+    return gx * ramp((z - (armpit - gd["below"])) / max(1e-9, gd["below"]))
 
 
 def keep_front(z: float, zones: list, edge: float = KEEP_EDGE) -> float:
@@ -389,6 +400,7 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
             k = min(nb["max_ratio"], max(1.0, neck_base_half(z, ring, rh, bh, nb) / max(1.0, r["own_half"](z))))
             return 1.0 + (k - 1.0) * ramp((z - nz) / nb["ease"])
     ring_set = set(ring_idx)
+    gd = fr.get("girdle")
     out = []
     for i, (p, a, f) in enumerate(zip(verts, wa, wf)):
         if i in ring_set:
@@ -421,6 +433,10 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
             yc, zcen = r["ayc"](ax), r["azc"](ax)
             amx, amy, amz = x, yc + (y - yc) * k + ady, zcen + (z - zcen) * k
             bx, by, bz = (1 - a) * bx + a * amx, (1 - a) * by + a * amy, (1 - a) * bz + a * amz
+        if gd and ady:  # D3g: the girdle follows the arms' forward move, easing toward the neck and under the armpit
+            gs = girdle_share(ax, z, za, gd)
+            if gs > 0.0:
+                by += (1.0 - a) * gs * (ady - ((r["f1"](z) + r["b1"](z)) / 2 - c))
         lock = ramp((z - (ring - 30.0)) / 30.0)
         q = ((1 - lock) * bx + lock * x, (1 - lock) * by + lock * y, (1 - lock) * bz + lock * z)
         if nb and z > ring - nb["length"]:  # the neck base's slope, the trunk's share only
@@ -741,3 +757,94 @@ def ring_morph(points: list, ring: list, band: float) -> list:
         out.append((cx + dx * f, cy + dy * f, p[2]))
     return out
 
+
+
+NECK_FLARE_BAND = 70.0  # mm above the ring: the head's neck flares into it over this band (neck_flare_morph)
+NECK_FLARE_A = 1.5  # flare_profile's slope at the ring: the steepest monotone one (about 14 to 18 degrees here)
+
+
+def flare_profile(u: float, a: float) -> float:
+    """D3g: the head-side neck flare's weight on the ring at u (0 at the ring, 1 at the band's top): a cubic with
+    g(0) = 1, g(1) = 0, g'(1) = 0 and g'(0) = -a, so the neck arrives at the ring with a slope (a = 0 is the
+    smoothstep, vertical at the ring; a = 1.5 the steepest that stays monotone) and meets its own neck flat at the top
+    of the band: an eased trumpet, not a cone."""
+    u = min(1.0, max(0.0, u))
+    return 1.0 - a * u + (2.0 * a - 3.0) * u * u + (2.0 - a) * u ** 3
+
+
+def _sections(points: list, edges: list, zs: list, bins: int) -> list:
+    """Per height in `zs` the outline's largest distance from the axis in each of `bins` angle bins (None where no
+    edge crosses there), from the edges crossing that height; the angle bins about (0, 0)."""
+    out = []
+    for z in zs:
+        r = [None] * bins
+        for a, b in edges:
+            pa, pb = points[a], points[b]
+            if pa[2] != pb[2] and min(pa[2], pb[2]) <= z <= max(pa[2], pb[2]):  # a vertex on the height counts
+                t = (z - pa[2]) / (pb[2] - pa[2])
+                x, y = pa[0] + t * (pb[0] - pa[0]), pa[1] + t * (pb[1] - pa[1])
+                k = int((math.atan2(y, x) % (2 * math.pi)) / (2 * math.pi) * bins) % bins
+                rho = math.hypot(x, y)
+                r[k] = rho if r[k] is None else max(r[k], rho)
+        out.append(r)
+    return out
+
+
+def _fill(r: list) -> list:
+    """A circular list's None gaps filled by linear interpolation between their known neighbours."""
+    n, known = len(r), [i for i, v in enumerate(r) if v is not None]
+    if not known:
+        return [0.0] * n
+    out = list(r)
+    for i in range(n):
+        if out[i] is None:
+            lo = max((k for k in known if k < i), default=known[-1] - n)
+            hi = min((k for k in known if k > i), default=known[0] + n)
+            t = (i - lo) / (hi - lo)
+            out[i] = r[lo % n] + t * (r[hi % n] - r[lo % n])
+    return out
+
+
+def neck_flare_morph(points: list, edges: list, ring: list, band: float, a: float, step: float = 2.5,
+                     bins: int = 48) -> tuple[list, dict]:
+    """D3g: a head's neck flared into the ring over `band` above it, one continuous neck (the manager's decision on
+    D3f's collar: the heads' necks are about 76 mm across, the ring 113 x 106 mm; ring_morph's 30 mm smoothstep
+    pinched the neck in right above a ring-wide collar). The head's own neck under its waist (the narrowest outline
+    from each angle above that height, up to the band's top) replaces the wider band an earlier weld left there, then
+    each point's distance from the ring's axis is blended onto the ring's at its angle by `flare_profile` (weight 1 at
+    the ring, 0 at the band's top): the neck leaves the ring at a slope and eases into its own neck. Points outside
+    the band are kept; the bottom loop lies on the ring. `edges` index `points`; units as the points' (mm)."""
+    rz = sum(p[2] for p in ring) / len(ring)
+    cx, cy = sum(p[0] for p in ring) / len(ring), sum(p[1] for p in ring) / len(ring)
+    rad = sorted((math.atan2(p[1] - cy, p[0] - cx), math.hypot(p[0] - cx, p[1] - cy)) for p in ring)
+    rel = [(p[0] - cx, p[1] - cy, p[2]) for p in points]
+    n = int(math.ceil(band / step))
+    ks = [min(band, max(0.05 * step, j * step)) for j in range(n + 1)]
+    sec = [_fill(s) for s in _sections(rel, edges, [rz + k for k in ks], bins)]
+    low = [list(s) for s in sec]  # the running minimum from the band's top down: the neck under its waist
+    for j in range(n - 1, -1, -1):
+        low[j] = [min(v, w) for v, w in zip(sec[j], low[j + 1])]
+
+    def grid(tab: list, k: float, phi: float) -> float:
+        j = min(n - 1, max(0, int(k / step)))
+        tk = min(1.0, max(0.0, (k - ks[j]) / max(1e-9, ks[j + 1] - ks[j])))
+        f = (phi % (2 * math.pi)) / (2 * math.pi) * bins - 0.5
+        b0 = int(math.floor(f))
+        tb = f - b0
+        v = [(1 - tb) * row[b0 % bins] + tb * row[(b0 + 1) % bins] for row in (tab[j], tab[j + 1])]
+        return (1 - tk) * v[0] + tk * v[1]
+
+    out, most = [], 0.0
+    for p, (dx, dy, z) in zip(points, rel):
+        k = z - rz
+        if not -1e-6 * band <= k < band:
+            out.append(tuple(p))
+            continue
+        phi, rho = math.atan2(dy, dx), math.hypot(dx, dy)
+        own = rho - max(0.0, grid(sec, k, phi) - grid(low, k, phi))
+        g = flare_profile(k / band, a)
+        r1 = g * _periodic(rad, phi) + (1.0 - g) * own
+        most = max(most, abs(r1 - rho))
+        f = r1 / max(1e-12, rho)
+        out.append((cx + dx * f, cy + dy * f, p[2]))
+    return out, {"band": band, "a": a, "max_move": round(most, 2)}

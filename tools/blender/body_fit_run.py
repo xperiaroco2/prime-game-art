@@ -179,7 +179,7 @@ def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, 
     table = F.load_table(DIMS / f"{name}.toml")
     wa = [F.arm_share(w) for w in weights]
     table["fit"] = {"keep_front": s.get("keep_front", []), "neck_base": s.get("neck_base"),
-                    "arm_follow": s.get("arm_follow", False),
+                    "arm_follow": s.get("arm_follow", False), "girdle": s.get("girdle"),
                     "arm_low": min(p[2] for p, a in zip(verts_mm, wa) if a >= 0.5)}
     fr = F.frame_of(table, bones, 0.0)
     au = F.armpit_u(verts_mm, edges, weights, fr["armpit"] - 5.0)

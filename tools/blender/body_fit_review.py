@@ -46,8 +46,8 @@ GROUND = np.array([0.35, 0.35, 0.36, 1.0], np.float32)
 
 
 def seat_head(body, head) -> dict:
-    """D3f: the cut head set on the body's ring as the assembler does (alien_char_build: its neck's NECK_BAND above
-    the ring blended onto the ring's ellipse, body_fit_geom.ring_morph), each of its bottom loop's vertices snapped
+    """D3f: the cut head set on the body's ring (D3g: its neck flared into the ring over NECK_FLARE_BAND,
+    body_fit_geom.neck_flare_morph; the assembler's own 30 mm smoothstep is alien_char_build's step 2), each of its bottom loop's vertices snapped
     onto the ring vertex at the nearest angle, and its normals there copied from the body's (the ADR's custom
     normals). D3e's try paired nothing: the character's own bottom loop is 101.8 x 90.5 mm, 8 mm inside the ring."""
     bw, hw = body.matrix_world, head.matrix_world
@@ -57,7 +57,10 @@ def seat_head(body, head) -> dict:
     rp = [tuple(bz[i]) for i in ring]
     me = head.data
     hp = [tuple(hw @ v.co) for v in me.vertices]
-    mp = F.ring_morph(hp, rp, 0.03)
+    he = [tuple(e.vertices) for e in me.edges]  # D3g: the neck flared into the ring (neck_flare_morph), in mm
+    mm, _ = F.neck_flare_morph([tuple(c * 1000 for c in p) for p in hp], he, [tuple(c * 1000 for c in p) for p in rp],
+                               F.NECK_FLARE_BAND, F.NECK_FLARE_A)
+    mp = [tuple(c / 1000 for c in p) for p in mm]
     low = min(p[2] for p in hp)
     cx, cy = sum(p[0] for p in rp) / len(rp), sum(p[1] for p in rp) / len(rp)
     ang = {i: math.atan2(bz[i].y - cy, bz[i].x - cx) for i in ring}
