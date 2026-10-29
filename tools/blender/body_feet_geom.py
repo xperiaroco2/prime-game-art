@@ -54,6 +54,22 @@ def sole_edge_lift(dx: float, z: float, half: float, sole: float, zc: float, r: 
     return r * u ** 4 * (1.0 - (z - sole) / max(1e-9, zc - sole))
 
 
+def midfoot(p: tuple, cx: float, y_cut: float, y_ankle: float, sole: float, top: float, ank_z: float,
+            lift: float, narrow: float, fade: float) -> tuple:
+    """D3g: the kept mid-foot between the forefoot's cut (`y_cut`) and the ankle (`y_ankle`, the Foot bone's head)
+    shaped so the front no longer reads as a disc under a stalk: its top raised by up to `lift` (an instep rising
+    toward the ankle, by the height share from the sole to the cut's `top`) and its width about `cx` narrowed by up
+    to `narrow`, both as sin(pi u)^2 along the foot (nothing at the cut, where the new front starts, nor at the
+    ankle), fading out over `fade` above the ankle's height so the leg keeps its shape. Same units in and out."""
+    u = (p[1] - y_cut) / (y_ankle - y_cut)
+    if not 0.0 < u < 1.0:
+        return tuple(p)
+    b = math.sin(math.pi * u) ** 2
+    keep = 1.0 - smoothstep(ank_z - fade, ank_z + fade, p[2])
+    hz = smoothstep(sole, top, p[2])
+    return (cx + (p[0] - cx) * (1.0 - narrow * b * keep), p[1], p[2] + lift * b * hz * keep)
+
+
 def ring_ts(k: int, power: float = 2.0) -> list:
     """The rings' t (k of them, the tip excluded): denser toward the tip, where the front turns fastest."""
     return [1.0 - (1.0 - i / (k + 1)) ** power for i in range(1, k + 1)]

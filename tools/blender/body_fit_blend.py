@@ -271,6 +271,25 @@ def new_forefoot(body, arm, table: dict, cut_behind: float) -> dict:
                     zone.append(i)
         P = FG.laplace(P, nbr, wa, 40, 0.5)  # the ankle front's fold (S4b's own) needs many rounds to fill
         P = FG.taubin(P, nbr, [max(a, b) for a, b in zip(wt, wa)], 6)
+        mid = {}
+        if table.get("instep_lift") or table.get("midfoot_narrow"):  # D3g: the instep and a narrower mid-foot
+            fh = arm.matrix_world @ arm.data.bones[f"{side}Foot"].head_local
+            sole0 = min(v.co.z for v in bv)
+            slab = [i for i, v in enumerate(allv) if v.co.x * sg > 0 and v.co.z < ank_z + 0.04 and foot_w(v) > 0.05
+                    and y0 < P[i][1] < fh.y]
+            def mid_w(pp):  # the mid-foot's width and top at the middle between the cut and the ankle
+                ym = 0.5 * (y0 + fh.y)
+                row = [pp[i] for i in slab if abs(pp[i][1] - ym) < 0.006 and pp[i][2] < ank_z]
+                return (round((max(q[0] for q in row) - min(q[0] for q in row)) * 1000, 1),
+                        round(max(q[2] for q in row) * 1000, 1)) if row else None
+            mid["before_w_top_mm"] = mid_w(P)
+            for i in slab:
+                P[i] = FG.midfoot(P[i], fh.x, y0, fh.y, sole0, top0, ank_z, table.get("instep_lift", 0.0) / 1000.0,
+                                  table.get("midfoot_narrow", 0.0), 0.02)
+            ss = set(slab)
+            P = FG.taubin(P, nbr, [1.0 if i in ss else 0.0 for i in range(len(allv))], 4)
+            mid["after_w_top_mm"] = mid_w(P)
+            mid["slab"] = len(slab)
         for v, p in zip(allv, P):
             v.co = Vector(p)
         front = FG.front_extent([P[idx[v]] for v in verts])
@@ -282,7 +301,7 @@ def new_forefoot(body, arm, table: dict, cut_behind: float) -> dict:
                      "width_mm": round(front["width"] * 1000, 1), "top_mm": round(front["top"] * 1000, 1),
                      "sole_mm": round(front["sole"] * 1000, 1),
                      "front_dihedral_max_deg": round(FG.dihedral_max(loc, loc_f), 1),
-                     "zone": len(zone), "zone_box": [min(P[i][1] for i in zone), max(P[i][2] for i in zone)]}
+                     "midfoot": mid, "zone": len(zone), "zone_box": [min(P[i][1] for i in zone), max(P[i][2] for i in zone)]}
     for v in bm.verts:
         v.co = inv @ v.co
     bm.to_mesh(me)

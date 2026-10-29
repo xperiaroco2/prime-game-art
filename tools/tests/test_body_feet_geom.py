@@ -161,5 +161,19 @@ class SoleEdgeTest(unittest.TestCase):
         self.assertEqual(FG.sole_edge_lift(0.04, 0.0, 0.04, 0.0, 0.02, 0.0), 0.0)
 
 
+class MidfootTest(unittest.TestCase):
+    """D3g: the instep rises and the mid-foot narrows halfway, nothing at the cut, the ankle or above it."""
+
+    def test_midfoot(self):
+        args = (113.0, -30.0, 90.0, 0.0, 60.0, 110.0, 7.0, 0.08, 20.0)
+        self.assertEqual(FG.midfoot((150.0, -30.0, 60.0), *args), (150.0, -30.0, 60.0))  # the cut
+        self.assertEqual(FG.midfoot((150.0, 95.0, 60.0), *args), (150.0, 95.0, 60.0))  # behind the ankle
+        x, y, z = FG.midfoot((150.0, 30.0, 60.0), *args)  # halfway, on top
+        self.assertAlmostEqual(z, 67.0, places=6)
+        self.assertAlmostEqual(x, 113.0 + 37.0 * 0.92, places=6)
+        self.assertAlmostEqual(FG.midfoot((150.0, 30.0, 0.0), *args)[2], 0.0)  # the sole stays
+        self.assertEqual(FG.midfoot((150.0, 30.0, 140.0), *args), (150.0, 30.0, 140.0))  # the leg above the ankle
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -63,3 +63,8 @@ chest_trim = true
 # and the sole's outer edge is raised by up to `sole_round` mm (body_feet_geom.sole_edge_lift).
 front_width = 0.88
 sole_round = 6.0
+# D3g (body_feet_geom.midfoot): the kept mid-foot between the cut and the ankle, so the front no longer reads as a
+# disc under a stalk: its top raised by up to `instep_lift` mm (the instep), its width narrowed by up to
+# `midfoot_narrow`, both peaking halfway and nothing at the cut or the ankle; the length and the side's sole kept.
+instep_lift = 7.0
+midfoot_narrow = 0.08
