@@ -67,8 +67,12 @@ class Layout(unittest.TestCase):
 class Walls(unittest.TestCase):
     def test_mirror(self):
         e, w = parts(T.th_wall, side="e"), parts(T.th_wall, side="w")
+        # the gill cover pilot (test_ship_cover) stands on the east wall only: its parts and the band's hole aside
+        e = {n: p for n, p in e.items() if not n.startswith("cover")}
         self.assertEqual(e.keys(), w.keys())
         for n in e:
+            if n == "band" and T.COVER_SIDES == ("e",):
+                continue
             self.assertEqual(sorted((round(-x, 6), round(y, 6), round(h, 6)) for x, y, h in e[n]["verts"]),
                              sorted((round(x, 6), round(y, 6), round(h, 6)) for x, y, h in w[n]["verts"]), n)
 
