@@ -8,7 +8,8 @@ no bpy; body_fit_run.py drives it in plain Python).
 `dump` (read only): the Body mesh's world vertices, every vertex's weights, its edges, the armature's bones (world
 head, tail, parent) and the open boundary loops. `apply`: opens the source body, writes the fit's vertices and bone
 rest (heads and tails; the rolls and the rest orientations kept), puts the neck ring's weights on Neck and Head only
-(the ADR, docs/decisions/2026-10-29-neck-ring.md) and saves <dir>/alien_body.blend; an out folder holding one is
+(the ADR, docs/decisions/2026-10-29-neck-ring.md), with `--round-toes M` gives the feet a soft rounded front (no
+separate toes; round_toes) and saves <dir>/alien_body.blend; an out folder holding one is
 refused, the source is never saved. Then it reopens the saved file and proves it (faces, edges, groups and UVs hash
 as the source's; the vertices as the fit's) into <dir>/apply.json.
 """
@@ -55,6 +56,58 @@ def open_loops(me) -> list:
     return out
 
 
+def round_toes(body, arm, behind: float, iters: int) -> dict:
+    """The feet's soft rounded front (the D3 brief, item 3: no separate toes): per foot, the vertices ahead of
+    `behind` m behind its Toes bone's head (and low, on the foot's bones) go to the convex hull of that region, by a
+    weight easing in over `behind`; then `iters` passes of weighted umbrella smoothing soften the hull's facets.
+    Rest pose, world space; the weights stay. Returns the moved vertices and the largest move."""
+    import bmesh
+    from mathutils.bvhtree import BVHTree
+    me, mw = body.data, body.matrix_world
+    inv = mw.inverted()
+    names = [g.name for g in body.vertex_groups]
+    co = [mw @ v.co for v in me.vertices]
+    nbr = [[] for _ in me.vertices]
+    for e in me.edges:
+        a, b = e.vertices
+        nbr[a].append(b)
+        nbr[b].append(a)
+    wt = [0.0] * len(co)
+    for side, sg in (("Left", 1), ("Right", -1)):
+        th = arm.matrix_world @ arm.data.bones[f"{side}Toes"].head_local
+        reg = []
+        for v in me.vertices:
+            p = co[v.index]
+            foot = sum(g.weight for g in v.groups if names[g.group] in (f"{side}Foot", f"{side}Toes"))
+            if p.x * sg > 0 and foot > 0.2 and p.y < th.y + behind and p.z < th.z + 0.06:
+                reg.append(v.index)
+        bm = bmesh.new()
+        for i in reg:
+            bm.verts.new(co[i])
+        bmesh.ops.convex_hull(bm, input=list(bm.verts))
+        tree = BVHTree.FromBMesh(bm)
+        for i in reg:
+            t = min(1.0, max(0.0, (th.y + behind - co[i].y) / behind))
+            wt[i] = t * t * (3 - 2 * t)
+            hit = tree.find_nearest(co[i])
+            if hit[0] is not None:
+                co[i] = co[i].lerp(hit[0], wt[i])
+        bm.free()
+    for _ in range(iters):
+        nxt = list(co)
+        for i, w in enumerate(wt):
+            if w > 0 and nbr[i]:
+                avg = sum((co[j] for j in nbr[i]), Vector()) / len(nbr[i])
+                nxt[i] = co[i].lerp(avg, 0.5 * w)
+        co = nxt
+    moved = [i for i, w in enumerate(wt) if w > 0]
+    big = max(((mw @ me.vertices[i].co) - co[i]).length for i in moved) if moved else 0.0
+    for i in moved:
+        me.vertices[i].co = inv @ co[i]
+    me.update()
+    return {"moved": moved, "max_move_m": round(big, 5), "behind_m": behind, "iters": iters}
+
+
 def _objs():
     return bpy.data.objects["Body"], bpy.data.objects["CharacterArmature"]
 
@@ -79,7 +132,7 @@ def dump(body_path: str, out: str) -> int:
     return 0
 
 
-def apply(body_path: str, fit_path: str, out_dir: str) -> int:
+def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0, toes_iters: int = 8) -> int:
     out = Path(out_dir)
     blend = out / "alien_body.blend"
     if blend.exists():
@@ -97,6 +150,8 @@ def apply(body_path: str, fit_path: str, out_dir: str) -> int:
     for v, q in zip(body.data.vertices, new):
         v.co = inv @ Vector(q)
     body.data.update()
+    toes = round_toes(body, arm, toes_behind, toes_iters) if toes_behind > 0 else {"moved": []}
+    new = [tuple(body.matrix_world @ v.co) for v in body.data.vertices]
     ring = fit.get("ring", [])
     names = {g.name: g for g in body.vertex_groups}
     for i in ring:  # weights only on Neck and Head, their sum kept at 1
@@ -134,10 +189,15 @@ def apply(body_path: str, fit_path: str, out_dir: str) -> int:
     ring_w = sorted({body.vertex_groups[g.group].name for i in ring for g in body.data.vertices[i].groups})
     res = {"source": body_path, "fit": fit_path, "blend": str(blend), "same": same, "all_same": all(same.values()),
            "weights_changed": hash_a["weights_sha256"] != hash_b["weights_sha256"], "ring_groups": ring_w,
-           "saved_vs_fit_max_m": round(err, 8)}
+           "saved_vs_fit_max_m": round(err, 8),
+           "toes": {k: v for k, v in toes.items() if k != "moved"} | {"moved": len(toes["moved"])},
+           "fit_vs_built_off_toes_max_m": round(max((math.dist(q, r) for i, (q, r) in
+                                                     enumerate(zip(fit["verts"], new)) if i not in set(toes["moved"])),
+                                                    default=0.0), 8)}
     (out / "apply.json").write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
     print("APPLY", json.dumps(res), flush=True)
-    return 0 if res["all_same"] and err < 1e-5 and set(ring_w) <= {"Neck", "Head"} else 1
+    ok = res["all_same"] and err < 1e-5 and res["fit_vs_built_off_toes_max_m"] < 1e-5
+    return 0 if ok and set(ring_w) <= {"Neck", "Head"} else 1
 
 
 def main() -> int:
@@ -147,8 +207,10 @@ def main() -> int:
     ap.add_argument("--body", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--fit", default="")
+    ap.add_argument("--round-toes", type=float, default=0.0, help="m behind the Toes heads: the rounded front")
+    ap.add_argument("--toes-iters", type=int, default=8)
     a = ap.parse_args(argv)
-    return dump(a.body, a.out) if a.mode == "dump" else apply(a.body, a.fit, a.out)
+    return dump(a.body, a.out) if a.mode == "dump" else apply(a.body, a.fit, a.out, a.round_toes, a.toes_iters)
 
 
 if __name__ == "__main__":

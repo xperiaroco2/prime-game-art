@@ -299,3 +299,24 @@ Python, `body_dims_geom.py`) measures each concept's front, side and back per pi
 arms and legs on their own axes; hands, feet, B's chest rounds; the neck ring); `body_drawing.py` draws the sheets.
 The scale puts the concept's neck-ring line at the body's ring and the sole at 0; one height map pins the crotch to
 the body's. The standard neck ring: `docs/decisions/2026-10-29-neck-ring.md`.
+
+## Bodies built to the drawing (D3, art #196)
+The smooth body (S4b) is deformed station by station to its table, keeping its surface, topology, weights and
+four-digit hands: `body_fit_blend.py dump` (headless Blender) writes the body's vertices, weights, edges, bones and
+open loops; `body_fit_run.py` (plain Python, `body_fit_geom.py`) fits body A to `A.toml` and writes B's rest skeleton
+from `fit.toml`; `body_fit_blend.py apply` saves the fitted `.blend` (`--round-toes`: the feet's soft rounded front)
+and proves it; `body_fit_review.py` draws the whole-body gate's sheets (four sides with the concept's outline, and
+the close-ups). The rules, in `body_fit_geom.py`'s docstring:
+- the trunk's x scales about the midline to the front width, the front half of y to `front_y` and the back half to
+  `back_y`; above the armpit x stays (the T arms) up to the neck, whose widths come back from 75 to 60 mm under the
+  ring; the 30 mm under the ring blend back to the body and the ring's 24 vertices stay exact;
+- the legs per height about each leg's own middle (our legs stay vertical; the concept's splay is not copied); the
+  arms along |x| on the T rest, eased in past the arm's root (the 10 to 70 mm past our armpit, whose stations are not
+  comparable with the concept's hanging arm); the hands and feet as they are;
+- the targets and ratios are smoothed along the body (20 mm; 6 mm over the neck and under the armpit), because the
+  tables step in whole pixels and per-station ratios ripple the surface in bands;
+- `fit.toml`'s `keep_front` zones keep the body's own front where the concept's side view shows the hand, not the
+  body (A: z 640 to 1000, easing over 60 mm at the ends).
+
+The check is the overlay error per station, built minus table (`errors.md` beside each fit): within 5 mm on the
+trunk and 3 mm on the limbs; stations left alone by rule are listed with their rule, not counted.
