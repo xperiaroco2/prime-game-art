@@ -51,6 +51,7 @@ def main() -> None:
     sc = bpy.context.scene
     sc.render.engine = "BLENDER_WORKBENCH"
     sc.display.shading.light = "STUDIO"
+    sc.view_settings.view_transform = "Standard"  # the texture as painted, not AgX-graded
     sc.display.shading.color_type = "TEXTURE"
     sc.display.shading.show_backface_culling = False
     sc.render.resolution_x = sc.render.resolution_y = CELL
