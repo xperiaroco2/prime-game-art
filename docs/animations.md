@@ -1497,6 +1497,39 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   above, is gone since p3)
   (`influence = 0`): the outline the photographer matches is the pose's own.
 
+### The loco clips' hand shapes (art #196, Hands H1)
+The loco clips carry human mocap finger motion (UAL, text to motion): the fingers claw, splay and differ clip to clip,
+and `finger_cap_deg` / `hands_relax` only cap it. `tools/blender/alien_hands.py` (headless Blender; the maths in
+`alien_hands_math.py`, no bpy) replaces it: every action's finger channels (the five chains of both hands, the
+unweighted Little's too) are removed and keyed with ready hand shapes from `tools/blender/anim_sets/alien_hands.toml`;
+every other channel (the arms and wrists) stays the clip's.
+- **The grips** are the photo poses' library (`alien_poses.toml` `[grips]`: fist, point, flat, heart, behind), reused
+  through `alien_pose_math.grip_quats` (the poses' `_fingers` calls it, so the poses are unchanged), plus the file's
+  own: `relaxed` (the fingers softly curved together, the thumb alongside) and `loose` (a loose fist). Redefining a
+  poses grip is refused.
+- **Per clip** the first `[clips]` pattern matching its Godot name (fnmatch, file order), else `[set] default`
+  (`relaxed`: Idle, Walk, Talk, Crouch, the rest); `grip`, `Left` and `Right`, or `keys` ([share 0..1, grip] or
+  [share, left, right]: Jump_Start relaxed to flat over its last 40 %); `[set] skip` the photo poses. Every key is
+  checked (`HandsError`).
+- **The check** (`--check`): on the build's own skin dump, per grip and hand, how deep a digit's skin goes into
+  another digit's bone tubes, its tip and middle into the palm's, its distal into its own base, the gaps between
+  neighbours; the rest pose's numbers are the measure's floor (`past rest`), and per clip the worst of its grips
+  (`collisions.md`).
+- **The sheets** (`--sheet --rows`): the left hand at 0.8 m (lens 85) from outside, the palm side, the thumb side and
+  the other side, a row per `grip:<name>`, `clip:<name>@<share>` or `rest`, `--sketch` beside the first row.
+
+      blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_hands.py -- --blend <char>.blend           --apply <dir> --name <char> [--glb] --check <dir>/check --sheet <png> --rows clip:Idle@0.5,grip:relaxed
+
+H1 step 1 (`<raw>/research/2026-10-22-roster/design/pilot3d/hands/h1/`, on loco1's builds, the old hands): 37
+actions keyed per character; past the rest floor relaxed 1.61 cm (the thumb's tip into the palm), loose 1.83 (the
+thumb into the index), flat 1.65, fist 5.08 (the long finger tubes curl into rings). The grips are to be retuned on
+the new hand mesh.
+
+**The hand mesh (not done in step 1).** `alien_cage.py` at HEAD does not rebuild S4b's body: with S4b's sources
+(`--src` S1c, `--target` b3d1) it makes 13,369 vertices against S4b's 9,814, so a cage rebuild would reshape the whole
+body and break every index-based step after it (the female variants, the clothes' fit). The remade hands have to be
+moved onto S4b's own hand vertices (the same topology), not rebuilt.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]

@@ -1,0 +1,46 @@
+# The alien's hand shapes in the loco clips (art #196, Hands H1; tools/blender/alien_hands_math.py, alien_hands.py).
+# The mocap finger motion of every clip is replaced, not capped: each clip's finger bones take one grip per hand, or a
+# short set of keyed grips ([share 0..1 of the clip, grip] or [share, left grip, right grip]); the arms and wrists keep
+# the clip's motion. The grips: the photo poses' library (alien_poses.toml [grips]: fist, point, flat, heart, behind;
+# reused, never redefined here) and this file's own. A grip: per finger [base, middle, tip] curl in degrees (the
+# thumb: metacarpal, proximal, distal), `all` for the rest, `ThumbTurn` [roll, swing] the thumb's base turned about its
+# length and toward the palm, `spread` + `mirror` the fingers drawn together on both hands (alien_pose_math.grip_quats).
+# A clip takes the first [clips] pattern matching its Godot name (no prefix, no _Loop; fnmatch, file order), else the
+# default grip.
+
+[set]
+poses = "alien_poses.toml"
+default = "relaxed"
+skip = ["PoseArms_*", "PoseLegs_*"]  # the photo poses keep their own grips
+
+[grips.relaxed]  # Idle, Walk, Talk, Crouch: the fingers softly curved together, the thumb alongside
+all = [20, 26, 14]
+mirror = true
+spread = 14
+Thumb = [6, 14, 10]
+ThumbTurn = [8, -18]
+
+[grips.loose]    # the run: a loose fist, the fingers curled half way, the thumb resting on the index's side
+all = [58, 64, 28]
+mirror = true
+spread = 10
+Thumb = [24, 28, 18]
+ThumbTurn = [18, 30]
+
+[clips."Jog_*"]
+grip = "loose"
+
+[clips."Sprint_*"]
+grip = "loose"
+
+[clips."Strafe_*"]
+grip = "loose"
+
+[clips."Jump_Start"]  # the crouch relaxed, the hands opening flat into the air
+keys = [[0.0, "relaxed"], [0.6, "relaxed"], [1.0, "flat"]]
+
+[clips."Jump_Air"]
+grip = "flat"
+
+[clips."Jump_Land"]
+keys = [[0.0, "flat"], [0.5, "relaxed"]]
