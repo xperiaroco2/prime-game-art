@@ -4,7 +4,7 @@
 [A]
 # The concept's forearm and hand hang in front of the belly in its side view (A.toml's note), and the side rows
 # around the hand are a straight interpolation, not a measurement: the body's own front is kept there (trunk and
-# legs), easing back to the table over the zone's 30 mm ends.
+# legs), easing back to the table over the zone's 60 mm ends (body_fit_geom.KEEP_EDGE).
 keep_front = [[640.0, 1000.0]]  # the trunk's belly and the upper thigh (the hand's rows)
 # D3f: the fit's moves diffused over the mesh after the passes (body_fit_geom.relax_moves): where the station maps
 # meet (the crotch, the shoulder's arm share, the chest, the armpit row, the ankle) their moves changed over an edge
@@ -40,7 +40,6 @@ shoulder_round = { rounds = 12, mu = 0.0, z0 = 15.0, z1 = 150.0, x0 = 20.0, x1 =
 # neck ring over A's (the tables), the Neck and Head about B's ring by B.toml's neck_bone_below / head_bone_above.
 shoulder_joint_x = 129.0      # the UpperArm heads' |x|
 hip_joint_x = 113.0           # the UpperLeg heads' |x|
-neck_below_ring = 50.8        # the Neck bone's head under the ring (the Head's stays 48.3 above it)
 # The hands and feet: A's at our size (the engineer, 2026-10-29), scaled per axis by the two tables' B/A ratios
 # (body_fit_run.limb_scales: the keys' hand and foot lengths and widths), never set here.
 # Her neck base: B's concept puts the ring at the collar, where her shoulder slopes start (the shoulder line 8 mm

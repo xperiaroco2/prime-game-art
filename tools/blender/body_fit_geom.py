@@ -22,7 +22,9 @@ A table's "-" (a side row where a hanging limb, not the body, forms the edge) is
 the body's own shape, moved by the error at the band's measured ends, interpolated across it (`fill_gaps`).
 A body whose concept's shoulder line sits within 60 mm of the ring (B: 8 mm) gets `fit.toml`'s `neck_base`: the
 widths above the armpit stay the body's (the T arms) up to the ring, and the neck's `length` mm under it widen into
-a smooth slope that meets the ring with a vertical tangent (`neck_base_half`), never a step or a shelf.
+a smooth slope (`neck_base_half`), never a step or a shelf. Since D3f/D3g the outline right under the ring is
+`neck_tangent`'s: it leaves the ring at the heads' flare angles, so body and head read as one neck
+(docs/decisions/2026-10-29-neck-ring.md, "Join").
 """
 from __future__ import annotations
 
@@ -746,37 +748,15 @@ def neck_tangent(verts: list, weights: list, ring_idx: list, nt: dict) -> tuple[
     return out, {"max_move_mm": round(most, 2), "ring_z": round(rz, 2), "centre": [round(cx, 2), round(cy, 2)]}
 
 
-def ring_morph(points: list, ring: list, band: float) -> list:
-    """D3f, the review's head on the ring as the assembler sets it (alien_char_build's step 2, NECK_BAND): every
-    point within `band` above the ring (`ring`: the body's loop) has its distance from the ring's axis blended toward
-    the ring's own at its angle, fully at the ring and by a smoothstep to its own at `band`, so the head's neck leaves
-    the ring vertically and its bottom loop lies on the ring. Same units in and out."""
-    rz = sum(p[2] for p in ring) / len(ring)
-    cx, cy = sum(p[0] for p in ring) / len(ring), sum(p[1] for p in ring) / len(ring)
-    rad = sorted((math.atan2(p[1] - cy, p[0] - cx), math.hypot(p[0] - cx, p[1] - cy)) for p in ring)
-    out = []
-    for p in points:
-        k = p[2] - rz
-        if not -1e-6 * band <= k < band:
-            out.append(tuple(p))
-            continue
-        dx, dy = p[0] - cx, p[1] - cy
-        phi, rho = math.atan2(dy, dx), math.hypot(dx, dy)
-        r0 = _periodic(rad, phi)
-        f = (r0 + ramp(k / band) * (rho - r0)) / max(1e-12, rho)
-        out.append((cx + dx * f, cy + dy * f, p[2]))
-    return out
-
-
-
 NECK_FLARE_BAND = 70.0  # mm above the ring: the head's neck flares into it over this band (neck_flare_morph)
-NECK_FLARE_A = 1.5  # flare_profile's slope at the ring: the steepest monotone one (about 14 to 18 degrees here)
+NECK_FLARE_A = 1.5  # flare_profile's slope at the ring (monotone for any a up to 3; 1.5: about 14 to 18 degrees here)
 
 
 def flare_profile(u: float, a: float) -> float:
     """D3g: the head-side neck flare's weight on the ring at u (0 at the ring, 1 at the band's top): a cubic with
     g(0) = 1, g(1) = 0, g'(1) = 0 and g'(0) = -a, so the neck arrives at the ring with a slope (a = 0 is the
-    smoothstep, vertical at the ring; a = 1.5 the steepest that stays monotone) and meets its own neck flat at the top
+    smoothstep, vertical at the ring; monotone for any a from 0 to 3, g' = -3 (1 - u)^2 at a = 3; NECK_FLARE_A is
+    1.5) and meets its own neck flat at the top
     of the band: an eased trumpet, not a cone."""
     u = min(1.0, max(0.0, u))
     return 1.0 - a * u + (2.0 * a - 3.0) * u * u + (2.0 - a) * u ** 3
@@ -818,7 +798,7 @@ def _fill(r: list) -> list:
 def neck_flare_morph(points: list, edges: list, ring: list, band: float, a: float, step: float = 2.5,
                      bins: int = 48) -> tuple[list, dict]:
     """D3g: a head's neck flared into the ring over `band` above it, one continuous neck (the manager's decision on
-    D3f's collar: the heads' necks are about 76 mm across, the ring 113 x 106 mm; ring_morph's 30 mm smoothstep
+    D3f's collar: the heads' necks are about 76 mm across, the ring 113 x 106 mm; the assembler's 30 mm smoothstep (alien_char_build's NECK_BAND)
     pinched the neck in right above a ring-wide collar). The head's own neck under its waist (the narrowest outline
     from each angle above that height, up to the band's top) replaces the wider band an earlier weld left there, then
     each point's distance from the ring's axis is blended onto the ring's at its angle by `flare_profile` (weight 1 at

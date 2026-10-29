@@ -461,23 +461,6 @@ class NeckTangentTest(unittest.TestCase):
         out, _ = F.neck_tangent(flared, [{}] * len(verts), top, nt)
         self.assertAlmostEqual(half(out, 1380.0), 56.7 + 10.0 * math.tan(math.radians(10.0)), places=4)
 
-    def test_ring_morph(self):
-        ring = [(56.7 * math.cos(2 * math.pi * k / 24), 52.8 * math.sin(2 * math.pi * k / 24), 1390.0)
-                for k in range(24)]
-        head = [(50.9 * math.cos(a), 45.2 * math.sin(a), z) for z in (1390.0, 1405.0, 1420.0, 1440.0)
-                for a in (0.1, 1.7, 3.3, 4.9)]
-        out = F.ring_morph(head, ring, 30.0)
-        for p, q in zip(head, out):
-            r = math.hypot(q[0], q[1])
-            if p[2] == 1390.0:  # the bottom on the ring's ellipse (within its 24-gon's chords)
-                a = math.atan2(q[1], q[0])
-                want = math.hypot(56.7 * math.cos(a), 52.8 * math.sin(a))
-                self.assertAlmostEqual(r, want, delta=1.0)
-            elif p[2] >= 1420.0:  # past the band: the head's own
-                self.assertEqual(q, p)
-            else:
-                self.assertGreater(r, math.hypot(p[0], p[1]))
-
 
 class NeckFlareTest(unittest.TestCase):
     """D3g: the head's neck flares into the ring (an eased trumpet), and the girdle's share of the arms' move."""
