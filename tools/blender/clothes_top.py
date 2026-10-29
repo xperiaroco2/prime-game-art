@@ -58,19 +58,33 @@ def tree_of(objs) -> BVHTree:
     return BVHTree.FromPolygons(co, polys)
 
 
-def _bisect(bm, mw, pick, co, no, outer: bool | None = True) -> None:
-    """Cuts the faces pick(world centre) by the world plane (co, no); clears its positive side (outer), its negative
-    (False) or nothing (None: the cut alone)."""
+def _bisect(bm, mw, pick, co, no, outer: bool | None = True, dist: float = 1e-5) -> int:
+    """Cuts the faces pick(world centre) by the world plane (co, no), then deletes those of them whose centres lie
+    on its positive side (outer), its negative side (False) or none (None: the cut alone); returns how many went.
+    The cut itself clears nothing (C1k): bisect_plane's clear kills vertices, and with them every face round them,
+    picked or not (clothes_shell.cleared)."""
     inv = mw.inverted()
+    tag = bm.faces.layers.int.new("c1k_pick")  # first: a new layer leaves earlier face references stale
     faces = [f for f in bm.faces if pick(mw @ f.calc_center_median())]
     if not faces:
-        return
+        bm.faces.layers.int.remove(tag)
+        return 0
+    for f in faces:
+        f[tag] = 1  # the halves of a cut face keep it
     edges = {e for f in faces for e in f.edges}
     verts = {v for f in faces for v in f.verts}
     nl = (mw.to_3x3().transposed() @ Vector(no)).normalized()
     bmesh.ops.bisect_plane(bm, geom=list(verts) + list(edges) + faces, plane_co=inv @ Vector(co), plane_no=nl,
-                           clear_outer=outer is True, clear_inner=outer is False)
+                           dist=dist)
+    gone = []
+    if outer is not None:
+        cand = [f for f in bm.faces if f[tag]]
+        sides = [H.plane_side(tuple(mw @ f.calc_center_median()), co, no) for f in cand]
+        gone = [f for f, g in zip(cand, H.cleared(sides, [True] * len(cand), outer)) if g]
+        bmesh.ops.delete(bm, geom=gone, context="FACES")
+    bm.faces.layers.int.remove(tag)
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    return len(gone)
 
 
 def cut_garment(gar, args) -> dict:
@@ -87,19 +101,20 @@ def cut_garment(gar, args) -> dict:
     _bisect(bm, mw, lambda c: True, (0, 0, z_w), (0, 0, 1), outer=None)
     front = lambda c: c.y < 0 and c.z > z_w
     back = lambda c: c.y > back_y and c.z > z_w
-    _bisect(bm, mw, front, (bib_hw, 0, 0), (1, 0, 0))
-    _bisect(bm, mw, front, (-bib_hw, 0, 0), (-1, 0, 0))
-    _bisect(bm, mw, front, (0, 0, bib_top), (0, 0, 1))
+    # the panels' planes cut only (C1k): a clearing cut killed the waist line's vertices beside the panels and with
+    # them the trousers' faces under it (the sawtooth); keep_face below is the only deletion, by face centres
+    _bisect(bm, mw, front, (bib_hw, 0, 0), (1, 0, 0), outer=None)
+    _bisect(bm, mw, front, (-bib_hw, 0, 0), (-1, 0, 0), outer=None)
+    _bisect(bm, mw, front, (0, 0, bib_top), (0, 0, 1), outer=None)
     dz, dx = z_apex - z_w, hw_a - hw_w
     ln = math.hypot(dz, dx)
     for sgn in (1, -1):
-        _bisect(bm, mw, back, (sgn * hw_w, 0, z_w), (sgn * dz / ln, 0, -dx / ln))
-    _bisect(bm, mw, back, (0, 0, z_apex), (0, 0, 1))
-    side = lambda c: c.z > z_w and not (c.y < 0 and abs(c.x) < bib_hw) and not (c.y > back_y and abs(c.x) < hw_w)
-    _bisect(bm, mw, side, (0, 0, z_w), (0, 0, 1))
+        _bisect(bm, mw, back, (sgn * hw_w, 0, z_w), (sgn * dz / ln, 0, -dx / ln), outer=None)
+    _bisect(bm, mw, back, (0, 0, z_apex), (0, 0, 1), outer=None)
     bm.faces.ensure_lookup_table()
-    gone = [f for f in bm.faces if not H.keep_face(*(mw @ f.calc_center_median()), z_w, bib_hw + 1e-3,
-                                                    bib_top + 1e-3, back_y, z_apex + 1e-3, hw_w + 1e-3, hw_a + 1e-3)]
+    e = 1e-5  # the cuts' own tolerance: a face outside a plane has its centre beyond it
+    gone = [f for f in bm.faces if not H.keep_face(*(mw @ f.calc_center_median()), z_w, bib_hw + e,
+                                                    bib_top + e, back_y, z_apex + e, hw_w + e, hw_a + e)]
     bmesh.ops.delete(bm, geom=gone, context="FACES")
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
     band_h, lap = floats(args.waistband)
@@ -129,10 +144,27 @@ def cut_garment(gar, args) -> dict:
     n_peel = peel_edges(bm, gar, args, z_w - (band_h - lap if band_h > 0 else 0.0) - 0.01, bib_hw, bib_top, back_y,
                         z_apex, hw_w, hw_a)
     n1 = len(bm.faces)
+    # the trousers' top edge beside the panels (C1k): its open edge's lowest and highest vertex, 1 cm and more off
+    # the panels' side zones; a straight cut reads one height (z_w less the band's removal)
+    zs = []
+    for v in bm.verts:
+        if not v.is_boundary:
+            continue
+        p = mw @ v.co
+        if not z_w - 0.1 < p.z < z_w + 1e-4:
+            continue
+        hw = H.back_halfwidth(min(p.z, z_w), z_w, z_apex, hw_w, hw_a)
+        if (p.y < 0 and abs(abs(p.x) - bib_hw) < 0.01 + args.edge_zone) or (
+                p.y > back_y and abs(abs(p.x) - hw) < 0.01 + args.edge_zone):
+            continue
+        zs.append(p.z)
     bm.to_mesh(me)
     bm.free()
     me.update()
-    rep = {"faces_before": n0, "faces_after": n1, "band_faces_removed": n_band, "edge_peeled": n_peel, "waist": z_w, "bib": [bib_hw, bib_top], "back": floats(args.back)}
+    rep = {"faces_before": n0, "faces_after": n1, "band_faces_removed": n_band, "edge_peeled": n_peel, "waist": z_w,
+           "bib": [bib_hw, bib_top], "back": floats(args.back),
+           "waist_edge_z_min_max": [round(min(zs), 4), round(max(zs), 4)] if zs else None,
+           "waist_edge_verts": len(zs)}
     say("garment cut", rep)
     return rep
 
@@ -176,9 +208,18 @@ def peel_edges(bm, gar, args, z_lo: float, bib_hw: float, bib_top: float, back_y
                 hits += H.shirt_texel(float(r), float(g), float(b))
             if hits >= len(uvs):
                 white.append(f)
-        rep["shirt_faces"] = len(white)
-        if white:
-            bmesh.ops.delete(bm, geom=white, context="FACES")
+        # only from an open edge inward (C1k, the review's minor 2): the bib's own light stitching inside the cloth
+        # stays, no hole opens
+        bm.faces.index_update()
+        allowed = {f.index for f in white}
+        nbrs = [[g.index for e in f.edges for g in e.link_faces if g is not f] for f in bm.faces]
+        seeds = [f.index for f in white if any(len(e.link_faces) != 2 for e in f.edges)]
+        bm.faces.ensure_lookup_table()
+        peel = [bm.faces[i] for i in H.flood(seeds, nbrs, allowed)]
+        rep["shirt_faces"] = len(peel)
+        rep["shirt_faces_inside_kept"] = len(white) - len(peel)
+        if peel:
+            bmesh.ops.delete(bm, geom=peel, context="FACES")
     for _ in range(args.edge_peel):
         bm.normal_update()
         gone = []
@@ -359,6 +400,11 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
         v.co = inv @ (p - n * args.shell_lip)
     rep["lip_edges"] = len(edges)
     bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    # the set-in sleeve's seam (C1k, the review's nit): cut at |x| = seam_x above arm_z and at z = arm_z beyond it,
+    # so each face lies wholly on one side and the seam H.region draws by face centres runs straight
+    for sgn in (1, -1):
+        _bisect(bm, mw, lambda c: c.z > args.arm_z - 0.03, (sgn * args.seam_x, 0, 0), (sgn, 0, 0), outer=None)
+        _bisect(bm, mw, lambda c, s=sgn: s * c.x > args.seam_x - 0.03, (0, 0, args.arm_z), (0, 0, 1), outer=None)
     # UVs
     uv = bm.loops.layers.uv.active
     axis_y, axis_z = floats(args.arm_axis)
@@ -975,6 +1021,7 @@ def waistband(bm, gar, body, gtree, rect, args, uv, dl, gi) -> dict:
         fill = known[len(known) // 2] if known else 0.012
         lows = S.smooth_open([x if x is not None else fill for x in lows], 3)
         grid, uvs, offs = [], [], []
+        n_pulled = n_on = 0
         along = [0.0]
         for k in range(1, len(cols)):
             along.append(along[-1] + (cols[k][1][-2][0] - cols[k - 1][1][-2][0]).length)
@@ -986,10 +1033,11 @@ def waistband(bm, gar, body, gtree, rect, args, uv, dl, gi) -> dict:
                     off = top_off + 0.001  # the ledge: rolled in to the tucked top
                 if j == 0:
                     p = p - Vector((0, 0, 0.002))
-                if under:  # the ends run under the Meshy bib's or back panel's bottom
+                if under:  # the ends run under the Meshy bib's or back panel's bottom, 2 mm inside it (C1k)
                     hit = gtree.ray_cast(p + n * 1e-4, n, 0.05)[0]
-                    if hit is not None:
-                        off = max(top_off + 0.001, min(off, (hit - p).length - 0.002))
+                    off, on_panel = H.band_end(off, (hit - p).length if hit is not None else None)
+                    n_pulled += hit is not None and off < top_off + 0.001
+                    n_on += on_panel
                 grid.append(p + n * off)
                 uvs.append((u0 + (u1 - u0) * ufr[j], S.mirror_v(along[k], v0, v1, args.strap_texels)))
             offs.append(low)
@@ -1018,7 +1066,8 @@ def waistband(bm, gar, body, gtree, rect, args, uv, dl, gi) -> dict:
                 f.normal_flip()
         tris += 2 * len(faces)
         side = {"stations": len(cols), "length_m": round(along[-1], 3),
-                "low_mm_min_max": [round(1000 * min(offs), 1), round(1000 * max(offs), 1)], "ends_under": sum(ends)}
+                "low_mm_min_max": [round(1000 * min(offs), 1), round(1000 * max(offs), 1)], "ends_under": sum(ends),
+                "end_points_inside_the_top": n_pulled, "end_points_on_the_panel": n_on}
         if args.band_button > 0 and bronze is not None:
             want = bib_hw + args.band_button
             fronts = [i for i in range(1, len(cols) - 1) if cols[i][1][nl // 2][0].y < 0]

@@ -371,6 +371,46 @@ def edge_defect(on_boundary: bool, out_dot: float, min_alt: float, area: float, 
     return out_dot < inward or min_alt < thin or area < tiny or fold_dot < fold
 
 
+def cleared(sides: list[float], picked: list[bool], outer: bool | None, eps: float = 1e-6) -> list[bool]:
+    """Which faces a plane cut clears (C1k), by the signed distances of their centres from the plane after the cut
+    (sides): of the picked faces, those on its positive side (outer True), on its negative side (False) or none
+    (None). bisect_plane's own clear kills vertices, and with each every face round it, picked or not (the second
+    review's major: the trousers' faces under the waist line beside the panels); this deletes only the faces meant."""
+    if outer is None:
+        return [False] * len(sides)
+    return [bool(p) and (s > eps if outer else s < -eps) for s, p in zip(sides, picked)]
+
+
+def flood(seeds: list[int], nbrs: list[list[int]], allowed: set[int]) -> set[int]:
+    """The allowed faces reached from seeds through neighbours that are allowed too (C1k: the shirt Meshy baked into
+    the denim peels only from an open edge inward, never as a hole inside the bib)."""
+    got = {s for s in seeds if s in allowed}
+    stack = list(got)
+    while stack:
+        f = stack.pop()
+        for g in nbrs[f]:
+            if g in allowed and g not in got:
+                got.add(g)
+                stack.append(g)
+    return got
+
+
+def opening_dist(d: float | None) -> float:
+    """A KD-tree find's distance to the nearest opening point; infinite when it found none (C1k: a tree of no
+    opening points finds (None, None, None))."""
+    return math.inf if d is None else d
+
+
+def band_end(off: float, hit: float | None, gap: float = 0.002, floor: float = 0.0005) -> tuple[float, bool]:
+    """A waistband end's offset from the body where it runs under a Meshy panel whose face is hit m out along the
+    body normal (C1k): at least gap inside that face, never under floor; and whether the panel lies so near the body
+    that even floor leaves the band on or outside it."""
+    if hit is None:
+        return off, False
+    cap = hit - gap
+    return max(floor, min(off, cap)), cap < floor
+
+
 def shirt_texel(r: float, g: float, b: float, lum: float = 0.55, sat: float = 0.3) -> bool:
     """Whether a garment texel (stored sRGB) is the shirt Meshy baked into the denim (C1j: the white wedges at the
     panels' edges): light (luminance over lum) and grey (saturation under sat), not denim, not orange stitching."""

@@ -288,5 +288,43 @@ class EdgePeel(unittest.TestCase):
         self.assertFalse(H.shirt_texel(0.9, 0.55, 0.2))  # orange top-stitching
         self.assertFalse(H.shirt_texel(0.0, 0.0, 0.0))
 
+    def test_cleared_by_face_centres_not_vertices(self):
+        # a strip of trouser faces just under the waist line beside the bib: their top vertices lie on z = 1.0 and on
+        # the outer side of the bib's x-plane, but their centres are below the waist; a clearing cut killed those
+        # vertices and so the faces (the second review's major); the face test keeps them
+        under = [-0.016, -0.016, -0.016]  # centres' sides of the plane z = 1.0 (the trousers)
+        above = [0.012, 0.03]
+        self.assertEqual(H.cleared(under + above, [True] * 5, True), [False, False, False, True, True])
+        self.assertEqual(H.cleared(under + above, [True] * 5, False), [True, True, True, False, False])
+        self.assertEqual(H.cleared(under + above, [True] * 5, None), [False] * 5)
+        self.assertEqual(H.cleared([0.02, 0.02], [False, True], True), [False, True])  # only the picked faces
+        self.assertEqual(H.cleared([1e-8, -1e-8], [True, True], True), [False, False])  # on the plane: kept
+        # and the garment's pick: the trousers' faces under the waist stay beside the bib and the back panel
+        for x, y in ((0.13, -0.08), (-0.2, 0.0), (0.15, 0.09)):
+            self.assertTrue(H.keep_face(x, y, 0.9999, 1.0, 0.105, 1.2, 0.03, 1.15, 0.12, 0.05))
+            self.assertFalse(H.keep_face(x, y, 1.0001, 1.0, 0.105, 1.2, 0.03, 1.15, 0.12, 0.05))
+
+    def test_flood_peels_only_from_an_open_edge(self):
+        nbrs = [[1], [0, 2], [1, 3], [2], [5], [4]]  # a chain 0-1-2-3 and a pair 4-5
+        self.assertEqual(H.flood([0], nbrs, {0, 1, 3}), {0, 1})  # 3 is not reached past 2
+        self.assertEqual(H.flood([], nbrs, {4, 5}), set())  # light faces inside the cloth: no hole
+        self.assertEqual(H.flood([2], nbrs, {0, 1}), set())  # a seed that is not allowed
+
+    def test_opening_dist_of_no_openings_is_infinite(self):
+        self.assertEqual(H.opening_dist(None), math.inf)
+        self.assertFalse(H.opening_dist(None) < 0.04)
+        self.assertEqual(H.opening_dist(0.02), 0.02)
+
+    def test_band_end_stays_inside_the_panel(self):
+        self.assertEqual(H.band_end(0.01, None), (0.01, False))
+        off, on = H.band_end(0.01, 0.006)
+        self.assertAlmostEqual(off, 0.004)
+        self.assertFalse(on)
+        self.assertEqual(H.band_end(0.003, 0.02), (0.003, False))
+        off, on = H.band_end(0.01, 0.0021)  # the panel at the body: the floor, counted
+        self.assertAlmostEqual(off, 0.0005)
+        self.assertTrue(on)
+
+
 if __name__ == "__main__":
     unittest.main()
