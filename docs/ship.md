@@ -1709,37 +1709,38 @@ throat_clean.png`) and asked to see the throat whole without the gills. `tools/b
 - Shots, close-ups, sheets: `<raw>/ship/v5/gills-throat/clean/` (`pieces/`, `shots/`, `shots/close/`, `sheets/`);
   handoff `<raw>/ship/v5/notes/gills-throat-clean-b.md`. Tests: `tools/tests/test_ship_throat.py`.
 
-### The gill cover pilot (2026-10-29)
-The engineer accepted the clean throat ("Yes, next one cover"). Design's gill covers (prime-game-design c275972,
-`ideas/ship-components/gill-covers/`, `covers_ingame.jpg`) replace the slits: five rigid metal covers like a fish's gill
-covers per side. The pilot builds ONE, animated, on the clean east wall: does it work in 3D and move well?
-- **The cover** (`tools/blender/ship_interior_cover.py`, parts `cover3_*` of `th_wall_e`; `COVER_SIDES` in
-  ship_interior_throat.py keeps the west wall plain). In front view a crescent: both arcs through tips 1.20 m apart
-  up the wall (t 0.75-1.95), the outer arc sagging 0.335 toward the ramp, the inner 0.035, so 30 cm wide; its middle at
-  s 2.69, the old middle slit's place. A 6 mm `cover_metal` shell (pale bronze-silver) domed 5.5 cm out of the wall,
-  resting 3 mm off it on its outer arc and tips; its open edge stands 1.6 cm off the wall even shut, and a thin rim
-  (the edge face and a 9 mm band on the front, `int_cyan__cover_rim`) glows along it.
-- **The hinge** runs vertical along the outer edge (toward the ramp): the axis touches the outer arc's furthest point,
-  1.3 cm off the wall. Three knuckles stand on it: the top and bottom fixed on small tabs (`cover3_hinge`), the middle
-  on the plate (`cover3_knuckle`). `cover3_plate`, `cover3_rim` and `cover3_knuckle` have their origins on the axis at
-  the cover's middle height and turn about local Y. Every plate point lies on the hall's side of the axis and in front
-  of the wall, so any outward turn lifts it further off: no swept point passes the wall over 0..35 deg (tested every
-  0.5 deg).
-- **The pocket**: the band (`band`) has a hole in the plate's shape, 2.2 cm inside the outer arc and the tips (the
-  plate rests on the wall there) and 8 mm out past the open edge (the shut red line). Behind it are 4.5 cm walls of a dark
-  metal with a faint glow (`cover3_pocket`, `int_cyan__cover_wall`) and a glowing floor (`cover3_glow`, `int_cyan__cover_glow`).
-- **The controller** `godot/ship/gill_cover.gd` (the game copies it): `step(delta)`, `press()` (returns "open" or
-  "cough"), `gasp()`, `reset()`. Shut: 0 deg, a dim red line, a wisp of vapour every 1.15 s. Gasp (every 2.4 s while
-  shut, or `gasp()`): the cover rises to 8 deg with an ease-out in 0.45 s, hangs, eases down and lands with a 0.7 deg
-  bounce; the red flares with the angle. A press while the cover stands at least 3 deg open opens it: a damped spring
-  (9 rad/s, damping 0.6) to 30 deg, peaking at about 32 deg, red easing to cyan over 0.35 s, three puffs. Then it stays
-  open with a calm cyan glow that never blinks and a soft drift of vapour. A press outside the window coughs: a short
-  shudder, a grey puff, and the line dims for 1 s. The light is one omni inside the pocket, 4 cm off its floor and
-  behind the wall's face: it lights the pocket and the plate's inside, never the shell's front, so the shell shows no
-  hot spot (in front of the wall it burnt spots on the rim and lit the cove).
-- **Proof**: `ship --out <pieces> --cover-anim DIR` (ship.gd mode `cover_anim`, off-screen). It renders the 10 s
-  demo: three gasps, a press in the third at 6.3 s, the swing and calm open. Two cameras: `concept`, 2.7 m square to
-  the wall like `covers_ingame.jpg`, and `close`, 1.5 m from the cover at 30 deg from the hall's side. Each camera
-  gets `DIR/<cam>/cover.mp4` and `keys_sheet.png`; the run also writes `stills/<cam>_{shut,gasp,open}.png` and
-  `sheet.png` beside the concept. Outputs: `<raw>/ship/v5/gills-throat/covers/`; handoff
-  `<raw>/ship/v5/notes/gills-covers-1.md`. Tests: `tools/tests/test_ship_cover.py`.
+### The gill cover pilot (2026-10-29, dropped)
+Design's hinged gill covers (`ideas/ship-components/gill-covers/`) were piloted (one, then five a side) and dropped the
+same day: the engineer found a cover that opens "like a little cabinet" ugly. The cover module, `gill_cover.gd`,
+`--cover-anim` and their tests are gone (handoffs `<raw>/ship/v5/notes/gills-covers-1.md`, `gills-covers-2.md`). Kept:
+`ship_build.py`'s `"nocol": True` part flag (decor on a colliding piece gets no `-col` collider).
+
+### The gill set (2026-10-29)
+The engineer's final pick: prime-game-design `ideas/ship-components/slits-lamps/set_plate.jpg`. On the clean throat's
+east wall only for now (`GILL_SIDES` in ship_interior_throat.py; the west mirrored later):
+- **Build** (`tools/blender/ship_interior_gillset.py`, parts of `th_wall_e`, all decor with `nocol`, nothing moves):
+  - five crescent niches at the old slots (s 1.95/2.32/2.69/3.06/3.43 = each crescent's middle), both arcs bulging toward
+    the mouth; chords 1.18/1.08/0.98/0.89/0.80 m, bottoms 0.80 -> 0.84, leaning back 3-7 deg (a shear: the top toward
+    the hall). Each is a smooth scoop 6.5 cm deep cut into the band (one band column per slit), in three glowing parts:
+    `gill<k>_scoop` (the mouth-side half, dim), `gill<k>_glow`, `gill<k>_edge` (the hall-side lip, bright);
+  - a turn bar over each slit: `gill<k>_bar` (a bevelled frame of the band's metal, 4 mm proud) and `gill<k>_bar_glow`
+    (14 x 3 cm, 2 mm off the wall);
+  - `groove` / `groove_glow`: a cubic Bezier round the set's mouth side from under the fold (s 1.93, h 2.06) to under
+    slits 1-2 (s 2.50, h 0.68), two bevelled lips with a thin glow strip between, tapering at both ends; 5 cm clear of
+    every hole (a grid search, `clearances()`);
+  - the button at s 3.73, h 1.15: an octagonal bezel of the band's metal, the cyan ring (`btn_ring`), the dark dome.
+  - Materials `int_cyan__gset_*` (their GLB colour the shut red) and `int_cyan__cover_btn`, rows in `[light.mats]`
+    with `l = 0` (they light nothing through ship.gd's strip lights).
+- **Controller** `godot/ship/gill_set.gd` (the game copies it): `setup(piece)`, `step(delta)`, `press()` (flips the slit
+  under the white bar: "open" / "shut"), `pose(open, at)`, `reset()`, `info()`. A niche eases red -> cyan in 0.25 s; the
+  bars are red over shut slits, cyan over open ones, and ONE white bar runs 1-2-3-4-5-4-3-2, 0.6 s a step (`STEP_S`),
+  over open slits too. An open slit puffs steam (a one-shot GPUParticles3D); with all five open a big cloud emits and
+  stays. Each niche has a shadowless omni 16 cm in front of it with no specular (the glow on the wall). `time_scale`
+  scales the steam (the proof sets it from the real frame time so the MP4 runs at its own clock).
+- **Proof**: `ship --out <pieces> --gill-set DIR` (ship.gd mode `gill_set`, off-screen): the 14 s demo (presses at 0.9,
+  2.1, 3.3 (shuts slit 4 again), 5.1, 6.3, 7.5, 8.1 s; all open from 8.1 s) from `concept` (square-on, 2.4 m out, the
+  wall from frame to jamb as in set_plate.jpg) and `close` (1.5 m from slot 3); `DIR/<cam>.mp4`, `DIR/<cam>/keys_sheet.png`,
+  `stills/<cam>_{shut,mid,open}.png`, the posed views and close-ups (`GILL_VIEWS` in ship.py: square_on, from_mouth,
+  from_hall, cu_*; `concept_wide` is the clean throat's old wall_square_on) and `sheet.png` beside set_plate.jpg.
+  Outputs: `<raw>/ship/v5/gills-throat/set/`; handoff `<raw>/ship/v5/notes/gills-set-1.md`. Tests:
+  `tools/tests/test_ship_gillset.py`.
