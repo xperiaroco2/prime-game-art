@@ -16,6 +16,16 @@ sys.path.insert(0, str(ROOT / "tools" / "blender"))
 import ship_interior as S  # noqa: E402
 import ship_interior_gills as G  # noqa: E402
 
+
+
+def setUpModule():
+    # the clean throat (2026-10-29, the engineer's order): the throat is shown without its gills, so th_gills_e/_w
+    # are out of the layout and the wall's profile changed (vertical to 2.10, a 25 cm cove); the builder and
+    # gill_row.gd stay in the repo, parked, until the hinged gill covers replace the slits. The clean throat's own
+    # tests: test_ship_throat.py.
+    raise unittest.SkipTest("the gills are parked: the clean throat has no slits (test_ship_throat.py)")
+
+
 PLACE = tomllib.loads((ROOT / "layouts" / "ship" / "interior.toml").read_text(encoding="utf-8"))["place"]
 # design's row (drawing2, the throat's row, the east wall; the west mirrors x)
 DESIGN = {1: (2.259, -5.248), 2: (2.375, -4.896), 3: (2.490, -4.545), 4: (2.606, -4.193), 5: (2.721, -3.842)}

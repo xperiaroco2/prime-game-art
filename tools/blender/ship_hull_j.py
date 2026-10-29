@@ -682,7 +682,7 @@ def j_cheeks(args: dict, layout: dict) -> list:
         top = inner[::-1]
         # the gills step 5: below the bend the gills' band (band_mouth, 3 mm in front) and its plinth are the wall, so
         # the jamb's inner face starts at the bend (each surface one piece)
-        face = _clip_z(face, S.FLOOR + S.TH_CH[0] - 0.002)
+        face = _clip_z(face, S.FLOOR + S.TUN_CH[0] - 0.002)
         for p in plates(face, inward):
             # details 3b: a plate's edge on the jamb's top is laid flush (its insets chewed the edge against the sky)
             flags = [not any(_off_segment(a, u, w) < 1e-4 and _off_segment(b, u, w) < 1e-4
@@ -824,7 +824,7 @@ def _tun_prof(y):
     throat's profile (walls vertical to the bend, the chamfer in, the ceiling) offset 0.25 m out, its chamfer parallel
     to the inside's (0.55 in over 0.85 up)."""
     w, k = _tun_w(y)
-    return [(w + TUN_OUT * k, S.SLAB - 0.01), (w + TUN_OUT * k, S.FLOOR + S.TH_CH[0] + 0.074),
+    return [(w + TUN_OUT * k, S.SLAB - 0.01), (w + TUN_OUT * k, S.FLOOR + S.TUN_CH[0] + 0.074),
             (w - 0.427 * k, TUN_TOP), (0.0, TUN_TOP)]
 
 
@@ -860,8 +860,8 @@ def mouth_tunnel(args: dict, layout: dict) -> list:
     pit, lintel or jamb end sticks out (bug 2). The front: a dark portal frame round the opening, a chrome lip. Plan
     coordinates in the design frame (ship_build lifts the piece)."""
     mx, my, yr, y0, _sl, _k = _tun_frame()
-    bend, cin = S.TH_CH
-    import ship_interior_gills as GI   # the gills' band metal, plinth and their materials (gills step 5)
+    bend, cin = S.TUN_CH
+    import ship_interior_throat as GI   # the throat wall's band metal, plinth and their materials
     FLOOR_I = S.FLOOR
     h_b, h_c = S.FLOOR + bend, S.FLOOR + S.TH["clear_h"]
     ye = yr + 0.04                                    # 4 cm past the roof line: under the throat's arch (yr + 0.1)

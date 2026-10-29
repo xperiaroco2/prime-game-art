@@ -54,7 +54,11 @@ shape = "poly"                               # a convex floor polygon [x, y], a 
                                              # running south
 points = [[-1.65, -7.1], [1.65, -7.1], [2.915, -3.252], [-2.915, -3.252]]
 clear_h = 2.3                                 # 2.9 over the ground: the capsule and its margin; walls vertical to
-chamfer = [1.45, 0.55]                        # 1.45, then slanted 0.55 in to the ceiling (the corridors' bend)
+chamfer = [2.10, 0.25]                        # the clean throat (2026-10-29, the engineer's yes): walls vertical to
+                                              # 2.10, then a 25 cm cove in to the flat ceiling (the highest fold the
+                                              # hull allows with 0.25 in is 2.14: 15 cm of skin at s 1.78)
+tunnel_chamfer = [1.45, 0.55]                 # the entry tunnel forward of the roof line keeps the old profile (its
+                                              # hood outside would widen 0.30 m at the shoulders with the room's)
 roof_y = -5.5608                              # the ceiling from here aft (the front is J's open notch, no roof): the
                                               # first module line (5 of 0.810) with 0.15 m of hull over the roof
 exit = "ramp"                                # the only way in or out (5a's side hatch is dropped: one entrance, art#263)

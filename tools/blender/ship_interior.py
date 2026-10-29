@@ -91,7 +91,8 @@ _TH = _ROOM["throat"]
 TH_PTS = [(x - HALL_C[0], y - HALL_C[1]) for x, y in _TH["points"]]   # hall-relative: mouth (-+1.65, -6.7), corners
 TH_CORNER = math.degrees(math.atan2(TH_PTS[2][1], TH_PTS[2][0]))      # -44.38
 TH_ROOF = _TH["roof_y"] - HALL_C[1]                                   # -5.161: the throat's ceiling from here aft
-TH_H, (TH_BEND, TH_IN) = _TH["clear_h"], _TH["chamfer"]                # 2.3; walls vertical to 1.45, then 0.55 in
+TH_H, (TH_BEND, TH_IN) = _TH["clear_h"], _TH["chamfer"]                # 2.3; walls vertical to 2.10, then 0.25 in
+TUN_BEND, TUN_IN = _TH.get("tunnel_chamfer", _TH["chamfer"])          # the entry tunnel's (and the old wall modules'): 1.45, 0.55
 TH_HALF = 1.0                                                         # the wall modules' nominal half width
 # inside-1: the hall's floor rings and lamp ring scaled with the hall (v1 apothem 3.4 -> 4.0: x 1.176)
 K_HALL = R_HALL / 3.4
@@ -704,12 +705,6 @@ def cor_wall_up(args, layout):
     fr = G.Frame((0.0, a[0], FLOOR + a[1]), (1, 0, 0), vdir, (0.0, vdir[2], -vdir[1]))
     e = hl - 0.006
     tone = "int_silver_b" if args.get("tone", "a") == "a" else "int_silver_a"
-    if args.get("end"):   # the raise step 3 (bug 1): the throat's last module mitred into the header at the hall
-        cut = th_end_cut(args["end"], hl, a[0], vlen)
-        body = [G.slab(fr, _clip2(G.rect(-hl, hl, 0.0, vlen), *cut), -0.2, 0.0)]
-        panel = _clip2(G.rect(-e, e, 0.05, vlen - 0.03), cut[0], cut[1], cut[2] - 0.04)
-        panels = [pyramid(fr, panel if G.area2(panel) > 0 else panel[::-1], 0.0, 0.03, 0.065, 0.012)]
-        return [P("body", M(*body), "int_silver_b"), P("panel", M(*panels), tone)]
     body = [G.slab(fr, G.rect(-hl, hl, 0.0, vlen), -0.2, 0.0)]
     panels = [G.pillow(fr, -e, e, 0.05, vlen - 0.03, 0.0, 0.03, 0.065, 0.012)]
     if a[1] > PROF[1][1] + 0.01:  # the mouth: a vertical panel from the bay's lintel up to the chamfer
@@ -720,8 +715,6 @@ def cor_wall_up(args, layout):
 
 
 TH_HEAD_D = 0.2    # the throat ceiling's header under the hall's rim: its depth hall-ward of the sub-facet's chord
-TH_GILLS_COLUMN = True   # the gills step 6: the gills' corner column covers the header's seat (no trim there)
-TH_SKIN = 0.008   # the gills step 5: the header's skin under the throat's ceiling by the corners (the band's cut is 1 cm in)
 
 
 def th_corner_chord():
@@ -734,24 +727,6 @@ def th_corner_chord():
     ln = math.hypot(*mid)
     m = (mid[0] / ln, mid[1] / ln)
     return k, v, m, ln
-
-
-def th_end_cut(end, hl, y0, vlen):
-    """The raise step 3 (art#263 bug 1): the half plane (a, b, c), a u + b v <= c, of the throat's last upper-wall
-    module (its chamfer frame: u along the wall, v up the slope) kept on the throat's side of the header's hall face
-    (1 cm inside it), so the chamfer's lean runs into the header instead of ending square in the hall. end 1: the
-    east module (the hall at local +x); -1: the west one (local +x from the hall to the mouth, the east mirrored)."""
-    k, _v, m, dist = th_corner_chord()
-    d = (k[0] - TH_PTS[1][0], k[1] - TH_PTS[1][1])
-    ln = math.hypot(*d)
-    d = (d[0] / ln, d[1] / ln)
-    n_in = (-d[1], d[0])
-    o = (k[0] - d[0] * hl + n_in[0] * TH_HALF, k[1] - d[1] * hl + n_in[1] * TH_HALF)
-    md, mn = m[0] * d[0] + m[1] * d[1], m[0] * n_in[0] + m[1] * n_in[1]
-    a, b = -md, -mn * TH_IN / vlen
-    c = m[0] * o[0] + m[1] * o[1] + mn * y0 - dist + TH_HEAD_D - 0.01
-    s = math.hypot(a, b)
-    return (a * end / s, b / s, c / s)
 
 
 def cor_ceil(args, layout):
@@ -803,23 +778,6 @@ def cor_arch_strip(args, layout):
         fr = G.Frame((0.0, 0.0, FLOOR), (0, 1, 0), (0, 0, 1), n)
         out.append(G.band(fr, a, b, 0.13, 0.138, 0.0, edges))
     return [P("strip", M(*out), "int_cyan")]
-
-
-def th_arch(args, layout):
-    """rebuild D: the throat's arch at its roof line in the corridors' arch style (cor_arch's band, stepped rim and
-    cyan strips), over the ceiling and both chamfers only, so the vents' plain walls below stay clear; args half (the
-    walls' half width in the cut across the throat's axis) and k (the chamfer's lean in that cut)."""
-    prof, i = _prof({**args, "prof": "throat"}), 0.18
-    edges = (1, 2, 3)
-    inner, outer, rim = G.inset(prof, i), G.inset(prof, -0.03), G.inset(prof, i - 0.065)
-    a, b = G.inset(prof, i - 0.045), G.inset(prof, i - 0.02)
-    arch, lip, strip = [], [], []
-    for n in ((-1, 0, 0), (1, 0, 0)):
-        fr = G.Frame((0.0, 0.0, FLOOR), (0, 1, 0), (0, 0, 1), n)
-        arch.append(G.band(fr, inner, outer, 0.0, 0.1, 0.03, edges))
-        lip.append(G.band(fr, inner, rim, 0.1, 0.13, 0.012, edges))
-        strip.append(G.band(fr, a, b, 0.13, 0.138, 0.0, edges))
-    return [P("arch", M(*arch), "int_silver_c"), P("rim", M(*lip), "int_silver_a"), P("strip", M(*strip), "int_cyan")]
 
 
 # --- rebuild C: the throat (hall-relative plan coordinates, placed at the hall's centre) -------------------------
@@ -901,21 +859,15 @@ def throat_floor(args, layout):
 
 
 def throat_ceil(args, layout):
-    """The throat's ceiling from its roof line aft to the hall's rim: the corridors' flat ceiling (a body, panels and
-    a dark spine) between the walls' chamfer tops, and the header under the hall's rim over each sub-facet, down
-    to the ceiling; near the corners only its hall face's skin goes on down to the chamfer (the gills step 5)."""
+    """The throat's ceiling (the clean throat, 2026-10-29): one flat plane at 2.30 between the coves' tops, from the
+    ramp frame (its front edge inside the frame's body at the roof line) aft to the header, with a dark spine down its
+    middle from the frame's aft face; the header under the hall's rim over each sub-facet, from the ceiling up to the
+    rim (its throat face carried down to the coves by the jambs, ship_interior_throat.drop)."""
+    import ship_interior_throat as T
     top = FLOOR + TH_H
-    fr = G.Frame((0.0, 0.0, top), (1, 0, 0), (0, 1, 0), (0, 0, -1))
-    fl = lambda q: [(x, y) for x, y in q]
     body = [G.slab(G.floor_frame(0.0), q, top, top + 0.12) for q in throat_pieces(TH_IN, TH_ROOF, None)]
-    # the gills step 4: only the two middle wedges' panels (on the spine); the corner wedges' small panels hung 3 cm
-    # under the ceiling by the hall's corners, where the header cuts the gills' band back, and read as floating plates
-    panels = [G.slab(G.floor_frame(0.0), G.inset(q, 0.03), top - 0.03, top, 0.01)
-              for q in throat_pieces(TH_IN + 0.02, TH_ROOF + 0.03, None, 0.05) if min(abs(x) for x, _ in q) < 0.06]
-    spine = [G.slab(G.floor_frame(0.0), q, top - 0.02, top) for q in throat_pieces(TH_IN, TH_ROOF, None)
-             if min(abs(x) for x, _ in q) < 0.05]
-    spine = [G.slab(G.floor_frame(0.0), G.rect(-0.03, 0.03, TH_ROOF, -HV), top - 0.02, top)]
-    head, trim, panel = [], [], []
+    spine = [G.slab(G.floor_frame(0.0), G.rect(-0.03, 0.03, T.FRAME_Y[1], -HV), top - 0.002, top)]
+    head = []
     a0, a1 = -180.0 - TH_CORNER, TH_CORNER
     for i in range(TH_SUBS):
         b0, b1 = a0 + (a1 - a0) * i / TH_SUBS, a0 + (a1 - a0) * (i + 1) / TH_SUBS
@@ -925,54 +877,9 @@ def throat_ceil(args, layout):
         ex = ((p1[0] - p0[0]) / ln, (p1[1] - p0[1]) / ln)
         nrm = (ex[1], -ex[0])                                    # outward, into the throat
         fv = G.Frame((p0[0], p0[1], FLOOR), (ex[0], ex[1], 0.0), (0, 0, 1), (nrm[0], nrm[1], 0.0))
-        def low(s):   # the throat's ceiling or chamfer under the edge point s along it
-            x, y = p0[0] + ex[0] * s, p0[1] + ex[1] * s
-            d = min(-(a * x + b * y - c) for a, b, c in (_wall_line(1), _wall_line(-1)))
-            return TH_BEND + (TH_H - TH_BEND) * min(1.0, max(0.0, d) / TH_IN)
-        ss = [0.0, ln]
-        for s in [ln * k / 12 for k in range(1, 12)]:
-            ss.append(s)
-        ss = sorted(ss)
-        def low_hall(s):   # the chamfer's height where it meets the header's hall face (clamped as low)
-            x, y = p0[0] + ex[0] * s - nrm[0] * TH_HEAD_D, p0[1] + ex[1] * s - nrm[1] * TH_HEAD_D
-            d = min(-(a * x + b * y - c) for a, b, c in (_wall_line(1), _wall_line(-1)))
-            return TH_BEND + (TH_H - TH_BEND) * min(1.0, max(0.0, d) / TH_IN)
-        for s0, s1 in zip(ss, ss[1:]):
-            # the gills step 5: the header stops at the throat's ceiling; below it, by the hall's corners, only a skin
-            # on its hall face (TH_SKIN) closes the chamfer's triangle from the hall, behind the gills' band, whose
-            # lean now runs on to the hall face (the full-depth drop stood over the band as a dark slanted block)
-            head.append(G.slab(fv, [(s0, TH_H), (s1, TH_H), (s1, H_HALL), (s0, H_HALL)], -TH_HEAD_D, 0.0))
-            if min(low_hall(s0), low_hall(s1)) < TH_H - 1e-6:
-                head.append(G.slab(fv, [(s0, low_hall(s0)), (s1, low_hall(s1)), (s1, TH_H), (s0, TH_H)],
-                                   -TH_HEAD_D, -TH_HEAD_D + TH_SKIN))
-        if i in (0, TH_SUBS - 1):   # the raise step 3 (bug 1): a trim where the mitred chamfer meets the header
-            def seat(s):   # the chamfer's height where it meets the header's hall face, None off the chamfer
-                x, y = p0[0] + ex[0] * s - nrm[0] * TH_HEAD_D, p0[1] + ex[1] * s - nrm[1] * TH_HEAD_D
-                d = min(-(a * x + b * y - c) for a, b, c in (_wall_line(1), _wall_line(-1)))
-                return TH_BEND + (TH_H - TH_BEND) * d / TH_IN if 0.0 <= d <= TH_IN else None
-            sq = [ln * k / 40 for k in range(41)]
-            # the gills step 6: the gills' corner column (its front 1.6 cm hall-ward of this face) now covers the
-            # seat from both sides; the trim showed past its edge from the throat as a slanted strip ending in the air
-            for s0, s1 in zip(sq, sq[1:]) if not TH_GILLS_COLUMN else ():
-                h0, h1 = seat(s0), seat(s1)
-                if h0 is not None and h1 is not None:
-                    trim.append(G.slab(fv, [(s0, h0 - 0.03), (s1, h1 - 0.03), (s1, h1 + 0.035), (s0, h0 + 0.035)],
-                                       -TH_HEAD_D - 0.022, -TH_HEAD_D))
-            # and the wall's raised panel over the header's face above it, as the throat's upper wall has
-            sk, sg = (0.0, 1.0) if i == 0 else (ln, -1.0)   # the hall corner's end of the sub-facet (west 0, east ln)
-            st = lambda t: sk + sg * t
-            lo = lambda t: (seat(st(t)) if seat(st(t)) is not None else TH_H) + 0.07
-            tq = [t for t in sq if seat(st(t)) is not None]
-            t_a = tq[0] + 0.06
-            t_t = next((t for t in sq if t > t_a and (seat(st(t)) is None or seat(st(t)) >= TH_H - 1e-6)), ln - 0.12)
-            poly = [(st(t), v) for t, v in ((t_a, lo(t_a)), (t_t, TH_H + 0.07), (ln - 0.06, TH_H + 0.07),
-                                             (ln - 0.06, H_HALL - 0.06), (t_a, H_HALL - 0.06))]
-            fh = G.Frame((p0[0] - nrm[0] * TH_HEAD_D, p0[1] - nrm[1] * TH_HEAD_D, FLOOR), (ex[0], ex[1], 0.0),
-                         (0, 0, 1), (-nrm[0], -nrm[1], 0.0))
-            panel.append(pyramid(fh, poly if G.area2(poly) > 0 else poly[::-1], 0.0, 0.03, 0.065, 0.012))
-    return [P("body", M(*body), "int_silver_b"), P("panels", M(*panels), "int_silver_a"),
-            P("spine", M(*spine), "int_dark"), P("header", M(*head), "int_silver_b"),
-            *([P("trim", M(*trim), "int_silver_c")] if trim else []), P("corner_panel", M(*panel), "int_silver_a")]
+        head.append(G.slab(fv, [(0.0, TH_H), (ln, TH_H), (ln, H_HALL), (0.0, H_HALL)], -TH_HEAD_D, 0.0))
+    return [P("body", M(*body), "int_silver_b"), P("spine", M(*spine), "int_dark"),
+            P("header", M(*head), "int_silver_b")]
 
 
 # --- the tip rooms (built for the east room, centre at the origin; the west one is turned 180) ----------------------
@@ -1387,6 +1294,9 @@ MODULES.append(ship_interior_lens)
 # the west lens room's workshop (decor)
 import ship_interior_workshop  # noqa: E402
 MODULES.append(ship_interior_workshop)
-# the gills (2026-10-28): the throat's clean walls, slits and button
+# the gills (2026-10-28): parked (2026-10-29: the throat shown without slits; hinged gill covers next), still built
 import ship_interior_gills  # noqa: E402
 MODULES.append(ship_interior_gills)
+# the clean throat (2026-10-29): its walls, the ramp frame and the hall jambs
+import ship_interior_throat  # noqa: E402
+MODULES.append(ship_interior_throat)

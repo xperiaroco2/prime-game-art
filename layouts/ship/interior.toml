@@ -107,8 +107,6 @@ place = [
   ["hall_rib_strip", [-3.5634, -2.3838, 0.0], 150.895],
   ["hall_rib", [-2.9152, -3.2522, 0.0], 135.626],
   ["hall_rib_strip", [-2.9152, -3.2522, 0.0], 135.626],
-  ["hall_pilaster", [-2.9152, -3.2522, 0.0], 135.626],
-  ["hall_pilaster_strip", [-2.9152, -3.2522, 0.0], 135.626],
   ["hall_rib", [-1.5813, -4.1593, 0.0], 112.813],
   ["hall_rib_strip", [-1.5813, -4.1593, 0.0], 112.813],
   ["hall_rib", [0.0, -4.4784, 0.0], 90.0],
@@ -117,8 +115,6 @@ place = [
   ["hall_rib_strip", [1.5813, -4.1593, 0.0], 67.187],
   ["hall_rib", [2.9152, -3.2522, 0.0], 44.374],
   ["hall_rib_strip", [2.9152, -3.2522, 0.0], 44.374],
-  ["hall_pilaster", [2.9152, -3.2522, 0.0], 44.374],
-  ["hall_pilaster_strip", [2.9152, -3.2522, 0.0], 44.374],
   ["hall_rib", [3.5634, -2.3838, 0.0], 29.105],
   ["hall_rib_strip", [3.5634, -2.3838, 0.0], 29.105],
   ["hall_rib", [3.96, -1.3753, 0.0], 13.836],
@@ -333,11 +329,12 @@ place = [
   ["arch_strip_r", [-8.7735, 0.9369, 0.0], -171.336],
   ["floor_light", [1.618, -6.2367, 0.0], -71.802],
   ["floor_light", [2.377, -3.9279, 0.0], -71.802],
-  ["th_gills_e", [1.65, -7.1, 0.0], -71.802],
+  ["th_wall_e", [1.65, -7.1, 0.0], -71.802],
   ["floor_light", [-1.618, -6.2367, 0.0], 71.802],
   ["floor_light", [-2.377, -3.9279, 0.0], 71.802],
-  ["th_gills_w", [-1.65, -7.1, 0.0], 71.802],
-  ["th_arch", [0.0, -5.4608, 0.0], 90.0],
+  ["th_wall_w", [-1.65, -7.1, 0.0], 71.802],
+  ["th_frame", [0.0, -0.4, 0.0], 0.0],
+  ["th_jambs", [0.0, -0.4, 0.0], 0.0],
   ["tip_floor_base", [10.5, 1.2, 0.0], -8.664],
   ["tip_floor_disc", [10.5, 1.2, 0.0], -8.664],
   ["tip_floor_rim", [10.5, 1.2, 0.0], -8.664],
@@ -731,10 +728,14 @@ builder = "throat_ceil"
 collide = true
 
 [[pieces]]
-id = "th_arch"
-builder = "th_arch"
+id = "th_frame"
+builder = "th_frame"
 collide = false
-args = { half = 2.1889, k = 1.0526 }
+
+[[pieces]]
+id = "th_jambs"
+builder = "th_jambs"
+collide = true
 
 [[pieces]]
 id = "hall_rib"
@@ -1061,18 +1062,18 @@ builder = "rim_bolts"
 collide = false
 
 [[pieces]]
-id = "th_gills_e"
-builder = "th_gills"
-collide = false
+id = "th_wall_e"
+builder = "th_wall"
+collide = true
 args = { side = "e" }
-plain = [1.62024, 4.0506, -0.25, 0.05]
+plain = [1.58897, 3.88, -0.25, 0.05]
 
 [[pieces]]
-id = "th_gills_w"
-builder = "th_gills"
-collide = false
+id = "th_wall_w"
+builder = "th_wall"
+collide = true
 args = { side = "w" }
-plain = [-4.0506, -1.62024, -0.25, 0.05]
+plain = [-3.88, -1.58897, -0.25, 0.05]
 
 [[pieces]]
 id = "tip_panel_plain"

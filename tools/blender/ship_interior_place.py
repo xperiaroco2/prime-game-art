@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ship_interior as S  # noqa: E402
 import ship_interior_vent as V  # noqa: E402,F401
-import ship_interior_gills as G_  # noqa: E402
+import ship_interior_throat as T_  # noqa: E402
 import ship_interior_lens as LN  # noqa: E402
 import ship_interior_workshop as WS  # noqa: E402
 
@@ -60,8 +60,6 @@ _VS = math.dist(_TM, (_VENT[0] - S.HALL_C[0], _VENT[1] - S.HALL_C[1]))   # the v
 _PW = S._SHIP["stations"]["plain_width_m"] / 2
 TH_PLAIN = [i for i in range(TH_N) if i * TH_MOD < _VS + _PW - 1e-6 and (i + 1) * TH_MOD > _VS - _PW + 1e-6]
 TH_COVER = [i for i in range(TH_N) if _TM[1] + (_TK[1] - _TM[1]) * i / TH_N >= S.TH_ROOF - 1e-6]   # under the roof
-TH_ARCH_Y = S.TH_ROOF + 0.1                                    # rebuild D: the arch's mid-plane, its face on the roof line
-TH_ARCH_HALF = _TM[0] + (_TK[0] - _TM[0]) * (TH_ARCH_Y - _TM[1]) / (_TK[1] - _TM[1])   # the walls' half width there
 PHI_BACK = round(S.BACK_DEG / 2, 4)                            # a back facet (6.25): the door's two sub-facets now
 PHI_SOCK = round((90.0 - S.BACK_DEG - S.SOCK_A0) / 2, 4)       # the back socket's flat chord (14.64), as rebuild A built it
 
@@ -120,9 +118,11 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "throat_floor": ("throat_floor", {}, True),
     "throat_ceil": ("throat_ceil", {}, True),
     # vents-b5: the pillow panels behind the vents again (b4's flat plates were for the recess, undone)
-    # the raise step 3 (art#263 bug 1): the last module at each hall corner, its chamfer mitred into the header
-    # rebuild D: the cyan arch at the throat's roof line (its ceiling and chamfers: the vents' walls stay plain)
-    "th_arch": ("th_arch", {"half": round(TH_ARCH_HALF, 4), "k": round(TH_LEN / (_TK[1] - _TM[1]), 4)}, False),
+    # the clean throat (2026-10-29, ship_interior_throat.py): one frame to the ramp at the roof line (it replaces the
+    # arch there) and one jamb at each hall corner (it replaces the hall pilasters there), both in hall-relative plan
+    # coordinates
+    "th_frame": ("th_frame", {}, False),
+    "th_jambs": ("th_jambs", {}, True),
     "hall_rib": ("rib", {"rv": S.HV, "rim": F + S.H_HALL, "r_in": S.R_RING, "h_in": H_IN_HALL}, False),
     "hall_rib_strip": ("rib", {"rv": S.HV, "rim": F + S.H_HALL, "r_in": S.R_RING, "h_in": H_IN_HALL, "strip": True},
                        False),
@@ -195,10 +195,10 @@ PIECES |= {
     "floor_patch_b": ("floor_patch", {"u": 0.36, "v": 0.3}, False),
     "rim_bolts": ("rim_bolts", {}, False),
     # step 2, station 1: the throat vents (ship_interior_vent.py), each on its spot
-    # the gills (2026-10-28, prime-game#1095 c6470177717): each throat side's clean wall under the roof, its five
-    # slits and its button (ship_interior_gills.py); they replace the wall modules there and the vent cabinets
-    "th_gills_e": ("th_gills", {"side": "e"}, False),
-    "th_gills_w": ("th_gills", {"side": "w"}, False),
+    # the clean throat (2026-10-29, ship_interior_throat.py): each side's flat wall, cove and plinth (no slits and no
+    # button this step: the gills (ship_interior_gills.py, th_gills) are parked for the hinged gill covers)
+    "th_wall_e": ("th_wall", {"side": "e"}, True),
+    "th_wall_w": ("th_wall", {"side": "w"}, True),
 }
 # lens room C, step 1 (ship_interior_lens.py): the charger's alcove and conduits in both lens rooms, the two facets
 # beside it plain; the east room's lounge on its facets -109.77..+21.95 (their panels' relief above the sofa's spine,
@@ -369,9 +369,8 @@ def placements() -> list[tuple[str, list[float], float]]:
     for v in S.hall_vertices():
         put("hall_rib", polar(S.HV, v), -v)
         put("hall_rib_strip", polar(S.HV, v), -v)
-        if round(norm(v), 4) in corners:   # the throat's walls meet the hall here
-            put("hall_pilaster", polar(S.HV, v), -v)
-            put("hall_pilaster_strip", polar(S.HV, v), -v)
+        if round(norm(v), 4) in corners:   # the throat's walls meet the hall here: its jamb (th_jambs), no pilaster
+            pass
         elif any(abs(norm(v - e)) < 1e-4 for e in edges):
             put("hall_pilaster", polar(S.HV, v), -v)
             put("hall_pilaster_strip", polar(S.HV, v), -v)
@@ -452,14 +451,15 @@ def placements() -> list[tuple[str, list[float], float]]:
                           round(w[1] + d[1] * TH_MOD * 0.5 + inward[1] * 0.3, 4)]
                     put("floor_light", lp, yw)
                 continue
-            # the gills: under the roof the wall is th_gills_<side>'s (placed once a side below), no modules
+            # the clean throat: under the roof the wall is th_wall_<side>'s (placed once a side below), no modules
             if i in (0, 3):   # rebuild E: two a side, at 1/5 and 4/5 of the wall (the vent's 0.36 m shift went with it)
                 sh = TH_MOD * 0.5
                 lp = [round(w[0] + d[0] * sh + inward[0] * 0.3, 4), round(w[1] + d[1] * sh + inward[1] * 0.3, 4)]
                 put("floor_light", lp, yw)
-        put("th_gills_" + ("e" if sx > 0 else "w"), [round(mx, 4), round(my, 4)], -sx * G_.WALL_YAW)
+        put("th_wall_" + ("e" if sx > 0 else "w"), [round(mx, 4), round(my, 4)], -sx * T_.WALL_YAW)
 
-    put("th_arch", [0.0, TH_ARCH_Y], 90.0)
+    put("th_frame", [0.0, 0.0])
+    put("th_jambs", [0.0, 0.0])
 
     # --- the tip rooms (rebuild A: at (+-8.3, 4.0), turned so the door faces the hall along the corridor's axis:
     # room yaw -COR_ANG east, 180 + COR_ANG west; no window, TIP_N wall facets round the outer side)
@@ -567,10 +567,11 @@ def placements() -> list[tuple[str, list[float], float]]:
 # plain pieces cover every wall spot's whole band (the vents stood half on the throat's hull jamb, rebuild E)
 _FACE = 0.25
 PLAIN: dict[str, list[float]] = {
-    # the gills: the clean wall's face under the roof (its frame: x along the wall from the mouth's corner, the face
-    # at y 0; the west mirrored), the station's 1.6 m band on it
-    "th_gills_e": [G_.S0, G_.WALL_LEN, -_FACE, 0.05],
-    "th_gills_w": [-G_.WALL_LEN, -G_.S0, -_FACE, 0.05],
+    # the clean throat: the wall's face from the ramp frame to the hall jamb (its frame: x along the wall from the
+    # mouth's corner, the face at y 0; the west mirrored), the station's 1.6 m band on it
+    "th_wall_e": [T_.S_F0 + 0.01, T_.JAMB_U, -_FACE, 0.05],   # (the panel runs on behind the frame: vent_e's band
+                                                              # starts at s 1.63, 4 cm under the frame's trim)
+    "th_wall_w": [-T_.JAMB_U, -T_.S_F0 - 0.01, -_FACE, 0.05],
     "cor_wall_board": [-(BOARD_X[1] - BOARD_X[0]) / 2, (BOARD_X[1] - BOARD_X[0]) / 2, -S.COR_HALF - _FACE,
                        -S.COR_HALF + 0.05],
     **{pid: [-_FACE, _FACE, -PIECES[pid][1]["plain"], PIECES[pid][1]["plain"]]

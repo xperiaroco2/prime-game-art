@@ -91,7 +91,8 @@ class ShipInteriorTest(unittest.TestCase):
         """lens step 1: the window band's five facets (window, glass, sill strip) on the outer side, biased forward
         (+ aft round the outward axis, the west room mirrored), mullions between them, pilasters at its ends; the
         other seven facets plain panels; no shutters or wells."""
-        self.assertEqual(S.THROAT_PROF[1][1], S.PROF[1][1])   # rebuild C: the throat bends where the corridors do
+        self.assertEqual(S.TUN_BEND, S.PROF[1][1])   # the entry tunnel bends where the corridors do
+        self.assertEqual((S.THROAT_PROF[1][1], S.TH_IN), (2.10, 0.25))   # the clean throat: the fold at 2.10, 25 cm in
         ids = {p["id"] for p in INTERIOR["pieces"]}
         self.assertFalse({i for i in ids if any(w in i for w in ("shutter", "well"))})
         self.assertEqual(INTERIOR.get("shutter_closed", []), [])

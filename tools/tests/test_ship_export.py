@@ -35,7 +35,7 @@ class StationsTest(unittest.TestCase):
         self.assertEqual(by["console"]["package"], "start_console")
         self.assertEqual(by["console"]["yaw"], 180.0)
         self.assertEqual(by["socket_fw"]["name"], "SocketFW")
-        self.assertEqual(by["vent_e"]["package"], "ship:th_gills_e")
+        self.assertEqual(by["vent_e"]["package"], "ship:th_wall_e")
         self.assertEqual(by["renewer_w"]["package"], "crystal_charger")
         self.assertEqual(by["breaker_e"]["package"], "breaker_board")
 
