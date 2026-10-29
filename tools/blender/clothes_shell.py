@@ -324,3 +324,23 @@ def inward_flap(x: float, y: float, z: float, nx: float, ny: float, z_lo: float,
     ox, oy = x, y - axis_y
     ln = (ox * ox + oy * oy) ** 0.5
     return ln > 1e-9 and (nx * ox + ny * oy) / ln < dot
+
+
+def min_altitude(edges: list[float], area: float) -> float:
+    """A face's thinness (C1j): twice its area over its longest edge (a triangle's least altitude; a quad's width
+    across its longest edge, about); 0 for a degenerate face."""
+    longest = max(edges) if edges else 0.0
+    if longest <= 0:
+        return 0.0
+    return (2.0 if len(edges) == 3 else 1.0) * area / longest
+
+
+def track_face_ok(edges: list[float], area: float, nbr_dots: list[float], min_alt: float = 0.0015,
+                  fold: float = 0.0) -> bool:
+    """Whether a garment face can carry a tracked top vertex's panel point (C1j): neither a sliver (its least
+    altitude under min_alt: its plane swings when it bends) nor folded back (the mean of its neighbours' normals
+    against its own, nbr_dots, under fold: a face wound against the cloth round it)."""
+    if min_altitude(edges, area) < min_alt:
+        return False
+    return not nbr_dots or sum(nbr_dots) / len(nbr_dots) >= fold
+

@@ -245,5 +245,23 @@ class WaistBand(unittest.TestCase):
         self.assertFalse(flap(0.04, 0.09, 1.08, 0.0, -1.0, hw=0.08))  # inside the narrowing V
 
 
+class EdgePeel(unittest.TestCase):
+    """C1j: the tracked panel point's face."""
+
+    def test_min_altitude_triangle_and_quad(self):
+        self.assertAlmostEqual(H.min_altitude([0.03, 0.04, 0.05], 0.0006), 0.024)
+        self.assertAlmostEqual(H.min_altitude([0.02, 0.01, 0.02, 0.01], 0.0002), 0.01)
+        self.assertEqual(H.min_altitude([], 0.0), 0.0)
+
+    def test_track_face_skips_a_sliver_and_a_folded_face(self):
+        # the chameleon's r26 case: a 36.5 / 40.0 / 3.7 mm triangle of 19.3 mm2 (its altitude about 1 mm)
+        self.assertFalse(H.track_face_ok([0.03647, 0.03999, 0.00366], 19.273e-6, [0.17, 0.99, 0.19]))
+        # the axolotl's: a broad face wound against most of its neighbours
+        self.assertFalse(H.track_face_ok([0.0399, 0.0314, 0.0134], 182.9e-6, [0.999, -0.42, 0.887, -0.696, -0.963,
+                                                                              -0.964, -0.978, -0.941]))
+        self.assertTrue(H.track_face_ok([0.01, 0.01, 0.0141], 50e-6, [0.99, 0.95, 0.9]))
+        self.assertTrue(H.track_face_ok([0.01, 0.01, 0.0141], 50e-6, []))
+
+
 if __name__ == "__main__":
     unittest.main()

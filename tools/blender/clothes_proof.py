@@ -16,7 +16,9 @@ and, per clip, measures the poke-through and shoots the contact sheet; then the 
   "top_under_panels" per clip, its "where" with the top vertex's bone). The nearest face can change in motion (a
   strap's folded lip, the bib's edge rim), so each such vertex is also followed against its own panel point: where
   its normal met the garment at rest, the same point of that face (barycentric) in each frame, and its side of
-  that face's plane ("top_under_panels_tracked", with the room at rest; C1i).
+  that face's plane ("top_under_panels_tracked", with the room at rest; C1i). A sliver (thinner than
+  --track-min-alt) or a face folded back against its neighbours carries no tracked point: the ray goes on past it
+  (clothes_shell.track_face_ok; C1j, the one vertex per character r26 counted).
 - The contact sheet: per clip (rows) the front, side and back at two moments of the clip (Workbench, the textures,
   orthographic), about 1280 px wide.
 - The close-ups: in Idle's first frame, the collar and neck, the cuffs and hands, the crotch, the hems and shoes,
@@ -46,6 +48,7 @@ from mathutils.bvhtree import BVHTree
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
 import clothes_open as O  # noqa: E402
+import clothes_shell as H  # noqa: E402
 
 CLIPS = "Idle,Walk,Jog_Fwd,Sprint_Fwd,Strafe_Left,Crouch_Fwd,Jump_Start,Jump_Air,Talk_Upper"
 PREFIX = "CharacterArmature|"
@@ -133,6 +136,8 @@ def main() -> int:
     ap.add_argument("--tol", type=float, default=0.001)
     ap.add_argument("--opening", type=float, default=0.04, help="body vertices this near an opening are left out")
     ap.add_argument("--tile", type=int, default=213)
+    ap.add_argument("--track-min-alt", type=float, default=0.0015,
+                    help="a garment face thinner than this cannot carry a tracked point; nor can a folded one (m)")
     ap.add_argument("--panel-reach", type=float, default=0.04,
                     help="a top vertex whose normal meets the garment this near at rest is under a panel (m)")
     ap.add_argument("--exposed", type=float, default=0.02,
@@ -194,9 +199,34 @@ def main() -> int:
         gtree = BVHTree.FromPolygons([tuple(c) for c in gco], g_polys)
         nm = top.matrix_world.to_3x3().inverted().transposed()
         cand, dropped, track = [], 0, []
+        # a sliver or a folded-back face cannot carry a tracked point (C1j: its plane swings as it bends; the r26
+        # cases): the ray goes on past it to the next face
+        gq = [[Vector(gco[k]) for k in vs] for vs in g_polys]
+        gn = [poly_normal(q) for q in gq]
+        by_vert: dict[int, list[int]] = {}
+        for fi_, vs in enumerate(g_polys):
+            for k in vs:
+                by_vert.setdefault(k, []).append(fi_)
+
+        def face_ok(fi_: int) -> bool:
+            q = gq[fi_]
+            edges = [(q[i] - q[(i + 1) % len(q)]).length for i in range(len(q))]
+            area = sum(((q[i] - q[0]).cross(q[i + 1] - q[0])).length / 2 for i in range(1, len(q) - 1))
+            nb = {f for k in g_polys[fi_] for f in by_vert[k]} - {fi_}
+            return H.track_face_ok(edges, area, [gn[f].dot(gn[fi_]) for f in nb], args.track_min_alt)
+
+        skipped = 0
         for v in top.data.vertices:
             p, n = Vector(tco[v.index]), (nm @ v.normal).normalized()
-            hit, _hn, hfi, _hd = gtree.ray_cast(p + n * 1e-4, n, args.panel_reach)
+            hit, _hn, hfi, hd = gtree.ray_cast(p + n * 1e-4, n, args.panel_reach)
+            reach = args.panel_reach
+            while hit is not None and not face_ok(hfi):
+                skipped += 1
+                reach -= hd + 1e-4
+                start = hit + n * 1e-4
+                hit, _hn, hfi, hd = gtree.ray_cast(start, n, reach) if reach > 0 else (None,) * 4
+                if hit is not None:
+                    hd = (hit - start).length
             if hit is None:
                 continue
             vs = g_polys[hfi]
@@ -210,7 +240,8 @@ def main() -> int:
                 dropped += 1
         under = np.array(cand, dtype=int)
         say("top under the panels at rest:", len(under), "vertices;", dropped,
-            "with the garment over them but outside its nearest face at rest, left out;", len(track), "tracked")
+            "with the garment over them but outside its nearest face at rest, left out;", len(track), "tracked;",
+            skipped, "sliver or folded faces passed")
 
     head = {b.name: arm.matrix_world @ b.head_local for b in arm.data.bones}
     front = 1.0 if (head["LeftToes"] - head["LeftFoot"]).y > 0 else -1.0
