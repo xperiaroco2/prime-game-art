@@ -59,7 +59,7 @@ TUCK = 0.02                                               # the frame runs this 
 # step 4 of the gill set (the engineer's walk: "the pillar has no purpose"): the free-standing hall jambs are gone; the
 # wall runs on to the hall's corner K (less 4 mm), ending in a bevelled frame END_U..JAMB_U of the same warm metal
 JAMB_U = WALL_LEN - 0.004                                 # the wall's hall end (the jamb's end face stood at 3.88 before)
-END_U = GS.END_U                                          # the end frame's mouth-side foot (3.98)
+END_U = 3.98                                              # the end frame's foot: ship_interior_gillset.END_U (a test holds them equal)
 END_PROUD = 0.036                                         # its face off the band (over the plinth's 3 cm): a 45 deg bevel, then flat
 JAMB_PROUD = 0.016                                        # its hall face this far proud of the header's
 GILL_SIDES = ("e",)                                       # the gill set: the east wall only for now (the west later, mirrored)

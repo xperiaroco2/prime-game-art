@@ -132,6 +132,7 @@ class HallEnd(unittest.TestCase):
         hall's corner K and ends in a bevelled frame of the same warm metal."""
         self.assertEqual([p["name"] for p in T.th_jambs({}, {})], ["drop"])
         self.assertAlmostEqual(T.JAMB_U, T.WALL_LEN, delta=0.01)
+        self.assertEqual(T.END_U, G.END_U)                                             # (literal: no import cycle)
         p = parts("e")
         band_u = max(uvw(v)[0] for v in p["band"]["verts"])
         self.assertAlmostEqual(band_u, T.JAMB_U, delta=1e-6)
