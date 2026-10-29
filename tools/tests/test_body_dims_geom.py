@@ -87,6 +87,39 @@ class TestRing(unittest.TestCase):
         self.assertIn(lm["ring"], (112, 113))
         self.assertGreaterEqual(lm["shoulder_top"], lm["ring"])
 
+    def test_a_neck_without_a_drawn_line_raises(self):
+        shapes = [(70, 10, 130, 70, SKIN), (85, 70, 115, 118, SKIN), (50, 118, 150, 140, SKIN),
+                  (70, 140, 130, 250, SKIN), (40, 140, 62, 240, SKIN), (138, 140, 160, 240, SKIN),
+                  (72, 250, 97, 400, SKIN), (103, 250, 128, 400, SKIN)]
+        rows = picture(200, 410, shapes)
+        m, sole = G.mask(rows)
+        with self.assertRaisesRegex(ValueError, "no drawn ring line"):
+            G.landmarks(m, rows, sole, (0, 200))
+
+
+class TestBackHidden(unittest.TestCase):
+    def test_the_arm_forms_the_back_edge_until_the_seat_comes_out(self):
+        # rows 0-9: the back shows behind the arm (a dark crease 8 px in, the back's brighter strip behind it);
+        # rows 10-39: the arm's shading darkens to the rim, its edge furthest forward at row 25, then the seat
+        # pushes the edge back; rows 40-49: the seat shows behind the arm again (a crease)
+        sb, rows = {}, []
+        for y in range(50):
+            e = 55 + min(abs(y - 25), 15) if 10 <= y < 40 else 70
+            sb[y] = e
+            line = []
+            for x in range(100):
+                if x > e:
+                    v = 184
+                elif 10 <= y < 40:
+                    v = 200 - 3 * (x - (e - 40)) if x >= e - 40 else 200
+                else:
+                    v = 60 if x == e - 8 else (90 if x > e - 8 else 150)
+                line.append((v, v, v))
+            rows.append(line)
+        self.assertEqual(G.back_hidden(rows, sb, 0, 49), (10, 25))
+        # no arm at the edge: no band
+        self.assertIsNone(G.back_hidden(rows[:10] + rows[40:], {i: 70 for i in range(20)}, 0, 19))
+
 
 class TestHeights(unittest.TestCase):
     def test_zmap_pins_the_landmarks_and_inverts(self):
@@ -150,6 +183,51 @@ class TestTables(unittest.TestCase):
         self.assertFalse(a["chest"]["rounds"])
         self.assertGreater(b["chest"]["projection"], 5.0)
         self.assertLess(b["keys"]["waist_w"], a["keys"]["waist_w"])
+
+    def test_hidden_bands_are_exactly_the_dash_rows(self):
+        for name in ("A", "B"):
+            d = self.load(name)
+            body, ring = d["body"], d["neck_ring"]["z"]
+            crotch = d["height_map"]["body_z"][1]
+            (f0, f1), (b0, b1) = body["side_hidden_z"], body["side_back_hidden_z"]
+            self.assertLess(f1, b0, name)              # the hand's band under the arm's
+            for tab in (d["trunk"], d["legs"]):
+                for i, z in enumerate(tab["z"]):
+                    if z > ring - 60 or (tab is d["trunk"] and z < crotch):
+                        continue                       # the head's drop near the ring; the legs' own table
+                    front, back = f0 <= z <= f1, b0 <= z <= b1
+                    self.assertEqual(tab["front_y"][i] == "-", front, f"{name} z {z} front_y")
+                    self.assertEqual(tab["back_y"][i] == "-", back, f"{name} z {z} back_y")
+                    self.assertEqual(tab["depth"][i] == "-", front or back, f"{name} z {z} depth")
+
+    def test_no_trunk_side_values_under_the_crotch(self):
+        for name in ("A", "B"):
+            d = self.load(name)
+            t, crotch = d["trunk"], d["height_map"]["body_z"][1]
+            under = [i for i, z in enumerate(t["z"]) if z < crotch]
+            self.assertTrue(under, name)
+            for key in ("front_w", "back_w", "depth", "front_y", "back_y"):
+                self.assertTrue(all(t[key][i] == "-" for i in under), f"{name} {key}")
+            self.assertLessEqual(max(d["legs"]["z"]), crotch, name)
+
+    def test_neck_and_head_bones_sit_at_the_ring_offsets(self):
+        for name in ("A", "B"):
+            d = self.load(name)
+            nr = d["neck_ring"]
+            self.assertAlmostEqual(d["skeleton"]["neck"][2], nr["z"] - nr["neck_bone_below"], delta=0.11)
+            self.assertAlmostEqual(d["skeleton"]["head"][2], nr["z"] + nr["head_bone_above"], delta=0.11)
+
+    def test_key_windows_are_read_in_body_z(self):
+        # key_numbers' windows around the body's armpit and crotch heights (the concept's mapped first)
+        for name in ("A", "B"):
+            d = self.load(name)
+            k, crotch = d["keys"], d["height_map"]["body_z"][1]
+            to_body = G.zmap(list(zip(d["height_map"]["concept_z"], d["height_map"]["body_z"])))[0]
+            self.assertAlmostEqual(k["armpit_z"], to_body(k["armpit_z_concept"]), delta=0.11)
+            self.assertTrue(k["armpit_z"] - 40 <= k["chest_z"] <= k["armpit_z"] - 20, name)
+            self.assertTrue(crotch + 100 <= k["waist_z"] <= k["armpit_z"] - 60, name)
+            self.assertTrue(crotch <= k["hip_z"] <= crotch + 250, name)
+            self.assertEqual(k["neck_at_ring_d"], d["neck_ring"]["concept_d"], name)
 
     def test_toml_writer_round_trips(self):
         doc = {"t": {"a": 1, "b": 2.5, "c": None, "d": "x", "e": [float(i) for i in range(40)], "f": [1.0, None]}}

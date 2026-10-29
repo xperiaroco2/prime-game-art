@@ -118,12 +118,17 @@ def outlines(doc: dict, concept_z: bool = False) -> dict:
     for view in ("front", "back"):
         for pl in (outer, inner, aout, ain):
             out[view] += [pl, [(-x, z) for x, z in pl]]
-    fy = [(num(a), to_c(z)) for z, a in zip(t["z"], t["front_y"]) if num(a) is not None]
-    by = [(num(a), to_c(z)) for z, a in zip(t["z"], t["back_y"]) if num(a) is not None]
+    def pieces(zs, vals):
+        """The side edge's polylines, split at the "-" rows (a hidden band is left open, never bridged)."""
+        pls, cur = [], []
+        for z, a in zip(zs, vals):
+            if num(a) is None:
+                pls, cur = pls + [cur] if len(cur) > 1 else pls, []
+            else:
+                cur.append((a, to_c(z)))
+        return pls + [cur] if len(cur) > 1 else pls
     # under the crotch the side is the legs' own table (the trunk's side values stop there)
-    lfy = [(num(a), to_c(z)) for z, a in zip(legs["z"], legs["front_y"]) if num(a) is not None]
-    lby = [(num(a), to_c(z)) for z, a in zip(legs["z"], legs["back_y"]) if num(a) is not None]
-    out["side"] = [fy, by, lfy, lby]
+    out["side"] = [pl for tab in (t, legs) for key in ("front_y", "back_y") for pl in pieces(tab["z"], tab[key])]
     return out
 
 
@@ -195,23 +200,36 @@ def body_sheet(doc: dict, meas: dict, out: Path) -> Path:
     extra = [f"UPPER ARM {ua:.0f}", f"FOREARM {k['forearm_w']:.0f}", f"ARM AXIS {arms['axis_deg']:.0f} DEG",
              f"HAND {hand['length']:.0f} X {hand['width']:.0f}, 4 DIGITS", f"FOOT {foot['length']:.0f} X {foot['width']:.0f}",
              f"LEG AXIS {doc['legs']['axis_deg']:.0f} DEG", f"CROTCH {doc['height_map']['body_z'][1]:.0f} (CONCEPT {k['crotch_z_concept']:.0f})",
-             f"ARMPIT (CONCEPT) {k['armpit_z']:.0f}"]
+             f"ARMPIT {k['armpit_z']:.0f} (CONCEPT {k['armpit_z_concept']:.0f})"]
     ch = doc["chest"]
     rounds = [f"CHEST ROUNDS +{ch['projection']:.0f} AT {ch['apex_z']:.0f}",
               f"ROUNDS {2 * ch['centre_x']:.0f} APART"] if ch.get("rounds") else []
     ex_y = int(oz - (H - 120) * s) - len(rounds) * 22   # the column moves up to keep clear of the depth labels
     for i, e in enumerate(extra + rounds):
         cv.text(cx["side"] + 140, ex_y + i * 22, e, RING if i >= len(extra) else INK)
-    # side dimensions: depth at the chest, waist, seat
+    # side dimensions: depth at the chest, waist, seat; where the hand hides the front (body.side_hidden_z) or the
+    # arm the back (body.side_back_hidden_z) the depth is taken at the nearest measured height within 20 mm and
+    # labelled "AT" it, else written "-" with what hides it (HAND, ARM) and no line
     t = doc["trunk"]
     for label, zz in (("depth chest", k["chest_z"]), ("depth waist", k["waist_z"]), ("depth seat", k["hip_z"] + 60)):
         i = min(range(len(t["z"])), key=lambda i: abs(t["z"][i] - zz))
         f_, b_ = t["front_y"][i], t["back_y"][i]
-        if "-" in (f_, b_):
-            continue   # the hand hides the front there (body.side_hidden_z)
         y = oz - t["z"][i] * s
+        at = ""
+        if "-" in (f_, b_):
+            why = "HAND" if f_ == "-" else "ARM"
+            ok = [j for j in range(len(t["z"])) if "-" not in (t["front_y"][j], t["back_y"][j])
+                  and abs(t["z"][j] - t["z"][i]) <= 20.0]
+            if not ok:
+                cv.text(cx["side"] + 140, int(y) - 7, f"{label} - ({why})", DIM)
+                continue
+            z_hid = t["z"][i]
+            i = min(ok, key=lambda j: abs(t["z"][j] - z_hid))
+            f_, b_ = t["front_y"][i], t["back_y"][i]
+            y = oz - t["z"][i] * s
+            at = f" AT {t['z'][i]:.0f}"
         cv.line((cx["side"] + f_ * s, y), (cx["side"] + b_ * s, y), DIM, 0)
-        cv.text(cx["side"] + 140, int(y) - 7, f"{label} {b_ - f_:.0f}", DIM)
+        cv.text(cx["side"] + 140, int(y) - 7, f"{label} {b_ - f_:.0f}{at}", DIM)
     if ch.get("rounds"):
         # no dots on the chest (they read as nipples): a tick on the side's profile, a dimension line between
         # the rounds' centres on the front; their labels end the extras' column

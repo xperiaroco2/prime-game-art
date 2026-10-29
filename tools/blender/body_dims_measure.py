@@ -117,7 +117,7 @@ def chest(d: dict, to_body) -> dict:
     left = max(range(q, c - 15), key=lambda i: sm[i])
     k = sc["mm_px"]
     # the light comes from the image's left: the lit round's highlight is the clear one, and it sits toward the
-    # light by about a tenth of its offset (checked by eye on b_c3s: the rounds' centres about 69 mm out)
+    # light by about a tenth of its offset (checked by eye on b_c3s against the table's centre_x)
     return {"rounds": True, "apex_z": zs[apex], "apex_front_y": fy[apex], "under_z": zs[under],
             "under_front_y": fy[under], "top_z": zs[above], "projection": round(fy[under] - fy[apex], 1),
             "projection_from_top": round(fy[above] - fy[apex], 1),
@@ -177,7 +177,8 @@ def key_numbers(d: dict, hf: dict, to_body) -> dict:
     ua = at(arms, "width", "s", ax["s_armpit"] + 30, ax["s_armpit"] + 60, max)
     fa = at(arms, "width", "s", ax["s_wrist"] - 160, ax["s_wrist"] - 60, max)
     ring_i = len(t["z"]) - 1
-    near = [i for i, z in enumerate(t["z"]) if sc["ring_z"] - 60 <= z <= sc["ring_z"] and t["depth"][i] is not None]
+    rz = round(sc["ring_z"], 1)   # the table's z are rounded to 0.1 mm, its last row the ring's
+    near = [i for i, z in enumerate(t["z"]) if rz - 60 <= z <= rz and t["depth"][i] is not None]
     neck_d = min(t["depth"][i] for i in near)
     return {"height_top": round(sc["top_z"], 1), "ring_z": round(sc["ring_z"], 1),
             "shoulder_w": sh[0], "shoulder_z": sh[1], "chest_w": ch[0], "chest_z": ch[1], "waist_w": wa[0],
@@ -185,7 +186,7 @@ def key_numbers(d: dict, hf: dict, to_body) -> dict:
             "upper_arm_w": ua[0], "forearm_w": fa[0], "hand_length": hf["hand"]["length"],
             "hand_width": hf["hand"]["width"], "foot_length": hf["foot"]["length"], "foot_width": hf["foot"]["width"],
             "neck_at_ring_w": t["front_w"][ring_i], "neck_at_ring_d": neck_d,
-            "armpit_z": round(arm_c, 1), "crotch_z_concept": d["crotch_concept"]}
+            "armpit_z": round(arm_z, 1), "armpit_z_concept": round(arm_c, 1), "crotch_z_concept": d["crotch_concept"]}
 
 
 def toml_value(v) -> str:
@@ -264,7 +265,8 @@ def main() -> None:
     doc = {
         "body": {"name": args.name, "concept": args.concept.replace("\\", "/"), "height_ratio": args.height_ratio,
                  "mm_per_px": round(sc["mm_px"], 4), "side_mid_y": round(bl["mid_y"], 1),
-                 "side_hidden_z": d["side_hidden_z"] or "-", "note": args.note},
+                 "side_hidden_z": d["side_hidden_z"] or "-", "side_back_hidden_z": d["side_back_hidden_z"] or "-",
+                 "note": args.note},
         "keys": keys,
         "landmarks_concept": concept_z,
         "skeleton": joints | {
@@ -289,8 +291,10 @@ def main() -> None:
             "# frame (x lateral, z up from the sole, the front at -y); \"-\" where a view has no value: the trunk's\n"
             "# widths, depth, front_y and back_y under the crotch (the legs' own table holds them), and front_y and\n"
             "# depth (trunk and legs) over body.side_hidden_z, where the hand hangs in front of the body in the side\n"
-            "# view (the edge there is not measured; no interpolated values). trunk.front_w above the armpits is the\n"
-            "# outline across the shoulder caps. The limbs' s runs along their own axes (arms from the shoulder line,\n"
+            "# view, and back_y and depth over body.side_back_hidden_z, where the hanging arm, not the body, forms\n"
+            "# the side's back edge (from under the armpits down to where the seat comes out behind the arm). Those\n"
+            "# edges are not measured (no interpolated values); each band is its first and last table height without\n"
+            "# them. trunk.front_w above the armpits is the outline across the shoulder caps. The limbs' s runs along their own axes (arms from the shoulder line,\n"
             "# legs from the crotch); their widths are across the axis. The neck ring is the standard ring\n"
             "# (docs/decisions/2026-10-29-neck-ring.md); its concept_w and concept_d are the concept's neck there.")
     tables = Path(__file__).with_name("body_dims")
