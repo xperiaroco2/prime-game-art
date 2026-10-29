@@ -19,7 +19,7 @@ from .. import blender, common, ship_layout
 from . import _export, _godot
 
 NAME = "ship"
-HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts); --vent-anim DIR (the vents' animation in place); --play (the engineer's walk)"
+HELP = "the empty ship (layouts/ship): check the layout; --build one GLB per piece; --godot import, sizes, colliders, walk; --shoot DIR, --walk DIR, --motion DIR (the stations' moving parts); --vent-anim DIR (the vents' animation in place); --charger-cycle DIR (the east charger's cycle); --play (the engineer's walk)"
 BUILD_SCRIPT = blender.SCRIPTS / "ship_build.py"
 GODOT_SCRIPT = "res://ship/ship.gd"
 CHARGER_SCRIPT = "res://charger/room.gd"   # --shoot --charger (lens C step 3)
@@ -64,6 +64,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--vent-anim", type=Path, metavar="DIR",
                         help="the east vent's animation in place at night (godot/ship/vent_anim.gd through its demo: calm, "
                              "the problem, a hold, the cough, calm) from the player's eye off-screen: MP4 and key sheet into DIR")
+    parser.add_argument("--charger-cycle", type=Path, metavar="DIR",
+                        help="the east crystal charger's cycle in lens room C at night (godot/charger/cycle.gd: idle, "
+                             "the crystal in, the button, charging, charged, the crystal out) from the player's eye "
+                             "off-screen: cycle.mp4 (1280x720, 30 fps) and keys_sheet.png into DIR")
     parser.add_argument("--export", type=Path, metavar="DIR",
                         help="the game-ready package into DIR (art #335; assets/environment/ship/, levels/ship/ship.tscn, "
                              "package.json): then its headless load, sizes and walk, and its views beside --shoot's")
@@ -127,6 +131,10 @@ def run(args: argparse.Namespace) -> int:
             return code
     if args.vent_anim:
         code = vent_anim(layout, out, args.vent_anim.resolve())
+        if code:
+            return code
+    if args.charger_cycle:
+        code = charger_cycle(layout, out, args.charger_cycle.resolve())
         if code:
             return code
     if args.shoot:
@@ -748,6 +756,87 @@ def vent_anim(layout: dict, out: Path, folder: Path) -> int:
         return 1
     common.ok(f"ship --vent-anim: {clip.as_posix()} {a['size'][0]}x{a['size'][1]}, {info['seconds']:.1f} s, "
               f"{info['frames']} frames, {mb:.1f} MB; states {info['states']}; sheet {(folder / 'keys_sheet.png').as_posix()}")
+    return 0
+
+
+# The charger's cycle (art #263, lens room C): the east charger from the player's eye (deck + 1.6 m), 1.5 m in front
+# of its front (its reach 0.70 + 1.5 out of the spot's vertex), looking at its axis's middle; fov wide enough for the
+# whole charger and the alcove round it (h 0..2 m)
+CHARGER_CYCLE = {"spot": "renewer_e", "eye_d": 2.2, "eye_h": 1.6, "look_d": 0.3, "look_h": 0.98, "fov": 60.0,
+                 "size": (1280, 720), "fps": 30, "max_mb": 15,
+                 # zap-4: the engineer's close camera, about 1.0 m from the crystal (its axis 0.38 m out of the
+                 # spot's vertex, the charger's front at depth_m 0.7), at a player's eye, looking at the crystal
+                 "close": {"eye_d": 1.4, "eye_h": 1.5, "look_d": 0.38, "look_h": 1.05}}
+CYCLE_SCRIPT = "res://charger/cycle.gd"
+
+
+def cycle_view(layout: dict, close: bool = False) -> tuple[list[float], list[float]]:
+    """The cycle camera's eye and look point, plan (x, y, h), from the spot's vertex along its normal; `close`: the
+    close camera's (CHARGER_CYCLE["close"])."""
+    c = CHARGER_CYCLE["close"] if close else CHARGER_CYCLE
+    spot = next(s for s in layout["stations"]["spot"] if s["id"] == CHARGER_CYCLE["spot"])
+    (x, y), (nx, ny) = spot["at"], spot["normal"]
+    floor = layout["deck"]["floor_h"]
+    return ([round(x + nx * c["eye_d"], 4), round(y + ny * c["eye_d"], 4), round(floor + c["eye_h"], 4)],
+            [round(x + nx * c["look_d"], 4), round(y + ny * c["look_d"], 4), round(floor + c["look_h"], 4)])
+
+
+def charger_cycle(layout: dict, out: Path, folder: Path) -> int:
+    """One full cycle of the east charger at night (charger/cycle.gd in ship.gd's off-screen "shoot" mode): the
+    chargers on both spots, a crystal only for the east one; one PNG per frame, the beats' key moments labelled into
+    keys_sheet.png; headless Blender encodes cycle.mp4 (ship_video.py, under max_mb); the frames are deleted."""
+    import shutil
+    req, staged = built_request(layout, out)
+    req["pieces"].update({"crystal_charger": "res://import/crystal_charger.glb",
+                          "energy_crystal": "res://import/energy_crystal.glb"})
+    staged.update({"crystal_charger": CHARGER_GLB, "energy_crystal": CRYSTAL_GLB})
+    # both chargers, and a crystal only on the east one (plan x > 0)
+    req["place"] += [p for p in charger_places(layout) if p[0] == "crystal_charger" or p[1][0] > 0]
+    c = CHARGER_CYCLE
+    eye, look = cycle_view(layout)
+    near_eye, near_look = cycle_view(layout, close=True)
+    req.update({"mode": "shoot", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
+                "cycle": {"eye": _g(eye), "look": _g(look), "fov": c["fov"], "fps": c["fps"],
+                          "close": {"eye": _g(near_eye), "look": _g(near_look)}},
+                "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    errors = _stage(staged)
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    shutil.rmtree(folder / "keys", ignore_errors=True)
+    shutil.rmtree(folder / "close", ignore_errors=True)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "charger_cycle_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    (folder / "cycle.json").unlink(missing_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", CYCLE_SCRIPT, "--",
+                                  path.as_posix(), folder.as_posix()], c["size"], VIDEO_TIMEOUT)
+    if code != 0 or not (folder / "cycle.json").is_file():
+        raise common.Failure(f"charger/cycle.gd failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+    info = json.loads((folder / "cycle.json").read_text(encoding="utf-8"))
+    if info.get("arc_ends_off"):  # cycle.gd _check_ends: frames whose arcs landed off the crystal
+        common.bad(f"ship --charger-cycle: {info['arc_ends_off']} of {info.get('arc_frames', 0)} arc frames "
+                   "with an arc end off its electrode or the crystal")
+        return 1
+    sizes = {}
+    for frames, clip in ((folder / "frames", folder / "cycle.mp4"), (folder / "close" / "frames",
+                                                                     folder / "close" / "cycle.mp4")):
+        clip.unlink(missing_ok=True)
+        blender.run_script(VIDEO_SCRIPT, ["--frames", str(frames), "--out", str(clip), "--fps", str(c["fps"]),
+                                          "--max-mb", str(c["max_mb"])], timeout=VIDEO_TIMEOUT)
+        if not clip.is_file():
+            raise common.Failure(f"{VIDEO_SCRIPT} wrote no {clip}")
+        shutil.rmtree(frames, ignore_errors=True)
+        sizes[clip] = clip.stat().st_size / 2 ** 20
+    if errors or max(sizes.values()) > c["max_mb"]:
+        common.bad(f"ship --charger-cycle: videos {', '.join(f'{mb:.1f}' for mb in sizes.values())} MB "
+                   f"(max {c['max_mb']}), {len(errors)} import errors")
+        return 1
+    for clip, mb in sizes.items():
+        common.ok(f"ship --charger-cycle: {clip.as_posix()} {c['size'][0]}x{c['size'][1]}, {info['seconds']:.1f} s, "
+                  f"{info['frames']} frames, {mb:.1f} MB")
+    common.ok(f"ship --charger-cycle: states {info['states']}; sheets {(folder / 'keys_sheet.png').as_posix()}, "
+              f"{(folder / 'close' / 'keys_sheet.png').as_posix()}, {(folder / 'zoom_sheet.png').as_posix()}")
     return 0
 
 

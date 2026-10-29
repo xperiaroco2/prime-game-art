@@ -18,6 +18,7 @@ import ship_interior as S  # noqa: E402
 import ship_interior_vent as V  # noqa: E402,F401
 import ship_interior_gills as G_  # noqa: E402
 import ship_interior_lens as LN  # noqa: E402
+import ship_interior_workshop as WS  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "layouts" / "ship" / "interior.toml"
@@ -173,15 +174,12 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
                     True),
     "tip_pilaster": ("pilaster", {"height": S.H_TIP_PORTAL}, True),        # lens step 1: up to the slanted ceiling
     "tip_pilaster_strip": ("pilaster_strip", {"height": S.H_TIP_PORTAL}, False),
-    "tip_trunk": ("trunk", {"height": S.H_TIP + 0.05, "flat": True}, True),       # inside-fix: flat to the wall
-    "tip_trunk_cables": ("trunk_cables", {"height": S.H_TIP + 0.05, "flat": True}, False),
     # lens step 1: the window band's facets (revived from v2's tip window: low wall, sill, header), glass, mullions
     "tip_window_a": ("tip_window", {"tone": "a"}, True),
     "tip_window_b": ("tip_window", {"tone": "b"}, True),
     "tip_glass": ("tip_glass", {}, False),
     "tip_mullion": ("tip_mullion", {}, True),
     "tip_sill_strip": ("tip_sill_strip", {}, False),
-    "tip_trunk_clip": ("trunk_clip", {"flat": True}, False),
     "tip_portal": ("portal", {"half": S.TIP_CHORD_H, "height": S.H_TIP_PORTAL}, True),
     "tip_ceiling": ("tip_ceiling", {}, False),
 }
@@ -236,6 +234,29 @@ SOFA_MODULES = {1: "lounge_sofa_fore", 2: "lounge_sofa_mid", 3: "lounge_sofa_mid
                 5: "lounge_sofa_mid", 6: "lounge_sofa_aft"}
 SOFA_PILLOWS = {2: "lounge_pillow_red", 5: "lounge_pillow_dark"}
 SOFA_THROWS = {4: "lounge_throw"}   # step 4
+# the west room's workshop (ship_interior_workshop.py, docs/ship.md "The west lens room's workshop"): the bench's four
+# (step 3: every bench module has one drawer pulled out, so the closed module ws_bench is no longer placed)
+# facets (the lounge's wall pieces: the panels' relief over the top, a flush sill ledge) and the cabinet's two (plain
+# window facets), both by the drawing's east angles (the west room's a_w = -a_e); its free items at their points
+PIECES |= {
+    "ws_bench_open_top": ("ws_bench", {"open": "top"}, True),
+    "ws_bench_open_low": ("ws_bench", {"open": "low"}, True),
+    "ws_drawer_eyes": ("ws_drawer", {"slot": "top", "fill": "eyes"}, False),
+    "ws_drawer_limbs": ("ws_drawer", {"slot": "low", "fill": "limbs"}, False),
+    "ws_drawer_parts_a": ("ws_drawer", {"slot": "low", "fill": "parts", "seed": 3}, False),
+    "ws_drawer_parts_b": ("ws_drawer", {"slot": "top", "fill": "parts", "seed": 8}, False),
+    "ws_cabinet": ("ws_cabinet", {}, True),
+    "ws_cradle": ("ws_cradle", {}, False),
+    "ws_sleeper_a": ("ws_sleeper", {"roll": 10.0, "yaw": 12.0}, False),
+    "ws_sleeper_b": ("ws_sleeper", {"roll": -12.0, "yaw": -16.0}, False),
+    "ws_robot_body": ("ws_robot_body", {}, True),   # the collider: the core and the shell band (the sphere Ø 60)
+    "ws_robot": ("ws_robot", {}, False),
+    "ws_hoist": ("ws_hoist", {}, False),
+    "ws_rail": ("ws_rail", {}, False),
+    "ws_rug": ("ws_rug", {}, False),
+    "ws_lamp": ("ws_lamp", {}, False),
+}
+WS_LO, WS_MID, WS_HI = WS.BENCH_K[0] * S.TIP_STEP, WS.BENCH_K[1] * S.TIP_STEP, WS.CAB_K[1] * S.TIP_STEP
 # step 2: a station piece's spot and its box [u0, u1, v0, v1, h0, h1] in the spot's frame (u along the wall, v out
 # of it, h over the deck): `ship --check` holds it inside the spot's plain band, depth and the room's height
 # the gills (2026-10-28): the vent cabinets are no longer placed (ship_interior_vent.py stays for the record)
@@ -246,7 +267,7 @@ _V = [-0.2, 0.2, -0.2, 0.2]
 _BAY = [-S.MOD_L / 2, S.MOD_L / 2, -S.COR_HALF - 0.05, -S.COR_HALF + 0.35]
 FOOT: dict[str, list[float]] = {
     "hall_trunk": _V, "hall_trunk_cables": _V, "trunk_clip": _V, "hall_pilaster": _V, "hall_pilaster_strip": _V,
-    "tip_trunk": _V, "tip_trunk_cables": _V, "tip_trunk_clip": _V, "tip_pilaster": _V, "tip_pilaster_strip": _V,
+    "tip_pilaster": _V, "tip_pilaster_strip": _V,
     "cor_bay_in": [(S.COR_X0 - BOARD_X[0]) / 2, (BOARD_X[0] - S.COR_X0) / 2] + _BAY[2:],
     "cor_bay_in_cables": [(S.COR_X0 - BOARD_X[0]) / 2, (BOARD_X[0] - S.COR_X0) / 2] + _BAY[2:],
     "cor_bay_out": [(BOARD_X[1] - S.COR_X1) / 2, (S.COR_X1 - BOARD_X[1]) / 2] + _BAY[2:],
@@ -460,6 +481,9 @@ def placements() -> list[tuple[str, list[float], float]]:
         for i, (a0, a1) in enumerate(zip(tv, tv[1:])):
             a = (a0 + a1) / 2
             lounge = s > 0 and SOFA_LO < a < SOFA_HI   # lens C: the east lounge's facets
+            bench = s < 0 and WS_LO < -a < WS_MID       # the west workshop's bench facets (a_w = -a_e)
+            cab = s < 0 and WS_MID < -a < WS_HI         # and its cabinet's
+            lounge = lounge or bench                     # the bench takes the lounge's wall pieces
             if i in band:   # lens step 1: the window band (the west room's mirrored: + aft in both)
                 put(("tip_window_lounge_" if lounge else "tip_window_") + ("a" if i % 2 else "b"),
                     polar(apo, a, c, room), room - a)
@@ -470,7 +494,14 @@ def placements() -> list[tuple[str, list[float], float]]:
             else:
                 put(("tip_panel_low_" if lounge else "tip_panel_") + ("a" if i % 2 else "b"),
                     polar(apo, a, c, room), room - a)
-            if lounge:
+            if bench:
+                slot = next((v for k, v in WS.OPEN.items() if abs(-a - k) < 0.5), None)
+                put("ws_bench_open_" + slot[0] if slot else "ws_bench", polar(apo, a, c, room), room - a)
+                if slot:
+                    put("ws_drawer_" + slot[1], polar(apo, a, c, room), room - a)
+            elif cab:
+                put("ws_cabinet", polar(apo, a, c, room), room - a)
+            elif lounge:
                 put("lounge_sofa_base", polar(apo, a, c, room), room - a)
                 put(SOFA_MODULES[i], polar(apo, a, c, room), room - a)
                 if i in SOFA_PILLOWS:
@@ -484,13 +515,8 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put("tip_pilaster_strip", polar(S.R_TIP, a, c, room), room - a)
             elif v in band_v:
                 put("tip_mullion", polar(S.R_TIP, a, c, room), room - a)
-            elif s > 0 and SOFA_LO - 0.01 <= a <= SOFA_HI + 0.01:   # lens C: no trunk behind the east sofa
-                pass
-            elif abs(a) > 70.0 and abs(s * a - RENEWER_DEG) > 25.0:   # the door's side: cable trunks, off the renewer
-                put("tip_trunk", polar(S.R_TIP, a, c, room), room - a)
-                put("tip_trunk_cables", polar(S.R_TIP, a, c, room), room - a)
-                for h in (0.55, 1.3, 2.05):
-                    put("tip_trunk_clip", polar(S.R_TIP, a, c, room), room - a, h)
+            # (the door side's cable trunks went with the west workshop: its bench and cabinet took their last two
+            # vertices, the east lounge and the alcoves the others)
         p = polar(-S.TIP_CHORD, 180.0, c, room)
         for pid in ("tip_portal", "portal_strip_l", "portal_strip_r"):
             put(pid, p, room - 180.0)
@@ -501,6 +527,9 @@ def placements() -> list[tuple[str, list[float], float]]:
         if s > 0:
             for pid in ("lounge_table", "lounge_cans", "lounge_lamp", "lounge_speaker", "lounge_plant"):
                 r, th, face = LN.item_polar("lounge_table" if pid == "lounge_cans" else pid)
+                put(pid, polar(r, th, c, room), room - face)
+        else:   # the west workshop's free items, in the west room's frame
+            for pid, r, th, face in WS.ITEMS:
                 put(pid, polar(r, th, c, room), room - face)
 
     # --- the vault (lens step 1): its shell behind the hall's back door (the door itself is a hall segment)

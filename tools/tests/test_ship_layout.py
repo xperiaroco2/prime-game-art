@@ -216,8 +216,8 @@ class ShipLayoutTest(unittest.TestCase):
 
     def test_a_trunk_on_a_plain_spot_is_refused(self) -> None:
         def trunk(layout):
-            layout["place"].append(["tip_trunk", [3.505, -2.403, 0.0], 29.745])   # rebuild E: on a front socket
-        self.assertTrue(any("socket_fe: tip_trunk sticks out" in p for p in problems_after(trunk)))
+            layout["place"].append(["tip_pilaster", [3.505, -2.403, 0.0], 29.745])   # rebuild E: on a front socket (a tip_trunk until the workshop)
+        self.assertTrue(any("socket_fe: tip_pilaster sticks out" in p for p in problems_after(trunk)))
 
     def test_a_vent_on_the_throat_jamb_is_refused(self) -> None:
         """rebuild F: no plain wall piece under a wall spot's band is refused (rebuild E's vents stood half on the

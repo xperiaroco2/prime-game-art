@@ -1,0 +1,46 @@
+# art#263, the crystal charger's antennas (the engineer, 2026-10-28, chat, translated: "the animation is fine. But what
+# are the blue and orange rectangles on these charging blocks? It looks weird. Remove them; let them be metal columns for
+# now, the two big ones and the two central ones, maybe with neat blue lines or strips inside, like metal plates or
+# electric parts that carry the energy. Throw a concept first of how these charging metal things, the antennas, should
+# look. Everything else is great."). Each item an edit of the charger's own Blender render (lens3, charging), only the
+# four columns changed. Medium (exploration), one image per concept. No game, film, studio or character names.
+id = "2026-10-28-ship-charger-antennas"
+service = "openai-images"
+purpose = "art#263: four concepts for the crystal charger's antennas (the two tall outer columns and the two inner prongs) without the odd flat blue and orange rectangles, for the engineer's pick."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 1.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-20"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6291187194"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1024x1024"
+n = 1
+
+[[items]]
+id = "a_lines"
+kind = "edit"
+prompt = "The reference image is a render of a finished 3D crystal charger: a dark bronze and graphite pedestal with a round well, a glowing cyan energy crystal standing in the middle on a cup, two short inner prongs beside it, and two tall outer columns (antennas) on the left and right that bend inward at the top. Keep everything exactly as it is, the same camera, framing, lighting, materials, the crystal, the cup, the deck and the well: change ONLY the four columns (the two tall outer antennas and the two short inner prongs). Remove the odd flat blue and orange rectangles stuck on them now. Redesign the antennas as clean, well-made polished bronze metal columns with crisp bevelled edges, the same size, position and inward-bending silhouette, so they read as the parts that conduct energy into the crystal. Idea: plain solid bronze columns with a few thin, neat cyan conductor lines inlaid flush in each column's front face, running from the base up along the bend to the tip, like busbars, glowing softly; a small cyan emitter at each tip pointing at the crystal. Clean and minimal. No text, no labels, no logos."
+images = [ { file = "raw:ship/v4/charger/lens3/renders/charging.png", provenance = "our crystal charger (charger_build.py, lens3), Blender render of the charging state", sha256 = "271546aee5d706520608c56fe7b0864bed6587cae6dc79e68217e585c4424eda" } ]
+
+[[items]]
+id = "b_fins"
+kind = "edit"
+prompt = "The reference image is a render of a finished 3D crystal charger: a dark bronze and graphite pedestal with a round well, a glowing cyan energy crystal standing in the middle on a cup, two short inner prongs beside it, and two tall outer columns (antennas) on the left and right that bend inward at the top. Keep everything exactly as it is, the same camera, framing, lighting, materials, the crystal, the cup, the deck and the well: change ONLY the four columns (the two tall outer antennas and the two short inner prongs). Remove the odd flat blue and orange rectangles stuck on them now. Redesign the antennas as clean, well-made polished bronze metal columns with crisp bevelled edges, the same size, position and inward-bending silhouette, so they read as the parts that conduct energy into the crystal. Idea: each column built from a stack of thin bronze plates or fins with narrow gaps between them, a soft cyan glow showing in the gaps, like a capacitor stack or heat sink, getting brighter toward the tip; a small cyan emitter at each tip pointing at the crystal. No text, no labels, no logos."
+images = [ { file = "raw:ship/v4/charger/lens3/renders/charging.png", provenance = "our crystal charger (charger_build.py, lens3), Blender render of the charging state", sha256 = "271546aee5d706520608c56fe7b0864bed6587cae6dc79e68217e585c4424eda" } ]
+
+[[items]]
+id = "c_coils"
+kind = "edit"
+prompt = "The reference image is a render of a finished 3D crystal charger: a dark bronze and graphite pedestal with a round well, a glowing cyan energy crystal standing in the middle on a cup, two short inner prongs beside it, and two tall outer columns (antennas) on the left and right that bend inward at the top. Keep everything exactly as it is, the same camera, framing, lighting, materials, the crystal, the cup, the deck and the well: change ONLY the four columns (the two tall outer antennas and the two short inner prongs). Remove the odd flat blue and orange rectangles stuck on them now. Redesign the antennas as clean, well-made polished bronze metal columns with crisp bevelled edges, the same size, position and inward-bending silhouette, so they read as the parts that conduct energy into the crystal. Idea: smooth bronze columns wrapped in neat bands of polished copper coil windings at intervals, like an energy coil, with thin cyan rings glowing between the bands and a small rounded cyan emitter at each tip pointing at the crystal. No text, no labels, no logos."
+images = [ { file = "raw:ship/v4/charger/lens3/renders/charging.png", provenance = "our crystal charger (charger_build.py, lens3), Blender render of the charging state", sha256 = "271546aee5d706520608c56fe7b0864bed6587cae6dc79e68217e585c4424eda" } ]
+
+[[items]]
+id = "d_channel"
+kind = "edit"
+prompt = "The reference image is a render of a finished 3D crystal charger: a dark bronze and graphite pedestal with a round well, a glowing cyan energy crystal standing in the middle on a cup, two short inner prongs beside it, and two tall outer columns (antennas) on the left and right that bend inward at the top. Keep everything exactly as it is, the same camera, framing, lighting, materials, the crystal, the cup, the deck and the well: change ONLY the four columns (the two tall outer antennas and the two short inner prongs). Remove the odd flat blue and orange rectangles stuck on them now. Redesign the antennas as clean, well-made polished bronze metal columns with crisp bevelled edges, the same size, position and inward-bending silhouette, so they read as the parts that conduct energy into the crystal. Idea: bronze columns each with one recessed glass channel down the inner face (the face toward the crystal), a narrow slot with bevelled bronze lips through which a cyan energy stream is seen flowing up toward the tip; the outer faces plain bronze with a few crisp panel seams. No text, no labels, no logos."
+images = [ { file = "raw:ship/v4/charger/lens3/renders/charging.png", provenance = "our crystal charger (charger_build.py, lens3), Blender render of the charging state", sha256 = "271546aee5d706520608c56fe7b0864bed6587cae6dc79e68217e585c4424eda" } ]

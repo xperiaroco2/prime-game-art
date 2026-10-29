@@ -79,7 +79,9 @@ and its first grate ring (r 1.294). Step 2 accounts for both.
 A piece is a builder function in its lane's module, `builder(args, layout) -> [parts]`; a part is
 `ship_lib.part(name, verts, faces, material, solid)`. Solid parts are closed and get their normals recomputed outward;
 open shells (the hull) orient their faces with `ship_lib.orient`. A piece with `collide = true` gets `-col` meshes, so
-Godot's importer gives it a static body with its trimesh (one-sided: solids face out). Materials come only from
+Godot's importer gives it a static body with its trimesh (one-sided: solids face out); a piece whose builder returns
+its own simple colliders (parts named `*-convcolonly` or `*-colonly`: a static body, no mesh, e.g. the workshop robot's
+sphere) keeps its other parts visual only, and Blender's bounds leave those colliders out as Godot's do. Materials come only from
 `ship_lib.MATERIALS` (a lane adds new entries, never changes one).
 
 The hull is lofted from `[hull] core` and `plate` rows. The core covers the hall and corridors and is open at its
@@ -156,6 +158,7 @@ tools/run.sh ship --godot --walk DIR    # headless: sizes, colliders, the capsul
 tools/run.sh ship --shoot DIR           # off-screen night shots, compare_top.png (plan-3 left), sheet.png
 tools/run.sh ship --motion DIR          # step 2: the vents' moving parts on their GLBs off-screen: numbers, MP4, sheets
 tools/run.sh ship --vent-anim DIR       # the east vent's animation in place at night from the player's eye: MP4, key sheet
+tools/run.sh ship --charger-cycle DIR   # the east crystal charger's cycle at night from the player's eye: cycle.mp4, key sheet
 tools/run.sh ship --play [DIR]          # the engineer's own walk (an on-screen window; agents run --play-test DIR)
 ```
 
@@ -1436,7 +1439,8 @@ table (`test_ship_lens`). The warm strips are `int_amber__lens` (`[light.mats]` 
   sheets now keep gutters between cells.
 - **The alcove's back panel** (`lens_graphite`, `lens_graphite2`): metallic 0.55 at roughness 0.38 mirrored the
   room's reflection probe and read light grey. Now the drawing's graphite: dark grey, metallic 0.12, roughness 0.66
-  (the plate 0.7). The sofa's toe and fill and the table's inset share it.
+  (the plate 0.7). The sofa's toe and fill and the table's inset share it. (Since the charger traces the panel is
+  `lens_panel`, navy, and the plate is gone.)
 - **The cushions**: `lens_cushion_red` (0.075, 0.015, 0.010), darker and browner (step 2's 0.17 read orange-salmon).
 - **The charger**: the pedestal's detail and darker plates (`docs/props.md`, build `lens2`).
 - **`ship --shoot --charger`** runs `godot/charger/room.gd` (ship.gd plus `charger.gd` and `crystal.gd`): the charger
@@ -1444,6 +1448,163 @@ table (`test_ship_lens`). The warm strips are `int_amber__lens` (`[light.mats]` 
   the charger wore its GLB's plain fallback and ship.gd's pass made strip lights of its emissive strips. A full
   crystal's light floods the lens room cyan (`r4-charged/`): an open question for the crystal's light in this room.
 - Shots: `<raw>/ship/v5/lens-c/r4/` (pieces `lens-c/pieces-r4`).
+
+## The charger's cycle in lens room C (2026-10-28)
+
+`ship --charger-cycle DIR` (`godot/charger/cycle.gd`, extending `charger/room.gd` in ship.gd's off-screen "shoot"
+mode) films one full cycle of the east charger at night: the eye at the player's 1.6 m, 1.5 m in front of the
+charger's front (2.2 m out of `renewer_e`'s vertex), fov 60, so the whole charger and the alcove are in the frame.
+A fixed clock (`step(dt)` at 1/30 s; every value a pure function of the time, eased, never linear) drives only what
+the charger and the crystal have: `set_state` (idle 0..5.9 s, charging to 17.0, charged to 20.3, idle), `set_pressed`
+(5.6..6.3 s, eased in by a share of its `TRAVEL`), `set_carrier` (rise 6.4..7.6, 4 whole turns 6.9..15.6 with eased
+speed, down 15.8..17.0), `set_ring` (3 turns the other way) and crystal.gd's `set_charge` (0 to 1, 7.4..15.4). Two
+stand-ins, as the game has no hand: the crystal's way into the cup and out (an eased Bezier from above the player,
+its last leg down the axis). Since the charger zap the electricity runs too (below).
+Output: `cycle.mp4` (1280x720, 30 fps, 24 s, under `max_mb` 15), `keys/` and `keys_sheet.png` (fourteen labelled beats, `cycle.gd` `KEYS`, since
+the traces) in `<raw>/ship/v5/charger-cycle/` (`--out` names the pieces: a set built from this tree with `ship --build --out DIR`; lens-c-main's `lens_alcove` predates the traces and films a pale panel, art#263 cycle2). The frames take
+about 4 min. `cycle.json`'s `trace_surfaces` counts the traces the east charger drives (3).
+Since zap-4 (the manager, 2026-10-28) a second camera films every frame again about 1.0 m from the crystal (1.4 m out
+of the vertex, eye 1.5 m, `CHARGER_CYCLE["close"]`): `close/cycle.mp4` and `close/keys_sheet.png`, for the
+engineer; the frames take about twice as long. `zoom_sheet.png` crops four charging frames of the 2.2 m camera
+(9.6, 11.4, 13.2, 14.6 s; `cycle.gd` `ZOOM`) to 320x180 px round the crystal, scaled 2x, to judge the electricity at
+the player's distance.
+
+## The charger traces on the alcove's back panel (2026-10-28)
+
+The engineer's pick for both lens rooms (prime-game#1095 c6468773545; the concept
+`<raw>/ship/v5/charger-traces/concept/a_circuit.jpg`): glowing cyan circuit traces on the back panel, lit by the charge.
+- **The panel** (`back`, d 0..10, u +-46, h 0..200) is `lens_panel`, a matte dark navy (#0b1a2e, roughness 0.82). The
+  graphite plate on it (`back_plate`) went: the traces run edge to edge.
+- **The traces** (`ship_interior_lens.py` `TRACE`, `trace_layout()`, `trace_parts()`; material `lens_trace`, no
+  collider of their own beyond the piece's `-col`): lines 1.2 cm wide, orthogonal with 45-degree bends, mirrored left
+  to right (one centre line on the axis). Trunks run from an outer end to the ring behind the crystal (centre u 0, h
+  115, radius 18 to the line's middle, a 1.5 cm line): the centre line and two lines from under the head strip, two
+  lines from hollow dots (Ø 4) beside the centre line, and the low conduit's line from the side edge at h 92 (behind
+  the pedestal, then up the gap between the outer prong and the cheek, into the ring's side). Branches end on the top
+  lane's trunk at 45 degrees: one down from the lintel and the high conduit's pair from the side edge at h 167 and 173.
+  Each kind sits a hair proud of the panel (branch 0.6 mm, trunk 0.8, dots 1.0, ring 1.2), so a branch's end tucks
+  under its trunk and a trunk's under the ring; nothing is coplanar.
+- **The fill coordinate**: each corner's UV x runs 0 at the line's outer end to 1 at the ring (a trunk: its arc length
+  over its length; a branch reaches its trunk's value at the junction, so the fronts meet there); UV y (Godot's, after
+  the glTF exporter's v -> 1 - v) is the line's metres per unit of fill, -1 on the ring.
+- **The look** (`godot/charger/traces.gdshader`, emission only: no strip light, it lights nothing). ship.gd swaps
+  every `lens_trace` surface for one idle copy (`TRACE_MAT`); `godot/charger/traces.gd`'s `bind(look, scene)` gives
+  the traces near a charger's crystal (`PANEL_REACH` 1.2 m) their own copy in its charger.gd look, `set_panel(look,
+  fill, flare, lit)` drives it (not in charger.gd: its copy ships in `assets/prop/crystal_charger`, the panel is the
+  ship's): idle every line at 13 % and the ring at 18 % (full: emission 1.3 of (0, 0.6, 1); 3.0 and 1.5 read pale under AgX); charging a full cyan behind the front at the charge fraction, dim
+  ahead, a small white-cyan head on it, the ring building to 35 %; full the ring flares (`flare`, a 0.3 s pulse,
+  white-cyan) and everything holds full; `lit` 1 -> 0 fades it back to dim. The cycle drives them (`cycle.gd` `FLARE` 15.4..15.7 s, `FADE` 0.5 s from the crystal leaving the
+  cup); `--shoot --charger` sets the fill from a view's state and charge.
+- **The export** ships the shader as `assets/environment/ship/charger_traces.gdshader` (`ship_export.SHADERS`).
+- Tests: `test_ship_charger_traces.py` (mirrored, orthogonal and 45 degrees, apart and inside the panel, the ring on
+  the crystal's axis, the fill 0..1 and the junctions, faces toward the room, the export's shader).
+- Output: `<raw>/ship/v5/charger-traces/` (`pieces/`: lens-c-main's with the new `lens_alcove`; `cycle/`).
+
+## The charger's electricity (2026-10-28)
+
+The engineer on the cycle (prime-game#1095): "no effects at all ... some electricity there". `godot/charger/zap.gd`
+is the reference the game copies (not in charger.gd, whose copy ships byte-equal in `assets/prop/crystal_charger`):
+`bind(look, ship, crystal)` after `Charger.apply` and `seat_crystal`, then `step(look, dt, charge, flash, lit)` each
+frame. Everything follows the charger look's state and the charge:
+- **Arcs** from the four electrodes (two per inner prong: `charger_dims.toml` `[inner] electrodes`, placed as
+  `charger_build.build_electrodes` does, on the track ring) into the crystal: each leaves its electrode's surface and
+  lands on the crystal's surface (a radius profile by height from its meshes), the tip pair 4.5 cm below its electrode
+  (level, 2.5 cm long, they read as nothing from 2 m), the low pair 9 cm above, jittered up and down and round the
+  axis. Ribbons 4 cm wide (the tip pair; 3 the low; zap-4: 2.2 cm still read as fine squiggles from 2.2 m), a white
+  core of 40 % of that, a blue haze round it. A bolt is midpoint displacement (16 segments, the ends fixed)
+  with 0..2 fading branches; the shapes re-roll every 50..80 ms from a seeded generator and are rebuilt every frame on
+  the electrodes' and the crystal's current places, so they follow the turning ring and the rising, turning crystal.
+  The low pair skips about half its ticks, the tip pair a tenth (the flicker). Drawn as camera-facing ribbons
+  (`godot/charger/arc.gdshader`: unshaded, additive, a white-cyan core over a cyan halo, HDR for the glow) in one
+  `ImmediateMesh` under the charger's root.
+- **Wrap arcs and halo loops** (zap-3, zap-4/5; the engineer: "lightning, white, around the crystal, spinning"): from
+  every electrode a wrap arc leaps into the air round the crystal (1.5..2.3 times its radius) and runs 1.2..3 rad round
+  it the ring's way; each tick 3..5 halo loops (8 in the flash) leave the crystal's surface, arch out to 2..3.4 times
+  its radius, tilted up to 12 cm, jagged by 1.4 cm and 1.8 cm, and land again 1.2..2.6 rad round, most with a fork
+  off the apex into the air (2.5..5 cm), and the whole cage turns round the axis at 9 rad/s between re-rolls,
+  so it spins; a crawler runs between two surface points of the tip pair. Glints (6..10 per tick, 70 in the flash)
+  orbit the crystal the ring's way and spiral out, a 2.4 cm head with a 0.7 rad trail.
+- **Lights**: one small `OmniLight3D` per arc at its hit (range 0.32 m, 0.45..0.7 flickering, a near-white blue
+  (0.78, 0.88, 1): zap-4, the old cyan (0.45, 0.82, 1) times the bronze's orange is olive; 0.8 washed the inner prongs
+  to chrome).
+- **Sparks** at the hits each tick (2..5) and now and then at an electrode: short streaks (0.15..0.4 s, gravity,
+  drag) simulated in `step` on the caller's dt (not GPUParticles3D), so the fixed-clock cycle draws the same frames
+  every run.
+- **The flash** (`flash` 0..1, `cycle.gd` `FLASH` 15.4..15.62 s, with the ring's flare): every arc on, 2.2 times
+  wider, four branches each, re-rolled every 30 ms, a burst of 60 sparks, the lights to 2.4 over 0.6 m. Then quiet.
+- **Gating**: arcs only while the state is "charging" and 0 < charge < 1, or during the flash (still "charging");
+  never idle or charged.
+- **The conduits** (`lens_conduits_e/w`, material `int_cyan__lens_core`): the cores' UV x runs 0 where a conduit
+  leaves the jamb to 1 at the deck or the ceiling, UV y (Godot) is the run's length (`ship_interior_lens.py`
+  `core_uvs`). `bind` puts one `godot/charger/conduit.gdshader` copy on the cores near the crystal (`CONDUIT_REACH`
+  1.2 m), its base the surface's own glow: while the arcs run, the base dims to 40 % and near-white bands (22 cm,
+  0.6 m apart, 1.1 m/s, energy 9; zap-4: 12 cm at 5 over the full base did not read) run from the deck and the
+  ceiling into the jambs; once full the core glows steady a little brighter; `lit` (the traces' fade) brings
+  it back to the base.
+- **The export** ships `charger_arc.gdshader` and `charger_conduit.gdshader` (`ship_export.SHADERS`) beside the
+  pieces for the game's copy of zap.gd; the ship scene itself does not use them.
+- `cycle.json` adds `conduit_surfaces` (1), `arc_frames` and `arc_ends_off` (frames whose arc ends left an electrode
+  or the crystal's surface: 0; the runner fails the run on any; the start lies on an electrode by zap.gd's
+  construction, so only the hits are a real check). Keys: "4 charging: the arcs" (12.6 s) and "5 full: the big flash" (15.5 s).
+- Tests: `test_ship_charger_zap.py` (the electrodes are the build's, the ends, the gating, the flash inside
+  "charging", the conduits' UV, the shaders shipped).
+- Output: `<raw>/ship/v5/charger-zap/` (`pieces/`: charger-traces' with the new `lens_conduits_e/w`; `cycle/`).
+
+## The west lens room's workshop (steps 1 to 4, 2026-10-29)
+
+The engineer's pick for the west lens room (prime-game#1095: "visually I like the robot repair the most"), built as
+decor from the design's cm drawing (`<raw>/ship/v5/workshop/drawing/index.html`) and its concept `w_c_bot.jpg`
+(painted on the east room; tip_w is its mirror, the charger left of the door). Nothing moves and nothing is a
+station; only the light lives. Builders: `tools/blender/ship_interior_workshop.py` (registered in
+`ship_interior.MODULES`); placements: `ship_interior_place.py` (the drawing's east angles mirrored, `a_w = -a_e`);
+tests: `tools/tests/test_ship_workshop.py`.
+
+| Piece | What | Placed | Triangles |
+|---|---|---|---|
+| `ws_bench_open_top`, `ws_bench_open_low` (colliders) | a bench module per facet -109.77..-21.95 (east), each with one drawer out (step 3; the closed `ws_bench` is no longer placed): a flush matte graphite kick plinth h 0..9 (step 3: the fronts' feet stayed dark), graphite carcass (face d 50), two drawer fronts (h 10..45, 47..82; an olive graphite frame `ws_bronze2`, step 4) each with a chamfered raised panel (`ws_olive`, a dark olive bronze, step 4: the neutral bronze read warm brown under the floor lights) and a lit green pull, the green strip under the top's overhang, the dark bronze top d 0..55 to h 90 (continuous across modules) with a glossy bronze nosing, a graphite work mat; `open` leaves a drawer's bay (graphite back, two stiles) | 4 facets | 240 / 228 |
+| `ws_drawer_eyes`, `ws_drawer_parts_a`, `ws_drawer_parts_b`, `ws_drawer_limbs` | a drawer pulled out 25 cm on its tray, a dark foam insert 14 cm under its top (the parts trays' a mid grey `ws_foam2`, step 4: on the dark foam their bronze parts did not read), a green rim line round the walls' insides: 20 spare eyes (D8, a cyan iris, a dark pupil) sunk in cut-outs (a 32.9, top); loose parts (gears, pistons, a board with a cyan light, a spare claw, a cable coil; a 54.9 low, 76.8 top); four spare arms (shoulder, ivory upper arm and forearm, dark elbow hinge, small claw) in a row (a 98.8, low) | 1 each | see the handoff |
+| `ws_cabinet` (collider) | the cradles' cabinet module, as the bench: toe, graphite body, one drawer front with its panel, pull, strip, the top d 0..59 to h 55 with its nosing (the drawing's 60 reached 1 mm over the floor light's bar on the middle vertex) | 2 facets | 172 |
+| `ws_cradle` | a graphite bowl D54 x 18 with a groove and a chamfered lip, the bed D44 with a padded dark cushion (a fat rolled edge, a dished middle with six sunk tuft buttons, a stitched groove), the green ring on the lip | 2 | 5328 |
+| `ws_sleeper_a`, `_b` | a small robot D28 in its cradle's dip: the main robot's family: an ivory shell band and two closed side shells on 2 mm seams round a dark core, one small layered eye (graphite bezel, dark glass lens D8) shut as a dim green arc, an antenna with a green bead; tilted face-up 22 deg, each rolled and turned its own way | 1 each | 10168 |
+| `ws_robot_body` (collider) | the main robot's dark core (flat mechanism plates at y +-0.205) and its thin ivory shell band (the sphere D60 at h 145 between the side shells) in four panels with 6 mm seams, a dark liner inside; its collider the drawing's sphere D60 as one convex 16 x 8 polyhedron (`col-convcolonly`, 224 triangles; the shells' own trimesh was 9.2k), the visible parts no collider | 1 | 9216 + 224 |
+| `ws_robot` | the layered eye D16 toward the room (a proud dark bronze bezel, a bronze trim ring, a dark glass dome, a teal iris in five 3.6 mm bands on one level from the deep rim to a bright inner ring (step 4: step 3's three bands at three lifts showed as rings), a dark limbal ring round the pupil, one small soft glint), the crown and its knob ball, the two thin side shells (step 3: 28 deg caps, 0.7 of step 2's, ivory outside, a matte graphite liner inside) standing 2.5 cm off the body (step 4: 5 cm read as headphones from the front) on two graphite hinge arms each and swung 30 deg on back hinges (`ROBOT` panel, lift, open, hinge; `shell_xf`), in each bay a gear train of three with hub caps, two pistons in mounts, a board with chips and a cyan light, a silver motor, two cable loops and three cables hanging under the body to loose plugs (four colours), two arms below the body (shoulder ball in a collar, ivory upper arm, graphite elbow hinge, ivory forearm, wrist ring, a claw of three two-segment fingers) hanging to h 95; every bay part stays inside the shells' sphere | 1 | 27932 |
+| `ws_rail` | the bronze box rail 10 x 8 from h 214 on the arc r 105 over a_w 25..110, glossy side lips, end stops, three hangers (5 x 2 bars, 16..18 cm showing) into the slanted ceiling (theta -100, -67.5, -35 east) with plates; step 2 lowered it 14 cm from the drawing's 228 so the hangers show; it clears the 1.8 m capsule by 34 cm | 1 (room frame) | 1896 |
+| `ws_hoist` | a chunky chamfered bronze carriage (30 x 17 x 12) with inset end panels, cheeks rising over the rail and two wheels riding its top on axles, a graphite motor drum with cooling fins and a green status light on its room side, a short thick steel rod (D4.4) with bronze collars, the claw: a bronze hub (h 183..188) and three two-segment fingers on graphite knuckles whose pads grip the crown's knob ball (down to h 176.6) | 1 | 4540 |
+| `ws_rug` | dark green pile D66 x 1.1 with a rolled edge and a darker border band, at r 1.10 on a_w 67.5 (the drawing's D80 at r 0.95 covered the floor lights' bars; D66 fits between them with 2.1 cm to spare; the check asks 8 mm and more of every floor item, the cabinet the closest at 9 mm) | 1 | 1152 |
+| `ws_lamp` | the articulated lamp on the bench (a_w 100): bronze base D18, turntable, twin arms through graphite hubs, the shade at h 140 aimed at the robot's open bays, its green lens | 1 | 2016 |
+
+About 122.5k triangles placed (step 1: 68.6k, step 2: 100.5k). The bench's facets take the lounge's wall pieces (`tip_panel_low_*`: the relief over
+h 0.92; `tip_window_lounge_*`: a flush 3 cm sill), the cabinet's keep the plain window facets. The door side's last
+two cable trunks (`tip_trunk*`) stood on the bench's vertices and went with it; the pieces are gone from the layout.
+
+**Light** (step 2: step 1's broad green washes flooded the walls and ceiling). The walls and ceiling keep the ship's
+neutral silver under the tip room's own lamp and its fill (a neutral cool grey, 0.62/0.70/0.86; step 1's mint is
+gone). The acid green only pools, the `shop` lamp group (`ship.toml`, `shop_lamp` 1.0): three short omnis before the
+bench fronts (r 1.30, h 0.80, range 0.75, energy 1.8 since step 4 so the olive fronts stay olive under the floor lights: the strips' light on the drawers and the floor before them; step 2's first
+try, spots straight down on the bench, painted green blobs on the mat), a spot over each cradle (34 deg, range 0.95),
+the bench lamp's spot aimed at the robot's bays (24 deg, a near-white work light (step 3: green there tinted the bays); a lamp row's index 11 is a spot's aim
+point [x, y, h], `godot/ship/ship.gd`), a little omni in each open drawer (range 0.42; step 4: the two parts trays' paler, 0.6/1.0/0.45 at 0.6); the bays light themselves
+(their cyan boards; omnis there washed the shells' insides green).
+The strips, pulls, rims, the drawers' liners, the lamp's lens and the sleepers' eye arcs are `ws_green__*` glows
+(`[light.mats]`, `l` 0: they light nothing); the eyes' and the bays' cyan `ws_cyan__*`, the eye's highlight
+`ws_glint`. The cabinetry's dark olive bronze `ws_bronze` and its near-graphite second tone `ws_bronze2` are the
+stations' bronze shader with darker colours (`ship.gd` `LENS_BRONZE`; step 1's lens bronze read orange plastic under
+the floor lights).
+
+**Checks** (`test_ship_workshop.py`): the robot, cradles and lamp at the drawing's tip_w points; the bench and
+cabinet on their facets, their heights and depths; the robot's sphere D60 at h 145, its eye toward the room, the
+hands at h 95, the claw 176.6..188 on the knob; the shells open 30..40 deg, the bays' mechanism inside the shells'
+sphere, the arms and loose cables below the body; the rail 15 cm and more under the ceiling, over the capsule, and
+clear of the oculus's light ring;
+every vertex of every piece inside tip_w's facet planes; the bench, cabinet and rug clear of the eight floor lights' bars by 8 mm and more (the open drawers float
+over two bars' outer ends at h 10+, never over their middles); the door-to-charger path clear by the capsule's
+radius; everything past a_w -24 (the alcove spans -105..-70); the colliders.
+
+Shots and sheets: `<raw>/ship/v5/workshop/` (`pieces/`, `shots1/` .. `shots4/`, `sheets/`, `grids/`, `views2.json` ..
+`views5.json`; step 4's `ws_hoist_wheels` shows the wheels on the rail from the window side); handoffs
+`<raw>/ship/v5/notes/workshop-1.md` .. `workshop-4.md`. Steps 2 and 3 were tuned by grids
+(`grids/`; step 3's shells: 0.8 / 0.7 of step 2's on back hinges, 0.7 on front hinges, picked 0.7 back, `robot3_grid_*.png`): the robot's shells (panel/open 40/30, 40/36, 37/42; picked 40/36, set to 32 in the room: at 36 the dark insides read as two black ears from the bench; front hinges tried, they hid the bays) in headless Blender, the light (the
+shop lamps' level 1.0/1.6/0.7 and the fill's colour, from the concept camera) in Godot.
 
 ## The throat's gills (pilot, 2026-10-28)
 

@@ -398,6 +398,14 @@ class Model:
         sp = spec.get("spine", {})
         if sp.get("turn"):
             r.turn_world("Spine", turn_q(*sp["turn"]))
+        if sp.get("level"):  # p3: the Spine counter-turned so the chest's up is the world's (`level` of the way):
+            # the arms' directions are in the chest's axes, so a level chest keeps their meaning in the world on
+            # every legs pose (a horizontal arm stays horizontal, an arm up stays up)
+            F = M.q_mul(r.world_q("UpperChest"), M.q_conj(r.rest_q("UpperChest")))
+            u = M.q_rotate(F, (0.0, 0.0, 1.0))
+            ang = math.degrees(math.acos(max(-1.0, min(1.0, u[2]))))
+            if ang > 0.01:
+                r.turn_world("Spine", M.q_axis_angle(norm(cross(u, (0.0, 0.0, 1.0))), ang * sp["level"]))
         legs = {side: spec.get(side) or spec.get("both") or {"mode": "plant"} for side in SIDES}
         for _ in range(4):  # free legs, the fit (the knee, the seat onto the floor), then the planted feet
             for side, leg in legs.items():
@@ -493,6 +501,8 @@ class Model:
                 continue
             if ref is not None and arm.get("variant"):  # a per-legs variant's own settings (the hip hand's fingers)
                 arm = {**arm, **arm["variant"]}
+            if ref is not None and legs in arm.get("legs_variant", {}):  # q3: one legs pose's own settings on top
+                arm = {**arm, **arm["legs_variant"][legs]}  # (the akimbo fist higher where the thighs rise to the waist)
             if arm.get("shoulder"):
                 r.turn_world(f"{side}Shoulder", turn_q(*arm["shoulder"], side=side))
             if arm["mode"] == "fk":
@@ -515,7 +525,10 @@ class Model:
         hq = r.rest_q(f"{side}Hand")
         f0 = M.q_rotate(hq, (0.0, 1.0, 0.0))
         n0 = (0.0, 0.0, -1.0)  # the T pose's palms face down
-        f = M.q_rotate(F, body(side, arm["fingers_dir"]))
+        if arm["fingers_dir"] == "forearm":  # a straight wrist (p3: the fists): the hand along the forearm
+            f = norm(sub(r.head(f"{side}Hand"), r.head(f"{side}LowerArm")))
+        else:
+            f = M.q_rotate(F, body(side, arm["fingers_dir"]))
         n = M.q_rotate(F, body(side, arm["palm"]))
         if arm.get("hand_roll"):  # the palm turned about the fingers' direction (+ the thumb side toward out)
             n = M.q_rotate(M.q_axis_angle(f, arm["hand_roll"] * (1.0 if side == "Left" else -1.0)), n)
@@ -531,9 +544,13 @@ class Model:
         hand_q = r.world_q(f"{side}Hand")
         r.turn_world(lo, M.q_axis_angle(ax, tw * k))
         r.set_world(f"{side}Hand", hand_q)
-        self._fingers(r, side, arm.get("grip", "relaxed"))
+        self._fingers(r, side, arm.get("grip", "flat"))
 
     def _fingers(self, r: Rig, side: str, grip: str) -> None:
+        """A hand shape of the library (`[grips]`, p3): per finger the curl of its three bones about their own x;
+        `ThumbTurn` [roll, swing] (degrees) turns the thumb's base about its length (y) and toward the palm (z) before
+        its curl (the left hand's; the right's mirrored), so a fist's thumb lies over the index and a flat hand's beside
+        it (a curl alone turns it about one axis only, p1)."""
         g = self.data["grips"][grip]
         for f in FINGERS:
             names = PHALANX.get(f, PHALANX["Index"])
@@ -542,7 +559,13 @@ class Model:
                 q = M.q_axis_angle((1.0, 0.0, 0.0), deg)
                 if i == 0 and g.get("spread") and f != "Thumb":
                     k = {"Index": -1.0, "Middle": -0.3, "Ring": 0.4, "Little": 1.0}[f]
+                    # q3 (`mirror` in the grip): mirrored like the thumb's turn (one sign drew the left hand's fingers
+                    # apart, the right's together); a flag, so the check still composes older builds' data as built
+                    k *= -1.0 if g.get("mirror") and side == "Right" else 1.0
                     q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), g["spread"] * k), q)
+                if i == 0 and f == "Thumb" and g.get("ThumbTurn"):
+                    roll, swing = (v * (1.0 if side == "Left" else -1.0) for v in g["ThumbTurn"])  # mirrored
+                    q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), swing), M.q_mul(M.q_axis_angle((0.0, 1.0, 0.0), roll), q))
                 r.local(f"{side}{f}{ph}", q)
 
     def _arm_fk(self, r: Rig, side: str, arm: dict) -> None:
@@ -566,12 +589,13 @@ class Model:
         # `clear` moves the wrist up the chest, or along `clear_dir` (chest axes: back along the hip's side)
         lift = norm(M.q_rotate(F, body(side, arm.get("clear_dir", (0.0, 0.0, 1.0)))))
         clear = [t for g in arm.get("clear", ()) for t in tube_bones(g.format(side=side), self.tubes)]
-        for it in range(9):
+        n = arm.get("passes", 9)  # p3: the akimbo fist's variants take more passes to settle (clear, then touch)
+        for it in range(n):
             sh = r.head(up)
             el = ik_mid(sh, goal, la, lb, pole)
             r.limb(up, lo, sub(el, sh), sub(goal, el))
             self._hand(r, side, arm)
-            if not (arm.get("touch") or clear) or it == 8:
+            if not (arm.get("touch") or clear) or it == n - 1:
                 break
             pz = Posed(self.skel, self.skin, r.P())
             # `clear`: the hand out of those groups (a raised thigh) by moving the wrist up the body, then touch again
@@ -631,7 +655,9 @@ class Model:
             for lg in legs:
                 if lg == self.data["reference_legs"]:
                     continue
-                if any(thigh_side(self.data, lg, s) for _, s in groups):  # round 3: the hand on the thigh, always
+                if spec.get("per_legs") or any(thigh_side(self.data, lg, s) for _, s in groups):
+                    # round 3: the hand on the thigh, always; p3: `per_legs`, a variant on every legs pose (the fist
+                    # akimbo: the shared clip's fist goes into the waist or off it where the legs lean the Spine)
                     out[f"{am}{VARIANT}{lg}"] = self.arms(am, ref=self.legs(lg), legs=lg)
                     continue
                 P = compose(legs[lg], arms[am]).P()
@@ -761,6 +787,12 @@ def palm_centre(P: dict, side: str) -> tuple:
     return mul(add(S.pos(P[f"{side}Hand"]), S.pos(P[f"{side}MiddleProximal"])), 0.5)
 
 
+def knuckles(P: dict, side: str) -> tuple:
+    """A fist's knuckles: the four fingers' base knuckles' centre (p3: the akimbo fist's knuckles press into the
+    waist, so its palm's centre stands a fist's depth off it)."""
+    return mul(tuple(map(sum, zip(*(S.pos(P[f"{side}{f}Proximal"]) for f in FINGERS[1:])))), 0.25)
+
+
 def mark_posed(model: Model, P: dict, mark: str) -> tuple:
     """A rest landmark (Model.marks) carried by the Spine's pose (the waist's side rides on the Spine)."""
     m = M.mat_mul(P["Spine"], S.rigid_inv(model.skel["rest"]["Spine"]))
@@ -856,7 +888,7 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
         if v > 0 and a.startswith(("hand", "forearm")) and nearest_gap(pz.group(a), pz.groups([b]), reach=0.05) * 100.0 > TOUCH_CM:
             proxy[f"{a}>{b}"], v = v, 0.0
         through[f"{a}>{b}"] = v
-    contacts, marks = {}, {}
+    contacts, marks, mark_lim = {}, {}, {}
     cs = d["arms"][arms].get("contacts", [])
     if variant and legs in d.get("thigh_hand", {}).get("legs", ()):  # the hip hand on the thigh: its contact is the
         hip = [f"hand_{s}" for s in SIDES  # thigh's skin (gap and through), not the waist's mark nor the torso
@@ -867,7 +899,12 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
         if c.get("measure") is False:  # a solve's helper (the hands' meet): its own contacts are measured
             continue
         if c.get("mark"):  # the palm's centre to a landmark carried by the Spine (the hip hand on the waist's side)
-            marks[f"{c['a']}@{c['mark']}"] = round(length(sub(palm_centre(P, c["a"].split("_")[1]),
+            at = knuckles if c.get("by") == "knuckles" else palm_centre  # p3: a fist's knuckles
+            if c.get("mark_cm"):  # the contact's own limit (p3: the akimbo fist rides above the waist's mark), per
+                # legs pose where it has one (q4, review 1: `legs_mark_cm`, the fist lifted up the waist's side on
+                # the legs whose thighs rise to it; the others keep the tight one)
+                mark_lim[f"{c['a']}@{c['mark']}"] = c.get("legs_mark_cm", {}).get(legs, c["mark_cm"])
+            marks[f"{c['a']}@{c['mark']}"] = round(length(sub(at(P, c["a"].split("_")[1]),
                                                               mark_posed(model, P, c["mark"]))) * 100, 2)
             continue
         contacts[f"{c['a']}~{c['b']}"] = round(nearest_gap(pz.group(c["a"]), pz.groups([c["b"]]), reach=0.3) * 100, 2)
@@ -891,8 +928,9 @@ def measure(model: Model, r: Rig, legs: str, arms: str, variant: bool = False) -
     for k, v in proxy.items():  # review 3: a depth with a skin gap still fails past its own limit (a hand deep in b
         if v > lim.get("proxy_hand_cm", lim["through_cm"]):  # with no vertex of b's skin within TOUCH_CM)
             fails.append(f"through (no touch) {k} {v} cm")
-    for k, v in marks.items():  # a per-legs variant rides off the waist to clear the thigh: its own, looser limit
-        if v > (lim.get("variant_mark_cm", lim["mark_cm"]) if variant else lim["mark_cm"]):
+    for k, v in marks.items():  # a per-legs variant rides off the waist to clear the thigh: its own, looser limit;
+        # a contact's own limit wins outright (q4: it was max()-ed with variant_mark_cm, 10 cm on Stand's variant)
+        if v > (mark_lim[k] if k in mark_lim else lim.get("variant_mark_cm", lim["mark_cm"]) if variant else lim["mark_cm"]):
             fails.append(f"mark {k} {v} cm")
     for k, v in contacts.items():
         if v > lim["contact_gap_cm"]:
@@ -930,7 +968,7 @@ def silhouette_table(masks: dict, legs: list, arms: list, w: int, lopsided: tupl
     poses. lr: per pair, the left facing against the mirrored right facing (a symmetric pose reads near 0: its left and
     right outlines are mirror images up to perspective). `lopsided` only labels the pairs whose facing should be
     told apart; nothing fails on it (a limit would not separate them: s11's unlisted Squat+Plane reads 0.18, the
-    listed Stand+Salute 0.07)."""
+    listed Stand+Salute 0.07; p3 replaced Salute by Victory)."""
     out = {"legs": {}, "arms": {}, "lr": {}}
     for face in FACINGS:
         for kind, parts, others in (("legs", legs, arms), ("arms", arms, legs)):

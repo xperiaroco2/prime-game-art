@@ -463,17 +463,27 @@ place = [
   ["tip_window_a", [-12.3954, 1.8765, 0.0], -160.359],
   ["tip_glass", [-12.3954, 1.8765, 0.0], -160.359],
   ["tip_sill_strip", [-12.3954, 1.8765, 0.0], -160.359],
+  ["ws_cabinet", [-12.3954, 1.8765, 0.0], -160.359],
   ["tip_window_b", [-12.5109, 1.1188, 0.0], 177.687],
   ["tip_glass", [-12.5109, 1.1188, 0.0], 177.687],
   ["tip_sill_strip", [-12.5109, 1.1188, 0.0], 177.687],
-  ["tip_window_a", [-12.3347, 0.3729, 0.0], 155.733],
+  ["ws_cabinet", [-12.5109, 1.1188, 0.0], 177.687],
+  ["tip_window_lounge_a", [-12.3347, 0.3729, 0.0], 155.733],
   ["tip_glass", [-12.3347, 0.3729, 0.0], 155.733],
-  ["tip_sill_strip", [-12.3347, 0.3729, 0.0], 155.733],
-  ["tip_window_b", [-11.8924, -0.2531, 0.0], 133.778],
+  ["tip_sill_strip_lounge", [-12.3347, 0.3729, 0.0], 155.733],
+  ["ws_bench_open_top", [-12.3347, 0.3729, 0.0], 155.733],
+  ["ws_drawer_eyes", [-12.3347, 0.3729, 0.0], 155.733],
+  ["tip_window_lounge_b", [-11.8924, -0.2531, 0.0], 133.778],
   ["tip_glass", [-11.8924, -0.2531, 0.0], 133.778],
-  ["tip_sill_strip", [-11.8924, -0.2531, 0.0], 133.778],
-  ["tip_panel_a", [-11.2482, -0.6683, 0.0], 111.824],
-  ["tip_panel_b", [-10.4954, -0.8125, 0.0], 89.87],
+  ["tip_sill_strip_lounge", [-11.8924, -0.2531, 0.0], 133.778],
+  ["ws_bench_open_low", [-11.8924, -0.2531, 0.0], 133.778],
+  ["ws_drawer_parts_a", [-11.8924, -0.2531, 0.0], 133.778],
+  ["tip_panel_low_a", [-11.2482, -0.6683, 0.0], 111.824],
+  ["ws_bench_open_top", [-11.2482, -0.6683, 0.0], 111.824],
+  ["ws_drawer_parts_b", [-11.2482, -0.6683, 0.0], 111.824],
+  ["tip_panel_low_b", [-10.4954, -0.8125, 0.0], 89.87],
+  ["ws_bench_open_low", [-10.4954, -0.8125, 0.0], 89.87],
+  ["ws_drawer_limbs", [-10.4954, -0.8125, 0.0], 89.87],
   ["tip_panel_a", [-9.7434, -0.6648, 0.0], 67.916],
   ["tip_pilaster", [-8.9207, 2.507, 0.0], -39.61],
   ["tip_pilaster_strip", [-8.9207, 2.507, 0.0], -39.61],
@@ -485,16 +495,6 @@ place = [
   ["tip_mullion", [-12.1742, 0.017, 0.0], 144.756],
   ["tip_pilaster", [-11.6105, -0.5231, 0.0], 122.801],
   ["tip_pilaster_strip", [-11.6105, -0.5231, 0.0], 122.801],
-  ["tip_trunk", [-10.8858, -0.8134, 0.0], 100.847],
-  ["tip_trunk_cables", [-10.8858, -0.8134, 0.0], 100.847],
-  ["tip_trunk_clip", [-10.8858, -0.8134, 0.55], 100.847],
-  ["tip_trunk_clip", [-10.8858, -0.8134, 1.3], 100.847],
-  ["tip_trunk_clip", [-10.8858, -0.8134, 2.05], 100.847],
-  ["tip_trunk", [-10.1051, -0.8116, 0.0], 78.893],
-  ["tip_trunk_cables", [-10.1051, -0.8116, 0.0], 78.893],
-  ["tip_trunk_clip", [-10.1051, -0.8116, 0.55], 78.893],
-  ["tip_trunk_clip", [-10.1051, -0.8116, 1.3], 78.893],
-  ["tip_trunk_clip", [-10.1051, -0.8116, 2.05], 78.893],
   ["tip_pilaster", [-9.3816, -0.5181, 0.0], 56.939],
   ["tip_pilaster_strip", [-9.3816, -0.5181, 0.0], 56.939],
   ["tip_portal", [-9.1512, 0.9945, 0.0], 8.664],
@@ -502,6 +502,16 @@ place = [
   ["portal_strip_r", [-9.1512, 0.9945, 0.0], 8.664],
   ["lens_alcove", [-10.2686, 3.2369, 0.0], -83.519],
   ["lens_conduits_w", [-10.2686, 3.2369, 0.0], -83.519],
+  ["ws_rail", [-10.5, 1.2, 0.0], -171.336],
+  ["ws_rug", [-11.0692, 0.2587, 0.0], 121.164],
+  ["ws_robot_body", [-11.0431, 0.302, 0.0], 121.164],
+  ["ws_robot", [-11.0431, 0.302, 0.0], 121.164],
+  ["ws_hoist", [-11.0431, 0.302, 0.0], 121.164],
+  ["ws_cradle", [-12.211, 1.1302, 0.0], 177.664],
+  ["ws_sleeper_a", [-12.211, 1.1302, 0.0], 177.664],
+  ["ws_cradle", [-12.1129, 1.7764, 0.0], -160.336],
+  ["ws_sleeper_b", [-12.1129, 1.7764, 0.0], -160.336],
+  ["ws_lamp", [-10.4577, -0.612, 0.0], 89.87],
   ["vault_shell", [0.0, 3.85, 0.0], 0.0],
   ["cup_a", [0.85, -3.22, 0.0], 145.0],
   ["spill_a", [0.85, -3.22, 0.0], 145.0],
@@ -961,20 +971,6 @@ args = { height = 2.428 }
 foot = [-0.2, 0.2, -0.2, 0.2]
 
 [[pieces]]
-id = "tip_trunk"
-builder = "trunk"
-collide = true
-args = { height = 2.4, flat = true }
-foot = [-0.2, 0.2, -0.2, 0.2]
-
-[[pieces]]
-id = "tip_trunk_cables"
-builder = "trunk_cables"
-collide = false
-args = { height = 2.4, flat = true }
-foot = [-0.2, 0.2, -0.2, 0.2]
-
-[[pieces]]
 id = "tip_window_a"
 builder = "tip_window"
 collide = true
@@ -1000,13 +996,6 @@ collide = true
 id = "tip_sill_strip"
 builder = "tip_sill_strip"
 collide = false
-
-[[pieces]]
-id = "tip_trunk_clip"
-builder = "trunk_clip"
-collide = false
-args = { flat = true }
-foot = [-0.2, 0.2, -0.2, 0.2]
 
 [[pieces]]
 id = "tip_portal"
@@ -1207,4 +1196,92 @@ collide = false
 [[pieces]]
 id = "lounge_plant"
 builder = "lounge_plant"
+collide = false
+
+[[pieces]]
+id = "ws_bench_open_top"
+builder = "ws_bench"
+collide = true
+args = { open = "top" }
+
+[[pieces]]
+id = "ws_bench_open_low"
+builder = "ws_bench"
+collide = true
+args = { open = "low" }
+
+[[pieces]]
+id = "ws_drawer_eyes"
+builder = "ws_drawer"
+collide = false
+args = { slot = "top", fill = "eyes" }
+
+[[pieces]]
+id = "ws_drawer_limbs"
+builder = "ws_drawer"
+collide = false
+args = { slot = "low", fill = "limbs" }
+
+[[pieces]]
+id = "ws_drawer_parts_a"
+builder = "ws_drawer"
+collide = false
+args = { slot = "low", fill = "parts", seed = 3 }
+
+[[pieces]]
+id = "ws_drawer_parts_b"
+builder = "ws_drawer"
+collide = false
+args = { slot = "top", fill = "parts", seed = 8 }
+
+[[pieces]]
+id = "ws_cabinet"
+builder = "ws_cabinet"
+collide = true
+
+[[pieces]]
+id = "ws_cradle"
+builder = "ws_cradle"
+collide = false
+
+[[pieces]]
+id = "ws_sleeper_a"
+builder = "ws_sleeper"
+collide = false
+args = { roll = 10.0, yaw = 12.0 }
+
+[[pieces]]
+id = "ws_sleeper_b"
+builder = "ws_sleeper"
+collide = false
+args = { roll = -12.0, yaw = -16.0 }
+
+[[pieces]]
+id = "ws_robot_body"
+builder = "ws_robot_body"
+collide = true
+
+[[pieces]]
+id = "ws_robot"
+builder = "ws_robot"
+collide = false
+
+[[pieces]]
+id = "ws_hoist"
+builder = "ws_hoist"
+collide = false
+
+[[pieces]]
+id = "ws_rail"
+builder = "ws_rail"
+collide = false
+
+[[pieces]]
+id = "ws_rug"
+builder = "ws_rug"
+collide = false
+
+[[pieces]]
+id = "ws_lamp"
+builder = "ws_lamp"
 collide = false

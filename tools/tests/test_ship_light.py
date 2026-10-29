@@ -136,8 +136,8 @@ class ShipLightTest(unittest.TestCase):
         gd = (ROOT / "godot" / "ship" / "ship.gd").read_text(encoding="utf-8")
         self.assertIn("var nav_blink: bool = true", gd)
         py = (ROOT / "tools" / "runner" / "commands" / "ship.py").read_text(encoding="utf-8")
-        self.assertEqual(py.count('"nav_blink": False'), 4,
-                         "shots, the video, the vent's clip and the gills' clip show a static glow")
+        self.assertEqual(py.count('"nav_blink": False'), 5,
+                         "shots, the video, the vent's clip, the gills' clip and the charger's cycle show a static glow")
 
 
 if __name__ == "__main__":

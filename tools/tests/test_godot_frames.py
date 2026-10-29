@@ -45,6 +45,38 @@ class TimesTest(unittest.TestCase):
         self.assertEqual((run["loop"], run["keep"], run["video"], run["video_frames"]), (True, False, True, 19))
         self.assertEqual((wave["loop"], wave["keep"], wave["video"]), (False, True, False))
         self.assertEqual(spec["cell"], list(_frames.CELL))
+        self.assertEqual((spec["yaw_deg"], spec["light_turn_deg"]), (_frames.YAW_DEG, 0.0))  # the three-quarter
+
+    def test_spec_turned(self) -> None:
+        """--yaw: the camera turns to the side or the back, and the studio light turns with it (art #196)."""
+        for yaw in (0.0, -90.0, 180.0):
+            spec = _frames.spec("x", {"CharacterArmature|Idle": 2.0}, [], [], yaw_deg=yaw)
+            self.assertEqual(spec["yaw_deg"], yaw)
+            self.assertEqual(spec["light_turn_deg"], yaw - _frames.YAW_DEG)
+
+    def test_closeups_parsed(self) -> None:
+        """--closeups: a target point, the view's height and the camera's yaw and pitch per shot; the light turns
+        with each shot; two per row (art #196)."""
+        shots = _frames.parse_closeups("collar@0,1.33,0.02/0.25/0; back shoulder@0.1,1.3,-0.05/0.3/180/10")
+        self.assertEqual([s["label"] for s in shots], ["collar", "back shoulder"])
+        self.assertEqual(shots[0]["target"], [0.0, 1.33, 0.02])
+        self.assertEqual((shots[1]["size"], shots[1]["yaw_deg"], shots[1]["pitch_deg"]), (0.3, 180.0, 10.0))
+        self.assertEqual(shots[0]["pitch_deg"], 0.0)
+        self.assertEqual(shots[1]["light_turn_deg"], 180.0 - _frames.YAW_DEG)
+        spec = _frames.closeup_spec("x", "CharacterArmature|Idle", shots)
+        self.assertEqual((spec["cols"], spec["t"], len(spec["shots"])), (2, 0.0, 2))
+        for bad in ("@0,1,0/0.2/0", "a@0,1/0.2/0", "a@0,1,0/0/0", "a@0,1,0/0.2", "a@0,1,0/0.2/0/95", ""):
+            with self.assertRaises(ValueError, msg=bad):
+                _frames.parse_closeups(bad)
+
+    def test_closeups_carried_by_a_bone(self) -> None:
+        """--closeups 'x,y,z~Bone': the rest point goes with that bone into the shot's pose (C1j); without it, no
+        bone."""
+        shots = _frames.parse_closeups("bib side@0.1,1.08,0.03~Chest/0.3/55/5; collar@0,1.31,0/0.26/0")
+        self.assertEqual((shots[0]["target"], shots[0]["bone"]), ([0.1, 1.08, 0.03], "Chest"))
+        self.assertNotIn("bone", shots[1])
+        with self.assertRaises(ValueError):
+            _frames.parse_closeups("a@0,1~Chest/0.2/0")
 
     def test_compare_joints(self) -> None:
         godot = {"clips": {"Wave": {"times": [0.0, 0.5], "joints": [{"Head": [0, 1.6, 0]}, {"Head": [0, 1.6, 0.012]}]}}}

@@ -53,6 +53,7 @@ import alien_char_geom as G  # noqa: E402
 GAP = 0.008  # the cut above the ring, m
 NECK_BAND = 0.03  # the morph band above the cut, m
 NECK_BLEND = 0.05  # the weights' blend above the cut, m
+SEAM_REACH = 1.5  # clothes step 2: the seam's smoothing within this many ring radii of the neck's axis
 NORMAL_BAND = 0.02  # the head's own normals faded in above the cut, m
 SEAM_FADE = 0.05  # the body's colour fades to the cut's below the ring, m
 TEX = 1024  # the body's maps
@@ -270,6 +271,8 @@ def main():
         ap.add_argument(k, required=True)
     ap.add_argument("--shield", action="store_true")
     ap.add_argument("--clip-edits", default="", help="A1: the alien's clip edits (anim_sets/alien.toml)")
+    ap.add_argument("--no-seam-smooth", action="store_true", help="clothes step 2: the weld without the seam's "
+                    "smoothing (the builds before it)")
     ap.add_argument("--no-flare", action="store_true", help="M1: no neck flare (a Meshy body has its own trapezius)")
     ap.add_argument("--leg-fit", default="", help="T2: the .blend of the rig the clips were made on (S4b's body): "
                     "the clips' hip keys scaled to this body's leg length and the feet's lowest point matched per frame (alien_leg_fit.py)")
@@ -632,6 +635,28 @@ def main():
     log(f"seam {rep['seam']}")
     if rep["seam"]["open"] or rep["seam"]["non_manifold"] or rep["seam"]["wound"]:  # B4: a seam not closed fails
         raise RuntimeError(f"the seam is not closed: {rep['seam']}")
+    # clothes step 2: the sewn line softened (alien_char_geom.taubin over seam_weight's band round the bridge)
+    if not a.no_seam_smooth:
+        mid = (ring_z + cut) / 2
+        reach = (SEAM_REACH * rep["ring"]["median_r"]) ** 2  # the neck only, never the shoulders' tops
+        sv = [v for v in bm.verts if G.seam_weight(v.co.z, mid) > 0.0
+              and (v.co.x - ring_c[0]) ** 2 + (v.co.y - ring_c[1]) ** 2 < reach]
+        pos = {v.index: k for k, v in enumerate(sv)}
+        fixed = [e.other_vert(v) for v in sv for e in v.link_edges if e.other_vert(v).index not in pos]
+        extra = {u.index: len(sv) + k for k, u in enumerate(dict.fromkeys(fixed))}
+        allv = sv + list(dict.fromkeys(fixed))
+        nb = [[pos.get(e.other_vert(v).index, extra.get(e.other_vert(v).index)) for e in v.link_edges] for v in sv]
+        nb += [[] for _ in extra]
+        w = [G.seam_weight(v.co.z, mid) for v in sv] + [0.0] * len(extra)
+        new = G.taubin([list(v.co) for v in allv], nb, w)
+        moved = 0.0
+        for v, q in zip(sv, new):
+            moved = max(moved, (Vector(q) - v.co).length)
+            v.co = Vector(q)
+        bm.normal_update()
+        rep["seam_smooth"] = {"vertices": len(sv), "max_move_m": round(moved, 5), "mid_z": round(mid, 4),
+                              "band_m": list(G.SEAM_SMOOTH), "iters": G.SEAM_ITERS}
+        log(f"seam smooth {rep['seam_smooth']}")
     # the normals: the head's own above the band, the geometric over the band, the bridge and the body
     cn = []
     for f in bm.faces:

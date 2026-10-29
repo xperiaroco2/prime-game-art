@@ -1384,6 +1384,9 @@ MODULES.append(ship_interior_vent)
 # lens room C, step 1: the charger's alcove and conduits, the east lounge
 import ship_interior_lens  # noqa: E402
 MODULES.append(ship_interior_lens)
+# the west lens room's workshop (decor)
+import ship_interior_workshop  # noqa: E402
+MODULES.append(ship_interior_workshop)
 # the gills (2026-10-28): the throat's clean walls, slits and button
 import ship_interior_gills  # noqa: E402
 MODULES.append(ship_interior_gills)

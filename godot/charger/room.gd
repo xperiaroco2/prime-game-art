@@ -14,8 +14,12 @@ extends "res://ship/ship.gd"
 
 const Charger = preload("res://charger/charger.gd")
 const Crystal = preload("res://crystal/crystal.gd")
+const Traces = preload("res://charger/traces.gd")
+const Zap = preload("res://charger/zap.gd")
 
-var _pairs: Array[Dictionary] = []   # {"charger": look, "crystal": Node3D or null, "crystal_look": Dictionary}
+## {"charger": look, "crystal": Node3D or null, "crystal_look": Dictionary, "traces": its bound trace surfaces,
+## "conduits": its alcove's conduit cores bound by zap.gd (the electricity, prime-game#1095)}
+var _pairs: Array[Dictionary] = []
 
 
 ## ship.gd dresses the ship without the chargers and the crystals (its pass would give the GLBs' plain emissive
@@ -32,8 +36,10 @@ func _dress(ship: Node3D) -> int:
 		ship.add_child(c)
 	for c: Node3D in mine:
 		if c.name.begins_with("crystal_charger"):
-			_pairs.append({"charger": Charger.apply(c), "node": c, "crystal": null, "crystal_look": {}})
-			print("CHARGER look on %s" % c.name)
+			var look: Dictionary = Charger.apply(c)
+			var traces: int = Traces.bind(look, ship)   # its alcove's back-panel traces (3 surfaces)
+			_pairs.append({"charger": look, "node": c, "crystal": null, "crystal_look": {}, "traces": traces})
+			print("CHARGER look on %s; %d trace surfaces" % [c.name, traces])
 	for c: Node3D in mine:
 		if not c.name.begins_with("energy_crystal") or _pairs.is_empty():
 			continue
@@ -50,6 +56,7 @@ func _dress(ship: Node3D) -> int:
 		best["crystal"] = c
 		best["crystal_look"] = Crystal.apply(c)
 		Charger.seat_crystal(best["charger"], c, best["crystal_look"])
+		best["conduits"] = Zap.bind(best["charger"], ship, c)   # the arcs, sparks and conduit pulses
 		print("CHARGER crystal %s seated on %s (%.2f m)" % [c.name, (best["node"] as Node3D).name, best_d])
 	return lights
 
@@ -61,11 +68,14 @@ func _ab(off: Dictionary) -> void:
 		Charger.set_state(look, str(off.get("charger", "idle")))
 		Charger.set_carrier(look, float(off.get("rise", 0.0)), deg_to_rad(float(off.get("carrier", 0.0))))
 		Charger.set_ring(look, deg_to_rad(float(off.get("ring", 0.0))))
+		var state := str(off.get("charger", "idle"))   # the traces: dim idle, the charge's front, full when charged
+		Traces.set_panel(look, 0.0 if state == "idle" else 1.0 if state == "charged" else float(off.get("charge", 1.0)))
 		var crystal: Node3D = p["crystal"]
 		if crystal == null:
 			continue
 		crystal.visible = bool(off.get("crystal", false))
 		Crystal.set_charge(p["crystal_look"], float(off.get("charge", 1.0)))
+		Zap.step(look, 0.0, float(off.get("charge", 1.0)) if state != "idle" else 0.0)   # a still: one tick's arcs
 		# set_charge hides the omni when spent; a hidden crystal never lights the room
 		var omni: OmniLight3D = p["crystal_look"]["omni"]
 		omni.visible = omni.visible and crystal.visible
