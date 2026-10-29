@@ -74,6 +74,11 @@ const LENS_BRONZE: Dictionary = {
 	"lens_edge": [Color(0.86, 0.64, 0.40), 0.85, 0.14, 0.6, 0.10],
 }
 var _bronzes: Dictionary = {}
+## the charger traces (prime-game#1095): the lens alcoves' lens_trace lines on charger/traces.gdshader, idle (its
+## defaults; charger/traces.gd's bind gives each charger its own copy to drive); glowing, no strip light
+const TRACE_MAT := "lens_trace"
+const TRACE_SHADER := "res://charger/traces.gdshader"
+var _trace: ShaderMaterial = null
 const LIGHT_CELL_M: float = 1.6
 const INSIDE_LAYER: int = 1   # render layer bits: the inside's pieces (default) and the outside's (inside-2)
 const OUTSIDE_LAYER: int = 2
@@ -389,7 +394,12 @@ func _dress(ship: Node3D) -> int:
 			var mat: Material = mi.mesh.surface_get_material(i)
 			if mat == null:
 				continue
-			if LENS_BRONZE.has(mat.resource_name):
+			if mat.resource_name == TRACE_MAT:
+				if _trace == null:
+					_trace = ShaderMaterial.new()
+					_trace.shader = load(TRACE_SHADER) as Shader
+				mi.set_surface_override_material(i, _trace)
+			elif LENS_BRONZE.has(mat.resource_name):
 				mi.set_surface_override_material(i, _bronze(mat.resource_name))
 			elif METALS.has(mat.resource_name):
 				mi.set_surface_override_material(i, _metal(mat.resource_name))

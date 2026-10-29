@@ -50,6 +50,12 @@ L.MATERIALS.update({
     "int_amber__lens_ring": {**L.MATERIALS["int_amber"]},
     # lens C step 2: the conduits' cyan core, brighter than int_cyan's e 0.05 (ship.toml [light.mats], l 0)
     "int_cyan__lens_core": {**L.MATERIALS["int_cyan"]},
+    # the charger traces (prime-game#1095, a_circuit.jpg): the alcove's back panel a matte dark navy (#0b1a2e, linear
+    # here) and its inlaid cyan traces; ship.gd swaps lens_trace for godot/charger/traces.gdshader by name (the fill
+    # the charger drives; no strip light), the GLB keeps a plain cyan glow for any other viewer
+    "lens_panel": {"base": (0.0033, 0.0103, 0.027, 1.0), "metallic": 0.0, "roughness": 0.82},
+    "lens_trace": {"base": (0.02, 0.12, 0.2, 1.0), "metallic": 0.0, "roughness": 0.4, "emission": (0.1, 0.7, 1.0),
+                   "strength": 2.0},
 })
 # the stations' shared bronze (godot/console/console.gd's `bronze` on console_metal.gdshader): ship.gd swaps these three
 # for that shader by name (LENS_BRONZE), the GLB keeps the same colours for any other viewer (linear here); the faces a
@@ -69,6 +75,12 @@ CONDUIT = {"u": 68.0, "d": 38.0, "r": 5.5, "bend": 8.0, "low": 92.0, "high": 170
            "collars_h": (24.0, 56.0), "collars_top": (0.3, 0.7), "flange_r": 8.0, "flange_h": 3.0, "core_r": 2.2,
            "bracket": (3.0, 5.0)}   # step 4: two collars per straight run (the upper run's at 0.3 and 0.7 of it), each
                                     # with a bracket (3 wide, 5 tall) back to the wall
+# the charger traces on the back panel (cm, the charger's frame: u across, h up; prime-game#1095 c6468773545): lines of
+# `w` inlaid in the panel's face (each kind a hair proud of it, `lift`, so a branch tucks under its trunk, a trunk
+# under the ring and the dots: no two coplanar), a ring behind the crystal (centre u 0, h `ring_h`, radius `ring_r` to
+# its line's middle, line `ring_w`), hollow dots (`dot`: outer and inner radius) at the dot traces' tips
+TRACE = {"w": 1.2, "ring_h": 115.0, "ring_r": 18.0, "ring_w": 1.5, "dot": (2.0, 1.0), "pair": 3.0,
+         "lift": {"branch": 0.06, "trunk": 0.08, "dot": 0.1, "ring": 0.12}}
 REACH = 70.0                                           # the charger's reach (renewer_e/_w depth_m 0.70)
 AXIS_D = 38.0                                          # the crystal's axis (the charger step's)
 SOFA = {"spine": (0.0, 18.0, 88.0), "back": (18.0, 32.0, 44.0, 80.0, 4.0), "seat": (18.0, 76.0, 30.0, 44.0),
@@ -197,16 +209,158 @@ def lens_alcove(args, layout):
     out += [
         P("lintel", G.slab(wf, G.rect(-A["jamb_out"] * CM, A["jamb_out"] * CM, A["top"] * CM, A["jamb_top"] * CM),
                            0.0, A["face"] * CM, 0.012), BRONZE),
+        # the charger traces: the panel matte navy, flat (the graphite plate on it went: the traces run edge to edge)
         P("back", G.slab(wf, G.rect(-A["open_back"] * CM, A["open_back"] * CM, 0.0, A["top"] * CM), 0.0,
-                         A["back"] * CM, 0.004), "lens_graphite"),
-        P("back_plate", G.slab(wf, G.rect(-0.40, 0.40, 0.10, 1.88), A["back"] * CM, (A["back"] + 0.5) * CM, 0.003),
-          "lens_graphite2"),
+                         A["back"] * CM, 0.004), "lens_panel"),
+        *trace_parts(),
         P("head_strip", G.slab(wf, G.rect(-0.26, 0.26, 1.94, 1.98), A["back"] * CM, (A["back"] + 0.6) * CM),
           "int_amber__lens"),
         P("lintel_strip", G.slab(wf, G.rect(-0.14, 0.14, 2.10, 2.14), (A["face"] - 0.1) * CM, (A["face"] + 0.5) * CM),
           "int_amber__lens"),
     ]
     return out
+
+
+# --- the charger traces (both lens rooms) -------------------------------------------------------------------------
+def _seg_len(pts) -> list[float]:
+    """The arc length (cm) at each point of a polyline."""
+    s = [0.0]
+    for (u0, h0), (u1, h1) in zip(pts, pts[1:]):
+        s.append(s[-1] + math.hypot(u1 - u0, h1 - h0))
+    return s
+
+
+def trace_layout() -> dict:
+    """The traces in the charger's frame (cm), from the concept a_circuit.jpg and the design's numbers: every line
+    runs orthogonally with 45-degree bends from an outer end inward to the ring. Trunks end on the ring's line (under
+    it); a branch ends on its trunk's centre line (under it). Each stroke's fill coordinate runs 0 at its outer end to
+    1 at the ring: a trunk's is its arc length over its length, a branch's reaches its trunk's value at the junction,
+    so a fill front reaches the junction on both at once. Returns {"strokes": [{"name", "kind" (trunk | branch), "pts"
+    [(u, h)], "fill" [per point 0..1], "scale" (cm of line per unit of fill)}], "dots": [{"name", "at" (u, h), "fill",
+    "scale"}], "ring": (u, h, r, w)}. The right half (u > 0) is mirrored to the left; the centre line is one."""
+    T, A, K = TRACE, ALCOVE, CONDUIT
+    r, hc = T["ring_r"], T["ring_h"]
+    edge = A["open_back"] + 0.3                     # the side edge, tucked 3 mm into the cheek
+    top = 194.5                                     # under the head strip (h 194..198, u +-26), 5 mm behind it
+    def on_ring(u):                                 # a vertical line's end on the ring's middle
+        return (u, hc + math.sqrt(r * r - u * u))
+    diag = r / math.sqrt(2.0)
+    d45 = [(22.0, top), (22.0, hc + 22.0), (diag, hc + diag)]   # the 45-degree lane: h = u + ring_h
+    hi, lo, p = K["high"], K["low"], T["pair"]
+    right = {
+        # the dot line: from a hollow dot near the centre line, down, 45 degrees in, down to the ring
+        "dot": ("trunk", [(12.0, 181.0 - sum(T["dot"]) / 2), (12.0, 174.0), (6.0, 168.0), on_ring(6.0)]),
+        "top": ("trunk", d45),
+        # the low conduit's line: in from the side edge at the conduit's height (behind the pedestal), up the gap
+        # between the outer prong and the cheek, 45 degrees in and down, into the ring's side
+        "low": ("trunk", [(edge, lo), (43.0, lo), (43.0, 136.0), (22.0, hc), (r, hc)]),
+        # branches into the top lane: one down from the lintel and the high conduit's pair from the side edge
+        "lintel": ("branch", [(30.0, A["top"] + 0.5), (30.0, 185.0), (22.0, 177.0)]),
+        "high0": ("branch", [(edge, hi + p), (36.0, hi + p), (22.0, hi + p - 14.0)]),
+        "high1": ("branch", [(edge, hi - p), (38.0, hi - p), (22.0, hi - p - 16.0)]),
+    }
+    trunk_s = _seg_len(d45)
+    def trunk_fill_at(h):                           # the top lane's fill at a junction on its vertical run
+        return (top - h) / trunk_s[-1]
+    strokes, dots = [], []
+    centre = [(0.0, top), on_ring(0.0)]
+    strokes.append({"name": "centre", "kind": "trunk", "pts": centre, "fill": [0.0, 1.0], "scale": _seg_len(centre)[-1]})
+    for s, side in ((1, "r"), (-1, "l")):
+        for name, (kind, pts) in right.items():
+            pts = [(s * u, h) for u, h in pts]
+            arc = _seg_len(pts)
+            end = 1.0 if kind == "trunk" else trunk_fill_at(pts[-1][1])
+            fill = [end * a / arc[-1] for a in arc]
+            strokes.append({"name": f"{name}_{side}", "kind": kind, "pts": pts, "fill": fill, "scale": arc[-1] / end})
+            if name == "dot":
+                dots.append({"name": f"dot_{side}", "at": (s * 12.0, 181.0), "fill": 0.0, "scale": arc[-1]})
+    return {"strokes": strokes, "dots": dots, "ring": (0.0, hc, r, T["ring_w"])}
+
+
+def _ribbon(pts, w):
+    """A flat line of width w along a polyline (u, h): mitred corners; the left and right edge points per point."""
+    out = []
+    n = len(pts)
+    for i in range(n):
+        dirs = []
+        if i > 0:
+            dirs.append((pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]))
+        if i < n - 1:
+            dirs.append((pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]))
+        dirs = [(a / math.hypot(a, b), b / math.hypot(a, b)) for a, b in dirs]
+        nu, nh = [(-b, a) for a, b in dirs][0] if len(dirs) == 1 else (0.0, 0.0)
+        if len(dirs) == 2:                          # the miter: the two normals' bisector, stretched
+            n0, n1 = (-dirs[0][1], dirs[0][0]), (-dirs[1][1], dirs[1][0])
+            bu, bh = n0[0] + n1[0], n0[1] + n1[1]
+            k = math.hypot(bu, bh)
+            cos_half = k / 2.0
+            nu, nh = bu / k / cos_half, bh / k / cos_half
+        out.append(((pts[i][0] + nu * w / 2, pts[i][1] + nh * w / 2), (pts[i][0] - nu * w / 2, pts[i][1] - nh * w / 2)))
+    return out
+
+
+def _panel_point(u, h, lift):
+    """A point on the back panel's face (cm; lift out of it) as the piece's local metres."""
+    return (-(ALCOVE["back"] + lift) * CM, u * CM, FLOOR + h * CM)
+
+
+def _facing(verts, face):
+    """The face's corners turned toward the room (-x) once built: the harness mirrors plan y into Blender's (x, -y,
+    h), which turns a face's winding over, so the plan-frame normal here must point away from the room (+x)."""
+    a, b, c = (verts[i] for i in face[:3])
+    nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1])
+    return face if nx > 0 else face[::-1]
+
+
+def _uv(fill, scale_cm):
+    """A trace's UV: x its fill coordinate, y (Godot's, after the glTF exporter's v -> 1 - v) the line's metres per
+    unit of fill (the head's size in the shader); the ring has y -1."""
+    return (fill, 1.0 - scale_cm * CM)
+
+
+def _annulus(cu, ch, r0, r1, n, lift, uv):
+    verts, faces, uvs = [], [], []
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        verts += [_panel_point(cu + r1 * math.cos(a), ch + r1 * math.sin(a), lift),
+                  _panel_point(cu + r0 * math.cos(a), ch + r0 * math.sin(a), lift)]
+    for i in range(n):
+        j = (i + 1) % n
+        f = _facing(verts, (2 * i, 2 * j, 2 * j + 1, 2 * i + 1))
+        faces.append(f)
+        uvs.append([uv] * 4)
+    return verts, faces, uvs
+
+
+def trace_parts() -> list[dict]:
+    """The traces as three flat parts on the back panel in lens_trace (no collider): the lines, the dots, the ring;
+    each corner's UV the fill coordinate (_uv) for godot/charger/traces.gdshader."""
+    lay, T = trace_layout(), TRACE
+    lv, lf, lu = [], [], []
+    for st in lay["strokes"]:
+        lift = T["lift"][st["kind"]]
+        base = len(lv)
+        for (left, right), f in zip(_ribbon(st["pts"], T["w"]), st["fill"]):
+            lv += [_panel_point(*left, lift), _panel_point(*right, lift)]
+            lu += [_uv(f, st["scale"])] * 2
+        for i in range(len(st["pts"]) - 1):
+            q = (base + 2 * i, base + 2 * i + 2, base + 2 * i + 3, base + 2 * i + 1)
+            lf.append(_facing(lv, q))
+    lines = P("trace_lines", (lv, lf), "lens_trace", solid=False)
+    lines["uv"] = [[lu[i] for i in f] for f in lf]
+    dv, df, du = [], [], []
+    for d in lay["dots"]:
+        v, f, u = _annulus(*d["at"], T["dot"][1], T["dot"][0], 20, T["lift"]["dot"], _uv(d["fill"], d["scale"]))
+        df += [tuple(i + len(dv) for i in face) for face in f]
+        dv += v
+        du += u
+    dots = P("trace_dots", (dv, df), "lens_trace", solid=False)
+    dots["uv"] = du
+    cu, ch, r, w = lay["ring"]
+    rv, rf, ru = _annulus(cu, ch, r - w / 2, r + w / 2, 72, T["lift"]["ring"], (1.0, 2.0))
+    ring = P("trace_ring", (rv, rf), "lens_trace", solid=False)
+    ring["uv"] = ru
+    return [lines, dots, ring]
 
 
 def conduit_paths(side: str, s: int) -> list[list[tuple[float, float, float]]]:
@@ -226,18 +380,36 @@ def conduit_paths(side: str, s: int) -> list[list[tuple[float, float, float]]]:
     return [low, high]
 
 
+CORE_SIDES = 10
+
+
+def core_uvs(path, sides: int) -> list:
+    """A conduit core's UVs per face of G.tube(path, r, sides) (its quads ring by ring, then the two caps): x the run
+    coordinate (0 where the conduit leaves the jamb, 1 at the deck or the ceiling), y (Godot's, after the glTF
+    exporter's v -> 1 - v) the run's length in metres, for godot/charger/conduit.gdshader's pulses (charger zap)."""
+    run = [0.0]
+    for a, b in zip(path, path[1:]):
+        run.append(run[-1] + math.dist(a, b))
+    total = run[-1]
+    f = [r / total for r in run]
+    y = 1.0 - total
+    out = [[(f[i], y), (f[i], y), (f[i + 1], y), (f[i + 1], y)] for i in range(len(path) - 1) for _ in range(sides)]
+    return out + [[(f[0], y)] * sides, [(f[-1], y)] * sides]
+
+
 def lens_conduits(args, layout):
     """The four conduits (one piece per room: the ceiling slants, so the two sides reach it at different heights):
     bronze tubes of 11 cm, a 3 cm cyan core on the room side, collars of 14 x 4 where they leave the jamb and on the
     straight runs (h 40, 210), flanges of 16 x 3 at the deck and the ceiling."""
     side, K = args.get("side", "e"), CONDUIT
-    tubes, cores, collars = [], [], []
+    tubes, cores, collars, core_uv = [], [], [], []
     for s in (-1, 1):
         x = -K["d"] * CM
         for path in conduit_paths(side, s):
             tubes.append(G.tube(path, K["r"] * CM, 16))
             off = (K["r"] - K["core_r"] + 0.4) * CM
-            cores.append(G.tube([(px - off, py, pz) for px, py, pz in path], K["core_r"] * CM, 10))
+            cores.append(G.tube([(px - off, py, pz) for px, py, pz in path], K["core_r"] * CM, CORE_SIDES))
+            core_uv += core_uvs(path, CORE_SIDES)
         y0, y1 = sorted((s * ALCOVE["jamb_out"] * CM, s * (ALCOVE["jamb_out"] + K["collar_l"]) * CM))
         for h in (K["low"], K["high"]):
             v, f = L.cylinder_y(K["collar_r"] * CM, 20, y0, y1)
@@ -261,8 +433,9 @@ def lens_conduits(args, layout):
                                      [(px, py, zc + hh * CM) for px, py in ccw(ring)]]))
         collars.append(S.shift(L.disc(K["flange_r"] * CM, 20, FLOOR + top - K["flange_h"] * CM, FLOOR + top + 0.02),
                                x, s * K["u"] * CM))
-    return [P("tubes", L.merge(*tubes), BRONZE2), P("cores", L.merge(*cores), "int_cyan__lens_core"),
-            P("collars", L.merge(*collars), EDGE)]
+    core = P("cores", L.merge(*cores), "int_cyan__lens_core")
+    core["uv"] = core_uv
+    return [P("tubes", L.merge(*tubes), BRONZE2), core, P("collars", L.merge(*collars), EDGE)]
 
 
 def cushion_block(d0, d1, h0, h1, e0=0.0, e1=0.0, r=3.5, crown=1.2, lean=0.0):

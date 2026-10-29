@@ -44,7 +44,7 @@ class ChargerDrawing(unittest.TestCase):
         # prime-game-design a53ce6f stations-final/charger-drawing/drawing.js (node: its N object)
         d = dims()
         f, b = d["frame"], d["base"]
-        self.assertEqual(f["top"], 139.7)
+        self.assertEqual(f["top"], 142.0)  # the drawing's N.outerTop 139.7, 2.3 taller since antennas-2
         # the pedestal: prime-game-design 7f335c2 lens-room/drawing/drawing.js (C.ped, C.axis, C.back, C.open)
         self.assertEqual((f["axis_d"], f["back"], f["reach"]), (38.0, 10.0, 70.0))
         self.assertEqual(f["open"], [46.0, 50.0, 46.0])
@@ -60,15 +60,73 @@ class ChargerDrawing(unittest.TestCase):
         rs = [r for prof in (i["column"], i["head"]) for r, _h in prof]
         self.assertGreaterEqual(min(rs), d["ring"]["r0"] - 2.5)
         self.assertAlmostEqual(max(rs), 22.8, delta=0.05)
-        self.assertAlmostEqual(max(h for prof in (i["column"], i["head"]) for _r, h in prof), 123.1, delta=0.05)
-        # the outer pair: in front, u = r cos(half_deg); its inner edge at the drawing's 23.9, its top 139.7
+        # antennas-2b: the slim wedge cap (the hook's top was 123.1, r2's blocky cap 121.2), its top sloping down
+        # toward the crystal, cap_edge its inner face; the tip electrode half sunk in that face (its centre on it)
+        self.assertAlmostEqual(max(h for prof in (i["column"], i["head"]) for _r, h in prof), 120.0, delta=0.05)
+        head = i["head"]
+        (ar, ah), (br, bh) = head[i["cap_edge"]], head[(i["cap_edge"] + 1) % len(head)]
+        self.assertEqual(br, ar)  # an upright face toward the crystal
+        self.assertLess(bh, ah)
+        self.assertEqual(ar, min(r for r, _h in head))
+        self.assertLess(max(h for r, h in head if r == ar), max(h for _r, h in head))  # the wedge slopes down inward
+        tip_e = i["electrodes"][0]
+        centre = tip_e[0] * math.cos(math.radians(i["half_deg"] / 3)) - 0.45 * tip_e[2]
+        self.assertAlmostEqual(centre, ar, delta=0.02)
+        self.assertTrue(bh < tip_e[1] - tip_e[2] and tip_e[1] + tip_e[2] < ah)
+        self.assertNotIn("emitter", i)
+        # the lip: a glowing slot parallel to the slanted edge splits it off the cap; the tip electrode on the lip
+        # (its distance from the edge's line under the lip's width), the slot's core inside the faces
+        lip_w, gap, ins = i["cap_lip"]
+        ln = math.hypot(br - ar, bh - ah)
+        n = (-(bh - ah) / ln, (br - ar) / ln)
+        dist = (tip_e[0] - ar) * n[0] + (tip_e[1] - ah) * n[1]
+        self.assertTrue(0.0 < dist < lip_w - gap / 2)
+        self.assertTrue(0.0 < ins < 0.45 and 0.0 < gap < 1.0)
+        self.assertNotIn("cap_light", i)
+        # the outer pair: in front, u = r cos(half_deg); its inner edge at the drawing's 23.9, its top 142
         o = d["outer"]
         cu = math.cos(math.radians(o["half_deg"]))
         self.assertAlmostEqual(o["root"][0][0] * cu, 23.9, delta=0.1)
-        self.assertAlmostEqual(max(h for _r, h in o["cap"]), f["top"], delta=0.01)
+        # antennas-1 (the plate stack): the middle line rises from the root's top, bends inward by its turn; the
+        # bend's outside reaches the top, its inside the lowest point over the inner pair
+        r0, foot, hb = o["spine"]
+        rad, turn = o["bend"]
+        hw = o["half"][0]
+        self.assertEqual(foot, max(h for _r, h in o["root"]))
+        self.assertEqual(turn, 90.0)  # the tip's face upright toward the crystal
+        self.assertAlmostEqual(hb + rad + hw, f["top"], delta=0.01)
         # the outer pair clears the turning ring and the inner pair
-        self.assertGreater(min(r for prof in (o["root"], o["column"]) for r, _h in prof), d["ring"]["r1"] + 0.5)
-        self.assertGreater(min(h for _r, h in o["cap"]), max(h for _r, h in i["head"]) + 3.0)
+        self.assertGreater(min(min(r for r, _h in o["root"]), r0 - hw), d["ring"]["r1"] + 0.5)
+        self.assertGreater(hb + rad - hw, max(h for _r, h in i["head"]) + 3.0)
+        # the glow brighter toward the tip: wider gaps, the cores nearer the faces (antennas-2: at the tip partly
+        # flush, filling the chamfers' V)
+        self.assertLess(o["gaps"][0], o["gaps"][1])
+        self.assertGreater(o["core_inset"][0], o["core_inset"][1])
+        self.assertLessEqual(o["core_inset"][1], 0.35)  # r2 b1: 0.1 filled the V with wide bands
+        # antennas-2: a smooth arc, not antennas-1's tight elbow (radius 9, 13 plates): the radius at least twice the
+        # plates' half width, and over it at least seven plates of the 16..18
+        self.assertGreaterEqual(rad, 2 * hw)
+        self.assertTrue(16 <= o["plates"] <= 18)
+        length = hb - foot + rad * math.radians(turn) + o["reach"]
+        pitch = length / (o["plates"] + sum(o["end_plates"]) - 2)
+        self.assertGreaterEqual(rad * math.radians(turn) / pitch, 7.0)
+        # antennas-2b: the picked tip t2: the last plates tapering, a lit slit across the end face inside it
+        self.assertEqual(o["tip"], "t2")
+        t2 = o["tip_t2"]
+        self.assertEqual(len(t2["taper"]), len(t2["depth"]))
+        self.assertEqual(sorted(t2["taper"], reverse=True), t2["taper"])
+        self.assertEqual(sorted(t2["depth"], reverse=True), t2["depth"])
+        w, depth, end = t2["slit"]
+        self.assertLess(w, 2 * hw * t2["taper"][-1] - 2.0)
+        self.assertTrue(0.0 < depth < 1.0)
+        self.assertGreater(end, 0.45)  # a closed slot: it stops short of the plate's chamfered sides
+        # the tip's emitter (r2, kept as a variant) recessed in its face: a frame, a sloped wall, the floor
+        frame, run, depth = o["emitter"]
+        self.assertGreater(depth, 0.0)
+        self.assertLess(frame + run, min(o["half"]) - 1.0)
+        for key in ("cyan", "amber", "cap", "column", "strip_w"):
+            self.assertNotIn(key, o)  # the flat strips and the swept claw are gone
+        self.assertNotIn("amber", i)
         # the risen crystal's loop under the prongs' tops
         self.assertLess(d["slot"]["tip"] + CRYSTAL + d["carrier"]["rise"], f["top"])
         # the dome on legs is gone (lens room C)

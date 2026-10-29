@@ -15,9 +15,13 @@ on the floor at the wall's face under the crystal's axis (the spot's `at`).
   a broad chamfer (UV0 u 0.45) and a small bright bevel on its folds (UV0 u 1), which the metal brightens. The button
   (bezel and lens) on the front plate at h 75.9; cyan strips up the chamfers, an amber pair on the front, amber along
   the sides under the slab, in graphite bezels.
-- The deck: the collar of the slot, the cyan slot ring, the fixed outer prongs on the u axis (the hero: an (r, h)
-  claw profile swept round the axis: a root block, a column that bows out, a chunky cap hooking in, graphite joint
-  plates; a cyan and an amber strip up the front face, amber up the inner face).
+- The deck: the collar of the slot, the cyan slot ring, the fixed outer prongs on the u axis (the hero; antennas-1,
+  the engineer's pick of 2026-10-28, concept b_fins): a root block swept round the axis, on it a stack of thick
+  bronze plates with chamfered edges along a middle line that rises, then bends inward over the crystal in a smooth
+  arc (antennas-2); the thin gaps between the plates are parallel-sided slots that glow cyan (cores in charger_cyan,
+  wider and nearer the faces toward the tip), the tip plate's face toward the crystal a recessed, chamfered cyan
+  emitter. The inner prongs on the ring the same family: a foot, plates with glowing gaps, a small plate cap split
+  by a glowing slot along its slanted inner edge (the lip), the tip electrode on the lip's inner face. No flat strips on the prongs.
 - The leaves (own objects, pivot on their axes, children of the body): `carrier` (the cup under the crystal with
   the pit for its point; rises 6 cm and spins; the empty `crystal_anchor` on it where the crystal's tip sits),
   `track_ring` (spins, carries the inner prong pair with their electrodes), `button` (presses 1 cm in toward -d, into the charger).
@@ -42,6 +46,8 @@ from mathutils import Matrix, Vector
 from mathutils.bvhtree import BVHTree
 
 DIMS = tomllib.loads((Path(__file__).with_name("charger_dims.toml")).read_text(encoding="utf-8"))
+if "--tip" in sys.argv:  # antennas-2b: build a tip variant instead of the dims' (outer.tip)
+    DIMS["outer"]["tip"] = sys.argv[sys.argv.index("--tip") + 1]
 CM = 0.01
 FR, BA = DIMS["frame"], DIMS["base"]
 AX = FR["axis_d"]
@@ -479,67 +485,278 @@ def end_face(a_mid: float, half: float) -> tuple:
 SIDES = (-90.0, 90.0)           # the prongs on the u axis
 
 
-def outer_pieces() -> list:
+def xprism(bm, prof: list, a_mid: float, depth: float) -> list:
+    """A closed (r, h) outline in the prong's radial plane (a_mid on the u axis) extruded straight across, +-depth cm
+    along d: flat front and back faces (antennas-1)."""
+    sx = 1.0 if a_mid > 0 else -1.0
+    return loft(bm, [P(sx * r, AX - depth, h) for r, h in prof], [P(sx * r, AX + depth, h) for r, h in prof])
+
+
+def lerp(a: float, b: float, t: float) -> float:
+    return a + (b - a) * t
+
+
+def spine(s: float) -> tuple:
+    """The outer stack's middle line at s cm from its foot: its point (r, h), its tangent and its normal (toward the
+    outside of the bend), all in the radial plane: straight up from the root, then a bend inward over the crystal."""
     o = DIMS["outer"]
-    return [(o["root"], o["root_deg"], 1), (o["column"], o["half_deg"], 3), (o["cap"], o["cap_deg"], 3)]
+    r0, hf, hb = o["spine"]
+    rad, turn = o["bend"]
+    if s <= hb - hf:
+        return (r0, hf + s), (0.0, 1.0), (1.0, 0.0)
+    phi = min((s - (hb - hf)) / rad, math.radians(turn))
+    run = s - (hb - hf) - phi * rad  # past the bend: straight on toward the crystal (o["reach"])
+    c, sn = math.cos(phi), math.sin(phi)
+    return (r0 - rad + rad * c - sn * run, hb + rad * sn + c * run), (-sn, c), (c, sn)
 
 
-def build_outer_prongs(bm) -> None:
-    for a_mid in SIDES:
-        for prof, half, steps in outer_pieces():
-            sweep(bm, [tuple(p) for p in prof], a_mid, half, steps)
+def spine_length() -> float:
+    o = DIMS["outer"]
+    return o["spine"][2] - o["spine"][1] + o["bend"][0] * math.radians(o["bend"][1]) + o["reach"]
 
 
-def build_prong_joints(bm) -> None:
-    """Graphite plates in the outer prongs' joints (the seams read dark, never see-through)."""
+def stack(length: float, n: int, gaps: list, ends: list) -> tuple:
+    """n plates along a line of the given length, each over its gap (gap k under plate k, growing linearly from
+    gaps[0] to gaps[1]); the first and the last plate ends[0], ends[1] times the others' thickness. Returns the
+    plates [(s0, s1)] and the gaps [(s0, s1, t)] (t 0 at the first gap, 1 at the last)."""
+    g = [lerp(gaps[0], gaps[1], k / (n - 1)) for k in range(n)]
+    w = [1.0] * n
+    w[0], w[-1] = ends
+    t = (length - sum(g)) / sum(w)
+    plates, holes, s = [], [], 0.0
+    for k in range(n):
+        holes.append((s, s + g[k], k / (n - 1)))
+        s += g[k]
+        plates.append((s, s + w[k] * t))
+        s += w[k] * t
+    return plates, holes
+
+
+def outer_stack() -> tuple:
+    o = DIMS["outer"]
+    return stack(spine_length(), o["plates"], o["gaps"], o["end_plates"])
+
+
+def cut(s: float, off: float, hw: float) -> list:
+    """The two ends of a cut across the outer stack: the line through the middle line's point at s, moved off cm
+    along its tangent, square to it, hw either side (inside first)."""
+    (pr, ph), (tr, th), (nr, nh) = spine(s)
+    cr, ch = pr + tr * off, ph + th * off
+    return [(cr - nr * hw, ch - nh * hw), (cr + nr * hw, ch + nh * hw)]
+
+
+def outer_gaps() -> list:
+    """antennas-2: each gap a slot with parallel sides, square to the middle line at its middle: [(s, width, t)], so
+    a gap is as wide on the bend's outside as on its inside (the plates take the turn as gentle wedges)."""
+    return [((s0 + s1) / 2, s1 - s0, t) for s0, s1, t in outer_stack()[1]]
+
+
+def plate_sizes() -> list:
+    """Each outer plate's (half width, half depth): the dims' half; tip t2 tapers the last plates (tip_t2)."""
+    o = DIMS["outer"]
+    n = o["plates"]
+    out = [tuple(o["half"])] * n
+    if o.get("tip") == "t2":
+        t = o["tip_t2"]
+        for j, (fw, fd) in enumerate(zip(t["taper"], t["depth"])):
+            out[n - len(t["taper"]) + j] = (o["half"][0] * fw, o["half"][1] * fd)
+    return out
+
+
+def outer_plate_outlines() -> list:
+    """The plates between the slots (the tip plate to the stack's end), as band's order: the lower cut's inside and
+    outside, the upper cut's outside and inside (side 2 the plate's upper face, the tip's end face)."""
+    gaps = outer_gaps()
+    sizes = plate_sizes()
+    out = []
+    for k, (s, g, _t) in enumerate(gaps):
+        hw = sizes[k][0]
+        lo = cut(s, g / 2, hw)
+        hi = cut(gaps[k + 1][0], -gaps[k + 1][1] / 2, hw) if k + 1 < len(gaps) else cut(spine_length(), 0.0, hw)
+        out.append([lo[0], lo[1], hi[1], hi[0]])
+    return out
+
+
+def steps(bm, face, seq: list, scale: float = 1.0) -> None:
+    """antennas-2b t1: insets in turn [(thickness, depth cm)] (depth > 0 out of the face), the last face cyan,
+    scaled about its centre (the insets on a sloped step come out smaller than their thickness)."""
+    for th, dz in seq:
+        bmesh.ops.inset_individual(bm, faces=[face], thickness=th * CM, depth=dz * CM)
+    c = face.calc_center_median()
+    for v in face.verts:
+        v.co = c + (v.co - c) * scale
+    face.material_index = 4
+
+
+def slot(bm, face, a_mid: float, width: float, depth: float, end: float) -> None:
+    """antennas-2b t2: a closed lit slot across the tip's end face toward the crystal: inset end cm from every edge
+    (the chamfer's width and a margin, so it stops short of the plate's sides: 2b's notch ran out through them and
+    read as a "C" bite), narrowed to width cm across the middle line, sunk depth cm; its floor cyan."""
+    bmesh.ops.inset_individual(bm, faces=[face], thickness=end * CM, depth=0.0)
+    _p, _t, (nr, nh) = spine(spine_length())
+    nw = Vector((nr if a_mid > 0 else -nr, 0.0, nh)).normalized()
+    c = face.calc_center_median()
+    half = max(abs((v.co - c).dot(nw)) for v in face.verts)
+    for v in face.verts:
+        x = (v.co - c).dot(nw)
+        v.co -= nw * x * (1.0 - (width / 2) * CM / half)
+    bmesh.ops.inset_individual(bm, faces=[face], thickness=0.0, depth=-depth * CM)
+    face.material_index = 4
+
+
+def ellipse(a_mid: float, a: float, b: float, off: float, n: int = 32) -> list:
+    """An oval on the outer tip's end face: a across (the middle line's normal), b along d, off cm out of it."""
+    (pr, ph), (tr, th), (nr, nh) = spine(spine_length())
+    sx = 1.0 if a_mid > 0 else -1.0
+    pts = []
+    for j in range(n):
+        c, s = math.cos(2 * math.pi * j / n), math.sin(2 * math.pi * j / n)
+        pts.append(P(sx * (pr + nr * a * c + tr * off), AX + b * s, ph + nh * a * c + th * off))
+    return pts
+
+
+def lens_disc(bm, a_mid: float, a: float, b: float, proud: float) -> None:
+    loft(bm, ellipse(a_mid, a, b, -0.3), ellipse(a_mid, a, b, proud))
+
+
+def pocket(bm, face, frame: float, run: float, depth: float) -> None:
+    """antennas-2: a recessed, chamfered light in a face: a flat bronze frame (frame cm wide), a sloped wall (run cm
+    across, depth cm down), its floor the cyan light (slot 4)."""
+    bmesh.ops.inset_individual(bm, faces=[face], thickness=frame * CM, depth=0.0)
+    bmesh.ops.inset_individual(bm, faces=[face], thickness=run * CM, depth=-depth * CM)
+    face.material_index = 4
+
+
+def build_outer_roots(bm) -> None:
     o = DIMS["outer"]
     for a_mid in SIDES:
-        for prof in ([(26.4, 103.7), (39.8, 103.7), (39.8, 104.9), (26.4, 104.9)],
-                     [(25.0, 128.1), (38.8, 128.1), (38.8, 129.3), (25.0, 129.3)]):
-            sweep(bm, prof, a_mid, o["half_deg"] - 1.0, 3)
+        sweep(bm, [tuple(p) for p in o["root"]], a_mid, o["root_deg"], 1)
 
 
-def build_outer_lights(bm) -> None:
-    """The outer prongs' strips: cyan up the front face and round onto the cap's, amber beside it, amber up the
-    inner face toward the crystal; thick (b4's 1.3 cm read thin)."""
+def build_outer_plates(bm) -> None:
+    """The plates; the tip plate's end face toward the crystal a recessed, chamfered cyan emitter (antennas-2: the
+    flat lit square standing out of it read as a window)."""
     o = DIMS["outer"]
-    wc, wa = o["strip_w"]
+    outlines = outer_plate_outlines()
     for a_mid in SIDES:
-        a, n = end_face(a_mid, o["half_deg"])
-        cy = o["cyan"]
-        for (r0, h0), (r1, h1) in zip(cy, cy[1:]):
-            segment_light(bm, polar(a, r0, h0), polar(a, r1, h1), n, wc, 4)
-        (r0, h0), (r1, h1) = o["amber"]
-        segment_light(bm, polar(a, r0, h0), polar(a, r1, h1), n, wa, 3)
-        ac, nc = end_face(a_mid, o["cap_deg"])
-        (r0, h0), (r1, h1) = o["cyan_cap"]
-        segment_light(bm, polar(ac, r0, h0), polar(ac, r1, h1), nc, wc, 4)
-        r_in = o["column"][-1][0] * math.cos(math.radians(o["half_deg"] / 3))  # the middle chord of three
-        inward = -(polar(a_mid, 1.0, 0.0) - polar(a_mid, 0.0, 0.0)).normalized()
-        h0, h1 = o["amber_inner"]
-        segment_light(bm, polar(a_mid, r_in, h0), polar(a_mid, r_in, h1), inward, wa, 3)
+        for k, prof in enumerate(outlines):
+            faces = xprism(bm, prof, a_mid, plate_sizes()[k][1])
+            if k == len(outlines) - 1 and o.get("tip", "r2") in ("r2", "t1", "t2"):
+                bmesh.ops.recalc_face_normals(bm, faces=faces)
+                if o.get("tip") == "t2":
+                    slot(bm, faces[2], a_mid, *o["tip_t2"]["slit"])
+                elif o.get("tip", "r2") == "r2":
+                    pocket(bm, faces[2], *o["emitter"])
+                else:
+                    steps(bm, faces[2], o["tip_t1"], o["tip_t1_scale"])
+        if o.get("tip") == "t3":  # the lens's bronze bezel between the lit ring and the lens
+            a, b, gap, _w = o["tip_t3"]
+            lens_disc(bm, a_mid, a + gap, b + gap, 0.2)
+
+
+def build_outer_cores(bm) -> None:
+    """The cyan cores in the outer stack's slots: 0.3 cm into the plates either side, inset from their faces by
+    core_inset (deep at the foot, nearly flush at the tip, filling the chamfers' V: the glow brighter toward the tip)."""
+    o = DIMS["outer"]
+    hw, dp = o["half"]
+    sizes = plate_sizes()
+    for a_mid in SIDES:
+        for k, (s, g, t) in enumerate(outer_gaps()):
+            ins = lerp(o["core_inset"][0], o["core_inset"][1], t)
+            hw, dp = min(sizes[max(k - 1, 0)], sizes[k])  # under a tapered plate the smaller
+            lo, hi = cut(s, -g / 2 - 0.3, hw - ins), cut(s, g / 2 + 0.3, hw - ins)
+            xprism(bm, [lo[0], lo[1], hi[1], hi[0]], a_mid, dp - ins)
+        if o.get("tip") == "t3":  # the lit ring under the bezel and the lens on it
+            a, b, gap, rw = o["tip_t3"]
+            lens_disc(bm, a_mid, a + gap + rw, b + gap + rw, 0.1)
+            lens_disc(bm, a_mid, a, b, 0.3)
+
+
+def inner_stack() -> tuple:
+    """The inner column's plates [(h0, h1)] (the foot first) and gaps [(h0, h1, t)] (the head's own gap last)."""
+    i = DIMS["inner"]
+    h0, h1 = i["column"][0][1], i["column"][2][1]
+    plates, holes = stack(h1 - h0 - i["foot"], i["plates"], i["gaps"], [1.0, 1.0])
+    base = h0 + i["foot"]
+    plates = [(h0, base)] + [(base + a, base + b) for a, b in plates]
+    holes = [(base + a, base + b, t) for a, b, t in holes] + [(h1, i["head"][0][1], 1.0)]
+    return plates, holes
+
+
+def clip(poly: list, a: tuple, n: tuple, lo: float) -> list:
+    """The convex (r, h) polygon's part where dot(p - a, n) >= lo (Sutherland-Hodgman, one half-plane)."""
+    def dist(p):
+        return (p[0] - a[0]) * n[0] + (p[1] - a[1]) * n[1]
+    out = []
+    for k, p in enumerate(poly):
+        q = poly[(k + 1) % len(poly)]
+        dp, dq = dist(p) - lo, dist(q) - lo
+        if dp >= 0.0:
+            out.append(p)
+        if (dp >= 0.0) != (dq >= 0.0):
+            t = dp / (dp - dq)
+            out.append((p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t))
+    return out
+
+
+def edge_frame(poly: list, k: int) -> tuple:
+    """The polygon's side k (poly[k] to poly[k + 1]; counter-clockwise in (r, h)): its start and inward normal."""
+    (ar, ah), (br, bh) = poly[k], poly[(k + 1) % len(poly)]
+    ln = math.hypot(br - ar, bh - ah)
+    return (ar, ah), (-(bh - ah) / ln, (br - ar) / ln)
+
+
+def cap_pieces() -> tuple:
+    """antennas-2: the cap split by a glowing slot parallel to its slanted inner edge (cap_edge): the lip plate along
+    the edge (the tip electrode on its inner face), the cap's main plate, and the slot's cyan core (inset core_inset
+    from every face). Returns (lip, main, core) outlines."""
+    i = DIMS["inner"]
+    head = [tuple(p) for p in i["head"]]
+    lip_w, gap, ins = i["cap_lip"]
+    a, n = edge_frame(head, i["cap_edge"])
+    main = clip(head, a, n, lip_w + gap / 2)
+    lip = clip(head, a, (-n[0], -n[1]), -(lip_w - gap / 2))
+    core = head
+    for k in range(len(head)):
+        ak, nk = edge_frame(head, k)
+        core = clip(core, ak, nk, ins)
+    core = clip(clip(core, a, n, lip_w - gap / 2 - 0.3), a, (-n[0], -n[1]), -(lip_w + gap / 2 + 0.3))
+    return lip, main, core
 
 
 def inner_pieces() -> list:
+    """The inner prong's outlines: its column's plates, the cap's lip and main plate (the colliders take their hull)."""
     i = DIMS["inner"]
-    return [i["column"], i["head"]]
+    r0, r1 = i["column"][0][0], i["column"][1][0]
+    lip, main, _core = cap_pieces()
+    return [[(r0, a), (r1, a), (r1, b), (r0, b)] for a, b in inner_stack()[0]] + [lip, main]
 
 
 def build_inner_prongs(bm) -> None:
+    """The column's plates and the cap (antennas-2: the concept's small plate cap instead of the big hook): its lip
+    along the slanted inner edge and its main plate, the glowing slot between them (build_inner_cores)."""
     i = DIMS["inner"]
     for a_mid in SIDES:
         for prof in inner_pieces():
-            sweep(bm, [tuple(p) for p in prof], a_mid, i["half_deg"], 3)
-        top = i["column"][-1][1]  # the graphite plate in the joint under the head
-        sweep(bm, [(17.4, top), (22.4, top), (22.4, top + 1.0), (17.4, top + 1.0)], a_mid, i["half_deg"] - 1.0, 3)
+            xprism(bm, prof, a_mid, i["depth"])
+        # antennas-2b: the tip electrode half sunk in the lip's inner face, a bronze socket collar round it
+        r, h, er = i["electrodes"][0]
+        c = polar(a_mid, r * math.cos(math.radians(i["half_deg"] / 3)) - er * 0.45, h)
+        axis = Vector((-c.x, 0.0, 0.0)).normalized()
+        sw, sh = i["socket"]
+        disc(bm, [(er + 0.1, -0.3), (er + 0.1 + sw, -0.3), (er + 0.1 + sw, sh), (er + 0.1, sh)], c, axis, 20,
+             closed=True)
 
 
-def build_inner_lights(bm) -> None:
+def build_inner_cores(bm) -> None:
     i = DIMS["inner"]
+    r0, r1 = i["column"][0][0], i["column"][1][0]
     for a_mid in SIDES:
-        a, n = end_face(a_mid, i["half_deg"])
-        (r0, h0), (r1, h1) = i["amber"]
-        segment_light(bm, polar(a, r0, h0), polar(a, r1, h1), n, i["amber_w"], 3)
+        for h0, h1, t in inner_stack()[1]:
+            ins = lerp(i["core_inset"][0], i["core_inset"][1], t)
+            xprism(bm, [(r0 + ins, h0 - 0.3), (r1 - ins, h0 - 0.3), (r1 - ins, h1 + 0.3), (r0 + ins, h1 + 0.3)],
+                   a_mid, i["depth"] - ins)
+        xprism(bm, cap_pieces()[2], a_mid, i["depth"] - i["cap_lip"][2])  # the cap's slot along its slanted edge
 
 
 def build_electrodes(bm) -> None:
@@ -771,11 +988,16 @@ def colliders(body, ring) -> list:
     pts = [P(u, d, h) for u, d in LIPPED for h in (0.0, BA["deck"])]
     out.append(hull_object("crystal_charger_col0-convcolonly", pts, body))
     for i, a_mid in enumerate(SIDES):
-        pts = [polar(a_mid + sx * half, r, h) for prof, half, _ in outer_pieces() for r, h in prof for sx in (-1, 1)]
+        o = DIMS["outer"]
+        sg = 1.0 if a_mid > 0 else -1.0
+        pts = [polar(a_mid + sx * o["root_deg"], r, h) for r, h in o["root"] for sx in (-1, 1)]
+        pts += [P(sg * r, AX + sx * o["half"][1], h) for prof in outer_plate_outlines() for r, h in prof
+                for sx in (-1, 1)]
         out.append(hull_object(f"crystal_charger_col{1 + i}-convcolonly", pts, body))
-    th = DIMS["inner"]["half_deg"]
+    dp = DIMS["inner"]["depth"]
     for i, a_mid in enumerate(SIDES):
-        pts = [polar(a_mid + sx * th, r, h) for prof in inner_pieces() for r, h in prof for sx in (-1, 1)]
+        sg = 1.0 if a_mid > 0 else -1.0
+        pts = [P(sg * r, AX + sx * dp, h) for prof in inner_pieces() for r, h in prof for sx in (-1, 1)]
         out.append(hull_object(f"track_ring_col{i}-convcolonly", pts, ring))
     return out
 
@@ -794,9 +1016,9 @@ def build(crystal: str | None) -> dict:
         part("pedestal_lights", build_pedestal_lights, "charger_graphite", bevel=False, drawn=False),
         part("collar", build_collar, "charger_bronze", small=True),
         part("slot_glow", build_slot_glow, "charger_cyan", bevel=False, drawn=False),
-        part("outer_prongs", build_outer_prongs, "charger_bronze"),
-        part("prong_joints", build_prong_joints, "charger_graphite", small=True, drawn=False),
-        part("outer_lights", build_outer_lights, "charger_graphite", bevel=False, drawn=False),
+        part("outer_roots", build_outer_roots, "charger_bronze"),
+        part("outer_plates", build_outer_plates, "charger_bronze", small=True),
+        part("outer_cores", build_outer_cores, "charger_cyan", bevel=False, drawn=False),
     ]
     body = join("crystal_charger", body_parts, Vector((0.0, 0.0, 0.0)))
     c = DIMS["carrier"]
@@ -806,7 +1028,7 @@ def build(crystal: str | None) -> dict:
     ring = join("track_ring", [part("ring", build_ring, "charger_bronze", small=True),
                                part("ring_light", build_ring_light, "charger_cyan", bevel=False, drawn=False),
                                part("inner_prongs", build_inner_prongs, "charger_bronze", small=True),
-                               part("inner_lights", build_inner_lights, "charger_graphite", bevel=False, drawn=False),
+                               part("inner_cores", build_inner_cores, "charger_cyan", bevel=False, drawn=False),
                                part("electrodes", build_electrodes, "charger_cyan", bevel=False, drawn=False)],
                 Vector(P(0.0, AX, BA["well"])))
     b = DIMS["button"]
@@ -989,6 +1211,10 @@ VIEWS = {
     "cu_prong_cap": (-35.0, 22.0, (-28.0, AX + 5.0, 134.0), 26.0, "idle"),
     "cu_prong_strips": (-18.0, 8.0, (-33.0, AX + 8.0, 116.0), 44.0, "idle"),
     "cu_inner_head": (25.0, 18.0, (-18.0, AX + 4.0, 117.0), 26.0, "charging"),
+    # antennas-2: the arc square on (its gaps even?), the recessed tip emitter from the crystal's side
+    "cu_bend": (0.0, 6.0, (-28.0, AX, 131.0), 30.0, "idle"),
+    "cu_tip": (-55.0, 8.0, (18.6, AX, 136.0), 20.0, "charging"),
+    "cu_socket": (70.0, 35.0, (-15.0, AX, 117.5), 14.0, "idle"),  # antennas-2b: the electrode in its socket
     "cu_deck_edge": (-40.0, 12.0, (-30.0, 60.0, 92.0), 40.0, "idle"),
     "cu_plinth": (-40.0, 10.0, (-30.0, 60.0, 8.0), 40.0, "idle"),
     "cu_side": (-80.0, 8.0, (-44.0, 28.0, 60.0), 90.0, "idle"),
@@ -1107,10 +1333,13 @@ def place_camera(co, yaw: float, elev: float, target: Vector, frame: float, orth
 
 def shoot(o: dict, folder: Path, res: int) -> list:
     sc = bpy.context.scene
+    only = argv().get("views")  # antennas-2b: a variant's few views, no orthographic ones
     co = sc.camera
     folder.mkdir(parents=True, exist_ok=True)
     files = []
     for name, (yaw, elev, (u, d, h), frame, state) in VIEWS.items():
+        if only and name not in only.split(","):
+            continue
         set_state(o, state)
         sc.render.resolution_x = res if not name.startswith("cu_") else int(res * 0.7)
         sc.render.resolution_y = sc.render.resolution_x
@@ -1119,7 +1348,7 @@ def shoot(o: dict, folder: Path, res: int) -> list:
         bpy.ops.render.render(write_still=True)
         files.append(name)
     set_state(o, "idle")
-    for name, (yaw, elev, (u, d, h), frame) in ORTHO.items():
+    for name, (yaw, elev, (u, d, h), frame) in (ORTHO.items() if not only else ()):
         sc.render.resolution_x = sc.render.resolution_y = int(frame * PX_PER_CM)
         place_camera(co, yaw, elev, P(u, d, h), frame, True)
         sc.render.filepath = str(folder / f"ortho_{name}.png")
