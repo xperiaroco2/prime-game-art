@@ -318,7 +318,7 @@ func _environment() -> void:
 		key.rotation_degrees = Vector3(float(light["key_dir_deg"][0]), float(light["key_dir_deg"][1]), 0)
 		root.add_child(key)
 		_night_lights.append(key)
-	for l: Array in light["lamps"]:  # [x, h, y, energy, range, r, g, b, (group), (shadow), (spot angle)]
+	for l: Array in light["lamps"]:  # [x, h, y, energy, range, r, g, b, (group), (shadow), (spot angle), (aim point [x, y, h])]
 		var omni: Light3D
 		if l.size() > 10 and float(l[10]) > 0.0:  # light layer: a spot pointing straight down (landing, edge pools)
 			var spot: SpotLight3D = SpotLight3D.new()
