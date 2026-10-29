@@ -88,12 +88,12 @@ def hands_feet(d: dict) -> dict:
                      "toe_shape": "one soft rounded front, no separate toes"}}
 
 
-def chest(d: dict) -> dict:
+def chest(d: dict, to_body) -> dict:
     """The chest from the side (the front edge's apex and the hollow under it) and the rounds' centres from the front
     (the luminance's two highlights across the trunk at the apex height)."""
     t = d["trunk"]
     zs, fy = t["z"], t["front_y"]
-    arm_z = G.z_of(d["landmarks"]["armpit"], d["landmarks"], d["scale"])
+    arm_z = to_body(G.z_of(d["landmarks"]["armpit"], d["landmarks"], d["scale"]))  # the table's z is the body's
     band = [i for i, z in enumerate(zs) if arm_z - 150 <= z <= arm_z + 80 and fy[i] is not None]
     apex = min(band, key=lambda i: fy[i])
     wide = [i for i, z in enumerate(zs) if zs[apex] - 150 <= z < zs[apex] and fy[i] is not None]
@@ -117,7 +117,7 @@ def chest(d: dict) -> dict:
     left = max(range(q, c - 15), key=lambda i: sm[i])
     k = sc["mm_px"]
     # the light comes from the image's left: the lit round's highlight is the clear one, and it sits toward the
-    # light by about a tenth of its offset (checked by eye on b_c3s: the rounds' centres about 69 mm out)
+    # light by about a tenth of its offset (checked by eye on b_c3s against the table's centre_x)
     return {"rounds": True, "apex_z": zs[apex], "apex_front_y": fy[apex], "under_z": zs[under],
             "under_front_y": fy[under], "top_z": zs[above], "projection": round(fy[under] - fy[apex], 1),
             "projection_from_top": round(fy[above] - fy[apex], 1),
@@ -156,16 +156,18 @@ def fingers(probe: dict, scale_: float) -> dict:
     return out
 
 
-def key_numbers(d: dict, hf: dict) -> dict:
+def key_numbers(d: dict, hf: dict, to_body) -> dict:
+    """The key numbers; the windows are in the tables' (the body's) z: the concept's landmark heights mapped first."""
     t, legs, arms, ax = d["trunk"], d["legs"], d["arms"], d["arm_axis"]
     lm, sc = d["landmarks"], d["scale"]
-    arm_z = G.z_of(lm["armpit"], lm, sc)
-    cr = d["crotch_concept"]
+    arm_c = G.z_of(lm["armpit"], lm, sc)
+    arm_z = to_body(arm_c)
+    cr = to_body(d["crotch_concept"])
 
     def at(table, key, zkey, lo, hi, f):
         vals = [(v, z) for v, z in zip(table[key], table[zkey]) if v is not None and lo <= z <= hi]
         return f(vals, key=lambda p: p[0]) if vals else (None, None)
-    shz = G.z_of(lm["shoulder"], lm, sc)
+    shz = to_body(G.z_of(lm["shoulder"], lm, sc))
     sh = at(t, "front_w", "z", shz - 6, shz + 6, max)
     ch = at(t, "front_w", "z", arm_z - 40, arm_z - 20, max)
     wa = at(t, "front_w", "z", cr + 100, arm_z - 60, min)
@@ -175,7 +177,8 @@ def key_numbers(d: dict, hf: dict) -> dict:
     ua = at(arms, "width", "s", ax["s_armpit"] + 30, ax["s_armpit"] + 60, max)
     fa = at(arms, "width", "s", ax["s_wrist"] - 160, ax["s_wrist"] - 60, max)
     ring_i = len(t["z"]) - 1
-    near = [i for i, z in enumerate(t["z"]) if sc["ring_z"] - 60 <= z <= sc["ring_z"] and t["depth"][i] is not None]
+    rz = round(sc["ring_z"], 1)   # the table's z are rounded to 0.1 mm, its last row the ring's
+    near = [i for i, z in enumerate(t["z"]) if rz - 60 <= z <= rz and t["depth"][i] is not None]
     neck_d = min(t["depth"][i] for i in near)
     return {"height_top": round(sc["top_z"], 1), "ring_z": round(sc["ring_z"], 1),
             "shoulder_w": sh[0], "shoulder_z": sh[1], "chest_w": ch[0], "chest_z": ch[1], "waist_w": wa[0],
@@ -183,7 +186,7 @@ def key_numbers(d: dict, hf: dict) -> dict:
             "upper_arm_w": ua[0], "forearm_w": fa[0], "hand_length": hf["hand"]["length"],
             "hand_width": hf["hand"]["width"], "foot_length": hf["foot"]["length"], "foot_width": hf["foot"]["width"],
             "neck_at_ring_w": t["front_w"][ring_i], "neck_at_ring_d": neck_d,
-            "armpit_z": round(arm_z, 1), "crotch_z_concept": cr}
+            "armpit_z": round(arm_z, 1), "armpit_z_concept": round(arm_c, 1), "crotch_z_concept": d["crotch_concept"]}
 
 
 def toml_value(v) -> str:
@@ -234,7 +237,8 @@ def main() -> None:
             for k, (a, b) in FINE.items()}
     d = G.measure(args.concept, ring, bl["crotch_z"], bl["mid_y"], fine)
     hf = hands_feet(d)
-    ch = chest(d) if args.chest else {"rounds": False}
+    to_body = G.zmap([(0.0, 0.0), (d["crotch_concept"], bl["crotch_z"]), (ring, ring)])[0]
+    ch = chest(d, to_body) if args.chest else {"rounds": False}
     b = probe["bones"]
     our_hand = (b["LeftMiddleDistal"]["tail"][0] - b["LeftHand"]["head"][0]) * 1000 * args.height_ratio
     hf["hand"]["our_length"] = round(our_hand, 1)
@@ -246,23 +250,33 @@ def main() -> None:
                                  "A's hand scaled to the concept's hand length")
     hf["hand"].pop("finger_length")
     hf["hand"].pop("finger_thickness")
-    keys = key_numbers(d, hf)
+    keys = key_numbers(d, hf, to_body)
     lm, sc = d["landmarks"], d["scale"]
     concept_z = {k: round(G.z_of(lm[k], lm, sc), 1) for k in
                  ("top", "ring", "shoulder_top", "shoulder", "armpit", "wrist", "hand_end", "crotch", "ankle")}
     lp = bl["ring"]
+    head_above = round((probe["bones"]["Head"]["head"][2] - lp["centre"][2]) * 1000, 1)
+    neck_below = round((lp["centre"][2] - probe["bones"]["Neck"]["head"][2]) * 1000, 1)
+    # the ring's tilt from the side: its back's height over its front's across its depth (+: the back higher)
+    tilt = math.degrees(math.atan2((lp["back_z"] - lp["front_z"]) * 1000, 2 * lp["y_half"] * 1000))
+    joints = dict(bl["joints"])
+    joints["neck"] = joints["neck"][:2] + [round(ring - neck_below, 1)]
+    joints["head"] = joints["head"][:2] + [round(ring + head_above, 1)]
     doc = {
         "body": {"name": args.name, "concept": args.concept.replace("\\", "/"), "height_ratio": args.height_ratio,
-                 "mm_per_px": round(sc["mm_px"], 4), "note": args.note},
+                 "mm_per_px": round(sc["mm_px"], 4), "side_mid_y": round(bl["mid_y"], 1),
+                 "side_hidden_z": d["side_hidden_z"] or "-", "side_back_hidden_z": d["side_back_hidden_z"] or "-",
+                 "note": args.note},
         "keys": keys,
         "landmarks_concept": concept_z,
-        "skeleton": {k: v for k, v in bl["joints"].items()} | {
-            "note": "body A's joints (S4b), z times height_ratio (B1's rule); the arms in A's T rest"},
+        "skeleton": joints | {
+            "note": "body A's joints (S4b), z times height_ratio (B1's rule), but Neck and Head at the standard "
+                    "ring's offsets (ring - neck_bone_below, ring + head_bone_above); the arms in A's T rest"},
         "height_map": {"concept_z": [0.0, d["crotch_concept"], ring], "body_z": [0.0, round(bl["crotch_z"], 1), ring]},
         "neck_ring": {"z": round(ring, 1), "vertices": lp["count"], "centre_y": round(lp["centre"][1] * 1000, 1),
                       "half_x": round(lp["x_half"] * 1000, 1), "half_y": round(lp["y_half"] * 1000, 1),
-                      "tilt_deg": 0.0, "head_bone_above": round((probe["bones"]["Head"]["head"][2] - lp["centre"][2]) * 1000, 1),
-                      "neck_bone_below": round((lp["centre"][2] - probe["bones"]["Neck"]["head"][2]) * 1000, 1),
+                      "tilt_deg": round(tilt, 1) + 0.0, "z_span": round((lp["z_max"] - lp["z_min"]) * 1000, 1),
+                      "head_bone_above": head_above, "neck_bone_below": neck_below,
                       "concept_w": keys["neck_at_ring_w"], "concept_d": keys["neck_at_ring_d"]},
         "trunk": d["trunk"],
         "legs": d["legs"] | {"axis_deg": d["leg_axis"]["angle_deg"]},
@@ -274,9 +288,13 @@ def main() -> None:
     }
     head = (f"# Body {args.name}'s dims table (art #196, step D2): read from its approved concept per pixel row by\n"
             "# body_dims_measure.py (body_dims_geom.py); regenerate, never hand-edit. Lengths in mm, the body file's\n"
-            "# frame (x lateral, z up from the sole, the front at -y); \"-\" where a view has no value (the trunk's\n"
-            "# widths under the crotch, where the legs' own table holds them). trunk.front_w above the armpits is the\n"
-            "# outline across the shoulder caps. The limbs' s runs along their own axes (arms from the shoulder line,\n"
+            "# frame (x lateral, z up from the sole, the front at -y); \"-\" where a view has no value: the trunk's\n"
+            "# widths, depth, front_y and back_y under the crotch (the legs' own table holds them), and front_y and\n"
+            "# depth (trunk and legs) over body.side_hidden_z, where the hand hangs in front of the body in the side\n"
+            "# view, and back_y and depth over body.side_back_hidden_z, where the hanging arm, not the body, forms\n"
+            "# the side's back edge (from under the armpits down to where the seat comes out behind the arm). Those\n"
+            "# edges are not measured (no interpolated values); each band is its first and last table height without\n"
+            "# them. trunk.front_w above the armpits is the outline across the shoulder caps. The limbs' s runs along their own axes (arms from the shoulder line,\n"
             "# legs from the crotch); their widths are across the axis. The neck ring is the standard ring\n"
             "# (docs/decisions/2026-10-29-neck-ring.md); its concept_w and concept_d are the concept's neck there.")
     tables = Path(__file__).with_name("body_dims")
