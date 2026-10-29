@@ -35,6 +35,7 @@ from mathutils import Vector
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import alien_body_refit_review as R  # noqa: E402
+import body_fit_geom as F  # noqa: E402
 
 FRAME_H = 2.0  # m, the four views' ortho height
 CELL = (320, 560)
@@ -42,6 +43,42 @@ CLOSE = (320, 320)
 VIEWS = (0, 45, 90, 180)
 YELLOW = np.array([1.0, 0.85, 0.1, 1.0], np.float32)
 GROUND = np.array([0.35, 0.35, 0.36, 1.0], np.float32)
+
+
+def seat_head(body, head) -> dict:
+    """D3f: the cut head set on the body's ring as the assembler does (alien_char_build: its neck's NECK_BAND above
+    the ring blended onto the ring's ellipse, body_fit_geom.ring_morph), each of its bottom loop's vertices snapped
+    onto the ring vertex at the nearest angle, and its normals there copied from the body's (the ADR's custom
+    normals). D3e's try paired nothing: the character's own bottom loop is 101.8 x 90.5 mm, 8 mm inside the ring."""
+    bw, hw = body.matrix_world, head.matrix_world
+    bz = [(bw @ v.co) for v in body.data.vertices]
+    top = max(p.z for p in bz)
+    ring = [i for i, p in enumerate(bz) if top - p.z < 0.001]
+    rp = [tuple(bz[i]) for i in ring]
+    me = head.data
+    hp = [tuple(hw @ v.co) for v in me.vertices]
+    mp = F.ring_morph(hp, rp, 0.03)
+    low = min(p[2] for p in hp)
+    cx, cy = sum(p[0] for p in rp) / len(rp), sum(p[1] for p in rp) / len(rp)
+    ang = {i: math.atan2(bz[i].y - cy, bz[i].x - cx) for i in ring}
+    hinv = hw.inverted()
+    pairs, worst = {}, 0.0
+    for k, (p, q) in enumerate(zip(hp, mp)):
+        if p[2] - low < 0.0005:  # the bottom loop: onto the ring's vertex at the nearest angle
+            a = math.atan2(q[1] - cy, q[0] - cx)
+            i = min(ring, key=lambda r: abs(math.remainder(ang[r] - a, 2 * math.pi)))
+            worst = max(worst, math.dist(q, tuple(bz[i])))
+            pairs[k] = i
+            q = tuple(bz[i])
+        me.vertices[k].co = hinv @ Vector(q)
+    me.update()
+    bn = {i: (bw.to_3x3() @ body.data.vertices[i].normal).normalized() for i in set(pairs.values())}
+    hn = {k: (hinv.to_3x3() @ bn[i]).normalized() for k, i in pairs.items()}
+    for f in me.polygons:
+        f.use_smooth = True
+    me.normals_split_custom_set([tuple(hn[lp.vertex_index]) if lp.vertex_index in hn
+                                 else tuple(me.vertices[lp.vertex_index].normal) for lp in me.loops])
+    return {"ring": len(ring), "pairs": len(pairs), "snap_max_mm": round(worst * 1000, 2)}
 
 
 def link(path: str, keep) -> list:
@@ -181,8 +218,11 @@ def main() -> int:
                 o.data.materials.append(mat)
             o.location.z += rings[j] - 1.39
             head.append(o)
+        bpy.context.view_layer.update()  # the moved heads' matrix_world
+        seam = [seat_head(groups[j][0], o) for o in head if o.name.startswith("Body")]
         heads.append((hf, j, head))
-        log["head"].append({"from": hf, "body": j, "ring_m": round(rings[j], 5), "objects": [o.name for o in head]})
+        log["head"].append({"from": hf, "body": j, "ring_m": round(rings[j], 5), "objects": [o.name for o in head],
+                            "seam": seam})
 
     def show(j, h=0):  # body j with head source h (or none)
         for i, g in enumerate(groups):
