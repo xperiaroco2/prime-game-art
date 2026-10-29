@@ -11,7 +11,7 @@ name = "A"
 concept = "D:/prime-art-raw/2026-10-29-alien-bodies-d1/a_c1/image-0.png"
 height_ratio = 1.0
 mm_per_px = 1.9386
-note = "concept a_c1, the engineer's pick 2026-10-29"
+note = "concept a_c1, the engineer's pick 2026-10-29. In the side view the forearm and hand hang in front of the belly from about z 640 to 1000 mm, so trunk.front_y and depth there are the arm's edge, not the belly's: D3 keeps body A's own belly front there (the front view's widths still hold)"
 
 [keys]
 height_top = 1886.3
