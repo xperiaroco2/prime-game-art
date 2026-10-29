@@ -439,6 +439,13 @@ int_dark__gill_btn = {l = 0.0}                                      # the gills'
 int_dark__gill_leaf = {l = 0.0}                                     # the slits' shutter leaves
 int_cyan__gill_ring = {c = [0.05, 0.8, 1.0], e = 0.5, l = 0.0}   # the button's light ring (step 3: bright, as the concept)
 int_cyan__gill_plinth = {c = [0.05, 0.8, 1.0], e = 0.4, l = 0.0}  # the plinth's line (step 5: 0.4, 2.4 cm, as thick and bright as the concept's; 0.12 read thin)
+int_cyan__gset_glow = {c = [1.0, 0.12, 0.04], e = 0.9, l = 0.0}    # the gill set (2026-10-29): a niche's middle (gill_set.gd sets red shut / cyan open)
+int_cyan__gset_scoop = {c = [1.0, 0.12, 0.04], e = 1.0, l = 0.0}   # the niche's mouth-side half, dimmer
+int_cyan__gset_edge = {c = [1.0, 0.12, 0.04], e = 0.85, l = 0.0}   # the niche's hall-side lip: the bright line
+int_cyan__gset_bar = {c = [1.0, 0.12, 0.04], e = 0.85, l = 0.0}    # the turn bars (red shut, cyan open, the runner white)
+int_cyan__gset_groove = {c = [0.05, 0.8, 1.0], e = 0.45, l = 0.0}  # the groove's thin glow round the set's mouth side
+int_cyan__cover_btn = {c = [0.05, 0.8, 1.0], e = 0.6, l = 0.0}     # the button's ring
+int_dark__cover_btn = {v = 1.0, l = 0.0}                           # the button's dark dome (no glow)
 int_amber_ring = {c = [1.0, 0.42, 0.06], e = 0.14, l = 0.8, rr = 0.3}  # the hall's floor ring: its own, shorter lights
 int_lamp = {c = [1.0, 0.6, 0.26], e = 0.08, l = 0.0}
 # the west workshop: acid green glows (strips under the tops, the drawers' pulls, the cradles' rims, the lamp's lens,

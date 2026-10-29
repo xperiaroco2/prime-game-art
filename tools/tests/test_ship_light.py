@@ -137,7 +137,7 @@ class ShipLightTest(unittest.TestCase):
         self.assertIn("var nav_blink: bool = true", gd)
         py = (ROOT / "tools" / "runner" / "commands" / "ship.py").read_text(encoding="utf-8")
         self.assertEqual(py.count('"nav_blink": False'), 6,
-                         "shots, the video, the vent's clip, the gills' clip, the gill cover's clip and the charger's "
+                         "shots, the video, the vent's clip, the gills' clip, the gill set's clips and the charger's "
                          "cycle show a static glow")
 
 
