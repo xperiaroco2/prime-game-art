@@ -72,10 +72,12 @@ def times(length: float, short: str, fps: int = FPS, open_cycle: bool = False, l
 
 def spec(character: str, animations: dict[str, float], compare: list[str], video: list[str],
          seams: dict[str, dict[str, float]] | None = None, fps: int = FPS,
-         loops: set[str] | None = None) -> dict[str, Any]:
+         loops: set[str] | None = None, yaw_deg: float = YAW_DEG) -> dict[str, Any]:
     """The spec frames.gd reads: every animation (name -> length in seconds), sorted by name; seams from export.json;
     fps the export's (whole frames of a 30 fps animation set, art #33); `loops` the animations Godot loops because
-    of their name (an animation set's _Loop clips), beside the pack's idles and locomotion."""
+    of their name (an animation set's _Loop clips), beside the pack's idles and locomotion. yaw_deg the clip sheets'
+    camera (0 the front, 90 the character's left side, -90 its right, 180 its back); the studio light turns with it
+    (light_turn_deg), so every view is lit as the three-quarter view is (art #196: a turnaround in Godot's look)."""
     clips = []
     for name in sorted(animations):
         short = label(name)
@@ -84,8 +86,8 @@ def spec(character: str, animations: dict[str, float], compare: list[str], video
         clips.append({"name": name, "label": short, **how,
                       "times": times(animations[name], short, fps, open_cycle=how["open_cycle"], loop=how["loop"]),
                       "keep": short in compare, "video": short in video})
-    return {"character": character, "cell": list(CELL), "yaw_deg": YAW_DEG, "pitch_deg": PITCH_DEG, "fps": fps,
-            "clips": clips}
+    return {"character": character, "cell": list(CELL), "yaw_deg": float(yaw_deg), "pitch_deg": PITCH_DEG,
+            "light_turn_deg": float(yaw_deg) - YAW_DEG, "fps": fps, "clips": clips}
 
 
 FACE_YAWS = (0.0, -YAW_DEG)  # the face close-up: front and three-quarter from the right, as the faces sheets
@@ -116,6 +118,46 @@ def face_spec(character: str, clip: str, beside: str = "", rects: list[list[int]
         title += f"   left {len(rects or [])}: the approved sheet, right {len(FACE_YAWS)}: Godot"
     return {"clip": clip, "t": t, "yaws": list(FACE_YAWS), "pitch_deg": 0.0, "cell": list(FACE_CELL),
             "beside": beside, "beside_rects": (rects or []) if beside else [], "title": title}
+
+
+CLOSE_CELL = (512, 640)  # the window's aspect (CELL's); two columns make a 2x2 sheet about 1050 px wide
+
+
+def parse_closeups(text: str) -> list[dict[str, Any]]:
+    """'label@x,y,z[~Bone]/size/yaw[/pitch];...' -> the close-up shots: the target point in Godot's frame (metres, y up,
+    the character facing +z; with ~Bone a point of the rest pose carried with that bone into the shot's pose, so a
+    crouch's bib side stays in frame; C1j), the orthographic view's vertical size (m), the camera's yaw (0 the front,
+    90 the character's left, 180 its back) and pitch (degrees, default 0); the studio light turns with each
+    (light_turn_deg)."""
+    shots = []
+    for part in (p.strip() for p in text.split(";")):
+        if not part:
+            continue
+        name, _, rest = part.partition("@")
+        fields = rest.split("/")
+        if not name.strip() or len(fields) not in (3, 4):
+            raise ValueError(f"not label@x,y,z/size/yaw[/pitch]: {part!r}")
+        point, _, bone = fields[0].partition("~")
+        target = [float(v) for v in point.split(",")]
+        size, yaw = float(fields[1]), float(fields[2])
+        pitch = float(fields[3]) if len(fields) == 4 else 0.0
+        if len(target) != 3 or size <= 0 or not -90 < pitch < 90:
+            raise ValueError(f"a target x,y,z, a positive size and a pitch inside +-90: {part!r}")
+        shot = {"label": name.strip(), "target": target, "size": size, "yaw_deg": yaw, "pitch_deg": pitch,
+                "light_turn_deg": yaw - YAW_DEG}
+        if bone.strip():
+            shot["bone"] = bone.strip()
+        shots.append(shot)
+    if not shots:
+        raise ValueError("no close-up shot")
+    return shots
+
+
+def closeup_spec(character: str, clip: str, shots: list[dict[str, Any]], t: float = 0.0) -> dict[str, Any]:
+    """The spec's `closeups` entry: one orthographic shot per target at time t of one animation, two per row, in one
+    sheet `sheets/closeups.png` (art #196: the clothes' shoulders, collar and cuffs as Godot draws them)."""
+    return {"clip": clip, "t": t, "cell": list(CLOSE_CELL), "cols": 2, "shots": shots,
+            "title": f"{character}   close-ups at {label(clip)} {t:.2f} s"}
 
 
 def _dist(a: list[float], b: list[float]) -> float:
