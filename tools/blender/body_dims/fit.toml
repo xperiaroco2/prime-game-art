@@ -1,0 +1,22 @@
+# The station fit's settings per body (art #196, step D3; body_fit_geom.py, body_fit_run.py). The dims tables beside
+# this file are generated (body_dims_measure.py, never hand-edited); what the fit adds to them lives here. mm.
+
+[A]
+# The concept's forearm and hand hang in front of the belly in its side view (A.toml's note): the body's own front
+# is kept there.
+keep_front = [[640.0, 1000.0]]
+
+[B]
+keep_front = []
+# B's rest from A's (B1's alien_body_b_geom with these numbers; the D2 plan's point 1)
+height_scale = 0.953
+shoulder_joint_x = 129.0      # the UpperArm heads' |x|
+hip_joint_x = 113.0           # the UpperLeg heads' |x|
+neck_below_ring = 50.8        # the Neck bone's head under the ring (the Head's stays 48.3 above it)
+hand_scale = 0.90             # the concept's B/A hands, at our size (the engineer, 2026-10-29)
+foot_scale_x = 0.85           # the feet: width
+foot_scale_y = 0.80           # length
+# Her chest: two soft rounds, no nipples. The table's side front ahead of the line from the crease to the upper
+# chest is the rounds' depth; across x it peaks at the rounds' centres and eases to `floor` between them.
+chest_sigma_x = 42.0
+chest_floor = 0.45
