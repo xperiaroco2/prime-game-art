@@ -108,7 +108,21 @@ def cut_garment(gar, args) -> dict:
         hb = band_h - lap
         _bisect(bm, mw, lambda c: H.in_waist_band(c.x, c.y, c.z, z_w, hb + 0.03, bib_hw, back_y, hw_w),
                 (0, 0, z_w - hb), (0, 0, 1), outer=None)
+        # its ends straight up and down at the bib's and the back panel's edges
+        low = lambda c: z_w - hb - 0.03 < c.z <= z_w
+        for sgn in (1, -1):
+            _bisect(bm, mw, lambda c: low(c) and c.y < 0, (sgn * bib_hw, 0, 0), (sgn, 0, 0), outer=None)
+            _bisect(bm, mw, lambda c: low(c) and c.y > back_y, (sgn * hw_w, 0, 0), (sgn, 0, 0), outer=None)
         band = [f for f in bm.faces if H.in_waist_band(*(mw @ f.calc_center_median()), z_w, hb, bib_hw, back_y, hw_w)]
+        # and the panels' edge flaps beside it that face the body (Meshy's layered side opening, the dark shards)
+        nm3 = mw.to_3x3().inverted().transposed()
+        for f in bm.faces:
+            c = mw @ f.calc_center_median()
+            n = (nm3 @ f.normal).normalized()
+            if H.inward_flap(c.x, c.y, c.z, n.x, n.y, z_w - hb, z_w + args.band_flaps, args.band_axis_y,
+                             bib_hw, back_y, H.back_halfwidth(c.z, z_w, z_apex, hw_w, hw_a), 0.025):
+                band.append(f)
+        band = list(set(band))
         n_band = len(band)
         bmesh.ops.delete(bm, geom=band, context="FACES")
         bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")

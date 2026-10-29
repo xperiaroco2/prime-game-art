@@ -234,6 +234,16 @@ class WaistBand(unittest.TestCase):
         self.assertEqual(sorted(many), ["A", "B", "C", "D"])
         self.assertAlmostEqual(sum(many.values()), 1.0)
 
+    def test_inward_flap_only_at_the_edges_turned_in(self):
+        def flap(x, y, z, nx, ny, hw=0.12):
+            return H.inward_flap(x, y, z, nx, ny, 0.968, 1.10, 0.015, 0.105, 0.03, hw, 0.025)
+        self.assertTrue(flap(0.10, -0.05, 1.03, -1.0, 0.0))  # the bib's side edge, facing in
+        self.assertFalse(flap(0.10, -0.05, 1.03, 1.0, 0.0))  # the same edge facing out
+        self.assertFalse(flap(0.03, -0.08, 1.03, 0.0, 1.0))  # the bib's middle, whatever it faces
+        self.assertFalse(flap(0.10, -0.05, 1.12, -1.0, 0.0))  # above the zone
+        self.assertTrue(flap(0.11, 0.06, 0.99, -1.0, 0.0))  # the back panel's edge at the waist
+        self.assertFalse(flap(0.04, 0.09, 1.08, 0.0, -1.0, hw=0.08))  # inside the narrowing V
+
 
 if __name__ == "__main__":
     unittest.main()

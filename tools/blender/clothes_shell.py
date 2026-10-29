@@ -303,3 +303,24 @@ def blend_rows(rows: list[tuple[dict[str, float], float]], n: int = 4) -> dict[s
     best = sorted(((x, b) for b, x in acc.items() if x > 1e-6), reverse=True)[:n]
     tot = sum(x for x, _ in best)
     return {b: x / tot for x, b in best} if tot > 0 else {}
+
+
+def inward_flap(x: float, y: float, z: float, nx: float, ny: float, z_lo: float, z_hi: float, axis_y: float,
+                bib_hw: float, back_y: float, back_hw: float, edge: float, dot: float = -0.2) -> bool:
+    """Whether a Meshy garment face (centre, normal's x and y) is one of the panels' edge flaps turned toward the
+    body (C1i: the layered side opening's dark shards beside the waistband): between z_lo and z_hi, within edge of
+    the bib's side edge (front) or the back panel's (back_hw, its half width at z), its normal pointing in (its
+    horizontal part against the direction out from the waist's centre by more than -dot)."""
+    if not z_lo < z < z_hi:
+        return False
+    if y < 0:
+        near = abs(x) > bib_hw - edge
+    elif y > back_y:
+        near = abs(x) > back_hw - edge
+    else:
+        near = True
+    if not near:
+        return False
+    ox, oy = x, y - axis_y
+    ln = (ox * ox + oy * oy) ** 0.5
+    return ln > 1e-9 and (nx * ox + ny * oy) / ln < dot

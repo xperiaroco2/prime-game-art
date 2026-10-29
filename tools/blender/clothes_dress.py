@@ -202,7 +202,9 @@ def main() -> int:
                     help="the band's upper edge stands this far out of the tucked top (m)")
     ap.add_argument("--band-over", type=float, default=0.012,
                     help="the band's ends run this far under the bib's and the back panel's edges (m)")
-    ap.add_argument("--band-step", type=float, default=4.0, help="degrees between the band's stations")
+    ap.add_argument("--band-step", type=float, default=3.0, help="degrees between the band's stations")
+    ap.add_argument("--band-flaps", type=float, default=0.10,
+                    help="the panels' edge faces turned toward the body go up to this far above the waist (m)")
     ap.add_argument("--band-button", type=float, default=0.012,
                     help="the band's side button this far beyond the bib's edge in |x| (m; 0: none)")
     ap.add_argument("--shell-decimate", default="0.32,0.22",
