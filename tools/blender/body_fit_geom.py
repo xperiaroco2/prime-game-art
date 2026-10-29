@@ -194,7 +194,8 @@ def frame_of(table: dict, bones: dict, armpit_u: float) -> dict:
             "armpit_u": armpit_u, "ankle": bones["LeftFoot"]["head"][2],
             "trunk_z": list(table["trunk"]["z"]), "leg_z": list(table["legs"]["z"]),
             "arm_s": list(arm["s"]), "arm_u": [s_to_u(s) for s in arm["s"]],
-            "keep_front": table.get("fit", {}).get("keep_front", []), "shoulder_top": sh_top, "neck_base": nb}
+            "keep_front": table.get("fit", {}).get("keep_front", []), "shoulder_top": sh_top, "neck_base": nb,
+            "arm_follow": bool(table.get("fit", {}).get("arm_follow", False))}
 
 
 def trunk_sigma(ring: float, armpit: float, at_armpit: bool = True):
@@ -281,6 +282,15 @@ SIGMA, SIGMA_NECK, NECK_BAND = 20.0, 6.0, 100.0
 SIGMA_FB_ARMPIT = 12.0  # mm: the front and back's smoothing under the armpit (trunk_sigma)
 CHEST_SIGMA = 15.0  # mm: the chest rounds' depth along z (fit)
 KEEP_EDGE = 60.0  # mm: a kept front eases back to the table over its zone's ends
+ARM_FOLLOW_SPAN = 80.0  # mm over the armpit: the trunk's centre shift there moves the arms (arm_dy)
+
+
+def arm_dy(r: dict, armpit: float, span: float = ARM_FOLLOW_SPAN) -> float:
+    """The trunk's mean centre shift in y (the target's front and back middle minus the body's) over the `span` mm
+    over the armpit: the arms move by it, or the trunk slides past the arm root and draws a diagonal crease from
+    the neck to each shoulder (D3d: B's concept sets her chest up to 50 mm ahead of A's on the same neck ring)."""
+    zs = [armpit + span * i / 16 for i in range(17)]
+    return sum((r["f1"](z) + r["b1"](z) - r["f0"](z) - r["b0"](z)) / 2 for z in zs) / len(zs)
 
 
 def keep_front(z: float, zones: list, edge: float = KEEP_EDGE) -> float:
@@ -362,6 +372,7 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
     m = measure(verts, edges, wa, fr)
     tg = targets(table, fr)
     r = ratios(m, tg, fr, chest)
+    ady = arm_dy(r, fr["armpit"]) if fr["arm_follow"] else 0.0
     if chest is not None:  # the rounds' depth smoothed along z: its kink at the crease drew a line under them (D3c)
         tz = sorted(m["trunk"])
         cxs = Profile(tz, [chest_excess(z, chest) for z in tz], sigma=CHEST_SIGMA, default=0.0)
@@ -405,7 +416,7 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
             k = r["ak"](ax)
             k = 1.0 + (k - 1.0) * ramp((ax - (fr["armpit_u"] + ARM_ROOT[0])) / (ARM_ROOT[1] - ARM_ROOT[0]))                 * (1.0 - ramp((ax - fr["wrist_u"]) / 40.0))
             yc, zcen = r["ayc"](ax), r["azc"](ax)
-            amx, amy, amz = x, yc + (y - yc) * k, zcen + (z - zcen) * k
+            amx, amy, amz = x, yc + (y - yc) * k + ady, zcen + (z - zcen) * k
             bx, by, bz = (1 - a) * bx + a * amx, (1 - a) * by + a * amy, (1 - a) * bz + a * amz
         lock = ramp((z - (ring - 30.0)) / 30.0)
         q = ((1 - lock) * bx + lock * x, (1 - lock) * by + lock * y, (1 - lock) * bz + lock * z)
@@ -414,7 +425,61 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
         out.append(q)
     moves = [math.dist(p, q) for p, q in zip(verts, out)]
     return out, {"max_move_mm": round(max(moves), 2), "mean_move_mm": round(sum(moves) / len(moves), 2),
+                 "arm_dy_mm": round(ady, 3),
                  "frame": {k: v for k, v in fr.items() if not isinstance(v, list)}}
+
+
+def concept_top(table: dict, x: float, z_low: float, ring: float) -> float:
+    """The concept's shoulder top over |x| in the front view: the highest station between z_low and the ring whose
+    half width reaches x (the table's halves fall toward the ring), linear between stations; z_low where none."""
+    t = table["trunk"]
+    pts = [(z, num(w) / 2) for z, w in zip(t["z"], t["front_w"]) if z_low <= z <= ring and num(w) is not None]
+    best = z_low
+    for (z0, h0), (z1, h1) in zip(pts, pts[1:]):
+        if h0 >= x >= h1 and h0 > h1:
+            best = max(best, z0 + (z1 - z0) * (h0 - x) / (h0 - h1))
+        elif h1 >= x:
+            best = max(best, z1)
+    return best
+
+
+def shoulder_lift(verts: list, ring_idx: list, table: dict, sl: dict, bin_mm: float = 10.0) -> tuple[list, dict]:
+    """B's shoulder tops raised in z toward the concept's higher slope (D3d; D3c's x widening of the neck base drew a
+    valley between the neck's slope and the shoulder, a diagonal crease in the 3/4 views). Per |x| the body's top
+    (the highest vertex in a `bin_mm` bin over the ring - `reach` mm) is filled to its outer envelope (no valley),
+    then moved `share` of the way to the concept's top (`concept_top`), smoothed over x by `sigma`; the lift eases in
+    over `x_in` mm past the ring's half width and out over `x_out` mm to `x_end`. Each vertex takes its x's lift
+    times a smoothstep of its depth under the top over `depth` mm. The ring never moves."""
+    ring = table["neck_ring"]["z"]
+    rh = table["neck_ring"]["half_x"]
+    z_low = ring - sl["reach"]
+    top = {}
+    for p in verts:
+        if p[2] > z_low and abs(p[0]) >= rh:
+            b = int(abs(p[0]) // bin_mm)
+            top[b] = max(top.get(b, z_low), p[2])
+    bins = sorted(b for b in top if (b + 0.5) * bin_mm <= sl["x_end"])
+    xs = [(b + 0.5) * bin_mm for b in bins]
+    own = [top[b] for b in bins]
+    env = [max(own[i:]) for i in range(len(own))]  # the outer envelope: never lower than the shoulder outside it
+    want = [e + sl["share"] * max(0.0, concept_top(table, x, z_low, ring) - e) for x, e in zip(xs, env)]
+    lift = Profile(xs, [w - o for w, o in zip(want, own)], sigma=sl["sigma"], default=0.0)
+    topp = Profile(xs, env, sigma=sl["sigma"], default=z_low)
+    keep = set(ring_idx)
+    out, most = [], 0.0
+    for i, p in enumerate(verts):
+        ax = abs(p[0])
+        if i in keep or p[2] <= z_low or ax < rh:
+            out.append(tuple(p))
+            continue
+        k = ramp((ax - rh) / sl["x_in"]) * ramp((sl["x_end"] - ax) / sl["x_out"])
+        d = max(0.0, topp(ax) - p[2])
+        dz = lift(ax) * k * ramp(1.0 - d / sl["depth"])
+        most = max(most, dz)
+        out.append((p[0], p[1], p[2] + dz))
+    return out, {"max_lift_mm": round(most, 2),
+                 "lift_mm": {round(x): round(lift(x) * ramp((x - rh) / sl["x_in"]) * ramp((sl["x_end"] - x) / sl["x_out"]), 1)
+                             for x in xs[::2]}}
 
 
 def armpit_u(verts: list, edges: list, weights: list, z: float) -> float:

@@ -9,6 +9,10 @@ keep_front = [[640.0, 1000.0]]  # the trunk's belly and the upper thigh (the han
 
 [B]
 keep_front = []
+# Her concept sets the chest and upper back up to 50 mm ahead of A's on the same neck ring (B.toml's front_y and
+# back_y): the arms follow the trunk's centre shift over the armpit (body_fit_geom.arm_dy), their bones with them,
+# or the trunk slides past the arm root (D3c's diagonal crease from the neck to each shoulder).
+arm_follow = true
 # B's rest from A's (B1's alien_body_b_geom with these numbers; the D2 plan's point 1). The height scale is B's
 # neck ring over A's (the tables), the Neck and Head about B's ring by B.toml's neck_bone_below / head_bone_above.
 shoulder_joint_x = 129.0      # the UpperArm heads' |x|
@@ -21,7 +25,11 @@ neck_below_ring = 50.8        # the Neck bone's head under the ring (the Head's 
 # half width (kept over the `collar` mm under it: a vertical tangent) to the table's at `length`, as
 # u ** `power`, eased in over `ease` mm from its bottom, at most `max_ratio` of the body (body_fit_geom.neck_base_half;
 # D3b's first B, eased over 20 mm and uncapped, grew a lip at the neck base). Never narrower than the body.
-neck_base = { length = 60.0, collar = 6.0, power = 1.5, ease = 60.0, max_ratio = 1.15 }
+neck_base = { length = 60.0, collar = 6.0, power = 1.5, ease = 60.0, max_ratio = 1.0 }
+# D3d: the x widening (max_ratio 1.15 until D3c) drew a valley between the neck's slope and the shoulder, a diagonal
+# crease in the 3/4 views; her shoulder tops are raised in z instead, `share` of the way to the concept's top over
+# the `reach` mm under the ring (body_fit_geom.shoulder_lift), from the ring's half width to `x_end`.
+shoulder_lift = { share = 0.5, reach = 110.0, sigma = 12.0, x_in = 25.0, x_out = 45.0, x_end = 210.0, depth = 80.0 }
 # Her chest: two soft rounds, no nipples. The table's side front ahead of the line from the crease to the upper
 # chest is the rounds' depth; across x it peaks at the rounds' centres and eases to `floor` between them.
 chest_sigma_x = 42.0

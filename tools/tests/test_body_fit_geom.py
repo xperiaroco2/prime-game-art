@@ -263,5 +263,62 @@ class NeckBase(unittest.TestCase):
             self.assertEqual(bool(F.frame_of(t, bones, 200.0)["neck_base"]), on, name)
 
 
+class ArmFollow(unittest.TestCase):
+    """D3d: the arms follow the trunk's centre shift over the armpit (B's chest sits ahead of A's)."""
+
+    def test_the_shift_is_the_middle_of_front_and_back_over_the_span(self):
+        c = lambda v: (lambda z: v)  # noqa: E731
+        r = {"f0": c(-100.0), "b0": c(100.0), "f1": c(-150.0), "b1": c(70.0)}
+        self.assertAlmostEqual(F.arm_dy(r, 1100.0), -40.0)
+        lin = {"f0": c(0.0), "b0": c(0.0), "f1": lambda z: -(z - 1000.0), "b1": lambda z: -(z - 1000.0)}
+        self.assertAlmostEqual(F.arm_dy(lin, 1000.0, span=80.0), -40.0)  # the mean over the span
+
+    def test_only_b_follows(self):
+        s = tomllib.loads((DIMS / "fit.toml").read_text(encoding="utf-8"))
+        self.assertTrue(s["B"]["arm_follow"])
+        self.assertFalse(s["A"].get("arm_follow", False))
+
+    def test_the_arm_bones_and_the_shoulders_tails_move(self):
+        rest = {"LeftShoulder": {"head": (0.02, 0.0, 1.3), "tail": (0.12, 0.0, 1.3), "parent": "UpperChest"},
+                "LeftUpperArm": {"head": (0.12, 0.0, 1.3), "tail": (0.2, 0.0, 1.1), "parent": "LeftShoulder"},
+                "LeftIndexProximal": {"head": (0.3, 0.0, 0.8), "tail": (0.3, 0.0, 0.77), "parent": "LeftHand"},
+                "UpperChest": {"head": (0.0, 0.0, 1.2), "tail": (0.0, 0.0, 1.3), "parent": "Chest"},
+                "LeftUpperLeg": {"head": (0.1, 0.0, 0.8), "tail": (0.1, 0.0, 0.45), "parent": "Hips"}}
+        out = RUN.arms_moved(rest, -40.0)
+        self.assertEqual(out["LeftShoulder"]["head"], rest["LeftShoulder"]["head"])
+        self.assertAlmostEqual(out["LeftShoulder"]["tail"][1], -0.04)
+        for n in ("LeftUpperArm", "LeftIndexProximal"):
+            for k in ("head", "tail"):
+                self.assertAlmostEqual(out[n][k][1], rest[n][k][1] - 0.04)
+                self.assertEqual(out[n][k][0::2], rest[n][k][0::2])
+        self.assertEqual(out["UpperChest"], rest["UpperChest"])
+        self.assertEqual(out["LeftUpperLeg"], rest["LeftUpperLeg"])
+        self.assertAlmostEqual(out["LeftShoulder"]["tail"][1], out["LeftUpperArm"]["head"][1])
+
+
+class ShoulderLift(unittest.TestCase):
+    """D3d: B's shoulder tops raised in z toward the concept's slope; the ring and everything low never move."""
+
+    TABLE = {"neck_ring": {"z": 1300.0, "half_x": 50.0},
+             "trunk": {"z": [1200.0, 1250.0, 1300.0], "front_w": [400.0, 300.0, 100.0]}}
+
+    def test_the_concept_top_inverts_the_half_widths(self):
+        self.assertAlmostEqual(F.concept_top(self.TABLE, 150.0, 1190.0, 1300.0), 1250.0)
+        self.assertAlmostEqual(F.concept_top(self.TABLE, 100.0, 1190.0, 1300.0), 1275.0)
+        self.assertAlmostEqual(F.concept_top(self.TABLE, 300.0, 1190.0, 1300.0), 1190.0)  # wider than any: z_low
+
+    def test_the_ring_and_low_vertices_stay_and_the_top_rises_toward_the_concept(self):
+        verts = [(50.0 * math.cos(a), 50.0 * math.sin(a), 1300.0) for a in (0.0, 1.0, 2.0)]
+        verts += [(float(x), 0.0, 1220.0) for x in range(60, 200, 10)] + [(100.0, 0.0, 1100.0)]
+        sl = {"share": 0.5, "reach": 110.0, "sigma": 8.0, "x_in": 20.0, "x_out": 30.0, "x_end": 200.0, "depth": 60.0}
+        out, rep = F.shoulder_lift(verts, [0, 1, 2], self.TABLE, sl)
+        self.assertEqual(out[:3], verts[:3])
+        self.assertEqual(out[-1], verts[-1])
+        top = {round(p[0]): p[2] for p in out[3:-1]}
+        self.assertGreater(top[110], 1220.0 + 5.0)  # the concept's top over x 110 is 1270
+        self.assertLessEqual(max(top.values()), 1220.0 + 0.5 * (1300.0 - 1220.0))  # at most half way to the ring
+        self.assertGreater(rep["max_lift_mm"], 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -152,6 +152,20 @@ def feet(verts: list, weights: list, rest: dict, sx: float, sy: float) -> list:
     return out
 
 
+def arms_moved(rest: dict, dy_mm: float) -> dict:
+    """The rest with the arms' bones (the upper arm to the fingertips) and the shoulders' tails moved by dy_mm in y
+    (the fit's `arm_dy`; metres in and out)."""
+    out = {n: dict(r) for n, r in rest.items()}
+    dy = dy_mm / 1000.0
+    for n, r in out.items():
+        if F.arm_share({n: 1.0}) > 0:
+            r["head"] = (r["head"][0], r["head"][1] + dy, r["head"][2])
+            r["tail"] = (r["tail"][0], r["tail"][1] + dy, r["tail"][2])
+        elif n.endswith("Shoulder") and n.startswith(("Left", "Right")):
+            r["tail"] = (r["tail"][0], r["tail"][1] + dy, r["tail"][2])
+    return out
+
+
 def chest_of(table: dict, s: dict) -> dict:
     """The chest rounds' settings: the table's chest keys, its side front, fit.toml's spread across x."""
     c, t = table["chest"], table["trunk"]
@@ -165,6 +179,7 @@ def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, 
     table = F.load_table(DIMS / f"{name}.toml")
     wa = [F.arm_share(w) for w in weights]
     table["fit"] = {"keep_front": s.get("keep_front", []), "neck_base": s.get("neck_base"),
+                    "arm_follow": s.get("arm_follow", False),
                     "arm_low": min(p[2] for p, a in zip(verts_mm, wa) if a >= 0.5)}
     fr = F.frame_of(table, bones, 0.0)
     au = F.armpit_u(verts_mm, edges, weights, fr["armpit"] - 5.0)
@@ -173,6 +188,9 @@ def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, 
     for _ in range(2):
         v, rep = F.fit(v, weights, edges, table, bones, au, ring, chest)
         reps.append(rep)
+    if s.get("shoulder_lift"):  # D3d: B's shoulder tops toward her concept's slope, after the station passes
+        v, lift = F.shoulder_lift(v, ring, table, s["shoulder_lift"])
+        reps.append({"shoulder_lift": lift})
     err = F.errors(v, weights, edges, table, bones, au, chest)
     err["before"] = before["summary"]
     err["passes"] = reps
@@ -216,6 +234,8 @@ def main() -> int:
     rest, rep, vb = b_rest(bones_m, F.load_table(DIMS / "A.toml"), tb, sb, va_m, weights)
     rest_out = {n: {"head": list(r["head"]), "tail": list(r["tail"]), "parent": r["parent"]} for n, r in rest.items()}
     vbf, eb = run_fit("B", mm(vb), weights, edges, bones_mm(rest_out), ring, sb, chest_of(tb, sb))
+    rep["arm_dy_mm"] = round(sum(p.get("arm_dy_mm", 0.0) for p in eb["passes"]), 3)
+    rest_out = arms_moved(rest_out, rep["arm_dy_mm"])
     eb["b_rest"] = rep
     o = out / "B"
     o.mkdir(parents=True, exist_ok=True)
