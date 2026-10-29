@@ -149,6 +149,33 @@ class WorkshopDrawingTest(unittest.TestCase):
         names = {p for p in parts("ws_robot")}
         self.assertTrue({"panels", "panel_liners", "hinge_arms", "eye_trim", "eye_iris_mid", "eye_glint", "core_light"} <= names)
 
+    def test_step4_polish(self) -> None:
+        """Step 4: the shells closer to the body, the iris's five bands on one level (no steps), olive front panels, the
+        parts trays on a lighter foam with their own small lights."""
+        self.assertLessEqual(WS.ROBOT["lift"], 0.03)                          # 5 cm read as headphones from the front
+        bands = ("eye_iris", "eye_iris_out", "eye_iris_mid", "eye_iris_in", "eye_inner")
+        p = parts("ws_robot")
+        mats = [p[n]["mat"] for n in bands]
+        self.assertEqual(len(set(mats)), 5)
+        for m in mats:
+            self.assertIn(m, LAYOUT["light"]["mats"])
+        es = [LAYOUT["light"]["mats"][m]["e"] for m in mats]
+        self.assertEqual(es, sorted(es))                                       # brighter inward
+        # the bands' tops on one level: neighbours' shared edges meet (the eye looks along -x)
+        for a, b in zip(bands, bands[1:]):
+            r0 = min(math.hypot(v[1], v[2] - WS.RC[2]) for v in p[a]["verts"] if v[0] < -0.2)
+            near = [-v[0] for v in p[a]["verts"] if abs(math.hypot(v[1], v[2] - WS.RC[2]) - r0) < 1e-4]
+            far = [-v[0] for v in p[b]["verts"] if abs(math.hypot(v[1], v[2] - WS.RC[2]) - r0) < 1e-4]
+            self.assertAlmostEqual(max(near), max(far), places=5)
+        for pid in ("ws_bench_open_top", "ws_cabinet"):
+            self.assertEqual(parts(pid)["panels"]["mat"], "ws_olive")
+        self.assertEqual(parts("ws_drawer_parts_a")["insert"]["mat"], "ws_foam2")
+        self.assertEqual(parts("ws_drawer_eyes")["insert"]["mat"], "ws_foam")
+        shop = [l for l in LAYOUT["light"]["lamps"] if len(l) > 8 and l[8] == "shop" and len(l) < 11]
+        for pid in ("ws_drawer_parts_a", "ws_drawer_parts_b"):
+            at = next(at for q, at, _ in INTERIOR["place"] if q == pid)
+            self.assertTrue(any(abs(math.dist(l[:2], at[:2]) - 0.5125) < 0.01 for l in shop), pid)
+
 
     def test_the_rail_hangs_under_the_ceiling(self) -> None:
         rail = verts("ws_rail", {"rail"})
