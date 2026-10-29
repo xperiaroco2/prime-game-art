@@ -132,6 +132,161 @@ def round_toes(body, arm, behind: float, iters: int) -> dict:
     return {"moved": moved, "max_move_m": round(big, 5), "behind_m": behind, "iters": iters}
 
 
+def new_forefoot(body, arm, table: dict, cut_behind: float) -> dict:
+    """D3c item 1: per foot, the region ahead of a plane `cut_behind` m behind the Toes head is cut off and replaced
+    by a new closed mitten front (body_feet_geom.forefoot) grown from the cut's loop to the foot table's length
+    (from the kept heel), width and toe height; its weights from the old toes' nearest vertex (Foot and Toes only);
+    then a Taubin smoothing over the front and 45 mm behind the cut, and a plain one over the ankle's front (its
+    dent). Rest pose, world space. Returns per foot the numbers and the zone the proof leaves out."""
+    import bmesh
+    from mathutils.kdtree import KDTree
+    import body_feet_geom as FG
+    me, mw = body.data, body.matrix_world
+    inv = mw.inverted()
+    names = [g.name for g in body.vertex_groups]
+    gidx = {n: i for i, n in enumerate(names)}
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    dl = bm.verts.layers.deform.verify()
+    uvl = bm.loops.layers.uv.active
+    shapes = list(bm.verts.layers.shape)
+    for v in bm.verts:
+        v.co = mw @ v.co
+    out = {"shape_keys": bool(me.shape_keys)}
+    for side, sg in (("Left", 1), ("Right", -1)):
+        th = arm.matrix_world @ arm.data.bones[f"{side}Toes"].head_local
+        fi, ti = gidx[f"{side}Foot"], gidx[f"{side}Toes"]
+        def foot_w(v):
+            return v[dl].get(fi, 0.0) + v[dl].get(ti, 0.0)
+        reg = [v for v in bm.verts if v.co.x * sg > 0 and v.co.z < 0.25 and foot_w(v) > 0.2]
+        heel_y = max(v.co.y for v in reg)
+        def loops_at(y):  # how many loops a cut at y makes (edges crossing it, joined through their faces)
+            cross = {e for v in reg for e in v.link_edges
+                     if (e.verts[0].co.y - y) * (e.verts[1].co.y - y) < 0}
+            par = {e: e for e in cross}
+            def root(e):
+                while par[e] is not e:
+                    e = par[e]
+                return e
+            for e in cross:
+                for f in e.link_faces:
+                    for e2 in f.edges:
+                        if e2 in cross:
+                            par[root(e2)] = root(e)
+            return len({root(e) for e in cross})
+        tries = [cut_behind + 0.005 * k for k in range(9)]
+        y0 = th.y + next((c for c in tries if loops_at(th.y + c) == 1), tries[-1])
+        geom = list({e for v in reg for e in v.link_edges}) + list({f for v in reg for f in v.link_faces})
+        bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-7, plane_co=(0, y0, 0), plane_no=(0, 1, 0))
+        reg = [v for v in bm.verts if v.co.x * sg > 0 and v.co.z < 0.25 and foot_w(v) > 0.05]
+        old = [v for v in reg if v.co.y < y0 - 1e-6]
+        kd = KDTree(len(old))
+        for k, v in enumerate(old):
+            kd.insert(v.co, k)
+        kd.balance()
+        old_w = [(v[dl].get(fi, 0.0), v[dl].get(ti, 0.0)) for v in old]
+        bmesh.ops.delete(bm, geom=old, context="VERTS")
+        bm.verts.index_update()
+        bm.verts.ensure_lookup_table()
+        bedges = [e for e in bm.edges if e.is_boundary and all(abs(v.co.y - y0) < 1e-5 and v.co.x * sg > 0
+                                                               for v in e.verts)]
+        loop = FG.order_loop([(e.verts[0].index, e.verts[1].index) for e in bedges])
+        a, b = bm.verts[loop[0]], bm.verts[loop[1]]
+        e01 = bm.edges.get((a, b))
+        f = e01.link_faces[0]
+        lo = next(lp for lp in f.loops if lp.vert == a)
+        if lo.link_loop_next.vert != b:  # the body's face must run B_j -> B_j+1
+            loop = [loop[0]] + loop[1:][::-1]
+        bv = [bm.verts[i] for i in loop]
+        uv_of = {}
+        for v in bv:
+            ls = [lp for lp in v.link_loops]
+            uv_of[v] = tuple(ls[0][uvl].uv) if (ls and uvl) else (0.0, 0.0)
+        tip_y = FG.tip_from_table(heel_y, table["length"] / 1000.0)
+        pts, faces = FG.forefoot([tuple(v.co) for v in bv], tip_y, table["width"] / 1000.0,
+                                 table["toe_height"] / 1000.0)
+        nb = len(bv)
+        verts = list(bv)
+        mat = f.material_index
+        for p in pts[nb:]:
+            nv = bm.verts.new(p)
+            k = kd.find(nv.co)[1]
+            wf, wtoe = old_w[k]
+            tot = (wf + wtoe) or 1.0
+            nv[dl][fi], nv[dl][ti] = wf / tot, wtoe / tot
+            if wtoe <= 0:
+                del nv[dl][ti]
+            for sl in shapes:
+                nv[sl] = inv @ nv.co
+            verts.append(nv)
+        newf = []
+        for fc in faces:
+            nf = bm.faces.new([verts[i] for i in fc])
+            nf.smooth, nf.material_index = True, mat
+            newf.append(nf)
+        bm.verts.ensure_lookup_table()
+        bm.verts.index_update()
+        # UVs: each new vertex takes its column's boundary UV (the body is one plain clay colour)
+        col_uv = [uv_of[v] for v in bv]
+        vpos = {v: k for k, v in enumerate(verts)}
+        nc = (len(pts) - nb - 1) // 14
+        if uvl:
+            for nf in newf:
+                for lp in nf.loops:
+                    k = vpos[lp.vert]
+                    lp[uvl].uv = (col_uv[k] if k < nb else col_uv[0] if k == len(verts) - 1
+                                  else col_uv[((k - nb) % nc) // (nc // nb)])
+        # smoothing: the front and a 25 mm blend zone behind the cut (Taubin); the ankle's front (plain)
+        allv = list(bm.verts)
+        idx = {v: i for i, v in enumerate(allv)}
+        P = [tuple(v.co) for v in allv]
+        nbr = [[idx[e.other_vert(v)] for e in v.link_edges] for v in allv]
+        newset = set(verts[nb:])
+        wt = [0.0] * len(allv)
+        zone = []
+        for i, v in enumerate(allv):
+            if v.co.x * sg <= 0 or v.co.z > 0.25 or foot_w(v) <= 0.05:
+                continue
+            if v in newset:
+                wt[i] = 1.0
+            elif v.co.y < y0 + 0.045:
+                wt[i] = 1.0 - FG.smoothstep(y0 - 0.002, y0 + 0.045, v.co.y)
+            if wt[i] > 0:
+                zone.append(i)
+        P = FG.taubin(P, nbr, wt, 12)
+        ank_z = table["ankle_z"] / 1000.0
+        mid_y = sum(v.co.y for v in bv) / nb
+        top0 = max(v.co.z for v in bv)
+        zd = 0.5 * (top0 + ank_z)
+        wa = [0.0] * len(allv)
+        for i, v in enumerate(allv):
+            if v.co.x * sg > 0 and v.co.z < ank_z + 0.06 and v.co.y < heel_y - 0.06 and v.co.y > y0 - 0.001:
+                wa[i] = (1.0 - FG.smoothstep(0.025, 0.07, abs(v.co.z - zd))) * \
+                    FG.smoothstep(heel_y - 0.05, heel_y - 0.11, v.co.y)
+                if wa[i] > 0 and i not in zone:
+                    zone.append(i)
+        P = FG.laplace(P, nbr, wa, 40, 0.5)  # the ankle front's fold (S4b's own) needs many rounds to fill
+        P = FG.taubin(P, nbr, [max(a, b) for a, b in zip(wt, wa)], 6)
+        for v, p in zip(allv, P):
+            v.co = Vector(p)
+        front = FG.front_extent([P[idx[v]] for v in verts])
+        loc = [P[idx[v]] for v in verts]
+        loc_f = [tuple(vpos[lp.vert] for lp in nf.loops) for nf in newf]
+        out[side] = {"cut_y_m": round(y0, 5), "heel_y_m": round(heel_y, 5), "tip_y_m": round(tip_y, 5),
+                     "loop": nb, "new_verts": len(pts) - nb, "new_faces": len(faces), "deleted": len(old),
+                     "length_mm": round((heel_y - front["min_y"]) * 1000, 1),
+                     "width_mm": round(front["width"] * 1000, 1), "top_mm": round(front["top"] * 1000, 1),
+                     "sole_mm": round(front["sole"] * 1000, 1),
+                     "front_dihedral_max_deg": round(FG.dihedral_max(loc, loc_f), 1),
+                     "zone": len(zone), "zone_box": [min(P[i][1] for i in zone), max(P[i][2] for i in zone)]}
+    for v in bm.verts:
+        v.co = inv @ v.co
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    return out
+
+
 def _objs():
     return bpy.data.objects["Body"], bpy.data.objects["CharacterArmature"]
 
@@ -156,7 +311,8 @@ def dump(body_path: str, out: str) -> int:
     return 0
 
 
-def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0, toes_iters: int = 8) -> int:
+def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0, toes_iters: int = 8,
+          foot_table: str = "", cut_behind: float = 0.03) -> int:
     out = Path(out_dir)
     blend = out / "alien_body.blend"
     if blend.exists():
@@ -175,7 +331,6 @@ def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0,
         v.co = inv @ Vector(q)
     body.data.update()
     toes = round_toes(body, arm, toes_behind, toes_iters) if toes_behind > 0 else {"moved": []}
-    new = [tuple(body.matrix_world @ v.co) for v in body.data.vertices]
     ring = fit.get("ring", [])
     names = {g.name: g for g in body.vertex_groups}
     for i in ring:  # weights only on Neck and Head, their sum kept at 1
@@ -202,6 +357,19 @@ def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0,
             eb.head, eb.tail = ainv @ Vector(r["head"]), ainv @ Vector(r["tail"])
             eb.roll = roll
         bpy.ops.object.mode_set(mode="OBJECT")
+    feet = {}
+    if foot_table:  # D3c: a new forefoot; the ring's indices are found again by position afterwards
+        import tomllib
+        from mathutils.kdtree import KDTree
+        table = tomllib.loads(Path(foot_table).read_text(encoding="utf-8"))["foot"]
+        feet = new_forefoot(body, arm, table, cut_behind)  # on the fit's rest (B: her Toes)
+        vs = body.data.vertices
+        kd = KDTree(len(vs))
+        for v in vs:
+            kd.insert(body.matrix_world @ v.co, v.index)
+        kd.balance()
+        ring = [kd.find(Vector(fit["verts"][i]))[1] for i in ring]
+    new = [tuple(body.matrix_world @ v.co) for v in body.data.vertices]
     out.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(blend), compress=True)
     bpy.ops.wm.open_mainfile(filepath=str(blend))
@@ -215,9 +383,25 @@ def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0,
            "weights_changed": hash_a["weights_sha256"] != hash_b["weights_sha256"], "ring_groups": ring_w,
            "saved_vs_fit_max_m": round(err, 8),
            "toes": {k: v for k, v in toes.items() if k != "moved"} | {"moved": len(toes["moved"])},
-           "fit_vs_built_off_toes_max_m": round(max((math.dist(q, r) for i, (q, r) in
-                                                     enumerate(zip(fit["verts"], new)) if i not in set(toes["moved"])),
-                                                    default=0.0), 8)}
+           "feet": feet}
+    if feet:  # every vertex above the feet's zone (z 0.25 m: the new fronts, the blend and the ankles' smoothing)
+        from mathutils.kdtree import KDTree  # is a fit vertex, unmoved
+
+        def in_zone(p, groups):
+            return p[2] < 0.25
+        kd = KDTree(len(fit["verts"]))
+        for i, q in enumerate(fit["verts"]):
+            kd.insert(q, i)
+        kd.balance()
+        off = [(new[v.index]) for v in body.data.vertices if not in_zone(new[v.index], v.groups)]
+        res["off_feet_verts"] = len(off)
+        res["fit_vs_built_off_toes_max_m"] = round(max((kd.find(p)[2] for p in off), default=0.0), 8)
+        res["same_off_feet"] = {k: res["same"][k] for k in ("groups",)}
+        res["all_same"] = res["same"]["groups"]
+    else:
+        res["fit_vs_built_off_toes_max_m"] = round(max((math.dist(q, r) for i, (q, r) in
+                                                         enumerate(zip(fit["verts"], new))
+                                                         if i not in set(toes["moved"])), default=0.0), 8)
     (out / "apply.json").write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
     print("APPLY", json.dumps(res), flush=True)
     ok = res["all_same"] and err < 1e-5 and res["fit_vs_built_off_toes_max_m"] < 1e-5
@@ -233,8 +417,11 @@ def main() -> int:
     ap.add_argument("--fit", default="")
     ap.add_argument("--round-toes", type=float, default=0.0, help="m behind the Toes heads: the rounded front")
     ap.add_argument("--toes-iters", type=int, default=8)
+    ap.add_argument("--foot-table", default="", help="a body_dims table: its [foot] gives the new forefoot (D3c)")
+    ap.add_argument("--cut-behind", type=float, default=0.03, help="m behind the Toes heads: the forefoot's cut")
     a = ap.parse_args(argv)
-    return dump(a.body, a.out) if a.mode == "dump" else apply(a.body, a.fit, a.out, a.round_toes, a.toes_iters)
+    return dump(a.body, a.out) if a.mode == "dump" else apply(a.body, a.fit, a.out, a.round_toes, a.toes_iters,
+                                                              a.foot_table, a.cut_behind)
 
 
 if __name__ == "__main__":

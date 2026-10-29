@@ -340,3 +340,20 @@ Body B (D3b) is A's fitted mesh on B's rest (B1's `deform` with `fit.toml`'s joi
 A table's "-" (a hanging limb forms the side edge) is never a value: there the fit keeps the body's own shape, moved by
 the error at the band's measured ends (`fill_gaps`). The feet's soft front (`apply --round-toes M`) shrink-wraps the
 toes' region onto its convex hull along rays from the region's centre, outwards only, then relaxes it.
+
+D3c replaced the toes: projecting them (`--round-toes`) left slits, flaps and holes twice, so `apply --foot-table
+<body_dims/X.toml>` cuts each foot along one plane 30 mm behind its Toes head (moved back in 5 mm steps until the cut
+is one loop) and grows a new closed mitten front from the cut's own vertex loop (`body_feet_geom.forefoot`): rings
+scaled from the cut's section to the table's foot length (from the kept heel), width and toe height, rounded as a
+superellipse in top and side view, the sole flat until the front turns it up, a fan to one tip vertex; the cut's
+loop is shared (no seam), weights from the old toes' nearest vertex (Foot and Toes only). A Taubin smoothing evens the
+front and 45 mm behind the cut, a plain one fills the ankle front's fold (S4b's own). The bone rest is applied first,
+so B's cut sits at her Toes. The topology changes under 0.25 m only: `apply.json` proves every vertex above it is the
+fit's (`off_feet_verts`, `fit_vs_built_off_toes_max_m`), the ring found again by position.
+
+The neck base (D3c): the fit's front and back met the ring's only inside the 30 mm lock and drew a collar ridge with a
+step at the ring. Over the 60 mm under the ring (`NECK_JOIN`) they now follow one cubic slope from the fit's value
+and slope to the ring's own front and back with a vertical tangent (`neck_join`, clamped so it never overshoots);
+these stations are "neck taper" in the error table. Under the armpit the front and back are smoothed over 12 mm
+(`SIGMA_FB_ARMPIT`), not 6 like the widths (the chest line at the armpit's height), and B's chest rounds' depth is
+smoothed along z over 15 mm (`CHEST_SIGMA`; its kink at the crease drew a line under the rounds).

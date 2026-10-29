@@ -139,6 +139,7 @@ def main() -> int:
     rings = []
     mat = bpy.data.materials.new("Skin")
     mat.diffuse_color = (*R.BODY_RGB, 1.0)
+    body_arms = []  # each body's own armature (the heads' linked rigs come later)
     for path in a.body:
         objs = link(path, lambda n: n in ("Body", "CharacterArmature"))
         arm = next(o for o in objs if o.type == "ARMATURE")
@@ -152,6 +153,7 @@ def main() -> int:
         body.data.materials.clear()
         body.data.materials.append(mat)
         groups.append([body])
+        body_arms.append(arm)
         rings.append(max((body.matrix_world @ v.co).z for v in body.data.vertices))  # the top loop: the ring
     heads = []  # per head source, one copy per body
     import bmesh
@@ -259,13 +261,15 @@ def main() -> int:
                   (f"neck{h}_34_back", (0, rz), 145, 0, 0.6, 50, h)]
     zk = rz / 1.39  # B's close-ups at her heights
     shots = [(n, (x, z * zk if not n.startswith("neck") else z), *rest) for n, (x, z), *rest in shots]
-    arm = bpy.data.objects[[o.name for o in bpy.data.objects if o.type == "ARMATURE"][-1]]
+    arm = body_arms[last]  # D3b took the last armature, a head's rig: the hand shots aimed at nothing
 
     def bone(n):
         return arm.matrix_world @ arm.pose.bones[n].head
 
     hand = (bone("LeftHand") + bone("LeftMiddleProximal")) / 2
-    foot = (bone("LeftFoot") + bone("LeftToes")) / 2
+    lb = [body.matrix_world @ v.co for body in groups[last] for v in body.data.vertices]
+    lf = [p for p in lb if p.x > 0.03 and p.z < 0.1]  # the left foot's sole region: its middle from heel to tip
+    foot = Vector((sum(p.x for p in lf) / len(lf), (min(p.y for p in lf) + max(p.y for p in lf)) / 2, 0.045))
     paths = []
     for name, (x, z), az, el, dist, lens, *hh in shots:
         show(last, hh[0] if hh else 0)
@@ -278,14 +282,17 @@ def main() -> int:
         paths.append(p)
         log["close"].append({"name": name, "target": list(tgt), "loc": list(loc), "lens": lens})
     for name, tgt, off in (("hand_front", hand, Vector((0.0, -0.45, 0.0))), ("hand_above", hand, Vector((0.05, -0.1, 0.45))),
-                           ("foot_side", foot, Vector((0.55, 0.0, 0.05))), ("foot_34_front", foot, Vector((0.3, -0.45, 0.2))),
-                           ("foot_front", foot, Vector((0.0, -0.3, 0.06))), ("foot_top", foot, Vector((0.0, -0.04, 0.3))),
-                           ("foot_below", foot, Vector((0.05, -0.12, -0.27)))):
-        R.look(cam, tgt + off, tgt, lens=50)
+                           # the feet at about 0.3 m (D3c), a wide lens so the whole foot fits
+                           ("foot_side", foot, Vector((0.3, 0.0, 0.03))), ("foot_34_back", foot, Vector((0.2, 0.22, 0.1))),
+                           ("foot_34_front", foot, Vector((0.17, -0.22, 0.12))), ("foot_front", foot, Vector((0.0, -0.3, 0.04))),
+                           ("foot_back", foot, Vector((0.0, 0.3, 0.06))), ("foot_top", foot, Vector((0.0, -0.03, 0.3))),
+                           ("foot_below", foot, Vector((0.03, -0.05, -0.3)))):
+        R.look(cam, tgt + off, tgt, lens=50 if name.startswith("hand") else 24)
         p = os.path.join(tmp, f"close_{name}.png")
         R.shot(sc, p, CLOSE)
         paths.append(p)
-        log["close"].append({"name": name, "target": list(tgt), "loc": list(tgt + off), "lens": 50})
+        log["close"].append({"name": name, "target": list(tgt), "loc": list(tgt + off),
+                             "lens": 50 if name.startswith("hand") else 24})
     R.stitch(paths, 4, os.path.join(a.out, f"close_{a.tag}.png"))
     with open(os.path.join(a.out, f"review_{a.tag}.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(log, f, indent=1)

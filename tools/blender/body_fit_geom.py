@@ -197,12 +197,16 @@ def frame_of(table: dict, bones: dict, armpit_u: float) -> dict:
             "keep_front": table.get("fit", {}).get("keep_front", []), "shoulder_top": sh_top, "neck_base": nb}
 
 
-def trunk_sigma(ring: float, armpit: float):
+def trunk_sigma(ring: float, armpit: float, at_armpit: bool = True):
     """The smoothing's width over z: SIGMA, easing to SIGMA_NECK over the neck band and over the 40 mm under the
-    armpit (the trunk's outline turns into the armpit's fold there)."""
+    armpit, where the front outline turns into the armpit's fold. The front and back (`at_armpit` False) ease only
+    to SIGMA_FB_ARMPIT there: at 6 mm their whole-pixel steps drew a line across the chest at the armpit's height
+    (D3c); at 20 mm B's upper chest lost up to 7 mm of its turn."""
     def sig(z: float) -> float:
-        k = max(ramp((z - (ring - NECK_BAND)) / 30.0), ramp((z - (armpit - 40.0)) / 20.0))
-        return SIGMA + (SIGMA_NECK - SIGMA) * k
+        kn = ramp((z - (ring - NECK_BAND)) / 30.0)
+        ka = ramp((z - (armpit - 40.0)) / 20.0)
+        low = SIGMA_NECK if at_armpit else SIGMA_FB_ARMPIT
+        return min(SIGMA + (SIGMA_NECK - SIGMA) * kn, SIGMA + (low - SIGMA) * ka)
     return sig
 
 
@@ -214,9 +218,10 @@ def targets(table: dict, frame: dict) -> dict:
     tw = [None if z <= frame["crotch"] + 1 or frame["armpit"] + 5 < z < top else h for z, h in zip(t["z"], half)]
     sel = [s <= ar["s_wrist"] for s in ar["s"]]
     sg = trunk_sigma(frame["ring"], frame["armpit"])
+    sfb = trunk_sigma(frame["ring"], frame["armpit"], at_armpit=False)
     return {"trunk_half": Profile(t["z"], tw, sigma=sg, default=0.0),
-            "trunk_front": Profile(t["z"], [num(v) for v in t["front_y"]], sigma=sg),
-            "trunk_back": Profile(t["z"], [num(v) for v in t["back_y"]], sigma=sg),
+            "trunk_front": Profile(t["z"], [num(v) for v in t["front_y"]], sigma=sfb),
+            "trunk_back": Profile(t["z"], [num(v) for v in t["back_y"]], sigma=sfb),
             "leg_half": Profile(lg["z"], [num(v) / 2 if num(v) else None for v in lg["width"]], sigma=sg),
             "leg_front": Profile(lg["z"], [num(v) for v in lg["front_y"]], sigma=sg),
             "leg_back": Profile(lg["z"], [num(v) for v in lg["back_y"]], sigma=sg),
@@ -238,6 +243,30 @@ def fill_gaps(zs: list, own: list, target, raw: dict) -> list:
     return [target(z) if z not in raw or raw[z] is not None else o + interp(mz, d, z) for z, o in zip(zs, own)]
 
 
+def neck_join(zs: list, vals: list, ring: float, ring_val: float, length: float) -> list:
+    """The station values over the `length` mm under the ring replaced by one smooth slope into the ring (D3c: the
+    fit's front and back met the ring's within 30 mm and drew a ridge, a collar, with a step at the ring): a cubic
+    Hermite from the value and slope at ring - length to the ring's own value at the ring with zero slope (the body
+    rises into the ring with a vertical tangent), its first slope clamped so it never overshoots (monotone)."""
+    zb = ring - length
+    vb = interp(zs, vals, zb)
+    m0 = (interp(zs, vals, zb + 5.0) - interp(zs, vals, zb - 5.0)) / 10.0 * length
+    d = ring_val - vb
+    m0 = 0.0 if m0 * d <= 0 else math.copysign(min(abs(m0), 3.0 * abs(d)), d)
+    out = []
+    for z, v in zip(zs, vals):
+        if z <= zb:
+            out.append(v)
+            continue
+        u = min(1.0, (z - zb) / length)
+        h00, h10, h01 = 2 * u ** 3 - 3 * u ** 2 + 1, u ** 3 - 2 * u ** 2 + u, -2 * u ** 3 + 3 * u ** 2
+        out.append(h00 * vb + h10 * m0 + h01 * ring_val)
+    return out
+
+
+NECK_JOIN = 60.0  # mm under the ring: the front and back's slope into the ring (neck_join)
+
+
 def neck_base_half(z: float, ring: float, ring_half: float, base_half: float, nb: dict) -> float:
     """The neck base's half width at z: the ring's half width over the `collar` mm under the ring (a vertical
     tangent), widening as ((ring - collar - z) / (length - collar)) ** power to `base_half` at `length` under it."""
@@ -249,6 +278,8 @@ def neck_base_half(z: float, ring: float, ring_half: float, base_half: float, nb
 # own sections wobble too, so the targets and each station's ratio are smoothed with their neighbours, or the surface
 # ripples in bands (D3's first build). Narrower over the neck (from `ring - NECK_BAND`) and under the armpit, where the outline turns fast.
 SIGMA, SIGMA_NECK, NECK_BAND = 20.0, 6.0, 100.0
+SIGMA_FB_ARMPIT = 12.0  # mm: the front and back's smoothing under the armpit (trunk_sigma)
+CHEST_SIGMA = 15.0  # mm: the chest rounds' depth along z (fit)
 KEEP_EDGE = 60.0  # mm: a kept front eases back to the table over its zone's ends
 
 
@@ -274,6 +305,10 @@ def ratios(m: dict, tg: dict, frame: dict, chest=None) -> dict:
     if chest is not None:
         f1 = [f + chest_excess(z, chest) for z, f in zip(tz, f1)]
     f1 = [m["trunk"][z][1] * k + f * (1 - k) for z, f, k in zip(tz, f1, kf)]
+    b1 = fill_gaps(tz, [m["trunk"][z][2] for z in tz], tg["trunk_back"], tg["raw"]["trunk_back"])
+    if "ring_front" in frame:
+        f1 = neck_join(tz, f1, frame["ring"], frame["ring_front"], NECK_JOIN)
+        b1 = neck_join(tz, b1, frame["ring"], frame["ring_back"], NECK_JOIN)
     lz = sorted(m["legs"])
     lr = [tg["leg_half"](z) / ((m["legs"][z][1] - m["legs"][z][0]) / 2) for z in lz]
     lf1 = fill_gaps(lz, [m["legs"][z][2] for z in lz], tg["leg_front"], tg["raw"]["leg_front"])
@@ -282,10 +317,11 @@ def ratios(m: dict, tg: dict, frame: dict, chest=None) -> dict:
     au = sorted(u for u in m["arms"] if u >= frame["armpit_u"] + ARM_ROOT[1])  # the root's ratio is held flat
     ak = [tg["arm_w"](u) / (m["arms"][u][1] - m["arms"][u][0]) for u in au]
     tsig = trunk_sigma(frame["ring"], frame["armpit"])
+    fsig = trunk_sigma(frame["ring"], frame["armpit"], at_armpit=False)
     p = lambda xs, ys: Profile(xs, ys, sigma=tsig)  # noqa: E731
-    return {"rx": p(tz, rx), "f0": p(tz, [m["trunk"][z][1] for z in tz]), "b0": p(tz, [m["trunk"][z][2] for z in tz]),
-            "f1": p(tz, f1), "b1": p(tz, fill_gaps(tz, [m["trunk"][z][2] for z in tz], tg["trunk_back"],
-                                                  tg["raw"]["trunk_back"])),
+    q = lambda xs, ys: Profile(xs, ys, sigma=fsig)  # noqa: E731
+    return {"rx": p(tz, rx), "f0": q(tz, [m["trunk"][z][1] for z in tz]), "b0": q(tz, [m["trunk"][z][2] for z in tz]),
+            "f1": q(tz, f1), "b1": q(tz, b1),
             "own_half": p(tz, [m["trunk"][z][0] for z in tz]),
             "lr": p(lz, lr), "lc": p(lz, [(m["legs"][z][0] + m["legs"][z][1]) / 2 for z in lz]),
             "lf0": p(lz, [m["legs"][z][2] for z in lz]), "lb0": p(lz, [m["legs"][z][3] for z in lz]),
@@ -320,9 +356,15 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
     wa = [arm_share(w) for w in weights]
     wf = [foot_share(w) for w in weights]
     fr = frame_of(table, bones, armpit_u)
+    if ring_idx:  # the ring's own front and back: the trunk's slope ends there (neck_join)
+        fr["ring_front"] = min(verts[i][1] for i in ring_idx)
+        fr["ring_back"] = max(verts[i][1] for i in ring_idx)
     m = measure(verts, edges, wa, fr)
     tg = targets(table, fr)
     r = ratios(m, tg, fr, chest)
+    if chest is not None:  # the rounds' depth smoothed along z: its kink at the crease drew a line under them (D3c)
+        tz = sorted(m["trunk"])
+        cxs = Profile(tz, [chest_excess(z, chest) for z in tz], sigma=CHEST_SIGMA, default=0.0)
     zc, za, ring, nb = fr["crotch"], fr["armpit"], fr["ring"], fr["neck_base"]
     if nb:
         rh = table["neck_ring"]["half_x"]
@@ -345,7 +387,7 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
         c = (r["f0"](z) + r["b0"](z)) / 2
         ty = map_y(y, c, r["f0"](z), r["b0"](z), r["f1"](z), r["b1"](z))
         if chest is not None:
-            ty -= chest_excess(z, chest) * round_x(abs(x), chest["centre_x"], chest["sigma_x"], chest["floor"]) \
+            ty -= cxs(z) * round_x(abs(x), chest["centre_x"], chest["sigma_x"], chest["floor"]) \
                 * ramp((c - y) / max(1.0, c - r["f0"](z)) * 1.6 - 0.3)
         # a leg
         ax, sg = abs(x), 1.0 if x >= 0 else -1.0
@@ -398,7 +440,7 @@ def errors(verts: list, weights: list, edges: list, table: dict, bones: dict, au
         x0, f0, b0 = m["trunk"][z]
         root = fr["armpit"] + 5 < z <= fr["armpit_table"] + 5  # B: the width there is our arm's root
         nbw = bool(fr["neck_base"]) and z >= fr["shoulder_top"]  # B: the ring row to the shoulder line
-        rule = "neck taper" if z > ring - 30 else "neck base (ring to shoulder line)" if nbw \
+        rule = "neck taper" if z > ring - NECK_JOIN else "neck base (ring to shoulder line)" if nbw \
             else "shoulders (T arms)" if fr["armpit_table"] + 5 < z < (ring if fr["neck_base"] else ring - 60) \
             else "kept front" if keep_front(z, fr["keep_front"], 0.0) > 0 else ""
         rows["trunk"].append({"z": z, "w": _e(2 * x0, w), "front": None if rule == "kept front" else _e(f0, f),
