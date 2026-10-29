@@ -704,15 +704,18 @@ def _band(R, t, name):
 
 
 def ws_robot_body(args, layout):
-    """The main robot's body (the collider): the dark core, flat at y +-CORE_Y under the side shells, and the ivory
-    shell band (the sphere Ø 60 between the side shells) in four panels on 6 mm seams, its dark liner inside."""
+    """The main robot's body: the dark core, flat at y +-CORE_Y under the side shells, and the ivory shell band (the
+    sphere Ø 60 between the side shells) in four panels on 6 mm seams, its dark liner inside; its collider the
+    drawing's sphere Ø 60, a convex 16 x 8 polyhedron on it (`col-convcolonly`; the shells' trimesh had 9.2k triangles)."""
     rc = RR - 0.014
     a = math.degrees(math.asin(CORE_Y / rc))
     core = [(0.0, -CORE_Y), (math.sqrt(rc ** 2 - CORE_Y ** 2), -CORE_Y)]
     core += [(rc * math.cos(D(-a + i * 2 * a / 16)), rc * math.sin(D(-a + i * 2 * a / 16))) for i in range(1, 16)]
     core += [(math.sqrt(rc ** 2 - CORE_Y ** 2), CORE_Y), (0.0, CORE_Y)]
     return [part("core", lathe(core, 48, RC, (0, 1, 0)), GRAPH, 35.0),
-            _band(RR, SHELL_T, "shell"), _band(RR - SHELL_T - 0.0005, LINER_T, "liner")]
+            _band(RR, SHELL_T, "shell"), _band(RR - SHELL_T - 0.0005, LINER_T, "liner"),
+            part("col-convcolonly", lathe([(RR * math.sin(D(i * 22.5)), -RR * math.cos(D(i * 22.5))) for i in range(9)],
+                                          16, RC), GRAPH)]
 
 
 def _eye():
