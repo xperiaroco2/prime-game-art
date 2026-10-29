@@ -1767,3 +1767,29 @@ east wall only for now (`GILL_SIDES` in ship_interior_throat.py; the west mirror
   (1.0, 0.64, 0.38) 2 m out at slot 3's height, a 38 deg soft cone at the band, warms the wall without pools on the
   plinth. The all-open cloud (`cloud` 0.3) leaves each slit toward the mouth and sinks (`drift` 1.6), a light haze
   with the slits readable (the grid holds the cloud about 2.5 s; at 0.6 the MP4's 6 s build veiled the slits again). Handoff `<raw>/ship/v5/notes/gills-set-3.md`.
+- **Step 4, the engineer's notes and his walk** (supersedes the build numbers above; his `--play` shots
+  `<raw>/ship/v5/play/`):
+  - *Slits*: "at a bigger angle, more open". The picture's crescents, measured in its pixels: outer arc sag 0.31 of the
+    chord, inner 0.14, width 0.17 (0.29 with the soft shoulder round the cut). A 3-variant overlay on set_plate.jpg
+    (sags 0.30/0.33/0.36 of the chord) picked the middle one: `SAG_O, SAG_I` 0.40, 0.156 per 1.2 m (0.33 and 0.13 of the
+    chord, width 0.2 of the height; with the lip it reads as the picture's cut and shoulder). Chords 1.08/0.99/0.90/
+    0.82/0.74 (still shrinking), middles s 2.074/2.438/2.801/3.164/3.526, bottoms 0.82 -> 0.86, leans 3-7 deg. The
+    picture is not to scale: its spacing is 0.41 of slit 1's height, ours 0.34 (the groove's sweep needs s 1.72-2.07).
+  - *A real cut* ("on the concept they are cut out of the wall"): 15 cm deep (`DEPTH`), the section `PROFILE` from the
+    mouth-side rim: `gill<k>_lip` (a bevel of the wall's metal, catches light), `gill<k>_edge` (the thin rim at its
+    foot, the only glow in the GLB, so `--play` shows a dark cut with a red line), `gill<k>_glow` (the inner wall's
+    fall, dark) and `gill<k>_scoop` (the floor, the back wall and the overhang's underside: the hall-side rim overhangs
+    the floor by `UNDER` 5 cm at the middle, easing to nothing at the tips). gill_set.gd drives edge/glow/scoop as
+    before (the lip stays metal). The fatter cuts nest, so the band is a scanline mesh: one strip per pair of the
+    slits' row heights (`rim_levels()`), each slit's rim carrying them all (no T-junctions).
+  - *Groove*: traced from the picture relative to slit 1 (its top end 0.14 of the chord over slit 1's top tip, the
+    widest point 0.59 left of the tips at mid-height, a long flat tail 0.16 under the bottom tip, ending under slit 2),
+    rebuilt as two cubic segments meeting at the widest point (`GROOVE`, 7 points), horizontally x 0.85; leftmost edge
+    s 1.72, 10 cm clear of every cut.
+  - *Button* (s 3.86, h 1.15): a 1.2 cm ring (r 0.060..0.072), a dark dome r 0.06, an octagonal bezel (corner r 0.11)
+    with a 9 mm 45 deg outer bevel, a flat face and a round inner bevel whose foot the ring runs under (no slivers).
+  - *Bars*: 12 x 1.4 cm glow in a 14 x 3 cm frame (14 x 3 in 18 x 6 before).
+  - *No pillar*: the free-standing hall jambs are gone (`th_jambs` keeps only the header's drop); each wall runs on to
+    the hall's corner K (`JAMB_U` = `WALL_LEN` - 4 mm) and ends in `end_frame` (`FRAME_MAT`, a 45 deg bevel from s 3.98 to
+    3.6 cm proud, then flat to the end), the deck to the fold. `interior.toml`'s plain spot runs to 4.047.
+  - Outputs `<raw>/ship/v5/gills-throat/set4/` (pieces in `set4/pieces`); handoff `<raw>/ship/v5/notes/gills-set-4.md`.

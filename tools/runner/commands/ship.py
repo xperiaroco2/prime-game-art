@@ -730,7 +730,7 @@ def gill_anim(layout: dict, out: Path, folder: Path, demo: str = "slit") -> int:
 # the gill set (art #263, 2026-10-29): the concept camera frames the wall square-on from the ramp frame to the jamb as
 # set_plate.jpg does (2.4 m out, eye 1.25 m; the old wall_square_on is the view "concept_wide"), the close one 1.5 m out from slot 3 a little toward the hall; the views (s, t, back, along, up on the east wall, or plan
 # points) are posed: "open" the slits open (1..5), "at" the white bar's slit
-GILL_SET = {"concept": {"s": 2.78, "t": 1.25, "back": 2.4, "along": 0.0, "up": 0.0, "fov": 58.0},
+GILL_SET = {"concept": {"s": 2.85, "t": 1.25, "back": 2.4, "along": 0.0, "up": 0.0, "fov": 58.0},
             "close": {"s": 2.69, "t": 1.35, "back": 1.5, "along": 0.35, "up": 0.2, "fov": 55.0},
             "ref": "D:/prime-game-design/ideas/ship-components/slits-lamps/set_plate.jpg",
             "fps": 30, "size": (1280, 720), "max_mb": 15}
@@ -740,17 +740,18 @@ GILL_VIEWS = [  # name, (s, t, back, along, up) eye, (s, t) look, fov, (open, at
     ("square_on_open", (2.75, 1.35, 2.2, 0.0, 0.25), (2.75, 1.35), 60.0, ([1, 2, 3, 4, 5], 3)),
     ("from_mouth", (1.0, 1.55, 1.4, 0.0, 0.0), (3.0, 1.30), 70.0, MID),
     ("from_hall", (4.6, 1.55, 1.4, 0.0, 0.0), (2.4, 1.30), 70.0, MID),
-    ("cu_slit1", (1.85, 1.40, 0.85, -0.25, 0.1), (1.98, 1.38), 55.0, MID),
-    ("cu_slit2", (2.22, 1.34, 0.85, -0.25, 0.1), (2.35, 1.34), 55.0, MID),
-    ("cu_slit3", (2.59, 1.30, 0.85, -0.25, 0.1), (2.72, 1.30), 55.0, MID),
-    ("cu_slit4", (2.96, 1.27, 0.85, -0.25, 0.1), (3.09, 1.27), 55.0, MID),
-    ("cu_slit5", (3.33, 1.24, 0.85, -0.25, 0.1), (3.46, 1.24), 55.0, MID),
-    ("cu_slit_graze", (3.75, 1.30, 0.5, 0.0, 0.05), (2.3, 1.30), 50.0, MID),
-    ("cu_groove_top", (1.95, 1.95, 0.55, 0.0, 0.05), (1.95, 1.95), 50.0, MID),
-    ("cu_groove_left", (1.75, 1.40, 0.6, 0.0, 0.05), (1.75, 1.40), 50.0, MID),
-    ("cu_groove_tail", (2.30, 0.75, 0.6, 0.0, 0.1), (2.30, 0.75), 50.0, MID),
-    ("cu_bars", (2.8, 1.85, 0.9, 0.0, 0.05), (2.8, 1.85), 55.0, MID),
-    ("cu_button", (3.72, 1.15, 0.5, -0.1, 0.05), (3.72, 1.15), 45.0, MID),
+    ("cu_slit1", (1.97, 1.36, 0.85, -0.25, 0.1), (2.10, 1.36), 55.0, MID),   # step 4: the slits spread (s 2.07-3.53)
+    ("cu_slit2", (2.34, 1.32, 0.85, -0.25, 0.1), (2.47, 1.32), 55.0, MID),
+    ("cu_slit3", (2.70, 1.29, 0.85, -0.25, 0.1), (2.83, 1.29), 55.0, MID),
+    ("cu_slit4", (3.06, 1.26, 0.85, -0.25, 0.1), (3.19, 1.26), 55.0, MID),
+    ("cu_slit5", (3.43, 1.23, 0.85, -0.25, 0.1), (3.56, 1.23), 55.0, MID),
+    ("cu_slit_graze", (3.95, 1.30, 0.5, 0.0, 0.05), (2.5, 1.30), 50.0, MID),
+    ("cu_groove_top", (2.0, 1.95, 0.55, 0.0, 0.05), (2.0, 1.95), 50.0, MID),
+    ("cu_groove_left", (1.80, 1.35, 0.6, 0.0, 0.05), (1.80, 1.35), 50.0, MID),
+    ("cu_groove_tail", (2.40, 0.72, 0.6, 0.0, 0.1), (2.40, 0.72), 50.0, MID),
+    ("cu_bars", (2.95, 1.80, 0.9, 0.0, 0.05), (2.95, 1.80), 55.0, MID),
+    ("cu_button", (3.86, 1.15, 0.5, -0.1, 0.05), (3.86, 1.15), 45.0, MID),
+    ("cu_end", (3.80, 1.25, 0.9, -0.3, 0.1), (4.0, 1.1), 55.0, MID),
 ]
 
 
