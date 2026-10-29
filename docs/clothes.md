@@ -167,7 +167,8 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
 Four builders (C1b to C1e) patched the Meshy garment's upper body and it kept getting worse: the shoulders and the
 straps' bases were 3 to 8 folded layers, removing them bared holes, the sleeves were crumpled and bulky, and Crouch's
 poke-through doubled (r20). A fitted top is better made from the body itself. The loose lower parts (trousers,
-pockets, hems, shoes) stay Meshy's, because they read right and match the sketch. `clothes_dress.py --shell`
+pockets, hems; the shoes until S1) stay Meshy's, because they read right and match the sketch.
+`clothes_dress.py --shell`
 (`clothes_top.py` inside Blender, the maths in `clothes_shell.py`; it replaced `--straps` and `--sleeve-smooth`):
 
 10. **The garment cut** (`cut_garment`). The Meshy garment keeps:
@@ -287,6 +288,57 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
     moves with that bone into the pose shot (`--closeup-clip`, `--closeup-time`: a clip's worst frame, C1j). Each shot is orthographic, the view's
     height is the size, and the studio light turns with each shot's yaw. The proof's `poke.json` now names up to six
     poking vertices per clip (`where`: rest place, bone, depth).
+
+## Our own sneakers (S1)
+The Meshy shoes were about 1,600 lumpy, crooked triangles for the pair, weighted to Foot and Toes all over: in
+Crouch_Fwd the Toes bone bent the toe box into folds whose light changed (it read as the texture changing).
+`clothes_dress.py --sneakers` (`auto`, the default: on with `--shell`, the dungarees; `on`, `off`) builds a clean
+low-top canvas pair from code in their place (`sneaker_build.py` inside Blender, the maths in `sneaker_geom.py`,
+tested by `test_sneaker_geom.py`), named `shoes`, so the foot cut (step 8), the openings and the proof treat it as
+before.
+
+16. **Parametric to the foot.** Every size comes from the build's own body after the f2 move: each foot's vertices
+    mostly on Foot and Toes (weights 0.5 and over) and the two bones' heads at rest. The foot's frame: u along the
+    foot from its hindmost point (the Foot head toward the Toes head, flat), v out from the body's middle, z up;
+    the right shoe is the left one in its mirrored frame, both built from both feet's points (`merge`), so the pair
+    is symmetric. A body with other feet (a body B, a heavier build) gets its own pair from the same code. Both
+    current bodies have the same feet: 25.4 cm long, 15.3 cm wide, the ball (Toes head) 22.3 cm from the heel, the
+    ankle (Foot head) at 11.5 cm.
+17. **The shape** (`build`, `Params`).
+    - The outline: the foot's plan hull offset by `clear` 4 mm, the toes given `toe_room` 12 mm, smoothed, 30
+      columns, denser at the ball.
+    - The rim: the slot between the eyelet stays (`gap` 2.6 cm) from in front of the leg (`slot_rear`: the front of
+      the foot's points at the stays' cap height, `stay_cap` 0.92 x the ankle's, plus `collar_clear`) to `throat`
+      3.5 cm before the ball, its height the instep's top plus `instep_clear` 7 mm; round the heel the collar on
+      the foot's own section at its height (the hull of the points from 8 mm under to 2 cm over it, hit from the
+      section's middle toward the column, plus `collar_clear` 7 mm and `heel_clear` 4 mm more at the back), from
+      `heel_collar` 0.62 x the ankle's height at the back dipping to `side_collar` 0.53 at the sides and rising to
+      the stays. Each outline column meets the rim: behind the slot its section point, the others the slot's curve
+      by arc length.
+    - One ring grid per column: the rubber sole (a rounded bottom edge, the foxing band raised 0.8 mm at 8.5 to
+      10.5 mm with its dark stripe, the top at `sole_top` 1.7 cm rising to `cap_top` 3.8 cm at the toe, the toe
+      cap), a 2 mm step in to the canvas upper, 6 rows up to the rim on a quarter ellipse (`fullness` 0.8), the
+      padded collar's swell, the roll over the rim and a 12 mm lining; the bottom zipped heel to toe. The tongue
+      under the stays rises 1.4 cm past the top eyelets; 5 eyelets a side (6-sided rings), 9 criss-cross flat laces
+      and a bow. 1,460 triangles a shoe, 2,920 the pair.
+    - The texture: one surface `sneaker_canvas`, a 2048x1024 atlas painted by UV rows (the shell's v by arc length
+      from the sole's join, square texels): the canvas (sRGB 226, 221, 204) with a 1.6 mm plain weave, the whiter
+      rubber, the foxing stripe, two dashed cream stitch rows over the sole and one under the collar, the tread on
+      the bottom, white laces, silver eyelets; a normal map from the same heights; roughness 0.85.
+18. **The bend.** Behind the ball the shoe is rigid on Foot, past it on Toes, a smoothstep across `blend` 2.5 cm at
+    the ball (`toes_weight`), so the toe box never folds: the sole creases at the ball. The clips' Toes bend is
+    capped: `anim_sets/alien_loco.toml`'s `[toes_cap]` (bones, `max_deg` 32, `knee_deg` 6); `clothes_dress.py
+    --toes-cap alien_loco` (with the sneakers) turns every Toes key about its own axis to `soft_cap_deg` (bends
+    under 26 degrees stay, larger ones ease into 32). Measured on the loco build: 57.5 degrees at most
+    (Jog_Bwd__s4b), Crouch_Idle 56.4, Crouch_Fwd 40.5, Jog_Fwd and the strafes 39.7; after the cap 32.0. The arms
+    and every other bone are untouched; `dress.json`'s `toes_cap` lists each clip's largest bend before and after.
+    The body's toes inside the shoe stay cut (step 8).
+19. **The report.** `dress.json`'s `sneakers`: the triangles, the foot's measures, the rim's heights, the slot and the
+    foot's clearance (each foot vertex's signed distance to the shoe along its normal: those over the rim, the
+    ankle, count as outside).
+
+S1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/s1/` (`r<n>/dress`, `proof`, `godot`,
+`render`).
 
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
