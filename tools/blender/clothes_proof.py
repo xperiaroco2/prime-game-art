@@ -13,7 +13,10 @@ and, per clip, measures the poke-through and shoots the contact sheet; then the 
 - The top under the panels (the hybrid route: the top on the body's weights, the bib, back panel and straps on the
   fit's): the top's vertices whose normal meets the garment within --panel-reach m at rest, inside it there, are
   followed the same way against the garment alone; a frame counts those outside it by more than --tol m (poke.json's
-  "top_under_panels" per clip, its "where" with the top vertex's bone).
+  "top_under_panels" per clip, its "where" with the top vertex's bone). The nearest face can change in motion (a
+  strap's folded lip, the bib's edge rim), so each such vertex is also followed against its own panel point: where
+  its normal met the garment at rest, the same point of that face (barycentric) in each frame, and its side of
+  that face's plane ("top_under_panels_tracked", with the room at rest; C1i).
 - The contact sheet: per clip (rows) the front, side and back at two moments of the clip (Workbench, the textures,
   orthographic), about 1280 px wide.
 - The close-ups: in Idle's first frame, the collar and neck, the cuffs and hands, the crotch, the hems and shoes,
@@ -36,6 +39,8 @@ from pathlib import Path
 import bpy
 import numpy as np
 from mathutils import Vector
+from mathutils.geometry import normal as poly_normal
+from mathutils.interpolate import poly_3d_calc
 from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -84,6 +89,14 @@ def side(tree: BVHTree, pts: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.nda
         z[i] = loc.z if loc is not None else 0.0
         nz[i] = nor.z if loc is not None else 0.0
     return s, z, nz
+
+
+def tracked_side(p, face, bary, sign: float) -> float:
+    """A top vertex p's side of its own panel point (C1i): the point bary of the face (its vertices, posed), along
+    the face's normal, times sign (so that under the panel is negative whichever way the face is wound)."""
+    q = [Vector(c) for c in face]
+    at = sum((c * w for c, w in zip(q, bary)), Vector())
+    return sign * (Vector(p) - at).dot(poly_normal(q))
 
 
 def render_tile(sc, path: Path) -> np.ndarray:
@@ -180,11 +193,16 @@ def main() -> int:
         gco, tco = world(gar), world(top)
         gtree = BVHTree.FromPolygons([tuple(c) for c in gco], g_polys)
         nm = top.matrix_world.to_3x3().inverted().transposed()
-        cand, dropped = [], 0
+        cand, dropped, track = [], 0, []
         for v in top.data.vertices:
             p, n = Vector(tco[v.index]), (nm @ v.normal).normalized()
-            if gtree.ray_cast(p + n * 1e-4, n, args.panel_reach)[0] is None:
+            hit, _hn, hfi, _hd = gtree.ray_cast(p + n * 1e-4, n, args.panel_reach)
+            if hit is None:
                 continue
+            vs = g_polys[hfi]
+            q = [Vector(gco[k]) for k in vs]
+            r0 = (p - hit).dot(poly_normal(q))
+            track.append((v.index, vs, poly_3d_calc(q, hit), 1.0 if r0 < 0 else -1.0, abs(r0)))
             loc, nor, _fi, _d = gtree.find_nearest(p)
             if loc is not None and (p - loc).dot(nor) < 0:
                 cand.append(v.index)
@@ -192,7 +210,7 @@ def main() -> int:
                 dropped += 1
         under = np.array(cand, dtype=int)
         say("top under the panels at rest:", len(under), "vertices;", dropped,
-            "with the garment over them but outside its nearest face at rest, left out")
+            "with the garment over them but outside its nearest face at rest, left out;", len(track), "tracked")
 
     head = {b.name: arm.matrix_world @ b.head_local for b in arm.data.bones}
     front = 1.0 if (head["LeftToes"] - head["LeftFoot"]).y > 0 else -1.0
@@ -222,7 +240,7 @@ def main() -> int:
             continue
         arm.animation_data.action = act
         f0, f1 = (int(round(x)) for x in act.frame_range)
-        frames, skin, worst, tframes, tworst = [], 0, {}, [], {}
+        frames, skin, worst, tframes, tworst, kframes, kworst = [], 0, {}, [], {}, [], {}
         for f in range(f0, max(f0 + 1, f1 + 1)):
             sc.frame_set(f)
             cos = {o.name: world(o) for o in cloth}
@@ -233,6 +251,13 @@ def main() -> int:
                 tframes.append((int(tbad.sum()), float(ts[tbad].max()) if tbad.any() else 0.0))
                 for j in np.nonzero(tbad)[0]:
                     tworst[int(under[j])] = max(tworst.get(int(under[j]), 0.0), float(ts[j]))
+            if track:
+                gp, tp = cos["garment"], cos["top"]
+                ks = np.array([tracked_side(tp[k], [gp[i] for i in vs], w, sg) for k, vs, w, sg, _r in track])
+                kbad = ks > args.tol
+                kframes.append((int(kbad.sum()), float(ks[kbad].max()) if kbad.any() else 0.0))
+                for j in np.nonzero(kbad)[0]:
+                    kworst[track[j][0]] = max(kworst.get(track[j][0], 0.0), float(ks[j]))
             s, cz, cnz = side(ctree, world(body)[near]) if len(near) else (np.zeros(0),) * 3
             chest = (arm.matrix_world @ arm.pose.bones["UpperChest"].head).z
             exposed = np.array([F.exposed_skin(d, z, nz, chest, args.exposed) for d, z, nz in zip(s, cz, cnz)],
@@ -253,6 +278,15 @@ def main() -> int:
                 "where": [{"rest": [round(float(x), 3) for x in top.matrix_world @ tv[k].co], "bone": bone_of(top, k),
                            "depth_mm": round(1000 * d, 1)}
                           for k, d in sorted(tworst.items(), key=lambda kv: -kv[1])[:6]]}
+        if track:
+            tv = top.data.vertices
+            rooms = sorted(r for *_x, r in track)
+            poke[clip]["top_under_panels_tracked"] = {
+                **F.frame_max(kframes), "vertices": len(track),
+                "room_at_rest_mm_min_median": [round(1000 * rooms[0], 1), round(1000 * rooms[len(rooms) // 2], 1)],
+                "where": [{"rest": [round(float(x), 3) for x in top.matrix_world @ tv[k].co], "bone": bone_of(top, k),
+                           "depth_mm": round(1000 * d, 1)}
+                          for k, d in sorted(kworst.items(), key=lambda kv: -kv[1])[:6]]}
         say("poke", clip, poke[clip])
         row = []
         for k in (0.25, 0.6):
