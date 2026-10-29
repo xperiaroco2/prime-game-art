@@ -325,7 +325,7 @@ lamps = [
   # in pools (step 2: step 1's broad washes flooded the walls and ceiling): short spots down on the bench and the
   # cradles, the bench lamp's spot on the robot (row index 11: its aim [x, y, h]), the open drawers' and the bays'
   # little omnis; the strips, pulls, rims and liners glow and light nothing ([light.mats] ws_green__*)
-  [-10.692, -0.246, 2.59, 1.5, 1.6, 0.8, 1.0, 0.72, "shop", false, 24.0, [-11.043, 0.302, 2.58]],  # the bench lamp's spot, from its lens on the robot's bays: a pale green work light (acid green tinted the shells and bays)
+  [-10.692, -0.246, 2.59, 1.3, 1.6, 0.82, 1.0, 0.8, "shop", false, 24.0, [-11.043, 0.302, 2.58]],  # the bench lamp's spot, from its lens on the robot's bays: a near-white work light (step 2's pale green still tinted the bays; step 3)
   [-11.61, 0.524, 2.0, 1.2, 0.75, 0.45, 1.0, 0.2, "shop", false],  # the bench fronts' green, window half (r 1.30, a_w 40, h 0.80: the strips' light on the drawers and the floor before them)
   [-11.173, 0.088, 2.0, 1.2, 0.75, 0.45, 1.0, 0.2, "shop", false],  # the bench fronts' green, the middle (r 1.30, a_w 67.5, h 0.80: the strips' light on the drawers and the floor before them)
   [-10.583, -0.097, 2.0, 1.2, 0.75, 0.45, 1.0, 0.2, "shop", false],  # the bench fronts' green, door half (r 1.30, a_w 95, h 0.80: the strips' light on the drawers and the floor before them)
@@ -436,10 +436,11 @@ ws_green__rim = {c = [0.45, 1.0, 0.08], e = 0.22, l = 0.0}
 ws_green__lamp = {c = [0.55, 1.0, 0.25], e = 0.8, l = 0.0}
 ws_green__sleep = {c = [0.45, 1.0, 0.08], e = 0.06, l = 0.0}
 ws_cyan__eye = {c = [0.0, 0.7, 1.0], v = 0.25, e = 0.1, l = 0.0}   # step 2: a deep teal iris with a soft glow (a bright base or a strong glow read as a pale blue disc under AgX)
-ws_cyan__pupil = {c = [0.2, 0.9, 1.0], v = 0.4, e = 0.22, l = 0.0}   # step 2: the iris's brighter inner ring (and the spare eyes' irises)
+ws_cyan__pupil = {c = [0.15, 0.85, 1.0], v = 0.33, e = 0.16, l = 0.0}
+ws_cyan__iris = {c = [0.05, 0.78, 1.0], v = 0.29, e = 0.125, l = 0.0}   # step 3: the iris's middle ring (a gradient from the deep rim to the bright inner ring)   # step 2: the iris's brighter inner ring (and the spare eyes' irises)
 ws_green__liner = {c = [0.45, 1.0, 0.08], e = 0.08, l = 0.0}   # step 2: the open drawers' lit felt liners
 ws_cyan__core = {c = [0.1, 0.8, 1.0], e = 0.3, l = 0.0}     # step 2: the robot's bay lights
-ws_glint = {c = [1.0, 1.0, 1.0], e = 0.05, l = 0.0}        # step 2: the eye's soft highlight
+ws_glint = {c = [1.0, 1.0, 1.0], v = 0.8, e = 0.02, l = 0.0}        # step 2: the eye's soft highlight
 ws_rug = {v = 0.6}                                          # step 2: the rug a shade darker under the bench's green
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
 int_halo__vent_heat = {c = [1.0, 0.13, 0.0], e = 0.6, l = 0.0}     # station 1: the vents' heat (vents-b3: a deep red-orange, b2's read peach)

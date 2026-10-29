@@ -74,7 +74,7 @@ const LENS_BRONZE: Dictionary = {
 	"lens_edge": [Color(0.86, 0.64, 0.40), 0.85, 0.14, 0.6, 0.10],
 	# the workshop's cabinetry (art #263 step 2): a dark olive bronze and its darker second tone
 	"ws_bronze": [Color(0.26, 0.22, 0.14), 0.55, 0.40, 0.8, 0.02],
-	"ws_bronze2": [Color(0.13, 0.125, 0.10), 0.35, 0.50, 0.6, 0.0],
+	"ws_bronze2": [Color(0.13, 0.125, 0.10), 0.20, 0.60, 0.6, 0.0],
 }
 var _bronzes: Dictionary = {}
 ## the charger traces (prime-game#1095): the lens alcoves' lens_trace lines on charger/traces.gdshader, idle (its
