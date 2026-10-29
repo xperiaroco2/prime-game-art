@@ -65,6 +65,29 @@ class TestRows(unittest.TestCase):
         self.assertEqual(rows[4][6], (180, 200, 7))
 
 
+class TestRing(unittest.TestCase):
+    def test_ring_is_the_thin_line_under_the_flare_not_the_chin_shadow(self):
+        # B's case: a broad dark shadow under the chin, a neck that widens past 1.25 times its narrowest width (the
+        # narrow band ends there), then the drawn ring line, 2 px thin, across the widened neck above the shoulders
+        dark = (60, 110, 107)
+        shapes = [(70, 10, 130, 70, SKIN),                    # head
+                  (85, 70, 115, 78, dark),                    # the chin's shadow (8 rows)
+                  (85, 78, 115, 100, SKIN),                   # the neck, 30 px
+                  (80, 100, 120, 108, SKIN),                  # the flare, 40 px (> 1.25 x 30)
+                  (75, 108, 125, 118, SKIN),                  # 50 px
+                  (75, 112, 125, 114, dark),                  # the ring line, rows 112 and 113
+                  (50, 118, 150, 140, SKIN),                  # shoulders
+                  (70, 140, 130, 250, SKIN),                  # trunk
+                  (40, 140, 62, 240, SKIN), (138, 140, 160, 240, SKIN),   # arms apart from the trunk
+                  (72, 250, 97, 400, SKIN), (103, 250, 128, 400, SKIN)]   # legs
+        rows = picture(200, 410, shapes)
+        m, sole = G.mask(rows)
+        lm = G.landmarks(m, rows, sole, (0, 200))
+        self.assertLess(lm["neck_band"][1], 108)          # the band ends at the flare, above the line
+        self.assertIn(lm["ring"], (112, 113))
+        self.assertGreaterEqual(lm["shoulder_top"], lm["ring"])
+
+
 class TestHeights(unittest.TestCase):
     def test_zmap_pins_the_landmarks_and_inverts(self):
         to_b, to_c = G.zmap([(0.0, 0.0), (739.0, 745.0), (1390.0, 1390.0)])

@@ -10,9 +10,9 @@ the front at -y; lengths in mm.
    median of the two edge strips), and, in the foot band (from `foot_band` px over the sole) only when it is coloured
    (the skin's chroma), so the grey contact shadow under the feet is ground. The sole is the lowest coloured row.
 2. The panels (`panels`): column groups of figure pixels, left to right.
-3. The front landmarks (`landmarks`): the top, the sole, the neck ring (the drawn line: the darkest row of the neck's
-   narrow band, a thin local minimum of the luminance), the shoulders (the widest trunk row in the upper 60 % between
-   the ring and the armpits), the armpits (the arms part from the trunk), the crotch (the legs part), the ankles and
+3. The front landmarks (`landmarks`): the top, the sole, the neck ring (the drawn line: the thin dark line across
+   most of the neck from the chin down to the shoulder line, `ring_line`; not the chin's broad shadow), the
+   shoulders (the widest trunk row in the upper 60 % between the ring and the armpits), the armpits (the arms part from the trunk), the crotch (the legs part), the ankles and
    wrists (the narrowest limb rows in their bands), the hand's end. The concepts show no narrowing at the knees and
    elbows, so those come from the skeleton.
 4. The scale (`scale`): the ring row maps to the body's ring height and the sole to z = 0 (the head is its own piece,
@@ -292,9 +292,10 @@ def landmarks(m, rows, sole: int, panel: tuple[int, int]) -> dict:
         n0 -= 1
     while n1 + 1 in band and width(n1 + 1) <= 1.25 * nmin:
         n1 += 1
-    # the ring: the drawn line from the chin down to the shoulder line (a first estimate from the narrowest row), not
-    # only inside the band: a neck may widen before the line (B), and the chin's shadow is broad, the line thin
-    wsh = max(width(y) for y in range(ymin, ymin + int(0.6 * (armpit - ymin)) + 1))
+    # the ring: the drawn line from the chin (the band's top) down to the shoulder line (a first estimate: the first
+    # row past half the way from the neck's width to the widest trunk row above the armpits), not only inside the
+    # band: a neck may widen before the line (B), and the chin's shadow is broad, the line thin (`ring_line`)
+    wsh = max(width(y) for y in range(ymin, armpit))
     s_end = next(y for y in range(ymin, armpit) if width(y) >= (nmin + wsh) / 2)
     ring = ring_line(rows, rr, cx, n0, s_end)
     shoulder = max(range(ring, ring + int(0.6 * (armpit - ring)) + 1), key=width)
@@ -458,7 +459,9 @@ def measure(path, ring_z: float, crotch_z: float, hips_mid_y: float, fine: dict 
     for y, rs in back["runs"].items():
         r = run_at(rs, bcx)
         bw[y] = _w(r) if r and r[0] <= bcx <= r[1] else None
-    # the side: the widest run per row; across the hands' rows the front edge is bridged (the hand hangs in front)
+    # the side: the widest run per row; across the hands' rows (the hand's end - 15 mm to the wrist + 25 mm) the
+    # hand hangs in front, so the front edge there is bridged linearly for the side's alignment only, and the tables
+    # write those rows' front_y and depth as "-" (`hidden`, in body z)
     sf, sb = {}, {}
     for y, rs in side["runs"].items():
         if not rs:
@@ -468,9 +471,17 @@ def measure(path, ring_z: float, crotch_z: float, hips_mid_y: float, fine: dict 
     hand_lo = srow(z_of(lm["hand_end"], lm, sc) - 15, side)
     hand_hi = srow(z_of(lm["wrist"], lm, sc) + 25, side)
     a, b = math.floor(hand_hi), math.ceil(hand_lo)
+    bridged = set()
     if a in sf and b in sf:
         for y in range(a + 1, b):
             sf[y] = sf[a] + (y - a) / (b - a) * (sf[b] - sf[a])
+            bridged.add(y)
+
+    def front_edge(ys):
+        """The side's front edge at a fractional row, None where a row it reads is bridged."""
+        if math.floor(ys) in bridged or math.ceil(ys) in bridged:
+            return None
+        return sy(lerp_rows(sf, ys))
     # align the side: its mid-depth at the crotch + 60 mm onto the body's
     ya = srow(to_concept(crotch_z + 60), side)
     mid = (lerp_rows(sf, ya) + lerp_rows(sb, ya)) / 2
@@ -487,8 +498,10 @@ def measure(path, ring_z: float, crotch_z: float, hips_mid_y: float, fine: dict 
         yf, ys, yb = y_of(zc, lm, sc), srow(zc, side), srow(zc, back)
         f = lerp_rows(fw, yf) if zc >= crotch_c else None
         bb = lerp_rows(bw, yb) if zc >= crotch_c else None
-        fy, by = sy(lerp_rows(sf, ys)), sy(lerp_rows(sb, ys))
-        for key, v in zip(TRUNK_KEYS, (z, zc, f and f * k, bb and bb * k, fy is not None and by - fy, fy, by)):
+        # under the crotch the side view holds the legs and feet (the legs' own table): "-" as for the widths
+        fy, by = (front_edge(ys), sy(lerp_rows(sb, ys))) if zc >= crotch_c else (None, None)
+        dp = by - fy if fy is not None and by is not None else None
+        for key, v in zip(TRUNK_KEYS, (z, zc, f and f * k, bb and bb * k, dp, fy, by)):
             trunk[key].append(None if v is None else round(v, 1))
     # the head over the neck in the side view (a big head reaches down past the ring at its chin and nape): the side
     # values in the top 60 mm whose depth passes 1.3 times the neck's (60 to 120 mm under the ring) are dropped
@@ -523,10 +536,10 @@ def measure(path, ring_z: float, crotch_z: float, hips_mid_y: float, fine: dict 
         wdt = (_w(l) + _w(r)) / 2 * k * (lcos if zc >= z_of(lm["ankle"], lm, sc) else 1.0)
         cxo = ((cx - (l[0] + l[1]) / 2) + ((r[0] + r[1]) / 2 - cx)) / 2 * k
         ys = srow(zc, side)
-        fy, by = sy(lerp_rows(sf, ys)), sy(lerp_rows(sb, ys))
+        fy, by = front_edge(ys), sy(lerp_rows(sb, ys))
         hip = hip or z
-        for key, v in zip(LEG_KEYS, (z, (crotch_z - z) / lcos, wdt, by - fy, cxo, fy, by)):
-            legs[key].append(round(v, 1))
+        for key, v in zip(LEG_KEYS, (z, (crotch_z - z) / lcos, wdt, None if fy is None else by - fy, cxo, fy, by)):
+            legs[key].append(None if v is None else round(v, 1))
     # the arms: the outermost run on each side below the armpit, the axis fitted from the armpit to the wrist
     def arm(y, side_):
         if y < lm["crotch"]:
@@ -571,6 +584,8 @@ def measure(path, ring_z: float, crotch_z: float, hips_mid_y: float, fine: dict 
     return {"path": str(path), "size": [w, h], "panels": ps, "landmarks": lm, "scale": sc, "side": {k_: side[k_] for k_ in ("top", "sole")},
             "back": {"top": back["top"], "sole": back["sole"], "cx": bcx}, "side_mid_px": mid,
             "crotch_concept": round(crotch_c, 1), "trunk": trunk, "legs": legs, "arms": arms,
+            "side_hidden_z": [round(to_body((side["sole"] - y) * k), 1) for y in (max(bridged), min(bridged))]
+            if bridged else None,
             "leg_axis": {"angle_deg": round(math.degrees(math.atan(lb)), 2), "a_px": la, "b": lb},
             "arm_axis": {"angle_deg": round(math.degrees(ang), 2), "s_armpit": round(s_armpit, 1),
                          "s_wrist": round(s_wrist, 1), "s_end": round(s_end, 1), "a_px": a0, "b": b0},

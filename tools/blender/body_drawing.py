@@ -120,7 +120,10 @@ def outlines(doc: dict, concept_z: bool = False) -> dict:
             out[view] += [pl, [(-x, z) for x, z in pl]]
     fy = [(num(a), to_c(z)) for z, a in zip(t["z"], t["front_y"]) if num(a) is not None]
     by = [(num(a), to_c(z)) for z, a in zip(t["z"], t["back_y"]) if num(a) is not None]
-    out["side"] = [fy, by]
+    # under the crotch the side is the legs' own table (the trunk's side values stop there)
+    lfy = [(num(a), to_c(z)) for z, a in zip(legs["z"], legs["front_y"]) if num(a) is not None]
+    lby = [(num(a), to_c(z)) for z, a in zip(legs["z"], legs["back_y"]) if num(a) is not None]
+    out["side"] = [fy, by, lfy, lby]
     return out
 
 
@@ -136,8 +139,9 @@ def dims_list(doc: dict) -> list[tuple[str, float, float, float]]:
             ("chest", k["chest_z"], k["chest_w"] / 2, k["chest_w"]),
             ("waist", k["waist_z"], k["waist_w"] / 2, k["waist_w"]),
             ("hip", k["hip_z"], k["hip_w"] / 2, k["hip_w"])]
-    c, w = leg_at(k["crotch_z_concept"] - 60)
-    rows.append(("thigh", k["crotch_z_concept"] - 60, c + w / 2, k["thigh_w"]))
+    crotch = doc["height_map"]["body_z"][1]   # the drawing's z is the body's (the tables' stations)
+    c, w = leg_at(crotch - 60)
+    rows.append(("thigh", crotch - 60, c + w / 2, k["thigh_w"]))
     c, w = leg_at(k["calf_z"])
     rows.append(("calf", k["calf_z"], c + w / 2, k["calf_w"]))
     rows.append(("neck ring", nr["z"], nr["half_x"], 2 * nr["half_x"]))
@@ -190,8 +194,8 @@ def body_sheet(doc: dict, meas: dict, out: Path) -> Path:
     ua = k["upper_arm_w"]
     extra = [f"UPPER ARM {ua:.0f}", f"FOREARM {k['forearm_w']:.0f}", f"ARM AXIS {arms['axis_deg']:.0f} DEG",
              f"HAND {hand['length']:.0f} X {hand['width']:.0f}, 4 DIGITS", f"FOOT {foot['length']:.0f} X {foot['width']:.0f}",
-             f"LEG AXIS {doc['legs']['axis_deg']:.0f} DEG", f"CROTCH {k['crotch_z_concept']:.0f}",
-             f"ARMPIT {k['armpit_z']:.0f}"]
+             f"LEG AXIS {doc['legs']['axis_deg']:.0f} DEG", f"CROTCH {doc['height_map']['body_z'][1]:.0f} (CONCEPT {k['crotch_z_concept']:.0f})",
+             f"ARMPIT (CONCEPT) {k['armpit_z']:.0f}"]
     ch = doc["chest"]
     rounds = [f"CHEST ROUNDS +{ch['projection']:.0f} AT {ch['apex_z']:.0f}",
               f"ROUNDS {2 * ch['centre_x']:.0f} APART"] if ch.get("rounds") else []
@@ -203,6 +207,8 @@ def body_sheet(doc: dict, meas: dict, out: Path) -> Path:
     for label, zz in (("depth chest", k["chest_z"]), ("depth waist", k["waist_z"]), ("depth seat", k["hip_z"] + 60)):
         i = min(range(len(t["z"])), key=lambda i: abs(t["z"][i] - zz))
         f_, b_ = t["front_y"][i], t["back_y"][i]
+        if "-" in (f_, b_):
+            continue   # the hand hides the front there (body.side_hidden_z)
         y = oz - t["z"][i] * s
         cv.line((cx["side"] + f_ * s, y), (cx["side"] + b_ * s, y), DIM, 0)
         cv.text(cx["side"] + 140, int(y) - 7, f"{label} {b_ - f_:.0f}", DIM)
@@ -281,10 +287,7 @@ def main() -> None:
         meas = json.loads((Path(args.dims) / f"{n}.json").read_text(encoding="utf-8"))
         doc = tomllib.loads((Path(__file__).with_name("body_dims") / f"{n}.toml").read_text(encoding="utf-8"))
         # the side profile's alignment: the measure put the side's mid column at the body's mid-depth
-        t = doc["trunk"]
-        zc = doc["height_map"]["body_z"][1] + 60
-        i = min(range(len(t["z"])), key=lambda i: abs(t["z"][i] - zc))
-        doc["_mid_y"] = (t["front_y"][i] + t["back_y"][i]) / 2
+        doc["_mid_y"] = doc["body"]["side_mid_y"]
         print(body_sheet(doc, meas, out))
         docs.append(doc)
     if len(docs) > 1:

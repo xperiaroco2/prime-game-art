@@ -2,7 +2,8 @@
 armature's bones (world head and tail), every mesh object's name and z range, and the body mesh's rest vertices with
 their dominant vertex group, plus its open boundary loops (the neck ring's vertex count, centre, radii and tilt).
 
-    blender -b --factory-startup --python tools/blender/body_dims_probe.py -- --body <alien_body.blend> --out <probe.json>
+    tools/runner/blender.py's run_script("body_dims_probe.py", ["--body", <alien_body.blend>, "--out", <probe.json>])
+(headless Blender, as every Blender run here; never a window)
 
 Read only: the .blend is opened and never saved. The frame is the body file's: x lateral, z up from the sole, the
 front at -y.
