@@ -53,7 +53,7 @@ BTN_W = 0.006
 # the groove's centre line: a cubic Bezier from its top end (left of bar 1, under the fold) round the mouth side of
 # slit 1 to its tail under slits 1-2 (the picture's sweep); GROOVE_HW the half width (lips), GROOVE_G the glow's
 GROOVE = ((1.93, 2.055), (1.66, 1.95), (1.56, 0.40), (2.50, 0.68))   # (a grid search: 5 cm clear of the holes)
-GROOVE_HW, GROOVE_BEVEL, GROOVE_G = 0.016, 0.006, 0.004
+GROOVE_HW, GROOVE_BEVEL, GROOVE_G = 0.017, 0.005, 0.0075   # step 2: the glow 15 mm (was 8)
 GROOVE_PROUD, GROOVE_SINK = 0.004, 0.0015       # the lips' top, the glow strip's w
 GROOVE_N = 96
 RED, CYAN = (1.0, 0.12, 0.04), (0.1, 0.85, 1.0)
