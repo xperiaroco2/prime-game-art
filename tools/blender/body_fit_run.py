@@ -1,17 +1,20 @@
-"""Bodies by drawing, step D3 (art #196): the station fit of bodies A and B to their dims tables, in plain Python
-(body_fit_geom.py's maths on body_fit_blend.py's dump; then `body_fit_blend.py apply` writes the .blend).
+"""Bodies by drawing, step D3 (art #196): the station fit of body A to its dims table and B's rest skeleton, in
+plain Python (body_fit_geom.py's maths on body_fit_blend.py's dump; then `body_fit_blend.py apply` writes the .blend).
 
     python tools/blender/body_fit_run.py --dump <A0 dump.json> --out <dir>
 
-Writes <dir>/A/fit.json and <dir>/B/fit.json (the vertices in metres, the bone rest, the ring's vertex indices),
-errors.json and errors.md beside each (the overlay error per station, built minus table). Body A is today's body
-(S4b) fitted to A.toml; body B is the fitted A on B's rest (alien_body_b_geom with fit.toml's numbers), its hands and
-feet scaled, then fitted to B.toml with her chest rounds. Two passes each (the second measures the first's result).
+Writes <dir>/A/fit.json (the vertices in metres, the ring's vertex indices), errors.json and errors.md beside it (the
+overlay error per station, built minus table): body A is today's body (S4b) fitted to A.toml, two passes (the second
+measures the first's result). <dir>/B/rest.json is B's rest skeleton (B1's alien_body_b_geom with fit.toml's joints;
+the heights from the two tables' neck rings, the Neck and Head about B's ring by B.toml's numbers, the feet by
+fit.toml's scales). B's mesh is not built here yet: B.toml is being re-measured (the D3 brief's update of
+2026-10-29), so D3b fits B's mesh with the fixed table (`chest_of` and the fit's `chest` are its chest rounds).
 """
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 import tomllib
 from pathlib import Path
@@ -33,14 +36,14 @@ def bones_mm(b: dict) -> dict:
                 "parent": x.get("parent")} for n, x in b.items()}
 
 
-def b_target(s: dict, bones: dict) -> tuple[dict, dict]:
+def b_target(s: dict, bones: dict, ring_a_m: float, scale: float) -> tuple[dict, dict]:
     """B1's target for B's rest with fit.toml's joints: the shifts solved from A's bones (metres); checked with
-    zero shifts (B1's check allows no inward hip shift, and B's hips move 1.3 mm in)."""
+    zero shifts (B1's check allows no inward hip shift, and B's hips move about 1 mm in)."""
     t = {"name": "d3b", "note": "D3's rest for B",
-         "height": {"scale": s["height_scale"], "ring_z": 1.39, "lock_from_z": 1.33},
+         "height": {"scale": scale, "ring_z": ring_a_m, "lock_from_z": ring_a_m - 0.06},
          "arms": {"shift_in_m": 0.0, "shoulder_axial": 0.85, "upper_radial": 1.0, "lower_radial": 1.0,
                   "hand_scale": s["hand_scale"]},
-         "legs": {"shift_out_m": 0.0, "upper_radial": 1.0, "lower_radial": 1.0, "foot_scale": s["height_scale"]},
+         "legs": {"shift_out_m": 0.0, "upper_radial": 1.0, "lower_radial": 1.0, "foot_scale": scale},
          "profile": {"z": [0.5, 1.0], "scale": [1.0, 1.0]},
          "chest": {"amount_m": 0.0, "z": 1.1, "half_z": 0.1, "x": 0.05, "half_x": 0.07, "ramp_m": 0.05},
          "seat": {"amount_m": 0.0, "z": 0.8, "half_z": 0.1, "x": 0.06, "half_x": 0.1, "ramp_m": 0.05},
@@ -49,6 +52,32 @@ def b_target(s: dict, bones: dict) -> tuple[dict, dict]:
     t["arms"]["shift_in_m"] = round(r0["LeftUpperArm"]["head"][0] - s["shoulder_joint_x"] / 1000, 6)
     t["legs"]["shift_out_m"] = round(s["hip_joint_x"] / 1000 - r0["LeftUpperLeg"]["head"][0], 6)
     return t, {"shift_in_m": t["arms"]["shift_in_m"], "shift_out_m": t["legs"]["shift_out_m"]}
+
+
+def b_rest(bones: dict, table_a: dict, table_b: dict, s: dict) -> tuple[dict, dict]:
+    """B's rest skeleton (metres) from A's bones, data-driven: the height scale is B's ring over A's, the joints'
+    x from fit.toml, the Neck's head `neck_bone_below` under B's ring and the Head's `head_bone_above` over it (the
+    bones that ended at the old Neck head end at the new one), the hands by `hand_scale`, the feet by their scales
+    about the ankles. The report holds the scale, the shifts and the key joints in mm."""
+    ra, rb = table_a["neck_ring"], table_b["neck_ring"]
+    scale = rb["z"] / ra["z"]
+    t, shifts = b_target(s, bones, ra["z"] / 1000, scale)
+    rest = {n: {"head": tuple(r["head"]), "tail": tuple(r["tail"]), "parent": r["parent"]}
+            for n, r in G.rest(bones, t).items()}  # checked in b_target with zero shifts
+    ring = rb["z"] / 1000
+    for name, dz in (("Neck", -rb["neck_bone_below"]), ("Head", rb["head_bone_above"])):
+        old = rest[name]["head"]
+        rest[name]["head"] = (old[0], old[1], ring + dz / 1000)
+        for n, r in rest.items():  # the bones that ended at its head on A (the parent's tail) end at the new one
+            if math.dist(bones[n]["tail"], bones[name]["head"]) < 1e-6:
+                r["tail"] = rest[name]["head"]
+    feet([], [], rest, s["foot_scale_x"] / scale, s["foot_scale_y"] / scale)
+    rep = {"height_scale": round(scale, 6), "shifts": shifts,
+           "joints_mm": {n: [round(c * 1000, 1) for c in rest[n]["head"]] for n in
+                         ("LeftShoulder", "LeftUpperArm", "LeftHand", "LeftUpperLeg", "LeftFoot", "LeftToes",
+                          "Neck", "Head")},
+           "ring_mm": rb["z"]}
+    return rest, rep
 
 
 def feet(verts: list, weights: list, rest: dict, sx: float, sy: float) -> list:
@@ -120,31 +149,20 @@ def main() -> int:
     out = Path(a.out)
     ring, weights, edges, bones_m = d["loops"][0], d["weights"], d["edges"], d["bones"]
     va, ea = run_fit("A", mm(d["verts"]), weights, edges, bones_mm(bones_m), ring, settings["A"], None)
-    res = {"A": (va, ea, None)}
-    sb = settings["B"]
-    t, shifts = b_target(sb, bones_m)
-    vb, rest, rep = G.deform([tuple(c / 1000 for c in p) for p in va], weights, bones_m, t)
-    ring_z = 1.39 * sb["height_scale"]
-    nk = rest["Neck"]
-    nk["head"] = (nk["head"][0], nk["head"][1], ring_z - sb["neck_below_ring"] / 1000)
-    vb = feet(vb, weights, rest, sb["foot_scale_x"] / sb["height_scale"], sb["foot_scale_y"] / sb["height_scale"])
-    rest_mm = {n: {"head": [c * 1000 for c in r["head"]], "tail": [c * 1000 for c in r["tail"]],
-                   "parent": r["parent"]} for n, r in rest.items()}
-    tb = F.load_table(DIMS / "B.toml")
-    vbf, eb = run_fit("B", mm(vb), weights, edges, rest_mm, ring, sb, chest_of(tb, sb))
-    eb["b_rest"] = {"shifts": shifts, "deform": rep,
-                    "joints_mm": {n: [round(c, 1) for c in rest_mm[n]["head"]] for n in
-                                  ("LeftUpperArm", "LeftUpperLeg", "Neck", "Head", "LeftHand", "LeftFoot")}}
-    res["B"] = (vbf, eb, {n: {"head": list(r["head"]), "tail": list(r["tail"])} for n, r in rest.items()})
-    for name, (v, e, rest_out) in res.items():
-        o = out / name
-        o.mkdir(parents=True, exist_ok=True)
-        fit = {"verts": [[round(c / 1000, 7) for c in p] for p in v], "ring": ring, "rest": rest_out}
-        (o / "fit.json").write_text(json.dumps(fit), encoding="utf-8")
-        (o / "errors.json").write_text(json.dumps(e, indent=1), encoding="utf-8", newline="\n")
-        (o / "errors.md").write_text(table_md(name, e), encoding="utf-8", newline="\n")
-        print(table_md(name, e))
-    print("B_REST", json.dumps(eb["b_rest"]))
+    o = out / "A"
+    o.mkdir(parents=True, exist_ok=True)
+    fit = {"verts": [[round(c / 1000, 7) for c in p] for p in va], "ring": ring, "rest": None}
+    (o / "fit.json").write_text(json.dumps(fit), encoding="utf-8")
+    (o / "errors.json").write_text(json.dumps(ea, indent=1), encoding="utf-8", newline="\n")
+    (o / "errors.md").write_text(table_md("A", ea), encoding="utf-8", newline="\n")
+    print(table_md("A", ea))
+    rest, rep = b_rest(bones_m, F.load_table(DIMS / "A.toml"), F.load_table(DIMS / "B.toml"), settings["B"])
+    o = out / "B"
+    o.mkdir(parents=True, exist_ok=True)
+    rest_out = {n: {"head": list(r["head"]), "tail": list(r["tail"]), "parent": r["parent"]} for n, r in rest.items()}
+    (o / "rest.json").write_text(json.dumps({"rest": rest_out, "report": rep}, indent=1), encoding="utf-8",
+                                 newline="\n")
+    print("B_REST", json.dumps(rep))
     return 0
 
 

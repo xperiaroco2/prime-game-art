@@ -8,7 +8,7 @@ The fit moves every vertex by a blend of three maps, by its weights (the arm's s
 - the trunk (z over the crotch): per height, x about the midline to the table's front width, the front half of y
   to `front_y` and the back half to `back_y`, each about the section's middle; above the armpit x is kept (the T
   arms; the shoulder caps' outline is not comparable with the concept's hanging arms) up to the neck, whose widths
-  come back over the 60 mm under the ring;
+  come back from 75 to 60 mm under the ring;
 - the legs (z under the crotch): per height, each leg's x about its own section middle to the table's width (our
   legs stay vertical, the concept's splay is not copied), y as the trunk; a band around the crotch blends them; the
   feet (their weights) are kept;
@@ -25,6 +25,10 @@ import math
 import tomllib
 from pathlib import Path
 
+# The arm's root on the T rest (mm past our armpit along |x|): the arm map eases in from the first to the second,
+# so the trunk's side and the shoulder cap keep the trunk map (a scale about the arm's axis there would drag them
+# down and forward); the table's arm stations inside it are not comparable (the concept's arm hangs) and are marked.
+ARM_ROOT = (10.0, 70.0)
 ARM = ("UpperArm", "LowerArm", "Hand", "Thumb", "Index", "Middle", "Ring", "Little")
 FOOT = ("Foot", "Toes")
 
@@ -54,18 +58,24 @@ def interp(xs: list, ys: list, x: float) -> float:
     return y0 + (y1 - y0) * (x - x0) / (x1 - x0) if x1 > x0 else y0
 
 
-def smooth(xs: list, ys: list, sigma: float) -> list:
-    """A Gaussian smoothing over irregular samples; None values are skipped and stay None."""
+def smooth(xs: list, ys: list, sigma) -> list:
+    """A Gaussian smoothing over irregular samples; None values are skipped and stay None. `sigma` is a number or a
+    function of x (a narrower kernel where the shape turns fast)."""
+    sig = sigma if callable(sigma) else (lambda x: sigma)
     out = []
-    for x in xs if sigma > 0 else []:
+    for x in xs:
+        sx = sig(x)
+        if sx <= 0:
+            out.append(None if ys[xs.index(x)] is None else ys[xs.index(x)])
+            continue
         sw = sv = 0.0
         for x2, y2 in zip(xs, ys):
-            if y2 is None or abs(x2 - x) > 3 * sigma:
+            if y2 is None or abs(x2 - x) > 3 * sx:
                 continue
-            w = math.exp(-0.5 * ((x2 - x) / sigma) ** 2)
+            w = math.exp(-0.5 * ((x2 - x) / sx) ** 2)
             sw, sv = sw + w, sv + w * y2
         out.append(sv / sw if sw > 0 else None)
-    return out if sigma > 0 else list(ys)
+    return out
 
 
 def series(xs: list, ys: list) -> tuple[list, list]:
@@ -168,6 +178,15 @@ def frame_of(table: dict, bones: dict, armpit_u: float) -> dict:
             "keep_front": table.get("fit", {}).get("keep_front", [])}
 
 
+def trunk_sigma(ring: float, armpit: float):
+    """The smoothing's width over z: SIGMA, easing to SIGMA_NECK over the neck band and over the 40 mm under the
+    armpit (the trunk's outline turns into the armpit's fold there)."""
+    def sig(z: float) -> float:
+        k = max(ramp((z - (ring - NECK_BAND)) / 30.0), ramp((z - (armpit - 40.0)) / 20.0))
+        return SIGMA + (SIGMA_NECK - SIGMA) * k
+    return sig
+
+
 def targets(table: dict, frame: dict) -> dict:
     """The table's values as smoothed profiles over the body's coordinates."""
     t, lg, ar = table["trunk"], table["legs"], table["arms"]
@@ -175,24 +194,33 @@ def targets(table: dict, frame: dict) -> dict:
     tw = [None if z <= frame["crotch"] + 1 or frame["armpit"] + 5 < z < frame["ring"] - 90 else h
           for z, h in zip(t["z"], half)]
     sel = [s <= ar["s_wrist"] for s in ar["s"]]
-    return {"trunk_half": Profile(t["z"], tw, default=0.0),
-            "trunk_front": Profile(t["z"], [num(v) for v in t["front_y"]]),
-            "trunk_back": Profile(t["z"], [num(v) for v in t["back_y"]]),
-            "leg_half": Profile(lg["z"], [num(v) / 2 if num(v) else None for v in lg["width"]]),
-            "leg_front": Profile(lg["z"], [num(v) for v in lg["front_y"]]),
-            "leg_back": Profile(lg["z"], [num(v) for v in lg["back_y"]]),
+    sg = trunk_sigma(frame["ring"], frame["armpit"])
+    return {"trunk_half": Profile(t["z"], tw, sigma=sg, default=0.0),
+            "trunk_front": Profile(t["z"], [num(v) for v in t["front_y"]], sigma=sg),
+            "trunk_back": Profile(t["z"], [num(v) for v in t["back_y"]], sigma=sg),
+            "leg_half": Profile(lg["z"], [num(v) / 2 if num(v) else None for v in lg["width"]], sigma=sg),
+            "leg_front": Profile(lg["z"], [num(v) for v in lg["front_y"]], sigma=sg),
+            "leg_back": Profile(lg["z"], [num(v) for v in lg["back_y"]], sigma=sg),
             "arm_w": Profile([u for u, k in zip(frame["arm_u"], sel) if k],
                              [num(w) for w, k in zip(ar["width"], sel) if k])}
 
 
-def keep_front(z: float, zones: list, edge: float = 30.0) -> float:
-    """1 inside a keep_front zone [z0, z1], easing to 0 over `edge` mm outside it."""
+# The fit's smoothing along the body (mm): the tables are read in whole pixels (about 2 mm, in steps) and the body's
+# own sections wobble too, so the targets and each station's ratio are smoothed with their neighbours, or the surface
+# ripples in bands (D3's first build). Narrower over the neck (from `ring - NECK_BAND`) and under the armpit, where the outline turns fast.
+SIGMA, SIGMA_NECK, NECK_BAND = 20.0, 6.0, 100.0
+KEEP_EDGE = 60.0  # mm: a kept front eases back to the table over its zone's ends
+
+
+def keep_front(z: float, zones: list, edge: float = KEEP_EDGE) -> float:
+    """1 inside a keep_front zone [z0, z1] but its `edge` mm ends, easing to 0 at its bounds (outside it the table
+    holds exactly)."""
     k = 0.0
     for z0, z1 in zones:
         if edge <= 0:
             k = max(k, 1.0 if z0 <= z <= z1 else 0.0)
             continue
-        k = max(k, ramp((z - (z0 - edge)) / edge) * ramp(((z1 + edge) - z) / edge))
+        k = max(k, ramp((z - z0) / edge) * ramp((z1 - z) / edge))
     return k
 
 
@@ -211,9 +239,10 @@ def ratios(m: dict, tg: dict, frame: dict, chest=None) -> dict:
     lf1 = [tg["leg_front"](z) for z in lz]
     lk = [keep_front(z, frame["keep_front"]) for z in lz]
     lf1 = [m["legs"][z][2] * k + f * (1 - k) for z, f, k in zip(lz, lf1, lk)]
-    au = sorted(m["arms"])
+    au = sorted(u for u in m["arms"] if u >= frame["armpit_u"] + ARM_ROOT[1])  # the root's ratio is held flat
     ak = [tg["arm_w"](u) / (m["arms"][u][1] - m["arms"][u][0]) for u in au]
-    p = lambda xs, ys: Profile(xs, ys, sigma=6.0)  # noqa: E731
+    tsig = trunk_sigma(frame["ring"], frame["armpit"])
+    p = lambda xs, ys: Profile(xs, ys, sigma=tsig)  # noqa: E731
     return {"rx": p(tz, rx), "f0": p(tz, [m["trunk"][z][1] for z in tz]), "b0": p(tz, [m["trunk"][z][2] for z in tz]),
             "f1": p(tz, f1), "b1": p(tz, [tg["trunk_back"](z) for z in tz]),
             "lr": p(lz, lr), "lc": p(lz, [(m["legs"][z][0] + m["legs"][z][1]) / 2 for z in lz]),
@@ -260,7 +289,7 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
             continue
         x, y, z = p
         # the trunk; x kept above the armpit, the neck's widths back over the 60 mm under the ring
-        wx = 1.0 - ramp((z - za) / 40.0) * (1.0 - ramp((z - (ring - 60.0)) / 25.0))
+        wx = 1.0 - ramp((z - za) / 40.0) * (1.0 - ramp((z - (ring - 75.0)) / 15.0))
         tx = x * (1.0 + wx * (r["rx"](z) - 1.0))
         c = (r["f0"](z) + r["b0"](z)) / 2
         ty = map_y(y, c, r["f0"](z), r["b0"](z), r["f1"](z), r["b1"](z))
@@ -281,7 +310,7 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
         # an arm
         if a > 0:
             k = r["ak"](ax)
-            k = 1.0 + (k - 1.0) * ramp((ax - (fr["armpit_u"] - 40.0)) / 50.0) * (1.0 - ramp((ax - fr["wrist_u"]) / 40.0))
+            k = 1.0 + (k - 1.0) * ramp((ax - (fr["armpit_u"] + ARM_ROOT[0])) / (ARM_ROOT[1] - ARM_ROOT[0]))                 * (1.0 - ramp((ax - fr["wrist_u"]) / 40.0))
             yc, zcen = r["ayc"](ax), r["azc"](ax)
             amx, amy, amz = x, yc + (y - yc) * k, zcen + (z - zcen) * k
             bx, by, bz = (1 - a) * bx + a * amx, (1 - a) * by + a * amy, (1 - a) * bz + a * amz
@@ -330,7 +359,8 @@ def errors(verts: list, weights: list, edges: list, table: dict, bones: dict, au
         if u not in m["arms"] or s > ar["s_wrist"]:
             continue
         z0, z1, _, _ = m["arms"][u]
-        rows["arms"].append({"s": s, "u": round(u, 1), "w": _e(z1 - z0, w), "rule": ""})
+        rule = "arm root (T rest)" if u < fr["armpit_u"] + ARM_ROOT[1] else ""
+        rows["arms"].append({"s": s, "u": round(u, 1), "w": _e(z1 - z0, w), "rule": rule})
     return {"rows": rows, "summary": summarise(rows), "frame": {k: v for k, v in fr.items() if not isinstance(v, list)}}
 
 

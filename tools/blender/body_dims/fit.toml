@@ -2,14 +2,15 @@
 # this file are generated (body_dims_measure.py, never hand-edited); what the fit adds to them lives here. mm.
 
 [A]
-# The concept's forearm and hand hang in front of the belly in its side view (A.toml's note): the body's own front
-# is kept there.
-keep_front = [[640.0, 1000.0]]
+# The concept's forearm and hand hang in front of the belly in its side view (A.toml's note), and the side rows
+# around the hand are a straight interpolation, not a measurement: the body's own front is kept there (trunk and
+# legs), easing back to the table over the zone's 30 mm ends.
+keep_front = [[640.0, 1000.0]]  # the trunk's belly and the upper thigh (the hand's rows)
 
 [B]
 keep_front = []
-# B's rest from A's (B1's alien_body_b_geom with these numbers; the D2 plan's point 1)
-height_scale = 0.953
+# B's rest from A's (B1's alien_body_b_geom with these numbers; the D2 plan's point 1). The height scale is B's
+# neck ring over A's (the tables), the Neck and Head about B's ring by B.toml's neck_bone_below / head_bone_above.
 shoulder_joint_x = 129.0      # the UpperArm heads' |x|
 hip_joint_x = 113.0           # the UpperLeg heads' |x|
 neck_below_ring = 50.8        # the Neck bone's head under the ring (the Head's stays 48.3 above it)

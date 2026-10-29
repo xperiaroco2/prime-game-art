@@ -24,6 +24,7 @@ light = [
   "tools/runner/commands/raw_backup.py", "tools/runner/commands/pins.py", "tools/runner/commands/nightly.py",
   "godot/alien_look/*",  # research shaders and their proof script; no runner command or test uses them yet (#196)
   "tools/blender/body_dims*", "tools/blender/body_drawing.py",  # the bodies' mm drawing (#196, D2): plain Python and a probe; no runner command or heavy test uses them
+  "tools/blender/body_fit*",  # the bodies' station fit to the drawing (#196, D3): plain Python and its Blender dump, apply and review; no runner command or heavy test uses them
   "godot/alien/*", "tools/blender/alien_*",  # the alien parts kit's build and proof scripts (#196): no runner command or test uses them yet
   "godot/plush/*", "tools/blender/plush_*",  # the vault plush's build and shot scripts (#297): no runner command or heavy test uses them
   "godot/crystal/*", "tools/blender/crystal_*",  # the energy crystal's build and shot scripts (#263): no runner command or heavy test uses them
