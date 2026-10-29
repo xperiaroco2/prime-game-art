@@ -89,6 +89,24 @@ class Helpers(unittest.TestCase):
         self.assertAlmostEqual(F.chest_excess(1050, ch), 20.0)
         self.assertEqual(F.chest_excess(990, ch), 0.0)
 
+    def test_the_chest_line_leaves_the_crease_tangent(self):
+        ch = {"under_z": 1000.0, "top_z": 1100.0, "under_f": -100.0, "top_f": -80.0}
+        self.assertAlmostEqual(F.chest_line(1000, ch), -100.0)
+        self.assertAlmostEqual(F.chest_line(1100, ch), -80.0)
+        self.assertLess(F.chest_line(1001, ch) - F.chest_line(1000, ch), 0.01)  # no kink at the crease
+        top = (F.chest_line(1100, ch) - F.chest_line(1099, ch))
+        self.assertAlmostEqual(top, 0.2, delta=0.01)  # the straight line's slope at the upper chest
+
+    def test_the_trim_moves_the_rounds_by_the_front_error_only(self):
+        ch = {"under_z": 1000.0, "top_z": 1100.0, "front": lambda z: -100.0, "centre_x": 70.0, "sigma_x": 40.0,
+              "floor": 0.4}
+        rows = [{"z": float(z), "front": 4.0} for z in range(1005, 1100, 5)]
+        body = {"Chest": 1.0}
+        verts = [(70.0, -100.0, 1050.0), (70.0, -100.0, 950.0), (70.0, 50.0, 1050.0), (300.0, -100.0, 1050.0)]
+        out = F.chest_trim(verts, [body, body, body, {"LeftUpperArm": 1.0}], rows, ch)
+        self.assertAlmostEqual(out[0][1], -104.0, delta=0.3)  # the apex 4 mm forward
+        self.assertEqual(out[1:], verts[1:])  # under the crease, the back, the arm
+
 
 class Fit(unittest.TestCase):
     def test_a_trunk_fits_its_table_and_keeps_the_ring(self):
@@ -318,6 +336,25 @@ class ShoulderLift(unittest.TestCase):
         self.assertGreater(top[110], 1220.0 + 5.0)  # the concept's top over x 110 is 1270
         self.assertLessEqual(max(top.values()), 1220.0 + 0.5 * (1300.0 - 1220.0))  # at most half way to the ring
         self.assertGreater(rep["max_lift_mm"], 0.0)
+
+    def test_the_smooth_lift_ignores_a_notch_in_the_top(self):
+        verts = [(50.0 * math.cos(a), 50.0 * math.sin(a), 1300.0) for a in (0.0, 1.0, 2.0)]
+        verts += [(float(x), 0.0, 1220.0 - (12.0 if x == 110 else 0.0)) for x in range(60, 200, 10)]
+        sl = {"share": 0.5, "reach": 110.0, "sigma": 25.0, "x_in": 20.0, "x_out": 30.0, "x_end": 200.0,
+              "depth": 60.0, "smooth_env": True}
+        def notch(s):
+            out, _ = F.shoulder_lift(verts, [0, 1, 2], self.TABLE, s)
+            lift = {round(p[0]): q[2] - p[2] for p, q in zip(verts[3:], out[3:])}
+            return lift[110] - (lift[100] + lift[120]) / 2
+        self.assertLess(notch(sl), 4.0)  # the lift at the notch stays near its neighbours'
+
+    def test_taubin_moves_only_the_shared_vertices_and_flattens_a_spike(self):
+        verts = [(float(i), 0.0, 5.0 if i == 2 else 0.0) for i in range(5)]
+        edges = [(i, i + 1) for i in range(4)]
+        out = F.taubin(verts, edges, {1: 1.0, 2: 1.0, 3: 1.0}, 4)
+        self.assertEqual(out[0], verts[0])
+        self.assertEqual(out[4], verts[4])
+        self.assertLess(out[2][2], 3.0)
 
 
 if __name__ == "__main__":

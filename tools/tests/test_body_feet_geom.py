@@ -45,6 +45,14 @@ class ProfileTest(unittest.TestCase):
         self.assertLess(ts[-1], 1.0)
 
 
+class ToeShareTest(unittest.TestCase):
+    def test_ahead_of_the_toe_joint_is_toes(self):
+        self.assertEqual(FG.toe_share(-0.10, -0.05, 0.0), 1.0)  # well ahead (the front at -y)
+        self.assertEqual(FG.toe_share(0.0, -0.05, 0.3), 0.3)  # behind: the nearest old vertex's share
+        self.assertAlmostEqual(FG.toe_share(-0.05, -0.05, 0.0), 0.5)
+        self.assertEqual(FG.toe_share(-0.10, -0.05, 1.0), 1.0)
+
+
 class ForefootTest(unittest.TestCase):
     def build(self, n=32):
         loop = cut_loop(n)

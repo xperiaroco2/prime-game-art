@@ -342,9 +342,12 @@ def ratios(m: dict, tg: dict, frame: dict, chest=None) -> dict:
 
 
 def chest_line(z: float, chest: dict) -> float:
-    """The front line under the chest rounds: linear from the crease to the upper chest (y, mm)."""
+    """The front line under the chest rounds from the crease to the upper chest (y, mm): s * s * (2 - s) of the way,
+    so it leaves the crease tangent to the front under it (D3e: the straight line's kink there drew a concave row
+    under the rounds) and meets the upper chest with the straight line's slope."""
     z0, z1, f0, f1 = chest["under_z"], chest["top_z"], chest["under_f"], chest["top_f"]
-    return f0 + (f1 - f0) * (z - z0) / (z1 - z0)
+    s = min(1.0, max(0.0, (z - z0) / (z1 - z0)))
+    return f0 + (f1 - f0) * s * s * (2.0 - s)
 
 
 def chest_excess(z: float, chest: dict) -> float:
@@ -429,6 +432,52 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
                  "frame": {k: v for k, v in fr.items() if not isinstance(v, list)}}
 
 
+def chest_trim(verts: list, weights: list, rows: list, chest: dict, sigma: float = CHEST_SIGMA) -> list:
+    """The rounds' last step (D3e): the station fit's two passes leave the rounds' apex short of the table (the second
+    pass maps the measured apex back to the line under them). Each trunk station's front error between the crease and
+    the upper chest (`rows`: errors()'s trunk rows), smoothed along z, moves the rounds' front by its opposite, by the
+    rounds' share across x and over the front half's depth; the arms and everything outside the band never move."""
+    inside = [r for r in rows if chest["under_z"] < r["z"] < chest["top_z"] and r["front"] is not None]
+    if not inside:
+        return [tuple(p) for p in verts]
+    zs = [chest["under_z"]] + [r["z"] for r in inside] + [chest["top_z"]]
+    pe = Profile(zs, [0.0] + [r["front"] for r in inside] + [0.0], sigma=sigma, default=0.0)
+    out = []
+    for p, w in zip(verts, weights):
+        x, y, z = p
+        a = arm_share(w)
+        if a >= 1.0 or not chest["under_z"] < z < chest["top_z"] or y >= 0:
+            out.append(tuple(p))
+            continue
+        f = round_x(abs(x), chest["centre_x"], chest["sigma_x"], chest["floor"])
+        d = ramp(-y / max(1.0, -chest["front"](z)) * 1.6 - 0.3)
+        out.append((x, y - pe(z) * f * d * (1.0 - a), z))
+    return out
+
+
+def taubin(verts: list, edges: list, share: dict, rounds: int, lam: float = 0.5, mu: float = -0.53) -> list:
+    """Taubin smoothing (a shrink-free Laplacian pair per round) of the vertices in `share` (index -> 0..1, how much
+    of each step it takes); every other vertex stays."""
+    nb = {i: [] for i in share}
+    for a, b in edges:
+        if a in nb:
+            nb[a].append(b)
+        if b in nb:
+            nb[b].append(a)
+    v = [tuple(p) for p in verts]
+    for _ in range(rounds):
+        for f in (lam, mu):
+            new = list(v)
+            for i, s in share.items():
+                if not nb[i]:
+                    continue
+                n = len(nb[i])
+                m = [sum(v[j][k] for j in nb[i]) / n for k in range(3)]
+                new[i] = tuple(v[i][k] + f * s * (m[k] - v[i][k]) for k in range(3))
+            v = new
+    return v
+
+
 def concept_top(table: dict, x: float, z_low: float, ring: float) -> float:
     """The concept's shoulder top over |x| in the front view: the highest station between z_low and the ring whose
     half width reaches x (the table's halves fall toward the ring), linear between stations; z_low where none."""
@@ -443,13 +492,17 @@ def concept_top(table: dict, x: float, z_low: float, ring: float) -> float:
     return best
 
 
-def shoulder_lift(verts: list, ring_idx: list, table: dict, sl: dict, bin_mm: float = 10.0) -> tuple[list, dict]:
+def shoulder_lift(verts: list, ring_idx: list, table: dict, sl: dict, bin_mm: float = 10.0,
+                  edges: list | None = None) -> tuple[list, dict]:
     """B's shoulder tops raised in z toward the concept's higher slope (D3d; D3c's x widening of the neck base drew a
     valley between the neck's slope and the shoulder, a diagonal crease in the 3/4 views). Per |x| the body's top
     (the highest vertex in a `bin_mm` bin over the ring - `reach` mm) is filled to its outer envelope (no valley),
     then moved `share` of the way to the concept's top (`concept_top`), smoothed over x by `sigma`; the lift eases in
     over `x_in` mm past the ring's half width and out over `x_out` mm to `x_end`. Each vertex takes its x's lift
-    times a smoothstep of its depth under the top over `depth` mm. The ring never moves."""
+    times a smoothstep of its depth under the top over `depth` mm. The ring never moves.
+    D3e: with `smooth_env` the lift is `want - env` against the envelope smoothed by `sigma` (the per-bin top, at
+    about the vertex spacing, copied its noise into the lift: a knot and a dent on the shoulder top), and `taubin`
+    rounds (with `edges`) then smooth the lifted band only, each vertex by its share of the lift."""
     ring = table["neck_ring"]["z"]
     rh = table["neck_ring"]["half_x"]
     z_low = ring - sl["reach"]
@@ -462,8 +515,11 @@ def shoulder_lift(verts: list, ring_idx: list, table: dict, sl: dict, bin_mm: fl
     xs = [(b + 0.5) * bin_mm for b in bins]
     own = [top[b] for b in bins]
     env = [max(own[i:]) for i in range(len(own))]  # the outer envelope: never lower than the shoulder outside it
+    if sl.get("smooth_env"):
+        env = smooth(xs, env, sl["sigma"])
     want = [e + sl["share"] * max(0.0, concept_top(table, x, z_low, ring) - e) for x, e in zip(xs, env)]
-    lift = Profile(xs, [w - o for w, o in zip(want, own)], sigma=sl["sigma"], default=0.0)
+    base = env if sl.get("smooth_env") else own
+    lift = Profile(xs, [w - o for w, o in zip(want, base)], sigma=sl["sigma"], default=0.0)
     topp = Profile(xs, env, sigma=sl["sigma"], default=z_low)
     keep = set(ring_idx)
     out, most = [], 0.0
@@ -477,7 +533,12 @@ def shoulder_lift(verts: list, ring_idx: list, table: dict, sl: dict, bin_mm: fl
         dz = lift(ax) * k * ramp(1.0 - d / sl["depth"])
         most = max(most, dz)
         out.append((p[0], p[1], p[2] + dz))
-    return out, {"max_lift_mm": round(most, 2),
+    rounds = sl.get("taubin", 0)
+    if rounds and edges:
+        share = {i: min(1.0, (q[2] - p[2]) / max(1.0, 0.25 * most)) for i, (p, q) in enumerate(zip(verts, out))
+                 if q[2] - p[2] > 0.05}
+        out = taubin(out, edges, share, rounds)
+    return out, {"max_lift_mm": round(most, 2), "taubin": rounds if edges else 0,
                  "lift_mm": {round(x): round(lift(x) * ramp((x - rh) / sl["x_in"]) * ramp((sl["x_end"] - x) / sl["x_out"]), 1)
                              for x in xs[::2]}}
 

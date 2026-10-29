@@ -26,6 +26,16 @@ def smoothstep(a: float, b: float, x: float) -> float:
     return t * t * (3 - 2 * t)
 
 
+TOE_BLEND = 0.012  # m: the new front's Toes share rises from this far behind the Toes head to this far ahead
+
+
+def toe_share(y: float, joint_y: float, near: float, blend: float = TOE_BLEND) -> float:
+    """A new forefoot vertex's Toes share (D3e): its nearest old toe vertex's (`near`), but never less than a
+    smoothstep from `blend` m behind the Toes head to `blend` m ahead (the front at -y). The front is longer than the
+    old toes; on Foot it pitched with the heel on a tiptoe (Crouch_Fwd) and sank under the floor."""
+    return max(near, smoothstep(joint_y + blend, joint_y - blend, y))
+
+
 def outline(t: float, start: float, peak: float, t_peak: float, n: float) -> float:
     """A profile along the forefoot, t in [0, 1] from the cut to the tip: `start` at the cut, easing (zero slope at
     both ends) to `peak` at `t_peak`, then a superellipse quarter of exponent n down to 0 at t = 1."""

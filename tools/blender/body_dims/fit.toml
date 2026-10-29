@@ -29,8 +29,11 @@ neck_base = { length = 60.0, collar = 6.0, power = 1.5, ease = 60.0, max_ratio =
 # D3d: the x widening (max_ratio 1.15 until D3c) drew a valley between the neck's slope and the shoulder, a diagonal
 # crease in the 3/4 views; her shoulder tops are raised in z instead, `share` of the way to the concept's top over
 # the `reach` mm under the ring (body_fit_geom.shoulder_lift), from the ring's half width to `x_end`.
-shoulder_lift = { share = 0.5, reach = 110.0, sigma = 12.0, x_in = 25.0, x_out = 45.0, x_end = 210.0, depth = 80.0 }
+# D3e: the lift against the smoothed envelope (`smooth_env`, sigma 25), then `taubin` rounds over the lifted band.
+shoulder_lift = { share = 0.5, reach = 110.0, sigma = 25.0, x_in = 25.0, x_out = 45.0, x_end = 210.0, depth = 80.0, smooth_env = true, taubin = 6 }
 # Her chest: two soft rounds, no nipples. The table's side front ahead of the line from the crease to the upper
 # chest is the rounds' depth; across x it peaks at the rounds' centres and eases to `floor` between them.
 chest_sigma_x = 42.0
 chest_floor = 0.45
+# D3e: the rounds' apex trimmed to the table after the passes (body_fit_geom.chest_trim).
+chest_trim = true

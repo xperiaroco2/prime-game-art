@@ -189,8 +189,11 @@ def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, 
         v, rep = F.fit(v, weights, edges, table, bones, au, ring, chest)
         reps.append(rep)
     if s.get("shoulder_lift"):  # D3d: B's shoulder tops toward her concept's slope, after the station passes
-        v, lift = F.shoulder_lift(v, ring, table, s["shoulder_lift"])
+        v, lift = F.shoulder_lift(v, ring, table, s["shoulder_lift"], edges=edges)
         reps.append({"shoulder_lift": lift})
+    if chest is not None and s.get("chest_trim"):  # D3e: the rounds' apex to the table
+        mid = F.errors(v, weights, edges, table, bones, au, chest)
+        v = F.chest_trim(v, weights, mid["rows"]["trunk"], chest)
     err = F.errors(v, weights, edges, table, bones, au, chest)
     err["before"] = before["summary"]
     err["passes"] = reps

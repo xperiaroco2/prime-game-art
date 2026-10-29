@@ -213,9 +213,12 @@ def new_forefoot(body, arm, table: dict, cut_behind: float) -> dict:
             k = kd.find(nv.co)[1]
             wf, wtoe = old_w[k]
             tot = (wf + wtoe) or 1.0
-            nv[dl][fi], nv[dl][ti] = wf / tot, wtoe / tot
+            wtoe = FG.toe_share(nv.co.y, th.y, wtoe / tot)  # D3e: ahead of the Toes head, on Toes
+            nv[dl][fi], nv[dl][ti] = 1.0 - wtoe, wtoe
             if wtoe <= 0:
                 del nv[dl][ti]
+            elif wtoe >= 1:
+                del nv[dl][fi]
             for sl in shapes:
                 nv[sl] = inv @ nv.co
             verts.append(nv)
