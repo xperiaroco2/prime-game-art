@@ -8,8 +8,12 @@ overlay error per station, built minus table): body A is today's body (S4b) fitt
 measures the first's result). Body B (D3b) is A's fitted mesh on B's rest skeleton (B1's alien_body_b_geom with
 fit.toml's joints; the heights from the two tables' neck rings, the Neck and Head about B's ring by B.toml's
 numbers), then the hands and feet scaled from A's by the tables' B/A ratios (`limb_scales`: the hand's length along
-its bone and its width across, the foot's length in y and width in x), then fitted to B.toml with her chest rounds
-(`chest_of`) and the neck base; <dir>/B/fit.json holds the vertices and the rest ("rest"), errors beside it.
+its bone and its width across, the foot's length in y and width in x; the mesh per axis, the bones along their own
+directions), then fitted to B.toml with her chest rounds (`chest_of`) and the neck base; the shoulder chains (the
+Shoulder to the fingertips) then move rigidly with the arms' mesh (`arm_shift_mm`, `arms_moved`). <dir>/B/fit.json
+holds the vertices and the rest ("rest"), errors beside it. Every B bone keeps A's rest direction (`rest_turns`, at
+most the contract's `[body_types.B] rest_turn_max_deg`) and B's arm mesh sits on its bones as A's does
+(`arm_offsets`, within ARM_OFFSET_MAX_MM); either over its limit exits 1 (D3i, the review of art #196).
 """
 from __future__ import annotations
 
@@ -26,6 +30,9 @@ import alien_body_b_geom as G  # noqa: E402
 import body_fit_geom as F  # noqa: E402
 
 DIMS = HERE / "body_dims"
+CONTRACT = HERE.parent.parent / "contract" / "contract.toml"
+ARM_OFFSET_MAX_MM = 1.0  # B's arm mesh against its bones in y, minus A's (per arm bone; the hand's by its width scale)
+ARM_BONES = ("UpperArm", "LowerArm", "Hand")
 
 
 def mm(v: list) -> list:
@@ -106,9 +113,28 @@ def _scale_about(p, a, u, sl: float, sw: float):
     return tuple(a[i] + sl * along * u[i] + sw * (d[i] - along * u[i]) for i in range(3))
 
 
+def keep_directions(rest: dict, names: list, place) -> None:
+    """The bones `names` re-placed in `rest` (in place) by the mesh's per-axis scale `place` (a point -> its new
+    place), each keeping its own rest direction (the contract: B's bones turn at most rest_turn_max_deg against A's;
+    D3g's per-axis scale turned the Foot 2.7 and the thumbs 2.5 degrees). Each head is `place` of its own (the joints
+    stay where the mesh's are: the toe joint, the thumb's knuckles, and the forefoot's cut that `apply` takes from the
+    Toes head); each tail lies along the bone's old direction, the length the scale gives it along that direction
+    (`place`'s move projected on it). A chain's tail then misses its child's head by a few mm (B's Foot 8 mm, the
+    thumbs 1.6); Blender's bones are unconnected here and glTF carries no tails, so only heads and directions count."""
+    for n in names:
+        h, t = tuple(rest[n]["head"]), tuple(rest[n]["tail"])
+        d = [t[i] - h[i] for i in range(3)]
+        ln = math.sqrt(sum(c * c for c in d)) or 1.0
+        u = [c / ln for c in d]
+        ph, pt = place(h), place(t)
+        nl = sum((pt[i] - ph[i]) * u[i] for i in range(3))
+        rest[n]["head"], rest[n]["tail"] = tuple(ph), tuple(ph[i] + nl * u[i] for i in range(3))
+
+
 def hands(verts: list, weights: list, rest: dict, sl: float, sw: float) -> list:
     """The hands scaled about their wrists (the Hand bone's head; metres): by sl along the Hand bone, by sw across
-    it, by the vertices' hand weights; the hands' bones (the Hand and its digits) with them."""
+    it, by the vertices' hand weights; the hands' bones (the Hand and its digits) with them, each along its own
+    direction (`keep_directions`)."""
     axes = {}
     for side in ("Left", "Right"):
         h, t = rest[f"{side}Hand"]["head"], rest[f"{side}Hand"]["tail"]
@@ -123,17 +149,17 @@ def hands(verts: list, weights: list, rest: dict, sl: float, sw: float) -> list:
         a, u = axes["Left" if p[0] >= 0 else "Right"]
         q = _scale_about(p, a, u, sl, sw)
         out.append(tuple(p[i] + f * (q[i] - p[i]) for i in range(3)))
-    for n, r in rest.items():
-        side = "Left" if n.startswith("Left") else "Right" if n.startswith("Right") else ""
-        if side and F.hand_share({n: 1.0}) > 0:
-            a, u = axes[side]
-            r["head"], r["tail"] = _scale_about(r["head"], a, u, sl, sw), _scale_about(r["tail"], a, u, sl, sw)
+    for side in ("Left", "Right"):
+        a, u = axes[side]
+        names = [n for n in rest if n.startswith(side) and F.hand_share({n: 1.0}) > 0]
+        keep_directions(rest, names, lambda p, a=a, u=u: _scale_about(p, a, u, sl, sw))
     return out
 
 
 def feet(verts: list, weights: list, rest: dict, sx: float, sy: float) -> list:
     """The feet scaled about their ankles (x by sx, y by sy; metres), by the vertices' foot weights; the feet's
-    bones with them."""
+    bones with them, each along its own direction (`keep_directions`: the toe joint lands on the Foot bone's line,
+    a few mm off the mesh's own)."""
     out = []
     for p, w in zip(verts, weights):
         f = F.foot_share(w)
@@ -145,24 +171,62 @@ def feet(verts: list, weights: list, rest: dict, sx: float, sy: float) -> list:
         out.append(tuple(p[i] + f * (q[i] - p[i]) for i in range(3)))
     for side in ("Left", "Right"):
         a = tuple(rest[f"{side}Foot"]["head"])
-        for n in (f"{side}Foot", f"{side}Toes"):
-            for k in ("head", "tail"):
-                p = rest[n][k]
-                rest[n][k] = (a[0] + sx * (p[0] - a[0]), a[1] + sy * (p[1] - a[1]), p[2])
+        keep_directions(rest, [f"{side}Foot", f"{side}Toes"],
+                        lambda p, a=a: (a[0] + sx * (p[0] - a[0]), a[1] + sy * (p[1] - a[1]), p[2]))
     return out
 
 
 def arms_moved(rest: dict, dy_mm: float) -> dict:
-    """The rest with the arms' bones (the upper arm to the fingertips) and the shoulders' tails moved by dy_mm in y
-    (the fit's `arm_dy`; metres in and out)."""
+    """The rest with the shoulder chains (the Shoulder, the upper arm to the fingertips) moved rigidly by dy_mm in y
+    (the arms' mesh move, `arm_shift_mm`; metres in and out): every bone keeps its direction (D3g moved only the
+    Shoulder's tail and turned it 15 degrees)."""
     out = {n: dict(r) for n, r in rest.items()}
     dy = dy_mm / 1000.0
     for n, r in out.items():
-        if F.arm_share({n: 1.0}) > 0:
+        if F.arm_share({n: 1.0}) > 0 or (n.endswith("Shoulder") and n.startswith(("Left", "Right"))):
             r["head"] = (r["head"][0], r["head"][1] + dy, r["head"][2])
             r["tail"] = (r["tail"][0], r["tail"][1] + dy, r["tail"][2])
-        elif n.endswith("Shoulder") and n.startswith(("Left", "Right")):
-            r["tail"] = (r["tail"][0], r["tail"][1] + dy, r["tail"][2])
+    return out
+
+
+def rest_turns(a: dict, b: dict) -> dict:
+    """Per bone of A the angle (degrees) between its rest direction on A and on B (heads and tails, any one unit)."""
+    out = {}
+    for n, ra in a.items():
+        u = [ra["tail"][i] - ra["head"][i] for i in range(3)]
+        v = [b[n]["tail"][i] - b[n]["head"][i] for i in range(3)]
+        c = sum(x * y for x, y in zip(u, v)) / (math.sqrt(sum(x * x for x in u)) * math.sqrt(sum(y * y for y in v)))
+        out[n] = math.degrees(math.acos(max(-1.0, min(1.0, c))))
+    return out
+
+
+def rest_turn_max() -> float:
+    """The contract's largest rest turn of a B bone against A's (degrees)."""
+    return float(tomllib.loads(CONTRACT.read_text(encoding="utf-8"))["body_types"]["B"]["rest_turn_max_deg"])
+
+
+def _arm_rows(weights: list) -> dict:
+    """Per arm bone (both sides) the vertices weighted at least 0.9 on it."""
+    return {f"{sd}{b}": [i for i, w in enumerate(weights) if w.get(f"{sd}{b}", 0.0) >= 0.9]
+            for sd in ("Left", "Right") for b in ARM_BONES}
+
+
+def arm_shift_mm(before: list, after: list, weights: list) -> float:
+    """The arms' mean move in y over the vertices weighted at least 0.9 on an arm bone (`before` and `after` in mm):
+    what the fit did to the arms' mesh, every pass and refit together (D3g summed only the reported passes' arm_dy,
+    -35.4 mm against the mesh's -14.9, and left B's arm bones about 20 mm in front of her arms)."""
+    idx = [i for v in _arm_rows(weights).values() for i in v]
+    return sum(after[i][1] - before[i][1] for i in idx) / max(1, len(idx))
+
+
+def arm_offsets(verts: list, weights: list, bones: dict) -> dict:
+    """Per arm bone the mean (y, z) of its vertices (weighted at least 0.9 on it) minus its middle's; one unit."""
+    out = {}
+    for n, idx in _arm_rows(weights).items():
+        if idx:
+            b = bones[n]
+            out[n] = tuple(sum(verts[i][k] for i in idx) / len(idx) - (b["head"][k] + b["tail"][k]) / 2
+                           for k in (1, 2))
     return out
 
 
@@ -183,11 +247,12 @@ def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, 
                     "arm_low": min(p[2] for p, a in zip(verts_mm, wa) if a >= 0.5)}
     fr = F.frame_of(table, bones, 0.0)
     au = F.armpit_u(verts_mm, edges, weights, fr["armpit"] - 5.0)
-    v, reps = verts_mm, []
+    v, reps, dys = verts_mm, [], []
     before = F.errors(v, weights, edges, table, bones, au, chest)
     for _ in range(2):
         v, rep = F.fit(v, weights, edges, table, bones, au, ring, chest)
         reps.append(rep)
+        dys.append(rep["arm_dy_mm"])
     if s.get("shoulder_lift"):  # D3d: B's shoulder tops toward her concept's slope, after the station passes
         v, lift = F.shoulder_lift(v, ring, table, s["shoulder_lift"], edges=edges)
         reps.append({"shoulder_lift": lift})
@@ -199,6 +264,7 @@ def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, 
         v = F.relax_moves(base, v, edges, fixed, rl["rounds"], rl.get("lam", 0.5))
         for _ in range(rl.get("refits", 0)):
             v, rep = F.fit(v, weights, edges, table, bones, au, ring, chest)
+            dys.append(rep["arm_dy_mm"])
             v = F.relax_moves(base, v, edges, fixed, rl["rounds_after"], rl.get("lam", 0.5))
         reps.append({"relax": rl})
     if s.get("neck_tangent"):  # D3f: the body leaves the ring at the seated head's tangent (no turtleneck flare)
@@ -218,6 +284,7 @@ def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, 
     err = F.errors(v, weights, edges, table, bones, au, chest)
     err["before"] = before["summary"]
     err["passes"] = reps
+    err["arm_dy_fit_mm"] = [round(x, 3) for x in dys]  # every F.fit call's, the refits' too
     return v, err
 
 
@@ -258,10 +325,21 @@ def main() -> int:
     va_m = [tuple(c / 1000 for c in p) for p in va]
     rest, rep, vb = b_rest(bones_m, F.load_table(DIMS / "A.toml"), tb, sb, va_m, weights)
     rest_out = {n: {"head": list(r["head"]), "tail": list(r["tail"]), "parent": r["parent"]} for n, r in rest.items()}
-    vbf, eb = run_fit("B", mm(vb), weights, edges, bones_mm(rest_out), ring, sb, chest_of(tb, sb),
+    vb_mm = mm(vb)
+    vbf, eb = run_fit("B", vb_mm, weights, edges, bones_mm(rest_out), ring, sb, chest_of(tb, sb),
                      mm(d["verts"]))
-    rep["arm_dy_mm"] = round(sum(p.get("arm_dy_mm", 0.0) for p in eb["passes"]), 3)
+    rep["arm_dy_fit_mm"] = round(sum(eb["arm_dy_fit_mm"]), 3)
+    rep["arm_dy_mm"] = round(arm_shift_mm(vb_mm, vbf, weights), 3)
     rest_out = arms_moved(rest_out, rep["arm_dy_mm"])
+    turns = rest_turns(bones_m, rest_out)
+    worst = max(turns, key=turns.get)
+    rep["rest_turn_max_deg"], rep["rest_turn_worst"] = round(turns[worst], 4), worst
+    oa, ob = arm_offsets(va, weights, bones_mm(bones_m)), arm_offsets(vbf, weights, bones_mm(rest_out))
+    sw = {n: rep["limb_scales"]["hand_width"] if n.endswith("Hand") else 1.0 for n in ob}  # the hand's own scale
+    rep["arm_offset_vs_a_mm"] = {n: [round(ob[n][k] - sw[n] * oa[n][k], 2) for k in (0, 1)] for n in ob}
+    off_y = max(abs(v[0]) for v in rep["arm_offset_vs_a_mm"].values())
+    ok = turns[worst] <= rest_turn_max() and off_y <= ARM_OFFSET_MAX_MM
+    rep["ok"] = ok
     eb["b_rest"] = rep
     o = out / "B"
     o.mkdir(parents=True, exist_ok=True)
@@ -273,7 +351,7 @@ def main() -> int:
     (o / "errors.md").write_text(table_md("B", eb), encoding="utf-8", newline="\n")
     print(table_md("B", eb))
     print("B_REST", json.dumps(rep))
-    return 0
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

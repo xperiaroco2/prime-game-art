@@ -8,10 +8,11 @@ no bpy; body_fit_run.py drives it in plain Python).
 `dump` (read only): the Body mesh's world vertices, every vertex's weights, its edges, the armature's bones (world
 head, tail, parent) and the open boundary loops. `apply`: opens the source body, writes the fit's vertices and bone
 rest (heads and tails; the rolls and the rest orientations kept), puts the neck ring's weights on Neck and Head only
-(the ADR, docs/decisions/2026-10-29-neck-ring.md), with `--round-toes M` gives the feet a soft rounded front (no
-separate toes; round_toes) and saves <dir>/alien_body.blend; an out folder holding one is
-refused, the source is never saved. Then it reopens the saved file and proves it (faces, edges, groups and UVs hash
-as the source's; the vertices as the fit's) into <dir>/apply.json.
+(the ADR, docs/decisions/2026-10-29-neck-ring.md), with `--foot-table` gives the feet their new forefoot
+(new_forefoot) and saves <dir>/alien_body.blend; an out folder holding one is refused, the source is never saved.
+Then it reopens the saved file and proves it (faces, edges, groups and UVs hash as the source's; the vertices as the
+fit's; every bone's rest turn against the source's, at most the contract's `rest_turn_max_deg` for `--body-type`)
+into <dir>/apply.json.
 """
 from __future__ import annotations
 
@@ -54,82 +55,6 @@ def open_loops(me) -> list:
             loop.append(cur)
         out.append(loop)
     return out
-
-
-TOE_STEP = 0.003  # m: how far a vertex inside the toes' hull creeps out per round
-
-
-def round_toes(body, arm, behind: float, iters: int) -> dict:
-    """The feet's soft rounded front (the D3 brief, item 3: no separate toes): per foot, the region ahead of
-    `behind` m behind its Toes bone's head (low, on the foot's bones) is shrink-wrapped onto its convex hull from the
-    inside: `iters` rounds of umbrella smoothing, after each every vertex inside the hull creeps out along the ray
-    from the region's centre through it, at most TOE_STEP m a round (only outwards: the gaps between the toes fill
-    from their floors while the outer surface stays on the hull), by a weight easing in over `behind`; then two light
-    passes soften the hull's facets. (D3's find_nearest sent a gap's vertex to the nearest hull face, often the sole,
-    and left the gaps; D3b's first try projected in one go and folded the gaps' floors into slits.) Rest pose, world
-    space; the weights stay. Returns the moved vertices and the largest move."""
-    import bmesh
-    from mathutils.bvhtree import BVHTree
-    me, mw = body.data, body.matrix_world
-    inv = mw.inverted()
-    names = [g.name for g in body.vertex_groups]
-    co = [mw @ v.co for v in me.vertices]
-    nbr = [[] for _ in me.vertices]
-    for e in me.edges:
-        a, b = e.vertices
-        nbr[a].append(b)
-        nbr[b].append(a)
-    wt = [0.0] * len(co)
-    trees = []
-    for side, sg in (("Left", 1), ("Right", -1)):
-        th = arm.matrix_world @ arm.data.bones[f"{side}Toes"].head_local
-        reg = []
-        for v in me.vertices:
-            p = co[v.index]
-            foot = sum(g.weight for g in v.groups if names[g.group] in (f"{side}Foot", f"{side}Toes"))
-            if p.x * sg > 0 and foot > 0.2 and p.y < th.y + behind and p.z < th.z + 0.06:
-                reg.append(v.index)
-        bm = bmesh.new()
-        for i in reg:
-            bm.verts.new(co[i])
-        bmesh.ops.convex_hull(bm, input=list(bm.verts))
-        tree = BVHTree.FromBMesh(bm)
-        c = sum((co[i] for i in reg), Vector()) / len(reg)
-        for i in reg:
-            t = min(1.0, max(0.0, (th.y + behind - co[i].y) / behind))
-            wt[i] = t * t * (3 - 2 * t)
-        trees.append((reg, tree, c, bm))
-    def out_to_hull(pts):
-        for reg, tree, c, _ in trees:
-            for i in reg:
-                d = pts[i] - c
-                if d.length < 1e-6:
-                    continue
-                hit = tree.ray_cast(c, d.normalized(), 1.0)
-                if hit[0] is not None and (hit[0] - c).length > d.length:
-                    gap = (hit[0] - c).length - d.length
-                    pts[i] = pts[i] + d.normalized() * min(gap, TOE_STEP) * wt[i]
-        return pts
-
-    def relax(pts, k):
-        nxt = list(pts)
-        for i, w in enumerate(wt):
-            if w > 0 and nbr[i]:
-                avg = sum((pts[j] for j in nbr[i]), Vector()) / len(nbr[i])
-                nxt[i] = pts[i].lerp(avg, k * w)
-        return nxt
-    for _ in range(iters):
-        co = out_to_hull(relax(co, 0.5))
-    for _ in range(2):
-        co = relax(co, 0.3)
-    for _, _, _, bm in trees:
-        bm.free()
-    moved = [i for i, w in enumerate(wt) if w > 0]
-    big = max(((mw @ me.vertices[i].co) - co[i]).length for i in moved) if moved else 0.0
-    for i in moved:
-        me.vertices[i].co = inv @ co[i]
-    me.update()
-    return {"moved": moved, "max_move_m": round(big, 5), "behind_m": behind, "iters": iters}
 
 
 def new_forefoot(body, arm, table: dict, cut_behind: float) -> dict:
@@ -334,8 +259,27 @@ def dump(body_path: str, out: str) -> int:
     return 0
 
 
-def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0, toes_iters: int = 8,
-          foot_table: str = "", cut_behind: float = 0.03) -> int:
+def rest_turn_limit(body_type: str) -> float:
+    """The contract's largest rest turn (degrees) of a bone of `body_type` against A's."""
+    import tomllib
+    c = Path(__file__).resolve().parents[2] / "contract" / "contract.toml"
+    return float(tomllib.loads(c.read_text(encoding="utf-8"))["body_types"][body_type]["rest_turn_max_deg"])
+
+
+def rest_mats(arm) -> dict:
+    """Per bone its rest orientation in world space (3x3; direction and roll)."""
+    m3 = arm.matrix_world.to_3x3().normalized()
+    return {b.name: (m3 @ b.matrix_local.to_3x3()).normalized() for b in arm.data.bones}
+
+
+def turn_deg(ra, rb) -> float:
+    """The angle (degrees) of the rotation from orientation ra to rb."""
+    q = (ra.transposed() @ rb).to_quaternion()
+    return math.degrees(q.angle if q.angle <= math.pi else 2 * math.pi - q.angle)
+
+
+def apply(body_path: str, fit_path: str, out_dir: str, foot_table: str = "", cut_behind: float = 0.03,
+          body_type: str = "") -> int:
     out = Path(out_dir)
     blend = out / "alien_body.blend"
     if blend.exists():
@@ -345,6 +289,7 @@ def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0,
     bpy.ops.wm.open_mainfile(filepath=str(Path(body_path).resolve()))
     body, arm = _objs()
     hash_a = mesh_hashes(body)
+    mats_a = rest_mats(arm)
     inv = body.matrix_world.inverted()
     new = fit["verts"]
     if len(new) != len(body.data.vertices):
@@ -353,7 +298,6 @@ def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0,
     for v, q in zip(body.data.vertices, new):
         v.co = inv @ Vector(q)
     body.data.update()
-    toes = round_toes(body, arm, toes_behind, toes_iters) if toes_behind > 0 else {"moved": []}
     ring = fit.get("ring", [])
     names = {g.name: g for g in body.vertex_groups}
     for i in ring:  # weights only on Neck and Head, their sum kept at 1
@@ -401,6 +345,11 @@ def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0,
     bpy.ops.wm.open_mainfile(filepath=str(blend))
     body, arm = _objs()
     hash_b = mesh_hashes(body)
+    mats_b = rest_mats(arm)
+    turns = {n: turn_deg(mats_a[n], mats_b[n]) for n in mats_a}
+    worst = max(turns, key=turns.get)
+    body_type = body_type or ("B" if fit.get("rest") else "A")
+    limit = rest_turn_limit(body_type)
     mw = body.matrix_world
     err = max(math.dist(tuple(mw @ v.co), q) for v, q in zip(body.data.vertices, new))
     same = {k: hash_a[k] == hash_b[k] for k in ("faces_sha256", "edges_sha256", "groups", "uv_sha256")}
@@ -408,7 +357,8 @@ def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0,
     res = {"source": body_path, "fit": fit_path, "blend": str(blend), "same": same, "all_same": all(same.values()),
            "weights_changed": hash_a["weights_sha256"] != hash_b["weights_sha256"], "ring_groups": ring_w,
            "saved_vs_fit_max_m": round(err, 8),
-           "toes": {k: v for k, v in toes.items() if k != "moved"} | {"moved": len(toes["moved"])},
+           "rest_turn": {"body_type": body_type, "max_deg": round(turns[worst], 4), "worst": worst,
+                         "limit_deg": limit, "over": sorted(n for n, t in turns.items() if t > limit + 1e-4)},
            "feet": feet}
     if feet:  # every vertex above the feet's zone (z 0.25 m: the new fronts, the blend and the ankles' smoothing)
         from mathutils.kdtree import KDTree  # is a fit vertex, unmoved
@@ -425,12 +375,12 @@ def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0,
         res["same_off_feet"] = {k: res["same"][k] for k in ("groups",)}
         res["all_same"] = res["same"]["groups"]
     else:
-        res["fit_vs_built_off_toes_max_m"] = round(max((math.dist(q, r) for i, (q, r) in
-                                                         enumerate(zip(fit["verts"], new))
-                                                         if i not in set(toes["moved"])), default=0.0), 8)
+        res["fit_vs_built_off_toes_max_m"] = round(max((math.dist(q, r) for q, r in zip(fit["verts"], new)),
+                                                       default=0.0), 8)
     (out / "apply.json").write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
     print("APPLY", json.dumps(res), flush=True)
-    ok = res["all_same"] and err < 1e-5 and res["fit_vs_built_off_toes_max_m"] < 1e-5
+    ok = res["all_same"] and err < 1e-5 and res["fit_vs_built_off_toes_max_m"] < 1e-5 \
+        and not res["rest_turn"]["over"]
     return 0 if ok and set(ring_w) <= {"Neck", "Head"} else 1
 
 
@@ -441,13 +391,13 @@ def main() -> int:
     ap.add_argument("--body", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--fit", default="")
-    ap.add_argument("--round-toes", type=float, default=0.0, help="m behind the Toes heads: the rounded front")
-    ap.add_argument("--toes-iters", type=int, default=8)
     ap.add_argument("--foot-table", default="", help="a body_dims table: its [foot] gives the new forefoot (D3c)")
     ap.add_argument("--cut-behind", type=float, default=0.03, help="m behind the Toes heads: the forefoot's cut")
+    ap.add_argument("--body-type", choices=("", "A", "B"), default="",
+                    help="the contract's body type for the rest-turn limit (default: B with a fit rest, else A)")
     a = ap.parse_args(argv)
-    return dump(a.body, a.out) if a.mode == "dump" else apply(a.body, a.fit, a.out, a.round_toes, a.toes_iters,
-                                                              a.foot_table, a.cut_behind)
+    return dump(a.body, a.out) if a.mode == "dump" else apply(a.body, a.fit, a.out, a.foot_table, a.cut_behind,
+                                                              a.body_type)
 
 
 if __name__ == "__main__":

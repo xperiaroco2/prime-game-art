@@ -202,6 +202,7 @@ class BRest(unittest.TestCase):
         for sd in ("Left", "Right"):  # the feet: x and y about the ankle by the tables' ratios, z by the height
             ank, ank_a = rest[f"{sd}Foot"]["head"], a[f"{sd}Foot"]["head"]
             toe, toe_a = rest[f"{sd}Toes"]["head"], a[f"{sd}Toes"]["head"]
+            # the toe joint where the mesh's per-axis scale puts it; the Foot keeps A's direction (8 mm short of it)
             self.assertAlmostEqual((toe[1] - ank[1]) / (toe_a[1] - ank_a[1]), ls["foot_length"], places=6)
             self.assertAlmostEqual((toe[2] - ank[2]) / (toe_a[2] - ank_a[2]), rep["height_scale"], places=6)
             h, h_a = rest[f"{sd}Hand"], a[f"{sd}Hand"]
@@ -296,22 +297,75 @@ class ArmFollow(unittest.TestCase):
         self.assertTrue(s["B"]["arm_follow"])
         self.assertFalse(s["A"].get("arm_follow", False))
 
-    def test_the_arm_bones_and_the_shoulders_tails_move(self):
+    def test_the_shoulder_chain_moves_rigidly(self):
         rest = {"LeftShoulder": {"head": (0.02, 0.0, 1.3), "tail": (0.12, 0.0, 1.3), "parent": "UpperChest"},
                 "LeftUpperArm": {"head": (0.12, 0.0, 1.3), "tail": (0.2, 0.0, 1.1), "parent": "LeftShoulder"},
                 "LeftIndexProximal": {"head": (0.3, 0.0, 0.8), "tail": (0.3, 0.0, 0.77), "parent": "LeftHand"},
                 "UpperChest": {"head": (0.0, 0.0, 1.2), "tail": (0.0, 0.0, 1.3), "parent": "Chest"},
                 "LeftUpperLeg": {"head": (0.1, 0.0, 0.8), "tail": (0.1, 0.0, 0.45), "parent": "Hips"}}
         out = RUN.arms_moved(rest, -40.0)
-        self.assertEqual(out["LeftShoulder"]["head"], rest["LeftShoulder"]["head"])
-        self.assertAlmostEqual(out["LeftShoulder"]["tail"][1], -0.04)
-        for n in ("LeftUpperArm", "LeftIndexProximal"):
+        for n in ("LeftShoulder", "LeftUpperArm", "LeftIndexProximal"):  # the Shoulder's head too (D3g turned it)
             for k in ("head", "tail"):
                 self.assertAlmostEqual(out[n][k][1], rest[n][k][1] - 0.04)
                 self.assertEqual(out[n][k][0::2], rest[n][k][0::2])
         self.assertEqual(out["UpperChest"], rest["UpperChest"])
         self.assertEqual(out["LeftUpperLeg"], rest["LeftUpperLeg"])
         self.assertAlmostEqual(out["LeftShoulder"]["tail"][1], out["LeftUpperArm"]["head"][1])
+        self.assertEqual(max(RUN.rest_turns(rest, out).values()), 0.0)
+
+    def test_b_rest_and_the_arm_move_keep_every_bone_within_the_contracts_turn(self):
+        s = tomllib.loads((DIMS / "fit.toml").read_text(encoding="utf-8"))["B"]
+        ta, tb = F.load_table(DIMS / "A.toml"), F.load_table(DIMS / "B.toml")
+        a = skeleton()
+        # S4b's own UpperChest, Neck and Head (the UpperChest ends short of the Neck's head, so it keeps its
+        # direction when B's Neck moves) and its thumb chain, at an angle to the Hand bone (D3g turned it 2.5)
+        a["UpperChest"] |= {"head": [0.0, -0.0069, 1.1491], "tail": [0.0, 0.0318, 1.3169]}
+        a["Neck"] |= {"head": [0.0, 0.0414, 1.3392], "tail": [0.0, 0.0119, 1.4368]}
+        a["Head"] |= {"head": [0.0, 0.0174, 1.4383], "tail": [0.0, 0.015, 1.5211]}
+        for sd, sg in (("Left", 1), ("Right", -1)):
+            a[f"{sd}ThumbMetacarpal"] = {"head": [sg * 0.6823, 0.0191, 1.2457], "tail": [sg * 0.7136, 0.004, 1.2264],
+                                         "parent": f"{sd}Hand"}
+            a[f"{sd}ThumbProximal"] = {"head": [sg * 0.7136, 0.004, 1.2264], "tail": [sg * 0.7386, -0.0081, 1.2109],
+                                       "parent": f"{sd}ThumbMetacarpal"}
+        rest, _, _ = RUN.b_rest(a, ta, tb, s)
+        out = RUN.arms_moved({n: dict(r) for n, r in rest.items()}, -35.4)
+        turns = RUN.rest_turns(a, out)
+        worst = max(turns, key=turns.get)
+        self.assertLessEqual(turns[worst], 0.5, worst)
+        self.assertLessEqual(turns[worst], RUN.rest_turn_max(), worst)
+        for n in ("LeftFoot", "LeftToes", "LeftThumbMetacarpal", "LeftThumbProximal", "LeftShoulder", "LeftHand"):
+            self.assertLess(turns[n], 1e-6, n)
+
+    def test_the_arm_bones_follow_the_arms_mesh(self):
+        """The arm shift is the arms' mesh move, every pass's (D3g summed only the reported passes' and left B's arm
+        bones 20 mm in front of her arms): after it the mesh sits on the bones as before."""
+        bones = {f"{sd}{b}": {"head": [sg * x0, 0.0, 1250.0], "tail": [sg * x1, 0.0, 1250.0]}
+                 for sd, sg in (("Left", 1), ("Right", -1))
+                 for b, x0, x1 in (("UpperArm", 150.0, 400.0), ("LowerArm", 400.0, 640.0), ("Hand", 640.0, 720.0))}
+        bones |= {f"{sd}Shoulder": {"head": [sg * 30.0, -30.0, 1290.0], "tail": [sg * 150.0, 60.0, 1270.0]}
+                  for sd, sg in (("Left", 1), ("Right", -1))}
+        verts, weights = [], []
+        for n, b in bones.items():
+            if "Shoulder" in n:
+                continue
+            for k in range(9):
+                x = b["head"][0] + (b["tail"][0] - b["head"][0]) * (k + 0.5) / 9
+                for dy, dz in ((-30.0, 0.0), (30.0, 0.0), (0.0, -28.0), (0.0, 28.0)):
+                    verts.append((x, 5.0 + dy, 1248.0 + dz))
+                    weights.append({n: 1.0})
+        before = RUN.arm_offsets(verts, weights, bones)
+        moved = verts
+        for dy in (-41.5, 6.0, 5.8, 7.0, 7.8):  # a fit's passes and refits, each moving the arms
+            moved = [(p[0], p[1] + dy, p[2]) for p in moved]
+        shift = RUN.arm_shift_mm(verts, moved, weights)
+        self.assertAlmostEqual(shift, -14.9, places=6)
+        rest = RUN.arms_moved({n: {k: tuple(c / 1000 for c in v) for k, v in b.items()} for n, b in bones.items()},
+                              shift)
+        after = RUN.arm_offsets(moved, weights, {n: {k: [c * 1000 for c in v] for k, v in b.items()}
+                                                for n, b in rest.items()})
+        for n in before:
+            for k in (0, 1):
+                self.assertAlmostEqual(after[n][k], before[n][k], delta=1.0)
 
 
 class ShoulderLift(unittest.TestCase):
