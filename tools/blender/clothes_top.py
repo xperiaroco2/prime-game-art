@@ -102,11 +102,21 @@ def cut_garment(gar, args) -> dict:
                                                     bib_top + 1e-3, back_y, z_apex + 1e-3, hw_w + 1e-3, hw_a + 1e-3)]
     bmesh.ops.delete(bm, geom=gone, context="FACES")
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    band_h, lap = floats(args.waistband)
+    n_band = 0
+    if band_h > 0:  # the Meshy band beside the bib goes (its layered side opening: shards); waistband() rebuilds it
+        hb = band_h - lap
+        _bisect(bm, mw, lambda c: H.in_waist_band(c.x, c.y, c.z, z_w, hb + 0.03, bib_hw, back_y, hw_w),
+                (0, 0, z_w - hb), (0, 0, 1), outer=None)
+        band = [f for f in bm.faces if H.in_waist_band(*(mw @ f.calc_center_median()), z_w, hb, bib_hw, back_y, hw_w)]
+        n_band = len(band)
+        bmesh.ops.delete(bm, geom=band, context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
     n1 = len(bm.faces)
     bm.to_mesh(me)
     bm.free()
     me.update()
-    rep = {"faces_before": n0, "faces_after": n1, "waist": z_w, "bib": [bib_hw, bib_top], "back": floats(args.back)}
+    rep = {"faces_before": n0, "faces_after": n1, "band_faces_removed": n_band, "waist": z_w, "bib": [bib_hw, bib_top], "back": floats(args.back)}
     say("garment cut", rep)
     return rep
 
@@ -157,7 +167,7 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
     for v in me.vertices:
         b = gname.get(max(v.groups, key=lambda g: g.weight).group, "") if v.groups else ""
         ok.append(any(b.endswith(k) for k in ALLOWED))
-    offs, reduced = {}, 0
+    offs, reduced, pulled = {}, 0, 0
     bm = bmesh.new()
     bm.from_mesh(me)
     bm.verts.ensure_lookup_table()
@@ -176,6 +186,11 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
             loc = ktree.ray_cast(p + n * 1e-4, n, 0.05)[0]
             hit = None if loc is None else (loc - p).length
         d = H.clearance(want, hit, args.shell_gap, args.shell_floor)
+        if ktree is not None and args.shell_under > 0 and p.z > args.waist:
+            # under the bib and the back panel nobody sees the top: in toward the body, so the panels have room
+            share = ray_share(ktree, p, n, args.shell_hide, args.shell_hide_tilt)
+            pulled += share > 0
+            d = H.under_offset(d, share, args.shell_under)
         reduced += d < want - 1e-6
         offs[v.index] = d
         v.co = inv @ (p + n * d)
@@ -192,6 +207,7 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
     rep["verts_offset"] = len(offs)
     rep["verts_nearer_for_the_bib"] = reduced
+    rep["verts_pulled_in_under_the_panels"] = pulled
     rep["offset_mm_min_median"] = [round(1000 * min(offs.values()), 2),
                                    round(1000 * sorted(offs.values())[len(offs) // 2], 2)]
     yf, zf, yb, zb = floats(args.neck)
@@ -273,42 +289,39 @@ def follow_panels(top, gar, args) -> dict:
     nm = mw.to_3x3().inverted().transposed()
     groups = {g.name: g for g in top.vertex_groups}
     names = {g.index: g.name for g in top.vertex_groups}
-    k = args.shell_hide_tilt
     full = part = 0
     for v in top.data.vertices:
         p = mw @ v.co
-        n = (nm @ v.normal).normalized()
-        side = Vector((n.y, -n.x, 0.0))
-        side = side.normalized() if side.length > 1e-6 else Vector((1.0, 0.0, 0.0))
-        up = n.cross(side).normalized()
-        dirs = [n] + [(n + k * d).normalized() for d in (side, -side, up, -up)]
-        hits = sum(tree.ray_cast(p + d * 1e-4, d, args.shell_follow)[0] is not None for d in dirs)
-        if not hits:
+        share = ray_share(tree, p, (nm @ v.normal).normalized(), args.shell_follow, args.shell_hide_tilt)
+        if not share:
             continue
         own = {names[g.group]: g.weight for g in v.groups if g.group in names}
-        row = H.follow_row(own, weight_row(src, p), hits / len(dirs))
+        row = H.follow_row(own, weight_row(src, p), share)
         for g in list(v.groups):
             top.vertex_groups[g.group].remove([v.index])
         for b, x in row.items():
             if b not in groups:
                 groups[b] = top.vertex_groups.new(name=b)
             groups[b].add([v.index], x, "REPLACE")
-        full += hits == len(dirs)
-        part += hits < len(dirs)
+        full += share == 1
+        part += share < 1
     return {"verts_following_fully": full, "verts_following_in_part": part}
 
 
 def hidden_face(tree, c, n, z_full, args) -> bool:
     """Whether a shell face (centre c, outward normal n, world) lies under a kept panel: above the full clearance,
     its normal and four rays tilted by args.shell_hide_tilt round it all meet the panel within args.shell_hide."""
-    if c.z <= z_full:
-        return False
+    return c.z > z_full and ray_share(tree, c, n, args.shell_hide, args.shell_hide_tilt) == 1
+
+
+def ray_share(tree, p, n, reach: float, tilt: float) -> float:
+    """The share of five rays from p (its normal n and four tilted round it by tilt, tan) that meet tree within
+    reach: 1 deep under a panel, partial at its edge, 0 in the open."""
     side = Vector((n.y, -n.x, 0.0))
     side = side.normalized() if side.length > 1e-6 else Vector((1.0, 0.0, 0.0))
     up = n.cross(side).normalized()
-    k = args.shell_hide_tilt
-    dirs = [n] + [(n + k * d).normalized() for d in (side, -side, up, -up)]
-    return all(tree.ray_cast(c + d * 1e-4, d, args.shell_hide)[0] is not None for d in dirs)
+    dirs = [n] + [(n + tilt * d).normalized() for d in (side, -side, up, -up)]
+    return sum(tree.ray_cast(p + d * 1e-4, d, reach)[0] is not None for d in dirs) / len(dirs)
 
 
 def body_weights(char):
@@ -739,6 +752,7 @@ def straps(gar, char, keep_objs, args) -> dict:
             "stations": len(ct), "length_m": round(along[-1], 4), "off_mm_min_max": [round(1000 * min(offs), 1),
                                                                                     round(1000 * max(offs), 1)],
             "front": [round(v, 3) for v in ct[0]], "back": [round(v, 3) for v in ct[-1]]}
+    gtree = tree_of([gar])  # the garment alone (cut, the Meshy band gone): the trousers under the waistband
     bm = bmesh.new()
     bm.from_mesh(me)
     rep["fronts"] = clear_strap_fronts(bm, gar, plans, rect, args)
@@ -770,9 +784,160 @@ def straps(gar, char, keep_objs, args) -> dict:
         new_faces += faces
     rep["strip_tris"] = 2 * len(new_faces)
     rep["buckles"] = buckles(bm, gar, body, plans, args, uv, dl, gi)
+    rep["waistband"] = waistband(bm, gar, body, gtree, rect, args, uv, dl, gi)
     bm.normal_update()
     bm.to_mesh(me)
     bm.free()
     me.update()
     say("straps", rep)
+    return rep
+
+
+def waistband(bm, gar, body, gtree, rect, args, uv, dl, gi) -> dict:
+    """The built waistband (C1i), in place of the Meshy band cut_garment removed beside the bib: per side a strip
+    args.waistband's height tall from just under the bib's side edge round the hip to just under the back panel's,
+    stations every args.band_step degrees round the waist's centre. Each column lies on the body's surface (rays from
+    the centre at its height) offset out: at the lower edge the trousers' own clearance under it (it laps over their
+    cut edge, its lip folded onto them), cinched at the upper edge to args.band_cinch out of the tucked top, which it
+    rolls in to (the ledge); at its ends it stays 2 mm under the Meshy it runs under. Its UVs are the straps'
+    stitched patch (the top-stitching along it), its weights the trousers' nearest vertices'
+    (clothes_shell.blend_rows), and a bronze button sits on it args.band_button beyond each bib edge."""
+    band_h, lap = floats(args.waistband)
+    if band_h <= 0:
+        return {}
+    z_w = args.waist
+    bib_hw, _bib_top = floats(args.bib)
+    back_y, _z_apex, hw_w, _hw_a = floats(args.back)
+    btree = body["tree"]
+    mw = gar.matrix_world
+    inv = mw.inverted()
+    z0 = z_w - band_h
+    lats = H.band_lats(band_h, args.band_lip, 0.0, args.shell_strap_lats - 2)
+    nl = len(lats)
+    ufr = H.lat_us(nl, args.strap_lip_u)
+    u0, u1, v0, v1 = rect
+    top_off = H.taper(z_w, args.shell_hem, args.shell_full, args.shell_hem_off, args.shell_off)
+    high0 = top_off + args.band_cinch
+    # the trousers' vertices below the band, for the weights
+    bm.verts.ensure_lookup_table()
+    low_vs = [v for v in bm.verts if z0 - 0.07 < (mw @ v.co).z < z0 - 0.003 and v.link_faces]
+    kd = KDTree(len(low_vs))
+    for i, v in enumerate(low_vs):
+        kd.insert(mw @ v.co, i)
+    kd.balance()
+    gname = {g.index: g.name for g in gar.vertex_groups}
+    bronze = next((i for i, m in enumerate(gar.data.materials) if m and m.name.startswith("buckle_bronze")), None)
+    rep: dict = {"height_m": band_h, "lap_m": lap, "top_offset_mm": round(1000 * top_off, 1)}
+    tris = 0
+    for sgn in (1, -1):
+        cols = []  # per station: (angle, [(body point, normal) per lat], whether it runs under a panel)
+        steps = int(round(180 / args.band_step))
+        for i in range(steps + 1):
+            a = math.radians(-90 + 180 * i / steps)
+            d = Vector((sgn * math.cos(a), math.sin(a), 0.0))
+            col = []
+            for hgt, _dn in lats:
+                o = Vector((0.0, args.band_axis_y, z0 + hgt))
+                loc, nor, _f, _d = btree.ray_cast(o, d, 0.4)
+                if loc is None:
+                    break
+                col.append((loc, nor if nor.dot(d) > 0 else -nor))
+            if len(col) < nl:
+                continue
+            q = col[nl // 2][0]
+            front, back = q.y < 0, q.y > back_y
+            if (front and abs(q.x) < bib_hw - args.band_over) or (back and abs(q.x) < hw_w - args.band_over):
+                continue
+            cols.append((a, col, (front and abs(q.x) < bib_hw) or (back and abs(q.x) < hw_w)))
+        if len(cols) < 3:
+            say("waistband: too few stations on side", sgn)
+            continue
+        lows, ends = [], []
+        for _a, col, under in cols:
+            p, n = col[1]  # the lower edge's body point
+            m = p - Vector((0, 0, 0.008))
+            loc = gtree.ray_cast(m + n * 1e-4, n, 0.05)[0]
+            lows.append((loc - m).length + 0.0015 if loc is not None else None)
+            ends.append(under)
+        known = sorted(x for x in lows if x is not None)
+        fill = known[len(known) // 2] if known else 0.012
+        lows = S.smooth_open([x if x is not None else fill for x in lows], 3)
+        grid, uvs, offs = [], [], []
+        along = [0.0]
+        for k in range(1, len(cols)):
+            along.append(along[-1] + (cols[k][1][-2][0] - cols[k - 1][1][-2][0]).length)
+        for k, (_a, col, under) in enumerate(cols):
+            low = max(lows[k], high0)
+            for j, ((hgt, dn), (p, n)) in enumerate(zip(lats, col)):
+                off = H.band_offset(hgt / band_h, low, high0) + dn
+                if j == nl - 1:
+                    off = top_off + 0.001  # the ledge: rolled in to the tucked top
+                if j == 0:
+                    p = p - Vector((0, 0, 0.002))
+                if under:  # the ends run under the Meshy bib's or back panel's bottom
+                    hit = gtree.ray_cast(p + n * 1e-4, n, 0.05)[0]
+                    if hit is not None:
+                        off = max(top_off + 0.001, min(off, (hit - p).length - 0.002))
+                grid.append(p + n * off)
+                uvs.append((u0 + (u1 - u0) * ufr[j], S.mirror_v(along[k], v0, v1, args.strap_texels)))
+            offs.append(low)
+        verts = []
+        for q in grid:
+            v = bm.verts.new(inv @ q)
+            near = [(low_vs[i], dd) for _c, i, dd in kd.find_n(q, 4)]
+            row = H.blend_rows([({gname[g]: w for g, w in v2[dl].items() if g in gname}, dd) for v2, dd in near])
+            for b, x in row.items():
+                if b not in gi:
+                    gi[b] = gar.vertex_groups.new(name=b).index
+                v[dl][gi[b]] = x
+            verts.append(v)
+        faces = []
+        for quad in S.strip_quads(len(cols), nl):
+            f = bm.faces.new([verts[k] for k in quad])
+            f.smooth = True
+            for loop, k in zip(f.loops, quad):
+                loop[uv].uv = uvs[k]
+            faces.append(f)
+        bm.normal_update()
+        mid = faces[(len(cols) // 2) * (nl - 1) + (nl - 1) // 2]
+        n_mid = cols[len(cols) // 2][1][nl // 2][1]
+        if (mw.to_3x3() @ mid.normal).dot(n_mid) < 0:
+            for f in faces:
+                f.normal_flip()
+        tris += 2 * len(faces)
+        side = {"stations": len(cols), "length_m": round(along[-1], 3),
+                "low_mm_min_max": [round(1000 * min(offs), 1), round(1000 * max(offs), 1)], "ends_under": sum(ends)}
+        if args.band_button > 0 and bronze is not None:
+            want = bib_hw + args.band_button
+            fronts = [i for i in range(1, len(cols) - 1) if cols[i][1][nl // 2][0].y < 0]
+            if fronts:
+                k = min(fronts, key=lambda i: abs(abs(cols[i][1][nl // 2][0].x) - want))
+                mid_k = k * nl + nl // 2
+                c = Vector(grid[mid_k])
+                t = (Vector(grid[mid_k + nl]) - Vector(grid[mid_k - nl])).normalized()
+                nv = cols[k][1][nl // 2][1]
+                sv = nv.cross(t).normalized()
+                r, bh, dome = floats(args.button_size)
+                vs, fs = H.button(tuple(c), tuple(t), tuple(sv), tuple(nv), r, 0.0005, 0.0005 + bh, dome, 10)
+                row = {g: w for g, w in verts[mid_k][dl].items()}
+                bv = []
+                for q in vs:
+                    v = bm.verts.new(inv @ Vector(q))
+                    for g, x in row.items():
+                        v[dl][g] = x
+                    bv.append(v)
+                for f in fs:
+                    fa = bm.faces.new([bv[i] for i in f])
+                    fa.material_index = bronze
+                    fa.smooth = True
+                    for loop in fa.loops:
+                        loop[uv].uv = (0.0, 0.0)
+                    fa.normal_update()
+                    if (fa.calc_center_median() - (inv @ c)).dot(fa.normal) < 0:
+                        fa.normal_flip()
+                tris += sum(len(f) - 2 for f in fs)
+                side["button"] = [round(x, 3) for x in c]
+        rep["left" if sgn > 0 else "right"] = side
+    rep["tris"] = tris
+    say("waistband", rep)
     return rep

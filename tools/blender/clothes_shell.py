@@ -252,3 +252,54 @@ def follow_row(own: dict[str, float], panel: dict[str, float], share: float, n: 
     best = sorted(((w, b) for b, w in row.items() if w > 1e-4), reverse=True)[:n]
     tot = sum(w for w, _ in best)
     return {b: w / tot for w, b in best} if tot > 0 else dict(own)
+
+
+def in_waist_band(x: float, y: float, z: float, z_waist: float, height: float, bib_hw: float, back_y: float,
+                  back_hw: float) -> bool:
+    """Whether a Meshy garment face (its centre) lies in the band the built waistband replaces (C1i): from height
+    below the waistband line up to it, outside the bib (front, y < 0, |x| < bib_hw) and the back panel (y > back_y,
+    |x| < back_hw, its half width at the waistband)."""
+    if not z_waist - height < z <= z_waist:
+        return False
+    if y < 0:
+        return abs(x) >= bib_hw
+    if y > back_y:
+        return abs(x) >= back_hw
+    return True
+
+
+def under_offset(d: float, share: float, under: float) -> float:
+    """The top's offset under a panel (C1i): d (its own clearance) pulled in toward under by share, the share of the
+    five rays that meet the panel (0: d; 1: under), never pushed out."""
+    share = min(1.0, max(0.0, share))
+    return min(d, d - share * (d - under))
+
+
+def band_lats(height: float, lip: float, ledge: float, n_flat: int) -> list[tuple[float, float]]:
+    """The waistband strip's lats from its lower edge up (C1i): (height above the lower edge, offset change toward
+    the body). The lower lip folds lip toward the body (it rests on the trousers), n_flat flat rows span the height,
+    and the upper edge rolls in by ledge (down to the tucked top), so neither edge shows a gap."""
+    if n_flat < 2:
+        raise ValueError("a waistband needs two flat rows at least")
+    flat = [(height * i / (n_flat - 1), 0.0) for i in range(n_flat)]
+    return [(0.0, -lip)] + flat + [(height, -ledge)]
+
+
+def band_offset(frac: float, low: float, high: float) -> float:
+    """The waistband's offset off the body at frac of its height (0: the lower edge, low: the trousers' own
+    clearance; 1: the upper edge, high, cinched toward the top), linear between."""
+    frac = min(1.0, max(0.0, frac))
+    return low + (high - low) * frac
+
+
+def blend_rows(rows: list[tuple[dict[str, float], float]], n: int = 4) -> dict[str, float]:
+    """Weights from nearby vertices (the trousers' under the waistband, C1i): each row (weights, distance) counts by
+    1 / distance; the n largest kept and normalised."""
+    acc: dict[str, float] = {}
+    for w, d in rows:
+        k = 1.0 / max(d, 1e-4)
+        for b, x in w.items():
+            acc[b] = acc.get(b, 0.0) + k * x
+    best = sorted(((x, b) for b, x in acc.items() if x > 1e-6), reverse=True)[:n]
+    tot = sum(x for x, _ in best)
+    return {b: x / tot for x, b in best} if tot > 0 else {}

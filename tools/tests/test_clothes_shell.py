@@ -191,6 +191,49 @@ class Follow(unittest.TestCase):
         self.assertAlmostEqual(sum(row.values()), 1.0)
         self.assertIn("E", row)
 
+class WaistBand(unittest.TestCase):
+    """C1i: the band the built waistband replaces, the top pulled in under the panels, the strip's lats."""
+
+    def band(self, x, y, z):
+        return H.in_waist_band(x, y, z, 1.0, 0.04, 0.105, 0.03, 0.12)
+
+    def test_band_is_the_sides_below_the_waist_only(self):
+        self.assertTrue(self.band(0.14, 0.0, 0.98))  # the hip's side
+        self.assertTrue(self.band(0.11, -0.05, 0.99))  # the front just beside the bib
+        self.assertTrue(self.band(0.13, 0.08, 0.97))  # the back beside the panel
+        self.assertFalse(self.band(0.05, -0.08, 0.98))  # under the bib
+        self.assertFalse(self.band(0.05, 0.09, 0.98))  # under the back panel
+        self.assertFalse(self.band(0.14, 0.0, 1.01))  # above the waistband line
+        self.assertFalse(self.band(0.14, 0.0, 0.95))  # the trousers below the band
+
+    def test_under_offset_pulls_in_by_share_never_out(self):
+        self.assertAlmostEqual(H.under_offset(0.006, 1.0, 0.0015), 0.0015)
+        self.assertAlmostEqual(H.under_offset(0.006, 0.0, 0.0015), 0.006)
+        self.assertAlmostEqual(H.under_offset(0.006, 0.4, 0.0015), 0.0042)
+        self.assertAlmostEqual(H.under_offset(0.001, 1.0, 0.0015), 0.001)
+        self.assertAlmostEqual(H.under_offset(0.006, 3.0, 0.0015), 0.0015)
+
+    def test_band_lats_lip_flat_ledge(self):
+        lats = H.band_lats(0.038, 0.003, 0.004, 3)
+        self.assertEqual(lats, [(0.0, -0.003), (0.0, 0.0), (0.019, 0.0), (0.038, 0.0), (0.038, -0.004)])
+        with self.assertRaises(ValueError):
+            H.band_lats(0.038, 0.003, 0.004, 1)
+
+    def test_band_offset_runs_low_to_high(self):
+        self.assertAlmostEqual(H.band_offset(0.0, 0.015, 0.009), 0.015)
+        self.assertAlmostEqual(H.band_offset(1.0, 0.015, 0.009), 0.009)
+        self.assertAlmostEqual(H.band_offset(0.5, 0.015, 0.009), 0.012)
+        self.assertAlmostEqual(H.band_offset(2.0, 0.015, 0.009), 0.009)
+
+    def test_blend_rows_weights_by_nearness(self):
+        row = H.blend_rows([({"Hips": 1.0}, 0.01), ({"Spine": 1.0}, 0.03)])
+        self.assertAlmostEqual(row["Hips"], 0.75)
+        self.assertAlmostEqual(row["Spine"], 0.25)
+        self.assertEqual(H.blend_rows([]), {})
+        many = H.blend_rows([({b: 1.0}, 0.01 * (i + 1)) for i, b in enumerate("ABCDEF")])
+        self.assertEqual(sorted(many), ["A", "B", "C", "D"])
+        self.assertAlmostEqual(sum(many.values()), 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()

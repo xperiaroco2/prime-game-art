@@ -190,6 +190,21 @@ def main() -> int:
     ap.add_argument("--shell-follow", type=float, default=0.04,
                     help="a top vertex whose rays meet the garment this near takes its weights by their share "
                          "(m; 0: the body's alone)")
+    ap.add_argument("--shell-under", type=float, default=0.0015,
+                    help="the top under the bib and the back panel is pulled in to this offset off the body, by the "
+                         "share of its five rays meeting them (m; 0: off; C1i)")
+    ap.add_argument("--waistband", default="0.038,0.006",
+                    help="the built waistband beside the bib (C1i): its height, and how far its lower edge laps over "
+                         "the trousers below the Meshy band it replaces (m; 0,0: off)")
+    ap.add_argument("--band-axis-y", type=float, default=0.015, help="the waist's centre in y, for the band's rays (m)")
+    ap.add_argument("--band-lip", type=float, default=0.003, help="the band's lower lip toward the body (m)")
+    ap.add_argument("--band-cinch", type=float, default=0.006,
+                    help="the band's upper edge stands this far out of the tucked top (m)")
+    ap.add_argument("--band-over", type=float, default=0.012,
+                    help="the band's ends run this far under the bib's and the back panel's edges (m)")
+    ap.add_argument("--band-step", type=float, default=4.0, help="degrees between the band's stations")
+    ap.add_argument("--band-button", type=float, default=0.012,
+                    help="the band's side button this far beyond the bib's edge in |x| (m; 0: none)")
     ap.add_argument("--shell-decimate", default="0.32,0.22",
                     help="the top's faces kept away from its openings: arms, torso (share; 1,1: no decimation)")
     ap.add_argument("--shell-protect", default="0.035,0.03,0.02",
