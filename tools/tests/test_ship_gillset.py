@@ -37,7 +37,7 @@ def uvw(p) -> tuple[float, float, float]:
 
 class Slits(unittest.TestCase):
     def test_places(self):
-        self.assertEqual(G.SLOTS, {1: 1.95, 2: 2.32, 3: 2.69, 4: 3.06, 5: 3.43})
+        self.assertEqual(G.SLOTS, {1: 2.074, 2: 2.438, 3: 2.801, 4: 3.164, 5: 3.526})   # step 4: spread to the hall
         for sl in G.slits():
             lo, hi = sl.extent()
             self.assertAlmostEqual((lo + hi) / 2, sl.s_mid, delta=0.03, msg=sl.k)     # its middle on the old slot
@@ -45,8 +45,8 @@ class Slits(unittest.TestCase):
     def test_sizes_shrink_from_the_mouth(self):
         rows = G.numbers()
         chords = [r["top"] - r["bottom"] for r in rows]
-        self.assertTrue(1.12 <= chords[0] <= 1.21, chords)                             # the mouth side's about 1.20
-        self.assertTrue(0.74 <= chords[-1] <= 0.84, chords)                            # down to about 0.80
+        self.assertTrue(1.02 <= chords[0] <= 1.12, chords)                             # step 4: the mouth side's 1.07
+        self.assertTrue(0.68 <= chords[-1] <= 0.78, chords)                            # down to about 0.73
         self.assertTrue(all(a > b + 0.05 for a, b in zip(chords, chords[1:])), chords)  # each a little shorter
         bottoms = [r["bottom"] for r in rows]
         self.assertTrue(all(0.0 <= b - a <= 0.03 for a, b in zip(bottoms, bottoms[1:])), bottoms)   # rising gently
@@ -60,6 +60,26 @@ class Slits(unittest.TestCase):
             self.assertLess(lo, min(ub, ut) - 0.1, sl.k)                               # the outer arc toward the ramp
             self.assertGreater(ut, ub)                                                 # the top leans toward the hall
 
+    def test_fat_and_open(self):
+        """step 4 ("a bigger angle, more open", the picture's): the outer arc sags about 0.33 of the chord, the
+        crescent about 0.2 of its height wide at the middle."""
+        for r in G.numbers():
+            self.assertTrue(0.18 <= r["width"] / r["chord"] <= 0.24, r)
+        self.assertAlmostEqual(G.SAG_O / 1.2, 0.333, delta=0.02)
+
+    def test_a_real_cut(self):
+        """step 4 ("cut out of the wall, real gills"): 15 cm deep, the hall-side rim overhangs the floor, the lip
+        bevelled, only the thin rim glows in the GLB."""
+        self.assertAlmostEqual(G.DEPTH, 0.15, delta=0.03)
+        for sl in G.slits():
+            t, ul, ur = min(sl.rows(), key=lambda r: abs(r[0] - sl.t_mid))
+            sec = sl.section(t, ul, ur)
+            self.assertGreater(max(u for u, _t, _w in sec), ur + 0.03, sl.k)            # under the hall-side rim
+            lip = sec[:G.PARTS["lip"][1] + 1]
+            self.assertTrue(0.5 < -lip[-1][2] / (lip[-1][0] - lip[0][0]) < 2.5, lip)    # a bevel, about 45 deg
+        self.assertEqual(G.NICHE_MAT["lip"], G.METAL)
+        self.assertEqual([k for k, m in G.NICHE_MAT.items() if m.startswith("int_cyan")], ["edge"])
+
     def test_bars_over_their_slits(self):
         for sl in G.slits():
             u, t = sl.bar()
@@ -71,9 +91,9 @@ class Slits(unittest.TestCase):
     def test_clearances(self):
         c = G.clearances()
         self.assertGreater(c["groove_hole"], 0.04)                                     # the groove crosses no slit
-        self.assertGreater(c["column_gap"], 0.0)
+        self.assertGreater(c["hole_gap"], 0.04)                                        # the cuts nest, never touch
         self.assertGreater(c["button_hole"], 0.05)                                     # the button clear of slit 5
-        self.assertGreater(c["button_jamb"], 0.04)                                     # and of the jamb's end face
+        self.assertGreater(c["button_end"], 0.005)                                     # and of the end frame
         self.assertGreater(c["groove_t_min"], T.PLINTH_H + 0.02)                       # above the plinth
 
 
@@ -83,11 +103,11 @@ class Wall(unittest.TestCase):
             pts = [uvw(v) for v in p["verts"]]
             self.assertGreaterEqual(min(u for u, _t, _w in pts), 1.70, n)
             self.assertLessEqual(max(t for _u, t, _w in pts), T.FOLD - T.GAP_H - 0.01, n)
-            self.assertLessEqual(max(u for u, _t, _w in pts), T.JAMB_U - 0.04, n)
+            self.assertLessEqual(max(u for u, _t, _w in pts), G.END_U, n)
 
     def test_decor_static_east_only(self):
         e = set_parts("e")
-        names = {f"gill{k}_{x}" for k in G.SLITS for x in ("scoop", "glow", "edge", "bar", "bar_glow")}
+        names = {f"gill{k}_{x}" for k in G.SLITS for x in ("lip", "scoop", "glow", "edge", "bar", "bar_glow")}
         self.assertEqual(set(e), names | {"groove", "groove_glow", "btn_bezel", "btn_ring", "btn_dome"})
         self.assertTrue(all(p.get("nocol") for p in e.values()))                       # no colliders on decor
         self.assertFalse([n for n, p in e.items() if p.get("origin")])                 # nothing moves
@@ -96,7 +116,7 @@ class Wall(unittest.TestCase):
     def test_niches_behind_the_face(self):
         p = parts("e")
         for k in G.SLITS:
-            ws = [uvw(v)[2] for x in ("scoop", "glow", "edge") for v in p[f"gill{k}_{x}"]["verts"]]
+            ws = [uvw(v)[2] for x in G.PARTS for v in p[f"gill{k}_{x}"]["verts"]]
             self.assertLessEqual(max(ws), 1e-9)
             self.assertAlmostEqual(min(ws), -G.DEPTH, delta=0.01)
         for n in ("groove", "groove_glow") + tuple(f"gill{k}_bar_glow" for k in G.SLITS):
@@ -104,6 +124,21 @@ class Wall(unittest.TestCase):
             self.assertGreaterEqual(min(ws), -1e-9, n)                                 # proud parts stay in front
         glow = [uvw(v)[2] for v in p["groove_glow"]["verts"]]
         self.assertGreater(min(glow), 0.001)                                           # no coplanar face on the band
+
+
+class HallEnd(unittest.TestCase):
+    def test_no_pillar_the_wall_runs_on(self):
+        """step 4 (the engineer's walk: "the pillar has no purpose"): no free-standing jambs; each wall runs on to the
+        hall's corner K and ends in a bevelled frame of the same warm metal."""
+        self.assertEqual([p["name"] for p in T.th_jambs({}, {})], ["drop"])
+        self.assertAlmostEqual(T.JAMB_U, T.WALL_LEN, delta=0.01)
+        p = parts("e")
+        band_u = max(uvw(v)[0] for v in p["band"]["verts"])
+        self.assertAlmostEqual(band_u, T.JAMB_U, delta=1e-6)
+        fr = [uvw(v) for v in p["end_frame"]["verts"]]
+        self.assertAlmostEqual(min(u for u, _t, _w in fr), G.END_U, delta=1e-6)
+        self.assertGreater(max(w for _u, _t, w in fr), T.PLINTH_W)                     # over the plinth
+        self.assertIn(p["end_frame"]["mat"], ("int_silver_a", "int_silver_b", "int_silver_c"))
 
 
 class Lamps(unittest.TestCase):

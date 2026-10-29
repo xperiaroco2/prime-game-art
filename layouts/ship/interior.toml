@@ -1072,14 +1072,14 @@ id = "th_wall_e"
 builder = "th_wall"
 collide = true
 args = { side = "e" }
-plain = [1.58897, 3.88, -0.25, 0.05]
+plain = [1.58897, 4.0466, -0.25, 0.05]
 
 [[pieces]]
 id = "th_wall_w"
 builder = "th_wall"
 collide = true
 args = { side = "w" }
-plain = [-3.88, -1.58897, -0.25, 0.05]
+plain = [-4.0466, -1.58897, -0.25, 0.05]
 
 [[pieces]]
 id = "tip_panel_plain"

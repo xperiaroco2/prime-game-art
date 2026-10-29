@@ -36,7 +36,7 @@ class Profile(unittest.TestCase):
         self.assertEqual(tuple(H.TUN_CH), (1.45, 0.55))
         self.assertGreater(T.FOLD - 1.95, 0.149)                             # 15 cm over the slits' top (1.95)
         self.assertAlmostEqual(T.S_F1, 1.668, places=3)                      # the frame's aft face on the wall
-        self.assertAlmostEqual(T.JAMB_V, 0.131, places=3)                    # the jamb's end face's depth
+        self.assertAlmostEqual(T.JAMB_V, 0.003, places=3)                    # gill set step 4: the wall runs to K
 
     def test_hull_sample_from_the_profile(self):
         self.assertAlmostEqual(H.chamfer_outer(1.45, 0.55, 2.30), 0.389, places=3)   # the old hard-coded 0.38
@@ -98,20 +98,10 @@ class Walls(unittest.TestCase):
 
 class Corners(unittest.TestCase):
     def test_jamb(self):
-        q = T.jamb_outline(1)
-        k = tuple(S.TH_PTS[2])
-        self.assertAlmostEqual(math.dist(q[-1], k), 0.0, places=9)                         # it reaches K
-        self.assertAlmostEqual(T._uv(q[0])[0], T.JAMB_U, places=9)                          # the end face at s 3.88
-        a, b, c = T.FRONT
-        u, v = T._uv(q[1])
-        self.assertAlmostEqual(a * u + b * v, c, places=9)                                  # its front on the header
-        n = len(q)
-        turns = [(q[(i + 1) % n][0] - q[i][0]) * (q[(i + 2) % n][1] - q[(i + 1) % n][1])
-                 - (q[(i + 1) % n][1] - q[i][1]) * (q[(i + 2) % n][0] - q[(i + 1) % n][0]) for i in range(n)]
-        self.assertTrue(all(t < 0 for t in turns) or all(t > 0 for t in turns))            # convex
-        jb = parts(T.th_jambs)
-        hs = [h for *_, h in jb["jamb_e"]["verts"]]
-        self.assertEqual((min(hs), max(hs)), (S.FLOOR, S.FLOOR + S.H_HALL))                # the deck to the rim
+        """gill set step 4 (the engineer's walk: "the pillar has no purpose"): no free-standing jambs, the walls run on
+        to K (less 4 mm), the header's drop stays."""
+        self.assertAlmostEqual(T.JAMB_U, T.WALL_LEN - 0.004, places=9)
+        self.assertEqual(set(parts(T.th_jambs)), {"drop"})
 
     def test_ceiling_and_header(self):
         p = parts(S.throat_ceil)

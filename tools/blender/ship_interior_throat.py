@@ -56,7 +56,11 @@ FRAME_Y = (S.TH_ROOF - 0.0392, S.TH_ROOF + 0.0458)        # the ramp frame's bod
 TRIM = 0.08                                               # its trim round the tunnel's opening (in from the tunnel's walls)
 BAR = 0.005                                               # the bar across the ceiling: this far under it
 TUCK = 0.02                                               # the frame runs this far into the walls and up into the ceiling
-JAMB_U = 3.88                                             # the hall jamb's end face along the wall (the old button ended 3.84)
+# step 4 of the gill set (the engineer's walk: "the pillar has no purpose"): the free-standing hall jambs are gone; the
+# wall runs on to the hall's corner K (less 4 mm), ending in a bevelled frame END_U..JAMB_U of the same warm metal
+JAMB_U = WALL_LEN - 0.004                                 # the wall's hall end (the jamb's end face stood at 3.88 before)
+END_U = GS.END_U                                          # the end frame's mouth-side foot (3.98)
+END_PROUD = 0.036                                         # its face off the band (over the plinth's 3 cm): a 45 deg bevel, then flat
 JAMB_PROUD = 0.016                                        # its hall face this far proud of the header's
 GILL_SIDES = ("e",)                                       # the gill set: the east wall only for now (the west later, mirrored)
 DROP_D = 0.02                                             # the header's throat face carried down to the cove by the jamb
@@ -159,12 +163,23 @@ def wall_parts(gills: bool = False) -> list:
     line = G.slab(fr, G.rect(PLINTH_S0, JAMB_U, *LINE_H), PLINTH_W - 0.001, PLINTH_W + 0.004)
     back = [_poly([(u0, PLINTH_H), (u1, PLINTH_H), (u1, FOLD), (u0, FOLD)], -0.2, flip=True),
             _poly(_cut_cove([(u0, FOLD), (u1, FOLD), (u1, T_TOP + T_OVER), (u0, T_TOP + T_OVER)]), -0.2, flip=True)]
+    end = _end_frame()
     parts = [P("band", M(*band), BAND_MAT), P("fold_line", M(gap), DARK), P("cove", M(*cove), COVE_MAT),
              P("plinth", body, BAND_MAT), P("kick", kick, DARK), P("plinth_line", line, "int_cyan__gill_plinth"),
-             P("back", M(*back), BAND_MAT)]
+             P("back", M(*back), BAND_MAT), {**P("end_frame", end, FRAME_MAT), "smooth_deg": 20}]
     for p in parts:   # the open sheets keep their winding (recalc_face_normals guesses on an open sheet)
-        p["solid"] = p["name"] in ("plinth", "kick", "plinth_line")
+        p["solid"] = p["name"] in ("plinth", "kick", "plinth_line", "end_frame")
     return parts + (GS.parts(point) if gills else [])
+
+
+def _end_frame() -> tuple[list, list]:
+    """The wall's hall-end frame: a 45 deg bevel from the band at END_U up to END_PROUD, flat to the end JAMB_U, its end
+    face back to the band; the deck to the fold, capped."""
+    sec = [(END_U, 0.0), (END_U + END_PROUD, END_PROUD), (JAMB_U, END_PROUD), (JAMB_U, 0.0)]
+    verts = [point(u, t, w) for t in (0.0, FOLD) for u, w in sec]
+    n = len(sec)
+    faces = [(i, i + 1, n + i + 1, n + i) for i in range(n - 1)] + [tuple(range(n))[::-1], tuple(range(n, 2 * n))]
+    return verts, faces
 
 
 def mirror(parts: list) -> list:
@@ -228,15 +243,9 @@ def drop(sx: int = 1):
 
 
 def th_jambs(args, layout):
-    """The two hall jambs, the deck to the hall's rim (a collider each: `-col` by the piece's collide), and the
-    header's drop to the cove by each."""
-    fr = G.floor_frame(0.0)
+    """The header's drop to the cove by each wall's hall end (step 4 of the gill set: the two free-standing hall jambs
+    removed, the walls run on to the hall's corner)."""
     out = []
-    for sx, side in ((1, "e"), (-1, "w")):
-        q = jamb_outline(sx)
-        if G.area2(q) < 0:
-            q = q[::-1]
-        out.append(P("jamb_" + side, G.slab(fr, q, FLOOR, FLOOR + S.H_HALL), JAMB_MAT))
     out.append(P("drop", M(drop(1), drop(-1)), BAND_MAT))
     return out
 
