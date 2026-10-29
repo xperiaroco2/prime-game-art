@@ -613,3 +613,131 @@ def summarise(rows: dict) -> dict:
             out[f"{reg}.{key}"] = {"worst": worst[0], "at": worst[1], "n": len(vals), "over": over,
                                    "mean_abs": round(sum(abs(v) for v, _ in vals) / len(vals), 2)}
     return out
+
+
+def neighbours(n: int, edges: list) -> list:
+    """Per vertex its neighbours' indices (from the edge list)."""
+    nb = [[] for _ in range(n)]
+    for a, b in edges:
+        nb[a].append(b)
+        nb[b].append(a)
+    return nb
+
+
+def relax_moves(base: list, verts: list, edges: list, fixed: set, rounds: int, lam: float = 0.5,
+                share: dict | None = None) -> list:
+    """D3f: the fit's moves (verts - base, per vertex) diffused over the mesh, `rounds` Jacobi steps of `lam` toward
+    the neighbours' mean move; the `fixed` vertices (the ring, the scaled hands and feet) keep theirs. The station
+    maps are each smooth, but where they meet (the leg and trunk maps at the crotch, the arm share at the shoulder,
+    the chest share, the lock under the ring, the shoulder lift) their moves change over one or two edges: a ridge or
+    a line on the surface (the critic's bikini line, shoulder diagonal, waist band). Smoothing the moves rather than
+    the positions keeps the body's own surface detail. `share` (index -> 0..1): only those vertices move, each
+    by its share of the step (a zone's soft edge)."""
+    nb = neighbours(len(verts), edges)
+    d = [tuple(q[k] - p[k] for k in range(3)) for p, q in zip(base, verts)]
+    free = [i for i in (share if share is not None else range(len(verts))) if i not in fixed and nb[i]]
+    st = {i: lam * (share[i] if share is not None else 1.0) for i in free}
+    for _ in range(rounds):
+        new = list(d)
+        for i in free:
+            ns = nb[i]
+            m = len(ns)
+            new[i] = tuple(d[i][k] + st[i] * (sum(d[j][k] for j in ns) / m - d[i][k]) for k in range(3))
+        d = new
+    return [tuple(p[k] + e[k] for k in range(3)) for p, e in zip(base, d)]
+
+
+def laplacian(verts: list, nb: list) -> list:
+    """Per vertex its offset from its neighbours' mean (the umbrella operator; zero where it has none)."""
+    out = []
+    for i, ns in enumerate(nb):
+        if not ns:
+            out.append((0.0, 0.0, 0.0))
+            continue
+        m = len(ns)
+        out.append(tuple(verts[i][k] - sum(verts[j][k] for j in ns) / m for k in range(3)))
+    return out
+
+
+def crease_map(base: list, verts: list, edges: list) -> list:
+    """D3f: per vertex how much the fit changed the surface's local bend (mm): the length of the change of its
+    umbrella offset from the body's own. A smooth fit (a slowly varying move) leaves it near zero; a line where two
+    shaping regions meet stands out as a row of high values."""
+    nb = neighbours(len(verts), edges)
+    l0, l1 = laplacian(base, nb), laplacian(verts, nb)
+    return [math.dist(a, b) for a, b in zip(l0, l1)]
+
+
+def _periodic(pairs: list, a: float) -> float:
+    """Linear interpolation of sorted (angle, value) pairs over the circle (radians)."""
+    n = len(pairs)
+    for k in range(n):
+        a0, v0 = pairs[k]
+        a1, v1 = pairs[(k + 1) % n]
+        if k == n - 1:
+            a1 += 2 * math.pi
+        aa = a if a >= a0 else a + 2 * math.pi
+        if a0 <= aa <= a1:
+            return v0 + (v1 - v0) * (aa - a0) / max(1e-9, a1 - a0)
+    return pairs[0][1]
+
+
+def neck_flare(phi: float, nt: dict) -> float:
+    """The outline's slope under the ring at the angle phi about the ring's centre (0 = +x, the side; -pi/2 = -y, the
+    front): tan of the side's angle times cos^2 plus the front's or back's times sin^2 (degrees from vertical, + out
+    going down)."""
+    c2, s = math.cos(phi) ** 2, math.sin(phi)
+    fb = nt["front_deg"] if s < 0 else nt["back_deg"]
+    return c2 * math.tan(math.radians(nt["side_deg"])) + (1.0 - c2) * math.tan(math.radians(fb))
+
+
+def neck_tangent(verts: list, weights: list, ring_idx: list, nt: dict) -> tuple[list, dict]:
+    """D3f: the body leaves the ring at the head neck's own tangent (the critic's blocker: the fit flared the body
+    out right under the ring, 27 to 38 degrees on A's sides, a turtleneck ledge against the head's neck). Over the
+    `straight` mm under the ring every trunk vertex's distance from the ring's axis follows the ring's own outline
+    widening at `neck_flare` (the heads' measured angles), then eases back to the fit's surface over `blend` mm (a
+    smoothstep), so the outline turns into the shoulders' slope. Moved in xy only, by the trunk's share (1 - the arm
+    share); the ring never moves."""
+    ring = [verts[i] for i in ring_idx]
+    rz = sum(p[2] for p in ring) / len(ring)
+    cx, cy = sum(p[0] for p in ring) / len(ring), sum(p[1] for p in ring) / len(ring)
+    rad = sorted((math.atan2(p[1] - cy, p[0] - cx), math.hypot(p[0] - cx, p[1] - cy)) for p in ring)
+    keep, depth = set(ring_idx), nt["straight"] + nt["blend"]
+    out, most = [], 0.0
+    for i, (p, w) in enumerate(zip(verts, weights)):
+        k = rz - p[2]
+        if i in keep or not 0.0 < k < depth:
+            out.append(tuple(p))
+            continue
+        dx, dy = p[0] - cx, p[1] - cy
+        phi, rho = math.atan2(dy, dx), math.hypot(dx, dy)
+        want = _periodic(rad, phi) + k * neck_flare(phi, nt)
+        share = (1.0 - ramp((k - nt["straight"]) / nt["blend"])) * (1.0 - arm_share(w))
+        r1 = rho + share * (want - rho)
+        most = max(most, abs(r1 - rho))
+        f = r1 / max(1e-9, rho)
+        out.append((cx + dx * f, cy + dy * f, p[2]))
+    return out, {"max_move_mm": round(most, 2), "ring_z": round(rz, 2), "centre": [round(cx, 2), round(cy, 2)]}
+
+
+def ring_morph(points: list, ring: list, band: float) -> list:
+    """D3f, the review's head on the ring as the assembler sets it (alien_char_build's step 2, NECK_BAND): every
+    point within `band` above the ring (`ring`: the body's loop) has its distance from the ring's axis blended toward
+    the ring's own at its angle, fully at the ring and by a smoothstep to its own at `band`, so the head's neck leaves
+    the ring vertically and its bottom loop lies on the ring. Same units in and out."""
+    rz = sum(p[2] for p in ring) / len(ring)
+    cx, cy = sum(p[0] for p in ring) / len(ring), sum(p[1] for p in ring) / len(ring)
+    rad = sorted((math.atan2(p[1] - cy, p[0] - cx), math.hypot(p[0] - cx, p[1] - cy)) for p in ring)
+    out = []
+    for p in points:
+        k = p[2] - rz
+        if not -1e-6 * band <= k < band:
+            out.append(tuple(p))
+            continue
+        dx, dy = p[0] - cx, p[1] - cy
+        phi, rho = math.atan2(dy, dx), math.hypot(dx, dy)
+        r0 = _periodic(rad, phi)
+        f = (r0 + ramp(k / band) * (rho - r0)) / max(1e-12, rho)
+        out.append((cx + dx * f, cy + dy * f, p[2]))
+    return out
+

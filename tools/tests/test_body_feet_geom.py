@@ -150,5 +150,16 @@ class NeckJoinTest(unittest.TestCase):
         self.assertAlmostEqual(fronts(1385.0), F.SIGMA_NECK)  # the neck band still narrows both
 
 
+class SoleEdgeTest(unittest.TestCase):
+    """D3f: the sole's edge raised at the outside, never at the centre or above the centre height."""
+
+    def test_lift(self):
+        self.assertEqual(FG.sole_edge_lift(0.0, 0.0, 0.04, 0.0, 0.02, 0.006), 0.0)
+        self.assertAlmostEqual(FG.sole_edge_lift(0.04, 0.0, 0.04, 0.0, 0.02, 0.006), 0.006)
+        self.assertEqual(FG.sole_edge_lift(0.04, 0.03, 0.04, 0.0, 0.02, 0.006), 0.0)
+        self.assertLess(FG.sole_edge_lift(0.02, 0.0, 0.04, 0.0, 0.02, 0.006), 0.0005)
+        self.assertEqual(FG.sole_edge_lift(0.04, 0.0, 0.04, 0.0, 0.02, 0.0), 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()

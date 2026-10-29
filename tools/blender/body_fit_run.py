@@ -175,7 +175,7 @@ def chest_of(table: dict, s: dict) -> dict:
 
 
 def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, ring: list, s: dict,
-            chest: dict | None) -> tuple[list, dict]:
+            chest: dict | None, base: list | None = None) -> tuple[list, dict]:
     table = F.load_table(DIMS / f"{name}.toml")
     wa = [F.arm_share(w) for w in weights]
     table["fit"] = {"keep_front": s.get("keep_front", []), "neck_base": s.get("neck_base"),
@@ -191,6 +191,19 @@ def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, 
     if s.get("shoulder_lift"):  # D3d: B's shoulder tops toward her concept's slope, after the station passes
         v, lift = F.shoulder_lift(v, ring, table, s["shoulder_lift"], edges=edges)
         reps.append({"shoulder_lift": lift})
+    rl = s.get("relax")
+    if rl and base is not None:  # D3f: the moves diffused over the mesh (the regions' hard edges); the ring, hands
+        # and feet keep theirs. The diffusion also blurs the fit's sizes, so `refits` rounds of one station pass (its
+        # small corrections) and a shorter diffusion (`rounds_after`) follow.
+        fixed = set(ring) | {i for i, w in enumerate(weights) if F.hand_share(w) > 0 or F.foot_share(w) > 0.5}
+        v = F.relax_moves(base, v, edges, fixed, rl["rounds"], rl.get("lam", 0.5))
+        for _ in range(rl.get("refits", 0)):
+            v, rep = F.fit(v, weights, edges, table, bones, au, ring, chest)
+            v = F.relax_moves(base, v, edges, fixed, rl["rounds_after"], rl.get("lam", 0.5))
+        reps.append({"relax": rl})
+    if s.get("neck_tangent"):  # D3f: the body leaves the ring at the seated head's tangent (no turtleneck flare)
+        v, nt = F.neck_tangent(v, weights, ring, s["neck_tangent"])
+        reps.append({"neck_tangent": nt})
     if chest is not None and s.get("chest_trim"):  # D3e: the rounds' apex to the table
         mid = F.errors(v, weights, edges, table, bones, au, chest)
         v = F.chest_trim(v, weights, mid["rows"]["trunk"], chest)
@@ -223,7 +236,8 @@ def main() -> int:
     settings = tomllib.loads((DIMS / "fit.toml").read_text(encoding="utf-8"))
     out = Path(a.out)
     ring, weights, edges, bones_m = d["loops"][0], d["weights"], d["edges"], d["bones"]
-    va, ea = run_fit("A", mm(d["verts"]), weights, edges, bones_mm(bones_m), ring, settings["A"], None)
+    va, ea = run_fit("A", mm(d["verts"]), weights, edges, bones_mm(bones_m), ring, settings["A"], None,
+                     mm(d["verts"]))
     o = out / "A"
     o.mkdir(parents=True, exist_ok=True)
     fit = {"verts": [[round(c / 1000, 7) for c in p] for p in va], "ring": ring, "rest": None}
@@ -236,7 +250,8 @@ def main() -> int:
     va_m = [tuple(c / 1000 for c in p) for p in va]
     rest, rep, vb = b_rest(bones_m, F.load_table(DIMS / "A.toml"), tb, sb, va_m, weights)
     rest_out = {n: {"head": list(r["head"]), "tail": list(r["tail"]), "parent": r["parent"]} for n, r in rest.items()}
-    vbf, eb = run_fit("B", mm(vb), weights, edges, bones_mm(rest_out), ring, sb, chest_of(tb, sb))
+    vbf, eb = run_fit("B", mm(vb), weights, edges, bones_mm(rest_out), ring, sb, chest_of(tb, sb),
+                     mm(d["verts"]))
     rep["arm_dy_mm"] = round(sum(p.get("arm_dy_mm", 0.0) for p in eb["passes"]), 3)
     rest_out = arms_moved(rest_out, rep["arm_dy_mm"])
     eb["b_rest"] = rep

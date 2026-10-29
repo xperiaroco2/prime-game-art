@@ -357,5 +357,73 @@ class ShoulderLift(unittest.TestCase):
         self.assertLess(out[2][2], 3.0)
 
 
+class RelaxMovesTest(unittest.TestCase):
+    """D3f: the fit's moves diffused over the mesh: a step in the moves softens, a uniform move stays, fixed keep."""
+
+    def test_step_softens_and_fixed_keep(self):
+        verts, edges, top = cylinder(0.0, 200.0, 10.0, 50.0, 50.0)
+        moved = [(x * (1.1 if z < 100 else 1.0), y, z) for x, y, z in verts]  # a 10 % step in x at z 100
+        out = F.relax_moves(verts, moved, edges, set(top), 10)
+        def half(vs, z):
+            return max(p[0] for p in vs if abs(p[2] - z) < 1e-6)
+        self.assertAlmostEqual(half(out, 0.0), 55.0, delta=0.6)  # far from the step: kept
+        jump0 = half(moved, 90.0) - half(moved, 100.0)
+        jump1 = half(out, 90.0) - half(out, 100.0)
+        self.assertLess(jump1, 0.5 * jump0)  # the step spread over its neighbours
+        for i in top:
+            self.assertEqual(out[i], tuple(moved[i]))
+
+    def test_uniform_move_is_kept(self):
+        verts, edges, top = cylinder(0.0, 100.0, 10.0, 40.0, 30.0)
+        moved = [(x, y + 7.0, z) for x, y, z in verts]
+        out = F.relax_moves(verts, moved, edges, set(), 20)
+        for p, q in zip(out, moved):
+            self.assertAlmostEqual(p[1], q[1], places=9)
+
+    def test_crease_map(self):
+        verts, edges, top = cylinder(0.0, 200.0, 10.0, 50.0, 50.0)
+        same = F.crease_map(verts, [(x * 1.2, y * 1.2, z) for x, y, z in verts], edges)
+        step = F.crease_map(verts, [(x * (1.1 if z < 100 else 1.0), y, z) for x, y, z in verts], edges)
+        self.assertLess(max(same[30:-30]), 0.6)  # a smooth scale barely changes the bend
+        self.assertGreater(max(step), 1.0)  # a step does (5 mm over 4 neighbours)
+
+
+class NeckTangentTest(unittest.TestCase):
+    """D3f: the body leaves the ring straight (or at the given angle), then eases back to its own surface."""
+
+    def test_straight_then_own(self):
+        verts, edges, top = cylinder(1300.0, 1390.0, 5.0, 56.7, 52.8)
+        flared = [(x * (1 + (1390 - z) / 60), y * (1 + (1390 - z) / 60), z) for x, y, z in verts]  # a turtleneck flare
+        nt = {"straight": 20.0, "blend": 30.0, "side_deg": 0.0, "front_deg": 0.0, "back_deg": 0.0}
+        out, rep = F.neck_tangent(flared, [{}] * len(verts), top, nt)
+        def half(vs, z):
+            return max(p[0] for p in vs if abs(p[2] - z) < 1e-6)
+        self.assertAlmostEqual(half(out, 1375.0), 56.7, places=6)  # straight under the ring
+        self.assertAlmostEqual(half(out, 1320.0), half(flared, 1320.0), places=6)  # past the blend: its own
+        self.assertGreater(rep["max_move_mm"], 10.0)
+        for i in top:
+            self.assertEqual(out[i], tuple(flared[i]))
+        nt["side_deg"] = 10.0
+        out, _ = F.neck_tangent(flared, [{}] * len(verts), top, nt)
+        self.assertAlmostEqual(half(out, 1380.0), 56.7 + 10.0 * math.tan(math.radians(10.0)), places=4)
+
+    def test_ring_morph(self):
+        ring = [(56.7 * math.cos(2 * math.pi * k / 24), 52.8 * math.sin(2 * math.pi * k / 24), 1390.0)
+                for k in range(24)]
+        head = [(50.9 * math.cos(a), 45.2 * math.sin(a), z) for z in (1390.0, 1405.0, 1420.0, 1440.0)
+                for a in (0.1, 1.7, 3.3, 4.9)]
+        out = F.ring_morph(head, ring, 30.0)
+        for p, q in zip(head, out):
+            r = math.hypot(q[0], q[1])
+            if p[2] == 1390.0:  # the bottom on the ring's ellipse (within its 24-gon's chords)
+                a = math.atan2(q[1], q[0])
+                want = math.hypot(56.7 * math.cos(a), 52.8 * math.sin(a))
+                self.assertAlmostEqual(r, want, delta=1.0)
+            elif p[2] >= 1420.0:  # past the band: the head's own
+                self.assertEqual(q, p)
+            else:
+                self.assertGreater(r, math.hypot(p[0], p[1]))
+
+
 if __name__ == "__main__":
     unittest.main()

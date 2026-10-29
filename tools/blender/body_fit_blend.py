@@ -203,8 +203,9 @@ def new_forefoot(body, arm, table: dict, cut_behind: float) -> dict:
             ls = [lp for lp in v.link_loops]
             uv_of[v] = tuple(ls[0][uvl].uv) if (ls and uvl) else (0.0, 0.0)
         tip_y = FG.tip_from_table(heel_y, table["length"] / 1000.0)
-        pts, faces = FG.forefoot([tuple(v.co) for v in bv], tip_y, table["width"] / 1000.0,
-                                 table["toe_height"] / 1000.0)
+        pts, faces = FG.forefoot([tuple(v.co) for v in bv], tip_y, table["width"] * table.get("front_width", 1.0)
+                                 / 1000.0, table["toe_height"] / 1000.0,
+                                 sole_round=table.get("sole_round", 0.0) / 1000.0)
         nb = len(bv)
         verts = list(bv)
         mat = f.material_index
@@ -365,6 +366,9 @@ def apply(body_path: str, fit_path: str, out_dir: str, toes_behind: float = 0.0,
         import tomllib
         from mathutils.kdtree import KDTree
         table = tomllib.loads(Path(foot_table).read_text(encoding="utf-8"))["foot"]
+        fit_toml = Path(foot_table).with_name("fit.toml")  # D3f: the front's width share and the sole's edge
+        if fit_toml.is_file():
+            table = {**table, **tomllib.loads(fit_toml.read_text(encoding="utf-8")).get("feet", {})}
         feet = new_forefoot(body, arm, table, cut_behind)  # on the fit's rest (B: her Toes)
         vs = body.data.vertices
         kd = KDTree(len(vs))

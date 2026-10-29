@@ -45,6 +45,15 @@ def outline(t: float, start: float, peak: float, t_peak: float, n: float) -> flo
     return peak * max(0.0, 1.0 - u ** n) ** (1.0 / n)
 
 
+def sole_edge_lift(dx: float, z: float, half: float, sole: float, zc: float, r: float) -> float:
+    """D3f: how far a forefoot point is raised so the sole's edge reads soft from the front: up to `r` at the ring's
+    outer edge (|dx| = `half`) on the sole, as (|dx| / half) ** 4, fading to nothing at the centre height `zc`."""
+    if r <= 0 or half <= 0 or z >= zc:
+        return 0.0
+    u = min(1.0, abs(dx) / half)
+    return r * u ** 4 * (1.0 - (z - sole) / max(1e-9, zc - sole))
+
+
 def ring_ts(k: int, power: float = 2.0) -> list:
     """The rings' t (k of them, the tip excluded): denser toward the tip, where the front turns fastest."""
     return [1.0 - (1.0 - i / (k + 1)) ** power for i in range(1, k + 1)]
@@ -56,12 +65,14 @@ def four_point(p0, p1, p2, p3):
 
 
 def forefoot(boundary: list, tip_y: float, width: float, toe_height: float, rings: int = 14, t_w: float = 0.45,
-             t_h: float = 0.45, n: float = 2.2, centre_share: float = 0.15, min_columns: int = 40) -> tuple:
+             t_h: float = 0.45, n: float = 2.2, centre_share: float = 0.15, min_columns: int = 40,
+             sole_round: float = 0.0) -> tuple:
     """New forefoot geometry from the cut's closed loop `boundary` ([(x, y, z)] in order, the y all the cut's; the
     body's face along it runs B_j -> B_j+1), forward -y to `tip_y`. Returns (points, faces): points[0:N] are the
     boundary's own (unmoved), the rest new; faces index points and wind opposite the body's face at the boundary,
     so the front's normals agree with the body's. Fewer than `min_columns` boundary vertices: the first ring doubles
-    them (a quad and a triangle per boundary edge)."""
+    them (a quad and a triangle per boundary edge). `sole_round` (D3f, the critic's plunger read from the front): the
+    sole's outer edge raised by up to this much, by sole_edge_lift."""
     nb = len(boundary)
     y0 = sum(p[1] for p in boundary) / nb
     xs = [p[0] for p in boundary]
@@ -92,7 +103,9 @@ def forefoot(boundary: list, tip_y: float, width: float, toe_height: float, ring
         base = len(pts)
         for (x, _, z) in cols:
             s = s_top if z >= zc else s_bot
-            pts.append((cx + (x - cx) * sx, y, max(sole, zc + (z - zc) * s)))  # the 4-point midpoints dip
+            px, pz = cx + (x - cx) * sx, max(sole, zc + (z - zc) * s)  # the 4-point midpoints dip
+            pz += sole_edge_lift(px - cx, pz, w0 * sx / 2, sole, zc, sole_round)
+            pts.append((px, y, pz))
         cur = list(range(base, base + nc))
         if r == 0 and double:
             for j in range(nb):
