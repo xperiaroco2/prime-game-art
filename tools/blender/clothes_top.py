@@ -7,7 +7,12 @@
   neck, the wrists and the hem, a rolled lip at the collar and cuffs, the body's own weights; its stripes and a soft
   cotton normal map are made here, darkened by an ambient-occlusion bake (Cycles) where it fits.
 - straps: two strips about 3.5 cm wide from the bib's top corners over the shoulders down to the back panel's V,
-  over the shell and the bib, weighted like the body under them; their UVs on the garment's plain denim.
+  over the shell and the bib, weighted like the body under them; their UVs on a free patch of the garment's texture,
+  a copy of its plain denim with two dashed stitch lines in the sketch's orange; at each front end a bronze buckle
+  ring and a button (real geometry, a metal material, weighted with the strap), the Meshy bib under the
+  strap's front goes (its broken buckle hardware), the hardware's faces beside it take plain denim.
+- The shell's faces hidden under the bib and the back panel go (five rays each), and the rest is decimated away from
+  the openings (the weights then re-read from the body under each vertex), so the dressed character keeps its budget.
 """
 from __future__ import annotations
 
@@ -93,13 +98,46 @@ def cut_garment(gar, args) -> dict:
                                                     bib_top + 1e-3, back_y, z_apex + 1e-3, hw_w + 1e-3, hw_a + 1e-3)]
     bmesh.ops.delete(bm, geom=gone, context="FACES")
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    rep_hw = drop_hardware(gar, bm, args)
     n1 = len(bm.faces)
     bm.to_mesh(me)
     bm.free()
     me.update()
-    rep = {"faces_before": n0, "faces_after": n1, "waist": z_w, "bib": [bib_hw, bib_top], "back": floats(args.back)}
+    rep = {"faces_before": n0, "faces_after": n1, "waist": z_w, "bib": [bib_hw, bib_top], "back": floats(args.back),
+           "hardware_faces_dropped": rep_hw}
     say("garment cut", rep)
     return rep
+
+
+def drop_hardware(gar, bm, args) -> int:
+    """The Meshy buckle hardware at the bib's top corners (args.hardware: |x| from, to and z from, to): its faces with
+    warm (bronze) or near-black texels and the faces next to them go; the new straps' tabs and buckles cover the
+    place, and the shell top stays under it (it is cut after this)."""
+    x0, x1, z0, z1 = floats(args.hardware)
+    img = next((n.image for sl in gar.material_slots if sl.material and sl.material.node_tree
+                for n in sl.material.node_tree.nodes if n.type == "TEX_IMAGE" and n.image and "diffuse" in n.image.name),
+               None)
+    if img is None or x1 <= x0:
+        return 0
+    w, h = img.size
+    px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)[..., :3]
+    mw = gar.matrix_world
+    uv = bm.loops.layers.uv.active
+    bad = set()
+    for f in bm.faces:
+        c = mw @ f.calc_center_median()
+        if not (c.y < 0 and x0 <= abs(c.x) <= x1 and z0 <= c.z <= z1):
+            continue
+        u = sum(lp[uv].uv.x for lp in f.loops) / len(f.loops)
+        v = sum(lp[uv].uv.y for lp in f.loops) / len(f.loops)
+        col = px[min(h - 1, int(v * h)), min(w - 1, int(u * w))]
+        if col[0] > 1.3 * col[2] or float(col @ np.array([0.2126, 0.7152, 0.0722])) < 0.03:
+            bad.add(f)
+    grown = {g for f in bad for e in f.edges for g in e.link_faces
+             if x0 - 0.01 <= abs((mw @ g.calc_center_median()).x) <= x1 + 0.01} | bad
+    bmesh.ops.delete(bm, geom=list(grown), context="FACES")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    return len(grown)
 
 
 def stripe_colours(gar) -> tuple[np.ndarray, np.ndarray]:
@@ -161,7 +199,7 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
     for v in me.vertices:
         b = gname.get(max(v.groups, key=lambda g: g.weight).group, "") if v.groups else ""
         ok.append(any(b.endswith(k) for k in ALLOWED))
-    offs, reduced, hidden = {}, 0, {}
+    offs, reduced = {}, 0
     bm = bmesh.new()
     bm.from_mesh(me)
     bm.verts.ensure_lookup_table()
@@ -182,11 +220,13 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
         d = H.clearance(want, hit, args.shell_gap, args.shell_floor)
         reduced += d < want - 1e-6
         offs[v.index] = d
-        hidden[v] = hit is not None and hit < args.shell_hide and p.z > z_full
         v.co = inv @ (p + n * d)
-    # under the bib and the back panel nobody sees the top: its faces go there, args.shell_hide_rings rings in from
-    # the panels' edges (the tucked hem stays whole)
-    hid = {f for f in bm.faces if all(hidden[v] for v in f.verts)}
+    bm.normal_update()
+    # under the bib and the back panel nobody sees the top: a face goes when its normal and four rays tilted round it
+    # all meet the kept garment within args.shell_hide, args.shell_hide_rings rings in from the panels' edges (the
+    # tucked hem stays whole)
+    hid = {f for f in bm.faces if ktree is not None and hidden_face(ktree, mw @ f.calc_center_median(),
+                                                                    (nmat @ f.normal).normalized(), z_full, args)}
     for _ in range(args.shell_hide_rings):
         hid = {f for f in hid if all(g in hid for v in f.verts for g in v.link_faces)}
     rep["faces_hidden_under_the_panels"] = len(hid)
@@ -196,12 +236,18 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
     rep["verts_nearer_for_the_bib"] = reduced
     rep["offset_mm_min_median"] = [round(1000 * min(offs.values()), 2),
                                    round(1000 * sorted(offs.values())[len(offs) // 2], 2)]
+    yf, zf, yb, zb = floats(args.neck)
+    nco, nno = H.neck_plane(yf, zf, yb, zb)
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    rep["decimate"] = decimate(top, char, nco, nno, zf, args)
+    bm = bmesh.new()
+    bm.from_mesh(me)
     # the openings: hem, cuffs, the crew neck
     _bisect(bm, mw, lambda c: True, (0, 0, z_hem), (0, 0, 1), outer=False)
     for sgn in (1, -1):
         _bisect(bm, mw, lambda c: True, (sgn * args.cuff_x, 0, 0), (sgn, 0, 0))
-    yf, zf, yb, zb = floats(args.neck)
-    nco, nno = H.neck_plane(yf, zf, yb, zb)
     _bisect(bm, mw, lambda c: abs(c.x) < args.neck_r and c.z > zf - 0.06, nco, nno)
     bm.normal_update()
     # the rolled lip at the collar and the cuffs: the open edge folded in toward the body
@@ -255,6 +301,99 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
     return top, rep
 
 
+def hidden_face(tree, c, n, z_full, args) -> bool:
+    """Whether a shell face (centre c, outward normal n, world) lies under a kept panel: above the full clearance,
+    its normal and four rays tilted by args.shell_hide_tilt round it all meet the panel within args.shell_hide."""
+    if c.z <= z_full:
+        return False
+    side = Vector((n.y, -n.x, 0.0))
+    side = side.normalized() if side.length > 1e-6 else Vector((1.0, 0.0, 0.0))
+    up = n.cross(side).normalized()
+    k = args.shell_hide_tilt
+    dirs = [n] + [(n + k * d).normalized() for d in (side, -side, up, -up)]
+    return all(tree.ray_cast(c + d * 1e-4, d, args.shell_hide)[0] is not None for d in dirs)
+
+
+def body_weights(char):
+    """The body's surface and weights, for weighting a new vertex like the body under it (weight_row)."""
+    gname = {g.index: g.name for g in char.vertex_groups}
+    return {"tree": tree_of([char]), "co": [char.matrix_world @ v.co for v in char.data.vertices],
+            "polys": [list(p.vertices) for p in char.data.polygons],
+            "w": [{gname[g.group]: g.weight for g in v.groups if g.group in gname} for v in char.data.vertices]}
+
+
+def weight_row(body, q) -> dict:
+    """The body's weights at its point nearest q (barycentric over the face), at most four bones."""
+    loc, _n, fi, _d = body["tree"].find_nearest(q)
+    row = {}
+    vs = body["polys"][fi]
+    for k, w in zip(vs, poly_3d_calc([body["co"][k] for k in vs], loc)):
+        for b, x in body["w"][k].items():
+            row[b] = row.get(b, 0.0) + w * x
+    return F.limit(row)
+
+
+def near_seam(c, reg, args, zf, share: float = 0.06, band: float = 0.025) -> bool:
+    """Whether a face centre c lies near a UV seam of the top, where a big face would take the next island's stripes:
+    the torso's back centre and each sleeve's underside (within share of the island's width), or the set-in sleeve
+    seam between the torso and the arms (within band m)."""
+    u0, wd = ISLANDS[reg]
+    axis_y, axis_z = floats(args.arm_axis)
+    if reg == H.TORSO:
+        u = H.torso_uv(c.x, c.y, c.z, axis_y - 0.04, u0, wd, V0[reg], args.shell_per_m, zf)[0]
+    else:
+        u = H.arm_uv(c.x, c.y, c.z, args.cuff_x, axis_y, axis_z, u0, wd, V0[reg], args.shell_per_m)[0]
+    f = (u - u0) / wd
+    sleeve = (abs(abs(c.x) - args.seam_x) < band and c.z > args.arm_z - band) or              (abs(c.x) > args.seam_x - band and abs(c.z - args.arm_z) < band)
+    return f < share or f > 1 - share or sleeve
+
+
+def decimate(top, char, nco, nno, zf, args) -> dict:
+    """Fewer faces on the top away from its openings (args.shell_decimate: the arms' and the torso's share kept),
+    mirrored in x, by Blender's collapse decimation of the selected faces; every vertex of a decimated face then takes
+    the body's weights under it (weight_row)."""
+    r_arm, r_torso = floats(args.shell_decimate)
+    p_cuff, p_neck, p_hem = floats(args.shell_protect)
+    me = top.data
+    mw = top.matrix_world
+    out = {"tris_before": sum(len(p.vertices) - 2 for p in me.polygons)}
+    if r_arm >= 1 and r_torso >= 1:
+        return out
+    for o in bpy.context.view_layer.objects:
+        o.select_set(o == top)
+    bpy.context.view_layer.objects.active = top
+    picked = 0
+    body = body_weights(char)
+    groups = top.vertex_groups
+    for want, ratio in ((False, r_arm), (True, r_torso)):
+        if ratio >= 1:
+            continue
+        bpy.ops.object.mode_set(mode="EDIT")
+        ebm = bmesh.from_edit_mesh(me)
+        for f in ebm.faces:
+            c = mw @ f.calc_center_median()
+            reg = H.region(c.x, c.z, args.seam_x, args.arm_z)
+            far = (abs(c.x) < args.cuff_x - p_cuff and H.plane_side(tuple(c), nco, nno) < -p_neck
+                   and c.z > args.shell_hem + p_hem and not near_seam(c, reg, args, zf))
+            f.select_set(far and (reg == H.TORSO) == want)
+        ebm.select_flush(True)
+        bmesh.update_edit_mesh(me)
+        bpy.ops.mesh.decimate(ratio=ratio, use_symmetry=True, symmetry_axis="X")
+        bpy.ops.object.mode_set(mode="OBJECT")
+        # the indices change with each pass: re-weight this pass's vertices now
+        here = sorted({k for p in me.polygons if p.select for k in p.vertices})
+        for vi in here:
+            v = me.vertices[vi]
+            for g in list(v.groups):
+                groups[g.group].remove([vi])
+            for b, x in weight_row(body, mw @ v.co).items():
+                (groups.get(b) or groups.new(name=b)).add([vi], x, "REPLACE")
+        picked += len(here)
+    out["tris_after"] = sum(len(p.vertices) - 2 for p in me.polygons)
+    out["reweighted_verts"] = picked
+    return out
+
+
 def material(top, gar, args, rep) -> dict:
     """The top's material: the stripes (the Meshy top's own navy and white) times a soft AO bake, a cotton normal map
     (fine knit ribs and the AO's folds), roughness 0.9."""
@@ -296,6 +435,13 @@ def material(top, gar, args, rep) -> dict:
             out["ao_in_islands_p10_median"] = [round(float(np.percentile(ao[inside], 10)), 3),
                                                round(float(np.median(ao[inside])), 3)]
             out["island_share"] = round(float(inside.mean()), 3)
+            # outside the islands the bake is black: fill it from the islands, and across the torso's back seam
+            # take the other side's texels, so the mips and the normal map see no edge there
+            ao = T.fill(ao[..., None], inside)[..., 0]
+            u0, wd = ISLANDS[H.TORSO]
+            for dst, src in H.seam_wrap_cols(round((u0 - 0.008) * IMG_W), round(u0 * IMG_W),
+                                             round((u0 + wd) * IMG_W), round((u0 + wd + 0.02) * IMG_W)):
+                ao[:, dst] = ao[:, src]
         except Exception as e:  # noqa: BLE001 - the stripes stand without the AO
             out["ao_failed"] = str(e)[:200]
     shade = 1.0 - args.shell_ao * (1.0 - ao)
@@ -350,26 +496,238 @@ def bake_ao(top, node, img, args) -> np.ndarray:
     return np.clip(a, 0.0, 1.0)
 
 
+def last_hit(tree, p, d, reach):
+    """The farthest surface of tree along the ray p + t d within reach (the Meshy hardware can be a few layers)."""
+    far, q, left = None, p + d * 1e-4, reach
+    for _ in range(12):
+        loc = tree.ray_cast(q, d, left)[0]
+        if loc is None:
+            break
+        far = loc
+        left -= (loc - q).length
+        q = loc + d * 1e-4
+        if left <= 0:
+            break
+    return far
+
+
+def garment_maps(gar) -> dict:
+    """The garment's images by kind: diffuse, normal, roughness."""
+    out = {}
+    for sl in gar.material_slots:
+        if sl.material and sl.material.node_tree:
+            for n in sl.material.node_tree.nodes:
+                if n.type == "TEX_IMAGE" and n.image:
+                    for kind in ("diffuse", "normal", "roughness"):
+                        if kind in n.image.name:
+                            out[kind] = n.image
+    return out
+
+
+def pixels(img) -> np.ndarray:
+    w, h = img.size
+    return np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
+
+
+def free_rect(used: np.ndarray, pw: int, ph: int, margin: int):
+    """The first pw x ph texel window (row, column of its low corner) with no used texel within margin, or None."""
+    h, w = used.shape
+    m = used.copy()
+    for _ in range(margin):
+        g = m.copy()
+        g[1:] |= m[:-1]
+        g[:-1] |= m[1:]
+        g[:, 1:] |= m[:, :-1]
+        g[:, :-1] |= m[:, 1:]
+        m = g
+    sat = np.zeros((h + 1, w + 1), dtype=np.int64)
+    sat[1:, 1:] = np.cumsum(np.cumsum(m, axis=0), axis=1)
+    win = sat[ph:, pw:] - sat[:-ph, pw:] - sat[ph:, :-pw] + sat[:-ph, :-pw]
+    ok = np.argwhere(win == 0)
+    if not len(ok):
+        return None
+    r, c = ok[0]
+    return int(r), int(c)
+
+
+def strap_patch(gar, args, ufr) -> tuple[tuple[float, float, float, float], dict]:
+    """A free patch of the garment's texture as the straps' own: a copy of its plain denim (args.strap_uv: the
+    diffuse, normal and roughness texels) with two dashed stitch lines along v in the sketch's orange, args.stitch's
+    inset from the strap's edges. Returns its UV rectangle (u0, u1, v0, v1), half a texel in, and its numbers; the
+    plain rectangle itself when no room is free."""
+    u0, u1, v0, v1 = floats(args.strap_uv)
+    maps = garment_maps(gar)
+    dif = maps.get("diffuse")
+    if dif is None:
+        return (u0, u1, v0, v1), {"patch": "none: no diffuse map"}
+    w, h = dif.size
+    me = gar.data
+    me.calc_loop_triangles()
+    uvl = me.uv_layers.active.data
+    tri = np.array([[uvl[t.loops[k]].uv[:] for k in range(3)] for t in me.loop_triangles], dtype=np.float64)
+    used = T.island_mask(tri, w, h, grow=1)
+    x0, x1, y0, y1 = int(u0 * w), int(np.ceil(u1 * w)), int(v0 * h), int(np.ceil(v1 * h))
+    pw, ph = x1 - x0, y1 - y0
+    at = free_rect(used, pw, ph, 6)
+    if at is None:
+        return (u0, u1, v0, v1), {"patch": "none free: the plain rectangle"}
+    ry, rx = at
+    inset, dash, gap = floats(args.stitch)
+    px0 = pixels(dif)
+    col = floats(args.stitch_colour)
+    for kind, img in maps.items():
+        iw, ih = img.size
+        px = px0 if img is dif else pixels(img)
+        sx, sy = iw / w, ih / h
+        a0, a1, b0, b1 = int(x0 * sx), int(x0 * sx) + int(pw * sx), int(y0 * sy), int(y0 * sy) + int(ph * sy)
+        c0, r0 = int(rx * sx), int(ry * sy)
+        px[r0:r0 + (b1 - b0), c0:c0 + (a1 - a0)] = px[b0:b1, a0:a1]
+        if img is dif:
+            width = args.strap_width
+            fl, fr = ufr[1], ufr[-2]
+            cols = [fl + (fr - fl) * inset / width, fr - (fr - fl) * inset / width]
+            per_px = args.strap_texels * h  # texels per metre along the strap
+            mask = np.array(H.stitch_mask(pw, ph, cols, max(1, round(dash * per_px)), max(1, round(gap * per_px))))
+            blk = px[r0:r0 + ph, c0:c0 + pw, :3]
+            blk[mask] = col
+        img.pixels[:] = px.ravel()
+        img.update()
+    rect = ((rx + 0.5) / w, (rx + pw - 0.5) / w, (ry + 0.5) / h, (ry + ph - 0.5) / h)
+    return rect, {"patch_px": [int(rx), int(ry), pw, ph], "stitch_srgb": [round(255 * c) for c in col],
+                  "stitch_u": [round(c, 3) for c in cols]}
+
+
+def bronze_material(args):
+    r, g, b, metal, rough = floats(args.bronze)
+    mat = bpy.data.materials.new("buckle_bronze")
+    mat.use_nodes = True
+    bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    lin = T.to_linear(np.array([r, g, b]))
+    bsdf.inputs["Base Color"].default_value = (float(lin[0]), float(lin[1]), float(lin[2]), 1.0)
+    bsdf.inputs["Metallic"].default_value = metal
+    bsdf.inputs["Roughness"].default_value = rough
+    return mat
+
+
+def buckles(bm, gar, body, plans, args, uv, dl, gi) -> dict:
+    """At each strap's front end a bronze ring over the strap (args.buckle's second place) and a domed button at the
+    tab's end (its first), on a new metal material; every vertex of a piece takes the body's weights under the strap's
+    station there, so it rides with the strap, rigid."""
+    mat = bronze_material(args)
+    gar.data.materials.append(mat)
+    mi = len(gar.data.materials) - 1
+    inv = gar.matrix_world.inverted()
+    at_button, at_ring = floats(args.buckle)
+    margin, half_l, bar, height = floats(args.buckle_size)
+    r, bh, dome = floats(args.button_size)
+    n_tris, pieces = 0, []
+    for pl in plans:
+        ct, sides, nt, along = pl["ct"], pl["sides"], pl["nt"], pl["along"]
+        for kind, s_at in (("button", at_button), ("ring", at_ring)):
+            i = min(range(len(along)), key=lambda k: abs(along[k] - s_at))
+            i = max(1, min(len(ct) - 2, i))
+            c = Vector(ct[i])
+            t = (Vector(ct[i + 1]) - Vector(ct[i - 1])).normalized()
+            sv = Vector(sides[i])
+            sv = (sv - t * sv.dot(t)).normalized()
+            nv = t.cross(sv).normalized()
+            if nv.dot(Vector(nt[i])) < 0:
+                nv = -nv
+            if kind == "ring":
+                vs, fs = H.buckle_ring(tuple(c), tuple(t), tuple(sv), tuple(nv), args.strap_width / 2 + margin, half_l,
+                                       bar, 0.0005, 0.0005 + height, 0.003)
+            else:
+                vs, fs = H.button(tuple(c), tuple(t), tuple(sv), tuple(nv), r, 0.0005, 0.0005 + bh, dome, 10)
+            row = weight_row(body, c - nv * pl["offs"][i])
+            bv = []
+            for q in vs:
+                v = bm.verts.new(inv @ Vector(q))
+                for b, x in row.items():
+                    if b not in gi:
+                        gi[b] = gar.vertex_groups.new(name=b).index
+                    v[dl][gi[b]] = x
+                bv.append(v)
+            faces = []
+            for f in fs:
+                fa = bm.faces.new([bv[k] for k in f])
+                fa.material_index = mi
+                fa.smooth = kind == "button"
+                for loop in fa.loops:
+                    loop[uv].uv = (0.0, 0.0)
+                faces.append(fa)
+            bm.normal_update()
+            if kind == "ring":
+                bmesh.ops.recalc_face_normals(bm, faces=faces)
+            else:
+                for fa in faces:
+                    if (fa.calc_center_median() - (inv @ c)).dot(fa.normal) < 0:
+                        fa.normal_flip()
+            n_tris += sum(len(f) - 2 for f in fs)
+            pieces.append({"kind": kind, "at": [round(x, 3) for x in c], "along_m": round(along[i], 3)})
+    return {"tris": n_tris, "pieces": pieces, "material": mat.name}
+
+
+def clear_strap_fronts(bm, gar, plans, rect, args) -> dict:
+    """Under each strap's front part (args.strap_front m from its end) the Meshy bib goes where the strap covers it
+    (args.strap_width / 2 less 2 mm across; its broken buckle hardware lies there in layers), and next to it the faces
+    with the hardware's warm or near-black texels take the patch's plain denim (its middle, away from the stitches)."""
+    dif = garment_maps(gar).get("diffuse")
+    px = pixels(dif)[..., :3] if dif is not None else None
+    mw = gar.matrix_world
+    uv = bm.loops.layers.uv.active
+    half = args.strap_width / 2
+    mid = ((rect[0] + rect[1]) / 2, (rect[2] + rect[3]) / 2)
+    fronts = []
+    for pl in plans:
+        for i, a in enumerate(pl["along"]):
+            if a <= args.strap_front and 0 < i < len(pl["ct"]) - 1:
+                t = (Vector(pl["ct"][i + 1]) - Vector(pl["ct"][i - 1])).normalized()
+                fronts.append((Vector(pl["ct"][i]), t, Vector(pl["sides"][i]), Vector(pl["nt"][i]), a))
+    gone, recoloured = [], 0
+    for f in bm.faces:
+        c = mw @ f.calc_center_median()
+        if c.y >= 0 or c.z < 1.05:
+            continue
+        best = min(fronts, key=lambda fr: (c - fr[0]).length)
+        d = c - best[0]
+        lat, up = abs(d.dot(best[2])), d.dot(best[3])
+        if lat < half - 0.002 and best[4] + d.dot(best[1]) > 0.004 and abs(d.dot(best[1])) < 0.02 and -0.04 < up < 0.002:
+            gone.append(f)
+            continue
+        if px is not None and lat < half + 0.008 and -0.04 < up < 0.01:
+            h, w = px.shape[:2]
+            u = sum(lp[uv].uv.x for lp in f.loops) / len(f.loops)
+            v = sum(lp[uv].uv.y for lp in f.loops) / len(f.loops)
+            col = px[min(h - 1, int(v * h)), min(w - 1, int(u * w))]
+            if col[0] > 1.3 * col[2] or float(col @ np.array([0.2126, 0.7152, 0.0722])) < 0.03:
+                for lp in f.loops:
+                    lp[uv].uv = mid
+                recoloured += 1
+    bmesh.ops.delete(bm, geom=gone, context="FACES")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    return {"faces_cleared_under_the_fronts": len(gone), "hardware_faces_to_denim": recoloured}
+
+
 def straps(gar, char, keep_objs, args) -> dict:
-    """Two new strips (see the module) appended to the garment mesh."""
-    btree = tree_of([char])
-    bco = [char.matrix_world @ v.co for v in char.data.vertices]
-    bpolys = [list(p.vertices) for p in char.data.polygons]
-    gname = {g.index: g.name for g in char.vertex_groups}
-    bw = [{gname[g.group]: g.weight for g in v.groups if g.group in gname} for v in char.data.vertices]
+    """Two new strips (see the module) appended to the garment mesh, their stitched patch, the buckles."""
+    body = body_weights(char)
+    btree = body["tree"]
     ktree = tree_of(keep_objs)
     y0, z0 = floats(args.strap_axis)
     ts = [math.radians(t) for t in floats(args.shell_strap_t)]
     xs_k = floats(args.shell_strap_x)
-    u0, u1, v0, v1 = floats(args.strap_uv)
     half, lip = args.strap_width / 2, args.strap_lip
     mw = gar.matrix_world
     inv = mw.inverted()
     me = gar.data
-    steps = max(8, int(round((ts[-1] - ts[0]) / math.radians(args.strap_step))))
+    steps = max(8, int(round((ts[-1] - ts[0]) / math.radians(args.shell_strap_step))))
     angles = [ts[0] + (ts[-1] - ts[0]) * i / steps for i in range(steps + 1)]
-    lats = [(-half, -lip), (-half, 0.0), (-half / 2, 0.0), (0.0, 0.0), (half / 2, 0.0), (half, 0.0), (half, -lip)]
-    rep, plans = {}, []
+    n_flat = args.shell_strap_lats - 2
+    lats = [(-half, -lip)] + [(-half + 2 * half * k / (n_flat - 1), 0.0) for k in range(n_flat)] + [(half, -lip)]
+    ufr = H.lat_us(len(lats), args.strap_lip_u)
+    rect, prep = strap_patch(gar, args, ufr)
+    u0, u1, v0, v1 = rect
+    rep, plans = {"patch": prep}, []
     for sgn in (1, -1):
         locs, nors, offs = [], [], []
         for t in angles:
@@ -379,7 +737,7 @@ def straps(gar, char, keep_objs, args) -> dict:
             if loc is None:
                 loc, nor, _i, _d = btree.find_nearest(a + d * 0.15)
             nor = nor if nor.dot(d) > 0 else -nor
-            hit = ktree.ray_cast(loc + nor * 1e-4, nor, 0.05)[0]
+            hit = last_hit(ktree, loc, nor, args.shell_strap_reach)
             extra = 0.0015 if sgn > 0 else 0.0
             offs.append(max(args.shell_strap_off, ((hit - loc).length + 0.002) if hit is not None else 0.0) + extra)
             locs.append(loc)
@@ -400,14 +758,16 @@ def straps(gar, char, keep_objs, args) -> dict:
                 loc, nor, _i, _d = btree.find_nearest(q)
                 nor = nor if nor.dot(Vector(n)) > 0 else -nor
                 grid.append(loc + nor * (offs[i] + hgt))
-                uvs.append((u0 + (u1 - u0) * k / (len(lats) - 1), S.mirror_v(along[i], v0, v1, args.strap_texels)))
-        plans.append({"grid": grid, "uvs": uvs, "rows": len(ct), "cols": len(lats), "nt": nt})
+                uvs.append((u0 + (u1 - u0) * ufr[k], S.mirror_v(along[i], v0, v1, args.strap_texels)))
+        plans.append({"grid": grid, "uvs": uvs, "rows": len(ct), "cols": len(lats), "nt": nt, "ct": ct,
+                      "sides": sides, "along": along, "offs": offs})
         rep["left" if sgn > 0 else "right"] = {
             "stations": len(ct), "length_m": round(along[-1], 4), "off_mm_min_max": [round(1000 * min(offs), 1),
                                                                                     round(1000 * max(offs), 1)],
             "front": [round(v, 3) for v in ct[0]], "back": [round(v, 3) for v in ct[-1]]}
     bm = bmesh.new()
     bm.from_mesh(me)
+    rep["fronts"] = clear_strap_fronts(bm, gar, plans, rect, args)
     uv = bm.loops.layers.uv.active
     dl = bm.verts.layers.deform.verify()
     gi = {g.name: g.index for g in gar.vertex_groups}
@@ -416,12 +776,7 @@ def straps(gar, char, keep_objs, args) -> dict:
         vs = []
         for q in pl["grid"]:
             v = bm.verts.new(inv @ q)
-            loc, _n, fi, _d = btree.find_nearest(q)
-            row: dict[str, float] = {}
-            for k, w in zip(bpolys[fi], poly_3d_calc([bco[k] for k in bpolys[fi]], loc)):
-                for b, x in bw[k].items():
-                    row[b] = row.get(b, 0.0) + w * x
-            for b, x in F.limit(row).items():
+            for b, x in weight_row(body, q).items():
                 if b not in gi:
                     gi[b] = gar.vertex_groups.new(name=b).index
                 v[dl][gi[b]] = x
@@ -439,10 +794,11 @@ def straps(gar, char, keep_objs, args) -> dict:
             for f in faces:
                 f.normal_flip()
         new_faces += faces
+    rep["strip_tris"] = 2 * len(new_faces)
+    rep["buckles"] = buckles(bm, gar, body, plans, args, uv, dl, gi)
     bm.normal_update()
     bm.to_mesh(me)
     bm.free()
     me.update()
-    rep["strip_tris"] = 2 * len(new_faces)
     say("straps", rep)
     return rep

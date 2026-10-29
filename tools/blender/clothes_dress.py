@@ -469,9 +469,15 @@ def main() -> int:
     ap.add_argument("--shell-hem-off", type=float, default=0.002, help="the clearance at the hem (m)")
     ap.add_argument("--shell-gap", type=float, default=0.003, help="the top stays this far inside a kept piece (m)")
     ap.add_argument("--shell-floor", type=float, default=0.002, help="the top's least clearance (m)")
-    ap.add_argument("--shell-hide", type=float, default=0.04,
-                    help="a top vertex with a kept piece this near along its normal is hidden under it (m)")
-    ap.add_argument("--shell-hide-rings", type=int, default=2, help="the hidden faces kept next to a panel's edge")
+    ap.add_argument("--shell-hide", type=float, default=0.06,
+                    help="a top face whose five rays (its normal and four tilted) meet a kept piece this near is "
+                         "hidden under it (m)")
+    ap.add_argument("--shell-hide-tilt", type=float, default=0.6, help="the four rays' tilt off the normal (tan)")
+    ap.add_argument("--shell-hide-rings", type=int, default=1, help="the hidden faces kept next to a panel's edge")
+    ap.add_argument("--shell-decimate", default="0.32,0.22",
+                    help="the top's faces kept away from its openings: arms, torso (share; 1,1: no decimation)")
+    ap.add_argument("--shell-protect", default="0.035,0.03,0.02",
+                    help="no decimation this near the cuffs, the neck cut and the hem (m)")
     ap.add_argument("--shell-lip", type=float, default=0.0045, help="the collar's and cuffs' lip toward the body (m)")
     ap.add_argument("--shell-per-m", type=float, default=1.29, help="the top's UV units per metre in v")
     ap.add_argument("--shell-ao", type=float, default=0.45, help="how much the AO bake darkens the top (0: no bake)")
@@ -489,10 +495,30 @@ def main() -> int:
     ap.add_argument("--bib", default="0.105,1.195", help="the bib's half width and top (m)")
     ap.add_argument("--back", default="0.03,1.12,0.12,0.03",
                     help="the back panel: least y, apex z, half width at the waist and at the apex (m)")
-    ap.add_argument("--shell-strap-t", default="-90,20,128",
+    ap.add_argument("--shell-strap-t", default="-118,20,134",
                     help="the new straps' angles round the shoulder axis: front, shoulder, back (degrees)")
-    ap.add_argument("--shell-strap-x", default="0.085,0.10,0.015", help="the new straps' |x| at those angles (m)")
+    ap.add_argument("--shell-strap-x", default="0.078,0.10,0.015", help="the new straps' |x| at those angles (m)")
     ap.add_argument("--shell-strap-off", type=float, default=0.010, help="the new straps' least distance off the body")
+    ap.add_argument("--shell-strap-step", type=float, default=6.0, help="degrees between the new straps' stations")
+    ap.add_argument("--shell-strap-lats", type=int, default=5, help="the new straps' vertices across (lips included)")
+    ap.add_argument("--shell-strap-reach", type=float, default=0.04,
+                    help="the new straps clear the outermost kept surface this far along the body's normal (m)")
+    ap.add_argument("--strap-lip-u", type=float, default=0.1, help="each lip's share of the strap patch's width")
+    ap.add_argument("--stitch", default="0.003,0.003,0.002",
+                    help="the straps' two stitch lines: inset from each edge, dash, gap (m)")
+    ap.add_argument("--buckle", default="0.01,0.036",
+                    help="the button's and the buckle ring's places along each strap from its front end (m)")
+    ap.add_argument("--buckle-size", default="0.004,0.011,0.004,0.0035",
+                    help="the ring's margin past the strap, half length, bar width, height; m")
+    ap.add_argument("--button-size", default="0.0065,0.003,0.001", help="the button's radius, height, dome (m)")
+    ap.add_argument("--hardware", default="0,0,0,0",
+                    help="drop the Meshy buckle hardware in this box at the bib's top corners before the top is cut: |x| from, "
+                         "to, z from, to (m; 0,0,0,0: off, the straps' fronts clear it instead)")
+    ap.add_argument("--strap-front", type=float, default=0.09,
+                    help="the Meshy bib under this much of each strap's front goes (m)")
+    ap.add_argument("--stitch-colour", default="0.78,0.48,0.22", help="the straps' stitching, the sketch's orange (sRGB)")
+    ap.add_argument("--bronze", default="0.60,0.42,0.20,0.85,0.38",
+                    help="the buckles' metal: sRGB R,G,B, metallic, roughness")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     glb = out / f"{args.name}_char.glb"

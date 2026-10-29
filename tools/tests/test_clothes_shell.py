@@ -105,5 +105,44 @@ class Neck(unittest.TestCase):
         self.assertLess(H.plane_side((0.1, 0.0, 1.30), co, no), 0.0)  # the shoulder below: kept
 
 
+class Finish(unittest.TestCase):
+    def test_lat_us_lips_then_an_even_flat_top(self):
+        self.assertEqual(H.lat_us(5, 0.1), [0.0, 0.1, 0.5, 0.9, 1.0])
+        with self.assertRaises(ValueError):
+            H.lat_us(3, 0.1)
+
+    def test_stitch_mask_two_dashed_columns(self):
+        m = H.stitch_mask(41, 8, [0.2, 0.8], 3, 2)
+        on = {x for row in m for x, v in enumerate(row) if v}
+        self.assertEqual(on, {8, 32})
+        self.assertEqual([m[r][8] for r in range(8)], [True, True, True, False, False, True, True, True])
+
+    def test_seam_wrap_takes_the_other_side(self):
+        pairs = H.seam_wrap_cols(18, 20, 120, 123)
+        self.assertEqual(pairs[:2], [(18, 118), (19, 119)])
+        self.assertEqual(pairs[2:], [(120, 20), (121, 21), (122, 22)])
+
+    def test_buckle_ring_closed_with_its_sizes(self):
+        t, s, n = (0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, -1.0, 0.0)
+        vs, qs = H.buckle_ring((0.1, -0.05, 1.16), t, s, n, 0.0215, 0.011, 0.004, 0.0005, 0.0035, 0.003)
+        self.assertEqual((len(vs), len(qs)), (32, 32))
+        xs = [v[0] for v in vs]
+        self.assertAlmostEqual(max(xs) - min(xs), 0.043)
+        ys = [v[1] for v in vs]
+        self.assertAlmostEqual(min(ys), -0.05 - 0.0035)  # out along n
+        edges = {}
+        for q in qs:
+            for a, b in zip(q, q[1:] + q[:1]):
+                edges[frozenset((a, b))] = edges.get(frozenset((a, b)), 0) + 1
+        self.assertEqual(set(edges.values()), {2})  # a closed ring: each edge in two quads
+
+    def test_button_dome_on_top(self):
+        t, s, n = (0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, -1.0, 0.0)
+        vs, fs = H.button((0.0, 0.0, 0.0), t, s, n, 0.0065, 0.0005, 0.003, 0.001, 10)
+        self.assertEqual((len(vs), len(fs)), (21, 20))
+        self.assertAlmostEqual(vs[-1][1], -0.004)
+        self.assertEqual(sum(len(f) - 2 for f in fs), 30)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -12,6 +12,10 @@ The hybrid route: a fitted top is a shell of the body itself, the loose lower pa
 - The Meshy garment keeps the trousers below the waistband, the bib inside its outline at the front and the back
   panel inside its V (keep_face); the straps are new strips from the bib's top corners over the shoulders down to the
   back's V (strap_x: the strip's x along its angle round the shoulder axis).
+- The finish (C1g): a bronze buckle at each front strap end, a rectangular ring with chamfered corners
+  (buckle_ring) over the strap and a domed button (button) at the tab's end on the bib; two dashed stitch lines along
+  each strap (stitch_mask, painted into a free patch of the garment's texture, across the strap's lat_us); the torso
+  island's AO wrapped across its back seam (seam_wrap_cols), so mips and the normal map see no edge there.
 """
 from __future__ import annotations
 
@@ -131,3 +135,69 @@ def neck_plane(y_front: float, z_front: float, y_back: float, z_back: float) -> 
     dy, dz = y_back - y_front, z_back - z_front
     n = math.hypot(dy, dz)
     return (0.0, y_front, z_front), (0.0, -dz / n, dy / n)
+
+
+def lat_us(n: int, lip_share: float) -> list[float]:
+    """The u fraction (0..1) of each of a strap's n lats (lip, flat..., lip): the two lips get lip_share each, the
+    flat top the rest, evenly."""
+    if n < 4:
+        raise ValueError("a strap needs two lips and two flat edges")
+    flat = [lip_share + (1 - 2 * lip_share) * i / (n - 3) for i in range(n - 2)]
+    return [0.0] + flat + [1.0]
+
+
+def stitch_mask(w: int, h: int, cols: list[float], dash: int, gap: int) -> list[list[bool]]:
+    """The stitch lines of a w x h patch (row-major, h rows): at each fraction in cols one texel column, dashed along
+    the rows (dash on, gap off)."""
+    xs = {min(w - 1, max(0, int(round(c * (w - 1))))) for c in cols}
+    return [[(x in xs) and (r % (dash + gap) < dash) for x in range(w)] for r in range(h)]
+
+
+def seam_wrap_cols(lo: int, c0: int, c1: int, hi: int) -> list[tuple[int, int]]:
+    """A periodic island's margin texels from the other side of its seam: (destination, source) columns for the
+    columns lo..c0-1 left of the island [c0, c1) and c1..hi-1 right of it."""
+    span = c1 - c0
+    return [(c, c + span) for c in range(lo, c0)] + [(c, c - span) for c in range(c1, hi)]
+
+
+def _frame_add(c, t, s, n, a, b, h):
+    return tuple(c[k] + s[k] * a + t[k] * b + n[k] * h for k in range(3))
+
+
+def chamfer_loop(a: float, b: float, ch: float) -> list[tuple[float, float]]:
+    """The 8 corners of an a x b half-size rectangle (a across, b along) with its corners cut by ch, counter-clockwise
+    from the +a side."""
+    return [(a, -b + ch), (a, b - ch), (a - ch, b), (-a + ch, b), (-a, b - ch), (-a, -b + ch), (-a + ch, -b),
+            (a - ch, -b)]
+
+
+def buckle_ring(c, t, s, n, half_w: float, half_l: float, bar: float, z0: float, z1: float, ch: float):
+    """A rectangular ring (the slider of a strap's buckle) centred on c in the frame t (along the strap), s (across),
+    n (out): outer half sizes half_w x half_l, the bar's width, from height z0 to z1 above c. Returns (vertices, quads):
+    four loops of 8 (outer low, outer high, inner high, inner low), closed into a ring of 32 quads."""
+    loops = [(half_w, half_l, z0), (half_w, half_l, z1), (half_w - bar, half_l - bar, z1), (half_w - bar, half_l - bar, z0)]
+    verts = []
+    for a, b, z in loops:
+        chi = max(0.0, ch - (bar if a < half_w else 0.0) * 0.5)
+        verts += [_frame_add(c, t, s, n, x, y, z) for x, y in chamfer_loop(a, b, chi)]
+    quads = []
+    for li in range(4):
+        lj = (li + 1) % 4
+        for k in range(8):
+            k2 = (k + 1) % 8
+            quads.append([li * 8 + k, li * 8 + k2, lj * 8 + k2, lj * 8 + k])
+    return verts, quads
+
+
+def button(c, t, s, n, r: float, z0: float, z1: float, dome: float, seg: int):
+    """A domed button on c in the frame (t, s, n): a ring of seg at z0 (radius r), one at z1 (0.85 r) and the dome's
+    top at z1 + dome. Returns (vertices, faces): seg side quads and seg top triangles, open underneath."""
+    verts = []
+    for rr, z in ((r, z0), (0.85 * r, z1)):
+        for i in range(seg):
+            ang = 2 * math.pi * i / seg
+            verts.append(_frame_add(c, t, s, n, rr * math.cos(ang), rr * math.sin(ang), z))
+    verts.append(_frame_add(c, t, s, n, 0.0, 0.0, z1 + dome))
+    faces = [[i, (i + 1) % seg, seg + (i + 1) % seg, seg + i] for i in range(seg)]
+    faces += [[seg + i, seg + (i + 1) % seg, 2 * seg] for i in range(seg)]
+    return verts, faces

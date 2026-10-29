@@ -180,13 +180,40 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
       the panels' edges. The 2048x1024 normal map carries fine knit ribs and the AO as a soft height.
     - The material: roughness 0.9.
 13. **The straps** (`straps`). Two strips `--strap-width` 3.5 cm wide with 3 mm lips, from the bib's top corners
-    over the shoulders down to the back's V.
-    - The path: each strap's |x| is piecewise linear in the angle round `--strap-axis` (`--shell-strap-t` -90, 20,
-      128 degrees; `--shell-strap-x` 0.085, 0.10, 0.015 m).
-    - The height: at least `--shell-strap-off` 10 mm off the body, and 2 mm over the bib where they reach it. The
-      left strap sits 1.5 mm higher, so the two do not flicker where they meet.
-    - The UVs are on the garment's plain denim rectangle, and the weights come from the nearest body point.
-14. **The proof's close-ups in Godot.** `frames --closeups 'label@x,y,z/size/yaw[/pitch];...'` (Godot's frame: y up,
+    over the shoulders down into the back's V.
+    - The path: each strap's |x| is piecewise linear in the angle round `--strap-axis` (`--shell-strap-t` -118, 20,
+      134 degrees; `--shell-strap-x` 0.078, 0.10, 0.015 m), a station every `--shell-strap-step` 6 degrees,
+      `--shell-strap-lats` 5 vertices across (C1g). The front ends reach down over the Meshy buckle hardware, the back
+      ends 1 cm into the back panel, so no shirt shows at the V's tip.
+    - The height: at least `--shell-strap-off` 10 mm off the body, and 2 mm over the outermost kept surface within
+      `--shell-strap-reach` 4 cm (the Meshy hardware lies in layers). The left strap sits 1.5 mm higher, so the two
+      do not flicker where they meet.
+    - The texture (C1g): a free patch of the garment's texture (no island within 6 texels) takes a copy of the plain
+      denim rectangle `--strap-uv` (albedo, normal, roughness), and two dashed stitch lines along it, `--stitch` 3 mm in
+      from each edge (3 mm dashes, 2 mm gaps) in `--stitch-colour`, the sketch's orange. The Meshy bib's own
+      stitching is light grey, not orange: the two differ.
+    - The weights come from the nearest body point.
+    - Under the first `--strap-front` 9 cm of each strap the Meshy bib goes where the strap covers it (2 mm inside its
+      edges): the broken buckle hardware lay there. Beside it the hardware's warm or near-black faces take the patch's
+      plain denim.
+    - **The buckles** (C1g): at each front end a bronze rectangular ring over the strap (`--buckle` 3.6 cm from the
+      end; `--buckle-size`: 4 mm past the strap, 2.2 cm long, 4 mm bars, 3.5 mm high, chamfered corners) and a domed
+      button at the tab's end (1 cm; `--button-size` radius 6.5 mm), 188 triangles for both. Real geometry on their
+      own material `buckle_bronze` (`--bronze`: sRGB 0.60, 0.42, 0.20, metallic 0.85, roughness 0.38, no texture;
+      the sixth surface), every vertex of a piece weighted like the body under its strap station, so it rides rigid
+      with the strap.
+14. **The budget** (C1g). The axolotl's body alone is 41k triangles (head and gills), so the top pays:
+    - its faces under the bib and the back panel go when their normal and four rays tilted round it
+      (`--shell-hide-tilt` 0.6) all meet the panel within `--shell-hide` 6 cm, one ring in from the panel's edges.
+      Cutting more does not pay: the body under a hole is no longer covered, so it stays;
+    - the rest is decimated (Blender's collapse, mirrored in x) to `--shell-decimate` 0.32 of the arms' and 0.22 of
+      the torso's faces, away from the openings (`--shell-protect`: 3.5 cm from the cuffs, 3 cm from the neck cut,
+      2 cm above the hem) and from the UV seams (the torso's back centre and the sleeves' undersides, 6 % of the
+      island; the set-in sleeve seam, 2.5 cm), where a big face would take the next island's stripes. Each
+      decimated vertex then takes the body's weights under it.
+    - The AO bake is black outside the islands: it is filled from them, and across the torso's back seam each
+      margin column takes the other side's texels, so the mips and the normal map show no hairline there.
+15. **The proof's close-ups in Godot.** `frames --closeups 'label@x,y,z/size/yaw[/pitch];...'` (Godot's frame: y up,
     the character facing +z) adds `sheets/closeups.png`, two shots per row. Each shot is orthographic, the view's
     height is the size, and the studio light turns with each shot's yaw. The proof's `poke.json` now names up to six
     poking vertices per clip (`where`: rest place, bone, depth).
