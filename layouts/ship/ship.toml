@@ -320,13 +320,19 @@ lamps = [
   [0.0, -5.0, 3.35, 0.45, 3.0, 1.0, 0.95, 0.88, "corr", false],  # rebuild C: the throat's ceiling (E: its covered part's middle)
   [-10.5, 1.200, 3.45, 1.0, 4.5, 0.95, 0.9, 0.85, "tip", true],  # west tip room (rebuild A: (8.3, 0) -> (8.3, 4.0))
   [0.0, 4.75, 3.05, 0.1, 2.4, 1.0, 0.82, 0.62, "corr", true],  # lens step 2: the vault's dim lamp under its fixture
-  [-11.785, 1.396, 2.6, 0.6, 3.5, 0.55, 0.8, 0.8, "tip", false],  # west tip room's fill, 1.3 m out on its axis (was the window's moonlight, cool blue 0.55/0.68/1.0; the workshop: a cool mint, green flooded the room)
-  # the west lens room's workshop (docs/ship.md "The west lens room's workshop"): its acid green, the "shop" group; the
-  # strips, handles and rims glow and light nothing ([light.mats] ws_green__*), these few omnis light the room
-  [-10.692, -0.246, 2.59, 1.3, 1.6, 0.45, 1.0, 0.2, "shop", false],  # the bench lamp's light, 10 cm before its lens toward the robot
-  [-11.446, 0.308, 2.15, 0.9, 1.7, 0.45, 1.0, 0.2, "shop", false],  # the bench's wash, the window half (r 1.3, a_w 52, h 0.95)
-  [-10.651, -0.091, 2.15, 0.9, 1.7, 0.45, 1.0, 0.2, "shop", false],  # the bench's wash, the door half (a_w 92)
-  [-11.933, 1.418, 2.2, 0.7, 1.4, 0.45, 1.0, 0.2, "shop", false],  # the cradles' glow (r 1.45, a_w 0, h 1.0)
+  [-11.785, 1.396, 2.6, 0.6, 3.5, 0.62, 0.70, 0.86, "tip", false],  # west tip room's fill, 1.3 m out on its axis (the window's moonlight was 0.55/0.68/1.0; workshop step 1's mint flooded the room green, step 2 a neutral cool grey: the walls stay the ship's silver)
+  # the west lens room's workshop (docs/ship.md "The west lens room's workshop"): its acid green, the "shop" group, only
+  # in pools (step 2: step 1's broad washes flooded the walls and ceiling): short spots down on the bench and the
+  # cradles, the bench lamp's spot on the robot (row index 11: its aim [x, y, h]), the open drawers' and the bays'
+  # little omnis; the strips, pulls, rims and liners glow and light nothing ([light.mats] ws_green__*)
+  [-10.692, -0.246, 2.59, 1.5, 1.6, 0.8, 1.0, 0.72, "shop", false, 24.0, [-11.043, 0.302, 2.58]],  # the bench lamp's spot, from its lens on the robot's bays: a pale green work light (acid green tinted the shells and bays)
+  [-11.61, 0.524, 2.0, 1.2, 0.75, 0.45, 1.0, 0.2, "shop", false],  # the bench fronts' green, window half (r 1.30, a_w 40, h 0.80: the strips' light on the drawers and the floor before them)
+  [-11.173, 0.088, 2.0, 1.2, 0.75, 0.45, 1.0, 0.2, "shop", false],  # the bench fronts' green, the middle (r 1.30, a_w 67.5, h 0.80: the strips' light on the drawers and the floor before them)
+  [-10.583, -0.097, 2.0, 1.2, 0.75, 0.45, 1.0, 0.2, "shop", false],  # the bench fronts' green, door half (r 1.30, a_w 95, h 0.80: the strips' light on the drawers and the floor before them)
+  [-11.867, 0.584, 2.06, 0.5, 0.42, 0.45, 1.0, 0.2, "shop", false],  # the open top drawer's glow (a_w 32.9, h 0.86)
+  [-10.496, -0.300, 1.68, 0.5, 0.42, 0.45, 1.0, 0.2, "shop", false],  # the open low drawer's glow (a_w 98.8, h 0.48)
+  [-12.211, 1.130, 2.45, 0.8, 0.95, 0.45, 1.0, 0.2, "shop", false, 34.0],  # cradle a's pool (r 1.71, a_w 11, h 1.25)
+  [-12.112, 1.776, 2.45, 0.8, 0.95, 0.45, 1.0, 0.2, "shop", false, 34.0],  # cradle b's pool (a_w -11)
   [-27.0, -3.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
   [-27.0, 5.0, 3.0, 3.0, 12.0, 1.0, 0.6, 0.3, "out", false],  # west treeline camp light
   [4.8441, 0.3381, 3.4, 0.5, 3.0, 1.0, 0.95, 0.88, "corr", false],  # east corridor ceiling (rebuild A, as the west's)
@@ -429,8 +435,12 @@ ws_green__handle = {c = [0.45, 1.0, 0.08], e = 0.4, l = 0.0}
 ws_green__rim = {c = [0.45, 1.0, 0.08], e = 0.22, l = 0.0}
 ws_green__lamp = {c = [0.55, 1.0, 0.25], e = 0.8, l = 0.0}
 ws_green__sleep = {c = [0.45, 1.0, 0.08], e = 0.06, l = 0.0}
-ws_cyan__eye = {c = [0.1, 0.8, 1.0], e = 0.06, l = 0.0}
-ws_cyan__pupil = {c = [0.1, 0.8, 1.0], e = 0.06, l = 0.0}
+ws_cyan__eye = {c = [0.0, 0.7, 1.0], v = 0.25, e = 0.1, l = 0.0}   # step 2: a deep teal iris with a soft glow (a bright base or a strong glow read as a pale blue disc under AgX)
+ws_cyan__pupil = {c = [0.2, 0.9, 1.0], v = 0.4, e = 0.22, l = 0.0}   # step 2: the iris's brighter inner ring (and the spare eyes' irises)
+ws_green__liner = {c = [0.45, 1.0, 0.08], e = 0.08, l = 0.0}   # step 2: the open drawers' lit felt liners
+ws_cyan__core = {c = [0.1, 0.8, 1.0], e = 0.3, l = 0.0}     # step 2: the robot's bay lights
+ws_glint = {c = [1.0, 1.0, 1.0], e = 0.05, l = 0.0}        # step 2: the eye's soft highlight
+ws_rug = {v = 0.6}                                          # step 2: the rug a shade darker under the bench's green
 int_halo = {c = [1.0, 0.45, 0.1], e = 0.5, l = 0.0}                # the floor strips' frosted halo: glows, lights nothing
 int_halo__vent_heat = {c = [1.0, 0.13, 0.0], e = 0.6, l = 0.0}     # station 1: the vents' heat (vents-b3: a deep red-orange, b2's read peach)
 int_halo__vent_seam = {c = [1.0, 0.13, 0.0], l = 0.0}             # the blades' lit seams, the heat's colour (dark calm: vent_anim.gd, ship.py VENT_STATES)
