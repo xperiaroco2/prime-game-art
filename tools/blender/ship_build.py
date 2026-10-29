@@ -186,14 +186,17 @@ def rig(objs: list, parts: list[dict]) -> None:
 def build(piece: dict, layout: dict, out: Path) -> dict:
     clear()
     parts = lifted(builder(piece["lane"], piece["builder"])(piece.get("args", {}), layout), piece, layout)
-    for p in parts:  # Godot's importer gives a `-col` mesh a static body with its trimesh (one-sided: solids face out)
-        if piece.get("collide"):
+    # Godot's importer gives a `-col` mesh a static body with its trimesh (one-sided: solids face out); a piece whose
+    # parts declare their own simple colliders (`-convcolonly`, `-colonly`: a static body, no mesh) keeps the rest visual
+    own = any(p["name"].endswith("colonly") for p in parts)
+    for p in parts:
+        if piece.get("collide") and not own:
             p["name"] += "-col"
     objs = [import_glb(p) if p.get("glb") else make(p) for p in parts]
     rig(objs, parts)
     glb = out / f"{piece['id']}.glb"
     bpy.ops.export_scene.gltf(filepath=str(glb), **EXPORT)
-    pts = [o.matrix_world @ v.co for o in objs for v in o.data.vertices]
+    pts = [o.matrix_world @ v.co for o in objs if not o.name.endswith("colonly") for v in o.data.vertices]   # Godot's: meshes
     lo = [min(p[k] for p in pts) for k in range(3)]
     hi = [max(p[k] for p in pts) for k in range(3)]
     return {"glb": glb.as_posix(), "lane": piece["lane"],

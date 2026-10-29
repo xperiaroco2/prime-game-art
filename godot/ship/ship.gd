@@ -72,6 +72,12 @@ const LENS_BRONZE: Dictionary = {
 	"lens_bronze": [Color(0.64, 0.42, 0.22), 0.70, 0.30, 1.0, 0.06],
 	"lens_bronze2": [Color(0.58, 0.38, 0.20), 0.70, 0.32, 1.0, 0.03],
 	"lens_edge": [Color(0.86, 0.64, 0.40), 0.85, 0.14, 0.6, 0.10],
+	# the workshop's cabinetry (art #263 step 2): a dark olive bronze and its darker second tone
+	"ws_bronze": [Color(0.26, 0.22, 0.14), 0.55, 0.40, 0.8, 0.02],
+	"ws_bronze2": [Color(0.08, 0.15, 0.11), 0.0, 0.75, 0.3, 0.0],
+	# step 4: the fronts' raised panels a dark olive bronze (step 3's ws_bronze on them read warm brown; green enough
+	# to stay olive under the floor lights' orange, matte so they do not mirror the glowing floor, less worn gold)
+	"ws_olive": [Color(0.11, 0.21, 0.14), 0.0, 0.75, 0.3, 0.0],
 }
 var _bronzes: Dictionary = {}
 ## the charger traces (prime-game#1095): the lens alcoves' lens_trace lines on charger/traces.gdshader, idle (its
@@ -312,7 +318,7 @@ func _environment() -> void:
 		key.rotation_degrees = Vector3(float(light["key_dir_deg"][0]), float(light["key_dir_deg"][1]), 0)
 		root.add_child(key)
 		_night_lights.append(key)
-	for l: Array in light["lamps"]:  # [x, h, y, energy, range, r, g, b, (group), (shadow), (spot angle)]
+	for l: Array in light["lamps"]:  # [x, h, y, energy, range, r, g, b, (group), (shadow), (spot angle), (aim point [x, y, h])]
 		var omni: Light3D
 		if l.size() > 10 and float(l[10]) > 0.0:  # light layer: a spot pointing straight down (landing, edge pools)
 			var spot: SpotLight3D = SpotLight3D.new()
@@ -328,6 +334,10 @@ func _environment() -> void:
 			o.omni_attenuation = 1.4
 			omni = o
 		omni.position = Vector3(float(l[0]), float(l[1]), float(l[2]))
+		if omni is SpotLight3D and l.size() > 11 and l[11] is Array:  # the workshop (art #263): a spot aimed at a plan point [x, y, h]
+			var aim: Vector3 = Vector3(float(l[11][0]), float(l[11][2]), float(l[11][1])) - omni.position
+			var up: Vector3 = Vector3.UP if absf(aim.normalized().y) < 0.95 else Vector3.FORWARD
+			omni.basis = Basis.looking_at(aim, up)
 		var scale: float = _lk("lamp_scale", 1.0)
 		if l.size() > 8:  # a room's lamps scale by its own number, "<group>_lamp" (ship.toml [light])
 			scale = _lk(str(l[8]) + "_lamp", scale)
