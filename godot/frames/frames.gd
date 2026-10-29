@@ -13,8 +13,8 @@ extends SceneTree
 ## frame of one cycle at fps as video/<label>/<i>.png. frames.json records the cameras, the times and every joint's
 ## world position at each time, with each bone's two axis points (Character.axis_points). Prints FRAMES saved <path>, or FRAMES error <why> and exits 1.
 ## Optional: "face" (sheets/face.png, its own fixed light) and "closeups" (sheets/closeups.png: `frames --closeups
-## 'label@x,y,z/size/yaw[/pitch];...'` at --closeup-clip's first frame, orthographic, two per row, the light turned
-## with each shot's yaw); light_turn_deg comes from `frames --yaw`.
+## 'label@x,y,z/size/yaw[/pitch];...'` at --closeup-clip's --closeup-time (default its first frame), orthographic,
+## two per row, the light turned with each shot's yaw); light_turn_deg comes from `frames --yaw`.
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const Character = preload("res://lib/character.gd")

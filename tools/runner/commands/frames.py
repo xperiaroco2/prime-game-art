@@ -33,7 +33,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--closeups", default="", help="also a close-up sheet (sheets/closeups.png, two per row): "
                         "'label@x,y,z/size/yaw[/pitch];...', the target in Godot's frame (y up, the character facing +z), "
                         "the orthographic view's height in metres, yaw and pitch in degrees")
-    parser.add_argument("--closeup-clip", default="Idle", help="the clip whose first frame the close-ups show")
+    parser.add_argument("--closeup-clip", default="Idle", help="the clip whose frame the close-ups show")
+    parser.add_argument("--closeup-time", type=float, default=0.0,
+                        help="the close-ups' time in --closeup-clip in seconds (default 0, its first frame)")
     parser.add_argument("--face-beside", type=Path, help="an approved face sheet whose crops go left of Godot's close-ups")
     parser.add_argument("--face-rects", default="", help="the crops of --face-beside in pixels: 'x,y,w,h;x,y,w,h'")
 
@@ -81,7 +83,7 @@ def run(args: argparse.Namespace) -> int:
                                  f"{', '.join(sorted(by_label))}")
         try:
             spec["closeups"] = _frames.closeup_spec(glb.stem, by_label[args.closeup_clip],
-                                                    _frames.parse_closeups(args.closeups))
+                                                    _frames.parse_closeups(args.closeups), args.closeup_time)
         except ValueError as e:
             raise common.Failure(f"--closeups: {e}") from e
     for clip in spec["clips"]:
