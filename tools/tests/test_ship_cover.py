@@ -1,7 +1,9 @@
-"""The gill cover pilot (art #263, 2026-10-29; tools/blender/ship_interior_cover.py, godot/ship/gill_cover.gd,
-docs/ship.md "The gill cover pilot"): one rigid curved cover on the clean east wall: its size and place, the hinge on
-its outer edge as the moving parts' origin, the pocket cut into the band under it, and no point of the plate behind
-the wall's face over the whole swing (0..35 deg, the open swing's overshoot included). Plain Python."""
+"""The gill covers (art #263, 2026-10-29; tools/blender/ship_interior_cover.py, godot/ship/gill_cover.gd and
+cover_row.gd, docs/ship.md "The gill covers"): rigid curved covers on the clean throat walls, five a side (step 2): their
+size and place, the hinge on the outer edge as the moving parts' origin, the pockets cut into the band, no point of a
+plate behind the wall's face over the whole swing (0..35 deg, the overshoot included), the west wall the east's mirror
+with its hinges toward the mouth, the button, no colliders, and the row's state machine (cover_row.gd's rules mirrored
+in plain Python). Plain Python."""
 
 from __future__ import annotations
 
@@ -110,11 +112,56 @@ class Cover(unittest.TestCase):
             if abs(t - C.T_MID) < C.HOLE_HALF:
                 self.assertFalse(C.HOLE_L(t) + 1e-6 < u < C.HOLE_R(t) - 1e-6, (u, t))
 
-    def test_east_only(self):
+    def test_five_a_side(self):
+        names = ["glow", "hinge", "knuckle", "plate", "pocket", "rim"]
+        for side in ("e", "w"):
+            p = parts(side)
+            for k, s_mid in C.SLOTS.items():
+                self.assertEqual(sorted(n[7:] for n in p if n.startswith(f"cover{k}_")), names, (side, k))
+            self.assertEqual(sorted(n for n in p if n.startswith("btn_")), ["btn_bezel", "btn_dome", "btn_ring"])
+        self.assertEqual(list(C.SLOTS.values()), [1.95, 2.32, 2.69, 3.06, 3.43])          # design's centres
+
+    def test_positions_east(self):
+        p = parts("e")
+        for k, s_mid in C.SLOTS.items():
+            plate = [wall(v) for v in p[f"cover{k}_plate"]["verts"]]
+            us, ts = [q[0] for q in plate], [q[1] for q in plate]
+            self.assertAlmostEqual(min(us) + C.WIDTH / 2, s_mid, places=6)              # the crescent's middle
+            self.assertAlmostEqual((min(ts) + max(ts)) / 2, C.T_MID, places=6)
+            self.assertTrue(min(ts) >= 0.75 - 1e-6 and max(ts) <= 1.95 + 1e-6)
+            for a, b in zip(p[f"cover{k}_plate"]["origin"], T.point(C.AXIS_U + s_mid - C.S_MID, C.T_MID, C.AXIS_W)):
+                self.assertAlmostEqual(a, b, places=9)
+            fixed = [wall(v) for v in p[f"cover{k}_hinge"]["verts"]]
+            self.assertGreaterEqual(min(q[0] for q in fixed), 1.70)                      # nothing before s 1.70
+        for k in range(1, 5):   # neighbours: the open edge's pocket clear of the next hinge's tabs by 2 cm at their heights
+            nxt = [wall(v) for v in p[f"cover{k + 1}_hinge"]["verts"]]
+            lo, hi = min(q[1] for q in nxt), max(q[1] for q in nxt)
+            hole = [wall(v) for v in p[f"cover{k}_pocket"]["verts"] if lo - 0.01 <= wall(v)[1] <= hi + 0.01]
+            self.assertGreater(min(q[0] for q in nxt) - max(q[0] for q in hole), 0.02, k)
+        btn = [wall(v) for v in p["btn_bezel"]["verts"]]
+        self.assertAlmostEqual((min(q[0] for q in btn) + max(q[0] for q in btn)) / 2, C.BUTTON[0], places=3)
+        self.assertAlmostEqual((min(q[1] for q in btn) + max(q[1] for q in btn)) / 2, C.BUTTON[1], places=3)
+        last = [wall(v) for v in p["cover5_pocket"]["verts"]]
+        self.assertGreater(min(q[0] for q in btn) - max(q[0] for q in last), 0.03)        # the button clear of cover 5
+        self.assertLess(max(q[0] for q in btn), T.JAMB_U - 0.05)                           # and of the jamb
+
+    def test_west_mirrored(self):
         e, w = parts("e"), parts("w")
-        self.assertEqual(sorted(n for n in e if n.startswith("cover3_")),
-                         ["cover3_glow", "cover3_hinge", "cover3_knuckle", "cover3_plate", "cover3_pocket", "cover3_rim"])
-        self.assertFalse([n for n in w if n.startswith("cover")])
+        for k in C.SLOTS:
+            for n in (f"cover{k}_plate", f"cover{k}_knuckle", f"cover{k}_hinge"):
+                self.assertEqual(sorted((round(-x, 6), round(y, 6), round(h, 6)) for x, y, h in e[n]["verts"]),
+                                 sorted((round(x, 6), round(y, 6), round(h, 6)) for x, y, h in w[n]["verts"]), n)
+            ox, oy, oh = e[f"cover{k}_plate"]["origin"]
+            self.assertEqual(w[f"cover{k}_plate"]["origin"], (-ox, oy, oh))
+            # the hinge on the mouth's side on both walls: every plate point further from the mouth than the axis
+            self.assertTrue(all(abs(x) > abs(w[f"cover{k}_plate"]["origin"][0]) for x, _y, _h in w[f"cover{k}_plate"]["verts"]))
+
+    def test_no_colliders(self):
+        for side in ("e", "w"):
+            for n, q in parts(side).items():
+                self.assertEqual(bool(q.get("nocol")), n.startswith(("cover", "btn_")), (side, n))
+        build = (ROOT / "tools" / "blender" / "ship_build.py").read_text(encoding="utf-8")
+        self.assertIn('not p.get("nocol")', build)
 
     def test_controller_never_turns_inward(self):
         # every write to the angle is the gasp's (>= 0), the spring's (>= its start) or the cough's outward shudder

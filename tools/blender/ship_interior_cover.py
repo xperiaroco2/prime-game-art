@@ -1,6 +1,9 @@
 """The throat's gill covers, the pilot (art #263, 2026-10-29; design's gill-covers concept, prime-game-design c275972
 ideas/ship-components/gill-covers/covers_ingame.jpg; docs/ship.md "The gill cover pilot"): ONE rigid, already-curved
-metal cover like a fish's gill cover on the clean east wall (th_wall_e), at the middle slit's place, before all ten.
+metal cover like a fish's gill cover; step 2 (the engineer, 2026-10-29: "Yes, the light and all 10"): five on each
+throat wall at SLOTS (centres s 1.95-3.43), the west wall the east's mirror (th_wall_w: hinges toward the mouth too),
+and one round button per wall (`btn_*`, a dark dome in a light ring) at BUTTON. Every cover part and the button are
+decor for the player: no colliders ("nocol").
 
 The cover in front view is a crescent: both edges arcs through the same two tips 1.20 m apart straight up the wall (the
 chord, t 0.75-1.95 above the deck, on the hall's side): the outer (convex) arc sags SAG_O toward the mouth, the inner
@@ -16,7 +19,7 @@ Behind the plate a shallow pocket (POCKET_D) is cut into the band in the plate's
 the tips (the plate rests on the wall there) and EDGE_GAP out past the open edge: its walls a dark metal with a faint glow, its floor a glow the
 game turns red (shut, gasping) or cyan (open). A thin strip on the plate's open edge face (`rim`) glows the same way.
 
-Parts (Godot `cover<k>_<part>`; k = 3, the middle of the five slots): `plate`, `rim` and `knuckle` turn about the
+Parts (Godot `cover<k>_<part>`, k = 1..5 from the mouth; the numbers below are slot 3's, the others shifted along u): `plate`, `rim` and `knuckle` turn about the
 hinge (their object origins on the axis at the cover's middle height: rotate them about local Y; the open edge moves
 out, the GLB's +z, for a negative turn on the east wall, positive on the mirrored west); `hinge` (the fixed knuckles
 and tabs), `pocket` (walls) and `glow` (the floor) stay. godot/ship/gill_cover.gd is the reference controller.
@@ -33,8 +36,15 @@ import ship_lib as L
 
 P = S.P
 
-K = 3                                                   # the slot (the middle of the five)
-S_MID, T_MID = 2.69, 1.35                               # the crescent's middle (the old middle slit's place)
+K = 3                                                   # the reference slot (the middle of the five)
+S_MID, T_MID = 2.69, 1.35                               # its crescent's middle (the old middle slit's place)
+SLOTS = {1: 1.95, 2: 2.32, 3: 2.69, 4: 3.06, 5: 3.43}   # each cover's middle s (design's positions, 37 cm apart)
+COLUMN = 0.21                                           # the band's column per cover: its pocket's hole in s_k-0.16 .. s_k+0.21
+BUTTON = (3.72, 1.15)                                   # the round button's centre (s, t)
+BTN_DOME_R, BTN_DOME_UP = 0.048, 0.026                  # the dark dome: radius, standing proud of the ring
+BTN_RING = (0.048, 0.068)                               # the light ring round it (radii)
+BTN_BEZEL = 0.078                                       # the silver bezel's outer radius
+BTN_W = 0.006                                           # the bezel's height off the wall (the ring sits on it)
 CHORD = 1.20                                            # the tips' line, t 0.75-1.95
 SAG_O, SAG_I = 0.335, 0.035                             # the outer and inner arcs' sag toward the mouth
 WIDTH = SAG_O - SAG_I                                   # 0.30 at the middle
@@ -61,10 +71,10 @@ MAX_DEG = 35.0                                          # the tests' sweep (the 
 PLATE_MAT, RIM_MAT, GLOW_MAT, WALL_MAT, HINGE_MAT = (
     "cover_metal", "int_cyan__cover_rim", "int_cyan__cover_glow", "int_cyan__cover_wall", "cover_hinge")
 
-# the plate: a pale bronze-silver (the concept's champagne metal), the hinge a darker steel; the glows' GLB colour is
+# the plate: a warm champagne bronze-silver (the concept's; step 2 warmer than the pilot's 0.50/0.42/0.33, metallic 0.85), the hinge a darker steel; the glows' GLB colour is
 # the shut state's red (the game drives both)
 L.MATERIALS.update({
-    "cover_metal": {"base": (0.50, 0.42, 0.33, 1.0), "metallic": 0.85, "roughness": 0.27},
+    "cover_metal": {"base": (0.66, 0.53, 0.38, 1.0), "metallic": 0.75, "roughness": 0.30},
     "cover_hinge": {"base": (0.30, 0.30, 0.31, 1.0), "metallic": 0.9, "roughness": 0.32},
     "int_cyan__cover_rim": {**L.MATERIALS["int_cyan"], "base": (1.0, 0.12, 0.04, 1.0), "emission": (1.0, 0.12, 0.04),
                             "strength": 2.0},
@@ -216,8 +226,82 @@ def pocket(pt) -> tuple[tuple[list, list], tuple[list, list]]:
     return (wv, wf), (fv, ff)
 
 
-def cover_parts(pt) -> list[dict]:
-    """The cover's parts in the east wall's frame (pt: ship_interior_throat.point)."""
+def shifted(pt, k: int):
+    """pt for slot k: slot 3's geometry moved along u to the slot's middle."""
+    du = SLOTS[k] - S_MID
+    return lambda u, t, w=0.0: pt(u + du, t, w)
+
+
+def band_with_holes(pt, u0: float, u1: float, t0: float, t1: float, slots=tuple(SLOTS)) -> tuple[list, list]:
+    """The band (u0..u1) with every slot's pocket hole: one column per cover (s_k - COLUMN .. s_k + COLUMN, the holes
+    span s_k - 0.13 .. s_k + 0.18), plain quads between them."""
+    verts, faces = [], []
+
+    def add(vf):
+        n = len(verts)
+        verts.extend(vf[0])
+        faces.extend(tuple(i + n for i in f) for f in vf[1])
+
+    a = u0
+    for k in sorted(slots):
+        lo, hi = SLOTS[k] - COLUMN, SLOTS[k] + COLUMN
+        if lo > a + 1e-9:
+            add(([pt(a, t0), pt(lo, t0), pt(lo, t1), pt(a, t1)], [(0, 1, 2, 3)]))
+        du = SLOTS[k] - S_MID
+        add(band_with_hole(shifted(pt, k), lo - du, hi - du, t0, t1))
+        a = hi
+    if u1 > a + 1e-9:
+        add(([pt(a, t0), pt(u1, t0), pt(u1, t1), pt(a, t1)], [(0, 1, 2, 3)]))
+    return verts, faces
+
+
+L.MATERIALS.update({
+    "int_cyan__cover_btn": {**L.MATERIALS["int_cyan"], "base": (0.1, 0.85, 1.0, 1.0), "emission": (0.1, 0.85, 1.0),
+                            "strength": 2.4},
+    "int_dark__cover_btn": {**L.MATERIALS["int_dark"], "base": (0.035, 0.04, 0.045, 1.0), "metallic": 0.6,
+                            "roughness": 0.38},
+})
+
+
+def _disc_rows(pt, us: float, ts: float, rings: list[tuple[float, float]], n: int = 48) -> tuple[list, list]:
+    """A surface of revolution about the wall normal at (us, ts): rings of (radius, w) outer to inner, quads between
+    them facing out of the wall (counter-clockwise seen from the room); a last radius 0 closes it with a fan."""
+    verts, faces = [], []
+    for r, w in rings:
+        verts += [pt(us + r * math.cos(2 * math.pi * i / n), ts + r * math.sin(2 * math.pi * i / n), w) for i in range(n)]
+    for j in range(len(rings) - 1):
+        a, b = j * n, (j + 1) * n
+        faces += [(a + i, a + (i + 1) % n, b + (i + 1) % n, b + i) for i in range(n)]
+    return verts, faces
+
+
+def button(pt) -> list[dict]:
+    """The round button (the concept's: a dark dome in a light ring): a low silver bezel on the wall, the cyan ring on
+    it, the dark dome in the ring. Decor (no collider); the game dims `btn_ring` after a wrong press."""
+    us, ts = BUTTON
+    r0, r1 = BTN_RING
+    bezel = _disc_rows(pt, us, ts, [(BTN_BEZEL, 0.0), (BTN_BEZEL, BTN_W * 0.6), (BTN_BEZEL - 0.004, BTN_W),
+                                    (r1, BTN_W), (r1, 0.0)])
+    ring = _disc_rows(pt, us, ts, [(r1, BTN_W + 0.0006), (r0, BTN_W + 0.0006)])
+    rho = (BTN_DOME_R ** 2 + BTN_DOME_UP ** 2) / (2 * BTN_DOME_UP)
+    dome = [(BTN_DOME_R, BTN_W - 0.004), (BTN_DOME_R, BTN_W)]
+    for i in range(1, 10):
+        r = BTN_DOME_R * (1 - i / 10)
+        dome.append((r, BTN_W + BTN_DOME_UP - rho + math.sqrt(rho ** 2 - r ** 2)))
+    dv, df = _disc_rows(pt, us, ts, dome)
+    n, top = 48, len(dv) - 48
+    dv.append(pt(us, ts, BTN_W + BTN_DOME_UP))
+    df += [(top + i, top + (i + 1) % n, len(dv) - 1) for i in range(n)]
+    out = [{**P("btn_bezel", bezel, PLATE_MAT), "smooth_deg": 40}, P("btn_ring", ring, "int_cyan__cover_btn"),
+           {**P("btn_dome", (dv, df), "int_dark__cover_btn"), "smooth_deg": 60}]
+    for p in out:
+        p["solid"], p["nocol"] = False, True
+    return out
+
+
+def cover_parts(pt, k: int = K) -> list[dict]:
+    """Slot k's cover parts in the east wall's frame (pt: ship_interior_throat.point)."""
+    pt = shifted(pt, k)
     rows = plate_grid()
     plate = _grid_solid(rows, pt)
     rim_v, rim_f = [], []
@@ -247,7 +331,7 @@ def cover_parts(pt) -> list[dict]:
         hinge.append(_box(pt, AXIS_U - TAB_W, AXIS_U, T_MID + lo + 0.006, T_MID + hi - 0.006, 0.0005, 0.005))
     walls, floor = pocket(pt)
     origin = pt(AXIS_U, T_MID, AXIS_W)
-    pre = f"cover{K}_"
+    pre = f"cover{k}_"
     out = [{**P(pre + "plate", S.M(plate), PLATE_MAT), "origin": origin, "smooth_deg": 50},
            {**P(pre + "rim", (rim_v, rim_f), RIM_MAT), "origin": origin},
            {**P(pre + "knuckle", S.M(knuckle, strap), HINGE_MAT), "origin": origin, "smooth_deg": 50},
@@ -255,6 +339,7 @@ def cover_parts(pt) -> list[dict]:
            P(pre + "pocket", walls, WALL_MAT), P(pre + "glow", floor, GLOW_MAT)]
     for p in out:
         p["solid"] = p["name"].endswith(("plate", "knuckle", "hinge"))
+        p["nocol"] = True   # decor: the player's capsule never meets a plate (art #263 step 2)
     return out
 
 

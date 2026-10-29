@@ -5,7 +5,8 @@ throat"): the throat's walls, the ramp frame and the hall jambs, drawn in <raw>/
   25 cm cove (a lighter metal, a 1.4 cm dark line at the fold) in to the flat ceiling at 2.30 (ship.toml throat
   `chamfer`); the plinth (0-0.60, 3 cm proud) with its cyan line; one clean panel from the ramp frame to the hall
   jamb (s 1.668-3.88). Under the entry tunnel (s 0.02 to the frame) only the plinth and the band to the tunnel's own
-  bend (1.45): above it the tunnel leans in (`tunnel_chamfer`, the hull's jamb plates). No slits and no button in
+  bend (1.45): above it the tunnel leans in (`tunnel_chamfer`, the hull's jamb plates). The gill covers and the
+  button (step 2) come from ship_interior_cover.py; no slits in
   this step (the engineer, 2026-10-29: the slits come back as hinged gill covers; ship_interior_gills.py is parked).
 - `th_frame`: one frame to the ramp in the roof line's plane (y roof_y - 0.039 .. roof_y + 0.046): on each side it
   fills the step from the tunnel's profile to the room's with an 8 cm trim round the tunnel's opening, and a flush
@@ -57,7 +58,7 @@ BAR = 0.005                                               # the bar across the c
 TUCK = 0.02                                               # the frame runs this far into the walls and up into the ceiling
 JAMB_U = 3.88                                             # the hall jamb's end face along the wall (the old button ended 3.84)
 JAMB_PROUD = 0.016                                        # its hall face this far proud of the header's
-COVER_SIDES = ("e",)                                      # the gill cover pilot: one cover, on the east wall only
+COVER_SIDES = ("e", "w")                                  # the gill covers: five on each wall (step 2), the west mirrored
 DROP_D = 0.02                                             # the header's throat face carried down to the cove by the jamb
 
 
@@ -143,10 +144,10 @@ def cove_start(t: float) -> float:
 
 def wall_parts(cover: bool = False) -> list:
     """The east wall: band (one panel), plinth, kick, cyan line, the fold's dark line, the cove and the back skin;
-    `cover`: the gill cover pilot (ship_interior_cover.py) with its pocket cut into the band."""
+    `cover`: the five gill covers and the button (ship_interior_cover.py), their pockets cut into the band."""
     u0, u1 = S_F0 + 0.01, JAMB_U
     band = [_poly([(PLINTH_S0, PLINTH_H), (u0, PLINTH_H), (u0, TUN_BEND - MOUTH_TOP), (PLINTH_S0, TUN_BEND - MOUTH_TOP)]),
-            C.band_with_hole(point, u0, u1, PLINTH_H, FOLD - GAP_H) if cover else
+            C.band_with_holes(point, u0, u1, PLINTH_H, FOLD - GAP_H) if cover else
             _poly([(u0, PLINTH_H), (u1, PLINTH_H), (u1, FOLD - GAP_H), (u0, FOLD - GAP_H)])]
     gap = _poly([(S_F1 - 0.01, FOLD - GAP_H), (u1, FOLD - GAP_H), (u1, FOLD), (S_F1 - 0.01, FOLD)], 0.0)
     tt = T_TOP + T_OVER
@@ -163,7 +164,7 @@ def wall_parts(cover: bool = False) -> list:
              P("back", M(*back), BAND_MAT)]
     for p in parts:   # the open sheets keep their winding (recalc_face_normals guesses on an open sheet)
         p["solid"] = p["name"] in ("plinth", "kick", "plinth_line")
-    return parts + (C.cover_parts(point) if cover else [])
+    return parts + ([q for k in C.SLOTS for q in C.cover_parts(point, k)] + C.button(point) if cover else [])
 
 
 def mirror(parts: list) -> list:

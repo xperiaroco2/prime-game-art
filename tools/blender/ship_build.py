@@ -189,8 +189,8 @@ def build(piece: dict, layout: dict, out: Path) -> dict:
     # Godot's importer gives a `-col` mesh a static body with its trimesh (one-sided: solids face out); a piece whose
     # parts declare their own simple colliders (`-convcolonly`, `-colonly`: a static body, no mesh) keeps the rest visual
     own = any(p["name"].endswith("colonly") for p in parts)
-    for p in parts:
-        if piece.get("collide") and not own:
+    for p in parts:   # a part marked "nocol" stays visual (the gill covers: decor, art #263)
+        if piece.get("collide") and not own and not p.get("nocol"):
             p["name"] += "-col"
     objs = [import_glb(p) if p.get("glb") else make(p) for p in parts]
     rig(objs, parts)
