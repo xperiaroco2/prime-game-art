@@ -1,7 +1,8 @@
 """The dressed character's proof in motion (art #196, clothes step 2, C1): opens clothes_dress.py's <name>_char.blend
 and, per clip, measures the poke-through and shoots the contact sheet; then the close-ups at 0.8 m.
 
-- Poke-through: the body vertices under the cloth at rest (nearest cloth point within --near m and behind the
+- Poke-through (each clip's "where": up to six of the vertices that poke, deepest first, with their rest place and
+  strongest bone): the body vertices under the cloth at rest (nearest cloth point within --near m and behind the
   cloth's face there, and farther than --opening m from every opening, where moving out of the cuff is no fault) are
   followed through every frame of each clip; a frame counts those that end up outside the
   cloth by more than --tol m and the deepest; the clip's numbers are the frame maximum (clothes_fit_geom.frame_max).
@@ -120,7 +121,7 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.open_mainfile(filepath=str(Path(args.blend).resolve()))
     arm = bpy.data.objects["CharacterArmature"]
-    cloth = [bpy.data.objects[n] for n in ("garment", "shoes") if n in bpy.data.objects]
+    cloth = [bpy.data.objects[n] for n in ("garment", "shoes", "top") if n in bpy.data.objects]
     body = next(o for o in bpy.data.objects if o.type == "MESH" and o.parent == arm and o not in cloth)
     polys, off = [], 0
     for o in cloth:
@@ -163,6 +164,12 @@ def main() -> int:
     near = np.array(near)[~at_open] if len(near) else np.array(near)
     say("hidden by the cloth at rest:", len(near), "body vertices,", rest_poke, "of them outside it;",
         int(at_open.sum()), "more by an opening, left out")
+    gname = {g.index: g.name for g in body.vertex_groups}
+
+    def bone_of(k: int) -> str:  # a poking vertex's strongest bone, to say where it is
+        gs = body.data.vertices[k].groups
+        return gname.get(max(gs, key=lambda g: g.weight).group, "") if len(gs) else ""
+
     head = {b.name: arm.matrix_world @ b.head_local for b in arm.data.bones}
     front = 1.0 if (head["LeftToes"] - head["LeftFoot"]).y > 0 else -1.0
     sc = bpy.context.scene
@@ -191,7 +198,7 @@ def main() -> int:
             continue
         arm.animation_data.action = act
         f0, f1 = (int(round(x)) for x in act.frame_range)
-        frames, skin = [], 0
+        frames, skin, worst = [], 0, {}
         for f in range(f0, max(f0 + 1, f1 + 1)):
             sc.frame_set(f)
             ctree = cloth_tree(cloth, polys)
@@ -202,7 +209,12 @@ def main() -> int:
             bad = (s > args.tol) & ~exposed
             skin = max(skin, int(exposed.sum()))
             frames.append((int(bad.sum()), float(s[bad].max()) if bad.any() else 0.0))
-        poke[clip] = {"action": act.name, **F.frame_max(frames), "exposed_skin_max": skin}
+            for j in np.nonzero(bad)[0]:
+                worst[int(near[j])] = max(worst.get(int(near[j]), 0.0), float(s[j]))
+        poke[clip] = {"action": act.name, **F.frame_max(frames), "exposed_skin_max": skin,
+                      "where": [{"rest": [round(float(x), 3) for x in rest[k]], "bone": bone_of(k),
+                                 "depth_mm": round(1000 * d, 1)}
+                                for k, d in sorted(worst.items(), key=lambda kv: -kv[1])[:6]]}
         say("poke", clip, poke[clip])
         row = []
         for k in (0.25, 0.6):

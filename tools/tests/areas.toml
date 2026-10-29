@@ -187,5 +187,6 @@ tests = ["test_alien_lively_*"]
 sources = [
   "tools/blender/clothes_texture.py",  # the cloth maps' fill and the denim's shift (#196, C1d)
   "tools/blender/clothes_strap.py",  # the straps' rebuild and the sleeves' smoothing (#196, C1e)
+  "tools/blender/clothes_shell.py",  # the shell top's, panels' and new straps' maths (#196, C1f)
 ]
-tests = ["test_clothes_texture_*", "test_clothes_strap*"]
+tests = ["test_clothes_texture_*", "test_clothes_strap*", "test_clothes_shell*"]

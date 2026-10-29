@@ -1,0 +1,133 @@
+"""The dungarees' upper body as our own clean pieces, pure maths (art #196, clothes step 2, C1f; no bpy,
+unittest-tested in tools/tests/test_clothes_shell.py). clothes_dress.py --shell imports it.
+
+The hybrid route: a fitted top is a shell of the body itself, the loose lower parts stay Meshy's.
+- The striped top: the body's own faces over the torso and arms, each vertex moved out along its normal by the
+  clearance (offset: less where the kept Meshy denim lies nearer, tapered to a few mm at the hem, which is tucked under
+  the trousers), cut by planes at a round crew neck, the wrists and the hem, with a rolled lip toward the body at the
+  collar and the cuffs. Its weights are the body's (same vertices), so no clip can push the body through it.
+- Its UVs (region, torso_uv, arm_uv, unwrap): the torso a cylinder round the vertical axis (v by height), each arm a
+  cylinder round its T-pose axis (v along the arm), all at one scale in v, so a stripe is an image row
+  (stripe_cover): navy and white bands of one width, from the collar down and from each cuff up.
+- The Meshy garment keeps the trousers below the waistband, the bib inside its outline at the front and the back
+  panel inside its V (keep_face); the straps are new strips from the bib's top corners over the shoulders down to the
+  back's V (strap_x: the strip's x along its angle round the shoulder axis).
+"""
+from __future__ import annotations
+
+import math
+
+TORSO, LEFT, RIGHT = "torso", "left", "right"
+
+
+def region(x: float, z: float, x_seam: float, z_arm: float) -> str:
+    """The shell piece a face belongs to by its centre: an arm beyond the shoulder seam's plane |x| = x_seam above
+    z_arm (a set-in sleeve: the arm's rings meet the torso's horizontal stripes at a vertical seam), else the torso."""
+    if abs(x) > x_seam and z > z_arm:
+        return LEFT if x > 0 else RIGHT
+    return TORSO
+
+
+def torso_uv(x: float, y: float, z: float, yc: float, u0: float, width: float, v0: float, per_m: float,
+             z_top: float) -> tuple[float, float]:
+    """The torso's UV: u by the angle round the vertical axis through (0, yc), the front centre in the middle of
+    [u0, u0 + width] and the seam at the back centre; v = v0 + (z_top - z) * per_m (down from the collar)."""
+    t = math.atan2(x, -(y - yc))  # 0 at the front centre, +-pi at the back
+    return u0 + width * (t + math.pi) / (2 * math.pi), v0 + (z_top - z) * per_m
+
+
+def arm_uv(x: float, y: float, z: float, x_cuff: float, axis_y: float, axis_z: float, u0: float, width: float,
+           v0: float, per_m: float) -> tuple[float, float]:
+    """An arm's UV (the T-pose arm along x): u by the angle round the axis (y = axis_y, z = axis_z), the seam on the
+    underside; v = v0 + (x_cuff - |x|) * per_m (up the arm from the cuff)."""
+    t = math.atan2(y - axis_y, z - axis_z)  # 0 on top, +-pi underneath
+    return u0 + width * (t + math.pi) / (2 * math.pi), v0 + (x_cuff - abs(x)) * per_m
+
+
+def unwrap(us: list[float], u0: float, width: float) -> list[float]:
+    """One face's u values on a cylinder's island [u0, u0 + width]: a face across the seam has some loops near each
+    end; those near the low end move up by the width, so the face stays whole (it reaches a little past the island)."""
+    if max(us) - min(us) <= width / 2:
+        return list(us)
+    mid = u0 + width / 2
+    return [u + width if u < mid else u for u in us]
+
+
+def stripe_cover(d0: float, d1: float, period: float, duty: float) -> float:
+    """The navy share of the band [d0, d1] (metres from the edge: the collar or a cuff); each period starts with
+    white for period * (1 - duty), then navy. The box filter of one texel: no jagged stripe edges."""
+    if d1 < d0:
+        d0, d1 = d1, d0
+    white = period * (1 - duty)
+
+    def navy_upto(d: float) -> float:  # the navy length in [0, d]
+        n, r = divmod(d, period)
+        return n * period * duty + max(0.0, r - white)
+
+    if d1 - d0 < 1e-12:
+        return 1.0 if (d0 % period) >= white else 0.0
+    return (navy_upto(d1) - navy_upto(d0)) / (d1 - d0)
+
+
+def clearance(want: float, hit: float | None, gap: float, floor: float) -> float:
+    """The shell's offset at a vertex: want, unless a kept piece (the bib) lies hit m out along its normal; then gap
+    inside that piece, but never under floor."""
+    if hit is None:
+        return want
+    return max(floor, min(want, hit - gap))
+
+
+def taper(z: float, z_hem: float, z_full: float, d_hem: float, d_full: float) -> float:
+    """The offset toward the tucked hem: d_full above z_full, d_hem at z_hem, linear between."""
+    if z >= z_full:
+        return d_full
+    if z <= z_hem:
+        return d_hem
+    return d_hem + (d_full - d_hem) * (z - z_hem) / (z_full - z_hem)
+
+
+def back_halfwidth(z: float, z_waist: float, z_apex: float, hw_waist: float, hw_apex: float) -> float:
+    """The back panel's half width at height z: hw_waist at the waistband narrowing to hw_apex at the apex, where the
+    straps meet; 0 above the apex."""
+    if z > z_apex:
+        return 0.0
+    if z <= z_waist:
+        return hw_waist
+    return hw_waist + (hw_apex - hw_waist) * (z - z_waist) / (z_apex - z_waist)
+
+
+def keep_face(x: float, y: float, z: float, z_waist: float, bib_hw: float, bib_top: float, back_y: float,
+              z_apex: float, back_hw_waist: float, back_hw_apex: float) -> bool:
+    """Whether a Meshy garment face (its centre) stays: below the waistband; or on the front (y < 0) inside the bib
+    (|x| < bib_hw, z < bib_top); or on the back (y > back_y) inside the back panel's V."""
+    if z <= z_waist:
+        return True
+    if y < 0:
+        return abs(x) < bib_hw and z < bib_top
+    if y > back_y:
+        return abs(x) < back_halfwidth(z, z_waist, z_apex, back_hw_waist, back_hw_apex)
+    return False
+
+
+def strap_x(t: float, ts: list[float], xs: list[float]) -> float:
+    """A strap's |x| at angle t round the shoulder axis: piecewise linear through (ts[i], xs[i]), held at the ends."""
+    if t <= ts[0]:
+        return xs[0]
+    for (a, xa), (b, xb) in zip(zip(ts, xs), zip(ts[1:], xs[1:])):
+        if t <= b:
+            return xa + (xb - xa) * (t - a) / (b - a) if b > a else xb
+    return xs[-1]
+
+
+def plane_side(p: tuple[float, float, float], co: tuple[float, float, float], no: tuple[float, float, float]) -> float:
+    """The signed distance of p from the plane through co with the unit normal no."""
+    return sum((a - b) * n for a, b, n in zip(p, co, no))
+
+
+def neck_plane(y_front: float, z_front: float, y_back: float, z_back: float) -> tuple[tuple[float, float, float],
+                                                                                       tuple[float, float, float]]:
+    """The crew neck's cut: the plane through the collar's front (y_front, z_front) and back (y_back, z_back) points,
+    level across x; returns (a point, the unit normal pointing up, out of the top)."""
+    dy, dz = y_back - y_front, z_back - z_front
+    n = math.hypot(dy, dz)
+    return (0.0, y_front, z_front), (0.0, -dz / n, dy / n)

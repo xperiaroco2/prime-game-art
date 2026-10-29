@@ -460,6 +460,39 @@ def main() -> int:
     ap.add_argument("--sleeve-max", type=float, default=0.01, help="a sleeve vertex moves at most this far (m)")
     ap.add_argument("--sleeve-floor", type=float, default=0.004,
                     help="a smoothed sleeve vertex never comes nearer the body than min(its old distance, this) (m)")
+    ap.add_argument("--shell", action="store_true",
+                    help="the hybrid route (clothes_top): a shell top of the body, the Meshy garment cut to the "
+                         "trousers, bib and back panel, new straps (replaces --straps and --sleeve-smooth)")
+    ap.add_argument("--shell-off", type=float, default=0.006, help="the top's clearance off the body (m)")
+    ap.add_argument("--shell-hem", type=float, default=0.95, help="the top's hem, tucked under the trousers (z, m)")
+    ap.add_argument("--shell-full", type=float, default=1.02, help="the full clearance from this height up (z, m)")
+    ap.add_argument("--shell-hem-off", type=float, default=0.002, help="the clearance at the hem (m)")
+    ap.add_argument("--shell-gap", type=float, default=0.003, help="the top stays this far inside a kept piece (m)")
+    ap.add_argument("--shell-floor", type=float, default=0.002, help="the top's least clearance (m)")
+    ap.add_argument("--shell-hide", type=float, default=0.04,
+                    help="a top vertex with a kept piece this near along its normal is hidden under it (m)")
+    ap.add_argument("--shell-hide-rings", type=int, default=2, help="the hidden faces kept next to a panel's edge")
+    ap.add_argument("--shell-lip", type=float, default=0.0045, help="the collar's and cuffs' lip toward the body (m)")
+    ap.add_argument("--shell-per-m", type=float, default=1.29, help="the top's UV units per metre in v")
+    ap.add_argument("--shell-ao", type=float, default=0.45, help="how much the AO bake darkens the top (0: no bake)")
+    ap.add_argument("--shell-ao-dist", type=float, default=0.06)
+    ap.add_argument("--shell-ao-samples", type=int, default=24)
+    ap.add_argument("--stripe", default="0.038,0.5", help="the stripes' period (m) and navy share")
+    ap.add_argument("--cuff-x", type=float, default=0.625, help="the cuffs' plane |x| (T-pose, m)")
+    ap.add_argument("--seam-x", type=float, default=0.165, help="the sleeves' seam plane |x| (m)")
+    ap.add_argument("--arm-z", type=float, default=1.18, help="the sleeves start above this height (m)")
+    ap.add_argument("--arm-axis", default="0.068,1.277", help="the T-pose arms' axis: y,z (m)")
+    ap.add_argument("--neck", default="-0.06,1.335,0.09,1.365",
+                    help="the crew neck's plane through its front and back points: yf,zf,yb,zb (m)")
+    ap.add_argument("--neck-r", type=float, default=0.09, help="the neck cut reaches this far out in |x| (m)")
+    ap.add_argument("--waist", type=float, default=1.0, help="the Meshy trousers' waistband height (m)")
+    ap.add_argument("--bib", default="0.105,1.195", help="the bib's half width and top (m)")
+    ap.add_argument("--back", default="0.03,1.12,0.12,0.03",
+                    help="the back panel: least y, apex z, half width at the waist and at the apex (m)")
+    ap.add_argument("--shell-strap-t", default="-90,20,128",
+                    help="the new straps' angles round the shoulder axis: front, shoulder, back (degrees)")
+    ap.add_argument("--shell-strap-x", default="0.085,0.10,0.015", help="the new straps' |x| at those angles (m)")
+    ap.add_argument("--shell-strap-off", type=float, default=0.010, help="the new straps' least distance off the body")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     glb = out / f"{args.name}_char.glb"
@@ -532,7 +565,14 @@ def main() -> int:
                                "unmatched": len(char.data.vertices) - matched}
         say("body variant", rep["body_variant"])
     garment = next((o for o in cloth if o.name == "garment"), None)
-    if args.straps and garment is not None:
+    if args.shell and garment is not None:  # the hybrid route: our own top, bib, back and straps (clothes_top)
+        import clothes_top as TOP
+        args.stripe_cols = TOP.stripe_colours(garment)
+        rep["garment_cut"] = TOP.cut_garment(garment, args)
+        top, rep["shell"] = TOP.shell(char, arm, garment, args)
+        rep["straps"] = TOP.straps(garment, char, [garment, top], args)
+        cloth.append(top)
+    elif args.straps and garment is not None:
         rep["straps"] = straps(garment, char, args)
     if args.sleeve_smooth and garment is not None:
         rep["sleeves"] = sleeves(garment, char, args)

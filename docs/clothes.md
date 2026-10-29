@@ -143,5 +143,53 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    engineer: the sketch beside Godot's front, side and back (`frames --clips Idle --compare "" --yaw 0`, `-90`,
    `180`; each sheet's first cell), one row about 1280 px wide, `look/<rN>/<char>_vs_sketch.png`.
 
+## The hybrid route: our own top, Meshy's trousers (C1f)
+Four builders (C1b to C1e) patched the Meshy garment's upper body and it kept getting worse: the shoulders and the
+straps' bases were 3 to 8 folded layers, removing them bared holes, the sleeves were crumpled and bulky, and Crouch's
+poke-through doubled (r20). A fitted top is better made from the body itself. The loose lower parts (trousers,
+pockets, hems, shoes) stay Meshy's, because they read right and match the sketch. `clothes_dress.py --shell`
+(`clothes_top.py` inside Blender, the maths in `clothes_shell.py`; it replaces `--straps` and `--sleeve-smooth`):
+
+10. **The garment cut** (`cut_garment`). The Meshy garment keeps:
+    - everything below `--waist` 1.0 m;
+    - the bib at the front (|x| under 0.105 m, below 1.195 m: `--bib`);
+    - the back panel inside its V (`--back`: from 0.12 m half width at the waist to 0.03 m at the 1.12 m apex).
+
+    Their edges are cut by planes (`bmesh.ops.bisect_plane`), so they are straight lines, not a row of whole faces.
+11. **The striped top** (`shell`). A copy of the character's body after the f2 move, its faces on the torso and arm
+    bones only.
+    - The clearance: each vertex moves out along its normal by `--shell-off` 6 mm. Where a kept panel lies nearer
+      along the normal, it moves less (`clearance`: 3 mm inside the panel, at least 2 mm). It tapers to 2 mm at the
+      `--shell-hem` 0.95 m, which stays tucked under the trousers (`taper`).
+    - The cuts: planes at the hem, the cuffs (|x| = `--cuff-x` 0.625 m in the T-pose rest) and a round crew neck
+      (`--neck`: the plane through its front and back points, cutting only within `--neck-r` of the neck).
+    - The edges: the collar and cuffs fold in toward the body by `--shell-lip` 4.5 mm, a rolled edge rather than a
+      paper one.
+    - The hidden part: the faces under the bib and the back panel go (every vertex with a panel within
+      `--shell-hide` 4 cm, two rings in from the panels' edges).
+    - The weights are the body's own (same vertices). The body under the top is then cut as under any cloth, so no
+      clip can push it through.
+12. **The top's UVs and maps.**
+    - The UVs: the torso is a cylinder round the vertical axis (v by height, the seam at the back centre), each arm a
+      cylinder round its T-pose axis (v along the arm, the seam underneath), all at `--shell-per-m` 1.29 UV units
+      per metre in v. A set-in sleeve's seam at |x| = `--seam-x` 0.165 m above `--arm-z` 1.18 m divides them.
+    - The stripes: one stripe is one image row (`stripe_cover`, box-filtered). They are navy and white of one width
+      from the collar down and from each cuff up: `--stripe` 3.2 cm period on the chameleon, 2.6 cm on the axolotl,
+      as their sketches draw them. The colours are the Meshy sleeves' own medians (sRGB 29, 38, 53 and 250, 251, 248).
+    - The shading: a Cycles AO bake at rest (`--shell-ao` 0.45 strength, 6 cm, 24 samples) darkens the armpits and
+      the panels' edges. The 2048x1024 normal map carries fine knit ribs and the AO as a soft height.
+    - The material: roughness 0.9.
+13. **The straps** (`straps`). Two strips `--strap-width` 3.5 cm wide with 3 mm lips, from the bib's top corners
+    over the shoulders down to the back's V.
+    - The path: each strap's |x| is piecewise linear in the angle round `--strap-axis` (`--shell-strap-t` -90, 20,
+      128 degrees; `--shell-strap-x` 0.085, 0.10, 0.015 m).
+    - The height: at least `--shell-strap-off` 10 mm off the body, and 2 mm over the bib where they reach it. The
+      left strap sits 1.5 mm higher, so the two do not flicker where they meet.
+    - The UVs are on the garment's plain denim rectangle, and the weights come from the nearest body point.
+14. **The proof's close-ups in Godot.** `frames --closeups 'label@x,y,z/size/yaw[/pitch];...'` (Godot's frame: y up,
+    the character facing +z) adds `sheets/closeups.png`, two shots per row. Each shot is orthographic, the view's
+    height is the size, and the studio light turns with each shot's yaw. The proof's `poke.json` now names up to six
+    poking vertices per clip (`where`: rest place, bone, depth).
+
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).

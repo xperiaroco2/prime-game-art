@@ -1,0 +1,109 @@
+"""The dungarees' shell top, panels and straps: pure maths (tools/blender/clothes_shell.py; art #196, C1f)."""
+import math
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "blender"))
+import clothes_shell as H  # noqa: E402
+
+
+class Regions(unittest.TestCase):
+    def test_arm_beyond_the_seam_above_the_armpit(self):
+        self.assertEqual(H.region(0.3, 1.27, 0.165, 1.18), H.LEFT)
+        self.assertEqual(H.region(-0.3, 1.27, 0.165, 1.18), H.RIGHT)
+        self.assertEqual(H.region(0.1, 1.27, 0.165, 1.18), H.TORSO)
+        self.assertEqual(H.region(0.17, 1.0, 0.165, 1.18), H.TORSO)  # the hip below the armpit
+
+
+class Uvs(unittest.TestCase):
+    def test_torso_front_centre_mid_island_and_v_by_height(self):
+        u, v = H.torso_uv(0.0, -0.1, 1.2, 0.02, 0.0, 0.5, 0.1, 2.0, 1.35)
+        self.assertAlmostEqual(u, 0.25)
+        self.assertAlmostEqual(v, 0.1 + 0.15 * 2.0)
+        ub, _ = H.torso_uv(0.0, 0.2, 1.2, 0.02, 0.0, 0.5, 0.1, 2.0, 1.35)
+        self.assertTrue(ub < 1e-9 or ub > 0.5 - 1e-9)  # the back centre is the seam
+
+    def test_arm_v_up_from_the_cuff_both_sides(self):
+        for sgn in (1, -1):
+            _, v = H.arm_uv(sgn * 0.5, 0.07, 1.3, 0.625, 0.068, 1.277, 0.6, 0.2, 0.0, 2.0)
+            self.assertAlmostEqual(v, 0.125 * 2.0)
+        u_top, _ = H.arm_uv(0.5, 0.068, 1.32, 0.625, 0.068, 1.277, 0.6, 0.2, 0.0, 2.0)
+        self.assertAlmostEqual(u_top, 0.7)  # the top of the arm in the island's middle
+
+    def test_unwrap_keeps_a_face_whole_across_the_seam(self):
+        self.assertEqual(H.unwrap([0.1, 0.12, 0.11], 0.0, 0.5), [0.1, 0.12, 0.11])
+        us = H.unwrap([0.49, 0.01, 0.495], 0.0, 0.5)
+        self.assertAlmostEqual(us[1], 0.51)
+        self.assertLess(max(us) - min(us), 0.05)
+
+
+class Stripes(unittest.TestCase):
+    def test_white_first_then_navy_even_widths(self):
+        p = 0.04
+        self.assertEqual(H.stripe_cover(0.005, 0.005, p, 0.5), 0.0)  # white at the edge
+        self.assertEqual(H.stripe_cover(0.025, 0.025, p, 0.5), 1.0)
+        self.assertAlmostEqual(H.stripe_cover(0.0, p, p, 0.5), 0.5)
+        self.assertAlmostEqual(H.stripe_cover(0.0, 10 * p, p, 0.5), 0.5)
+
+    def test_box_filter_at_an_edge(self):
+        self.assertAlmostEqual(H.stripe_cover(0.019, 0.021, 0.04, 0.5), 0.5)
+        self.assertAlmostEqual(H.stripe_cover(0.021, 0.019, 0.04, 0.5), 0.5)  # either order
+
+
+class Offsets(unittest.TestCase):
+    def test_clearance_inside_the_bib_never_below_the_floor(self):
+        self.assertEqual(H.clearance(0.006, None, 0.003, 0.002), 0.006)
+        self.assertAlmostEqual(H.clearance(0.006, 0.007, 0.003, 0.002), 0.004)
+        self.assertEqual(H.clearance(0.006, 0.003, 0.003, 0.002), 0.002)
+        self.assertEqual(H.clearance(0.006, 0.05, 0.003, 0.002), 0.006)
+
+    def test_taper_to_the_hem(self):
+        self.assertEqual(H.taper(1.1, 0.95, 1.02, 0.002, 0.006), 0.006)
+        self.assertEqual(H.taper(0.9, 0.95, 1.02, 0.002, 0.006), 0.002)
+        self.assertAlmostEqual(H.taper(0.985, 0.95, 1.02, 0.002, 0.006), 0.004)
+
+
+class Panels(unittest.TestCase):
+    ARGS = dict(z_waist=1.0, bib_hw=0.105, bib_top=1.195, back_y=0.03, z_apex=1.12, back_hw_waist=0.12,
+                back_hw_apex=0.03)
+
+    def test_trousers_bib_and_back_kept_the_rest_goes(self):
+        k = lambda x, y, z: H.keep_face(x, y, z, **self.ARGS)
+        self.assertTrue(k(0.2, 0.0, 0.9))  # the trousers
+        self.assertTrue(k(0.05, -0.08, 1.15))  # the bib
+        self.assertFalse(k(0.15, -0.08, 1.15))  # beside the bib: the old top
+        self.assertFalse(k(0.05, -0.06, 1.25))  # above the bib
+        self.assertTrue(k(0.1, 0.12, 1.01))  # the back panel at the waist
+        self.assertFalse(k(0.1, 0.12, 1.10))  # outside the V
+        self.assertTrue(k(0.0, 0.12, 1.11))
+        self.assertFalse(k(0.0, 0.12, 1.13))  # above the apex
+        self.assertFalse(k(0.17, 0.01, 1.05))  # the side above the waistband
+
+    def test_back_halfwidth_narrows(self):
+        self.assertEqual(H.back_halfwidth(0.95, 1.0, 1.12, 0.12, 0.03), 0.12)
+        self.assertAlmostEqual(H.back_halfwidth(1.06, 1.0, 1.12, 0.12, 0.03), 0.075)
+        self.assertEqual(H.back_halfwidth(1.2, 1.0, 1.12, 0.12, 0.03), 0.0)
+
+
+class Straps(unittest.TestCase):
+    def test_strap_x_piecewise_and_held(self):
+        ts, xs = [-1.5, 0.5, 2.2], [0.085, 0.1, 0.015]
+        self.assertEqual(H.strap_x(-2.0, ts, xs), 0.085)
+        self.assertAlmostEqual(H.strap_x(-0.5, ts, xs), 0.0925)
+        self.assertAlmostEqual(H.strap_x(1.35, ts, xs), 0.0575)
+        self.assertEqual(H.strap_x(3.0, ts, xs), 0.015)
+
+
+class Neck(unittest.TestCase):
+    def test_neck_plane_up_and_through_both_points(self):
+        co, no = H.neck_plane(-0.06, 1.33, 0.09, 1.36)
+        self.assertAlmostEqual(math.hypot(*no), 1.0)
+        self.assertGreater(no[2], 0.9)
+        self.assertAlmostEqual(H.plane_side((0.0, 0.09, 1.36), co, no), 0.0)
+        self.assertGreater(H.plane_side((0.0, 0.0, 1.40), co, no), 0.0)  # the neck above: cut away
+        self.assertLess(H.plane_side((0.1, 0.0, 1.30), co, no), 0.0)  # the shoulder below: kept
+
+
+if __name__ == "__main__":
+    unittest.main()
