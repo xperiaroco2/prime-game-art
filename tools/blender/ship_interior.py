@@ -416,13 +416,16 @@ def portal(args, layout):
     w, h, soffit = args["half"], args["height"], args.get("soffit", False)
     fr = G.wall_frame(FLOOR)
     prof = _prof(args)
-    outer = [(u, max(0.0, v)) for u, v in G.inset(prof, -0.1)]
+    # step 5 (his walk, shots 004-007): `rim` the band's width; the hall's corridor portals keep it inside the chord
+    # (6 cm), so the band ends at the facets' vertex in a bevelled reveal instead of running 4 cm into the next facet
+    outer = [(u, max(0.0, v)) for u, v in G.inset(prof, -args.get("rim", 0.1))]
     inner = prof
     o1, o2, o3 = outer[1], outer[2], outer[3]
     fill = M(G.slab(fr, [(-w, o1[1]), o2, (o2[0], h), (-w, h)], -PORTAL_D, 0.0),
              G.slab(fr, [(w, o1[1]), (w, h), (o3[0], h), o3], -PORTAL_D, 0.0),
              G.slab(fr, G.rect(o2[0], o3[0], o2[1], h), -PORTAL_D, 0.0))
-    out = [P("band", G.band(fr, inner, outer, -PORTAL_D - 0.01, 0.045, 0.02, range(5)), "int_silver_c"),
+    out = [P("band", G.band(fr, inner, outer, -PORTAL_D - 0.01, 0.045, args.get("bevel", 0.02), range(5)),
+             "int_silver_c"),
            P("fill", fill, "int_silver_b")]
     if soffit:
         tri = [(0.0, -w, FLOOR + h), (HV - HC, 0.0, FLOOR + h), (0.0, w, FLOOR + h)]
@@ -436,8 +439,8 @@ def portal_strip(args, layout):
     fr = G.wall_frame(FLOOR)
     edges = (0, 1) if args["side"] < 0 else (3, 4)
     prof = _prof(args)
-    return [P("strip", G.band(fr, G.inset(prof, -0.035), G.inset(prof, -0.065), 0.045, 0.057, 0.0, edges),
-              "int_cyan")]
+    a, b = args.get("at_in", 0.035), args.get("at_out", 0.065)   # its inner and outer offset from the opening (step 5: the 6 cm band's middle)
+    return [P("strip", G.band(fr, G.inset(prof, -a), G.inset(prof, -b), 0.045, 0.057, 0.0, edges), "int_cyan")]
 
 
 # --- the hall ------------------------------------------------------------------------------------------------------

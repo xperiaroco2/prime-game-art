@@ -97,10 +97,13 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "hall_door": ("hall_door", {"half": round(_hv(2 * PHI_BACK)[1], 5), "apo": round(_hv(2 * PHI_BACK)[0], 5)}, True),
     "vault_shell": ("vault_shell", {}, True),
     "hall_threshold": ("hall_threshold", {}, True),
-    "hall_pilaster": ("pilaster", {"height": S.H_HALL}, True),
-    "hall_pilaster_strip": ("pilaster_strip", {"height": S.H_HALL}, False),
+    # step 5: no hall pilasters (the corridor portals frame their own jambs, the throat's corners end in its frame)
     # lens step 1: no hall trunk (its last vertex, the back's at 90 deg, is the vault's door now)
-    "hall_portal": ("portal", {"half": S.HCH, "height": S.H_HALL, "soffit": True}, True),
+    # step 5: the corridor portals' band 6 cm, inside the chord (it ran 4 cm into the next facet), its strip centred
+    "hall_portal": ("portal", {"half": S.HCH, "height": S.H_HALL, "soffit": True,
+                               "rim": round(S.HCH - S.COR_HALF - 0.002, 4), "bevel": 0.012}, True),
+    "hall_portal_strip_l": ("portal_strip", {"side": -1, "at_in": 0.017, "at_out": 0.042}, False),
+    "hall_portal_strip_r": ("portal_strip", {"side": 1, "at_in": 0.017, "at_out": 0.042}, False),
     "portal_strip_l": ("portal_strip", {"side": -1}, False),
     "portal_strip_r": ("portal_strip", {"side": 1}, False),
     "hall_ceil_panel_a": ("hall_ceil_panel", {"tone": "a"}, False),
@@ -264,7 +267,7 @@ UNITS: dict[str, tuple[str, list[float]]] = {}
 _V = [-0.2, 0.2, -0.2, 0.2]
 _BAY = [-S.MOD_L / 2, S.MOD_L / 2, -S.COR_HALF - 0.05, -S.COR_HALF + 0.35]
 FOOT: dict[str, list[float]] = {
-    "hall_trunk": _V, "hall_trunk_cables": _V, "trunk_clip": _V, "hall_pilaster": _V, "hall_pilaster_strip": _V,
+    "hall_trunk": _V, "hall_trunk_cables": _V, "trunk_clip": _V,
     "tip_pilaster": _V, "tip_pilaster_strip": _V,
     "cor_bay_in": [(S.COR_X0 - BOARD_X[0]) / 2, (BOARD_X[0] - S.COR_X0) / 2] + _BAY[2:],
     "cor_bay_in_cables": [(S.COR_X0 - BOARD_X[0]) / 2, (BOARD_X[0] - S.COR_X0) / 2] + _BAY[2:],
@@ -320,6 +323,7 @@ def placements() -> list[tuple[str, list[float], float]]:
         put("hall_amber_arc_thin" if near else "hall_amber_arc", polar(S.R_ARC, a), -a)
     claimed: set[float] = set()   # vertices a station's flat or an opening keeps free of a cable trunk
     edges: list[float] = []
+    cor_edges: list[float] = []   # step 5: the corridors' portals frame their own jambs (no pilaster beside them)
     n_ceil = n_wall = 0
     for a0, a1, kind in SEGS:
         mid, tag = (a0 + a1) / 2, facet_tag(a0, a1, kind)
@@ -358,9 +362,9 @@ def placements() -> list[tuple[str, list[float], float]]:
             pre = "mouth_" if abs(norm(mid - mouth)) < 1e-6 else ""
             put("hall_threshold", polar(S.HC, mid), -mid)
             put("mouth_portal" if pre else "hall_portal", polar(S.HC, mid), -mid)
-            put(pre + "portal_strip_l", polar(S.HC, mid), -mid)
-            put(pre + "portal_strip_r", polar(S.HC, mid), -mid)
-            edges += [norm(a0), norm(a1)]
+            put((pre or "hall_") + "portal_strip_l", polar(S.HC, mid), -mid)
+            put((pre or "hall_") + "portal_strip_r", polar(S.HC, mid), -mid)
+            (edges if pre else cor_edges).extend([norm(a0), norm(a1)])
         if kind != "facet":
             claimed.add(round(norm(mid), 4))
     corners = {norm(S.TH_CORNER), norm(-180.0 - S.TH_CORNER)}   # the gills: norm's own rounding (the east had none)
@@ -369,9 +373,10 @@ def placements() -> list[tuple[str, list[float], float]]:
         put("hall_rib_strip", polar(S.HV, v), -v)
         if round(norm(v), 4) in corners:   # the throat's walls meet the hall here: its jamb (th_jambs), no pilaster
             pass
+        elif any(abs(norm(v - e)) < 1e-4 for e in cor_edges):
+            pass   # step 5 (his walk, shots 004-007): the pilaster doubled the portal's jamb and strip
         elif any(abs(norm(v - e)) < 1e-4 for e in edges):
-            put("hall_pilaster", polar(S.HV, v), -v)
-            put("hall_pilaster_strip", polar(S.HV, v), -v)
+            raise ValueError(f"a hall opening's edge at {v} has no frame")   # the mouth's are the throat's corners
         elif round(norm(v), 4) not in claimed:   # hall_in-3's radial columns: cable trunks (the back's, at 90)
             put("hall_trunk", polar(S.HV, v), -v)
             put("hall_trunk_cables", polar(S.HV, v), -v)
@@ -421,7 +426,7 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put("clip_h", local(at, front, dx, 0.0), front)
         for x in COR_RIBS:
             put("cor_ceil_rib", local((0.0, 0.0), yaw, x, 0.0), yaw)
-        for x in ARCH_X:  # v2: off the breaker board's plain wall
+        for x in ARCH_X[1:]:  # v2: off the breaker board's plain wall; step 5: none beside the hall's portal
             p = local((0.0, 0.0), yaw, x, 0.0)
             for pid in ("cor_arch", "arch_strip_l", "arch_strip_r"):
                 put(pid, p, yaw)
