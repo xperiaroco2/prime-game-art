@@ -17,6 +17,12 @@ The fit moves every vertex by a blend of three maps, by its weights (the arm's s
 A ratio of the table's (smoothed) value over the body's own at each station is smoothed again along the body, so
 no station leaves a ridge. The 30 mm under the neck ring blend back to the body as it is, and the ring's vertices
 stay exact. `keep_front` heights keep the body's own front (body A's belly behind the concept's arm).
+
+A table's "-" (a side row where a hanging limb, not the body, forms the edge) is never a value: there the fit keeps
+the body's own shape, moved by the error at the band's measured ends, interpolated across it (`fill_gaps`).
+A body whose concept's shoulder line sits within 60 mm of the ring (B: 8 mm) gets `fit.toml`'s `neck_base`: the
+widths above the armpit stay the body's (the T arms) up to the ring, and the neck's `length` mm under it widen into
+a smooth slope that meets the ring with a vertical tangent (`neck_base_half`), never a step or a shelf.
 """
 from __future__ import annotations
 
@@ -29,6 +35,7 @@ from pathlib import Path
 # so the trunk's side and the shoulder cap keep the trunk map (a scale about the arm's axis there would drag them
 # down and forward); the table's arm stations inside it are not comparable (the concept's arm hangs) and are marked.
 ARM_ROOT = (10.0, 70.0)
+ARMPIT_GAP = 25.0  # mm: our armpit is at least this far under the arm's lowest vertex (A: 32, the table's holds)
 ARM = ("UpperArm", "LowerArm", "Hand", "Thumb", "Index", "Middle", "Ring", "Little")
 FOOT = ("Foot", "Toes")
 
@@ -91,6 +98,11 @@ def _limb(b: str) -> str:
 def arm_share(w: dict) -> float:
     """The vertex's weight on an arm's bones (the upper arm to the fingertips), at most 1."""
     return min(1.0, sum(v for b, v in w.items() if _limb(b).startswith(ARM)))
+
+
+def hand_share(w: dict) -> float:
+    """The vertex's weight on a hand's bones (the hand and its digits), at most 1."""
+    return min(1.0, sum(v for b, v in w.items() if _limb(b).startswith(ARM[2:])))
 
 
 def foot_share(w: dict) -> float:
@@ -170,12 +182,19 @@ def frame_of(table: dict, bones: dict, armpit_u: float) -> dict:
     arm = table["arms"]
     wrist_u = bones["LeftHand"]["head"][0]
     s0, s1 = arm["s_armpit"], arm["s_wrist"]
+    k = table["keys"]  # armpit_z is the body's height since D2's round 2 (armpit_z_concept the concept's)
+    armpit_t = k["armpit_z"] if "armpit_z_concept" in k else to_body(k["armpit_z"])
+    # our armpit: the table's, but never within ARMPIT_GAP of the arm's lowest vertex (B: her concept's armpit sits
+    # higher than our arm root on B's rest; the rows between are the arm root, not the trunk's side)
+    armpit = min(armpit_t, table.get("fit", {}).get("arm_low", 1e9) - ARMPIT_GAP)
+    sh_top = to_body(table.get("landmarks_concept", {}).get("shoulder_top", 0.0))
+    nb = table.get("fit", {}).get("neck_base") if sh_top > ring - 60.0 else None
     s_to_u = lambda s: armpit_u + (s - s0) / (s1 - s0) * (wrist_u - armpit_u)  # noqa: E731
-    return {"crotch": crotch, "armpit": to_body(table["keys"]["armpit_z"]), "ring": ring, "wrist_u": wrist_u,
+    return {"crotch": crotch, "armpit": armpit, "armpit_table": armpit_t, "ring": ring, "wrist_u": wrist_u,
             "armpit_u": armpit_u, "ankle": bones["LeftFoot"]["head"][2],
             "trunk_z": list(table["trunk"]["z"]), "leg_z": list(table["legs"]["z"]),
             "arm_s": list(arm["s"]), "arm_u": [s_to_u(s) for s in arm["s"]],
-            "keep_front": table.get("fit", {}).get("keep_front", [])}
+            "keep_front": table.get("fit", {}).get("keep_front", []), "shoulder_top": sh_top, "neck_base": nb}
 
 
 def trunk_sigma(ring: float, armpit: float):
@@ -191,8 +210,8 @@ def targets(table: dict, frame: dict) -> dict:
     """The table's values as smoothed profiles over the body's coordinates."""
     t, lg, ar = table["trunk"], table["legs"], table["arms"]
     half = [num(w) / 2 if num(w) is not None else None for w in t["front_w"]]
-    tw = [None if z <= frame["crotch"] + 1 or frame["armpit"] + 5 < z < frame["ring"] - 90 else h
-          for z, h in zip(t["z"], half)]
+    top = frame["ring"] + 1 if frame["neck_base"] else frame["ring"] - 90
+    tw = [None if z <= frame["crotch"] + 1 or frame["armpit"] + 5 < z < top else h for z, h in zip(t["z"], half)]
     sel = [s <= ar["s_wrist"] for s in ar["s"]]
     sg = trunk_sigma(frame["ring"], frame["armpit"])
     return {"trunk_half": Profile(t["z"], tw, sigma=sg, default=0.0),
@@ -202,7 +221,28 @@ def targets(table: dict, frame: dict) -> dict:
             "leg_front": Profile(lg["z"], [num(v) for v in lg["front_y"]], sigma=sg),
             "leg_back": Profile(lg["z"], [num(v) for v in lg["back_y"]], sigma=sg),
             "arm_w": Profile([u for u, k in zip(frame["arm_u"], sel) if k],
-                             [num(w) for w, k in zip(ar["width"], sel) if k])}
+                             [num(w) for w, k in zip(ar["width"], sel) if k]),
+            "raw": {"trunk_front": dict(zip(t["z"], map(num, t["front_y"]))),
+                    "trunk_back": dict(zip(t["z"], map(num, t["back_y"]))),
+                    "leg_front": dict(zip(lg["z"], map(num, lg["front_y"]))),
+                    "leg_back": dict(zip(lg["z"], map(num, lg["back_y"])))}}
+
+
+def fill_gaps(zs: list, own: list, target, raw: dict) -> list:
+    """Per station the target: the (smoothed) table's where the table has a number, and over a "-" band the body's
+    own value plus the error at the band's measured ends, linear across the band (held flat past the table's ends)."""
+    mz = [z for z in zs if raw.get(z) is not None]
+    if not mz:
+        return list(own)
+    d = [target(z) - o for z, o in zip(zs, own) if raw.get(z) is not None]
+    return [target(z) if z not in raw or raw[z] is not None else o + interp(mz, d, z) for z, o in zip(zs, own)]
+
+
+def neck_base_half(z: float, ring: float, ring_half: float, base_half: float, nb: dict) -> float:
+    """The neck base's half width at z: the ring's half width over the `collar` mm under the ring (a vertical
+    tangent), widening as ((ring - collar - z) / (length - collar)) ** power to `base_half` at `length` under it."""
+    u = min(1.0, max(0.0, (ring - nb["collar"] - z) / (nb["length"] - nb["collar"])))
+    return ring_half + (base_half - ring_half) * u ** nb["power"]
 
 
 # The fit's smoothing along the body (mm): the tables are read in whole pixels (about 2 mm, in steps) and the body's
@@ -230,13 +270,13 @@ def ratios(m: dict, tg: dict, frame: dict, chest=None) -> dict:
     tz = sorted(m["trunk"])
     rx = [tg["trunk_half"](z) / m["trunk"][z][0] if m["trunk"][z][0] > 0 else 1.0 for z in tz]
     kf = [keep_front(z, frame["keep_front"]) for z in tz]
-    f1 = [tg["trunk_front"](z) for z in tz]
+    f1 = fill_gaps(tz, [m["trunk"][z][1] for z in tz], tg["trunk_front"], tg["raw"]["trunk_front"])
     if chest is not None:
         f1 = [f + chest_excess(z, chest) for z, f in zip(tz, f1)]
     f1 = [m["trunk"][z][1] * k + f * (1 - k) for z, f, k in zip(tz, f1, kf)]
     lz = sorted(m["legs"])
     lr = [tg["leg_half"](z) / ((m["legs"][z][1] - m["legs"][z][0]) / 2) for z in lz]
-    lf1 = [tg["leg_front"](z) for z in lz]
+    lf1 = fill_gaps(lz, [m["legs"][z][2] for z in lz], tg["leg_front"], tg["raw"]["leg_front"])
     lk = [keep_front(z, frame["keep_front"]) for z in lz]
     lf1 = [m["legs"][z][2] * k + f * (1 - k) for z, f, k in zip(lz, lf1, lk)]
     au = sorted(u for u in m["arms"] if u >= frame["armpit_u"] + ARM_ROOT[1])  # the root's ratio is held flat
@@ -244,10 +284,13 @@ def ratios(m: dict, tg: dict, frame: dict, chest=None) -> dict:
     tsig = trunk_sigma(frame["ring"], frame["armpit"])
     p = lambda xs, ys: Profile(xs, ys, sigma=tsig)  # noqa: E731
     return {"rx": p(tz, rx), "f0": p(tz, [m["trunk"][z][1] for z in tz]), "b0": p(tz, [m["trunk"][z][2] for z in tz]),
-            "f1": p(tz, f1), "b1": p(tz, [tg["trunk_back"](z) for z in tz]),
+            "f1": p(tz, f1), "b1": p(tz, fill_gaps(tz, [m["trunk"][z][2] for z in tz], tg["trunk_back"],
+                                                  tg["raw"]["trunk_back"])),
+            "own_half": p(tz, [m["trunk"][z][0] for z in tz]),
             "lr": p(lz, lr), "lc": p(lz, [(m["legs"][z][0] + m["legs"][z][1]) / 2 for z in lz]),
             "lf0": p(lz, [m["legs"][z][2] for z in lz]), "lb0": p(lz, [m["legs"][z][3] for z in lz]),
-            "lf1": p(lz, lf1), "lb1": p(lz, [tg["leg_back"](z) for z in lz]),
+            "lf1": p(lz, lf1), "lb1": p(lz, fill_gaps(lz, [m["legs"][z][3] for z in lz], tg["leg_back"],
+                                                     tg["raw"]["leg_back"])),
             "ak": p(au, ak), "ayc": p(au, [(m["arms"][u][2] + m["arms"][u][3]) / 2 for u in au]),
             "azc": p(au, [(m["arms"][u][0] + m["arms"][u][1]) / 2 for u in au])}
 
@@ -280,7 +323,15 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
     m = measure(verts, edges, wa, fr)
     tg = targets(table, fr)
     r = ratios(m, tg, fr, chest)
-    zc, za, ring = fr["crotch"], fr["armpit"], fr["ring"]
+    zc, za, ring, nb = fr["crotch"], fr["armpit"], fr["ring"], fr["neck_base"]
+    if nb:
+        rh = table["neck_ring"]["half_x"]
+        nz = ring - nb["length"]
+        bh = Profile(table["trunk"]["z"], [num(w) / 2 if num(w) else None for w in table["trunk"]["front_w"]])(nz)
+
+        def nbk(z: float) -> float:  # the neck base's x ratio, eased in over `ease` mm from its bottom
+            k = min(nb["max_ratio"], max(1.0, neck_base_half(z, ring, rh, bh, nb) / max(1.0, r["own_half"](z))))
+            return 1.0 + (k - 1.0) * ramp((z - nz) / nb["ease"])
     ring_set = set(ring_idx)
     out = []
     for i, (p, a, f) in enumerate(zip(verts, wa, wf)):
@@ -289,7 +340,7 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
             continue
         x, y, z = p
         # the trunk; x kept above the armpit, the neck's widths back over the 60 mm under the ring
-        wx = 1.0 - ramp((z - za) / 40.0) * (1.0 - ramp((z - (ring - 75.0)) / 15.0))
+        wx = 1.0 - ramp((z - za) / 40.0) * (1.0 if nb else 1.0 - ramp((z - (ring - 75.0)) / 15.0))
         tx = x * (1.0 + wx * (r["rx"](z) - 1.0))
         c = (r["f0"](z) + r["b0"](z)) / 2
         ty = map_y(y, c, r["f0"](z), r["b0"](z), r["f1"](z), r["b1"](z))
@@ -315,7 +366,10 @@ def fit(verts: list, weights: list, edges: list, table: dict, bones: dict, armpi
             amx, amy, amz = x, yc + (y - yc) * k, zcen + (z - zcen) * k
             bx, by, bz = (1 - a) * bx + a * amx, (1 - a) * by + a * amy, (1 - a) * bz + a * amz
         lock = ramp((z - (ring - 30.0)) / 30.0)
-        out.append(((1 - lock) * bx + lock * x, (1 - lock) * by + lock * y, (1 - lock) * bz + lock * z))
+        q = ((1 - lock) * bx + lock * x, (1 - lock) * by + lock * y, (1 - lock) * bz + lock * z)
+        if nb and z > ring - nb["length"]:  # the neck base's slope, the trunk's share only
+            q = (q[0] * (1.0 + (1.0 - a) * (nbk(z) - 1.0)), q[1], q[2])
+        out.append(q)
     moves = [math.dist(p, q) for p, q in zip(verts, out)]
     return out, {"max_move_mm": round(max(moves), 2), "mean_move_mm": round(sum(moves) / len(moves), 2),
                  "frame": {k: v for k, v in fr.items() if not isinstance(v, list)}}
@@ -342,11 +396,16 @@ def errors(verts: list, weights: list, edges: list, table: dict, bones: dict, au
         if z not in m["trunk"]:
             continue
         x0, f0, b0 = m["trunk"][z]
-        rule = "neck taper" if z > ring - 30 else "shoulders (T arms)" if fr["armpit"] + 5 < z < ring - 60 \
+        root = fr["armpit"] + 5 < z <= fr["armpit_table"] + 5  # B: the width there is our arm's root
+        nbw = bool(fr["neck_base"]) and z >= fr["shoulder_top"]  # B: the ring row to the shoulder line
+        rule = "neck taper" if z > ring - 30 else "neck base (ring to shoulder line)" if nbw \
+            else "shoulders (T arms)" if fr["armpit_table"] + 5 < z < (ring if fr["neck_base"] else ring - 60) \
             else "kept front" if keep_front(z, fr["keep_front"], 0.0) > 0 else ""
         rows["trunk"].append({"z": z, "w": _e(2 * x0, w), "front": None if rule == "kept front" else _e(f0, f),
                               "back": _e(b0, b), "rule": rule if rule != "kept front" else "front kept",
-                              "w_skip": rule in ("neck taper", "shoulders (T arms)")})
+                              "w_skip": rule in ("neck taper", "shoulders (T arms)")
+                              or rule.startswith("neck base") or root,
+                              "w_rule": "arm root (our armpit to the table's)" if root else ""})
     for z, w, f, b in zip(lg["z"], lg["width"], lg["front_y"], lg["back_y"]):
         if z not in m["legs"]:
             continue

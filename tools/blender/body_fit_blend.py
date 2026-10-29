@@ -56,11 +56,18 @@ def open_loops(me) -> list:
     return out
 
 
+TOE_STEP = 0.003  # m: how far a vertex inside the toes' hull creeps out per round
+
+
 def round_toes(body, arm, behind: float, iters: int) -> dict:
-    """The feet's soft rounded front (the D3 brief, item 3: no separate toes): per foot, the vertices ahead of
-    `behind` m behind its Toes bone's head (and low, on the foot's bones) go to the convex hull of that region, by a
-    weight easing in over `behind`; then `iters` passes of weighted umbrella smoothing soften the hull's facets.
-    Rest pose, world space; the weights stay. Returns the moved vertices and the largest move."""
+    """The feet's soft rounded front (the D3 brief, item 3: no separate toes): per foot, the region ahead of
+    `behind` m behind its Toes bone's head (low, on the foot's bones) is shrink-wrapped onto its convex hull from the
+    inside: `iters` rounds of umbrella smoothing, after each every vertex inside the hull creeps out along the ray
+    from the region's centre through it, at most TOE_STEP m a round (only outwards: the gaps between the toes fill
+    from their floors while the outer surface stays on the hull), by a weight easing in over `behind`; then two light
+    passes soften the hull's facets. (D3's find_nearest sent a gap's vertex to the nearest hull face, often the sole,
+    and left the gaps; D3b's first try projected in one go and folded the gaps' floors into slits.) Rest pose, world
+    space; the weights stay. Returns the moved vertices and the largest move."""
     import bmesh
     from mathutils.bvhtree import BVHTree
     me, mw = body.data, body.matrix_world
@@ -73,6 +80,7 @@ def round_toes(body, arm, behind: float, iters: int) -> dict:
         nbr[a].append(b)
         nbr[b].append(a)
     wt = [0.0] * len(co)
+    trees = []
     for side, sg in (("Left", 1), ("Right", -1)):
         th = arm.matrix_world @ arm.data.bones[f"{side}Toes"].head_local
         reg = []
@@ -86,20 +94,36 @@ def round_toes(body, arm, behind: float, iters: int) -> dict:
             bm.verts.new(co[i])
         bmesh.ops.convex_hull(bm, input=list(bm.verts))
         tree = BVHTree.FromBMesh(bm)
+        c = sum((co[i] for i in reg), Vector()) / len(reg)
         for i in reg:
             t = min(1.0, max(0.0, (th.y + behind - co[i].y) / behind))
             wt[i] = t * t * (3 - 2 * t)
-            hit = tree.find_nearest(co[i])
-            if hit[0] is not None:
-                co[i] = co[i].lerp(hit[0], wt[i])
-        bm.free()
-    for _ in range(iters):
-        nxt = list(co)
+        trees.append((reg, tree, c, bm))
+    def out_to_hull(pts):
+        for reg, tree, c, _ in trees:
+            for i in reg:
+                d = pts[i] - c
+                if d.length < 1e-6:
+                    continue
+                hit = tree.ray_cast(c, d.normalized(), 1.0)
+                if hit[0] is not None and (hit[0] - c).length > d.length:
+                    gap = (hit[0] - c).length - d.length
+                    pts[i] = pts[i] + d.normalized() * min(gap, TOE_STEP) * wt[i]
+        return pts
+
+    def relax(pts, k):
+        nxt = list(pts)
         for i, w in enumerate(wt):
             if w > 0 and nbr[i]:
-                avg = sum((co[j] for j in nbr[i]), Vector()) / len(nbr[i])
-                nxt[i] = co[i].lerp(avg, 0.5 * w)
-        co = nxt
+                avg = sum((pts[j] for j in nbr[i]), Vector()) / len(nbr[i])
+                nxt[i] = pts[i].lerp(avg, k * w)
+        return nxt
+    for _ in range(iters):
+        co = out_to_hull(relax(co, 0.5))
+    for _ in range(2):
+        co = relax(co, 0.3)
+    for _, _, _, bm in trees:
+        bm.free()
     moved = [i for i, w in enumerate(wt) if w > 0]
     big = max(((mw @ me.vertices[i].co) - co[i]).length for i in moved) if moved else 0.0
     for i in moved:

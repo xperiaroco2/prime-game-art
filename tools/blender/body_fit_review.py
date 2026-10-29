@@ -13,10 +13,13 @@ Workbench (alien_body_refit_review's look and numpy helpers).
   back), the left hand from the front and from above, the left foot from the side and 3/4 front;
 - review_<tag>.json: the cells' order, the head objects linked, the cameras.
 
-`--head-from`: a character .blend (alien_assemble's, head and body joined in `Body`): its mesh above the neck ring,
-linked once and drawn on every body (the ring is the same on every body, the ADR docs/decisions/2026-10-29-neck-ring.md).
-The concept's outline is a plain colour threshold against the panel's corners: it bleeds where the concept's ground
-shades (around the legs and feet) and draws the belly's light patch; the numbers are the errors table's.
+`--head-from` (once or twice): a character .blend (alien_assemble's, head and body joined in `Body`): its mesh above
+its neck ring (z 1.39 m), one copy per body moved onto that body's ring (the body mesh's top loop; the ring is the
+same on every body, the ADR docs/decisions/2026-10-29-neck-ring.md). The first head is on the four-side views; the
+close-ups show the neck with each head.
+The concept's outline is D2's own figure mask (body_dims_geom.mask, the ground flood from the border) and its panels
+(body_dims_geom.panels), the masks the tables were measured on; `--sole-row` defaults to that mask's sole.
+`--pair`: instead, one sheet `pair_<tag>.png` of the bodies side by side, front and side, one scale, heads on.
 """
 from __future__ import annotations
 
@@ -50,12 +53,23 @@ def link(path: str, keep) -> list:
     return objs
 
 
-def concept_mask(im, cut, mirror):
-    """One panel's figure mask (the colour distance to the panel's corner ground) and its colours."""
+def d2_mask(path):
+    """D2's figure mask of the concept (body_dims_geom: the tables' own), as a bool array, its sole row and the
+    panels' column cuts (midway between the four figures)."""
+    import body_dims_geom as DG
+    w, h, rows = DG.read_png(path)
+    m, sole = DG.mask(rows)
+    full = np.array([[(r >> x) & 1 for x in range(w)] for r in m], bool) if isinstance(m[0], int) else \
+        np.array([list(r) for r in m], bool)
+    ps = DG.panels(m)
+    cuts = [0] + [(a[1] + b[0]) // 2 for a, b in zip(ps, ps[1:])] + [w]
+    return full, sole, cuts
+
+
+def concept_mask(im, cut, mirror, full):
+    """One panel's figure mask (D2's) and its colours."""
     sub = im[:, cut[0]:cut[1]]
-    w = sub.shape[1]
-    bg = np.median(np.stack([sub[4, 8], sub[4, w - 8], sub[-5, 8], sub[-5, w - 8]]), axis=0)
-    m = np.abs(sub[..., :3] - bg[:3]).sum(-1) > 38 / 255
+    m = full[:, cut[0]:cut[1]]
     if mirror:
         sub, m = sub[:, ::-1], m[:, ::-1]
     return m, sub
@@ -109,10 +123,11 @@ def main() -> int:
     ap.add_argument("--body", action="append", required=True)
     ap.add_argument("--concept", required=True)
     ap.add_argument("--mm-px", type=float, required=True)
-    ap.add_argument("--sole-row", type=int, required=True)
-    ap.add_argument("--cuts", required=True)
+    ap.add_argument("--sole-row", type=int, default=-1)
+    ap.add_argument("--cuts", default="")
+    ap.add_argument("--pair", action="store_true")
     ap.add_argument("--mirror", default="0,1,1,0")
-    ap.add_argument("--head-from", default="")
+    ap.add_argument("--head-from", action="append", default=[])
     ap.add_argument("--arm-deg", type=float, default=66.0)
     ap.add_argument("--tag", default="A")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -121,6 +136,7 @@ def main() -> int:
     os.makedirs(tmp, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     groups, log = [], {"bodies": a.body, "views": VIEWS, "arm_deg": a.arm_deg, "head": [], "close": []}
+    rings = []
     mat = bpy.data.materials.new("Skin")
     mat.diffuse_color = (*R.BODY_RGB, 1.0)
     for path in a.body:
@@ -136,12 +152,15 @@ def main() -> int:
         body.data.materials.clear()
         body.data.materials.append(mat)
         groups.append([body])
-    head = []
-    if a.head_from:  # the character's Body (head and body joined) cut at the ring (its eyes lose their sockets'
-        # frames when linked alone, so they are left out)
-        objs = link(a.head_from, lambda n: n == "Body")
+        rings.append(max((body.matrix_world @ v.co).z for v in body.data.vertices))  # the top loop: the ring
+    heads = []  # per head source, one copy per body
+    import bmesh
+    for hf in a.head_from:  # the character's Body (head and body joined) cut at its ring (its eyes lose their
+        # sockets' frames when linked alone, so they are left out)
+      for j in range(len(groups)):
+        objs = link(hf, lambda n: n == "Body")
         saved = {o.name: o.matrix_world.copy() for o in objs}
-        import bmesh
+        head = []
         for o in objs:
             if o.type != "MESH":
                 continue
@@ -158,13 +177,47 @@ def main() -> int:
                 bm.free()
                 o.data.materials.clear()
                 o.data.materials.append(mat)
+            o.location.z += rings[j] - 1.39
             head.append(o)
-        log["head"] = [o.name for o in head]  # never hidden: on every body
+        heads.append((hf, j, head))
+        log["head"].append({"from": hf, "body": j, "ring_m": round(rings[j], 5), "objects": [o.name for o in head]})
+
+    def show(j, h=0):  # body j with head source h (or none)
+        for i, g in enumerate(groups):
+            for o in g:
+                o.hide_render = i != j
+        for k, (hf, jj, hd) in enumerate(heads):
+            for o in hd:
+                o.hide_render = not (jj == j and k // max(1, len(groups)) == h)
     bpy.context.view_layer.update()
     sc, cam = R.setup(CELL)
     sc.render.film_transparent = True
     cim = R.load(a.concept)
-    cuts = [int(c) for c in a.cuts.split(",")]
+    full, sole, cuts = d2_mask(a.concept)
+    if a.cuts:
+        cuts = [int(c) for c in a.cuts.split(",")]
+    sole_row = a.sole_row if a.sole_row >= 0 else sole
+    log["concept"] = {"sole_row": sole_row, "cuts": cuts, "mask": "body_dims_geom.mask"}
+    if a.pair:  # the bodies side by side, front and side, one scale
+        cells = []
+        for ang in (0, 90):
+            t = math.radians(ang)
+            c = Vector((0, 0, 0.97))
+            R.look(cam, c + Vector((-8 * math.sin(t), -8 * math.cos(t), 0)), c, ortho=FRAME_H)
+            for j in range(len(groups)):
+                show(j)
+                p = os.path.join(tmp, f"pair_{ang}_{j}.png")
+                R.shot(sc, p, CELL)
+                R.save(composite(R.load(p)), p)
+                cells.append(p)
+        R.stitch(cells, 2 * len(groups), os.path.join(a.out, f"pair_{a.tag}.png"))
+        for q in os.listdir(tmp):
+            os.remove(os.path.join(tmp, q))
+        os.rmdir(tmp)
+        with open(os.path.join(a.out, f"review_pair_{a.tag}.json"), "w", encoding="utf-8", newline="\n") as f:
+            json.dump(log, f, indent=1)
+        print("REVIEW pair", a.tag, len(groups), "bodies", flush=True)
+        return 0
     mirror = [c == "1" for c in a.mirror.split(",")]
     cells = []
     concept_row = []
@@ -172,15 +225,13 @@ def main() -> int:
         t = math.radians(ang)
         c = Vector((0, 0, 0.97))
         R.look(cam, c + Vector((-8 * math.sin(t), -8 * math.cos(t), 0)), c, ortho=FRAME_H)
-        m, sub = concept_mask(cim, cuts[k:k + 2], mirror[k])
+        m, sub = concept_mask(cim, cuts[k:k + 2], mirror[k], full)
         for j, objs in enumerate(groups):
-            for i, g in enumerate(groups):
-                for o in g:
-                    o.hide_render = i != j
+            show(j)
             p = os.path.join(tmp, f"four_{k}_{j}.png")
             R.shot(sc, p, CELL)
             im = R.load(p)
-            om, oc = resample(m, sub, a.mm_px, a.sole_row, body_cx(im[..., 3]))
+            om, oc = resample(m, sub, a.mm_px, sole_row, body_cx(im[..., 3]))
             im = composite(im)
             im[edge(om)] = YELLOW
             R.save(im, p)
@@ -193,17 +244,21 @@ def main() -> int:
     R.stitch(order + concept_row, len(VIEWS), os.path.join(a.out, f"four_{a.tag}.png"))
 
     # close-ups of the last body (with the head), one flat colour, cavity on
-    for i, g in enumerate(groups):
-        for o in g:
-            o.hide_render = i != len(groups) - 1
+    last = len(groups) - 1
+    show(last)
+    rz = rings[last]
     sc.render.film_transparent = False
     sh = sc.display.shading
     sh.color_type, sh.show_cavity, sh.cavity_type = "MATERIAL", True, "WORLD"
     shots = [("chest_front", (0, 1.12), 0, 0, 0.85, 50), ("chest_34", (0.03, 1.12), 35, 0, 0.85, 50),
              ("crotch_front", (0, 0.74), 0, -12, 0.85, 50), ("crotch_34_low", (0.03, 0.74), 30, -20, 0.85, 50),
              ("seat_side", (0, 0.82), 90, 0, 0.95, 50), ("seat_34_back", (0.03, 0.82), 145, 0, 0.95, 50),
-             ("neck_34_front", (0, 1.39), 35, 0, 0.6, 50), ("neck_side", (0, 1.39), 90, 0, 0.6, 50),
-             ("neck_34_back", (0, 1.39), 145, 0, 0.6, 50)]
+             ("chest_side", (0, 1.12), 90, 0, 0.85, 50)]
+    for h in range(len(a.head_from)):
+        shots += [(f"neck{h}_34_front", (0, rz), 35, 0, 0.6, 50, h), (f"neck{h}_side", (0, rz), 90, 0, 0.6, 50, h),
+                  (f"neck{h}_34_back", (0, rz), 145, 0, 0.6, 50, h)]
+    zk = rz / 1.39  # B's close-ups at her heights
+    shots = [(n, (x, z * zk if not n.startswith("neck") else z), *rest) for n, (x, z), *rest in shots]
     arm = bpy.data.objects[[o.name for o in bpy.data.objects if o.type == "ARMATURE"][-1]]
 
     def bone(n):
@@ -212,7 +267,8 @@ def main() -> int:
     hand = (bone("LeftHand") + bone("LeftMiddleProximal")) / 2
     foot = (bone("LeftFoot") + bone("LeftToes")) / 2
     paths = []
-    for name, (x, z), az, el, dist, lens in shots:
+    for name, (x, z), az, el, dist, lens, *hh in shots:
+        show(last, hh[0] if hh else 0)
         tgt = Vector((x, 0.02, z))
         t, e = math.radians(az), math.radians(el)
         loc = tgt + dist * Vector((-math.sin(t) * math.cos(e), -math.cos(t) * math.cos(e), math.sin(e)))
@@ -222,7 +278,9 @@ def main() -> int:
         paths.append(p)
         log["close"].append({"name": name, "target": list(tgt), "loc": list(loc), "lens": lens})
     for name, tgt, off in (("hand_front", hand, Vector((0.0, -0.45, 0.0))), ("hand_above", hand, Vector((0.05, -0.1, 0.45))),
-                           ("foot_side", foot, Vector((0.55, 0.0, 0.05))), ("foot_34_front", foot, Vector((0.3, -0.45, 0.2)))):
+                           ("foot_side", foot, Vector((0.55, 0.0, 0.05))), ("foot_34_front", foot, Vector((0.3, -0.45, 0.2))),
+                           ("foot_front", foot, Vector((0.0, -0.3, 0.06))), ("foot_top", foot, Vector((0.0, -0.04, 0.3))),
+                           ("foot_below", foot, Vector((0.05, -0.12, -0.27)))):
         R.look(cam, tgt + off, tgt, lens=50)
         p = os.path.join(tmp, f"close_{name}.png")
         R.shot(sc, p, CLOSE)

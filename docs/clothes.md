@@ -325,3 +325,18 @@ the close-ups). The rules, in `body_fit_geom.py`'s docstring:
 
 The check is the overlay error per station, built minus table (`errors.md` beside each fit): within 5 mm on the
 trunk and 3 mm on the limbs; stations left alone by rule are listed with their rule, not counted.
+
+Body B (D3b) is A's fitted mesh on B's rest (B1's `deform` with `fit.toml`'s joints), then:
+- the hands and feet: A's (our size, the engineer's answer) scaled per axis by the two tables' B/A ratios
+  (`body_fit_run.limb_scales`: hand 0.960 long and 0.878 wide along and across the Hand bone, foot 0.850 long and
+  0.911 wide about the ankle), never set by hand;
+- the fit to `B.toml` with her chest rounds (`chest_of`) and the neck base: her concept's shoulder line is 8 mm under
+  the ring, so above the armpit her widths stay the body's up to the ring and the 60 mm under the standard ring widen
+  into a slope with a vertical tangent at the ring (`fit.toml`'s `neck_base`); the ring row down to the shoulder line
+  is left out of the error table by rule;
+- our armpit is the table's but at least 25 mm under the arm's lowest vertex (`ARMPIT_GAP`): B's concept armpit sits
+  higher than our arm's root on her rest, and the widths between are marked "arm root", not counted.
+
+A table's "-" (a hanging limb forms the side edge) is never a value: there the fit keeps the body's own shape, moved by
+the error at the band's measured ends (`fill_gaps`). The feet's soft front (`apply --round-toes M`) shrink-wraps the
+toes' region onto its convex hull along rays from the region's centre, outwards only, then relaxes it.

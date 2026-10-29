@@ -14,9 +14,14 @@ keep_front = []
 shoulder_joint_x = 129.0      # the UpperArm heads' |x|
 hip_joint_x = 113.0           # the UpperLeg heads' |x|
 neck_below_ring = 50.8        # the Neck bone's head under the ring (the Head's stays 48.3 above it)
-hand_scale = 0.90             # the concept's B/A hands, at our size (the engineer, 2026-10-29)
-foot_scale_x = 0.85           # the feet: width
-foot_scale_y = 0.80           # length
+# The hands and feet: A's at our size (the engineer, 2026-10-29), scaled per axis by the two tables' B/A ratios
+# (body_fit_run.limb_scales: the keys' hand and foot lengths and widths), never set here.
+# Her neck base: B's concept puts the ring at the collar, where her shoulder slopes start (the shoulder line 8 mm
+# under it). The ring stays the standard one; the trunk's `length` mm under it widen into a slope from the ring's
+# half width (kept over the `collar` mm under it: a vertical tangent) to the table's at `length`, as
+# u ** `power`, eased in over `ease` mm from its bottom, at most `max_ratio` of the body (body_fit_geom.neck_base_half;
+# D3b's first B, eased over 20 mm and uncapped, grew a lip at the neck base). Never narrower than the body.
+neck_base = { length = 60.0, collar = 6.0, power = 1.5, ease = 60.0, max_ratio = 1.15 }
 # Her chest: two soft rounds, no nipples. The table's side front ahead of the line from the crease to the upper
 # chest is the rounds' depth; across x it peaks at the rounds' centres and eases to `floor` between them.
 chest_sigma_x = 42.0

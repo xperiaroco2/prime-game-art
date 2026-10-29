@@ -169,7 +169,9 @@ class BRest(unittest.TestCase):
         s = tomllib.loads((DIMS / "fit.toml").read_text(encoding="utf-8"))["B"]
         ta, tb = F.load_table(DIMS / "A.toml"), F.load_table(DIMS / "B.toml")
         a = skeleton()
-        rest, rep = RUN.b_rest(a, ta, tb, s)
+        rest, rep, vb = RUN.b_rest(a, ta, tb, s)
+        ls = RUN.limb_scales(ta, tb)
+        self.assertEqual(vb, [])
         ring = tb["neck_ring"]["z"] / 1000
         self.assertAlmostEqual(rep["height_scale"], tb["neck_ring"]["z"] / ta["neck_ring"]["z"], places=6)
         self.assertAlmostEqual(rest["LeftUpperArm"]["head"][0], s["shoulder_joint_x"] / 1000, places=6)
@@ -179,21 +181,86 @@ class BRest(unittest.TestCase):
         self.assertAlmostEqual(rest["Head"]["head"][2], ring + tb["neck_ring"]["head_bone_above"] / 1000, places=6)
         self.assertEqual(rest["UpperChest"]["tail"], rest["Neck"]["head"])
         self.assertEqual(rest["Neck"]["tail"], rest["Head"]["head"])
-        for sd in ("Left", "Right"):  # the feet: x and y about the ankle by fit.toml's scales, z by the height
+        for sd in ("Left", "Right"):  # the feet: x and y about the ankle by the tables' ratios, z by the height
             ank, ank_a = rest[f"{sd}Foot"]["head"], a[f"{sd}Foot"]["head"]
             toe, toe_a = rest[f"{sd}Toes"]["head"], a[f"{sd}Toes"]["head"]
-            self.assertAlmostEqual((toe[1] - ank[1]) / (toe_a[1] - ank_a[1]), s["foot_scale_y"], places=6)
+            self.assertAlmostEqual((toe[1] - ank[1]) / (toe_a[1] - ank_a[1]), ls["foot_length"], places=6)
             self.assertAlmostEqual((toe[2] - ank[2]) / (toe_a[2] - ank_a[2]), rep["height_scale"], places=6)
             h, h_a = rest[f"{sd}Hand"], a[f"{sd}Hand"]
             self.assertAlmostEqual(math.dist(h["head"], h["tail"]) / math.dist(h_a["head"], h_a["tail"]),
-                                   s["hand_scale"], places=6)
+                                   ls["hand_length"], places=6)
 
     def test_fit_toml_holds_both_bodies(self):
         s = tomllib.loads((DIMS / "fit.toml").read_text(encoding="utf-8"))
         self.assertEqual(s["A"]["keep_front"], [[640.0, 1000.0]])
-        for k in ("shoulder_joint_x", "hip_joint_x", "hand_scale", "foot_scale_x", "foot_scale_y"):
+        for k in ("shoulder_joint_x", "hip_joint_x", "neck_base"):
             self.assertIn(k, s["B"])
-        self.assertNotIn("height_scale", s["B"])
+        for k in ("height_scale", "hand_scale", "foot_scale_x", "foot_scale_y"):  # from the tables now
+            self.assertNotIn(k, s["B"])
+        self.assertEqual(set(s["B"]["neck_base"]), {"length", "collar", "power", "ease", "max_ratio"})
+
+    def test_limb_scales_from_the_tables(self):
+        ls = RUN.limb_scales(F.load_table(DIMS / "A.toml"), F.load_table(DIMS / "B.toml"))
+        want = {"hand_length": 0.960, "hand_width": 0.878, "foot_length": 0.850, "foot_width": 0.911}
+        for k, v in want.items():
+            self.assertAlmostEqual(ls[k], v, delta=0.0015)
+
+    def test_hands_scale_along_and_across_the_hand_bone(self):
+        rest = {n: dict(r) for n, r in skeleton().items()}
+        h = rest["LeftHand"]["head"]
+        p = (h[0] + 0.1, h[1] + 0.02, h[2] - 0.01)  # 0.1 m past the wrist along x, off the axis a little
+        u = [rest["LeftHand"]["tail"][i] - rest["LeftHand"]["head"][i] for i in range(3)]
+        n = math.sqrt(sum(c * c for c in u))
+        out = RUN.hands([p, (0.0, 0.0, 1.0)], [{"LeftMiddle1": 1.0}, {"Spine": 1.0}], rest, 0.9, 0.8)
+        d = [out[0][i] - h[i] for i in range(3)]
+        d0 = [p[i] - h[i] for i in range(3)]
+        along, along0 = (sum(d[i] * u[i] for i in range(3)) / n, sum(d0[i] * u[i] for i in range(3)) / n)
+        self.assertAlmostEqual(along / along0, 0.9, places=6)
+        across = math.dist(d, [along * c / n for c in u])
+        across0 = math.dist(d0, [along0 * c / n for c in u])
+        self.assertAlmostEqual(across / across0, 0.8, places=6)
+        self.assertEqual(out[1], (0.0, 0.0, 1.0))  # off the hand: unmoved
+        self.assertAlmostEqual(math.dist(rest["LeftHand"]["head"], rest["LeftHand"]["tail"]) / n, 0.9, places=6)
+
+
+class Gaps(unittest.TestCase):
+    def test_a_dash_band_keeps_the_body_shape_moved_by_its_ends(self):
+        zs = [0.0, 10.0, 20.0, 30.0, 40.0]
+        own = [0.0, 5.0, 9.0, 5.0, 0.0]
+        raw = {0.0: 1.0, 10.0: None, 20.0: None, 30.0: None, 40.0: 3.0}
+        out = F.fill_gaps(zs, own, lambda z: {0.0: 1.0, 40.0: 3.0}[z], raw)
+        self.assertEqual(out[0], 1.0)
+        self.assertEqual(out[-1], 3.0)
+        self.assertAlmostEqual(out[2], 9.0 + 2.0)  # own + the ends' error (1 and 3) halfway: never 0, never a line
+        self.assertAlmostEqual(out[1], 5.0 + 1.5)
+
+    def test_the_tables_dash_bands_are_not_values(self):
+        for name in ("A", "B"):
+            t = F.load_table(DIMS / f"{name}.toml")
+            z0, z1 = t["body"]["side_back_hidden_z"]
+            tg = F.targets(t | {"fit": {}}, F.frame_of(t | {"fit": {}}, {"LeftHand": {"head": [600.0, 0, 0]},
+                                                                         "LeftFoot": {"head": [0, 0, 100.0]}}, 200.0))
+            hidden = [z for z, v in tg["raw"]["trunk_back"].items() if v is None and z0 <= z <= z1]
+            self.assertTrue(hidden, name)
+
+
+class NeckBase(unittest.TestCase):
+    NB = {"length": 60.0, "collar": 6.0, "power": 1.5, "ease": 20.0}
+
+    def test_the_slope_meets_the_ring_with_a_vertical_tangent(self):
+        f = lambda z: F.neck_base_half(z, 1324.7, 56.7, 185.0, self.NB)  # noqa: E731
+        self.assertEqual(f(1324.7), 56.7)
+        self.assertEqual(f(1320.0), 56.7)  # the collar
+        self.assertAlmostEqual(f(1324.7 - 60.0), 185.0)
+        hs = [f(1324.7 - d) for d in range(0, 61, 5)]
+        self.assertEqual(hs, sorted(hs))  # widening downwards, no step
+        self.assertLess(f(1324.7 - 12) - f(1324.7 - 7), f(1324.7 - 50) - f(1324.7 - 45))  # steeper lower down
+
+    def test_only_a_body_with_high_shoulders_gets_it(self):
+        bones = {"LeftHand": {"head": [600.0, 0, 0]}, "LeftFoot": {"head": [0, 0, 100.0]}}
+        for name, on in (("A", False), ("B", True)):
+            t = F.load_table(DIMS / f"{name}.toml") | {"fit": {"neck_base": self.NB}}
+            self.assertEqual(bool(F.frame_of(t, bones, 200.0)["neck_base"]), on, name)
 
 
 if __name__ == "__main__":
