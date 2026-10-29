@@ -20,10 +20,37 @@ const ORDER: Array = [0, 1, 2, 3, 4, 3, 2, 1]
 const EASE_S := 0.25
 const DEMO_S := 14.0
 # the glows' emission energies (absolute) and the lights; the look knobs
-const LOOK: Dictionary = {"scoop": 0.5, "glow": 1.3, "edge": 2.6, "bar": 2.2, "white": 2.8, "light": 0.3,
-	"light_range": 0.75, "light_out": 0.16, "puff": 0.55, "cloud": 0.32}
+# step 2 (the look pass): "grad" a single gradient over the three parts (NICHE_SHADER: "rim" at the hole's edge down to
+# "floor" at the scoop's bottom, "power" the rim's falloff), else the three bands' energies; "albedo" the niches' base
+# colour x (dark inside); bars and the groove saturated (their base colour a tenth of the glow)
+# The pick (grid_sheet.png, variant "dark"): dark bands with a saturated lip, the closest to set_plate.jpg's dark scoops
+const LOOK: Dictionary = {"grad": false, "rim": 1.5, "floor": 0.04, "power": 1.5, "scoop": 0.03, "glow": 0.15,
+	"edge": 1.0, "albedo": 0.015, "bar": 0.8, "white": 1.8, "groove": 0.8, "light": 0.12, "light_range": 0.75,
+	"light_out": 0.16, "puff": 0.55, "cloud": 0.42}
+const NICHE_SHADER := """
+shader_type spatial;
+uniform vec3 colour : source_color = vec3(1.0, 0.12, 0.04);
+uniform float rim = 1.5;
+uniform float floor_e = 0.04;
+uniform float power = 1.5;
+uniform float albedo = 0.04;
+uniform vec3 plane_p;
+uniform vec3 plane_n;
+uniform float depth = 0.065;
+varying float d;
+void vertex() {
+	d = clamp(dot(plane_p - VERTEX, plane_n) / depth, 0.0, 1.0);
+}
+void fragment() {
+	ALBEDO = colour * albedo;
+	ROUGHNESS = 0.45;
+	METALLIC = 0.0;
+	EMISSION = colour * mix(floor_e, rim, pow(1.0 - d, power));
+}
+"""
 
 var time_scale: float = 1.0
+var look: Dictionary = LOOK.duplicate()
 var open: Array = [false, false, false, false, false]
 var runner: int = 0              # ORDER's index under the white bar
 var _root: Node3D
@@ -32,7 +59,9 @@ var _mats: Array = []            # per slit {part: material}
 var _bars: Array = []            # per slit the bar's material
 var _lights: Array = []
 var _puffs: Array = []           # per slit GPUParticles3D (one shot)
-var _cloud: GPUParticles3D
+var _clouds: Array = []        # per slit GPUParticles3D (held while all five are open)
+var _shaders: Array = []       # per slit the gradient ShaderMaterial
+var _groove: StandardMaterial3D
 var _mix: Array = [0.0, 0.0, 0.0, 0.0, 0.0]   # 0 red .. 1 cyan, easing to open[k]
 var _clock: float = 0.0
 var _mids: Array = []            # per slit the niche's middle on the wall's face, piece space
@@ -70,11 +99,31 @@ func setup(piece: Node3D) -> void:
 		piece.add_child(l)
 		_lights.append(l)
 		_puffs.append(_particles(mid + _out * 0.02, Vector3(0.03, box.size.y * 0.32, 0.01), 28, 1.8, true))
-	var a: Vector3 = _mids[0]
-	var b: Vector3 = _mids[4]
-	var c: Vector3 = (a + b) * 0.5 + _out * 0.12
-	_cloud = _particles(c, Vector3(absf(b.x - a.x) * 0.6 + 0.15, 0.45, 0.08), 90, 5.0, false)
+		_clouds.append(_particles(mid + _out * 0.03, Vector3(0.05, box.size.y * 0.36, 0.02), 26, 3.6, false))
+		var sh: ShaderMaterial = ShaderMaterial.new()
+		var shader: Shader = Shader.new()
+		shader.code = NICHE_SHADER
+		sh.shader = shader
+		if glow != null:   # the wall's plane in the niche meshes' own space (they share the piece's frame or not)
+			sh.set_shader_parameter("plane_p", glow.to_local(_root.to_global(mid)))
+			var n: Vector3 = (glow.global_basis.inverse() * _root.global_basis * _out).normalized()
+			sh.set_shader_parameter("plane_n", n)
+		_shaders.append(sh)
+	_groove = _own("groove_glow")
 	reset()
+	set_look({})
+
+
+## The variant grid: override LOOK's knobs.
+func set_look(over: Dictionary) -> void:
+	look = LOOK.duplicate()
+	look.merge(over, true)
+	for k: int in 5:
+		for part: String in ["scoop", "glow", "edge"]:
+			var mi: MeshInstance3D = _mesh("gill%d_%s" % [k + 1, part])
+			if mi != null and _mats[k].has(part):
+				mi.material_override = _shaders[k] if bool(look["grad"]) else _mats[k][part]
+	_apply()
 
 
 func info() -> Dictionary:
@@ -92,8 +141,14 @@ func press() -> String:
 	if open[k]:
 		(_puffs[k] as GPUParticles3D).restart()
 		(_puffs[k] as GPUParticles3D).emitting = true
-	_cloud.emitting = not open.has(false)
+	_hold()
 	return "open" if open[k] else "shut"
+
+
+func _hold() -> void:
+	var all_open: bool = not open.has(false)
+	for c: GPUParticles3D in _clouds:
+		c.emitting = all_open
 
 
 func pose(opened: Array, at: int) -> void:
@@ -102,7 +157,7 @@ func pose(opened: Array, at: int) -> void:
 		_mix[k] = 1.0 if open[k] else 0.0
 	runner = maxi(0, ORDER.find(at - 1))
 	_clock = runner * STEP_S + 0.3
-	_cloud.emitting = not open.has(false)
+	_hold()
 	_apply()
 
 
@@ -111,7 +166,7 @@ func reset() -> void:
 	_mix = [0.0, 0.0, 0.0, 0.0, 0.0]
 	_clock = 0.0
 	runner = 0
-	for p: GPUParticles3D in _puffs + [_cloud]:
+	for p: GPUParticles3D in _puffs + _clouds:
 		p.emitting = false
 		p.restart()
 		p.emitting = false
@@ -123,7 +178,7 @@ func step(dt: float) -> void:
 	runner = int(floorf(_clock / STEP_S)) % ORDER.size()
 	for k: int in 5:
 		_mix[k] = move_toward(_mix[k], 1.0 if open[k] else 0.0, dt / EASE_S)
-	for p: GPUParticles3D in _puffs + [_cloud]:
+	for p: GPUParticles3D in _puffs + _clouds:
 		p.speed_scale = time_scale
 	_apply()
 
@@ -131,21 +186,34 @@ func step(dt: float) -> void:
 func _apply() -> void:
 	for k: int in 5:
 		var c: Color = RED.lerp(CYAN, _mix[k])
+		var al: float = float(look["albedo"])
 		for part: String in _mats[k]:
 			var m: StandardMaterial3D = _mats[k][part]
 			m.emission = c
-			m.albedo_color = Color(c.r * 0.25, c.g * 0.25, c.b * 0.25)
-			m.emission_energy_multiplier = float(LOOK[part])
+			m.albedo_color = Color(c.r * al, c.g * al, c.b * al)
+			m.metallic = 0.0
+			m.emission_energy_multiplier = float(look[part])
+		var sh: ShaderMaterial = _shaders[k]
+		sh.set_shader_parameter("colour", Vector3(c.r, c.g, c.b))
+		sh.set_shader_parameter("rim", float(look["rim"]))
+		sh.set_shader_parameter("floor_e", float(look["floor"]))
+		sh.set_shader_parameter("power", float(look["power"]))
+		sh.set_shader_parameter("albedo", al)
 		var l: OmniLight3D = _lights[k]
 		l.light_color = c
-		l.light_energy = float(LOOK["light"]) * (1.0 + 0.3 * _mix[k])
+		l.omni_range = float(look["light_range"]) * (0.8 + 0.25 * float(_sizes[k].y))
+		l.light_energy = float(look["light"]) * (1.0 + 0.3 * _mix[k])
 		var bar: StandardMaterial3D = _bars[k]
 		if bar != null:
 			var white: bool = k == slit()
 			var bc: Color = WHITE if white else (CYAN if open[k] else RED)
 			bar.emission = bc
-			bar.albedo_color = bc
-			bar.emission_energy_multiplier = float(LOOK["white" if white else "bar"])
+			bar.albedo_color = bc if white else Color(bc.r * 0.1, bc.g * 0.1, bc.b * 0.1)
+			bar.emission_energy_multiplier = float(look["white" if white else "bar"])
+	if _groove != null:
+		_groove.emission = CYAN
+		_groove.albedo_color = Color(CYAN.r * 0.1, CYAN.g * 0.1, CYAN.b * 0.1)
+		_groove.emission_energy_multiplier = float(look["groove"])
 
 
 func _mesh(name: String) -> MeshInstance3D:
@@ -188,8 +256,8 @@ func _particles(at: Vector3, extents: Vector3, amount: int, life: float, one_sho
 	pm.emission_box_extents = extents
 	pm.direction = _out
 	pm.spread = 30.0 if one_shot else 60.0
-	pm.initial_velocity_min = 0.22 if one_shot else 0.03
-	pm.initial_velocity_max = 0.45 if one_shot else 0.1
+	pm.initial_velocity_min = 0.22 if one_shot else 0.06
+	pm.initial_velocity_max = 0.45 if one_shot else 0.16
 	pm.gravity = Vector3(0, 0.08 if one_shot else 0.025, 0)
 	pm.damping_min = 0.25
 	pm.damping_max = 0.4
@@ -234,7 +302,7 @@ func _particles(at: Vector3, extents: Vector3, amount: int, life: float, one_sho
 	m.albedo_color = Color(0.55 * k, 0.9 * k, 1.0 * k, 1.0)
 	m.disable_receive_shadows = true
 	var q: QuadMesh = QuadMesh.new()
-	q.size = Vector2(0.24, 0.24) if one_shot else Vector2(0.75, 0.75)
+	q.size = Vector2(0.24, 0.24) if one_shot else Vector2(0.42, 0.42)
 	q.material = m
 	p.draw_pass_1 = q
 	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

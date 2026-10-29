@@ -1039,6 +1039,39 @@ func _gill_anim() -> void:
 	quit(0)
 
 
+## ship.py --gill-set --grid: the look variants on the first camera, posed (open 1-3, the white bar over 4):
+## grid/<name>.png and grid_sheet.png beside the request's "ref" (pairs per row).
+func _gill_grid(gs: Node, a: Dictionary) -> void:
+	var cam: Array = a["cams"][0]
+	_camera.fov = float(cam[3])
+	_camera.look_at_from_position(_v(cam[1]), _v(cam[2]), UP)
+	DirAccess.make_dir_recursive_absolute(_out.path_join("grid"))
+	var tiles: Array = []
+	var ref: Image = Image.load_from_file(String(a["ref"]))
+	ref.convert(Image.FORMAT_RGB8)
+	tiles.append(ref)
+	for v: Array in a["grid"]:
+		gs.reset()
+		gs.set_look(v[1])
+		gs.pose([1, 2, 3], 4)
+		for i: int in 40:
+			gs.step(0.0)
+			await process_frame
+		_label.text = String(v[0])
+		await RenderingServer.frame_post_draw
+		var img: Image = root.get_texture().get_image()
+		img.convert(Image.FORMAT_RGB8)
+		_save(img, _out.path_join("grid/%s.png" % String(v[0])))
+		tiles.append(img)
+		_label.text = ""
+	var rows: Array = []
+	for i: int in range(0, tiles.size(), 2):
+		rows.append(tiles.slice(i, mini(i + 2, tiles.size())))
+	_save(_sheet(rows), _out.path_join("grid_sheet.png"))
+	_write("anim.json", {"grid": a["grid"]})
+	quit(0)
+
+
 # --- the gill set (art #263, 2026-10-29; gill_set.gd) ----------------------------------------------------------------
 ## ship.py --gill-set: gill_set.gd's demo on th_wall_e from each camera in "cams" ([name, eye, look, fov]): one PNG a
 ## frame into <out>/<name>/frames, the key moments labelled into <name>/keys_sheet.png, the stills (shut, mid, open)
@@ -1074,6 +1107,9 @@ func _gill_set() -> void:
 	_label.add_theme_constant_override("outline_size", 8)
 	layer.add_child(_label)
 	root.add_child(layer)
+	if a.has("grid"):  # the look grid: each variant ([name, LOOK overrides]) posed from the first camera
+		await _gill_grid(gs, a)
+		return
 	var fps: float = float(a["fps"])
 	var count: int = int(GillSet.DEMO_S * fps)
 	var events: Array = GillSet.demo_events()

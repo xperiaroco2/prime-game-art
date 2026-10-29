@@ -63,6 +63,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "presses open and shut slits, all five open hold a steam cloud) from the concept's camera "
                              "and a close one: <DIR>/<cam>/<cam>.mp4, keys_sheet.png, the stills, the posed views and "
                              "close-ups, and sheet.png beside set_plate.jpg; off-screen")
+    parser.add_argument("--gill-grid", action="store_true",
+                        help="with --gill-set: only the look grid (GILL_GRID's variants from the concept camera, posed) "
+                             "into <DIR>/grid/ and grid_sheet.png beside set_plate.jpg")
     parser.add_argument("--gill-demo", choices=("slit", "row"), default="slit",
                         help="--gill-anim's demo: slit (gill_anim.mp4, 6 s) or row (gill_row.mp4, 10 s: the breath runs "
                              "along the row, presses open the gasping slits, all five open -> the exhale)")
@@ -131,7 +134,7 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if getattr(args, "gill_set", None):
-        code = gill_set(layout, out, args.gill_set.resolve())
+        code = gill_set(layout, out, args.gill_set.resolve(), getattr(args, "gill_grid", False))
         if code:
             return code
     if getattr(args, "gill_anim", None):
@@ -751,7 +754,16 @@ GILL_VIEWS = [  # name, (s, t, back, along, up) eye, (s, t) look, fov, (open, at
 ]
 
 
-def gill_set(layout: dict, out: Path, folder: Path) -> int:
+# the look grid (step 2): gill_set.gd LOOK overrides; "next" the step-1 handoff's values in bands, "dark" darker bands,
+# "grad" one gradient over the niche (rim to floor), "grad_tight" a narrower, brighter rim
+GILL_GRID = [["next", {"grad": False, "scoop": 0.15, "glow": 0.5, "edge": 1.2}],
+             ["dark", {"grad": False, "scoop": 0.03, "glow": 0.15, "edge": 1.0, "albedo": 0.015}],
+             ["grad", {"grad": True}],
+             ["grad_tight", {"grad": True, "rim": 2.2, "floor": 0.0, "power": 3.0, "albedo": 0.015}],
+             ["grad_soft", {"grad": True, "rim": 1.1, "floor": 0.08, "power": 1.0}]]
+
+
+def gill_set(layout: dict, out: Path, folder: Path, grid: bool = False) -> int:
     """The gill set's proof: ship.gd mode "gill_set" renders gill_set.gd's demo on th_wall_e from both cameras at night
     in the off-screen window, then the posed views and close-ups; headless Blender encodes each camera's MP4; the
     frames are deleted."""
@@ -768,7 +780,8 @@ def gill_set(layout: dict, out: Path, folder: Path) -> int:
              for name, eye, look, fov, pose in GILL_VIEWS]
     req, staged = built_request(layout, out)
     req.update({"mode": "gill_set", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
-                "anim": {"cams": cams, "views": views, "fps": a["fps"], "ref": a["ref"]},
+                "anim": {"cams": cams, "views": views, "fps": a["fps"], "ref": a["ref"],
+                         **({"grid": GILL_GRID} if grid else {})},
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "rooms": room_boxes(layout)})
     errors = _stage(staged)
@@ -785,6 +798,9 @@ def gill_set(layout: dict, out: Path, folder: Path) -> int:
     if code != 0 or not (folder / "anim.json").is_file():
         raise common.Failure(f"ship.gd gill_set failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
+    if grid:
+        common.ok(f"ship --gill-set --gill-grid: {(folder / 'grid_sheet.png').as_posix()}")
+        return 0
     sizes = {}
     for cam in cams:
         clip = folder / f"{cam[0]}.mp4"
