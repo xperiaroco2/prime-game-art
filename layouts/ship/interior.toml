@@ -500,7 +500,6 @@ place = [
   ["lens_alcove", [-10.2686, 3.2369, 0.0], -83.519],
   ["lens_conduits_w", [-10.2686, 3.2369, 0.0], -83.519],
   ["ws_rail", [-10.5, 1.2, 0.0], -171.336],
-  ["ws_rug", [-11.0692, 0.2587, 0.0], 121.164],
   ["ws_robot_body", [-11.0431, 0.302, 0.0], 121.164],
   ["ws_robot", [-11.0431, 0.302, 0.0], 121.164],
   ["ws_hoist", [-11.0431, 0.302, 0.0], 121.164],
@@ -510,8 +509,6 @@ place = [
   ["ws_sleeper_b", [-12.1129, 1.7764, 0.0], -160.336],
   ["ws_lamp", [-10.4577, -0.612, 0.0], 89.87],
   ["vault_shell", [0.0, 3.85, 0.0], 0.0],
-  ["cup_a", [0.85, -3.22, 0.0], 145.0],
-  ["spill_a", [0.85, -3.22, 0.0], 145.0],
   ["cup_c", [-1.05, -0.85, 0.0], -160.0],
   ["spill_c", [-1.05, -0.85, 0.0], -160.0],
   ["cup_b", [-7.1428, 1.6494, 0.0], 88.664],
@@ -1016,12 +1013,6 @@ builder = "tip_ceiling"
 collide = false
 
 [[pieces]]
-id = "cup_a"
-builder = "cup"
-collide = false
-args = { seed = 3, scale = 1.8 }
-
-[[pieces]]
 id = "cup_b"
 builder = "cup"
 collide = false
@@ -1032,12 +1023,6 @@ id = "cup_c"
 builder = "cup"
 collide = false
 args = { seed = 27, scale = 1.8 }
-
-[[pieces]]
-id = "spill_a"
-builder = "spill"
-collide = false
-args = { seed = 4, from = 0.2, size = 2.2 }
 
 [[pieces]]
 id = "spill_c"
@@ -1281,11 +1266,6 @@ collide = false
 [[pieces]]
 id = "ws_rail"
 builder = "ws_rail"
-collide = false
-
-[[pieces]]
-id = "ws_rug"
-builder = "ws_rug"
 collide = false
 
 [[pieces]]

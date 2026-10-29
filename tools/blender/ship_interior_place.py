@@ -186,10 +186,8 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
 }
 PIECES |= {
     # details
-    "cup_a": ("cup", {"seed": 3, "scale": 1.8}, False),  # polish 4: 1.8 (22 cm; inside 3-1: 1.5 read as a red mark)
     "cup_b": ("cup", {"seed": 11, "scale": 1.8}, False),
     "cup_c": ("cup", {"seed": 27, "scale": 1.8}, False),
-    "spill_a": ("spill", {"seed": 4, "from": 0.2, "size": 2.2}, False),
     "spill_c": ("spill", {"seed": 8, "from": 0.2, "size": 2.0}, False),
     "cable_coil": ("cable_coil", {}, False),
     "floor_patch_a": ("floor_patch", {"u": 0.42, "v": 0.36}, False),
@@ -254,7 +252,6 @@ PIECES |= {
     "ws_robot": ("ws_robot", {}, False),
     "ws_hoist": ("ws_hoist", {}, False),
     "ws_rail": ("ws_rail", {}, False),
-    "ws_rug": ("ws_rug", {}, False),
     "ws_lamp": ("ws_lamp", {}, False),
 }
 WS_LO, WS_MID, WS_HI = WS.BENCH_K[0] * S.TIP_STEP, WS.BENCH_K[1] * S.TIP_STEP, WS.CAB_K[1] * S.TIP_STEP
@@ -546,8 +543,8 @@ def placements() -> list[tuple[str, list[float], float]]:
     def cor_pt(s, u, v):   # a point (u along, v across, +v south) in the east corridor's frame, or its west mirror
         x, y = local((0.0, 0.0), -S.COR_ANG, u, v)
         return [round(s * x, 4), y]
-    for pid, xy, yaw in (("cup_a", [0.85, -2.82], 145.0), ("spill_a", [0.85, -2.82], 145.0),
-                         ("cup_c", [-1.05, -0.45], 200.0), ("spill_c", [-1.05, -0.45], 200.0),
+    # the engineer's walk (2026-10-29, shot 009): the hall's spilled cup_a and its puddle removed
+    for pid, xy, yaw in (("cup_c", [-1.05, -0.45], 200.0), ("spill_c", [-1.05, -0.45], 200.0),
                          ("cup_b", cor_pt(-1, 7.37, 0.95), 80.0 + S.COR_ANG),
                          ("cable_coil", cor_pt(1, 7.11, 1.0), 20.0 - S.COR_ANG),
                          ("floor_patch_a", polar(S.R_RIM_REF - 0.08, 96.0), -96.0 + 8.0),   # rebuild A: 112.5 is a socket flat now
