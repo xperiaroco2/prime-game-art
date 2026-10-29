@@ -69,6 +69,15 @@ class TimesTest(unittest.TestCase):
             with self.assertRaises(ValueError, msg=bad):
                 _frames.parse_closeups(bad)
 
+    def test_closeups_carried_by_a_bone(self) -> None:
+        """--closeups 'x,y,z~Bone': the rest point goes with that bone into the shot's pose (C1j); without it, no
+        bone."""
+        shots = _frames.parse_closeups("bib side@0.1,1.08,0.03~Chest/0.3/55/5; collar@0,1.31,0/0.26/0")
+        self.assertEqual((shots[0]["target"], shots[0]["bone"]), ([0.1, 1.08, 0.03], "Chest"))
+        self.assertNotIn("bone", shots[1])
+        with self.assertRaises(ValueError):
+            _frames.parse_closeups("a@0,1~Chest/0.2/0")
+
     def test_compare_joints(self) -> None:
         godot = {"clips": {"Wave": {"times": [0.0, 0.5], "joints": [{"Head": [0, 1.6, 0]}, {"Head": [0, 1.6, 0.012]}]}}}
         blender = {"joints": {"Wave": [{"Head": [0, 1.6, 0]}, {"Head": [0, 1.6, 0]}]}}

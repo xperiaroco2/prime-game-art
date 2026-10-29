@@ -13,7 +13,7 @@ extends SceneTree
 ## frame of one cycle at fps as video/<label>/<i>.png. frames.json records the cameras, the times and every joint's
 ## world position at each time, with each bone's two axis points (Character.axis_points). Prints FRAMES saved <path>, or FRAMES error <why> and exits 1.
 ## Optional: "face" (sheets/face.png, its own fixed light) and "closeups" (sheets/closeups.png: `frames --closeups
-## 'label@x,y,z/size/yaw[/pitch];...'` at --closeup-clip's --closeup-time (default its first frame), orthographic,
+## 'label@x,y,z[~Bone]/size/yaw[/pitch];...'` (~Bone: the rest point carried with that bone into the pose) at --closeup-clip's --closeup-time (default its first frame), orthographic,
 ## two per row, the light turned with each shot's yaw); light_turn_deg comes from `frames --yaw`.
 
 const Offscreen = preload("res://lib/offscreen.gd")
@@ -138,6 +138,8 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 		var shots: Array[Image] = []
 		var cams: Array = []
 		for s: Dictionary in cu["shots"]:
+			if s.has("bone"):
+				Character.pose_at(_player, _skeleton, cu["clip"], float(cu["t"]))
 			cams.append(_point_frame(s))
 			_rig.rotation.y = deg_to_rad(float(s["light_turn_deg"]))
 			shots.append(await _shot(cu["clip"], float(cu["t"]), "%s   %s" % [spec["character"], s["label"]]))
@@ -258,6 +260,13 @@ func _point_frame(s: Dictionary) -> Dictionary:
 	var right: Vector3 = Vector3.UP.cross(back).normalized()
 	var up: Vector3 = back.cross(right).normalized()
 	var at: Vector3 = Vector3(float(s["target"][0]), float(s["target"][1]), float(s["target"][2]))
+	if s.has("bone"):  # a rest-pose point carried with the bone into the posed frame (the caller posed it)
+		var b: int = _skeleton.find_bone(String(s["bone"]))
+		if b < 0:
+			_fail("no bone %s for the close-up %s" % [s["bone"], s["label"]])
+		else:
+			var sk: Transform3D = _skeleton.global_transform
+			at = sk * _skeleton.get_bone_global_pose(b) * _skeleton.get_bone_global_rest(b).affine_inverse() 					* (sk.affine_inverse() * at)
 	_camera.size = float(s["size"])
 	_camera.look_at_from_position(at + back * 10.0, at, up)
 	return {"label": s["label"], "target": Character.vec(at), "back": Character.vec(back),

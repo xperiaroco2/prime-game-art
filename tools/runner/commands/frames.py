@@ -31,7 +31,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--face", default="", help="also a face close-up sheet (sheets/face.png, front and three-quarter) "
                         "at the first frame of this clip, e.g. Idle")
     parser.add_argument("--closeups", default="", help="also a close-up sheet (sheets/closeups.png, two per row): "
-                        "'label@x,y,z/size/yaw[/pitch];...', the target in Godot's frame (y up, the character facing +z), "
+                        "'label@x,y,z[~Bone]/size/yaw[/pitch];...', the target in Godot's frame (y up, the character facing +z; ~Bone: the rest point carried with that bone), "
                         "the orthographic view's height in metres, yaw and pitch in degrees")
     parser.add_argument("--closeup-clip", default="Idle", help="the clip whose frame the close-ups show")
     parser.add_argument("--closeup-time", type=float, default=0.0,

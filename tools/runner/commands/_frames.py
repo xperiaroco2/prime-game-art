@@ -124,9 +124,11 @@ CLOSE_CELL = (512, 640)  # the window's aspect (CELL's); two columns make a 2x2 
 
 
 def parse_closeups(text: str) -> list[dict[str, Any]]:
-    """'label@x,y,z/size/yaw[/pitch];...' -> the close-up shots: the target point in Godot's frame (metres, y up, the
-    character facing +z), the orthographic view's vertical size (m), the camera's yaw (0 the front, 90 the
-    character's left, 180 its back) and pitch (degrees, default 0); the studio light turns with each (light_turn_deg)."""
+    """'label@x,y,z[~Bone]/size/yaw[/pitch];...' -> the close-up shots: the target point in Godot's frame (metres, y up,
+    the character facing +z; with ~Bone a point of the rest pose carried with that bone into the shot's pose, so a
+    crouch's bib side stays in frame; C1j), the orthographic view's vertical size (m), the camera's yaw (0 the front,
+    90 the character's left, 180 its back) and pitch (degrees, default 0); the studio light turns with each
+    (light_turn_deg)."""
     shots = []
     for part in (p.strip() for p in text.split(";")):
         if not part:
@@ -135,13 +137,17 @@ def parse_closeups(text: str) -> list[dict[str, Any]]:
         fields = rest.split("/")
         if not name.strip() or len(fields) not in (3, 4):
             raise ValueError(f"not label@x,y,z/size/yaw[/pitch]: {part!r}")
-        target = [float(v) for v in fields[0].split(",")]
+        point, _, bone = fields[0].partition("~")
+        target = [float(v) for v in point.split(",")]
         size, yaw = float(fields[1]), float(fields[2])
         pitch = float(fields[3]) if len(fields) == 4 else 0.0
         if len(target) != 3 or size <= 0 or not -90 < pitch < 90:
             raise ValueError(f"a target x,y,z, a positive size and a pitch inside +-90: {part!r}")
-        shots.append({"label": name.strip(), "target": target, "size": size, "yaw_deg": yaw, "pitch_deg": pitch,
-                      "light_turn_deg": yaw - YAW_DEG})
+        shot = {"label": name.strip(), "target": target, "size": size, "yaw_deg": yaw, "pitch_deg": pitch,
+                "light_turn_deg": yaw - YAW_DEG}
+        if bone.strip():
+            shot["bone"] = bone.strip()
+        shots.append(shot)
     if not shots:
         raise ValueError("no close-up shot")
     return shots
