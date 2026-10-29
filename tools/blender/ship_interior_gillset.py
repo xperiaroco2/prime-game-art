@@ -45,10 +45,10 @@ BAR_UP = 0.06                                   # the bar's middle over its slit
 BAR_GLOW = (0.14, 0.03)                        # the bar's light strip (w x h)
 BAR_FRAME = (0.18, 0.06)                       # its frame's outside
 BAR_PROUD, BAR_BEVEL, BAR_SINK = 0.004, 0.003, 0.002   # the frame's face off the wall, its outer bevel; the strip's w
-BUTTON = (3.73, 1.15)                           # the round button's centre (s, t), the hall end (the picture's)
-BTN_DOME_R, BTN_DOME_UP = 0.048, 0.026
-BTN_RING = (0.048, 0.068)
-BTN_BEZEL = 0.088                               # the octagonal bezel's outer corner radius
+BUTTON = (3.72, 1.15)                           # the round button's centre (s, t), the hall end (the picture's)
+BTN_DOME_R, BTN_DOME_UP = 0.05, 0.028           # step 3: larger (bezel 0.088, ring 0.048-0.068 before)
+BTN_RING = (0.05, 0.078)                        # the glowing ring, 2.8 cm thick
+BTN_BEZEL = 0.11                                # the octagonal bezel's outer corner radius
 BTN_W = 0.006
 # the groove's centre line: a cubic Bezier from its top end (left of bar 1, under the fold) round the mouth side of
 # slit 1 to its tail under slits 1-2 (the picture's sweep); GROOVE_HW the half width (lips), GROOVE_G the glow's
