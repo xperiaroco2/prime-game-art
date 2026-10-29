@@ -29,7 +29,19 @@ feet_tolerance_m = 0.01      # the lowest vertex is within this of y = 0
 transform_tolerance = 0.0001 # location 0, rotation 0, scale 1 on every object
 capsule_height_m = 1.8       # the game's player capsule, for reference
 capsule_radius_m = 0.4
-variants = "one neutral body in v1"
+variants = "one neutral body in v1 (the alien: body types A and B since 2026-10-29, below)"
+
+# Body types (art #196, a trial; docs/decisions/2026-10-29-body-types.md, the engineer's yes of 2026-10-29): the alien
+# has two bodies, A (male, S4b's body, the clips' donor rig) and B (female), on one topology (the same vertices in the
+# same order, the same faces and weights) with their own rest skeletons: the same bone names, parents and rest
+# orientations (each bone's rest turn against A's at most rest_turn_max_deg), other bone positions. The clips are
+# shared, their Root and Hips keys scaled by the leg length. godot-check --body-type B holds a character to B's table.
+[body_types.A]
+height_min_m = 1.70          # body.height_min_m
+rest_turn_max_deg = 0.0
+[body_types.B]
+height_min_m = 1.62          # B is 4.7 % shorter below the neck (6.5 cm): the axolotl on B stands about 1.69 m
+rest_turn_max_deg = 0.5
 
 [skeleton]
 root = "Root"                # on the ground between the feet, never weighted
