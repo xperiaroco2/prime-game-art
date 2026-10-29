@@ -216,7 +216,7 @@ class WorkshopRoomTest(unittest.TestCase):
         self.assertGreaterEqual(len(shop), 3)
         for l in shop:
             self.assertLess(math.hypot(l[0] - C[0], l[1] - C[1]), S.R_TIP)
-            self.assertGreater(l[6], l[5] * 1.5)   # green over red
+            self.assertGreater(l[6], l[5] * (1.2 if len(l) > 11 else 1.5))   # green over red (the lamp's: a pale work light)
             # step 2: green pools, no washes: above the deck, short ranges (only the bench lamp's aimed spot reaches the
             # robot), the bench lamp's aim at the robot's bays
             h = l[2] - S.FLOOR - LAYOUT["deck"]["lift_m"]
