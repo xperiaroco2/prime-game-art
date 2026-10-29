@@ -96,3 +96,74 @@ def shift(srgb: np.ndarray, gain: tuple[float, float, float]) -> np.ndarray:
     wgt = denim_weight(srgb)[..., None]
     lin = to_linear(srgb.astype(np.float64)) * (1.0 + wgt * (np.asarray(gain, dtype=np.float64) - 1.0))
     return to_srgb(np.clip(lin, 0.0, 1.0)).astype(srgb.dtype)
+
+
+def blur(a: np.ndarray, r: int) -> np.ndarray:
+    """A box blur of a 2D map, 2r + 1 texels wide each way, its edges padded with their own values."""
+    k = np.ones(2 * r + 1, dtype=np.float32) / (2 * r + 1)
+    a = np.apply_along_axis(lambda m: np.convolve(np.pad(m, r, mode="edge"), k, mode="valid"), 0, a)
+    return np.apply_along_axis(lambda m: np.convolve(np.pad(m, r, mode="edge"), k, mode="valid"), 1, a)
+
+
+def free_rect(used: np.ndarray, pw: int, ph: int, margin: int):
+    """The first pw x ph texel window (row, column of its low corner) with no used texel within margin and at least
+    margin texels from the map's edges (so a repeat-wrapped mip does not mix in the opposite edge), or None."""
+    h, w = used.shape
+    m = used.copy()
+    for _ in range(margin):
+        g = m.copy()
+        g[1:] |= m[:-1]
+        g[:-1] |= m[1:]
+        g[:, 1:] |= m[:, :-1]
+        g[:, :-1] |= m[:, 1:]
+        m = g
+    if margin > 0:
+        m[:margin] = m[-margin:] = True
+        m[:, :margin] = m[:, -margin:] = True
+    if ph > h or pw > w:
+        return None
+    sat = np.zeros((h + 1, w + 1), dtype=np.int64)
+    sat[1:, 1:] = np.cumsum(np.cumsum(m, axis=0), axis=1)
+    win = sat[ph:, pw:] - sat[:-ph, pw:] - sat[ph:, :-pw] + sat[:-ph, :-pw]
+    ok = np.argwhere(win == 0)
+    if not len(ok):
+        return None
+    r, c = ok[0]
+    return int(r), int(c)
+
+
+def stripe_image(navy, white, period, duty, per_m, islands: dict, v0: dict, size: tuple[int, int]) -> np.ndarray:
+    """The shell top's albedo (linear, h x w x 3): white, and per island (name: u0, width) rows of navy and white
+    from its edge (v0[name]), per_m UV units per metre in v (clothes_shell.stripe_cover per row); the torso's columns
+    reach 0.8 % before it and 2 % past it, an arm's 0.5 and 0.8 %, so the island's margin keeps its stripes."""
+    import clothes_shell as H
+    w, h = size
+    lin_n, lin_w = to_linear(np.asarray(navy)), to_linear(np.asarray(white))
+    out = np.empty((h, w, 3), dtype=np.float32)
+    out[:] = lin_w
+    cols = np.arange(w) / w
+    for name, (u0, wd) in islands.items():
+        lo = u0 - 0.008 if name == H.TORSO else u0 - 0.005
+        hi = u0 + wd + (0.02 if name == H.TORSO else 0.008)
+        sel = (cols >= lo) & (cols < hi)
+        for r in range(h):
+            d0, d1 = (r / h - v0[name]) / per_m, ((r + 1) / h - v0[name]) / per_m
+            c = H.stripe_cover(d0, d1, period, duty) if d1 > 0 else 0.0
+            out[r, sel] = c * lin_n + (1 - c) * lin_w
+    return out
+
+
+def vertex_normals(pts: np.ndarray, faces: list[list[int]]) -> np.ndarray:
+    """Per vertex its area-weighted normal from faces (fan-triangulated), unit length (0-length: left 0)."""
+    acc = np.zeros_like(pts)
+    for f in faces:
+        for k in range(1, len(f) - 1):
+            a, b, c = f[0], f[k], f[k + 1]
+            n = np.cross(pts[b] - pts[a], pts[c] - pts[a])
+            acc[a] += n
+            acc[b] += n
+            acc[c] += n
+    ln = np.linalg.norm(acc, axis=1)
+    ln[ln == 0] = 1.0
+    return acc / ln[:, None]
+

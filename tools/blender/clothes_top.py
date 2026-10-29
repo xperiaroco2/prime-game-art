@@ -127,27 +127,14 @@ def stripe_colours(gar) -> tuple[np.ndarray, np.ndarray]:
             v = sum(uvl[li].uv.y for li in p.loop_indices) / p.loop_total
             cols.append(px[min(h - 1, int(v * h)), min(w - 1, int(u * w))])
     cols = np.array(cols)
+    if len(cols) < 2:
+        raise ValueError(f"no sleeve faces of {gar.name} to sample the stripes' colours from (z > 1.2, |x| 0.25-0.55)")
     lum = cols @ np.array([0.2126, 0.7152, 0.0722])
     cut = np.median(lum)
-    return np.median(cols[lum < cut], axis=0), np.median(cols[lum >= cut], axis=0)
-
-
-def stripe_image(navy, white, period, duty, per_m) -> np.ndarray:
-    """The top's albedo (linear, h x w x 3): per island, rows of navy and white from its edge (V0), per_m UV units
-    per metre in v."""
-    lin_n, lin_w = T.to_linear(np.asarray(navy)), T.to_linear(np.asarray(white))
-    out = np.empty((IMG_H, IMG_W, 3), dtype=np.float32)
-    out[:] = lin_w
-    cols = np.arange(IMG_W) / IMG_W
-    for name, (u0, wd) in ISLANDS.items():
-        lo = u0 - 0.008 if name == H.TORSO else u0 - 0.005
-        hi = u0 + wd + (0.02 if name == H.TORSO else 0.008)
-        sel = (cols >= lo) & (cols < hi)
-        for r in range(IMG_H):
-            d0, d1 = (r / IMG_H - V0[name]) / per_m, ((r + 1) / IMG_H - V0[name]) / per_m
-            c = H.stripe_cover(d0, d1, period, duty) if d1 > 0 else 0.0
-            out[r, sel] = c * lin_n + (1 - c) * lin_w
-    return out
+    dark, light = cols[lum < cut], cols[lum >= cut]
+    if not len(dark):  # one colour only: the stripes take it twice
+        dark = light
+    return np.median(dark, axis=0), np.median(light, axis=0)
 
 
 def shell(char, arm, keep, args) -> tuple[object, dict]:
@@ -410,7 +397,7 @@ def material(top, gar, args, rep) -> dict:
     (fine knit ribs and the AO's folds), roughness 0.9."""
     navy, white = args.stripe_cols
     period, duty = floats(args.stripe)
-    lin = stripe_image(navy, white, period, duty, args.shell_per_m)
+    lin = T.stripe_image(navy, white, period, duty, args.shell_per_m, ISLANDS, V0, (IMG_W, IMG_H))
     mat = bpy.data.materials.new("top_cotton")
     mat.use_nodes = True
     nt = mat.node_tree
@@ -462,7 +449,7 @@ def material(top, gar, args, rep) -> dict:
     alb.pack()
     # the normal map: fine ribs across u (about 2 mm) and the AO as a soft height (the folds)
     xs = np.arange(IMG_W, dtype=np.float32)
-    hgt = 0.15 * np.sin(2 * np.pi * xs / 3.0)[None, :] + 6.0 * blur(ao, 6)
+    hgt = 0.15 * np.sin(2 * np.pi * xs / 3.0)[None, :] + 6.0 * T.blur(ao, 6)
     gy, gx = np.gradient(hgt)
     n = np.stack([-gx, -gy, np.ones_like(hgt)], axis=2)
     n /= np.linalg.norm(n, axis=2, keepdims=True)
@@ -470,12 +457,6 @@ def material(top, gar, args, rep) -> dict:
     nrm.update()
     nrm.pack()
     return out
-
-
-def blur(a: np.ndarray, r: int) -> np.ndarray:
-    k = np.ones(2 * r + 1, dtype=np.float32) / (2 * r + 1)
-    a = np.apply_along_axis(lambda m: np.convolve(np.pad(m, r, mode="edge"), k, mode="valid"), 0, a)
-    return np.apply_along_axis(lambda m: np.convolve(np.pad(m, r, mode="edge"), k, mode="valid"), 1, a)
 
 
 def bake_ao(top, node, img, args) -> np.ndarray:
@@ -540,27 +521,6 @@ def pixels(img) -> np.ndarray:
     return np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
 
 
-def free_rect(used: np.ndarray, pw: int, ph: int, margin: int):
-    """The first pw x ph texel window (row, column of its low corner) with no used texel within margin, or None."""
-    h, w = used.shape
-    m = used.copy()
-    for _ in range(margin):
-        g = m.copy()
-        g[1:] |= m[:-1]
-        g[:-1] |= m[1:]
-        g[:, 1:] |= m[:, :-1]
-        g[:, :-1] |= m[:, 1:]
-        m = g
-    sat = np.zeros((h + 1, w + 1), dtype=np.int64)
-    sat[1:, 1:] = np.cumsum(np.cumsum(m, axis=0), axis=1)
-    win = sat[ph:, pw:] - sat[:-ph, pw:] - sat[ph:, :-pw] + sat[:-ph, :-pw]
-    ok = np.argwhere(win == 0)
-    if not len(ok):
-        return None
-    r, c = ok[0]
-    return int(r), int(c)
-
-
 def strap_patch(gar, args, ufr) -> tuple[tuple[float, float, float, float], dict]:
     """A free patch of the garment's texture as the straps' own: a copy of its plain denim (args.strap_uv: the
     diffuse, normal and roughness texels) with two dashed stitch lines along v in the sketch's orange, args.stitch's
@@ -579,7 +539,7 @@ def strap_patch(gar, args, ufr) -> tuple[tuple[float, float, float, float], dict
     used = T.island_mask(tri, w, h, grow=1)
     x0, x1, y0, y1 = int(u0 * w), int(np.ceil(u1 * w)), int(v0 * h), int(np.ceil(v1 * h))
     pw, ph = x1 - x0, y1 - y0
-    at = free_rect(used, pw, ph, 6)
+    at = T.free_rect(used, pw, ph, 6)
     if at is None:
         return (u0, u1, v0, v1), {"patch": "none free: the plain rectangle"}
     ry, rx = at
@@ -695,6 +655,9 @@ def clear_strap_fronts(bm, gar, plans, rect, args) -> dict:
                 t = (Vector(pl["ct"][i + 1]) - Vector(pl["ct"][i - 1])).normalized()
                 fronts.append((Vector(pl["ct"][i]), t, Vector(pl["sides"][i]), Vector(pl["nt"][i]), a))
     gone, recoloured = [], 0
+    if not fronts:
+        say("strap fronts: no station within", args.strap_front, "m of a strap's front end; nothing cleared")
+        return {"faces_cleared_under_the_fronts": 0, "hardware_faces_to_denim": 0}
     for f in bm.faces:
         c = mw @ f.calc_center_median()
         if c.y >= 0 or c.z < 1.05:

@@ -39,6 +39,7 @@ from mathutils.interpolate import poly_3d_calc
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
+import clothes_texture as T  # noqa: E402
 
 PIECES = ("garment", "shoes")
 OPENING_PLAIN = 0.05  # m: a cloth point this near an opening keeps the plain push (push_out)
@@ -146,21 +147,6 @@ def body_weights(body, arm) -> list[dict[str, float]]:
             for v in body.data.vertices]
 
 
-def vertex_normals(pts: np.ndarray, faces: list[list[int]]) -> np.ndarray:
-    """Per vertex its area-weighted normal from faces (fan-triangulated), unit length."""
-    acc = np.zeros_like(pts)
-    for f in faces:
-        for k in range(1, len(f) - 1):
-            a, b, c = f[0], f[k], f[k + 1]
-            n = np.cross(pts[b] - pts[a], pts[c] - pts[a])
-            acc[a] += n
-            acc[b] += n
-            acc[c] += n
-    ln = np.linalg.norm(acc, axis=1)
-    ln[ln == 0] = 1.0
-    return acc / ln[:, None]
-
-
 def nearest_rows(pts: np.ndarray, tree: BVHTree, polys, bco: np.ndarray, rows: list[dict],
                  nrm: np.ndarray | None = None, reach: float = 0.10) -> tuple[list[dict], int]:
     """Per point the body's weights at its nearest body point, interpolated over that face. With nrm (the cloth's
@@ -225,7 +211,7 @@ def push_out(pts: np.ndarray, tree: BVHTree, floor, faces=None) -> tuple[np.ndar
     pts = pts.copy()
     deep = np.zeros(len(pts), dtype=bool)
     if faces is not None and (s < 0).any():
-        nrm = vertex_normals(pts, faces)
+        nrm = T.vertex_normals(pts, faces)
         if float(np.mean(np.sum(nrm * n, axis=1))) < 0:  # the cloth's faces wound inward
             nrm = -nrm
         edge = np.array(sorted(F.boundary_verts(faces)), dtype=int)
@@ -442,7 +428,7 @@ def main() -> int:
     for name, o in cloth.items():
         pts = fitted[name]
         faces = [list(p.vertices) for p in o.data.polygons]
-        nrm = vertex_normals(pts, faces)
+        nrm = T.vertex_normals(pts, faces)
         _s_n, n_n = signed(pts, tree)
         if float(np.mean(np.sum(nrm * n_n, axis=1))) < 0:  # the cloth's faces wound inward
             nrm = -nrm

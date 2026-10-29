@@ -46,6 +46,20 @@ if IN_BLENDER:
         gain = (2.0, 2.0, 2.0)
         r["denim_lin_ratio"] = (T.to_linear(T.shift(denim, gain).astype(np.float64)) / T.to_linear(denim.astype(np.float64)))[0].round(4).tolist()
         r["others_same"] = [bool(np.allclose(T.shift(c, gain), c, atol=1e-6)) for c in (stripe, white, orange)]
+        # the moved helpers (C1h): free_rect, blur, stripe_image, vertex_normals
+        used = np.zeros((20, 30), bool)
+        used[:, :10] = True
+        r["free_rect"] = T.free_rect(used, 5, 4, 2)  # 2 past the used columns and 2 off the edges
+        r["free_rect_none"] = T.free_rect(np.zeros((6, 6), bool), 5, 5, 1) is None
+        a = np.zeros((9, 9), np.float32)
+        a[4, 4] = 9.0
+        b = T.blur(a, 1)
+        r["blur"] = [round(float(b[4, 4]), 4), round(float(b.sum()), 4), round(float(b[0, 0]), 4)]
+        img = T.stripe_image((0.0, 0.0, 0.5), (1.0, 1.0, 1.0), 0.1, 0.5, 1.0, {"torso": (0.25, 0.5)},
+                             {"torso": 0.0}, (40, 20))
+        r["stripes"] = [round(float(img[0, 20, 0]), 3), round(float(img[1, 20, 0]), 3), round(float(img[0, 2, 0]), 3)]
+        pts = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [5, 5, 5]], np.float64)
+        r["normals"] = T.vertex_normals(pts, [[0, 1, 2, 3]]).round(4).tolist()
         (out / "texture.json").write_text(json.dumps(r), encoding="utf-8")
 
     blender_side(Path(sys.argv[sys.argv.index("--") + 1]))
@@ -76,6 +90,14 @@ else:
             self.assertGreater(self.r["min_filled"], 0.5)  # no black texel left
             self.assertEqual(self.r["near_tri"], [0.2, 0.3, 0.6])
             self.assertEqual(self.r["near_square"], [0.9, 0.1, 0.1])
+
+        def test_moved_helpers(self) -> None:
+            self.assertEqual(self.r["free_rect"], [2, 12])
+            self.assertTrue(self.r["free_rect_none"])
+            self.assertEqual(self.r["blur"], [1.0, 9.0, 0.0])  # the peak spread over 3 x 3, the sum kept
+            self.assertEqual(self.r["stripes"], [1.0, 0.0, 1.0])  # white, then navy from the island's edge; white outside
+            self.assertEqual(self.r["normals"][:4], [[0.0, 0.0, 1.0]] * 4)
+            self.assertEqual(self.r["normals"][4], [0.0, 0.0, 0.0])
 
         def test_denim_shift(self) -> None:
             self.assertEqual(self.r["weights"], [1.0, 0.0, 0.0, 0.0])

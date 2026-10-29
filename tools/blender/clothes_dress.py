@@ -105,9 +105,13 @@ def rays(n: Vector) -> list[Vector]:
 
 def maps(cloth, grow: bool, gain: tuple[float, float, float]) -> dict:
     """Each cloth piece's image maps filled from its UV islands (grow) and the garment's albedo shifted by gain;
-    re-packed so the .blend and the GLB carry them. Returns per image the share of texels filled."""
+    re-packed so the .blend and the GLB carry them. Returns per image the share of texels filled. The top is left
+    out: clothes_top fills its maps itself and then wraps its back seam's margin columns, which a fill here would
+    undo."""
     rep = {}
     for o in cloth:
+        if o.name == "top":
+            continue
         me = o.data
         uv = me.uv_layers.active.data
         tri = np.array([[uv[t.loops[i]].uv[:] for i in range(3)] for t in me.loop_triangles] if me.loop_triangles
@@ -123,7 +127,9 @@ def maps(cloth, grow: bool, gain: tuple[float, float, float]) -> dict:
             px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
             entry = {}
             if grow:
-                valid = masks.setdefault((w, h), T.island_mask(tri, w, h))
+                if (w, h) not in masks:
+                    masks[(w, h)] = T.island_mask(tri, w, h)
+                valid = masks[(w, h)]
                 px[..., :3] = T.fill(px[..., :3], valid)
                 entry["filled_share"] = round(float((~valid).mean()), 4)
             if o.name == "garment" and "diffuse" in img.name and gain != (1.0, 1.0, 1.0):
@@ -193,7 +199,8 @@ def main() -> int:
     ap.add_argument("--shell-ao", type=float, default=0.45, help="how much the AO bake darkens the top (0: no bake)")
     ap.add_argument("--shell-ao-dist", type=float, default=0.06)
     ap.add_argument("--shell-ao-samples", type=int, default=24)
-    ap.add_argument("--stripe", default="0.038,0.5", help="the stripes' period (m) and navy share")
+    ap.add_argument("--stripe", default="0.032,0.5",
+                    help="the stripes' period (m) and navy share (the chameleon's; the axolotl's 0.026,0.5)")
     ap.add_argument("--cuff-x", type=float, default=0.625, help="the cuffs' plane |x| (T-pose, m)")
     ap.add_argument("--seam-x", type=float, default=0.165, help="the sleeves' seam plane |x| (m)")
     ap.add_argument("--arm-z", type=float, default=1.18, help="the sleeves start above this height (m)")
@@ -308,7 +315,11 @@ def main() -> int:
     garment = next((o for o in cloth if o.name == "garment"), None)
     if args.shell and garment is not None:  # the hybrid route: our own top, bib, back and straps (clothes_top)
         import clothes_top as TOP
-        args.stripe_cols = TOP.stripe_colours(garment)
+        try:
+            args.stripe_cols = TOP.stripe_colours(garment)
+        except ValueError as e:
+            say("REFUSED", e)
+            return 3
         rep["garment_cut"] = TOP.cut_garment(garment, args)
         top, rep["shell"] = TOP.shell(char, arm, garment, args)
         rep["straps"] = TOP.straps(garment, char, [garment, top], args)
