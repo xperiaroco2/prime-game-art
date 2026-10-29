@@ -83,9 +83,11 @@ def bar_gap(p, bar) -> float:
 
 class WorkshopDrawingTest(unittest.TestCase):
     def test_the_items_stand_where_the_drawing_puts_them(self) -> None:
-        want = {"ws_robot": (-11.043, 0.302, 31.2), "ws_lamp": (-10.458, -0.612, -0.1)}
-        for pid, (x, y, rot) in want.items():
+        # the drawing's table (drawn as tip_e; tip_w its mirror): theta east, the tip_w point and the yaw
+        want = {"ws_robot": (-67.5, -11.043, 0.302, 31.2), "ws_lamp": (-100.0, -10.458, -0.612, -0.1)}
+        for pid, (theta, x, y, rot) in want.items():
             (q,) = [q for q in INTERIOR["place"] if q[0] == pid]
+            self.assertAlmostEqual(a_w(*q[1][:2]), -theta, delta=0.01, msg=pid)   # the mirror negates the angle
             self.assertAlmostEqual(q[1][0], x, delta=0.0011, msg=pid)
             self.assertAlmostEqual(q[1][1], y, delta=0.0011, msg=pid)
             self.assertAlmostEqual((q[2] - 90.0 + 180.0) % 360.0 - 180.0, rot, delta=0.1, msg=pid)   # its +90 frame
@@ -194,10 +196,16 @@ class WorkshopDrawingTest(unittest.TestCase):
 
 class WorkshopRoomTest(unittest.TestCase):
     def test_everything_stays_inside_tip_w(self) -> None:
+        """Every vertex inside every facet's plane (the apothem R_TIP cos(TIP_STEP / 2), about 2.012, not the
+        circumradius) and the door's chord."""
+        edges = [((a0 + a1) / 2, S.R_TIP * math.cos(math.radians((a1 - a0) / 2))) for a0, a1 in S.tip_edges()]
+        self.assertAlmostEqual(edges[0][1], 2.012, delta=0.001)
         for pid in SHOP:
-            for pts in footprint(pid, 3):
-                worst = max(math.hypot(x - C[0], y - C[1]) for x, y in pts)
-                self.assertLess(worst, S.R_TIP + 0.001, pid)
+            for pts in footprint(pid):
+                for x, y in pts:
+                    r, t = math.hypot(x - C[0], y - C[1]), a_w(x, y)
+                    worst = max(r * math.cos(math.radians(t - mid)) - apo for mid, apo in edges)
+                    self.assertLess(worst, 0.001, (pid, round(x, 3), round(y, 3)))
         self.assertFalse([q for q in INTERIOR["place"] if q[0].startswith("ws_") and q[1][0] > 0])
 
     def test_the_floor_lights_stay_uncovered(self) -> None:
@@ -220,7 +228,7 @@ class WorkshopRoomTest(unittest.TestCase):
         stand = ship_layout.spot_stand(LAYOUT, SPOTS["renewer_w"])
         for pid in FLOOR_ITEMS + ("ws_drawer_eyes", "ws_drawer_limbs", "ws_drawer_parts_a", "ws_drawer_parts_b", "ws_cradle",
                     "ws_robot_body", "ws_robot"):
-            for pts in footprint(pid, 3):
+            for pts in footprint(pid):
                 self.assertGreater(min(seg_dist(q, door, stand) for q in pts), rad, pid)
 
     def test_clear_of_the_charger_alcove(self) -> None:

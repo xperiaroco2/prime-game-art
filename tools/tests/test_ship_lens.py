@@ -15,7 +15,6 @@ sys.path.insert(0, str(ROOT / "tools" / "blender"))
 sys.path.insert(0, str(ROOT / "tools"))
 import ship_interior as S  # noqa: E402
 import ship_interior_lens as LN  # noqa: E402
-import ship_interior_place as SP  # noqa: E402
 from runner import ship_layout  # noqa: E402
 
 with (ROOT / "layouts" / "ship" / "interior.toml").open("rb") as _f:
@@ -180,12 +179,8 @@ class LensLoungeTest(unittest.TestCase):
         self.assertTrue(PIECES["lens_alcove"]["collide"])
         self.assertFalse(PIECES["lens_conduits_e"]["collide"] or PIECES["lens_conduits_w"]["collide"])
 
-    def test_no_trunk_behind_the_sofa(self) -> None:
-        c = TIP_E["centre"]
-        for pid, at, _ in INTERIOR["place"]:
-            if pid.startswith("tip_trunk") and at[0] > 0:
-                th = math.degrees(math.atan2(at[1] - c[1], at[0] - c[0])) - S.COR_ANG
-                self.assertFalse(SP.SOFA_LO - 0.1 <= th <= SP.SOFA_HI + 0.1, (pid, th))
+    def test_no_trunk_in_room_c(self) -> None:
+        self.assertFalse([q for q in INTERIOR["place"] if q[0].startswith("tip_trunk") and q[1][0] > 0])
 
 
 if __name__ == "__main__":
