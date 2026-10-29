@@ -224,6 +224,39 @@ def luminance(p) -> float:
 
 
 # ------------------------------------------------------------------------------------------------------ landmarks
+def ring_line(rows, rr: dict, cx: int, y0: int, y1: int, reach: int = 2, sag: int = 3, t: float = 6.0) -> int:
+    """The drawn neck ring line's row between rows y0 and y1 (inclusive): a thin dark line across most of the neck.
+
+    Per column of the run at cx (its middle 80 %) a pixel's thin-line contrast is how much darker it is than both
+    pixels `reach` rows above and below (a broad shadow, like the chin's, scores little; a 1 to 3 px line a lot). The
+    line sags a little (the ring's front arc seen from above), so a row's score takes each column's best contrast
+    within `sag` rows: the mean contrast times the share of columns over `t`. At the best row, the ring is the median
+    of the columns' own darkest rows near it."""
+    def lum(y, x):
+        return luminance(rows[y][x])
+
+    def s(y, x):
+        return min(lum(y - reach, x), lum(y + reach, x)) - lum(y, x)
+
+    def cols(y):
+        r = run_at(rr[y], cx)
+        q = (r[1] - r[0] + 1) // 10
+        return range(r[0] + q, r[1] - q + 1)
+
+    def score(y):
+        best = [max(s(y + d, x) for d in range(-sag, sag + 1)) for x in cols(y)]
+        if not best:
+            return 0.0
+        return sum(max(0.0, b) for b in best) / len(best) * sum(1 for b in best if b > t) / len(best)
+    yb = max(range(y0, y1 + 1), key=score)
+    at = []
+    for x in cols(yb):
+        y = max(range(yb - sag, yb + sag + 1), key=lambda y: s(y, x))
+        if s(y, x) > t:
+            at.append(y)
+    return _median(at) if at else yb
+
+
 def landmarks(m, rows, sole: int, panel: tuple[int, int]) -> dict:
     """The front view's landmark rows and the centre column (see the module doc)."""
     x0, x1 = panel
@@ -250,7 +283,7 @@ def landmarks(m, rows, sole: int, panel: tuple[int, int]) -> dict:
         t = run_at(rr[y], cx)
         return t and any(r[1] < t[0] for r in rr[y]) and any(r[0] > t[1] for r in rr[y])
     armpit = next(y for y in range(head_end, crotch) if parted(y) and parted(y + 1) and parted(y + 2))
-    # the neck: the narrowest trunk rows between the head and the armpits; the ring = the darkest row in that band
+    # the neck: the narrowest trunk rows between the head and the armpits (the band; its top row is the chin's end)
     band = range(top + int(0.10 * H), armpit)
     ymin = min(band, key=width)
     nmin = width(ymin)
@@ -259,13 +292,11 @@ def landmarks(m, rows, sole: int, panel: tuple[int, int]) -> dict:
         n0 -= 1
     while n1 + 1 in band and width(n1 + 1) <= 1.25 * nmin:
         n1 += 1
-
-    def dark(y):
-        r = run_at(rr[y], cx)
-        q = (r[1] - r[0]) // 5
-        vals = [luminance(rows[y][x]) for x in range(r[0] + q, r[1] - q + 1)]
-        return sum(vals) / len(vals)
-    ring = min(range(n0, n1 + 1), key=lambda y: dark(y) - (dark(y - 3) + dark(y + 3)) / 2)
+    # the ring: the drawn line from the chin down to the shoulder line (a first estimate from the narrowest row), not
+    # only inside the band: a neck may widen before the line (B), and the chin's shadow is broad, the line thin
+    wsh = max(width(y) for y in range(ymin, ymin + int(0.6 * (armpit - ymin)) + 1))
+    s_end = next(y for y in range(ymin, armpit) if width(y) >= (nmin + wsh) / 2)
+    ring = ring_line(rows, rr, cx, n0, s_end)
     shoulder = max(range(ring, ring + int(0.6 * (armpit - ring)) + 1), key=width)
     # the shoulder line: the first row under the ring past half the way from the neck to the shoulders' width
     half = (nmin + width(shoulder)) / 2
