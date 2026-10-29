@@ -1728,7 +1728,8 @@ east wall only for now (`GILL_SIDES` in ship_interior_throat.py; the west mirror
   - `groove` / `groove_glow`: a cubic Bezier round the set's mouth side from under the fold (s 1.93, h 2.06) to under
     slits 1-2 (s 2.50, h 0.68), two bevelled lips with a thin glow strip between, tapering at both ends; 5 cm clear of
     every hole (a grid search, `clearances()`);
-  - the button at s 3.73, h 1.15: an octagonal bezel of the band's metal, the cyan ring (`btn_ring`), the dark dome.
+  - the button at s 3.72, h 1.15 (step 3: larger): an octagonal bezel of the band's metal (corner r 0.11), the cyan
+    ring (`btn_ring`, r 0.05..0.078), the dark dome (r 0.05); 5.3 cm clear of slit 5's hole, 5 cm from the jamb.
   - Materials `int_cyan__gset_*` (their GLB colour the shut red) and `int_cyan__cover_btn`, rows in `[light.mats]`
     with `l = 0` (they light nothing through ship.gd's strip lights).
 - **Controller** `godot/ship/gill_set.gd` (the game copies it): `setup(piece)`, `step(delta)`, `press()` (flips the slit
@@ -1754,3 +1755,15 @@ east wall only for now (`GILL_SIDES` in ship_interior_throat.py; the west mirror
   quads), not one box over the set. The throat's four floor lights are `th_light` pieces in `int_amber_throat`
   (`[light.mats]` l 0: their lens glows, they light nothing), so no amber pool reaches the set's plinth; `int_amber`
   is untouched. Handoff `<raw>/ship/v5/notes/gills-set-2.md`.
+- **Step 3, a short look pass** (the manager's notes on step 2: the open niche dull teal, the cyan bars pale, the wall
+  flat and dark, the all-open cloud a curtain, the button small). The grid (`GILL_GRID`, poses per variant, all open
+  too) settled LOOK's new knobs: `cyan` (0.0, 0.7, 1.0) for every cyan glow, and once open the niche's energies x
+  `cyan_scoop` 3, `cyan_glow` 5, `cyan_edge` 2 (red keeps 0.03 / 0.15 / 1.0), the bars x `cyan_bar` 0.85, the groove 0.7,
+  the button ring `btn` 1.0. AgX greys a bright cyan toward white far sooner than red (its luminance is about twice
+  red's), so a deeper cyan at middle energies stays saturated where brighter ones ("halo") went white; a negative red
+  (past the gamut) did nothing. The bars, groove and ring are matte (no specular: the reflections greyed them). An open
+  niche spills a soft cyan haze onto the wall on its mouth side (an additive sprite, `spill` 0.3, 1.6 x its width,
+  7 cm toward the mouth; its omni x `cyan_light` 1.6 and moved there too). `warm` 2.5: a shadowless warm spot
+  (1.0, 0.64, 0.38) 2 m out at slot 3's height, a 38 deg soft cone at the band, warms the wall without pools on the
+  plinth. The all-open cloud (`cloud` 0.3) leaves each slit toward the mouth and sinks (`drift` 1.6), a light haze
+  with the slits readable (the grid holds the cloud about 2.5 s; at 0.6 the MP4's 6 s build veiled the slits again). Handoff `<raw>/ship/v5/notes/gills-set-3.md`.
