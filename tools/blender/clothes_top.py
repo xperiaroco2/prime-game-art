@@ -126,12 +126,110 @@ def cut_garment(gar, args) -> dict:
         n_band = len(band)
         bmesh.ops.delete(bm, geom=band, context="FACES")
         bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    n_peel = peel_edges(bm, gar, args, z_w - (band_h - lap if band_h > 0 else 0.0) - 0.01, bib_hw, bib_top, back_y,
+                        z_apex, hw_w, hw_a)
     n1 = len(bm.faces)
     bm.to_mesh(me)
     bm.free()
     me.update()
-    rep = {"faces_before": n0, "faces_after": n1, "band_faces_removed": n_band, "waist": z_w, "bib": [bib_hw, bib_top], "back": floats(args.back)}
+    rep = {"faces_before": n0, "faces_after": n1, "band_faces_removed": n_band, "edge_peeled": n_peel, "waist": z_w, "bib": [bib_hw, bib_top], "back": floats(args.back)}
     say("garment cut", rep)
+    return rep
+
+
+def peel_edges(bm, gar, args, z_lo: float, bib_hw: float, bib_top: float, back_y: float, z_apex: float,
+               hw_w: float, hw_a: float) -> dict:
+    """The panels' ragged side edges (C1j): along the bib's and the back panel's side edges (within args.edge_zone of
+    the cut, from the waistband's foot up to args.band_flaps above the waist: r27 peeled up to the bib's top, and
+    beside the buckle that opened the bib over the chest), args.edge_peel passes each peel the
+    faces on an open edge that are turned toward the body, slivers, crumbs or folded back
+    (clothes_shell.edge_defect: the wedges, flaps and slivers Meshy's layered side opening leaves); then the loose
+    bits there (args.edge_island faces or fewer, all in the zone) go. Faces inside the cloth stay (no hole opens),
+    except those mostly of the shirt Meshy baked into the denim (clothes_shell.shirt_texel: the white wedges), which
+    show the top behind them."""
+    if args.edge_peel <= 0:
+        return {}
+    mw = gar.matrix_world
+    nm3 = mw.to_3x3().inverted().transposed()
+
+    def zone(c) -> bool:
+        hw = H.back_halfwidth(c.z, args.waist, z_apex, hw_w, hw_a)
+        z_hi = min(bib_top if c.y < 0 else z_apex, args.waist + args.band_flaps) + 0.005
+        return H.near_panel_edge(c.x, c.y, c.z, z_lo, z_hi, bib_hw, back_y, hw, args.edge_zone)
+
+    rep = {"passes": []}
+    # the shirt Meshy baked into the denim along the edges (the white wedges): faces mostly of its texels
+    diff = garment_maps(gar).get("diffuse")
+    uvl = bm.loops.layers.uv.active
+    if diff is not None and uvl is not None:
+        px = pixels(diff)
+        h, w = px.shape[:2]
+        white = []
+        for f in bm.faces:
+            if not zone(mw @ f.calc_center_median()):
+                continue
+            uvs = [l[uvl].uv for l in f.loops]
+            cu = sum((u for u in uvs), Vector((0.0, 0.0))) / len(uvs)
+            hits = 0
+            for u in [cu] + [cu.lerp(u, 0.7) for u in uvs]:
+                r, g, b = px[min(h - 1, max(0, int(u.y * h))), min(w - 1, max(0, int(u.x * w))), :3]
+                hits += H.shirt_texel(float(r), float(g), float(b))
+            if hits >= len(uvs):
+                white.append(f)
+        rep["shirt_faces"] = len(white)
+        if white:
+            bmesh.ops.delete(bm, geom=white, context="FACES")
+    for _ in range(args.edge_peel):
+        bm.normal_update()
+        gone = []
+        for f in bm.faces:
+            c = mw @ f.calc_center_median()
+            if not zone(c):
+                continue
+            open_edge = any(len(e.link_faces) != 2 for e in f.edges)
+            if not open_edge:
+                continue
+            n = (nm3 @ f.normal).normalized()
+            ox, oy = c.x, c.y - args.band_axis_y
+            ln = math.hypot(ox, oy)
+            out = (n.x * ox + n.y * oy) / ln if ln > 1e-9 else 0.0
+            q = [mw @ v.co for v in f.verts]
+            edges = [(q[i] - q[(i + 1) % len(q)]).length for i in range(len(q))]
+            area = sum(((q[i] - q[0]).cross(q[i + 1] - q[0])).length / 2 for i in range(1, len(q) - 1))
+            nb = [g for e in f.edges for g in e.link_faces if g is not f]
+            fold = sum(g.normal.dot(f.normal) for g in nb) / len(nb) if nb else -1.0
+            if H.edge_defect(True, out, H.min_altitude(edges, area), area, fold, inward=args.edge_inward):
+                gone.append(f)
+        rep["passes"].append(len(gone))
+        if not gone:
+            break
+        bmesh.ops.delete(bm, geom=gone, context="FACES")
+    # the loose bits along the edges
+    seen, bits = set(), []
+    for f in bm.faces:
+        if f in seen or not zone(mw @ f.calc_center_median()):
+            continue
+        comp, stack, small = [], [f], True
+        seen_local = {f}
+        while stack and small:
+            g = stack.pop()
+            comp.append(g)
+            if len(comp) > args.edge_island or not zone(mw @ g.calc_center_median()):
+                small = False
+                break
+            for e in g.edges:
+                for h in e.link_faces:
+                    if h not in seen_local:
+                        seen_local.add(h)
+                        stack.append(h)
+        seen.update(comp)
+        if small:
+            bits.extend(comp)
+    if bits:
+        bmesh.ops.delete(bm, geom=list(set(bits)), context="FACES")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    rep["islands_faces"] = len(set(bits))
+    rep["total"] = sum(rep["passes"]) + rep["islands_faces"] + rep.get("shirt_faces", 0)
     return rep
 
 

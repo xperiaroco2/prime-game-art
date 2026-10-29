@@ -200,11 +200,17 @@ def main() -> int:
     ap.add_argument("--band-lip", type=float, default=0.003, help="the band's lower lip toward the body (m)")
     ap.add_argument("--band-cinch", type=float, default=0.006,
                     help="the band's upper edge stands this far out of the tucked top (m)")
-    ap.add_argument("--band-over", type=float, default=0.012,
+    ap.add_argument("--band-over", type=float, default=0.03,
                     help="the band's ends run this far under the bib's and the back panel's edges (m)")
     ap.add_argument("--band-step", type=float, default=3.0, help="degrees between the band's stations")
     ap.add_argument("--band-flaps", type=float, default=0.10,
                     help="the panels' edge faces turned toward the body go up to this far above the waist (m)")
+    ap.add_argument("--edge-peel", type=int, default=3,
+                    help="passes peeling the bib's and the back panel's ragged side-edge faces (C1j; 0: none)")
+    ap.add_argument("--edge-zone", type=float, default=0.02, help="the peel's reach either side of a panel's edge (m)")
+    ap.add_argument("--edge-inward", type=float, default=-0.1,
+                    help="an edge face whose normal's horizontal part points in by more than this is peeled")
+    ap.add_argument("--edge-island", type=int, default=12, help="loose bits of this many faces or fewer along the edges go")
     ap.add_argument("--band-button", type=float, default=0.012,
                     help="the band's side button this far beyond the bib's edge in |x| (m; 0: none)")
     ap.add_argument("--shell-decimate", default="0.32,0.22",

@@ -344,3 +344,35 @@ def track_face_ok(edges: list[float], area: float, nbr_dots: list[float], min_al
         return False
     return not nbr_dots or sum(nbr_dots) / len(nbr_dots) >= fold
 
+
+def near_panel_edge(x: float, y: float, z: float, z_lo: float, z_hi: float, bib_hw: float, back_y: float,
+                    back_hw: float, edge: float) -> bool:
+    """Whether a garment face (its centre) lies along the bib's or the back panel's side edge (C1j): between z_lo
+    and z_hi, within edge of the bib's half width (front, y < 0) or of the back panel's (y > back_y; back_hw its
+    half width at z), on either side of the cut; the side between them is left alone (r27: peeling there opened the
+    waist at the hip)."""
+    if not z_lo < z < z_hi:
+        return False
+    if y < 0:
+        return abs(abs(x) - bib_hw) < edge
+    if y > back_y:
+        return abs(abs(x) - back_hw) < edge
+    return False
+
+
+def edge_defect(on_boundary: bool, out_dot: float, min_alt: float, area: float, fold_dot: float,
+                inward: float = 0.0, thin: float = 0.001, tiny: float = 2e-6, fold: float = 0.0) -> bool:
+    """Whether a garment face on a panel's open edge is a wedge, flap or sliver to peel off (C1j): only faces with
+    an open edge (so peeling opens no hole inside the cloth), turned toward the body (their normal's horizontal part
+    against the way out, out_dot, under inward), thinner than thin, smaller than tiny (m^2) or folded back against
+    their neighbours (fold_dot, the mean of their normals against its own, under fold)."""
+    if not on_boundary:
+        return False
+    return out_dot < inward or min_alt < thin or area < tiny or fold_dot < fold
+
+
+def shirt_texel(r: float, g: float, b: float, lum: float = 0.55, sat: float = 0.3) -> bool:
+    """Whether a garment texel (stored sRGB) is the shirt Meshy baked into the denim (C1j: the white wedges at the
+    panels' edges): light (luminance over lum) and grey (saturation under sat), not denim, not orange stitching."""
+    hi, lo = max(r, g, b), min(r, g, b)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b > lum and hi > 0 and (hi - lo) / hi < sat

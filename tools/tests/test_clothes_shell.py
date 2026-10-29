@@ -246,7 +246,7 @@ class WaistBand(unittest.TestCase):
 
 
 class EdgePeel(unittest.TestCase):
-    """C1j: the tracked panel point's face."""
+    """C1j: the tracked panel point's face and the panels' edge peel."""
 
     def test_min_altitude_triangle_and_quad(self):
         self.assertAlmostEqual(H.min_altitude([0.03, 0.04, 0.05], 0.0006), 0.024)
@@ -262,6 +262,31 @@ class EdgePeel(unittest.TestCase):
         self.assertTrue(H.track_face_ok([0.01, 0.01, 0.0141], 50e-6, [0.99, 0.95, 0.9]))
         self.assertTrue(H.track_face_ok([0.01, 0.01, 0.0141], 50e-6, []))
 
+    def test_near_panel_edge_both_sides_of_the_cut(self):
+        def near(x, y, z, hw=0.12):
+            return H.near_panel_edge(x, y, z, 0.96, 1.2, 0.105, 0.03, hw, 0.02)
+        self.assertTrue(near(0.095, -0.06, 1.05))
+        self.assertTrue(near(-0.115, -0.06, 1.05))
+        self.assertFalse(near(0.05, -0.08, 1.05))  # the bib's middle
+        self.assertFalse(near(0.095, -0.06, 1.25))  # above the zone
+        self.assertTrue(near(0.11, 0.06, 1.0))  # the back panel's edge
+        self.assertFalse(near(0.02, 0.09, 1.05, hw=0.08))  # inside the narrowing V
+        self.assertFalse(near(0.11, 0.01, 1.0))  # the hip between the panels: left alone
+
+    def test_edge_defect_only_on_an_open_edge(self):
+        self.assertFalse(H.edge_defect(False, -0.9, 0.0001, 1e-7, -1.0))  # inside the cloth: never (no hole)
+        self.assertTrue(H.edge_defect(True, -0.3, 0.004, 20e-6, 0.9))  # turned in
+        self.assertTrue(H.edge_defect(True, 0.8, 0.0005, 20e-6, 0.9))  # a sliver
+        self.assertTrue(H.edge_defect(True, 0.8, 0.004, 1e-6, 0.9))  # a crumb
+        self.assertTrue(H.edge_defect(True, 0.8, 0.004, 20e-6, -0.5))  # folded back
+        self.assertFalse(H.edge_defect(True, 0.8, 0.004, 20e-6, 0.9))  # a clean edge face
+
+
+    def test_shirt_texel_is_light_and_grey(self):
+        self.assertTrue(H.shirt_texel(0.92, 0.93, 0.95))  # the shirt's white
+        self.assertFalse(H.shirt_texel(0.15, 0.2, 0.35))  # denim
+        self.assertFalse(H.shirt_texel(0.9, 0.55, 0.2))  # orange top-stitching
+        self.assertFalse(H.shirt_texel(0.0, 0.0, 0.0))
 
 if __name__ == "__main__":
     unittest.main()
