@@ -204,6 +204,14 @@ def run_fit(name: str, verts_mm: list, weights: list, edges: list, bones: dict, 
     if s.get("neck_tangent"):  # D3f: the body leaves the ring at the seated head's tangent (no turtleneck flare)
         v, nt = F.neck_tangent(v, weights, ring, s["neck_tangent"])
         reps.append({"neck_tangent": nt})
+    sr = s.get("shoulder_round")
+    if sr:  # D3g: B's girdle corner (the diagonal from the neck base to each armpit, her boxy deltoid) rounded
+        rz = table["neck_ring"]["z"]
+        keep = set(ring)
+        share = {i: w for i, p in enumerate(v) if i not in keep and F.hand_share(weights[i]) == 0
+                 and (w := F.shoulder_share(p, rz, sr)) > 0}
+        v = F.taubin(v, edges, share, sr["rounds"], mu=sr.get("mu", -0.53))  # mu 0: plain rounds, a corner shrinks
+        reps.append({"shoulder_round": {**sr, "vertices": len(share)}})
     if chest is not None and s.get("chest_trim"):  # D3e: the rounds' apex to the table
         mid = F.errors(v, weights, edges, table, bones, au, chest)
         v = F.chest_trim(v, weights, mid["rows"]["trunk"], chest)

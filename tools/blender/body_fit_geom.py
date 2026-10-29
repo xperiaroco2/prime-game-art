@@ -304,6 +304,16 @@ def girdle_share(ax: float, z: float, armpit: float, gd: dict) -> float:
     return gx * ramp((z - (armpit - gd["below"])) / max(1e-9, gd["below"]))
 
 
+def shoulder_share(p: tuple, ring: float, sr: dict) -> float:
+    """D3g: a vertex's share of the shoulders' rounding (B's girdle corner): 1 from `z0` + `edge` to `z1` - `edge` mm
+    under the ring and from |x| `x0` + `edge` to `x1` - `edge`, easing to 0 at those bounds; in front of `y_back`
+    only (the back's lines are fine), easing over `edge` behind it."""
+    k = ring - p[2]
+    e = sr["edge"]
+    return (ramp((k - sr["z0"]) / e) * ramp((sr["z1"] - k) / e) * ramp((abs(p[0]) - sr["x0"]) / e)
+            * ramp((sr["x1"] - abs(p[0])) / e) * ramp((sr["y_back"] - p[1]) / e))
+
+
 def keep_front(z: float, zones: list, edge: float = KEEP_EDGE) -> float:
     """1 inside a keep_front zone [z0, z1] but its `edge` mm ends, easing to 0 at its bounds (outside it the table
     holds exactly)."""

@@ -32,6 +32,10 @@ arm_follow = true
 # from 0 at |x| `x0` (just outside the ring) to all of it at `x1` (the shoulder joint), from `below` mm under the
 # armpit up; the lock under the ring eases it out toward the neck. D3f's diagonal from the neck base to each armpit.
 girdle = { x0 = 60.0, x1 = 130.0, below = 60.0 }
+# D3g: the girdle's front corner rounded (body_fit_geom.shoulder_share, `rounds` Taubin rounds, positions): with
+# her shoulders and chest forward, the corner between the shoulder top and the chest front still drew the bright
+# diagonal after the girdle's move, and read boxy at the deltoid. Under the ring's join (z0) and over the chest.
+shoulder_round = { rounds = 12, mu = 0.0, z0 = 15.0, z1 = 150.0, x0 = 20.0, x1 = 210.0, y_back = 50.0, edge = 40.0 }
 # B's rest from A's (B1's alien_body_b_geom with these numbers; the D2 plan's point 1). The height scale is B's
 # neck ring over A's (the tables), the Neck and Head about B's ring by B.toml's neck_bone_below / head_bone_above.
 shoulder_joint_x = 129.0      # the UpperArm heads' |x|

@@ -466,5 +466,14 @@ class NeckFlareTest(unittest.TestCase):
         self.assertAlmostEqual(F.girdle_share(95.0, 1250.0, 1180.0, gd), 0.5)
 
 
+    def test_shoulder_share(self):
+        sr = {"z0": 15.0, "z1": 150.0, "x0": 20.0, "x1": 210.0, "y_back": 50.0, "edge": 40.0}
+        self.assertEqual(F.shoulder_share((100.0, -20.0, 1324.0), 1324.0, sr), 0.0)  # at the ring
+        self.assertEqual(F.shoulder_share((100.0, -20.0, 1244.0), 1324.0, sr), 1.0)  # the girdle's front corner
+        self.assertEqual(F.shoulder_share((10.0, -20.0, 1244.0), 1324.0, sr), 0.0)  # the midline
+        self.assertEqual(F.shoulder_share((100.0, 95.0, 1244.0), 1324.0, sr), 0.0)  # the back
+        self.assertAlmostEqual(F.shoulder_share((40.0, -20.0, 1244.0), 1324.0, sr), 0.5)
+
+
 if __name__ == "__main__":
     unittest.main()
