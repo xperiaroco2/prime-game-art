@@ -26,7 +26,7 @@ TIP_W = next(r for r in LAYOUT["rooms"] if r["id"] == "tip_w")
 C = TIP_W["centre"]
 ROOM = 180.0 + S.COR_ANG
 SHOP = sorted(p for p in PIECES if p.startswith("ws_"))
-FLOOR_ITEMS = ("ws_bench", "ws_bench_open_top", "ws_bench_open_low", "ws_cabinet", "ws_rug")
+FLOOR_ITEMS = ("ws_bench_open_top", "ws_bench_open_low", "ws_cabinet", "ws_rug")
 _CACHE: dict = {}
 
 
@@ -105,14 +105,16 @@ class WorkshopDrawingTest(unittest.TestCase):
             self.assertAlmostEqual(got, 21.95 + S.TIP_STEP * (k + 0.5), delta=0.02)
         for got, k in zip(cab, range(2)):
             self.assertAlmostEqual(got, -21.95 + S.TIP_STEP * (k + 0.5), delta=0.02)
-        top = max(v[2] for v in verts("ws_bench", {"top"})) - S.FLOOR
+        top = max(v[2] for v in verts("ws_bench_open_top", {"top"})) - S.FLOOR
         self.assertAlmostEqual(top, 0.90)
-        self.assertAlmostEqual(-min(v[0] for v in verts("ws_bench", {"top", "nosing"})), 0.55)
+        self.assertAlmostEqual(-min(v[0] for v in verts("ws_bench_open_top", {"top", "nosing"})), 0.55)
         self.assertAlmostEqual(max(v[2] for v in verts("ws_cabinet", {"top"})) - S.FLOOR, 0.55)
         self.assertAlmostEqual(-min(v[0] for v in verts("ws_cabinet", {"top", "nosing"})), 0.59)   # the drawing: 60
-        # the open drawers: the top one on the facet a_w 32.9 (spare eyes), the low one on 98.8 (spare limbs), 25 cm out
+        # the open drawers, one per bench module, 25 cm out: spare eyes (top, a_w 32.9), parts (low 54.9, top 76.8),
+        # spare arms (low 98.8)
         opened = {pid: round(a_w(*at[:2]), 1) for pid, at, _ in INTERIOR["place"] if pid.startswith("ws_drawer")}
-        self.assertEqual(opened, {"ws_drawer_eyes": 32.9, "ws_drawer_limbs": 98.8})
+        self.assertEqual(opened, {"ws_drawer_eyes": 32.9, "ws_drawer_parts_a": 54.9, "ws_drawer_parts_b": 76.8,
+                                  "ws_drawer_limbs": 98.8})
         self.assertAlmostEqual(-min(v[0] for v in verts("ws_drawer_eyes", {"front"})), 0.775)
 
     def test_the_robot_and_its_hoist(self) -> None:
@@ -135,7 +137,8 @@ class WorkshopDrawingTest(unittest.TestCase):
         """Step 2: thin side shells opened 30..40 deg, every part of the bays' mechanism inside the shells' sphere, the
         arms below the body, the cables hanging out of the bays."""
         self.assertTrue(30.0 <= WS.ROBOT["open"] <= 40.0)
-        self.assertLess(WS.ROBOT["panel"], 45.0)
+        self.assertLessEqual(WS.ROBOT["panel"], 32.0)                         # step 3: 0.8 of step 2's 40 or less
+        self.assertGreater(WS.ROBOT["lift"], 0.0)                             # on hinge arms, off the body
         c = WS.RC
         mech = verts("ws_robot", {"gears", "hubs", "motors", "rods", "mounts", "chips", "core_light"})
         self.assertLess(max(math.dist(v, c) for v in mech), WS.MECH_R)
@@ -144,7 +147,7 @@ class WorkshopDrawingTest(unittest.TestCase):
         hang = verts("ws_robot", {"cables_b", "cables_c", "cables_d"})
         self.assertLess(min(v[2] for v in hang), c[2] - WS.RR - 0.05)          # the loose cables under it
         names = {p for p in parts("ws_robot")}
-        self.assertTrue({"panels", "panel_liners", "eye_trim", "eye_glint", "core_light"} <= names)
+        self.assertTrue({"panels", "panel_liners", "hinge_arms", "eye_trim", "eye_iris_mid", "eye_glint", "core_light"} <= names)
 
 
     def test_the_rail_hangs_under_the_ceiling(self) -> None:
@@ -178,7 +181,7 @@ class WorkshopRoomTest(unittest.TestCase):
                 for bar in bars:
                     self.assertGreater(min(bar_gap(p, bar) for p in pts), 0.008, pid)
         # the open drawers float over the bars' outer ends (h 10+), never over their middles at r 1.08
-        for pid in ("ws_drawer_eyes", "ws_drawer_limbs"):
+        for pid in ("ws_drawer_eyes", "ws_drawer_limbs", "ws_drawer_parts_a", "ws_drawer_parts_b"):
             for pts in footprint(pid, 5):
                 for (cx, cy, _), _, _, _ in bars:
                     self.assertGreater(min(math.hypot(x - cx, y - cy) for x, y in pts), 0.1, pid)
@@ -188,7 +191,8 @@ class WorkshopRoomTest(unittest.TestCase):
         a = math.radians(-S.COR_ANG)
         door = (C[0] + 1.3 * math.cos(a), C[1] + 1.3 * math.sin(a))
         stand = ship_layout.spot_stand(LAYOUT, SPOTS["renewer_w"])
-        for pid in FLOOR_ITEMS + ("ws_drawer_eyes", "ws_drawer_limbs", "ws_cradle", "ws_robot_body", "ws_robot"):
+        for pid in FLOOR_ITEMS + ("ws_drawer_eyes", "ws_drawer_limbs", "ws_drawer_parts_a", "ws_drawer_parts_b", "ws_cradle",
+                    "ws_robot_body", "ws_robot"):
             for pts in footprint(pid, 3):
                 self.assertGreater(min(seg_dist(q, door, stand) for q in pts), rad, pid)
 
@@ -209,7 +213,7 @@ class WorkshopRoomTest(unittest.TestCase):
 
     def test_colliders(self) -> None:
         self.assertEqual({p for p in SHOP if PIECES[p]["collide"]},
-                         {"ws_bench", "ws_bench_open_top", "ws_bench_open_low", "ws_cabinet", "ws_robot_body"})
+                         {"ws_bench_open_top", "ws_bench_open_low", "ws_cabinet", "ws_robot_body"})
 
     def test_the_room_reads_green(self) -> None:
         shop = [l for l in LAYOUT["light"]["lamps"] if len(l) > 8 and l[8] == "shop"]
@@ -232,7 +236,7 @@ class WorkshopRoomTest(unittest.TestCase):
         self.assertLess(fill[6], fill[7])
         mats = LAYOUT["light"]["mats"]
         for name in ("ws_green__strip", "ws_green__handle", "ws_green__rim", "ws_green__lamp", "ws_green__sleep",
-                     "ws_green__liner", "ws_cyan__eye", "ws_cyan__pupil", "ws_cyan__core", "ws_glint"):
+                     "ws_green__liner", "ws_cyan__eye", "ws_cyan__pupil", "ws_cyan__core", "ws_glint", "ws_cyan__iris"):
             self.assertEqual(mats[name]["l"], 0.0, name)
 
 
