@@ -1558,7 +1558,7 @@ tests: `tools/tests/test_ship_workshop.py`.
 
 | Piece | What | Placed | Triangles |
 |---|---|---|---|
-| `ws_bench_open_top`, `ws_bench_open_low` (colliders) | a bench module per facet -109.77..-21.95 (east), each with one drawer out (step 3; the closed `ws_bench` is no longer placed): a flush matte graphite kick plinth h 0..9 (step 3: the fronts' feet stayed dark), graphite carcass (face d 50), two dark olive-bronze drawer fronts (h 10..45, 47..82) each with a chamfered raised panel and a lit green pull, the green strip under the top's overhang, the dark bronze top d 0..55 to h 90 (continuous across modules) with a glossy bronze nosing, a graphite work mat; `open` leaves a drawer's bay (graphite back, two stiles) | 4 facets | 228 |
+| `ws_bench_open_top`, `ws_bench_open_low` (colliders) | a bench module per facet -109.77..-21.95 (east), each with one drawer out (step 3; the closed `ws_bench` is no longer placed): a flush matte graphite kick plinth h 0..9 (step 3: the fronts' feet stayed dark), graphite carcass (face d 50), two dark olive-bronze drawer fronts (h 10..45, 47..82) each with a chamfered raised panel and a lit green pull, the green strip under the top's overhang, the dark bronze top d 0..55 to h 90 (continuous across modules) with a glossy bronze nosing, a graphite work mat; `open` leaves a drawer's bay (graphite back, two stiles) | 4 facets | 240 / 228 |
 | `ws_drawer_eyes`, `ws_drawer_parts_a`, `ws_drawer_parts_b`, `ws_drawer_limbs` | a drawer pulled out 25 cm on its tray, a dark foam insert 14 cm under its top, a green rim line round the walls' insides: 20 spare eyes (D8, a cyan iris, a dark pupil) sunk in cut-outs (a 32.9, top); loose parts (gears, pistons, a board with a cyan light, a spare claw, a cable coil; a 54.9 low, 76.8 top); four spare arms (shoulder, ivory upper arm and forearm, dark elbow hinge, small claw) in a row (a 98.8, low) | 1 each | see the handoff |
 | `ws_cabinet` (collider) | the cradles' cabinet module, as the bench: toe, graphite body, one drawer front with its panel, pull, strip, the top d 0..59 to h 55 with its nosing (the drawing's 60 reached 1 mm over the floor light's bar on the middle vertex) | 2 facets | 172 |
 | `ws_cradle` | a graphite bowl D54 x 18 with a groove and a chamfered lip, the bed D44 with a padded dark cushion (a fat rolled edge, a dished middle with six sunk tuft buttons, a stitched groove), the green ring on the lip | 2 | 5328 |
@@ -1570,7 +1570,7 @@ tests: `tools/tests/test_ship_workshop.py`.
 | `ws_rug` | dark green pile D66 x 1.1 with a rolled edge and a darker border band, at r 1.10 on a_w 67.5 (the drawing's D80 at r 0.95 covered the floor lights' bars; D66 fits between them with 1 cm to spare) | 1 | 1152 |
 | `ws_lamp` | the articulated lamp on the bench (a_w 100): bronze base D18, turntable, twin arms through graphite hubs, the shade at h 140 aimed at the robot's open bays, its green lens | 1 | 2016 |
 
-About 100.5k triangles placed (step 1: 68.6k). The bench's facets take the lounge's wall pieces (`tip_panel_low_*`: the relief over
+About 122.5k triangles placed (step 1: 68.6k, step 2: 100.5k). The bench's facets take the lounge's wall pieces (`tip_panel_low_*`: the relief over
 h 0.92; `tip_window_lounge_*`: a flush 3 cm sill), the cabinet's keep the plain window facets. The door side's last
 two cable trunks (`tip_trunk*`) stood on the bench's vertices and went with it; the pieces are gone from the layout.
 
