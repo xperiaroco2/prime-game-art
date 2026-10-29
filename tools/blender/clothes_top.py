@@ -102,46 +102,13 @@ def cut_garment(gar, args) -> dict:
                                                     bib_top + 1e-3, back_y, z_apex + 1e-3, hw_w + 1e-3, hw_a + 1e-3)]
     bmesh.ops.delete(bm, geom=gone, context="FACES")
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
-    rep_hw = drop_hardware(gar, bm, args)
     n1 = len(bm.faces)
     bm.to_mesh(me)
     bm.free()
     me.update()
-    rep = {"faces_before": n0, "faces_after": n1, "waist": z_w, "bib": [bib_hw, bib_top], "back": floats(args.back),
-           "hardware_faces_dropped": rep_hw}
+    rep = {"faces_before": n0, "faces_after": n1, "waist": z_w, "bib": [bib_hw, bib_top], "back": floats(args.back)}
     say("garment cut", rep)
     return rep
-
-
-def drop_hardware(gar, bm, args) -> int:
-    """The Meshy buckle hardware at the bib's top corners (args.hardware: |x| from, to and z from, to): its faces with
-    warm (bronze) or near-black texels and the faces next to them go; the new straps' tabs and buckles cover the
-    place, and the shell top stays under it (it is cut after this)."""
-    x0, x1, z0, z1 = floats(args.hardware)
-    img = next((n.image for sl in gar.material_slots if sl.material and sl.material.node_tree
-                for n in sl.material.node_tree.nodes if n.type == "TEX_IMAGE" and n.image and "diffuse" in n.image.name),
-               None)
-    if img is None or x1 <= x0:
-        return 0
-    w, h = img.size
-    px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)[..., :3]
-    mw = gar.matrix_world
-    uv = bm.loops.layers.uv.active
-    bad = set()
-    for f in bm.faces:
-        c = mw @ f.calc_center_median()
-        if not (c.y < 0 and x0 <= abs(c.x) <= x1 and z0 <= c.z <= z1):
-            continue
-        u = sum(lp[uv].uv.x for lp in f.loops) / len(f.loops)
-        v = sum(lp[uv].uv.y for lp in f.loops) / len(f.loops)
-        col = px[min(h - 1, int(v * h)), min(w - 1, int(u * w))]
-        if col[0] > 1.3 * col[2] or float(col @ np.array([0.2126, 0.7152, 0.0722])) < 0.03:
-            bad.add(f)
-    grown = {g for f in bad for e in f.edges for g in e.link_faces
-             if x0 - 0.01 <= abs((mw @ g.calc_center_median()).x) <= x1 + 0.01} | bad
-    bmesh.ops.delete(bm, geom=list(grown), context="FACES")
-    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
-    return len(grown)
 
 
 def stripe_colours(gar) -> tuple[np.ndarray, np.ndarray]:
