@@ -19,6 +19,10 @@ and, per clip, measures the poke-through and shoots the contact sheet; then the 
   that face's plane ("top_under_panels_tracked", with the room at rest; C1i). A sliver (thinner than
   --track-min-alt) or a face folded back against its neighbours carries no tracked point: the ray goes on past it
   (clothes_shell.track_face_ok; C1j, the one vertex per character r26 counted).
+- The gaps (C1k): the body vertices clothes_dress.py removed under the cloth (its unexported body_removed object, on
+  the body's weights) are followed through every frame; a frame counts those whose normal meets no cloth within
+  --gap-reach m, nor behind it within --gap-back m (a gap between pieces, the hem and the trousers, a band's end and a panel, shows the hollow inside);
+  those uncovered at rest or within --opening m of an opening are left out and counted apart (poke.json's "gaps").
 - The contact sheet: per clip (rows) the front, side and back at two moments of the clip (Workbench, the textures,
   orthographic), about 1280 px wide.
 - The close-ups: in Idle's first frame, the collar and neck, the cuffs and hands, the crotch, the hems and shoes,
@@ -75,6 +79,31 @@ def world(o) -> np.ndarray:
     co = co @ m[:3, :3].T + m[:3, 3]
     ev.to_mesh_clear()
     return co
+
+
+def world_nor(o) -> tuple[np.ndarray, np.ndarray]:
+    """o's evaluated (skinned) vertices and vertex normals in world space."""
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = o.evaluated_get(dg)
+    me = ev.to_mesh()
+    co = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("co", co)
+    no = np.empty(len(me.vertices) * 3)
+    me.vertices.foreach_get("normal", no)
+    ev.to_mesh_clear()
+    m = np.array(o.matrix_world)
+    nm = np.linalg.inv(m[:3, :3]).T
+    no = no.reshape(-1, 3) @ nm.T
+    no /= np.maximum(np.linalg.norm(no, axis=1, keepdims=True), 1e-12)
+    return co.reshape(-1, 3) @ m[:3, :3].T + m[:3, 3], no
+
+
+def uncovered(tree: BVHTree, co: np.ndarray, no: np.ndarray, reach: float, back: float) -> np.ndarray:
+    """Per point whether its normal meets no cloth within reach, nor behind it within back (a removed vertex that
+    passed out through the cloth still has the cloth over the hollow)."""
+    return np.array([tree.ray_cast(Vector(p) + Vector(n) * 1e-4, Vector(n), reach)[0] is None
+                     and tree.ray_cast(Vector(p), -Vector(n), back)[0] is None
+                     for p, n in zip(co, no)], dtype=bool)
 
 
 def cloth_tree(cloth, polys, cos=None) -> BVHTree:
@@ -140,6 +169,10 @@ def main() -> int:
                     help="a garment face thinner than this cannot carry a tracked point; nor can a folded one (m)")
     ap.add_argument("--panel-reach", type=float, default=0.04,
                     help="a top vertex whose normal meets the garment this near at rest is under a panel (m)")
+    ap.add_argument("--gap-reach", type=float, default=0.08,
+                    help="a removed body vertex whose normal meets no cloth this near shows a gap (m)")
+    ap.add_argument("--gap-back", type=float, default=0.03,
+                    help="nor cloth this near behind it (it passed out through the cloth: no gap) (m)")
     ap.add_argument("--exposed", type=float, default=0.02,
                     help="outside the cloth by more than this over an upward collar face: exposed skin (m)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -179,7 +212,7 @@ def main() -> int:
     say("openings", len(edge_pts), "points:", open_rep)
     kd = O.kd_of(edge_pts)
     # inside: the body vertex by the opening; outside: its nearest cloth point by the opening (the hand beyond a cuff)
-    at_open = np.array([kd.find(Vector(rest[i]) if s < 0 else loc)[2] < args.opening
+    at_open = np.array([H.opening_dist(kd.find(Vector(rest[i]) if s < 0 else loc)[2]) < args.opening
                         for i, s, loc in zip(near, s0, locs)], dtype=bool)
     rest_poke = F.rest_poke([s * 1000 for s in s0], at_open.tolist(), args.tol * 1000)
     near = np.array(near)[~at_open] if len(near) else np.array(near)
@@ -243,6 +276,21 @@ def main() -> int:
             "with the garment over them but outside its nearest face at rest, left out;", len(track), "tracked;",
             skipped, "sliver or folded faces passed")
 
+    # the gaps (C1k): the removed body part, followed through the clips
+    rem = bpy.data.objects.get("body_removed")
+    gap_ids, gap_rep = np.zeros(0, dtype=int), {"present": rem is not None}
+    if rem is not None:
+        rem.hide_viewport = False
+        rem.hide_set(False)
+        bpy.context.view_layer.update()
+        rco, rno = world_nor(rem)
+        open0 = uncovered(tree, rco, rno, args.gap_reach, args.gap_back)
+        by_open = np.array([H.opening_dist(kd.find(Vector(p))[2]) < args.opening for p in rco], dtype=bool)
+        gap_ids = np.nonzero(~open0 & ~by_open)[0]
+        gap_rep.update({"removed_verts": int(len(rco)), "uncovered_at_rest": int((open0 & ~by_open).sum()),
+                        "by_an_opening": int(by_open.sum()), "followed": int(len(gap_ids))})
+        say("gaps: removed body vertices", gap_rep)
+
     head = {b.name: arm.matrix_world @ b.head_local for b in arm.data.bones}
     front = 1.0 if (head["LeftToes"] - head["LeftFoot"]).y > 0 else -1.0
     sc = bpy.context.scene
@@ -272,6 +320,7 @@ def main() -> int:
         arm.animation_data.action = act
         f0, f1 = (int(round(x)) for x in act.frame_range)
         frames, skin, worst, tframes, tworst, kframes, kworst = [], 0, {}, [], {}, [], {}
+        gframes, gworst = [], {}
         for f in range(f0, max(f0 + 1, f1 + 1)):
             sc.frame_set(f)
             cos = {o.name: world(o) for o in cloth}
@@ -289,6 +338,12 @@ def main() -> int:
                 kframes.append((int(kbad.sum()), float(ks[kbad].max()) if kbad.any() else 0.0))
                 for j in np.nonzero(kbad)[0]:
                     kworst[track[j][0]] = max(kworst.get(track[j][0], 0.0), float(ks[j]))
+            if len(gap_ids):
+                gco, gno = world_nor(rem)
+                miss = uncovered(ctree, gco[gap_ids], gno[gap_ids], args.gap_reach, args.gap_back)
+                gframes.append((int(miss.sum()), 0.0))
+                for j in np.nonzero(miss)[0]:
+                    gworst[int(gap_ids[j])] = gworst.get(int(gap_ids[j]), 0) + 1
             s, cz, cnz = side(ctree, world(body)[near]) if len(near) else (np.zeros(0),) * 3
             chest = (arm.matrix_world @ arm.pose.bones["UpperChest"].head).z
             exposed = np.array([F.exposed_skin(d, z, nz, chest, args.exposed) for d, z, nz in zip(s, cz, cnz)],
@@ -318,6 +373,12 @@ def main() -> int:
                 "where": [{"rest": [round(float(x), 3) for x in top.matrix_world @ tv[k].co], "bone": bone_of(top, k),
                            "depth_mm": round(1000 * d, 1)}
                           for k, d in sorted(kworst.items(), key=lambda kv: -kv[1])[:6]]}
+        if len(gap_ids):
+            g = F.frame_max(gframes)
+            poke[clip]["gaps"] = {"frames": g["frames"], "max_count": g["max_count"], "worst_frame": g["worst_frame"],
+                                  "where": [{"rest": [round(float(x), 3) for x in rco[k]], "bone": bone_of(rem, k),
+                                             "frames_open": n}
+                                            for k, n in sorted(gworst.items(), key=lambda kv: -kv[1])[:6]]}
         say("poke", clip, poke[clip])
         row = []
         for k in (0.25, 0.6):
@@ -364,6 +425,7 @@ def main() -> int:
                                                "outside_cloth_at_rest": rest_poke,
                                                "left_out_by_an_opening": int(at_open.sum()),
                                                "openings": open_rep, "top_under_panels_at_rest": int(len(under)),
+                                               "gaps": gap_rep,
                                                "tol_m": args.tol, "clips": poke}, indent=1),
                                    encoding="utf-8", newline="\n")
     say("wrote", out)

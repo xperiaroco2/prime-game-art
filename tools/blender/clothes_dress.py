@@ -53,6 +53,7 @@ from mathutils.kdtree import KDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
+import clothes_shell as H  # noqa: E402
 import clothes_texture as T  # noqa: E402
 
 PIECES = ("garment", "shoes")
@@ -416,7 +417,7 @@ def main() -> int:
             continue
         top_bone = gname.get(max(v.groups, key=lambda g: g.weight).group, "") if v.groups else ""
         loc, nor, _fi, _d = tree.find_nearest(p, args.near)
-        if loc is not None and F.under_cloth((p - loc).dot(nor), ekd.find(p)[2], top_bone, away=args.away,
+        if loc is not None and F.under_cloth((p - loc).dot(nor), H.opening_dist(ekd.find(p)[2]), top_bone, away=args.away,
                                               away_shoulder=args.away_shoulder):
             cov.append(True)
             sure.append(True)
@@ -426,7 +427,7 @@ def main() -> int:
         hit = all(tree.ray_cast(p + d * 1e-4, d, args.reach)[0] is not None for d in rays(n))
         if not hit:  # the body outside the cloth (a shoulder): covered if the cloth lies within --outside behind it
             loc, _nor, _fi, t = tree.ray_cast(p, -n, args.outside)
-            if loc is not None and ekd.find(loc)[2] >= args.opening:
+            if loc is not None and H.opening_dist(ekd.find(loc)[2]) >= args.opening:
                 q = loc - n * 1e-3
                 hit = all(tree.ray_cast(q + d * 1e-4, d, args.reach)[0] is not None for d in rays(n))
                 outside += hit
@@ -447,6 +448,24 @@ def main() -> int:
                   for g, f in zip(gone, faces)]
     gone = [g or x for g, x in zip(gone, shoe_faces)]
     rep["faces_removed_through_shoe_walls"] = sum(shoe_faces)
+    # the removed part, kept in the blend for the proof's gap check (C1k): its own object with the body's weights and
+    # armature modifier, not parented to the armature, so the GLB leaves it out (alien_loco._export)
+    rem = char.copy()
+    rem.data = char.data.copy()
+    rem.name = rem.data.name = "body_removed"
+    bpy.context.scene.collection.objects.link(rem)
+    mwc = char.matrix_world.copy()
+    rem.parent = None
+    rem.matrix_world = mwc
+    rem.hide_render = True
+    rbm = bmesh.new()
+    rbm.from_mesh(rem.data)
+    rbm.faces.ensure_lookup_table()
+    bmesh.ops.delete(rbm, geom=[rbm.faces[i] for i, g in enumerate(gone) if not g], context="FACES")
+    bmesh.ops.delete(rbm, geom=[v for v in rbm.verts if not v.link_faces], context="VERTS")
+    rbm.to_mesh(rem.data)
+    rbm.free()
+    rep["removed_body_kept_verts"] = len(rem.data.vertices)
     bm = bmesh.new()
     bm.from_mesh(me)
     bm.faces.ensure_lookup_table()
