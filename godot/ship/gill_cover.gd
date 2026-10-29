@@ -154,7 +154,8 @@ func step(dt: float) -> void:
 			_puff(0.0, 0.35, 0.35, 2.4, 0.0)
 	if _cough_t >= 0.0:
 		_cough_t += dt
-		angle += 1.6 * sin(_cough_t * 38.0) * exp(-_cough_t * 9.0) if _cough_t < 0.4 else 0.0
+		# a shudder outward only: a negative angle would press the plate into the wall
+		angle += 1.6 * absf(sin(_cough_t * 38.0)) * exp(-_cough_t * 9.0) if _cough_t < 0.4 else 0.0
 		if _cough_t >= COUGH_S:
 			_cough_t = -1.0
 	_apply()

@@ -116,6 +116,11 @@ class Cover(unittest.TestCase):
                          ["cover3_glow", "cover3_hinge", "cover3_knuckle", "cover3_plate", "cover3_pocket", "cover3_rim"])
         self.assertFalse([n for n in w if n.startswith("cover")])
 
+    def test_controller_never_turns_inward(self):
+        # every write to the angle is the gasp's (>= 0), the spring's (>= its start) or the cough's outward shudder
+        self.assertIn("absf(sin(_cough_t", GD)
+        self.assertNotIn("angle = -", GD)
+
     def test_controller_names(self):
         for part in ("plate", "rim", "knuckle", "glow"):
             self.assertIn(f'"{part}"', GD)
