@@ -107,9 +107,9 @@ class WorkshopDrawingTest(unittest.TestCase):
             self.assertAlmostEqual(got, -21.95 + S.TIP_STEP * (k + 0.5), delta=0.02)
         top = max(v[2] for v in verts("ws_bench", {"top"})) - S.FLOOR
         self.assertAlmostEqual(top, 0.90)
-        self.assertAlmostEqual(-min(v[0] for v in verts("ws_bench", {"top"})), 0.55)
+        self.assertAlmostEqual(-min(v[0] for v in verts("ws_bench", {"top", "nosing"})), 0.55)
         self.assertAlmostEqual(max(v[2] for v in verts("ws_cabinet", {"top"})) - S.FLOOR, 0.55)
-        self.assertAlmostEqual(-min(v[0] for v in verts("ws_cabinet", {"top"})), 0.59)   # the drawing: 60
+        self.assertAlmostEqual(-min(v[0] for v in verts("ws_cabinet", {"top", "nosing"})), 0.59)   # the drawing: 60
         # the open drawers: the top one on the facet a_w 32.9 (spare eyes), the low one on 98.8 (spare limbs), 25 cm out
         opened = {pid: round(a_w(*at[:2]), 1) for pid, at, _ in INTERIOR["place"] if pid.startswith("ws_drawer")}
         self.assertEqual(opened, {"ws_drawer_eyes": 32.9, "ws_drawer_limbs": 98.8})
@@ -121,23 +121,42 @@ class WorkshopDrawingTest(unittest.TestCase):
         self.assertAlmostEqual(c[2] - S.FLOOR, 1.45)
         self.assertAlmostEqual(max(math.dist(v, c) for v in body), 0.30, places=4)          # the sphere Ø 60
         eye = verts("ws_robot", {"eye_ring"})
-        self.assertAlmostEqual(max(math.hypot(v[1], v[2] - c[2]) for v in eye), 0.094, places=4)   # D16 + its ring
+        self.assertAlmostEqual(max(math.hypot(v[1], v[2] - c[2]) for v in eye), 0.095, places=4)   # D16 + its bezel
         self.assertLess(max(v[0] for v in eye), -0.25)                                       # toward the room (-x)
         low = min(v[2] for v in verts("ws_robot", {"claws"})) - S.FLOOR
         self.assertAlmostEqual(low, 0.95, delta=0.01)                                        # the hands hang to 95
         clamp = verts("ws_hoist", {"clamp", "jaws"})
         self.assertAlmostEqual(min(v[2] for v in clamp) - S.FLOOR, 1.77, delta=0.005)
-        self.assertAlmostEqual(max(v[2] for v in verts("ws_hoist", {"clamp"})) - S.FLOOR, 1.90, places=4)
+        self.assertAlmostEqual(max(v[2] for v in verts("ws_hoist", {"clamp"})) - S.FLOOR, 1.88, places=4)   # step 2: the claw's hub 183..188
         knob = verts("ws_robot", {"knob"})
         self.assertGreater(max(v[2] for v in knob), min(v[2] for v in clamp))                # the jaws hold the knob
 
+    def test_the_robot_reads_as_the_concept(self) -> None:
+        """Step 2: thin side shells opened 30..40 deg, every part of the bays' mechanism inside the shells' sphere, the
+        arms below the body, the cables hanging out of the bays."""
+        self.assertTrue(30.0 <= WS.ROBOT["open"] <= 40.0)
+        self.assertLess(WS.ROBOT["panel"], 45.0)
+        c = WS.RC
+        mech = verts("ws_robot", {"gears", "hubs", "motors", "rods", "mounts", "chips", "core_light"})
+        self.assertLess(max(math.dist(v, c) for v in mech), WS.MECH_R)
+        arms = verts("ws_robot", {"arms", "claws"})
+        self.assertLess(min(v[2] for v in arms), c[2] - WS.RR - 0.15)          # 15 cm and more below the body
+        hang = verts("ws_robot", {"cables_b", "cables_c", "cables_d"})
+        self.assertLess(min(v[2] for v in hang), c[2] - WS.RR - 0.05)          # the loose cables under it
+        names = {p for p in parts("ws_robot")}
+        self.assertTrue({"panels", "panel_liners", "eye_trim", "eye_glint", "core_light"} <= names)
+
+
     def test_the_rail_hangs_under_the_ceiling(self) -> None:
         rail = verts("ws_rail", {"rail"})
-        self.assertAlmostEqual(min(v[2] for v in rail) - S.FLOOR, 2.28)
+        self.assertAlmostEqual(min(v[2] for v in rail) - S.FLOOR, 2.14)   # step 2: 14 cm under the drawing's 228
         rs = [math.hypot(v[0], v[1]) for v in rail]
         self.assertAlmostEqual((min(rs) + max(rs)) / 2, 1.05, places=3)
         for v in rail:
-            self.assertLess(v[2], S.FLOOR + S.tip_clear(v[0]) - 0.01)   # 1.7..3.5 cm under it
+            self.assertLess(v[2], S.FLOOR + S.tip_clear(v[0]) - 0.15)   # 15.7..17.5 cm under it: the hangers show
+        need = LAYOUT["player"]["capsule_height_m"]
+        self.assertGreater(min(v[2] for v in verts("ws_hoist")) - S.FLOOR, need - 0.05)   # the claw: over the robot
+        self.assertGreater(min(v[2] for v in rail) - S.FLOOR, need + 0.3)                # a 1.8 m capsule passes
         self.assertGreaterEqual(min(rs), S.OC_BEAM[1] + 0.02)   # clear of the oculus's light ring
         tops = max(v[2] - (S.FLOOR + S.tip_clear(v[0])) for v in verts("ws_rail", {"hangers"}))
         self.assertGreater(tops, 0.0)                               # the hangers reach into the ceiling
@@ -198,8 +217,22 @@ class WorkshopRoomTest(unittest.TestCase):
         for l in shop:
             self.assertLess(math.hypot(l[0] - C[0], l[1] - C[1]), S.R_TIP)
             self.assertGreater(l[6], l[5] * 1.5)   # green over red
+            # step 2: green pools, no washes: above the deck, short ranges (only the bench lamp's aimed spot reaches the
+            # robot), the bench lamp's aim at the robot's bays
+            h = l[2] - S.FLOOR - LAYOUT["deck"]["lift_m"]
+            self.assertTrue(0.3 < h < 1.9, l)
+            self.assertLessEqual(l[4], 1.6 if len(l) > 11 else 1.0, l)
+        aimed = [l for l in shop if len(l) > 11]
+        self.assertEqual(len(aimed), 1)
+        at = next(at for pid, at, _ in INTERIOR["place"] if pid == "ws_robot")
+        self.assertLess(math.dist(aimed[0][11][:2], at[:2]), 0.05)
+        self.assertAlmostEqual(aimed[0][11][2] - S.FLOOR - LAYOUT["deck"]["lift_m"], WS.ROBOT["h"] * 0.01 - 0.07, delta=0.05)
+        # the room's own fill stays a neutral cool grey (step 1's mint flooded the walls green)
+        fill = next(l for l in LAYOUT["light"]["lamps"] if len(l) > 8 and l[8] == "tip" and l[0] < -11.5)
+        self.assertLess(fill[6], fill[7])
         mats = LAYOUT["light"]["mats"]
-        for name in ("ws_green__strip", "ws_green__handle", "ws_green__rim", "ws_green__lamp", "ws_green__sleep"):
+        for name in ("ws_green__strip", "ws_green__handle", "ws_green__rim", "ws_green__lamp", "ws_green__sleep",
+                     "ws_green__liner", "ws_cyan__eye", "ws_cyan__pupil", "ws_cyan__core", "ws_glint"):
             self.assertEqual(mats[name]["l"], 0.0, name)
 
 
