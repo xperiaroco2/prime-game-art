@@ -369,6 +369,32 @@ class AlienProfileTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             _godot.evaluate(d, e, A_CONTRACT, [], profile="alien", allowance="giant")
 
+    def test_a_body_type_holds_its_own_height_min(self) -> None:
+        # art #196: body type B is shorter; --body-type B replaces the body's height_min_m with B's
+        d = alien_dump()
+        d["meshes"][0]["rest_bounds"]["min"][1], d["meshes"][0]["rest_bounds"]["max"][1] = 0.0, 1.66
+        d["meshes"][0]["bone_bounds"]["Hips"] = {"min": [0.0, 0.8, 0.0], "max": [0.1, 1.3, 0.1]}
+        d["meshes"][0]["bone_bounds"]["Head"] = {"min": [0.0, 1.3, 0.0], "max": [0.1, 1.66, 0.1]}
+        e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
+             "rest_heads_m": {}, "height_m": None, "animations": {}}
+        types = {"A": {"height_min_m": 1.70, "rest_turn_max_deg": 0.0},
+                 "B": {"height_min_m": 1.62, "rest_turn_max_deg": 0.5}}
+        con = {**A_CONTRACT, "body_types": types}
+
+        def height(body_type: str) -> dict:
+            return {c["check"]: c for c in _godot.evaluate(d, e, con, [], strict_contract=True, profile="alien",
+                                                          body_type=body_type)}["contract_height"]
+
+        self.assertEqual(height("")["status"], "fail")  # under the body's 1.70
+        self.assertEqual(height("A")["status"], "fail")
+        got = height("B")
+        self.assertEqual(got["status"], "pass", got)
+        self.assertIn("1.62 to", got["detail"])
+        with self.assertRaises(ValueError):
+            _godot.evaluate(d, e, con, [], profile="alien", body_type="C")
+        with self.assertRaises(ValueError):
+            _godot.evaluate(d, e, con, [], profile="pack", body_type="B")
+
     def test_an_unknown_profile_is_refused(self) -> None:
         with self.assertRaises(ValueError):
             alien(alien_dump(), profile="dragon")

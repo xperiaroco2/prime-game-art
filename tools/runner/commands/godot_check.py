@@ -32,6 +32,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--allowance", default="",
                         help="--profile alien: a named height allowance of the contract's body (plasticine: "
                              "plasticine_height_max_m); without one the alien profile holds height_max_m")
+    parser.add_argument("--body-type", default="",
+                        help="--profile alien: the contract's body type (A, B; art #196): its height_min_m replaces "
+                             "the body's (docs/contract.md, Body types)")
 
 
 def run(args: argparse.Namespace) -> int:
@@ -50,7 +53,7 @@ def run(args: argparse.Namespace) -> int:
     for glb, res_path in staged.items():
         out = (args.out or _godot.OUT).resolve() / glb.stem
         failed += not check_one(glb, res_path, out, contract, import_lines, args.strict_contract, list(staged.values()),
-                            args.textured, args.profile, args.allowance)
+                            args.textured, args.profile, args.allowance, args.body_type)
     if args.humanoid:
         from . import _humanoid
 
@@ -61,13 +64,14 @@ def run(args: argparse.Namespace) -> int:
 
 
 def check_one(glb: Path, res_path: str, out: Path, contract: dict, import_lines: list[str], strict: bool,
-              staged: list[str], textured: bool = False, profile: str = "pack", allowance: str = "") -> bool:
+              staged: list[str], textured: bool = False, profile: str = "pack", allowance: str = "",
+              body_type: str = "") -> bool:
     expect = _godot.expectations(glb)
     dump, lines = _godot.inspect(res_path, out / "inspect.json")
     mine = _godot.lines_for(import_lines, res_path, staged)
     output = mine + lines
     checks = _godot.evaluate(dump, expect, contract, output, strict_contract=strict, textured=textured,
-                             profile=profile, allowance=allowance)
+                             profile=profile, allowance=allowance, body_type=body_type)
     failed = [c for c in checks if c["status"] == "fail"]
     report = {
         "glb": glb.as_posix(),
