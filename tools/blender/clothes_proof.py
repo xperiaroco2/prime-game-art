@@ -3,12 +3,17 @@ and, per clip, measures the poke-through and shoots the contact sheet; then the 
 
 - Poke-through (each clip's "where": up to six of the vertices that poke, deepest first, with their rest place and
   strongest bone): the body vertices under the cloth at rest (nearest cloth point within --near m and behind the
-  cloth's face there, and farther than --opening m from every opening, where moving out of the cuff is no fault) are
-  followed through every frame of each clip; a frame counts those that end up outside the
+  cloth's face there, and farther than --opening m from every real opening, where moving out of the cuff is no
+  fault: clothes_open.opening_points, the top's collar and cuffs, the trousers' hems and the shoes' tops; the straps',
+  panels' and cut edges and the hidden-face holes are no opening) are followed through every frame of each clip; a frame counts those that end up outside the
   cloth by more than --tol m and the deepest; the clip's numbers are the frame maximum (clothes_fit_geom.frame_max).
   A vertex outside by more than --exposed m whose nearest cloth point is above the chest (the UpperChest bone's head
   in that frame) on a cloth face turned up is exposed skin, not poke-through (clothes_fit_geom.exposed_skin: the
   neck over the collar's roll); the clip's frame maximum of those is exposed_skin_max.
+- The top under the panels (the hybrid route: the top on the body's weights, the bib, back panel and straps on the
+  fit's): the top's vertices whose normal meets the garment within --panel-reach m at rest, inside it there, are
+  followed the same way against the garment alone; a frame counts those outside it by more than --tol m (poke.json's
+  "top_under_panels" per clip, its "where" with the top vertex's bone).
 - The contact sheet: per clip (rows) the front, side and back at two moments of the clip (Workbench, the textures,
   orthographic), about 1280 px wide.
 - The close-ups: in Idle's first frame, the collar and neck, the cuffs and hands, the crotch, the hems and shoes,
@@ -35,6 +40,7 @@ from mathutils.bvhtree import BVHTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
+import clothes_open as O  # noqa: E402
 
 CLIPS = "Idle,Walk,Jog_Fwd,Sprint_Fwd,Strafe_Left,Crouch_Fwd,Jump_Start,Jump_Air,Talk_Upper"
 PREFIX = "CharacterArmature|"
@@ -63,8 +69,8 @@ def world(o) -> np.ndarray:
     return co
 
 
-def cloth_tree(cloth, polys) -> BVHTree:
-    co = np.concatenate([world(o) for o in cloth])
+def cloth_tree(cloth, polys, cos=None) -> BVHTree:
+    co = np.concatenate([cos[o.name] if cos else world(o) for o in cloth])
     return BVHTree.FromPolygons([tuple(c) for c in co], polys)
 
 
@@ -114,6 +120,8 @@ def main() -> int:
     ap.add_argument("--tol", type=float, default=0.001)
     ap.add_argument("--opening", type=float, default=0.04, help="body vertices this near an opening are left out")
     ap.add_argument("--tile", type=int, default=213)
+    ap.add_argument("--panel-reach", type=float, default=0.04,
+                    help="a top vertex whose normal meets the garment this near at rest is under a panel (m)")
     ap.add_argument("--exposed", type=float, default=0.02,
                     help="outside the cloth by more than this over an upward collar face: exposed skin (m)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -122,7 +130,11 @@ def main() -> int:
     bpy.ops.wm.open_mainfile(filepath=str(Path(args.blend).resolve()))
     arm = bpy.data.objects["CharacterArmature"]
     cloth = [bpy.data.objects[n] for n in ("garment", "shoes", "top") if n in bpy.data.objects]
-    body = next(o for o in bpy.data.objects if o.type == "MESH" and o.parent == arm and o not in cloth)
+    try:
+        body = O.body_mesh(arm, cloth, args.name)
+    except ValueError as e:
+        say("REFUSED", e)
+        return 2
     polys, off = [], 0
     for o in cloth:
         polys += [[i + off for i in p.vertices] for p in o.data.polygons]
@@ -143,20 +155,11 @@ def main() -> int:
             near.append(i)
             s0.append((Vector(p) - loc).dot(nor))
             locs.append(loc)
-    # a body vertex whose nearest cloth point is near an opening (collar, cuffs, hems, the shoes' tops) leaves the
-    # opening when it moves (the wrist out of the cuff): that is no poke-through, so it is counted apart
-    import bmesh
-    edge_pts = []
-    for o in cloth:
-        bm = bmesh.new()
-        bm.from_mesh(o.data)
-        edge_pts += [tuple(o.matrix_world @ v.co) for v in bm.verts if v.is_boundary]
-        bm.free()
-    from mathutils.kdtree import KDTree
-    kd = KDTree(len(edge_pts))
-    for i, p in enumerate(edge_pts):
-        kd.insert(p, i)
-    kd.balance()
+    # a body vertex whose nearest cloth point is near a real opening (collar, cuffs, hems, the shoes' tops) leaves
+    # the opening when it moves (the wrist out of the cuff): that is no poke-through, so it is counted apart
+    edge_pts, open_rep = O.opening_points(cloth, arm)
+    say("openings", len(edge_pts), "points:", open_rep)
+    kd = O.kd_of(edge_pts)
     # inside: the body vertex by the opening; outside: its nearest cloth point by the opening (the hand beyond a cuff)
     at_open = np.array([kd.find(Vector(rest[i]) if s < 0 else loc)[2] < args.opening
                         for i, s, loc in zip(near, s0, locs)], dtype=bool)
@@ -164,11 +167,32 @@ def main() -> int:
     near = np.array(near)[~at_open] if len(near) else np.array(near)
     say("hidden by the cloth at rest:", len(near), "body vertices,", rest_poke, "of them outside it;",
         int(at_open.sum()), "more by an opening, left out")
-    gname = {g.index: g.name for g in body.vertex_groups}
+    def bone_of(o, k: int) -> str:  # a poking vertex's strongest bone, to say where it is
+        gs = o.data.vertices[k].groups
+        return o.vertex_groups[max(gs, key=lambda g: g.weight).group].name if len(gs) else ""
 
-    def bone_of(k: int) -> str:  # a poking vertex's strongest bone, to say where it is
-        gs = body.data.vertices[k].groups
-        return gname.get(max(gs, key=lambda g: g.weight).group, "") if len(gs) else ""
+    # the top under the bib, the back panel and the straps (their own weights): it must stay under them
+    gar = bpy.data.objects.get("garment")
+    top = bpy.data.objects.get("top")
+    under, g_polys = np.zeros(0, dtype=int), []
+    if gar is not None and top is not None:
+        g_polys = [list(q.vertices) for q in gar.data.polygons]
+        gco, tco = world(gar), world(top)
+        gtree = BVHTree.FromPolygons([tuple(c) for c in gco], g_polys)
+        nm = top.matrix_world.to_3x3().inverted().transposed()
+        cand, dropped = [], 0
+        for v in top.data.vertices:
+            p, n = Vector(tco[v.index]), (nm @ v.normal).normalized()
+            if gtree.ray_cast(p + n * 1e-4, n, args.panel_reach)[0] is None:
+                continue
+            loc, nor, _fi, _d = gtree.find_nearest(p)
+            if loc is not None and (p - loc).dot(nor) < 0:
+                cand.append(v.index)
+            else:
+                dropped += 1
+        under = np.array(cand, dtype=int)
+        say("top under the panels at rest:", len(under), "vertices;", dropped,
+            "with the garment over them but outside its nearest face at rest, left out")
 
     head = {b.name: arm.matrix_world @ b.head_local for b in arm.data.bones}
     front = 1.0 if (head["LeftToes"] - head["LeftFoot"]).y > 0 else -1.0
@@ -198,10 +222,17 @@ def main() -> int:
             continue
         arm.animation_data.action = act
         f0, f1 = (int(round(x)) for x in act.frame_range)
-        frames, skin, worst = [], 0, {}
+        frames, skin, worst, tframes, tworst = [], 0, {}, [], {}
         for f in range(f0, max(f0 + 1, f1 + 1)):
             sc.frame_set(f)
-            ctree = cloth_tree(cloth, polys)
+            cos = {o.name: world(o) for o in cloth}
+            ctree = cloth_tree(cloth, polys, cos)
+            if len(under):
+                ts = side(BVHTree.FromPolygons([tuple(c) for c in cos["garment"]], g_polys), cos["top"][under])[0]
+                tbad = ts > args.tol
+                tframes.append((int(tbad.sum()), float(ts[tbad].max()) if tbad.any() else 0.0))
+                for j in np.nonzero(tbad)[0]:
+                    tworst[int(under[j])] = max(tworst.get(int(under[j]), 0.0), float(ts[j]))
             s, cz, cnz = side(ctree, world(body)[near]) if len(near) else (np.zeros(0),) * 3
             chest = (arm.matrix_world @ arm.pose.bones["UpperChest"].head).z
             exposed = np.array([F.exposed_skin(d, z, nz, chest, args.exposed) for d, z, nz in zip(s, cz, cnz)],
@@ -212,9 +243,16 @@ def main() -> int:
             for j in np.nonzero(bad)[0]:
                 worst[int(near[j])] = max(worst.get(int(near[j]), 0.0), float(s[j]))
         poke[clip] = {"action": act.name, **F.frame_max(frames), "exposed_skin_max": skin,
-                      "where": [{"rest": [round(float(x), 3) for x in rest[k]], "bone": bone_of(k),
+                      "where": [{"rest": [round(float(x), 3) for x in rest[k]], "bone": bone_of(body, k),
                                  "depth_mm": round(1000 * d, 1)}
                                 for k, d in sorted(worst.items(), key=lambda kv: -kv[1])[:6]]}
+        if len(under):
+            tv = top.data.vertices
+            poke[clip]["top_under_panels"] = {
+                **F.frame_max(tframes),
+                "where": [{"rest": [round(float(x), 3) for x in top.matrix_world @ tv[k].co], "bone": bone_of(top, k),
+                           "depth_mm": round(1000 * d, 1)}
+                          for k, d in sorted(tworst.items(), key=lambda kv: -kv[1])[:6]]}
         say("poke", clip, poke[clip])
         row = []
         for k in (0.25, 0.6):
@@ -259,6 +297,8 @@ def main() -> int:
     body.hide_render = False
     (out / "poke.json").write_text(json.dumps({"blend": args.blend, "under_cloth_at_rest": int(len(near)),
                                                "outside_cloth_at_rest": rest_poke,
+                                               "left_out_by_an_opening": int(at_open.sum()),
+                                               "openings": open_rep, "top_under_panels_at_rest": int(len(under)),
                                                "tol_m": args.tol, "clips": poke}, indent=1),
                                    encoding="utf-8", newline="\n")
     say("wrote", out)

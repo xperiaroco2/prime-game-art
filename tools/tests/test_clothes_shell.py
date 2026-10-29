@@ -144,5 +144,33 @@ class Finish(unittest.TestCase):
         self.assertEqual(sum(len(f) - 2 for f in fs), 30)
 
 
+
+class Openings(unittest.TestCase):
+    def test_edge_loops_split_runs_longest_first(self):
+        edges = [(0, 1), (1, 2), (2, 0), (5, 6), (6, 7), (7, 8), (8, 5), (10, 11)]
+        self.assertEqual(H.edge_loops(edges), [[5, 6, 7, 8], [0, 1, 2], [10, 11]])
+        self.assertEqual(H.edge_loops([]), [])
+
+    def test_the_collar_not_the_hole_beside_it(self):
+        neck = (0.0, 0.02, 1.40)
+        loops = [((0.0, 0.01, 1.35), 0.62),  # the collar
+                 ((0.09, 0.03, 1.30), 0.20),  # a hidden-face hole under the strap, near the neck
+                 ((0.0, -0.1, 1.10), 0.90),  # the bib's hole: long, but far
+                 ((0.0, 0.0, 0.95), 1.80)]  # the tucked hem
+        self.assertEqual(H.pick_openings(loops, neck, 0.15), [0])
+
+    def test_both_layers_of_a_hem_and_none_when_far(self):
+        ankle = (0.1, 0.0, 0.08)
+        loops = [((0.1, 0.0, 0.15), 0.40), ((0.1, 0.0, 0.16), 0.36), ((0.1, -0.05, 0.2), 0.05)]
+        self.assertEqual(H.pick_openings(loops, ankle, 0.3), [0, 1])
+        self.assertEqual(H.pick_openings(loops, (0.0, 0.0, 1.4), 0.15), [])
+
+    def test_every_piece_has_its_joints(self):
+        self.assertEqual(H.OPENINGS["top"], ("Neck", "LeftHand", "RightHand"))
+        for joints in H.OPENINGS.values():
+            for jn in joints:
+                self.assertIn(jn, H.OPENING_REACH)
+
+
 if __name__ == "__main__":
     unittest.main()

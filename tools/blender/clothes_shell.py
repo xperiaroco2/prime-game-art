@@ -201,3 +201,43 @@ def button(c, t, s, n, r: float, z0: float, z1: float, dome: float, seg: int):
     faces = [[i, (i + 1) % seg, seg + (i + 1) % seg, seg + i] for i in range(seg)]
     faces += [[seg + i, seg + (i + 1) % seg, 2 * seg] for i in range(seg)]
     return verts, faces
+
+
+# the cloth's real openings (C1h): per piece the joints it opens at; the garment takes the top's when no top is made
+OPENINGS = {"top": ("Neck", "LeftHand", "RightHand"), "garment": ("LeftFoot", "RightFoot"),
+            "shoes": ("LeftFoot", "RightFoot")}
+OPENING_REACH = {"Neck": 0.15, "LeftHand": 0.15, "RightHand": 0.15, "LeftFoot": 0.3, "RightFoot": 0.3}
+
+
+def edge_loops(edges: list[tuple[int, int]]) -> list[list[int]]:
+    """The connected runs of a mesh's boundary edges (vertex index pairs), each its sorted vertex indices; longest
+    run first."""
+    parent: dict[int, int] = {}
+
+    def root(a: int) -> int:
+        while parent.setdefault(a, a) != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for a, b in edges:
+        ra, rb = root(a), root(b)
+        if ra != rb:
+            parent[ra] = rb
+    runs: dict[int, list[int]] = {}
+    for v in parent:
+        runs.setdefault(root(v), []).append(v)
+    return sorted((sorted(r) for r in runs.values()), key=lambda r: (-len(r), r[0]))
+
+
+def pick_openings(loops: list[tuple[tuple[float, float, float], float]], joint: tuple[float, float, float],
+                  reach: float, share: float = 0.5) -> list[int]:
+    """The indexes of the boundary loops (centre, length in m) that are a piece's opening at a joint (the collar at
+    the neck, a cuff at the wrist, a hem or a shoe's top at the ankle): the centre within reach of the joint and the
+    length at least share of the longest such loop's, so a small hole beside it (a hidden-face hole, a button's
+    bottom) is no opening."""
+    near = [i for i, (c, _ln) in enumerate(loops) if math.dist(c, joint) <= reach]
+    if not near:
+        return []
+    most = max(loops[i][1] for i in near)
+    return [i for i in near if loops[i][1] >= share * most]

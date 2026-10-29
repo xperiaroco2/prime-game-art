@@ -15,7 +15,8 @@ body source stays whole: only this build's copy loses them). Then the GLB with e
   --outside m outside the cloth (one ray along its reversed normal) is tested from just inside the cloth instead,
   so a shoulder or a toe that crosses the cloth at rest is cut too.
 - Under the cloth for certain (clothes_fit_geom.under_cloth): a body vertex inside the cloth at rest (its nearest
-  cloth face within --near m) and farther than --away m from every opening, on no neck, head or hand bone, is cut
+  cloth face within --near m) and farther than --away m from every real opening (clothes_open.opening_points: the
+  top's collar and cuffs, the trousers' hems, the shoes' tops), on no neck, head or hand bone, is cut
   without the erosion, also where a ray escapes: a clip would move it out through the cloth; on the Shoulder bones
   farther than --away-shoulder m (the skin under the straps' base, near the collar).
 - The shoes: the shoes are rigid on the feet, so a foot vertex inside one is cut for certain (no erosion): below the
@@ -528,7 +529,12 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     bpy.ops.wm.open_mainfile(filepath=str(Path(args.char).resolve()))
     arm = bpy.data.objects["CharacterArmature"]
-    char = next(o for o in bpy.data.objects if o.type == "MESH" and o.parent == arm)
+    import clothes_open as O
+    try:
+        char = O.body_mesh(arm, [], args.name)
+    except ValueError as e:
+        say("REFUSED", e)
+        return 3
     rep = {"char": args.char, "fit": args.fit, "mesh": char.name, "tris_before": tris(char)}
     with bpy.data.libraries.load(str(Path(args.fit).resolve())) as (src, dst):
         dst.objects = [n for n in src.objects if n in PIECES or n == "CharacterArmature"]
@@ -540,12 +546,15 @@ def main() -> int:
                          (farm.data.bones[b.name].tail_local - b.tail_local).length)
              for b in arm.data.bones if b.name in farm.data.bones}
     missing = sorted(used - set(diffs))
-    rest_diff = max(diffs[n] for n in used if n in diffs)
+    if not used or missing:
+        say("REFUSED the fit's cloth bones", sorted(used), "are not all the character's: missing", missing)
+        return 3
+    rest_diff = max(diffs[n] for n in used)
     rep["fit_armature_rest_diff_mm"] = round(rest_diff * 1000, 4)
     rep["other_bones_differing"] = sorted(n for n, d in diffs.items() if d > 1e-4 and n not in used)
     say("cloth bones", len(used), "rest diff mm", rep["fit_armature_rest_diff_mm"], "others differing",
         rep["other_bones_differing"])
-    if missing or rest_diff > 1e-4:
+    if rest_diff > 1e-4:
         say("REFUSED the fit's armature rest differs from the character's by", rest_diff, "m")
         return 3
     cloth = [o for o in dst.objects if o.type == "MESH"]
@@ -608,18 +617,12 @@ def main() -> int:
     me = char.data
     mw = char.matrix_world
     nmat = mw.to_3x3().inverted().transposed()
-    # the cloth's openings (collar, cuffs, hems, the shoes' tops): no cut reaches past them
+    # the cloth's real openings (collar, cuffs, hems, the shoes' tops): no cut reaches past them
     import bmesh
-    edge = []
-    for o in cloth:
-        bm = bmesh.new()
-        bm.from_mesh(o.data)
-        edge += [tuple(o.matrix_world @ v.co) for v in bm.verts if v.is_boundary]
-        bm.free()
-    ekd = KDTree(len(edge))
-    for i, e in enumerate(edge):
-        ekd.insert(e, i)
-    ekd.balance()
+    import clothes_open as O
+    edge, rep["openings"] = O.opening_points(cloth, arm)
+    say("openings", len(edge), "points:", rep["openings"])
+    ekd = O.kd_of(edge)
     # a shoe is closed: the foot inside it (Foot and Toes, below the shoe's top opening) never shows
     # (each shoe its own top, by side; and any foot vertex with the shoe above it, the toes under the toe box)
     shoe = next((o for o in cloth if o.name == "shoes"), None)
