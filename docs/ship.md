@@ -1570,7 +1570,7 @@ tests: `tools/tests/test_ship_workshop.py`.
 | `ws_rug` | dark green pile D66 x 1.1 with a rolled edge and a darker border band, at r 1.10 on a_w 67.5 (the drawing's D80 at r 0.95 covered the floor lights' bars; D66 fits between them with 1 cm to spare) | 1 | 1152 |
 | `ws_lamp` | the articulated lamp on the bench (a_w 100): bronze base D18, turntable, twin arms through graphite hubs, the shade at h 140 aimed at the robot's open bays, its green lens | 1 | 2016 |
 
-About 97k triangles placed (step 1: 68.6k). The bench's facets take the lounge's wall pieces (`tip_panel_low_*`: the relief over
+About 100.5k triangles placed (step 1: 68.6k). The bench's facets take the lounge's wall pieces (`tip_panel_low_*`: the relief over
 h 0.92; `tip_window_lounge_*`: a flush 3 cm sill), the cabinet's keep the plain window facets. The door side's last
 two cable trunks (`tip_trunk*`) stood on the bench's vertices and went with it; the pieces are gone from the layout.
 
