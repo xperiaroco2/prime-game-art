@@ -301,8 +301,47 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
     me.materials.clear()
     rep["tris"] = sum(len(p.vertices) - 2 for p in me.polygons)
     rep["material"] = material(top, keep, args, rep)
+    rep["follow"] = follow_panels(top, keep, args)
     say("shell", rep)
     return top, rep
+
+
+def follow_panels(top, gar, args) -> dict:
+    """The top under the bib, the back panel and the trousers' waist takes their weights (the fit's), by the share
+    of five rays from each vertex (its normal and four tilted by args.shell_hide_tilt) that meet the garment within
+    args.shell_follow m (clothes_shell.follow_row): it moves with the panels and stays under them (C1h: the body's
+    weights let it poke through the bib's sides by up to 10 mm in the clips, clothes_proof's top_under_panels)."""
+    if args.shell_follow <= 0 or gar is None:
+        return {}
+    tree = tree_of([gar])
+    src = body_weights(gar)
+    mw = top.matrix_world
+    nm = mw.to_3x3().inverted().transposed()
+    groups = {g.name: g for g in top.vertex_groups}
+    names = {g.index: g.name for g in top.vertex_groups}
+    k = args.shell_hide_tilt
+    full = part = 0
+    for v in top.data.vertices:
+        p = mw @ v.co
+        n = (nm @ v.normal).normalized()
+        side = Vector((n.y, -n.x, 0.0))
+        side = side.normalized() if side.length > 1e-6 else Vector((1.0, 0.0, 0.0))
+        up = n.cross(side).normalized()
+        dirs = [n] + [(n + k * d).normalized() for d in (side, -side, up, -up)]
+        hits = sum(tree.ray_cast(p + d * 1e-4, d, args.shell_follow)[0] is not None for d in dirs)
+        if not hits:
+            continue
+        own = {names[g.group]: g.weight for g in v.groups if g.group in names}
+        row = H.follow_row(own, weight_row(src, p), hits / len(dirs))
+        for g in list(v.groups):
+            top.vertex_groups[g.group].remove([v.index])
+        for b, x in row.items():
+            if b not in groups:
+                groups[b] = top.vertex_groups.new(name=b)
+            groups[b].add([v.index], x, "REPLACE")
+        full += hits == len(dirs)
+        part += hits < len(dirs)
+    return {"verts_following_fully": full, "verts_following_in_part": part}
 
 
 def hidden_face(tree, c, n, z_full, args) -> bool:

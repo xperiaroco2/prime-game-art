@@ -172,5 +172,25 @@ class Openings(unittest.TestCase):
                 self.assertIn(jn, H.OPENING_REACH)
 
 
+
+class Follow(unittest.TestCase):
+    def test_share_blends_and_normalises(self):
+        own, panel = {"Chest": 1.0}, {"Chest": 0.5, "Spine": 0.5}
+        self.assertEqual(H.follow_row(own, panel, 0.0), {"Chest": 1.0})
+        self.assertEqual(H.follow_row(own, panel, 1.0), {"Chest": 0.5, "Spine": 0.5})
+        half = H.follow_row(own, panel, 0.5)
+        self.assertAlmostEqual(half["Chest"], 0.75)
+        self.assertAlmostEqual(half["Spine"], 0.25)
+        self.assertEqual(H.follow_row(own, panel, 2.0), H.follow_row(own, panel, 1.0))  # clamped
+
+    def test_four_bones_at_most(self):
+        own = {"A": 0.3, "B": 0.3, "C": 0.2, "D": 0.2}
+        panel = {"E": 0.9, "A": 0.1}
+        row = H.follow_row(own, panel, 0.5)
+        self.assertEqual(len(row), 4)
+        self.assertAlmostEqual(sum(row.values()), 1.0)
+        self.assertIn("E", row)
+
+
 if __name__ == "__main__":
     unittest.main()

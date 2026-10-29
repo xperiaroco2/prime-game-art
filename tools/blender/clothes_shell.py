@@ -241,3 +241,14 @@ def pick_openings(loops: list[tuple[tuple[float, float, float], float]], joint: 
         return []
     most = max(loops[i][1] for i in near)
     return [i for i in near if loops[i][1] >= share * most]
+
+
+def follow_row(own: dict[str, float], panel: dict[str, float], share: float, n: int = 4) -> dict[str, float]:
+    """A top vertex's weights under a panel (C1h): its own (the body's) blended toward the panel's at its nearest
+    point by share (0: its own, 1: the panel's), the n largest kept and normalised, so the top moves with the bib,
+    the back panel and the trousers' waist and stays under them in every clip."""
+    share = min(1.0, max(0.0, share))
+    row = {b: (1 - share) * own.get(b, 0.0) + share * panel.get(b, 0.0) for b in set(own) | set(panel)}
+    best = sorted(((w, b) for b, w in row.items() if w > 1e-4), reverse=True)[:n]
+    tot = sum(w for w, _ in best)
+    return {b: w / tot for w, b in best} if tot > 0 else dict(own)

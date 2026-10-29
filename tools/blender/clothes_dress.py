@@ -475,6 +475,9 @@ def main() -> int:
                          "hidden under it (m)")
     ap.add_argument("--shell-hide-tilt", type=float, default=0.6, help="the four rays' tilt off the normal (tan)")
     ap.add_argument("--shell-hide-rings", type=int, default=1, help="the hidden faces kept next to a panel's edge")
+    ap.add_argument("--shell-follow", type=float, default=0.04,
+                    help="a top vertex whose rays meet the garment this near takes its weights by their share "
+                         "(m; 0: the body's alone)")
     ap.add_argument("--shell-decimate", default="0.32,0.22",
                     help="the top's faces kept away from its openings: arms, torso (share; 1,1: no decimation)")
     ap.add_argument("--shell-protect", default="0.035,0.03,0.02",
