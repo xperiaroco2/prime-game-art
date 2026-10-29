@@ -32,8 +32,8 @@ to 9). One piece at a time: C2 runs the tracksuit through the same steps.
      rounds) and small holes are filled (`--hole-sides`, 10 edges; UVs from the faces beside);
    - per piece over its target (`--garment-tris`, `--shoe-tris`): Blender's collapse decimation of a copy, fresh UVs
      (Smart UV Project) and the full piece's base colour, roughness and normal baked onto it in Cycles (`--bake`
-     px, selected to active). The bake's reach is `--ray` (0.01 m; B's 0.04 m reached the denim beside the
-     arm and smeared the inner right sleeve); the baked roughness is floored at `--rough-floor` (0.85) and the
+     px, selected to active). The bake's reach is `--ray` (0.03 m, half outside and half inside; B's 4 cm inward
+     reached the denim beside the arm and smeared the inner right sleeve, 1 cm left black holes); the baked roughness is floored at `--rough-floor` (0.85) and the
      specular lowered to 0.3, so denim reads as matte fabric, not leather; Decimating Meshy's UVs in place garbled the shirt's stripes and the shoes' laces
      (texels pulled across islands; seen on the first try), so the low mesh never keeps them;
    - writes `cloth.blend` (images packed), `cloth.glb` and `cloth.json` (per piece its triangles and box, what was
@@ -106,7 +106,8 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    sides and rises at the heel and the tongue), or through the shoe's wall (`through_shoe`: 1 to 30 mm outside it,
    its nearest shoe point over 1 cm from the rim), and a face of such a vertex goes when all its vertices are on the
    foot below the rim's high point (`shoe_face`; r12 to r15 showed a teal triangle on each shoe's outer side); a
-   body vertex inside the cloth at rest, over `--away` 0.08 m from every opening and on no neck, head or hand bone,
+   body vertex inside the cloth at rest, over `--away` 0.08 m from every real opening (C1h, `clothes_open.py`: the
+   top's collar and cuffs, the trousers' hems, the shoes' tops; no strap, panel or cut edge) and on no neck, head or hand bone,
    always goes too (`under_cloth`: the rays miss some on the upper back and the crotch, and a crouch or a strafe
    moved them out through the cloth); one ring of erosion keeps the rays' cut under the cloth, the certain cuts
    (the shoes, `under_cloth`) skip it); on the Shoulder bones the limit is `--away-shoulder` 0.04 m (the skin under
@@ -117,7 +118,9 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    sketch's 44, 55, 73), and with a little specular it read as wet leather: `--denim-gain R,G,B` scales the denim's
    linear colour (`shift`, weighted by `denim_weight`: blue over red and green; the stripes and the orange stitching
    keep theirs). C1d's 2.15, 2.15, 2.1 (Godot's frame over the sketch's, per channel) brought Godot's legs to 42, 54,
-   72. Blender's `Image.pixels` of an 8-bit map are its stored sRGB values, not linear. `--straps` (C1e,
+   72. Blender's `Image.pixels` of an 8-bit map are its stored sRGB values, not linear. The top is left out of this
+   fill: `clothes_top.py` fills its own maps and then wraps its back seam, which a second fill would undo (C1h). The
+   dropped route (C1e; its code went in C1h): `--straps` (
    `clothes_strap.py`): the Meshy straps break into folded flaps over the shoulders (3 to 8 layers within 4 cm), so
    each strap's path is found from its own UV column (u 0.476 to 0.511) binned by angle around the shoulder axis
    (`--strap-axis` y 0.04, z 1.18; `--strap-arc` -70 to 100 degrees), followed down the back along the nearest denim
@@ -127,16 +130,23 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    there, mapped onto a plain denim rectangle of the map (`--strap-uv`, mirrored along the strap) and weighted from
    the nearest body point. `--sleeve-smooth N`: N smoothing steps on the arm-weighted vertices along each vertex's
    normal only (an umbrella step along the surface zig-zagged the stripes, C1d r19), each move at most
-   `--sleeve-max` 0.01 m and never nearer the body than min(its old distance, `--sleeve-floor` 4 mm). The GLB with `export_glb.py`'s
+   `--sleeve-max` 0.01 m and never nearer the body than min(its old distance, `--sleeve-floor` 4 mm); see below for
+   why the hybrid route replaced both. The GLB with `export_glb.py`'s
    fixed textured options. Then glTF-Validator and
    `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
 9. **The proof.** `tools/blender/clothes_proof.py -- --blend <char>_char.blend --name <char> --out DIR`: per clip
    (Idle, Walk, Jog_Fwd, Sprint_Fwd, Strafe_Left, Crouch_Fwd, Jump_Start, Jump_Air, Talk_Upper) the poke-through
-   (the body vertices the cloth hides at rest, within 0.06 m of it and not by an opening, inside it or already
+   (the body vertices the cloth hides at rest, within 0.06 m of it and over `--opening` 4 cm from a real opening:
+   `clothes_open.opening_points`, per piece the long boundary loop at its joints, the top's collar and cuffs at the
+   Neck and the Hands, the trousers' hems and the shoes' tops at the Feet, `clothes_shell.pick_openings`; until C1h
+   every boundary counted, the straps', panels' and cut edges and the hidden-face holes too, which left about 96 % of
+   the near-cloth body out; inside it or already
    outside it, `outside_cloth_at_rest`; followed through every frame: those outside the cloth by more than 1 mm,
    the frame maximum, `poke.json`; a vertex over `--exposed` 0.02 m outside whose nearest cloth face lies above the
    chest, the UpperChest bone's head, and is turned up is the neck over the collar's roll, exposed skin, counted
-   apart as `exposed_skin_max`: `exposed_skin`) and a contact sheet (front, side, back at two moments); the close-ups at
+   apart as `exposed_skin_max`: `exposed_skin`); with a top, the top's vertices under the garment at rest (their
+   normal meets it within `--panel-reach` 4 cm) followed against the garment alone, `top_under_panels` per clip;
+   and a contact sheet (front, side, back at two moments); the close-ups at
    0.8 m (collar and neck, cuffs and hands, crotch, hems and shoes); then `tools/run.sh render <glb> --pose
    "CharacterArmature|Idle_Loop" --no-outline`, a Godot frame sheet (`tools/run.sh frames <glb> --clips Idle
    --compare ""`: the denim's matte look is judged there, Workbench ignores roughness) and a defect hunt. For the
@@ -148,7 +158,7 @@ Four builders (C1b to C1e) patched the Meshy garment's upper body and it kept ge
 straps' bases were 3 to 8 folded layers, removing them bared holes, the sleeves were crumpled and bulky, and Crouch's
 poke-through doubled (r20). A fitted top is better made from the body itself. The loose lower parts (trousers,
 pockets, hems, shoes) stay Meshy's, because they read right and match the sketch. `clothes_dress.py --shell`
-(`clothes_top.py` inside Blender, the maths in `clothes_shell.py`; it replaces `--straps` and `--sleeve-smooth`):
+(`clothes_top.py` inside Blender, the maths in `clothes_shell.py`; it replaced `--straps` and `--sleeve-smooth`):
 
 10. **The garment cut** (`cut_garment`). The Meshy garment keeps:
     - everything below `--waist` 1.0 m;
@@ -156,6 +166,9 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
     - the back panel inside its V (`--back`: from 0.12 m half width at the waist to 0.03 m at the 1.12 m apex).
 
     Their edges are cut by planes (`bmesh.ops.bisect_plane`), so they are straight lines, not a row of whole faces.
+    The waist is cut first, all round and without clearing; the bib's and the V's planes then act only above it, so
+    beside them the trousers end at the straight 1.0 m line (C1h; before, they took whole faces crossing the waist,
+    a sawtooth 2 to 4 cm low).
 11. **The striped top** (`shell`). A copy of the character's body after the f2 move, its faces on the torso and arm
     bones only.
     - The clearance: each vertex moves out along its normal by `--shell-off` 6 mm. Where a kept panel lies nearer
@@ -165,10 +178,13 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
       (`--neck`: the plane through its front and back points, cutting only within `--neck-r` of the neck).
     - The edges: the collar and cuffs fold in toward the body by `--shell-lip` 4.5 mm, a rolled edge rather than a
       paper one.
-    - The hidden part: the faces under the bib and the back panel go (every vertex with a panel within
-      `--shell-hide` 4 cm, two rings in from the panels' edges).
+    - The hidden part: the faces under the bib and the back panel go (step 14: per face its normal and four tilted
+      rays within `--shell-hide` 6 cm, `--shell-hide-rings` 1 ring in from the panels' edges).
     - The weights are the body's own (same vertices). The body under the top is then cut as under any cloth, so no
-      clip can push it through.
+      clip can push it through. Under the garment (the bib, the back panel, the trousers' waist) each vertex's weights
+      blend toward the garment's at its nearest point by the share of five rays that meet it within `--shell-follow`
+      4 cm (`follow_panels`, `follow_row`; C1h): with the body's weights alone the top poked through the bib's sides
+      by up to 10 mm in the clips (the proof's `top_under_panels`).
 12. **The top's UVs and maps.**
     - The UVs: the torso is a cylinder round the vertical axis (v by height, the seam at the back centre), each arm a
       cylinder round its T-pose axis (v along the arm, the seam underneath), all at `--shell-per-m` 1.29 UV units

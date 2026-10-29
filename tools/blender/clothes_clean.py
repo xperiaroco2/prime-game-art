@@ -8,7 +8,7 @@ and bakes Meshy's texture onto fresh UVs (matte: the roughness has a fabric floo
 
     blender -b --factory-startup --python tools/blender/clothes_clean.py -- MODEL.glb OUT_DIR --height 1.80
         [--garment-tris 8000] [--shoe-tris 1600] [--split-z 0.0] [--top-tris 4500]
-        [--ray 0.01] [--rough-floor 0.85] [--spike-deg 40] [--hole-sides 10]
+        [--ray 0.03] [--rough-floor 0.85] [--spike-deg 40] [--hole-sides 10]
 
 Writes OUT_DIR/cloth.blend, cloth.glb and cloth.json (per piece its triangles, faces dropped and why); prints
 CLOTHES_CLEAN lines.
@@ -144,8 +144,9 @@ def fill_holes(bm, sides: int, start: int) -> int:
 def bake_low(hi, target: int, size: int, ray: float, rough_floor: float):
     """A decimated copy of hi with fresh UVs and hi's base colour, roughness and normal baked onto it (Cycles,
     selected to active). Decimating Meshy's own UVs in place garbles the stripes and the laces (texels pulled across
-    islands), so the low mesh never keeps them. ray is the bake's reach, half outside and half inside: B's 4 cm
-    inward reached the denim beside the arm (a dark smear on the inner right sleeve), 1 cm left black holes. The baked roughness is raised to at least rough_floor
+    islands), so the low mesh never keeps them. ray is the bake's reach (--ray, 3 cm), half outside and half inside:
+    B's 4 cm inward reached the denim beside the arm (a dark smear on the inner right sleeve), 1 cm left black holes.
+    The baked roughness is raised to at least rough_floor
     (fabric: Meshy's map read as leather gloss) and the specular is lowered, so the denim stays matte."""
     lo = hi.copy()
     lo.data = hi.data.copy()
