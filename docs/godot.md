@@ -10,10 +10,12 @@ tools/run.py godot-check <glb> [...] [--out DIR] [--strict-contract] [--humanoid
                                                                   import headless in godot/; assertions; report.json
 tools/run.py frames <glb> [--clips A,B] [--compare all|A,B|''] [--video A,B] [--blend FILE] [--out DIR]
                   [--face CLIP [--face-beside PNG --face-rects 'x,y,w,h;...']] [--yaw DEG]
-                  [--closeups 'label@x,y,z/size/yaw[/pitch];...' [--closeup-clip Idle] [--closeup-time S]]
+                  [--closeups 'label@x,y,z[~Bone]/size/yaw[/pitch];...' [--closeup-clip Idle] [--closeup-time S]]
                                                                   Godot-rendered frame sheets (off-screen window);
                                                                   --closeups: targeted orthographic close-ups, two
-                                                                  per row, sheets/closeups.png (y up, facing +z)
+                                                                  per row, sheets/closeups.png (y up, facing +z);
+                                                                  ~Bone: the rest point carried into the pose by
+                                                                  that bone (the worst frame of a clip, C1j)
 tools/run.py showroom [<glb>] [--variants a,b] [--clip Idle] [--hdri HDR] [--beside PNG [--beside-rects ...]]
                   [--out DIR] | --write-presets            look variants, face and body sheets, GPU ms (off-screen)
 ```

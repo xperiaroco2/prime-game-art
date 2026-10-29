@@ -149,7 +149,13 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    (its nearest face can switch in motion, to a strap's folded lip or the bib's edge rim, and read a poke where the
    top stays under its panel; so each is also followed against its own panel point, where its normal met the
    garment at rest, the same barycentric point of that face in every frame, `top_under_panels_tracked`, with the
-   room at rest; C1i);
+   room at rest; C1i; a garment face thinner than `--track-min-alt` 1.5 mm, a sliver, or folded back against its
+   neighbours carries no tracked point and the ray goes on past it, `clothes_shell.track_face_ok`, C1j);
+   the gaps (C1k): the body vertices step 8 removed under the cloth (kept in the blend as `body_removed`, on the
+   body's weights, not parented to the armature, so the GLB leaves it out) followed through every frame, a frame
+   counting those whose normal meets no cloth within `--gap-reach` 8 cm, nor behind them within `--gap-back` 3 cm (a gap between pieces, the hem and the
+   trousers or a band's end and a panel, shows the hollow inside), those uncovered at rest or by an opening counted
+   apart (`poke.json` `gaps`, per clip `gaps` with `where`);
    and a contact sheet (front, side, back at two moments); the close-ups at
    0.8 m (collar and neck, cuffs and hands, crotch, hems and shoes); then `tools/run.sh render <glb> --pose
    "CharacterArmature|Idle_Loop" --no-outline`, a Godot frame sheet (`tools/run.sh frames <glb> --clips Idle
@@ -170,9 +176,13 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
     - the back panel inside its V (`--back`: from 0.12 m half width at the waist to 0.03 m at the 1.12 m apex).
 
     Their edges are cut by planes (`bmesh.ops.bisect_plane`), so they are straight lines, not a row of whole faces.
-    The waist is cut first, all round and without clearing; the bib's and the V's planes then act only above it, so
-    beside them the trousers end at the straight 1.0 m line (C1h; before, they took whole faces crossing the waist,
-    a sawtooth 2 to 4 cm low).
+    The waist is cut first, all round; the bib's and the V's planes then cut only the faces above it. No cut clears
+    anything (C1k): `bisect_plane`'s clear kills vertices, and a killed vertex takes every face round it, so the
+    bib's and the V's clears took the waist line's vertices beside the panels and with them the trousers' faces under
+    them (a sawtooth up to 4 cm low, hidden by the band's removal down to about 0.96 m). The only deletion is
+    `keep_face` by face centres (`_bisect` with a clearing side deletes the cut faces by their centres too,
+    `clothes_shell.cleared`; the top's hem, cuffs and neck). With `--waistband 0,0` the trousers' top edge beside the
+    panels reads 0.999 to 1.000 m on the chameleon (`garment cut`'s `waist_edge_z_min_max`).
 
     Beside the bib and the back panel the Meshy waistband went too (C1i): its layered side opening tore into dark
     shards and spikes over the tucked stripes whatever the cut. The faces from `--waistband`'s height less its lap
@@ -181,6 +191,16 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
     `--band-flaps` 10 cm above the waist, the faces within 2.5 cm of the bib's side edge or the back panel's whose
     normal points toward the body go too (`inward_flap`: Meshy's layered edge flaps, seen as dark shards). Step 13b
     builds the band in their place.
+
+10b. **The edge peel** (`peel_edges`, C1j). Along the bib's and the back panel's side edges, within `--edge-zone`
+    2 cm either side of the cut, from the band's foot up to `--band-flaps` above the waist (r27 peeled up to the
+    bib's top and opened the bib over the chest), Meshy's layered side opening leaves wedges, flaps and slivers:
+    - the faces mostly of the shirt Meshy baked into the denim (`shirt_texel`: light and grey) go, but only those
+      reached from an open edge through such faces (`flood`, C1k): the bib's own light stitching inside the cloth
+      stays, no hole opens;
+    - then `--edge-peel` 3 passes peel the faces on an open edge that face the body (their normal's way out under
+      `--edge-inward` -0.1), slivers (under 1 mm), crumbs (under 2 mm2) or faces folded back (`edge_defect`);
+    - then loose bits of `--edge-island` 12 faces or fewer, all in the zone.
 11. **The striped top** (`shell`). A copy of the character's body after the f2 move, its faces on the torso and arm
     bones only.
     - The clearance: each vertex moves out along its normal by `--shell-off` 6 mm. Where a kept panel lies nearer
@@ -203,7 +223,9 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
 12. **The top's UVs and maps.**
     - The UVs: the torso is a cylinder round the vertical axis (v by height, the seam at the back centre), each arm a
       cylinder round its T-pose axis (v along the arm, the seam underneath), all at `--shell-per-m` 1.29 UV units
-      per metre in v. A set-in sleeve's seam at |x| = `--seam-x` 0.165 m above `--arm-z` 1.18 m divides them.
+      per metre in v. A set-in sleeve's seam at |x| = `--seam-x` 0.165 m above `--arm-z` 1.18 m divides them; the
+      top is cut along it (and at `--arm-z` beyond it) before the UVs, so the faces' centres put each wholly on one
+      side and the seam runs straight (C1k; it zig-zagged along whole faces before).
     - The stripes: one stripe is one image row (`stripe_cover`, box-filtered). They are navy and white of one width
       from the collar down and from each cuff up: `--stripe` 3.2 cm period on the chameleon, 2.6 cm on the axolotl,
       as their sketches draw them. The colours are the Meshy sleeves' own medians (sRGB 29, 38, 53 and 250, 251, 248).
@@ -233,15 +255,19 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
       own material `buckle_bronze` (`--bronze`: sRGB 0.60, 0.42, 0.20, metallic 0.85, roughness 0.38, no texture;
       the sixth surface), every vertex of a piece weighted like the body under its strap station, so it rides rigid
       with the strap.
-13b. **The waistband** (`waistband`, C1i). Per side a denim strip `--waistband` 3.8 cm tall, from 1.2 cm under the
-    bib's side edge round the hip to 1.2 cm under the back panel's (`--band-over`), a station every `--band-step`
-    3 degrees round the waist's centre (y `--band-axis-y` 0.015 m); 14 stations, 7.1 cm, per side on the
+13b. **The waistband** (`waistband`, C1i). Per side a denim strip `--waistband` 3.8 cm tall, from 3 cm under the
+    bib's side edge round the hip to 3 cm under the back panel's (`--band-over` 0.03; C1j, 1.2 cm before: the band
+    started at the bib's cut edge with no overlap and the top showed through), a station every `--band-step`
+    3 degrees round the waist's centre (y `--band-axis-y` 0.015 m); 27 stations, 14.3 cm, per side on the
     chameleon (the bib covers almost the whole front).
     - Each column lies on the body (a ray from the centre at each lat's height) offset out
       (`band_lats`, `band_offset`): at the lower edge the trousers' own clearance 8 mm under it plus 1.5 mm (14 to
       19 mm), the edge lapping 6 mm over the trousers' cut edge with a `--band-lip` 3 mm lip folded onto them; at
       the upper edge cinched to `--band-cinch` 6 mm out of the tucked top, then rolled in to 1 mm out of it (the
-      ledge), so neither edge shows a gap. At the ends the strip stays 2 mm under the Meshy it runs under.
+      ledge), so neither edge shows a gap. At the ends the strip stays 2 mm inside the Meshy panel it runs under,
+      never under 0.5 mm off the body (`band_end`, C1k; before, a floor 1 mm outside the top put an end on or
+      outside the panel wherever the panel lay nearer); `waistband`'s report counts the end points pulled inside the
+      top's offset and those the floor leaves on the panel.
     - The UVs are the straps' stitched patch across its height (the two orange top-stitch lines run along it), the
       weights the trousers' four nearest vertices under the band by inverse distance (`blend_rows`), and a bronze
       button (the buckles' `--button-size` and material) sits on it `--band-button` 1.2 cm beyond each bib edge.
@@ -256,8 +282,9 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
       decimated vertex then takes the body's weights under it.
     - The AO bake is black outside the islands: it is filled from them, and across the torso's back seam each
       margin column takes the other side's texels, so the mips and the normal map show no hairline there.
-15. **The proof's close-ups in Godot.** `frames --closeups 'label@x,y,z/size/yaw[/pitch];...'` (Godot's frame: y up,
-    the character facing +z) adds `sheets/closeups.png`, two shots per row. Each shot is orthographic, the view's
+15. **The proof's close-ups in Godot.** `frames --closeups 'label@x,y,z[~Bone]/size/yaw[/pitch];...'` (Godot's
+    frame: y up, the character facing +z) adds `sheets/closeups.png`, two shots per row; with `~Bone` the rest point
+    moves with that bone into the pose shot (`--closeup-clip`, `--closeup-time`: a clip's worst frame, C1j). Each shot is orthographic, the view's
     height is the size, and the studio light turns with each shot's yaw. The proof's `poke.json` now names up to six
     poking vertices per clip (`where`: rest place, bone, depth).
 
