@@ -145,7 +145,11 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    the frame maximum, `poke.json`; a vertex over `--exposed` 0.02 m outside whose nearest cloth face lies above the
    chest, the UpperChest bone's head, and is turned up is the neck over the collar's roll, exposed skin, counted
    apart as `exposed_skin_max`: `exposed_skin`); with a top, the top's vertices under the garment at rest (their
-   normal meets it within `--panel-reach` 4 cm) followed against the garment alone, `top_under_panels` per clip;
+   normal meets it within `--panel-reach` 4 cm) followed against the garment alone, `top_under_panels` per clip
+   (its nearest face can switch in motion, to a strap's folded lip or the bib's edge rim, and read a poke where the
+   top stays under its panel; so each is also followed against its own panel point, where its normal met the
+   garment at rest, the same barycentric point of that face in every frame, `top_under_panels_tracked`, with the
+   room at rest; C1i);
    and a contact sheet (front, side, back at two moments); the close-ups at
    0.8 m (collar and neck, cuffs and hands, crotch, hems and shoes); then `tools/run.sh render <glb> --pose
    "CharacterArmature|Idle_Loop" --no-outline`, a Godot frame sheet (`tools/run.sh frames <glb> --clips Idle
@@ -169,6 +173,14 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
     The waist is cut first, all round and without clearing; the bib's and the V's planes then act only above it, so
     beside them the trousers end at the straight 1.0 m line (C1h; before, they took whole faces crossing the waist,
     a sawtooth 2 to 4 cm low).
+
+    Beside the bib and the back panel the Meshy waistband went too (C1i): its layered side opening tore into dark
+    shards and spikes over the tucked stripes whatever the cut. The faces from `--waistband`'s height less its lap
+    (3.8 - 0.6 = 3.2 cm) below the waist line up to it, outside the bib (|x| 0.105 m) and the back panel (0.12 m at
+    the waist), go (`in_waist_band`), cut straight up and down at those two edges first; and from the band up to
+    `--band-flaps` 10 cm above the waist, the faces within 2.5 cm of the bib's side edge or the back panel's whose
+    normal points toward the body go too (`inward_flap`: Meshy's layered edge flaps, seen as dark shards). Step 13b
+    builds the band in their place.
 11. **The striped top** (`shell`). A copy of the character's body after the f2 move, its faces on the torso and arm
     bones only.
     - The clearance: each vertex moves out along its normal by `--shell-off` 6 mm. Where a kept panel lies nearer
@@ -180,6 +192,9 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
       paper one.
     - The hidden part: the faces under the bib and the back panel go (step 14: per face its normal and four tilted
       rays within `--shell-hide` 6 cm, `--shell-hide-rings` 1 ring in from the panels' edges).
+    - Under the panels (C1i): above the waist each vertex whose five rays meet the garment within `--shell-hide` is
+      pulled in toward `--shell-under` 1.5 mm off the body by their share (`ray_share`, `under_offset`): 1 deep
+      under the bib, partial at its edge, so the visible top beside the edge keeps its 6 mm and the bib gets room.
     - The weights are the body's own (same vertices). The body under the top is then cut as under any cloth, so no
       clip can push it through. Under the garment (the bib, the back panel, the trousers' waist) each vertex's weights
       blend toward the garment's at its nearest point by the share of five rays that meet it within `--shell-follow`
@@ -218,6 +233,18 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
       own material `buckle_bronze` (`--bronze`: sRGB 0.60, 0.42, 0.20, metallic 0.85, roughness 0.38, no texture;
       the sixth surface), every vertex of a piece weighted like the body under its strap station, so it rides rigid
       with the strap.
+13b. **The waistband** (`waistband`, C1i). Per side a denim strip `--waistband` 3.8 cm tall, from 1.2 cm under the
+    bib's side edge round the hip to 1.2 cm under the back panel's (`--band-over`), a station every `--band-step`
+    3 degrees round the waist's centre (y `--band-axis-y` 0.015 m); 14 stations, 7.1 cm, per side on the
+    chameleon (the bib covers almost the whole front).
+    - Each column lies on the body (a ray from the centre at each lat's height) offset out
+      (`band_lats`, `band_offset`): at the lower edge the trousers' own clearance 8 mm under it plus 1.5 mm (14 to
+      19 mm), the edge lapping 6 mm over the trousers' cut edge with a `--band-lip` 3 mm lip folded onto them; at
+      the upper edge cinched to `--band-cinch` 6 mm out of the tucked top, then rolled in to 1 mm out of it (the
+      ledge), so neither edge shows a gap. At the ends the strip stays 2 mm under the Meshy it runs under.
+    - The UVs are the straps' stitched patch across its height (the two orange top-stitch lines run along it), the
+      weights the trousers' four nearest vertices under the band by inverse distance (`blend_rows`), and a bronze
+      button (the buckles' `--button-size` and material) sits on it `--band-button` 1.2 cm beyond each bib edge.
 14. **The budget** (C1g). The axolotl's body alone is 41k triangles (head and gills), so the top pays:
     - its faces under the bib and the back panel go when their normal and four rays tilted round it
       (`--shell-hide-tilt` 0.6) all meet the panel within `--shell-hide` 6 cm, one ring in from the panel's edges.
