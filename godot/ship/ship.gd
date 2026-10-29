@@ -27,6 +27,7 @@ const Player = preload("res://ship/player.gd")
 const VentGlow = preload("res://ship/vent_glow.gd")
 const VentAnim = preload("res://ship/vent_anim.gd")
 const GillRow = preload("res://ship/gill_row.gd")
+const GillCover = preload("res://ship/gill_cover.gd")
 const WATCHDOG_S: float = 240.0
 const UP := Vector3.UP
 const SPEED: float = 3.0
@@ -106,7 +107,7 @@ func _initialize() -> void:
 	nav_blink = bool(_req.get("nav_blink", true))
 	DirAccess.make_dir_recursive_absolute(_out)
 	var test_play: bool = _req["mode"] == "play" and bool(_req.get("test", false))
-	if _req["mode"] in ["shoot", "video", "vent_anim", "gill_anim"] or test_play:
+	if _req["mode"] in ["shoot", "video", "vent_anim", "gill_anim", "cover_anim"] or test_play:
 		if DisplayServer.get_name() == "headless":
 			_fail("shoot needs a window (off-screen), not --headless")
 			return
@@ -127,6 +128,8 @@ func _initialize() -> void:
 		_vent_anim()
 	elif _req["mode"] == "gill_anim":
 		_gill_anim()
+	elif _req["mode"] == "cover_anim":
+		_cover_anim()
 	else:
 		_shoot()
 
@@ -1033,4 +1036,115 @@ func _gill_anim() -> void:
 			beats.append([snappedf(f / fps, 0.01), beat])
 	_write("anim.json", {"frames": count, "fps": fps, "seconds": seconds, "lights": lights, "states": beats})
 	print("SHIP gill_anim %d frames" % count)
+	quit(0)
+
+
+# --- the gill cover pilot (art #263, 2026-10-29; gill_cover.gd) ----------------------------------------------------
+## ship.py --cover-anim: gill_cover.gd's demo on th_wall_e's cover from each camera in "cams" ([name, eye, look, fov]):
+## one PNG a frame into <out>/<name>/frames, the key moments labelled into <name>/keys_sheet.png, the stills (shut, gasp,
+## open) into stills/<name>_<state>.png and sheet.png beside the request's "ref" (the concept).
+func _cover_anim() -> void:
+	_environment()
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
+	_probes()
+	var a: Dictionary = _req["anim"]
+	var piece: Node3D = null
+	for n: Node in ship.get_children():
+		if String(n.name).begins_with("th_wall_e"):
+			piece = n
+	if piece == null:
+		_fail("no placed th_wall_e")
+		return
+	var cover: Node = GillCover.new()
+	piece.add_child(cover)
+	cover.setup(piece)
+	cover.breathing = false
+	_camera = Camera3D.new()
+	_camera.near = 0.05
+	_camera.far = 500.0
+	root.add_child(_camera)
+	_camera.make_current()
+	var layer: CanvasLayer = CanvasLayer.new()
+	_label = Label.new()
+	_label.position = Vector2(16, 10)
+	_label.add_theme_font_size_override("font_size", 30)
+	_label.add_theme_color_override("font_color", Color(1, 1, 1))
+	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_label.add_theme_constant_override("outline_size", 8)
+	layer.add_child(_label)
+	root.add_child(layer)
+	var fps: float = float(a["fps"])
+	var count: int = int(GillCover.DEMO_S * fps)
+	var events: Array = GillCover.demo_events()
+	var key_frames: Dictionary = {}
+	for kv: Array in GillCover.demo_keys():
+		key_frames[int(round(float(kv[0]) * fps))] = kv
+	DirAccess.make_dir_recursive_absolute(_out.path_join("stills"))
+	var stills: Dictionary = {}
+	var states: Array = []
+	var peak: float = 0.0
+	for cam: Array in a["cams"]:
+		var name: String = cam[0]
+		_camera.fov = float(cam[3])
+		_camera.look_at_from_position(_v(cam[1]), _v(cam[2]), UP)
+		cover.reset()
+		for i: int in 30:  # the probes, SSAO and glow settle
+			await process_frame
+		var dir: String = _out.path_join(name).path_join("frames")
+		DirAccess.make_dir_recursive_absolute(dir)
+		DirAccess.make_dir_recursive_absolute(_out.path_join(name).path_join("keys"))
+		var tiles: Array = []
+		var e: int = 0
+		for f: int in count:
+			var t: float = f / fps
+			while e < events.size() and float(events[e][0]) <= t + 1e-6:
+				if events[e][1] == "gasp":
+					cover.gasp()
+				else:
+					cover.press()
+				e += 1
+			cover.step(0.0 if f == 0 else 1.0 / fps)
+			peak = maxf(peak, cover.angle)
+			await RenderingServer.frame_post_draw
+			var image: Image = root.get_texture().get_image()
+			image.convert(Image.FORMAT_RGB8)
+			_save(image, dir.path_join("%05d.png" % f))
+			var look: String = cover.state if cover.state != "shut" or cover.angle <= 0.0 else "gasp"
+			if name == a["cams"][0][0] and (states.is_empty() or states[-1][1] != look):
+				states.append([snappedf(t, 0.01), look, snappedf(cover.angle, 0.1)])
+			if key_frames.has(f):
+				var kv: Array = key_frames[f]
+				if String(kv[2]) != "":
+					stills["%s_%s" % [name, kv[2]]] = image
+					_save(image, _out.path_join("stills/%s_%s.png" % [name, kv[2]]))
+				_label.text = "%.2f s  %s  %.1f deg" % [t, kv[1], cover.angle]
+				await RenderingServer.frame_post_draw
+				var shot: Image = root.get_texture().get_image()
+				shot.convert(Image.FORMAT_RGB8)
+				_save(shot, _out.path_join(name).path_join("keys/%05d.png" % f))
+				shot.resize(320, 180, Image.INTERPOLATE_LANCZOS)
+				tiles.append(shot)
+				_label.text = ""
+		var sheet: Image = Image.create(1280, 180 * ceili(tiles.size() / 4.0), false, Image.FORMAT_RGB8)
+		for i: int in tiles.size():
+			sheet.blit_rect(tiles[i], Rect2i(0, 0, 320, 180), Vector2i((i % 4) * 320, (i / 4) * 180))
+		_save(sheet, _out.path_join(name).path_join("keys_sheet.png"))
+	var rows: Array = []
+	var ref: Image = Image.load_from_file(String(a["ref"])) if a.has("ref") else null
+	var names: Array = (a["cams"] as Array).map(func(c: Array) -> String: return String(c[0]))
+	if ref != null:
+		ref.convert(Image.FORMAT_RGB8)
+		rows.append([ref, stills.get("%s_open" % names[0], ref), stills.get("%s_gasp" % names[0], ref)])
+	for nm: String in names:
+		var row: Array = []
+		for st: String in ["shut", "gasp", "open"]:
+			if stills.has("%s_%s" % [nm, st]):
+				row.append(stills["%s_%s" % [nm, st]])
+		if not row.is_empty():
+			rows.append(row)
+	_save(_sheet(rows), _out.path_join("sheet.png"))
+	_write("anim.json", {"frames": count, "fps": fps, "seconds": GillCover.DEMO_S, "lights": lights, "states": states,
+		"peak_deg": snappedf(peak, 0.01), "cams": names, "cover": cover.info()})
+	print("SHIP cover_anim %d frames x %d cams" % [count, names.size()])
 	quit(0)

@@ -58,6 +58,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--gill-anim", type=Path, metavar="DIR",
                         help="the throat gills' proof (godot/ship/gill_row.gd's 6 s demo on the east row's working slit: "
                              "shut, the gasp, shut, the press, open with an overshoot, settle) off-screen: MP4 into DIR")
+    parser.add_argument("--cover-anim", type=Path, metavar="DIR",
+                        help="the gill cover pilot (godot/ship/gill_cover.gd's 10 s demo on th_wall_e's cover from the "
+                             "concept's camera and a close 3/4 one: <DIR>/<cam>/cover.mp4, keys_sheet.png, the stills "
+                             "and sheet.png beside the concept; off-screen)")
     parser.add_argument("--gill-demo", choices=("slit", "row"), default="slit",
                         help="--gill-anim's demo: slit (gill_anim.mp4, 6 s) or row (gill_row.mp4, 10 s: the breath runs "
                              "along the row, presses open the gasping slits, all five open -> the exhale)")
@@ -123,6 +127,10 @@ def run(args: argparse.Namespace) -> int:
             return code
     if args.motion:
         code = motion(layout, out, args.motion.resolve())
+        if code:
+            return code
+    if getattr(args, "cover_anim", None):
+        code = cover_anim(layout, out, args.cover_anim.resolve())
         if code:
             return code
     if getattr(args, "gill_anim", None):
@@ -712,6 +720,67 @@ def gill_anim(layout: dict, out: Path, folder: Path, demo: str = "slit") -> int:
         return 1
     common.ok(f"ship --gill-anim: {clip.as_posix()}, {info['seconds']:.1f} s, {info['frames']} frames, {mb:.1f} MB; "
               f"beats {info['states']}")
+    return 0
+
+
+# the gill cover pilot (art #263, 2026-10-29): a camera matched to the concept covers_ingame.jpg (2.7 m out from the
+# wall, 0.5 m toward the hall, the frame and the jamb at the picture's sides) and a close one 1.5 m from the cover's
+# middle at 3/4 (30 deg off square, from the hall's side), both at a player's eye
+COVER_ANIM = {"concept": {"s": 2.75, "t": 1.30, "back": 2.7, "along": 0.5, "up": 0.15, "fov": 62.0},
+              "close": {"s": 2.69, "t": 1.35, "back": 1.3, "along": 0.75, "up": 0.2, "fov": 50.0},
+              "ref": "D:/prime-art-raw/ship/v5/gills-throat/covers/ref/covers_ingame.jpg",
+              "fps": 30, "size": (1280, 720), "max_mb": 15}
+
+
+def cover_anim(layout: dict, out: Path, folder: Path) -> int:
+    """The gill cover pilot's proof: ship.gd mode "cover_anim" renders gill_cover.gd's demo on th_wall_e's cover from
+    both cameras at night in the off-screen window; headless Blender encodes each camera's MP4; the frames are
+    deleted."""
+    import shutil
+    a = COVER_ANIM
+    cams = []
+    for name in ("concept", "close"):
+        c = a[name]
+        eye = gill_view(layout, c["s"], c["t"], c["back"], c["along"], c["up"])[0]
+        look = gill_view(layout, c["s"], c["t"], 0.05, 0.0, 0.0)[0]
+        cams.append([name, _g(eye), _g(look), c["fov"]])
+    req, staged = built_request(layout, out)
+    req.update({"mode": "cover_anim", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
+                "anim": {"cams": cams, "fps": a["fps"], "ref": a["ref"]},
+                "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    errors = _stage(staged)
+    for cam in cams:
+        shutil.rmtree(folder / cam[0] / "frames", ignore_errors=True)
+        shutil.rmtree(folder / cam[0] / "keys", ignore_errors=True)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "cover_anim_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    (folder / "anim.json").unlink(missing_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
+                                  path.as_posix(), folder.as_posix()], a["size"], VIDEO_TIMEOUT)
+    if code != 0 or not (folder / "anim.json").is_file():
+        raise common.Failure(f"ship.gd cover_anim failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+    info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
+    sizes = {}
+    for cam in cams:
+        clip = folder / cam[0] / "cover.mp4"
+        clip.unlink(missing_ok=True)
+        blender.run_script(VIDEO_SCRIPT, ["--frames", str(folder / cam[0] / "frames"), "--out", str(clip),
+                                          "--fps", str(a["fps"]), "--max-mb", str(a["max_mb"])], timeout=VIDEO_TIMEOUT)
+        if not clip.is_file():
+            raise common.Failure(f"{VIDEO_SCRIPT} wrote no {clip}")
+        shutil.rmtree(folder / cam[0] / "frames", ignore_errors=True)
+        sizes[clip] = clip.stat().st_size / 2 ** 20
+    if errors or max(sizes.values()) > a["max_mb"]:
+        common.bad(f"ship --cover-anim: videos {', '.join(f'{mb:.1f}' for mb in sizes.values())} MB "
+                   f"(max {a['max_mb']}), {len(errors)} import errors")
+        return 1
+    for clip, mb in sizes.items():
+        common.ok(f"ship --cover-anim: {clip.as_posix()}, {info['seconds']:.1f} s, {info['frames']} frames, {mb:.1f} MB")
+    common.ok(f"ship --cover-anim: peak {info['peak_deg']} deg; states {info['states']}; sheet "
+              f"{(folder / 'sheet.png').as_posix()}")
     return 0
 
 
