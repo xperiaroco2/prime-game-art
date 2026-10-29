@@ -1744,3 +1744,13 @@ east wall only for now (`GILL_SIDES` in ship_interior_throat.py; the west mirror
   from_hall, cu_*; `concept_wide` is the clean throat's old wall_square_on) and `sheet.png` beside set_plate.jpg.
   Outputs: `<raw>/ship/v5/gills-throat/set/`; handoff `<raw>/ship/v5/notes/gills-set-1.md`. Tests:
   `tools/tests/test_ship_gillset.py`.
+- **Step 2, the look pass**: `ship --gill-set DIR --gill-grid` renders gill_set.gd's LOOK variants (`GILL_GRID` in
+  ship.py) posed on the concept camera beside set_plate.jpg (`DIR/grid_sheet.png`). Variants: the bands brighter
+  ("next"), darker ("dark"), and a single gradient over the niche (a shader: bright at the hole's edge, dark at the
+  bottom; "grad", "grad_tight", "grad_soft"). The pick is "dark", now LOOK's defaults: niche albedo 0.015, scoop 0.03,
+  glow 0.15, the hall-side lip 1.0 (dark inside, a saturated rim); the gradient read as a pale lit dish. Bars 0.8 and
+  the groove 0.8 with their base a tenth of the glow (saturated, not white-washed; the runner white 1.8), the niche
+  omnis 0.12, the groove's glow 15 mm wide. The all-open cloud comes from five small emitters at the slits (0.42 m
+  quads), not one box over the set. The throat's four floor lights are `th_light` pieces in `int_amber_throat`
+  (`[light.mats]` l 0: their lens glows, they light nothing), so no amber pool reaches the set's plinth; `int_amber`
+  is untouched. Handoff `<raw>/ship/v5/notes/gills-set-2.md`.
