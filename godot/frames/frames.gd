@@ -4,7 +4,7 @@ extends SceneTree
 ## runner opens the window off-screen like the game's `tools\run.cmd shot`:
 ##   PRIME_WINDOW=480x600 godot --path godot --position 30000,30000 --resolution 1x1 -s res://frames/frames.gd
 ##       -- <res://import/x.glb> <out folder> <spec.json>
-## spec.json: {"character": id, "cell": [w, h], "yaw_deg": 35, "pitch_deg": 8, "fps": 24,
+## spec.json: {"character": id, "cell": [w, h], "yaw_deg": 35, "pitch_deg": 8, "light_turn_deg": 0, "fps": 24,
 ##             "clips": [{"name": animation, "label": short name, "times": [s, ...], "note": title text,
 ##                        "video_frames": n, "keep": bool, "video": bool}]}
 ## For each clip, one fixed orthographic three-quarter camera frames the whole character over all its sample times;
@@ -12,6 +12,9 @@ extends SceneTree
 ## sheets/<label>.png under a title band. "keep" also saves frames/<label>/<i>.png at window size, "video" saves every
 ## frame of one cycle at fps as video/<label>/<i>.png. frames.json records the cameras, the times and every joint's
 ## world position at each time, with each bone's two axis points (Character.axis_points). Prints FRAMES saved <path>, or FRAMES error <why> and exits 1.
+## Optional: "face" (sheets/face.png, its own fixed light) and "closeups" (sheets/closeups.png: `frames --closeups
+## 'label@x,y,z[~Bone]/size/yaw[/pitch];...'` (~Bone: the rest point carried with that bone into the pose) at --closeup-clip's --closeup-time (default its first frame), orthographic,
+## two per row, the light turned with each shot's yaw); light_turn_deg comes from `frames --yaw`.
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const Character = preload("res://lib/character.gd")
@@ -28,6 +31,7 @@ var _scene: Node
 var _skeleton: Skeleton3D
 var _player: AnimationPlayer
 var _camera: Camera3D
+var _rig: Node3D  # the three studio lights; turned by the spec's light_turn_deg so they keep their place to the camera
 
 
 func _initialize() -> void:
@@ -65,6 +69,7 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 	_skeleton = skeletons[0] as Skeleton3D
 	_player = players[0] as AnimationPlayer
 	_stage()
+	_rig.rotation.y = deg_to_rad(float(spec.get("light_turn_deg", 0.0)))
 	await process_frame
 	var size: Vector2i = root.get_visible_rect().size
 	var cell: Vector2i = Vector2i(int(spec["cell"][0]), int(spec["cell"][1]))
@@ -116,13 +121,34 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 			for r: Array in face["beside_rects"]:
 				shots.append(approved.get_region(Rect2i(int(r[0]), int(r[1]), int(r[2]), int(r[3]))))
 		var cams: Array = []
+		_rig.rotation.y = 0.0  # the face sheet keeps the studio light as approved: --yaw turns only the clip sheets'
 		for yaw: float in face["yaws"]:
 			cams.append(_face_frame(face["clip"], float(face["t"]), float(yaw), float(face["pitch_deg"]), size))
 			shots.append(await _shot(face["clip"], float(face["t"]), "Godot  yaw %d" % int(yaw)))
+		_rig.rotation.y = deg_to_rad(float(spec.get("light_turn_deg", 0.0)))
 		var sheet: Image = await _sheet(shots, Vector2i(int(face["cell"][0]), int(face["cell"][1])), face["title"])
 		_save(sheet, "%s/sheets/face.png" % out_dir)
 		record["face"] = {"clip": face["clip"], "t": face["t"], "cameras": cams, "beside": beside}
 		print("FRAMES sheet face ", shots.size(), " cells")
+	if spec.has("closeups"):
+		var cu: Dictionary = spec["closeups"]
+		if not _player.has_animation(cu["clip"]):
+			_fail("no animation %s for the close-ups" % cu["clip"])
+			return
+		var shots: Array[Image] = []
+		var cams: Array = []
+		for s: Dictionary in cu["shots"]:
+			if s.has("bone"):
+				Character.pose_at(_player, _skeleton, cu["clip"], float(cu["t"]))
+			cams.append(_point_frame(s))
+			_rig.rotation.y = deg_to_rad(float(s["light_turn_deg"]))
+			shots.append(await _shot(cu["clip"], float(cu["t"]), "%s   %s" % [spec["character"], s["label"]]))
+		_rig.rotation.y = deg_to_rad(float(spec.get("light_turn_deg", 0.0)))
+		var sheet: Image = await _sheet(shots, Vector2i(int(cu["cell"][0]), int(cu["cell"][1])), cu["title"],
+				int(cu["cols"]))
+		_save(sheet, "%s/sheets/closeups.png" % out_dir)
+		record["closeups"] = {"clip": cu["clip"], "t": cu["t"], "cameras": cams}
+		print("FRAMES sheet closeups ", shots.size(), " cells")
 	var json_path: String = "%s/frames.json" % out_dir
 	if not Character.write_json(json_path, record):
 		_fail("cannot write %s" % json_path)
@@ -147,6 +173,8 @@ func _stage() -> void:
 	var world: WorldEnvironment = WorldEnvironment.new()
 	world.environment = env
 	root.add_child(world)
+	_rig = Node3D.new()
+	root.add_child(_rig)
 	# Soft specular: the pack's materials are metallic 0.4, roughness 0.42, and a full-strength highlight turns single
 	# flat faces white (a checkerboard of glints on dark clothes and faces) that hides the motion.
 	_light(Vector3(-2.0, 3.2, 3.0), 1.05, true, 0.15)
@@ -177,7 +205,7 @@ func _stage() -> void:
 
 func _light(at: Vector3, energy: float, shadow: bool, specular: float) -> void:
 	var light: DirectionalLight3D = DirectionalLight3D.new()
-	root.add_child(light)
+	_rig.add_child(light)
 	light.look_at_from_position(at, Vector3(0, 0.9, 0))
 	light.light_energy = energy
 	light.light_specular = specular
@@ -221,6 +249,28 @@ func _frame(name: String, times: Array, yaw_deg: float, pitch_deg: float, size: 
 	return {"centre": Character.vec(centre), "back": Character.vec(back), "up": Character.vec(up),
 			"right": Character.vec(right), "distance": 10.0, "ortho_size": snappedf(ortho, 0.00001),
 			"yaw_deg": yaw_deg, "pitch_deg": pitch_deg, "projection": "orthogonal, size = the vertical extent"}
+
+
+## A close-up camera on one point (spec closeups): orthographic, the view's height the shot's size, from its yaw
+## and pitch, the light turned with it by the caller.
+func _point_frame(s: Dictionary) -> Dictionary:
+	var yaw: float = deg_to_rad(float(s["yaw_deg"]))
+	var pitch: float = deg_to_rad(float(s["pitch_deg"]))
+	var back: Vector3 = Vector3(sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch))
+	var right: Vector3 = Vector3.UP.cross(back).normalized()
+	var up: Vector3 = back.cross(right).normalized()
+	var at: Vector3 = Vector3(float(s["target"][0]), float(s["target"][1]), float(s["target"][2]))
+	if s.has("bone"):  # a rest-pose point carried with the bone into the posed frame (the caller posed it)
+		var b: int = _skeleton.find_bone(String(s["bone"]))
+		if b < 0:
+			_fail("no bone %s for the close-up %s" % [s["bone"], s["label"]])
+		else:
+			var sk: Transform3D = _skeleton.global_transform
+			at = sk * _skeleton.get_bone_global_pose(b) * _skeleton.get_bone_global_rest(b).affine_inverse() 					* (sk.affine_inverse() * at)
+	_camera.size = float(s["size"])
+	_camera.look_at_from_position(at + back * 10.0, at, up)
+	return {"label": s["label"], "target": Character.vec(at), "back": Character.vec(back),
+			"ortho_size": float(s["size"]), "yaw_deg": float(s["yaw_deg"]), "pitch_deg": float(s["pitch_deg"])}
 
 
 ## A close-up camera on the head: it fits the skinned vertices above the Head bone's origin (face, hair, ears) at
@@ -269,8 +319,8 @@ func _shot(name: String, t: float, text: String) -> Image:
 
 
 ## The frames in a grid of cells (at most 6 per row) under a title band.
-func _sheet(shots: Array[Image], cell: Vector2i, title: String) -> Image:
-	var cols: int = mini(shots.size(), 6 if shots.size() > 8 else 4)
+func _sheet(shots: Array[Image], cell: Vector2i, title: String, cols_wanted: int = 0) -> Image:
+	var cols: int = mini(shots.size(), cols_wanted if cols_wanted > 0 else (6 if shots.size() > 8 else 4))
 	var rows: int = int(ceil(shots.size() / float(cols)))
 	var width: int = cols * cell.x + (cols + 1) * GAP
 	var height: int = TITLE_H + rows * cell.y + (rows + 1) * GAP

@@ -743,6 +743,10 @@ def charger_cycle(layout: dict, out: Path, folder: Path) -> int:
     if code != 0 or not (folder / "cycle.json").is_file():
         raise common.Failure(f"charger/cycle.gd failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     info = json.loads((folder / "cycle.json").read_text(encoding="utf-8"))
+    if info.get("arc_ends_off"):  # cycle.gd _check_ends: frames whose arcs landed off the crystal
+        common.bad(f"ship --charger-cycle: {info['arc_ends_off']} of {info.get('arc_frames', 0)} arc frames "
+                   "with an arc end off its electrode or the crystal")
+        return 1
     sizes = {}
     for frames, clip in ((folder / "frames", folder / "cycle.mp4"), (folder / "close" / "frames",
                                                                      folder / "close" / "cycle.mp4")):

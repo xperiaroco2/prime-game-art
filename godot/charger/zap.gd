@@ -90,6 +90,13 @@ const EASE := 3.0
 ## conduit surfaces bound (1 per lens_conduits piece: its cores).
 static func bind(look: Dictionary, scene: Node, crystal: Node3D) -> int:
 	var ring: Node3D = look["ring"]
+	# the electrodes' ring-local points are taken at the ring's angle 0 (the prongs left and right)
+	assert(absf(ring.rotation.y) < 1e-4, "zap.bind: bind with the track ring at angle 0")
+	if look.has("zap"):  # a second bind replaces the first: free its arc mesh and lights
+		var old: Dictionary = look["zap"]
+		(old["node"] as Node).queue_free()
+		for l: OmniLight3D in old["lights"]:
+			l.queue_free()
 	var model: Node3D = (look["glow"] as Node3D).get_parent()
 	var ring_t: Transform3D = _rel(ring, model)
 	var locals: Array[Vector3] = []
@@ -175,7 +182,7 @@ static func step(look: Dictionary, dt: float, charge: float, flash: float = 0.0,
 	if crystal != null:
 		z["centre"] = _rel(crystal, z["model"]).origin
 	var rng: RandomNumberGenerator = z["rng"]
-	z["clock"] = float(z["clock"]) + dt
+	z["clock"] = float(z["clock"]) + minf(dt, 0.1)  # a long frame rerolls a few times, not once per missed tick
 	if not arcing:
 		z["next"] = float(z["clock"])
 	while arcing and float(z["clock"]) >= float(z["next"]):

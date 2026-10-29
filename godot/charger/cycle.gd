@@ -156,8 +156,10 @@ func _apply(v: Dictionary) -> void:
 		_check_ends(look)
 
 
-## The arcs leave the electrodes and land on the crystal: each start within its electrode's radius + 2 mm of an
-## electrode's centre, each hit within 1 cm of the crystal's axis-to-surface (in the crystal's frame). Fails the run.
+## The arcs land on the crystal: each hit within 1 cm of the crystal's axis-to-surface (in the crystal's frame). The
+## start is zap.gd's own (an electrode's centre moved its radius toward the hit), so its 2 mm test only guards that
+## code, not the GLB's electrode geometry (test_ship_charger_zap compares ELECTRODES with charger_dims.toml). Counted
+## in cycle.json's arc_ends_off; ship.py's charger_cycle fails the run on any.
 func _check_ends(look: Dictionary) -> void:
 	var z: Dictionary = look["zap"]
 	var model: Node3D = z["model"]

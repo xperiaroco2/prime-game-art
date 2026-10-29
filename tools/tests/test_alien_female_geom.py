@@ -37,6 +37,24 @@ class FemaleGeomTest(unittest.TestCase):
         self.refused(lambda d: d["waist"].update(half_z="wide"), "not a number")
         self.refused(lambda d: d["mask"].update(bones=[]), "mask.bones")
         self.refused(lambda d: d.update(limits=3), "limits is not a table")
+        self.refused(lambda d: d["chest"].update(half_x=float("nan")), "not finite")
+        self.refused(lambda d: d["hips"].update(ref_x=float("inf")), "not finite")
+        self.refused(lambda d: d["limits"].update(still_below_z=1.30, still_above_z=1.25), "still_below_z")
+        self.refused(lambda d: d.update(name=""), "name must be")
+
+    def test_name_must_be_the_stem(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            q = Path(tmp) / "f9.toml"
+            q.write_text(F1.read_text(encoding="utf-8"), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "stem"):
+                G.load(q)
+
+    def test_f2_is_stronger_than_f1(self) -> None:
+        f2 = G.load(F1.parent / "f2.toml")
+        for k in ("chest", "hips", "seat"):
+            self.assertGreater(f2[k]["amount_m"], self.t[k]["amount_m"], k)
+        self.assertAlmostEqual(f2["chest"]["amount_m"], 0.030)
 
     def test_kernel_is_compact_and_smooth(self) -> None:
         self.assertEqual(G.kernel(0.0), 1.0)

@@ -4,16 +4,27 @@ The charger where a player recharges a spent energy crystal (art#263's stations)
 the aft wall: a faceted bronze pedestal set into the alcove under the head the engineer picked on 2026-10-25
 (prime-game#1095 comment 6401197371). Not yet approved by the engineer: the new pedestal's look waits for his yes.
 
-## What changed (antennas-1, 2026-10-28, build `lens4`)
+## What changed (antennas round 2 and 2b, 2026-10-29, build `<raw>/ship/v5/charger-antennas/r2b/final2`)
 
-The four prongs (the two outer antennas and the inner pair on the track ring) are stacks of chamfered bronze plates
-with thin cyan-lit gaps (the engineer's pick, concept b_fins); the flat cyan and amber strips on them are gone. The
-outer pair keeps its place, its top 139.7 and its inward bend, now a tight elbow ending in a small cyan emitter
-toward the crystal; the inner pair keeps its hook head, with a cyan emitter over the tip electrode. For the game:
-nothing to change. The node names, pivots, leaves, collider names and the electrodes (`zap.gd`) are unchanged; the
-gaps' glow is `charger_cyan`, so `charger.gd`'s states drive it with the other cyan lights. The ring's surfaces no
-longer include `charger_graphite` or `charger_amber` (the strips' bezels and light). Not approved yet: the antennas
-changed after the 2026-10-28 approval and await the engineer's yes.
+The engineer's note on antennas-1 was "polish the bend and the tip". The outer antennas now rise to 142 (was 139.7)
+and turn inward in a smooth arc of 18 thinner chamfered bronze plates (radius 14; antennas-1 had a tight elbow).
+Their cyan-lit gaps are even along the arc and glow brighter toward the tip. The last three plates taper, and the tip
+ends in a closed lit slot across its end face toward the crystal (no lit square). The inner prongs lost their hook
+heads: each now ends in a slim wedge cap that slopes down toward the crystal (top 120), with a lit slot near its
+crystal end. The tip electrode sits half sunk in the cap's inner face inside a bronze socket. The electrodes
+(`charger_dims.toml` `[inner] electrodes`, `zap.gd` `ELECTRODES`) are now `[14.84, 117.0, 0.9]` (the tip, on the
+cap) and `[16.8, 101.0, 1.0]` (the column). A game copy of `zap.gd` must take this version, or its arcs start in
+the air where the old hook was.
+
+For the game, nothing else changes: the node names, pivots, leaves, collider names and `charger.gd` are the same.
+The glow is `charger_cyan`, so `charger.gd`'s states drive it. 39,896 triangles (`report.json`; antennas-1 had
+36,240). Not approved yet: the antennas changed after the 2026-10-28 approval and await the engineer's yes.
+
+## What changed (antennas-1, 2026-10-28, build `lens4`; superseded by round 2 above)
+
+The four prongs (the two outer antennas and the inner pair on the track ring) became stacks of chamfered bronze
+plates with thin cyan-lit gaps (the engineer's pick, concept b_fins), and the flat cyan and amber strips on them went.
+The ring's surfaces no longer include `charger_graphite` or `charger_amber` (the strips' bezels and light).
 
 ## What changed (lens room C, 2026-10-28)
 
@@ -41,7 +52,7 @@ same plan and heights (the head, the pivots, the colliders and the reach 70 unch
   `BRONZE2_FINISH`), so the big faces hold under the lens room's warm lamp; the deck slab and the head keep
   `charger_bronze`. A game copy of `charger.gd` must take this version (an older one warns "no look for surface
   material 'charger_bronze2'" and leaves the plates on the GLB's plain fallback);
-- 30,520 triangles (was 29,080).
+- 30,520 triangles (was 29,080; 39,896 since antennas 2b).
 
 Node names, the leaves, `charger.gd`'s functions and the render layer are unchanged.
 
@@ -84,8 +95,8 @@ layout's own stand check).
 The outer prongs and the pedestal are part of the body. The lightning (arcs from the inner prongs' electrodes into the
 crystal while it charges) and the crystal's glow are the game's; the art repo's reference for the lightning is
 `godot/charger/zap.gd` with `arc.gdshader` (shipped with the ship package as `charger_arc.gdshader`): arcs from the
-four electrodes (`charger_dims.toml` `[inner] electrodes`: per inner prong one under the hook's lip at r 11, h 116,
-one on the column at r 16.8, h 101), sparks at the hits, a flash at full charge (`docs/ship.md`, "The charger's
+four electrodes (`charger_dims.toml` `[inner] electrodes`: per inner prong one half sunk in the wedge cap's inner
+face at r 14.84, h 117, one on the column at r 16.8, h 101), sparks at the hits, a flash at full charge (`docs/ship.md`, "The charger's
 electricity").
 
 ## The crystal

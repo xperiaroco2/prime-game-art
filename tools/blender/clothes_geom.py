@@ -70,7 +70,13 @@ def fit_lines(cloth: dict[str, float], body: dict[str, float]) -> dict[str, dict
     return out
 
 
-def centre_run(xs: list[float], gap: float = 0.02) -> tuple[float, float] | None:
+# The widest gap between neighbouring x values inside one torso slice. The decimated garment (8,000 triangles) has
+# vertices up to about 5 cm apart, so B's 2 cm stopped the run early (hip 0.03 m); 6 cm still parts the hanging arms,
+# which hang 8 cm or more beside the torso.
+CENTRE_GAP = 0.06
+
+
+def centre_run(xs: list[float], gap: float = CENTRE_GAP) -> tuple[float, float] | None:
     """The (min, max) of the run of xs around x = 0 with no gap wider than gap: the torso's width at one height,
     without the arms hanging beside it."""
     if not xs:
@@ -83,3 +89,23 @@ def centre_run(xs: list[float], gap: float = 0.02) -> tuple[float, float] | None
     while hi < len(xs) - 1 and xs[hi + 1] - xs[hi] <= gap:
         hi += 1
     return xs[lo], xs[hi]
+
+
+def span(values: list[float]) -> float:
+    """max - min of values, 0.0 for none (a depth at a height where a mesh has no vertex)."""
+    return max(values) - min(values) if values else 0.0
+
+
+def skin_mask(rgb):
+    """is_skin over an (n, 3) numpy array of sRGB colours (0..1): the same HSV rule, vectorised (numpy is imported
+    here, so the rest of the module stays standard library)."""
+    import numpy as np
+    rgb = np.asarray(rgb, dtype=np.float64)
+    mx, mn = rgb.max(axis=1), rgb.min(axis=1)
+    d = mx - mn
+    s = np.where(mx > 0, d / np.maximum(mx, 1e-9), 0.0)
+    r, g, b = rgb[:, 0], rgb[:, 1], rgb[:, 2]
+    dd = np.maximum(d, 1e-9)
+    h = np.where(mx == r, ((g - b) / dd) % 6.0, np.where(mx == g, (b - r) / dd + 2.0, (r - g) / dd + 4.0)) * 60.0
+    h = np.where(d > 0, h, 0.0)
+    return (h >= SKIN_HUE[0]) & (h <= SKIN_HUE[1]) & (s >= SKIN_SAT) & (mx >= SKIN_VAL)
