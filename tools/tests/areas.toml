@@ -32,6 +32,7 @@ light = [
   "godot/charger/*", "tools/blender/charger_*",  # the crystal charger's build and shot scripts (#263): no runner command or heavy test uses them
   "tools/blender/metal_cost_run.py",  # the stations' bronze cost measurement (#263 fix2): no runner command or heavy test uses it
   "tools/blender/clothes_*",  # the clothes step's Blender scripts (#196): no runner command or heavy test runs them; the pure modules' tests are [area.clothes]
+  "tools/blender/sneaker_build.py",  # the code-built sneakers inside Blender (#196, S1): clothes_dress.py runs it, no heavy test; the maths' tests are [area.clothes]
 ]
 
 [area.anim]
@@ -188,5 +189,6 @@ sources = [
   "tools/blender/clothes_texture.py",  # the cloth maps' fill and the denim's shift (#196, C1d)
   "tools/blender/clothes_strap.py",  # the new straps' strip maths (#196, C1e)
   "tools/blender/clothes_shell.py",  # the shell top's, panels' and new straps' maths (#196, C1f)
+  "tools/blender/sneaker_geom.py",  # the code-built sneakers' maths and the toes' cap (#196, S1)
 ]
-tests = ["test_clothes_texture_*", "test_clothes_strap*", "test_clothes_shell*"]
+tests = ["test_clothes_texture_*", "test_clothes_strap*", "test_clothes_shell*", "test_sneaker_geom*"]
