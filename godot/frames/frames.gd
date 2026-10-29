@@ -125,6 +125,23 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 		_save(sheet, "%s/sheets/face.png" % out_dir)
 		record["face"] = {"clip": face["clip"], "t": face["t"], "cameras": cams, "beside": beside}
 		print("FRAMES sheet face ", shots.size(), " cells")
+	if spec.has("closeups"):
+		var cu: Dictionary = spec["closeups"]
+		if not _player.has_animation(cu["clip"]):
+			_fail("no animation %s for the close-ups" % cu["clip"])
+			return
+		var shots: Array[Image] = []
+		var cams: Array = []
+		for s: Dictionary in cu["shots"]:
+			cams.append(_point_frame(s))
+			_rig.rotation.y = deg_to_rad(float(s["light_turn_deg"]))
+			shots.append(await _shot(cu["clip"], float(cu["t"]), "%s   %s" % [spec["character"], s["label"]]))
+		_rig.rotation.y = deg_to_rad(float(spec.get("light_turn_deg", 0.0)))
+		var sheet: Image = await _sheet(shots, Vector2i(int(cu["cell"][0]), int(cu["cell"][1])), cu["title"],
+				int(cu["cols"]))
+		_save(sheet, "%s/sheets/closeups.png" % out_dir)
+		record["closeups"] = {"clip": cu["clip"], "t": cu["t"], "cameras": cams}
+		print("FRAMES sheet closeups ", shots.size(), " cells")
 	var json_path: String = "%s/frames.json" % out_dir
 	if not Character.write_json(json_path, record):
 		_fail("cannot write %s" % json_path)
@@ -227,6 +244,21 @@ func _frame(name: String, times: Array, yaw_deg: float, pitch_deg: float, size: 
 			"yaw_deg": yaw_deg, "pitch_deg": pitch_deg, "projection": "orthogonal, size = the vertical extent"}
 
 
+## A close-up camera on one point (spec closeups): orthographic, the view's height the shot's size, from its yaw
+## and pitch, the light turned with it by the caller.
+func _point_frame(s: Dictionary) -> Dictionary:
+	var yaw: float = deg_to_rad(float(s["yaw_deg"]))
+	var pitch: float = deg_to_rad(float(s["pitch_deg"]))
+	var back: Vector3 = Vector3(sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch))
+	var right: Vector3 = Vector3.UP.cross(back).normalized()
+	var up: Vector3 = back.cross(right).normalized()
+	var at: Vector3 = Vector3(float(s["target"][0]), float(s["target"][1]), float(s["target"][2]))
+	_camera.size = float(s["size"])
+	_camera.look_at_from_position(at + back * 10.0, at, up)
+	return {"label": s["label"], "target": Character.vec(at), "back": Character.vec(back),
+			"ortho_size": float(s["size"]), "yaw_deg": float(s["yaw_deg"]), "pitch_deg": float(s["pitch_deg"])}
+
+
 ## A close-up camera on the head: it fits the skinned vertices above the Head bone's origin (face, hair, ears) at
 ## one time of one clip, with the window's aspect and a margin.
 func _face_frame(name: String, t: float, yaw_deg: float, pitch_deg: float, size: Vector2i) -> Dictionary:
@@ -273,8 +305,8 @@ func _shot(name: String, t: float, text: String) -> Image:
 
 
 ## The frames in a grid of cells (at most 6 per row) under a title band.
-func _sheet(shots: Array[Image], cell: Vector2i, title: String) -> Image:
-	var cols: int = mini(shots.size(), 6 if shots.size() > 8 else 4)
+func _sheet(shots: Array[Image], cell: Vector2i, title: String, cols_wanted: int = 0) -> Image:
+	var cols: int = mini(shots.size(), cols_wanted if cols_wanted > 0 else (6 if shots.size() > 8 else 4))
 	var rows: int = int(ceil(shots.size() / float(cols)))
 	var width: int = cols * cell.x + (cols + 1) * GAP
 	var height: int = TITLE_H + rows * cell.y + (rows + 1) * GAP

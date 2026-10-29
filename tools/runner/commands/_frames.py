@@ -120,6 +120,40 @@ def face_spec(character: str, clip: str, beside: str = "", rects: list[list[int]
             "beside": beside, "beside_rects": (rects or []) if beside else [], "title": title}
 
 
+CLOSE_CELL = (512, 640)  # the window's aspect (CELL's); two columns make a 2x2 sheet about 1050 px wide
+
+
+def parse_closeups(text: str) -> list[dict[str, Any]]:
+    """'label@x,y,z/size/yaw[/pitch];...' -> the close-up shots: the target point in Godot's frame (metres, y up, the
+    character facing +z), the orthographic view's vertical size (m), the camera's yaw (0 the front, 90 the
+    character's left, 180 its back) and pitch (degrees, default 0); the studio light turns with each (light_turn_deg)."""
+    shots = []
+    for part in (p.strip() for p in text.split(";")):
+        if not part:
+            continue
+        name, _, rest = part.partition("@")
+        fields = rest.split("/")
+        if not name.strip() or len(fields) not in (3, 4):
+            raise ValueError(f"not label@x,y,z/size/yaw[/pitch]: {part!r}")
+        target = [float(v) for v in fields[0].split(",")]
+        size, yaw = float(fields[1]), float(fields[2])
+        pitch = float(fields[3]) if len(fields) == 4 else 0.0
+        if len(target) != 3 or size <= 0 or not -90 < pitch < 90:
+            raise ValueError(f"a target x,y,z, a positive size and a pitch inside +-90: {part!r}")
+        shots.append({"label": name.strip(), "target": target, "size": size, "yaw_deg": yaw, "pitch_deg": pitch,
+                      "light_turn_deg": yaw - YAW_DEG})
+    if not shots:
+        raise ValueError("no close-up shot")
+    return shots
+
+
+def closeup_spec(character: str, clip: str, shots: list[dict[str, Any]], t: float = 0.0) -> dict[str, Any]:
+    """The spec's `closeups` entry: one orthographic shot per target at time t of one animation, two per row, in one
+    sheet `sheets/closeups.png` (art #196: the clothes' shoulders, collar and cuffs as Godot draws them)."""
+    return {"clip": clip, "t": t, "cell": list(CLOSE_CELL), "cols": 2, "shots": shots,
+            "title": f"{character}   close-ups at {label(clip)} {t:.2f} s"}
+
+
 def _dist(a: list[float], b: list[float]) -> float:
     return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
 

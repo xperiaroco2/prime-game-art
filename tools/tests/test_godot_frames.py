@@ -54,6 +54,21 @@ class TimesTest(unittest.TestCase):
             self.assertEqual(spec["yaw_deg"], yaw)
             self.assertEqual(spec["light_turn_deg"], yaw - _frames.YAW_DEG)
 
+    def test_closeups_parsed(self) -> None:
+        """--closeups: a target point, the view's height and the camera's yaw and pitch per shot; the light turns
+        with each shot; two per row (art #196)."""
+        shots = _frames.parse_closeups("collar@0,1.33,0.02/0.25/0; back shoulder@0.1,1.3,-0.05/0.3/180/10")
+        self.assertEqual([s["label"] for s in shots], ["collar", "back shoulder"])
+        self.assertEqual(shots[0]["target"], [0.0, 1.33, 0.02])
+        self.assertEqual((shots[1]["size"], shots[1]["yaw_deg"], shots[1]["pitch_deg"]), (0.3, 180.0, 10.0))
+        self.assertEqual(shots[0]["pitch_deg"], 0.0)
+        self.assertEqual(shots[1]["light_turn_deg"], 180.0 - _frames.YAW_DEG)
+        spec = _frames.closeup_spec("x", "CharacterArmature|Idle", shots)
+        self.assertEqual((spec["cols"], spec["t"], len(spec["shots"])), (2, 0.0, 2))
+        for bad in ("@0,1,0/0.2/0", "a@0,1/0.2/0", "a@0,1,0/0/0", "a@0,1,0/0.2", "a@0,1,0/0.2/0/95", ""):
+            with self.assertRaises(ValueError, msg=bad):
+                _frames.parse_closeups(bad)
+
     def test_compare_joints(self) -> None:
         godot = {"clips": {"Wave": {"times": [0.0, 0.5], "joints": [{"Head": [0, 1.6, 0]}, {"Head": [0, 1.6, 0.012]}]}}}
         blender = {"joints": {"Wave": [{"Head": [0, 1.6, 0]}, {"Head": [0, 1.6, 0]}]}}
