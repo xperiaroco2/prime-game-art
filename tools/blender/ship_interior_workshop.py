@@ -63,11 +63,20 @@ L.MATERIALS.update({
     # step 2: the cabinetry's dark bronze (the concept's olive-bronze fronts and tops; step 1's lens bronze read orange
     # plastic) and its second, darker tone; ship.gd swaps both for the stations' bronze shader (LENS_BRONZE)
     "ws_bronze": {"base": (*(x ** 2.2 for x in (0.26, 0.22, 0.14)), 1.0), "metallic": 0.55, "roughness": 0.4},
-    "ws_bronze2": {"base": (*(x ** 2.2 for x in (0.13, 0.125, 0.10)), 1.0), "metallic": 0.2, "roughness": 0.6},
+    # step 4: the second tone (the fronts' frames, the stiles, the trays' walls) an olive graphite and the fronts'
+    # raised panels their own dark olive bronze (`ws_olive`: under the warm floor lights step 3's neutral bronze read
+    # warm brown; the concept's lower fronts are a dark olive green-bronze). Green enough to stay olive under the
+    # floor lights' orange and matte, so they do not mirror the glowing floor (tries at 0.17/0.20/0.11 metallic 0.45
+    # and 0.14/0.20/0.12 metallic 0.3 read red-brown: the lit floor's reflection; matte 0.12/0.20/0.13 a lighter brown,
+    # so the bench fronts' green omnis are 1.8, step 3's 1.2)
+    "ws_bronze2": {"base": (*(x ** 2.2 for x in (0.08, 0.15, 0.11)), 1.0), "metallic": 0.0, "roughness": 0.75},
+    "ws_olive": {"base": (*(x ** 2.2 for x in (0.11, 0.21, 0.14)), 1.0), "metallic": 0.0, "roughness": 0.75},
     # step 3: the kick plinth's matte graphite (the fronts' feet stay dark under the warm floor lights) and the
     # drawers' dark foam inserts
     "ws_kick": {"base": (0.028, 0.03, 0.033, 1.0), "metallic": 0.0, "roughness": 0.88},
     "ws_foam": {"base": (0.018, 0.02, 0.022, 1.0), "metallic": 0.0, "roughness": 0.97},
+    # step 4: the parts trays' foam a mid grey (on the dark foam their small bronze parts did not read from the room)
+    "ws_foam2": {"base": (0.075, 0.08, 0.08, 1.0), "metallic": 0.0, "roughness": 0.95},
 })
 # the room's acid green (and the eyes' cyan): glows; ship.toml [light.mats] gives each its colour and strength, l 0
 # (they light nothing: the room's green light is the "shop" lamp group's few omnis and spots); step 2: the open
@@ -75,7 +84,8 @@ L.MATERIALS.update({
 for _n, _c, _s in (("ws_green__strip", _GREEN, 8.0), ("ws_green__handle", _GREEN, 8.0), ("ws_green__rim", _GREEN, 8.0),
                    ("ws_green__lamp", _GREEN, 12.0), ("ws_green__sleep", _GREEN, 4.0), ("ws_cyan__eye", _CYAN, 6.0),
                    ("ws_cyan__pupil", _CYAN, 4.0), ("ws_green__liner", _GREEN, 2.0), ("ws_cyan__core", _CYAN, 8.0),
-                   ("ws_glint", (1.0, 1.0, 1.0), 2.0), ("ws_cyan__iris", _CYAN, 5.0)):
+                   ("ws_glint", (1.0, 1.0, 1.0), 2.0), ("ws_cyan__iris", _CYAN, 5.0), ("ws_cyan__iris_out", _CYAN, 5.0),
+                   ("ws_cyan__iris_in", _CYAN, 5.0)):
     L.MATERIALS[_n] = {"base": (*_c, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": _c, "strength": _s}
 L.MATERIALS["ws_green__liner"]["base"] = (0.03, 0.12, 0.02, 1.0)   # a dark green felt that glows a little
 
@@ -99,8 +109,8 @@ SLEEPER = 28.0            # the sleeping robots' diameter
 # step 3: the side shells 0.7 of step 2's (caps of 28 deg; step 2's 40 read as mouse ears from the front), standing
 # 5 cm off the body on two hinge arms each and swung 30 deg on back hinges, so their dark insides and the core show from
 # the three-quarter view (the shells' grid, <raw>/ship/v5/workshop/grids/robot3_grid_*.png: 0.8 / 0.7 back hinge,
-# 0.7 front hinge; picked 0.7 back)
-ROBOT = {"d": 60.0, "h": 145.0, "eye": 16.0, "hands": 95.0, "open": 30.0, "panel": 28.0, "lift": 0.05, "hinge": "back"}
+# 0.7 front hinge; picked 0.7 back); step 4: 2.5 cm off the body (5 cm read as headphones from the front)
+ROBOT = {"d": 60.0, "h": 145.0, "eye": 16.0, "hands": 95.0, "open": 30.0, "panel": 28.0, "lift": 0.025, "hinge": "back"}
 # step 2: the rail 14 cm lower (bottom 214; at 228 its top was 1.7..3.5 cm under the ceiling and the hangers did not
 # show); it still clears the 1.8 m capsule by 34 cm; the hoist a chunky carriage, a short thick rod and a claw clamp
 RAIL = {"r": 105.0, "th": (-110.0, -25.0), "bottom": 214.0, "w": 10.0, "t": 8.0, "hangers": (-100.0, -67.5, -35.0)}
@@ -353,7 +363,7 @@ def _module(K, drawers, open_slot=None):
         bezels.append(b)
         bars.append(g)
     if fronts:
-        out += [part("fronts", M(*fronts), "ws_bronze2"), part("panels", M(*panels), "ws_bronze"),
+        out += [part("fronts", M(*fronts), "ws_bronze2"), part("panels", M(*panels), "ws_olive"),
                 part("pulls", M(*bezels), GRAPH), part("pull_lights", M(*bars), "ws_green__handle")]
     s0, s1 = K["strip"]
     out.append(part("strip", fblock(body - 0.1, body + 0.5, s0, s1, 1.0), "ws_green__strip"))
@@ -380,7 +390,7 @@ def ws_cabinet(args, layout):
     return _module(CAB, [CAB["drawer"]])
 
 
-def _tray(h0, h1, d_front):
+def _tray(h0, h1, d_front, foam="ws_foam"):
     """A pulled-out drawer: its front (as the closed ones) at d_front, the tray behind it (1.2 cm walls, 48 deep) and
     a raised graphite insert 14 cm under the front's top; returns (parts, floor h cm, inner y m, inner d range cm)."""
     fr = BENCH["front"]
@@ -403,9 +413,9 @@ def _tray(h0, h1, d_front):
             L.box(xb - 0.003, xb, -yw + 0.003, yw - 0.003, FLOOR + (ht - 1.6) * CM, FLOOR + (ht - 0.8) * CM))
     parts = [part("front", front(-yf, yf, h0, h1, d_front, d_front + fr), "ws_bronze2"),
              part("panel", front(-yf + 0.03, yf - 0.03, h0 + 3.0, h1 - 3.0, d_front + fr - 0.1, d_front + fr + 0.5,
-                                 0.004), "ws_bronze"),
+                                 0.004), "ws_olive"),
              part("tray", M(*walls), "ws_bronze2"),
-             part("insert", G.bbox(x0, x1, -yi, yi, FLOOR + (hf + 0.5) * CM, FLOOR + fl * CM, 0.004), "ws_foam"),
+             part("insert", G.bbox(x0, x1, -yi, yi, FLOOR + (hf + 0.5) * CM, FLOOR + fl * CM, 0.004), foam),
              part("rim", rim, "ws_green__strip"),
              part("pull", b, GRAPH), part("pull_light", g, "ws_green__handle")]
     return parts, fl, w - 0.015, (db + 1.5, d_front - 0.3)
@@ -563,7 +573,7 @@ def _parts(fl, yin, dr, seed=3):
 def ws_drawer(args, layout):
     """A bench drawer pulled out 25 cm (`slot` top / low) with its contents (`fill` eyes / limbs / parts)."""
     h0, h1 = BENCH["drawers"][1 if args["slot"] == "top" else 0]
-    out, fl, yin, dr = _tray(h0, h1, BENCH["body"] + BENCH["pull"])
+    out, fl, yin, dr = _tray(h0, h1, BENCH["body"] + BENCH["pull"], "ws_foam2" if args["fill"] == "parts" else "ws_foam")
     if args["fill"] == "parts":
         out += _parts(fl, yin, dr, args.get("seed", 3))
     else:
@@ -729,9 +739,13 @@ def _eye():
            (0.0, on(0.0, -0.002))]
     return [part("eye_ring", lathe(bezel, 48, RC, ex), "ws_bronze", 35.0), part("eye_trim", lathe(trim, 48, RC, ex), EDGE, 35.0),
             part("eye_glass", lathe(dome, 48, RC, ex), "ws_glass", 40.0),
-            part("eye_iris", lathe(ring(0.026, 0.032, 0.0011, 3), 48, RC, ex), "ws_cyan__eye", 40.0),
-            part("eye_iris_mid", lathe(ring(0.0195, 0.026, 0.0013, 3), 48, RC, ex), "ws_cyan__iris", 40.0),
-            part("eye_inner", lathe(ring(0.014, 0.0195, 0.0015, 2), 48, RC, ex), "ws_cyan__pupil", 40.0),
+            # step 4: five bands of 3.6 mm on one level, a gradient in [light.mats] from the deep rim to the bright
+            # inner ring (step 3's three bands stood at three lifts: their steps showed as rings)
+            part("eye_iris", lathe(ring(0.0284, 0.032, 0.0013, 3), 48, RC, ex), "ws_cyan__eye", 40.0),
+            part("eye_iris_out", lathe(ring(0.0248, 0.0284, 0.0013, 3), 48, RC, ex), "ws_cyan__iris_out", 40.0),
+            part("eye_iris_mid", lathe(ring(0.0212, 0.0248, 0.0013, 3), 48, RC, ex), "ws_cyan__iris", 40.0),
+            part("eye_iris_in", lathe(ring(0.0176, 0.0212, 0.0013, 3), 48, RC, ex), "ws_cyan__iris_in", 40.0),
+            part("eye_inner", lathe(ring(0.014, 0.0176, 0.0013, 3), 48, RC, ex), "ws_cyan__pupil", 40.0),
             part("eye_limbal", lathe(ring(0.032, 0.0355, 0.0011, 2), 48, RC, ex), GRAPH, 40.0),
             part("eye_glint", lathe(dot, 16, add(RC, (0.0, 0.019, 0.021)), ex), "ws_glint", 40.0)]
 
