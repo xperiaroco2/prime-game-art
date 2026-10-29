@@ -12,6 +12,9 @@ extends SceneTree
 ## sheets/<label>.png under a title band. "keep" also saves frames/<label>/<i>.png at window size, "video" saves every
 ## frame of one cycle at fps as video/<label>/<i>.png. frames.json records the cameras, the times and every joint's
 ## world position at each time, with each bone's two axis points (Character.axis_points). Prints FRAMES saved <path>, or FRAMES error <why> and exits 1.
+## Optional: "face" (sheets/face.png, its own fixed light) and "closeups" (sheets/closeups.png: `frames --closeups
+## 'label@x,y,z/size/yaw[/pitch];...'` at --closeup-clip's first frame, orthographic, two per row, the light turned
+## with each shot's yaw); light_turn_deg comes from `frames --yaw`.
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const Character = preload("res://lib/character.gd")
@@ -118,9 +121,11 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 			for r: Array in face["beside_rects"]:
 				shots.append(approved.get_region(Rect2i(int(r[0]), int(r[1]), int(r[2]), int(r[3]))))
 		var cams: Array = []
+		_rig.rotation.y = 0.0  # the face sheet keeps the studio light as approved: --yaw turns only the clip sheets'
 		for yaw: float in face["yaws"]:
 			cams.append(_face_frame(face["clip"], float(face["t"]), float(yaw), float(face["pitch_deg"]), size))
 			shots.append(await _shot(face["clip"], float(face["t"]), "Godot  yaw %d" % int(yaw)))
+		_rig.rotation.y = deg_to_rad(float(spec.get("light_turn_deg", 0.0)))
 		var sheet: Image = await _sheet(shots, Vector2i(int(face["cell"][0]), int(face["cell"][1])), face["title"])
 		_save(sheet, "%s/sheets/face.png" % out_dir)
 		record["face"] = {"clip": face["clip"], "t": face["t"], "cameras": cams, "beside": beside}
