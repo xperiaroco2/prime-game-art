@@ -19,9 +19,6 @@ same on every body, the ADR docs/decisions/2026-10-29-neck-ring.md). The first h
 close-ups show the neck with each head.
 The concept's outline is D2's own figure mask (body_dims_geom.mask, the ground flood from the border) and its panels
 (body_dims_geom.panels), the masks the tables were measured on; `--sole-row` defaults to that mask's sole.
-D3e: each head's and its body's ring vertices share one normal (custom split normals, the two meshes' vertex normals
-averaged), as the assembler's weld gives, so the sheet shows the real join rather than two meshes' own normals; and
-the concept's mask gets back the ground-coloured holes it closed (the gap between the legs, `open_holes`).
 `--pair`: instead, one sheet `pair_<tag>.png` of the bodies side by side, front and side, one scale, heads on.
 """
 from __future__ import annotations
@@ -67,70 +64,6 @@ def d2_mask(path):
     ps = DG.panels(m)
     cuts = [0] + [(a[1] + b[0]) // 2 for a, b in zip(ps, ps[1:])] + [w]
     return full, sole, cuts
-
-
-def open_holes(full, im, min_h: int = 60, thresh: float = 9 / 255):
-    """D3e: the ground flood leaves a gap closed by the figure all round (between the legs, where the feet's shadow
-    joins them) inside the mask. Every 4-connected run of the mask's ground-coloured pixels (within `thresh` of the
-    row's ground, as body_dims_geom.mask) at least `min_h` px tall is taken out of the mask; a small highlight stays."""
-    h, w = full.shape
-    rgb = im[..., :3]
-    strip = np.concatenate([rgb[:, 2:12], rgb[:, w - 12:w - 2]], axis=1)
-    bg = np.median(strip, axis=1)
-    ground = (np.abs(rgb - bg[:, None, :]).max(axis=2) <= thresh) & full
-    seen = np.zeros_like(ground)
-    out = full.copy()
-    for y0, x0 in zip(*np.nonzero(ground)):
-        if seen[y0, x0]:
-            continue
-        stack, comp = [(y0, x0)], []
-        seen[y0, x0] = True
-        while stack:
-            y, x = stack.pop()
-            comp.append((y, x))
-            for yy, xx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
-                if 0 <= yy < h and 0 <= xx < w and ground[yy, xx] and not seen[yy, xx]:
-                    seen[yy, xx] = True
-                    stack.append((yy, xx))
-        ys = [p[0] for p in comp]
-        if max(ys) - min(ys) + 1 >= min_h:
-            for y, x in comp:
-                out[y, x] = False
-    return out
-
-
-def seam_normals(body, head) -> int:
-    """D3e: the body's top loop (the ring) and the head's bottom loop share one normal per vertex pair (nearest in
-    world space), the two meshes' vertex normals averaged, as custom split normals on both; returns the pairs."""
-    def ring_of(o, top):
-        mw = o.matrix_world
-        zs = [(mw @ v.co).z for v in o.data.vertices]
-        z = max(zs) if top else min(zs)
-        return [v.index for v, zz in zip(o.data.vertices, zs) if abs(zz - z) < 0.002]
-    rb, rh = ring_of(body, True), ring_of(head, False)
-    bw, hw = body.matrix_world, head.matrix_world
-    bn = {i: (bw.to_3x3() @ body.data.vertices[i].normal).normalized() for i in rb}
-    hp = {i: hw @ head.data.vertices[i].co for i in rh}
-    hn = {i: (hw.to_3x3() @ head.data.vertices[i].normal).normalized() for i in rh}
-    pairs = {}
-    for i in rb:
-        p = bw @ body.data.vertices[i].co
-        j = min(rh, key=lambda k: (hp[k] - p).length)
-        if (hp[j] - p).length < 0.003:
-            pairs[i] = j
-    shared_b, shared_h = {}, {}
-    for i, j in pairs.items():
-        n = (bn[i] + hn[j]).normalized()
-        shared_b[i] = bw.to_3x3().inverted() @ n
-        shared_h[j] = hw.to_3x3().inverted() @ n
-    for o, sh in ((body, shared_b), (head, shared_h)):
-        me = o.data
-        ns = [tuple(sh[lp.vertex_index].normalized()) if lp.vertex_index in sh
-              else tuple(me.vertices[lp.vertex_index].normal) for lp in me.loops]
-        for f in me.polygons:
-            f.use_smooth = True
-        me.normals_split_custom_set(ns)
-    return len(pairs)
 
 
 def concept_mask(im, cut, mirror, full):
@@ -248,12 +181,8 @@ def main() -> int:
                 o.data.materials.append(mat)
             o.location.z += rings[j] - 1.39
             head.append(o)
-        bpy.context.view_layer.update()  # the moved heads' matrix_world
-        bodies_mesh = next(o for o in groups[j] if o.type == "MESH")
-        seams = [seam_normals(bodies_mesh, o) for o in head if o.name.startswith("Body")]
         heads.append((hf, j, head))
-        log["head"].append({"from": hf, "body": j, "ring_m": round(rings[j], 5), "objects": [o.name for o in head],
-                            "seam_pairs": seams})
+        log["head"].append({"from": hf, "body": j, "ring_m": round(rings[j], 5), "objects": [o.name for o in head]})
 
     def show(j, h=0):  # body j with head source h (or none)
         for i, g in enumerate(groups):
@@ -267,7 +196,6 @@ def main() -> int:
     sc.render.film_transparent = True
     cim = R.load(a.concept)
     full, sole, cuts = d2_mask(a.concept)
-    full = open_holes(full, cim)
     if a.cuts:
         cuts = [int(c) for c in a.cuts.split(",")]
     sole_row = a.sole_row if a.sole_row >= 0 else sole
