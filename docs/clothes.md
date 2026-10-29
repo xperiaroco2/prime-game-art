@@ -117,7 +117,17 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
    sketch's 44, 55, 73), and with a little specular it read as wet leather: `--denim-gain R,G,B` scales the denim's
    linear colour (`shift`, weighted by `denim_weight`: blue over red and green; the stripes and the orange stitching
    keep theirs). C1d's 2.15, 2.15, 2.1 (Godot's frame over the sketch's, per channel) brought Godot's legs to 42, 54,
-   72. Blender's `Image.pixels` of an 8-bit map are its stored sRGB values, not linear. The GLB with `export_glb.py`'s
+   72. Blender's `Image.pixels` of an 8-bit map are its stored sRGB values, not linear. `--straps` (C1e,
+   `clothes_strap.py`): the Meshy straps break into folded flaps over the shoulders (3 to 8 layers within 4 cm), so
+   each strap's path is found from its own UV column (u 0.476 to 0.511) binned by angle around the shoulder axis
+   (`--strap-axis` y 0.04, z 1.18; `--strap-arc` -70 to 100 degrees), followed down the back along the nearest denim
+   run until it reaches the back bib (`--strap-run`), and the garment's faces in a corridor along it go: those under
+   the strip, and the outer layers and far flaps within 2.5 cm of its edges (unless the body under them would then
+   show); a clean strip `--strap-width` 0.035 m wide, `--strap-off` 6 mm off the body with 3 mm lips toward it, lies
+   there, mapped onto a plain denim rectangle of the map (`--strap-uv`, mirrored along the strap) and weighted from
+   the nearest body point. `--sleeve-smooth N`: N smoothing steps on the arm-weighted vertices along each vertex's
+   normal only (an umbrella step along the surface zig-zagged the stripes, C1d r19), each move at most
+   `--sleeve-max` 0.01 m and never nearer the body than min(its old distance, `--sleeve-floor` 4 mm). The GLB with `export_glb.py`'s
    fixed textured options. Then glTF-Validator and
    `tools/run.sh godot-check <glb> --profile alien --strict-contract --textured`.
 9. **The proof.** `tools/blender/clothes_proof.py -- --blend <char>_char.blend --name <char> --out DIR`: per clip

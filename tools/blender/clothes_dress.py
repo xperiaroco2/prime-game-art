@@ -52,6 +52,7 @@ from mathutils.kdtree import KDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
+import clothes_strap as S  # noqa: E402
 import clothes_texture as T  # noqa: E402
 
 PIECES = ("garment", "shoes")
@@ -137,6 +138,286 @@ def maps(cloth, grow: bool, gain: tuple[float, float, float]) -> dict:
     return rep
 
 
+def world_tree(o) -> tuple[BVHTree, list[Vector], list[list[int]]]:
+    co = [o.matrix_world @ v.co for v in o.data.vertices]
+    polys = [list(p.vertices) for p in o.data.polygons]
+    return BVHTree.FromPolygons(co, polys), co, polys
+
+
+def straps(gar, char, args) -> dict:
+    """Rebuilds the garment's straps over both shoulders (clothes_strap): deletes the faces in a corridor along each
+    strap's path and lays a clean strip args.strap_off off the body there, UVs on a plain denim rectangle, weights
+    from the nearest body point. Returns the numbers per side."""
+    import bmesh
+    btree, bco, bpolys = world_tree(char)
+    gname = {g.index: g.name for g in char.vertex_groups}
+    bw = [{gname[g.group]: g.weight for g in v.groups if g.group in gname} for v in char.data.vertices]
+    y0, z0 = (float(v) for v in args.strap_axis.split(","))
+    lo, hi = (math.radians(float(v)) for v in args.strap_arc.split(","))
+    u0, u1, v0, v1 = (float(v) for v in args.strap_uv.split(","))
+    half, off, lip = args.strap_width / 2, args.strap_off, args.strap_lip
+    mw = gar.matrix_world
+    inv = mw.inverted()
+    me = gar.data
+    uvl = me.uv_layers.active.data
+    centres_uv = [(sum(uvl[li].uv.x for li in p.loop_indices) / p.loop_total,
+                   sum(uvl[li].uv.y for li in p.loop_indices) / p.loop_total) for p in me.polygons]
+    fc = [mw @ p.center for p in me.polygons]
+    rect = sum(u0 <= u <= u1 and v0 <= v <= v1 for u, v in centres_uv)
+    rep = {"uv_rect": [u0, u1, v0, v1], "faces_on_the_uv_rect": rect}
+    gtree, _gco, _gp = world_tree(gar)
+    img = next(n.image for sl in gar.material_slots if sl.material and sl.material.node_tree
+               for n in sl.material.node_tree.nodes if n.type == "TEX_IMAGE" and n.image and "diffuse" in n.image.name)
+    w, h = img.size
+    px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)[..., :3]
+    back = [fi for fi, c in enumerate(fc) if c.y > 0.05 and c.z > 1.0 and abs(c.x) < 0.25]
+    col = np.array([px[min(h - 1, int(centres_uv[fi][1] * h)), min(w - 1, int(centres_uv[fi][0] * w))] for fi in back])
+    back = [fi for fi, d in zip(back, T.denim_weight(col)) if d > 0.5]
+    plans, gone = [], set()
+    steps = max(8, int(round((hi - lo) / math.radians(args.strap_step))))
+    angles = [lo + (hi - lo) * i / steps for i in range(steps + 1)]
+    for sgn in (1, -1):
+        pts = [tuple(c) for c, (u, v) in zip(fc, centres_uv)
+               if 0.476 < u < 0.511 and c.z > 1.15 and c.x * sgn > 0.05]
+        bins = S.bin_angles(pts, y0, z0, lo - math.radians(10), hi + math.radians(10), math.radians(10))
+        last = bins[-1][0]
+        xs = S.fill_bins(bins, angles)
+
+        def surface(t, x):
+            a = Vector((x, y0, z0))
+            d = Vector((0.0, math.sin(t), math.cos(t)))
+            loc, nor, _i, _d = btree.ray_cast(a, d, 0.4)
+            if loc is None:
+                loc, nor, _i, _d = btree.find_nearest(a + d * 0.15)
+            return loc, (nor if nor.dot(d) > 0 else -nor)
+
+        # down the back, past the strap's UV column: the denim run nearest the strap's last x, to the back bib
+        keep = len(angles)
+        for i, t in enumerate(angles):
+            if t <= last:
+                continue
+            loc, _n = surface(t, xs[i - 1])
+            run = [fc[fi].x for fi in back if fc[fi].x * sgn > 0
+                   and math.hypot(fc[fi].y - loc.y, fc[fi].z - loc.z) < 0.012]
+            x = S.follow_run(run, xs[i - 1], *(float(v) for v in args.strap_run.split(",")))
+            if x is None:
+                keep = i
+                break
+            xs[i] = x
+        ang, xs = angles[:keep], S.smooth_open(xs[:keep], 4)
+        cs, ns = [], []
+        for t, x in zip(ang, xs):
+            loc, nor = surface(t, x)
+            cs.append(loc + nor * off)
+            ns.append(nor)
+        cx = [S.smooth_open([c[k] for c in cs], 3) for k in range(3)]
+        cs = [Vector((cx[0][i], cx[1][i], cx[2][i])) for i in range(len(cs))]
+        nx = [S.smooth_open([n[k] for n in ns], 3) for k in range(3)]
+        ns = [Vector((nx[0][i], nx[1][i], nx[2][i])).normalized() for i in range(len(ns))]
+        ct, nt = [tuple(c) for c in cs], [tuple(n) for n in ns]
+        sides = S.frames(ct, nt)
+        along = S.arcs(ct)
+        length = along[-1]
+        lo3 = Vector([min(c[k] for c in ct) - 0.06 for k in range(3)])
+        hi3 = Vector([max(c[k] for c in ct) + 0.06 for k in range(3)])
+        core, flap = set(), set()
+        cand = [fi for fi, c in enumerate(fc) if all(lo3[k] <= c[k] <= hi3[k] for k in range(3)) and c.x * sgn > 0]
+        coords = {fi: S.strip_coords(tuple(fc[fi]), ct, sides, nt, along) for fi in cand}
+        for fi in cand:
+            if S.strip_delete(coords[fi], length, half, outer=False) == "core":
+                core.add(fi)
+        for fi in cand:
+            if fi in core:
+                continue
+            p = fc[fi]
+            loc, _n, _i, dist = btree.find_nearest(p)
+            outer = coords[fi][2] > args.strap_far
+            if not outer and loc is not None and dist > 1e-4:
+                dirn = (loc - p).normalized()
+                start, left = p + dirn * 1e-4, dist
+                for _ in range(8):
+                    h = gtree.ray_cast(start, dirn, left)
+                    if h[0] is None:
+                        break
+                    if h[2] not in core and h[2] != fi:
+                        outer = True
+                        break
+                    left -= (h[0] - start).length
+                    start = h[0] + dirn * 1e-4
+            if S.strip_delete(coords[fi], length, half, outer=outer) == "flap":
+                flap.add(fi)
+        plans_flap = flap
+        gone |= core | flap
+        # the strip's grid: per station a lip, the top across the width, a lip
+        lats = [(-half, -lip), (-half, 0.0), (-half / 2, 0.0), (0.0, 0.0), (half / 2, 0.0), (half, 0.0), (half, -lip)]
+        grid, uvs = [], []
+        for i, (c, s, n) in enumerate(zip(ct, sides, nt)):
+            for k, (lat, hgt) in enumerate(lats):
+                q = Vector(c) + Vector(s) * lat
+                loc, nor, _i, _d = btree.find_nearest(q)
+                nor = nor if nor.dot(Vector(n)) > 0 else -nor
+                grid.append(loc + nor * (off + hgt))
+                uvs.append((u0 + (u1 - u0) * k / (len(lats) - 1), S.mirror_v(along[i], v0, v1, args.strap_texels)))
+        mats = [me.polygons[fi].material_index for fi in core]
+        plans.append({"grid": grid, "uvs": uvs, "rows": len(ct), "cols": len(lats),
+                      "mat": max(set(mats), key=mats.count) if mats else 0, "side": sgn, "ct": ct, "sides": sides,
+                      "nt": nt, "along": along, "flap": plans_flap})
+        rep["left" if sgn > 0 else "right"] = {
+            "stations": len(ct), "length_m": round(length, 4), "core_faces": len(core), "flap_faces": len(flap),
+            "x_front_back": [round(ct[0][0], 4), round(ct[-1][0], 4)], "z_front_back": [round(ct[0][2], 4),
+                                                                                       round(ct[-1][2], 4)]}
+    bn = char.matrix_world.to_3x3().inverted().transposed()
+    corridor = []
+    for v, q in zip(char.data.vertices, bco):
+        for pl in plans:
+            if q.x * pl["side"] <= 0:
+                continue
+            s_, lat, hh = S.strip_coords(tuple(q), pl["ct"], pl["sides"], pl["nt"], pl["along"])
+            if 0.0 < s_ < pl["along"][-1] and abs(lat) < half + 0.025 and abs(hh) < 0.03:
+                corridor.append((q, (bn @ v.normal).normalized()))
+    rep["corridor_uncovered_before"] = sum(gtree.ray_cast(q + n * 1e-4, n, 0.03)[0] is None for q, n in corridor)
+    gco = [mw @ v.co for v in me.vertices]
+    flaps = set().union(*(pl["flap"] for pl in plans))
+    restored = 0
+    for _ in range(3):
+        co = list(gco)
+        polys = [list(me.polygons[fi].vertices) for fi in range(len(me.polygons)) if fi not in gone]
+        for pl in plans:
+            base = len(co)
+            co += pl["grid"]
+            polys += [[base + k for k in qd] for qd in S.strip_quads(pl["rows"], pl["cols"])]
+        kept = BVHTree.FromPolygons(co, polys)
+        back_in = set()
+        for q, n in corridor:
+            if kept.ray_cast(q + n * 1e-4, n, 0.03)[0] is None:
+                fi = gtree.ray_cast(q + n * 1e-4, n, 0.03)[2]
+                if fi is not None and fi in flaps and fi in gone:
+                    back_in.add(fi)
+        if not back_in:
+            break
+        gone -= back_in
+        restored += len(back_in)
+    rep["flap_faces_restored"] = restored
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.faces.ensure_lookup_table()
+    bmesh.ops.delete(bm, geom=[bm.faces[i] for i in sorted(gone)], context="FACES")
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    uv = bm.loops.layers.uv.active
+    dl = bm.verts.layers.deform.verify()
+    gi = {g.name: g.index for g in gar.vertex_groups}
+    new_tris = 0
+    for pl in plans:
+        vs = []
+        for q in pl["grid"]:
+            v = bm.verts.new(inv @ q)
+            loc, _n, fi, _d = btree.find_nearest(q)
+            row: dict[str, float] = {}
+            for k, w in zip(bpolys[fi], poly_3d_calc([bco[k] for k in bpolys[fi]], loc)):
+                for b, x in bw[k].items():
+                    row[b] = row.get(b, 0.0) + w * x
+            for b, x in F.limit(row).items():
+                if b not in gi:
+                    gi[b] = gar.vertex_groups.new(name=b).index
+                v[dl][gi[b]] = x
+            vs.append(v)
+        for quad in S.strip_quads(pl["rows"], pl["cols"]):
+            f = bm.faces.new([vs[k] for k in quad])
+            f.material_index = pl["mat"]
+            f.smooth = True
+            for loop, k in zip(f.loops, quad):
+                loop[uv].uv = pl["uvs"][k]
+            new_tris += 2
+    bm.normal_update()
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    # wind each strip outward: its first top face's normal against the body normal
+    flipped = 0
+    nf = len(me.polygons)
+    per = [(pl["rows"] - 1) * (pl["cols"] - 1) for pl in plans]
+    start = nf - sum(per)
+    for pl, n_q in zip(plans, per):
+        mid = start + (pl["rows"] // 2) * (pl["cols"] - 1) + (pl["cols"] - 1) // 2
+        if (mw.to_3x3() @ me.polygons[mid].normal).dot(Vector(pl["nt"][pl["rows"] // 2])) < 0:
+            for fi in range(start, start + n_q):
+                me.polygons[fi].flip()
+            flipped += 1
+        start += n_q
+    me.update()
+    rep["faces_deleted"] = len(gone)
+    rep["strip_tris"] = new_tris
+    rep["strips_flipped"] = flipped
+    # holes: the body under the corridors with no garment along its normal within 3 cm
+    gtree2, _c, _p = world_tree(gar)
+    for pl in plans:
+        miss = n = 0
+        for v, p in zip(char.data.vertices, bco):
+            if p.x * pl["side"] <= 0:
+                continue
+            s_, lat, h = S.strip_coords(tuple(p), pl["ct"], pl["sides"], pl["nt"], pl["along"])
+            if not (0.0 < s_ < pl["along"][-1] and abs(lat) < half + 0.025 and abs(h) < 0.03):
+                continue
+            n += 1
+            nrm = (char.matrix_world.to_3x3().inverted().transposed() @ v.normal).normalized()
+            miss += gtree2.ray_cast(p + nrm * 1e-4, nrm, 0.03)[0] is None
+        rep["left" if pl["side"] > 0 else "right"].update({"body_verts_in_corridor": n, "body_verts_uncovered": miss})
+    say("straps", rep)
+    return rep
+
+
+def sleeves(gar, char, args) -> dict:
+    """Smooths the striped sleeves' folds along each vertex's normal only (clothes_strap.normal_step), so the stripes
+    do not slide; a vertex whose move brings it nearer the body than min(its old distance, args.sleeve_floor) keeps
+    its old place; the openings stay."""
+    import bmesh
+    btree, _bco, _bp = world_tree(char)
+    gname = {g.index: g.name for g in gar.vertex_groups}
+    mw = gar.matrix_world
+    inv = mw.inverted()
+    me = gar.data
+    nmat = mw.to_3x3().inverted().transposed()
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    arm_bones = ("LeftUpperArm", "LeftLowerArm", "RightUpperArm", "RightLowerArm")
+    sel = [v.index for v in me.vertices if v.groups
+           and gname.get(max(v.groups, key=lambda g: g.weight).group, "") in arm_bones]
+    idx = {k: i for i, k in enumerate(sel)}
+    pinned = {idx[k] for k in sel if bm.verts[k].is_boundary}
+    nbrs = [[idx[e.other_vert(bm.verts[k]).index] for e in bm.verts[k].link_edges
+             if e.other_vert(bm.verts[k]).index in idx] for k in sel]
+    bm.free()
+    pos0 = [tuple(mw @ me.vertices[k].co) for k in sel]
+    nor = [tuple((nmat @ me.vertices[k].normal).normalized()) for k in sel]
+
+    def dist(p):
+        loc, n, _i, _d = btree.find_nearest(Vector(p))
+        return (Vector(p) - loc).dot(n) if loc is not None else 1.0
+
+    d0 = [dist(p) for p in pos0]
+    pos = pos0
+    for _ in range(args.sleeve_smooth):
+        pos = S.normal_step(pos, nor, nbrs, args.sleeve_alpha, pinned)
+    kept = reverted = 0
+    moves = []
+    for k, p0, p, a in zip(sel, pos0, pos, d0):
+        p = S.clamp_move(p0, p, args.sleeve_max)
+        if S.keep_clearance(a, dist(p), args.sleeve_floor):
+            me.vertices[k].co = inv @ Vector(p)
+            moves.append((Vector(p) - Vector(p0)).length)
+            kept += 1
+        else:
+            reverted += 1
+    me.update()
+    moves.sort()
+    rep = {"verts": len(sel), "pinned": len(pinned), "moved": kept, "reverted": reverted,
+           "move_mm_median": round(1000 * moves[len(moves) // 2], 2) if moves else 0.0,
+           "move_mm_max": round(1000 * moves[-1], 2) if moves else 0.0}
+    say("sleeves", rep)
+    return rep
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--char", required=True)
@@ -160,6 +441,25 @@ def main() -> int:
                     help="--away on the Shoulder bones (m): the skin under the straps' base, near the collar")
     ap.add_argument("--no-fill", action="store_true", help="leave the maps' empty texels black (the r16 build)")
     ap.add_argument("--denim-gain", default="1,1,1", help="the garment denim's linear gain R,G,B (1,1,1: as baked)")
+    ap.add_argument("--straps", action="store_true", help="rebuild the straps over the shoulders as clean strips")
+    ap.add_argument("--strap-axis", default="0.04,1.18", help="the shoulders' axis in the side view: y,z (m)")
+    ap.add_argument("--strap-arc", default="-70,100", help="the rebuilt arc around the axis: front,back (degrees)")
+    ap.add_argument("--strap-step", type=float, default=4.0, help="degrees between the strip's stations")
+    ap.add_argument("--strap-width", type=float, default=0.035)
+    ap.add_argument("--strap-off", type=float, default=0.006, help="the strip's distance off the body (m)")
+    ap.add_argument("--strap-lip", type=float, default=0.003, help="the strip's edges fold this far toward the body")
+    ap.add_argument("--strap-far", type=float, default=0.012,
+                    help="a face this far above the strip's line within reach of its edges is a flap (m)")
+    ap.add_argument("--strap-uv", default="0.4725,0.4935,0.784,0.829",
+                    help="the plain denim rectangle the strips map onto: u0,u1,v0,v1")
+    ap.add_argument("--strap-texels", type=float, default=0.743, help="the strips' UV units per metre along")
+    ap.add_argument("--strap-run", default="0.04,0.06",
+                    help="down the back: the denim run's window around the strap's last x and its widest (m)")
+    ap.add_argument("--sleeve-smooth", type=int, default=0, help="normal-only smoothing steps on the sleeves (0: off)")
+    ap.add_argument("--sleeve-alpha", type=float, default=0.5)
+    ap.add_argument("--sleeve-max", type=float, default=0.01, help="a sleeve vertex moves at most this far (m)")
+    ap.add_argument("--sleeve-floor", type=float, default=0.004,
+                    help="a smoothed sleeve vertex never comes nearer the body than min(its old distance, this) (m)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     glb = out / f"{args.name}_char.glb"
@@ -231,6 +531,11 @@ def main() -> int:
                                "followed_nearest_face": followed,
                                "unmatched": len(char.data.vertices) - matched}
         say("body variant", rep["body_variant"])
+    garment = next((o for o in cloth if o.name == "garment"), None)
+    if args.straps and garment is not None:
+        rep["straps"] = straps(garment, char, args)
+    if args.sleeve_smooth and garment is not None:
+        rep["sleeves"] = sleeves(garment, char, args)
     gname = {g.index: g.name for g in char.vertex_groups}
     # the covered faces
     tree = cloth_tree(cloth)
