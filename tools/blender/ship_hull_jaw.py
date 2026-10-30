@@ -370,11 +370,15 @@ def lower_parts(j: dict) -> list:
     parts += _flat("lower_rail_glow", glow, "glow_cyan")
     parts += _flat("lower_tip_glow", seam_glow, "glow_cyan", nocol=True)
     parts += _flat("lower_rim", frame, "ext_frame")
-    parts += _flat("lower_deck", deck, "ext_silver_c")
+    # only the deck's top face collides: the plate's underside and edges face down or away at the tip, and Jolt's
+    # recovery from those back faces pressed the capsule into the ground there (the open walk's stop, b3; b4)
+    p0, u, w = deck_frame(j)
+    deck_top = [(q, n) for q, n in deck if n[2] > 0.5 and abs(S._dot(n, w) - 1.0) < 1e-6]
+    parts += _flat("lower_deck", deck_top, "ext_silver_c")
+    parts += _flat("lower_deck_edge", [(q, n) for q, n in deck if (q, n) not in deck_top], "ext_silver_c", nocol=True)
     parts += _flat("lower_bulkhead", bulk, "hull_dark")
     # ribs across the deck and two amber lit edges along the rails' feet
-    p0, u, w = deck_frame(j)
-    top = next(q for q, n in deck if n[2] > 0.5 and abs(S._dot(n, w) - 1.0) < 1e-6)
+    top = deck_top[0][0]
     length = math.hypot(j["lower_hinge"][1] - j["tip_y"], j["seam_h"] - j["floor_h"])
 
     def at(s, x, hh):
@@ -575,18 +579,37 @@ def outline_x(j: dict, y: float) -> float:
     return pts[-1][0]
 
 
+def _front(parts):
+    """The shells' faces are wound counter-clockwise about their outward side in the plan frame (x, y, h), and
+    ship_build.make mirrors y into Blender, which turns that winding over: every open shell (solid False, no normal
+    recalculation) came out facing inward (b2, b3). The materials are double-sided, so the look never showed it, but
+    Godot's trimesh colliders are one-sided: the deck's top let the capsule fall through from above and its underside
+    caught it at the tip (the open walk's stop, b4). Reversed here, each face's front is its outward side in Blender
+    and Godot."""
+    for p in parts:
+        if not p.get("solid", True):
+            p["faces"] = [tuple(reversed(f)) for f in p["faces"]]
+    return parts
+
+
+def front_normal(q):
+    """A face's front (Blender's and Godot's) in the plan frame, after _front: the opposite of its Newell normal."""
+    n = S._unit3(S._newell(q))
+    return (-n[0], -n[1], -n[2])
+
+
 def jaw_upper(args: dict, layout: dict) -> list:
     """The upper jaw, origin at [jaw] upper_hinge."""
     j = jaw(layout)
-    return _shift_parts(upper_parts(j), j["upper_hinge"])
+    return _front(_shift_parts(upper_parts(j), j["upper_hinge"]))
 
 
 def jaw_lower(args: dict, layout: dict) -> list:
     """The lower jaw, the ramp, origin at [jaw] lower_hinge."""
     j = jaw(layout)
-    return _shift_parts(lower_parts(j), j["lower_hinge"])
+    return _front(_shift_parts(lower_parts(j), j["lower_hinge"]))
 
 
 def jaw_root(args: dict, layout: dict) -> list:
     """The fixed root, plan origin."""
-    return root_parts(jaw(layout))
+    return _front(root_parts(jaw(layout)))

@@ -536,10 +536,11 @@ int_silver_c__clad = {v = 0.9, r = 0.0, m = 0.2, l = 0.0}                  # ste
 [walk]
 # lens step 1: the corridor points on the axes (u 3.0 from the hall's centre), the lens rooms' 0.5 m past their centres
 # lens C: and each charger's player stand (renewer_e/_w at + normal (0.70 + 0.4), the alcove's reach) and back
-points = [[0.0, -14.0, 0.0], [0.0, -12.6, 0.0], [0.0, -6.6, 1.2], [0.0, -2.2, 1.2], [-2.966, 0.052, 1.6],
+# jaw nose b4: on the ground 0.6 m in front of the open ramp's tip (y -12.58), then straight up its centre line
+points = [[0.0, -14.0, 0.0], [0.0, -13.2, 0.0], [0.0, -6.6, 1.2], [0.0, -2.2, 1.2], [-2.966, 0.052, 1.6],
           [-10.994, 1.275, 1.2], [-10.393, 2.144, 1.2], [-10.994, 1.275, 1.2], [-2.966, 0.052, 1.2],
           [2.966, 0.052, 1.2], [10.994, 1.275, 1.2], [10.393, 2.144, 1.2], [10.994, 1.275, 1.2], [2.966, 0.052, 1.6],
-          [0.0, -2.2, 1.2], [0.0, -6.6, 1.2], [0.0, -12.6, 0.0], [0.0, -14.0, 0.0]]
+          [0.0, -2.2, 1.2], [0.0, -6.6, 1.2], [0.0, -13.2, 0.0], [0.0, -14.0, 0.0]]
 
 # Views: [name, title, eye [x, y, h], look [x, y, h], fov]; the plan view "top" (south up, as plan-3) is added by the
 # command and compared side by side with plan_ref.

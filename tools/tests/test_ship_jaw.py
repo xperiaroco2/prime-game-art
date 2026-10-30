@@ -124,7 +124,8 @@ class ShipJawBuildTest(unittest.TestCase):
 
     def test_open_the_tip_collides_only_from_above(self) -> None:
         """Open, every collider face of the ramp near its tip (where the capsule walks on, |x| 0.8, the front 0.5 m)
-        looks up: b2's underside slivers and the tip's rim stopped the walk 12 cm short of the ramp (b3)."""
+        looks up: b2's underside slivers and the tip's rim stopped the walk 12 cm short of the ramp (b3), and so did the
+        deck plate's own underside and edges (b4: only its top face collides)."""
         j = J.jaw(LAYOUT)
         o = j["lower_hinge"]
         deg = sl.jaw_deg(LAYOUT, "open")["jaw_lower"]
@@ -136,8 +137,24 @@ class ShipJawBuildTest(unittest.TestCase):
             for f in p["faces"]:
                 q = [v[i] for i in f]
                 if any(abs(x) < 0.8 and y < tip_y + 0.5 and h < 0.4 for x, y, h in q):
-                    n = S._unit3(S._newell(q))
-                    self.assertTrue(n[2] > 0.5 or p["name"] == "lower_deck", (p["name"], n))
+                    n = J.front_normal(q)
+                    self.assertTrue(n[2] > 0.5, (p["name"], n))
+
+    def test_the_open_deck_faces_up_in_godot(self) -> None:
+        """Open, the deck's top (the only face of its collider) fronts up after make()'s mirror, and the belly's
+        inner faces under it front up into the mouth: Godot's trimesh colliders are one-sided, and b3's inward shells
+        let the capsule fall through the deck and stop at its tip (b4)."""
+        j = J.jaw(LAYOUT)
+        o = j["lower_hinge"]
+        deg = sl.jaw_deg(LAYOUT, "open")["jaw_lower"]
+        parts = {p["name"]: p for p in J.jaw_lower({}, LAYOUT)}
+        for name in ("lower_deck", "lower_inner"):
+            p = parts[name]
+            self.assertFalse(p.get("nocol"), name)
+            v = [J._pose((a[0] + o[0], a[1] + o[1], a[2] + o[2]), o, deg) for a in p["verts"]]
+            ups = [J.front_normal([v[i] for i in f])[2] for f in p["faces"]]
+            self.assertTrue(all(u > 0.3 for u in ups) if name == "lower_deck" else sum(ups) > 0, (name, min(ups)))
+        self.assertTrue(parts["lower_deck_edge"].get("nocol"))
 
     def test_nothing_in_the_throat(self) -> None:
         """In every pose no face of a piece crosses into the throat room (inside its walls, floor to ceiling): the
