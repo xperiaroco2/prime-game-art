@@ -127,12 +127,12 @@ void sky() {
 		}
 		// the atmosphere: a thin bright rim at the limb, a little haze inside it and a faint halo outside
 		float w = radians(rim_width_deg);
-		float sunward = sun_energy * pow(max(dot(v, sun_dir), 0.0), 30.0);
-		float rim = edge > 0.0 ? exp(-edge / w) + 0.12 * exp(-edge / (8.0 * w)) : exp(edge / (2.5 * w)) * 0.8 + pow(1.0 - mu, 6.0) * 0.25;
+		float sunward = sun_energy * pow(max(dot(v, sun_dir), 0.0), 70.0);
+		float rim = edge > 0.0 ? exp(-edge / w) + 0.04 * exp(-edge / (5.0 * w)) : exp(edge / (1.5 * w)) * 0.8 + pow(1.0 - mu, 14.0) * 0.12;
 		vec3 rim_c = mix(rim_rgb, dawn_rgb, clamp(sunward * 1.2, 0.0, 0.85));
 		vec3 atmo = rim_c * rim * rim_energy * (1.0 + 4.0 * sunward);
-		atmo += dawn_rgb * sun_energy * pow(max(dot(v, sun_dir), 0.0), 120.0) * 1.5 * (1.0 - cover);
-		vec3 stars = star_layer(v, 110.0, 0.16 * stars_density, 5.0) + star_layer(v, 260.0, 0.22 * stars_density, 1.6);
+		atmo += dawn_rgb * sun_energy * pow(max(dot(v, sun_dir), 0.0), 600.0) * 0.8 * (1.0 - cover);
+		vec3 stars = star_layer(v, 110.0, 0.07 * stars_density, 4.0) + star_layer(v, 260.0, 0.06 * stars_density, 1.0);
 		stars *= stars_energy * (1.0 - cover) * (1.0 - clamp(rim * 2.0, 0.0, 1.0));
 		COLOR = col * cover + atmo + stars;
 	}
