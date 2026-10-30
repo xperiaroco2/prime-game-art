@@ -34,7 +34,8 @@ import ship_interior as S
 import ship_lib as L
 
 FLOOR = S.FLOOR
-BEND, IN, TOP = S.TH_BEND, S.TH_IN, S.TH_H      # the throat wall: vertical to 1.45, then 0.55 in at 2.3
+BEND, IN, TOP = S.TUN_BEND, S.TUN_IN, S.TH_H    # the throat wall they were built for (no longer placed since the gills):
+                                                # vertical to 1.45, then 0.55 in at 2.3 (the tunnel keeps that profile)
 
 for _name in ("int_halo__vent_heat", "int_cyan__vent_cool", "glow_nav_white__vent_marker"):
     L.MATERIALS[_name] = dict(L.MATERIALS[_name.split("__")[0]])
