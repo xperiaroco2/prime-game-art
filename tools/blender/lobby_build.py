@@ -872,24 +872,31 @@ def vault(H: Hall) -> list[Part]:
 def window_frame(H: Hall) -> list[Part]:
     w, wall = H.w, H.h["wall"]
     parts = []
-    bars = Part("window_bars", "lobby_trim", col=True)
+    # step 3b (the engineer's "less copper"): the frame in the dark graphite-teal metal, copper only as a thin edge:
+    # a 3 cm lip along the sill's ledge, the transom's and the head's hall-side edges, and the mullions' cap noses
+    bars = Part("window_bars", "lobby_metal", col=True)
+    edge = Part("window_copper", "lobby_trim")
     # the sill (top at [window] sill), its ledge 0.5 m into the hall, the transom and the head, each with depth
-    for y0, y1, d0, d1 in ((0.0, w["sill"], -0.1, 0.5), (w["sill"] - 0.09, w["sill"], -0.55, 0.5),
-                           (w["transom"] - w["bar_h"] / 2, w["transom"] + w["bar_h"] / 2, -0.32, 0.3),
-                           (wall - w["bar_h"], wall, -0.32, 0.3)):
+    tb, th = w["transom"] - w["bar_h"] / 2, w["transom"] + w["bar_h"] / 2
+    for part, y0, y1, d0, d1 in ((bars, 0.0, w["sill"], -0.1, 0.5), (bars, w["sill"] - 0.09, w["sill"], -0.55, 0.5),
+                                 (bars, tb, th, -0.32, 0.3), (bars, wall - w["bar_h"], wall, -0.32, 0.3),
+                                 (edge, w["sill"] - 0.03, w["sill"] + 0.005, -0.565, -0.53),     # the sill's lip
+                                 (edge, tb - 0.005, tb + 0.03, -0.335, -0.3),                    # the transom's
+                                 (edge, th - 0.03, th + 0.005, -0.335, -0.3),
+                                 (edge, wall - w["bar_h"] - 0.005, wall - w["bar_h"] + 0.03, -0.335, -0.3)):  # the head's
         secs = []
         for a in H.angles():
             (ix, iz), (ox, oz) = H.arc_pt(a, d0), H.arc_pt(a, d1)
             secs.append([(ix, y0, iz), (ox, y0, oz), (ox, y1, oz), (ix, y1, iz)])
-        bars.loft(secs)
-    parts.append(bars)
-    mull = Part("window_mullions", "lobby_pilaster", col=True)
+        part.loft(secs)
+    parts += [bars, edge]
+    mull = Part("window_mullions", "lobby_metal", col=True)
     half = w["mullion_w"] / 2
     for a in [-H.a0 + 2 * H.a0 * i / w["panes"] for i in range(w["panes"] + 1)]:
         top = wall - w["bar_h"]
         for part, hw, r0, r1, y0, y1 in ((mull, half, -0.3, 0.3, w["sill"], top),                        # the mullion
                                          (bars, 0.17, -0.48, -0.3, w["sill"], top),                       # its cap
-                                         (mull, 0.07, -0.56, -0.48, w["sill"], top),                      # the cap's nose
+                                         (edge, 0.07, -0.56, -0.48, w["sill"], top),                      # the cap's copper nose
                                          (mull, half + 0.08, -0.52, 0.3, w["sill"], w["sill"] + 0.45),    # a shoe
                                          (bars, half + 0.05, -0.54, 0.3, w["transom"] - 0.28, w["transom"] + 0.28)):
             pts = [H.arc_pt(a - hw / H.R, r0), H.arc_pt(a + hw / H.R, r0), H.arc_pt(a + hw / H.R, r1), H.arc_pt(a - hw / H.R, r1)]
