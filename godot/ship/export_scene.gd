@@ -43,7 +43,8 @@ func _export() -> void:
 	level.name = "Ship"
 	root.add_child(level)
 	var groups: Dictionary = {}
-	for group: String in ["Environment", "Lights", "Probes", "Ground"]:
+	var ground: Node3D = null
+	for group: String in ["Environment", "Lights", "Probes"]:
 		var g: Node3D = Node3D.new()
 		g.name = group
 		level.add_child(g)
@@ -58,9 +59,12 @@ func _export() -> void:
 		elif n is ReflectionProbe:
 			into = "Probes"
 		elif n is StaticBody3D:
-			into = "Ground"
+			n.name = "Ground"
+			ground = n
+			continue
 		n.reparent(groups[into])
 	var overrides: int = _materials(ship)
+	var clearing: Node3D = _clearing(level, ship, groups["Lights"], ground)
 	_spots(level)
 	level.set_meta("size_m", Vector2(float(_req["size_m"][0]), float(_req["size_m"][1])))
 	level.set_meta("deck_h", float(_req["deck_h"]))
@@ -72,7 +76,7 @@ func _export() -> void:
 	for n: Node in level.find_children("*", "", true, false):
 		if n.owner == null:
 			n.owner = level
-	for piece: Node in ship.get_children():
+	for piece: Node in ship.get_children() + clearing.get_node("Pieces").get_children():
 		level.set_editable_instance(piece, true)
 	var scripts: Array = level.find_children("*", "", true, false).filter(func(n: Node) -> bool: return n.get_script() != null)
 	if not scripts.is_empty():
@@ -89,9 +93,39 @@ func _export() -> void:
 		return
 	_write("export.json", {"pieces": ship.get_child_count(), "emissive_lights": lights, "overrides": overrides,
 		"lights": groups["Lights"].get_child_count(), "probes": groups["Probes"].get_child_count(),
+		"clearing_pieces": clearing.get_node("Pieces").get_child_count(),
+		"clearing_lights": clearing.get_node("Lights").get_child_count(),
 		"stations": level.get_node("Stations").get_child_count(), "metals": _metals.keys()})
 	print("SHIP export saved %s" % EXPORT_DIR)
 	quit(0)
+
+
+## Ship/Clearing (art #356: the lobby shows the ship docked, without the clearing): the clearing's pieces (the
+## request's "clearing" ids, ship_layout.CLEARING_BUILDERS) under Clearing/Pieces, the lights ship.gd marked as the
+## clearing's (its lamp groups and the glow cells only clearing pieces lit) under Clearing/Lights, the world boundary
+## as Clearing/Ground. The lobby frees the node (hiding it leaves Ground's collider on). Returns Clearing.
+func _clearing(level: Node3D, ship: Node3D, lights: Node3D, ground: Node3D) -> Node3D:
+	var clearing: Node3D = Node3D.new()
+	clearing.name = "Clearing"
+	level.add_child(clearing)
+	var into: Dictionary = {}
+	for group: String in ["Pieces", "Lights"]:
+		var g: Node3D = Node3D.new()
+		g.name = group
+		clearing.add_child(g)
+		into[group] = g
+	var ids: Array = _req.get("clearing", [])
+	for piece: Node in ship.get_children():
+		var s: String = String(piece.name)
+		if s.substr(0, s.rfind("_")) in ids:
+			piece.reparent(into["Pieces"])
+	for l: Node in lights.get_children():
+		if l.has_meta("clearing"):
+			l.remove_meta("clearing")
+			l.reparent(into["Lights"])
+	if ground != null:
+		ground.reparent(clearing)
+	return clearing
 
 
 ## Every glTF material the look changed in place becomes a copy set as its surface's override (the instance's own

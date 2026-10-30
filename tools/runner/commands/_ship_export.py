@@ -37,6 +37,7 @@ def scene(layout: dict, pieces: Path, request: dict, staged: dict[str, Path], fo
     request.update({"mode": "export", "stations": [[s["name"], s["spot"], s["package"], s["kind"], s["at"], s["yaw"]]
                                                    for s in ship_export.stations(layout)],
                     "spawn": [walk[0], walk[2], walk[1]], "spawn_yaw": 180.0, "deck_h": floor,
+                    "clearing": ship_layout.clearing_ids(layout), "clearing_lamps": sorted(ship_layout.CLEARING_LAMPS),
                     "size_m": [round(v, 3) for v in ship_layout.extent(layout)]})
     path = folder / CHECK_DIR / "export_request.json"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -99,14 +100,34 @@ def check(layout: dict, pieces: Path, folder: Path) -> tuple[list[str], dict]:
     want_st = {s["name"] for s in ship_export.stations(layout)}
     if set(got["stations"]) != want_st:
         problems.append(f"Stations holds {sorted(got['stations'])}, wants {sorted(want_st)}")
+    problems += clearing_problems(layout, got)
     w = got["walk"]
     if not w["arrived"]:
         problems.append(f"the capsule walk stopped at {w['reached']}/{w['of']} near {w['stuck']}")
     got["size_worst_m"] = worst
     common.say(f"  load: {got['pieces']} pieces, {got['bodies']} layer-1 bodies, {got['lights']} lights, "
+               f"Clearing {len(got['clearing_ids'])} pieces and {got['clearing_lights']} lights, "
                f"{len(got['stations'])} station spots; sizes within {worst * 1000:.1f} mm of Blender's; walk "
                f"{w['reached']}/{w['of']} points in {w['seconds']:.1f} s, lowest {w['min_y']:.2f} m")
     return problems, got
+
+
+def clearing_problems(layout: dict, got: dict) -> list[str]:
+    """Ship/Clearing (art #356) holds exactly the clearing's placements and its Ground, Pieces none of them."""
+    ids = set(ship_layout.clearing_ids(layout))
+    want = sorted(pid for pid, _at, _yaw in layout["place"] if pid in ids)
+    problems = []
+    if sorted(got["clearing_ids"]) != want:
+        problems.append(f"Clearing/Pieces holds {len(got['clearing_ids'])} placements, wants the clearing's {len(want)}")
+    stray = sorted({pid for pid in got["ship_ids"] if pid in ids})
+    if stray:
+        problems.append(f"clearing pieces under Pieces: {', '.join(stray)}")
+    wrong = sorted({pid for pid in got["clearing_ids"] if pid not in ids})
+    if wrong:
+        problems.append(f"ship pieces under Clearing: {', '.join(wrong)}")
+    if not got["clearing_ground"]:
+        problems.append("no Clearing/Ground (the world boundary)")
+    return problems
 
 
 def compare(layout: dict, pieces: Path, folder: Path) -> tuple[list[str], dict]:
