@@ -312,6 +312,9 @@ func _shoot() -> void:
 	var c: Vector3 = Vector3(float(top["centre"][0]), 0, float(top["centre"][1]))
 	_camera.look_at_from_position(c + Vector3(0, 80, 0), c, Vector3(0, 0, -1))  # north (-z) up the picture
 	images[top["name"]] = await _shot(top["name"], top["title"], shots)
+	for pid: String in top.get("hide", []):   # back for the close-ups
+		for n: Node3D in _placed.get(pid, []):
+			n.visible = true
 	for cmp: Array in _req["compare"]:
 		var ref: Image = Image.load_from_file(cmp[1])
 		if ref == null:

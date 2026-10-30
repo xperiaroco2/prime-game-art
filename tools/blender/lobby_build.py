@@ -40,7 +40,7 @@ ARC_STEP_DEG = 2.0
 # with fine scratches; occlusion 1, a roughness multiplier, metallic 1), box-projected UVs, each 2 m cell offset and
 # its brushing turned by a steady hash (per-plate variation). The materials scale them by their own numbers.
 TEX_SIZE, TEX_M = 1024, 1.5                               # pixels, metres per repeat
-NORMAL_STRENGTH = {"lobby_floor": 0.35, "lobby_floor2": 0.35, "lobby_floor3": 0.35}   # the floor stays clean
+NORMAL_STRENGTH = {"lobby_floor": 0.1, "lobby_floor2": 0.1, "lobby_floor3": 0.1}   # the floor stays clean
 PLAIN = {"lobby_glass", "lobby_lens", "lobby_lamp", "lobby_strip", "lobby_ring"}       # no metal maps
 IMG: dict = {}
 
