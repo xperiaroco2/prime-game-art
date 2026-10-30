@@ -1383,41 +1383,56 @@ the clearing outside, grounded and collision-free, and the clearing lamps outsid
 rejected (the nose itself read as a box bolted onto the manta) and are removed; the jaw nose below replaces them, and
 its closed pose is the lobby's docked ship.
 
-### The jaw nose (art #263, blockout b1, 2026-10-30)
+### The jaw nose (art #263, b2: thin plated shells, 2026-10-30)
 
 The engineer's redesign (#263 c6524257765; concepts `<raw>/2026-10-30-ship-nose-concepts/`, 6 and 1 closed, 2 open):
-the hull's own surface runs forward into a flat, pointed prow that splits along a horizontal seam like a jaw. Built by
-`tools/blender/ship_hull_jaw.py` from ship.toml `[jaw]`, three pieces (all `grounded`, `collide`, `outside`):
+the hull's own surface runs forward into a flat, pointed prow that opens like a jaw. Built by
+`tools/blender/ship_hull_jaw.py` from ship.toml `[jaw]`. Blockout b1 (solid convex wedges) was rejected for holes
+when closed (the passage's sides lay outside the prow where the upper hull's sides lean in), the old tunnel showing
+and parts read as thick blocks; b2 rebuilds every moving part as a thin shell (`SHELL` 4 cm) following the prow's outer
+surface, plated outside like the hull (`ship_hull_j.plates`/`lay`, the dark under-skin), finished inside.
 
-- `jaw_upper`, placed at `upper_hinge` (0, -4.6, 4.67): the roof over the entrance, two cheeks over the seam and three
-  roof blocks over the passage (the underside `roof_h` 3.51 aft of the hinge line, falling to the seam at the tip), and
-  the thin cyan seam line (`glow_cyan`) along the front edge and both sides until the seam runs into the hull's lead
-  edge (y -6.2);
-- `jaw_lower`, placed at `lower_hinge` (0, -8.1, 1.2), the ramp's hinge: the body under the deck and two cheeks beside
-  it up to the seam (the ramp's side walls when open), ribs across the deck and two warm lit edges (`glow_amber`), both
-  visual only (`nocol`);
-- `jaw_root` (plan origin, fixed): the lower hull between the throat's notch and the hinge line, and under the
-  mouth's floor there.
+The prow is two convex outer hulls: O_U (the seam outline at `seam_h` 2.75 with the front edge (+-0.7, `tip_y`
+-12.492) and the rear corners (+-4.5, -5.0), and the `top` points, which lie 2 cm under the hull's top along y -4.6, so
+the top grows out of the hull with no step) and O_L (the seam outline and the `belly` points: the hull's flat bottom,
+0.77, run on forward). Three pieces (all `grounded`, `collide`, `outside`):
 
-Every solid is a convex polyhedron: the two outer hulls (the seam outline at `seam_h` 2.75 with the front edge
-(+-0.7, `tip_y` -12.492) and the rear corners (+-4.5, -5.0); the top plate's corners `top`; the belly's `belly`) cut by
-planes that keep the passage clear (|x| <= 1.65 forward of the throat's notch, the notch's sides 1 cm out aft), the
-deck's plane and the roof's underside. The pieces are built closed, each one's origin its hinge; a pose turns them about
-Godot's x (+ lifts the front): `lower_deg` closed 0, half -17.18, open -34.37 (closed the deck rises 19.44 deg to the
-seam at the tip; open it lies on the ground at the ramp's 14.93 deg, the tip at y -12.6), `upper_deg` 0, 1.5, 3.0.
-`[jaw] pose` (default `open`) is what the game, `--godot`, the walk and the export get: a jaw piece's placement row in
-a request carries the angle as a 4th element (`ship.places`), which `ship.gd` and `export_scene.gd` apply.
-`ship_layout.check_jaw` holds the lower hinge on the ramp's, the open deck on the ground at the ramp's slope (under 30
-deg) and the head room over it (`jaw_numbers`: open 2.51 m, wants the capsule and margin 2.3); `test_ship_jaw.py`.
-The jaws replace the ramp, its lights, its hazard stripes and the entry tunnel's hood (`mouth_tunnel_in`, the
-tunnel's inside, stays). The [ramp] numbers stay as the open jaw's.
+- `jaw_lower`, placed at `lower_hinge` (0, -8.1, 1.2), the ramp's hinge: the shell of O_L forward of the hinge line
+  and under the rail plane (the deck's plane + `RAIL` 0.30): the belly, the low side rails (their tops `glow_cyan`),
+  the deck plate in the deck's plane (flush with the floor at the hinge), a bulkhead under it, ribs and amber lit
+  edges (`nocol`). Its aft face under the hinge leans forward `V_DEG` 36 (the swing is 34.37), so it never swings
+  into the root; closed this leaves a V-shaped hinge groove under the belly, closed at its top.
+- `jaw_upper`, placed at `upper_hinge` (0, -4.6, 4.88), on its rear line on the hull's top: the shell of O_U and the
+  skirts (O_L over the rail plane forward of the hinge line, their lower edges `glow_cyan`), a ceiling plate (the
+  roof's underside, `roof_h` 3.51 at the hinge line falling to the seam at the tip) with two cyan bars under its
+  sides, a bulkhead over the seam just forward of the portal, and the cyan mouth line (`seam_glow`): closed, the
+  parting runs from the tip along the seam and down along the rails' tops, and aft of the hinge line along the seam
+  until it meets the hull's lead edge (y -6.2).
+- `jaw_root` (plan origin, fixed): the shell of O_L aft of the hinge line; the front bulkhead (y -8.1 .. -8.05) round
+  the throat's opening (the tunnel's profile), a lit lip round it; the hood over the tunnel's chamfers and ceiling and
+  the lid at the seam beside it (inside the prow; they close the tunnel's outside, which has no faces of its own).
+
+The pieces are built closed, each one's origin its hinge; a pose turns them about Godot's x (+ lifts the front):
+`lower_deg` closed 0, half -17.18, open -34.37 (closed the deck rises 19.44 deg to the seam at the tip; open it lies on
+the ground at the ramp's 14.93 deg, the tip at y -12.6), `upper_deg` 0, 1.5, 3.0. `[jaw] pose` (default `open`) is what
+the game, `--godot`, the walk and the export get: a jaw piece's placement row in a request carries the angle as a 4th
+element (`ship.places`), which `ship.gd` and `export_scene.gd` apply. `ship_layout.check_jaw` holds the lower hinge on
+the ramp's, the open deck on the ground at the ramp's slope (under 30 deg) and the head room over it (`jaw_numbers`;
+wants the capsule and margin 2.3). `test_ship_jaw.py` also checks, on flat skins (`ship_hull_jaw.PLATED = False`; the
+plates sink inside the skin): closed, no ray from a ring of outside points (and from under and over the nose) reaches
+the throat or the closed mouth; in six steps of the swing no piece's edge passes through another's face; open, nothing
+stands in the walkway; the deck in its plane. The clearing lamp in front of the old ramp moved to (0, -17.5, 0.8),
+range 5 (it lit the closed jaw as a gold slab); a shadowed cool lamp in the mouth (0, -8.7, 2.6) lights the open ramp
+from the throat. The jaws replace the ramp, its lights, its hazard stripes and the entry tunnel's hood
+(`mouth_tunnel_in`, the tunnel's inside, stays). The [ramp] numbers stay as the open jaw's.
 
 Views: a `ship --shoot DIR --views FILE` row whose 6th element is `{"jaw": "closed"}` (or `half`, `open`) shows that
 pose (`ship.gd` `_jaw_pose`); `{"solo": true}` alone just makes a review sheet. Either way the sheet holds the
 file's views alone, `NOSE_SHEET_W` (1600) px wide. `ship --jaw-video DIR` renders the opening (`JAW_VIDEO`: a still
 3/4 front camera at eye height, 6.5 s at 30 fps: closed, the seam lights, the lower jaw lowers to the ground, the
 upper lifts) into `DIR/open.mp4`. Round b1's views, sheets and video: `<raw>/ship/v5/nose/b1/` (its pieces in
-`b1/pieces`, a copy of `v5/pieces` with the jaws built).
+`b1/pieces`, a copy of `v5/pieces` with the jaws built); b2's in `<raw>/ship/v5/nose/b2/` (`views/close.json`: the
+close-ups).
 
 ## Lens room C, step 1: the charger's alcove and the east lounge (2026-10-28)
 
