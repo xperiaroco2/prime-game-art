@@ -741,12 +741,30 @@ def main() -> int:
 
         shrunk, most_mm = 0, 0.0
         new_co = {}
+        # E1j2: the foot's skin ahead of the tongue's back (the instep under the laces and the vamp) is flattened onto
+        # that vertical plane, under the tongue's top (easing out collar_band over it): the shoe can take a slimmer
+        # last than the soft foot, and nothing shows under the laces or pokes through the vamp
+        fronts = {}
+        for sgn, side in ((1.0, "Left"), (-1.0, "Right")):
+            if f"front_{side}" in shoe.keys():
+                fronts[sgn] = (Vector(tuple(shoe[f"front_{side}"])), Vector(tuple(shoe[f"fwd_{side}"])),
+                               float(shoe["front_top_z"]))
+        flat = 0
         for v in me.vertices:
             p = mw @ v.co
             sgn = 1.0 if p.x > 0 else -1.0
             c = collar.get(sgn)
             if c is None or sgn not in axes or p.z > c["top"] + args.collar_keep:
                 continue
+            fp = fronts.get(sgn)
+            if fp is not None and (p.xy - c["ctr"].xy).length <= c["reach"] + 0.03:
+                ahead = (p.xy - fp[0]).dot(fp[1])
+                t = max(0.0, min(1.0, (p.z - fp[2]) / args.collar_band))
+                k = 1.0 - t * t * (3 - 2 * t)
+                if ahead > 0 and k > 0:
+                    p = Vector((p.x - fp[1].x * ahead * k, p.y - fp[1].y * ahead * k, p.z))
+                    new_co[v.index] = inv @ p
+                    flat += 1
             _c, j, _dxy = rim_kd.find((p.x, p.y, 0.0))
             rz = rim_pts[j].z
             # skin with the shoe over it or just under it (the instep under the vamp or poking through it, beside
@@ -778,6 +796,7 @@ def main() -> int:
             me.vertices[i].co = q
         me.update()
         rep["collar"]["shrunk"] = shrunk
+        rep["collar"]["flattened_front"] = flat
         rep["collar"]["shrunk_most_mm"] = round(most_mm, 1)
         rep["collar"]["faces_cut"] = cut
         # E1e: the same skin moves as one with the shoe: up to the rim it takes its nearest shoe vertex's weights,

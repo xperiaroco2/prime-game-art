@@ -36,8 +36,10 @@ LACE = (0.955, 0.945, 0.92)
 EYELET = (0.20, 0.21, 0.24)  # dark metal: the eyelets read as dots on the canvas, as on the concept
 TREAD = (0.80, 0.78, 0.73)
 STRIPE_MM = 2.4  # the stripe's height
+STRIPE_HI_MM = (6.0, 2.6)  # E1j2: the upper navy line under the rubber's top: its middle's depth, its height
 
 
+FRONT_CLEAR = 0.003  # E1j2: the leg's front skin flattened this far behind the tongue's back
 SECT_Z = 0.2  # E1: the collar's section points: any Foot, Toes or LowerLeg weight under this height (m)
 
 
@@ -109,6 +111,15 @@ def shoes(body, arm, params: G.Params | None = None):
                     "points": {s: len(d["pts"]) for s, d in ft.items()},
                     "section_points": {s: len(d["sect"]) for s, d in ft.items()}},
            "params": {k_: getattr(params, k_) for k_ in params.__dataclass_fields__}}
+    # E1j2: where the dress flattens the leg's front skin (behind the tongue's back, under its top): per side a point
+    # on that vertical plane and the foot's forward direction, in world plan coordinates
+    tb = G.tongue_back_u(foot, params) - FRONT_CLEAR
+    top = G.stay_z(foot, params, G.slot_rear(foot, params)) + params.tongue_rise - 0.006
+    for side, fr in frames.items():
+        ob[f"front_{side}"] = list(fr.world((tb, 0.0, 0.0))[:2])
+        ob[f"fwd_{side}"] = list(fr.fwd)
+    ob["front_top_z"] = top
+    rep["front_plane"] = {"tongue_back_u": round(tb, 4), "top_z": round(top, 4)}
     rep["material"] = material(ob, sh)
     rep["clearance"] = clearance(ob, ft)
     return ob, rep
@@ -145,6 +156,8 @@ def paint(sh: G.Shoe) -> tuple[np.ndarray, np.ndarray]:
     rgb[stripe] = STRIPE
     rgb[sole & (v < sv[1] - 0.5 * mmv)] = EDGE  # the outsole's edge under the wall
     rgb[sole & (v > join - 1.0 * mmv)] = EDGE_TOP  # the rubber's top edge (round the toe cap): a fine grey line
+    # E1j2: the second navy line, high on the foxing under its top edge, as on the concept
+    rgb[sole & (np.abs(v - (join - STRIPE_HI_MM[0] * mmv)) < 0.5 * STRIPE_HI_MM[1] * mmv)] = STRIPE
     hgt += np.where(sole, 0.6 * np.clip(1 - np.abs(v - mid) / max(half, 1e-6), 0, 1), 0)
     # the rubber's faint vertical ribs on the sole's wall below the band
     hgt += np.where(sole & (v < b0), 0.12 * np.sin(2 * np.pi * u / (1.6 * mm)), 0)
@@ -169,9 +182,16 @@ def paint(sh: G.Shoe) -> tuple[np.ndarray, np.ndarray]:
     cap_v = np.interp(u[0], rows["rim_u"], rows["cap"], period=1.0)[None, :]
     cap = canvas & (v < cap_v) & (cap_v > join + 1.5 * mmv)
     rgb[cap] = RUBBER
-    capedge = canvas & (np.abs(v - cap_v) < 0.6 * mmv) & (cap_v > join + 1.5 * mmv)
-    rgb[capedge] = EDGE_TOP
-    hgt += np.where(cap, 1.0, 0)
+    capedge = canvas & (np.abs(v - cap_v) < 0.8 * mmv) & (cap_v > join + 1.5 * mmv)
+    rgb[capedge] = EDGE  # E1j2: a darker, wider edge line: the cap's edge reads crisp
+    hgt += np.where(cap, 1.6, 0)
+    # E1j2: the vamp's seam with the quarter panels: a fine shadow line and a stitch row beside it, foot line to rim
+    for su in rows.get("seam_u", []):
+        seam = canvas & ~cap & (np.abs(u - su) < 0.5 * mm) & (v < rim_v - 3.0 * mmv)
+        rgb[seam] = EDGE_TOP
+        hgt += np.where(seam, -0.8, 0)
+        st |= (canvas & ~cap & (np.abs(np.abs(u - su) - 2.0 * mm) < 0.45 * mm) & (v < rim_v - 3.0 * mmv)
+               & (np.mod(v / mmv, 4.0) < 2.6))
     stay_u = np.zeros(len(rows["rim_u"]), np.float32)
     stay_u[rows["stay_cols"]] = 1.0
     on_stay = np.interp(u[0], rows["rim_u"], stay_u, period=1.0)[None, :] > 0.5

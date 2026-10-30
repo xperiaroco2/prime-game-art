@@ -99,8 +99,11 @@ class BuildTest(unittest.TestCase):
         us = [q[0] for q in f.pts]
         self.assertGreater(sh.info["outline_len_m"], f.length + 0.01)  # the clearance and the toe room
         self.assertLess(sh.info["outline_len_m"], f.length + 0.03)
-        self.assertGreater(sh.info["outline_width_m"], f.width)
-        self.assertLess(sh.info["outline_width_m"], f.width + 0.025)
+        # E1j2: a slimmer last than the soft foot (the dress shrinks the kept skin inside), its length kept
+        k = G.Params().slim
+        self.assertGreater(sh.info["outline_width_m"], k * f.width)
+        self.assertLess(sh.info["outline_width_m"], k * f.width + 0.025)
+        self.assertLess(sh.info["outline_width_m"], f.width)
         lo, hi = sh.info["rim_z_min_max"]
         self.assertLess(lo, f.ankle_z)  # a low top: the collar under the ankle
         self.assertGreater(min(q[0] for q in sh.verts), min(us) - 0.012)
@@ -208,3 +211,50 @@ class SectionTest(unittest.TestCase):
         a.sect, b.sect = [(0.0, 0.0, 0.05)], [(0.01, 0.0, 0.05)]
         self.assertEqual(G.merge(a, b).section_pts, [(0.0, 0.0, 0.05), (0.01, 0.0, 0.05)])
         self.assertEqual(synth_foot().section_pts, synth_foot().pts)
+
+
+class SlimTest(unittest.TestCase):
+    """E1j2: the slim last, the collar's rim inside it, the tongue's back."""
+
+    def test_slim_scales_about_the_middle_line(self):
+        pts = [(u / 100, v / 100) for u in range(0, 21) for v in (-3, 7)]  # middle line at v = 0.02
+        out = G.slim(pts, 0.5)
+        for (u, v), (u2, v2) in zip(pts, out):
+            self.assertAlmostEqual(u, u2)
+            self.assertAlmostEqual(v2 - 0.02, 0.5 * (v - 0.02))
+        self.assertEqual(G.slim(pts, 1.0), pts)
+
+    def test_inside_by_pushes_only_points_too_far_out(self):
+        b, nin = (0.0, 0.05), (0.0, -1.0)
+        self.assertEqual(G.inside_by(b, (0.01, 0.03), nin, 0.005), (0.01, 0.03))  # 2 cm inside: kept
+        q = G.inside_by(b, (0.01, 0.06), nin, 0.005)  # 1 cm outside: to 5 mm inside
+        self.assertAlmostEqual(q[0], 0.01)
+        self.assertAlmostEqual(q[1], 0.045)
+
+    def test_tongue_back_behind_the_slot_and_the_shoe_keeps_its_rim_inside(self):
+        f = synth_foot()
+        p = G.Params()
+        tb = G.tongue_back_u(f, p)
+        self.assertLess(tb, G.slot_rear(f, p) - 0.012)
+        self.assertGreater(tb, f.ankle_u)
+        sh = G.build(f, p)
+        tongue = [sh.verts[i] for fi, part in enumerate(sh.part) if part == "tongue" for i in sh.faces[fi]]
+        self.assertAlmostEqual(min(q[0] for q in tongue), tb, delta=0.004)
+        # the collar's rim inside the outline: the shell is no wider at the rim than at the foot line
+        self.assertLessEqual(max(abs(q[1]) for q in sh.verts if q[2] > 0.06),
+                             max(abs(q[1]) for q in sh.verts if q[2] < 0.03) + 1e-6)
+
+    def test_row_ks_put_the_first_row_on_the_toe_caps_edge(self):
+        p = G.Params()
+        b, o = (0.25, 0.0), (0.22, 0.0)
+        even = G.row_ks(b, o, 0.04, 0.08, p, 0.0)
+        self.assertEqual(even, [j / p.upper_rows for j in range(1, p.upper_rows + 1)])
+        ks = G.row_ks(b, o, 0.04, 0.08, p, 0.02)
+        a = G._ring_point(b, o, 0.04, 0.08, 0.0, p)
+        pts = [G._ring_point(b, o, 0.04, 0.08, i * ks[0] / 100, p) for i in range(101)]
+        arc = sum(math.dist(x, y) for x, y in zip(pts, pts[1:]))
+        self.assertAlmostEqual(arc, 0.02, delta=0.001)
+        self.assertEqual(ks[-1], 1.0)
+        self.assertTrue(all(x < y for x, y in zip(ks, ks[1:])))
+        self.assertEqual(G.row_ks(b, o, 0.04, 0.08, p, 0.0005), even)  # under a tenth of a row: the even rows
+        self.assertIsNotNone(a)
