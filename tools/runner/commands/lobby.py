@@ -2,12 +2,14 @@
 --build the grey massing in headless Blender, one GLB per piece with glTF-Validator; --godot the headless import
 (sizes, colliders), a capsule walk and the doors' and the corridor's end's proof; --shoot DIR the review views beside
 concepts A and C, a top view, a spawn's eye and the close-ups, in an off-screen window; --grid DIR the taste grid (the
-colour schemes, [look.schemes], in the layout's grid views)."""
+colour schemes, [look.schemes], in the layout's grid views); --earth-tex the window's Earth textures from NASA's
+sources (step 3b); --earth-grid DIR the Earth variants ([earth.variants]) in [earth] grid's views."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 from .. import blender, common, lobby_layout
@@ -17,6 +19,7 @@ NAME = "lobby"
 HELP = ("the lobby hall (layouts/lobby/hall.toml): check it with the ship in place; --build the grey massing GLBs; "
         "--godot import, colliders, walk, doors; --shoot DIR the review views off-screen; --grid DIR the colour schemes")
 BUILD_SCRIPT = blender.SCRIPTS / "lobby_build.py"
+EARTH_SCRIPT = blender.SCRIPTS / "lobby_earth_tex.py"
 GODOT_SCRIPT = "res://lobby/hall.gd"
 BUILD_TIMEOUT = 600
 GODOT_TIMEOUT = 300
@@ -30,6 +33,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--godot", action="store_true", help="import headless: sizes, colliders, the walk, the doors")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="shoot the review views into DIR (off-screen)")
     parser.add_argument("--grid", type=Path, metavar="DIR", help="shoot the colour schemes' grid into DIR (off-screen)")
+    parser.add_argument("--earth-tex", action="store_true", help="scale NASA's Earth sources to the window's textures")
+    parser.add_argument("--earth-grid", type=Path, metavar="DIR", help="shoot the Earth variants' grid into DIR")
     parser.add_argument("--out", type=Path, help="the pieces' folder (default <raw>/<layout raw_dir>/pieces)")
 
 
@@ -70,6 +75,8 @@ def run(args: argparse.Namespace) -> int:
     plan.write_text(lobby_layout.ascii_plan(layout, fp), encoding="utf-8", newline="\n")
     common.ok(f"lobby: hall, arc, ribs, arch, doors, spawns and the ship's place hold; plan {plan.as_posix()}")
     out = (args.out or raw(layout) / "pieces").resolve()
+    if args.earth_tex:
+        earth_tex(layout)
     if args.build:
         code = build(layout, out, n["middle_z"])
         if code:
@@ -83,8 +90,51 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.grid:
-        return shoot(layout, out, place, args.grid.resolve(), grid=True)
+        code = shoot(layout, out, place, args.grid.resolve(), grid=True)
+        if code:
+            return code
+    if args.earth_grid:
+        return shoot(layout, out, place, args.earth_grid.resolve(), grid="earth")
     return 0
+
+
+# --- the Earth (step 3b) -------------------------------------------------------------------------------------------
+def earth_tex(layout: dict) -> None:
+    """NASA's raw sources scaled to [earth] size in headless Blender into [earth] tex_dir (the sources only read)."""
+    e = layout["earth"]
+    src = common.raw_dir() / e["src_dir"]
+    maps = {k: (src / f).as_posix() for k, f in e["maps"].items()}
+    missing = [m for m in maps.values() if not Path(m).is_file()]
+    if missing:
+        raise common.Failure(f"lobby --earth-tex: missing sources {', '.join(missing)}")
+    out = common.raw_dir() / e["tex_dir"]
+    request = common.OUT / "lobby" / "earth_request.json"
+    request.parent.mkdir(parents=True, exist_ok=True)
+    request.write_text(json.dumps({"size": e["size"], "quality": e["quality"], "out": out.as_posix(), "maps": maps},
+                                  indent=1), encoding="utf-8", newline="\n")
+    blender.run_script(EARTH_SCRIPT, ["--request", str(request)], timeout=BUILD_TIMEOUT)
+    common.ok(f"lobby --earth-tex: {len(maps)} textures {e['size'][0]} x {e['size'][1]} -> {out.as_posix()}")
+
+
+def _dir(azimuth: float, elevation: float) -> list[float]:
+    """A direction from [azimuth from south (+z) toward east (+x), elevation] in degrees."""
+    a, el = math.radians(azimuth), math.radians(elevation)
+    return [math.sin(a) * math.cos(el), math.sin(el), math.cos(a) * math.cos(el)]
+
+
+def earth_request(layout: dict, vid: str) -> dict:
+    """What hall.gd hands earth_sky.gdshader for one variant: the textures' paths, the look and the variant's numbers."""
+    e = layout["earth"]
+    tex = common.raw_dir() / e["tex_dir"]
+    files = {k: (tex / f"earth_{k}.jpg").as_posix() for k in e["maps"]}
+    missing = [f for f in files.values() if not Path(f).is_file()]
+    if missing:
+        raise common.Failure(f"the Earth's textures are missing (lobby --earth-tex): {', '.join(missing)}")
+    v = e["variants"][vid]
+    return {"id": vid, "title": v["title"], "earth": {
+        "textures": files, "look": e["look"], "centre": _dir(*v["centre"]), "radius_deg": v["radius_deg"],
+        "subpoint": v["subpoint"], "roll_deg": v["roll_deg"], "sun": _dir(*v["sun"]), "sun_energy": v["sun_energy"],
+        "stars": v["stars"]}}
 
 
 def look_request(layout: dict, scheme: str) -> dict:
@@ -214,14 +264,19 @@ def godot_check(layout: dict, out: Path, place: list, ship_report: dict, folder:
     return 0
 
 
-def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool = False) -> int:
+def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str = False) -> int:
     req, staged, _want = scene_request(layout, out, place, lobby_layout.ship_report(layout))
     rv = layout["review"]
     req.update({"mode": "shoot", "background": rv["background"], "views": [v[:5] for v in rv["views"]],
                 "top": rv["top"], "compare": [[v[0], v[5]] for v in rv["views"] if v[5]],
                 "closeups": [v[:5] for v in rv.get("closeups", [])],
                 "look": look_request(layout, layout["look"]["scheme"])})
-    if grid:
+    if "earth" in layout:
+        req["earth"] = earth_request(layout, layout["earth"]["variant"])["earth"]
+    if grid == "earth":
+        req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in layout["earth"]["grid"]],
+                    "variants": [earth_request(layout, k) for k in layout["earth"]["variants"]]})
+    elif grid:
         req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in rv["grid"]],
                     "variants": [look_request(layout, k) for k in layout["look"]["schemes"]]})
     errors = _stage(staged)

@@ -101,6 +101,41 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertTrue(any("material lobby_panel" in p for p in problems), problems)
         self.assertTrue(any("grid: nowhere" in p for p in problems), problems)
 
+    def test_the_earth(self) -> None:
+        """Step 3b: E1 by default, three variants, NASA's three maps at most 4096 x 2048, the grid's two views."""
+        e = self.layout["earth"]
+        self.assertEqual(e["variant"], "E1")
+        self.assertEqual(sorted(e["variants"]), ["E1", "E2", "E3"])
+        self.assertEqual(sorted(e["maps"]), ["clouds", "day", "night"])
+        self.assertEqual(e["size"], [4096, 2048])
+        self.assertEqual(e["grid"], ["spawn_eye", "corner_nw"])
+        self.assertEqual(e["credit"], "Earth imagery: NASA")
+        v = e["variants"]
+        self.assertGreater(v["E1"]["radius_deg"], 3 * v["E3"]["radius_deg"])   # E1 huge, E3 a smaller disc
+        self.assertEqual(v["E1"]["sun_energy"], 0.0)                             # E1: full night
+        self.assertGreater(v["E2"]["sun_energy"], 0.0)                           # E2: the dawn
+        self.assertGreater(v["E3"]["stars"], v["E1"]["stars"])                   # E3: more stars
+
+    def test_e2s_sun_is_just_behind_the_limb(self) -> None:
+        from runner.commands import lobby as cmd
+        v = self.layout["earth"]["variants"]["E2"]
+        c, s = cmd._dir(*v["centre"]), cmd._dir(*v["sun"])
+        import math
+        ang = math.degrees(math.acos(sum(a * b for a, b in zip(c, s))))
+        self.assertLess(ang, v["radius_deg"])            # hidden by the planet
+        self.assertGreater(ang, v["radius_deg"] - 4.0)   # but just below the limb
+
+    def test_refuses_a_bad_earth(self) -> None:
+        layout = copy.deepcopy(self.layout)
+        layout["earth"]["variant"] = "E9"
+        layout["earth"]["size"] = [8192, 4096]
+        layout["earth"]["grid"] = ["spawn_eye", "nowhere"]
+        layout["earth"]["variants"]["E3"]["radius_deg"] = 95.0
+        layout["earth"]["variants"]["E2"]["subpoint"] = [120.0, 0.0]
+        problems = lobby_layout.check(layout)
+        for want in ("variant E9", "size 8192", "earth grid: nowhere", "E3: radius_deg", "E2: subpoint"):
+            self.assertTrue(any(want in p for p in problems), (want, problems))
+
     def test_closeups_and_the_grey_teal(self) -> None:
         close = self.layout["review"]["closeups"]
         self.assertGreaterEqual(len(close), 9)   # step 2c: one close-up per fix at least

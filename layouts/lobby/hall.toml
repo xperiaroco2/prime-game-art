@@ -187,7 +187,7 @@ metallic = 0.5
 trim_metallic = 0.7
 
 [review]
-background = [0.02, 0.035, 0.11]   # the dark blue placeholder behind the window (no Earth yet)
+background = [0.02, 0.035, 0.11]   # the placeholder behind the window before step 3b ([earth] draws the sky since)
 # [name, title, eye [x, y, z], look [x, y, z], vertical fov, the concept to compare with ("" for none)]. Cameras
 # estimated from the pictures (docs/lobby.md): A at eye height, about 80 deg across (52 deg high at 16:9); its doors
 # D1 and D2 at the frame's edges put A's camera at about z -23, where the moved ship's nose now stands, so A stands at
@@ -243,3 +243,65 @@ blocks = [
   ["D4", [11.0, -27.5], [11.0, -33.0], "z", -30.0, 1],
   ["corridor_end", [0.0, -35.5], [0.0, -41.0], "z", -38.0, 1],
 ]
+
+[earth]
+# Step 3b (the engineer, art #356, 2026-10-30): the night Earth from low orbit behind the window, from NASA's imagery
+# (licence NASA-PD, credit "Earth imagery: NASA"; sources/nasa_earth_lobby.toml). `lobby --earth-tex` scales the raw
+# sources (src_dir, never written) to game textures in tex_dir; godot/lobby/earth_sky.gdshader draws them as the sky
+# (at infinity: no parallax as the player walks). Directions: azimuth in degrees from south (+z, the window) toward
+# east (+x), elevation above the horizontal.
+variant = "E1"                      # the one switch: the shots and the game use this variant
+src_dir = "lobby/hall/earth-src"
+tex_dir = "lobby/hall/v5/earth"
+size = [4096, 2048]                 # the textures' pixels (at most 4096 x 2048)
+quality = 92                        # JPEG
+maps = { night = "BlackMarble_2016_3km.jpg", day = "world.topo.bathy.200412.3x5400x2700.jpg", clouds = "cloud_combined_8192.tif" }
+grid = ["spawn_eye", "corner_nw"]   # `lobby --earth-grid DIR`: these views once per variant
+credit = "Earth imagery: NASA"
+
+[earth.look]                        # shared by every variant (linear colours, HDR energies)
+lights_rgb = [1.0, 0.52, 0.2]       # the city lights' warm orange
+lights_energy = 6.0
+base_energy = 3.0                   # the night map's own dark land and sea (x 0.05)
+moon_rgb = [0.35, 0.45, 0.7]        # the moonlit land, sea and clouds
+moon_energy = 0.12
+cloud_energy = 0.11
+rim_rgb = [0.25, 0.55, 1.0]         # the atmosphere's blue rim
+rim_energy = 2.4
+rim_width_deg = 0.35
+dawn_rgb = [1.0, 0.55, 0.25]        # E2's sun behind the limb
+stars_energy = 1.6
+glass_rgb = [0.55, 0.7, 0.75]       # the window's tint
+glass_alpha = 0.05
+
+# [title, centre [azimuth, elevation], angular radius, subpoint [lat, lon] (the surface point nearest the eye), roll,
+#  sun [azimuth, elevation], sun energy, star density]
+[earth.variants.E1]
+title = "a huge Earth close below, its horizon arcing across the upper window"
+centre = [0.0, -22.0]
+radius_deg = 48.0
+subpoint = [24.0, 18.0]
+roll_deg = 0.0
+sun = [0.0, -22.0]
+sun_energy = 0.0
+stars = 1.0
+
+[earth.variants.E2]
+title = "E1 with the sun just below the limb: a thin dawn glow on one side of the rim"
+centre = [0.0, -22.0]
+radius_deg = 48.0
+subpoint = [24.0, 18.0]
+roll_deg = 0.0
+sun = [30.0, 14.0]
+sun_energy = 1.0
+stars = 1.0
+
+[earth.variants.E3]
+title = "a smaller full disc in the window's middle, more star field"
+centre = [0.0, 13.0]
+radius_deg = 13.0
+subpoint = [28.0, 20.0]
+roll_deg = 0.0
+sun = [0.0, 13.0]
+sun_energy = 0.0
+stars = 1.6

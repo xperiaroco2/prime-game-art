@@ -307,6 +307,8 @@ def check(layout: dict[str, Any], fp: list[tuple[float, float]] | None = None) -
     for g in layout["review"].get("grid", []):
         if g not in names:
             p.append(f"grid: {g} is no view")
+    # the Earth (step 3b): one variant switch, textures no larger than 4096 x 2048, every variant's numbers in range
+    p += earth_problems(layout, names)
     # the look: one scheme switch, every scheme's role colours in 0..1, every material a role with its numbers
     look = layout["look"]
     if look["scheme"] not in look["schemes"]:
@@ -384,3 +386,38 @@ def ascii_plan(layout: dict[str, Any], fp: list[tuple[float, float]] | None, cel
         head += (f"\nship: nose z {n['nose_z']:.2f}, aft z {n['aft_z']:.2f}, middle z {n['middle_z']:.2f}, "
                  f"half span {n['half_span']:.2f} m")
     return head + "\n" + "\n".join(rows) + "\n"
+
+
+EARTH_MAX = (4096, 2048)
+EARTH_MAPS = ("night", "day", "clouds")
+
+
+def earth_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
+    """[earth]: the variant switch names a variant, the maps are night, day and clouds, the size at most 4096 x 2048,
+    the grid's views exist, and each variant's centre, radius, subpoint and sun are angles in range."""
+    e = layout.get("earth")
+    if e is None:
+        return []
+    p: list[str] = []
+    if e["variant"] not in e["variants"]:
+        p.append(f"earth: variant {e['variant']} is not in [earth.variants]")
+    if sorted(e["maps"]) != sorted(EARTH_MAPS):
+        p.append(f"earth: maps must be {', '.join(EARTH_MAPS)}")
+    w, h = e["size"]
+    if not (0 < w <= EARTH_MAX[0] and 0 < h <= EARTH_MAX[1] and w == 2 * h):
+        p.append(f"earth: size {w} x {h} is not an equirectangular 2:1 of at most {EARTH_MAX[0]} x {EARTH_MAX[1]}")
+    for g in e["grid"]:
+        if g not in views:
+            p.append(f"earth grid: {g} is no view")
+    for vid, v in e["variants"].items():
+        az, el = v["centre"]
+        if not (-180 <= az <= 180 and -90 <= el <= 90):
+            p.append(f"earth {vid}: centre {v['centre']} is not [azimuth, elevation] in degrees")
+        if not 1.0 <= v["radius_deg"] <= 80.0:
+            p.append(f"earth {vid}: radius_deg {v['radius_deg']} is not within 1..80")
+        lat, lon = v["subpoint"]
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            p.append(f"earth {vid}: subpoint {v['subpoint']} is not [lat, lon]")
+        if not (-180 <= v["sun"][0] <= 180 and -90 <= v["sun"][1] <= 90) or v["sun_energy"] < 0 or v["stars"] < 0:
+            p.append(f"earth {vid}: sun, sun_energy or stars out of range")
+    return p

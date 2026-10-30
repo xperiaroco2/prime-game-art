@@ -9,6 +9,9 @@ extends SceneTree
 ##   "top": {"name", "title", "size_m", "centre": [x, z], "hide": [id]}, "compare": [[shot, image]], "background",
 ##   "look": {"id", "title", "mats": {material: {"rgb", "metallic", "roughness", "emit"}}},
 ##   grid: "variants": [look] (the schemes). The look replaces the hall's materials (by their glTF name).
+##   "earth" (step 3b): {"textures": {night, day, clouds: path}, "look", "centre", "radius_deg", "subpoint", "roll_deg",
+##   "sun", "sun_energy", "stars"} draws the night Earth as the sky (earth_sky.gdshader) and the window's glass with
+##   window_glass.gdshader; an Earth grid's variants are {"id", "title", "earth"}.
 ## grid: <out>/grid.png, one row per scheme (its views side by side, labelled), and <out>/<scheme>_<view>.png.
 ## check: <out>/check.json {"bounds": {id: {min, max}} (each piece at its origin), "colliders": {id: n}, "walk",
 ##   "blocks": {name: walk}}. shoot: <out>/<view>.png, compare_<view>.png (the concept left, the shot right),
@@ -26,6 +29,8 @@ var _camera: Camera3D
 var _label: Label
 var _scenes: Dictionary = {}
 var _placed: Dictionary = {}   # piece id -> its placed nodes
+var _earth: ShaderMaterial      # the sky's material when the request has an Earth (step 3b)
+var _textures: Dictionary = {}  # path -> ImageTexture
 
 
 func _initialize() -> void:
@@ -101,6 +106,8 @@ func _look_material(orig: BaseMaterial3D, spec: Dictionary) -> BaseMaterial3D:
 func _setup_scene() -> void:
 	_environment()
 	_build()
+	if _req.has("earth"):
+		_glass()
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	_camera.far = 400.0
@@ -123,7 +130,10 @@ func _grid() -> void:
 	var shots: Dictionary = {}
 	var rows: Array = []
 	for look: Dictionary in _req["variants"]:
-		_apply_look(look)
+		if look.has("earth"):
+			_apply_earth(look["earth"])
+		else:
+			_apply_look(look)
 		var row: Array = []
 		for v: Array in _req["views"]:
 			_camera.fov = float(v[4])
@@ -254,7 +264,7 @@ func _walk(r: float, h: float, points: Array) -> Dictionary:
 
 # --- pictures ------------------------------------------------------------------------------------------------------
 ## The neutral review light: a grey ambient, a grey sky for reflections only, a soft key from the north-west above without shadows, SSAO for the forms;
-## the dark blue placeholder fills everything behind the window (no Earth yet).
+## behind the window the dark blue placeholder, or since step 3b the Earth (the request's "earth").
 func _environment() -> void:
 	var env: Environment = Environment.new()
 	env.background_mode = Environment.BG_COLOR
@@ -270,6 +280,16 @@ func _environment() -> void:
 	sky_mat.ground_bottom_color = Color(0.25, 0.25, 0.26)
 	var sky: Sky = Sky.new()
 	sky.sky_material = sky_mat
+	if _req.has("earth"):   # step 3b: the Earth is the background; its cubemap pass keeps this grey for reflections
+		_earth = ShaderMaterial.new()
+		_earth.shader = load("res://lobby/earth_sky.gdshader")
+		_earth.set_shader_parameter("neutral_top", Vector3(0.55, 0.56, 0.6))
+		_earth.set_shader_parameter("neutral_horizon", Vector3(0.5, 0.5, 0.52))
+		_earth.set_shader_parameter("neutral_ground", Vector3(0.35, 0.35, 0.36))
+		_earth.set_shader_parameter("neutral_bottom", Vector3(0.25, 0.25, 0.26))
+		sky.sky_material = _earth
+		env.background_mode = Environment.BG_SKY
+		_apply_earth(_req["earth"])
 	env.sky = sky
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
@@ -291,6 +311,58 @@ func _environment() -> void:
 	fill.shadow_enabled = false
 	fill.rotation_degrees = Vector3(-30, 150, 0)
 	root.add_child(fill)
+
+
+## One Earth variant into the sky's material: the maps (loaded once, mipmapped), the shared look and its numbers.
+func _apply_earth(e: Dictionary) -> void:
+	for k: String in ["night", "day", "clouds"]:
+		var path: String = e["textures"][k]
+		if not _textures.has(path):
+			var img: Image = Image.load_from_file(path)
+			if img == null:
+				_fail("cannot load %s" % path)
+				return
+			img.generate_mipmaps()
+			_textures[path] = ImageTexture.create_from_image(img)
+		_earth.set_shader_parameter({"night": "night_tex", "day": "day_tex", "clouds": "cloud_tex"}[k], _textures[path])
+	var look: Dictionary = e["look"]
+	for k: String in look:
+		if k.begins_with("glass_"):
+			continue
+		var val: Variant = look[k]
+		_earth.set_shader_parameter(k, _v(val) if typeof(val) == TYPE_ARRAY else float(val))
+	_earth.set_shader_parameter("earth_dir", _v(e["centre"]).normalized())
+	_earth.set_shader_parameter("earth_radius_deg", float(e["radius_deg"]))
+	_earth.set_shader_parameter("subpoint", Vector2(float(e["subpoint"][0]), float(e["subpoint"][1])))
+	_earth.set_shader_parameter("roll_deg", float(e["roll_deg"]))
+	_earth.set_shader_parameter("sun_dir", _v(e["sun"]).normalized())
+	_earth.set_shader_parameter("sun_energy", float(e["sun_energy"]))
+	_earth.set_shader_parameter("stars_density", float(e["stars"]))
+
+
+## The window's glass (step 3b): window_glass.gdshader with the layout's tint over every lobby_glass surface.
+func _glass() -> void:
+	var look: Dictionary = _req["earth"]["look"]
+	var mat: ShaderMaterial = ShaderMaterial.new()
+	mat.shader = load("res://lobby/window_glass.gdshader")
+	var c: Array = look["glass_rgb"]
+	mat.set_shader_parameter("tint", Color(float(c[0]), float(c[1]), float(c[2])))
+	mat.set_shader_parameter("base_alpha", float(look["glass_alpha"]))
+	var n_set: int = 0
+	for top: Node in _placed.get("window_glass", []):
+		var stack: Array = [top]
+		while not stack.is_empty():
+			var n: Node = stack.pop_back()
+			stack.append_array(n.get_children())
+			if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+				var mi: MeshInstance3D = n
+				for i: int in mi.mesh.get_surface_count():
+					var m: Material = mi.mesh.surface_get_material(i)
+					if m != null and m.resource_name == "lobby_glass":
+						mi.set_surface_override_material(i, mat)
+						n_set += 1
+	if n_set == 0:
+		_fail("no lobby_glass surface on window_glass")
 
 
 func _shoot() -> void:
