@@ -333,5 +333,31 @@ class SeamSmoothTest(unittest.TestCase):
         self.assertGreater(min(radii), 0.97)  # the inflating step keeps the girth
         self.assertEqual(co[0], [0.9, 0.0, 0.0])
 
+class NormalBandTest(unittest.TestCase):
+    """E1m: the flared neck's normals fade over the flare, and the gate's move above the band is measured."""
+
+    def test_weld_keeps_the_normal_band(self):
+        self.assertAlmostEqual(G.normal_top(1.0, 0.02), 1.02)
+
+    def test_flare_fades_over_the_whole_flare(self):
+        ring, cut = 1.0, 1.008
+        top = G.normal_top(cut, 0.02, ring + 0.07)
+        self.assertAlmostEqual(top, 1.07)
+        # 28 mm above the ring (the old switch) the head's own normals are not yet in full
+        self.assertLess(G.sstep(cut, top, ring + 0.028), 0.5)
+        self.assertEqual(G.sstep(cut, top, top), 1.0)
+        self.assertEqual(G.sstep(cut, top, cut), 0.0)
+
+    def test_flare_never_shorter_than_the_band(self):
+        self.assertAlmostEqual(G.normal_top(1.0, 0.02, 1.005), 1.02)
+
+    def test_moved_above(self):
+        src = [(0, 0, 0.5), (0, 0, 1.2), (0, 0, 1.5)]
+        dst = [(0.3, 0, 0.5), (0, 0.004, 1.2), (0, 0, 1.5)]
+        self.assertAlmostEqual(G.moved_above(src, dst, 1.0), 0.004)
+        self.assertEqual(G.moved_above(src, src, 1.0), 0.0)
+        self.assertEqual(G.moved_above([], [], 1.0), 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()

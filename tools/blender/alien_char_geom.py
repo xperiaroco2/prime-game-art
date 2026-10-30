@@ -117,6 +117,23 @@ def sstep(a: float, b: float, x: float) -> float:
     return t * t * (3.0 - 2.0 * t)
 
 
+def normal_top(cut: float, normal_band: float, flare_top: float | None = None) -> float:
+    """E1m: the height from which a welded head keeps its own (pre-morph) normals. The weld's smoothstep: `normal_band`
+    above the cut. A flare (`--neck-band flare`) reshapes the neck up to `flare_top`, so the head's own normals fade in
+    over the whole flare: below its top they belong to the old neck's shape, not the flared one."""
+    return cut + normal_band if flare_top is None else max(cut + normal_band, flare_top)
+
+
+def moved_above(src: list, dst: list, top: float) -> float:
+    """E1m: the farthest any point at or above `top` (its height in `src`) moved from `src` to `dst`, 0.0 when none:
+    the gate's geometric half, measured (the head above the morph's band is only scaled and moved, never reshaped)."""
+    most = 0.0
+    for p, q in zip(src, dst):
+        if p[2] >= top:
+            most = max(most, math.dist(p, q))
+    return most
+
+
 def interp(table: list[tuple[float, float]], x: float) -> float:
     if x <= table[0][0]:
         return table[0][1]

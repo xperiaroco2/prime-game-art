@@ -17,7 +17,10 @@ the face-rigged one:
 3. Weld: joined with the body, the cut and the ring zipped by angle (`zip_loops`; the counts differ), the new row
    on the body's material with the ring's UVs.
 4. Normals: the head's own corner normals kept above the band (a corner attribute through the cut and the join),
-   the geometric smooth normals over the band, the bridge and the body: no lighting seam.
+   the geometric smooth normals over the band, the bridge and the body: no lighting seam. The head's own fade in
+   from the cut over NORMAL_BAND (the weld) or over the whole flare (`--neck-band flare`: the morph reshapes the
+   neck up to 70 mm above the ring, so the head's pre-morph normals belong to its old neck below that;
+   `alien_char_geom.normal_top`).
 5. Weights: the head's Neck and Head groups are the body's; its Chest goes to UpperChest; over NECK_BLEND above the
    cut the weights blend to the ring's mean, so the neck bends as one. The spring bones (Crest1-3 or Gill*) join
    the body's armature under its Head; the eye bones move to the head's eye centres.
@@ -417,6 +420,8 @@ def main():
         new[:, 0] = ring_c[0] + rel[:, 0] * k
         new[:, 1] = ring_c[1] + rel[:, 1] * k
         band_top = cut + NECK_BAND
+    # the height from which the head keeps its own normals (E1m: over the whole flare, not NORMAL_BAND's 20 mm)
+    normal_top = G.normal_top(cut, NORMAL_BAND, band_top if a.neck_band == "flare" else None)
     bm = bmesh.new()
     bm.from_mesh(me)
     oid = bm.verts.layers.int.new("char_oid")
@@ -444,9 +449,10 @@ def main():
     rep["neck_band"] = a.neck_band if a.neck_band == "flare" else NECK_BAND
     rep["cut_faces_deleted"] = len(dead)
     rep["band_moved"] = int(moved)
+    # the gate's geometric half, measured: the farthest move of a vertex above the band's top (E1m; it was a fixed 0.0)
+    rep["moved_above_band_max_m"] = round(G.moved_above(sco.tolist(), new.tolist(), band_top), 6)
+    rep["normal_top_above_ring_m"] = round(normal_top - ring_z, 4)
     sco = world(skin)
-    # above the band nothing moved: the gate's geometric half (max move above cut + NECK_BAND)
-    rep["moved_above_band_max_m"] = 0.0
 
     # the head's colours at the cut: albedo (sRGB) and the accent's front (B), per boundary vertex
     alb, acc, msk, det = pixels(a.albedo), pixels(a.accent), pixels(a.mask), pixels(a.detail)
@@ -680,7 +686,7 @@ def main():
             geo = lp.vert.normal
             z = lp.vert.co.z
             own = Vector(lp[hn]) if hn is not None else Vector()
-            w = G.sstep(cut, cut + NORMAL_BAND, z) if (lp.vert.index < nh and own.length > 0.5) else 0.0
+            w = G.sstep(cut, normal_top, z) if (lp.vert.index < nh and own.length > 0.5) else 0.0
             cn.append((own * w + geo * (1 - w)).normalized())
     bm.to_mesh(me)  # writes the faces and their corners in this order: cn is in the mesh's corner order
     bm.free()
