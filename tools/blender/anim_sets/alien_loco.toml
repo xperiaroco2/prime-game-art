@@ -344,3 +344,12 @@ name = "Strafe_F3"
 views = ["three_quarter", "back"]
 clips = [{ clip = "Strafe_Left__w03", speed = 3.0, label = "Strafe_Left__w03 (widen 0.03, F2's)" },
          { clip = "Strafe_Left", speed = 3.0, label = "Strafe_Left (widen 0.09, F3)" }]
+
+# The toes' bend cap (art #196, S1): a canvas sneaker's sole bends at the ball only so far. The clips bend Toes up
+# to 57.5 degrees (Jog_Bwd__s4b), 56.4 (Crouch_Idle), 40.5 (Crouch_Fwd), 39.7 (Jog_Fwd, Strafe); clothes_dress.py
+# --sneakers turns every Toes key about its own axis to sneaker_geom.soft_cap_deg(angle, max_deg, knee_deg): bends
+# under max_deg - knee_deg stay, larger ones ease into max_deg. The arms and every other bone are untouched.
+[toes_cap]
+bones = ["LeftToes", "RightToes"]
+max_deg = 32.0
+knee_deg = 6.0

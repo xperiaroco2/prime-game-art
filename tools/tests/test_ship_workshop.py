@@ -26,7 +26,7 @@ TIP_W = next(r for r in LAYOUT["rooms"] if r["id"] == "tip_w")
 C = TIP_W["centre"]
 ROOM = 180.0 + S.COR_ANG
 SHOP = sorted(p for p in PIECES if p.startswith("ws_"))
-FLOOR_ITEMS = ("ws_bench_open_top", "ws_bench_open_low", "ws_cabinet", "ws_rug")
+FLOOR_ITEMS = ("ws_bench_open_top", "ws_bench_open_low", "ws_cabinet")   # the rug unplaced (2026-10-29)
 _CACHE: dict = {}
 
 

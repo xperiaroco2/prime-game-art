@@ -84,6 +84,15 @@ def limit(row: dict[str, float], n: int = 4, floor: float = 1e-3) -> dict[str, f
     return {b: w / tot for w, b in top} if tot > 0 else {}
 
 
+def mix_rows(own: dict[str, float], other: dict[str, float], share: float, n: int = 4) -> dict[str, float]:
+    """E1e: a vertex's weights blended toward another's (the ankle skin under the collar takes its nearest shoe
+    vertex's, so the two move as one): share of other plus (1 - share) of own, limited to n and normalised."""
+    if not 0.0 <= share <= 1.0:
+        raise ValueError(f"share {share} must lie in [0, 1]")
+    names = set(own) | set(other)
+    return limit({b: (1.0 - share) * own.get(b, 0.0) + share * other.get(b, 0.0) for b in names}, n)
+
+
 def blend(row: dict[str, float], mats: dict[str, Mat]) -> Mat:
     """Linear blend skinning's per-vertex matrix: the weighted sum of the bones' deform matrices (the weights
     normalised); the identity for a vertex with no weight."""
@@ -149,11 +158,16 @@ def pick_facing(cands: list[tuple[float, Vec, int]], n: Vec, min_dot: float = 0.
     """The body face a cloth vertex takes its weights from: among cands (distance, the body face's outward normal,
     the face index) the nearest whose normal faces the same way as the cloth's outward normal n (dot >= min_dot).
     So the inner side of a sleeve takes the arm, not the torso beside it, and an inner trouser leg its own thigh.
-    None when no face qualifies (the caller falls back to the plain nearest)."""
+    None when no face qualifies (the caller falls back to the plain nearest); a zero normal on either side never
+    qualifies."""
     if not -1.0 <= min_dot <= 1.0:
         raise ValueError(f"min_dot {min_dot} outside -1..1")
+    if dot(n, n) < 1e-24:  # E1: a cloth vertex without a normal picks nothing (the plain nearest)
+        return None
     best = None
     for d, nor, fi in cands:
+        if dot(nor, nor) < 1e-24:  # E1: a degenerate body face (D3's A11 has some) has no direction to agree with
+            continue
         if dot(unit(nor), unit(n)) >= min_dot and (best is None or d < best[0]):
             best = (d, fi)
     return None if best is None else best[1]
@@ -303,3 +317,169 @@ def boundary_verts(faces: list[list[int]]) -> set[int]:
             e = tuple(sorted((f[k], f[(k + 1) % len(f)])))
             count[e] = count.get(e, 0) + 1
     return {v for e, n in count.items() if n == 1 for v in e}
+
+
+def ankle_kept(z: float, rim_z: float | None, rim_xy: float, keep: float = 0.04, reach: float = 0.06) -> bool:
+    """E1b, the shoe collar's shards: an ankle vertex (any Foot, Toes or LowerLeg weight) between the shoe opening's
+    nearest rim point across the floor (rim_z, rim_xy m away) and keep m above it is open skin between the shoe and
+    the trousers' hem, never cut by the cover rays (their tilted rays meet the hem above and the shoe below, and cut
+    holes into the ankle over the collar); None or a rim farther than reach: not by a shoe."""
+    if keep <= 0 or rim_z is None or rim_xy > reach:
+        return False
+    return rim_z <= z < rim_z + keep
+
+
+def ankle_ride(z: float, rim_z: float, below: float = 0.005, band: float = 0.03) -> float:
+    """E1b: the share of an ankle vertex's LowerLeg weight that goes to its Foot, so the skin under the shoe's collar
+    rides with the rigid shoe instead of the shin (in Idle and Crouch the shin's tilt pushed it out through the
+    collar: the teal shards): all of it from below m under the rim (rim_z) down, none from band m over that up,
+    smooth between."""
+    if band <= 0:
+        raise ValueError(f"band {band} must be positive")
+    t = min(1.0, max(0.0, (z - (rim_z - below)) / band))
+    return 1.0 - t * t * (3.0 - 2.0 * t)
+
+
+def rim_plane(rim: list[Vec], below: float = 0.012) -> tuple[float, float, float]:
+    """E1c, the collar's clean cut: the plane z = a x + b y + c through a shoe opening's rim points (least squares,
+    so it tilts with the collar), lowered until every rim point lies at least below m over it; the ankle skin is
+    bisected there, one clean ring inside the shoe instead of the faces' staircase over the rim."""
+    if len(rim) < 3:
+        raise ValueError("a rim needs three points")
+    n = float(len(rim))
+    mx, my, mz = (sum(p[k] for p in rim) / n for k in range(3))
+    sxx = sum((p[0] - mx) ** 2 for p in rim)
+    syy = sum((p[1] - my) ** 2 for p in rim)
+    sxy = sum((p[0] - mx) * (p[1] - my) for p in rim)
+    sxz = sum((p[0] - mx) * (p[2] - mz) for p in rim)
+    syz = sum((p[1] - my) * (p[2] - mz) for p in rim)
+    det = sxx * syy - sxy * sxy
+    a, b = ((sxz * syy - syz * sxy) / det, (syz * sxx - sxz * sxy) / det) if abs(det) > 1e-12 else (0.0, 0.0)
+    c = min(p[2] - a * p[0] - b * p[1] for p in rim) - below
+    return a, b, c
+
+
+def plane_z(plane: tuple[float, float, float], x: float, y: float) -> float:
+    a, b, c = plane
+    return a * x + b * y + c
+
+
+def outside_shell(out_hits: int) -> bool:
+    """E1c: a skin vertex under the rim whose ray outward (away from the rim's centre, across the floor) meets no
+    shoe face is outside the shoe's outer shell; one hit (inside the wall) or more is hidden."""
+    return out_hits == 0
+
+
+def hem_drop(hem_z: float, rim_z: float, rest: float, most: float = 0.04) -> float:
+    """E1j3: how far the trousers' turn-up goes down so its lowest point (hem_z) rests rest m under the shoe's
+    collar at the heel (rim_z): never up, at most most m."""
+    return max(0.0, min(most, hem_z - (rim_z - rest)))
+
+
+def hem_drops(hem: list[float | None], top: list[float | None], rest: float, most: float = 0.04,
+              passes: int = 2) -> list[float]:
+    """E1j3: per angle bin round a leg, how far its turn-up goes down so its lowest point there (hem) rests rest m
+    under the shoe's top there (top): hem_drop per bin, a bin missing either taking its neighbours', then smoothed
+    round the circle (passes of 1/4, 1/2, 1/4) so the hem's line bends gently."""
+    n = len(hem)
+    raw = [None if h is None or t is None else hem_drop(h, t, rest, most) for h, t in zip(hem, top)]
+    if all(x is None for x in raw):
+        return [0.0] * n
+    for _ in range(n):
+        if all(x is not None for x in raw):
+            break
+        raw = [x if x is not None else next((y for y in (raw[i - 1], raw[(i + 1) % n]) if y is not None), None)
+               for i, x in enumerate(raw)]
+    out = [float(x) for x in raw]
+    for _ in range(passes):
+        out = [0.25 * out[i - 1] + 0.5 * out[i] + 0.25 * out[(i + 1) % n] for i in range(n)]
+    return out
+
+
+def hem_shift(z: float, hem_z: float, drop: float, hold: float = 0.07, ease: float = 0.15) -> float:
+    """E1j3: a garment vertex's move down (m) when the turn-up drops by drop: all of it up to hold m over the hem's
+    lowest point (the turn-up keeps its shape), easing to none over the next ease m up the shin (the cloth stretches
+    a little there, nothing moves above)."""
+    if ease <= 0:
+        raise ValueError(f"ease {ease} must be positive")
+    t = min(1.0, max(0.0, (z - (hem_z + hold)) / ease))
+    return drop * (1.0 - t * t * (3.0 - 2.0 * t))
+
+
+def axis_dist(head: Vec, tail: Vec, p: Vec) -> float:
+    """E1l: p's horizontal distance (m) from a leg's axis (the line through the LowerLeg bone's head and tail,
+    extended), taken at p's own height; a level bone gives the distance from its head."""
+    dz = tail[2] - head[2]
+    k = (p[2] - head[2]) / dz if abs(dz) > 1e-6 else 0.0
+    ax, ay = head[0] + (tail[0] - head[0]) * k, head[1] + (tail[1] - head[1]) * k
+    return math.hypot(p[0] - ax, p[1] - ay)
+
+
+def near_ankle(z: float, axis_d: float, rim_low: float, top: float, radius: float = 0.08) -> bool:
+    """E1l: the collar's region also holds the ankle's skin over the rim's lowest point and within radius m of the
+    leg's axis (up to top): the rim's xy reach missed the forward-leaning ankle front, whose faces the cover rays then
+    cut one by one into a jagged edge inside the turn-up."""
+    return rim_low < z <= top and axis_d <= radius
+
+
+def soft_flat(ahead: float, k: float, soft: float = 0.01) -> float:
+    """E1l: how far (m) a foot or ankle vertex ahead (m) of the tongue's back plane moves back onto it, by share k:
+    k * ahead well ahead of the plane, none well behind it, and a quadratic ramp across +-soft between, so the
+    flattened front meets the round ankle with no crease (the hard max(0, ahead) drew a vertical edge on the ankle)."""
+    if soft <= 0:
+        return k * max(0.0, ahead)
+    if ahead <= -soft:
+        return 0.0
+    if ahead >= soft:
+        return k * ahead
+    return k * (ahead + soft) ** 2 / (4.0 * soft)
+
+
+def collar_clamp(r: float, outline: float, z: float, rim_z: float, clear: float = 0.003, band: float = 0.01) -> float:
+    """E1d, E1e: an ankle vertex's radius round the leg's axis, shrunk inside the shoe: under its nearest rim point
+    (rim_z) it lies at most clear m inside the shoe's inner wall (outline m out from the axis toward it); from rim_z
+    up over band m the limit eases out to none (a smooth falloff, no step)."""
+    if band <= 0:
+        raise ValueError(f"band {band} must be positive")
+    most = outline - clear
+    if r <= most:
+        return r
+    t = min(1.0, max(0.0, (z - rim_z) / band))
+    return most + (r - most) * t * t * (3.0 - 2.0 * t)
+
+
+def seat_weight(y: float, z: float, dist: float, z_lo: float, z_hi: float, y0: float, ramp: float = 0.03,
+                far: float = 0.09, y1: float = math.inf) -> float:
+    """How much a garment vertex over the seat is re-laid on the body (E1f, clothes_top.seat_wrap): 1 behind y0
+    (the side seams) between z_lo and z_hi (under the waistband) and within far - ramp of the body; each border eased
+    out over ramp with a smoothstep, so the re-laid cloth meets the rest without a step; 0 where the cloth bridges
+    (farther than far: the crotch). E1g: y1 bounds the zone's other side too (the front's own zone: y0 < y < y1)."""
+    def s(t: float) -> float:
+        t = min(1.0, max(0.0, t / ramp))
+        return t * t * (3.0 - 2.0 * t)
+    return s(z - z_lo) * s(z_hi - z) * s(y - y0) * s(far - dist) * (s(y1 - y) if math.isfinite(y1) else 1.0)
+
+
+def near_rings(seeds: list[int], nbrs: list[list[int]], rings: int) -> list[float]:
+    """E1g: 1.0 for each vertex within rings edge steps of a seed (the seat's open edges), else 0.0: the seat's relax
+    acts only there, so the cloth away from a flap keeps its layout (the relax over Meshy's whole relief smeared the
+    stitches into wavy streaks, d16)."""
+    out = [0.0] * len(nbrs)
+    front = [i for i in seeds if 0 <= i < len(nbrs)]
+    for i in front:
+        out[i] = 1.0
+    for _ in range(max(0, rings)):
+        nxt = []
+        for i in front:
+            for j in nbrs[i]:
+                if out[j] == 0.0:
+                    out[j] = 1.0
+                    nxt.append(j)
+        front = nxt
+    return out
+
+
+def spike_out(d: tuple[float, float, float], n: tuple[float, float, float], limit: float) -> bool:
+    """E1g: a vertex is a spike's tip when its offset d from its neighbours' mean reaches more than limit m along the
+    body's outward normal n (a unit vector)."""
+    return d[0] * n[0] + d[1] * n[1] + d[2] * n[2] > limit

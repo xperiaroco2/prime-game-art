@@ -212,7 +212,10 @@ def main() -> int:
     say("openings", len(edge_pts), "points:", open_rep)
     kd = O.kd_of(edge_pts)
     # inside: the body vertex by the opening; outside: its nearest cloth point by the opening (the hand beyond a cuff)
-    at_open = np.array([H.opening_dist(kd.find(Vector(rest[i]) if s < 0 else loc)[2]) < args.opening
+    # (E1b) and a vertex "inside" whose nearest cloth point is an opening's folded lip: the thumb's root 55 mm past
+    # the cuff, inside by the lip's inward normal, is beyond the opening, not under the cloth
+    at_open = np.array([H.opening_dist(kd.find(loc)[2]) < args.opening
+                        or (s < 0 and H.opening_dist(kd.find(Vector(rest[i]))[2]) < args.opening)
                         for i, s, loc in zip(near, s0, locs)], dtype=bool)
     rest_poke = F.rest_poke([s * 1000 for s in s0], at_open.tolist(), args.tol * 1000)
     near = np.array(near)[~at_open] if len(near) else np.array(near)

@@ -167,12 +167,13 @@ Each script runs in headless Blender (`blender -b --factory-startup --python <sc
 Four builders (C1b to C1e) patched the Meshy garment's upper body and it kept getting worse: the shoulders and the
 straps' bases were 3 to 8 folded layers, removing them bared holes, the sleeves were crumpled and bulky, and Crouch's
 poke-through doubled (r20). A fitted top is better made from the body itself. The loose lower parts (trousers,
-pockets, hems, shoes) stay Meshy's, because they read right and match the sketch. `clothes_dress.py --shell`
+pockets, hems; the shoes until S1) stay Meshy's, because they read right and match the sketch.
+`clothes_dress.py --shell`
 (`clothes_top.py` inside Blender, the maths in `clothes_shell.py`; it replaced `--straps` and `--sleeve-smooth`):
 
 10. **The garment cut** (`cut_garment`). The Meshy garment keeps:
     - everything below `--waist` 1.0 m;
-    - the bib at the front (|x| under 0.105 m, below 1.195 m: `--bib`);
+    - the bib at the front (|x| under 0.105 m, below 1.166 m: `--bib`);
     - the back panel inside its V (`--back`: from 0.12 m half width at the waist to 0.03 m at the 1.12 m apex).
 
     Their edges are cut by planes (`bmesh.ops.bisect_plane`), so they are straight lines, not a row of whole faces.
@@ -288,6 +289,205 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
     height is the size, and the studio light turns with each shot's yaw. The proof's `poke.json` now names up to six
     poking vertices per clip (`where`: rest place, bone, depth).
 
+## Our own sneakers (S1)
+The Meshy shoes were about 1,600 lumpy, crooked triangles for the pair, weighted to Foot and Toes all over: in
+Crouch_Fwd the Toes bone bent the toe box into folds whose light changed (it read as the texture changing).
+`clothes_dress.py --sneakers` (`auto`, the default: on with `--shell`, the dungarees; `on`, `off`) builds a clean
+low-top canvas pair from code in their place (`sneaker_build.py` inside Blender, the maths in `sneaker_geom.py`,
+tested by `test_sneaker_geom.py`), named `shoes`, so the foot cut (step 8), the openings and the proof treat it as
+before.
+
+16. **Parametric to the foot.** Every size comes from the build's own body after the f2 move: each foot's vertices
+    mostly on Foot and Toes (weights 0.5 and over) and the two bones' heads at rest. The foot's frame: u along the
+    foot from its hindmost point (the Foot head toward the Toes head, flat), v out from the body's middle, z up;
+    the right shoe is the left one in its mirrored frame, both built from both feet's points (`merge`), so the pair
+    is symmetric. A body with other feet (a body B, a heavier build) gets its own pair from the same code. Both
+    current bodies have the same feet: 25.4 cm long, 15.3 cm wide, the ball (Toes head) 22.3 cm from the heel, the
+    ankle (Foot head) at 11.5 cm.
+17. **The shape** (`build`, `Params`).
+    - The outline: the foot's plan hull offset by `clear` 4 mm, the toes given `toe_room` 12 mm, smoothed, 30
+      columns, denser at the ball.
+    - The rim: the slot between the eyelet stays (`gap` 2.6 cm) from in front of the leg (`slot_rear`: the front of
+      the foot's points at the stays' cap height, `stay_cap` 0.92 x the ankle's, plus `collar_clear`) to `throat`
+      3.5 cm before the ball, its height the instep's top plus `instep_clear` 7 mm; round the heel the collar on
+      the foot's own section at its height (the hull of the points from 8 mm under to 2 cm over it, hit from the
+      section's middle toward the column, plus `collar_clear` 7 mm and `heel_clear` 4 mm more at the back), from
+      `heel_collar` 0.62 x the ankle's height at the back dipping to `side_collar` 0.53 at the sides and rising to
+      the stays. Each outline column meets the rim: behind the slot its section point, the others the slot's curve
+      by arc length.
+    - One ring grid per column: the rubber sole (a rounded bottom edge, the foxing band raised 0.8 mm at 8.5 to
+      10.5 mm with its dark stripe, the top at `sole_top` 1.7 cm rising to `cap_top` 3.8 cm at the toe, the toe
+      cap), a 2 mm step in to the canvas upper, 6 rows up to the rim on a quarter ellipse (`fullness` 0.8), the
+      padded collar's swell, the roll over the rim and a 12 mm lining; the bottom zipped heel to toe. The tongue
+      under the stays rises 1.4 cm past the top eyelets; 5 eyelets a side (6-sided rings), 9 criss-cross flat laces
+      and a bow. 1,460 triangles a shoe, 2,920 the pair.
+    - The texture: one surface `sneaker_canvas`, a 2048x1024 atlas painted by UV rows (the shell's v by arc length
+      from the sole's join, square texels): the canvas (sRGB 226, 221, 204) with a 1.6 mm plain weave, the whiter
+      rubber, the foxing stripe, two dashed cream stitch rows over the sole and one under the collar, the tread on
+      the bottom, white laces, silver eyelets; a normal map from the same heights; roughness 0.85.
+18. **The bend.** Behind the ball the shoe is rigid on Foot, past it on Toes, a smoothstep across `blend` 2.5 cm at
+    the ball (`toes_weight`), so the toe box never folds: the sole creases at the ball. The clips' Toes bend is
+    capped: `anim_sets/alien_loco.toml`'s `[toes_cap]` (bones, `max_deg` 32, `knee_deg` 6); `clothes_dress.py
+    --toes-cap alien_loco` (with the sneakers) turns every Toes key about its own axis to `soft_cap_deg` (bends
+    under 26 degrees stay, larger ones ease into 32). Measured on the loco build: 57.5 degrees at most
+    (Jog_Bwd__s4b), Crouch_Idle 56.4, Crouch_Fwd 40.5, Jog_Fwd and the strafes 39.7; after the cap 32.0. The arms
+    and every other bone are untouched; `dress.json`'s `toes_cap` lists each clip's largest bend before and after.
+    The body's toes inside the shoe stay cut (step 8).
+19. **The report.** `dress.json`'s `sneakers`: the triangles, the foot's measures, the rim's heights, the slot and the
+    foot's clearance (each foot vertex's signed distance to the shoe along its normal: those over the rim, the
+    ankle, count as outside).
+
+S1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/s1/` (`r<n>/dress`, `proof`, `godot`,
+`render`).
+
+### The sneaker as on the concept (E1j)
+S1's pair read as flat slippers or clogs with a tiny bow (the fresh critic and the engineer). The cause was the shape,
+not the parts: the stays' rim followed the mitten foot's own instep (flat and tall), the slot was clamped to 4 cm
+behind the throat, so the five eyelets sat in 1.8 cm under the bow, and the toe box was a flat roof at the instep's
+height. The concept (`2026-10-28-alien-clothes-s1/ax_overall`, `s1b/ch_overall`) is a classic low-top canvas
+sneaker. What changed (`Params`; the S1 values above are superseded where they differ):
+- **The lace line.** The stays' rim no longer follows the foot (`stay_z`): it is a straight `lace_line` from
+  `throat_rise` 3.2 cm over the toe cap's top at the throat to the collar's front corners (`stay_cap` 1.04 x the
+  ankle's height plus 7 mm). The foot's skin under the collar's plane is removed by the dress anyway, and the toes
+  that poke through a lower vamp are cut by the dress's through-the-wall rule (step 8), so the shoe's shape no longer
+  has to wrap the foot's tall mitten toes.
+- **The slot** starts `throat` 6 mm before the ball (the lacing reaches the toe cap's back) and is at least
+  `slot_min` 5.5 cm long; `gap` 3 cm; 5 eyelets a side from 7 mm behind its front to 10 mm before its rear, each
+  lace leaving its eyelet on the hole's slot side so the dark ring shows; laces 5.2 x 2.6 mm; a larger bow with
+  four-point tails.
+- **The collar** higher, the hem's turn-up sitting on it: `heel_collar` 0.95, `side_collar` 0.82; padding `pad`
+  6 mm.
+- **The sole** thicker: `sole_top` 2.8 cm, the foxing band at 13.5 to 18.5 mm with a 2.4 mm navy stripe (sRGB 33,
+  43, 84), a grey outsole edge under it and a fine grey line along the rubber's top edge; `toe_spring` 7 mm (the sole's
+  front lifted off the floor, `toe_spring`).
+- **The rubber toe cap** is painted over the upper's front (`toe_cap_arc`, `Params.toe_cap`): its edge 4 cm up the
+  upper at the tip, a U from above reaching 7.5 cm back along the sides, the rubber white with a grey edge line and
+  a lip in the normal map; the sole's own rise at the tip `cap_top` 4 cm.
+- **The last:** the toe narrower than the ball (`taper` 0.3: v x (1 - 0.3 s^1.5) ahead of the ball, s 0 at the ball,
+  1 at the tip); `fullness` 0.75.
+- **Colours:** canvas cream sRGB 227, 219, 196, rubber 251, 251, 249, dark eyelets 51, 54, 61 (they read as dots, as
+  on the concept), laces 244, 241, 235; the eyelet stays' stitched edge 13 mm under the slot's rim.
+
+The topology is S1's (1,476 triangles a shoe, 2,952 the pair). The shoe sheet (`tools/out/dress/e1j/shoe_sheet.py`, a
+Blender script: per character the concept's shoes over six Cycles views of the left shoe alone, built on the loco
+build's feet) is the quick loop: about a minute for both characters.
+
+### Crisper and fitted clean (E1j2)
+E1j's sneaker still read as a soft, inflated blob beside the concept, and skin showed at the throat and through the
+vamp. The shoe no longer grows round the mitten foot: the dress makes room inside instead.
+- **Room inside (the dress, `clothes_dress.py`).** After the collar's plane cut (E1e), the foot's skin ahead of the
+  tongue's back (the instep under the laces, the ball under the vamp) is flattened onto that vertical plane, under
+  the tongue's top, easing out over `--collar-band` above it (`collar.flattened_front` in `dress.json`). The plane
+  comes from the shoe: `sneaker_geom.tongue_back_u` less `FRONT_CLEAR` 3 mm, stored per side on the `shoes` object
+  (`front_Left`, `fwd_Left`, `front_top_z`). The leg's skin left is then shrunk inside the walls as before, the
+  shrink easing out over `--collar-band` 3 cm over the rim (1.5 cm left the leg wider than the collar just over it:
+  teal shards over the collar's top edge, d32).
+- **A slimmer last.** `slim` 0.8: the plan's width about its middle line per u (`slim`), from x 1 at the ankle
+  (the heel cup keeps the leg's room) to x 0.8 at the ball and on, the length kept; `taper` 0.34, `toe_room` 8 mm. The collar's rim is kept `rim_in` 5 mm inside the outline (`inside_by`), so the
+  walls never flare out over the leg; the leg is shrunk inside instead.
+- **Crisper upper.** `fullness` 1 (no inflated toe box); the collar's padding only round the collar, easing off over
+  2.5 cm before the slot's rear end, so the stays stay flat and the edge at the laces is crisp.
+- **Tall foxing, two navy lines.** `sole_top` 3.6 cm, `cap_top` 4.6 cm; the lower navy line on the band at 9.5 to
+  14.5 mm, the upper one 6 mm under the rubber's top (`STRIPE_HI_MM`).
+- **A defined toe cap.** The upper's first row lies on the cap's edge wherever the cap reaches past a tenth of a row
+  (`row_ks`), so the edge is a mesh edge (no zigzag of a painted curve across big quads), stands `cap_lip` 1.2 mm
+  proud and is painted a darker grey line.
+- **Panels.** The vamp's seam with the quarters (`seam_cols`, `seam_back` 4 mm behind the slot's front): a shadow
+  line and a stitch row, foot line to rim.
+- **The tongue and laces.** `gap` 3.4 cm; the tongue just under the stays' rim (it shows between the laces), rising
+  `tongue_rise` 1.6 cm over the top eyelets and leaning back `tongue_lean` 0.3 of that; the laces 3.6 x 3.2 mm cords
+  arching `lace_arch` 4 mm over the tongue.
+- **Heights.** `heel_collar` 1.12, `side_collar` 1.02, `stay_cap` 1.10 (x the ankle's height: the trouser hem's
+  turn-up rests on the collar, as on the concept), `throat_rise` 3.6 cm.
+
+Same topology, 2,952 triangles the pair. Raw output: `2026-10-30-alien-dress-e1/d32/` (`sheet/s7`, `s8`, `dress/`,
+`proof/`, `look/`, `side/`) and `d33/` (the final: `sheet/s9`, the same folders); drivers `tools/out/dress/e1j2/` (`sheet.sh`, `dress.sh`, `closeout.sh`, `chain.sh`: sheet, dress and
+close-out in one background run).
+
+### The last polish (E1j3)
+E1j2's sneaker read as the concept's up close, but a teal band showed between the chameleon's collar and turn-up
+(jagged at the front corner), the heel was a square box from behind, the toe box flat on top, the sole's outline
+faceted at the toe and heel, and at full-body distance the shoe was one pale blob.
+- **The turn-up rests on the collar (the dress).** `--hem-rest` m (the drivers pass 4 mm): round each trouser leg,
+  in 24 angle bins about the hem's middle, the hem's lowest point goes down to the shoe's highest point in that
+  direction (the collar at the back and sides, the tongue in front) less `--hem-rest`; never up, at most 4 cm, a
+  missing bin taking its neighbour's, smoothed round the circle (`clothes_fit_geom.hem_drops`). The hem was higher
+  at the front and outside than at the back, so one drop by its lowest point (d34) closed nothing. Each garment
+  vertex moves by its angle's drop: the whole turn-up up to 7 cm over the hem's lowest point, easing to no move over
+  the next 15 cm up the shin (`hem_shift`). `dress.json`'s `hem_rest` holds each side's hem height and drops;
+  `heel_rim_z` (the collar at the heel's back) is stored on the `shoes` object. The collar's side dip is shallower
+  (`side_collar` 1.02 to 1.05).
+- **A round heel cup.** The collar's rim round the heel is pulled in `heel_in` 1.2 cm (easing out toward the slot's
+  rear end; the dress shrinks the ankle inside it, as for the slim last), the heel's walls lean in from low
+  (`heel_wall` 0.5) and the plan narrows to `heel_slim` 0.82 at the heel's back (`slim`'s `heel`); the collar's
+  dip now starts at the heel's back, not at the ankle. From behind the heel tapers up instead of a box.
+- **Rounder walls, a domed toe box.** `wall` 1 to 0.85 (the walls lean in lower: no vertical sides under a flat top from
+  the front; 0.72 let the chameleon's right foot through the side wall by 29 mm in Jump_Start, d34); the toe box's rows ahead of the ball are raised up to `dome` 1.2 cm at mid-height
+  (`column_shape`, `_ring_point`'s `dome`: none at the join and the rim, so the toe cap and the laces stay).
+- **No facets.** `around` 30 to 40 columns, spent where the outline turns: `resample`'s `bend` 1.5 weights the
+  arc length by the curvature (`curvature`, x 3 cm, at most x 3), so the toe and the heel get the new columns. The
+  outsole's bottom edge is rounded `sole_round` 5 mm.
+- **Reading at full-body distance.** The canvas a touch greyer (sRGB 214, 207, 186), the rubber white as before;
+  the navy lines darker and bolder (`STRIPE_MM` 3.4, the upper line 3.2 mm); the rubber's top edge line darker;
+  the laces whiter and the eyelets darker.
+
+3,532 triangles the pair (+580, all in the visible columns). Raw output: `2026-10-30-alien-dress-e1/d34/`
+(`sheet/s10` to `s12`, a first dress) and `d35/` (the final: `dress/`, `proof/`, `look/`, `side/`); drivers `tools/out/dress/e1j3/` (`HR` sets
+`--hem-rest`).
+
+### The low collar (E1k)
+A fresh critic on d35 found a dark wedge on the upper thigh in Walk, a shoe that read as a tall block against the
+concept (its collar high at the heel and sides, into the turn-up), small eyelets and thin laces at game distance, a
+throat tear in Crouch and teal skin at the ankle.
+- **The thigh wedge is the arm's shadow, not the garment.** A ray probe on d35 in Walk (`tools/out/dress/e1k/
+  wedge_probe.py`: from three cameras in front of the hips, the first hit per ray) finds almost no back faces
+  (0 to 5 of about 3,800 trouser hits per view, none on the thigh), so no inside or crumpled face of the side opening
+  shows. A shadow ray from each trouser hit toward the approved key light (`look_presets.json`, at (-2, 3.2, 3)) is
+  blocked by the body (the swinging hand and forearm) for 300 to 480 hits in Walk f5 and f27 and none in the bind
+  pose. A Cycles render with one sun at the key's direction (`sun_probe.py`, `d36/sun/`) draws the same wedge.
+  With the key at 3.0 and the fill and ambient at 0.12, that shadow on dark denim is near black: a look question
+  (the fill or the shadow's softness), not a fit fix.
+- **The low collar.** `heel_collar` 1.12 to 0.96 (the heel tab), `side_collar` 1.05 to 0.84 (under the ankle bone),
+  `stay_cap` 1.10 to 0.95 (the collar's front corners). The turn-up stays at the fit's own height (`--hem-rest` is
+  off again), so a band of ankle shows between the collar and the turn-up all round, as on the concept. d36 tried
+  0.90 / 0.76 / 0.92: the rim then sat where the ankle widens toward the heel, and the skin eased out over it in
+  teal fins.
+- **The ankle over the low collar.** `--collar-keep` 6 to 9 cm (the plane rule owns the skin up to this far over
+  the rim's top, so it still reaches into the turn-up and its cut edge stays hidden there; at 6 cm over the lower
+  rim the skin's top edge showed jagged inside the turn-up, d36) and `--collar-band` 3 to 4.5 cm (the shrink into
+  the collar eases out over more).
+- **Eyelets and laces read at game distance.** `eyelet_r` 3.3 / 1.7 / 0.9 mm to 4.6 / 2.4 / 1.2 mm (`eyelet_in`
+  7.5 mm), `lace` 3.6 x 3.2 mm to 5.2 x 4.0 mm.
+- **The axolotl's "R top" close-up** looked from between the legs (yaw 20, pitch 60); it now looks from the front
+  outside (yaw -40, pitch 50; `tools/out/dress/e1k/frames.sh`).
+
+Raw output: `2026-10-30-alien-dress-e1/d36/` (the probes, `sheet/s13`, the first low-collar dress) and `d37/` (the
+final); drivers `tools/out/dress/e1k/`.
+
+### The close-up leftovers (E1l)
+- **Specks on the collar (partly fixed).** Skin with the shoe's wall beside it at its own height (a horizontal ray
+  from the leg's axis meets the shoe) now counts as under the rim, wherever its nearest rim point in xy lies
+  (`--collar-beside`, on by default). The collar's height changes fast between the heel and the side, and that skin
+  was eased out through the padding. The speck probe (`tools/out/dress/e1l/speck_probe.py`) found 20 face points
+  per leg on the chameleon, 13 on the axolotl, at z 0.10 to 0.11; the d39 close-ups show the outside clean and small
+  remnants at the back.
+- **The ankle's front edge (not fixed).** Two leads were tried and neither moved it:
+  - the collar region also takes the ankle's skin within `--collar-ankle` (8 cm) of the leg's axis. The rim's xy
+    reach (12 to 13 cm) already held all of it: 0 vertices added;
+  - the instep's flattening onto the tongue's back now eases out over `--front-band` (1.5 cm, was the 4.5 cm
+    `collar_band`) with a soft ramp across the plane (`clothes_fit_geom.soft_flat`, `--front-soft` 1 cm).
+
+  The probes (`fold_probe.py`, `front_probe.py`) find no open edge and no inverted face on the ankle between the
+  collar and the turn-up, and from the front they meet only the shoe up to z 0.12 and the skin from 0.12 to the
+  turn-up. So the vertical edge in the L front close-up is probably the turn-up's inside beside the ankle, not a cut
+  in the skin. That is not proven.
+- **The toe crease ahead of the lacing (no visible change).** The shoe's Toes weight's blend now starts
+  `crease_gap` (3 mm) ahead of the throat's front end (`sneaker_geom.crease_u`), never behind the ball, so the
+  lacing stays on Foot. The Crouch tear beside the laces and the crumpled laces still show in d39.
+
+Raw output: `2026-10-30-alien-dress-e1/d38/` (the specks and the region) and `d39/` (the final); drivers and probes
+`tools/out/dress/e1l/`.
+
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
 
@@ -386,3 +586,162 @@ narrower halfway between the cut and the ankle (`body_feet_geom.midfoot`; `fit.t
 keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 degrees, from the ring's height);
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
+
+## Dressing D3's bodies (E1 to E1i2, art #196)
+- **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
+  head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
+  smoothing; the 30 mm smoothstep band stays the default for the old bodies.
+- **Per-body fits** (E1): A11 and B13 differ in topology (the feet's cut), so each gets its own
+  `clothes_fit.py --body` base fit (no `--female`; her fit has no chest hug). `pick_facing` skips zero normals.
+- **The cut planes from the bones** (E1b): `clothes_dress.py --planes bones` sets the top's and the garment's planes
+  from the character's own bones (`clothes_shell.body_planes`): heights (`--waist`, the bib's top, the back's apex,
+  the crew neck, `--arm-z`) mapped linearly from the old body A's torso (Chest 1.028 m to Neck 1.339 m) to the
+  body's, `--seam-x` moved with the upper arm's root, `--arm-axis` through the upper arm's head, and the cuffs
+  `--cuff-back` (35 mm) in from the hand bone's head. The old fixed planes (`--planes fixed`, the default) put B13's
+  cuff past her wrist (her sleeve covered the hand, the proof's 64 mm pokes) and A11's on the thumb's root.
+- **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
+  weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
+  up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'
+  hem above and the shoe below and cut ragged holes into the open ankle over the collar (the teal shards). The
+  dress's `collar_probe` counts kept skin under the rim (within 20 mm) outside the shoe's surface, at rest only
+  (it read 0 while the shards showed: they come in the clips' pose). The shards' cause: the shin's tilt in Idle and
+  Crouch carries the ankle skin under the collar (weighted to LowerLeg) out through the rigid shoe; `--ankle-ride`
+  hands that skin's LowerLeg weight to the Foot from 5 mm under the rim's nearest point down, easing out over 30 mm
+  above (`clothes_fit_geom.ankle_ride`). That did not move the shards: they are static.
+- **The collar's clean cut** (E1c): the shards' real cause was the rim itself. The shoe's boundary includes the
+  eyelets' and laces' small islands (z 0.083 to 0.109 on the instep), so the "rim" the cut measured against sat on
+  the instep, and the per-face cut left a staircase of skin over and outside the collar. Now the opening's rim is the
+  boundary of each shoe's main island (100 vertices or more, over 0.05 m, the points 25 mm under the median dropped);
+  `clothes_fit_geom.rim_plane` fits a plane through it (least squares, so it tilts with the collar) and lowers it
+  `--collar-cut` (12 mm) under its lowest point; the ankle's faces between that plane and the rim's top come back
+  (only where no shoe face lies over them, so not the instep under the vamp, and up to `--collar-over`, 15 mm, over the top: the notch the old rim cut), the skin
+  under the plane near the shoe is bisected away, and each kept vertex under its nearest rim point whose ray outward
+  across the floor meets no shoe face (`outside_shell`: outside the outer shell) is pulled back toward the rim's
+  centre, `--collar-clear` (3 mm) inside the innermost wall on its way (`pull_in`). `dress.json` reports `collar`
+  (the planes, faces back, pulled) and `collar_shell_probe` (that count after the pull: 0 on both). The old
+  `collar_probe` (the nearest face's normal) still counts the lining's side and reads high; do not trust it.
+- **The collar in motion** (E1d): E1c's main-island rim fed only the plane; every other rim rule (the shoe's top,
+  `local_rim`, `through_shoe`, `ankle_kept`, `--ankle-ride`) still used the whole boundary with the laces' points over
+  the instep, and cut holes into the ankle's front (the dark teal blocks: the leg's far side seen through them). Now
+  all of them use the main island's rim. The faces that come back are the ankle's column: inside the opening's outline
+  across the floor (`clothes_fit_geom.in_opening`, the rim's radius round its centre interpolated by angle, grown
+  `--collar-grow`, 10 mm), up to `--collar-keep` (60 mm) over the rim's top, each face with a vertex over the plane (so
+  the faces crossing it come back and the bisect cuts them: no holes at the ring); the rule "no shoe face over it" is
+  gone. The foot's skin outside the outline, under its nearest rim point and with the shoe over it or within
+  `--collar-vamp` (30 mm) under it, is the instep and toes under the vamp: it goes (`collar.vamp_faces_removed`; the
+  teal patches through the vamp). `collar.faces_cut` reads 0 by construction (each crossing face splits in two and
+  loses its lower half). Where the ankle is wider than the opening, the kept skin under each vertex's nearest rim
+  point hung over the collar as teeth: every such vertex is tucked inside the outline, `--collar-clear` (3 mm) in,
+  easing out over `--collar-band` (10 mm) above the rim (`clothes_fit_geom.collar_clamp`; `collar.tucked_in`: 83 and
+  78 vertices, at most 12.7 and 28 mm on A and B).
+- **The collar by one plane** (E1e, the route that worked; it replaces E1c's pull-in and E1d's column, vamp and
+  tuck): the bind pose (no clip) showed E1d's teeth over the collar exactly as in Idle, so they were geometry, not
+  skinning. Every rule that deletes faces one by one near a visible edge (the cover rays, in-shoe, through-wall,
+  column, vamp) leaves a sawtooth there, and bringing faces back or tucking vertices afterwards never smooths it. Now
+  the plane alone decides the leg's and foot's skin near each shoe (up to `--collar-keep`, 60 mm, over the rim's top,
+  within the rim's reach): a face goes only when it lies wholly under the plane (`--collar-cut`, 12 mm under the rim's
+  lowest point); every face with a vertex over it stays and the bisect cuts the crossing ones into one edge loop
+  inside the shoe (`collar.faces_back`, `faces_under_plane_removed`). The kept skin is then **shrunk toward the leg's
+  own axis** (the LowerLeg bone's line, extended down): a ray from the axis out toward each vertex at its own height
+  finds the shoe's inner wall, and the vertex comes in to `--collar-clear` (3 mm) inside it, easing out over
+  `--collar-band` (15 mm) over its nearest rim point (`clothes_fit_geom.collar_clamp`; over the rim the wall is
+  measured just under the rim, so no step). Skin with the shoe over it, or within 12 mm under it (the instep under or
+  2 mm through the vamp, where the nearest rim point is the throat's low slot), counts as under the rim: without that
+  the instep showed as teal patches through the vamp. That skin, up to `--collar-weights` (30 mm) over the rim, takes
+  its nearest shoe vertex's weights, blended back to its own over that band (`clothes_fit_geom.mix_rows`), so the
+  ankle and the shoe move as one; E1b's `--ankle-ride` is off with the plane. `collar.shrunk` (d14: 253 and 159
+  vertices, at most 113 and 29 mm, the most on A's instep) and `collar.shoe_weights` report it.
+- **The bib's top by a lower plane** (E1f): the bind pose (`tools/out/dress/e1f/fit_bind.py`, textured and by
+  object) showed the ragged top edge and the white and dark slits beside the bib as geometry: Meshy's layered top hem,
+  about 30 mm deep, opened by the old plane at 1.195 m (A's reference) into crumpled folds with the shirt baked into
+  their texels. The plane now sits under that hem, on the stitched band's top: `--bib 0.105,1.166` and
+  `clothes_shell.body_planes`' reference bib top 1.166 (mapped per body with `--planes bones`); the straps' fronts and
+  buckles follow it. One cut, no peel.
+- **The seat re-laid on the body** (E1f): the dark shards at the back waist were bind-pose geometry too: B's female
+  fit folds the cloth over her seat into flared flaps round the back pockets (open edges 70 to 140 mm under the
+  waist, outer layers 6 mm and more off the cloth under them). `clothes_top.seat_wrap` (before the cut) puts each
+  garment vertex behind the side seams (y over -0.02), from 10 mm under the waist down `--seat-wrap` (0.24 m), on its
+  nearest body point plus a smoothed offset (its own, clamped to `--seat-clear` 4 to 30 mm, `--seat-smooth` rounds),
+  and relaxes the cloth along the body only round its folds (faces turned off the body's normal by more than
+  `--seat-fold`, two rings out; `--seat-relax` rounds): relaxing smooth cloth smeared its texture (d15).
+  `clothes_fit_geom.seat_weight` eases it out over 30 mm at every border and where the cloth bridges (over 60 to
+  90 mm off the body: the crotch). No face goes and no vertex is added, so the weights stay the fit's.
+- **The seat's texture** (E1g): the E1f relax over every fold slid Meshy's relief along the body and smeared the
+  stitches into wavy streaks. Now a seat vertex off the relax moves along the body's normal only, so its UVs keep their
+  layout. The chameleon's back seat is no longer re-laid at all (its d14 look); `--seat-y0 -1 --seat-y1 -0.03
+  --seat-relax 0` re-lays only its front, along the normal. The axolotl (`--seat-y0 -0.08 --seat-fold 0.0`) still
+  needs the relax: her flared pocket flaps are closed folds, not open edges, so gating the relax to open edges'
+  rings (`--seat-open-rings`, d17 and d18) brought the flaps back; with the relax (d20, `-0.3` in d20b alike) the
+  flaps are gone but the pockets' stitched texels stay stretched over the seat. A clean seat needs new texels there
+  (a re-projected bake), not another vertex rule.
+- **Plain denim texels** (E1h): Meshy's layered side opening under the hips' side buttons is baked as a light,
+  streaked, crumpled patch (a dark stain on the hip at game distance, a chrome-like hollow in Crouch), and the
+  axolotl's re-laid seat and front pockets carry stretched stitch texels. These are texel faults, so
+  `clothes_top.plain_denim` (after the straps) gives them new texels without moving a vertex: each `--plain` box
+  (`x0,x1,y0,y1,z0,z1` for |x|, bind pose; `;` between boxes) on each side is a region of denim faces (the straps'
+  and band's patch and the bronze left out), re-laid in UV on a vertical cylinder round the waist's axis
+  (`--band-axis-y`; `clothes_shell.cyl_coords`) at the garment's median texel density (about 1,100 texels per metre;
+  `--plain-density` scales it). All regions share one free window of the maps filled with the straps' plain denim
+  rectangle (`--strap-uv`) repeated mirrored (`clothes_shell.mirror_tile`; the normal map's x or y turned over in a
+  mirrored copy), in the diffuse, roughness and normal maps alike; with no window free the density steps down by
+  15% up to three times. The boxes: the chameleon `0.11,0.25,-0.07,0.09,0.74,0.99` (the hip sides); the axolotl
+  the hip sides `0.11,0.25,-0.04,0.05,0.72,0.975`, the seat `0,0.25,0.05,0.25,0.72,0.975` and the front pockets
+  `0.05,0.25,-0.25,-0.04,0.80,0.975`. Her back and front pockets' outlines go with it: they could not be kept clean.
+  The Meshy side buttons become denim bumps; the side's crumpled geometry stays. The mirrored repeat of the small
+  plain rectangle (44 x 93 texels) shows as a faint zigzag moire over her seat in Godot (Crouch, d23): a larger plain
+  source would remove it.
+- **The bib pocket's white holes in Jog** (E1h, not fixed): two white teardrops at the chameleon's bib pocket bottom
+  in Godot's Jog at 0 s. `--shell-hide-above` (the top's faces under the panels may go from that height over the
+  waist, not only above `--shell-full`) was tried in d23 and changed nothing there, while it raised the axolotl's
+  body pokes in Jog, Sprint and Strafe (2 to 8 vertices, up to 6 mm); it stays off. The white is most likely the
+  background through open holes in Meshy's layered pocket bottom, with the top and the body removed under the bib;
+  `fill_holes` only works under the waist. Next: fill those loops above the waist, or keep the top under that spot.
+- **Her bib flat, as on the concept** (E1i, the axolotl only; the chameleon's bib is not touched): her fit made the
+  bib follow each breast, and its top (1.110 m) sat under her bust (apex about 1.15 m), so the denim cupped under the
+  chest. The flat bib rule: the bib is a stiff panel that rests on the chest's most forward points and falls straight
+  to the waistband; the shirt carries the chest's shape at its sides. `clothes_top.flat_bib` (after the cut, before
+  the top and the straps; `--flat-bib blend,curve,radius,clear`, `--bib-raise dz,b0,b1`):
+  - `--bib-raise` lifts everything over waist + b1 by dz and stretches the band waist + b0 to waist + b1; that band's
+    texels are re-laid plain (a `--plain` box is added); the bib's top and the straps' fronts follow (`straps` turns
+    its front angle until the front end is dz higher);
+  - every bib vertex moves forward only, by the offset from the bib's smoothed surface (every layer's mean, so the
+    pocket keeps its layer) to a cylinder `hull(z) + c x^2` (c fitted to the belly's rows with `curve < 0`); hull is
+    the front hull (`clothes_shell.front_hull`) of the bib and of the body's front less `clear`: the taut line from
+    the waistband over the bust; the move eases in over `blend` above the waist;
+  - the moved vertices' weights blend toward their 3 cm row's mean of the body's weights under the panel.
+  d27 (`--flat-bib 0.05,-1,0.02,0.014 --bib-raise 0.06,0.012,0.035`): bib top 1.170 m, c 4.7 1/m, hull from -0.129 m
+  at the waist to -0.164 m at the bust. At rest and in the turnaround it reads as the concept's bib. Still wrong: in
+  Jog its top folds down under the bust (the weights), the body pokes rose (Idle 4/3.1 mm, Jump_Start 5/8.1 mm against
+  d23b's 0/0 and 1/3.6), and a teal patch shows at her left bib side at rest (the top's hidden faces, 51 against 38).
+- **Her flat bib in motion** (E1i2): in Jog the bones pitch far (UpperChest about 38 degrees, Chest 27) and the body's
+  front under the bib compresses (its front at 1.16 m drops 120 mm, at 0.96 m 28 mm). A panel weighted like that
+  body, by the rows' means (d27) or bone by bone up to UpperChest (d28), squashes the same way and folds under the
+  bust. The rule: a stiff panel rides one bone. `--bib-chain Hips,Spine,Chest` weights it by height alone
+  (`clothes_shell.chain_row` over the bones' bind-pose mid heights, the same across its width, eased from the
+  band's own weights over `blend`), so above Chest's mid (1.04 m) it is rigid with Chest. d29: flat in Jog, Crouch,
+  Walk and Jump_Start. `--shell-hide 0.02` keeps the top under the stood-off bib (2 faces hidden, not 51): the teal
+  patch and the chest pokes are gone (Idle 0/0). Her close-up cameras aim at the raised bib (`e1i2/frames.sh`).
+- **Holes over the waist** (E1i2, off by default): `--fill-holes-above` lets `fill_holes` work up to that height
+  over the waist and reports the loops it filled there. On the chameleon (d30) it filled two at the back and side,
+  none at the bib pocket: the pocket's white holes are not small closed loops, so they stay open.
+- **The hips' spikes** (E1g): `clothes_top.despike` moves a garment vertex under the waist that stands over
+  `--despike` (15 mm) out of its neighbours' mean, along the body's normal, to that mean (`clothes_fit_geom.spike_out`;
+  the axolotl's front-hip spike, d16).
+- **Meshy's small holes** (E1g): `clothes_top.fill_holes` fills the garment's closed open-edge loops of at most
+  `--fill-holes` (12) edges under the waist, each new corner with its vertex's UV from the cloth round it; loose bits
+  of 4 faces or fewer there go first (the flood must cover a whole component: a partial one made pieces of large
+  components look loose and opened 160 holes, d19).
+- **The strap fronts' notch** (E1g): `clear_strap_fronts` first cuts along each strap front's side lines (half the
+  strap less 2 mm) and its end, so the faces under the strap go to a straight edge.
+- **The instep's clearance** (E1f): skin with the shoe over it is shrunk to `--collar-clear-under` (6 mm) inside the
+  shoe's wall instead of `--collar-clear` (3 mm): the vamp's teal specks in motion.
+- **The straps' back ends** (E1d): with `--planes bones` the straps sweep on past `--shell-strap-t`'s back angle until
+  their back end lies `--strap-back-below` (32 mm) under the back panel's apex (`straps.back_angle_deg`); the shorter
+  body B's straps met 50 mm over her apex (a flat bar of shirt and panel under their V). A's stay at 134 degrees.
+- **The fit's strays** (E1b): garment vertices over `--stray` (80 mm) from the body go with their faces (two on A11
+  made dark spikes out of the hips).
+- **The proof's openings** (E1b): a body vertex "inside" by an opening's inward-folded lip whose nearest cloth point
+  is that opening (the thumb's root 55 mm past the cuff) is left out like one by the opening.
+- **The game's look** (E1b): `frames --look high` renders under `look_presets.json`'s High preset (AgX 0.9, the
+  studio sky's ambient and reflections, SSAO, soft shadows, MSAA 4x, the approved lights); the default `studio` is
+  the linear review light.

@@ -326,5 +326,116 @@ class EdgePeel(unittest.TestCase):
         self.assertTrue(on)
 
 
+class BodyPlanes(unittest.TestCase):  # E1b: the cut planes from a body's own bones
+    def test_the_reference_body_gets_the_defaults_but_the_cuff(self):
+        pl = H.body_planes(1.028, 1.339, 0.041, (0.152, 0.065, 1.277), 0.644)
+        self.assertAlmostEqual(pl["cuff_x"], 0.609)
+        self.assertAlmostEqual(pl["seam_x"], 0.165)
+        self.assertAlmostEqual(pl["arm_z"], 1.18)
+        self.assertAlmostEqual(pl["waist"], 1.0)
+        self.assertEqual(pl["arm_axis"], (0.065, 1.277))
+        for a, b in zip(pl["neck"], (-0.06, 1.335, 0.09, 1.365)):
+            self.assertAlmostEqual(a, b)
+
+    def test_a_smaller_body_moves_every_plane_with_its_bones(self):  # D3's B13
+        pl = H.body_planes(0.980, 1.274, 0.041, (0.129, 0.041, 1.216), 0.598)
+        self.assertAlmostEqual(pl["cuff_x"], 0.563)
+        self.assertAlmostEqual(pl["seam_x"], 0.142)
+        self.assertAlmostEqual(pl["z_scale"], 0.294 / 0.311)
+        self.assertAlmostEqual(pl["waist"], 0.980 - 0.028 * 0.294 / 0.311)
+        self.assertLess(pl["arm_z"], 1.216)  # the sleeve's seam still under the arm's axis
+        self.assertLess(pl["bib"][1], pl["neck"][1])
+        self.assertEqual(pl["arm_axis"], (0.041, 1.216))
+
+    def test_a_neck_under_the_chest_is_refused(self):
+        with self.assertRaises(ValueError):
+            H.body_planes(1.3, 1.2, 0.04, (0.15, 0.06, 1.27), 0.64)
+
+
+
+
+class PlainDenim(unittest.TestCase):
+    """E1h: the plain denim patch's mirrored repeat, cylinder coordinates and boxes."""
+
+    def test_mirror_tile_turns_every_other_copy(self):
+        got = [H.mirror_tile(i, 3) for i in range(8)]
+        self.assertEqual(got, [(0, False), (1, False), (2, False), (2, True), (1, True), (0, True),
+                               (0, False), (1, False)])
+
+    def test_mirror_tile_neighbours_differ_by_at_most_one_texel(self):
+        idx = [H.mirror_tile(i, 5)[0] for i in range(30)]
+        self.assertTrue(all(abs(a - b) <= 1 for a, b in zip(idx, idx[1:])))
+
+    def test_cyl_coords_arc_from_the_reference_and_height(self):
+        s, t = H.cyl_coords(0.2, 0.015, 0.9, 0.015, 0.0, 0.2)  # the left side, a quarter turn from the front
+        self.assertAlmostEqual(s, 0.2 * math.pi / 2)
+        self.assertAlmostEqual(t, 0.9)
+        s0, _ = H.cyl_coords(0.0, -0.185, 0.9, 0.015, 0.0, 0.2)
+        self.assertAlmostEqual(s0, 0.0)
+
+    def test_cyl_coords_wrap_round_the_back(self):
+        a_ref = math.pi * 0.95
+        s1, _ = H.cyl_coords(0.01, 0.2, 1.0, 0.0, a_ref, 0.1)
+        s2, _ = H.cyl_coords(-0.01, 0.2, 1.0, 0.0, a_ref, 0.1)
+        self.assertLess(abs(s1 - s2), 0.03)  # both sides of the back centre stay together
+
+    def test_in_box_mirrored_in_x(self):
+        box = (0.1, 0.2, -0.1, 0.1, 0.8, 1.0)
+        self.assertTrue(H.in_box(0.15, 0.0, 0.9, box))
+        self.assertTrue(H.in_box(-0.15, 0.0, 0.9, box))
+        self.assertFalse(H.in_box(0.05, 0.0, 0.9, box))
+        self.assertFalse(H.in_box(0.15, 0.0, 1.1, box))
+
+
+class FlatBib(unittest.TestCase):  # E1i: her bib a flat, stiff panel over the chest
+    def test_chain_row_by_height(self):
+        knots = [(1.10, "UpperChest"), (0.95, "Hips"), (1.00, "Spine"), (1.05, "Chest")]
+        self.assertEqual(H.chain_row(0.90, knots), {"Hips": 1.0})
+        self.assertEqual(H.chain_row(1.20, knots), {"UpperChest": 1.0})
+        mid = H.chain_row(1.075, knots)
+        self.assertAlmostEqual(mid["Chest"], 0.5)
+        self.assertAlmostEqual(mid["UpperChest"], 0.5)
+        for z in (0.93, 0.97, 1.0, 1.02, 1.06, 1.09, 1.15):
+            self.assertAlmostEqual(sum(H.chain_row(z, knots).values()), 1.0)
+            self.assertLessEqual(len(H.chain_row(z, knots)), 2)
+        # monotone: the upper bone's share only grows with height between two knots
+        ups = [H.chain_row(1.05 + 0.005 * k, knots).get("UpperChest", 0.0) for k in range(11)]
+        self.assertEqual(ups, sorted(ups))
+        self.assertEqual(H.chain_row(1.0, []), {})
+
+    def test_hull_bridges_the_dip_under_the_bust(self):
+        # (z, y), front at smaller y: waist, belly, under the bust (behind), the bust's apex, the upper chest, the top
+        prof = [(0.95, -0.10), (1.00, -0.11), (1.04, -0.09), (1.08, -0.14), (1.10, -0.12), (1.11, -0.11)]
+        hull = H.front_hull(prof)
+        self.assertEqual(hull[0], (0.95, -0.10))
+        self.assertIn((1.08, -0.14), hull)
+        self.assertNotIn((1.04, -0.09), hull)
+        self.assertNotIn((1.00, -0.11), hull)  # in front of the waist, but behind the taut line to the apex
+        for z, y in prof:
+            self.assertLessEqual(H.hull_at(hull, z), y + 1e-12)
+
+    def test_hull_of_a_straight_or_concave_profile_keeps_its_points(self):
+        line = [(0.0, 0.0), (0.5, -0.05), (1.0, -0.1)]
+        self.assertEqual(H.front_hull(line), [(0.0, 0.0), (1.0, -0.1)])
+        bulge = [(0.0, 0.0), (0.5, -0.2), (1.0, 0.0)]
+        self.assertEqual(H.front_hull(bulge), bulge)
+
+    def test_hull_same_height_keeps_the_front_point(self):
+        self.assertEqual(H.front_hull([(0.0, -0.1), (0.0, -0.2), (1.0, 0.0)]), [(0.0, -0.2), (1.0, 0.0)])
+
+    def test_hull_at_interpolates_and_clamps(self):
+        hull = [(0.0, 0.0), (1.0, -0.1), (2.0, 0.1)]
+        self.assertAlmostEqual(H.hull_at(hull, 0.5), -0.05)
+        self.assertAlmostEqual(H.hull_at(hull, 1.5), 0.0)
+        self.assertEqual(H.hull_at(hull, -1.0), 0.0)
+        self.assertEqual(H.hull_at(hull, 3.0), 0.1)
+
+    def test_ease(self):
+        self.assertEqual(H.ease(0.9, 1.0, 0.05), 0.0)
+        self.assertEqual(H.ease(1.06, 1.0, 0.05), 1.0)
+        self.assertAlmostEqual(H.ease(1.025, 1.0, 0.05), 0.5)
+        self.assertEqual(H.ease(1.01, 1.0, 0.0), 1.0)
+
+
 if __name__ == "__main__":
     unittest.main()

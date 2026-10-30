@@ -18,6 +18,7 @@ extends SceneTree
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const Character = preload("res://lib/character.gd")
+const LookLights = preload("res://showroom/look_lights.gd")
 const WATCHDOG_S: float = 600.0
 const BACKGROUND: Color = Color(0.80, 0.80, 0.82)
 const FLOOR: Color = Color(0.66, 0.66, 0.68)
@@ -68,7 +69,10 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 		return
 	_skeleton = skeletons[0] as Skeleton3D
 	_player = players[0] as AnimationPlayer
-	_stage()
+	if str(spec.get("look", "")) == "high":
+		_game_stage(str(spec.get("hdri", "")))
+	else:
+		_stage()
 	_rig.rotation.y = deg_to_rad(float(spec.get("light_turn_deg", 0.0)))
 	await process_frame
 	var size: Vector2i = root.get_visible_rect().size
@@ -183,6 +187,79 @@ func _stage() -> void:
 	var floor_mesh: MeshInstance3D = MeshInstance3D.new()
 	var plane: PlaneMesh = PlaneMesh.new()
 	plane.size = Vector2(200, 200)  # its far edge stays out of the frame
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
+	mat.albedo_color = FLOOR
+	mat.roughness = 1.0
+	plane.material = mat
+	floor_mesh.mesh = plane
+	root.add_child(floor_mesh)
+	_camera = Camera3D.new()
+	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	_camera.far = 100.0
+	root.add_child(_camera)
+	_camera.make_current()
+	var layer: CanvasLayer = CanvasLayer.new()
+	root.add_child(layer)
+	_label = Label.new()
+	_label.add_theme_font_size_override("font_size", 20)
+	_label.add_theme_color_override("font_color", INK)
+	_label.position = Vector2(12, 8)
+	layer.add_child(_label)
+
+
+## The game's look (art #196, E1b): look_presets.json's High preset (approved 2026-10-13, lights D since 10-19): AgX at
+## exposure 0.9, the studio sky's ambient (0.12, half sky) and reflections, SSAO 0.6 / 1.5, soft shadows (filter
+## quality 4, the key's angular distance 1.5), MSAA 4x, and the approved directional lights; the floor, background,
+## camera and label as _stage's. hdri: the studio sky's .hdr (missing: a ProceduralSky).
+func _game_stage(hdri: String) -> void:
+	root.msaa_3d = Viewport.MSAA_4X
+	var env: Environment = Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = BACKGROUND
+	var sky: Sky = Sky.new()
+	sky.radiance_size = Sky.RADIANCE_SIZE_256
+	var image: Image = Image.load_from_file(hdri) if hdri != "" and FileAccess.file_exists(hdri) else null
+	if image != null and not image.is_empty():
+		var pano: PanoramaSkyMaterial = PanoramaSkyMaterial.new()
+		pano.panorama = ImageTexture.create_from_image(image)
+		sky.sky_material = pano
+	else:
+		sky.sky_material = ProceduralSkyMaterial.new()
+	env.sky = sky
+	env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	env.tonemap_exposure = 0.9
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	env.ambient_light_sky_contribution = 0.5
+	env.ambient_light_color = Color(1.0, 0.8, 0.62)
+	env.ambient_light_energy = 0.12
+	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+	env.ssao_enabled = true
+	env.ssao_radius = 0.6
+	env.ssao_intensity = 1.5
+	env.ssao_light_affect = 0.2
+	var world: WorldEnvironment = WorldEnvironment.new()
+	world.environment = env
+	root.add_child(world)
+	RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_ULTRA)
+	RenderingServer.directional_shadow_atlas_set_size(4096, true)
+	_rig = Node3D.new()
+	root.add_child(_rig)
+	for l: Dictionary in LookLights.directional():
+		var at: Array = l["at"]
+		var aim: Array = l.get("look_at", [0.0, 0.9, 0.0])
+		var light: DirectionalLight3D = DirectionalLight3D.new()
+		_rig.add_child(light)
+		light.look_at_from_position(Vector3(at[0], at[1], at[2]), Vector3(aim[0], aim[1], aim[2]))
+		light.light_energy = float(l["energy"])
+		light.light_specular = float(l.get("specular", 0.0))
+		light.shadow_enabled = bool(l.get("shadow", false))
+		if light.shadow_enabled:
+			light.light_angular_distance = 1.5
+			light.shadow_blur = 1.0
+			light.directional_shadow_max_distance = 12.0
+	var floor_mesh: MeshInstance3D = MeshInstance3D.new()
+	var plane: PlaneMesh = PlaneMesh.new()
+	plane.size = Vector2(200, 200)
 	var mat: StandardMaterial3D = StandardMaterial3D.new()
 	mat.albedo_color = FLOOR
 	mat.roughness = 1.0

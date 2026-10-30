@@ -277,6 +277,8 @@ class ShipVentTest(unittest.TestCase):
         self.assertEqual((depth["vent_e"], depth["vent_w"], LAYOUT["stations"]["depth_m"]), (0.6, 0.6, 0.5))
         for d in (depth["vent_e"], depth["vent_w"]):   # the budget is measured from the wall's face (RECESS: the unit's back)
             self.assertLessEqual(V.UNIT[3] + V.RECESS, d + 1e-9)
+        if not any(q[0] == "station_vent_e" for q in LAYOUT["place"]):
+            return   # the gills (2026-10-28): the cabinets are no longer placed, so no unit to break
         bad = copy.deepcopy(LAYOUT)
         for p in bad["pieces"]:
             if p["id"] == "station_vent_e":
