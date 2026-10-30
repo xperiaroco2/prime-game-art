@@ -662,8 +662,12 @@ def follow_panels(top, gar, args) -> dict:
 
 def hidden_face(tree, c, n, z_full, args) -> bool:
     """Whether a shell face (centre c, outward normal n, world) lies under a kept panel: above the full clearance,
-    its normal and four rays tilted by args.shell_hide_tilt round it all meet the panel within args.shell_hide."""
-    return c.z > z_full and ray_share(tree, c, n, args.shell_hide, args.shell_hide_tilt) == 1
+    its normal and four rays tilted by args.shell_hide_tilt round it all meet the panel within args.shell_hide. E1h:
+    with args.shell_hide_above, from that height over the waist on (the shirt came through the bib pocket's bottom in
+    Jog, between the waist and the full clearance)."""
+    above = getattr(args, "shell_hide_above", None)
+    z_gate = z_full if above is None else min(z_full, args.waist + above)  # E1h: lower under the bib's pocket
+    return c.z > z_gate and ray_share(tree, c, n, args.shell_hide, args.shell_hide_tilt) == 1
 
 
 def ray_share(tree, p, n, reach: float, tilt: float) -> float:
@@ -1097,6 +1101,7 @@ def straps(gar, char, keep_objs, args) -> dict:
     lats = [(-half, -lip)] + [(-half + 2 * half * k / (n_flat - 1), 0.0) for k in range(n_flat)] + [(half, -lip)]
     ufr = H.lat_us(len(lats), args.strap_lip_u)
     rect, prep = strap_patch(gar, args, ufr)
+    args.patch_rect = rect  # E1h: plain_denim leaves the straps' and band's patch alone
     u0, u1, v0, v1 = rect
     rep, plans = {"patch": prep, "back_angle_deg": round(math.degrees(ts[-1]), 1)}, []
     for sgn in (1, -1):
@@ -1327,4 +1332,127 @@ def waistband(bm, gar, body, gtree, rect, args, uv, dl, gi) -> dict:
         rep["left" if sgn > 0 else "right"] = side
     rep["tris"] = tris
     say("waistband", rep)
+    return rep
+
+
+def plain_denim(gar, args) -> dict:
+    """E1h: plain denim texels over the garment's areas whose own texels are wrong (Meshy's layered hip opening: a
+    glossy, streaked patch; the axolotl's seat and front pockets: stretched stitch texels). Each box of args.plain
+    ("x0,x1,y0,y1,z0,z1" for |x|, ';' between boxes; bind pose, m) on each side is one region: its denim faces (not
+    the straps' and band's patch, not the bronze) are re-laid in UV on a vertical cylinder round the waist's axis
+    (args.band_axis_y) at the garment's median texel density, into a free window of the maps that is filled with
+    the plain denim rectangle args.strap_uv repeated mirrored (diffuse, roughness and normal; the normal's x or y
+    turned over in a mirrored copy); one window for all the regions, as its texels are the same pattern everywhere.
+    No vertex moves. Returns per region its faces and size, the window and the density."""
+    boxes = [tuple(floats(b)) for b in args.plain.split(";") if b.strip()]
+    rep = {"regions": []}
+    maps = garment_maps(gar)
+    dif = maps.get("diffuse")
+    if not boxes or dif is None:
+        rep["skipped"] = "no boxes" if not boxes else "no diffuse map"
+        return rep
+    w, h = dif.size
+    me = gar.data
+    mw = gar.matrix_world
+    uvl = me.uv_layers.active.data
+    own = getattr(args, "patch_rect", None)
+    den_slot = {i for i, s in enumerate(gar.material_slots) if s.material and s.material.node_tree and any(
+        n.type == "TEX_IMAGE" and n.image is dif for n in s.material.node_tree.nodes)}
+    co = [mw @ v.co for v in me.vertices]
+
+    def uv_c(p):
+        return sum((Vector(uvl[k].uv) for k in p.loop_indices), Vector((0.0, 0.0))) / len(p.loop_indices)
+
+    def ours(p):
+        if own is None:
+            return False
+        c = uv_c(p)
+        return own[0] - 1e-3 <= c.x <= own[1] + 1e-3 and own[2] - 1e-3 <= c.y <= own[3] + 1e-3
+
+    regions = {}
+    dens = []
+    for p in me.polygons:
+        c = sum((co[v] for v in p.vertices), Vector()) / len(p.vertices)
+        hit = next((k for k, b in enumerate(boxes) if H.in_box(c.x, c.y, c.z, b)), None)
+        if p.material_index in den_slot and not ours(p) and hit is not None:
+            regions.setdefault((hit, 1 if c.x > 0 else -1), []).append(p.index)
+            continue
+        if p.material_index in den_slot and not ours(p):
+            uv = [Vector(uvl[k].uv) for k in p.loop_indices]
+            q = [co[v] for v in p.vertices]
+            a3 = sum((q[i] - q[0]).cross(q[i + 1] - q[0]).length / 2 for i in range(1, len(q) - 1))
+            a2 = sum(abs((uv[i] - uv[0]).cross(uv[i + 1] - uv[0])) / 2 for i in range(1, len(uv) - 1))
+            if a3 > 1e-9 and a2 > 0:
+                dens.append(math.sqrt(a2 * w * h / a3))
+    d0 = float(np.median(dens)) * args.plain_density if dens else 0.0
+    rep["texels_per_m"] = round(d0, 1)
+    u0, u1, v0, v1 = floats(args.strap_uv)
+    sx0, sx1, sy0, sy1 = int(u0 * w) + 1, int(u1 * w) - 1, int(v0 * h) + 1, int(v1 * h) - 1
+    sw, sh = sx1 - sx0, sy1 - sy0
+    me.calc_loop_triangles()
+    pad = 4
+    pxs = {k: pixels(img) for k, img in maps.items()}
+    plan = []
+    for (bi, side), fids in sorted(regions.items()):
+        vids = sorted({v for i in fids for v in me.polygons[i].vertices})
+        cen = sum((co[v] for v in vids), Vector()) / len(vids)
+        a_ref = math.atan2(cen.x, -(cen.y - args.band_axis_y))
+        radius = float(np.median([math.hypot(co[v].x, co[v].y - args.band_axis_y) for v in vids]))
+        st = {v: H.cyl_coords(co[v].x, co[v].y, co[v].z, args.band_axis_y, a_ref, radius) for v in vids}
+        lo = (min(a for a, _ in st.values()), min(b for _, b in st.values()))
+        hi = (max(a for a, _ in st.values()), max(b for _, b in st.values()))
+        plan.append((bi, side, fids, st, lo, hi))
+    # one window of plain denim serves every region: it is the same repeated patch, so the regions share its texels;
+    # when no window that size is free, the density steps down (the grain a little coarser) up to three times
+    fset = {i for _b, _s, fids, *_r in plan for i in fids}
+    tri = np.array([[uvl[t.loops[k]].uv[:] for k in range(3)] for t in me.loop_triangles
+                    if t.polygon_index not in fset], dtype=np.float64)
+    used = T.island_mask(tri, w, h, grow=1)
+    at = None
+    for _ in range(4):
+        pw = max(int(math.ceil((hi[0] - lo[0]) * d0)) for *_r, lo, hi in plan) + 2 * pad
+        ph = max(int(math.ceil((hi[1] - lo[1]) * d0)) for *_r, lo, hi in plan) + 2 * pad
+        at = T.free_rect(used, pw, ph, 6)
+        if at is not None:
+            break
+        d0 *= 0.85
+    rep["texels_per_m_used"] = round(d0, 1)
+    rep["window_px"] = None if at is None else [int(at[1]), int(at[0]), pw, ph]
+    for bi, side, fids, st, lo, hi in plan:
+        rep["regions"].append({"box": bi, "side": side, "faces": len(fids),
+                               "size_mm": [round(1000 * (hi[0] - lo[0])), round(1000 * (hi[1] - lo[1]))]})
+    say("plain denim", rep)
+    if at is None:
+        rep["window_px"] = "none free: left as it was"
+        return rep
+    ry, rx = at
+    ix = [H.mirror_tile(i, sw) for i in range(pw)]
+    iy = [H.mirror_tile(j, sh) for j in range(ph)]
+    for kind, img in maps.items():
+        iw, ih = img.size
+        fx, fy = iw / w, ih / h
+        px = pxs[kind]
+        cols = np.array([int((sx0 + i) * fx) for i, _m in ix])
+        rows = np.array([int((sy0 + j) * fy) for j, _m in iy])
+        blk = px[np.ix_(rows, cols)].copy()
+        if kind == "normal":
+            mx = np.array([m for _i, m in ix])
+            my = np.array([m for _j, m in iy])
+            blk[:, mx, 0] = 1.0 - blk[:, mx, 0]
+            blk[my, :, 1] = 1.0 - blk[my, :, 1]
+        r0, c0 = int(ry * fy), int(rx * fx)
+        tw, th = int(pw * fx), int(ph * fy)
+        ys = (np.arange(th) / fy).astype(int).clip(0, ph - 1)
+        xs = (np.arange(tw) / fx).astype(int).clip(0, pw - 1)
+        px[r0:r0 + th, c0:c0 + tw] = blk[np.ix_(ys, xs)]
+    for bi, side, fids, st, lo, hi in plan:
+        for i in fids:
+            p = me.polygons[i]
+            for li, v in zip(p.loop_indices, p.vertices):
+                s, t = st[v]
+                uvl[li].uv = ((rx + pad + (s - lo[0]) * d0) / w, (ry + pad + (t - lo[1]) * d0) / h)
+    for kind, img in maps.items():
+        img.pixels[:] = pxs[kind].ravel()
+        img.update()
+    me.update()
     return rep

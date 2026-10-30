@@ -442,3 +442,24 @@ def body_planes(chest_z: float, neck_z: float, neck_y: float, upper_arm: tuple[f
             "arm_axis": (upper_arm[1], upper_arm[2]), "waist": zm(waist), "bib": (bib[0], zm(bib[1])),
             "back": (back[0], zm(back[1]), back[2], back[3]),
             "neck": (neck[0] + dy, zm(neck[1]), neck[2] + dy, zm(neck[3])), "z_scale": k}
+
+
+def mirror_tile(i: int, n: int) -> tuple[int, bool]:
+    """E1h: texel i of a strip that repeats an n-texel source mirrored every other time (no seam where two copies
+    meet): the source texel and whether this copy is mirrored."""
+    k, r = divmod(i, n)
+    return (n - 1 - r, True) if k % 2 else (r, False)
+
+
+def cyl_coords(x: float, y: float, z: float, axis_y: float, a_ref: float, radius: float) -> tuple[float, float]:
+    """E1h: a point's place on a vertical cylinder round the body's axis (x = 0, y = axis_y; the front at -y): the arc
+    length (m) at `radius` from the angle a_ref (wrapped to within half a turn of it), and the height."""
+    a = math.atan2(x, -(y - axis_y)) - a_ref
+    a = (a + math.pi) % (2 * math.pi) - math.pi
+    return radius * a, z
+
+
+def in_box(x: float, y: float, z: float, box: tuple[float, float, float, float, float, float]) -> bool:
+    """E1h: a point inside a box (x0, x1, y0, y1, z0, z1), mirrored in x (the box is given for |x|)."""
+    x0, x1, y0, y1, z0, z1 = box
+    return x0 <= abs(x) <= x1 and y0 <= y <= y1 and z0 <= z <= z1

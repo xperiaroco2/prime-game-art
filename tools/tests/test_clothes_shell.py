@@ -354,3 +354,36 @@ class BodyPlanes(unittest.TestCase):  # E1b: the cut planes from a body's own bo
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PlainDenim(unittest.TestCase):
+    """E1h: the plain denim patch's mirrored repeat, cylinder coordinates and boxes."""
+
+    def test_mirror_tile_turns_every_other_copy(self):
+        got = [H.mirror_tile(i, 3) for i in range(8)]
+        self.assertEqual(got, [(0, False), (1, False), (2, False), (2, True), (1, True), (0, True),
+                               (0, False), (1, False)])
+
+    def test_mirror_tile_neighbours_differ_by_at_most_one_texel(self):
+        idx = [H.mirror_tile(i, 5)[0] for i in range(30)]
+        self.assertTrue(all(abs(a - b) <= 1 for a, b in zip(idx, idx[1:])))
+
+    def test_cyl_coords_arc_from_the_reference_and_height(self):
+        s, t = H.cyl_coords(0.2, 0.015, 0.9, 0.015, 0.0, 0.2)  # the left side, a quarter turn from the front
+        self.assertAlmostEqual(s, 0.2 * math.pi / 2)
+        self.assertAlmostEqual(t, 0.9)
+        s0, _ = H.cyl_coords(0.0, -0.185, 0.9, 0.015, 0.0, 0.2)
+        self.assertAlmostEqual(s0, 0.0)
+
+    def test_cyl_coords_wrap_round_the_back(self):
+        a_ref = math.pi * 0.95
+        s1, _ = H.cyl_coords(0.01, 0.2, 1.0, 0.0, a_ref, 0.1)
+        s2, _ = H.cyl_coords(-0.01, 0.2, 1.0, 0.0, a_ref, 0.1)
+        self.assertLess(abs(s1 - s2), 0.03)  # both sides of the back centre stay together
+
+    def test_in_box_mirrored_in_x(self):
+        box = (0.1, 0.2, -0.1, 0.1, 0.8, 1.0)
+        self.assertTrue(H.in_box(0.15, 0.0, 0.9, box))
+        self.assertTrue(H.in_box(-0.15, 0.0, 0.9, box))
+        self.assertFalse(H.in_box(0.05, 0.0, 0.9, box))
+        self.assertFalse(H.in_box(0.15, 0.0, 1.1, box))

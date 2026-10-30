@@ -317,6 +317,14 @@ def main() -> int:
     ap.add_argument("--strap-front", type=float, default=0.09,
                     help="the Meshy bib under this much of each strap's front goes (m)")
     ap.add_argument("--stitch-colour", default="0.78,0.48,0.22", help="the straps' stitching, the sketch's orange (sRGB)")
+    ap.add_argument("--shell-hide-above", type=float, default=None,
+                    help="E1h: the top's faces under the panels go from this height over the waist (m; default: from "
+                         "--shell-full)")
+    ap.add_argument("--plain", default="",
+                    help="E1h: boxes x0,x1,y0,y1,z0,z1 (|x|, bind pose, m; ';' between) whose denim gets plain texels "
+                         "(clothes_top.plain_denim; empty: off)")
+    ap.add_argument("--plain-density", type=float, default=1.0,
+                    help="E1h: the plain texels' density against the garment's median")
     ap.add_argument("--bronze", default="0.60,0.42,0.20,0.85,0.38",
                     help="the buckles' metal: sRGB R,G,B, metallic, roughness")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -471,6 +479,8 @@ def main() -> int:
         rep["garment_cut"] = TOP.cut_garment(garment, args)
         top, rep["shell"] = TOP.shell(char, arm, garment, args)
         rep["straps"] = TOP.straps(garment, char, [garment, top], args)
+        if args.plain:  # E1h: plain denim texels over the areas whose own texels are wrong
+            rep["plain_denim"] = TOP.plain_denim(garment, args)
         cloth.append(top)
     gname = {g.index: g.name for g in char.vertex_groups}
     # the covered faces
