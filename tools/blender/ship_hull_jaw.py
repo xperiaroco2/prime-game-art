@@ -1,31 +1,50 @@
-"""The ship's jaw nose, blockout b1 (art #263, docs/ship.md "The jaw nose"): the hull's own surface runs on into a flat,
-pointed prow that splits along a horizontal seam. The upper jaw is the roof over the entrance and lifts a little; the
-lower jaw hinges down to the ground and is the ramp, its top face the walking deck. A fixed root fairs the jaws into
-the hull's nose between its lead edge and the lower jaw's hinge line. Plain Python (no bpy).
+"""The ship's jaw nose, b2 (art #263, docs/ship.md "The jaw nose"): the hull runs on into a flat, pointed prow that
+opens as a mouth. Every moving part is a thin plated shell (SHELL thick, the hull's plates on its outside) that follows
+the prow's outer surface; nothing is a solid wedge. Plain Python (no bpy).
 
-Every solid is a convex polyhedron cut from two outer hulls by planes: the upper hull O_U (the seam outline at
-seam_h and the top plate) and the lower hull O_L (the seam outline and the belly). The cuts keep the mouth clear: the
-passage |x| <= 1.65 (the throat's mouth) forward of the funnel, the throat's notch planes (ship_hull_shape.cutters,
-1 cm out) aft, the deck plane over the lower jaw and the roof's underside over the passage.
+The prow is two convex outer hulls: O_U (the seam outline at seam_h and the top points, which lie just under the
+hull's top at the upper hinge's line, so the top grows out of the hull) and O_L (the seam outline and the belly
+points, the belly continuing the hull's flat bottom). Three pieces:
 
-The pieces are built in the closed pose at the real heights (grounded) and each one's origin is its hinge: jaw_lower
-at [jaw] lower_hinge, jaw_upper at upper_hinge; ship.gd turns them about Godot's x axis by the pose's angles ([jaw]
-lower_deg, upper_deg). jaw_root does not move."""
+- jaw_lower, the ramp: the shell of O_L forward of the hinge line and under the rail plane (the deck's plane raised
+  RAIL): the belly, the low side rails, a deck plate in the deck's plane, a bulkhead under the deck at the hinge. Its
+  aft face below the hinge leans forward V_DEG, so turning down to the ground it never swings into the root.
+- jaw_upper, the roof: the shell of O_U (top and sides) and the skirts (O_L over the rail plane, forward of the hinge
+  line), so closed the parting line runs from the tip along the seam and down the rails' tops: the mouth line, a cyan
+  strip. Under it a ceiling plate (the roof's underside, its lit edges) and a bulkhead over the seam at the mouth.
+- jaw_root, fixed: the shell of O_L aft of the hinge line, the front bulkhead round the throat's opening (the portal,
+  a chrome lip), and the hood and lid that close the entry tunnel's outside inside the prow.
+
+Built closed at the real heights (grounded); each piece's origin is its hinge: jaw_lower at [jaw] lower_hinge,
+jaw_upper at upper_hinge; ship.gd turns them about Godot's x axis by the pose's angles. jaw_root does not move."""
 
 from __future__ import annotations
 
 import itertools
 import math
+import zlib
 
+import ship_hull as H
+import ship_hull_j as HJ
 import ship_hull_shape as S
 import ship_lib as L
 
 EPS = 1e-6
-MOUTH_X = 1.65     # the passage's half width (the throat's mouth, the ramp's 3.3 m)
+MOUTH_X = 1.65      # the passage's half width (the throat's mouth, the ramp's 3.3 m)
+SHELL = 0.04        # the shells' thickness
+RAIL = 0.30         # the ramp's side rails over the deck (the parting line on the sides: the deck's plane + RAIL)
+V_DEG = 36.0        # the lower jaw's aft face under the hinge leans forward this much (its swing is 34.4 deg)
+PLATE_T = 0.05      # the deck plate and the ceiling plate
+BULK = 0.05         # the root's front bulkhead (y hinge .. hinge + BULK)
+UPPER_BULK = (0.11, 0.07)   # the upper jaw's bulkhead over the seam, this far forward of the hinge line
+CLEAR = 0.25        # the root's bulkhead over the seam stays this far inside the upper shell (its lift)
+LIP = (0.10, 0.03)  # the portal's chrome lip: width round the opening, proud of the bulkhead
+STRIP = (0.025, 0.006)      # the cyan mouth line: width on the upper face, proud
+PLATED = True       # False: the outer faces flat (the seal and clash checks; the plates sink inside the skin)
 
 
 def jaw(layout: dict) -> dict:
-    """The [jaw] numbers with the derived ones: the deck's slope, the tip, the hinges."""
+    """The [jaw] numbers with the derived ones: the deck's slope, the roof's underside, the floor and the throat."""
     j = dict(layout["jaw"])
     floor_h = layout["deck"]["floor_h"]
     hy = j["lower_hinge"][1]
@@ -33,12 +52,15 @@ def jaw(layout: dict) -> dict:
     j["ceil_slope"] = (j["roof_h"] - j["seam_h"]) / (hy - j["tip_y"])      # the roof's underside falls forward
     j["floor_h"] = floor_h
     j["slab_m"] = layout["deck"]["slab_m"]
+    th = next(r for r in layout["rooms"] if r["id"] == "throat")
+    bend, cin = th.get("tunnel_chamfer", th["chamfer"])
+    j["portal"] = (MOUTH_X, floor_h + bend, MOUTH_X - cin, floor_h + th["clear_h"])   # wall x, bend h, top x, top h
     return j
 
 
 def _plane_pts(planes):
     """The corners of a bounded convex region {n . p <= d}: every triple of planes' meeting point inside all."""
-    out = []
+    out = {}
     for (n1, d1), (n2, d2), (n3, d3) in itertools.combinations(planes, 3):
         det = (n1[0] * (n2[1] * n3[2] - n2[2] * n3[1]) - n1[1] * (n2[0] * n3[2] - n2[2] * n3[0])
                + n1[2] * (n2[0] * n3[1] - n2[1] * n3[0]))
@@ -47,28 +69,8 @@ def _plane_pts(planes):
         c23, c31, c12 = S._cross(n2, n3), S._cross(n3, n1), S._cross(n1, n2)
         p = tuple((d1 * c23[k] + d2 * c31[k] + d3 * c12[k]) / det for k in range(3))
         if all(S._dot(n, p) <= d + 1e-7 for n, d in planes):
-            out.append(p)
-    return out
-
-
-def solid(hull_pts, cuts):
-    """The convex hull of the points cut by the half-spaces [(n, d)] (n . p <= d kept): (verts, faces) or None."""
-    planes = [(n, d) for n, d, _poly in S.convex_hull(hull_pts)] + list(cuts)
-    pts = _plane_pts(planes)
-    if len(pts) < 4:
-        return None
-    try:
-        fac = S.convex_hull(pts)
-    except (ValueError, ZeroDivisionError, IndexError):
-        return None
-    verts, faces = [], []
-    for _n, _d, poly in fac:
-        if len(poly) < 3 or S.area(poly) < 1e-6:
-            continue
-        base = len(verts)
-        verts += list(poly)
-        faces.append(tuple(range(base, base + len(poly))))
-    return (verts, faces) if faces else None
+            out[tuple(round(c, 7) for c in p)] = p
+    return list(out.values())
 
 
 def _hp(n, d):
@@ -77,8 +79,76 @@ def _hp(n, d):
     return (tuple(c / m for c in n), d / m)
 
 
+def _flip(pl):
+    return (tuple(-c for c in pl[0]), -pl[1])
+
+
+def _order(pts, n):
+    """Points of one plane wound counter-clockwise about n (their Newell normal along n)."""
+    c = tuple(sum(p[k] for p in pts) / len(pts) for k in range(3))
+    e1, e2 = HJ._basis(n)
+    return sorted(pts, key=lambda p: math.atan2(S._dot(S._sub(p, c), e2), S._dot(S._sub(p, c), e1)))
+
+
+def faces(planes) -> dict:
+    """{plane index: its face polygon (wound along the plane's outward normal)} of the convex region."""
+    pts = _plane_pts(planes)
+    out = {}
+    if len(pts) < 4:
+        return out
+    for k, (n, d) in enumerate(planes):
+        on = [p for p in pts if abs(S._dot(n, p) - d) < 1e-6]
+        if len(on) >= 3:
+            poly = _order(on, n)
+            if S.area(poly) > 1e-6:
+                out[k] = poly
+    return out
+
+
+def _edge_planes(g, n):
+    """A convex polygon's edges as in-plane half-spaces (inside n_e . p <= d), for S._subtract."""
+    out = []
+    for a, b in zip(g, g[1:] + g[:1]):
+        ne = S._unit3(S._cross(S._sub(b, a), n))
+        out.append((ne, S._dot(ne, a)))
+    return out
+
+
+AFT_Y = -5.6        # nothing of the shells' rims aft of this (the throat's roofed part; inside the hull there)
+
+
+def shell(planes, skin, t=SHELL, hide=()) -> dict:
+    """A convex region's shell t thick behind its skin planes: {"outer": [(poly, n)], "inner": [(poly, n)],
+    "rim": {plane index: [(poly, n)]}} - the rims the cut faces' bands between the outer and the inner region, none
+    aft of AFT_Y. The `hide` planes (the hulls' aft faces, which would wall off the throat) get no face at all."""
+    out = faces(planes)
+    if not out:
+        return {"outer": [], "inner": [], "rim": {}}
+    inner = faces([(n, d - t) if k in skin else (n, d) for k, (n, d) in enumerate(planes)])
+    res = {"outer": [], "inner": [], "rim": {}}
+    for k, poly in out.items():
+        n = planes[k][0]
+        if k in hide:
+            continue
+        if k in skin:
+            res["outer"].append((poly, n))
+            continue
+        g = inner.get(k)
+        pieces = S._subtract(poly, _edge_planes(g, n)) if g else [poly]
+        pieces = [S.clip(q, (0.0, 1.0, 0.0), AFT_Y) for q in pieces]
+        res["rim"][k] = [(q, n) for q in pieces if len(q) >= 3 and S.area(q) > 1e-7]
+    for k, poly in inner.items():
+        if k in skin:
+            res["inner"].append((list(reversed(poly)), S._neg(planes[k][0])))
+    return res
+
+
+def _mesh(polys):
+    return L.merge(*[(list(q), [tuple(range(len(q)))]) for q, _n in polys]) if polys else ([], [])
+
+
 def outer_points(j: dict):
-    """The two outer hulls' points (closed pose): O_U (seam outline + top plate) and O_L (seam outline + belly)."""
+    """The two outer hulls' points (closed pose): O_U (seam outline + top points) and O_L (seam outline + belly)."""
     hs, tw, ty = j["seam_h"], j["tip_half_w"], j["tip_y"]
     seam = [(s * tw, ty, hs) for s in (-1, 1)] + [(s * x, y, hs) for x, y in j["outline"] for s in (-1, 1)]
     top = [(s * x, y, h) for x, y, h in j["top"] for s in (-1, 1)]
@@ -86,62 +156,364 @@ def outer_points(j: dict):
     return seam + top, seam + belly
 
 
+def hulls(j: dict):
+    """(O_U planes, its skin indices, O_L planes, its skin indices): every face but the seam and the aft faces is skin
+    (aft_faces: those inside the hull, which would cross the throat)."""
+    ou, ol = outer_points(j)
+    out = []
+    for pts, up in ((ou, -1.0), (ol, 1.0)):
+        pl = [(n, d) for n, d, _poly in S.convex_hull(pts)]
+        skin = {k for k, (n, d) in enumerate(pl) if not (abs(n[2] - up) < 1e-6 and abs(n[2] * j["seam_h"] - d) < 1e-6)}
+        out += [pl, skin - aft_faces(pl)]
+    return tuple(out)
+
+
+def aft_faces(pl) -> set:
+    """The hull's faces looking aft (n_y > 0.3): inside the hull, they would wall off the throat."""
+    return {k for k, (n, _d) in enumerate(pl) if n[1] > 0.3}
+
+
+def _offset(planes, skin, t):
+    return [(n, d - t) if k in skin else (n, d) for k, (n, d) in enumerate(planes)]
+
+
 def cuts(j: dict) -> dict:
-    """The planes that split the outer hulls into the jaws' convex solids (n . p <= d kept)."""
-    hy = j["lower_hinge"][1]
-    fh, ds, cs, rh = j["floor_h"], j["deck_slope"], j["ceil_slope"], j["roof_h"]
-    planes = S.cutters()["notch"][:2]                                     # the throat's notch sides (outward normals)
-    ne, de = planes[0]
-    nw, dw = planes[1]
-    # where the east notch plane crosses x = MOUTH_X: forward of it the passage is |x| <= MOUTH_X
-    yc = (de + 0.01 - ne[0] * MOUTH_X) / ne[1]
-    deck, deck_d = (0.0, ds, 1.0), fh + ds * hy                         # the deck: h <= fh + ds * (hy - y)
-    ceil_n, ceil_d = (0.0, cs, -1.0), -rh + cs * hy                       # the roof's underside: h >= rh + cs * (y - hy)
+    """The planes that split the outer hulls into the jaws (n . p <= d kept)."""
+    hy, fh, ds, cs, rh, hs = j["lower_hinge"][1], j["floor_h"], j["deck_slope"], j["ceil_slope"], j["roof_h"], j["seam_h"]
+    tv = math.tan(math.radians(V_DEG))
+    deck = ((0.0, ds, 1.0), fh + ds * hy)                         # h + ds y <= fh + ds hy: under the deck
+    wx, bh, tx, th = j["portal"]
+    cham = (wx - tx, 0.0, th - bh)                                # the portal's chamfer line's outward normal (east)
+    cd = cham[0] * wx + cham[2] * bh
     return {
         "fore": _hp((0, 1, 0), hy), "aft": _hp((0, -1, 0), -hy),
-        "fore_c": _hp((0, 1, 0), yc), "aft_c": _hp((0, -1, 0), -yc),
-        "east": _hp((-1, 0, 0), -MOUTH_X), "west": _hp((1, 0, 0), -MOUTH_X),
-        "mid": [_hp((1, 0, 0), MOUTH_X), _hp((-1, 0, 0), MOUTH_X)],
-        "out_e": _hp(tuple(-c for c in ne), -(de + 0.01)), "out_w": _hp(tuple(-c for c in nw), -(dw + 0.01)),
-        "in_n": [_hp(ne, de + 0.01), _hp(nw, dw + 0.01)],
-        "below_deck": _hp(deck, deck_d), "above_deck": _hp(tuple(-c for c in deck), -deck_d),
-        "above_ceil": _hp(ceil_n, ceil_d), "above_roof": _hp((0, 0, -1), -rh),
-        "under_floor": _hp((0, 0, 1), fh - j["slab_m"] - 0.01),
+        "v": _hp((0, 1, -tv), hy - fh * tv),                     # the lower jaw's aft face under the hinge
+        "below_deck": _hp(*deck), "above_deck": _flip(_hp(*deck)),
+        "below_plate": _flip(_hp(deck[0], deck[1] - PLATE_T)),    # over the deck plate's bottom
+        "below_rail": _hp(deck[0], deck[1] + RAIL), "above_rail": _flip(_hp(deck[0], deck[1] + RAIL)),
+        "below_ceil": _hp((0, -cs, 1), rh - cs * hy), "above_ceil": _flip(_hp((0, -cs, 1), rh - cs * hy)),
+        "above_seam": _hp((0, 0, -1), -hs), "below_seam": _hp((0, 0, 1), hs),
+        "cham_out_e": _flip(_hp(cham, cd)), "cham_out_w": _flip(_hp((-cham[0], 0, cham[2]), cd)),
+        "cham_in": [_hp(cham, cd), _hp((-cham[0], 0, cham[2]), cd)],
     }
 
 
-def _solids(j: dict) -> dict:
-    """{piece: [(name, (verts, faces), material)]} in the closed pose, plan frame, real heights."""
-    ou, ol = outer_points(j)
+def _pose(p, o, deg):
+    """A plan point turned about Godot's x through the hinge o by deg (+ lifts the front)."""
+    a = math.radians(deg)
+    dy, dh = p[1] - o[1], p[2] - o[2]
+    return (p[0], o[1] + dy * math.cos(a) + dh * math.sin(a), o[2] - dy * math.sin(a) + dh * math.cos(a))
+
+
+def _plated(polys, name):
+    """Outer faces as the hull's plates (ship_hull_j: inset, chamfered seams, v1's silvers) and the dark under-skin."""
+    if not PLATED:
+        return _flat(f"{name}_flat", polys, "hull_silver")
+    groups, under = {}, []
+    for poly, n in polys:
+        for q in HJ.plates(poly, n):
+            c = tuple(round(sum(x[k] for x in q) / len(q), 1) for k in range(3))
+            mat = HJ.MATS["top"][zlib.crc32(repr(c).encode()) % len(HJ.MATS["top"])]
+            groups.setdefault(mat, []).append(HJ.lay(q))
+        under.append(([H._add(x, n, -HJ.DEPTH * 1.8) for x in poly], [tuple(range(len(poly)))]))
+    parts = [L.part(f"{name}_{m}", *L.merge(*g), m, solid=False) for m, g in sorted(groups.items())]
+    if under:
+        parts.append(L.part(f"{name}_seam", *L.merge(*under), "ext_seam", solid=False))
+    return parts
+
+
+def _flat(name, polys, mat, nocol=False):
+    if not polys:
+        return []
+    p = L.part(name, *_mesh(polys), mat, solid=False)
+    if nocol:
+        p["nocol"] = True
+    return [p]
+
+
+def _solid_polys(planes):
+    return [(q, planes[k][0]) for k, q in faces(planes).items()]
+
+
+def _band(a, b, n, inward, w, lift, lift0=0.001):
+    """A thin glowing bar on a face of normal n along a -> b, w wide toward `inward`, from lift0 to lift proud."""
+    e = S._unit3(S._cross(n, S._sub(b, a)))
+    if S._dot(e, inward) < 0:
+        e = S._neg(e)
+    base = [a, b, H._add(b, e, w), H._add(a, e, w)]
+    lo = [H._add(p, n, lift0) for p in base]
+    hi = [H._add(p, n, lift) for p in base]
+    v = lo + hi
+    f = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+    # wind every face outward: the top along +n
+    if S._dot(S._newell([v[i] for i in f[1]]), n) < 0:
+        f = [tuple(reversed(x)) for x in f]
+    return v, f
+
+
+def _on(p, pl):
+    return abs(S._dot(pl[0], p) - pl[1]) < 1e-6
+
+
+def parting(j: dict) -> list:
+    """The mouth line on the outside, closed: [(a, b, face normal, face polygon)] along the lower jaw's top edges
+    (the seam at the tip, the rails' tops on the sides), each on the upper part's face over it."""
+    ou, sku, ol, skl = hulls(j)
     c = cuts(j)
-    up, lo, root = [], [], []
-    for side, inner, out in (("e", c["east"], c["out_e"]), ("w", c["west"], c["out_w"])):
-        up.append((f"upper_cheek_{side}", solid(ou, [inner, out]), "hull_silver"))
-        lo.append((f"lower_cheek_{side}", solid(ol, [c["fore"], c["above_deck"], inner]), "hull_silver"))
-        root.append((f"root_{side}", solid(ol, [c["aft"], inner, out]), "hull_silver"))
-    up.append(("upper_roof_fore", solid(ou, [c["fore"], *c["mid"], c["above_ceil"]]), "hull_silver"))
-    up.append(("upper_roof_mid", solid(ou, [c["aft"], c["fore_c"], *c["mid"], c["above_roof"]]), "hull_silver"))
-    up.append(("upper_roof_aft", solid(ou, [c["aft_c"], *c["in_n"], c["above_roof"]]), "hull_silver"))
-    lo.append(("lower_body", solid(ol, [c["fore"], c["below_deck"]]), "hull_silver"))
-    root.append(("root_under", solid(ol, [c["aft"], c["fore_c"], *c["mid"], c["under_floor"]]), "hull_dark"))
-    return {"upper": [s for s in up if s[1]], "lower": [s for s in lo if s[1]], "root": [s for s in root if s[1]]}
+    reg = ol + [c["fore"], c["v"], c["below_rail"]]
+    fs = faces(reg)
+    top = [len(ol) + 2] + [k for k in range(len(ol)) if k not in skl]   # the rail plane, the seam
+    up_faces = [(ou[k], q) for k, q in faces(ou).items() if k in sku]
+    up_faces += [(ol[k], q) for k, q in faces(ol + [c["fore"], c["above_rail"]]).items() if k in skl]
+    out = []
+    for k in top:
+        poly = fs.get(k)
+        if not poly:
+            continue
+        for a, b in zip(poly, poly[1:] + poly[:1]):
+            if math.dist(a, b) < 0.02 or not any(_on(a, ol[s]) and _on(b, ol[s]) for s in skl):
+                continue
+            for pl, q in up_faces:
+                if _on(a, pl) and _on(b, pl):
+                    out.append((a, b, pl[0], q))
+                    break
+    return out
 
 
-def _shift(vf, o):
-    v, f = vf
-    return [(p[0] - o[0], p[1] - o[1], p[2] - o[2]) for p in v], f
+def _seam_aft(j: dict, ye: float) -> list:
+    """The seam aft of the hinge line to ye (where it meets the hull's lead edge), on O_U's faces."""
+    ou, sku, _ol, _skl = hulls(j)
+    hy = j["lower_hinge"][1]
+    seam_k = next(k for k in range(len(ou)) if k not in sku)
+    poly = faces(ou)[seam_k]
+    out = []
+    for a, b in zip(poly, poly[1:] + poly[:1]):
+        q = S.clip(S.clip([a, b, b], (0, -1, 0), -hy), (0, 1, 0), ye)
+        q = [p for i, p in enumerate(q) if i == 0 or math.dist(p, q[i - 1]) > 1e-6]
+        if len(q) < 2 or math.dist(q[0], q[-1]) < 0.02:
+            continue
+        a2, b2 = q[0], q[-1]
+        for k in sku:
+            if _on(a2, ou[k]) and _on(b2, ou[k]):
+                out.append((a2, b2, ou[k][0], faces(ou)[k]))
+                break
+    return out
 
 
-def _strip(a, b, h0, h1, out_w, normal):
-    """A thin glowing bar along a -> b (plan), from h0 to h1, out_w proud of the face along the plan normal."""
-    nx, ny = normal
-    pts = []
-    for (x, y) in (a, b):
-        for o in (0.0, out_w):
-            for h in (h0, h1):
-                pts.append((x + nx * o, y + ny * o, h))
-    v = [pts[0], pts[4], pts[6], pts[2], pts[1], pts[5], pts[7], pts[3]]
-    return v, [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
+def _strips(lines, w=STRIP[0], lift=STRIP[1]):
+    bars = []
+    for a, b, n, q in lines:
+        c = tuple(sum(p[k] for p in q) / len(q) for k in range(3))
+        bars.append(_band(a, b, n, S._sub(c, a), w, lift))
+    return bars
+
+
+def _shift_parts(parts, o):
+    for p in parts:
+        p["verts"] = [(v[0] - o[0], v[1] - o[1], v[2] - o[2]) for v in p["verts"]]
+    return parts
+
+
+def lower_parts(j: dict) -> list:
+    """The lower jaw in the plan frame (closed): rails and belly shell, deck plate, bulkhead, ribs and edge lights."""
+    ou, sku, ol, skl = hulls(j)
+    c = cuts(j)
+    reg = ol + [c["fore"], c["v"], c["below_rail"]]
+    sh = shell(reg, skl, hide=aft_faces(ol))
+    k_fore, k_v, k_rail = len(ol), len(ol) + 1, len(ol) + 2
+    k_seam = [k for k in range(len(ol)) if k not in skl]
+    glow = [r for k in [k_rail] + k_seam for r in sh["rim"].get(k, [])]
+    frame = [r for k in (k_fore, k_v) for r in sh["rim"].get(k, [])]
+    olh = _offset(ol, skl, SHELL / 2)
+    deck = _solid_polys(olh + [c["fore"], c["v"], c["below_deck"], c["below_plate"]])
+    bulk = _solid_polys(olh + [c["v"], _flip((c["v"][0], c["v"][1] - BULK)), _flip(c["below_plate"])])
+    parts = _plated(sh["outer"], "lower_skin")
+    parts += _flat("lower_inner", sh["inner"], "ext_silver_c")
+    parts += _flat("lower_rail_glow", glow, "glow_cyan")
+    parts += _flat("lower_rim", frame, "ext_frame")
+    parts += _flat("lower_deck", deck, "ext_silver_c")
+    parts += _flat("lower_bulkhead", bulk, "hull_dark")
+    # ribs across the deck and two amber lit edges along the rails' feet
+    p0, u, w = deck_frame(j)
+    top = next(q for q, n in deck if n[2] > 0.5 and abs(S._dot(n, w) - 1.0) < 1e-6)
+    length = math.hypot(j["lower_hinge"][1] - j["tip_y"], j["seam_h"] - j["floor_h"])
+
+    def at(s, x, hh):
+        return tuple(p0[k] + u[k] * s + w[k] * hh + (x if k == 0 else 0.0) for k in range(3))
+
+    def half(s):
+        pts = [p for a, b in zip(top, top[1:] + top[:1]) for p in [a, b]]
+        best = 0.0
+        for a, b in zip(top, top[1:] + top[:1]):
+            sa, sb = S._dot(S._sub(a, p0), u), S._dot(S._sub(b, p0), u)
+            if (sa - s) * (sb - s) <= 0 and abs(sa - sb) > 1e-9:
+                t = (s - sa) / (sb - sa)
+                best = max(best, abs(a[0] + (b[0] - a[0]) * t))
+        return best if pts else 0.0
+
+    ribs, edges = [], []
+    s = 0.35
+    while s < length - 0.4:
+        hw = half(s) - 0.14
+        if hw > 0.2:
+            corners = [at(s + d_, sx * hw, hh) for hh in (0.0, 0.014) for d_ in (0.0, 0.07) for sx in (-1, 1)]
+            ribs.append((corners, [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]))
+        s += 0.42
+    n_seg = 12
+    step = length / n_seg
+    for side in (-1, 1):
+        for i in range(n_seg):
+            s0, s1 = i * step + 0.03, (i + 1) * step - 0.03
+            if s1 > length - 0.35:
+                break
+            a0, a1 = side * (half(s0) - 0.07), side * (half(s1) - 0.07)
+            v = [at(s0, a0, 0.0), at(s0, a0 + side * 0.04, 0.0), at(s1, a1 + side * 0.04, 0.0), at(s1, a1, 0.0)]
+            v += [at(s0, a0, 0.012), at(s0, a0 + side * 0.04, 0.012), at(s1, a1 + side * 0.04, 0.012), at(s1, a1, 0.012)]
+            edges.append((v, [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]))
+    rib = L.part("deck_ribs", *L.merge(*ribs), "leg_metal")
+    rib["nocol"] = True
+    lit = L.part("deck_edges", *L.merge(*edges), "glow_amber")
+    lit["nocol"] = True
+    return parts + [rib, lit]
+
+
+def upper_parts(j: dict) -> list:
+    """The upper jaw in the plan frame (closed): the top shell, the skirts, the ceiling plate with its lit edges, the
+    bulkhead over the seam, the cyan mouth line."""
+    ou, sku, ol, skl = hulls(j)
+    c = cuts(j)
+    hy = j["lower_hinge"][1]
+    k_seam_u = next(k for k in range(len(ou)) if k not in sku)
+    u_aft = shell(ou + [c["aft"]], sku, hide=aft_faces(ou))
+    u_fore = shell(ou + [c["fore"]], sku, hide=aft_faces(ou))
+    skirt = shell(ol + [c["fore"], c["above_rail"]], skl, hide=aft_faces(ol))
+    parts = _plated(u_aft["outer"] + u_fore["outer"] + skirt["outer"], "upper_skin")
+    parts += _flat("upper_inner", u_aft["inner"] + u_fore["inner"] + skirt["inner"], "ext_silver_c")
+    parts += _flat("upper_rim", u_aft["rim"].get(k_seam_u, []) + u_fore["rim"].get(k_seam_u, [])
+                   + skirt["rim"].get(len(ol), []), "ext_frame")
+    parts += _flat("upper_skirt_glow", skirt["rim"].get(len(ol) + 1, []), "glow_cyan")
+    ouh = _offset(ou, sku, SHELL / 2)
+    yb0, yb1 = hy - UPPER_BULK[0], hy - UPPER_BULK[1]
+    ceil = ouh + [_hp((0, 1, 0), yb1), c["below_ceil"], _flip((c["below_ceil"][0], c["below_ceil"][1] - PLATE_T))]
+    ceil_polys = _solid_polys(ceil)
+    parts += _flat("upper_ceiling", ceil_polys, "ext_silver_b")
+    bulk = []
+    for side in ("cham_out_e", "cham_out_w"):
+        bulk += _solid_polys(ouh + [_hp((0, 1, 0), yb1), _hp((0, -1, 0), -yb0), c["below_ceil"], c["above_seam"], c[side]])
+    parts += _flat("upper_bulkhead", bulk, "ext_frame")
+    # the ceiling's lit edges: a cyan bar under each side edge
+    under = max(((q, n) for q, n in ceil_polys if n[2] < -0.5), key=lambda qn: S.area(qn[0]), default=None)
+    bars = []
+    if under:
+        q, n = under
+        cq = tuple(sum(p[k] for p in q) / len(q) for k in range(3))
+        for a, b in zip(q, q[1:] + q[:1]):
+            if abs(b[1] - a[1]) > 0.5:
+                lo_h = j["seam_h"] + 0.2                    # the bar stops where the roof comes down near the seam
+                if min(a[2], b[2]) < lo_h < max(a[2], b[2]):
+                    t = (lo_h - a[2]) / (b[2] - a[2])
+                    m = tuple(a[k] + (b[k] - a[k]) * t for k in range(3))
+                    a, b = (m, b) if a[2] < lo_h else (a, m)
+                if min(a[2], b[2]) >= lo_h - 1e-6:
+                    bars.append(_band(a, b, n, S._sub(cq, a), 0.035, 0.012, 0.004))
+    glow = L.part("ceiling_glow", *L.merge(*bars), "glow_cyan") if bars else None
+    line = L.part("seam_glow", *L.merge(*_strips(parting(j) + _seam_aft(j, j.get("seam_end_y", -6.2)))), "glow_cyan")
+    line["nocol"] = True
+    out = parts + [line]
+    if glow:
+        glow["nocol"] = True
+        out.append(glow)
+    return out
+
+
+def root_parts(j: dict) -> list:
+    """The fixed root in the plan frame: the lower hull's shell aft of the hinge line, the front bulkhead round the
+    portal with its chrome lip, and the hood and lid over the entry tunnel inside the prow."""
+    ou, sku, ol, skl = hulls(j)
+    c = cuts(j)
+    hy, fh, hs = j["lower_hinge"][1], j["floor_h"], j["seam_h"]
+    wx, bh, tx, th = j["portal"]
+    sh = shell(ol + [c["aft"]], skl, hide=aft_faces(ol))
+    k_seam = [k for k in range(len(ol)) if k not in skl]
+    parts = _plated(sh["outer"], "root_skin")
+    parts += _flat("root_inner", sh["inner"], "hull_dark")
+    parts += _flat("root_rim", [r for k in k_seam + [len(ol)] for r in sh["rim"].get(k, [])], "ext_frame")
+    # the front bulkhead (y hy .. hy + BULK) round the opening; the tunnel's slab front is its own face
+    olh = _offset(ol, skl, SHELL / 2)
+    ouc = _offset(ou, sku, SHELL + CLEAR)
+    bw = [_hp((0, -1, 0), -hy), _hp((0, 1, 0), hy + BULK)]
+    slab_b = fh - j["slab_m"]
+
+    def hz(lo, hi):
+        return [_hp((0, 0, -1), -lo), _hp((0, 0, 1), hi)]
+
+    regions = [olh + bw + hz(-9.0, slab_b)]
+    for sx in (1, -1):
+        side = _hp((-sx, 0, 0), -wx)
+        cham = c["cham_out_e"] if sx > 0 else c["cham_out_w"]
+        regions += [olh + bw + hz(slab_b, fh) + [side], olh + bw + hz(fh, bh) + [side],
+                    olh + bw + hz(bh, hs) + [cham], ouc + bw + hz(hs, th + 0.3) + [cham]]
+    regions.append(ouc + bw + hz(th, th + 0.3) + c["cham_in"])
+    bulk = [pq for r in regions for pq in _solid_polys(r)]
+    parts += _flat("root_bulkhead", bulk, "ext_frame")
+    # the chrome lip round the opening (sides and top, none across the floor), LIP[1] proud of the bulkhead
+    lw, lp = LIP
+    f0 = fh + 0.04                                       # its feet over the deck plate's hinge end
+    prof = [(wx, f0), (wx, bh), (tx, th), (-tx, th), (-wx, bh), (-wx, f0)]
+    outp = [(wx + lw, f0), (wx + lw, bh + lw * 0.45), (tx + lw * 0.55, th + lw), (-tx - lw * 0.55, th + lw),
+            (-wx - lw, bh + lw * 0.45), (-wx - lw, f0)]
+    lip = []
+    for i in range(len(prof) - 1):
+        a, b, bo, ao = prof[i], prof[i + 1], outp[i + 1], outp[i]
+        quad = [(a[0], a[1]), (b[0], b[1]), (bo[0], bo[1]), (ao[0], ao[1])]
+        v = [(x, hy - lp, h) for x, h in quad] + [(x, hy, h) for x, h in quad]
+        f = [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
+        if S._dot(S._newell([v[k] for k in f[0]]), (0, -1, 0)) < 0:
+            f = [tuple(reversed(x)) for x in f]
+        lip.append((v, f))
+    lip_p = L.part("root_lip", *L.merge(*lip), "glow_edge")
+    lip_p["nocol"] = True
+    parts.append(lip_p)
+    # the hood over the tunnel's chamfers and ceiling, and the lid at the seam beside it, inside the prow
+    ys = [hy + BULK, -7.1, S.TH_ROOF_Y + 0.04]
+    hood, lid = [], []
+    olt = _offset(ol, skl, SHELL)
+
+    def tun(y):
+        w, k = HJ._tun_w(y)
+        return w, k
+
+    for sx in (1, -1):
+        for y0, y1 in zip(ys, ys[1:]):
+            (w0, k0), (w1, k1) = tun(y0), tun(y1)
+            h_lo = hs - 0.06
+            ch0 = (w0 - (h_lo - bh) * (wx - tx) / (th - bh) * k0 + 0.012, h_lo)
+            ch1 = (w1 - (h_lo - bh) * (wx - tx) / (th - bh) * k1 + 0.012, h_lo)
+            t0, t1 = (w0 - (wx - tx) * k0 + 0.012, th + 0.012), (w1 - (wx - tx) * k1 + 0.012, th + 0.012)
+            q = [(sx * ch0[0], y0, ch0[1]), (sx * ch1[0], y1, ch1[1]), (sx * t1[0], y1, t1[1]), (sx * t0[0], y0, t0[1])]
+            nrm = S._newell(q)
+            hood.append((q if nrm[0] * sx > 0 else list(reversed(q)), None))
+            if sx > 0:
+                tq = [(-t0[0], y0, t0[1]), (t0[0], y0, t0[1]), (t1[0], y1, t1[1]), (-t1[0], y1, t1[1])]
+                hood.append((tq if S._newell(tq)[2] > 0 else list(reversed(tq)), None))
+            # the lid: the seam's plane just under it, from beside the hood out to the shell
+            xin = (w0 - 0.035, w1 - 0.035)
+            n_in = S._unit3((-sx * 1.0, (xin[1] - xin[0]) / (y1 - y0) * 1.0, 0.0))
+            d_in = S._dot(n_in, (sx * xin[0], y0, 0.0))
+            lid += _solid_polys(olt + [_hp((0, -1, 0), -y0), _hp((0, 1, 0), y1), _hp(n_in, d_in),
+                                       _hp((0, 0, 1), hs - 0.004), _hp((0, 0, -1), -(hs - 0.03))])
+    parts += _flat("root_hood", hood, "hull_silver")
+    parts += _flat("root_lid", lid, "hull_dark")
+    return parts
+
+
+def deck_frame(j: dict):
+    """The deck's frame (closed): origin the hinge on the floor, u forward along the deck, w its normal up."""
+    hy, fh, ds = j["lower_hinge"][1], j["floor_h"], j["deck_slope"]
+    k = 1.0 / math.hypot(1.0, ds)
+    u = (0.0, -k, ds * k)
+    w = (0.0, ds * k, k)
+    return (0.0, hy, fh), u, w
 
 
 def seam_outline(j: dict):
@@ -165,82 +537,17 @@ def outline_x(j: dict, y: float) -> float:
 
 
 def jaw_upper(args: dict, layout: dict) -> list:
-    """The upper jaw: two cheeks over the seam and the roof over the passage, the cyan seam line along its lower
-    edge; origin at [jaw] upper_hinge."""
+    """The upper jaw, origin at [jaw] upper_hinge."""
     j = jaw(layout)
-    o = j["upper_hinge"]
-    parts = [L.part(nm, *_shift(vf, o), mat) for nm, vf, mat in _solids(j)["upper"]]
-    hs, tw, ty = j["seam_h"], j["tip_half_w"], j["tip_y"]
-    ye = j.get("seam_end_y", -6.2)                                  # where the seam runs into the hull's lead edge
-    xe = outline_x(j, ye)
-    chain = [(-xe, ye), (-tw, ty), (tw, ty), (xe, ye)]
-    bars = []
-    for a, b in zip(chain, chain[1:]):
-        dx, dy = b[0] - a[0], b[1] - a[1]
-        m = math.hypot(dx, dy)
-        nrm = (dy / m, -dx / m)
-        mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 8.0)              # from a point inside the prow
-        if nrm[0] * mid[0] + nrm[1] * mid[1] < 0:
-            nrm = (-nrm[0], -nrm[1])
-        bars.append(_strip(a, b, hs - 0.015, hs + 0.015, 0.015, nrm))
-    parts.append(L.part("seam_glow", *_shift(L.merge(*bars), o), "glow_cyan"))
-    return parts
-
-
-def deck_frame(j: dict):
-    """The deck's frame (closed): origin the hinge on the floor, u forward along the deck, w its normal up."""
-    hy, fh, ds = j["lower_hinge"][1], j["floor_h"], j["deck_slope"]
-    k = 1.0 / math.hypot(1.0, ds)
-    u = (0.0, -k, ds * k)
-    w = (0.0, ds * k, k)
-    return (0.0, hy, fh), u, w
+    return _shift_parts(upper_parts(j), j["upper_hinge"])
 
 
 def jaw_lower(args: dict, layout: dict) -> list:
-    """The lower jaw, the ramp: its body under the deck, two cheeks beside it up to the seam, ribs across the deck and
-    two warm lit edges; origin at [jaw] lower_hinge."""
+    """The lower jaw, the ramp, origin at [jaw] lower_hinge."""
     j = jaw(layout)
-    o = j["lower_hinge"]
-    parts = [L.part(nm, *_shift(vf, o), mat) for nm, vf, mat in _solids(j)["lower"]]
-    p0, u, w = deck_frame(j)
-    length = math.hypot(j["lower_hinge"][1] - j["tip_y"], j["seam_h"] - j["floor_h"])
-
-    def at(s, x, h):
-        return tuple(p0[k] + u[k] * s + w[k] * h + (x if k == 0 else 0.0) for k in range(3))
-
-    def half(s):
-        y = p0[1] + u[1] * s
-        return min(MOUTH_X, outline_x(j, y) - 0.06)
-
-    ribs, edges = [], []
-    s = 0.35
-    while s < length - 0.3:
-        hw = half(s) - 0.12
-        if hw > 0.2:
-            corners = [at(s + ds_, sx * hw, hh) for hh in (0.0, 0.014) for ds_ in (0.0, 0.07) for sx in (-1, 1)]
-            ribs.append((corners, [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]))
-        s += 0.42
-    step = length / 12
-    for side in (-1, 1):
-        for i in range(12):
-            s0, s1 = i * step + 0.02, (i + 1) * step - 0.02
-            if s1 > length - 0.15:
-                break
-            a0, a1 = side * (half(s0) - 0.05), side * (half(s1) - 0.05)
-            v = [at(s0, a0, 0.0), at(s0, a0 + side * 0.04, 0.0), at(s1, a1 + side * 0.04, 0.0), at(s1, a1, 0.0)]
-            v += [(p[0], p[1], p[2]) for p in [at(s0, a0, 0.012), at(s0, a0 + side * 0.04, 0.012),
-                                               at(s1, a1 + side * 0.04, 0.012), at(s1, a1, 0.012)]]
-            edges.append((v, [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]))
-    rib = L.part("deck_ribs", *_shift(L.merge(*ribs), o), "leg_metal")
-    rib["nocol"] = True
-    lit = L.part("deck_edges", *_shift(L.merge(*edges), o), "glow_amber")
-    lit["nocol"] = True
-    return parts + [rib, lit]
+    return _shift_parts(lower_parts(j), j["lower_hinge"])
 
 
 def jaw_root(args: dict, layout: dict) -> list:
-    """The fixed root: the lower hull between the throat's notch and the lower jaw's hinge line, and under the
-    passage's floor; plan origin."""
-    j = jaw(layout)
-    return [L.part(nm, *vf, mat) for nm, vf, mat in _solids(j)["root"]]
-
+    """The fixed root, plan origin."""
+    return root_parts(jaw(layout))

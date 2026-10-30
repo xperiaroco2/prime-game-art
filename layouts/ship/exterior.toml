@@ -14,7 +14,7 @@ place = [
   ["skin_cheeks", [0.00, 0.00, 0.00], 0.0],
   # the jaw nose (art #263, b1): each jaw at its hinge, turned by ship.toml [jaw]'s pose; the root fixed
   ["jaw_lower", [0.00, -8.10, 1.20], 0.0],
-  ["jaw_upper", [0.00, -4.60, 4.67], 0.0],
+  ["jaw_upper", [0.00, -4.60, 4.88], 0.0],
   ["jaw_root", [0.00, 0.00, 0.00], 0.0],
   # the raise step 2: the entry tunnel past the nose (y -7.1 to -8.1); its hood gave way to the jaws (art #263, b1)
   ["mouth_tunnel_in", [0.00, 0.00, 0.00], 0.0],
