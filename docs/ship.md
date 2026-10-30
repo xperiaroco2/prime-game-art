@@ -1383,24 +1383,35 @@ the clearing outside, grounded and collision-free, and the clearing lamps outsid
 rejected (the nose itself read as a box bolted onto the manta) and are removed; the jaw nose below replaces them, and
 its closed pose is the lobby's docked ship.
 
-### The jaw nose (art #263, b2: thin plated shells, 2026-10-30)
+### The jaw nose (art #263, b3: thin plated shells, a prow that faces down, 2026-10-30)
 
 The engineer's redesign (#263 c6524257765; concepts `<raw>/2026-10-30-ship-nose-concepts/`, 6 and 1 closed, 2 open):
 the hull's own surface runs forward into a flat, pointed prow that opens like a jaw. Built by
 `tools/blender/ship_hull_jaw.py` from ship.toml `[jaw]`. Blockout b1 (solid convex wedges) was rejected for holes
 when closed (the passage's sides lay outside the prow where the upper hull's sides lean in), the old tunnel showing
 and parts read as thick blocks; b2 rebuilds every moving part as a thin shell (`SHELL` 4 cm) following the prow's outer
-surface, plated outside like the hull (`ship_hull_j.plates`/`lay`, the dark under-skin), finished inside.
+surface, plated outside like the hull (`ship_hull_j.plates`/`lay`, the dark under-skin), finished inside. b2's lower
+part read as a heavy wedge under the nose from the 3/4 front (tall flat side skirts, big flat lower front faces, a
+vertical crease where the jaw met the hull); b3 (a grid of three shape variants, `<raw>/ship/v5/nose/b3/var/`) widens
+the seam to (+-3.5, -8.1) and adds a chine under it staggered aft of the hinge line, (+-3.4, -7.6, 1.9), so the sides
+under the seam face down and read as the hull's underside; the lower hull's aft points follow the hull's own bottom at
+y -4.6 (1.52 .. 1.72 m at x 3 .. 4.5), a keel point (0, -10.0, 1.5) splits the lower front into facets, and the rails
+are 0.45 m (`[jaw] rail`), so the skirts over them are short.
 
 The prow is two convex outer hulls: O_U (the seam outline at `seam_h` 2.75 with the front edge (+-0.7, `tip_y`
 -12.492) and the rear corners (+-4.5, -5.0), and the `top` points, which lie 2 cm under the hull's top along y -4.6, so
 the top grows out of the hull with no step) and O_L (the seam outline and the `belly` points: the hull's flat bottom,
-0.77, run on forward). Three pieces (all `grounded`, `collide`, `outside`):
+0.77, run on forward, the chine, the hull's bottom at y -4.6 and the keel point). Three pieces (all `grounded`, `collide`, `outside`):
 
 - `jaw_lower`, placed at `lower_hinge` (0, -8.1, 1.2), the ramp's hinge: the shell of O_L forward of the hinge line
-  and under the rail plane (the deck's plane + `RAIL` 0.30): the belly, the low side rails (their tops `glow_cyan`),
+  and under the rail plane (the deck's plane + `[jaw] rail` 0.45, default `RAIL` 0.30): the belly, the low side rails (their tops `glow_cyan`),
   the deck plate in the deck's plane (flush with the floor at the hinge), a bulkhead under it, ribs and amber lit
-  edges (`nocol`). Its aft face under the hinge leans forward `V_DEG` 36 (the swing is 34.37), so it never swings
+  edges (`nocol`). The underside (the plates and under-skin of the faces looking down, built closed) and the tip's
+  seam rim are `nocol` too: open they lie under the deck; near the tip only the deck collides (a test holds every
+  collider face there looking up). The capsule walk still stops at the tip (b3: at y -12.65, as it touches the
+  deck's plane; b2 stopped at -12.75 on the slivers), so the walk is open. The deck plate runs
+  3 mm inside the skin, and the inner faces are clipped under the deck, only on the front and belly faces; on the
+  sides, which face down too since b3, that let the deck and the throat show through. Its aft face under the hinge leans forward `V_DEG` 36 (the swing is 34.37), so it never swings
   into the root; closed this leaves a V-shaped hinge groove under the belly, closed at its top.
 - `jaw_upper`, placed at `upper_hinge` (0, -4.6, 4.88), on its rear line on the hull's top: the shell of O_U and the
   skirts (O_L over the rail plane forward of the hinge line, their lower edges `glow_cyan`), a ceiling plate (the
@@ -1433,7 +1444,8 @@ file's views alone, `NOSE_SHEET_W` (1600) px wide. `ship --jaw-video DIR` render
 3/4 front camera at eye height, 6.5 s at 30 fps: closed, the seam lights, the lower jaw lowers to the ground, the
 upper lifts) into `DIR/open.mp4`. Round b1's views, sheets and video: `<raw>/ship/v5/nose/b1/` (its pieces in
 `b1/pieces`, a copy of `v5/pieces` with the jaws built); b2's in `<raw>/ship/v5/nose/b2/` (`views/close.json`: the
-close-ups).
+close-ups); b3's in `<raw>/ship/v5/nose/b3/` (`var/A..C`: the shape grid; `compare.png`: b1, b2, b3 closed and b3 open,
+side and 3/4).
 
 ## Lens room C, step 1: the charger's alcove and the east lounge (2026-10-28)
 
