@@ -86,21 +86,37 @@ class LobbyLayoutTest(unittest.TestCase):
         layout["place"].append(["balcony", [0.0, 0.0, 0.0], 0.0])
         self.assertIn("place: no piece 'balcony'", lobby_layout.check(layout, self.fp(layout)))
 
-    def test_refuses_an_unknown_look_variant(self) -> None:
+    def test_refuses_an_unknown_look_scheme(self) -> None:
         layout = copy.deepcopy(self.layout)
-        layout["look"]["variant"] = "V9"
-        self.assertTrue(any("variant V9" in p for p in lobby_layout.check(layout)))
+        layout["look"]["scheme"] = "S9"
+        self.assertTrue(any("scheme S9" in p for p in lobby_layout.check(layout)))
 
-    def test_refuses_a_bad_variant_colour_and_grid_view(self) -> None:
+    def test_refuses_a_bad_scheme_colour_material_and_grid_view(self) -> None:
         layout = copy.deepcopy(self.layout)
-        layout["look"]["variants"]["V2"]["base"] = [0.3, 1.4, 0.2]
+        layout["look"]["schemes"]["S2"]["accent"] = [0.3, 1.4, 0.2]
+        layout["look"]["mats"]["lobby_panel"] = ["wallpaper", 1.0, 0.5, 0.0]
         layout["review"]["grid"] = ["corner_nw", "nowhere"]
         problems = lobby_layout.check(layout)
-        self.assertTrue(any("look V2: base" in p for p in problems), problems)
+        self.assertTrue(any("look S2: accent" in p for p in problems), problems)
+        self.assertTrue(any("material lobby_panel" in p for p in problems), problems)
         self.assertTrue(any("grid: nowhere" in p for p in problems), problems)
 
-    def test_three_variants_and_the_views(self) -> None:
-        self.assertEqual(sorted(self.layout["look"]["variants"]), ["V1", "V2", "V3"])
+    def test_six_schemes_resolve_with_fixed_hazard_and_lamps(self) -> None:
+        look = self.layout["look"]
+        self.assertEqual(sorted(look["schemes"]), ["S1", "S2", "S3", "S4", "S5", "S6"])
+        self.assertEqual(look["scheme"], "S1")
+        for sid in look["schemes"]:
+            mats = lobby_layout.look_materials(self.layout, sid)
+            self.assertNotIn("lobby_hazard", mats)   # yellow-black and red in every scheme: fixed in the builder
+            self.assertNotIn("lobby_lamp", mats)
+            self.assertGreater(mats["lobby_strip"]["emit"], 0.0)
+            self.assertEqual(mats["lobby_strip"]["metallic"], 0.0)
+            self.assertLessEqual(mats["lobby_floor"]["roughness"], 0.2)
+            self.assertTrue(all(0.0 <= c <= 1.0 for m in mats.values() for c in m["rgb"]))
+        s1 = lobby_layout.look_materials(self.layout, "S1")
+        self.assertNotEqual(s1["lobby_panel"]["rgb"], s1["lobby_pilaster"]["rgb"])   # a scheme, not one metal
+
+    def test_the_views(self) -> None:
         names = [v[0] for v in self.layout["review"]["views"]]
         for want in ("corner_nw", "c_back", "spawn_eye", "spawn_ship", "door_d3", "arch", "rib", "floor_ring"):
             self.assertIn(want, names)

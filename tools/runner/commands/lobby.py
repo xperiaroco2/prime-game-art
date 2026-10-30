@@ -2,7 +2,7 @@
 --build the grey massing in headless Blender, one GLB per piece with glTF-Validator; --godot the headless import
 (sizes, colliders), a capsule walk and the doors' and the corridor's end's proof; --shoot DIR the review views beside
 concepts A and C, a top view, a spawn's eye and the close-ups, in an off-screen window; --grid DIR the taste grid (the
-wall-and-floor metal's variants, [look.variants], in the layout's grid views)."""
+colour schemes, [look.schemes], in the layout's grid views)."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from . import _export, _godot
 
 NAME = "lobby"
 HELP = ("the lobby hall (layouts/lobby/hall.toml): check it with the ship in place; --build the grey massing GLBs; "
-        "--godot import, colliders, walk, doors; --shoot DIR the review views off-screen; --grid DIR the metal variants")
+        "--godot import, colliders, walk, doors; --shoot DIR the review views off-screen; --grid DIR the colour schemes")
 BUILD_SCRIPT = blender.SCRIPTS / "lobby_build.py"
 GODOT_SCRIPT = "res://lobby/hall.gd"
 BUILD_TIMEOUT = 600
@@ -29,7 +29,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--build", action="store_true", help="build the hall's pieces in headless Blender")
     parser.add_argument("--godot", action="store_true", help="import headless: sizes, colliders, the walk, the doors")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="shoot the review views into DIR (off-screen)")
-    parser.add_argument("--grid", type=Path, metavar="DIR", help="shoot the metal variants' grid into DIR (off-screen)")
+    parser.add_argument("--grid", type=Path, metavar="DIR", help="shoot the colour schemes' grid into DIR (off-screen)")
     parser.add_argument("--out", type=Path, help="the pieces' folder (default <raw>/<layout raw_dir>/pieces)")
 
 
@@ -87,10 +87,10 @@ def run(args: argparse.Namespace) -> int:
     return 0
 
 
-def look_request(layout: dict, variant: str) -> dict:
-    """The look Godot applies to the hall's metals: [look] with one variant."""
-    lk = layout["look"]
-    return {"id": variant, **lk["variants"][variant], "metals": lk["metals"], "floor": lk["floor"]}
+def look_request(layout: dict, scheme: str) -> dict:
+    """The look Godot applies to the hall's materials: one scheme's resolved materials (lobby_layout.look_materials)."""
+    return {"id": scheme, "title": layout["look"]["schemes"][scheme]["title"],
+            "mats": lobby_layout.look_materials(layout, scheme)}
 
 
 # --- build ---------------------------------------------------------------------------------------------------------
@@ -98,7 +98,8 @@ def build(layout: dict, out: Path, ring_z: float) -> int:
     out.mkdir(parents=True, exist_ok=True)
     request = common.OUT / "lobby" / "build_request.json"
     request.parent.mkdir(parents=True, exist_ok=True)
-    request.write_text(json.dumps({"layout": layout, "arc": list(lobby_layout.arc(layout)), "ring_z": ring_z}, indent=1),
+    request.write_text(json.dumps({"layout": layout, "arc": list(lobby_layout.arc(layout)), "ring_z": ring_z,
+                                   "look": lobby_layout.look_materials(layout, layout["look"]["scheme"])}, indent=1),
                        encoding="utf-8", newline="\n")
     blender.run_script(BUILD_SCRIPT, ["--request", str(request), "--out", str(out)], timeout=BUILD_TIMEOUT)
     report = json.loads((out / "build_report.json").read_text(encoding="utf-8"))
@@ -218,10 +219,10 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool = False
     rv = layout["review"]
     req.update({"mode": "shoot", "background": rv["background"], "views": [v[:5] for v in rv["views"]],
                 "top": rv["top"], "compare": [[v[0], v[5]] for v in rv["views"] if v[5]],
-                "look": look_request(layout, layout["look"]["variant"])})
+                "look": look_request(layout, layout["look"]["scheme"])})
     if grid:
         req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in rv["grid"]],
-                    "variants": [look_request(layout, k) for k in layout["look"]["variants"]]})
+                    "variants": [look_request(layout, k) for k in layout["look"]["schemes"]]})
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "lobby" / "shoot_request.json"

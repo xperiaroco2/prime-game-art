@@ -209,6 +209,21 @@ def wall_gaps(layout: dict[str, Any], fp: list[tuple[float, float]]) -> dict[str
 
 
 # --- the check -----------------------------------------------------------------------------------------------------
+ROLES = ("panel", "frame", "trim", "floor", "accent")
+
+
+def look_materials(layout: dict[str, Any], scheme: str) -> dict[str, dict[str, Any]]:
+    """The scheme's materials by name: sRGB colour (the role's times the lightness), metallic, roughness, emission."""
+    look = layout["look"]
+    sc = look["schemes"][scheme]
+    out = {}
+    for name, (role, k, rough, emit) in look["mats"].items():
+        metallic = 0.0 if role == "accent" else sc["trim_metallic"] if role == "trim" else sc["metallic"]
+        out[name] = {"rgb": [round(min(1.0, c * k), 4) for c in sc[role]], "metallic": metallic, "roughness": rough,
+                     "emit": emit}
+    return out
+
+
 def check(layout: dict[str, Any], fp: list[tuple[float, float]] | None = None) -> list[str]:
     """Every rule of docs/lobby.md "The check"; fp: the ship's footprint (footprint(); None skips the ship's rules)."""
     p: list[str] = []
@@ -292,22 +307,22 @@ def check(layout: dict[str, Any], fp: list[tuple[float, float]] | None = None) -
     for g in layout["review"].get("grid", []):
         if g not in names:
             p.append(f"grid: {g} is no view")
-    # the look: one variant switch, every variant a colour in 0..1 with its metal numbers
+    # the look: one scheme switch, every scheme's role colours in 0..1, every material a role with its numbers
     look = layout["look"]
-    if look["variant"] not in look["variants"]:
-        p.append(f"look: variant {look['variant']} is not in [look.variants]")
-    for vid, v in look["variants"].items():
-        if len(v["base"]) != 3 or not all(0.0 <= c <= 1.0 for c in v["base"]):
-            p.append(f"look {vid}: base is not an sRGB colour in 0..1")
-        for k in ("metallic", "roughness", "floor_roughness"):
-            if not 0.0 <= v[k] <= 1.0:
-                p.append(f"look {vid}: {k} is not in 0..1")
-    for m, k in look["metals"].items():
-        if not m.startswith("lobby_") or not 0.0 < k <= 1.5:
-            p.append(f"look: metal {m} {k} (a lobby_ material, lightness in 0..1.5)")
-    for m in look["floor"]:
-        if m not in look["metals"]:
-            p.append(f"look: floor material {m} is no metal")
+    if look["scheme"] not in look["schemes"]:
+        p.append(f"look: scheme {look['scheme']} is not in [look.schemes]")
+    for sid, sc in look["schemes"].items():
+        for role in ROLES:
+            c = sc.get(role)
+            if not isinstance(c, list) or len(c) != 3 or not all(0.0 <= x <= 1.0 for x in c):
+                p.append(f"look {sid}: {role} is not an sRGB colour in 0..1")
+        for k in ("metallic", "trim_metallic"):
+            if not 0.0 <= sc.get(k, -1.0) <= 1.0:
+                p.append(f"look {sid}: {k} is not in 0..1")
+    for m, v in look["mats"].items():
+        if (not m.startswith("lobby_") or len(v) != 4 or v[0] not in ROLES or not 0.0 < v[1] <= 1.5
+                or not 0.0 <= v[2] <= 1.0 or not 0.0 <= v[3] <= 5.0):
+            p.append(f"look: material {m} {v} (a lobby_ material: [role, lightness 0..1.5, roughness, emission 0..5])")
     # the ship
     if fp:
         n = ship_numbers(layout, fp)

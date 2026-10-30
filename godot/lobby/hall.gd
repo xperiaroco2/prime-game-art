@@ -7,9 +7,9 @@ extends SceneTree
 ## request.json (tools/runner/commands/lobby.py): {"mode", "pieces": {id: res}, "place": [[id, [x, y, z], yaw]],
 ##   "walk": {"r", "h", "points": [[x, y, z]]}, "blocks": [[name, from, to]], "views": [[name, title, eye, look, fov]],
 ##   "top": {"name", "title", "size_m", "centre": [x, z], "hide": [id]}, "compare": [[shot, image]], "background",
-##   "look": {"id", "title", "base", "metallic", "roughness", "floor_roughness", "metals": {material: lightness},
-##   "floor": [material]}, grid: "variants": [look]}. The look replaces the hall's metal materials (by their glTF name).
-## grid: <out>/grid.png, one row per variant (its views side by side, labelled), and <out>/<variant>_<view>.png.
+##   "look": {"id", "title", "mats": {material: {"rgb", "metallic", "roughness", "emit"}}},
+##   grid: "variants": [look] (the schemes). The look replaces the hall's materials (by their glTF name).
+## grid: <out>/grid.png, one row per scheme (its views side by side, labelled), and <out>/<scheme>_<view>.png.
 ## check: <out>/check.json {"bounds": {id: {min, max}} (each piece at its origin), "colliders": {id: n}, "walk",
 ##   "blocks": {name: walk}}. shoot: <out>/<view>.png, compare_<view>.png (the concept left, the shot right),
 ##   sheet.png (1280 px wide, two per row) and shots.json.
@@ -57,34 +57,84 @@ func _initialize() -> void:
 		_shoot()
 
 
-## The hall's metals in a look: each metal surface (by its glTF material's name) gets the variant's colour times its
-## lightness, its metallic and roughness (the floor's own roughness); the ship's pieces keep their own.
+## The hall's materials in a look (a colour scheme, step 2b): each surface whose glTF material is in the scheme's
+## "mats" gets its colour, metallic, roughness and emission; the non-emissive ones a fine-noise metal detail (a subtle
+## normal and roughness grain, triplanar, generated here: no texture files). The ship's pieces keep their own.
 func _apply_look(look: Dictionary) -> void:
+	var mats: Dictionary = look["mats"]
 	var made: Dictionary = {}
 	for pid: String in _placed:
 		if pid.begins_with("ship_"):
 			continue
-		var stack: Array = _placed[pid].duplicate()
-		while not stack.is_empty():
-			var n: Node = stack.pop_back()
-			stack.append_array(n.get_children())
-			if not n is MeshInstance3D or (n as MeshInstance3D).mesh == null:
-				continue
-			var mi: MeshInstance3D = n
-			for i: int in mi.mesh.get_surface_count():
-				var m: Material = mi.mesh.surface_get_material(i)
-				if m == null or not look["metals"].has(m.resource_name):
+		for top: Node in _placed[pid]:
+			var stack: Array = [top]
+			while not stack.is_empty():
+				var n: Node = stack.pop_back()
+				stack.append_array(n.get_children())
+				if not n is MeshInstance3D or (n as MeshInstance3D).mesh == null:
 					continue
-				var mname: String = m.resource_name
-				if not made.has(mname):
-					var k: float = float(look["metals"][mname])
-					var mat: StandardMaterial3D = StandardMaterial3D.new()
-					mat.resource_name = mname
-					mat.albedo_color = Color(float(look["base"][0]) * k, float(look["base"][1]) * k, float(look["base"][2]) * k)
-					mat.metallic = float(look["metallic"])
-					mat.roughness = float(look["floor_roughness"] if mname in look["floor"] else look["roughness"])
-					made[mname] = mat
-				mi.set_surface_override_material(i, made[mname])
+				var mi: MeshInstance3D = n
+				for i: int in mi.mesh.get_surface_count():
+					var m: Material = mi.mesh.surface_get_material(i)
+					if m == null or not mats.has(m.resource_name):
+						continue
+					var mname: String = m.resource_name
+					if not made.has(mname):
+						made[mname] = _look_material(mname, mats[mname])
+					mi.set_surface_override_material(i, made[mname])
+
+
+var _grain: Array = []
+
+
+## The shared grain: a fine seamless noise as a normal map and as a roughness map (0.8..1 of the roughness).
+func _grain_textures() -> Array:
+	if _grain.is_empty():
+		var noise: FastNoiseLite = FastNoiseLite.new()
+		noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+		noise.frequency = 0.08
+		noise.fractal_octaves = 3
+		var normal: NoiseTexture2D = NoiseTexture2D.new()
+		normal.width = 512
+		normal.height = 512
+		normal.seamless = true
+		normal.as_normal_map = true
+		normal.bump_strength = 1.5
+		normal.noise = noise
+		var rough: NoiseTexture2D = NoiseTexture2D.new()
+		rough.width = 512
+		rough.height = 512
+		rough.seamless = true
+		rough.noise = noise
+		var ramp: Gradient = Gradient.new()
+		ramp.set_color(0, Color(0.8, 0.8, 0.8))
+		ramp.set_color(1, Color(1, 1, 1))
+		rough.color_ramp = ramp
+		_grain = [normal, rough]
+	return _grain
+
+
+func _look_material(mname: String, spec: Dictionary) -> StandardMaterial3D:
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
+	mat.resource_name = mname
+	var c: Color = Color(float(spec["rgb"][0]), float(spec["rgb"][1]), float(spec["rgb"][2]))
+	mat.albedo_color = c
+	mat.metallic = float(spec["metallic"])
+	mat.roughness = float(spec["roughness"])
+	if float(spec["emit"]) > 0.0:
+		mat.emission_enabled = true
+		mat.emission = c
+		mat.emission_energy_multiplier = float(spec["emit"])
+	else:
+		var g: Array = _grain_textures()
+		mat.normal_enabled = true
+		mat.normal_texture = g[0]
+		mat.normal_scale = 0.25
+		mat.roughness_texture = g[1]
+		mat.uv1_triplanar = true
+		mat.uv1_world_triplanar = true
+		mat.uv1_scale = Vector3(0.7, 0.7, 0.7)
+	return mat
 
 
 func _setup_scene() -> void:
@@ -106,7 +156,7 @@ func _setup_scene() -> void:
 	root.add_child(layer)
 
 
-## The taste grid: the grid's views once per variant, a row each.
+## The taste grid: the grid's views once per scheme, a row each.
 func _grid() -> void:
 	_setup_scene()
 	var shots: Dictionary = {}
