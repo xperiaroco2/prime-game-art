@@ -5,8 +5,8 @@
 # it, in metres (Godot's own frame, no conversion). tools/runner/lobby_layout.py loads and checks this file; the
 # `lobby` command builds and shoots it.
 
-version = 1
-raw_dir = "lobby/hall/v1"          # under the raw folder: pieces/, plan/, logs/, shots/
+version = 2
+raw_dir = "lobby/hall/v2"          # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -113,6 +113,36 @@ collide = true
 id = "door"                        # a sealed door: slab, frame, red lamp; built facing +z, placed four times
 collide = true
 
+[look]
+# Step 2's materials (docs/lobby.md, "Step 2: shell and materials"). The wall-and-floor metal is one switch: `variant`
+# names one of [look.variants] (the engineer picks from the grid, `lobby --grid`). Each metal material's albedo is the
+# variant's base colour (sRGB) times its lightness below; the builder writes the chosen variant into the GLBs and the
+# shots apply it in Godot (the grid applies each in turn). The other materials (seams, emissives, hazard) are fixed.
+variant = "V1"
+metals = { lobby_panel = 1.0, lobby_pilaster = 0.86, lobby_trim = 0.68, lobby_vault = 0.8, lobby_rib = 0.62, lobby_floor = 0.92, lobby_wall = 0.42 }
+floor = ["lobby_floor"]            # the polished plates: the variant's floor_roughness instead of its roughness
+
+[look.variants.V1]
+title = "dark gunmetal"
+base = [0.36, 0.365, 0.38]
+metallic = 0.5
+roughness = 0.42
+floor_roughness = 0.2
+
+[look.variants.V2]
+title = "warm dark bronze-grey"
+base = [0.40, 0.355, 0.30]
+metallic = 0.5
+roughness = 0.42
+floor_roughness = 0.2
+
+[look.variants.V3]
+title = "cool blue-grey"
+base = [0.30, 0.35, 0.42]
+metallic = 0.5
+roughness = 0.42
+floor_roughness = 0.2
+
 [review]
 background = [0.02, 0.035, 0.11]   # the dark blue placeholder behind the window (no Earth yet)
 # [name, title, eye [x, y, z], look [x, y, z], vertical fov, the concept to compare with ("" for none)]. Cameras
@@ -123,10 +153,16 @@ background = [0.02, 0.035, 0.11]   # the dark blue placeholder behind the window
 views = [
   ["a_entrance", "A: from the entrance, as concept A", [-5.0, 1.7, -29.3], [0.0, 3.0, -12.0], 52.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/a_entrance.jpg"],
   ["c_back", "C: from the window, as concept C", [0.0, 5.0, 14.0], [0.0, 2.6, -24.0], 37.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/c_back.jpg"],
-  ["spawn_eye", "a spawn's eye (x -1, z 0) toward the ship", [-1.0, 1.65, 0.0], [0.0, 2.6, -13.0], 75.0, ""],
-  ["spawn_window", "a spawn's eye (x 0, z 0) toward the window", [0.0, 1.65, 0.0], [0.0, 4.0, 16.0], 75.0, ""],
   ["corner_nw", "the whole hall from the north-west corner, eye height", [-18.5, 1.7, -28.5], [4.0, 3.5, 2.0], 75.0, ""],
+  ["spawn_eye", "a spawn's eye (x 0, z 0) toward the window, as the spawns face", [0.0, 1.65, 0.0], [0.0, 4.0, 16.0], 75.0, ""],
+  ["spawn_ship", "a spawn's eye (x -1, z 0) toward the ship", [-1.0, 1.65, 0.0], [0.0, 2.6, -13.0], 75.0, ""],
+  ["door_d3", "door D3 close up", [-11.0, 1.7, -24.5], [-11.0, 3.2, -30.0], 60.0, ""],
+  ["arch", "the arch and the corridor from 6 m", [-4.0, 1.9, -24.4], [0.0, 3.2, -36.0], 60.0, ""],
+  ["rib", "a vault rib on its pilaster, close up", [-12.0, 3.0, -9.0], [-19.0, 11.0, -12.5], 60.0, ""],
+  ["floor_ring", "the floor plates and the ring, close up", [8.0, 1.7, 2.5], [10.6, 0.0, -2.5], 60.0, ""],
 ]
+# the taste grid (`lobby --grid DIR`): these views once per variant, one row each, labelled V1..V3
+grid = ["corner_nw", "door_d3"]
 top = { name = "top", title = "top: plan view, north up (the vault hidden)", size_m = 58.0, centre = [0.0, -11.0], hide = ["vault"] }
 
 [walk]

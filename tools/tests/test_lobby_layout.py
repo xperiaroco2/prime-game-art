@@ -86,6 +86,27 @@ class LobbyLayoutTest(unittest.TestCase):
         layout["place"].append(["balcony", [0.0, 0.0, 0.0], 0.0])
         self.assertIn("place: no piece 'balcony'", lobby_layout.check(layout, self.fp(layout)))
 
+    def test_refuses_an_unknown_look_variant(self) -> None:
+        layout = copy.deepcopy(self.layout)
+        layout["look"]["variant"] = "V9"
+        self.assertTrue(any("variant V9" in p for p in lobby_layout.check(layout)))
+
+    def test_refuses_a_bad_variant_colour_and_grid_view(self) -> None:
+        layout = copy.deepcopy(self.layout)
+        layout["look"]["variants"]["V2"]["base"] = [0.3, 1.4, 0.2]
+        layout["review"]["grid"] = ["corner_nw", "nowhere"]
+        problems = lobby_layout.check(layout)
+        self.assertTrue(any("look V2: base" in p for p in problems), problems)
+        self.assertTrue(any("grid: nowhere" in p for p in problems), problems)
+
+    def test_three_variants_and_the_views(self) -> None:
+        self.assertEqual(sorted(self.layout["look"]["variants"]), ["V1", "V2", "V3"])
+        names = [v[0] for v in self.layout["review"]["views"]]
+        for want in ("corner_nw", "c_back", "spawn_eye", "spawn_ship", "door_d3", "arch", "rib", "floor_ring"):
+            self.assertIn(want, names)
+        spawn = next(v for v in self.layout["review"]["views"] if v[0] == "spawn_eye")
+        self.assertGreater(spawn[3][2], spawn[2][2])   # the spawns face the window (+z)
+
     def test_plan_draws_the_hall(self) -> None:
         plan = lobby_layout.ascii_plan(self.layout, self.fp(self.layout))
         for mark in ("A", "S", "s", "o", "W", "D", "#", "|"):

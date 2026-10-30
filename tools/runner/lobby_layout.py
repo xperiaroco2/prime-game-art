@@ -288,6 +288,26 @@ def check(layout: dict[str, Any], fp: list[tuple[float, float]] | None = None) -
         eye = v[2]
         if not on_floor(layout, eye[0], eye[2]) or not 0 < eye[1] < h["wall"]:
             p.append(f"view {v[0]}: its eye is not inside the hall")
+    names = {v[0] for v in layout["review"]["views"]}
+    for g in layout["review"].get("grid", []):
+        if g not in names:
+            p.append(f"grid: {g} is no view")
+    # the look: one variant switch, every variant a colour in 0..1 with its metal numbers
+    look = layout["look"]
+    if look["variant"] not in look["variants"]:
+        p.append(f"look: variant {look['variant']} is not in [look.variants]")
+    for vid, v in look["variants"].items():
+        if len(v["base"]) != 3 or not all(0.0 <= c <= 1.0 for c in v["base"]):
+            p.append(f"look {vid}: base is not an sRGB colour in 0..1")
+        for k in ("metallic", "roughness", "floor_roughness"):
+            if not 0.0 <= v[k] <= 1.0:
+                p.append(f"look {vid}: {k} is not in 0..1")
+    for m, k in look["metals"].items():
+        if not m.startswith("lobby_") or not 0.0 < k <= 1.5:
+            p.append(f"look: metal {m} {k} (a lobby_ material, lightness in 0..1.5)")
+    for m in look["floor"]:
+        if m not in look["metals"]:
+            p.append(f"look: floor material {m} is no metal")
     # the ship
     if fp:
         n = ship_numbers(layout, fp)
