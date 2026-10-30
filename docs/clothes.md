@@ -439,7 +439,7 @@ keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 deg
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
 
-## Dressing D3's bodies (E1 to E1d, art #196)
+## Dressing D3's bodies (E1 to E1e, art #196)
 - **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
   head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
   smoothing; the 30 mm smoothstep band stays the default for the old bodies.
@@ -486,6 +486,23 @@ above it again from Blender's rest matrices.
   point hung over the collar as teeth: every such vertex is tucked inside the outline, `--collar-clear` (3 mm) in,
   easing out over `--collar-band` (10 mm) above the rim (`clothes_fit_geom.collar_clamp`; `collar.tucked_in`: 83 and
   78 vertices, at most 12.7 and 28 mm on A and B).
+- **The collar by one plane** (E1e, the route that worked; it replaces E1c's pull-in and E1d's column, vamp and
+  tuck): the bind pose (no clip) showed E1d's teeth over the collar exactly as in Idle, so they were geometry, not
+  skinning. Every rule that deletes faces one by one near a visible edge (the cover rays, in-shoe, through-wall,
+  column, vamp) leaves a sawtooth there, and bringing faces back or tucking vertices afterwards never smooths it. Now
+  the plane alone decides the leg's and foot's skin near each shoe (up to `--collar-keep`, 60 mm, over the rim's top,
+  within the rim's reach): a face goes only when it lies wholly under the plane (`--collar-cut`, 12 mm under the rim's
+  lowest point); every face with a vertex over it stays and the bisect cuts the crossing ones into one edge loop
+  inside the shoe (`collar.faces_back`, `faces_under_plane_removed`). The kept skin is then **shrunk toward the leg's
+  own axis** (the LowerLeg bone's line, extended down): a ray from the axis out toward each vertex at its own height
+  finds the shoe's inner wall, and the vertex comes in to `--collar-clear` (3 mm) inside it, easing out over
+  `--collar-band` (15 mm) over its nearest rim point (`clothes_fit_geom.collar_clamp`; over the rim the wall is
+  measured just under the rim, so no step). Skin with the shoe over it, or within 12 mm under it (the instep under or
+  2 mm through the vamp, where the nearest rim point is the throat's low slot), counts as under the rim: without that
+  the instep showed as teal patches through the vamp. That skin, up to `--collar-weights` (30 mm) over the rim, takes
+  its nearest shoe vertex's weights, blended back to its own over that band (`clothes_fit_geom.mix_rows`), so the
+  ankle and the shoe move as one; E1b's `--ankle-ride` is off with the plane. `collar.shrunk` (d14: 253 and 159
+  vertices, at most 113 and 29 mm, the most on A's instep) and `collar.shoe_weights` report it.
 - **The straps' back ends** (E1d): with `--planes bones` the straps sweep on past `--shell-strap-t`'s back angle until
   their back end lies `--strap-back-below` (32 mm) under the back panel's apex (`straps.back_angle_deg`); the shorter
   body B's straps met 50 mm over her apex (a flat bar of shirt and panel under their V). A's stay at 134 degrees.
