@@ -173,7 +173,7 @@ pockets, hems; the shoes until S1) stay Meshy's, because they read right and mat
 
 10. **The garment cut** (`cut_garment`). The Meshy garment keeps:
     - everything below `--waist` 1.0 m;
-    - the bib at the front (|x| under 0.105 m, below 1.195 m: `--bib`);
+    - the bib at the front (|x| under 0.105 m, below 1.166 m: `--bib`);
     - the back panel inside its V (`--back`: from 0.12 m half width at the waist to 0.03 m at the 1.12 m apex).
 
     Their edges are cut by planes (`bmesh.ops.bisect_plane`), so they are straight lines, not a row of whole faces.
