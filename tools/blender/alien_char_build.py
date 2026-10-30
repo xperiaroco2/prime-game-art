@@ -11,7 +11,9 @@ the face-rigged one:
    onto the body's neck ring (`alien_char_geom.fit_scale`: the x half-widths) and set on the ring's axis GAP above it.
    No turn (both face -Y). The head above the band is only scaled and moved: never reshaped.
 2. Cut and morph: the skin below the waist (the bust) is deleted; over NECK_BAND above the cut each vertex's
-   distance from the axis blends toward the ring's ellipse at its angle, the boundary flat on the cut.
+   distance from the axis blends toward the ring's ellipse at its angle, the boundary flat on the cut. E1 (`--neck-band
+   flare`, D3's bodies): instead the neck flares into the ring over 70 mm from it (`body_fit_geom.neck_flare_morph`,
+   the ring ADR's "Join"), as the review's seat_head does; the bridge then closes the GAP at the flare's own slope.
 3. Weld: joined with the body, the cut and the ring zipped by angle (`zip_loops`; the counts differ), the new row
    on the body's material with the ring's UVs.
 4. Normals: the head's own corner normals kept above the band (a corner attribute through the cut and the join),
@@ -273,6 +275,9 @@ def main():
     ap.add_argument("--clip-edits", default="", help="A1: the alien's clip edits (anim_sets/alien.toml)")
     ap.add_argument("--no-seam-smooth", action="store_true", help="clothes step 2: the weld without the seam's "
                     "smoothing (the builds before it)")
+    ap.add_argument("--neck-band", default="smooth", choices=("smooth", "flare"), help="E1: the head's neck onto "
+                    "the ring: smooth, NECK_BAND's 30 mm smoothstep above the cut (the old bodies); flare, "
+                    "body_fit_geom.neck_flare_morph over NECK_FLARE_BAND from the ring (D3's bodies, the ring ADR)")
     ap.add_argument("--no-flare", action="store_true", help="M1: no neck flare (a Meshy body has its own trapezius)")
     ap.add_argument("--leg-fit", default="", help="T2: the .blend of the rig the clips were made on (S4b's body): "
                     "the clips' hip keys scaled to this body's leg length and the feet's lowest point matched per frame (alien_leg_fit.py)")
@@ -396,11 +401,22 @@ def main():
     rel = sco[:, :2] - ring_c
     phi = np.arctan2(rel[:, 0], -rel[:, 1]) % (2 * math.pi)
     r = np.hypot(rel[:, 0], rel[:, 1])
-    t = np.array([G.sstep(cut + NECK_BAND, cut, z) for z in sco[:, 2]])
-    k = (r + t * (ring_r(phi) - r)) / np.maximum(r, 1e-9)
-    new = sco.copy()
-    new[:, 0] = ring_c[0] + rel[:, 0] * k
-    new[:, 1] = ring_c[1] + rel[:, 1] * k
+    if a.neck_band == "flare":  # E1: the ring ADR's "Join", the review's seat_head: one continuous neck flare
+        import body_fit_geom as F
+        mm, info = F.neck_flare_morph([tuple(float(c) * 1000 for c in p) for p in sco],
+                                      [tuple(e.vertices) for e in me.edges],
+                                      [tuple(float(c) * 1000 for c in p) for p in ring], F.NECK_FLARE_BAND,
+                                      F.NECK_FLARE_A)
+        new = np.array(mm) / 1000.0
+        rep["neck_flare"] = info
+        band_top = ring_z + F.NECK_FLARE_BAND / 1000.0
+    else:  # the old weld: a 30 mm smoothstep onto the ring's ellipse above the cut
+        t = np.array([G.sstep(cut + NECK_BAND, cut, z) for z in sco[:, 2]])
+        k = (r + t * (ring_r(phi) - r)) / np.maximum(r, 1e-9)
+        new = sco.copy()
+        new[:, 0] = ring_c[0] + rel[:, 0] * k
+        new[:, 1] = ring_c[1] + rel[:, 1] * k
+        band_top = cut + NECK_BAND
     bm = bmesh.new()
     bm.from_mesh(me)
     oid = bm.verts.layers.int.new("char_oid")
@@ -409,7 +425,7 @@ def main():
         v[oid] = v.index
     dead = [f for f in bm.faces if any(sco[v.index, 2] < cut - 1e-6 for v in f.verts)]
     n0 = len(bm.verts)
-    bmesh.ops.remove_doubles(bm, verts=[v for v in bm.verts if sco[v[oid], 2] < cut + NECK_BAND + 0.03], dist=1e-6)
+    bmesh.ops.remove_doubles(bm, verts=[v for v in bm.verts if sco[v[oid], 2] < band_top + 0.03], dist=1e-6)
     rep["band_merged"] = n0 - len(bm.verts)
     dead = [f for f in bm.faces if any(sco[v[oid], 2] < cut - 1e-6 for v in f.verts)]
     bmesh.ops.delete(bm, geom=dead, context="FACES")
@@ -425,7 +441,7 @@ def main():
     bm.verts.layers.int.remove(oid)
     bm.to_mesh(me)
     bm.free()
-    rep["neck_band"] = NECK_BAND
+    rep["neck_band"] = a.neck_band if a.neck_band == "flare" else NECK_BAND
     rep["cut_faces_deleted"] = len(dead)
     rep["band_moved"] = int(moved)
     sco = world(skin)
