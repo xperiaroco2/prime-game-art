@@ -124,6 +124,8 @@ views = [
   ["a_entrance", "A: from the entrance, as concept A", [-5.0, 1.7, -29.3], [0.0, 3.0, -12.0], 52.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/a_entrance.jpg"],
   ["c_back", "C: from the window, as concept C", [0.0, 5.0, 14.0], [0.0, 2.6, -24.0], 37.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/c_back.jpg"],
   ["spawn_eye", "a spawn's eye (x -1, z 0) toward the ship", [-1.0, 1.65, 0.0], [0.0, 2.6, -13.0], 75.0, ""],
+  ["spawn_window", "a spawn's eye (x 0, z 0) toward the window", [0.0, 1.65, 0.0], [0.0, 4.0, 16.0], 75.0, ""],
+  ["corner_nw", "the whole hall from the north-west corner, eye height", [-18.5, 1.7, -28.5], [4.0, 3.5, 2.0], 75.0, ""],
 ]
 top = { name = "top", title = "top: plan view, north up (the vault hidden)", size_m = 58.0, centre = [0.0, -11.0], hide = ["vault"] }
 
