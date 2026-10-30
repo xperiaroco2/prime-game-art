@@ -200,6 +200,7 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
             errors.append(f"kinds.{kind}.fingers_unweighted is {unweighted!r}; it must list fingers of skeleton.fingers")
         elif unweighted and len(set(unweighted)) >= len(fingers):
             errors.append(f"kinds.{kind}.fingers_unweighted leaves no weighted finger")
+    errors += validate_body_types(contract)
     for name, budget in contract.get("budgets", {}).items():
         if name == "limits":
             continue
@@ -212,6 +213,35 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> list
     for slot in contract.get("slots", []):
         if slot.get("budget") and slot["budget"] not in contract.get("budgets", {}):
             errors.append(f"slot {slot.get('id')} names the unknown budget {slot['budget']!r}")
+    return errors
+
+
+BODY_TYPE_KEYS = {"height_min_m", "rest_turn_max_deg"}
+
+
+def validate_body_types(contract: dict[str, Any]) -> list[str]:
+    """body_types (art #196, the body types trial): each type a table of exactly BODY_TYPE_KEYS, height_min_m a number
+    from 1.2 m to body.height_max_m, rest_turn_max_deg from 0 to 5 degrees; A, the clips' donor body, holds
+    body.height_min_m and a rest turn of 0."""
+    types = contract.get("body_types")
+    if types is None:
+        return []
+    if not isinstance(types, dict) or "A" not in types:
+        return ["body_types must be a table holding at least A"]
+    errors = []
+    body = contract.get("body", {})
+    for name, t in types.items():
+        if not isinstance(t, dict) or set(t) != BODY_TYPE_KEYS:
+            errors.append(f"body_types.{name} must hold exactly {sorted(BODY_TYPE_KEYS)}")
+            continue
+        h, turn = t["height_min_m"], t["rest_turn_max_deg"]
+        if not isinstance(h, (int, float)) or not 1.2 <= h <= body.get("height_max_m", 0):
+            errors.append(f"body_types.{name}.height_min_m must be a number from 1.2 to body.height_max_m")
+        if not isinstance(turn, (int, float)) or not 0 <= turn <= 5:
+            errors.append(f"body_types.{name}.rest_turn_max_deg must be a number from 0 to 5")
+    a = types["A"]
+    if isinstance(a, dict) and (a.get("height_min_m") != body.get("height_min_m") or a.get("rest_turn_max_deg") != 0):
+        errors.append("body_types.A must hold body.height_min_m and a rest_turn_max_deg of 0")
     return errors
 
 

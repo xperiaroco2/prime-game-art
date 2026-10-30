@@ -1,0 +1,49 @@
+# Body type B, the female alien body (art #196, docs/decisions/2026-10-29-body-types.md; alien_body_b_geom.py), on
+# body A's topology with its own skeleton rest. The target: the 2D sketch 2026-10-29-alien-female-body-2d-r2/d (her
+# front, side and back beside him) with f's front numbers, B over A: shoulders about 0.82, waist 0.78, hips 1.10 to
+# 1.13, forearms, wrists and calves 0.85, the height 0.95 (5 to 8 cm shorter). The chest a soft adult round, no
+# nipples, never a pin-up; the head, colours, four-digit hands and the feet's shape kept.
+# Heights are body A's (S4b): crotch about 0.82 m, navel 1.00, chest 1.14, armpit 1.30, neck ring 1.39.
+name = "b1"
+note = "first B: height 0.953, the shoulder joints 3.1 cm in, forearms and calves 0.85, hips out, waist in, chest 3.4 cm, seat 3.0 cm"
+
+[height]
+scale = 0.953        # below the ring; the ring drops 6.5 cm, the head on it keeps its size
+ring_z = 1.39        # the body's neck ring (its x and y kept: the head's fit is A's)
+lock_from_z = 1.33   # from here up the neck blends to the ring's pure drop
+
+[arms]
+shift_in_m = 0.013   # each UpperArm's head 1.3 cm in (with the collar's 0.85, 3.1 cm): the narrower shoulders
+shoulder_axial = 0.85 # the collar bone's reach
+upper_radial = 0.88
+lower_radial = 0.85  # the forearm and the wrist
+hand_scale = 0.953   # the hands' shape kept, at the body's scale
+
+[legs]
+shift_out_m = 0.008  # each hip joint out a little
+upper_radial = 0.97
+lower_radial = 0.85  # the calf
+foot_scale = 0.953   # the feet's shape kept; with the height scale the sole stays on the floor
+
+[profile]            # the trunk's x scale about the midline over A's height (1.0 at both ends)
+z =     [0.62, 0.74, 0.84, 0.90, 0.96, 1.02, 1.08, 1.16, 1.24, 1.31]
+scale = [1.00, 1.05, 1.10, 1.09, 0.92, 0.79, 0.80, 0.88, 0.94, 1.00]
+
+[chest]              # two rounds forward on the front half (alien_female_geom's field)
+amount_m = 0.034
+z = 1.13
+half_z = 0.10
+x = 0.056
+half_x = 0.075
+ramp_m = 0.04
+
+[seat]               # two rounds back on the back half
+amount_m = 0.030
+z = 0.85
+half_z = 0.12
+x = 0.065
+half_x = 0.095
+ramp_m = 0.05
+
+[mask]               # the profile, chest and seat move a vertex by its summed weight on these bones
+bones = ["Hips", "Spine", "Chest", "UpperChest", "LeftUpperLeg", "RightUpperLeg"]

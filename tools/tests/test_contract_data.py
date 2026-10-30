@@ -90,6 +90,22 @@ class ContractTest(unittest.TestCase):
     def test_contract_agrees_with_the_profile(self) -> None:
         self.assertEqual(_contract.validate_contract(self.contract, self.profile), [])
 
+    def test_the_body_types_are_checked(self) -> None:
+        # art #196: A and B, A holding the body's height_min_m and no rest turn
+        self.assertEqual(sorted(self.contract["body_types"]), ["A", "B"])
+        self.assertEqual(self.contract["body_types"]["A"]["height_min_m"], self.contract["body"]["height_min_m"])
+        for change, want in (
+            (lambda t: t["B"].update(height_min_m=1.0), "body_types.B.height_min_m must be"),
+            (lambda t: t["B"].update(rest_turn_max_deg=9), "body_types.B.rest_turn_max_deg must be"),
+            (lambda t: t["B"].update(extra=1), "body_types.B must hold exactly"),
+            (lambda t: t["A"].update(height_min_m=1.6), "body_types.A must hold body.height_min_m"),
+            (lambda t: t.pop("A"), "body_types must be a table holding at least A"),
+        ):
+            broken = copy.deepcopy(self.contract)
+            change(broken["body_types"])
+            errors = _contract.validate_contract(broken, self.profile)
+            self.assertTrue(any(want in e for e in errors), (want, errors))
+
     def test_a_socket_on_an_unknown_bone_is_caught(self) -> None:
         broken = copy.deepcopy(self.contract)
         broken["sockets"][0]["bone"] = "Skull"

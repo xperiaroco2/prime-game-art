@@ -290,3 +290,99 @@ pockets, hems, shoes) stay Meshy's, because they read right and match the sketch
 
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
+
+## Bodies by drawing (D2, art #196)
+Bodies A and B are drawn in mm from their approved concepts before any 3D (the crystal's route, `docs/props.md`):
+`tools/blender/body_dims_probe.py` (headless Blender, read only) dumps body A's rest; `body_dims_measure.py` (plain
+Python, `body_dims_geom.py`) measures each concept's front, side and back per pixel row into
+`tools/blender/body_dims/<A|B>.toml` (the trunk every 10 mm of height, 5 mm across the neck, chest and crotch; the
+arms and legs on their own axes; hands, feet, B's chest rounds; the neck ring); `body_drawing.py` draws the sheets.
+The scale puts the concept's neck-ring line at the body's ring and the sole at 0; one height map pins the crotch to
+the body's. The side view is aligned on its edges as drawn at the crotch + 60 mm onto body A's mid-depth there.
+Where a hanging limb forms the side view's edge, the tables write "-", never an interpolated or a limb's value: the
+hand at the front (`front_y` and `depth` over `body.side_hidden_z`) and, from under the armpits down to where the seat
+comes out behind it, the arm at the back (`back_y` and `depth` over `body.side_back_hidden_z`; `back_hidden` finds it
+by the crease the back shows behind the arm). A key depth there is drawn at the nearest measured height within
+20 mm, labelled "AT", or written "-". The standard neck ring: `docs/decisions/2026-10-29-neck-ring.md`.
+
+## Bodies built to the drawing (D3, art #196)
+The smooth body (S4b) is deformed station by station to its table, keeping its surface, topology, weights and
+four-digit hands: `body_fit_blend.py dump` (headless Blender) writes the body's vertices, weights, edges, bones and
+open loops; `body_fit_run.py` (plain Python, `body_fit_geom.py`) fits body A to `A.toml` and writes B's rest skeleton
+from `fit.toml`; `body_fit_blend.py apply` saves the fitted `.blend` (`--foot-table`: the new forefoot) and proves it
+(`apply.json`, with every bone's rest turn against A's held to the contract's `rest_turn_max_deg`);
+`body_fit_review.py` draws the whole-body gate's sheets (four sides with the concept's outline, and the close-ups).
+The rules, in `body_fit_geom.py`'s docstring:
+- the trunk's x scales about the midline to the front width, the front half of y to `front_y` and the back half to
+  `back_y`; above the armpit x stays (the T arms) up to the neck, whose widths come back from 75 to 60 mm under the
+  ring; the 30 mm under the ring blend back to the body and the ring's 24 vertices stay exact;
+- the legs per height about each leg's own middle (our legs stay vertical; the concept's splay is not copied); the
+  arms along |x| on the T rest, eased in past the arm's root (the 10 to 70 mm past our armpit, whose stations are not
+  comparable with the concept's hanging arm); the hands and feet as they are;
+- the targets and ratios are smoothed along the body (20 mm; 6 mm over the neck and under the armpit), because the
+  tables step in whole pixels and per-station ratios ripple the surface in bands;
+- `fit.toml`'s `keep_front` zones keep the body's own front where the concept's side view shows the hand, not the
+  body (A: z 640 to 1000, easing over 60 mm at the ends).
+
+The check is the overlay error per station, built minus table (`errors.md` beside each fit): within 5 mm on the
+trunk and 3 mm on the limbs; stations left alone by rule are listed with their rule, not counted.
+
+Body B (D3b) is A's fitted mesh on B's rest (B1's `deform` with `fit.toml`'s joints), then:
+- the hands and feet: A's (our size, the engineer's answer) scaled per axis by the two tables' B/A ratios
+  (`body_fit_run.limb_scales`: hand 0.960 long and 0.878 wide along and across the Hand bone, foot 0.850 long and
+  0.911 wide about the ankle), never set by hand; the mesh per axis, the bones only along their own directions
+  (`keep_directions`: the heads where the mesh's joints go, each bone keeping A's direction, so none turns);
+- the fit to `B.toml` with her chest rounds (`chest_of`) and the neck base: her concept's shoulder line is 8 mm under
+  the ring, so above the armpit her widths stay the body's up to the ring and the 60 mm under the standard ring widen
+  into a smooth slope (`fit.toml`'s `neck_base`; right under the ring `neck_tangent` sets the outline since D3f, see
+  below); the ring row down to the shoulder line is left out of the error table by rule;
+- our armpit is the table's but at least 25 mm under the arm's lowest vertex (`ARMPIT_GAP`): B's concept armpit sits
+  higher than our arm's root on her rest, and the widths between are marked "arm root", not counted.
+
+A table's "-" (a hanging limb forms the side edge) is never a value: there the fit keeps the body's own shape, moved by
+the error at the band's measured ends (`fill_gaps`).
+
+D3c replaced the toes: projecting them onto their hull (D3b's `--round-toes`, removed) left slits, flaps and holes
+twice, so `apply --foot-table
+<body_dims/X.toml>` cuts each foot along one plane 30 mm behind its Toes head (moved back in 5 mm steps until the cut
+is one loop) and grows a new closed mitten front from the cut's own vertex loop (`body_feet_geom.forefoot`): rings
+scaled from the cut's section to the table's foot length (from the kept heel), width and toe height, rounded as a
+superellipse in top and side view, the sole flat until the front turns it up, a fan to one tip vertex; the cut's
+loop is shared (no seam), weights from the old toes' nearest vertex (Foot and Toes only). A Taubin smoothing evens the
+front and 45 mm behind the cut, a plain one fills the ankle front's fold (S4b's own). The bone rest is applied first,
+so B's cut sits at her Toes. The topology changes under 0.25 m only: `apply.json` proves every vertex above it is the
+fit's (`off_feet_verts`, `fit_vs_built_off_toes_max_m`), the ring found again by position.
+
+The neck base (D3c): the fit's front and back met the ring's only inside the 30 mm lock and drew a collar ridge with a
+step at the ring. Over the 60 mm under the ring (`NECK_JOIN`) they now follow one cubic slope from the fit's value
+and slope to the ring's own front and back (`neck_join`, clamped so it never overshoots); these stations are "neck
+taper" in the error table. Since D3f the outline right under the ring is `neck_tangent`'s (below): body and head meet
+at the heads' flare angles, not vertically (`docs/decisions/2026-10-29-neck-ring.md`, "Join"). Under the armpit the front and back are smoothed over 12 mm
+(`SIGMA_FB_ARMPIT`), not 6 like the widths (the chest line at the armpit's height), and B's chest rounds' depth is
+smoothed along z over 15 mm (`CHEST_SIGMA`; its kink at the crease drew a line under the rounds).
+
+### D3d to D3g: B's shoulders, the neck join, the feet
+`body_fit_run.run_fit` runs, after the two station passes, each step `fit.toml` names for a body:
+- `arm_follow` (B, D3d): her concept sets the chest up to 50 mm ahead of A's on the same ring, so each pass moves the
+  arms by the trunk's centre shift over the armpit (`body_fit_geom.arm_dy`); the shoulder chains (the Shoulder to
+  the fingertips) then move rigidly in y by the arms' mesh move, every pass and refit together (`arm_shift_mm`,
+  `arms_moved`), so her arm mesh sits on its bones as A's does (`arm_offsets`, within 1 mm in y);
+- `girdle` (B, D3g): the trunk outside |x| 60 mm takes the arms' move too, easing to all of it at the shoulder joint
+  and from 60 mm under the armpit up (`girdle_share`): the trunk no longer shears past the arm root (the diagonal
+  crease from the neck base to each armpit);
+- `shoulder_lift` (B, D3d and D3e): her shoulder tops raised half way to her concept's slope against a smoothed
+  envelope, then Taubin rounds over the band;
+- `relax` (both, D3f): the fit's moves diffused over the mesh (`relax_moves`; the ring, hands and feet keep theirs),
+  where the station maps meet; then `refits` rounds of one pass and a shorter diffusion;
+- `neck_tangent` (both, D3f and D3g): the body leaves the ring at the heads' flare angles (22 side, 17 front, 18.5
+  back degrees) over 10 mm, then eases into the trapezius over 35 mm; the head side flares into the ring over 70 mm
+  (`neck_flare_morph`), one continuous neck (the ring ADR's "Join");
+- `shoulder_round` (B, D3g): 12 plain Laplacian rounds on her girdle's front corner (`shoulder_share`);
+- `chest_trim` (B, D3e): the chest rounds' apex brought to the table.
+
+The feet (D3g): `apply`'s new forefoot (`body_feet_geom`) also gets an instep, the mid-foot lifted 7 mm and 8 %
+narrower halfway between the cut and the ankle (`body_feet_geom.midfoot`; `fit.toml` `[feet]` `instep_lift`,
+`midfoot_narrow`); D3f raised the sole's outer edge by up to `sole_round` mm (`sole_edge_lift`). B's rest: each bone
+keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 degrees, from the ring's height);
+`body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
+above it again from Blender's rest matrices.
