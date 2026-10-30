@@ -26,13 +26,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sneaker_geom as G  # noqa: E402
 
 IMG_W, IMG_H = 2048, 1024
-CANVAS = (0.885, 0.865, 0.80)  # sRGB, off-white canvas
-RUBBER = (0.96, 0.95, 0.92)
-STRIPE = (0.16, 0.17, 0.22)
-STITCH = (0.80, 0.77, 0.70)
-LACE = (0.965, 0.96, 0.945)
-EYELET = (0.62, 0.63, 0.65)
+CANVAS = (0.89, 0.86, 0.77)  # sRGB, off-white canvas (E1j: a warmer cream, so the whiter rubber reads apart)
+RUBBER = (0.985, 0.983, 0.975)
+STRIPE = (0.13, 0.17, 0.33)  # the foxing's thin navy stripe
+EDGE = (0.70, 0.71, 0.73)  # the outsole's grey bottom edge
+EDGE_TOP = (0.80, 0.80, 0.80)  # the rubber's top edge, where the canvas starts
+STITCH = (0.78, 0.75, 0.67)
+LACE = (0.955, 0.945, 0.92)
+EYELET = (0.20, 0.21, 0.24)  # dark metal: the eyelets read as dots on the canvas, as on the concept
 TREAD = (0.80, 0.78, 0.73)
+STRIPE_MM = 2.4  # the stripe's height
 
 
 SECT_Z = 0.2  # E1: the collar's section points: any Foot, Toes or LowerLeg weight under this height (m)
@@ -138,8 +141,10 @@ def paint(sh: G.Shoe) -> tuple[np.ndarray, np.ndarray]:
     sv = rows["sole_v"]
     b0, b1 = sv[rows["band_rows"][0]], sv[rows["band_rows"][1]]
     mid, half = (b0 + b1) / 2, (b1 - b0) / 2
-    stripe = sole & (np.abs(v - mid) < half * 0.45)
+    stripe = sole & (np.abs(v - mid) < 0.5 * STRIPE_MM * mmv)
     rgb[stripe] = STRIPE
+    rgb[sole & (v < sv[1] - 0.5 * mmv)] = EDGE  # the outsole's edge under the wall
+    rgb[sole & (v > join - 1.0 * mmv)] = EDGE_TOP  # the rubber's top edge (round the toe cap): a fine grey line
     hgt += np.where(sole, 0.6 * np.clip(1 - np.abs(v - mid) / max(half, 1e-6), 0, 1), 0)
     # the rubber's faint vertical ribs on the sole's wall below the band
     hgt += np.where(sole & (v < b0), 0.12 * np.sin(2 * np.pi * u / (1.6 * mm)), 0)
@@ -159,6 +164,18 @@ def paint(sh: G.Shoe) -> tuple[np.ndarray, np.ndarray]:
     st = stitch_row(join + 3.0 * mmv) | stitch_row(join + 5.5 * mmv)
     rim_v = np.interp(u[0], rows["rim_u"], rows["rim"], period=1.0)[None, :]
     st |= stitch_row(rim_v - 4.5 * mmv)
+    # E1j: the rubber toe cap over the upper's front (a U from above), its edge a fine grey line and a lip in the
+    # normal map; the eyelet stays' stitched edge, 13 mm under the slot's rim
+    cap_v = np.interp(u[0], rows["rim_u"], rows["cap"], period=1.0)[None, :]
+    cap = canvas & (v < cap_v) & (cap_v > join + 1.5 * mmv)
+    rgb[cap] = RUBBER
+    capedge = canvas & (np.abs(v - cap_v) < 0.6 * mmv) & (cap_v > join + 1.5 * mmv)
+    rgb[capedge] = EDGE_TOP
+    hgt += np.where(cap, 1.0, 0)
+    stay_u = np.zeros(len(rows["rim_u"]), np.float32)
+    stay_u[rows["stay_cols"]] = 1.0
+    on_stay = np.interp(u[0], rows["rim_u"], stay_u, period=1.0)[None, :] > 0.5
+    st |= stitch_row(rim_v - 13.0 * mmv) & on_stay
     rgb[st] = STITCH
     hgt += np.where(st, 1.2, 0)
     # the sole's bottom: tread diamonds, a little darker

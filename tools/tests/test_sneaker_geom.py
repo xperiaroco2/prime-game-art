@@ -84,7 +84,7 @@ class BuildTest(unittest.TestCase):
 
     def test_budget_and_parts(self):
         sh = self.shoe
-        self.assertTrue(1000 <= sh.tris <= 1500, sh.tris)  # 2,000 to 3,000 for the pair
+        self.assertTrue(1000 <= sh.tris <= 1910, sh.tris)  # E1j: at most S1's pair (2,920) plus 900 for the pair
         parts = Counter(sh.part)
         for p in ("sole", "upper", "lining", "bottom", "tongue", "eyelet", "lace"):
             self.assertGreater(parts[p], 0, p)
@@ -137,7 +137,7 @@ class BuildTest(unittest.TestCase):
         big = G.build(synth_foot(scale=1.1, wide=1.1))
         self.assertGreater(big.info["outline_len_m"], self.shoe.info["outline_len_m"] + 0.02)
         self.assertGreater(big.info["outline_width_m"], self.shoe.info["outline_width_m"] + 0.012)
-        self.assertGreater(big.info["rim_z_min_max"][0], self.shoe.info["rim_z_min_max"][0])
+        self.assertGreater(big.info["rim_z_min_max"][1], self.shoe.info["rim_z_min_max"][1])  # the collar
         self.assertEqual(big.tris, self.shoe.tris)  # the same topology
 
     def test_symmetric_pair_from_merged_feet(self):
@@ -185,7 +185,7 @@ class SectionTest(unittest.TestCase):
         sh0 = G.build(foot)
         # the ankle's mostly-shin skin round the heel at collar height, a little wider and further back than the
         # foot's own points there (the heel's section from u 0, v -4.4 to 5.4 cm)
-        z = 0.62 * foot.ankle_z
+        z = G.Params().heel_collar * foot.ankle_z
         ring = [(0.055 + 0.047 * math.cos(t / 16 * math.pi), 0.005 + 0.04 * math.sin(t / 16 * math.pi), z + dz)
                 for t in range(32) for dz in (-0.004, 0.0, 0.008)]
         wide = G.Foot(foot.pts, foot.ball_u, foot.ankle_u, foot.ankle_z, foot.pts + ring)

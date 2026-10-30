@@ -35,27 +35,35 @@ class Params:
     clear: float = 0.004  # the even clearance round the foot (m)
     toe_room: float = 0.012  # the shoe past the toes
     sole_out: float = 0.002  # the sole's wall outside the upper
-    sole_top: float = 0.017  # the sole's top (the foxing's top edge)
-    cap_top: float = 0.038  # the toe cap's top at the toe's tip
-    cap_reach: float = 0.075  # how far back from the tip the cap rises (m along u)
-    band: tuple[float, float, float] = (0.0085, 0.0105, 0.0008)  # the foxing band: from, to, raised by (m)
+    sole_top: float = 0.028  # the sole's top (the foxing's top edge; E1j: thicker, as on the concept)
+    cap_top: float = 0.040  # the toe cap's top at the toe's tip
+    cap_reach: float = 0.060  # how far back from the tip the cap rises (m along u)
+    band: tuple[float, float, float] = (0.0135, 0.0185, 0.0008)  # the foxing band: from, to, raised by (m)
+    cap_step: float = 0.002  # the canvas's step in from the rubber's top edge (the toe cap's lip)
+    toe_cap: tuple[float, float, float] = (0.040, 0.075, 0.012)  # E1j: the rubber toe cap painted over the upper: its
+                                       # edge's arc up the upper at the tip, how far back it reaches, its ease (m)
+    toe_spring: float = 0.007  # the sole's front lifted off the floor at the tip (m)
+    taper: float = 0.30  # E1j: the toe narrower than the ball (a sneaker's last, not a round clog): v x (1 - taper) at the tip
     upper_rows: int = 6
-    fullness: float = 0.8  # the upper's height profile exponent (under 1: a fuller toe box)
+    fullness: float = 0.75  # the upper's height profile exponent (under 1: a fuller toe box)
     collar_clear: float = 0.007
     heel_clear: float = 0.004  # the collar's extra room at the heel's back
-    heel_collar: float = 0.62  # the collar's height at the heel's back, x the ankle's (Foot head) height
-    side_collar: float = 0.53  # at its side dip
-    gap: float = 0.026  # the throat's slot between the eyelet stays
-    stay_cap: float = 0.92  # the stays' rim at most this x the ankle's height (a low top)
-    throat: float = 0.035  # the slot's front end before the ball (m)
+    heel_collar: float = 0.95  # the collar's height at the heel's back, x the ankle's (Foot head) height
+    side_collar: float = 0.82  # at its side dip
+    gap: float = 0.030  # the throat's slot between the eyelet stays
+    stay_cap: float = 1.04  # the stays' rim at most this x the ankle's height (a low top)
+    throat_rise: float = 0.032  # E1j: the stays' rim at the throat over the toe cap's top; a straight lace line
+                                # rises from there to the collar's front corners (the foot's instep permitting)
+    throat: float = 0.006  # the slot's front end before the ball (m; E1j: the lacing reaches the toe cap's back)
+    slot_min: float = 0.055  # the slot at least this long (the top eyelets' end no further back than front - slot_min)
     instep_clear: float = 0.007  # the stays' rim over the instep's top
-    pad: float = 0.0025  # the collar's padding out
+    pad: float = 0.006  # the collar's padding out
     lining: tuple[float, float] = (0.005, 0.012)  # the rolled collar's lining: in, down (m)
     blend: float = 0.025  # the crease's blend across the ball (m along u)
     eyelets: int = 5  # per side
-    eyelet_r: tuple[float, float, float] = (0.0038, 0.0019, 0.0009)  # outer, inner radius, height
-    eyelet_in: float = 0.007  # from the stays' edge
-    lace: tuple[float, float] = (0.0075, 0.0018)  # flat lace width, thickness
+    eyelet_r: tuple[float, float, float] = (0.0033, 0.0017, 0.0009)  # outer, inner radius, height
+    eyelet_in: float = 0.0065  # from the stays' edge
+    lace: tuple[float, float] = (0.0052, 0.0026)  # flat lace width, thickness
     tongue_rise: float = 0.014  # the tongue's top above the top eyelets
 
 
@@ -266,9 +274,37 @@ def outline(foot: Foot, p: Params) -> list[Pt2]:
     tip = max(q[0] for q in h)
     span = max(1e-6, tip - foot.ball_u)
     h = [((u + p.toe_room * ((u - foot.ball_u) / span) ** 2) if u > foot.ball_u else u, v) for u, v in h]
+    h = taper(h, foot.ball_u, p.taper)
     c = densify(offset(h, p.clear), 0.004)
     c = offset(smooth(c, 30), p.clear * 0.5)
     return resample(start_at_heel(c), p.around, dense_at=foot.ball_u)
+
+
+def taper(pts: list[Pt2], ball_u: float, k: float) -> list[Pt2]:
+    """The points ahead of the ball pulled toward the axis, more toward the tip (v x (1 - k s^1.5), s 0 at the ball,
+    1 at the tip): the toe narrower than the ball; behind the ball unchanged."""
+    tip = max(q[0] for q in pts)
+    span = max(1e-6, tip - ball_u)
+    return [(u, v * (1 - k * max(0.0, (u - ball_u) / span) ** 1.5)) for u, v in pts]
+
+
+def toe_cap_arc(u: float, v: float, tip_u: float, half_w: float, cap: tuple[float, float, float]) -> float:
+    """The rubber toe cap's edge at an outline column (u, v): its arc length up the upper from the canvas's foot
+    line; arc at the tip, falling to 0 at reach behind the tip along the sides (a U from above), eased over ease."""
+    arc, reach, ease = cap
+    back = tip_u - u + 0.5 * reach * (abs(v) / max(1e-6, half_w)) ** 2
+    return arc * (1 - smoothstep(reach - ease, reach, back)) * (1 - 0.35 * smoothstep(0.0, reach, back))
+
+
+def toe_spring(u: float, ball_u: float, tip_u: float, rise: float) -> float:
+    """The sole's lift off the floor at u: 0 behind the ball, rise at the tip (a smoothstep)."""
+    return rise * smoothstep(ball_u, tip_u, u)
+
+
+def lace_line(front_z: float, corner_z: float, front_u: float, rear_u: float, u: float) -> float:
+    """The straight lace line's height at u: front_z at the throat (front_u), corner_z at the slot's rear end."""
+    t = max(0.0, min(1.0, (front_u - u) / max(1e-6, front_u - rear_u)))
+    return front_z + (corner_z - front_z) * t
 
 
 def stay_cap(foot: Foot, p: Params) -> float:
@@ -276,12 +312,11 @@ def stay_cap(foot: Foot, p: Params) -> float:
 
 
 def stay_z(foot: Foot, p: Params, u: float) -> float:
-    """The stays' rim height at u: over the instep's top by instep_clear, never under the instep further forward
-    (the slot runs down to the throat), at most the stays' cap."""
-    half = p.gap / 2 + 0.012
-    front = throat_u(foot, p)
-    zs = [foot.top(min(front, u + 0.004 * k), half) for k in range(0, 1 + max(0, int((front - u) / 0.004)))]
-    return min(max(zs) + p.instep_clear, stay_cap(foot, p) + p.instep_clear)
+    """The stays' rim height at u (E1j): a straight lace line from throat_rise over the toe cap's top at the throat to
+    the collar's front corners (the stays' cap plus instep_clear), as on a sneaker's last; the foot's own instep no
+    longer lifts it (the dress removes the foot's skin under the collar's plane, so a low vamp cannot show it)."""
+    corner = stay_cap(foot, p) + p.instep_clear
+    return min(lace_line(p.cap_top + p.throat_rise, corner, throat_u(foot, p), slot_rear(foot, p), u), corner)
 
 
 def slot_rear(foot: Foot, p: Params) -> float:
@@ -291,7 +326,7 @@ def slot_rear(foot: Foot, p: Params) -> float:
     cap, front = stay_cap(foot, p), throat_u(foot, p)
     leg = [q[0] for q in foot.section_pts if q[2] >= cap - 0.004 and q[0] < front - 0.04]
     u = (max(leg) if leg else foot.ankle_u) + p.collar_clear
-    return min(max(u, foot.ankle_u + 0.01), front - 0.04)
+    return min(max(u, foot.ankle_u + 0.01), front - p.slot_min)
 
 
 def throat_u(foot: Foot, p: Params) -> float:
@@ -453,7 +488,7 @@ def build(foot: Foot, p: Params | None = None) -> Shoe:
     # the sole's wall rows: (out from the upper's line, z); the top row rises into the toe cap at the front
     b0, b1, bh = p.band
     sole_rows = [(p.sole_out - 0.003, 0.0), (p.sole_out, 0.0035), (p.sole_out, b0),
-                 (p.sole_out + bh, (b0 + b1) / 2), (p.sole_out, b1), (p.sole_out, None), (0.0, None)]
+                 (p.sole_out + bh, (b0 + b1) / 2), (p.sole_out, b1), (p.sole_out, None), (p.sole_out - p.cap_step, None)]
 
     def cap_z(u: float) -> float:
         return p.sole_top + (p.cap_top - p.sole_top) * smoothstep(tip_u - p.cap_reach, tip_u - 0.008, u)
@@ -465,11 +500,12 @@ def build(foot: Foot, p: Params | None = None) -> Shoe:
         nn = math.hypot(*nb) or 1.0
         nb = (nb[0] / nn, nb[1] / nn)
         zt = cap_z(b[0])
+        lift = toe_spring(b[0], foot.ball_u, tip_u, p.toe_spring)
         ring = []
         for d, z in sole_rows:
-            zz = zt if z is None else z
-            if d == 0.0 and z is None:
-                zz = zt + 0.0012
+            zz = zt if z is None else z + lift
+            if z is None and d < p.sole_out:
+                zz = zt + p.cap_step * 0.6
             ring.append((b[0] + nb[0] * d, b[1] + nb[1] * d, zz))
         zj = ring[-1][2]
         o = o_pts[c]
@@ -513,7 +549,10 @@ def build(foot: Foot, p: Params | None = None) -> Shoe:
             part = "sole" if r < join_row else ("upper" if r < rim_row else "lining")
             quad(idx[c][r], idx[c][r + 1], idx[c2][r + 1], idx[c2][r],
                  ((u1, v_of[c][r]), (u1, v_of[c][r + 1]), (u2, v_of[c2][r + 1]), (u2, v_of[c2][r])), part)
-    sh.uv_rows = {"scale": scale, "scale_v": vs_, "join": vj, 
+    half_w = max(abs(q[1]) for q in out)
+    cap_v = [vj + toe_cap_arc(out[c][0], out[c][1], tip_u, half_w, p.toe_cap) * vs_ for c in range(n)]
+    sh.uv_rows = {"scale": scale, "scale_v": vs_, "join": vj, "cap": cap_v,
+                  "stay_cols": [c for c in range(o_anchor["lat"], o_anchor["med"] + 1)], 
                   "sole_v": [v_of[0][r] for r in range(join_row + 1)], "rim": [v_of[c][rim_row] for c in range(n)],
                   "rim_u": [x0 + w * (c + 0.5) / n for c in range(n)], "band_rows": (2, 4)}
     # the bottom: the first ring zipped across (heel to toe along both sides)
@@ -633,7 +672,7 @@ def _stays(sh: Shoe, foot: Foot, p: Params, cols, rim_row: int, n: int, anchor: 
         us = [cols[c][rim_row][0] for c in cs]
         pts = []
         for e in range(p.eyelets):
-            target = front - 0.008 - (front - 0.008 - (rear + 0.014)) * e / max(1, p.eyelets - 1)
+            target = front - 0.007 - (front - 0.007 - (rear + 0.010)) * e / max(1, p.eyelets - 1)
             # the fractional column whose rim point is at target u (columns run along the slot monotonically)
             order = sorted(zip(us, cs))
             k = max(0, min(len(order) - 2, max(i for i in range(len(order)) if order[i][0] <= target) if order[0][0] <= target else 0))
@@ -708,7 +747,8 @@ def _stays(sh: Shoe, foot: Foot, p: Params, cols, rim_row: int, n: int, anchor: 
     L, M = eyes[1], eyes[-1]
 
     def lace_pt(e):
-        return _add(e[0], e[1], p.eyelet_r[2] + lt * 0.5 + 0.0004)
+        """Where a lace leaves its eyelet: on the hole's slot side, so the dark ring shows round it."""
+        return _add(_add(e[0], e[3], -0.5 * p.eyelet_r[1]), e[1], p.eyelet_r[2] + lt * 0.5 + 0.0004)
     bars = [(L[0], M[0])]
     for e in range(p.eyelets - 1):
         bars += [(L[e], M[e + 1]), (M[e], L[e + 1])]
@@ -720,7 +760,7 @@ def _stays(sh: Shoe, foot: Foot, p: Params, cols, rim_row: int, n: int, anchor: 
         tan = _unit(_sub(b, a))
         side = _unit(_cross(up, tan))
         mid = tuple((a[i] + b[i]) / 2 for i in range(3))
-        mid = (mid[0], mid[1], max(mid[2], foot.top(mid[0], 0.01) + p.instep_clear + 0.002 + lift))
+        mid = (mid[0], mid[1], mid[2] + 0.0015)
         _tube(sh, [a, mid, b], [up] * 3, lw, lt, "lace", lbox, caps=False)
     # the bow over the top pair: a knot, two flat loops out to the sides, two tails hanging over the stays
     ka, kb = lace_pt(L[-1]), lace_pt(M[-1])
@@ -731,13 +771,14 @@ def _stays(sh: Shoe, foot: Foot, p: Params, cols, rim_row: int, n: int, anchor: 
         loop = []
         for s in range(5):
             a = 2 * math.pi * s / 5
-            loop.append((knot[0] - 0.006 * math.sin(a) - 0.002, knot[1] + sgn * (0.016 * (1 - math.cos(a)) / 2 + 0.003),
-                         knot[2] + 0.0015 + 0.003 * (1 - math.cos(a)) / 2))
+            loop.append((knot[0] - 0.008 * math.sin(a) - 0.002, knot[1] + sgn * (0.022 * (1 - math.cos(a)) / 2 + 0.003),
+                         knot[2] + 0.0015 + 0.004 * (1 - math.cos(a)) / 2))
         _tube(sh, loop, [up] * len(loop), lw * 0.9, lt, "lace", lbox, closed=True)
         tail = [(knot[0] + 0.003, knot[1] + sgn * 0.003, knot[2]),
-                (knot[0] + 0.012, knot[1] + sgn * 0.009, knot[2] - 0.004),
-                (knot[0] + 0.022, knot[1] + sgn * 0.013, knot[2] - 0.012)]
-        _tube(sh, tail, [up] * 3, lw * 0.9, lt, "lace", lbox)
+                (knot[0] + 0.013, knot[1] + sgn * 0.010, knot[2] - 0.003),
+                (knot[0] + 0.024, knot[1] + sgn * 0.016, knot[2] - 0.010),
+                (knot[0] + 0.032, knot[1] + sgn * 0.020, knot[2] - 0.020)]
+        _tube(sh, tail, [up] * len(tail), lw * 0.9, lt, "lace", lbox)
     sh.info["eyelets_per_side"] = p.eyelets
     sh.info["lace_bars"] = len(bars)
 

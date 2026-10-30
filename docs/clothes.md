@@ -340,6 +340,38 @@ before.
 S1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/s1/` (`r<n>/dress`, `proof`, `godot`,
 `render`).
 
+### The sneaker as on the concept (E1j)
+S1's pair read as flat slippers or clogs with a tiny bow (the fresh critic and the engineer). The cause was the shape,
+not the parts: the stays' rim followed the mitten foot's own instep (flat and tall), the slot was clamped to 4 cm
+behind the throat, so the five eyelets sat in 1.8 cm under the bow, and the toe box was a flat roof at the instep's
+height. The concept (`2026-10-28-alien-clothes-s1/ax_overall`, `s1b/ch_overall`) is a classic low-top canvas
+sneaker. What changed (`Params`; the S1 values above are superseded where they differ):
+- **The lace line.** The stays' rim no longer follows the foot (`stay_z`): it is a straight `lace_line` from
+  `throat_rise` 3.2 cm over the toe cap's top at the throat to the collar's front corners (`stay_cap` 1.04 x the
+  ankle's height plus 7 mm). The foot's skin under the collar's plane is removed by the dress anyway, and the toes
+  that poke through a lower vamp are cut by the dress's through-the-wall rule (step 8), so the shoe's shape no longer
+  has to wrap the foot's tall mitten toes.
+- **The slot** starts `throat` 6 mm before the ball (the lacing reaches the toe cap's back) and is at least
+  `slot_min` 5.5 cm long; `gap` 3 cm; 5 eyelets a side from 7 mm behind its front to 10 mm before its rear, each
+  lace leaving its eyelet on the hole's slot side so the dark ring shows; laces 5.2 x 2.6 mm; a larger bow with
+  four-point tails.
+- **The collar** higher, the hem's turn-up sitting on it: `heel_collar` 0.95, `side_collar` 0.82; padding `pad`
+  6 mm.
+- **The sole** thicker: `sole_top` 2.8 cm, the foxing band at 13.5 to 18.5 mm with a 2.4 mm navy stripe (sRGB 33,
+  43, 84), a grey outsole edge under it and a fine grey line along the rubber's top edge; `toe_spring` 7 mm (the sole's
+  front lifted off the floor, `toe_spring`).
+- **The rubber toe cap** is painted over the upper's front (`toe_cap_arc`, `Params.toe_cap`): its edge 4 cm up the
+  upper at the tip, a U from above reaching 7.5 cm back along the sides, the rubber white with a grey edge line and
+  a lip in the normal map; the sole's own rise at the tip `cap_top` 4 cm.
+- **The last:** the toe narrower than the ball (`taper` 0.3: v x (1 - 0.3 s^1.5) ahead of the ball, s 0 at the ball,
+  1 at the tip); `fullness` 0.75.
+- **Colours:** canvas cream sRGB 227, 219, 196, rubber 251, 251, 249, dark eyelets 51, 54, 61 (they read as dots, as
+  on the concept), laces 244, 241, 235; the eyelet stays' stitched edge 13 mm under the slot's rim.
+
+The topology is S1's (1,476 triangles a shoe, 2,952 the pair). The shoe sheet (`tools/out/dress/e1j/shoe_sheet.py`, a
+Blender script: per character the concept's shoes over six Cycles views of the left shoe alone, built on the loco
+build's feet) is the quick loop: about a minute for both characters.
+
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
 
