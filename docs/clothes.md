@@ -439,7 +439,7 @@ keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 deg
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
 
-## Dressing D3's bodies (E1 to E1e, art #196)
+## Dressing D3's bodies (E1 to E1f, art #196)
 - **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
   head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
   smoothing; the 30 mm smoothstep band stays the default for the old bodies.
@@ -503,6 +503,23 @@ above it again from Blender's rest matrices.
   its nearest shoe vertex's weights, blended back to its own over that band (`clothes_fit_geom.mix_rows`), so the
   ankle and the shoe move as one; E1b's `--ankle-ride` is off with the plane. `collar.shrunk` (d14: 253 and 159
   vertices, at most 113 and 29 mm, the most on A's instep) and `collar.shoe_weights` report it.
+- **The bib's top by a lower plane** (E1f): the bind pose (`tools/out/dress/e1f/fit_bind.py`, textured and by
+  object) showed the ragged top edge and the white and dark slits beside the bib as geometry: Meshy's layered top hem,
+  about 30 mm deep, opened by the old plane at 1.195 m (A's reference) into crumpled folds with the shirt baked into
+  their texels. The plane now sits under that hem, on the stitched band's top: `--bib 0.105,1.166` and
+  `clothes_shell.body_planes`' reference bib top 1.166 (mapped per body with `--planes bones`); the straps' fronts and
+  buckles follow it. One cut, no peel.
+- **The seat re-laid on the body** (E1f): the dark shards at the back waist were bind-pose geometry too: B's female
+  fit folds the cloth over her seat into flared flaps round the back pockets (open edges 70 to 140 mm under the
+  waist, outer layers 6 mm and more off the cloth under them). `clothes_top.seat_wrap` (before the cut) puts each
+  garment vertex behind the side seams (y over -0.02), from 10 mm under the waist down `--seat-wrap` (0.24 m), on its
+  nearest body point plus a smoothed offset (its own, clamped to `--seat-clear` 4 to 30 mm, `--seat-smooth` rounds),
+  and relaxes the cloth along the body only round its folds (faces turned off the body's normal by more than
+  `--seat-fold`, two rings out; `--seat-relax` rounds): relaxing smooth cloth smeared its texture (d15).
+  `clothes_fit_geom.seat_weight` eases it out over 30 mm at every border and where the cloth bridges (over 60 to
+  90 mm off the body: the crotch). No face goes and no vertex is added, so the weights stay the fit's.
+- **The instep's clearance** (E1f): skin with the shoe over it is shrunk to `--collar-clear-under` (6 mm) inside the
+  shoe's wall instead of `--collar-clear` (3 mm): the vamp's teal specks in motion.
 - **The straps' back ends** (E1d): with `--planes bones` the straps sweep on past `--shell-strap-t`'s back angle until
   their back end lies `--strap-back-below` (32 mm) under the back panel's apex (`straps.back_angle_deg`); the shorter
   body B's straps met 50 mm over her apex (a flat bar of shirt and panel under their V). A's stay at 134 degrees.

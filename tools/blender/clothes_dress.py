@@ -213,6 +213,14 @@ def main() -> int:
     ap.add_argument("--band-over", type=float, default=0.03,
                     help="the band's ends run this far under the bib's and the back panel's edges (m)")
     ap.add_argument("--band-step", type=float, default=3.0, help="degrees between the band's stations")
+    ap.add_argument("--seat-wrap", type=float, default=0.24,
+                    help="E1f: the cloth over the seat, from under the waist down this far, re-laid on the body "
+                         "(clothes_top.seat_wrap; 0: off)")
+    ap.add_argument("--seat-clear", default="0.004,0.03", help="the seat's offset off the body, least and most (m)")
+    ap.add_argument("--seat-smooth", type=int, default=20, help="rounds smoothing the seat's offsets")
+    ap.add_argument("--seat-relax", type=int, default=8, help="rounds relaxing the seat's folds along the body")
+    ap.add_argument("--seat-fold", type=float, default=0.5,
+                    help="a seat face whose normal's dot with the body's is under this is a fold (relaxed)")
     ap.add_argument("--band-flaps", type=float, default=0.10,
                     help="the panels' edge faces turned toward the body go up to this far above the waist (m)")
     ap.add_argument("--edge-peel", type=int, default=3,
@@ -252,6 +260,9 @@ def main() -> int:
                     help="E1e: the plane rule owns the leg's and foot's skin up to this far over the rim's top (m)")
     ap.add_argument("--collar-band", type=float, default=0.015,
                     help="E1e: the skin's shrink toward the leg's axis eases out over this much over the rim (m)")
+    ap.add_argument("--collar-clear-under", type=float, default=0.006,
+                    help="E1f: the clearance inside the shoe for skin with the shoe over it (the instep: the vamp's "
+                         "specks in motion; m)")
     ap.add_argument("--collar-clear", type=float, default=0.003,
                     help="E1e: the shrunk skin stays this far inside the shoe's inner wall (m)")
     ap.add_argument("--collar-weights", type=float, default=0.03,
@@ -268,7 +279,7 @@ def main() -> int:
                     help="the crew neck's plane through its front and back points: yf,zf,yb,zb (m)")
     ap.add_argument("--neck-r", type=float, default=0.09, help="the neck cut reaches this far out in |x| (m)")
     ap.add_argument("--waist", type=float, default=1.0, help="the Meshy trousers' waistband height (m)")
-    ap.add_argument("--bib", default="0.105,1.195", help="the bib's half width and top (m)")
+    ap.add_argument("--bib", default="0.105,1.166", help="the bib's half width and top (m)")
     ap.add_argument("--back", default="0.03,1.12,0.12,0.03",
                     help="the back panel: least y, apex z, half width at the waist and at the apex (m)")
     ap.add_argument("--shell-strap-t", default="-118,20,134",
@@ -427,6 +438,9 @@ def main() -> int:
             garment.data.update()
         rep["garment_stray_verts_removed"] = len(bad)
         say("garment strays removed", len(bad))
+    if args.seat_wrap > 0 and garment is not None:  # E1f: the seat's folds re-laid on the body
+        import clothes_top as TOP
+        rep["seat_wrap"] = TOP.seat_wrap(garment, char, args)
     if args.shell and garment is not None:  # the hybrid route: our own top, bib, back and straps (clothes_top)
         import clothes_top as TOP
         try:
@@ -694,8 +708,9 @@ def main() -> int:
             rz = rim_pts[j].z
             # skin with the shoe over it or just under it (the instep under the vamp or poking through it, beside
             # the throat's low slot) counts as under the rim wherever its nearest rim point lies
-            if (stree.ray_cast(p + up * 1e-4, up, 0.1)[0] is not None
-                    or stree.ray_cast(p - up * 1e-4, -up, 0.012)[0] is not None):
+            over = (stree.ray_cast(p + up * 1e-4, up, 0.1)[0] is not None
+                    or stree.ray_cast(p - up * 1e-4, -up, 0.012)[0] is not None)
+            if over:
                 rz = max(rz, p.z + 0.002)
             if p.z > rz + args.collar_band or (p.xy - c["ctr"].xy).length > c["reach"]:
                 continue
@@ -710,7 +725,8 @@ def main() -> int:
             t = wall(Vector((o.x, o.y, h)), d, r + 0.05)
             if t is None:
                 continue
-            r2 = F.collar_clamp(r, t, p.z, rz, args.collar_clear, args.collar_band)
+            r2 = F.collar_clamp(r, t, p.z, rz, args.collar_clear_under if over else args.collar_clear,
+                                args.collar_band)
             if r2 < r - 1e-6:
                 new_co[v.index] = inv @ Vector((ax.x + d.x * r2, ax.y + d.y * r2, p.z))
                 shrunk += 1

@@ -354,5 +354,24 @@ class MixRows(unittest.TestCase):  # E1e: the ankle skin takes the shoe's weight
             F.mix_rows({"a": 1.0}, {"b": 1.0}, 1.5)
 
 
+class SeatWeight(unittest.TestCase):  # E1f: the seat re-laid on the body
+    A = dict(z_lo=0.70, z_hi=0.94, y0=-0.02)
+
+    def test_full_inside_the_zone(self):
+        self.assertAlmostEqual(F.seat_weight(0.08, 0.84, 0.01, **self.A), 1.0)
+
+    def test_none_in_front_above_below_or_bridging(self):
+        self.assertEqual(F.seat_weight(-0.05, 0.84, 0.01, **self.A), 0.0)  # in front of the side seams
+        self.assertEqual(F.seat_weight(0.08, 0.95, 0.01, **self.A), 0.0)  # the waistband
+        self.assertEqual(F.seat_weight(0.08, 0.69, 0.01, **self.A), 0.0)  # under the seat
+        self.assertEqual(F.seat_weight(0.08, 0.84, 0.10, **self.A), 0.0)  # the crotch's bridge
+
+    def test_the_borders_ease_out_without_a_step(self):
+        ws = [F.seat_weight(0.08, 0.94 - i * 0.001, 0.01, **self.A) for i in range(41)]
+        self.assertTrue(all(b >= a for a, b in zip(ws, ws[1:])))
+        self.assertLess(max(b - a for a, b in zip(ws, ws[1:])), 0.06)
+        self.assertAlmostEqual(F.seat_weight(0.08, 0.925, 0.01, **self.A), 0.5)
+
+
 if __name__ == "__main__":
     unittest.main()

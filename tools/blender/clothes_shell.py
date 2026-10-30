@@ -425,7 +425,7 @@ REF_NECK_Y = 0.041
 
 
 def body_planes(chest_z: float, neck_z: float, neck_y: float, upper_arm: tuple[float, float, float], hand_x: float,
-                cuff_back: float = 0.035, waist: float = 1.0, bib: tuple[float, float] = (0.105, 1.195),
+                cuff_back: float = 0.035, waist: float = 1.0, bib: tuple[float, float] = (0.105, 1.166),
                 back: tuple[float, float, float, float] = (0.03, 1.12, 0.12, 0.03),
                 neck: tuple[float, float, float, float] = (-0.06, 1.335, 0.09, 1.365), seam_x: float = 0.165,
                 arm_z: float = 1.18) -> dict:

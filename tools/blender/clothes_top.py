@@ -169,6 +169,76 @@ def cut_garment(gar, args) -> dict:
     return rep
 
 
+def seat_wrap(gar, char, args) -> dict:
+    """The seat re-laid on the body (E1f): the female fit folded the cloth over her seat into flared shards round the
+    back pockets (the dark shards at the back waist), geometry in the bind pose. Behind the side seams, under the
+    waistband and down args.seat_wrap m, each garment vertex goes to its nearest body point plus a smoothed offset
+    (its own distance there, clamped to args.seat_clear and smoothed over the cloth's edges), and the surface is
+    relaxed along the body round its folds (faces turned more than args.seat_fold off the body's normal, two rings
+    out; args.seat_relax rounds: Laplacian, then back onto the offset surface), which unfolds them; clothes_fit_geom.seat_weight eases it out at the zone's borders and where the cloth bridges. No face goes
+    and no vertex is added, so the weights stay the fit's."""
+    from mathutils.bvhtree import BVHTree as _B
+    dg = bpy.context.evaluated_depsgraph_get()
+    btree = _B.FromObject(char, dg)
+    cw, gw = char.matrix_world, gar.matrix_world
+    cinv, ginv = cw.inverted(), gw.inverted()
+    cn = cw.to_3x3().inverted().transposed()
+    lo, hi = floats(args.seat_clear)
+    z_lo, z_hi = args.waist - args.seat_wrap, args.waist - 0.01
+    me = gar.data
+    nbrs = [[] for _ in me.vertices]
+    for e in me.edges:
+        a, b = e.vertices
+        nbrs[a].append(b)
+        nbrs[b].append(a)
+
+    def near(p):  # world point -> (body point, outward normal, distance), all world
+        loc, n, _i, d = btree.find_nearest(cinv @ p)
+        return cw @ loc, (cn @ n).normalized(), (cw @ loc - p).length
+
+    pts = [gw @ v.co for v in me.vertices]
+    w, off = [], []
+    for p in pts:
+        loc, n, d = near(p)
+        s = (p - loc).dot(n)
+        w.append(F.seat_weight(p.y, p.z, d, z_lo, z_hi, -0.02) if s > -0.01 else 0.0)
+        off.append([min(hi, max(lo, s))])
+    moved = [i for i, x in enumerate(w) if x > 0]
+    if not moved:
+        return {"verts": 0}
+    off = F.smooth(off, nbrs, args.seat_smooth, 0.5, mask=[1.0 if x > 0 else 0.0 for x in w])
+    # the relax only round the folds (faces turned off the body's normal, two rings out): sliding smooth cloth along
+    # the body smears its texture (d15, the chameleon's back)
+    gn = gw.to_3x3().inverted().transposed()
+    fold = [0.0] * len(pts)
+    for f in me.polygons:
+        if not any(w[i] > 0 for i in f.vertices):
+            continue
+        _loc, n, _d = near(gw @ f.center)
+        if (gn @ f.normal).normalized().dot(n) < args.seat_fold:
+            for i in f.vertices:
+                fold[i] = 1.0
+    for _ in range(2):
+        fold = [max([fold[i]] + [fold[j] for j in nbrs[i]]) for i in range(len(fold))]
+    relax = [a * b for a, b in zip(w, fold)]
+    cur = [list(p) for p in pts]
+    for _ in range(args.seat_relax):
+        cur = F.smooth(cur, nbrs, 1, 0.5, mask=relax)
+        for i in moved:
+            loc, n, _d = near(Vector(cur[i]))
+            q = loc + n * off[i][0]
+            cur[i] = list(Vector(pts[i]).lerp(q, w[i]))
+    shift = [(Vector(cur[i]) - pts[i]).length for i in moved]
+    for i in moved:
+        me.vertices[i].co = ginv @ Vector(cur[i])
+    me.update()
+    rep = {"verts": len(moved), "full": sum(x > 0.999 for x in w), "relaxed": sum(x > 0 for x in relax), "shift_mm_median_max":
+           [round(1000 * sorted(shift)[len(shift) // 2], 1), round(1000 * max(shift), 1)], "z": [round(z_lo, 4),
+                                                                                                 round(z_hi, 4)]}
+    say("seat wrap", rep)
+    return rep
+
+
 def peel_edges(bm, gar, args, z_lo: float, bib_hw: float, bib_top: float, back_y: float, z_apex: float,
                hw_w: float, hw_a: float) -> dict:
     """The panels' ragged side edges (C1j): along the bib's and the back panel's side edges (within args.edge_zone of

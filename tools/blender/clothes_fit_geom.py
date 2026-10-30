@@ -381,3 +381,15 @@ def collar_clamp(r: float, outline: float, z: float, rim_z: float, clear: float 
         return r
     t = min(1.0, max(0.0, (z - rim_z) / band))
     return most + (r - most) * t * t * (3.0 - 2.0 * t)
+
+
+def seat_weight(y: float, z: float, dist: float, z_lo: float, z_hi: float, y0: float, ramp: float = 0.03,
+                far: float = 0.09) -> float:
+    """How much a garment vertex over the seat is re-laid on the body (E1f, clothes_top.seat_wrap): 1 behind y0
+    (the side seams) between z_lo and z_hi (under the waistband) and within far - ramp of the body; each border eased
+    out over ramp with a smoothstep, so the re-laid cloth meets the rest without a step; 0 where the cloth bridges
+    (farther than far: the crotch)."""
+    def s(t: float) -> float:
+        t = min(1.0, max(0.0, t / ramp))
+        return t * t * (3.0 - 2.0 * t)
+    return s(z - z_lo) * s(z_hi - z) * s(y - y0) * s(far - dist)
