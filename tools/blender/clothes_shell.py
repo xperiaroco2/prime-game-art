@@ -416,3 +416,107 @@ def shirt_texel(r: float, g: float, b: float, lum: float = 0.55, sat: float = 0.
     panels' edges): light (luminance over lum) and grey (saturation under sat), not denim, not orange stitching."""
     hi, lo = max(r, g, b), min(r, g, b)
     return 0.2126 * r + 0.7152 * g + 0.0722 * b > lum and hi > 0 and (hi - lo) / hi < sat
+
+
+# E1b: the planes' defaults (clothes_dress's flags) were set on the old body A, whose bones these are (A11 keeps them)
+REF_CHEST_Z, REF_NECK_Z = 1.028, 1.339
+REF_UPPER_ARM = (0.152, 0.065, 1.277)
+REF_NECK_Y = 0.041
+
+
+def body_planes(chest_z: float, neck_z: float, neck_y: float, upper_arm: tuple[float, float, float], hand_x: float,
+                cuff_back: float = 0.035, waist: float = 1.0, bib: tuple[float, float] = (0.105, 1.166),
+                back: tuple[float, float, float, float] = (0.03, 1.12, 0.12, 0.03),
+                neck: tuple[float, float, float, float] = (-0.06, 1.335, 0.09, 1.365), seam_x: float = 0.165,
+                arm_z: float = 1.18) -> dict:
+    """The top's and the garment's cut planes from a body's own bones (E1b, art #196): heights mapped linearly from
+    the reference torso (Chest to Neck) to this body's, the sleeves' seam moved with the upper arm's root, the arms'
+    axis through the upper arm's head, and the cuffs cuff_back m in from the hand bone's head (the wrist), so the
+    sleeve never reaches the hand or the thumb's root. The reference body gets the defaults back but the cuff."""
+    if neck_z <= chest_z:
+        raise ValueError(f"neck {neck_z} not above chest {chest_z}")
+    k = (neck_z - chest_z) / (REF_NECK_Z - REF_CHEST_Z)
+    zm = lambda z: chest_z + (z - REF_CHEST_Z) * k
+    dy = neck_y - REF_NECK_Y
+    return {"cuff_x": hand_x - cuff_back, "seam_x": seam_x + upper_arm[0] - REF_UPPER_ARM[0], "arm_z": zm(arm_z),
+            "arm_axis": (upper_arm[1], upper_arm[2]), "waist": zm(waist), "bib": (bib[0], zm(bib[1])),
+            "back": (back[0], zm(back[1]), back[2], back[3]),
+            "neck": (neck[0] + dy, zm(neck[1]), neck[2] + dy, zm(neck[3])), "z_scale": k}
+
+
+def mirror_tile(i: int, n: int) -> tuple[int, bool]:
+    """E1h: texel i of a strip that repeats an n-texel source mirrored every other time (no seam where two copies
+    meet): the source texel and whether this copy is mirrored."""
+    k, r = divmod(i, n)
+    return (n - 1 - r, True) if k % 2 else (r, False)
+
+
+def cyl_coords(x: float, y: float, z: float, axis_y: float, a_ref: float, radius: float) -> tuple[float, float]:
+    """E1h: a point's place on a vertical cylinder round the body's axis (x = 0, y = axis_y; the front at -y): the arc
+    length (m) at `radius` from the angle a_ref (wrapped to within half a turn of it), and the height."""
+    a = math.atan2(x, -(y - axis_y)) - a_ref
+    a = (a + math.pi) % (2 * math.pi) - math.pi
+    return radius * a, z
+
+
+def in_box(x: float, y: float, z: float, box: tuple[float, float, float, float, float, float]) -> bool:
+    """E1h: a point inside a box (x0, x1, y0, y1, z0, z1), mirrored in x (the box is given for |x|)."""
+    x0, x1, y0, y1, z0, z1 = box
+    return x0 <= abs(x) <= x1 and y0 <= y <= y1 and z0 <= z <= z1
+
+
+def front_hull(pts: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """The taut line a stiff panel takes over a side profile (E1i, her flat bib): pts are (z, y) with the front at
+    the smaller y; the result is the profile's front hull, (z, y) from the lowest z to the highest, every point of
+    pts on it or behind it (y no smaller than the hull's at its z)."""
+    hull: list[tuple[float, float]] = []
+    for z, y in sorted(pts):
+        if hull and abs(z - hull[-1][0]) < 1e-12:
+            continue  # sorted by (z, y): the first point at a height already has its smallest y
+        while len(hull) >= 2:
+            (z1, y1), (z2, y2) = hull[-2], hull[-1]
+            if (y2 - y1) * (z - z1) >= (y - y1) * (z2 - z1):  # hull[-1] on or behind the chord: not taut
+                hull.pop()
+            else:
+                break
+        hull.append((z, y))
+    return hull
+
+
+def hull_at(hull: list[tuple[float, float]], z: float) -> float:
+    """The hull's y at z, linear between its points, clamped to its ends."""
+    if z <= hull[0][0]:
+        return hull[0][1]
+    for (z1, y1), (z2, y2) in zip(hull, hull[1:]):
+        if z <= z2:
+            return y1 + (y2 - y1) * (z - z1) / (z2 - z1)
+    return hull[-1][1]
+
+
+def ease(z: float, z0: float, span: float) -> float:
+    """0 at z0 and below, 1 from z0 + span on, smoothstep between (E1i: the flat bib eased in over the waist)."""
+    if span <= 0:
+        return 1.0 if z > z0 else 0.0
+    t = min(1.0, max(0.0, (z - z0) / span))
+    return t * t * (3 - 2 * t)
+
+
+def chain_row(z: float, knots: list[tuple[float, str]]) -> dict[str, float]:
+    """A stiff panel's weights by height alone (E1i2, her flat bib): knots are (height, bone) up the spine (each bone's
+    mid height in the bind pose, e.g. Hips, Spine, Chest, UpperChest); at z the two knots round it share the weight,
+    smoothstep between them, so the panel bends only where the spine does and the same across its width. Below the
+    lowest knot all goes to its bone, above the highest to its."""
+    ks = sorted(knots)
+    if not ks:
+        return {}
+    if z <= ks[0][0]:
+        return {ks[0][1]: 1.0}
+    for (z1, b1), (z2, b2) in zip(ks, ks[1:]):
+        if z <= z2:
+            t = ease(z, z1, z2 - z1)
+            row: dict[str, float] = {}
+            for b, w in ((b1, 1.0 - t), (b2, t)):
+                if w > 1e-6:
+                    row[b] = row.get(b, 0.0) + w
+            return row
+    return {ks[-1][1]: 1.0}

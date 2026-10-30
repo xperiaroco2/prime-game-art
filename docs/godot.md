@@ -11,6 +11,7 @@ tools/run.py godot-check <glb> [...] [--out DIR] [--strict-contract] [--humanoid
 tools/run.py frames <glb> [--clips A,B] [--compare all|A,B|''] [--video A,B] [--blend FILE] [--out DIR]
                   [--face CLIP [--face-beside PNG --face-rects 'x,y,w,h;...']] [--yaw DEG]
                   [--closeups 'label@x,y,z[~Bone]/size/yaw[/pitch];...' [--closeup-clip Idle] [--closeup-time S]]
+                  [--look studio|high]
                                                                   Godot-rendered frame sheets (off-screen window);
                                                                   --closeups: targeted orthographic close-ups, two
                                                                   per row, sheets/closeups.png (y up, facing +z);
@@ -276,6 +277,9 @@ for the faces gate's before/after (docs/faces.md). `slice` runs it with the firs
 `--yaw DEG` turns the clip sheets' camera (0 the front, 90 the character's left side, -90 its right, 180 its back;
 default the three-quarter, 35) and the three studio lights with it (the spec's `light_turn_deg`), so a turnaround in
 Godot's look is lit as the three-quarter view is (art #196: the clothes beside their sketch, one run per view).
+`--look high` (art #196, E1b) shoots in the game's look instead of the studio light: the High preset of
+`godot/showroom/look_presets.json` with the approved lights and the studio sky; `--look studio` (the default) is the
+linear review light above.
 
 **Measured** on whole frames (2026-10-03, every clip of m1_rex and w1_ivy, 62 joints and 124 axis points): Godot and
 Blender agree within 0.017 mm everywhere. Before the optimizer was turned off they differed by up to 16.7 mm (m1_rex

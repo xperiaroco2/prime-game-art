@@ -100,6 +100,8 @@ def main() -> int:
     ap.add_argument("--fix", default="{}", help="B3: JSON render settings after the front isolation sheet "
                     "(shadow_quality 0-5, default 5; taa, angular_deg, sss_scale)")
     ap.add_argument("--no-flare", action="store_true", help="M1: the build without the neck flare (a Meshy body)")
+    ap.add_argument("--neck-band", default="smooth", choices=("smooth", "flare"), help="E1: alien_char_build's "
+                    "head morph (flare: D3's bodies, the ring ADR's Join; use it with --no-flare, their necks are built)")
     ap.add_argument("--gill-ratio", type=float, default=1.0, help="M1: the gills' triangles kept (1.0: all)")
     ap.add_argument("--leg-fit", action="store_true", help="T2: the clips fitted to the body's own legs against "
                     "S4b's rig, the one they were made on (alien_leg_fit.py: the hip keys scaled, the feet matched)")
@@ -140,7 +142,7 @@ def main() -> int:
                 "--mask", str(eye_mask(lv, static, h)),
                 "--accent", str(SLOTS / "maps" / f"{h}_accent.png"),
                 "--detail", str(static / f"{h}_detail.png"), "--bases", str(hd / "bases.json"),
-                "--out", str(hd), *(["--no-flare"] if args.no_flare else []),
+                "--out", str(hd), *(["--no-flare"] if args.no_flare else []), "--neck-band", args.neck_band,
                 *(["--gill-ratio", str(args.gill_ratio)] if args.gill_ratio < 1.0 else []),
                 *(["--leg-fit", str(BODY)] if args.leg_fit else []),
                 *(["--leg-fit-mode", "ik"] if args.leg_fit and args.leg_ik else []),

@@ -169,6 +169,208 @@ def cut_garment(gar, args) -> dict:
     return rep
 
 
+def fill_holes(gar, args) -> dict:
+    """E1g: the garment's small holes under the waist (closed open-edge loops of at most args.fill_holes edges, Meshy's
+    gaps round the front pockets: dark divots where the removed body left nothing behind) are filled; each new face's
+    corners take their vertex's UV from the cloth round it, so the fill shows the denim next to it. E1i2: with
+    args.fill_holes_above, up to that height over the waist (the chameleon's bib pocket: white holes in Jog where the
+    top and the body under the bib are removed)."""
+    mw = gar.matrix_world
+    bm = bmesh.new()
+    bm.from_mesh(gar.data)
+    # loose bits first (a lone triangle 45 mm off A's hip, d18): islands of at most 4 faces under the waist go; their
+    # own edges would read as holes below
+    comp, bits = {}, []
+    for f in bm.faces:
+        if f in comp:
+            continue
+        st, grp = [f], [f]
+        comp[f] = True
+        while st:  # the whole component: a partial flood would leave pieces of a large one looking small
+            g = st.pop()
+            for e in g.edges:
+                for h in e.link_faces:
+                    if h not in comp:
+                        comp[h] = True
+                        st.append(h)
+                        grp.append(h)
+        if len(grp) <= 4 and all((mw @ g.calc_center_median()).z < args.waist for g in grp):
+            bits.extend(grp)
+    if bits:
+        bmesh.ops.delete(bm, geom=bits, context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    seen, holes = set(), []
+    for e in bm.edges:
+        if e in seen or not e.is_boundary:
+            continue
+        st, grp = [e], []
+        seen.add(e)
+        while st:
+            x = st.pop()
+            grp.append(x)
+            for v in x.verts:
+                for y in v.link_edges:
+                    if y.is_boundary and y not in seen:
+                        seen.add(y)
+                        st.append(y)
+        vs = {v for x in grp for v in x.verts}
+        closed = all(sum(1 for y in v.link_edges if y.is_boundary) == 2 for v in vs) and len(vs) == len(grp)
+        above = getattr(args, "fill_holes_above", None)
+        z_cap = args.waist - 0.005 if above is None else args.waist + above  # E1i2: the bib pocket's holes too
+        if closed and len(grp) <= args.fill_holes and max((mw @ v.co).z for v in vs) < z_cap:
+            holes.append(grp)
+    up = [[round(c, 3) for c in sum((mw @ v.co for x in g for v in x.verts), Vector()) / (2 * len(g))]
+          for g in holes if max((mw @ v.co).z for x in g for v in x.verts) >= args.waist - 0.005]
+    uvl = bm.loops.layers.uv.active
+    vuv = {}
+    if uvl is not None:
+        for g in holes:
+            for x in g:
+                for v in x.verts:
+                    ls = [l[uvl].uv.copy() for l in v.link_loops]
+                    vuv[v] = sum(ls, Vector((0.0, 0.0))) / len(ls) if ls else Vector((0.0, 0.0))
+    new = bmesh.ops.holes_fill(bm, edges=[x for g in holes for x in g], sides=args.fill_holes)["faces"]
+    if new:
+        bmesh.ops.recalc_face_normals(bm, faces=new)
+        if uvl is not None:
+            for f in new:
+                for l in f.loops:
+                    if l.vert in vuv:
+                        l[uvl].uv = vuv[l.vert]
+    bm.to_mesh(gar.data)
+    bm.free()
+    gar.data.update()
+    rep = {"holes": len(holes), "faces": len(new), "loose_faces_removed": len(bits)}
+    if up:
+        rep["over_the_waist"] = up
+    say("holes filled", rep)
+    return rep
+
+
+def despike(gar, char, args) -> dict:
+    """E1g: the trousers' spikes (A's and B's hip sides, d16): a garment vertex under the waist that stands more than
+    args.despike m out of its neighbours' mean, along the body's outward normal, goes to that mean (args.despike_rounds
+    passes). Smooth cloth and its corners stand far less out, so only the spikes' tips move."""
+    from mathutils.bvhtree import BVHTree as _B
+    if args.despike <= 0:
+        return {}
+    dg = bpy.context.evaluated_depsgraph_get()
+    btree = _B.FromObject(char, dg)
+    cw, gw = char.matrix_world, gar.matrix_world
+    cinv, ginv = cw.inverted(), gw.inverted()
+    cn = cw.to_3x3().inverted().transposed()
+    me = gar.data
+    nbrs = [[] for _ in me.vertices]
+    for e in me.edges:
+        a, b = e.vertices
+        nbrs[a].append(b)
+        nbrs[b].append(a)
+    moved = set()
+    for _ in range(args.despike_rounds):
+        pts = [gw @ v.co for v in me.vertices]
+        out = []
+        for i, p in enumerate(pts):
+            if p.z > args.waist or len(nbrs[i]) < 2:
+                continue
+            m = sum((pts[j] for j in nbrs[i]), Vector()) / len(nbrs[i])
+            loc, n, _i, _d = btree.find_nearest(cinv @ p)
+            n = (cn @ n).normalized()
+            if F.spike_out(tuple(p - m), tuple(n), args.despike):
+                out.append((i, m))
+        for i, m in out:
+            me.vertices[i].co = ginv @ m
+            moved.add(i)
+        if not out:
+            break
+    me.update()
+    rep = {"verts": len(moved)}
+    say("despike", rep)
+    return rep
+
+
+def seat_wrap(gar, char, args) -> dict:
+    """The seat re-laid on the body (E1f): the female fit folded the cloth over her seat into flared shards round the
+    back pockets (the dark shards at the back waist), geometry in the bind pose. Behind the side seams, under the
+    waistband and down args.seat_wrap m, each garment vertex goes to its nearest body point plus a smoothed offset
+    (its own distance there, clamped to args.seat_clear and smoothed over the cloth's edges), and the surface is
+    relaxed along the body round its folds (faces turned more than args.seat_fold off the body's normal, two rings
+    out; args.seat_relax rounds: Laplacian, then back onto the offset surface), which unfolds them; clothes_fit_geom.seat_weight eases it out at the zone's borders and where the cloth bridges. No face goes
+    and no vertex is added, so the weights stay the fit's."""
+    from mathutils.bvhtree import BVHTree as _B
+    dg = bpy.context.evaluated_depsgraph_get()
+    btree = _B.FromObject(char, dg)
+    cw, gw = char.matrix_world, gar.matrix_world
+    cinv, ginv = cw.inverted(), gw.inverted()
+    cn = cw.to_3x3().inverted().transposed()
+    lo, hi = floats(args.seat_clear)
+    z_lo, z_hi = args.waist - args.seat_wrap, args.waist - 0.01
+    me = gar.data
+    nbrs = [[] for _ in me.vertices]
+    for e in me.edges:
+        a, b = e.vertices
+        nbrs[a].append(b)
+        nbrs[b].append(a)
+
+    def near(p):  # world point -> (body point, outward normal, distance), all world
+        loc, n, _i, d = btree.find_nearest(cinv @ p)
+        return cw @ loc, (cn @ n).normalized(), (cw @ loc - p).length
+
+    pts = [gw @ v.co for v in me.vertices]
+    w, off = [], []
+    for p in pts:
+        loc, n, d = near(p)
+        s = (p - loc).dot(n)
+        w.append(F.seat_weight(p.y, p.z, d, z_lo, z_hi, args.seat_y0, y1=args.seat_y1) if s > -0.01 else 0.0)
+        off.append([min(hi, max(lo, s))])
+    moved = [i for i, x in enumerate(w) if x > 0]
+    if not moved:
+        return {"verts": 0}
+    off = F.smooth(off, nbrs, args.seat_smooth, 0.5, mask=[1.0 if x > 0 else 0.0 for x in w])
+    # the relax only round the folds (faces turned off the body's normal, two rings out): sliding smooth cloth along
+    # the body smears its texture (d15, the chameleon's back)
+    gn = gw.to_3x3().inverted().transposed()
+    fold = [0.0] * len(pts)
+    for f in me.polygons:
+        if not any(w[i] > 0 for i in f.vertices):
+            continue
+        _loc, n, _d = near(gw @ f.center)
+        if (gn @ f.normal).normalized().dot(n) < args.seat_fold:
+            for i in f.vertices:
+                fold[i] = 1.0
+    for _ in range(2):
+        fold = [max([fold[i]] + [fold[j] for j in nbrs[i]]) for i in range(len(fold))]
+    if args.seat_open_rings > 0:  # E1g: the relax only near the cloth's open edges (the flaps), not Meshy's relief
+        ekey = {tuple(sorted(e.vertices)): 0 for e in me.edges}
+        for f in me.polygons:
+            for k in f.edge_keys:
+                ekey[tuple(sorted(k))] += 1
+        seeds = sorted({i for k, c in ekey.items() if c == 1 for i in k if w[i] > 0})
+        fold = [a * b for a, b in zip(fold, F.near_rings(seeds, nbrs, args.seat_open_rings))]
+    relax = [a * b for a, b in zip(w, fold)]
+    relax_set = {i for i, x in enumerate(relax) if x > 0}
+    cur = [list(p) for p in pts]
+    for i in moved:  # E1g: off the relax, along the body's normal only, so the UVs keep their layout
+        if i not in relax_set:
+            loc, n, _d = near(pts[i])
+            q = pts[i] + n * (off[i][0] - (pts[i] - loc).dot(n))
+            cur[i] = list(pts[i].lerp(q, w[i]))
+    for _ in range(args.seat_relax if relax_set else 0):
+        cur = F.smooth(cur, nbrs, 1, 0.5, mask=relax)
+        for i in relax_set:
+            loc, n, _d = near(Vector(cur[i]))
+            q = loc + n * off[i][0]
+            cur[i] = list(Vector(pts[i]).lerp(q, w[i]))
+    shift = [(Vector(cur[i]) - pts[i]).length for i in moved]
+    for i in moved:
+        me.vertices[i].co = ginv @ Vector(cur[i])
+    me.update()
+    rep = {"verts": len(moved), "full": sum(x > 0.999 for x in w), "relaxed": sum(x > 0 for x in relax), "shift_mm_median_max":
+           [round(1000 * sorted(shift)[len(shift) // 2], 1), round(1000 * max(shift), 1)], "z": [round(z_lo, 4),
+                                                                                                 round(z_hi, 4)]}
+    say("seat wrap", rep)
+    return rep
+
+
 def peel_edges(bm, gar, args, z_lo: float, bib_hw: float, bib_top: float, back_y: float, z_apex: float,
                hw_w: float, hw_a: float) -> dict:
     """The panels' ragged side edges (C1j): along the bib's and the back panel's side edges (within args.edge_zone of
@@ -468,8 +670,12 @@ def follow_panels(top, gar, args) -> dict:
 
 def hidden_face(tree, c, n, z_full, args) -> bool:
     """Whether a shell face (centre c, outward normal n, world) lies under a kept panel: above the full clearance,
-    its normal and four rays tilted by args.shell_hide_tilt round it all meet the panel within args.shell_hide."""
-    return c.z > z_full and ray_share(tree, c, n, args.shell_hide, args.shell_hide_tilt) == 1
+    its normal and four rays tilted by args.shell_hide_tilt round it all meet the panel within args.shell_hide. E1h:
+    with args.shell_hide_above, from that height over the waist on (the shirt came through the bib pocket's bottom in
+    Jog, between the waist and the full clearance)."""
+    above = getattr(args, "shell_hide_above", None)
+    z_gate = z_full if above is None else min(z_full, args.waist + above)  # E1h: lower under the bib's pocket
+    return c.z > z_gate and ray_share(tree, c, n, args.shell_hide, args.shell_hide_tilt) == 1
 
 
 def ray_share(tree, p, n, reach: float, tilt: float) -> float:
@@ -829,6 +1035,29 @@ def clear_strap_fronts(bm, gar, plans, rect, args) -> dict:
     if not fronts:
         say("strap fronts: no station within", args.strap_front, "m of a strap's front end; nothing cleared")
         return {"faces_cleared_under_the_fronts": 0, "hardware_faces_to_denim": 0}
+    # E1g: first cut along each strap front's side lines and its end, so the faces that go below leave a straight
+    # edge under the strap's own edge, not a jagged notch beside it (the axolotl's left strap front, d16)
+    n_cut = 0
+    for pl in plans:
+        st = [fr for fr in fronts if any((fr[0] - Vector(q)).length < 1e-9 for q in pl["ct"])]
+        if not st:
+            continue
+        ct = sum((fr[0] for fr in st), Vector()) / len(st)
+        sd = sum((fr[2] for fr in st), Vector()).normalized()
+        tg = sum((fr[1] for fr in st), Vector()).normalized()
+        nt = sum((fr[3] for fr in st), Vector()).normalized()
+        reach = max(fr[4] for fr in st) / 2 + 0.03
+
+        def box(c, ct=ct, tg=tg, nt=nt, reach=reach):
+            d = c - ct
+            return c.y < 0 and c.z >= 1.05 and abs(d.dot(tg)) < reach and -0.05 < d.dot(nt) < 0.012
+
+        for sgn in (1, -1):
+            n_cut += 1
+            _bisect(bm, mw, box, tuple(ct + sd * sgn * (half - 0.002)), tuple(sd * sgn), outer=None)
+        end = min(st, key=lambda fr: fr[4])
+        _bisect(bm, mw, box, tuple(end[0] - end[1] * (end[4] - 0.004)), tuple(end[1]), outer=None)
+    bm.faces.ensure_lookup_table()
     for f in bm.faces:
         c = mw @ f.calc_center_median()
         if c.y >= 0 or c.z < 1.05:
@@ -862,6 +1091,30 @@ def straps(gar, char, keep_objs, args) -> dict:
     ts = [math.radians(t) for t in floats(args.shell_strap_t)]
     xs_k = floats(args.shell_strap_x)
     half, lip = args.strap_width / 2, args.strap_lip
+    t_back = ts[-1]
+    if getattr(args, "strap_back_z", None) is not None:  # E1d: the back ends reach under the back panel's apex
+        for k in range(80):
+            t = ts[-1] + math.radians(k)
+            loc = btree.ray_cast(Vector((xs_k[-1], y0, z0)), Vector((0.0, math.sin(t), math.cos(t))), 0.4)[0]
+            if loc is None or loc.z <= args.strap_back_z or t > math.radians(175):
+                break
+            t_back = t
+        ts = ts[:-1] + [max(ts[-1], t_back)]
+    dz_bib = getattr(args, "bib_raise_dz", 0.0)
+    if dz_bib > 0:  # E1i: the bib was raised (flat_bib), so the straps' fronts end that much higher on it
+        def front_z(t):
+            loc = btree.ray_cast(Vector((xs_k[0], y0, z0)), Vector((0.0, math.sin(t), math.cos(t))), 0.4)[0]
+            return None if loc is None else loc.z
+        z_f0 = front_z(ts[0])
+        t_f = ts[0]
+        for k in range(1, 61):
+            z = front_z(ts[0] + math.radians(k))
+            if z_f0 is None or z is None:
+                break
+            t_f = ts[0] + math.radians(k)
+            if z >= z_f0 + dz_bib:
+                break
+        ts = [t_f] + ts[1:]
     mw = gar.matrix_world
     inv = mw.inverted()
     me = gar.data
@@ -871,8 +1124,10 @@ def straps(gar, char, keep_objs, args) -> dict:
     lats = [(-half, -lip)] + [(-half + 2 * half * k / (n_flat - 1), 0.0) for k in range(n_flat)] + [(half, -lip)]
     ufr = H.lat_us(len(lats), args.strap_lip_u)
     rect, prep = strap_patch(gar, args, ufr)
+    args.patch_rect = rect  # E1h: plain_denim leaves the straps' and band's patch alone
     u0, u1, v0, v1 = rect
-    rep, plans = {"patch": prep}, []
+    rep, plans = {"patch": prep, "front_angle_deg": round(math.degrees(ts[0]), 1),
+                  "back_angle_deg": round(math.degrees(ts[-1]), 1)}, []
     for sgn in (1, -1):
         locs, nors, offs = [], [], []
         for t in angles:
@@ -1101,4 +1356,276 @@ def waistband(bm, gar, body, gtree, rect, args, uv, dl, gi) -> dict:
         rep["left" if sgn > 0 else "right"] = side
     rep["tris"] = tris
     say("waistband", rep)
+    return rep
+
+
+def plain_denim(gar, args) -> dict:
+    """E1h: plain denim texels over the garment's areas whose own texels are wrong (Meshy's layered hip opening: a
+    glossy, streaked patch; the axolotl's seat and front pockets: stretched stitch texels). Each box of args.plain
+    ("x0,x1,y0,y1,z0,z1" for |x|, ';' between boxes; bind pose, m) on each side is one region: its denim faces (not
+    the straps' and band's patch, not the bronze) are re-laid in UV on a vertical cylinder round the waist's axis
+    (args.band_axis_y) at the garment's median texel density, into a free window of the maps that is filled with
+    the plain denim rectangle args.strap_uv repeated mirrored (diffuse, roughness and normal; the normal's x or y
+    turned over in a mirrored copy); one window for all the regions, as its texels are the same pattern everywhere.
+    No vertex moves. Returns per region its faces and size, the window and the density."""
+    boxes = [tuple(floats(b)) for b in args.plain.split(";") if b.strip()]
+    rep = {"regions": []}
+    maps = garment_maps(gar)
+    dif = maps.get("diffuse")
+    if not boxes or dif is None:
+        rep["skipped"] = "no boxes" if not boxes else "no diffuse map"
+        return rep
+    w, h = dif.size
+    me = gar.data
+    mw = gar.matrix_world
+    uvl = me.uv_layers.active.data
+    own = getattr(args, "patch_rect", None)
+    den_slot = {i for i, s in enumerate(gar.material_slots) if s.material and s.material.node_tree and any(
+        n.type == "TEX_IMAGE" and n.image is dif for n in s.material.node_tree.nodes)}
+    co = [mw @ v.co for v in me.vertices]
+
+    def uv_c(p):
+        return sum((Vector(uvl[k].uv) for k in p.loop_indices), Vector((0.0, 0.0))) / len(p.loop_indices)
+
+    def ours(p):
+        if own is None:
+            return False
+        c = uv_c(p)
+        return own[0] - 1e-3 <= c.x <= own[1] + 1e-3 and own[2] - 1e-3 <= c.y <= own[3] + 1e-3
+
+    regions = {}
+    dens = []
+    for p in me.polygons:
+        c = sum((co[v] for v in p.vertices), Vector()) / len(p.vertices)
+        hit = next((k for k, b in enumerate(boxes) if H.in_box(c.x, c.y, c.z, b)), None)
+        if p.material_index in den_slot and not ours(p) and hit is not None:
+            regions.setdefault((hit, 1 if c.x > 0 else -1), []).append(p.index)
+            continue
+        if p.material_index in den_slot and not ours(p):
+            uv = [Vector(uvl[k].uv) for k in p.loop_indices]
+            q = [co[v] for v in p.vertices]
+            a3 = sum((q[i] - q[0]).cross(q[i + 1] - q[0]).length / 2 for i in range(1, len(q) - 1))
+            a2 = sum(abs((uv[i] - uv[0]).cross(uv[i + 1] - uv[0])) / 2 for i in range(1, len(uv) - 1))
+            if a3 > 1e-9 and a2 > 0:
+                dens.append(math.sqrt(a2 * w * h / a3))
+    d0 = float(np.median(dens)) * args.plain_density if dens else 0.0
+    rep["texels_per_m"] = round(d0, 1)
+    u0, u1, v0, v1 = floats(args.strap_uv)
+    sx0, sx1, sy0, sy1 = int(u0 * w) + 1, int(u1 * w) - 1, int(v0 * h) + 1, int(v1 * h) - 1
+    sw, sh = sx1 - sx0, sy1 - sy0
+    me.calc_loop_triangles()
+    pad = 4
+    pxs = {k: pixels(img) for k, img in maps.items()}
+    plan = []
+    for (bi, side), fids in sorted(regions.items()):
+        vids = sorted({v for i in fids for v in me.polygons[i].vertices})
+        cen = sum((co[v] for v in vids), Vector()) / len(vids)
+        a_ref = math.atan2(cen.x, -(cen.y - args.band_axis_y))
+        radius = float(np.median([math.hypot(co[v].x, co[v].y - args.band_axis_y) for v in vids]))
+        st = {v: H.cyl_coords(co[v].x, co[v].y, co[v].z, args.band_axis_y, a_ref, radius) for v in vids}
+        lo = (min(a for a, _ in st.values()), min(b for _, b in st.values()))
+        hi = (max(a for a, _ in st.values()), max(b for _, b in st.values()))
+        plan.append((bi, side, fids, st, lo, hi))
+    # one window of plain denim serves every region: it is the same repeated patch, so the regions share its texels;
+    # when no window that size is free, the density steps down (the grain a little coarser) up to three times
+    fset = {i for _b, _s, fids, *_r in plan for i in fids}
+    tri = np.array([[uvl[t.loops[k]].uv[:] for k in range(3)] for t in me.loop_triangles
+                    if t.polygon_index not in fset], dtype=np.float64)
+    used = T.island_mask(tri, w, h, grow=1)
+    at = None
+    if not plan:  # no region found a denim face: report and skip instead of max() over an empty plan
+        rep["skipped"] = "no region has denim faces"
+        say("plain denim", rep)
+        return rep
+    for _ in range(4):
+        pw = max(int(math.ceil((hi[0] - lo[0]) * d0)) for *_r, lo, hi in plan) + 2 * pad
+        ph = max(int(math.ceil((hi[1] - lo[1]) * d0)) for *_r, lo, hi in plan) + 2 * pad
+        at = T.free_rect(used, pw, ph, 6)
+        if at is not None:
+            break
+        d0 *= 0.85
+    rep["texels_per_m_used"] = round(d0, 1)
+    rep["window_px"] = None if at is None else [int(at[1]), int(at[0]), pw, ph]
+    for bi, side, fids, st, lo, hi in plan:
+        rep["regions"].append({"box": bi, "side": side, "faces": len(fids),
+                               "size_mm": [round(1000 * (hi[0] - lo[0])), round(1000 * (hi[1] - lo[1]))]})
+    say("plain denim", rep)
+    if at is None:
+        rep["window_px"] = "none free: left as it was"
+        return rep
+    ry, rx = at
+    ix = [H.mirror_tile(i, sw) for i in range(pw)]
+    iy = [H.mirror_tile(j, sh) for j in range(ph)]
+    for kind, img in maps.items():
+        iw, ih = img.size
+        fx, fy = iw / w, ih / h
+        px = pxs[kind]
+        cols = np.array([int((sx0 + i) * fx) for i, _m in ix])
+        rows = np.array([int((sy0 + j) * fy) for j, _m in iy])
+        blk = px[np.ix_(rows, cols)].copy()
+        if kind == "normal":
+            mx = np.array([m for _i, m in ix])
+            my = np.array([m for _j, m in iy])
+            blk[:, mx, 0] = 1.0 - blk[:, mx, 0]
+            blk[my, :, 1] = 1.0 - blk[my, :, 1]
+        r0, c0 = int(ry * fy), int(rx * fx)
+        tw, th = int(pw * fx), int(ph * fy)
+        ys = (np.arange(th) / fy).astype(int).clip(0, ph - 1)
+        xs = (np.arange(tw) / fx).astype(int).clip(0, pw - 1)
+        px[r0:r0 + th, c0:c0 + tw] = blk[np.ix_(ys, xs)]
+    for bi, side, fids, st, lo, hi in plan:
+        for i in fids:
+            p = me.polygons[i]
+            for li, v in zip(p.loop_indices, p.vertices):
+                s, t = st[v]
+                uvl[li].uv = ((rx + pad + (s - lo[0]) * d0) / w, (ry + pad + (t - lo[1]) * d0) / h)
+    for kind, img in maps.items():
+        img.pixels[:] = pxs[kind].ravel()
+        img.update()
+    me.update()
+    return rep
+
+
+def chain_knots(char, spec: str) -> list[tuple[float, str]]:
+    """E1i2: the knots of clothes_shell.chain_row from spec "Bone,Bone,..." (up the spine): each bone's mid height in
+    the bind pose (world), from char's armature; empty spec or no armature: []."""
+    names = [b for b in spec.split(",") if b.strip()]
+    arm = next((m.object for m in char.modifiers if m.type == "ARMATURE" and m.object), None)
+    if not names or arm is None:
+        return []
+    out = []
+    for b in names:
+        bone = arm.data.bones[b.strip()]
+        out.append(((arm.matrix_world @ ((bone.head_local + bone.tail_local) / 2)).z, b.strip()))
+    return out
+
+
+def flat_bib(gar, char, args) -> dict:
+    """E1i: the bib as a flat, stiff panel (the concept): her fit made the bib follow each breast, so the denim bent
+    over her chest, and its top sat under the bust. args.flat_bib "blend,curve,radius,clear":
+    - args.bib_raise "dz,b0,b1" (optional) first raises the bib: everything over the waist + b1 goes up dz, the band
+      from waist + b0 to waist + b1 stretches (its texels are re-laid plain: a --plain box is added), so the top
+      edge and the pocket sit over the bust as on the concept; args.bib's top and args.bib_raise_dz follow (the
+      straps' fronts move up with it);
+    - then each bib vertex (front, |x| within the bib, over the waist) moves forward only, by the offset between the
+      bib's smoothed surface S (every layer's mean within radius in x and z, averaged twice: every layer moves alike,
+      so the pocket keeps its own layer over it) and the target T(x, z) = hull(z) + c * x^2 (a cylinder across,
+      which stiff denim can take; curve < 0: c fitted to the belly's rows just over the eased band), where hull is
+      the front hull (clothes_shell.front_hull) per 1 cm of height of the smaller of S - c x^2 and the body's front
+      less clear - c x^2: the taut line from the waistband over the chest's most forward points to the top edge.
+      The move eases in over blend m above the waist (clothes_shell.ease), so the waistband stays;
+    - each moved vertex's weights blend toward the mean over its 3 cm row of the body's weights under the panel (the
+      panel moves as one with the chest, no fold); E1i2: with args.bib_chain "Hips,Spine,Chest,UpperChest" toward
+      clothes_shell.chain_row at its height instead (the rows' means folded the raised top under the bust in Jog).
+    No face is added or removed; the UVs stay (but the stretched band's)."""
+    blend, curve, rad, clear = floats(args.flat_bib)
+    z_w = args.waist
+    bib_hw, bib_top = floats(args.bib)
+    me = gar.data
+    mw = gar.matrix_world
+    inv = mw.inverted()
+    co = [mw @ v.co for v in me.vertices]
+    ids = [i for i, p in enumerate(co) if p.y < 0 and abs(p.x) <= bib_hw + 1e-3 and p.z > z_w - 1e-4]
+    if not ids:
+        return {"skipped": "no bib vertices"}
+    rep = {}
+    dz, b0, b1 = floats(args.bib_raise) if getattr(args, "bib_raise", "") else (0.0, 0.0, 0.0)
+    if dz > 0:
+        for i in ids:
+            z = co[i].z
+            if z >= z_w + b1:
+                z += dz
+            elif z > z_w + b0:
+                z += dz * (z - z_w - b0) / (b1 - b0)
+            co[i] = Vector((co[i].x, co[i].y, z))
+        bib_top += dz
+        args.bib = f"{bib_hw:.4f},{bib_top:.4f}"
+        args.bib_raise_dz = dz
+        box = f"0,{bib_hw + 0.002:.4f},-0.4,0,{z_w + b0 - 0.002:.4f},{z_w + b1 + dz + 0.002:.4f}"
+        args.plain = ";".join(b for b in (args.plain, box) if b)
+        rep["raised"] = {"dz": dz, "band_z": [round(z_w + b0, 4), round(z_w + b1 + dz, 4)], "bib_top": bib_top,
+                         "plain_box": box}
+    kd = KDTree(len(ids))
+    for k, i in enumerate(ids):
+        kd.insert((co[i].x, 0.0, co[i].z), k)
+    kd.balance()
+    ys = np.array([co[i].y for i in ids])
+    near = [[k for _c, k, _d in kd.find_range((co[i].x, 0.0, co[i].z), rad)] for i in ids]
+    base = np.array([np.mean(ys[n]) for n in near])  # every layer's mean: each layer then moves alike
+    s = np.array([np.mean(base[n]) for n in near])
+    xs = np.array([co[i].x for i in ids])
+    zs = np.array([co[i].z for i in ids])
+    fit_c = None
+    if curve < 0:  # the curve across from the belly's rows over the eased band (a + c x^2, least squares)
+        m = (zs > z_w + blend) & (zs < z_w + blend + 0.04)
+        if m.sum() >= 6:
+            fit_c = float(np.linalg.lstsq(np.stack([np.ones(int(m.sum())), xs[m] ** 2], 1), s[m], rcond=None)[0][1])
+        curve = max(0.0, fit_c or 0.0)
+    bins = {}
+    for z, r in zip(zs, s - curve * xs * xs):
+        b = int(math.floor((z - z_w) / 0.01))
+        bins[b] = min(bins.get(b, r), r)
+    cm = char.matrix_world
+    body_prof = {}
+    for v in char.data.vertices:
+        p = cm @ v.co
+        if p.y < 0 and abs(p.x) <= bib_hw + 0.01 and z_w + blend <= p.z <= bib_top + 0.01:
+            b = int(math.floor((p.z - z_w) / 0.01))
+            r = p.y - clear - curve * p.x * p.x
+            body_prof[b] = min(body_prof.get(b, r), r)
+            if b in bins:
+                bins[b] = min(bins[b], r)
+    prof = [(min(max(z_w + 0.01 * (b + 0.5), zs.min()), zs.max()), r) for b, r in sorted(bins.items())]
+    hull = H.front_hull(prof)
+    body = body_weights(char)
+    rows = []
+    for k, i in enumerate(ids):
+        w = H.ease(zs[k], z_w, blend)
+        d = w * min(0.0, H.hull_at(hull, zs[k]) + curve * xs[k] ** 2 - s[k])
+        co[i] = co[i] + Vector((0.0, d, 0.0))
+        rows.append((w, weight_row(body, co[i]) if w > 0 else {}))
+    moves = [(mw @ me.vertices[i].co - co[i]).length for i in ids]
+    bib_set = set(ids)
+    areas0 = {p.index: p.area for p in me.polygons if all(v in bib_set for v in p.vertices)}
+    groups = {g.name: g for g in gar.vertex_groups}
+    names = {g.index: g.name for g in gar.vertex_groups}
+    new_rows = []
+    knots = chain_knots(char, getattr(args, "bib_chain", ""))
+    if knots:
+        rep["chain_knots"] = [(round(z, 4), b) for z, b in knots]
+    for k, i in enumerate(ids):
+        w = rows[k][0]
+        if w <= 0:
+            continue
+        if knots:  # E1i2: by height alone, so the panel moves as one stiff piece with the spine (no fold)
+            own = {names[g.group]: g.weight for g in me.vertices[i].groups if g.group in names}
+            new_rows.append((i, H.follow_row(own, H.chain_row(co[i].z, knots), w)))
+            continue
+        mean: dict[str, float] = {}
+        near_z = [kk for kk in range(len(ids)) if abs(zs[kk] - zs[k]) < 0.015 and rows[kk][0] > 0]
+        for kk in near_z:
+            for b, x in rows[kk][1].items():
+                mean[b] = mean.get(b, 0.0) + x / len(near_z)
+        own = {names[g.group]: g.weight for g in me.vertices[i].groups if g.group in names}
+        new_rows.append((i, H.follow_row(own, mean, w)))
+    for i in ids:
+        me.vertices[i].co = inv @ co[i]
+    for i, row in new_rows:
+        v = me.vertices[i]
+        for g in list(v.groups):
+            gar.vertex_groups[g.group].remove([i])
+        for b, x in row.items():
+            if b not in groups:
+                groups[b] = gar.vertex_groups.new(name=b)
+            groups[b].add([i], x, "REPLACE")
+    me.update()
+    ratio = sorted(me.polygons[f].area / a for f, a in areas0.items() if a > 1e-9)
+    pick = lambda q: round(ratio[min(len(ratio) - 1, int(q * len(ratio)))], 3) if ratio else None
+    rep.update({"verts": len(ids), "moved": sum(m > 1e-5 for m in moves), "curve": round(curve, 3),
+                "curve_fit": fit_c, "max_move_mm": round(1000 * max(moves), 1),
+                "hull_zy": [(round(z, 3), round(y, 4)) for z, y in hull],
+                "body_front_zy": [(round(z_w + 0.01 * (b + 0.5), 3), round(r + clear, 4))
+                                  for b, r in sorted(body_prof.items())],
+                "area_ratio_p1_p50_p99": [pick(0.01), pick(0.5), pick(0.99)], "faces": len(ratio)})
+    say("flat bib", rep)
     return rep

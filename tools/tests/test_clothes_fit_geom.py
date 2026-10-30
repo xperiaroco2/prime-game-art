@@ -116,6 +116,9 @@ class Facing(unittest.TestCase):
 
     def test_none_and_bad(self):
         self.assertIsNone(F.pick_facing([(0.01, (0.0, 0.0, 1.0), 1)], (0.0, 0.0, -1.0)))
+        # E1: a degenerate body face (zero normal) is skipped; a cloth vertex without a normal picks nothing
+        self.assertEqual(F.pick_facing([(0.001, (0.0, 0.0, 0.0), 3), (0.02, (0.0, 0.0, 1.0), 4)], (0.0, 0.0, 1.0)), 4)
+        self.assertIsNone(F.pick_facing([(0.01, (0.0, 0.0, 1.0), 1)], (0.0, 0.0, 0.0)))
         self.assertIsNone(F.pick_facing([], (0.0, 0.0, 1.0)))
         with self.assertRaises(ValueError):
             F.pick_facing([], (0.0, 0.0, 1.0), 2.0)
@@ -262,6 +265,194 @@ class BoundaryVerts(unittest.TestCase):
         tet = [[0, 1, 2], [0, 3, 1], [1, 3, 2], [2, 3, 0]]
         self.assertEqual(F.boundary_verts(tet), set())  # closed
         self.assertEqual(F.boundary_verts(tet[:3]), {0, 2, 3})  # the missing face's rim
+
+
+class AnkleKept(unittest.TestCase):  # E1b: the collar's shards
+    def test_open_skin_just_over_the_rim_is_kept(self):
+        self.assertTrue(F.ankle_kept(0.10, 0.09, 0.02))
+        self.assertTrue(F.ankle_kept(0.09, 0.09, 0.02))  # on the rim itself
+
+    def test_under_the_rim_or_far_over_it_is_left_to_the_other_rules(self):
+        self.assertFalse(F.ankle_kept(0.08, 0.09, 0.02))
+        self.assertFalse(F.ankle_kept(0.14, 0.09, 0.02))
+
+    def test_no_rim_near_or_off(self):
+        self.assertFalse(F.ankle_kept(0.10, None, 0.02))
+        self.assertFalse(F.ankle_kept(0.10, 0.09, 0.08))
+        self.assertFalse(F.ankle_kept(0.10, 0.09, 0.02, keep=0.0))
+
+
+class AnkleRide(unittest.TestCase):  # E1b: the skin under the collar rides with the shoe
+    def test_under_the_rim_all_over_the_band_none(self):
+        self.assertEqual(F.ankle_ride(0.08, 0.09), 1.0)
+        self.assertEqual(F.ankle_ride(0.085, 0.09), 1.0)
+        self.assertEqual(F.ankle_ride(0.115, 0.09), 0.0)
+        self.assertAlmostEqual(F.ankle_ride(0.1, 0.09), 0.5)
+
+    def test_no_band_refused(self):
+        with self.assertRaises(ValueError):
+            F.ankle_ride(0.1, 0.09, band=0.0)
+
+
+class RimPlane(unittest.TestCase):  # E1c: the collar's clean cut
+    def test_a_tilted_rim_gives_its_tilt_lowered_under_every_point(self):
+        rim = [(math.cos(t), math.sin(t), 0.09 + 0.1 * math.sin(t) + (0.004 if i % 2 else 0.0))
+               for i, t in enumerate(k * math.tau / 16 for k in range(16))]
+        a, b, c = F.rim_plane(rim, below=0.012)
+        self.assertAlmostEqual(a, 0.0, places=6)
+        self.assertAlmostEqual(b, 0.1, places=6)
+        gaps = [p[2] - F.plane_z((a, b, c), p[0], p[1]) for p in rim]
+        self.assertAlmostEqual(min(gaps), 0.012, places=9)
+
+    def test_too_few_points_refused(self):
+        with self.assertRaises(ValueError):
+            F.rim_plane([(0, 0, 0), (1, 0, 0)])
+
+
+class CollarClamp(unittest.TestCase):  # E1d, E1e: the ankle shrunk inside the shoe's inner wall
+    def test_under_the_rim_inside_the_outline(self):
+        self.assertAlmostEqual(F.collar_clamp(0.06, 0.05, 0.07, 0.08), 0.047)
+
+    def test_inside_stays(self):
+        self.assertEqual(F.collar_clamp(0.04, 0.05, 0.07, 0.08), 0.04)
+
+    def test_eases_out_over_the_band(self):
+        self.assertAlmostEqual(F.collar_clamp(0.06, 0.05, 0.095, 0.08), 0.06)
+        mid = F.collar_clamp(0.06, 0.05, 0.085, 0.08)
+        self.assertTrue(0.047 < mid < 0.06)
+
+    def test_band_positive(self):
+        with self.assertRaises(ValueError):
+            F.collar_clamp(0.06, 0.05, 0.07, 0.08, band=0.0)
+
+
+class OutsideShell(unittest.TestCase):  # E1c: the collar's outer-shell probe
+    def test_outside_only_with_no_hit_out(self):
+        self.assertTrue(F.outside_shell(0))
+        self.assertFalse(F.outside_shell(1))
+        self.assertFalse(F.outside_shell(2))
+
+
+class MixRows(unittest.TestCase):  # E1e: the ankle skin takes the shoe's weights
+    def test_all_theirs_at_one(self):
+        r = F.mix_rows({"LeftLowerLeg": 1.0}, {"LeftFoot": 1.0}, 1.0)
+        self.assertEqual(r, {"LeftFoot": 1.0})
+
+    def test_own_at_zero(self):
+        r = F.mix_rows({"LeftLowerLeg": 0.7, "LeftFoot": 0.3}, {"LeftFoot": 1.0}, 0.0)
+        self.assertAlmostEqual(r["LeftLowerLeg"], 0.7)
+        self.assertAlmostEqual(r["LeftFoot"], 0.3)
+
+    def test_blend_sums_to_one_and_limits(self):
+        r = F.mix_rows({"a": 0.5, "b": 0.3, "c": 0.2}, {"d": 0.6, "e": 0.4}, 0.5)
+        self.assertEqual(len(r), 4)
+        self.assertAlmostEqual(sum(r.values()), 1.0)
+        self.assertNotIn("c", r)
+
+    def test_share_in_range(self):
+        with self.assertRaises(ValueError):
+            F.mix_rows({"a": 1.0}, {"b": 1.0}, 1.5)
+
+
+class SeatWeight(unittest.TestCase):  # E1f: the seat re-laid on the body
+    A = dict(z_lo=0.70, z_hi=0.94, y0=-0.02)
+
+    def test_full_inside_the_zone(self):
+        self.assertAlmostEqual(F.seat_weight(0.08, 0.84, 0.01, **self.A), 1.0)
+
+    def test_none_in_front_above_below_or_bridging(self):
+        self.assertEqual(F.seat_weight(-0.05, 0.84, 0.01, **self.A), 0.0)  # in front of the side seams
+        self.assertEqual(F.seat_weight(0.08, 0.95, 0.01, **self.A), 0.0)  # the waistband
+        self.assertEqual(F.seat_weight(0.08, 0.69, 0.01, **self.A), 0.0)  # under the seat
+        self.assertEqual(F.seat_weight(0.08, 0.84, 0.10, **self.A), 0.0)  # the crotch's bridge
+
+    def test_the_borders_ease_out_without_a_step(self):
+        ws = [F.seat_weight(0.08, 0.94 - i * 0.001, 0.01, **self.A) for i in range(41)]
+        self.assertTrue(all(b >= a for a, b in zip(ws, ws[1:])))
+        self.assertLess(max(b - a for a, b in zip(ws, ws[1:])), 0.06)
+        self.assertAlmostEqual(F.seat_weight(0.08, 0.925, 0.01, **self.A), 0.5)
+
+    def test_y1_bounds_the_front_zone(self):  # E1g: the chameleon's front, y0 < y < y1
+        a = dict(z_lo=0.70, z_hi=0.94, y0=-1.0, y1=-0.03)
+        self.assertAlmostEqual(F.seat_weight(-0.10, 0.84, 0.01, **a), 1.0)
+        self.assertEqual(F.seat_weight(0.0, 0.84, 0.01, **a), 0.0)
+        self.assertAlmostEqual(F.seat_weight(-0.045, 0.84, 0.01, **a), 0.5)
+
+
+class SpikeOut(unittest.TestCase):  # E1g: the hips' spikes
+    def test_out_along_the_normal_only(self):
+        self.assertTrue(F.spike_out((0.0, 0.02, 0.0), (0.0, 1.0, 0.0), 0.015))
+        self.assertFalse(F.spike_out((0.0, 0.01, 0.0), (0.0, 1.0, 0.0), 0.015))
+        self.assertFalse(F.spike_out((0.03, 0.0, 0.0), (0.0, 1.0, 0.0), 0.015))  # sideways: a corner, not a spike
+        self.assertFalse(F.spike_out((0.0, -0.03, 0.0), (0.0, 1.0, 0.0), 0.015))  # a dent
+
+
+class NearRings(unittest.TestCase):  # E1g: the seat's relax only near its open edges
+    NB = [[1], [0, 2], [1, 3], [2, 4], [3]]  # a strip of five vertices
+
+    def test_rings_out_from_the_seeds(self):
+        self.assertEqual(F.near_rings([0], self.NB, 2), [1.0, 1.0, 1.0, 0.0, 0.0])
+        self.assertEqual(F.near_rings([2], self.NB, 1), [0.0, 1.0, 1.0, 1.0, 0.0])
+
+    def test_no_rings_or_no_seeds(self):
+        self.assertEqual(F.near_rings([4], self.NB, 0), [0.0, 0.0, 0.0, 0.0, 1.0])
+        self.assertEqual(F.near_rings([], self.NB, 3), [0.0] * 5)
+
+
+
+class HemRest(unittest.TestCase):
+    """E1j3: the trousers' turn-up lowered onto the shoe's collar."""
+
+    def test_hem_drop(self):
+        self.assertAlmostEqual(F.hem_drop(0.15, 0.13, 0.004), 0.024)
+        self.assertEqual(F.hem_drop(0.12, 0.13, 0.004), 0.0)  # never up
+        self.assertEqual(F.hem_drop(0.30, 0.13, 0.004), 0.04)  # at most 4 cm
+
+    def test_hem_drops_per_angle(self):
+        hem = [0.15, 0.15, None, 0.13, 0.13, 0.13, 0.13, 0.15]
+        top = [0.13, 0.13, 0.13, 0.13, None, 0.13, 0.13, 0.13]
+        raw = F.hem_drops(hem, top, 0.004, passes=0)
+        self.assertEqual(len(raw), 8)
+        self.assertAlmostEqual(raw[0], 0.024)
+        self.assertAlmostEqual(raw[2], raw[1])  # a missing bin takes its neighbour's
+        self.assertAlmostEqual(raw[4], 0.004)
+        sm = F.hem_drops(hem, top, 0.004)
+        self.assertAlmostEqual(sum(sm), sum(raw))  # smoothing round the circle keeps the total
+        self.assertLess(max(sm), max(raw) + 1e-12)
+        self.assertEqual(F.hem_drops([None] * 4, [0.1] * 4, 0.004), [0.0] * 4)
+
+    def test_hem_shift(self):
+        self.assertEqual(F.hem_shift(0.15, 0.15, 0.02), 0.02)
+        self.assertEqual(F.hem_shift(0.15 + 0.07, 0.15, 0.02), 0.02)  # the turn-up moves whole
+        self.assertAlmostEqual(F.hem_shift(0.15 + 0.07 + 0.075, 0.15, 0.02), 0.01)
+        self.assertEqual(F.hem_shift(0.15 + 0.3, 0.15, 0.02), 0.0)
+        with self.assertRaises(ValueError):
+            F.hem_shift(0.1, 0.1, 0.01, ease=0)
+
+    def test_axis_dist(self):
+        head, tail = (0.1, 0.0, 0.5), (0.1, 0.1, 0.1)  # leaning: the axis's y grows downward
+        self.assertAlmostEqual(F.axis_dist(head, tail, (0.1, 0.0, 0.5)), 0.0)
+        self.assertAlmostEqual(F.axis_dist(head, tail, (0.1, 0.1, 0.1)), 0.0)
+        self.assertAlmostEqual(F.axis_dist(head, tail, (0.13, 0.05, 0.3)), 0.03)  # at its own height
+        self.assertAlmostEqual(F.axis_dist(head, tail, (0.1, 0.15, 0.0)), 0.025)  # extended under the tail
+        self.assertAlmostEqual(F.axis_dist((0, 0, 0.2), (0.1, 0, 0.2), (0.03, 0.04, 0.2)), 0.05)  # level: from head
+
+    def test_soft_flat(self):
+        self.assertEqual(F.soft_flat(-0.02, 1.0), 0.0)
+        self.assertAlmostEqual(F.soft_flat(0.03, 0.5), 0.015)
+        self.assertAlmostEqual(F.soft_flat(0.0, 1.0), 0.0025)  # the ramp's middle: (soft)^2 / (4 soft)
+        self.assertAlmostEqual(F.soft_flat(0.01, 1.0), 0.01)  # meets k * ahead at +soft
+        e = 1e-6  # no crease: the slope is continuous at both ends of the ramp
+        self.assertAlmostEqual((F.soft_flat(0.01 + e, 1.0) - F.soft_flat(0.01 - e, 1.0)) / (2 * e), 1.0, places=3)
+        self.assertAlmostEqual((F.soft_flat(-0.01 + e, 1.0) - F.soft_flat(-0.01 - e, 1.0)) / (2 * e), 0.0, places=3)
+        self.assertEqual(F.soft_flat(0.02, 1.0, soft=0), 0.02)
+
+    def test_near_ankle(self):
+        self.assertTrue(F.near_ankle(0.12, 0.05, 0.08, 0.2))
+        self.assertFalse(F.near_ankle(0.07, 0.05, 0.08, 0.2))  # under the rim's lowest point: the reach decides
+        self.assertFalse(F.near_ankle(0.21, 0.05, 0.08, 0.2))  # over the region's top
+        self.assertFalse(F.near_ankle(0.12, 0.09, 0.08, 0.2))  # too far from the axis
+        self.assertTrue(F.near_ankle(0.12, 0.09, 0.08, 0.2, radius=0.1))
 
 
 if __name__ == "__main__":
