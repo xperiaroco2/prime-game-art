@@ -329,3 +329,44 @@ def ankle_ride(z: float, rim_z: float, below: float = 0.005, band: float = 0.03)
         raise ValueError(f"band {band} must be positive")
     t = min(1.0, max(0.0, (z - (rim_z - below)) / band))
     return 1.0 - t * t * (3.0 - 2.0 * t)
+
+
+def rim_plane(rim: list[Vec], below: float = 0.012) -> tuple[float, float, float]:
+    """E1c, the collar's clean cut: the plane z = a x + b y + c through a shoe opening's rim points (least squares,
+    so it tilts with the collar), lowered until every rim point lies at least below m over it; the ankle skin is
+    bisected there, one clean ring inside the shoe instead of the faces' staircase over the rim."""
+    if len(rim) < 3:
+        raise ValueError("a rim needs three points")
+    n = float(len(rim))
+    mx, my, mz = (sum(p[k] for p in rim) / n for k in range(3))
+    sxx = sum((p[0] - mx) ** 2 for p in rim)
+    syy = sum((p[1] - my) ** 2 for p in rim)
+    sxy = sum((p[0] - mx) * (p[1] - my) for p in rim)
+    sxz = sum((p[0] - mx) * (p[2] - mz) for p in rim)
+    syz = sum((p[1] - my) * (p[2] - mz) for p in rim)
+    det = sxx * syy - sxy * sxy
+    a, b = ((sxz * syy - syz * sxy) / det, (syz * sxx - sxz * sxy) / det) if abs(det) > 1e-12 else (0.0, 0.0)
+    c = min(p[2] - a * p[0] - b * p[1] for p in rim) - below
+    return a, b, c
+
+
+def plane_z(plane: tuple[float, float, float], x: float, y: float) -> float:
+    a, b, c = plane
+    return a * x + b * y + c
+
+
+def pull_in(r: float, wall_t: list[float], clear: float = 0.003, least: float = 0.5) -> float:
+    """E1c, the collar's outer-shell probe: an ankle vertex r m out from the rim's centre whose ray outward meets no
+    shoe face is outside the shoe's outer shell (the teal shards); wall_t are the distances along its ray back
+    toward the centre to the shoe faces it crosses. Its new radius: inside the innermost of them by clear, never
+    under least times r (a vertex with no wall on the way in keeps r)."""
+    inside = [t for t in wall_t if 0.0 <= t < r]
+    if not inside:
+        return r
+    return max(least * r, r - max(inside) - clear)
+
+
+def outside_shell(out_hits: int) -> bool:
+    """E1c: a skin vertex under the rim whose ray outward (away from the rim's centre, across the floor) meets no
+    shoe face is outside the shoe's outer shell; one hit (inside the wall) or more is hidden."""
+    return out_hits == 0

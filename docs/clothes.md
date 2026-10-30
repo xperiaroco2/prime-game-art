@@ -439,7 +439,7 @@ keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 deg
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
 
-## Dressing D3's bodies (E1, E1b, art #196)
+## Dressing D3's bodies (E1 to E1c, art #196)
 - **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
   head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
   smoothing; the 30 mm smoothstep band stays the default for the old bodies.
@@ -459,7 +459,19 @@ above it again from Blender's rest matrices.
   (it read 0 while the shards showed: they come in the clips' pose). The shards' cause: the shin's tilt in Idle and
   Crouch carries the ankle skin under the collar (weighted to LowerLeg) out through the rigid shoe; `--ankle-ride`
   hands that skin's LowerLeg weight to the Foot from 5 mm under the rim's nearest point down, easing out over 30 mm
-  above (`clothes_fit_geom.ankle_ride`).
+  above (`clothes_fit_geom.ankle_ride`). That did not move the shards: they are static.
+- **The collar's clean cut** (E1c): the shards' real cause was the rim itself. The shoe's boundary includes the
+  eyelets' and laces' small islands (z 0.083 to 0.109 on the instep), so the "rim" the cut measured against sat on
+  the instep, and the per-face cut left a staircase of skin over and outside the collar. Now the opening's rim is the
+  boundary of each shoe's main island (100 vertices or more, over 0.05 m, the points 25 mm under the median dropped);
+  `clothes_fit_geom.rim_plane` fits a plane through it (least squares, so it tilts with the collar) and lowers it
+  `--collar-cut` (12 mm) under its lowest point; the ankle's faces between that plane and the rim's top come back
+  (only where no shoe face lies over them, so not the instep under the vamp, and up to `--collar-over`, 15 mm, over the top: the notch the old rim cut), the skin
+  under the plane near the shoe is bisected away, and each kept vertex under its nearest rim point whose ray outward
+  across the floor meets no shoe face (`outside_shell`: outside the outer shell) is pulled back toward the rim's
+  centre, `--collar-clear` (3 mm) inside the innermost wall on its way (`pull_in`). `dress.json` reports `collar`
+  (the planes, faces back, pulled) and `collar_shell_probe` (that count after the pull: 0 on both). The old
+  `collar_probe` (the nearest face's normal) still counts the lining's side and reads high; do not trust it.
 - **The fit's strays** (E1b): garment vertices over `--stray` (80 mm) from the body go with their faces (two on A11
   made dark spikes out of the hips).
 - **The proof's openings** (E1b): a body vertex "inside" by an opening's inward-folded lip whose nearest cloth point

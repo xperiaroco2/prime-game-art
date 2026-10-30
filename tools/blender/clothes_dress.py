@@ -157,6 +157,9 @@ def main() -> int:
     ap.add_argument("--reach", type=float, default=0.12)
     ap.add_argument("--outside", type=float, default=0.03, help="a body vertex this far outside the cloth still counts")
     ap.add_argument("--opening", type=float, default=0.04, help="no outside cut this near an opening (m)")
+    ap.add_argument("--opening-leg", type=float, default=0.015,
+                    help="--opening for skin on the LowerLeg bones (m): the shin poked through the trouser leg 25 mm "
+                         "over the hem, inside the 40 mm (E1c)")
     ap.add_argument("--shoe-margin", type=float, default=0.01, help="the foot cut stays this far below the shoe's top")
     ap.add_argument("--near", type=float, default=0.06, help="the cloth this near a body vertex at rest (m)")
     ap.add_argument("--away", type=float, default=0.08,
@@ -242,6 +245,15 @@ def main() -> int:
     ap.add_argument("--ankle-ride", default="0.005,0.03",
                     help="the ankle skin's LowerLeg weight goes to the Foot from this far under the shoe opening's rim "
                          "down, easing out over the band above (m: below,band; E1b; 0,0: off)")
+    ap.add_argument("--collar-cut", type=float, default=0.012,
+                    help="the ankle skin is bisected on the plane through the shoe opening's rim, this far under its "
+                         "lowest point, the skin between kept and pulled inside the shoe's outer shell (E1c, the "
+                         "collar's shards; m, 0: off)")
+    ap.add_argument("--collar-over", type=float, default=0.015,
+                    help="the ankle's faces come back up to this far over the rim's top where no shoe lies over them "
+                         "(E1c, the notch over the collar; m)")
+    ap.add_argument("--collar-clear", type=float, default=0.003,
+                    help="the pulled-in ankle skin stays this far inside the shoe's innermost wall (m)")
     ap.add_argument("--stray", type=float, default=0.08,
                     help="garment vertices farther than this from the body go with their faces (the fit's strays: "
                          "E1b's spikes at the hips; m, 0: off)")
@@ -434,7 +446,7 @@ def main() -> int:
     shoe = next((o for o in cloth if o.name == "shoes"), None)
     top_z = {1.0: None, -1.0: None}
     stree = None
-    rim_kd, rim_pts = None, []
+    rim_kd, rim_pts, main_rim = None, [], []
     if shoe is not None:
         bm = bmesh.new()
         bm.from_mesh(shoe.data)
@@ -454,6 +466,30 @@ def main() -> int:
         rim_kd3.balance()
         sv = [shoe.matrix_world @ v.co for v in shoe.data.vertices]
         stree = BVHTree.FromPolygons(sv, [list(p.vertices) for p in shoe.data.polygons])
+        # E1c: the opening's own rim, the boundary of each shoe's main island (the eyelets' and laces' small islands
+        # left out: their edges pulled the rim's centre onto the instep)
+        bm = bmesh.new()
+        bm.from_mesh(shoe.data)
+        bm.verts.ensure_lookup_table()
+        seen, big = set(), set()
+        for v0 in bm.verts:
+            if v0.index in seen:
+                continue
+            isl, st = [], [v0]
+            seen.add(v0.index)
+            while st:
+                a = st.pop()
+                isl.append(a.index)
+                for e in a.link_edges:
+                    b = e.other_vert(a)
+                    if b.index not in seen:
+                        seen.add(b.index)
+                        st.append(b)
+            if len(isl) >= 100:
+                big.update(isl)
+        main_rim = [shoe.matrix_world @ v.co for v in bm.verts if v.is_boundary and v.index in big]
+        bm.free()
+        main_rim = [q for q in main_rim if q.z > 0.05]
     rep["shoe_top_z"] = {("left" if k > 0 else "right"): (None if t is None else round(t, 4)) for k, t in top_z.items()}
     up = Vector((0.0, 0.0, 1.0))
     cov, sure, outside, in_shoe, by_rim, by_wall, n_under = [], [], 0, 0, 0, 0, 0
@@ -505,7 +541,8 @@ def main() -> int:
         hit = all(tree.ray_cast(p + d * 1e-4, d, args.reach)[0] is not None for d in rays(n))
         if not hit:  # the body outside the cloth (a shoulder): covered if the cloth lies within --outside behind it
             loc, _nor, _fi, t = tree.ray_cast(p, -n, args.outside)
-            if loc is not None and H.opening_dist(ekd.find(loc)[2]) >= args.opening:
+            near = args.opening_leg if top_bone.endswith("LowerLeg") else args.opening
+            if loc is not None and H.opening_dist(ekd.find(loc)[2]) >= near:
                 q = loc - n * 1e-3
                 hit = all(tree.ray_cast(q + d * 1e-4, d, args.reach)[0] is not None for d in rays(n))
                 outside += hit
@@ -526,6 +563,37 @@ def main() -> int:
     shoe_faces = [not g and F.shoe_face([thru[k] for k in f], [low_foot[k] or sure[k] for k in f])
                   for g, f in zip(gone, faces)]
     gone = [g or x for g, x in zip(gone, shoe_faces)]
+    # E1c, the collar's clean cut: the ankle's faces between the plane under the rim and the rim's top come back
+    # (their removal left the staircase of teal shards over the collar); the bisect below cuts them on the plane
+    collar = {}
+    if args.collar_cut > 0 and stree is not None and main_rim:
+        for sgn in (1.0, -1.0):
+            side_rim = [q for q in main_rim if q.x * sgn > 0]
+            if len(side_rim) < 8:
+                continue
+            zs = sorted(q.z for q in side_rim)
+            side_rim = [q for q in side_rim if q.z > zs[len(zs) // 2] - 0.025]
+            ctr = sum(side_rim, Vector()) / len(side_rim)
+            reach = max((q - ctr).xy.length for q in side_rim) + 0.03
+            collar[sgn] = {"plane": F.rim_plane([tuple(q) for q in side_rim], args.collar_cut), "ctr": ctr,
+                           "reach": reach, "top": max(q.z for q in side_rim), "low": min(q.z for q in side_rim)}
+        wco = [mw @ v.co for v in me.vertices]
+
+        def in_band(k: int) -> bool:
+            p = wco[k]
+            c = collar.get(1.0 if p.x > 0 else -1.0)
+            if c is None or (p.xy - c["ctr"].xy).length >= c["reach"] or p.z < F.plane_z(c["plane"], p.x, p.y):
+                return False
+            # only skin with no shoe over it (the ankle in the opening, not the instep under the vamp: d7 showed
+            # it through the vamp in Crouch), up to collar_over over the rim's top (the old rim's notch)
+            return p.z < c["top"] + args.collar_over and stree.ray_cast(p + up * 1e-4, up, 0.05)[0] is None
+        back = [fi for fi, (g, f) in enumerate(zip(gone, faces)) if g and all(in_band(k) for k in f)]
+        for fi in back:
+            gone[fi] = False
+        rep["collar"] = {("left" if k > 0 else "right"): {"plane": [round(x, 4) for x in c["plane"]],
+                                                          "rim_low": round(c["low"], 4), "rim_top": round(c["top"], 4),
+                                                          "reach": round(c["reach"], 4)} for k, c in collar.items()}
+        rep["collar"]["faces_back"] = len(back)
     rep["faces_removed_through_shoe_walls"] = sum(shoe_faces)
     # the removed part, kept in the blend for the proof's gap check (C1k): its own object with the body's weights and
     # armature modifier, not parented to the armature, so the GLB leaves it out (alien_loco._export)
@@ -553,6 +621,66 @@ def main() -> int:
     bm.to_mesh(me)
     bm.free()
     me.update()
+    if collar:  # E1c: the ankle bisected on each collar's plane, everything under it near the shoe goes
+        inv = mw.inverted()
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        cut = 0
+        for sgn, c in collar.items():
+            a, b, _c = c["plane"]
+            vs = [v for v in bm.verts if (mw @ v.co).x * sgn > 0 and (mw @ v.co).z < c["top"] + 0.06
+                  and ((mw @ v.co).xy - c["ctr"].xy).length < c["reach"] + 0.03]
+            if not vs:
+                continue
+            vset = set(vs)
+            fs = [f for f in {f for v in vs for f in v.link_faces} if all(x in vset for x in f.verts)]
+            es = list({e for f in fs for e in f.edges})
+            vs = list({x for f in fs for x in f.verts})
+            co = inv @ Vector((c["ctr"].x, c["ctr"].y, F.plane_z(c["plane"], c["ctr"].x, c["ctr"].y)))
+            no = (mw.to_3x3().transposed() @ Vector((-a, -b, 1.0))).normalized()
+            n0 = len(bm.faces)
+            bmesh.ops.bisect_plane(bm, geom=vs + es + fs, dist=1e-6, plane_co=co, plane_no=no, clear_inner=True)
+            cut += n0 - len(bm.faces)
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+        bm.to_mesh(me)
+        bm.free()
+        me.update()
+        # the skin left between the plane and the rim, outside the shoe's outer shell (no shoe face on its way out
+        # across the floor), pulled in: inside the shoe's innermost wall on its way back to the rim's centre
+        pulled, worst = 0, 0.0
+        for v in me.vertices:
+            p = mw @ v.co
+            c = collar.get(1.0 if p.x > 0 else -1.0)
+            if c is None or p.z >= c["top"] or (p.xy - c["ctr"].xy).length >= c["reach"]:
+                continue
+            d = Vector((p.x - c["ctr"].x, p.y - c["ctr"].y, 0.0))
+            r = d.length
+            if r < 1e-5:
+                continue
+            d /= r
+            if not F.outside_shell(int(stree.ray_cast(p + d * 1e-4, d, 0.1)[0] is not None)):
+                continue
+            nr = min((q for q in main_rim if q.x * p.x > 0), key=lambda q: (q.xy - p.xy).length)
+            if p.z >= nr.z:
+                continue
+            ts, q, t0 = [], p - d * 1e-4, 1e-4
+            for _ in range(6):
+                loc, _n, _f, t = stree.ray_cast(q, -d, r - t0)
+                if loc is None:
+                    break
+                t0 += t
+                ts.append(t0)
+                q = loc - d * 1e-4
+                t0 += 1e-4
+            r2 = F.pull_in(r, ts, args.collar_clear)
+            if r2 < r:
+                v.co = inv @ Vector((c["ctr"].x + d.x * r2, c["ctr"].y + d.y * r2, p.z))
+                pulled += 1
+                worst = max(worst, r - r2)
+        rep["collar"]["faces_cut"] = cut
+        rep["collar"]["pulled_in"] = pulled
+        rep["collar"]["pulled_most_mm"] = round(1000 * worst, 1)
+        say("collar", rep["collar"])
     rep["covered_vertices"] = sum(cov)
     rep["faces_removed"] = sum(gone)
     below, band = (float(v) for v in args.ankle_ride.split(","))
@@ -577,6 +705,21 @@ def main() -> int:
             rode += 1
         rep["ankle_rides_with_the_shoe"] = rode
         say("ankle verts riding with the shoe", rode)
+    if collar:  # E1c, the outer-shell probe: kept skin under the rim with no shoe face on its way out
+        outs = 0
+        for v in me.vertices:
+            p = mw @ v.co
+            c = collar.get(1.0 if p.x > 0 else -1.0)
+            if c is None or p.z >= c["top"] or (p.xy - c["ctr"].xy).length >= c["reach"]:
+                continue
+            nr = min((q for q in main_rim if q.x * p.x > 0), key=lambda q: (q.xy - p.xy).length)
+            d = Vector((p.x - c["ctr"].x, p.y - c["ctr"].y, 0.0))
+            if p.z >= nr.z or d.length < 1e-5:
+                continue
+            d.normalize()
+            outs += F.outside_shell(int(stree.ray_cast(p + d * 1e-4, d, 0.1)[0] is not None))
+        rep["collar_shell_probe"] = {"kept_under_rim_outside_shell": outs}
+        say("collar shell probe", rep["collar_shell_probe"])
     if stree is not None and rim_pts:  # E1b, the collar probe: kept skin under the rim outside the shoe's surface
         outs = []
         for v in me.vertices:

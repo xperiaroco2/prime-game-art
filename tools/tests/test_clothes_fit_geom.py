@@ -294,5 +294,37 @@ class AnkleRide(unittest.TestCase):  # E1b: the skin under the collar rides with
             F.ankle_ride(0.1, 0.09, band=0.0)
 
 
+class RimPlane(unittest.TestCase):  # E1c: the collar's clean cut
+    def test_a_tilted_rim_gives_its_tilt_lowered_under_every_point(self):
+        rim = [(math.cos(t), math.sin(t), 0.09 + 0.1 * math.sin(t) + (0.004 if i % 2 else 0.0))
+               for i, t in enumerate(k * math.tau / 16 for k in range(16))]
+        a, b, c = F.rim_plane(rim, below=0.012)
+        self.assertAlmostEqual(a, 0.0, places=6)
+        self.assertAlmostEqual(b, 0.1, places=6)
+        gaps = [p[2] - F.plane_z((a, b, c), p[0], p[1]) for p in rim]
+        self.assertAlmostEqual(min(gaps), 0.012, places=9)
+
+    def test_too_few_points_refused(self):
+        with self.assertRaises(ValueError):
+            F.rim_plane([(0, 0, 0), (1, 0, 0)])
+
+
+class PullIn(unittest.TestCase):  # E1c: the skin outside the shoe's outer shell
+    def test_inside_the_innermost_wall_by_clear(self):
+        self.assertAlmostEqual(F.pull_in(0.05, [0.004, 0.008], clear=0.003), 0.039)
+
+    def test_no_wall_on_the_way_in_keeps_the_radius(self):
+        self.assertEqual(F.pull_in(0.05, []), 0.05)
+        self.assertEqual(F.pull_in(0.05, [0.06]), 0.05)
+
+    def test_never_under_least(self):
+        self.assertAlmostEqual(F.pull_in(0.04, [0.035], clear=0.003, least=0.5), 0.02)
+
+    def test_outside_only_with_no_hit_out(self):
+        self.assertTrue(F.outside_shell(0))
+        self.assertFalse(F.outside_shell(1))
+        self.assertFalse(F.outside_shell(2))
+
+
 if __name__ == "__main__":
     unittest.main()
