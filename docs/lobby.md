@@ -56,7 +56,7 @@ point under the ship; the views' eyes inside. The ship: its footprint is the con
 (`ship_hull_shape.outline("P")`), each placed pod's bounds and the tail (the `skin_top` piece's bounds aft of the
 outline, as wide as the pods) from art #263's `build_report.json`, moved by the origin; it keeps at least 2 m to every
 spawn and 3 m to every wall, the window and every door's opening, and the floor ring reaches no more than 1 m inside
-its outline. The text plan goes to `<raw>/<raw_dir>/plan/plan.txt` (`raw_dir` in `hall.toml`: step 1 `lobby/hall/v1`, step 2 `lobby/hall/v2`, step 2b `lobby/hall/v3`).
+its outline. The text plan goes to `<raw>/<raw_dir>/plan/plan.txt` (`raw_dir` in `hall.toml`: step 1 `lobby/hall/v1`, step 2 `lobby/hall/v2`, step 2b `lobby/hall/v3`, step 2c `lobby/hall/v4`).
 
 Measured (step 1): the spawns 2.04 m from the ship (the mid pod's end); the ship 6.95 m from the west and east walls,
 5.90 m from the north wall, 12.04 m from the window; D1/D2 14.58 m, D3/D4 8.83 m.
@@ -90,8 +90,8 @@ lamp; built facing +z, the command places it on its wall: N yaw 0, W 90, E -90).
 tools/run.sh lobby --check                     # the check and the text plan
 tools/run.sh lobby --build                     # the GLBs into <raw>/<raw_dir>/pieces with glTF-Validator
 tools/run.sh lobby --godot                     # headless import, sizes, colliders, the walk and the blocks
-tools/run.sh lobby --shoot <raw>/lobby/hall/v3/shots
-tools/run.sh lobby --grid <raw>/lobby/hall/v3/grid    # the colour schemes' taste grid
+tools/run.sh lobby --shoot <raw>/lobby/hall/v4/shots    # also closeups.png (step 2c)
+tools/run.sh lobby --grid <raw>/lobby/hall/v4/grid    # the colour schemes' taste grid
 ```
 
 `--build`, `--godot` and `--shoot` are heavy runs (Blender, Godot; one at a time): agents start them in the background.
@@ -213,9 +213,9 @@ cornices, door and arch frames, bolts, the lamp shades), `floor` and `accent` (t
 metallic of the metals and of the trim. `[look] mats` lists each scheme material as [role, lightness, roughness,
 emission]; `lobby_layout.look_materials()` resolves a scheme into colours, and both the builder (into the GLBs) and
 `hall.gd` (in the shots and the grid) use that table. The hazard stripes, the red lamps, the seams, the lens and the
-glass are fixed in every scheme. `hall.gd` also gives the non-emissive scheme materials a fine-noise grain: one seamless
-noise as a subtle normal map (scale 0.25) and as a roughness map (0.8-1 of the roughness), world triplanar, generated at
-run time (no texture files). The GLBs carry plain colours, so the game needs the same material step (an open problem).
+glass are fixed in every scheme. Until step 2c `hall.gd` also gave the non-emissive scheme materials a fine-noise
+grain: one seamless noise as a subtle normal map (scale 0.25) and as a roughness map (0.8-1 of the roughness), world
+triplanar, generated at run time; the GLBs carried plain colours (step 2c moved the metal surface into the GLBs).
 
 | Scheme | panel | frame | trim | accent |
 |---|---|---|---|---|
