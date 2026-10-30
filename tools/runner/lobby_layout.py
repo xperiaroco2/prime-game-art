@@ -225,6 +225,12 @@ def check(layout: dict[str, Any], fp: list[tuple[float, float]] | None = None) -
         p.append("vault: its arc does not spring from the walls' top to the apex")
     if not 0 < win["sill"] < win["transom"] < h["wall"]:
         p.append("window: sill, transom and head out of order")
+    ids = {q["id"] for q in layout.get("pieces", [])}
+    for pid, _at, _yaw in layout.get("place", []):
+        if pid not in ids:
+            p.append(f"place: no piece {pid!r}")
+    if not layout.get("place") or "door" not in ids:
+        p.append("pieces: no placements or no door piece")
     # ribs and pilasters
     ribs = h["ribs"]
     if sorted(ribs) != ribs or len(set(ribs)) != len(ribs):

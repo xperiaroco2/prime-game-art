@@ -81,6 +81,11 @@ class LobbyLayoutTest(unittest.TestCase):
         problems = lobby_layout.check(layout, self.fp(layout))
         self.assertTrue(any("under the ship" in p for p in problems), problems)
 
+    def test_refuses_a_placement_without_a_piece(self) -> None:
+        layout = copy.deepcopy(self.layout)
+        layout["place"].append(["balcony", [0.0, 0.0, 0.0], 0.0])
+        self.assertIn("place: no piece 'balcony'", lobby_layout.check(layout, self.fp(layout)))
+
     def test_plan_draws_the_hall(self) -> None:
         plan = lobby_layout.ascii_plan(self.layout, self.fp(self.layout))
         for mark in ("A", "S", "s", "o", "W", "D", "#", "|"):

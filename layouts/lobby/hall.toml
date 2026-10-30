@@ -7,6 +7,16 @@
 
 version = 1
 raw_dir = "lobby/hall/v1"          # under the raw folder: pieces/, plan/, logs/, shots/
+# The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
+# their walls by the `lobby` command from [door] doors)
+place = [
+  ["floor", [0.0, 0.0, 0.0], 0.0],
+  ["walls", [0.0, 0.0, 0.0], 0.0],
+  ["vault", [0.0, 0.0, 0.0], 0.0],
+  ["window_frame", [0.0, 0.0, 0.0], 0.0],
+  ["window_glass", [0.0, 0.0, 0.0], 0.0],
+  ["arch", [0.0, 0.0, 0.0], 0.0],
+]
 
 [hall]
 x0 = -20.0                         # H.x0, H.x1, H.zN, H.zS: the straight walls' inner faces, 40 x 40 m
@@ -102,16 +112,6 @@ collide = true
 [[pieces]]
 id = "door"                        # a sealed door: slab, frame, red lamp; built facing +z, placed four times
 collide = true
-
-# [piece, [x, y, z], yaw degrees about y]; the hall's own pieces sit at the origin
-place = [
-  ["floor", [0.0, 0.0, 0.0], 0.0],
-  ["walls", [0.0, 0.0, 0.0], 0.0],
-  ["vault", [0.0, 0.0, 0.0], 0.0],
-  ["window_frame", [0.0, 0.0, 0.0], 0.0],
-  ["window_glass", [0.0, 0.0, 0.0], 0.0],
-  ["arch", [0.0, 0.0, 0.0], 0.0],
-]
 
 [review]
 background = [0.02, 0.035, 0.11]   # the dark blue placeholder behind the window (no Earth yet)
