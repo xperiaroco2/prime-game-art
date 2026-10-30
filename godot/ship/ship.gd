@@ -354,6 +354,8 @@ func _environment() -> void:
 			omni.light_cull_mask = OUTSIDE_LAYER
 		if l.size() > 8 and str(l[8]) in ["nav", "nav_tail"]:
 			_nav.append([omni, omni.light_energy, str(l[8]) == "nav_tail"])
+		if l.size() > 8 and str(l[8]) in _req.get("clearing_lamps", []):  # art #356: export_scene.gd's Clearing
+			omni.set_meta("clearing", true)
 		root.add_child(omni)
 
 
@@ -399,6 +401,7 @@ func _dress(ship: Node3D) -> int:
 	var cells: Dictionary = {}
 	var seen: Dictionary = {}
 	var mats: Dictionary = (_req["light"] as Dictionary).get("mats", {})
+	var clearing: Array = _req.get("clearing", [])  # art #356: a cell lit only by clearing pieces is the clearing's
 	var stack: Array = [ship]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
@@ -437,10 +440,12 @@ func _dress(ship: Node3D) -> int:
 				var inside: bool = mi.layers != OUTSIDE_LAYER
 				var key: String = "%d_%d_%d_%s_%s" % [floori(c.x / LIGHT_CELL_M), floori(c.y / LIGHT_CELL_M),
 					floori(c.z / LIGHT_CELL_M), bm.emission.to_html(false), inside]
+				var of_clearing: bool = not clearing.is_empty() and _piece_id(mi, ship) in clearing
 				if not cells.has(key):
 					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0, float(_entry(mats, bm.resource_name).get("rr", 1.0)),
-						inside or _entry(mats, bm.resource_name).get("cull", "") == "inside"]
+						inside or _entry(mats, bm.resource_name).get("cull", "") == "inside", of_clearing]
 				var cell: Array = cells[key]
+				cell[6] = bool(cell[6]) and of_clearing
 				cell[0] = (cell[0] as Vector3) + c * area
 				cell[1] = float(cell[1]) + area
 				cell[3] = maxf(float(cell[3]), float(seen[bm]))
@@ -457,6 +462,8 @@ func _dress(ship: Node3D) -> int:
 		omni.omni_attenuation = 1.6
 		if bool(cell[5]):  # an inside strip lights only the inside (it shone through the smooth skin's top, inside-2)
 			omni.light_cull_mask = INSIDE_LAYER
+		if bool(cell[6]):
+			omni.set_meta("clearing", true)
 		root.add_child(omni)
 		dump.append([_r3(omni.position), snappedf(omni.light_energy, 0.001), snappedf(omni.omni_range, 0.001),
 			omni.light_color.to_html(false)])
@@ -467,6 +474,98 @@ func _dress(ship: Node3D) -> int:
 	for n: Node in ship.find_children("station_vent_*_heat", "Node3D", true, false):
 		(n as Node3D).visible = false
 	return mini(list.size(), MAX_LIGHTS) + vents
+
+
+## The placed piece's id of a node under ship (its child "<id>_<n>").
+func _piece_id(n: Node, ship: Node3D) -> String:
+	while n != null and n.get_parent() != ship:
+		n = n.get_parent()
+	if n == null:
+		return ""
+	var name: String = String(n.name)
+	return name.substr(0, name.rfind("_"))
+
+
+## The closed nose's blockout variants (art #356, the lobby's docked ship; ship_layout.closed_poses, built only when a
+## shot asks for one): per variant a hidden Node3D "Closed_<name>" of CSG parts on the outside layer. A part: "kind"
+## "prism" (a plan polygon [[x, h]...] in the plane y = "y", extruded aft by "depth"; "ring" d: only its band d wide
+## inside the outline), or "box" ("at" [x, y, h], "size" [x, y, h], "pitch" deg about x); "mat" a METALS name, or
+## "rgb" with "emit" (an emission energy), "rough" and "metal".
+func _closed_build(ship: Node3D) -> void:
+	var poses: Dictionary = _req.get("closed", {})
+	for name: String in poses:
+		var group: Node3D = Node3D.new()
+		group.name = "Closed_%s" % name
+		group.visible = false
+		ship.get_parent().add_child(group)
+		for part: Dictionary in poses[name]["parts"]:
+			var node: GeometryInstance3D = _closed_part(part)
+			node.layers = OUTSIDE_LAYER
+			group.add_child(node)
+
+
+func _closed_part(part: Dictionary) -> GeometryInstance3D:
+	var mat: Material
+	if part.has("mat"):
+		mat = _metal(str(part["mat"]))
+	else:
+		var sm: StandardMaterial3D = StandardMaterial3D.new()
+		var c: Array = part.get("rgb", [0.1, 0.1, 0.1])
+		sm.albedo_color = Color(float(c[0]), float(c[1]), float(c[2]))
+		sm.roughness = float(part.get("rough", 0.5))
+		sm.metallic = float(part.get("metal", 0.3))
+		if float(part.get("emit", 0.0)) > 0.0:
+			sm.emission_enabled = true
+			sm.emission = sm.albedo_color
+			sm.emission_energy_multiplier = float(part["emit"])
+		mat = sm
+	if str(part.get("kind", "box")) == "box":
+		var box: CSGBox3D = CSGBox3D.new()
+		var sz: Array = part["size"]
+		box.size = Vector3(float(sz[0]), float(sz[2]), float(sz[1]))
+		var at: Array = part["at"]
+		box.position = Vector3(float(at[0]), float(at[2]), float(at[1]))
+		box.rotation_degrees.x = float(part.get("pitch", 0.0))
+		box.material = mat
+		return box
+	var poly: PackedVector2Array = PackedVector2Array()
+	for q: Array in part["poly"]:
+		poly.append(Vector2(float(q[0]), float(q[1])))
+	var depth: float = float(part["depth"])
+	var outer: CSGPolygon3D = CSGPolygon3D.new()
+	outer.polygon = poly
+	outer.depth = depth
+	outer.position = Vector3(0, 0, float(part["y"]) + depth)  # extruded along -z: from y aft by depth
+	outer.material = mat
+	if not part.has("ring"):
+		return outer
+	var combo: CSGCombiner3D = CSGCombiner3D.new()
+	outer.position = Vector3.ZERO
+	combo.position = Vector3(0, 0, float(part["y"]) + depth)
+	combo.add_child(outer)
+	var shrunk: Array = Geometry2D.offset_polygon(poly, -float(part["ring"]))
+	if not shrunk.is_empty():
+		var inner: CSGPolygon3D = CSGPolygon3D.new()
+		inner.polygon = shrunk[0]
+		inner.depth = depth + 0.02
+		inner.position = Vector3(0, 0, 0.01)
+		inner.operation = CSGShape3D.OPERATION_SUBTRACTION
+		inner.material = mat
+		combo.add_child(inner)
+	return combo
+
+
+## Shows one closed variant (or none: the open ship) and hides the pieces it replaces.
+func _closed_pose(ship: Node3D, name: String) -> void:
+	var poses: Dictionary = _req.get("closed", {})
+	if poses.is_empty():
+		return
+	var hide: Array = poses[name]["hide"] if poses.has(name) else []
+	for n: Node in ship.get_children():
+		var s: String = String(n.name)
+		(n as Node3D).visible = not (s.substr(0, s.rfind("_")) in hide)
+	for other: String in poses:
+		(ship.get_parent().get_node("Closed_%s" % other) as Node3D).visible = other == name
 
 
 ## Every mesh under n on the render layers bits.
@@ -544,6 +643,7 @@ func _shoot() -> void:
 	var lights: int = _dress(ship)
 	_stations(ship)
 	_probes()
+	_closed_build(ship)
 	print("SHIP look: %d emissive lights" % lights)
 	if nav_blink:
 		process_frame.connect(_nav_tick)
@@ -569,6 +669,7 @@ func _shoot() -> void:
 		_camera.look_at_from_position(_v(v[2]), _v(v[3]), UP)
 		_ab(v[5] if v.size() > 5 else {})
 		_gills(ship, (v[5] as Dictionary).get("gills", {}) if v.size() > 5 and v[5] is Dictionary else {})
+		_closed_pose(ship, str((v[5] as Dictionary).get("closed", "")) if v.size() > 5 and v[5] is Dictionary else "")
 		images[v[0]] = await _shot(v[0], v[1], shots)
 		_ab({})
 	if _req.has("top"):  # (a --views prefix set alone has no plan view)
@@ -611,7 +712,11 @@ func _shoot() -> void:
 	var names: Array = images.keys()
 	for i: int in range(0, names.size(), 3):
 		rows.append(names.slice(i, i + 3).map(func(n: String) -> Image: return images[n]))
-	_save(_sheet(rows), _out.path_join("sheet.png"))
+	var sheet: Image = _sheet(rows)
+	if _req.has("sheet_w") and sheet.get_width() > int(_req["sheet_w"]):  # art #356: a sheet sized for review
+		sheet.resize(int(_req["sheet_w"]), int(sheet.get_height() * float(_req["sheet_w"]) / sheet.get_width()),
+			Image.INTERPOLATE_LANCZOS)
+	_save(sheet, _out.path_join("sheet.png"))
 	_write("shots.json", {"shots": shots})
 	print("SHIP saved %s" % _out)
 	quit(0)

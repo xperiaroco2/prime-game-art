@@ -21,7 +21,7 @@ import re
 import shutil
 from pathlib import Path
 
-from . import house_export
+from . import house_export, ship_layout
 
 FORMAT = 1
 ASSET_DIR = "assets/environment/ship"
@@ -62,6 +62,12 @@ QUESTIONS = [
     "look; a baked light or fewer lights is the game's call against its budget (HANDOFF 'Cost').",
     "S6: the pieces' colliders are the GLBs' own -col trimesh hints (StaticBody3D on layer 1); the game's `colliders` "
     "writes its wrappers on import (11.2).",
+    "S7: the clearing round the ship (the ground and its world boundary, the pines, bushes, ferns, moss, litter, "
+    "logs, rocks, the ground lamps, the party string and the lamps that light only them) is the one node Clearing "
+    "(Clearing/Pieces, Clearing/Lights, Clearing/Ground); the lobby (art#356) shows the ship docked without it: free "
+    "the node (queue_free(), or delete it in an inherited scene); hiding it leaves Ground's collider on. The ship "
+    "itself (hull, legs, ramp, entry tunnel, its landing and edge lights, the rim and key) stays under Pieces and "
+    "Lights. A closed state (the ramp raised, the mouth shut) waits for the engineer's pick of its look.",
     "Imports: each GLB's .import holds only 11.2's options; the game's editor regenerates the .import files (and the "
     "uids) on its first import: commit the regenerated ones.",
 ]
@@ -159,6 +165,11 @@ def write(layout: dict, pieces: Path, built: Path, shaders: Path, out: Path) -> 
                "root": "Ship", "pieces": len(ids), "placements": len(layout["place"]),
                "stations": stations(layout),
                "spawn": {"node": "Markers/Spawn", "at": [walk[0], walk[2], walk[1]], "yaw": 180.0},
+               # art #356: the lobby shows the ship docked without the clearing; it frees this node
+               "clearing": {"node": "Clearing", "pieces": sorted(ship_layout.clearing_ids(layout)),
+                            "placements": sum(1 for pid, _at, _yaw in layout["place"]
+                                              if pid in set(ship_layout.clearing_ids(layout))),
+                            "lamp_groups": sorted(ship_layout.CLEARING_LAMPS)},
                "files": files, "bytes": sum(f["bytes"] for f in files.values()), "questions": QUESTIONS}
     (out / "package.json").write_text(json.dumps(summary, indent=1), encoding="utf-8", newline="\n")
     return summary

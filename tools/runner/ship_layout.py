@@ -38,7 +38,31 @@ def load(path: Path = SHIP) -> dict[str, Any]:
         for p in data.get("pieces", []):
             layout["pieces"].append({"lane": lane, "args": {}, "collide": False, "outside": False, **p})
         layout["place"] += [[p[0], list(p[1]), float(p[2])] for p in data.get("place", [])]
+        if "closed_nose" in data:
+            layout["closed_nose"] = {**layout.get("closed_nose", {}), **data["closed_nose"]}
     return layout
+
+
+# The clearing (art #356, the lobby): the pieces round the ship that are not the ship (ship_hull_clearing.py's
+# builders, the ground, the loose rocks, the ground lamps) and the ship.toml [light] lamp groups that light only them
+# (the ground lamps' pools, the party string, the treeline camp lights, the pines' fill). `ship --export` puts them
+# under Ship/Clearing (docs/ship.md "The export"). The ship's own lights on the ground (land, edge), the rim and the
+# key stay with the ship.
+CLEARING_BUILDERS = frozenset({"ground", "rock", "rock_pile", "pine2", "dirt_patch", "dirt_path", "tuft", "bush", "log",
+                               "stump", "fern", "moss", "party_post", "party_lights", "ground_lamp"})
+CLEARING_LAMPS = frozenset({"pool", "party", "out", "fill"})
+
+
+def clearing_ids(layout: dict[str, Any]) -> list[str]:
+    """The clearing's piece ids (CLEARING_BUILDERS), in the layout's order."""
+    return [p["id"] for p in layout["pieces"] if p["builder"] in CLEARING_BUILDERS]
+
+
+def closed_poses(layout: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """The closed nose's blockout variants (art #356, the lobby's docked ship; exterior.toml [closed_nose.<name>]): per
+    variant its title, the pieces it hides and its parts; off unless a shot asks for one (`ship --shoot --views`)."""
+    return {name: {"title": v.get("title", name), "hide": list(v.get("hide", [])), "parts": list(v.get("parts", []))}
+            for name, v in layout.get("closed_nose", {}).items()}
 
 
 def rooms(layout: dict[str, Any]) -> dict[str, dict[str, Any]]:

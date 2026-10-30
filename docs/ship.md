@@ -1329,8 +1329,8 @@ writes the ship's game-ready package (for prime-game#1225 and #1285) from `layou
   sky); the vents' normal maps the GLBs' import extracts (`station_vent_<e|w>_vent_a_normal.png`). Data only.
 - `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the 1092
   placements as GLB instances), `Environment` (the WorldEnvironment), `Lights` (the moon, the key, the layout's lamps
-  and the glow cells' omni lights, as `ship.gd` places them), `Probes` (one reflection probe per room), `Ground` (the
-  world boundary under the clearing), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
+  and the glow cells' omni lights, as `ship.gd` places them), `Probes` (one reflection probe per room), `Clearing`
+  (art #356, below: the clearing's pieces, its lights and `Ground`, the world boundary), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
   `SocketE`, `SocketW`, `SocketFE`, `SocketFW`, `BreakerE`, `BreakerW`, `RenewerE`, `RenewerW`; on the deck, +Z the
   spot's normal, the console turned 180 degrees; `metadata/spot`, `package`, `kind`) and `Markers/Spawn` (the walk's
   first point at the ramp's foot, facing the ship).
@@ -1355,6 +1355,37 @@ on every colliding piece; no script on any node; the station spots; the 1.36 m c
 the package in an off-screen window: the mean absolute difference (0..255, at most 2.0) and the share of pixels off
 by more than 16, with each view's draw calls, primitives and GPU ms. `DIR/_check/report.json` holds the numbers;
 `assets/environment/ship/` commits the manifest (the files' hashes), `report.json` and `HANDOFF.md`, not the GLBs.
+
+### The lobby: the Clearing node and the closed nose (art #356, 2026-10-30)
+
+The lobby hall instances the package and never forks it; it shows the ship docked and closed (the engineer's word),
+without the clearing. So the export puts the clearing under one node, `Ship/Clearing`:
+
+- `Clearing/Pieces`: every placement of a piece whose builder is in `ship_layout.CLEARING_BUILDERS` (the ground, the
+  rocks and rock piles, the pines, tufts, bushes, ferns, moss and litter, logs, stumps, the dirt patch and path, the
+  ground lamps, the party posts and string; `ship_layout.clearing_ids`), moved there from `Pieces` by
+  `export_scene.gd` `_clearing`; still editable instances.
+- `Clearing/Lights`: the lamp rows of the groups `ship_layout.CLEARING_LAMPS` (`pool`: the ground lamps' pools, `party`,
+  `out`: the treeline camp lights and the lamp in front of the ramp, `fill`: the pines' moonlight) and the glow cells'
+  omni lights that only clearing pieces lit (the party bulbs); `ship.gd` marks them (metadata `clearing`, removed
+  before the save) from the request's `clearing` and `clearing_lamps`.
+- `Clearing/Ground`: the world boundary (it was `Ship/Ground`).
+
+The ship's own outside light (the landing and edge spots on the ground, the rim, the key, the tail lamp) stays under
+`Lights`. The lobby frees the node; hiding it leaves `Ground`'s collider on. There is no root script (the package
+carries none), so the switch is the node. The export's check (`_ship_export.clearing_problems`) refuses a `Clearing`
+that differs from the layout's clearing placements, a clearing piece under `Pieces` or a ship piece under
+`Clearing`; `tools/tests/test_ship_lobby.py` keeps the builder list complete (every `ship_hull_clearing` builder),
+the clearing outside, grounded and collision-free, and the clearing lamps outside the hull or on the ground.
+
+**The closed nose** (the look is the engineer's pick; no design drawing): `exterior.toml` `[closed_nose.<name>]` holds
+quick blockout variants, each the pieces it hides (the ramp and its lights) and CSG parts (a prism of a polygon in the
+tunnel's front plane, a ring of it, a box; a METALS name or an emissive colour). They are off by default: a
+`ship --shoot DIR --views FILE` row whose 6th element is `{"closed": "<name>"}` builds them (`ship.gd`
+`_closed_build`, `_closed_pose`) and shows that one (`""` the open ship); the sheet then comes out
+`CLOSED_SHEET_W` (1600) px wide. The first stills: `<raw>/ship/v5/lobby/closed-1/` (A the flush silver seal, B a
+two-leaf door 0.35 m in with the ramp's lip under the floor, C a silver plug 0.1 m in with a bevel and a thin cyan
+line). After his pick the variant is built as pieces and written by the export as a pose.
 
 ## Lens room C, step 1: the charger's alcove and the east lounge (2026-10-28)
 

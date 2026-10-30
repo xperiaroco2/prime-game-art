@@ -26,6 +26,7 @@ CHARGER_SCRIPT = "res://charger/room.gd"   # --shoot --charger (lens C step 3)
 BUILD_TIMEOUT = 900
 GODOT_TIMEOUT = 300
 VIEW_SIZE = (1920, 1080)
+CLOSED_SHEET_W = 1600   # art #356: the closed-nose variants' sheet (3 views a row)
 SIZE_TOL_M = 0.01
 PLAY_DEFAULT = Path("<raw>/play")  # --play with no DIR: <raw>/<raw_dir>/play
 PLAY_HOURS = 8  # the most one --play session stays open
@@ -454,6 +455,10 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         for key in ("top", "top_full", "day_views"):
             req.pop(key)
         req["compare"] = []
+    if any(len(v) > 5 and isinstance(v[5], dict) and "closed" in v[5] for v in req["views"]):
+        # art #356: a view's {"closed": name} shows that closed-nose blockout (exterior.toml [closed_nose.<name>],
+        # off by default; "" the open ship); the sheet comes out CLOSED_SHEET_W wide for the review
+        req.update({"closed": ship_layout.closed_poses(layout), "sheet_w": CLOSED_SHEET_W})
     # lens C step 3: --charger runs charger/room.gd instead of the GLBs' plain materials, which ship.gd's pass made
     # strip lights of
     script = shoot_script(charger)
