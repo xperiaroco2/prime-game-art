@@ -26,6 +26,8 @@ const Offscreen = preload("res://lib/offscreen.gd")
 const Player = preload("res://ship/player.gd")
 const VentGlow = preload("res://ship/vent_glow.gd")
 const VentAnim = preload("res://ship/vent_anim.gd")
+const GillRow = preload("res://ship/gill_row.gd")
+const GillSet = preload("res://ship/gill_set.gd")
 const WATCHDOG_S: float = 240.0
 const UP := Vector3.UP
 const SPEED: float = 3.0
@@ -105,7 +107,7 @@ func _initialize() -> void:
 	nav_blink = bool(_req.get("nav_blink", true))
 	DirAccess.make_dir_recursive_absolute(_out)
 	var test_play: bool = _req["mode"] == "play" and bool(_req.get("test", false))
-	if _req["mode"] in ["shoot", "video", "vent_anim"] or test_play:
+	if _req["mode"] in ["shoot", "video", "vent_anim", "gill_anim", "gill_set"] or test_play:
 		if DisplayServer.get_name() == "headless":
 			_fail("shoot needs a window (off-screen), not --headless")
 			return
@@ -124,6 +126,10 @@ func _initialize() -> void:
 		_video()
 	elif _req["mode"] == "vent_anim":
 		_vent_anim()
+	elif _req["mode"] == "gill_anim":
+		_gill_anim()
+	elif _req["mode"] == "gill_set":
+		_gill_set()
 	else:
 		_shoot()
 
@@ -562,6 +568,7 @@ func _shoot() -> void:
 		_camera.fov = float(v[4])
 		_camera.look_at_from_position(_v(v[2]), _v(v[3]), UP)
 		_ab(v[5] if v.size() > 5 else {})
+		_gills(ship, (v[5] as Dictionary).get("gills", {}) if v.size() > 5 and v[5] is Dictionary else {})
 		images[v[0]] = await _shot(v[0], v[1], shots)
 		_ab({})
 	if _req.has("top"):  # (a --views prefix set alone has no plan view)
@@ -663,17 +670,20 @@ func _play(test: bool) -> void:
 		root.move_to_center()
 		root.grab_focus()
 	_environment()
-	var lights: int = _dress(_build())
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
 	_probes()
 	if nav_blink:
 		process_frame.connect(_nav_tick)
 	var w: Dictionary = _req["walk"]
-	var p = Player.new()  # untyped: player.gd's own fields (test, shots, shot())
+	var p = Player.new()  # untyped: player.gd's own fields (test, shots, shot(), can_use, used)
 	p.test = test
 	p.setup(float(w["r"]), float(w["h"]), _out)
 	root.add_child(p)
 	p.global_position = _v(_req["spawn"]) + Vector3(0, 0.05, 0)
 	p.rotation_degrees.y = float(_req.get("spawn_yaw", 180.0))
+	_play_player = p
+	_play_gill_set(ship)
 	print("SHIP play ready: %d emissive lights, shots into %s" % [lights, _out])
 	if not test:
 		return
@@ -694,10 +704,131 @@ func _play(test: bool) -> void:
 		await physics_frame
 	await p.shot()
 	var end: Vector3 = p.global_position
+	var press: Dictionary = await _play_test_press(p)
 	_write("play.json", {"start": _r3(start), "end": _r3(end), "moved_m": snappedf(start.distance_to(end), 0.001),
-		"on_floor": p.is_on_floor(), "shots": p.shots})
+		"on_floor": p.is_on_floor(), "shots": p.shots, "press": press})
 	print("SHIP play test saved %s" % _out)
 	quit(0)
+
+
+# --- step 5: the gill set in --play (gill_set.gd on each throat wall; E presses the button within reach) ----------
+# step 6: both walls (th_wall_e and its mirror th_wall_w), each its own row and its own button
+const REACH_M: float = 1.6     # eye to the button's middle
+const AIM_DEG: float = 14.0    # the look's angle off the button
+var _play_player = null
+var _play_gills: Dictionary = {}   # side ("e", "w") -> its gill_set.gd
+var _play_presses: Array = []
+
+
+## The placed throat walls that carry a gill set: side -> piece (th_wall_e, th_wall_w).
+static func gill_walls(ship: Node3D) -> Dictionary:
+	var out: Dictionary = {}
+	for n: Node in ship.get_children():
+		for side: String in ["e", "w"]:
+			if String(n.name).begins_with("th_wall_" + side):
+				out[side] = n
+	return out
+
+
+func _play_gill_set(ship: Node3D) -> void:
+	var walls: Dictionary = gill_walls(ship)
+	if walls.is_empty():
+		print("SHIP play: no placed th_wall_e/_w, no gill set")
+		return
+	for side: String in walls:
+		var gs: Node = GillSet.new()
+		walls[side].add_child(gs)
+		gs.setup(walls[side])
+		_play_gills[side] = gs
+	process_frame.connect(_play_tick)
+	_play_player.used.connect(_play_use)
+
+
+func _play_tick() -> void:
+	var dt: float = root.get_process_delta_time()
+	for side: String in _play_gills:
+		_play_gills[side].step(dt)
+	_play_player.can_use = _reach_side() != ""
+
+
+## The wall whose button the player looks at within reach ("" if none).
+func _reach_side() -> String:
+	var cam: Camera3D = _play_player.camera
+	for side: String in _play_gills:
+		var gs: Node = _play_gills[side]
+		var to: Vector3 = gs.button_point() - cam.global_position
+		if to.length() > REACH_M or to.dot(gs.out_dir()) > 0.0:   # too far, or behind the wall
+			continue
+		if (-cam.global_transform.basis.z).angle_to(to) < deg_to_rad(AIM_DEG):
+			return side
+	return ""
+
+
+func _play_use() -> void:
+	var side: String = _reach_side()
+	if side == "":
+		return
+	var gs: Node = _play_gills[side]
+	var k: int = gs.slit()
+	var state: String = gs.press()
+	_play_presses.append({"side": side, "slit": k + 1, "state": state})
+	print("SHIP play press: %s slit %d %s" % [side, k + 1, state])
+
+
+## --play-test's presses: on each wall in turn the capsule set 0.9 m in front of the button on the deck, looking at
+## it; a real E key event (player.gd's `used`) must flip the slit under that wall's white bar and nothing on the other
+## wall. A shot each (with the hint).
+func _play_test_press(p) -> Dictionary:
+	if _play_gills.is_empty():
+		return {"ok": false, "why": "no gill set"}
+	var walls: Dictionary = {}
+	var ok: bool = true
+	for side: String in ["e", "w"]:
+		if not _play_gills.has(side):
+			ok = false
+			walls[side] = {"ok": false, "why": "no gill set"}
+			continue
+		var gs: Node = _play_gills[side]
+		var b: Vector3 = gs.button_point()
+		var out: Vector3 = gs.out_dir()
+		out.y = 0.0
+		out = out.normalized()
+		var stand: Vector3 = b + out * 0.9
+		stand.y = b.y - 1.15 + 0.05   # the button stands 1.15 m over the deck
+		p.velocity = Vector3.ZERO
+		p.global_position = stand
+		p.rotation.y = atan2(out.x, out.z)   # -z (the look) toward the wall
+		for i: int in 10:
+			await physics_frame
+		var to: Vector3 = b - p.camera.global_position
+		p.camera.rotation.x = atan2(to.y, Vector2(to.x, to.z).length())
+		for i: int in 3:
+			await process_frame
+		var reach: bool = _reach_side() == side
+		var before: int = _play_presses.size()
+		var key: InputEventKey = InputEventKey.new()
+		key.physical_keycode = KEY_E
+		key.keycode = KEY_E
+		key.pressed = true
+		Input.parse_input_event(key)
+		for i: int in 3:
+			await process_frame
+		key = key.duplicate()
+		key.pressed = false
+		Input.parse_input_event(key)
+		for i: int in 20:
+			await process_frame
+		await p.shot()
+		var open: Array = gs.open.duplicate()
+		var mine: Array = _play_presses.slice(before)
+		var w_ok: bool = reach and mine.size() == 1 and mine[0]["side"] == side and mine[0]["state"] == "open" \
+			and open.count(true) == 1 and bool(open[int(mine[0]["slit"]) - 1])
+		walls[side] = {"ok": w_ok, "in_reach": reach, "hint": p.can_use, "open": open, "stand": _r3(p.global_position),
+			"button": _r3(b)}
+		ok = ok and w_ok
+	var other_shut: bool = _play_gills.size() == 2 and (_play_gills["e"].open as Array).count(true) == 1 \
+		and (_play_gills["w"].open as Array).count(true) == 1
+	return {"ok": ok and other_shut, "walls": walls, "presses": _play_presses}
 
 
 ## The nav lamps' blink (light layer): the white tail lamp a short flash once a second (0.12 s), red and green a soft
@@ -966,3 +1097,239 @@ func _write(name: String, data: Dictionary) -> void:
 func _fail(why: String) -> void:
 	printerr("SHIP error %s" % why)
 	quit(1)
+
+
+# --- the gills (art #263, 2026-10-28; gill_row.gd) -----------------------------------------------------------------
+var _gill_rows: Dictionary = {}
+
+
+## A view's gills pose ({"e": {"lip": deg, "slits": {"3": "open"}, "ring": 0..1}, "w": {...}}; a side left out:
+## every slit calm, the lip shut), applied to each placed th_gills_<side>.
+func _gills(ship: Node3D, spec: Dictionary) -> void:
+	for n: Node in ship.get_children():
+		var nm: String = String(n.name)
+		if not nm.begins_with("th_gills_"):
+			continue
+		var side: String = nm.substr(9, 1)
+		if not _gill_rows.has(nm):
+			var row: Node = GillRow.new()
+			n.add_child(row)
+			row.setup(n as Node3D)
+			_gill_rows[nm] = row
+		_gill_rows[nm].pose(spec.get(side, {}))
+
+
+## The gills' proof (ship.py --gill-anim): gill_row.gd's demo on the east row from a fixed camera, one PNG a frame.
+func _gill_anim() -> void:
+	_environment()
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
+	_probes()
+	var a: Dictionary = _req["anim"]
+	_gills(ship, {})
+	var row: Node = null
+	for nm: String in _gill_rows:
+		if nm.begins_with("th_gills_e"):
+			row = _gill_rows[nm]
+	if row == null:
+		_fail("no placed th_gills_e")
+		return
+	_camera = Camera3D.new()
+	_camera.near = 0.05
+	_camera.far = 500.0
+	_camera.fov = float(a["fov"])
+	root.add_child(_camera)
+	_camera.make_current()
+	_camera.look_at_from_position(_v(a["eye"]), _v(a["look"]), UP)
+	for i: int in 30:  # the probes, SSAO and glow settle
+		await process_frame
+	var fps: float = float(a["fps"])
+	var row_demo: bool = String(a.get("demo", "slit")) == "row"   # the gills step 4: the whole row's mechanic
+	var seconds: float = GillRow.ROW_S if row_demo else GillRow.DEMO_S
+	var count: int = int(seconds * fps)
+	var dir: String = _out.path_join("frames")
+	DirAccess.make_dir_recursive_absolute(dir)
+	var beats: Array = []
+	for f: int in count:
+		var beat: String = row.play_row(f / fps) if row_demo else row.play_demo(f / fps)
+		await RenderingServer.frame_post_draw
+		var image: Image = root.get_texture().get_image()
+		image.convert(Image.FORMAT_RGB8)
+		_save(image, dir.path_join("%05d.png" % f))
+		if beats.is_empty() or beats[-1][1] != beat:
+			beats.append([snappedf(f / fps, 0.01), beat])
+	_write("anim.json", {"frames": count, "fps": fps, "seconds": seconds, "lights": lights, "states": beats})
+	print("SHIP gill_anim %d frames" % count)
+	quit(0)
+
+
+## ship.py --gill-set --grid: the look variants on the first camera, posed (open 1-3, the white bar over 4; or a
+## variant's own [open, at]):
+## grid/<name>.png and grid_sheet.png beside the request's "ref" (pairs per row).
+func _gill_grid(gs: Node, a: Dictionary) -> void:
+	var cam: Array = a["cams"][0]
+	_camera.fov = float(cam[3])
+	_camera.look_at_from_position(_v(cam[1]), _v(cam[2]), UP)
+	DirAccess.make_dir_recursive_absolute(_out.path_join("grid"))
+	var tiles: Array = []
+	var ref: Image = Image.load_from_file(String(a["ref"]))
+	ref.convert(Image.FORMAT_RGB8)
+	tiles.append(ref)
+	for v: Array in a["grid"]:
+		gs.reset()
+		gs.set_look(v[1])
+		var po: Array = v[2] if v.size() > 2 else [[1, 2, 3], 4]   # step 3: a variant's pose (all open: the cloud builds)
+		gs.pose(po[0], int(po[1]))
+		gs.time_scale = 1.0
+		for i: int in (150 if (po[0] as Array).size() == 5 else 40):
+			gs.step(0.0)
+			await process_frame
+		_label.text = String(v[0])
+		await RenderingServer.frame_post_draw
+		var img: Image = root.get_texture().get_image()
+		img.convert(Image.FORMAT_RGB8)
+		_save(img, _out.path_join("grid/%s.png" % String(v[0])))
+		tiles.append(img)
+		_label.text = ""
+	var rows: Array = []
+	for i: int in range(0, tiles.size(), 2):
+		rows.append(tiles.slice(i, mini(i + 2, tiles.size())))
+	_save(_sheet(rows), _out.path_join("grid_sheet.png"))
+	_write("anim.json", {"grid": a["grid"]})
+	quit(0)
+
+
+# --- the gill set (art #263, 2026-10-29; gill_set.gd) ----------------------------------------------------------------
+## ship.py --gill-set: gill_set.gd's demo on th_wall_e from each camera in "cams" ([name, eye, look, fov]): one PNG a
+## frame into <out>/<name>/frames, the key moments labelled into <name>/keys_sheet.png, the stills (shut, mid, open)
+## into stills/<cam>_<state>.png; then each of "views" ([name, eye, look, fov, open slits, runner slit]) posed into
+## stills/<name>.png, and sheet.png: the request's "ref" (the concept) beside the first camera's stills.
+func _gill_set() -> void:
+	_environment()
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
+	_probes()
+	var a: Dictionary = _req["anim"]
+	var walls: Dictionary = gill_walls(ship)
+	if not walls.has("e"):
+		_fail("no placed th_wall_e")
+		return
+	var sets: Array = []   # step 6: a gill set on each wall, driven alike (the east first: its presses are reported)
+	for side: String in ["e", "w"]:
+		if walls.has(side):
+			var g: Node = GillSet.new()
+			walls[side].add_child(g)
+			g.setup(walls[side])
+			sets.append(g)
+	var gs: Node = sets[0]
+	_camera = Camera3D.new()
+	_camera.near = 0.03
+	_camera.far = 500.0
+	root.add_child(_camera)
+	_camera.make_current()
+	var layer: CanvasLayer = CanvasLayer.new()
+	_label = Label.new()
+	_label.position = Vector2(16, 10)
+	_label.add_theme_font_size_override("font_size", 30)
+	_label.add_theme_color_override("font_color", Color(1, 1, 1))
+	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_label.add_theme_constant_override("outline_size", 8)
+	layer.add_child(_label)
+	root.add_child(layer)
+	if a.has("grid"):  # the look grid: each variant ([name, LOOK overrides]) posed from the first camera
+		await _gill_grid(gs, a)
+		return
+	var fps: float = float(a["fps"])
+	var count: int = int(GillSet.DEMO_S * fps)
+	var events: Array = GillSet.demo_events()
+	var key_frames: Dictionary = {}
+	for kv: Array in GillSet.demo_keys():
+		key_frames[int(round(float(kv[0]) * fps))] = kv
+	DirAccess.make_dir_recursive_absolute(_out.path_join("stills"))
+	var stills: Dictionary = {}
+	var presses: Array = []
+	for cam: Array in a["cams"]:
+		var name: String = cam[0]
+		_camera.fov = float(cam[3])
+		_camera.look_at_from_position(_v(cam[1]), _v(cam[2]), UP)
+		for g: Node in sets:
+			g.reset()
+		for i: int in 30:  # the probes, SSAO and glow settle
+			await process_frame
+		var dir: String = _out.path_join(name).path_join("frames")
+		DirAccess.make_dir_recursive_absolute(dir)
+		DirAccess.make_dir_recursive_absolute(_out.path_join(name).path_join("keys"))
+		var tiles: Array = []
+		var e: int = 0
+		var last: int = Time.get_ticks_usec()
+		for f: int in count:
+			var t: float = f / fps
+			while e < events.size() and float(events[e][0]) <= t + 1e-6:
+				var r: String = gs.press()
+				for g: Node in sets.slice(1):
+					g.press()
+				if name == a["cams"][0][0]:
+					presses.append([snappedf(t, 0.01), gs.slit() + 1, r])
+				e += 1
+			var now: int = Time.get_ticks_usec()
+			var ts: float = clampf((1.0 / fps) / maxf((now - last) / 1e6, 1e-4), 0.02, 4.0) if f > 0 else 1.0
+			last = now
+			for g: Node in sets:
+				g.time_scale = ts
+				g.step(0.0 if f == 0 else 1.0 / fps)
+			await RenderingServer.frame_post_draw
+			var image: Image = root.get_texture().get_image()
+			image.convert(Image.FORMAT_RGB8)
+			_save(image, dir.path_join("%05d.png" % f))
+			if key_frames.has(f):
+				var kv: Array = key_frames[f]
+				if String(kv[2]) != "":
+					stills["%s_%s" % [name, kv[2]]] = image
+					_save(image, _out.path_join("stills/%s_%s.png" % [name, kv[2]]))
+				_label.text = "%.2f s  %s" % [t, kv[1]]
+				await RenderingServer.frame_post_draw
+				var shot: Image = root.get_texture().get_image()
+				shot.convert(Image.FORMAT_RGB8)
+				_save(shot, _out.path_join(name).path_join("keys/%05d.png" % f))
+				shot.resize(320, 180, Image.INTERPOLATE_LANCZOS)
+				tiles.append(shot)
+				_label.text = ""
+				last = Time.get_ticks_usec()
+		var sheet: Image = Image.create(1280, 180 * ceili(tiles.size() / 4.0), false, Image.FORMAT_RGB8)
+		for i: int in tiles.size():
+			sheet.blit_rect(tiles[i], Rect2i(0, 0, 320, 180), Vector2i((i % 4) * 320, (i / 4) * 180))
+		_save(sheet, _out.path_join(name).path_join("keys_sheet.png"))
+	for v: Array in a.get("views", []):
+		_camera.fov = float(v[3])
+		_camera.look_at_from_position(_v(v[1]), _v(v[2]), UP)
+		for g: Node in sets:
+			g.reset()
+			g.time_scale = 1.0
+			g.pose(v[4], int(v[5]))
+		for i: int in int(a.get("settle", 75)):
+			for g: Node in sets:
+				g.step(0.0)
+			await process_frame
+		await RenderingServer.frame_post_draw
+		var img: Image = root.get_texture().get_image()
+		img.convert(Image.FORMAT_RGB8)
+		_save(img, _out.path_join("stills/%s.png" % String(v[0])))
+		stills[String(v[0])] = img
+	var names: Array = (a["cams"] as Array).map(func(c: Array) -> String: return String(c[0]))
+	var ref: Image = Image.load_from_file(String(a["ref"])) if a.has("ref") else null
+	var rows: Array = []
+	var c0: String = names[0] if names.size() > 0 else ""
+	if ref != null and c0 != "":   # (step 6: a views-only run, no cameras, has no demo sheet)
+		ref.convert(Image.FORMAT_RGB8)
+		rows.append([ref, stills.get(c0 + "_mid", ref)])
+		rows.append([stills.get(c0 + "_shut", ref), stills.get(c0 + "_open", ref)])
+	if a.has("sheet"):   # step 6: the sheet's rows by name ("ref": set_plate.jpg, else a still or a posed view)
+		rows = []
+		for names_row: Array in a["sheet"]:
+			rows.append(names_row.map(func(n: String) -> Image: return ref if n == "ref" else stills.get(n, ref)))
+	if not rows.is_empty():
+		_save(_sheet(rows), _out.path_join("sheet.png"))
+	_write("anim.json", {"frames": count, "fps": fps, "seconds": GillSet.DEMO_S, "lights": lights, "presses": presses,
+		"cams": names, "set": gs.info()})
+	print("SHIP gill_set %d frames x %d cams" % [count, names.size()])
+	quit(0)

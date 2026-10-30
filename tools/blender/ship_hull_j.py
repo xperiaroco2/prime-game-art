@@ -680,6 +680,9 @@ def j_cheeks(args: dict, layout: dict) -> list:
         if S._dot(S._newell(face), inward) < 0:
             face.reverse()
         top = inner[::-1]
+        # the gills step 5: below the bend the gills' band (band_mouth, 3 mm in front) and its plinth are the wall, so
+        # the jamb's inner face starts at the bend (each surface one piece)
+        face = _clip_z(face, S.FLOOR + S.TUN_CH[0] - 0.002)
         for p in plates(face, inward):
             # details 3b: a plate's edge on the jamb's top is laid flush (its insets chewed the edge against the sky)
             flags = [not any(_off_segment(a, u, w) < 1e-4 and _off_segment(b, u, w) < 1e-4
@@ -715,6 +718,19 @@ def j_cheeks(args: dict, layout: dict) -> list:
     parts.append(L.part("jamb_edge", *L.merge(*edge), "hull_silver", solid=False))
     parts.append(L.part("jamb_cap", *L.merge(*jamb_caps()), MATS["mouth"][0], solid=False))
     return parts
+
+
+def _clip_z(poly: list, z0: float) -> list:
+    """A planar polygon (x, y, z) cut to z >= z0 (Sutherland-Hodgman on one plane)."""
+    out = []
+    for a, b in zip(poly, poly[1:] + poly[:1]):
+        ia, ib = a[2] >= z0, b[2] >= z0
+        if ia:
+            out.append(a)
+        if ia != ib:
+            k = (z0 - a[2]) / (b[2] - a[2])
+            out.append(tuple(a[i] + (b[i] - a[i]) * k for i in range(3)))
+    return out
 
 
 CAP_BACK = 0.01   # rebuild F: the jamb's aft cap this far aft of the roof line, behind the arch's face and the lintel
@@ -808,7 +824,7 @@ def _tun_prof(y):
     throat's profile (walls vertical to the bend, the chamfer in, the ceiling) offset 0.25 m out, its chamfer parallel
     to the inside's (0.55 in over 0.85 up)."""
     w, k = _tun_w(y)
-    return [(w + TUN_OUT * k, S.SLAB - 0.01), (w + TUN_OUT * k, S.FLOOR + S.TH_CH[0] + 0.074),
+    return [(w + TUN_OUT * k, S.SLAB - 0.01), (w + TUN_OUT * k, S.FLOOR + S.TUN_CH[0] + 0.074),
             (w - 0.427 * k, TUN_TOP), (0.0, TUN_TOP)]
 
 
@@ -844,7 +860,9 @@ def mouth_tunnel(args: dict, layout: dict) -> list:
     pit, lintel or jamb end sticks out (bug 2). The front: a dark portal frame round the opening, a chrome lip. Plan
     coordinates in the design frame (ship_build lifts the piece)."""
     mx, my, yr, y0, _sl, _k = _tun_frame()
-    bend, cin = S.TH_CH
+    bend, cin = S.TUN_CH
+    import ship_interior_throat as GI   # the throat wall's band metal, plinth and their materials
+    FLOOR_I = S.FLOOR
     h_b, h_c = S.FLOOR + bend, S.FLOOR + S.TH["clear_h"]
     ye = yr + 0.04                                    # 4 cm past the roof line: under the throat's arch (yr + 0.1)
     ys = [y0, my] + [my + (ye - my) * i / 8 for i in range(1, 9)]
@@ -874,10 +892,28 @@ def mouth_tunnel(args: dict, layout: dict) -> list:
             e = 0.0 if fwd else 0.003                 # aft of the nose 3 mm behind the throat's own faces
             pa, pb = inner(ya, e), inner(yb, e)
             for i in range(3):
-                if not fwd and i == 0:                # the jambs are the walls there: a 10 cm strip under the bend
-                    q = [(sx * (pa[1][0] - 0.005), ya, h_b - 0.1), (sx * (pb[1][0] - 0.005), yb, h_b - 0.1),
-                         (sx * (pb[1][0] - 0.005), yb, h_b), (sx * (pa[1][0] - 0.005), ya, h_b)]
-                    flat(q, (-sx, 0.0, 0.0), "hull_silver", in_groups)
+                if not fwd and i == 0:   # the jambs and the gills' band (band_mouth, to the bend) are the walls there
+                    continue             # (gills step 5: the 10 cm hull_silver strip under the bend stood 5 mm over it)
+                if fwd and i == 0:       # the gills step 5: the mouth's column, the band's metal and plinth (its line)
+                    in_groups.setdefault(GI.BAND_MAT, []).append(
+                        _quad([(sx * pa[0][0], ya, FLOOR_I + GI.PLINTH_H), (sx * pb[0][0], yb, FLOOR_I + GI.PLINTH_H),
+                               (sx * pb[1][0], yb, pb[1][1]), (sx * pa[1][0], ya, pa[1][1])], (-sx, 0.0, 0.0)))
+                    for mat, lo, hi, off in ((GI.BAND_MAT, GI.KICK_H, GI.PLINTH_H, GI.PLINTH_W),
+                                             (GI.DARK, 0.0, GI.KICK_H, GI.PLINTH_W - 0.012),
+                                             ("int_cyan__gill_plinth", *GI.LINE_H, GI.PLINTH_W + 0.004)):
+                        xa, xb = sx * (pa[0][0] - off), sx * (pb[0][0] - off)
+                        y1 = yb + 0.01   # on into the band's plinth at the nose
+                        y0f = ya + 0.004
+                        in_groups.setdefault(mat, []).append(_quad(
+                            [(xa, y0f, FLOOR_I + lo), (xb, y1, FLOOR_I + lo), (xb, y1, FLOOR_I + hi),
+                             (xa, y0f, FLOOR_I + hi)], (-sx, 0.0, 0.0)))
+                        if mat != "int_cyan__gill_plinth":   # its top and its front end
+                            in_groups.setdefault(mat, []).append(_quad(
+                                [(xa, y0f, FLOOR_I + hi), (xb, y1, FLOOR_I + hi), (sx * pb[0][0], y1, FLOOR_I + hi),
+                                 (sx * pa[0][0], y0f, FLOOR_I + hi)], (0.0, 0.0, 1.0)))
+                            in_groups.setdefault(mat, []).append(_quad(
+                                [(xa, y0f, FLOOR_I + lo), (sx * pa[0][0], y0f, FLOOR_I + lo),
+                                 (sx * pa[0][0], y0f, FLOOR_I + hi), (xa, y0f, FLOOR_I + hi)], (0.0, -1.0, 0.0)))
                     continue
                 q = [(sx * pa[i][0], ya, pa[i][1]), (sx * pb[i][0], yb, pb[i][1]),
                      (sx * pb[i + 1][0], yb, pb[i + 1][1]), (sx * pa[i + 1][0], ya, pa[i + 1][1])]

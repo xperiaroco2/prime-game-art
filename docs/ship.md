@@ -1605,3 +1605,266 @@ Shots and sheets: `<raw>/ship/v5/workshop/` (`pieces/`, `shots1/` .. `shots4/`, 
 `<raw>/ship/v5/notes/workshop-1.md` .. `workshop-4.md`. Steps 2 and 3 were tuned by grids
 (`grids/`; step 3's shells: 0.8 / 0.7 of step 2's on back hinges, 0.7 on front hinges, picked 0.7 back, `robot3_grid_*.png`): the robot's shells (panel/open 40/30, 40/36, 37/42; picked 40/36, set to 32 in the room: at 36 the dark insides read as two black ears from the bench; front hinges tried, they hid the bays) in headless Blender, the light (the
 shop lamps' level 1.0/1.6/0.7 and the fill's colour, from the concept camera) in Godot.
+
+## The throat's gills (pilot, 2026-10-28)
+
+**Parked since 2026-10-29**: the throat is shown without its gills (the engineer: the slits come back as hinged
+gill covers), so `th_gills_e` and `th_gills_w` are out of the layout and the throat's walls are the clean throat's
+(below, "The clean throat"). The builder, `gill_row.gd` and `--gill-anim` stay as they were; their tests skip.
+
+The throat's wall modules and vent cabinets gave way to one gills piece per side (`th_gills_e`, `th_gills_w`, mirrored;
+`tools/blender/ship_interior_gills.py`): a plinth 0-60 cm with its cyan line, then a clean band on the throat's own
+profile (vertical to 1.45 m, leaning 0.55 m in to 2.30 m) from the roof line (s 1.62) to the hall corner (s 4.05),
+its top 3 cm into the ceiling; the plinth and its line run on under the ramp roof from the mouth's corner (s 0.02),
+as the approved concept `<raw>/ship/v5/gills-throat/concept/side_right.jpg` draws one plinth, and so does the band
+(step 4): its mouth part (`band_mouth`, s 0.02-1.62, the plinth's top to the bend, where the tunnel's chamfer leans
+over it) lies 3 mm in front of the jambs, so one clean band runs from the ramp roof's edge to the hall's corner. The
+throat's ceiling keeps only its two middle panels: the corner wedges' panels hung 3 cm under the ceiling by the hall's
+corners. Step 5 (the engineer: "around the gills textures climb onto textures"): the header under the hall's rim stops
+at the throat's ceiling; by the corners only an 8 mm skin on its hall face (`TH_SKIN`) still closes the chamfer's
+triangle from the hall, behind the band, whose lean now runs on to that face (the full 20 cm drop stood over the band
+as a dark slanted block). A cornice (6 cm, 2.2 cm proud, `int_silver_c`) runs along the band's top under the ceiling;
+the plinth's line is 2.4 cm at emission 0.4 (was 1.2 cm at 0.12). The mouth's column (the tunnel's wall forward of the
+nose, `mouth_tunnel_in`) is the band's metal with the plinth, kick and line run on to the tunnel's front; the jambs'
+inner faces start at the bend (below it the band and plinth are the wall) and the tunnel's 10 cm hull-silver strip
+under the bend is gone, so each surface there is one piece. Five slits (s 1.95-3.43,
+37 cm apart) are true crescents after the concept (step 3): both arcs through the same tips 1.20 m apart up the band,
+the outer arc sagging 0.27 toward the mouth, the inner 0.06 (21 cm wide at the middle, about 1/6 of the chord), a
+thick bevelled rim (5 cm, 2.2 cm proud) on the convex side. Each recess (13 cm) holds a glowing back and 36 fine
+filaments radiating from the outer arc's centre (step 4: 3 mm ribs 2.2 cm off the back, emission 0.3 over the back's
+0.15; step 3's 6 mm blades 7.5 cm deep at 0.6 read as pale blue-white sawteeth). Two dark shutter leaves close over it, meeting on the crescent's
+middle line, each meeting edge a thin light line (a fault: red); they slide 12.3 cm apart along the wall through
+slots in the recess walls into pockets under the band. Sliding along u is the same move on both planes of the 1.45
+bend, so each leaf is one rigid node; the leaves are built open, so the GLB's rest is the calm glowing row. (Hinged
+lips, step 2, hid the filaments: the calm row read as thin scratches.) Neighbouring slits' open leaves stay 2 cm
+clear of each other's crescents, which caps the crescent at about 21 cm. The button (s 3.72, h 1.15): a dark dome
+13 cm across, rough enough (0.38) to show no blocky reflections, in a bright cyan ring, in a 24 cm octagonal recess.
+The vent stations' spots stay at design's 3/5 of the wall (`ship.toml`); the export's vent package is the gills piece
+(`ship:th_gills_<side>`).
+
+Step 6 (the corner, the cornice, the mist): one clean column (`corner-col`, `int_silver_a`) stands at the band's hall
+end from the floor to past the ceiling, in the band's frame: its hall face lies 2.6 cm hall-ward of the header clip
+(`COL_PROUD`, 1.6 cm past the header's hall face), its throat edge vertical to the bend at u 3.80 (the button stays in
+view) and leaning to u 3.58 at the ceiling, so from the throat the corner reads as the concept's single column. The
+throat ceiling's corner trims (`throat_ceil`, `TH_GILLS_COLUMN`) are gone: the column covers that seat from both sides,
+and from the throat the trim hung past the column's edge as a slanted strip ending in the air. The cornice is
+`hull_silver` (3.2 cm proud) over a 1.4 cm dark shadow line (`cornice_gap`): the three `int_silver_*` share one look
+in `ship.toml`, so `int_silver_a` would not have read lighter. The band's mouth part lies flush with the band
+(`MOUTH_W` 0, its top 2 mm under the bend where the jambs start): its 3 mm end step read as a dashed light line at the
+roof line. The filament blades taper to their inner end (their square ends read as steps at the leaf's edge). In
+`gill_row.gd` the slit's light and mist were placed 0.3 m behind the wall: the throat is the GLB's +z (the band leans
+to +z), not -z. Both now stand in front of the slit, the lights at a third of their old energy (`LIGHT_ENERGY`, range
+0.8 m; at the old values the whole band went cyan) and the mist a soft additive puff 22 cm out and 20 cm toward the
+mouth (`MIST`, `MIST_OUT`). The matched camera for design's concept is `gill_view(2.25, 1.23, 4.3, 0, 0)` at a 52 degree
+vertical field of view: level, as the concept's verticals are, the band's top and the floor line at its heights.
+Step 6b: the mist from a three-way grid (`<raw>/ship/v5/gills-throat/sheets/mist_grid_6b.png`; a view's gills pose
+takes `"mist": {"k": strength factor, "w", "h": puff size factors}`): the pick is 0.6 open (calm 0.375, gasp 0.49) on a
+0.68 x 1.04 m puff swaying slower. From 2.5 m it reads as a soft puff on the mouth side of each open slit, not a fog
+wall, and the band stays its metal. It is still an additive billboard, with no volumetrics.
+
+- `godot/ship/gill_row.gd` drives a row: calm and open (leaves open, cyan, a soft additive mist toward the mouth), gasp
+  (60 % open, red-orange), shut (closed, dim cyan line) and fault (closed, red line), and the button ring's white
+  flash; `ship.gd` takes a per-view pose (`{"gills": {"e": {"slits": {"3": "gasp", "2": "fault"}}}}`).
+- `ship --gill-anim DIR`: the 6 s proof (shut, gasp, shut, open with an overshoot, settle) as `gill_anim.mp4`,
+  off-screen; with `--gill-demo row` the 10 s row demo (`gill_row.gd` `play_row`) as `gill_row.mp4`: the breath runs
+  1-2-3-4-5-4-3-2..., each shut slit it reaches gasps, a press during a shut slit's gasp opens it (the ring flashes
+  white), all five open -> the exhale.
+- A `--views` file's 6th element may be a dict with a pose and a `"ref"` image path: the shot is also saved beside
+  the reference as `compare_<view>.png`.
+- Tests: `tools/tests/test_ship_gills.py` (numbers, mirror, placement, corners, band to ceiling, plinth); skipped
+  while the gills are parked.
+
+### The clean throat (step B, 2026-10-29)
+
+The engineer approved step A's proposal ("fold at 2.10"; the drawing `<raw>/ship/v5/gills-throat/clean/drawing/
+throat_clean.png`) and asked to see the throat whole without the gills. `tools/blender/ship_interior_throat.py`:
+
+- **Profile.** ship.toml throat `chamfer = [2.10, 0.25]`: the walls stand vertical to 2.10, then a 25 cm cove leans in
+  to the flat ceiling at 2.30. 2.14 is the highest fold the hull allows with 0.25 in: the roof's outer corner keeps
+  15 cm of skin at s 1.78. `tunnel_chamfer = [1.45, 0.55]` keeps the entry tunnel and its hood (`mouth_tunnel`, the
+  notch jamb's clip) as they were, and the parked throat vents read it too (`S.TUN_BEND`, `S.TUN_IN`). The hull's
+  throat sample (`ship_hull_shape.chamfer_outer`) derives the cove's outer face from the profile; it used to be a
+  hard-coded 0.17. `ship --check`: least skin 0.150.
+- **Walls** `th_wall_e` and `th_wall_w` (mirrored, a collider each; frame as the gills'). Each is one flat panel
+  (`int_silver_b`) from the ramp frame to the hall jamb (s 1.668-3.88) and from the plinth to the fold. Below it are
+  the plinth (0-0.60, 3 cm proud) and its cyan line (2.4 cm) from s 0.02. Above it are a dark 1.4 cm line at the fold
+  and the cove in the lighter `hull_silver`, cut on the header's plane at the hall end and on the frame's plane at the
+  ramp end (cut square to the wall, its top had begun 6.8 cm aft of the frame). Under the tunnel the band reaches only
+  the tunnel's bend (1.45). Each wall is 58 triangles, with no seams, slits or button.
+- **Ramp frame** `th_frame` (hall-relative, replacing the roof line's `th_arch`). It is the plane y -5.60 .. -5.515
+  over the roof line. On each side one solid fills the step from the tunnel's profile to the room's, with an 8 cm
+  trim inside the tunnel's walls and leans; it runs 2 cm into the walls and up into the ceiling. A bar across the
+  ceiling sits 5 mm under it, so the 2.30 head room holds.
+- **Hall jambs** `th_jambs` (hall-relative, colliders, replacing the hall pilasters and their strips at the corners
+  K). Each jamb runs from the deck to the rim (3.20). Its end face is square to the wall at s 3.88, 13.1 cm deep. Its
+  front is the corner sub-facet's chord, and a reveal square to that chord runs through the header's depth. Its hall
+  face stands 1.6 cm proud of the header's. Beside it, `drop` carries the header's throat face down from the ceiling
+  to the cove, between the jamb's front corner and the cove's top line (s 3.73), so the cove's end has a face and no
+  gap opens under the header. The wall, plinth, line and cove all end on the jamb.
+- **Ceiling** `throat_ceil`. One flat body between the coves' tops from the roof line (inside the frame), a 2 mm dark
+  spine from the frame's aft face, and the header from 2.30 to the rim. The skin under the ceiling (`TH_SKIN`), the
+  corner trims and panels, the middle panels, `th_end_cut` and the old end modules' branch are gone.
+- The station spots `vent_e` and `vent_w` stay. Their 1.6 m band lies on the walls from s 1.63, 4 cm under the frame's
+  trim, where the panel runs on behind it. The export names `ship:th_wall_<side>` for them, with no vent hardware.
+- Shots, close-ups, sheets: `<raw>/ship/v5/gills-throat/clean/` (`pieces/`, `shots/`, `shots/close/`, `sheets/`);
+  handoff `<raw>/ship/v5/notes/gills-throat-clean-b.md`. Tests: `tools/tests/test_ship_throat.py`.
+
+### The gill cover pilot (2026-10-29, dropped)
+Design's hinged gill covers (`ideas/ship-components/gill-covers/`) were piloted (one, then five a side) and dropped the
+same day: the engineer found a cover that opens "like a little cabinet" ugly. The cover module, `gill_cover.gd`,
+`--cover-anim` and their tests are gone (handoffs `<raw>/ship/v5/notes/gills-covers-1.md`, `gills-covers-2.md`). Kept:
+`ship_build.py`'s `"nocol": True` part flag (decor on a colliding piece gets no `-col` collider).
+
+### The gill set (2026-10-29)
+The engineer's final pick: prime-game-design `ideas/ship-components/slits-lamps/set_plate.jpg`. On the clean throat's
+east wall and, since step 6, its mirror on the west (`GILL_SIDES` in ship_interior_throat.py):
+- **Build** (`tools/blender/ship_interior_gillset.py`, parts of `th_wall_e`, all decor with `nocol`, nothing moves):
+  - five crescent niches at the old slots (s 1.95/2.32/2.69/3.06/3.43 = each crescent's middle), both arcs bulging toward
+    the mouth; chords 1.18/1.08/0.98/0.89/0.80 m, bottoms 0.80 -> 0.84, leaning back 3-7 deg (a shear: the top toward
+    the hall). Each is a smooth scoop 6.5 cm deep cut into the band (one band column per slit), in three glowing parts:
+    `gill<k>_scoop` (the mouth-side half, dim), `gill<k>_glow`, `gill<k>_edge` (the hall-side lip, bright);
+  - a turn bar over each slit: `gill<k>_bar` (a bevelled frame of the band's metal, 4 mm proud) and `gill<k>_bar_glow`
+    (14 x 3 cm, 2 mm off the wall);
+  - `groove` / `groove_glow`: a cubic Bezier round the set's mouth side from under the fold (s 1.93, h 2.06) to under
+    slits 1-2 (s 2.50, h 0.68), two bevelled lips with a thin glow strip between, tapering at both ends; 5 cm clear of
+    every hole (a grid search, `clearances()`);
+  - the button at s 3.72, h 1.15 (step 3: larger): an octagonal bezel of the band's metal (corner r 0.11), the cyan
+    ring (`btn_ring`, r 0.05..0.078), the dark dome (r 0.05); 5.3 cm clear of slit 5's hole, 5 cm from the jamb.
+  - Materials `int_cyan__gset_*` (their GLB colour the shut red) and `int_cyan__cover_btn`, rows in `[light.mats]`
+    with `l = 0` (they light nothing through ship.gd's strip lights).
+- **Controller** `godot/ship/gill_set.gd` (the game copies it): `setup(piece)`, `step(delta)`, `press()` (flips the slit
+  under the white bar: "open" / "shut"), `pose(open, at)`, `reset()`, `info()`. A niche eases red -> cyan in 0.25 s; the
+  bars are red over shut slits, cyan over open ones, and ONE white bar runs 1-2-3-4-5-4-3-2, 0.6 s a step (`STEP_S`),
+  over open slits too. An open slit puffs steam (a one-shot GPUParticles3D); with all five open a big cloud emits and
+  stays. Each niche has a shadowless omni 16 cm in front of it with no specular (the glow on the wall). `time_scale`
+  scales the steam (the proof sets it from the real frame time so the MP4 runs at its own clock).
+- **Proof**: `ship --out <pieces> --gill-set DIR` (ship.gd mode `gill_set`, off-screen): the 14 s demo (presses at 0.9,
+  2.1, 3.3 (shuts slit 4 again), 5.1, 6.3, 7.5, 8.1 s; all open from 8.1 s) from `concept` (square-on, 2.4 m out, the
+  wall from frame to jamb as in set_plate.jpg) and `close` (1.5 m from slot 3); `DIR/<cam>.mp4`, `DIR/<cam>/keys_sheet.png`,
+  `stills/<cam>_{shut,mid,open}.png`, the posed views and close-ups (`GILL_VIEWS` in ship.py: square_on, from_mouth,
+  from_hall, cu_*; `concept_wide` is the clean throat's old wall_square_on) and `sheet.png` beside set_plate.jpg.
+  Outputs: `<raw>/ship/v5/gills-throat/set/`; handoff `<raw>/ship/v5/notes/gills-set-1.md`. Tests:
+  `tools/tests/test_ship_gillset.py`.
+- **Step 2, the look pass**: `ship --gill-set DIR --gill-grid` renders gill_set.gd's LOOK variants (`GILL_GRID` in
+  ship.py) posed on the concept camera beside set_plate.jpg (`DIR/grid_sheet.png`). Variants: the bands brighter
+  ("next"), darker ("dark"), and a single gradient over the niche (a shader: bright at the hole's edge, dark at the
+  bottom; "grad", "grad_tight", "grad_soft"). The pick is "dark", now LOOK's defaults: niche albedo 0.015, scoop 0.03,
+  glow 0.15, the hall-side lip 1.0 (dark inside, a saturated rim); the gradient read as a pale lit dish. Bars 0.8 and
+  the groove 0.8 with their base a tenth of the glow (saturated, not white-washed; the runner white 1.8), the niche
+  omnis 0.12, the groove's glow 15 mm wide. The all-open cloud comes from five small emitters at the slits (0.42 m
+  quads), not one box over the set. The throat's four floor lights are `th_light` pieces in `int_amber_throat`
+  (`[light.mats]` l 0: their lens glows, they light nothing), so no amber pool reaches the set's plinth; `int_amber`
+  is untouched. Handoff `<raw>/ship/v5/notes/gills-set-2.md`.
+- **Step 3, a short look pass** (the manager's notes on step 2: the open niche dull teal, the cyan bars pale, the wall
+  flat and dark, the all-open cloud a curtain, the button small). The grid (`GILL_GRID`, poses per variant, all open
+  too) settled LOOK's new knobs: `cyan` (0.0, 0.7, 1.0) for every cyan glow, and once open the niche's energies x
+  `cyan_scoop` 3, `cyan_glow` 5, `cyan_edge` 2 (red keeps 0.03 / 0.15 / 1.0), the bars x `cyan_bar` 0.85, the groove 0.7,
+  the button ring `btn` 1.0. AgX greys a bright cyan toward white far sooner than red (its luminance is about twice
+  red's), so a deeper cyan at middle energies stays saturated where brighter ones ("halo") went white; a negative red
+  (past the gamut) did nothing. The bars, groove and ring are matte (no specular: the reflections greyed them). An open
+  niche spills a soft cyan haze onto the wall on its mouth side (an additive sprite, `spill` 0.3, 1.6 x its width,
+  7 cm toward the mouth; its omni x `cyan_light` 1.6 and moved there too). `warm` 2.5: a shadowless warm spot
+  (1.0, 0.64, 0.38) 2 m out at slot 3's height, a 38 deg soft cone at the band, warms the wall without pools on the
+  plinth. The all-open cloud (`cloud` 0.3) leaves each slit toward the mouth and sinks (`drift` 1.6), a light haze
+  with the slits readable (the grid holds the cloud about 2.5 s; at 0.6 the MP4's 6 s build veiled the slits again). Handoff `<raw>/ship/v5/notes/gills-set-3.md`.
+- **Step 4, the engineer's notes and his walk** (supersedes the build numbers above; his `--play` shots
+  `<raw>/ship/v5/play/`):
+  - *Slits*: "at a bigger angle, more open". The picture's crescents, measured in its pixels: outer arc sag 0.31 of the
+    chord, inner 0.14, width 0.17 (0.29 with the soft shoulder round the cut). A 3-variant overlay on set_plate.jpg
+    (sags 0.30/0.33/0.36 of the chord) picked the middle one: `SAG_O, SAG_I` 0.40, 0.156 per 1.2 m (0.33 and 0.13 of the
+    chord, width 0.2 of the height; with the lip it reads as the picture's cut and shoulder). Chords 1.08/0.99/0.90/
+    0.82/0.74 (still shrinking), middles s 2.074/2.438/2.801/3.164/3.526, bottoms 0.82 -> 0.86, leans 3-7 deg. The
+    picture is not to scale: its spacing is 0.41 of slit 1's height, ours 0.34 (the groove's sweep needs s 1.72-2.07).
+  - *A real cut* ("on the concept they are cut out of the wall"): 15 cm deep (`DEPTH`), the section `PROFILE` from the
+    mouth-side rim: `gill<k>_lip` (a bevel of the wall's metal, catches light), `gill<k>_edge` (the thin rim at its
+    foot, the only glow in the GLB, so `--play` shows a dark cut with a red line), `gill<k>_glow` (the inner wall's
+    fall, dark) and `gill<k>_scoop` (the floor, the back wall and the overhang's underside: the hall-side rim overhangs
+    the floor by `UNDER` 5 cm at the middle, easing to nothing at the tips). gill_set.gd drives edge/glow/scoop as
+    before (the lip stays metal). The fatter cuts nest, so the band is a scanline mesh: one strip per pair of the
+    slits' row heights (`rim_levels()`), each slit's rim carrying them all (no T-junctions).
+  - *Groove*: traced from the picture relative to slit 1 (its top end 0.14 of the chord over slit 1's top tip, the
+    widest point 0.59 left of the tips at mid-height, a long flat tail 0.16 under the bottom tip, ending under slit 2),
+    rebuilt as two cubic segments meeting at the widest point (`GROOVE`, 7 points), horizontally x 0.85; leftmost edge
+    s 1.72, 10 cm clear of every cut.
+  - *Button* (s 3.86, h 1.15): a 1.2 cm ring (r 0.060..0.072), a dark dome r 0.06, an octagonal bezel (corner r 0.11)
+    with a 9 mm 45 deg outer bevel, a flat face and a round inner bevel whose foot the ring runs under (no slivers).
+  - *Bars*: 12 x 1.4 cm glow in a 14 x 3 cm frame (14 x 3 in 18 x 6 before).
+  - *No pillar*: the free-standing hall jambs are gone (`th_jambs` keeps only the header's drop); each wall runs on to
+    the hall's corner K (`JAMB_U` = `WALL_LEN` - 4 mm) and ends in `end_frame` (`FRAME_MAT`, a 45 deg bevel from s 3.98 to
+    3.6 cm proud, then flat to the end), the deck to the fold. `interior.toml`'s plain spot runs to 4.047.
+  - Outputs `<raw>/ship/v5/gills-throat/set4/` (pieces in `set4/pieces`); handoff `<raw>/ship/v5/notes/gills-set-4.md`.
+- **Step 5, his walk's doorway joins and the gill set in `--play`** (his shots `<raw>/ship/v5/play/` 004-007):
+  - *One frame per corridor portal.* The hall pilasters at the corridor openings' edges doubled the portal's jamb and
+    strip, the portal's 10 cm band ran 4 cm past the chord into the next facet (its diamond panel), and a cyan arch
+    stood 0.38 m behind the portal. Now: no hall pilasters at all (`ship_interior_place` raises if a hall opening's
+    edge has no frame; the mouth's edges are the throat's corners), `hall_portal`'s band 6 cm (`rim` = HCH - COR_HALF -
+    2 mm, bevel 12 mm) so it ends at the facets' vertex in a bevelled reveal, its strip `hall_portal_strip_l`/`_r`
+    centred on it (`at_in`/`at_out` 17/42 mm; the tip portals keep `portal_strip_l`/`_r`), and the corridor's arches
+    only at the tip end (`ARCH_X[1:]`; the ceiling ribs keep their spacing; step 6 fixed the tip doors the same way).
+  - *The gill set in `--play`.* `ship.gd`'s play mode puts `gill_set.gd` on the placed `th_wall_e` (the white bar
+    runs, the niches glow); `player.gd` emits `used` on E (when not flying) and shows a centred "[E] press" hint while
+    ship.gd's `can_use` is true: the eye within `REACH_M` 1.6 m of the button's middle, in front of the wall, the look
+    within `AIM_DEG` 14 deg of it. A press flips the slit under the white bar (puff, the all-open cloud).
+    `--play-test` now also stands the capsule 0.9 m in front of the button, looks at it, sends a real E key event and
+    fails unless exactly that slit opened (`play.json` `press`, a second shot with the hint).
+  - Outputs `<raw>/ship/v5/gills-throat/set5/` (pieces in `set5/pieces`, `play/` the views from his positions and
+    both portals each way, `play_before_after.png`); handoff `<raw>/ship/v5/notes/ship-step5.md`.
+- **Step 6, the lens-room doors, the corner flats, the west gill set and the glow's balance** (2026-10-30):
+  - *One frame per lens-room door* (as step 5's hall portals). At each corridor-to-lens-room door a `tip_pilaster` and
+    its strip stood on the portal's jamb, the portal's 10 cm band ran 7 cm past the door's chord (TIP_CHORD_H 1.53 against
+    the corridor's 1.50) into the next wall facet, and a `cor_arch` with its strips stood 0.38 m beside it. Now: no
+    pilaster on the door's vertices (the window band's end pilasters stay), no `cor_arch` anywhere (the pieces
+    `cor_arch`, `arch_strip_l`/`_r` and the old `portal_strip_l`/`_r` dropped; the ceiling ribs keep `ARCH_X`'s
+    spacing), and `tip_portal` frames its own jambs: `narrow` 3 cm (its opening steps 3 cm inside the corridor's walls,
+    its foot on the deck), `rim` TIP_CHORD_H - COR_HALF - 2 mm, so a 5.8 cm band with a 12 mm bevel ends at the facets'
+    vertex; its strip `tip_portal_strip_l`/`_r` centred on it (`at_in`/`at_out` -13.5/11.5 mm from the corridor's
+    profile).
+  - *The corner flats beside the throat's end frames* (`hall_panel_flat_sockf`, the `socket_fe`/`socket_fw` station
+    spots): `flat_panel`'s `clad` puts the plain and upper zones in the end frame's metal (`int_silver_c`), the same
+    flat faces, so the station spot stays plain (`ship` check green), and a soft warm lamp hangs 0.9 m before each
+    (ship.toml `lamps`, "hall" group, 0.9 / range 2.2, 2 m over the deck; 0.35 left it a dark slab); step 7 replaced both: a matte clad and an aimed spot).
+  - *The west wall's gill set*: `ship_interior_throat.GILL_SIDES` ("e", "w"): `th_wall_w` is `th_wall_e` mirrored in
+    x, every part (slits, groove, bars, button; the groove sweeps round the mouth side, the button at the hall end).
+    `ship.gd` puts a `gill_set.gd` on each placed wall (`gill_walls()`), in `--play` (each its own row and button; E
+    presses the wall whose button is in reach) and in `--gill-set` (both driven alike). `--play-test` presses each
+    wall's button in turn with a real E key event and fails unless that wall's slit under its white bar opened and the
+    other wall's row kept its own one open slit (three shots). `ship.gill_view(..., side="w")` mirrors a view; the
+    `--gill-set` views add the west wall's (`w_*`), the posed east concept views (`e_concept_*`), the row of all five
+    square on (`row_shut`, `row_open`, `w_row_*`) and both walls from the throat's middle (`mouth_both`, `hall_both`);
+    `ship.gill_set(..., only=[...])` renders named views only (no demo, no videos).
+  - *The glow's balance* (the engineer: slits 1 and 2 "super"; on 3-5 the glowing rim read as a hair line in a big
+    unlit lip, 5 the worst): from slit 3 on (`BALANCE_FROM`) each slit has its own section (`profile_of`): the rim
+    keeps slit 2's absolute width x (chord 2 / chord) ** `GLOW_K`, the lip gives up the room (lip + rim stay 0.16 of
+    the crescent: inner wall, floor and overhang unchanged), the lip's depth scales with its width (its bevel's angle
+    kept) and the rim keeps slit 2's 10.5 mm drop, so as it widens it lies flatter and faces the room. A row at
+    `GLOW_K` 0 / 0.5 / 1 changed too little (`set6/glow_var/variants_open.png`); the pick 1.6: rim 11.0 / 10.1 / 11.7 /
+    13.6 / 16.0 mm, lip 24.2 / 22.1 / 17.6 / 13.1 / 8.0 mm. Seen from the concept camera, slits 4-5 still show their
+    dark hall-side wall (the perspective: the bright inner wall faces the hall).
+  - Outputs `<raw>/ship/v5/gills-throat/set6/` (pieces in `set6/pieces`, `views/stills`, `doors_before`,
+    `doors_after`, `doors_before_after.png`, `sheet.png`, `play_test/`); handoff `<raw>/ship/v5/notes/ship-step6.md`.
+- **Step 7, the corner flats lit and the final proof** (2026-10-30; the engineer approved the set on both walls, the
+  doors and the portals as of step 6, "Так, доводь"):
+  - *The corner flats' clad*: `int_silver_c__clad` (ship_interior.py), the end frame's metal a hair warmer
+    (0.42, 0.41, 0.395), metallic 0.2, roughness 0.62, with its own `[light.mats]` row (v 0.9, m 0.2; without it the
+    family's `int_silver_c` row, m 0.45, would win through `_entry`). `int_silver_c` itself is unchanged. Step 6's
+    omni (0.9, range 2.2, 0.9 m out) lit only the flat's foot; now a soft warm spot per flat, 1.6 m out along its
+    normal and 2.6 m over the deck (ship.toml `lamps`, "hall", 2.4, range 3.6, 45 deg, aimed at the flat's middle
+    (+-3.4376, -2.3137, 2.6)). The flat's mean in `clad_hall` 36 -> 80 (0..255; the gill wall beside it 88).
+    `CLAD_VIEWS` in ship.py (`clad_throat`, `clad_hall`, `w_*`: eye height 1.6 m, from the throat by its hall end and
+    2.4 m before the flat; `play003` and `w_play003`: his `--play` shot 003's place and look, fov 75, and its mirror) are among the `--gill-set` views.
+  - *The proof's third camera*: `GILL_SET["both"]` ("both", as `mouth_both`: 0.3 m in from the mouth's corners, eye
+    1.6 m, looking up the throat) films both rows running the demo, so `--gill-set` writes `concept.mp4`,
+    `close.mp4` and `both.mp4`. The sheet stays `GILL_SHEET`: set_plate | east concept mid; west concept mid | both
+    walls from the mouth.
+  - *As built* (both walls; the west is the east's mirror in x, `GILL_SIDES`; s along the wall from the mouth's
+    corner, h over the deck): five crescent cuts 15 cm deep, middles s 2.074 / 2.438 / 2.801 / 3.164 / 3.526, chords
+    1.08 / 0.99 / 0.90 / 0.82 / 0.74 m, bottoms 0.827 -> 0.867, leaning back 3 -> 7 deg; the glowing rim 11.0 / 10.1 /
+    11.7 / 13.6 / 16.0 mm, the lip 24.2 / 22.1 / 17.6 / 13.1 / 8.0 mm (`GLOW_K` 1.6 from slit 3); a turn bar over each
+    slit; the groove round the mouth side; the button at s 3.86, h 1.15; no pillar, the wall runs to the hall's corner
+    in `end_frame`; one frame per corridor portal and lens-room door. In `--play` each wall has its own
+    `gill_set.gd` and E presses the wall whose button is in reach. Tests: `test_ship_gillset.py` (the mirror, the rim
+    and lip widths as built, the clad and its spots, the cameras), `test_ship_throat.py`, `test_ship_gills.py`.
+  - Outputs `<raw>/ship/v5/gills-throat/set7/` (pieces in `set7/pieces`: set6's with `hall_panel_flat_sockf`
+    rebuilt; `clad_before_after.png` (rows clad_throat, w_clad_throat, clad_hall, w_clad_hall; left step 6, right
+    step 7), `gill_set/` (the three MP4s, the stills, `sheet.png`), `play_test/`); handoff
+    `<raw>/ship/v5/notes/ship-step7.md`.
