@@ -116,6 +116,9 @@ class Facing(unittest.TestCase):
 
     def test_none_and_bad(self):
         self.assertIsNone(F.pick_facing([(0.01, (0.0, 0.0, 1.0), 1)], (0.0, 0.0, -1.0)))
+        # E1: a degenerate body face (zero normal) is skipped; a cloth vertex without a normal picks nothing
+        self.assertEqual(F.pick_facing([(0.001, (0.0, 0.0, 0.0), 3), (0.02, (0.0, 0.0, 1.0), 4)], (0.0, 0.0, 1.0)), 4)
+        self.assertIsNone(F.pick_facing([(0.01, (0.0, 0.0, 1.0), 1)], (0.0, 0.0, 0.0)))
         self.assertIsNone(F.pick_facing([], (0.0, 0.0, 1.0)))
         with self.assertRaises(ValueError):
             F.pick_facing([], (0.0, 0.0, 1.0), 2.0)

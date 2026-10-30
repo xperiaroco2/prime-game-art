@@ -149,11 +149,16 @@ def pick_facing(cands: list[tuple[float, Vec, int]], n: Vec, min_dot: float = 0.
     """The body face a cloth vertex takes its weights from: among cands (distance, the body face's outward normal,
     the face index) the nearest whose normal faces the same way as the cloth's outward normal n (dot >= min_dot).
     So the inner side of a sleeve takes the arm, not the torso beside it, and an inner trouser leg its own thigh.
-    None when no face qualifies (the caller falls back to the plain nearest)."""
+    None when no face qualifies (the caller falls back to the plain nearest); a zero normal on either side never
+    qualifies."""
     if not -1.0 <= min_dot <= 1.0:
         raise ValueError(f"min_dot {min_dot} outside -1..1")
+    if dot(n, n) < 1e-24:  # E1: a cloth vertex without a normal picks nothing (the plain nearest)
+        return None
     best = None
     for d, nor, fi in cands:
+        if dot(nor, nor) < 1e-24:  # E1: a degenerate body face (D3's A11 has some) has no direction to agree with
+            continue
         if dot(unit(nor), unit(n)) >= min_dot and (best is None or d < best[0]):
             best = (d, fi)
     return None if best is None else best[1]

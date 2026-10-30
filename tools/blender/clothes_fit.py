@@ -14,7 +14,8 @@ base body, and carries it to a female variant (art #196, clothes step 2, C1). No
 4. The rest pose: each vertex's linear blend skinning is undone (clothes_fit_geom.unskin), so the cloth's bind pose is
    the body's rest pose; the armature modifier re-poses it and the error against the fitted cloth is reported.
 5. The female fit (--female): each cloth vertex follows the body's per-vertex difference (base to female, same
-   topology) at its nearest rest body point, smoothed, then pushed out of the female body where needed.
+   topology) at its nearest rest body point, smoothed, then pushed out of the female body where needed. A female
+   with her own rest (E1: D3's B13) brings her armature, the rested cloth re-bound to it.
 
     blender -b --factory-startup --python tools/blender/clothes_fit.py -- --cloth CLOTH.blend --body BASE.blend
         [--female FEMALE.blend] --out DIR [--offset 0.010] [--keep 0.30] [--floor 0.005]
@@ -502,8 +503,9 @@ def main() -> int:
     if args.female:
         base_rest = np.array([(body.matrix_world @ v.co)[:] for v in body.data.vertices])
         with bpy.data.libraries.load(str(Path(args.female).resolve())) as (src, dst2):
-            dst2.objects = ["Body"]
+            dst2.objects = ["Body"] + (["CharacterArmature"] if "CharacterArmature" in src.objects else [])
         fem = dst2.objects[0]
+        farm = dst2.objects[1] if len(dst2.objects) > 1 else None
         fco = np.array([(fem.matrix_world @ v.co)[:] for v in fem.data.vertices])
         if fco.shape != base_rest.shape:
             say("REFUSED the female body's vertices differ from the base's")
@@ -544,6 +546,29 @@ def main() -> int:
             rep["female"][name] = {"moved": int((mv > 1e-4).sum()), "max_mm": round(float(mv.max()) * 1000, 1),
                                    "pushed": pushed, "hugged": hugged}
         bpy.data.objects.remove(fem)
+        # E1: a female body with its own rest (D3's B: her shoulder chains and feet, the contract's body type B)
+        # brings its armature: the rested cloth is re-bound to it unchanged (at rest the skin does not move it), so
+        # the dressed build's rest check passes on her character
+        rest_mm = 0.0 if farm is None else max(
+            (max((b.head_local - farm.data.bones[b.name].head_local).length,
+                 (b.tail_local - farm.data.bones[b.name].tail_local).length)
+             for b in arm.data.bones if b.name in farm.data.bones), default=0.0) * 1000
+        rep["female"]["armature_rest_diff_mm"] = round(rest_mm, 3)
+        if farm is not None and rest_mm > 0.1:
+            bpy.context.scene.collection.objects.link(farm)
+            farm.matrix_world = arm.matrix_world
+            for o in [body, *cloth.values()]:
+                for m in o.modifiers:
+                    if m.type == "ARMATURE" and m.object == arm:
+                        m.object = farm
+                if o.parent == arm:
+                    mw = o.matrix_world.copy()
+                    o.parent = farm
+                    o.matrix_world = mw
+            bpy.data.objects.remove(arm)
+            farm.name = "CharacterArmature"
+            arm = farm
+            rep["female"]["armature"] = "the female's own"
         say("female", rep["female"])
         stem = Path(args.female).parent.name
         bpy.ops.wm.save_as_mainfile(filepath=str(out / f"fit_{stem}.blend"), compress=True)
