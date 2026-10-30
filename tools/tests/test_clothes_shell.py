@@ -352,8 +352,6 @@ class BodyPlanes(unittest.TestCase):  # E1b: the cut planes from a body's own bo
             H.body_planes(1.3, 1.2, 0.04, (0.15, 0.06, 1.27), 0.64)
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class PlainDenim(unittest.TestCase):
@@ -387,3 +385,42 @@ class PlainDenim(unittest.TestCase):
         self.assertTrue(H.in_box(-0.15, 0.0, 0.9, box))
         self.assertFalse(H.in_box(0.05, 0.0, 0.9, box))
         self.assertFalse(H.in_box(0.15, 0.0, 1.1, box))
+
+
+class FlatBib(unittest.TestCase):  # E1i: her bib a flat, stiff panel over the chest
+    def test_hull_bridges_the_dip_under_the_bust(self):
+        # (z, y), front at smaller y: waist, belly, under the bust (behind), the bust's apex, the upper chest, the top
+        prof = [(0.95, -0.10), (1.00, -0.11), (1.04, -0.09), (1.08, -0.14), (1.10, -0.12), (1.11, -0.11)]
+        hull = H.front_hull(prof)
+        self.assertEqual(hull[0], (0.95, -0.10))
+        self.assertIn((1.08, -0.14), hull)
+        self.assertNotIn((1.04, -0.09), hull)
+        self.assertNotIn((1.00, -0.11), hull)  # in front of the waist, but behind the taut line to the apex
+        for z, y in prof:
+            self.assertLessEqual(H.hull_at(hull, z), y + 1e-12)
+
+    def test_hull_of_a_straight_or_concave_profile_keeps_its_points(self):
+        line = [(0.0, 0.0), (0.5, -0.05), (1.0, -0.1)]
+        self.assertEqual(H.front_hull(line), [(0.0, 0.0), (1.0, -0.1)])
+        bulge = [(0.0, 0.0), (0.5, -0.2), (1.0, 0.0)]
+        self.assertEqual(H.front_hull(bulge), bulge)
+
+    def test_hull_same_height_keeps_the_front_point(self):
+        self.assertEqual(H.front_hull([(0.0, -0.1), (0.0, -0.2), (1.0, 0.0)]), [(0.0, -0.2), (1.0, 0.0)])
+
+    def test_hull_at_interpolates_and_clamps(self):
+        hull = [(0.0, 0.0), (1.0, -0.1), (2.0, 0.1)]
+        self.assertAlmostEqual(H.hull_at(hull, 0.5), -0.05)
+        self.assertAlmostEqual(H.hull_at(hull, 1.5), 0.0)
+        self.assertEqual(H.hull_at(hull, -1.0), 0.0)
+        self.assertEqual(H.hull_at(hull, 3.0), 0.1)
+
+    def test_ease(self):
+        self.assertEqual(H.ease(0.9, 1.0, 0.05), 0.0)
+        self.assertEqual(H.ease(1.06, 1.0, 0.05), 1.0)
+        self.assertAlmostEqual(H.ease(1.025, 1.0, 0.05), 0.5)
+        self.assertEqual(H.ease(1.01, 1.0, 0.0), 1.0)
+
+
+if __name__ == "__main__":
+    unittest.main()

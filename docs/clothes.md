@@ -439,7 +439,7 @@ keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 deg
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
 
-## Dressing D3's bodies (E1 to E1h, art #196)
+## Dressing D3's bodies (E1 to E1i, art #196)
 - **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
   head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
   smoothing; the 30 mm smoothstep band stays the default for the old bodies.
@@ -548,6 +548,23 @@ above it again from Blender's rest matrices.
   body pokes in Jog, Sprint and Strafe (2 to 8 vertices, up to 6 mm); it stays off. The white is most likely the
   background through open holes in Meshy's layered pocket bottom, with the top and the body removed under the bib;
   `fill_holes` only works under the waist. Next: fill those loops above the waist, or keep the top under that spot.
+- **Her bib flat, as on the concept** (E1i, the axolotl only; the chameleon's bib is not touched): her fit made the
+  bib follow each breast, and its top (1.110 m) sat under her bust (apex about 1.15 m), so the denim cupped under the
+  chest. The flat bib rule: the bib is a stiff panel that rests on the chest's most forward points and falls straight
+  to the waistband; the shirt carries the chest's shape at its sides. `clothes_top.flat_bib` (after the cut, before
+  the top and the straps; `--flat-bib blend,curve,radius,clear`, `--bib-raise dz,b0,b1`):
+  - `--bib-raise` lifts everything over waist + b1 by dz and stretches the band waist + b0 to waist + b1; that band's
+    texels are re-laid plain (a `--plain` box is added); the bib's top and the straps' fronts follow (`straps` turns
+    its front angle until the front end is dz higher);
+  - every bib vertex moves forward only, by the offset from the bib's smoothed surface (every layer's mean, so the
+    pocket keeps its layer) to a cylinder `hull(z) + c x^2` (c fitted to the belly's rows with `curve < 0`); hull is
+    the front hull (`clothes_shell.front_hull`) of the bib and of the body's front less `clear`: the taut line from
+    the waistband over the bust; the move eases in over `blend` above the waist;
+  - the moved vertices' weights blend toward their 3 cm row's mean of the body's weights under the panel.
+  d27 (`--flat-bib 0.05,-1,0.02,0.014 --bib-raise 0.06,0.012,0.035`): bib top 1.170 m, c 4.7 1/m, hull from -0.129 m
+  at the waist to -0.164 m at the bust. At rest and in the turnaround it reads as the concept's bib. Still wrong: in
+  Jog its top folds down under the bust (the weights), the body pokes rose (Idle 4/3.1 mm, Jump_Start 5/8.1 mm against
+  d23b's 0/0 and 1/3.6), and a teal patch shows at her left bib side at rest (the top's hidden faces, 51 against 38).
 - **The hips' spikes** (E1g): `clothes_top.despike` moves a garment vertex under the waist that stands over
   `--despike` (15 mm) out of its neighbours' mean, along the body's normal, to that mean (`clothes_fit_geom.spike_out`;
   the axolotl's front-hip spike, d16).

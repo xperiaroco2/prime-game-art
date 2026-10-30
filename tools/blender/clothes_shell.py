@@ -463,3 +463,42 @@ def in_box(x: float, y: float, z: float, box: tuple[float, float, float, float, 
     """E1h: a point inside a box (x0, x1, y0, y1, z0, z1), mirrored in x (the box is given for |x|)."""
     x0, x1, y0, y1, z0, z1 = box
     return x0 <= abs(x) <= x1 and y0 <= y <= y1 and z0 <= z <= z1
+
+
+def front_hull(pts: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """The taut line a stiff panel takes over a side profile (E1i, her flat bib): pts are (z, y) with the front at
+    the smaller y; the result is the profile's front hull, (z, y) from the lowest z to the highest, every point of
+    pts on it or behind it (y no smaller than the hull's at its z)."""
+    hull: list[tuple[float, float]] = []
+    for z, y in sorted(pts):
+        if hull and abs(z - hull[-1][0]) < 1e-12:
+            if y < hull[-1][1]:
+                hull.pop()
+            else:
+                continue
+        while len(hull) >= 2:
+            (z1, y1), (z2, y2) = hull[-2], hull[-1]
+            if (y2 - y1) * (z - z1) >= (y - y1) * (z2 - z1):  # hull[-1] on or behind the chord: not taut
+                hull.pop()
+            else:
+                break
+        hull.append((z, y))
+    return hull
+
+
+def hull_at(hull: list[tuple[float, float]], z: float) -> float:
+    """The hull's y at z, linear between its points, clamped to its ends."""
+    if z <= hull[0][0]:
+        return hull[0][1]
+    for (z1, y1), (z2, y2) in zip(hull, hull[1:]):
+        if z <= z2:
+            return y1 + (y2 - y1) * (z - z1) / (z2 - z1)
+    return hull[-1][1]
+
+
+def ease(z: float, z0: float, span: float) -> float:
+    """0 at z0 and below, 1 from z0 + span on, smoothstep between (E1i: the flat bib eased in over the waist)."""
+    if span <= 0:
+        return 1.0 if z > z0 else 0.0
+    t = min(1.0, max(0.0, (z - z0) / span))
+    return t * t * (3 - 2 * t)

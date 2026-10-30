@@ -323,6 +323,11 @@ def main() -> int:
     ap.add_argument("--plain", default="",
                     help="E1h: boxes x0,x1,y0,y1,z0,z1 (|x|, bind pose, m; ';' between) whose denim gets plain texels "
                          "(clothes_top.plain_denim; empty: off)")
+    ap.add_argument("--flat-bib", default="",
+                    help="E1i: the bib as a flat, stiff panel: blend,curve,radius,clear (m, 1/m (<0: fitted), m, m; "
+                         "clothes_top.flat_bib; empty: off)")
+    ap.add_argument("--bib-raise", default="",
+                    help="E1i: with --flat-bib, the bib raised dz over the band waist+b0..waist+b1: dz,b0,b1 (m)")
     ap.add_argument("--plain-density", type=float, default=1.0,
                     help="E1h: the plain texels' density against the garment's median")
     ap.add_argument("--bronze", default="0.60,0.42,0.20,0.85,0.38",
@@ -477,6 +482,8 @@ def main() -> int:
             say("REFUSED", e)
             return 3
         rep["garment_cut"] = TOP.cut_garment(garment, args)
+        if args.flat_bib:  # E1i: her bib a flat, stiff panel over the chest (the concept), before the top and straps
+            rep["flat_bib"] = TOP.flat_bib(garment, char, args)
         top, rep["shell"] = TOP.shell(char, arm, garment, args)
         rep["straps"] = TOP.straps(garment, char, [garment, top], args)
         if args.plain:  # E1h: plain denim texels over the areas whose own texels are wrong

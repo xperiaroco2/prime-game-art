@@ -1092,6 +1092,21 @@ def straps(gar, char, keep_objs, args) -> dict:
                 break
             t_back = t
         ts = ts[:-1] + [max(ts[-1], t_back)]
+    dz_bib = getattr(args, "bib_raise_dz", 0.0)
+    if dz_bib > 0:  # E1i: the bib was raised (flat_bib), so the straps' fronts end that much higher on it
+        def front_z(t):
+            loc = btree.ray_cast(Vector((xs_k[0], y0, z0)), Vector((0.0, math.sin(t), math.cos(t))), 0.4)[0]
+            return None if loc is None else loc.z
+        z_f0 = front_z(ts[0])
+        t_f = ts[0]
+        for k in range(1, 61):
+            z = front_z(ts[0] + math.radians(k))
+            if z_f0 is None or z is None:
+                break
+            t_f = ts[0] + math.radians(k)
+            if z >= z_f0 + dz_bib:
+                break
+        ts = [t_f] + ts[1:]
     mw = gar.matrix_world
     inv = mw.inverted()
     me = gar.data
@@ -1103,7 +1118,8 @@ def straps(gar, char, keep_objs, args) -> dict:
     rect, prep = strap_patch(gar, args, ufr)
     args.patch_rect = rect  # E1h: plain_denim leaves the straps' and band's patch alone
     u0, u1, v0, v1 = rect
-    rep, plans = {"patch": prep, "back_angle_deg": round(math.degrees(ts[-1]), 1)}, []
+    rep, plans = {"patch": prep, "front_angle_deg": round(math.degrees(ts[0]), 1),
+                  "back_angle_deg": round(math.degrees(ts[-1]), 1)}, []
     for sgn in (1, -1):
         locs, nors, offs = [], [], []
         for t in angles:
@@ -1455,4 +1471,127 @@ def plain_denim(gar, args) -> dict:
         img.pixels[:] = pxs[kind].ravel()
         img.update()
     me.update()
+    return rep
+
+
+def flat_bib(gar, char, args) -> dict:
+    """E1i: the bib as a flat, stiff panel (the concept): her fit made the bib follow each breast, so the denim bent
+    over her chest, and its top sat under the bust. args.flat_bib "blend,curve,radius,clear":
+    - args.bib_raise "dz,b0,b1" (optional) first raises the bib: everything over the waist + b1 goes up dz, the band
+      from waist + b0 to waist + b1 stretches (its texels are re-laid plain: a --plain box is added), so the top
+      edge and the pocket sit over the bust as on the concept; args.bib's top and args.bib_raise_dz follow (the
+      straps' fronts move up with it);
+    - then each bib vertex (front, |x| within the bib, over the waist) moves forward only, by the offset between the
+      bib's smoothed surface S (every layer's mean within radius in x and z, averaged twice: every layer moves alike,
+      so the pocket keeps its own layer over it) and the target T(x, z) = hull(z) + c * x^2 (a cylinder across,
+      which stiff denim can take; curve < 0: c fitted to the belly's rows just over the eased band), where hull is
+      the front hull (clothes_shell.front_hull) per 1 cm of height of the smaller of S - c x^2 and the body's front
+      less clear - c x^2: the taut line from the waistband over the chest's most forward points to the top edge.
+      The move eases in over blend m above the waist (clothes_shell.ease), so the waistband stays;
+    - each moved vertex's weights blend toward the mean over its 3 cm row of the body's weights under the panel (the
+      panel moves as one with the chest, no fold).
+    No face is added or removed; the UVs stay (but the stretched band's)."""
+    blend, curve, rad, clear = floats(args.flat_bib)
+    z_w = args.waist
+    bib_hw, bib_top = floats(args.bib)
+    me = gar.data
+    mw = gar.matrix_world
+    inv = mw.inverted()
+    co = [mw @ v.co for v in me.vertices]
+    ids = [i for i, p in enumerate(co) if p.y < 0 and abs(p.x) <= bib_hw + 1e-3 and p.z > z_w - 1e-4]
+    if not ids:
+        return {"skipped": "no bib vertices"}
+    rep = {}
+    dz, b0, b1 = floats(args.bib_raise) if getattr(args, "bib_raise", "") else (0.0, 0.0, 0.0)
+    if dz > 0:
+        for i in ids:
+            z = co[i].z
+            if z >= z_w + b1:
+                z += dz
+            elif z > z_w + b0:
+                z += dz * (z - z_w - b0) / (b1 - b0)
+            co[i] = Vector((co[i].x, co[i].y, z))
+        bib_top += dz
+        args.bib = f"{bib_hw:.4f},{bib_top:.4f}"
+        args.bib_raise_dz = dz
+        box = f"0,{bib_hw + 0.002:.4f},-0.4,0,{z_w + b0 - 0.002:.4f},{z_w + b1 + dz + 0.002:.4f}"
+        args.plain = ";".join(b for b in (args.plain, box) if b)
+        rep["raised"] = {"dz": dz, "band_z": [round(z_w + b0, 4), round(z_w + b1 + dz, 4)], "bib_top": bib_top,
+                         "plain_box": box}
+    kd = KDTree(len(ids))
+    for k, i in enumerate(ids):
+        kd.insert((co[i].x, 0.0, co[i].z), k)
+    kd.balance()
+    ys = np.array([co[i].y for i in ids])
+    near = [[k for _c, k, _d in kd.find_range((co[i].x, 0.0, co[i].z), rad)] for i in ids]
+    base = np.array([np.mean(ys[n]) for n in near])  # every layer's mean: each layer then moves alike
+    s = np.array([np.mean(base[n]) for n in near])
+    xs = np.array([co[i].x for i in ids])
+    zs = np.array([co[i].z for i in ids])
+    fit_c = None
+    if curve < 0:  # the curve across from the belly's rows over the eased band (a + c x^2, least squares)
+        m = (zs > z_w + blend) & (zs < z_w + blend + 0.04)
+        if m.sum() >= 6:
+            fit_c = float(np.linalg.lstsq(np.stack([np.ones(int(m.sum())), xs[m] ** 2], 1), s[m], rcond=None)[0][1])
+        curve = max(0.0, fit_c or 0.0)
+    bins = {}
+    for z, r in zip(zs, s - curve * xs * xs):
+        b = int(math.floor((z - z_w) / 0.01))
+        bins[b] = min(bins.get(b, r), r)
+    cm = char.matrix_world
+    body_prof = {}
+    for v in char.data.vertices:
+        p = cm @ v.co
+        if p.y < 0 and abs(p.x) <= bib_hw + 0.01 and z_w + blend <= p.z <= bib_top + 0.01:
+            b = int(math.floor((p.z - z_w) / 0.01))
+            r = p.y - clear - curve * p.x * p.x
+            body_prof[b] = min(body_prof.get(b, r), r)
+            if b in bins:
+                bins[b] = min(bins[b], r)
+    prof = [(min(max(z_w + 0.01 * (b + 0.5), zs.min()), zs.max()), r) for b, r in sorted(bins.items())]
+    hull = H.front_hull(prof)
+    body = body_weights(char)
+    rows = []
+    for k, i in enumerate(ids):
+        w = H.ease(zs[k], z_w, blend)
+        d = w * min(0.0, H.hull_at(hull, zs[k]) + curve * xs[k] ** 2 - s[k])
+        co[i] = co[i] + Vector((0.0, d, 0.0))
+        rows.append((w, weight_row(body, co[i]) if w > 0 else {}))
+    moves = [(mw @ me.vertices[i].co - co[i]).length for i in ids]
+    bib_set = set(ids)
+    areas0 = {p.index: p.area for p in me.polygons if all(v in bib_set for v in p.vertices)}
+    groups = {g.name: g for g in gar.vertex_groups}
+    names = {g.index: g.name for g in gar.vertex_groups}
+    new_rows = []
+    for k, i in enumerate(ids):
+        w = rows[k][0]
+        if w <= 0:
+            continue
+        mean: dict[str, float] = {}
+        near_z = [kk for kk in range(len(ids)) if abs(zs[kk] - zs[k]) < 0.015 and rows[kk][0] > 0]
+        for kk in near_z:
+            for b, x in rows[kk][1].items():
+                mean[b] = mean.get(b, 0.0) + x / len(near_z)
+        own = {names[g.group]: g.weight for g in me.vertices[i].groups if g.group in names}
+        new_rows.append((i, H.follow_row(own, mean, w)))
+    for i in ids:
+        me.vertices[i].co = inv @ co[i]
+    for i, row in new_rows:
+        v = me.vertices[i]
+        for g in list(v.groups):
+            gar.vertex_groups[g.group].remove([i])
+        for b, x in row.items():
+            if b not in groups:
+                groups[b] = gar.vertex_groups.new(name=b)
+            groups[b].add([i], x, "REPLACE")
+    me.update()
+    ratio = sorted(me.polygons[f].area / a for f, a in areas0.items() if a > 1e-9)
+    pick = lambda q: round(ratio[min(len(ratio) - 1, int(q * len(ratio)))], 3) if ratio else None
+    rep.update({"verts": len(ids), "moved": sum(m > 1e-5 for m in moves), "curve": round(curve, 3),
+                "curve_fit": fit_c, "max_move_mm": round(1000 * max(moves), 1),
+                "hull_zy": [(round(z, 3), round(y, 4)) for z, y in hull],
+                "body_front_zy": [(round(z_w + 0.01 * (b + 0.5), 3), round(r + clear, 4))
+                                  for b, r in sorted(body_prof.items())],
+                "area_ratio_p1_p50_p99": [pick(0.01), pick(0.5), pick(0.99)], "faces": len(ratio)})
+    say("flat bib", rep)
     return rep
