@@ -245,6 +245,74 @@ Measured (step 2b, S1):
 Blender's sizes, 60 colliders; the walk 22/22, 178.1 m in 60.2 s; the blocks hold (D1-D4 0.41 m, the corridor's end
 0.90 m short of their walls; the doors' leaves sit deeper now). Shots: 24-210 draw calls, 28-93k primitives.
 
+## Step 2c: S4 and the surfaces at release quality
+
+The engineer picked S4 (2026-10-30): two-tone teal-grey with copper accents, now `[look] scheme = "S4"`. A critic warned
+that S4 may turn green under the Earth's blue light later, so step 2c keeps its teal on the grey side: panel
+(0.35, 0.42, 0.42), frame (0.25, 0.3, 0.31), floor (0.27, 0.31, 0.315), a spread under 0.1 per colour (a fast test holds
+it). No layout number moved except the mullions' width (0.4 to 0.5 m, ours). The raw output is `<raw>/lobby/hall/v4/`
+(v1-v3 stay).
+
+The second critic's findings on 2b, each fixed (`lobby_build.py`):
+
+1. Frames, pilasters and the arch were one flat black slab. S4's frame is a mid graphite-teal (above), clearly lighter
+   than black. Every band of the door and arch frames (`framed`) has a 4.5 cm bevel on its outer front edge, so the three
+   steps catch the light. Eight bays carry one unique detail each (`GREEBLES`; none twice on a wall, none on the north
+   wall with its doors): a service hatch (a frame, a recessed door, hinges, a handle, a label plate), a pipe junction
+   (two risers with copper flanges, a valve box with a red wheel, a riser to the cornice, a branch into the wall), a fire
+   point (a red cabinet, `lobby_signal`, with a dark glass front, a sign, a terminal with keys beside it), and a cable
+   tray under the cornice broken by a junction box with the cables dropping into it. The old small service box is left
+   out of those bays.
+2. The fine-noise grain read as orange peel and left a noisy hot spot on the floor. It is replaced by a brushed and
+   scratched micro-surface: a shared, tiling 1024 px pair of maps generated in the build (`metal_images`, numpy in
+   Blender), a normal map (streaks along u, about 260 fine scratches) and a roughness multiplier (0.78-1: soft blotches,
+   the streaks, the scratches rougher), 1.5 m a repeat. Every non-emissive material but the glass and the lens uses
+   them at its own roughness and metallic (`metal_maps`: the maps' G and B times the material's numbers, which the
+   glTF exporter writes as the factors); the floor at normal strength 0.35, so it stays polished and clean (roughness
+   0.12-0.19 over its three tones). UVs are box-projected (`box_uvs`); every 2 m cell gets a steady offset and a
+   90-degree turn of the brushing, so neighbouring plates differ. Per-panel variation stays the three panel tones.
+3. The lunettes (over the window's head and over the north wall) are panelled: 2 m columns like the vault's, bevelled
+   panels in rows whose tops follow the vault's curve (`lunette_column`), a batten on each seam, a copper trim along the
+   curve and, over the window's head, a copper band (0.36 m tall, 0.42 m deep); the face behind is dark (`lobby_grout`).
+   The pendant lamps have real shades: a rolled rim, a reflective inside (`lobby_reflector`) up to a dark socket and a
+   bulb in the recess (`lobby_lens`, not emissive until step 4).
+4. The ribs are an I-section (`sweep`): the 1.24 m top flange over the panels' ends, a 0.4 m web, a 0.8 m bottom flange
+   with chamfers, still hanging `rib_d`; a copper collar 1.3 m from each wall and a corbel from each pilaster's capital up
+   under the rib. Cover strips (0.09 m, the frame's material) over the joints between each pilaster and its panels
+   close the light vertical seam beside it (not beside D1's and D2's frames, where the pilaster steps back).
+5. Doors: each leaf is bevelled at the centre seam (a V-groove between the leaves), its striped field sits inside a
+   raised 0.12 m border; a copper lip round the opening covers the leaves' edges; a threshold plate. The red lamp
+   (still at 5.1 m) sits in a housing: a back plate, cheeks, a sloped hood, a bottom lip and a cage of three bars. The
+   lintel box has a chamfered lower edge and a grille either side of the lamp. Hazard stripes stay yellow-black.
+6. Pilasters: a chamfered base (a plinth with cut corners, 0.4 m, and a sloped step into the shaft up to 0.62 m) and a
+   mid-height band at 4.56-4.76 m on the panels' row seam. The window's mullions are sturdier: 0.5 m wide with a stepped
+   cap and nose (0.34 and 0.14 m) 0.56 m into the hall, a shoe on the sill (0.45 m tall) and a collar at the transom;
+   still 6 panes, sill 0.5 m, transom 3 m.
+
+The fine metal surface is now in the GLBs' materials, so the game gets the same look: `--shoot` shows the GLBs as they
+are (no material step in `hall.gd`); `--grid` recolours copies of the imported materials, keeping their maps. A new
+review view `door_d1` shows D1 and the pilaster stepped back beside it; `[review] closeups` lists one close-up per fix,
+which `--shoot` writes into `closeups.png` (two a row).
+
+Measured (step 2c, S4):
+
+| Piece | Triangles | Objects | Materials | GLB |
+|---|---|---|---|---|
+| floor | 5232 | 6 | lobby_floor, lobby_floor2, lobby_floor3, lobby_grout, lobby_ring | 2.9 MB |
+| walls | 28216 | 11 | lobby_wall, lobby_panel, lobby_panel2, lobby_panel3, lobby_inset, lobby_pilaster, lobby_rib, lobby_trim, lobby_dark, lobby_strip, lobby_signal | 4.6 MB |
+| vault | 22348 | 8 | lobby_grout, lobby_vault, lobby_panel3, lobby_rib, lobby_trim, lobby_dark, lobby_lens, lobby_reflector | 4.2 MB |
+| window_frame | 1524 | 2 | lobby_trim, lobby_pilaster | 2.5 MB |
+| window_glass | 68 | 1 | lobby_glass | 0.01 MB |
+| arch | 2682 | 14 | lobby_wall, lobby_trim, lobby_pilaster, lobby_panel, lobby_floor, lobby_floor2, lobby_floor3, lobby_grout, lobby_rib, lobby_dark, lobby_strip, lobby_hazard, lobby_lamp | 2.6 MB |
+| door (x4) | 1266 | 8 | lobby_trim, lobby_pilaster, lobby_panel3, lobby_dark, lobby_hazard, lobby_lamp, lobby_strip | 2.5 MB |
+
+Every GLB but the glass embeds the same two maps (1024 x 1024 PNG: normal 1.7 MB, roughness 0.7 MB; also in
+`<raw>/lobby/hall/v4/pieces/textures/`); a game import shares them once. 61336 triangles in the 7 GLBs (65134 with the
+four doors placed; 2b: 48890 and 51050), glTF-Validator clean (0 errors; warnings only for tangents on the unmapped
+emissive surfaces). `--godot`: 37 pieces at Blender's sizes, 60 colliders; the walk 22/22, 178.1 m in 60.2 s; the
+blocks hold (D1-D4 0.44 m, the corridor's end 0.91 m short of their walls). Shots: 25-204 draw calls, 34-106k
+primitives.
+
 ## Open problems
 
 - The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
@@ -255,7 +323,8 @@ Blender's sizes, 60 colliders; the walk 22/22, 178.1 m in 60.2 s; the blocks hol
 - The pilaster width (0.8 m, not the drawing's 1.2 m glyph) and the vault's cross-section are our readings of the
   drawing.
 - No Earth and no light design yet (later steps); the review light is not the game's, and the vault reads dark under it.
-- The scheme's grain lives in `hall.gd` (the shots): the GLBs carry plain colours, so the game needs the same material
-  step when the hall goes in.
-- The lunette over the window's head is one flat face: in light schemes it reads as a blank wedge (`corner_nw`).
+- The lunettes' two end columns (where the vault meets the side walls) stay unpanelled: a dark wedge (`c_lunette`).
+- The vault and its I-section ribs still read dark under the review light (no light from below until step 4); the
+  collars and corbels show mostly as copper glints.
+- S4's teal is checked only under the review light; the Earth's blue light (step 3) may push it green.
 - The vault's inner panels' bevels still catch small glints at grazing angles (`rib`).
