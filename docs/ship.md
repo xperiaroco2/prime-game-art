@@ -1379,13 +1379,19 @@ that differs from the layout's clearing placements, a clearing piece under `Piec
 the clearing outside, grounded and collision-free, and the clearing lamps outside the hull or on the ground.
 
 **The closed nose** (the look is the engineer's pick; no design drawing): `exterior.toml` `[closed_nose.<name>]` holds
-quick blockout variants, each the pieces it hides (the ramp and its lights) and CSG parts (a prism of a polygon in the
-tunnel's front plane, a ring of it, a box; a METALS name or an emissive colour). They are off by default: a
-`ship --shoot DIR --views FILE` row whose 6th element is `{"closed": "<name>"}` builds them (`ship.gd`
-`_closed_build`, `_closed_pose`) and shows that one (`""` the open ship); the sheet then comes out
-`CLOSED_SHEET_W` (1600) px wide. The first stills: `<raw>/ship/v5/lobby/closed-1/` (A the flush silver seal, B a
-two-leaf door 0.35 m in with the ramp's lip under the floor, C a silver plug 0.1 m in with a bevel and a thin cyan
-line). After his pick the variant is built as pieces and written by the export as a pose.
+quick blockout variants, each the pieces it hides (`hide`: the ramp, its lights and its hazard stripes; a strip light
+made only by hidden pieces goes too), the plan spots `hide_at` [x, y, r] round which every placement and lamp goes (the
+ramp's four ground lamps), and CSG parts: a prism of a polygon in the tunnel's front plane (`ring` its band only,
+`inset` shrunk or grown, `hole` a round hole, `yaw` turned about a vertical line at `pivot`), a box, or an `iris`
+(a petal shutter: blades swirled between seams over a dark back, every other one stepped proud, a glow disc behind the
+centre, a rim); a METALS name or an emissive colour. They are off by default: a `ship --shoot DIR --views FILE` row
+whose 6th element is `{"closed": "<name>"}` builds them (`ship.gd` `_closed_build`, `_closed_pose`) and shows that one
+(`""` the open ship); the sheet then holds the review's views alone (no plan or top views), `CLOSED_SHEET_W` (1280) px
+wide. Round 1 (`<raw>/ship/v5/lobby/closed-1/`: flush silver seal, two-leaf door, silver plug) read as a pale garage
+door with the ramp's stripes leading up to it. Round 2 (`<raw>/ship/v5/lobby/closed-2/`): A a sealed skin of hull
+plates in a shallow prow, a fine seam and a thin cyan line round; B the raised ramp as the door, its ribbed dark
+underside out in a bevelled frame; C a dark recessed iris with a cyan glow at its centre. After his pick the variant is
+built as pieces and written by the export as a pose.
 
 ## Lens room C, step 1: the charger's alcove and the east lounge (2026-10-28)
 
