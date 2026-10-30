@@ -342,7 +342,8 @@ def _part(dump: dict[str, Any], slot: str) -> dict[str, Any] | None:
 
 def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, Any], output: list[str],
              strict_contract: bool = False, renamed: dict[str, str] | None = None,
-             textured: bool = False, profile: str = "pack", allowance: str = "") -> list[dict[str, str]]:
+             textured: bool = False, profile: str = "pack", allowance: str = "",
+             body_type: str = "") -> list[dict[str, str]]:
     """The assertions of godot-check on inspect.gd's description of an imported character (docs/godot.md). renamed maps
     the rig's bone names to the names the import gave them (the SkeletonProfileHumanoid trial); then the bone set is
     compared through it and the rest joints are not compared. Contract v1 gates are warnings unless strict_contract.
@@ -359,6 +360,11 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
     if allowance and (profile != "alien" or f"{allowance}_height_max_m" not in contract["body"]):
         raise ValueError(f"no height allowance {allowance!r} for the {profile} profile (the contract's body has "
                          f"{sorted(k for k in contract['body'] if k.endswith('_height_max_m'))})")
+    if body_type:  # art #196: a body type's own table replaces the body's height_min_m (the alien only)
+        types = contract.get("body_types", {})
+        if profile != "alien" or body_type not in types:
+            raise ValueError(f"no body type {body_type!r} for the {profile} profile (the contract has {sorted(types)})")
+        contract = {**contract, "body": {**contract["body"], "height_min_m": types[body_type]["height_min_m"]}}
     renamed = renamed or {}
     c = Checks()
     skeletons = dump["skeletons"]

@@ -1,0 +1,73 @@
+# The station fit's settings per body (art #196, step D3; body_fit_geom.py, body_fit_run.py). The dims tables beside
+# this file are generated (body_dims_measure.py, never hand-edited); what the fit adds to them lives here. mm.
+
+[A]
+# The concept's forearm and hand hang in front of the belly in its side view (A.toml's note), and the side rows
+# around the hand are a straight interpolation, not a measurement: the body's own front is kept there (trunk and
+# legs), easing back to the table over the zone's 60 mm ends (body_fit_geom.KEEP_EDGE).
+keep_front = [[640.0, 1000.0]]  # the trunk's belly and the upper thigh (the hand's rows)
+# D3f: the fit's moves diffused over the mesh after the passes (body_fit_geom.relax_moves): where the station maps
+# meet (the crotch, the shoulder's arm share, the chest, the armpit row, the ankle) their moves changed over an edge
+# or two and drew lines on the surface. The ring, the hands and the feet keep their moves.
+relax = { rounds = 12, lam = 0.5, refits = 3, rounds_after = 2 }
+# D3f: the neck join. The assembler blends a head's lowest 30 mm onto the ring's ellipse, so the head leaves the ring
+# vertically; the fit had flared the body out right under it (A's sides 27 to 38 degrees: a turtleneck ledge). The
+# body's outline now leaves the ring at the head's angle (degrees from vertical, + out going down) over `straight` mm,
+# then eases into the fit's shoulders over `blend` mm (body_fit_geom.neck_tangent).
+# D3g: one continuous neck. The head's neck now flares into the ring over 70 mm (body_fit_geom.neck_flare_morph,
+# NECK_FLARE_BAND and NECK_FLARE_A) and arrives at 22 (side), 17 (front) and 18.5 (back) degrees on both heads; the
+# body leaves the ring at the same angles and turns into the trapezius (D3f's 18 mm straight cylinder read as a
+# turtleneck under the heads' thin necks).
+neck_tangent = { straight = 10.0, blend = 35.0, side_deg = 22.0, front_deg = 17.0, back_deg = 18.5 }
+
+[B]
+keep_front = []
+relax = { rounds = 12, lam = 0.5, refits = 3, rounds_after = 2 }  # as A's (D3f)
+neck_tangent = { straight = 10.0, blend = 35.0, side_deg = 22.0, front_deg = 17.0, back_deg = 18.5 }  # as A's (D3g)
+# Her concept sets the chest and upper back up to 50 mm ahead of A's on the same neck ring (B.toml's front_y and
+# back_y): the arms follow the trunk's centre shift over the armpit (body_fit_geom.arm_dy), their bones with them,
+# or the trunk slides past the arm root (D3c's diagonal crease from the neck to each shoulder).
+arm_follow = true
+# D3g: the shoulder girdle follows the arms' forward move too (body_fit_geom.girdle_share): a trunk vertex takes it
+# from 0 at |x| `x0` (just outside the ring) to all of it at `x1` (the shoulder joint), from `below` mm under the
+# armpit up; the lock under the ring eases it out toward the neck. D3f's diagonal from the neck base to each armpit.
+girdle = { x0 = 60.0, x1 = 130.0, below = 60.0 }
+# D3g: the girdle's front corner rounded (body_fit_geom.shoulder_share, `rounds` Taubin rounds, positions): with
+# her shoulders and chest forward, the corner between the shoulder top and the chest front still drew the bright
+# diagonal after the girdle's move, and read boxy at the deltoid. Under the ring's join (z0) and over the chest.
+shoulder_round = { rounds = 12, mu = 0.0, z0 = 15.0, z1 = 150.0, x0 = 20.0, x1 = 210.0, y_back = 50.0, edge = 40.0 }
+# B's rest from A's (B1's alien_body_b_geom with these numbers; the D2 plan's point 1). The height scale is B's
+# neck ring over A's (the tables), the Neck and Head about B's ring by B.toml's neck_bone_below / head_bone_above.
+shoulder_joint_x = 129.0      # the UpperArm heads' |x|
+hip_joint_x = 113.0           # the UpperLeg heads' |x|
+# The hands and feet: A's at our size (the engineer, 2026-10-29), scaled per axis by the two tables' B/A ratios
+# (body_fit_run.limb_scales: the keys' hand and foot lengths and widths), never set here.
+# Her neck base: B's concept puts the ring at the collar, where her shoulder slopes start (the shoulder line 8 mm
+# under it). The ring stays the standard one; the trunk's `length` mm under it widen into a slope from the ring's
+# half width (kept over the `collar` mm under it: a vertical tangent) to the table's at `length`, as
+# u ** `power`, eased in over `ease` mm from its bottom, at most `max_ratio` of the body (body_fit_geom.neck_base_half;
+# D3b's first B, eased over 20 mm and uncapped, grew a lip at the neck base). Never narrower than the body.
+neck_base = { length = 60.0, collar = 6.0, power = 1.5, ease = 60.0, max_ratio = 1.0 }
+# D3d: the x widening (max_ratio 1.15 until D3c) drew a valley between the neck's slope and the shoulder, a diagonal
+# crease in the 3/4 views; her shoulder tops are raised in z instead, `share` of the way to the concept's top over
+# the `reach` mm under the ring (body_fit_geom.shoulder_lift), from the ring's half width to `x_end`.
+# D3e: the lift against the smoothed envelope (`smooth_env`, sigma 25), then `taubin` rounds over the lifted band.
+shoulder_lift = { share = 0.5, reach = 110.0, sigma = 25.0, x_in = 25.0, x_out = 45.0, x_end = 210.0, depth = 80.0, smooth_env = true, taubin = 6 }
+# Her chest: two soft rounds, no nipples. The table's side front ahead of the line from the crease to the upper
+# chest is the rounds' depth; across x it peaks at the rounds' centres and eases to `floor` between them.
+chest_sigma_x = 42.0
+chest_floor = 0.45
+# D3e: the rounds' apex trimmed to the table after the passes (body_fit_geom.chest_trim).
+chest_trim = true
+
+[feet]
+# D3f, both bodies (body_fit_blend.new_forefoot): the critic read the feet as plungers from the front (a wide flat
+# disc under a thin ankle). The new front's width is `front_width` of the table's (the heel and the length kept),
+# and the sole's outer edge is raised by up to `sole_round` mm (body_feet_geom.sole_edge_lift).
+front_width = 0.88
+sole_round = 6.0
+# D3g (body_feet_geom.midfoot): the kept mid-foot between the cut and the ankle, so the front no longer reads as a
+# disc under a stalk: its top raised by up to `instep_lift` mm (the instep), its width narrowed by up to
+# `midfoot_narrow`, both peaking halfway and nothing at the cut or the ankle; the length and the side's sole kept.
+instep_lift = 7.0
+midfoot_narrow = 0.08

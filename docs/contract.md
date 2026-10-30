@@ -152,6 +152,26 @@ decision of the engineer. For the alien this replaces "No extra bones" and the 1
   retarget, which Godot 4.7.2 does) and a head above the 1.80 m capsule (no clamp or refusal on the top). This repo
   does not touch the game; the handoff names it.
 
+**Body types** (art #196, a trial: `docs/decisions/2026-10-29-body-types.md`, the engineer's yes of 2026-10-29). The
+alien has two bodies, A (male, S4b's body, the rig every clip is made on) and B (female, `tools/blender/alien_body_b.py`
+from `tools/blender/alien_body_types/b3.toml`). They share one topology: the same vertices in the same order, the same
+faces, weights and UVs. Each has its own rest skeleton with the same 56 bone names, parents and rest orientations and
+its own bone positions (B: the shoulder joints 3.1 cm in, the hip joints 8 mm out, 0.953 times A's height below the
+neck ring). Since D3 B's rest comes from the fit to her mm table (`body_fit_run.py`, `docs/clothes.md`, "Bodies
+built to the drawing"): her shoulder chains also sit 14.6 mm forward with her arms, her hands and feet are scaled
+along their own bones; her largest rest turn is the Neck's, 0.38 degrees. The clips are shared, their Root and Hips keys scaled by the leg length (`--leg-fit`, the
+`slice --own-proportions` rule), and each garment is fitted once per body type. `contract.toml`'s `[body_types.A]` and
+`[body_types.B]` each hold:
+- `height_min_m`: A's is `body.height_min_m` (1.70 m); B's is 1.62 m (the axolotl on B stands 1.694 m);
+- `rest_turn_max_deg`, the largest rest turn of any bone against A's: A's 0, B's 0.5 degrees (b3 measured 0.0, D3's
+  B 0.38 at the Neck; `body_fit_run.py` and `body_fit_blend.py apply` fail a B above it).
+
+`contract --check` refuses a type without both keys, a height outside 1.2 m to `body.height_max_m`, a turn outside
+0 to 5 degrees, and an A that differs from `body`. `godot-check --profile alien --body-type B` holds a character to
+B's minimum height; without the flag the body's 1.70 m holds. Everything else (bones, weights, budgets, the head top,
+the spring bones, the eye height's warning) is the same for both types. Recorded change, 2026-10-29: the two tables
+and the flag; nothing was loosened for A.
+
 **The alien parts kit** (art #226). The kit is one GLB holding the body and every eye, mouth and crest variant
 (`docs/godot.md`, "The alien parts kit"), and a character shows one of each. `check --kind alien` judges it per part
 when it finds the kit's `character.json` (with `nodes`) beside the model, or is given one with `--kit`:
