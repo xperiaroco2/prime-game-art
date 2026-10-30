@@ -636,11 +636,14 @@ def shell(char, arm, keep, args) -> tuple[object, dict]:
     return top, rep
 
 
-def follow_panels(top, gar, args) -> dict:
+def follow_panels(top, gar, args, zmax: float | None = None) -> dict:
     """The top under the bib, the back panel and the trousers' waist takes their weights (the fit's), by the share
     of five rays from each vertex (its normal and four tilted by args.shell_hide_tilt) that meet the garment within
     args.shell_follow m (clothes_shell.follow_row): it moves with the panels and stays under them (C1h: the body's
-    weights let it poke through the bib's sides by up to 10 mm in the clips, clothes_proof's top_under_panels)."""
+    weights let it poke through the bib's sides by up to 10 mm in the clips, clothes_proof's top_under_panels).
+    zmax (M2e): only the top's vertices up to this height (run again after straps() built the waistband: the first
+    run met no band at the hip sides, where cut_garment had cut Meshy's, so the top's rows there kept the body's
+    Spine weights and came out through the band by 10 to 23 mm in Jog and Crouch)."""
     if args.shell_follow <= 0 or gar is None:
         return {}
     tree = tree_of([gar])
@@ -652,6 +655,8 @@ def follow_panels(top, gar, args) -> dict:
     full = part = 0
     for v in top.data.vertices:
         p = mw @ v.co
+        if zmax is not None and p.z > zmax:
+            continue
         share = ray_share(tree, p, (nm @ v.normal).normalized(), args.shell_follow, args.shell_hide_tilt)
         if not share:
             continue
@@ -1173,8 +1178,10 @@ def straps(gar, char, keep_objs, args) -> dict:
     dl = bm.verts.layers.deform.verify()
     gi = {g.name: g.index for g in gar.vertex_groups}
     new_faces = []
+    grids = []  # M2e: each strip's vertices, for back_join
     for pl in plans:
         vs = []
+        grids.append(vs)
         for q in pl["grid"]:
             v = bm.verts.new(inv @ q)
             for b, x in weight_row(body, q).items():
@@ -1199,6 +1206,10 @@ def straps(gar, char, keep_objs, args) -> dict:
     rep["buckles"] = buckles(bm, gar, body, plans, args, uv, dl, gi)
     rep["waistband"] = waistband(bm, gar, body, gtree, rect, args, uv, dl, gi)
     bm.normal_update()
+    bm.verts.index_update()
+    args.strap_grids = [{"ids": [v.index for v in vs], "rows": pl["rows"], "cols": pl["cols"],
+                         "hgts": [h for _l, h in lats], "nt": pl["nt"], "along": pl["along"],
+                         "extra": 0.0015 if k == 0 else 0.0} for k, (vs, pl) in enumerate(zip(grids, plans))]
     bm.to_mesh(me)
     bm.free()
     me.update()
@@ -1698,4 +1709,83 @@ def flat_bib(gar, char, args) -> dict:
                                   for b, r in sorted(body_prof.items())],
                 "area_ratio_p1_p50_p99": [pick(0.01), pick(0.5), pick(0.99)], "faces": len(ratio)})
     say("flat bib", rep)
+    return rep
+
+
+def back_join(gar, args) -> dict:
+    """M2e: the straps' back ends glued onto the back panel, so its top moves as one piece (the Jog close-up's
+    crumpled top: the built straps reached args.strap_back_below under the panel's apex 12 to 15 mm off it, crossed
+    over its top, and took the body's weights under them (UpperChest, the shoulders) where the panel had the spine
+    chain's, so in motion their square ends stood off it as loose flaps). args.back_join "blend,gap": each strap
+    vertex with the panel under it (a ray in along its row's normal from 3 cm out, the panel being the garment's
+    back faces over the waist, the straps, band and buckles left out) lies gap (plus its lip's own height, the left
+    strap's 1.5 mm over the right kept) outside the panel and takes the panel face's weights (its corners by
+    nearness); the rows in front of that run take its first row's move and weights eased out over blend m along
+    the strap (clothes_shell.join_rows). The panel and the straps' outline stay; nothing else moves."""
+    blend, gap = floats(args.back_join)
+    grids = getattr(args, "strap_grids", None)
+    if not grids:
+        return {"skipped": "no straps"}
+    _y0, z_apex, hw_w, hw_a = floats(args.back)
+    me = gar.data
+    mw = gar.matrix_world
+    inv = mw.inverted()
+    co = [mw @ v.co for v in me.vertices]
+    strap = {i for g in grids for i in g["ids"]}
+    # (bmesh reuses deleted vertices' slots, so the strips' indices are not all past the Meshy garment's)
+    panel = [list(p.vertices) for p in me.polygons
+             if not any(i in strap for i in p.vertices)
+             and all(co[i].y > 0 and args.waist - 0.01 < co[i].z < z_apex + 0.03
+                     and abs(co[i].x) < max(hw_w, hw_a) + 0.02 for i in p.vertices)]
+    if not panel:
+        return {"skipped": "no back panel faces"}
+    tree = BVHTree.FromPolygons(co, panel)
+    names = {g.index: g.name for g in gar.vertex_groups}
+    groups = {g.name: g for g in gar.vertex_groups}
+    rows_w = [{names[g.group]: g.weight for g in v.groups if g.group in names and g.weight > 0} for v in me.vertices]
+    rep = {"glued_rows": [], "eased_rows": [], "moved_most_mm": 0.0, "verts": 0}
+    for g in grids:
+        nr, nc = g["rows"], g["cols"]
+        moves, wts = [], []  # per row: per column (move along n, weights) or None
+        for r in range(nr):
+            n = Vector(g["nt"][r])
+            row_m, row_w, ok = [], [], True
+            for c in range(nc):
+                i = g["ids"][r * nc + c]
+                p = co[i]
+                loc, _nor, fi, _d = tree.ray_cast(p + n * 0.03, -n, 0.06)
+                if loc is None:
+                    ok = False
+                    break
+                want = gap + g["hgts"][c] + g["extra"]
+                row_m.append((loc + n * max(0.0005, want) - p).dot(n))
+                ids = panel[fi]
+                row_w.append(F.blend_rows([rows_w[k] for k in ids], [1.0 / max(1e-4, (co[k] - loc).length) for k in ids]))
+            moves.append(row_m if ok else None)
+            wts.append(row_w if ok else None)
+        plan = H.join_rows([None if m is None else 0.0 for m in moves], g["along"], blend)
+        glued = eased = 0
+        for r, (share, src) in enumerate(plan):
+            if src is None or share <= 0:
+                continue
+            glued += src == r
+            eased += src != r
+            n = Vector(g["nt"][r])
+            for c in range(nc):
+                i = g["ids"][r * nc + c]
+                m = share * moves[src][c]
+                me.vertices[i].co = inv @ (co[i] + n * m)
+                rep["moved_most_mm"] = max(rep["moved_most_mm"], round(1000 * abs(m), 1))
+                row = H.follow_row(rows_w[i], wts[src][c], share)
+                v = me.vertices[i]
+                for gg in list(v.groups):
+                    gar.vertex_groups[gg.group].remove([i])
+                for b, x in row.items():
+                    if b not in groups:
+                        groups[b] = gar.vertex_groups.new(name=b)
+                    groups[b].add([i], x, "REPLACE")
+                rep["verts"] += 1
+        rep["glued_rows"].append(glued)
+        rep["eased_rows"].append(eased)
+    me.update()
     return rep

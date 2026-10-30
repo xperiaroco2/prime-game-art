@@ -471,3 +471,19 @@ class PanelFit(unittest.TestCase):  # M2d: the flat back panel's depth
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class JoinRows(unittest.TestCase):
+    def test_the_back_run_glued_and_eased_out_in_front(self):
+        hits = [None, 0.004, None, None, -0.008, -0.01]
+        along = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
+        out = H.join_rows(hits, along, 0.02)
+        self.assertEqual(out[4], (1.0, 4))
+        self.assertEqual(out[5], (1.0, 5))
+        self.assertEqual(out[3][1], 4)
+        self.assertAlmostEqual(out[3][0], 0.5)
+        self.assertEqual(out[2], (0.0, None))  # 2 cm in front: eased out
+        self.assertEqual(out[1], (0.0, None))  # a stray hit up the strap is not glued
+
+    def test_no_panel_under_the_end(self):
+        self.assertEqual(H.join_rows([0.01, None], [0.0, 0.01], 0.03), [(0.0, None), (0.0, None)])

@@ -421,6 +421,12 @@ def main() -> int:
     ap.add_argument("--flat-back", default="",
                     help="M2d: the back panel's top as one stiff panel: blend,radius,band,clear (m; clothes_top.flat_back; "
                          "its weights along --bib-chain; empty: off)")
+    ap.add_argument("--back-join", default="",
+                    help="M2e: the straps' back ends glued onto the back panel: blend,gap (m; clothes_top.back_join; "
+                         "empty: off)")
+    ap.add_argument("--band-follow", type=float, default=None,
+                    help="M2e: after the waistband is built, the top's vertices up to this far over the waist take "
+                         "the garment's weights again by their rays' share (clothes_top.follow_panels; unset: off)")
     ap.add_argument("--skin-follow", default="",
                     help="M2d: lo,hi,clear,reach (m): the kept skin under the garment (under the waist, its nearest cloth "
                          "the garment within reach) takes the nearest garment face's weights and is pulled clear inside "
@@ -631,6 +637,12 @@ def main() -> int:
             rep["flat_back"] = TOP.flat_back(garment, char, args)
         top, rep["shell"] = TOP.shell(char, arm, garment, args)
         rep["straps"] = TOP.straps(garment, char, [garment, top], args)
+        if args.back_join:  # M2e: the straps' back ends glued onto the back panel (one piece with it)
+            rep["back_join"] = TOP.back_join(garment, args)
+            say("back join", rep["back_join"])
+        if args.band_follow is not None:  # M2e: the top's rows under the built waistband move with it
+            rep["band_follow"] = TOP.follow_panels(top, garment, args, zmax=args.waist + args.band_follow)
+            say("band follow", rep["band_follow"])
         if args.plain:  # E1h: plain denim texels over the areas whose own texels are wrong
             rep["plain_denim"] = TOP.plain_denim(garment, args)
         cloth.append(top)

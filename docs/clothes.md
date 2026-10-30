@@ -624,6 +624,19 @@ above it again from Blender's rest matrices.
   back vertex over the waist the depth of `clothes_shell.panel_fit` (a quadratic across, from the vertices within
   radius in x and band in z, less all layers' mean within 1 cm) eased in over blend above the waist, never nearer the
   body's back than clear, and its weights along `--bib-chain`: Meshy's panel had a vertical fold at its apex.
+- **The straps' back ends on the panel** (M2e): the panel's "crumpled top" in Jog was not the panel. The built straps
+  reach `--strap-back-below` under its apex 12 to 15 mm off it, with the body's weights under them (UpperChest, the
+  shoulders), while the panel has the spine chain's; in motion their square ends stood off it as loose flaps over
+  its top. `--back-join blend,gap` (d50: `0.03,0.002`; `clothes_top.back_join`) lays each strap row with the panel
+  under it (a ray in along the row's normal) gap outside it, its lips and the left strap's 1.5 mm over the right
+  kept, gives it the panel face's weights and eases the rows in front out over blend along the strap
+  (`clothes_shell.join_rows`). The panel's apex tip between the straps still shows as a small dark triangle.
+- **The top's rows under the built band** (M2e): the top follows the garment's weights by its rays' share
+  (`follow_panels`) before `straps()` builds the waistband, and `cut_garment` had cut Meshy's band at the hip
+  sides, so the top's rows at z 0.90 to 0.92 there kept the body's Spine weights and came out through the band by
+  10 to 23 mm in Jog and Crouch (`--shell-hem` moves only the hem, 3 cm under). `--band-follow H` runs the follow
+  again after the band, for the top up to H over the waist (d50: 0.02): Jog's worst 15.1 to 7.8 mm (tracked 22.2 to
+  14.9, one vertex at the right hip, z 0.904).
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'

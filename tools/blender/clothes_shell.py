@@ -554,3 +554,27 @@ def panel_fit(nbrs: list[tuple[float, float, float]]) -> float:
     for i in range(3, -1, -1):
         sol[i] = (m[i][4] - sum(m[i][j] * sol[j] for j in range(i + 1, 4))) / m[i][i]
     return sol[0]
+
+
+def join_rows(hits: list[float | None], along: list[float], blend: float) -> list[tuple[float, int | None]]:
+    """M2e: the straps' back ends glued onto the back panel. hits: per strap row (front to back) the move along its
+    normal that lays it on the panel (None: no panel under it); along: the rows' arc lengths. Returns per row
+    (share, source row): a row over the panel takes its own move fully (share 1, itself); a row in front of the
+    glued run takes the run's first row's move and weights eased out over blend m along the strap (smoothstep); the
+    rest none (0, None). Only the run joined to the back end counts (a stray hit up the strap does not)."""
+    n = len(hits)
+    first = n
+    while first > 0 and hits[first - 1] is not None:
+        first -= 1
+    out: list[tuple[float, int | None]] = [(0.0, None)] * n
+    if first == n:
+        return out
+    for i in range(first, n):
+        out[i] = (1.0, i)
+    for i in range(first - 1, -1, -1):
+        d = along[first] - along[i]
+        if blend <= 0 or d >= blend:
+            break
+        t = d / blend
+        out[i] = (1.0 - t * t * (3 - 2 * t), first)
+    return out
