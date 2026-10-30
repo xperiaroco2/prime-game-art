@@ -333,6 +333,23 @@ class InOpening(unittest.TestCase):  # E1d: the ankle's column and the vamp
             F.rim_radius((0, 0), [(0.1, 0), (0, 0.1)], 0.0)
 
 
+class CollarClamp(unittest.TestCase):  # E1d: the ankle tucked inside the opening
+    def test_under_the_rim_inside_the_outline(self):
+        self.assertAlmostEqual(F.collar_clamp(0.06, 0.05, 0.07, 0.08), 0.047)
+
+    def test_inside_stays(self):
+        self.assertEqual(F.collar_clamp(0.04, 0.05, 0.07, 0.08), 0.04)
+
+    def test_eases_out_over_the_band(self):
+        self.assertAlmostEqual(F.collar_clamp(0.06, 0.05, 0.095, 0.08), 0.06)
+        mid = F.collar_clamp(0.06, 0.05, 0.085, 0.08)
+        self.assertTrue(0.047 < mid < 0.06)
+
+    def test_band_positive(self):
+        with self.assertRaises(ValueError):
+            F.collar_clamp(0.06, 0.05, 0.07, 0.08, band=0.0)
+
+
 class PullIn(unittest.TestCase):  # E1c: the skin outside the shoe's outer shell
     def test_inside_the_innermost_wall_by_clear(self):
         self.assertAlmostEqual(F.pull_in(0.05, [0.004, 0.008], clear=0.003), 0.039)

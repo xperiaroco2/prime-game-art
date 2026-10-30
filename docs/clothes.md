@@ -482,7 +482,10 @@ above it again from Blender's rest matrices.
   gone. The foot's skin outside the outline, under its nearest rim point and with the shoe over it or within
   `--collar-vamp` (30 mm) under it, is the instep and toes under the vamp: it goes (`collar.vamp_faces_removed`; the
   teal patches through the vamp). `collar.faces_cut` reads 0 by construction (each crossing face splits in two and
-  loses its lower half).
+  loses its lower half). Where the ankle is wider than the opening, the kept skin under each vertex's nearest rim
+  point hung over the collar as teeth: every such vertex is tucked inside the outline, `--collar-clear` (3 mm) in,
+  easing out over `--collar-band` (10 mm) above the rim (`clothes_fit_geom.collar_clamp`; `collar.tucked_in`: 83 and
+  78 vertices, at most 12.7 and 28 mm on A and B).
 - **The straps' back ends** (E1d): with `--planes bones` the straps sweep on past `--shell-strap-t`'s back angle until
   their back end lies `--strap-back-below` (32 mm) under the back panel's apex (`straps.back_angle_deg`); the shorter
   body B's straps met 50 mm over her apex (a flat bar of shirt and panel under their V). A's stay at 134 degrees.

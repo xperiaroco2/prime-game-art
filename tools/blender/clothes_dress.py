@@ -258,6 +258,8 @@ def main() -> int:
                     help="the opening's outline across the floor grown by this much for the ankle's column (E1d; m)")
     ap.add_argument("--collar-vamp", type=float, default=0.03,
                     help="foot skin outside the opening with the shoe this close under it goes (E1d; m)")
+    ap.add_argument("--collar-band", type=float, default=0.01,
+                    help="the ankle's tuck inside the opening eases out over this much over the rim (E1d; m)")
     ap.add_argument("--collar-clear", type=float, default=0.003,
                     help="the pulled-in ankle skin stays this far inside the shoe's innermost wall (m)")
     ap.add_argument("--stray", type=float, default=0.08,
@@ -705,6 +707,29 @@ def main() -> int:
                 v.co = inv @ Vector((c["ctr"].x + d.x * r2, c["ctr"].y + d.y * r2, p.z))
                 pulled += 1
                 worst = max(worst, r - r2)
+        # E1d: then every kept vertex under its nearest rim point (easing out collar_band over it) is tucked inside
+        # the opening's outline across the floor, collar_clear in (the teeth over the collar where the ankle is
+        # wider than the opening; the ankle ride keeps them with the shoe in the clips)
+        tucked, most = 0, 0.0
+        for v in me.vertices:
+            p = mw @ v.co
+            c = collar.get(1.0 if p.x > 0 else -1.0)
+            if c is None or p.z > c["top"] + args.collar_band or p.z < F.plane_z(c["plane"], p.x, p.y) - 0.005:
+                continue
+            dx, dy = p.x - c["xy"][0], p.y - c["xy"][1]
+            r = math.hypot(dx, dy)
+            if r < 1e-5:
+                continue
+            _c, j, _dxy = rim_kd.find((p.x, p.y, 0.0))
+            r2 = F.collar_clamp(r, F.rim_radius(c["xy"], c["poly"], math.atan2(dy, dx)), p.z, rim_pts[j].z,
+                                args.collar_clear, args.collar_band)
+            if r2 < r - 1e-6:
+                v.co = inv @ Vector((c["xy"][0] + dx * r2 / r, c["xy"][1] + dy * r2 / r, p.z))
+                tucked += 1
+                most = max(most, r - r2)
+        me.update()
+        rep["collar"]["tucked_in"] = tucked
+        rep["collar"]["tucked_most_mm"] = round(1000 * most, 1)
         rep["collar"]["faces_cut"] = cut
         rep["collar"]["pulled_in"] = pulled
         rep["collar"]["pulled_most_mm"] = round(1000 * worst, 1)

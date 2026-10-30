@@ -392,3 +392,16 @@ def in_opening(ctr: tuple[float, float], rim_xy: list[tuple[float, float]], x: f
     column inside it is open skin; the foot outside it is under the vamp."""
     dx, dy = x - ctr[0], y - ctr[1]
     return math.hypot(dx, dy) <= rim_radius(ctr, rim_xy, math.atan2(dy, dx)) + grow
+
+
+def collar_clamp(r: float, outline: float, z: float, rim_z: float, clear: float = 0.003, band: float = 0.01) -> float:
+    """E1d: an ankle vertex's radius round the opening's centre, tucked inside the shoe: under its nearest rim point
+    (rim_z) it lies at most clear m inside the opening's outline (outline m out at its angle; the teeth that hung over
+    the collar where the ankle is wider than the opening); from rim_z up over band m the limit eases out to none."""
+    if band <= 0:
+        raise ValueError(f"band {band} must be positive")
+    most = outline - clear
+    if r <= most:
+        return r
+    t = min(1.0, max(0.0, (z - rim_z) / band))
+    return most + (r - most) * t * t * (3.0 - 2.0 * t)
