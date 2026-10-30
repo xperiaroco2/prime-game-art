@@ -76,6 +76,8 @@ class Params:
     pad: float = 0.006  # the collar's padding out
     lining: tuple[float, float] = (0.005, 0.012)  # the rolled collar's lining: in, down (m)
     blend: float = 0.025  # the crease's blend across the ball (m along u)
+    crease_gap: float = 0.003  # E1l: the crease's blend starts this far ahead of the throat's front end, so the
+                               # lacing stays rigid on Foot (it tore and crumpled across the crease in Crouch)
     eyelets: int = 5  # per side
     eyelet_r: tuple[float, float, float] = (0.0046, 0.0024, 0.0012)  # outer, inner radius, height (E1k: bigger,
                                                                       # the dark rings read at game distance)
@@ -415,6 +417,12 @@ def slot_rear(foot: Foot, p: Params) -> float:
 
 def throat_u(foot: Foot, p: Params) -> float:
     return foot.ball_u - p.throat
+
+
+def crease_u(foot: Foot, p: Params) -> float:
+    """E1l: the toe crease's middle (the Toes weight's half point, m along u): its blend starts crease_gap ahead of
+    the throat's front end, never behind the ball."""
+    return max(foot.ball_u, throat_u(foot, p) + p.blend / 2 + p.crease_gap)
 
 
 def slot_curve(foot: Foot, p: Params) -> list[Pt2]:

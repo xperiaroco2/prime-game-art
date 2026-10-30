@@ -155,6 +155,15 @@ class BendTest(unittest.TestCase):
         self.assertEqual(G.toes_weight(0.24, 0.22, 0.025), 1.0)
         self.assertAlmostEqual(G.toes_weight(0.22, 0.22, 0.025), 0.5)
 
+    def test_crease_starts_ahead_of_the_throat(self):
+        foot, p = G.Foot([], ball_u=0.22, ankle_u=0.05, ankle_z=0.11), G.Params()
+        c = G.crease_u(foot, p)
+        self.assertGreaterEqual(c, foot.ball_u)
+        self.assertEqual(G.toes_weight(G.throat_u(foot, p) + p.crease_gap, c, p.blend), 0.0)  # the lacing: Foot only
+        self.assertEqual(G.toes_weight(c + p.blend, c, p.blend), 1.0)
+        far = G.Params(throat=0.05)  # a throat far behind the ball: the crease stays at the ball
+        self.assertEqual(G.crease_u(foot, far), foot.ball_u)
+
     def test_soft_cap(self):
         self.assertEqual(G.soft_cap_deg(20, 32, 6), 20)
         self.assertLess(G.soft_cap_deg(57.5, 32, 6), 32)

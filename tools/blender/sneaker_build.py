@@ -82,7 +82,7 @@ def shoes(body, arm, params: G.Params | None = None):
                 f, uv = f[::-1], uv[::-1]
             faces.append(tuple(base + i for i in f))
             uvs.append(uv)
-        groups += [(side, G.toes_weight(q[0], foot.ball_u, params.blend)) for q in sh.verts]
+        groups += [(side, G.toes_weight(q[0], G.crease_u(foot, params), params.blend)) for q in sh.verts]
     me = bpy.data.meshes.new("shoes")
     me.from_pydata(verts, [], faces)
     me.update()

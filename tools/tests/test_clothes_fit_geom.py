@@ -429,6 +429,31 @@ class HemRest(unittest.TestCase):
         with self.assertRaises(ValueError):
             F.hem_shift(0.1, 0.1, 0.01, ease=0)
 
+    def test_axis_dist(self):
+        head, tail = (0.1, 0.0, 0.5), (0.1, 0.1, 0.1)  # leaning: the axis's y grows downward
+        self.assertAlmostEqual(F.axis_dist(head, tail, (0.1, 0.0, 0.5)), 0.0)
+        self.assertAlmostEqual(F.axis_dist(head, tail, (0.1, 0.1, 0.1)), 0.0)
+        self.assertAlmostEqual(F.axis_dist(head, tail, (0.13, 0.05, 0.3)), 0.03)  # at its own height
+        self.assertAlmostEqual(F.axis_dist(head, tail, (0.1, 0.15, 0.0)), 0.025)  # extended under the tail
+        self.assertAlmostEqual(F.axis_dist((0, 0, 0.2), (0.1, 0, 0.2), (0.03, 0.04, 0.2)), 0.05)  # level: from head
+
+    def test_soft_flat(self):
+        self.assertEqual(F.soft_flat(-0.02, 1.0), 0.0)
+        self.assertAlmostEqual(F.soft_flat(0.03, 0.5), 0.015)
+        self.assertAlmostEqual(F.soft_flat(0.0, 1.0), 0.0025)  # the ramp's middle: (soft)^2 / (4 soft)
+        self.assertAlmostEqual(F.soft_flat(0.01, 1.0), 0.01)  # meets k * ahead at +soft
+        e = 1e-6  # no crease: the slope is continuous at both ends of the ramp
+        self.assertAlmostEqual((F.soft_flat(0.01 + e, 1.0) - F.soft_flat(0.01 - e, 1.0)) / (2 * e), 1.0, places=3)
+        self.assertAlmostEqual((F.soft_flat(-0.01 + e, 1.0) - F.soft_flat(-0.01 - e, 1.0)) / (2 * e), 0.0, places=3)
+        self.assertEqual(F.soft_flat(0.02, 1.0, soft=0), 0.02)
+
+    def test_near_ankle(self):
+        self.assertTrue(F.near_ankle(0.12, 0.05, 0.08, 0.2))
+        self.assertFalse(F.near_ankle(0.07, 0.05, 0.08, 0.2))  # under the rim's lowest point: the reach decides
+        self.assertFalse(F.near_ankle(0.21, 0.05, 0.08, 0.2))  # over the region's top
+        self.assertFalse(F.near_ankle(0.12, 0.09, 0.08, 0.2))  # too far from the axis
+        self.assertTrue(F.near_ankle(0.12, 0.09, 0.08, 0.2, radius=0.1))
+
 
 if __name__ == "__main__":
     unittest.main()

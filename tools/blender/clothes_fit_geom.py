@@ -406,6 +406,35 @@ def hem_shift(z: float, hem_z: float, drop: float, hold: float = 0.07, ease: flo
     return drop * (1.0 - t * t * (3.0 - 2.0 * t))
 
 
+def axis_dist(head: Vec, tail: Vec, p: Vec) -> float:
+    """E1l: p's horizontal distance (m) from a leg's axis (the line through the LowerLeg bone's head and tail,
+    extended), taken at p's own height; a level bone gives the distance from its head."""
+    dz = tail[2] - head[2]
+    k = (p[2] - head[2]) / dz if abs(dz) > 1e-6 else 0.0
+    ax, ay = head[0] + (tail[0] - head[0]) * k, head[1] + (tail[1] - head[1]) * k
+    return math.hypot(p[0] - ax, p[1] - ay)
+
+
+def near_ankle(z: float, axis_d: float, rim_low: float, top: float, radius: float = 0.08) -> bool:
+    """E1l: the collar's region also holds the ankle's skin over the rim's lowest point and within radius m of the
+    leg's axis (up to top): the rim's xy reach missed the forward-leaning ankle front, whose faces the cover rays then
+    cut one by one into a jagged edge inside the turn-up."""
+    return rim_low < z <= top and axis_d <= radius
+
+
+def soft_flat(ahead: float, k: float, soft: float = 0.01) -> float:
+    """E1l: how far (m) a foot or ankle vertex ahead (m) of the tongue's back plane moves back onto it, by share k:
+    k * ahead well ahead of the plane, none well behind it, and a quadratic ramp across +-soft between, so the
+    flattened front meets the round ankle with no crease (the hard max(0, ahead) drew a vertical edge on the ankle)."""
+    if soft <= 0:
+        return k * max(0.0, ahead)
+    if ahead <= -soft:
+        return 0.0
+    if ahead >= soft:
+        return k * ahead
+    return k * (ahead + soft) ** 2 / (4.0 * soft)
+
+
 def collar_clamp(r: float, outline: float, z: float, rim_z: float, clear: float = 0.003, band: float = 0.01) -> float:
     """E1d, E1e: an ankle vertex's radius round the leg's axis, shrunk inside the shoe: under its nearest rim point
     (rim_z) it lies at most clear m inside the shoe's inner wall (outline m out from the axis toward it); from rim_z

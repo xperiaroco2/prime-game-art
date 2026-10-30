@@ -464,6 +464,30 @@ throat tear in Crouch and teal skin at the ankle.
 Raw output: `2026-10-30-alien-dress-e1/d36/` (the probes, `sheet/s13`, the first low-collar dress) and `d37/` (the
 final); drivers `tools/out/dress/e1k/`.
 
+### The close-up leftovers (E1l)
+- **Specks on the collar (partly fixed).** Skin with the shoe's wall beside it at its own height (a horizontal ray
+  from the leg's axis meets the shoe) now counts as under the rim, wherever its nearest rim point in xy lies
+  (`--collar-beside`, on by default). The collar's height changes fast between the heel and the side, and that skin
+  was eased out through the padding. The speck probe (`tools/out/dress/e1l/speck_probe.py`) found 20 face points
+  per leg on the chameleon, 13 on the axolotl, at z 0.10 to 0.11; the d39 close-ups show the outside clean and small
+  remnants at the back.
+- **The ankle's front edge (not fixed).** Two leads were tried and neither moved it:
+  - the collar region also takes the ankle's skin within `--collar-ankle` (8 cm) of the leg's axis. The rim's xy
+    reach (12 to 13 cm) already held all of it: 0 vertices added;
+  - the instep's flattening onto the tongue's back now eases out over `--front-band` (1.5 cm, was the 4.5 cm
+    `collar_band`) with a soft ramp across the plane (`clothes_fit_geom.soft_flat`, `--front-soft` 1 cm).
+
+  The probes (`fold_probe.py`, `front_probe.py`) find no open edge and no inverted face on the ankle between the
+  collar and the turn-up, and from the front they meet only the shoe up to z 0.12 and the skin from 0.12 to the
+  turn-up. So the vertical edge in the L front close-up is probably the turn-up's inside beside the ankle, not a cut
+  in the skin. That is not proven.
+- **The toe crease ahead of the lacing (no visible change).** The shoe's Toes weight's blend now starts
+  `crease_gap` (3 mm) ahead of the throat's front end (`sneaker_geom.crease_u`), never behind the ball, so the
+  lacing stays on Foot. The Crouch tear beside the laces and the crumpled laces still show in d39.
+
+Raw output: `2026-10-30-alien-dress-e1/d38/` (the specks and the region) and `d39/` (the final); drivers and probes
+`tools/out/dress/e1l/`.
+
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
 
