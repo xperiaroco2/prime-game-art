@@ -439,7 +439,7 @@ keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 deg
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
 
-## Dressing D3's bodies (E1 to E1g, art #196)
+## Dressing D3's bodies (E1 to E1h, art #196)
 - **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
   head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
   smoothing; the 30 mm smoothstep band stays the default for the old bodies.
@@ -526,6 +526,28 @@ above it again from Blender's rest matrices.
   rings (`--seat-open-rings`, d17 and d18) brought the flaps back; with the relax (d20, `-0.3` in d20b alike) the
   flaps are gone but the pockets' stitched texels stay stretched over the seat. A clean seat needs new texels there
   (a re-projected bake), not another vertex rule.
+- **Plain denim texels** (E1h): Meshy's layered side opening under the hips' side buttons is baked as a light,
+  streaked, crumpled patch (a dark stain on the hip at game distance, a chrome-like hollow in Crouch), and the
+  axolotl's re-laid seat and front pockets carry stretched stitch texels. These are texel faults, so
+  `clothes_top.plain_denim` (after the straps) gives them new texels without moving a vertex: each `--plain` box
+  (`x0,x1,y0,y1,z0,z1` for |x|, bind pose; `;` between boxes) on each side is a region of denim faces (the straps'
+  and band's patch and the bronze left out), re-laid in UV on a vertical cylinder round the waist's axis
+  (`--band-axis-y`; `clothes_shell.cyl_coords`) at the garment's median texel density (about 1,100 texels per metre;
+  `--plain-density` scales it). All regions share one free window of the maps filled with the straps' plain denim
+  rectangle (`--strap-uv`) repeated mirrored (`clothes_shell.mirror_tile`; the normal map's x or y turned over in a
+  mirrored copy), in the diffuse, roughness and normal maps alike; with no window free the density steps down by
+  15% up to three times. The boxes: the chameleon `0.11,0.25,-0.07,0.09,0.74,0.99` (the hip sides); the axolotl
+  the hip sides `0.11,0.25,-0.04,0.05,0.72,0.975`, the seat `0,0.25,0.05,0.25,0.72,0.975` and the front pockets
+  `0.05,0.25,-0.25,-0.04,0.80,0.975`. Her back and front pockets' outlines go with it: they could not be kept clean.
+  The Meshy side buttons become denim bumps; the side's crumpled geometry stays. The mirrored repeat of the small
+  plain rectangle (44 x 93 texels) shows as a faint zigzag moire over her seat in Godot (Crouch, d23): a larger plain
+  source would remove it.
+- **The bib pocket's white holes in Jog** (E1h, not fixed): two white teardrops at the chameleon's bib pocket bottom
+  in Godot's Jog at 0 s. `--shell-hide-above` (the top's faces under the panels may go from that height over the
+  waist, not only above `--shell-full`) was tried in d23 and changed nothing there, while it raised the axolotl's
+  body pokes in Jog, Sprint and Strafe (2 to 8 vertices, up to 6 mm); it stays off. The white is most likely the
+  background through open holes in Meshy's layered pocket bottom, with the top and the body removed under the bib;
+  `fill_holes` only works under the waist. Next: fill those loops above the waist, or keep the top under that spot.
 - **The hips' spikes** (E1g): `clothes_top.despike` moves a garment vertex under the waist that stands over
   `--despike` (15 mm) out of its neighbours' mean, along the body's normal, to that mean (`clothes_fit_geom.spike_out`;
   the axolotl's front-hip spike, d16).
