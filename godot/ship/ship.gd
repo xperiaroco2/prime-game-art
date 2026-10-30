@@ -354,6 +354,8 @@ func _environment() -> void:
 			omni.light_cull_mask = OUTSIDE_LAYER
 		if l.size() > 8 and str(l[8]) in ["nav", "nav_tail"]:
 			_nav.append([omni, omni.light_energy, str(l[8]) == "nav_tail"])
+		if l.size() > 8 and str(l[8]) in _req.get("clearing_lamps", []):  # art #356: export_scene.gd's Clearing
+			omni.set_meta("clearing", true)
 		root.add_child(omni)
 
 
@@ -399,6 +401,7 @@ func _dress(ship: Node3D) -> int:
 	var cells: Dictionary = {}
 	var seen: Dictionary = {}
 	var mats: Dictionary = (_req["light"] as Dictionary).get("mats", {})
+	var clearing: Array = _req.get("clearing", [])  # art #356: a cell lit only by clearing pieces is the clearing's
 	var stack: Array = [ship]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
@@ -437,10 +440,13 @@ func _dress(ship: Node3D) -> int:
 				var inside: bool = mi.layers != OUTSIDE_LAYER
 				var key: String = "%d_%d_%d_%s_%s" % [floori(c.x / LIGHT_CELL_M), floori(c.y / LIGHT_CELL_M),
 					floori(c.z / LIGHT_CELL_M), bm.emission.to_html(false), inside]
+				var of_clearing: bool = not clearing.is_empty() and _piece_id(mi, ship) in clearing
 				if not cells.has(key):
 					cells[key] = [Vector3.ZERO, 0.0, bm.emission, 0.0, float(_entry(mats, bm.resource_name).get("rr", 1.0)),
-						inside or _entry(mats, bm.resource_name).get("cull", "") == "inside"]
+						inside or _entry(mats, bm.resource_name).get("cull", "") == "inside", of_clearing, {}]
 				var cell: Array = cells[key]
+				(cell[7] as Dictionary)[_piece_id(mi, ship)] = true  # art #356: its pieces (a closed pose hides them)
+				cell[6] = bool(cell[6]) and of_clearing
 				cell[0] = (cell[0] as Vector3) + c * area
 				cell[1] = float(cell[1]) + area
 				cell[3] = maxf(float(cell[3]), float(seen[bm]))
@@ -457,6 +463,9 @@ func _dress(ship: Node3D) -> int:
 		omni.omni_attenuation = 1.6
 		if bool(cell[5]):  # an inside strip lights only the inside (it shone through the smooth skin's top, inside-2)
 			omni.light_cull_mask = INSIDE_LAYER
+		if bool(cell[6]):
+			omni.set_meta("clearing", true)
+		omni.set_meta("pieces", (cell[7] as Dictionary).keys())
 		root.add_child(omni)
 		dump.append([_r3(omni.position), snappedf(omni.light_energy, 0.001), snappedf(omni.omni_range, 0.001),
 			omni.light_color.to_html(false)])
@@ -467,6 +476,216 @@ func _dress(ship: Node3D) -> int:
 	for n: Node in ship.find_children("station_vent_*_heat", "Node3D", true, false):
 		(n as Node3D).visible = false
 	return mini(list.size(), MAX_LIGHTS) + vents
+
+
+## The placed piece's id of a node under ship (its child "<id>_<n>").
+func _piece_id(n: Node, ship: Node3D) -> String:
+	while n != null and n.get_parent() != ship:
+		n = n.get_parent()
+	if n == null:
+		return ""
+	var name: String = String(n.name)
+	return name.substr(0, name.rfind("_"))
+
+
+## The closed nose's blockout variants (art #356, the lobby's docked ship; ship_layout.closed_poses, built only when a
+## shot asks for one): per variant a hidden Node3D "Closed_<name>" of CSG parts on the outside layer. A part: "kind"
+## "prism" (a plan polygon [[x, h]...] in the plane y = "y", extruded aft by "depth"; "ring" d: only its band d wide
+## inside the outline; "hole" [x, h, r]: a round hole cut through it), "box" ("at" [x, y, h], "size" [x, y, h],
+## "pitch" deg about x) or "iris" (round 2: a petal shutter at "centre" [x, h] of radius "r" in the plane y, "blades"
+## blades swirled by "swirl" deg, each "depth" thick and every other one "step" proud, "seam" apart over a dark back,
+## a glowing disc "glow" [r, energy] behind the centre, a ring "rim" [width, METALS name] round it); "inset" d shrinks
+## a prism's polygon by d (grows it if negative), "yaw" deg turns a plain prism about the vertical at plan x "pivot";
+## "mat" a METALS name ("mat2" the iris's every other blade), or
+## "rgb" with "emit" (an emission energy), "rough" and "metal".
+func _closed_build(ship: Node3D) -> void:
+	var poses: Dictionary = _req.get("closed", {})
+	for name: String in poses:
+		var group: Node3D = Node3D.new()
+		group.name = "Closed_%s" % name
+		group.visible = false
+		ship.get_parent().add_child(group)
+		for part: Dictionary in poses[name]["parts"]:
+			var node: GeometryInstance3D = _closed_part(part)
+			node.layers = OUTSIDE_LAYER
+			group.add_child(node)
+
+
+func _closed_part(part: Dictionary) -> GeometryInstance3D:
+	var mat: Material
+	if part.has("mat"):
+		mat = _metal(str(part["mat"]))
+	else:
+		var sm: StandardMaterial3D = StandardMaterial3D.new()
+		var c: Array = part.get("rgb", [0.1, 0.1, 0.1])
+		sm.albedo_color = Color(float(c[0]), float(c[1]), float(c[2]))
+		sm.roughness = float(part.get("rough", 0.5))
+		sm.metallic = float(part.get("metal", 0.3))
+		if float(part.get("emit", 0.0)) > 0.0:
+			sm.emission_enabled = true
+			sm.emission = sm.albedo_color
+			sm.emission_energy_multiplier = float(part["emit"])
+		mat = sm
+	if str(part.get("kind", "box")) == "iris":
+		return _closed_iris(part, mat)
+	if str(part.get("kind", "box")) == "box":
+		var box: CSGBox3D = CSGBox3D.new()
+		var sz: Array = part["size"]
+		box.size = Vector3(float(sz[0]), float(sz[2]), float(sz[1]))
+		var at: Array = part["at"]
+		box.position = Vector3(float(at[0]), float(at[2]), float(at[1]))
+		box.rotation_degrees.x = float(part.get("pitch", 0.0))
+		box.material = mat
+		return box
+	var poly: PackedVector2Array = PackedVector2Array()
+	for q: Array in part["poly"]:
+		poly.append(Vector2(float(q[0]), float(q[1])))
+	if float(part.get("inset", 0.0)) != 0.0:  # round 2: the polygon shrunk (grown if negative) by inset, mitred
+		poly = Geometry2D.offset_polygon(poly, -float(part["inset"]), Geometry2D.JOIN_MITER)[0]
+	var depth: float = float(part["depth"])
+	var outer: CSGPolygon3D = CSGPolygon3D.new()
+	outer.polygon = poly
+	outer.depth = depth
+	outer.position = Vector3(0, 0, float(part["y"]) + depth)  # extruded along -z: from y aft by depth
+	outer.material = mat
+	if part.has("hole"):  # a round hole through the plate (the iris's surround)
+		var hc: Array = part["hole"]
+		var combo_h: CSGCombiner3D = CSGCombiner3D.new()
+		outer.position = Vector3.ZERO
+		combo_h.position = Vector3(0, 0, float(part["y"]) + depth)
+		combo_h.add_child(outer)
+		var hole: CSGPolygon3D = CSGPolygon3D.new()
+		hole.polygon = _circle(Vector2(float(hc[0]), float(hc[1])), float(hc[2]), 64)
+		hole.depth = depth + 0.02
+		hole.position = Vector3(0, 0, 0.01)
+		hole.operation = CSGShape3D.OPERATION_SUBTRACTION
+		hole.material = mat
+		combo_h.add_child(hole)
+		return combo_h
+	if not part.has("ring"):
+		if part.has("yaw"):  # round 2: turned about the vertical line at plan x "pivot" (its outer edge stays put)
+			var piv: Vector3 = Vector3(float(part.get("pivot", 0.0)), 0, float(part["y"]))
+			outer.rotation_degrees.y = float(part["yaw"])
+			outer.position = outer.basis * (outer.position - piv) + piv
+		return outer
+	var combo: CSGCombiner3D = CSGCombiner3D.new()
+	outer.position = Vector3.ZERO
+	combo.position = Vector3(0, 0, float(part["y"]) + depth)
+	combo.add_child(outer)
+	var shrunk: Array = Geometry2D.offset_polygon(poly, -float(part["ring"]))
+	if not shrunk.is_empty():
+		var inner: CSGPolygon3D = CSGPolygon3D.new()
+		inner.polygon = shrunk[0]
+		inner.depth = depth + 0.02
+		inner.position = Vector3(0, 0, 0.01)
+		inner.operation = CSGShape3D.OPERATION_SUBTRACTION
+		inner.material = mat
+		combo.add_child(inner)
+	return combo
+
+
+## A round polygon of n points.
+func _circle(c: Vector2, r: float, n: int) -> PackedVector2Array:
+	var out: PackedVector2Array = PackedVector2Array()
+	for i: int in n:
+		out.append(c + Vector2.from_angle(TAU * i / n) * r)
+	return out
+
+
+## The iris (round 2, variant C): a dark back disc, a glowing disc behind the centre, the blades between swirled seams.
+func _closed_iris(part: Dictionary, mat: Material) -> GeometryInstance3D:
+	var group: CSGCombiner3D = CSGCombiner3D.new()  # (a GeometryInstance3D: _closed_build sets its layers)
+	var c: Vector2 = Vector2(float(part["centre"][0]), float(part["centre"][1]))
+	var r: float = float(part["r"])
+	var y: float = float(part["y"])
+	var depth: float = float(part.get("depth", 0.05))
+	var n: int = int(part.get("blades", 8))
+	var swirl: float = deg_to_rad(float(part.get("swirl", 55.0)))
+	var mat2: Material = _metal(str(part["mat2"])) if part.has("mat2") else mat
+	var back: CSGPolygon3D = CSGPolygon3D.new()
+	back.polygon = _circle(c, r + 0.01, 64)
+	back.depth = 0.02
+	back.position = Vector3(0, 0, y + depth + 0.03)
+	back.material = _metal("ext_seam")
+	group.add_child(back)
+	if part.has("glow"):
+		var g: Array = part["glow"]
+		var gm: StandardMaterial3D = StandardMaterial3D.new()
+		gm.albedo_color = Color(0.2, 0.9, 1.0)
+		gm.emission_enabled = true
+		gm.emission = gm.albedo_color
+		gm.emission_energy_multiplier = float(g[1])
+		var disc: CSGPolygon3D = CSGPolygon3D.new()
+		disc.polygon = _circle(c, float(g[0]), 32)
+		disc.depth = 0.01
+		disc.position = Vector3(0, 0, y + depth + 0.015)
+		disc.material = gm
+		group.add_child(disc)
+	if part.has("rim"):
+		var rim: CSGCombiner3D = CSGCombiner3D.new()
+		rim.position = Vector3(0, 0, y + depth)
+		var ro: CSGPolygon3D = CSGPolygon3D.new()
+		ro.polygon = _circle(c, r + float(part["rim"][0]), 64)
+		ro.depth = depth + 0.06
+		ro.position = Vector3(0, 0, 0.02)
+		ro.material = _metal(str(part["rim"][1]))
+		rim.add_child(ro)
+		var ri: CSGPolygon3D = CSGPolygon3D.new()
+		ri.polygon = _circle(c, r, 64)
+		ri.depth = depth + 0.14
+		ri.position = Vector3(0, 0, 0.07)
+		ri.operation = CSGShape3D.OPERATION_SUBTRACTION
+		rim.add_child(ri)
+		group.add_child(rim)
+	var steps: int = 10
+	for k: int in n:
+		var a0: float = TAU * k / n
+		var a1: float = TAU * (k + 1) / n
+		var poly: PackedVector2Array = PackedVector2Array()
+		for i: int in steps + 1:  # out along seam k
+			var t: float = float(i) / steps
+			poly.append(c + Vector2.from_angle(a0 + swirl * t) * (r * t))
+		for i: int in range(1, steps):  # the rim arc
+			poly.append(c + Vector2.from_angle(a0 + swirl + (a1 - a0) * i / steps) * r)
+		for i: int in range(steps, 0, -1):  # back in along seam k + 1
+			var t: float = float(i) / steps
+			poly.append(c + Vector2.from_angle(a1 + swirl * t) * (r * t))
+		var shrunk: Array = Geometry2D.offset_polygon(poly, -float(part.get("seam", 0.012)) / 2.0)
+		if shrunk.is_empty():
+			continue
+		var blade: CSGPolygon3D = CSGPolygon3D.new()
+		blade.polygon = shrunk[0]
+		var proud: float = float(part.get("step", 0.0)) if k % 2 == 0 else 0.0
+		blade.depth = depth + proud
+		blade.position = Vector3(0, 0, y + depth)
+		blade.material = mat if k % 2 == 0 else mat2
+		group.add_child(blade)
+	return group
+
+
+## Shows one closed variant (or none: the open ship) and hides the pieces it replaces: the pieces named in "hide" (and
+## the strip lights only they make), and every placement and lamp within r of a "hide_at" [x, y, r] in plan.
+func _closed_pose(ship: Node3D, name: String) -> void:
+	var poses: Dictionary = _req.get("closed", {})
+	if poses.is_empty():
+		return
+	var hide: Array = poses[name]["hide"] if poses.has(name) else []
+	var spots: Array = poses[name].get("hide_at", []) if poses.has(name) else []
+	var near: Callable = func(p: Vector3) -> bool:
+		for q: Array in spots:
+			if Vector2(p.x - float(q[0]), p.z - float(q[1])).length() < float(q[2]):
+				return true
+		return false
+	for n: Node in ship.get_children():
+		var s: String = String(n.name)
+		(n as Node3D).visible = not (s.substr(0, s.rfind("_")) in hide) and not near.call((n as Node3D).position)
+	for n: Node in root.get_children():
+		if n is OmniLight3D or n is SpotLight3D:
+			var lit: Array = (n as Light3D).get_meta("pieces", [])
+			var gone: bool = not lit.is_empty() and lit.all(func(pid: String) -> bool: return pid in hide)
+			(n as Light3D).visible = not gone and not near.call((n as Light3D).position)
+	for other: String in poses:
+		(ship.get_parent().get_node("Closed_%s" % other) as Node3D).visible = other == name
 
 
 ## Every mesh under n on the render layers bits.
@@ -544,6 +763,7 @@ func _shoot() -> void:
 	var lights: int = _dress(ship)
 	_stations(ship)
 	_probes()
+	_closed_build(ship)
 	print("SHIP look: %d emissive lights" % lights)
 	if nav_blink:
 		process_frame.connect(_nav_tick)
@@ -569,6 +789,7 @@ func _shoot() -> void:
 		_camera.look_at_from_position(_v(v[2]), _v(v[3]), UP)
 		_ab(v[5] if v.size() > 5 else {})
 		_gills(ship, (v[5] as Dictionary).get("gills", {}) if v.size() > 5 and v[5] is Dictionary else {})
+		_closed_pose(ship, str((v[5] as Dictionary).get("closed", "")) if v.size() > 5 and v[5] is Dictionary else "")
 		images[v[0]] = await _shot(v[0], v[1], shots)
 		_ab({})
 	if _req.has("top"):  # (a --views prefix set alone has no plan view)
@@ -611,7 +832,11 @@ func _shoot() -> void:
 	var names: Array = images.keys()
 	for i: int in range(0, names.size(), 3):
 		rows.append(names.slice(i, i + 3).map(func(n: String) -> Image: return images[n]))
-	_save(_sheet(rows), _out.path_join("sheet.png"))
+	var sheet: Image = _sheet(rows)
+	if _req.has("sheet_w") and sheet.get_width() > int(_req["sheet_w"]):  # art #356: a sheet sized for review
+		sheet.resize(int(_req["sheet_w"]), int(sheet.get_height() * float(_req["sheet_w"]) / sheet.get_width()),
+			Image.INTERPOLATE_LANCZOS)
+	_save(sheet, _out.path_join("sheet.png"))
 	_write("shots.json", {"shots": shots})
 	print("SHIP saved %s" % _out)
 	quit(0)

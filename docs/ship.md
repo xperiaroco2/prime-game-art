@@ -1322,15 +1322,15 @@ writes the ship's game-ready package (for prime-game#1225 and #1285) from `layou
 (`<raw>/ship/v5/pieces`) into `DIR` (the raw folder's `ship/v5/export/v<n>/`, never git), shaped like the game's tree
 (its ARCHITECTURE 11.1), as the House's export (`docs/house.md` "The export"):
 
-- `assets/environment/ship/`: the 168 pieces' GLBs, each with a minimal `.import` (11.2's options); `metal.gdshader`
+- `assets/environment/ship/`: the pieces' GLBs (189 at v3, 2026-10-30), each with a minimal `.import` (11.2's options); `metal.gdshader`
   and `night_sky.gdshader` (copies of `godot/ship/`'s), `console_metal.gdshader` (`godot/console/`'s, the lens
   bronze's shader); `materials/metal_<name>.tres` (one per shared metal of
   `ship.gd` METALS), `night_sky.tres`, `night_env.tres` (the night environment: AgX, glow, SSAO, SSIL, fog, the star
   sky); the vents' normal maps the GLBs' import extracts (`station_vent_<e|w>_vent_a_normal.png`). Data only.
-- `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the 1092
+- `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the ship's
   placements as GLB instances), `Environment` (the WorldEnvironment), `Lights` (the moon, the key, the layout's lamps
-  and the glow cells' omni lights, as `ship.gd` places them), `Probes` (one reflection probe per room), `Ground` (the
-  world boundary under the clearing), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
+  and the glow cells' omni lights, as `ship.gd` places them), `Probes` (one reflection probe per room), `Clearing`
+  (art #356, below: the clearing's pieces, its lights and `Ground`, the world boundary), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
   `SocketE`, `SocketW`, `SocketFE`, `SocketFW`, `BreakerE`, `BreakerW`, `RenewerE`, `RenewerW`; on the deck, +Z the
   spot's normal, the console turned 180 degrees; `metadata/spot`, `package`, `kind`) and `Markers/Spawn` (the walk's
   first point at the ramp's foot, facing the ship).
@@ -1355,6 +1355,43 @@ on every colliding piece; no script on any node; the station spots; the 1.36 m c
 the package in an off-screen window: the mean absolute difference (0..255, at most 2.0) and the share of pixels off
 by more than 16, with each view's draw calls, primitives and GPU ms. `DIR/_check/report.json` holds the numbers;
 `assets/environment/ship/` commits the manifest (the files' hashes), `report.json` and `HANDOFF.md`, not the GLBs.
+
+### The lobby: the Clearing node and the closed nose (art #356, 2026-10-30)
+
+The lobby hall instances the package and never forks it; it shows the ship docked and closed (the engineer's word),
+without the clearing. So the export puts the clearing under one node, `Ship/Clearing`:
+
+- `Clearing/Pieces`: every placement of a piece whose builder is in `ship_layout.CLEARING_BUILDERS` (the ground, the
+  rocks and rock piles, the pines, tufts, bushes, ferns, moss and litter, logs, stumps, the dirt patch and path, the
+  ground lamps, the party posts and string; `ship_layout.clearing_ids`), moved there from `Pieces` by
+  `export_scene.gd` `_clearing`; still editable instances.
+- `Clearing/Lights`: the lamp rows of the groups `ship_layout.CLEARING_LAMPS` (`pool`: the ground lamps' pools, `party`,
+  `out`: the treeline camp lights and the lamp in front of the ramp, `fill`: the pines' moonlight) and the glow cells'
+  omni lights that only clearing pieces lit (the party bulbs); `ship.gd` marks them (metadata `clearing`, removed
+  before the save) from the request's `clearing` and `clearing_lamps`.
+- `Clearing/Ground`: the world boundary (it was `Ship/Ground`).
+
+The ship's own outside light (the landing and edge spots on the ground, the rim, the key, the tail lamp) stays under
+`Lights`. The lobby frees the node; hiding it leaves `Ground`'s collider on. There is no root script (the package
+carries none), so the switch is the node. The export's check (`_ship_export.clearing_problems`) refuses a `Clearing`
+that differs from the layout's clearing placements, a clearing piece under `Pieces` or a ship piece under
+`Clearing`; `tools/tests/test_ship_lobby.py` keeps the builder list complete (every `ship_hull_clearing` builder),
+the clearing outside, grounded and collision-free, and the clearing lamps outside the hull or on the ground.
+
+**The closed nose** (the look is the engineer's pick; no design drawing): `exterior.toml` `[closed_nose.<name>]` holds
+quick blockout variants, each the pieces it hides (`hide`: the ramp, its lights and its hazard stripes; a strip light
+made only by hidden pieces goes too), the plan spots `hide_at` [x, y, r] round which every placement and lamp goes (the
+ramp's four ground lamps), and CSG parts: a prism of a polygon in the tunnel's front plane (`ring` its band only,
+`inset` shrunk or grown, `hole` a round hole, `yaw` turned about a vertical line at `pivot`), a box, or an `iris`
+(a petal shutter: blades swirled between seams over a dark back, every other one stepped proud, a glow disc behind the
+centre, a rim); a METALS name or an emissive colour. They are off by default: a `ship --shoot DIR --views FILE` row
+whose 6th element is `{"closed": "<name>"}` builds them (`ship.gd` `_closed_build`, `_closed_pose`) and shows that one
+(`""` the open ship); the sheet then holds the review's views alone (no plan or top views), `CLOSED_SHEET_W` (1280) px
+wide. Round 1 (`<raw>/ship/v5/lobby/closed-1/`: flush silver seal, two-leaf door, silver plug) read as a pale garage
+door with the ramp's stripes leading up to it. Round 2 (`<raw>/ship/v5/lobby/closed-2/`): A a sealed skin of hull
+plates in a shallow prow, a fine seam and a thin cyan line round; B the raised ramp as the door, its ribbed dark
+underside out in a bevelled frame; C a dark recessed iris with a cyan glow at its centre. After his pick the variant is
+built as pieces and written by the export as a pose.
 
 ## Lens room C, step 1: the charger's alcove and the east lounge (2026-10-28)
 
