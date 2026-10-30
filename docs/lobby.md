@@ -56,7 +56,7 @@ point under the ship; the views' eyes inside. The ship: its footprint is the con
 (`ship_hull_shape.outline("P")`), each placed pod's bounds and the tail (the `skin_top` piece's bounds aft of the
 outline, as wide as the pods) from art #263's `build_report.json`, moved by the origin; it keeps at least 2 m to every
 spawn and 3 m to every wall, the window and every door's opening, and the floor ring reaches no more than 1 m inside
-its outline. The text plan goes to `<raw>/<raw_dir>/plan/plan.txt` (`raw_dir` in `hall.toml`: step 1 `lobby/hall/v1`, step 2 `lobby/hall/v2`, step 2b `lobby/hall/v3`, step 2c `lobby/hall/v4`).
+its outline. The text plan goes to `<raw>/<raw_dir>/plan/plan.txt` (`raw_dir` in `hall.toml`: step 1 `lobby/hall/v1`, step 2 `lobby/hall/v2`, step 2b `lobby/hall/v3`, step 2c `lobby/hall/v4`, step 3 `lobby/hall/v5`).
 
 Measured (step 1): the spawns 2.04 m from the ship (the mid pod's end); the ship 6.95 m from the west and east walls,
 5.90 m from the north wall, 12.04 m from the window; D1/D2 14.58 m, D3/D4 8.83 m.
@@ -313,6 +313,72 @@ emissive surfaces). `--godot`: 37 pieces at Blender's sizes, 60 colliders; the w
 blocks hold (D1-D4 0.44 m, the corridor's end 0.91 m short of their walls). Shots: 25-204 draw calls, 34-106k
 primitives.
 
+## Step 3: less copper, light wear, the critic's details (the Earth stopped)
+
+The engineer on step 2c (2026-10-30): S4 stays; less copper; light wear; then the window's Earth with these fixes.
+The raw output is `<raw>/lobby/hall/v5/` (v1-v4 stay).
+
+**The Earth is stopped, not built.** The brief named NASA's free imagery (Black Marble, Blue Marble). NASA's media
+are "generally not subject to copyright in the United States" (https://www.nasa.gov/nasa-brand-center/images-and-media/),
+with conditions (no implied endorsement, no NASA insignia), but that is not one of the licences this repo allows
+(`docs/manifest.md`: `CC0-1.0`, `CC-BY-4.0`, `owned-paid-output`, `own-work`, `restricted`), and a licence outside
+the allowlist is the engineer's call (`CLAUDE.md`, "Decisions"). Nothing was downloaded; no source record, no sky
+shader, no Earth grid (E1-E3) yet. The window still shows step 1's dark blue placeholder.
+
+Less copper (`lobby_build.py`, `hall.toml`):
+
+- A new material `lobby_metal`: the frame colour at 0.78, the scheme's metallic, roughness 0.4: the dark
+  graphite-teal metal. The door frames' inner and outer bands, the threshold, the lamp housings, the lintels'
+  grilles and bolts, the arch's portal bands and the corridor's nested frames, the pilasters' plinths, capitals, face
+  plates and upper plates are in it, and so are the walls' skirting, cornice, frieze lips, vents and the bays'
+  frames (`wall_trim`).
+- Copper is left as thin edges and small accents: the outer band's bevel of each door and of the arch (`framed(...,
+  edges=)`), the door's lip round the leaves, a 3 cm band on top of each plinth, a 3 cm lip under each capital, the
+  pilasters' mid and cornice bands, the lunettes' trim, the window frame, the pendants' rims, the ring's inlays.
+- S4's copper desaturated: `trim` (0.68, 0.45, 0.35) (was (0.74, 0.43, 0.28)), roughness 0.42 times a blotchier map
+  (`lobby_metal_r2`, 0.6-1: `ROUGH2`).
+
+Light wear, all in the GLBs' own materials (the game gets it):
+
+- Every mapped material's colour is its factor times a shared grime map (`lobby_metal_g`, 0.86-1: soft blotches and
+  dark specks), the exporter writing the factor and the texture (a Mix node, Multiply).
+- A scuff map (`lobby_metal_s`, 0.5-1: rubbed patches and scratches) instead on the hazard stripes (scuffed doors),
+  the worn floor and the worn edges (`SCUFFED`).
+- Edge wear: about 55 % (`WEAR_SHARE`, a steady hash of the face's centre) of the narrow faces (at most 6 cm wide, at
+  least 12 cm long: bevels, chamfers, lips, the stripes' sides) of `lobby_metal`, `lobby_pilaster` and `lobby_hazard`
+  move into `lobby_worn`, bare brushed steel (`merged`, `worn`); smooth parts never.
+- The floor within 3.4 m of a door's or the arch's middle: 8 plates in 10 are `lobby_floor_worn` (the floor colour
+  at 0.94, roughness 0.3, the scuff map). No rust anywhere.
+
+The critic's details:
+
+- Pendants: 40 segments, smooth shading (`Part.smooth`, sharp edges over 35 deg kept, `make`), a dark metal shade
+  with a copper rim, a cable from a ceiling canopy, a grip; heights 9.6 m -0.7/0/+0.6 by a steady pick (`PENDANT_DY`).
+- The floor: a flush hex bolt head 0.1 m in from each plate's corners; service plates (one in 29 full plates: a dark
+  metal plate 4 mm lower with 8 bolts and a lifting slot); a yellow keep-clear box before each door (side and front
+  lines, a hatched band; `KEEP`); the ring 1.06 m wide (was 0.34): a dark metal band, two copper inlays 0.36 m off
+  its radius, the dark channel and the accent line, dark seams at its edges (`RING_W`).
+- The ceiling lighter: `lobby_vault` 1.24 (was 1.12), `lobby_rib` 1.22 (was 1.12).
+- The lunettes' rows hang from the vault's curve at a steady 1.7 m, their seams parallel to the curve and level from
+  column to column, the last row down to the bottom (`lunette_column`).
+- Two close-ups: `c_door_floor` and `c_ring`.
+
+Measured (step 3, S4):
+
+| Piece | Triangles | Objects | GLB |
+|---|---|---|---|
+| floor | 15032 | 11 | 5.2 MB |
+| walls | 28728 | 14 | 6.4 MB |
+| vault | 37438 | 10 | 6.5 MB |
+| window_frame | 1524 | 2 | 3.6 MB |
+| window_glass | 68 | 1 | 0.01 MB |
+| arch | 2682 | 17 | 4.4 MB |
+| door (x4) | 1266 | 11 | 4.3 MB |
+
+86738 triangles in the 7 GLBs (90536 with the four doors placed; 2c: 61336), glTF-Validator clean (0 errors). The
+pendants are most of the vault's growth (6 x about 2.4k). Five shared maps, 1024 px PNGs (normal 1.7 MB, roughness
+0.7, copper roughness 0.7, grime 0.3, scuff 0.7 MB), each GLB embedding the ones its materials use.
+
 ## Open problems
 
 - The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
@@ -322,7 +388,7 @@ primitives.
 - Concept A's camera cannot be matched with the ship 7 m north (see above); A shows the ship's nose close up.
 - The pilaster width (0.8 m, not the drawing's 1.2 m glyph) and the vault's cross-section are our readings of the
   drawing.
-- No Earth and no light design yet (later steps); the review light is not the game's, and the vault reads dark under it.
+- No Earth yet (step 3 stopped it on the licence, above) and no light design (step 4); the review light is not the game's, and the vault reads dark under it.
 - The lunettes' two end columns (where the vault meets the side walls) stay unpanelled: a dark wedge (`c_lunette`).
 - The vault and its I-section ribs still read dark under the review light (no light from below until step 4); the
   collars and corbels show mostly as copper glints.
