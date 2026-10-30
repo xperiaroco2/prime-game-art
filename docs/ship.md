@@ -1322,12 +1322,12 @@ writes the ship's game-ready package (for prime-game#1225 and #1285) from `layou
 (`<raw>/ship/v5/pieces`) into `DIR` (the raw folder's `ship/v5/export/v<n>/`, never git), shaped like the game's tree
 (its ARCHITECTURE 11.1), as the House's export (`docs/house.md` "The export"):
 
-- `assets/environment/ship/`: the 168 pieces' GLBs, each with a minimal `.import` (11.2's options); `metal.gdshader`
+- `assets/environment/ship/`: the pieces' GLBs (189 at v3, 2026-10-30), each with a minimal `.import` (11.2's options); `metal.gdshader`
   and `night_sky.gdshader` (copies of `godot/ship/`'s), `console_metal.gdshader` (`godot/console/`'s, the lens
   bronze's shader); `materials/metal_<name>.tres` (one per shared metal of
   `ship.gd` METALS), `night_sky.tres`, `night_env.tres` (the night environment: AgX, glow, SSAO, SSIL, fog, the star
   sky); the vents' normal maps the GLBs' import extracts (`station_vent_<e|w>_vent_a_normal.png`). Data only.
-- `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the 1092
+- `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the ship's
   placements as GLB instances), `Environment` (the WorldEnvironment), `Lights` (the moon, the key, the layout's lamps
   and the glow cells' omni lights, as `ship.gd` places them), `Probes` (one reflection probe per room), `Clearing`
   (art #356, below: the clearing's pieces, its lights and `Ground`, the world boundary), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
