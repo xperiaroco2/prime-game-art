@@ -205,7 +205,21 @@ def _pose(p, o, deg):
     return (p[0], o[1] + dy * math.cos(a) + dh * math.sin(a), o[2] - dy * math.sin(a) + dh * math.cos(a))
 
 
-def _plated(polys, name):
+def _below(polys, plane, gap=0.003):
+    """Faces looking up or down (|n_z| > 0.5) clipped under a plane (the deck's: at the ramp's thin tip the shell's
+    inner face and under-skin would stand through the deck)."""
+    if plane is None:
+        return polys
+    out = []
+    for q, n in polys:
+        if abs(n[2]) > 0.5:
+            q = S.clip(q, plane[0], plane[1] - gap)
+        if len(q) >= 3 and S.area(q) > 1e-7:
+            out.append((q, n))
+    return out
+
+
+def _plated(polys, name, under_clip=None):
     """Outer faces as the hull's plates (ship_hull_j: inset, chamfered seams, v1's silvers) and the dark under-skin."""
     if not PLATED:
         return _flat(f"{name}_flat", polys, "hull_silver")
@@ -215,7 +229,8 @@ def _plated(polys, name):
             c = tuple(round(sum(x[k] for x in q) / len(q), 1) for k in range(3))
             mat = HJ.MATS["top"][zlib.crc32(repr(c).encode()) % len(HJ.MATS["top"])]
             groups.setdefault(mat, []).append(HJ.lay(q))
-        under.append(([H._add(x, n, -HJ.DEPTH * 1.8) for x in poly], [tuple(range(len(poly)))]))
+        sunk = _below([([H._add(x, n, -HJ.DEPTH * 1.8) for x in poly], n)], under_clip)
+        under += [(q, [tuple(range(len(q)))]) for q, _n in sunk]
     parts = [L.part(f"{name}_{m}", *L.merge(*g), m, solid=False) for m, g in sorted(groups.items())]
     if under:
         parts.append(L.part(f"{name}_seam", *L.merge(*under), "ext_seam", solid=False))
@@ -325,10 +340,12 @@ def lower_parts(j: dict) -> list:
     glow = [r for k in [k_rail] + k_seam for r in sh["rim"].get(k, [])]
     frame = [r for k in (k_fore, k_v) for r in sh["rim"].get(k, [])]
     olh = _offset(ol, skl, SHELL / 2)
-    deck = _solid_polys(olh + [c["fore"], c["v"], c["below_deck"], c["below_plate"]])
+    # the deck plate runs out to the tip: over the belly it may thin out (3 mm inside the belly's skin there)
+    old_ = [(n, d - (0.003 if n[2] < -0.5 else SHELL / 2)) if k in skl else (n, d) for k, (n, d) in enumerate(ol)]
+    deck = _solid_polys(old_ + [c["fore"], c["v"], c["below_deck"], c["below_plate"]])
     bulk = _solid_polys(olh + [c["v"], _flip((c["v"][0], c["v"][1] - BULK)), _flip(c["below_plate"])])
-    parts = _plated(sh["outer"], "lower_skin")
-    parts += _flat("lower_inner", sh["inner"], "ext_silver_c")
+    parts = _plated(sh["outer"], "lower_skin", c["below_deck"])
+    parts += _flat("lower_inner", _below(sh["inner"], c["below_deck"]), "ext_silver_c")
     parts += _flat("lower_rail_glow", glow, "glow_cyan")
     parts += _flat("lower_rim", frame, "ext_frame")
     parts += _flat("lower_deck", deck, "ext_silver_c")

@@ -375,7 +375,6 @@ lamps = [
   [31.0, -4.0, 8.0, 4.0, 12.0, 0.55, 0.68, 1.0, "fill", false],  # east pines, window view (polish 4: x 23 -> 31, range 9.5 -> 12: the pines stand at 33+)
   [31.0, 4.0, 8.0, 4.0, 12.0, 0.55, 0.68, 1.0, "fill", false],  # east pines, window view (polish 4: x 23 -> 31, range 9.5 -> 12: the pines stand at 33+)
   [0.0, -20.0, 0.5, 1.0, 4.5, 1.0, 0.6, 0.3, "out", false],  # the clearing in front of the ramp (b2: from (0, -14, 1.4) r 7, which lit the closed jaw as a gold slab)
-  [0.0, -8.7, 2.6, 1.2, 4.5, 0.8, 0.92, 1.0, "out", true],  # the throat's glow out over the open ramp (b2; shadowed, so the closed prow keeps it in)
   # the hull lane's outside light (step 3): ground lamps' and belly pools, the party string, the rim
   [-2.99, -4.34, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool
   [2.99, -4.34, 0.3, 1.0, 3.5, 1.0, 0.55, 0.22, "pool", true],  # ground lamp pool

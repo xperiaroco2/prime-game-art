@@ -1421,9 +1421,10 @@ the ramp's, the open deck on the ground at the ramp's slope (under 30 deg) and t
 wants the capsule and margin 2.3). `test_ship_jaw.py` also checks, on flat skins (`ship_hull_jaw.PLATED = False`; the
 plates sink inside the skin): closed, no ray from a ring of outside points (and from under and over the nose) reaches
 the throat or the closed mouth; in six steps of the swing no piece's edge passes through another's face; open, nothing
-stands in the walkway; the deck in its plane. The clearing lamp in front of the old ramp moved to (0, -17.5, 0.8),
-range 5 (it lit the closed jaw as a gold slab); a shadowed cool lamp in the mouth (0, -8.7, 2.6) lights the open ramp
-from the throat. The jaws replace the ramp, its lights, its hazard stripes and the entry tunnel's hood
+stands in the walkway; the deck in its plane. The clearing lamp in front of the old ramp moved to (0, -20, 0.5),
+range 4.5 (it lit the closed jaw as a gold slab). A lamp in the mouth for the open ramp was tried and dropped: even
+shadowed it lit the ground under the closed prow through the one-sided shells; the open mouth glows from its lip, the
+ceiling's bars and the rails' edges. The jaws replace the ramp, its lights, its hazard stripes and the entry tunnel's hood
 (`mouth_tunnel_in`, the tunnel's inside, stays). The [ramp] numbers stay as the open jaw's.
 
 Views: a `ship --shoot DIR --views FILE` row whose 6th element is `{"jaw": "closed"}` (or `half`, `open`) shows that

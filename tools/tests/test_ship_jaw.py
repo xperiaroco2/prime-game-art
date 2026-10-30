@@ -144,7 +144,7 @@ class ShipJawBuildTest(unittest.TestCase):
         pts = [(v[0] + o[0], v[1] + o[1], v[2] + o[2]) for v in deck["verts"]]
         on = [p for p in pts if abs(p[2] - (j["floor_h"] + j["deck_slope"] * (o[1] - p[1]))) < 1e-6]
         self.assertTrue(any(abs(p[1] - o[1]) < 1e-6 and abs(p[2] - j["floor_h"]) < 1e-6 for p in on))  # flush at the hinge
-        self.assertLess(min(p[1] for p in on), j["tip_y"] + 0.3)                    # out to the tip (its last cm the shell's lip)
+        self.assertLess(min(p[1] for p in on), j["tip_y"] + 0.06)                   # out to the tip (the walk starts there)
         self.assertLessEqual(max(p[2] for p in pts), j["seam_h"] + 1e-6)
 
 
