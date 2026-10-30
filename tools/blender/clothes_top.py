@@ -172,7 +172,9 @@ def cut_garment(gar, args) -> dict:
 def fill_holes(gar, args) -> dict:
     """E1g: the garment's small holes under the waist (closed open-edge loops of at most args.fill_holes edges, Meshy's
     gaps round the front pockets: dark divots where the removed body left nothing behind) are filled; each new face's
-    corners take their vertex's UV from the cloth round it, so the fill shows the denim next to it."""
+    corners take their vertex's UV from the cloth round it, so the fill shows the denim next to it. E1i2: with
+    args.fill_holes_above, up to that height over the waist (the chameleon's bib pocket: white holes in Jog where the
+    top and the body under the bib are removed)."""
     mw = gar.matrix_world
     bm = bmesh.new()
     bm.from_mesh(gar.data)
@@ -213,8 +215,12 @@ def fill_holes(gar, args) -> dict:
                         st.append(y)
         vs = {v for x in grp for v in x.verts}
         closed = all(sum(1 for y in v.link_edges if y.is_boundary) == 2 for v in vs) and len(vs) == len(grp)
-        if closed and len(grp) <= args.fill_holes and max((mw @ v.co).z for v in vs) < args.waist - 0.005:
+        above = getattr(args, "fill_holes_above", None)
+        z_cap = args.waist - 0.005 if above is None else args.waist + above  # E1i2: the bib pocket's holes too
+        if closed and len(grp) <= args.fill_holes and max((mw @ v.co).z for v in vs) < z_cap:
             holes.append(grp)
+    up = [[round(c, 3) for c in sum((mw @ v.co for x in g for v in x.verts), Vector()) / (2 * len(g))]
+          for g in holes if max((mw @ v.co).z for x in g for v in x.verts) >= args.waist - 0.005]
     uvl = bm.loops.layers.uv.active
     vuv = {}
     if uvl is not None:
@@ -235,6 +241,8 @@ def fill_holes(gar, args) -> dict:
     bm.free()
     gar.data.update()
     rep = {"holes": len(holes), "faces": len(new), "loose_faces_removed": len(bits)}
+    if up:
+        rep["over_the_waist"] = up
     say("holes filled", rep)
     return rep
 

@@ -328,6 +328,9 @@ def main() -> int:
                          "clothes_top.flat_bib; empty: off)")
     ap.add_argument("--bib-raise", default="",
                     help="E1i: with --flat-bib, the bib raised dz over the band waist+b0..waist+b1: dz,b0,b1 (m)")
+    ap.add_argument("--fill-holes-above", type=float, default=None,
+                    help="E1i2: fill the small holes up to this height over the waist (m; default: under the waist "
+                         "only)")
     ap.add_argument("--bib-chain", default="",
                     help="E1i2: with --flat-bib, the bib's weights by height along these bones (up the spine, comma "
                          "separated; clothes_shell.chain_row; empty: the rows' means of the body's weights)")

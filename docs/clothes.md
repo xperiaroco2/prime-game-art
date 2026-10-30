@@ -439,7 +439,7 @@ keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 deg
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
 
-## Dressing D3's bodies (E1 to E1i, art #196)
+## Dressing D3's bodies (E1 to E1i2, art #196)
 - **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
   head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
   smoothing; the 30 mm smoothstep band stays the default for the old bodies.
@@ -565,6 +565,17 @@ above it again from Blender's rest matrices.
   at the waist to -0.164 m at the bust. At rest and in the turnaround it reads as the concept's bib. Still wrong: in
   Jog its top folds down under the bust (the weights), the body pokes rose (Idle 4/3.1 mm, Jump_Start 5/8.1 mm against
   d23b's 0/0 and 1/3.6), and a teal patch shows at her left bib side at rest (the top's hidden faces, 51 against 38).
+- **Her flat bib in motion** (E1i2): in Jog the bones pitch far (UpperChest about 38 degrees, Chest 27) and the body's
+  front under the bib compresses (its front at 1.16 m drops 120 mm, at 0.96 m 28 mm). A panel weighted like that
+  body, by the rows' means (d27) or bone by bone up to UpperChest (d28), squashes the same way and folds under the
+  bust. The rule: a stiff panel rides one bone. `--bib-chain Hips,Spine,Chest` weights it by height alone
+  (`clothes_shell.chain_row` over the bones' bind-pose mid heights, the same across its width, eased from the
+  band's own weights over `blend`), so above Chest's mid (1.04 m) it is rigid with Chest. d29: flat in Jog, Crouch,
+  Walk and Jump_Start. `--shell-hide 0.02` keeps the top under the stood-off bib (2 faces hidden, not 51): the teal
+  patch and the chest pokes are gone (Idle 0/0). Her close-up cameras aim at the raised bib (`e1i2/frames.sh`).
+- **Holes over the waist** (E1i2, off by default): `--fill-holes-above` lets `fill_holes` work up to that height
+  over the waist and reports the loops it filled there. On the chameleon (d30) it filled two at the back and side,
+  none at the bib pocket: the pocket's white holes are not small closed loops, so they stay open.
 - **The hips' spikes** (E1g): `clothes_top.despike` moves a garment vertex under the waist that stands over
   `--despike` (15 mm) out of its neighbours' mean, along the body's normal, to that mean (`clothes_fit_geom.spike_out`;
   the axolotl's front-hip spike, d16).
