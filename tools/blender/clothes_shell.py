@@ -523,3 +523,34 @@ def chain_row(z: float, knots: list[tuple[float, str]]) -> dict[str, float]:
                     row[b] = row.get(b, 0.0) + w
             return row
     return {ks[-1][1]: 1.0}
+
+
+def panel_fit(nbrs: list[tuple[float, float, float]]) -> float:
+    """M2d, the flat back panel: a panel point's smoothed depth from its neighbours (dx, dz, y), dx and dz their
+    offsets from it: the least-squares y = a + b dx + c dx^2 + d dz, so a's the depth with the panel's round across
+    and its slope up kept, and a fold narrower than the window gone. Too few or degenerate neighbours: their mean."""
+    if not nbrs:
+        raise ValueError("no neighbours")
+    mean = sum(y for _x, _z, y in nbrs) / len(nbrs)
+    if len(nbrs) < 6:
+        return mean
+    m = [[0.0] * 5 for _ in range(4)]
+    for dx, dz, y in nbrs:
+        r = (1.0, dx, dx * dx, dz)
+        for i in range(4):
+            for j in range(4):
+                m[i][j] += r[i] * r[j]
+            m[i][4] += r[i] * y
+    for c in range(4):  # Gaussian elimination with partial pivoting
+        piv = max(range(c, 4), key=lambda i: abs(m[i][c]))
+        if abs(m[piv][c]) < 1e-14:
+            return mean
+        m[c], m[piv] = m[piv], m[c]
+        for i in range(c + 1, 4):
+            f = m[i][c] / m[c][c]
+            for j in range(c, 5):
+                m[i][j] -= f * m[c][j]
+    sol = [0.0] * 4
+    for i in range(3, -1, -1):
+        sol[i] = (m[i][4] - sum(m[i][j] * sol[j] for j in range(i + 1, 4))) / m[i][i]
+    return sol[0]

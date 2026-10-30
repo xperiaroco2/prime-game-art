@@ -1486,6 +1486,76 @@ def plain_denim(gar, args) -> dict:
     return rep
 
 
+def flat_back(gar, char, args) -> dict:
+    """M2d: the back panel's top as one stiff panel (her bib's treatment, E1i): Meshy's panel has a vertical fold at
+    its apex. args.flat_back "blend,radius,band,clear": each back vertex over the waist (y > 0, |x| within the panel's
+    widest half width + 1 cm) takes the depth clothes_shell.panel_fit gives from the vertices within radius in x and
+    band in z (a quadratic across, so the back's round stays and the fold goes) less all layers' mean within 1 cm
+    (so a hem's layer keeps its offset), eased in over blend m above the waist
+    (the band stays), never nearer the body's back than clear; the outline (x, z) and the UVs stay. Its weights go to
+    clothes_shell.chain_row along args.bib_chain by the same ease, so it moves as one piece with the spine."""
+    blend, rad, band, clear = floats(args.flat_back)
+    z_w = args.waist
+    _y0, _apex, hw_w, hw_a = floats(args.back)
+    me = gar.data
+    mw = gar.matrix_world
+    inv = mw.inverted()
+    co = [mw @ v.co for v in me.vertices]
+    ids = [i for i, p in enumerate(co) if p.y > 0 and p.z > z_w + 1e-4 and abs(p.x) <= max(hw_w, hw_a) + 0.01]
+    if not ids:
+        return {"skipped": "no back panel vertices"}
+    kd = KDTree(len(ids))
+    for k, i in enumerate(ids):
+        kd.insert((co[i].x, 0.0, co[i].z), k)
+    kd.balance()
+    # the body's back surface: per vertex the most backward body point within 1 cm in x and z
+    cm = char.matrix_world
+    bpts = [cm @ v.co for v in char.data.vertices]
+    bpts = [p for p in bpts if p.y > 0 and p.z > z_w - 0.02]
+    bkd = KDTree(max(1, len(bpts)))
+    for k, p in enumerate(bpts):
+        bkd.insert((p.x, 0.0, p.z), k)
+    bkd.balance()
+    knots = chain_knots(char, getattr(args, "bib_chain", ""))
+    names = {g.index: g.name for g in gar.vertex_groups}
+    groups = {g.name: g for g in gar.vertex_groups}
+    new_co, rows, most, floor_hit = {}, [], 0.0, 0
+    for k, i in enumerate(ids):
+        p = co[i]
+        w = H.ease(p.z, z_w, blend)
+        if w <= 0:
+            continue
+        nb = [(co[ids[j]].x - p.x, co[ids[j]].z - p.z, co[ids[j]].y) for _c, j, _d in kd.find_range((p.x, 0.0, p.z), rad)
+              if abs(co[ids[j]].z - p.z) <= band]
+        # every layer moves alike (a hem's or a pocket's layer keeps its own offset): by the fit less the mean of
+        # all layers within 1 cm
+        lm = [co[ids[j]].y for _c, j, _d in kd.find_range((p.x, 0.0, p.z), 0.01)]
+        y = p.y + H.panel_fit(nb) - sum(lm) / len(lm)
+        under = [bpts[j].y for _c, j, _d in bkd.find_range((p.x, 0.0, p.z), 0.01)]
+        if under and y < max(under) + clear:
+            y = max(under) + clear
+            floor_hit += 1
+        d = w * (y - p.y)
+        new_co[i] = Vector((p.x, p.y + d, p.z))
+        most = max(most, abs(d))
+        if knots:
+            own = {names[g.group]: g.weight for g in me.vertices[i].groups if g.group in names}
+            rows.append((i, H.follow_row(own, H.chain_row(p.z, knots), w)))
+    for i, q in new_co.items():
+        me.vertices[i].co = inv @ q
+    for i, row in rows:
+        v = me.vertices[i]
+        for g in list(v.groups):
+            gar.vertex_groups[g.group].remove([i])
+        for b, x in row.items():
+            if b not in groups:
+                groups[b] = gar.vertex_groups.new(name=b)
+            groups[b].add([i], x, "REPLACE")
+    me.update()
+    return {"verts": len(ids), "moved": len(new_co), "max_move_mm": round(1000 * most, 1), "at_clear": floor_hit,
+            "reweighted": len(rows)}
+
+
 def chain_knots(char, spec: str) -> list[tuple[float, str]]:
     """E1i2: the knots of clothes_shell.chain_row from spec "Bone,Bone,..." (up the spine): each bone's mid height in
     the bind pose (world), from char's armature; empty spec or no armature: []."""

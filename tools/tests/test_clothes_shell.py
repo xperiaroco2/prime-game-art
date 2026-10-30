@@ -445,5 +445,29 @@ class FlatBib(unittest.TestCase):  # E1i: her bib a flat, stiff panel over the c
         self.assertEqual(H.ease(1.01, 1.0, 0.0), 1.0)
 
 
+class PanelFit(unittest.TestCase):  # M2d: the flat back panel's depth
+    def test_keeps_the_round_and_drops_a_narrow_fold(self):
+        pts = []
+        for i in range(-10, 11):
+            dx = i * 0.005
+            for dz in (-0.01, 0.0, 0.01):
+                y = 0.12 - 2.0 * dx * dx + 0.1 * dz
+                if abs(dx) < 0.006:
+                    y += 0.004  # the fold
+                pts.append((dx, dz, y))
+        self.assertAlmostEqual(H.panel_fit(pts), 0.12, delta=0.004 / 3)  # two thirds of the fold gone at its middle
+
+    def test_exact_on_a_quadratic(self):
+        pts = [(dx * 0.01, dz * 0.01, 0.1 + 0.2 * dx * 0.01 - 3.0 * (dx * 0.01) ** 2 + 0.5 * dz * 0.01)
+               for dx in range(-3, 4) for dz in (-1, 0, 1)]
+        self.assertAlmostEqual(H.panel_fit(pts), 0.1, places=9)
+
+    def test_mean_when_degenerate(self):
+        self.assertAlmostEqual(H.panel_fit([(0.0, 0.0, 0.1), (0.0, 0.0, 0.2)]), 0.15)
+        self.assertAlmostEqual(H.panel_fit([(0.0, 0.0, 0.1)] * 8), 0.1)
+        with self.assertRaises(ValueError):
+            H.panel_fit([])
+
+
 if __name__ == "__main__":
     unittest.main()
