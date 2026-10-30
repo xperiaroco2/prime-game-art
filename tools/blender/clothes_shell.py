@@ -578,3 +578,51 @@ def join_rows(hits: list[float | None], along: list[float], blend: float) -> lis
         t = d / blend
         out[i] = (1.0 - t * t * (3 - 2 * t), first)
     return out
+
+
+def back_bib_grid(z0: float, z_c: float, z_v: float, hw_b: float, hw_t: float, x_v: float, border: float,
+                  cols: int = 14, rows: int = 14) -> dict:
+    """M2f, her back bib (the turnaround's back view): the panel's grid in the back view (x, z), row-major from the
+    bottom. Its outline: the sides straight from half width hw_b at z0 to hw_t at the top corners' height z_c, the
+    top flat at z_c out from |x| = x_v and a V down to z_v at x = 0 between. cols (even, so a column runs up the V's
+    tip) interior divisions across inside a border of width border along each side, rows divisions up to border
+    under the top edge, then the top edge itself. Per vertex: x, z, whether it is on the outline's sides or top (the
+    lip), and per face whether it is in the side or top border (the stitched edge) with each corner's (across,
+    along): across 0 at the outline growing inward to border, along in metres up a side or across the top."""
+    if cols % 2 or cols < 2 or rows < 1 or not (z0 < z_v <= z_c) or border <= 0 or not (0 < x_v <= hw_t):
+        raise ValueError("bad back bib")
+
+    def hw(z):
+        return hw_b + (hw_t - hw_b) * (z - z0) / (z_c - z0)
+
+    def top(x):
+        return z_v + (z_c - z_v) * min(1.0, abs(x) / x_v)
+
+    gs = [-1.0 - 1.0 / cols] + [-1.0 + 2.0 * k / cols for k in range(cols + 1)] + [1.0 + 1.0 / cols]
+    nc, nr = len(gs), rows + 2
+    pts, edge = [], []
+    for r in range(nr):
+        for g in gs:
+            side = abs(g) > 1.0
+            gi = max(-1.0, min(1.0, g))
+            x_top = math.copysign(hw(z_c), g) if side else (hw(z_c) - border) * gi
+            zt = top(x_top)
+            z = zt if r == nr - 1 else z0 + (zt - border - z0) * r / rows
+            x = math.copysign(hw(z), g) if side else (hw(z) - border) * gi
+            pts.append((x, z))
+            edge.append(side or r == nr - 1)
+    faces, kind, uvs = [], [], []
+    for r in range(nr - 1):
+        for c in range(nc - 1):
+            q = [r * nc + c, r * nc + c + 1, (r + 1) * nc + c + 1, (r + 1) * nc + c]
+            faces.append(q)
+            if c == 0 or c == nc - 2:
+                kind.append("side")
+                uvs.append([(border if abs(gs[k % nc]) <= 1.0 else 0.0, pts[k][1] - z0) for k in q])
+            elif r == nr - 2:
+                kind.append("top")
+                uvs.append([(0.0 if k // nc == nr - 1 else border, pts[k][0]) for k in q])
+            else:
+                kind.append("inner")
+                uvs.append(None)
+    return {"points": pts, "edge": edge, "rows": nr, "cols": nc, "faces": faces, "kind": kind, "border_uv": uvs}

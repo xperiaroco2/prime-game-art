@@ -403,7 +403,7 @@ def main() -> int:
                     help="E1h: the top's faces under the panels go from this height over the waist (m; default: from "
                          "--shell-full)")
     ap.add_argument("--plain", default="",
-                    help="E1h: boxes x0,x1,y0,y1,z0,z1 (|x|, bind pose, m; ';' between) whose denim gets plain texels "
+                    help="E1h: boxes x0,x1,y0,y1,z0,z1[,tint] (|x|, bind pose, m; ';' between) whose denim gets plain texels "
                          "(clothes_top.plain_denim; empty: off)")
     ap.add_argument("--flat-bib", default="",
                     help="E1i: the bib as a flat, stiff panel: blend,curve,radius,clear (m, 1/m (<0: fitted), m, m; "
@@ -424,6 +424,14 @@ def main() -> int:
     ap.add_argument("--back-join", default="",
                     help="M2e: the straps' back ends glued onto the back panel: blend,gap (m; clothes_top.back_join; "
                          "empty: off)")
+    ap.add_argument("--light-denim", default="0.60,0.70,0.82",
+                    help="M2f: the denim's reverse side (sRGB), for a --plain box's 7th value (its mix toward it): "
+                         "the turn-ups' light cuff")
+    ap.add_argument("--back-bib", default="",
+                    help="M2f: her back bib built to the turnaround: z_c,z_v,hw_b,hw_t,x_v,off,border (m; top corners' "
+                         "height, the V's tip, half widths at the waist and the top, the V's half width, clearance off "
+                         "the body, the stitched border; clothes_top.back_bib; empty: off). The straps' back ends then "
+                         "reach --strap-back-below under z_c")
     ap.add_argument("--band-follow", type=float, default=None,
                     help="M2e: after the waistband is built, the top's vertices up to this far over the waist take "
                          "the garment's weights again by their rays' share (clothes_top.follow_panels; unset: off)")
@@ -529,6 +537,8 @@ def main() -> int:
         # E1d: the straps' back ends reach strap_back_below under the back panel's apex on every body (the shorter
         # body's straps met over it: a flat bar of shirt and panel under their V)
         args.strap_back_z = pl["back"][1] - args.strap_back_below
+        if args.back_bib:  # M2f: they end on the built back bib's top corners
+            args.strap_back_z = float(args.back_bib.split(",")[0]) - args.strap_back_below
         args.neck = ",".join(f"{v:.4f}" for v in pl["neck"])
         rep["planes"] = {k: (round(v, 4) if isinstance(v, float) else [round(x, 4) for x in v]) for k, v in pl.items()}
         say("planes from the bones", rep["planes"])
@@ -635,8 +645,12 @@ def main() -> int:
             rep["flat_bib"] = TOP.flat_bib(garment, char, args)
         if args.flat_back:  # M2d: the back panel's top one stiff panel (no apex fold), before the top and straps
             rep["flat_back"] = TOP.flat_back(garment, char, args)
+        if args.back_bib:  # M2f: the back bib to the turnaround, before the top (hidden under it) and straps
+            rep["back_bib"] = TOP.back_bib(garment, char, args)
         top, rep["shell"] = TOP.shell(char, arm, garment, args)
         rep["straps"] = TOP.straps(garment, char, [garment, top], args)
+        if args.back_bib:
+            rep["back_bib_uv"] = TOP.back_bib_uv(garment, args)
         if args.back_join:  # M2e: the straps' back ends glued onto the back panel (one piece with it)
             rep["back_join"] = TOP.back_join(garment, args)
             say("back join", rep["back_join"])

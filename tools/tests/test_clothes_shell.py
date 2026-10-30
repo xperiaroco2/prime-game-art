@@ -487,3 +487,47 @@ class JoinRows(unittest.TestCase):
 
     def test_no_panel_under_the_end(self):
         self.assertEqual(H.join_rows([0.01, None], [0.0, 0.01], 0.03), [(0.0, None), (0.0, None)])
+
+
+class BackBib(unittest.TestCase):  # M2f: her back bib's grid
+    def test_outline(self):
+        g = H.back_bib_grid(0.92, 1.15, 1.10, 0.075, 0.10, 0.06, 0.012, cols=6, rows=4)
+        nc, nr, pts = g["cols"], g["rows"], g["points"]
+        self.assertEqual((nc, nr), (9, 6))
+        self.assertEqual(len(g["faces"]), (nc - 1) * (nr - 1))
+        # the bottom corners at hw_b, the top corners at hw_t and z_c, the V's tip at x 0, z_v
+        self.assertAlmostEqual(pts[0][0], -0.075)
+        self.assertAlmostEqual(pts[0][1], 0.92)
+        self.assertAlmostEqual(pts[(nr - 1) * nc + nc - 1][0], 0.10)
+        self.assertAlmostEqual(pts[(nr - 1) * nc + nc - 1][1], 1.15)
+        tip = pts[(nr - 1) * nc + nc // 2]
+        self.assertAlmostEqual(tip[0], 0.0)
+        self.assertAlmostEqual(tip[1], 1.10)
+        # the border's inner line one border in from the side, one border under the top
+        self.assertAlmostEqual(pts[1][0], -0.075 + 0.012)
+        self.assertAlmostEqual(pts[(nr - 2) * nc + nc // 2][1], 1.10 - 0.012)
+        # the lip: the sides and the top edge only
+        self.assertTrue(g["edge"][0] and g["edge"][(nr - 1) * nc + 3] and not g["edge"][nc + 3])
+        # every row rises; mirrored across
+        for r in range(nr - 1):
+            for c in range(nc):
+                self.assertLess(pts[r * nc + c][1], pts[(r + 1) * nc + c][1])
+        for k in range(nc):
+            self.assertAlmostEqual(pts[k][0], -pts[nc - 1 - k][0])
+
+    def test_border_uv(self):
+        g = H.back_bib_grid(0.92, 1.15, 1.10, 0.075, 0.10, 0.06, 0.012, cols=6, rows=4)
+        kinds = g["kind"]
+        self.assertEqual(kinds.count("side"), 2 * (g["rows"] - 1))
+        self.assertEqual(kinds.count("top"), g["cols"] - 3)
+        for k, uv in zip(kinds, g["border_uv"]):
+            if k == "inner":
+                self.assertIsNone(uv)
+            else:
+                self.assertEqual(sorted({round(a, 4) for a, _ in uv}), [0.0, 0.012])
+
+    def test_bad(self):
+        with self.assertRaises(ValueError):
+            H.back_bib_grid(0.92, 1.15, 1.10, 0.075, 0.10, 0.06, 0.012, cols=5)
+        with self.assertRaises(ValueError):
+            H.back_bib_grid(0.92, 1.05, 1.10, 0.075, 0.10, 0.06, 0.012)

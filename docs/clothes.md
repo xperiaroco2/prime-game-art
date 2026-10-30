@@ -637,6 +637,23 @@ above it again from Blender's rest matrices.
   10 to 23 mm in Jog and Crouch (`--shell-hem` moves only the hem, 3 cm under). `--band-follow H` runs the follow
   again after the band, for the top up to H over the waist (d50: 0.02): Jog's worst 15.1 to 7.8 mm (tracked 22.2 to
   14.9, one vertex at the right hip, z 0.904).
+- **The built back bib** (M2f): Meshy's back panel ended at the shoulder blades' foot (z 1.067) and the straps met
+  in a lump at the waistband, so from behind she read as jeans with suspenders. `--back-bib
+  z_c,z_v,hw_b,hw_t,x_v,off,border` (d53: `1.15,1.10,0.08,0.103,0.062,0.010,0.012`, measured off the approved
+  turnaround's back view scaled by the waist and floor; `clothes_top.back_bib`, the grid
+  `clothes_shell.back_bib_grid`) deletes Meshy's panel over the waist and builds the turnaround's outline: sides
+  from half width hw_b at the waist to hw_t at the top corners (z_c), a V top down to z_v; each row one quadratic
+  across from rays at the body's back (the spine's groove bridged), at least off clear, the rows under the waist
+  tucked 2 mm under Meshy's back band, the outline folded `--strap-lip` toward the body; weights by
+  `clothes_shell.chain_row` along `--bib-chain`. It runs before the top, so `shell()` hides and follows the top
+  under it. Its border (width border) gets the straps' stitched patch after `straps()` (`back_bib_uv`); its inner
+  faces plain texels from a `--plain` box (`0,0.14,0.02,0.3,0.9305,1.2`). The straps' back ends are aimed at its top
+  corners (`strap_back_z` = z_c less `--strap-back-below`; their back |x| in `--shell-strap-x` kept inside hw_t, or
+  `--back-join` finds no panel under the outer lip and glues nothing, d52).
+- **The turn-ups' light cuff** (M2f): a `--plain` box takes a 7th value, its mix toward `--light-denim` (sRGB,
+  default `0.60,0.70,0.82`, the denim's reverse side): the box's faces go into their own window, its diffuse the
+  plain denim blended toward that colour with its grain kept. d53: the ankle box split at z 0.163 (the turn-up's
+  fold), `0,0.3,-0.3,0.3,0,0.163,0.75` under it.
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'
