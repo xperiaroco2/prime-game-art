@@ -362,6 +362,32 @@ class BodyPlanes(unittest.TestCase):  # E1b: the cut planes from a body's own bo
 
 
 
+class M2gHelpers(unittest.TestCase):  # M2g: the bib side's striped walls, the turn-ups' cut
+    def test_face_samples_count_and_inside(self):
+        tri = [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]
+        c = (1 / 3, 1 / 3)
+        pts = H.face_samples(c, tri)
+        self.assertEqual(len(pts), 10)
+        self.assertEqual(len(H.face_samples((0.5, 0.5), [(0, 0), (1, 0), (1, 1), (0, 1)])), 13)
+        for x, y in pts:  # all inside the triangle
+            self.assertGreaterEqual(x, -1e-9)
+            self.assertGreaterEqual(y, -1e-9)
+            self.assertLessEqual(x + y, 1 + 1e-9)
+
+    def test_face_samples_catch_a_stripe(self):
+        # a white band 0.55 < v < 0.75 of a unit quad: the old 5 samples (centre, corners at 0.7) miss it
+        quad = [(0, 0), (1, 0), (1, 1), (0, 1)]
+        old = [(0.5, 0.5)] + [(0.5 + 0.7 * (x - 0.5), 0.5 + 0.7 * (y - 0.5)) for x, y in quad]
+        self.assertFalse(any(0.55 < y < 0.75 for _x, y in old))
+        self.assertTrue(any(0.55 < y < 0.75 for _x, y in H.face_samples((0.5, 0.5), quad)))
+
+    def test_cut_ramp(self):
+        self.assertEqual(H.cut_ramp(0.150, 0.163, 0.002), 1.0)
+        self.assertEqual(H.cut_ramp(0.170, 0.163, 0.002), 0.0)
+        self.assertAlmostEqual(H.cut_ramp(0.163, 0.163, 0.002), 0.5)
+        self.assertAlmostEqual(H.cut_ramp(0.1625, 0.163, 0.002), 0.75)
+
+
 class PlainDenim(unittest.TestCase):
     """E1h: the plain denim patch's mirrored repeat, cylinder coordinates and boxes."""
 

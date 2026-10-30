@@ -305,6 +305,12 @@ def main() -> int:
     ap.add_argument("--edge-inward", type=float, default=-0.1,
                     help="an edge face whose normal's horizontal part points in by more than this is peeled")
     ap.add_argument("--edge-island", type=int, default=12, help="loose bits of this many faces or fewer along the edges go")
+    ap.add_argument("--shirt-top", type=float, default=0.0,
+                    help="M2g: the baked-shirt test along the panels' side edges reaches this far above the waist (m; "
+                         "0: --band-flaps, as the peel)")
+    ap.add_argument("--shirt-min", type=float, default=0.0,
+                    help="M2g: a face is the baked shirt when this share of up to 13 samples over its UVs is shirt texel "
+                         "(the striped side walls beside the buckle; 0: the old rule, nearly all of 4 or 5 samples)")
     ap.add_argument("--band-button", type=float, default=0.012,
                     help="the band's side button this far beyond the bib's edge in |x| (m; 0: none)")
     ap.add_argument("--shell-decimate", default="0.32,0.22",
@@ -403,7 +409,7 @@ def main() -> int:
                     help="E1h: the top's faces under the panels go from this height over the waist (m; default: from "
                          "--shell-full)")
     ap.add_argument("--plain", default="",
-                    help="E1h: boxes x0,x1,y0,y1,z0,z1[,tint] (|x|, bind pose, m; ';' between) whose denim gets plain texels "
+                    help="E1h: boxes x0,x1,y0,y1,z0,z1[,tint[,cut[,gain]]] (|x|, bind pose, m; ';' between; M2g: cut, the tint only under that height, by texel row (-1: none); gain, the window's diffuse times it, 0 or 1: none) whose denim gets plain texels "
                          "(clothes_top.plain_denim; empty: off)")
     ap.add_argument("--flat-bib", default="",
                     help="E1i: the bib as a flat, stiff panel: blend,curve,radius,clear (m, 1/m (<0: fitted), m, m; "

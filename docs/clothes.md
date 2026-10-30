@@ -654,6 +654,18 @@ above it again from Blender's rest matrices.
   default `0.60,0.70,0.82`, the denim's reverse side): the box's faces go into their own window, its diffuse the
   plain denim blended toward that colour with its grain kept. d53: the ankle box split at z 0.163 (the turn-up's
   fold), `0,0.3,-0.3,0.3,0,0.163,0.75` under it.
+- **The turn-ups' cut by texel row, the back bib's gain** (M2g): split by face centres, the cuff's light/dark line
+  followed the faces (dark teeth over the light). A `--plain` box's 8th value is a height: the box's regions are laid
+  on one height scale in their window and the tint applies to the texel rows under it (a 2 mm blend,
+  `clothes_shell.cut_ramp`), so the line is straight on the cloth whatever the faces; d55:
+  `0,0.3,-0.3,0.3,0,0.19,0.75,0.163` (one box, -1: no cut). Its 9th value multiplies the window's diffuse: the back
+  bib's panel uses the straps' own texels (medians equal) but faces away from the light and read darker; d56: 1.35.
+- **The striped walls beside the buckle** (M2g): the shard under the buckle was Meshy's bib side wall (|x| 0.100 to
+  0.105, 3 to 5 cm behind the bib's face, z 1.03 to 1.11), its UVs on the shirt Meshy baked into the denim (stripes),
+  over the edge peel's zone (`--band-flaps`: up to 1.035). `--shirt-top` (m over the waist) raises the baked-shirt
+  test alone to the bib's top, and `--shirt-min` (share of up to 13 samples per face, `clothes_shell.face_samples`)
+  catches a striped face that the old five samples (nearly all white) missed; d55: `--shirt-top 0.19 --shirt-min 0.2`
+  peeled 38 faces (0 before), from the open edge inward only.
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'

@@ -399,16 +399,27 @@ def peel_edges(bm, gar, args, z_lo: float, bib_hw: float, bib_top: float, back_y
         px = pixels(diff)
         h, w = px.shape[:2]
         white = []
+        smin = getattr(args, "shirt_min", 0.0)
+        stop = getattr(args, "shirt_top", 0.0)
+
+        def shirt_zone(c) -> bool:  # M2g: the striped side walls beside the buckle sit above the peel's zone
+            if stop <= 0:
+                return zone(c)
+            hw = H.back_halfwidth(c.z, args.waist, z_apex, hw_w, hw_a)
+            z_hi = min(bib_top if c.y < 0 else z_apex, args.waist + stop) + 0.005
+            return H.near_panel_edge(c.x, c.y, c.z, z_lo, z_hi, bib_hw, back_y, hw, args.edge_zone)
+
         for f in bm.faces:
-            if not zone(mw @ f.calc_center_median()):
+            if not shirt_zone(mw @ f.calc_center_median()):
                 continue
             uvs = [l[uvl].uv for l in f.loops]
             cu = sum((u for u in uvs), Vector((0.0, 0.0))) / len(uvs)
+            pts = H.face_samples(cu, uvs) if smin > 0 else [cu] + [cu.lerp(u, 0.7) for u in uvs]
             hits = 0
-            for u in [cu] + [cu.lerp(u, 0.7) for u in uvs]:
-                r, g, b = px[min(h - 1, max(0, int(u.y * h))), min(w - 1, max(0, int(u.x * w))), :3]
+            for u in pts:
+                r, g, b = px[min(h - 1, max(0, int(u[1] * h))), min(w - 1, max(0, int(u[0] * w))), :3]
                 hits += H.shirt_texel(float(r), float(g), float(b))
-            if hits >= len(uvs):
+            if (hits >= max(1, math.ceil(smin * len(pts) - 1e-9))) if smin > 0 else hits >= len(uvs):
                 white.append(f)
         # only from an open edge inward (C1k, the review's minor 2): the bib's own light stitching inside the cloth
         # stays, no hole opens
@@ -1381,6 +1392,12 @@ def plain_denim(gar, args) -> dict:
     No vertex moves. Returns per region its faces and size, the window and the density."""
     boxes = [tuple(floats(b)) for b in args.plain.split(";") if b.strip()]
     tints = [b[6] if len(b) > 6 else 0.0 for b in boxes]  # M2f: a 7th value, the box's mix toward args.light_denim
+    # M2g: an 8th value, a height: the tint only below it, by texel row (the turn-up's light cuff cut in a straight
+    # line over the faces, not face by face), the box's regions laid on one height scale
+    cuts = [b[7] if len(b) > 7 else -1.0 for b in boxes]
+    # M2g: a 9th value, a gain on the window's diffuse (0 or 1: none): the back bib's flat panel faces away from the
+    # light and read darker than its straps and the trousers, though its texels are the straps' own (d55: medians equal)
+    gains = [b[8] if len(b) > 8 and b[8] > 0 else 1.0 for b in boxes]
     boxes = [b[:6] for b in boxes]
     rep = {"regions": []}
     maps = garment_maps(gar)
@@ -1452,8 +1469,13 @@ def plain_denim(gar, args) -> dict:
         return rep
     light = floats(args.light_denim) if any(tints) else None  # 8-bit maps: pixels hold sRGB values
     d_base = d0
-    for tint in sorted(set(tints[bi] for bi, *_r in plan)):
-        group = [pl for pl in plan if tints[pl[0]] == tint]
+    for tint, cut, gain in sorted(set((tints[bi], cuts[bi], gains[bi]) for bi, *_r in plan)):
+        group = [pl for pl in plan if (tints[pl[0]], cuts[pl[0]], gains[pl[0]]) == (tint, cut, gain)]
+        glo = 0.0
+        if cut >= 0:  # one height scale: a window row is one height in every region of the group
+            glo = min(lo[1] for *_r, lo, _hi in group)
+            ghi = max(hi[1] for *_r, _lo, hi in group)
+            group = [(bi, side, fids, st, (lo[0], glo), (hi[0], ghi)) for bi, side, fids, st, lo, hi in group]
         d0 = d_base
         at = place = None
         for _ in range(4):
@@ -1463,11 +1485,12 @@ def plain_denim(gar, args) -> dict:
             if at is not None:
                 break
             d0 *= 0.85
-        key = "" if tint == 0 else f"_tint{tint:g}"
+        key = ("" if tint == 0 else f"_tint{tint:g}") + ("" if cut < 0 else f"_cut{cut:g}") + (
+            "" if gain == 1.0 else f"_gain{gain:g}")
         rep["texels_per_m_used" + key] = round(d0, 1)
         rep["window_px" + key] = None if at is None else [int(at[1]), int(at[0]), pw, ph]
         for bi, side, fids, st, lo, hi in group:
-            rep["regions"].append({"box": bi, "side": side, "faces": len(fids), "tint": tint,
+            rep["regions"].append({"box": bi, "side": side, "faces": len(fids), "tint": tint, "cut": cut,
                                    "size_mm": [round(1000 * (hi[0] - lo[0])), round(1000 * (hi[1] - lo[1]))]})
         if at is None:
             rep["window_px" + key] = "none free: left as it was"
@@ -1491,7 +1514,12 @@ def plain_denim(gar, args) -> dict:
             if kind == "diffuse" and tint > 0:  # the denim's reverse side: its grain kept, lighter and bluer
                 lum = blk[..., :3].mean(axis=2, keepdims=True)
                 grain = lum / max(1e-6, float(lum.mean()))
-                blk[..., :3] = (1 - tint) * blk[..., :3] + tint * np.array(light)[None, None, :] * grain
+                tt = tint
+                if cut >= 0:  # per row: rows under the cut light, over it dark, a 2 mm blend
+                    tt = tint * np.array([H.cut_ramp(glo + (j - pad) / d0, cut, 0.002) for j in range(ph)])[:, None, None]
+                blk[..., :3] = (1 - tt) * blk[..., :3] + tt * np.array(light)[None, None, :] * grain
+            if kind == "diffuse" and gain != 1.0:
+                blk[..., :3] = np.clip(blk[..., :3] * gain, 0.0, 1.0)
             r0, c0 = int(ry * fy), int(rx * fx)
             tw, th = int(pw * fx), int(ph * fy)
             ys = (np.arange(th) / fy).astype(int).clip(0, ph - 1)

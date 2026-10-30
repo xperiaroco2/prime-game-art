@@ -418,6 +418,28 @@ def shirt_texel(r: float, g: float, b: float, lum: float = 0.55, sat: float = 0.
     return 0.2126 * r + 0.7152 * g + 0.0722 * b > lum and hi > 0 and (hi - lo) / hi < sat
 
 
+
+def face_samples(centre, corners) -> list[tuple[float, float]]:
+    """M2g: points over a face's UVs for the baked-shirt test: its centre, and per corner the points 0.35 and 0.7 of
+    the way to it and 0.7 of the way to the next edge's middle (10 for a triangle, 13 for a quad), so a striped face
+    (a white stripe among dark ones) is not missed by a sample falling on the dark."""
+    cx, cy = float(centre[0]), float(centre[1])
+    pts = [(cx, cy)]
+    n = len(corners)
+    for i, c in enumerate(corners):
+        d = corners[(i + 1) % n]
+        mx, my = (float(c[0]) + float(d[0])) / 2, (float(c[1]) + float(d[1])) / 2
+        for t, (tx, ty) in ((0.35, c), (0.7, c), (0.7, (mx, my))):
+            pts.append((cx + t * (float(tx) - cx), cy + t * (float(ty) - cy)))
+    return pts
+
+
+def cut_ramp(z: float, cut: float, soft: float) -> float:
+    """M2g: the turn-up's tint weight at a height: 1 under cut - soft/2, 0 over cut + soft/2, linear between (a 2 mm
+    blend keeps the light cuff's top from stair-stepping in texels)."""
+    return min(1.0, max(0.0, (cut - z) / max(soft, 1e-9) + 0.5))
+
+
 # E1b: the planes' defaults (clothes_dress's flags) were set on the old body A, whose bones these are (A11 keeps them)
 REF_CHEST_Z, REF_NECK_Z = 1.028, 1.339
 REF_UPPER_ARM = (0.152, 0.065, 1.277)
