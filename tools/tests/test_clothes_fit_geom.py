@@ -372,6 +372,32 @@ class SeatWeight(unittest.TestCase):  # E1f: the seat re-laid on the body
         self.assertLess(max(b - a for a, b in zip(ws, ws[1:])), 0.06)
         self.assertAlmostEqual(F.seat_weight(0.08, 0.925, 0.01, **self.A), 0.5)
 
+    def test_y1_bounds_the_front_zone(self):  # E1g: the chameleon's front, y0 < y < y1
+        a = dict(z_lo=0.70, z_hi=0.94, y0=-1.0, y1=-0.03)
+        self.assertAlmostEqual(F.seat_weight(-0.10, 0.84, 0.01, **a), 1.0)
+        self.assertEqual(F.seat_weight(0.0, 0.84, 0.01, **a), 0.0)
+        self.assertAlmostEqual(F.seat_weight(-0.045, 0.84, 0.01, **a), 0.5)
+
+
+class SpikeOut(unittest.TestCase):  # E1g: the hips' spikes
+    def test_out_along_the_normal_only(self):
+        self.assertTrue(F.spike_out((0.0, 0.02, 0.0), (0.0, 1.0, 0.0), 0.015))
+        self.assertFalse(F.spike_out((0.0, 0.01, 0.0), (0.0, 1.0, 0.0), 0.015))
+        self.assertFalse(F.spike_out((0.03, 0.0, 0.0), (0.0, 1.0, 0.0), 0.015))  # sideways: a corner, not a spike
+        self.assertFalse(F.spike_out((0.0, -0.03, 0.0), (0.0, 1.0, 0.0), 0.015))  # a dent
+
+
+class NearRings(unittest.TestCase):  # E1g: the seat's relax only near its open edges
+    NB = [[1], [0, 2], [1, 3], [2, 4], [3]]  # a strip of five vertices
+
+    def test_rings_out_from_the_seeds(self):
+        self.assertEqual(F.near_rings([0], self.NB, 2), [1.0, 1.0, 1.0, 0.0, 0.0])
+        self.assertEqual(F.near_rings([2], self.NB, 1), [0.0, 1.0, 1.0, 1.0, 0.0])
+
+    def test_no_rings_or_no_seeds(self):
+        self.assertEqual(F.near_rings([4], self.NB, 0), [0.0, 0.0, 0.0, 0.0, 1.0])
+        self.assertEqual(F.near_rings([], self.NB, 3), [0.0] * 5)
+
 
 if __name__ == "__main__":
     unittest.main()

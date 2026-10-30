@@ -169,6 +169,117 @@ def cut_garment(gar, args) -> dict:
     return rep
 
 
+def fill_holes(gar, args) -> dict:
+    """E1g: the garment's small holes under the waist (closed open-edge loops of at most args.fill_holes edges, Meshy's
+    gaps round the front pockets: dark divots where the removed body left nothing behind) are filled; each new face's
+    corners take their vertex's UV from the cloth round it, so the fill shows the denim next to it."""
+    mw = gar.matrix_world
+    bm = bmesh.new()
+    bm.from_mesh(gar.data)
+    # loose bits first (a lone triangle 45 mm off A's hip, d18): islands of at most 4 faces under the waist go; their
+    # own edges would read as holes below
+    comp, bits = {}, []
+    for f in bm.faces:
+        if f in comp:
+            continue
+        st, grp = [f], [f]
+        comp[f] = True
+        while st:  # the whole component: a partial flood would leave pieces of a large one looking small
+            g = st.pop()
+            for e in g.edges:
+                for h in e.link_faces:
+                    if h not in comp:
+                        comp[h] = True
+                        st.append(h)
+                        grp.append(h)
+        if len(grp) <= 4 and all((mw @ g.calc_center_median()).z < args.waist for g in grp):
+            bits.extend(grp)
+    if bits:
+        bmesh.ops.delete(bm, geom=bits, context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    seen, holes = set(), []
+    for e in bm.edges:
+        if e in seen or not e.is_boundary:
+            continue
+        st, grp = [e], []
+        seen.add(e)
+        while st:
+            x = st.pop()
+            grp.append(x)
+            for v in x.verts:
+                for y in v.link_edges:
+                    if y.is_boundary and y not in seen:
+                        seen.add(y)
+                        st.append(y)
+        vs = {v for x in grp for v in x.verts}
+        closed = all(sum(1 for y in v.link_edges if y.is_boundary) == 2 for v in vs) and len(vs) == len(grp)
+        if closed and len(grp) <= args.fill_holes and max((mw @ v.co).z for v in vs) < args.waist - 0.005:
+            holes.append(grp)
+    uvl = bm.loops.layers.uv.active
+    vuv = {}
+    if uvl is not None:
+        for g in holes:
+            for x in g:
+                for v in x.verts:
+                    ls = [l[uvl].uv.copy() for l in v.link_loops]
+                    vuv[v] = sum(ls, Vector((0.0, 0.0))) / len(ls) if ls else Vector((0.0, 0.0))
+    new = bmesh.ops.holes_fill(bm, edges=[x for g in holes for x in g], sides=args.fill_holes)["faces"]
+    if new:
+        bmesh.ops.recalc_face_normals(bm, faces=new)
+        if uvl is not None:
+            for f in new:
+                for l in f.loops:
+                    if l.vert in vuv:
+                        l[uvl].uv = vuv[l.vert]
+    bm.to_mesh(gar.data)
+    bm.free()
+    gar.data.update()
+    rep = {"holes": len(holes), "faces": len(new), "loose_faces_removed": len(bits)}
+    say("holes filled", rep)
+    return rep
+
+
+def despike(gar, char, args) -> dict:
+    """E1g: the trousers' spikes (A's and B's hip sides, d16): a garment vertex under the waist that stands more than
+    args.despike m out of its neighbours' mean, along the body's outward normal, goes to that mean (args.despike_rounds
+    passes). Smooth cloth and its corners stand far less out, so only the spikes' tips move."""
+    from mathutils.bvhtree import BVHTree as _B
+    if args.despike <= 0:
+        return {}
+    dg = bpy.context.evaluated_depsgraph_get()
+    btree = _B.FromObject(char, dg)
+    cw, gw = char.matrix_world, gar.matrix_world
+    cinv, ginv = cw.inverted(), gw.inverted()
+    cn = cw.to_3x3().inverted().transposed()
+    me = gar.data
+    nbrs = [[] for _ in me.vertices]
+    for e in me.edges:
+        a, b = e.vertices
+        nbrs[a].append(b)
+        nbrs[b].append(a)
+    moved = set()
+    for _ in range(args.despike_rounds):
+        pts = [gw @ v.co for v in me.vertices]
+        out = []
+        for i, p in enumerate(pts):
+            if p.z > args.waist or len(nbrs[i]) < 2:
+                continue
+            m = sum((pts[j] for j in nbrs[i]), Vector()) / len(nbrs[i])
+            loc, n, _i, _d = btree.find_nearest(cinv @ p)
+            n = (cn @ n).normalized()
+            if F.spike_out(tuple(p - m), tuple(n), args.despike):
+                out.append((i, m))
+        for i, m in out:
+            me.vertices[i].co = ginv @ m
+            moved.add(i)
+        if not out:
+            break
+    me.update()
+    rep = {"verts": len(moved)}
+    say("despike", rep)
+    return rep
+
+
 def seat_wrap(gar, char, args) -> dict:
     """The seat re-laid on the body (E1f): the female fit folded the cloth over her seat into flared shards round the
     back pockets (the dark shards at the back waist), geometry in the bind pose. Behind the side seams, under the
@@ -201,7 +312,7 @@ def seat_wrap(gar, char, args) -> dict:
     for p in pts:
         loc, n, d = near(p)
         s = (p - loc).dot(n)
-        w.append(F.seat_weight(p.y, p.z, d, z_lo, z_hi, -0.02) if s > -0.01 else 0.0)
+        w.append(F.seat_weight(p.y, p.z, d, z_lo, z_hi, args.seat_y0, y1=args.seat_y1) if s > -0.01 else 0.0)
         off.append([min(hi, max(lo, s))])
     moved = [i for i, x in enumerate(w) if x > 0]
     if not moved:
@@ -220,11 +331,24 @@ def seat_wrap(gar, char, args) -> dict:
                 fold[i] = 1.0
     for _ in range(2):
         fold = [max([fold[i]] + [fold[j] for j in nbrs[i]]) for i in range(len(fold))]
+    if args.seat_open_rings > 0:  # E1g: the relax only near the cloth's open edges (the flaps), not Meshy's relief
+        ekey = {tuple(sorted(e.vertices)): 0 for e in me.edges}
+        for f in me.polygons:
+            for k in f.edge_keys:
+                ekey[tuple(sorted(k))] += 1
+        seeds = sorted({i for k, c in ekey.items() if c == 1 for i in k if w[i] > 0})
+        fold = [a * b for a, b in zip(fold, F.near_rings(seeds, nbrs, args.seat_open_rings))]
     relax = [a * b for a, b in zip(w, fold)]
+    relax_set = {i for i, x in enumerate(relax) if x > 0}
     cur = [list(p) for p in pts]
-    for _ in range(args.seat_relax):
+    for i in moved:  # E1g: off the relax, along the body's normal only, so the UVs keep their layout
+        if i not in relax_set:
+            loc, n, _d = near(pts[i])
+            q = pts[i] + n * (off[i][0] - (pts[i] - loc).dot(n))
+            cur[i] = list(pts[i].lerp(q, w[i]))
+    for _ in range(args.seat_relax if relax_set else 0):
         cur = F.smooth(cur, nbrs, 1, 0.5, mask=relax)
-        for i in moved:
+        for i in relax_set:
             loc, n, _d = near(Vector(cur[i]))
             q = loc + n * off[i][0]
             cur[i] = list(Vector(pts[i]).lerp(q, w[i]))
@@ -899,6 +1023,29 @@ def clear_strap_fronts(bm, gar, plans, rect, args) -> dict:
     if not fronts:
         say("strap fronts: no station within", args.strap_front, "m of a strap's front end; nothing cleared")
         return {"faces_cleared_under_the_fronts": 0, "hardware_faces_to_denim": 0}
+    # E1g: first cut along each strap front's side lines and its end, so the faces that go below leave a straight
+    # edge under the strap's own edge, not a jagged notch beside it (the axolotl's left strap front, d16)
+    n_cut = 0
+    for pl in plans:
+        st = [fr for fr in fronts if any((fr[0] - Vector(q)).length < 1e-9 for q in pl["ct"])]
+        if not st:
+            continue
+        ct = sum((fr[0] for fr in st), Vector()) / len(st)
+        sd = sum((fr[2] for fr in st), Vector()).normalized()
+        tg = sum((fr[1] for fr in st), Vector()).normalized()
+        nt = sum((fr[3] for fr in st), Vector()).normalized()
+        reach = max(fr[4] for fr in st) / 2 + 0.03
+
+        def box(c, ct=ct, tg=tg, nt=nt, reach=reach):
+            d = c - ct
+            return c.y < 0 and c.z >= 1.05 and abs(d.dot(tg)) < reach and -0.05 < d.dot(nt) < 0.012
+
+        for sgn in (1, -1):
+            n_cut += 1
+            _bisect(bm, mw, box, tuple(ct + sd * sgn * (half - 0.002)), tuple(sd * sgn), outer=None)
+        end = min(st, key=lambda fr: fr[4])
+        _bisect(bm, mw, box, tuple(end[0] - end[1] * (end[4] - 0.004)), tuple(end[1]), outer=None)
+    bm.faces.ensure_lookup_table()
     for f in bm.faces:
         c = mw @ f.calc_center_median()
         if c.y >= 0 or c.z < 1.05:

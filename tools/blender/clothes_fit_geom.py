@@ -384,12 +384,37 @@ def collar_clamp(r: float, outline: float, z: float, rim_z: float, clear: float 
 
 
 def seat_weight(y: float, z: float, dist: float, z_lo: float, z_hi: float, y0: float, ramp: float = 0.03,
-                far: float = 0.09) -> float:
+                far: float = 0.09, y1: float = math.inf) -> float:
     """How much a garment vertex over the seat is re-laid on the body (E1f, clothes_top.seat_wrap): 1 behind y0
     (the side seams) between z_lo and z_hi (under the waistband) and within far - ramp of the body; each border eased
     out over ramp with a smoothstep, so the re-laid cloth meets the rest without a step; 0 where the cloth bridges
-    (farther than far: the crotch)."""
+    (farther than far: the crotch). E1g: y1 bounds the zone's other side too (the front's own zone: y0 < y < y1)."""
     def s(t: float) -> float:
         t = min(1.0, max(0.0, t / ramp))
         return t * t * (3.0 - 2.0 * t)
-    return s(z - z_lo) * s(z_hi - z) * s(y - y0) * s(far - dist)
+    return s(z - z_lo) * s(z_hi - z) * s(y - y0) * s(far - dist) * (s(y1 - y) if math.isfinite(y1) else 1.0)
+
+
+def near_rings(seeds: list[int], nbrs: list[list[int]], rings: int) -> list[float]:
+    """E1g: 1.0 for each vertex within rings edge steps of a seed (the seat's open edges), else 0.0: the seat's relax
+    acts only there, so the cloth away from a flap keeps its layout (the relax over Meshy's whole relief smeared the
+    stitches into wavy streaks, d16)."""
+    out = [0.0] * len(nbrs)
+    front = [i for i in seeds if 0 <= i < len(nbrs)]
+    for i in front:
+        out[i] = 1.0
+    for _ in range(max(0, rings)):
+        nxt = []
+        for i in front:
+            for j in nbrs[i]:
+                if out[j] == 0.0:
+                    out[j] = 1.0
+                    nxt.append(j)
+        front = nxt
+    return out
+
+
+def spike_out(d: tuple[float, float, float], n: tuple[float, float, float], limit: float) -> bool:
+    """E1g: a vertex is a spike's tip when its offset d from its neighbours' mean reaches more than limit m along the
+    body's outward normal n (a unit vector)."""
+    return d[0] * n[0] + d[1] * n[1] + d[2] * n[2] > limit

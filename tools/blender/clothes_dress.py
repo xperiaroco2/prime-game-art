@@ -219,6 +219,20 @@ def main() -> int:
     ap.add_argument("--seat-clear", default="0.004,0.03", help="the seat's offset off the body, least and most (m)")
     ap.add_argument("--seat-smooth", type=int, default=20, help="rounds smoothing the seat's offsets")
     ap.add_argument("--seat-relax", type=int, default=8, help="rounds relaxing the seat's folds along the body")
+    ap.add_argument("--fill-holes", type=int, default=12,
+                    help="E1g: the garment's closed open-edge loops of at most this many edges under the waist are "
+                         "filled (Meshy's holes, the dark divots; 0: off)")
+    ap.add_argument("--despike", type=float, default=0.015,
+                    help="E1g: a garment vertex under the waist this far (m) out of its neighbours' mean along the "
+                         "body's normal goes to that mean (the hips' spikes; 0: off)")
+    ap.add_argument("--despike-rounds", type=int, default=3, help="E1g: the despike's passes")
+    ap.add_argument("--seat-y0", type=float, default=-0.02,
+                    help="the seat's zone lies behind this y (the side seams; -1: no bound)")
+    ap.add_argument("--seat-y1", type=float, default=float("inf"),
+                    help="E1g: and in front of this y (a front zone, the chameleon's divots: --seat-y0 -1 --seat-y1 -0.03)")
+    ap.add_argument("--seat-open-rings", type=int, default=0,
+                    help="E1g: the relax only on folds within this many edge rings of an open edge (the flaps); 0: "
+                         "every fold (E1f, smeared the stitches)")
     ap.add_argument("--seat-fold", type=float, default=0.5,
                     help="a seat face whose normal's dot with the body's is under this is a fold (relaxed)")
     ap.add_argument("--band-flaps", type=float, default=0.10,
@@ -438,6 +452,12 @@ def main() -> int:
             garment.data.update()
         rep["garment_stray_verts_removed"] = len(bad)
         say("garment strays removed", len(bad))
+    if args.fill_holes > 0 and garment is not None:  # E1g: Meshy's small holes in the trousers (the dark divots)
+        import clothes_top as TOP
+        rep["holes_filled"] = TOP.fill_holes(garment, args)
+    if args.despike > 0 and garment is not None:  # E1g: the hips' spikes
+        import clothes_top as TOP
+        rep["despike"] = TOP.despike(garment, char, args)
     if args.seat_wrap > 0 and garment is not None:  # E1f: the seat's folds re-laid on the body
         import clothes_top as TOP
         rep["seat_wrap"] = TOP.seat_wrap(garment, char, args)
