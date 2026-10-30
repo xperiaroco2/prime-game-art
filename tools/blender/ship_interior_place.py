@@ -155,7 +155,7 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
                                               "plain": S._SHIP["stations"]["plain_width_m"] / 2}, True),
     # lens step 1: the front socket's flat chord from the throat's corner to the corridor's opening (2.15 m)
     "hall_panel_flat_sockf": ("flat_panel", {"half": round(_hv(PHI_SOCKF)[1], 5), "apo": round(_hv(PHI_SOCKF)[0], 5),
-                                             "height": S.H_HALL, "plain": 0.86, "clad": "int_silver_c"}, True),   # the spot 0.045 m off its middle;
+                                             "height": S.H_HALL, "plain": 0.86, "clad": "int_silver_c__clad"}, True),   # the spot 0.045 m off its middle;
     # step 6: clad in the throat's end-frame metal (flat, the station spot stays plain), a soft warm lamp on it (ship.toml)
     "cor_wall_up_a": ("cor_wall_up", {"length": S.MOD_L, "tone": "a"}, True),
     "cor_wall_up_b": ("cor_wall_up", {"length": S.MOD_L, "tone": "b"}, True),

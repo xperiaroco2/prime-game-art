@@ -503,7 +503,7 @@ glow_pod = {c = [0.2, 0.9, 1.0], e = 0.6, l = 0.15, rr = 0.6}        # lens step
 int_silver_a = {v = 0.55, r = 0.25, m = 0.45}
 int_silver_b = {v = 0.55, r = 0.25, m = 0.45}
 int_silver_c = {v = 0.55, r = 0.25, m = 0.45}
-int_silver_c__clad = {v = 0.9, r = 0.0, m = 0.2}                     # step 7: the corner flats' matte clad (its own row: the family's m 0.45 would undo it); the warm lamp before each lights it
+int_silver_c__clad = {v = 0.9, r = 0.0, m = 0.2, l = 0.0}                  # step 7: the corner flats' matte clad (its own row: the family's m 0.45 would undo it); the warm lamp before each lights it
 
 
 # The capsule walk: up the ramp, through the hall into both tip rooms and back out. Points [x, y, h].
