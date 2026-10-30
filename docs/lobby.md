@@ -16,6 +16,10 @@ window's Earth and the light on top.
 | `tools/blender/lobby_build.py` | The shell builder, one GLB per piece (headless Blender) |
 | `godot/lobby/hall.gd` | The Godot side: import check, walk and blocks (headless); the shots (off-screen window) |
 | `tools/tests/test_lobby_layout.py` | Fast tests of the check |
+| `tools/blender/lobby_earth_tex.py` | Step 3b: NASA's Earth maps scaled to game textures (headless Blender) |
+| `godot/lobby/earth_sky.gdshader` | Step 3b: the night Earth, its atmosphere rim and the stars as a sky shader (the game's file) |
+| `godot/lobby/window_glass.gdshader` | Step 3b: the window's glass, a faint tint and a grazing reflection (the game's file) |
+| `sources/nasa_earth_lobby.toml` | Step 3b: the Earth's source record (`NASA-PD`, credit "Earth imagery: NASA") |
 
 The source: the engineer's approved drawing `D:/prime-game-design/ideas/lobby-station/hall/drawing/drawing.js` (its
 `H` object and rows table) and concepts `a_entrance.jpg` (A) and `c_back.jpg` (C) beside it; the ship's placement from
@@ -92,6 +96,8 @@ tools/run.sh lobby --build                     # the GLBs into <raw>/<raw_dir>/p
 tools/run.sh lobby --godot                     # headless import, sizes, colliders, the walk and the blocks
 tools/run.sh lobby --shoot <raw>/lobby/hall/v4/shots    # also closeups.png (step 2c)
 tools/run.sh lobby --grid <raw>/lobby/hall/v4/grid    # the colour schemes' taste grid
+tools/run.sh lobby --earth-tex                 # step 3b: NASA's maps -> <raw>/<[earth] tex_dir>, 4096 x 2048 JPEGs
+tools/run.sh lobby --earth-grid <raw>/lobby/hall/v5/grid    # step 3b: the Earth variants E1-E3
 ```
 
 `--build`, `--godot` and `--shoot` are heavy runs (Blender, Godot; one at a time): agents start them in the background.
@@ -379,6 +385,41 @@ Measured (step 3, S4):
 pendants are most of the vault's growth (6 x about 2.4k). Five shared maps, 1024 px PNGs (normal 1.7 MB, roughness
 0.7, copper roughness 0.7, grime 0.3, scuff 0.7 MB), each GLB embedding the ones its materials use.
 
+## Step 3b: the night Earth and the window frame
+
+The engineer's decision (2026-10-30, art #356): the Earth comes from NASA's imagery; he added US government public
+domain (NASA) to the allowlist as `NASA-PD`, with the credit line "Earth imagery: NASA", no NASA logos and no implied
+endorsement (`docs/decisions/2026-10-30-nasa-public-domain.md`, `docs/manifest.md`).
+
+- The sources (`sources/nasa_earth_lobby.toml`), from NASA's image server eoimages.gsfc.nasa.gov, kept as downloaded in
+  `<raw>/lobby/hall/earth-src/`: Black Marble 2016 at 3 km (`BlackMarble_2016_3km.jpg`, 13500 x 6750, 8.1 MB), Blue
+  Marble Next Generation, December 2004 with bathymetry (`world.topo.bathy.200412.3x5400x2700.jpg`, 5400 x 2700,
+  2.6 MB), the Blue Marble clouds (`cloud_combined_8192.tif`, 8192 x 4096, 35.9 MB).
+- `lobby --earth-tex` scales them in headless Blender (the Standard view, no look) to `[earth] size`, 4096 x 2048
+  JPEGs at quality 92: `<raw>/lobby/hall/v5/earth/earth_night.jpg`, `earth_day.jpg`, `earth_clouds.jpg`.
+- `godot/lobby/earth_sky.gdshader`, a sky shader: the planet a unit sphere along `earth_dir` at the distance that
+  gives it `earth_radius_deg`; each ray that hits it reads the maps at the hit's latitude and longitude, turned so that
+  `subpoint` faces the eye with north up. The night map's lights (its luminance over a threshold) turn warm orange
+  (`lights_rgb`, `lights_energy`), its dark land and sea stay (`base_energy`), the day map lit by a faint moon
+  (`moon_rgb`, `moon_energy`), the clouds dim the lights and glow faintly; with `sun_energy` the sunward side gets the
+  day map and white clouds. The atmosphere: a thin bright blue rim at the limb (`rim_width_deg`), a little haze inside,
+  a faint halo outside; toward the sun the rim turns to `dawn_rgb`. Stars: two layers of at most one star per cell of a
+  cube-face grid, faded near the rim. A sky is at infinity: no parallax as the player walks. The radiance cubemap
+  pass draws the review light's neutral grey sky, so the reflections and the hall's look do not change.
+- `godot/lobby/window_glass.gdshader` on the `lobby_glass` surfaces: a faint tint (`glass_rgb`, `glass_alpha`) and the
+  sky's reflection, stronger at grazing angles.
+- `[earth]` in `hall.toml`: `variant` (the one switch, default E1), the maps, the shared `[earth.look]` and three
+  variants: E1 a huge Earth (radius 48 deg, its centre 22 deg below the horizon to the south) whose limb arcs across the
+  upper window; E2 the same with the sun 1.5 deg behind the limb on the east side (azimuth 30, elevation 14; the left as the spawns face the window): a
+  thin dawn glow on that side of the rim; E3 a disc of 13 deg in the window's middle with more stars. The check refuses
+  an unknown variant, a texture over 4096 x 2048, a grid view that is no view and angles out of range.
+- `lobby --earth-grid DIR`: the variants in `[earth] grid`'s views (`spawn_eye`, `corner_nw`), `grid.png` and each
+  frame at full size (`E1_spawn_eye.png` ...).
+- The window frame (the engineer's "less copper"): the sill, transom, head, mullions, caps, shoes and collars in
+  `lobby_metal`, the dark graphite-teal; copper only as a thin edge: a 3 cm lip along the sill's ledge and the
+  transom's and the head's hall-side edges, and the mullions' 14 cm cap noses (`window_copper`). window_frame 2628
+  triangles (step 3: 1524).
+
 ## Open problems
 
 - The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
@@ -388,7 +429,8 @@ pendants are most of the vault's growth (6 x about 2.4k). Five shared maps, 1024
 - Concept A's camera cannot be matched with the ship 7 m north (see above); A shows the ship's nose close up.
 - The pilaster width (0.8 m, not the drawing's 1.2 m glyph) and the vault's cross-section are our readings of the
   drawing.
-- No Earth yet (step 3 stopped it on the licence, above) and no light design (step 4); the review light is not the game's, and the vault reads dark under it.
+- No light design yet (step 4); the review light is not the game's, and the vault reads dark under it. The Earth
+  (step 3b) lights nothing in the hall: it is only the background, and the reflections keep the neutral grey sky.
 - The lunettes' two end columns (where the vault meets the side walls) stay unpanelled: a dark wedge (`c_lunette`).
 - The vault and its I-section ribs still read dark under the review light (no light from below until step 4); the
   collars and corbels show mostly as copper glints.
