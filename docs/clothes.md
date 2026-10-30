@@ -599,6 +599,18 @@ above it again from Blender's rest matrices.
   body's, `--seam-x` moved with the upper arm's root, `--arm-axis` through the upper arm's head, and the cuffs
   `--cuff-back` (35 mm) in from the hand bone's head. The old fixed planes (`--planes fixed`, the default) put B13's
   cuff past her wrist (her sleeve covered the hand, the proof's 64 mm pokes) and A11's on the thumb's root.
+- **A garment's own waist** (M2c): `--waist-z` puts the waist plane at that height instead of the bones' (the other
+  planes stay from the bones). The m2 dungarees' band edge on B13 sits at 0.896 to 0.932 m, under her bones' 0.954 m:
+  between the two the Meshy shirt texels stayed beside the bib (a grey crumpled shard by the hip button). With
+  `--waist-z 0.93` the built band covers 0.898 to 0.93 m; the top's hem goes down with it (`--shell-hem 0.92`), or the
+  body shows between the band and the hem. The m2 map's plain denim for the straps and the `--plain` boxes is
+  `--strap-uv 0.5957,0.6172,0.5425,0.5879` (a 44 x 93 texel window inside a leg island, sRGB std 0.002; the default
+  rectangle lies on an island's edge there: the straps' black hexagons). Its turn-ups' grey herringbone texels and
+  the hips' side openings, front and back, get plain denim from `--plain` boxes (`0,0.3,-0.3,0.3,0,0.19`,
+  `0.108,0.25,-0.25,0.05,0.82,0.95` and `0.12,0.25,0.05,0.25,0.82,0.95`); `--waistband 0.038,0.015` laps the band
+  further over the trousers' ragged top. Its denim is already a dark indigo (legs sRGB 0.066, 0.125, 0.198): E1's
+  `--denim-gain 2.15,2.15,2.1`, tuned for the old near-black bake, made it a light mid blue; `1.05,1.3,1.25` brings
+  the High look's legs to the turnaround's (measured on the comparison sheets: render/turnaround in linear light).
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'

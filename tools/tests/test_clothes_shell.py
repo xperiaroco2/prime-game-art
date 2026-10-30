@@ -347,6 +347,14 @@ class BodyPlanes(unittest.TestCase):  # E1b: the cut planes from a body's own bo
         self.assertLess(pl["bib"][1], pl["neck"][1])
         self.assertEqual(pl["arm_axis"], (0.041, 1.216))
 
+    def test_waist_z_sets_the_waist_alone(self):  # M2c: the m2 dungarees' band under B13's bones' waist
+        pl = H.body_planes(0.980, 1.274, 0.041, (0.129, 0.041, 1.216), 0.598)
+        low = H.body_planes(0.980, 1.274, 0.041, (0.129, 0.041, 1.216), 0.598, waist_z=0.93)
+        self.assertAlmostEqual(low["waist"], 0.93)
+        for k in pl:
+            if k != "waist":
+                self.assertEqual(low[k], pl[k])
+
     def test_a_neck_under_the_chest_is_refused(self):
         with self.assertRaises(ValueError):
             H.body_planes(1.3, 1.2, 0.04, (0.15, 0.06, 1.27), 0.64)

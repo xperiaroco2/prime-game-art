@@ -310,6 +310,9 @@ def main() -> int:
                     help="the crew neck's plane through its front and back points: yf,zf,yb,zb (m)")
     ap.add_argument("--neck-r", type=float, default=0.09, help="the neck cut reaches this far out in |x| (m)")
     ap.add_argument("--waist", type=float, default=1.0, help="the Meshy trousers' waistband height (m)")
+    ap.add_argument("--waist-z", type=float, default=None,
+                    help="M2c: the waist plane at this height over --planes bones' (m; a garment whose own band sits "
+                         "lower than the bones' waist: the band's edge, so no shirt texels stay over it; default: off)")
     ap.add_argument("--bib", default="0.105,1.166", help="the bib's half width and top (m)")
     ap.add_argument("--back", default="0.03,1.12,0.12,0.03",
                     help="the back panel: least y, apex z, half width at the waist and at the apex (m)")
@@ -438,7 +441,8 @@ def main() -> int:
         bw = lambda n: arm.matrix_world @ arm.data.bones[n].head_local
         try:
             ua, hand = bw("LeftUpperArm"), bw("LeftHand")
-            pl = H.body_planes(bw("Chest").z, bw("Neck").z, bw("Neck").y, tuple(ua), hand.x, args.cuff_back)
+            pl = H.body_planes(bw("Chest").z, bw("Neck").z, bw("Neck").y, tuple(ua), hand.x, args.cuff_back,
+                                 waist_z=args.waist_z)
         except KeyError as e:
             say("REFUSED --planes bones: no bone", e)
             return 3
