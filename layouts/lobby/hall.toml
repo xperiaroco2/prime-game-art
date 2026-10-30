@@ -217,6 +217,8 @@ closeups = [
   ["c_door", "5: a door's leaves, lip, lamp housing and lintel", [-11.0, 2.8, -25.8], [-11.0, 3.9, -30.0], 55.0],
   ["c_pilaster", "6: a pilaster's chamfered base and band, the mullions", [13.5, 1.7, 1.5], [20.0, 3.2, 8.0], 65.0],
   ["c_mullion", "6: the window's mullions: cap, nose, shoe, collar", [7.0, 1.7, 8.0], [12.5, 2.4, 13.6], 60.0],
+  ["c_door_floor", "step 3: D3 scuffed, its keep-clear box, worn plates, bolts", [-11.0, 1.9, -24.0], [-11.0, 0.9, -30.0], 60.0],
+  ["c_ring", "step 3: the wider ring with its copper inlays, the bolts, a service plate", [11.0, 1.7, -8.0], [15.0, 0.0, -12.5], 55.0],
 ]
 # the taste grid (`lobby --grid DIR`): these views once per scheme, one row each, labelled S1..S6
 grid = ["corner_nw", "door_d3"]
