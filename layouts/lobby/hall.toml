@@ -122,7 +122,7 @@ collide = true
 # scheme into the GLBs and the shots apply it in Godot (the grid each in turn). The hazard stripes (yellow-black), the
 # door lamps (red), the seams and the glass are fixed in every scheme.
 scheme = "S1"
-mats = { lobby_panel = ["panel", 1.0, 0.46, 0.0], lobby_panel2 = ["panel", 0.9, 0.62, 0.0], lobby_panel3 = ["panel", 1.1, 0.54, 0.0], lobby_inset = ["panel", 0.72, 0.58, 0.0], lobby_vault = ["panel", 1.12, 0.5, 0.0], lobby_pilaster = ["frame", 1.0, 0.5, 0.0], lobby_rib = ["frame", 1.12, 0.48, 0.0], lobby_wall = ["frame", 0.6, 0.62, 0.0], lobby_trim = ["trim", 1.0, 0.4, 0.0], lobby_floor = ["floor", 1.0, 0.15, 0.0], lobby_floor2 = ["floor", 0.92, 0.2, 0.0], lobby_floor3 = ["floor", 1.07, 0.12, 0.0], lobby_strip = ["accent", 1.0, 0.4, 1.8], lobby_ring = ["accent", 0.9, 0.35, 0.5] }
+mats = { lobby_panel = ["panel", 1.0, 0.46, 0.0], lobby_panel2 = ["panel", 0.9, 0.62, 0.0], lobby_panel3 = ["panel", 1.1, 0.54, 0.0], lobby_inset = ["panel", 0.72, 0.58, 0.0], lobby_vault = ["panel", 1.12, 0.5, 0.0], lobby_pilaster = ["frame", 1.0, 0.5, 0.0], lobby_rib = ["frame", 1.12, 0.48, 0.0], lobby_wall = ["frame", 0.6, 0.62, 0.0], lobby_trim = ["trim", 1.0, 0.4, 0.0], lobby_floor = ["floor", 1.0, 0.15, 0.0], lobby_floor2 = ["floor", 0.96, 0.19, 0.0], lobby_floor3 = ["floor", 1.035, 0.12, 0.0], lobby_strip = ["accent", 1.0, 0.4, 1.8], lobby_ring = ["accent", 0.9, 0.35, 0.5] }
 
 [look.schemes.S1]
 title = "cool blue-grey, graphite frames, warm orange strips"

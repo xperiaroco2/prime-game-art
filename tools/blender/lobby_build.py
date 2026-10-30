@@ -507,9 +507,10 @@ def vault(H: Hall) -> list[Part]:
         lun.face([(xa, h["wall"], h["zN"]), (xb, h["wall"], h["zN"]), (xb, yb, h["zN"]), (xa, ya, h["zN"])], (0, 0, 1))
         za, zb = H.arc_z(xa), H.arc_z(xb)
         lun.face([(xa, h["wall"], za), (xb, h["wall"], zb), (xb, yb, zb), (xa, ya, za)], (0, 0, -1))
-    # the infill: light bevelled panels between the ribs in two depths, 1.5 cm seams over the dark shell
+    # the infill: light bevelled panels between the ribs in two depths, their 1.5 cm seams under dark battens
     base = Part("vault_panels", "lobby_vault", closed=False)
     inner = Part("vault_panels2", "lobby_panel3", closed=False)
+    battens = Part("vault_battens", "lobby_rib", closed=False)   # dark battens over the seams: no bright hairlines
     pw = h["pilaster_w"] / 2
     edges = [h["zN"]] + [z for r in h["ribs"] for z in (r - pw, r + pw)] + [None]
     cols = [h["x0"] + 2.0 * i for i in range(int((h["x1"] - h["x0"]) / 2.0) + 1)]
@@ -522,6 +523,10 @@ def vault(H: Hall) -> list[Part]:
                 plate(base, F, xa + 0.0075, xb - 0.0075, za, zb, 0.0, 0.08, 0.02)
                 if zb - za > 1.2:
                     plate(inner, F, xa + 0.32, xb - 0.32, za + 0.32, zb - 0.32, 0.08, 0.12, 0.02)
+                if k == 1:   # a batten over the seam between the span's two panels
+                    plate(battens, F, xa, xb, za - 0.045, za + 0.03, 0.0, 0.092, 0.008)
+            if xb < h["x1"] - 1e-6:   # and over the seam between this column and the next
+                plate(battens, F, xb - 0.035, xb + 0.035, z0, z1, 0.0, 0.092, 0.008)
     # the ribs: a broad flange over the panels' ends and the chamfered body (still hanging rib_d)
     ribs = Part("vault_ribs", "lobby_rib")
     d, c = h["rib_d"], 0.12
@@ -554,7 +559,7 @@ def vault(H: Hall) -> list[Part]:
             lamps.loft([sec(0.13, yb + 0.98), sec(0.22, yb + 0.82), sec(0.34, yb + 0.62), sec(0.7, yb + 0.12),
                         sec(0.78, yb), sec(0.72, yb - 0.02)])
             lens.face(sec(0.66, yb - 0.026), (0, -1, 0))
-    return [shell, lun, base, inner, ribs, spine, lamps, lens]
+    return [shell, lun, base, inner, battens, ribs, spine, lamps, lens]
 
 
 def window_frame(H: Hall) -> list[Part]:
