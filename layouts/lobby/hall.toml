@@ -1,0 +1,147 @@
+# The lobby hall (art #356, docs/lobby.md): the numbers of the approved drawing
+# (D:/prime-game-design/ideas/lobby-station/hall/drawing/drawing.js, its `H` object and rows table; concepts
+# a_entrance.jpg and c_back.jpg) and the engineer's ship placement (art#356 comment 6522500716).
+# The frame is the game's levels/lobby/lobby.tscn: x east, z south, y up, the floor at y 0; every position below is in
+# it, in metres (Godot's own frame, no conversion). tools/runner/lobby_layout.py loads and checks this file; the
+# `lobby` command builds and shoots it.
+
+version = 1
+raw_dir = "lobby/hall/v1"          # under the raw folder: pieces/, plan/, logs/, shots/
+
+[hall]
+x0 = -20.0                         # H.x0, H.x1, H.zN, H.zS: the straight walls' inner faces, 40 x 40 m
+x1 = 20.0
+zN = -30.0
+zS = 10.0
+bulge = 6.0                        # H.bulge: the window arc through (+-20, 10) and (0, 16)
+wall = 12.0                        # H.wall: the walls' and the window's height
+apex = 15.0                        # H.apex: the ribbed vault's top (rows: "склепіння з ребрами до 15 м посередині")
+ribs = [-24.0, -18.0, -12.0, -6.0, 0.0, 6.0]   # H.ribs: the ribs across the hall (z), over the side walls' pilasters
+north_pilasters = [-18.0, -6.0, 6.0, 18.0]     # drawing.js northWall(): the north wall's pilasters (x)
+tile = 2.0                         # H.tile: the floor plates
+# Not in H: the drawing's pilaster glyph is 1.2 x 0.6 m (12 x 6 svg units at 10 per metre), but 1.2 m puts the
+# pilaster at z 0 0.1 m into D1 and D2 (z 0.5..3.5); 0.8 m leaves 0.1 m. The wall's thickness and the trims are ours.
+pilaster_w = 0.8
+pilaster_d = 0.6
+wall_t = 0.5
+rib_d = 0.5                        # how far a rib hangs below the vault
+door_clear_m = 0.1                 # the least gap between a door's opening and a pilaster or the arch
+corner_clear_m = 1.0               # the least gap between a door's opening and a corner
+
+[window]
+sill = 0.5                         # H.sill
+transom = 3.0                      # H.transom: one cross bar
+panes = 6                          # H.panes: even along the arc's angle (drawing.js plan(): mullions at i = 0..6)
+mullion_w = 0.5                    # not in H: the mullions' and bars' size (blockout)
+bar_h = 0.3
+
+[arch]
+w = 6.0                            # H.arch: the entrance in the north wall's middle
+h = 6.0
+depth = 8.0                        # the short corridor, closed at its end (rows: "у кінці зачинені двері")
+frame = 0.6                        # not in H: the portal's frame on the hall side
+
+[door]
+w = 3.0                            # H.door
+h = 4.5
+lamp = 5.1                         # the red lamp's centre above the door
+# H.doors: D1 and D2 on the side walls at z +2 (concept A), D3 and D4 by the arch at x -+11 (concept C)
+doors = [["D1", "W", 2.0], ["D2", "E", 2.0], ["D3", "N", -11.0], ["D4", "N", 11.0]]
+
+[floor]
+ring_r = 15.0                      # H.ring: the floor ring round the ship
+spawns_z = 0.0                     # H.spawns: ten markers at z 0, x -9..9 step 2 (the greybox's, unchanged)
+spawns_x = [-9.0, -7.0, -5.0, -3.0, -1.0, 1.0, 3.0, 5.0, 7.0, 9.0]
+spawn_ship_m = 2.0                 # the least gap between a spawn and the ship's footprint
+ship_wall_m = 3.0                  # the least gap between the ship's footprint and every wall and door
+
+[ship]
+# The engineer's decision (2026-10-30, art#356 comment 6522500716): the ship 7 m nearer the entrance than drawn, its
+# plan origin at lobby (0, 0, -17), nose north; plan x = lobby x, lobby z = plan y - 17, plan h = lobby y. The nose at
+# z -24.1, the engine pods' ends at z -2.04; the ring centred on the ship's middle (z -13.07, computed by the check).
+origin = [0.0, 0.0, -17.0]
+pieces_dir = "ship/v5/pieces"      # art #263's built pieces (under the raw folder), never rebuilt from here
+hull = "P"                         # ship_hull_shape.outline("P"): the hull's footprint
+pods = ["nozzle_pod_outer", "nozzle_pod_mid"]   # their placed bounds join the footprint (the build report)
+tail = "skin_top"                  # its bounds' aft end beyond the outline joins the footprint, as wide as the pods
+lanes = ["exterior"]               # the interior is only seen through the canopies' glass: left out in step 1
+# The ramp is down (the ship's closed state does not exist yet): it stays as a stand-in and is not in the footprint;
+# its foot at plan y -12.6 lands at z -29.6, 0.4 m from the north wall (docs/lobby.md, open problems).
+stand_in = ["ramp", "ramp_lights"]
+# The forest clearing (layouts/ship/exterior.toml), not in the lobby
+drop = ["ground", "pine_a", "pine_b", "pine_c", "pine_d", "pine_e", "pine_f", "pine_g", "pine_s", "rock_a", "rock_b",
+        "rock_c", "rock_pile_a", "rock_pile_b", "ground_lamp", "dirt_patch", "dirt_path", "tuft_a", "tuft_b",
+        "tuft_dry", "bush_s", "bush_m", "bush_l", "log_a", "log_b", "log_c", "stump", "party_post", "party_lights",
+        "fern_a", "fern_b", "moss_a", "moss_b", "litter"]
+
+# The hall's pieces (tools/blender/lobby_build.py builds each by its id): collide = trimesh colliders (`-col`)
+[[pieces]]
+id = "floor"                       # the slab, the 2 m plates, the ring
+collide = true
+
+[[pieces]]
+id = "walls"                       # the west, east and north walls with their openings and pilasters
+collide = true
+
+[[pieces]]
+id = "vault"                       # the vault with its ribs and the lunettes over the north wall and the window
+collide = false
+
+[[pieces]]
+id = "window_frame"                # the sill, the 7 mullions, the transom and the head along the arc
+collide = true
+
+[[pieces]]
+id = "window_glass"
+collide = true
+
+[[pieces]]
+id = "arch"                        # the portal's frame and the corridor: walls, ceiling, floor, closed end
+collide = true
+
+[[pieces]]
+id = "door"                        # a sealed door: slab, frame, red lamp; built facing +z, placed four times
+collide = true
+
+# [piece, [x, y, z], yaw degrees about y]; the hall's own pieces sit at the origin
+place = [
+  ["floor", [0.0, 0.0, 0.0], 0.0],
+  ["walls", [0.0, 0.0, 0.0], 0.0],
+  ["vault", [0.0, 0.0, 0.0], 0.0],
+  ["window_frame", [0.0, 0.0, 0.0], 0.0],
+  ["window_glass", [0.0, 0.0, 0.0], 0.0],
+  ["arch", [0.0, 0.0, 0.0], 0.0],
+]
+
+[review]
+background = [0.02, 0.035, 0.11]   # the dark blue placeholder behind the window (no Earth yet)
+# [name, title, eye [x, y, z], look [x, y, z], vertical fov, the concept to compare with ("" for none)]. Cameras
+# estimated from the pictures (docs/lobby.md): A from the arch's mouth, a little west, at eye height, about 80 deg
+# across; C from the window's bulge at about 5 m, about 60 deg across. The concepts drew the ship 7 m further south.
+views = [
+  ["a_entrance", "A: from the entrance, as concept A", [-2.5, 1.7, -33.0], [0.5, 3.2, -10.0], 52.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/a_entrance.jpg"],
+  ["c_back", "C: from the window, as concept C", [0.0, 5.0, 14.0], [0.0, 2.6, -24.0], 37.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/c_back.jpg"],
+  ["spawn_eye", "a spawn's eye (x -1, z 0) toward the ship", [-1.0, 1.65, 0.0], [0.0, 2.6, -13.0], 60.0, ""],
+]
+top = { name = "top", title = "top: plan view, north up (the vault hidden)", size_m = 58.0, centre = [0.0, -11.0], hide = ["vault"] }
+
+[walk]
+r = 0.4                            # the game's capsule (docs/ship.md "Player")
+h = 1.8
+# The capsule's waypoints [x, z] on the floor: the spawns, round the ship's east side, beside the ramp into the
+# corridor's end, back out, up to D4 and D3, round the west side to D1, across the spawns to D2.
+points = [
+  [-9.0, 0.0], [9.0, 0.0], [15.5, -6.0], [16.5, -13.0], [14.5, -22.0], [5.0, -27.8], [2.3, -30.8], [2.3, -34.0],
+  [0.0, -37.1], [2.3, -34.0], [2.3, -30.8], [2.3, -28.6], [11.0, -28.4], [2.3, -28.6], [2.3, -30.8], [-2.3, -30.8],
+  [-2.3, -28.6], [-11.0, -28.4], [-15.5, -22.0], [-16.5, -13.0], [-17.0, 2.0], [-18.4, 2.0], [-15.0, 4.0],
+  [15.0, 4.0], [18.4, 2.0],
+]
+# Walks that must not pass: [name, from [x, z], to [x, z], axis, the wall's inner face, the hall's side (+1 / -1)];
+# the capsule must end on the hall's side of that face.
+blocks = [
+  ["D1", [-17.5, 2.0], [-23.0, 2.0], "x", -20.0, 1],
+  ["D2", [17.5, 2.0], [23.0, 2.0], "x", 20.0, -1],
+  ["D3", [-11.0, -27.5], [-11.0, -33.0], "z", -30.0, 1],
+  ["D4", [11.0, -27.5], [11.0, -33.0], "z", -30.0, 1],
+  ["corridor_end", [0.0, -35.5], [0.0, -41.0], "z", -38.0, 1],
+]

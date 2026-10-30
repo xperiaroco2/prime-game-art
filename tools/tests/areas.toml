@@ -192,3 +192,10 @@ sources = [
   "tools/blender/clothes_shell.py",  # the shell top's, panels' and new straps' maths (#196, C1f)
 ]
 tests = ["test_clothes_texture_*", "test_clothes_strap*", "test_clothes_shell*"]
+
+[area.lobby]
+sources = [
+  "layouts/lobby/*", "tools/runner/lobby_*.py", "tools/runner/commands/lobby.py", "tools/blender/lobby_*",
+  "godot/lobby/*",  # the lobby hall (#356); test_lobby_layout.py is fast and always runs
+]
+tests = ["test_lobby_*"]
