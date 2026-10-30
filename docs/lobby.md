@@ -13,7 +13,7 @@ window's Earth and the light on top.
 | `layouts/lobby/hall.toml` | Every number: the hall, the window, the arch, the doors, the floor ring and spawns, the ship's placement and dropped pieces, the hall's pieces and placements, the review views, the walk and the blocks |
 | `tools/runner/lobby_layout.py` | Load, the check, the ship's footprint, the text plan (plain Python) |
 | `tools/runner/commands/lobby.py` | The `lobby` command |
-| `tools/blender/lobby_build.py` | The grey massing builder, one GLB per piece (headless Blender) |
+| `tools/blender/lobby_build.py` | The shell builder, one GLB per piece (headless Blender) |
 | `godot/lobby/hall.gd` | The Godot side: import check, walk and blocks (headless); the shots (off-screen window) |
 | `tools/tests/test_lobby_layout.py` | Fast tests of the check |
 
@@ -56,7 +56,7 @@ point under the ship; the views' eyes inside. The ship: its footprint is the con
 (`ship_hull_shape.outline("P")`), each placed pod's bounds and the tail (the `skin_top` piece's bounds aft of the
 outline, as wide as the pods) from art #263's `build_report.json`, moved by the origin; it keeps at least 2 m to every
 spawn and 3 m to every wall, the window and every door's opening, and the floor ring reaches no more than 1 m inside
-its outline. The text plan goes to `<raw>/lobby/hall/v1/plan/plan.txt`.
+its outline. The text plan goes to `<raw>/<raw_dir>/plan/plan.txt` (`raw_dir` in `hall.toml`: step 1 `lobby/hall/v1`, step 2 `lobby/hall/v2`).
 
 Measured (step 1): the spawns 2.04 m from the ship (the mid pod's end); the ship 6.95 m from the west and east walls,
 5.90 m from the north wall, 12.04 m from the window; D1/D2 14.58 m, D3/D4 8.83 m.
@@ -88,9 +88,10 @@ lamp; built facing +z, the command places it on its wall: N yaw 0, W 90, E -90).
 
 ```
 tools/run.sh lobby --check                     # the check and the text plan
-tools/run.sh lobby --build                     # the GLBs into <raw>/lobby/hall/v1/pieces with glTF-Validator
+tools/run.sh lobby --build                     # the GLBs into <raw>/<raw_dir>/pieces with glTF-Validator
 tools/run.sh lobby --godot                     # headless import, sizes, colliders, the walk and the blocks
-tools/run.sh lobby --shoot <raw>/lobby/hall/v1/shots
+tools/run.sh lobby --shoot <raw>/lobby/hall/v2/shots
+tools/run.sh lobby --grid <raw>/lobby/hall/v2/grid    # the metal variants' taste grid
 ```
 
 `--build`, `--godot` and `--shoot` are heavy runs (Blender, Godot; one at a time): agents start them in the background.
@@ -110,6 +111,67 @@ The cameras, estimated from the concepts: A at eye height, about 80 deg across; 
 edges put A's camera at about z -23 in the drawn hall, where the moved ship's nose now stands, so A stands at the north
 wall's foot west of the ramp (-5, 1.7, -29.3). C from the window's bulge (0, 5, 14) at about 5 m, about 60 deg across.
 
+## Step 2: shell and materials
+
+Step 2 turns the grey massing into the station hall's shell, the look of concepts A and C: no number the layout held
+moved (the engineer approved step 1's proportions on 2026-10-30). The raw output is `<raw>/lobby/hall/v2/` (`raw_dir`);
+v1 stays as it was.
+
+What each piece carries now (ours, not the drawing's; the bands and sizes are constants at the top of the pieces in
+`lobby_build.py`):
+
+- `walls`: the wall behind (`lobby_wall`, the seams' dark) with bevelled plates in front, 7 cm proud, 6 cm gaps, at
+  most 2.1 m wide, in rows 0.32-2.35, 2.41-4.6, 4.66-7.1 m under a cornice at 7.2-7.7 m and 7.8-9.85, 9.91-11.5 m above
+  it, cut round the doors (their frames and lamps up to 5.6 m) and the arch (its frames and strip up to 7.8 m); a
+  chamfered base trim (0.3 m), a crown band at 11.55-12 m; each pilaster a shaft with chamfered front corners, a plinth,
+  a capital and a band at the cornice, and one slim vertical orange strip (2.0-4.4 m, emissive, in a dark housing) on
+  its face; every third bay a louvred vent in its lowest row, every fourth a small service box with an amber
+  indicator; two conduits on brackets at 10.1 and 10.4 m along the side walls.
+- `vault`: the shell (`lobby_wall`) with bevelled infill panels (2 m across, two per rib span, hanging 0.1 m), the ribs
+  with chamfered lower edges (still hanging `rib_d` 0.5 m) and a spine beam along the crown between them.
+- `floor`: 2 m plates with 1.6 cm seams and 1 cm bevels over the dark slab (`lobby_grout`), polished (the variant's
+  `floor_roughness`); the ring as an amber line (12 cm, a little emissive) inlaid in a dark 34 cm channel.
+- `door`: two leaves with yellow-black hazard stripes at 45 deg, mirrored so they meet in chevrons, two nested
+  chamfered frame bands (0.22 and 0.2 m), the red lamp's housing and lens at 5.1 m and an orange strip above it.
+- `arch`: the portal's two chamfered bands (0.6 and 0.4 m) with an orange strip over them; down the corridor three
+  nested chamfered frames (z -32, -34, -36) with orange strips on their jambs, panelled walls, floor plates, and at the
+  end a shut plain door (two leaves with raised ribs, its frames, a red lamp and a strip).
+- `window_frame`: the same bars and mullions in the trim and pilaster metals.
+
+Materials are a library of 14 by name: 7 metals (`lobby_panel`, `lobby_pilaster`, `lobby_trim`, `lobby_vault`,
+`lobby_rib`, `lobby_floor`, `lobby_wall`) and 7 fixed (`lobby_grout`, `lobby_dark`, `lobby_ring`, `lobby_strip`,
+`lobby_lamp`, `lobby_hazard`, `lobby_glass`). Each piece is merged into one object per material (and per collision), so
+a piece draws in one call per material. The metals are plain metallic-roughness colours, no textures: the ship's
+`metal.gdshader` was not used, its scratches and grime are wrong for a clean hall and its fine seams would fight the
+geometry's own.
+
+The wall-and-floor metal is one switch, `[look] variant` in `hall.toml`: each metal's colour is the variant's `base`
+(sRGB) times its lightness in `[look] metals`; the builder writes the chosen variant into the GLBs and `hall.gd`
+applies it to the hall's metal surfaces (by their glTF material's name) when it shoots. `lobby --grid DIR` shoots the
+layout's `[review] grid` views once per variant into `grid.png`, a row each, labelled: V1 dark gunmetal, V2 warm dark
+bronze-grey, V3 cool blue-grey (metallic 0.5, roughness 0.42, the floor 0.2). The pieces are built with V1 until the
+engineer picks. The review light gained screen-space reflections for the polished floor; real lights are step 4.
+
+Measured (step 2):
+
+| Piece | Triangles | Materials |
+|---|---|---|
+| floor | 5232 | lobby_floor, lobby_grout, lobby_ring |
+| walls | 7764 | lobby_wall, lobby_panel, lobby_pilaster, lobby_trim, lobby_rib, lobby_dark, lobby_strip |
+| vault | 6048 | lobby_wall, lobby_vault, lobby_rib |
+| window_frame | 912 | lobby_trim, lobby_pilaster |
+| window_glass | 68 | lobby_glass |
+| arch | 980 | lobby_wall, lobby_trim, lobby_pilaster, lobby_panel, lobby_floor, lobby_grout, lobby_dark, lobby_strip, lobby_lamp |
+| door (x4) | 412 | lobby_trim, lobby_pilaster, lobby_dark, lobby_hazard, lobby_lamp, lobby_strip |
+
+21416 triangles in the 7 GLBs (22652 with the four doors placed), glTF-Validator clean. `--godot`: 37 pieces import at
+Blender's sizes, 60 colliders; the walk 22/22 points, 178.1 m in 59.7 s; the blocks hold (D1, D2 0.53 m, D3, D4 0.55
+m, the corridor's end 0.90 m short of their walls). Shots: 18-201 draw calls, 10-65k primitives (`corner_nw` 201 with
+the ship).
+
+The views (`[review] views`): the spawns face the window (+z), so `spawn_eye` looks at the window and `spawn_ship`
+toward the ship; `door_d3`, `arch` (from 6 m), `rib`, `floor_ring` are the close-ups.
+
 ## Open problems
 
 - The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
@@ -119,4 +181,7 @@ wall's foot west of the ramp (-5, 1.7, -29.3). C from the window's bulge (0, 5, 
 - Concept A's camera cannot be matched with the ship 7 m north (see above); A shows the ship's nose close up.
 - The pilaster width (0.8 m, not the drawing's 1.2 m glyph) and the vault's cross-section are our readings of the
   drawing.
-- No materials, no Earth, no light design yet (later steps); the review light is not the game's.
+- No Earth and no light design yet (later steps); the review light is not the game's, and the vault reads dark under it.
+- D1's and D2's frames: the pilasters at z 0 stand 0.1 m from their openings, so the frames' north jambs run into
+  those pilasters (the pilasters cover them).
+- Above each door, between its strip (5.6 m) and the cornice (7.2 m), the wall is bare (the concepts show it so).
