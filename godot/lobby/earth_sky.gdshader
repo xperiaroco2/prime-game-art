@@ -31,6 +31,7 @@ uniform float stars_energy = 1.6;
 uniform float stars_density = 1.0;
 
 // the neutral review sky for the reflections only (hall.gd's former ProceduralSkyMaterial)
+uniform float draw_earth = 1.0;     // step 4c: 0 when the Earth is an object (earth_object.gdshader): stars only
 uniform float cubemap_earth = 0.0;   // step 4: 1 draws the Earth in the radiance pass too (the probes, the floor)
 uniform vec3 neutral_top = vec3(0.55, 0.56, 0.6);
 uniform vec3 neutral_horizon = vec3(0.5, 0.5, 0.52);
@@ -84,6 +85,8 @@ void sky() {
 	vec3 v = normalize(EYEDIR);
 	if (AT_CUBEMAP_PASS && cubemap_earth < 0.5) {
 		COLOR = neutral(v);
+	} else if (!AT_CUBEMAP_PASS && draw_earth < 0.5) {   // step 4c: the visible Earth is the object; the stars stay
+		COLOR = (star_layer(v, 110.0, 0.07 * stars_density, 4.0) + star_layer(v, 260.0, 0.06 * stars_density, 1.0)) * stars_energy;
 	} else {
 		float alpha = radians(earth_radius_deg);
 		float d = 1.0 / sin(alpha);

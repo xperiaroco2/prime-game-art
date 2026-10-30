@@ -31,6 +31,8 @@ var _scenes: Dictionary = {}
 var _placed: Dictionary = {}   # piece id -> its placed nodes
 var _earth: ShaderMaterial      # the sky's material when the request has an Earth (step 3b)
 var _textures: Dictionary = {}  # path -> ImageTexture
+var _earth_obj: MeshInstance3D   # step 4c: the Earth as a sphere at a finite distance (earth_object.gdshader)
+var _far: float = 400.0          # the camera's far plane (step 4c: past the Earth object's shell)
 var _env: Environment
 var _rig: Node3D                 # step 4: the light rig of the current mood (rebuilt per mood)
 var _emissive: Array = []        # step 4: [mesh, surface, its material, is the ship] of the lens, strip, ring, lamp and the ship's glow surfaces
@@ -118,7 +120,7 @@ func _setup_scene() -> void:
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
 	_camera = Camera3D.new()
 	_camera.near = 0.05
-	_camera.far = 400.0
+	_camera.far = _far
 	root.add_child(_camera)
 	_camera.make_current()
 	var layer: CanvasLayer = CanvasLayer.new()
@@ -353,6 +355,49 @@ func _apply_earth(e: Dictionary) -> void:
 	_earth.set_shader_parameter("sun_dir", _v(e["sun"]).normalized())
 	_earth.set_shader_parameter("sun_energy", float(e["sun_energy"]))
 	_earth.set_shader_parameter("stars_density", float(e["stars"]))
+	_earth.set_shader_parameter("draw_earth", 0.0 if e.has("object") else 1.0)
+	if _earth_obj != null:
+		_earth_obj.queue_free()
+		_earth_obj = null
+	if e.has("object"):
+		_earth_object(e)
+
+
+## Step 4c: the Earth as an object, a shell of `shell` times the planet's radius round its centre (drawn by its back
+## faces, earth_object.gdshader) with the sky material's maps and look; the sky keeps the stars and, in its cubemap
+## pass, the Earth at infinity for the reflections.
+func _earth_object(e: Dictionary) -> void:
+	var o: Dictionary = e["object"]
+	var mat: ShaderMaterial = ShaderMaterial.new()
+	mat.shader = load("res://lobby/earth_object.gdshader")
+	mat.render_priority = -1
+	for k: String in ["night_tex", "day_tex", "cloud_tex", "subpoint", "roll_deg", "sun_dir", "sun_energy"]:
+		mat.set_shader_parameter(k, _earth.get_shader_parameter(k))
+	for k: String in e["look"]:
+		if not k.begins_with("glass_") and not k.begins_with("stars"):
+			var val: Variant = e["look"][k]
+			mat.set_shader_parameter(k, _v(val) if typeof(val) == TYPE_ARRAY else float(val))
+	mat.set_shader_parameter("centre", _v(o["centre"]))
+	mat.set_shader_parameter("radius", float(o["radius_m"]))
+	mat.set_shader_parameter("frame_dir", _v(o["frame_dir"]))
+	mat.set_shader_parameter("ref_radius_deg", float(e["radius_deg"]))
+	var sphere: SphereMesh = SphereMesh.new()
+	sphere.radius = float(o["radius_m"]) * float(o["shell"])
+	sphere.height = sphere.radius * 2.0
+	sphere.radial_segments = 96
+	sphere.rings = 48
+	_earth_obj = MeshInstance3D.new()
+	_earth_obj.name = "EarthObject"
+	_earth_obj.mesh = sphere
+	_earth_obj.material_override = mat
+	_earth_obj.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_earth_obj.extra_cull_margin = 16384.0
+	_earth_obj.position = _v(o["centre"])
+	root.add_child(_earth_obj)
+	_far = maxf(_far, float(o["far_m"]))
+	if _camera != null:
+		_camera.far = _far
+	print("LOBBY earth object %s: radius %.1f m at %.1f m from the spawn, far %.0f m" % [o["id"], float(o["radius_m"]), float(o["distance_m"]), _far])
 
 
 ## The window's glass (step 3b): window_glass.gdshader with the layout's tint over every lobby_glass surface.

@@ -152,6 +152,52 @@ def footprint(layout: dict[str, Any], outline: list[tuple[float, float]], report
     return [(x + ox, y + oz) for x, y in _hull2d(pts)]
 
 
+def glb_points(path: Path) -> list[tuple[float, float, float]]:
+    """Every vertex of a GLB's meshes in the file's frame (each mesh node's translation, rotation and scale applied,
+    one level: the ship's pieces hold their meshes at the root), plain Python."""
+    import struct
+    data = path.read_bytes()
+    jlen = struct.unpack_from("<I", data, 12)[0]
+    gl = json.loads(data[20:20 + jlen])
+    blen = struct.unpack_from("<I", data, 20 + jlen)[0]
+    binary = data[28 + jlen:28 + jlen + blen]
+    out = []
+    for node in gl.get("nodes", []):
+        if "mesh" not in node:
+            continue
+        t = node.get("translation", [0, 0, 0])
+        qx, qy, qz, qw = node.get("rotation", [0, 0, 0, 1])
+        s = node.get("scale", [1, 1, 1])
+        rot = [[1 - 2 * (qy * qy + qz * qz), 2 * (qx * qy - qz * qw), 2 * (qx * qz + qy * qw)],
+               [2 * (qx * qy + qz * qw), 1 - 2 * (qx * qx + qz * qz), 2 * (qy * qz - qx * qw)],
+               [2 * (qx * qz - qy * qw), 2 * (qy * qz + qx * qw), 1 - 2 * (qx * qx + qy * qy)]]
+        for prim in gl["meshes"][node["mesh"]]["primitives"]:
+            acc = gl["accessors"][prim["attributes"]["POSITION"]]
+            view = gl["bufferViews"][acc["bufferView"]]
+            off = view.get("byteOffset", 0) + acc.get("byteOffset", 0)
+            stride = view.get("byteStride", 12)
+            for i in range(acc["count"]):
+                v = struct.unpack_from("<3f", binary, off + i * stride)
+                v = [v[k] * s[k] for k in range(3)]
+                out.append(tuple(sum(rot[r][c] * v[c] for c in range(3)) + t[r] for r in range(3)))
+    return out
+
+
+def closed_footprint(layout: dict[str, Any], fp: list[tuple[float, float]], place: list) -> list[tuple[float, float]]:
+    """Step 4c: the footprint with the closed jaw nose of art #263's package ([ship] package): the convex hull of fp and
+    every vertex of the nose's pieces (built closed, each at its hinge) placed as in the ship's layout, in the lobby."""
+    pk = layout["ship"]["package"]
+    folder = common.raw_dir() / pk["dir"] / "assets" / "environment" / "ship"
+    ox, oz = layout["ship"]["origin"][0], layout["ship"]["origin"][2]
+    pts = list(fp)
+    for pid, at, yaw in place:
+        if pid in pk["nose"]:
+            if abs(yaw) > EPS:
+                raise ValueError(f"{pid}: a turned nose piece is not measured")
+            pts += [(at[0] + x + ox, at[1] + z + oz) for x, _y, z in glb_points(folder / f"{pid}.glb")]
+    return _hull2d(pts)
+
+
 def ship_place(layout: dict[str, Any], ship: dict[str, Any]) -> list:
     """The ship's placements kept in the lobby (its lanes minus the dropped clearing), plan [x, y, h] as given."""
     s = layout["ship"]
@@ -422,7 +468,41 @@ def earth_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
             p.append(f"earth {vid}: subpoint {v['subpoint']} is not [lat, lon]")
         if not (-180 <= v["sun"][0] <= 180 and -90 <= v["sun"][1] <= 90) or v["sun_energy"] < 0 or v["stars"] < 0:
             p.append(f"earth {vid}: sun, sun_energy or stars out of range")
+    if "distances" in e and e["variant"] in e["variants"]:
+        if e["distance"] not in e["distances"]:
+            p.append(f"earth: distance {e['distance']} is not in [earth.distances]")
+        h = layout["hall"]
+        lo = (h["x0"], -1.0, h["zN"])
+        hi = (h["x1"], h["apex"], h["zS"] + h["bulge"] + layout["hall"].get("wall_t", 0.5))
+        for did in e["distances"]:
+            o = earth_object(layout, e["variant"], did)
+            gap = math.dist(o["centre"], [min(max(c, a), b) for c, a, b in zip(o["centre"], lo, hi)]) - o["radius_m"]
+            if gap < 1.0:
+                p.append(f"earth {did}: the planet comes {gap:.2f} m from the hall's box (at least 1 m outside)")
+            if not 1.05 <= e["shell"] <= 2.0:
+                p.append(f"earth: shell {e['shell']} is not within 1.05..2")
+        for g in e.get("distance_views", []):
+            if len(g) != 5:
+                p.append(f"earth distance view {g[0]}: not [name, title, eye, look, fov]")
     return p
+
+
+def direction(azimuth: float, elevation: float) -> list[float]:
+    """A direction from [azimuth from south (+z) toward east (+x), elevation] in degrees."""
+    a, el = math.radians(azimuth), math.radians(elevation)
+    return [math.sin(a) * math.cos(el), math.sin(el), math.cos(a) * math.cos(el)]
+
+
+def earth_object(layout: dict[str, Any], vid: str, did: str) -> dict[str, Any]:
+    """Step 4c: the Earth as a sphere at [earth.distances] did's distance from [earth] eye along variant vid's centre,
+    its radius the one that gives it the variant's angular radius from there (what the sky's Earth filled)."""
+    e = layout["earth"]
+    v, dist = e["variants"][vid], e["distances"][did]["distance_m"]
+    u = direction(*v["centre"])
+    r = dist * math.sin(math.radians(v["radius_deg"]))
+    centre = [a + dist * b for a, b in zip(e["eye"], u)]
+    return {"id": did, "distance_m": dist, "radius_m": r, "centre": centre, "frame_dir": [-c for c in u],
+            "shell": e["shell"], "far_m": dist + r * e["shell"] + 100.0}
 
 
 LIGHT_KEYS = ("exposure", "ambient_rgb", "ambient_energy", "probe_intensity", "pendant_rgb", "pendant_energy",

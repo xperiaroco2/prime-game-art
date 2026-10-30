@@ -39,6 +39,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--earth-grid", type=Path, metavar="DIR", help="shoot the Earth variants' grid into DIR")
     parser.add_argument("--light-grid", type=Path, metavar="DIR", help="shoot the light moods' grid into DIR (step 4)")
     parser.add_argument("--video", type=Path, metavar="DIR", help="the eye-height walk-through MP4 into DIR (step 4)")
+    parser.add_argument("--distance-grid", type=Path, metavar="DIR",
+                        help="step 4c: the Earth object's distances D1-D3 from [earth] distance_views into DIR")
+    parser.add_argument("--earth-video", type=Path, metavar="DIR",
+                        help="step 4c: one short MP4 per Earth distance ([earth] video_keys) into DIR")
     parser.add_argument("--out", type=Path, help="the pieces' folder (default <raw>/<layout raw_dir>/pieces)")
 
 
@@ -70,6 +74,20 @@ def run(args: argparse.Namespace) -> int:
                f"aft z {n['aft_z']:.2f}, middle z {n['middle_z']:.2f}, half span {n['half_span']:.2f} m; "
                f"{len(place)} ship placements, {len(drop)} clearing pieces dropped")
     common.say(f"  spawns to the ship {spawn:.2f} m; ship to " + ", ".join(f"{k} {v:.2f}" for k, v in gaps.items()))
+    pk = layout["ship"].get("package")
+    if pk:   # step 4c: the closed ship of art #263's package, its pointed jaw nose shut, measured against the same rules
+        cf = lobby_layout.closed_footprint(layout, fp, place)
+        cn = lobby_layout.ship_numbers(layout, cf)
+        cg = lobby_layout.wall_gaps(layout, cf)
+        cs = min(lobby_layout.poly_dist(cf, (x, layout["floor"]["spawns_z"])) for x in layout["floor"]["spawns_x"])
+        closed = [q for q in lobby_layout.check(layout, cf) if q.startswith(("ship:", "spawn", "ring:"))]
+        common.say(f"  the closed ship ({pk['dir']}, nose {', '.join(pk['nose'])} shut): nose z {cn['nose_z']:.2f}, aft z "
+                   f"{cn['aft_z']:.2f}; spawns {cs:.2f} m; " + ", ".join(f"{k} {v:.2f}" for k, v in cg.items())
+                   + (f"; FAILS: {'; '.join(closed)}" if closed else "; holds"))
+        if pk["use"]:
+            problems += [f"the closed ship: {q}" for q in closed]
+        elif closed:
+            common.say("  the package instance is not used ([ship.package] use = false); the pieces of pieces_dir stand in, their jaws shut")
     for p in problems:
         common.say(f"  {p}")
     if problems:
@@ -105,6 +123,17 @@ def run(args: argparse.Namespace) -> int:
         code = shoot(layout, out, place, args.light_grid.resolve(), grid="light")
         if code:
             return code
+    if args.distance_grid:
+        code = shoot(layout, out, place, args.distance_grid.resolve(), grid="distance")
+        if code:
+            return code
+    if args.earth_video:
+        e = layout["earth"]
+        vd = dict(layout["video"], keys=e["video_keys"], max_mb=e["video_max_mb"])
+        for did in e["distances"]:
+            code = video(layout, out, place, args.earth_video.resolve(), vd=vd, distance=did, name=f"earth_{did}.mp4")
+            if code:
+                return code
     if args.video:
         return video(layout, out, place, args.video.resolve())
     return 0
@@ -134,7 +163,7 @@ def _dir(azimuth: float, elevation: float) -> list[float]:
     return [math.sin(a) * math.cos(el), math.sin(el), math.cos(a) * math.cos(el)]
 
 
-def earth_request(layout: dict, vid: str) -> dict:
+def earth_request(layout: dict, vid: str, distance: str | None = None) -> dict:
     """What hall.gd hands earth_sky.gdshader for one variant: the textures' paths, the look and the variant's numbers."""
     e = layout["earth"]
     tex = common.raw_dir() / e["tex_dir"]
@@ -143,10 +172,15 @@ def earth_request(layout: dict, vid: str) -> dict:
     if missing:
         raise common.Failure(f"the Earth's textures are missing (lobby --earth-tex): {', '.join(missing)}")
     v = e["variants"][vid]
-    return {"id": vid, "title": v["title"], "earth": {
+    out = {"id": vid, "title": v["title"], "earth": {
         "textures": files, "look": e["look"], "centre": _dir(*v["centre"]), "radius_deg": v["radius_deg"],
         "subpoint": v["subpoint"], "roll_deg": v["roll_deg"], "sun": _dir(*v["sun"]), "sun_energy": v["sun_energy"],
         "stars": v["stars"]}}
+    did = distance or e.get("distance")
+    if did:   # step 4c: the Earth as an object at a finite distance (earth_object.gdshader)
+        out["earth"]["object"] = lobby_layout.earth_object(layout, vid, did)
+        out.update({"id": did, "title": e["distances"][did]["title"]} if distance else {})
+    return out
 
 
 def look_request(layout: dict, scheme: str) -> dict:
@@ -187,16 +221,17 @@ def light_request(layout: dict, mood: str, trial: str | None = None) -> dict:
     return {"id": trial or mood, "title": title, "light": m}
 
 
-def video(layout: dict, out: Path, place: list, folder: Path) -> int:
+def video(layout: dict, out: Path, place: list, folder: Path, vd: dict | None = None, distance: str | None = None,
+          name: str = "walkthrough.mp4") -> int:
     """The eye-height walk-through (step 4): hall.gd renders every frame off-screen (mode "video", the layout's mood),
     headless Blender encodes them with the ship's ship_video.py under max_mb, and the frames are deleted."""
     import shutil
     req, staged, _want = scene_request(layout, out, place, lobby_layout.ship_report(layout))
-    vd = layout["video"]
+    vd = vd or layout["video"]
     req.update({"mode": "video", "background": layout["review"]["background"], "video": vd,
                 "watchdog_s": VIDEO_TIMEOUT - 60, "light": light_request(layout, layout["light"]["mood"])["light"]})
     if "earth" in layout:
-        req["earth"] = earth_request(layout, layout["earth"]["variant"])["earth"]
+        req["earth"] = earth_request(layout, layout["earth"]["variant"], distance)["earth"]
     errors = _stage(staged)
     work = folder / "work"
     shutil.rmtree(work / "frames", ignore_errors=True)
@@ -210,7 +245,7 @@ def video(layout: dict, out: Path, place: list, folder: Path) -> int:
     if code != 0 or not (work / "video.json").is_file():
         raise common.Failure(f"hall.gd video failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     info = json.loads((work / "video.json").read_text(encoding="utf-8"))
-    clip = folder / "walkthrough.mp4"
+    clip = folder / name
     clip.unlink(missing_ok=True)
     blender.run_script(VIDEO_SCRIPT, ["--frames", str(work / "frames"), "--out", str(clip), "--fps", str(vd["fps"]),
                                       "--max-mb", str(vd["max_mb"])], timeout=VIDEO_TIMEOUT)
@@ -364,6 +399,10 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
                     "variants": ([light_request(layout, layout["light"]["mood"], k) for k in layout["light"]["trials"]]
                                  if layout["light"].get("trials") else
                                  [light_request(layout, k) for k in layout["light"]["moods"]])})
+    elif grid == "distance":   # step 4c: the Earth object's distances from the same positions
+        e = layout["earth"]
+        req.update({"mode": "grid", "views": e["distance_views"],
+                    "variants": [earth_request(layout, e["variant"], d) for d in e["distances"]]})
     elif grid == "earth":
         req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in layout["earth"]["grid"]],
                     "variants": [earth_request(layout, k) for k in layout["earth"]["variants"]]})

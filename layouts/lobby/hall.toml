@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v6"          # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v7"          # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -70,14 +70,21 @@ ship_wall_m = 3.0                  # the least gap between the ship's footprint 
 # plan origin at lobby (0, 0, -17), nose north; plan x = lobby x, lobby z = plan y - 17, plan h = lobby y. The nose at
 # z -24.1, the engine pods' ends at z -2.04; the ring centred on the ship's middle (z -13.07, computed by the check).
 origin = [0.0, 0.0, -17.0]
-pieces_dir = "ship/v5/pieces"      # art #263's built pieces (under the raw folder), never rebuilt from here
+pieces_dir = "ship/v5/nose/b4/pieces"   # art #263's built pieces (under the raw folder), never rebuilt from here;
+                                   # step 4c: the jaw nose b4 the package was built from (the jaws built closed)
 hull = "P"                         # ship_hull_shape.outline("P"): the hull's footprint
 pods = ["nozzle_pod_outer", "nozzle_pod_mid"]   # their placed bounds join the footprint (the build report)
 tail = "skin_top"                  # its bounds' aft end beyond the outline joins the footprint, as wide as the pods
 lanes = ["exterior"]               # the interior is only seen through the canopies' glass: left out in step 1
 # The ramp is down (the ship's closed state does not exist yet): it stays as a stand-in and is not in the footprint;
 # its foot at plan y -12.6 lands at z -29.6, 0.4 m from the north wall (docs/lobby.md, open problems).
-stand_in = ["ramp", "ramp_lights"]
+stand_in = []                      # step 4c: the ramp is gone (the jaw nose, shut)
+# Step 4c: art #263's closed ship, its package (prime-game-art#358/#359, assets/environment/ship/HANDOFF.md S7, S8):
+# levels/ship/ship.tscn with its Clearing freed and the jaw nose shut. `lobby --check` measures its footprint with the
+# nose's pieces (built closed, each at its hinge) against the same rules. The pointed jaw reaches plan y -12.49, lobby
+# z -29.49: 0.51 m from the north wall (the rule's 3 m) in the arch's mouth, so it is not used until the engineer
+# moves the ship or changes the rule (docs/lobby.md "Step 4c").
+package = { dir = "ship/v5/export/v4", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = false }
 # The forest clearing (layouts/ship/exterior.toml), not in the lobby
 drop = ["ground", "pine_a", "pine_b", "pine_c", "pine_d", "pine_e", "pine_f", "pine_g", "pine_s", "rock_a", "rock_b",
         "rock_c", "rock_pile_a", "rock_pile_b", "ground_lamp", "dirt_patch", "dirt_path", "tuft_a", "tuft_b",
@@ -258,6 +265,33 @@ quality = 92                        # JPEG
 maps = { night = "BlackMarble_2016_3km.jpg", day = "world.topo.bathy.200412.3x5400x2700.jpg", clouds = "cloud_combined_8192.tif" }
 grid = ["spawn_eye", "corner_nw"]   # `lobby --earth-grid DIR`: these views once per variant
 credit = "Earth imagery: NASA"
+# Step 4c (the engineer, 2026-10-30: "a picture glued to the eye"): the Earth as an object, a sphere at a finite
+# distance (godot/lobby/earth_object.gdshader), so it shows parallax against the mullions and shrinks with the window
+# as the player backs away; the stars stay at infinity in the sky. Each distance's radius gives the variant's angular
+# radius from `eye` (a spawn looking at the window: what E2 filled). The sky's cubemap pass keeps the Earth at
+# infinity for the probes and reflections.
+distance = "D2"                     # the one switch (D1 near, D2 middle, D3 far)
+eye = [0.0, 1.65, 0.0]
+shell = 1.35                        # the traced shell's radius over the planet's (room for the rim's halo and the dawn)
+# `lobby --distance-grid DIR`: the distances from the same three positions [name, title, eye, look, fov]
+distance_views = [
+  ["glass", "1.5 m from the glass", [0.0, 1.65, 14.5], [0.0, 3.95, 30.5], 75.0],
+  ["back", "backed off to z -2", [0.0, 1.65, -2.0], [0.0, 3.95, 14.0], 75.0],
+  ["side", "to the side, x -10 z 2", [-10.0, 1.65, 2.0], [-10.0, 3.95, 18.0], 75.0],
+]
+# `lobby --earth-video DIR`: per distance, [eye, look, seconds from the previous key] (the [video] size, fps, fov):
+# 1.5 m from the glass, backing off to z -2, then sideways along x -10..10 at z 2, looking at the window
+video_keys = [
+  [[0.0, 1.65, 14.5], [0.0, 3.95, 30.5], 0.0],
+  [[0.0, 1.65, 14.0], [0.0, 3.95, 30.0], 0.6],
+  [[0.0, 1.65, 6.0], [0.0, 3.95, 22.0], 2.6],
+  [[0.0, 1.65, -2.0], [0.0, 3.95, 14.0], 2.6],
+  [[-10.0, 1.65, 2.0], [-10.0, 3.95, 18.0], 3.0],
+  [[0.0, 1.65, 2.0], [0.0, 3.95, 18.0], 3.0],
+  [[10.0, 1.65, 2.0], [10.0, 3.95, 18.0], 3.0],
+  [[10.0, 1.65, 2.0], [10.0, 3.95, 18.0], 0.4],
+]
+video_max_mb = 6
 
 [earth.look]                        # shared by every variant (linear colours, HDR energies)
 lights_rgb = [1.0, 0.52, 0.2]       # the city lights' warm orange
@@ -305,6 +339,19 @@ roll_deg = 0.0
 sun = [0.0, 13.0]
 sun_energy = 0.0
 stars = 1.6
+
+# step 4c's distances: [title, distance_m from the eye to the planet's centre]
+[earth.distances.D1]
+title = "near: a big globe just outside, strong parallax"
+distance_m = 70.0
+
+[earth.distances.D2]
+title = "middle"
+distance_m = 250.0
+
+[earth.distances.D3]
+title = "far: subtle parallax"
+distance_m = 900.0
 
 [light]
 # Step 4 (art #356, docs/lobby.md "Step 4"): the hall's real light, the drawing's words: "warm hanging lamps under the

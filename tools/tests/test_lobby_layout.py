@@ -5,6 +5,7 @@ the tail's bounds as built in ship/v5); a last test reads the real report when t
 from __future__ import annotations
 
 import copy
+import math
 import sys
 import unittest
 from pathlib import Path
@@ -149,7 +150,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v6")   # step 4
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v7")   # step 4c
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -256,6 +257,45 @@ class LobbyLayoutTest(unittest.TestCase):
             self.assertIn(want, names)
         spawn = next(v for v in self.layout["review"]["views"] if v[0] == "spawn_eye")
         self.assertGreater(spawn[3][2], spawn[2][2])   # the spawns face the window (+z)
+
+    def test_the_earth_as_an_object(self) -> None:
+        """Step 4c: three distances, D2 by default; each fills E2's angle from the eye and stays outside the hall."""
+        e = self.layout["earth"]
+        self.assertEqual(e["distance"], "D2")
+        self.assertEqual(list(e["distances"]), ["D1", "D2", "D3"])
+        dists = [e["distances"][d]["distance_m"] for d in e["distances"]]
+        self.assertEqual(dists, sorted(dists))
+        v = e["variants"][e["variant"]]
+        for did in e["distances"]:
+            o = lobby_layout.earth_object(self.layout, e["variant"], did)
+            seen = math.degrees(math.asin(o["radius_m"] / math.dist(o["centre"], e["eye"])))
+            self.assertAlmostEqual(seen, v["radius_deg"], places=6)
+            self.assertGreater(o["far_m"], o["distance_m"] + o["radius_m"] * e["shell"])
+        self.assertEqual(lobby_layout.earth_problems(self.layout, {v[0] for v in self.layout["review"]["views"]}), [])
+        for d in ("glass", "back", "side"):
+            self.assertIn(d, [g[0] for g in e["distance_views"]])
+        self.assertAlmostEqual(e["video_keys"][0][0][2], self.layout["hall"]["zS"] + self.layout["hall"]["bulge"] - 1.5)
+
+    def test_refuses_an_earth_inside_the_hall(self) -> None:
+        bad = copy.deepcopy(self.layout)
+        bad["earth"]["distances"]["D1"]["distance_m"] = 40.0
+        self.assertTrue(any("D1" in q and "hall's box" in q for q in lobby_layout.earth_problems(bad, {v[0] for v in self.layout["review"]["views"]})))
+        bad["earth"]["distance"] = "D9"
+        self.assertTrue(any("D9" in q for q in lobby_layout.earth_problems(bad, {v[0] for v in self.layout["review"]["views"]})))
+
+    def test_glb_points_and_the_closed_nose(self) -> None:
+        """Step 4c: the closed ship's footprint joins the shut jaws' vertices (read from the package's GLBs)."""
+        pk = self.layout["ship"]["package"]
+        folder = common.raw_dir() / pk["dir"] / "assets" / "environment" / "ship"
+        if not (folder / "jaw_lower.glb").is_file() or not (common.raw_dir() / self.layout["ship"]["pieces_dir"]).is_dir():
+            self.skipTest(f"no {folder}")
+        self.assertFalse(pk["use"])   # it fails the north wall's 3 m until the engineer decides
+        from runner.commands import lobby
+        place, _drop, report, _ship = lobby.ship_scene(self.layout)
+        fp = lobby_layout.footprint(self.layout, self.outline, report, place)
+        cf = lobby_layout.closed_footprint(self.layout, fp, place)
+        self.assertAlmostEqual(lobby_layout.ship_numbers(self.layout, cf)["nose_z"], -29.49, places=2)
+        self.assertLess(lobby_layout.wall_gaps(self.layout, cf)["N"], 3.0)
 
     def test_plan_draws_the_hall(self) -> None:
         plan = lobby_layout.ascii_plan(self.layout, self.fp(self.layout))
