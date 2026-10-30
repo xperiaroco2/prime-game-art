@@ -223,6 +223,12 @@ class SlimTest(unittest.TestCase):
             self.assertAlmostEqual(u, u2)
             self.assertAlmostEqual(v2 - 0.02, 0.5 * (v - 0.02))
         self.assertEqual(G.slim(pts, 1.0), pts)
+        graded = G.slim(pts, 0.5, 0.05, 0.15)  # 1 behind u0, 0.5 from u1 on
+        for (u, v), (u2, v2) in zip(pts, graded):
+            if u <= 0.05:
+                self.assertAlmostEqual(v2, v)
+            if u >= 0.15:
+                self.assertAlmostEqual(v2 - 0.02, 0.5 * (v - 0.02))
 
     def test_inside_by_pushes_only_points_too_far_out(self):
         b, nin = (0.0, 0.05), (0.0, -1.0)

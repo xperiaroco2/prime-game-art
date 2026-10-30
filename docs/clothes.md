@@ -372,6 +372,38 @@ The topology is S1's (1,476 triangles a shoe, 2,952 the pair). The shoe sheet (`
 Blender script: per character the concept's shoes over six Cycles views of the left shoe alone, built on the loco
 build's feet) is the quick loop: about a minute for both characters.
 
+### Crisper and fitted clean (E1j2)
+E1j's sneaker still read as a soft, inflated blob beside the concept, and skin showed at the throat and through the
+vamp. The shoe no longer grows round the mitten foot: the dress makes room inside instead.
+- **Room inside (the dress, `clothes_dress.py`).** After the collar's plane cut (E1e), the foot's skin ahead of the
+  tongue's back (the instep under the laces, the ball under the vamp) is flattened onto that vertical plane, under
+  the tongue's top, easing out over `--collar-band` above it (`collar.flattened_front` in `dress.json`). The plane
+  comes from the shoe: `sneaker_geom.tongue_back_u` less `FRONT_CLEAR` 3 mm, stored per side on the `shoes` object
+  (`front_Left`, `fwd_Left`, `front_top_z`). The leg's skin left is then shrunk inside the walls as before, the
+  shrink easing out over `--collar-band` 3 cm over the rim (1.5 cm left the leg wider than the collar just over it:
+  teal shards over the collar's top edge, d32).
+- **A slimmer last.** `slim` 0.8: the plan's width about its middle line per u (`slim`), from x 1 at the ankle
+  (the heel cup keeps the leg's room) to x 0.8 at the ball and on, the length kept; `taper` 0.34, `toe_room` 8 mm. The collar's rim is kept `rim_in` 5 mm inside the outline (`inside_by`), so the
+  walls never flare out over the leg; the leg is shrunk inside instead.
+- **Crisper upper.** `fullness` 1 (no inflated toe box); the collar's padding only round the collar, easing off over
+  2.5 cm before the slot's rear end, so the stays stay flat and the edge at the laces is crisp.
+- **Tall foxing, two navy lines.** `sole_top` 3.6 cm, `cap_top` 4.6 cm; the lower navy line on the band at 9.5 to
+  14.5 mm, the upper one 6 mm under the rubber's top (`STRIPE_HI_MM`).
+- **A defined toe cap.** The upper's first row lies on the cap's edge wherever the cap reaches past a tenth of a row
+  (`row_ks`), so the edge is a mesh edge (no zigzag of a painted curve across big quads), stands `cap_lip` 1.2 mm
+  proud and is painted a darker grey line.
+- **Panels.** The vamp's seam with the quarters (`seam_cols`, `seam_back` 4 mm behind the slot's front): a shadow
+  line and a stitch row, foot line to rim.
+- **The tongue and laces.** `gap` 3.4 cm; the tongue just under the stays' rim (it shows between the laces), rising
+  `tongue_rise` 1.6 cm over the top eyelets and leaning back `tongue_lean` 0.3 of that; the laces 3.6 x 3.2 mm cords
+  arching `lace_arch` 4 mm over the tongue.
+- **Heights.** `heel_collar` 1.12, `side_collar` 1.02, `stay_cap` 1.10 (x the ankle's height: the trouser hem's
+  turn-up rests on the collar, as on the concept), `throat_rise` 3.6 cm.
+
+Same topology, 2,952 triangles the pair. Raw output: `2026-10-30-alien-dress-e1/d32/` (`sheet/s7`, `s8`, `dress/`,
+`proof/`, `look/`, `side/`) and `d33/` (the final: `sheet/s9`, the same folders); drivers `tools/out/dress/e1j2/` (`sheet.sh`, `dress.sh`, `closeout.sh`, `chain.sh`: sheet, dress and
+close-out in one background run).
+
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
 

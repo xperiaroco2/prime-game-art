@@ -53,10 +53,10 @@ class Params:
     wall: float = 1.0  # E1j2: the upper's walls rise first, then turn in (the plan's ease exponent; 1: a round shoulder)
     collar_clear: float = 0.007
     heel_clear: float = 0.004  # the collar's extra room at the heel's back
-    heel_collar: float = 1.0  # the collar's height at the heel's back, x the ankle's (Foot head) height
-    side_collar: float = 0.86  # at its side dip
+    heel_collar: float = 1.12  # the collar's height at the heel's back, x the ankle's (Foot head) height
+    side_collar: float = 1.02  # at its side dip
     gap: float = 0.034  # the throat's slot between the eyelet stays (E1j2: wider, the tongue shows)
-    stay_cap: float = 1.04  # the stays' rim at most this x the ankle's height (a low top)
+    stay_cap: float = 1.10  # the stays' rim at most this x the ankle's height (a low top)
     throat_rise: float = 0.036  # E1j: the stays' rim at the throat over the toe cap's top; a straight lace line
                                 # rises from there to the collar's front corners (the foot's instep permitting)
     throat: float = 0.006  # the slot's front end before the ball (m; E1j: the lacing reaches the toe cap's back)
@@ -284,7 +284,7 @@ def outline(foot: Foot, p: Params) -> list[Pt2]:
     span = max(1e-6, tip - foot.ball_u)
     h = [((u + p.toe_room * ((u - foot.ball_u) / span) ** 2) if u > foot.ball_u else u, v) for u, v in h]
     h = taper(h, foot.ball_u, p.taper)
-    h = slim(h, p.slim)
+    h = slim(h, p.slim, foot.ankle_u, foot.ball_u)
     c = densify(offset(h, p.clear), 0.004)
     c = offset(smooth(c, 30), p.clear * 0.5)
     return resample(start_at_heel(c), p.around, dense_at=foot.ball_u)
@@ -298,16 +298,19 @@ def taper(pts: list[Pt2], ball_u: float, k: float) -> list[Pt2]:
     return [(u, v * (1 - k * max(0.0, (u - ball_u) / span) ** 1.5)) for u, v in pts]
 
 
-def slim(pts: list[Pt2], k: float) -> list[Pt2]:
-    """E1j2: the plan's width scaled by k about its middle line (per u, the middle of its v extent, from the points
-    within 1 cm of that u): a slimmer last than the soft foot, its length kept."""
+def slim(pts: list[Pt2], k: float, u0: float = -1.0, u1: float = -1.0) -> list[Pt2]:
+    """E1j2: the plan's width scaled about its middle line (per u, the middle of its v extent, from the points
+    within 1 cm of that u): a slimmer last than the soft foot, its length kept. The scale eases from 1 at u0 (the
+    ankle: the heel cup keeps the leg's room, the collar fits it) to k at u1 (the ball) and on; u0 = u1: k
+    everywhere."""
     if k >= 1.0:
         return list(pts)
     out = []
     for u, v in pts:
         vs = [q[1] for q in pts if abs(q[0] - u) <= 0.01]
         mid = 0.5 * (min(vs) + max(vs))
-        out.append((u, mid + (v - mid) * k))
+        kk = k if u1 <= u0 else 1 - (1 - k) * smoothstep(u0, u1, u)
+        out.append((u, mid + (v - mid) * kk))
     return out
 
 
