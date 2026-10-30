@@ -34,6 +34,7 @@ MATS = {"lobby_grout": ((0.010, 0.010, 0.012, 1), 0.55, 0.3, 0.0),
         "lobby_hazard": ((0.78, 0.48, 0.015, 1), 0.5, 0.1, 0.0),
         "lobby_signal": ((0.42, 0.018, 0.012, 1), 0.42, 0.15, 0.0),   # the fire point's red paint (step 2c)
         "lobby_reflector": ((0.62, 0.62, 0.6, 1), 0.3, 0.9, 0.0),     # the pendant shades' insides (step 2c)
+        "lobby_worn": ((0.30, 0.31, 0.31, 1), 0.36, 0.85, 0.0),       # bare steel on the worn edges (step 3)
         "lobby_glass": ((0.45, 0.6, 0.8, 0.12), 0.05, 0.0, 0.0)}
 ARC_STEP_DEG = 2.0
 # Step 2c: the fine metal surface in the GLBs' own materials: one shared tiling pair of maps (a brushed micro-normal
@@ -42,6 +43,14 @@ ARC_STEP_DEG = 2.0
 TEX_SIZE, TEX_M = 1024, 1.5                               # pixels, metres per repeat
 NORMAL_STRENGTH = {"lobby_floor": 0.1, "lobby_floor2": 0.1, "lobby_floor3": 0.1}   # the floor stays clean
 PLAIN = {"lobby_glass", "lobby_lens", "lobby_lamp", "lobby_strip", "lobby_ring"}       # no metal maps
+# Step 3, light wear: every mapped material's colour times a shared grime map (soft blotches and specks, 0.86-1); the
+# scuff map (rubbed patches, scratches) instead on the hazard stripes, the floor before the doors and the worn edges;
+# a blotchier roughness map on the copper. About WEAR_SHARE of the narrow faces (bevels, chamfers, lips, edges under
+# WEAR_W wide) of the WEARABLE materials turn into lobby_worn: the paint rubbed off the exposed edges.
+SCUFFED = {"lobby_hazard", "lobby_floor_worn", "lobby_worn"}
+ROUGH2 = {"lobby_trim"}
+WEARABLE = {"lobby_metal", "lobby_pilaster", "lobby_hazard"}
+WEAR_W, WEAR_SHARE = 0.06, 55
 IMG: dict = {}
 
 
@@ -49,6 +58,8 @@ IMG: dict = {}
 class Part:
     def __init__(self, name: str, mat: str, closed: bool = True, col: bool = False):
         self.name, self.mat, self.closed, self.col = name, mat, closed, col
+        self.smooth = False   # smooth shading (step 3: the pendants), sharp edges kept over 35 deg
+        self.flags: list[bool] = []
         self.verts: list[tuple[float, float, float]] = []
         self.faces: list[list[int]] = []
 
@@ -280,6 +291,13 @@ LAMP_HALF = (0.3, 0.13)
 LINTEL = 0.3                                             # a door's lintel box: its depth
 PENDANTS = ((-10.0, 0.0, 10.0), (-21.0, -9.0, 3.0), 9.6)  # the pendant lamps: x, z, the shade's bottom (y)
 MID_BAND = (4.56, 4.76)                                  # a pilaster's mid-height band (on the panels' row seam)
+PENDANT_N, PENDANT_DY = 40, (-0.7, 0.0, 0.6)             # step 3: the shades' segments, their heights' steps
+# step 3, the floor: a flush bolt head in each plate's corners (BOLT_IN from the edges), service plates where
+# pick(x, z, 13.0, n=SERVICE_N) is 0, the plates within WORN_R of a door's or the arch's middle mostly scuffed, a
+# yellow keep-clear box before each door (KEEP: half-width, depth from the wall, start past the pilasters' plinths)
+BOLT_IN, BOLT_R, SERVICE_N, WORN_R = 0.1, 0.022, 29, 3.4
+KEEP = (1.9, 2.5, 0.75)
+RING_W = (0.5, 0.36, 0.02)   # the ring's metal band half-width, its copper inlays' offset from r, their half-width
 # Step 2c: one unique detail per chosen bay (wall, bay index from the wall's low end), none twice on a wall
 GREEBLES = {("W", 1): "service", ("W", 2): "tray", ("W", 3): "pipes", ("W", 4): "fire",
             ("E", 0): "pipes", ("E", 1): "fire", ("E", 3): "tray", ("E", 4): "service"}
@@ -317,8 +335,9 @@ def wall_cuts(H: "Hall"):
     return pil, holes, span
 
 
-def floor_plates(parts: list, x0, x1, z0, z1, g, zmax=None, y=0.015, gap=0.006, bev=0.02):
-    """2 m plates with fine seams and bevelled edges (front at y) in three tones, clipped at zmax(x) (the arc)."""
+def floor_plates(parts: list, x0, x1, z0, z1, g, zmax=None, y=0.015, gap=0.006, bev=0.02, extra=None):
+    """2 m plates with fine seams and bevelled edges (front at y) in three tones, clipped at zmax(x) (the arc).
+    extra (step 3): {"bolts", "service", "dark", "near"}: the bolts, the service plates, their slots, near(x, z)."""
     F = lambda u, v, w: (u, w, v)   # u = x, v = z, w = up
     x = x0
     while x < x1 - 1e-6:
@@ -327,15 +346,53 @@ def floor_plates(parts: list, x0, x1, z0, z1, g, zmax=None, y=0.015, gap=0.006, 
             xa, xb, za, zb = x + gap, min(x + g, x1) - gap, z + gap, min(z + g, z1) - gap
             if zmax is not None:
                 zb = min(zb, zmax(xa) - gap, zmax(xb) - gap)
-            if zb - za > 0.15:
-                plate(parts[pick(x, z, 7.0)], F, xa, xb, za, zb, 0.0, y, bev)
+            if zb - za > 1.9 and xb - xa > 1.9 and extra and pick(x, z, 13.0, n=SERVICE_N) == 0:
+                plate(extra["service"], F, xa, xb, za, zb, 0.0, y - 0.004, bev)   # a service plate: a slot, 8 bolts
+                lbox(extra["dark"], F, xa + 0.85, xb - 0.85, za + 0.12, za + 0.2, y - 0.0045, y - 0.003)
+                for bx in (xa + 0.08, (xa + xb) / 2, xb - 0.08):
+                    for bz in (za + 0.08, (za + zb) / 2, zb - 0.08):
+                        if (bx, bz) != ((xa + xb) / 2, (za + zb) / 2):
+                            disc(extra["bolts"], bx, bz, BOLT_R, y - 0.002, up=True, n=6)
+            elif zb - za > 0.15:
+                tone = parts[pick(x, z, 7.0)]
+                if extra and extra["near"]((xa + xb) / 2, (za + zb) / 2) and pick(x, z, 17.0, n=10) < 8:
+                    tone = parts[3]
+                plate(tone, F, xa, xb, za, zb, 0.0, y, bev)
+                if extra:
+                    for bx in (xa + BOLT_IN, xb - BOLT_IN):
+                        for bz in (za + BOLT_IN, zb - BOLT_IN):
+                            disc(extra["bolts"], bx, bz, BOLT_R, y + 0.0015, up=True, n=6)
             z += g
         x += g
 
 
 def _floor_set(prefix: str) -> list:
     return [Part(prefix, "lobby_floor", closed=False), Part(prefix + "2", "lobby_floor2", closed=False),
-            Part(prefix + "3", "lobby_floor3", closed=False)]
+            Part(prefix + "3", "lobby_floor3", closed=False), Part(prefix + "_worn", "lobby_floor_worn", closed=False)]
+
+
+def door_spots(H: "Hall") -> list:
+    """Each door's (wall, at, the middle of its foot on the wall's face (x, z)) and the arch's ("A")."""
+    h = H.h
+    out = []
+    for _id, wall, at in H.d["doors"]:
+        out.append((wall, at, (h["x0"], at) if wall == "W" else (h["x1"], at) if wall == "E" else (at, h["zN"])))
+    return out + [("A", 0.0, (0.0, h["zN"]))]
+
+
+def markings(H: "Hall", paint: Part) -> None:
+    """Step 3: a yellow keep-clear box on the floor before each door: two side lines, a front line and a hatched band
+    inside the front line (hazard()'s stripes, 12 mm proud)."""
+    h, (a, d, s) = H.h, KEEP
+    for wall, at, _foot in door_spots(H):
+        if wall == "A":
+            continue
+        F = ((lambda u, v, w, at=at: (at + u, w, h["zN"] + v)) if wall == "N" else
+             (lambda u, v, w, at=at: (h["x0"] + v, w, at - u)) if wall == "W" else
+             (lambda u, v, w, at=at: (h["x1"] - v, w, at + u)))
+        for u0, u1, v0, v1 in ((-a, a, d - 0.1, d), (-a, -a + 0.1, s, d), (a - 0.1, a, s, d)):
+            lbox(paint, F, u0, u1, v0, v1, 0.015, 0.018)
+        hazard(paint, F, -a + 0.1, a - 0.1, d - 0.5, d - 0.1, 0.015, mirror=False, period=0.5)
 
 
 def floor(H: Hall) -> list[Part]:
@@ -345,12 +402,25 @@ def floor(H: Hall) -> list[Part]:
     prism(slab, [(h["x0"] - t, h["zN"] - t), (h["x1"] + t, h["zN"] - t), (h["x1"] + t, h["zS"]), *arc,
                  (h["x0"] - t, h["zS"])], -0.3, 0.0)
     plates = _floor_set("floor_plates")
-    floor_plates(plates, h["x0"], h["x1"], h["zN"], h["zS"] + h["bulge"], h["tile"], zmax=H.arc_z)
-    # the ring: a dark channel with the accent line inlaid
-    parts = [slab, *plates]
-    rr, n = H.L["floor"]["ring_r"], 160
-    for name, mat, r0, r1, y in (("floor_ring_channel", "lobby_grout", rr - 0.17, rr + 0.17, 0.016),
+    spots = [foot for _w, _at, foot in door_spots(H)]
+    extra = {"bolts": Part("floor_bolts", "lobby_metal", closed=False),
+             "service": Part("floor_service", "lobby_metal", closed=False),
+             "dark": Part("floor_slots", "lobby_grout", closed=False),
+             "near": lambda x, z: any(math.hypot(x - fx, z - fz) < WORN_R for fx, fz in spots)}
+    floor_plates(plates, h["x0"], h["x1"], h["zN"], h["zS"] + h["bulge"], h["tile"], zmax=H.arc_z, extra=extra)
+    paint = Part("floor_marks", "lobby_hazard", closed=False)
+    markings(H, paint)
+    # the ring (step 3: wider): a metal band with two copper inlays round the accent line, dark seams at its edges
+    parts = [slab, *plates, extra["bolts"], extra["service"], extra["dark"], paint]
+    rr, n = H.L["floor"]["ring_r"], 200
+    bw, ci, cw = RING_W
+    for name, mat, r0, r1, y in (("floor_ring_seam", "lobby_grout", rr - bw - 0.03, rr + bw + 0.03, 0.0158),
+                                 ("floor_ring_band", "lobby_metal", rr - bw, rr + bw, 0.0165),
+                                 ("floor_ring_inlay", "lobby_trim", rr - ci - cw, rr - ci + cw, 0.018),
+                                 ("floor_ring_inlay2", "lobby_trim", rr + ci - cw, rr + ci + cw, 0.018),
+                                 ("floor_ring_channel", "lobby_grout", rr - 0.1, rr + 0.1, 0.018),
                                  ("floor_ring", "lobby_ring", rr - 0.06, rr + 0.06, 0.019)):
+
         ring_p = Part(name, mat, closed=False)
         for i in range(n):
             a, b = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n
@@ -393,7 +463,7 @@ def bolts(part: Part, F, u0, u1, v, w, step=0.32, s=0.025):
         lbox(part, F, u - s, u + s, v - s, v + s, w, w + 0.018)
 
 
-def pilaster(H: Hall, F, u, lo, hi, shaft: Part, trim: Part, dark: Part, strip: Part, top: float):
+def pilaster(H: Hall, F, u, lo, hi, shaft: Part, trim: Part, dark: Part, strip: Part, top: float, metal: Part):
     """A pilaster at u; below the cornice only lo..hi (narrowed beside a door's frame, step 2b)."""
     pw, pd, c = H.h["pilaster_w"] / 2, H.h["pilaster_d"], 0.12
 
@@ -405,7 +475,10 @@ def pilaster(H: Hall, F, u, lo, hi, shaft: Part, trim: Part, dark: Part, strip: 
     # the chamfered base (step 2c): a plinth with cut corners and a sloped top into the shaft
     pp = pd + 0.1
     base = [(l2, 0.0), (h2, 0.0), (h2, pp - 0.1), (h2 - 0.1, pp), (l2 + 0.1, pp), (l2, pp - 0.1)]
-    ext(trim, F, base, "v", 0.0, 0.4)
+    ext(metal, F, base, "v", 0.0, 0.4)   # step 3: the base in the dark metal with a thin copper band on top
+    e = 0.012
+    ext(trim, F, [(l2 - e, 0.0), (h2 + e, 0.0), (h2 + e, pp - 0.1), (h2 - 0.1 + e * 0.4, pp + e), (l2 + 0.1 - e * 0.4, pp + e),
+                  (l2 - e, pp - 0.1)], "v", 0.355, 0.385)
     shaft.loft([[F(*_L("v", q, 0.4)) for q in base], [F(*_L("v", q, 0.62)) for q in prof(lo, hi)]])
     ext(shaft, F, prof(lo, hi), "v", 0.62, CORNICE[0])
     ext(shaft, F, prof(u - pw, u + pw), "v", CORNICE[0], top - 0.6)
@@ -418,14 +491,15 @@ def pilaster(H: Hall, F, u, lo, hi, shaft: Part, trim: Part, dark: Part, strip: 
             lbox(shaft, F, a, b, 0.4, CORNICE[0], 0.0, PROUD + 0.025)
     for a, b in ((u - pw - 0.09, u - pw), (u + pw, u + pw + 0.09)):
         lbox(shaft, F, a, b, CORNICE[1], top - 0.6, 0.0, PROUD + 0.025)
-    lbox(trim, F, u - pw - 0.06, u + pw + 0.06, top - 0.6, top, 0.0, pd + 0.1)         # the capital
+    lbox(metal, F, u - pw - 0.06, u + pw + 0.06, top - 0.6, top, 0.0, pd + 0.1)        # the capital
+    lbox(trim, F, u - pw - 0.07, u + pw + 0.07, top - 0.6, top - 0.57, 0.0, pd + 0.11)  # its copper lip
     lbox(trim, F, u - pw - 0.03, u + pw + 0.03, CORNICE[0], CORNICE[1], 0.0, pd + 0.05)  # the band at the cornice
     m = (lo + hi) / 2
     channel(F, m - 0.04, m + 0.04, STRIP[0], STRIP[1], pd, dark, strip)
-    lbox(trim, F, m - 0.16, m + 0.16, 4.8, 6.9, pd, pd + 0.03)                         # a bolted face plate
+    lbox(metal, F, m - 0.16, m + 0.16, 4.8, 6.9, pd, pd + 0.03)                        # a bolted face plate
     for v in (4.95, 6.75):
-        bolts(trim, F, m - 0.1, m + 0.1, v, pd + 0.03, step=0.2)
-    lbox(trim, F, u - pw + 0.1, u + pw - 0.1, 8.4, 10.6, pd, pd + 0.03)
+        bolts(metal, F, m - 0.1, m + 0.1, v, pd + 0.03, step=0.2)
+    lbox(metal, F, u - pw + 0.1, u + pw - 0.1, 8.4, 10.6, pd, pd + 0.03)
 
 
 def vent(F, u0, u1, v0, v1, trim: Part, dark: Part):
@@ -554,6 +628,7 @@ def walls(H: Hall) -> list[Part]:
         part.box(xa, xb, top or 0.0, wall, h["zN"] - t, h["zN"])
     shaft = Part("pilasters", "lobby_pilaster", col=True)
     trim = Part("wall_trim", "lobby_trim")
+    metal = Part("wall_metal", "lobby_metal")
     dark = Part("wall_dark", "lobby_dark")
     strip = Part("wall_strips", "lobby_strip")
     P = [Part("wall_panels", "lobby_panel", closed=False), Part("wall_panels2", "lobby_panel2", closed=False),
@@ -575,7 +650,7 @@ def walls(H: Hall) -> list[Part]:
                         hi = min(hi, a + 0.03)
                     else:
                         lo = max(lo, b - 0.03)
-            pilaster(H, F, u, lo, hi, shaft, trim, dark, strip, wall)
+            pilaster(H, F, u, lo, hi, shaft, trim, dark, strip, wall, metal)
             cu = u - pw - 0.22   # a vertical conduit left of every other pilaster, on brackets
             if i % 2 == 0 and cu > span[side][0] + 0.3 and not any(a - 0.2 < cu < b + 0.2 for a, b, _t in holes[side]):
                 for v0, v1 in ((0.35, CORNICE[0] - 0.02), (CORNICE[1] + 0.02, FRIEZE[0])):
@@ -632,7 +707,7 @@ def walls(H: Hall) -> list[Part]:
                             lbox(trim, F, u1 - 0.75, u1 - 0.25, v0 + 0.5, v0 + 1.2, PROUD, PROUD + 0.14)
                             lbox(dark, F, u1 - 0.68, u1 - 0.32, v0 + 0.62, v0 + 0.98, PROUD + 0.14, PROUD + 0.16)
                             lbox(lights, F, u1 - 0.66, u1 - 0.6, v0 + 1.06, v0 + 1.12, PROUD + 0.14, PROUD + 0.165)
-    return [part, shaft, trim, dark, strip, *P, inset, pipes, lights, signal]
+    return [part, shaft, trim, metal, dark, strip, *P, inset, pipes, lights, signal]
 
 
 def lunette_column(H: Hall, A, B, inn, yb, band: bool, parts: dict, xa) -> None:
@@ -665,10 +740,30 @@ def lunette_column(H: Hall, A, B, inn, yb, band: bool, parts: dict, xa) -> None:
     hm = max(yt0, yt1) - yb
     if min(yt0, yt1) - yb < 0.3:
         return
-    nrow, g = max(1, math.ceil(hm / 1.7)), 0.0075
-    for k in range(nrow):
+    # step 3: the rows hang from the curve at a steady 1.7 m (their seams parallel to it and level with the next
+    # column's); the last row fills down to yb
+    g, k = 0.0075, 0
+    while True:
+        t0, t1 = yt0 - 1.7 * k, yt1 - 1.7 * k
+        b0, b1 = t0 - 1.7, t1 - 1.7
+        last = min(b0, b1) - yb < 0.6
+        if last:
+            b0 = b1 = yb
+        if min(t0, t1) - yb < 0.3:
+            break
+
+        def Fr(u, v, w, t0=t0, t1=t1, b0=b0, b1=b1):
+            x, z = xz(u, w)
+            bb, tt = b0 + (b1 - b0) * u / L, t0 + (t1 - t0) * u / L
+            return x, bb + v * (tt - bb), z
+
+        hr = min(t0 - b0, t1 - b1)
         part = parts["base"] if pick(xa, k, 3.0, n=2) == 0 else parts["inner"]
-        plate(part, Fl, g, L - g, k / nrow + g / hm, (k + 1) / nrow - g / hm, 0.0, 0.07, 0.02, bev_v=0.02 / hm)
+        plate(part, Fr, g, L - g, g / hr, 1.0 - g / hr, 0.0, 0.07, 0.02, bev_v=0.02 / hr)
+        if last:
+            break
+        k += 1
+
     plate(parts["battens"], Fl, -0.035, 0.035, 0.0, 1.0, 0.0, 0.085, 0.008, bev_v=0.008 / hm)
     lbox(parts["trim"], Fs, 0.0, L, -0.04, 0.3, 0.0, 0.12)
 
@@ -738,25 +833,36 @@ def vault(H: Hall) -> list[Part]:
         spine.box(-0.45, 0.45, yc - 0.35, yc + 0.02, z0, z1)
     # the pendant lamps' housings (dome shades on rods; their light is step 4's, the lens is not emissive yet)
     # step 2c: real shades (a rim, a reflector inside, a socket and a bulb in the recess; unlit until step 4)
-    lamps, lens = Part("vault_lamps", "lobby_trim", closed=False), Part("vault_lens", "lobby_lens", closed=False)
+    # step 3: smooth shades (PENDANT_N segments, smooth shading) in the dark metal with a copper rim, each on a cable
+    # from a ceiling canopy, their heights varied (PENDANT_DY by a steady pick)
+    lamps, lens = Part("vault_lamps", "lobby_metal", closed=False), Part("vault_lens", "lobby_lens", closed=False)
     refl, sock = Part("vault_reflectors", "lobby_reflector", closed=False), Part("vault_sockets", "lobby_dark", closed=False)
-    px, pz, yb = PENDANTS
+    rims, cables = Part("vault_lamp_rims", "lobby_trim", closed=False), Part("vault_cables", "lobby_dark", closed=False)
+    for p in (lamps, lens, refl, sock, rims, cables):
+        p.smooth = True
+    px, pz, yb0 = PENDANTS
+    N = PENDANT_N
     for x in px:
         for z in pz:
-            ytop = yc - 0.3 if abs(x) < 0.5 else H.vault_y(x) - 0.1
+            yb = yb0 + PENDANT_DY[pick(x, z, 11.0, n=len(PENDANT_DY))]
+            ym = yc - 0.35 if abs(x) < 0.5 else H.vault_y(x) - 0.12   # the spine's or the panels' underside
 
-            def sec(r, y, x=x, z=z):
-                return [(x + r * math.cos(2 * math.pi * i / 16), y, z + r * math.sin(2 * math.pi * i / 16)) for i in range(16)]
+            def sec(r, y, x=x, z=z, n=8):
+                return [(x + r * math.cos(2 * math.pi * i / n), y, z + r * math.sin(2 * math.pi * i / n)) for i in range(n)]
 
-            lamps.loft([sec(0.045, ytop), sec(0.045, yb + 0.9)])
-            revolve(lamps, x, z, [(0.13, yb + 0.98), (0.22, yb + 0.82), (0.34, yb + 0.62), (0.7, yb + 0.12),
-                                  (0.78, yb), (0.77, yb - 0.035), (0.72, yb - 0.035)])
-            disc(lamps, x, z, 0.13, yb + 0.98, up=True)
-            revolve(refl, x, z, [(0.72, yb - 0.035), (0.66, yb + 0.06), (0.3, yb + 0.5), (0.19, yb + 0.6)])
-            disc(sock, x, z, 0.19, yb + 0.6, up=False)
-            revolve(sock, x, z, [(0.1, yb + 0.6), (0.1, yb + 0.5)])
-            revolve(lens, x, z, [(0.1, yb + 0.5), (0.14, yb + 0.44), (0.15, yb + 0.36), (0.1, yb + 0.28), (0.001, yb + 0.25)])
-    return [shell, lun, base, inner, battens, ribs, spine, lamps, lens, refl, sock, lparts["trim"]]
+            revolve(lamps, x, z, [(0.001, ym + 0.02), (0.21, ym + 0.02), (0.21, ym - 0.03), (0.15, ym - 0.12),
+                                  (0.06, ym - 0.16), (0.001, ym - 0.16)], n=N)              # the canopy
+            cables.loft([sec(0.011, ym - 0.15), sec(0.011, yb + 1.12)])                    # the cable
+            revolve(lamps, x, z, [(0.03, yb + 1.2), (0.05, yb + 1.15), (0.05, yb + 1.02), (0.13, yb + 0.98)], n=N)  # its grip
+            revolve(lamps, x, z, [(0.13, yb + 0.98), (0.22, yb + 0.86), (0.3, yb + 0.7), (0.4, yb + 0.52), (0.55, yb + 0.3),
+                                  (0.69, yb + 0.11)], n=N)
+            revolve(rims, x, z, [(0.69, yb + 0.11), (0.76, yb + 0.06), (0.79, yb + 0.01), (0.785, yb - 0.035),
+                                 (0.75, yb - 0.045), (0.72, yb - 0.035)], n=N)
+            revolve(refl, x, z, [(0.72, yb - 0.035), (0.66, yb + 0.06), (0.5, yb + 0.26), (0.3, yb + 0.5), (0.19, yb + 0.6)], n=N)
+            disc(sock, x, z, 0.19, yb + 0.6, up=False, n=N)
+            revolve(sock, x, z, [(0.1, yb + 0.6), (0.1, yb + 0.5)], n=N)
+            revolve(lens, x, z, [(0.1, yb + 0.5), (0.14, yb + 0.44), (0.15, yb + 0.36), (0.1, yb + 0.28), (0.001, yb + 0.25)], n=N)
+    return [shell, lun, base, inner, battens, ribs, spine, lamps, lens, refl, sock, rims, cables, lparts["trim"]]
 
 
 def window_frame(H: Hall) -> list[Part]:
@@ -799,19 +905,19 @@ def window_glass(H: Hall) -> list[Part]:
     return [glass]
 
 
-def framed(F, a, h, c, bands, w_back, parts, fronts):
+def framed(F, a, h, c, bands, w_back, parts, fronts, edges=(None, None, None)):
     """Nested chamfered frame bands round an opening (half-width a, height h, chamfer c) in a local frame, each from
-    w_back to its front (stepped)."""
+    w_back to its front (stepped); a band's bevel goes into its edges part if given (step 3: a thin copper edge)."""
     d, cb = 0.0, 0.045
     o = F(0.0, 0.0, 0.0)
-    for band, part, front in zip(bands, parts, fronts):
+    for band, part, front, edge in zip(bands, parts, fronts, edges):
         inner, outer, oc = (chamfer_outline(a, h, c, d), chamfer_outline(a, h, c, d + band),
                             chamfer_outline(a, h, c, d + band - cb))
         ext(part, F, ring(inner, oc), "w", w_back, front)
         ext(part, F, ring(oc, outer), "w", w_back, front - cb)
         for p, q, pc, qc in zip(outer, outer[1:], oc, oc[1:]):   # the bevel: it catches the light, the steps read
             hint = [F(-(q[1] - p[1]), q[0] - p[0], 1.0)[k] - o[k] for k in range(3)]
-            part.face([F(p[0], p[1], front - cb), F(q[0], q[1], front - cb), F(qc[0], qc[1], front),
+            (edge or part).face([F(p[0], p[1], front - cb), F(q[0], q[1], front - cb), F(qc[0], qc[1], front),
                        F(pc[0], pc[1], front)], hint)
         d += band
     return chamfer_outline(a, h, c)
@@ -836,7 +942,8 @@ def door_parts(H: Hall, F, out: dict, w_back: float, slab_w: tuple[float, float]
     """A sealed door facing +w at w 0 in frame F (step 2b): two hazard-striped leaves recessed in three nested stepped
     frames, a lintel box with the red lamp and an accent strip, and (header) a panel with a grille above it."""
     a, dh = H.d["w"] / 2, H.d["h"]
-    framed(F, a, dh, 0.45, DOOR_BANDS, w_back, (out["trim"], out["frame"], out["trim"]), DOOR_FRONTS)
+    framed(F, a, dh, 0.45, DOOR_BANDS, w_back, (out["trim"], out["frame"], out["trim"]), DOOR_FRONTS,
+           edges=(None, None, out["copper"]))
     s0, s1 = slab_w
     lbox(out["back"], F, -a - 0.05, a + 0.05, 0.0, dh + 0.05, s0 - 0.1, s0)
     for side in (-1, 1):   # step 2c: each leaf bevelled at the centre seam, its striped field inside a raised border
@@ -855,7 +962,7 @@ def door_parts(H: Hall, F, out: dict, w_back: float, slab_w: tuple[float, float]
         ha, hb = (u0 + 0.14, u1 - 0.19) if side < 0 else (u0 + 0.19, u1 - 0.14)
         hazard(out["hazard"], F, ha, hb, 0.14, dh - 0.14, s1, mirror=side > 0)
     # the frame's lip over the leaves' edges and a threshold plate
-    ext(out["trim"], F, ring(chamfer_outline(a - 0.05, dh - 0.05, 0.43), chamfer_outline(a, dh, 0.45)), "w",
+    ext(out["copper"], F, ring(chamfer_outline(a - 0.05, dh - 0.05, 0.43), chamfer_outline(a, dh, 0.45)), "w",
         s1 - 0.02, s1 + 0.07)
     lbox(out["trim"], F, -a, a, 0.0, 0.03, s1, DOOR_FRONTS[0])
     big = a + sum(DOOR_BANDS)
@@ -886,7 +993,9 @@ def door_parts(H: Hall, F, out: dict, w_back: float, slab_w: tuple[float, float]
 
 
 def _door_set(prefix: str, col: bool) -> dict:
-    return {"trim": Part(prefix + "_frame", "lobby_trim", col=col), "frame": Part(prefix + "_frame2", "lobby_pilaster", col=col),
+    # step 3: the frames in the dark graphite-teal metal; copper only on the outer band's bevel and the lip
+    return {"trim": Part(prefix + "_frame", "lobby_metal", col=col), "frame": Part(prefix + "_frame2", "lobby_pilaster", col=col),
+            "copper": Part(prefix + "_copper", "lobby_trim"),
             "back": Part(prefix + "_back", "lobby_dark", col=col), "slab": Part(prefix + "_slab", "lobby_dark", col=col),
             "hazard": Part(prefix + "_hazard", "lobby_hazard"), "lamp": Part(prefix + "_lamp", "lobby_lamp"),
             "dark": Part(prefix + "_dark", "lobby_dark"), "strip": Part(prefix + "_strip", "lobby_strip"),
@@ -897,9 +1006,10 @@ def arch(H: Hall) -> list[Part]:
     h, a = H.h, H.a
     zN, t, w, ah, end = h["zN"], 0.3, a["w"] / 2, a["h"], h["zN"] - a["depth"]
     FN = lambda u, v, ww: (u, v, zN + ww)
-    trim, frame2 = Part("arch_frame", "lobby_trim", col=True), Part("arch_frame2", "lobby_pilaster", col=True)
+    trim, frame2 = Part("arch_frame", "lobby_metal", col=True), Part("arch_frame2", "lobby_pilaster", col=True)
     dark, strip = Part("arch_dark", "lobby_dark"), Part("arch_strips", "lobby_strip")
-    framed(FN, w, ah, 1.0, ARCH_BANDS, -h["wall_t"], (trim, frame2, trim), ARCH_FRONTS)
+    copper = Part("arch_copper", "lobby_trim")   # step 3: the frame in the dark metal, a thin copper edge outside
+    framed(FN, w, ah, 1.0, ARCH_BANDS, -h["wall_t"], (trim, frame2, trim), ARCH_FRONTS, edges=(None, None, copper))
     big = w + sum(ARCH_BANDS) + 0.25
     lbox(frame2, FN, -big, big, ah + sum(ARCH_BANDS), ah + sum(ARCH_BANDS) + 0.78, 0.0, 0.45)   # the lintel box
     channel(shifted(FN, 0.45), -1.6, 1.6, ah + sum(ARCH_BANDS) + 0.35, ah + sum(ARCH_BANDS) + 0.43, 0.0, dark, strip)
@@ -940,7 +1050,7 @@ def arch(H: Hall) -> list[Part]:
     # the shut door at the end, hazard-striped like the hall's, facing the hall
     out = _door_set("corridor_door", True)
     door_parts(H, lambda u, v, ww: (u, v, end + ww), out, 0.0, (0.1, 0.2), header=False)
-    return [trim, frame2, dark, strip, shell, slab, *plates, panels, ribs, *out.values()]
+    return [trim, frame2, copper, dark, strip, shell, slab, *plates, panels, ribs, *out.values()]
 
 
 def door(H: Hall) -> list[Part]:
@@ -1000,10 +1110,31 @@ def metal_images(folder: Path) -> None:
     one = np.ones_like(h)
     maps = {"n": np.stack([-dx / ln * 0.5 + 0.5, -dy / ln * 0.5 + 0.5, 1.0 / ln * 0.5 + 0.5, one], -1),
             "r": np.stack([one, np.clip(0.9 + 0.06 * blot + 0.025 * np.clip(br, -2, 2) + 0.08 * sc, 0.78, 1.0), one, one], -1)}
+    # step 3 (after the 2c maps, which stay as they were): grime, scuffs and the copper's roughness
+    def vnoise(k):
+        gg = rng.uniform(-1, 1, (k, k)).astype(np.float32)
+        ff = (idx * k / 8 - np.floor(idx * k / 8)).astype(np.float32)
+        ff = ff * ff * (3 - 2 * ff)
+        j0 = np.floor(idx * k / 8).astype(int) % k
+        j1 = (j0 + 1) % k
+        rr = gg[j0] * (1 - ff)[:, None] + gg[j1] * ff[:, None]
+        return rr[:, j0] * (1 - ff)[None, :] + rr[:, j1] * ff[None, :]
+
+    b16, b32 = vnoise(16), vnoise(32)
+    speck = blur(blur(rng.standard_normal((n, n)).astype(np.float32), 1, 0), 1, 1)
+    speck /= speck.std() + 1e-6
+    sc2 = np.rot90(sc).copy()
+    grime = np.clip(0.95 + 0.035 * blot + 0.03 * b16 - 0.05 * np.clip(speck - 1.6, 0, 2), 0.86, 1.0)
+    rub = np.clip(b16 + 0.5 * b32 - 0.15, 0, 1)
+    scuff = np.clip(0.97 - 0.28 * rub - 0.3 * np.maximum(sc, sc2) - 0.06 * np.clip(speck - 1.0, 0, 2), 0.5, 1.0)
+    r2 = np.clip(0.82 + 0.16 * b16 + 0.08 * b32 + 0.03 * np.clip(br, -2, 2), 0.6, 1.0)
+    for key, val in (("g", grime), ("s", scuff)):
+        maps[key] = np.stack([val, val, val, one], -1)
+    maps["r2"] = np.stack([one, r2, one, one], -1)
     folder.mkdir(parents=True, exist_ok=True)
     for key, arr in maps.items():
         img = bpy.data.images.new(f"lobby_metal_{key}", n, n, alpha=False)
-        img.colorspace_settings.name = "Non-Color"
+        img.colorspace_settings.name = "sRGB" if key in ("g", "s") else "Non-Color"
         img.pixels.foreach_set(arr.astype(np.float32).ravel())
         img.filepath_raw = str(folder / f"lobby_metal_{key}.png")
         img.file_format = "PNG"
@@ -1011,7 +1142,7 @@ def metal_images(folder: Path) -> None:
         IMG[key] = img
 
 
-def metal_maps(mat, bsdf, name: str, rough: float, metallic: float) -> None:
+def metal_maps(mat, bsdf, name: str, rough: float, metallic: float, rgba=None) -> None:
     """The shared maps on a material: the normal at its strength, roughness and metallic as the maps' G and B times
     the material's numbers (the glTF exporter writes them as the factors)."""
     nodes, links = mat.node_tree.nodes, mat.node_tree.links
@@ -1022,7 +1153,7 @@ def metal_maps(mat, bsdf, name: str, rough: float, metallic: float) -> None:
     links.new(tn.outputs["Color"], nm.inputs["Color"])
     links.new(nm.outputs["Normal"], bsdf.inputs["Normal"])
     tr = nodes.new("ShaderNodeTexImage")
-    tr.image = IMG["r"]
+    tr.image = IMG["r2" if name in ROUGH2 else "r"]
     sep = nodes.new("ShaderNodeSeparateColor")
     links.new(tr.outputs["Color"], sep.inputs["Color"])
     for channel_name, socket, value in (("Green", "Roughness", rough), ("Blue", "Metallic", metallic)):
@@ -1031,6 +1162,15 @@ def metal_maps(mat, bsdf, name: str, rough: float, metallic: float) -> None:
         m.inputs[1].default_value = value
         links.new(sep.outputs[channel_name], m.inputs[0])
         links.new(m.outputs[0], bsdf.inputs[socket])
+    if rgba is not None:   # step 3: the colour times the grime (or scuff) map; the exporter writes rgba as the factor
+        tc = nodes.new("ShaderNodeTexImage")
+        tc.image = IMG["s" if name in SCUFFED else "g"]
+        mix = nodes.new("ShaderNodeMix")
+        mix.data_type, mix.blend_type = "RGBA", "MULTIPLY"
+        mix.inputs[0].default_value = 1.0
+        mix.inputs[7].default_value = rgba
+        links.new(tc.outputs["Color"], mix.inputs[6])
+        links.new(mix.outputs[2], bsdf.inputs["Base Color"])
 
 
 def box_uvs(mesh) -> None:
@@ -1065,7 +1205,7 @@ def material(name: str):
     bsdf.inputs["Roughness"].default_value = rough
     bsdf.inputs["Metallic"].default_value = metallic
     if name not in PLAIN and IMG:
-        metal_maps(mat, bsdf, name, rough, metallic)
+        metal_maps(mat, bsdf, name, rough, metallic, rgba)
     if emit:
         bsdf.inputs["Emission Color"].default_value = rgba
         bsdf.inputs["Emission Strength"].default_value = emit
@@ -1085,9 +1225,17 @@ def make(part: Part, collide: bool):
     mesh.validate()
     bm = bmesh.new()
     bm.from_mesh(mesh)
+    smooth = any(part.flags) and len(part.flags) == len(bm.faces)
+    if smooth:
+        for f, s in zip(bm.faces, part.flags):
+            f.smooth = s
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
     if part.closed:   # every face carries its outward hint (Part.face); merged parts are never recalculated
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    if smooth:   # sharp where the surface turns more than 35 deg (the shades' rims stay crisp)
+        for e in bm.edges:
+            if len(e.link_faces) == 2 and e.calc_face_angle(0.0) > math.radians(35):
+                e.smooth = False
     bm.to_mesh(mesh)
     bm.free()
     box_uvs(mesh)
@@ -1098,21 +1246,36 @@ def make(part: Part, collide: bool):
 
 
 def merged(pid: str, parts: list[Part], collide: bool) -> list[tuple[Part, bool]]:
-    """One object per material and collision: fewer draw calls."""
+    """One object per material and collision: fewer draw calls. Step 3: some narrow faces of the WEARABLE materials
+    move into lobby_worn (worn())."""
     groups: dict = {}
     for p in parts:
         if not p.faces:
             continue
         col = collide and p.col
-        key = (p.mat, col)
-        if key not in groups:
-            groups[key] = Part(f"{pid}_{p.mat.removeprefix('lobby_')}" + ("_c" if col else ""), p.mat, closed=True)
-            groups[key].closed = False
-        g = groups[key]
-        base = len(g.verts)
-        g.verts += p.verts
-        g.faces += [[i + base for i in f] for f in p.faces]
+        for f in p.faces:
+            mat = "lobby_worn" if p.mat in WEARABLE and worn([p.verts[i] for i in f]) else p.mat
+            key = (mat, col)
+            if key not in groups:
+                groups[key] = Part(f"{pid}_{mat.removeprefix('lobby_')}" + ("_c" if col else ""), mat, closed=False)
+            g = groups[key]
+            base = len(g.verts)
+            g.verts += [p.verts[i] for i in f]
+            g.faces.append(list(range(base, base + len(f))))
+            g.flags.append(p.smooth)
     return [(g, col) for (_m, col), g in groups.items()]
+
+
+def worn(pts) -> bool:
+    """A narrow face (a bevel, a chamfer, a lip: at most WEAR_W wide, at least 0.12 m long), about WEAR_SHARE % of
+    them by a steady hash of the face's centre."""
+    nrm = _normal(pts)
+    area = 0.5 * math.sqrt(sum(c * c for c in nrm))
+    longest = max(math.dist(a, b) for a, b in zip(pts, pts[1:] + pts[:1]))
+    if longest < 0.12 or area / longest > WEAR_W:
+        return False
+    c = [sum(p[k] for p in pts) / len(pts) for k in range(3)]
+    return pick(round(c[0] * 3), round(c[1] * 3), round(c[2] * 3), 5.0, n=100) < WEAR_SHARE
 
 
 def build(piece: dict, H: Hall, out: Path) -> dict:
@@ -1125,7 +1288,8 @@ def build(piece: dict, H: Hall, out: Path) -> dict:
     lo = [min(p[k] for p in pts) for k in range(3)]
     hi = [max(p[k] for p in pts) for k in range(3)]
     return {"glb": glb.as_posix(), "triangles": sum(len(pl.vertices) - 2 for o in objs for pl in o.data.polygons),
-            "objects": [o.name for o in objs], "materials": sorted({p.mat for p in parts if p.faces}),
+            "objects": [o.name for o in objs], "materials": sorted({o.data.materials[0].name for o in objs}),
+
             "bounds": {"min": [lo[0], lo[2], -hi[1]], "max": [hi[0], hi[2], -lo[1]]}}
 
 
