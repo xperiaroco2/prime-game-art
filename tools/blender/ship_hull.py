@@ -483,3 +483,7 @@ MODULES.append(ship_hull_fittings)
 import ship_hull_clearing  # noqa: E402  (the clearing: dirt, path, tufts, bushes, logs, pines, party lights; step 3)
 
 MODULES.append(ship_hull_clearing)
+
+import ship_hull_jaw  # noqa: E402  (art #263: the jaw nose)
+
+MODULES.append(ship_hull_jaw)

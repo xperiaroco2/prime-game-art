@@ -85,6 +85,7 @@ func _check() -> void:
 		var mk: Marker3D = m
 		result["stations"][String(mk.name)] = {"spot": mk.get_meta("spot", ""), "package": mk.get_meta("package", ""),
 			"at": [mk.position.x, mk.position.y, mk.position.z], "yaw": mk.rotation_degrees.y}
+	result["nose"] = _nose(level)
 	var spawn: Marker3D = level.get_node("Markers/Spawn")
 	result["spawn"] = [spawn.position.x, spawn.position.y, spawn.position.z]
 	for i: int in 3:
@@ -97,6 +98,41 @@ func _check() -> void:
 	_write("load.json", result)
 	print("SHIP export check saved %s" % _out)
 	quit(0)
+
+
+## Ship/Nose (art #263 b4): its pieces, the player's clips and lengths, the scene's pose ("default") and each clip's
+## pose at its end (seeked there, then back to RESET), {pose: {piece: degrees about x}}. {} without a Nose.
+func _nose(level: Node3D) -> Dictionary:
+	var nose: Node = level.get_node_or_null("Nose")
+	if nose == null:
+		return {}
+	var info: Dictionary = _req.get("nose", {})
+	var moving: Array = info.get("moving", [])
+	var pose: Callable = func() -> Dictionary:
+		var out: Dictionary = {}
+		for pid: String in moving:
+			var n: Node3D = nose.get_node_or_null(pid)
+			if n != null:
+				out[pid] = rad_to_deg(n.rotation.x)
+		return out
+	var result: Dictionary = {"pieces": [], "clips": [], "lengths": {}, "poses": {"default": pose.call()}}
+	for n: Node in nose.get_children():
+		if not (n is AnimationPlayer):
+			result["pieces"].append(String(n.name))
+	var player: AnimationPlayer = nose.get_node_or_null(str(info.get("player", "AnimationPlayer")))
+	if player == null:
+		return result
+	for clip: String in player.get_animation_list():
+		result["clips"].append(clip)
+		result["lengths"][clip] = player.get_animation(clip).length
+		player.play(clip)
+		player.seek(player.get_animation(clip).length, true)
+		result["poses"][clip] = pose.call()
+		player.stop()
+	if player.has_animation("RESET"):
+		player.play("RESET")
+		player.seek(0.0, true)
+	return result
 
 
 ## A piece's bounds at the origin (its meshes' AABBs in its frame) and its collision shapes (ship.gd _measure).
