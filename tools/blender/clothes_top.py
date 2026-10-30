@@ -1474,6 +1474,20 @@ def plain_denim(gar, args) -> dict:
     return rep
 
 
+def chain_knots(char, spec: str) -> list[tuple[float, str]]:
+    """E1i2: the knots of clothes_shell.chain_row from spec "Bone,Bone,..." (up the spine): each bone's mid height in
+    the bind pose (world), from char's armature; empty spec or no armature: []."""
+    names = [b for b in spec.split(",") if b.strip()]
+    arm = next((m.object for m in char.modifiers if m.type == "ARMATURE" and m.object), None)
+    if not names or arm is None:
+        return []
+    out = []
+    for b in names:
+        bone = arm.data.bones[b.strip()]
+        out.append(((arm.matrix_world @ ((bone.head_local + bone.tail_local) / 2)).z, b.strip()))
+    return out
+
+
 def flat_bib(gar, char, args) -> dict:
     """E1i: the bib as a flat, stiff panel (the concept): her fit made the bib follow each breast, so the denim bent
     over her chest, and its top sat under the bust. args.flat_bib "blend,curve,radius,clear":
@@ -1489,7 +1503,8 @@ def flat_bib(gar, char, args) -> dict:
       less clear - c x^2: the taut line from the waistband over the chest's most forward points to the top edge.
       The move eases in over blend m above the waist (clothes_shell.ease), so the waistband stays;
     - each moved vertex's weights blend toward the mean over its 3 cm row of the body's weights under the panel (the
-      panel moves as one with the chest, no fold).
+      panel moves as one with the chest, no fold); E1i2: with args.bib_chain "Hips,Spine,Chest,UpperChest" toward
+      clothes_shell.chain_row at its height instead (the rows' means folded the raised top under the bust in Jog).
     No face is added or removed; the UVs stay (but the stretched band's)."""
     blend, curve, rad, clear = floats(args.flat_bib)
     z_w = args.waist
@@ -1563,9 +1578,16 @@ def flat_bib(gar, char, args) -> dict:
     groups = {g.name: g for g in gar.vertex_groups}
     names = {g.index: g.name for g in gar.vertex_groups}
     new_rows = []
+    knots = chain_knots(char, getattr(args, "bib_chain", ""))
+    if knots:
+        rep["chain_knots"] = [(round(z, 4), b) for z, b in knots]
     for k, i in enumerate(ids):
         w = rows[k][0]
         if w <= 0:
+            continue
+        if knots:  # E1i2: by height alone, so the panel moves as one stiff piece with the spine (no fold)
+            own = {names[g.group]: g.weight for g in me.vertices[i].groups if g.group in names}
+            new_rows.append((i, H.follow_row(own, H.chain_row(co[i].z, knots), w)))
             continue
         mean: dict[str, float] = {}
         near_z = [kk for kk in range(len(ids)) if abs(zs[kk] - zs[k]) < 0.015 and rows[kk][0] > 0]

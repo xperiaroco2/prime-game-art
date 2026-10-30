@@ -388,6 +388,21 @@ class PlainDenim(unittest.TestCase):
 
 
 class FlatBib(unittest.TestCase):  # E1i: her bib a flat, stiff panel over the chest
+    def test_chain_row_by_height(self):
+        knots = [(1.10, "UpperChest"), (0.95, "Hips"), (1.00, "Spine"), (1.05, "Chest")]
+        self.assertEqual(H.chain_row(0.90, knots), {"Hips": 1.0})
+        self.assertEqual(H.chain_row(1.20, knots), {"UpperChest": 1.0})
+        mid = H.chain_row(1.075, knots)
+        self.assertAlmostEqual(mid["Chest"], 0.5)
+        self.assertAlmostEqual(mid["UpperChest"], 0.5)
+        for z in (0.93, 0.97, 1.0, 1.02, 1.06, 1.09, 1.15):
+            self.assertAlmostEqual(sum(H.chain_row(z, knots).values()), 1.0)
+            self.assertLessEqual(len(H.chain_row(z, knots)), 2)
+        # monotone: the upper bone's share only grows with height between two knots
+        ups = [H.chain_row(1.05 + 0.005 * k, knots).get("UpperChest", 0.0) for k in range(11)]
+        self.assertEqual(ups, sorted(ups))
+        self.assertEqual(H.chain_row(1.0, []), {})
+
     def test_hull_bridges_the_dip_under_the_bust(self):
         # (z, y), front at smaller y: waist, belly, under the bust (behind), the bust's apex, the upper chest, the top
         prof = [(0.95, -0.10), (1.00, -0.11), (1.04, -0.09), (1.08, -0.14), (1.10, -0.12), (1.11, -0.11)]

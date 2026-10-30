@@ -328,6 +328,9 @@ def main() -> int:
                          "clothes_top.flat_bib; empty: off)")
     ap.add_argument("--bib-raise", default="",
                     help="E1i: with --flat-bib, the bib raised dz over the band waist+b0..waist+b1: dz,b0,b1 (m)")
+    ap.add_argument("--bib-chain", default="",
+                    help="E1i2: with --flat-bib, the bib's weights by height along these bones (up the spine, comma "
+                         "separated; clothes_shell.chain_row; empty: the rows' means of the body's weights)")
     ap.add_argument("--plain-density", type=float, default=1.0,
                     help="E1h: the plain texels' density against the garment's median")
     ap.add_argument("--bronze", default="0.60,0.42,0.20,0.85,0.38",

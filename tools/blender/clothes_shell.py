@@ -502,3 +502,24 @@ def ease(z: float, z0: float, span: float) -> float:
         return 1.0 if z > z0 else 0.0
     t = min(1.0, max(0.0, (z - z0) / span))
     return t * t * (3 - 2 * t)
+
+
+def chain_row(z: float, knots: list[tuple[float, str]]) -> dict[str, float]:
+    """A stiff panel's weights by height alone (E1i2, her flat bib): knots are (height, bone) up the spine (each bone's
+    mid height in the bind pose, e.g. Hips, Spine, Chest, UpperChest); at z the two knots round it share the weight,
+    smoothstep between them, so the panel bends only where the spine does and the same across its width. Below the
+    lowest knot all goes to its bone, above the highest to its."""
+    ks = sorted(knots)
+    if not ks:
+        return {}
+    if z <= ks[0][0]:
+        return {ks[0][1]: 1.0}
+    for (z1, b1), (z2, b2) in zip(ks, ks[1:]):
+        if z <= z2:
+            t = ease(z, z1, z2 - z1)
+            row: dict[str, float] = {}
+            for b, w in ((b1, 1.0 - t), (b2, t)):
+                if w > 1e-6:
+                    row[b] = row.get(b, 0.0) + w
+            return row
+    return {ks[-1][1]: 1.0}
