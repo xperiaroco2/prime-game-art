@@ -67,10 +67,9 @@ class Layout(unittest.TestCase):
 class Walls(unittest.TestCase):
     def test_mirror(self):
         e, w = parts(T.th_wall, side="e"), parts(T.th_wall, side="w")
-        # the gill set stands on the east wall only for now (test_ship_gillset); the rest is mirrored
-        shared = [n for n in w if n != "band"]
-        self.assertEqual(set(shared), {n for n in e if not n.startswith(("gill", "groove", "btn_")) and n != "band"})
-        for n in shared:
+        # step 6: the gill set stands on both walls (test_ship_gillset), so every part is mirrored, the band too
+        self.assertEqual(set(w), set(e))
+        for n in w:
             self.assertEqual(sorted((round(-x, 6), round(y, 6), round(h, 6)) for x, y, h in e[n]["verts"]),
                              sorted((round(x, 6), round(y, 6), round(h, 6)) for x, y, h in w[n]["verts"]), n)
 
@@ -91,9 +90,10 @@ class Walls(unittest.TestCase):
         gap = p["fold_line"]["verts"]
         self.assertEqual({round(h - S.FLOOR, 6) for *_, h in gap}, {round(T.FOLD - T.GAP_H, 6), T.FOLD})
 
-    def test_west_plain(self):
-        names = parts(T.th_wall, side="w").keys()
-        self.assertFalse([n for n in names if n.startswith(("gill", "groove", "btn_", "cover"))])   # the west later
+    def test_west_carries_the_set(self):
+        names = parts(T.th_wall, side="w").keys()   # step 6: the gill set mirrored onto the west wall
+        self.assertTrue({"gill1_edge", "gill5_edge", "groove_glow", "btn_ring"} <= set(names))
+        self.assertFalse([n for n in names if n.startswith("cover")])
 
 
 class Corners(unittest.TestCase):

@@ -46,6 +46,15 @@ PROFILE = ((0.0, 0.0), (0.04, 0.07), (0.08, 0.15), (0.11, 0.2), (0.16, 0.27), (0
            (0.6, 1.0), (0.8, 1.0), (1.0, 1.0), (1.5, 0.92), (1.9, 0.7), (1.9, 0.4), (1.45, 0.16), (1.0, 0.0))
 UNDER = 0.05                                    # the overhang's reach past the hall-side rim at a 2 (scaled by the tips)
 PARTS = {"lip": (0, 3), "edge": (3, 4), "glow": (4, 6), "scoop": (6, len(PROFILE) - 1)}   # PROFILE's column runs
+# step 6 (the engineer: "slits 1 and 2 are super"; on 3-5 the glowing rim read as a hair line in a big unlit lip):
+# from slit BALANCE_FROM on the rim keeps slit BALANCE_REF's absolute width times (ref chord / chord) ** GLOW_K
+# (0: the same width, 1: growing as the slit shrinks) and the lip gives it the room (lip + rim stay 0.16 of the
+# crescent, so the inner wall, floor and overhang are unchanged); the lip's and the rim's depths scale with their widths
+# (the lip keeps its bevel's angle); the rim keeps the reference's depth drop, so as it widens it lies flatter and
+# faces the room (seen from the mouth side, slits 4-5 showed the rim edge-on). GSET_GLOW_K overrides GLOW_K (the
+# variant row, step 6: rim 10 -> 11.7 / 13.6 / 16 mm on slits 3-5, lip 22 -> 17 / 12 / 8 mm).
+BALANCE_REF, BALANCE_FROM = 2, 3
+GLOW_K = float(__import__("os").environ.get("GSET_GLOW_K", "1.6"))   # the row k 0 / 0.5 / 1 changed too little
 FOLD_T = 2.086                                  # the band's top (ship_interior_throat: FOLD - GAP_H)
 BAR_UP = 0.06                                   # the bar's middle over its slit's top tip
 BAR_GLOW = (0.12, 0.014)                       # step 4: the bar's light strip (w x h; 14 x 3 cm before, "too wide")
@@ -104,6 +113,7 @@ class Slit:
             m = (a + b) / 2
             a, b = (m, b) if self._width(self.t_mid + m) > TIP else (a, m)
         self.half = a
+        self.profile = profile_of(k)
 
     def _r(self, sag: float) -> float:
         return (self.chord ** 2 / 4 + sag ** 2) / (2 * sag)
@@ -151,10 +161,26 @@ class Slit:
         v = (t - self.t_mid) / self.half
         env = max(0.0, 1.0 - v * v) ** 0.5
         out = []
-        for a, f in PROFILE:
+        for a, f in self.profile:
             u = ul + (ur - ul) * a if a <= 1.0 else ur + (a - 1.0) * UNDER * env
             out.append((u, t, -DEPTH * f * env))
         return out
+
+
+def profile_of(k: int) -> tuple:
+    """Slit k's section (step 6): PROFILE for slits before BALANCE_FROM; from it on, the lip (columns 0..3) and the
+    rim (3..4) re-split so the rim keeps BALANCE_REF's absolute width x (ref chord / chord) ** GLOW_K."""
+    if k < BALANCE_FROM:
+        return PROFILE
+    r = SLITS[k][2] / SLITS[BALANCE_REF][2]              # the crescent's width scales with its chord
+    j0, j1 = PARTS["edge"]
+    a_lip, a_end = PROFILE[j0][0], PROFILE[j1][0]           # 0.11 and 0.16 of the crescent
+    e = (a_end - a_lip) * r ** -GLOW_K / r                  # the rim's share of this crescent (absolute width / width)
+    lam = a_end - e                                         # the lip's share
+    lip_scale = lam * r / a_lip                             # its absolute width against the reference's
+    out = [(a * lam / a_lip, f * lip_scale) for a, f in PROFILE[:j0 + 1]]
+    out.append((a_end, out[-1][1] + PROFILE[j1][1] - PROFILE[j0][1]))   # the reference's drop: flatter as it widens
+    return tuple(out) + PROFILE[j1 + 1:]
 
 
 def slits() -> list[Slit]:

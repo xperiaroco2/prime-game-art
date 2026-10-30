@@ -62,7 +62,7 @@ JAMB_U = WALL_LEN - 0.004                                 # the wall's hall end 
 END_U = 3.98                                              # the end frame's foot: ship_interior_gillset.END_U (a test holds them equal)
 END_PROUD = 0.036                                         # its face off the band (over the plinth's 3 cm): a 45 deg bevel, then flat
 JAMB_PROUD = 0.016                                        # its hall face this far proud of the header's
-GILL_SIDES = ("e",)                                       # the gill set: the east wall only for now (the west later, mirrored)
+GILL_SIDES = ("e", "w")                                   # the gill set on both walls (step 6: the west mirrored)
 DROP_D = 0.02                                             # the header's throat face carried down to the cove by the jamb
 
 

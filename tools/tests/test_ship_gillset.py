@@ -1,7 +1,7 @@
 """The throat's gill set (art #263, 2026-10-29; tools/blender/ship_interior_gillset.py, godot/ship/gill_set.gd,
 docs/ship.md "The gill set"): five static crescent niches on the east throat wall, the groove, the turn bars and the
 button: their places and sizes (the chords shrinking from the mouth, the bottoms rising gently), nothing before s 1.70
-or over the fold, the groove and the button clear of the holes, no colliders and no moving parts, the west wall plain,
+or over the fold, the groove and the button clear of the holes, no colliders and no moving parts, the west wall the east's mirror,
 and the controller's demo (gill_set.gd's rules mirrored in plain Python). Plain Python."""
 
 from __future__ import annotations
@@ -111,7 +111,41 @@ class Wall(unittest.TestCase):
         self.assertEqual(set(e), names | {"groove", "groove_glow", "btn_bezel", "btn_ring", "btn_dome"})
         self.assertTrue(all(p.get("nocol") for p in e.values()))                       # no colliders on decor
         self.assertFalse([n for n, p in e.items() if p.get("origin")])                 # nothing moves
-        self.assertEqual(set_parts("w"), {})                                           # the west plain for now
+
+    def test_west_mirrors_every_part(self):
+        """step 6: the west wall carries the same set, every part the east's mirror in x (faces turned back), so the
+        groove sweeps round the mouth side there too and the button sits at the hall end."""
+        e, w = set_parts("e"), set_parts("w")
+        self.assertEqual(set(w), set(e))
+        for n, p in e.items():
+            self.assertEqual(w[n]["mat"], p["mat"], n)
+            self.assertEqual([(round(-x, 6), round(y, 6), round(h, 6)) for x, y, h in p["verts"]],
+                             [(round(x, 6), round(y, 6), round(h, 6)) for x, y, h in w[n]["verts"]], n)
+            self.assertEqual([tuple(f[::-1]) for f in p["faces"]], [tuple(f) for f in w[n]["faces"]], n)
+
+
+class GlowBalance(unittest.TestCase):
+    """step 6 (the engineer: slits 1 and 2 "super"; 3-5's glowing rim a hair line in a big unlit lip)."""
+
+    def widths(self, sl):
+        w = sl.sag_o - sl.sag_i                                                      # the crescent at its middle
+        j0, j1 = G.PARTS["edge"]
+        return w * sl.profile[j0][0], w * (sl.profile[j1][0] - sl.profile[j0][0])  # lip, rim (m)
+
+    def test_first_two_unchanged(self):
+        for sl in G.slits()[:2]:
+            self.assertEqual(sl.profile, G.PROFILE, sl.k)
+
+    def test_rim_holds_its_width_lip_gives_way(self):
+        lips, rims = zip(*(self.widths(sl) for sl in G.slits()))
+        for k in range(2, 5):   # slits 3-5: the rim at least slit 2's, growing a little; the lip thinner each time
+            self.assertGreaterEqual(rims[k], rims[1] - 1e-9, k)
+            self.assertGreaterEqual(rims[k], rims[k - 1] - 1e-9, k)
+            self.assertLess(lips[k], lips[k - 1], k)
+        self.assertLess(rims[4], rims[0] * 1.6)                                       # never a fat band
+        for sl in G.slits():    # the lip and rim together keep their share: the inner wall, floor and overhang stay
+            self.assertAlmostEqual(sl.profile[G.PARTS["edge"][1]][0], G.PROFILE[G.PARTS["edge"][1]][0], 9)
+            self.assertEqual(sl.profile[G.PARTS["edge"][1] + 1:], G.PROFILE[G.PARTS["edge"][1] + 1:])
 
     def test_niches_behind_the_face(self):
         p = parts("e")

@@ -711,89 +711,124 @@ func _play(test: bool) -> void:
 	quit(0)
 
 
-# --- step 5: the gill set in --play (gill_set.gd on the east wall; E presses the button within reach) -----------
+# --- step 5: the gill set in --play (gill_set.gd on each throat wall; E presses the button within reach) ----------
+# step 6: both walls (th_wall_e and its mirror th_wall_w), each its own row and its own button
 const REACH_M: float = 1.6     # eye to the button's middle
 const AIM_DEG: float = 14.0    # the look's angle off the button
 var _play_player = null
-var _play_gills: Node = null
+var _play_gills: Dictionary = {}   # side ("e", "w") -> its gill_set.gd
 var _play_presses: Array = []
 
 
-func _play_gill_set(ship: Node3D) -> void:
-	var piece: Node3D = null
+## The placed throat walls that carry a gill set: side -> piece (th_wall_e, th_wall_w).
+static func gill_walls(ship: Node3D) -> Dictionary:
+	var out: Dictionary = {}
 	for n: Node in ship.get_children():
-		if String(n.name).begins_with("th_wall_e"):
-			piece = n
-	if piece == null:
-		print("SHIP play: no placed th_wall_e, no gill set")
+		for side: String in ["e", "w"]:
+			if String(n.name).begins_with("th_wall_" + side):
+				out[side] = n
+	return out
+
+
+func _play_gill_set(ship: Node3D) -> void:
+	var walls: Dictionary = gill_walls(ship)
+	if walls.is_empty():
+		print("SHIP play: no placed th_wall_e/_w, no gill set")
 		return
-	_play_gills = GillSet.new()
-	piece.add_child(_play_gills)
-	_play_gills.setup(piece)
+	for side: String in walls:
+		var gs: Node = GillSet.new()
+		walls[side].add_child(gs)
+		gs.setup(walls[side])
+		_play_gills[side] = gs
 	process_frame.connect(_play_tick)
 	_play_player.used.connect(_play_use)
 
 
 func _play_tick() -> void:
-	_play_gills.step(root.get_process_delta_time())
-	_play_player.can_use = _in_reach()
+	var dt: float = root.get_process_delta_time()
+	for side: String in _play_gills:
+		_play_gills[side].step(dt)
+	_play_player.can_use = _reach_side() != ""
 
 
-func _in_reach() -> bool:
+## The wall whose button the player looks at within reach ("" if none).
+func _reach_side() -> String:
 	var cam: Camera3D = _play_player.camera
-	var to: Vector3 = _play_gills.button_point() - cam.global_position
-	if to.length() > REACH_M or to.dot(_play_gills.out_dir()) > 0.0:   # too far, or behind the wall
-		return false
-	return (-cam.global_transform.basis.z).angle_to(to) < deg_to_rad(AIM_DEG)
+	for side: String in _play_gills:
+		var gs: Node = _play_gills[side]
+		var to: Vector3 = gs.button_point() - cam.global_position
+		if to.length() > REACH_M or to.dot(gs.out_dir()) > 0.0:   # too far, or behind the wall
+			continue
+		if (-cam.global_transform.basis.z).angle_to(to) < deg_to_rad(AIM_DEG):
+			return side
+	return ""
 
 
 func _play_use() -> void:
-	if _play_gills == null or not _in_reach():
+	var side: String = _reach_side()
+	if side == "":
 		return
-	var k: int = _play_gills.slit()
-	var state: String = _play_gills.press()
-	_play_presses.append({"slit": k + 1, "state": state})
-	print("SHIP play press: slit %d %s" % [k + 1, state])
+	var gs: Node = _play_gills[side]
+	var k: int = gs.slit()
+	var state: String = gs.press()
+	_play_presses.append({"side": side, "slit": k + 1, "state": state})
+	print("SHIP play press: %s slit %d %s" % [side, k + 1, state])
 
 
-## --play-test's press: the capsule set 0.9 m in front of the button on the deck, looking at it; a real E key event
-## (player.gd's `used`) must flip the slit under the white bar. Saves a second shot with the hint.
+## --play-test's presses: on each wall in turn the capsule set 0.9 m in front of the button on the deck, looking at
+## it; a real E key event (player.gd's `used`) must flip the slit under that wall's white bar and nothing on the other
+## wall. A shot each (with the hint).
 func _play_test_press(p) -> Dictionary:
-	if _play_gills == null:
+	if _play_gills.is_empty():
 		return {"ok": false, "why": "no gill set"}
-	var b: Vector3 = _play_gills.button_point()
-	var out: Vector3 = _play_gills.out_dir()
-	out.y = 0.0
-	out = out.normalized()
-	var stand: Vector3 = b + out * 0.9
-	stand.y = b.y - 1.15 + 0.05   # the button stands 1.15 m over the deck
-	p.velocity = Vector3.ZERO
-	p.global_position = stand
-	p.rotation.y = atan2(out.x, out.z)   # -z (the look) toward the wall
-	for i: int in 10:
-		await physics_frame
-	var to: Vector3 = b - p.camera.global_position
-	p.camera.rotation.x = atan2(to.y, Vector2(to.x, to.z).length())
-	for i: int in 3:
-		await process_frame
-	var reach: bool = _in_reach()
-	var key: InputEventKey = InputEventKey.new()
-	key.physical_keycode = KEY_E
-	key.keycode = KEY_E
-	key.pressed = true
-	Input.parse_input_event(key)
-	for i: int in 3:
-		await process_frame
-	key = key.duplicate()
-	key.pressed = false
-	Input.parse_input_event(key)
-	for i: int in 20:
-		await process_frame
-	await p.shot()
-	var open: Array = _play_gills.open.duplicate()
-	var ok: bool = reach and _play_presses.size() == 1 and _play_presses[0]["state"] == "open" 		and open.count(true) == 1 and bool(open[int(_play_presses[0]["slit"]) - 1])
-	return {"ok": ok, "in_reach": reach, "hint": p.can_use, "presses": _play_presses, "open": open,
-		"stand": _r3(p.global_position), "button": _r3(b)}
+	var walls: Dictionary = {}
+	var ok: bool = true
+	for side: String in ["e", "w"]:
+		if not _play_gills.has(side):
+			ok = false
+			walls[side] = {"ok": false, "why": "no gill set"}
+			continue
+		var gs: Node = _play_gills[side]
+		var b: Vector3 = gs.button_point()
+		var out: Vector3 = gs.out_dir()
+		out.y = 0.0
+		out = out.normalized()
+		var stand: Vector3 = b + out * 0.9
+		stand.y = b.y - 1.15 + 0.05   # the button stands 1.15 m over the deck
+		p.velocity = Vector3.ZERO
+		p.global_position = stand
+		p.rotation.y = atan2(out.x, out.z)   # -z (the look) toward the wall
+		for i: int in 10:
+			await physics_frame
+		var to: Vector3 = b - p.camera.global_position
+		p.camera.rotation.x = atan2(to.y, Vector2(to.x, to.z).length())
+		for i: int in 3:
+			await process_frame
+		var reach: bool = _reach_side() == side
+		var before: int = _play_presses.size()
+		var key: InputEventKey = InputEventKey.new()
+		key.physical_keycode = KEY_E
+		key.keycode = KEY_E
+		key.pressed = true
+		Input.parse_input_event(key)
+		for i: int in 3:
+			await process_frame
+		key = key.duplicate()
+		key.pressed = false
+		Input.parse_input_event(key)
+		for i: int in 20:
+			await process_frame
+		await p.shot()
+		var open: Array = gs.open.duplicate()
+		var mine: Array = _play_presses.slice(before)
+		var w_ok: bool = reach and mine.size() == 1 and mine[0]["side"] == side and mine[0]["state"] == "open" \
+			and open.count(true) == 1 and bool(open[int(mine[0]["slit"]) - 1])
+		walls[side] = {"ok": w_ok, "in_reach": reach, "hint": p.can_use, "open": open, "stand": _r3(p.global_position),
+			"button": _r3(b)}
+		ok = ok and w_ok
+	var other_shut: bool = _play_gills.size() == 2 and (_play_gills["e"].open as Array).count(true) == 1 \
+		and (_play_gills["w"].open as Array).count(true) == 1
+	return {"ok": ok and other_shut, "walls": walls, "presses": _play_presses}
 
 
 ## The nav lamps' blink (light layer): the white tail lamp a short flash once a second (0.12 s), red and green a soft
@@ -1175,16 +1210,18 @@ func _gill_set() -> void:
 	var lights: int = _dress(ship)
 	_probes()
 	var a: Dictionary = _req["anim"]
-	var piece: Node3D = null
-	for n: Node in ship.get_children():
-		if String(n.name).begins_with("th_wall_e"):
-			piece = n
-	if piece == null:
+	var walls: Dictionary = gill_walls(ship)
+	if not walls.has("e"):
 		_fail("no placed th_wall_e")
 		return
-	var gs: Node = GillSet.new()
-	piece.add_child(gs)
-	gs.setup(piece)
+	var sets: Array = []   # step 6: a gill set on each wall, driven alike (the east first: its presses are reported)
+	for side: String in ["e", "w"]:
+		if walls.has(side):
+			var g: Node = GillSet.new()
+			walls[side].add_child(g)
+			g.setup(walls[side])
+			sets.append(g)
+	var gs: Node = sets[0]
 	_camera = Camera3D.new()
 	_camera.near = 0.03
 	_camera.far = 500.0
@@ -1215,7 +1252,8 @@ func _gill_set() -> void:
 		var name: String = cam[0]
 		_camera.fov = float(cam[3])
 		_camera.look_at_from_position(_v(cam[1]), _v(cam[2]), UP)
-		gs.reset()
+		for g: Node in sets:
+			g.reset()
 		for i: int in 30:  # the probes, SSAO and glow settle
 			await process_frame
 		var dir: String = _out.path_join(name).path_join("frames")
@@ -1228,13 +1266,17 @@ func _gill_set() -> void:
 			var t: float = f / fps
 			while e < events.size() and float(events[e][0]) <= t + 1e-6:
 				var r: String = gs.press()
+				for g: Node in sets.slice(1):
+					g.press()
 				if name == a["cams"][0][0]:
 					presses.append([snappedf(t, 0.01), gs.slit() + 1, r])
 				e += 1
 			var now: int = Time.get_ticks_usec()
-			gs.time_scale = clampf((1.0 / fps) / maxf((now - last) / 1e6, 1e-4), 0.02, 4.0) if f > 0 else 1.0
+			var ts: float = clampf((1.0 / fps) / maxf((now - last) / 1e6, 1e-4), 0.02, 4.0) if f > 0 else 1.0
 			last = now
-			gs.step(0.0 if f == 0 else 1.0 / fps)
+			for g: Node in sets:
+				g.time_scale = ts
+				g.step(0.0 if f == 0 else 1.0 / fps)
 			await RenderingServer.frame_post_draw
 			var image: Image = root.get_texture().get_image()
 			image.convert(Image.FORMAT_RGB8)
@@ -1260,25 +1302,33 @@ func _gill_set() -> void:
 	for v: Array in a.get("views", []):
 		_camera.fov = float(v[3])
 		_camera.look_at_from_position(_v(v[1]), _v(v[2]), UP)
-		gs.reset()
-		gs.time_scale = 1.0
-		gs.pose(v[4], int(v[5]))
+		for g: Node in sets:
+			g.reset()
+			g.time_scale = 1.0
+			g.pose(v[4], int(v[5]))
 		for i: int in int(a.get("settle", 75)):
-			gs.step(0.0)
+			for g: Node in sets:
+				g.step(0.0)
 			await process_frame
 		await RenderingServer.frame_post_draw
 		var img: Image = root.get_texture().get_image()
 		img.convert(Image.FORMAT_RGB8)
 		_save(img, _out.path_join("stills/%s.png" % String(v[0])))
+		stills[String(v[0])] = img
 	var names: Array = (a["cams"] as Array).map(func(c: Array) -> String: return String(c[0]))
 	var ref: Image = Image.load_from_file(String(a["ref"])) if a.has("ref") else null
 	var rows: Array = []
-	var c0: String = names[0]
-	if ref != null:
+	var c0: String = names[0] if names.size() > 0 else ""
+	if ref != null and c0 != "":   # (step 6: a views-only run, no cameras, has no demo sheet)
 		ref.convert(Image.FORMAT_RGB8)
 		rows.append([ref, stills.get(c0 + "_mid", ref)])
 		rows.append([stills.get(c0 + "_shut", ref), stills.get(c0 + "_open", ref)])
-	_save(_sheet(rows), _out.path_join("sheet.png"))
+	if a.has("sheet"):   # step 6: the sheet's rows by name ("ref": set_plate.jpg, else a still or a posed view)
+		rows = []
+		for names_row: Array in a["sheet"]:
+			rows.append(names_row.map(func(n: String) -> Image: return ref if n == "ref" else stills.get(n, ref)))
+	if not rows.is_empty():
+		_save(_sheet(rows), _out.path_join("sheet.png"))
 	_write("anim.json", {"frames": count, "fps": fps, "seconds": GillSet.DEMO_S, "lights": lights, "presses": presses,
 		"cams": names, "set": gs.info()})
 	print("SHIP gill_set %d frames x %d cams" % [count, names.size()])

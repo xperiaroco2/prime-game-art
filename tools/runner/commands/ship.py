@@ -546,13 +546,16 @@ def play(layout: dict, out: Path, folder: Path, test: bool) -> int:
         if code != 0 or not (folder / "play.json").is_file():
             raise common.Failure(f"ship.gd play test failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
         result = json.loads((folder / "play.json").read_text(encoding="utf-8"))
-        # step 5: and a scripted E press at the gill set's button flips the slit under the white bar (a second shot)
+        # step 5: and a scripted E press at the gill set's button flips the slit under the white bar (a shot each);
+        # step 6: on each wall (its own row, its own button), the other wall's row untouched
         press = result.get("press", {})
-        if result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 2 or not press.get("ok"):
+        walls = press.get("walls", {})
+        if result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 3 or not press.get("ok")                 or set(walls) != {"e", "w"}:
             common.bad(f"ship --play-test: {result}")
             return 1
-        common.ok(f"ship --play-test: walked {result['moved_m']} m on the floor; E at the button flipped slit "
-                  f"{press['presses'][0]['slit']} {press['presses'][0]['state']}; two shots in {folder.as_posix()}")
+        flips = ", ".join(f"{p['side']} slit {p['slit']} {p['state']}" for p in press["presses"])
+        common.ok(f"ship --play-test: walked {result['moved_m']} m on the floor; E at each wall's button flipped "
+                  f"{flips}; three shots in {folder.as_posix()}")
         return 0
     common.say(f"ship --play: a window opens; P saves a screenshot into {folder.as_posix()}, Ctrl+Q or closing it quits")
     # ship.gd's _play sizes and centres his window itself. heavy=False: it may stay open for hours, so it does not hold
@@ -672,9 +675,11 @@ VENT_ANIM = {"piece": "station_vent_e", "eye": [-0.25, -3.05, 2.8], "look": [2.1
              "size": (1280, 720), "fps": 24, "max_mb": 15}
 
 
-def gill_view(layout: dict, s: float, t: float, back: float, along: float = 0.0, up: float = 0.0) -> tuple:
+def gill_view(layout: dict, s: float, t: float, back: float, along: float = 0.0, up: float = 0.0,
+              side: str = "e") -> tuple:
     """(eye, look) in plan (x, y, h) for a point on the east gills' wall (s along it from the mouth's corner, t up its
-    vertical part), the eye `back` m into the throat, `along` m toward the hall and `up` m higher."""
+    vertical part), the eye `back` m into the throat, `along` m toward the hall and `up` m higher; side "w": the same
+    on the west wall (step 6: the ship's mirror in x)."""
     import importlib
     import sys
     sys.path.insert(0, str(blender.SCRIPTS))
@@ -684,7 +689,19 @@ def gill_view(layout: dict, s: float, t: float, back: float, along: float = 0.0,
     h = layout["deck"]["floor_h"] + t
     look = [m[0] + d[0] * s, m[1] + d[1] * s, h]
     eye = [look[0] + n[0] * back + d[0] * along, look[1] + n[1] * back + d[1] * along, h + up]
+    if side == "w":
+        eye[0], look[0] = 2 * g.S.HALL_C[0] - eye[0], 2 * g.S.HALL_C[0] - look[0]
     return [round(v, 4) for v in eye], [round(v, 4) for v in look]
+
+
+def throat_axis(layout: dict) -> tuple[float, float, float]:
+    """(x, y at the mouth's corners, y at the walls' hall end) of the throat's middle line (step 6's both-wall views)."""
+    import importlib
+    import sys
+    sys.path.insert(0, str(blender.SCRIPTS))
+    g = importlib.import_module("ship_interior_gills")
+    my = g.S.TH_PTS[1][1] + g.S.HALL_C[1]
+    return g.S.HALL_C[0], my, my + g.WALL_D[1] * 4.047
 
 
 GILL_ANIM = {"s": 2.66, "t": 1.32, "back": 0.95, "along": -0.45, "up": 0.08, "fov": 50.0, "fps": 30,
@@ -756,7 +773,27 @@ GILL_VIEWS = [  # name, (s, t, back, along, up) eye, (s, t) look, fov, (open, at
     ("cu_bars", (2.95, 1.80, 0.9, 0.0, 0.05), (2.95, 1.80), 55.0, MID),
     ("cu_button", (3.86, 1.15, 0.5, -0.1, 0.05), (3.86, 1.15), 45.0, MID),
     ("cu_end", (3.80, 1.25, 0.9, -0.3, 0.1), (4.0, 1.1), 55.0, MID),
+    # step 6: the west wall (the mirror, side "w"): the concept camera shut, mid and all open, its groove ends, button
+    # and end; and the row of all five square on at one scale, shut and open, on both walls (the glow's balance)
+    ("e_concept_shut", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, ([], 0)),
+    ("e_concept_mid", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, MID),
+    ("e_concept_open", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, ([1, 2, 3, 4, 5], 3)),
+    ("w_concept_shut", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, ([], 0), "w"),
+    ("w_concept_mid", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, MID, "w"),
+    ("w_concept_open", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, ([1, 2, 3, 4, 5], 3), "w"),
+    ("w_cu_groove_top", (2.0, 1.95, 0.55, 0.0, 0.05), (2.0, 1.95), 50.0, MID, "w"),
+    ("w_cu_groove_tail", (2.40, 0.72, 0.6, 0.0, 0.1), (2.40, 0.72), 50.0, MID, "w"),
+    ("w_cu_button", (3.86, 1.15, 0.5, -0.1, 0.05), (3.86, 1.15), 45.0, MID, "w"),
+    ("w_cu_end", (3.80, 1.25, 0.9, -0.3, 0.1), (4.0, 1.1), 55.0, MID, "w"),
+    ("row_shut", (2.80, 1.36, 1.8, 0.0, 0.0), (2.80, 1.36), 40.0, ([], 0)),
+    ("row_open", (2.80, 1.36, 1.8, 0.0, 0.0), (2.80, 1.36), 40.0, ([1, 2, 3, 4, 5], 3)),
+    ("w_row_shut", (2.80, 1.36, 1.8, 0.0, 0.0), (2.80, 1.36), 40.0, ([], 0), "w"),
+    ("w_row_open", (2.80, 1.36, 1.8, 0.0, 0.0), (2.80, 1.36), 40.0, ([1, 2, 3, 4, 5], 3), "w"),
 ]
+# step 6: both walls in view from the throat's middle line: (name, eye (dy from the mouth's corners, h over the deck),
+# look (dy, h), fov, pose); dy < 0: |dy| past the walls' hall end into the hall
+GILL_AXIS_VIEWS = [("mouth_both", (0.3, 1.6), (4.0, 1.3), 75.0, MID), ("hall_both", (-1.2, 1.6), (0.0, 1.3), 70.0, MID)]
+GILL_SHEET = [["ref", "concept_mid"], ["w_concept_mid", "mouth_both"]]   # set_plate | east mid; west mid | both
 
 
 # the look grid (step 3; LOOK holds its pick "deep_mid", after deep_lo, halo and blue_mid lost): gill_set.gd LOOK
@@ -768,7 +805,7 @@ GILL_GRID = [["mid", {}], ["cloud_04", {"cloud": 0.4, "drift": 1.0}, ALL_OPEN],
              ["cloud_06_drift14", {"cloud": 0.6, "drift": 1.4}, ALL_OPEN]]
 
 
-def gill_set(layout: dict, out: Path, folder: Path, grid: bool = False) -> int:
+def gill_set(layout: dict, out: Path, folder: Path, grid: bool = False, only: list[str] | None = None) -> int:
     """The gill set's proof: ship.gd mode "gill_set" renders gill_set.gd's demo on th_wall_e from both cameras at night
     in the off-screen window, then the posed views and close-ups; headless Blender encodes each camera's MP4; the
     frames are deleted."""
@@ -781,12 +818,20 @@ def gill_set(layout: dict, out: Path, folder: Path, grid: bool = False) -> int:
             ["close", _g(gill_view(layout, c["s"], c["t"], c["back"], c["along"], c["up"])[0]),
              _g(gill_view(layout, c["s"], c["t"], 0.05)[0]), c["fov"]]]
     views = [["concept_wide", _g([-1.7323, -3.6196, 2.43]), _g([2.3527, -4.9625, 2.43]), 52.0, *MID]]
-    views += [[name, _g(gill_view(layout, *eye)[0]), _g(gill_view(layout, *look, 0.0)[0]), fov, pose[0], pose[1]]
-             for name, eye, look, fov, pose in GILL_VIEWS]
+    views += [[name, _g(gill_view(layout, *eye, side=v[0] if v else "e")[0]),
+               _g(gill_view(layout, *look, 0.0, side=v[0] if v else "e")[0]), fov, pose[0], pose[1]]
+              for name, eye, look, fov, pose, *v in GILL_VIEWS]
+    x0, y_mouth, y_hall = throat_axis(layout)
+    deck = layout["deck"]["floor_h"]
+    for name, (de, he), (dl, hl), fov, pose in GILL_AXIS_VIEWS:
+        ye, yl = (y_mouth + de if de >= 0 else y_hall - de), (y_mouth + dl if dl >= 0 else y_hall - dl)
+        views.append([name, _g([x0, ye, deck + he]), _g([x0, yl, deck + hl]), fov, pose[0], pose[1]])
+    if only is not None:   # step 6: a views-only run (no demo, no videos): the named views
+        cams, views = [], [v for v in views if v[0] in only]
     req, staged = built_request(layout, out)
     req.update({"mode": "gill_set", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
                 "anim": {"cams": cams, "views": views, "fps": a["fps"], "ref": a["ref"],
-                         **({"grid": GILL_GRID} if grid else {})},
+                         **({"grid": GILL_GRID} if grid else {}), **({} if only is not None else {"sheet": GILL_SHEET})},
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
                 "rooms": room_boxes(layout)})
     errors = _stage(staged)
@@ -805,6 +850,9 @@ def gill_set(layout: dict, out: Path, folder: Path, grid: bool = False) -> int:
     info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
     if grid:
         common.ok(f"ship --gill-set --gill-grid: {(folder / 'grid_sheet.png').as_posix()}")
+        return 0
+    if only is not None:
+        common.ok(f"ship --gill-set: {len(views)} views in {(folder / 'stills').as_posix()}")
         return 0
     sizes = {}
     for cam in cams:
