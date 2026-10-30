@@ -169,7 +169,7 @@ func _walk(r: float, h: float, points: Array) -> Dictionary:
 
 
 # --- pictures ------------------------------------------------------------------------------------------------------
-## The neutral review light: a grey ambient, a soft key from the north-west above without shadows, SSAO for the forms;
+## The neutral review light: a grey ambient, a grey sky for reflections only, a soft key from the north-west above without shadows, SSAO for the forms;
 ## the dark blue placeholder fills everything behind the window (no Earth yet).
 func _environment() -> void:
 	var env: Environment = Environment.new()
@@ -177,7 +177,17 @@ func _environment() -> void:
 	env.background_color = Color(_req["background"][0], _req["background"][1], _req["background"][2])
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.85, 0.86, 0.9)
-	env.ambient_light_energy = 0.55
+	env.ambient_light_energy = 0.4
+	# a neutral grey sky for the reflections only (the ship's metal reads black without one); never the background
+	var sky_mat: ProceduralSkyMaterial = ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = Color(0.55, 0.56, 0.6)
+	sky_mat.sky_horizon_color = Color(0.5, 0.5, 0.52)
+	sky_mat.ground_horizon_color = Color(0.35, 0.35, 0.36)
+	sky_mat.ground_bottom_color = Color(0.25, 0.25, 0.26)
+	var sky: Sky = Sky.new()
+	sky.sky_material = sky_mat
+	env.sky = sky
+	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
 	env.ssao_enabled = true
 	env.ssao_radius = 1.5
@@ -186,7 +196,7 @@ func _environment() -> void:
 	world.environment = env
 	root.add_child(world)
 	var key: DirectionalLight3D = DirectionalLight3D.new()
-	key.light_energy = 0.9
+	key.light_energy = 0.8
 	key.shadow_enabled = false
 	key.rotation_degrees = Vector3(-55, -35, 0)
 	root.add_child(key)
