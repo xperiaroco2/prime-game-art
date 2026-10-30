@@ -60,8 +60,10 @@ def clearing_ids(layout: dict[str, Any]) -> list[str]:
 
 def closed_poses(layout: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """The closed nose's blockout variants (art #356, the lobby's docked ship; exterior.toml [closed_nose.<name>]): per
-    variant its title, the pieces it hides and its parts; off unless a shot asks for one (`ship --shoot --views`)."""
-    return {name: {"title": v.get("title", name), "hide": list(v.get("hide", [])), "parts": list(v.get("parts", []))}
+    variant its title, the pieces it hides, the plan spots [x, y, r] round which it hides every placement and lamp
+    (the ramp's ground lamps) and its parts; off unless a shot asks for one (`ship --shoot --views`)."""
+    return {name: {"title": v.get("title", name), "hide": list(v.get("hide", [])),
+                   "hide_at": [list(q) for q in v.get("hide_at", [])], "parts": list(v.get("parts", []))}
             for name, v in layout.get("closed_nose", {}).items()}
 
 

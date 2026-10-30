@@ -77,18 +77,32 @@ class ShipClosedNoseTest(unittest.TestCase):
         poses = sl.closed_poses(LAYOUT)
         self.assertEqual(sorted(poses), ["a", "b", "c"])
         for name, pose in poses.items():
-            self.assertEqual(sorted(pose["hide"]), ["ramp", "ramp_lights"], name)
+            # round 2: nothing of the ramp shows when closed (its deck, lights, hazard stripes, ground lamps)
+            self.assertEqual(sorted(pose["hide"]), ["hazard_stripes", "ramp", "ramp_lights"], name)
+            lamps = [at for pid, at, _yaw in LAYOUT["place"] if pid == "ground_lamp" and at[1] < -9.0]
+            self.assertEqual(len(lamps), 4)
+            for x, y, _h in lamps:
+                self.assertTrue(any(abs(x - q[0]) < q[2] and abs(y - q[1]) < q[2] for q in pose["hide_at"]), (name, x, y))
+            for q in pose["hide_at"]:
+                self.assertTrue(q[1] < -9.0 and q[2] <= 1.0, (name, q))   # ahead of the nose only, no hull piece
             for part in pose["parts"]:
                 self.assertTrue(part.get("mat") in metals or "rgb" in part, (name, part))
+                self.assertIn(part["kind"], ("prism", "box", "iris"), name)
                 if part["kind"] == "prism":
-                    self.assertTrue(-8.3 < part["y"] and part["y"] + part["depth"] < -7.5, (name, part))
+                    self.assertTrue(-8.5 < part["y"] and part["y"] + part["depth"] < -7.5, (name, part))
                     for x, h in part["poly"]:
                         self.assertTrue(abs(x) <= 1.7 and 1.1 <= h <= 3.6, (name, part))
+                    self.assertLessEqual(abs(part.get("inset", 0.0)), 0.1, (name, part))
+                    self.assertLessEqual(abs(part.get("yaw", 0.0)), 8.0, (name, part))   # a shallow prow, not a wedge
+                elif part["kind"] == "iris":
+                    cx, ch = part["centre"]
+                    reach = part["r"] + part.get("rim", [0.0])[0]
+                    self.assertTrue(abs(cx) + reach <= 1.65 and ch - reach >= 1.2 and ch + reach <= 3.5, (name, part))
+                    self.assertIn(part["mat2"], metals, name)
+                    self.assertTrue(-8.5 < part["y"] < -7.5, (name, part))
                 else:
-                    self.assertEqual(part["kind"], "box", name)
                     x, y, h = part["at"]
-                    self.assertTrue(abs(x) < 1.7 and -8.3 < y < -7.5 and 1.0 < h < 3.6, (name, part))
-
+                    self.assertTrue(abs(x) < 1.7 and -8.5 < y < -7.5 and 1.0 < h < 3.6, (name, part))
 
 if __name__ == "__main__":
     unittest.main()
