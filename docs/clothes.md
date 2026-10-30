@@ -611,6 +611,19 @@ above it again from Blender's rest matrices.
   further over the trousers' ragged top. Its denim is already a dark indigo (legs sRGB 0.066, 0.125, 0.198): E1's
   `--denim-gain 2.15,2.15,2.1`, tuned for the old near-black bake, made it a light mid blue; `1.05,1.3,1.25` brings
   the High look's legs to the turnaround's (measured on the comparison sheets: render/turnaround in linear light).
+- **The skin the garment hides follows it** (M2d): `--skin-follow lo,hi,clear,reach` (m; d47 on: `0.015,0.035,0.004,0.04`)
+  takes every body vertex under the waist whose nearest cloth is the garment (within reach) and, by its distance
+  from the nearest opening (none within lo, all from hi on, `clothes_fit_geom.follow_share`), first pulls it in
+  along the nearest garment face's normal until it lies clear inside (`pull_in`; skin more than 15 mm outside is no
+  poke and stays), before the cover test, then gives the kept ones the garment face's weights (`blend_rows`, the
+  corners by nearness). The traces (`tools/out/dress/m2d/probe_poke.py`): her right ankle front inside the turn-up lay
+  6 to 9 mm outside the cloth at rest, 44 mm from the hem, and no rule cut it (its tilted cover rays leave by the hem);
+  the crotch's skin (Hips and both UpperLegs) lay 3 to 9 mm inside the seat, within under_cloth's 1 mm once the fit
+  shifted a vertex, and its weights differ from the garment's (mostly one UpperLeg), so it left the cloth in motion.
+- **The flat back panel** (M2d): `--flat-back blend,radius,band,clear` (d47 on: `0.06,0.05,0.012,0.008`) gives every
+  back vertex over the waist the depth of `clothes_shell.panel_fit` (a quadratic across, from the vertices within
+  radius in x and band in z, less all layers' mean within 1 cm) eased in over blend above the waist, never nearer the
+  body's back than clear, and its weights along `--bib-chain`: Meshy's panel had a vertical fold at its apex.
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'

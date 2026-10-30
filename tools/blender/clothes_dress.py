@@ -146,6 +146,68 @@ def maps(cloth, grow: bool, gain: tuple[float, float, float]) -> dict:
     return rep
 
 
+def follow_garment(char, cloth, ekd, args, weights: bool = True) -> dict:
+    """M2d: each kept body vertex under the waist whose nearest cloth is the garment (within reach) takes the nearest
+    garment face's weights (its corners mixed by nearness) and moves in along that face's normal until it lies clear
+    inside it, both by F.follow_share of its distance from the nearest opening (the skin by a hem or the waist keeps
+    its own). The turn-up's ankle front lay 6 to 9 mm outside the cloth at rest, and the crotch's skin (Hips and both
+    UpperLegs) moved apart from the garment's (mostly one UpperLeg) in motion. weights False: the pull alone (before
+    the cover test, so the pulled skin counts as under the cloth: the crotch's kept patch sat on skin within 1 mm of
+    the seat's cloth, under_cloth's deep)."""
+    lo, hi, clear, reach = (float(x) for x in args.skin_follow.split(","))
+    gar = next((o for o in cloth if o.name == "garment"), None)
+    if gar is None:
+        return {"skipped": "no garment"}
+    gm = gar.matrix_world
+    gco = [gm @ v.co for v in gar.data.vertices]
+    gpol = [list(p.vertices) for p in gar.data.polygons]
+    gtree = BVHTree.FromPolygons(gco, gpol)
+    others = [o for o in cloth if o is not gar]
+    otree = cloth_tree(others) if others else None
+    ggn = {g.index: g.name for g in gar.vertex_groups}
+    grow = [{ggn[g.group]: g.weight for g in v.groups if g.group in ggn and g.weight > 0} for v in gar.data.vertices]
+    me, mw = char.data, char.matrix_world
+    inv = mw.inverted()
+    gname = {g.index: g.name for g in char.vertex_groups}
+    vg = {g.name: g for g in char.vertex_groups}
+    took, pulled, most, full = 0, 0, 0.0, 0
+    for v in me.vertices:
+        p = mw @ v.co
+        if p.z > args.waist:
+            continue
+        loc, nor, fi, d = gtree.find_nearest(p, reach)
+        if loc is None:
+            continue
+        if otree is not None:
+            ol = otree.find_nearest(p, d)
+            if ol[0] is not None and ol[3] < d:
+                continue
+        share = F.follow_share(H.opening_dist(ekd.find(p)[2]), lo, hi)
+        if share <= 0:
+            continue
+        ids = gpol[fi]
+        theirs = F.blend_rows([grow[k] for k in ids], [1.0 / max(1e-4, (gco[k] - loc).length) for k in ids])
+        if theirs and weights:
+            own = {gname[g.group]: g.weight for g in v.groups if g.group in gname}
+            row = F.mix_rows(own, theirs, share)
+            for name in set(own) - set(row):
+                vg[name].remove([v.index])
+            for name, w in row.items():
+                if name not in vg:
+                    vg[name] = char.vertex_groups.new(name=name)
+                    gname[vg[name].index] = name
+                vg[name].add([v.index], w, "REPLACE")
+            took += 1
+            full += share >= 0.999
+        m = F.pull_in((p - loc).dot(nor), clear, share)
+        if m > 0:
+            v.co = inv @ (p - nor * m)
+            pulled += 1
+            most = max(most, m)
+    me.update()
+    return {"weights_taken": took, "full_share": full, "pulled": pulled, "pulled_most_mm": round(1000 * most, 1)}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--char", required=True)
@@ -356,6 +418,13 @@ def main() -> int:
                          "separated; clothes_shell.chain_row; empty: the rows' means of the body's weights)")
     ap.add_argument("--plain-density", type=float, default=1.0,
                     help="E1h: the plain texels' density against the garment's median")
+    ap.add_argument("--flat-back", default="",
+                    help="M2d: the back panel's top as one stiff panel: blend,radius,band,clear (m; clothes_top.flat_back; "
+                         "its weights along --bib-chain; empty: off)")
+    ap.add_argument("--skin-follow", default="",
+                    help="M2d: lo,hi,clear,reach (m): the kept skin under the garment (under the waist, its nearest cloth "
+                         "the garment within reach) takes the nearest garment face's weights and is pulled clear inside "
+                         "it, none within lo of an opening, all from hi on (the turn-up's ankle, the crotch); '': off")
     ap.add_argument("--bronze", default="0.60,0.42,0.20,0.85,0.38",
                     help="the buckles' metal: sRGB R,G,B, metallic, roughness")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -558,6 +627,8 @@ def main() -> int:
         rep["garment_cut"] = TOP.cut_garment(garment, args)
         if args.flat_bib:  # E1i: her bib a flat, stiff panel over the chest (the concept), before the top and straps
             rep["flat_bib"] = TOP.flat_bib(garment, char, args)
+        if args.flat_back:  # M2d: the back panel's top one stiff panel (no apex fold), before the top and straps
+            rep["flat_back"] = TOP.flat_back(garment, char, args)
         top, rep["shell"] = TOP.shell(char, arm, garment, args)
         rep["straps"] = TOP.straps(garment, char, [garment, top], args)
         if args.plain:  # E1h: plain denim texels over the areas whose own texels are wrong
@@ -574,6 +645,9 @@ def main() -> int:
     edge, rep["openings"] = O.opening_points(cloth, arm)
     say("openings", len(edge), "points:", rep["openings"])
     ekd = O.kd_of(edge)
+    if args.skin_follow:  # M2d: the skin poking through the garment at rest, far from an opening, first pulled in
+        rep["skin_pull"] = follow_garment(char, cloth, ekd, args, weights=False)
+        say("skin pull", rep["skin_pull"])
     # a shoe is closed: the foot inside it (Foot and Toes, below the shoe's top opening) never shows
     # (each shoe its own top, by side; and any foot vertex with the shoe above it, the toes under the toe box)
     shoe = next((o for o in cloth if o.name == "shoes"), None)
@@ -956,6 +1030,9 @@ def main() -> int:
             rode += 1
         rep["ankle_rides_with_the_shoe"] = rode
         say("ankle verts riding with the shoe", rode)
+    if args.skin_follow:  # M2d: the skin the garment hides moves with the garment and stays inside it
+        rep["skin_follow"] = follow_garment(char, cloth, ekd, args)
+        say("skin follow", rep["skin_follow"])
     if collar:  # E1c, the outer-shell probe: kept skin under the rim with no shoe face on its way out
         outs = 0
         for v in me.vertices:

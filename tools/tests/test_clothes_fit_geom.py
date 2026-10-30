@@ -455,5 +455,32 @@ class HemRest(unittest.TestCase):
         self.assertTrue(F.near_ankle(0.12, 0.09, 0.08, 0.2, radius=0.1))
 
 
+class SkinFollow(unittest.TestCase):  # M2d: the skin under the garment moves with it and stays inside it
+    def test_share_none_by_an_opening_all_far_from_it(self):
+        self.assertEqual(F.follow_share(0.01, 0.015, 0.035), 0.0)
+        self.assertEqual(F.follow_share(0.05, 0.015, 0.035), 1.0)
+        self.assertAlmostEqual(F.follow_share(0.025, 0.015, 0.035), 0.5)
+
+    def test_share_needs_a_span(self):
+        with self.assertRaises(ValueError):
+            F.follow_share(0.02, 0.03, 0.03)
+
+    def test_pull_only_what_pokes_or_lies_too_near(self):
+        self.assertAlmostEqual(F.pull_in(0.0068, 0.004, 1.0), 0.0108)
+        self.assertAlmostEqual(F.pull_in(-0.002, 0.004, 0.5), 0.001)
+        self.assertEqual(F.pull_in(-0.01, 0.004, 1.0), 0.0)
+
+    def test_no_pull_for_skin_far_outside(self):
+        self.assertEqual(F.pull_in(0.02, 0.004, 1.0), 0.0)
+
+    def test_blend_rows_by_nearness(self):
+        r = F.blend_rows([{"LeftUpperLeg": 1.0}, {"Hips": 1.0}], [3.0, 1.0])
+        self.assertAlmostEqual(r["LeftUpperLeg"], 0.75)
+        self.assertAlmostEqual(r["Hips"], 0.25)
+        self.assertEqual(F.blend_rows([{"a": 1.0}], [0.0]), {})
+        with self.assertRaises(ValueError):
+            F.blend_rows([{"a": 1.0}], [1.0, 2.0])
+
+
 if __name__ == "__main__":
     unittest.main()

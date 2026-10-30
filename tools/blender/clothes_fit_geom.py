@@ -93,6 +93,39 @@ def mix_rows(own: dict[str, float], other: dict[str, float], share: float, n: in
     return limit({b: (1.0 - share) * own.get(b, 0.0) + share * other.get(b, 0.0) for b in names}, n)
 
 
+def blend_rows(rows: list[dict[str, float]], ws: list[float], n: int = 4) -> dict[str, float]:
+    """M2d: several vertices' weights mixed by ws (a garment face's corners by their nearness to a point), limited to
+    n and normalised ({} when ws sum to nothing)."""
+    if len(rows) != len(ws):
+        raise ValueError("one weight per row")
+    tot = sum(ws)
+    if tot <= 0:
+        return {}
+    out: dict[str, float] = {}
+    for row, w in zip(rows, ws):
+        for b, x in row.items():
+            out[b] = out.get(b, 0.0) + x * w / tot
+    return limit(out, n)
+
+
+def follow_share(open_dist: float, lo: float, hi: float) -> float:
+    """M2d: how much a kept skin vertex under the garment takes the garment's weights and is pulled inside it: none
+    within lo m of an opening (the skin there shows and keeps its own motion), all from hi m on, smooth between."""
+    if hi <= lo:
+        raise ValueError(f"hi {hi} must exceed lo {lo}")
+    t = min(1.0, max(0.0, (open_dist - lo) / (hi - lo)))
+    return t * t * (3.0 - 2.0 * t)
+
+
+def pull_in(side: float, clear: float, share: float, most: float = 0.015) -> float:
+    """M2d: how far (m) a skin vertex at side m of its nearest garment face (+: outside, poking through) moves in
+    along that face's normal: until clear m inside it, times share; none when it is already that far in or more than
+    most m outside (skin that far out is no poke under the cloth but skin beside it)."""
+    if side > most:
+        return 0.0
+    return share * max(0.0, side + clear)
+
+
 def blend(row: dict[str, float], mats: dict[str, Mat]) -> Mat:
     """Linear blend skinning's per-vertex matrix: the weighted sum of the bones' deform matrices (the weights
     normalised); the identity for a vertex with no weight."""
