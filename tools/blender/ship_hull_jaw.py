@@ -153,7 +153,15 @@ def outer_points(j: dict):
     seam = [(s * tw, ty, hs) for s in (-1, 1)] + [(s * x, y, hs) for x, y in j["outline"] for s in (-1, 1)]
     top = [(s * x, y, h) for x, y, h in j["top"] for s in (-1, 1)]
     belly = [(s * x, y, h) for x, y, h in j["belly"] for s in (-1, 1)]
-    return seam + top, seam + belly
+    return _uniq(seam + top), _uniq(seam + belly)
+
+
+def _uniq(pts):
+    """The points without repeats (a point on the centre line, x 0, is mirrored onto itself)."""
+    out = {}
+    for p in pts:
+        out.setdefault(tuple(round(c, 7) for c in p), p)
+    return list(out.values())
 
 
 def hulls(j: dict):
@@ -190,7 +198,8 @@ def cuts(j: dict) -> dict:
         "v": _hp((0, 1, -tv), hy - fh * tv),                     # the lower jaw's aft face under the hinge
         "below_deck": _hp(*deck), "above_deck": _flip(_hp(*deck)),
         "below_plate": _flip(_hp(deck[0], deck[1] - PLATE_T)),    # over the deck plate's bottom
-        "below_rail": _hp(deck[0], deck[1] + RAIL), "above_rail": _flip(_hp(deck[0], deck[1] + RAIL)),
+        "below_rail": _hp(deck[0], deck[1] + j.get("rail", RAIL)),
+        "above_rail": _flip(_hp(deck[0], deck[1] + j.get("rail", RAIL))),
         "below_ceil": _hp((0, -cs, 1), rh - cs * hy), "above_ceil": _flip(_hp((0, -cs, 1), rh - cs * hy)),
         "above_seam": _hp((0, 0, -1), -hs), "below_seam": _hp((0, 0, 1), hs),
         "cham_out_e": _flip(_hp(cham, cd)), "cham_out_w": _flip(_hp((-cham[0], 0, cham[2]), cd)),
@@ -212,15 +221,25 @@ def _below(polys, plane, gap=0.003):
         return polys
     out = []
     for q, n in polys:
-        if abs(n[2]) > 0.5:
+        if abs(n[2]) > 0.5 and abs(n[0]) < 0.3:   # the front and belly (b3: not the sides, which face down too)
             q = S.clip(q, plane[0], plane[1] - gap)
         if len(q) >= 3 and S.area(q) > 1e-7:
             out.append((q, n))
     return out
 
 
-def _plated(polys, name, under_clip=None):
-    """Outer faces as the hull's plates (ship_hull_j: inset, chamfered seams, v1's silvers) and the dark under-skin."""
+def _plated(polys, name, under_clip=None, nocol_down=False):
+    """Outer faces as the hull's plates (ship_hull_j: inset, chamfered seams, v1's silvers) and the dark under-skin.
+    nocol_down: the faces looking down (n_z < -0.3, built closed) and the whole under-skin stay visual (the ramp's
+    underside: open, it lies under the deck, and its slivers at the tip stopped the walk, b3)."""
+    if nocol_down:
+        down = [(q, n) for q, n in polys if n[2] < -0.3]
+        rest = [(q, n) for q, n in polys if n[2] >= -0.3]
+        parts = _plated(rest, name, under_clip) + _plated(down, f"{name}_under", under_clip)
+        for p in parts:
+            if p["name"].startswith(f"{name}_under") or p["name"].endswith("_seam"):
+                p["nocol"] = True
+        return parts
     if not PLATED:
         return _flat(f"{name}_flat", polys, "hull_silver")
     groups, under = {}, []
@@ -337,16 +356,19 @@ def lower_parts(j: dict) -> list:
     sh = shell(reg, skl, hide=aft_faces(ol))
     k_fore, k_v, k_rail = len(ol), len(ol) + 1, len(ol) + 2
     k_seam = [k for k in range(len(ol)) if k not in skl]
-    glow = [r for k in [k_rail] + k_seam for r in sh["rim"].get(k, [])]
+    glow = [r for k in [k_rail] for r in sh["rim"].get(k, [])]
+    seam_glow = [r for k in k_seam for r in sh["rim"].get(k, [])]   # the tip's rim: visual (the walk, b3)
     frame = [r for k in (k_fore, k_v) for r in sh["rim"].get(k, [])]
     olh = _offset(ol, skl, SHELL / 2)
     # the deck plate runs out to the tip: over the belly it may thin out (3 mm inside the belly's skin there)
-    old_ = [(n, d - (0.003 if n[2] < -0.5 else SHELL / 2)) if k in skl else (n, d) for k, (n, d) in enumerate(ol)]
+    old_ = [(n, d - (0.003 if n[2] < -0.5 and abs(n[0]) < 0.3 else SHELL / 2)) if k in skl else (n, d)
+            for k, (n, d) in enumerate(ol)]
     deck = _solid_polys(old_ + [c["fore"], c["v"], c["below_deck"], c["below_plate"]])
     bulk = _solid_polys(olh + [c["v"], _flip((c["v"][0], c["v"][1] - BULK)), _flip(c["below_plate"])])
-    parts = _plated(sh["outer"], "lower_skin", c["below_deck"])
+    parts = _plated(sh["outer"], "lower_skin", c["below_deck"], nocol_down=True)
     parts += _flat("lower_inner", _below(sh["inner"], c["below_deck"]), "ext_silver_c")
     parts += _flat("lower_rail_glow", glow, "glow_cyan")
+    parts += _flat("lower_tip_glow", seam_glow, "glow_cyan", nocol=True)
     parts += _flat("lower_rim", frame, "ext_frame")
     parts += _flat("lower_deck", deck, "ext_silver_c")
     parts += _flat("lower_bulkhead", bulk, "hull_dark")

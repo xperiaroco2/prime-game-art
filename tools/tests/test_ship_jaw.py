@@ -84,7 +84,7 @@ class ShipJawBuildTest(unittest.TestCase):
     def test_the_parts_are_there(self) -> None:
         want = {"jaw_upper": {"upper_inner", "upper_rim", "upper_skirt_glow", "upper_ceiling", "upper_bulkhead",
                               "seam_glow", "ceiling_glow"},
-                "jaw_lower": {"lower_inner", "lower_rail_glow", "lower_rim", "lower_deck", "lower_bulkhead",
+                "jaw_lower": {"lower_inner", "lower_rail_glow", "lower_tip_glow", "lower_rim", "lower_deck", "lower_bulkhead",
                               "deck_ribs", "deck_edges"},
                 "jaw_root": {"root_inner", "root_rim", "root_bulkhead", "root_lip", "root_hood", "root_lid"}}
         for pid, names in want.items():
@@ -121,6 +121,23 @@ class ShipJawBuildTest(unittest.TestCase):
                     if abs(x) < 1.2 and -11.5 < y < -7.0:
                         deck = fh if y >= hy else fh - (hy - y) * fall
                         self.assertFalse(deck + 0.03 < h < deck + 2.25, (pid, t[3], (x, y, h)))
+
+    def test_open_the_tip_collides_only_from_above(self) -> None:
+        """Open, every collider face of the ramp near its tip (where the capsule walks on, |x| 0.8, the front 0.5 m)
+        looks up: b2's underside slivers and the tip's rim stopped the walk 12 cm short of the ramp (b3)."""
+        j = J.jaw(LAYOUT)
+        o = j["lower_hinge"]
+        deg = sl.jaw_deg(LAYOUT, "open")["jaw_lower"]
+        tip_y = J._pose((0.0, j["tip_y"], j["seam_h"]), o, deg)[1]
+        for p in J.jaw_lower({}, LAYOUT):
+            if p.get("nocol"):
+                continue
+            v = [J._pose((a[0] + o[0], a[1] + o[1], a[2] + o[2]), o, deg) for a in p["verts"]]
+            for f in p["faces"]:
+                q = [v[i] for i in f]
+                if any(abs(x) < 0.8 and y < tip_y + 0.5 and h < 0.4 for x, y, h in q):
+                    n = S._unit3(S._newell(q))
+                    self.assertTrue(n[2] > 0.5 or p["name"] == "lower_deck", (p["name"], n))
 
     def test_nothing_in_the_throat(self) -> None:
         """In every pose no face of a piece crosses into the throat room (inside its walls, floor to ceiling): the
