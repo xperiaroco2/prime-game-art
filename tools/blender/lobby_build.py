@@ -627,8 +627,11 @@ def walls(H: Hall) -> list[Part]:
     for xa, xb, top in _cut((h["x0"] - t, h["x1"] + t), doors["N"]):
         part.box(xa, xb, top or 0.0, wall, h["zN"] - t, h["zN"])
     shaft = Part("pilasters", "lobby_pilaster", col=True)
-    trim = Part("wall_trim", "lobby_trim")
+    # step 3 (less copper): the walls' skirting, cornice, frieze lips, vents and the bays' frames in the dark metal;
+    # copper only in the pilasters' thin bands (plinth top, mid band, cornice band, capital lip)
+    trim = Part("wall_trim", "lobby_metal")
     metal = Part("wall_metal", "lobby_metal")
+    copper = Part("wall_copper", "lobby_trim")
     dark = Part("wall_dark", "lobby_dark")
     strip = Part("wall_strips", "lobby_strip")
     P = [Part("wall_panels", "lobby_panel", closed=False), Part("wall_panels2", "lobby_panel2", closed=False),
@@ -650,7 +653,7 @@ def walls(H: Hall) -> list[Part]:
                         hi = min(hi, a + 0.03)
                     else:
                         lo = max(lo, b - 0.03)
-            pilaster(H, F, u, lo, hi, shaft, trim, dark, strip, wall, metal)
+            pilaster(H, F, u, lo, hi, shaft, copper, dark, strip, wall, metal)
             cu = u - pw - 0.22   # a vertical conduit left of every other pilaster, on brackets
             if i % 2 == 0 and cu > span[side][0] + 0.3 and not any(a - 0.2 < cu < b + 0.2 for a, b, _t in holes[side]):
                 for v0, v1 in ((0.35, CORNICE[0] - 0.02), (CORNICE[1] + 0.02, FRIEZE[0])):
@@ -707,7 +710,8 @@ def walls(H: Hall) -> list[Part]:
                             lbox(trim, F, u1 - 0.75, u1 - 0.25, v0 + 0.5, v0 + 1.2, PROUD, PROUD + 0.14)
                             lbox(dark, F, u1 - 0.68, u1 - 0.32, v0 + 0.62, v0 + 0.98, PROUD + 0.14, PROUD + 0.16)
                             lbox(lights, F, u1 - 0.66, u1 - 0.6, v0 + 1.06, v0 + 1.12, PROUD + 0.14, PROUD + 0.165)
-    return [part, shaft, trim, metal, dark, strip, *P, inset, pipes, lights, signal]
+    return [part, shaft, trim, metal, copper, dark, strip, *P, inset, pipes, lights, signal]
+
 
 
 def lunette_column(H: Hall, A, B, inn, yb, band: bool, parts: dict, xa) -> None:
@@ -1254,7 +1258,7 @@ def merged(pid: str, parts: list[Part], collide: bool) -> list[tuple[Part, bool]
             continue
         col = collide and p.col
         for f in p.faces:
-            mat = "lobby_worn" if p.mat in WEARABLE and worn([p.verts[i] for i in f]) else p.mat
+            mat = "lobby_worn" if p.mat in WEARABLE and not p.smooth and worn([p.verts[i] for i in f]) else p.mat
             key = (mat, col)
             if key not in groups:
                 groups[key] = Part(f"{pid}_{mat.removeprefix('lobby_')}" + ("_c" if col else ""), mat, closed=False)
