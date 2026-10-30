@@ -26,17 +26,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sneaker_geom as G  # noqa: E402
 
 IMG_W, IMG_H = 2048, 1024
-CANVAS = (0.89, 0.86, 0.77)  # sRGB, off-white canvas (E1j: a warmer cream, so the whiter rubber reads apart)
+CANVAS = (0.84, 0.81, 0.73)  # sRGB, off-white canvas (E1j: a warmer cream; E1j3: a touch greyer, apart from the
+                             # rubber at full-body distance)
 RUBBER = (0.985, 0.983, 0.975)
-STRIPE = (0.13, 0.17, 0.33)  # the foxing's thin navy stripe
+STRIPE = (0.09, 0.12, 0.27)  # the foxing's navy lines (E1j3: darker)
 EDGE = (0.70, 0.71, 0.73)  # the outsole's grey bottom edge
-EDGE_TOP = (0.80, 0.80, 0.80)  # the rubber's top edge, where the canvas starts
+EDGE_TOP = (0.64, 0.64, 0.66)  # the rubber's top edge, where the canvas starts (E1j3: darker, the line reads)
 STITCH = (0.78, 0.75, 0.67)
-LACE = (0.955, 0.945, 0.92)
-EYELET = (0.20, 0.21, 0.24)  # dark metal: the eyelets read as dots on the canvas, as on the concept
+LACE = (0.99, 0.985, 0.975)  # E1j3: whiter than the greyer canvas
+EYELET = (0.11, 0.12, 0.15)  # dark metal: the eyelets read as dots on the canvas, as on the concept
 TREAD = (0.80, 0.78, 0.73)
-STRIPE_MM = 2.4  # the stripe's height
-STRIPE_HI_MM = (6.0, 2.6)  # E1j2: the upper navy line under the rubber's top: its middle's depth, its height
+STRIPE_MM = 3.4  # the stripe's height (E1j3: 2.4 -> 3.4, it reads at full-body distance)
+STRIPE_HI_MM = (6.0, 3.2)  # E1j2: the upper navy line under the rubber's top: its middle's depth, its height
 
 
 FRONT_CLEAR = 0.003  # E1j2: the leg's front skin flattened this far behind the tongue's back
@@ -119,6 +120,11 @@ def shoes(body, arm, params: G.Params | None = None):
         ob[f"front_{side}"] = list(fr.world((tb, 0.0, 0.0))[:2])
         ob[f"fwd_{side}"] = list(fr.fwd)
     ob["front_top_z"] = top
+    # E1j3: the collar's rim at the heel's back (column 0's rim row, the lowest of the pair): the dress lowers the
+    # trousers' turn-up onto it (--hem-rest)
+    rim_row = sh.info["rows"] - 3
+    ob["heel_rim_z"] = min(fr.world(sh.verts[rim_row])[2] for fr in frames.values())
+    rep["heel_rim_z"] = round(ob["heel_rim_z"], 4)
     rep["front_plane"] = {"tongue_back_u": round(tb, 4), "top_z": round(top, 4)}
     rep["material"] = material(ob, sh)
     rep["clearance"] = clearance(ob, ft)

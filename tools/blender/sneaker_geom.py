@@ -31,10 +31,13 @@ Pt3 = tuple[float, float, float]
 
 @dataclass
 class Params:
-    around: int = 30  # outline columns
+    around: int = 40  # outline columns (E1j3: 30 -> 40, spent at the toe and the heel by `bend`)
+    bend: float = 1.5  # E1j3: the columns' density up by this x the outline's curvature (x 3 cm): no facets at the
+                       # toe's and the heel's curves
     clear: float = 0.004  # the even clearance round the foot (m)
     toe_room: float = 0.008  # the shoe past the toes
     sole_out: float = 0.002  # the sole's wall outside the upper
+    sole_round: float = 0.005  # E1j3: the outsole's bottom edge rounded: in by this, up by this (m; was 3 x 3.5 mm)
     sole_top: float = 0.036  # the sole's top (the foxing's top edge; E1j2: tall, as on the concept)
     cap_top: float = 0.046  # the toe cap's top at the toe's tip
     cap_reach: float = 0.060  # how far back from the tip the cap rises (m along u)
@@ -47,14 +50,20 @@ class Params:
     toe_spring: float = 0.007  # the sole's front lifted off the floor at the tip (m)
     taper: float = 0.34  # E1j: the toe narrower than the ball (a sneaker's last, not a round clog): v x (1 - taper) at the tip
     slim: float = 0.80  # E1j2: the last's width x the foot's (the dress shrinks the kept skin inside the shoe)
+    heel_slim: float = 0.82  # E1j3: the width at the heel's back x the foot's, easing to 1 at the ankle: a round heel
+    heel_wall: float = 0.5  # E1j3: the wall exponent round the heel (under `wall`: the walls lean in from low, a cup)
+    dome: float = 0.012  # E1j3: the toe box's rows raised by up to this (m) between the toe cap and the throat: a dome
     rim_in: float = 0.005  # E1j2: the collar's rim at least this far inside the outline (no flare over a slim last)
     upper_rows: int = 6
     fullness: float = 1.0  # the upper's height profile exponent (under 1: a fuller toe box; E1j2: crisper)
-    wall: float = 1.0  # E1j2: the upper's walls rise first, then turn in (the plan's ease exponent; 1: a round shoulder)
+    wall: float = 0.85  # E1j2: the upper's walls rise first, then turn in (the plan's ease exponent; 1: a round shoulder;
+                        # E1j3: 1 -> 0.85, the walls lean in lower: round from the front and behind, no box)
     collar_clear: float = 0.007
     heel_clear: float = 0.004  # the collar's extra room at the heel's back
+    heel_in: float = 0.012  # E1j3: the collar's rim round the heel pulled in by this (m; the dress shrinks the ankle
+                            # inside it): the heel counter tapers up into a cup, no box from behind
     heel_collar: float = 1.12  # the collar's height at the heel's back, x the ankle's (Foot head) height
-    side_collar: float = 1.02  # at its side dip
+    side_collar: float = 1.05  # at its side dip (E1j3: 1.02 -> 1.05, the turn-up rests on it all round)
     gap: float = 0.034  # the throat's slot between the eyelet stays (E1j2: wider, the tongue shows)
     stay_cap: float = 1.10  # the stays' rim at most this x the ankle's height (a low top)
     throat_rise: float = 0.036  # E1j: the stays' rim at the throat over the toe cap's top; a straight lace line
@@ -253,14 +262,30 @@ def start_at_heel(poly: list[Pt2]) -> list[Pt2]:
     return poly[i:] + poly[:i]
 
 
-def resample(poly: list[Pt2], n: int, dense_at: float | None = None, dense: float = 1.5, sigma: float = 0.02) -> list[Pt2]:
-    """n points along a closed curve from its first, by arc length weighted up near u = dense_at (the ball)."""
+def curvature(fine: list[Pt2], win: int = 8) -> list[float]:
+    """E1j3: per point of a closed, finely spaced curve its curvature (rad/m): the turning angle over the window of
+    +-win points, divided by that window's arc length."""
+    n, out = len(fine), []
+    for i in range(n):
+        a, b, c = fine[i - win], fine[i], fine[(i + win) % n]
+        t1, t2 = math.atan2(b[1] - a[1], b[0] - a[0]), math.atan2(c[1] - b[1], c[0] - b[0])
+        d = abs((t2 - t1 + math.pi) % (2 * math.pi) - math.pi)
+        out.append(2 * d / max(1e-9, math.dist(a, b) + math.dist(b, c)))  # the chords turn half the arc
+    return out
+
+
+def resample(poly: list[Pt2], n: int, dense_at: float | None = None, dense: float = 1.5, sigma: float = 0.02,
+             bend: float = 0.0) -> list[Pt2]:
+    """n points along a closed curve from its first, by arc length weighted up near u = dense_at (the ball) and,
+    E1j3, by bend x the curvature x 3 cm (at most x 3) where it turns (the toe, the heel)."""
     fine = densify(poly, 0.001)
     cum = arclen(fine)
+    kap = curvature(fine) if bend > 0 else [0.0] * len(fine)
     wts = []
     for i in range(len(fine)):
         a, b = fine[i], fine[(i + 1) % len(fine)]
         m = 1.0 if dense_at is None else 1.0 + dense * math.exp(-(((a[0] + b[0]) / 2 - dense_at) / sigma) ** 2)
+        m *= 1.0 + bend * min(3.0, 0.03 * 0.5 * (kap[i] + kap[(i + 1) % len(fine)]))
         wts.append((cum[i + 1] - cum[i]) * m)
     tot, acc, out, j = sum(wts), 0.0, [], 0
     for k in range(n):
@@ -284,10 +309,10 @@ def outline(foot: Foot, p: Params) -> list[Pt2]:
     span = max(1e-6, tip - foot.ball_u)
     h = [((u + p.toe_room * ((u - foot.ball_u) / span) ** 2) if u > foot.ball_u else u, v) for u, v in h]
     h = taper(h, foot.ball_u, p.taper)
-    h = slim(h, p.slim, foot.ankle_u, foot.ball_u)
+    h = slim(h, p.slim, foot.ankle_u, foot.ball_u, heel=p.heel_slim)
     c = densify(offset(h, p.clear), 0.004)
     c = offset(smooth(c, 30), p.clear * 0.5)
-    return resample(start_at_heel(c), p.around, dense_at=foot.ball_u)
+    return resample(start_at_heel(c), p.around, dense_at=foot.ball_u, bend=p.bend)
 
 
 def taper(pts: list[Pt2], ball_u: float, k: float) -> list[Pt2]:
@@ -298,18 +323,21 @@ def taper(pts: list[Pt2], ball_u: float, k: float) -> list[Pt2]:
     return [(u, v * (1 - k * max(0.0, (u - ball_u) / span) ** 1.5)) for u, v in pts]
 
 
-def slim(pts: list[Pt2], k: float, u0: float = -1.0, u1: float = -1.0) -> list[Pt2]:
+def slim(pts: list[Pt2], k: float, u0: float = -1.0, u1: float = -1.0, heel: float = 1.0) -> list[Pt2]:
     """E1j2: the plan's width scaled about its middle line (per u, the middle of its v extent, from the points
     within 1 cm of that u): a slimmer last than the soft foot, its length kept. The scale eases from 1 at u0 (the
     ankle: the heel cup keeps the leg's room, the collar fits it) to k at u1 (the ball) and on; u0 = u1: k
-    everywhere."""
-    if k >= 1.0:
+    everywhere. E1j3: behind u0 the scale eases from 1 at u0 to heel at the curve's back (a rounder heel cup)."""
+    if k >= 1.0 and heel >= 1.0:
         return list(pts)
+    back = min(q[0] for q in pts)
     out = []
     for u, v in pts:
         vs = [q[1] for q in pts if abs(q[0] - u) <= 0.01]
         mid = 0.5 * (min(vs) + max(vs))
         kk = k if u1 <= u0 else 1 - (1 - k) * smoothstep(u0, u1, u)
+        if heel < 1.0 and u < u0 and u0 > back:
+            kk *= heel + (1 - heel) * smoothstep(back, u0, u)
         out.append((u, mid + (v - mid) * kk))
     return out
 
@@ -451,7 +479,7 @@ def rim_points(foot: Foot, p: Params, out: list[Pt2]) -> tuple[list[Pt2], list[f
     rear_cols = list(range(med + 1, n)) + list(range(0, lat))
     for j, i in enumerate(rear_cols):
         b = out[i]
-        f = b[0] / max(1e-6, rear)
+        f = (b[0] - out[0][0]) / max(1e-6, rear - out[0][0])  # E1j3: from the heel's back (the rim curves down at once)
         z = collar_z(foot, p, max(0.0, min(1.0, f)), corner)
         sec = [(q[0], q[1]) for q in foot.section_pts if z - 0.008 < q[2] < z + 0.02 and q[0] <= rear + 0.005]
         q = None
@@ -469,6 +497,8 @@ def rim_points(foot: Foot, p: Params, out: list[Pt2]) -> tuple[list[Pt2], list[f
         if nin[0] * (sum(x for x, _ in out) / n - b[0]) + nin[1] * (sum(y for _, y in out) / n - b[1]) < 0:
             nin = (-nin[0], -nin[1])
         q = inside_by(b, q, nin, p.rim_in)
+        pull = p.heel_in * (1 - smoothstep(0.35, 0.8, f))  # E1j3: the heel's cup
+        q = (q[0] + nin[0] * pull, q[1] + nin[1] * pull)
         # ease into the slot's corner (the rim's front of the collar, at |v| = gap / 2)
         sgn = 1.0 if b[1] > 0 else -1.0
         w = smoothstep(rear - 0.035, rear, b[0])
@@ -525,7 +555,8 @@ def toes_weight(u: float, ball_u: float, blend: float) -> float:
     return smoothstep(ball_u - blend / 2, ball_u + blend / 2, u)
 
 
-def row_ks(b: Pt2, o: Pt2, zb: float, zo: float, p: Params, cap_arc: float) -> list[float]:
+def row_ks(b: Pt2, o: Pt2, zb: float, zo: float, p: Params, cap_arc: float, wall: float | None = None,
+           dome: float = 0.0) -> list[float]:
     """E1j2: the upper's rows' parameters k (0 at the join, 1 at the rim) for one column: evenly spread, but where
     the toe cap's arc reaches past half a row the first row sits on the cap's edge (its arc length from the join),
     the rows over it spread evenly up to the rim."""
@@ -534,7 +565,7 @@ def row_ks(b: Pt2, o: Pt2, zb: float, zo: float, p: Params, cap_arc: float) -> l
     if cap_arc <= 0:
         return even
     steps = 200
-    pts = [_ring_point(b, o, zb, zo, i / steps, p) for i in range(steps + 1)]
+    pts = [_ring_point(b, o, zb, zo, i / steps, p, wall, dome) for i in range(steps + 1)]
     acc, k1 = 0.0, None
     for i in range(1, steps + 1):
         acc += math.dist(pts[i - 1], pts[i])
@@ -547,10 +578,20 @@ def row_ks(b: Pt2, o: Pt2, zb: float, zo: float, p: Params, cap_arc: float) -> l
     return [k1] + [k1 + (1 - k1) * (j - 1) / (n - 1) for j in range(2, n + 1)]
 
 
-def _ring_point(b: Pt2, o: Pt2, zb: float, zo: float, k: float, p: Params) -> Pt3:
-    h = (1 - math.cos(k * math.pi / 2)) ** p.wall
+def _ring_point(b: Pt2, o: Pt2, zb: float, zo: float, k: float, p: Params, wall: float | None = None,
+                dome: float = 0.0) -> Pt3:
+    """A ring point k of the way up a column (0: the join, 1: the rim). E1j3: wall, the column's own wall exponent
+    (the heel's cup); dome, the column's raise at mid-height (the toe box), 0 at the join and the rim."""
+    h = (1 - math.cos(k * math.pi / 2)) ** (p.wall if wall is None else wall)
     vz = math.sin(k * math.pi / 2) ** p.fullness
-    return (b[0] + (o[0] - b[0]) * h, b[1] + (o[1] - b[1]) * h, zb + (zo - zb) * vz)
+    return (b[0] + (o[0] - b[0]) * h, b[1] + (o[1] - b[1]) * h, zb + (zo - zb) * vz + dome * math.sin(k * math.pi))
+
+
+def column_shape(u: float, foot: "Foot", p: Params) -> tuple[float, float]:
+    """E1j3: a column's wall exponent and dome by its u: heel_wall round the heel (to the ankle, easing to wall 5 cm
+    ahead of it), the dome ahead of the ball (easing in over 5 cm before it)."""
+    w = 1 - smoothstep(foot.ankle_u, foot.ankle_u + 0.05, u)
+    return p.wall + (p.heel_wall - p.wall) * w, p.dome * smoothstep(foot.ball_u - 0.03, foot.ball_u + 0.02, u)
 
 
 def build(foot: Foot, p: Params | None = None) -> Shoe:
@@ -566,7 +607,7 @@ def build(foot: Foot, p: Params | None = None) -> Shoe:
     sole_n = offset(out, p.sole_out)
     # the sole's wall rows: (out from the upper's line, z); the top row rises into the toe cap at the front
     b0, b1, bh = p.band
-    sole_rows = [(p.sole_out - 0.003, 0.0), (p.sole_out, 0.0035), (p.sole_out, b0),
+    sole_rows = [(p.sole_out - p.sole_round, 0.0), (p.sole_out, p.sole_round), (p.sole_out, b0),
                  (p.sole_out + bh, (b0 + b1) / 2), (p.sole_out, b1), (p.sole_out, None), (p.sole_out - p.cap_step, None)]
 
     def cap_z(u: float) -> float:
@@ -589,9 +630,10 @@ def build(foot: Foot, p: Params | None = None) -> Shoe:
             ring.append((b[0] + nb[0] * d, b[1] + nb[1] * d, zz))
         zj = ring[-1][2]
         o = o_pts[c]
-        ks = row_ks(b, o, zj, o_z[c], p, toe_cap_arc(b[0], b[1], tip_u, half_w, p.toe_cap))
+        cw, cd = column_shape(b[0], foot, p)
+        ks = row_ks(b, o, zj, o_z[c], p, toe_cap_arc(b[0], b[1], tip_u, half_w, p.toe_cap), cw, cd)
         for j in range(1, p.upper_rows + 1):
-            q = _ring_point(b, o, zj, o_z[c], ks[j - 1], p)
+            q = _ring_point(b, o, zj, o_z[c], ks[j - 1], p, cw, cd)
             if j == 1 and ks[0] != 1 / p.upper_rows:  # E1j2: the rubber toe cap's edge stands proud
                 lip = p.cap_lip * smoothstep(0.1, 0.5, ks[0] * p.upper_rows)
                 q = (q[0] + nb[0] * lip, q[1] + nb[1] * lip, q[2])

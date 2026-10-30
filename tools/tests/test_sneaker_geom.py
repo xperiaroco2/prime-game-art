@@ -175,6 +175,56 @@ class BendTest(unittest.TestCase):
         self.assertEqual(G.cap_quat(small, 32, 6), small)
 
 
+
+class PolishTest(unittest.TestCase):
+    """E1j3: the columns spent on the curves, the round heel, the heel's cup and the toe box's dome."""
+
+    def test_curvature_of_a_circle(self):
+        r = 0.05
+        ring = [(r * math.cos(2 * math.pi * i / 400), r * math.sin(2 * math.pi * i / 400)) for i in range(400)]
+        for k in G.curvature(ring)[::50]:
+            self.assertAlmostEqual(k, 1 / r, delta=0.5)
+        line = [(0.001 * i, 0.0) for i in range(100)]
+        self.assertAlmostEqual(G.curvature(line)[50], 0.0, places=6)
+
+    def test_resample_spends_columns_on_the_bends(self):
+        # a stadium: two straight sides 20 cm long, round ends of 3 cm
+        r, L = 0.03, 0.2
+        pts = [(L / 2 + r * math.cos(a), r * math.sin(a)) for a in [-math.pi / 2 + math.pi * i / 60 for i in range(61)]]
+        pts += [(-L / 2 + r * math.cos(a), r * math.sin(a)) for a in [math.pi / 2 + math.pi * i / 60 for i in range(61)]]
+
+        def on_ends(q):
+            return sum(abs(x) > L / 2 + 1e-4 for x, _ in q)
+        plain, bent = G.resample(pts, 40), G.resample(pts, 40, bend=1.5)
+        self.assertEqual(len(bent), 40)
+        self.assertGreater(on_ends(bent), on_ends(plain) + 4)
+
+    def test_slim_narrows_the_heel_only(self):
+        pts = [(u / 100, v) for u in range(-5, 21) for v in (-0.05, 0.05)]
+        out = G.slim(pts, 1.0, 0.05, 0.15, heel=0.8)
+        back = [q for q in out if q[0] == -0.05]
+        self.assertAlmostEqual(abs(back[0][1]), 0.04, places=6)
+        self.assertEqual([q for q in out if q[0] >= 0.05], [q for q in pts if q[0] >= 0.05])
+
+    def test_column_shape(self):
+        f, p = synth_foot(), G.Params()
+        w, d = G.column_shape(f.ankle_u - 0.05, f, p)
+        self.assertEqual((w, d), (p.heel_wall, 0.0))
+        w, d = G.column_shape(f.ball_u + 0.05, f, p)
+        self.assertEqual((w, d), (p.wall, p.dome))
+
+    def test_dome_raises_mid_rows_only(self):
+        p = G.Params()
+        b, o = (0.0, 0.0), (0.05, 0.0)
+        for k in (0.0, 1.0):
+            self.assertAlmostEqual(G._ring_point(b, o, 0.04, 0.08, k, p, None, 0.006)[2],
+                                   G._ring_point(b, o, 0.04, 0.08, k, p)[2], places=9)
+        self.assertAlmostEqual(G._ring_point(b, o, 0.04, 0.08, 0.5, p, None, 0.006)[2]
+                               - G._ring_point(b, o, 0.04, 0.08, 0.5, p)[2], 0.006, places=9)
+        # a lower wall exponent leans the wall in sooner (the heel's cup)
+        self.assertGreater(G._ring_point(b, o, 0.04, 0.08, 0.3, p, 0.55)[0], G._ring_point(b, o, 0.04, 0.08, 0.3, p)[0])
+
+
 if __name__ == "__main__":
     unittest.main()
 
