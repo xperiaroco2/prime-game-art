@@ -439,7 +439,7 @@ keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 deg
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
 
-## Dressing D3's bodies (E1 to E1f, art #196)
+## Dressing D3's bodies (E1 to E1g, art #196)
 - **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
   head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
   smoothing; the 30 mm smoothstep band stays the default for the old bodies.
@@ -518,6 +518,23 @@ above it again from Blender's rest matrices.
   `--seat-fold`, two rings out; `--seat-relax` rounds): relaxing smooth cloth smeared its texture (d15).
   `clothes_fit_geom.seat_weight` eases it out over 30 mm at every border and where the cloth bridges (over 60 to
   90 mm off the body: the crotch). No face goes and no vertex is added, so the weights stay the fit's.
+- **The seat's texture** (E1g): the E1f relax over every fold slid Meshy's relief along the body and smeared the
+  stitches into wavy streaks. Now a seat vertex off the relax moves along the body's normal only, so its UVs keep their
+  layout. The chameleon's back seat is no longer re-laid at all (its d14 look); `--seat-y0 -1 --seat-y1 -0.03
+  --seat-relax 0` re-lays only its front, along the normal. The axolotl (`--seat-y0 -0.08 --seat-fold 0.0`) still
+  needs the relax: her flared pocket flaps are closed folds, not open edges, so gating the relax to open edges'
+  rings (`--seat-open-rings`, d17 and d18) brought the flaps back; with the relax (d20, `-0.3` in d20b alike) the
+  flaps are gone but the pockets' stitched texels stay stretched over the seat. A clean seat needs new texels there
+  (a re-projected bake), not another vertex rule.
+- **The hips' spikes** (E1g): `clothes_top.despike` moves a garment vertex under the waist that stands over
+  `--despike` (15 mm) out of its neighbours' mean, along the body's normal, to that mean (`clothes_fit_geom.spike_out`;
+  the axolotl's front-hip spike, d16).
+- **Meshy's small holes** (E1g): `clothes_top.fill_holes` fills the garment's closed open-edge loops of at most
+  `--fill-holes` (12) edges under the waist, each new corner with its vertex's UV from the cloth round it; loose bits
+  of 4 faces or fewer there go first (the flood must cover a whole component: a partial one made pieces of large
+  components look loose and opened 160 holes, d19).
+- **The strap fronts' notch** (E1g): `clear_strap_fronts` first cuts along each strap front's side lines (half the
+  strap less 2 mm) and its end, so the faces under the strap go to a straight edge.
 - **The instep's clearance** (E1f): skin with the shoe over it is shrunk to `--collar-clear-under` (6 mm) inside the
   shoe's wall instead of `--collar-clear` (3 mm): the vamp's teal specks in motion.
 - **The straps' back ends** (E1d): with `--planes bones` the straps sweep on past `--shell-strap-t`'s back angle until
