@@ -41,6 +41,100 @@ def load(path: Path = SHIP) -> dict[str, Any]:
     return layout
 
 
+# The clearing (art #356, the lobby): the pieces round the ship that are not the ship (ship_hull_clearing.py's
+# builders, the ground, the loose rocks, the ground lamps) and the ship.toml [light] lamp groups that light only them
+# (the ground lamps' pools, the party string, the treeline camp lights, the pines' fill). `ship --export` puts them
+# under Ship/Clearing (docs/ship.md "The export"). The ship's own lights on the ground (land, edge), the rim and the
+# key stay with the ship.
+CLEARING_BUILDERS = frozenset({"ground", "rock", "rock_pile", "pine2", "dirt_patch", "dirt_path", "tuft", "bush", "log",
+                               "stump", "fern", "moss", "party_post", "party_lights", "ground_lamp"})
+CLEARING_LAMPS = frozenset({"pool", "party", "out", "fill"})
+
+
+def clearing_ids(layout: dict[str, Any]) -> list[str]:
+    """The clearing's piece ids (CLEARING_BUILDERS), in the layout's order."""
+    return [p["id"] for p in layout["pieces"] if p["builder"] in CLEARING_BUILDERS]
+
+
+JAW_POSES = ("closed", "half", "open")
+
+
+def jaw_deg(layout: dict[str, Any], pose: str | None = None) -> dict[str, float]:
+    """The jaw nose's angles (art #263, ship.toml [jaw]): {piece: degrees about Godot's x, + lifts the front} for a
+    pose (default [jaw] pose); {} without a [jaw]."""
+    j = layout.get("jaw")
+    if not j:
+        return {}
+    pose = pose or j["pose"]
+    out = {pid: float(j["lower_deg"][pose]) for pid in j["lower"]}
+    out.update({pid: float(j["upper_deg"][pose]) for pid in j["upper"]})
+    return out
+
+
+def jaw_numbers(layout: dict[str, Any], pose: str | None = None) -> dict[str, float]:
+    """The jaw's key numbers in a pose (plan metres, degrees): the deck's length, its slope from the floor (+ down
+    forward), its tip's plan y and height, and the least head room over the deck under the upper jaw's roof along the
+    mouth's centre line (the roof's underside over the deck's top, both turned about their hinges)."""
+    j = layout["jaw"]
+    pose = pose or j["pose"]
+    fh = layout["deck"]["floor_h"]
+    (_x, hy, hh), (_ux, uy, uh) = j["lower_hinge"], j["upper_hinge"]
+    run, rise = hy - j["tip_y"], j["seam_h"] - fh
+    length = math.hypot(run, rise)
+    phi = math.atan2(rise, run)
+    a = math.radians(j["lower_deg"][pose])
+    b = math.radians(j["upper_deg"][pose])
+    slope = -math.degrees(phi + a)                                    # + falls forward
+    tip = (hy - length * math.cos(phi + a), hh + length * math.sin(phi + a))
+    cs = (j["roof_h"] - j["seam_h"]) / run
+
+    def roof(y):   # the roof's underside at the centre (closed), then turned up by b about the upper hinge
+        h = j["roof_h"] if y >= hy else j["roof_h"] + cs * (y - hy)
+        dy, dh = y - uy, h - uh
+        return (uy + dy * math.cos(b) + dh * math.sin(b), uh - dy * math.sin(b) + dh * math.cos(b))
+
+    least = math.inf
+    for i in range(101):   # the roof's underside sampled from the hinge line to its front edge, over the deck
+        y0 = hy - run * i / 100
+        ry, rh = roof(y0)
+        if ry > hy:
+            deck = fh
+        elif ry < tip[0]:
+            continue
+        else:
+            deck = hh + (hy - ry) * math.tan(phi + a)
+        least = min(least, rh - deck)
+    return {"length": length, "slope_deg": slope, "tip_y": tip[0], "tip_h": tip[1], "head_room": least}
+
+
+def check_jaw(layout: dict[str, Any]) -> list[str]:
+    """The jaw nose: its pose known, the lower jaw's hinge the ramp's, the open deck on the ground at the ramp's slope
+    (under 30 deg), and the head room over the deck (capsule and margin) wherever the roof is over it, open."""
+    j = layout.get("jaw")
+    if not j:
+        return []
+    problems = []
+    if j["pose"] not in JAW_POSES:
+        problems.append(f"jaw: pose {j['pose']!r}, wants one of {', '.join(JAW_POSES)}")
+        return problems
+    ramp, fh = layout["ramp"], layout["deck"]["floor_h"]
+    if [j["lower_hinge"][0], j["lower_hinge"][1]] != list(ramp["hinge"]) or abs(j["lower_hinge"][2] - fh) > TOL:
+        problems.append("jaw: the lower jaw's hinge is not the ramp's hinge on the floor")
+    if j["lower_deg"]["closed"] != 0.0 or j["upper_deg"]["closed"] != 0.0:
+        problems.append("jaw: the pieces are built closed, so the closed pose turns them by 0")
+    o = jaw_numbers(layout, "open")
+    want = math.degrees(math.atan2(fh - layout["deck"]["ground_h"], ramp["hinge"][1] - ramp["foot"][1]))
+    if abs(o["tip_h"] - layout["deck"]["ground_h"]) > 0.03:
+        problems.append(f"jaw: open, the deck's tip is {o['tip_h']:.3f} m up, wants it on the ground")
+    if abs(o["slope_deg"] - want) > 0.1 or o["slope_deg"] > 30.0:
+        problems.append(f"jaw: open, the deck falls {o['slope_deg']:.2f} deg, wants the ramp's {want:.2f} (under 30)")
+    pl = layout["player"]
+    need = pl["capsule_height_m"] + pl["head_margin_m"]
+    if o["head_room"] < need - 0.02:
+        problems.append(f"jaw: open, {o['head_room']:.2f} m over the deck under the roof, wants {need:g}")
+    return problems
+
+
 def rooms(layout: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {r["id"]: r for r in layout["rooms"]}
 
@@ -269,6 +363,7 @@ def check(layout: dict[str, Any]) -> list[str]:
     problems += check_units(layout)
     problems += check_walk(layout)
     problems += hull_skin(layout)
+    problems += check_jaw(layout)
     # inside the hull: every room's outer wall and every placed piece's origin (unless the piece may stand outside)
     poly = outline(layout)
     wall = layout["deck"]["wall_m"]

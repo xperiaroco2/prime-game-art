@@ -118,10 +118,10 @@ HOIST = {"carriage": (30.0, 17.0, 12.0), "rod": 2.2, "clamp": (176.0, 188.0)}
 RUG = {"d": 66.0, "r": 110.0}   # the drawing's D80 at r 95 covered the floor lights' bars: D66 between them at r 110
 LAMP = {"base": 18.0, "head": 140.0}
 # the free items in the WEST room's frame (a_w = -a_e of the drawing): (piece, r m, a_w deg, face deg); the robot,
-# cradles and lamp at the drawing's tip_w points (r, theta), the rug moved out to clear the floor lights
+# cradles and lamp at the drawing's tip_w points (r, theta); the rug is no longer placed (the engineer's walk,
+# 2026-10-29, shot 008: the round dark mat under the robot removed; its piece stays buildable)
 _LAMP_FACE = -(round((-100.0 - HALF) / S.TIP_STEP) * S.TIP_STEP + HALF)   # LN.facet_mid(-100)
 ITEMS = [("ws_rail", 0.0, 0.0, 0.0),
-         ("ws_rug", RUG["r"] * CM, 67.5, 67.5),
          ("ws_robot_body", 1.0494, 67.5, 67.5),
          ("ws_robot", 1.0494, 67.5, 67.5),
          ("ws_hoist", 1.0494, 67.5, 67.5),

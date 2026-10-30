@@ -93,9 +93,8 @@ class ShipFittingsTest(unittest.TestCase):
         hw = LAYOUT["ramp"]["width_m"] / 2
         self.assertTrue(ramp and all(hw - 0.125 < abs(v[0]) < hw + 0.005 for v in ramp))
         pieces = {p["id"]: p for p in LAYOUT["pieces"]}
-        for pid in ("portholes", "tail_vents", "hump_sensors", "service_hatches", "hazard_stripes"):
-            self.assertIn(pid, pieces)
-        self.assertTrue(pieces["hazard_stripes"].get("outside"))
+        for pid in ("portholes", "tail_vents", "hump_sensors", "service_hatches"):   # (the stripes went with the
+            self.assertIn(pid, pieces)                                              # ramp: art #263, the jaw nose)
         self.assertEqual(LAYOUT["light"]["mats"]["ext_porthole"]["l"], 0.0)
 
 

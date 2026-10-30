@@ -57,7 +57,8 @@ TH = RM["throat"]
 TH_PTS = [tuple(p) for p in TH["points"]]                              # mouth (-+1.65, -7.1), hall corners (+-2.915, -3.252)
 TH_ROOF_Y = TH["roof_y"]                                               # -5.5608: the ceiling from here aft
 TH_TOP = FLOOR + TH["clear_h"] + ROOF                                  # 3.02: the throat's roof
-TH_CH = TH["chamfer"]                                                  # walls vertical to 1.35, then 0.55 in
+TH_CH = TH["chamfer"]                                                  # the room: walls vertical to 2.10, then 0.25 in
+TUN_CH = TH.get("tunnel_chamfer", TH_CH)                               # the entry tunnel: vertical to 1.45, then 0.55 in
 TIP_R = J_ROOMS["tip_e"]["radius"] + WALL                              # 2.0
 TIP_RIM = FLOOR + J_ROOMS["tip_e"]["clear_h"] + ROOF                   # 3.22
 TIP_APEX = FLOOR + J_ROOMS["tip_e"]["apex_h"] + ROOF                   # 3.52
@@ -269,6 +270,16 @@ def _steps(a, b, step=STEP_M):
     return [a + (b - a) * i / n for i in range(n + 1)]
 
 
+def chamfer_outer(ch_h: float, ch_in: float, clear_h: float) -> float:
+    """How far in from the wall's inner line the chamfer's outer face (WALL out from its inner face) crosses the
+    roof's top (clear_h + ROOF), across the room: the throat's hull sample there. The old [1.45, 0.55] gave 0.389
+    (it was hard-coded as 0.38); the clean throat's [2.10, 0.25] gives 0.080."""
+    rise = clear_h - ch_h
+    ln = math.hypot(ch_in, rise)
+    h = clear_h + ROOF - WALL * ch_in / ln            # the inner face's height whose normal reaches the roof's top
+    return ch_in * (h - ch_h) / rise - WALL * rise / ln
+
+
 def _room_points(rooms):
     """rebuild D: every room's outer surface where `rooms` (a layout's rooms by id) has it, each room on its own (no
     mirroring): the hall with the throat's opening, the throat's covered part, every corridor strip, every tip room.
@@ -315,6 +326,7 @@ def _room_points(rooms):
         ch_h, ch_in = th["chamfer"]
         side = [(a, b) for a, b in zip(th["points"], th["points"][1:] + th["points"][:1]) if abs(a[1] - b[1]) > 1e-6]
         y_end = max(p[1] for p in th["points"])
+        lean = chamfer_outer(ch_h, ch_in, th["clear_h"])
         for y in _steps(th["roof_y"] + SKIN, y_end):
             row = []
             for a, b in side:
@@ -326,8 +338,8 @@ def _room_points(rooms):
                 continue
             (x0, k0), (x1, k1) = sorted(row)
             for what, x, h in (("throat wall", x0 - WALL * k0, FLOOR + ch_h), ("throat wall", x1 + WALL * k1, FLOOR + ch_h),
-                               ("throat chamfer", x0 + (ch_in - 0.17) * k0, top),
-                               ("throat chamfer", x1 - (ch_in - 0.17) * k1, top),
+                               ("throat chamfer", x0 + lean * k0, top),
+                               ("throat chamfer", x1 - lean * k1, top),
                                ("throat roof", x0 + ch_in * k0, top), ("throat roof", x1 - ch_in * k1, top),
                                ("throat roof", 0.5 * (x0 + x1), top)):
                 if math.hypot(x - hx, y - hy) > hr - 0.3:

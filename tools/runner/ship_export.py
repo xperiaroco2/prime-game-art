@@ -21,7 +21,7 @@ import re
 import shutil
 from pathlib import Path
 
-from . import house_export
+from . import house_export, ship_layout
 
 FORMAT = 1
 ASSET_DIR = "assets/environment/ship"
@@ -39,7 +39,7 @@ SHADERS = {"ship/metal.gdshader": "metal.gdshader", "ship/night_sky.gdshader": "
            "charger/arc.gdshader": "charger_arc.gdshader", "charger/conduit.gdshader": "charger_conduit.gdshader"}
 CONSOLE_YAW = 180.0  # the console's front (+Z, the button) faces the mouth (-Z): assets/prop/start_console/HANDOFF.md
 # spot id prefix -> (the station package that goes there, the kind); the vents are ship pieces in the scene
-PACKAGES = {"console": ("start_console", "console"), "vent": ("ship:station_vent_{side}", "vent"),
+PACKAGES = {"console": ("start_console", "console"), "vent": ("ship:th_wall_{side}", "vent"),
             "socket": ("crystal_socket", "socket"), "breaker": ("breaker_board", "breaker"),
             "renewer": ("crystal_charger", "renewer")}
 QUESTIONS = [
@@ -48,9 +48,10 @@ QUESTIONS = [
     "crystal_anchor, breaker_board, crystal_charger) get their look from their own GDScript (apply()), which an asset "
     "may not carry (11.1), so the game's station scenes instance them at the markers. Each package's HANDOFF.md "
     "'Placement' holds its own offset (the breaker board 0.07 m out along the normal).",
-    "S2: the throat vents (VentE, VentW) are part of the ship: the pieces station_vent_e and station_vent_w under "
-    "Pieces, calm (the heat panel hidden). Their states (slats, the heat and cool panels and their well lights) are "
-    "art code today (godot/ship/vent_anim.gd, vent_glow.gd): the game's vent station drives the nodes by name.",
+    "S2: the throat vents (VentE, VentW) are part of the ship: since the clean throat (2026-10-29) the spots lie on "
+    "the walls th_wall_e and th_wall_w under Pieces, which carry the gill set (five static glowing slits, the turn "
+    "bars and a button per wall; the engineer's pick, 2026-10-30); godot/ship/gill_set.gd is the art's reference "
+    "driver for the game's vent station.",
     "S3: the look the art sets by code is baked into the scene as overrides inside each piece's instance (the glTF "
     "materials' night values, the outside pieces' render layer 2, the vents' well lights), every piece an editable "
     "instance; the shared metal is metal.gdshader with one .tres per metal. The shaders are art code shipped as files "
@@ -61,6 +62,17 @@ QUESTIONS = [
     "look; a baked light or fewer lights is the game's call against its budget (HANDOFF 'Cost').",
     "S6: the pieces' colliders are the GLBs' own -col trimesh hints (StaticBody3D on layer 1); the game's `colliders` "
     "writes its wrappers on import (11.2).",
+    "S7: the clearing round the ship (the ground and its world boundary, the pines, bushes, ferns, moss, litter, "
+    "logs, rocks, the ground lamps, the party string and the lamps that light only them) is the one node Clearing "
+    "(Clearing/Pieces, Clearing/Lights, Clearing/Ground); the lobby (art#356) shows the ship docked without it: free "
+    "the node (queue_free(), or delete it in an inherited scene); hiding it leaves Ground's collider on. The ship "
+    "itself (hull, legs, entry tunnel, its landing and edge lights, the rim and key) stays under Pieces and Lights, "
+    "the jaw nose under Nose (S8).",
+    "S8: the jaw nose (art#263) is the node Nose: jaw_lower (the ramp), jaw_upper and the fixed jaw_root, saved open, "
+    "and Nose/AnimationPlayer with the clips open (closed to open, 2.5 s), close (the same backwards) and RESET (the "
+    "open pose). The lobby shows it closed: with the instance in the tree, play \"close\" and seek to its end "
+    "(seek(length, true)). Each jaw's colliders (StaticBody3D) turn with it; a player standing on the ramp while it moves is not carried "
+    "(AnimatableBody3D would be the game's call). The seam's cyan line keeps its static glow.",
     "Imports: each GLB's .import holds only 11.2's options; the game's editor regenerates the .import files (and the "
     "uids) on its first import: commit the regenerated ones.",
 ]
@@ -158,6 +170,11 @@ def write(layout: dict, pieces: Path, built: Path, shaders: Path, out: Path) -> 
                "root": "Ship", "pieces": len(ids), "placements": len(layout["place"]),
                "stations": stations(layout),
                "spawn": {"node": "Markers/Spawn", "at": [walk[0], walk[2], walk[1]], "yaw": 180.0},
+               # art #356: the lobby shows the ship docked without the clearing; it frees this node
+               "clearing": {"node": "Clearing", "pieces": sorted(ship_layout.clearing_ids(layout)),
+                            "placements": sum(1 for pid, _at, _yaw in layout["place"]
+                                              if pid in set(ship_layout.clearing_ids(layout))),
+                            "lamp_groups": sorted(ship_layout.CLEARING_LAMPS)},
                "files": files, "bytes": sum(f["bytes"] for f in files.values()), "questions": QUESTIONS}
     (out / "package.json").write_text(json.dumps(summary, indent=1), encoding="utf-8", newline="\n")
     return summary

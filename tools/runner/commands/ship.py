@@ -26,6 +26,7 @@ CHARGER_SCRIPT = "res://charger/room.gd"   # --shoot --charger (lens C step 3)
 BUILD_TIMEOUT = 900
 GODOT_TIMEOUT = 300
 VIEW_SIZE = (1920, 1080)
+NOSE_SHEET_W = 1600     # art #263: the jaw nose's review sheets (3 views a row)
 SIZE_TOL_M = 0.01
 PLAY_DEFAULT = Path("<raw>/play")  # --play with no DIR: <raw>/<raw_dir>/play
 PLAY_HOURS = 8  # the most one --play session stays open
@@ -55,6 +56,22 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         "(calm: slats open, the cyan glow, the lamp dim; problem: slats shut, the orange heat, the lamp lit)")
     parser.add_argument("--motion", type=Path, metavar="DIR",
                         help="the stations' motion proof (step 2: the vents) off-screen: checks, MP4, sheets into DIR")
+    parser.add_argument("--gill-anim", type=Path, metavar="DIR",
+                        help="the throat gills' proof (godot/ship/gill_row.gd's 6 s demo on the east row's working slit: "
+                             "shut, the gasp, shut, the press, open with an overshoot, settle) off-screen: MP4 into DIR")
+    parser.add_argument("--gill-set", type=Path, metavar="DIR",
+                        help="the throat's gill set (godot/ship/gill_set.gd's 14 s demo on both walls: the white bar runs, "
+                             "presses open and shut slits, all five open hold a steam cloud) from the concept's camera, "
+                             "a close one and the mouth (both rows): <DIR>/<cam>/<cam>.mp4, keys_sheet.png, the stills, the posed views and "
+                             "close-ups, and sheet.png beside set_plate.jpg; off-screen")
+    parser.add_argument("--gill-grid", action="store_true",
+                        help="with --gill-set: only the look grid (GILL_GRID's variants from the concept camera, posed) "
+                             "into <DIR>/grid/ and grid_sheet.png beside set_plate.jpg")
+    parser.add_argument("--gill-demo", choices=("slit", "row"), default="slit",
+                        help="--gill-anim's demo: slit (gill_anim.mp4, 6 s) or row (gill_row.mp4, 10 s: the breath runs "
+                             "along the row, presses open the gasping slits, all five open -> the exhale)")
+    parser.add_argument("--jaw-video", type=Path, metavar="DIR",
+                        help="the jaw nose opening (art #263) from a still 3/4 front camera at night: DIR/open.mp4")
     parser.add_argument("--vent-anim", type=Path, metavar="DIR",
                         help="the east vent's animation in place at night (godot/ship/vent_anim.gd through its demo: calm, "
                              "the problem, a hold, the cough, calm) from the player's eye off-screen: MP4 and key sheet into DIR")
@@ -71,7 +88,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                              "first person at night; P saves a screenshot and its position into DIR "
                              "(default <raw>/<raw_dir>/play)")
     parser.add_argument("--play-test", type=Path, metavar="DIR",
-                        help="the --play scene off-screen: the capsule walks 2 s, saves one shot and DIR/play.json")
+                        help="the --play scene off-screen: the capsule walks 2 s, presses the gill set's button (E), saves two shots and "
+                             "DIR/play.json")
     parser.set_defaults(_ship_parser=parser)   # lens C step 4: run() refuses --charger without --shoot as a usage error
 
 
@@ -117,6 +135,18 @@ def run(args: argparse.Namespace) -> int:
             return code
     if args.motion:
         code = motion(layout, out, args.motion.resolve())
+        if code:
+            return code
+    if getattr(args, "gill_set", None):
+        code = gill_set(layout, out, args.gill_set.resolve(), getattr(args, "gill_grid", False))
+        if code:
+            return code
+    if getattr(args, "gill_anim", None):
+        code = gill_anim(layout, out, args.gill_anim.resolve(), getattr(args, "gill_demo", "slit"))
+        if code:
+            return code
+    if args.jaw_video:
+        code = walk_video(layout, out, args.jaw_video.resolve(), jaw_video_request(layout), "open.mp4")
         if code:
             return code
     if args.vent_anim:
@@ -201,8 +231,21 @@ def scene_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
     req = {"pieces": {p["id"]: f"res://import/ship_{p['id']}.glb" for p in layout["pieces"]},
            "collide": [p["id"] for p in layout["pieces"] if p["collide"]],
            "bounds": {pid: report[pid]["bounds"] for pid in req_ids(layout)},
-           "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"]]}
+           "place": places(layout)}
     return req, staged
+
+
+def places(layout: dict, ids: list[str] | None = None) -> list:
+    """The request's placements [id, [x, h, y], yaw] (Godot); a jaw piece's row carries its pose's angle about x as a
+    4th element (art #263, ship.toml [jaw])."""
+    deg = ship_layout.jaw_deg(layout)
+    return [[pid, _g(at), yaw, *([deg[pid]] if pid in deg else [])] for pid, at, yaw in layout["place"]
+            if ids is None or pid in ids]
+
+
+def jaw_request(layout: dict) -> dict:
+    """{pose: {piece: degrees about x}} for a view's or the video's {"jaw": pose} (ship.gd _jaw_pose)."""
+    return {pose: ship_layout.jaw_deg(layout, pose) for pose in ship_layout.JAW_POSES} if layout.get("jaw") else {}
 
 
 def req_ids(layout: dict) -> list[str]:
@@ -321,7 +364,7 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
         common.say(f"  not built, left out: {', '.join(missing)}")
     req = {"pieces": {pid: f"res://import/ship_{pid}.glb" for pid in ids},
            "collide": [p["id"] for p in layout["pieces"] if p["collide"] and p["id"] in ids],
-           "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"] if pid in ids],
+           "place": places(layout, ids), "jaw": jaw_request(layout),
            # inside-2: the outside pieces draw on render layer 2, out of reach of the inside's strip lights
            # (an exterior piece with layer = "inside", the tunnel's inside, draws with the inside's)
            "outside": [p["id"] for p in layout["pieces"]
@@ -405,7 +448,9 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         views = json.loads(Path(only).read_text(encoding="utf-8"))
         # lens C step 2: a row whose 6th element is a string names a reference image (an absolute path) to compare
         # the shot with side by side (an A/B dict there stays the night look's switch)
-        compares = [[v[0], v[5]] for v in views if len(v) > 5 and isinstance(v[5], str)]
+        # (the gills, 2026-10-28: a dict's "ref" does the same beside its pose)
+        compares = [[v[0], v[5] if isinstance(v[5], str) else v[5]["ref"]] for v in views
+                    if len(v) > 5 and (isinstance(v[5], str) or (isinstance(v[5], dict) and "ref" in v[5]))]
         views = [v[:5] if len(v) > 5 and isinstance(v[5], str) else v for v in views]
         layout = {**layout, "shots": {**layout["shots"], "day_views": []}}
     elif only:   # step 2: a view set alone by name prefix (the vents' in-place shots and close-ups), no plan view
@@ -429,6 +474,12 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         for key in ("top", "top_full", "day_views"):
             req.pop(key)
         req["compare"] = []
+    if any(len(v) > 5 and isinstance(v[5], dict) and ("jaw" in v[5] or v[5].get("solo")) for v in req["views"]):
+        # art #263, the nose: a view's {"jaw": pose} shows the jaw in that pose ([jaw] in ship.toml); {"solo": true}
+        # alone; either way the sheet holds the review's views alone, NOSE_SHEET_W wide (no plan, top or day views)
+        req.update({"sheet_px": NOSE_SHEET_W, "compare": []})
+        for key in ("top", "top_full", "day_views"):
+            req.pop(key, None)
     # lens C step 3: --charger runs charger/room.gd instead of the GLBs' plain materials, which ship.gd's pass made
     # strip lights of
     script = shoot_script(charger)
@@ -480,7 +531,8 @@ def export(layout: dict, out: Path, folder: Path, compare: bool = True) -> int:
         problems += more
     report = {"package": {k: summary[k] for k in ("version", "scene", "pieces", "placements", "bytes")},
               "files": len(summary["files"]), "stations": len(summary["stations"]),
-              "load": {k: load[k] for k in ("pieces", "bodies", "lights", "size_worst_m", "walk")}, "views": shots,
+              "load": {k: load[k] for k in ("pieces", "bodies", "lights", "size_worst_m", "walk")},
+              "nose": load.get("nose", {}), "views": shots,
               "problems": problems}
     path = folder / _ship_export.CHECK_DIR / "report.json"
     path.write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
@@ -521,10 +573,17 @@ def play(layout: dict, out: Path, folder: Path, test: bool) -> int:
         if code != 0 or not (folder / "play.json").is_file():
             raise common.Failure(f"ship.gd play test failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
         result = json.loads((folder / "play.json").read_text(encoding="utf-8"))
-        if result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 1:
+        # step 5: and a scripted E press at the gill set's button flips the slit under the white bar (a shot each);
+        # step 6: on each wall (its own row, its own button), the other wall's row untouched
+        press = result.get("press", {})
+        walls = press.get("walls", {})
+        if (result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 3 or not press.get("ok")
+                or set(walls) != {"e", "w"}):
             common.bad(f"ship --play-test: {result}")
             return 1
-        common.ok(f"ship --play-test: walked {result['moved_m']} m on the floor, one shot in {folder.as_posix()}")
+        flips = ", ".join(f"{p['side']} slit {p['slit']} {p['state']}" for p in press["presses"])
+        common.ok(f"ship --play-test: walked {result['moved_m']} m on the floor; E at each wall's button flipped "
+                  f"{flips}; three shots in {folder.as_posix()}")
         return 0
     common.say(f"ship --play: a window opens; P saves a screenshot into {folder.as_posix()}, Ctrl+Q or closing it quits")
     # ship.gd's _play sizes and centres his window itself. heavy=False: it may stay open for hours, so it does not hold
@@ -552,11 +611,54 @@ def video_request(layout: dict) -> dict:
             "keys": [[_g(eye), _g(look), float(sec)] for eye, look, sec in v["keys"]]}
 
 
-def walk_video(layout: dict, out: Path, folder: Path) -> int:
+# art #263, the jaw nose: the opening from a still 3/4 front camera at eye height, [t, lower deg, upper deg, seam glow]
+# keys (eased between): closed, the seam lights, the lower jaw lowers to the ground as the ramp, the upper lifts
+JAW_VIDEO = {"size": [1280, 720], "fps": 30, "fov": 50.0, "max_mb": 15, "eye": [-9.9, -22.4, 1.7], "look": [0.0, -8.0, 2.0],
+             "seconds": 6.5, "jaw": [[0.0, 0.0, 0.0, 0.0], [0.4, 0.0, 0.0, 0.0], [1.3, 0.0, 0.0, 1.0], [1.6, 0.0, 0.0, 1.0],
+                                    [3.0, -9.0, 1.6, 1.0], [4.9, None, None, 1.0], [6.5, None, None, 1.0]]}
+
+
+def jaw_video_request(layout: dict) -> dict:
+    """JAW_VIDEO in Godot coordinates, its keys' None the open pose's angles."""
+    v, deg = JAW_VIDEO, ship_layout.jaw_deg(layout, "open")
+    lower, upper = deg[layout["jaw"]["lower"][0]], deg[layout["jaw"]["upper"][0]]
+    keys = [[t, lower if lo is None else lo, upper if up is None else up, g] for t, lo, up, g in v["jaw"]]
+    return {"size": v["size"], "fps": v["fps"], "fov": v["fov"], "max_mb": v["max_mb"],
+            "keys": [[_g(v["eye"]), _g(v["look"]), 0.0], [_g(v["eye"]), _g(v["look"]), v["seconds"]]],
+            "jaw": keys, "lower": layout["jaw"]["lower"], "upper": layout["jaw"]["upper"]}
+
+
+NOSE_SECONDS = 2.5    # the package's Nose clips (art #263 b4): JAW_VIDEO's swing (its keys after the seam lights) in 2.5 s
+NOSE_PLAYER = "AnimationPlayer"
+
+
+def nose_request(layout: dict) -> dict:
+    """The package's Ship/Nose (export_scene.gd _nose): the jaw pieces, the open pose (the scene's default) and the
+    "open" clip's keys [t, {piece: degrees about x}] (JAW_VIDEO's swing scaled to NOSE_SECONDS; "close" plays them
+    backwards). Empty without [jaw]."""
+    if not layout.get("jaw"):
+        return {}
+    j, deg = layout["jaw"], ship_layout.jaw_deg(layout, "open")
+    swing = [k for k in JAW_VIDEO["jaw"] if k[0] >= 1.6][:-1]   # closed (seam lit) .. the open pose's first key
+    t0, t1 = swing[0][0], swing[-1][0]
+    keys = []
+    for t, lo, up, _g in swing:
+        at = {pid: deg[pid] if lo is None else lo for pid in j["lower"]}
+        at.update({pid: deg[pid] if up is None else up for pid in j["upper"]})
+        keys.append([round((t - t0) / (t1 - t0) * NOSE_SECONDS, 4), at])
+    moving = list(j["lower"]) + list(j["upper"])
+    fixed = [p["id"] for p in layout["pieces"] if p["builder"] == "jaw_root"]   # the jaw's fixed root, in Nose too
+    return {"pieces": moving + fixed, "moving": moving,
+            "open": {pid: deg[pid] for pid in moving},
+            "closed": ship_layout.jaw_deg(layout, "closed"), "keys": keys, "seconds": NOSE_SECONDS, "player": NOSE_PLAYER}
+
+
+def walk_video(layout: dict, out: Path, folder: Path, video: dict | None = None, name: str = "walkthrough.mp4") -> int:
     """The eye-height walk-through: Godot renders every frame in the off-screen window (ship.gd mode "video"), headless
-    Blender encodes them (ship_video.py, under max_mb), and the frames are deleted."""
+    Blender encodes them (ship_video.py, under max_mb), and the frames are deleted. `video`: another camera path (the
+    jaw's opening, `--jaw-video`) into `name`."""
     import shutil
-    video = video_request(layout)
+    video = video or video_request(layout)
     req, staged = built_request(layout, out)
     req.update({"mode": "video", "video": video, "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
@@ -573,7 +675,7 @@ def walk_video(layout: dict, out: Path, folder: Path) -> int:
     if code != 0 or not (work / "video.json").is_file():
         raise common.Failure(f"ship.gd video failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     info = json.loads((work / "video.json").read_text(encoding="utf-8"))
-    clip = folder / "walkthrough.mp4"
+    clip = folder / name
     clip.unlink(missing_ok=True)
     blender.run_script(VIDEO_SCRIPT, ["--frames", str(work / "frames"), "--out", str(clip), "--fps", str(video["fps"]),
                                       "--max-mb", str(video["max_mb"])], timeout=VIDEO_TIMEOUT)
@@ -642,6 +744,223 @@ def motion_request(layout: dict) -> dict:
 # vents-anim1: the east vent from about 3 m across the throat at the player's eye (deck 1.2 + 1.6), plan (x, y, h)
 VENT_ANIM = {"piece": "station_vent_e", "eye": [-0.25, -3.05, 2.8], "look": [2.108, -4.745, 2.12], "fov": 50.0,
              "size": (1280, 720), "fps": 24, "max_mb": 15}
+
+
+def gill_view(layout: dict, s: float, t: float, back: float, along: float = 0.0, up: float = 0.0,
+              side: str = "e") -> tuple:
+    """(eye, look) in plan (x, y, h) for a point on the east gills' wall (s along it from the mouth's corner, t up its
+    vertical part), the eye `back` m into the throat, `along` m toward the hall and `up` m higher; side "w": the same
+    on the west wall (step 6: the ship's mirror in x)."""
+    import importlib
+    import sys
+    sys.path.insert(0, str(blender.SCRIPTS))
+    g = importlib.import_module("ship_interior_gills")
+    m = [g.S.TH_PTS[1][0] + g.S.HALL_C[0], g.S.TH_PTS[1][1] + g.S.HALL_C[1]]
+    d, n = g.WALL_D, (-g.WALL_D[1], g.WALL_D[0])
+    h = layout["deck"]["floor_h"] + t
+    look = [m[0] + d[0] * s, m[1] + d[1] * s, h]
+    eye = [look[0] + n[0] * back + d[0] * along, look[1] + n[1] * back + d[1] * along, h + up]
+    if side == "w":
+        eye[0], look[0] = 2 * g.S.HALL_C[0] - eye[0], 2 * g.S.HALL_C[0] - look[0]
+    return [round(v, 4) for v in eye], [round(v, 4) for v in look]
+
+
+def throat_axis(layout: dict) -> tuple[float, float, float]:
+    """(x, y at the mouth's corners, y at the walls' hall end) of the throat's middle line (step 6's both-wall views)."""
+    import importlib
+    import sys
+    sys.path.insert(0, str(blender.SCRIPTS))
+    g = importlib.import_module("ship_interior_gills")
+    my = g.S.TH_PTS[1][1] + g.S.HALL_C[1]
+    return g.S.HALL_C[0], my, my + g.WALL_D[1] * 4.047
+
+
+GILL_ANIM = {"s": 2.66, "t": 1.32, "back": 0.95, "along": -0.45, "up": 0.08, "fov": 50.0, "fps": 30,
+             "size": (1280, 720), "max_mb": 8}
+GILL_ROW = {**GILL_ANIM, "s": 2.78, "t": 1.30, "back": 2.05, "along": -0.55, "up": 0.15, "fov": 62.0}   # the whole row
+
+
+def gill_anim(layout: dict, out: Path, folder: Path, demo: str = "slit") -> int:
+    """The gills' proof (art #263, 2026-10-28): ship.gd mode "gill_anim" renders gill_row.gd's demo on the east row's
+    working slit at night in the off-screen window; headless Blender encodes the MP4; the frames are deleted."""
+    import shutil
+    a = GILL_ROW if demo == "row" else GILL_ANIM
+    eye, look = gill_view(layout, a["s"], a["t"], a["back"], a["along"], a["up"])
+    req, staged = built_request(layout, out)
+    req.update({"mode": "gill_anim", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
+                "anim": {"eye": _g(eye), "look": _g(look), "fov": a["fov"], "fps": a["fps"], "demo": demo},
+                "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    errors = _stage(staged)
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "gill_anim_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    (folder / "anim.json").unlink(missing_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
+                                  path.as_posix(), folder.as_posix()], a["size"], VIDEO_TIMEOUT)
+    if code != 0 or not (folder / "anim.json").is_file():
+        raise common.Failure(f"ship.gd gill_anim failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+    info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
+    clip = folder / ("gill_row.mp4" if demo == "row" else "gill_anim.mp4")
+    clip.unlink(missing_ok=True)
+    blender.run_script(VIDEO_SCRIPT, ["--frames", str(folder / "frames"), "--out", str(clip), "--fps", str(a["fps"]),
+                                      "--max-mb", str(a["max_mb"])], timeout=VIDEO_TIMEOUT)
+    if not clip.is_file():
+        raise common.Failure(f"{VIDEO_SCRIPT} wrote no {clip}")
+    shutil.rmtree(folder / "frames", ignore_errors=True)
+    mb = clip.stat().st_size / 2 ** 20
+    if errors or mb > a["max_mb"]:
+        common.bad(f"ship --gill-anim: video {mb:.1f} MB (max {a['max_mb']}), {len(errors)} import errors")
+        return 1
+    common.ok(f"ship --gill-anim: {clip.as_posix()}, {info['seconds']:.1f} s, {info['frames']} frames, {mb:.1f} MB; "
+              f"beats {info['states']}")
+    return 0
+
+
+# the gill set (art #263, 2026-10-29): the concept camera frames the wall square-on from the ramp frame to the jamb as
+# set_plate.jpg does (2.4 m out, eye 1.25 m; the old wall_square_on is the view "concept_wide"), the close one 1.5 m out from slot 3 a little toward the hall; the views (s, t, back, along, up on the east wall, or plan
+# points) are posed: "open" the slits open (1..5), "at" the white bar's slit
+GILL_SET = {"concept": {"s": 2.85, "t": 1.25, "back": 2.4, "along": 0.0, "up": 0.0, "fov": 58.0},
+            "close": {"s": 2.69, "t": 1.35, "back": 1.5, "along": 0.35, "up": 0.2, "fov": 55.0},
+            "both": {"eye": (0.3, 1.6), "look": (4.0, 1.3), "fov": 75.0},   # step 7: as mouth_both (dy, h)
+            "ref": "D:/prime-game-design/ideas/ship-components/slits-lamps/set_plate.jpg",
+            "fps": 30, "size": (1280, 720), "max_mb": 15}
+MID = ([1, 2, 3], 4)
+GILL_VIEWS = [  # name, (s, t, back, along, up) eye, (s, t) look, fov, (open, at)
+    ("square_on", (2.75, 1.35, 2.2, 0.0, 0.25), (2.75, 1.35), 60.0, MID),
+    ("square_on_open", (2.75, 1.35, 2.2, 0.0, 0.25), (2.75, 1.35), 60.0, ([1, 2, 3, 4, 5], 3)),
+    ("from_mouth", (1.0, 1.55, 1.4, 0.0, 0.0), (3.0, 1.30), 70.0, MID),
+    ("from_hall", (4.6, 1.55, 1.4, 0.0, 0.0), (2.4, 1.30), 70.0, MID),
+    ("cu_slit1", (1.97, 1.36, 0.85, -0.25, 0.1), (2.10, 1.36), 55.0, MID),   # step 4: the slits spread (s 2.07-3.53)
+    ("cu_slit2", (2.34, 1.32, 0.85, -0.25, 0.1), (2.47, 1.32), 55.0, MID),
+    ("cu_slit3", (2.70, 1.29, 0.85, -0.25, 0.1), (2.83, 1.29), 55.0, MID),
+    ("cu_slit4", (3.06, 1.26, 0.85, -0.25, 0.1), (3.19, 1.26), 55.0, MID),
+    ("cu_slit5", (3.43, 1.23, 0.85, -0.25, 0.1), (3.56, 1.23), 55.0, MID),
+    ("cu_slit_graze", (3.95, 1.30, 0.5, 0.0, 0.05), (2.5, 1.30), 50.0, MID),
+    ("cu_groove_top", (2.0, 1.95, 0.55, 0.0, 0.05), (2.0, 1.95), 50.0, MID),
+    ("cu_groove_left", (1.80, 1.35, 0.6, 0.0, 0.05), (1.80, 1.35), 50.0, MID),
+    ("cu_groove_tail", (2.40, 0.72, 0.6, 0.0, 0.1), (2.40, 0.72), 50.0, MID),
+    ("cu_bars", (2.95, 1.80, 0.9, 0.0, 0.05), (2.95, 1.80), 55.0, MID),
+    ("cu_button", (3.86, 1.15, 0.5, -0.1, 0.05), (3.86, 1.15), 45.0, MID),
+    ("cu_end", (3.80, 1.25, 0.9, -0.3, 0.1), (4.0, 1.1), 55.0, MID),
+    # step 6: the west wall (the mirror, side "w"): the concept camera shut, mid and all open, its groove ends, button
+    # and end; and the row of all five square on at one scale, shut and open, on both walls (the glow's balance)
+    ("e_concept_shut", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, ([], 0)),
+    ("e_concept_mid", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, MID),
+    ("e_concept_open", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, ([1, 2, 3, 4, 5], 3)),
+    ("w_concept_shut", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, ([], 0), "w"),
+    ("w_concept_mid", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, MID, "w"),
+    ("w_concept_open", (2.85, 1.25, 2.4, 0.0, 0.0), (2.85, 1.25), 58.0, ([1, 2, 3, 4, 5], 3), "w"),
+    ("w_cu_groove_top", (2.0, 1.95, 0.55, 0.0, 0.05), (2.0, 1.95), 50.0, MID, "w"),
+    ("w_cu_groove_tail", (2.40, 0.72, 0.6, 0.0, 0.1), (2.40, 0.72), 50.0, MID, "w"),
+    ("w_cu_button", (3.86, 1.15, 0.5, -0.1, 0.05), (3.86, 1.15), 45.0, MID, "w"),
+    ("w_cu_end", (3.80, 1.25, 0.9, -0.3, 0.1), (4.0, 1.1), 55.0, MID, "w"),
+    ("row_shut", (2.80, 1.36, 1.8, 0.0, 0.0), (2.80, 1.36), 40.0, ([], 0)),
+    ("row_open", (2.80, 1.36, 1.8, 0.0, 0.0), (2.80, 1.36), 40.0, ([1, 2, 3, 4, 5], 3)),
+    ("w_row_shut", (2.80, 1.36, 1.8, 0.0, 0.0), (2.80, 1.36), 40.0, ([], 0), "w"),
+    ("w_row_open", (2.80, 1.36, 1.8, 0.0, 0.0), (2.80, 1.36), 40.0, ([1, 2, 3, 4, 5], 3), "w"),
+]
+# step 6: both walls in view from the throat's middle line: (name, eye (dy from the mouth's corners, h over the deck),
+# look (dy, h), fov, pose); dy < 0: |dy| past the walls' hall end into the hall
+GILL_AXIS_VIEWS = [("mouth_both", (0.3, 1.6), (4.0, 1.3), 75.0, MID), ("hall_both", (-1.2, 1.6), (0.0, 1.3), 70.0, MID)]
+# step 7: the corner flats' clad at eye height (1.6 m over the deck), plan points (x, y) of the east one (the flat's
+# middle 3.44, -2.31, facing the hall), side "w" the ship's mirror: from the throat by its hall end, and 2.4 m before it
+# from the hall
+CLAD_VIEWS = [("clad_throat", (0.0, -4.0, 1.6), (3.44, -2.31, 1.4), 60.0, "e"),
+              ("w_clad_throat", (0.0, -4.0, 1.6), (3.44, -2.31, 1.4), 60.0, "w"),
+              ("clad_hall", (1.34, -1.14, 1.6), (3.44, -2.31, 1.4), 60.0, "e"),
+              ("w_clad_hall", (1.34, -1.14, 1.6), (3.44, -2.31, 1.4), 60.0, "w"),
+              # his --play shot 003 (<raw>/ship/v5/play/shots.txt: plan 0.274, -2.18, look [0.906, -0.421, 0.052], the
+              # player's fov 75) and its mirror: the throat's hall end, the end frame and the flat
+              ("play003", (0.274, -2.18, 1.6), (2.992, -3.443, 1.756), 75.0, "e"),
+              ("w_play003", (0.274, -2.18, 1.6), (2.992, -3.443, 1.756), 75.0, "w")]
+GILL_SHEET = [["ref", "concept_mid"], ["w_concept_mid", "mouth_both"]]   # set_plate | east mid; west mid | both
+
+
+# the look grid (step 3; LOOK holds its pick "deep_mid", after deep_lo, halo and blue_mid lost): gill_set.gd LOOK
+# overrides and an optional pose ([open slits], white bar); "mid" LOOK posed, then the all-open cloud's strength and drift
+ALL_OPEN = [[1, 2, 3, 4, 5], 3]
+# (a grid tile holds the cloud about 2.5 s; the MP4's 6 s build is denser, hence LOOK's 0.3 and drift 1.6)
+GILL_GRID = [["mid", {}], ["cloud_04", {"cloud": 0.4, "drift": 1.0}, ALL_OPEN],
+             ["cloud_06", {"cloud": 0.6, "drift": 1.0}, ALL_OPEN], ["cloud_09", {"cloud": 0.9, "drift": 1.0}, ALL_OPEN],
+             ["cloud_06_drift14", {"cloud": 0.6, "drift": 1.4}, ALL_OPEN]]
+
+
+def gill_set(layout: dict, out: Path, folder: Path, grid: bool = False, only: list[str] | None = None) -> int:
+    """The gill set's proof: ship.gd mode "gill_set" renders gill_set.gd's demo on th_wall_e from both cameras at night
+    in the off-screen window, then the posed views and close-ups; headless Blender encodes each camera's MP4; the
+    frames are deleted."""
+    import shutil
+    a = GILL_SET
+    c = a["close"]
+    k = a["concept"]
+    cams = [["concept", _g(gill_view(layout, k["s"], k["t"], k["back"], k["along"], k["up"])[0]),
+             _g(gill_view(layout, k["s"], k["t"], 0.05)[0]), k["fov"]],
+            ["close", _g(gill_view(layout, c["s"], c["t"], c["back"], c["along"], c["up"])[0]),
+             _g(gill_view(layout, c["s"], c["t"], 0.05)[0]), c["fov"]]]
+    x0, y_mouth, y_hall = throat_axis(layout)
+    deck = layout["deck"]["floor_h"]
+    b = a["both"]   # step 7: both walls' rows running, from the mouth up the throat
+    cams.append(["both", _g([x0, y_mouth + b["eye"][0], deck + b["eye"][1]]),
+                 _g([x0, y_mouth + b["look"][0], deck + b["look"][1]]), b["fov"]])
+    views = [["concept_wide", _g([-1.7323, -3.6196, 2.43]), _g([2.3527, -4.9625, 2.43]), 52.0, *MID]]
+    views += [[name, _g(gill_view(layout, *eye, side=v[0] if v else "e")[0]),
+               _g(gill_view(layout, *look, 0.0, side=v[0] if v else "e")[0]), fov, pose[0], pose[1]]
+              for name, eye, look, fov, pose, *v in GILL_VIEWS]
+    for name, (de, he), (dl, hl), fov, pose in GILL_AXIS_VIEWS:
+        ye, yl = (y_mouth + de if de >= 0 else y_hall - de), (y_mouth + dl if dl >= 0 else y_hall - dl)
+        views.append([name, _g([x0, ye, deck + he]), _g([x0, yl, deck + hl]), fov, pose[0], pose[1]])
+    for name, (xe, ye, he), (xl, yl, hl), fov, side in CLAD_VIEWS:
+        sx = -1.0 if side == "w" else 1.0
+        views.append([name, _g([sx * xe, ye, deck + he]), _g([sx * xl, yl, deck + hl]), fov, *MID])
+    if only is not None:   # step 6: a views-only run (no demo, no videos): the named views
+        cams, views = [], [v for v in views if v[0] in only]
+    req, staged = built_request(layout, out)
+    req.update({"mode": "gill_set", "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
+                "anim": {"cams": cams, "views": views, "fps": a["fps"], "ref": a["ref"],
+                         **({"grid": GILL_GRID} if grid else {}), **({} if only is not None else {"sheet": GILL_SHEET})},
+                "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
+                "rooms": room_boxes(layout)})
+    errors = _stage(staged)
+    for cam in cams:
+        shutil.rmtree(folder / cam[0] / "frames", ignore_errors=True)
+        shutil.rmtree(folder / cam[0] / "keys", ignore_errors=True)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "ship" / "gill_set_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    (folder / "anim.json").unlink(missing_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
+                                  path.as_posix(), folder.as_posix()], a["size"], VIDEO_TIMEOUT)
+    if code != 0 or not (folder / "anim.json").is_file():
+        raise common.Failure(f"ship.gd gill_set failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+    info = json.loads((folder / "anim.json").read_text(encoding="utf-8"))
+    if grid:
+        common.ok(f"ship --gill-set --gill-grid: {(folder / 'grid_sheet.png').as_posix()}")
+        return 0
+    if only is not None:
+        common.ok(f"ship --gill-set: {len(views)} views in {(folder / 'stills').as_posix()}")
+        return 0
+    sizes = {}
+    for cam in cams:
+        clip = folder / f"{cam[0]}.mp4"
+        clip.unlink(missing_ok=True)
+        blender.run_script(VIDEO_SCRIPT, ["--frames", str(folder / cam[0] / "frames"), "--out", str(clip),
+                                          "--fps", str(a["fps"]), "--max-mb", str(a["max_mb"])], timeout=VIDEO_TIMEOUT)
+        if not clip.is_file():
+            raise common.Failure(f"{VIDEO_SCRIPT} wrote no {clip}")
+        shutil.rmtree(folder / cam[0] / "frames", ignore_errors=True)
+        sizes[clip] = clip.stat().st_size / 2 ** 20
+    if errors or max(sizes.values()) > a["max_mb"]:
+        common.bad(f"ship --gill-set: videos {', '.join(f'{mb:.1f}' for mb in sizes.values())} MB "
+                   f"(max {a['max_mb']}), {len(errors)} import errors")
+        return 1
+    for clip, mb in sizes.items():
+        common.ok(f"ship --gill-set: {clip.as_posix()}, {info['seconds']:.1f} s, {info['frames']} frames, {mb:.1f} MB")
+    common.ok(f"ship --gill-set: presses {info['presses']}; sheet {(folder / 'sheet.png').as_posix()}")
+    return 0
 
 
 def vent_anim(layout: dict, out: Path, folder: Path) -> int:
