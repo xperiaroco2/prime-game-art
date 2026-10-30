@@ -429,7 +429,13 @@ LIGHT_KEYS = ("exposure", "ambient_rgb", "ambient_energy", "probe_intensity", "p
               "pendant_range", "pendant_angle", "bulb_emit", "strip_rgb", "strip_energy", "strip_range", "strip_emit",
               "door_rgb", "door_energy", "door_range", "door_emit", "corridor_rgb", "corridor_energy", "corridor_range",
               "earth_rgb", "earth_energy", "earth_dir", "dawn_rgb", "dawn_energy", "dawn_dir", "glow_intensity",
-              "glow_bloom", "glow_threshold", "ssao_intensity")
+              "glow_bloom", "glow_threshold", "ssao_intensity",
+              # step 4b: the glow's HDR scale and luminance cap, the ship's own glow surfaces' emission factor (applied
+              # by hall.gd per instance, never in the ship's files), the pendants' upward fill on the vault, the strips'
+              # specular and size (longer reflections on the floor), the Earth's soft, lighter shadow, its cold spill
+              "glow_hdr_scale", "glow_cap", "ship_emit", "fill_rgb", "fill_energy", "fill_range", "fill_angle",
+              "strip_specular", "strip_size", "earth_soft", "earth_shadow", "window_rgb", "window_energy",
+              "window_range", "pendant_specular")
 
 
 def light_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
@@ -458,10 +464,23 @@ def light_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
             elif k.endswith("_dir"):
                 if not (-180 <= v[0] <= 180 and -90 <= v[1] <= 90):
                     p.append(f"light {mid}: {k} {v} is not [azimuth, elevation]")
-            elif not 0.0 <= v <= (90.0 if k == "pendant_angle" else 40.0):
+            elif not 0.0 <= v <= (90.0 if k.endswith("_angle") else 40.0):
                 p.append(f"light {mid}: {k} {v} out of range")
         if not 10.0 <= m["pendant_angle"] <= 70.0:
             p.append(f"light {mid}: pendant_angle {m['pendant_angle']} is not within 10..70 (the shade's rim)")
+        if not 10.0 <= m["fill_angle"] <= 85.0:
+            p.append(f"light {mid}: fill_angle {m['fill_angle']} is not within 10..85")
+        if not 0.0 <= m["earth_shadow"] <= 1.0:
+            p.append(f"light {mid}: earth_shadow {m['earth_shadow']} is not an opacity in 0..1")
+    for tid, tr in li.get("trials", {}).items():
+        extra = sorted(set(tr) - set(("title",) + LIGHT_KEYS))
+        if extra or "title" not in tr:
+            p.append(f"light trial {tid}: needs a title and only the moods' keys ({', '.join(extra)})")
+    for x, y, z in li.get("window", []):
+        if not on_floor(layout, x, z) or not 0 < y < h["wall"]:
+            p.append(f"light: window lamp ({x}, {y}, {z}) is not inside the hall")
+    if not 0.0 <= li.get("window_tilt", 0.0) <= 80.0:
+        p.append(f"light: window_tilt {li['window_tilt']} is not within 0..80")
     for x in li["pendants_x"]:
         for z in li["pendants_z"]:
             if not on_floor(layout, x, z):

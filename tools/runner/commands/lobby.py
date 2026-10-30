@@ -156,12 +156,15 @@ def look_request(layout: dict, scheme: str) -> dict:
 
 
 # --- the light (step 4) ---------------------------------------------------------------------------------------------
-def light_request(layout: dict, mood: str) -> dict:
+def light_request(layout: dict, mood: str, trial: str | None = None) -> dict:
     """One mood's rig for hall.gd: its numbers, the directions, and every lamp's place in the lobby frame (the pendants'
     x and z (hall.gd finds each lens's height in the vault's mesh), the strips before the pilasters' faces, the red
     omnis before the door lamps, the corridor's omnis) and the reflection probes."""
     li, h = layout["light"], layout["hall"]
     m = dict(li["moods"][mood])
+    if trial:   # step 4b's grid: a trial's numbers over the mood
+        m.update(li["trials"][trial])
+        m["title"] = f"{mood}+{trial} " + m["title"]
     title = m.pop("title")
     m["earth_dir"], m["dawn_dir"] = _dir(*m["earth_dir"]), _dir(*m["dawn_dir"])
     face = {"W": (h["x0"] + h["pilaster_d"] + li["strip_off"], 1), "E": (h["x1"] - h["pilaster_d"] - li["strip_off"], -1)}
@@ -179,8 +182,9 @@ def light_request(layout: dict, mood: str) -> dict:
         else:
             doors.append([h["x0"] + li["door_off"] if side == "W" else h["x1"] - li["door_off"], y, u])
     m.update({"pendants": [[x, z] for x in li["pendants_x"] for z in li["pendants_z"]], "strips": strips,
-              "doors": doors, "corridor": li["corridor"], "probes": li["probes"]})
-    return {"id": mood, "title": title, "light": m}
+              "doors": doors, "corridor": li["corridor"], "probes": li["probes"],
+              "window": li.get("window", []), "window_tilt": li.get("window_tilt", 0.0)})
+    return {"id": trial or mood, "title": title, "light": m}
 
 
 def video(layout: dict, out: Path, place: list, folder: Path) -> int:
@@ -357,7 +361,9 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
         req["light"] = light_request(layout, layout["light"]["mood"])["light"]
     if grid == "light":
         req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in layout["light"]["grid"]],
-                    "variants": [light_request(layout, k) for k in layout["light"]["moods"]]})
+                    "variants": ([light_request(layout, layout["light"]["mood"], k) for k in layout["light"]["trials"]]
+                                 if layout["light"].get("trials") else
+                                 [light_request(layout, k) for k in layout["light"]["moods"]])})
     elif grid == "earth":
         req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in layout["earth"]["grid"]],
                     "variants": [earth_request(layout, k) for k in layout["earth"]["variants"]]})

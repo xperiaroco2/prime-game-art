@@ -318,7 +318,7 @@ stars = 1.6
 #     door_emit; corridor_*: unshadowed omnis along the corridor; earth_*: the Earth's cold light, a shadowed
 #     DirectionalLight3D from earth_dir [azimuth from south toward east, elevation]; dawn_*: E2's warmer hint, an
 #     unshadowed DirectionalLight3D from dawn_dir; glow_intensity, glow_bloom, glow_threshold; ssao_intensity.
-mood = "L1"
+mood = "L3"                         # the engineer's pick (2026-10-30)
 grid = ["corner_nw", "spawn_eye", "c_back"]
 pendants_x = [-10.0, 0.0, 10.0]     # the builder's PENDANTS (lobby_build.py): the spots sit under each lens
 pendants_z = [-21.0, -9.0, 3.0]
@@ -326,6 +326,9 @@ strip_y = 3.2                       # the pilaster strips' middle (the builder's
 strip_off = 0.35                    # the omnis in front of a pilaster's face (m)
 door_off = 0.4                      # the red omnis in front of the door lamp's wall
 corridor = [[0.0, 5.0, -32.5], [0.0, 5.0, -36.0]]
+window = [[-10.0, 4.0, 12.5], [0.0, 4.0, 14.0], [10.0, 4.0, 12.5]]   # step 4b: the Earth's cold spill, inside the glass
+window_tilt = 50.0                  # their spots (35 deg half angle) look north, this many degrees down: the
+                                    # cone's top edge 15 deg down passes under the ship's aft panel
 probes = [["hall", [0.0, 8.0, -8.0], [42.0, 16.5, 48.0], false], ["corridor", [0.0, 3.2, -34.0], [6.4, 6.6, 8.4], true]]
 
 [light.moods.L1]
@@ -359,7 +362,22 @@ dawn_dir = [30.0, 4.0]
 glow_intensity = 0.6
 glow_bloom = 0.05
 glow_threshold = 1.0
+pendant_specular = 0.5
 ssao_intensity = 1.6
+glow_hdr_scale = 2.0
+glow_cap = 12.0
+ship_emit = 1.0
+fill_rgb = [1.0, 0.7, 0.45]
+fill_energy = 0.0
+fill_range = 8.0
+fill_angle = 70.0
+strip_specular = 0.5
+strip_size = 0.0
+earth_soft = 1.0
+earth_shadow = 1.0
+window_rgb = [0.55, 0.7, 1.0]
+window_energy = 0.0
+window_range = 12.0
 
 [light.moods.L2]
 title = "darker and moodier: pools of warm light, deep shadows, the Earth the brightest thing"
@@ -392,7 +410,22 @@ dawn_dir = [30.0, 4.0]
 glow_intensity = 0.7
 glow_bloom = 0.04
 glow_threshold = 1.0
+pendant_specular = 0.5
 ssao_intensity = 2.2
+glow_hdr_scale = 2.0
+glow_cap = 12.0
+ship_emit = 1.0
+fill_rgb = [1.0, 0.7, 0.45]
+fill_energy = 0.0
+fill_range = 8.0
+fill_angle = 70.0
+strip_specular = 0.5
+strip_size = 0.0
+earth_soft = 1.0
+earth_shadow = 1.0
+window_rgb = [0.55, 0.7, 1.0]
+window_energy = 0.0
+window_range = 12.0
 
 [light.moods.L3]
 title = "brighter and warmer, closer to the concept's glow"
@@ -410,22 +443,73 @@ strip_energy = 2.4
 strip_range = 7.0
 strip_emit = 1.4
 door_rgb = [1.0, 0.08, 0.04]
-door_energy = 1.0
-door_range = 5.0
+door_energy = 1.4
+door_range = 7.0
 door_emit = 1.1
 corridor_rgb = [1.0, 0.72, 0.48]
 corridor_energy = 2.6
 corridor_range = 8.0
 earth_rgb = [0.62, 0.74, 1.0]
-earth_energy = 0.8
+earth_energy = 0.7
 earth_dir = [0.0, 2.0]
 dawn_rgb = [1.0, 0.64, 0.38]
 dawn_energy = 0.24
 dawn_dir = [30.0, 4.0]
-glow_intensity = 1.0
-glow_bloom = 0.15
-glow_threshold = 0.9
+glow_intensity = 0.5
+glow_bloom = 0.0
+glow_threshold = 1.2
+pendant_specular = 0.3
 ssao_intensity = 1.4
+glow_hdr_scale = 1.5
+glow_cap = 6.0
+ship_emit = 0.3
+fill_rgb = [1.0, 0.7, 0.45]
+fill_energy = 3.0
+fill_range = 12.0
+fill_angle = 75.0
+strip_specular = 1.5
+strip_size = 0.0
+earth_soft = 3.0
+earth_shadow = 0.55
+window_rgb = [0.55, 0.7, 1.0]
+window_energy = 3.0
+window_range = 16.0
+
+# Step 4b's grid (`lobby --light-grid DIR` shoots these over the mood when present, else every mood): the glow against
+# the ship's engine rings and wing strip, the vault's fill, the window's cold spill
+[light.trials.T1]
+title = "glow only: threshold 1.5, ship as built, faint fill"
+glow_intensity = 0.6
+glow_bloom = 0.0
+glow_threshold = 1.5
+glow_hdr_scale = 2.0
+glow_cap = 12.0
+ship_emit = 1.0
+fill_energy = 0.8
+fill_range = 8.0
+window_energy = 1.0
+[light.trials.T2]
+title = "glow 1.2, ship's glow x0.5, fill 1.5"
+glow_intensity = 0.5
+glow_bloom = 0.0
+glow_threshold = 1.2
+glow_hdr_scale = 1.5
+glow_cap = 6.0
+ship_emit = 0.5
+fill_energy = 1.5
+fill_range = 10.0
+window_energy = 2.0
+[light.trials.T3]
+title = "glow 1.0, ship's glow x0.3, fill 2.5"
+glow_intensity = 0.4
+glow_bloom = 0.0
+glow_threshold = 1.0
+glow_hdr_scale = 1.2
+glow_cap = 4.0
+ship_emit = 0.3
+fill_energy = 2.5
+fill_range = 12.0
+window_energy = 3.0
 
 [video]
 # Step 4's walk-through (`lobby --video DIR`, docs/lobby.md): eye height, the mood above; keys [eye, look, seconds

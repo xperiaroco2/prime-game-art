@@ -33,7 +33,7 @@ var _earth: ShaderMaterial      # the sky's material when the request has an Ear
 var _textures: Dictionary = {}  # path -> ImageTexture
 var _env: Environment
 var _rig: Node3D                 # step 4: the light rig of the current mood (rebuilt per mood)
-var _emissive: Array = []        # step 4: [mesh, surface, its GLB material] of the hall's lens, strip, ring and lamp surfaces
+var _emissive: Array = []        # step 4: [mesh, surface, its material, is the ship] of the lens, strip, ring, lamp and the ship's glow surfaces
 
 
 func _initialize() -> void:
@@ -509,6 +509,8 @@ func _apply_light(l: Dictionary) -> void:
 	_env.glow_intensity = float(l["glow_intensity"])
 	_env.glow_bloom = float(l["glow_bloom"])
 	_env.glow_hdr_threshold = float(l["glow_threshold"])
+	_env.glow_hdr_scale = float(l["glow_hdr_scale"])
+	_env.glow_hdr_luminance_cap = float(l["glow_cap"])
 	_env.ssao_intensity = float(l["ssao_intensity"])
 	var vp: Viewport = root
 	vp.positional_shadow_atlas_size = 4096
@@ -531,11 +533,27 @@ func _apply_light(l: Dictionary) -> void:
 		spot.shadow_enabled = true
 		spot.shadow_blur = 1.5
 		spot.shadow_bias = 0.04
+		spot.light_specular = float(l["pendant_specular"])   # step 4b: the ship's silver top's hot spots softer
 		_rig.add_child(spot)
 		spot.position = Vector3(float(p[0]), float(lens_y[key]) - 0.03, float(p[1]))
 		spot.rotation_degrees = Vector3(-90, 0, 0)   # -z (the spot's axis) straight down
+		if float(l["fill_energy"]) > 0.0:   # step 4b: the shade's wide warm spill up onto the vault and ribs (no shadow)
+			var up: SpotLight3D = SpotLight3D.new()
+			up.light_color = _c(l["fill_rgb"])
+			up.light_energy = float(l["fill_energy"])
+			up.spot_range = float(l["fill_range"])
+			up.spot_angle = float(l["fill_angle"])
+			up.spot_angle_attenuation = 0.8
+			up.spot_attenuation = 0.8
+			up.light_specular = 0.2
+			up.shadow_enabled = false
+			_rig.add_child(up)
+			up.position = Vector3(float(p[0]), float(lens_y[key]) + 0.6, float(p[1]))
+			up.rotation_degrees = Vector3(90, 0, 0)   # straight up
 	for at: Array in l["strips"]:
-		_omni(_v(at), _c(l["strip_rgb"]), float(l["strip_energy"]), float(l["strip_range"]))
+		var o: OmniLight3D = _omni(_v(at), _c(l["strip_rgb"]), float(l["strip_energy"]), float(l["strip_range"]))
+		o.light_specular = float(l["strip_specular"])   # step 4b: longer, softer streaks on the polished floor
+		o.light_size = float(l["strip_size"])
 	for at: Array in l["doors"]:
 		_omni(_v(at), _c(l["door_rgb"]), float(l["door_energy"]), float(l["door_range"]))
 	for at: Array in l["corridor"]:
@@ -546,9 +564,24 @@ func _apply_light(l: Dictionary) -> void:
 		sun.light_energy = float(l[k + "_energy"])
 		sun.shadow_enabled = k == "earth"
 		sun.directional_shadow_max_distance = 80.0
+		if k == "earth":   # step 4b: the ship's shadow on the north wall and doors soft and lighter
+			sun.shadow_blur = float(l["earth_soft"])   # a PCF blur: the angular size's PCSS cost ~1.4 ms (grid 4b)
+			sun.shadow_opacity = float(l["earth_shadow"])
 		_rig.add_child(sun)
 		var d: Vector3 = _v(l[k + "_dir"]).normalized()
 		sun.look_at_from_position(Vector3.ZERO, -d, Vector3.UP)   # the light travels away from the Earth
+	if float(l["window_energy"]) > 0.0:   # step 4b: the Earth's cold spill just inside the glass, north and down
+		for at: Array in l["window"]:
+			var cold: SpotLight3D = SpotLight3D.new()
+			cold.light_color = _c(l["window_rgb"])
+			cold.light_energy = float(l["window_energy"])
+			cold.spot_range = float(l["window_range"])
+			cold.spot_angle = 35.0
+			cold.spot_angle_attenuation = 0.8
+			cold.shadow_enabled = false
+			_rig.add_child(cold)
+			cold.position = _v(at)
+			cold.rotation_degrees = Vector3(-float(l["window_tilt"]), 0, 0)
 	for pr: Array in l["probes"]:
 		var probe: ReflectionProbe = ReflectionProbe.new()
 		probe.name = "probe_" + String(pr[0])
@@ -567,7 +600,7 @@ func _apply_light(l: Dictionary) -> void:
 	_emit(l)
 
 
-func _omni(at: Vector3, c: Color, energy: float, rng: float) -> void:
+func _omni(at: Vector3, c: Color, energy: float, rng: float) -> OmniLight3D:
 	var o: OmniLight3D = OmniLight3D.new()
 	o.light_color = c
 	o.light_energy = energy
@@ -576,6 +609,7 @@ func _omni(at: Vector3, c: Color, energy: float, rng: float) -> void:
 	o.shadow_enabled = false
 	_rig.add_child(o)
 	o.position = at
+	return o
 
 
 ## Each pendant's lens bottom (the lowest lobby_lens vertex within 0.2 m of its x, z), keyed "x,z".
@@ -607,8 +641,6 @@ func _lens_bottoms(pendants: Array) -> Dictionary:
 func _emit(l: Dictionary) -> void:
 	if _emissive.is_empty():
 		for pid: String in _placed:
-			if pid.begins_with("ship_"):
-				continue
 			for top: Node in _placed[pid]:
 				var stack: Array = [top]
 				while not stack.is_empty():
@@ -618,16 +650,26 @@ func _emit(l: Dictionary) -> void:
 						continue
 					var mi: MeshInstance3D = n
 					for i: int in mi.mesh.get_surface_count():
-						var m: Material = mi.mesh.surface_get_material(i)
-						if m is BaseMaterial3D and m.resource_name in ["lobby_lens", "lobby_strip", "lobby_ring", "lobby_lamp"]:
-							_emissive.append([mi, i, m])
+						var m: Material = mi.get_surface_override_material(i)
+						if m == null:
+							m = mi.mesh.surface_get_material(i)
+						if pid.begins_with("ship_"):   # step 4b: the ship's glow surfaces (art #263's), only scaled here
+							if m is BaseMaterial3D and (m as BaseMaterial3D).emission_enabled:
+								_emissive.append([mi, i, m, true])
+						elif m is BaseMaterial3D and m.resource_name in ["lobby_lens", "lobby_strip", "lobby_ring", "lobby_lamp"]:
+							_emissive.append([mi, i, m, false])
+	print("LOBBY emissive surfaces %d, the ship's %d (x%s)" % [_emissive.size(), _emissive.filter(func(e: Array) -> bool: return bool(e[3])).size(), l["ship_emit"]])
 	var made: Dictionary = {}
 	for e: Array in _emissive:
 		var orig: BaseMaterial3D = e[2]
 		var mname: String = orig.resource_name
+		if bool(e[3]):   # a ship surface: its own material times ship_emit, keyed by the material itself
+			mname = "ship:%d" % orig.get_instance_id()
 		if not made.has(mname):
 			var mat: BaseMaterial3D = orig.duplicate()
-			if mname == "lobby_lens":
+			if bool(e[3]):
+				mat.emission_energy_multiplier = orig.emission_energy_multiplier * float(l["ship_emit"])
+			elif mname == "lobby_lens":
 				mat.emission_enabled = true
 				mat.emission = _c(l["pendant_rgb"])
 				mat.emission_energy_multiplier = float(l["bulb_emit"])

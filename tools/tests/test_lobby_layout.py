@@ -175,9 +175,10 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertNotEqual(s1["lobby_panel"]["rgb"], s1["lobby_pilaster"]["rgb"])   # a scheme, not one metal
 
     def test_the_light_moods(self) -> None:
-        """Step 4: L1 by default, three moods with the same keys, L2 darker and L3 brighter than L1, the rig's lamps."""
+        """Step 4: three moods with the same keys, L2 darker and L3 brighter than L1, the rig's lamps; step 4b: L3 (the
+        engineer's pick) by default."""
         li = self.layout["light"]
-        self.assertEqual(li["mood"], "L1")
+        self.assertEqual(li["mood"], "L3")
         self.assertEqual(sorted(li["moods"]), ["L1", "L2", "L3"])
         self.assertEqual(li["grid"], ["corner_nw", "spawn_eye", "c_back"])
         m = li["moods"]
@@ -197,6 +198,34 @@ class LobbyLayoutTest(unittest.TestCase):
             self.assertTrue(lobby_layout.in_hall(self.layout, x, z, 0.2), (x, z))
         self.assertGreater(rig["earth_dir"][2], 0.9)   # toward the Earth: the window's side (+z)
 
+    def test_the_step_4b_fixes(self) -> None:
+        """Step 4b in L3: the ship's glow scaled down on the hall's side and the glow's threshold over 1, the vault's
+        upward fill, longer strip streaks (more specular, no light size: a disc), a blurred, lighter Earth shadow, wider red door lamps, the window's cold spill;
+        L1 and L2 keep step 4's look (the new lights off, the ship as built)."""
+        m = self.layout["light"]["moods"]
+        l3 = m["L3"]
+        self.assertLess(l3["ship_emit"], 1.0)
+        self.assertGreater(l3["glow_threshold"], 1.0)
+        self.assertEqual(l3["glow_bloom"], 0.0)
+        self.assertGreater(l3["fill_energy"], 0.0)
+        self.assertGreater(l3["fill_rgb"][0], l3["fill_rgb"][2])     # the fill warm
+        self.assertGreater(l3["window_rgb"][2], l3["window_rgb"][0])  # the spill cold
+        self.assertGreater(l3["window_energy"], 0.0)
+        self.assertGreater(l3["strip_specular"], m["L1"]["strip_specular"])
+        self.assertLess(l3["pendant_specular"], m["L1"]["pendant_specular"])
+        self.assertGreater(l3["earth_soft"], m["L1"]["earth_soft"])
+        self.assertLess(l3["earth_shadow"], 1.0)
+        self.assertGreater(l3["door_range"], m["L1"]["door_range"])
+        for mid in ("L1", "L2"):
+            self.assertEqual((m[mid]["fill_energy"], m[mid]["window_energy"], m[mid]["ship_emit"]), (0.0, 0.0, 1.0))
+        from runner.commands import lobby as cmd
+        rig = cmd.light_request(self.layout, "L3")["light"]
+        self.assertEqual(len(rig["window"]), 3)
+        for x, y, z in rig["window"]:
+            self.assertTrue(lobby_layout.on_floor(self.layout, x, z), (x, z))
+        for tid in self.layout["light"].get("trials", {}):
+            self.assertEqual(cmd.light_request(self.layout, "L3", tid)["id"], tid)
+
     def test_the_light_check(self) -> None:
         bad = copy.deepcopy(self.layout)
         bad["light"]["mood"] = "L9"
@@ -204,8 +233,12 @@ class LobbyLayoutTest(unittest.TestCase):
         del bad["light"]["moods"]["L3"]["glow_bloom"]
         bad["light"]["corridor"][0] = [0.0, 5.0, -20.0]
         bad["video"]["keys"][3][0] = [30.0, 1.7, -21.5]
+        bad["light"]["window"][0] = [0.0, 7.0, 30.0]
+        bad["light"]["moods"]["L1"]["earth_shadow"] = 1.5
+        bad["light"]["trials"] = {"T9": {"title": "x", "glow_power": 1.0}}
         problems = lobby_layout.check(bad, self.fp(bad))
-        for want in ("mood L9", "L2: pendant_angle", "L3: keys differ", "corridor lamp", "video key 3"):
+        for want in ("mood L9", "L2: pendant_angle", "L3: keys differ", "corridor lamp", "video key 3", "window lamp",
+                     "L1: earth_shadow", "trial T9"):
             self.assertTrue(any(want in p for p in problems), (want, problems))
 
     def test_the_video(self) -> None:
