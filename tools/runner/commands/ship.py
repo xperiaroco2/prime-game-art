@@ -59,9 +59,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="the throat gills' proof (godot/ship/gill_row.gd's 6 s demo on the east row's working slit: "
                              "shut, the gasp, shut, the press, open with an overshoot, settle) off-screen: MP4 into DIR")
     parser.add_argument("--gill-set", type=Path, metavar="DIR",
-                        help="the throat's gill set (godot/ship/gill_set.gd's 14 s demo on th_wall_e: the white bar runs, "
-                             "presses open and shut slits, all five open hold a steam cloud) from the concept's camera "
-                             "and a close one: <DIR>/<cam>/<cam>.mp4, keys_sheet.png, the stills, the posed views and "
+                        help="the throat's gill set (godot/ship/gill_set.gd's 14 s demo on both walls: the white bar runs, "
+                             "presses open and shut slits, all five open hold a steam cloud) from the concept's camera, "
+                             "a close one and the mouth (both rows): <DIR>/<cam>/<cam>.mp4, keys_sheet.png, the stills, the posed views and "
                              "close-ups, and sheet.png beside set_plate.jpg; off-screen")
     parser.add_argument("--gill-grid", action="store_true",
                         help="with --gill-set: only the look grid (GILL_GRID's variants from the concept camera, posed) "
@@ -753,6 +753,7 @@ def gill_anim(layout: dict, out: Path, folder: Path, demo: str = "slit") -> int:
 # points) are posed: "open" the slits open (1..5), "at" the white bar's slit
 GILL_SET = {"concept": {"s": 2.85, "t": 1.25, "back": 2.4, "along": 0.0, "up": 0.0, "fov": 58.0},
             "close": {"s": 2.69, "t": 1.35, "back": 1.5, "along": 0.35, "up": 0.2, "fov": 55.0},
+            "both": {"eye": (0.3, 1.6), "look": (4.0, 1.3), "fov": 75.0},   # step 7: as mouth_both (dy, h)
             "ref": "D:/prime-game-design/ideas/ship-components/slits-lamps/set_plate.jpg",
             "fps": 30, "size": (1280, 720), "max_mb": 15}
 MID = ([1, 2, 3], 4)
@@ -793,6 +794,17 @@ GILL_VIEWS = [  # name, (s, t, back, along, up) eye, (s, t) look, fov, (open, at
 # step 6: both walls in view from the throat's middle line: (name, eye (dy from the mouth's corners, h over the deck),
 # look (dy, h), fov, pose); dy < 0: |dy| past the walls' hall end into the hall
 GILL_AXIS_VIEWS = [("mouth_both", (0.3, 1.6), (4.0, 1.3), 75.0, MID), ("hall_both", (-1.2, 1.6), (0.0, 1.3), 70.0, MID)]
+# step 7: the corner flats' clad at eye height (1.6 m over the deck), plan points (x, y) of the east one (the flat's
+# middle 3.44, -2.31, facing the hall), side "w" the ship's mirror: from the throat by its hall end, and 2.4 m before it
+# from the hall
+CLAD_VIEWS = [("clad_throat", (0.0, -4.0, 1.6), (3.44, -2.31, 1.4), 60.0, "e"),
+              ("w_clad_throat", (0.0, -4.0, 1.6), (3.44, -2.31, 1.4), 60.0, "w"),
+              ("clad_hall", (1.34, -1.14, 1.6), (3.44, -2.31, 1.4), 60.0, "e"),
+              ("w_clad_hall", (1.34, -1.14, 1.6), (3.44, -2.31, 1.4), 60.0, "w"),
+              # his --play shot 003 (<raw>/ship/v5/play/shots.txt: plan 0.274, -2.18, look [0.906, -0.421, 0.052], the
+              # player's fov 75) and its mirror: the throat's hall end, the end frame and the flat
+              ("play003", (0.274, -2.18, 1.6), (2.992, -3.443, 1.756), 75.0, "e"),
+              ("w_play003", (0.274, -2.18, 1.6), (2.992, -3.443, 1.756), 75.0, "w")]
 GILL_SHEET = [["ref", "concept_mid"], ["w_concept_mid", "mouth_both"]]   # set_plate | east mid; west mid | both
 
 
@@ -817,15 +829,21 @@ def gill_set(layout: dict, out: Path, folder: Path, grid: bool = False, only: li
              _g(gill_view(layout, k["s"], k["t"], 0.05)[0]), k["fov"]],
             ["close", _g(gill_view(layout, c["s"], c["t"], c["back"], c["along"], c["up"])[0]),
              _g(gill_view(layout, c["s"], c["t"], 0.05)[0]), c["fov"]]]
+    x0, y_mouth, y_hall = throat_axis(layout)
+    deck = layout["deck"]["floor_h"]
+    b = a["both"]   # step 7: both walls' rows running, from the mouth up the throat
+    cams.append(["both", _g([x0, y_mouth + b["eye"][0], deck + b["eye"][1]]),
+                 _g([x0, y_mouth + b["look"][0], deck + b["look"][1]]), b["fov"]])
     views = [["concept_wide", _g([-1.7323, -3.6196, 2.43]), _g([2.3527, -4.9625, 2.43]), 52.0, *MID]]
     views += [[name, _g(gill_view(layout, *eye, side=v[0] if v else "e")[0]),
                _g(gill_view(layout, *look, 0.0, side=v[0] if v else "e")[0]), fov, pose[0], pose[1]]
               for name, eye, look, fov, pose, *v in GILL_VIEWS]
-    x0, y_mouth, y_hall = throat_axis(layout)
-    deck = layout["deck"]["floor_h"]
     for name, (de, he), (dl, hl), fov, pose in GILL_AXIS_VIEWS:
         ye, yl = (y_mouth + de if de >= 0 else y_hall - de), (y_mouth + dl if dl >= 0 else y_hall - dl)
         views.append([name, _g([x0, ye, deck + he]), _g([x0, yl, deck + hl]), fov, pose[0], pose[1]])
+    for name, (xe, ye, he), (xl, yl, hl), fov, side in CLAD_VIEWS:
+        sx = -1.0 if side == "w" else 1.0
+        views.append([name, _g([sx * xe, ye, deck + he]), _g([sx * xl, yl, deck + hl]), fov, *MID])
     if only is not None:   # step 6: a views-only run (no demo, no videos): the named views
         cams, views = [], [v for v in views if v[0] in only]
     req, staged = built_request(layout, out)
