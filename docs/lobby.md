@@ -18,6 +18,7 @@ window's Earth and the light on top.
 | `tools/tests/test_lobby_layout.py` | Fast tests of the check |
 | `tools/blender/lobby_earth_tex.py` | Step 3b: NASA's Earth maps scaled to game textures (headless Blender) |
 | `godot/lobby/earth_sky.gdshader` | Step 3b: the night Earth, its atmosphere rim and the stars as a sky shader (the game's file) |
+| `godot/lobby/earth_object.gdshader` | Step 4c: the Earth as an object, a sphere at a finite distance traced per pixel on a back-faced shell (the game's file) |
 | `godot/lobby/window_glass.gdshader` | Step 3b: the window's glass, a faint tint and a grazing reflection (the game's file) |
 | `sources/nasa_earth_lobby.toml` | Step 3b: the Earth's source record (`NASA-PD`, credit "Earth imagery: NASA") |
 
@@ -60,7 +61,7 @@ point under the ship; the views' eyes inside. The ship: its footprint is the con
 (`ship_hull_shape.outline("P")`), each placed pod's bounds and the tail (the `skin_top` piece's bounds aft of the
 outline, as wide as the pods) from art #263's `build_report.json`, moved by the origin; it keeps at least 2 m to every
 spawn and 3 m to every wall, the window and every door's opening, and the floor ring reaches no more than 1 m inside
-its outline. The text plan goes to `<raw>/<raw_dir>/plan/plan.txt` (`raw_dir` in `hall.toml`: step 1 `lobby/hall/v1`, step 2 `lobby/hall/v2`, step 2b `lobby/hall/v3`, step 2c `lobby/hall/v4`, step 3 `lobby/hall/v5`, step 4 `lobby/hall/v6`).
+its outline. The text plan goes to `<raw>/<raw_dir>/plan/plan.txt` (`raw_dir` in `hall.toml`: step 1 `lobby/hall/v1`, step 2 `lobby/hall/v2`, step 2b `lobby/hall/v3`, step 2c `lobby/hall/v4`, step 3 `lobby/hall/v5`, step 4 `lobby/hall/v6`, step 4c `lobby/hall/v7`).
 
 Measured (step 1): the spawns 2.04 m from the ship (the mid pod's end); the ship 6.95 m from the west and east walls,
 5.90 m from the north wall, 12.04 m from the window; D1/D2 14.58 m, D3/D4 8.83 m.
@@ -100,6 +101,8 @@ tools/run.sh lobby --earth-tex                 # step 3b: NASA's maps -> <raw>/<
 tools/run.sh lobby --earth-grid <raw>/lobby/hall/v5/grid    # step 3b: the Earth variants E1-E3
 tools/run.sh lobby --light-grid <raw>/lobby/hall/v6/grid    # step 4: the light moods L1-L3
 tools/run.sh lobby --video <raw>/lobby/hall/v6/walk         # step 4: the eye-height walk-through MP4
+tools/run.sh lobby --distance-grid <raw>/lobby/hall/v7/dgrid    # step 4c: the Earth's distances from three positions
+tools/run.sh lobby --earth-video <raw>/lobby/hall/v7/earth-video  # step 4c: one 15 s MP4 per distance
 ```
 
 `--build`, `--godot` and `--shoot` are heavy runs (Blender, Godot; one at a time): agents start them in the background.
@@ -514,9 +517,52 @@ shadow at step 4's cost.
 2.25, `c_back` 3.20 against step 4's L3 2.89 / 2.08 / 2.96: the 12 new unshadowed spots cost about 0.2 ms); draw calls
 unchanged (776 / 85 / 706).
 
+## Step 4c: the Earth as an object, the closed ship
+
+The engineer (2026-10-30, after the walk-through): the Earth behaved like a picture glued to the eye, small from the
+glass and huge from far back: the sky shader draws it at infinity, so its angular size stays while the window's
+changes. It is now a real sphere at a finite distance south of the window.
+
+- `godot/lobby/earth_object.gdshader`: the planet's centre, radius and a fixed map frame (the spawn's view of it), the
+  same maps, city lights, clouds, rim and dawn as the sky shader; each pixel traces the ray from the camera to the
+  sphere. The mesh is a shell `[earth] shell` (1.35) times the planet's radius drawn by its back faces only
+  (`cull_front`), so it lies far beyond the hall, never cuts its geometry and leaves room for the rim's halo; it
+  writes no depth and blends with premultiplied alpha over the sky. The rim's angular width scales with the planet's
+  angular size (a shell of fixed metres). The camera's far plane goes past the shell (D3: 1903 m).
+- The sky (`draw_earth` 0) keeps the stars at infinity in the view and still draws E2's Earth at infinity in its
+  cubemap pass, so the probes and the floor's reflections show it as before.
+- `[earth] distance` the one switch (default **D2**), `[earth.distances]` the distance from `[earth] eye` (the spawn
+  (0, 1.65, 0)) to the planet's centre along E2's centre; the radius gives E2's 48 deg from there
+  (`lobby_layout.earth_object`). The check refuses a planet within 1 m of the hall's box.
+
+| | distance to the centre | radius | from the glass (z 14.5) | parallax over x -10..10 | GPU ms (glass / back / side) |
+|---|---|---|---|---|---|
+| D1 near | 70 m | 52.0 m | fills the frame, cities as blobs | about 16 deg | 1.71 / 2.67 / 2.45 |
+| D2 middle | 250 m | 185.8 m | a big disc, the limb in the panes | about 4.6 deg | 1.70 / 2.67 / 2.45 |
+| D3 far | 900 m | 668.8 m | close to step 4b's | about 1.3 deg | 1.69 / 2.68 / 2.45 |
+
+The centres: D1 (0, -24.6, 64.9), D2 (0, -92.0, 231.8), D3 (0, -335.5, 834.5). `lobby --distance-grid DIR`: the three
+from `[earth] distance_views` (1.5 m from the glass, backed off to z -2, to the side at x -10), `grid.png`. `lobby
+--earth-video DIR`: per distance `earth_<id>.mp4` along `[earth] video_keys` (1.5 m from the glass at x 0, back to
+z -2, then sideways x -10..10 at z 2, looking at the window): 1280 x 720, 15.2 s, about 5 MB each, GPU median
+0.84 ms. `lobby --shoot` (L3, E2, D2): 23 shots, `corner_nw` 3.23, `spawn_eye` 2.42, `c_back` 3.26 ms against step
+4b's 3.11 / 2.34 / 3.19 in the same session (the jaw pieces and the Earth object, about +0.1 ms).
+
+The closed ship. Art #263's package (`<raw>/ship/v5/export/v4`, its `ship.tscn` with the jaw nose) was measured
+first: `lobby --check` joins every vertex of the shut jaws (`jaw_lower`, `jaw_upper`, `jaw_root` from the package's
+GLBs, `lobby_layout.glb_points`) to the footprint (`closed_footprint`). The pointed nose reaches plan y -12.49, lobby
+z **-29.49**: **0.51 m** from the north wall (the rule's 3 m), in front of the arch (its tip 1.4 m wide); D3 and D4
+6.49 m (were 8.83); W, E 6.95, the window 12.04, D1 and D2 14.58 m and the spawns 2.04 m unchanged; and the ring,
+centred on the longer ship's middle (z -15.76), leaves the floor. So the package instance stays off (`[ship.package]
+use = false`, its numbers printed each check) until the engineer moves the ship or the rule. Step 4b's ramp stand-in
+reached z -29.6, as far. Since the merged ship layout has the jaws instead of the ramp, the lobby places the pieces
+the package was built from (`[ship] pieces_dir` `ship/v5/nose/b4/pieces`, the jaws built shut, no stand-in), so the
+shots and the walk show the closed nose; step 4b's per-piece `ship_emit` keeps working. The walk (`--godot`) passes
+with the jaws' colliders: 22/22, 178.1 m, 5 blocks hold.
+
 ## Open problems
 
-- The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
+- (Step 4b, before the jaw nose) The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
   narrower than the 1.36 m capsule, so the walk crosses its foot. The ship's closed state (ramp up) is art #263's to make.
 - The spawns are 2.04 m from the engine pods (the rule's 2 m): from a spawn the pods fill the view (`spawn_eye`).
 - Concept C drew a two-pod ship; ours has three pods, so C's back view differs there.
@@ -534,3 +580,7 @@ unchanged (776 / 85 / 706).
   collars and corbels show mostly as copper glints.
 - S4's teal is checked only under the review light; the Earth's blue light (step 3) may push it green.
 - The vault's inner panels' bevels still catch small glints at grazing angles (`rib`).
+- Step 4c: the closed jaw nose stands 0.51 m from the north wall in the arch's mouth (rule 3 m); the ship's place or
+  the rule is the engineer's call (moving the ship 2.5 m south puts the pods' ends past the spawns at z 0).
+- Step 4c, D1: from the glass the 4096 x 2048 maps are magnified (cities as soft blobs); walking east the sun (at
+  infinity, 1.5 deg behind the limb at the spawn) comes out from behind the near globe as an orange ball.
