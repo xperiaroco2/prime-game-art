@@ -174,6 +174,11 @@ def main() -> int:
     ap.add_argument("--strap-uv", default="0.4725,0.4935,0.784,0.829",
                     help="the plain denim rectangle the straps' patch copies: u0,u1,v0,v1")
     ap.add_argument("--strap-texels", type=float, default=0.743, help="the strips' UV units per metre along")
+    ap.add_argument("--sneakers", choices=("auto", "on", "off"), default="auto",
+                    help="our code-built canvas sneakers (sneaker_build.py) in place of the fit's Meshy shoes; auto: "
+                         "on with --shell (the dungarees)")
+    ap.add_argument("--toes-cap", default="alien_loco",
+                    help="with the sneakers, the anim set whose [toes_cap] caps every clip's Toes bend ('': none)")
     ap.add_argument("--shell", action="store_true",
                     help="the hybrid route (clothes_top): a shell top of the body, the Meshy garment cut to the "
                          "trousers, bib and back panel, new straps")
@@ -336,6 +341,26 @@ def main() -> int:
                                "followed_nearest_face": followed,
                                "unmatched": len(char.data.vertices) - matched}
         say("body variant", rep["body_variant"])
+    if args.sneakers == "on" or (args.sneakers == "auto" and args.shell):
+        import sneaker_build as SB
+        old = next((o for o in cloth if o.name == "shoes"), None)
+        if old is not None:
+            cloth.remove(old)
+            bpy.data.objects.remove(old)
+        try:
+            new, rep["sneakers"] = SB.shoes(char, arm)
+        except ValueError as e:
+            say("REFUSED the sneakers:", e)
+            return 3
+        cloth.append(new)
+        say("sneakers", {k: rep["sneakers"][k] for k in ("tris_pair", "foot", "clearance", "rim_z_min_max")})
+        if args.toes_cap:
+            cap = SB.toes_cap(args.toes_cap)
+            if cap:
+                rep["toes_cap"] = {"settings": cap, "clips_before_after_deg": SB.cap_toes(cap)}
+                say("toes cap", cap, "largest before / after",
+                    max(v[0] for v in rep["toes_cap"]["clips_before_after_deg"].values()),
+                    max(v[1] for v in rep["toes_cap"]["clips_before_after_deg"].values()))
     garment = next((o for o in cloth if o.name == "garment"), None)
     if args.shell and garment is not None:  # the hybrid route: our own top, bib, back and straps (clothes_top)
         import clothes_top as TOP
