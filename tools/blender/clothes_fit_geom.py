@@ -318,3 +318,14 @@ def ankle_kept(z: float, rim_z: float | None, rim_xy: float, keep: float = 0.04,
     if keep <= 0 or rim_z is None or rim_xy > reach:
         return False
     return rim_z <= z < rim_z + keep
+
+
+def ankle_ride(z: float, rim_z: float, below: float = 0.005, band: float = 0.03) -> float:
+    """E1b: the share of an ankle vertex's LowerLeg weight that goes to its Foot, so the skin under the shoe's collar
+    rides with the rigid shoe instead of the shin (in Idle and Crouch the shin's tilt pushed it out through the
+    collar: the teal shards): all of it from below m under the rim (rim_z) down, none from band m over that up,
+    smooth between."""
+    if band <= 0:
+        raise ValueError(f"band {band} must be positive")
+    t = min(1.0, max(0.0, (z - (rim_z - below)) / band))
+    return 1.0 - t * t * (3.0 - 2.0 * t)

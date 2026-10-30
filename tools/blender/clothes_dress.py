@@ -44,6 +44,7 @@ import math
 import sys
 from pathlib import Path
 
+import bmesh
 import bpy
 import numpy as np
 from mathutils import Vector
@@ -238,6 +239,12 @@ def main() -> int:
     ap.add_argument("--ankle-keep", type=float, default=0.04,
                     help="the ankle's skin up to this far over the shoe opening's rim is never cut by the cover rays "
                          "(E1b, the collar's shards; 0: off)")
+    ap.add_argument("--ankle-ride", default="0.005,0.03",
+                    help="the ankle skin's LowerLeg weight goes to the Foot from this far under the shoe opening's rim "
+                         "down, easing out over the band above (m: below,band; E1b; 0,0: off)")
+    ap.add_argument("--stray", type=float, default=0.08,
+                    help="garment vertices farther than this from the body go with their faces (the fit's strays: "
+                         "E1b's spikes at the hips; m, 0: off)")
     ap.add_argument("--cuff-x", type=float, default=0.625, help="the cuffs' plane |x| (T-pose, m)")
     ap.add_argument("--seam-x", type=float, default=0.165, help="the sleeves' seam plane |x| (m)")
     ap.add_argument("--arm-z", type=float, default=1.18, help="the sleeves start above this height (m)")
@@ -386,6 +393,20 @@ def main() -> int:
                     max(v[0] for v in rep["toes_cap"]["clips_before_after_deg"].values()),
                     max(v[1] for v in rep["toes_cap"]["clips_before_after_deg"].values()))
     garment = next((o for o in cloth if o.name == "garment"), None)
+    if args.stray > 0 and garment is not None:  # E1b: the fit's stray vertices (spikes out of the hips)
+        btree = BVHTree.FromObject(char, bpy.context.evaluated_depsgraph_get())
+        gm = garment.matrix_world
+        bad = [v.index for v in garment.data.vertices if btree.find_nearest(gm @ v.co, args.stray)[0] is None]
+        if bad:
+            bm = bmesh.new()
+            bm.from_mesh(garment.data)
+            bm.verts.ensure_lookup_table()
+            bmesh.ops.delete(bm, geom=[bm.verts[i] for i in bad], context="VERTS")
+            bm.to_mesh(garment.data)
+            bm.free()
+            garment.data.update()
+        rep["garment_stray_verts_removed"] = len(bad)
+        say("garment strays removed", len(bad))
     if args.shell and garment is not None:  # the hybrid route: our own top, bib, back and straps (clothes_top)
         import clothes_top as TOP
         try:
@@ -404,7 +425,6 @@ def main() -> int:
     mw = char.matrix_world
     nmat = mw.to_3x3().inverted().transposed()
     # the cloth's real openings (collar, cuffs, hems, the shoes' tops): no cut reaches past them
-    import bmesh
     import clothes_open as O
     edge, rep["openings"] = O.opening_points(cloth, arm)
     say("openings", len(edge), "points:", rep["openings"])
@@ -535,6 +555,28 @@ def main() -> int:
     me.update()
     rep["covered_vertices"] = sum(cov)
     rep["faces_removed"] = sum(gone)
+    below, band = (float(v) for v in args.ankle_ride.split(","))
+    if band > 0 and rim_pts:  # E1b: the skin under the collar rides with the shoe (its Foot), not the shin
+        rode = 0
+        for v in me.vertices:
+            p = mw @ v.co
+            if p.z > 0.3:
+                continue
+            side = "Left" if p.x > 0 else "Right"
+            _c, j, dxy = rim_kd.find((p.x, p.y, 0.0))
+            gl, gf = char.vertex_groups.get(side + "LowerLeg"), char.vertex_groups.get(side + "Foot")
+            if dxy > 0.06 or gl is None or gf is None:
+                continue
+            wl = next((g.weight for g in v.groups if g.group == gl.index), 0.0)
+            share = F.ankle_ride(p.z, rim_pts[j].z, below, band)
+            if wl <= 0 or share <= 0:
+                continue
+            wf = next((g.weight for g in v.groups if g.group == gf.index), 0.0)
+            gf.add([v.index], wf + share * wl, "REPLACE")
+            gl.add([v.index], wl * (1 - share), "REPLACE")
+            rode += 1
+        rep["ankle_rides_with_the_shoe"] = rode
+        say("ankle verts riding with the shoe", rode)
     if stree is not None and rim_pts:  # E1b, the collar probe: kept skin under the rim outside the shoe's surface
         outs = []
         for v in me.vertices:

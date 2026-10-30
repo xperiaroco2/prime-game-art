@@ -282,5 +282,17 @@ class AnkleKept(unittest.TestCase):  # E1b: the collar's shards
         self.assertFalse(F.ankle_kept(0.10, 0.09, 0.02, keep=0.0))
 
 
+class AnkleRide(unittest.TestCase):  # E1b: the skin under the collar rides with the shoe
+    def test_under_the_rim_all_over_the_band_none(self):
+        self.assertEqual(F.ankle_ride(0.08, 0.09), 1.0)
+        self.assertEqual(F.ankle_ride(0.085, 0.09), 1.0)
+        self.assertEqual(F.ankle_ride(0.115, 0.09), 0.0)
+        self.assertAlmostEqual(F.ankle_ride(0.1, 0.09), 0.5)
+
+    def test_no_band_refused(self):
+        with self.assertRaises(ValueError):
+            F.ankle_ride(0.1, 0.09, band=0.0)
+
+
 if __name__ == "__main__":
     unittest.main()
