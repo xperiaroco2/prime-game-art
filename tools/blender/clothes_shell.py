@@ -416,3 +416,29 @@ def shirt_texel(r: float, g: float, b: float, lum: float = 0.55, sat: float = 0.
     panels' edges): light (luminance over lum) and grey (saturation under sat), not denim, not orange stitching."""
     hi, lo = max(r, g, b), min(r, g, b)
     return 0.2126 * r + 0.7152 * g + 0.0722 * b > lum and hi > 0 and (hi - lo) / hi < sat
+
+
+# E1b: the planes' defaults (clothes_dress's flags) were set on the old body A, whose bones these are (A11 keeps them)
+REF_CHEST_Z, REF_NECK_Z = 1.028, 1.339
+REF_UPPER_ARM = (0.152, 0.065, 1.277)
+REF_NECK_Y = 0.041
+
+
+def body_planes(chest_z: float, neck_z: float, neck_y: float, upper_arm: tuple[float, float, float], hand_x: float,
+                cuff_back: float = 0.035, waist: float = 1.0, bib: tuple[float, float] = (0.105, 1.195),
+                back: tuple[float, float, float, float] = (0.03, 1.12, 0.12, 0.03),
+                neck: tuple[float, float, float, float] = (-0.06, 1.335, 0.09, 1.365), seam_x: float = 0.165,
+                arm_z: float = 1.18) -> dict:
+    """The top's and the garment's cut planes from a body's own bones (E1b, art #196): heights mapped linearly from
+    the reference torso (Chest to Neck) to this body's, the sleeves' seam moved with the upper arm's root, the arms'
+    axis through the upper arm's head, and the cuffs cuff_back m in from the hand bone's head (the wrist), so the
+    sleeve never reaches the hand or the thumb's root. The reference body gets the defaults back but the cuff."""
+    if neck_z <= chest_z:
+        raise ValueError(f"neck {neck_z} not above chest {chest_z}")
+    k = (neck_z - chest_z) / (REF_NECK_Z - REF_CHEST_Z)
+    zm = lambda z: chest_z + (z - REF_CHEST_Z) * k
+    dy = neck_y - REF_NECK_Y
+    return {"cuff_x": hand_x - cuff_back, "seam_x": seam_x + upper_arm[0] - REF_UPPER_ARM[0], "arm_z": zm(arm_z),
+            "arm_axis": (upper_arm[1], upper_arm[2]), "waist": zm(waist), "bib": (bib[0], zm(bib[1])),
+            "back": (back[0], zm(back[1]), back[2], back[3]),
+            "neck": (neck[0] + dy, zm(neck[1]), neck[2] + dy, zm(neck[3])), "z_scale": k}

@@ -230,6 +230,14 @@ def main() -> int:
     ap.add_argument("--shell-ao-samples", type=int, default=24)
     ap.add_argument("--stripe", default="0.032,0.5",
                     help="the stripes' period (m) and navy share (the chameleon's; the axolotl's 0.026,0.5)")
+    ap.add_argument("--planes", choices=("fixed", "bones"), default="fixed",
+                    help="bones: the cuff, seam, arm, neck, waist, bib and back planes from the character's own bones "
+                         "(clothes_shell.body_planes; E1b, D3's bodies), over the flags below; fixed: the flags")
+    ap.add_argument("--cuff-back", type=float, default=0.035, help="with --planes bones: the cuffs this far in from "
+                    "the hand bone's head (m)")
+    ap.add_argument("--ankle-keep", type=float, default=0.04,
+                    help="the ankle's skin up to this far over the shoe opening's rim is never cut by the cover rays "
+                         "(E1b, the collar's shards; 0: off)")
     ap.add_argument("--cuff-x", type=float, default=0.625, help="the cuffs' plane |x| (T-pose, m)")
     ap.add_argument("--seam-x", type=float, default=0.165, help="the sleeves' seam plane |x| (m)")
     ap.add_argument("--arm-z", type=float, default=1.18, help="the sleeves start above this height (m)")
@@ -341,6 +349,22 @@ def main() -> int:
                                "followed_nearest_face": followed,
                                "unmatched": len(char.data.vertices) - matched}
         say("body variant", rep["body_variant"])
+    if args.planes == "bones":
+        bw = lambda n: arm.matrix_world @ arm.data.bones[n].head_local
+        try:
+            ua, hand = bw("LeftUpperArm"), bw("LeftHand")
+            pl = H.body_planes(bw("Chest").z, bw("Neck").z, bw("Neck").y, tuple(ua), hand.x, args.cuff_back)
+        except KeyError as e:
+            say("REFUSED --planes bones: no bone", e)
+            return 3
+        args.cuff_x, args.seam_x, args.arm_z = pl["cuff_x"], pl["seam_x"], pl["arm_z"]
+        args.waist = pl["waist"]
+        args.arm_axis = ",".join(f"{v:.4f}" for v in pl["arm_axis"])
+        args.bib = ",".join(f"{v:.4f}" for v in pl["bib"])
+        args.back = ",".join(f"{v:.4f}" for v in pl["back"])
+        args.neck = ",".join(f"{v:.4f}" for v in pl["neck"])
+        rep["planes"] = {k: (round(v, 4) if isinstance(v, float) else [round(x, 4) for x in v]) for k, v in pl.items()}
+        say("planes from the bones", rep["planes"])
     if args.sneakers == "on" or (args.sneakers == "auto" and args.shell):
         import sneaker_build as SB
         old = next((o for o in cloth if o.name == "shoes"), None)
@@ -413,6 +437,8 @@ def main() -> int:
     rep["shoe_top_z"] = {("left" if k > 0 else "right"): (None if t is None else round(t, 4)) for k, t in top_z.items()}
     up = Vector((0.0, 0.0, 1.0))
     cov, sure, outside, in_shoe, by_rim, by_wall, n_under = [], [], 0, 0, 0, 0, 0
+    legs = ("Foot", "Toes", "LowerLeg")
+    n_ankle = 0
     thru, low_foot = [False] * len(me.vertices), [False] * len(me.vertices)
     for v in me.vertices:
         p = mw @ v.co
@@ -440,6 +466,13 @@ def main() -> int:
             by_rim += not F.in_shoe(foot, p.z, top, under=under, toes_weight=toes, shoe=stree is not None)
             by_wall += through
             continue
+        if rim_pts and p.z < 0.3 and any(g.weight > 0 and gname.get(g.group, "").endswith(legs) for g in v.groups):
+            _c, j, dxy = rim_kd.find((p.x, p.y, 0.0))
+            if rim_pts[j].x * p.x > 0 and F.ankle_kept(p.z, rim_pts[j].z, dxy, args.ankle_keep):
+                cov.append(False)
+                sure.append(False)
+                n_ankle += 1
+                continue
         top_bone = gname.get(max(v.groups, key=lambda g: g.weight).group, "") if v.groups else ""
         loc, nor, _fi, _d = tree.find_nearest(p, args.near)
         if loc is not None and F.under_cloth((p - loc).dot(nor), H.opening_dist(ekd.find(p)[2]), top_bone, away=args.away,
@@ -458,6 +491,7 @@ def main() -> int:
                 outside += hit
         cov.append(hit)
     rep["covered_from_outside"] = outside
+    rep["ankle_kept_over_the_rim"] = n_ankle
     rep["covered_in_shoes"] = in_shoe
     rep["covered_in_shoes_by_rim"] = by_rim
     rep["covered_through_shoe_walls"] = by_wall
@@ -501,6 +535,21 @@ def main() -> int:
     me.update()
     rep["covered_vertices"] = sum(cov)
     rep["faces_removed"] = sum(gone)
+    if stree is not None and rim_pts:  # E1b, the collar probe: kept skin under the rim outside the shoe's surface
+        outs = []
+        for v in me.vertices:
+            p = mw @ v.co
+            if p.z > 0.3:
+                continue
+            _c, j, dxy = rim_kd.find((p.x, p.y, 0.0))
+            if dxy > 0.06 or rim_pts[j].x * p.x <= 0 or not (rim_pts[j].z - 0.02 <= p.z < rim_pts[j].z):
+                continue
+            sloc, snor, _sf, _sd = stree.find_nearest(p)
+            if sloc is not None and (p - sloc).dot(snor) > 0.001:
+                outs.append((p - sloc).length)
+        rep["collar_probe"] = {"kept_under_rim_outside_shoe": len(outs),
+                               "max_mm": round(1000 * max(outs), 1) if outs else 0.0}
+        say("collar probe", rep["collar_probe"])
     rep["tris"] = {"body": tris(char), **{o.name: tris(o) for o in cloth}}
     rep["tris"]["cloth"] = sum(tris(o) for o in cloth)
     rep["tris"]["total"] = rep["tris"]["body"] + rep["tris"]["cloth"]

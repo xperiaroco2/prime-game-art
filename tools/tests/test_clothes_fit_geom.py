@@ -267,5 +267,20 @@ class BoundaryVerts(unittest.TestCase):
         self.assertEqual(F.boundary_verts(tet[:3]), {0, 2, 3})  # the missing face's rim
 
 
+class AnkleKept(unittest.TestCase):  # E1b: the collar's shards
+    def test_open_skin_just_over_the_rim_is_kept(self):
+        self.assertTrue(F.ankle_kept(0.10, 0.09, 0.02))
+        self.assertTrue(F.ankle_kept(0.09, 0.09, 0.02))  # on the rim itself
+
+    def test_under_the_rim_or_far_over_it_is_left_to_the_other_rules(self):
+        self.assertFalse(F.ankle_kept(0.08, 0.09, 0.02))
+        self.assertFalse(F.ankle_kept(0.14, 0.09, 0.02))
+
+    def test_no_rim_near_or_off(self):
+        self.assertFalse(F.ankle_kept(0.10, None, 0.02))
+        self.assertFalse(F.ankle_kept(0.10, 0.09, 0.08))
+        self.assertFalse(F.ankle_kept(0.10, 0.09, 0.02, keep=0.0))
+
+
 if __name__ == "__main__":
     unittest.main()

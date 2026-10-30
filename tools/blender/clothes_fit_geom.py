@@ -308,3 +308,13 @@ def boundary_verts(faces: list[list[int]]) -> set[int]:
             e = tuple(sorted((f[k], f[(k + 1) % len(f)])))
             count[e] = count.get(e, 0) + 1
     return {v for e, n in count.items() if n == 1 for v in e}
+
+
+def ankle_kept(z: float, rim_z: float | None, rim_xy: float, keep: float = 0.04, reach: float = 0.06) -> bool:
+    """E1b, the shoe collar's shards: an ankle vertex (any Foot, Toes or LowerLeg weight) between the shoe opening's
+    nearest rim point across the floor (rim_z, rim_xy m away) and keep m above it is open skin between the shoe and
+    the trousers' hem, never cut by the cover rays (their tilted rays meet the hem above and the shoe below, and cut
+    holes into the ankle over the collar); None or a rim farther than reach: not by a shoe."""
+    if keep <= 0 or rim_z is None or rim_xy > reach:
+        return False
+    return rim_z <= z < rim_z + keep

@@ -326,5 +326,31 @@ class EdgePeel(unittest.TestCase):
         self.assertTrue(on)
 
 
+class BodyPlanes(unittest.TestCase):  # E1b: the cut planes from a body's own bones
+    def test_the_reference_body_gets_the_defaults_but_the_cuff(self):
+        pl = H.body_planes(1.028, 1.339, 0.041, (0.152, 0.065, 1.277), 0.644)
+        self.assertAlmostEqual(pl["cuff_x"], 0.609)
+        self.assertAlmostEqual(pl["seam_x"], 0.165)
+        self.assertAlmostEqual(pl["arm_z"], 1.18)
+        self.assertAlmostEqual(pl["waist"], 1.0)
+        self.assertEqual(pl["arm_axis"], (0.065, 1.277))
+        for a, b in zip(pl["neck"], (-0.06, 1.335, 0.09, 1.365)):
+            self.assertAlmostEqual(a, b)
+
+    def test_a_smaller_body_moves_every_plane_with_its_bones(self):  # D3's B13
+        pl = H.body_planes(0.980, 1.274, 0.041, (0.129, 0.041, 1.216), 0.598)
+        self.assertAlmostEqual(pl["cuff_x"], 0.563)
+        self.assertAlmostEqual(pl["seam_x"], 0.142)
+        self.assertAlmostEqual(pl["z_scale"], 0.294 / 0.311)
+        self.assertAlmostEqual(pl["waist"], 0.980 - 0.028 * 0.294 / 0.311)
+        self.assertLess(pl["arm_z"], 1.216)  # the sleeve's seam still under the arm's axis
+        self.assertLess(pl["bib"][1], pl["neck"][1])
+        self.assertEqual(pl["arm_axis"], (0.041, 1.216))
+
+    def test_a_neck_under_the_chest_is_refused(self):
+        with self.assertRaises(ValueError):
+            H.body_planes(1.3, 1.2, 0.04, (0.15, 0.06, 1.27), 0.64)
+
+
 if __name__ == "__main__":
     unittest.main()
