@@ -309,31 +309,7 @@ class RimPlane(unittest.TestCase):  # E1c: the collar's clean cut
             F.rim_plane([(0, 0, 0), (1, 0, 0)])
 
 
-class InOpening(unittest.TestCase):  # E1d: the ankle's column and the vamp
-    ELLIPSE = [(0.04 * math.cos(a / 16 * 2 * math.pi), 0.06 * math.sin(a / 16 * 2 * math.pi)) for a in range(16)]
-
-    def test_radius_at_a_rim_point_and_between(self):
-        self.assertAlmostEqual(F.rim_radius((0, 0), self.ELLIPSE, 0.0), 0.04)
-        self.assertAlmostEqual(F.rim_radius((0, 0), self.ELLIPSE, math.pi / 2), 0.06)
-        r = F.rim_radius((0, 0), self.ELLIPSE, math.pi / 16)
-        self.assertTrue(0.04 < r < 0.06)
-
-    def test_wraps_round_pi(self):
-        self.assertAlmostEqual(F.rim_radius((0, 0), self.ELLIPSE, math.pi), 0.04)
-        self.assertAlmostEqual(F.rim_radius((0, 0), self.ELLIPSE, -math.pi), 0.04)
-
-    def test_inside_outside_and_grown(self):
-        self.assertTrue(F.in_opening((0, 0), self.ELLIPSE, 0.0, 0.055))
-        self.assertFalse(F.in_opening((0, 0), self.ELLIPSE, 0.045, 0.0))
-        self.assertTrue(F.in_opening((0, 0), self.ELLIPSE, 0.045, 0.0, grow=0.01))
-        self.assertTrue(F.in_opening((1, 2), [(x + 1, y + 2) for x, y in self.ELLIPSE], 1.0, 2.05))
-
-    def test_needs_three_points(self):
-        with self.assertRaises(ValueError):
-            F.rim_radius((0, 0), [(0.1, 0), (0, 0.1)], 0.0)
-
-
-class CollarClamp(unittest.TestCase):  # E1d: the ankle tucked inside the opening
+class CollarClamp(unittest.TestCase):  # E1d, E1e: the ankle shrunk inside the shoe's inner wall
     def test_under_the_rim_inside_the_outline(self):
         self.assertAlmostEqual(F.collar_clamp(0.06, 0.05, 0.07, 0.08), 0.047)
 
@@ -350,21 +326,32 @@ class CollarClamp(unittest.TestCase):  # E1d: the ankle tucked inside the openin
             F.collar_clamp(0.06, 0.05, 0.07, 0.08, band=0.0)
 
 
-class PullIn(unittest.TestCase):  # E1c: the skin outside the shoe's outer shell
-    def test_inside_the_innermost_wall_by_clear(self):
-        self.assertAlmostEqual(F.pull_in(0.05, [0.004, 0.008], clear=0.003), 0.039)
-
-    def test_no_wall_on_the_way_in_keeps_the_radius(self):
-        self.assertEqual(F.pull_in(0.05, []), 0.05)
-        self.assertEqual(F.pull_in(0.05, [0.06]), 0.05)
-
-    def test_never_under_least(self):
-        self.assertAlmostEqual(F.pull_in(0.04, [0.035], clear=0.003, least=0.5), 0.02)
-
+class OutsideShell(unittest.TestCase):  # E1c: the collar's outer-shell probe
     def test_outside_only_with_no_hit_out(self):
         self.assertTrue(F.outside_shell(0))
         self.assertFalse(F.outside_shell(1))
         self.assertFalse(F.outside_shell(2))
+
+
+class MixRows(unittest.TestCase):  # E1e: the ankle skin takes the shoe's weights
+    def test_all_theirs_at_one(self):
+        r = F.mix_rows({"LeftLowerLeg": 1.0}, {"LeftFoot": 1.0}, 1.0)
+        self.assertEqual(r, {"LeftFoot": 1.0})
+
+    def test_own_at_zero(self):
+        r = F.mix_rows({"LeftLowerLeg": 0.7, "LeftFoot": 0.3}, {"LeftFoot": 1.0}, 0.0)
+        self.assertAlmostEqual(r["LeftLowerLeg"], 0.7)
+        self.assertAlmostEqual(r["LeftFoot"], 0.3)
+
+    def test_blend_sums_to_one_and_limits(self):
+        r = F.mix_rows({"a": 0.5, "b": 0.3, "c": 0.2}, {"d": 0.6, "e": 0.4}, 0.5)
+        self.assertEqual(len(r), 4)
+        self.assertAlmostEqual(sum(r.values()), 1.0)
+        self.assertNotIn("c", r)
+
+    def test_share_in_range(self):
+        with self.assertRaises(ValueError):
+            F.mix_rows({"a": 1.0}, {"b": 1.0}, 1.5)
 
 
 if __name__ == "__main__":

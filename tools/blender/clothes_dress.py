@@ -246,22 +246,17 @@ def main() -> int:
                     help="the ankle skin's LowerLeg weight goes to the Foot from this far under the shoe opening's rim "
                          "down, easing out over the band above (m: below,band; E1b; 0,0: off)")
     ap.add_argument("--collar-cut", type=float, default=0.012,
-                    help="the ankle skin is bisected on the plane through the shoe opening's rim, this far under its "
-                         "lowest point, the skin between kept and pulled inside the shoe's outer shell (E1c, the "
-                         "collar's shards; m, 0: off)")
-    ap.add_argument("--collar-over", type=float, default=0.015,
-                    help="the ankle's faces come back up to this far over the rim's top where no shoe lies over them "
-                         "(E1c, the notch over the collar; m)")
+                    help="E1e: each foot's skin is bisected on one plane through the shoe opening's rim, this far "
+                         "under its lowest point; everything under it goes, no face over it is deleted (m, 0: off)")
     ap.add_argument("--collar-keep", type=float, default=0.06,
-                    help="the ankle's open column reaches this far over the rim's top (E1d; m)")
-    ap.add_argument("--collar-grow", type=float, default=0.01,
-                    help="the opening's outline across the floor grown by this much for the ankle's column (E1d; m)")
-    ap.add_argument("--collar-vamp", type=float, default=0.03,
-                    help="foot skin outside the opening with the shoe this close under it goes (E1d; m)")
-    ap.add_argument("--collar-band", type=float, default=0.01,
-                    help="the ankle's tuck inside the opening eases out over this much over the rim (E1d; m)")
+                    help="E1e: the plane rule owns the leg's and foot's skin up to this far over the rim's top (m)")
+    ap.add_argument("--collar-band", type=float, default=0.015,
+                    help="E1e: the skin's shrink toward the leg's axis eases out over this much over the rim (m)")
     ap.add_argument("--collar-clear", type=float, default=0.003,
-                    help="the pulled-in ankle skin stays this far inside the shoe's innermost wall (m)")
+                    help="E1e: the shrunk skin stays this far inside the shoe's inner wall (m)")
+    ap.add_argument("--collar-weights", type=float, default=0.03,
+                    help="E1e: the skin takes its nearest shoe vertex's weights up to the rim, blended back to its "
+                         "own over this much over the rim (m; 0: off)")
     ap.add_argument("--stray", type=float, default=0.08,
                     help="garment vertices farther than this from the body go with their faces (the fit's strays: "
                          "E1b's spikes at the hips; m, 0: off)")
@@ -589,41 +584,34 @@ def main() -> int:
             reach = max((q - ctr).xy.length for q in side_rim) + 0.03
             collar[sgn] = {"plane": F.rim_plane([tuple(q) for q in side_rim], args.collar_cut), "ctr": ctr,
                            "reach": reach, "top": max(q.z for q in side_rim), "low": min(q.z for q in side_rim)}
+        # E1e: the plane alone decides the leg's and foot's skin near each shoe (up to collar_keep over the rim's
+        # top, within the rim's reach): a face goes only when it lies wholly under the plane; every face with a
+        # vertex over it stays (the bisect below cuts the crossing ones into one clean loop). E1b to E1d's per-face
+        # deletes near the rim (cover rays, in-shoe, through-wall, column, vamp) each left a sawtooth at the collar.
         wco = [mw @ v.co for v in me.vertices]
-        # E1d: the ankle's column, inside the opening's outline across the floor (grown by collar_grow), from the
-        # plane up collar_keep over the rim's top, is open skin: every face of it with a vertex over the plane comes
-        # back (the bisect below cuts the crossing ones on the plane: no holes at the ring, none above it);
-        # the foot's skin outside the outline, under the rim's height and with the shoe over it or just under it, is
-        # the instep and toes under the vamp: it goes (the teal patches through the vamp)
-        for sgn, c in collar.items():
-            c["poly"] = [(q.x, q.y) for q in main_rim if q.x * sgn > 0]
-            c["xy"] = (c["ctr"].x, c["ctr"].y)
-        col, over, vamp = [False] * len(wco), [False] * len(wco), [False] * len(wco)
+        region, over = [False] * len(wco), [False] * len(wco)
         for k, p in enumerate(wco):
             c = collar.get(1.0 if p.x > 0 else -1.0)
-            if c is None or p.z > 0.3:
+            if c is None or p.z > c["top"] + args.collar_keep or (p.xy - c["ctr"].xy).length > c["reach"]:
                 continue
-            near = F.in_opening(c["xy"], c["poly"], p.x, p.y, args.collar_grow)
-            col[k] = near and p.z < c["top"] + args.collar_keep
+            v = me.vertices[k]
+            if not any(g.weight > 0 and gname.get(g.group, "").endswith(legs) for g in v.groups):
+                continue
+            region[k] = True
             over[k] = p.z >= F.plane_z(c["plane"], p.x, p.y)
-            if near or footw[k] < 0.3:
+        back, under = 0, 0
+        for fi, f in enumerate(faces):
+            if not all(region[k] for k in f):
                 continue
-            _c, j, _dxy = rim_kd.find((p.x, p.y, 0.0))
-            if p.z < rim_pts[j].z and (stree.ray_cast(p + up * 1e-4, up, 0.15)[0] is not None
-                                       or stree.ray_cast(p - up * 1e-4, -up, args.collar_vamp)[0] is not None):
-                vamp[k] = True
-        back = [fi for fi, (g, f) in enumerate(zip(gone, faces))
-                if g and all(col[k] for k in f) and any(over[k] for k in f) and not any(vamp[k] for k in f)]
-        for fi in back:
-            gone[fi] = False
-        vamp_f = [fi for fi, (g, f) in enumerate(zip(gone, faces)) if not g and any(vamp[k] for k in f)]
-        for fi in vamp_f:
-            gone[fi] = True
+            keep = any(over[k] for k in f)
+            back += gone[fi] and keep
+            under += (not gone[fi]) and not keep
+            gone[fi] = not keep
         rep["collar"] = {("left" if k > 0 else "right"): {"plane": [round(x, 4) for x in c["plane"]],
                                                           "rim_low": round(c["low"], 4), "rim_top": round(c["top"], 4),
                                                           "reach": round(c["reach"], 4)} for k, c in collar.items()}
-        rep["collar"]["faces_back"] = len(back)
-        rep["collar"]["vamp_faces_removed"] = len(vamp_f)
+        rep["collar"]["faces_back"] = back
+        rep["collar"]["faces_under_plane_removed"] = under
     rep["faces_removed_through_shoe_walls"] = sum(shoe_faces)
     # the removed part, kept in the blend for the proof's gap check (C1k): its own object with the body's weights and
     # armature modifier, not parented to the armature, so the GLB leaves it out (alien_loco._export)
@@ -675,69 +663,104 @@ def main() -> int:
         bm.to_mesh(me)
         bm.free()
         me.update()
-        # the skin left between the plane and the rim, outside the shoe's outer shell (no shoe face on its way out
-        # across the floor), pulled in: inside the shoe's innermost wall on its way back to the rim's centre
-        pulled, worst = 0, 0.0
+        # E1e: the skin between the plane and the rim (easing out collar_band over it) is shrunk toward the leg's
+        # own axis (the LowerLeg bone's line, extended down) until it lies collar_clear inside the shoe's inner
+        # wall: the wall is found by a ray from the axis out toward the vertex at its own height (over the rim: at
+        # the rim's height, so the shrink eases out with no step)
+        axes = {}
+        for sgn, side in ((1.0, "Left"), (-1.0, "Right")):
+            bone = arm.data.bones.get(side + "LowerLeg")
+            if bone is not None and sgn in collar:
+                axes[sgn] = (arm.matrix_world @ bone.head_local, arm.matrix_world @ bone.tail_local)
+
+        def axis_at(sgn: float, z: float) -> Vector:
+            h, t = axes[sgn]
+            k = (z - h.z) / (t.z - h.z) if abs(t.z - h.z) > 1e-6 else 0.0
+            return h + (t - h) * k
+
+        def wall(o: Vector, d: Vector, most: float) -> float | None:
+            loc, _n, _f, t = stree.ray_cast(o, d, most)
+            return None if loc is None else t
+
+        shrunk, most_mm = 0, 0.0
+        new_co = {}
         for v in me.vertices:
             p = mw @ v.co
-            c = collar.get(1.0 if p.x > 0 else -1.0)
-            if c is None or p.z >= c["top"] or (p.xy - c["ctr"].xy).length >= c["reach"]:
+            sgn = 1.0 if p.x > 0 else -1.0
+            c = collar.get(sgn)
+            if c is None or sgn not in axes or p.z > c["top"] + args.collar_keep:
                 continue
-            d = Vector((p.x - c["ctr"].x, p.y - c["ctr"].y, 0.0))
+            _c, j, _dxy = rim_kd.find((p.x, p.y, 0.0))
+            rz = rim_pts[j].z
+            # skin with the shoe over it or just under it (the instep under the vamp or poking through it, beside
+            # the throat's low slot) counts as under the rim wherever its nearest rim point lies
+            if (stree.ray_cast(p + up * 1e-4, up, 0.1)[0] is not None
+                    or stree.ray_cast(p - up * 1e-4, -up, 0.012)[0] is not None):
+                rz = max(rz, p.z + 0.002)
+            if p.z > rz + args.collar_band or (p.xy - c["ctr"].xy).length > c["reach"]:
+                continue
+            ax = axis_at(sgn, p.z)
+            d = Vector((p.x - ax.x, p.y - ax.y, 0.0))
             r = d.length
             if r < 1e-5:
                 continue
             d /= r
-            if not F.outside_shell(int(stree.ray_cast(p + d * 1e-4, d, 0.1)[0] is not None)):
+            h = min(p.z, rz - 0.002)
+            o = Vector((ax.x, ax.y, h)) if h == p.z else axis_at(sgn, h)
+            t = wall(Vector((o.x, o.y, h)), d, r + 0.05)
+            if t is None:
                 continue
-            nr = min((q for q in main_rim if q.x * p.x > 0), key=lambda q: (q.xy - p.xy).length)
-            if p.z >= nr.z:
-                continue
-            ts, q, t0 = [], p - d * 1e-4, 1e-4
-            for _ in range(6):
-                loc, _n, _f, t = stree.ray_cast(q, -d, r - t0)
-                if loc is None:
-                    break
-                t0 += t
-                ts.append(t0)
-                q = loc - d * 1e-4
-                t0 += 1e-4
-            r2 = F.pull_in(r, ts, args.collar_clear)
-            if r2 < r:
-                v.co = inv @ Vector((c["ctr"].x + d.x * r2, c["ctr"].y + d.y * r2, p.z))
-                pulled += 1
-                worst = max(worst, r - r2)
-        # E1d: then every kept vertex under its nearest rim point (easing out collar_band over it) is tucked inside
-        # the opening's outline across the floor, collar_clear in (the teeth over the collar where the ankle is
-        # wider than the opening; the ankle ride keeps them with the shoe in the clips)
-        tucked, most = 0, 0.0
-        for v in me.vertices:
-            p = mw @ v.co
-            c = collar.get(1.0 if p.x > 0 else -1.0)
-            if c is None or p.z > c["top"] + args.collar_band or p.z < F.plane_z(c["plane"], p.x, p.y) - 0.005:
-                continue
-            dx, dy = p.x - c["xy"][0], p.y - c["xy"][1]
-            r = math.hypot(dx, dy)
-            if r < 1e-5:
-                continue
-            _c, j, _dxy = rim_kd.find((p.x, p.y, 0.0))
-            r2 = F.collar_clamp(r, F.rim_radius(c["xy"], c["poly"], math.atan2(dy, dx)), p.z, rim_pts[j].z,
-                                args.collar_clear, args.collar_band)
+            r2 = F.collar_clamp(r, t, p.z, rz, args.collar_clear, args.collar_band)
             if r2 < r - 1e-6:
-                v.co = inv @ Vector((c["xy"][0] + dx * r2 / r, c["xy"][1] + dy * r2 / r, p.z))
-                tucked += 1
-                most = max(most, r - r2)
+                new_co[v.index] = inv @ Vector((ax.x + d.x * r2, ax.y + d.y * r2, p.z))
+                shrunk += 1
+                most_mm = max(most_mm, 1000 * (r - r2))
+        for i, q in new_co.items():
+            me.vertices[i].co = q
         me.update()
-        rep["collar"]["tucked_in"] = tucked
-        rep["collar"]["tucked_most_mm"] = round(1000 * most, 1)
+        rep["collar"]["shrunk"] = shrunk
+        rep["collar"]["shrunk_most_mm"] = round(most_mm, 1)
         rep["collar"]["faces_cut"] = cut
-        rep["collar"]["pulled_in"] = pulled
-        rep["collar"]["pulled_most_mm"] = round(1000 * worst, 1)
+        # E1e: the same skin moves as one with the shoe: up to the rim it takes its nearest shoe vertex's weights,
+        # blended back to its own over collar_weights over the rim
+        took = 0
+        if args.collar_weights > 0:
+            sg = {g.index: g.name for g in shoe.vertex_groups}
+            skd = KDTree(len(shoe.data.vertices))
+            for sv0 in shoe.data.vertices:
+                skd.insert(shoe.matrix_world @ sv0.co, sv0.index)
+            skd.balance()
+            vg = {g.name: g for g in char.vertex_groups}
+            for v in me.vertices:
+                p = mw @ v.co
+                c = collar.get(1.0 if p.x > 0 else -1.0)
+                if c is None or p.z > c["top"] + args.collar_weights or (p.xy - c["ctr"].xy).length > c["reach"]:
+                    continue
+                _c, j, _dxy = rim_kd.find((p.x, p.y, 0.0))
+                f = F.ankle_ride(p.z, rim_pts[j].z, 0.0, args.collar_weights)
+                if f <= 0:
+                    continue
+                _q, si, _d = skd.find(p)
+                theirs = {sg[g.group]: g.weight for g in shoe.data.vertices[si].groups if g.group in sg}
+                if not theirs:
+                    continue
+                own = {gname[g.group]: g.weight for g in v.groups if g.group in gname}
+                row = F.mix_rows(own, theirs, f)
+                for name in set(own) - set(row):
+                    vg[name].remove([v.index])
+                for name, w in row.items():
+                    if name not in vg:
+                        vg[name] = char.vertex_groups.new(name=name)
+                        gname[vg[name].index] = name
+                    vg[name].add([v.index], w, "REPLACE")
+                took += 1
+        rep["collar"]["shoe_weights"] = took
         say("collar", rep["collar"])
     rep["covered_vertices"] = sum(cov)
     rep["faces_removed"] = sum(gone)
     below, band = (float(v) for v in args.ankle_ride.split(","))
-    if band > 0 and rim_pts:  # E1b: the skin under the collar rides with the shoe (its Foot), not the shin
+    if band > 0 and rim_pts and not collar:  # E1b (off with E1e's collar): the skin under the collar rides with the
+        # shoe (its Foot), not the shin
         rode = 0
         for v in me.vertices:
             p = mw @ v.co
