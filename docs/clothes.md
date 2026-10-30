@@ -439,7 +439,7 @@ keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 deg
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
 
-## Dressing D3's bodies (E1 to E1c, art #196)
+## Dressing D3's bodies (E1 to E1d, art #196)
 - **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
   head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
   smoothing; the 30 mm smoothstep band stays the default for the old bodies.
@@ -472,6 +472,20 @@ above it again from Blender's rest matrices.
   centre, `--collar-clear` (3 mm) inside the innermost wall on its way (`pull_in`). `dress.json` reports `collar`
   (the planes, faces back, pulled) and `collar_shell_probe` (that count after the pull: 0 on both). The old
   `collar_probe` (the nearest face's normal) still counts the lining's side and reads high; do not trust it.
+- **The collar in motion** (E1d): E1c's main-island rim fed only the plane; every other rim rule (the shoe's top,
+  `local_rim`, `through_shoe`, `ankle_kept`, `--ankle-ride`) still used the whole boundary with the laces' points over
+  the instep, and cut holes into the ankle's front (the dark teal blocks: the leg's far side seen through them). Now
+  all of them use the main island's rim. The faces that come back are the ankle's column: inside the opening's outline
+  across the floor (`clothes_fit_geom.in_opening`, the rim's radius round its centre interpolated by angle, grown
+  `--collar-grow`, 10 mm), up to `--collar-keep` (60 mm) over the rim's top, each face with a vertex over the plane (so
+  the faces crossing it come back and the bisect cuts them: no holes at the ring); the rule "no shoe face over it" is
+  gone. The foot's skin outside the outline, under its nearest rim point and with the shoe over it or within
+  `--collar-vamp` (30 mm) under it, is the instep and toes under the vamp: it goes (`collar.vamp_faces_removed`; the
+  teal patches through the vamp). `collar.faces_cut` reads 0 by construction (each crossing face splits in two and
+  loses its lower half).
+- **The straps' back ends** (E1d): with `--planes bones` the straps sweep on past `--shell-strap-t`'s back angle until
+  their back end lies `--strap-back-below` (32 mm) under the back panel's apex (`straps.back_angle_deg`); the shorter
+  body B's straps met 50 mm over her apex (a flat bar of shirt and panel under their V). A's stay at 134 degrees.
 - **The fit's strays** (E1b): garment vertices over `--stray` (80 mm) from the body go with their faces (two on A11
   made dark spikes out of the hips).
 - **The proof's openings** (E1b): a body vertex "inside" by an opening's inward-folded lip whose nearest cloth point

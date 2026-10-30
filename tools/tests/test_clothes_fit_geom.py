@@ -309,6 +309,30 @@ class RimPlane(unittest.TestCase):  # E1c: the collar's clean cut
             F.rim_plane([(0, 0, 0), (1, 0, 0)])
 
 
+class InOpening(unittest.TestCase):  # E1d: the ankle's column and the vamp
+    ELLIPSE = [(0.04 * math.cos(a / 16 * 2 * math.pi), 0.06 * math.sin(a / 16 * 2 * math.pi)) for a in range(16)]
+
+    def test_radius_at_a_rim_point_and_between(self):
+        self.assertAlmostEqual(F.rim_radius((0, 0), self.ELLIPSE, 0.0), 0.04)
+        self.assertAlmostEqual(F.rim_radius((0, 0), self.ELLIPSE, math.pi / 2), 0.06)
+        r = F.rim_radius((0, 0), self.ELLIPSE, math.pi / 16)
+        self.assertTrue(0.04 < r < 0.06)
+
+    def test_wraps_round_pi(self):
+        self.assertAlmostEqual(F.rim_radius((0, 0), self.ELLIPSE, math.pi), 0.04)
+        self.assertAlmostEqual(F.rim_radius((0, 0), self.ELLIPSE, -math.pi), 0.04)
+
+    def test_inside_outside_and_grown(self):
+        self.assertTrue(F.in_opening((0, 0), self.ELLIPSE, 0.0, 0.055))
+        self.assertFalse(F.in_opening((0, 0), self.ELLIPSE, 0.045, 0.0))
+        self.assertTrue(F.in_opening((0, 0), self.ELLIPSE, 0.045, 0.0, grow=0.01))
+        self.assertTrue(F.in_opening((1, 2), [(x + 1, y + 2) for x, y in self.ELLIPSE], 1.0, 2.05))
+
+    def test_needs_three_points(self):
+        with self.assertRaises(ValueError):
+            F.rim_radius((0, 0), [(0.1, 0), (0, 0.1)], 0.0)
+
+
 class PullIn(unittest.TestCase):  # E1c: the skin outside the shoe's outer shell
     def test_inside_the_innermost_wall_by_clear(self):
         self.assertAlmostEqual(F.pull_in(0.05, [0.004, 0.008], clear=0.003), 0.039)

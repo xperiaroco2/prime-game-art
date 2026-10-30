@@ -862,6 +862,15 @@ def straps(gar, char, keep_objs, args) -> dict:
     ts = [math.radians(t) for t in floats(args.shell_strap_t)]
     xs_k = floats(args.shell_strap_x)
     half, lip = args.strap_width / 2, args.strap_lip
+    t_back = ts[-1]
+    if getattr(args, "strap_back_z", None) is not None:  # E1d: the back ends reach under the back panel's apex
+        for k in range(80):
+            t = ts[-1] + math.radians(k)
+            loc = btree.ray_cast(Vector((xs_k[-1], y0, z0)), Vector((0.0, math.sin(t), math.cos(t))), 0.4)[0]
+            if loc is None or loc.z <= args.strap_back_z or t > math.radians(175):
+                break
+            t_back = t
+        ts = ts[:-1] + [max(ts[-1], t_back)]
     mw = gar.matrix_world
     inv = mw.inverted()
     me = gar.data
@@ -872,7 +881,7 @@ def straps(gar, char, keep_objs, args) -> dict:
     ufr = H.lat_us(len(lats), args.strap_lip_u)
     rect, prep = strap_patch(gar, args, ufr)
     u0, u1, v0, v1 = rect
-    rep, plans = {"patch": prep}, []
+    rep, plans = {"patch": prep, "back_angle_deg": round(math.degrees(ts[-1]), 1)}, []
     for sgn in (1, -1):
         locs, nors, offs = [], [], []
         for t in angles:

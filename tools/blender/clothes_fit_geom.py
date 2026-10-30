@@ -370,3 +370,25 @@ def outside_shell(out_hits: int) -> bool:
     """E1c: a skin vertex under the rim whose ray outward (away from the rim's centre, across the floor) meets no
     shoe face is outside the shoe's outer shell; one hit (inside the wall) or more is hidden."""
     return out_hits == 0
+
+
+def rim_radius(ctr: tuple[float, float], rim_xy: list[tuple[float, float]], theta: float) -> float:
+    """E1d: a shoe opening's outline across the floor as a radius round its centre: the rim points' radii,
+    interpolated linearly by angle (the outline is star-shaped round the centre; a gap wraps round)."""
+    if len(rim_xy) < 3:
+        raise ValueError("an outline needs three points")
+    pts = sorted((math.atan2(y - ctr[1], x - ctr[0]), math.hypot(x - ctr[0], y - ctr[1])) for x, y in rim_xy)
+    pts = [(a - 2 * math.pi, r) for a, r in pts[-1:]] + pts + [(a + 2 * math.pi, r) for a, r in pts[:1]]
+    t = math.atan2(math.sin(theta), math.cos(theta))
+    for (a0, r0), (a1, r1) in zip(pts, pts[1:]):
+        if a0 <= t <= a1:
+            return r0 if a1 - a0 < 1e-12 else r0 + (r1 - r0) * (t - a0) / (a1 - a0)
+    return pts[-1][1]
+
+
+def in_opening(ctr: tuple[float, float], rim_xy: list[tuple[float, float]], x: float, y: float,
+               grow: float = 0.0) -> bool:
+    """E1d: is the point (x, y) inside a shoe opening's outline across the floor, grown by grow m? The ankle's
+    column inside it is open skin; the foot outside it is under the vamp."""
+    dx, dy = x - ctr[0], y - ctr[1]
+    return math.hypot(dx, dy) <= rim_radius(ctr, rim_xy, math.atan2(dy, dx)) + grow
