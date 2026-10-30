@@ -112,6 +112,18 @@ class LobbyLayoutTest(unittest.TestCase):
             self.assertLess(max(s4[role]) - min(s4[role]), 0.1, role)
         self.assertGreater(min(s4["frame"]), 0.2)   # the frames a mid value, clearly lighter than black
 
+    def test_less_copper_and_a_lighter_ceiling(self) -> None:
+        """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v5")
+        mats = lobby_layout.look_materials(self.layout, "S4")
+        metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
+        self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
+        self.assertLess(max(metal) - min(metal), 0.06)
+        cu = self.layout["look"]["schemes"]["S4"]["trim"]
+        self.assertLess(max(cu) - min(cu), 0.35)   # desaturated (2c: 0.74 - 0.28 = 0.46)
+        self.assertGreater(mats["lobby_vault"]["rgb"][0], 0.42)   # 2c: 0.392
+        self.assertGreater(mats["lobby_floor_worn"]["roughness"], mats["lobby_floor"]["roughness"])
+
     def test_six_schemes_resolve_with_fixed_hazard_and_lamps(self) -> None:
         look = self.layout["look"]
         self.assertEqual(sorted(look["schemes"]), ["S1", "S2", "S3", "S4", "S5", "S6"])
