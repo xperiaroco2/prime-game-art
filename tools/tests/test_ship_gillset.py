@@ -147,6 +147,14 @@ class GlowBalance(unittest.TestCase):
             self.assertAlmostEqual(sl.profile[G.PARTS["edge"][1]][0], G.PROFILE[G.PARTS["edge"][1]][0], 9)
             self.assertEqual(sl.profile[G.PARTS["edge"][1] + 1:], G.PROFILE[G.PARTS["edge"][1] + 1:])
 
+    def test_rim_and_lip_as_built(self):
+        """step 7: the approved widths (GLOW_K 1.6, the engineer's yes of 2026-10-30), mm, slits 1-5; both walls carry
+        them (the west is the east's mirror, test_west_mirrors_every_part)."""
+        lips, rims = zip(*(self.widths(sl) for sl in G.slits()))
+        for got, want in ((rims, (11.0, 10.1, 11.7, 13.6, 16.0)), (lips, (24.2, 22.1, 17.6, 13.1, 8.0))):
+            for k, (g, w) in enumerate(zip(got, want)):
+                self.assertAlmostEqual(g * 1000, w, delta=0.1, msg=f"slit {k + 1}")
+
     def test_niches_behind_the_face(self):
         p = parts("e")
         for k in G.SLITS:
@@ -216,6 +224,40 @@ class Controller(unittest.TestCase):
         self.assertEqual(opened, [True] * 5)
         self.assertGreaterEqual(shut_again, 1)
         self.assertLess(max(events), self.const("DEMO_S") - 4.0)                       # the cloud holds a while
+
+
+class CornerFlats(unittest.TestCase):
+    """step 7: the front sockets' flats beside the throat's end frames read lit: their own matte clad, not the end
+    frame's mirror-like int_silver_c, and a warm spot aimed at each."""
+
+    def test_clad_is_matte_with_its_own_light_row(self):
+        import tomllib
+        clad = S.L.MATERIALS["int_silver_c__clad"]
+        self.assertLessEqual(clad["metallic"], 0.3)
+        self.assertGreaterEqual(clad["roughness"], 0.55)
+        self.assertEqual(S.L.MATERIALS["int_silver_c"]["metallic"], 0.8)             # the end frame keeps its metal
+        ship = tomllib.loads((ROOT / "layouts" / "ship" / "ship.toml").read_text(encoding="utf-8"))
+        row = ship["light"]["mats"]["int_silver_c__clad"]                             # (the family's m 0.45 would win)
+        self.assertLessEqual(row["m"], 0.3)
+        inner = tomllib.loads((ROOT / "layouts" / "ship" / "interior.toml").read_text(encoding="utf-8"))
+        piece = next(p for p in inner["pieces"] if p["id"] == "hall_panel_flat_sockf")
+        self.assertEqual(piece["args"]["clad"], "int_silver_c__clad")
+        aimed = [l for l in ship["light"]["lamps"] if len(l) > 11 and isinstance(l[11], list)
+                 and abs(abs(l[11][0]) - 3.4376) < 1e-6 and abs(l[11][1] + 2.3137) < 1e-6]
+        self.assertEqual(sorted(l[0] > 0 for l in aimed), [False, True])              # one spot per flat, mirrored
+        self.assertEqual(aimed[0][:2], [-aimed[1][0], aimed[1][1]])
+
+
+class Proof(unittest.TestCase):
+    def test_three_cameras_and_the_clad_views(self):
+        """step 7: the demo from the concept camera, the close one and the mouth (both rows); the clad's views on
+        both sides."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        from runner.commands import ship
+        self.assertEqual(set(ship.GILL_SET["both"]), {"eye", "look", "fov"})
+        names = [v[0] for v in ship.CLAD_VIEWS]
+        self.assertEqual(names, ["clad_throat", "w_clad_throat", "clad_hall", "w_clad_hall", "play003", "w_play003"])
+        self.assertIn("mouth_both", [v[0] for v in ship.GILL_AXIS_VIEWS])
 
 
 if __name__ == "__main__":

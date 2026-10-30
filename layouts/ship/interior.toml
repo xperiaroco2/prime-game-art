@@ -829,7 +829,7 @@ plain = [-0.25, 0.25, -0.8, 0.8]
 id = "hall_panel_flat_sockf"
 builder = "flat_panel"
 collide = true
-args = { half = 1.07405, apo = 3.9344, height = 3.2, plain = 0.86, clad = "int_silver_c" }
+args = { half = 1.07405, apo = 3.9344, height = 3.2, plain = 0.86, clad = "int_silver_c__clad" }
 plain = [-0.25, 0.25, -0.86, 0.86]
 
 [[pieces]]

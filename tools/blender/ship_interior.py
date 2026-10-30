@@ -31,6 +31,9 @@ L.MATERIALS.update({
     "int_silver_a": {"base": (0.66, 0.67, 0.69, 1.0), "metallic": 0.7, "roughness": 0.36},
     "int_silver_b": {"base": (0.55, 0.565, 0.59, 1.0), "metallic": 0.7, "roughness": 0.42},
     "int_silver_c": {"base": (0.38, 0.39, 0.41, 1.0), "metallic": 0.8, "roughness": 0.34},
+    # step 7 (art #263): the front sockets' corner flats beside the throat's end frames: the end frame's metal, a hair
+    # warmer, matte and little metallic, so the warm lamp before each lights it (int_silver_c only mirrored the dark)
+    "int_silver_c__clad": {"base": (0.42, 0.41, 0.395, 1.0), "metallic": 0.2, "roughness": 0.62},
     "int_dark": {"base": (0.035, 0.038, 0.042, 1.0), "metallic": 0.6, "roughness": 0.55},
     "int_grate": {"base": (0.22, 0.225, 0.23, 1.0), "metallic": 0.8, "roughness": 0.42},
     "int_plate": {"base": (0.34, 0.35, 0.36, 1.0), "metallic": 0.8, "roughness": 0.40},
