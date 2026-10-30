@@ -62,10 +62,12 @@ class Params:
     heel_clear: float = 0.004  # the collar's extra room at the heel's back
     heel_in: float = 0.012  # E1j3: the collar's rim round the heel pulled in by this (m; the dress shrinks the ankle
                             # inside it): the heel counter tapers up into a cup, no box from behind
-    heel_collar: float = 1.12  # the collar's height at the heel's back, x the ankle's (Foot head) height
-    side_collar: float = 1.05  # at its side dip (E1j3: 1.02 -> 1.05, the turn-up rests on it all round)
+    heel_collar: float = 0.96  # the collar's height at the heel's back (the heel tab), x the ankle's (Foot head) height
+                               # (E1k: 1.12 -> 0.96, a low top as on the concept: a band of ankle over the collar)
+    side_collar: float = 0.84  # at its side dip, under the ankle bone (E1k: 1.05 -> 0.84; 0.76 in d36 put the
+                               # rim where the ankle widens: teal fins over it)
     gap: float = 0.034  # the throat's slot between the eyelet stays (E1j2: wider, the tongue shows)
-    stay_cap: float = 1.10  # the stays' rim at most this x the ankle's height (a low top)
+    stay_cap: float = 0.95  # the stays' rim at most this x the ankle's height (a low top; E1k: 1.10 -> 0.95)
     throat_rise: float = 0.036  # E1j: the stays' rim at the throat over the toe cap's top; a straight lace line
                                 # rises from there to the collar's front corners (the foot's instep permitting)
     throat: float = 0.006  # the slot's front end before the ball (m; E1j: the lacing reaches the toe cap's back)
@@ -75,9 +77,11 @@ class Params:
     lining: tuple[float, float] = (0.005, 0.012)  # the rolled collar's lining: in, down (m)
     blend: float = 0.025  # the crease's blend across the ball (m along u)
     eyelets: int = 5  # per side
-    eyelet_r: tuple[float, float, float] = (0.0033, 0.0017, 0.0009)  # outer, inner radius, height
-    eyelet_in: float = 0.0065  # from the stays' edge
-    lace: tuple[float, float] = (0.0036, 0.0032)  # the lace's width, thickness (E1j2: a raised round cord)
+    eyelet_r: tuple[float, float, float] = (0.0046, 0.0024, 0.0012)  # outer, inner radius, height (E1k: bigger,
+                                                                      # the dark rings read at game distance)
+    eyelet_in: float = 0.0075  # from the stays' edge
+    lace: tuple[float, float] = (0.0052, 0.0040)  # the lace's width, thickness (E1j2: a raised round cord; E1k:
+                                                 # thicker, the laces read at game distance)
     lace_arch: float = 0.004  # E1j2: the laces' rise over the tongue at their middle
     tongue_rise: float = 0.016  # the tongue's top above the top eyelets (E1j2: shows over the bow)
     tongue_lean: float = 0.3  # the tongue's top leaning back, x its rise

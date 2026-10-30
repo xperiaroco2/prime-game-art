@@ -270,10 +270,13 @@ def main() -> int:
     ap.add_argument("--collar-cut", type=float, default=0.012,
                     help="E1e: each foot's skin is bisected on one plane through the shoe opening's rim, this far "
                          "under its lowest point; everything under it goes, no face over it is deleted (m, 0: off)")
-    ap.add_argument("--collar-keep", type=float, default=0.06,
-                    help="E1e: the plane rule owns the leg's and foot's skin up to this far over the rim's top (m)")
-    ap.add_argument("--collar-band", type=float, default=0.03,
-                    help="E1e: the skin's shrink toward the leg's axis eases out over this much over the rim (m; E1j2: 3 cm, the leg narrows into the collar with no shards)")
+    ap.add_argument("--collar-keep", type=float, default=0.09,
+                    help="E1e: the plane rule owns the leg's and foot's skin up to this far over the rim's top (m; "
+                         "E1k: 6 to 9 cm, the low collar's rim is 2 to 3 cm lower, so the skin still reaches into the "
+                         "turn-up and its cut edge stays hidden there)")
+    ap.add_argument("--collar-band", type=float, default=0.045,
+                    help="E1e: the skin's shrink toward the leg's axis eases out over this much over the rim (m; E1j2: 3 cm, the leg narrows into the collar with no shards; "
+                         "E1k: 4.5 cm, the low collar's ankle eases out over more)")
     ap.add_argument("--collar-clear-under", type=float, default=0.006,
                     help="E1f: the clearance inside the shoe for skin with the shoe over it (the instep: the vamp's "
                          "specks in motion; m)")

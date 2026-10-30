@@ -435,6 +435,35 @@ faceted at the toe and heel, and at full-body distance the shoe was one pale blo
 (`sheet/s10` to `s12`, a first dress) and `d35/` (the final: `dress/`, `proof/`, `look/`, `side/`); drivers `tools/out/dress/e1j3/` (`HR` sets
 `--hem-rest`).
 
+### The low collar (E1k)
+A fresh critic on d35 found a dark wedge on the upper thigh in Walk, a shoe that read as a tall block against the
+concept (its collar high at the heel and sides, into the turn-up), small eyelets and thin laces at game distance, a
+throat tear in Crouch and teal skin at the ankle.
+- **The thigh wedge is the arm's shadow, not the garment.** A ray probe on d35 in Walk (`tools/out/dress/e1k/
+  wedge_probe.py`: from three cameras in front of the hips, the first hit per ray) finds almost no back faces
+  (0 to 5 of about 3,800 trouser hits per view, none on the thigh), so no inside or crumpled face of the side opening
+  shows. A shadow ray from each trouser hit toward the approved key light (`look_presets.json`, at (-2, 3.2, 3)) is
+  blocked by the body (the swinging hand and forearm) for 300 to 480 hits in Walk f5 and f27 and none in the bind
+  pose. A Cycles render with one sun at the key's direction (`sun_probe.py`, `d36/sun/`) draws the same wedge.
+  With the key at 3.0 and the fill and ambient at 0.12, that shadow on dark denim is near black: a look question
+  (the fill or the shadow's softness), not a fit fix.
+- **The low collar.** `heel_collar` 1.12 to 0.96 (the heel tab), `side_collar` 1.05 to 0.84 (under the ankle bone),
+  `stay_cap` 1.10 to 0.95 (the collar's front corners). The turn-up stays at the fit's own height (`--hem-rest` is
+  off again), so a band of ankle shows between the collar and the turn-up all round, as on the concept. d36 tried
+  0.90 / 0.76 / 0.92: the rim then sat where the ankle widens toward the heel, and the skin eased out over it in
+  teal fins.
+- **The ankle over the low collar.** `--collar-keep` 6 to 9 cm (the plane rule owns the skin up to this far over
+  the rim's top, so it still reaches into the turn-up and its cut edge stays hidden there; at 6 cm over the lower
+  rim the skin's top edge showed jagged inside the turn-up, d36) and `--collar-band` 3 to 4.5 cm (the shrink into
+  the collar eases out over more).
+- **Eyelets and laces read at game distance.** `eyelet_r` 3.3 / 1.7 / 0.9 mm to 4.6 / 2.4 / 1.2 mm (`eyelet_in`
+  7.5 mm), `lace` 3.6 x 3.2 mm to 5.2 x 4.0 mm.
+- **The axolotl's "R top" close-up** looked from between the legs (yaw 20, pitch 60); it now looks from the front
+  outside (yaw -40, pitch 50; `tools/out/dress/e1k/frames.sh`).
+
+Raw output: `2026-10-30-alien-dress-e1/d36/` (the probes, `sheet/s13`, the first low-collar dress) and `d37/` (the
+final); drivers `tools/out/dress/e1k/`.
+
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
 
