@@ -651,6 +651,8 @@ func _shoot() -> void:
 		_gills(ship, (v[5] as Dictionary).get("gills", {}) if v.size() > 5 and v[5] is Dictionary else {})
 		if v.size() > 5 and v[5] is Dictionary and (v[5] as Dictionary).has("jaw"):
 			_jaw_pose(ship, str(v[5]["jaw"]))
+		else:
+			_jaw_pose(ship, "open")  # a plain view after a posed one shows the saved pose
 		images[v[0]] = await _shot(v[0], v[1], shots)
 		_ab({})
 	if _req.has("top"):  # (a --views prefix set alone has no plan view)

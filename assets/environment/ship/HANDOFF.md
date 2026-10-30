@@ -55,6 +55,7 @@ nothing. **The lobby shows it closed and without the clearing:**
 ```gdscript
 var ship := preload("res://levels/ship/ship.tscn").instantiate()
 ship.get_node("Clearing").queue_free()
+add_child(ship)   # in the tree first: an AnimationPlayer outside it does not apply a seek
 var nose: AnimationPlayer = ship.get_node("Nose/AnimationPlayer")
 nose.play("close")
 nose.seek(nose.current_animation_length, true)   # closed at once; leave out the seek to watch it close
@@ -131,5 +132,5 @@ above beside `ship --shoot`'s: mean difference 0.003, 0.002, 0.003 of 255 (the l
 - S5: the strip lights are many OmniLight3D nodes (no shadows) under Lights, placed per glowing cell by the art's look; a baked light or fewer lights is the game's call against its budget (HANDOFF 'Cost').
 - S6: the pieces' colliders are the GLBs' own -col trimesh hints (StaticBody3D on layer 1); the game's `colliders` writes its wrappers on import (11.2).
 - S7: the clearing round the ship (the ground and its world boundary, the pines, bushes, ferns, moss, litter, logs, rocks, the ground lamps, the party string and the lamps that light only them) is the one node Clearing (Clearing/Pieces, Clearing/Lights, Clearing/Ground); the lobby (art#356) shows the ship docked without it: free the node (queue_free(), or delete it in an inherited scene); hiding it leaves Ground's collider on. The ship itself (hull, legs, entry tunnel, its landing and edge lights, the rim and key) stays under Pieces and Lights, the jaw nose under Nose (S8).
-- S8: the jaw nose (art#263) is the node Nose: jaw_lower (the ramp), jaw_upper and the fixed jaw_root, saved open, and Nose/AnimationPlayer with the clips open (closed to open, 2.5 s), close (the same backwards) and RESET (the open pose). The lobby shows it closed: play "close" and seek to its end (seek(length, true)). Each jaw's colliders (StaticBody3D) turn with it; a player standing on the ramp while it moves is not carried (AnimatableBody3D would be the game's call). The seam's cyan line keeps its static glow.
+- S8: the jaw nose (art#263) is the node Nose: jaw_lower (the ramp), jaw_upper and the fixed jaw_root, saved open, and Nose/AnimationPlayer with the clips open (closed to open, 2.5 s), close (the same backwards) and RESET (the open pose). The lobby shows it closed: with the instance in the tree, play "close" and seek to its end (seek(length, true)). Each jaw's colliders (StaticBody3D) turn with it; a player standing on the ramp while it moves is not carried (AnimatableBody3D would be the game's call). The seam's cyan line keeps its static glow.
 - Imports: each GLB's .import holds only 11.2's options; the game's editor regenerates the .import files (and the uids) on its first import: commit the regenerated ones.

@@ -166,8 +166,9 @@ def nose_problems(layout: dict, got: dict) -> list[str]:
             deg = n.get("poses", {}).get(name, {}).get(pid)
             if deg is None or abs(deg - pose[pid]) > NOSE_TOL_DEG:
                 problems.append(f"Nose: {pid} at the end of {name} is {deg} deg, wants {pose[pid]}")
-    if abs(n.get("lengths", {}).get("open", 0.0) - want["seconds"]) > 1e-3:
-        problems.append(f"Nose: the open clip lasts {n.get('lengths', {}).get('open')} s, wants {want['seconds']}")
+    for clip in ("open", "close"):
+        if abs(n.get("lengths", {}).get(clip, 0.0) - want["seconds"]) > 1e-3:
+            problems.append(f"Nose: the {clip} clip lasts {n.get('lengths', {}).get(clip)} s, wants {want['seconds']}")
     return problems
 
 

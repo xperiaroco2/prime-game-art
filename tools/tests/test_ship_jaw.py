@@ -67,7 +67,9 @@ class ShipJawPoseTest(unittest.TestCase):
         self.assertEqual(rows["jaw_lower"][3], LAYOUT["jaw"]["lower_deg"]["open"])
         self.assertEqual(rows["jaw_upper"][3], LAYOUT["jaw"]["upper_deg"]["open"])
         self.assertEqual(len(rows["jaw_root"]), 3)
-        self.assertEqual(rows["jaw_lower"][1], [0.0, 1.2, -8.1])      # Godot (x, h, y): at its hinge
+        for pid, key in (("jaw_lower", "lower_hinge"), ("jaw_upper", "upper_hinge")):
+            x, y, h = LAYOUT["jaw"][key]
+            self.assertEqual(rows[pid][1], [x, h, y], pid)            # Godot (x, h, y): at its hinge
         self.assertEqual(sorted(ship_cmd.jaw_request(LAYOUT)), sorted(sl.JAW_POSES))
         pieces = {p["id"]: p for p in LAYOUT["pieces"]}
         for pid in ("jaw_lower", "jaw_upper", "jaw_root"):
