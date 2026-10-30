@@ -483,6 +483,37 @@ deleted.
 Step 4's run (L1, E2): `<raw>/lobby/hall/v6/walk/walkthrough.mp4`, 1061 frames, 44.2 s, 12.7 MB, rendered in 185 s,
 the GPU's median 1.58 ms a frame at 1280 x 720.
 
+## Step 4b: L3, the critic's light fixes
+
+The engineer's mood pick (2026-10-30): **L3**, now `[light] mood`. A fresh critic's findings on L3, fixed in L3 only (L1
+and L2 keep step 4's look: the new lights off, the ship's glow as built, the Earth shadow's blur at Godot's 1.0). New
+keys in every mood:
+
+| Key | What | L3 (step 4 -> 4b) |
+|---|---|---|
+| `glow_threshold`, `glow_bloom`, `glow_intensity` | the environment's glow | 0.9 -> **1.2**, 0.15 -> **0**, 1.0 -> **0.5** |
+| `glow_hdr_scale`, `glow_cap` | the glow's HDR bleed and luminance cap | 2.0 (Godot's) -> **1.5**, 12 -> **6** |
+| `ship_emit` | the ship's glow surfaces' emission (every emissive `BaseMaterial3D` on a `ship_` piece, a per-instance override made by `hall.gd`'s `_emit`; art #263's files and materials untouched) | 1 -> **0.3** |
+| `fill_rgb`, `fill_energy`, `fill_range`, `fill_angle` | an unshadowed warm SpotLight3D 0.6 m over each pendant's lens pointing up: the shade's spill on the vault, ribs and lunettes | **3.0**, 12 m, 75 deg |
+| `pendant_specular` | the pendants' spots' specular (the ship's silver top's hot spots) | 0.5 -> **0.3** |
+| `strip_specular`, `strip_size` | the pilaster omnis' specular (longer streaks on the polished floor) and light size | 0.5 -> **1.5**, **0** |
+| `earth_soft`, `earth_shadow` | the Earth light's shadow blur (PCF) and opacity: the ship's shadow on the north wall and doors | 1.0 -> **3.0**, 1 -> **0.55** |
+| `window_rgb`, `window_energy`, `window_range` | three unshadowed cold spots inside the glass (`[light] window`, y 4 m, `window_tilt` 50 deg down, 35 deg half angle): the cool sheen on the floor near the window | **3.0**, 16 m |
+
+Changed numbers too: `door_energy` 1.0 -> 1.4 and `door_range` 5 -> 7 m (the red reaches wider on the wall);
+`earth_energy` 0.8 -> 0.7 (at 1.0 the ship's south-facing aft panel between the pods went white).
+
+The glow alone (T1, threshold 1.5, the ship as built) kept the engine rings and the wing strip blown: their emission is
+far over any threshold, so the per-instance `ship_emit` was needed (T3's 0.3). The grid (`lobby --light-grid`, three
+`[light.trials]` over L3 in `corner_nw`, `spawn_eye`, `c_back`; `<raw>/lobby/hall/v6/grid-4b/grid.png`) also showed two
+dead ends: a strip `light_size` of 0.8 m draws its specular as a disc (a hot half-moon at a pilaster's foot), and the
+Earth's soft shadow as an angular size (PCSS) cost about 1.4 ms (4.3 ms against 2.9); a PCF blur does the door's
+shadow at step 4's cost.
+
+`lobby --shoot` (L3, step 4b; `<raw>/lobby/hall/v6/shots-4b/`): 23 shots, GPU 1.6-3.5 ms (`corner_nw` 3.12, `spawn_eye`
+2.25, `c_back` 3.20 against step 4's L3 2.89 / 2.08 / 2.96: the 12 new unshadowed spots cost about 0.2 ms); draw calls
+unchanged (776 / 85 / 706).
+
 ## Open problems
 
 - The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
@@ -492,6 +523,9 @@ the GPU's median 1.58 ms a frame at 1280 x 720.
 - Concept A's camera cannot be matched with the ship 7 m north (see above); A shows the ship's nose close up.
 - The pilaster width (0.8 m, not the drawing's 1.2 m glyph) and the vault's cross-section are our readings of the
   drawing.
+- Step 4b (L3): the ship's south-facing aft panel between the engine pods still reads near white from the window's
+  side (`c_back`, `spawn_ship`); lowering the Earth light to 0.7 did not change it, so its source (the probe's
+  reflection of the window or the panel's own material) is still to find.
 - Step 4's light: the ship's silver top takes hot spots under the six pendants 4 m above it; the vault and its ribs
   stay dark (the pendants shine down, only the ambient reaches up); in L1 the west wall away from its strips reads
   dark; the pendants' pools on the polished floor show little at eye height (mostly specular), clearly from above.
