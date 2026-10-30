@@ -49,8 +49,9 @@ QUESTIONS = [
     "may not carry (11.1), so the game's station scenes instance them at the markers. Each package's HANDOFF.md "
     "'Placement' holds its own offset (the breaker board 0.07 m out along the normal).",
     "S2: the throat vents (VentE, VentW) are part of the ship: since the clean throat (2026-10-29) the spots lie on "
-    "the plain walls th_wall_e and th_wall_w under Pieces, with no vent hardware yet: the gills' slits and button are "
-    "parked (the engineer: hinged gill covers next); the game's vent station waits for them.",
+    "the walls th_wall_e and th_wall_w under Pieces, which carry the gill set (five static glowing slits, the turn "
+    "bars and a button per wall; the engineer's pick, 2026-10-30); godot/ship/gill_set.gd is the art's reference "
+    "driver for the game's vent station.",
     "S3: the look the art sets by code is baked into the scene as overrides inside each piece's instance (the glTF "
     "materials' night values, the outside pieces' render layer 2, the vents' well lights), every piece an editable "
     "instance; the shared metal is metal.gdshader with one .tres per metal. The shaders are art code shipped as files "

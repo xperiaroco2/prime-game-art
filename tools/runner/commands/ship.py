@@ -550,7 +550,8 @@ def play(layout: dict, out: Path, folder: Path, test: bool) -> int:
         # step 6: on each wall (its own row, its own button), the other wall's row untouched
         press = result.get("press", {})
         walls = press.get("walls", {})
-        if result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 3 or not press.get("ok")                 or set(walls) != {"e", "w"}:
+        if (result["moved_m"] < 1.0 or not result["on_floor"] or result["shots"] != 3 or not press.get("ok")
+                or set(walls) != {"e", "w"}):
             common.bad(f"ship --play-test: {result}")
             return 1
         flips = ", ".join(f"{p['side']} slit {p['slit']} {p['state']}" for p in press["presses"])

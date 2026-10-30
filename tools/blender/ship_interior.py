@@ -1307,7 +1307,7 @@ MODULES.append(ship_interior_lens)
 # the west lens room's workshop (decor)
 import ship_interior_workshop  # noqa: E402
 MODULES.append(ship_interior_workshop)
-# the gills (2026-10-28): parked (2026-10-29: the throat shown without slits; hinged gill covers next), still built
+# the old slit gills (2026-10-28): parked since the gill set replaced them (2026-10-30), still built
 import ship_interior_gills  # noqa: E402
 MODULES.append(ship_interior_gills)
 # the clean throat (2026-10-29): its walls, the ramp frame and the hall jambs

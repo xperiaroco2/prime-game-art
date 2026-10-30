@@ -7,7 +7,7 @@ throat"): the throat's walls, the ramp frame and the hall jambs, drawn in <raw>/
   jamb (s 1.668-3.88). Under the entry tunnel (s 0.02 to the frame) only the plinth and the band to the tunnel's own
   bend (1.45): above it the tunnel leans in (`tunnel_chamfer`, the hull's jamb plates). The gill set (five static
   glowing crescent niches, the groove, the turn bars and the button; the engineer's pick of 2026-10-29) comes from
-  ship_interior_gillset.py, on the east wall only for now (GILL_SIDES); ship_interior_gills.py is parked.
+  ship_interior_gillset.py, on both walls (GILL_SIDES, the west mirrored); ship_interior_gills.py is parked.
 - `th_frame`: one frame to the ramp in the roof line's plane (y roof_y - 0.039 .. roof_y + 0.046): on each side it
   fills the step from the tunnel's profile to the room's with an 8 cm trim round the tunnel's opening, and a flush
   bar across the ceiling (no drop: the 2.30 head room holds). It replaces the roof line's arch (th_arch).
