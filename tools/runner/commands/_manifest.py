@@ -34,7 +34,9 @@ KIND_SLOTS: dict[str, frozenset[str]] = {
 # Kinds whose manifest may hold a set of shipped files ([[files]]) rather than one asset.
 SET_KINDS = frozenset({"kit", "room", "environment", "prop"})
 # Licences an asset may carry; only the first four may ever reach the public game repo.
-PUBLIC_LICENCES = frozenset({"CC0-1.0", "CC-BY-4.0", "owned-paid-output", "own-work"})
+PUBLIC_LICENCES = frozenset({"CC0-1.0", "CC-BY-4.0", "NASA-PD", "owned-paid-output", "own-work"})
+# Licences whose records must carry `credit` (the attribution line).
+CREDIT_LICENCES = frozenset({"CC-BY-4.0", "NASA-PD"})
 LICENCES = PUBLIC_LICENCES | {"restricted"}
 
 TOP_REQUIRED = (
@@ -328,15 +330,15 @@ def _clips_errors(data: dict[str, Any], sources: dict[str, dict[str, Any]] | Non
 
 
 def _licence_errors(data: dict[str, Any], what: str) -> list[str]:
-    """licence, licence_url, credit (required for CC-BY-4.0) and public_repo_ok (never with a private licence)."""
+    """licence, licence_url, credit (required for CC-BY-4.0 and NASA-PD) and public_repo_ok (never private)."""
     errors: list[str] = []
     licence = data.get("licence")
     if "licence" in data and (not isinstance(licence, str) or licence not in LICENCES):
         errors.append(f"licence {licence!r} is not one of {', '.join(sorted(LICENCES))}")
     if "licence_url" in data and not (isinstance(data["licence_url"], str) and URL_RE.fullmatch(data["licence_url"])):
         errors.append("licence_url must be an http(s) URL to the licence or terms that apply")
-    if licence == "CC-BY-4.0" and not _is_text(data.get("credit")):
-        errors.append(f"a CC-BY-4.0 {what} needs credit (the attribution line)")
+    if isinstance(licence, str) and licence in CREDIT_LICENCES and not _is_text(data.get("credit")):
+        errors.append(f"a {licence} {what} needs credit (the attribution line)")
     if "credit" in data and not isinstance(data["credit"], str):
         errors.append("credit must be a string")
 
