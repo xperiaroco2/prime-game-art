@@ -3,10 +3,13 @@ extends SceneTree
 ## ship pieces by the request's placements (pieces imported with `-col` meshes carry their trimesh colliders), then
 ## checks it headless or shoots it under a neutral review light in an off-screen window.
 ##   godot --headless --path godot -s res://lobby/hall.gd -- <request.json> <out>          (mode "check")
-##   shoot: started by the runner through `_godot.window()` (CLAUDE.md, #214), never by hand (mode "shoot")
+##   shoot, grid: started by the runner through `_godot.window()` (CLAUDE.md, #214), never by hand (modes "shoot", "grid")
 ## request.json (tools/runner/commands/lobby.py): {"mode", "pieces": {id: res}, "place": [[id, [x, y, z], yaw]],
 ##   "walk": {"r", "h", "points": [[x, y, z]]}, "blocks": [[name, from, to]], "views": [[name, title, eye, look, fov]],
-##   "top": {"name", "title", "size_m", "centre": [x, z], "hide": [id]}, "compare": [[shot, image]], "background"}.
+##   "top": {"name", "title", "size_m", "centre": [x, z], "hide": [id]}, "compare": [[shot, image]], "background",
+##   "look": {"id", "title", "base", "metallic", "roughness", "floor_roughness", "metals": {material: lightness},
+##   "floor": [material]}, grid: "variants": [look]}. The look replaces the hall's metal materials (by their glTF name).
+## grid: <out>/grid.png, one row per variant (its views side by side, labelled), and <out>/<variant>_<view>.png.
 ## check: <out>/check.json {"bounds": {id: {min, max}} (each piece at its origin), "colliders": {id: n}, "walk",
 ##   "blocks": {name: walk}}. shoot: <out>/<view>.png, compare_<view>.png (the concept left, the shot right),
 ##   sheet.png (1280 px wide, two per row) and shots.json.
@@ -37,7 +40,7 @@ func _initialize() -> void:
 	_req = request
 	_out = args[1]
 	DirAccess.make_dir_recursive_absolute(_out)
-	if _req["mode"] == "shoot":
+	if _req["mode"] != "check":
 		if DisplayServer.get_name() == "headless":
 			_fail("shoot needs a window (off-screen), not --headless")
 			return
@@ -48,8 +51,78 @@ func _initialize() -> void:
 	create_timer(WATCHDOG_S).timeout.connect(_fail.bind("not done within %d s" % WATCHDOG_S))
 	if _req["mode"] == "check":
 		_check()
+	elif _req["mode"] == "grid":
+		_grid()
 	else:
 		_shoot()
+
+
+## The hall's metals in a look: each metal surface (by its glTF material's name) gets the variant's colour times its
+## lightness, its metallic and roughness (the floor's own roughness); the ship's pieces keep their own.
+func _apply_look(look: Dictionary) -> void:
+	var made: Dictionary = {}
+	for pid: String in _placed:
+		if pid.begins_with("ship_"):
+			continue
+		var stack: Array = _placed[pid].duplicate()
+		while not stack.is_empty():
+			var n: Node = stack.pop_back()
+			stack.append_array(n.get_children())
+			if not n is MeshInstance3D or (n as MeshInstance3D).mesh == null:
+				continue
+			var mi: MeshInstance3D = n
+			for i: int in mi.mesh.get_surface_count():
+				var m: Material = mi.mesh.surface_get_material(i)
+				if m == null or not look["metals"].has(m.resource_name):
+					continue
+				var mname: String = m.resource_name
+				if not made.has(mname):
+					var k: float = float(look["metals"][mname])
+					var mat: StandardMaterial3D = StandardMaterial3D.new()
+					mat.resource_name = mname
+					mat.albedo_color = Color(float(look["base"][0]) * k, float(look["base"][1]) * k, float(look["base"][2]) * k)
+					mat.metallic = float(look["metallic"])
+					mat.roughness = float(look["floor_roughness"] if mname in look["floor"] else look["roughness"])
+					made[mname] = mat
+				mi.set_surface_override_material(i, made[mname])
+
+
+func _setup_scene() -> void:
+	_environment()
+	_build()
+	_camera = Camera3D.new()
+	_camera.near = 0.05
+	_camera.far = 400.0
+	root.add_child(_camera)
+	_camera.make_current()
+	var layer: CanvasLayer = CanvasLayer.new()
+	_label = Label.new()
+	_label.position = Vector2(20, 12)
+	_label.add_theme_font_size_override("font_size", 40)
+	_label.add_theme_color_override("font_color", Color(1, 1, 1))
+	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_label.add_theme_constant_override("outline_size", 8)
+	layer.add_child(_label)
+	root.add_child(layer)
+
+
+## The taste grid: the grid's views once per variant, a row each.
+func _grid() -> void:
+	_setup_scene()
+	var shots: Dictionary = {}
+	var rows: Array = []
+	for look: Dictionary in _req["variants"]:
+		_apply_look(look)
+		var row: Array = []
+		for v: Array in _req["views"]:
+			_camera.fov = float(v[4])
+			_camera.look_at_from_position(_v(v[2]), _v(v[3]), Vector3.UP)
+			row.append(await _shot("%s_%s" % [look["id"], v[0]], "%s %s: %s" % [look["id"], look["title"], v[0]], shots))
+		rows.append(row)
+	_save(_sheet(rows), _out.path_join("grid.png"))
+	_write("shots.json", {"shots": shots})
+	print("LOBBY grid saved %s" % _out)
+	quit(0)
 
 
 func _scene(pid: String) -> PackedScene:
@@ -189,6 +262,8 @@ func _environment() -> void:
 	env.sky = sky
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	env.ssr_enabled = true   # the polished floor's reflections (step 2)
+	env.ssr_max_steps = 96
 	env.ssao_enabled = true
 	env.ssao_radius = 1.5
 	env.ssao_intensity = 1.6
@@ -208,22 +283,8 @@ func _environment() -> void:
 
 
 func _shoot() -> void:
-	_environment()
-	_build()
-	_camera = Camera3D.new()
-	_camera.near = 0.05
-	_camera.far = 400.0
-	root.add_child(_camera)
-	_camera.make_current()
-	var layer: CanvasLayer = CanvasLayer.new()
-	_label = Label.new()
-	_label.position = Vector2(20, 12)
-	_label.add_theme_font_size_override("font_size", 40)
-	_label.add_theme_color_override("font_color", Color(1, 1, 1))
-	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	_label.add_theme_constant_override("outline_size", 8)
-	layer.add_child(_label)
-	root.add_child(layer)
+	_setup_scene()
+	_apply_look(_req["look"])
 	var shots: Dictionary = {}
 	var images: Dictionary = {}
 	for v: Array in _req["views"]:

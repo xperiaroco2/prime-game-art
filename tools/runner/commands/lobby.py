@@ -1,7 +1,8 @@
 """`lobby`: the lobby hall (art #356, docs/lobby.md): checks layouts/lobby/hall.toml with art #263's ship in place;
 --build the grey massing in headless Blender, one GLB per piece with glTF-Validator; --godot the headless import
 (sizes, colliders), a capsule walk and the doors' and the corridor's end's proof; --shoot DIR the review views beside
-concepts A and C, a top view and a spawn's eye, in an off-screen window."""
+concepts A and C, a top view, a spawn's eye and the close-ups, in an off-screen window; --grid DIR the taste grid (the
+wall-and-floor metal's variants, [look.variants], in the layout's grid views)."""
 
 from __future__ import annotations
 
@@ -14,7 +15,7 @@ from . import _export, _godot
 
 NAME = "lobby"
 HELP = ("the lobby hall (layouts/lobby/hall.toml): check it with the ship in place; --build the grey massing GLBs; "
-        "--godot import, colliders, walk, doors; --shoot DIR the review views off-screen")
+        "--godot import, colliders, walk, doors; --shoot DIR the review views off-screen; --grid DIR the metal variants")
 BUILD_SCRIPT = blender.SCRIPTS / "lobby_build.py"
 GODOT_SCRIPT = "res://lobby/hall.gd"
 BUILD_TIMEOUT = 600
@@ -28,7 +29,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--build", action="store_true", help="build the hall's pieces in headless Blender")
     parser.add_argument("--godot", action="store_true", help="import headless: sizes, colliders, the walk, the doors")
     parser.add_argument("--shoot", type=Path, metavar="DIR", help="shoot the review views into DIR (off-screen)")
-    parser.add_argument("--out", type=Path, help="the pieces' folder (default <raw>/lobby/hall/v1/pieces)")
+    parser.add_argument("--grid", type=Path, metavar="DIR", help="shoot the metal variants' grid into DIR (off-screen)")
+    parser.add_argument("--out", type=Path, help="the pieces' folder (default <raw>/<layout raw_dir>/pieces)")
 
 
 def raw(layout: dict) -> Path:
@@ -77,8 +79,18 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.shoot:
-        return shoot(layout, out, place, args.shoot.resolve())
+        code = shoot(layout, out, place, args.shoot.resolve())
+        if code:
+            return code
+    if args.grid:
+        return shoot(layout, out, place, args.grid.resolve(), grid=True)
     return 0
+
+
+def look_request(layout: dict, variant: str) -> dict:
+    """The look Godot applies to the hall's metals: [look] with one variant."""
+    lk = layout["look"]
+    return {"id": variant, **lk["variants"][variant], "metals": lk["metals"], "floor": lk["floor"]}
 
 
 # --- build ---------------------------------------------------------------------------------------------------------
@@ -201,11 +213,15 @@ def godot_check(layout: dict, out: Path, place: list, ship_report: dict, folder:
     return 0
 
 
-def shoot(layout: dict, out: Path, place: list, folder: Path) -> int:
+def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool = False) -> int:
     req, staged, _want = scene_request(layout, out, place, lobby_layout.ship_report(layout))
     rv = layout["review"]
     req.update({"mode": "shoot", "background": rv["background"], "views": [v[:5] for v in rv["views"]],
-                "top": rv["top"], "compare": [[v[0], v[5]] for v in rv["views"] if v[5]]})
+                "top": rv["top"], "compare": [[v[0], v[5]] for v in rv["views"] if v[5]],
+                "look": look_request(layout, layout["look"]["variant"])})
+    if grid:
+        req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in rv["grid"]],
+                    "variants": [look_request(layout, k) for k in layout["look"]["variants"]]})
     errors = _stage(staged)
     folder.mkdir(parents=True, exist_ok=True)
     path = common.OUT / "lobby" / "shoot_request.json"
@@ -221,5 +237,6 @@ def shoot(layout: dict, out: Path, place: list, folder: Path) -> int:
     if errors:
         common.bad(f"lobby --shoot: {len(errors)} import errors")
         return 1
-    common.ok(f"lobby --shoot: {len(result['shots'])} shots, sheet {(folder / 'sheet.png').as_posix()}")
+    sheet = folder / ("grid.png" if grid else "sheet.png")
+    common.ok(f"lobby --{'grid' if grid else 'shoot'}: {len(result['shots'])} shots, sheet {sheet.as_posix()}")
     return 0
