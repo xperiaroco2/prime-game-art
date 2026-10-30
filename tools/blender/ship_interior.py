@@ -312,6 +312,7 @@ def flat_panel(args, layout):
     ceiling's rim behind the chord."""
     hw, h, pl = args["half"], args.get("height", H_HALL), args.get("plain", 0.8)
     apo = args.get("apo", HC)   # rebuild A: the chord's apothem (a socket's flat is narrower than two facets)
+    clad = args.get("clad")     # step 6: the front sockets' flats in the throat's end-frame metal (same flat faces)
     fr = G.wall_frame(FLOOR)
     belt = h - 0.9
     side = (hw - pl) / 2
@@ -327,9 +328,9 @@ def flat_panel(args, layout):
     return out + [P("soffit", G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08), "int_silver_b"),
                   P("body", G.slab(fr, G.rect(-pl, pl, 0.0, h), -0.2, 0.0), "int_silver_b"),
                   P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.16), 0.0, 0.015), "int_dark"),
-                  P("plain", G.slab(fr, G.rect(-e, e, 0.2, belt - 0.05), 0.0, 0.02, 0.008), "int_silver_a"),
+                  P("plain", G.slab(fr, G.rect(-e, e, 0.2, belt - 0.05), 0.0, 0.02, 0.008), clad or "int_silver_a"),
                   P("belt", G.slab(fr, G.rect(-pl, pl, belt, belt + 0.12), 0.0, 0.05, 0.012), "int_silver_c"),
-                  P("upper", G.slab(fr, G.rect(-e, e, belt + 0.17, h - 0.04), 0.0, 0.03, 0.01), "int_silver_b")]
+                  P("upper", G.slab(fr, G.rect(-e, e, belt + 0.17, h - 0.04), 0.0, 0.03, 0.01), clad or "int_silver_b")]
 
 
 def pyramid(fr, poly, w0, w1, apex, bevel):
@@ -419,7 +420,8 @@ def portal(args, layout):
     # step 5 (his walk, shots 004-007): `rim` the band's width; the hall's corridor portals keep it inside the chord
     # (6 cm), so the band ends at the facets' vertex in a bevelled reveal instead of running 4 cm into the next facet
     outer = [(u, max(0.0, v)) for u, v in G.inset(prof, -args.get("rim", 0.1))]
-    inner = prof
+    nw = args.get("narrow", 0.0)   # step 6: the tip doors' opening inside the corridor's walls (its foot on the deck)
+    inner = [(u, 0.0 if v < nw + 1e-6 else v) for u, v in G.inset(prof, nw)] if nw else prof
     o1, o2, o3 = outer[1], outer[2], outer[3]
     fill = M(G.slab(fr, [(-w, o1[1]), o2, (o2[0], h), (-w, h)], -PORTAL_D, 0.0),
              G.slab(fr, [(w, o1[1]), (w, h), (o3[0], h), o3], -PORTAL_D, 0.0),

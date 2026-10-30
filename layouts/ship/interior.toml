@@ -223,9 +223,6 @@ place = [
   ["cor_ceil_rib", [5.971, 0.5099, 0.0], -8.664],
   ["cor_ceil_rib", [6.9051, 0.6522, 0.0], -8.664],
   ["cor_ceil_rib", [7.8393, 0.7946, 0.0], -8.664],
-  ["cor_arch", [8.7735, 0.9369, 0.0], -8.664],
-  ["arch_strip_l", [8.7735, 0.9369, 0.0], -8.664],
-  ["arch_strip_r", [8.7735, 0.9369, 0.0], -8.664],
   ["cor_grate", [-4.3862, 0.2684, 0.0], -171.336],
   ["cor_ceil", [-4.3862, 0.2684, 0.0], -171.336],
   ["cor_gutter", [-4.3862, 0.2684, 0.0], -171.336],
@@ -310,9 +307,6 @@ place = [
   ["cor_ceil_rib", [-5.971, 0.5099, 0.0], -171.336],
   ["cor_ceil_rib", [-6.9051, 0.6522, 0.0], -171.336],
   ["cor_ceil_rib", [-7.8393, 0.7946, 0.0], -171.336],
-  ["cor_arch", [-8.7735, 0.9369, 0.0], -171.336],
-  ["arch_strip_l", [-8.7735, 0.9369, 0.0], -171.336],
-  ["arch_strip_r", [-8.7735, 0.9369, 0.0], -171.336],
   ["th_light", [1.618, -6.2367, 0.0], -71.802],
   ["th_light", [2.377, -3.9279, 0.0], -71.802],
   ["th_wall_e", [1.65, -7.1, 0.0], -71.802],
@@ -386,8 +380,6 @@ place = [
   ["tip_panel_plain", [10.6578, 3.2063, 0.0], -85.504],
   ["tip_panel_plain", [9.8962, 3.1198, 0.0], -107.458],
   ["tip_panel_a", [9.2223, 2.7548, 0.0], -129.413],
-  ["tip_pilaster", [9.3816, -0.5181, 0.0], 123.061],
-  ["tip_pilaster_strip", [9.3816, -0.5181, 0.0], 123.061],
   ["tip_pilaster", [11.6105, -0.5231, 0.0], 57.199],
   ["tip_pilaster_strip", [11.6105, -0.5231, 0.0], 57.199],
   ["tip_mullion", [12.1742, 0.017, 0.0], 35.244],
@@ -396,11 +388,9 @@ place = [
   ["tip_mullion", [12.2642, 2.2441, 0.0], -30.618],
   ["tip_pilaster", [11.7459, 2.828, 0.0], -52.573],
   ["tip_pilaster_strip", [11.7459, 2.828, 0.0], -52.573],
-  ["tip_pilaster", [8.9207, 2.507, 0.0], -140.39],
-  ["tip_pilaster_strip", [8.9207, 2.507, 0.0], -140.39],
   ["tip_portal", [9.1512, 0.9945, 0.0], 171.336],
-  ["portal_strip_l", [9.1512, 0.9945, 0.0], 171.336],
-  ["portal_strip_r", [9.1512, 0.9945, 0.0], 171.336],
+  ["tip_portal_strip_l", [9.1512, 0.9945, 0.0], 171.336],
+  ["tip_portal_strip_r", [9.1512, 0.9945, 0.0], 171.336],
   ["lens_alcove", [10.2686, 3.2369, 0.0], -96.481],
   ["lens_conduits_e", [10.2686, 3.2369, 0.0], -96.481],
   ["lounge_table", [10.2967, 0.3747, 0.0], 103.836],
@@ -468,8 +458,6 @@ place = [
   ["ws_bench_open_low", [-10.4954, -0.8125, 0.0], 89.87],
   ["ws_drawer_limbs", [-10.4954, -0.8125, 0.0], 89.87],
   ["tip_panel_a", [-9.7434, -0.6648, 0.0], 67.916],
-  ["tip_pilaster", [-8.9207, 2.507, 0.0], -39.61],
-  ["tip_pilaster_strip", [-8.9207, 2.507, 0.0], -39.61],
   ["tip_pilaster", [-11.7459, 2.828, 0.0], -127.427],
   ["tip_pilaster_strip", [-11.7459, 2.828, 0.0], -127.427],
   ["tip_mullion", [-12.2642, 2.2441, 0.0], -149.382],
@@ -478,11 +466,9 @@ place = [
   ["tip_mullion", [-12.1742, 0.017, 0.0], 144.756],
   ["tip_pilaster", [-11.6105, -0.5231, 0.0], 122.801],
   ["tip_pilaster_strip", [-11.6105, -0.5231, 0.0], 122.801],
-  ["tip_pilaster", [-9.3816, -0.5181, 0.0], 56.939],
-  ["tip_pilaster_strip", [-9.3816, -0.5181, 0.0], 56.939],
   ["tip_portal", [-9.1512, 0.9945, 0.0], 8.664],
-  ["portal_strip_l", [-9.1512, 0.9945, 0.0], 8.664],
-  ["portal_strip_r", [-9.1512, 0.9945, 0.0], 8.664],
+  ["tip_portal_strip_l", [-9.1512, 0.9945, 0.0], 8.664],
+  ["tip_portal_strip_r", [-9.1512, 0.9945, 0.0], 8.664],
   ["lens_alcove", [-10.2686, 3.2369, 0.0], -83.519],
   ["lens_conduits_w", [-10.2686, 3.2369, 0.0], -83.519],
   ["ws_rail", [-10.5, 1.2, 0.0], -171.336],
@@ -583,18 +569,6 @@ id = "hall_portal_strip_r"
 builder = "portal_strip"
 collide = false
 args = { side = 1, at_in = 0.017, at_out = 0.042 }
-
-[[pieces]]
-id = "portal_strip_l"
-builder = "portal_strip"
-collide = false
-args = { side = -1 }
-
-[[pieces]]
-id = "portal_strip_r"
-builder = "portal_strip"
-collide = false
-args = { side = 1 }
 
 [[pieces]]
 id = "hall_ceil_panel_a"
@@ -855,7 +829,7 @@ plain = [-0.25, 0.25, -0.8, 0.8]
 id = "hall_panel_flat_sockf"
 builder = "flat_panel"
 collide = true
-args = { half = 1.07405, apo = 3.9344, height = 3.2, plain = 0.86 }
+args = { half = 1.07405, apo = 3.9344, height = 3.2, plain = 0.86, clad = "int_silver_c" }
 plain = [-0.25, 0.25, -0.86, 0.86]
 
 [[pieces]]
@@ -875,26 +849,6 @@ id = "cor_ceil"
 builder = "cor_ceil"
 collide = false
 args = { length = 1.03778 }
-
-[[pieces]]
-id = "cor_arch"
-builder = "cor_arch"
-collide = true
-foot = [-0.16, 0.16, -1.55, 1.55]
-
-[[pieces]]
-id = "arch_strip_l"
-builder = "cor_arch_strip"
-collide = false
-args = { side = -1 }
-foot = [-0.16, 0.16, -1.55, 1.55]
-
-[[pieces]]
-id = "arch_strip_r"
-builder = "cor_arch_strip"
-collide = false
-args = { side = 1 }
-foot = [-0.16, 0.16, -1.55, 1.55]
 
 [[pieces]]
 id = "tip_floor_base"
@@ -989,7 +943,19 @@ collide = false
 id = "tip_portal"
 builder = "portal"
 collide = true
-args = { half = 1.53, height = 2.428 }
+args = { half = 1.53, height = 2.428, narrow = 0.03, rim = 0.028, bevel = 0.012 }
+
+[[pieces]]
+id = "tip_portal_strip_l"
+builder = "portal_strip"
+collide = false
+args = { side = -1, at_in = -0.0135, at_out = 0.0115 }
+
+[[pieces]]
+id = "tip_portal_strip_r"
+builder = "portal_strip"
+collide = false
+args = { side = 1, at_in = -0.0135, at_out = 0.0115 }
 
 [[pieces]]
 id = "tip_ceiling"

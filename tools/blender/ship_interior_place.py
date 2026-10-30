@@ -36,6 +36,8 @@ BOARD_X = (round(_BOARD - S._SHIP["stations"]["plain_width_m"] / 2 - 0.1, 4),
            round(_BOARD + S._SHIP["stations"]["plain_width_m"] / 2 + 0.1, 4))
 # v2: the corridors' cyan arches (u), 0.232 in from each portal, off the breaker board's span; rebuild A: three
 # ceiling ribs evenly between them (inside-fix: v2 had two between 4.15 and 6.4)
+TIP_NARROW = 0.03                                      # step 6: the tip door's frame inside the corridor's walls
+TIP_STRIP = (-0.0135, 0.0115)                          # its strip's offsets from the corridor's profile (the band's middle)
 ARCH_X = (round(S.COR_X0 + 0.232, 4), round(S.COR_X1 - 0.232, 4))
 COR_RIBS = tuple(round(ARCH_X[0] + (ARCH_X[1] - ARCH_X[0]) * k / 5, 4) for k in (1, 2, 3, 4))   # lens step 1: four
 
@@ -104,8 +106,6 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
                                "rim": round(S.HCH - S.COR_HALF - 0.002, 4), "bevel": 0.012}, True),
     "hall_portal_strip_l": ("portal_strip", {"side": -1, "at_in": 0.017, "at_out": 0.042}, False),
     "hall_portal_strip_r": ("portal_strip", {"side": 1, "at_in": 0.017, "at_out": 0.042}, False),
-    "portal_strip_l": ("portal_strip", {"side": -1}, False),
-    "portal_strip_r": ("portal_strip", {"side": 1}, False),
     "hall_ceil_panel_a": ("hall_ceil_panel", {"tone": "a"}, False),
     "hall_ceil_panel_b": ("hall_ceil_panel", {"tone": "b"}, False),
     # rebuild A: the re-spaced facets' wall panels, floor rims and ceiling panels
@@ -155,13 +155,11 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
                                               "plain": S._SHIP["stations"]["plain_width_m"] / 2}, True),
     # lens step 1: the front socket's flat chord from the throat's corner to the corridor's opening (2.15 m)
     "hall_panel_flat_sockf": ("flat_panel", {"half": round(_hv(PHI_SOCKF)[1], 5), "apo": round(_hv(PHI_SOCKF)[0], 5),
-                                             "height": S.H_HALL, "plain": 0.86}, True),   # the spot 0.045 m off its middle
+                                             "height": S.H_HALL, "plain": 0.86, "clad": "int_silver_c"}, True),   # the spot 0.045 m off its middle;
+    # step 6: clad in the throat's end-frame metal (flat, the station spot stays plain), a soft warm lamp on it (ship.toml)
     "cor_wall_up_a": ("cor_wall_up", {"length": S.MOD_L, "tone": "a"}, True),
     "cor_wall_up_b": ("cor_wall_up", {"length": S.MOD_L, "tone": "b"}, True),
     "cor_ceil": ("cor_ceil", {"length": S.MOD_L}, False),
-    "cor_arch": ("cor_arch", {}, True),
-    "arch_strip_l": ("cor_arch_strip", {"side": -1}, False),
-    "arch_strip_r": ("cor_arch_strip", {"side": 1}, False),
     # inside 3-1: the mouth's own wide portal and arch (S.MOUTH_PROF: hall_out-2's opening)
     # the tip rooms
     "tip_floor_base": ("tip_floor_base", {}, True),
@@ -184,7 +182,14 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     "tip_glass": ("tip_glass", {}, False),
     "tip_mullion": ("tip_mullion", {}, True),
     "tip_sill_strip": ("tip_sill_strip", {}, False),
-    "tip_portal": ("portal", {"half": S.TIP_CHORD_H, "height": S.H_TIP_PORTAL}, True),
+    # step 6 (the corridor-to-lens-room doors, as step 5's hall portals): no tip pilaster at the door, no arch beside
+    # it; the door's chord leaves 3 cm past the corridor (TIP_CHORD_H 1.53), so its frame steps 3 cm into the opening
+    # (`narrow`) for a 5.8 cm band that ends at the facets' vertex in a bevelled reveal, its strip centred on it
+    "tip_portal": ("portal", {"half": S.TIP_CHORD_H, "height": S.H_TIP_PORTAL, "narrow": TIP_NARROW,
+                              "rim": round(S.TIP_CHORD_H - S.COR_HALF - 0.002, 4), "bevel": 0.012}, True),
+    "tip_portal_strip_l": ("portal_strip", {"side": -1, "at_in": TIP_STRIP[0], "at_out": TIP_STRIP[1]}, False),
+    "tip_portal_strip_r": ("portal_strip", {"side": 1, "at_in": TIP_STRIP[0], "at_out": TIP_STRIP[1]}, False),
+    # (step 6: cor_arch, arch_strip_l/_r and the old portal_strip_l/_r are no longer placed: dropped)
     "tip_ceiling": ("tip_ceiling", {}, False),
 }
 PIECES |= {
@@ -274,9 +279,6 @@ FOOT: dict[str, list[float]] = {
     "cor_bay_out": [(BOARD_X[1] - S.COR_X1) / 2, (S.COR_X1 - BOARD_X[1]) / 2] + _BAY[2:],
     "cor_bay_out_cables": [(BOARD_X[1] - S.COR_X1) / 2, (S.COR_X1 - BOARD_X[1]) / 2] + _BAY[2:],
     "cor_channel": _BAY, "cor_cables": _BAY, "clip_h": [-0.05, 0.05, -S.COR_HALF - 0.05, -S.COR_HALF + 0.35],
-    "cor_arch": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
-    "arch_strip_l": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
-    "arch_strip_r": [-0.16, 0.16, -S.COR_HALF - 0.05, S.COR_HALF + 0.05],
 }
 
 
@@ -426,10 +428,8 @@ def placements() -> list[tuple[str, list[float], float]]:
                 put("clip_h", local(at, front, dx, 0.0), front)
         for x in COR_RIBS:
             put("cor_ceil_rib", local((0.0, 0.0), yaw, x, 0.0), yaw)
-        for x in ARCH_X[1:]:  # v2: off the breaker board's plain wall; step 5: none beside the hall's portal
-            p = local((0.0, 0.0), yaw, x, 0.0)
-            for pid in ("cor_arch", "arch_strip_l", "arch_strip_r"):
-                put(pid, p, yaw)
+        # (no cor_arch: step 5 dropped the one beside the hall's portal, step 6 the one beside the tip door's; the
+        # corridor keeps its ceiling ribs, spaced on ARCH_X)
     # rebuild C: the throat's two slanted walls, four modules each from the mouth to the hall's corner (a piece's wall
     # at local -y, TH_HALF from its origin): plain where the vent hangs, a cable bay elsewhere, the chamfer under the
     # roof; amber floor lights along each wall
@@ -513,7 +513,9 @@ def placements() -> list[tuple[str, list[float], float]]:
                     put(SOFA_THROWS[i], polar(apo, a, c, room), room - a)
         for a in tv:
             v = round(a, 4)
-            if abs(abs(a) - door) < 1e-6 or v in ends:
+            if abs(abs(a) - door) < 1e-6:
+                pass   # step 6: the door's portal frames its own jambs (the pilaster doubled its jamb and strip)
+            elif v in ends:
                 put("tip_pilaster", polar(S.R_TIP, a, c, room), room - a)
                 put("tip_pilaster_strip", polar(S.R_TIP, a, c, room), room - a)
             elif v in band_v:
@@ -521,7 +523,7 @@ def placements() -> list[tuple[str, list[float], float]]:
             # (the door side's cable trunks went with the west workshop: its bench and cabinet took their last two
             # vertices, the east lounge and the alcoves the others)
         p = polar(-S.TIP_CHORD, 180.0, c, room)
-        for pid in ("tip_portal", "portal_strip_l", "portal_strip_r"):
+        for pid in ("tip_portal", "tip_portal_strip_l", "tip_portal_strip_r"):
             put(pid, p, room - 180.0)
         # lens C: the charger's alcove on the renewer's vertex, its conduits; the east lounge's free pieces
         ren = s * RENEWER_DEG
