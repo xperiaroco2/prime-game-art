@@ -152,6 +152,8 @@ func _build() -> Node3D:
 		node.name = "%s_%d" % [p[0], ship.get_child_count()]
 		node.position = _v(p[1])
 		node.rotation_degrees.y = float(p[2])
+		if p.size() > 3:  # art #263: a jaw piece turned about its hinge (its origin) by the pose's angle
+			node.rotation_degrees.x = float(p[3])
 		ship.add_child(node)
 		if p[0] in _req.get("outside", []):  # inside-2: the outside draws on layer 2, unlit by the inside's strips
 			_set_layers(node, OUTSIDE_LAYER)
@@ -488,204 +490,54 @@ func _piece_id(n: Node, ship: Node3D) -> String:
 	return name.substr(0, name.rfind("_"))
 
 
-## The closed nose's blockout variants (art #356, the lobby's docked ship; ship_layout.closed_poses, built only when a
-## shot asks for one): per variant a hidden Node3D "Closed_<name>" of CSG parts on the outside layer. A part: "kind"
-## "prism" (a plan polygon [[x, h]...] in the plane y = "y", extruded aft by "depth"; "ring" d: only its band d wide
-## inside the outline; "hole" [x, h, r]: a round hole cut through it), "box" ("at" [x, y, h], "size" [x, y, h],
-## "pitch" deg about x) or "iris" (round 2: a petal shutter at "centre" [x, h] of radius "r" in the plane y, "blades"
-## blades swirled by "swirl" deg, each "depth" thick and every other one "step" proud, "seam" apart over a dark back,
-## a glowing disc "glow" [r, energy] behind the centre, a ring "rim" [width, METALS name] round it); "inset" d shrinks
-## a prism's polygon by d (grows it if negative), "yaw" deg turns a plain prism about the vertical at plan x "pivot";
-## "mat" a METALS name ("mat2" the iris's every other blade), or
-## "rgb" with "emit" (an emission energy), "rough" and "metal".
-func _closed_build(ship: Node3D) -> void:
-	var poses: Dictionary = _req.get("closed", {})
-	for name: String in poses:
-		var group: Node3D = Node3D.new()
-		group.name = "Closed_%s" % name
-		group.visible = false
-		ship.get_parent().add_child(group)
-		for part: Dictionary in poses[name]["parts"]:
-			var node: GeometryInstance3D = _closed_part(part)
-			node.layers = OUTSIDE_LAYER
-			group.add_child(node)
+## The jaw nose's pose (art #263, ship.toml [jaw]): the request's "jaw" {pose: {piece: deg}} turns each placed jaw piece
+## about Godot's x (its origin is its hinge; + lifts the front).
+func _jaw_pose(ship: Node3D, pose: String) -> void:
+	var deg: Dictionary = (_req.get("jaw", {}) as Dictionary).get(pose, {})
+	_jaw_turn(ship, deg)
 
 
-func _closed_part(part: Dictionary) -> GeometryInstance3D:
-	var mat: Material
-	if part.has("mat"):
-		mat = _metal(str(part["mat"]))
-	else:
-		var sm: StandardMaterial3D = StandardMaterial3D.new()
-		var c: Array = part.get("rgb", [0.1, 0.1, 0.1])
-		sm.albedo_color = Color(float(c[0]), float(c[1]), float(c[2]))
-		sm.roughness = float(part.get("rough", 0.5))
-		sm.metallic = float(part.get("metal", 0.3))
-		if float(part.get("emit", 0.0)) > 0.0:
-			sm.emission_enabled = true
-			sm.emission = sm.albedo_color
-			sm.emission_energy_multiplier = float(part["emit"])
-		mat = sm
-	if str(part.get("kind", "box")) == "iris":
-		return _closed_iris(part, mat)
-	if str(part.get("kind", "box")) == "box":
-		var box: CSGBox3D = CSGBox3D.new()
-		var sz: Array = part["size"]
-		box.size = Vector3(float(sz[0]), float(sz[2]), float(sz[1]))
-		var at: Array = part["at"]
-		box.position = Vector3(float(at[0]), float(at[2]), float(at[1]))
-		box.rotation_degrees.x = float(part.get("pitch", 0.0))
-		box.material = mat
-		return box
-	var poly: PackedVector2Array = PackedVector2Array()
-	for q: Array in part["poly"]:
-		poly.append(Vector2(float(q[0]), float(q[1])))
-	if float(part.get("inset", 0.0)) != 0.0:  # round 2: the polygon shrunk (grown if negative) by inset, mitred
-		poly = Geometry2D.offset_polygon(poly, -float(part["inset"]), Geometry2D.JOIN_MITER)[0]
-	var depth: float = float(part["depth"])
-	var outer: CSGPolygon3D = CSGPolygon3D.new()
-	outer.polygon = poly
-	outer.depth = depth
-	outer.position = Vector3(0, 0, float(part["y"]) + depth)  # extruded along -z: from y aft by depth
-	outer.material = mat
-	if part.has("hole"):  # a round hole through the plate (the iris's surround)
-		var hc: Array = part["hole"]
-		var combo_h: CSGCombiner3D = CSGCombiner3D.new()
-		outer.position = Vector3.ZERO
-		combo_h.position = Vector3(0, 0, float(part["y"]) + depth)
-		combo_h.add_child(outer)
-		var hole: CSGPolygon3D = CSGPolygon3D.new()
-		hole.polygon = _circle(Vector2(float(hc[0]), float(hc[1])), float(hc[2]), 64)
-		hole.depth = depth + 0.02
-		hole.position = Vector3(0, 0, 0.01)
-		hole.operation = CSGShape3D.OPERATION_SUBTRACTION
-		hole.material = mat
-		combo_h.add_child(hole)
-		return combo_h
-	if not part.has("ring"):
-		if part.has("yaw"):  # round 2: turned about the vertical line at plan x "pivot" (its outer edge stays put)
-			var piv: Vector3 = Vector3(float(part.get("pivot", 0.0)), 0, float(part["y"]))
-			outer.rotation_degrees.y = float(part["yaw"])
-			outer.position = outer.basis * (outer.position - piv) + piv
-		return outer
-	var combo: CSGCombiner3D = CSGCombiner3D.new()
-	outer.position = Vector3.ZERO
-	combo.position = Vector3(0, 0, float(part["y"]) + depth)
-	combo.add_child(outer)
-	var shrunk: Array = Geometry2D.offset_polygon(poly, -float(part["ring"]))
-	if not shrunk.is_empty():
-		var inner: CSGPolygon3D = CSGPolygon3D.new()
-		inner.polygon = shrunk[0]
-		inner.depth = depth + 0.02
-		inner.position = Vector3(0, 0, 0.01)
-		inner.operation = CSGShape3D.OPERATION_SUBTRACTION
-		inner.material = mat
-		combo.add_child(inner)
-	return combo
+func _jaw_turn(ship: Node3D, deg: Dictionary) -> void:
+	for n: Node in ship.get_children():
+		var s: String = String(n.name)
+		var pid: String = s.substr(0, s.rfind("_"))
+		if deg.has(pid):
+			(n as Node3D).rotation_degrees.x = float(deg[pid])
 
 
-## A round polygon of n points.
-func _circle(c: Vector2, r: float, n: int) -> PackedVector2Array:
-	var out: PackedVector2Array = PackedVector2Array()
-	for i: int in n:
-		out.append(c + Vector2.from_angle(TAU * i / n) * r)
+## The jaw video's seam line: [material, its emission energy] for each mesh named seam_glow* under a jaw piece, each
+## given its own material copy so the video can fade it.
+func _jaw_seam(ship: Node3D) -> Array:
+	var out: Array = []
+	for m: Node in ship.find_children("seam_glow*", "MeshInstance3D", true, false):
+		var mi: MeshInstance3D = m as MeshInstance3D
+		var base: Material = mi.get_active_material(0)
+		if base is BaseMaterial3D:
+			var copy: BaseMaterial3D = (base as BaseMaterial3D).duplicate() as BaseMaterial3D
+			mi.material_override = copy
+			out.append([copy, copy.emission_energy_multiplier])
 	return out
 
 
-## The iris (round 2, variant C): a dark back disc, a glowing disc behind the centre, the blades between swirled seams.
-func _closed_iris(part: Dictionary, mat: Material) -> GeometryInstance3D:
-	var group: CSGCombiner3D = CSGCombiner3D.new()  # (a GeometryInstance3D: _closed_build sets its layers)
-	var c: Vector2 = Vector2(float(part["centre"][0]), float(part["centre"][1]))
-	var r: float = float(part["r"])
-	var y: float = float(part["y"])
-	var depth: float = float(part.get("depth", 0.05))
-	var n: int = int(part.get("blades", 8))
-	var swirl: float = deg_to_rad(float(part.get("swirl", 55.0)))
-	var mat2: Material = _metal(str(part["mat2"])) if part.has("mat2") else mat
-	var back: CSGPolygon3D = CSGPolygon3D.new()
-	back.polygon = _circle(c, r + 0.01, 64)
-	back.depth = 0.02
-	back.position = Vector3(0, 0, y + depth + 0.03)
-	back.material = _metal("ext_seam")
-	group.add_child(back)
-	if part.has("glow"):
-		var g: Array = part["glow"]
-		var gm: StandardMaterial3D = StandardMaterial3D.new()
-		gm.albedo_color = Color(0.2, 0.9, 1.0)
-		gm.emission_enabled = true
-		gm.emission = gm.albedo_color
-		gm.emission_energy_multiplier = float(g[1])
-		var disc: CSGPolygon3D = CSGPolygon3D.new()
-		disc.polygon = _circle(c, float(g[0]), 32)
-		disc.depth = 0.01
-		disc.position = Vector3(0, 0, y + depth + 0.015)
-		disc.material = gm
-		group.add_child(disc)
-	if part.has("rim"):
-		var rim: CSGCombiner3D = CSGCombiner3D.new()
-		rim.position = Vector3(0, 0, y + depth)
-		var ro: CSGPolygon3D = CSGPolygon3D.new()
-		ro.polygon = _circle(c, r + float(part["rim"][0]), 64)
-		ro.depth = depth + 0.06
-		ro.position = Vector3(0, 0, 0.02)
-		ro.material = _metal(str(part["rim"][1]))
-		rim.add_child(ro)
-		var ri: CSGPolygon3D = CSGPolygon3D.new()
-		ri.polygon = _circle(c, r, 64)
-		ri.depth = depth + 0.14
-		ri.position = Vector3(0, 0, 0.07)
-		ri.operation = CSGShape3D.OPERATION_SUBTRACTION
-		rim.add_child(ri)
-		group.add_child(rim)
-	var steps: int = 10
-	for k: int in n:
-		var a0: float = TAU * k / n
-		var a1: float = TAU * (k + 1) / n
-		var poly: PackedVector2Array = PackedVector2Array()
-		for i: int in steps + 1:  # out along seam k
-			var t: float = float(i) / steps
-			poly.append(c + Vector2.from_angle(a0 + swirl * t) * (r * t))
-		for i: int in range(1, steps):  # the rim arc
-			poly.append(c + Vector2.from_angle(a0 + swirl + (a1 - a0) * i / steps) * r)
-		for i: int in range(steps, 0, -1):  # back in along seam k + 1
-			var t: float = float(i) / steps
-			poly.append(c + Vector2.from_angle(a1 + swirl * t) * (r * t))
-		var shrunk: Array = Geometry2D.offset_polygon(poly, -float(part.get("seam", 0.012)) / 2.0)
-		if shrunk.is_empty():
-			continue
-		var blade: CSGPolygon3D = CSGPolygon3D.new()
-		blade.polygon = shrunk[0]
-		var proud: float = float(part.get("step", 0.0)) if k % 2 == 0 else 0.0
-		blade.depth = depth + proud
-		blade.position = Vector3(0, 0, y + depth)
-		blade.material = mat if k % 2 == 0 else mat2
-		group.add_child(blade)
-	return group
-
-
-## Shows one closed variant (or none: the open ship) and hides the pieces it replaces: the pieces named in "hide" (and
-## the strip lights only they make), and every placement and lamp within r of a "hide_at" [x, y, r] in plan.
-func _closed_pose(ship: Node3D, name: String) -> void:
-	var poses: Dictionary = _req.get("closed", {})
-	if poses.is_empty():
-		return
-	var hide: Array = poses[name]["hide"] if poses.has(name) else []
-	var spots: Array = poses[name].get("hide_at", []) if poses.has(name) else []
-	var near: Callable = func(p: Vector3) -> bool:
-		for q: Array in spots:
-			if Vector2(p.x - float(q[0]), p.z - float(q[1])).length() < float(q[2]):
-				return true
-		return false
-	for n: Node in ship.get_children():
-		var s: String = String(n.name)
-		(n as Node3D).visible = not (s.substr(0, s.rfind("_")) in hide) and not near.call((n as Node3D).position)
-	for n: Node in root.get_children():
-		if n is OmniLight3D or n is SpotLight3D:
-			var lit: Array = (n as Light3D).get_meta("pieces", [])
-			var gone: bool = not lit.is_empty() and lit.all(func(pid: String) -> bool: return pid in hide)
-			(n as Light3D).visible = not gone and not near.call((n as Light3D).position)
-	for other: String in poses:
-		(ship.get_parent().get_node("Closed_%s" % other) as Node3D).visible = other == name
+## One video frame of the jaw (art #263): the keys [t, lower deg, upper deg, seam 0..1], smoothstep between two keys.
+func _jaw_frame(ship: Node3D, v: Dictionary, t: float, seam: Array) -> void:
+	var keys: Array = v["jaw"]
+	var i: int = 0
+	while i < keys.size() - 2 and t > float(keys[i + 1][0]):
+		i += 1
+	var a: Array = keys[i]
+	var b: Array = keys[i + 1]
+	var w: float = clampf((t - float(a[0])) / maxf(0.001, float(b[0]) - float(a[0])), 0.0, 1.0)
+	w = w * w * (3.0 - 2.0 * w)
+	var deg: Dictionary = {}
+	for pid: String in v["lower"]:
+		deg[pid] = lerpf(float(a[1]), float(b[1]), w)
+	for pid: String in v["upper"]:
+		deg[pid] = lerpf(float(a[2]), float(b[2]), w)
+	_jaw_turn(ship, deg)
+	var g: float = lerpf(float(a[3]), float(b[3]), w)
+	for s: Array in seam:
+		(s[0] as BaseMaterial3D).emission_energy_multiplier = float(s[1]) * g
 
 
 ## Every mesh under n on the render layers bits.
@@ -763,7 +615,6 @@ func _shoot() -> void:
 	var lights: int = _dress(ship)
 	_stations(ship)
 	_probes()
-	_closed_build(ship)
 	print("SHIP look: %d emissive lights" % lights)
 	if nav_blink:
 		process_frame.connect(_nav_tick)
@@ -789,7 +640,8 @@ func _shoot() -> void:
 		_camera.look_at_from_position(_v(v[2]), _v(v[3]), UP)
 		_ab(v[5] if v.size() > 5 else {})
 		_gills(ship, (v[5] as Dictionary).get("gills", {}) if v.size() > 5 and v[5] is Dictionary else {})
-		_closed_pose(ship, str((v[5] as Dictionary).get("closed", "")) if v.size() > 5 and v[5] is Dictionary else "")
+		if v.size() > 5 and v[5] is Dictionary and (v[5] as Dictionary).has("jaw"):
+			_jaw_pose(ship, str(v[5]["jaw"]))
 		images[v[0]] = await _shot(v[0], v[1], shots)
 		_ab({})
 	if _req.has("top"):  # (a --views prefix set alone has no plan view)
@@ -1094,9 +946,11 @@ func _day() -> void:
 ## saved as a PNG (the runner encodes them with Blender's FFmpeg).
 func _video() -> void:
 	_environment()
-	var lights: int = _dress(_build())
+	var ship: Node3D = _build()
+	var lights: int = _dress(ship)
 	_probes()
 	var v: Dictionary = _req["video"]
+	var seam: Array = _jaw_seam(ship) if v.has("jaw") else []
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	_camera.far = 500.0
@@ -1123,6 +977,8 @@ func _video() -> void:
 		var gap: float = float(times[k + 1]) - float(times[k])
 		var w: float = (t - float(times[k])) / gap if gap > 0.0 else 1.0
 		_camera.look_at_from_position(_key(keys, times, k, w, 0), _key(keys, times, k, w, 1), UP)
+		if v.has("jaw"):
+			_jaw_frame(ship, v, t, seam)
 		await RenderingServer.frame_post_draw
 		var image: Image = root.get_texture().get_image()
 		image.convert(Image.FORMAT_RGB8)
@@ -1283,7 +1139,7 @@ func _sheet(rows: Array) -> Image:
 		var total: float = 0.0
 		for w: float in widths:
 			total += w
-		var k: float = (SHEET_W - (row.size() - 1) * GAP) / total
+		var k: float = (_sheet_w() - (row.size() - 1) * GAP) / total
 		var tiles: Array = []
 		for i: int in row.size():
 			var img: Image = (row[i] as Image).duplicate() as Image
@@ -1291,7 +1147,7 @@ func _sheet(rows: Array) -> Image:
 			tiles.append(img)
 		scaled.append(tiles)
 		height += int(h0 * k) + GAP
-	var sheet: Image = Image.create_empty(SHEET_W, maxi(1, height - GAP), false, Image.FORMAT_RGB8)
+	var sheet: Image = Image.create_empty(_sheet_w(), maxi(1, height - GAP), false, Image.FORMAT_RGB8)
 	sheet.fill(Color(0.97, 0.97, 0.97))
 	var y: int = 0
 	for tiles: Array in scaled:
@@ -1301,6 +1157,11 @@ func _sheet(rows: Array) -> Image:
 			x += img.get_width() + GAP
 		y += (tiles[0] as Image).get_height() + GAP
 	return sheet
+
+
+## The sheet's width: SHEET_W, or the request's "sheet_px" (art #263, the nose's review sheets: 1600 px).
+func _sheet_w() -> int:
+	return int(_req.get("sheet_px", SHEET_W))
 
 
 func _v(a: Variant) -> Vector3:

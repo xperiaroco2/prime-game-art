@@ -12,10 +12,11 @@ place = [
   ["skin_belly", [0.00, 0.00, 0.00], 0.0],
   ["skin_mouth", [0.00, 0.00, 0.00], 0.0],
   ["skin_cheeks", [0.00, 0.00, 0.00], 0.0],
-  ["ramp", [0.00, -8.10, 0.00], 0.0],
-  ["ramp_lights", [0.00, -8.10, 0.00], 0.0],
-  # the raise step 2: the entry tunnel past the nose (y -7.1 to -8.1), its hood over the notch
-  ["mouth_tunnel", [0.00, 0.00, 0.00], 0.0],
+  # the jaw nose (art #263, b1): each jaw at its hinge, turned by ship.toml [jaw]'s pose; the root fixed
+  ["jaw_lower", [0.00, -8.10, 1.20], 0.0],
+  ["jaw_upper", [0.00, -4.60, 4.67], 0.0],
+  ["jaw_root", [0.00, 0.00, 0.00], 0.0],
+  # the raise step 2: the entry tunnel past the nose (y -7.1 to -8.1); its hood gave way to the jaws (art #263, b1)
   ["mouth_tunnel_in", [0.00, 0.00, 0.00], 0.0],
   # details: the canopies in their fairings (outside only), the pods (rear ends at J's y 11.0 / 11.8)
   ["canopy_fairing_e", [0.00, 0.00, 0.00], 0.0],
@@ -39,7 +40,6 @@ place = [
   ["tail_vents", [0.00, 0.00, 0.00], 0.0],
   ["hump_sensors", [0.00, 0.00, 0.00], 0.0],
   ["service_hatches", [0.00, 0.00, 0.00], 0.0],
-  ["hazard_stripes", [0.00, 0.00, 0.00], 0.0],
   # light layer: the navigation lamps (port red on the west lens rim's forward facet, starboard green on the east's,
   # under the edge light; white on the tail's top centre) and a warm landing light under the belly by each leg
   # NAV SIDE (fix 2: off, "not needed yet"; uncomment with the pieces below and ship.toml's two "nav" lamp rows)
@@ -609,19 +609,6 @@ id = "skin_cheeks"
 builder = "j_cheeks"
 
 [[pieces]]
-id = "ramp"
-builder = "ramp"
-grounded = true                              # built at the real heights (not lifted: the raise)
-collide = true
-outside = true
-
-[[pieces]]
-id = "ramp_lights"
-builder = "ramp_lights"
-grounded = true                              # built at the real heights (not lifted: the raise)
-outside = true
-
-[[pieces]]
 id = "leg_front"
 builder = "leg"
 grounded = true                              # built at the real heights (not lifted: the raise)
@@ -1024,12 +1011,6 @@ id = "service_hatches"
 builder = "service_hatches"
 
 [[pieces]]
-id = "hazard_stripes"
-builder = "hazard_stripes"
-grounded = true                              # built at the real heights (not lifted: the raise)
-outside = true                               # the ramp's rails stand outside the hull
-
-[[pieces]]
 id = "lens_frames"                           # lens step 2: the band's and the roof windows' outer frames
 builder = "lens_frames"
 
@@ -1049,14 +1030,6 @@ builder = "j_skin"
 args = { part = "mouth" }
 
 [[pieces]]
-id = "mouth_tunnel"                          # the raise step 2: the entry tunnel 1 m past the nose and its hood over
-builder = "mouth_tunnel"                     # the mouth's notch (ship_hull_j.mouth_tunnel)
-args = { part = "hood" }                     # the raise step 3: the hood, the fill, the portal (the outside layer)
-collide = true
-outside = true                               # the only hull pieces past the footprint's lead edge (y -7.1): their
-                                             # front at the throat's tunnel_y -8.1
-
-[[pieces]]
 id = "mouth_tunnel_in"                       # the raise step 3: the tunnel's inside (walls, chamfers, ceiling, ribs,
 builder = "mouth_tunnel"                     # strips, floor) on the inside layer, lit by the throat's strips as the
 args = { part = "inside" }                   # throat is (it drew on the outside layer, darker)
@@ -1064,58 +1037,26 @@ layer = "inside"
 collide = true
 outside = true
 
-# The closed nose (art #356: the lobby shows the ship docked and closed; the look is the engineer's pick): three quick
-# blockout variants for his stills, off by default; a `ship --shoot --views FILE` row whose 6th element is
-# {"closed": "<name>"} shows one (ship.gd _closed_build, ship_layout.closed_poses). Parts: "prism" a plan polygon
-# [[x, h]...] in the plane y, extruded aft by depth ("ring" d: its band d wide only; "inset" d: shrunk by d, grown if
-# negative; "hole" [x, h, r]: a round hole through it), "box" at [x, y, h] size [x, y, h], "iris" a petal shutter
-# (ship.gd _closed_iris); "mat" a ship.gd METALS name or "rgb" with "emit". The tunnel's open front (y -8.1): x +-1.65,
-# floor 1.2, the bend 2.65, the ceiling +-1.1 at 3.5 (ship_hull_j.mouth_tunnel's inner profile, tunnel_chamfer
-# [1.45, 0.55]); the dark portal frame's face at y -8.16, its chrome lip back to -8.02. Round 2 (the manager: round 1
-# read as a pale garage door, the stripes led to a shut mouth): every variant hides the ramp, its lights, its hazard
-# stripes and its four ground lamps.
-[closed_nose.a]
-title = "A sealed skin: hull plates in a shallow prow (4 deg a side), a fine seam, a thin cyan line round"
-hide = ["ramp", "ramp_lights", "hazard_stripes"]
-hide_at = [[-3.7, -10.3, 0.6], [3.7, -10.3, 0.6], [-3.7, -12.0, 0.6], [3.7, -12.0, 0.6]]  # the ramp's four ground lamps
-parts = [
-  { kind = "prism", poly = [[-1.65, 1.2], [1.65, 1.2], [1.65, 2.65], [1.1, 3.5], [-1.1, 3.5], [-1.65, 2.65]], y = -8.10, depth = 0.04, mat = "ext_seam" },
-  { kind = "prism", poly = [[-1.65, 1.2], [0.0, 1.2], [0.0, 3.5], [-0.6, 3.5], [-1.65, 1.75]], inset = 0.011, y = -8.13, depth = 0.03, yaw = 4.0, pivot = -1.65, mat = "hull_silver" },
-  { kind = "prism", poly = [[-1.65, 1.2], [0.0, 1.2], [0.0, 3.5], [-0.6, 3.5], [-1.65, 1.75]], inset = 0.045, y = -8.136, depth = 0.01, yaw = 4.0, pivot = -1.65, mat = "hull_silver" },
-  { kind = "prism", poly = [[0.0, 1.2], [1.65, 1.2], [1.65, 1.75], [0.6, 3.5], [0.0, 3.5]], inset = 0.011, y = -8.13, depth = 0.03, yaw = -4.0, pivot = 1.65, mat = "hull_silver" },
-  { kind = "prism", poly = [[0.0, 1.2], [1.65, 1.2], [1.65, 1.75], [0.6, 3.5], [0.0, 3.5]], inset = 0.045, y = -8.136, depth = 0.01, yaw = -4.0, pivot = 1.65, mat = "hull_silver" },
-  { kind = "prism", poly = [[-1.65, 1.75], [-0.6, 3.5], [-1.1, 3.5], [-1.65, 2.65]], inset = 0.011, y = -8.13, depth = 0.03, yaw = 4.0, pivot = -1.65, mat = "ext_silver_c" },
-  { kind = "prism", poly = [[-1.65, 1.75], [-0.6, 3.5], [-1.1, 3.5], [-1.65, 2.65]], inset = 0.045, y = -8.136, depth = 0.01, yaw = 4.0, pivot = -1.65, mat = "ext_silver_c" },
-  { kind = "prism", poly = [[1.65, 1.75], [1.65, 2.65], [1.1, 3.5], [0.6, 3.5]], inset = 0.011, y = -8.13, depth = 0.03, yaw = -4.0, pivot = 1.65, mat = "ext_silver_c" },
-  { kind = "prism", poly = [[1.65, 1.75], [1.65, 2.65], [1.1, 3.5], [0.6, 3.5]], inset = 0.045, y = -8.136, depth = 0.01, yaw = -4.0, pivot = 1.65, mat = "ext_silver_c" },
-  { kind = "box", at = [0.0, -8.2, 2.35], size = [0.03, 0.15, 2.3], mat = "ext_seam" },
-  { kind = "prism", poly = [[-1.65, 1.2], [1.65, 1.2], [1.65, 2.65], [1.1, 3.5], [-1.1, 3.5], [-1.65, 2.65]], ring = 0.02, y = -8.142, depth = 0.012, rgb = [0.2, 0.9, 1.0], emit = 3.0 },
-]
+# The jaw nose (art #263, blockout b1; tools/blender/ship_hull_jaw.py, ship.toml [jaw]): the prow splits along a
+# horizontal seam; the lower jaw is the ramp, the upper the roof; built closed, each origin at its hinge, turned by
+# the pose in ship.gd. They replace the ramp, its lights, its hazard stripes and the entry tunnel's hood (2026-10-30).
+[[pieces]]
+id = "jaw_upper"
+builder = "jaw_upper"
+grounded = true                              # built at the real heights
+collide = true
+outside = true
 
-[closed_nose.b]
-title = "B raised ramp as the door: its ribbed dark underside out, a bevelled frame, the stripes on the hidden face"
-hide = ["ramp", "ramp_lights", "hazard_stripes"]
-hide_at = [[-3.7, -10.3, 0.6], [3.7, -10.3, 0.6], [-3.7, -12.0, 0.6], [3.7, -12.0, 0.6]]  # the ramp's four ground lamps
-parts = [
-  { kind = "prism", poly = [[-1.65, 1.2], [1.65, 1.2], [1.65, 2.65], [1.1, 3.5], [-1.1, 3.5], [-1.65, 2.65]], inset = -0.07, y = -8.31, depth = 0.14, mat = "leg_metal" },
-  { kind = "prism", poly = [[-1.65, 1.2], [1.65, 1.2], [1.65, 2.65], [1.1, 3.5], [-1.1, 3.5], [-1.65, 2.65]], inset = -0.07, ring = 0.18, y = -8.33, depth = 0.03, mat = "hull_silver" },
-  { kind = "prism", poly = [[-1.65, 1.2], [1.65, 1.2], [1.65, 2.65], [1.1, 3.5], [-1.1, 3.5], [-1.65, 2.65]], inset = -0.07, ring = 0.12, y = -8.35, depth = 0.05, mat = "ext_silver_c" },
-  { kind = "box", at = [-1.15, -8.335, 2.31], size = [0.07, 0.05, 1.98], mat = "ext_frame" },
-  { kind = "box", at = [-0.58, -8.335, 2.355], size = [0.07, 0.05, 2.07], mat = "ext_frame" },
-  { kind = "box", at = [0.0, -8.335, 2.355], size = [0.07, 0.05, 2.07], mat = "ext_frame" },
-  { kind = "box", at = [0.58, -8.335, 2.355], size = [0.07, 0.05, 2.07], mat = "ext_frame" },
-  { kind = "box", at = [1.15, -8.335, 2.31], size = [0.07, 0.05, 1.98], mat = "ext_frame" },
-  { kind = "box", at = [-1.15, -8.24, 1.08], size = [0.7, 0.2, 0.2], mat = "ext_silver_b" },
-  { kind = "box", at = [0.0, -8.24, 1.08], size = [0.9, 0.2, 0.2], mat = "ext_silver_b" },
-  { kind = "box", at = [1.15, -8.24, 1.08], size = [0.7, 0.2, 0.2], mat = "ext_silver_b" },
-  { kind = "box", at = [0.0, -8.355, 1.255], size = [2.6, 0.01, 0.016], rgb = [0.2, 0.9, 1.0], emit = 2.0 },
-]
+[[pieces]]
+id = "jaw_lower"
+builder = "jaw_lower"
+grounded = true
+collide = true
+outside = true
 
-[closed_nose.c]
-title = "C iris: a dark petal shutter recessed in the frame, a soft cyan glow at its centre, the ramp retracted"
-hide = ["ramp", "ramp_lights", "hazard_stripes"]
-hide_at = [[-3.7, -10.3, 0.6], [3.7, -10.3, 0.6], [-3.7, -12.0, 0.6], [3.7, -12.0, 0.6]]  # the ramp's four ground lamps
-parts = [
-  { kind = "prism", poly = [[-1.65, 1.2], [1.65, 1.2], [1.65, 2.65], [1.1, 3.5], [-1.1, 3.5], [-1.65, 2.65]], y = -8.02, depth = 0.05, hole = [0.0, 2.35, 1.15], mat = "hull_dark" },
-  { kind = "iris", centre = [0.0, 2.35], r = 1.06, y = -7.93, depth = 0.04, blades = 8, swirl = 50.0, step = 0.012, seam = 0.024, mat = "ext_silver_c", mat2 = "leg_metal", glow = [0.34, 4.0], rim = [0.09, "hull_silver"] },
-]
+[[pieces]]
+id = "jaw_root"
+builder = "jaw_root"
+grounded = true
+collide = true
+outside = true

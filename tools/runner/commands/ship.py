@@ -26,7 +26,7 @@ CHARGER_SCRIPT = "res://charger/room.gd"   # --shoot --charger (lens C step 3)
 BUILD_TIMEOUT = 900
 GODOT_TIMEOUT = 300
 VIEW_SIZE = (1920, 1080)
-CLOSED_SHEET_W = 1280   # art #356: the closed-nose variants' sheet (3 views a row)
+NOSE_SHEET_W = 1600     # art #263: the jaw nose's review sheets (3 views a row)
 SIZE_TOL_M = 0.01
 PLAY_DEFAULT = Path("<raw>/play")  # --play with no DIR: <raw>/<raw_dir>/play
 PLAY_HOURS = 8  # the most one --play session stays open
@@ -70,6 +70,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--gill-demo", choices=("slit", "row"), default="slit",
                         help="--gill-anim's demo: slit (gill_anim.mp4, 6 s) or row (gill_row.mp4, 10 s: the breath runs "
                              "along the row, presses open the gasping slits, all five open -> the exhale)")
+    parser.add_argument("--jaw-video", type=Path, metavar="DIR",
+                        help="the jaw nose opening (art #263) from a still 3/4 front camera at night: DIR/open.mp4")
     parser.add_argument("--vent-anim", type=Path, metavar="DIR",
                         help="the east vent's animation in place at night (godot/ship/vent_anim.gd through its demo: calm, "
                              "the problem, a hold, the cough, calm) from the player's eye off-screen: MP4 and key sheet into DIR")
@@ -141,6 +143,10 @@ def run(args: argparse.Namespace) -> int:
             return code
     if getattr(args, "gill_anim", None):
         code = gill_anim(layout, out, args.gill_anim.resolve(), getattr(args, "gill_demo", "slit"))
+        if code:
+            return code
+    if args.jaw_video:
+        code = walk_video(layout, out, args.jaw_video.resolve(), jaw_video_request(layout), "open.mp4")
         if code:
             return code
     if args.vent_anim:
@@ -225,8 +231,21 @@ def scene_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
     req = {"pieces": {p["id"]: f"res://import/ship_{p['id']}.glb" for p in layout["pieces"]},
            "collide": [p["id"] for p in layout["pieces"] if p["collide"]],
            "bounds": {pid: report[pid]["bounds"] for pid in req_ids(layout)},
-           "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"]]}
+           "place": places(layout)}
     return req, staged
+
+
+def places(layout: dict, ids: list[str] | None = None) -> list:
+    """The request's placements [id, [x, h, y], yaw] (Godot); a jaw piece's row carries its pose's angle about x as a
+    4th element (art #263, ship.toml [jaw])."""
+    deg = ship_layout.jaw_deg(layout)
+    return [[pid, _g(at), yaw, *([deg[pid]] if pid in deg else [])] for pid, at, yaw in layout["place"]
+            if ids is None or pid in ids]
+
+
+def jaw_request(layout: dict) -> dict:
+    """{pose: {piece: degrees about x}} for a view's or the video's {"jaw": pose} (ship.gd _jaw_pose)."""
+    return {pose: ship_layout.jaw_deg(layout, pose) for pose in ship_layout.JAW_POSES} if layout.get("jaw") else {}
 
 
 def req_ids(layout: dict) -> list[str]:
@@ -345,7 +364,7 @@ def built_request(layout: dict, out: Path) -> tuple[dict, dict[str, Path]]:
         common.say(f"  not built, left out: {', '.join(missing)}")
     req = {"pieces": {pid: f"res://import/ship_{pid}.glb" for pid in ids},
            "collide": [p["id"] for p in layout["pieces"] if p["collide"] and p["id"] in ids],
-           "place": [[pid, _g(at), yaw] for pid, at, yaw in layout["place"] if pid in ids],
+           "place": places(layout, ids), "jaw": jaw_request(layout),
            # inside-2: the outside pieces draw on render layer 2, out of reach of the inside's strip lights
            # (an exterior piece with layer = "inside", the tunnel's inside, draws with the inside's)
            "outside": [p["id"] for p in layout["pieces"]
@@ -455,11 +474,10 @@ def shoot(layout: dict, out: Path, folder: Path, only: str = "", states: str = "
         for key in ("top", "top_full", "day_views"):
             req.pop(key)
         req["compare"] = []
-    if any(len(v) > 5 and isinstance(v[5], dict) and "closed" in v[5] for v in req["views"]):
-        # art #356: a view's {"closed": name} shows that closed-nose blockout (exterior.toml [closed_nose.<name>],
-        # off by default; "" the open ship); the sheet comes out CLOSED_SHEET_W wide for the review, the review's views
-        # alone (round 2: no plan or top views)
-        req.update({"closed": ship_layout.closed_poses(layout), "sheet_w": CLOSED_SHEET_W, "compare": []})
+    if any(len(v) > 5 and isinstance(v[5], dict) and ("jaw" in v[5] or v[5].get("solo")) for v in req["views"]):
+        # art #263, the nose: a view's {"jaw": pose} shows the jaw in that pose ([jaw] in ship.toml); {"solo": true}
+        # alone; either way the sheet holds the review's views alone, NOSE_SHEET_W wide (no plan, top or day views)
+        req.update({"sheet_px": NOSE_SHEET_W, "compare": []})
         for key in ("top", "top_full", "day_views"):
             req.pop(key, None)
     # lens C step 3: --charger runs charger/room.gd instead of the GLBs' plain materials, which ship.gd's pass made
@@ -592,11 +610,29 @@ def video_request(layout: dict) -> dict:
             "keys": [[_g(eye), _g(look), float(sec)] for eye, look, sec in v["keys"]]}
 
 
-def walk_video(layout: dict, out: Path, folder: Path) -> int:
+# art #263, the jaw nose: the opening from a still 3/4 front camera at eye height, [t, lower deg, upper deg, seam glow]
+# keys (eased between): closed, the seam lights, the lower jaw lowers to the ground as the ramp, the upper lifts
+JAW_VIDEO = {"size": [1280, 720], "fps": 30, "fov": 50.0, "max_mb": 15, "eye": [-9.9, -22.4, 1.7], "look": [0.0, -8.0, 2.0],
+             "seconds": 6.5, "jaw": [[0.0, 0.0, 0.0, 0.0], [0.4, 0.0, 0.0, 0.0], [1.3, 0.0, 0.0, 1.0], [1.6, 0.0, 0.0, 1.0],
+                                    [3.0, -9.0, 1.6, 1.0], [4.9, None, None, 1.0], [6.5, None, None, 1.0]]}
+
+
+def jaw_video_request(layout: dict) -> dict:
+    """JAW_VIDEO in Godot coordinates, its keys' None the open pose's angles."""
+    v, deg = JAW_VIDEO, ship_layout.jaw_deg(layout, "open")
+    lower, upper = deg[layout["jaw"]["lower"][0]], deg[layout["jaw"]["upper"][0]]
+    keys = [[t, lower if lo is None else lo, upper if up is None else up, g] for t, lo, up, g in v["jaw"]]
+    return {"size": v["size"], "fps": v["fps"], "fov": v["fov"], "max_mb": v["max_mb"],
+            "keys": [[_g(v["eye"]), _g(v["look"]), 0.0], [_g(v["eye"]), _g(v["look"]), v["seconds"]]],
+            "jaw": keys, "lower": layout["jaw"]["lower"], "upper": layout["jaw"]["upper"]}
+
+
+def walk_video(layout: dict, out: Path, folder: Path, video: dict | None = None, name: str = "walkthrough.mp4") -> int:
     """The eye-height walk-through: Godot renders every frame in the off-screen window (ship.gd mode "video"), headless
-    Blender encodes them (ship_video.py, under max_mb), and the frames are deleted."""
+    Blender encodes them (ship_video.py, under max_mb), and the frames are deleted. `video`: another camera path (the
+    jaw's opening, `--jaw-video`) into `name`."""
     import shutil
-    video = video_request(layout)
+    video = video or video_request(layout)
     req, staged = built_request(layout, out)
     req.update({"mode": "video", "video": video, "watchdog_s": VIDEO_TIMEOUT - 60, "nav_blink": False,
                 "light": {**layout["light"], "lamps": [[*_g(l[:3]), *l[3:]] for l in layout["light"]["lamps"]]},
@@ -613,7 +649,7 @@ def walk_video(layout: dict, out: Path, folder: Path) -> int:
     if code != 0 or not (work / "video.json").is_file():
         raise common.Failure(f"ship.gd video failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     info = json.loads((work / "video.json").read_text(encoding="utf-8"))
-    clip = folder / "walkthrough.mp4"
+    clip = folder / name
     clip.unlink(missing_ok=True)
     blender.run_script(VIDEO_SCRIPT, ["--frames", str(work / "frames"), "--out", str(clip), "--fps", str(video["fps"]),
                                       "--max-mb", str(video["max_mb"])], timeout=VIDEO_TIMEOUT)

@@ -206,6 +206,8 @@ func _build() -> Node3D:
 		node.name = "%s_%d" % [p[0], ship.get_child_count()]
 		node.position = _v(p[1])
 		node.rotation_degrees.y = float(p[2])
+		if p.size() > 3:  # art #263: a jaw piece turned about its hinge (its origin) by the pose's angle
+			node.rotation_degrees.x = float(p[3])
 		ship.add_child(node)
 		if p[0] in _req.get("outside", []):
 			_set_layers(node, OUTSIDE_LAYER)
