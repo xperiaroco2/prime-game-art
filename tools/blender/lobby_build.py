@@ -18,11 +18,13 @@ from pathlib import Path
 
 import bmesh
 import bpy
+import numpy as np
 
 EXPORT = {"export_format": "GLB", "use_selection": False, "use_visible": False, "use_renderable": False,
           "use_active_collection": False, "export_yup": True, "export_apply": True, "export_skins": False,
           "export_animations": False, "export_morph": False, "export_cameras": False, "export_lights": False,
-          "export_materials": "EXPORT", "export_texcoords": True, "export_normals": True}
+          "export_materials": "EXPORT", "export_texcoords": True, "export_normals": True,
+          "export_tangents": True}
 # The fixed materials (linear colour, roughness, metallic, emission strength), the same in every scheme; the others
 # (panels, frames, trim, floor, the strips and the ring) come resolved from the layout's [look] scheme (req["look"]).
 MATS = {"lobby_grout": ((0.010, 0.010, 0.012, 1), 0.55, 0.3, 0.0),
@@ -30,8 +32,17 @@ MATS = {"lobby_grout": ((0.010, 0.010, 0.012, 1), 0.55, 0.3, 0.0),
         "lobby_lamp": ((1.0, 0.015, 0.008, 1), 0.4, 0.0, 2.6),
         "lobby_lens": ((0.8, 0.76, 0.66, 1), 0.25, 0.0, 0.0),
         "lobby_hazard": ((0.78, 0.48, 0.015, 1), 0.5, 0.1, 0.0),
+        "lobby_signal": ((0.42, 0.018, 0.012, 1), 0.42, 0.15, 0.0),   # the fire point's red paint (step 2c)
+        "lobby_reflector": ((0.62, 0.62, 0.6, 1), 0.3, 0.9, 0.0),     # the pendant shades' insides (step 2c)
         "lobby_glass": ((0.45, 0.6, 0.8, 0.12), 0.05, 0.0, 0.0)}
 ARC_STEP_DEG = 2.0
+# Step 2c: the fine metal surface in the GLBs' own materials: one shared tiling pair of maps (a brushed micro-normal
+# with fine scratches; occlusion 1, a roughness multiplier, metallic 1), box-projected UVs, each 2 m cell offset and
+# its brushing turned by a steady hash (per-plate variation). The materials scale them by their own numbers.
+TEX_SIZE, TEX_M = 1024, 1.5                               # pixels, metres per repeat
+NORMAL_STRENGTH = {"lobby_floor": 0.35, "lobby_floor2": 0.35, "lobby_floor3": 0.35}   # the floor stays clean
+PLAIN = {"lobby_glass", "lobby_lens", "lobby_lamp", "lobby_strip", "lobby_ring"}       # no metal maps
+IMG: dict = {}
 
 
 # --- parts ---------------------------------------------------------------------------------------------------------
@@ -112,9 +123,10 @@ def ext(part: "Part", F, poly, axis, t0, t1):
         part.face([P0[i], P0[j], P1[j], P1[i]], wd(_L(axis, (sgn * (by2 - ay2), -sgn * (bx2 - ax2)), 0.0)))
 
 
-def plate(part: "Part", F, u0, u1, v0, v1, w0, w1, bev):
-    """A bevelled plate on a local wall (front at w1, inset by bev; open at the back, against the wall)."""
-    front = [F(u0 + bev, v0 + bev, w1), F(u1 - bev, v0 + bev, w1), F(u1 - bev, v1 - bev, w1), F(u0 + bev, v1 - bev, w1)]
+def plate(part: "Part", F, u0, u1, v0, v1, w0, w1, bev, bev_v=None):
+    """A bevelled plate on a local wall (front at w1, inset by bev, in v by bev_v if given; open at the back)."""
+    bv = bev if bev_v is None else bev_v
+    front = [F(u0 + bev, v0 + bv, w1), F(u1 - bev, v0 + bv, w1), F(u1 - bev, v1 - bv, w1), F(u0 + bev, v1 - bv, w1)]
     back = [F(u0, v0, w0), F(u1, v0, w0), F(u1, v1, w0), F(u0, v1, w0)]
     o = F(0.0, 0.0, 0.0)
 
@@ -186,6 +198,41 @@ def prism(part: Part, poly, y0, y1):
         part.face([(ax, y0, az), (bx, y0, bz), (bx, y1, bz), (ax, y1, az)], (mx - cx, 0, mz - cz))
 
 
+def sweep(part: Part, poly, frames):
+    """A 2D profile (any winding, may be concave) swept along frames [(origin, a_dir, b_dir)] (lobby frame), capped;
+    each face's hint is the profile edge's outward normal (a loft's centre hints fail on concave profiles)."""
+    n = len(poly)
+    sgn = 1 if sum(poly[i][0] * poly[(i + 1) % n][1] - poly[(i + 1) % n][0] * poly[i][1] for i in range(n)) > 0 else -1
+    secs = [[tuple(o[k] + p[0] * A[k] + p[1] * B[k] for k in range(3)) for p in poly] for o, A, B in frames]
+    for s in range(len(secs) - 1):
+        _o, A, B = frames[s]
+        for i in range(n):
+            j = (i + 1) % n
+            (ax, ay), (bx, by) = poly[i], poly[j]
+            nx, ny = sgn * (by - ay), -sgn * (bx - ax)
+            part.face([secs[s][i], secs[s][j], secs[s + 1][j], secs[s + 1][i]], [nx * A[k] + ny * B[k] for k in range(3)])
+    part.face(secs[0], [frames[0][0][k] - frames[1][0][k] for k in range(3)])
+    part.face(secs[-1], [frames[-1][0][k] - frames[-2][0][k] for k in range(3)])
+
+
+def revolve(part: Part, x, z, profile, n=16):
+    """A surface of revolution about the vertical axis at (x, z) from a profile [(r, y)]; each face faces the profile's
+    left side (walk the profile with the outside on its left: out and down the outside, back up the inside)."""
+    for i in range(n):
+        a, b = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n
+        am = (a + b) / 2
+        for (r0, y0), (r1, y1) in zip(profile, profile[1:]):
+            nr, ny = -(y1 - y0), (r1 - r0)
+            part.face([(x + r0 * math.cos(a), y0, z + r0 * math.sin(a)), (x + r1 * math.cos(a), y1, z + r1 * math.sin(a)),
+                       (x + r1 * math.cos(b), y1, z + r1 * math.sin(b)), (x + r0 * math.cos(b), y0, z + r0 * math.sin(b))],
+                      (math.cos(am) * nr, ny, math.sin(am) * nr))
+
+
+def disc(part: Part, x, z, r, y, up: bool, n=16):
+    part.face([(x + r * math.cos(2 * math.pi * i / n), y, z + r * math.sin(2 * math.pi * i / n)) for i in range(n)],
+              (0, 1 if up else -1, 0))
+
+
 # --- the hall's numbers --------------------------------------------------------------------------------------------
 class Hall:
     def __init__(self, req):
@@ -232,6 +279,10 @@ STRIP = (2.0, 4.4)                                       # a pilaster's light st
 LAMP_HALF = (0.3, 0.13)
 LINTEL = 0.3                                             # a door's lintel box: its depth
 PENDANTS = ((-10.0, 0.0, 10.0), (-21.0, -9.0, 3.0), 9.6)  # the pendant lamps: x, z, the shade's bottom (y)
+MID_BAND = (4.56, 4.76)                                  # a pilaster's mid-height band (on the panels' row seam)
+# Step 2c: one unique detail per chosen bay (wall, bay index from the wall's low end), none twice on a wall
+GREEBLES = {("W", 1): "service", ("W", 2): "tray", ("W", 3): "pipes", ("W", 4): "fire",
+            ("E", 0): "pipes", ("E", 1): "fire", ("E", 3): "tray", ("E", 4): "service"}
 
 
 def pick(*keys, n=3):
@@ -349,11 +400,24 @@ def pilaster(H: Hall, F, u, lo, hi, shaft: Part, trim: Part, dark: Part, strip: 
     def prof(a, b):
         return [(a, 0.0), (b, 0.0), (b, pd - c), (b - c, pd), (a + c, pd), (a, pd - c)]
 
-    ext(shaft, F, prof(lo, hi), "v", 0.0, CORNICE[0])
-    ext(shaft, F, prof(u - pw, u + pw), "v", CORNICE[0], top - 0.6)
     l2 = lo - 0.08 if lo <= u - pw + 1e-6 else lo
     h2 = hi + 0.08 if hi >= u + pw - 1e-6 else hi
-    lbox(trim, F, l2, h2, 0.0, 0.5, 0.0, pd + 0.08)                                  # the plinth
+    # the chamfered base (step 2c): a plinth with cut corners and a sloped top into the shaft
+    pp = pd + 0.1
+    base = [(l2, 0.0), (h2, 0.0), (h2, pp - 0.1), (h2 - 0.1, pp), (l2 + 0.1, pp), (l2, pp - 0.1)]
+    ext(trim, F, base, "v", 0.0, 0.4)
+    shaft.loft([[F(*_L("v", q, 0.4)) for q in base], [F(*_L("v", q, 0.62)) for q in prof(lo, hi)]])
+    ext(shaft, F, prof(lo, hi), "v", 0.62, CORNICE[0])
+    ext(shaft, F, prof(u - pw, u + pw), "v", CORNICE[0], top - 0.6)
+    mb0, mb1 = MID_BAND   # the mid-height band: a human-sized step on the tall shaft
+    ext(trim, F, [(mb0, 0.0), (mb0, pd + 0.03), (mb0 + 0.04, pd + 0.07), (mb1 - 0.04, pd + 0.07), (mb1, pd + 0.03),
+                  (mb1, 0.0)], "u", lo - 0.04, hi + 0.04)
+    # cover strips over the joints to the panels (the light seam beside the pilaster), not beside a door's frame
+    for a, b, free in ((lo - 0.09, lo, lo <= u - pw + 1e-6), (hi, hi + 0.09, hi >= u + pw - 1e-6)):
+        if free:
+            lbox(shaft, F, a, b, 0.4, CORNICE[0], 0.0, PROUD + 0.025)
+    for a, b in ((u - pw - 0.09, u - pw), (u + pw, u + pw + 0.09)):
+        lbox(shaft, F, a, b, CORNICE[1], top - 0.6, 0.0, PROUD + 0.025)
     lbox(trim, F, u - pw - 0.06, u + pw + 0.06, top - 0.6, top, 0.0, pd + 0.1)         # the capital
     lbox(trim, F, u - pw - 0.03, u + pw + 0.03, CORNICE[0], CORNICE[1], 0.0, pd + 0.05)  # the band at the cornice
     m = (lo + hi) / 2
@@ -372,6 +436,79 @@ def vent(F, u0, u1, v0, v1, trim: Part, dark: Part):
     while v < v1 - 0.16:
         ext(trim, F, [(v, 0.02), (v + 0.05, 0.02), (v + 0.1, 0.08), (v + 0.05, 0.08)], "u", u0 + 0.08, u1 - 0.08)
         v += 0.14
+
+
+def greeble(kind, F, b0, b1, c, P, trim, dark, shaft, pipes, lights, signal):
+    """One bay's unique detail centred at u c (step 2c): a service hatch, a pipe junction with a valve, a fire point
+    with a terminal, or a cable tray broken by a junction box."""
+    w0 = PROUD
+    if kind == "service":
+        u0, u1, v0, v1 = c - 0.8, c + 0.8, 0.6, 4.3
+        lbox(dark, F, u0, u1, v0, v1, w0, w0 + 0.02)
+        for a in ((u0, u1, v0, v0 + 0.1), (u0, u1, v1 - 0.1, v1), (u0, u0 + 0.1, v0 + 0.1, v1 - 0.1),
+                  (u1 - 0.1, u1, v0 + 0.1, v1 - 0.1)):
+            lbox(trim, F, a[0], a[1], a[2], a[3], w0, w0 + 0.09)
+        plate(P[2], F, u0 + 0.13, u1 - 0.13, v0 + 0.13, v1 - 0.13, w0 + 0.02, w0 + 0.07, 0.02)
+        plate(P[0], F, u0 + 0.35, u1 - 0.35, v0 + 0.5, v0 + 1.6, w0 + 0.07, w0 + 0.1, 0.015)
+        for v in (v0 + 0.55, v1 - 0.55):   # hinges
+            lbox(shaft, F, u0 + 0.05, u0 + 0.2, v - 0.18, v + 0.18, w0 + 0.07, w0 + 0.13)
+        lbox(trim, F, u1 - 0.33, u1 - 0.25, (v0 + v1) / 2 - 0.3, (v0 + v1) / 2 + 0.3, w0 + 0.07, w0 + 0.15)   # handle
+        lbox(P[1], F, c - 0.32, c + 0.32, v1 - 0.6, v1 - 0.32, w0 + 0.07, w0 + 0.09)   # the label plate, its lines
+        for v in (v1 - 0.43, v1 - 0.5):
+            lbox(dark, F, c - 0.25, c + 0.2, v - 0.015, v + 0.015, w0 + 0.09, w0 + 0.096)
+        bolts(trim, F, u0 + 0.05, u1 - 0.05, v0 + 0.05, w0 + 0.09, step=0.4)
+        bolts(trim, F, u0 + 0.05, u1 - 0.05, v1 - 0.05, w0 + 0.09, step=0.4)
+    elif kind == "pipes":
+        for du in (-0.35, 0.35):   # two risers with copper flanges into a valve box
+            vpipe(pipes, F, c + du, 0.35, 1.62, 0.26, 0.09)
+            for v in (0.52, 1.0, 1.5):
+                vpipe(trim, F, c + du, v, v + 0.07, 0.26, 0.125)
+        plate(shaft, F, c - 0.6, c + 0.6, 1.6, 2.45, w0, 0.46, 0.04)
+        plate(trim, F, c - 0.5, c + 0.5, 1.7, 2.35, 0.46, 0.48, 0.01)
+        vpipe(pipes, F, c, 2.43, CORNICE[0] - 0.02, 0.26, 0.07)   # the riser up to the cornice
+        for v in (2.5, 4.62, 6.9):
+            vpipe(trim, F, c, v, v + 0.07, 0.26, 0.1)
+        cv, r0, r1 = 2.02, 0.17, 0.21   # the valve wheel: a rim of 12 segments, two spokes, a hub
+        for k in range(12):
+            a, b = 2 * math.pi * k / 12, 2 * math.pi * (k + 1) / 12
+            ext(signal, F, [(c + r0 * math.cos(a), cv + r0 * math.sin(a)), (c + r1 * math.cos(a), cv + r1 * math.sin(a)),
+                            (c + r1 * math.cos(b), cv + r1 * math.sin(b)), (c + r0 * math.cos(b), cv + r0 * math.sin(b))],
+                "w", 0.56, 0.6)
+        lbox(signal, F, c - r0, c + r0, cv - 0.015, cv + 0.015, 0.56, 0.59)
+        lbox(signal, F, c - 0.015, c + 0.015, cv - r0, cv + r0, 0.56, 0.59)
+        lbox(trim, F, c - 0.04, c + 0.04, cv - 0.04, cv + 0.04, 0.48, 0.62)
+        pipe(pipes, F, c + 0.6, c + 1.5, 2.02, 0.26, 0.07)   # a branch into the wall beside the box
+        lbox(trim, F, c + 1.5, c + 1.62, 1.86, 2.18, w0, 0.36)
+    elif kind == "fire":
+        plate(signal, F, c - 0.45, c + 0.45, 1.0, 2.3, w0, w0 + 0.24, 0.03)
+        plate(dark, F, c - 0.36, c + 0.36, 1.32, 2.2, w0 + 0.24, w0 + 0.26, 0.012)
+        lbox(trim, F, c + 0.27, c + 0.32, 1.55, 1.95, w0 + 0.26, w0 + 0.32)
+        lbox(lights, F, c - 0.3, c + 0.3, 2.62, 2.66, w0 + 0.03, w0 + 0.045)
+        plate(signal, F, c - 0.32, c + 0.32, 2.45, 2.82, w0, w0 + 0.03, 0.01)   # the sign over it
+        plate(shaft, F, c + 0.62, c + 1.12, 1.15, 1.95, w0, w0 + 0.12, 0.02)   # the terminal beside it
+        lbox(dark, F, c + 0.68, c + 1.06, 1.55, 1.88, w0 + 0.12, w0 + 0.13)
+        for k in range(3):
+            lbox(trim, F, c + 0.7 + k * 0.12, c + 0.78 + k * 0.12, 1.24, 1.32, w0 + 0.12, w0 + 0.14)
+    elif kind == "tray":
+        v, ua, ub = 6.75, b0 + 0.3, b1 - 0.45
+        for a, b in ((ua, c - 0.42), (c + 0.42, ub)):   # the tray, broken at the box
+            lbox(trim, F, a, b, v - 0.12, v - 0.1, 0.12, 0.44)
+            for ww in (0.12, 0.42):
+                lbox(trim, F, a, b, v - 0.12, v + 0.04, ww, ww + 0.02)
+            for ww in (0.2, 0.27, 0.34):
+                pipe(pipes, F, a, b, v - 0.06, ww, 0.03)
+        u = ua + 0.25
+        while u < ub:
+            if abs(u - c) > 0.6:
+                lbox(shaft, F, u - 0.03, u + 0.03, v - 0.22, v - 0.12, 0.0, 0.44)
+            u += 1.2
+        plate(shaft, F, c - 0.36, c + 0.36, v - 1.15, v - 0.32, w0, 0.46, 0.03)
+        plate(P[1], F, c - 0.24, c + 0.24, v - 1.0, v - 0.6, 0.46, 0.475, 0.01)
+        for k, ww in enumerate((0.2, 0.27, 0.34)):   # the cables drop from the tray's broken ends into the box
+            for side in (-1, 1):
+                uc = c + side * (0.37 - 0.04 * k)
+                vpipe(pipes, F, uc, v - 0.34, v - 0.06, ww, 0.03)
+                pipe(pipes, F, min(uc, c + side * 0.42), max(uc, c + side * 0.42), v - 0.06, ww, 0.03)
 
 
 def pipe(part: Part, F, u0, u1, v, w, r):
@@ -424,6 +561,7 @@ def walls(H: Hall) -> list[Part]:
     inset = Part("wall_insets", "lobby_inset", closed=False)
     pipes = Part("wall_pipes", "lobby_rib")
     lights = Part("wall_lights", "lobby_strip")
+    signal = Part("wall_signal", "lobby_signal")
     pw = h["pilaster_w"] / 2
     pil, holes, span = wall_cuts(H)
     bay_no = 0
@@ -460,8 +598,11 @@ def walls(H: Hall) -> list[Part]:
                 lbox(dark, F, u - 0.05, u + 0.05, 10.2, 10.35, 0.24, 0.255)
             u += FRIEZE_STEPS[k % len(FRIEZE_STEPS)]
             k += 1
-        for b0, b1 in bays:
+        for bi, (b0, b1) in enumerate(bays):
             bay_no += 1
+            kind = GREEBLES.get((side, bi))
+            if kind:
+                greeble(kind, F, b0, b1, b0 + 0.6 * (b1 - b0), P, trim, dark, shaft, pipes, lights, signal)
             low = [(a, b) for a, b, top in holes[side] if top > 0.0]
             # the base trim, the cornice and the crown band, cut by the openings
             for a, b in intervals((b0, b1), low):
@@ -485,19 +626,57 @@ def walls(H: Hall) -> list[Part]:
                             vent(F, u0 + 0.15, u1 - 0.15, v0 + 0.25, v1 - 0.35, trim, dark)
                             plate(P[tone], F, u0, u1, v0, v0 + 0.2, 0.0, PROUD, BEV)
                             continue
-                        box = ri == 1 and kk == n - 1 and bay_no % 4 == 2 and u1 - u0 > 1.0
+                        box = ri == 1 and kk == n - 1 and bay_no % 4 == 2 and u1 - u0 > 1.0 and not kind
                         wall_panel(F, u0, u1, v0, v1, -1 if box else pick(u0, v0, si, 2.0, n=4), tone, P, inset, trim)
                         if box:   # a small service box with an amber indicator
                             lbox(trim, F, u1 - 0.75, u1 - 0.25, v0 + 0.5, v0 + 1.2, PROUD, PROUD + 0.14)
                             lbox(dark, F, u1 - 0.68, u1 - 0.32, v0 + 0.62, v0 + 0.98, PROUD + 0.14, PROUD + 0.16)
                             lbox(lights, F, u1 - 0.66, u1 - 0.6, v0 + 1.06, v0 + 1.12, PROUD + 0.14, PROUD + 0.165)
-    return [part, shaft, trim, dark, strip, *P, inset, pipes, lights]
+    return [part, shaft, trim, dark, strip, *P, inset, pipes, lights, signal]
+
+
+def lunette_column(H: Hall, A, B, inn, yb, band: bool, parts: dict, xa) -> None:
+    """One 2 m column of a lunette (step 2c): bevelled panels in rows up to the vault's curve (their tops follow it),
+    a batten on its west seam, a trim along the curve and (band) a band over the window's head. A, B: the column's
+    ends (x, z) on the lunette; inn: the unit direction into the hall."""
+    L = math.hypot(B[0] - A[0], B[1] - A[1])
+    d = ((B[0] - A[0]) / L, (B[1] - A[1]) / L)
+    yt0, yt1 = H.vault_y(A[0]) - 0.22, H.vault_y(B[0]) - 0.22
+
+    def xz(u, w):
+        return A[0] + d[0] * u + inn[0] * w, A[1] + d[1] * u + inn[1] * w
+
+    def Fb(u, v, w):   # plain: v is the height
+        x, z = xz(u, w)
+        return x, v, z
+
+    def Fs(u, v, w):   # sheared: v from the curve's line
+        x, z = xz(u, w)
+        return x, yt0 + (yt1 - yt0) * u / L + v, z
+
+    def Fl(u, v, w):   # v from 0 (yb) to 1 (the curve's line)
+        x, z = xz(u, w)
+        return x, yb + v * (yt0 + (yt1 - yt0) * u / L - yb), z
+
+    wall = H.h["wall"]
+    if band:
+        ext(parts["trim"], Fb, [(wall, 0.0), (wall, 0.36), (wall + 0.06, 0.42), (wall + 0.3, 0.42), (wall + 0.36, 0.34),
+                                (wall + 0.36, 0.0)], "u", 0.0, L)
+    hm = max(yt0, yt1) - yb
+    if min(yt0, yt1) - yb < 0.3:
+        return
+    nrow, g = max(1, math.ceil(hm / 1.7)), 0.0075
+    for k in range(nrow):
+        part = parts["base"] if pick(xa, k, 3.0, n=2) == 0 else parts["inner"]
+        plate(part, Fl, g, L - g, k / nrow + g / hm, (k + 1) / nrow - g / hm, 0.0, 0.07, 0.02, bev_v=0.02 / hm)
+    plate(parts["battens"], Fl, -0.035, 0.035, 0.0, 1.0, 0.0, 0.085, 0.008, bev_v=0.008 / hm)
+    lbox(parts["trim"], Fs, 0.0, L, -0.04, 0.3, 0.0, 0.12)
 
 
 def vault(H: Hall) -> list[Part]:
     h = H.h
     shell = Part("vault_shell", "lobby_grout", closed=False)   # matte and dark: the panels' seams show no sky
-    lun = Part("vault_lunettes", "lobby_vault", closed=False)
+    lun = Part("vault_lunettes", "lobby_grout", closed=False)   # dark behind their panelling (step 2c)
     n = 40
     xs = [h["x0"] + (h["x1"] - h["x0"]) * i / n for i in range(n + 1)]
     for xa, xb in zip(xs, xs[1:]):
@@ -527,18 +706,30 @@ def vault(H: Hall) -> list[Part]:
                     plate(battens, F, xa, xb, za - 0.045, za + 0.03, 0.0, 0.092, 0.008)
             if xb < h["x1"] - 1e-6:   # and over the seam between this column and the next
                 plate(battens, F, xb - 0.035, xb + 0.035, z0, z1, 0.0, 0.092, 0.008)
-    # the ribs: a broad flange over the panels' ends and the chamfered body (still hanging rib_d)
+    # the lunettes' panelling (step 2c): over the north wall and over the window's head, 2 m columns like the vault's
+    lparts = {"base": base, "inner": inner, "battens": battens, "trim": Part("vault_trim", "lobby_trim")}
+    for xa, xb in zip(cols, cols[1:]):
+        lunette_column(H, (xa, h["zN"]), (xb, h["zN"]), (0.0, 1.0), h["wall"] + 0.02, False, lparts, xa)
+        mx = (xa + xb) / 2
+        mz = H.arc_z(mx)
+        rr = math.hypot(mx, mz - H.CZ)
+        lunette_column(H, (xa, H.arc_z(xa)), (xb, H.arc_z(xb)), (-mx / rr, (H.CZ - mz) / rr), h["wall"] + 0.36, True,
+                       lparts, xa)
+    # the ribs (step 2c): an I-section (a broad top flange over the panels' ends, a web, a chamfered bottom flange,
+    # still hanging rib_d), copper collars near the walls and a corbel from each pilaster's capital up under the rib
     ribs = Part("vault_ribs", "lobby_rib")
-    d, c = h["rib_d"], 0.12
+    d, cf, wb = h["rib_d"], 0.05, h["rib_d"] - 0.16
+    prof = [(-0.62, 0.05), (0.62, 0.05), (0.62, -0.14), (0.2, -0.14), (0.2, -wb), (pw, -wb), (pw, -(d - cf)),
+            (pw - cf, -d), (-pw + cf, -d), (-pw, -(d - cf)), (-pw, -wb), (-0.2, -wb), (-0.2, -0.14), (-0.62, -0.14)]
+    collar = [(-pw - 0.05, -0.12), (pw + 0.05, -0.12), (pw + 0.05, -d - 0.04), (-pw - 0.05, -d - 0.04)]
+    top, pd = h["wall"], h["pilaster_d"]
+    corbel = [(top - 0.6, 0.0), (top - 0.6, pd + 0.1), (top - 0.08, pd + 0.6), (top + 0.1, pd + 0.6), (top + 0.1, 0.0)]
     for z in h["ribs"]:
-        fl, body = [], []
-        for x in xs:
-            y = H.vault_y(x)
-            fl.append([(x, y + 0.05, z - 0.62), (x, y + 0.05, z + 0.62), (x, y - 0.17, z + 0.62), (x, y - 0.17, z - 0.62)])
-            body.append([(x, y - 0.1, z - pw), (x, y - 0.1, z + pw), (x, y - d + c, z + pw), (x, y - d, z + pw - c),
-                         (x, y - d, z - pw + c), (x, y - d + c, z - pw)])
-        ribs.loft(fl)
-        ribs.loft(body)
+        sweep(ribs, prof, [((x, H.vault_y(x), z), (0, 0, 1), (0, 1, 0)) for x in xs])
+        for c0, c1 in ((h["x0"] + 1.3, h["x0"] + 1.42), (h["x1"] - 1.42, h["x1"] - 1.3)):
+            sweep(lparts["trim"], collar, [((x, H.vault_y(x), z), (0, 0, 1), (0, 1, 0)) for x in (c0, c1)])
+        for FW in (lambda u, v, w: (h["x0"] + w, v, u), lambda u, v, w: (h["x1"] - w, v, u)):
+            ext(ribs, FW, corbel, "u", z - pw - 0.04, z + pw + 0.04)
     # a spine beam along the crown between the ribs
     spine = Part("vault_spine", "lobby_rib")
     yc = H.vault_y(0.0)
@@ -546,7 +737,9 @@ def vault(H: Hall) -> list[Part]:
         z1 = z1 if z1 is not None else H.arc_z(0.0) - 0.1
         spine.box(-0.45, 0.45, yc - 0.35, yc + 0.02, z0, z1)
     # the pendant lamps' housings (dome shades on rods; their light is step 4's, the lens is not emissive yet)
-    lamps, lens = Part("vault_lamps", "lobby_trim"), Part("vault_lens", "lobby_lens", closed=False)
+    # step 2c: real shades (a rim, a reflector inside, a socket and a bulb in the recess; unlit until step 4)
+    lamps, lens = Part("vault_lamps", "lobby_trim", closed=False), Part("vault_lens", "lobby_lens", closed=False)
+    refl, sock = Part("vault_reflectors", "lobby_reflector", closed=False), Part("vault_sockets", "lobby_dark", closed=False)
     px, pz, yb = PENDANTS
     for x in px:
         for z in pz:
@@ -556,10 +749,14 @@ def vault(H: Hall) -> list[Part]:
                 return [(x + r * math.cos(2 * math.pi * i / 16), y, z + r * math.sin(2 * math.pi * i / 16)) for i in range(16)]
 
             lamps.loft([sec(0.045, ytop), sec(0.045, yb + 0.9)])
-            lamps.loft([sec(0.13, yb + 0.98), sec(0.22, yb + 0.82), sec(0.34, yb + 0.62), sec(0.7, yb + 0.12),
-                        sec(0.78, yb), sec(0.72, yb - 0.02)])
-            lens.face(sec(0.66, yb - 0.026), (0, -1, 0))
-    return [shell, lun, base, inner, battens, ribs, spine, lamps, lens]
+            revolve(lamps, x, z, [(0.13, yb + 0.98), (0.22, yb + 0.82), (0.34, yb + 0.62), (0.7, yb + 0.12),
+                                  (0.78, yb), (0.77, yb - 0.035), (0.72, yb - 0.035)])
+            disc(lamps, x, z, 0.13, yb + 0.98, up=True)
+            revolve(refl, x, z, [(0.72, yb - 0.035), (0.66, yb + 0.06), (0.3, yb + 0.5), (0.19, yb + 0.6)])
+            disc(sock, x, z, 0.19, yb + 0.6, up=False)
+            revolve(sock, x, z, [(0.1, yb + 0.6), (0.1, yb + 0.5)])
+            revolve(lens, x, z, [(0.1, yb + 0.5), (0.14, yb + 0.44), (0.15, yb + 0.36), (0.1, yb + 0.28), (0.001, yb + 0.25)])
+    return [shell, lun, base, inner, battens, ribs, spine, lamps, lens, refl, sock, lparts["trim"]]
 
 
 def window_frame(H: Hall) -> list[Part]:
@@ -579,10 +776,14 @@ def window_frame(H: Hall) -> list[Part]:
     mull = Part("window_mullions", "lobby_pilaster", col=True)
     half = w["mullion_w"] / 2
     for a in [-H.a0 + 2 * H.a0 * i / w["panes"] for i in range(w["panes"] + 1)]:
-        for hw, r0, r1, y0, y1 in ((half, -0.3, 0.3, w["sill"], wall - w["bar_h"]),            # the mullion
-                                   (0.12, -0.46, -0.3, w["sill"], wall - w["bar_h"])):        # its cap, inside
+        top = wall - w["bar_h"]
+        for part, hw, r0, r1, y0, y1 in ((mull, half, -0.3, 0.3, w["sill"], top),                        # the mullion
+                                         (bars, 0.17, -0.48, -0.3, w["sill"], top),                       # its cap
+                                         (mull, 0.07, -0.56, -0.48, w["sill"], top),                      # the cap's nose
+                                         (mull, half + 0.08, -0.52, 0.3, w["sill"], w["sill"] + 0.45),    # a shoe
+                                         (bars, half + 0.05, -0.54, 0.3, w["transom"] - 0.28, w["transom"] + 0.28)):
             pts = [H.arc_pt(a - hw / H.R, r0), H.arc_pt(a + hw / H.R, r0), H.arc_pt(a + hw / H.R, r1), H.arc_pt(a - hw / H.R, r1)]
-            (mull if hw == half else bars).loft([[(x, y, z) for x, z in pts] for y in (y0, y1)])
+            part.loft([[(x, y, z) for x, z in pts] for y in (y0, y1)])
     parts.append(mull)
     return parts
 
@@ -601,9 +802,17 @@ def window_glass(H: Hall) -> list[Part]:
 def framed(F, a, h, c, bands, w_back, parts, fronts):
     """Nested chamfered frame bands round an opening (half-width a, height h, chamfer c) in a local frame, each from
     w_back to its front (stepped)."""
-    d = 0.0
+    d, cb = 0.0, 0.045
+    o = F(0.0, 0.0, 0.0)
     for band, part, front in zip(bands, parts, fronts):
-        ext(part, F, ring(chamfer_outline(a, h, c, d), chamfer_outline(a, h, c, d + band)), "w", w_back, front)
+        inner, outer, oc = (chamfer_outline(a, h, c, d), chamfer_outline(a, h, c, d + band),
+                            chamfer_outline(a, h, c, d + band - cb))
+        ext(part, F, ring(inner, oc), "w", w_back, front)
+        ext(part, F, ring(oc, outer), "w", w_back, front - cb)
+        for p, q, pc, qc in zip(outer, outer[1:], oc, oc[1:]):   # the bevel: it catches the light, the steps read
+            hint = [F(-(q[1] - p[1]), q[0] - p[0], 1.0)[k] - o[k] for k in range(3)]
+            part.face([F(p[0], p[1], front - cb), F(q[0], q[1], front - cb), F(qc[0], qc[1], front),
+                       F(pc[0], pc[1], front)], hint)
         d += band
     return chamfer_outline(a, h, c)
 
@@ -630,18 +839,45 @@ def door_parts(H: Hall, F, out: dict, w_back: float, slab_w: tuple[float, float]
     framed(F, a, dh, 0.45, DOOR_BANDS, w_back, (out["trim"], out["frame"], out["trim"]), DOOR_FRONTS)
     s0, s1 = slab_w
     lbox(out["back"], F, -a - 0.05, a + 0.05, 0.0, dh + 0.05, s0 - 0.1, s0)
-    for side in (-1, 1):
+    for side in (-1, 1):   # step 2c: each leaf bevelled at the centre seam, its striped field inside a raised border
         u0, u1 = (-a, -0.012) if side < 0 else (0.012, a)
-        lbox(out["slab"], F, u0, u1, 0.0, dh, s0, s1)
-        hazard(out["hazard"], F, u0 + 0.12, u1 - 0.12, 0.14, dh - 0.14, s1, mirror=side > 0)
+        if side < 0:
+            poly = [(u0, s0), (u1, s0), (u1, s1 - 0.05), (u1 - 0.05, s1), (u0, s1)]
+            outer_u, seam_u, fo, fs = (u0, u0 + 0.12), (u1 - 0.17, u1 - 0.07), u0, u1 - 0.07
+        else:
+            poly = [(u0, s0), (u1, s0), (u1, s1), (u0 + 0.05, s1), (u0, s1 - 0.05)]
+            outer_u, seam_u, fo, fs = (u1 - 0.12, u1), (u0 + 0.07, u0 + 0.17), u0 + 0.07, u1
+        ext(out["slab"], F, poly, "v", 0.0, dh)
+        for b0, b1 in ((0.0, 0.12), (dh - 0.12, dh)):
+            lbox(out["frame"], F, fo, fs, b0, b1, s1, s1 + 0.035)
+        for uu in (outer_u, seam_u):
+            lbox(out["frame"], F, uu[0], uu[1], 0.12, dh - 0.12, s1, s1 + 0.035)
+        ha, hb = (u0 + 0.14, u1 - 0.19) if side < 0 else (u0 + 0.19, u1 - 0.14)
+        hazard(out["hazard"], F, ha, hb, 0.14, dh - 0.14, s1, mirror=side > 0)
+    # the frame's lip over the leaves' edges and a threshold plate
+    ext(out["trim"], F, ring(chamfer_outline(a - 0.05, dh - 0.05, 0.43), chamfer_outline(a, dh, 0.45)), "w",
+        s1 - 0.02, s1 + 0.07)
+    lbox(out["trim"], F, -a, a, 0.0, 0.03, s1, DOOR_FRONTS[0])
     big = a + sum(DOOR_BANDS)
     top = dh + sum(DOOR_BANDS)
-    lbox(out["frame"], F, -big, big, top, top + 0.86, 0.0, LINTEL)                    # the lintel box
+    ext(out["frame"], F, [(top, 0.0), (top, LINTEL - 0.06), (top + 0.06, LINTEL), (top + 0.86, LINTEL),
+                          (top + 0.86, 0.0)], "u", -big, big)                                   # the lintel box
     FL = shifted(F, LINTEL)
-    lh, lv = LAMP_HALF
     lamp_v = H.d["lamp"]
-    lbox(out["trim"], FL, -lh, lh, lamp_v - lv, lamp_v + lv, 0.0, 0.1)
-    lbox(out["lamp"], FL, -lh + 0.07, lh - 0.07, lamp_v - lv + 0.05, lamp_v + lv - 0.05, 0.1, 0.12)
+    for sg in (-1, 1):   # the lintel's grilles either side of the lamp
+        ua, ub = sorted((sg * 0.55, sg * (big - 0.2)))
+        vent(FL, ua, ub, top + 0.08, top + 0.5, out["trim"], out["dark"])
+    # the red lamp in a housing: a back plate, cheeks, a sloped hood, a bottom lip and a cage over the lens
+    lbox(out["trim"], FL, -0.4, 0.4, lamp_v - 0.2, lamp_v + 0.2, 0.0, 0.05)
+    for sg in (-1, 1):
+        ua, ub = sorted((sg * 0.3, sg * 0.36))
+        lbox(out["trim"], FL, ua, ub, lamp_v - 0.17, lamp_v + 0.19, 0.05, 0.2)
+    ext(out["trim"], FL, [(lamp_v + 0.15, 0.05), (lamp_v + 0.23, 0.05), (lamp_v + 0.19, 0.27), (lamp_v + 0.14, 0.27)],
+        "u", -0.4, 0.4)
+    lbox(out["trim"], FL, -0.3, 0.3, lamp_v - 0.17, lamp_v - 0.12, 0.05, 0.2)
+    lbox(out["lamp"], FL, -0.26, 0.26, lamp_v - 0.09, lamp_v + 0.09, 0.05, 0.14)
+    for u in (-0.13, 0.0, 0.13):
+        lbox(out["dark"], FL, u - 0.012, u + 0.012, lamp_v - 0.12, lamp_v + 0.14, 0.17, 0.195)
     channel(FL, -0.9, 0.9, lamp_v + 0.4 - 0.035, lamp_v + 0.4 + 0.035, 0.0, out["dark"], out["strip"])
     bolts(out["trim"], FL, -big + 0.15, big - 0.15, top + 0.75, 0.0, step=0.45)
     if header:   # the wall above the door up to the panels' top row (no longer bare)
@@ -728,6 +964,90 @@ def clear() -> None:
 LOOK: dict = {}   # "mats": the scheme's materials by name (tools/runner/lobby_layout.look_materials)
 
 
+def metal_images(folder: Path) -> None:
+    """The shared maps (TEX_SIZE, seamless): normal (brushed streaks along u, fine scratches) and roughness (0.78-1:
+    soft blotches, the streaks, the scratches rougher), saved as PNGs in folder and kept in IMG."""
+    rng = np.random.default_rng(356)
+    n = TEX_SIZE
+
+    def blur(a, k, axis):
+        acc = np.zeros_like(a)
+        for i in range(-k, k + 1):
+            acc += np.roll(a, i, axis=axis)
+        return acc / (2 * k + 1)
+
+    br = blur(blur(rng.standard_normal((n, n)).astype(np.float32), 24, 1), 1, 0)
+    br /= br.std() + 1e-6
+    sc = np.zeros((n, n), np.float32)
+    for _ in range(260):
+        x, y = rng.uniform(0, n, 2)
+        ang, length, depth = rng.uniform(0, math.pi), rng.uniform(15, 110), rng.uniform(0.4, 1.0)
+        t = np.arange(0, length, 0.7)
+        xs = (x + t * math.cos(ang)).astype(int) % n
+        ys = (y + t * math.sin(ang)).astype(int) % n
+        sc[ys, xs] = np.maximum(sc[ys, xs], depth)
+    g = rng.uniform(-1, 1, (8, 8)).astype(np.float32)
+    idx = np.arange(n) * 8 / n
+    i0 = np.floor(idx).astype(int)
+    f = (idx - i0).astype(np.float32)
+    i1 = (i0 + 1) % 8
+    rows = g[i0] * (1 - f)[:, None] + g[i1] * f[:, None]
+    blot = rows[:, i0] * (1 - f)[None, :] + rows[:, i1] * f[None, :]
+    h = 0.35 * br - sc
+    dx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * 0.3
+    dy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * 0.3
+    ln = np.sqrt(dx * dx + dy * dy + 1.0)
+    one = np.ones_like(h)
+    maps = {"n": np.stack([-dx / ln * 0.5 + 0.5, -dy / ln * 0.5 + 0.5, 1.0 / ln * 0.5 + 0.5, one], -1),
+            "r": np.stack([one, np.clip(0.9 + 0.06 * blot + 0.025 * np.clip(br, -2, 2) + 0.08 * sc, 0.78, 1.0), one, one], -1)}
+    folder.mkdir(parents=True, exist_ok=True)
+    for key, arr in maps.items():
+        img = bpy.data.images.new(f"lobby_metal_{key}", n, n, alpha=False)
+        img.colorspace_settings.name = "Non-Color"
+        img.pixels.foreach_set(arr.astype(np.float32).ravel())
+        img.filepath_raw = str(folder / f"lobby_metal_{key}.png")
+        img.file_format = "PNG"
+        img.save()
+        IMG[key] = img
+
+
+def metal_maps(mat, bsdf, name: str, rough: float, metallic: float) -> None:
+    """The shared maps on a material: the normal at its strength, roughness and metallic as the maps' G and B times
+    the material's numbers (the glTF exporter writes them as the factors)."""
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    tn = nodes.new("ShaderNodeTexImage")
+    tn.image = IMG["n"]
+    nm = nodes.new("ShaderNodeNormalMap")
+    nm.inputs["Strength"].default_value = NORMAL_STRENGTH.get(name, 1.0)
+    links.new(tn.outputs["Color"], nm.inputs["Color"])
+    links.new(nm.outputs["Normal"], bsdf.inputs["Normal"])
+    tr = nodes.new("ShaderNodeTexImage")
+    tr.image = IMG["r"]
+    sep = nodes.new("ShaderNodeSeparateColor")
+    links.new(tr.outputs["Color"], sep.inputs["Color"])
+    for channel_name, socket, value in (("Green", "Roughness", rough), ("Blue", "Metallic", metallic)):
+        m = nodes.new("ShaderNodeMath")
+        m.operation = "MULTIPLY"
+        m.inputs[1].default_value = value
+        links.new(sep.outputs[channel_name], m.inputs[0])
+        links.new(m.outputs[0], bsdf.inputs[socket])
+
+
+def box_uvs(mesh) -> None:
+    """Box-projected UVs in metres / TEX_M; per 2 m cell a steady offset and a 90 deg turn (the brushing's way)."""
+    data = mesh.uv_layers.new(name="UVMap").data
+    for poly in mesh.polygons:
+        nrm, c = poly.normal, poly.center
+        ax = max(range(3), key=lambda k: abs(nrm[k]))
+        i, j = ((1, 2), (0, 2), (0, 1))[ax]
+        cell = (math.floor(c.x / 2.0), math.floor(c.y / 2.0), math.floor(c.z / 2.0))
+        ou, ov, turn = pick(*cell, 1.0, n=97) / 97.0, pick(*cell, 2.0, n=89) / 89.0, pick(*cell, 3.0, n=2)
+        for li in poly.loop_indices:
+            co = mesh.vertices[mesh.loops[li].vertex_index].co
+            a, b = co[i] / TEX_M + ou, co[j] / TEX_M + ov
+            data[li].uv = (b, a) if turn else (a, b)
+
+
 def material(name: str):
     mat = bpy.data.materials.get(name)
     if mat:
@@ -744,6 +1064,8 @@ def material(name: str):
     bsdf.inputs["Base Color"].default_value = rgba
     bsdf.inputs["Roughness"].default_value = rough
     bsdf.inputs["Metallic"].default_value = metallic
+    if name not in PLAIN and IMG:
+        metal_maps(mat, bsdf, name, rough, metallic)
     if emit:
         bsdf.inputs["Emission Color"].default_value = rgba
         bsdf.inputs["Emission Strength"].default_value = emit
@@ -768,6 +1090,7 @@ def make(part: Part, collide: bool):
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(mesh)
     bm.free()
+    box_uvs(mesh)
     mesh.materials.append(material(part.mat))
     obj = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(obj)
@@ -812,6 +1135,7 @@ def main() -> None:
     out = Path(argv[argv.index("--out") + 1])
     out.mkdir(parents=True, exist_ok=True)
     LOOK["mats"] = req["look"]
+    metal_images(out / "textures")
     H = Hall(req)
     report = {"pieces": {}}
     for piece in req["layout"]["pieces"]:
