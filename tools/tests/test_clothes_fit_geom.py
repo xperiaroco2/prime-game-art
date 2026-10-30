@@ -399,5 +399,36 @@ class NearRings(unittest.TestCase):  # E1g: the seat's relax only near its open 
         self.assertEqual(F.near_rings([], self.NB, 3), [0.0] * 5)
 
 
+
+class HemRest(unittest.TestCase):
+    """E1j3: the trousers' turn-up lowered onto the shoe's collar."""
+
+    def test_hem_drop(self):
+        self.assertAlmostEqual(F.hem_drop(0.15, 0.13, 0.004), 0.024)
+        self.assertEqual(F.hem_drop(0.12, 0.13, 0.004), 0.0)  # never up
+        self.assertEqual(F.hem_drop(0.30, 0.13, 0.004), 0.04)  # at most 4 cm
+
+    def test_hem_drops_per_angle(self):
+        hem = [0.15, 0.15, None, 0.13, 0.13, 0.13, 0.13, 0.15]
+        top = [0.13, 0.13, 0.13, 0.13, None, 0.13, 0.13, 0.13]
+        raw = F.hem_drops(hem, top, 0.004, passes=0)
+        self.assertEqual(len(raw), 8)
+        self.assertAlmostEqual(raw[0], 0.024)
+        self.assertAlmostEqual(raw[2], raw[1])  # a missing bin takes its neighbour's
+        self.assertAlmostEqual(raw[4], 0.004)
+        sm = F.hem_drops(hem, top, 0.004)
+        self.assertAlmostEqual(sum(sm), sum(raw))  # smoothing round the circle keeps the total
+        self.assertLess(max(sm), max(raw) + 1e-12)
+        self.assertEqual(F.hem_drops([None] * 4, [0.1] * 4, 0.004), [0.0] * 4)
+
+    def test_hem_shift(self):
+        self.assertEqual(F.hem_shift(0.15, 0.15, 0.02), 0.02)
+        self.assertEqual(F.hem_shift(0.15 + 0.07, 0.15, 0.02), 0.02)  # the turn-up moves whole
+        self.assertAlmostEqual(F.hem_shift(0.15 + 0.07 + 0.075, 0.15, 0.02), 0.01)
+        self.assertEqual(F.hem_shift(0.15 + 0.3, 0.15, 0.02), 0.0)
+        with self.assertRaises(ValueError):
+            F.hem_shift(0.1, 0.1, 0.01, ease=0)
+
+
 if __name__ == "__main__":
     unittest.main()

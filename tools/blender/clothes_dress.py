@@ -282,6 +282,9 @@ def main() -> int:
     ap.add_argument("--collar-weights", type=float, default=0.03,
                     help="E1e: the skin takes its nearest shoe vertex's weights up to the rim, blended back to its "
                          "own over this much over the rim (m; 0: off)")
+    ap.add_argument("--hem-rest", type=float, default=-1.0,
+                    help="E1j3, with the sneakers: each trouser leg's turn-up lowered so its lowest point rests this "
+                         "far under the shoe's collar at the heel (m; -1: off), the shin's cloth easing over 15 cm")
     ap.add_argument("--stray", type=float, default=0.08,
                     help="garment vertices farther than this from the body go with their faces (the fit's strays: "
                          "E1b's spikes at the hips; m, 0: off)")
@@ -471,6 +474,50 @@ def main() -> int:
             garment.data.update()
         rep["garment_stray_verts_removed"] = len(bad)
         say("garment strays removed", len(bad))
+    shoe_ob = next((o for o in cloth if o.name == "shoes"), None)
+    if args.hem_rest >= 0 and garment is not None and shoe_ob is not None and "heel_rim_z" in shoe_ob.keys():
+        # E1j3: the turn-up rests on the collar, as on the concept (the leg's skin between them showed as a band): per
+        # angle round each leg (24 bins about the hem's middle) the hem's lowest point goes down to the shoe's top
+        # there less hem_rest (the hem was higher at the front and outside than at the back)
+        gm, gi = garment.matrix_world, garment.matrix_world.inverted()
+        sm = shoe_ob.matrix_world
+        rim_z, hems, nb = float(shoe_ob["heel_rim_z"]), {}, 24
+        sv = [sm @ v.co for v in shoe_ob.data.vertices]
+        gw = [gm @ v.co for v in garment.data.vertices]
+
+        def ang(p, ctr):
+            return int(((math.atan2(p.y - ctr.y, p.x - ctr.x) / (2 * math.pi)) % 1.0) * nb) % nb
+        for sgn in (1.0, -1.0):
+            low = [p for p in gw if p.x * sgn > 0.02 and p.z < 0.4]
+            if not low:
+                continue
+            hz = min(p.z for p in low)
+            ring = [p for p in low if p.z < hz + 0.07]
+            ctr = sum(ring, Vector()) / len(ring)
+            hem_b, top_b = [None] * nb, [None] * nb
+            for p in ring:
+                a = ang(p, ctr)
+                hem_b[a] = p.z if hem_b[a] is None else min(hem_b[a], p.z)
+            for p in sv:
+                if p.x * sgn > 0 and (p.xy - ctr.xy).length < 0.12:
+                    a = ang(p, ctr)
+                    top_b[a] = p.z if top_b[a] is None else max(top_b[a], p.z)
+            drops = F.hem_drops(hem_b, top_b, args.hem_rest)
+            hems["left" if sgn > 0 else "right"] = {"hem_z": round(hz, 4), "drop_mm_min_max": [
+                round(1000 * min(drops), 1), round(1000 * max(drops), 1)]}
+            for v, p in zip(garment.data.vertices, gw):
+                if p.x * sgn > 0.02 and p.z < hz + 0.25:
+                    t = ((math.atan2(p.y - ctr.y, p.x - ctr.x) / (2 * math.pi)) % 1.0) * nb - 0.5
+                    i0 = math.floor(t)
+                    f = t - i0
+                    d = drops[i0 % nb] * (1 - f) + drops[(i0 + 1) % nb] * f
+                    if d > 0:
+                        q = p.copy()
+                        q.z -= F.hem_shift(p.z, hz, d)
+                        v.co = gi @ q
+        garment.data.update()
+        rep["hem_rest"] = {"heel_rim_z": round(rim_z, 4), **hems}
+        say("hem rest", rep["hem_rest"])
     if args.fill_holes > 0 and garment is not None:  # E1g: Meshy's small holes in the trousers (the dark divots)
         import clothes_top as TOP
         rep["holes_filled"] = TOP.fill_holes(garment, args)

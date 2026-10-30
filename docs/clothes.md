@@ -404,6 +404,37 @@ Same topology, 2,952 triangles the pair. Raw output: `2026-10-30-alien-dress-e1/
 `proof/`, `look/`, `side/`) and `d33/` (the final: `sheet/s9`, the same folders); drivers `tools/out/dress/e1j2/` (`sheet.sh`, `dress.sh`, `closeout.sh`, `chain.sh`: sheet, dress and
 close-out in one background run).
 
+### The last polish (E1j3)
+E1j2's sneaker read as the concept's up close, but a teal band showed between the chameleon's collar and turn-up
+(jagged at the front corner), the heel was a square box from behind, the toe box flat on top, the sole's outline
+faceted at the toe and heel, and at full-body distance the shoe was one pale blob.
+- **The turn-up rests on the collar (the dress).** `--hem-rest` m (the drivers pass 4 mm): round each trouser leg,
+  in 24 angle bins about the hem's middle, the hem's lowest point goes down to the shoe's highest point in that
+  direction (the collar at the back and sides, the tongue in front) less `--hem-rest`; never up, at most 4 cm, a
+  missing bin taking its neighbour's, smoothed round the circle (`clothes_fit_geom.hem_drops`). The hem was higher
+  at the front and outside than at the back, so one drop by its lowest point (d34) closed nothing. Each garment
+  vertex moves by its angle's drop: the whole turn-up up to 7 cm over the hem's lowest point, easing to no move over
+  the next 15 cm up the shin (`hem_shift`). `dress.json`'s `hem_rest` holds each side's hem height and drops;
+  `heel_rim_z` (the collar at the heel's back) is stored on the `shoes` object. The collar's side dip is shallower
+  (`side_collar` 1.02 to 1.05).
+- **A round heel cup.** The collar's rim round the heel is pulled in `heel_in` 1.2 cm (easing out toward the slot's
+  rear end; the dress shrinks the ankle inside it, as for the slim last), the heel's walls lean in from low
+  (`heel_wall` 0.5) and the plan narrows to `heel_slim` 0.82 at the heel's back (`slim`'s `heel`); the collar's
+  dip now starts at the heel's back, not at the ankle. From behind the heel tapers up instead of a box.
+- **Rounder walls, a domed toe box.** `wall` 1 to 0.85 (the walls lean in lower: no vertical sides under a flat top from
+  the front; 0.72 let the chameleon's right foot through the side wall by 29 mm in Jump_Start, d34); the toe box's rows ahead of the ball are raised up to `dome` 1.2 cm at mid-height
+  (`column_shape`, `_ring_point`'s `dome`: none at the join and the rim, so the toe cap and the laces stay).
+- **No facets.** `around` 30 to 40 columns, spent where the outline turns: `resample`'s `bend` 1.5 weights the
+  arc length by the curvature (`curvature`, x 3 cm, at most x 3), so the toe and the heel get the new columns. The
+  outsole's bottom edge is rounded `sole_round` 5 mm.
+- **Reading at full-body distance.** The canvas a touch greyer (sRGB 214, 207, 186), the rubber white as before;
+  the navy lines darker and bolder (`STRIPE_MM` 3.4, the upper line 3.2 mm); the rubber's top edge line darker;
+  the laces whiter and the eyelets darker.
+
+3,532 triangles the pair (+580, all in the visible columns). Raw output: `2026-10-30-alien-dress-e1/d34/`
+(`sheet/s10` to `s12`, a first dress) and `d35/` (the final: `dress/`, `proof/`, `look/`, `side/`); drivers `tools/out/dress/e1j3/` (`HR` sets
+`--hem-rest`).
+
 C1's raw output is under `D:/prime-art-raw/2026-10-28-alien-clothes-m1/c1/` (`cloth/`, `body_f2/`, `fit/`, `dress/`,
 `proof/`).
 

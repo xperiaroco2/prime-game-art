@@ -370,6 +370,42 @@ def outside_shell(out_hits: int) -> bool:
     return out_hits == 0
 
 
+def hem_drop(hem_z: float, rim_z: float, rest: float, most: float = 0.04) -> float:
+    """E1j3: how far the trousers' turn-up goes down so its lowest point (hem_z) rests rest m under the shoe's
+    collar at the heel (rim_z): never up, at most most m."""
+    return max(0.0, min(most, hem_z - (rim_z - rest)))
+
+
+def hem_drops(hem: list[float | None], top: list[float | None], rest: float, most: float = 0.04,
+              passes: int = 2) -> list[float]:
+    """E1j3: per angle bin round a leg, how far its turn-up goes down so its lowest point there (hem) rests rest m
+    under the shoe's top there (top): hem_drop per bin, a bin missing either taking its neighbours', then smoothed
+    round the circle (passes of 1/4, 1/2, 1/4) so the hem's line bends gently."""
+    n = len(hem)
+    raw = [None if h is None or t is None else hem_drop(h, t, rest, most) for h, t in zip(hem, top)]
+    if all(x is None for x in raw):
+        return [0.0] * n
+    for _ in range(n):
+        if all(x is not None for x in raw):
+            break
+        raw = [x if x is not None else next((y for y in (raw[i - 1], raw[(i + 1) % n]) if y is not None), None)
+               for i, x in enumerate(raw)]
+    out = [float(x) for x in raw]
+    for _ in range(passes):
+        out = [0.25 * out[i - 1] + 0.5 * out[i] + 0.25 * out[(i + 1) % n] for i in range(n)]
+    return out
+
+
+def hem_shift(z: float, hem_z: float, drop: float, hold: float = 0.07, ease: float = 0.15) -> float:
+    """E1j3: a garment vertex's move down (m) when the turn-up drops by drop: all of it up to hold m over the hem's
+    lowest point (the turn-up keeps its shape), easing to none over the next ease m up the shin (the cloth stretches
+    a little there, nothing moves above)."""
+    if ease <= 0:
+        raise ValueError(f"ease {ease} must be positive")
+    t = min(1.0, max(0.0, (z - (hem_z + hold)) / ease))
+    return drop * (1.0 - t * t * (3.0 - 2.0 * t))
+
+
 def collar_clamp(r: float, outline: float, z: float, rim_z: float, clear: float = 0.003, band: float = 0.01) -> float:
     """E1d, E1e: an ankle vertex's radius round the leg's axis, shrunk inside the shoe: under its nearest rim point
     (rim_z) it lies at most clear m inside the shoe's inner wall (outline m out from the axis toward it); from rim_z
