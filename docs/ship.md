@@ -1822,7 +1822,7 @@ east wall and, since step 6, its mirror on the west (`GILL_SIDES` in ship_interi
   - *The corner flats beside the throat's end frames* (`hall_panel_flat_sockf`, the `socket_fe`/`socket_fw` station
     spots): `flat_panel`'s `clad` puts the plain and upper zones in the end frame's metal (`int_silver_c`), the same
     flat faces, so the station spot stays plain (`ship` check green), and a soft warm lamp hangs 0.9 m before each
-    (ship.toml `lamps`, "hall" group, 0.9 / range 2.2, 2 m over the deck; 0.35 left it a dark slab).
+    (ship.toml `lamps`, "hall" group, 0.9 / range 2.2, 2 m over the deck; 0.35 left it a dark slab); step 7 replaced both: a matte clad and an aimed spot).
   - *The west wall's gill set*: `ship_interior_throat.GILL_SIDES` ("e", "w"): `th_wall_w` is `th_wall_e` mirrored in
     x, every part (slits, groove, bars, button; the groove sweeps round the mouth side, the button at the hall end).
     `ship.gd` puts a `gill_set.gd` on each placed wall (`gill_walls()`), in `--play` (each its own row and button; E
@@ -1842,3 +1842,29 @@ east wall and, since step 6, its mirror on the west (`GILL_SIDES` in ship_interi
     dark hall-side wall (the perspective: the bright inner wall faces the hall).
   - Outputs `<raw>/ship/v5/gills-throat/set6/` (pieces in `set6/pieces`, `views/stills`, `doors_before`,
     `doors_after`, `doors_before_after.png`, `sheet.png`, `play_test/`); handoff `<raw>/ship/v5/notes/ship-step6.md`.
+- **Step 7, the corner flats lit and the final proof** (2026-10-30; the engineer approved the set on both walls, the
+  doors and the portals as of step 6, "Так, доводь"):
+  - *The corner flats' clad*: `int_silver_c__clad` (ship_interior.py), the end frame's metal a hair warmer
+    (0.42, 0.41, 0.395), metallic 0.2, roughness 0.62, with its own `[light.mats]` row (v 0.9, m 0.2; without it the
+    family's `int_silver_c` row, m 0.45, would win through `_entry`). `int_silver_c` itself is unchanged. Step 6's
+    omni (0.9, range 2.2, 0.9 m out) lit only the flat's foot; now a soft warm spot per flat, 1.6 m out along its
+    normal and 2.6 m over the deck (ship.toml `lamps`, "hall", 2.4, range 3.6, 45 deg, aimed at the flat's middle
+    (+-3.4376, -2.3137, 2.6)). The flat's mean in `clad_hall` 36 -> 80 (0..255; the gill wall beside it 88).
+    `CLAD_VIEWS` in ship.py (`clad_throat`, `clad_hall`, `w_*`: eye height 1.6 m, from the throat by its hall end and
+    2.4 m before the flat; `play003` and `w_play003`: his `--play` shot 003's place and look, fov 75, and its mirror) are among the `--gill-set` views.
+  - *The proof's third camera*: `GILL_SET["both"]` ("both", as `mouth_both`: 0.3 m in from the mouth's corners, eye
+    1.6 m, looking up the throat) films both rows running the demo, so `--gill-set` writes `concept.mp4`,
+    `close.mp4` and `both.mp4`. The sheet stays `GILL_SHEET`: set_plate | east concept mid; west concept mid | both
+    walls from the mouth.
+  - *As built* (both walls; the west is the east's mirror in x, `GILL_SIDES`; s along the wall from the mouth's
+    corner, h over the deck): five crescent cuts 15 cm deep, middles s 2.074 / 2.438 / 2.801 / 3.164 / 3.526, chords
+    1.08 / 0.99 / 0.90 / 0.82 / 0.74 m, bottoms 0.827 -> 0.867, leaning back 3 -> 7 deg; the glowing rim 11.0 / 10.1 /
+    11.7 / 13.6 / 16.0 mm, the lip 24.2 / 22.1 / 17.6 / 13.1 / 8.0 mm (`GLOW_K` 1.6 from slit 3); a turn bar over each
+    slit; the groove round the mouth side; the button at s 3.86, h 1.15; no pillar, the wall runs to the hall's corner
+    in `end_frame`; one frame per corridor portal and lens-room door. In `--play` each wall has its own
+    `gill_set.gd` and E presses the wall whose button is in reach. Tests: `test_ship_gillset.py` (the mirror, the rim
+    and lip widths as built, the clad and its spots, the cameras), `test_ship_throat.py`, `test_ship_gills.py`.
+  - Outputs `<raw>/ship/v5/gills-throat/set7/` (pieces in `set7/pieces`: set6's with `hall_panel_flat_sockf`
+    rebuilt; `clad_before_after.png` (rows clad_throat, w_clad_throat, clad_hall, w_clad_hall; left step 6, right
+    step 7), `gill_set/` (the three MP4s, the stills, `sheet.png`), `play_test/`); handoff
+    `<raw>/ship/v5/notes/ship-step7.md`.
