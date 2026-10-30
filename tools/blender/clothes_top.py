@@ -1433,6 +1433,10 @@ def plain_denim(gar, args) -> dict:
                     if t.polygon_index not in fset], dtype=np.float64)
     used = T.island_mask(tri, w, h, grow=1)
     at = None
+    if not plan:  # no region found a denim face: report and skip instead of max() over an empty plan
+        rep["skipped"] = "no region has denim faces"
+        say("plain denim", rep)
+        return rep
     for _ in range(4):
         pw = max(int(math.ceil((hi[0] - lo[0]) * d0)) for *_r, lo, hi in plan) + 2 * pad
         ph = max(int(math.ceil((hi[1] - lo[1]) * d0)) for *_r, lo, hi in plan) + 2 * pad

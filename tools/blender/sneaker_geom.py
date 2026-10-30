@@ -16,7 +16,8 @@ from the body's middle (the right shoe is the left one mirrored), z up from the 
   (each outline column joined to its opening point by arc length between anchors: heel to heel, the ball's side to
   the collar's front corner, the toe to the throat), the padded collar rolled in and a short lining; a bottom;
 - the tongue, the eyelets (rings on the stays), the laces (criss-cross bars over the tongue) and the bow;
-- the bend (`toes_weight`): the rear rigid on Foot, past the ball on Toes, a short smoothstep at the ball.
+- the bend (`toes_weight`): the rear rigid on Foot, the front on Toes, a short smoothstep across the toe crease
+  (`crease_u`: at the ball, or crease_gap ahead of the throat's front end when that is further forward, E1l).
 The texture's zones are rows of the UVs (`Shoe.uv_rows`): sole_strip, join, rim per column, so the painter in
 sneaker_build.py draws the foxing stripe and the stitching on straight texel rows.
 """
@@ -677,7 +678,6 @@ def build(foot: Foot, p: Params | None = None) -> Shoe:
     vj = y0 + max(a[join_row] for a in col_len) * vs_
     v_of = [[vj + (a[r] - a[join_row]) * vs_ for r in range(rows)] for a in col_len]
     idx = [[sh.add(q) for q in ring] for ring in cols]
-    flip = False
 
     def quad(a, b_, c_, d, uv, part):
         sh.face((a, b_, c_, d), uv, part)
@@ -695,7 +695,7 @@ def build(foot: Foot, p: Params | None = None) -> Shoe:
     cap_v = [v_of[c][join_row + 1] if abs(arcs[c] - (col_len[c][join_row + 1] - col_len[c][join_row])) < 0.002
              else vj + arcs[c] * vs_ for c in range(n)]
     sh.uv_rows = {"scale": scale, "scale_v": vs_, "join": vj, "cap": cap_v,
-                  "stay_cols": [c for c in range(o_anchor["lat"], o_anchor["med"] + 1)], 
+                  "stay_cols": [c for c in range(o_anchor["lat"], o_anchor["med"] + 1)],
                   "sole_v": [v_of[0][r] for r in range(join_row + 1)], "rim": [v_of[c][rim_row] for c in range(n)],
                   "rim_u": [x0 + w * (c + 0.5) / n for c in range(n)], "band_rows": (2, 4),
                   "seam_u": [x0 + w * cf / n for cf in seam_cols(out, throat_u(foot, p) - p.seam_back)]}
@@ -724,8 +724,6 @@ def build(foot: Foot, p: Params | None = None) -> Shoe:
                     "slot": o_anchor,
                     "uv_scale_per_m": round(scale, 3)})
     _stays(sh, foot, p, cols, rim_row, n, o_anchor)
-    if flip:
-        pass
     return sh
 
 

@@ -472,10 +472,7 @@ def front_hull(pts: list[tuple[float, float]]) -> list[tuple[float, float]]:
     hull: list[tuple[float, float]] = []
     for z, y in sorted(pts):
         if hull and abs(z - hull[-1][0]) < 1e-12:
-            if y < hull[-1][1]:
-                hull.pop()
-            else:
-                continue
+            continue  # sorted by (z, y): the first point at a height already has its smallest y
         while len(hull) >= 2:
             (z1, y1), (z2, y2) = hull[-2], hull[-1]
             if (y2 - y1) * (z - z1) >= (y - y1) * (z2 - z1):  # hull[-1] on or behind the chord: not taut

@@ -87,11 +87,9 @@ def shoes(body, arm, params: G.Params | None = None):
     me.from_pydata(verts, [], faces)
     me.update()
     uvl = me.uv_layers.new(name="UVMap")
-    k = 0
     for poly, uv in zip(me.polygons, uvs):
         for li, c in zip(poly.loop_indices, uv):
             uvl.data[li].uv = c
-        k += 1
     for poly in me.polygons:
         poly.use_smooth = True
     ob = bpy.data.objects.new("shoes", me)
@@ -129,11 +127,6 @@ def shoes(body, arm, params: G.Params | None = None):
     rep["material"] = material(ob, sh)
     rep["clearance"] = clearance(ob, ft)
     return ob, rep
-
-
-def _lin(c):
-    c = np.asarray(c, dtype=np.float32)
-    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
 
 
 def paint(sh: G.Shoe) -> tuple[np.ndarray, np.ndarray]:
@@ -259,7 +252,8 @@ def material(ob, sh: G.Shoe) -> dict:
 
 def clearance(ob, ft: dict) -> dict:
     """The foot's vertices against the shoe at rest: per side the signed distance to the nearest shoe point along
-    its normal (negative: the foot is outside the shoe); only points under the opening's height count."""
+    its normal (negative: the foot is outside the shoe), over every foot point (`feet`'s pts: Foot + Toes weight 0.5
+    and over, at any height); a point with no shoe surface within 0.2 m is skipped."""
     me = ob.data
     vs = [ob.matrix_world @ v.co for v in me.vertices]
     tree = BVHTree.FromPolygons(vs, [list(p.vertices) for p in me.polygons])

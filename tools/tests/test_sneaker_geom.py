@@ -144,9 +144,21 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(big.tris, self.shoe.tris)  # the same topology
 
     def test_symmetric_pair_from_merged_feet(self):
-        a = synth_foot()
-        b = G.merge(a, synth_foot())
-        self.assertEqual(G.build(b).info["outline_len_m"], self.shoe.info["outline_len_m"])
+        """A real mirrored right foot: both feet placed in the world (the front faces -Y, the left at +x), each
+        measured in its own frame; the right lies on the left, so the merged pair builds the left's shoe."""
+        f = synth_foot()
+        y0 = 0.09  # the heel's y
+
+        def place(sx):
+            pts = [(sx * (0.114 + v), y0 - u, z) for u, v, z in f.pts]
+            foot_head, toes_head = (sx * 0.114, y0 - f.ankle_u, f.ankle_z), (sx * 0.114, y0 - f.ball_u, 0.026)
+            return G.measure(G.frame(foot_head, toes_head, pts), pts, foot_head, toes_head)
+        left, right = place(1.0), place(-1.0)
+        for p, q in zip(left.pts, right.pts):
+            self.assertTrue(all(abs(x - y) < 1e-9 for x, y in zip(p, q)), (p, q))
+        pair = G.build(G.merge(left, right))
+        self.assertAlmostEqual(pair.info["outline_len_m"], G.build(left).info["outline_len_m"], places=6)
+        self.assertAlmostEqual(pair.info["outline_width_m"], G.build(left).info["outline_width_m"], places=6)
 
 
 class BendTest(unittest.TestCase):

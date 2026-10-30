@@ -469,10 +469,13 @@ def main() -> int:
         if args.toes_cap:
             cap = SB.toes_cap(args.toes_cap)
             if cap:
-                rep["toes_cap"] = {"settings": cap, "clips_before_after_deg": SB.cap_toes(cap)}
-                say("toes cap", cap, "largest before / after",
-                    max(v[0] for v in rep["toes_cap"]["clips_before_after_deg"].values()),
-                    max(v[1] for v in rep["toes_cap"]["clips_before_after_deg"].values()))
+                ba = SB.cap_toes(cap)
+                rep["toes_cap"] = {"settings": cap, "clips_before_after_deg": ba}
+                if ba:
+                    say("toes cap", cap, "largest before / after", max(v[0] for v in ba.values()),
+                        max(v[1] for v in ba.values()))
+                else:  # no clip had a toe bend to cap: report it, never crash on max() over nothing
+                    say("toes cap", cap, "no clip capped")
     garment = next((o for o in cloth if o.name == "garment"), None)
     if args.stray > 0 and garment is not None:  # E1b: the fit's stray vertices (spikes out of the hips)
         btree = BVHTree.FromObject(char, bpy.context.evaluated_depsgraph_get())
