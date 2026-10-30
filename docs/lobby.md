@@ -14,7 +14,7 @@ window's Earth and the light on top.
 | `tools/runner/lobby_layout.py` | Load, the check, the ship's footprint, the text plan (plain Python) |
 | `tools/runner/commands/lobby.py` | The `lobby` command |
 | `tools/blender/lobby_build.py` | The shell builder, one GLB per piece (headless Blender) |
-| `godot/lobby/hall.gd` | The Godot side: import check, walk and blocks (headless); the shots (off-screen window) |
+| `godot/lobby/hall.gd` | The Godot side: import check, walk and blocks (headless); the shots, the light rig (step 4) and the walk-through's frames (off-screen window) |
 | `tools/tests/test_lobby_layout.py` | Fast tests of the check |
 | `tools/blender/lobby_earth_tex.py` | Step 3b: NASA's Earth maps scaled to game textures (headless Blender) |
 | `godot/lobby/earth_sky.gdshader` | Step 3b: the night Earth, its atmosphere rim and the stars as a sky shader (the game's file) |
@@ -60,7 +60,7 @@ point under the ship; the views' eyes inside. The ship: its footprint is the con
 (`ship_hull_shape.outline("P")`), each placed pod's bounds and the tail (the `skin_top` piece's bounds aft of the
 outline, as wide as the pods) from art #263's `build_report.json`, moved by the origin; it keeps at least 2 m to every
 spawn and 3 m to every wall, the window and every door's opening, and the floor ring reaches no more than 1 m inside
-its outline. The text plan goes to `<raw>/<raw_dir>/plan/plan.txt` (`raw_dir` in `hall.toml`: step 1 `lobby/hall/v1`, step 2 `lobby/hall/v2`, step 2b `lobby/hall/v3`, step 2c `lobby/hall/v4`, step 3 `lobby/hall/v5`).
+its outline. The text plan goes to `<raw>/<raw_dir>/plan/plan.txt` (`raw_dir` in `hall.toml`: step 1 `lobby/hall/v1`, step 2 `lobby/hall/v2`, step 2b `lobby/hall/v3`, step 2c `lobby/hall/v4`, step 3 `lobby/hall/v5`, step 4 `lobby/hall/v6`).
 
 Measured (step 1): the spawns 2.04 m from the ship (the mid pod's end); the ship 6.95 m from the west and east walls,
 5.90 m from the north wall, 12.04 m from the window; D1/D2 14.58 m, D3/D4 8.83 m.
@@ -98,6 +98,8 @@ tools/run.sh lobby --shoot <raw>/lobby/hall/v4/shots    # also closeups.png (ste
 tools/run.sh lobby --grid <raw>/lobby/hall/v4/grid    # the colour schemes' taste grid
 tools/run.sh lobby --earth-tex                 # step 3b: NASA's maps -> <raw>/<[earth] tex_dir>, 4096 x 2048 JPEGs
 tools/run.sh lobby --earth-grid <raw>/lobby/hall/v5/grid    # step 3b: the Earth variants E1-E3
+tools/run.sh lobby --light-grid <raw>/lobby/hall/v6/grid    # step 4: the light moods L1-L3
+tools/run.sh lobby --video <raw>/lobby/hall/v6/walk         # step 4: the eye-height walk-through MP4
 ```
 
 `--build`, `--godot` and `--shoot` are heavy runs (Blender, Godot; one at a time): agents start them in the background.
@@ -408,7 +410,7 @@ endorsement (`docs/decisions/2026-10-30-nasa-public-domain.md`, `docs/manifest.m
   pass draws the review light's neutral grey sky, so the reflections and the hall's look do not change.
 - `godot/lobby/window_glass.gdshader` on the `lobby_glass` surfaces: a faint tint (`glass_rgb`, `glass_alpha`) and the
   sky's reflection, stronger at grazing angles.
-- `[earth]` in `hall.toml`: `variant` (the one switch, default E1), the maps, the shared `[earth.look]` and three
+- `[earth]` in `hall.toml`: `variant` (the one switch, default E1; E2 since step 4, the engineer's pick), the maps, the shared `[earth.look]` and three
   variants: E1 a huge Earth (radius 48 deg, its centre 22 deg below the horizon to the south) whose limb arcs across the
   upper window; E2 the same with the sun 1.5 deg behind the limb on the east side (azimuth 30, elevation 14; the left as the spawns face the window): a
   thin dawn glow on that side of the rim; E3 a disc of 13 deg in the window's middle with more stars. The check refuses
@@ -420,6 +422,67 @@ endorsement (`docs/decisions/2026-10-30-nasa-public-domain.md`, `docs/manifest.m
   transom's and the head's hall-side edges, and the mullions' 14 cm cap noses (`window_copper`). window_frame 2628
   triangles (step 3: 1524).
 
+## Step 4: the hall's light
+
+The drawing's words: "warm hanging lamps under the vault, orange strips on the pilasters, the Earth's cold light from
+the window; darker in game than on the concept". The engineer's Earth pick (2026-10-30): **E2**, the dawn glow on the
+limb, now `[earth] variant`; scheme S4 stays; no geometry moved (`raw_dir` `lobby/hall/v6`, the pieces rebuilt
+unchanged, 87842 triangles).
+
+`[light]` in `hall.toml`: `mood`, the one switch (the shots, the video and the game: default **L1**), and three moods
+with the same keys (`lobby_layout.LIGHT_KEYS`; the check refuses a mood with other keys or numbers out of range).
+`hall.gd` `_apply_light` builds the rig per mood (the review light's two directionals are gone when a mood is set):
+
+| Light | Count | Shadows | Where |
+|---|---|---|---|
+| SpotLight3D, warm, straight down | 9 | yes (blur 1.5, atlas 4096, 4 per quadrant) | 3 cm under each pendant's lens; the lens's height read from the vault's `lobby_lens` mesh |
+| OmniLight3D, orange | 16 | no | 0.35 m before each pilaster's strip (12 side, 4 north), y 3.2 |
+| OmniLight3D, red | 4 | no | 0.4 m before each door lamp, y 5.1 |
+| OmniLight3D, warm | 2 | no | the corridor, (0, 5, -32.5) and (0, 5, -36) |
+| DirectionalLight3D, cold (the Earth) | 1 | yes (80 m) | from the window: azimuth 0, elevation 2 |
+| DirectionalLight3D, warm (E2's dawn) | 1 | no | azimuth 30 (the dawn's side), elevation 4 |
+| ReflectionProbe | 2 | probe shadows on | the hall (42 x 16.5 x 48 m, box-projected, not interior: it sees the Earth) and the corridor (interior) |
+
+The lenses glow (`bulb_emit`, the pendant colour); the strips' and the ring's glTF emission times `strip_emit`, the
+door lamps' times `door_emit`. The environment: AgX at `exposure`, a flat ambient colour (`ambient_rgb`,
+`ambient_energy`; the probes take the same colour: a probe's default ambient is its own dark capture, which ignored
+the ambient in the first grids), glow (screen blend, `glow_*`), SSAO (`ssao_intensity`), the step 2 SSR. The Earth's
+sky shader draws the Earth in the radiance pass too (`cubemap_earth`), so the probes and the polished floor reflect
+it; the window's glass casts no shadow. The top shot gets a plain dark background (an ortho camera streaked the sky).
+
+| | L1 balanced (default) | L2 darker, moodier | L3 brighter, warmer |
+|---|---|---|---|
+| exposure | 1.1 | 1.0 | 1.15 |
+| ambient | 0.16 (0.42, 0.5, 0.7) | 0.07 | 0.3 (0.66, 0.58, 0.5) |
+| pendants: energy, half angle, range | 14, 48 deg, 18 m | 11, 36 deg, 16 m | 18, 55 deg, 20 m |
+| bulbs' emission | 10 | 8 | 12 |
+| strips: energy, range, emission | 1.5, 6 m, x1.0 | 0.7, 4 m, x0.7 | 2.4, 7 m, x1.4 |
+| door lamps: energy, range | 0.8, 4.5 m | 0.6, 4 m | 1.0, 5 m |
+| corridor | 2.0, 7 m | 1.4, 6 m | 2.6, 8 m |
+| Earth light; dawn | 0.8; 0.2 | 0.6; 0.14 | 0.8; 0.24 |
+| probes | 0.8 | 0.5 | 1.0 |
+| glow: intensity, bloom, threshold | 0.6, 0.05, 1.0 | 0.7, 0.04, 1.0 | 1.0, 0.15, 0.9 |
+| SSAO | 1.6 | 2.2 | 1.4 |
+| GPU ms (corner_nw / spawn_eye / c_back) | 2.78 / 1.99 / 2.98 | 2.65 / 1.93 / 2.58 | 2.89 / 2.08 / 2.96 |
+| draw calls (same three) | 776 / 85 / 706 | 776 / 85 / 706 | 776 / 85 / 706 |
+
+The cost: 1920 x 1080 in the off-screen window, each shot's median GPU time over 16 frames
+(`viewport_get_measured_render_time_gpu`, on this PC's GPU), the draw calls and primitives as Godot counts them
+(shadow passes included); the moods differ by energies only, so their counts match. `lobby --shoot` (L1): 23 shots,
+1.5-3.0 ms. The walk (`--godot`) still passes: 22/22, 178.1 m, 5 blocks hold.
+
+`lobby --light-grid DIR`: the moods in `[light] grid`'s views (`corner_nw`, `spawn_eye`, `c_back`), `grid.png` and
+each frame at full size (`L1_corner_nw.png` ...). Grid 1 and 2 (`<raw>/lobby/hall/v6/logs/grid1.log`, `grid2.log`)
+barely changed with the ambient: the probes' own ambient replaced it; grid 3 is the one shown.
+
+`lobby --video DIR`: `[video]`'s keys (eye, look, seconds) through a Catmull-Rom path, 1280 x 720 at 24 fps, from the
+corridor's shut end through the arch, round the ship's east side, to the spawn line, a turn to the window and the
+Earth (44.2 s); `hall.gd` renders the frames off-screen (mode `video`), headless Blender encodes them with the ship's
+`tools/blender/ship_video.py` (only run, never changed) under `max_mb` into `DIR/walkthrough.mp4`, and the frames are
+deleted.
+Step 4's run (L1, E2): `<raw>/lobby/hall/v6/walk/walkthrough.mp4`, 1061 frames, 44.2 s, 12.7 MB, rendered in 185 s,
+the GPU's median 1.58 ms a frame at 1280 x 720.
+
 ## Open problems
 
 - The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
@@ -429,8 +492,9 @@ endorsement (`docs/decisions/2026-10-30-nasa-public-domain.md`, `docs/manifest.m
 - Concept A's camera cannot be matched with the ship 7 m north (see above); A shows the ship's nose close up.
 - The pilaster width (0.8 m, not the drawing's 1.2 m glyph) and the vault's cross-section are our readings of the
   drawing.
-- No light design yet (step 4); the review light is not the game's, and the vault reads dark under it. The Earth
-  (step 3b) lights nothing in the hall: it is only the background, and the reflections keep the neutral grey sky.
+- Step 4's light: the ship's silver top takes hot spots under the six pendants 4 m above it; the vault and its ribs
+  stay dark (the pendants shine down, only the ambient reaches up); in L1 the west wall away from its strips reads
+  dark; the pendants' pools on the polished floor show little at eye height (mostly specular), clearly from above.
 - The lunettes' two end columns (where the vault meets the side walls) stay unpanelled: a dark wedge (`c_lunette`).
 - The vault and its I-section ribs still read dark under the review light (no light from below until step 4); the
   collars and corbels show mostly as copper glints.
