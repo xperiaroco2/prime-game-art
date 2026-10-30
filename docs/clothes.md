@@ -438,3 +438,32 @@ narrower halfway between the cut and the ankle (`body_feet_geom.midfoot`; `fit.t
 keeps A's rest direction (`rest_turns`: B's largest turn is the Neck's, 0.38 degrees, from the ring's height);
 `body_fit_run.py` exits 1 above the contract's `[body_types.B] rest_turn_max_deg` or an arm offset over 1 mm, `apply`
 above it again from Blender's rest matrices.
+
+## Dressing D3's bodies (E1, E1b, art #196)
+- **The heads** (E1): `alien_char_build.py --neck-band flare` (from `alien_char_run.py --neck-band flare`) flares the
+  head's neck into D3's ring over 70 mm with `body_fit_geom.neck_flare_morph`, then the 8 mm bridge and the seam
+  smoothing; the 30 mm smoothstep band stays the default for the old bodies.
+- **Per-body fits** (E1): A11 and B13 differ in topology (the feet's cut), so each gets its own
+  `clothes_fit.py --body` base fit (no `--female`; her fit has no chest hug). `pick_facing` skips zero normals.
+- **The cut planes from the bones** (E1b): `clothes_dress.py --planes bones` sets the top's and the garment's planes
+  from the character's own bones (`clothes_shell.body_planes`): heights (`--waist`, the bib's top, the back's apex,
+  the crew neck, `--arm-z`) mapped linearly from the old body A's torso (Chest 1.028 m to Neck 1.339 m) to the
+  body's, `--seam-x` moved with the upper arm's root, `--arm-axis` through the upper arm's head, and the cuffs
+  `--cuff-back` (35 mm) in from the hand bone's head. The old fixed planes (`--planes fixed`, the default) put B13's
+  cuff past her wrist (her sleeve covered the hand, the proof's 64 mm pokes) and A11's on the thumb's root.
+- **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
+  weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
+  up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'
+  hem above and the shoe below and cut ragged holes into the open ankle over the collar (the teal shards). The
+  dress's `collar_probe` counts kept skin under the rim (within 20 mm) outside the shoe's surface, at rest only
+  (it read 0 while the shards showed: they come in the clips' pose). The shards' cause: the shin's tilt in Idle and
+  Crouch carries the ankle skin under the collar (weighted to LowerLeg) out through the rigid shoe; `--ankle-ride`
+  hands that skin's LowerLeg weight to the Foot from 5 mm under the rim's nearest point down, easing out over 30 mm
+  above (`clothes_fit_geom.ankle_ride`).
+- **The fit's strays** (E1b): garment vertices over `--stray` (80 mm) from the body go with their faces (two on A11
+  made dark spikes out of the hips).
+- **The proof's openings** (E1b): a body vertex "inside" by an opening's inward-folded lip whose nearest cloth point
+  is that opening (the thumb's root 55 mm past the cuff) is left out like one by the opening.
+- **The game's look** (E1b): `frames --look high` renders under `look_presets.json`'s High preset (AgX 0.9, the
+  studio sky's ambient and reflections, SSAO, soft shadows, MSAA 4x, the approved lights); the default `studio` is
+  the linear review light.
