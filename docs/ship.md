@@ -1331,7 +1331,9 @@ writes the ship's game-ready package (for prime-game#1225 and #1285) from `layou
 - `levels/ship/ship.tscn`: root `Ship` (`metadata/size_m` the plan's width and length, `deck_h`), `Pieces` (the ship's
   placements as GLB instances), `Environment` (the WorldEnvironment), `Lights` (the moon, the key, the layout's lamps
   and the glow cells' omni lights, as `ship.gd` places them), `Probes` (one reflection probe per room), `Clearing`
-  (art #356, below: the clearing's pieces, its lights and `Ground`, the world boundary), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
+  (art #356, below: the clearing's pieces, its lights and `Ground`, the world boundary, which `ship.gd` names
+  `Ground` so the export finds it by name), `Nose` (art #263: the jaw's pieces and their `AnimationPlayer`, "The jaw
+  nose" below), `Stations` (one `Marker3D` per `[[stations.spot]]`: `Console`, `VentE`, `VentW`,
   `SocketE`, `SocketW`, `SocketFE`, `SocketFW`, `BreakerE`, `BreakerW`, `RenewerE`, `RenewerW`; on the deck, +Z the
   spot's normal, the console turned 180 degrees; `metadata/spot`, `package`, `kind`) and `Markers/Spawn` (the walk's
   first point at the ramp's foot, facing the ship).
@@ -1345,7 +1347,8 @@ the outside pieces' render layer 2, the vents' heat panel hidden and their well 
 pack saved every mesh and shape of every instance (a 14 MB scene); with it the scene is about 0.8 MB. A vec3
 `source_color` uniform set from a `Vector3` saves as null, so the metals' and the sky's are stored as the `Color`
 that renders the same (its sRGB). `ship_export.relocate` moves the art project's `res://` paths to the package's and
-drops the uids; `leftovers` refuses an art path, a script or a sub-resource path. The nav lamps keep their static
+drops the uids; `leftovers` refuses an art path, a script or a sub-resource path. The glow omnis' `pieces` metadata
+(ship.gd's bookkeeping) is removed before the save. The nav lamps keep their static
 glow (the blink is the shots' script).
 
 The check, on the package opened as its own Godot project (`godot/ship/export_check.gd`, copied to `DIR/_check/`):
@@ -1383,7 +1386,7 @@ the clearing outside, grounded and collision-free, and the clearing lamps outsid
 rejected (the nose itself read as a box bolted onto the manta) and are removed; the jaw nose below replaces them, and
 its closed pose is the lobby's docked ship.
 
-### The jaw nose (art #263, b3: thin plated shells, a prow that faces down, 2026-10-30)
+### The jaw nose (art #263: b3's look, approved 2026-10-30; b4 finished it for the package)
 
 The engineer's redesign (#263 c6524257765; concepts `<raw>/2026-10-30-ship-nose-concepts/`, 6 and 1 closed, 2 open):
 the hull's own surface runs forward into a flat, pointed prow that opens like a jaw. Built by
@@ -1406,10 +1409,9 @@ the top grows out of the hull with no step) and O_L (the seam outline and the `b
 - `jaw_lower`, placed at `lower_hinge` (0, -8.1, 1.2), the ramp's hinge: the shell of O_L forward of the hinge line
   and under the rail plane (the deck's plane + `[jaw] rail` 0.45, default `RAIL` 0.30): the belly, the low side rails (their tops `glow_cyan`),
   the deck plate in the deck's plane (flush with the floor at the hinge), a bulkhead under it, ribs and amber lit
-  edges (`nocol`). The underside (the plates and under-skin of the faces looking down, built closed) and the tip's
-  seam rim are `nocol` too: open they lie under the deck; near the tip only the deck collides (a test holds every
-  collider face there looking up). The capsule walk still stops at the tip (b3: at y -12.65, as it touches the
-  deck's plane; b2 stopped at -12.75 on the slivers), so the walk is open. The deck plate runs
+  edges (`nocol`). The underside (the plates and under-skin of the faces looking down, built closed), the tip's
+  seam rim and the deck plate's underside and edges (`lower_deck_edge`) are `nocol` too: open they lie under the
+  deck; near the tip only the deck's top face collides (a test holds every collider face there fronting up). The deck plate runs
   3 mm inside the skin, and the inner faces are clipped under the deck, only on the front and belly faces; on the
   sides, which face down too since b3, that let the deck and the throat show through. Its aft face under the hinge leans forward `V_DEG` 36 (the swing is 34.37), so it never swings
   into the root; closed this leaves a V-shaped hinge groove under the belly, closed at its top.
@@ -1438,14 +1440,42 @@ shadowed it lit the ground under the closed prow through the one-sided shells; t
 ceiling's bars and the rails' edges. The jaws replace the ramp, its lights, its hazard stripes and the entry tunnel's hood
 (`mouth_tunnel_in`, the tunnel's inside, stays). The [ramp] numbers stay as the open jaw's.
 
-Views: a `ship --shoot DIR --views FILE` row whose 6th element is `{"jaw": "closed"}` (or `half`, `open`) shows that
-pose (`ship.gd` `_jaw_pose`); `{"solo": true}` alone just makes a review sheet. Either way the sheet holds the
+**The shells' winding (b4).** `ship_build.make` mirrors the plan's y into Blender, which turns a face's winding over.
+The jaw's shells are open meshes (`solid` False, so no normal recalculation), wound counter-clockwise about their
+outward side in the plan frame, so b2 and b3 came out facing inward. The materials are double-sided and the look
+never showed it, but Godot's trimesh colliders are one-sided: the capsule fell through the deck from above, and the
+deck plate's underside, which then fronted up, caught it at the tip (the open walk stopped at y -12.65; found by
+probing the capsule's contacts headless, every one of them the ground's with the deck in reach, and by a capsule that
+fell through the deck from above until the deck shape's `backface_collision` was on). `ship_hull_jaw._front`
+reverses the shells' faces in `jaw_lower`, `jaw_upper` and `jaw_root`; `front_normal(q)` gives a face's
+Blender/Godot front in the plan frame (the tests use it). The walk's outside points stand on the ground 0.6 m in
+front of the open tip (y -13.2, then -14), on the centre line: `ship --godot` walks 18/18.
+
+**In the package** (`ship --export`, art #335 above): `Ship/Nose` holds the three jaw pieces, named by their ids
+(`jaw_lower`, `jaw_upper`, `jaw_root`; moved out of `Pieces` by `export_scene.gd` `_nose`), saved in `[jaw] pose`
+(open), and `Nose/AnimationPlayer` with `open` (closed to open, `ship.NOSE_SECONDS` 2.5 s: `JAW_VIDEO`'s swing after
+the seam lights, each key eased in and out), `close` (the same keys backwards) and `RESET` (the open pose), value
+tracks on each moving jaw's `rotation:x` (`ship.nose_request`). No script: the lobby plays `close` and seeks to its
+end (HANDOFF). The jaws' colliders are children of their pieces and turn with them. The check
+(`_ship_export.nose_problems`, read by `export_check.gd` `_nose`) refuses a Nose without its three pieces or the
+three clips, a saved pose that is not open, a clip whose end pose is wrong or an `open` that is not 2.5 s; Pieces
+must hold exactly the layout's placements but the clearing's and the Nose's (`clearing_problems`). The seam's cyan
+line keeps its static glow (the video's seam fade is not in the clips).
+
+**The defect hunt (b4)** at full size, closed, half and open from the six cameras, inside, the close set and three
+in-between poses of the swing (`views/swing.json`: 0.25, 0.6, 0.9 of the open angles, each from the 3/4 front, the
+hinges' side and under the prow; a view's `{"jaw": "0.6"}` is that share of the open pose): see
+`<raw>/ship/v5/notes/nose-b4.md`. `test_ship_jaw.py` keeps the swing's interpenetration check (six steps).
+
+Views: a `ship --shoot DIR --views FILE` row whose 6th element is `{"jaw": "closed"}` (or `half`, `open`, or a share
+of the open pose such as `"0.25"`) shows that pose (`ship.gd` `_jaw_pose`); `{"solo": true}` alone just makes a review sheet. Either way the sheet holds the
 file's views alone, `NOSE_SHEET_W` (1600) px wide. `ship --jaw-video DIR` renders the opening (`JAW_VIDEO`: a still
 3/4 front camera at eye height, 6.5 s at 30 fps: closed, the seam lights, the lower jaw lowers to the ground, the
 upper lifts) into `DIR/open.mp4`. Round b1's views, sheets and video: `<raw>/ship/v5/nose/b1/` (its pieces in
 `b1/pieces`, a copy of `v5/pieces` with the jaws built); b2's in `<raw>/ship/v5/nose/b2/` (`views/close.json`: the
-close-ups); b3's in `<raw>/ship/v5/nose/b3/` (`var/A..C`: the shape grid; `compare.png`: b1, b2, b3 closed and b3 open,
-side and 3/4).
+close-ups); b3's in `<raw>/ship/v5/nose/b3/` (`var/A..C`: the shape grid); b4's in `<raw>/ship/v5/nose/b4/` (`pieces/`, the
+final; `closed/`, `open/`, `half/`, `swing/`, `inside/`, `close/`; `compare.png`: main's ship before the jaw, the
+jaw closed and open, side and 3/4); the package `<raw>/ship/v5/export/v4`.
 
 ## Lens room C, step 1: the charger's alcove and the east lounge (2026-10-28)
 
