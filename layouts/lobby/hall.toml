@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v5"          # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v6"          # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -250,7 +250,7 @@ blocks = [
 # sources (src_dir, never written) to game textures in tex_dir; godot/lobby/earth_sky.gdshader draws them as the sky
 # (at infinity: no parallax as the player walks). Directions: azimuth in degrees from south (+z, the window) toward
 # east (+x), elevation above the horizontal.
-variant = "E1"                      # the one switch: the shots and the game use this variant
+variant = "E2"                      # the one switch (the engineer, 2026-10-30: E2, the dawn glow on the limb)
 src_dir = "lobby/hall/earth-src"
 tex_dir = "lobby/hall/v5/earth"
 size = [4096, 2048]                 # the textures' pixels (at most 4096 x 2048)
@@ -305,3 +305,148 @@ roll_deg = 0.0
 sun = [0.0, 13.0]
 sun_energy = 0.0
 stars = 1.6
+
+[light]
+# Step 4 (art #356, docs/lobby.md "Step 4"): the hall's real light, the drawing's words: "warm hanging lamps under the
+# vault, orange strips on the pilasters, the Earth's cold light from the window; darker in game than on the concept".
+# `mood` is the one switch (the shots, the video and the game use it); `lobby --light-grid DIR` shoots every mood in
+# `grid`'s views. Every mood holds the same keys (linear colours; Godot light energies under AgX):
+#   exposure; ambient_rgb, ambient_energy (a flat fill, never the sky); probe_intensity (the reflection probes);
+#   pendant_*: a shadowed SpotLight3D under each pendant's bulb pointing down (angle: the half angle, degrees), the
+#     bulb's own emission (bulb_emit); strip_*: an unshadowed OmniLight3D before each pilaster's light strip, the
+#     strips' glTF emission times strip_emit; door_*: a red OmniLight3D before each door lamp, its emission times
+#     door_emit; corridor_*: unshadowed omnis along the corridor; earth_*: the Earth's cold light, a shadowed
+#     DirectionalLight3D from earth_dir [azimuth from south toward east, elevation]; dawn_*: E2's warmer hint, an
+#     unshadowed DirectionalLight3D from dawn_dir; glow_intensity, glow_bloom, glow_threshold; ssao_intensity.
+mood = "L1"
+grid = ["corner_nw", "spawn_eye", "c_back"]
+pendants_x = [-10.0, 0.0, 10.0]     # the builder's PENDANTS (lobby_build.py): the spots sit under each lens
+pendants_z = [-21.0, -9.0, 3.0]
+strip_y = 3.2                       # the pilaster strips' middle (the builder's STRIP, v 2.0..4.4)
+strip_off = 0.35                    # the omnis in front of a pilaster's face (m)
+door_off = 0.4                      # the red omnis in front of the door lamp's wall
+corridor = [[0.0, 5.0, -32.5], [0.0, 5.0, -36.0]]
+probes = [["hall", [0.0, 8.0, -8.0], [42.0, 16.5, 48.0], false], ["corridor", [0.0, 3.2, -34.0], [6.4, 6.6, 8.4], true]]
+
+[light.moods.L1]
+title = "balanced, as the drawing"
+exposure = 1.1
+ambient_rgb = [0.42, 0.5, 0.7]
+ambient_energy = 0.16
+probe_intensity = 0.8
+pendant_rgb = [1.0, 0.68, 0.42]
+pendant_energy = 14.0
+pendant_range = 18.0
+pendant_angle = 48.0
+bulb_emit = 10.0
+strip_rgb = [1.0, 0.55, 0.26]
+strip_energy = 1.5
+strip_range = 6.0
+strip_emit = 1.0
+door_rgb = [1.0, 0.08, 0.04]
+door_energy = 0.8
+door_range = 4.5
+door_emit = 1.0
+corridor_rgb = [1.0, 0.7, 0.45]
+corridor_energy = 2.0
+corridor_range = 7.0
+earth_rgb = [0.6, 0.72, 1.0]
+earth_energy = 0.8
+earth_dir = [0.0, 2.0]
+dawn_rgb = [1.0, 0.62, 0.35]
+dawn_energy = 0.2
+dawn_dir = [30.0, 4.0]
+glow_intensity = 0.6
+glow_bloom = 0.05
+glow_threshold = 1.0
+ssao_intensity = 1.6
+
+[light.moods.L2]
+title = "darker and moodier: pools of warm light, deep shadows, the Earth the brightest thing"
+exposure = 1.0
+ambient_rgb = [0.38, 0.46, 0.68]
+ambient_energy = 0.07
+probe_intensity = 0.5
+pendant_rgb = [1.0, 0.64, 0.36]
+pendant_energy = 11.0
+pendant_range = 16.0
+pendant_angle = 36.0
+bulb_emit = 8.0
+strip_rgb = [1.0, 0.5, 0.22]
+strip_energy = 0.7
+strip_range = 4.0
+strip_emit = 0.7
+door_rgb = [1.0, 0.08, 0.04]
+door_energy = 0.6
+door_range = 4.0
+door_emit = 0.9
+corridor_rgb = [1.0, 0.66, 0.4]
+corridor_energy = 1.4
+corridor_range = 6.0
+earth_rgb = [0.55, 0.7, 1.0]
+earth_energy = 0.6
+earth_dir = [0.0, 2.0]
+dawn_rgb = [1.0, 0.6, 0.32]
+dawn_energy = 0.14
+dawn_dir = [30.0, 4.0]
+glow_intensity = 0.7
+glow_bloom = 0.04
+glow_threshold = 1.0
+ssao_intensity = 2.2
+
+[light.moods.L3]
+title = "brighter and warmer, closer to the concept's glow"
+exposure = 1.15
+ambient_rgb = [0.66, 0.58, 0.5]
+ambient_energy = 0.3
+probe_intensity = 1.0
+pendant_rgb = [1.0, 0.7, 0.45]
+pendant_energy = 18.0
+pendant_range = 20.0
+pendant_angle = 55.0
+bulb_emit = 12.0
+strip_rgb = [1.0, 0.56, 0.28]
+strip_energy = 2.4
+strip_range = 7.0
+strip_emit = 1.4
+door_rgb = [1.0, 0.08, 0.04]
+door_energy = 1.0
+door_range = 5.0
+door_emit = 1.1
+corridor_rgb = [1.0, 0.72, 0.48]
+corridor_energy = 2.6
+corridor_range = 8.0
+earth_rgb = [0.62, 0.74, 1.0]
+earth_energy = 0.8
+earth_dir = [0.0, 2.0]
+dawn_rgb = [1.0, 0.64, 0.38]
+dawn_energy = 0.24
+dawn_dir = [30.0, 4.0]
+glow_intensity = 1.0
+glow_bloom = 0.15
+glow_threshold = 0.9
+ssao_intensity = 1.4
+
+[video]
+# Step 4's walk-through (`lobby --video DIR`, docs/lobby.md): eye height, the mood above; keys [eye, look, seconds
+# from the previous key] through a Catmull-Rom path: from the corridor's shut end through the arch, round the ship's
+# east side, to the spawn line, then a turn to the window and the Earth. Frames rendered off-screen, encoded in
+# headless Blender by the ship's tools/blender/ship_video.py (read, never changed) under max_mb.
+size = [1280, 720]
+fps = 24
+fov = 70.0
+max_mb = 15
+keys = [
+  [[0.0, 1.7, -37.2], [0.0, 2.2, -28.0], 0.0],
+  [[1.6, 1.7, -32.0], [5.0, 2.2, -26.0], 3.0],
+  [[6.0, 1.7, -27.8], [10.0, 2.6, -20.0], 3.2],
+  [[14.5, 1.7, -21.5], [0.0, 3.0, -14.0], 5.0],
+  [[16.0, 1.7, -12.0], [0.0, 3.5, -13.0], 4.5],
+  [[15.0, 1.7, -3.5], [0.0, 3.0, -10.0], 4.5],
+  [[6.0, 1.7, 0.8], [-2.0, 2.6, -8.0], 4.5],
+  [[0.0, 1.65, 1.0], [-4.0, 2.6, -6.0], 3.5],
+  [[0.0, 1.65, 1.0], [7.0, 3.5, 14.0], 3.0],
+  [[0.0, 1.65, 1.5], [0.0, 4.5, 16.0], 3.0],
+  [[0.0, 1.65, 3.0], [0.0, 5.0, 16.0], 6.0],
+  [[0.0, 1.65, 3.0], [0.0, 5.0, 16.0], 4.0],
+]

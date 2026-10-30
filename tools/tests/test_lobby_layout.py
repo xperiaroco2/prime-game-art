@@ -102,9 +102,9 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertTrue(any("grid: nowhere" in p for p in problems), problems)
 
     def test_the_earth(self) -> None:
-        """Step 3b: E1 by default, three variants, NASA's three maps at most 4096 x 2048, the grid's two views."""
+        """Step 3b: three variants (E2 by default since step 4, the engineer's pick), NASA's three maps at most 4096 x 2048, the grid's two views."""
         e = self.layout["earth"]
-        self.assertEqual(e["variant"], "E1")
+        self.assertEqual(e["variant"], "E2")
         self.assertEqual(sorted(e["variants"]), ["E1", "E2", "E3"])
         self.assertEqual(sorted(e["maps"]), ["clouds", "day", "night"])
         self.assertEqual(e["size"], [4096, 2048])
@@ -149,7 +149,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v5")
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v6")   # step 4
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -173,6 +173,48 @@ class LobbyLayoutTest(unittest.TestCase):
             self.assertTrue(all(0.0 <= c <= 1.0 for m in mats.values() for c in m["rgb"]))
         s1 = lobby_layout.look_materials(self.layout, "S1")
         self.assertNotEqual(s1["lobby_panel"]["rgb"], s1["lobby_pilaster"]["rgb"])   # a scheme, not one metal
+
+    def test_the_light_moods(self) -> None:
+        """Step 4: L1 by default, three moods with the same keys, L2 darker and L3 brighter than L1, the rig's lamps."""
+        li = self.layout["light"]
+        self.assertEqual(li["mood"], "L1")
+        self.assertEqual(sorted(li["moods"]), ["L1", "L2", "L3"])
+        self.assertEqual(li["grid"], ["corner_nw", "spawn_eye", "c_back"])
+        m = li["moods"]
+        self.assertLess(m["L2"]["ambient_energy"], m["L1"]["ambient_energy"])
+        self.assertLess(m["L1"]["ambient_energy"], m["L3"]["ambient_energy"])
+        self.assertLess(m["L2"]["pendant_angle"], m["L3"]["pendant_angle"])   # L2's pools tighter
+        for mood in m.values():
+            self.assertGreater(mood["pendant_rgb"][0], mood["pendant_rgb"][2])   # the pendants warm
+            self.assertGreater(mood["earth_rgb"][2], mood["earth_rgb"][0])       # the Earth's light cold
+            self.assertGreater(mood["door_rgb"][0], 10 * mood["door_rgb"][1])    # the door lamps red
+        from runner.commands import lobby as cmd
+        rig = cmd.light_request(self.layout, "L1")["light"]
+        self.assertEqual(len(rig["pendants"]), 9)
+        self.assertEqual(len(rig["strips"]), 16)   # 6 + 6 side pilasters, 4 on the north wall
+        self.assertEqual(len(rig["doors"]), 4)
+        for x, y, z in rig["strips"] + rig["doors"]:
+            self.assertTrue(lobby_layout.in_hall(self.layout, x, z, 0.2), (x, z))
+        self.assertGreater(rig["earth_dir"][2], 0.9)   # toward the Earth: the window's side (+z)
+
+    def test_the_light_check(self) -> None:
+        bad = copy.deepcopy(self.layout)
+        bad["light"]["mood"] = "L9"
+        bad["light"]["moods"]["L2"]["pendant_angle"] = 80.0
+        del bad["light"]["moods"]["L3"]["glow_bloom"]
+        bad["light"]["corridor"][0] = [0.0, 5.0, -20.0]
+        bad["video"]["keys"][3][0] = [30.0, 1.7, -21.5]
+        problems = lobby_layout.check(bad, self.fp(bad))
+        for want in ("mood L9", "L2: pendant_angle", "L3: keys differ", "corridor lamp", "video key 3"):
+            self.assertTrue(any(want in p for p in problems), (want, problems))
+
+    def test_the_video(self) -> None:
+        vd = self.layout["video"]
+        self.assertEqual(vd["size"], [1280, 720])
+        self.assertLessEqual(vd["max_mb"], 15)
+        self.assertTrue(40.0 <= sum(k[2] for k in vd["keys"][1:]) <= 60.0)
+        self.assertTrue(lobby_layout.in_corridor(self.layout, vd["keys"][0][0][0], vd["keys"][0][0][2]))  # the shut end
+        self.assertGreater(vd["keys"][-1][1][2], 10.0)   # it ends toward the window and the Earth
 
     def test_the_views(self) -> None:
         names = [v[0] for v in self.layout["review"]["views"]]

@@ -309,6 +309,8 @@ def check(layout: dict[str, Any], fp: list[tuple[float, float]] | None = None) -
             p.append(f"grid: {g} is no view")
     # the Earth (step 3b): one variant switch, textures no larger than 4096 x 2048, every variant's numbers in range
     p += earth_problems(layout, names)
+    # the light (step 4): one mood switch, every mood the same keys in range, the rig's spots inside the hall; the video
+    p += light_problems(layout, names)
     # the look: one scheme switch, every scheme's role colours in 0..1, every material a role with its numbers
     look = layout["look"]
     if look["scheme"] not in look["schemes"]:
@@ -420,4 +422,63 @@ def earth_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
             p.append(f"earth {vid}: subpoint {v['subpoint']} is not [lat, lon]")
         if not (-180 <= v["sun"][0] <= 180 and -90 <= v["sun"][1] <= 90) or v["sun_energy"] < 0 or v["stars"] < 0:
             p.append(f"earth {vid}: sun, sun_energy or stars out of range")
+    return p
+
+
+LIGHT_KEYS = ("exposure", "ambient_rgb", "ambient_energy", "probe_intensity", "pendant_rgb", "pendant_energy",
+              "pendant_range", "pendant_angle", "bulb_emit", "strip_rgb", "strip_energy", "strip_range", "strip_emit",
+              "door_rgb", "door_energy", "door_range", "door_emit", "corridor_rgb", "corridor_energy", "corridor_range",
+              "earth_rgb", "earth_energy", "earth_dir", "dawn_rgb", "dawn_energy", "dawn_dir", "glow_intensity",
+              "glow_bloom", "glow_threshold", "ssao_intensity")
+
+
+def light_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
+    """[light]: the mood switch names a mood, every mood has exactly LIGHT_KEYS with colours in 0..1, energies, ranges and
+    angles in range; the pendants over the floor under the vault, the corridor's lamps in the corridor; [video]'s keys
+    inside the hall or the corridor, its size, fps and length within the walk-through's limits."""
+    li = layout.get("light")
+    if li is None:
+        return []
+    p: list[str] = []
+    h = layout["hall"]
+    if li["mood"] not in li["moods"]:
+        p.append(f"light: mood {li['mood']} is not in [light.moods]")
+    for g in li["grid"]:
+        if g not in views:
+            p.append(f"light grid: {g} is no view")
+    for mid, m in li["moods"].items():
+        if sorted(m) != sorted(("title",) + LIGHT_KEYS):
+            p.append(f"light {mid}: keys differ from the moods' set ({', '.join(sorted(set(m) ^ set(('title',) + LIGHT_KEYS)))})")
+            continue
+        for k in LIGHT_KEYS:
+            v = m[k]
+            if k.endswith("_rgb"):
+                if len(v) != 3 or not all(0.0 <= c <= 1.0 for c in v):
+                    p.append(f"light {mid}: {k} {v} is not a colour in 0..1")
+            elif k.endswith("_dir"):
+                if not (-180 <= v[0] <= 180 and -90 <= v[1] <= 90):
+                    p.append(f"light {mid}: {k} {v} is not [azimuth, elevation]")
+            elif not 0.0 <= v <= (90.0 if k == "pendant_angle" else 40.0):
+                p.append(f"light {mid}: {k} {v} out of range")
+        if not 10.0 <= m["pendant_angle"] <= 70.0:
+            p.append(f"light {mid}: pendant_angle {m['pendant_angle']} is not within 10..70 (the shade's rim)")
+    for x in li["pendants_x"]:
+        for z in li["pendants_z"]:
+            if not on_floor(layout, x, z):
+                p.append(f"light: pendant ({x}, {z}) is not over the floor")
+    if not 0 < li["strip_y"] < h["wall"]:
+        p.append(f"light: strip_y {li['strip_y']} is not on the walls")
+    for x, y, z in li["corridor"]:
+        if not in_corridor(layout, x, z) or not 0 < y < layout["arch"]["h"]:
+            p.append(f"light: corridor lamp ({x}, {y}, {z}) is not in the corridor")
+    vd = layout.get("video")
+    if vd:
+        if vd["size"] != [1280, 720] or not 12 <= vd["fps"] <= 30 or vd["max_mb"] > 15:
+            p.append("video: 1280 x 720, 12..30 fps and at most 15 MB")
+        seconds = sum(k[2] for k in vd["keys"][1:])
+        if not 40.0 <= seconds <= 60.0:
+            p.append(f"video: {seconds:.1f} s is not within 40..60 s")
+        for i, (eye, _look, _s) in enumerate(vd["keys"]):
+            if not (on_floor(layout, eye[0], eye[2]) or in_corridor(layout, eye[0], eye[2])) or not 1.0 < eye[1] < 2.2:
+                p.append(f"video key {i}: its eye {eye} is not at eye height in the hall or the corridor")
     return p

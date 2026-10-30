@@ -23,6 +23,8 @@ EARTH_SCRIPT = blender.SCRIPTS / "lobby_earth_tex.py"
 GODOT_SCRIPT = "res://lobby/hall.gd"
 BUILD_TIMEOUT = 600
 GODOT_TIMEOUT = 300
+VIDEO_SCRIPT = blender.SCRIPTS / "ship_video.py"   # the ship's encoder (art #263), only run, never changed
+VIDEO_TIMEOUT = 1500
 VIEW_SIZE = (1920, 1080)
 SIZE_TOL_M = 0.01
 
@@ -35,6 +37,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--grid", type=Path, metavar="DIR", help="shoot the colour schemes' grid into DIR (off-screen)")
     parser.add_argument("--earth-tex", action="store_true", help="scale NASA's Earth sources to the window's textures")
     parser.add_argument("--earth-grid", type=Path, metavar="DIR", help="shoot the Earth variants' grid into DIR")
+    parser.add_argument("--light-grid", type=Path, metavar="DIR", help="shoot the light moods' grid into DIR (step 4)")
+    parser.add_argument("--video", type=Path, metavar="DIR", help="the eye-height walk-through MP4 into DIR (step 4)")
     parser.add_argument("--out", type=Path, help="the pieces' folder (default <raw>/<layout raw_dir>/pieces)")
 
 
@@ -94,7 +98,15 @@ def run(args: argparse.Namespace) -> int:
         if code:
             return code
     if args.earth_grid:
-        return shoot(layout, out, place, args.earth_grid.resolve(), grid="earth")
+        code = shoot(layout, out, place, args.earth_grid.resolve(), grid="earth")
+        if code:
+            return code
+    if args.light_grid:
+        code = shoot(layout, out, place, args.light_grid.resolve(), grid="light")
+        if code:
+            return code
+    if args.video:
+        return video(layout, out, place, args.video.resolve())
     return 0
 
 
@@ -141,6 +153,74 @@ def look_request(layout: dict, scheme: str) -> dict:
     """The look Godot applies to the hall's materials: one scheme's resolved materials (lobby_layout.look_materials)."""
     return {"id": scheme, "title": layout["look"]["schemes"][scheme]["title"],
             "mats": lobby_layout.look_materials(layout, scheme)}
+
+
+# --- the light (step 4) ---------------------------------------------------------------------------------------------
+def light_request(layout: dict, mood: str) -> dict:
+    """One mood's rig for hall.gd: its numbers, the directions, and every lamp's place in the lobby frame (the pendants'
+    x and z (hall.gd finds each lens's height in the vault's mesh), the strips before the pilasters' faces, the red
+    omnis before the door lamps, the corridor's omnis) and the reflection probes."""
+    li, h = layout["light"], layout["hall"]
+    m = dict(li["moods"][mood])
+    title = m.pop("title")
+    m["earth_dir"], m["dawn_dir"] = _dir(*m["earth_dir"]), _dir(*m["dawn_dir"])
+    face = {"W": (h["x0"] + h["pilaster_d"] + li["strip_off"], 1), "E": (h["x1"] - h["pilaster_d"] - li["strip_off"], -1)}
+    strips = []
+    for side, u in lobby_layout.pilasters(layout):
+        if side == "N":
+            strips.append([u, li["strip_y"], h["zN"] + h["pilaster_d"] + li["strip_off"]])
+        else:
+            strips.append([face[side][0], li["strip_y"], u])
+    doors = []
+    for _did, side, u in layout["door"]["doors"]:
+        y = layout["door"]["lamp"]
+        if side == "N":
+            doors.append([u, y, h["zN"] + li["door_off"]])
+        else:
+            doors.append([h["x0"] + li["door_off"] if side == "W" else h["x1"] - li["door_off"], y, u])
+    m.update({"pendants": [[x, z] for x in li["pendants_x"] for z in li["pendants_z"]], "strips": strips,
+              "doors": doors, "corridor": li["corridor"], "probes": li["probes"]})
+    return {"id": mood, "title": title, "light": m}
+
+
+def video(layout: dict, out: Path, place: list, folder: Path) -> int:
+    """The eye-height walk-through (step 4): hall.gd renders every frame off-screen (mode "video", the layout's mood),
+    headless Blender encodes them with the ship's ship_video.py under max_mb, and the frames are deleted."""
+    import shutil
+    req, staged, _want = scene_request(layout, out, place, lobby_layout.ship_report(layout))
+    vd = layout["video"]
+    req.update({"mode": "video", "background": layout["review"]["background"], "video": vd,
+                "watchdog_s": VIDEO_TIMEOUT - 60, "light": light_request(layout, layout["light"]["mood"])["light"]})
+    if "earth" in layout:
+        req["earth"] = earth_request(layout, layout["earth"]["variant"])["earth"]
+    errors = _stage(staged)
+    work = folder / "work"
+    shutil.rmtree(work / "frames", ignore_errors=True)
+    work.mkdir(parents=True, exist_ok=True)
+    path = common.OUT / "lobby" / "video_request.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")
+    (work / "video.json").unlink(missing_ok=True)
+    code, output = _godot.window(["--path", str(_godot.PROJECT), "--audio-driver", "Dummy", "-s", GODOT_SCRIPT, "--",
+                                  path.as_posix(), work.as_posix()], tuple(vd["size"]), VIDEO_TIMEOUT)
+    if code != 0 or not (work / "video.json").is_file():
+        raise common.Failure(f"hall.gd video failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
+    info = json.loads((work / "video.json").read_text(encoding="utf-8"))
+    clip = folder / "walkthrough.mp4"
+    clip.unlink(missing_ok=True)
+    blender.run_script(VIDEO_SCRIPT, ["--frames", str(work / "frames"), "--out", str(clip), "--fps", str(vd["fps"]),
+                                      "--max-mb", str(vd["max_mb"])], timeout=VIDEO_TIMEOUT)
+    if not clip.is_file():
+        raise common.Failure(f"ship_video.py wrote no {clip}")
+    shutil.rmtree(work / "frames", ignore_errors=True)
+    mb = clip.stat().st_size / 2 ** 20
+    if errors or mb > vd["max_mb"]:
+        common.bad(f"lobby --video: {mb:.1f} MB (max {vd['max_mb']}), {len(errors)} import errors")
+        return 1
+    common.ok(f"lobby --video: {clip.as_posix()} {vd['size'][0]}x{vd['size'][1]}, {info['seconds']:.1f} s, "
+              f"{info['frames']} frames, {mb:.1f} MB (rendered in {info['render_s']:.0f} s, GPU median "
+              f"{info['gpu_ms']:.2f} ms)")
+    return 0
 
 
 # --- build ---------------------------------------------------------------------------------------------------------
@@ -273,7 +353,12 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
                 "look": look_request(layout, layout["look"]["scheme"])})
     if "earth" in layout:
         req["earth"] = earth_request(layout, layout["earth"]["variant"])["earth"]
-    if grid == "earth":
+    if "light" in layout:
+        req["light"] = light_request(layout, layout["light"]["mood"])["light"]
+    if grid == "light":
+        req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in layout["light"]["grid"]],
+                    "variants": [light_request(layout, k) for k in layout["light"]["moods"]]})
+    elif grid == "earth":
         req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in layout["earth"]["grid"]],
                     "variants": [earth_request(layout, k) for k in layout["earth"]["variants"]]})
     elif grid:
@@ -290,7 +375,8 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
         raise common.Failure(f"hall.gd shoot failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     result = json.loads((folder / "shots.json").read_text(encoding="utf-8"))
     for name, info in result["shots"].items():
-        common.say(f"  {name}: {info['draw_calls']} draw calls, {info['primitives']} primitives")
+        common.say(f"  {name}: {info['draw_calls']} draw calls, {info['primitives']} primitives"
+                   + (f", GPU {info['gpu_ms']:.2f} ms" if "gpu_ms" in info else ""))
     if errors:
         common.bad(f"lobby --shoot: {len(errors)} import errors")
         return 1
