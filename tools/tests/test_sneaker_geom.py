@@ -174,3 +174,37 @@ class BendTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SectionTest(unittest.TestCase):
+    """E1, S1's collar shards: the collar's section comes from the foot's section points (any Foot, Toes or LowerLeg
+    weight low on the leg) while the outline keeps the foot's own points."""
+
+    def test_the_collar_takes_the_section_points(self):
+        foot = synth_foot()
+        sh0 = G.build(foot)
+        # the ankle's mostly-shin skin round the heel at collar height, a little wider and further back than the
+        # foot's own points there (the heel's section from u 0, v -4.4 to 5.4 cm)
+        z = 0.62 * foot.ankle_z
+        ring = [(0.055 + 0.047 * math.cos(t / 16 * math.pi), 0.005 + 0.04 * math.sin(t / 16 * math.pi), z + dz)
+                for t in range(32) for dz in (-0.004, 0.0, 0.008)]
+        wide = G.Foot(foot.pts, foot.ball_u, foot.ankle_u, foot.ankle_z, foot.pts + ring)
+        sh1 = G.build(wide)
+        self.assertEqual(len(sh0.verts), len(sh1.verts))  # the same topology
+        self.assertAlmostEqual(wide.length, foot.length)  # the outline is the foot's own
+        self.assertAlmostEqual(wide.width, foot.width)
+        r0 = G.rim_points(foot, G.Params(), G.outline(foot, G.Params()))[0]
+        r1 = G.rim_points(wide, G.Params(), G.outline(wide, G.Params()))[0]
+        # round the heel (the columns behind u 6 cm) the collar moves out toward the ankle's skin, never in; it
+        # stays inside the shoe's outline, which is the foot's own
+        heel = [(a, b) for a, b in zip(r0, r1) if a[0] < 0.06]
+        self.assertGreater(len(heel), 4)
+        d = [math.hypot(b[0] - 0.055, b[1] - 0.005) - math.hypot(a[0] - 0.055, a[1] - 0.005) for a, b in heel]
+        self.assertGreaterEqual(min(d), -1e-4)
+        self.assertGreater(max(d), 0.002)
+
+    def test_merge_keeps_both_sections(self):
+        a, b = synth_foot(), synth_foot()
+        a.sect, b.sect = [(0.0, 0.0, 0.05)], [(0.01, 0.0, 0.05)]
+        self.assertEqual(G.merge(a, b).section_pts, [(0.0, 0.0, 0.05), (0.01, 0.0, 0.05)])
+        self.assertEqual(synth_foot().section_pts, synth_foot().pts)

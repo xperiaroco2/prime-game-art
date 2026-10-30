@@ -99,11 +99,18 @@ def frame(foot_head: Pt3, toes_head: Pt3, foot_pts: list[Pt3]) -> Frame:
 @dataclass
 class Foot:
     """A foot's measures in its frame: its points (u, v, z), the ball's u (the Toes head), the ankle's u and z (the
-    Foot head)."""
+    Foot head); `sect`, the points the collar's section and the rim are taken from (E1, S1's collar shards: every
+    vertex with any Foot, Toes or LowerLeg weight low on the leg, so the ankle's mostly-shin skin over the rim lies
+    inside the collar; empty: `pts`)."""
     pts: list[Pt3]
     ball_u: float
     ankle_u: float
     ankle_z: float
+    sect: list[Pt3] = field(default_factory=list)
+
+    @property
+    def section_pts(self) -> list[Pt3]:
+        return self.sect or self.pts
 
     @property
     def length(self) -> float:
@@ -119,15 +126,16 @@ class Foot:
         return max(zs) if zs else 0.0
 
 
-def measure(fr: Frame, pts: list[Pt3], foot_head: Pt3, toes_head: Pt3) -> Foot:
+def measure(fr: Frame, pts: list[Pt3], foot_head: Pt3, toes_head: Pt3, sect: list[Pt3] | None = None) -> Foot:
     loc = [fr.local(p) for p in pts]
-    return Foot(loc, fr.local(toes_head)[0], fr.local(foot_head)[0], foot_head[2])
+    return Foot(loc, fr.local(toes_head)[0], fr.local(foot_head)[0], foot_head[2], [fr.local(p) for p in sect or []])
 
 
 def merge(a: Foot, b: Foot) -> Foot:
     """Both feet in one: the points of both (each in its own frame, so the right foot lies mirrored on the left),
     the bones' means; the pair is then one shape, symmetric left and right."""
-    return Foot(a.pts + b.pts, 0.5 * (a.ball_u + b.ball_u), 0.5 * (a.ankle_u + b.ankle_u), 0.5 * (a.ankle_z + b.ankle_z))
+    return Foot(a.pts + b.pts, 0.5 * (a.ball_u + b.ball_u), 0.5 * (a.ankle_u + b.ankle_u), 0.5 * (a.ankle_z + b.ankle_z),
+                a.sect + b.sect)
 
 
 # ---- plane curves -------------------------------------------------------------------------------------------------
@@ -281,7 +289,7 @@ def slot_rear(foot: Foot, p: Params) -> float:
     foot's points at the stays' cap height and over, their front plus collar_clear), so the collar's front corners
     never cut into the ankle and a low top never climbs the leg."""
     cap, front = stay_cap(foot, p), throat_u(foot, p)
-    leg = [q[0] for q in foot.pts if q[2] >= cap - 0.004 and q[0] < front - 0.04]
+    leg = [q[0] for q in foot.section_pts if q[2] >= cap - 0.004 and q[0] < front - 0.04]
     u = (max(leg) if leg else foot.ankle_u) + p.collar_clear
     return min(max(u, foot.ankle_u + 0.01), front - 0.04)
 
@@ -358,7 +366,7 @@ def rim_points(foot: Foot, p: Params, out: list[Pt2]) -> tuple[list[Pt2], list[f
         b = out[i]
         f = b[0] / max(1e-6, rear)
         z = collar_z(foot, p, max(0.0, min(1.0, f)), corner)
-        sec = [(q[0], q[1]) for q in foot.pts if z - 0.008 < q[2] < z + 0.02 and q[0] <= rear + 0.005]
+        sec = [(q[0], q[1]) for q in foot.section_pts if z - 0.008 < q[2] < z + 0.02 and q[0] <= rear + 0.005]
         q = None
         if len(sec) >= 3:
             h = hull(sec)

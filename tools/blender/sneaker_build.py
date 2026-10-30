@@ -35,18 +35,26 @@ EYELET = (0.62, 0.63, 0.65)
 TREAD = (0.80, 0.78, 0.73)
 
 
+SECT_Z = 0.2  # E1: the collar's section points: any Foot, Toes or LowerLeg weight under this height (m)
+
+
 def feet(body, arm, min_w: float = 0.5) -> dict:
-    """Per side ("Left", "Right") the foot's world points at rest and the Foot and Toes heads."""
+    """Per side ("Left", "Right") the foot's world points at rest (Foot + Toes weight min_w and over: the outline),
+    the section points (E1: any Foot, Toes or LowerLeg weight under SECT_Z: the collar and the rim) and the Foot and
+    Toes heads."""
     gn = {g.index: g.name for g in body.vertex_groups}
     out = {}
     for side in ("Left", "Right"):
         names = (side + "Foot", side + "Toes")
+        legs = names + (side + "LowerLeg",)
         pts = [tuple(body.matrix_world @ v.co) for v in body.data.vertices
                if sum(g.weight for g in v.groups if gn.get(g.group, "") in names) >= min_w]
+        sect = [p for p in (tuple(body.matrix_world @ v.co) for v in body.data.vertices
+                            if any(g.weight > 0.0 and gn.get(g.group, "") in legs for g in v.groups)) if p[2] < SECT_Z]
         if len(pts) < 50:
             raise ValueError(f"{side}: only {len(pts)} foot vertices")
         bones = {n: tuple(arm.matrix_world @ arm.data.bones[n].head_local) for n in names}
-        out[side] = {"pts": pts, "foot": bones[names[0]], "toes": bones[names[1]]}
+        out[side] = {"pts": pts, "sect": sect, "foot": bones[names[0]], "toes": bones[names[1]]}
     return out
 
 
@@ -55,7 +63,7 @@ def shoes(body, arm, params: G.Params | None = None):
     params = params or G.Params()
     ft = feet(body, arm)
     frames = {s: G.frame(d["foot"], d["toes"], d["pts"]) for s, d in ft.items()}
-    measures = {s: G.measure(frames[s], d["pts"], d["foot"], d["toes"]) for s, d in ft.items()}
+    measures = {s: G.measure(frames[s], d["pts"], d["foot"], d["toes"], d["sect"]) for s, d in ft.items()}
     foot = G.merge(measures["Left"], measures["Right"])
     sh = G.build(foot, params)
     verts, faces, uvs, groups = [], [], [], []
@@ -95,7 +103,8 @@ def shoes(body, arm, params: G.Params | None = None):
     rep = {"tris_pair": 2 * sh.tris, "tris_shoe": sh.tris, "verts_pair": len(verts), **sh.info,
            "foot": {"length_m": round(foot.length, 4), "width_m": round(foot.width, 4), "ball_u": round(foot.ball_u, 4),
                     "ankle_u": round(foot.ankle_u, 4), "ankle_z": round(foot.ankle_z, 4),
-                    "points": {s: len(d["pts"]) for s, d in ft.items()}},
+                    "points": {s: len(d["pts"]) for s, d in ft.items()},
+                    "section_points": {s: len(d["sect"]) for s, d in ft.items()}},
            "params": {k_: getattr(params, k_) for k_ in params.__dataclass_fields__}}
     rep["material"] = material(ob, sh)
     rep["clearance"] = clearance(ob, ft)
