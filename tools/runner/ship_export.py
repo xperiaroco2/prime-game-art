@@ -66,8 +66,13 @@ QUESTIONS = [
     "logs, rocks, the ground lamps, the party string and the lamps that light only them) is the one node Clearing "
     "(Clearing/Pieces, Clearing/Lights, Clearing/Ground); the lobby (art#356) shows the ship docked without it: free "
     "the node (queue_free(), or delete it in an inherited scene); hiding it leaves Ground's collider on. The ship "
-    "itself (hull, legs, ramp, entry tunnel, its landing and edge lights, the rim and key) stays under Pieces and "
-    "Lights. A closed state (the ramp raised, the mouth shut) waits for the engineer's pick of its look.",
+    "itself (hull, legs, entry tunnel, its landing and edge lights, the rim and key) stays under Pieces and Lights, "
+    "the jaw nose under Nose (S8).",
+    "S8: the jaw nose (art#263) is the node Nose: jaw_lower (the ramp), jaw_upper and the fixed jaw_root, saved open, "
+    "and Nose/AnimationPlayer with the clips open (closed to open, 2.5 s), close (the same backwards) and RESET (the "
+    "open pose). The lobby shows it closed: play \"close\" and seek to its end (seek(length, true)). Each jaw's "
+    "colliders (StaticBody3D) turn with it; a player standing on the ramp while it moves is not carried "
+    "(AnimatableBody3D would be the game's call). The seam's cyan line keeps its static glow.",
     "Imports: each GLB's .import holds only 11.2's options; the game's editor regenerates the .import files (and the "
     "uids) on its first import: commit the regenerated ones.",
 ]

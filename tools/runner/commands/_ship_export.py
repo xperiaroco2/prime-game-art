@@ -25,7 +25,7 @@ MAX_MEAN_ABS = 2.0
 
 def scene(layout: dict, pieces: Path, request: dict, staged: dict[str, Path], folder: Path) -> Path:
     """Runs export_scene.gd headless on the staged pieces; returns godot/import/ship_export/ (ship.tscn and .tres)."""
-    from .ship import _stage
+    from .ship import _stage, nose_request
     built = _godot.IMPORT_DIR / ship_export.BUILT
     if built.is_dir():
         shutil.rmtree(built)
@@ -38,6 +38,7 @@ def scene(layout: dict, pieces: Path, request: dict, staged: dict[str, Path], fo
                                                    for s in ship_export.stations(layout)],
                     "spawn": [walk[0], walk[2], walk[1]], "spawn_yaw": 180.0, "deck_h": floor,
                     "clearing": ship_layout.clearing_ids(layout), "clearing_lamps": sorted(ship_layout.CLEARING_LAMPS),
+                    "nose": nose_request(layout),
                     "size_m": [round(v, 3) for v in ship_layout.extent(layout)]})
     path = folder / CHECK_DIR / "export_request.json"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -67,7 +68,8 @@ def check(layout: dict, pieces: Path, folder: Path) -> tuple[list[str], dict]:
         raise common.Failure(f"godot --import of the package exited {code}:\n" + "\n".join(output.splitlines()[-20:]))
     errors = [line for line in _godot.noteworthy(output) if "ERROR" in line]
     pl = layout["player"]
-    req = {"scene": f"res://{ship_export.SCENE}",
+    from .ship import nose_request
+    req = {"scene": f"res://{ship_export.SCENE}", "nose": nose_request(layout),
            "pieces": {p["id"]: f"res://{ship_export.ASSET_DIR}/{p['id']}.glb" for p in layout["pieces"]},
            "walk": {"r": pl["capsule_radius_m"], "h": pl["capsule_height_m"],
                     "points": [[p[0], p[2], p[1]] for p in layout["walk"]["points"]]}}
@@ -101,6 +103,7 @@ def check(layout: dict, pieces: Path, folder: Path) -> tuple[list[str], dict]:
     if set(got["stations"]) != want_st:
         problems.append(f"Stations holds {sorted(got['stations'])}, wants {sorted(want_st)}")
     problems += clearing_problems(layout, got)
+    problems += nose_problems(layout, got)
     w = got["walk"]
     if not w["arrived"]:
         problems.append(f"the capsule walk stopped at {w['reached']}/{w['of']} near {w['stuck']}")
@@ -113,12 +116,21 @@ def check(layout: dict, pieces: Path, folder: Path) -> tuple[list[str], dict]:
 
 
 def clearing_problems(layout: dict, got: dict) -> list[str]:
-    """Ship/Clearing (art #356) holds exactly the clearing's placements and its Ground, Pieces none of them."""
+    """Ship/Clearing (art #356) holds exactly the clearing's placements and its Ground; Pieces exactly the other
+    placements but the Nose's (art #263 b4)."""
+    from .ship import nose_request
     ids = set(ship_layout.clearing_ids(layout))
+    nose = set(nose_request(layout).get("pieces", []))
     want = sorted(pid for pid, _at, _yaw in layout["place"] if pid in ids)
     problems = []
     if sorted(got["clearing_ids"]) != want:
         problems.append(f"Clearing/Pieces holds {len(got['clearing_ids'])} placements, wants the clearing's {len(want)}")
+    want_ship = sorted(pid for pid, _at, _yaw in layout["place"] if pid not in ids and pid not in nose)
+    if sorted(got["ship_ids"]) != want_ship:
+        lost = sorted(set(want_ship) - set(got["ship_ids"]))
+        extra = sorted(set(got["ship_ids"]) - set(want_ship))
+        problems.append(f"Pieces holds {len(got['ship_ids'])} placements, wants {len(want_ship)} (missing "
+                        f"{', '.join(lost[:5]) or '-'}; extra {', '.join(extra[:5]) or '-'})")
     stray = sorted({pid for pid in got["ship_ids"] if pid in ids})
     if stray:
         problems.append(f"clearing pieces under Pieces: {', '.join(stray)}")
@@ -127,6 +139,35 @@ def clearing_problems(layout: dict, got: dict) -> list[str]:
         problems.append(f"ship pieces under Clearing: {', '.join(wrong)}")
     if not got["clearing_ground"]:
         problems.append("no Clearing/Ground (the world boundary)")
+    return problems
+
+
+NOSE_TOL_DEG = 0.05
+
+
+def nose_problems(layout: dict, got: dict) -> list[str]:
+    """Ship/Nose (art #263 b4): the jaw's pieces, the player's clips, the scene's default pose (open) and each clip's
+    end pose, read by export_check.gd after seeking each clip to its end."""
+    from .ship import nose_request
+    want = nose_request(layout)
+    if not want:
+        return []
+    n = got.get("nose") or {}
+    if not n:
+        return ["no Ship/Nose"]
+    problems = []
+    if sorted(n["pieces"]) != sorted(want["pieces"]):
+        problems.append(f"Nose holds {sorted(n['pieces'])}, wants {sorted(want['pieces'])}")
+    if sorted(n["clips"]) != ["RESET", "close", "open"]:
+        problems.append(f"Nose/{want['player']} holds the clips {sorted(n['clips'])}, wants open, close and RESET")
+    for name, pose in (("default", want["open"]), ("open", want["open"]), ("close", want["closed"]),
+                       ("RESET", want["open"])):
+        for pid in want["moving"]:
+            deg = n.get("poses", {}).get(name, {}).get(pid)
+            if deg is None or abs(deg - pose[pid]) > NOSE_TOL_DEG:
+                problems.append(f"Nose: {pid} at the end of {name} is {deg} deg, wants {pose[pid]}")
+    if abs(n.get("lengths", {}).get("open", 0.0) - want["seconds"]) > 1e-3:
+        problems.append(f"Nose: the open clip lasts {n.get('lengths', {}).get('open')} s, wants {want['seconds']}")
     return problems
 
 
@@ -144,7 +185,8 @@ def compare(layout: dict, pieces: Path, folder: Path) -> tuple[list[str], dict]:
     elif shoot(layout, pieces, ref, str(views_file)):
         raise common.Failure("ship --shoot of the compare views failed")
     project(folder)
-    req = {"scene": f"res://{ship_export.SCENE}", "refs": ref.as_posix(),
+    from .ship import nose_request
+    req = {"scene": f"res://{ship_export.SCENE}", "nose": nose_request(layout), "refs": ref.as_posix(),
            "views": [[v[0], v[1], [v[2][0], v[2][2], v[2][1]], [v[3][0], v[3][2], v[3][1]], v[4]] for v in views]}
     path = folder / CHECK_DIR / "shoot_request.json"
     path.write_text(json.dumps(req, indent=1), encoding="utf-8", newline="\n")

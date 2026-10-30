@@ -59,11 +59,14 @@ class ShipLobbyClearingTest(unittest.TestCase):
 
     def test_the_export_check_refuses_a_wrong_clearing(self) -> None:
         clear = [pid for pid, _at, _yaw in LAYOUT["place"] if pid in CLEARING]
-        ship = [pid for pid, _at, _yaw in LAYOUT["place"] if pid not in CLEARING]
+        nose = ("jaw_lower", "jaw_upper", "jaw_root")   # under Ship/Nose (art #263 b4), not Pieces
+        ship = [pid for pid, _at, _yaw in LAYOUT["place"] if pid not in CLEARING and pid not in nose]
         good = {"clearing_ids": clear, "ship_ids": ship, "clearing_ground": True}
         self.assertEqual(_ship_export.clearing_problems(LAYOUT, good), [])
         moved = {**good, "clearing_ids": clear[1:], "ship_ids": ship + clear[:1]}
-        self.assertEqual(len(_ship_export.clearing_problems(LAYOUT, moved)), 2)
+        self.assertEqual(len(_ship_export.clearing_problems(LAYOUT, moved)), 3)
+        lost = {**good, "ship_ids": ship[1:] + ["jaw_lower"]}   # Pieces exactly the other placements
+        self.assertEqual(len(_ship_export.clearing_problems(LAYOUT, lost)), 1)
         wrong = {**good, "clearing_ids": clear + ["ramp"], "clearing_ground": False}
         self.assertEqual(len(_ship_export.clearing_problems(LAYOUT, wrong)), 3)
 

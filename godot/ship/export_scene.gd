@@ -59,12 +59,17 @@ func _export() -> void:
 		elif n is ReflectionProbe:
 			into = "Probes"
 		elif n is StaticBody3D:
-			n.name = "Ground"
-			ground = n
+			if n.name != GROUND or ground != null:
+				_fail("an unexpected body at the root: %s" % n.name)
+				return
+			ground = n  # the world boundary _build made (by its name, never "the last body")
 			continue
 		n.reparent(groups[into])
 	var overrides: int = _materials(ship)
 	var clearing: Node3D = _clearing(level, ship, groups["Lights"], ground)
+	for l: Node in groups["Lights"].get_children() + clearing.get_node("Lights").get_children():
+		l.remove_meta("pieces")  # ship.gd's glow cells' bookkeeping (the pieces each omni lights), not the game's
+	var nose: Node3D = _nose(level, ship)
 	_spots(level)
 	level.set_meta("size_m", Vector2(float(_req["size_m"][0]), float(_req["size_m"][1])))
 	level.set_meta("deck_h", float(_req["deck_h"]))
@@ -76,7 +81,7 @@ func _export() -> void:
 	for n: Node in level.find_children("*", "", true, false):
 		if n.owner == null:
 			n.owner = level
-	for piece: Node in ship.get_children() + clearing.get_node("Pieces").get_children():
+	for piece: Node in ship.get_children() + clearing.get_node("Pieces").get_children() + _nose_pieces(nose):
 		level.set_editable_instance(piece, true)
 	var scripts: Array = level.find_children("*", "", true, false).filter(func(n: Node) -> bool: return n.get_script() != null)
 	if not scripts.is_empty():
@@ -95,6 +100,7 @@ func _export() -> void:
 		"lights": groups["Lights"].get_child_count(), "probes": groups["Probes"].get_child_count(),
 		"clearing_pieces": clearing.get_node("Pieces").get_child_count(),
 		"clearing_lights": clearing.get_node("Lights").get_child_count(),
+		"nose": _nose_pieces(nose).map(func(n: Node) -> String: return String(n.name)),
 		"stations": level.get_node("Stations").get_child_count(), "metals": _metals.keys()})
 	print("SHIP export saved %s" % EXPORT_DIR)
 	quit(0)
@@ -126,6 +132,65 @@ func _clearing(level: Node3D, ship: Node3D, lights: Node3D, ground: Node3D) -> N
 	if ground != null:
 		ground.reparent(clearing)
 	return clearing
+
+
+## Ship/Nose (art #263 b4, docs/ship.md "The jaw nose"): the jaw's pieces (the request's "nose" pieces, named by
+## their ids: jaw_lower, jaw_upper, jaw_root) moved out of Pieces, in the open pose they were built in, and an
+## AnimationPlayer whose clips turn the moving ones about x: "open" (closed to open, the jaw video's swing), "close"
+## (the same backwards) and "RESET" (the open pose). Their colliders turn with them. Returns Nose.
+func _nose(level: Node3D, ship: Node3D) -> Node3D:
+	var info: Dictionary = _req.get("nose", {})
+	var nose: Node3D = Node3D.new()
+	nose.name = "Nose"
+	level.add_child(nose)
+	if info.is_empty():
+		return nose
+	var ids: Array = info["pieces"]
+	for piece: Node in ship.get_children():
+		var s: String = String(piece.name)
+		var pid: String = s.substr(0, s.rfind("_"))
+		if pid in ids:
+			piece.reparent(nose)
+			piece.name = pid
+	var lib: AnimationLibrary = AnimationLibrary.new()
+	var keys: Array = info["keys"]
+	var open: Animation = _nose_clip("open", info, keys, false)
+	var close: Animation = _nose_clip("close", info, keys, true)
+	var reset: Animation = Animation.new()
+	reset.length = 0.001
+	for pid: String in info["moving"]:
+		var t: int = reset.add_track(Animation.TYPE_VALUE)
+		reset.track_set_path(t, NodePath("%s:rotation:x" % pid))
+		reset.track_insert_key(t, 0.0, deg_to_rad(float(info["open"][pid])))
+	lib.add_animation("open", open)
+	lib.add_animation("close", close)
+	lib.add_animation("RESET", reset)
+	var player: AnimationPlayer = AnimationPlayer.new()
+	player.name = str(info["player"])
+	nose.add_child(player)
+	player.add_animation_library("", lib)
+	return nose
+
+
+## One Nose clip: a value track per moving piece on rotation:x, the keys eased in and out (the video's smoothstep);
+## backwards: the times mirrored.
+func _nose_clip(name: String, info: Dictionary, keys: Array, backwards: bool) -> Animation:
+	var clip: Animation = Animation.new()
+	clip.resource_name = name
+	var seconds: float = float(info["seconds"])
+	clip.length = seconds
+	for pid: String in info["moving"]:
+		var t: int = clip.add_track(Animation.TYPE_VALUE)
+		clip.track_set_path(t, NodePath("%s:rotation:x" % pid))
+		clip.value_track_set_update_mode(t, Animation.UPDATE_CONTINUOUS)
+		for k: Array in keys:
+			var at: float = seconds - float(k[0]) if backwards else float(k[0])
+			clip.track_insert_key(t, at, deg_to_rad(float(k[1][pid])), -2.0)
+	return clip
+
+
+func _nose_pieces(nose: Node3D) -> Array:
+	return nose.get_children().filter(func(n: Node) -> bool: return not (n is AnimationPlayer))
 
 
 ## Every glTF material the look changed in place becomes a copy set as its surface's override (the instance's own
@@ -212,6 +277,7 @@ func _build() -> Node3D:
 		if p[0] in _req.get("outside", []):
 			_set_layers(node, OUTSIDE_LAYER)
 	var ground: StaticBody3D = StaticBody3D.new()
+	ground.name = GROUND
 	var shape: CollisionShape3D = CollisionShape3D.new()
 	shape.shape = WorldBoundaryShape3D.new()
 	ground.add_child(shape)

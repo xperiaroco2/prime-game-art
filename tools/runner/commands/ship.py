@@ -531,7 +531,8 @@ def export(layout: dict, out: Path, folder: Path, compare: bool = True) -> int:
         problems += more
     report = {"package": {k: summary[k] for k in ("version", "scene", "pieces", "placements", "bytes")},
               "files": len(summary["files"]), "stations": len(summary["stations"]),
-              "load": {k: load[k] for k in ("pieces", "bodies", "lights", "size_worst_m", "walk")}, "views": shots,
+              "load": {k: load[k] for k in ("pieces", "bodies", "lights", "size_worst_m", "walk")},
+              "nose": load.get("nose", {}), "views": shots,
               "problems": problems}
     path = folder / _ship_export.CHECK_DIR / "report.json"
     path.write_text(json.dumps(report, indent=1), encoding="utf-8", newline="\n")
@@ -625,6 +626,31 @@ def jaw_video_request(layout: dict) -> dict:
     return {"size": v["size"], "fps": v["fps"], "fov": v["fov"], "max_mb": v["max_mb"],
             "keys": [[_g(v["eye"]), _g(v["look"]), 0.0], [_g(v["eye"]), _g(v["look"]), v["seconds"]]],
             "jaw": keys, "lower": layout["jaw"]["lower"], "upper": layout["jaw"]["upper"]}
+
+
+NOSE_SECONDS = 2.5    # the package's Nose clips (art #263 b4): JAW_VIDEO's swing (its keys after the seam lights) in 2.5 s
+NOSE_PLAYER = "AnimationPlayer"
+
+
+def nose_request(layout: dict) -> dict:
+    """The package's Ship/Nose (export_scene.gd _nose): the jaw pieces, the open pose (the scene's default) and the
+    "open" clip's keys [t, {piece: degrees about x}] (JAW_VIDEO's swing scaled to NOSE_SECONDS; "close" plays them
+    backwards). Empty without [jaw]."""
+    if not layout.get("jaw"):
+        return {}
+    j, deg = layout["jaw"], ship_layout.jaw_deg(layout, "open")
+    swing = [k for k in JAW_VIDEO["jaw"] if k[0] >= 1.6][:-1]   # closed (seam lit) .. the open pose's first key
+    t0, t1 = swing[0][0], swing[-1][0]
+    keys = []
+    for t, lo, up, _g in swing:
+        at = {pid: deg[pid] if lo is None else lo for pid in j["lower"]}
+        at.update({pid: deg[pid] if up is None else up for pid in j["upper"]})
+        keys.append([round((t - t0) / (t1 - t0) * NOSE_SECONDS, 4), at])
+    moving = list(j["lower"]) + list(j["upper"])
+    fixed = [p["id"] for p in layout["pieces"] if p["builder"] == "jaw_root"]   # the jaw's fixed root, in Nose too
+    return {"pieces": moving + fixed, "moving": moving,
+            "open": {pid: deg[pid] for pid in moving},
+            "closed": ship_layout.jaw_deg(layout, "closed"), "keys": keys, "seconds": NOSE_SECONDS, "player": NOSE_PLAYER}
 
 
 def walk_video(layout: dict, out: Path, folder: Path, video: dict | None = None, name: str = "walkthrough.mp4") -> int:

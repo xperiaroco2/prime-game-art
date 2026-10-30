@@ -22,6 +22,7 @@ extends SceneTree
 ##   line in <out>/shots.txt. With "test": true the runner opens it off-screen (`ship --play-test`): the capsule walks
 ##   forward 2 s, saves one shot, writes <out>/play.json and quits.
 
+const GROUND: String = "Ground"  # the world boundary body, a child of the root
 const Offscreen = preload("res://lib/offscreen.gd")
 const Player = preload("res://ship/player.gd")
 const VentGlow = preload("res://ship/vent_glow.gd")
@@ -158,6 +159,7 @@ func _build() -> Node3D:
 		if p[0] in _req.get("outside", []):  # inside-2: the outside draws on layer 2, unlit by the inside's strips
 			_set_layers(node, OUTSIDE_LAYER)
 	var ground: StaticBody3D = StaticBody3D.new()
+	ground.name = GROUND  # the world boundary; export_scene.gd finds it by this name (art #263 b4)
 	var shape: CollisionShape3D = CollisionShape3D.new()
 	shape.shape = WorldBoundaryShape3D.new()
 	ground.add_child(shape)
@@ -491,9 +493,16 @@ func _piece_id(n: Node, ship: Node3D) -> String:
 
 
 ## The jaw nose's pose (art #263, ship.toml [jaw]): the request's "jaw" {pose: {piece: deg}} turns each placed jaw piece
-## about Godot's x (its origin is its hinge; + lifts the front).
+## about Godot's x (its origin is its hinge; + lifts the front). A number "0.25" is that share of the open pose's
+## angles (the swing's in-between poses for the defect hunt, b4).
 func _jaw_pose(ship: Node3D, pose: String) -> void:
-	var deg: Dictionary = (_req.get("jaw", {}) as Dictionary).get(pose, {})
+	var jaw: Dictionary = _req.get("jaw", {})
+	var deg: Dictionary = jaw.get(pose, {})
+	if pose.is_valid_float():
+		var f: float = pose.to_float()
+		deg = {}
+		for pid: String in jaw.get("open", {}):
+			deg[pid] = float(jaw["open"][pid]) * f
 	_jaw_turn(ship, deg)
 
 

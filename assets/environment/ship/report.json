@@ -2,53 +2,53 @@
  "package": {
   "version": 3,
   "scene": "res://levels/ship/ship.tscn",
-  "pieces": 189,
-  "placements": 1056,
-  "bytes": 12053212
+  "pieces": 188,
+  "placements": 1055,
+  "bytes": 11944553
  },
- "files": 205,
+ "files": 204,
  "stations": 11,
  "load": {
-  "pieces": 522,
-  "bodies": 694,
-  "lights": 144,
+  "pieces": 518,
+  "bodies": 705,
+  "lights": 148,
   "size_worst_m": 1.0000076144935435e-05,
   "walk": {
    "arrived": true,
    "end": [
-    9.55544164753519e-05,
-    0.000896030513104051,
-    -13.7026681900024
+    0.000132281958940439,
+    0.000778785906732082,
+    -13.7056436538696
    ],
-   "min_y": 0.0005335733294487,
+   "min_y": 0.000778785906732082,
    "of": 18,
    "passed": [
     [
      0.0,
-     -12.9
+     -13.5
     ],
     [
      0.0,
-     -6.85
+     -6.87
     ],
     [
      0.0,
-     -2.46
+     -2.47
     ],
     [
-     -2.75,
-     -0.13
+     -2.74,
+     -0.14
     ],
     [
-     -10.72,
+     -10.71,
      1.23
     ],
     [
-     -10.49,
+     -10.48,
      1.89
     ],
     [
-     -10.81,
+     -10.8,
      1.5
     ],
     [
@@ -85,30 +85,65 @@
     ],
     [
      0.0,
-     -12.3
+     -12.91
     ],
     [
      0.0,
-     -13.7
+     -13.71
     ]
    ],
    "radius_m": 0.4,
    "reached": 18,
-   "seconds": 23.9666666666667,
+   "seconds": 23.9,
    "stuck": [
-    9.55544164753519e-05,
-    0.000896030513104051,
-    -13.7026681900024
+    0.000132281958940439,
+    0.000778785906732082,
+    -13.7056436538696
    ]
+  }
+ },
+ "nose": {
+  "clips": [
+   "RESET",
+   "close",
+   "open"
+  ],
+  "lengths": {
+   "RESET": 0.001,
+   "close": 2.5,
+   "open": 2.5
+  },
+  "pieces": [
+   "jaw_lower",
+   "jaw_upper",
+   "jaw_root"
+  ],
+  "poses": {
+   "RESET": {
+    "jaw_lower": -34.3700002620298,
+    "jaw_upper": 3.00000008348261
+   },
+   "close": {
+    "jaw_lower": 0.0,
+    "jaw_upper": 0.0
+   },
+   "default": {
+    "jaw_lower": -34.3700036771244,
+    "jaw_upper": 3.00000029692602
+   },
+   "open": {
+    "jaw_lower": -34.3700002620298,
+    "jaw_upper": 3.00000008348261
+   }
   }
  },
  "views": {
   "in_hall": {
-   "draw_calls": 4336,
-   "gpu_ms": 4.95,
+   "draw_calls": 4365,
+   "gpu_ms": 4.63,
    "mean_abs": 0.003,
    "off_share": 0.0,
-   "primitives": 2106100,
+   "primitives": 2108751,
    "size": [
     1920,
     1080
@@ -116,7 +151,7 @@
   },
   "in_tip_e": {
    "draw_calls": 1228,
-   "gpu_ms": 4.42,
+   "gpu_ms": 4.33,
    "mean_abs": 0.002,
    "off_share": 0.0,
    "primitives": 1194499,
@@ -126,11 +161,11 @@
    ]
   },
   "out_hero": {
-   "draw_calls": 4950,
-   "gpu_ms": 3.71,
+   "draw_calls": 5046,
+   "gpu_ms": 3.5,
    "mean_abs": 0.003,
    "off_share": 0.0,
-   "primitives": 2405533,
+   "primitives": 2404360,
    "size": [
     1920,
     1080
