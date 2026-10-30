@@ -31,6 +31,9 @@ var _scenes: Dictionary = {}
 var _placed: Dictionary = {}   # piece id -> its placed nodes
 var _earth: ShaderMaterial      # the sky's material when the request has an Earth (step 3b)
 var _textures: Dictionary = {}  # path -> ImageTexture
+var _env: Environment
+var _rig: Node3D                 # step 4: the light rig of the current mood (rebuilt per mood)
+var _emissive: Array = []        # step 4: [mesh, surface, its GLB material] of the hall's lens, strip, ring and lamp surfaces
 
 
 func _initialize() -> void:
@@ -53,11 +56,13 @@ func _initialize() -> void:
 		if placed != "":
 			_fail(placed)
 			return
-	create_timer(WATCHDOG_S).timeout.connect(_fail.bind("not done within %d s" % WATCHDOG_S))
+	create_timer(float(_req.get("watchdog_s", WATCHDOG_S))).timeout.connect(_fail.bind("not done within %d s" % WATCHDOG_S))
 	if _req["mode"] == "check":
 		_check()
 	elif _req["mode"] == "grid":
 		_grid()
+	elif _req["mode"] == "video":
+		_video()
 	else:
 		_shoot()
 
@@ -108,6 +113,9 @@ func _setup_scene() -> void:
 	_build()
 	if _req.has("earth"):
 		_glass()
+	if _req.has("light"):
+		_apply_light(_req["light"])
+	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	_camera.far = 400.0
@@ -132,6 +140,8 @@ func _grid() -> void:
 	for look: Dictionary in _req["variants"]:
 		if look.has("earth"):
 			_apply_earth(look["earth"])
+		elif look.has("light"):
+			_apply_light(look["light"])
 		else:
 			_apply_look(look)
 		var row: Array = []
@@ -301,6 +311,11 @@ func _environment() -> void:
 	var world: WorldEnvironment = WorldEnvironment.new()
 	world.environment = env
 	root.add_child(world)
+	_env = env
+	if _req.has("light"):   # step 4: the hall's own light (_apply_light) instead of the review light
+		if _earth != null:
+			_earth.set_shader_parameter("cubemap_earth", 1.0)   # the probes and reflections show the Earth
+		return
 	var key: DirectionalLight3D = DirectionalLight3D.new()
 	key.light_energy = 0.8
 	key.shadow_enabled = false
@@ -360,6 +375,7 @@ func _glass() -> void:
 					var m: Material = mi.mesh.surface_get_material(i)
 					if m != null and m.resource_name == "lobby_glass":
 						mi.set_surface_override_material(i, mat)
+						mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # the Earth's light comes in
 						n_set += 1
 	if n_set == 0:
 		_fail("no lobby_glass surface on window_glass")
@@ -378,12 +394,16 @@ func _shoot() -> void:
 	for pid: String in top.get("hide", []):
 		for n: Node3D in _placed.get(pid, []):
 			n.visible = false
+	var bg: Environment.BGMode = _env.background_mode   # step 4: a plain background (a sky under an ortho camera streaks)
+	_env.background_mode = Environment.BG_COLOR
+	_env.background_color = Color(0.05, 0.055, 0.065)
 	_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	_camera.size = float(top["size_m"])
 	_camera.keep_aspect = Camera3D.KEEP_HEIGHT
 	var c: Vector3 = Vector3(float(top["centre"][0]), 0, float(top["centre"][1]))
 	_camera.look_at_from_position(c + Vector3(0, 80, 0), c, Vector3(0, 0, -1))  # north (-z) up the picture
 	images[top["name"]] = await _shot(top["name"], top["title"], shots)
+	_env.background_mode = bg
 	for pid: String in top.get("hide", []):   # back for the close-ups
 		for n: Node3D in _placed.get(pid, []):
 			n.visible = true
@@ -417,14 +437,18 @@ func _shoot() -> void:
 
 func _shot(name: String, title: String, shots: Dictionary) -> Image:
 	_label.text = title
+	var gpu: Array = []
 	for i: int in 30:
 		await process_frame
+		if i >= 14:
+			gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(root.get_viewport_rid()))
 	await RenderingServer.frame_post_draw
 	var image: Image = root.get_texture().get_image()
 	image.convert(Image.FORMAT_RGB8)
 	_save(image, _out.path_join("%s.png" % name))
 	shots[name] = {"draw_calls": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
-		"primitives": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)}
+		"primitives": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME),
+		"gpu_ms": _median(gpu)}
 	return image
 
 
@@ -455,6 +479,219 @@ func _sheet(rows: Array) -> Image:
 			x += img.get_width() + GAP
 		y += (tiles[0] as Image).get_height() + GAP
 	return sheet
+
+
+func _median(a: Array) -> float:
+	if a.is_empty():
+		return 0.0
+	var b: Array = a.duplicate()
+	b.sort()
+	return float(b[b.size() / 2])
+
+
+## Step 4: one light mood (docs/lobby.md "Step 4"): the environment's exposure, ambient, glow and SSAO; a shadowed spot
+## under each pendant's lens (its height read from the vault's lens mesh), an omni before each pilaster strip, a red
+## omni before each door lamp, the corridor's omnis, the Earth's cold shadowed directional and E2's warmer hint, the
+## reflection probes; the lenses lit, the strips', ring's and lamps' glTF emission scaled. Rebuilt per mood.
+func _apply_light(l: Dictionary) -> void:
+	if _rig != null:
+		_rig.free()
+	_rig = Node3D.new()
+	_rig.name = "light_rig"
+	root.add_child(_rig)
+	_env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	_env.tonemap_exposure = float(l["exposure"])
+	_env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	_env.ambient_light_color = _c(l["ambient_rgb"])
+	_env.ambient_light_energy = float(l["ambient_energy"])
+	_env.glow_enabled = true
+	_env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	_env.glow_intensity = float(l["glow_intensity"])
+	_env.glow_bloom = float(l["glow_bloom"])
+	_env.glow_hdr_threshold = float(l["glow_threshold"])
+	_env.ssao_intensity = float(l["ssao_intensity"])
+	var vp: Viewport = root
+	vp.positional_shadow_atlas_size = 4096
+	for q: int in 4:
+		vp.set_positional_shadow_atlas_quadrant_subdiv(q, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_4)
+	var lens_y: Dictionary = _lens_bottoms(l["pendants"])
+	var warm: Color = _c(l["pendant_rgb"])
+	for p: Array in l["pendants"]:
+		var key: String = "%s,%s" % [p[0], p[1]]
+		if not lens_y.has(key):
+			_fail("no pendant lens at %s" % key)
+			return
+		var spot: SpotLight3D = SpotLight3D.new()
+		spot.light_color = warm
+		spot.light_energy = float(l["pendant_energy"])
+		spot.spot_range = float(l["pendant_range"])
+		spot.spot_angle = float(l["pendant_angle"])
+		spot.spot_angle_attenuation = 1.4
+		spot.spot_attenuation = 1.0
+		spot.shadow_enabled = true
+		spot.shadow_blur = 1.5
+		spot.shadow_bias = 0.04
+		_rig.add_child(spot)
+		spot.position = Vector3(float(p[0]), float(lens_y[key]) - 0.03, float(p[1]))
+		spot.rotation_degrees = Vector3(-90, 0, 0)   # -z (the spot's axis) straight down
+	for at: Array in l["strips"]:
+		_omni(_v(at), _c(l["strip_rgb"]), float(l["strip_energy"]), float(l["strip_range"]))
+	for at: Array in l["doors"]:
+		_omni(_v(at), _c(l["door_rgb"]), float(l["door_energy"]), float(l["door_range"]))
+	for at: Array in l["corridor"]:
+		_omni(_v(at), _c(l["corridor_rgb"]), float(l["corridor_energy"]), float(l["corridor_range"]))
+	for k: String in ["earth", "dawn"]:
+		var sun: DirectionalLight3D = DirectionalLight3D.new()
+		sun.light_color = _c(l[k + "_rgb"])
+		sun.light_energy = float(l[k + "_energy"])
+		sun.shadow_enabled = k == "earth"
+		sun.directional_shadow_max_distance = 80.0
+		_rig.add_child(sun)
+		var d: Vector3 = _v(l[k + "_dir"]).normalized()
+		sun.look_at_from_position(Vector3.ZERO, -d, Vector3.UP)   # the light travels away from the Earth
+	for pr: Array in l["probes"]:
+		var probe: ReflectionProbe = ReflectionProbe.new()
+		probe.name = "probe_" + String(pr[0])
+		probe.size = _v(pr[2])
+		probe.box_projection = true
+		probe.interior = bool(pr[3])
+		probe.enable_shadows = true
+		probe.max_distance = 80.0
+		probe.intensity = float(l["probe_intensity"])
+		probe.update_mode = ReflectionProbe.UPDATE_ONCE
+		probe.ambient_mode = ReflectionProbe.AMBIENT_COLOR   # inside a probe its own (dark) capture would replace the ambient
+		probe.ambient_color = _c(l["ambient_rgb"])
+		probe.ambient_color_energy = float(l["ambient_energy"])
+		_rig.add_child(probe)
+		probe.position = _v(pr[1])
+	_emit(l)
+
+
+func _omni(at: Vector3, c: Color, energy: float, rng: float) -> void:
+	var o: OmniLight3D = OmniLight3D.new()
+	o.light_color = c
+	o.light_energy = energy
+	o.omni_range = rng
+	o.omni_attenuation = 1.2
+	o.shadow_enabled = false
+	_rig.add_child(o)
+	o.position = at
+
+
+## Each pendant's lens bottom (the lowest lobby_lens vertex within 0.2 m of its x, z), keyed "x,z".
+func _lens_bottoms(pendants: Array) -> Dictionary:
+	var out: Dictionary = {}
+	for top: Node in _placed.get("vault", []):
+		var stack: Array = [top]
+		while not stack.is_empty():
+			var n: Node = stack.pop_back()
+			stack.append_array(n.get_children())
+			if not n is MeshInstance3D or (n as MeshInstance3D).mesh == null:
+				continue
+			var mi: MeshInstance3D = n
+			for i: int in mi.mesh.get_surface_count():
+				var m: Material = mi.mesh.surface_get_material(i)
+				if m == null or m.resource_name != "lobby_lens":
+					continue
+				var verts: PackedVector3Array = mi.mesh.surface_get_arrays(i)[Mesh.ARRAY_VERTEX]
+				for vtx: Vector3 in verts:
+					var g: Vector3 = mi.global_transform * vtx
+					for p: Array in pendants:
+						if Vector2(g.x - float(p[0]), g.z - float(p[1])).length() < 0.2:
+							var key: String = "%s,%s" % [p[0], p[1]]
+							out[key] = minf(float(out.get(key, 1e9)), g.y)
+	return out
+
+
+## The lenses glow warm (bulb_emit); the strips' and the ring's glTF emission times strip_emit, the lamps' door_emit.
+func _emit(l: Dictionary) -> void:
+	if _emissive.is_empty():
+		for pid: String in _placed:
+			if pid.begins_with("ship_"):
+				continue
+			for top: Node in _placed[pid]:
+				var stack: Array = [top]
+				while not stack.is_empty():
+					var n: Node = stack.pop_back()
+					stack.append_array(n.get_children())
+					if not n is MeshInstance3D or (n as MeshInstance3D).mesh == null:
+						continue
+					var mi: MeshInstance3D = n
+					for i: int in mi.mesh.get_surface_count():
+						var m: Material = mi.mesh.surface_get_material(i)
+						if m is BaseMaterial3D and m.resource_name in ["lobby_lens", "lobby_strip", "lobby_ring", "lobby_lamp"]:
+							_emissive.append([mi, i, m])
+	var made: Dictionary = {}
+	for e: Array in _emissive:
+		var orig: BaseMaterial3D = e[2]
+		var mname: String = orig.resource_name
+		if not made.has(mname):
+			var mat: BaseMaterial3D = orig.duplicate()
+			if mname == "lobby_lens":
+				mat.emission_enabled = true
+				mat.emission = _c(l["pendant_rgb"])
+				mat.emission_energy_multiplier = float(l["bulb_emit"])
+			else:
+				var k: float = float(l["door_emit"]) if mname == "lobby_lamp" else float(l["strip_emit"])
+				mat.emission_energy_multiplier = orig.emission_energy_multiplier * k
+			made[mname] = mat
+		(e[0] as MeshInstance3D).set_surface_override_material(int(e[1]), made[mname])
+
+
+## Step 4: the eye-height walk-through: the request's keys [eye, look, seconds from the previous] through a
+## Catmull-Rom path, every frame saved for the encoder; the GPU time's median for the record.
+func _video() -> void:
+	_setup_scene()
+	_label.visible = false
+	var v: Dictionary = _req["video"]
+	_camera.fov = float(v["fov"])
+	var keys: Array = v["keys"]
+	var times: Array = [0.0]
+	for i: int in range(1, keys.size()):
+		times.append(float(times[-1]) + float(keys[i][2]))
+	var fps: float = float(v["fps"])
+	var count: int = int(float(times[-1]) * fps) + 1
+	var dir: String = _out.path_join("frames")
+	DirAccess.make_dir_recursive_absolute(dir)
+	_camera.look_at_from_position(_v(keys[0][0]), _v(keys[0][1]), Vector3.UP)
+	for i: int in 40:   # the probes, SSAO and glow settle
+		await process_frame
+	var started: int = Time.get_ticks_msec()
+	var gpu: Array = []
+	var k: int = 0
+	for f: int in count:
+		var t: float = minf(f / fps, float(times[-1]))
+		while k < keys.size() - 2 and t > float(times[k + 1]):
+			k += 1
+		var gap: float = float(times[k + 1]) - float(times[k])
+		var w: float = (t - float(times[k])) / gap if gap > 0.0 else 1.0
+		_camera.look_at_from_position(_cr(keys, k, w, 0), _cr(keys, k, w, 1), Vector3.UP)
+		await RenderingServer.frame_post_draw
+		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(root.get_viewport_rid()))
+		var image: Image = root.get_texture().get_image()
+		image.convert(Image.FORMAT_RGB8)
+		_save(image, dir.path_join("%05d.png" % f))
+	_write("video.json", {"frames": count, "fps": fps, "seconds": times[-1], "gpu_ms": _median(gpu),
+		"render_s": (Time.get_ticks_msec() - started) / 1000.0})
+	print("LOBBY video %d frames" % count)
+	quit(0)
+
+
+## A Catmull-Rom point between keys k and k + 1 at w (0..1) of field j (0 the eye, 1 the look), the ends repeated.
+func _cr(keys: Array, k: int, w: float, j: int) -> Vector3:
+	var n: int = keys.size()
+	var p0: Vector3 = _v(keys[maxi(k - 1, 0)][j])
+	var p1: Vector3 = _v(keys[k][j])
+	var p2: Vector3 = _v(keys[mini(k + 1, n - 1)][j])
+	var p3: Vector3 = _v(keys[mini(k + 2, n - 1)][j])
+	var w2: float = w * w
+	var w3: float = w2 * w
+	return 0.5 * ((2.0 * p1) + (p2 - p0) * w + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * w2
+		+ (3.0 * p1 - p0 - 3.0 * p2 + p3) * w3)
+
+
+func _c(a: Variant) -> Color:
+	return Color(float(a[0]), float(a[1]), float(a[2]))
 
 
 func _v(a: Variant) -> Vector3:

@@ -31,6 +31,7 @@ uniform float stars_energy = 1.6;
 uniform float stars_density = 1.0;
 
 // the neutral review sky for the reflections only (hall.gd's former ProceduralSkyMaterial)
+uniform float cubemap_earth = 0.0;   // step 4: 1 draws the Earth in the radiance pass too (the probes, the floor)
 uniform vec3 neutral_top = vec3(0.55, 0.56, 0.6);
 uniform vec3 neutral_horizon = vec3(0.5, 0.5, 0.52);
 uniform vec3 neutral_ground = vec3(0.35, 0.35, 0.36);
@@ -81,7 +82,7 @@ vec3 star_layer(vec3 v, float cells, float chance, float bright) {
 
 void sky() {
 	vec3 v = normalize(EYEDIR);
-	if (AT_CUBEMAP_PASS) {
+	if (AT_CUBEMAP_PASS && cubemap_earth < 0.5) {
 		COLOR = neutral(v);
 	} else {
 		float alpha = radians(earth_radius_deg);
