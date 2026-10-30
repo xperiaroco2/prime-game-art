@@ -101,10 +101,21 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertTrue(any("material lobby_panel" in p for p in problems), problems)
         self.assertTrue(any("grid: nowhere" in p for p in problems), problems)
 
+    def test_closeups_and_the_grey_teal(self) -> None:
+        close = self.layout["review"]["closeups"]
+        self.assertGreaterEqual(len(close), 9)   # step 2c: one close-up per fix at least
+        layout = copy.deepcopy(self.layout)
+        layout["review"]["closeups"][0][2] = [0.0, 1.7, 60.0]
+        self.assertTrue(any(f"view {close[0][0]}" in p for p in lobby_layout.check(layout)))
+        s4 = self.layout["look"]["schemes"]["S4"]
+        for role in ("panel", "frame", "floor"):   # the teal stays on the grey side
+            self.assertLess(max(s4[role]) - min(s4[role]), 0.1, role)
+        self.assertGreater(min(s4["frame"]), 0.2)   # the frames a mid value, clearly lighter than black
+
     def test_six_schemes_resolve_with_fixed_hazard_and_lamps(self) -> None:
         look = self.layout["look"]
         self.assertEqual(sorted(look["schemes"]), ["S1", "S2", "S3", "S4", "S5", "S6"])
-        self.assertEqual(look["scheme"], "S1")
+        self.assertEqual(look["scheme"], "S4")   # the engineer's pick (step 2c)
         for sid in look["schemes"]:
             mats = lobby_layout.look_materials(self.layout, sid)
             self.assertNotIn("lobby_hazard", mats)   # yellow-black and red in every scheme: fixed in the builder
@@ -118,7 +129,8 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_the_views(self) -> None:
         names = [v[0] for v in self.layout["review"]["views"]]
-        for want in ("corner_nw", "c_back", "spawn_eye", "spawn_ship", "door_d3", "arch", "rib", "floor_ring"):
+        for want in ("corner_nw", "c_back", "spawn_eye", "spawn_ship", "door_d3", "door_d1", "arch", "rib",
+                     "floor_ring"):
             self.assertIn(want, names)
         spawn = next(v for v in self.layout["review"]["views"] if v[0] == "spawn_eye")
         self.assertGreater(spawn[3][2], spawn[2][2])   # the spawns face the window (+z)

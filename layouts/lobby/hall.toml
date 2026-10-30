@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v3"          # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v4"          # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -42,7 +42,7 @@ corner_clear_m = 1.0               # the least gap between a door's opening and 
 sill = 0.5                         # H.sill
 transom = 3.0                      # H.transom: one cross bar
 panes = 6                          # H.panes: even along the arc's angle (drawing.js plan(): mullions at i = 0..6)
-mullion_w = 0.4                    # not in H: the mullions' width (step 2b: 0.4 m, with frame depth and a cap)
+mullion_w = 0.5                    # not in H: the mullions' width (step 2c: 0.5 m, a stepped cap, shoes, collars)
 bar_h = 0.3
 
 [arch]
@@ -121,7 +121,7 @@ collide = true
 # [role, lightness, roughness, emission]: its colour is the role's times the lightness. The builder writes the chosen
 # scheme into the GLBs and the shots apply it in Godot (the grid each in turn). The hazard stripes (yellow-black), the
 # door lamps (red), the seams and the glass are fixed in every scheme.
-scheme = "S1"
+scheme = "S4"                      # the engineer's pick (2026-10-30, step 2c)
 mats = { lobby_panel = ["panel", 1.0, 0.46, 0.0], lobby_panel2 = ["panel", 0.9, 0.62, 0.0], lobby_panel3 = ["panel", 1.1, 0.54, 0.0], lobby_inset = ["panel", 0.72, 0.58, 0.0], lobby_vault = ["panel", 1.12, 0.5, 0.0], lobby_pilaster = ["frame", 1.0, 0.5, 0.0], lobby_rib = ["frame", 1.12, 0.48, 0.0], lobby_wall = ["frame", 0.6, 0.62, 0.0], lobby_trim = ["trim", 1.0, 0.4, 0.0], lobby_floor = ["floor", 1.0, 0.15, 0.0], lobby_floor2 = ["floor", 0.96, 0.19, 0.0], lobby_floor3 = ["floor", 1.035, 0.12, 0.0], lobby_strip = ["accent", 1.0, 0.4, 1.8], lobby_ring = ["accent", 0.9, 0.35, 0.5] }
 
 [look.schemes.S1]
@@ -155,11 +155,13 @@ metallic = 0.45
 trim_metallic = 0.9
 
 [look.schemes.S4]
+# step 2c: the teal kept on the grey side (it may turn green under the Earth's blue light), the frame a mid
+# graphite-teal clearly lighter than black (the frames, pilasters and ribs read as steps, not one slab)
 title = "two-tone teal-grey, copper accents"
-panel = [0.32, 0.42, 0.42]
-frame = [0.17, 0.23, 0.24]
+panel = [0.35, 0.42, 0.42]
+frame = [0.25, 0.3, 0.31]
 trim = [0.74, 0.43, 0.28]
-floor = [0.25, 0.3, 0.31]
+floor = [0.27, 0.31, 0.315]
 accent = [1.0, 0.52, 0.26]
 metallic = 0.45
 trim_metallic = 0.85
@@ -198,9 +200,22 @@ views = [
   ["spawn_eye", "a spawn's eye (x 0, z 0) toward the window, as the spawns face", [0.0, 1.65, 0.0], [0.0, 4.0, 16.0], 75.0, ""],
   ["spawn_ship", "a spawn's eye (x -1, z 0) toward the ship", [-1.0, 1.65, 0.0], [0.0, 2.6, -13.0], 75.0, ""],
   ["door_d3", "door D3 close up", [-11.0, 1.7, -24.5], [-11.0, 3.2, -30.0], 60.0, ""],
+  ["door_d1", "door D1 and the pilaster stepped back beside it", [-13.5, 1.7, 7.0], [-20.0, 3.2, 0.5], 60.0, ""],
   ["arch", "the arch and the corridor from 6 m", [-4.0, 1.9, -24.4], [0.0, 3.2, -36.0], 60.0, ""],
   ["rib", "a vault rib on its pilaster, close up", [-12.0, 3.0, -9.0], [-19.0, 11.0, -12.5], 60.0, ""],
   ["floor_ring", "the floor plates and the ring, close up", [8.0, 1.7, 2.5], [10.6, 0.0, -2.5], 60.0, ""],
+]
+# step 2c's close-ups of each fix (`lobby --shoot` writes them into closeups.png): [name, title, eye, look, fov]
+closeups = [
+  ["c_arch", "1: the arch's three bevelled steps", [-3.6, 2.2, -25.6], [-2.2, 5.6, -30.0], 55.0],
+  ["c_bays_a", "1: greeble bays: service hatch, cable tray (west wall)", [-14.0, 2.4, -17.5], [-20.0, 3.4, -17.5], 70.0],
+  ["c_bays_b", "1: greeble bays: pipe junction, fire point (west wall)", [-14.5, 2.0, -5.5], [-20.0, 2.2, -5.5], 65.0],
+  ["c_floor", "2: the floor's polish and the metal's micro-surface", [6.0, 1.7, 4.0], [11.0, 0.3, -1.5], 50.0],
+  ["c_lunette", "3: the panelled lunette over the window", [0.0, 6.0, -2.0], [6.0, 13.0, 12.0], 60.0],
+  ["c_pendant", "3: a pendant's shade and bulb recess", [-7.0, 6.2, -6.2], [-10.0, 9.7, -9.0], 45.0],
+  ["c_rib", "4: a rib's I-section, collar and corbel on its pilaster", [-15.0, 7.0, -9.5], [-20.0, 11.6, -12.0], 55.0],
+  ["c_door", "5: a door's leaves, lip, lamp housing and lintel", [-11.0, 2.8, -25.8], [-11.0, 3.9, -30.0], 55.0],
+  ["c_pilaster", "6: a pilaster's chamfered base and band, the mullions", [13.5, 1.7, 1.5], [20.0, 2.6, 8.0], 65.0],
 ]
 # the taste grid (`lobby --grid DIR`): these views once per scheme, one row each, labelled S1..S6
 grid = ["corner_nw", "door_d3"]

@@ -219,6 +219,7 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool = False
     rv = layout["review"]
     req.update({"mode": "shoot", "background": rv["background"], "views": [v[:5] for v in rv["views"]],
                 "top": rv["top"], "compare": [[v[0], v[5]] for v in rv["views"] if v[5]],
+                "closeups": [v[:5] for v in rv.get("closeups", [])],
                 "look": look_request(layout, layout["look"]["scheme"])})
     if grid:
         req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in rv["grid"]],

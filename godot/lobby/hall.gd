@@ -57,9 +57,10 @@ func _initialize() -> void:
 		_shoot()
 
 
-## The hall's materials in a look (a colour scheme, step 2b): each surface whose glTF material is in the scheme's
-## "mats" gets its colour, metallic, roughness and emission; the non-emissive ones a fine-noise metal detail (a subtle
-## normal and roughness grain, triplanar, generated here: no texture files). The ship's pieces keep their own.
+## The hall's materials in a look (a colour scheme, the grid only): each surface whose glTF material is in the
+## scheme's "mats" gets a copy of its imported material with the scheme's colour, metallic, roughness and emission; the
+## copy keeps the GLB's own metal maps (step 2c: the normal and roughness maps live in the GLBs, so the shots show the
+## game's look without this step). The ship's pieces keep their own.
 func _apply_look(look: Dictionary) -> void:
 	var mats: Dictionary = look["mats"]
 	var made: Dictionary = {}
@@ -76,47 +77,16 @@ func _apply_look(look: Dictionary) -> void:
 				var mi: MeshInstance3D = n
 				for i: int in mi.mesh.get_surface_count():
 					var m: Material = mi.mesh.surface_get_material(i)
-					if m == null or not mats.has(m.resource_name):
+					if m == null or not mats.has(m.resource_name) or not m is BaseMaterial3D:
 						continue
 					var mname: String = m.resource_name
 					if not made.has(mname):
-						made[mname] = _look_material(mname, mats[mname])
+						made[mname] = _look_material(m as BaseMaterial3D, mats[mname])
 					mi.set_surface_override_material(i, made[mname])
 
 
-var _grain: Array = []
-
-
-## The shared grain: a fine seamless noise as a normal map and as a roughness map (0.8..1 of the roughness).
-func _grain_textures() -> Array:
-	if _grain.is_empty():
-		var noise: FastNoiseLite = FastNoiseLite.new()
-		noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
-		noise.frequency = 0.08
-		noise.fractal_octaves = 3
-		var normal: NoiseTexture2D = NoiseTexture2D.new()
-		normal.width = 512
-		normal.height = 512
-		normal.seamless = true
-		normal.as_normal_map = true
-		normal.bump_strength = 1.5
-		normal.noise = noise
-		var rough: NoiseTexture2D = NoiseTexture2D.new()
-		rough.width = 512
-		rough.height = 512
-		rough.seamless = true
-		rough.noise = noise
-		var ramp: Gradient = Gradient.new()
-		ramp.set_color(0, Color(0.8, 0.8, 0.8))
-		ramp.set_color(1, Color(1, 1, 1))
-		rough.color_ramp = ramp
-		_grain = [normal, rough]
-	return _grain
-
-
-func _look_material(mname: String, spec: Dictionary) -> StandardMaterial3D:
-	var mat: StandardMaterial3D = StandardMaterial3D.new()
-	mat.resource_name = mname
+func _look_material(orig: BaseMaterial3D, spec: Dictionary) -> BaseMaterial3D:
+	var mat: BaseMaterial3D = orig.duplicate()
 	var c: Color = Color(float(spec["rgb"][0]), float(spec["rgb"][1]), float(spec["rgb"][2]))
 	mat.albedo_color = c
 	mat.metallic = float(spec["metallic"])
@@ -125,15 +95,6 @@ func _look_material(mname: String, spec: Dictionary) -> StandardMaterial3D:
 		mat.emission_enabled = true
 		mat.emission = c
 		mat.emission_energy_multiplier = float(spec["emit"])
-	else:
-		var g: Array = _grain_textures()
-		mat.normal_enabled = true
-		mat.normal_texture = g[0]
-		mat.normal_scale = 0.25
-		mat.roughness_texture = g[1]
-		mat.uv1_triplanar = true
-		mat.uv1_world_triplanar = true
-		mat.uv1_scale = Vector3(0.7, 0.7, 0.7)
 	return mat
 
 
@@ -333,8 +294,7 @@ func _environment() -> void:
 
 
 func _shoot() -> void:
-	_setup_scene()
-	_apply_look(_req["look"])
+	_setup_scene()   # the GLBs' own materials: the layout's scheme, built in (step 2c)
 	var shots: Dictionary = {}
 	var images: Dictionary = {}
 	for v: Array in _req["views"]:
@@ -364,6 +324,17 @@ func _shoot() -> void:
 	for i: int in range(0, names.size(), 2):
 		rows.append(names.slice(i, i + 2).map(func(n: String) -> Image: return images[n]))
 	_save(_sheet(rows), _out.path_join("sheet.png"))
+	var close: Array = []   # step 2c: the close-ups of each fix, two a row, in their own sheet
+	for v: Array in _req.get("closeups", []):
+		_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+		_camera.fov = float(v[4])
+		_camera.look_at_from_position(_v(v[2]), _v(v[3]), Vector3.UP)
+		close.append(await _shot(v[0], v[1], shots))
+	if not close.is_empty():
+		var crow: Array = []
+		for i: int in range(0, close.size(), 2):
+			crow.append(close.slice(i, i + 2))
+		_save(_sheet(crow), _out.path_join("closeups.png"))
 	_write("shots.json", {"shots": shots})
 	print("LOBBY saved %s" % _out)
 	quit(0)

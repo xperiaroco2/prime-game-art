@@ -299,7 +299,7 @@ def check(layout: dict[str, Any], fp: list[tuple[float, float]] | None = None) -
             p.append(f"walk point {i} ({x}, {z}): not on the floor with the capsule's radius")
         if fp and poly_dist(fp, (x, z)) < layout["walk"]["r"]:
             p.append(f"walk point {i} ({x}, {z}): under the ship")
-    for v in layout["review"]["views"]:
+    for v in layout["review"]["views"] + layout["review"].get("closeups", []):
         eye = v[2]
         if not on_floor(layout, eye[0], eye[2]) or not 0 < eye[1] < h["wall"]:
             p.append(f"view {v[0]}: its eye is not inside the hall")
