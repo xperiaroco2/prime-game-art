@@ -859,9 +859,38 @@ ms against `--shoot`'s): `spawn_eye` 0.07, 0.00%, 74, 2.65 (2.79); `corner_nw` 0
 brighter in the upper half (walls near the window about +10 bluish, the hull +17/+10/+4 warm, the floor equal); not
 timing (a 60-frame warm-up changed nothing) and not the project settings (the same as the art project's).
 
+## Step 5c: the Earth lowered
+
+```
+tools/run.sh lobby --earth-route <raw>/lobby/hall/v16/earth-route
+```
+
+The engineer (2026-10-31): backing away from the window there was no sky, only the Earth; on a station the horizon is
+below eye level, the planet fills the lower part of the view and black sky with stars shows above it. F36's limb topped
+out at +14.2 deg above the eye's horizontal (traced from `far_eye`; not the 24 deg first guessed). `[earth.distances]`
+H1, H2 and H3 are F36 turned down about the eye (`lobby_layout.earth_drop`, `pitch_down`) so the limb's highest point
+sits at `limb_deg` +4, -2 and -8 deg (measured 4.05, -2.03, -8.10); the size (36 deg), the far mode, the look (cap,
+`[earth.look]`, snow N2) and the sun's angle behind the limb (the dawn glow) are kept, and the sky's cubemap Earth and
+its sun turn with it (`earth_request`). `earth_object` reports `limb_deg`. The route compares F36, H1, H2, H3 and has a
+`far_back` point (x -12, z -20); there the ship's nose hides most of the window, so `corner_nw` (z -27) is the deep view.
+
+Default `[earth] distance = "H1"`: from every point of the route the window shows black sky with stars above the
+planet, and the dawn glow stays on the limb. H2 leaves the spawn a sliver over the sill and H3 nothing: with the planet
+at infinity its horizon has one elevation from everywhere, and the sill is 4.7 deg below the spawn's eye, so a limb
+low enough for sky from deep in the hall cannot also fill the window's lower half from the spawn (that needs about
++20 deg, which closes the sky from the back: the engineer's call, or a lower sill).
+
+The export's `c_back` (`lobby --export`, still 3.15 of 255 off `--shoot`'s): `export_scene.gd` now loads the saved
+scene back and compares every node's stored properties (resources one level deep) with the assembled tree
+(`export.json` `roundtrip`): no difference, so the pack loses nothing; the GLBs' import options match the art
+project's but for the animation fps. What is left is the scene at run time: the ship package's freed nodes are only
+hidden in the package (`Clearing`, its `Environment` with a second `WorldEnvironment`, its sun) and the probes capture
+at load rather than after `hall.gd`'s assembly. Next: free those nodes in `export_check.gd` before the views and
+compare again.
+
 ## Open problems
 
-- Step 5b: `c_back` from the package is 3.16 of 255 off `--shoot`'s (above); the cause is to find before the package
+- Step 5b/5c: `c_back` from the package is 3.15 of 255 off `--shoot`'s (step 5c: not the pack); the cause is to find before the package
   goes to the game. The hall's GLBs each embed the metal texture set (about 4 MB each): one shared set would save
   about 24 MB.
 
