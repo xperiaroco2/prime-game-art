@@ -31,6 +31,10 @@ uniform vec3 rim_rgb = vec3(0.25, 0.55, 1.0);
 uniform float rim_energy = 2.4;
 uniform float rim_width_deg = 0.35;
 uniform vec3 dawn_rgb = vec3(1.0, 0.55, 0.25);
+// step 5a3: from the hall's far side (a_entrance, corner_nw) the window shows the high north seen obliquely, where the
+// equirectangular maps stretch: clouds as snowy speckle, cities as stretched blobs. There (mu * cos(latitude) low) the
+// maps are read soft_lod mips softer and the cities and clouds lose contrast; head-on (spawn_eye) stays as it was
+uniform float soft_lod = 2.5;
 
 const float AA = 0.0009;
 
@@ -68,11 +72,13 @@ void fragment() {
 		float lat = asin(clamp(g.y, -1.0, 1.0));
 		float lon = atan(-g.z, g.x);
 		vec2 uv = vec2((lon + PI) / (2.0 * PI), (PI * 0.5 - lat) / PI);
-		vec3 night = texture(night_tex, uv).rgb;
-		vec3 day = texture(day_tex, uv).rgb;
-		float cloud = smoothstep(0.12, 0.85, texture(cloud_tex, uv).r);
+		float soft = 1.0 - smoothstep(0.15, 0.45, mu * cos(lat));
+		vec3 night = mix(texture(night_tex, uv).rgb, textureLod(night_tex, uv, soft_lod).rgb, soft);
+		vec3 day = mix(texture(day_tex, uv).rgb, textureLod(day_tex, uv, soft_lod).rgb, soft);
+		float cloud = smoothstep(0.12, 0.85, mix(texture(cloud_tex, uv).r, textureLod(cloud_tex, uv, soft_lod).r, soft));
+		cloud = mix(cloud, 0.2 + 0.45 * cloud, soft);   // less cloud contrast where soft
 		float lum = dot(night, vec3(0.2126, 0.7152, 0.0722));
-		float city = smoothstep(0.012, 0.12, lum);
+		float city = smoothstep(0.012, 0.12, lum) * (1.0 - 0.55 * soft);
 		float lit = sun_energy * smoothstep(-0.03, 0.1, dot(N, sun_dir));
 		vec3 lights = lights_rgb * lum * lights_energy * city * (1.0 - 0.6 * cloud) * (1.0 - lit);
 		col = night * (1.0 - city) * base_energy * 0.05 + day * moon_rgb * moon_energy + lights;
