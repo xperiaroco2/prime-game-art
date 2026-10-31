@@ -208,6 +208,14 @@ def main() -> None:
     ap.add_argument("--yoke-into-band", type=float, default=0.005, help="the yoke's top over the band's bottom (m)")
     ap.add_argument("--ankle-restore", default="0.125,0.20", help="body_removed faces between these heights rejoin")
     ap.add_argument("--plate", type=float, default=0.002, help="the bib's and back panel's thickness (m)")
+    ap.add_argument("--panel-bone", default="Chest",
+                    help="the bib, pocket, back panel and the straps' ends on this bone alone (rigid); '' = her blend")
+    ap.add_argument("--band-bone", default="Spine", help="the waistband on this bone alone (rigid); '' = her blend")
+    ap.add_argument("--back-u-power", type=float, default=3.0,
+                    help="the back's top: centre + 3 cm * (|x| / the straps' inner edge) ** this (1 = the drawing's V; "
+                         "the spec's back_top_z: a shallow U, lowest at the centre)")
+    ap.add_argument("--strap-sh-share", type=float, default=1.0,
+                    help="the straps' middle: this share of her shoulder's weights, the rest the panel bone's")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     spec = S.load_spec(a.spec)
     d = {k: v["cm"] / 100 for k, v in spec["dims"].items()}
@@ -320,6 +328,8 @@ def main() -> None:
             band_samples.append(q)
         rows.append(row)
     w_band = shirt_w.mean(band_samples, keep=("Hips", "Spine", "Chest"))
+    if a.band_bone:   # G3b: a blend of bones bends when they twist (Jog, Strafe: 2-8 % stretch); one bone is rigid
+        w_band = {a.band_bone: 1.0}
     B.slab(rows, lambda p: w_band, 0, closed_u=True)
     rep["waistband"] = {"weights": w_band, "top_m": bbz, "bottom_m": wbz,
                         "front_w_m": max(r[0].x for r in rows[2]) - min(r[0].x for r in rows[2])}
@@ -388,6 +398,8 @@ def main() -> None:
     rows[0] = [(p + Vector((0, 0, 0.0002)), q + Vector((0, 0, 0.0002))) for p, q in rows[0]]
     bib_samples = [Vector((p.x, ref.front(p.z, 0.004) + 0.006, p.z)) for p in bib_samples[::5]]
     w_bib = shirt_w.mean(bib_samples, keep=TRUNK)
+    if a.panel_bone:  # G3b: rigid, so flat in every clip (b02's blend bent 9-13 mm in Jog and Strafe)
+        w_bib = {a.panel_bone: 1.0}
     B.slab(rows, lambda p: w_bib, 0)
     rep["bib"] = {"weights": w_bib, "hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in hull],
                   "top_y_cm": round(bib_y(bt) * 100, 2), "band_y_cm": round(bib_y(bbz) * 100, 2)}
@@ -424,7 +436,7 @@ def main() -> None:
             u = -1 + 2 * i / (nk - 1)
             xt = u * d["back_top_w"] / 2
             ax = abs(xt)
-            top_z = kt + 0.03 * min(1.0, ax / xs_in)
+            top_z = kt + 0.03 * min(1.0, ax / xs_in) ** a.back_u_power
             z = bbz + 0.0002 + v * (top_z - bbz - 0.0002)
             hw = d["back_bottom_w"] / 2 + (d["back_top_w"] - d["back_bottom_w"]) / 2 * (z - bbz) / (corner - bbz)
             x = u * hw
@@ -434,6 +446,8 @@ def main() -> None:
                 back_samples.append(Vector((x, ref.front(z, 0.004, back=True) - 0.006, z)))
         rows.append(row)
     w_back = shirt_w.mean(back_samples, keep=TRUNK)
+    if a.panel_bone:
+        w_back = {a.panel_bone: 1.0}
     B.slab(rows, lambda p: w_back, 0)
     rep["back_panel"] = {"weights": w_back, "hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in bhull],
                          "corner_m": corner}
@@ -484,6 +498,8 @@ def main() -> None:
         prof = [max(p, s) for p, s in zip(prof, sm)]
         sh_pt = Vector((xc, y0, z0)) + dirs[len(dirs) // 2] * prof[len(dirs) // 2]
         w_sh = no_arms(shirt_w.at(sh_pt))
+        if a.strap_sh_share < 1.0:
+            w_sh = mix({a.panel_bone or "UpperChest": 1.0}, w_sh, a.strap_sh_share)
         # the spec: the straps' outer edges flush with the bib's top corners (bib_top_w / 2 - strap_w / 2 on the bib),
         # at strap_x from her collarbone up: eased between the bib's top and her collarbone
         x_bib = sd * (d["bib_top_w"] / 2 - d["strap_w"] / 2)

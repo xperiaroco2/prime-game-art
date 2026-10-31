@@ -988,13 +988,17 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   top, the trousers' own ease eased out over 9 rows, weights eased from the trousers' to the band's. **Replaced by
   code:** d79's band at 93.3 (spec 99.82), its hem at 12.6 (17.76), turn-up 4.57 (5.5) and 9.71 wide (11.5), the
   bib, back panel and straps. The trousers' arm weights are dropped (d79's band leak).
-- **Weights:** the band one constant blend (her Spine/Chest/Hips under it), the bib and pocket one constant blend
-  (Spine/Chest/UpperChest under the bib), the back panel the same at the back: each panel moves as one piece and
-  cannot stretch. The straps' rows on the bib carry the bib's weights exactly and those on the back panel the
-  back's; the middle eases to her clavicle's (no arm bones). The turn-ups ride the lower leg alone.
+- **Weights (G3b):** each stiff part on one bone, so it moves rigidly: the bib, its pocket, buckles and the back
+  panel on `--panel-bone` (Chest), the band on `--band-bone` (Spine). G3a's constant blends (Spine/Chest/UpperChest)
+  were not rigid: linear blend skinning bends a plate when its bones twist against each other, 9-13 mm in Jog and
+  Strafe and 2-8 % stretch (b02). The straps' rows on the bib carry the bib's weights exactly and those on the back
+  panel the back's (slip stays under 1 mm); the middle eases to `--strap-sh-share` of her clavicle's weights, the
+  rest the panel bone's (no arm bones). The turn-ups ride the lower leg alone.
 - **Shapes:** the bib the forward convex envelope of her front over |x| < 11 cm + the shirt + 0.3 cm, its top edge
-  0.8 cm off (lean B: straight across, one bend over the bust); the back the same behind, its top the drawing's V
-  (the centre at 118.67, the corners 3 cm higher); the straps laid by rays over the plates and the shirt, flush
+  0.8 cm off (lean B: straight across, one bend over the bust); the back the same behind, its top the centre at
+  118.67 and the corners 3 cm higher at the straps' inner edges, rising as (|x| / 7.6 cm) ** `--back-u-power` (3:
+  the spec's shallow U, lowest at the centre; 1 is the drawing's straight V, which Gate 2's back-top station reads
+  17 mm high, as the highest row within 4 cm of the centre); the straps laid by rays over the plates and the shirt, flush
   with the bib's corners on the bib and at 9.5 cm from her collarbone up; the bare ankle's skin (removed by d79
   under its trousers) rejoined from `body_removed` between 12.5 and 20 cm.
 - **b02** (`D:/prime-art-raw/2026-10-31-gate2/g3a/b02/`): 9,629 vertices, 18,910 triangles; every one of the
