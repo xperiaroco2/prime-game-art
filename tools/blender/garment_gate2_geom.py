@@ -1,10 +1,22 @@
 """Gate 2's plain maths (art #196; docs/clothes.md, "Gate 2"), testable without Blender: the spec's expressions, the
 concept's garment mask (a colour rule, a vertical opening that drops the shirt's stripes, a closing, the largest
 pieces), the build's silhouette raster, the overlap, the stations' edges, the motion numbers' verdicts. Masks are
-bytearrays of w x h (1 = garment). numpy is imported lazily (stretch), so the runner's tests import this module."""
+bytearrays of w x h (1 = garment). Plain Python throughout
+(the stretch takes numpy arrays too), so the runner's tests import and run all of it."""
 from __future__ import annotations
 
+import math
 import re
+
+def file_sha256(path) -> str:
+    """A file's SHA-256 (hex): the build id that ties a probe, a motion result and the videos to one build."""
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
 
 # --- the spec's expressions --------------------------------------------------------------------------------------
 
@@ -219,38 +231,27 @@ def top_row(mask: bytearray, w: int, h: int, c0: int, c1: int, r0: int, r1: int,
     return None
 
 
-def row_scale(pairs: list[tuple[float, float]], z: float) -> float:
-    """Concept px per cm of height at z (pairs: (landmark cm, concept row), sorted by cm): the segment's slope."""
-    for (z0, r0), (z1, r1) in zip(pairs, pairs[1:]):
-        if z <= z1 or (z1, r1) == pairs[-1]:
-            return abs(r1 - r0) / (z1 - z0) if z1 != z0 else 1.0
-    return 1.0
-
-
-def row_to_z(pairs: list[tuple[float, float]], row: float) -> float:
-    """The inverse of the landmark rows' piecewise line: a concept row -> her height in cm."""
-    for (z0, r0), (z1, r1) in zip(pairs, pairs[1:]):
-        if min(r0, r1) <= row <= max(r0, r1) and r1 != r0:
-            return z0 + (row - r0) * (z1 - z0) / (r1 - r0)
-    (z0, r0), (z1, r1) = (pairs[0], pairs[1]) if row > pairs[0][1] else (pairs[-2], pairs[-1])
-    return z0 + (row - r0) * (z1 - z0) / (r1 - r0)
-
-
 # --- motion ------------------------------------------------------------------------------------------------------
 
-def stretch(rest: "np.ndarray", now: "np.ndarray", edges_ij: "np.ndarray", min_len: float = 0.003) -> tuple[float, float]:
-    """The largest and the 95th percentile |length / rest length - 1| of the edges (i, j) longer than min_len at
-    rest, in %."""
-    import numpy as np
-    if not len(edges_ij):
-        return 0.0, 0.0
-    l0 = np.linalg.norm(rest[edges_ij[:, 0]] - rest[edges_ij[:, 1]], axis=1)
-    l1 = np.linalg.norm(now[edges_ij[:, 0]] - now[edges_ij[:, 1]], axis=1)
-    keep = l0 > min_len
-    if not keep.any():
-        return 0.0, 0.0
-    r = np.abs(l1[keep] / l0[keep] - 1.0) * 100
-    return float(r.max()), float(np.percentile(r, 95))
+def stretch(rest, now, edges_ij, min_len: float = 0.003) -> tuple[float | None, float | None]:
+    """The largest and the 95th percentile (linear, as numpy's default) |length / rest length - 1| of the edges (i, j)
+    longer than min_len at rest, in %; (None, None) when there is no such edge: an empty part is never a pass.
+    Plain Python: rest and now are lists of points or numpy arrays."""
+    rest = rest.tolist() if hasattr(rest, "tolist") else rest
+    now = now.tolist() if hasattr(now, "tolist") else now
+    edges_ij = edges_ij.tolist() if hasattr(edges_ij, "tolist") else edges_ij
+    r = []
+    for i, j in edges_ij:
+        l0 = math.dist(rest[i], rest[j])
+        if l0 > min_len:
+            r.append(abs(math.dist(now[i], now[j]) / l0 - 1.0) * 100)
+    if not r:
+        return None, None
+    r.sort()
+    k = 0.95 * (len(r) - 1)
+    f = int(k)
+    p95 = r[f] + (r[min(f + 1, len(r) - 1)] - r[f]) * (k - f)
+    return r[-1], p95
 
 
 def classify(sizes: list[int], spans: list[tuple[float, float, float, float]], over_z: float, hw_max: int) -> list[str]:

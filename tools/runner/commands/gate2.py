@@ -21,7 +21,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--spec", required=True, type=Path, help="specs/<garment>_dims.toml with its [gate2] section")
     parser.add_argument("--body", required=True, type=Path, help="garment_spec_probe.py's dump of the undressed character")
     parser.add_argument("--blend", required=True, type=Path, help="the dressed build's .blend")
-    parser.add_argument("--dress", required=True, type=Path, help="its dress.json")
+    parser.add_argument("--dress", type=Path, help="its dress.json (recorded only: every size is measured on the mesh)")
     parser.add_argument("--poke", type=Path, help="clothes_proof.py's poke.json of the build (the pokes per clip)")
     parser.add_argument("--video", type=Path, help="`frames --video Walk,Jog_Fwd --video-camera ...`'s output folder")
     parser.add_argument("--out", required=True, type=Path)
@@ -50,15 +50,16 @@ def run(args: argparse.Namespace) -> int:
         build = S.load_probe(probe)
         body = S.load_probe(args.body)
         sec = S.Sections(body, [spec["body"]["mesh"]])
-        meas, _ = GG.spec_numbers(spec, build, json.loads(args.dress.read_text(encoding="utf-8")), sec)
+        meas, _ = GG.spec_numbers(spec, build, sec)
         cfg = out / "motion_config.json"
         cfg.write_text(json.dumps(GG.motion_config(spec, meas, blend.as_posix()), indent=1), encoding="utf-8")
         common.say(f"gate2: the motion numbers in headless Blender -> {motion.as_posix()}")
         blender.run_script("garment_motion.py", ["--config", str(cfg), "--out", str(motion)], timeout=TIMEOUT)
-    argv = ["--spec", str(args.spec), "--body", str(args.body), "--probe", str(probe), "--dress", str(args.dress),
-            "--out", str(out), "--motion", str(motion), "--tag", args.tag]
+    argv = ["--spec", str(args.spec), "--body", str(args.body), "--probe", str(probe), "--blend", str(blend), "--out", str(out), "--motion", str(motion), "--tag", args.tag]
     if args.poke:
         argv += ["--poke", str(args.poke)]
+    if args.dress:
+        argv += ["--dress", str(args.dress)]
     if args.video:
         argv += ["--video", str(args.video)]
     code = GG.run(GG.parser().parse_args(argv))

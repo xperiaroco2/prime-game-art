@@ -3,11 +3,11 @@ garment_spec.py) and garment_spec_probe.py's rest dumps it writes, per view (fro
 panels at one scale: the concept | the spec over the concept | the spec over her body (a flat-shaded orthographic
 render of the probe, 5 px per cm), with the callouts in cm. Over the concept the spec is placed by the landmarks:
 each height by its ratio between the concept's own landmark rows, across by the concept's scale from the hips.
-A wrong size shows as a line off the picture. With --build it measures a build (a dressed character's probe and its
-dress.json) against the spec: spec_vs_<tag>.md and .json, and a table sheet.
+A wrong size shows as a line off the picture. With --build it measures a build (every size on a dressed character's
+probe's meshes) against the spec: spec_vs_<tag>.md and .json, and a table sheet.
 
     $PYTHON_BIN tools/blender/garment_drawing.py --spec specs/dungarees_dims.toml --body <char probe.json>
-        --out DIR [--build <probe.json> --dress <dress.json> --tag d79]
+        --out DIR [--build <probe.json> --tag d79]
 """
 from __future__ import annotations
 
@@ -192,9 +192,10 @@ def lines(spec: dict, sec: S.Sections, view: str, shirt: float = 0.5, legc=None)
 # --- placing on the concept -------------------------------------------------------------------------------------
 
 def concept_map(spec: dict, view: str):
-    """(u, z) cm -> the concept's (col, row) px: rows piecewise through the landmarks, columns by px_per_cm."""
-    c, lm = spec["concept"], spec["body"]["landmarks_cm"]
-    pairs = sorted((lm[k], r) for k, r in c["rows"].items())
+    """(u, z) cm -> the concept's (col, row) px: rows piecewise through the mapped landmark rows (S.concept_pairs),
+    columns by px_per_cm."""
+    c = spec["concept"]
+    pairs = S.concept_pairs(spec)
     k = c["px_per_cm"]
 
     def row(z):
@@ -308,35 +309,71 @@ def view_sheet(spec: dict, probe: dict, sec: S.Sections, concept_rows, view: str
 
 # --- measuring a build against the spec ---------------------------------------------------------------------------
 
-def measure_build(spec: dict, probe: dict, dress: dict, body: S.Sections, shirt: float = 0.5) -> dict:
-    """Each spec dimension measured on a dressed character (cm), or None with the reason."""
+def _top(pts, i: int = 2, lo: bool = False):
+    """The largest (lo: smallest) coordinate i of pts, None for no points (never max() of an empty list)."""
+    return None if not pts else (min if lo else max)(q[i] for q in pts)
+
+
+def _span(pts, i: int = 0):
+    return None if not pts else (max(q[i] for q in pts) - min(q[i] for q in pts))
+
+
+def _piece_height(pieces: list[dict], q, max_h_cm: float = 15.0):
+    """The height (cm) of the connected piece holding point q when it is a separate part no taller than max_h_cm;
+    None when q is in no such piece (fused with the rest of the garment)."""
+    for p in pieces:
+        if q in p["pts_set"]:
+            h = (p["hi"][2] - p["lo"][2]) * 100
+            return h if h <= max_h_cm else None
+    return None
+
+
+def measure_build(spec: dict, probe: dict, body: S.Sections, shirt: float = 0.5, mesh: str = "garment",
+                  shoes: str = "shoes") -> dict:
+    """Each spec dimension measured on the dressed character's meshes (cm), or None with the reason; a part looked
+    for and not there is absent (a failure). The heights it looks at come from her landmarks or the build's own
+    measures; nothing is read back from the build's dress.json."""
     lm = spec["body"]["landmarks_cm"]
-    g = S.Sections(probe, ["garment"])
+    g = S.Sections(probe, [mesh])
     res = {}
 
     def put(k, v, how, absent=False):
         res[k] = {"cm": None if v is None else round(v, 2), "how": how}
         if absent:
             res[k]["absent"] = True   # looked for on the mesh and not there: a failure, never "unmeasured"
+    zw = lm["waist"] + 4.5
     front_pts = [p for p in g.pts if abs(p[0]) < 0.06 and p[1] < -0.09]
-    bt = max(p[2] for p in front_pts) * 100
+    side = [p for p in g.pts if 0.12 < abs(p[0]) < 0.15 and p[1] < 0 and p[2] < zw / 100]
+    if not front_pts or not side:
+        why = f"absent: no '{mesh}' vertex " + ("in front within 6 cm of the centre" if not front_pts else
+                                                f"12-15 cm off the centre in front under her waist + 4.5 ({zw:.1f})")
+        for k in spec["dims"]:
+            put(k, None, why, absent=True)
+        return res
+    bt = _top(front_pts) * 100
     put("bib_top_z", bt, "highest garment vertex within 6 cm of the centre front")
 
-    def front_w(z):
-        pts = [q for q in g.at(z / 100) if q[1] < -0.07 and abs(q[0]) < 0.16]
-        return (max(q[0] for q in pts) - min(q[0] for q in pts)) * 100 if pts else None
-    put("bib_top_w", front_w(bt - 1.5), "front garment section 1.5 cm under the bib top (straps included)")
-    side = [p for p in g.pts if 0.12 < abs(p[0]) < 0.15 and p[1] < 0 and p[2] < 1.05]
-    band = max(p[2] for p in side) * 100
-    put("bib_bottom_w", front_w(band + 2.5), "front garment section 2.5 cm over the band's top")
-    hull = dress["flat_bib"]["hull_zy"]
-    put("bib_lean_deg", S.lean_deg(hull[-1][1], hull[-1][0], hull[0][1], hull[0][0]),
-        "flat_bib hull_zy: chord from its bottom to its top")
+    def width(z, back=False):
+        pts = [q for q in g.at(z / 100) if (q[1] > 0.02 if back else q[1] < -0.07) and abs(q[0]) < 0.16]
+        return _span(pts) * 100 if pts else None
+    put("bib_top_w", width(bt - 1.5), "front garment section 1.5 cm under the bib top (straps included)")
+    band = _top(side) * 100
+    put("bib_bottom_w", width(band + 2.5), "front garment section 2.5 cm over the band's top")
 
-    def gap(z):
-        a = [q for q in g.at(z / 100) if abs(q[0]) < 0.05 and q[1] < 0]
-        b = [q for q in body.at(z / 100) if abs(q[0]) < 0.05 and q[1] < 0]
-        return (min(q[1] for q in b) - min(q[1] for q in a)) * 100 - shirt if a and b else None
+    def centre(z, back=False):
+        """The garment's outer y (m) at the centre (|x| < 5 cm) at height z cm: the front's least y, the back's most."""
+        pts = [q for q in g.at(z / 100) if abs(q[0]) < 0.05 and (q[1] > 0 if back else q[1] < 0)]
+        return _top(pts, 1, lo=not back)
+    yb, yt = centre(band + 0.5), centre(bt - 0.5)
+    put("bib_lean_deg", None if None in (yb, yt) else S.lean_deg(yt * 100, bt - 0.5, yb * 100, band + 0.5),
+        "the garment's front at the centre: chord from the band's top + 0.5 cm to the bib top - 0.5 cm")
+
+    def gap(z, back=False):
+        a = centre(z, back)
+        b = [q for q in body.at(z / 100) if abs(q[0]) < 0.05 and (q[1] > 0 if back else q[1] < 0)]
+        if a is None or not b:
+            return None
+        return ((a - _top(b, 1)) if back else (_top(b, 1, lo=True) - a)) * 100 - shirt
     put("bib_standoff_top", gap(bt - 1.0), "her front + 0.5 cm shirt to the garment's front at the centre, 1 cm under the bib top")
     if bt > lm["bust"]:
         put("bib_standoff_bust", gap(lm["bust"]), "the same at her bust peak's height")
@@ -352,9 +389,9 @@ def measure_build(spec: dict, probe: dict, dress: dict, body: S.Sections, shirt:
     else:
         for k in ("pocket_top_z", "pocket_bottom_z", "pocket_w"):
             put(k, None, "absent: no pocket on the mesh (no 'pocket' material, no piece on the bib)", absent=True)
-    sw = [q for q in g.at(1.25) if q[1] < 0 and 0.05 < q[0] < 0.16]
-    put("strap_w", (max(q[0] for q in sw) - min(q[0] for q in sw)) * 100 if sw else None,
-        "her left strap's front, section at 125 cm")
+    zc = lm["collarbone"]
+    sw = [q for q in g.at(zc / 100) if q[1] < 0 and 0.05 < q[0] < 0.16]
+    put("strap_w", _span(sw) * 100 if sw else None, f"her left strap's front, section at her collarbone ({zc:.1f})")
     put("strap_x", (max(q[0] for q in sw) + min(q[0] for q in sw)) / 2 * 100 if sw else None, "its centre")
     bb = hw["buckle_buttons"]
     how = f"{len(bb)} button pieces on the mesh, in front over the band's top + 5 cm"
@@ -362,8 +399,14 @@ def measure_build(spec: dict, probe: dict, dress: dict, body: S.Sections, shirt:
         absent=not bb)
     put("buckle_d", sum(b["d"] for b in bb) / len(bb) * 100 if bb else None, how + ": mean disc diameter",
         absent=not bb)
-    put("waistband_top_z", band, "highest garment vertex 12-15 cm off the centre, in front, under 105 cm")
-    put("waistband_h", dress["straps"]["waistband"]["height_m"] * 100, "dress.json straps.waistband.height_m")
+    put("waistband_top_z", band, "highest garment vertex 12-15 cm off the centre, in front, under her waist + 4.5 cm")
+    gm = next((m for m in probe["meshes"] if m["name"] == mesh), None)
+    pieces = S.mesh_pieces(gm) if gm else []
+    for p in pieces:
+        p["pts_set"] = set(p["pts"])
+    bh = _piece_height(pieces, max(side, key=lambda q: q[2]))
+    put("waistband_h", bh, "the height of the separate piece holding the band's top" if bh is not None else
+        "absent: the band's top is on no separate piece 15 cm tall or less", absent=bh is None)
     t = S.trunk_x(g, (band - 1) / 100)
     put("waistband_w", (t[1] - t[0]) * 100 if t else None, "garment section 1 cm under the band's top")
     sb = hw["side_buttons"]
@@ -372,23 +415,40 @@ def measure_build(spec: dict, probe: dict, dress: dict, body: S.Sections, shirt:
         absent=not sb)
     put("side_button_d", sum(b["d"] for b in sb) / len(sb) * 100 if sb else None, how + ": mean disc diameter",
         absent=not sb)
-    o = dress["back_bib"]["outline"]
-    put("back_top_z", o["z_v"] * 100, "dress.json back_bib outline z_v (the V's bottom)")
-    put("back_top_w", 2 * o["hw_t"] * 100, "2 x outline hw_t")
-    put("back_bottom_w", 2 * o["hw_b"] * 100, "2 x outline hw_b")
-    put("back_standoff", dress["back_bib"]["off_body_mm_min_max"][1] / 10, "back_bib off_body max (from the body)")
+    kt = _top([q for q in g.pts if abs(q[0]) < 0.01 and q[1] > 0.03 and band / 100 < q[2] < (zc + 3) / 100])
+    kt = None if kt is None else kt * 100
+    put("back_top_z", kt, "highest garment vertex within 1 cm of the centre back, over the band, under her "
+        "collarbone + 3 cm", absent=kt is None)
+    put("back_top_w", None if kt is None else width(kt + 1.5, back=True),
+        "back garment section 1.5 cm over the back top's centre (towards its corners; straps included)")
+    put("back_bottom_w", width(band + 2.5, back=True), "back garment section 2.5 cm over the band's top")
+    gaps = [] if kt is None or kt - 1 <= band + 3 else [gap(band + 3 + i * (kt - 4 - band) / 4, back=True)
+                                                       for i in range(5)]
+    gaps = [v for v in gaps if v is not None]
+    put("back_standoff", max(gaps) if gaps else None,
+        "her back + 0.5 cm shirt to the garment's back at the centre: the most of 5 heights, band + 3 to back top - 1")
 
     def leg_w(z):
         r = S.leg_x(g, z / 100)
         return (r[1] - r[0]) * 100 if r else None
     put("leg_thigh_w", leg_w(lm["crotch"] - 3), "garment section, her left leg, 3 cm under the crotch")
     put("leg_knee_w", leg_w(lm["knee"]), "the same at the knee")
-    cr = dress["cuff_ring"]
-    put("leg_hem_w", 2 * cr["left"]["r_out_mm_min_max"][1] / 10, "cuff_ring left r_out max x 2")
-    hem = (cr["z_top"] - cr["height"]) * 100
-    put("hem_z", hem, "cuff_ring z_top - height")
-    put("turnup_h", cr["height"] * 100, "cuff_ring height")
-    put("ankle_strip_h", hem - dress["sneakers"]["rim_z_min_max"][1] * 100, "hem - the sneaker rim's top")
+    leg = [q for q in g.pts if q[0] > 0.03 and q[2] < lm["knee"] / 100]
+    low = min(leg, key=lambda q: q[2]) if leg else None
+    hem = None if low is None else low[2] * 100
+    put("hem_z", hem, "lowest garment vertex on her left leg (under her knee)", absent=hem is None)
+    th = None if low is None else _piece_height(pieces, low)
+    put("turnup_h", th, "the height of the separate piece holding the leg's lowest vertex" if th is not None else
+        "absent: the leg's end is on no separate piece 15 cm tall or less", absent=th is None)
+    hz = None if hem is None else hem + (th or 2.0) / 2
+    hs = [] if hz is None else [q for q in g.at(hz / 100) if q[0] > 0.02]
+    put("leg_hem_w", _span(hs) * 100 if hs else None,
+        "her left leg's garment section at the turn-up's mid-height (2 cm over the hem without one): its outer width")
+    sm = next((m for m in probe["meshes"] if m["name"] == shoes), None)
+    rim = None if sm is None else _top([v for v in sm["vertices"] if v[0] > 0])
+    put("ankle_strip_h", None if hem is None or rim is None else hem - rim * 100,
+        f"the hem - her left '{shoes}' mesh's highest point (the bare ankle seen)" if rim is not None else f"absent: no '{shoes}' mesh",
+        absent=rim is None)
     return res
 
 
@@ -473,7 +533,6 @@ def main() -> None:
     ap.add_argument("--body", required=True, help="garment_spec_probe.py's dump of the undressed character")
     ap.add_argument("--out", required=True)
     ap.add_argument("--build", help="the probe of a dressed build")
-    ap.add_argument("--dress", help="its dress.json")
     ap.add_argument("--tag", default="build")
     ap.add_argument("--views", default=",".join(VIEWS))
     a = ap.parse_args()
@@ -489,7 +548,7 @@ def main() -> None:
     for v in a.views.split(","):
         print("sheet:", view_sheet(spec, probe, sec, crow, v, out / f"sheet_{v}.png"))
     if a.build:
-        meas = measure_build(spec, S.load_probe(a.build), json.loads(Path(a.dress).read_text(encoding="utf-8")), sec)
+        meas = measure_build(spec, S.load_probe(a.build), sec)
         md, rows = table(spec, meas, a.tag)
         (out / f"spec_vs_{a.tag}.md").write_text(md, encoding="utf-8", newline="\n")
         (out / f"spec_vs_{a.tag}.json").write_text(json.dumps(meas, indent=1), encoding="utf-8", newline="\n")

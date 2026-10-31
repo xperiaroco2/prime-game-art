@@ -47,7 +47,12 @@ def main() -> None:
         tris = [[t.vertices[0], t.vertices[1], t.vertices[2], t.material_index] for t in me.loop_triangles]
         meshes.append({"name": o.name, "materials": mats, "vertices": verts, "tris": tris})
         ev.to_mesh_clear()
-    out = {"blend": args.blend, "bones": bones, "meshes": meshes}
+    import hashlib
+    h = hashlib.sha256()
+    with open(args.blend, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    out = {"blend": args.blend, "blend_sha256": h.hexdigest(), "bones": bones, "meshes": meshes}
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
     print("probe: " + ", ".join(f"{m['name']} {len(m['vertices'])}v {len(m['tris'])}t {m['materials']}"

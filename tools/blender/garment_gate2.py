@@ -14,7 +14,7 @@ plain Python, with headless Blender for the build's rest dump and its motion num
    gate2.json and gate2.md; the verdict: PASS only when every number is measured and within its tolerance.
 
     tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <char probe.json> --blend <dressed .blend>
-        --dress <dress.json> --poke <poke.json> --out DIR [--probe P] [--motion M] [--video DIR] [--tag d79]
+        [--dress <dress.json>] --poke <poke.json> --out DIR [--probe P] [--motion M] [--video DIR] [--tag d79]
 """
 from __future__ import annotations
 
@@ -36,8 +36,8 @@ OK_C, BAD_C, NA_C = (40, 130, 60), (200, 30, 30), (120, 120, 120)
 
 # --- 1. the spec numbers -----------------------------------------------------------------------------------------
 
-def spec_numbers(spec, build_probe, dress, sec) -> tuple[dict, list]:
-    meas = GD.measure_build(spec, build_probe, dress, sec)
+def spec_numbers(spec, build_probe, sec) -> tuple[dict, list]:
+    meas = GD.measure_build(spec, build_probe, sec)
     _md, rows = GD.table(spec, meas, "build")
     return meas, rows
 
@@ -93,12 +93,17 @@ def build_mask(spec, probe, sec, view: str):
     return w, h, bytearray(1 if o == 1 else 0 for o in owner)
 
 
-def concept_garment(spec, rows, view: str, out: Path):
+def concept_garment(spec, rows, view: str, out: Path, base: Path = Path(".")):
     g2 = spec["gate2"]
     box = spec["concept"]["boxes"][view]
     hand = g2.get(f"mask_{view}")
-    if hand:   # a hand-painted mask, the box's size: any non-black pixel is garment
-        w, h, mrows = BG.read_png(hand)
+    if hand:   # a hand-painted mask, the box's size: any non-black pixel is garment; a relative path from the spec's folder
+        path = Path(hand) if Path(hand).is_absolute() else base / hand
+        if not path.is_file():
+            raise SystemExit(f"gate2.mask_{view}: no file {path.as_posix()}")
+        w, h, mrows = BG.read_png(path)
+        if (w, h) != (box[2] - box[0], box[3] - box[1]):
+            raise SystemExit(f"gate2.mask_{view}: {w} x {h} px, but the {view} box is {box[2] - box[0]} x {box[3] - box[1]}")
         return w, h, bytearray(1 if sum(p[:3]) > 0 else 0 for r in mrows for p in r)
     w, h, m = G.concept_mask(rows, box, g2["concept_mask"])
     cv = D.Canvas(w, h, bg=(0, 0, 0))
@@ -109,17 +114,95 @@ def concept_garment(spec, rows, view: str, out: Path):
     return w, h, m
 
 
+def check_gate2(spec) -> list[str]:
+    """The [gate2] section's cross-references that do not resolve: every expression (parts, stations, classify,
+    overlap_z), every station's dim, view and kind, every part a join, flat or stretch names (empty when sound)."""
+    g2, lm, dims = spec["gate2"], spec["body"]["landmarks_cm"], spec["dims"]
+    bad = []
+
+    def expr(where, e):
+        try:
+            G.resolve(e, {}, dims, lm)
+        except (ValueError, KeyError) as err:
+            bad.append(f"{where}: {err}")
+    for name, p in g2["parts"].items():
+        for key in ("x_abs", "y", "z"):
+            for e in p[key]:
+                expr(f"parts.{name}.{key}", e)
+    expr("classify.over_z", g2["classify"]["over_z"])
+    for v, zs in g2.get("overlap_z", {}).items():
+        for e in zs:
+            expr(f"overlap_z.{v}", e)
+    for v in g2.get("overlap_min", {}):
+        if v not in VIEWS:
+            bad.append(f"overlap_min: no view {v!r}")
+    for st in g2.get("stations", []):
+        where = f"stations '{st.get('name')}'"
+        if st.get("view") not in VIEWS:
+            bad.append(f"{where}: no view {st.get('view')!r}")
+        if st.get("kind") not in ("top", "bottom", "width", "front", "back"):
+            bad.append(f"{where}: no kind {st.get('kind')!r}")
+        if "dim" in st and st["dim"] not in dims:
+            bad.append(f"{where}: dim {st['dim']!r} is no spec size")
+        if "dim" not in st and "concept_tol_cm" not in st:
+            bad.append(f"{where}: neither a dim nor a concept_tol_cm")
+        for e in (st["z"] if isinstance(st["z"], list) else [st["z"]]):
+            expr(where, e)
+    for j in g2.get("joins", []):
+        for key in ("moving", "on"):
+            if j[key] not in g2["parts"]:
+                bad.append(f"joins '{j['name']}': {key} {j[key]!r} is no part")
+    for key in ("flat", "stretch"):
+        for f in g2.get(key, []):
+            if f["part"] not in g2["parts"]:
+                bad.append(f"{key}: {f['part']!r} is no part")
+    return bad
+
+
+def build_of(path, sha: str | None, what: str) -> None:
+    """Refuse a dump or a motion result made from another build than the --blend (its blend_sha256)."""
+    if sha is None:
+        return
+    got = json.loads(Path(path).read_text(encoding="utf-8")).get("blend_sha256")
+    if got != sha:
+        raise SystemExit(f"{what} {Path(path).as_posix()} is not of this build: its blend_sha256 is "
+                         f"{got or 'missing (made before build ids: make it again)'}, the --blend's {sha[:12]}...")
+
+
+def video_source(video: Path, blend: Path | None, sha: str | None) -> tuple[bool, str]:
+    """Whether the videos in `video` are this build's close-ups: frames' spec.json has the --video-camera shot and its
+    source GLB is unchanged (its SHA-256) and of this build (the .blend's hash, or the GLB beside the .blend with its
+    name)."""
+    sp = video / "spec.json"
+    if not sp.is_file():
+        return False, f"no {sp.as_posix()}"
+    vs = json.loads(sp.read_text(encoding="utf-8"))
+    if not vs.get("video_camera"):
+        return False, "made without --video-camera (the whole-body camera)"
+    src = vs.get("source")
+    if not src:
+        return False, "spec.json has no source (made before build ids: make the videos again)"
+    if blend is None or sha is None:
+        return False, "no --blend to check the videos' build against"
+    glb = Path(src["glb"])
+    if not glb.is_file() or G.file_sha256(glb) != src["glb_sha256"]:
+        return False, f"the GLB {glb.as_posix()} changed or is gone since the videos"
+    if src.get("blend_sha256") == sha or (glb.parent.resolve() == blend.parent.resolve() and glb.stem == blend.stem):
+        return True, f"from {glb.as_posix()} ({src['glb_sha256'][:12]}), this build"
+    return False, f"from {glb.as_posix()}, another build than {blend.as_posix()}"
+
+
 def stations(spec, view, cm, bm, w, h, meas) -> list[dict]:
     """The view's stations: the concept's and the build's value in cm, the spec's, the errors."""
     c, lm, dims = spec["concept"], spec["body"]["landmarks_cm"], spec["dims"]
-    pairs = sorted((lm[k], r) for k, r in c["rows"].items())
+    pairs = S.concept_pairs(spec)
     box, k = c["boxes"][view], c["px_per_cm"]
     cx = c["side_mid_x"] if view == "side" else (c["front_cx"] if view == "front" else c["back_cx"])
     u_off = c["side_mid_y_cm"] if view == "side" else 0.0
     to_col = lambda u: int(round(cx + (u - u_off) * k)) - box[0]
     to_u = lambda col: u_off + (col + box[0] + 0.5 - cx) / k
     to_row = lambda z: int(round(GD.concept_map(spec, view)(0, z)[1])) - box[1]
-    to_z = lambda row: G.row_to_z(pairs, row + box[1] + 0.5)
+    to_z = lambda row: S.concept_row_to_z(pairs, row + box[1] + 0.5)
     res = []
     for st in spec["gate2"]["stations"]:
         if st["view"] != view:
@@ -204,8 +287,13 @@ def motion_config(spec, meas, blend: str) -> dict:
 
 
 def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
-    """One row per clip and check: value, tolerance, pass."""
+    """One row per part (its vertices: a part with none fails) and per clip and check: value, tolerance, pass."""
     g2, rows = spec["gate2"], []
+    parts = motion.get("parts") or {}
+    for name in g2["parts"]:
+        n = (parts.get(name) or {}).get("verts")
+        rows.append({"clip": "rest", "check": f"part found: {name} (vertices)", "value": n, "unit": "verts",
+                     "tol": 1, "pass": None if n is None else n > 0})
     for clip in g2["clips"]:
         m = (motion.get("clips") or {}).get(clip)
         for j in g2["joins"]:
@@ -309,19 +397,26 @@ def run(a) -> int:
         raise SystemExit("spec: " + "; ".join(bad))
     if "gate2" not in spec:
         raise SystemExit(f"{a.spec} has no [gate2] section")
+    bad = check_gate2(spec)
+    if bad:
+        raise SystemExit("spec [gate2]: " + "; ".join(bad))
+    blend = Path(a.blend) if a.blend else None
+    sha = G.file_sha256(blend) if blend else None
+    build_of(a.probe, sha, "--probe")
+    if a.motion:
+        build_of(a.motion, sha, "--motion")
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     body = S.load_probe(a.body)
     sec = S.Sections(body, [spec["body"]["mesh"]])
     build = S.load_probe(a.probe)
-    dress = json.loads(Path(a.dress).read_text(encoding="utf-8"))
-    meas, nums = spec_numbers(spec, build, dress, sec)
+    meas, nums = spec_numbers(spec, build, sec)
     print("spec numbers:", sum(1 for r in nums if r[5]), "within,", sum(1 for r in nums if r[5] is False), "off,",
           sum(1 for r in nums if r[5] is None), "unmeasured")
     _, _, crow = BG.read_png(spec["garment"]["concept"])
     sil = {}
     for v in VIEWS:
-        w, h, cm = concept_garment(spec, crow, v, out)
+        w, h, cm = concept_garment(spec, crow, v, out, Path(a.spec).parent)
         _, _, bm = build_mask(spec, build, sec, v)
         oz = spec["gate2"].get("overlap_z", {}).get(v)
         lim = None
@@ -340,8 +435,12 @@ def run(a) -> int:
     motion = json.loads(Path(a.motion).read_text(encoding="utf-8")) if a.motion else {"clips": {}}
     poke = json.loads(Path(a.poke).read_text(encoding="utf-8")) if a.poke else None
     mrows = motion_rows(spec, motion, poke)
-    videos = {}
+    videos, vwhy = {}, "no --video"
+    vok = False
     if a.video:
+        vok, vwhy = video_source(Path(a.video), blend, sha)
+        print("videos:", vwhy)
+    if vok:
         for name in ("Walk", "Jog_Fwd"):
             src = Path(a.video) / "clips" / f"{name}.mp4"
             if src.is_file():
@@ -351,10 +450,10 @@ def run(a) -> int:
     checks += [r["pass"] for r in mrows]
     n_ok, n_bad, n_na = checks.count(True), checks.count(False), checks.count(None)
     verdict = {"pass": n_bad == 0 and n_na == 0 and len(videos) == 2,
-               "summary": f"{n_ok} checks within tolerance, {n_bad} off, {n_na} unmeasured; videos {len(videos)}/2. "
+               "summary": f"{n_ok} checks within tolerance, {n_bad} off, {n_na} unmeasured; videos {len(videos)}/2 ({vwhy}). "
                           "Gate 2 passes only with every check measured and within tolerance."}
     rep = {"tag": a.tag, "spec": a.spec, "build_probe": a.probe, "dress": a.dress, "verdict": verdict,
-           "spec_numbers": meas, "silhouettes": sil, "motion": mrows, "motion_raw": motion, "videos": videos}
+           "blend": a.blend, "blend_sha256": sha, "spec_numbers": meas, "silhouettes": sil, "motion": mrows, "motion_raw": motion, "videos": videos}
     (out / "gate2.json").write_text(json.dumps(rep, indent=1), encoding="utf-8", newline="\n")
     print("numbers:", numbers_sheet(a.tag, nums, sil, mrows, out / "numbers.png"))
     print("page:", page(a.tag, spec, nums, sil, mrows, videos, verdict, out))
@@ -367,11 +466,12 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--spec", required=True)
     ap.add_argument("--body", required=True, help="garment_spec_probe.py's dump of the undressed character")
     ap.add_argument("--probe", required=True, help="garment_spec_probe.py's dump of the dressed build")
-    ap.add_argument("--dress", required=True, help="the build's dress.json")
+    ap.add_argument("--dress", help="the build's dress.json (recorded only: every size is measured on the mesh)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--motion", help="garment_motion.py's result")
     ap.add_argument("--poke", help="clothes_proof.py's poke.json")
     ap.add_argument("--video", help="a `frames --video Walk,Jog_Fwd --video-camera ...` output folder")
+    ap.add_argument("--blend", help="the build's .blend: the probe, the motion and the videos must be of it (SHA-256)")
     ap.add_argument("--tag", default="build")
     return ap
 

@@ -6,9 +6,13 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "blender"))
+import body_drawing as D  # noqa: E402
 import garment_drawing as GD  # noqa: E402
+import garment_gate2 as GG  # noqa: E402
 import garment_gate2_geom as G  # noqa: E402
 import garment_spec as S  # noqa: E402
+
+SPEC = Path(__file__).resolve().parents[2] / "specs" / "dungarees_dims.toml"
 
 try:
     import numpy  # noqa: F401
@@ -81,12 +85,17 @@ class RasterTest(unittest.TestCase):
     def test_depth_keeps_the_nearest(self):
         w = h = 10
         depth, owner = [1e9] * (w * h), bytearray(w * h)
-        near = [((0, 0, 1.0), (10, 0, 1.0), (10, 10, 1.0)), ((0, 0, 1.0), (10, 10, 1.0), (0, 10, 1.0))]
-        far = [((0, 0, 5.0), (10, 0, 5.0), (10, 10, 5.0)), ((0, 0, 5.0), (10, 10, 5.0), (0, 10, 5.0))]
-        G.raster(far, w, h, depth, owner, 1)
-        G.raster(near, w, h, depth, owner, 2)
-        G.raster(far, w, h, depth, owner, 1)
-        self.assertEqual(set(owner), {2})
+        flat = [((0, 0, 5.0), (10, 0, 5.0), (10, 10, 5.0)), ((0, 0, 5.0), (10, 10, 5.0), (0, 10, 5.0))]
+        # a tilted square, depth 0 at the left edge to 10 at the right: nearer than the flat one left of x = 5
+        tilt = [((0, 0, 0.0), (10, 0, 10.0), (10, 10, 10.0)), ((0, 0, 0.0), (10, 10, 10.0), (0, 10, 0.0))]
+        G.raster(flat, w, h, depth, owner, 1)
+        G.raster(tilt, w, h, depth, owner, 2)
+        for y in range(h):
+            self.assertEqual([owner[y * w + x] for x in range(w)], [2] * 5 + [1] * 5)
+        depth2, owner2 = [1e9] * (w * h), bytearray(w * h)
+        G.raster(tilt, w, h, depth2, owner2, 2)   # the other order gives the same picture
+        G.raster(flat, w, h, depth2, owner2, 1)
+        self.assertEqual(owner2, owner)
 
 
 class OverlapTest(unittest.TestCase):
@@ -108,9 +117,102 @@ class OverlapTest(unittest.TestCase):
 
     def test_rows_to_heights(self):
         pairs = [(0.0, 945), (100.5, 440), (113.05, 372)]
-        self.assertAlmostEqual(G.row_to_z(pairs, 440), 100.5)
-        self.assertAlmostEqual(G.row_to_z(pairs, 406), (100.5 + 113.05) / 2)
-        self.assertAlmostEqual(G.row_scale(pairs, 105), 68 / 12.55)
+        self.assertAlmostEqual(S.concept_row_to_z(pairs, 440), 100.5)
+        self.assertAlmostEqual(S.concept_row_to_z(pairs, 406), (100.5 + 113.05) / 2)
+
+
+class ConceptMapTest(unittest.TestCase):
+    """The spec's placing on the concept (art #196, G2t3): her T-pose armpit against the concept's A-pose armpit
+    skewed the band 113-125 cm (1 and 8.25 px/cm); it is left out of the mapping rows."""
+
+    def setUp(self):
+        self.spec = S.load_spec(SPEC)
+
+    def test_unmapped_rows_left_out(self):
+        pairs = S.concept_pairs(self.spec)
+        self.assertNotIn(self.spec["body"]["landmarks_cm"]["armpit"], [z for z, _r in pairs])
+        bad = dict(self.spec, concept=dict(self.spec["concept"], unmapped=["armpitt"]))
+        with self.assertRaises(S.SpecError):
+            S.concept_pairs(bad)
+
+    def test_no_skewed_band(self):
+        pairs = S.concept_pairs(self.spec)
+        k = sorted((r0 - r1) / (z1 - z0) for (z0, r0), (z1, r1) in zip(pairs, pairs[1:]))
+        med = k[len(k) // 2]
+        for v in k:
+            self.assertTrue(0.6 * med <= v <= 1.6 * med, (v, med))
+
+    def test_bib_top_on_the_concepts(self):
+        row = GD.concept_map(self.spec, "front")(0, self.spec["dims"]["bib_top_z"]["cm"])[1]
+        self.assertAlmostEqual(row, 336, delta=1.0)   # the concept's bib top
+        row = GD.concept_map(self.spec, "back")(0, self.spec["dims"]["back_top_z"]["cm"])[1]
+        self.assertAlmostEqual(row, 342, delta=1.0)
+
+
+class Gate2SpecTest(unittest.TestCase):
+    def test_every_cross_reference_resolves(self):
+        self.assertEqual(GG.check_gate2(S.load_spec(SPEC)), [])
+
+    def test_misspelt_names_reported(self):
+        spec = S.load_spec(SPEC)
+        spec["gate2"]["stations"][0]["dim"] = "bib_top"
+        spec["gate2"]["parts"]["bib"]["z"][1] = "bib_topz+1"
+        spec["gate2"]["joins"][0]["on"] = "bibb"
+        bad = " ".join(GG.check_gate2(spec))
+        for word in ("'bib_top'", "bib_topz", "'bibb'"):
+            self.assertIn(word, bad)
+
+    def test_a_part_with_no_vertices_fails(self):
+        spec = S.load_spec(SPEC)
+        motion = {"parts": {n: {"verts": 0 if n == "bib" else 10} for n in spec["gate2"]["parts"]}, "clips": {}}
+        rows = {r["check"]: r["pass"] for r in GG.motion_rows(spec, motion, None) if r["clip"] == "rest"}
+        self.assertFalse(rows["part found: bib (vertices)"])
+        self.assertTrue(rows["part found: waistband (vertices)"])
+
+    def test_hand_mask_size_and_folder(self):
+        import tempfile
+        spec = S.load_spec(SPEC)
+        box = spec["concept"]["boxes"]["front"]
+        with tempfile.TemporaryDirectory() as td:
+            D.Canvas(box[2] - box[0], box[3] - box[1], bg=(0, 0, 0)).save(Path(td) / "ok.png")
+            D.Canvas(20, 20, bg=(0, 0, 0)).save(Path(td) / "small.png")
+            spec["gate2"]["mask_front"] = "ok.png"
+            w, h, m = GG.concept_garment(spec, None, "front", Path(td), Path(td))
+            self.assertEqual((w, h, sum(m)), (box[2] - box[0], box[3] - box[1], 0))
+            spec["gate2"]["mask_front"] = "small.png"
+            with self.assertRaises(SystemExit):
+                GG.concept_garment(spec, None, "front", Path(td), Path(td))
+
+    def test_videos_of_this_build(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            t = Path(td)
+            (t / "char.blend").write_bytes(b"blend")
+            (t / "char.glb").write_bytes(b"glb")
+            (t / "other.blend").write_bytes(b"other")
+            v = t / "video"
+            v.mkdir()
+            sha = G.file_sha256(t / "char.blend")
+            src = {"glb": (t / "char.glb").as_posix(), "glb_sha256": G.file_sha256(t / "char.glb"),
+                   "blend": None, "blend_sha256": None}
+            (v / "spec.json").write_text(json.dumps({"video_camera": {"label": "torso"}, "source": src}))
+            self.assertTrue(GG.video_source(v, t / "char.blend", sha)[0])
+            self.assertFalse(GG.video_source(v, t / "other.blend", G.file_sha256(t / "other.blend"))[0])
+            (v / "spec.json").write_text(json.dumps({"source": src}))
+            self.assertFalse(GG.video_source(v, t / "char.blend", sha)[0])      # the whole-body camera
+            (v / "spec.json").write_text(json.dumps({"video_camera": {"label": "torso"}}))
+            self.assertFalse(GG.video_source(v, t / "char.blend", sha)[0])      # no build id
+
+    def test_probe_of_another_build_refused(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            pr = Path(td) / "probe.json"
+            pr.write_text(json.dumps({"blend_sha256": "aa"}))
+            GG.build_of(pr, "aa", "--probe")
+            with self.assertRaises(SystemExit):
+                GG.build_of(pr, "bb", "--probe")
 
 
 class MotionTest(unittest.TestCase):
@@ -124,14 +226,26 @@ class MotionTest(unittest.TestCase):
         self.assertIsNone(G.verdict(None, 3.0))
         self.assertTrue(G.verdict(0.85, 0.8, smaller_is_better=False))
 
-    @unittest.skipUnless(HAVE_NUMPY, "numpy (Blender's Python has it)")
     def test_stretch(self):
-        import numpy as np
-        rest = np.array([[0, 0, 0], [0.01, 0, 0], [0.02, 0, 0]], float)
-        now = np.array([[0, 0, 0], [0.0102, 0, 0], [0.0202, 0, 0]], float)
-        mx, p95 = G.stretch(rest, now, np.array([[0, 1], [1, 2]]))
+        rest = [[0, 0, 0], [0.01, 0, 0], [0.02, 0, 0]]
+        now = [[0, 0, 0], [0.0102, 0, 0], [0.0202, 0, 0]]
+        mx, p95 = G.stretch(rest, now, [[0, 1], [1, 2]])
         self.assertAlmostEqual(mx, 2.0, places=6)
         self.assertLessEqual(p95, mx)
+        self.assertEqual(G.stretch(rest, now, []), (None, None))            # an empty part never passes
+        self.assertEqual(G.stretch(rest, now, [[0, 0]]), (None, None))      # no edge over min_len
+
+    @unittest.skipUnless(HAVE_NUMPY, "numpy (Blender's Python has it)")
+    def test_stretch_numpy_like_lists(self):
+        import numpy as np
+        rng = np.random.default_rng(1)
+        rest, now = rng.random((30, 3)), rng.random((30, 3))
+        e = np.array([[i, i + 1] for i in range(29)])
+        mx, p95 = G.stretch(rest, now, e)
+        l0 = np.linalg.norm(rest[e[:, 0]] - rest[e[:, 1]], axis=1)
+        r = np.abs(np.linalg.norm(now[e[:, 0]] - now[e[:, 1]], axis=1) / l0 - 1) * 100
+        self.assertAlmostEqual(mx, float(r.max()), places=6)
+        self.assertAlmostEqual(p95, float(np.percentile(r, 95)), places=6)
 
 
 
@@ -211,6 +325,14 @@ class HardwareTest(unittest.TestCase):
         hw = GD.mesh_hardware({}, {"meshes": [mesh([bib, pocket], ("cloth", "denim_pocket"))]}, 112.0, 93.0)
         self.assertAlmostEqual(hw["pocket"]["w"], 0.12, places=6)
         self.assertIn("denim_pocket", hw["pocket"]["how"])
+
+    def test_empty_garment_all_absent(self):
+        spec = S.load_spec(SPEC)
+        body = S.Sections({"meshes": []})
+        res = GD.measure_build(spec, {"meshes": [{"name": "garment", "materials": [], "vertices": [], "tris": []}]},
+                               body)
+        self.assertEqual(set(res), set(spec["dims"]))
+        self.assertTrue(all(v["absent"] and v["cm"] is None for v in res.values()))
 
     def test_absent_is_a_failure(self):
         spec = {"dims": {"buckle_d": {"cm": 1.6, "tol_cm": 0.3}, "strap_w": {"cm": 3.8, "tol_cm": 0.3}}}

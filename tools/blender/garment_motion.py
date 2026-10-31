@@ -91,7 +91,7 @@ def main() -> int:
     cl = cfg["classify"]
     classes = G.classify(sizes, spans, cl["over_z"], cl["hardware_max_verts"])
     cls_of_vert = np.array([classes[k] for k in comp])
-    rep = {"blend": cfg["blend"], "pieces": [
+    rep = {"blend": cfg["blend"], "blend_sha256": G.file_sha256(cfg["blend"]), "pieces": [
         {"verts": n, "class": c, "z_max": round(s[0], 4), "y": [round(s[1], 4), round(s[2], 4)]}
         for n, c, s in zip(sizes, classes, spans)], "parts": {}, "clips": {}}
     parts = {name: select(co0, cls_of_vert, p) for name, p in cfg["parts"].items()}
@@ -162,9 +162,10 @@ def main() -> int:
                 old = res["flat_mm"].get(fl["part"])
                 res["flat_mm"][fl["part"]] = v if old is None else max(old, v)
             for st in cfg["stretch"]:
-                mx, p95 = G.stretch(ref, co, edges[st["part"]])
-                res["stretch_pct"][st["part"]] = max(res["stretch_pct"].get(st["part"], 0.0), mx)
-                res["stretch_p95_pct"][st["part"]] = max(res["stretch_p95_pct"].get(st["part"], 0.0), p95)
+                mx, p95 = G.stretch(ref, co, edges[st["part"]])   # None for a part with no edges
+                for key, v in (("stretch_pct", mx), ("stretch_p95_pct", p95)):
+                    old = res[key].get(st["part"])
+                    res[key][st["part"]] = v if old is None else (old if v is None else max(old, v))
         for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct"):
             res[k] = {n: (None if v is None else round(v, 2)) for n, v in res[k].items()}
         rep["clips"][clip] = res
