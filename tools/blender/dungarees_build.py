@@ -211,8 +211,9 @@ def main() -> None:
     ap.add_argument("--panel-bone", default="Chest",
                     help="the bib, pocket, back panel and the straps' ends on this bone alone (rigid); '' = her blend")
     ap.add_argument("--band-bone", default="Spine", help="the waistband on this bone alone (rigid); '' = her blend")
-    ap.add_argument("--strap-sh-share", type=float, default=1.0,
-                    help="the straps' middle: this share of her shoulder's weights, the rest the panel bone's")
+    ap.add_argument("--strap-sh-share", type=float, default=0.0,
+                    help="the straps' middle: this share of her shoulder's weights, the rest the panel bone's (0: the "
+                         "whole strap rides the panel bone, G3c c01: stretch 0, pokes 0 in every clip; 1.0: 16-57 %%)")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     spec = S.load_spec(a.spec)
     d = {k: v["cm"] / 100 for k, v in spec["dims"].items()}

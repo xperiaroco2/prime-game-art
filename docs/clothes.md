@@ -1002,7 +1002,9 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   were not rigid: linear blend skinning bends a plate when its bones twist against each other, 9-13 mm in Jog and
   Strafe and 2-8 % stretch (b02). The straps' rows on the bib carry the bib's weights exactly and those on the back
   panel the back's (slip stays under 1 mm); the middle eases to `--strap-sh-share` of her clavicle's weights, the
-  rest the panel bone's (no arm bones). The turn-ups ride the lower leg alone.
+  rest the panel bone's (no arm bones); the default 0 (G3c's c01) puts the whole strap on Chest: the clavicle moved the
+  15 cm between the bib top and the shoulder against Chest, 16-57 % stretch in the run clips at 1.0 (b04), 0 % and 0
+  pokes in every clip at 0. The turn-ups ride the lower leg alone.
 - **Shapes:** the bib the forward convex envelope of her front over |x| < 11 cm + the shirt + 0.3 cm, its top edge
   0.8 cm off (lean B: straight across, one bend over the bust); the back the same behind, its top the centre at
   118.67 and the corners 3 cm higher at the straps' inner edges, the approved drawing's shallow V (straight from
