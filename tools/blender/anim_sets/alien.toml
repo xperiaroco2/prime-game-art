@@ -13,6 +13,10 @@ floor = true
 # then averaged) carried the leg fit's 3 cm heel-strike sink into the frames where the planted foot was already
 # down: her Walk floated up to 21 mm, both feet off the floor on 18 of 32 frames (a 1 cm hop at each step)
 floor_reach = 0
+# B1b: at the foot, not the Hips: a foot under the floor raised by its own need, its leg solved again
+# (alien_clip_edit.feet_floor); the Hips lift at reach 0 jerked the chameleon's Walk at heel strike
+# (780, 795, 809, 804, 793 mm)
+floor_feet = true
 
 # A3: the idle's life: UAL's 2.5 s cycle played three times (7.5 s), the hips over one foot then the other (3 cm, the
 # legs solved per frame, the feet kept), the spine and head countering it; the chest breathes in the lively controller

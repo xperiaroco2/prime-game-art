@@ -114,6 +114,10 @@ class SoleRule(unittest.TestCase):
         self.assertAlmostEqual(k2[0], 0.1, places=9)  # the knee in the leg's own plane
         self.assertLess(k2[1], knee[1])  # the knee bends a little more forward
 
+    def test_the_build_floors_at_the_foot(self):  # the Hips lift at reach 0 jerked the chameleon's Walk
+        for clip in ("Walk_Loop", "Jog_Fwd_Loop", "Sprint_Fwd_Loop", "Idle_Loop", "Crouch_Fwd_Loop", "Jump_Land"):
+            self.assertIs(E.settings(self.TOML, clip).get("floor_feet"), True, clip)
+
     def test_no_raise_no_change(self):
         hip, knee, ank = (0.1, 0.0, 0.85), (0.1, -0.12, 0.47), (0.1, -0.2, 0.07)
         for a, b in zip(E.raise_knee(hip, knee, ank, (0.0, 0.0, 0.0)), knee):

@@ -56,8 +56,8 @@ FINGERS = ("Index", "Middle", "Ring", "Little")
 SEGMENTS = ("Proximal", "Intermediate", "Distal")
 THUMB = ("ThumbProximal", "ThumbDistal")
 KEYS = ("finger_cap_deg", "thumb_cap_deg", "abduct_deg", "swing_deg", "head_up_deg", "lean_deg", "cut_straight_deg",
-        "cut_gap", "hips_up_cm", "knees_in_deg", "floor", "floor_reach", "chest_up_deg", "repeat", "sway_cm",
-        "sway_counter_deg")
+        "cut_gap", "hips_up_cm", "knees_in_deg", "floor", "floor_reach", "floor_feet", "chest_up_deg", "repeat",
+        "sway_cm", "sway_counter_deg")
 FLOOR_FAIL_CM = -0.5  # A2: a clip still this far under the floor after its lift fails the build
 ANKLE_MISS_FAIL_CM = 0.5  # A3: a re-solved leg whose Foot lands this far from its kept place (re-evaluated) fails
 
@@ -318,7 +318,9 @@ def apply(arm, skin, path: str) -> dict:
                                      sway_m=float(cfg.get("sway_cm", 0.0)) / 100.0,
                                      counter_deg=float(cfg.get("sway_counter_deg", 0.0)), fwd_arm=fwd_arm)
         mode = cfg.get("floor", False)
-        if mode is True:
+        if mode is True and cfg.get("floor_feet"):  # B1b: at the foot, the Hips untouched (feet_floor)
+            rep["floor"] = feet_floor(arm, skin, act, rest, up_arm, wrap=clip.endswith("_Loop"))
+        elif mode is True:
             rep["floor"] = floor(arm, skin, act, rest, up_arm, wrap=clip.endswith("_Loop"),
                                  reach=int(cfg.get("floor_reach", 2)))
             if rep["floor"]["lowest_after_cm"] < FLOOR_FAIL_CM:
@@ -476,6 +478,44 @@ def _raise_ankles(arm, act, raises: dict[str, list[float]]) -> dict:
     return {"ankle_miss_max_cm": round(miss * 100.0, 3), "legs": [leg[0] for leg in legs]}
 
 
+def feet_floor(arm, skins, act, rest, up_arm, wrap: bool) -> dict:
+    """B1b: one clip on the floor at the foot (sole_floor's and the build's `floor_feet` pass): each foot's lowest
+    point per frame (_foot_lows over skins), a foot under the floor raised by its own need (foot_raise) and its leg
+    solved again (_raise_ankles), twice at most, the Hips untouched; what a leg cannot reach goes to the Hips by
+    floor() at reach 0 (`hips_fallback_cm`). Returns the report (sole_floor's keys)."""
+    skins = skins if isinstance(skins, (list, tuple)) else [skins]
+    f0, f1 = _assign(arm, act)
+    lows = before = _foot_lows(arm, skins, f0, f1)
+    raised = {s: [0.0] * (f1 - f0 + 1) for s in lows}
+    miss = 0.0
+    for _ in range(2):
+        r = {s: foot_raise(v) for s, v in lows.items()}
+        if max(max(v) for v in r.values()) < 1e-4:
+            break
+        miss = max(miss, _raise_ankles(arm, act, r)["ankle_miss_max_cm"])
+        raised = {s: [a + b for a, b in zip(raised[s], r[s])] for s in raised}
+        _assign(arm, act)
+        lows = _foot_lows(arm, skins, f0, f1)
+    low_b = [min(a, b) for a, b in zip(before["Left"], before["Right"])]
+    low_a = [min(a, b) for a, b in zip(lows["Left"], lows["Right"])]
+    rep = {"feet": True, "lowest_before_cm": round(min(low_b) * 100, 2),
+           "max_raise_cm": {s: round(max(v) * 100, 2) for s, v in raised.items()},
+           "ankle_miss_max_cm": miss, "hips_fallback_cm": 0.0}
+    if min(low_a) < -SOLE_UNDER_M:  # a leg out of reach: the rest at the Hips, each frame its own need
+        fb = floor(arm, skins, act, rest, up_arm, wrap=wrap, reach=0)
+        rep["hips_fallback_cm"] = fb["max_lift_cm"]
+        _assign(arm, act)
+        lows = _foot_lows(arm, skins, f0, f1)
+        low_a = [min(a, b) for a, b in zip(lows["Left"], lows["Right"])]
+    arm.animation_data.action = None
+    rep.update(lowest_after_cm=round(min(low_a) * 100, 2), highest_low_after_cm=round(max(low_a) * 100, 2),
+               under_2mm_frames=sum(z < -SOLE_UNDER_M for z in low_a),
+               floated_frames=len(floated_frames(low_b, low_a)),
+               lowest_before_mm=[round(x * 1000, 1) for x in low_b],
+               lowest_after_mm=[round(x * 1000, 1) for x in low_a])
+    return rep
+
+
 def sole_floor(arm, skins, path: str) -> dict:
     """B1 (art #196, the Walk hop), B1b (the heel strike): after the dress, every ground clip (ground_clips: the
     settings' floor-true clips and every clip they do not list) put on the floor with all of skins measured (the
@@ -499,35 +539,7 @@ def sole_floor(arm, skins, path: str) -> dict:
     out = {}
     for clip in ground_clips(sorted(acts), str(p)):
         act = acts[clip]
-        f0, f1 = _assign(arm, act)
-        lows = before = _foot_lows(arm, skins, f0, f1)
-        raised = {s: [0.0] * (f1 - f0 + 1) for s in lows}
-        miss = 0.0
-        for _ in range(2):
-            r = {s: foot_raise(v) for s, v in lows.items()}
-            if max(max(v) for v in r.values()) < 1e-4:
-                break
-            miss = max(miss, _raise_ankles(arm, act, r)["ankle_miss_max_cm"])
-            raised = {s: [a + b for a, b in zip(raised[s], r[s])] for s in raised}
-            _assign(arm, act)
-            lows = _foot_lows(arm, skins, f0, f1)
-        low_b = [min(a, b) for a, b in zip(before["Left"], before["Right"])]
-        low_a = [min(a, b) for a, b in zip(lows["Left"], lows["Right"])]
-        rep = {"feet": True, "lowest_before_cm": round(min(low_b) * 100, 2),
-               "max_raise_cm": {s: round(max(v) * 100, 2) for s, v in raised.items()},
-               "ankle_miss_max_cm": miss, "hips_fallback_cm": 0.0}
-        if min(low_a) < -SOLE_UNDER_M:  # a leg out of reach: the rest at the Hips, each frame its own need
-            fb = floor(arm, skins, act, rest, up_arm, wrap=clip.endswith("_Loop"), reach=0)
-            rep["hips_fallback_cm"] = fb["max_lift_cm"]
-            _assign(arm, act)
-            lows = _foot_lows(arm, skins, f0, f1)
-            low_a = [min(a, b) for a, b in zip(lows["Left"], lows["Right"])]
-        arm.animation_data.action = None
-        rep.update(lowest_after_cm=round(min(low_a) * 100, 2),
-                   under_2mm_frames=sum(z < -SOLE_UNDER_M for z in low_a),
-                   floated_frames=len(floated_frames(low_b, low_a)),
-                   lowest_before_mm=[round(x * 1000, 1) for x in low_b],
-                   lowest_after_mm=[round(x * 1000, 1) for x in low_a])
+        rep = feet_floor(arm, skins, act, rest, up_arm, clip.endswith("_Loop"))
         out[clip] = rep
         if rep["lowest_after_cm"] < FLOOR_FAIL_CM:
             raise ValueError(f"{act.name}: still {rep['lowest_after_cm']} cm under the floor with the soles")
