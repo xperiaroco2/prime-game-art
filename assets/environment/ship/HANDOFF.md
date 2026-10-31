@@ -2,7 +2,7 @@
 
 The empty ship of art#263 (a wide metal manta at night: the hall, the throat and its ramp, two corridors, two lens tip
 rooms, the vault; the throat walls with the gill set) as the game's package, for prime-game#1225 (the engine) and #1285 (boot into it). Written by
-`tools/run.sh ship --out <raw>/ship/v5/nose/b4/pieces --export <raw>/ship/v5/export/v4` (2026-10-30, branch feat/ship-nose-263, the jaw nose b4) (art#335, `docs/ship.md` "The export"); the files and their
+`tools/run.sh ship --out <raw>/ship/v5/polish/n2/pieces --export <raw>/ship/v5/export/v5` (2026-11-01, branch feat/ship-polish-263, polish n1/n2: the smooth nozzles glowing from their own materials, the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody lines) (art#335, `docs/ship.md` "The export"); the files and their
 hashes are in `manifest.toml` and the package's `package.json`. The GLBs are not committed here: the package lives in
 the raw folder until approved.
 
@@ -10,7 +10,7 @@ the raw folder until approved.
 
 | Path | What |
 |---|---|
-| `assets/environment/ship/<piece>.glb` | the 188 pieces, each with a minimal `.import` (11.2); colliders are the GLBs' `-col` trimesh hints |
+| `assets/environment/ship/<piece>.glb` | the 189 pieces, each with a minimal `.import` (11.2); colliders are the GLBs' `-col` trimesh hints |
 | `assets/environment/ship/*.gdshader` | the shared metal, the star sky, the lens bronze (`console_metal`) and the charger's traces, arcs and conduits (art shaders shipped as files) |
 | `assets/environment/ship/materials/*.tres` | one `metal_<name>.tres` per shared metal, `night_sky.tres`, `night_env.tres` |
 | `levels/ship/ship.tscn` | the level: `Ship` > `Pieces`, `Environment`, `Lights`, `Probes`, `Clearing` (`Pieces`, `Lights`, `Ground`), `Nose` (the jaw and its `AnimationPlayer`), `Stations`, `Markers` |
@@ -41,7 +41,8 @@ rim, the key, the tail lamp) under `Lights`. The landing legs' feet stand at y 0
 The prow opens like a jaw: the lower jaw lowers to the ground as the ramp, the upper lifts. `Ship/Nose` holds
 `jaw_lower` (the ramp, its hinge on the deck at the mouth), `jaw_upper` (its hinge on the hull's top) and the fixed
 `jaw_root`, each piece's origin its hinge, and `Nose/AnimationPlayer` with three clips that turn the two jaws about
-their x (`rotation:x`):
+their x (`rotation:x`). The few glow lights that only a jaw lights sit under that jaw piece, so the clips carry them
+(a closed nose leaves no light hanging in front of it):
 
 | Clip | What |
 |---|---|
@@ -112,7 +113,7 @@ lamps hold their static glow (no blink).
 | `out_hero` | 5046 | 2,404,360 | 3.50 |
 
 `in_hall` is a player's eye in the hall (1.6 m over the deck), `in_tip_e` in a tip room, `out_hero` the outside from
-above. Every piece is its own instance (1055), so the hall draws about 4300 calls: merging or batching the static
+above. Every piece is its own instance (1056), so the hall draws about 4300 calls: merging or batching the static
 pieces, as the House does, is the first lever if the game's budget needs it.
 
 ## The check (art side)
