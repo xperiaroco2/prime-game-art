@@ -1499,6 +1499,179 @@ def turnup_relax(gar, args) -> dict:
     return rep
 
 
+def cuff_ring(gar, char, shoe, args) -> dict:
+    """M2j: each trouser leg's turn-up built, as the waistband and straps are (Meshy's folded band was jagged and its
+    fold's faces faced in over the calf: d67's 24 mm pokes stayed with the tied-face side). args.cuff_ring
+    "z_top,height,thick,clear,stations[,lap[,most]]" (bind pose, m): per leg (|x| over 3 cm) the Meshy leg is cut on one
+    level plane lap under z_top (a bisect: a clean edge, no per-face sawtooth) and everything under it goes; a
+    closed rolled band (clothes_shell.cuff_profile), stations round the leg's axis, takes its place from z_top down
+    height: its outer wall thick out of the leg's cloth just over it (and out of the shoe where they overlap, by
+    at most most more), its
+    inner wall just inside the leg at the top, narrowing to clear off the ankle's skin at the bottom (the opening
+    shows no skin edge), the leg's cut edge between the walls under the roll. The leg's remaining vertices under
+    z_top + 2 cm are held between the walls. Weights: the cut leg's nearest four vertices' (the shin's, as the old
+    cuff's). UVs: the nearest old vertex's (plain_denim re-lays and tints them; its box's cut height should be
+    z_top). Material: the leg's."""
+    vals = floats(args.cuff_ring)
+    z_top, height, thick, clear = vals[:4]
+    n_st = int(vals[4])
+    lap = vals[5] if len(vals) > 5 else 0.008
+    most = vals[6] if len(vals) > 6 else 0.010  # the shoe pushes the outer wall out by at most this (d69: 90 mm)
+    z_bot, z_cut = z_top - height, z_top - lap
+    dg = bpy.context.evaluated_depsgraph_get()
+    btree = BVHTree.FromObject(char, dg)
+    stree = tree_of([shoe]) if shoe is not None else None
+    mw = gar.matrix_world
+    inv = mw.inverted()
+    nm = mw.to_3x3().transposed()  # world -> local for a plane's normal (no shear)
+    rep: dict = {"z_top": z_top, "height": height, "thick": thick, "clear": clear, "stations": n_st, "z_cut": z_cut}
+    tris = 0
+    for sgn, side in ((1.0, "left"), (-1.0, "right")):
+        gt = tree_of([gar])
+        bm = bmesh.new()
+        bm.from_mesh(gar.data)
+        dl = bm.verts.layers.deform.verify()
+        uvl = bm.loops.layers.uv.active
+        gname = {g.index: g.name for g in gar.vertex_groups}
+        gi = {g.name: g.index for g in gar.vertex_groups}
+        bm.verts.ensure_lookup_table()
+        wco = {v: mw @ v.co for v in bm.verts}
+        leg = [v for v in bm.verts if wco[v].x * sgn > 0.03 and wco[v].z < z_top + 0.12]
+        above = [wco[v] for v in leg if z_top + 0.03 < wco[v].z < z_top + 0.10]
+        old = [v for v in leg if z_bot - 0.03 < wco[v].z < z_top + 0.03 and v.link_faces]
+        if len(above) < 8 or len(old) < 8:
+            rep[side] = {"skipped": "no leg"}
+            bm.free()
+            continue
+        ax = sum(above, Vector()) / len(above)
+        # per station: the leg's cloth radius just over the cuff (the innermost hit), the skin's at the top and the
+        # bottom, the shoe's outermost over the cuff's lower part
+        r_leg, r_skin_t, r_skin_b, r_shoe, dirs = [], [], [], [], []
+        for k in range(n_st):
+            a = 2 * math.pi * k / n_st
+            d = Vector((math.cos(a), math.sin(a), 0.0))
+            dirs.append(d)
+            o = Vector((ax.x, ax.y, z_top + 0.01))
+            hit = gt.ray_cast(o, d, 0.25)[0]
+            r_leg.append((hit - o).length if hit is not None else None)
+            for z, acc in ((z_cut - 0.004, r_skin_t), (z_bot + 0.004, r_skin_b)):
+                o = Vector((ax.x, ax.y, z))
+                h = btree.ray_cast(o, d, 0.25)[0]
+                acc.append((h - o).length if h is not None else None)
+            far = 0.0
+            if stree is not None:
+                for z in (z_bot + 0.002, z_bot + 0.008, z_bot + 0.016):
+                    o = Vector((ax.x, ax.y, z))
+                    oo = o
+                    for _n in range(6):
+                        h = stree.ray_cast(oo, d, 0.25)[0]
+                        if h is None:
+                            break
+                        if (h - o).length < 0.12:
+                            far = max(far, (h - o).length)
+                        oo = h + d * 1e-4
+            r_shoe.append(far)
+        known = sorted(r for r in r_leg if r is not None)
+        if not known:
+            rep[side] = {"skipped": "no leg hit"}
+            bm.free()
+            continue
+        med = known[len(known) // 2]
+        r_leg = H.circ_smooth([r if r is not None else med for r in r_leg], 2)
+        r_out = H.circ_smooth([r + thick + min(max(0.0, sh + 0.003 - r - thick), most)
+                               for r, sh in zip(r_leg, r_shoe)], 2)
+        profs = []
+        for k in range(n_st):
+            ri_t = r_leg[k] - 0.003
+            if r_skin_t[k] is not None:
+                ri_t = max(ri_t, r_skin_t[k] + clear)
+            ri_t = min(ri_t, r_out[k] - 0.004)
+            ri_b = r_skin_b[k] + clear if r_skin_b[k] is not None else ri_t
+            ri_b = max(0.005, min(ri_b, ri_t))
+            profs.append(H.cuff_profile(r_out[k], ri_t, ri_b, z_top, z_bot))
+        # the old leg's weights and UVs for the ring, by its nearest vertices (before the cut)
+        kd = KDTree(len(old))
+        for i, v in enumerate(old):
+            kd.insert(wco[v], i)
+        kd.balance()
+        rows = [{gname[g]: w for g, w in v[dl].items() if g in gname} for v in old]
+        uv_of = [v.link_loops[0][uvl].uv.copy() if v.link_loops else Vector((0.0, 0.0)) for v in old]
+        mats: dict[int, int] = {}
+        for v in old:
+            for f in v.link_faces:
+                mats[f.material_index] = mats.get(f.material_index, 0) + 1
+        mat = max(mats, key=mats.get) if mats else 0
+        # the cut: one plane, everything of this leg under it goes
+        geom = list({e for v in leg for e in v.link_edges}) + list({f for v in leg for f in v.link_faces}) + leg
+        bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-6, plane_co=inv @ Vector((0, 0, z_cut)),
+                               plane_no=(nm @ Vector((0, 0, 1))).normalized(), clear_inner=True)
+        gone = [f for f in bm.faces if all((mw @ v.co).z < z_cut + 1e-5 and (mw @ v.co).x * sgn > 0.03
+                                           for v in f.verts)]
+        bmesh.ops.delete(bm, geom=gone, context="FACES")
+        loose = [v for v in bm.verts if not v.link_faces and (mw @ v.co).x * sgn > 0.03 and (mw @ v.co).z < z_top]
+        bmesh.ops.delete(bm, geom=loose, context="VERTS")
+        # the leg's rest under z_top + 2 cm held between the walls
+        held = 0
+        for v in bm.verts:
+            p = mw @ v.co
+            if p.x * sgn <= 0.03 or p.z >= z_top + 0.02:
+                continue
+            dx, dy = p.x - ax.x, p.y - ax.y
+            r = math.hypot(dx, dy)
+            k = int(round((math.atan2(dy, dx) % (2 * math.pi)) / (2 * math.pi) * n_st)) % n_st
+            hi_r = r_out[k] - 0.0025
+            lo_r = profs[k][0][0] + 0.0015
+            r2 = min(max(r, lo_r), hi_r) if lo_r < hi_r else (lo_r + hi_r) / 2
+            if abs(r2 - r) > 1e-6 and r > 1e-6:
+                v.co = inv @ Vector((ax.x + dx * r2 / r, ax.y + dy * r2 / r, p.z))
+                held += 1
+        # the ring
+        npr = len(profs[0])
+        grid = []
+        for k in range(n_st):
+            for r, z in profs[k]:
+                q = Vector((ax.x, ax.y, z)) + dirs[k] * r
+                v = bm.verts.new(inv @ q)
+                near = kd.find_n(q, 4)
+                row = H.blend_rows([(rows[i], max(dd, 1e-5)) for _c, i, dd in near])
+                for b, x in row.items():
+                    if b not in gi:
+                        gi[b] = gar.vertex_groups.new(name=b).index
+                    v[dl][gi[b]] = x
+                grid.append((v, uv_of[near[0][1]]))
+        faces = []
+        for k in range(n_st):
+            k2 = (k + 1) % n_st
+            for j in range(npr):
+                j2 = (j + 1) % npr
+                ids = [k * npr + j, k2 * npr + j, k2 * npr + j2, k * npr + j2]
+                f = bm.faces.new([grid[i][0] for i in ids])
+                f.smooth = True
+                f.material_index = mat
+                for loop, i in zip(f.loops, ids):
+                    loop[uvl].uv = grid[i][1]
+                faces.append(f)
+        bm.normal_update()
+        f0 = faces[3]  # the outer wall's face: it must face away from the axis
+        c0 = mw @ f0.calc_center_median()
+        if (mw.to_3x3() @ f0.normal).dot(Vector((c0.x - ax.x, c0.y - ax.y, 0.0))) < 0:
+            for f in faces:
+                f.normal_flip()
+        tris += 2 * len(faces)
+        rep[side] = {"axis": [round(ax.x, 4), round(ax.y, 4)], "faces_left_under_cut": len(gone), "leg_held": held,
+                     "r_out_mm_min_max": [round(1000 * min(r_out), 1), round(1000 * max(r_out), 1)],
+                     "r_leg_mm_min_max": [round(1000 * min(r_leg), 1), round(1000 * max(r_leg), 1)],
+                     "opening_mm_min_max": [round(1000 * min(p[-1][0] for p in profs), 1),
+                                            round(1000 * max(p[-1][0] for p in profs), 1)],
+                     "shoe_over_leg_stations": sum(1 for r, sh in zip(r_leg, r_shoe) if sh + 0.003 > r + thick)}
+        bm.to_mesh(gar.data)
+        bm.free()
+        gar.data.update()
+    rep["tris"] = tris
+    say("cuff ring", rep)
+    return rep
+
+
 def plain_denim(gar, args) -> dict:
     """E1h: plain denim texels over the garment's areas whose own texels are wrong (Meshy's layered hip opening: a
     glossy, streaked patch; the axolotl's seat and front pockets: stretched stitch texels). Each box of args.plain

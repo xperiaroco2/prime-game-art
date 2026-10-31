@@ -401,6 +401,35 @@ def outward_only(r_new: float, r_old: float) -> float:
     return max(r_new, r_old)
 
 
+def cuff_profile(r_out: float, r_in_top: float, r_in_bot: float, z_top: float, z_bot: float,
+                 r_bot: float = 0.004) -> list[tuple[float, float]]:
+    """M2j: the built cuff's cross-section at one angle round the leg, a closed loop of (radius, height) points: a
+    rolled top (a half round from the inner wall over to the outer), the outer wall straight down, its lower edge
+    rounded by r_bot, a flat bottom in to the inner wall (narrowed to r_in_bot, the ankle's opening), its edge
+    rounded too, and the inner wall back up: 10 points (M2j's d69 had 13 at 32 stations, 60,672 triangles). The leg's cut edge sits between the walls under the roll. Refuses an
+    inner wall outside the outer or a cuff lower than its rounds."""
+    if not (0.0 < r_in_top < r_out and 0.0 < r_in_bot < r_out):
+        raise ValueError("the cuff's inner wall must lie inside its outer wall")
+    rt = (r_out - r_in_top) / 2
+    rb = min(r_bot, (r_out - r_in_bot) / 2)
+    if z_top - z_bot < rt + rb + 1e-4:
+        raise ValueError("the cuff is lower than its rounds")
+    c = math.cos(math.radians(45))
+    cr, cz = r_in_top + rt, z_top - rt
+    pts = [(cr - rt * math.cos(math.radians(a)), cz + rt * math.sin(math.radians(a))) for a in (0, 60, 120, 180)]
+    pts += [(r_out, z_bot + rb), (r_out - rb + rb * c, z_bot + rb - rb * c), (r_out - rb, z_bot)]
+    pts += [(r_in_bot + rb, z_bot), (r_in_bot + rb - rb * c, z_bot + rb - rb * c), (r_in_bot, z_bot + rb)]
+    return pts
+
+
+def circ_smooth(xs: list[float], rounds: int = 2) -> list[float]:
+    """M2j: a closed loop's values (per angle round the leg) smoothed by [1, 2, 1] rounds times."""
+    n = len(xs)
+    for _ in range(rounds):
+        xs = [(xs[i - 1] + 2 * xs[i] + xs[(i + 1) % n]) / 4 for i in range(n)]
+    return xs
+
+
 def opening_dist(d: float | None) -> float:
     """A KD-tree find's distance to the nearest opening point; infinite when it found none (C1k: a tree of no
     opening points finds (None, None, None))."""

@@ -407,6 +407,36 @@ class M2hHelpers(unittest.TestCase):  # M2h: the turn-ups' relax
         self.assertEqual(H.loop_nbrs([], {4}), {4: []})
 
 
+class CuffRing(unittest.TestCase):
+    """M2j: the built cuff's cross-section and the per-angle smoothing."""
+
+    def test_profile_is_a_closed_rolled_band(self):
+        pts = H.cuff_profile(0.060, 0.046, 0.035, 0.165, 0.118)
+        self.assertEqual(len(pts), 10)
+        for r, z in pts:
+            self.assertTrue(0.035 - 1e-9 <= r <= 0.060 + 1e-9, (r, z))
+            self.assertTrue(0.118 - 1e-9 <= z <= 0.165 + 1e-9, (r, z))
+        self.assertAlmostEqual(max(z for _r, z in pts), 0.165 - 0.007 * (1 - math.sin(math.radians(60))))  # the roll
+        self.assertAlmostEqual(min(z for _r, z in pts), 0.118)
+        self.assertAlmostEqual(pts[0][0], 0.046)  # starts on the inner wall under the roll
+        self.assertAlmostEqual(pts[3][0], 0.060)  # the roll ends on the outer wall
+        outer = [z for r, z in pts if abs(r - 0.060) < 1e-9]
+        self.assertEqual(len(outer), 2)  # the outer wall is straight (one radius) down to its round
+        self.assertAlmostEqual(pts[-2][0], 0.035 + 0.004 - 0.004 * math.cos(math.radians(45)))
+        self.assertAlmostEqual(pts[-1][0], 0.035)  # the narrowed opening
+
+    def test_profile_refuses_crossed_walls_and_a_flat_cuff(self):
+        with self.assertRaises(ValueError):
+            H.cuff_profile(0.05, 0.055, 0.03, 0.165, 0.12)
+        with self.assertRaises(ValueError):
+            H.cuff_profile(0.06, 0.04, 0.03, 0.165, 0.155)
+
+    def test_circ_smooth_wraps_and_keeps_a_constant(self):
+        self.assertEqual(H.circ_smooth([0.05] * 6), [0.05] * 6)
+        got = H.circ_smooth([1.0, 0.0, 0.0, 0.0], 1)
+        self.assertEqual(got, [0.5, 0.25, 0.0, 0.25])  # the spike spreads to both sides across the loop's seam
+
+
 class PlainDenim(unittest.TestCase):
     """E1h: the plain denim patch's mirrored repeat, cylinder coordinates and boxes."""
 
