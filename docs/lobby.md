@@ -104,6 +104,8 @@ tools/run.sh lobby --video <raw>/lobby/hall/v6/walk         # step 4: the eye-he
 tools/run.sh lobby --distance-grid <raw>/lobby/hall/v7/dgrid    # step 4c: the Earth's distances from three positions
 tools/run.sh lobby --earth-video <raw>/lobby/hall/v7/earth-video  # step 4c: one 15 s MP4 per distance
 tools/run.sh lobby --ship-grid <raw>/lobby/hall/v9/sgrid           # step 5a2: the ship's light sets K1-K3
+tools/run.sh lobby --snow-grid <raw>/lobby/hall/v13/snow-grid      # step 5a6: the snow strengths N1-N3
+tools/run.sh lobby --earth-video <raw>/lobby/hall/v13/earth-video --distance D2   # step 5a6: one distance only
 ```
 
 `--build`, `--godot` and `--shoot` are heavy runs (Blender, Godot; one at a time): agents start them in the background.
@@ -738,12 +740,41 @@ point, not a blob). GPU in the same shots: spawn_eye 2.43 -> 2.85, corner_nw 3.6
 (the trial grids gave 2.45-2.76 ms for spawn_eye across sets); two more texture reads per pixel (the halo) are the
 real cost, to be measured on a quiet machine.
 
+## Step 5a6: less snow
+
+The engineer (2026-10-31), from corner_nw: tone the snow down further. Raw `lobby/hall/v13` (the pieces copied from
+v12, unchanged). Only the Earth's moonlit land changed: E2 at D2, the limb, the dawn glow, the cities, the clouds and
+the hall are as in step 5a5.
+
+- **Two shader knobs** (`earth_object.gdshader`, defaults off = step 5a5): `snow_cut` takes the day map's white (its
+  least channel, linear, over `snow_lo` 0.12 .. `snow_hi` 0.4: snow and ice, not the dark land, the deserts or the sea)
+  toward `snow_rgb`, a dark winter land, before the moon lights it; `moon_land` dims the moonlight on land, the sea
+  told by its blue over red (`smoothstep(1.6, 3.0, b / r)`), so the sea and the coastlines keep theirs. `debug_mode` 2
+  paints the snow mask red and the sea mask green.
+- **Three strengths** (`[earth.snow]` in `hall.toml`, each a few `[earth.look]` keys over it; `lobby --snow-grid DIR`
+  shoots them in corner_nw, a_entrance and spawn_eye): N1 `snow_cut` 0.5 (a bit less), N2 0.85 (barely visible), N3
+  1.0 with `moon_land` 0.85 (no snow, the land almost unlit). **`set = "N2"`** is the one switch (the default).
+- `lobby --earth-video DIR --distance D2` renders one distance's video.
+
+Numbers (`lobby --shoot` / the grid, 1920 x 1080; snow px: the crop's share of bright non-city pixels, sRGB L > 0.12 and
+R < 1.1 B, the moonlit clouds included, which no set changes; blue px: B > 1.4 R, L > 0.03, the moonlit sea):
+
+| crop | v12 | N1 | N2 | N3 |
+|---|---|---|---|---|
+| corner_nw snow px / L | 0.056 / 0.082 | 0.036 / 0.081 | 0.021 / 0.080 | 0.010 / 0.061 |
+| a_entrance snow px / L | 0.449 / 0.106 | 0.375 / 0.103 | 0.210 / 0.095 | 0.020 / 0.060 |
+| spawn_eye snow px / L / blue px | 0.210 / 0.118 / 0.458 | 0.203 / 0.117 / 0.458 | 0.174 / 0.115 / 0.458 | 0.115 / 0.098 / 0.467 |
+
+From the spawn N1 and N2 keep step 5a5's look (L and the blue sea's share unchanged); N3 darkens the land there too.
+In corner_nw the grey patches that stay even in N3 are the moonlit clouds (`cloud_energy` 0.05), not snow.
+
 ## Open problems
 
 - Step 5a3: the back light leaves a hot spot on the deck's middle in `c_back` (0.77; `back_energy` 0.5 is the
   knob), and the warm bounce reads copper-orange on the undersides in `a_entrance` (`bounce_energy` 0.22).
-- Step 5a5: corner_nw's Earth fixed by the night look (snow under the moon, the cities' halos); the snow still
-  shows faintly; the GPU cost of the halo's two texture reads is to be measured on a quiet machine.
+- Step 5a5: corner_nw's Earth fixed by the night look (snow under the moon, the cities' halos); the GPU cost of the
+  halo's two texture reads is to be measured on a quiet machine. Step 5a6: the snow down to N2; what grey stays in
+  corner_nw is the moonlit clouds (a further step would lower `cloud_energy` there).
 - (Step 4b, before the jaw nose) The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
   narrower than the 1.36 m capsule, so the walk crosses its foot. The ship's closed state (ramp up) is art #263's to make.
 - The spawns are 2.04 m from the engine pods (the rule's 2 m): from a spawn the pods fill the view (`spawn_eye`).
