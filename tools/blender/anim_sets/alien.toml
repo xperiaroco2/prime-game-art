@@ -40,11 +40,13 @@ finger_cap_deg = 30.0  # a looser hand than the idle's, so walking differs from 
 thumb_cap_deg = 22.0
 
 [clips.Jog_Fwd_Loop]
+leg_fit_bob = 0.84  # B1c: with --leg-fit (ik) her bob scaled about its mean: step 70.8 -> about 59.5 mm/frame (B1's 60.1)
 abduct_deg = 6.0
 finger_cap_deg = 50.0  # loose fists, not flat paddles
 thumb_cap_deg = 30.0
 
 [clips.Sprint_Fwd_Loop]
+leg_fit_bob = 0.88  # B1c: 64.3 -> about 56.6 mm/frame (B1's 57.4)
 abduct_deg = 6.0
 finger_cap_deg = 50.0
 thumb_cap_deg = 30.0

@@ -359,5 +359,41 @@ class NormalBandTest(unittest.TestCase):
         self.assertEqual(G.moved_above([], [], 1.0), 0.0)
 
 
+class BobScale(unittest.TestCase):
+    """B1c: leg_fit_bob scales a clip's Hips bob about its mean before the IK (alien_leg_fit.py, mode ik)."""
+    # the axolotl's Jog_Fwd_Loop Hips z (mm) with --leg-fit-mode ik (b1c/ik): its largest step 70.8 mm per frame
+    JOG = [699, 633, 587, 596, 656, 726, 780, 807, 807, 790, 758, 709, 645, 592, 589, 643, 714, 771, 803, 807, 795,
+           766, 721]
+
+    @staticmethod
+    def step(z):
+        return max(abs(b - a) for a, b in zip(z, z[1:]))
+
+    def test_the_step_scales_with_the_factor(self):
+        z = [v / 1000 for v in self.JOG]
+        out = [a + d for a, d in zip(z, G.bob_offsets(z, 0.85, wrap=True))]
+        self.assertAlmostEqual(self.step(out), 0.85 * self.step(z), places=9)
+
+    def test_the_toml_brings_the_jog_to_b1s_step(self):  # B1c's target: no worse than B1's 60.1 mm per frame
+        import alien_clip_edit as E
+        toml = Path(__file__).resolve().parents[1] / "blender" / "anim_sets" / "alien.toml"
+        f = E.settings(str(toml), "Jog_Fwd_Loop")["leg_fit_bob"]
+        z = [v / 1000 for v in self.JOG]
+        out = [a + d for a, d in zip(z, G.bob_offsets(z, f, wrap=True))]
+        self.assertLessEqual(self.step(out) * 1000, 60.1)
+        self.assertNotIn("leg_fit_bob", E.settings(str(toml), "Walk_Loop"))  # the Walk keeps the clip's own bob
+
+    def test_the_mean_and_the_seam_stay(self):
+        z = [0.70, 0.62, 0.66, 0.78, 0.70]
+        d = G.bob_offsets(z, 0.5, wrap=True)
+        self.assertAlmostEqual(d[0], d[-1], places=12)  # the loop's seam: the last frame is the first again
+        self.assertAlmostEqual(sum(d[:-1]), 0.0, places=12)  # the mean over one period
+
+    def test_one_moves_nothing_and_zero_is_refused(self):
+        self.assertEqual(G.bob_offsets([0.7, 0.8, 0.7], 1.0), [0.0, 0.0, 0.0])
+        with self.assertRaises(ValueError):
+            G.bob_offsets([0.7, 0.8], 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()

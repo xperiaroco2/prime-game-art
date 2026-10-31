@@ -21,6 +21,9 @@ land elsewhere on legs of other proportions (M1f's: thigh 0.255 m against 0.323,
    report gives per action the ankles' worst miss, the frames out of reach, the knee's largest per-frame change
    against the donor's (a pop), the frames whose knee turned to the other side of the hip-ankle line (a flip) and the
    feet's lowest point against the donor's.
+   B1c: with mode "ik" a clip's `leg_fit_bob` (alien.toml, per clip; 1.0 when absent) scales the Hips' bob about its
+   mean before the legs are solved (alien_char_geom.bob_offsets), so the feet stay on the donor's paths and the knees
+   take the change; the report gives the factor and the Hips' largest one-frame step before and after (mm).
 """
 from __future__ import annotations
 
@@ -196,10 +199,23 @@ def _ik(arm, donor, act, f0: int, f1: int, theirs: dict, scale: float) -> dict:
     return rep
 
 
-def fit(arm, donor_path: str, actions: list, mode: str = "lowest") -> dict:
+def _hips_z(obj, f0: int, f1: int) -> list[float]:
+    """Per frame the Hips head's world z (m) of obj playing its assigned action."""
+    scene, mw, out = bpy.context.scene, obj.matrix_world, []
+    for f in range(f0, f1 + 1):
+        scene.frame_set(f)
+        out.append((mw @ obj.pose.bones["Hips"].head).z)
+    return out
+
+
+def _step_mm(z: list[float]) -> float:
+    return round(max((abs(b - a) for a, b in zip(z, z[1:])), default=0.0) * 1000, 1)
+
+
+def fit(arm, donor_path: str, actions: list, mode: str = "lowest", bob: dict | None = None) -> dict:
     """Both steps on actions (bpy actions of arm, keyed for the donor's proportions); returns the report: leg_m,
     scale, donor, mode, keys (the scaled ones) and per action the foot match's Hips offset (min and max, cm) and
-    miss, or with mode "ik" the IK's measures (see the module)."""
+    miss, or with mode "ik" the IK's measures (see the module). bob: per clip name its leg_fit_bob (ik only)."""
     if mode not in MODES:
         raise ValueError(f"leg fit mode {mode!r}: not one of {MODES}")
     donor = _donor(donor_path)
@@ -220,7 +236,19 @@ def fit(arm, donor_path: str, actions: list, mode: str = "lowest") -> dict:
         f0, f1, low, legs = theirs[act.name]
         name = act.name.split("|", 1)[-1]
         if mode == "ik":
+            factor = float((bob or {}).get(name, 1.0))
+            bob_rep = None
+            if factor != 1.0:  # B1c: the Hips' bob scaled before the legs are solved
+                E._assign(arm, act)
+                z = _hips_z(arm, f0, f1)
+                dz = G.bob_offsets(z, factor, wrap=name.endswith("_Loop"))
+                E._shift_hips(act, f0, f1, [up_h * d for d in dz], bake=True)
+                E._assign(arm, act)
+                bob_rep = {"factor": factor, "hips_step_mm": [_step_mm(z), _step_mm(_hips_z(arm, f0, f1))]}
+                arm.animation_data.action = None
             m = _ik(arm, donor, act, f0, f1, legs, rep["scale"])
+            if bob_rep:
+                m["bob"] = bob_rep
             E._assign(arm, act)
             m["lowest_vs_donor_mm"] = round(max(abs(a - t) for a, t in zip(_lowest(arm, f0, f1), low)) * 1000, 1)
             match[name] = m
@@ -237,5 +265,6 @@ def fit(arm, donor_path: str, actions: list, mode: str = "lowest") -> dict:
     bpy.data.objects.remove(donor)
     bpy.data.armatures.remove(data)
     return {**rep, "donor": str(donor_path), "donor_world_identity": donor_identity,
-            "donor_matrix_world": donor_mw, "mode": mode, "actions": len(actions), "keys": keys,
+            "donor_matrix_world": donor_mw, "mode": mode, "bob": {k: v for k, v in (bob or {}).items() if v != 1.0},
+            "actions": len(actions), "keys": keys,
             "foot_match": match}

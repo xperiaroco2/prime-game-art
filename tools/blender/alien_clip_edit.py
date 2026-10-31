@@ -57,7 +57,7 @@ SEGMENTS = ("Proximal", "Intermediate", "Distal")
 THUMB = ("ThumbProximal", "ThumbDistal")
 KEYS = ("finger_cap_deg", "thumb_cap_deg", "abduct_deg", "swing_deg", "head_up_deg", "lean_deg", "cut_straight_deg",
         "cut_gap", "hips_up_cm", "knees_in_deg", "floor", "floor_reach", "floor_feet", "chest_up_deg", "repeat",
-        "sway_cm", "sway_counter_deg")
+        "sway_cm", "sway_counter_deg", "leg_fit_bob")
 FLOOR_FAIL_CM = -0.5  # A2: a clip still this far under the floor after its lift fails the build
 ANKLE_MISS_FAIL_CM = 0.5  # A3: a re-solved leg whose Foot lands this far from its kept place (re-evaluated) fails
 
