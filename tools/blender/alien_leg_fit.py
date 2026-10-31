@@ -299,6 +299,7 @@ def fit(arm, donor_path: str, actions: list, mode: str = "lowest", bob: dict | N
     bpy.data.objects.remove(donor)
     bpy.data.armatures.remove(data)
     return {**rep, "donor": str(donor_path), "donor_world_identity": donor_identity,
-            "donor_matrix_world": donor_mw, "mode": mode, "bob": {k: v for k, v in (bob or {}).items() if v != 1.0},
+            "donor_matrix_world": donor_mw, "mode": mode,
+            "bob": {k: v for k, v in (bob or {}).items() if v != 1.0} if mode == "ik" else {},  # B1i: ik only
             "actions": len(actions), "keys": keys,
             "foot_match": match}

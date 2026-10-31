@@ -30,5 +30,6 @@ for act in [a for a in bpy.data.actions if a.name.startswith("CharacterArmature|
             ev.to_mesh_clear()
         rows.append(r)
     res["clips"][clip] = rows
-json.dump(res, open(out, "w"), indent=0)
+with open(out, "w", encoding="utf-8") as f:  # B1i (the review's minor 12)
+    json.dump(res, f, indent=0)
 print("MEASURE wrote", out, len(res["clips"]))

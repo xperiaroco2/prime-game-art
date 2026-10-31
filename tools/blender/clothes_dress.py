@@ -258,8 +258,10 @@ def main() -> int:
     ap.add_argument("--toes-cap", default="alien_loco",
                     help="with the sneakers, the anim set whose [toes_cap] caps every clip's Toes bend ('': none)")
     ap.add_argument("--sole-floor", default="alien",
-                    help="with the sneakers, the clip edits (anim_sets/<name>.toml) whose floor-lifted clips are "
-                         "lifted again with the soles counted, each frame by its own need (B1, the Walk hop; '': none)")
+                    help="with the sneakers, the clip edits (anim_sets/<name>.toml) whose ground clips (their floor "
+                         "true, and every clip they do not list) are put on the floor again with the soles counted, "
+                         "at the foot: each foot by its own need, its leg solved again, the Hips untouched; a no-flight "
+                         "clip's lower foot planted; the crossing shoes moved apart (B1-B1i; '': none)")
     ap.add_argument("--shell", action="store_true",
                     help="the hybrid route (clothes_top): a shell top of the body, the Meshy garment cut to the "
                          "trousers, bib and back panel, new straps")
