@@ -409,6 +409,53 @@ class AlienProfileTest(unittest.TestCase):
             alien(alien_dump(), profile="dragon")
 
 
+class AlienHandMorphTest(unittest.TestCase):
+    """The run fist (art #196 H1j): one morph "fist" on the body, its weight 1 in the run clips and 0 elsewhere."""
+
+    CON = {**A_CONTRACT, "kinds": {**A_CONTRACT["kinds"], "alien": {**A_CONTRACT["kinds"].get("alien", {}),
+                                                                    "hand_morph": "fist",
+                                                                    "hand_morph_on": ["Jog_*", "Sprint_*"]}}}
+
+    def dump(self, run=1.0, other=0.0, shapes=("fist",)) -> dict:
+        d = alien_dump()
+        d["meshes"][0]["blend_shapes"] = list(shapes)
+        anims = d["players"][0]["animations"]
+        for n in list(anims):
+            w = run if n.split("|")[-1].startswith(("Jog_", "Sprint_")) else other
+            anims[n] = {**anims[n], "blend_shapes": {"Skeleton3D/x_char:fist": {"keys": 2, "min": w, "max": w,
+                                                                                "played": [w, w]}}}
+        return d
+
+    def check(self, d: dict) -> dict[str, dict]:
+        e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
+             "rest_heads_m": {}, "height_m": None, "animations": {}}
+        return {c["check"]: c for c in _godot.evaluate(d, e, self.CON, [], textured=True, profile="alien")}
+
+    def test_keyed_in_the_run_clips_passes(self) -> None:
+        got = self.check(self.dump())
+        self.assertEqual(got["hand_morph"]["status"], "pass", got["hand_morph"])
+        self.assertEqual(got["hand_morph_keyed"]["status"], "pass", got["hand_morph_keyed"])
+        self.assertIn("Jog_Fwd", got["hand_morph_keyed"]["detail"])
+        self.assertIn("Sprint_Fwd", got["hand_morph_keyed"]["detail"])
+
+    def test_a_walk_with_the_fist_or_a_run_without_it_fails(self) -> None:
+        self.assertEqual(self.check(self.dump(other=1.0))["hand_morph_keyed"]["status"], "fail")
+        self.assertEqual(self.check(self.dump(run=0.0))["hand_morph_keyed"]["status"], "fail")
+        d = self.dump()
+        d["players"][0]["animations"]["CharacterArmature|Jog_Fwd"]["blend_shapes"]["Skeleton3D/x_char:fist"][
+            "played"] = [0.0, 0.0]  # keyed but not played
+        self.assertEqual(self.check(d)["hand_morph_keyed"]["status"], "fail")
+        d = self.dump()
+        d["players"][0]["animations"]["CharacterArmature|Walk"]["blend_shapes"] = {}  # a clip without the track
+        self.assertEqual(self.check(d)["hand_morph_keyed"]["status"], "fail")
+
+    def test_another_morph_fails_and_none_warns(self) -> None:
+        self.assertEqual(self.check(self.dump(shapes=("fist", "smile")))["hand_morph"]["status"], "fail")
+        got = self.check(self.dump(shapes=()))
+        self.assertEqual(got["hand_morph"]["status"], "warn", got["hand_morph"])
+        self.assertNotIn("hand_morph_keyed", got)
+
+
 class LoopModesTest(unittest.TestCase):
     def test_cycles_that_play_once_warn_and_open_cycles_are_named(self) -> None:
         d = dump()

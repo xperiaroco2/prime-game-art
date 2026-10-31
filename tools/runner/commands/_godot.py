@@ -4,6 +4,7 @@ running the inspection script, and the assertions on its description (docs/godot
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import os
 import re
@@ -448,6 +449,8 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
               f"all {len(held)} held pose clips (PoseLegs_/PoseArms_) keep every bone still" if not drift else
               f"held pose clips that move: {', '.join(drift)}")
 
+    if profile == "alien":
+        _alien_hand_morph(c, dump, anims, contract["kinds"].get("alien", {}))
     _loops(c, anims, expect.get("seams", {}))
     if expect.get("loop_suffix"):  # animations named as loops: Godot must import them looping (art #33)
         once = [n for n in expect["loop_suffix"] if n in anims and not anims[n].get("loop_mode", 0)]
@@ -634,6 +637,41 @@ def _below(top: str, parent_of: dict[str, str]) -> set[str]:
             seen.add(b)
             b = parent_of.get(b, "")
     return out
+
+
+def _alien_hand_morph(c: Checks, dump: dict[str, Any], anims: dict[str, Any], rules: dict[str, Any]) -> None:
+    """The run fist (art #196 H1j, [kinds.alien] hand_morph): the body may carry one morph, `hand_morph`, and nothing
+    else. With it, every clip matching `hand_morph_on` (fnmatch on the Godot name) plays its weight track at 1 and
+    every other clip at 0 (Godot's imported track, its keys and the weight the mesh plays at a quarter and half the
+    clip); without it, a warning (an alien GLB from before H1j)."""
+    morph, on = rules.get("hand_morph", ""), rules.get("hand_morph_on", [])
+    if not morph:
+        return
+    shaped = {m["name"]: m.get("blend_shapes", []) for m in dump["meshes"] if m.get("blend_shapes")}
+    if not shaped:
+        c.add("hand_morph", False, f"no mesh carries the hand morph {morph!r} (the run fist, art #196 H1j)", "warn")
+        return
+    bad = {n: s for n, s in shaped.items() if s != [morph]}
+    c.add("hand_morph", len(shaped) == 1 and not bad,
+          f"{next(iter(shaped))} carries the one hand morph {morph!r}" if len(shaped) == 1 and not bad else
+          f"only one mesh may carry morphs, exactly [{morph!r}]: {shaped}")
+    wrong, runs = [], []
+    for n, a in sorted(anims.items()):
+        game = n.split("|")[-1].removesuffix("_Loop")
+        want = 1.0 if any(fnmatch.fnmatchcase(game, p) for p in on) else 0.0
+        tracks = {p: t for p, t in a.get("blend_shapes", {}).items() if p.endswith(f":{morph}")}
+        if len(tracks) != 1:
+            wrong.append(f"{n}: {len(tracks)} {morph} tracks")
+            continue
+        t = next(iter(tracks.values()))
+        got = [t["min"], t["max"], *t["played"]]
+        if any(abs(x - want) > 1e-3 for x in got) or len(t["played"]) != 2:
+            wrong.append(f"{n}: keys {t['min']}..{t['max']}, played {t['played']} (want {want:g})")
+        elif want:
+            runs.append(n)
+    c.add("hand_morph_keyed", not wrong and bool(runs),
+          f"{len(runs)} clips play {morph} at 1 ({', '.join(runs)}), the other {len(anims) - len(runs)} at 0"
+          if not wrong and runs else "; ".join(wrong[:8]) or f"no clip matching {on} plays {morph}")
 
 
 def _alien_extra_bones(c: Checks, skeleton: dict[str, Any], renamed: dict[str, str],

@@ -1593,6 +1593,25 @@ step from bone to bone over +-`joint_blend` of the radius at each joint. The bum
 0.3 fails the build); `alien_hand_mesh.py apply` takes the moves and the weights (no vertex added, nothing outside the
 hand moved). `<out>/profile_<side>.png` plots each digit's radius along it per angle sector, before | after.
 
+**The run fist as a morph (H1j).** The engineer chose option C (2026-10-31): the run's loose grip pressed into one
+fist by a shape, not by bones alone. `alien_hands.py --apply` runs `alien_fist_shape.add` after the grips when the
+hands file has a `[fist]` table: in the `grip` pose (`loose`) each digit gets a chain of round cones fitted to its own
+tube (stations at rest: the proximal's 15 %, each joint, the tip dome's centre on the distal's line and taper; the
+thumb from its proximal on, its metacarpal pad only pushed out), a plain union along a chain (no knuckle bulge) and a
+smooth union between digits (`k_mm`, the thumb `k_thumb_mm`). Every finger vertex goes onto that surface (pushed out,
+or pulled in from up to `pull_mm` outside), faded into the palm by its finger weight; buried deeper than `hide_mm`, it
+stays under it; `relax` rounds even it out along the surface. The posed moves go back to rest by the inverse skinning:
+the body's shape key `fist` (`alien_fist_math.py` the maths, `test_alien_fist_math.py`). The clips' weights come from
+the grip plan (`weight_plan`: 1 where the grip is `loose`, eased like the grip keys), stored on the body as
+`fist_weights`; `alien_loco._export` exports the shape key as the GLB's one morph target (`export_morph` on,
+`export_morph_animation` off: the exporter's shape-key actions merge across clips) and `alien_fist_math.key_weights`
+writes a `weights` channel into every animation, sampled on its own frames: the 24 Jog, Sprint and Strafe clips at 1,
+the other 13 (Walk, Idle, Crouch, Jump, Talk) at 0. `godot-check --profile alien` checks it (`docs/contract.md`).
+H1j's first shape (k 14 / 10 mm) is exact on its surface (0.001 mm) but does not yet read as one mass in Godot's
+Jog close-ups: the fingers stay three rounded tubes with gaps, and the index's curl still shows a hook from the front
+(the webs bridge only gaps narrower than about k); H1h's prototype, which pushed and smoothed every inside vertex,
+closed more. Tuning `k_mm` (or a palm in the union) is the next step.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
