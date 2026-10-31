@@ -333,6 +333,10 @@ before.
     (Jog_Bwd__s4b), Crouch_Idle 56.4, Crouch_Fwd 40.5, Jog_Fwd and the strafes 39.7; after the cap 32.0. The arms
     and every other bone are untouched; `dress.json`'s `toes_cap` lists each clip's largest bend before and after.
     The body's toes inside the shoe stay cut (step 8).
+    The soles count on the floor (B1, art #196): after the cap, `--sole-floor alien` (the default; `''`: none) lifts
+    every clip that `anim_sets/alien.toml` floor-lifts again with the body and the shoes measured, each frame by
+    its own need (`alien_clip_edit.sole_floor`): the sole reached 5 to 6.5 mm under the floor at heel strike and
+    toe-off. `dress.json`'s `sole_floor` holds each clip's report (`lowest_before_mm`, `lowest_after_mm`).
 19. **The report.** `dress.json`'s `sneakers`: the triangles, the foot's measures, the rim's heights, the slot and the
     foot's clearance (each foot vertex's signed distance to the shoe along its normal: those over the rim, the
     ankle, count as outside).

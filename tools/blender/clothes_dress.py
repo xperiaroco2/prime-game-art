@@ -257,6 +257,9 @@ def main() -> int:
                          "on with --shell (the dungarees)")
     ap.add_argument("--toes-cap", default="alien_loco",
                     help="with the sneakers, the anim set whose [toes_cap] caps every clip's Toes bend ('': none)")
+    ap.add_argument("--sole-floor", default="alien",
+                    help="with the sneakers, the clip edits (anim_sets/<name>.toml) whose floor-lifted clips are "
+                         "lifted again with the soles counted, each frame by its own need (B1, the Walk hop; '': none)")
     ap.add_argument("--shell", action="store_true",
                     help="the hybrid route (clothes_top): a shell top of the body, the Meshy garment cut to the "
                          "trousers, bib and back panel, new straps")
@@ -606,6 +609,11 @@ def main() -> int:
                         max(v[1] for v in ba.values()))
                 else:  # no clip had a toe bend to cap: report it, never crash on max() over nothing
                     say("toes cap", cap, "no clip capped")
+        if args.sole_floor:  # B1: the soles reach 5 to 6.5 mm under the bare foot at heel strike and toe-off
+            import alien_clip_edit as CE
+            rep["sole_floor"] = CE.sole_floor(arm, [char, new], args.sole_floor)
+            sf = rep["sole_floor"]
+            say("sole floor", {k: (v["lowest_before_cm"], v["max_lift_cm"], v["floated_frames"]) for k, v in sf.items()})
     garment = next((o for o in cloth if o.name == "garment"), None)
     if args.stray > 0 and garment is not None:  # E1b: the fit's stray vertices (spikes out of the hips)
         btree = BVHTree.FromObject(char, bpy.context.evaluated_depsgraph_get())
