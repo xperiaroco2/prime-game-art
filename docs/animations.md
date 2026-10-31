@@ -1530,6 +1530,22 @@ the new hand mesh.
 body and break every index-based step after it (the female variants, the clothes' fit). The remade hands have to be
 moved onto S4b's own hand vertices (the same topology), not rebuilt.
 
+**The hand and wrist rebuilt in place (H1b).** The spec is `tools/blender/body_dims/hand_dims.toml` (every length a
+share of the side's Hand bone, so one table serves A and B). `alien_hand_mesh.py dump` (headless Blender) writes the
+hand region (the LowerArm, the Hand and the finger chains' vertices, weights, edges, the bones; `--bend 30` the region
+with each Hand bent 30 degrees each way); `alien_hand_run.py build` (plain Python, `alien_hand_geom.py`) computes the
+moves and transfers them to dressed characters by rest position; `alien_hand_mesh.py apply` moves the vertices and
+refuses a changed topology. The wrist band (from the forearm's last clean ring, -0.55, to the palm, +0.62) is relaxed
+by Taubin rounds with its ends held, then scaled across and through about a smooth centre line so its sections follow
+the forearm's own, 0.95 x 0.86 of it at the joint, the palm's own (monotone eases: no pinched neck, no lump); each
+finger's radius about its chain is mapped to its root's (the mean of both hands) tapering 12 % (the thumb 15 %) to a
+dome over the tip, so the knuckle bulges and the thin ends go. Sections are cut by slicing edges (`slice_points`);
+`alien_hand_run.py table` gives the joint's width, thickness, area and deepest fold (the crease, against the hull) at
+rest and bent. The wrist's vertex rows: moving keeps the vertex count, so the band's largest gap along the arm stays
+about 5 mm (6.3 before); more rows need new vertices, which breaks the index-based steps after the body (f1, f2, the
+clothes' fits): a later choice. The relaxed grip curls more from the index to the outer finger with the thumb alongside
+the index; the loose fist curls more toward the outer finger with the thumb laid over the index.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
