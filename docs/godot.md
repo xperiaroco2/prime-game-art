@@ -16,7 +16,11 @@ tools/run.py frames <glb> [--clips A,B] [--compare all|A,B|''] [--video A,B] [--
                                                                   --closeups: targeted orthographic close-ups, two
                                                                   per row, sheets/closeups.png (y up, facing +z);
                                                                   ~Bone: the rest point carried into the pose by
-                                                                  that bone (the worst frame of a clip, C1j)
+                                                                  that bone (the worst frame of a clip, C1j);
+                                                                  --video-camera 'label@x,y,z[~Bone]/size/yaw':
+                                                                  the --video clips from that close-up camera, its
+                                                                  ~Bone target followed each frame (Gate 2's front
+                                                                  torso Walk and Jog: 'torso@0,1.06,0~Chest/0.55/0')
 tools/run.py showroom [<glb>] [--variants a,b] [--clip Idle] [--hdri HDR] [--beside PNG [--beside-rects ...]]
                   [--out DIR] | --write-presets            look variants, face and body sheets, GPU ms (off-screen)
 ```
