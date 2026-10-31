@@ -37,8 +37,12 @@ MATERIALS = {
     # polish n1: the nozzles' inner glow, a hot teal core fading to a dark rim (emissive: it glows with no light)
     "glow_pod_hot": {"base": (0.4, 1.0, 0.95, 1.0), "metallic": 0.0, "roughness": 0.35, "emission": (0.45, 1.0, 0.95),
                      "strength": 5.0},
+    "glow_pod_warm": {"base": (0.15, 0.8, 0.8, 1.0), "metallic": 0.0, "roughness": 0.4, "emission": (0.25, 0.95, 0.92),
+                      "strength": 3.5},
     "glow_pod_mid": {"base": (0.05, 0.5, 0.55, 1.0), "metallic": 0.0, "roughness": 0.4, "emission": (0.1, 0.8, 0.85),
                      "strength": 2.0},
+    "glow_pod_dim": {"base": (0.03, 0.32, 0.38, 1.0), "metallic": 0.1, "roughness": 0.42,
+                     "emission": (0.05, 0.6, 0.68), "strength": 1.4},
     "glow_pod_deep": {"base": (0.02, 0.18, 0.22, 1.0), "metallic": 0.2, "roughness": 0.45,
                       "emission": (0.03, 0.45, 0.55), "strength": 0.8},
     # light layer: the navigation lamps (port red, starboard green, tail white) and the warm landing lights' lenses

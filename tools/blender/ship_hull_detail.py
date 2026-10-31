@@ -266,7 +266,7 @@ def _stringer(r, a, y0, y1, w=0.07, top=1.028):
                    (t[0] * w / 2, 0, t[2] * w / 2))
 
 
-def _vane(a, ri, ro, y0, yi, yo, th=0.024, twist=22.0):
+def _vane(a, ri, ro, y0, yi, yo, th=0.03, twist=35.0):
     """A stator vane at angle a (deg): a thin twisted plate from the hub (ri, y0..yi) to the wall (ro, y0..yo)."""
     u = (math.cos(math.radians(a)), 0.0, math.sin(math.radians(a)))
     t = (-u[2], 0.0, u[0])
@@ -347,14 +347,16 @@ def nozzle_pod(args: dict, layout: dict) -> list:
                     _ring([(0.719 * r, y1 - 0.012), (0.712 * r, y1), (0.69 * r, y1)], _back),
                     _ring([(0.66 * r, y2), (0.64 * r, y2), (0.633 * r, y2 - 0.012)], _back),
                     _ring([(0.607 * r, y2 - 0.012), (0.6 * r, y2), (0.58 * r, y2)], _back))
-    hub = H._lathe_y([(0.22 * r, fl - 0.12), (0.215 * r, fl + 0.02), (0.19 * r, fl + 0.1), (0.15 * r, fl + 0.17),
-                      (0.1 * r, fl + 0.215), (0.0, fl + 0.215)], POD_SEGS)
-    vanes = [_vane(360.0 * k / 12 + 15.0, 0.2 * r, 0.565 * r, fl - 0.08, fl + 0.13, fl + 0.05) for k in range(12)]
+    # the hub a pointed spinner (n1 b: a round dome with a big lit tip read as an eye), its small hot tip: pod_ring
+    hub = H._lathe_y([(0.22 * r, fl - 0.12), (0.215 * r, fl + 0.0), (0.18 * r, fl + 0.13), (0.12 * r, fl + 0.24),
+                      (0.05 * r, fl + 0.31), (0.0, fl + 0.31)], POD_SEGS)
+    # the vanes wide blades widening to the wall (n1 b: thin ones read as a starburst's spikes)
+    vanes = [_vane(360.0 * k / 12 + 15.0, 0.2 * r, 0.565 * r, fl - 0.08, fl + 0.12, fl + 0.27) for k in range(12)]
     smooth = {"pod_mount": 40.0, "pod_collar": 40.0, "pod_housing": 40.0, "pod_bell": 40.0,
               "pod_throat": THROAT_SMOOTH_DEG, "pod_hub": 40.0}
     parts = [_smooth(L.part("pod_shell", *shell, "hull_silver")), L.part("pod_mount", *mount, "hull_silver"),
-             L.part("pod_collar", *collar, "hull_dark"), L.part("pod_ribs", *L.merge(*ribs), "ext_frame"),
-             L.part("pod_housing", *housing, "hull_dark"), L.part("pod_bell", *bell, "ext_frame"),
+             L.part("pod_collar", *collar, "hull_dark"), L.part("pod_ribs", *L.merge(*ribs), "ext_silver_c"),
+             L.part("pod_housing", *housing, "ext_silver_c"), L.part("pod_bell", *bell, "ext_frame"),
              L.part("pod_throat", *throat, "ext_nozzle_inner", solid=False),
              L.part("pod_steps", *steps, "ext_frame", solid=False),
              L.part("pod_hub", *hub, "ext_frame"), L.part("pod_vanes", *L.merge(*vanes), "ext_frame")]
@@ -377,8 +379,8 @@ def nozzle_pod(args: dict, layout: dict) -> list:
 def pod_ring(args: dict, layout: dict) -> list:
     """A pod's lights (local frame as nozzle_pod): n1's continuous light rings inset in the metal (glow_pod): the
     strip in the bell housing's groove, the strip between two trim lips on the barrel, the ring in the bell's lip, the
-    rings in the throat's two steps; the throat's glow (glow_pod_deep/_mid/_hot, a hot teal core fading to a dark
-    rim): the deep wall, the floor's three bands round the hub and the hub's tip."""
+    ring in the throat's first step; the throat's glow (glow_pod_deep/_dim/_mid/_warm/_hot, a hot teal core fading
+    to a dark rim): the deep wall, the floor's four bands round the hub and the spinner's tip."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
     lp, y1, y2, fl = ln + LIP, ln + 0.05, ln - 0.2, ln - 0.5
 
@@ -391,19 +393,20 @@ def pod_ring(args: dict, layout: dict) -> list:
                    _loop([(0.99 * r, ln - 0.825), (1.017 * r, ln - 0.82), (1.017 * r, ln - 0.795),
                           (0.99 * r, ln - 0.79)]))
     rings = L.merge(_ring([(0.862 * r, lp - 0.016), (0.838 * r, lp - 0.016)], _back),
-                    _ring([(0.742 * r, y1 - 0.01), (0.718 * r, y1 - 0.01)], _back),
-                    _ring([(0.634 * r, y2 - 0.01), (0.606 * r, y2 - 0.01)], _back))
+                    _ring([(0.742 * r, y1 - 0.01), (0.718 * r, y1 - 0.01)], _back))   # n1 b: not the 2nd step (busy)
     deep = L.merge(_ring([(0.58 * r, y2), (0.555 * r, fl + 0.02)], _radial),
-                   _ring([(0.555 * r, fl + 0.02), (0.44 * r, fl - 0.02)], _back))
-    mid = _ring([(0.44 * r, fl - 0.02), (0.33 * r, fl - 0.05)], _back)
-    hot = _ring([(0.33 * r, fl - 0.05), (0.215 * r, fl - 0.08)], _back)
-    tip = H._lathe_y([(0.1 * r, fl + 0.218), (0.06 * r, fl + 0.24), (0.0, fl + 0.25)], POD_SEGS, caps=False)
+                   _ring([(0.555 * r, fl + 0.02), (0.47 * r, fl - 0.01)], _back))
+    fb = [(0.47, -0.01), (0.4, -0.03), (0.33, -0.05), (0.27, -0.065), (0.215, -0.08)]   # dim, mid, warm, hot
+    floor = [_ring([(a * r, fl + ya), (b * r, fl + yb)], _back) for (a, ya), (b, yb) in zip(fb, fb[1:])]
+    tip = H._lathe_y([(0.05 * r, fl + 0.312), (0.025 * r, fl + 0.33), (0.0, fl + 0.336)], POD_SEGS, caps=False)
     tip = (tip[0], L.orient(tip[0], tip[1], lambda q: (0.0, q[1] - 0.5, 0.0)))
     return [L.part("pod_band", *band, "glow_pod", solid=False), L.part("pod_trim", *trim, "ext_frame"),
             L.part("pod_rings", *rings, "glow_pod", solid=False),
             L.part("pod_glow_deep", *deep, "glow_pod_deep", solid=False),
-            L.part("pod_glow_mid", *mid, "glow_pod_mid", solid=False),
-            L.part("pod_glow_hot", *L.merge(hot, tip), "glow_pod_hot", solid=False)]
+            L.part("pod_glow_dim", *floor[0], "glow_pod_dim", solid=False),
+            L.part("pod_glow_mid", *floor[1], "glow_pod_mid", solid=False),
+            L.part("pod_glow_warm", *floor[2], "glow_pod_warm", solid=False),
+            L.part("pod_glow_hot", *L.merge(floor[3], tip), "glow_pod_hot", solid=False)]
 
 
 def ground_lamp(args: dict, layout: dict) -> list:
