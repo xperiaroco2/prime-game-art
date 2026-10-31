@@ -124,6 +124,15 @@ class TieSide(unittest.TestCase):  # M2i: the side of a point whose nearest clot
         self.assertEqual(F.tie_side(u, d, [b, a]), d)
         self.assertEqual(F.tie_side(tuple(-x for x in u), d, [b, a]), -d)
 
+    def test_under_a_hem_lip_reads_inside(self):  # M2j: the proof's measure under a turn-up's lip
+        # the leg's inner wall (normal +x, out) meets the lip's bottom (normal -z) at the edge x = 0.05, z = 0; skin
+        # inside the leg and just under the lip: the lip's face alone reads it 5 mm outside (a poke), both read inside
+        u = (-0.010, 0.0, -0.005)
+        d = math.sqrt(sum(x * x for x in u))
+        self.assertGreater(F.dot(u, (0, 0, -1)), 0)
+        self.assertEqual(F.tie_side(u, d, [(1, 0, 0), (0, 0, -1)]), -d)
+        self.assertEqual(F.tie_side(u, d, [(0, 0, -1), (1, 0, 0)]), -d)
+
     def test_pseudo_normal_weights(self):
         self.assertEqual(F.pseudo_normal([(1, 0, 0), (0, 1, 0)]), (1, 1, 0))
         self.assertEqual(F.pseudo_normal([(1, 0, 0), (0, 1, 0)], [2.0, 1.0]), (2, 1, 0))

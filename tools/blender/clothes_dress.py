@@ -48,13 +48,13 @@ import bmesh
 import bpy
 import numpy as np
 from mathutils import Vector
-from mathutils import geometry as mgeo
 from mathutils.bvhtree import BVHTree
 from mathutils.interpolate import poly_3d_calc
 from mathutils.kdtree import KDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
+from clothes_side import ClothSide  # noqa: E402,F401
 import clothes_shell as H  # noqa: E402
 import clothes_texture as T  # noqa: E402
 
@@ -94,73 +94,6 @@ def cloth_tree(objs) -> BVHTree:
         polys += [[i + off for i in p.vertices] for p in o.data.polygons]
         off += len(o.data.vertices)
     return BVHTree.FromPolygons(co, polys)
-
-
-class ClothSide:
-    """M2i: the cloth's nearest point and a signed distance that does not hang on the face a BVH query returns. On
-    an edge or vertex several faces tie; the side comes from all of them (clothes_fit_geom.tie_side). M2h's d57 and
-    d59 changed the garment far from the crotch (the crumbs, the cuffs), the tree's face order moved, the query
-    returned the other face of the seat's seam, and the crotch's kept skin and its pokes changed (9 to 14 mm)."""
-
-    def __init__(self, objs, tol: float = 1e-6):
-        self.co, self.polys = [], []
-        off = 0
-        for o in objs:
-            self.co += [o.matrix_world @ v.co for v in o.data.vertices]
-            self.polys += [[i + off for i in p.vertices] for p in o.data.polygons]
-            off += len(o.data.vertices)
-        self.tree = BVHTree.FromPolygons([tuple(c) for c in self.co], self.polys)
-        self.vf: list[list[int]] = [[] for _ in self.co]
-        for fi, p in enumerate(self.polys):
-            for k in p:
-                self.vf[k].append(fi)
-        self.tol, self.flips = tol, 0
-        self._n: dict[int, Vector] = {}
-
-    def normal(self, fi: int) -> Vector:
-        if fi not in self._n:
-            self._n[fi] = mgeo.normal([self.co[k] for k in self.polys[fi]])
-        return self._n[fi]
-
-    def face_dist(self, p: Vector, fi: int) -> float:
-        """The distance from p to polygon fi (a fan of triangles)."""
-        ids = self.polys[fi]
-        best = math.inf
-        for j in range(1, len(ids) - 1):
-            q = mgeo.closest_point_on_tri(p, self.co[ids[0]], self.co[ids[j]], self.co[ids[j + 1]])
-            best = min(best, (p - q).length)
-        return best
-
-    def angle_at(self, fi: int, q: Vector) -> float:
-        """The corner angle of polygon fi at its vertex nearest q (the pseudo-normal's weight at a vertex tie)."""
-        ids = self.polys[fi]
-        k = min(range(len(ids)), key=lambda j: (self.co[ids[j]] - q).length)
-        a, b, c = self.co[ids[k - 1]], self.co[ids[k]], self.co[ids[(k + 1) % len(ids)]]
-        e1, e2 = a - b, c - b
-        return e1.angle(e2, 0.0) if e1.length > 0 and e2.length > 0 else 0.0
-
-    def find(self, p: Vector, dist: float):
-        """(loc, normal, face, signed distance +out) of the nearest cloth within dist, or four Nones. On a tie the
-        normal is the tied faces' pseudo-normal (the skin pull moves along it: one face's normal at the seat's seam
-        moved the crotch's skin sideways along the seam, still within 1 mm of the cloth)."""
-        loc, nor, fi, d = self.tree.find_nearest(p, dist)
-        if loc is None:
-            return None, None, None, None
-        u = p - loc
-        plain = u.dot(nor)
-        cand = {f for k in self.polys[fi] for f in self.vf[k]}
-        tied = [f for f in cand if self.face_dist(p, f) <= d + self.tol]
-        if len(tied) < 2:
-            return loc, nor, fi, plain
-        near_v = min((self.co[k] for f in tied for k in self.polys[f]), key=lambda c: (c - loc).length)
-        on_vertex = (near_v - loc).length <= self.tol
-        ws = [self.angle_at(f, loc) if on_vertex else 1.0 for f in tied]
-        s = F.tie_side(tuple(u), d, [tuple(self.normal(f)) for f in tied], ws)
-        pn = Vector(F.pseudo_normal([tuple(self.normal(f)) for f in tied], ws))
-        if s == 0.0 or pn.length < 1e-9:
-            return loc, nor, fi, plain
-        self.flips += (s > 0) != (plain > 0)
-        return loc, pn.normalized(), fi, s
 
 
 def rays(n: Vector) -> list[Vector]:
@@ -520,6 +453,12 @@ def main() -> int:
     ap.add_argument("--back-join", default="",
                     help="M2e: the straps' back ends glued onto the back panel: blend,gap (m; clothes_top.back_join; "
                          "empty: off)")
+    ap.add_argument("--ankle-top", type=float, default=-1.0,
+                    help="M2j, with the shoes' collar cut: the kept ankle's top cut on this level plane (m; inside the "
+                         "built cuff, under its top) and the leg's skin over it near the shoe's axis removed; -1: off")
+    ap.add_argument("--cuff-ring", default="",
+                    help="M2j: z_top,height,thick,clear,stations[,lap[,most]] (m): each turn-up a built rolled band in "
+                         "place of Meshy's, the leg cut on one plane lap under z_top (clothes_top.cuff_ring; '': off)")
     ap.add_argument("--light-denim", default="0.60,0.70,0.82",
                     help="M2f: the denim's reverse side (sRGB), for a --plain box's 7th value (its mix toward it): "
                          "the turn-ups' light cuff")
@@ -753,6 +692,8 @@ def main() -> int:
         if args.band_follow is not None:  # M2e: the top's rows under the built waistband move with it
             rep["band_follow"] = TOP.follow_panels(top, garment, args, zmax=args.waist + args.band_follow)
             say("band follow", rep["band_follow"])
+        if args.cuff_ring:  # M2j: the turn-ups built (a rolled band per leg on a clean plane cut), before the tint
+            rep["cuff_ring"] = TOP.cuff_ring(garment, char, shoe_ob, args)
         if args.plain:  # E1h: plain denim texels over the areas whose own texels are wrong
             rep["plain_denim"] = TOP.plain_denim(garment, args)
         cloth.append(top)
@@ -1016,6 +957,31 @@ def main() -> int:
         bm.to_mesh(me)
         bm.free()
         me.update()
+        if args.ankle_top > 0:  # M2j: the kept ankle's top on one level plane inside the built cuff (its per-face cut
+            # left a jagged teal edge in the turn-up's opening; --collar-keep only moved it), everything over it near
+            # the leg's axis goes, up to 12 cm over it (the cloth over it hides that skin)
+            bm = bmesh.new()
+            bm.from_mesh(me)
+            cut_top = 0
+            for sgn, c in collar.items():
+                zt = args.ankle_top
+                vs = [v for v in bm.verts if (mw @ v.co).x * sgn > 0 and zt - 0.03 < (mw @ v.co).z < zt + 0.12
+                      and ((mw @ v.co).xy - c["ctr"].xy).length < 0.09]
+                vset = set(vs)
+                fs = [f for f in {f for v in vs for f in v.link_faces} if all(x in vset for x in f.verts)]
+                es = list({e for f in fs for e in f.edges})
+                vs = list({x for f in fs for x in f.verts})
+                n0 = len(bm.faces)
+                bmesh.ops.bisect_plane(bm, geom=vs + es + fs, dist=1e-6, plane_co=mw.inverted() @ Vector((0, 0, zt)),
+                                       plane_no=(mw.to_3x3().transposed() @ Vector((0, 0, 1))).normalized(),
+                                       clear_outer=True)
+                cut_top += n0 - len(bm.faces)
+            bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+            bm.to_mesh(me)
+            bm.free()
+            me.update()
+            rep["ankle_top"] = {"z": args.ankle_top, "faces_cut": cut_top}
+            say("collar ankle top", rep["ankle_top"])
         # E1e: the skin between the plane and the rim (easing out collar_band over it) is shrunk toward the leg's
         # own axis (the LowerLeg bone's line, extended down) until it lies collar_clear inside the shoe's inner
         # wall: the wall is found by a ray from the axis out toward the vertex at its own height (over the rim: at
