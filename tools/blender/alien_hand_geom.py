@@ -326,3 +326,26 @@ def row_gaps(ss, lo: float, hi: float) -> float:
     xs = sorted(s for s in ss if lo <= s <= hi)
     xs = [lo] + xs + [hi]
     return round(max(b - a for a, b in zip(xs, xs[1:])) * 1000, 1)
+
+
+def grid_index(pos: dict, cell: float) -> dict:
+    """The points {id: p} in a hash grid of the given cell (for nearest-point lookups)."""
+    out = {}
+    for i, p in pos.items():
+        out.setdefault(tuple(int(c // cell) for c in p), []).append((i, p))
+    return {"cell": cell, "cells": out}
+
+
+def grid_nearest(grid: dict, p, tol: float):
+    """(id, distance) of the nearest indexed point within tol of p; (None, nearest distance within 3 cells or None)."""
+    c = grid["cell"]
+    k = tuple(int(x // c) for x in p)
+    best, bd = None, None
+    for dx in (-3, -2, -1, 0, 1, 2, 3):
+        for dy in (-3, -2, -1, 0, 1, 2, 3):
+            for dz in (-3, -2, -1, 0, 1, 2, 3):
+                for i, q in grid["cells"].get((k[0] + dx, k[1] + dy, k[2] + dz), ()):
+                    d = sum((a - b) ** 2 for a, b in zip(p, q)) ** 0.5
+                    if bd is None or d < bd:
+                        best, bd = i, d
+    return (best, bd) if bd is not None and bd <= tol else (None, bd)

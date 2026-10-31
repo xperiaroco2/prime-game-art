@@ -9,8 +9,9 @@ alien_hand_mesh.py the Blender dump and apply, body_dims/hand_dims.toml the spec
   body's moved vertices found in the character's skin objects by their rest position, within 0.1 mm), the report
   `<out>/build.json` (per side the band's extents along the arm before and after, the largest row gap, each finger's
   root and end diameter); exit 1 when a spec check fails.
-- `table`: per side and bend the wrist joint's section (width, thickness, hull area, deepest fold) at rest and bent
-  (the plane halfway between the forearm and the bent hand); exit 1 above the spec's `fold_max_mm` when `--spec`.
+- `table`: per side and bend the wrist's sections (width, thickness, hull area, deepest fold) at rest and bent, the
+  worst of PLANES (square to the forearm behind the joint, to the bisector through it, to the bent hand past it);
+  exit 1 above the spec's `fold_max_mm` when `--spec`.
 """
 from __future__ import annotations
 
@@ -25,6 +26,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import alien_hand_geom as G  # noqa: E402
 
 SIDES = ("Left", "Right")
+# the wrist's sections (m from the joint): across the forearm behind it, along the bisector through it, across the
+# bent hand past it (each section square to its own segment; H1b sliced the palm parallel to the bisector)
+PLANES = ((-0.015, "fore"), (-0.0075, "joint"), (0.0, "joint"), (0.0075, "joint"), (0.015, "hand"), (0.03, "hand"))
+TRANSFER_TOL = 1e-4  # a character's vertex is the body's within 0.1 mm (H1b's rounded keys missed one per character)
 FINGERS = {"Thumb": ("Metacarpal", "Proximal", "Distal"), "Index": ("Proximal", "Intermediate", "Distal"),
            "Middle": ("Proximal", "Intermediate", "Distal"), "Ring": ("Proximal", "Intermediate", "Distal")}
 
@@ -120,23 +125,31 @@ def build(dump_path: str, spec_path: str, out: str, transfers: list) -> int:
         rep["sides"][side] = r
     Path(out).mkdir(parents=True, exist_ok=True)
     Path(out, "moves_body.json").write_text(json.dumps({"objects": {obj["name"]: {str(i): p for i, p in moves.items()}}}))
-    key = {tuple(round(c, 4) for c in pos[i]): i for i in moves}
     for t in transfers:
         name, path = t.split("=", 1)
         cd = json.loads(Path(path).read_text())
-        cm, found = {}, set()
+        cm, found, near = {}, set(), {}
         for o in skin_objects(cd):
+            grid = G.grid_index(dict(zip(o["index"], o["co"])), TRANSFER_TOL)
             mv = {}
-            for i, p in zip(o["index"], o["co"]):
-                j = key.get(tuple(round(c, 4) for c in p))
-                if j is not None:
+            for j in moves:  # the body's moved vertex at the character's vertex nearest its rest position
+                i, dist = G.grid_nearest(grid, pos[j], TRANSFER_TOL)
+                if i is not None:
                     mv[str(i)] = moves[j]
                     found.add(j)
+                elif dist is not None:
+                    near[j] = min(near.get(j, 1.0), dist)
             if mv:
                 cm[o["name"]] = mv
         Path(out, f"moves_{name}.json").write_text(json.dumps({"objects": cm}))
+        loose = {i for i, m in zip(obj["index"], obj["mat"]) if not m}  # in no face: the characters dropped them
+        miss = {j: (pos[j], near.get(j)) for j in moves if j not in found and j not in loose}
         rep.setdefault("transfers", {})[name] = {"objects": {k: len(v) for k, v in cm.items()},
-                                                 "body_moves_found": len(found), "body_moves": len(moves)}
+                                                 "body_moves_found": len(found), "body_moves": len(moves),
+                                                 "loose_not_found": sorted(j for j in moves if j in loose and j not in found),
+                                                 "missing": {str(j): {"rest": p, "nearest_mm": None if d is None
+                                                                      else round(d * 1000, 3)}
+                                                             for j, (p, d) in miss.items()}}
     rep["moved"] = len(moves)
     rep["ok"] = bool(ok)
     Path(out, "build.json").write_text(json.dumps(rep, indent=1))
@@ -159,25 +172,31 @@ def table(dump_path: str, out: str, spec_path: str = "") -> int:
         origin, (d, u, v), L = side_frame(dump, side)
         keys = ["rest"] + sorted(k for k in dump.get("bends", {}) if k.startswith(side))
         for key in keys:
-            pts = []
-            if key == "rest":
-                n = d
-            else:
-                tail = dump["bends"][key]["_tail"]
-                n = G.norm(G.add(d, G.norm(G.sub(tail, origin))))
-            uu = G.norm(G.sub(u, G.mul(n, G.dot(u, n))))
-            vv = G.cross(n, uu)
+            hand = d if key == "rest" else G.norm(G.sub(dump["bends"][key]["_tail"], origin))
+            bis = G.norm(G.add(d, hand))
             secs = []
-            for off in (-0.015, 0.0, 0.015, 0.03):
+            for off, which in PLANES:
+                n = {"fore": d, "joint": bis, "hand": hand}[which]
+                uu = G.norm(G.sub(u, G.mul(n, G.dot(u, n))))
+                vv = G.cross(n, uu)
                 pts = []
                 for o in objs:
                     cos = o["co"] if key == "rest" else dump["bends"][key][o["name"]]
                     pos = {i: p for i, p in zip(o["index"], cos) if p[0] * origin[0] > 0}
                     pts += G.slice_points(pos, o["edges"], G.add(origin, G.mul(n, off)), n, uu, vv, 0.07)
-                secs.append(dict(G.section(pts), at_mm=round(off * 1000)))
-            sec = max(secs, key=lambda x: x.get("fold_mm", 0))
-            sec["joint"] = secs[1]
-            sec = G.section(pts)
+                secs.append(dict(G.section(pts), at_mm=off * 1000, plane=which))
+            sec = dict(max(secs, key=lambda x: x.get("fold_mm", 0)))
+            sec["planes_fold_mm"] = {f"{x['plane']}{x['at_mm']:+g}": x.get("fold_mm") for x in secs}
+            # H1b's measure, kept for comparison: a plane parallel to the bisector 30 mm into the palm cuts the
+            # rigid palm at a slant, through the thumb's cleft (a concavity of the hand, not a crease)
+            n = bis
+            uu = G.norm(G.sub(u, G.mul(n, G.dot(u, n))))
+            pts = []
+            for o in objs:
+                cos = o["co"] if key == "rest" else dump["bends"][key][o["name"]]
+                pos = {i: p for i, p in zip(o["index"], cos) if p[0] * origin[0] > 0}
+                pts += G.slice_points(pos, o["edges"], G.add(origin, G.mul(n, 0.03)), n, uu, G.cross(n, uu), 0.07)
+            sec["h1b_slanted_palm_fold_mm"] = G.section(pts).get("fold_mm")
             res[key] = sec
             if key != "rest":
                 worst = max(worst, sec.get("fold_mm", 0))

@@ -115,5 +115,17 @@ class Spec(unittest.TestCase):
         self.assertFalse(RUN.monotone_ok(rows[:2] + [[0, 72, 55]] + rows[3:], -30, 30))
 
 
+class Transfer(unittest.TestCase):
+    def test_nearest_within_tolerance_across_a_cell_border(self):
+        # H1b's rounded keys missed a point whose copy fell on the other side of a rounding border
+        pts = {7: (0.12345, 0.5, 1.0), 8: (0.2, 0.5, 1.0)}
+        grid = G.grid_index(pts, RUN.TRANSFER_TOL)
+        self.assertEqual(G.grid_nearest(grid, (0.1234499, 0.5, 1.0), RUN.TRANSFER_TOL)[0], 7)
+        i, d = G.grid_nearest(grid, (0.12365, 0.5, 1.0), RUN.TRANSFER_TOL)
+        self.assertIsNone(i)
+        self.assertAlmostEqual(d, 0.0002, places=6)
+        self.assertEqual(G.grid_nearest(grid, (0.5, 0.5, 1.0), RUN.TRANSFER_TOL), (None, None))
+
+
 if __name__ == "__main__":
     unittest.main()
