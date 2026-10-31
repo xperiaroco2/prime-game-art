@@ -34,7 +34,15 @@ CLIP_KEYS = {"grip", "Left", "Right", "keys", "note"}
 SET_KEYS = {"poses", "skip", "default", "note"}
 # [fist] (H1j): the run fist as a morph (alien_fist_math.py); the defaults, every key optional but `grip`
 FIST_DEFAULTS = {"morph": "fist", "k_mm": 14.0, "k_thumb_mm": 10.0, "pull_mm": 2.0, "hide_mm": 4.0, "relax": 4,
-                 "relax_lambda": 0.3, "band_mm": 2.0, "fade_to": 0.6}
+                 "relax_lambda": 0.3, "band_mm": 2.0, "fade_to": 0.6,
+                 # H1l: route "envelope" (alien_fist_envelope.py): the fingers' blend, the core's, the thumb's, the
+                 # chords' radius share, the palm box's share of the palm, the thumb's shift (mm along the hand's u,
+                 # w, n), the relax's rounds and step
+                 "route": "field", "env_k_mm": 10.0, "env_k_core_mm": 12.0, "env_k_thumb_mm": 8.0, "env_core": 0.9,
+                 "env_palm": 0.95, "thumb_shift_mm": [0.0, 0.0, 0.0], "wrap_rounds": 300, "wrap_lambda": 0.5,
+                 # H1l: env_mode "merge" (one smooth solid) or "press" (each digit inflated, pressed against the others
+                 # with a slit of env_gap_mm, its lip rounded over env_lip_mm)
+                 "env_mode": "merge", "env_inflate": 1.0, "env_gap_mm": 0.4, "env_lip_mm": 3.0}
 
 
 class HandsError(ValueError):
