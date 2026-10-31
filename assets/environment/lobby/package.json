@@ -4,6 +4,7 @@
  "version": 3,
  "scene": "res://levels/lobby/lobby_hall.tscn",
  "root": "LobbyHall",
+ "level_script": "res://levels/lobby/lobby_hall.gd",
  "pieces": [
   "arch",
   "door",
@@ -126,7 +127,7 @@
  "earth": {
   "node": "Earth/EarthObject",
   "variant": "E2",
-  "distance": "F36",
+  "distance": "H1",
   "snow": "N2",
   "credit": "Earth imagery: NASA",
   "licence": "NASA-PD",
@@ -197,12 +198,16 @@
    "sha256": "e8a3c179e45551781d3f36b5de35fb43e1d2699a7c14361e46c77ae5967453fe",
    "bytes": 622
   },
+  "levels/lobby/lobby_hall.gd": {
+   "sha256": "fc7049a6877c9d2138802e9c89020b38749d54652f0b0efdb19dbca163fe15cc",
+   "bytes": 1862
+  },
   "assets/environment/lobby/materials/earth_object.tres": {
-   "sha256": "15752fa1a3695d495196b57c05c2c65574ef42f133c77bbe9aee4917e6bc9674",
-   "bytes": 2661
+   "sha256": "e5ea378908c207e47593e256446750899d00daccf7006895ea223ffc8ad2ee0e",
+   "bytes": 2663
   },
   "assets/environment/lobby/materials/lobby_env.tres": {
-   "sha256": "5226e799613c238d5daa11fa8f9408597ba1605f84e27167c8fe6d1bd12d4257",
+   "sha256": "904296784aca088d83bfd4fe3f6140131937b1f67852d3f8958be386127d6ff2",
    "bytes": 2377
   },
   "assets/environment/lobby/materials/window_glass.tres": {
@@ -210,13 +215,13 @@
    "bytes": 332
   },
   "levels/lobby/lobby_hall.tscn": {
-   "sha256": "b0d6d65ecf5a1eb82964e91835700ab791b0dedee588a77a53619adbe3ba2d6f",
-   "bytes": 429358
+   "sha256": "776d2b1737bf5efd2a6f24293562deb13a031d47326239482f262db4ab6c86cd",
+   "bytes": 429651
   }
  },
- "bytes": 38511920,
+ "bytes": 38514077,
  "questions": [
-  "L1: the ship is an instance of the ship package's res://levels/ship/ship.tscn (assets/environment/ship/HANDOFF.md), never a copy: the game needs the ship package at its paths. The lobby switches off what the hall must not have by overrides a packed scene can keep: Ship/Clearing hidden and disabled (its Ground's collider leaves the world), Ship/Environment/WorldEnvironment's environment cleared, the moon and key suns under Ship/Lights hidden; freeing them in the game's lobby script (as art's hall.gd does) is the same picture.",
+  "L1: the ship is an instance of the ship package's res://levels/ship/ship.tscn (assets/environment/ship/HANDOFF.md), never a copy: the game needs the ship package at its paths. What the hall must not have is saved switched off (a packed scene cannot remove a node of an instance: Ship/Clearing hidden and disabled, Ship/Environment's WorldEnvironment on the hall's environment, the suns under Ship/Lights hidden), and the root's level script res://levels/lobby/lobby_hall.gd frees them on _ready (its ship_free paths) and has the reflection probes capture again a frame later, as the art's assembly does. Keep the script on LobbyHall; a game script for the lobby extends it and calls super._ready().",
   "L2: the jaw nose is saved shut (jaw_lower and jaw_upper at 0 deg) by overrides; Ship/Nose/AnimationPlayer still holds open/close: the lobby never plays them. Its pose is the scene's, so nothing needs to run at load.",
   "L3: behind the shut nose and the closed doors the package's whole interior is still drawn when in view (about 3200 draw calls in the views that see the ship, HANDOFF 'Cost'); an occluder or hiding Ship's interior pieces in the lobby is the game's call.",
   "L4: the ten spawn markers (Markers/Spawn0..9) stand at z 2.5, 0.76 m outside the floor ring (r 15 round the closed ship's middle, z -13.26); the ring is the floor's inlay only, no rule of the game.",

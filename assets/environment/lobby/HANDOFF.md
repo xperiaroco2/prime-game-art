@@ -2,14 +2,16 @@
 
 The lobby's hall of art#356 (a 40 x 40 m hall with a bowed window to the night Earth, a ribbed vault, the entrance
 arch, four sealed doors, art#263's ship docked on a floor ring) as the game's package. Written by
-`tools/run.sh lobby --export <raw>/lobby/hall/v15/export/v2` (2026-10-31, branch feat/lobby-hall-356, step 5b;
+`tools/run.sh lobby --export <raw>/lobby/hall/v16/export3 --no-compare` (2026-11-01, branch feat/lobby-hall-356, steps
+5b-5c2;
 `docs/lobby.md` "The export"); the files and their hashes are in `manifest.toml` and `package.json`, the check's
 numbers in `report.json`. The binaries are not committed here: the package lives in the raw folder until approved (as
 the ship's).
 
 The engineer's picks it carries: the colour scheme S4, the light L3, the ship light K1, the closed jaw-nose ship from
 the ship package at plan origin (0, 0, -14.5), the spawns at z 2.5 facing the window, the Earth E2 with the snow set
-N2, at infinity at F36 (2026-10-31).
+N2, at infinity at F36 (2026-10-31), lowered to H1 (2026-11-01: the limb's top about 4 deg above the spawn's eye, so
+black sky shows above the planet from everywhere in the hall).
 
 ## Files (the game's tree)
 
@@ -20,11 +22,13 @@ N2, at infinity at F36 (2026-10-31).
 | `assets/environment/lobby/*.gdshader` | `earth_sky` (the stars; the Earth at infinity in the sky's cubemap pass for probes and reflections), `earth_object` (the planet, far mode), `window_glass` (art shaders shipped as files) |
 | `assets/environment/lobby/materials/*.tres` | `lobby_env.tres` (the environment: AgX, exposure, glow, SSR, SSAO, the ambient and the Earth sky), `earth_object.tres`, `window_glass.tres` |
 | `levels/lobby/lobby_hall.tscn` | the level (below), 0.43 MB |
+| `levels/lobby/lobby_hall.gd` | the level's root script: frees the ship instance's switched-off nodes on `_ready`, then recaptures the probes |
 | `package.json` | every file with SHA-256 and bytes, the spawns, the ship package it needs, the Earth, the questions |
 
-19 files, 38.5 MB (the GLBs 29.8 MB: each embeds its copy of the hall's metal texture set, about 4 MB). Copy only the
+20 files, 38.5 MB (the GLBs 29.8 MB: each embeds its copy of the hall's metal texture set, about 4 MB). Copy only the
 files `package.json` lists: the export folder also holds the art check's `_check/`, `project.godot`, `lib/`,
-`.godot/` and a copy of the ship package for the check, none of them this package's. No GDScript.
+`.godot/` and a copy of the ship package for the check, none of them this package's. One GDScript, the level's root
+script.
 
 ## The level
 
@@ -38,9 +42,11 @@ files `package.json` lists: the export folder also holds the art check's `_check
   `WorldEnvironment` given the hall's `lobby_env.tres` (a cleared environment does not survive a save, and two
   environments fight), the moon and the cool key under `Lights` hidden, the ship's 105 lamps hidden (L3:
   `ship_lights` 0), the jaw nose shut (`jaw_lower`, `jaw_upper` at 0 deg; `Nose/AnimationPlayer` is never played),
-  every drawn mesh on render layer 11 and the ship's glow surfaces at 0.3 of their own (`ship_emit`). Freeing
-  `Ship/Clearing`, `Ship/Environment` and the two suns in a lobby script instead is the same picture. The 704 ship
-  colliders stay on.
+  every drawn mesh on render layer 11 and the ship's glow surfaces at 0.3 of their own (`ship_emit`). On `_ready` the
+  root script `lobby_hall.gd` frees the nodes in its `ship_free` list (`Ship/Clearing`, `Ship/Environment` and the two
+  suns, which the ship package names `Lights/@DirectionalLight3D@3` and `@4`), then takes every reflection probe out of
+  the tree and back one frame later so each captures without them (the check: 4 nodes freed, 10 of 10 probes
+  recaptured). The 704 ship colliders stay on.
 - `Earth/EarthObject`: the planet, a back-faced sphere shell (`earth_object.tres`, far mode): every ray starts at the
   spawn's eye (0, 1.65, 2.5) and the shader moves the shell with the camera, so the planet is **at infinity**: the
   same size, horizon and direction from everywhere in the hall. Never parent it to anything that moves or scale it;
@@ -81,7 +87,9 @@ ship's own light set) unless they should take the ship's light.
   inside pieces in the lobby is the game's call.
 - The spawns stand 0.76 m outside the floor ring (r 15 round the closed ship's middle, z -13.26); the ring is an inlay
   only.
-- The check's `c_back` view differs from `lobby --shoot`'s by a mean of 3.16 (of 255; 5% of pixels off by more than
-  16; the hull and the walls near the window a little brighter in the package); `spawn_eye` 0.07 and `corner_nw` 0.74
-  hold the 2.0 rule. The cause is not found yet (art#356).
+- Step 5b's check found the `c_back` view a mean of 3.16 (of 255) off `lobby --shoot`'s (the 2.0 rule; `spawn_eye`
+  0.07 and `corner_nw` 0.74 held). The level script above is the fix under test; this package was exported with
+  `--no-compare` while no window could open on the art PC, so the views' comparison is still to run (art#356).
+- The ship package names its two suns `@DirectionalLight3D@3` and `@4`; if art#263 renames them, `ship_free` must
+  follow (the check fails on a sun left over).
 - The Earth's textures are compressed (BC7); the art's shots load them uncompressed.
