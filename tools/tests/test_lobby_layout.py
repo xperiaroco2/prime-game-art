@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import copy
 import math
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -137,6 +138,57 @@ class LobbyLayoutTest(unittest.TestCase):
         problems = lobby_layout.check(bad)
         self.assertTrue(any("earth cap: lat" in p for p in problems), problems)
 
+    def test_corner_nw_sees_the_cap(self) -> None:
+        """Step 5a5's debug: the window's crop in corner_nw (x1180-1500, y360-590 at 1920 x 1080) sees the globe at about
+        lat 43-61, lon -6..24 (Europe, head-on enough: mu 0.35-0.88), inside the cap, as the shader's debug paint showed;
+        traced as earth_object.gdshader does (D2, E2's map frame)."""
+        e, o = self.layout["earth"], lobby_layout.earth_object(self.layout, "E2", "D2")
+        c, r, f = o["centre"], o["radius_m"], o["frame_dir"]
+        sub = lambda a, b: [x - y for x, y in zip(a, b)]
+        dot = lambda a, b: sum(x * y for x, y in zip(a, b))
+        unit = lambda a: [x / math.sqrt(dot(a, a)) for x in a]
+        cross = lambda a, b: [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+        comb = lambda *ps: [sum(k * v[i] for k, v in ps) for i in range(3)]
+        p0, l0 = (math.radians(a) for a in e["variants"]["E2"]["subpoint"])
+        s = [math.cos(p0) * math.cos(l0), math.sin(p0), -math.cos(p0) * math.sin(l0)]
+        east, north = [-math.sin(l0), 0.0, -math.cos(l0)], [-math.sin(p0) * math.cos(l0), math.cos(p0), math.sin(p0) * math.sin(l0)]
+        u0 = unit(sub([0.0, 1.0, 0.0], [x * f[1] for x in f]))
+        r0 = unit(cross([-x for x in f], u0))
+        view = next(v for v in self.layout["review"]["views"] if v[0] == "corner_nw")
+        eye, fw = view[2], unit(sub(view[3], view[2]))
+        rt = unit(cross(fw, [0.0, 1.0, 0.0]))
+        up, t = cross(rt, fw), math.tan(math.radians(view[4]) / 2)
+        cap = e["cap"]
+        for px in (1180, 1340, 1500):
+            for py in (360, 475, 590):
+                v = unit(comb((1.0, fw), ((2 * px / 1920 - 1) * t * 1920 / 1080, rt), ((1 - 2 * py / 1080) * t, up)))
+                oc = sub(c, eye)
+                b = dot(v, oc)
+                disc = b * b - (dot(oc, oc) - r * r)
+                self.assertGreater(disc, 0.0, (px, py))   # the ray hits the globe
+                n = unit(sub(comb((1.0, eye), (b - math.sqrt(disc), v)), c))
+                g = unit(comb((dot(n, r0), east), (dot(n, u0), north), (dot(n, f), s)))
+                lat, lon = math.degrees(math.asin(g[1])), math.degrees(math.atan2(-g[2], g[0]))
+                self.assertTrue(cap["lat"][0] + cap["fade_deg"] < lat < cap["lat"][1] - cap["fade_deg"], (px, py, lat))
+                self.assertTrue(cap["lon"][0] + cap["fade_deg"] < lon < cap["lon"][1] - cap["fade_deg"], (px, py, lon))
+                self.assertTrue(40.0 < lat < 64.0 and -10.0 < lon < 28.0, (px, py, lat, lon))
+
+    def test_the_night_look(self) -> None:
+        """Step 5a5: every [earth.look] key the Earth object takes is a uniform of earth_object.gdshader; the new
+        uniforms' defaults draw step 5a4's look; the layout's night: dark clouds, cities capped and as points."""
+        src = (Path(__file__).resolve().parents[2] / "godot" / "lobby" / "earth_object.gdshader").read_text(encoding="utf-8")
+        look = self.layout["earth"]["look"]
+        for k in look:
+            if not k.startswith(("glass_", "stars")):
+                self.assertIsNotNone(re.search(rf"uniform (float|vec3) {k} ", src), k)
+        for k, v in {"light_cap": "1000.0", "halo_energy": "0.0", "cloud_city": "0.0", "cloud_shade": "0.5",
+                     "haze_energy": "0.0", "moon_knee": "0.0", "debug_mode": "0.0"}.items():
+            self.assertIn(f"uniform float {k} = {v};", src)
+        self.assertLess(look["cloud_energy"], 0.1)
+        self.assertGreater(look["city_gamma"], 1.8)
+        self.assertTrue(1.0 < look["light_cap"] < 4.0)
+        self.assertLess(look["haze_energy"], 0.1)
+
     def test_e2s_sun_is_just_behind_the_limb(self) -> None:
         from runner.commands import lobby as cmd
         v = self.layout["earth"]["variants"]["E2"]
@@ -170,7 +222,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v11")   # step 5a4
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v12")   # step 5a5
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
