@@ -388,6 +388,21 @@ class M2gHelpers(unittest.TestCase):  # M2g: the bib side's striped walls, the t
         self.assertAlmostEqual(H.cut_ramp(0.1625, 0.163, 0.002), 0.75)
 
 
+class M2hHelpers(unittest.TestCase):  # M2h: the turn-ups' relax
+    def test_relax_weight(self):
+        self.assertEqual(H.relax_weight(0.10, 0.20, 0.03), 1.0)
+        self.assertEqual(H.relax_weight(0.20, 0.20, 0.03), 0.0)
+        self.assertEqual(H.relax_weight(0.25, 0.20, 0.03), 0.0)
+        self.assertAlmostEqual(H.relax_weight(0.185, 0.20, 0.03), 0.5)
+        self.assertTrue(0.0 < H.relax_weight(0.19, 0.20, 0.03) < 0.5)
+
+    def test_loop_nbrs_stay_on_the_loop(self):
+        edges = [(0, 1), (1, 2), (2, 0), (2, 7), (7, 8)]  # a hem loop 0-1-2 and an open run up the leg 2-7-8
+        got = H.loop_nbrs(edges, {0, 1, 2})
+        self.assertEqual({k: sorted(v) for k, v in got.items()}, {0: [1, 2], 1: [0, 2], 2: [0, 1]})
+        self.assertEqual(H.loop_nbrs([], {4}), {4: []})
+
+
 class PlainDenim(unittest.TestCase):
     """E1h: the plain denim patch's mirrored repeat, cylinder coordinates and boxes."""
 

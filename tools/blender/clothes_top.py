@@ -1381,6 +1381,119 @@ def waistband(bm, gar, body, gtree, rect, args, uv, dl, gi) -> dict:
     return rep
 
 
+def late_islands(gar, args) -> dict:
+    """M2h: the bib side wall's dark crumbs beside the buckle (1 to 4 faces each, left loose by the shirt peel, above
+    the peel's zone) go at the end, after the body's cover test and the skin's follow: d57 dropped them in the peel and
+    the crotch's skin, whose tilted cover rays had met them, came back and poked 9 to 13 mm. A crumb is a piece of
+    args.edge_island faces or fewer, all of the garment's denim slots, every face centre between the waist and
+    args.island_top over it (the buckles and buttons are larger, the band button lower)."""
+    top = args.waist + args.island_top
+    mw = gar.matrix_world
+    dif = garment_maps(gar).get("diffuse")
+    den = {i for i, sl in enumerate(gar.material_slots) if sl.material and sl.material.node_tree and any(
+        n.type == "TEX_IMAGE" and n.image is dif for n in sl.material.node_tree.nodes)}
+    bm = bmesh.new()
+    bm.from_mesh(gar.data)
+    seen, bits, n = set(), [], 0
+    for f in bm.faces:
+        if f in seen:
+            continue
+        comp, stack = [], [f]
+        seen.add(f)
+        while stack:
+            g = stack.pop()
+            comp.append(g)
+            for e in g.edges:
+                for h in e.link_faces:
+                    if h not in seen:
+                        seen.add(h)
+                        stack.append(h)
+        if len(comp) <= args.edge_island and all(
+                g.material_index in den and args.waist < (mw @ g.calc_center_median()).z <= top for g in comp):
+            bits.extend(comp)
+            n += 1
+    if bits:
+        bmesh.ops.delete(bm, geom=bits, context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+        bm.to_mesh(gar.data)
+        gar.data.update()
+    bm.free()
+    rep = {"pieces": n, "faces": len(bits)}
+    say("late islands", rep)
+    return rep
+
+
+def turnup_relax(gar, args) -> dict:
+    """M2h: the turn-ups' geometry, Meshy's one trouser surface folded out at each hem (bind pose). args.turnup_relax
+    "z_top,rounds,alpha": per leg (|x| over 3 cm, under z_top) the hem loop (the lowest open edges, within 3 cm of the
+    lowest) goes onto one level, its median height (the jagged bottom edge), and its radius round the leg's axis is
+    relaxed along the loop; then every other vertex of the leg under z_top has its radius alone relaxed over its edge
+    neighbours (clothes_fit_geom.smooth, rounds at alpha), easing out over the top 3 cm (clothes_shell.relax_weight):
+    the fold's in-and-out teeth over the light cuff. Heights stay (the cuff's colour is cut at one height by
+    plain_denim's 8th value, so its line stays straight), but the hem's, under the cut in the light. Runs after the
+    body's cover test and the skin's follow (d59 ran it before them: the body's cut changed and the crotch poked 9 to
+    14 mm). Other open edges (a stray hole) stay. No weight changes."""
+    z_top, rounds, alpha = floats(args.turnup_relax)
+    rounds = int(rounds)
+    me, mw = gar.data, gar.matrix_world
+    inv = mw.inverted()
+    co = [mw @ v.co for v in me.vertices]
+    nb = [[] for _ in co]
+    for e in me.edges:
+        a, b = e.vertices
+        nb[a].append(b)
+        nb[b].append(a)
+    use: dict[tuple, int] = {}
+    for p in me.polygons:
+        for ek in p.edge_keys:
+            use[ek] = use.get(ek, 0) + 1
+    open_e = [ek for ek, n in use.items() if n == 1]
+    open_v = {i for ek in open_e for i in ek}
+    rep = {}
+    for sgn, side in ((1.0, "left"), (-1.0, "right")):
+        leg = [i for i, c in enumerate(co) if c.x * sgn > 0.03 and c.z < z_top]
+        hem0 = [i for i in leg if i in open_v]
+        if len(leg) < 20 or not hem0:
+            rep[side] = {"skipped": "no leg"}
+            continue
+        zl = min(co[i].z for i in hem0)
+        hem = {i for i in hem0 if co[i].z < zl + 0.03}
+        hz = float(np.median([co[i].z for i in hem]))
+        ring = [co[i] for i in leg if co[i].z > hz]
+        ax = (sum(c.x for c in ring) / len(ring), sum(c.y for c in ring) / len(ring))
+
+        def cyl(c):
+            dx, dy = c.x - ax[0], c.y - ax[1]
+            return math.atan2(dy, dx), math.hypot(dx, dy)
+
+        th = {i: cyl(co[i])[0] for i in leg}
+        # the hem loop: one level, its radius relaxed along the loop
+        ln = H.loop_nbrs(open_e, hem)
+        hl = sorted(hem)
+        loc = {i: k for k, i in enumerate(hl)}
+        r_h = F.smooth([[cyl(co[i])[1]] for i in hl], [[loc[j] for j in ln[i]] for i in hl], rounds, alpha)
+        rz = {i: [r_h[loc[i]][0], hz] for i in hl}
+        z_span = [round(min(co[i].z for i in hem), 4), round(max(co[i].z for i in hem), 4)]
+        # the rest of the leg under z_top: radius and height over the edge neighbours (any vertex, fixed outside)
+        ids = sorted(set(leg) | {j for i in leg for j in nb[i]})
+        at = {i: k for k, i in enumerate(ids)}
+        vals = [[rz[i][0]] if i in rz else [cyl(co[i])[1]] for i in ids]
+        mask = [0.0 if (i in hem or i in open_v or i not in th) else H.relax_weight(co[i].z, z_top, 0.03) for i in ids]
+        out = F.smooth(vals, [[at[j] for j in nb[i] if j in at] for i in ids], rounds, alpha, mask)
+        moved = 0.0
+        for i in leg:
+            r, z = out[at[i]][0], (rz[i][1] if i in rz else co[i].z)
+            t = th[i]
+            p = Vector((ax[0] + r * math.cos(t), ax[1] + r * math.sin(t), z))
+            moved = max(moved, (p - co[i]).length)
+            me.vertices[i].co = inv @ p
+        rep[side] = {"verts": len(leg), "hem_verts": len(hem), "hem_z": round(hz, 4), "hem_z_was": z_span,
+                     "axis": [round(ax[0], 4), round(ax[1], 4)], "moved_most_mm": round(1000 * moved, 1)}
+    me.update()
+    say("turnup relax", rep)
+    return rep
+
+
 def plain_denim(gar, args) -> dict:
     """E1h: plain denim texels over the garment's areas whose own texels are wrong (Meshy's layered hip opening: a
     glossy, streaked patch; the axolotl's seat and front pockets: stretched stitch texels). Each box of args.plain

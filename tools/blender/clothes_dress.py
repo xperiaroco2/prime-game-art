@@ -305,6 +305,13 @@ def main() -> int:
     ap.add_argument("--edge-inward", type=float, default=-0.1,
                     help="an edge face whose normal's horizontal part points in by more than this is peeled")
     ap.add_argument("--edge-island", type=int, default=12, help="loose bits of this many faces or fewer along the edges go")
+    ap.add_argument("--turnup-relax", default="",
+                    help="M2h: z_top,rounds,alpha: each trouser leg's hem onto one level and the turn-up's radius and "
+                         "height relaxed under z_top (clothes_top.turnup_relax; '': off)")
+    ap.add_argument("--island-top", type=float, default=0.0,
+                    help="M2h: after the skin's follow, the garment's loose denim bits (--edge-island faces or fewer) "
+                         "between the waist and this far over it go (clothes_top.late_islands: the crumbs beside the "
+                         "buckle; m, 0: off)")
     ap.add_argument("--shirt-top", type=float, default=0.0,
                     help="M2g: the baked-shirt test along the panels' side edges reaches this far above the waist (m; "
                          "0: --band-flaps, as the peel)")
@@ -1065,6 +1072,15 @@ def main() -> int:
     if args.skin_follow:  # M2d: the skin the garment hides moves with the garment and stays inside it
         rep["skin_follow"] = follow_garment(char, cloth, ekd, args)
         say("skin follow", rep["skin_follow"])
+    if args.island_top > 0 and garment is not None:  # M2h: after the cover test, which the crumbs' faces helped
+        import clothes_top as TOP
+        rep["late_islands"] = TOP.late_islands(garment, args)
+    if args.turnup_relax and garment is not None:  # M2h: late too (d59: early, the body's cut moved and the crotch poked)
+        import clothes_top as TOP
+        rep["turnup_relax"] = TOP.turnup_relax(garment, args)
+        if args.skin_follow:  # d60: the relaxed cuff came in 10 mm over the calf's pulled skin (13 to 26 mm pokes)
+            rep["skin_pull_late"] = follow_garment(char, cloth, ekd, args, weights=False)
+            say("skin pull late", rep["skin_pull_late"])
     if collar:  # E1c, the outer-shell probe: kept skin under the rim with no shoe face on its way out
         outs = 0
         for v in me.vertices:

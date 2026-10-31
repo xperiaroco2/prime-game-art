@@ -440,6 +440,26 @@ def cut_ramp(z: float, cut: float, soft: float) -> float:
     return min(1.0, max(0.0, (cut - z) / max(soft, 1e-9) + 0.5))
 
 
+def relax_weight(z: float, z_top: float, fade: float) -> float:
+    """M2h: the turn-up relax's share at a height: 1 up to z_top - fade, easing (smoothstep) to 0 at z_top and over (the
+    trouser leg above the turn-up keeps its shape)."""
+    if z >= z_top:
+        return 0.0
+    t = min(1.0, (z_top - z) / max(fade, 1e-9))
+    return t * t * (3 - 2 * t)
+
+
+def loop_nbrs(edges: list[tuple[int, int]], ids: set[int]) -> dict[int, list[int]]:
+    """M2h: each vertex of ids with its neighbours along the given (open) edges that are also in ids: the hem loop's
+    own neighbours, so its relax runs along the loop and not up the leg."""
+    out: dict[int, list[int]] = {i: [] for i in ids}
+    for a, b in edges:
+        if a in ids and b in ids:
+            out[a].append(b)
+            out[b].append(a)
+    return out
+
+
 # E1b: the planes' defaults (clothes_dress's flags) were set on the old body A, whose bones these are (A11 keeps them)
 REF_CHEST_Z, REF_NECK_Z = 1.028, 1.339
 REF_UPPER_ARM = (0.152, 0.065, 1.277)
