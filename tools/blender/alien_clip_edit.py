@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import math
 import tomllib
+from pathlib import Path
 
 FINGERS = ("Index", "Middle", "Ring", "Little")
 SEGMENTS = ("Proximal", "Intermediate", "Distal")
@@ -147,6 +148,23 @@ def lift_profile(lowest: list[float], reach: int = 2, wrap: bool = False) -> lis
         return avg + [avg[0]]
     run = [max(need[max(0, i - reach):i + reach + 1]) for i in range(n)]
     return [sum(run[max(0, i - reach):i + reach + 1]) / len(run[max(0, i - reach):i + reach + 1]) for i in range(n)]
+
+
+FLOAT_TOL_M = 0.005  # B1 (the Walk hop): a frame whose lowest point is this far over the floor floats
+
+
+def floated_frames(before: list[float], after: list[float], tol: float = FLOAT_TOL_M) -> list[int]:
+    """B1 (art #196, the Walk hop): the frames the floor lift floated, each frame's lowest point (m) before and after
+    the lift: on or under the floor within tol before (a foot planted or sunk), more than tol over it after. A frame
+    already off the floor before (a run's real flight) is not counted. floor_reach 2 floated the Walk's planted frames
+    up to 21 mm (18 of 32); reach 0 lifts each frame by exactly its own need, so it floats none."""
+    return [i for i, (b, a) in enumerate(zip(before, after)) if b <= tol and a > tol]
+
+
+def lowest_of(per_mesh: list[list[float]]) -> list[float]:
+    """B1: per frame the lowest of several meshes' lowest points (the body and the sneakers: the soles reach 5 to 6.5
+    mm under the bare foot at heel strike and toe-off)."""
+    return [min(col) for col in zip(*per_mesh)]
 
 
 def cut_frames(straight: list[bool], gap: int):
@@ -314,6 +332,37 @@ def apply(arm, skin, path: str) -> dict:
             raise ValueError(f"{act.name}: floor must be true, false or \"ground\", not {mode!r}")
         report[clip] = rep
     return report
+
+
+def sole_floor(arm, skins, path: str) -> dict:
+    """B1 (art #196, the Walk hop): after the dress, every clip whose settings (path: a file, or a name under
+    anim_sets/) say `floor = true` lifted again with all of skins measured (the body and the sneakers: the soles reach
+    5 to 6.5 mm under the bare foot at heel strike and toe-off), each frame by its own need (reach 0, whatever the
+    clip's floor_reach: the clip's own lift is already in its keys). A clip still under FLOOR_FAIL_CM fails. Returns
+    floor()'s report per clip."""
+    from mathutils import Vector  # Blender only
+    import bpy
+
+    p = Path(path)
+    if not p.is_file():
+        p = Path(__file__).resolve().parent / "anim_sets" / f"{path}.toml"
+    rest = {b.name: b.matrix_local.to_3x3() for b in arm.data.bones}
+    up_arm = arm.matrix_world.to_3x3().normalized().inverted() @ Vector((0.0, 0.0, 1.0))
+    keep = arm.animation_data.action if arm.animation_data else None
+    keep_slot = arm.animation_data.action_slot if keep is not None else None
+    out = {}
+    for act in [a for a in bpy.data.actions if a.name.startswith("CharacterArmature|")]:
+        clip = act.name.split("|", 1)[1]
+        if settings(str(p), clip).get("floor", False) is not True:
+            continue
+        out[clip] = rep = floor(arm, skins, act, rest, up_arm, wrap=clip.endswith("_Loop"), reach=0)
+        if rep["lowest_after_cm"] < FLOOR_FAIL_CM:
+            raise ValueError(f"{act.name}: still {rep['lowest_after_cm']} cm under the floor with the soles")
+    if keep is not None:
+        arm.animation_data.action = keep
+        if keep_slot is not None:
+            arm.animation_data.action_slot = keep_slot
+    return out
 
 
 def cut(arm, act, straight_deg: float, gap: int) -> dict:
@@ -552,7 +601,9 @@ def floor(arm, skin, act, rest, up_arm, wrap: bool = False, reach: int = 2, chec
     """The `floor` edit on one action: samples the posed skin on every frame, lifts the Hips' location keys by
     lift_profile (wrap: a loop; reach 0: each frame its own need, keyed on every frame). check_only (A3, "ground"):
     the frames up to check_to (all without it) lifted onto the floor, the lift faded out over fade frames after
-    (ground_lift), and checked as lowest_after_cm."""
+    (ground_lift), and checked as lowest_after_cm. skin may be a list of meshes (B1: the body and the sneakers, so the
+    soles count); each frame's lowest is the lowest of them (lowest_of). The report's floated_frames
+    (floated_frames) counts the frames the lift put more than 5 mm over the floor that were on it before."""
     import bpy
     import numpy as np
     from mathutils import Vector
@@ -562,16 +613,20 @@ def floor(arm, skin, act, rest, up_arm, wrap: bool = False, reach: int = 2, chec
 
     def lowest_per_frame():
         out = []
+        skins = skin if isinstance(skin, (list, tuple)) else [skin]
         for f in range(f0, f1 + 1):
             scene.frame_set(f)
             dg = bpy.context.evaluated_depsgraph_get()
-            ev = skin.evaluated_get(dg)
-            me = ev.to_mesh()
-            co = np.empty(len(me.vertices) * 3)
-            me.vertices.foreach_get("co", co)
-            co = co.reshape(-1, 3) @ np.array(ev.matrix_world.to_3x3()).T + np.array(ev.matrix_world.translation)
-            out.append(float(co[:, 2].min()))
-            ev.to_mesh_clear()
+            lows = []
+            for sk in skins:
+                ev = sk.evaluated_get(dg)
+                me = ev.to_mesh()
+                co = np.empty(len(me.vertices) * 3)
+                me.vertices.foreach_get("co", co)
+                co = co.reshape(-1, 3) @ np.array(ev.matrix_world.to_3x3()).T + np.array(ev.matrix_world.translation)
+                lows.append([float(co[:, 2].min())] if len(co) else [])
+                ev.to_mesh_clear()
+            out.append(lowest_of([x for x in lows if x])[0])
         return out
 
     before = lowest_per_frame()
@@ -590,4 +645,5 @@ def floor(arm, skin, act, rest, up_arm, wrap: bool = False, reach: int = 2, chec
                 "highest_low_after_cm": round(max(after[:last + 1]) * 100, 2), "lowest_all_after_cm": round(min(after) * 100, 2)}
     return {"lowest_before_cm": round(min(before) * 100, 2), "lowest_after_cm": round(min(after) * 100, 2),
             "max_lift_cm": round(max(lift) * 100, 2), "highest_low_after_cm": round(max(after) * 100, 2),
-            "wrap": wrap, "reach": reach}
+            "wrap": wrap, "reach": reach, "floated_frames": len(floated_frames(before, after)),
+            "lowest_before_mm": [round(x * 1000, 1) for x in before], "lowest_after_mm": [round(x * 1000, 1) for x in after]}

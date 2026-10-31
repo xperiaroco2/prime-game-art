@@ -47,6 +47,45 @@ class Lift(unittest.TestCase):
         self.assertTrue(all(abs(x - 0.012) < 1e-12 for x in E.lift_profile([-0.012] * 7)))
 
 
+# B1 (art #196, the Walk hop): body B13's Walk_Loop after the leg fit, the lowest skin point per frame (mm; the last
+# frame is the first again), from D:/prime-art-raw/2026-10-31-hop/stages.json
+WALK_LEG_FIT_MM = [-3.7, -8.1, -22.1, -30.3, -29.4, -13.2, 0.5, 2.2, 2.7, 2.1, 1.7, 1.4, 1.1, 0.3, -0.5, -1.3, -5.2,
+                   -8.1, -21.9, -29.6, -29.6, -13.3, -2.2, -0.6, 0.7, 1.2, 1.5, 1.8, 2.1, 1.8, 1.2, -0.2, -3.7]
+
+
+class FloorRule(unittest.TestCase):
+    """The floor rule: a lift puts the lowest point on the floor and never floats a frame that was on it."""
+
+    def after(self, reach):
+        low = [x / 1000.0 for x in WALK_LEG_FIT_MM]
+        return low, [z + l for z, l in zip(low, E.lift_profile(low, reach=reach, wrap=True))]
+
+    def test_reach_two_floated_the_walk(self):  # the hop the engineer saw: up to 21 mm
+        low, after = self.after(2)
+        self.assertGreaterEqual(len(E.floated_frames(low, after)), 10)
+        self.assertGreater(max(after), 0.02)
+
+    def test_reach_zero_floats_no_frame(self):
+        low, after = self.after(0)
+        self.assertEqual(E.floated_frames(low, after), [])
+        self.assertTrue(all(a >= -1e-9 for a in after))
+        self.assertTrue(all(abs(a) < 1e-9 for z, a in zip(low, after) if z < 0))  # a sunk frame lands on the floor
+
+    def test_flight_is_not_a_float(self):  # a run's frame already off the floor before is real flight
+        self.assertEqual(E.floated_frames([-0.01, 0.08, 0.004], [0.0, 0.08, 0.004]), [])
+        self.assertEqual(E.floated_frames([0.0, 0.001], [0.006, 0.001]), [0])
+
+    def test_the_soles_count(self):  # the sneakers' heel dips under the bare foot at heel strike
+        self.assertEqual(E.lowest_of([[0.0, 0.002, 0.01], [-0.0065, 0.003, 0.009]]), [-0.0065, 0.002, 0.009])
+
+    def test_the_alien_loco_clips_lift_per_frame(self):
+        toml = Path(E.__file__).resolve().parent / "anim_sets" / "alien.toml"
+        for clip in ("Walk_Loop", "Jog_Fwd_Loop", "Sprint_Fwd_Loop", "Idle_Loop", "Crouch_Fwd_Loop", "Jump_Land"):
+            cfg = E.settings(str(toml), clip)
+            self.assertIs(cfg.get("floor"), True, clip)
+            self.assertEqual(int(cfg.get("floor_reach", 2)), 0, clip)
+
+
 class A2Maths(unittest.TestCase):
     def test_arm_axis_signs(self):
         # the character faces -Y, its left is +X; a hand hangs along -Z
