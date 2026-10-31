@@ -348,6 +348,7 @@ def sole_floor(arm, skins, path: str) -> dict:
         p = Path(__file__).resolve().parent / "anim_sets" / f"{path}.toml"
     rest = {b.name: b.matrix_local.to_3x3() for b in arm.data.bones}
     up_arm = arm.matrix_world.to_3x3().normalized().inverted() @ Vector((0.0, 0.0, 1.0))
+    frame = bpy.context.scene.frame_current
     keep = arm.animation_data.action if arm.animation_data else None
     keep_slot = arm.animation_data.action_slot if keep is not None else None
     out = {}
@@ -362,6 +363,7 @@ def sole_floor(arm, skins, path: str) -> dict:
         arm.animation_data.action = keep
         if keep_slot is not None:
             arm.animation_data.action_slot = keep_slot
+    bpy.context.scene.frame_set(frame)
     return out
 
 

@@ -609,11 +609,6 @@ def main() -> int:
                         max(v[1] for v in ba.values()))
                 else:  # no clip had a toe bend to cap: report it, never crash on max() over nothing
                     say("toes cap", cap, "no clip capped")
-        if args.sole_floor:  # B1: the soles reach 5 to 6.5 mm under the bare foot at heel strike and toe-off
-            import alien_clip_edit as CE
-            rep["sole_floor"] = CE.sole_floor(arm, [char, new], args.sole_floor)
-            sf = rep["sole_floor"]
-            say("sole floor", {k: (v["lowest_before_cm"], v["max_lift_cm"], v["floated_frames"]) for k, v in sf.items()})
     garment = next((o for o in cloth if o.name == "garment"), None)
     if args.stray > 0 and garment is not None:  # E1b: the fit's stray vertices (spikes out of the hips)
         btree = BVHTree.FromObject(char, bpy.context.evaluated_depsgraph_get())
@@ -1194,6 +1189,14 @@ def main() -> int:
         "through the walls ),", n_under,
         "under the cloth for certain,", sum(gone),
         "faces removed; tris", rep["tris"])
+    shoes_now = next((o for o in cloth if o.name == "shoes"), None)
+    if args.sole_floor and shoes_now is not None and "sneakers" in rep:
+        # B1: the soles reach under the bare foot at heel strike and toe-off; last, so every step above sees the
+        # clips and the frame as the character brought them
+        import alien_clip_edit as CE
+        rep["sole_floor"] = CE.sole_floor(arm, [char, shoes_now], args.sole_floor)
+        say("sole floor", {k: (v["lowest_before_cm"], v["max_lift_cm"], v["floated_frames"])
+                           for k, v in rep["sole_floor"].items()})
     rep["maps"] = maps(cloth, not args.no_fill, tuple(float(v) for v in args.denim_gain.split(",")))
     blend = out / f"{args.name}_char.blend"
     bpy.ops.wm.save_as_mainfile(filepath=str(blend), compress=True)
