@@ -1612,6 +1612,30 @@ Jog close-ups: the fingers stay three rounded tubes with gaps, and the index's c
 (the webs bridge only gaps narrower than about k); H1h's prototype, which pushed and smoothed every inside vertex,
 closed more. Tuning `k_mm` (or a palm in the union) is the next step.
 
+**The run fist by an envelope (H1l).** Five rounds of tuning the field (H1j, H1k) failed for one reason: moving
+each finger vertex to the nearest point of one merged solid leaves the facing sides of two fingers nowhere to go. In
+every cross-section a closed loop (one finger's skin) cannot cover an arc of the merged outline once, so the facing
+sides fold (H1k: 300-570 hidden vertices per hand, creases and spikes). `[fist] route = "envelope"`
+(`alien_fist_envelope.py`, numpy inside Blender) builds the fist's surface first and wraps the skin onto it:
+- `env_mode = "merge"`, the smooth union of the fitted digits (`env_k_mm`), the chord cores and the palm box
+  (`env_k_core_mm`), the thumb (`env_k_thumb_mm`): still folds (axolotl, k 22: 169-183 folded triangles per hand
+  after the relax);
+- `env_mode = "press"` (the pick): each digit stays its own solid, inflated (`env_inflate`) with its own curl
+  filled by its chord cone (`env_core`), clipped against the other digits at their bisector less half the slit
+  (`env_gap_mm`) and off the palm box (`env_palm`), the clip's lip rounded over `env_lip_mm`: fingers pressed
+  together with a thin dark line between them, the thumb lying across them. Each vertex follows the digit carrying
+  most of its weight, so a finger's skin maps onto its own solid;
+- `wrap`: the shrink-wrap (Newton steps along the field's gradient), then `wrap_rounds` of edge springs towards
+  the posed edge lengths, taken in the tangent plane and re-projected, with a fold guard that undoes any step turning
+  a triangle over (a uniform umbrella instead slides a pinned tube's skin towards its rim and folds it);
+- `metrics`: folded triangles (normal against the envelope's), the shortest edge against the median, the vertices'
+  distance from the envelope (bumps), the facets' sag. `test_alien_fist_envelope_blender.py` checks them on
+  synthetic tubes: merged folds, pressed does not.
+H1l's grid on the axolotl (`D:/prime-art-raw/2026-10-31-hands/h1l/e2/`): press at inflate 1.4 reads as a clean
+cartoon fist in Blender (three pressed fingers, the thumb across the front), 33-36 folded triangles per hand left
+(from 84-86 bare; the posed mesh's own shortest edge is 0.09 of the median, so the brief's 30 % bound fails before any
+move); the index's curl still shows a small dark notch from the thumb's side.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
