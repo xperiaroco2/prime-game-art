@@ -305,6 +305,9 @@ def main() -> int:
             raise SystemExit(f"{blend} exists: never over a raw build")
         out.mkdir(parents=True, exist_ok=True)
         used = apply(cfg, arm)
+        if cfg.get("fist"):  # H1j: the run fist's shape key and its weight keys (alien_fist_shape.py)
+            import alien_fist_shape
+            used["fist"] = alien_fist_shape.add(cfg, arm)
         (out / "hands.json").write_text(json.dumps({"source": a.blend, "hands": a.hands, "actions": used}, indent=1),
                                         encoding="utf-8", newline="\n")
         bpy.ops.wm.save_as_mainfile(filepath=str(blend))

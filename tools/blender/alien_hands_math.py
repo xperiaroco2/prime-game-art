@@ -32,6 +32,9 @@ CHAINS = {"Thumb": ("Metacarpal", "Proximal", "Distal"), "Index": ("Proximal", "
 GRIP_KEYS = {"all", "Thumb", "Index", "Middle", "Ring", "Little", "ThumbTurn", "spread", "mirror", "note"}
 CLIP_KEYS = {"grip", "Left", "Right", "keys", "note"}
 SET_KEYS = {"poses", "skip", "default", "note"}
+# [fist] (H1j): the run fist as a morph (alien_fist_math.py); the defaults, every key optional but `grip`
+FIST_DEFAULTS = {"morph": "fist", "k_mm": 14.0, "k_thumb_mm": 10.0, "pull_mm": 2.0, "hide_mm": 4.0, "relax": 4,
+                 "relax_lambda": 0.3, "band_mm": 2.0, "fade_to": 0.6}
 
 
 class HandsError(ValueError):
@@ -59,7 +62,7 @@ def _check_grip(name: str, g: dict) -> None:
 def load(path: Path = DATA, poses: Path | None = None) -> dict:
     """The hands file with its grips merged over the poses' (`[set] poses`, beside it), every nested key checked."""
     cfg = tomllib.loads(Path(path).read_text(encoding="utf-8"))
-    bad = sorted(set(cfg) - {"set", "grips", "clips"})
+    bad = sorted(set(cfg) - {"set", "grips", "clips", "fist"})
     if bad:
         raise HandsError(f"{path}: unknown tables {bad}")
     st = cfg.get("set", {})
@@ -84,8 +87,17 @@ def load(path: Path = DATA, poses: Path | None = None) -> dict:
         if bad:
             raise HandsError(f"clips.{pat}: unknown keys {bad}")
         plan_of(c, grips, f"clips.{pat}")
-    return {"set": {"poses": str(src), "skip": list(st.get("skip", [])), "default": default},
-            "grips": grips, "own": sorted(own), "clips": clips}
+    out = {"set": {"poses": str(src), "skip": list(st.get("skip", [])), "default": default},
+           "grips": grips, "own": sorted(own), "clips": clips}
+    if "fist" in cfg:  # H1j: the run fist as a morph on the fist grip
+        fist = cfg["fist"]
+        bad = sorted(set(fist) - set(FIST_DEFAULTS) - {"grip", "note"})
+        if bad:
+            raise HandsError(f"{path}: [fist] unknown keys {bad}")
+        if fist.get("grip") not in grips:
+            raise HandsError(f"{path}: [fist] grip {fist.get('grip')!r} unknown")
+        out["fist"] = {**FIST_DEFAULTS, **{k: v for k, v in fist.items() if k != "note"}}
+    return out
 
 
 def plan_of(c: dict, grips: dict, where: str = "") -> dict:

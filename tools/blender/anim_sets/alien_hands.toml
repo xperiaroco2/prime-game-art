@@ -51,3 +51,14 @@ grip = "flat"
 
 [clips."Jump_Land"]
 keys = [[0.0, "flat"], [0.5, "relaxed"]]
+
+[fist]  # H1j: the run fist as a morph (the engineer's option C, art #196; tools/blender/alien_fist_math.py): the body's
+        # shape key `morph`, made in the `grip` pose, its weight 1 wherever a clip's grip is `grip` (Jog, Sprint,
+        # Strafe), 0 elsewhere, eased between keyed grips; the fingers smooth-unioned over k_mm, the thumb over k_thumb_mm
+grip = "loose"
+morph = "fist"
+k_mm = 14.0        # the fingers' webs: H1h's C prototype
+k_thumb_mm = 10.0  # the thumb's web onto the fingers: smaller, so the thumb still reads on its own
+pull_mm = 2.0      # a finger vertex up to this far outside the fitted tubes is pulled onto them
+hide_mm = 4.0      # buried deeper than this (two fingers' facing sides): kept under the surface
+relax = 4          # rounds of relaxing along the surface where the projection moved vertices

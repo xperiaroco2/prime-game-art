@@ -170,10 +170,22 @@ def _export(arm, path: Path) -> None:
         o.select_set(o == arm or (o.type == "MESH" and o.parent == arm))
     bpy.context.view_layer.objects.active = arm
     # the fixed textured options; the character build's GLB has no morph targets (alien_char_build.py exports none)
-    opts = {**EG.options(textured=True), "use_selection": True, "export_morph": False}
+    # but the run fist (H1j, alien_fist_shape.py): the body's one shape key, its weights keyed per clip afterwards
+    # from the body's fist_weights (the exporter's own shape-key animation stays off: it merges actions)
+    fist = [o for o in bpy.context.selected_objects if o.type == "MESH" and o.get("fist_weights")]
+    opts = {**EG.options(textured=True), "use_selection": True, "export_morph": bool(fist),
+            "export_morph_animation": False}
     if bpy.ops.export_scene.gltf(filepath=str(path), **opts) != {"FINISHED"}:
         raise SystemExit(f"the glTF exporter failed on {path}")
     EG.fix_zero_tangents(str(path))
+    if fist:
+        import alien_fist_math as F
+        o = fist[0]
+        morph = [k.name for k in o.data.shape_keys.key_blocks][1:]
+        plans = {n: [tuple(k) for k in v] for n, v in json.loads(o["fist_weights"]).items()}
+        got = F.key_weights(str(path), morph[0] if len(morph) == 1 else ",".join(morph), plans)
+        print(f"FIST weights {path.name}: " + ", ".join(f"{n.split('|')[-1]} {w}" for n, w in sorted(got.items())),
+              flush=True)
 
 
 def _blender_main(argv: list[str]) -> None:
