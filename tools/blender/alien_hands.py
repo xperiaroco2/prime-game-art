@@ -10,7 +10,7 @@ alien_hands_math.py, the data in anim_sets/alien_hands.toml). Headless Blender:
   with `--glb`, `<dir>/<name>_char.glb` with alien_loco's textured export.
 - `--check`: the skin dump (`alien_poses._dump`), per grip and hand the finger collisions at rest and past the rest
   pose's floor, and per clip the worst of its grips: `<dir>/collisions.json`, `<dir>/collisions.md`.
-- `--sheet`: the left hand at 0.8 m (lens 85) from outside, the palm side, the thumb side and the other side, one row
+- `--sheet`: the left hand (`--side Right`: the right) at 0.8 m (lens 85) from outside, the palm side, the thumb side and the other side, one row
   per spec item (`grip:<name>`: the rest pose with the grip; `clip:<name>@<share>`: the clip at that share of its
   frames; `rest`); flat colour with cavity; `--sketch` puts the sketch's hands beside the first row.
 """
@@ -127,9 +127,9 @@ def check(cfg: dict, arm, out: Path, used: dict) -> dict:
     return res
 
 
-def _hand_axes(arm):
-    """The left hand's palm normal and thumb side in its bone's local axes (from the T-pose rest: -Z, -Y)."""
-    b = arm.data.bones["LeftHand"]
+def _hand_axes(arm, side: str = "Left"):
+    """The hand's palm normal and thumb side in its bone's local axes (from the T-pose rest: -Z, -Y)."""
+    b = arm.data.bones[f"{side}Hand"]
     inv = (arm.matrix_world.to_3x3() @ b.matrix_local.to_3x3()).inverted()
     return inv @ Vector((0.0, 0.0, -1.0)), inv @ Vector((0.0, -1.0, 0.0))
 
@@ -150,12 +150,12 @@ def _pose_rest(arm) -> None:
         pb.matrix_basis = Matrix.Identity(4)
 
 
-def sheet(cfg: dict, arm, spec: str, png: Path, sketch: str = "", res: int = 320) -> list:
+def sheet(cfg: dict, arm, spec: str, png: Path, sketch: str = "", res: int = 320, side: str = "Left") -> list:
     import alien_closeups as C
     sc, cam = R.setup((res, res))
     sc.display.shading.show_cavity = True
     sc.display.shading.cavity_type = "WORLD"
-    palm_l, thumb_l = _hand_axes(arm)
+    palm_l, thumb_l = _hand_axes(arm, side)
     tmp = png.parent / f"_cells_{png.stem}"
     tmp.mkdir(parents=True, exist_ok=True)
     rows, log = [], []
@@ -163,7 +163,7 @@ def sheet(cfg: dict, arm, spec: str, png: Path, sketch: str = "", res: int = 320
         kind, _, val = item.partition(":")
         _pose_rest(arm)
         if kind == "grip":
-            for b, q in H.grip_pose(cfg, val, "Left").items():
+            for b, q in H.grip_pose(cfg, val, side).items():
                 if b in arm.pose.bones:
                     arm.pose.bones[b].rotation_mode = "QUATERNION"
                     arm.pose.bones[b].rotation_quaternion = q
@@ -173,11 +173,11 @@ def sheet(cfg: dict, arm, spec: str, png: Path, sketch: str = "", res: int = 320
             f0, f1 = act.frame_range
             C.play(arm, act, int(round(f0 + float(share or 0) * (f1 - f0))))
         bpy.context.view_layer.update()
-        pb = arm.pose.bones["LeftHand"]
+        pb = arm.pose.bones[f"{side}Hand"]
         rot = (arm.matrix_world @ pb.matrix).to_3x3().normalized()
         length = rot @ Vector((0.0, 1.0, 0.0))
         palm, thumb = (rot @ palm_l).normalized(), (rot @ thumb_l).normalized()
-        c = arm.matrix_world @ ((pb.head + arm.pose.bones["LeftMiddleIntermediate"].head) / 2)
+        c = arm.matrix_world @ ((pb.head + arm.pose.bones[f"{side}MiddleIntermediate"].head) / 2)
         row = []
         for view, d in zip(VIEWS, (-palm, palm, thumb, -thumb)):
             _look(cam, c + d * DIST, c, -length)
@@ -213,6 +213,7 @@ def main() -> int:
     ap.add_argument("--sheet")
     ap.add_argument("--rows", default="rest,grip:relaxed")
     ap.add_argument("--sketch", default="")
+    ap.add_argument("--side", choices=("Left", "Right"), default="Left", help="the sheet's hand")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     cfg = H.load(Path(a.hands))
     bpy.ops.wm.open_mainfile(filepath=str(Path(a.blend).resolve()))
@@ -248,7 +249,7 @@ def main() -> int:
         if png.exists():
             raise SystemExit(f"{png} exists")
         png.parent.mkdir(parents=True, exist_ok=True)
-        log = sheet(cfg, arm, a.rows, png, a.sketch)
+        log = sheet(cfg, arm, a.rows, png, a.sketch, side=a.side)
         png.with_suffix(".json").write_text(json.dumps(log, indent=1), encoding="utf-8", newline="\n")
         print("HANDS sheet", png, flush=True)
     return 0
