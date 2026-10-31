@@ -682,6 +682,18 @@ above it again from Blender's rest matrices.
   at a vertex) and the skin pull moves along it; `--cosmetic-early 1` runs the crumbs and the relax before the cover
   test. d65 (d58's args) and d66 (the crumbs early) give the same body (42,688 tris) and pokes, better than d58.
   `--collar-keep 0.09` (d68, with the relax) kept 212 more body tris and 11 points at rest: not used.
+- **The proof's side from every tied face** (M2j): `clothes_proof.py` measures a body point's side with the dress's
+  `clothes_side.ClothSide` (`--tie-side`, default 1). On d65 it moved Jog and Strafe to 0 and Sprint and Jump_Start
+  to 19 and 12 mm (one or two right-calf points at z 0.162); d67's 24 to 27 mm calf points stayed, so they were the
+  fold's inward faces, not a tie.
+- **The built cuff ring** (M2j, `--cuff-ring z_top,height,thick,clear,stations[,lap[,most]]`, `clothes_top.cuff_ring`):
+  each turn-up a closed rolled band (`clothes_shell.cuff_profile`, 10 points per station) in place of Meshy's folded
+  band. The Meshy leg is bisected on one plane lap under z_top; its outer wall lies thick out of the leg's cloth just
+  above (pushed out of the shoe by at most `most`), its opening narrows to `clear` off the ankle, its weights are the
+  cut leg's nearest four vertices', and `plain_denim` tints it (the box's cut height at z_top). `--ankle-top z` cuts the
+  kept ankle skin on one level plane inside it. d70 (`0.165,0.05,0.008,0.003,32,0.008`, `--ankle-top 0.128`): clean
+  rings, 0 pokes in every clip, but 60,558 triangles; d71 at 24 stations is the cap's build. The teal ankle between the
+  ring and the shoe still shows the collar's shards in Jog: the ring's bottom should reach the collar next.
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'
