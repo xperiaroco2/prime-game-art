@@ -139,9 +139,8 @@ class SpecTest(unittest.TestCase):
                 self.assertIn(f, g["starts"])
                 self.assertIn(f if f == "Thumb" else "finger", g["limits"])
         hands = tomllib.loads((ROOT / "tools/blender/anim_sets/alien_hands.toml").read_text(encoding="utf-8"))
-        for name in ("loose", "relaxed"):
-            for f in G.FING:
-                self.assertEqual(len(hands["grips"][name][f]), 4, (name, f))  # the solved side turn
+        for f in G.FING:  # the loose grip is solved (its side turn); the relaxed one is H1f's r2 again (H1h)
+            self.assertEqual(len(hands["grips"]["loose"][f]), 4, f)
         self.assertLessEqual(max(hands["grips"]["loose"][f][2] for f in G.FING), 15.0)  # the tip joint <= 15
 
 

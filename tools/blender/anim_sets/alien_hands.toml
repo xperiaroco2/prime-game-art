@@ -13,15 +13,16 @@ poses = "alien_poses.toml"
 default = "relaxed"
 skip = ["PoseArms_*", "PoseLegs_*"]  # the photo poses keep their own grips
 
-[grips.relaxed]  # Idle, Walk, Talk, Crouch: a knuckle-led curl, the thumb alongside the index (H1b, H1f r2's
-                 # tips as the spec's targets)
-Index = [11.2, 8.4, 3.3, -3.6]    # H1g: solved (tools/blender/alien_grip_solve.py) to body_dims/hand_grips.toml on
-Middle = [19, 13.4, 5.4, -0.9]  # both characters' hands at once; [base, middle, tip, side turn]
-Ring = [26.7, 20.8, 7.9, 4.1]
-Little = [26.7, 20.8, 7.9]
+[grips.relaxed]  # Idle, Walk, Talk, Crouch (H1b): the curl grows from the index to the outer finger, the thumb lies
+                 # alongside the index, never facing the fingers (the old even 30/30/30 C read as holding a cup)
+Index = [12, 10, 2]     # H1f r2: the curl led by the knuckles, the tips nearly straight and the fingers closer (spread 6):
+Middle = [20, 16, 4]    # 8/14/8 .. 26/34/18 with spread 12 read as a claw in side view (separated, hooked tips).
+Ring = [28, 22, 6]      # H1h: restored; H1g's solved relaxed (side turns instead of the spread, the spec's thumb
+Little = [30, 22, 6]    # beside the index's knuckle) splayed the fingers straight and laid the thumb into the palm
 mirror = true
-Thumb = [-2.6, 0, 4.3]
-ThumbTurn = [9.1, -35.6]
+spread = 6
+Thumb = [2, 8, 6]
+ThumbTurn = [4, -6]
 
 [grips.loose]  # the run (Jog, Sprint, Strafe): the fingers folded onto the palm, every tip touching it,
                  # the thumb's pad over the index's and middle's middle segments (H1d-H1f's grids never converged)
