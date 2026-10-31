@@ -103,6 +103,7 @@ tools/run.sh lobby --light-grid <raw>/lobby/hall/v6/grid    # step 4: the light 
 tools/run.sh lobby --video <raw>/lobby/hall/v6/walk         # step 4: the eye-height walk-through MP4
 tools/run.sh lobby --distance-grid <raw>/lobby/hall/v7/dgrid    # step 4c: the Earth's distances from three positions
 tools/run.sh lobby --earth-video <raw>/lobby/hall/v7/earth-video  # step 4c: one 15 s MP4 per distance
+tools/run.sh lobby --ship-grid <raw>/lobby/hall/v9/sgrid           # step 5a2: the ship's light sets K1-K3
 ```
 
 `--build`, `--godot` and `--shoot` are heavy runs (Blender, Godot; one at a time): agents start them in the background.
@@ -591,6 +592,43 @@ it, the Earth at D2, and the package's closed ship in the hall.
 GPU ms (L3, E2, D2, `lobby --shoot`): `corner_nw` 3.49, `spawn_eye` 2.42, `c_back` 3.56 against step 4c's 3.23 /
 2.42 / 3.26 (the package's whole ship, interior included: about 3200 draw calls in the ship's views); with the
 package's lamps on 3.98 / 2.89 / 4.23.
+
+## Step 5a2: the ship's own light
+
+The package's ship (art #263's silver `metal.gdshader`, base about 0.83, metallic 0.6, approved on the ship) read as a
+flat cream-white under the hall's L3, its panel seams lost and hot spots on its top; in its own night scene it reads as
+cool brushed silver with visible seams (`<raw>/ship/v5/export/v4/_check/shots/out_hero.png`). Fixed on the hall's side
+only, per instance in `hall.gd`; the package's files and materials are never changed.
+
+- The cause (`lobby --ship-grid`, `<raw>/lobby/hall/v9/sdiag/`, one input taken off the ship at a time; the hull's mean
+  sRGB luminance in fixed crops): the hall's **warm pendants**. Without them the top (`ship_top`) goes from **0.50**
+  (rgb 0.60, 0.48, 0.40: cream) to **0.27** (neutral), the whole ship from the corner (`corner_nw`) from 0.53 to 0.22.
+  The hall's ambient carries the sides (`a_entrance` flank 0.23 -> 0.10 without it), the Earth's light the aft panel
+  (`spawn_ship` 0.67 -> 0.48); the probes' reflections change nothing (0.49 -> 0.49). The target's wing top reads
+  **0.69** (rgb 0.64, 0.69, 0.77: cool), its shaded side 0.45.
+- `[light.ship]`: the ship's meshes draw on render layer 11 (`GeometryInstance3D.layers`, set when the instance is
+  placed). Per set: `pendant_k` (the hall's pendants and their upward fill skip the ship by their cull mask, still
+  casting its shadow through `shadow_caster_mask`; an unshadowed copy of each at this share, its specular
+  `pendant_specular`, lights it), `earth_k` (the same for the Earth's light), `own_probe` (the hall's probes skip the
+  ship by their reflection mask; a probe of its own, box `probe`, captures the hall without the ship and gives its
+  ambient), and `key_*` and `rim_*`: unshadowed directionals on the ship alone, the ship scene's own cool key
+  (-140 deg, 38 deg up) and its moon (35 deg, 30 deg up, the Earth's side) as the rim. `set` is the one switch (K1).
+- The grid (`lobby --ship-grid DIR`, `<raw>/lobby/hall/v9/sgrid/grid.png`; views `a_entrance`, `c_back`,
+  `corner_nw`, `spawn_ship` and the new close-up `ship_top`), the hall's own L3 unchanged:
+
+  | set | what | top | flank | corner | aft | GPU ms (A / C / corner / spawn / top) |
+  |---|---|---|---|---|---|---|
+  | step 5a | the hall's light | 0.50 warm | 0.21 | 0.53 | 0.67 | 4.06 / 3.46 / 3.37 / 3.51 / 3.51 |
+  | K1 | the ship's own night: key 0.55, moon 0.6, pendants x0.15, ambient 0.12 cool | 0.55 cool | 0.31 | 0.48 | 0.64 | 4.13 / 3.56 / 3.62 / 3.51 / 3.81 |
+  | K2 | warmer: pendants x0.4, key 0.45, a warm grey ambient 0.15 | 0.57 neutral | 0.26 | 0.54 | 0.52 | 4.01 / 3.62 / 3.65 / 3.60 / 3.50 |
+  | K3 | darker: pendants x0.1, key 0.35, ambient 0.07 | 0.49 cool | 0.20 | 0.41 | 0.44 | 3.85 / 3.52 / 3.49 / 3.45 / 3.53 |
+
+  (Crops at 1920x1080: `ship_top` 300,300-1600,900; `a_entrance` 300,420-1000,620; `corner_nw` 400,470-1100,560;
+  `spawn_ship` 800,560-1150,640. The target: 980,490-1230,560 and 760,440-1000,520.) The sets cost about 0.1-0.3 ms
+  (nine unshadowed spot copies, one more probe, two directionals).
+- K1 as the default (`lobby --godot --shoot --video`, `<raw>/lobby/hall/v9/`): the walk 22/22 (179.9 m), 6 blocks
+  hold; GPU `corner_nw` 3.78, `spawn_eye` 2.39, `c_back` 3.78 ms against step 5a's 3.49 / 2.42 / 3.56. The ship still
+  casts its shadows (the floor under it). The hall's walls, floor and vault are as in step 5a (L3).
 
 ## Open problems
 
