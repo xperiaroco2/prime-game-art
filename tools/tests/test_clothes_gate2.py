@@ -334,6 +334,29 @@ class HardwareTest(unittest.TestCase):
         self.assertEqual(set(res), set(spec["dims"]))
         self.assertTrue(all(v["absent"] and v["cm"] is None for v in res.values()))
 
+    def test_band_hugging_her_waist_is_found(self):
+        # G3a: a band at the spec's 24.5 cm is widest behind the centre line, 12.2 cm off it; the old window
+        # (|x| 12-15 cm, y < 0) missed it and read the yoke under it as the band's top
+        spec = S.load_spec(SPEC)
+        bib = (*panel(-0.10, 0.10, -0.12, 1.0, 1.198), 0)
+        band = (*panel(0.115, 0.1225, 0.01, 0.958, 0.998, n=2), 0)
+        yoke = (*panel(0.12, 0.125, -0.01, 0.90, 0.963, n=2), 0)
+        res = GD.measure_build(spec, {"meshes": [mesh([bib, band, yoke])]}, S.Sections({"meshes": []}))
+        self.assertAlmostEqual(res["waistband_top_z"]["cm"], 99.8, places=2)
+
+    def test_bust_gap_against_her_front_over_11_cm(self):
+        # G3a: the gap is to her front over |x| < 11 cm (the bust's peaks), as the drawing's lean B, not the cleavage
+        spec = S.load_spec(SPEC)
+        bib = (*panel(-0.11, 0.11, -0.140, 1.0, 1.198), 0)
+        band = (*panel(0.115, 0.1225, 0.01, 0.958, 0.998, n=2), 0)
+        cleavage = panel(-0.04, 0.04, -0.120, 1.08, 1.18)
+        peaks = panel(0.06, 0.10, -0.132, 1.08, 1.18)
+        body = S.Sections({"meshes": [{"name": "b", "vertices": cleavage[0] + peaks[0],
+                                       "tris": cleavage[1] + [[a + len(cleavage[0]), b + len(cleavage[0]),
+                                                               c + len(cleavage[0]), 0] for a, b, c, _ in peaks[1]]}]})
+        res = GD.measure_build(spec, {"meshes": [mesh([bib, band])]}, body)
+        self.assertAlmostEqual(res["bib_standoff_bust"]["cm"], 0.3, places=2)
+
     def test_absent_is_a_failure(self):
         spec = {"dims": {"buckle_d": {"cm": 1.6, "tol_cm": 0.3}, "strap_w": {"cm": 3.8, "tol_cm": 0.3}}}
         meas = {"buckle_d": {"cm": None, "how": "absent", "absent": True}}

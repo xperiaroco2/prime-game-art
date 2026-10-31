@@ -343,10 +343,12 @@ def measure_build(spec: dict, probe: dict, body: S.Sections, shirt: float = 0.5,
             res[k]["absent"] = True   # looked for on the mesh and not there: a failure, never "unmeasured"
     zw = lm["waist"] + 4.5
     front_pts = [p for p in g.pts if abs(p[0]) < 0.06 and p[1] < -0.09]
-    side = [p for p in g.pts if 0.12 < abs(p[0]) < 0.15 and p[1] < 0 and p[2] < zw / 100]
+    # the band's side, forward of the side seam (y < 3 cm): a band hugging her waist at the spec's 24.5 cm is widest
+    # behind the centre line, 12.2 cm off it, so "in front, over 12 cm" missed it (G3a)
+    side = [p for p in g.pts if 0.11 < abs(p[0]) < 0.15 and p[1] < 0.03 and p[2] < zw / 100]
     if not front_pts or not side:
         why = f"absent: no '{mesh}' vertex " + ("in front within 6 cm of the centre" if not front_pts else
-                                                f"12-15 cm off the centre in front under her waist + 4.5 ({zw:.1f})")
+                                                f"11-15 cm off the centre, y < 3 cm, under her waist + 4.5 ({zw:.1f})")
         for k in spec["dims"]:
             put(k, None, why, absent=True)
         return res
@@ -370,7 +372,8 @@ def measure_build(spec: dict, probe: dict, body: S.Sections, shirt: float = 0.5,
 
     def gap(z, back=False):
         a = centre(z, back)
-        b = [q for q in body.at(z / 100) if abs(q[0]) < 0.05 and (q[1] > 0 if back else q[1] < 0)]
+        # her front over |x| < 11 cm, as the drawing's lean B (profile): the bust's peaks, not the cleavage (G3a)
+        b = [q for q in body.at(z / 100) if abs(q[0]) < 0.11 and (q[1] > 0 if back else q[1] < 0)]
         if a is None or not b:
             return None
         return ((a - _top(b, 1)) if back else (_top(b, 1, lo=True) - a)) * 100 - shirt
@@ -399,7 +402,7 @@ def measure_build(spec: dict, probe: dict, body: S.Sections, shirt: float = 0.5,
         absent=not bb)
     put("buckle_d", sum(b["d"] for b in bb) / len(bb) * 100 if bb else None, how + ": mean disc diameter",
         absent=not bb)
-    put("waistband_top_z", band, "highest garment vertex 12-15 cm off the centre, in front, under her waist + 4.5 cm")
+    put("waistband_top_z", band, "highest garment vertex 11-15 cm off the centre, y < 3 cm, under her waist + 4.5 cm")
     gm = next((m for m in probe["meshes"] if m["name"] == mesh), None)
     pieces = S.mesh_pieces(gm) if gm else []
     for p in pieces:
