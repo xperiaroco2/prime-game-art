@@ -898,3 +898,44 @@ cd tools/blender && $PYTHON_BIN garment_drawing.py --spec ../../specs/dungarees_
   off her upper chest (d80-d82's board); (B, the spec's choice) straight across with one smooth side-view bend over
   the bust, the top edge 0.8 cm off the shirt. The d79 build is off in 14 of 21 measured sizes (bib top -8.9 cm,
   band -6.5, hem -5.2). Her rest is a T-pose: her armpit landmark is a T-pose armpit, higher than an A-pose one.
+
+## Gate 2: the build's automatic checks and its review page (art #196)
+The ADR `docs/decisions/2026-10-31-asset-pipeline-gates.md` lets no garment pass Gate 2 without these numbers. They are
+general for any garment with a spec: the spec's `[gate2]` section (`specs/dungarees_dims.toml`) names the clips, the
+parts, the joins, the flat and stiff parts, the stations and every tolerance; heights and boxes may name a measure
+(the build's measured value of a spec size, else the spec's cm, else her landmark; `spec:NAME` always the spec's).
+
+```
+tools/run.sh frames <build.glb> --clips Walk,Jog_Fwd --video Walk,Jog_Fwd --compare '' --look high
+    --video-camera 'torso@0,1.06,0~Chest/0.55/0' --out <raw>/.../video
+tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json> --blend <build .blend>
+    --dress <dress.json> --poke <clothes_proof poke.json> --video <raw>/.../video --out <raw>/.../gate2 --tag dNN
+    [--probe <build probe.json>] [--motion <motion.json>]
+```
+
+- **Spec numbers** (`garment_drawing.measure_build`): every spec size on the build against its `tol_cm`. A size it
+  cannot measure (a part the build lacks, a measure not written yet: the pocket, the side buttons, the buckle's
+  diameter on d79) counts as unmeasured, and Gate 2 does not pass with an unmeasured number. `measure_build` reads
+  some sizes from `dress.json` (the cuff ring, the buckles, the back panel's outline): a new build route must write
+  them or `measure_build` must measure them on the mesh.
+- **Silhouettes** (`garment_gate2.py`, plain Python): per view the build's garment as seen (z-buffered against her
+  body, the shirt and the shoes), drawn at the concept's scale by her landmark rows (`garment_drawing.concept_map`; in
+  front and back the legs moved onto the concept's leg lines, as the drawing does), against the concept's garment
+  mask (`garment_gate2_geom.concept_mask`: blue over red and green, an opening of 4 rows that drops the shirt's navy
+  stripes, a closing, the large pieces, the holes filled; `concept_mask_<view>.png`; a hand mask `mask_<view>` in
+  `[gate2]` replaces it). The overlap is the intersection over union (`overlap_min` per view; the side view's over
+  the trunk only, `overlap_z`, as the concept's side legs stride). `overlay_<view>.png`: green both, blue the concept
+  only, red the build only. The stations' table: per station the concept's, the spec's and the build's cm and the
+  error in mm against the spec (against the concept where the spec has no size), only where both pictures show the
+  garment plainly (the concept's side arm hides the back at the bust; its bib is narrower than the spec's).
+- **Motion** (`garment_motion.py`, headless Blender, every frame of each clip): the garment's pieces are classed as
+  `strap` (over the collarbone with points in front and behind), `hardware` (at most 300 vertices) or `panel`; a part
+  is those classes inside a box. Slip at a join is clothes_bibmove's (each moving vertex tied at rest to its nearest
+  point on the other part, turned back by that part's best fit), flatness the largest distance from the part's own
+  rest shape moved rigidly onto it (change from rest: lean B's drawn bend is the rest shape, only a new bend counts),
+  stretch the edges' |length / rest - 1| (largest and 95th percentile). Pokes come from `clothes_proof.py`'s
+  `poke.json` (`--poke`; run clothes_proof first).
+- **The page** (`index.html` in OUT, with `gate2.json`, `numbers.png`): per view concept | the spec drawn over the
+  concept | the build with the spec's lines at 5 px/cm (`garment_drawing.view_sheet` on the build's probe), the
+  overlays, the tables, and the front close-up Walk and Jog videos (`frames --video-camera`, copied in as
+  `closeup_<clip>.mp4`). The verdict is PASS only with every number measured and within tolerance and both videos.
