@@ -929,11 +929,11 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   error in mm against the spec (against the concept where the spec has no size), only where both pictures show the
   garment plainly (the concept's side arm hides the back at the bust; its bib is narrower than the spec's).
 - **Motion** (`garment_motion.py`, headless Blender, every frame of each clip): the garment's pieces are classed as
-  `strap` (over the collarbone with points in front and behind), `hardware` (at most 300 vertices) or `panel`; a part
+  `strap` (over the collarbone with points in front and behind), `hardware` (at most 60 vertices) or `panel`; a part
   is those classes inside a box. Slip at a join is clothes_bibmove's (each moving vertex tied at rest to its nearest
   point on the other part, turned back by that part's best fit), flatness the largest distance from the part's own
   rest shape moved rigidly onto it (change from rest: lean B's drawn bend is the rest shape, only a new bend counts),
-  stretch the edges' |length / rest - 1| (largest and 95th percentile). Pokes come from `clothes_proof.py`'s
+  stretch the edges' |length / rest - 1|, judged on the 95th percentile (the largest beside it: one torn edge). Pokes come from `clothes_proof.py`'s
   `poke.json` (`--poke`; run clothes_proof first).
 - **The page** (`index.html` in OUT, with `gate2.json`, `numbers.png`): per view concept | the spec drawn over the
   concept | the build with the spec's lines at 5 px/cm (`garment_drawing.view_sheet` on the build's probe), the

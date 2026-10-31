@@ -255,11 +255,11 @@ def stretch(rest: "np.ndarray", now: "np.ndarray", edges_ij: "np.ndarray", min_l
 
 def classify(sizes: list[int], spans: list[tuple[float, float, float, float]], over_z: float, hw_max: int) -> list[str]:
     """Each garment piece's class from its vertex count and rest span (z max, y min, y max, unused): 'strap' if it
-    reaches over over_z with points both in front (y < -2 cm) and behind (y > 2 cm), it goes over the shoulder;
-    'hardware' if it has at most hw_max vertices; else 'panel'."""
+    reaches over over_z with points both in front (y < -2 cm) and behind (y > 2 cm), it goes over the shoulder,
+    whatever its size; else 'hardware' if it has at most hw_max vertices; else 'panel'."""
     out = []
     for n, (zmax, ymin, ymax, _) in zip(sizes, spans):
-        if zmax > over_z and ymin < -0.02 and ymax > 0.02 and n > hw_max:
+        if zmax > over_z and ymin < -0.02 and ymax > 0.02:
             out.append("strap")
         elif n <= hw_max:
             out.append("hardware")

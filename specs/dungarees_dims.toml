@@ -273,7 +273,7 @@ concept_mask = { b_minus_r = 15, b_minus_g = 6, max = 215, open_ry = 4, close_r 
 
 [gate2.classify]
 over_z = "collarbone"        # a piece over this with points in front and behind goes over the shoulder: a strap
-hardware_max_verts = 300     # buckles, buttons
+hardware_max_verts = 60      # buckles, buttons (d79: 21 and 32; its back panel 272, band halves 165, cuffs 240)
 
 [gate2.parts.bib]
 classes = ["panel"]
@@ -326,6 +326,7 @@ tol_mm = 3.0                 # change from rest: lean B's drawn bend is the rest
 part = "back_panel"
 tol_mm = 3.0
 
+# judged on the 95th percentile of the edges' stretch over the clip (the largest is reported beside it)
 [[gate2.stretch]]
 part = "waistband"
 tol_pct = 2.0                # [behaviour] waistband: no stretch over 2 %

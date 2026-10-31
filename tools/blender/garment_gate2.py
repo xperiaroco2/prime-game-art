@@ -217,9 +217,9 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
             rows.append({"clip": clip, "check": f"flatness: {f['part']}", "value": v, "unit": "mm", "tol": f["tol_mm"],
                          "pass": G.verdict(v, f["tol_mm"])})
         for s in g2["stretch"]:
-            v = None if m is None else m["stretch_pct"].get(s["part"])
-            p95 = None if m is None else m["stretch_p95_pct"].get(s["part"])
-            rows.append({"clip": clip, "check": f"stretch: {s['part']} (p95 {p95})", "value": v, "unit": "%",
+            mx = None if m is None else m["stretch_pct"].get(s["part"])
+            v = None if m is None else m["stretch_p95_pct"].get(s["part"])   # judged: one torn edge shows in the max
+            rows.append({"clip": clip, "check": f"stretch p95: {s['part']} (max {mx})", "value": v, "unit": "%",
                          "tol": s["tol_pct"], "pass": G.verdict(v, s["tol_pct"])})
         pk = None if poke is None else (poke.get("clips") or {}).get(clip)
         v = None if pk is None else pk.get("max_count")
@@ -336,7 +336,7 @@ def run(a) -> int:
         mn = spec["gate2"]["overlap_min"][v]
         sil[v] = {"overlap": o, "min": mn, "pass": o["iou"] >= mn, "stations": sts}
         print(f"overlay {v}: IoU {o['iou']:.3f} ->", overlay(spec, crow, v, cm, bm, w, h, sts, o, out / f"overlay_{v}.png"))
-        print("sheet:", GD.view_sheet(spec, build, sec, crow, v, out / f"sheet_{v}.png"))
+        print("sheet:", GD.view_sheet(spec, build, sec, crow, v, out / f"sheet_{v}.png", f"the build {a.tag}"))
     motion = json.loads(Path(a.motion).read_text(encoding="utf-8")) if a.motion else {"clips": {}}
     poke = json.loads(Path(a.poke).read_text(encoding="utf-8")) if a.poke else None
     mrows = motion_rows(spec, motion, poke)

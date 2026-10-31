@@ -228,7 +228,9 @@ def draw_lines(cv, ls, tf, r=1):
                 cv.line(a, b, colour, r)
 
 
-def view_sheet(spec: dict, probe: dict, sec: S.Sections, concept_rows, view: str, out: Path) -> Path:
+def view_sheet(spec: dict, probe: dict, sec: S.Sections, concept_rows, view: str, out: Path, what: str = "") -> Path:
+    """concept | the spec over the concept | the spec over the probe's render; what names the probe (default her
+    body)."""
     c = spec["concept"]
     box = c["boxes"][view]
     lm = spec["body"]["landmarks_cm"]
@@ -247,8 +249,8 @@ def view_sheet(spec: dict, probe: dict, sec: S.Sections, concept_rows, view: str
     sole_y = oy + (TOP_CM - lm["sole"]) * PX
     oy_c = sole_y - (c["rows"]["sole"] - box[1]) * f          # the concept's sole on her sole line
     xs = [30, 30 + cw + 30, 30 + cw + 30 + cw + callw]
-    cv.text(30, 12, f"{spec['garment']['id']} SPEC - {view} - concept | spec over the concept | spec over her body "
-                     f"{spec['body']['id']} (5 PX/CM)", k=2)
+    cv.text(30, 12, f"{spec['garment']['id']} SPEC - {view} - concept | spec over the concept | spec over "
+                     f"{what or 'her body ' + spec['body']['id']} (5 PX/CM)", k=2)
     cv.text(30, 34, "red: the spec (option B)   blue dashed: option A / the sneaker rim   cm on her body", k=2)
     for i in (0, 1):
         cv.blit(concept_rows, box, (xs[i], int(oy_c)), f, fade=0.0 if i == 0 else 0.25)

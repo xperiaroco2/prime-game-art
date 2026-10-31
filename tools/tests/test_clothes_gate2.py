@@ -114,7 +114,7 @@ class OverlapTest(unittest.TestCase):
 class MotionTest(unittest.TestCase):
     def test_classify(self):
         spans = [(1.30, -0.12, 0.11, 0), (1.10, -0.15, 0.0, 0), (1.12, -0.13, -0.12, 0), (1.30, -0.12, 0.11, 0)]
-        self.assertEqual(G.classify([400, 5000, 80, 120], spans, 1.25, 300), ["strap", "panel", "hardware", "hardware"])
+        self.assertEqual(G.classify([400, 5000, 80, 120], spans, 1.25, 300), ["strap", "panel", "hardware", "strap"])
 
     def test_verdict(self):
         self.assertTrue(G.verdict(2.9, 3.0))
