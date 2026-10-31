@@ -128,7 +128,7 @@ class Spec(unittest.TestCase):
         self.assertLess(spec["wrist"]["s_fore"], 0)
         self.assertGreater(spec["wrist"]["s_palm"], 0)
         for g in ("fingers", "thumb"):
-            self.assertEqual(set(spec[g]), {"root_at", "taper", "ramp"})
+            self.assertEqual(set(spec[g]), {"root_at", "taper", "ramp", "wave_max_mm", "joint_blend"}  # H1i: the tubes)
         self.assertEqual(set(spec["palm"]), {"radius", "inner", "thumb_radius", "finger_max", "rounds", "fit", "fit_radius"})
         self.assertLess(spec["palm"]["inner"], 1.0)
         self.assertTrue(0.0 <= spec["palm"]["fit"] <= 1.0)
