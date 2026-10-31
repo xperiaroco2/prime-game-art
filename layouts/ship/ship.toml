@@ -526,6 +526,9 @@ ext_window_glow = {l = 0.0}                                          # details 1
 ext_screen = {l = 0.0, e = 2.0}                                             # details 1: the cockpit screens glow, light nothing
 ext_porthole = {l = 0.0}                                            # details 2: the portholes' faint warm glass glows, lights nothing (3b: and its glow bands, ext_porthole__gNN)
 glow_pod = {c = [0.2, 0.9, 1.0], e = 0.6, l = 0.15, rr = 0.6}        # lens step 2: the pods' rings, seen, not a lamp; light layer: e 0.6, the bands clipped pale in out_back
+glow_pod_hot = {e = 0.8, l = 0.0}                                    # polish n1: the nozzles' inner glow, hot core to
+glow_pod_mid = {e = 0.7, l = 0.0}                                    # dark rim; emissive in the package, lights nothing
+glow_pod_deep = {e = 0.6, l = 0.0}                                   # (the lobby zeroes the ship's run-time lights)
 int_silver_a = {v = 0.55, r = 0.25, m = 0.45}
 int_silver_b = {v = 0.55, r = 0.25, m = 0.45}
 int_silver_c = {v = 0.55, r = 0.25, m = 0.45}

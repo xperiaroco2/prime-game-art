@@ -218,65 +218,192 @@ def cockpit(side: float) -> list:
 
 
 # --- the nozzle pods -----------------------------------------------------------------------------------------------
-POD_SEGS = 32
+# polish n1 (art #263): the stern seen up close from the lobby's spawn. 64 segments shaded smooth (16-facet corners on
+# every rim before); the bell a solid ring with bevelled lips and a continuous light ring inset in its lip; inside,
+# two stepped rings with inset light rings, a deep wall and a floor glowing from a hot teal core to a dim rim round a
+# turbine hub with stator vanes. The glow lives in the materials (glow_pod_hot/_mid/_deep, emissive, l 0 in
+# ship.toml [light.mats]), so the package's bells glow wherever it is instanced, its run-time lights off or on (the
+# lobby zeroes them; the throat's teal had been only the run-time glow-cell omni lighting a black wall).
+POD_SEGS = 64
 THROAT_SMOOTH_DEG = 30.0   # fix 2: the throat smooth across its radial facets, sharp at its wall/floor crease
-NOZZLE = (0.8, 0.45)   # lens step 2: the nozzle's radius at the bell's lip and 1.0 m in (x r), its floor 1.15 m in
+NOZZLE = (0.8, 0.45)   # lens step 2: the nozzle's radius at the bell's lip (x r); n1: the stepped throat inside it
+LIP = 0.45            # n1: the bell's lip plane past the args length (its light ring 1.6 cm into it: pod_tail_m)
+POD_RIBS = (45.0, 90.0, 135.0, 225.0, 270.0, 315.0)   # n1: the stringers' angles, clear of the pods' contact (~ +-10)
+
+
+def _ring(profile, inner, segs=POD_SEGS):
+    """An open surface of revolution (no caps) oriented away from inner(face centre)."""
+    v, f = H._lathe_y(profile, segs, caps=False)
+    return v, L.orient(v, f, inner)
+
+
+def _loop(profile, segs=POD_SEGS):
+    """A closed ring solid: the profile's loop (its last point joins its first) turned round the y axis."""
+    return H._lathe_y(list(profile) + [profile[0]], segs, caps=False)
+
+
+def _radial(q):
+    """A wall seen from the axis: oriented away from a point radially outside it."""
+    return (2.0 * q[0], q[1], 2.0 * q[2])
+
+
+def _back(q):
+    """A face seen from behind (+y): oriented away from a point in front of it."""
+    return (q[0], q[1] - 1.0, q[2])
+
+
+def _box8(corners):
+    """A solid from 8 corners in _obox's order (bit 0 the first axis, bit 1 the second, bit 2 the third)."""
+    return list(corners), [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
+
+
+def _stringer(r, a, y0, y1, w=0.07, top=1.028):
+    """A rib along the shell at angle a (deg) from y0 to y1: its foot inside the shell, its top at top * r."""
+    u = (math.cos(math.radians(a)), 0.0, math.sin(math.radians(a)))
+    t = (-u[2], 0.0, u[0])
+    rm, hr = (0.955 + top) / 2 * r, (top - 0.955) / 2 * r
+    return H._obox((u[0] * rm, (y0 + y1) / 2, u[2] * rm), (u[0] * hr, 0, u[2] * hr), (0, (y1 - y0) / 2, 0),
+                   (t[0] * w / 2, 0, t[2] * w / 2))
+
+
+def _vane(a, ri, ro, y0, yi, yo, th=0.024, twist=22.0):
+    """A stator vane at angle a (deg): a thin twisted plate from the hub (ri, y0..yi) to the wall (ro, y0..yo)."""
+    u = (math.cos(math.radians(a)), 0.0, math.sin(math.radians(a)))
+    t = (-u[2], 0.0, u[0])
+    tw = math.radians(twist)
+    p = (t[0] * math.sin(tw), math.cos(tw), t[2] * math.sin(tw))      # along the plate (mostly +y)
+    w = (t[0] * math.cos(tw), -math.sin(tw), t[2] * math.cos(tw))     # across it
+    out = []
+    for s_hi in (0, 1):
+        for rad in (0, 1):
+            for side in (-1, 1):
+                rho = (ri, ro)[rad]
+                s = (yi, yo)[rad] - y0 if s_hi else 0.0
+                base = (u[0] * rho, y0, u[2] * rho)
+                out.append(tuple(base[k] + p[k] * s + w[k] * side * th / 2 for k in range(3)))
+    return _box8(out)
+
+
+def _bridge(r, mate, y0, y1, hd=0.22, hw=0.46, ch=0.06):
+    """n1: the shared housing between this pod and a neighbour (mate [dx, dh, r] of its axis): a chamfered beam
+    along y over their contact line, hiding where their collars and fairings would cross; its end bevelled, a bolt
+    row on each flat side."""
+    dx, dh, rb = (float(c) for c in mate)
+    dist = math.hypot(dx, dh)
+    d = (dx / dist, dh / dist)
+    n = (-d[1], d[0])
+    cd = r + (dist - r - rb) / 2
+    sec = [(hd, hw - ch), (hd - ch, hw), (-hd + ch, hw), (-hd, hw - ch), (-hd, -hw + ch), (-hd + ch, -hw),
+           (hd - ch, -hw), (hd, -hw + ch)]
+
+    def ring(y, k):
+        return [(d[0] * (cd + a * k) + n[0] * b * k, y, d[1] * (cd + a * k) + n[1] * b * k) for a, b in sec]
+    rings = [ring(y0, 1.0), ring(y1, 1.0), ring(y1 + 0.14, 0.62)]
+    v = [p for rg in rings for p in rg]
+    m = len(sec)
+    f = [tuple(range(m - 1, -1, -1)), tuple(range(2 * m, 3 * m))]
+    for j in range(2):
+        f += [(j * m + i, j * m + (i + 1) % m, (j + 1) * m + (i + 1) % m, (j + 1) * m + i) for i in range(m)]
+    bolts = []
+    for side in (-1, 1):
+        for k in range(6):
+            y = y0 + 0.55 + k * (y1 - y0 - 0.75) / 5
+            c = (d[0] * cd + n[0] * side * hw, y, d[1] * cd + n[1] * side * hw)
+            bolts.append(H._rod(c, (c[0] + n[0] * side * 0.022, y, c[2] + n[1] * side * 0.022), 0.028, 10))
+    return (v, f), bolts
 
 
 def nozzle_pod(args: dict, layout: dict) -> list:
-    """A long engine pod along +y (local origin: its nose on the axis; args r, length): a smooth shell with a round
-    nose (shaded smooth, no plates), one dark collar, the bell (an open ring: lens step 2) and the dark nozzle, 1.15 m
-    deep from the bell's lip (NOZZLE), behind it the shell's cone (the lights: pod_ring)."""
+    """A long engine pod along +y (local origin: its nose on the axis; args r, length, mount, bridges, bridge_y): a
+    smooth shell with a round nose, n1's fairing where it leaves the hull (args mount, local y), six stringers, one
+    dark collar, the housing round the bell (its light strip: pod_ring), the bell (a solid ring, bevelled, its lip's
+    light ring inset) and inside it the stepped throat: two dark walls with stepped rings, the turbine hub and its
+    stator vanes (the deep wall's and the floor's glow: pod_ring); args bridges [[dx, dh, r]] the shared housings
+    to the neighbours' axes, from bridge_y [y0, y1]."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
+    ym = float(args.get("mount", ln - 2.2))
     nose = [(0.97 * r * math.sin(math.pi / 2 * k / 7) ** 0.85, 1.5 * (1 - math.cos(math.pi / 2 * k / 7)))
             for k in range(1, 8)]
     shell = H._lathe_y([(0.0, 0.0)] + nose + [(r, ln - 0.7), (0.97 * r, ln - 0.35), (0.0, ln - 0.9)], POD_SEGS)
-    collar = H._lathe_y([(0.0, ln - 1.5), (1.03 * r, ln - 1.5), (1.03 * r, ln - 1.3), (0.0, ln - 1.3)], POD_SEGS)
-    # fix 2 (art #263, item 5): the bell and the throat open (caps=False). The lathe capped their rings off the axis:
-    # the bell's lip ring and the throat's mouth were two flat discs in one plane (ln + 0.4) over the whole nozzle,
-    # ext_frame and ext_nozzle_inner z-fighting, so the "dish" changed as the camera turned (wedges of the two discs'
-    # triangles, the brushed frame's moving highlight), and the nozzle behind them was never seen
-    bv, bf = H._lathe_y([(0.95 * r, ln - 0.4), (0.92 * r, ln + 0.35), (0.84 * r, ln + 0.4), (NOZZLE[0] * r, ln + 0.4)],
-                        POD_SEGS, caps=False)
-    bell = (bv, L.orient(bv, bf, lambda q: (0.0, q[1] - 2.0, 0.0)))
-    tv, tf = H._lathe_y([(NOZZLE[0] * r, ln + 0.4), (NOZZLE[1] * r, ln - 0.6), (0.0, ln - 0.75)], POD_SEGS, caps=False)
-    throat = (tv, L.orient(tv, tf, lambda q: (2.0 * q[0], q[1], 2.0 * q[2])))
-    # fix 2 (art #263, item 5): the throat (the dark dish behind the cyan ring) shaded smooth round its POD_SEGS
-    # radial facets (11.25 deg apart), its crease between the wall and the floor (about 50 deg) kept: flat, each facet
-    # mirrored another strip of the sky, streaks that moved as the camera turned
-    pt = L.part("pod_throat", *throat, "ext_nozzle_inner", solid=False)
-    pt["smooth_deg"] = THROAT_SMOOTH_DEG
-    return [_smooth(L.part("pod_shell", *shell, "hull_silver")), L.part("pod_collar", *collar, "hull_dark"),
-            L.part("pod_bell", *bell, "ext_frame", solid=False), pt]
+    mount = _loop([(0.96 * r, ym - 0.75), (r, ym - 0.75), (1.03 * r, ym - 0.45), (1.06 * r, ym - 0.18),
+                   (1.072 * r, ym - 0.06), (1.072 * r, ym + 0.04), (1.06 * r, ym + 0.09), (1.0 * r, ym + 0.12),
+                   (0.96 * r, ym + 0.12)])
+    collar = _loop([(0.97 * r, ln - 1.55), (1.0 * r, ln - 1.55), (1.03 * r, ln - 1.51), (1.04 * r, ln - 1.44),
+                    (1.04 * r, ln - 1.37), (1.03 * r, ln - 1.31), (1.0 * r, ln - 1.28), (0.97 * r, ln - 1.28)])
+    ribs = [_stringer(r, a, ym + 0.1, ln - 0.42) for a in POD_RIBS]
+    # the housing round the bell's base: bevelled, its light groove (pod_band's strip, 1 cm proud of its floor)
+    housing = _loop([(0.93 * r, ln - 0.43), (0.975 * r, ln - 0.43), (0.993 * r, ln - 0.41), (0.995 * r, ln + 0.05),
+                     (0.985 * r, ln + 0.07), (0.962 * r, ln + 0.07), (0.962 * r, ln + 0.15), (0.985 * r, ln + 0.15),
+                     (0.995 * r, ln + 0.17), (0.995 * r, ln + 0.24), (0.982 * r, ln + 0.27), (0.94 * r, ln + 0.285)])
+    lp = ln + LIP
+    bell = _loop([(0.95 * r, ln - 0.4), (0.935 * r, ln + 0.1), (0.921 * r, ln + 0.33), (0.913 * r, lp - 0.055),
+                  (0.902 * r, lp - 0.02), (0.886 * r, lp), (0.868 * r, lp), (0.861 * r, lp - 0.018),
+                  (0.839 * r, lp - 0.018), (0.832 * r, lp), (0.816 * r, lp), (0.805 * r, lp - 0.012),
+                  (0.8 * r, lp - 0.035), (0.8 * r, ln + 0.3)])
+    y1, y2, fl = ln + 0.05, ln - 0.2, ln - 0.5     # the two steps and the floor
+    throat = L.merge(_ring([(0.8 * r, ln + 0.3), (0.77 * r, y1)], _radial),
+                     _ring([(0.69 * r, y1), (0.66 * r, y2)], _radial))
+    steps = L.merge(_ring([(0.77 * r, y1), (0.748 * r, y1), (0.741 * r, y1 - 0.012)], _back),
+                    _ring([(0.719 * r, y1 - 0.012), (0.712 * r, y1), (0.69 * r, y1)], _back),
+                    _ring([(0.66 * r, y2), (0.64 * r, y2), (0.633 * r, y2 - 0.012)], _back),
+                    _ring([(0.607 * r, y2 - 0.012), (0.6 * r, y2), (0.58 * r, y2)], _back))
+    hub = H._lathe_y([(0.22 * r, fl - 0.12), (0.215 * r, fl + 0.02), (0.19 * r, fl + 0.1), (0.15 * r, fl + 0.17),
+                      (0.1 * r, fl + 0.215), (0.0, fl + 0.215)], POD_SEGS)
+    vanes = [_vane(360.0 * k / 12 + 15.0, 0.2 * r, 0.565 * r, fl - 0.08, fl + 0.13, fl + 0.05) for k in range(12)]
+    smooth = {"pod_mount": 40.0, "pod_collar": 40.0, "pod_housing": 40.0, "pod_bell": 40.0,
+              "pod_throat": THROAT_SMOOTH_DEG, "pod_hub": 40.0}
+    parts = [_smooth(L.part("pod_shell", *shell, "hull_silver")), L.part("pod_mount", *mount, "hull_silver"),
+             L.part("pod_collar", *collar, "hull_dark"), L.part("pod_ribs", *L.merge(*ribs), "ext_frame"),
+             L.part("pod_housing", *housing, "hull_dark"), L.part("pod_bell", *bell, "ext_frame"),
+             L.part("pod_throat", *throat, "ext_nozzle_inner", solid=False),
+             L.part("pod_steps", *steps, "ext_frame", solid=False),
+             L.part("pod_hub", *hub, "ext_frame"), L.part("pod_vanes", *L.merge(*vanes), "ext_frame")]
+    for p in parts:
+        if p["name"] in smooth:
+            p["smooth_deg"] = smooth[p["name"]]
+    bridges = args.get("bridges", [])
+    if bridges:
+        b0, b1 = (float(c) for c in args.get("bridge_y", [ym - 1.0, ln - 0.9]))
+        beams, bolts = [], []
+        for mate in bridges:
+            b, bs = _bridge(r, mate, b0, b1)
+            beams.append(b)
+            bolts += bs
+        parts += [L.part("pod_bridge", *L.merge(*beams), "ext_frame"),
+                  L.part("pod_bolts", *L.merge(*bolts), "ext_chrome")]
+    return parts
 
 
 def pod_ring(args: dict, layout: dict) -> list:
-    """A pod's cyan lights (local frame as nozzle_pod; glow_pod, dimmer than the strips: a ring you see, not a lamp):
-    the band round the bell, a band on the barrel ahead of it, the segmented ring on the bell's lip and (lens step 2)
-    the glowing inner ring 0.3 m down the nozzle, a dim core on its floor."""
+    """A pod's lights (local frame as nozzle_pod): n1's continuous light rings inset in the metal (glow_pod): the
+    strip in the bell housing's groove, the strip between two trim lips on the barrel, the ring in the bell's lip, the
+    rings in the throat's two steps; the throat's glow (glow_pod_deep/_mid/_hot, a hot teal core fading to a dark
+    rim): the deep wall, the floor's three bands round the hub and the hub's tip."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
-    # fix 2: the band round the bell a ring outside the nozzle's wall (it was a solid disc across the nozzle 16 cm in)
-    rin = NOZZLE[0] * r
-    band = H._lathe_y([(rin, ln + 0.02), (0.99 * r, ln + 0.02), (0.99 * r, ln + 0.24), (rin, ln + 0.24), (rin, ln + 0.02)],
-                      POD_SEGS, caps=False)
-    band2 = H._lathe_y([(0.0, ln - 0.95), (1.015 * r, ln - 0.95), (1.015 * r, ln - 0.8), (0.0, ln - 0.8)], POD_SEGS)
-    segs = []
-    for k in range(10):
-        a0, a1 = 2 * math.pi * k / 10 + 0.06, 2 * math.pi * (k + 1) / 10 - 0.06
-        v, f = L.sector(0.805 * r, 0.835 * r, a0, a1, ln + 0.405, ln + 0.435)
-        v = [(x, h, y) for x, y, h in v]  # the swap mirrors the winding: orient the faces rearward (polish 4)
-        segs.append((v, L.orient(v, f, lambda q: (0.0, q[1] - 1.0, 0.0))))
-    core = H._lathe_y([(0.0, ln - 0.73), (0.3 * r, ln - 0.73), (0.0, ln - 0.7)], 12)
+    lp, y1, y2, fl = ln + LIP, ln + 0.05, ln - 0.2, ln - 0.5
 
-    def wall(y):   # the nozzle's radius at y, 6 mm inside it
-        a, b = NOZZLE
-        return (b + (a - b) * (y - (ln - 0.6)) / 1.0) * r - 0.006
-    iv, i_f = H._lathe_y([(wall(ln - 0.27), ln - 0.27), (wall(ln - 0.33), ln - 0.33)], POD_SEGS, caps=False)
-    inner = (iv, L.orient(iv, i_f, lambda q: (2.0 * q[0], q[1], 2.0 * q[2])))
-    return [L.part("pod_band", *L.merge(band, band2), "glow_pod"),
-            L.part("pod_segments", *L.merge(*segs), "glow_pod"),
-            L.part("pod_inner_ring", *inner, "glow_pod", solid=False),
-            L.part("pod_core", *core, "ext_glow_cyan_dim")]
+    def out(q):
+        return (0.0, q[1], 0.0)
+    band = L.merge(_ring([(0.972 * r, ln + 0.071), (0.972 * r, ln + 0.149)], out),
+                   _ring([(1.006 * r, ln - 0.925), (1.006 * r, ln - 0.825)], out))
+    trim = L.merge(_loop([(0.99 * r, ln - 0.96), (1.017 * r, ln - 0.955), (1.017 * r, ln - 0.93),
+                          (0.99 * r, ln - 0.925)]),
+                   _loop([(0.99 * r, ln - 0.825), (1.017 * r, ln - 0.82), (1.017 * r, ln - 0.795),
+                          (0.99 * r, ln - 0.79)]))
+    rings = L.merge(_ring([(0.862 * r, lp - 0.016), (0.838 * r, lp - 0.016)], _back),
+                    _ring([(0.742 * r, y1 - 0.01), (0.718 * r, y1 - 0.01)], _back),
+                    _ring([(0.634 * r, y2 - 0.01), (0.606 * r, y2 - 0.01)], _back))
+    deep = L.merge(_ring([(0.58 * r, y2), (0.555 * r, fl + 0.02)], _radial),
+                   _ring([(0.555 * r, fl + 0.02), (0.44 * r, fl - 0.02)], _back))
+    mid = _ring([(0.44 * r, fl - 0.02), (0.33 * r, fl - 0.05)], _back)
+    hot = _ring([(0.33 * r, fl - 0.05), (0.215 * r, fl - 0.08)], _back)
+    tip = H._lathe_y([(0.1 * r, fl + 0.218), (0.06 * r, fl + 0.24), (0.0, fl + 0.25)], POD_SEGS, caps=False)
+    tip = (tip[0], L.orient(tip[0], tip[1], lambda q: (0.0, q[1] - 0.5, 0.0)))
+    return [L.part("pod_band", *band, "glow_pod", solid=False), L.part("pod_trim", *trim, "ext_frame"),
+            L.part("pod_rings", *rings, "glow_pod", solid=False),
+            L.part("pod_glow_deep", *deep, "glow_pod_deep", solid=False),
+            L.part("pod_glow_mid", *mid, "glow_pod_mid", solid=False),
+            L.part("pod_glow_hot", *L.merge(hot, tip), "glow_pod_hot", solid=False)]
 
 
 def ground_lamp(args: dict, layout: dict) -> list:

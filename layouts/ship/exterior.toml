@@ -777,7 +777,7 @@ args = { part = "glow", side = -1.0 }
 [[pieces]]
 id = "nozzle_pod_outer"
 builder = "nozzle_pod"
-args = { r = 1.42, length = 4.665 }    # lens step 2: P's pods (ship_hull_shape.p_pods), 2.84 m across
+args = { r = 1.42, length = 4.665, mount = 2.5 }    # n1: mount (the fairing out of the hull, local y); lens step 2: P's pods (ship_hull_shape.p_pods), 2.84 m across
 outside = true                               # the pods stick out of the stern (turnaround back, side, top)
 
 [[pieces]]
@@ -789,7 +789,8 @@ outside = true
 [[pieces]]
 id = "nozzle_pod_mid"
 builder = "nozzle_pod"
-args = { r = 1.62, length = 4.965 }    # 3.24 m across
+args = { r = 1.62, length = 4.965, mount = 3.15, bridges = [[-3.0, -0.55, 1.42], [3.0, -0.55, 1.42]], bridge_y = [2.1, 4.05] }
+# n1: the middle pod carries the shared housings (bridges) over its contact with each outer pod; 3.24 m across
 outside = true                               # the pods stick out of the stern (turnaround back, side, top)
 
 [[pieces]]

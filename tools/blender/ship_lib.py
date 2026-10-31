@@ -34,6 +34,13 @@ MATERIALS = {
                   "strength": 16.0},   # 4.0 read as a pale line in the moonlit silver (out_lens_e); 10 thin in out_hero
     "glow_pod": {"base": (0.2, 0.9, 1.0, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.2, 0.9, 1.0),
                  "strength": 4.0},
+    # polish n1: the nozzles' inner glow, a hot teal core fading to a dark rim (emissive: it glows with no light)
+    "glow_pod_hot": {"base": (0.4, 1.0, 0.95, 1.0), "metallic": 0.0, "roughness": 0.35, "emission": (0.45, 1.0, 0.95),
+                     "strength": 5.0},
+    "glow_pod_mid": {"base": (0.05, 0.5, 0.55, 1.0), "metallic": 0.0, "roughness": 0.4, "emission": (0.1, 0.8, 0.85),
+                     "strength": 2.0},
+    "glow_pod_deep": {"base": (0.02, 0.18, 0.22, 1.0), "metallic": 0.2, "roughness": 0.45,
+                      "emission": (0.03, 0.45, 0.55), "strength": 0.8},
     # light layer: the navigation lamps (port red, starboard green, tail white) and the warm landing lights' lenses
     "glow_nav_red": {"base": (1.0, 0.06, 0.04, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (1.0, 0.06, 0.04),
                      "strength": 8.0},
