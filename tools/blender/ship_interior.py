@@ -35,6 +35,11 @@ L.MATERIALS.update({
     # warmer, matte and little metallic, so the warm lamp before each lights it (int_silver_c only mirrored the dark)
     "int_silver_c__clad": {"base": (0.42, 0.41, 0.395, 1.0), "metallic": 0.2, "roughness": 0.62},
     "int_dark": {"base": (0.035, 0.038, 0.042, 1.0), "metallic": 0.6, "roughness": 0.55},
+    # polish n2 (art #263): the tip rooms' centre disc, matte and darker (int_plate read near white under the ring
+    # light, in_tip_e/w); the vault door's frame light and its leaf's centre line (int_cyan's 0.05 read as nothing)
+    "int_plate__tip": {"base": (0.24, 0.245, 0.255, 1.0), "metallic": 0.5, "roughness": 0.62},
+    "int_cyan__door": {"base": (0.25, 0.95, 1.0, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.25, 0.95, 1.0),
+                       "strength": 9.0},
     "int_grate": {"base": (0.22, 0.225, 0.23, 1.0), "metallic": 0.8, "roughness": 0.42},
     "int_plate": {"base": (0.34, 0.35, 0.36, 1.0), "metallic": 0.8, "roughness": 0.40},
     "int_cyan": {"base": (0.25, 0.95, 1.0, 1.0), "metallic": 0.0, "roughness": 0.3, "emission": (0.25, 0.95, 1.0),
@@ -268,6 +273,27 @@ def M(*vfs):
     return L.merge(*vfs)
 
 
+def relief(fr, u0, u1, v0, v1, mat, rows=3, border=0.055):
+    """polish n2 (art #263): a flat bay (u0..u1, v0..v1 on the wall) as a raised frame round `rows` recessed panels
+    split by dark 14 mm seams, a bolt head in each frame corner: the hall's blank flats read as relief, their field
+    still flat (a station hangs on it). The frame stands 35 mm proud, the panels 20 mm (as the old plain plate)."""
+    b, g = border, 0.007
+    frame = M(G.slab(fr, G.rect(u0, u1, v0, v0 + b), 0.0, 0.035, 0.008),
+              G.slab(fr, G.rect(u0, u1, v1 - b, v1), 0.0, 0.035, 0.008),
+              G.slab(fr, G.rect(u0, u0 + b, v0 + b, v1 - b), 0.0, 0.035, 0.008),
+              G.slab(fr, G.rect(u1 - b, u1, v0 + b, v1 - b), 0.0, 0.035, 0.008))
+    lo, hi = v0 + b + 0.01, v1 - b - 0.01
+    step = (hi - lo) / rows
+    panels = M(*[G.slab(fr, G.rect(u0 + b + 0.01, u1 - b - 0.01, lo + i * step + (g if i else 0.0),
+                                   lo + (i + 1) * step - (g if i < rows - 1 else 0.0)), 0.0, 0.02, 0.006)
+                 for i in range(rows)])
+    back = G.slab(fr, G.rect(u0 + b, u1 - b, v0 + b, v1 - b), 0.0, 0.008)
+    bolts = M(*[G.slab(fr, G.rect(u - 0.012, u + 0.012, v - 0.012, v + 0.012), 0.035, 0.043, 0.004)
+                for u in (u0 + b / 2, u1 - b / 2) for v in (v0 + b / 2, v1 - b / 2)])
+    return [P("relief_frame", frame, "int_silver_c"), P("relief_back", back, "int_dark"),
+            P("relief_panels", panels, mat), P("relief_bolts", bolts, "int_bolt")]
+
+
 def wedge(r0, r1, a0, a1):
     return G.arc(r0, a0, a1)[::-1] + G.arc(r1, a0, a1)
 
@@ -331,9 +357,9 @@ def flat_panel(args, layout):
     return out + [P("soffit", G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08), "int_silver_b"),
                   P("body", G.slab(fr, G.rect(-pl, pl, 0.0, h), -0.2, 0.0), "int_silver_b"),
                   P("kick", G.slab(fr, G.rect(-e, e, 0.0, 0.16), 0.0, 0.015), "int_dark"),
-                  P("plain", G.slab(fr, G.rect(-e, e, 0.2, belt - 0.05), 0.0, 0.02, 0.008), clad or "int_silver_a"),
                   P("belt", G.slab(fr, G.rect(-pl, pl, belt, belt + 0.12), 0.0, 0.05, 0.012), "int_silver_c"),
-                  P("upper", G.slab(fr, G.rect(-e, e, belt + 0.17, h - 0.04), 0.0, 0.03, 0.01), clad or "int_silver_b")]
+                  P("upper", G.slab(fr, G.rect(-e, e, belt + 0.17, h - 0.04), 0.0, 0.03, 0.01), clad or "int_silver_b")
+                  ] + relief(fr, -e, e, 0.2, belt - 0.05, clad or "int_silver_a")
 
 
 def pyramid(fr, poly, w0, w1, apex, bevel):
@@ -471,7 +497,7 @@ def floor_disc(args, layout):
         return [P("grate", M(*q), "int_grate"), P("glow", glow, "int_halo"), P("hub", hub, "int_plate"),
                 P("bolts", bolts, "int_bolt"), P("trim", trim, "int_silver_c")]
     inlay = M(*[L.sector(r * 0.55, r * 0.55 + 0.03, p, q, FLOOR, FLOOR + 0.002) for p, q in zip(a, a[1:])])
-    return [P("disc", disc, "int_plate"), P("trim", trim, "int_silver_c"), P("inlay", inlay, "int_dark")]
+    return [P("disc", disc, args.get("mat", "int_plate")), P("trim", trim, "int_silver_c"), P("inlay", inlay, "int_dark")]
 
 
 def radial_grate(args, layout):
@@ -1137,24 +1163,37 @@ def hall_door(args, layout):
              G.slab(fr, G.rect(d, d + 0.05, 0.0, dh + 0.05), -0.06, 0.035),
              G.slab(fr, G.rect(-d, d, dh, dh + 0.05), -0.06, 0.035))
     strip = G.slab(fr, G.rect(-d + 0.04, d - 0.04, dh + 0.075, dh + 0.1), 0.0, 0.075)
-    side = M(*[G.slab(fr, G.rect(a, b, 0.2, h - 0.95), 0.0, 0.025, 0.01) for a, b in ((-hw + 0.05, -d - 0.16), (d + 0.16, hw - 0.05))])
+    sides = [p for a, b in ((-hw + 0.05, -d - 0.16), (d + 0.16, hw - 0.05)) for p in relief(fr, a, b, 0.2, h - 0.95,
+                                                                                          "int_silver_a")]
     kick = M(*[G.slab(fr, G.rect(a, b, 0.0, 0.16), 0.0, 0.015) for a, b in ((-hw + 0.05, -d - 0.15), (d + 0.15, hw - 0.05))])
     upper = G.slab(fr, G.rect(-hw + 0.05, hw - 0.05, h - 0.8, h - 0.06), 0.0, 0.03, 0.01)
     belt = G.slab(fr, G.rect(-hw, hw, h - 0.9, h - 0.84), 0.0, 0.05, 0.012)
     leaf = G.slab(fr, G.rect(-d, d, 0.0, dh), -0.12, -0.06)
-    panels = M(G.slab(fr, G.rect(-d + 0.07, d - 0.16, 0.1, 0.98), -0.06, -0.048, 0.006),
-               G.slab(fr, G.rect(-d + 0.07, d - 0.16, 1.1, dh - 0.1), -0.06, -0.048, 0.006))
-    groove = G.slab(fr, G.rect(-d, d - 0.12, 1.02, 1.06), -0.06, -0.056)
-    edge = G.slab(fr, G.rect(d - 0.1, d - 0.07, 0.15, dh - 0.15), -0.06, -0.052)
-    reader = G.slab(fr, G.rect(d + 0.22, d + 0.34, 1.12, 1.38), 0.0, 0.045, 0.008)
-    light = G.slab(fr, G.rect(d + 0.25, d + 0.31, 1.29, 1.33), 0.045, 0.05)
+    # polish n2: the leaf in four panels either side of a centred light line (was one off-centre strip), the frame's
+    # inner edge lit all round, a real reader (a bezel, a dark screen with a lit bar, a lit key row)
+    panels = M(*[G.slab(fr, G.rect(a, b, v0, v1), -0.06, -0.048, 0.006) for a, b in ((-d + 0.07, -0.05), (0.05, d - 0.07))
+                 for v0, v1 in ((0.1, 0.98), (1.1, dh - 0.1))])
+    groove = G.slab(fr, G.rect(-d, d, 1.02, 1.06), -0.06, -0.056)
+    seam = G.slab(fr, G.rect(-0.03, 0.03, 0.06, dh - 0.06), -0.06, -0.055)
+    edge = G.slab(fr, G.rect(-0.011, 0.011, 0.12, dh - 0.12), -0.055, -0.05)
+    lit = M(G.slab(fr, G.rect(-d - 0.035, -d - 0.012, 0.0, dh + 0.035), 0.07, 0.074),
+            G.slab(fr, G.rect(d + 0.012, d + 0.035, 0.0, dh + 0.035), 0.07, 0.074),
+            G.slab(fr, G.rect(-d - 0.012, d + 0.012, dh + 0.012, dh + 0.035), 0.07, 0.074))
+    reader = M(G.slab(fr, G.rect(d + 0.22, d + 0.40, 1.02, 1.46), 0.0, 0.04, 0.01),
+               G.slab(fr, G.rect(d + 0.24, d + 0.38, 1.04, 1.44), 0.04, 0.05, 0.004))
+    screen = G.slab(fr, G.rect(d + 0.25, d + 0.37, 1.22, 1.41), 0.05, 0.053)
+    light = M(G.slab(fr, G.rect(d + 0.265, d + 0.355, 1.36, 1.38), 0.053, 0.056),
+              *[G.slab(fr, G.rect(d + 0.255 + 0.04 * k, d + 0.285 + 0.04 * k, 1.08, 1.17), 0.05, 0.056, 0.003)
+                for k in range(3)])
     tri = [(0.0, -hw), (HV - apo, 0.0), (0.0, hw)]
     soffit = G.slab(G.floor_frame(0.0), tri, FLOOR + h, FLOOR + h + 0.08)
     return [P("body", body, "int_silver_b"), P("trim", M(frame, belt), "int_silver_c"), P("step", step, "int_dark"),
-            P("side", side, "int_silver_a"), P("kick", kick, "int_dark"), P("upper", upper, "int_silver_a"),
-            P("leaf", leaf, "int_silver_a"), P("leaf_panels", panels, "int_silver_b"), P("groove", groove, "int_dark"),
-            P("strips", M(strip, edge), "int_cyan"), P("reader", reader, "int_dark"), P("lamp", light, "int_cyan"),
-            P("soffit", soffit, "int_silver_b")]
+            P("kick", kick, "int_dark"), P("upper", upper, "int_silver_a"),
+            P("leaf", leaf, "int_silver_a"), P("leaf_panels", panels, "int_silver_b"),
+            P("groove", M(groove, seam), "int_dark"), P("strips", strip, "int_cyan"),
+            P("door_light", M(edge, lit), "int_cyan__door"), P("reader", reader, "int_silver_c"),
+            P("screen", screen, "int_dark"), P("lamp", light, "int_cyan"),
+            P("soffit", soffit, "int_silver_b")] + sides
 
 
 def vault_top(y: float) -> float:

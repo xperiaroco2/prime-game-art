@@ -163,7 +163,7 @@ PIECES: dict[str, tuple[str, dict, bool]] = {
     # inside 3-1: the mouth's own wide portal and arch (S.MOUTH_PROF: hall_out-2's opening)
     # the tip rooms
     "tip_floor_base": ("tip_floor_base", {}, True),
-    "tip_floor_disc": ("floor_disc", {"radius": R_TIP_DISC}, True),
+    "tip_floor_disc": ("floor_disc", {"radius": R_TIP_DISC, "mat": "int_plate__tip"}, True),  # polish n2: matte
     "tip_grate": ("radial_grate", {"r0": R_TIP_GRATE0, "r1": S.R_TIP - 0.33, "half_deg": 22.5 - SPOKE_TIP,
                                    "ref": REF_TIP}, True),
     "tip_spoke": ("spoke", {"r0": R_TIP_GRATE0 - 0.02, "r1": S.R_TIP - 0.29, "half_deg": SPOKE_TIP, "ref": REF_TIP},
