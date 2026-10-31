@@ -12,10 +12,10 @@ below; where they differ, this section wins:
 
 | Gate | What | Where it sits in the steps below | Who says yes |
 |---|---|---|---|
-| 0 | The concept on the frozen body (gpt-image onto renders of the final body, flat light; a check that the body stayed hers) | before step 1; the body and skeleton are frozen first | the engineer, once |
+| 0 | The concept on the frozen body (gpt-image onto renders of the final body, flat light; a check that the body stayed hers) | before step 1, through its own image batch (`approval_ref`, `cost_cap_usd`); the body and skeleton are frozen first | the engineer, once |
 | 1 | The spec and its drawing: `<asset>_dims.toml`, drawn over the concept and the body | before step 2 (generation) or a code build | the engineer, once |
-| 2 | A rough build in motion: plain material, skinned, the game's clips and look; silhouette overlay, spec numbers, slip, flatness, stretch, pokes; a front close-up Walk and Jog video | after steps 3 to 7 (import, check, rig, weights), before step 8 | the engineer: shape and motion |
-| 3 | Detail: texture, stitching, hardware; Gate 2's numbers re-run each step and unchanged | step 8 | its checks |
+| 2 | A rough build in motion: plain material, skinned, the game's clips and look; silhouette overlay, spec numbers, slip, flatness, stretch, pokes; a front close-up Walk and Jog video | after steps 3 to 7 (import, check, rig, weights): a rough export run through `frames` early, outside the step numbering; before step 8 | the engineer: shape and motion |
+| 3 | Detail: texture, stitching, hardware; Gate 2's numbers re-run each step and unchanged | step 8 for texture; stitching and hardware are geometry steps of their own | its checks |
 | 4 | The defect hunt: close-ups, a fresh critic given the spec and the concept, the numbers table; every sheet and video viewed | after steps 10 and 11 | its checks |
 | 5 | His look, then the PR | step 12 | the engineer |
 

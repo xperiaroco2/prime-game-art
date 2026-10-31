@@ -92,8 +92,8 @@ The manager writes every brief for an asset's step under the gates of
   spec file") and the numbers the step must hit, each with its tolerance. A target that is not in the spec goes into
   the spec first; no target lives only in a script argument or in the brief.
 - **Motion before detail.** A step that changes shape is judged on the skinned build playing the game's clips (Gate
-  2) before any texture, stitching or hardware step is briefed; a detail step re-runs Gate 2's numbers and they must
-  not move.
+  2) and the engineer's yes on its shape and motion comes before any texture, stitching or hardware step is
+  briefed; a detail step re-runs Gate 2's numbers and they must not move.
 - **No sheet or video counts until viewed.** A handoff that lists a sheet or an MP4 says it was viewed and what it
   showed; "not viewed" means the step's check is not done, and the next brief starts by viewing it.
 - **Two steps on one defect mean a change of route.** When two steps in a row have fixed the same kind of defect,

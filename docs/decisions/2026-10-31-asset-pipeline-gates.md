@@ -2,9 +2,12 @@
 
 - Date: 2026-10-31
 - Status: accepted (the engineer, 2026-10-31 ~12:00 UTC, in chat with the art manager, on the findings page
-  https://claude.ai/artifact/4yo3JCyWzoKgG4bb4UTVZJ ; recorded on
+  https://claude.ai/artifact/4yo3JCyWzoKgG4bb4UTVZJ ; his yes recorded on
+  [#196, comment 6543365574](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6543365574); the
+  proposal and its summary:
   [#196, comment 6542991280](https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6542991280)).
-- Applies to every new character part, garment and hero prop from now on; it adds gates to the steps in
+- Applies to every new character part, garment and hero prop from now on (for a prop that no body wears, Gate 0 is
+  the concept and Gate 1 the drawing, as for the crystal); it adds gates to the steps in
   `docs/pipeline.md` and does not replace the release-quality ADR (`2026-10-17-release-quality.md`) or the trust model.
 
 ## Context
@@ -21,7 +24,7 @@ root causes:
 3. **The clothes were made before the bodies were final.** Refitting a garment onto a changed body bent her bib
    (D3's bodies came after C1's dress).
 4. **Meshy output is a fused figure, not a garment**: a dressed statue whose cloth has to be cut off a body.
-5. **Motion was checked late and on stills**, and the MP4s went unwatched (38 "not viewed" in the handoffs). The bib
+5. **Motion was checked late and on stills**, and the MP4s went unwatched (about 40 "not viewed" in the handoffs). The bib
    motion step (M2m) measured the straps sliding 16 to 72 mm on the bib across 9 clips only at the end.
 6. **The checks measured the easy things** (triangles, pokes, gaps), not what the engineer judges: the silhouette
    against the concept, the sizes, the motion.
@@ -55,7 +58,8 @@ has said yes. Nothing from a later gate starts before the earlier one passes.
 
 The rules around the gates:
 - **Two steps on one kind of defect mean a change of route** (regenerate it, or build it in code), not a third fix.
-- **An intermediate image is shown only at full size, with the concept overlaid and measured callouts.**
+- **An intermediate image is shown to the engineer only at full size, with the concept overlaid and measured
+  callouts.**
 - **A garment is made per body**, never refitted from another body.
 - **His taste words become a written behaviour rule** in the spec (for example "the bib stays flat and the straps
   stay glued to it"), confirmed with a picture before building.
@@ -80,7 +84,8 @@ Which tool for what:
 - Briefs get longer by one line (the spec and its tolerances) and shorter by the history they no longer paste; the
   manager's brief rules are in `docs/agents.md` ("Briefs under the asset gates").
 - Critics get the spec and the concept, so their findings are measured against the target, not against the last step.
-- The checks still to write (the silhouette overlap, slip, flatness and stretch, the review page template) are the
-  first tasks under this ADR; until they exist, a step measures by hand what Gate 2 names and says so in its handoff.
+- The checks still to write (the silhouette overlap, slip, flatness and stretch, the review page template) are
+  written before the first asset reaches Gate 2 (for her dungarees, before their build); Gate 2 does not pass
+  without them.
 - `docs/pipeline.md` ("Since 2026-10-31: the asset gates") places the gates in the pipeline and describes the spec
   file.
