@@ -273,6 +273,10 @@ def earth_request(layout: dict, vid: str, distance: str | None = None, snow: str
     did = distance or e.get("distance")
     if did:   # step 4c: the Earth as an object at a finite distance (earth_object.gdshader)
         out["earth"]["object"] = lobby_layout.earth_object(layout, vid, did)
+        drop = lobby_layout.earth_drop(layout, vid, did)
+        if drop:   # step 5c: the sky's cubemap Earth (the probes, reflections) turned down with the object
+            out["earth"]["centre"] = lobby_layout.pitch_down(out["earth"]["centre"], drop)
+            out["earth"]["sun"] = lobby_layout.pitch_down(out["earth"]["sun"], drop)
         out.update({"id": did, "title": e["distances"][did]["title"]} if distance else {})
     if snow:
         out.update({"id": snow, "title": e["snow"]["sets"][snow]["title"]})

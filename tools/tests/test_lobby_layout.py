@@ -248,7 +248,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v15")   # step 5b
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v16")   # step 5c
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -417,8 +417,8 @@ class LobbyLayoutTest(unittest.TestCase):
         """Step 4c: three distances; each fills E2's angle from the eye and stays outside the hall (step 5a7: F48 the
         default, the far distances tested below)."""
         e = self.layout["earth"]
-        self.assertEqual(e["distance"], "F36")   # step 5b: the engineer, 2026-10-31
-        self.assertEqual(list(e["distances"]), ["D1", "D2", "D3", "F48", "F36"])
+        self.assertEqual(e["distance"], "H1")   # step 5c: F36 lowered (step 5b: F36, the engineer, 2026-10-31)
+        self.assertEqual(list(e["distances"]), ["D1", "D2", "D3", "F48", "F36", "H1", "H2", "H3"])
         dists = [e["distances"][d]["distance_m"] for d in ("D1", "D2", "D3")]
         self.assertEqual(dists, sorted(dists))
         v = e["variants"][e["variant"]]
@@ -457,8 +457,9 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertIn("vec3 eye = far_mode > 0.5 ? far_eye : cam;", src)
         self.assertIn("vec3 v = normalize(wpos - cam);", src)
         rt = e["route"]
-        self.assertEqual(rt["distances"], ["D2", "F48", "F36"])
-        self.assertEqual([p[0] for p in rt["points"]], ["spawn", "corner_nw", "glass", "arch", "par_spawn", "par_glass"])
+        self.assertEqual(rt["distances"], ["F36", "H1", "H2", "H3"])   # step 5c (step 5a7: D2, F48, F36)
+        self.assertEqual([p[0] for p in rt["points"]], ["spawn", "corner_nw", "glass", "arch", "par_spawn", "par_glass",
+                                                        "far_back"])
         pa, pb = rt["points"][4], rt["points"][5]
         unit = lambda a: [x / math.sqrt(sum(y * y for y in a)) for x in a]
         self.assertEqual([round(x, 3) for x in unit([q - p for p, q in zip(pa[2], pa[3])])],
@@ -472,6 +473,38 @@ class LobbyLayoutTest(unittest.TestCase):
         bad["earth"]["route"]["keys"][1][0] = [30.0, 1.6, 0.0]
         q = lobby_layout.earth_problems(bad, {v[0] for v in self.layout["review"]["views"]})
         self.assertTrue(any("F9" in x for x in q) and any("outside the hall" in x for x in q))
+
+    def test_the_lowered_earth(self) -> None:
+        """Step 5c: H1..H3 are F36 turned down about the eye so the limb's highest point (traced from far_eye) sits at
+        limb_deg; the size, the far mode and the sun's angle behind the limb kept; the sky's cubemap Earth turned with
+        it in the request."""
+        from runner.commands import lobby as cmd
+        e = self.layout["earth"]
+        f36 = lobby_layout.earth_object(self.layout, "E2", "F36")
+        ang = lambda a, b: math.degrees(math.acos(max(-1.0, min(1.0, sum(x * y for x, y in zip(a, b)) / math.sqrt(
+            sum(x * x for x in a) * sum(y * y for y in b))))))
+        rel = lambda o: [c - a for c, a in zip(o["centre"], e["eye"])]
+        self.assertAlmostEqual(f36["limb_deg"], 14.17, places=1)
+        for did, limb in (("H1", 4.0), ("H2", -2.0), ("H3", -8.0)):
+            o = lobby_layout.earth_object(self.layout, "E2", did)
+            self.assertTrue(o["far"])
+            self.assertEqual(e["distances"][did]["limb_deg"], limb)
+            self.assertAlmostEqual(o["limb_deg"], limb, delta=0.15)
+            self.assertAlmostEqual(o["radius_m"], f36["radius_m"], places=9)
+            self.assertAlmostEqual(math.dist(o["centre"], e["eye"]), f36["distance_m"], places=6)
+            self.assertAlmostEqual(ang(rel(o), o["sun_dir"]), ang(rel(f36), f36["sun_dir"]), places=6)
+            self.assertAlmostEqual(o["centre"][0], 0.0, places=9)   # straight down, the azimuth kept
+            drop = lobby_layout.earth_drop(self.layout, "E2", did)
+            self.assertAlmostEqual(drop, e["variants"]["E2"]["centre"][1] + 36.0 - limb)
+            try:   # the request reads the Earth's textures' paths in the raw folder
+                req = cmd.earth_request(self.layout, "E2", distance=did)
+            except common.Failure:
+                continue
+            self.assertAlmostEqual(ang(req["earth"]["centre"], rel(o)), 0.0, places=4)
+            sky_sun = lobby_layout.pitch_down(lobby_layout.direction(*e["variants"]["E2"]["sun"]), drop)
+            self.assertAlmostEqual(ang(req["earth"]["sun"], sky_sun), 0.0, places=4)   # the sky's E2 sun, turned down
+        self.assertEqual(lobby_layout.earth_drop(self.layout, "E2", "F36"), 0.0)
+        self.assertEqual(lobby_layout.pitch_down([0.0, 0.0, 1.0], 90.0)[1], -1.0)
 
     def test_refuses_an_earth_inside_the_hall(self) -> None:
         bad = copy.deepcopy(self.layout)

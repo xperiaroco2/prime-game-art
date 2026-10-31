@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v15"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v16"         # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -282,7 +282,7 @@ credit = "Earth imagery: NASA"
 # Step 5a7 (the engineer, 2026-10-31: at D2 the planet changed scale with the viewpoint): the far mode, the F
 # distances (`far = true`): the ray traced from `eye` whatever the camera's place, so the planet sits at infinity: the
 # same planet, angular size, horizon height and direction from every point of the hall; the window frames a part of it.
-distance = "F36"                    # the one switch (the engineer, 2026-10-31: F36) (D1 near, D2 middle, D3 far; F48, F36 at infinity)
+distance = "H1"                     # the one switch (step 5c: H1, F36 lowered; the engineer, 2026-10-31: F36) (D1 near, D2 middle, D3 far; F48, F36, H1..H3 at infinity)
 eye = [0.0, 1.65, 0.0]
 far_eye = [0.0, 1.65, 2.5]          # step 5a7: the far mode's fixed ray origin, the spawn's eye (spawn_eye): there F48 is D2
 shell = 1.35                        # the traced shell's radius over the planet's (room for the rim's halo and the dawn)
@@ -419,12 +419,36 @@ distance_m = 250.0
 far = true
 radius_deg = 36.0
 
+# Step 5c (the engineer, 2026-10-31: backing away from the window there was no sky, only the Earth; on a station the
+# horizon is below eye level): F36 turned down about the eye so the limb's highest point sits at limb_deg above the
+# eye's horizontal (the sky's cubemap Earth and the sun with it, the dawn glow kept 1.5 deg behind the limb)
+[earth.distances.H1]
+title = "F36 lowered: the limb's top at +4 deg"
+distance_m = 250.0
+far = true
+radius_deg = 36.0
+limb_deg = 4.0
+
+[earth.distances.H2]
+title = "F36 lowered: the limb's top at -2 deg"
+distance_m = 250.0
+far = true
+radius_deg = 36.0
+limb_deg = -2.0
+
+[earth.distances.H3]
+title = "F36 lowered: the limb's top at -8 deg"
+distance_m = 250.0
+far = true
+radius_deg = 36.0
+limb_deg = -8.0
+
 # `lobby --earth-route DIR [--distance ID]`: one walk at eye height (1.6 m) looking at the window, per distance one MP4
 # (the [video] size, fps, fov), then the stills from `points` [name, title, eye, look, fov] in a sheet (rows the points,
 # columns the distances). Round the ship's west side to the north-west corner, back to the glass at x 6, along it to
 # x 16, round the ship's east side to the arch's mouth. keys: [eye, look, seconds from the previous key]
 [earth.route]
-distances = ["D2", "F48", "F36"]
+distances = ["F36", "H1", "H2", "H3"]   # step 5c: F36 and its three heights (step 5a7: D2, F48, F36)
 video_max_mb = 15
 keys = [
   [[0.0, 1.6, 2.5], [0.0, 4.0, 18.5], 0.0],
@@ -450,6 +474,7 @@ points = [
   ["arch", "the arch's mouth (x 0, z -28.3)", [0.0, 1.6, -28.3], [0.0, 4.0, 14.0], 70.0],
   ["par_spawn", "due south from the spawn", [0.0, 1.6, 2.5], [0.0, 5.888, 18.5], 70.0],
   ["par_glass", "due south from the glass's east end", [16.0, 1.6, 10.0], [16.0, 5.888, 26.0], 70.0],
+  ["far_back", "deep in the hall (x -12, z -20), beside the ship", [-12.0, 1.6, -20.0], [-3.0, 4.0, 14.0], 70.0],
 ]
 
 [light]

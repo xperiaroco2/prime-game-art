@@ -542,7 +542,40 @@ def earth_object(layout: dict[str, Any], vid: str, did: str) -> dict[str, Any]:
         n = math.sqrt(sum(a * a for a in perp))
         new = ang - math.radians(v["radius_deg"] - deg)
         out["sun_dir"] = [math.cos(new) * b + math.sin(new) * a / n for a, b in zip(perp, u)]
+    drop = earth_drop(layout, vid, did)
+    if drop:   # step 5c: the planet turned down about the eye, its sun with it (the dawn glow kept behind the limb)
+        out["centre"] = [a + b for a, b in zip(e["eye"], pitch_down([c - a for c, a in zip(centre, e["eye"])], drop))]
+        out["frame_dir"] = pitch_down(out["frame_dir"], drop)
+        out["sun_dir"] = pitch_down(out.get("sun_dir", direction(*v["sun"])), drop)
+    out["limb_deg"] = limb_top(out)
     return out
+
+
+def pitch_down(vec: list[float], deg: float) -> list[float]:
+    """vec turned down by deg degrees about the east-west axis (+x): south (+z) toward -y."""
+    c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+    x, y, z = vec
+    return [x, y * c - z * s, z * c + y * s]
+
+
+def earth_drop(layout: dict[str, Any], vid: str, did: str) -> float:
+    """Step 5c (the engineer, 2026-10-31: from deep in the hall the window showed no sky): a distance's `limb_deg`, the
+    limb's highest point above the eye's horizontal, gives how far (degrees) the variant's centre is turned down; 0
+    without it."""
+    e = layout["earth"]
+    d, v = e["distances"][did], e["variants"][vid]
+    if "limb_deg" not in d:
+        return 0.0
+    return v["centre"][1] + d.get("radius_deg", v["radius_deg"]) - d["limb_deg"]
+
+
+def limb_top(o: dict[str, Any]) -> float:
+    """The limb's highest elevation (degrees) as the shader traces it: from far_eye in the far mode, else from the
+    eye the centre was placed from (the same point for the near distances' spawn view)."""
+    eye = o["far_eye"] if o["far"] else [o["centre"][i] + o["distance_m"] * o["frame_dir"][i] for i in range(3)]
+    dv = [c - a for c, a in zip(o["centre"], eye)]
+    dist = math.sqrt(sum(a * a for a in dv))
+    return math.degrees(math.asin(dv[1] / dist) + math.asin(min(1.0, o["radius_m"] / dist)))
 
 
 LIGHT_KEYS = ("ship_lights", "exposure", "ambient_rgb", "ambient_energy", "probe_intensity", "pendant_rgb", "pendant_energy",
