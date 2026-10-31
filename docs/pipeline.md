@@ -4,6 +4,49 @@ From a raw generation or download to an approved asset in the game. Based on sec
 (`docs/research/2026-10-02-wave-1/report.md`), updated with the engineer's answers on xperiaroco2/prime-game#165
 (2026-10-02). Where the report and this page differ, this page wins; where #165 and this page differ, fix this page.
 
+## Since 2026-10-31: the asset gates
+
+Every new character part, garment and hero prop passes six gates in order
+(`docs/decisions/2026-10-31-asset-pipeline-gates.md`, the engineer's yes of 2026-10-31 on #196). They wrap the steps
+below; where they differ, this section wins:
+
+| Gate | What | Where it sits in the steps below | Who says yes |
+|---|---|---|---|
+| 0 | The concept on the frozen body (gpt-image onto renders of the final body, flat light; a check that the body stayed hers) | before step 1; the body and skeleton are frozen first | the engineer, once |
+| 1 | The spec and its drawing: `<asset>_dims.toml`, drawn over the concept and the body | before step 2 (generation) or a code build | the engineer, once |
+| 2 | A rough build in motion: plain material, skinned, the game's clips and look; silhouette overlay, spec numbers, slip, flatness, stretch, pokes; a front close-up Walk and Jog video | after steps 3 to 7 (import, check, rig, weights), before step 8 | the engineer: shape and motion |
+| 3 | Detail: texture, stitching, hardware; Gate 2's numbers re-run each step and unchanged | step 8 | its checks |
+| 4 | The defect hunt: close-ups, a fresh critic given the spec and the concept, the numbers table; every sheet and video viewed | after steps 10 and 11 | its checks |
+| 5 | His look, then the PR | step 12 | the engineer |
+
+Which tool makes what: gpt-image the concepts and their translation onto the body, never measurements; Meshy the soft
+organic forms (trouser folds, soft props) or a retexture of our mesh, always on the final body; code the flat,
+structural, measured parts (bibs, straps, bands, cuffs, shoes, props from drawings). A garment is made per body, never
+refitted from another. Two steps on one kind of defect mean a change of route. The manager's brief rules are in
+`docs/agents.md` ("Briefs under the asset gates").
+
+### The spec file: `<asset>_dims.toml`
+
+One TOML file per asset is the source every brief, build script, check and critic cites. It generalises two
+precedents: the energy crystal's engineering drawing, `tools/blender/crystal_dims.toml` with `crystal_drawing.py`
+(`docs/props.md`, "A hero prop from code: the ship engine's energy crystal"), and the bodies' dims tables,
+`tools/blender/body_dims/A.toml` and `B.toml` (`docs/clothes.md`, "Bodies by drawing"). It holds:
+- **Its source:** the approved concept's path and the body it is drawn on, where each number was read (view and pixel
+  rows) and the scale (cm per px).
+- **Sizes:** every size in cm, and for a garment also as a ratio to the body's landmarks (collarbone, armpit, bust
+  peak, waist, crotch, knee, ankle; the body table's own landmarks), so a size can be checked on the body it was made
+  for.
+- **Parts:** the panels, their thicknesses and edges, and the hardware (buttons, buckles, loops), each with its place.
+- **Tolerances:** per number, how far the build may be off; the Gate 2 and Gate 3 checks read them.
+- **Which view wins** where the concept's views disagree, written beside the numbers it affects (as the crystal's file
+  does for its band and windows).
+- **Behaviour:** what stays flat, what bends, what moves with what (for example a bib that stays flat with straps glued
+  to it); the engineer's taste words become these rules, confirmed with a picture before the build.
+
+A drawing script (`<asset>_drawing.py`, like `crystal_drawing.py` and `body_drawing.py`) draws the numbers over the
+concept and over the body; the engineer approves that drawing once (Gate 1). After that a change to a target is a
+change to the file, never a script argument or a brief alone.
+
 ## Since 2026-10-18: Meshy generates the character forms
 
 The engineer chose Meshy as the 3D generator after the three-generator showcase of the alien base character
