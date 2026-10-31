@@ -24,6 +24,11 @@ land elsewhere on legs of other proportions (M1f's: thigh 0.255 m against 0.323,
    B1c: with mode "ik" a clip's `leg_fit_bob` (alien.toml, per clip; 1.0 when absent) scales the Hips' bob about its
    mean before the legs are solved (alien_char_geom.bob_offsets), so the feet stay on the donor's paths and the knees
    take the change; the report gives the factor and the Hips' largest one-frame step before and after (mm).
+   B1d: mode "ik" solves each action twice. The donor's ankle path left a shorter foot's toe higher than the
+   donor's on a heel-up stance (her crouch's planted toe floated 29-32 mm, the donor's 19), so after the first solve
+   each ankle target moves up or down by alien_char_geom.sole_dz: the foot's lowest point (its Foot and Toes heads,
+   its Toes tail) then rises from its rest height as the donor's does, scaled; a flat foot moves nothing. The report
+   gives the move's range per action (sole_dz_mm) and the second solve's measures.
 """
 from __future__ import annotations
 
@@ -98,6 +103,22 @@ def _lowest(obj, f0: int, f1: int) -> list[float]:
     return out
 
 
+def _foot_lows(obj, f0: int, f1: int) -> dict:
+    """B1d: per Foot bone (LEGS' third) per frame the lowest of that foot's points (world z, m) of obj playing its
+    assigned action, and at rest (key "rest")."""
+    scene, mw, bones = bpy.context.scene, obj.matrix_world, obj.data.bones
+    sides = {ft: (ft, ft.replace("Foot", "Toes")) for _, _, ft in LEGS}
+    out = {ft: [] for ft in sides}
+    for f in range(f0, f1 + 1):
+        scene.frame_set(f)
+        for ft, (a, t) in sides.items():
+            pb = obj.pose.bones
+            out[ft].append(min((mw @ p).z for p in (pb[a].head, pb[t].head, pb[t].tail)))
+    out["rest"] = {ft: min((mw @ p).z for p in (bones[a].head_local, bones[t].head_local, bones[t].tail_local))
+                   for ft, (a, t) in sides.items()}
+    return out
+
+
 def _legs(obj, f0: int, f1: int) -> dict:
     """Per frame the legs' pose matrices (armature space) of obj playing its assigned action, and their parents'."""
     scene, pb, out = bpy.context.scene, obj.pose.bones, {}
@@ -117,9 +138,10 @@ def _rotation_fcurves(act) -> dict:
     return fcs
 
 
-def _ik(arm, donor, act, f0: int, f1: int, theirs: dict, scale: float) -> dict:
+def _ik(arm, donor, act, f0: int, f1: int, theirs: dict, scale: float, dz: dict | None = None) -> dict:
     """Mode "ik" on one action (step 1 done): the feet of arm on the donor's ankle paths (theirs: the donor's _legs
-    on the unscaled clip); returns the action's measures (see the module)."""
+    on the unscaled clip), each ankle target moved up by dz[foot][frame - f0] (m, world; B1d's second solve);
+    returns the action's measures (see the module)."""
     bones, dbones = arm.data.bones, donor.data.bones
     mw, dmw = arm.matrix_world, donor.matrix_world
     mwi = mw.inverted()
@@ -146,7 +168,10 @@ def _ik(arm, donor, act, f0: int, f1: int, theirs: dict, scale: float) -> dict:
         prev, last_angle, last_dangle, last_pole = {}, None, None, None
         for f in range(f0, f1 + 1):
             r, t = mine[f], theirs[f]
-            tgt = mwi @ Vector(G.foot_target(own_rest, d_rest, tuple(dmw @ t[ft].translation), scale))
+            w = Vector(G.foot_target(own_rest, d_rest, tuple(dmw @ t[ft].translation), scale))
+            if dz is not None:
+                w.z += dz[ft][f - f0]
+            tgt = mwi @ w
             foot_q = roti @ (drot @ t[ft].to_quaternion()) @ d_rot_inv @ own_rot
             mu, ml = r[u], r[lo]
             hip, knee, ank = mu.translation, ml.translation, r[ft].translation
@@ -226,14 +251,15 @@ def fit(arm, donor_path: str, actions: list, mode: str = "lowest", bob: dict | N
     theirs = {}
     for act in actions:  # the donor on the clips as they were made
         f0, f1 = E._assign(donor, act)
-        theirs[act.name] = (f0, f1, _lowest(donor, f0, f1), _legs(donor, f0, f1) if mode == "ik" else None)
+        theirs[act.name] = (f0, f1, _lowest(donor, f0, f1), _legs(donor, f0, f1) if mode == "ik" else None,
+                            _foot_lows(donor, f0, f1) if mode == "ik" else None)
     donor.animation_data.action = None
     keys = slice_actions.scale_leg_keys(actions, rep["scale"])
     up_h = (arm.data.bones["Hips"].matrix_local.to_3x3().inverted()
             @ (arm.matrix_world.to_3x3().normalized().inverted() @ Vector((0.0, 0.0, 1.0)))).normalized()
     match = {}
     for act in actions:
-        f0, f1, low, legs = theirs[act.name]
+        f0, f1, low, legs, d_lows = theirs[act.name]
         name = act.name.split("|", 1)[-1]
         if mode == "ik":
             factor = float((bob or {}).get(name, 1.0))
@@ -246,7 +272,15 @@ def fit(arm, donor_path: str, actions: list, mode: str = "lowest", bob: dict | N
                 E._assign(arm, act)
                 bob_rep = {"factor": factor, "hips_step_mm": [_step_mm(z), _step_mm(_hips_z(arm, f0, f1))]}
                 arm.animation_data.action = None
-            m = _ik(arm, donor, act, f0, f1, legs, rep["scale"])
+            _ik(arm, donor, act, f0, f1, legs, rep["scale"])
+            E._assign(arm, act)  # B1d: each foot's lowest point against the donor's, then the second solve
+            own = _foot_lows(arm, f0, f1)
+            arm.animation_data.action = None
+            dz = {ft: G.sole_dz(own[ft], own["rest"][ft], d_lows[ft], d_lows["rest"][ft], rep["scale"])
+                  for ft in own["rest"]}
+            m = _ik(arm, donor, act, f0, f1, legs, rep["scale"], dz=dz)
+            every = [v for per in dz.values() for v in per]
+            m["sole_dz_mm"] = [round(min(every) * 1000, 1), round(max(every) * 1000, 1)]
             if bob_rep:
                 m["bob"] = bob_rep
             E._assign(arm, act)

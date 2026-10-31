@@ -69,6 +69,17 @@ def foot_target(own_rest, donor_rest, donor_now, scale: float) -> tuple:
     return tuple(o + scale * (n - d) for o, d, n in zip(own_rest, donor_rest, donor_now))
 
 
+def sole_dz(own_low, own_rest_low: float, donor_low, donor_rest_low: float, scale: float) -> list[float]:
+    """B1d: per frame the vertical move (m) of one ankle target after the IK so the foot's lowest point (its Foot and
+    Toes heads, its Toes tail; world z) rises from its rest height as the donor's does, scaled by the legs' ratio:
+    scale * (donor_low - donor_rest_low) - (own_low - own_rest_low). foot_target copies the donor's ankle path, so on
+    a heel-up (toe) stance a shorter foot's toe stays higher than the donor's (her foot is 3.6 cm shorter: the
+    crouch's planted toe floated about 1 cm more); a flat foot moves nothing."""
+    if len(own_low) != len(donor_low):
+        raise ValueError(f"sole_dz: {len(own_low)} frames against the donor's {len(donor_low)}")
+    return [scale * (d - donor_rest_low) - (o - own_rest_low) for o, d in zip(own_low, donor_low)]
+
+
 def bob_offsets(z: list[float], factor: float, wrap: bool = False) -> list[float]:
     """B1c: per frame the vertical move (m) that scales the Hips' bob (z, world, per frame) about its mean by factor:
     (factor - 1) * (z - mean). wrap (a loop whose last frame repeats its first): the mean over one period, the last

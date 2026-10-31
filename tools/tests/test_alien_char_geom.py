@@ -395,5 +395,32 @@ class BobScale(unittest.TestCase):
             G.bob_offsets([0.7, 0.8], 0.0)
 
 
+class SoleDz(unittest.TestCase):
+    """B1d: after the IK each ankle moves so the foot's lowest point rises from rest as the donor's (scaled)."""
+
+    @staticmethod
+    def toe_stance(foot_len, ankle_up, angle):  # the lowest point of a foot pivoted on its tip by angle (rad)
+        import math
+        return ankle_up - foot_len * math.sin(angle)
+
+    def test_a_shorter_foot_on_its_toe_comes_down(self):
+        import math
+        a, s = math.radians(40), 0.953
+        d_len, o_len = 0.20, 0.164  # the donor's foot and hers, 3.6 cm shorter
+        donor_ankle = d_len * math.sin(a)  # the donor's tip on the floor: its ankle that high over its rest
+        d_low = self.toe_stance(d_len, donor_ankle, a)
+        o_low = self.toe_stance(o_len, s * donor_ankle, a)  # her ankle on the donor's path (foot_target)
+        dz = G.sole_dz([o_low], 0.0, [d_low], 0.0, s)
+        self.assertLess(dz[0], -0.01)  # her toe floated over a cm: the ankle comes down
+        self.assertAlmostEqual(o_low + dz[0], s * d_low, places=12)
+
+    def test_a_flat_foot_and_the_rest_offsets(self):
+        dz = G.sole_dz([0.031, 0.08], 0.031, [0.05, 0.10], 0.05, 0.9)
+        self.assertAlmostEqual(dz[0], 0.0, places=12)  # flat on the floor: nothing moves, whatever the rest heights
+        self.assertAlmostEqual(dz[1], 0.9 * 0.05 - 0.049, places=12)  # in the swing: the donor's rise, scaled
+        with self.assertRaises(ValueError):
+            G.sole_dz([0.0], 0.0, [0.0, 0.0], 0.0, 1.0)
+
+
 if __name__ == "__main__":
     unittest.main()
