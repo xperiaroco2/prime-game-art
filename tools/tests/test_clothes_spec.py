@@ -95,6 +95,7 @@ class SpecFile(unittest.TestCase):
         good = SPEC.read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "x.toml"
+            assert not text or text in good, f"the spec has no {text!r} to break"
             p.write_text(good.replace(text, extra) if text else good + extra, encoding="utf-8")
             return S.load_spec(p)
 
@@ -105,8 +106,8 @@ class SpecFile(unittest.TestCase):
 
     def test_unknown_landmark_refused(self):
         with self.assertRaises(S.SpecError):
-            self.broken('between = ["waist", "collarbone"]\nratio = 0.78',
-                        'between = ["waist", "elbow"]\nratio = 0.78')
+            self.broken('between = ["bust", "collarbone"]\nratio = 0.5455',
+                        'between = ["bust", "elbow"]\nratio = 0.5455')
 
     def test_missing_tolerance_refused(self):
         with self.assertRaises(S.SpecError):

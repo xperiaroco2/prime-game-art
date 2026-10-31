@@ -101,6 +101,27 @@ def check_spec(spec: dict) -> list[str]:
     return bad
 
 
+def concept_pairs(spec: dict) -> list[tuple[float, float]]:
+    """(her landmark cm, the concept's row px), sorted by height, for the concept's landmark rows that place the spec
+    on the concept: every [concept] rows entry but those in [concept] unmapped (a landmark whose pose differs between
+    her rest and the concept, such as her T-pose armpit against its A-pose one, would skew the band around it)."""
+    c, lm = spec["concept"], spec["body"]["landmarks_cm"]
+    skip = set(c.get("unmapped", []))
+    unknown = skip - set(c["rows"])
+    if unknown:
+        raise SpecError(f"concept.unmapped names no concept row: {sorted(unknown)}")
+    return sorted((lm[k], r) for k, r in c["rows"].items() if k not in skip)
+
+
+def concept_row_to_z(pairs: list[tuple[float, float]], row: float) -> float:
+    """A concept row -> her height (cm) by the landmark rows' piecewise line (concept_pairs)."""
+    for (z0, r0), (z1, r1) in zip(pairs, pairs[1:]):
+        if min(r0, r1) <= row <= max(r0, r1) and r1 != r0:
+            return z0 + (row - r0) * (z1 - z0) / (r1 - r0)
+    (z0, r0), (z1, r1) = (pairs[0], pairs[1]) if row > pairs[0][1] else (pairs[-2], pairs[-1])
+    return z0 + (row - r0) * (z1 - z0) / (r1 - r0)
+
+
 def within(d: dict, measured_cm: float | None) -> bool | None:
     return None if measured_cm is None else abs(measured_cm - d["cm"]) <= d["tol_cm"]
 
