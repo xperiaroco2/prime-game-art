@@ -258,3 +258,168 @@ back_panel = "rigid like the bib, rides the UpperChest/Chest; the straps leave i
 waistband = "stiff ring: follows the Hips/Spine, no stretch over 2 %"
 buttons_buckles = "rigid hardware, each on the nearest panel's surface"
 legs = "soft denim: bend at the hips and knees, the turn-up stays a rigid ring over the ankle strip"
+
+# --- Gate 2: the build's automatic checks (tools/blender/garment_gate2.py; docs/clothes.md, "Gate 2") -------------
+# Heights and boxes may name a measure: the build's measured value of a spec size (garment_drawing.measure_build),
+# else the spec's cm, else her landmark; 'spec:NAME' always the spec's cm. Boxes in cm on her rest (T-pose).
+[gate2]
+clips = ["Idle", "Walk", "Jog_Fwd", "Sprint_Fwd", "Strafe_Left", "Crouch_Fwd", "Jump_Start", "Jump_Air", "Talk_Upper"]
+overlap_min = { front = 0.8, side = 0.75, back = 0.8 }
+# the side view's overlap over the trunk only: the concept's side legs stride, hers stand straight
+overlap_z = { side = ["crotch", "shoulder_top+8"] }
+# the concept's denim: blue over red and green, no bright grey; an opening of 4 rows drops the shirt's navy stripes;
+# the holes inside (stitching, the pocket's seams, highlights) filled. A hand mask instead: mask_<view> = "PNG path"
+concept_mask = { b_minus_r = 15, b_minus_g = 6, max = 215, open_ry = 4, close_r = 3, keep_share = 0.02 }
+
+[gate2.classify]
+over_z = "collarbone"        # a piece over this with points in front and behind goes over the shoulder: a strap
+hardware_max_verts = 300     # buckles, buttons
+
+[gate2.parts.bib]
+classes = ["panel"]
+x_abs = [0, 11.5]
+y = [-40, 0]
+z = ["waistband_top_z+1", "bib_top_z+1"]
+[gate2.parts.strap_fronts]
+classes = ["strap", "hardware"]
+x_abs = [0, 15]
+y = [-40, 0]
+z = ["waistband_top_z+1", "bib_top_z+0.5"]
+[gate2.parts.back_panel]
+classes = ["panel"]
+x_abs = [0, 13]
+y = [0, 40]
+z = ["waistband_top_z+1", "back_top_z+1"]
+[gate2.parts.strap_backs]
+classes = ["strap", "hardware"]
+x_abs = [0, 15]
+y = [0, 40]
+z = ["waistband_top_z+1", "back_top_z+0.5"]
+[gate2.parts.straps]
+classes = ["strap"]
+x_abs = [0, 40]
+y = [-40, 40]
+z = [0, 200]
+[gate2.parts.waistband]
+classes = ["panel"]
+x_abs = [0, 40]
+y = [-40, 40]
+z = ["waistband_top_z-waistband_h", "waistband_top_z"]
+
+[[gate2.joins]]
+name = "strap fronts on the bib"
+moving = "strap_fronts"
+on = "bib"
+reach_mm = 25
+tol_mm = 3.0                 # [behaviour] bib: the buckles ride on it, slip under 3 mm
+[[gate2.joins]]
+name = "strap backs on the back panel"
+moving = "strap_backs"
+on = "back_panel"
+reach_mm = 25
+tol_mm = 3.0
+
+[[gate2.flat]]
+part = "bib"
+tol_mm = 3.0                 # change from rest: lean B's drawn bend is the rest shape, a new fold counts
+[[gate2.flat]]
+part = "back_panel"
+tol_mm = 3.0
+
+[[gate2.stretch]]
+part = "waistband"
+tol_pct = 2.0                # [behaviour] waistband: no stretch over 2 %
+[[gate2.stretch]]
+part = "bib"
+tol_pct = 2.0
+[[gate2.stretch]]
+part = "back_panel"
+tol_pct = 2.0
+[[gate2.stretch]]
+part = "straps"
+tol_pct = 5.0                # bend along their length only
+
+[gate2.pokes]
+max_count = 0                # clothes_proof.py's poke-through, every clip
+
+# Stations on the silhouettes: kind top / bottom (a row inside the columns u), width / front / back (a row's edges
+# inside u at height z). dim: the spec size it checks (its cm and tol_cm); else concept_tol_cm against the concept.
+# Only where both pictures show the garment plainly: the concept's side arm hides the back at the bust, its bib is
+# narrower than the spec's (no band top beside it), the straps rise over the bib top in side view.
+[[gate2.stations]]
+view = "front"
+name = "bib top, centre"
+kind = "top"
+u = [-4, 4]
+z = ["waist", "shoulder_top+8"]
+dim = "bib_top_z"
+[[gate2.stations]]
+view = "front"
+name = "bib width under its top"
+kind = "width"
+u = [-16, 16]
+z = "spec:bib_top_z-1.5"
+dim = "bib_top_w"
+[[gate2.stations]]
+view = "front"
+name = "waistband width"
+kind = "width"
+u = [-25, 25]
+z = "spec:waistband_top_z-1"
+dim = "waistband_w"
+[[gate2.stations]]
+view = "front"
+name = "her left thigh"
+kind = "width"
+u = [0.5, 30]
+z = "crotch-3"
+dim = "leg_thigh_w"
+[[gate2.stations]]
+view = "front"
+name = "her left knee"
+kind = "width"
+u = [0.5, 30]
+z = "knee"
+dim = "leg_knee_w"
+[[gate2.stations]]
+view = "front"
+name = "her left hem"
+kind = "bottom"
+u = [3, 30]
+z = ["ankle", "knee"]
+dim = "hem_z"
+[[gate2.stations]]
+view = "side"
+name = "bib front at the bust"
+kind = "front"
+u = [-30, 30]
+z = "bust"
+concept_tol_cm = 1.5
+[[gate2.stations]]
+view = "side"
+name = "seat's back under the waist"
+kind = "back"
+u = [-30, 30]
+z = "waist-6"
+concept_tol_cm = 1.5
+[[gate2.stations]]
+view = "back"
+name = "back top, centre"
+kind = "top"
+u = [-4, 4]
+z = ["waist", "shoulder_top+8"]
+dim = "back_top_z"
+[[gate2.stations]]
+view = "back"
+name = "waistband width"
+kind = "width"
+u = [-25, 25]
+z = "spec:waistband_top_z-1"
+dim = "waistband_w"
+[[gate2.stations]]
+view = "back"
+name = "her left hem"
+kind = "bottom"
+u = [-30, -3]
+z = ["ankle", "knee"]
+dim = "hem_z"

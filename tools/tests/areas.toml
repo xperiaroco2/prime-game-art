@@ -36,6 +36,7 @@ light = [
   "tools/blender/clothes_*",  # the clothes step's Blender scripts (#196): no runner command or heavy test runs them; the pure modules' tests are [area.clothes]
   "tools/blender/sneaker_build.py",  # the code-built sneakers inside Blender (#196, S1): clothes_dress.py runs it, no heavy test; the maths' tests are [area.clothes]
   "tools/blender/garment_spec_probe.py", "tools/blender/garment_drawing.py",  # a garment spec's rest dump and drawing (#196, Gate 1): no runner command or heavy test runs them; the spec's tests are [area.clothes]
+  "tools/blender/garment_gate2.py", "tools/blender/garment_motion.py", "tools/runner/commands/gate2.py",  # Gate 2's checks and page (#196): the `gate2` command; no heavy test runs them; the maths' tests are [area.clothes]
 ]
 
 [area.anim]
@@ -194,5 +195,7 @@ sources = [
   "tools/blender/clothes_shell.py",  # the shell top's, panels' and new straps' maths (#196, C1f)
   "tools/blender/sneaker_geom.py",  # the code-built sneakers' maths and the toes' cap (#196, S1)
   "tools/blender/garment_spec.py", "specs/*_dims.toml",  # a garment's spec: loader, ratio maths, landmarks (#196, Gate 1)
+  "tools/blender/garment_gate2_geom.py",  # Gate 2's maths: masks, silhouettes, overlap, stretch (#196)
 ]
-tests = ["test_clothes_texture_*", "test_clothes_strap*", "test_clothes_shell*", "test_sneaker_geom*", "test_clothes_spec*"]
+tests = ["test_clothes_texture_*", "test_clothes_strap*", "test_clothes_shell*", "test_sneaker_geom*", "test_clothes_spec*",
+         "test_clothes_gate2*"]
