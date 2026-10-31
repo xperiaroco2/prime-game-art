@@ -3,6 +3,7 @@ alien_hands_math.py, the data in anim_sets/alien_hands.toml). Headless Blender:
 
     blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_hands.py -- --blend <in.blend> \
         [--apply <dir> --name <char> [--glb]] [--check <dir>] [--sheet <png> --rows <spec> [--sketch <png>]]
+        [--video <dir> --before <before.blend> [--clips Walk,Jog_Fwd] [--side Left]]
 
 - `--apply`: every action's finger channels (the five chains of both hands) are removed and keyed with the clip's
   grips (`alien_hands_math.clip_plan`; skipped actions untouched); every other channel stays. Saves
@@ -13,6 +14,8 @@ alien_hands_math.py, the data in anim_sets/alien_hands.toml). Headless Blender:
 - `--sheet`: the left hand (`--side Right`: the right) at 0.8 m (lens 85) from outside, the palm side, the thumb side and the other side, one row
   per spec item (`grip:<name>`: the rest pose with the grip; `clip:<name>@<share>`: the clip at that share of its
   frames; `rest`); flat colour with cavity; `--sketch` puts the sketch's hands beside the first row.
+- `--video` (H1c): per clip one cycle with the camera following the hand from the front and from its side, each frame
+  the `--before` character's two views beside the `--blend`'s; `<dir>/<clip>_<side>.mp4` (24 fps, three cycles).
 """
 from __future__ import annotations
 
@@ -202,6 +205,60 @@ def sheet(cfg: dict, arm, spec: str, png: Path, sketch: str = "", res: int = 320
     return log
 
 
+def _video_frames(arm, side: str, clips: list, out: Path, res: int) -> dict:
+    """Per clip one cycle of frames, the camera following the hand: from the front (-Y) and the hand's side."""
+    import alien_closeups as C
+    sc, cam = R.setup((res, res))
+    sc.display.shading.show_cavity = True
+    sc.display.shading.cavity_type = "WORLD"
+    sx = 1.0 if side == "Left" else -1.0
+    made = {}
+    for name in clips:
+        act = C.action(name)
+        f0, f1 = (int(round(x)) for x in act.frame_range)
+        cells = []
+        for f in range(f0, f1):
+            C.play(arm, act, f)
+            bpy.context.view_layer.update()
+            pb = arm.pose.bones[f"{side}Hand"]
+            c = arm.matrix_world @ ((pb.head + arm.pose.bones[f"{side}MiddleIntermediate"].head) / 2)
+            row = []
+            for view, d in (("front", Vector((0.0, -1.0, 0.0))), ("side", Vector((sx, 0.0, 0.0)))):
+                _look(cam, c + d * DIST, c, Vector((0.0, 0.0, 1.0)))
+                p = out / f"{name}_{view}_{f - f0:04d}.png"
+                R.shot(sc, str(p))
+                row.append(str(p))
+            cells.append(row)
+        made[name] = cells
+    return made
+
+
+def video(cfg: dict, before: str, after: str, side: str, clips: list, out: Path, res: int = 360) -> list:
+    """`--video`: per clip an MP4, each frame [before front | before side || after front | after side]."""
+    import encode_clips as E
+    tmp = out / "_frames"
+    cells = {}
+    for tag, blend in (("before", before), ("after", after)):
+        bpy.ops.wm.open_mainfile(filepath=str(Path(blend).resolve()))
+        d = tmp / tag
+        d.mkdir(parents=True, exist_ok=True)
+        cells[tag] = _video_frames(_arm(), side, clips, d, res)
+    made = []
+    for name in clips:
+        fd = tmp / f"{name}_{side}"
+        fd.mkdir(parents=True, exist_ok=True)
+        n = min(len(cells["before"][name]), len(cells["after"][name]))
+        for k in range(n):
+            b, a = cells["before"][name][k], cells["after"][name][k]
+            R.grid([[R.load(b[0]), R.load(b[1]), R.load(a[0]), R.load(a[1])]], str(fd / f"{k:04d}.png"))
+        mp4 = out / f"{name}_{side}.mp4"
+        E.encode(str(fd), str(mp4), 24, 3)
+        made.append(str(mp4))
+        for im in list(bpy.data.images):
+            bpy.data.images.remove(im)
+    return made
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--blend", required=True)
@@ -214,8 +271,19 @@ def main() -> int:
     ap.add_argument("--rows", default="rest,grip:relaxed")
     ap.add_argument("--sketch", default="")
     ap.add_argument("--side", choices=("Left", "Right"), default="Left", help="the sheet's hand")
+    ap.add_argument("--video", help="a folder: per clip an MP4 of the hand, --before | --blend, front and side")
+    ap.add_argument("--before", default="", help="--video: the before character's .blend")
+    ap.add_argument("--clips", default="Walk,Jog_Fwd", help="--video: the clips")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     cfg = H.load(Path(a.hands))
+    if a.video:
+        out = Path(a.video)
+        if out.exists():
+            raise SystemExit(f"{out} exists")
+        out.mkdir(parents=True)
+        for m in video(cfg, a.before, a.blend, a.side, a.clips.split(","), out):
+            print("HANDS video", m, flush=True)
+        return 0
     bpy.ops.wm.open_mainfile(filepath=str(Path(a.blend).resolve()))
     arm = _arm()
     used = {}
