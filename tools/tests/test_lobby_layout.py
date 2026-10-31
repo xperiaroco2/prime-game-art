@@ -248,7 +248,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v14")   # step 5a7
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v15")   # step 5b
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -417,7 +417,7 @@ class LobbyLayoutTest(unittest.TestCase):
         """Step 4c: three distances; each fills E2's angle from the eye and stays outside the hall (step 5a7: F48 the
         default, the far distances tested below)."""
         e = self.layout["earth"]
-        self.assertEqual(e["distance"], "F48")
+        self.assertEqual(e["distance"], "F36")   # step 5b: the engineer, 2026-10-31
         self.assertEqual(list(e["distances"]), ["D1", "D2", "D3", "F48", "F36"])
         dists = [e["distances"][d]["distance_m"] for d in ("D1", "D2", "D3")]
         self.assertEqual(dists, sorted(dists))
