@@ -390,37 +390,94 @@ def raise_knee(hip, knee, ankle, lift):
     return tuple(x + d for x, d in zip(k, lift))
 
 
-CROSS_CELL_M = 0.01  # B1f: the shoes are compared in cells this big across the forward and up axes
+CROSS_GRID_M = (0.004, 0.001, 0.000125)  # B1g: the grid steps the shoes' overlap is searched at, coarse to fine
+CROSS_TOUCH_M = 1e-5  # B1g: an overlap this small or less is none (a shoe resting against the other)
 
 
-def cross_cells(pts, cell: float = CROSS_CELL_M) -> dict:
-    """B1f (art #196, the crossing feet): one shoe's points (plain (u, y, z) tuples: u along the swinging foot's
-    outward side axis, y forward, z up, m) reduced to cells of the y-z plane: per cell the shoe's (smallest, largest)
-    u, its extent across."""
-    out = {}
-    for u, y, z in pts:
-        k = (math.floor(y / cell), math.floor(z / cell))
-        if k in out:
-            lo, hi = out[k]
-            out[k] = (min(lo, u), max(hi, u))
+def hull_slab(planes, a: float, b: float):
+    """B1g (art #196, the crossing shoes): a convex hull's extent along its depth axis u at (a, b) of the two other
+    axes: planes are (nu, na, nb, d), the hull being nu*u + na*a + nb*b <= d. Returns (lo, hi), or None where the line
+    misses the hull."""
+    lo, hi = -math.inf, math.inf
+    for nu, na, nb, d in planes:
+        r = d - na * a - nb * b
+        if abs(nu) < 1e-9:
+            if r < -1e-9:
+                return None
+        elif nu > 0.0:
+            hi = min(hi, r / nu)
         else:
-            out[k] = (u, u)
-    return out
+            lo = max(lo, r / nu)
+    return (lo, hi) if lo <= hi else None
 
 
-def cross_need(swing: dict, planted: dict, clear: float) -> float:
-    """B1f: how far (m) the swinging shoe must move outward to clear the planted one by clear: over the y-z cells both
-    shoes fill (cross_cells) whose extents across meet within clear, the planted shoe's outer side less the swinging
-    shoe's inner side, plus clear; 0 when no such cell. A cell where the swinging shoe lies wholly inward of the
-    planted one (a strafe's foot crossed over in front) has its shoes apart, not meeting. Walk's crossing frame and
-    the runs' tuck frame pass the swinging shoe through the planted one on both characters (the library clip's
-    paths)."""
-    need = 0.0
-    for k in swing.keys() & planted.keys():
-        (s0, s1), (p0, p1) = swing[k], planted[k]
-        if s0 < p1 + clear and p0 < s1 + clear:
-            need = max(need, p1 - s0 + clear)
-    return need
+def hull_gaps(swing, planted):
+    """B1g: the gap function cross_depth searches, in plain Python (hull_slab): per (a, b) point (out, inn), out the
+    planted hull's far side less the swinging hull's near side (how far the swinging shoe must move along +u to clear
+    the planted one there), inn the reverse (along -u); None where either hull is missed."""
+    def gaps(pts):
+        out = []
+        for a, b in pts:
+            s, p = hull_slab(swing, a, b), hull_slab(planted, a, b)
+            out.append(None if s is None or p is None else (p[1] - s[0], s[1] - p[0]))
+        return out
+    return gaps
+
+
+def _grid(a0, a1, b0, b1, step):
+    na = max(2, int(math.ceil((a1 - a0) / step)) + 1)
+    nb = max(2, int(math.ceil((b1 - b0) / step)) + 1)
+    return [(a0 + (a1 - a0) * i / (na - 1), b0 + (b1 - b0) * j / (nb - 1)) for i in range(na) for j in range(nb)]
+
+
+def cross_depth(gaps, box, steps=CROSS_GRID_M, keep: int = 4):
+    """B1g: two convex shoes' overlap along the depth axis u, the largest of gaps' (out, inn) over the two hulls' shared
+    (a, b) box (a0, a1, b0, b1): a grid at steps[0], then around the best `keep` points a grid at each finer step
+    (out and inn are concave over the shared projection, so the search converges on the one top). For convex hulls
+    the swinging shoe overlaps the planted one, moved by t along u, for t in [-inn, out]: they overlap now when
+    out > 0 and inn > 0, and out is the push along +u that clears them (inn along -u). Returns (out, inn) in m, or
+    None when the projections share no point."""
+    a0, a1, b0, b1 = box
+    if a1 < a0 or b1 < b0:
+        return None
+    best = []
+    pts = _grid(a0, a1, b0, b1, steps[0])
+    vals = gaps(pts)
+    for k in (0, 1):
+        cand = sorted(((v[k], p) for p, v in zip(pts, vals) if v is not None), reverse=True)[:keep]
+        if not cand:
+            return None
+        prev = steps[0]
+        for st in steps[1:]:
+            nxt = []
+            for _, (a, b) in cand:
+                q = _grid(max(a0, a - prev), min(a1, a + prev), max(b0, b - prev), min(b1, b + prev), st)
+                nxt += [(v[k], p) for p, v in zip(q, gaps(q)) if v is not None]
+            cand = sorted(cand + nxt, reverse=True)[:keep]
+            prev = st
+        best.append(cand[0][0])
+    return best[0], best[1]
+
+
+def cross_need(depth, clear: float) -> float:
+    """B1g: the push (m) a frame's measured depth (cross_depth's (out, inn), or None) asks for along +u: the overlap
+    out plus clear when the shoes really overlap (out and inn over CROSS_TOUCH_M) and +u is the short way out
+    (out <= inn); 0 otherwise. B1f's 1 cm cells counted shoes within the clearance as meeting: the crouches and the
+    back jogs got 1 to 1.7 cm pushes with no overlap at all."""
+    if depth is None:
+        return 0.0
+    out, inn = depth
+    if out > CROSS_TOUCH_M and inn > CROSS_TOUCH_M and out <= inn:
+        return out + clear
+    return 0.0
+
+
+def cross_overlap(depth) -> float:
+    """B1g: the overlap (m) along the side axis: the shorter way out, min(out, inn), when both are over
+    CROSS_TOUCH_M; else 0."""
+    if depth is None or min(depth) <= CROSS_TOUCH_M:
+        return 0.0
+    return min(depth)
 
 
 def cross_bump(need: list[float], reach: int = 2, wrap: bool = False) -> list[float]:
@@ -439,7 +496,7 @@ def cross_bump(need: list[float], reach: int = 2, wrap: bool = False) -> list[fl
     return [max(need[j] * w[abs(j - i)] for j in range(max(0, i - reach), min(n, i + reach + 1))) for i in range(n)]
 
 
-CROSS_MAX_M = 0.04  # B1f: no frame's need counts over this (a strafe's crossed-over foot is skipped, not pushed)
+CROSS_MAX_M = 0.04  # B1f: no frame's need counts over this; B1g: a frame needing more is a crossed-over step
 
 
 def _runs(flags: list[bool], wrap: bool) -> list[list[int]]:
@@ -461,23 +518,30 @@ def _runs(flags: list[bool], wrap: bool) -> list[list[int]]:
     return runs
 
 
-def cross_pushes(lows: dict[str, list[float]], needs: dict[str, list[float]], reach: int = 2, wrap: bool = False,
-                 crossed: list[bool] | None = None, plant: float = FLOAT_TOL_M) -> dict[str, list[float]]:
-    """B1f: per foot the outward push (m) per frame. A frame's need counts for the higher foot only, not on a frame
-    whose feet are crossed over (a strafe's step: its own intent), and at most CROSS_MAX_M; then cross_bump. A foot
-    on the floor (its lowest within plant) never slides: over each such stance run the push is held at the run's
-    largest, and the swing frames around it ease from it (the raised cosine), so a foot that lands into the other
-    shoe lands that much wider and stays there. B1e's route pushed the higher foot only, and a double-support frame
-    (Jog_Bwd: the landing foot 0.4 mm over the other) slid the planted foot 3 cm."""
-    crossed = crossed or [False] * len(lows["Left"])
+def cross_pushes(lows: dict[str, list[float]], need: list[float], reach: int = 2, wrap: bool = False,
+                 plant: float = FLOAT_TOL_M) -> dict[str, list[float]]:
+    """B1f, B1g: per foot the outward push (m) per frame from each frame's need (cross_need: the overlap plus the
+    clearance, 0 on a frame without an overlap), at most CROSS_MAX_M. A frame's need goes to the higher foot; B1g:
+    when both feet stand (each lowest within plant) each takes half (his Jog_Bwd: both soles at 0.0, neither pushed,
+    0.9 mm left). Then cross_bump, and a foot on the floor never slides: over each of its stance runs the push is held
+    at the run's largest, and the swing frames around it ease from it (the raised cosine), so a foot that lands into
+    the other shoe lands that much wider and stays there. A clip without an overlap gets exactly 0."""
     n = len(lows["Left"])
     w = [0.5 * (1.0 + math.cos(math.pi * d / (reach + 1))) for d in range(reach + 1)]
     m = n - 1 if wrap and n > 2 else n
+    share = {"Left": [0.0] * n, "Right": [0.0] * n}
+    for i, nd in enumerate(need):
+        if nd <= 0.0:
+            continue
+        nd = min(nd, CROSS_MAX_M)
+        lo, ro = lows["Left"][i], lows["Right"][i]
+        if lo <= plant and ro <= plant:
+            share["Left"][i] = share["Right"][i] = 0.5 * nd
+        else:
+            share["Left" if lo > ro else "Right"][i] = nd
     out = {}
-    for s, o in (("Left", "Right"), ("Right", "Left")):
-        mine = [min(nd, CROSS_MAX_M) if lows[s][i] > lows[o][i] and not crossed[i] else 0.0
-                for i, nd in enumerate(needs[s])]
-        p = cross_bump(mine, reach, wrap)
+    for s in ("Left", "Right"):
+        p = cross_bump(share[s], reach, wrap)
         for run in _runs([z <= plant for z in lows[s]], wrap):
             hold = max(p[i] for i in run)
             for i in run:
@@ -492,14 +556,36 @@ def cross_pushes(lows: dict[str, list[float]], needs: dict[str, list[float]], re
     return out
 
 
-def cross_overlap_mm(lows: dict[str, list[float]], needs: dict[str, list[float]], clear: float) -> list[float]:
-    """B1f: per frame the swinging foot's overlap (mm) with the planted shoe: its need less clear (0: clear by clear
-    or more, or no shared cell)."""
-    out = []
-    for i in range(len(needs["Left"])):
+def cross_lifts(lows: dict[str, list[float]], lift: list[float], reach: int = 2, wrap: bool = False,
+                plant: float = FLOAT_TOL_M) -> dict[str, list[float]]:
+    """B1g (the crossed-over step, Strafe_Left__s4b): per foot the lift (m) per frame from each crossed frame's lift
+    (the vertical overlap plus the clearance): the higher foot only, when it is off the floor (over plant), eased by
+    cross_bump and never on a frame that foot stands on; such a step crosses on purpose, so it is not pushed apart.
+    A lift over CROSS_MAX_M is not made: Strafe_Left__s4b's hop has the feet in an X at one height on one frame (10
+    to 12 cm to lift), the clip's own crossing, left as it is."""
+    n = len(lows["Left"])
+    share = {"Left": [0.0] * n, "Right": [0.0] * n}
+    for i, lf in enumerate(lift):
         s = "Left" if lows["Left"][i] > lows["Right"][i] else "Right"
-        nd = needs[s][i]
-        out.append(round(max(0.0, nd - clear) * 1000, 1) if nd > 0 else 0.0)
+        if 0.0 < lf <= CROSS_MAX_M and lows[s][i] > plant:
+            share[s][i] = lf
+    out = {}
+    for s in ("Left", "Right"):
+        p = cross_bump(share[s], reach, wrap)
+        out[s] = [0.0 if z <= plant else x for x, z in zip(p, lows[s])]
+        if wrap and n > 2:
+            out[s][-1] = out[s][0]
+    return out
+
+
+def cross_slide_mm(lows: dict[str, list[float]], push: dict[str, list[float]], wrap: bool = False,
+                   plant: float = FLOAT_TOL_M) -> dict[str, float]:
+    """B1g: per foot how far the push slides it while it stands (mm): over each stance run the push's range."""
+    out = {}
+    for s in ("Left", "Right"):
+        r = [max(push[s][i] for i in run) - min(push[s][i] for i in run)
+             for run in _runs([z <= plant for z in lows[s]], wrap)]
+        out[s] = round(max(r, default=0.0) * 1000, 2)
     return out
 
 
@@ -527,19 +613,107 @@ def _shoe_split(arm, p):
     return {"Left": p[left], "Right": p[~left]}
 
 
+def _hull_planes(p):
+    """B1g: the convex hull of world points p (numpy n x 3; bmesh's convex_hull) as planes (F x 4: the outward unit
+    normal, d), the hull being n.x <= d; d is the points' support along n, as bmesh's sliver faces put up to 26 mm of
+    the shoe outside their own plane."""
+    import bmesh
+    import numpy as np
+    bm = bmesh.new()
+    for v in p.tolist():
+        bm.verts.new(v)
+    geom = bmesh.ops.convex_hull(bm, input=list(bm.verts))["geom"]
+    c = p.mean(axis=0)
+    ns = set()
+    for f in geom:
+        if not isinstance(f, bmesh.types.BMFace):
+            continue
+        f.normal_update()
+        n = np.array(f.normal)
+        if n @ n < 0.5:
+            continue
+        if n @ (np.array(f.verts[0].co) - c) < 0.0:
+            n = -n
+        ns.add(tuple(round(float(x), 9) for x in n))
+    bm.free()
+    n = np.array(sorted(ns))
+    return np.column_stack([n, (p @ n.T).max(axis=0)])  # each plane through the points' support: no point outside
+
+
+def _np_gaps(swing, planted):
+    """B1g: hull_gaps with numpy (Blender), the same maths on many points at once; planes (F x 4) in the depth
+    frame (nu, na, nb, d)."""
+    import numpy as np
+
+    def slabs(P, A, B):
+        nu = P[:, 0]
+        r = P[None, :, 3] - P[None, :, 1] * A[:, None] - P[None, :, 2] * B[:, None]
+        pos, neg = nu > 1e-9, nu < -1e-9
+        zer = ~(pos | neg)
+        hi = (r[:, pos] / nu[pos]).min(axis=1) if pos.any() else np.full(len(A), np.inf)
+        lo = (r[:, neg] / nu[neg]).max(axis=1) if neg.any() else np.full(len(A), -np.inf)
+        ok = lo <= hi
+        if zer.any():
+            ok &= (r[:, zer] >= -1e-9).all(axis=1)
+        return lo, hi, ok
+
+    def gaps(pts):
+        out = []
+        for k in range(0, len(pts), 1500):
+            q = np.array(pts[k:k + 1500])
+            sl, sh, so = slabs(swing, q[:, 0], q[:, 1])
+            pl, ph, po = slabs(planted, q[:, 0], q[:, 1])
+            ok = so & po
+            out += [(float(a), float(b)) if g else None for a, b, g in zip(ph - sl, sh - pl, ok)]
+        return out
+    return gaps
+
+
+def _depth(hs, hp, vs, vp, axes):
+    """B1g: cross_depth of the swinging hull hs over the planted hp (world planes) along axes[0], searched over
+    axes[1] x axes[2] where both shoes' points (vs, vp) project. Returns the depth and the two hulls' planes in the
+    depth frame."""
+    import numpy as np
+    E = np.array(axes)
+    sw = np.column_stack([hs[:, :3] @ E.T, hs[:, 3]])
+    pl = np.column_stack([hp[:, :3] @ E.T, hp[:, 3]])
+    qs, qp = vs @ E[1:].T, vp @ E[1:].T
+    lo, hi = np.maximum(qs.min(axis=0), qp.min(axis=0)), np.minimum(qs.max(axis=0), qp.max(axis=0))
+    return cross_depth(_np_gaps(sw, pl), (lo[0], hi[0], lo[1], hi[1])), (sw, pl)
+
+
+def _shoe_sides(shoes):
+    """B1g: per vertex of the shoes mesh whether it is the left shoe's (its weights to the Left* bones over the
+    Right* ones), or None without such groups. The nearer Foot-Toes segment (_shoe_split) gave 29 of the right
+    shoe's heel collar points to the left foot in her Crouch_Fwd: a 0.8 mm overlap with the feet 17 cm apart."""
+    import numpy as np
+    gn = {g.index: g.name for g in shoes.vertex_groups}
+    if not any(n.startswith("Left") for n in gn.values()) or not any(n.startswith("Right") for n in gn.values()):
+        return None
+    lr = [sum(e.weight * (1.0 if gn[e.group].startswith("Left") else -1.0 if gn[e.group].startswith("Right") else 0.0)
+              for e in v.groups if e.group in gn) for v in shoes.data.vertices]
+    return np.array(lr) > 0.0
+
+
 def cross_measure(arm, shoes, act, clear: float) -> dict:
-    """B1f: per frame each foot's lowest shoe point and its need as the swinging foot (cross_need against the other
-    shoe, m), from the shoes mesh's evaluated points."""
+    """B1f, B1g: per frame each foot's lowest shoe point and the shoes' overlap from their convex hulls (the shoes
+    mesh's evaluated points, each to its foot by its weights, _shoe_sides): along the body's side axis, cross_depth with the left shoe as
+    the swinging one (the relative motion is the same for either), `need` the push apart (cross_need: the overlap
+    plus clear, 0 without one), `overlap` (cross_overlap). A frame whose overlap is a crossed-over step (the shorter
+    way out is across, the shoes' centres on the wrong sides, or a push over CROSS_MAX_M: Strafe_Left__s4b's hop, the
+    feet in an X, 15 cm either way) is `crossed`, not pushed, and `lift` is the higher shoe's vertical overlap over
+    the other plus clear.
+    Frames whose shoes' boxes do not meet are not searched (0)."""
     import bpy
     import numpy as np
 
     f0, f1 = _assign(arm, act)
     side, fwd = _side_axes(arm)
-    ax = {"Left": np.array(side), "Right": -np.array(side)}
-    fw = np.array(fwd)
+    sd, fw, up = np.array(side), np.array(fwd), np.array((0.0, 0.0, 1.0))
     lows = {"Left": [], "Right": []}
-    needs = {"Left": [], "Right": []}
-    crossed = []
+    need, lift, overlap, crossed = [], [], [], []
+    checked = False
+    sides = _shoe_sides(shoes)
     for f in range(f0, f1 + 1):
         bpy.context.scene.frame_set(f)
         dg = bpy.context.evaluated_depsgraph_get()
@@ -549,47 +723,84 @@ def cross_measure(arm, shoes, act, clear: float) -> dict:
         me.vertices.foreach_get("co", co)
         co = co.reshape(-1, 3) @ np.array(ev.matrix_world.to_3x3()).T + np.array(ev.matrix_world.translation)
         ev.to_mesh_clear()
-        feet = _shoe_split(arm, co)
-        crossed.append(bool(len(feet["Left"]) and len(feet["Right"])
-                            and float((feet["Left"] @ ax["Left"]).mean() + (feet["Right"] @ ax["Right"]).mean()) < 0.0))
-        for s, o in (("Left", "Right"), ("Right", "Left")):
+        feet = ({"Left": co[sides], "Right": co[~sides]} if sides is not None and len(sides) == len(co)
+                else _shoe_split(arm, co))
+        for s in ("Left", "Right"):
             lows[s].append(float(feet[s][:, 2].min()) if len(feet[s]) else 1.0)
-            if not (len(feet[s]) and len(feet[o])):
-                needs[s].append(0.0)
-                continue
-            sw, pl = (np.stack([q @ ax[s], q @ fw, q[:, 2]], axis=1).tolist() for q in (feet[s], feet[o]))
-            needs[s].append(cross_need(cross_cells(sw), cross_cells(pl), clear))
+        nd = lf = ov = 0.0
+        cr = False
+        L, R = feet["Left"], feet["Right"]
+        if len(L) > 3 and len(R) > 3:
+            box = [np.stack([q @ sd, q @ fw, q[:, 2]], axis=1) for q in (L, R)]
+            if (box[0].min(axis=0) < box[1].max(axis=0)).all() and (box[1].min(axis=0) < box[0].max(axis=0)).all():
+                hl, hr = _hull_planes(L), _hull_planes(R)
+                d, (sw, pl) = _depth(hl, hr, L, R, (sd, fw, up))
+                if not checked and d is not None:  # the numpy search against the plain maths, once a clip
+                    q = (L @ np.array((fw, up)).T)[:: max(1, len(L) // 7)].tolist()
+                    a, b = _np_gaps(sw, pl)(q), hull_gaps(sw.tolist(), pl.tolist())(q)
+                    if any((x is None) != (y is None) or (x and max(abs(x[0] - y[0]), abs(x[1] - y[1])) > 1e-7)
+                           for x, y in zip(a, b)):
+                        raise ValueError(f"{act.name}: the hull gaps differ between numpy and plain Python")
+                    checked = True
+                nd, ov = cross_need(d, clear), cross_overlap(d)
+                swapped = float((L @ sd).mean()) < float((R @ sd).mean())
+                if ov > 0.0 and (nd == 0.0 or nd - clear > CROSS_MAX_M or swapped):
+                    cr, nd = True, 0.0  # crossed over: the higher shoe lifted over the other instead
+                    hi_left = lows["Left"][-1] > lows["Right"][-1]
+                    hs, hp, vs, vp = (hl, hr, L, R) if hi_left else (hr, hl, R, L)
+                    du, _ = _depth(hs, hp, vs, vp, (up, sd, fw))
+                    lf = du[0] + clear if du is not None and du[0] > CROSS_TOUCH_M else 0.0
+        need.append(nd)
+        lift.append(lf)
+        overlap.append(ov)
+        crossed.append(cr)
     arm.animation_data.action = None
-    return {"lows": lows, "needs": needs, "side": tuple(side), "crossed": crossed}
+    return {"lows": lows, "need": need, "lift": lift, "overlap": overlap, "crossed": crossed, "side": tuple(side)}
 
 
 def feet_cross(arm, shoes, act, clear: float, wrap: bool) -> dict:
-    """B1f (art #196, the crossing feet): the swinging shoe moved outward along the body's side axis by its measured
-    overlap with the planted shoe plus clear (cross_measure, cross_pushes: a raised-cosine bump), the leg solved again
-    by _raise_ankles (the Foot's world rotation kept, the knee in its own plane), the planted foot and the Hips
-    untouched; three times at most. Returns the overlap per frame before and after (mm, cross_overlap_mm) and the push."""
+    """B1f, B1g (art #196, the crossing shoes): where the shoes really overlap (cross_measure's convex hulls), they
+    move apart along the body's side axis by the overlap plus clear (cross_pushes: the higher foot, or half each when
+    both stand; held over a stance, eased by a raised cosine), a crossed-over step's higher foot lifted over the
+    other instead (cross_lifts); the legs solved again by _raise_ankles (the Foot's world rotation kept, the knee in
+    its own plane), the Hips untouched; three times at most. A clip with no overlap is not touched (asserted).
+    Returns the overlap per frame before and after (mm), the push, the lift and the planted feet's slide."""
     m0 = m = cross_measure(arm, shoes, act, clear)
     side = m["side"]
-    pushed = {s: [0.0] * len(m["needs"][s]) for s in m["needs"]}
+    n = len(m["need"])
+    pushed = {s: [0.0] * n for s in ("Left", "Right")}
+    lifted = {s: [0.0] * n for s in ("Left", "Right")}
     sign = {"Left": 1.0, "Right": -1.0}
     miss = 0.0
+    passes = []
     for _ in range(3):
-        push = cross_pushes(m["lows"], m["needs"], wrap=wrap, crossed=m["crossed"])
-        if max(max(v) for v in push.values()) < 1e-4:
+        passes.append({"frames": sum(x > 0.0 for x in m["need"]), "need_max_mm": round(max(m["need"]) * 1000, 2),
+                       "overlap_max_mm": round(max(m["overlap"]) * 1000, 3)})
+        push = cross_pushes(m["lows"], m["need"], wrap=wrap)
+        lift = cross_lifts(m["lows"], m["lift"], wrap=wrap)
+        if not any(x > 0.0 for v in (*push.values(), *lift.values()) for x in v):
             break
-        off = {s: [tuple(sign[s] * x * c for c in side) for x in v] for s, v in push.items()}
+        off = {s: [(sign[s] * x * side[0], sign[s] * x * side[1], z) for x, z in zip(push[s], lift[s])]
+               for s in push}
         miss = max(miss, _raise_ankles(arm, act, off)["ankle_miss_max_cm"])
         pushed = {s: [a + b for a, b in zip(pushed[s], push[s])] for s in pushed}
+        lifted = {s: [a + b for a, b in zip(lifted[s], lift[s])] for s in lifted}
         m = cross_measure(arm, shoes, act, clear)
-    ob = cross_overlap_mm(m0["lows"], m0["needs"], clear)
-    oa = cross_overlap_mm(m["lows"], m["needs"], clear)
+    ob = [round(x * 1000, 1) for x in m0["overlap"]]
+    oa = [round(x * 1000, 1) for x in m["overlap"]]
+    moved = any(x != 0.0 for v in (*pushed.values(), *lifted.values()) for x in v)
+    if moved and not any(x > 0.0 for x in m0["overlap"]):
+        raise ValueError(f"{act.name}: the shoes do not overlap, yet the cross pass moved a foot")
     return {"clear_cm": round(clear * 100, 2), "overlap_before_mm": ob, "overlap_after_mm": oa,
             "overlap_max_before_mm": max(ob), "overlap_max_after_mm": max(oa),
             "overlap_frames_before": sum(x > 0 for x in ob), "overlap_frames_after": sum(x > 0 for x in oa),
             "push_max_cm": {s: round(max(v) * 100, 2) for s, v in pushed.items()},
             "push_cm": {s: [round(x * 100, 2) for x in v] for s, v in pushed.items()},
-            "crossed_frames": sum(m0["crossed"]),
-            "ankle_miss_max_cm": miss}
+            "lift_max_cm": {s: round(max(v) * 100, 2) for s, v in lifted.items()},
+            "zero_push": not moved,
+            "slide_mm": cross_slide_mm(m0["lows"], pushed, wrap),
+            "crossed_frames": sum(m0["crossed"]), "crossed_frames_after": sum(m["crossed"]),
+            "ankle_miss_max_cm": miss, "passes": passes}
 
 
 def _foot_lows(arm, skins, f0: int, f1: int) -> dict[str, list[float]]:
@@ -783,8 +994,10 @@ def sole_floor(arm, skins, path: str) -> dict:
     for clip in ground_clips(sorted(acts), str(p)):
         act = acts[clip]
         cross = cross_clear_cm(str(p), clip)
-        cr = feet_cross(arm, shoes, act, cross / 100.0, clip.endswith("_Loop")) if shoes and cross is not None else None
         rep = feet_floor(arm, skins, act, rest, up_arm, clip.endswith("_Loop"), no_flight=not can_fly(clip))
+        # B1g: the shoes apart after the floor: the push is across, the Foot's world rotation kept, so the soles stay
+        # where the floor put them (B1f pushed first, and the floor's raises put 0.7 to 3 mm of overlap back)
+        cr = feet_cross(arm, shoes, act, cross / 100.0, clip.endswith("_Loop")) if shoes and cross is not None else None
         if cr is not None:
             rep["cross"] = cr
         out[clip] = rep

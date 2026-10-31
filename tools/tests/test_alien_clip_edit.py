@@ -256,28 +256,64 @@ class B1ePlant(unittest.TestCase):
 
 
 class B1fCross(unittest.TestCase):
-    """B1f (art #196): the swinging shoe moved outward by its overlap with the planted one plus a clearance."""
+    """B1f, B1g (art #196): the shoes moved apart by their real overlap (convex hulls) plus a clearance."""
 
     @staticmethod
-    def box(u0, u1, y0, y1, z0, z1, step=0.005):
-        n = lambda a, b: [a + step * i for i in range(int(round((b - a) / step)) + 1)]
-        return [(u, y, z) for u in (u0, u1) for y in n(y0, y1) for z in n(z0, z1)]
+    def box(u0, u1, a0, a1, b0, b1):
+        """An axis box as hull planes (nu, na, nb, d): nu*u + na*a + nb*b <= d."""
+        return [(1, 0, 0, u1), (-1, 0, 0, -u0), (0, 1, 0, a1), (0, -1, 0, -a0), (0, 0, 1, b1), (0, 0, -1, -b0)]
+
+    def depth(self, swing, planted):
+        sb, pb = [self.bounds(swing), self.bounds(planted)]
+        box = (max(sb[0], pb[0]), min(sb[1], pb[1]), max(sb[2], pb[2]), min(sb[3], pb[3]))
+        return E.cross_depth(E.hull_gaps(swing, planted), box)
+
+    @staticmethod
+    def bounds(planes):
+        get = {(na, nb): d for _, na, nb, d in planes}
+        return (-get[(-1, 0)], get[(1, 0)], -get[(0, -1)], get[(0, 1)])
+
+    def test_slab(self):
+        h = self.box(-0.05, 0.04, 0.0, 0.25, 0.0, 0.08)
+        self.assertEqual(E.hull_slab(h, 0.1, 0.04), (-0.05, 0.04))
+        self.assertIsNone(E.hull_slab(h, 0.3, 0.04))
+        wedge = [(1, 0, 1, 0.1), (-1, 0, 0, 0.0), (0, 1, 0, 1), (0, -1, 0, 1), (0, 0, -1, 0.0)]  # u <= 0.1 - b
+        lo, hi = E.hull_slab(wedge, 0.0, 0.04)
+        self.assertAlmostEqual(hi, 0.06)
 
     def test_overlap_plus_clear(self):
-        planted = E.cross_cells(self.box(-0.05, 0.04, 0.0, 0.25, 0.0, 0.08))  # outer side at u = 0.04
-        swing = E.cross_cells(self.box(0.02, 0.12, 0.10, 0.30, 0.03, 0.10))  # inner side at u = 0.02, 2 cm in
-        self.assertAlmostEqual(E.cross_need(swing, planted, 0.005), 0.025)
+        planted = self.box(-0.05, 0.04, 0.0, 0.25, 0.0, 0.08)  # outer side at u = 0.04
+        swing = self.box(0.02, 0.12, 0.10, 0.30, 0.03, 0.10)  # inner side at u = 0.02: 2 cm into it
+        d = self.depth(swing, planted)
+        self.assertAlmostEqual(d[0], 0.02)
+        self.assertAlmostEqual(E.cross_overlap(d), 0.02)
+        self.assertAlmostEqual(E.cross_need(d, 0.005), 0.025)
 
-    def test_apart_or_past(self):
-        planted = E.cross_cells(self.box(-0.05, 0.04, 0.0, 0.25, 0.0, 0.08))
-        far = E.cross_cells(self.box(0.06, 0.16, 0.10, 0.30, 0.03, 0.10))  # 2 cm out: clear
-        self.assertEqual(E.cross_need(far, planted, 0.005), 0.0)
-        near = E.cross_cells(self.box(0.042, 0.14, 0.10, 0.30, 0.03, 0.10))  # 2 mm out: within the clearance
-        self.assertAlmostEqual(E.cross_need(near, planted, 0.005), 0.003)
-        above = E.cross_cells(self.box(0.0, 0.10, 0.10, 0.30, 0.12, 0.20))  # over the planted shoe: no shared cell
-        self.assertEqual(E.cross_need(above, planted, 0.005), 0.0)
-        crossed = E.cross_cells(self.box(-0.25, -0.10, 0.10, 0.30, 0.03, 0.10))  # wholly inward (a strafe's cross)
-        self.assertEqual(E.cross_need(crossed, planted, 0.005), 0.0)
+    def test_no_overlap_no_need(self):
+        planted = self.box(-0.05, 0.04, 0.0, 0.25, 0.0, 0.08)
+        for swing in (self.box(0.06, 0.16, 0.10, 0.30, 0.03, 0.10),  # 2 cm out: clear
+                      self.box(0.042, 0.14, 0.10, 0.30, 0.03, 0.10),  # 2 mm out: within the clearance, still none
+                      self.box(0.0, 0.10, 0.10, 0.30, 0.0805, 0.20),  # over it by 0.5 mm
+                      self.box(0.0, 0.10, 0.2502, 0.40, 0.0, 0.08)):  # in front of it by 0.2 mm
+            d = self.depth(swing, planted)
+            self.assertEqual(E.cross_need(d, 0.005), 0.0, swing)
+            self.assertEqual(E.cross_overlap(d), 0.0, swing)
+
+    def test_a_slanted_hull_fine(self):
+        # the planted shoe's outer side leans: u <= 0.04 - 0.25 * (b - 0.04); the swinging shoe's inner side at
+        # u = 0.035 from b = 0.06 up: the overlap is at b = 0.06, 0.04 - 0.005 - 0.035 = 0 ... 0.5 mm deeper at 0.058
+        planted = [(1, 0, 0.25, 0.04 + 0.25 * 0.04), (-1, 0, 0, 0.05), (0, 1, 0, 0.25), (0, -1, 0, 0.0),
+                   (0, 0, 1, 0.08), (0, 0, -1, 0.0)]
+        swing = self.box(0.035, 0.12, 0.10, 0.30, 0.058, 0.10)
+        d = E.cross_depth(E.hull_gaps(swing, planted), (0.10, 0.25, 0.058, 0.08))
+        self.assertAlmostEqual(d[0], 0.04 - 0.25 * 0.018 - 0.035, places=6)
+
+    def test_crossed_way_out(self):
+        planted = self.box(-0.05, 0.04, 0.0, 0.25, 0.0, 0.08)
+        swing = self.box(-0.10, -0.02, 0.10, 0.30, 0.03, 0.10)  # mostly inward of its far side: across is shorter
+        d = self.depth(swing, planted)
+        self.assertAlmostEqual(E.cross_overlap(d), 0.03)  # -0.02 + 0.05
+        self.assertEqual(E.cross_need(d, 0.005), 0.0)
 
     def test_bump_covers_the_need_and_eases(self):
         need = [0.0] * 5 + [0.01, 0.02, 0.01] + [0.0] * 5
@@ -299,31 +335,57 @@ class B1fCross(unittest.TestCase):
 
     def test_only_the_swinging_foot_moves(self):
         lows = {"Left": [0.0, 0.0, 0.05], "Right": [0.06, 0.02, 0.0]}
-        needs = {"Left": [0.01, 0.01, 0.01], "Right": [0.02, 0.0, 0.0]}
-        p = E.cross_pushes(lows, needs, reach=0)
+        p = E.cross_pushes(lows, [0.025, 0.0, 0.01], reach=0)
         self.assertEqual(p["Left"], [0.0, 0.0, 0.01])  # the left foot planted on frames 0-1
-        self.assertEqual(p["Right"], [0.02, 0.0, 0.0])
-        self.assertEqual(E.cross_overlap_mm(lows, needs, 0.005), [15.0, 0.0, 5.0])
+        self.assertEqual(p["Right"], [0.025, 0.0, 0.0])
+
+    def test_no_overlap_exactly_zero(self):
+        lows = {"Left": [0.0, 0.0, 0.0, 0.01, 0.03, 0.0], "Right": [0.02, 0.01, 0.0, 0.0, 0.0, 0.0]}
+        for wrap in (False, True):
+            p = E.cross_pushes(lows, [0.0] * 6, wrap=wrap)
+            self.assertEqual(p, {"Left": [0.0] * 6, "Right": [0.0] * 6})
+            self.assertEqual(E.cross_lifts(lows, [0.0] * 6, wrap=wrap), p)
+
+    def test_both_standing_split(self):
+        # his Jog_Bwd: both soles at 0.0 on frame 2, 0.9 mm overlap; each foot takes half, held over its stance
+        lows = {"Left": [0.0, 0.0, 0.0, 0.02, 0.04, 0.02], "Right": [0.04, 0.01, 0.0, 0.0, 0.0, 0.0]}
+        p = E.cross_pushes(lows, [0.0, 0.0, 0.0059, 0.0, 0.0, 0.0])
+        self.assertAlmostEqual(p["Left"][2] + p["Right"][2], 0.0059)
+        self.assertEqual(p["Left"][0], p["Left"][2])  # the left stance 0-2 held
+        self.assertEqual(set(p["Right"][2:]), {0.00295})  # the right stance 2-5 held
+        self.assertEqual(E.cross_slide_mm(lows, p), {"Left": 0.0, "Right": 0.0})
+
+    def test_slide_measured(self):
+        lows = {"Left": [0.0, 0.0, 0.0], "Right": [0.05, 0.05, 0.05]}
+        self.assertEqual(E.cross_slide_mm(lows, {"Left": [0.0, 0.001, 0.003], "Right": [0.0, 0.02, 0.0]}),
+                         {"Left": 3.0, "Right": 0.0})
 
     def test_a_planted_foot_never_slides(self):
         # Jog_Bwd: the right foot lands into the left shoe on frame 3 and stands on 3-5; the left one lifts
         lows = {"Right": [0.03, 0.02, 0.01, 0.0004, 0.0, 0.0, 0.02, 0.04],
                 "Left": [0.0, 0.0, 0.0, 0.0, 0.01, 0.03, 0.0, 0.0]}
-        needs = {"Right": [0.0, 0.0, 0.01, 0.02, 0.0, 0.0, 0.0, 0.0], "Left": [0.0] * 8}
-        p = E.cross_pushes(lows, needs)
+        p = E.cross_pushes(lows, [0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0])
         self.assertEqual(p["Right"][3], p["Right"][4])  # held over the stance
         self.assertEqual(p["Right"][4], p["Right"][5])
-        self.assertAlmostEqual(p["Right"][3], 0.02)
-        self.assertAlmostEqual(p["Right"][6], 0.02 * 0.75)  # eased out in the swing after it
-        self.assertAlmostEqual(p["Right"][2], 0.015)  # and in before it
-        self.assertAlmostEqual(p["Right"][1], 0.0075)
+        self.assertAlmostEqual(p["Right"][3], 0.0075)  # the eased need reaching the landing
+        self.assertAlmostEqual(p["Right"][2], 0.01)
+        self.assertAlmostEqual(p["Right"][6], 0.0075 * 0.75)  # eased out in the swing after it
         self.assertEqual(p["Left"], [0.0] * 8)
+        self.assertEqual(E.cross_slide_mm(lows, p)["Right"], 0.0)
 
-    def test_crossed_and_capped(self):
+    def test_capped(self):
         lows = {"Left": [0.0, 0.0], "Right": [0.05, 0.05]}
-        needs = {"Left": [0.0, 0.0], "Right": [0.09, 0.09]}
-        self.assertEqual(E.cross_pushes(lows, needs, reach=0, crossed=[True, True])["Right"], [0.0, 0.0])
-        self.assertEqual(E.cross_pushes(lows, needs, reach=0)["Right"], [E.CROSS_MAX_M] * 2)
+        self.assertEqual(E.cross_pushes(lows, [0.09, 0.09], reach=0)["Right"], [E.CROSS_MAX_M] * 2)
+
+    def test_crossed_step_lifted_in_the_air_only(self):
+        lows = {"Left": [0.0, 0.0, 0.0, 0.0, 0.0], "Right": [0.0, 0.02, 0.04, 0.02, 0.0]}
+        lf = E.cross_lifts(lows, [0.0, 0.0, 0.03, 0.0, 0.0])
+        self.assertEqual(lf["Left"], [0.0] * 5)
+        self.assertEqual(lf["Right"][0], 0.0)  # standing: never lifted
+        self.assertEqual(lf["Right"][4], 0.0)
+        self.assertAlmostEqual(lf["Right"][2], 0.03)
+        self.assertAlmostEqual(lf["Right"][1], 0.0225)
+        self.assertEqual(E.cross_lifts(lows, [0.0, 0.0, 0.11, 0.0, 0.0])["Right"], [0.0] * 5)  # an X: left as it is
 
     def test_settings_key(self):
         self.assertEqual(E.cross_clear_cm(str(SETTINGS), "Walk_Loop"), 0.5)
