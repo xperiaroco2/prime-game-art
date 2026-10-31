@@ -30,6 +30,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--look", choices=("studio", "high"), default="studio",
                         help="studio: the linear review light; high: the game's look, look_presets.json's High preset "
                              "with the approved lights and the studio sky (art #196, E1b)")
+    parser.add_argument("--lod", choices=("auto", "off"), default="auto",
+                        help="auto: the importer's mesh LODs as the game draws them; off: always the full mesh (the "
+                             "viewport's mesh_lod_threshold 0; art #196 H1g, the fingers' facets)")
     parser.add_argument("--blend", type=Path, help="the character .blend for the comparison (default: the one the export names)")
     parser.add_argument("--face", default="", help="also a face close-up sheet (sheets/face.png, front and three-quarter) "
                         "at the first frame of this clip, e.g. Idle")
@@ -72,6 +75,8 @@ def run(args: argparse.Namespace) -> int:
         from . import _showroom
         spec["look"] = "high"
         spec["hdri"] = (common.raw_dir() / _showroom.HDRI).as_posix()
+    if args.lod == "off":
+        spec["lod"] = "off"
     if args.face:
         if args.face not in by_label:
             raise common.Failure(f"unknown clip {args.face} for --face; {glb.name} has: {', '.join(sorted(by_label))}")

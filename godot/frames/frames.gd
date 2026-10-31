@@ -69,6 +69,8 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 		return
 	_skeleton = skeletons[0] as Skeleton3D
 	_player = players[0] as AnimationPlayer
+	if str(spec.get("lod", "")) == "off":
+		root.mesh_lod_threshold = 0.0  # the full mesh at any distance (H1g: the fingers' facets)
 	if str(spec.get("look", "")) == "high":
 		_game_stage(str(spec.get("hdri", "")))
 	else:
