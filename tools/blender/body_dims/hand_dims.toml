@@ -26,6 +26,9 @@ smooth = 8                # rounds smoothing the LowerArm/Hand split across the 
 root_at = 0.18            # where the root radius is measured, past the knuckle
 taper = 0.12              # the radius lost from the root to the dome's start (the old tips lost about 30 %)
 ramp = [0.0, 0.21]        # the move ramps in from the knuckle over this span
+# H1i (alien_finger_run.py build): each digit rebuilt as a defined smooth tube at these numbers (alien_finger_geom.py)
+joint_blend = 0.5         # the chain weights step from bone to bone over +-this share of the local radius at each joint
+wave_max_mm = 0.3         # the largest radius residual (from an 8 mm trend) allowed after the rebuild, per digit
 
 [thumb]
 root_at = 0.90            # past the thenar (the metacarpal is 0.59 of the Hand bone)

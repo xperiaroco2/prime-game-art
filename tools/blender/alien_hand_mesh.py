@@ -11,7 +11,8 @@ tools/blender/body_dims/hand_dims.toml, the driver alien_hand_run.py). Headless 
   the region bones' rest heads, tails and x/z axes. `--bend DEG`: the region vertices posed with each Hand bent
   +-DEG about its own x and z axes (no action), for the wrist's cross-section table.
 - `apply`: moves the named vertices (world positions, by object name and index; every shape key moved by the same
-  step), refuses a changed topology or an existing `--out`, saves `--out` and `<out>.json` (moved count, largest
+  step; H1i: an optional `weights` {object: {index: {bone: weight}}} replaces those vertices' weights on the named
+  bones' chains), refuses a changed topology or an existing `--out`, saves `--out` and `<out>.json` (moved count, largest
   move, the topology hash before and after, every other vertex's largest move: 0).
 - `rings` (H1c): new rows on the wrist: every skin edge of the band (`--band`, Hand lengths from the wrist) cut
   `cuts` times (bmesh: the new vertices on the old surface, their weights, UVs and shape keys interpolated, appended
@@ -173,6 +174,21 @@ def apply(blend: str, moves_path: str, out: str) -> int:
                 for kb in me.shape_keys.key_blocks:
                     kb.data[i].co = kb.data[i].co + d
         me.update()
+        rw = moves.get("weights", {}).get(o.name, {})
+        if rw:  # H1i: a digit's chain weights replaced (its other groups kept)
+            import re
+            groups = {g.name: g for g in o.vertex_groups}
+            for i, w in rw.items():
+                i = int(i)
+                pre = {re.sub("(Metacarpal|Proximal|Intermediate|Distal)$", "", n) for n in w}
+                for g in list(groups.values()):
+                    if re.sub("(Metacarpal|Proximal|Intermediate|Distal)$", "", g.name) in pre and g.name not in w:
+                        g.remove([i])
+                for n, x in w.items():
+                    g = groups.get(n) or o.vertex_groups.new(name=n)
+                    groups[n] = g
+                    g.add([i], x, "REPLACE")
+            rep.setdefault("reweighted", {})[o.name] = len(rw)
         keep = set(int(i) for i in mv)
         other = max(((me.vertices[i].co - old[i]).length for i in range(len(old)) if i not in keep), default=0.0)
         after = topo_hash(me)
