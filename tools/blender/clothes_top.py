@@ -2254,8 +2254,11 @@ def back_bib(gar, char, args) -> dict:
     me.update()
     args.back_bib_top = z_c
     gap = [ys[i] - by[i] for i in range(len(pts))]
+    worst = sorted(range(len(pts)), key=lambda i: -gap[i])[:4]  # M2k: where the panel stands farthest off
     rep = {"meshy_faces_removed": len(gone), "verts": len(pts), "tris": 2 * len(faces), "tucked_verts": tucked,
            "off_body_mm_min_max": [round(1000 * min(gap), 1), round(1000 * max(gap), 1)],
+           "off_body_worst_x_z_mm": [(round(pts[i][0], 3), round(pts[i][1], 3), round(1000 * gap[i], 1),
+                                      "edge" if g["edge"][i] else "inner") for i in worst],
            "outline": {"z0": z0, "z_c": z_c, "z_v": z_v, "hw_b": hw_b, "hw_t": hw_t, "x_v": x_v}}
     say("back bib", rep)
     return rep

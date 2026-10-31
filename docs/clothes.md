@@ -694,6 +694,19 @@ above it again from Blender's rest matrices.
   kept ankle skin on one level plane inside it. d70 (`0.165,0.05,0.008,0.003,32,0.008`, `--ankle-top 0.128`): clean
   rings, 0 pokes in every clip, but 60,558 triangles; d71 at 24 stations is the cap's build. The teal ankle between the
   ring and the shoe still shows the collar's shards in Jog: the ring's bottom should reach the collar next.
+- **The ring down to the collar** (M2k): d71's ring bottom (z 0.115) floated 1 to 1.5 cm over the sneaker's collar
+  (rim top 0.099, heel rim 0.105). d73 lowers the whole ring, level: `--cuff-ring 0.158,0.062,...` (bottom 0.096),
+  the plain box's cut at 0.159, `--ankle-top 0.120`; 59,847 triangles, 0 pokes in every clip. At Jog 0.3 s the
+  planted foot's ring meets its collar with no teal; the lifted, pointed foot still shows a small teal sliver at
+  the back of its collar. A per-angle bottom (following the collar) is the next step if that sliver matters.
+- **The back bib's stand-off** (M2k probe, `back bib` report `off_body_worst_x_z_mm`): the 23.6 mm is the row under
+  the band at the spine (z 0.922, hidden by the band); the next are the V's tip over the spine groove (21 to 22 mm at
+  z 1.09 to 1.10, the row's quadratic bridging the groove between the shoulder blades) and a top corner (20 mm). The
+  panel's edges fold `strap_lip` in, so the visible gap at the V is about 1 cm. Not changed.
+- **The back straps' kink** (M2k): in Jog the straps bent in an S just over the back bib's top corners, where
+  `back_join` hands them from the panel's spine-chain weights to the body's shoulder weights over only `blend` 3 cm.
+  `--back-join 0.14,0.002` eases that over 14 cm (14 rows a side instead of 4): at Jog 0.3 s the left strap runs
+  straight and the right one bends softly (d75); 0.08 (d74) is between. d76 = d73's ring with the 14 cm ease.
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'
