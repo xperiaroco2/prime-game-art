@@ -666,6 +666,22 @@ above it again from Blender's rest matrices.
   test alone to the bib's top, and `--shirt-min` (share of up to 13 samples per face, `clothes_shell.face_samples`)
   catches a striped face that the old five samples (nearly all white) missed; d55: `--shirt-top 0.19 --shirt-min 0.2`
   peeled 38 faces (0 before), from the open edge inward only.
+- **The crumbs beside the buckle, the turn-ups' relax** (M2h): `--island-top` (m over the waist) removes the
+  garment's loose denim bits (`--edge-island` faces or fewer) up to that height, the bib side wall's crumbs; d58:
+  `0.19`, 8 pieces, 15 faces. `--turnup-relax z_top,rounds,alpha[,outward]` levels each leg's hem and relaxes the
+  turn-up's radius under z_top (`clothes_top.turnup_relax`); off by default. Tried in M2h (d59 to d61) and M2i (d64,
+  d67): the cuff's teeth hardly change in the close-ups, and the proof reports 13 to 26 mm at the back of the calf
+  (z 0.162) at rest and in motion. A probe of d67's blend found that skin 24 to 27 mm inside the cuff along its
+  normal, the nearest face being the fold's inner layer: probably the proof's single-face sign at the double layer,
+  not visible skin. Not used. `outward` (4th value 1) never moves a vertex in toward the leg's axis.
+- **The cloth's side from every tied face** (M2i, `--tie-side`, default 1): the under-cloth test and the skin pull
+  took the side of the cloth from the one face a BVH nearest query returned. At the seat's seam the nearest point lies
+  on an edge whose two faces point different ways, so any garment change elsewhere (M2h's crumbs removed early, the
+  cuff's relax early) moved the tree's face order, flipped the side and kept a 12-vertex crotch patch (9 to 14 mm
+  pokes in motion). Now the side comes from the tied faces' pseudo-normal (`clothes_fit_geom.tie_side`, angle-weighted
+  at a vertex) and the skin pull moves along it; `--cosmetic-early 1` runs the crumbs and the relax before the cover
+  test. d65 (d58's args) and d66 (the crumbs early) give the same body (42,688 tris) and pokes, better than d58.
+  `--collar-keep 0.09` (d68, with the relax) kept 212 more body tris and 11 points at rest: not used.
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'
