@@ -630,8 +630,54 @@ only, per instance in `hall.gd`; the package's files and materials are never cha
   hold; GPU `corner_nw` 3.78, `spawn_eye` 2.39, `c_back` 3.78 ms against step 5a's 3.49 / 2.42 / 3.56. The ship still
   casts its shadows (the floor under it). The hall's walls, floor and vault are as in step 5a (L3).
 
+## Step 5a3: the critic's findings on v9
+
+A fresh critic judged v9 not ready. Fixed on the hall's side (`<raw>/lobby/hall/v10/`); the package's files and
+materials untouched. Numbers: mean sRGB luminance (sd) of fixed crops at 1920x1080, v9 -> v10 (`lobby --shoot`).
+
+- **The north wall's three "trees"** (`c_back`, x 590/960/1320, y 290): not the package (the Clearing is freed
+  before the instance enters the tree, and no other package node is left). The Earth's light, 2 deg up from the
+  south and shadowed, laid each column of three hanging lamps (x -10, 0, 10; z -21, -9, 3) onto the upper panels,
+  stacked by distance into a soft fir tree. `hall.gd` `_fixtures`: the vault's meshes hanging below `[light]
+  fixtures_below` (11 m: shades, lenses, cords, copper rims; the vault's meshes are split by material) cast no shadow;
+  their own spots hang under the lenses and the fills are unshadowed, so nothing else is lost; none found fails the run.
+  A `shadow_caster_mask` on the Earth's DirectionalLight3D did not take in Godot 4.7.2 (the first grid: tree/neighbour
+  0.81 unchanged). The tree/neighbour panel ratio: left **0.81 -> 0.96**, right **0.83 -> 1.02**.
+  `_ship_package` now also fails a run when a top-level node of the package is not in `[ship.package] keep` (Lights,
+  Probes, Pieces, Nose, Stations, Markers) or a WorldEnvironment, Camera3D, DirectionalLight3D, GPUParticles3D or
+  Decal is left.
+- **The ship's lilac-white** (K1 of 5a2): `[light.ship]` K1 is now neutral silver: a neutral key (0.4), a grey
+  ambient (0.08), the pendants x0.25, a back light from the north (`back_*`, 0.5, 30 deg up) and a warm bounce from
+  below (`bounce_*`, copper, 0.22, 40 deg below); K2 warmer, K3 cooler. `ship_top` rgb **(0.52, 0.55, 0.63) ->
+  (0.58, 0.57, 0.58)** (blue minus red 0.11 -> 0.00), L 0.55 -> 0.57; `a_entrance` flank (0.24, 0.25, 0.31) ->
+  (0.31, 0.29, 0.29). The grid `<raw>/lobby/hall/v10/sgrid/grid.png`:
+
+  | set | top L (rgb) | flank | corner | aft | GPU ms (A / C / corner / spawn / top) |
+  |---|---|---|---|---|---|
+  | K1 | 0.57 (0.58, 0.57, 0.58) | 0.35 | 0.56 | 0.65 | 4.10 / 3.55 / 3.68 / 3.93 / 3.79 |
+  | K2 | 0.59 (0.63, 0.58, 0.57) | 0.30 | 0.59 | 0.48 | 3.82 / 3.57 / 3.57 / 3.54 / 3.51 |
+  | K3 | 0.58 (0.58, 0.58, 0.61) | 0.29 | 0.57 | 0.44 | 3.83 / 3.60 / 3.56 / 3.70 / 3.50 |
+
+- **Hull and north wall the same value** (`c_back`): the back light outlines the hull, and `[light] wash`, a negative
+  unshadowed spot off the ship's layer, takes a little cool light off the north wall behind it. Hull/wall: the wing
+  over the wall above it **0.525/0.334 = 1.57 -> 0.503/0.256 = 1.96**, the deck over the wall behind it **0.553/0.399
+  = 1.39 -> 0.772/0.267 = 2.89**.
+- **The Earth from the far side** (`a_entrance`, `corner_nw`): the window shows the high north at a slant (mu 0.5-0.6
+  there as head-on, so not the limb; the maps are magnified, not minified). `earth_object.gdshader` reads the maps
+  `soft_lod` mips softer, with less cloud and city contrast, where mu * cos(latitude) is low. The crops' sd: a_entrance
+  **0.127 -> 0.116**, corner_nw **0.177 -> 0.174**: a small change, not fixed (open problems).
+- **Floor glare**: the Earth's light specular 0.15 and the window spill's 0.1 (`[light] earth_specular`,
+  `window_specular`; Godot's 0.5), L3's `strip_specular` 1.5 -> 0.9. `spawn_eye`'s seam (940,740-980,1080) **0.531 ->
+  0.302**; `a_entrance` x1280 **0.816 -> 0.700**; `corner_nw` x1480 **0.741 -> 0.613**; `a_entrance` x690 (warm)
+  **0.809 -> 0.814**: unchanged, so a reflection (kept), not a light's specular.
+- K1 (`lobby --godot --shoot`): walk 22/22 (179.9 m), 6 blocks hold; GPU `corner_nw` 3.68, `spawn_eye` 2.42, `c_back`
+  3.71 ms (5a2: 3.78 / 2.39 / 3.78).
+
 ## Open problems
 
+- Step 5a3: the back light leaves a hot spot on the deck's middle in `c_back` (0.77; `back_energy` 0.5 is the
+  knob), and the warm bounce reads copper-orange on the undersides in `a_entrance` (`bounce_energy` 0.22).
+- Step 5a3: the Earth seen from the hall's far side still reads as speckle (clouds) and blobs (cities).
 - (Step 4b, before the jaw nose) The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
   narrower than the 1.36 m capsule, so the walk crosses its foot. The ship's closed state (ramp up) is art #263's to make.
 - The spawns are 2.04 m from the engine pods (the rule's 2 m): from a spawn the pods fill the view (`spawn_eye`).
