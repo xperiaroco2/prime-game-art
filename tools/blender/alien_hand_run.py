@@ -4,6 +4,8 @@ alien_hand_mesh.py the Blender dump and apply, body_dims/hand_dims.toml the spec
     python tools/blender/alien_hand_run.py build --dump <body dump.json> --spec <hand_dims.toml> --out <dir>
         [--transfer <name>=<char dump.json> ...]
     python tools/blender/alien_hand_run.py table --dump <dump with --bend> --out <table.json>
+    python tools/blender/alien_hand_run.py relax --dump <body dump.json> --spec <hand_dims.toml> --out <dir>
+        [--rounds N] [--transfer <name>=<char dump.json> ...]
 
 - `build`: the moves for the body's skin (`<out>/moves_body.json`), one moves file per `--transfer` character (the
   body's moved vertices found in the character's skin objects by their rest position, within 0.1 mm), the report
@@ -12,6 +14,11 @@ alien_hand_mesh.py the Blender dump and apply, body_dims/hand_dims.toml the spec
 - `table`: per side and bend the wrist's sections (width, thickness, hull area, deepest fold) at rest and bent, the
   worst of PLANES (square to the forearm behind the joint, to the bisector through it, to the bent hand past it);
   exit 1 above the spec's `fold_max_mm` when `--spec`.
+- `relax` (H1d): the palm's bumps around the thumb's root: Taubin rounds on the spec's `[thenar]` region only (within
+  `radius` Hand lengths of the ThumbMetacarpal bone, eased from `inner`; fingers, the thumb past its metacarpal and the
+  forearm kept), so the topology and every vertex outside it stay; the moves for the body and per `--transfer`
+  character as in `build` (apply them with alien_hand_mesh.py apply), `<out>/relax.json` the bump measure (each
+  vertex's distance to its neighbours' centroid) before and after.
 """
 from __future__ import annotations
 
@@ -76,6 +83,37 @@ def monotone_ok(rows, s_fore_mm, s_palm_mm, tol=1.5) -> bool:
     return all(y <= x + tol for x, y in zip(a, a[1:])) and all(y >= x - tol for x, y in zip(b, b[1:]))
 
 
+def write_transfers(obj: dict, pos: dict, moves: dict, transfers: list, out: str) -> dict:
+    """moves_<name>.json per --transfer character: the body's moved vertices found in its skin objects by their rest
+    position (within TRANSFER_TOL); returns the per-character report (found, loose, missing)."""
+    rep = {}
+    for t in transfers:
+        name, path = t.split("=", 1)
+        cd = json.loads(Path(path).read_text())
+        cm, found, near = {}, set(), {}
+        for o in skin_objects(cd):
+            grid = G.grid_index(dict(zip(o["index"], o["co"])), TRANSFER_TOL)
+            mv = {}
+            for j in moves:  # the body's moved vertex at the character's vertex nearest its rest position
+                i, dist = G.grid_nearest(grid, pos[j], TRANSFER_TOL)
+                if i is not None:
+                    mv[str(i)] = moves[j]
+                    found.add(j)
+                elif dist is not None:
+                    near[j] = min(near.get(j, 1.0), dist)
+            if mv:
+                cm[o["name"]] = mv
+        Path(out, f"moves_{name}.json").write_text(json.dumps({"objects": cm}))
+        loose = {i for i, m in zip(obj["index"], obj["mat"]) if not m}  # in no face: the characters dropped them
+        miss = {j: (pos[j], near.get(j)) for j in moves if j not in found and j not in loose}
+        rep[name] = {"objects": {k: len(v) for k, v in cm.items()},
+                     "body_moves_found": len(found), "body_moves": len(moves),
+                     "loose_not_found": sorted(j for j in moves if j in loose and j not in found),
+                     "missing": {str(j): {"rest": p, "nearest_mm": None if d is None else round(d * 1000, 3)}
+                                 for j, (p, d) in miss.items()}}
+    return rep
+
+
 def build(dump_path: str, spec_path: str, out: str, transfers: list) -> int:
     dump = json.loads(Path(dump_path).read_text())
     spec = tomllib.loads(Path(spec_path).read_text())
@@ -125,31 +163,7 @@ def build(dump_path: str, spec_path: str, out: str, transfers: list) -> int:
         rep["sides"][side] = r
     Path(out).mkdir(parents=True, exist_ok=True)
     Path(out, "moves_body.json").write_text(json.dumps({"objects": {obj["name"]: {str(i): p for i, p in moves.items()}}}))
-    for t in transfers:
-        name, path = t.split("=", 1)
-        cd = json.loads(Path(path).read_text())
-        cm, found, near = {}, set(), {}
-        for o in skin_objects(cd):
-            grid = G.grid_index(dict(zip(o["index"], o["co"])), TRANSFER_TOL)
-            mv = {}
-            for j in moves:  # the body's moved vertex at the character's vertex nearest its rest position
-                i, dist = G.grid_nearest(grid, pos[j], TRANSFER_TOL)
-                if i is not None:
-                    mv[str(i)] = moves[j]
-                    found.add(j)
-                elif dist is not None:
-                    near[j] = min(near.get(j, 1.0), dist)
-            if mv:
-                cm[o["name"]] = mv
-        Path(out, f"moves_{name}.json").write_text(json.dumps({"objects": cm}))
-        loose = {i for i, m in zip(obj["index"], obj["mat"]) if not m}  # in no face: the characters dropped them
-        miss = {j: (pos[j], near.get(j)) for j in moves if j not in found and j not in loose}
-        rep.setdefault("transfers", {})[name] = {"objects": {k: len(v) for k, v in cm.items()},
-                                                 "body_moves_found": len(found), "body_moves": len(moves),
-                                                 "loose_not_found": sorted(j for j in moves if j in loose and j not in found),
-                                                 "missing": {str(j): {"rest": p, "nearest_mm": None if d is None
-                                                                      else round(d * 1000, 3)}
-                                                             for j, (p, d) in miss.items()}}
+    rep["transfers"] = write_transfers(obj, pos, moves, transfers, out)
     rep["moved"] = len(moves)
     rep["ok"] = bool(ok)
     Path(out, "build.json").write_text(json.dumps(rep, indent=1))
@@ -162,6 +176,63 @@ def build(dump_path: str, spec_path: str, out: str, transfers: list) -> int:
             print("  ", f, fr_)
     print("transfers", rep.get("transfers"), "ok", ok)
     return 0 if ok else 1
+
+
+def thenar_region(dump: dict, pos: dict, wts: dict, side: str, spec: dict, L: float) -> dict:
+    """The palm around the thumb's root: {index: strength}, 1 within inner x radius of the ThumbMetacarpal bone,
+    easing to 0 at radius (Hand lengths); the fingers, the thumb past its metacarpal and the forearm are left out."""
+    b = dump["bones"][f"{side}ThumbMetacarpal"]
+    r1, r0 = spec["radius"] * L, spec["radius"] * spec["inner"] * L
+    out = {}
+    for i, p in pos.items():
+        if not side_of(dump, p, side):
+            continue
+        w = wts[i]
+        fingers = sum(x for k, x in w.items() if any(f in k for f in ("Index", "Middle", "Ring", "Little")))
+        thumb_out = w.get(f"{side}ThumbProximal", 0) + w.get(f"{side}ThumbDistal", 0)
+        if fingers > spec["finger_max"] or thumb_out > 0.5 or w.get(f"{side}LowerArm", 0) > 0.5:
+            continue
+        k = 1.0 - G.smoothstep(r0, r1, G.seg_closest(p, b["head"], b["tail"]))
+        if k > 0:
+            out[i] = k
+    return out
+
+
+def relax(dump_path: str, spec_path: str, out: str, transfers: list, rounds: int = 0) -> int:
+    """The thenar's bumps relaxed (H1d): Taubin rounds on the palm around the thumb's root only, eased to nothing at
+    the region's edge; the topology and every other vertex unchanged. moves_body.json, moves_<name>.json and
+    relax.json (per side the region, the bump measure before and after, the largest move)."""
+    dump = json.loads(Path(dump_path).read_text())
+    spec = tomllib.loads(Path(spec_path).read_text())["thenar"]
+    rounds = rounds or spec["rounds"]
+    obj = skin_objects(dump)[0]
+    pos = {i: p for i, p in zip(obj["index"], obj["co"])}
+    wts = {i: w for i, w in zip(obj["index"], obj["w"])}
+    adj = G.adjacency(None, obj["edges"])
+    moves, rep = {}, {"dump": dump_path, "object": obj["name"], "rounds": rounds, "sides": {}}
+    for side in SIDES:
+        _, _, L = side_frame(dump, side)
+        k = thenar_region(dump, pos, wts, side, spec, L)
+        new = G.taubin(pos, adj, set(k), rounds, strength=k)
+        core = [i for i in k if k[i] >= 0.99]
+        mm = lambda xs: [round(1000 * sum(xs) / max(len(xs), 1), 3), round(1000 * sorted(xs)[int(0.95 * (len(xs) - 1))], 3),
+                         round(1000 * max(xs), 3)] if xs else None
+        d = {i: math.dist(new[i], pos[i]) for i in k}
+        rep["sides"][side] = {"region": len(k), "core": len(core),
+                              "bump_mm_mean_p95_max_before": mm(G.umbrella(pos, adj, core)),
+                              "bump_mm_mean_p95_max_after": mm(G.umbrella(new, adj, core)),
+                              "largest_move_mm": round(1000 * max(d.values(), default=0), 2)}
+        moves.update({i: [round(c, 6) for c in new[i]] for i in k if d[i] > 1e-7})
+    Path(out).mkdir(parents=True, exist_ok=True)
+    Path(out, "moves_body.json").write_text(json.dumps({"objects": {obj["name"]: {str(i): p for i, p in moves.items()}}}))
+    rep["transfers"] = write_transfers(obj, pos, moves, transfers, out)
+    rep["moved"] = len(moves)
+    Path(out, "relax.json").write_text(json.dumps(rep, indent=1))
+    for side, r in rep["sides"].items():
+        print(side, r)
+    print("moved", len(moves), "transfers", {n: (t["body_moves_found"], t["body_moves"], len(t["missing"]))
+                                              for n, t in rep["transfers"].items()})
+    return 0
 
 
 def table(dump_path: str, out: str, spec_path: str = "") -> int:
@@ -212,12 +283,15 @@ def table(dump_path: str, out: str, spec_path: str = "") -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(prog="alien_hand_run.py")
-    ap.add_argument("mode", choices=("build", "table"))
+    ap.add_argument("mode", choices=("build", "table", "relax"))
     ap.add_argument("--dump", required=True)
     ap.add_argument("--spec", default="")
     ap.add_argument("--out", required=True)
     ap.add_argument("--transfer", action="append", default=[])
+    ap.add_argument("--rounds", type=int, default=0, help="relax: Taubin rounds (default: the spec's [thenar] rounds)")
     a = ap.parse_args()
+    if a.mode == "relax":
+        return relax(a.dump, a.spec, a.out, a.transfer, a.rounds)
     if a.mode == "build":
         return build(a.dump, a.spec, a.out, a.transfer)
     return table(a.dump, a.out, a.spec)

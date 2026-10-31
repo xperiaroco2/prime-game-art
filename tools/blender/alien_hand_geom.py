@@ -79,8 +79,10 @@ def adjacency(n_or_ids, edges) -> dict:
     return adj
 
 
-def taubin(pos: dict, adj: dict, movable: set, iters: int, lam: float = 0.5, mu: float = -0.53) -> dict:
-    """Taubin rounds on the movable vertices (uniform weights); the others are held. Returns new positions."""
+def taubin(pos: dict, adj: dict, movable: set, iters: int, lam: float = 0.5, mu: float = -0.53,
+           strength: dict | None = None) -> dict:
+    """Taubin rounds on the movable vertices (uniform weights); the others are held. strength: {index: 0..1}, each
+    step scaled per vertex (a soft edge to a local relax; default 1). Returns new positions."""
     p = {k: list(v) for k, v in pos.items()}
     for _ in range(iters):
         for f in (lam, mu):
@@ -90,9 +92,27 @@ def taubin(pos: dict, adj: dict, movable: set, iters: int, lam: float = 0.5, mu:
                 if not nb:
                     continue
                 c = [sum(p[j][k] for j in nb) / len(nb) for k in range(3)]
-                new[i] = add(p[i], mul(sub(c, p[i]), f))
+                new[i] = add(p[i], mul(sub(c, p[i]), f * (1.0 if strength is None else strength.get(i, 1.0))))
             p.update(new)
     return p
+
+
+def umbrella(pos: dict, adj: dict, ids) -> list:
+    """Each vertex's distance to its neighbours' centroid (the bump measure: a dent or a lump stands off it)."""
+    out = []
+    for i in ids:
+        nb = [j for j in adj.get(i, ()) if j in pos]
+        if nb:
+            c = [sum(pos[j][k] for j in nb) / len(nb) for k in range(3)]
+            out.append(math.dist(c, pos[i]))
+    return out
+
+
+def seg_closest(p, a, b) -> float:
+    """The distance from p to the segment a-b."""
+    ab = sub(b, a)
+    t = max(0.0, min(1.0, dot(sub(p, a), ab) / max(dot(ab, ab), 1e-12)))
+    return math.dist(p, add(a, mul(ab, t)))
 
 
 def coords(p, origin, fr):

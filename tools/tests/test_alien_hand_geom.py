@@ -54,6 +54,27 @@ class Basics(unittest.TestCase):
         self.assertEqual(new[0], pos[0])
         self.assertLess(abs(new[2 * N][1] - 0.03), 0.01)
 
+    def test_taubin_strength_eases_the_step(self):
+        pos, edges = tube(lambda s: (0.03, 0.03), [k * 0.01 for k in range(5)])
+        pos[2 * N][1] += 0.01
+        adj = G.adjacency(None, edges)
+        ids = {i for i in pos if N <= i < 4 * N}
+        none = G.taubin(pos, adj, ids, 10, strength={i: 0.0 for i in ids})
+        self.assertEqual(none[2 * N], pos[2 * N])
+        half = G.taubin(pos, adj, ids, 10, strength={i: 0.5 for i in ids})
+        full = G.taubin(pos, adj, ids, 10)
+        self.assertLess(abs(full[2 * N][1] - 0.03), abs(half[2 * N][1] - 0.03))
+        self.assertLess(abs(half[2 * N][1] - 0.03), 0.01)
+
+    def test_umbrella_finds_the_bump(self):
+        pos, edges = tube(lambda s: (0.03, 0.03), [k * 0.01 for k in range(5)])
+        adj = G.adjacency(None, edges)
+        flat = max(G.umbrella(pos, adj, range(N, 4 * N)))
+        pos[2 * N][1] += 0.005
+        self.assertGreater(max(G.umbrella(pos, adj, range(N, 4 * N))), flat + 0.003)
+        self.assertAlmostEqual(G.seg_closest([0, 1, 0], [-1, 0, 0], [1, 0, 0]), 1.0)
+        self.assertAlmostEqual(G.seg_closest([3, 0, 0], [-1, 0, 0], [1, 0, 0]), 2.0)
+
     def test_row_gaps(self):
         self.assertEqual(G.row_gaps([0.0, 0.002, 0.007], -0.001, 0.008), 5.0)
 
@@ -108,11 +129,32 @@ class Spec(unittest.TestCase):
         self.assertGreater(spec["wrist"]["s_palm"], 0)
         for g in ("fingers", "thumb"):
             self.assertEqual(set(spec[g]), {"root_at", "taper", "ramp"})
+        self.assertEqual(set(spec["thenar"]), {"radius", "inner", "finger_max", "rounds"})
+        self.assertLess(spec["thenar"]["inner"], 1.0)
 
     def test_monotone_check(self):
         rows = [[-30, 70, 60], [-15, 68, 58], [0, 66, 55], [15, 75, 58], [30, 90, 62]]
         self.assertTrue(RUN.monotone_ok(rows, -30, 30))
         self.assertFalse(RUN.monotone_ok(rows[:2] + [[0, 72, 55]] + rows[3:], -30, 30))
+
+
+class Thenar(unittest.TestCase):
+    def test_the_region_keeps_the_fingers_the_thumb_and_the_forearm(self):
+        dump = {"bones": {"LeftThumbMetacarpal": {"head": [0.5, 0, 0], "tail": [0.54, 0, 0]},
+                          "LeftHand": {"head": [0.45, 0, 0], "tail": [0.52, 0, 0]}}}
+        pos = {0: [0.52, 0.01, 0], 1: [0.52, 0.01, 0.001], 2: [0.52, 0.01, 0.002], 3: [0.52, 0.01, 0.003],
+               4: [0.52, 0.03, 0], 5: [0.52, 0.2, 0], 6: [-0.52, 0.01, 0]}
+        wts = {0: {"LeftHand": 1.0}, 1: {"LeftIndexProximal": 0.6, "LeftHand": 0.4}, 2: {"LeftThumbDistal": 1.0},
+               3: {"LeftLowerArm": 0.8}, 4: {"LeftHand": 1.0}, 5: {"LeftHand": 1.0}, 6: {"LeftHand": 1.0}}
+        spec = {"radius": 0.6, "inner": 0.5, "finger_max": 0.3}
+        k = RUN.thenar_region(dump, pos, wts, "Left", spec, 0.067)
+        self.assertEqual(k.get(0), 1.0)
+        self.assertNotIn(1, k)
+        self.assertNotIn(2, k)
+        self.assertNotIn(3, k)
+        self.assertTrue(0 < k[4] < 1)
+        self.assertNotIn(5, k)
+        self.assertNotIn(6, k)
 
 
 class Transfer(unittest.TestCase):

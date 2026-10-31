@@ -1559,6 +1559,13 @@ the bisector through it (-7.5, 0, +7.5) and the bent hand past it (+15, +30). H1
 bisector, which cut the rigid palm at a slant through the thumb's cleft and read it as a 4 mm crease.
 `alien_hands.py --video` shows the hand in Walk and Jog from the front and from its side, before | after.
 
+**The thenar relaxed (H1d).** H1b's moves left bumps on the palm at the thumb's root. `alien_hand_run.py relax`
+runs Taubin rounds (`[thenar]` of `hand_dims.toml`: 24) on the palm around the ThumbMetacarpal bone only (within
+0.6 Hand lengths, full strength inside 0.7 of that, easing to nothing at its edge; the fingers, the thumb past its
+metacarpal and the forearm kept), writes the moves for the body and its dressed character by rest position, and
+`alien_hand_mesh.py apply` applies them: no topology change, every vertex outside the region unchanged. Its report
+gives the bump measure (each vertex's distance to its neighbours' centroid) before and after.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]

@@ -31,3 +31,9 @@ ramp = [0.0, 0.21]        # the move ramps in from the knuckle over this span
 root_at = 0.90            # past the thenar (the metacarpal is 0.59 of the Hand bone)
 taper = 0.15
 ramp = [0.60, 0.85]       # the thumb's root in the palm stays (the band's held side)
+
+[thenar]                  # H1d: the palm's bumps at the thumb's root (H1b's moves) relaxed in place (alien_hand_run.py relax)
+radius = 0.6              # the region: within this many Hand lengths of the ThumbMetacarpal bone ...
+inner = 0.7               # ... at full strength within this share of the radius, easing to nothing at the radius
+finger_max = 0.3          # vertices more than this on the fingers, past the thumb's metacarpal or on the forearm stay
+rounds = 24               # Taubin rounds (the topology and every vertex outside the region unchanged)
