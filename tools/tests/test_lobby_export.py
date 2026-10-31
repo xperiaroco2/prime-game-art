@@ -44,6 +44,35 @@ class PathsTest(unittest.TestCase):
                           ('path="res://assets/props/x.glb"', "a path outside the package")):
             self.assertIn(why, lobby_export.leftovers(text), text)
 
+    def test_the_level_script(self):
+        ext = '[ext_resource type="Script" path="res://lobby/lobby_hall.gd" id="1_s"]\n'
+        node = '[node name="LobbyHall" type="Node3D"]\nscript = ExtResource("1_s")\n'
+        scene = lobby_export.relocate(ext + node)
+        self.assertIn(f'path="res://{lobby_export.LEVEL_SCRIPT}"', scene)
+        self.assertEqual(lobby_export.leftovers(scene, level_script=True), [])
+        self.assertIn("a script", lobby_export.leftovers(scene))   # only the scene may hold it
+        self.assertIn("no level script on the root",
+                      lobby_export.leftovers(lobby_export.relocate(node), level_script=True))
+        other = '[ext_resource type="Script" path="res://levels/lobby/x.gd" id="2_s"]\n'
+        self.assertIn("a script",
+                      lobby_export.leftovers(scene + other + 'script = ExtResource("2_s")\n', level_script=True))
+        twice = scene + '[node name="Hall" type="Node3D"]\nscript = ExtResource("1_s")\n'
+        self.assertIn("no level script on the root", lobby_export.leftovers(twice, level_script=True))
+
+    def test_the_level_script_source(self):
+        """godot/lobby/lobby_hall.gd moves with the package: no res:// path in its code; it frees ship_free on _ready
+        and has the probes capture again after a frame."""
+        src = (Path(__file__).resolve().parents[2] / "godot" / lobby_export.LEVEL_SCRIPT_SRC).read_text(encoding="utf-8")
+        self.assertTrue(src.startswith("extends Node3D\n"))
+        code = "\n".join(line for line in src.splitlines() if not line.lstrip().startswith("#"))
+        self.assertNotIn("res://", code)
+        for want in ("@export var ship_free: Array[NodePath]", "func _ready() -> void:", "n.free()",
+                     "await get_tree().process_frame", '"ReflectionProbe"', "remove_child(probe)", "add_child(probe)",
+                     'set_meta("ship_freed"', 'set_meta("probes_recaptured"'):
+            self.assertIn(want, code)
+        self.assertNotIn("@tool", code)        # never runs in the game's editor
+        self.assertNotIn("queue_free", code)   # freed at once, before the first frame draws
+
 
 class LayoutTest(unittest.TestCase):
     def test_spawns_face_the_window(self):
@@ -58,13 +87,16 @@ class LayoutTest(unittest.TestCase):
             pieces, built, shaders, out = tmp / "pieces", tmp / "import" / "lobby_export", tmp / "godot", tmp / "out"
             for d in (pieces, built, shaders / "lobby"):
                 d.mkdir(parents=True)
+            (shaders / lobby_export.LEVEL_SCRIPT_SRC).write_text("extends Node3D\n", encoding="utf-8")
             for pid in lobby_export.piece_ids(LAYOUT):
                 (pieces / f"{pid}.glb").write_bytes(b"glTF" + pid.encode())
             (tmp / "import" / "lobby_vault_lobby_metal_n.png").write_bytes(b"png")
             (built / "lobby_hall.tscn").write_text(
+                '[ext_resource type="Script" path="res://lobby/lobby_hall.gd" id="9_s"]\n'
                 '[ext_resource path="res://import/lobby_floor.glb" id="1"]\n'
                 '[ext_resource path="res://import/lobby_vault_lobby_metal_n.png" id="2"]\n'
-                '[ext_resource path="res://import/ship_pkg/levels/ship/ship.tscn" id="3"]\n', encoding="utf-8")
+                '[ext_resource path="res://import/ship_pkg/levels/ship/ship.tscn" id="3"]\n'
+                '[node name="LobbyHall" type="Node3D"]\nscript = ExtResource("9_s")\n', encoding="utf-8")
             (built / "lobby_env.tres").write_text('[ext_resource path="res://lobby/earth_sky.gdshader" id="1"]\n',
                                                   encoding="utf-8")
             for src in lobby_export.SHADERS:
@@ -89,8 +121,12 @@ class LayoutTest(unittest.TestCase):
             self.assertFalse([f for f in files if f.startswith(lobby_export.SHIP_PREFIXES)], "the ship is never copied")
             scene = (out / lobby_export.SCENE).read_text(encoding="utf-8")
             self.assertIn('"res://levels/ship/ship.tscn"', scene)
+            self.assertIn(f'path="res://{lobby_export.LEVEL_SCRIPT}"', scene)
+            self.assertIn(lobby_export.LEVEL_SCRIPT, files)
+            self.assertEqual((out / lobby_export.LEVEL_SCRIPT).read_text(encoding="utf-8"), "extends Node3D\n")
             meta = json.loads((out / "package.json").read_text(encoding="utf-8"))
             self.assertEqual(meta["ship"]["scene"], "res://levels/ship/ship.tscn")
+            self.assertEqual(meta["level_script"], f"res://{lobby_export.LEVEL_SCRIPT}")
             self.assertEqual(meta["earth"]["credit"], "Earth imagery: NASA")
             self.assertEqual(meta["earth"]["distance"], LAYOUT["earth"]["distance"])
             self.assertEqual(len(meta["spawns"]), 10)
@@ -104,7 +140,7 @@ class LayoutTest(unittest.TestCase):
             (tmp / "lobby").mkdir()
             for pid in lobby_export.piece_ids(LAYOUT):
                 (pieces / f"{pid}.glb").write_bytes(b"glTF")
-            for src in lobby_export.SHADERS:
+            for src in [*lobby_export.SHADERS, lobby_export.LEVEL_SCRIPT_SRC]:
                 (tmp / src).write_text("x", encoding="utf-8")
             (built / "lobby_hall.tscn").write_text('[ext_resource type="Script" path="res://lobby/hall.gd"]\n',
                                                    encoding="utf-8")
@@ -115,12 +151,17 @@ class LayoutTest(unittest.TestCase):
 class VerdictTest(unittest.TestCase):
     def good(self) -> dict:
         sp = lobby_export.spawns(LAYOUT)
-        return {"bounds": {}, "colliders": {p["id"]: 1 for p in LAYOUT["pieces"]}, "scripts": [], "root": "LobbyHall",
+        free = ["Ship/Clearing", "Ship/Environment", "Ship/Lights/Moon", "Ship/Lights/Key"]
+        return {"bounds": {}, "colliders": {p["id"]: 1 for p in LAYOUT["pieces"]},
+                "scripts": [f"LobbyHall res://{lobby_export.LEVEL_SCRIPT}"], "root": "LobbyHall",
+                "level_script": {"path": f"res://{lobby_export.LEVEL_SCRIPT}", "ship_free": free, "ship_freed": 4,
+                                 "probes_recaptured": 5, "probes_total": 5},
                 "meta": {"size_m": "", "camera_far_m": ""},
                 "groups": ["Hall", "Ship", "Earth", "Environment", "Lights", "Probes", "Markers"],
                 "spawns": [{"name": s["name"], "at": s["at"], "forward": [0.0, 0.0, 1.0]} for s in sp],
                 "ship": {"scene": "res://levels/ship/ship.tscn", "at": LAYOUT["ship"]["origin"], "clearing_visible": False,
-                         "clearing_processing": False, "environments": 0, "suns_visible": 0,
+                         "clearing_processing": False, "clearing_present": False, "environment_present": False,
+                         "environments": 0, "suns": 0, "suns_visible": 0,
                          "jaws": {"jaw_lower": 0.0, "jaw_upper": 0.0}, "colliders_on": 700, "colliders_off": 20,
                          "off_layer": 0, "meshes": 900, "lights_visible": 0},
                 "earth": {"far_mode": 1.0, "textures": [f"res://{lobby_export.EARTH_DIR}/earth_night.jpg 4096x2048"]},
@@ -142,6 +183,23 @@ class VerdictTest(unittest.TestCase):
             got = self.good()
             got["spawns"][3]["forward"] = [0.0, 0.0, -1.0]
             self.assertTrue(_lobby_export.problems(LAYOUT, Path(tmp), got, []))
+            for change in (("clearing_present", True), ("environment_present", True), ("suns", 1), ("environments", 1)):
+                got = copy.deepcopy(self.good())
+                got["ship"][change[0]] = change[1]
+                self.assertTrue(_lobby_export.problems(LAYOUT, Path(tmp), got, []), change)
+
+    def test_verdict_on_the_level_script(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "build_report.json").write_text(json.dumps({"pieces": {}}), encoding="utf-8")
+            for key, value in (("ship_freed", 3), ("probes_recaptured", -1), ("probes_recaptured", 4),
+                               ("ship_free", ["Ship/Clearing"]), ("ship_free", [])):
+                got = copy.deepcopy(self.good())
+                got["level_script"][key] = value
+                self.assertTrue(_lobby_export.problems(LAYOUT, Path(tmp), got, []), (key, value))
+            for scripts in ([], [f"LobbyHall res://{lobby_export.LEVEL_SCRIPT}", "Hall res://x.gd"]):
+                got = copy.deepcopy(self.good())
+                got["scripts"] = scripts
+                self.assertTrue(_lobby_export.problems(LAYOUT, Path(tmp), got, []), scripts)
 
 
 if __name__ == "__main__":

@@ -140,7 +140,18 @@ def problems(layout: dict, pieces: Path, got: dict, errors: list[str]) -> list[s
     want_groups = ["Hall", "Ship", "Earth", "Environment", "Lights", "Probes", "Markers"]
     if sorted(got["groups"]) != sorted(want_groups):
         out.append(f"the root holds {got['groups']}, wants {want_groups}")
-    out += [f"a script on {n}" for n in got["scripts"]]
+    want_script = f"LobbyHall res://{lobby_export.LEVEL_SCRIPT}"
+    out += [f"a script on {n}" for n in got["scripts"] if n != want_script]
+    if want_script not in got["scripts"]:
+        out.append(f"the root carries no level script res://{lobby_export.LEVEL_SCRIPT}")
+    ls = got.get("level_script", {})
+    want_free = [f"Ship/{f}" for f in layout["ship"]["package"].get("free", []) if ":" not in f]
+    if not ls.get("ship_free") or any(f not in ls["ship_free"] for f in want_free):
+        out.append(f"the level script frees {ls.get('ship_free')}, wants at least {want_free}")
+    elif ls.get("ship_freed") != len(ls["ship_free"]):
+        out.append(f"the level script freed {ls.get('ship_freed')} of {len(ls['ship_free'])} nodes")
+    if ls.get("probes_recaptured", -1) < 1 or ls.get("probes_recaptured") != ls.get("probes_total"):
+        out.append(f"the level script recaptured {ls.get('probes_recaptured')} of {ls.get('probes_total')} probes")
     want_sp = lobby_export.spawns(layout)
     if [s["name"] for s in got["spawns"]] != [s["name"] for s in want_sp]:
         out.append(f"Markers holds {[s['name'] for s in got['spawns']]}")
@@ -152,10 +163,11 @@ def problems(layout: dict, pieces: Path, got: dict, errors: list[str]) -> list[s
         out.append(f"Ship instances {s['scene']!r}, wants the ship package's res://{lobby_export.SHIP_SCENE}")
     if max(abs(a - b) for a, b in zip(s["at"], layout["ship"]["origin"])) > 1e-3:
         out.append(f"Ship stands at {s['at']}, wants {layout['ship']['origin']}")
-    if s["clearing_visible"] or s["clearing_processing"]:
-        out.append("Ship/Clearing is still drawn or processed")
-    if s["environments"] or s["suns_visible"]:
-        out.append(f"the ship package keeps {s['environments']} environments and {s['suns_visible']} suns on")
+    if s.get("clearing_present", True) or s["clearing_visible"] or s["clearing_processing"]:
+        out.append("Ship/Clearing is still in the tree after the level script's _ready")
+    if s.get("environment_present", True) or s["environments"] or s.get("suns", 1) or s["suns_visible"]:
+        out.append(f"the ship package keeps its Environment ({s.get('environment_present')}), {s['environments']} "
+                   f"WorldEnvironments and {s.get('suns')} suns after the level script's _ready")
     if any(v is None or abs(v) > 0.05 for v in s["jaws"].values()):
         out.append(f"the jaw nose is not shut: {s['jaws']}")
     if s["off_layer"]:
@@ -172,8 +184,10 @@ def problems(layout: dict, pieces: Path, got: dict, errors: list[str]) -> list[s
         out.append(f"the capsule walk stopped at {w['reached']}/{w['of']} near {w['stuck']}")
     common.say(f"  load: {len(got['bounds'])} hall GLBs within {worst * 1000:.1f} mm of Blender's; {got['lights']} "
                f"lights, {got['probes']} probes, {len(got['spawns'])} spawns; the ship {s['colliders_on']} colliders on "
-               f"({s['colliders_off']} off in Clearing), {s['meshes']} meshes drawn, {s['lights_visible']} lamps on, "
-               f"jaws {s['jaws']}; walk {w['reached']}/{w['of']} points in {w['seconds']:.1f} s, lowest {w['min_y']:.2f} m")
+               f"({s['colliders_off']} off), {s['meshes']} meshes drawn, {s['lights_visible']} lamps on, "
+               f"jaws {s['jaws']}; the level script freed {ls.get('ship_freed')} nodes "
+               f"({', '.join(ls.get('ship_free') or [])}), recaptured {ls.get('probes_recaptured')} of "
+               f"{ls.get('probes_total')} probes; walk {w['reached']}/{w['of']} points in {w['seconds']:.1f} s, lowest {w['min_y']:.2f} m")
     return out
 
 

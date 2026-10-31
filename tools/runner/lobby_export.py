@@ -12,6 +12,8 @@ module turns that into the package, shaped like the game's tree (its ARCHITECTUR
                            earth_object.tres, window_glass.tres
   levels/lobby/lobby_hall.tscn   the hall, the ship instanced from res://levels/ship/ship.tscn (the ship package,
                                  never copied), the Earth, the light rig, probes and the ten spawn markers
+  levels/lobby/lobby_hall.gd     the root's level script (step 5c2): frees the ship package's switched-off nodes on
+                                 _ready and has the reflection probes capture again (godot/lobby/lobby_hall.gd)
   package.json             files with SHA-256 and bytes, the spawns, the ship package it needs, the open questions
 
 relocate() moves every res:// path from the art project's to the package's (the ship package's to its own game
@@ -32,6 +34,8 @@ EARTH_DIR = f"{ASSET_DIR}/earth"
 MATERIAL_DIR = f"{ASSET_DIR}/materials"
 SCENE = "levels/lobby/lobby_hall.tscn"
 SHIP_SCENE = "levels/ship/ship.tscn"
+LEVEL_SCRIPT = "levels/lobby/lobby_hall.gd"   # the package's one script, on the scene's root (step 5c2)
+LEVEL_SCRIPT_SRC = "lobby/lobby_hall.gd"      # its source under godot/
 SHIP_PREFIXES = ("assets/environment/ship/", "levels/ship/")
 BUILT = "lobby_export"   # godot/import/lobby_export/: export_scene.gd's output
 EARTH_STAGE = "lobby_earth"   # godot/import/lobby_earth/: the Earth's textures, staged with the package's .import
@@ -44,10 +48,12 @@ EARTH_IMPORT = ["compress/mode=2", "compress/high_quality=true", "mipmaps/genera
 CREDIT = "Earth imagery: NASA"
 QUESTIONS = [
     "L1: the ship is an instance of the ship package's res://levels/ship/ship.tscn (assets/environment/ship/HANDOFF.md), "
-    "never a copy: the game needs the ship package at its paths. The lobby switches off what the hall must not have by "
-    "overrides a packed scene can keep: Ship/Clearing hidden and disabled (its Ground's collider leaves the world), "
-    "Ship/Environment/WorldEnvironment's environment cleared, the moon and key suns under Ship/Lights hidden; freeing "
-    "them in the game's lobby script (as art's hall.gd does) is the same picture.",
+    "never a copy: the game needs the ship package at its paths. What the hall must not have is saved switched off "
+    "(a packed scene cannot remove a node of an instance: Ship/Clearing hidden and disabled, Ship/Environment's "
+    "WorldEnvironment on the hall's environment, the suns under Ship/Lights hidden), and the root's level script "
+    "res://levels/lobby/lobby_hall.gd frees them on _ready (its ship_free paths) and has the reflection probes capture "
+    "again a frame later, as the art's assembly does. Keep the script on LobbyHall; a game script for the lobby "
+    "extends it and calls super._ready().",
     "L2: the jaw nose is saved shut (jaw_lower and jaw_upper at 0 deg) by overrides; Ship/Nose/AnimationPlayer still "
     "holds open/close: the lobby never plays them. Its pose is the scene's, so nothing needs to run at load.",
     "L3: behind the shut nose and the closed doors the package's whole interior is still drawn when in view (about "
@@ -83,21 +89,31 @@ def relocate(text: str) -> str:
     text = text.replace(f"res://import/{BUILT}/", f"res://{MATERIAL_DIR}/")
     text = text.replace(f"res://import/{EARTH_STAGE}/", f"res://{EARTH_DIR}/")
     text = text.replace(f"res://import/{SHIP_STAGE}/", "res://")
+    text = text.replace(f"res://{LEVEL_SCRIPT_SRC}", f"res://{LEVEL_SCRIPT}")
     text = _PIECE.sub(lambda m: f"res://{ASSET_DIR}/{m.group(1)}", text)
     for src, name in SHADERS.items():
         text = text.replace(f"res://{src}", f"res://{ASSET_DIR}/{name}")
     return _UID.sub("", text)
 
 
-def leftovers(text: str) -> list[str]:
+def leftovers(text: str, level_script: bool = False) -> list[str]:
     """What a relocated text must not hold: an art-project path, a script, a sub-resource path of an imported file,
-    any res:// path outside the package and the ship package."""
+    any res:// path outside the package and the ship package. level_script (the scene): LEVEL_SCRIPT, used once, is
+    allowed and required."""
     allowed = "|".join(re.escape(p) for p in (f"{ASSET_DIR}/", "levels/lobby/", *SHIP_PREFIXES))
     bad = []
+    if level_script:
+        ext = re.search(rf'^\[ext_resource type="Script" path="res://{re.escape(LEVEL_SCRIPT)}" id="([^"]+)"\]\n?',
+                        text, re.M)
+        use = rf'^script = ExtResource\("{re.escape(ext.group(1))}"\)\n?' if ext else None
+        if not ext or len(re.findall(use, text, re.M)) != 1:
+            bad.append("no level script on the root")
+        else:
+            text = re.sub(use, "", text.replace(ext.group(0), "", 1), count=1, flags=re.M)
     for pat, why in ((r"res://import/", "an art-project import path"), (r'"res://lobby/', "an art-project lobby path"),
                      (r'type="Script"', "a script"), (r"^script = ", "a script"), (r'path="[^"]*::', "a sub-resource path"),
                      (rf'"res://(?!{allowed})', "a path outside the package")):
-        if re.search(pat, text, re.M):
+        if re.search(pat, text, re.M) and why not in bad:
             bad.append(why)
     return bad
 
@@ -157,9 +173,15 @@ def write(layout: dict, pieces: Path, built: Path, shaders: Path, earth: dict[st
         copy(built.parent / f"lobby_{name}", rel, None)
         (out / f"{rel}.import").write_text(house_export.import_text(out / rel), encoding="utf-8", newline="\n")
     texts[SCENE] = built / "lobby_hall.tscn"
+    if not (shaders / LEVEL_SCRIPT_SRC).is_file():
+        raise ValueError(f"no level script {(shaders / LEVEL_SCRIPT_SRC).as_posix()}")
+    (out / LEVEL_SCRIPT).parent.mkdir(parents=True, exist_ok=True)
+    (out / LEVEL_SCRIPT).write_text((shaders / LEVEL_SCRIPT_SRC).read_text(encoding="utf-8"), encoding="utf-8",
+                                    newline="\n")
+    add(LEVEL_SCRIPT)
     for rel, src in texts.items():
         text = relocate(src.read_text(encoding="utf-8"))
-        bad = leftovers(text)
+        bad = leftovers(text, level_script=rel == SCENE)
         if bad:
             raise ValueError(f"{rel}: {', '.join(bad)}")
         (out / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -167,7 +189,7 @@ def write(layout: dict, pieces: Path, built: Path, shaders: Path, earth: dict[st
         add(rel)
     e = layout["earth"]
     summary = {"format": FORMAT, "name": "lobby", "version": layout["version"], "scene": f"res://{SCENE}",
-               "root": "LobbyHall", "pieces": ids, "placements": len(layout["place"]) + len(layout["door"]["doors"]),
+               "root": "LobbyHall", "level_script": f"res://{LEVEL_SCRIPT}", "pieces": ids, "placements": len(layout["place"]) + len(layout["door"]["doors"]),
                "spawns": spawns(layout),
                "ship": {"node": "Ship", "scene": f"res://{SHIP_SCENE}", "package": ship_dir,
                         "package_version": ship_meta.get("version"), "package_bytes": ship_meta.get("bytes"),

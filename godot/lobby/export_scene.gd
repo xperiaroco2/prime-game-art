@@ -1,7 +1,7 @@
 extends "res://lobby/hall.gd"
 ## The lobby hall's game-ready scene for `lobby --export DIR` (art #356 step 5b, docs/lobby.md "The export"):
 ## assembles the hall exactly as hall.gd's shoot does (_environment, _build with the ship package, _glass,
-## _apply_light) and saves it as one packed scene of data, no script. Headless, in godot/ with the hall's pieces staged
+## _apply_light) and saves it as one packed scene of data, with one script: lobby_hall.gd on the root (step 5c2). Headless, in godot/ with the hall's pieces staged
 ## as res://import/lobby_<id>.glb, the Earth's textures as res://import/lobby_earth/ and the ship package as
 ## res://import/ship_pkg/:
 ##   godot --headless --path godot -s res://lobby/export_scene.gd -- <request.json> <out dir>
@@ -11,9 +11,12 @@ extends "res://lobby/hall.gd"
 ## Everything hall.gd sets by code becomes overrides inside the instances (the hall's pieces and the ship, each an
 ## editable instance, the ship's own pieces too): the glass, the hanging lamps' shadows, the glow surfaces, the ship's
 ## render layer 11 and its lamps. The package's nodes hall.gd frees ([ship.package] free) are switched off instead
-## (hidden, disabled, the environment cleared): a packed scene cannot remove a node of an instance.
+## (hidden, disabled, the environment cleared): a packed scene cannot remove a node of an instance. Step 5c2: the
+## root carries LEVEL_SCRIPT with those nodes' paths (ship_free), which frees them on _ready and lets the reflection
+## probes capture again after the frees, so the game's scene is the art's assembly.
 
 const EXPORT_DIR: String = "res://import/lobby_export"
+const LEVEL_SCRIPT: String = "res://lobby/lobby_hall.gd"
 
 
 func _initialize() -> void:
@@ -90,6 +93,13 @@ func _export() -> void:
 		level.set_meta(k, meta[k])
 	level.set_meta("size_m", Vector2(float(_req["size_m"][0]), float(_req["size_m"][1])))
 	level.set_meta("camera_far_m", _far)
+	var ship_free: Array[NodePath] = []
+	for n: Node in ship.find_children("*", "", true, false):
+		if n.has_meta("lobby_dropped"):
+			ship_free.append(level.get_path_to(n))
+	if ship_free.is_empty():
+		_fail("no ship package node switched off ([ship.package] free)")
+		return
 	for n: Node in level.find_children("*", "", true, false):
 		for k: String in ["lobby_dropped", "lobby_e0"]:
 			if n.has_meta(k):
@@ -110,6 +120,12 @@ func _export() -> void:
 	if not scripts.is_empty():
 		_fail("a node carries a script: %s" % scripts[0].name)
 		return
+	# set in the tree, after the assembly: its _ready does not run here, only in the game (and the package's check)
+	level.set_script(load(LEVEL_SCRIPT))
+	level.set("ship_free", ship_free)
+	if level.get("ship_free") != ship_free:
+		_fail("the level script did not take ship_free")
+		return
 	var packed: PackedScene = PackedScene.new()
 	var error: Error = packed.pack(level)
 	if error != OK:
@@ -122,7 +138,7 @@ func _export() -> void:
 	var drift: Array = _roundtrip(level, EXPORT_DIR.path_join("lobby_hall.tscn"))
 	_write("export.json", {"roundtrip": drift, "hall_pieces": hall.get_child_count(), "lights": groups["Lights"].get_child_count(),
 		"probes": groups["Probes"].get_child_count(), "spawns": groups["Markers"].get_child_count(),
-		"editable_instances": editable, "ship": _pkg_info, "camera_far_m": _far,
+		"editable_instances": editable, "ship": _pkg_info, "ship_free": ship_free.map(func(p: NodePath) -> String: return String(p)), "camera_far_m": _far,
 		"emissive_surfaces": _emissive.size()})
 	print("LOBBY export saved %s" % EXPORT_DIR)
 	quit(0)

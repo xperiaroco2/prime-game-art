@@ -3,8 +3,10 @@ extends SceneTree
 ## folder opened as its own Godot project (the runner copies this file to DIR/_check/ and the ship package beside the
 ## lobby's files), against the packages alone.
 ##   check (headless): godot --headless --path DIR -s res://_check/export_check.gd -- check <request.json> <out dir>
-##     measures each hall GLB at the origin (bounds, colliders), loads res://levels/lobby/lobby_hall.tscn and reads its
-##     tree (spawns, the ship instance and what is switched off, the jaws, the ship's layers, the Earth), then walks the
+##     measures each hall GLB at the origin (bounds, colliders), loads res://levels/lobby/lobby_hall.tscn and, after its
+##     level script's _ready (step 5c2: the ship package's Clearing, Environment and suns freed, the probes captured
+##     again), reads its tree (spawns, the scripts, the ship instance and what is gone, the jaws, the ship's layers,
+##     the Earth), then walks the
 ##     1.36 m capsule through the layout's walk points; <out>/load.json.
 ##   shoot (an off-screen window, through the runner's _godot.window(), never by hand): -- shoot <request.json> <out>
 ##     the views as hall.gd shoots them (the title label, 30 frames, the GPU median of the last 16), each beside the
@@ -68,14 +70,22 @@ func _check() -> void:
 		return
 	await physics_frame
 	await physics_frame
+	for i: int in 3:   # lobby_hall.gd's probe capture waits one frame after _ready
+		await process_frame
 	result["root"] = String(level.name)
+	result["level_script"] = {"path": "" if level.get_script() == null else (level.get_script() as Script).resource_path,
+		"ship_free": Array(level.get("ship_free") if level.get_script() != null else []).map(func(p: NodePath) -> String: return String(p)),
+		"ship_freed": level.get_meta("ship_freed", -1), "probes_recaptured": level.get_meta("probes_recaptured", -1),
+		"probes_total": level.find_children("*", "ReflectionProbe", true, false).size()}
 	result["meta"] = {}
 	for k: StringName in level.get_meta_list():
 		result["meta"][String(k)] = var_to_str(level.get_meta(k))
 	result["groups"] = level.get_children().map(func(n: Node) -> String: return String(n.name))
 	for n: Node in level.find_children("*", "", true, false):
 		if n.get_script() != null:
-			result["scripts"].append(String(n.name))
+			result["scripts"].append("%s %s" % [level.get_path_to(n), (n.get_script() as Script).resource_path])
+	if level.get_script() != null:
+		result["scripts"].append("%s %s" % [level.name, (level.get_script() as Script).resource_path])
 	result["spawns"] = []
 	for m: Node in level.get_node("Markers").get_children():
 		var mk: Node3D = m as Node3D
@@ -83,13 +93,16 @@ func _check() -> void:
 		result["spawns"].append({"name": String(mk.name), "at": [mk.global_position.x, mk.global_position.y, mk.global_position.z],
 			"yaw": snappedf(mk.rotation_degrees.y, 0.001), "forward": [snappedf(fwd.x, 0.001), snappedf(fwd.y, 0.001), snappedf(fwd.z, 0.001)]})
 	var ship: Node3D = level.get_node("Ship") as Node3D
-	var clearing: Node3D = ship.get_node("Clearing") as Node3D
-	var own: Environment = (level.get_node("Environment").get_child(0) as WorldEnvironment).environment
-	var worlds: Array = ship.find_children("*", "WorldEnvironment", true, false).filter(func(w: Node) -> bool: return (w as WorldEnvironment).environment not in [null, own])
-	var suns: Array = ship.get_node("Lights").find_children("*", "DirectionalLight3D", true, false).filter(func(l: Node) -> bool: return (l as Node3D).is_visible_in_tree())
+	# step 5c2: freed by the level script, so none of them is left at all (not only hidden)
+	var clearing: Node3D = ship.get_node_or_null("Clearing") as Node3D
+	var worlds: Array = ship.find_children("*", "WorldEnvironment", true, false)
+	var suns: Array = ship.find_children("*", "DirectionalLight3D", true, false)
 	var info: Dictionary = {"scene": ship.scene_file_path, "at": [ship.position.x, ship.position.y, ship.position.z],
-		"clearing_visible": clearing.is_visible_in_tree(), "clearing_processing": clearing.can_process(),
-		"environments": worlds.size(), "suns_visible": suns.size(),
+		"clearing_present": clearing != null, "environment_present": ship.get_node_or_null("Environment") != null,
+		"clearing_visible": clearing != null and clearing.is_visible_in_tree(),
+		"clearing_processing": clearing != null and clearing.can_process(),
+		"environments": worlds.size(), "suns": suns.size(),
+		"suns_visible": suns.filter(func(l: Node) -> bool: return (l as Node3D).is_visible_in_tree()).size(),
 		"jaws": {}, "colliders_on": 0, "colliders_off": 0, "off_layer": 0, "meshes": 0, "lights_visible": 0}
 	for j: String in ["jaw_lower", "jaw_upper"]:
 		var jn: Node3D = ship.get_node("Nose").find_child(j, true, false) as Node3D
