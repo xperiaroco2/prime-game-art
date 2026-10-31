@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v9"          # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v10"         # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -90,7 +90,7 @@ stand_in = []                      # step 4c: the ramp is gone (the jaw nose, sh
 # the night clearing's WorldEnvironment (it fights the hall's AgX, glow and exposure) and the moon and cool key (two
 # shadowed suns that would light the hall's walls and cast two more ship shadows against the Earth's light). The
 # ship's 105 own lamps and its 7 interior probes stay.
-package = { dir = "ship/v5/export/v4", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"] }
+package = { dir = "ship/v5/export/v4", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
 # The forest clearing (layouts/ship/exterior.toml), not in the lobby
 drop = ["ground", "pine_a", "pine_b", "pine_c", "pine_d", "pine_e", "pine_f", "pine_g", "pine_s", "rock_a", "rock_b",
         "rock_c", "rock_pile_a", "rock_pile_b", "ground_lamp", "dirt_patch", "dirt_path", "tuft_a", "tuft_b",
@@ -385,6 +385,14 @@ corridor = [[0.0, 5.0, -32.5], [0.0, 5.0, -36.0]]
 window = [[-10.0, 4.0, 12.5], [0.0, 4.0, 14.0], [10.0, 4.0, 12.5]]   # step 4b: the Earth's cold spill, inside the glass
 window_tilt = 50.0                  # their spots (35 deg half angle) look north, this many degrees down: the
                                     # cone's top edge 15 deg down passes under the ship's aft panel
+# Step 5a3: the Earth's light (2 deg up) laid the nine hanging lamps' shadows on the north wall's upper panels, each
+# column of three stacked into a soft "tree" (c_back); the vault's meshes below fixtures_below m (shades, lenses, cords,
+# rims) cast no shadow (their spots hang under the lenses; a shadow_caster_mask on the Earth's light did not take).
+fixtures_below = 11.0
+earth_specular = 0.15               # step 5a3: the Earth's and the window spill's glare on the floor's seams (Godot 0.5)
+window_specular = 0.1
+# step 5a3: a negative, unshadowed spot (not on the ship) takes a little cool light off the north wall behind the ship
+wash = { at = [0.0, 5.0, -12.0], rgb = [0.55, 0.68, 1.0], energy = 0.22, range = 26.0, angle = 38.0 }
 probes = [["hall", [0.0, 8.0, -8.0], [42.0, 16.5, 48.0], false], ["corridor", [0.0, 3.2, -34.0], [6.4, 6.6, 8.4], true]]
 
 [light.moods.L1]
@@ -525,7 +533,7 @@ fill_rgb = [1.0, 0.7, 0.45]
 fill_energy = 3.0
 fill_range = 12.0
 fill_angle = 75.0
-strip_specular = 1.5
+strip_specular = 0.9                # step 5a3: was 1.5; its warm glare streaks on the floor (a_entrance)
 strip_size = 0.0
 earth_soft = 3.0
 earth_shadow = 0.55
@@ -560,9 +568,11 @@ window_energy = 1.5
 #   earth_k: the same for the Earth's light (its copy unshadowed, the hall's light still casts the ship's shadow);
 #   own_probe: the hall's probes skip the ship and a probe of its own (box `probe`, the hall without the ship
 #     captured) reflects on it at probe_intensity with its ambient (ambient_rgb, ambient_energy);
-#   key_*, rim_*: unshadowed directionals on the ship only ([azimuth from south toward east, elevation]).
+#   key_*, rim_*: unshadowed directionals on the ship only ([azimuth from south toward east, elevation]);
+#   back_* (step 5a3): one from the north, the hull's outline against the north wall in c_back; bounce_*: a
+#   warm one from below, the pendants' and the copper ring's bounce on the flanks and undersides.
 # `lobby --ship-grid DIR` shoots every set in `grid`'s views (the review views and `views` below).
-set = "K1"                         # the default (step 5a2); the engineer picks from K1-K3
+set = "K1"                         # the default (step 5a3: neutral silver); K2 warmer, K3 cooler
 grid = ["a_entrance", "c_back", "corner_nw", "spawn_ship", "ship_top"]
 views = [["ship_top", "the ship's silver top, close up", [9.0, 9.0, -3.0], [0.0, 3.0, -14.0], 50.0]]
 probe = [[0.0, 4.0, -13.3], [32.0, 12.0, 36.0]]
@@ -572,52 +582,70 @@ probe = [[0.0, 4.0, -13.3], [32.0, 12.0, 36.0]]
 # probes' reflections change nothing. The sets keep the hall's lamps off the ship but for a share, and light it as
 # its own night scene does: the ship scene's cool key (-140, 38) and its moon (35, 30, the Earth's side) as the rim.
 [light.ship.sets.K1]
-title = "as the ship's own night: its cool key and moon, the pendants x0.15, a dim cool ambient"
-pendant_k = 0.15
-pendant_specular = 0.15
-earth_k = 0.4
+title = "neutral silver (step 5a3): a lower neutral key, a dim grey ambient, a warm bounce, a back light"
+pendant_k = 0.25
+pendant_specular = 0.12
+earth_k = 0.35
 own_probe = true
-probe_intensity = 1.0
-ambient_rgb = [0.42, 0.5, 0.7]
-ambient_energy = 0.12
-key_rgb = [0.78, 0.84, 1.0]
-key_energy = 0.55
+probe_intensity = 0.9
+ambient_rgb = [0.52, 0.5, 0.5]
+ambient_energy = 0.08
+key_rgb = [0.92, 0.92, 0.94]
+key_energy = 0.4
 key_dir = [-140.0, 38.0]
-rim_rgb = [0.62, 0.72, 1.0]
-rim_energy = 0.6
+rim_rgb = [0.74, 0.8, 0.92]
+rim_energy = 0.35
 rim_dir = [35.0, 30.0]
+back_rgb = [0.9, 0.9, 0.92]
+back_energy = 0.5
+back_dir = [180.0, 30.0]
+bounce_rgb = [1.0, 0.62, 0.38]
+bounce_energy = 0.22
+bounce_dir = [0.0, -40.0]
 
 [light.ship.sets.K2]
-title = "a bit warmer in the hall: the pendants x0.4, a warmer key and ambient"
+title = "warmer: more of the pendants, a warm grey ambient and key, a stronger bounce"
 pendant_k = 0.4
-pendant_specular = 0.25
-earth_k = 0.6
+pendant_specular = 0.15
+earth_k = 0.35
 own_probe = true
-probe_intensity = 1.0
-ambient_rgb = [0.6, 0.56, 0.52]
-ambient_energy = 0.15
-key_rgb = [0.86, 0.88, 1.0]
-key_energy = 0.45
+probe_intensity = 0.9
+ambient_rgb = [0.6, 0.54, 0.48]
+ambient_energy = 0.1
+key_rgb = [0.96, 0.92, 0.86]
+key_energy = 0.36
 key_dir = [-140.0, 38.0]
-rim_rgb = [0.62, 0.72, 1.0]
-rim_energy = 0.45
+rim_rgb = [0.74, 0.8, 0.92]
+rim_energy = 0.3
 rim_dir = [35.0, 30.0]
+back_rgb = [0.92, 0.88, 0.84]
+back_energy = 0.5
+back_dir = [180.0, 30.0]
+bounce_rgb = [1.0, 0.6, 0.34]
+bounce_energy = 0.32
+bounce_dir = [0.0, -40.0]
 
 [light.ship.sets.K3]
-title = "darker and moodier: the pendants x0.1, a weaker key, the rim kept"
-pendant_k = 0.1
+title = "cooler: fewer pendants, a cool key and ambient, a faint bounce"
+pendant_k = 0.15
 pendant_specular = 0.1
-earth_k = 0.3
+earth_k = 0.4
 own_probe = true
-probe_intensity = 0.8
-ambient_rgb = [0.4, 0.46, 0.66]
-ambient_energy = 0.07
-key_rgb = [0.74, 0.82, 1.0]
-key_energy = 0.35
+probe_intensity = 0.9
+ambient_rgb = [0.46, 0.5, 0.58]
+ambient_energy = 0.08
+key_rgb = [0.84, 0.88, 0.98]
+key_energy = 0.42
 key_dir = [-140.0, 38.0]
-rim_rgb = [0.62, 0.72, 1.0]
-rim_energy = 0.5
+rim_rgb = [0.7, 0.78, 0.95]
+rim_energy = 0.4
 rim_dir = [35.0, 30.0]
+back_rgb = [0.84, 0.88, 0.96]
+back_energy = 0.5
+back_dir = [180.0, 30.0]
+bounce_rgb = [1.0, 0.64, 0.42]
+bounce_energy = 0.12
+bounce_dir = [0.0, -40.0]
 
 [video]
 # Step 4's walk-through (`lobby --video DIR`, docs/lobby.md): eye height, the mood above; keys [eye, look, seconds

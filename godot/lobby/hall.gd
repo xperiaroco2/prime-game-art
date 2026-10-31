@@ -216,6 +216,19 @@ func _ship_package(hall: Node3D, pk: Dictionary) -> void:
 				c.free()
 				k += 1
 		freed.append("%s x%d" % [f, k])
+	# step 5a3: only the ship itself may stay; any other top-level node of the package (a new scenery group, a sky,
+	# a camera, a sun) fails the run instead of drawing into the hall
+	var kept: Array = []
+	for c: Node in ship.get_children():
+		kept.append(String(c.name))
+		if not (pk["keep"] as Array).has(String(c.name)):
+			_fail("ship package: %s is left (not in [ship.package] keep)" % c.name)
+			return
+	for cls: String in ["WorldEnvironment", "Camera3D", "DirectionalLight3D", "GPUParticles3D", "Decal"]:
+		var left: Array = ship.find_children("*", cls, true, false)
+		if not left.is_empty():
+			_fail("ship package: a %s is left (%s)" % [cls, left[0].name])
+			return
 	hall.add_child(ship)   # in the tree first: an AnimationPlayer outside it does not apply a seek
 	var nose: AnimationPlayer = ship.get_node("Nose/AnimationPlayer") as AnimationPlayer
 	nose.play("close")
@@ -237,7 +250,7 @@ func _ship_package(hall: Node3D, pk: Dictionary) -> void:
 			lights += 1
 		if n is GeometryInstance3D:   # step 5a2: per instance only; the package's files stay as they are
 			(n as GeometryInstance3D).layers = SHIP_LAYER
-	_pkg_info = {"freed": freed, "jaws": jaws, "colliders": colliders, "lights": lights}
+	_pkg_info = {"freed": freed, "kept": kept, "jaws": jaws, "colliders": colliders, "lights": lights}
 	_placed["ship_pkg"] = [ship]
 	print("LOBBY ship package: %s" % JSON.stringify(_pkg_info))
 
@@ -678,6 +691,7 @@ func _apply_light(l: Dictionary) -> void:
 		if k == "earth":   # step 4b: the ship's shadow on the north wall and doors soft and lighter
 			sun.shadow_blur = float(l["earth_soft"])   # a PCF blur: the angular size's PCSS cost ~1.4 ms (grid 4b)
 			sun.shadow_opacity = float(l["earth_shadow"])
+			sun.light_specular = float(l.get("earth_specular", 0.5))   # its glare on the polished floor's seams
 		_rig.add_child(sun)
 		var d: Vector3 = _v(l[k + "_dir"]).normalized()
 		sun.look_at_from_position(Vector3.ZERO, -d, Vector3.UP)   # the light travels away from the Earth
@@ -695,6 +709,24 @@ func _apply_light(l: Dictionary) -> void:
 			_rig.add_child(cold)
 			cold.position = _v(at)
 			cold.rotation_degrees = Vector3(-float(l["window_tilt"]), 0, 0)
+			cold.light_specular = float(l.get("window_specular", 0.5))   # step 5a3: its white streaks on the floor
+	if l.has("wash"):   # step 5a3: a darker, warmer wash on the north wall behind the ship (a negative spot, not on it)
+		var w: Dictionary = l["wash"]
+		var wash: SpotLight3D = SpotLight3D.new()
+		wash.name = "north_wash"
+		wash.light_negative = true
+		wash.light_color = _c(w["rgb"])
+		wash.light_energy = float(w["energy"])
+		wash.light_specular = 0.0
+		wash.spot_range = float(w["range"])
+		wash.spot_angle = float(w["angle"])
+		wash.spot_angle_attenuation = 1.0
+		wash.spot_attenuation = 0.0   # no 1/d falloff: the energy is what it takes off the wall
+		wash.shadow_enabled = false
+		wash.light_cull_mask = ALL_LAYERS & ~SHIP_LAYER
+		_rig.add_child(wash)
+		wash.position = _v(w["at"])   # looking north (-z)
+	_fixtures(float(l["fixtures_below"]))
 	for pr: Array in l["probes"]:
 		var probe: ReflectionProbe = ReflectionProbe.new()
 		probe.name = "probe_" + String(pr[0])
@@ -722,6 +754,22 @@ func _apply_light(l: Dictionary) -> void:
 			lt.light_energy = float(lt.get_meta("lobby_e0")) * float(l["ship_lights"])
 			lt.visible = lt.light_energy > 0.0
 	_emit(l)
+
+
+## Step 5a3: the vault's meshes hanging below `below` m (the pendants' shades, lenses, cords and copper rims; the
+## vault's meshes are split by material) cast no shadow. The Earth's light, 2 deg up from the south, laid each column
+## of three lamps (x -10, 0, 10) onto the north wall's upper panels, stacked into three soft "trees" (c_back); their own
+## spots hang under the lenses and the fills are unshadowed, so no other shadow is lost. None found fails the run.
+func _fixtures(below: float) -> void:
+	var n: int = 0
+	for top: Node in _placed.get("vault", []):
+		for c: Node in top.find_children("*", "MeshInstance3D", true, false):
+			var mi: MeshInstance3D = c as MeshInstance3D
+			if mi.mesh != null and (mi.global_transform * mi.get_aabb()).position.y < below:
+				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				n += 1
+	if n == 0:
+		_fail("no hanging lamp meshes in the vault below %.1f m" % below)
 
 
 ## Step 5a2: the package ship's own light set (docs/lobby.md "Step 5a2"), by cull masks on its render layer: the hall's
@@ -765,7 +813,7 @@ func _ship_light(s: Dictionary, l: Dictionary, hall_lights: Dictionary) -> void:
 		probe.ambient_color_energy = float(s["ambient_energy"])
 		_rig.add_child(probe)
 		probe.position = _v(s["probe"][0])
-	for k: String in ["key", "rim"]:
+	for k: String in ["key", "rim", "back", "bounce"]:   # step 5a3: a back light (the outline) and a warm bounce
 		if float(s[k + "_energy"]) <= 0.0:
 			continue
 		var sun: DirectionalLight3D = DirectionalLight3D.new()
@@ -776,8 +824,9 @@ func _ship_light(s: Dictionary, l: Dictionary, hall_lights: Dictionary) -> void:
 		sun.light_cull_mask = SHIP_LAYER
 		_rig.add_child(sun)
 		sun.look_at_from_position(Vector3.ZERO, -_v(s[k + "_dir"]).normalized(), Vector3.UP)
-	print("LOBBY ship light %s: pendants x%s, Earth x%s, own probe %s, key %s, rim %s" % [s["id"], s["pendant_k"],
-		s["earth_k"], s["own_probe"], s["key_energy"], s["rim_energy"]])
+	print("LOBBY ship light %s: pendants x%s, Earth x%s, own probe %s, key %s, rim %s, back %s, bounce %s" % [s["id"],
+		s["pendant_k"], s["earth_k"], s["own_probe"], s["key_energy"], s["rim_energy"], s["back_energy"],
+		s["bounce_energy"]])
 
 
 func _omni(at: Vector3, c: Color, energy: float, rng: float) -> OmniLight3D:

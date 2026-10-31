@@ -153,7 +153,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v9")   # step 5a2
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v10")   # step 5a3
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -246,9 +246,10 @@ class LobbyLayoutTest(unittest.TestCase):
             self.assertTrue(any(want in p for p in problems), (want, problems))
 
     def test_the_ships_own_light(self) -> None:
-        """Step 5a2: [light.ship]'s one switch K1 of three sets (K2 warmer, K3 darker), each keeping the hall's pendants
-        off the ship but for a share, its own probe, the ship scene's cool key and moon; the request carries the set,
-        the grid one variant per set; the check refuses a bad set."""
+        """Step 5a2/5a3: [light.ship]'s one switch K1 (neutral silver) of three sets (K2 warmer, K3 cooler), each keeping
+        the hall's pendants off the ship but for a share, its own probe, a key, a rim, a back light from the north (the
+        outline against the north wall) and a warm bounce from below; the request carries the set, the grid one variant
+        per set; the check refuses a bad set."""
         from runner.commands import lobby as cmd
         sh = self.layout["light"]["ship"]
         self.assertEqual(sh["set"], "K1")
@@ -257,17 +258,39 @@ class LobbyLayoutTest(unittest.TestCase):
         for st in k.values():
             self.assertLess(st["pendant_k"], 1.0)
             self.assertTrue(st["own_probe"])
-            self.assertGreater(st["key_rgb"][2], st["key_rgb"][0])   # the key cool
-        self.assertGreater(k["K2"]["pendant_k"], k["K1"]["pendant_k"])          # K2 warmer: more of the pendants
-        self.assertGreater(k["K2"]["ambient_rgb"][0], k["K1"]["ambient_rgb"][0])
-        self.assertLess(k["K3"]["key_energy"], k["K1"]["key_energy"])           # K3 darker
-        self.assertLess(k["K3"]["ambient_energy"], k["K1"]["ambient_energy"])
+            self.assertEqual(abs(st["back_dir"][0]), 180.0)   # from the north
+            self.assertLess(st["bounce_dir"][1], 0.0)         # from below
+            self.assertGreater(st["bounce_rgb"][0], st["bounce_rgb"][2])   # warm
+        self.assertLess(max(k["K1"]["key_rgb"]) - min(k["K1"]["key_rgb"]), 0.05)   # K1 neutral, not blue-violet
+        self.assertLessEqual(max(k["K1"]["ambient_rgb"]) - min(k["K1"]["ambient_rgb"]), 0.05)
+        self.assertGreater(k["K2"]["pendant_k"], k["K1"]["pendant_k"])          # K2 warmer
+        self.assertGreater(k["K2"]["key_rgb"][0], k["K2"]["key_rgb"][2])
+        self.assertGreater(k["K2"]["bounce_energy"], k["K1"]["bounce_energy"])
+        self.assertGreater(k["K3"]["key_rgb"][2], k["K3"]["key_rgb"][0])        # K3 cooler
+        self.assertLess(k["K3"]["bounce_energy"], k["K1"]["bounce_energy"])
         rig = cmd.light_request(self.layout, "L3")["light"]
         self.assertEqual(rig["ship"]["id"], "K1")
         self.assertAlmostEqual(sum(c * c for c in rig["ship"]["key_dir"]), 1.0)
         self.assertEqual(rig["ship"]["probe"], sh["probe"])
         self.assertEqual(cmd.light_request(self.layout, "L3", ship="K3")["light"]["ship"]["id"], "K3")
         self.assertIn("ship_top", sh["grid"])
+        self.assertEqual(len(rig["ship"]["back_dir"]), 3)
+
+    def test_the_hall_side_fixes(self) -> None:
+        """Step 5a3: the hanging lamps cast no shadow (the Earth's light laid them on the north wall as "trees"), the Earth's and the
+        window spill's specular tamed, the north wall's negative wash off the ship, the package's kept nodes."""
+        from runner.commands import lobby as cmd
+        li = self.layout["light"]
+        rig = cmd.light_request(self.layout, li["mood"])["light"]
+        self.assertTrue(9.0 < rig["fixtures_below"] < 11.4)   # under the vault's ribs (11.4), over the lenses (9.15)
+        self.assertLess(rig["earth_specular"], 0.5)          # Godot's default 0.5
+        self.assertLess(rig["window_specular"], 0.5)
+        self.assertTrue(0.0 < rig["wash"]["energy"] <= 0.5)  # subtle
+        self.assertLess(rig["wash"]["at"][2], self.layout["ship"]["origin"][2] + 5.0)
+        pk = self.layout["ship"]["package"]
+        self.assertTrue({"Pieces", "Nose"} <= set(pk["keep"]))
+        self.assertFalse({f.split(":")[0] for f in pk["free"] if ":" not in f} & set(pk["keep"]))
+        self.assertNotIn("Clearing", pk["keep"])
         bad = copy.deepcopy(self.layout)
         bad["light"]["ship"]["set"] = "K9"
         bad["light"]["ship"]["grid"].append("nowhere")

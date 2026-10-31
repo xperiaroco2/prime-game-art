@@ -520,7 +520,8 @@ LIGHT_KEYS = ("ship_lights", "exposure", "ambient_rgb", "ambient_energy", "probe
 
 # Step 5a2: a [light.ship] set's keys (hall.gd `_ship_light`: the package ship's own light by cull masks, per instance)
 SHIP_LIGHT_KEYS = ("pendant_k", "pendant_specular", "earth_k", "own_probe", "probe_intensity", "ambient_rgb",
-                   "ambient_energy", "key_rgb", "key_energy", "key_dir", "rim_rgb", "rim_energy", "rim_dir")
+                   "ambient_energy", "key_rgb", "key_energy", "key_dir", "rim_rgb", "rim_energy", "rim_dir",
+                   "back_rgb", "back_energy", "back_dir", "bounce_rgb", "bounce_energy", "bounce_dir")
 
 
 def ship_light_problems(layout: dict[str, Any], views: set[str]) -> list[str]:

@@ -208,7 +208,8 @@ def ship_light(layout: dict, sid: str | None = None) -> dict | None:
         return None
     sid = sid or sh["set"]
     s = dict(sh["sets"][sid])
-    s["key_dir"], s["rim_dir"] = _dir(*s["key_dir"]), _dir(*s["rim_dir"])
+    for k in ("key", "rim", "back", "bounce"):
+        s[f"{k}_dir"] = _dir(*s[f"{k}_dir"])
     s.update({"id": sid, "probe": sh["probe"]})
     return s
 
@@ -240,7 +241,11 @@ def light_request(layout: dict, mood: str, trial: str | None = None, ship: str |
             doors.append([h["x0"] + li["door_off"] if side == "W" else h["x1"] - li["door_off"], y, u])
     m.update({"pendants": [[x, z] for x in li["pendants_x"] for z in li["pendants_z"]], "strips": strips,
               "doors": doors, "corridor": li["corridor"], "probes": li["probes"],
-              "window": li.get("window", []), "window_tilt": li.get("window_tilt", 0.0)})
+              "window": li.get("window", []), "window_tilt": li.get("window_tilt", 0.0),
+              "fixtures_below": li["fixtures_below"], "earth_specular": li["earth_specular"],
+              "window_specular": li["window_specular"]})
+    if "wash" in li:   # step 5a3: the north wall's wash behind the ship
+        m["wash"] = li["wash"]
     sl = ship_light(layout, ship)
     if sl is not None:
         m["ship"] = sl
@@ -339,7 +344,8 @@ def scene_request(layout: dict, out: Path, place: list, ship_report: dict) -> tu
     collide = [p["id"] for p in layout["pieces"] if p["collide"]]
     req = {"pieces": pieces, "place": places}
     if pk.get("use"):   # step 5a: the ship's package instead of its pieces (hall.gd _ship_package)
-        req["ship_package"] = {"scene": stage_package(pk), "at": [ox, oy, oz], "free": pk.get("free", [])}
+        req["ship_package"] = {"scene": stage_package(pk), "at": [ox, oy, oz], "free": pk.get("free", []),
+                              "keep": pk["keep"]}
     return req, staged, {"bounds": bounds, "collide": collide}
 
 
