@@ -38,6 +38,8 @@ var _far: float = 400.0          # the camera's far plane (step 4c: past the Ear
 var _env: Environment
 var _rig: Node3D                 # step 4: the light rig of the current mood (rebuilt per mood)
 var _pkg_info: Dictionary = {}   # step 5a: the ship package's freed nodes, jaws, colliders and lights
+var _gen: int = PackedScene.GEN_EDIT_STATE_DISABLED   # step 5b: export_scene.gd instantiates in edit state
+var _hide_freed: bool = false    # step 5b: [ship.package] free hidden and disabled instead (a packed scene keeps no removal)
 var _emissive: Array = []        # step 4: [mesh, surface, its material, is the ship] of the lens, strip, ring, lamp and the ship's glow surfaces
 
 
@@ -205,7 +207,7 @@ func _build() -> void:
 	hall.name = "Lobby"
 	root.add_child(hall)
 	for p: Array in _req["place"]:
-		var node: Node3D = _scene(p[0]).instantiate() as Node3D
+		var node: Node3D = _scene(p[0]).instantiate(_gen) as Node3D
 		node.name = "%s_%d" % [p[0], hall.get_child_count()]
 		node.position = _v(p[1])
 		node.rotation_degrees.y = float(p[2])
@@ -225,7 +227,7 @@ func _ship_package(hall: Node3D, pk: Dictionary) -> void:
 	if scn == null:
 		_fail("cannot load %s" % pk["scene"])
 		return
-	var ship: Node3D = scn.instantiate() as Node3D
+	var ship: Node3D = scn.instantiate(_gen) as Node3D
 	ship.name = "ship_pkg"
 	ship.position = _v(pk["at"])
 	var freed: Array = []
@@ -236,27 +238,27 @@ func _ship_package(hall: Node3D, pk: Dictionary) -> void:
 			_fail("ship package: no node %s" % parts[0])
 			return
 		if parts.size() == 1:
-			n.get_parent().remove_child(n)
-			n.free()
+			_drop(n)
 			freed.append(f)
 			continue
 		var k: int = 0
 		for c: Node in n.get_children():
 			if c.is_class(parts[1]):
-				n.remove_child(c)
-				c.free()
+				_drop(c)
 				k += 1
 		freed.append("%s x%d" % [f, k])
 	# step 5a3: only the ship itself may stay; any other top-level node of the package (a new scenery group, a sky,
 	# a camera, a sun) fails the run instead of drawing into the hall
 	var kept: Array = []
 	for c: Node in ship.get_children():
+		if c.has_meta("lobby_dropped"):
+			continue
 		kept.append(String(c.name))
 		if not (pk["keep"] as Array).has(String(c.name)):
 			_fail("ship package: %s is left (not in [ship.package] keep)" % c.name)
 			return
 	for cls: String in ["WorldEnvironment", "Camera3D", "DirectionalLight3D", "GPUParticles3D", "Decal"]:
-		var left: Array = ship.find_children("*", cls, true, false)
+		var left: Array = ship.find_children("*", cls, true, false).filter(func(x: Node) -> bool: return not x.has_meta("lobby_dropped") and not (x.get_parent() != null and x.get_parent().has_meta("lobby_dropped")))
 		if not left.is_empty():
 			_fail("ship package: a %s is left (%s)" % [cls, left[0].name])
 			return
@@ -274,6 +276,8 @@ func _ship_package(hall: Node3D, pk: Dictionary) -> void:
 	var stack: Array = [ship]
 	while not stack.is_empty():
 		var n: Node = stack.pop_back()
+		if n.has_meta("lobby_dropped"):   # step 5b: the switched-off clearing keeps its own
+			continue
 		stack.append_array(n.get_children())
 		if n is CollisionShape3D and (n as CollisionShape3D).shape != null:
 			colliders += 1
@@ -284,6 +288,22 @@ func _ship_package(hall: Node3D, pk: Dictionary) -> void:
 	_pkg_info = {"freed": freed, "kept": kept, "jaws": jaws, "colliders": colliders, "lights": lights}
 	_placed["ship_pkg"] = [ship]
 	print("LOBBY ship package: %s" % JSON.stringify(_pkg_info))
+
+
+## A freed node of the package (step 5a), or in the export (step 5b, _hide_freed) the same node switched off by
+## overrides a packed scene can keep: hidden, its processing and physics disabled (a StaticBody3D's disable_mode
+## removes it from the world), a WorldEnvironment's environment cleared.
+func _drop(n: Node) -> void:
+	if not _hide_freed:
+		n.get_parent().remove_child(n)
+		n.free()
+		return
+	n.set_meta("lobby_dropped", true)
+	if n is Node3D:
+		(n as Node3D).visible = false
+	if n is WorldEnvironment:
+		(n as WorldEnvironment).environment = null
+	n.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 ## A piece's bounds at its origin (its meshes' AABBs) and its colliders.
@@ -441,6 +461,8 @@ func _environment() -> void:
 func _apply_earth(e: Dictionary) -> void:
 	for k: String in e["textures"]:
 		var path: String = e["textures"][k]
+		if not _textures.has(path) and path.begins_with("res://"):   # step 5b: the package's imported textures
+			_textures[path] = load(path) as Texture2D
 		if not _textures.has(path):
 			var img: Image = Image.load_from_file(path)
 			if img == null:
@@ -795,6 +817,8 @@ func _apply_light(l: Dictionary) -> void:
 	for top: Node in _placed.get("ship_pkg", []):
 		for n: Node in top.find_children("*", "Light3D", true, false):
 			var lt: Light3D = n as Light3D
+			if lt.has_meta("lobby_dropped"):
+				continue
 			if not lt.has_meta("lobby_e0"):
 				lt.set_meta("lobby_e0", lt.light_energy)
 			lt.light_energy = float(lt.get_meta("lobby_e0")) * float(l["ship_lights"])
@@ -920,6 +944,8 @@ func _emit(l: Dictionary) -> void:
 				var stack: Array = [top]
 				while not stack.is_empty():
 					var n: Node = stack.pop_back()
+					if n.has_meta("lobby_dropped"):
+						continue
 					stack.append_array(n.get_children())
 					if not n is MeshInstance3D or (n as MeshInstance3D).mesh == null:
 						continue

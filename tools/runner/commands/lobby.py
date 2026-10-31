@@ -53,6 +53,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--no-video", action="store_true", help="with --earth-route: only the stills")
     parser.add_argument("--snow-grid", type=Path, metavar="DIR",
                         help="step 5a6: the snow strengths ([earth.snow] sets) in [earth.snow] grid's views into DIR")
+    parser.add_argument("--export", type=Path, metavar="DIR",
+                        help="the game-ready package into DIR, its headless check and three views beside --shoot's (step 5b)")
+    parser.add_argument("--no-compare", action="store_true", help="with --export: no off-screen views")
     parser.add_argument("--out", type=Path, help="the pieces' folder (default <raw>/<layout raw_dir>/pieces)")
 
 
@@ -160,8 +163,55 @@ def run(args: argparse.Namespace) -> int:
         code = earth_route(layout, out, place, args.earth_route.resolve(), args.distance, not args.no_video)
         if code:
             return code
+    if args.export:
+        code = export(layout, out, place, args.export.resolve(), not args.no_compare)
+        if code:
+            return code
     if args.video:
         return video(layout, out, place, args.video.resolve())
+    return 0
+
+
+def export(layout: dict, out: Path, place: list, folder: Path, compare: bool = True) -> int:
+    """Step 5b: the game-ready package (lobby_export.py, _lobby_export.py; docs/lobby.md "The export") into folder,
+    then its check on the package opened as its own project beside a copy of the ship package; `compare` adds the
+    three views beside the shots of `lobby --shoot` in <raw_dir>/shots."""
+    from .. import lobby_export
+    from . import _lobby_export
+    req, staged, _want = scene_request(layout, out, place, lobby_layout.ship_report(layout))
+    rv = layout["review"]
+    req.update({"background": rv["background"], "views": [], "top": rv["top"], "compare": [],
+                "earth": earth_request(layout, layout["earth"]["variant"])["earth"],
+                "light": light_request(layout, layout["light"]["mood"])["light"]})
+    earth = {Path(p).name: Path(p) for p in req["earth"]["textures"].values()}
+    folder.mkdir(parents=True, exist_ok=True)
+    built = _lobby_export.scene(layout, req, staged, folder, _stage)
+    pk = layout["ship"]["package"]
+    ship_src = common.raw_dir() / pk["dir"]
+    ship_meta = json.loads((ship_src / "package.json").read_text(encoding="utf-8"))
+    try:
+        summary = lobby_export.write(layout, out, built, _godot.PROJECT, earth, ship_meta, pk["dir"], folder)
+    except ValueError as e:
+        raise common.Failure(f"lobby --export: {e}")
+    common.say(f"  package: {len(summary['files'])} files, {summary['bytes'] / 1e6:.1f} MB in {folder.as_posix()}")
+    n = _lobby_export.ship_copy(ship_src, folder)
+    common.say(f"  the ship package's {n} files copied beside it for the check ({pk['dir']}; not the lobby's files)")
+    problems, got = _lobby_export.check(layout, out, folder)
+    shots: dict = {}
+    if compare:
+        more, shots = _lobby_export.compare(layout, folder, raw(layout) / "shots")
+        problems += more
+    report = {"package": {k: summary[k] for k in ("name", "version", "scene", "root", "bytes")},
+              "files": len(summary["files"]), "load": got, "shots": shots, "problems": problems}
+    (folder / _lobby_export.CHECK_DIR / "report.json").write_text(json.dumps(report, indent=1), encoding="utf-8",
+                                                                  newline="\n")
+    for p in problems:
+        common.say(f"  {p}")
+    if problems:
+        common.bad(f"lobby --export: {len(problems)} problems ({folder.as_posix()})")
+        return 1
+    common.ok(f"lobby --export: {len(summary['files'])} files, {summary['bytes'] / 1e6:.1f} MB, the check holds"
+              + (f", {len(shots)} views beside --shoot's" if shots else "") + f" ({folder.as_posix()})")
     return 0
 
 
