@@ -14,8 +14,13 @@ wrist_thick_ratio = 0.86  # the joint's thickness / the forearm's (flatter towar
 taubin = 80               # relaxation rounds on the band (the neck, the lump and the uneven rows go)
 # the checks (alien_hand_run.py fails above them)
 row_gap_max_mm = 4.5      # reported, not failed (moving keeps the vertex count): the largest gap between the band's vertices along the arm within +-0.3 of the joint
-fold_max_mm = 2.0         # the deepest fold of the sections from -0.22 to +0.45 bent 30 degrees each way (the crease)
+fold_max_mm = 2.0         # the deepest fold bent 30 degrees each way (the crease): sections square to the forearm at -15 mm, to the bisector at -7.5/0/+7.5, to the bent hand at +15/+30 (alien_hand_run.PLANES)
 taper_monotone = true     # the band's width falls from the forearm to the joint and rises into the palm
+
+[rings]                   # H1c: new rows on the wrist (a topology change; alien_hand_mesh.py rings)
+band = [-0.75, 0.62]      # every skin edge between these shares of the Hand bone from the wrist is cut
+cuts = 1                  # cuts per edge (the grid: 2 cuts gave nothing more)
+smooth = 8                # rounds smoothing the LowerArm/Hand split across the band only (24 raised the up-bend fold)
 
 [fingers]
 root_at = 0.18            # where the root radius is measured, past the knuckle

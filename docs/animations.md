@@ -1546,6 +1546,19 @@ about 5 mm (6.3 before); more rows need new vertices, which breaks the index-bas
 clothes' fits): a later choice. The relaxed grip curls more from the index to the outer finger with the thumb alongside
 the index; the loose fist curls more toward the outer finger with the thumb laid over the index.
 
+**The wrist rings (H1c).** `alien_hand_mesh.py rings --spec hand_dims.toml` cuts every skin edge of the band
+(`[rings]`: -0.75 to +0.62 Hand lengths from the wrist, one cut) with bmesh: the new vertices sit on the old surface
+(the rest shape does not change), their weights, UVs and shape keys interpolated, appended after the old vertices, so
+every old index and position stays and index-based steps that only read old vertices keep working; then the
+LowerArm/Hand split is smoothed across the band only (8 rounds; 24 raised the up-bend's fold, 2 cuts gave nothing
+more). A11 and B13 do not share a topology (10262 and 10198 vertices), so each body gets its own cut (about 800 new
+vertices) and a dressed character takes its body's cut by rest position (`--edges-in`). `alien_hand_mesh.py diff`
+checks the whole body: per object over the old indices, the largest move and weight change outside the hand region
+(0). The fold is measured on six sections, each square to its own segment: the forearm behind the joint (-15 mm),
+the bisector through it (-7.5, 0, +7.5) and the bent hand past it (+15, +30). H1b sliced the palm parallel to the
+bisector, which cut the rigid palm at a slant through the thumb's cleft and read it as a 4 mm crease.
+`alien_hands.py --video` shows the hand in Walk and Jog from the front and from its side, before | after.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]

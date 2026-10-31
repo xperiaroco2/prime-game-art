@@ -396,7 +396,12 @@ def main() -> int:
     ap.add_argument("--grid", default="1:8", help="rings: cuts:smoothing-rounds variants, comma separated")
     ap.add_argument("--dump-dir", default="", help="rings: a dump per variant (with --bend)")
     ap.add_argument("--band", default="-0.75,0.62", help="rings: the band from,to in Hand lengths from the wrist")
+    ap.add_argument("--spec", default="", help="rings: hand_dims.toml; its [rings] band, cuts and smooth win")
     a = ap.parse_args(argv)
+    if a.spec:
+        import tomllib
+        rg = tomllib.loads(Path(a.spec).read_text())["rings"]
+        a.band, a.grid = ",".join(str(x) for x in rg["band"]), f"{rg['cuts']}:{rg['smooth']}"
     if a.mode == "diff":
         return diff(a.blend, a.other, a.out)
     if a.mode == "rings":
