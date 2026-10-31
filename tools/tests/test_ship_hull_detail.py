@@ -321,7 +321,7 @@ class ShipHullDetailTest(unittest.TestCase):
             # POD_SEGS corners); the bell's and the throat's caps z-fought in one plane over the whole nozzle
             parts = D.nozzle_pod(args, LAYOUT) + D.pod_ring(args, LAYOUT)
             for p in parts:
-                if p["name"] in ("pod_bell", "pod_throat", "pod_band", "pod_inner_ring"):
+                if p["name"] in ("pod_bell", "pod_throat", "pod_band", "pod_rings"):
                     self.assertFalse([f for f in p["faces"] if len(f) >= D.POD_SEGS], p["name"])
 
     def test_merged_plate_pieces_stay_convex(self) -> None:

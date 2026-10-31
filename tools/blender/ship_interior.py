@@ -336,8 +336,8 @@ def wall_panel(args, layout):
 
 
 def flat_panel(args, layout):
-    """inside-1: a station's flat chord over two hall facets (3.12 m): a PLAIN centre panel 2 x `plain` wide (a
-    station hangs flat on it later: no relief, no trunk) between two narrow diamond panels, the soffit closing the
+    """inside-1: a station's flat chord over two hall facets (3.12 m): a centre panel 2 x `plain` wide (a station
+    hangs on it; polish n2: a relief bay, `relief`, its field flat for the station) between two narrow diamond panels, the soffit closing the
     ceiling's rim behind the chord."""
     hw, h, pl = args["half"], args.get("height", H_HALL), args.get("plain", 0.8)
     apo = args.get("apo", HC)   # rebuild A: the chord's apothem (a socket's flat is narrower than two facets)

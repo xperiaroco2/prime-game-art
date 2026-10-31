@@ -2019,8 +2019,9 @@ A fresh critic's findings on the b4 package (art #263); note `D:/prime-art-raw/s
 - **The closed nose's glare** was no leak: `test_ship_jaw` casts its seal rays and the closed jaws are shut. `ship.gd`
   `_dress` makes the glow cells' lights in the saved pose (open), so a closed view left the deck tip's cyan light
   (lights.json `(0, 0.48, -12.07)`) 0.5 m over the path in front of the shut nose. `_jaw_bind` keeps a cell lit
-  only by one jaw piece in that jaw's frame and `_jaw_turn` moves it with the jaw. The package's `Lights` still stand
-  in the saved pose (the lobby zeroes them); `export_scene.gd` strips the binding's metas.
+  only by one jaw piece in that jaw's frame and `_jaw_turn` moves it with the jaw. In the package,
+  `export_scene.gd` reparents each such light under its jaw piece (under `Nose`), so the game's `Nose` clips carry it,
+  and strips the binding's metas.
 - **The mouth ceiling's bars** are `glow_cyan__jaw_ceil` (half glow_cyan's strength, light `l` 0.3): the clamp's
   2.4 clipped the throat's ceiling white.
 - **The hall's flats** (`flat_panel`) and the vault door wall's sides are relief bays (`ship_interior.relief`): a
