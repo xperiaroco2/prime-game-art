@@ -106,6 +106,8 @@ tools/run.sh lobby --earth-video <raw>/lobby/hall/v7/earth-video  # step 4c: one
 tools/run.sh lobby --ship-grid <raw>/lobby/hall/v9/sgrid           # step 5a2: the ship's light sets K1-K3
 tools/run.sh lobby --snow-grid <raw>/lobby/hall/v13/snow-grid      # step 5a6: the snow strengths N1-N3
 tools/run.sh lobby --earth-video <raw>/lobby/hall/v13/earth-video --distance D2   # step 5a6: one distance only
+tools/run.sh lobby --earth-route <raw>/lobby/hall/v14/earth-route --no-video   # step 5a7: the route's stills sheet
+tools/run.sh lobby --earth-route <raw>/lobby/hall/v14/route-F48 --distance F48 # step 5a7: one distance's walk MP4
 ```
 
 `--build`, `--godot` and `--shoot` are heavy runs (Blender, Godot; one at a time): agents start them in the background.
@@ -768,8 +770,45 @@ R < 1.1 B, the moonlit clouds included, which no set changes; blue px: B > 1.4 R
 From the spawn N1 and N2 keep step 5a5's look (L and the blue sea's share unchanged); N3 darkens the land there too.
 In corner_nw the grey patches that stay even in N3 are the moonlit clouds (`cloud_energy` 0.05), not snow.
 
+## Step 5a7: the Earth far away
+
+The engineer (2026-10-31) rejected the near Earth: at D2 (a sphere of 185.8 m, 250 m from the spawn's eye, its near
+side about 64 m behind the glass) the planet changed scale with the viewpoint, a whole arc from the spawn, its surface
+filling the window from the north-west corner. His pick: a planet far away, as from orbit: the same planet, angular
+size, horizon height and direction from every point of the hall, the window only framing a different part of it.
+Raw `lobby/hall/v14` (the pieces copied from v13, unchanged).
+
+- **The far mode** (`earth_object.gdshader` `far_mode`, `far_eye`): every ray starts at `far_eye` (`[earth] far_eye`,
+  the spawn's eye (0, 1.65, 2.5), spawn_eye's place) whatever the camera's place, and `vertex()` moves the shell by
+  (camera - `far_eye`), so it covers the same directions from everywhere: the planet sits at infinity, no far plane or
+  precision change (the shell stays 250 m round the eye; the far plane as D2's, 601 m). The ray's direction is the
+  camera's own. Every look setting stays (the cap, `[earth.look]`, the snow set N2, the dawn glow, E2's frame); the
+  sky's cubemap pass still draws E2 at infinity for the probes and reflections.
+- **Two far distances** in `[earth.distances]` (`far = true`; `distance_m` only sizes the shell): **F48** D2's sphere
+  (E2's 48 deg), so from the spawn it is D2 as approved; **F36** a radius for 36 deg at the same centre, its sun
+  turned toward the centre so it stays 1.5 deg behind the smaller limb (the dawn glow kept; `lobby_layout.earth_object`
+  gives the object its own `sun_dir`). **`distance = "F48"`** the default for now; D1-D3 stay for comparison.
+- **The route** (`[earth.route]`, `lobby --earth-route DIR [--distance ID] [--no-video]`): a 30.1 s walk at 1.6 m
+  looking at the window, round the ship's west side to the north-west corner (-17, -27), back to the glass at (6, 13),
+  along it to (16, 10), round the east side to the arch's mouth (0, -28.3); one `route_<id>.mp4` per distance (the
+  [video] size and fps, 1280 x 720). Stills from `points` into `grid.png`, a row per point (spawn, corner_nw, glass,
+  arch) and a column per distance (the grid's `rows = "views"`), and `parallax.json`: the pair `par_spawn` (0, 2.5) and
+  `par_glass` (16, 10) look in one direction (due south, 15 deg up) with the hall hidden; hall.gd scans the limb's row
+  per 32 px column and the runner turns the rows' difference into degrees.
+
+| | the limb across the hall (par_spawn vs par_glass) | GPU ms spawn / corner_nw / glass / arch |
+|---|---|---|
+| D2 | median 3.33 deg, max 12.0 deg (60 columns) | 2.59 / 3.72 / 1.98 / 3.90 |
+| F48 | 0.000 / 0.000 deg (60 columns) | 2.59 / 3.96 / 1.98 / 3.93 |
+| F36 | 0.000 / 0.000 deg (46 columns) | 2.37 / 3.72 / 1.95 / 3.90 |
+
+From the spawn F48 draws D2's picture. F36 sits lower: from the spawn its limb arcs inside the window's upper panes,
+from corner_nw its horizon shows in the window's slit (F48 there shows only the surface and cities). From the arch's
+mouth at eye height the ship's nose, 1.3 m ahead, hides the window for every distance.
+
 ## Open problems
 
+- Step 5a7: the engineer picks F48 or F36 (`[earth] distance`). From the arch's mouth the ship hides the window.
 - Step 5a3: the back light leaves a hot spot on the deck's middle in `c_back` (0.77; `back_energy` 0.5 is the
   knob), and the warm bounce reads copper-orange on the undersides in `a_entrance` (`bounce_energy` 0.22).
 - Step 5a5: corner_nw's Earth fixed by the night look (snow under the moon, the cities' halos); the GPU cost of the
