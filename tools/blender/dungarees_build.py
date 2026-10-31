@@ -211,9 +211,6 @@ def main() -> None:
     ap.add_argument("--panel-bone", default="Chest",
                     help="the bib, pocket, back panel and the straps' ends on this bone alone (rigid); '' = her blend")
     ap.add_argument("--band-bone", default="Spine", help="the waistband on this bone alone (rigid); '' = her blend")
-    ap.add_argument("--back-u-power", type=float, default=3.0,
-                    help="the back's top: centre + 3 cm * (|x| / the straps' inner edge) ** this (1 = the drawing's V; "
-                         "the spec's back_top_z: a shallow U, lowest at the centre)")
     ap.add_argument("--strap-sh-share", type=float, default=1.0,
                     help="the straps' middle: this share of her shoulder's weights, the rest the panel bone's")
     a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -436,7 +433,7 @@ def main() -> None:
             u = -1 + 2 * i / (nk - 1)
             xt = u * d["back_top_w"] / 2
             ax = abs(xt)
-            top_z = kt + 0.03 * min(1.0, ax / xs_in) ** a.back_u_power
+            top_z = kt + 0.03 * min(1.0, ax / xs_in)   # the drawing's shallow V
             z = bbz + 0.0002 + v * (top_z - bbz - 0.0002)
             hw = d["back_bottom_w"] / 2 + (d["back_top_w"] - d["back_bottom_w"]) / 2 * (z - bbz) / (corner - bbz)
             x = u * hw
