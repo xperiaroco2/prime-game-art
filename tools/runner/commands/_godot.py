@@ -515,9 +515,14 @@ def evaluate(dump: dict[str, Any], expect: dict[str, Any], contract: dict[str, A
                   f"{len(ALIEN_CLIPS) - len(lack_c)} of the shared alien body's {len(ALIEN_CLIPS)} clips"
                   + (f"; missing bones {lack_b}" if lack_b else "") + (f"; no vertex weighted to {lack_w}" if lack_w else "") + (f"; missing clips {lack_c}" if lack_c else ""))
         else:
-            c.add("pack_floor", len(got) >= PACK_BONES and len(anims) >= PACK_ANIMATIONS,
+            ok = len(got) >= PACK_BONES and len(anims) >= PACK_ANIMATIONS
+            weighted = contract.get("skeleton", {}).get("weighted", [])
+            alien_rig = bool(weighted) and all(renamed.get(b, b) in got for b in weighted)
+            c.add("pack_floor", ok,
                   f"{len(got)} bones and {len(anims)} animations (the Ultimate Modular rig has {PACK_BONES} bones and "
-                  f"{PACK_ANIMATIONS} actions)")
+                  f"{PACK_ANIMATIONS} actions)" + ("" if ok or not alien_rig else
+                  "; the rig has the contract skeleton's bones, not the pack's: an alien character takes "
+                  "--profile alien (its own floor)"))
     return c.items
 
 

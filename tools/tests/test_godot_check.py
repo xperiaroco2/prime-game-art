@@ -248,6 +248,15 @@ class AlienProfileTest(unittest.TestCase):
         for k in ("facing_plus_z", "eye_pupils", "pack_floor"):
             self.assertEqual(got[k]["status"], "fail", got[k])
 
+    def test_the_pack_floor_points_an_alien_rig_to_its_profile(self) -> None:
+        # H1f: a 59-bone alien (no gill springs) checked without --profile alien failed pack_floor with no hint
+        d = alien_dump()
+        d["skeletons"][0]["bones"] = d["skeletons"][0]["bones"][:59]
+        got = alien(d, profile="pack")["pack_floor"]
+        self.assertEqual(got["status"], "fail", got)
+        self.assertIn("--profile alien", got["detail"])
+        self.assertEqual(alien(d)["pack_floor"]["status"], "pass", alien(d)["pack_floor"])
+
     def test_an_alien_facing_backwards_fails(self) -> None:
         d = alien_dump()
         d["meshes"][0]["eye_tones"]["eye_mid"][2] = -0.1  # the eyes behind the Head joint: it faces -Z
