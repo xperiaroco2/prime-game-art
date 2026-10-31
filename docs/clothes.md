@@ -913,11 +913,15 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
     [--probe <build probe.json>] [--motion <motion.json>]
 ```
 
-- **Spec numbers** (`garment_drawing.measure_build`): every spec size on the build against its `tol_cm`. A size it
-  cannot measure (a part the build lacks, a measure not written yet: the pocket, the side buttons, the buckle's
-  diameter on d79) counts as unmeasured, and Gate 2 does not pass with an unmeasured number. `measure_build` reads
-  some sizes from `dress.json` (the cuff ring, the buckles, the back panel's outline): a new build route must write
-  them or `measure_build` must measure them on the mesh.
+- **Spec numbers** (`garment_drawing.measure_build`): every spec size on the build against its `tol_cm`. The
+  hardware and the pocket are measured on the mesh (`garment_drawing.mesh_hardware`): a button is a connected piece of
+  at most `hardware_max_verts` vertices and 3 cm across, its diameter the disc's (`garment_spec.disc_size`: the
+  widest width across its thinnest direction); the buckle buttons sit in front over the band's top + 5 cm, the side
+  buttons over 6 cm off the centre near the band's top; the pocket is a `*pocket*` material's triangles, else a
+  piece on the bib's front. A part looked for and not there (d79's pocket is texture only; its bib ends under her
+  bust, so no bust stand-off) is **absent**, a failure; a size with no measure written counts as unmeasured, and
+  Gate 2 does not pass with either. `measure_build` still reads some sizes from `dress.json` (the cuff ring, the
+  band's height, the back panel's outline): a new build route must write them or they must be measured on the mesh.
 - **Silhouettes** (`garment_gate2.py`, plain Python): per view the build's garment as seen (z-buffered against her
   body, the shirt and the shoes), drawn at the concept's scale by her landmark rows (`garment_drawing.concept_map`; in
   front and back the legs moved onto the concept's leg lines, as the drawing does), against the concept's garment

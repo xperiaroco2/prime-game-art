@@ -314,8 +314,10 @@ def measure_build(spec: dict, probe: dict, dress: dict, body: S.Sections, shirt:
     g = S.Sections(probe, ["garment"])
     res = {}
 
-    def put(k, v, how):
+    def put(k, v, how, absent=False):
         res[k] = {"cm": None if v is None else round(v, 2), "how": how}
+        if absent:
+            res[k]["absent"] = True   # looked for on the mesh and not there: a failure, never "unmeasured"
     front_pts = [p for p in g.pts if abs(p[0]) < 0.06 and p[1] < -0.09]
     bt = max(p[2] for p in front_pts) * 100
     put("bib_top_z", bt, "highest garment vertex within 6 cm of the centre front")
@@ -336,24 +338,40 @@ def measure_build(spec: dict, probe: dict, dress: dict, body: S.Sections, shirt:
         b = [q for q in body.at(z / 100) if abs(q[0]) < 0.05 and q[1] < 0]
         return (min(q[1] for q in b) - min(q[1] for q in a)) * 100 - shirt if a and b else None
     put("bib_standoff_top", gap(bt - 1.0), "her front + 0.5 cm shirt to the garment's front at the centre, 1 cm under the bib top")
-    put("bib_standoff_bust", gap(lm["bust"]), "the same at her bust peak's height" if bt > lm["bust"]
-        else f"none: the bib's top ({bt:.1f}) is under her bust peak ({lm['bust']:.1f})")
-    for k in ("pocket_top_z", "pocket_bottom_z", "pocket_w"):
-        put(k, None, "the pocket is texture only on d79")
+    if bt > lm["bust"]:
+        put("bib_standoff_bust", gap(lm["bust"]), "the same at her bust peak's height")
+    else:
+        put("bib_standoff_bust", None, f"absent: the bib's top ({bt:.1f}) is under her bust peak ({lm['bust']:.1f})",
+            absent=True)
+    hw = mesh_hardware(spec, probe, bt, band)
+    pk = hw["pocket"]
+    if pk:
+        put("pocket_top_z", pk["top"] * 100, pk["how"] + ": its top")
+        put("pocket_bottom_z", pk["bottom"] * 100, pk["how"] + ": its bottom at the centre (|x| < 1 cm)")
+        put("pocket_w", pk["w"] * 100, pk["how"] + ": its width")
+    else:
+        for k in ("pocket_top_z", "pocket_bottom_z", "pocket_w"):
+            put(k, None, "absent: no pocket on the mesh (no 'pocket' material, no piece on the bib)", absent=True)
     sw = [q for q in g.at(1.25) if q[1] < 0 and 0.05 < q[0] < 0.16]
     put("strap_w", (max(q[0] for q in sw) - min(q[0] for q in sw)) * 100 if sw else None,
         "her left strap's front, section at 125 cm")
     put("strap_x", (max(q[0] for q in sw) + min(q[0] for q in sw)) / 2 * 100 if sw else None, "its centre")
-    bk = dress["straps"]["buckles"]["pieces"]
-    btn = [p["at"] for p in bk if p["kind"] == "button"]
-    put("buckle_z", sum(p[2] for p in btn) / len(btn) * 100, "dress.json buckle buttons' mean height")
-    put("buckle_d", None, "not recorded")
+    bb = hw["buckle_buttons"]
+    how = f"{len(bb)} button pieces on the mesh, in front over the band's top + 5 cm"
+    put("buckle_z", sum(b["z"] for b in bb) / len(bb) * 100 if bb else None, how + ": mean centre height",
+        absent=not bb)
+    put("buckle_d", sum(b["d"] for b in bb) / len(bb) * 100 if bb else None, how + ": mean disc diameter",
+        absent=not bb)
     put("waistband_top_z", band, "highest garment vertex 12-15 cm off the centre, in front, under 105 cm")
     put("waistband_h", dress["straps"]["waistband"]["height_m"] * 100, "dress.json straps.waistband.height_m")
     t = S.trunk_x(g, (band - 1) / 100)
     put("waistband_w", (t[1] - t[0]) * 100 if t else None, "garment section 1 cm under the band's top")
-    put("side_button_z", None, "no side buttons on d79")
-    put("side_button_d", None, "no side buttons on d79")
+    sb = hw["side_buttons"]
+    how = f"{len(sb)} button pieces on the mesh, |x| over 6 cm, 10 cm under to 3 cm over the band's top"
+    put("side_button_z", sum(b["z"] for b in sb) / len(sb) * 100 if sb else None, how + ": mean centre height",
+        absent=not sb)
+    put("side_button_d", sum(b["d"] for b in sb) / len(sb) * 100 if sb else None, how + ": mean disc diameter",
+        absent=not sb)
     o = dress["back_bib"]["outline"]
     put("back_top_z", o["z_v"] * 100, "dress.json back_bib outline z_v (the V's bottom)")
     put("back_top_w", 2 * o["hw_t"] * 100, "2 x outline hw_t")
@@ -374,12 +392,58 @@ def measure_build(spec: dict, probe: dict, dress: dict, body: S.Sections, shirt:
     return res
 
 
+BUTTON_MAX_CM = 3.0   # a hardware piece no larger than this (box) is a button; buckle rings are larger
+
+
+def mesh_hardware(spec: dict, probe: dict, bib_top_cm: float, band_cm: float, mesh: str = "garment") -> dict:
+    """The hardware and the pocket found on the build's mesh (metres): buttons are pieces of at most the spec's
+    [gate2.classify] hardware_max_verts vertices (60 if none) and BUTTON_MAX_CM across, each with its centre height
+    and disc diameter (S.disc_size); the buckle buttons in front over the band's top + 5 cm, the side buttons over
+    6 cm off the centre within 10 cm under to 3 cm over the band's top. The pocket: the triangles of a material
+    named '*pocket*', else a piece on the bib's front (centred within 4 cm, 5-25 cm wide, between the band's top and
+    the bib's top, 1 cm slack) that is not the garment's largest piece; None when there is none."""
+    hw_max = spec.get("gate2", {}).get("classify", {}).get("hardware_max_verts", 60)
+    g = next((m for m in probe["meshes"] if m["name"] == mesh), None)
+    res = {"buckle_buttons": [], "side_buttons": [], "pocket": None}
+    if g is None:
+        return res
+    pieces = S.mesh_pieces(g)
+    bt, band = bib_top_cm / 100, band_cm / 100
+    for p in pieces:
+        ext = max(h - lo for h, lo in zip(p["hi"], p["lo"]))
+        if p["verts"] > hw_max or ext > BUTTON_MAX_CM / 100:
+            continue
+        d, _t, _n = S.disc_size(p["pts"])
+        b = {"z": p["centre"][2], "x": p["centre"][0], "d": d}
+        if p["centre"][1] < 0 and p["centre"][2] > band + 0.05:
+            res["buckle_buttons"].append(b)
+        elif abs(p["centre"][0]) > 0.06 and band - 0.10 <= p["centre"][2] <= band + 0.03:
+            res["side_buttons"].append(b)
+    pts, how = None, ""
+    mi = [i for i, n in enumerate(g["materials"]) if "pocket" in n.lower()]
+    if mi:
+        ids = {v for t in g["tris"] if t[3] in mi for v in t[:3]}
+        pts, how = [tuple(g["vertices"][i]) for i in ids], f"the '{g['materials'][mi[0]]}' triangles"
+    else:
+        for p in pieces[1:]:
+            w = p["hi"][0] - p["lo"][0]
+            if (p["centre"][1] < 0 and abs(p["centre"][0]) < 0.04 and 0.05 <= w <= 0.25
+                    and p["lo"][2] >= band - 0.01 and p["hi"][2] <= bt + 0.01):
+                pts, how = p["pts"], f"a {p['verts']}-vertex piece on the bib"
+                break
+    if pts:
+        mid = [q for q in pts if abs(q[0]) < 0.01] or pts
+        res["pocket"] = {"top": max(q[2] for q in pts), "bottom": min(q[2] for q in mid),
+                         "w": max(q[0] for q in pts) - min(q[0] for q in pts), "how": how}
+    return res
+
+
 def table(spec: dict, meas: dict, tag: str) -> tuple[str, list]:
     rows = []
     for k, d in spec["dims"].items():
         m = meas.get(k, {"cm": None, "how": "not measured"})
         diff = None if m["cm"] is None else round(m["cm"] - d["cm"], 2)
-        ok = S.within(d, m["cm"])
+        ok = False if m.get("absent") else S.within(d, m["cm"])
         rows.append((k, d["cm"], d["tol_cm"], m["cm"], diff, ok, m["how"]))
     md = [f"| dimension | spec cm | tol | {tag} cm | {tag} - spec | within | how |", "|---|---|---|---|---|---|---|"]
     for k, s, t, m, df, ok, how in rows:

@@ -290,3 +290,78 @@ def mm_line(lm: dict) -> str:
 def lean_deg(top_y: float, top_z: float, bottom_y: float, bottom_z: float) -> float:
     """A panel's lean in side view, degrees from vertical; positive: its top stands forward (toward -y)."""
     return math.degrees(math.atan2(bottom_y - top_y, top_z - bottom_z))
+
+
+# --- a mesh's connected pieces and their sizes (Gate 2's hardware and pocket measures) ---------------------------
+
+def mesh_pieces(mesh: dict) -> list[dict]:
+    """A probe mesh's connected pieces (vertices joined by triangles): per piece its vertex count, its points, the
+    names of its triangles' materials, its box (lo, hi) and centre, largest first."""
+    vs = mesh["vertices"]
+    parent = list(range(len(vs)))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    mats: dict[int, set] = {}
+    for t in mesh["tris"]:
+        for a, b in ((t[0], t[1]), (t[1], t[2])):
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[ra] = rb
+    for t in mesh["tris"]:
+        mats.setdefault(find(t[0]), set()).add(mesh["materials"][t[3]] if t[3] < len(mesh["materials"]) else "")
+    groups: dict[int, list] = {}
+    for i in range(len(vs)):
+        groups.setdefault(find(i), []).append(i)
+    out = []
+    for root, ids in groups.items():
+        pts = [tuple(vs[i]) for i in ids]
+        lo = tuple(min(p[k] for p in pts) for k in range(3))
+        hi = tuple(max(p[k] for p in pts) for k in range(3))
+        out.append({"verts": len(ids), "pts": pts, "materials": sorted(mats.get(root, ())), "lo": lo, "hi": hi,
+                    "centre": tuple((a + b) / 2 for a, b in zip(lo, hi))})
+    return sorted(out, key=lambda p: -p["verts"])
+
+
+def _width(pts, d) -> float:
+    s = [p[0] * d[0] + p[1] * d[1] + p[2] * d[2] for p in pts]
+    return max(s) - min(s)
+
+
+def disc_size(pts, steps: int = 90) -> tuple[float, float, tuple[float, float, float]]:
+    """A button's (disc's) diameter, thickness and axis from its points: the axis is the direction of least width
+    (sampled over the half sphere every 180/steps degrees, then refined around the best), the diameter the largest
+    width across it (every 180/steps degrees). Units as the points'."""
+    def unit(th, ph):
+        return (math.sin(th) * math.cos(ph), math.sin(th) * math.sin(ph), math.cos(th))
+    best = None
+    for i in range(steps // 2 + 1):
+        th = math.pi / 2 * i / (steps // 2)
+        for j in range(max(1, int(steps * 2 * math.sin(th)))):
+            ph = 2 * math.pi * j / max(1, int(steps * 2 * math.sin(th)))
+            w = _width(pts, unit(th, ph))
+            if best is None or w < best[0]:
+                best = (w, th, ph)
+    w, th, ph = best
+    step = math.pi / steps
+    for _ in range(3):
+        for a in (-1, 0, 1):
+            for b in (-1, 0, 1):
+                t2, p2 = th + a * step, ph + b * step
+                w2 = _width(pts, unit(t2, p2))
+                if w2 < w:
+                    w, th, ph = w2, t2, p2
+        step /= 3
+    n = unit(th, ph)
+    # two directions across the axis
+    h = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
+    u = (n[1] * h[2] - n[2] * h[1], n[2] * h[0] - n[0] * h[2], n[0] * h[1] - n[1] * h[0])
+    lu = math.sqrt(sum(c * c for c in u))
+    u = tuple(c / lu for c in u)
+    v = (n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2], n[0] * u[1] - n[1] * u[0])
+    d = max(_width(pts, tuple(math.cos(a) * u[k] + math.sin(a) * v[k] for k in range(3)))
+            for a in (math.pi * i / steps for i in range(steps)))
+    return d, w, n

@@ -6,7 +6,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "blender"))
+import garment_drawing as GD  # noqa: E402
 import garment_gate2_geom as G  # noqa: E402
+import garment_spec as S  # noqa: E402
 
 try:
     import numpy  # noqa: F401
@@ -130,6 +132,91 @@ class MotionTest(unittest.TestCase):
         mx, p95 = G.stretch(rest, now, np.array([[0, 1], [1, 2]]))
         self.assertAlmostEqual(mx, 2.0, places=6)
         self.assertLessEqual(p95, mx)
+
+
+
+def disc(cx, cy, cz, r, t, axis, n=10):
+    """A closed disc (two rims and two centres) of radius r and thickness t around axis 'x', 'y' or 'z'."""
+    import math
+    verts, tris = [], []
+    for side in (-t / 2, t / 2):
+        for k in range(n):
+            a = 2 * math.pi * k / n
+            u, v = r * math.cos(a), r * math.sin(a)
+            verts.append({"x": (side, u, v), "y": (u, side, v), "z": (u, v, side)}[axis])
+    verts += [{"x": (s, 0, 0), "y": (0, s, 0), "z": (0, 0, s)}[axis] for s in (-t / 2, t / 2)]
+    for k in range(n):
+        k2 = (k + 1) % n
+        tris += [[k, k2, 2 * n, 0], [n + k, n + k2, 2 * n + 1, 0], [k, k2, n + k, 0], [k2, n + k2, n + k, 0]]
+    return [[cx + p[0], cy + p[1], cz + p[2]] for p in verts], tris
+
+
+def mesh(parts, materials=("cloth",)):
+    vs, ts = [], []
+    for v, t, mi in parts:
+        o = len(vs)
+        vs += v
+        ts += [[a + o, b + o, c + o, mi] for a, b, c, _ in t]
+    return {"name": "garment", "materials": list(materials), "vertices": vs, "tris": ts}
+
+
+def panel(x0, x1, y, z0, z1, n=6):
+    vs = [[x0 + (x1 - x0) * i / n, y, z0 + (z1 - z0) * j / n] for j in range(n + 1) for i in range(n + 1)]
+    ts = []
+    for j in range(n):
+        for i in range(n):
+            a = j * (n + 1) + i
+            ts += [[a, a + 1, a + n + 1, 0], [a + 1, a + n + 2, a + n + 1, 0]]
+    return vs, ts
+
+
+class HardwareTest(unittest.TestCase):
+    def test_pieces(self):
+        m = mesh([(*panel(-0.1, 0.1, -0.1, 0.9, 1.1), 0), (*disc(0.09, -0.11, 1.08, 0.008, 0.004, "y"), 1)],
+                 ("cloth", "bronze"))
+        ps = S.mesh_pieces(m)
+        self.assertEqual([p["verts"] for p in ps], [49, 22])
+        self.assertEqual(ps[1]["materials"], ["bronze"])
+        self.assertAlmostEqual(ps[1]["centre"][2], 1.08, places=6)
+
+    def test_disc_size_any_axis(self):
+        for axis in ("x", "y", "z"):
+            v, _t = disc(0.0, 0.0, 0.0, 0.009, 0.004, axis, n=16)
+            d, th, _n = S.disc_size(v)
+            self.assertAlmostEqual(th, 0.004, delta=2e-4, msg=axis)
+            self.assertAlmostEqual(d, 0.018, delta=4e-4, msg=axis)   # a 16-gon: 0.018 at the corners
+
+    def test_buttons_pocket_and_absent(self):
+        spec = {"gate2": {"classify": {"hardware_max_verts": 60}}}
+        bib = (*panel(-0.11, 0.11, -0.12, 0.92, 1.12), 0)
+        buckles = [(*disc(x, -0.13, 1.10, 0.008, 0.004, "y"), 1) for x in (-0.09, 0.09)]
+        sides = [(*disc(x, -0.04, 0.91, 0.009, 0.004, "x"), 1) for x in (-0.13, 0.13)]
+        pocket = (*panel(-0.07, 0.07, -0.125, 1.0, 1.08, n=3), 0)
+        probe = {"meshes": [mesh([bib, *buckles, *sides, pocket], ("cloth", "bronze"))]}
+        hw = GD.mesh_hardware(spec, probe, 112.0, 93.0)
+        self.assertEqual(len(hw["buckle_buttons"]), 2)
+        self.assertEqual(len(hw["side_buttons"]), 2)
+        self.assertAlmostEqual(hw["buckle_buttons"][0]["d"], 0.016, delta=4e-4)
+        self.assertAlmostEqual(hw["side_buttons"][0]["z"], 0.91, places=6)
+        self.assertAlmostEqual(hw["side_buttons"][0]["d"], 0.018, delta=4e-4)
+        self.assertAlmostEqual(hw["pocket"]["w"], 0.14, places=6)
+        self.assertAlmostEqual(hw["pocket"]["top"], 1.08, places=6)
+        self.assertAlmostEqual(hw["pocket"]["bottom"], 1.0, places=6)
+        none = GD.mesh_hardware(spec, {"meshes": [mesh([bib])]}, 112.0, 93.0)
+        self.assertEqual((none["buckle_buttons"], none["side_buttons"], none["pocket"]), ([], [], None))
+
+    def test_pocket_by_material(self):
+        bib = (*panel(-0.11, 0.11, -0.12, 0.92, 1.12), 0)
+        pocket = (*panel(-0.06, 0.06, -0.12, 1.0, 1.06, n=2), 1)
+        hw = GD.mesh_hardware({}, {"meshes": [mesh([bib, pocket], ("cloth", "denim_pocket"))]}, 112.0, 93.0)
+        self.assertAlmostEqual(hw["pocket"]["w"], 0.12, places=6)
+        self.assertIn("denim_pocket", hw["pocket"]["how"])
+
+    def test_absent_is_a_failure(self):
+        spec = {"dims": {"buckle_d": {"cm": 1.6, "tol_cm": 0.3}, "strap_w": {"cm": 3.8, "tol_cm": 0.3}}}
+        meas = {"buckle_d": {"cm": None, "how": "absent", "absent": True}}
+        _md, rows = GD.table(spec, meas, "t")
+        self.assertEqual([r[5] for r in rows], [False, None])
 
 
 if __name__ == "__main__":
