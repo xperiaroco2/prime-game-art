@@ -161,10 +161,14 @@ def earth_tex(layout: dict) -> None:
     out = common.raw_dir() / e["tex_dir"]
     request = common.OUT / "lobby" / "earth_request.json"
     request.parent.mkdir(parents=True, exist_ok=True)
-    request.write_text(json.dumps({"size": e["size"], "quality": e["quality"], "out": out.as_posix(), "maps": maps},
-                                  indent=1), encoding="utf-8", newline="\n")
+    cap = e.get("cap")   # step 5a4: the regional caps cut at full resolution
+    caps = {f"{k}_cap": {"source": maps[k], "lat": cap["lat"], "lon": cap["lon"], "size": size}
+            for k, size in cap["maps"].items()} if cap else {}
+    request.write_text(json.dumps({"size": e["size"], "quality": e["quality"], "out": out.as_posix(), "maps": maps,
+                                   "caps": caps}, indent=1), encoding="utf-8", newline="\n")
     blender.run_script(EARTH_SCRIPT, ["--request", str(request)], timeout=BUILD_TIMEOUT)
-    common.ok(f"lobby --earth-tex: {len(maps)} textures {e['size'][0]} x {e['size'][1]} -> {out.as_posix()}")
+    common.ok(f"lobby --earth-tex: {len(maps)} textures {e['size'][0]} x {e['size'][1]}"
+              + "".join(f", {k} {c['size'][0]} x {c['size'][1]}" for k, c in caps.items()) + f" -> {out.as_posix()}")
 
 
 def _dir(azimuth: float, elevation: float) -> list[float]:
@@ -178,6 +182,9 @@ def earth_request(layout: dict, vid: str, distance: str | None = None) -> dict:
     e = layout["earth"]
     tex = common.raw_dir() / e["tex_dir"]
     files = {k: (tex / f"earth_{k}.jpg").as_posix() for k in e["maps"]}
+    cap = e.get("cap")
+    if cap:   # step 5a4: the regional caps at full resolution where the window shows the globe up close
+        files.update({f"{k}_cap": (tex / f"earth_{k}_cap.jpg").as_posix() for k in cap["maps"]})
     missing = [f for f in files.values() if not Path(f).is_file()]
     if missing:
         raise common.Failure(f"the Earth's textures are missing (lobby --earth-tex): {', '.join(missing)}")
@@ -186,6 +193,8 @@ def earth_request(layout: dict, vid: str, distance: str | None = None) -> dict:
         "textures": files, "look": e["look"], "centre": _dir(*v["centre"]), "radius_deg": v["radius_deg"],
         "subpoint": v["subpoint"], "roll_deg": v["roll_deg"], "sun": _dir(*v["sun"]), "sun_energy": v["sun_energy"],
         "stars": v["stars"]}}
+    if cap:
+        out["earth"]["cap"] = {"lat": cap["lat"], "lon": cap["lon"], "fade_deg": cap["fade_deg"]}
     did = distance or e.get("distance")
     if did:   # step 4c: the Earth as an object at a finite distance (earth_object.gdshader)
         out["earth"]["object"] = lobby_layout.earth_object(layout, vid, did)

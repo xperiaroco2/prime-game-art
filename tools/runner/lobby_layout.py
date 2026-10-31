@@ -457,6 +457,20 @@ def earth_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
     for g in e["grid"]:
         if g not in views:
             p.append(f"earth grid: {g} is no view")
+    cap = e.get("cap")
+    if cap is not None:   # step 5a4: a degree box of the night and cloud maps at most 4096 px a side
+        (la0, la1), (lo0, lo1) = cap["lat"], cap["lon"]
+        if not (-90 <= la0 < la1 <= 90 and -180 <= lo0 < lo1 <= 180):
+            p.append(f"earth cap: lat {cap['lat']} or lon {cap['lon']} is no box in degrees")
+        if sorted(cap["maps"]) != ["clouds", "night"]:
+            p.append("earth cap: maps must be night and clouds")
+        for k, (cw, ch) in cap["maps"].items():
+            if not (0 < cw <= EARTH_MAX[0] and 0 < ch <= EARTH_MAX[0]):
+                p.append(f"earth cap {k}: size {cw} x {ch} is over {EARTH_MAX[0]} a side")
+            elif la1 > la0 and abs(cw / (lo1 - lo0) - ch / (la1 - la0)) > 0.02 * cw / (lo1 - lo0):
+                p.append(f"earth cap {k}: {cw} x {ch} px is not as many px a degree across as down")
+        if not 0 < cap["fade_deg"] < min(la1 - la0, lo1 - lo0) / 2:
+            p.append(f"earth cap: fade_deg {cap['fade_deg']} out of range")
     for vid, v in e["variants"].items():
         az, el = v["centre"]
         if not (-180 <= az <= 180 and -90 <= el <= 90):

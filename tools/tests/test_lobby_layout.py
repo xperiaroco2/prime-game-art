@@ -120,6 +120,23 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertGreater(v["E2"]["sun_energy"], 0.0)                           # E2: the dawn
         self.assertGreater(v["E3"]["stars"], v["E1"]["stars"])                   # E3: more stars
 
+    def test_the_earths_cap(self) -> None:
+        """Step 5a4: the cap covers E2's subpoint and the 42 deg seen round it from D2, at Black Marble's resolution."""
+        e = self.layout["earth"]
+        cap = e["cap"]
+        lat, lon = e["variants"]["E2"]["subpoint"]
+        self.assertLessEqual(cap["lat"][0], lat - 42.0)
+        self.assertGreaterEqual(cap["lat"][1], lat + 42.0)
+        self.assertLessEqual(cap["lon"][0], lon - 56.0)    # 42 deg round [36, 12] spans 56 deg of longitude
+        self.assertGreaterEqual(cap["lon"][1], lon + 56.0)
+        nw = cap["maps"]["night"][0] / (cap["lon"][1] - cap["lon"][0])
+        self.assertGreater(nw, 2.5 * e["size"][0] / 360.0)   # 2.5 times the global map's px a degree at least
+        bad = copy.deepcopy(self.layout)
+        bad["earth"]["cap"]["maps"]["night"] = [4096, 1024]
+        bad["earth"]["cap"]["lat"] = [50.0, 40.0]
+        problems = lobby_layout.check(bad)
+        self.assertTrue(any("earth cap: lat" in p for p in problems), problems)
+
     def test_e2s_sun_is_just_behind_the_limb(self) -> None:
         from runner.commands import lobby as cmd
         v = self.layout["earth"]["variants"]["E2"]
@@ -153,7 +170,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v10")   # step 5a3
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v11")   # step 5a4
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue

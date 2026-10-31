@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v10"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v11"         # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -268,7 +268,7 @@ blocks = [
 # east (+x), elevation above the horizontal.
 variant = "E2"                      # the one switch (the engineer, 2026-10-30: E2, the dawn glow on the limb)
 src_dir = "lobby/hall/earth-src"
-tex_dir = "lobby/hall/v5/earth"
+tex_dir = "lobby/hall/v11/earth"   # step 5a4: the maps and the caps (v5: the maps alone)
 size = [4096, 2048]                 # the textures' pixels (at most 4096 x 2048)
 quality = 92                        # JPEG
 maps = { night = "BlackMarble_2016_3km.jpg", day = "world.topo.bathy.200412.3x5400x2700.jpg", clouds = "cloud_combined_8192.tif" }
@@ -301,6 +301,17 @@ video_keys = [
   [[10.0, 1.65, 2.0], [10.0, 3.95, 18.0], 0.4],
 ]
 video_max_mb = 6
+
+# Step 5a4 (art #356): from the hall's far side the window shows the globe's high north up close and at a slant, where the
+# 4096 x 2048 maps (11.4 px a degree) are magnified: clouds read as snowy speckle, cities as orange blobs. The cap is
+# that part ([lat0, lat1] x [lon0, lon1] degrees round E2's subpoint [36, 12]: the cap seen from 250 m, 42 deg round it,
+# and a margin) cut from the NASA sources at full resolution: night 34 px a degree (Black Marble's 37.5), clouds 22.75
+# (the cloud map's own); earth_object.gdshader reads it inside the box and the global maps outside, faded over fade_deg.
+[earth.cap]
+lat = [-8.0, 82.0]
+lon = [-48.0, 72.0]
+maps = { night = [4096, 3072], clouds = [2730, 2048] }
+fade_deg = 3.0
 
 [earth.look]                        # shared by every variant (linear colours, HDR energies)
 lights_rgb = [1.0, 0.52, 0.2]       # the city lights' warm orange

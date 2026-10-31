@@ -408,16 +408,19 @@ func _environment() -> void:
 
 ## One Earth variant into the sky's material: the maps (loaded once, mipmapped), the shared look and its numbers.
 func _apply_earth(e: Dictionary) -> void:
-	for k: String in ["night", "day", "clouds"]:
+	for k: String in e["textures"]:
 		var path: String = e["textures"][k]
 		if not _textures.has(path):
 			var img: Image = Image.load_from_file(path)
 			if img == null:
 				_fail("cannot load %s" % path)
 				return
+			if k.begins_with("clouds"):
+				img.convert(Image.FORMAT_L8)   # step 5a4: one channel (a quarter of RGBA8's memory)
 			img.generate_mipmaps()
 			_textures[path] = ImageTexture.create_from_image(img)
-		_earth.set_shader_parameter({"night": "night_tex", "day": "day_tex", "clouds": "cloud_tex"}[k], _textures[path])
+		if not k.ends_with("_cap"):   # the caps are the Earth object's alone (step 5a4)
+			_earth.set_shader_parameter({"night": "night_tex", "day": "day_tex", "clouds": "cloud_tex"}[k], _textures[path])
 	var look: Dictionary = e["look"]
 	for k: String in look:
 		if k.begins_with("glass_"):
@@ -457,6 +460,13 @@ func _earth_object(e: Dictionary) -> void:
 	mat.set_shader_parameter("radius", float(o["radius_m"]))
 	mat.set_shader_parameter("frame_dir", _v(o["frame_dir"]))
 	mat.set_shader_parameter("ref_radius_deg", float(e["radius_deg"]))
+	if e.has("cap"):   # step 5a4: the regional caps at the sources' full resolution
+		var cap: Dictionary = e["cap"]
+		mat.set_shader_parameter("night_cap_tex", _textures[e["textures"]["night_cap"]])
+		mat.set_shader_parameter("cloud_cap_tex", _textures[e["textures"]["clouds_cap"]])
+		mat.set_shader_parameter("cap_box", Vector4(float(cap["lat"][0]), float(cap["lat"][1]), float(cap["lon"][0]), float(cap["lon"][1])))
+		mat.set_shader_parameter("cap_fade_deg", float(cap["fade_deg"]))
+		mat.set_shader_parameter("cap_on", 1.0)
 	var sphere: SphereMesh = SphereMesh.new()
 	sphere.radius = float(o["radius_m"]) * float(o["shell"])
 	sphere.height = sphere.radius * 2.0
