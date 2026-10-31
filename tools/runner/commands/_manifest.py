@@ -33,7 +33,7 @@ KIND_SLOTS: dict[str, frozenset[str]] = {
 }
 # Kinds whose manifest may hold a set of shipped files ([[files]]) rather than one asset.
 SET_KINDS = frozenset({"kit", "room", "environment", "prop"})
-# Licences an asset may carry; only the first four may ever reach the public game repo.
+# Licences an asset may carry; these may reach the public game repo ("restricted" never).
 PUBLIC_LICENCES = frozenset({"CC0-1.0", "CC-BY-4.0", "NASA-PD", "owned-paid-output", "own-work"})
 # Licences whose records must carry `credit` (the attribution line).
 CREDIT_LICENCES = frozenset({"CC-BY-4.0", "NASA-PD"})

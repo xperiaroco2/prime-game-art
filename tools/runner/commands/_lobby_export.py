@@ -170,6 +170,8 @@ def problems(layout: dict, pieces: Path, got: dict, errors: list[str]) -> list[s
                    f"WorldEnvironments and {s.get('suns')} suns after the level script's _ready")
     if any(v is None or abs(v) > 0.05 for v in s["jaws"].values()):
         out.append(f"the jaw nose is not shut: {s['jaws']}")
+    if not s["meshes"]:
+        out.append("the ship draws no meshes")
     if s["off_layer"]:
         out.append(f"{s['off_layer']} of the ship's {s['meshes']} drawn meshes are off render layer 11")
     if s["colliders_on"] < 1:

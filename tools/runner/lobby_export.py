@@ -72,6 +72,10 @@ QUESTIONS = [
     "L7: the positional shadow atlas: the art's shots use 4096 with every quadrant subdivided 4 (the pendants' "
     "shadowed spots); the game's project settings decide (HANDOFF 'Light').",
     "L8: the credit line \"Earth imagery: NASA\" goes in the game's credits (NASA-PD, sources/nasa_earth_lobby.toml).",
+    "L9: this package was exported with --no-compare (no window could open on the art PC, 2026-11-01): its three "
+    "views have not been compared with lobby --shoot's. Step 5b's comparison found c_back a mean of 3.16 (of 255) "
+    "off against the 2.0 rule; the level script's frees are the fix under test (art#356). Until that comparison "
+    "passes, treat the look of the views that see the ship as unconfirmed.",
     "Imports: each file's .import holds only the package's options; the game's editor regenerates the .import files "
     "(and the uids) on its first import: commit the regenerated ones.",
 ]
