@@ -54,7 +54,7 @@ from mathutils.kdtree import KDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
-from clothes_side import ClothSide  # noqa: E402,F401
+from clothes_side import ClothSide  # noqa: E402
 import clothes_shell as H  # noqa: E402
 import clothes_texture as T  # noqa: E402
 
@@ -462,6 +462,12 @@ def main() -> int:
     ap.add_argument("--light-denim", default="0.60,0.70,0.82",
                     help="M2f: the denim's reverse side (sRGB), for a --plain box's 7th value (its mix toward it): "
                          "the turn-ups' light cuff")
+    ap.add_argument("--plain-src", default="",
+                    help="M2l: the garment's own leg texels (u0,u1,v0,v1 of its maps, inside one leg island, no seam) "
+                         "for a --plain box whose 10th value is 1 (the back bib: the legs' twill and tone)")
+    ap.add_argument("--cuff-fold", default="",
+                    help="M2l: width,dark: the turn-up's fold line, the cut box's rows that far under its cut height "
+                         "darkened by this factor ('': off)")
     ap.add_argument("--back-bib", default="",
                     help="M2f: her back bib built to the turnaround: z_c,z_v,hw_b,hw_t,x_v,off,border (m; top corners' "
                          "height, the V's tip, half widths at the waist and the top, the V's half width, clearance off "
@@ -572,11 +578,11 @@ def main() -> int:
         # E1d: the straps' back ends reach strap_back_below under the back panel's apex on every body (the shorter
         # body's straps met over it: a flat bar of shirt and panel under their V)
         args.strap_back_z = pl["back"][1] - args.strap_back_below
-        if args.back_bib:  # M2f: they end on the built back bib's top corners
-            args.strap_back_z = float(args.back_bib.split(",")[0]) - args.strap_back_below
         args.neck = ",".join(f"{v:.4f}" for v in pl["neck"])
         rep["planes"] = {k: (round(v, 4) if isinstance(v, float) else [round(x, 4) for x in v]) for k, v in pl.items()}
         say("planes from the bones", rep["planes"])
+    if args.back_bib:  # M2f: the straps end on the built back bib's top corners, with either kind of planes
+        args.strap_back_z = float(args.back_bib.split(",")[0]) - args.strap_back_below
     if args.sneakers == "on" or (args.sneakers == "auto" and args.shell):
         import sneaker_build as SB
         old = next((o for o in cloth if o.name == "shoes"), None)

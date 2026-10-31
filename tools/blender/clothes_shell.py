@@ -539,6 +539,16 @@ def cyl_coords(x: float, y: float, z: float, axis_y: float, a_ref: float, radius
     return radius * a, z
 
 
+
+def seam_unwrap(ss: list[float], radius: float) -> list[float]:
+    """M2l: one face's arc lengths on a cylinder (cyl_coords, within half a turn of a_ref): a face across the seam
+    (its arc lengths over half a turn apart) gets a full turn added to its negative ones, so it stays one narrow face
+    in UV instead of a band across the whole window."""
+    if max(ss) - min(ss) <= math.pi * radius:
+        return list(ss)
+    return [s + 2 * math.pi * radius if s < 0 else s for s in ss]
+
+
 def in_box(x: float, y: float, z: float, box: tuple[float, float, float, float, float, float]) -> bool:
     """E1h: a point inside a box (x0, x1, y0, y1, z0, z1), mirrored in x (the box is given for |x|)."""
     x0, x1, y0, y1, z0, z1 = box

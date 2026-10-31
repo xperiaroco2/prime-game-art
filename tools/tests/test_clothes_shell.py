@@ -544,9 +544,6 @@ class PanelFit(unittest.TestCase):  # M2d: the flat back panel's depth
             H.panel_fit([])
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class JoinRows(unittest.TestCase):
     def test_the_back_run_glued_and_eased_out_in_front(self):
@@ -606,3 +603,26 @@ class BackBib(unittest.TestCase):  # M2f: her back bib's grid
             H.back_bib_grid(0.92, 1.15, 1.10, 0.075, 0.10, 0.06, 0.012, cols=5)
         with self.assertRaises(ValueError):
             H.back_bib_grid(0.92, 1.05, 1.10, 0.075, 0.10, 0.06, 0.012)
+
+
+class SeamUnwrap(unittest.TestCase):  # M2l: a cuff laid on its leg's own axis
+    def test_a_face_off_the_seam_kept(self):
+        self.assertEqual(H.seam_unwrap([-0.01, 0.0, 0.01], 0.06), [-0.01, 0.0, 0.01])
+
+    def test_a_face_across_the_seam_one_side(self):
+        r = 0.06
+        half = math.pi * r
+        out = H.seam_unwrap([half - 0.005, -half + 0.004, half - 0.002], r)
+        self.assertLess(max(out) - min(out), 0.01)
+        self.assertAlmostEqual(out[1], half + 0.004)
+
+    def test_leg_axis_coords(self):  # a leg at x 0.12: its outer side 1/4 turn from the inner seam's opposite
+        r, cx = 0.06, 0.12
+        s, z = H.cyl_coords(cx + r - cx, 0.08, 0.15, 0.08, math.pi / 2, r)
+        self.assertAlmostEqual(s, 0.0)
+        s, _z = H.cyl_coords(cx - cx, 0.08 - r, 0.15, 0.08, math.pi / 2, r)
+        self.assertAlmostEqual(s, -math.pi * r / 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

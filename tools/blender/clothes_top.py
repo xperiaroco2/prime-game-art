@@ -1425,14 +1425,15 @@ def late_islands(gar, args) -> dict:
 
 def turnup_relax(gar, args) -> dict:
     """M2h: the turn-ups' geometry, Meshy's one trouser surface folded out at each hem (bind pose). args.turnup_relax
-    "z_top,rounds,alpha[,outward]": per leg (|x| over 3 cm, under z_top) the hem loop (the lowest open edges, within 3 cm of the
-    lowest) goes onto one level, its median height (the jagged bottom edge), and its radius round the leg's axis is
+    "z_top,rounds,alpha[,outward]": per leg (|x| over 3 cm, under z_top) the hem loop (the lowest open edges, within
+    3 cm of the lowest) goes onto one level, its median height (the jagged bottom edge), and its radius round the leg's axis is
     relaxed along the loop; then every other vertex of the leg under z_top has its radius alone relaxed over its edge
     neighbours (clothes_fit_geom.smooth, rounds at alpha), easing out over the top 3 cm (clothes_shell.relax_weight):
     the fold's in-and-out teeth over the light cuff. Heights stay (the cuff's colour is cut at one height by
     plain_denim's 8th value, so its line stays straight), but the hem's, under the cut in the light. Runs after the
     body's cover test and the skin's follow (d59 ran it before them: the body's cut changed and the crotch poked 9 to
-    14 mm). Other open edges (a stray hole) stay. No weight changes."""
+    14 mm). Other open edges (a stray hole) stay. outward (M2i, a 4th value over 0): the relax only moves a vertex
+    away from the leg's axis, never in over the calf's skin. No weight changes."""
     vals = floats(args.turnup_relax)
     z_top, rounds, alpha = vals[:3]
     rounds = int(rounds)
@@ -1678,9 +1679,10 @@ def plain_denim(gar, args) -> dict:
     ("x0,x1,y0,y1,z0,z1" for |x|, ';' between boxes; bind pose, m) on each side is one region: its denim faces (not
     the straps' and band's patch, not the bronze) are re-laid in UV on a vertical cylinder round the waist's axis
     (args.band_axis_y) at the garment's median texel density, into a free window of the maps that is filled with
-    the plain denim rectangle args.strap_uv repeated mirrored (diffuse, roughness and normal; the normal's x or y
-    turned over in a mirrored copy); one window for all the regions, as its texels are the same pattern everywhere.
-    No vertex moves. Returns per region its faces and size, the window and the density."""
+    the plain denim rectangle args.strap_uv (or the legs' own args.plain_src) repeated mirrored (diffuse, roughness
+    and normal; the normal's x or y turned over in a mirrored copy); one window per (tint, cut, gain, source) group, as
+    its texels are the same pattern everywhere. A box may lay its regions on their own vertical axis instead (a
+    trouser leg's cuff). No vertex moves. Returns per region its faces and size, the window and the density."""
     boxes = [tuple(floats(b)) for b in args.plain.split(";") if b.strip()]
     tints = [b[6] if len(b) > 6 else 0.0 for b in boxes]  # M2f: a 7th value, the box's mix toward args.light_denim
     # M2g: an 8th value, a height: the tint only below it, by texel row (the turn-up's light cuff cut in a straight
@@ -1689,6 +1691,12 @@ def plain_denim(gar, args) -> dict:
     # M2g: a 9th value, a gain on the window's diffuse (0 or 1: none): the back bib's flat panel faces away from the
     # light and read darker than its straps and the trousers, though its texels are the straps' own (d55: medians equal)
     gains = [b[8] if len(b) > 8 and b[8] > 0 else 1.0 for b in boxes]
+    # M2l: a 10th value, the source: 1 the garment's own leg texels args.plain_src (twill and tone of the legs: the
+    # back bib read as a smooth, lighter patch on the straps' rectangle), else args.strap_uv; an 11th, the axis: 1 the
+    # region's own vertical axis (a trouser leg's: on the waist's axis the cuff's front and back shared texels and its
+    # sides stretched to a smooth tube), the seam on the leg's inner side
+    srcs = [int(b[9]) if len(b) > 9 else 0 for b in boxes]
+    own_axis = [len(b) > 10 and b[10] > 0 for b in boxes]
     boxes = [b[:6] for b in boxes]
     rep = {"regions": []}
     maps = garment_maps(gar)
@@ -1701,6 +1709,7 @@ def plain_denim(gar, args) -> dict:
     mw = gar.matrix_world
     uvl = me.uv_layers.active.data
     own = getattr(args, "patch_rect", None)
+    me.calc_loop_triangles()
     den_slot = {i for i, s in enumerate(gar.material_slots) if s.material and s.material.node_tree and any(
         n.type == "TEX_IMAGE" and n.image is dif for n in s.material.node_tree.nodes)}
     co = [mw @ v.co for v in me.vertices]
@@ -1731,19 +1740,43 @@ def plain_denim(gar, args) -> dict:
                 dens.append(math.sqrt(a2 * w * h / a3))
     d0 = float(np.median(dens)) * args.plain_density if dens else 0.0
     rep["texels_per_m"] = round(d0, 1)
-    u0, u1, v0, v1 = floats(args.strap_uv)
-    sx0, sx1, sy0, sy1 = int(u0 * w) + 1, int(u1 * w) - 1, int(v0 * h) + 1, int(v1 * h) - 1
-    sw, sh = sx1 - sx0, sy1 - sy0
-    me.calc_loop_triangles()
+    auto = None
+    if any(srcs) and getattr(args, "plain_src", "").startswith("auto"):
+        # M2l: --plain-src auto[,w,h]: the plainest rectangle of the garment's own denim texels wholly inside its UV
+        # islands (d77's hand-picked leg rectangle, read off the filled GLB map, lay partly outside them: black wedges)
+        aw, ah = (int(v) for v in (args.plain_src.split(",")[1:] or ["96", "160"]))
+        alltri = np.array([[uvl[t.loops[k]].uv[:] for k in range(3)] for t in me.loop_triangles], dtype=np.float64)
+        dpx = pixels(dif)
+        lum = dpx[..., :3].mean(axis=2)
+        at0 = T.clean_rect(T.island_mask(alltri, w, h), lum, aw, ah)
+        rep["plain_src_auto_px"] = None if at0 is None else [int(at0[0]), int(at0[1]), aw, ah]
+        if at0 is not None:
+            auto = (at0[0] / w, (at0[0] + aw) / w, at0[1] / h, (at0[1] + ah) / h)
+
+    def src_rect(k):
+        if k == 1 and auto is not None:
+            u0, u1, v0, v1 = auto
+        else:
+            u0, u1, v0, v1 = floats(args.plain_src if k == 1 and getattr(args, "plain_src", "") and
+                                    not args.plain_src.startswith("auto") else args.strap_uv)
+        return int(u0 * w) + 1, int(u1 * w) - 1, int(v0 * h) + 1, int(v1 * h) - 1
+    fold_w, fold_dark = floats(args.cuff_fold) if getattr(args, "cuff_fold", "") else (0.0, 1.0)
     pad = 4
     pxs = {k: pixels(img) for k, img in maps.items()}
     plan = []
     for (bi, side), fids in sorted(regions.items()):
         vids = sorted({v for i in fids for v in me.polygons[i].vertices})
         cen = sum((co[v] for v in vids), Vector()) / len(vids)
-        a_ref = math.atan2(cen.x, -(cen.y - args.band_axis_y))
-        radius = float(np.median([math.hypot(co[v].x, co[v].y - args.band_axis_y) for v in vids]))
-        st = {v: H.cyl_coords(co[v].x, co[v].y, co[v].z, args.band_axis_y, a_ref, radius) for v in vids}
+        cx, cy = (cen.x, cen.y) if own_axis[bi] else (0.0, args.band_axis_y)
+        a_ref = side * math.pi / 2 if own_axis[bi] else math.atan2(cen.x, -(cen.y - cy))
+        radius = float(np.median([math.hypot(co[v].x - cx, co[v].y - cy) for v in vids]))
+        sv = {v: H.cyl_coords(co[v].x - cx, co[v].y, co[v].z, cy, a_ref, radius) for v in vids}
+        st = {}  # per loop: a face across the cylinder's seam (half a turn from a_ref) unwrapped to one side of it
+        for i in fids:
+            p = me.polygons[i]
+            ss = H.seam_unwrap([sv[v][0] for v in p.vertices], radius)
+            for li, v, s_ in zip(p.loop_indices, p.vertices, ss):
+                st[li] = (s_, sv[v][1])
         lo = (min(a for a, _ in st.values()), min(b for _, b in st.values()))
         hi = (max(a for a, _ in st.values()), max(b for _, b in st.values()))
         plan.append((bi, side, fids, st, lo, hi))
@@ -1760,8 +1793,8 @@ def plain_denim(gar, args) -> dict:
         return rep
     light = floats(args.light_denim) if any(tints) else None  # 8-bit maps: pixels hold sRGB values
     d_base = d0
-    for tint, cut, gain in sorted(set((tints[bi], cuts[bi], gains[bi]) for bi, *_r in plan)):
-        group = [pl for pl in plan if (tints[pl[0]], cuts[pl[0]], gains[pl[0]]) == (tint, cut, gain)]
+    for tint, cut, gain, src in sorted(set((tints[bi], cuts[bi], gains[bi], srcs[bi]) for bi, *_r in plan)):
+        group = [pl for pl in plan if (tints[pl[0]], cuts[pl[0]], gains[pl[0]], srcs[pl[0]]) == (tint, cut, gain, src)]
         glo = 0.0
         if cut >= 0:  # one height scale: a window row is one height in every region of the group
             glo = min(lo[1] for *_r, lo, _hi in group)
@@ -1777,7 +1810,7 @@ def plain_denim(gar, args) -> dict:
                 break
             d0 *= 0.85
         key = ("" if tint == 0 else f"_tint{tint:g}") + ("" if cut < 0 else f"_cut{cut:g}") + (
-            "" if gain == 1.0 else f"_gain{gain:g}")
+            "" if gain == 1.0 else f"_gain{gain:g}") + ("" if src == 0 else "_legs")
         rep["texels_per_m_used" + key] = round(d0, 1)
         rep["window_px" + key] = None if at is None else [int(at[1]), int(at[0]), pw, ph]
         for bi, side, fids, st, lo, hi in group:
@@ -1788,9 +1821,13 @@ def plain_denim(gar, args) -> dict:
             continue
         ry, rx = at
         used[ry:ry + ph, rx:rx + pw] = True
-        ix = [H.mirror_tile(i, sw) for i in range(pw)]
-        iy = [H.mirror_tile(j, sh) for j in range(ph)]
         for kind, img in maps.items():
+            # M2l: the legs' own texels give the diffuse and roughness; the normal map stays the plain rectangle's
+            # twill (the legs' normals carry their folds: d77's back bib showed the knee's creases as dark wedges)
+            sx0, sx1, sy0, sy1 = src_rect(0 if kind == "normal" else src)
+            sw, sh = sx1 - sx0, sy1 - sy0
+            ix = [H.mirror_tile(i, sw) for i in range(pw)]
+            iy = [H.mirror_tile(j, sh) for j in range(ph)]
             iw, ih = img.size
             fx, fy = iw / w, ih / h
             px = pxs[kind]
@@ -1809,6 +1846,10 @@ def plain_denim(gar, args) -> dict:
                 if cut >= 0:  # per row: rows under the cut light, over it dark, a 2 mm blend
                     tt = tint * np.array([H.cut_ramp(glo + (j - pad) / d0, cut, 0.002) for j in range(ph)])[:, None, None]
                 blk[..., :3] = (1 - tt) * blk[..., :3] + tt * np.array(light)[None, None, :] * grain
+                if cut >= 0 and fold_w > 0:  # M2l: the roll's fold, a darker line just under the cuff's top
+                    fd = np.array([1.0 - (1.0 - fold_dark) * (cut - fold_w <= glo + (j - pad) / d0 <= cut)
+                                   for j in range(ph)])[:, None, None]
+                    blk[..., :3] *= fd
             if kind == "diffuse" and gain != 1.0:
                 blk[..., :3] = np.clip(blk[..., :3] * gain, 0.0, 1.0)
             r0, c0 = int(ry * fy), int(rx * fx)
@@ -1819,8 +1860,8 @@ def plain_denim(gar, args) -> dict:
         for bi, side, fids, st, lo, hi in group:
             for i in fids:
                 p = me.polygons[i]
-                for li, v in zip(p.loop_indices, p.vertices):
-                    s_, t_ = st[v]
+                for li in p.loop_indices:
+                    s_, t_ = st[li]
                     uvl[li].uv = ((rx + pad + (s_ - lo[0]) * d0) / w, (ry + pad + (t_ - lo[1]) * d0) / h)
     say("plain denim", rep)
     for kind, img in maps.items():
@@ -2054,7 +2095,9 @@ def back_join(gar, args) -> dict:
     back faces over the waist, the straps, band and buckles left out) lies gap (plus its lip's own height, the left
     strap's 1.5 mm over the right kept) outside the panel and takes the panel face's weights (its corners by
     nearness); the rows in front of that run take its first row's move and weights eased out over blend m along
-    the strap (clothes_shell.join_rows). The panel and the straps' outline stay; nothing else moves."""
+    the strap (clothes_shell.join_rows). A lip column past the panel's edge (the built back bib narrows toward the
+    waist, M2f) takes its nearest hit's move and weights. The panel and the straps' outline stay; nothing else
+    moves."""
     blend, gap = floats(args.back_join)
     grids = getattr(args, "strap_grids", None)
     if not grids:
@@ -2218,10 +2261,12 @@ def back_bib(gar, char, args) -> dict:
     dl = bm.verts.layers.deform.verify()
     gi = {gg.name: gg.index for gg in gar.vertex_groups}
     vs = []
+    yf = []  # the depths as built (the edge's lip folded in): the off-body report's
     for i, (x, z) in enumerate(pts):
         y = ys[i]
         if g["edge"][i]:
             y = max(by[i] + 0.002, y - args.strap_lip)
+        yf.append(y)
         v = bm.verts.new(inv @ Vector((x, y, z)))
         row = H.chain_row(z, knots) if knots else weight_row(body, Vector((x, by[i], z)))
         for bname, wt in row.items():
@@ -2253,7 +2298,7 @@ def back_bib(gar, char, args) -> dict:
     bm.free()
     me.update()
     args.back_bib_top = z_c
-    gap = [ys[i] - by[i] for i in range(len(pts))]
+    gap = [yf[i] - by[i] for i in range(len(pts))]
     worst = sorted(range(len(pts)), key=lambda i: -gap[i])[:4]  # M2k: where the panel stands farthest off
     rep = {"meshy_faces_removed": len(gone), "verts": len(pts), "tris": 2 * len(faces), "tucked_verts": tucked,
            "off_body_mm_min_max": [round(1000 * min(gap), 1), round(1000 * max(gap), 1)],

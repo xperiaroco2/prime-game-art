@@ -365,8 +365,12 @@ def main() -> int:
                 gframes.append((int(miss.sum()), 0.0))
                 for j in np.nonzero(miss)[0]:
                     gworst[int(gap_ids[j])] = gworst.get(int(gap_ids[j]), 0) + 1
-            cs = ClothSide(None, co=np.concatenate([cos[o.name] for o in cloth]), polys=polys, edge_check=True)                 if args.tie_side else ctree
-            s, cz, cnz = side(cs, world(body)[near]) if len(near) else (np.zeros(0),) * 3
+            if len(near):  # the cloth's tied-face side is built only for a frame with skin near it
+                cs = ClothSide(None, co=np.concatenate([cos[o.name] for o in cloth]), polys=polys,
+                               edge_check=True) if args.tie_side else ctree
+                s, cz, cnz = side(cs, world(body)[near])
+            else:
+                s, cz, cnz = (np.zeros(0),) * 3
             chest = (arm.matrix_world @ arm.pose.bones["UpperChest"].head).z
             exposed = np.array([F.exposed_skin(d, z, nz, chest, args.exposed) for d, z, nz in zip(s, cz, cnz)],
                                dtype=bool)
