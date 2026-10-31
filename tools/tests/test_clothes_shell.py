@@ -396,6 +396,10 @@ class M2hHelpers(unittest.TestCase):  # M2h: the turn-ups' relax
         self.assertAlmostEqual(H.relax_weight(0.185, 0.20, 0.03), 0.5)
         self.assertTrue(0.0 < H.relax_weight(0.19, 0.20, 0.03) < 0.5)
 
+    def test_outward_only_never_comes_in(self):  # M2i
+        self.assertEqual(H.outward_only(0.060, 0.065), 0.065)
+        self.assertEqual(H.outward_only(0.070, 0.065), 0.070)
+
     def test_loop_nbrs_stay_on_the_loop(self):
         edges = [(0, 1), (1, 2), (2, 0), (2, 7), (7, 8)]  # a hem loop 0-1-2 and an open run up the leg 2-7-8
         got = H.loop_nbrs(edges, {0, 1, 2})

@@ -1425,7 +1425,7 @@ def late_islands(gar, args) -> dict:
 
 def turnup_relax(gar, args) -> dict:
     """M2h: the turn-ups' geometry, Meshy's one trouser surface folded out at each hem (bind pose). args.turnup_relax
-    "z_top,rounds,alpha": per leg (|x| over 3 cm, under z_top) the hem loop (the lowest open edges, within 3 cm of the
+    "z_top,rounds,alpha[,outward]": per leg (|x| over 3 cm, under z_top) the hem loop (the lowest open edges, within 3 cm of the
     lowest) goes onto one level, its median height (the jagged bottom edge), and its radius round the leg's axis is
     relaxed along the loop; then every other vertex of the leg under z_top has its radius alone relaxed over its edge
     neighbours (clothes_fit_geom.smooth, rounds at alpha), easing out over the top 3 cm (clothes_shell.relax_weight):
@@ -1433,8 +1433,11 @@ def turnup_relax(gar, args) -> dict:
     plain_denim's 8th value, so its line stays straight), but the hem's, under the cut in the light. Runs after the
     body's cover test and the skin's follow (d59 ran it before them: the body's cut changed and the crotch poked 9 to
     14 mm). Other open edges (a stray hole) stay. No weight changes."""
-    z_top, rounds, alpha = floats(args.turnup_relax)
+    vals = floats(args.turnup_relax)
+    z_top, rounds, alpha = vals[:3]
     rounds = int(rounds)
+    outward = len(vals) > 3 and vals[3] > 0  # M2i: no vertex comes in toward the leg's axis (d60, d64: the cuff came
+    # in over the calf's skin at the back, 13 mm at rest and 25 to 30 mm in motion); the dips go out to the teeth
     me, mw = gar.data, gar.matrix_world
     inv = mw.inverted()
     co = [mw @ v.co for v in me.vertices]
@@ -1484,6 +1487,8 @@ def turnup_relax(gar, args) -> dict:
         for i in leg:
             r, z = out[at[i]][0], (rz[i][1] if i in rz else co[i].z)
             t = th[i]
+            if outward:
+                r = H.outward_only(r, cyl(co[i])[1])
             p = Vector((ax[0] + r * math.cos(t), ax[1] + r * math.sin(t), z))
             moved = max(moved, (p - co[i]).length)
             me.vertices[i].co = inv @ p

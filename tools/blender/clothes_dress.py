@@ -48,6 +48,7 @@ import bmesh
 import bpy
 import numpy as np
 from mathutils import Vector
+from mathutils import geometry as mgeo
 from mathutils.bvhtree import BVHTree
 from mathutils.interpolate import poly_3d_calc
 from mathutils.kdtree import KDTree
@@ -93,6 +94,73 @@ def cloth_tree(objs) -> BVHTree:
         polys += [[i + off for i in p.vertices] for p in o.data.polygons]
         off += len(o.data.vertices)
     return BVHTree.FromPolygons(co, polys)
+
+
+class ClothSide:
+    """M2i: the cloth's nearest point and a signed distance that does not hang on the face a BVH query returns. On
+    an edge or vertex several faces tie; the side comes from all of them (clothes_fit_geom.tie_side). M2h's d57 and
+    d59 changed the garment far from the crotch (the crumbs, the cuffs), the tree's face order moved, the query
+    returned the other face of the seat's seam, and the crotch's kept skin and its pokes changed (9 to 14 mm)."""
+
+    def __init__(self, objs, tol: float = 1e-6):
+        self.co, self.polys = [], []
+        off = 0
+        for o in objs:
+            self.co += [o.matrix_world @ v.co for v in o.data.vertices]
+            self.polys += [[i + off for i in p.vertices] for p in o.data.polygons]
+            off += len(o.data.vertices)
+        self.tree = BVHTree.FromPolygons([tuple(c) for c in self.co], self.polys)
+        self.vf: list[list[int]] = [[] for _ in self.co]
+        for fi, p in enumerate(self.polys):
+            for k in p:
+                self.vf[k].append(fi)
+        self.tol, self.flips = tol, 0
+        self._n: dict[int, Vector] = {}
+
+    def normal(self, fi: int) -> Vector:
+        if fi not in self._n:
+            self._n[fi] = mgeo.normal([self.co[k] for k in self.polys[fi]])
+        return self._n[fi]
+
+    def face_dist(self, p: Vector, fi: int) -> float:
+        """The distance from p to polygon fi (a fan of triangles)."""
+        ids = self.polys[fi]
+        best = math.inf
+        for j in range(1, len(ids) - 1):
+            q = mgeo.closest_point_on_tri(p, self.co[ids[0]], self.co[ids[j]], self.co[ids[j + 1]])
+            best = min(best, (p - q).length)
+        return best
+
+    def angle_at(self, fi: int, q: Vector) -> float:
+        """The corner angle of polygon fi at its vertex nearest q (the pseudo-normal's weight at a vertex tie)."""
+        ids = self.polys[fi]
+        k = min(range(len(ids)), key=lambda j: (self.co[ids[j]] - q).length)
+        a, b, c = self.co[ids[k - 1]], self.co[ids[k]], self.co[ids[(k + 1) % len(ids)]]
+        e1, e2 = a - b, c - b
+        return e1.angle(e2, 0.0) if e1.length > 0 and e2.length > 0 else 0.0
+
+    def find(self, p: Vector, dist: float):
+        """(loc, normal, face, signed distance +out) of the nearest cloth within dist, or four Nones. On a tie the
+        normal is the tied faces' pseudo-normal (the skin pull moves along it: one face's normal at the seat's seam
+        moved the crotch's skin sideways along the seam, still within 1 mm of the cloth)."""
+        loc, nor, fi, d = self.tree.find_nearest(p, dist)
+        if loc is None:
+            return None, None, None, None
+        u = p - loc
+        plain = u.dot(nor)
+        cand = {f for k in self.polys[fi] for f in self.vf[k]}
+        tied = [f for f in cand if self.face_dist(p, f) <= d + self.tol]
+        if len(tied) < 2:
+            return loc, nor, fi, plain
+        near_v = min((self.co[k] for f in tied for k in self.polys[f]), key=lambda c: (c - loc).length)
+        on_vertex = (near_v - loc).length <= self.tol
+        ws = [self.angle_at(f, loc) if on_vertex else 1.0 for f in tied]
+        s = F.tie_side(tuple(u), d, [tuple(self.normal(f)) for f in tied], ws)
+        pn = Vector(F.pseudo_normal([tuple(self.normal(f)) for f in tied], ws))
+        if s == 0.0 or pn.length < 1e-9:
+            return loc, nor, fi, plain
+        self.flips += (s > 0) != (plain > 0)
+        return loc, pn.normalized(), fi, s
 
 
 def rays(n: Vector) -> list[Vector]:
@@ -161,7 +229,8 @@ def follow_garment(char, cloth, ekd, args, weights: bool = True) -> dict:
     gm = gar.matrix_world
     gco = [gm @ v.co for v in gar.data.vertices]
     gpol = [list(p.vertices) for p in gar.data.polygons]
-    gtree = BVHTree.FromPolygons(gco, gpol)
+    gside = ClothSide([gar]) if args.tie_side else None
+    gtree = gside.tree if gside else BVHTree.FromPolygons(gco, gpol)
     others = [o for o in cloth if o is not gar]
     otree = cloth_tree(others) if others else None
     ggn = {g.index: g.name for g in gar.vertex_groups}
@@ -175,7 +244,12 @@ def follow_garment(char, cloth, ekd, args, weights: bool = True) -> dict:
         p = mw @ v.co
         if p.z > args.waist:
             continue
-        loc, nor, fi, d = gtree.find_nearest(p, reach)
+        if gside is not None:  # M2i: the side from every face tied at the nearest point
+            loc, nor, fi, side = gside.find(p, reach)
+            d = None if loc is None else (p - loc).length
+        else:
+            loc, nor, fi, d = gtree.find_nearest(p, reach)
+            side = None if loc is None else (p - loc).dot(nor)
         if loc is None:
             continue
         if otree is not None:
@@ -199,13 +273,14 @@ def follow_garment(char, cloth, ekd, args, weights: bool = True) -> dict:
                 vg[name].add([v.index], w, "REPLACE")
             took += 1
             full += share >= 0.999
-        m = F.pull_in((p - loc).dot(nor), clear, share)
+        m = F.pull_in(side, clear, share)
         if m > 0:
             v.co = inv @ (p - nor * m)
             pulled += 1
             most = max(most, m)
     me.update()
-    return {"weights_taken": took, "full_share": full, "pulled": pulled, "pulled_most_mm": round(1000 * most, 1)}
+    return {"weights_taken": took, "full_share": full, "pulled": pulled, "pulled_most_mm": round(1000 * most, 1),
+            "tie_flips": gside.flips if gside else None}
 
 
 def main() -> int:
@@ -223,6 +298,10 @@ def main() -> int:
                     help="--opening for skin on the LowerLeg bones (m): the shin poked through the trouser leg 25 mm "
                          "over the hem, inside the 40 mm (E1c)")
     ap.add_argument("--shoe-margin", type=float, default=0.01, help="the foot cut stays this far below the shoe's top")
+    ap.add_argument("--tie-side", type=int, default=1,
+                    help="M2i: the under-cloth test's and the skin pull's side of the cloth from every face tied at the "
+                         "nearest point (clothes_fit_geom.tie_side), not the one face the BVH query returns (0: the old "
+                         "single face; d57 and d59 flipped the crotch's kept skin)")
     ap.add_argument("--near", type=float, default=0.06, help="the cloth this near a body vertex at rest (m)")
     ap.add_argument("--away", type=float, default=0.08,
                     help="a body vertex inside the cloth and this far from every opening is cut for certain (m)")
@@ -306,8 +385,12 @@ def main() -> int:
                     help="an edge face whose normal's horizontal part points in by more than this is peeled")
     ap.add_argument("--edge-island", type=int, default=12, help="loose bits of this many faces or fewer along the edges go")
     ap.add_argument("--turnup-relax", default="",
-                    help="M2h: z_top,rounds,alpha: each trouser leg's hem onto one level and the turn-up's radius and "
+                    help="M2h: z_top,rounds,alpha[,outward]: each trouser leg's hem onto one level and the turn-up's radius and "
                          "height relaxed under z_top (clothes_top.turnup_relax; '': off)")
+    ap.add_argument("--cosmetic-early", type=int, default=0,
+                    help="M2i: --island-top's crumbs and --turnup-relax before the body's cover test and skin pull "
+                         "(1), not after them (0, M2h's d58: an early change flipped the crotch's kept skin before "
+                         "--tie-side)")
     ap.add_argument("--island-top", type=float, default=0.0,
                     help="M2h: after the skin's follow, the garment's loose denim bits (--edge-island faces or fewer) "
                          "between the waist and this far over it go (clothes_top.late_islands: the crumbs beside the "
@@ -675,7 +758,15 @@ def main() -> int:
         cloth.append(top)
     gname = {g.index: g.name for g in char.vertex_groups}
     # the covered faces
+    if args.cosmetic_early and garment is not None:  # M2i: the crumbs and the cuff's relax before the cover test, so
+        import clothes_top as TOP  # the cut and the skin's pull see the garment as it ships (robust with --tie-side)
+        if args.island_top > 0:
+            rep["late_islands"] = TOP.late_islands(garment, args)
+        if args.turnup_relax:
+            rep["turnup_relax"] = TOP.turnup_relax(garment, args)
+            say("turnup relax", rep["turnup_relax"])
     tree = cloth_tree(cloth)
+    side_of = ClothSide(cloth) if args.tie_side else None  # M2i: the under-cloth test's side, robust at a seam
     me = char.data
     mw = char.matrix_world
     nmat = mw.to_3x3().inverted().transposed()
@@ -775,8 +866,12 @@ def main() -> int:
                 n_ankle += 1
                 continue
         top_bone = gname.get(max(v.groups, key=lambda g: g.weight).group, "") if v.groups else ""
-        loc, nor, _fi, _d = tree.find_nearest(p, args.near)
-        if loc is not None and F.under_cloth((p - loc).dot(nor), H.opening_dist(ekd.find(p)[2]), top_bone, away=args.away,
+        if side_of is not None:
+            loc, nor, _fi, sd = side_of.find(p, args.near)
+        else:
+            loc, nor, _fi, _d = tree.find_nearest(p, args.near)
+            sd = None if loc is None else (p - loc).dot(nor)
+        if loc is not None and F.under_cloth(sd, H.opening_dist(ekd.find(p)[2]), top_bone, away=args.away,
                                               away_shoulder=args.away_shoulder):
             cov.append(True)
             sure.append(True)
@@ -798,6 +893,7 @@ def main() -> int:
     rep["covered_in_shoes_by_rim"] = by_rim
     rep["covered_through_shoe_walls"] = by_wall
     rep["covered_under_the_cloth"] = n_under
+    rep["under_cloth_tie_flips"] = side_of.flips if side_of else None
     faces = [list(p.vertices) for p in me.polygons]
     by_edge: dict[tuple[int, int], list[int]] = {}
     for fi, p in enumerate(me.polygons):
@@ -1072,10 +1168,10 @@ def main() -> int:
     if args.skin_follow:  # M2d: the skin the garment hides moves with the garment and stays inside it
         rep["skin_follow"] = follow_garment(char, cloth, ekd, args)
         say("skin follow", rep["skin_follow"])
-    if args.island_top > 0 and garment is not None:  # M2h: after the cover test, which the crumbs' faces helped
+    if args.island_top > 0 and garment is not None and not args.cosmetic_early:  # M2h: after the cover test
         import clothes_top as TOP
         rep["late_islands"] = TOP.late_islands(garment, args)
-    if args.turnup_relax and garment is not None:  # M2h: late too (d59: early, the body's cut moved and the crotch poked)
+    if args.turnup_relax and garment is not None and not args.cosmetic_early:  # M2h: late (d59: early flipped the crotch)
         import clothes_top as TOP
         rep["turnup_relax"] = TOP.turnup_relax(garment, args)
         if args.skin_follow:  # d60: the relaxed cuff came in 10 mm over the calf's pulled skin (13 to 26 mm pokes)

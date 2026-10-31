@@ -395,6 +395,12 @@ def flood(seeds: list[int], nbrs: list[list[int]], allowed: set[int]) -> set[int
     return got
 
 
+def outward_only(r_new: float, r_old: float) -> float:
+    """M2i: a relaxed radius that never comes in toward the axis: the relax may push a dip out to its neighbours, but
+    the cuff never closes over the skin it covered (the calf's pokes of d60 and d64)."""
+    return max(r_new, r_old)
+
+
 def opening_dist(d: float | None) -> float:
     """A KD-tree find's distance to the nearest opening point; infinite when it found none (C1k: a tree of no
     opening points finds (None, None, None))."""

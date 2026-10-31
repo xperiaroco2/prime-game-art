@@ -107,6 +107,33 @@ class Covered(unittest.TestCase):
         self.assertEqual(F.frame_max([])["frames"], 0)
 
 
+class TieSide(unittest.TestCase):  # M2i: the side of a point whose nearest cloth point is on an edge
+    def test_one_face_is_the_plain_side(self):
+        self.assertEqual(F.tie_side((0, 0, 0.002), 0.002, [(0, 0, 1)]), 0.002)
+        self.assertEqual(F.tie_side((0, 0, -0.002), 0.002, [(0, 0, 1)]), -0.002)
+
+    def test_a_crease_gives_one_answer_whichever_face_is_picked(self):
+        # a sharp ridge along y (a seam): faces tilted 60 degrees each way, normals 120 degrees apart; a point over
+        # the edge, inside the normals' wedge (so the edge is its nearest point), but near face a's normal
+        a, b = F.unit((-0.866, 0, 0.5)), F.unit((0.866, 0, 0.5))
+        u = tuple(0.001 * (x + 0.2 * y) for x, y in zip(a, b))
+        d = math.sqrt(sum(x * x for x in u))
+        self.assertGreater(F.dot(u, a), 0)  # face a alone says outside, face b alone inside: the flip M2h saw
+        self.assertLess(F.dot(u, b), 0)
+        self.assertEqual(F.tie_side(u, d, [a, b]), d)
+        self.assertEqual(F.tie_side(u, d, [b, a]), d)
+        self.assertEqual(F.tie_side(tuple(-x for x in u), d, [b, a]), -d)
+
+    def test_pseudo_normal_weights(self):
+        self.assertEqual(F.pseudo_normal([(1, 0, 0), (0, 1, 0)]), (1, 1, 0))
+        self.assertEqual(F.pseudo_normal([(1, 0, 0), (0, 1, 0)], [2.0, 1.0]), (2, 1, 0))
+
+    def test_level_and_empty(self):
+        self.assertEqual(F.tie_side((1, 0, 0), 1.0, [(0, 0, 1)]), 0.0)
+        with self.assertRaises(ValueError):
+            F.tie_side((0, 0, 1), 1.0, [])
+
+
 class Facing(unittest.TestCase):
     def test_inner_sleeve_takes_the_arm(self):
         # the torso's side faces +x (outward), nearer; the arm's inner side faces -x, like the sleeve's inner side

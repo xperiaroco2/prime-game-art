@@ -117,6 +117,29 @@ def follow_share(open_dist: float, lo: float, hi: float) -> float:
     return t * t * (3.0 - 2.0 * t)
 
 
+def pseudo_normal(normals: list[Vec], weights: list[float] | None = None) -> Vec:
+    """M2i: the weighted sum of the faces' normals at a shared edge or vertex (unnormalised; weights: the corner
+    angles at a vertex, 1 each on an edge). Refuses no normals."""
+    if not normals:
+        raise ValueError("no face normal")
+    ws = weights or [1.0] * len(normals)
+    return tuple(sum(w * nn[i] for w, nn in zip(ws, normals)) for i in range(3))
+
+
+def tie_side(u: Vec, d: float, normals: list[Vec], weights: list[float] | None = None) -> float:
+    """M2i: a point's signed distance (+: outside) from a mesh whose nearest point lies at u = point - nearest, d
+    = |u| away, given the normals of every face that nearest point lies on (one when it is inside a face; two on an
+    edge; all round a vertex, weighted by their corner angles): the sign comes from their (pseudo-)normal's sum, not
+    from the one face a BVH query happened to return. On a crease, such as the seat's seam at the crotch, two faces
+    tie and their normals point different ways: the face picked flipped with any change anywhere in the cloth's
+    tree (M2h's d57 and d59), and with it the crotch's kept skin (under_cloth's deep, the skin pull). 0.0 when the
+    sum is level with u (the side is not defined)."""
+    s = dot(u, pseudo_normal(normals, weights))
+    if abs(s) <= 1e-12 * max(1e-12, d):
+        return 0.0
+    return d if s > 0 else -d
+
+
 def pull_in(side: float, clear: float, share: float, most: float = 0.015) -> float:
     """M2d: how far (m) a skin vertex at side m of its nearest garment face (+: outside, poking through) moves in
     along that face's normal: until clear m inside it, times share; none when it is already that far in or more than
