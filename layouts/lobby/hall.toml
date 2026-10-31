@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v8"          # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v9"          # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -551,6 +551,73 @@ title = "lamps x0.35, pendant specular 0.1, window spill 1.5"
 ship_lights = 0.35
 pendant_specular = 0.1
 window_energy = 1.5
+
+[light.ship]
+# Step 5a2 (art #356, docs/lobby.md "Step 5a2"): the package's ship under its own light, set by hall.gd per instance
+# (never in the ship's files or materials): its meshes on render layer 11; `set` is the one switch. Per set:
+#   pendant_k: 1 = the hall's pendants (and their upward fill) light the ship as the hall; below 1 they skip it (they
+#     still cast its shadow) and an unshadowed copy of each at this share lights it, its specular pendant_specular;
+#   earth_k: the same for the Earth's light (its copy unshadowed, the hall's light still casts the ship's shadow);
+#   own_probe: the hall's probes skip the ship and a probe of its own (box `probe`, the hall without the ship
+#     captured) reflects on it at probe_intensity with its ambient (ambient_rgb, ambient_energy);
+#   key_*, rim_*: unshadowed directionals on the ship only ([azimuth from south toward east, elevation]).
+# `lobby --ship-grid DIR` shoots every set in `grid`'s views (the review views and `views` below).
+set = "K1"                         # the default (step 5a2); the engineer picks from K1-K3
+grid = ["a_entrance", "c_back", "corner_nw", "spawn_ship", "ship_top"]
+views = [["ship_top", "the ship's silver top, close up", [9.0, 9.0, -3.0], [0.0, 3.0, -14.0], 50.0]]
+probe = [[0.0, 4.0, -13.3], [32.0, 12.0, 36.0]]
+
+# Step 5a2's diagnosis (<raw>/lobby/hall/v9/sdiag): the hall's warm pendants make the cream (the ship's top 0.50 ->
+# 0.27 without them, warm -> neutral), the hall's ambient carries the sides, the Earth's light the aft panel; the
+# probes' reflections change nothing. The sets keep the hall's lamps off the ship but for a share, and light it as
+# its own night scene does: the ship scene's cool key (-140, 38) and its moon (35, 30, the Earth's side) as the rim.
+[light.ship.sets.K1]
+title = "as the ship's own night: its cool key and moon, the pendants x0.15, a dim cool ambient"
+pendant_k = 0.15
+pendant_specular = 0.15
+earth_k = 0.4
+own_probe = true
+probe_intensity = 1.0
+ambient_rgb = [0.42, 0.5, 0.7]
+ambient_energy = 0.12
+key_rgb = [0.78, 0.84, 1.0]
+key_energy = 0.55
+key_dir = [-140.0, 38.0]
+rim_rgb = [0.62, 0.72, 1.0]
+rim_energy = 0.6
+rim_dir = [35.0, 30.0]
+
+[light.ship.sets.K2]
+title = "a bit warmer in the hall: the pendants x0.4, a warmer key and ambient"
+pendant_k = 0.4
+pendant_specular = 0.25
+earth_k = 0.6
+own_probe = true
+probe_intensity = 1.0
+ambient_rgb = [0.6, 0.56, 0.52]
+ambient_energy = 0.15
+key_rgb = [0.86, 0.88, 1.0]
+key_energy = 0.45
+key_dir = [-140.0, 38.0]
+rim_rgb = [0.62, 0.72, 1.0]
+rim_energy = 0.45
+rim_dir = [35.0, 30.0]
+
+[light.ship.sets.K3]
+title = "darker and moodier: the pendants x0.1, a weaker key, the rim kept"
+pendant_k = 0.1
+pendant_specular = 0.1
+earth_k = 0.3
+own_probe = true
+probe_intensity = 0.8
+ambient_rgb = [0.4, 0.46, 0.66]
+ambient_energy = 0.07
+key_rgb = [0.74, 0.82, 1.0]
+key_energy = 0.35
+key_dir = [-140.0, 38.0]
+rim_rgb = [0.62, 0.72, 1.0]
+rim_energy = 0.5
+rim_dir = [35.0, 30.0]
 
 [video]
 # Step 4's walk-through (`lobby --video DIR`, docs/lobby.md): eye height, the mood above; keys [eye, look, seconds

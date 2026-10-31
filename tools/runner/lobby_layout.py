@@ -518,6 +518,48 @@ LIGHT_KEYS = ("ship_lights", "exposure", "ambient_rgb", "ambient_energy", "probe
               "window_range", "pendant_specular")
 
 
+# Step 5a2: a [light.ship] set's keys (hall.gd `_ship_light`: the package ship's own light by cull masks, per instance)
+SHIP_LIGHT_KEYS = ("pendant_k", "pendant_specular", "earth_k", "own_probe", "probe_intensity", "ambient_rgb",
+                   "ambient_energy", "key_rgb", "key_energy", "key_dir", "rim_rgb", "rim_energy", "rim_dir")
+
+
+def ship_light_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
+    """[light.ship] (step 5a2): `set` names a set, the grid's views exist (the review views and its own `views`), every
+    set has exactly SHIP_LIGHT_KEYS: shares in 0..1, colours in 0..1, energies in 0..4, directions [azimuth,
+    elevation]; the ship's probe box [centre, size] on the floor's plan with a positive size."""
+    sh = layout.get("light", {}).get("ship")
+    if sh is None:
+        return []
+    p: list[str] = []
+    if sh["set"] not in sh["sets"]:
+        p.append(f"light ship: set {sh['set']} is not in [light.ship.sets]")
+    own = {v[0] for v in sh.get("views", [])}
+    for g in sh["grid"]:
+        if g not in views | own:
+            p.append(f"light ship grid: {g} is no view")
+    centre, size = sh["probe"]
+    if not on_floor(layout, centre[0], centre[2]) or min(size) <= 0.0:
+        p.append(f"light ship: probe {sh['probe']} is not a box over the floor")
+    for sid, st in sh["sets"].items():
+        if sorted(st) != sorted(("title",) + SHIP_LIGHT_KEYS):
+            p.append(f"light ship {sid}: keys differ ({', '.join(sorted(set(st) ^ set(('title',) + SHIP_LIGHT_KEYS)))})")
+            continue
+        for k in SHIP_LIGHT_KEYS:
+            v = st[k]
+            if k == "own_probe":
+                if not isinstance(v, bool):
+                    p.append(f"light ship {sid}: own_probe {v} is not true or false")
+            elif k.endswith("_rgb"):
+                if len(v) != 3 or not all(0.0 <= c <= 1.0 for c in v):
+                    p.append(f"light ship {sid}: {k} {v} is not a colour in 0..1")
+            elif k.endswith("_dir"):
+                if not (-180 <= v[0] <= 180 and -90 <= v[1] <= 90):
+                    p.append(f"light ship {sid}: {k} {v} is not [azimuth, elevation]")
+            elif not 0.0 <= v <= (1.0 if k.endswith("_k") else 4.0):
+                p.append(f"light ship {sid}: {k} {v} out of range")
+    return p
+
+
 def light_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
     """[light]: the mood switch names a mood, every mood has exactly LIGHT_KEYS with colours in 0..1, energies, ranges and
     angles in range; the pendants over the floor under the vault, the corridor's lamps in the corridor; [video]'s keys
@@ -556,6 +598,7 @@ def light_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
         extra = sorted(set(tr) - set(("title",) + LIGHT_KEYS))
         if extra or "title" not in tr:
             p.append(f"light trial {tid}: needs a title and only the moods' keys ({', '.join(extra)})")
+    p += ship_light_problems(layout, views)
     for x, y, z in li.get("window", []):
         if not on_floor(layout, x, z) or not 0 < y < h["wall"]:
             p.append(f"light: window lamp ({x}, {y}, {z}) is not inside the hall")

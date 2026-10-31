@@ -153,7 +153,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v8")   # step 5a
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v9")   # step 5a2
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -243,6 +243,40 @@ class LobbyLayoutTest(unittest.TestCase):
         problems = lobby_layout.check(bad, self.fp(bad))
         for want in ("mood L9", "L2: pendant_angle", "L3: keys differ", "corridor lamp", "video key 3", "window lamp",
                      "L1: earth_shadow", "trial T9"):
+            self.assertTrue(any(want in p for p in problems), (want, problems))
+
+    def test_the_ships_own_light(self) -> None:
+        """Step 5a2: [light.ship]'s one switch K1 of three sets (K2 warmer, K3 darker), each keeping the hall's pendants
+        off the ship but for a share, its own probe, the ship scene's cool key and moon; the request carries the set,
+        the grid one variant per set; the check refuses a bad set."""
+        from runner.commands import lobby as cmd
+        sh = self.layout["light"]["ship"]
+        self.assertEqual(sh["set"], "K1")
+        self.assertEqual(sorted(sh["sets"]), ["K1", "K2", "K3"])
+        k = sh["sets"]
+        for st in k.values():
+            self.assertLess(st["pendant_k"], 1.0)
+            self.assertTrue(st["own_probe"])
+            self.assertGreater(st["key_rgb"][2], st["key_rgb"][0])   # the key cool
+        self.assertGreater(k["K2"]["pendant_k"], k["K1"]["pendant_k"])          # K2 warmer: more of the pendants
+        self.assertGreater(k["K2"]["ambient_rgb"][0], k["K1"]["ambient_rgb"][0])
+        self.assertLess(k["K3"]["key_energy"], k["K1"]["key_energy"])           # K3 darker
+        self.assertLess(k["K3"]["ambient_energy"], k["K1"]["ambient_energy"])
+        rig = cmd.light_request(self.layout, "L3")["light"]
+        self.assertEqual(rig["ship"]["id"], "K1")
+        self.assertAlmostEqual(sum(c * c for c in rig["ship"]["key_dir"]), 1.0)
+        self.assertEqual(rig["ship"]["probe"], sh["probe"])
+        self.assertEqual(cmd.light_request(self.layout, "L3", ship="K3")["light"]["ship"]["id"], "K3")
+        self.assertIn("ship_top", sh["grid"])
+        bad = copy.deepcopy(self.layout)
+        bad["light"]["ship"]["set"] = "K9"
+        bad["light"]["ship"]["grid"].append("nowhere")
+        bad["light"]["ship"]["sets"]["K2"]["pendant_k"] = 1.5
+        bad["light"]["ship"]["sets"]["K3"]["rim_rgb"] = [2.0, 0.0, 0.0]
+        del bad["light"]["ship"]["sets"]["K1"]["key_dir"]
+        bad["light"]["ship"]["probe"] = [[0.0, 4.0, 60.0], [32.0, 12.0, 36.0]]
+        problems = lobby_layout.check(bad, self.fp(bad))
+        for want in ("set K9", "grid: nowhere", "K2: pendant_k", "K3: rim_rgb", "K1: keys differ", "probe"):
             self.assertTrue(any(want in p for p in problems), (want, problems))
 
     def test_the_video(self) -> None:

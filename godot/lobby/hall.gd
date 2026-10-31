@@ -22,6 +22,8 @@ const WATCHDOG_S: float = 240.0
 const SPEED: float = 3.0
 const SHEET_W: int = 1280
 const GAP: int = 4
+const SHIP_LAYER: int = 1 << 10   # step 5a2: the package ship's meshes draw on render layer 11 (its own light set)
+const ALL_LAYERS: int = 0xFFFFF
 
 var _req: Dictionary
 var _out: String
@@ -233,6 +235,8 @@ func _ship_package(hall: Node3D, pk: Dictionary) -> void:
 			colliders += 1
 		if n is Light3D:
 			lights += 1
+		if n is GeometryInstance3D:   # step 5a2: per instance only; the package's files stay as they are
+			(n as GeometryInstance3D).layers = SHIP_LAYER
 	_pkg_info = {"freed": freed, "jaws": jaws, "colliders": colliders, "lights": lights}
 	_placed["ship_pkg"] = [ship]
 	print("LOBBY ship package: %s" % JSON.stringify(_pkg_info))
@@ -622,6 +626,7 @@ func _apply_light(l: Dictionary) -> void:
 		vp.set_positional_shadow_atlas_quadrant_subdiv(q, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_4)
 	var lens_y: Dictionary = _lens_bottoms(l["pendants"])
 	var warm: Color = _c(l["pendant_rgb"])
+	var hall_lights: Dictionary = {"pendant": [], "fill": [], "earth": [], "probe": []}   # step 5a2: _ship_light's
 	for p: Array in l["pendants"]:
 		var key: String = "%s,%s" % [p[0], p[1]]
 		if not lens_y.has(key):
@@ -641,6 +646,7 @@ func _apply_light(l: Dictionary) -> void:
 		_rig.add_child(spot)
 		spot.position = Vector3(float(p[0]), float(lens_y[key]) - 0.03, float(p[1]))
 		spot.rotation_degrees = Vector3(-90, 0, 0)   # -z (the spot's axis) straight down
+		hall_lights["pendant"].append(spot)
 		if float(l["fill_energy"]) > 0.0:   # step 4b: the shade's wide warm spill up onto the vault and ribs (no shadow)
 			var up: SpotLight3D = SpotLight3D.new()
 			up.light_color = _c(l["fill_rgb"])
@@ -654,6 +660,7 @@ func _apply_light(l: Dictionary) -> void:
 			_rig.add_child(up)
 			up.position = Vector3(float(p[0]), float(lens_y[key]) + 0.6, float(p[1]))
 			up.rotation_degrees = Vector3(90, 0, 0)   # straight up
+			hall_lights["fill"].append(up)
 	for at: Array in l["strips"]:
 		var o: OmniLight3D = _omni(_v(at), _c(l["strip_rgb"]), float(l["strip_energy"]), float(l["strip_range"]))
 		o.light_specular = float(l["strip_specular"])   # step 4b: longer, softer streaks on the polished floor
@@ -674,6 +681,8 @@ func _apply_light(l: Dictionary) -> void:
 		_rig.add_child(sun)
 		var d: Vector3 = _v(l[k + "_dir"]).normalized()
 		sun.look_at_from_position(Vector3.ZERO, -d, Vector3.UP)   # the light travels away from the Earth
+		if k == "earth":
+			hall_lights["earth"].append(sun)
 	if float(l["window_energy"]) > 0.0:   # step 4b: the Earth's cold spill just inside the glass, north and down
 		for at: Array in l["window"]:
 			var cold: SpotLight3D = SpotLight3D.new()
@@ -701,6 +710,9 @@ func _apply_light(l: Dictionary) -> void:
 		probe.ambient_color_energy = float(l["ambient_energy"])
 		_rig.add_child(probe)
 		probe.position = _v(pr[1])
+		hall_lights["probe"].append(probe)
+	if l.has("ship") and _placed.has("ship_pkg"):
+		_ship_light(l["ship"], l, hall_lights)
 	# step 5a: the ship package's own lamps (its ship.tscn's Light3D nodes left after the freed ones) times ship_lights
 	for top: Node in _placed.get("ship_pkg", []):
 		for n: Node in top.find_children("*", "Light3D", true, false):
@@ -710,6 +722,62 @@ func _apply_light(l: Dictionary) -> void:
 			lt.light_energy = float(lt.get_meta("lobby_e0")) * float(l["ship_lights"])
 			lt.visible = lt.light_energy > 0.0
 	_emit(l)
+
+
+## Step 5a2: the package ship's own light set (docs/lobby.md "Step 5a2"), by cull masks on its render layer: the hall's
+## pendants (with their fill) and the Earth's light skip it below k 1, still casting its shadow, and unshadowed copies
+## at k light it; its own probe (the hall captured without it) instead of the hall's; a cool key and a rim on it alone.
+func _ship_light(s: Dictionary, l: Dictionary, hall_lights: Dictionary) -> void:
+	var not_ship: int = ALL_LAYERS & ~SHIP_LAYER
+	for k: String in ["pendant", "earth"]:
+		var share: float = float(s[k + "_k"])
+		if share >= 1.0:
+			continue
+		for lt: Light3D in hall_lights[k] + (hall_lights["fill"] if k == "pendant" else []):
+			lt.light_cull_mask = not_ship
+			lt.shadow_caster_mask = ALL_LAYERS
+		if share <= 0.0:
+			continue
+		for lt: Light3D in hall_lights[k]:
+			var copy: Light3D = lt.duplicate() as Light3D
+			copy.light_energy = lt.light_energy * share
+			copy.shadow_enabled = false
+			copy.light_cull_mask = SHIP_LAYER
+			if k == "pendant":
+				copy.light_specular = float(s["pendant_specular"])
+			_rig.add_child(copy)
+			copy.global_transform = lt.global_transform
+	if bool(s["own_probe"]):
+		for pr: ReflectionProbe in hall_lights["probe"]:
+			pr.reflection_mask = not_ship
+		var probe: ReflectionProbe = ReflectionProbe.new()
+		probe.name = "probe_ship"
+		probe.size = _v(s["probe"][1])
+		probe.box_projection = true
+		probe.enable_shadows = true
+		probe.max_distance = 80.0
+		probe.cull_mask = not_ship
+		probe.reflection_mask = SHIP_LAYER
+		probe.intensity = float(s["probe_intensity"])
+		probe.update_mode = ReflectionProbe.UPDATE_ONCE
+		probe.ambient_mode = ReflectionProbe.AMBIENT_COLOR
+		probe.ambient_color = _c(s["ambient_rgb"])
+		probe.ambient_color_energy = float(s["ambient_energy"])
+		_rig.add_child(probe)
+		probe.position = _v(s["probe"][0])
+	for k: String in ["key", "rim"]:
+		if float(s[k + "_energy"]) <= 0.0:
+			continue
+		var sun: DirectionalLight3D = DirectionalLight3D.new()
+		sun.name = "ship_" + k
+		sun.light_color = _c(s[k + "_rgb"])
+		sun.light_energy = float(s[k + "_energy"])
+		sun.shadow_enabled = false
+		sun.light_cull_mask = SHIP_LAYER
+		_rig.add_child(sun)
+		sun.look_at_from_position(Vector3.ZERO, -_v(s[k + "_dir"]).normalized(), Vector3.UP)
+	print("LOBBY ship light %s: pendants x%s, Earth x%s, own probe %s, key %s, rim %s" % [s["id"], s["pendant_k"],
+		s["earth_k"], s["own_probe"], s["key_energy"], s["rim_energy"]])
 
 
 func _omni(at: Vector3, c: Color, energy: float, rng: float) -> OmniLight3D:

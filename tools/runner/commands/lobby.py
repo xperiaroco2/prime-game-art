@@ -38,6 +38,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--earth-tex", action="store_true", help="scale NASA's Earth sources to the window's textures")
     parser.add_argument("--earth-grid", type=Path, metavar="DIR", help="shoot the Earth variants' grid into DIR")
     parser.add_argument("--light-grid", type=Path, metavar="DIR", help="shoot the light moods' grid into DIR (step 4)")
+    parser.add_argument("--ship-grid", type=Path, metavar="DIR",
+                        help="step 5a2: the ship's light sets ([light.ship.sets]) in [light.ship] grid's views into DIR")
     parser.add_argument("--video", type=Path, metavar="DIR", help="the eye-height walk-through MP4 into DIR (step 4)")
     parser.add_argument("--distance-grid", type=Path, metavar="DIR",
                         help="step 4c: the Earth object's distances D1-D3 from [earth] distance_views into DIR")
@@ -131,6 +133,10 @@ def run(args: argparse.Namespace) -> int:
         code = shoot(layout, out, place, args.distance_grid.resolve(), grid="distance")
         if code:
             return code
+    if args.ship_grid:
+        code = shoot(layout, out, place, args.ship_grid.resolve(), grid="ship")
+        if code:
+            return code
     if args.earth_video:
         e = layout["earth"]
         vd = dict(layout["video"], keys=e["video_keys"], max_mb=e["video_max_mb"])
@@ -194,7 +200,20 @@ def look_request(layout: dict, scheme: str) -> dict:
 
 
 # --- the light (step 4) ---------------------------------------------------------------------------------------------
-def light_request(layout: dict, mood: str, trial: str | None = None) -> dict:
+def ship_light(layout: dict, sid: str | None = None) -> dict | None:
+    """Step 5a2: one of [light.ship]'s sets for hall.gd (the layout's `set` by default): its numbers, the key's and the
+    rim's directions as vectors and the ship's own probe box; None without a [light.ship]."""
+    sh = layout["light"].get("ship")
+    if sh is None:
+        return None
+    sid = sid or sh["set"]
+    s = dict(sh["sets"][sid])
+    s["key_dir"], s["rim_dir"] = _dir(*s["key_dir"]), _dir(*s["rim_dir"])
+    s.update({"id": sid, "probe": sh["probe"]})
+    return s
+
+
+def light_request(layout: dict, mood: str, trial: str | None = None, ship: str | None = None) -> dict:
     """One mood's rig for hall.gd: its numbers, the directions, and every lamp's place in the lobby frame (the pendants'
     x and z (hall.gd finds each lens's height in the vault's mesh), the strips before the pilasters' faces, the red
     omnis before the door lamps, the corridor's omnis) and the reflection probes."""
@@ -222,6 +241,11 @@ def light_request(layout: dict, mood: str, trial: str | None = None) -> dict:
     m.update({"pendants": [[x, z] for x in li["pendants_x"] for z in li["pendants_z"]], "strips": strips,
               "doors": doors, "corridor": li["corridor"], "probes": li["probes"],
               "window": li.get("window", []), "window_tilt": li.get("window_tilt", 0.0)})
+    sl = ship_light(layout, ship)
+    if sl is not None:
+        m["ship"] = sl
+    if ship:   # step 5a2's grid: one ship set over the mood
+        return {"id": ship, "title": f"{mood}+{ship} {li['ship']['sets'][ship]['title']}", "light": m}
     return {"id": trial or mood, "title": title, "light": m}
 
 
@@ -442,6 +466,11 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
                     "variants": ([light_request(layout, layout["light"]["mood"], k) for k in layout["light"]["trials"]]
                                  if layout["light"].get("trials") else
                                  [light_request(layout, k) for k in layout["light"]["moods"]])})
+    elif grid == "ship":   # step 5a2: the ship's light sets over the mood
+        sh = layout["light"]["ship"]
+        views = [v[:5] for v in rv["views"]] + sh["views"]
+        req.update({"mode": "grid", "views": [v for g in sh["grid"] for v in views if v[0] == g],
+                    "variants": [light_request(layout, layout["light"]["mood"], ship=k) for k in sh["sets"]]})
     elif grid == "distance":   # step 4c: the Earth object's distances from the same positions
         e = layout["earth"]
         req.update({"mode": "grid", "views": e["distance_views"],
