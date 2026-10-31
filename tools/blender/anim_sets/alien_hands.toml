@@ -15,25 +15,26 @@ skip = ["PoseArms_*", "PoseLegs_*"]  # the photo poses keep their own grips
 
 [grips.relaxed]  # Idle, Walk, Talk, Crouch (H1b): the curl grows from the index to the outer finger, the thumb lies
                  # alongside the index, never facing the fingers (the old even 30/30/30 C read as holding a cup)
-Index = [8, 14, 8]
-Middle = [16, 24, 12]
-Ring = [26, 34, 18]
-Little = [26, 34, 18]
+Index = [12, 10, 2]     # H1f: the curl led by the knuckles, the tips nearly straight and the fingers closer (spread 6):
+Middle = [20, 16, 4]    # 8/14/8 .. 26/34/18 with spread 12 read as a claw in side view (separated, hooked tips)
+Ring = [28, 22, 6]
+Little = [30, 22, 6]
 mirror = true
-spread = 12
+spread = 6
 Thumb = [2, 8, 6]
 ThumbTurn = [4, -6]
 
 [grips.loose]    # the run (H1b): a soft loose fist, the curl growing to the outer finger, the thumb laid over the
                  # index's middle segment (no "O" of thumb and index tips)
-Index = [72, 62, 14]    # H1c: the fold led by the knuckle, the tips tucked (48/56/26 closed an "O" with the thumb)
-Middle = [78, 68, 16]
-Ring = [84, 74, 18]
-Little = [84, 74, 18]
+Index = [72, 90, 30]    # H1f: the fingers folded onto the palm (H1c's 72/62/14 left the tips short of it, and the
+Middle = [78, 94, 30]   # thumb's tip met the index's tip in an "O" in the Jog clip)
+Ring = [84, 98, 32]
+Little = [84, 98, 32]
 mirror = true
-spread = 6
-Thumb = [24, 30, 18]
-ThumbTurn = [42, 60]    # across the index's middle segment (past rest 0.64 cm: the thumb resting on the index)
+spread = 4
+Thumb = [20, 45, 35]
+ThumbTurn = [20, 70]    # H1f grid t3: rolled 20 the thumb lies diagonally over the folded index and middle (roll 42
+                        # pointed it at the index's tip; -20 laid it flat over the knuckles' line, 60-100 off the fist)
 
 [clips."Jog_*"]
 grip = "loose"
