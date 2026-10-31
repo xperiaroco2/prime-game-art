@@ -323,6 +323,8 @@ def apply(arm, skin, path: str) -> dict:
         if mode is True and cfg.get("floor_feet"):  # B1b: at the foot, the Hips untouched (feet_floor)
             rep["floor"] = feet_floor(arm, skin, act, rest, up_arm, wrap=clip.endswith("_Loop"),
                                       no_flight=not can_fly(clip))
+            if rep["floor"]["lowest_after_cm"] < FLOOR_FAIL_CM:  # B1i (the review's minor 2): A2's rule kept
+                raise ValueError(f"{act.name}: still {rep['floor']['lowest_after_cm']} cm under the floor at the foot")
         elif mode is True:
             rep["floor"] = floor(arm, skin, act, rest, up_arm, wrap=clip.endswith("_Loop"),
                                  reach=int(cfg.get("floor_reach", 2)))
@@ -364,21 +366,81 @@ def foot_raise(lowest: list[float]) -> list[float]:
 PLANT_TOL_M = 0.0005  # B1e: a no-flight frame's lower foot this high or less is left as it is
 
 
-def foot_plant(left: list[float], right: list[float], no_flight: bool) -> dict[str, list[float]]:
+def foot_plant(left: list[float], right: list[float], no_flight: bool,
+               standing: dict[str, list[bool]] | None = None) -> dict[str, list[float]]:
     """B1e (art #196, the crouch float): per frame each foot's raise (m, negative lowers it). A foot under the floor
     is raised by its own need (foot_raise). In a clip with no flight (no_flight: alien_contact.can_fly false: the
     walk, the crouches, the idles), a frame with both feet up has both lowered by the lower foot's height over
     PLANT_TOL_M, so the lower foot lands and the other keeps its height over it. One amount for both feet keeps the
     paths smooth where the lower foot changes sides (lowering only the lower foot would jump the other one there).
     The crouch's trailing foot rose onto its toe before the front foot landed: both shoes 10-23 mm up for about 10
-    frames, on both characters. A foot without points near the floor (_foot_lows' 1.0) lowers nothing."""
+    frames, on both characters. A foot without points near the floor (_foot_lows' 1.0) lowers nothing.
+    standing (B1i, the review's major 1): per foot and frame whether it moves as a planted foot does (plant_standing);
+    a frame whose lower foot does not is not lowered, so no foot lands while it still moves (a skid)."""
     out = {"Left": foot_raise(left), "Right": foot_raise(right)}
     if no_flight:
         for i, (a, b) in enumerate(zip(left, right)):
             d = min(a, b) - PLANT_TOL_M
+            if standing is not None and not standing["Left" if a <= b else "Right"][i]:
+                continue
             if 0.0 < d < SOLE_BAND_M:
                 out["Left"][i] = out["Right"][i] = -d
     return out
+
+
+PLANT_SLIDE_M = 0.002  # B1i: a foot moving this far per frame off the stance motion is not standing (a skid)
+PLANT_PATCH_M = 0.003  # B1i: a foot's contact patch: its points this close over its lowest
+
+
+def foot_velocity(xy: list, wrap: bool = False) -> list[tuple[float, float]]:
+    """B1i: per frame a foot's horizontal velocity (m per frame) from its track (x, y): the central difference, one
+    sided at a clip's ends; wrap: a loop whose last frame repeats its first, the difference runs around the seam."""
+    n = len(xy)
+    if n < 2:
+        return [(0.0, 0.0)] * n
+    m = n - 1 if wrap and n > 2 else n
+    out = []
+    for i in range(m):
+        if wrap and m == n - 1:
+            a, b, k = xy[(i - 1) % m], xy[(i + 1) % m], 2.0
+        else:
+            a, b = xy[max(0, i - 1)], xy[min(n - 1, i + 1)]
+            k = float(min(n - 1, i + 1) - max(0, i - 1))
+        out.append(((b[0] - a[0]) / k, (b[1] - a[1]) / k))
+    return out + [out[0]] if m == n - 1 else out
+
+
+def stance_velocity(lows: dict[str, list[float]], vel: dict[str, list], plant: float = SOLE_UNDER_M):
+    """B1i: the clip's stance motion (m per frame, x and y): the median velocity of the feet on the frames they stand
+    (lowest at most plant). The game plays the clips in place, so a planted foot travels back at the ground speed.
+    None when no foot stands."""
+    vx = sorted(v[0] for s in lows for z, v in zip(lows[s], vel[s]) if z <= plant)
+    vy = sorted(v[1] for s in lows for z, v in zip(lows[s], vel[s]) if z <= plant)
+    if not vx:
+        return None
+    mid = len(vx) // 2
+    med = (lambda a: a[mid] if len(a) % 2 else 0.5 * (a[mid - 1] + a[mid]))
+    return med(vx), med(vy)
+
+
+def plant_standing(lows: dict[str, list[float]], xy: dict[str, list], wrap: bool = False,
+                   tol: float = PLANT_SLIDE_M) -> tuple[dict[str, list[bool]], dict[str, list[float]]]:
+    """B1i: per foot and frame whether it moves as a planted foot (within tol per frame of stance_velocity) and its
+    slide off that motion (m per frame); no frame stands without a stance motion."""
+    vel = {s: foot_velocity(xy[s], wrap) for s in xy}
+    vs = stance_velocity(lows, vel)
+    if vs is None:
+        return {s: [False] * len(xy[s]) for s in xy}, {s: [0.0] * len(xy[s]) for s in xy}
+    off = {s: [math.hypot(v[0] - vs[0], v[1] - vs[1]) for v in vel[s]] for s in vel}
+    return {s: [x <= tol for x in off[s]] for s in off}, off
+
+
+def plant_slide_mm(lows: dict[str, list[float]], raise_: dict[str, list[float]], off: dict[str, list[float]]) -> float:
+    """B1i: the largest slide (mm per frame, plant_standing's off) of the lower foot on a frame foot_plant lowered
+    (both feet lowered by one amount; the lower one lands)."""
+    lowered = [("Left" if a <= b else "Right", i) for i, (a, b) in enumerate(zip(lows["Left"], lows["Right"]))
+               if raise_["Left"][i] < 0.0 and raise_["Right"][i] < 0.0]
+    return round(max((off[s][i] for s, i in lowered), default=0.0) * 1000, 2)
 
 
 def raise_knee(hip, knee, ankle, lift):
@@ -578,6 +640,9 @@ def cross_lifts(lows: dict[str, list[float]], lift: list[float], reach: int = 2,
     return out
 
 
+CROSS_SLIDE_FAIL_MM = 1.0  # B1i: a cross push sliding a planted foot this far (mm) over a stance fails the clip
+
+
 def cross_slide_mm(lows: dict[str, list[float]], push: dict[str, list[float]], wrap: bool = False,
                    plant: float = FLOAT_TOL_M) -> dict[str, float]:
     """B1g: per foot how far the push slides it while it stands (mm): over each stance run the push's range."""
@@ -764,6 +829,9 @@ def feet_cross(arm, shoes, act, clear: float, wrap: bool) -> dict:
     both stand; held over a stance, eased by a raised cosine), a crossed-over step's higher foot lifted over the
     other instead (cross_lifts); the legs solved again by _raise_ankles (the Foot's world rotation kept, the knee in
     its own plane), the Hips untouched; three times at most. A clip with no overlap is not touched (asserted).
+    B1i: the clearance goes into the first pass only (a later pass asks for the overlap still left); a push sliding a
+    planted foot over CROSS_SLIDE_FAIL_MM (each pass's push over its own stance runs, and the summed push over the
+    final ones: `slide_max_mm`) or a Foot missing its place over ANKLE_MISS_FAIL_CM fails the clip.
     Returns the overlap per frame before and after (mm), the push, the lift and the planted feet's slide."""
     m0 = m = cross_measure(arm, shoes, act, clear)
     side = m["side"]
@@ -771,7 +839,7 @@ def feet_cross(arm, shoes, act, clear: float, wrap: bool) -> dict:
     pushed = {s: [0.0] * n for s in ("Left", "Right")}
     lifted = {s: [0.0] * n for s in ("Left", "Right")}
     sign = {"Left": 1.0, "Right": -1.0}
-    miss = 0.0
+    miss = slide = 0.0
     passes = []
     for _ in range(3):
         passes.append({"frames": sum(x > 0.0 for x in m["need"]), "need_max_mm": round(max(m["need"]) * 1000, 2),
@@ -780,17 +848,26 @@ def feet_cross(arm, shoes, act, clear: float, wrap: bool) -> dict:
         lift = cross_lifts(m["lows"], m["lift"], wrap=wrap)
         if not any(x > 0.0 for v in (*push.values(), *lift.values()) for x in v):
             break
+        # B1i (the review's minor 6): each pass's push slides no planted foot over that pass's own stance runs
+        slide = max(slide, *cross_slide_mm(m["lows"], push, wrap).values())
         off = {s: [(sign[s] * x * side[0], sign[s] * x * side[1], z) for x, z in zip(push[s], lift[s])]
                for s in push}
         miss = max(miss, _raise_ankles(arm, act, off)["ankle_miss_max_cm"])
         pushed = {s: [a + b for a, b in zip(pushed[s], push[s])] for s in pushed}
         lifted = {s: [a + b for a, b in zip(lifted[s], lift[s])] for s in lifted}
-        m = cross_measure(arm, shoes, act, clear)
+        # B1i (the review's minor 5): the first pass gave the clearance; a later one asks only for what still overlaps
+        m = cross_measure(arm, shoes, act, 0.0)
     ob = [round(x * 1000, 1) for x in m0["overlap"]]
     oa = [round(x * 1000, 1) for x in m["overlap"]]
     moved = any(x != 0.0 for v in (*pushed.values(), *lifted.values()) for x in v)
     if moved and not any(x > 0.0 for x in m0["overlap"]):
         raise ValueError(f"{act.name}: the shoes do not overlap, yet the cross pass moved a foot")
+    final = cross_slide_mm(m["lows"], pushed, wrap)  # the summed push over the final stance runs
+    slide = max(slide, *final.values())
+    if slide > CROSS_SLIDE_FAIL_MM:
+        raise ValueError(f"{act.name}: the cross push slides a planted foot {slide} mm (over {CROSS_SLIDE_FAIL_MM})")
+    if miss > ANKLE_MISS_FAIL_CM:  # B1i (the review's minor 3)
+        raise ValueError(f"{act.name}: a pushed Foot lands {miss} cm from its place (over {ANKLE_MISS_FAIL_CM})")
     return {"clear_cm": round(clear * 100, 2), "overlap_before_mm": ob, "overlap_after_mm": oa,
             "overlap_max_before_mm": max(ob), "overlap_max_after_mm": max(oa),
             "overlap_frames_before": sum(x > 0 for x in ob), "overlap_frames_after": sum(x > 0 for x in oa),
@@ -798,14 +875,20 @@ def feet_cross(arm, shoes, act, clear: float, wrap: bool) -> dict:
             "push_cm": {s: [round(x * 100, 2) for x in v] for s, v in pushed.items()},
             "lift_max_cm": {s: round(max(v) * 100, 2) for s, v in lifted.items()},
             "zero_push": not moved,
-            "slide_mm": cross_slide_mm(m0["lows"], pushed, wrap),
+            "slide_mm": final, "slide_max_mm": slide,
             "crossed_frames": sum(m0["crossed"]), "crossed_frames_after": sum(m["crossed"]),
             "ankle_miss_max_cm": miss, "passes": passes}
 
 
-def _foot_lows(arm, skins, f0: int, f1: int) -> dict[str, list[float]]:
+FOOT_REACH_M = 0.15  # B1i (the review's minor 4): a point farther than this from both feet counts for neither
+
+
+def _foot_lows(arm, skins, f0: int, f1: int, tracks: dict | None = None) -> dict[str, list[float]]:
     """B1b: per frame each foot's lowest point (m, world z): the skins' points within SOLE_BAND_M of the floor, each
-    counted for the foot whose Foot-to-Toes segment is nearer (1.0 when none is that low)."""
+    counted for the foot whose Foot-to-Toes segment is nearer (1.0 when none is that low); B1i: only points within
+    FOOT_REACH_M of that segment (a hand or a knee near the floor raised the nearer foot). tracks (B1i): a dict
+    filled per foot with its contact patch's centre (x, y) per frame: its points within PLANT_PATCH_M over its
+    lowest (None when it has none)."""
     import bpy
     import numpy as np
 
@@ -834,8 +917,14 @@ def _foot_lows(arm, skins, f0: int, f1: int) -> dict[str, list[float]]:
             t = np.clip(((p - a) @ ab) / max(1e-12, float(ab @ ab)), 0.0, 1.0)
             dist.append(np.linalg.norm(p - (a + t[:, None] * ab), axis=1))
         left = dist[0] <= dist[1]
-        for s, m in (("Left", left), ("Right", ~left)):
-            out[s].append(float(p[m, 2].min()) if m.any() else 1.0)
+        near = np.minimum(dist[0], dist[1]) <= FOOT_REACH_M
+        for s, m in (("Left", left & near), ("Right", ~left & near)):
+            low = float(p[m, 2].min()) if m.any() else 1.0
+            out[s].append(low)
+            if tracks is not None:
+                patch = p[m & (p[:, 2] <= low + PLANT_PATCH_M)] if m.any() else p[:0]
+                tracks.setdefault(s, []).append(tuple(float(x) for x in patch[:, :2].mean(axis=0)) if len(patch)
+                                                else None)
     return out
 
 
@@ -917,32 +1006,58 @@ def _raise_ankles(arm, act, raises: dict[str, list]) -> dict:
     return {"ankle_miss_max_cm": round(miss * 100.0, 3), "legs": [leg[0] for leg in legs]}
 
 
+def _fill_track(xy: list) -> list[tuple[float, float]]:
+    """B1i: a foot's track with its missing frames (None: no point near the floor) filled from the nearest frame
+    before (else after); all missing: zeros."""
+    known = [i for i, v in enumerate(xy) if v is not None]
+    if not known:
+        return [(0.0, 0.0)] * len(xy)
+    return [xy[i] if xy[i] is not None else xy[max((k for k in known if k < i), default=min(known))]
+            for i in range(len(xy))]
+
+
 def feet_floor(arm, skins, act, rest, up_arm, wrap: bool, no_flight: bool = False) -> dict:
     """B1b: one clip on the floor at the foot (sole_floor's and the build's `floor_feet` pass): each foot's lowest
     point per frame (_foot_lows over skins), a foot under the floor raised by its own need (foot_raise) and its leg
     solved again (_raise_ankles), twice at most, the Hips untouched; what a leg cannot reach goes to the Hips by
     floor() at reach 0 (`hips_fallback_cm`). no_flight (B1e): a frame with both feet up lowered by foot_plant, so the
-    lower foot stands on the floor (`max_lower_cm`; `floated_after` counts the frames still both up after).
-    Returns the report (sole_floor's keys)."""
+    lower foot stands on the floor (`max_lower_cm`; `floated_after` counts the frames still both up after). B1i: only
+    where that lower foot moves as a planted one (plant_standing: within PLANT_SLIDE_M per frame of the stance motion),
+    the frames left up in `plant_skipped_frames`, the lowered feet's largest slide in `plant_slide_mm`; a Foot missing
+    its place over ANKLE_MISS_FAIL_CM fails the clip. Returns the report (sole_floor's keys)."""
     skins = skins if isinstance(skins, (list, tuple)) else [skins]
     f0, f1 = _assign(arm, act)
-    lows = before = _foot_lows(arm, skins, f0, f1)
+    tracks = {}
+    lows = before = _foot_lows(arm, skins, f0, f1, tracks)
     raised = {s: [0.0] * (f1 - f0 + 1) for s in lows}
-    miss = 0.0
+    miss = slide = 0.0
+    skipped = set()
     for _ in range(2):
-        r = foot_plant(lows["Left"], lows["Right"], no_flight)
+        standing = off = None
+        if no_flight:  # B1i: lower only a foot that moves as a planted one
+            xy = {s: _fill_track(tracks[s]) for s in tracks}
+            standing, off = plant_standing(lows, xy, wrap)
+            skipped |= {i for i, (a, b) in enumerate(zip(lows["Left"], lows["Right"]))
+                        if PLANT_TOL_M < min(a, b) < SOLE_BAND_M and not standing["Left" if a <= b else "Right"][i]}
+        r = foot_plant(lows["Left"], lows["Right"], no_flight, standing)
         if max(abs(x) for v in r.values() for x in v) < 1e-4:
             break
+        if off is not None:
+            slide = max(slide, plant_slide_mm(lows, r, off))
         miss = max(miss, _raise_ankles(arm, act, r)["ankle_miss_max_cm"])
         raised = {s: [a + b for a, b in zip(raised[s], r[s])] for s in raised}
         _assign(arm, act)
-        lows = _foot_lows(arm, skins, f0, f1)
+        tracks = {}
+        lows = _foot_lows(arm, skins, f0, f1, tracks)
     low_b = [min(a, b) for a, b in zip(before["Left"], before["Right"])]
     low_a = [min(a, b) for a, b in zip(lows["Left"], lows["Right"])]
     rep = {"feet": True, "lowest_before_cm": round(min(low_b) * 100, 2),
            "max_raise_cm": {s: round(max(v) * 100, 2) for s, v in raised.items()},
            "no_flight": no_flight, "max_lower_cm": round(max(0.0, -min(min(v) for v in raised.values())) * 100, 2),
-           "ankle_miss_max_cm": miss, "hips_fallback_cm": 0.0}
+           "ankle_miss_max_cm": miss, "hips_fallback_cm": 0.0,
+           "plant_slide_mm": slide, "plant_skipped_frames": sorted(skipped)}
+    if miss > ANKLE_MISS_FAIL_CM:  # B1i (the review's minor 3): two_bone's clamp left a Foot short
+        raise ValueError(f"{act.name}: a re-solved Foot lands {miss} cm from its place (over {ANKLE_MISS_FAIL_CM})")
     if min(low_a) < -SOLE_UNDER_M:  # a leg out of reach: the rest at the Hips, each frame its own need
         fb = floor(arm, skins, act, rest, up_arm, wrap=wrap, reach=0)
         rep["hips_fallback_cm"] = fb["max_lift_cm"]

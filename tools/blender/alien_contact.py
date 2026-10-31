@@ -4,8 +4,8 @@ lowest, else every mesh's) min and max, the frames floated over 5 mm outside rea
 the Hips' largest one-frame step.
 
 Flight: a frame where the bare loco body's lowest is over 5 mm, but only in a clip that can leave the ground. B1d: a
-gait with a foot always down (NO_FLIGHT: the walk, the crouches, the idles, the talk) has no flight, so a frame with
-both feet up counts as floated there. Before, the crouch's float (her shoes 29-32 mm up, the bare body too) passed
+gait with a foot always down (NO_FLIGHT: the walk, the crouches, the idles, the talk; B1i: not the crouch run) has no
+flight, so a frame with both feet up counts as floated there. Before, the crouch's float (her shoes 29-32 mm up, the bare body too) passed
 as flight.
 
 Usage: alien_contact.py OUT.md LABEL=bare.json,stage1.json,stage2.json,... ...
@@ -16,12 +16,15 @@ import json
 import sys
 
 NO_FLIGHT = ("Walk", "Crouch", "Idle", "Talk")
+FLIGHT = ("Crouch_Run",)  # B1i: a run, though crouched: its source leaves the ground (his shoes 19 mm up, B1d)
 FLOAT_MM, UNDER_MM = 5.0, -2.0
 
 
 def can_fly(clip: str) -> bool:
-    """Whether the clip has frames with both feet up (a run, a jump): not a NO_FLIGHT gait."""
-    return not clip.startswith(NO_FLIGHT)
+    """Whether the clip has frames with both feet up (a run, a jump): not a NO_FLIGHT gait. B1i (art #196, the
+    review's major 1): Crouch_Run (and its variants) can fly: as a NO_FLIGHT crouch, foot_plant lowered its trailing
+    toe onto the floor in the run's own flight while it still moved (a skid)."""
+    return clip.startswith(FLIGHT) or not clip.startswith(NO_FLIGHT)
 
 
 def flight(clip: str, bare_ground: list[float]) -> list[bool]:
