@@ -344,6 +344,22 @@ before.
     the sole's need instead: the heel dips up to 19 mm at heel strike, so the Hips jerked up to 18.6 mm in a frame.
     `dress.json`'s `sole_floor` holds each clip's report (`max_raise_cm` per foot, `ankle_miss_max_cm`,
     `under_2mm_frames`, `floated_frames`, `lowest_before_mm`, `lowest_after_mm`).
+    The crossing shoes (B1f, art #196): before each clip's floor pass, `alien_clip_edit.feet_cross` measures the
+    shoes against each other per frame: each shoe's points (nearer its Foot-Toes segment) in 1 cm cells across the
+    body's forward and up axes, per cell its extent along the side axis (the right hip to the left); where both
+    shoes fill a cell and their extents come within the clearance, the swinging foot (the higher one; the planted
+    foot is never moved) needs to move outward by the planted shoe's outer side less its own inner side plus the
+    clearance (`cross_need`). A cell where the swinging shoe lies wholly inward does not count, nor a frame whose
+    shoes are crossed over (a strafe's step), and a need counts at most 4 cm (`CROSS_MAX_M`). The need is spread by
+    a raised cosine over two frames each side (`cross_bump`, around a loop's seam); a foot within 5 mm of the floor
+    never slides: over each stance run its push is held at the run's largest and eased in the swing around it
+    (`cross_pushes`; a foot that lands into the other shoe lands that much wider and stays). The foot is moved outward by it with its world rotation kept and the leg solved again (`_raise_ankles` with a world
+    offset; the knee in its own plane), the Hips untouched, three times at most. Walk, Jog_Fwd and Sprint never meet
+    (the shoes 8 to 16 cm apart in front view: the side views only overlap them in projection); Jog_Bwd (22 mm, hers)
+    and Strafe_Left__s4b (27 mm, his) do. The clearance is `cross_out_cm` in
+    `anim_sets/alien.toml` (0.5 cm in `[defaults]`, which also covers the clips it does not list; no key: no pass).
+    The report's `cross` per clip: `overlap_before_mm` / `overlap_after_mm` per frame, their maxima and frame
+    counts, `push_cm` per foot and frame, `crossed_frames`, `ankle_miss_max_cm`.
 19. **The report.** `dress.json`'s `sneakers`: the triangles, the foot's measures, the rim's heights, the slot and the
     foot's clearance (each foot vertex's signed distance to the shoe along its normal: those over the rim, the
     ankle, count as outside).
