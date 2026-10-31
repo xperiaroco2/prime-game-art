@@ -43,7 +43,8 @@ The settings: `[defaults]` and one `[clips.<name>]` table per clip, each key ove
   airborne loop, Jump_Air, which the game holds off the floor).
 Only the clips listed under `[clips.*]` are edited, each with `[defaults]` under its own keys; an unlisted clip is
 left exactly as the body carries it (A2: A1 gave every clip the defaults).
-Pure maths (`cap_turn`, `axis_turn`, `q_rotate`, `lift_profile`, `cut_frames`, `two_bone`) has no bpy and is unit-tested (tools/tests/test_alien_clip_edit.py).
+Pure maths (`cap_turn`, `axis_turn`, `q_rotate`, `lift_profile`, `cut_frames`, `two_bone`; B1b: `ground_clips`,
+`foot_raise`, `raise_knee`) has no bpy and is unit-tested (tools/tests/test_alien_clip_edit.py).
 """
 from __future__ import annotations
 
@@ -334,12 +335,155 @@ def apply(arm, skin, path: str) -> dict:
     return report
 
 
+SOLE_UNDER_M = 0.002  # B1b: the target: no sole more than this under the floor after the feet pass
+SOLE_BAND_M = 0.25  # B1b: only skin points this close to the floor count for a foot's sole
+
+
+def ground_clips(names: list[str], path: str) -> list[str]:
+    """B1b (art #196): the clips the soles' floor covers: every clip the game plays on the ground. A clip the
+    settings list counts when its floor is true; a clip they do not list counts too (the loco set's derived actions:
+    Jog_Fwd_Left, Jog_Bwd*, the strafes, the __p2 / __arm* / __w03 / __ual variants, which B1 left 5 to 19 mm under
+    the floor). Not floor false (Jump_Air: held off the floor) nor "ground" (Jump_Start: its tuck leaves the floor)."""
+    with open(path, "rb") as f:
+        listed = tomllib.load(f).get("clips", {})
+    return [n for n in names if n not in listed or settings(path, n).get("floor", False) is True]
+
+
+def foot_raise(lowest: list[float]) -> list[float]:
+    """B1b: per frame the raise (m) of one foot that puts its sole on the floor: its own need, max(0, -lowest). A
+    frame on or over the floor is not touched, so the other foot (the trailing toe at heel strike) stays down and
+    the Hips do not move: B1's Hips lift by the sole's need jerked them 18.6 mm in a frame at heel strike."""
+    return [max(0.0, -z) for z in lowest]
+
+
+def raise_knee(hip, knee, ankle, lift):
+    """B1b: the knee for the ankle moved by the vector lift with the hip kept (plain tuples): two_bone in a frame
+    moved by -lift, so the thigh and shin keep their lengths and the knee stays in the leg's own plane. An ankle out
+    of reach lands short (two_bone's 0.9995 of the leg); the pass measures where it landed."""
+    moved_hip = tuple(h - d for h, d in zip(hip, lift))
+    k = two_bone(tuple(hip), tuple(knee), tuple(ankle), moved_hip)
+    return tuple(x + d for x, d in zip(k, lift))
+
+
+def _foot_lows(arm, skins, f0: int, f1: int) -> dict[str, list[float]]:
+    """B1b: per frame each foot's lowest point (m, world z): the skins' points within SOLE_BAND_M of the floor, each
+    counted for the foot whose Foot-to-Toes segment is nearer (1.0 when none is that low)."""
+    import bpy
+    import numpy as np
+
+    scene = bpy.context.scene
+    pb = arm.pose.bones
+    mw = arm.matrix_world
+    out = {"Left": [], "Right": []}
+    for f in range(f0, f1 + 1):
+        scene.frame_set(f)
+        dg = bpy.context.evaluated_depsgraph_get()
+        pts = []
+        for sk in skins:
+            ev = sk.evaluated_get(dg)
+            me = ev.to_mesh()
+            co = np.empty(len(me.vertices) * 3)
+            me.vertices.foreach_get("co", co)
+            co = co.reshape(-1, 3) @ np.array(ev.matrix_world.to_3x3()).T + np.array(ev.matrix_world.translation)
+            pts.append(co[co[:, 2] < SOLE_BAND_M])
+            ev.to_mesh_clear()
+        p = np.concatenate(pts) if pts else np.empty((0, 3))
+        dist = []
+        for s in ("Left", "Right"):
+            a = np.array(mw @ pb[f"{s}Foot"].head)
+            b = np.array(mw @ pb[f"{s}Toes"].tail)
+            ab = b - a
+            t = np.clip(((p - a) @ ab) / max(1e-12, float(ab @ ab)), 0.0, 1.0)
+            dist.append(np.linalg.norm(p - (a + t[:, None] * ab), axis=1))
+        left = dist[0] <= dist[1]
+        for s, m in (("Left", left), ("Right", ~left)):
+            out[s].append(float(p[m, 2].min()) if m.any() else 1.0)
+    return out
+
+
+def _raise_ankles(arm, act, raises: dict[str, list[float]]) -> dict:
+    """B1b: each leg with a raise solved again per frame: its Foot moved up by raises[side][f - f0] metres (world)
+    with its world rotation kept (the Toes follow), the knee by raise_knee, the Hips untouched; the UpperLeg,
+    LowerLeg and Foot rotations keyed linearly on every frame (as hips_up). Returns the feet's largest miss (cm) on
+    the re-evaluated rig."""
+    import bpy
+    from mathutils import Matrix, Vector
+
+    f0, f1 = _assign(arm, act)
+    pb = arm.pose.bones
+    bones = arm.data.bones
+    legs = [(s, f"{s}UpperLeg", f"{s}LowerLeg", f"{s}Foot") for s in ("Left", "Right")
+            if max(raises.get(s, [0.0])) > 1e-5]
+    if not legs:
+        arm.animation_data.action = None
+        return {"ankle_miss_max_cm": 0.0, "legs": []}
+    names = {bones[u].parent.name for _, u, _, _ in legs} | {x for leg in legs for x in leg[1:]}
+    rec = {}
+    for f in range(f0, f1 + 1):
+        bpy.context.scene.frame_set(f)
+        rec[f] = {n: pb[n].matrix.copy() for n in names}
+    arm.animation_data.action = None
+    to_arm = arm.matrix_world.inverted().to_3x3()
+
+    def rel(child):
+        b = bones[child]
+        return b.parent.matrix_local.inverted() @ b.matrix_local
+
+    fcs = {}
+    for bag in _bags(act):
+        for fc in bag.fcurves:
+            if fc.data_path.endswith(".rotation_quaternion"):
+                fcs[(fc.data_path.split('"')[1], fc.array_index)] = fc
+    prev, solved, want = {}, {}, {}
+    for f in range(f0, f1 + 1):
+        r = rec[f]
+        for side, u, lo, ft in legs:
+            d = to_arm @ Vector((0.0, 0.0, raises[side][f - f0]))
+            mu, ml, mf = r[u], r[lo], r[ft]
+            hip, knee, ank = mu.translation, ml.translation, mf.translation
+            knee2 = Vector(raise_knee(tuple(hip), tuple(knee), tuple(ank), tuple(d)))
+            ank2 = ank + d
+            want[(f, ft)] = ank2
+            du = (knee - hip).rotation_difference(knee2 - hip)
+            mu2 = Matrix.Translation(hip) @ (du.to_matrix() @ mu.to_3x3()).to_4x4()
+            dl = (du @ (ank - knee)).rotation_difference(ank2 - knee2)
+            ml2 = Matrix.Translation(knee2) @ (dl.to_matrix() @ du.to_matrix() @ ml.to_3x3()).to_4x4()
+            mf2 = Matrix.Translation(ank2) @ mf.to_3x3().to_4x4()
+            for name, m, par in ((u, mu2, r[bones[u].parent.name]), (lo, ml2, mu2), (ft, mf2, ml2)):
+                q = (rel(name).inverted() @ par.inverted() @ m).to_quaternion().normalized()
+                if name in prev and q.dot(prev[name]) < 0.0:
+                    q = -q
+                prev[name] = q
+                for i in range(4):
+                    if (name, i) not in fcs:
+                        raise ValueError(f"{act.name}: {name} has no rotation keys")
+                    solved.setdefault((name, i), []).extend((float(f), q[i]))
+    for key, co in solved.items():
+        fc = fcs[key]
+        fc.keyframe_points.clear()
+        fc.keyframe_points.add(len(co) // 2)
+        fc.keyframe_points.foreach_set("co", co)
+        for kp in fc.keyframe_points:
+            kp.interpolation = "LINEAR"
+        fc.update()
+    _assign(arm, act)
+    miss = 0.0
+    for f in range(f0, f1 + 1):
+        bpy.context.scene.frame_set(f)
+        for _, _, _, ft in legs:
+            miss = max(miss, (pb[ft].matrix.translation - want[(f, ft)]).length)
+    arm.animation_data.action = None
+    return {"ankle_miss_max_cm": round(miss * 100.0, 3), "legs": [leg[0] for leg in legs]}
+
+
 def sole_floor(arm, skins, path: str) -> dict:
-    """B1 (art #196, the Walk hop): after the dress, every clip whose settings (path: a file, or a name under
-    anim_sets/) say `floor = true` lifted again with all of skins measured (the body and the sneakers: the soles reach
-    5 to 6.5 mm under the bare foot at heel strike and toe-off), each frame by its own need (reach 0, whatever the
-    clip's floor_reach: the clip's own lift is already in its keys). A clip still under FLOOR_FAIL_CM fails. Returns
-    floor()'s report per clip."""
+    """B1 (art #196, the Walk hop), B1b (the heel strike): after the dress, every ground clip (ground_clips: the
+    settings' floor-true clips and every clip they do not list) put on the floor with all of skins measured (the
+    body and the sneakers: the sole dips up to 19 mm under the floor at heel strike) at the foot, not the Hips: per
+    frame each foot's lowest (_foot_lows) and its raise (foot_raise), the leg solved again (_raise_ankles), twice at
+    most; what a leg cannot reach (a straight leg) is lifted at the Hips by floor() at reach 0 (`hips_fallback_cm`).
+    A clip still under FLOOR_FAIL_CM fails. Returns per clip the feet's lowest before and after, the raises, the miss,
+    `under_2mm_frames` and `floated_frames` (floated_frames over the lower foot)."""
     from mathutils import Vector  # Blender only
     import bpy
 
@@ -351,12 +495,40 @@ def sole_floor(arm, skins, path: str) -> dict:
     frame = bpy.context.scene.frame_current
     keep = arm.animation_data.action if arm.animation_data else None
     keep_slot = arm.animation_data.action_slot if keep is not None else None
+    acts = {a.name.split("|", 1)[1]: a for a in bpy.data.actions if a.name.startswith("CharacterArmature|")}
     out = {}
-    for act in [a for a in bpy.data.actions if a.name.startswith("CharacterArmature|")]:
-        clip = act.name.split("|", 1)[1]
-        if settings(str(p), clip).get("floor", False) is not True:
-            continue
-        out[clip] = rep = floor(arm, skins, act, rest, up_arm, wrap=clip.endswith("_Loop"), reach=0)
+    for clip in ground_clips(sorted(acts), str(p)):
+        act = acts[clip]
+        f0, f1 = _assign(arm, act)
+        lows = before = _foot_lows(arm, skins, f0, f1)
+        raised = {s: [0.0] * (f1 - f0 + 1) for s in lows}
+        miss = 0.0
+        for _ in range(2):
+            r = {s: foot_raise(v) for s, v in lows.items()}
+            if max(max(v) for v in r.values()) < 1e-4:
+                break
+            miss = max(miss, _raise_ankles(arm, act, r)["ankle_miss_max_cm"])
+            raised = {s: [a + b for a, b in zip(raised[s], r[s])] for s in raised}
+            _assign(arm, act)
+            lows = _foot_lows(arm, skins, f0, f1)
+        low_b = [min(a, b) for a, b in zip(before["Left"], before["Right"])]
+        low_a = [min(a, b) for a, b in zip(lows["Left"], lows["Right"])]
+        rep = {"feet": True, "lowest_before_cm": round(min(low_b) * 100, 2),
+               "max_raise_cm": {s: round(max(v) * 100, 2) for s, v in raised.items()},
+               "ankle_miss_max_cm": miss, "hips_fallback_cm": 0.0}
+        if min(low_a) < -SOLE_UNDER_M:  # a leg out of reach: the rest at the Hips, each frame its own need
+            fb = floor(arm, skins, act, rest, up_arm, wrap=clip.endswith("_Loop"), reach=0)
+            rep["hips_fallback_cm"] = fb["max_lift_cm"]
+            _assign(arm, act)
+            lows = _foot_lows(arm, skins, f0, f1)
+            low_a = [min(a, b) for a, b in zip(lows["Left"], lows["Right"])]
+        arm.animation_data.action = None
+        rep.update(lowest_after_cm=round(min(low_a) * 100, 2),
+                   under_2mm_frames=sum(z < -SOLE_UNDER_M for z in low_a),
+                   floated_frames=len(floated_frames(low_b, low_a)),
+                   lowest_before_mm=[round(x * 1000, 1) for x in low_b],
+                   lowest_after_mm=[round(x * 1000, 1) for x in low_a])
+        out[clip] = rep
         if rep["lowest_after_cm"] < FLOOR_FAIL_CM:
             raise ValueError(f"{act.name}: still {rep['lowest_after_cm']} cm under the floor with the soles")
     if keep is not None:

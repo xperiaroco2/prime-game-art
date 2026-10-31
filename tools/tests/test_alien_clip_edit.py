@@ -86,6 +86,40 @@ class FloorRule(unittest.TestCase):
             self.assertEqual(int(cfg.get("floor_reach", 2)), 0, clip)
 
 
+class SoleRule(unittest.TestCase):
+    """B1b (art #196): the soles on the floor at the foot, not the Hips, over every clip the game plays on the ground."""
+
+    TOML = str(Path(E.__file__).resolve().parent / "anim_sets" / "alien.toml")
+
+    def test_every_ground_clip_is_covered(self):  # B1 left the loco set's derived clips 5 to 19 mm under the floor
+        names = ["Walk_Loop", "Jog_Fwd_Loop", "Jog_Fwd_Left_Loop", "Strafe_Left__w03_Loop", "Jog_Bwd__p2_Loop",
+                 "Crouch_Fwd__ual_Loop", "Crouch_Run_Loop", "Idle_Loop", "Jump_Land", "Jump_Start", "Jump_Air_Loop"]
+        got = E.ground_clips(names, self.TOML)
+        self.assertEqual(got, names[:-2])  # not Jump_Start ("ground": its tuck) nor Jump_Air (held off the floor)
+
+    def test_a_foot_rises_by_its_own_need_only(self):  # the trailing toe stays down, nothing floats
+        heel = [0.0, -0.019, -0.012, -0.003, 0.0, 0.04]
+        self.assertEqual(E.foot_raise(heel), [0.0, 0.019, 0.012, 0.003, 0.0, 0.0])
+        after = [z + r for z, r in zip(heel, E.foot_raise(heel))]
+        self.assertEqual(E.floated_frames(heel, after), [])
+        self.assertTrue(all(abs(a) < 1e-12 for z, a in zip(heel, after) if z < 0))
+
+    def test_raised_ankle_keeps_the_leg(self):  # a striking leg: the ankle up 19 mm, the hip kept
+        hip, knee, ank = (0.1, 0.0, 0.85), (0.1, -0.12, 0.47), (0.1, -0.2, 0.07)
+        lift = (0.0, 0.0, 0.019)
+        k2 = E.raise_knee(hip, knee, ank, lift)
+        a2 = tuple(a + d for a, d in zip(ank, lift))
+        self.assertAlmostEqual(math.dist(hip, k2), math.dist(hip, knee), places=9)  # the thigh's length
+        self.assertAlmostEqual(math.dist(k2, a2), math.dist(knee, ank), places=9)  # the shin's length
+        self.assertAlmostEqual(k2[0], 0.1, places=9)  # the knee in the leg's own plane
+        self.assertLess(k2[1], knee[1])  # the knee bends a little more forward
+
+    def test_no_raise_no_change(self):
+        hip, knee, ank = (0.1, 0.0, 0.85), (0.1, -0.12, 0.47), (0.1, -0.2, 0.07)
+        for a, b in zip(E.raise_knee(hip, knee, ank, (0.0, 0.0, 0.0)), knee):
+            self.assertAlmostEqual(a, b, places=9)
+
+
 class A2Maths(unittest.TestCase):
     def test_arm_axis_signs(self):
         # the character faces -Y, its left is +X; a hand hangs along -Z

@@ -333,10 +333,17 @@ before.
     (Jog_Bwd__s4b), Crouch_Idle 56.4, Crouch_Fwd 40.5, Jog_Fwd and the strafes 39.7; after the cap 32.0. The arms
     and every other bone are untouched; `dress.json`'s `toes_cap` lists each clip's largest bend before and after.
     The body's toes inside the shoe stay cut (step 8).
-    The soles count on the floor (B1, art #196): after the cap, `--sole-floor alien` (the default; `''`: none) lifts
-    every clip that `anim_sets/alien.toml` floor-lifts again with the body and the shoes measured, each frame by
-    its own need (`alien_clip_edit.sole_floor`): the sole reached 5 to 6.5 mm under the floor at heel strike and
-    toe-off. `dress.json`'s `sole_floor` holds each clip's report (`lowest_before_mm`, `lowest_after_mm`).
+    The soles count on the floor (B1, B1b, art #196): after the cap, `--sole-floor alien` (the default; `''`: none)
+    puts every ground clip on the floor with the body and the shoes measured (`alien_clip_edit.sole_floor`): the
+    clips `anim_sets/alien.toml` floor-lifts and every clip it does not list (the loco set's derived actions:
+    Jog_Fwd_Left, Jog_Bwd*, the strafes, the `__` variants; `ground_clips`), not Jump_Air (`false`) nor Jump_Start
+    (`"ground"`). It works at the foot, not the Hips: per frame each foot's lowest sole point (the skin within
+    25 cm of the floor, nearer its Foot-Toes segment), a foot under the floor raised by its own need with its world
+    rotation kept, the leg solved again (`raise_knee`: the thigh and shin lengths and the knee's plane kept), twice
+    at most; what a straight leg cannot reach goes to the Hips at reach 0 (`hips_fallback_cm`). B1 lifted the Hips by
+    the sole's need instead: the heel dips up to 19 mm at heel strike, so the Hips jerked up to 18.6 mm in a frame.
+    `dress.json`'s `sole_floor` holds each clip's report (`max_raise_cm` per foot, `ankle_miss_max_cm`,
+    `under_2mm_frames`, `floated_frames`, `lowest_before_mm`, `lowest_after_mm`).
 19. **The report.** `dress.json`'s `sneakers`: the triangles, the foot's measures, the rim's heights, the slot and the
     foot's clearance (each foot vertex's signed distance to the shoe along its normal: those over the rim, the
     ankle, count as outside).

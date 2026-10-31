@@ -1191,12 +1191,12 @@ def main() -> int:
         "faces removed; tris", rep["tris"])
     shoes_now = next((o for o in cloth if o.name == "shoes"), None)
     if args.sole_floor and shoes_now is not None and "sneakers" in rep:
-        # B1: the soles reach under the bare foot at heel strike and toe-off; last, so every step above sees the
+        # B1, B1b: the soles reach under the floor at heel strike (raised at the foot); last, so every step above sees the
         # clips and the frame as the character brought them
         import alien_clip_edit as CE
         rep["sole_floor"] = CE.sole_floor(arm, [char, shoes_now], args.sole_floor)
-        say("sole floor", {k: (v["lowest_before_cm"], v["max_lift_cm"], v["floated_frames"])
-                           for k, v in rep["sole_floor"].items()})
+        say("sole floor", {k: (v["lowest_before_cm"], v["lowest_after_cm"], v["max_raise_cm"],
+                               v["hips_fallback_cm"], v["floated_frames"]) for k, v in rep["sole_floor"].items()})
     rep["maps"] = maps(cloth, not args.no_fill, tuple(float(v) for v in args.denim_gain.split(",")))
     blend = out / f"{args.name}_char.blend"
     bpy.ops.wm.save_as_mainfile(filepath=str(blend), compress=True)
