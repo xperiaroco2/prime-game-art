@@ -628,7 +628,7 @@ outside = true
 id = "leg_stern"
 builder = "leg"
 grounded = true                              # built at the real heights (not lifted: the raise)
-args = { top = 1.77, reach = 0.6 }   # the raise (was 1.17, 1.6)
+args = { top = 1.77, reach = 0.6, heavy = true }   # the raise (was 1.17, 1.6); n1: heavy, under the big bells
 collide = true
 outside = true
 
