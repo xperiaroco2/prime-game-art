@@ -85,6 +85,22 @@ The drivers overlap: a long agent pays every one of the others on every call.
          rewrite only after a gap over an hour;
      - `tools/run.sh metrics` run read-only in a checkout of the game repo.
 
+## Briefs under the asset gates (2026-10-31)
+The manager writes every brief for an asset's step under the gates of
+`docs/decisions/2026-10-31-asset-pipeline-gates.md` (the engineer's yes of 2026-10-31, #196). On top of rule 3:
+- **Cite the spec and its tolerances.** The brief names the asset's `<asset>_dims.toml` (`docs/pipeline.md`, "The
+  spec file") and the numbers the step must hit, each with its tolerance. A target that is not in the spec goes into
+  the spec first; no target lives only in a script argument or in the brief.
+- **Motion before detail.** A step that changes shape is judged on the skinned build playing the game's clips (Gate
+  2) and the engineer's yes on its shape and motion comes before any texture, stitching or hardware step is
+  briefed; a detail step re-runs Gate 2's numbers and they must not move.
+- **No sheet or video counts until viewed.** A handoff that lists a sheet or an MP4 says it was viewed and what it
+  showed; "not viewed" means the step's check is not done, and the next brief starts by viewing it.
+- **Two steps on one defect mean a change of route.** When two steps in a row have fixed the same kind of defect,
+  the next brief changes the route (regenerate, or build the part in code) instead of a third fix.
+- **Critics get the spec and the concept**, never an intermediate image as the target; they judge the build against
+  them, with the numbers table beside it.
+
 ## Checking a workflow script (#56)
 `workflow-check <script.js>...` refuses a script, one line per refusal (`<file>:<line>: <reason>`), when:
 - its line endings are not LF (a CRLF script is refused at resume);

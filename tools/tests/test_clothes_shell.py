@@ -347,11 +347,94 @@ class BodyPlanes(unittest.TestCase):  # E1b: the cut planes from a body's own bo
         self.assertLess(pl["bib"][1], pl["neck"][1])
         self.assertEqual(pl["arm_axis"], (0.041, 1.216))
 
+    def test_waist_z_sets_the_waist_alone(self):  # M2c: the m2 dungarees' band under B13's bones' waist
+        pl = H.body_planes(0.980, 1.274, 0.041, (0.129, 0.041, 1.216), 0.598)
+        low = H.body_planes(0.980, 1.274, 0.041, (0.129, 0.041, 1.216), 0.598, waist_z=0.93)
+        self.assertAlmostEqual(low["waist"], 0.93)
+        for k in pl:
+            if k != "waist":
+                self.assertEqual(low[k], pl[k])
+
     def test_a_neck_under_the_chest_is_refused(self):
         with self.assertRaises(ValueError):
             H.body_planes(1.3, 1.2, 0.04, (0.15, 0.06, 1.27), 0.64)
 
 
+
+
+class M2gHelpers(unittest.TestCase):  # M2g: the bib side's striped walls, the turn-ups' cut
+    def test_face_samples_count_and_inside(self):
+        tri = [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]
+        c = (1 / 3, 1 / 3)
+        pts = H.face_samples(c, tri)
+        self.assertEqual(len(pts), 10)
+        self.assertEqual(len(H.face_samples((0.5, 0.5), [(0, 0), (1, 0), (1, 1), (0, 1)])), 13)
+        for x, y in pts:  # all inside the triangle
+            self.assertGreaterEqual(x, -1e-9)
+            self.assertGreaterEqual(y, -1e-9)
+            self.assertLessEqual(x + y, 1 + 1e-9)
+
+    def test_face_samples_catch_a_stripe(self):
+        # a white band 0.55 < v < 0.75 of a unit quad: the old 5 samples (centre, corners at 0.7) miss it
+        quad = [(0, 0), (1, 0), (1, 1), (0, 1)]
+        old = [(0.5, 0.5)] + [(0.5 + 0.7 * (x - 0.5), 0.5 + 0.7 * (y - 0.5)) for x, y in quad]
+        self.assertFalse(any(0.55 < y < 0.75 for _x, y in old))
+        self.assertTrue(any(0.55 < y < 0.75 for _x, y in H.face_samples((0.5, 0.5), quad)))
+
+    def test_cut_ramp(self):
+        self.assertEqual(H.cut_ramp(0.150, 0.163, 0.002), 1.0)
+        self.assertEqual(H.cut_ramp(0.170, 0.163, 0.002), 0.0)
+        self.assertAlmostEqual(H.cut_ramp(0.163, 0.163, 0.002), 0.5)
+        self.assertAlmostEqual(H.cut_ramp(0.1625, 0.163, 0.002), 0.75)
+
+
+class M2hHelpers(unittest.TestCase):  # M2h: the turn-ups' relax
+    def test_relax_weight(self):
+        self.assertEqual(H.relax_weight(0.10, 0.20, 0.03), 1.0)
+        self.assertEqual(H.relax_weight(0.20, 0.20, 0.03), 0.0)
+        self.assertEqual(H.relax_weight(0.25, 0.20, 0.03), 0.0)
+        self.assertAlmostEqual(H.relax_weight(0.185, 0.20, 0.03), 0.5)
+        self.assertTrue(0.0 < H.relax_weight(0.19, 0.20, 0.03) < 0.5)
+
+    def test_outward_only_never_comes_in(self):  # M2i
+        self.assertEqual(H.outward_only(0.060, 0.065), 0.065)
+        self.assertEqual(H.outward_only(0.070, 0.065), 0.070)
+
+    def test_loop_nbrs_stay_on_the_loop(self):
+        edges = [(0, 1), (1, 2), (2, 0), (2, 7), (7, 8)]  # a hem loop 0-1-2 and an open run up the leg 2-7-8
+        got = H.loop_nbrs(edges, {0, 1, 2})
+        self.assertEqual({k: sorted(v) for k, v in got.items()}, {0: [1, 2], 1: [0, 2], 2: [0, 1]})
+        self.assertEqual(H.loop_nbrs([], {4}), {4: []})
+
+
+class CuffRing(unittest.TestCase):
+    """M2j: the built cuff's cross-section and the per-angle smoothing."""
+
+    def test_profile_is_a_closed_rolled_band(self):
+        pts = H.cuff_profile(0.060, 0.046, 0.035, 0.165, 0.118)
+        self.assertEqual(len(pts), 10)
+        for r, z in pts:
+            self.assertTrue(0.035 - 1e-9 <= r <= 0.060 + 1e-9, (r, z))
+            self.assertTrue(0.118 - 1e-9 <= z <= 0.165 + 1e-9, (r, z))
+        self.assertAlmostEqual(max(z for _r, z in pts), 0.165 - 0.007 * (1 - math.sin(math.radians(60))))  # the roll
+        self.assertAlmostEqual(min(z for _r, z in pts), 0.118)
+        self.assertAlmostEqual(pts[0][0], 0.046)  # starts on the inner wall under the roll
+        self.assertAlmostEqual(pts[3][0], 0.060)  # the roll ends on the outer wall
+        outer = [z for r, z in pts if abs(r - 0.060) < 1e-9]
+        self.assertEqual(len(outer), 2)  # the outer wall is straight (one radius) down to its round
+        self.assertAlmostEqual(pts[-2][0], 0.035 + 0.004 - 0.004 * math.cos(math.radians(45)))
+        self.assertAlmostEqual(pts[-1][0], 0.035)  # the narrowed opening
+
+    def test_profile_refuses_crossed_walls_and_a_flat_cuff(self):
+        with self.assertRaises(ValueError):
+            H.cuff_profile(0.05, 0.055, 0.03, 0.165, 0.12)
+        with self.assertRaises(ValueError):
+            H.cuff_profile(0.06, 0.04, 0.03, 0.165, 0.155)
+
+    def test_circ_smooth_wraps_and_keeps_a_constant(self):
+        self.assertEqual(H.circ_smooth([0.05] * 6), [0.05] * 6)
+        got = H.circ_smooth([1.0, 0.0, 0.0, 0.0], 1)
+        self.assertEqual(got, [0.5, 0.25, 0.0, 0.25])  # the spike spreads to both sides across the loop's seam
 
 
 class PlainDenim(unittest.TestCase):
@@ -435,6 +518,110 @@ class FlatBib(unittest.TestCase):  # E1i: her bib a flat, stiff panel over the c
         self.assertEqual(H.ease(1.06, 1.0, 0.05), 1.0)
         self.assertAlmostEqual(H.ease(1.025, 1.0, 0.05), 0.5)
         self.assertEqual(H.ease(1.01, 1.0, 0.0), 1.0)
+
+
+class PanelFit(unittest.TestCase):  # M2d: the flat back panel's depth
+    def test_keeps_the_round_and_drops_a_narrow_fold(self):
+        pts = []
+        for i in range(-10, 11):
+            dx = i * 0.005
+            for dz in (-0.01, 0.0, 0.01):
+                y = 0.12 - 2.0 * dx * dx + 0.1 * dz
+                if abs(dx) < 0.006:
+                    y += 0.004  # the fold
+                pts.append((dx, dz, y))
+        self.assertAlmostEqual(H.panel_fit(pts), 0.12, delta=0.004 / 3)  # two thirds of the fold gone at its middle
+
+    def test_exact_on_a_quadratic(self):
+        pts = [(dx * 0.01, dz * 0.01, 0.1 + 0.2 * dx * 0.01 - 3.0 * (dx * 0.01) ** 2 + 0.5 * dz * 0.01)
+               for dx in range(-3, 4) for dz in (-1, 0, 1)]
+        self.assertAlmostEqual(H.panel_fit(pts), 0.1, places=9)
+
+    def test_mean_when_degenerate(self):
+        self.assertAlmostEqual(H.panel_fit([(0.0, 0.0, 0.1), (0.0, 0.0, 0.2)]), 0.15)
+        self.assertAlmostEqual(H.panel_fit([(0.0, 0.0, 0.1)] * 8), 0.1)
+        with self.assertRaises(ValueError):
+            H.panel_fit([])
+
+
+
+class JoinRows(unittest.TestCase):
+    def test_the_back_run_glued_and_eased_out_in_front(self):
+        hits = [None, 0.004, None, None, -0.008, -0.01]
+        along = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
+        out = H.join_rows(hits, along, 0.02)
+        self.assertEqual(out[4], (1.0, 4))
+        self.assertEqual(out[5], (1.0, 5))
+        self.assertEqual(out[3][1], 4)
+        self.assertAlmostEqual(out[3][0], 0.5)
+        self.assertEqual(out[2], (0.0, None))  # 2 cm in front: eased out
+        self.assertEqual(out[1], (0.0, None))  # a stray hit up the strap is not glued
+
+    def test_no_panel_under_the_end(self):
+        self.assertEqual(H.join_rows([0.01, None], [0.0, 0.01], 0.03), [(0.0, None), (0.0, None)])
+
+
+class BackBib(unittest.TestCase):  # M2f: her back bib's grid
+    def test_outline(self):
+        g = H.back_bib_grid(0.92, 1.15, 1.10, 0.075, 0.10, 0.06, 0.012, cols=6, rows=4)
+        nc, nr, pts = g["cols"], g["rows"], g["points"]
+        self.assertEqual((nc, nr), (9, 6))
+        self.assertEqual(len(g["faces"]), (nc - 1) * (nr - 1))
+        # the bottom corners at hw_b, the top corners at hw_t and z_c, the V's tip at x 0, z_v
+        self.assertAlmostEqual(pts[0][0], -0.075)
+        self.assertAlmostEqual(pts[0][1], 0.92)
+        self.assertAlmostEqual(pts[(nr - 1) * nc + nc - 1][0], 0.10)
+        self.assertAlmostEqual(pts[(nr - 1) * nc + nc - 1][1], 1.15)
+        tip = pts[(nr - 1) * nc + nc // 2]
+        self.assertAlmostEqual(tip[0], 0.0)
+        self.assertAlmostEqual(tip[1], 1.10)
+        # the border's inner line one border in from the side, one border under the top
+        self.assertAlmostEqual(pts[1][0], -0.075 + 0.012)
+        self.assertAlmostEqual(pts[(nr - 2) * nc + nc // 2][1], 1.10 - 0.012)
+        # the lip: the sides and the top edge only
+        self.assertTrue(g["edge"][0] and g["edge"][(nr - 1) * nc + 3] and not g["edge"][nc + 3])
+        # every row rises; mirrored across
+        for r in range(nr - 1):
+            for c in range(nc):
+                self.assertLess(pts[r * nc + c][1], pts[(r + 1) * nc + c][1])
+        for k in range(nc):
+            self.assertAlmostEqual(pts[k][0], -pts[nc - 1 - k][0])
+
+    def test_border_uv(self):
+        g = H.back_bib_grid(0.92, 1.15, 1.10, 0.075, 0.10, 0.06, 0.012, cols=6, rows=4)
+        kinds = g["kind"]
+        self.assertEqual(kinds.count("side"), 2 * (g["rows"] - 1))
+        self.assertEqual(kinds.count("top"), g["cols"] - 3)
+        for k, uv in zip(kinds, g["border_uv"]):
+            if k == "inner":
+                self.assertIsNone(uv)
+            else:
+                self.assertEqual(sorted({round(a, 4) for a, _ in uv}), [0.0, 0.012])
+
+    def test_bad(self):
+        with self.assertRaises(ValueError):
+            H.back_bib_grid(0.92, 1.15, 1.10, 0.075, 0.10, 0.06, 0.012, cols=5)
+        with self.assertRaises(ValueError):
+            H.back_bib_grid(0.92, 1.05, 1.10, 0.075, 0.10, 0.06, 0.012)
+
+
+class SeamUnwrap(unittest.TestCase):  # M2l: a cuff laid on its leg's own axis
+    def test_a_face_off_the_seam_kept(self):
+        self.assertEqual(H.seam_unwrap([-0.01, 0.0, 0.01], 0.06), [-0.01, 0.0, 0.01])
+
+    def test_a_face_across_the_seam_one_side(self):
+        r = 0.06
+        half = math.pi * r
+        out = H.seam_unwrap([half - 0.005, -half + 0.004, half - 0.002], r)
+        self.assertLess(max(out) - min(out), 0.01)
+        self.assertAlmostEqual(out[1], half + 0.004)
+
+    def test_leg_axis_coords(self):  # a leg at x 0.12: its outer side 1/4 turn from the inner seam's opposite
+        r, cx = 0.06, 0.12
+        s, z = H.cyl_coords(cx + r - cx, 0.08, 0.15, 0.08, math.pi / 2, r)
+        self.assertAlmostEqual(s, 0.0)
+        s, _z = H.cyl_coords(cx - cx, 0.08 - r, 0.15, 0.08, math.pi / 2, r)
+        self.assertAlmostEqual(s, -math.pi * r / 2)
 
 
 if __name__ == "__main__":

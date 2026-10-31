@@ -54,6 +54,7 @@ from mathutils.kdtree import KDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
+from clothes_side import ClothSide  # noqa: E402
 import clothes_shell as H  # noqa: E402
 import clothes_texture as T  # noqa: E402
 
@@ -146,6 +147,75 @@ def maps(cloth, grow: bool, gain: tuple[float, float, float]) -> dict:
     return rep
 
 
+def follow_garment(char, cloth, ekd, args, weights: bool = True) -> dict:
+    """M2d: each kept body vertex under the waist whose nearest cloth is the garment (within reach) takes the nearest
+    garment face's weights (its corners mixed by nearness) and moves in along that face's normal until it lies clear
+    inside it, both by F.follow_share of its distance from the nearest opening (the skin by a hem or the waist keeps
+    its own). The turn-up's ankle front lay 6 to 9 mm outside the cloth at rest, and the crotch's skin (Hips and both
+    UpperLegs) moved apart from the garment's (mostly one UpperLeg) in motion. weights False: the pull alone (before
+    the cover test, so the pulled skin counts as under the cloth: the crotch's kept patch sat on skin within 1 mm of
+    the seat's cloth, under_cloth's deep)."""
+    lo, hi, clear, reach = (float(x) for x in args.skin_follow.split(","))
+    gar = next((o for o in cloth if o.name == "garment"), None)
+    if gar is None:
+        return {"skipped": "no garment"}
+    gm = gar.matrix_world
+    gco = [gm @ v.co for v in gar.data.vertices]
+    gpol = [list(p.vertices) for p in gar.data.polygons]
+    gside = ClothSide([gar]) if args.tie_side else None
+    gtree = gside.tree if gside else BVHTree.FromPolygons(gco, gpol)
+    others = [o for o in cloth if o is not gar]
+    otree = cloth_tree(others) if others else None
+    ggn = {g.index: g.name for g in gar.vertex_groups}
+    grow = [{ggn[g.group]: g.weight for g in v.groups if g.group in ggn and g.weight > 0} for v in gar.data.vertices]
+    me, mw = char.data, char.matrix_world
+    inv = mw.inverted()
+    gname = {g.index: g.name for g in char.vertex_groups}
+    vg = {g.name: g for g in char.vertex_groups}
+    took, pulled, most, full = 0, 0, 0.0, 0
+    for v in me.vertices:
+        p = mw @ v.co
+        if p.z > args.waist:
+            continue
+        if gside is not None:  # M2i: the side from every face tied at the nearest point
+            loc, nor, fi, side = gside.find(p, reach)
+            d = None if loc is None else (p - loc).length
+        else:
+            loc, nor, fi, d = gtree.find_nearest(p, reach)
+            side = None if loc is None else (p - loc).dot(nor)
+        if loc is None:
+            continue
+        if otree is not None:
+            ol = otree.find_nearest(p, d)
+            if ol[0] is not None and ol[3] < d:
+                continue
+        share = F.follow_share(H.opening_dist(ekd.find(p)[2]), lo, hi)
+        if share <= 0:
+            continue
+        ids = gpol[fi]
+        theirs = F.blend_rows([grow[k] for k in ids], [1.0 / max(1e-4, (gco[k] - loc).length) for k in ids])
+        if theirs and weights:
+            own = {gname[g.group]: g.weight for g in v.groups if g.group in gname}
+            row = F.mix_rows(own, theirs, share)
+            for name in set(own) - set(row):
+                vg[name].remove([v.index])
+            for name, w in row.items():
+                if name not in vg:
+                    vg[name] = char.vertex_groups.new(name=name)
+                    gname[vg[name].index] = name
+                vg[name].add([v.index], w, "REPLACE")
+            took += 1
+            full += share >= 0.999
+        m = F.pull_in(side, clear, share)
+        if m > 0:
+            v.co = inv @ (p - nor * m)
+            pulled += 1
+            most = max(most, m)
+    me.update()
+    return {"weights_taken": took, "full_share": full, "pulled": pulled, "pulled_most_mm": round(1000 * most, 1),
+            "tie_flips": gside.flips if gside else None}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--char", required=True)
@@ -161,6 +231,10 @@ def main() -> int:
                     help="--opening for skin on the LowerLeg bones (m): the shin poked through the trouser leg 25 mm "
                          "over the hem, inside the 40 mm (E1c)")
     ap.add_argument("--shoe-margin", type=float, default=0.01, help="the foot cut stays this far below the shoe's top")
+    ap.add_argument("--tie-side", type=int, default=1,
+                    help="M2i: the under-cloth test's and the skin pull's side of the cloth from every face tied at the "
+                         "nearest point (clothes_fit_geom.tie_side), not the one face the BVH query returns (0: the old "
+                         "single face; d57 and d59 flipped the crotch's kept skin)")
     ap.add_argument("--near", type=float, default=0.06, help="the cloth this near a body vertex at rest (m)")
     ap.add_argument("--away", type=float, default=0.08,
                     help="a body vertex inside the cloth and this far from every opening is cut for certain (m)")
@@ -243,6 +317,23 @@ def main() -> int:
     ap.add_argument("--edge-inward", type=float, default=-0.1,
                     help="an edge face whose normal's horizontal part points in by more than this is peeled")
     ap.add_argument("--edge-island", type=int, default=12, help="loose bits of this many faces or fewer along the edges go")
+    ap.add_argument("--turnup-relax", default="",
+                    help="M2h: z_top,rounds,alpha[,outward]: each trouser leg's hem onto one level and the turn-up's radius and "
+                         "height relaxed under z_top (clothes_top.turnup_relax; '': off)")
+    ap.add_argument("--cosmetic-early", type=int, default=0,
+                    help="M2i: --island-top's crumbs and --turnup-relax before the body's cover test and skin pull "
+                         "(1), not after them (0, M2h's d58: an early change flipped the crotch's kept skin before "
+                         "--tie-side)")
+    ap.add_argument("--island-top", type=float, default=0.0,
+                    help="M2h: after the skin's follow, the garment's loose denim bits (--edge-island faces or fewer) "
+                         "between the waist and this far over it go (clothes_top.late_islands: the crumbs beside the "
+                         "buckle; m, 0: off)")
+    ap.add_argument("--shirt-top", type=float, default=0.0,
+                    help="M2g: the baked-shirt test along the panels' side edges reaches this far above the waist (m; "
+                         "0: --band-flaps, as the peel)")
+    ap.add_argument("--shirt-min", type=float, default=0.0,
+                    help="M2g: a face is the baked shirt when this share of up to 13 samples over its UVs is shirt texel "
+                         "(the striped side walls beside the buckle; 0: the old rule, nearly all of 4 or 5 samples)")
     ap.add_argument("--band-button", type=float, default=0.012,
                     help="the band's side button this far beyond the bib's edge in |x| (m; 0: none)")
     ap.add_argument("--shell-decimate", default="0.32,0.22",
@@ -310,6 +401,9 @@ def main() -> int:
                     help="the crew neck's plane through its front and back points: yf,zf,yb,zb (m)")
     ap.add_argument("--neck-r", type=float, default=0.09, help="the neck cut reaches this far out in |x| (m)")
     ap.add_argument("--waist", type=float, default=1.0, help="the Meshy trousers' waistband height (m)")
+    ap.add_argument("--waist-z", type=float, default=None,
+                    help="M2c: the waist plane at this height over --planes bones' (m; a garment whose own band sits "
+                         "lower than the bones' waist: the band's edge, so no shirt texels stay over it; default: off)")
     ap.add_argument("--bib", default="0.105,1.166", help="the bib's half width and top (m)")
     ap.add_argument("--back", default="0.03,1.12,0.12,0.03",
                     help="the back panel: least y, apex z, half width at the waist and at the apex (m)")
@@ -338,7 +432,7 @@ def main() -> int:
                     help="E1h: the top's faces under the panels go from this height over the waist (m; default: from "
                          "--shell-full)")
     ap.add_argument("--plain", default="",
-                    help="E1h: boxes x0,x1,y0,y1,z0,z1 (|x|, bind pose, m; ';' between) whose denim gets plain texels "
+                    help="E1h: boxes x0,x1,y0,y1,z0,z1[,tint[,cut[,gain]]] (|x|, bind pose, m; ';' between; M2g: cut, the tint only under that height, by texel row (-1: none); gain, the window's diffuse times it, 0 or 1: none) whose denim gets plain texels "
                          "(clothes_top.plain_denim; empty: off)")
     ap.add_argument("--flat-bib", default="",
                     help="E1i: the bib as a flat, stiff panel: blend,curve,radius,clear (m, 1/m (<0: fitted), m, m; "
@@ -353,6 +447,39 @@ def main() -> int:
                          "separated; clothes_shell.chain_row; empty: the rows' means of the body's weights)")
     ap.add_argument("--plain-density", type=float, default=1.0,
                     help="E1h: the plain texels' density against the garment's median")
+    ap.add_argument("--flat-back", default="",
+                    help="M2d: the back panel's top as one stiff panel: blend,radius,band,clear (m; clothes_top.flat_back; "
+                         "its weights along --bib-chain; empty: off)")
+    ap.add_argument("--back-join", default="",
+                    help="M2e: the straps' back ends glued onto the back panel: blend,gap (m; clothes_top.back_join; "
+                         "empty: off)")
+    ap.add_argument("--ankle-top", type=float, default=-1.0,
+                    help="M2j, with the shoes' collar cut: the kept ankle's top cut on this level plane (m; inside the "
+                         "built cuff, under its top) and the leg's skin over it near the shoe's axis removed; -1: off")
+    ap.add_argument("--cuff-ring", default="",
+                    help="M2j: z_top,height,thick,clear,stations[,lap[,most]] (m): each turn-up a built rolled band in "
+                         "place of Meshy's, the leg cut on one plane lap under z_top (clothes_top.cuff_ring; '': off)")
+    ap.add_argument("--light-denim", default="0.60,0.70,0.82",
+                    help="M2f: the denim's reverse side (sRGB), for a --plain box's 7th value (its mix toward it): "
+                         "the turn-ups' light cuff")
+    ap.add_argument("--plain-src", default="",
+                    help="M2l: the garment's own leg texels (u0,u1,v0,v1 of its maps, inside one leg island, no seam) "
+                         "for a --plain box whose 10th value is 1 (the back bib: the legs' twill and tone)")
+    ap.add_argument("--cuff-fold", default="",
+                    help="M2l: width,dark: the turn-up's fold line, the cut box's rows that far under its cut height "
+                         "darkened by this factor ('': off)")
+    ap.add_argument("--back-bib", default="",
+                    help="M2f: her back bib built to the turnaround: z_c,z_v,hw_b,hw_t,x_v,off,border (m; top corners' "
+                         "height, the V's tip, half widths at the waist and the top, the V's half width, clearance off "
+                         "the body, the stitched border; clothes_top.back_bib; empty: off). The straps' back ends then "
+                         "reach --strap-back-below under z_c")
+    ap.add_argument("--band-follow", type=float, default=None,
+                    help="M2e: after the waistband is built, the top's vertices up to this far over the waist take "
+                         "the garment's weights again by their rays' share (clothes_top.follow_panels; unset: off)")
+    ap.add_argument("--skin-follow", default="",
+                    help="M2d: lo,hi,clear,reach (m): the kept skin under the garment (under the waist, its nearest cloth "
+                         "the garment within reach) takes the nearest garment face's weights and is pulled clear inside "
+                         "it, none within lo of an opening, all from hi on (the turn-up's ankle, the crotch); '': off")
     ap.add_argument("--bronze", default="0.60,0.42,0.20,0.85,0.38",
                     help="the buckles' metal: sRGB R,G,B, metallic, roughness")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
@@ -438,7 +565,8 @@ def main() -> int:
         bw = lambda n: arm.matrix_world @ arm.data.bones[n].head_local
         try:
             ua, hand = bw("LeftUpperArm"), bw("LeftHand")
-            pl = H.body_planes(bw("Chest").z, bw("Neck").z, bw("Neck").y, tuple(ua), hand.x, args.cuff_back)
+            pl = H.body_planes(bw("Chest").z, bw("Neck").z, bw("Neck").y, tuple(ua), hand.x, args.cuff_back,
+                                 waist_z=args.waist_z)
         except KeyError as e:
             say("REFUSED --planes bones: no bone", e)
             return 3
@@ -453,6 +581,8 @@ def main() -> int:
         args.neck = ",".join(f"{v:.4f}" for v in pl["neck"])
         rep["planes"] = {k: (round(v, 4) if isinstance(v, float) else [round(x, 4) for x in v]) for k, v in pl.items()}
         say("planes from the bones", rep["planes"])
+    if args.back_bib:  # M2f: the straps end on the built back bib's top corners, with either kind of planes
+        args.strap_back_z = float(args.back_bib.split(",")[0]) - args.strap_back_below
     if args.sneakers == "on" or (args.sneakers == "auto" and args.shell):
         import sneaker_build as SB
         old = next((o for o in cloth if o.name == "shoes"), None)
@@ -554,14 +684,36 @@ def main() -> int:
         rep["garment_cut"] = TOP.cut_garment(garment, args)
         if args.flat_bib:  # E1i: her bib a flat, stiff panel over the chest (the concept), before the top and straps
             rep["flat_bib"] = TOP.flat_bib(garment, char, args)
+        if args.flat_back:  # M2d: the back panel's top one stiff panel (no apex fold), before the top and straps
+            rep["flat_back"] = TOP.flat_back(garment, char, args)
+        if args.back_bib:  # M2f: the back bib to the turnaround, before the top (hidden under it) and straps
+            rep["back_bib"] = TOP.back_bib(garment, char, args)
         top, rep["shell"] = TOP.shell(char, arm, garment, args)
         rep["straps"] = TOP.straps(garment, char, [garment, top], args)
+        if args.back_bib:
+            rep["back_bib_uv"] = TOP.back_bib_uv(garment, args)
+        if args.back_join:  # M2e: the straps' back ends glued onto the back panel (one piece with it)
+            rep["back_join"] = TOP.back_join(garment, args)
+            say("back join", rep["back_join"])
+        if args.band_follow is not None:  # M2e: the top's rows under the built waistband move with it
+            rep["band_follow"] = TOP.follow_panels(top, garment, args, zmax=args.waist + args.band_follow)
+            say("band follow", rep["band_follow"])
+        if args.cuff_ring:  # M2j: the turn-ups built (a rolled band per leg on a clean plane cut), before the tint
+            rep["cuff_ring"] = TOP.cuff_ring(garment, char, shoe_ob, args)
         if args.plain:  # E1h: plain denim texels over the areas whose own texels are wrong
             rep["plain_denim"] = TOP.plain_denim(garment, args)
         cloth.append(top)
     gname = {g.index: g.name for g in char.vertex_groups}
     # the covered faces
+    if args.cosmetic_early and garment is not None:  # M2i: the crumbs and the cuff's relax before the cover test, so
+        import clothes_top as TOP  # the cut and the skin's pull see the garment as it ships (robust with --tie-side)
+        if args.island_top > 0:
+            rep["late_islands"] = TOP.late_islands(garment, args)
+        if args.turnup_relax:
+            rep["turnup_relax"] = TOP.turnup_relax(garment, args)
+            say("turnup relax", rep["turnup_relax"])
     tree = cloth_tree(cloth)
+    side_of = ClothSide(cloth) if args.tie_side else None  # M2i: the under-cloth test's side, robust at a seam
     me = char.data
     mw = char.matrix_world
     nmat = mw.to_3x3().inverted().transposed()
@@ -570,6 +722,9 @@ def main() -> int:
     edge, rep["openings"] = O.opening_points(cloth, arm)
     say("openings", len(edge), "points:", rep["openings"])
     ekd = O.kd_of(edge)
+    if args.skin_follow:  # M2d: the skin poking through the garment at rest, far from an opening, first pulled in
+        rep["skin_pull"] = follow_garment(char, cloth, ekd, args, weights=False)
+        say("skin pull", rep["skin_pull"])
     # a shoe is closed: the foot inside it (Foot and Toes, below the shoe's top opening) never shows
     # (each shoe its own top, by side; and any foot vertex with the shoe above it, the toes under the toe box)
     shoe = next((o for o in cloth if o.name == "shoes"), None)
@@ -658,8 +813,12 @@ def main() -> int:
                 n_ankle += 1
                 continue
         top_bone = gname.get(max(v.groups, key=lambda g: g.weight).group, "") if v.groups else ""
-        loc, nor, _fi, _d = tree.find_nearest(p, args.near)
-        if loc is not None and F.under_cloth((p - loc).dot(nor), H.opening_dist(ekd.find(p)[2]), top_bone, away=args.away,
+        if side_of is not None:
+            loc, nor, _fi, sd = side_of.find(p, args.near)
+        else:
+            loc, nor, _fi, _d = tree.find_nearest(p, args.near)
+            sd = None if loc is None else (p - loc).dot(nor)
+        if loc is not None and F.under_cloth(sd, H.opening_dist(ekd.find(p)[2]), top_bone, away=args.away,
                                               away_shoulder=args.away_shoulder):
             cov.append(True)
             sure.append(True)
@@ -681,6 +840,7 @@ def main() -> int:
     rep["covered_in_shoes_by_rim"] = by_rim
     rep["covered_through_shoe_walls"] = by_wall
     rep["covered_under_the_cloth"] = n_under
+    rep["under_cloth_tie_flips"] = side_of.flips if side_of else None
     faces = [list(p.vertices) for p in me.polygons]
     by_edge: dict[tuple[int, int], list[int]] = {}
     for fi, p in enumerate(me.polygons):
@@ -803,6 +963,31 @@ def main() -> int:
         bm.to_mesh(me)
         bm.free()
         me.update()
+        if args.ankle_top > 0:  # M2j: the kept ankle's top on one level plane inside the built cuff (its per-face cut
+            # left a jagged teal edge in the turn-up's opening; --collar-keep only moved it), everything over it near
+            # the leg's axis goes, up to 12 cm over it (the cloth over it hides that skin)
+            bm = bmesh.new()
+            bm.from_mesh(me)
+            cut_top = 0
+            for sgn, c in collar.items():
+                zt = args.ankle_top
+                vs = [v for v in bm.verts if (mw @ v.co).x * sgn > 0 and zt - 0.03 < (mw @ v.co).z < zt + 0.12
+                      and ((mw @ v.co).xy - c["ctr"].xy).length < 0.09]
+                vset = set(vs)
+                fs = [f for f in {f for v in vs for f in v.link_faces} if all(x in vset for x in f.verts)]
+                es = list({e for f in fs for e in f.edges})
+                vs = list({x for f in fs for x in f.verts})
+                n0 = len(bm.faces)
+                bmesh.ops.bisect_plane(bm, geom=vs + es + fs, dist=1e-6, plane_co=mw.inverted() @ Vector((0, 0, zt)),
+                                       plane_no=(mw.to_3x3().transposed() @ Vector((0, 0, 1))).normalized(),
+                                       clear_outer=True)
+                cut_top += n0 - len(bm.faces)
+            bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+            bm.to_mesh(me)
+            bm.free()
+            me.update()
+            rep["ankle_top"] = {"z": args.ankle_top, "faces_cut": cut_top}
+            say("collar ankle top", rep["ankle_top"])
         # E1e: the skin between the plane and the rim (easing out collar_band over it) is shrunk toward the leg's
         # own axis (the LowerLeg bone's line, extended down) until it lies collar_clear inside the shoe's inner
         # wall: the wall is found by a ray from the axis out toward the vertex at its own height (over the rim: at
@@ -952,6 +1137,18 @@ def main() -> int:
             rode += 1
         rep["ankle_rides_with_the_shoe"] = rode
         say("ankle verts riding with the shoe", rode)
+    if args.skin_follow:  # M2d: the skin the garment hides moves with the garment and stays inside it
+        rep["skin_follow"] = follow_garment(char, cloth, ekd, args)
+        say("skin follow", rep["skin_follow"])
+    if args.island_top > 0 and garment is not None and not args.cosmetic_early:  # M2h: after the cover test
+        import clothes_top as TOP
+        rep["late_islands"] = TOP.late_islands(garment, args)
+    if args.turnup_relax and garment is not None and not args.cosmetic_early:  # M2h: late (d59: early flipped the crotch)
+        import clothes_top as TOP
+        rep["turnup_relax"] = TOP.turnup_relax(garment, args)
+        if args.skin_follow:  # d60: the relaxed cuff came in 10 mm over the calf's pulled skin (13 to 26 mm pokes)
+            rep["skin_pull_late"] = follow_garment(char, cloth, ekd, args, weights=False)
+            say("skin pull late", rep["skin_pull_late"])
     if collar:  # E1c, the outer-shell probe: kept skin under the rim with no shoe face on its way out
         outs = 0
         for v in me.vertices:

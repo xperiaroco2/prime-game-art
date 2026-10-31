@@ -107,6 +107,42 @@ class Covered(unittest.TestCase):
         self.assertEqual(F.frame_max([])["frames"], 0)
 
 
+class TieSide(unittest.TestCase):  # M2i: the side of a point whose nearest cloth point is on an edge
+    def test_one_face_is_the_plain_side(self):
+        self.assertEqual(F.tie_side((0, 0, 0.002), 0.002, [(0, 0, 1)]), 0.002)
+        self.assertEqual(F.tie_side((0, 0, -0.002), 0.002, [(0, 0, 1)]), -0.002)
+
+    def test_a_crease_gives_one_answer_whichever_face_is_picked(self):
+        # a sharp ridge along y (a seam): faces tilted 60 degrees each way, normals 120 degrees apart; a point over
+        # the edge, inside the normals' wedge (so the edge is its nearest point), but near face a's normal
+        a, b = F.unit((-0.866, 0, 0.5)), F.unit((0.866, 0, 0.5))
+        u = tuple(0.001 * (x + 0.2 * y) for x, y in zip(a, b))
+        d = math.sqrt(sum(x * x for x in u))
+        self.assertGreater(F.dot(u, a), 0)  # face a alone says outside, face b alone inside: the flip M2h saw
+        self.assertLess(F.dot(u, b), 0)
+        self.assertEqual(F.tie_side(u, d, [a, b]), d)
+        self.assertEqual(F.tie_side(u, d, [b, a]), d)
+        self.assertEqual(F.tie_side(tuple(-x for x in u), d, [b, a]), -d)
+
+    def test_under_a_hem_lip_reads_inside(self):  # M2j: the proof's measure under a turn-up's lip
+        # the leg's inner wall (normal +x, out) meets the lip's bottom (normal -z) at the edge x = 0.05, z = 0; skin
+        # inside the leg and just under the lip: the lip's face alone reads it 5 mm outside (a poke), both read inside
+        u = (-0.010, 0.0, -0.005)
+        d = math.sqrt(sum(x * x for x in u))
+        self.assertGreater(F.dot(u, (0, 0, -1)), 0)
+        self.assertEqual(F.tie_side(u, d, [(1, 0, 0), (0, 0, -1)]), -d)
+        self.assertEqual(F.tie_side(u, d, [(0, 0, -1), (1, 0, 0)]), -d)
+
+    def test_pseudo_normal_weights(self):
+        self.assertEqual(F.pseudo_normal([(1, 0, 0), (0, 1, 0)]), (1, 1, 0))
+        self.assertEqual(F.pseudo_normal([(1, 0, 0), (0, 1, 0)], [2.0, 1.0]), (2, 1, 0))
+
+    def test_level_and_empty(self):
+        self.assertEqual(F.tie_side((1, 0, 0), 1.0, [(0, 0, 1)]), 0.0)
+        with self.assertRaises(ValueError):
+            F.tie_side((0, 0, 1), 1.0, [])
+
+
 class Facing(unittest.TestCase):
     def test_inner_sleeve_takes_the_arm(self):
         # the torso's side faces +x (outward), nearer; the arm's inner side faces -x, like the sleeve's inner side
@@ -453,6 +489,33 @@ class HemRest(unittest.TestCase):
         self.assertFalse(F.near_ankle(0.21, 0.05, 0.08, 0.2))  # over the region's top
         self.assertFalse(F.near_ankle(0.12, 0.09, 0.08, 0.2))  # too far from the axis
         self.assertTrue(F.near_ankle(0.12, 0.09, 0.08, 0.2, radius=0.1))
+
+
+class SkinFollow(unittest.TestCase):  # M2d: the skin under the garment moves with it and stays inside it
+    def test_share_none_by_an_opening_all_far_from_it(self):
+        self.assertEqual(F.follow_share(0.01, 0.015, 0.035), 0.0)
+        self.assertEqual(F.follow_share(0.05, 0.015, 0.035), 1.0)
+        self.assertAlmostEqual(F.follow_share(0.025, 0.015, 0.035), 0.5)
+
+    def test_share_needs_a_span(self):
+        with self.assertRaises(ValueError):
+            F.follow_share(0.02, 0.03, 0.03)
+
+    def test_pull_only_what_pokes_or_lies_too_near(self):
+        self.assertAlmostEqual(F.pull_in(0.0068, 0.004, 1.0), 0.0108)
+        self.assertAlmostEqual(F.pull_in(-0.002, 0.004, 0.5), 0.001)
+        self.assertEqual(F.pull_in(-0.01, 0.004, 1.0), 0.0)
+
+    def test_no_pull_for_skin_far_outside(self):
+        self.assertEqual(F.pull_in(0.02, 0.004, 1.0), 0.0)
+
+    def test_blend_rows_by_nearness(self):
+        r = F.blend_rows([{"LeftUpperLeg": 1.0}, {"Hips": 1.0}], [3.0, 1.0])
+        self.assertAlmostEqual(r["LeftUpperLeg"], 0.75)
+        self.assertAlmostEqual(r["Hips"], 0.25)
+        self.assertEqual(F.blend_rows([{"a": 1.0}], [0.0]), {})
+        with self.assertRaises(ValueError):
+            F.blend_rows([{"a": 1.0}], [1.0, 2.0])
 
 
 if __name__ == "__main__":

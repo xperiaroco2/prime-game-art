@@ -1,0 +1,87 @@
+# art#196, the clothes, step M2a: her dungarees drawn on her own body B13 (the engineer, 2026-10-30 ~19:48 UTC, in the
+# approval_ref comment: a new dungarees model from Meshy, generated on her own body B; refitting the old fixed mesh,
+# made on the chameleon body, onto B13 by code bent the bib). Her bare body B13 with her axolotl head (the E1 build
+# <raw>/2026-10-30-alien-dress-e1/c1/loco/build/axolotl/axolotl_char.blend, no clothes, no shoes), Idle_Loop's first
+# frame, rendered front, left and back by `tools/run.py render --pose "CharacterArmature|Idle_Loop" --no-outline
+# --cell 768` (the s1b refs' size), and the axolotl's dungarees concept (batch 2026-10-28-alien-clothes-s1,
+# ax_overall) as the outfit reference: one edit of the four into one front / left / back turnaround, her body, head and
+# colours kept, five digits per hand (her rig has thumb, index, middle, ring and little chains). The input of a Meshy
+# multi-image-to-3D batch after the engineer's look. Medium (three variants of one prompt, n = 3), then one high edit of
+# the pick with the concept. 1536x1024. No game, film, studio, character or real-person names; no style names of other
+# works; no brand marks.
+id = "2026-10-30-alien-clothes-s2"
+service = "openai-images"
+purpose = "art#196 M2a: the axolotl's dungarees concept drawn as a front / left / back turnaround on her own body B13 with her head, the input of a new Meshy dungarees model made on her body."
+plan = "OpenAI API, prepaid balance (topped up by the engineer, 2026-10-20)"
+terms_url = "https://openai.com/policies/services-agreement/"
+licence = "owned by the customer: OpenAI assigns to the customer all its rights in the Output (OpenAI Services Agreement, section 4.1, read 2026-10-20); no attribution required"
+cost_cap_usd = 2.0
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-30"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6532151985"
+model = "gpt-image-2.5-sunburst"
+quality = "medium"
+
+[defaults]
+size = "1536x1024"
+n = 1
+
+[[items]]
+id = "ax_dung"
+kind = "edit"
+n = 3
+prompt = "The first three reference images are the front, left side and back views of one finished 3D character, the axolotl woman, an adult alien. Keep her exactly as she is: the same height, the same body proportions, limb lengths and limb thickness, her fuller chest and her fuller seat and hips, the same round wide head with the three feathery gill fronds on each side, the small black bead eyes, the wide gentle smile, the same small dots on the face, the same teal skin with the paler throat and chest, and the same smooth soft-matte toy finish and soft studio light. Her chest is smooth, with no nipples. Each hand has exactly five digits: four rounded fingers and a thumb, relaxed open. The fourth reference image shows the outfit only: copy that outfit exactly, not its body or head. Dress her in it: slim dark-indigo denim dungarees whose bib is one flat, stiff, upright panel up to the same height as in the outfit reference, with its stitched bib pocket in the middle, two straps over the shoulders, fastened to the top corners of the bib with small metal buckles at the front and running straight down the back, side by side, into the back waistband, side buttons at the waist, slim straight trouser legs rolled up once at the ankle showing the lighter inside of the denim; under them a fitted long-sleeve thin top with even navy and white horizontal stripes down to the wrists; and off-white low canvas sneakers with white laces and a thin dark line round the sole. The clothes are well made and well fitted, following her body closely so they move with it, a cool grown-up look, not childish, nothing old or worn; no extra garments and nothing missing. Show one character turnaround: three full-length views of her side by side at the same scale and height, left to right the front view, the left side profile and the back view, each in the same neutral standing pose as the first three references, arms hanging a little away from the body, feet on the same ground line, a little space above the head and below the feet. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-30-alien-clothes-s2/refs/0_000_front.png", provenance = "her bare body B13 with the axolotl head (E1 build c1/loco/build/axolotl/axolotl_char.blend), Idle_Loop first frame, front view, rendered by tools/run.py render --cell 768 --no-outline", sha256 = "5b737e58006f49c801925ef3ca38a09f00e7c91cb2e45bf243eec134c42907c5" },
+  { file = "raw:2026-10-30-alien-clothes-s2/refs/2_090_left.png", provenance = "the same render, left side view", sha256 = "6be4171ff833add88ffee6a161a17fa3fe4ff8ec33e083f6c2fd10cf5c614120" },
+  { file = "raw:2026-10-30-alien-clothes-s2/refs/4_180_back.png", provenance = "the same render, back view", sha256 = "1bf2b9d78b7d68cf684e2b1b0c3efbe75ec610d7c569ad6ba2a6a15949cc00c2" },
+  { file = "raw:2026-10-28-alien-clothes-s1/ax_overall/image-0.png", provenance = "the axolotl's dungarees concept (batch 2026-10-28-alien-clothes-s1, item ax_overall), the outfit reference", sha256 = "ec45f07415214ac0947491b8b1f23b1692bb8e49ff798b8296176df37d3baa6b" },
+]
+
+# ax_dung (above) failed: all three images redrew the outfit reference's whole figure (its bigger head, its stockier
+# body and legs, four-digit hands) instead of her body; with four inputs the full turnaround of the concept led. So
+# ax_dung_b gives her as one turnaround on a white ground (refs/b13_turnaround.png: the three 768 px renders cropped
+# to 384 x 768 round the figure and scaled to 512 x 1024 each, side by side, by a standard-library script) as the
+# image to edit, and the concept second, as the outfit only.
+[[items]]
+id = "ax_dung_b"
+kind = "edit"
+n = 3
+prompt = "Edit the first image. It is a character turnaround of one finished 3D character, an adult alien woman with an axolotl-like head: the front view, the left side profile and the back view. She is the character; keep her exactly as she is in the first image and keep each figure where it is, at the same size and the same outline: her height, her small round head with the three feathery gill fronds on each side, the small black bead eyes, the wide gentle smile, her long neck, her narrow shoulders, her long slim arms and legs, her fuller chest and her fuller seat and hips, her teal skin with the paler throat and chest, and the smooth soft-matte toy finish and soft studio light. Her chest is smooth, with no nipples. Each hand has exactly five digits: four rounded fingers and a thumb, relaxed open, as in the first image. The second image shows only an outfit design; it is not her: do not copy that figure's head, face, hands, body shape, proportions or legs, take only its clothes. Dress her in that outfit, fitted to her own body: slim dark-indigo denim dungarees whose bib is one flat, stiff, upright panel up to the same height on the chest as in the second image, with its stitched bib pocket in the middle, two straps over the shoulders, fastened to the top corners of the bib with small metal buckles at the front and running straight down the back, side by side, into the back waistband, side buttons at the waist, slim straight trouser legs rolled up once at the ankle showing the lighter inside of the denim; under them a fitted long-sleeve thin top with even navy and white horizontal stripes down to the wrists; and off-white low canvas sneakers with white laces and a thin dark line round the sole on her own feet. The clothes are well made and well fitted, following her body closely so they move with it, a cool grown-up look, not childish, nothing old or worn; no extra garments and nothing missing. Keep the three views side by side at the same scale, feet on one ground line, in the same pose as the first image. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-30-alien-clothes-s2/refs/b13_turnaround.png", provenance = "her bare body B13 with the axolotl head: refs 0_000_front, 2_090_left and 4_180_back side by side (cropped, scaled 4/3)", sha256 = "d3d2277c464deeec2d07b6547345143705b896206f8d249755a437f39becc760" },
+  { file = "raw:2026-10-28-alien-clothes-s1/ax_overall/image-0.png", provenance = "the axolotl's dungarees concept (batch 2026-10-28-alien-clothes-s1, item ax_overall), the outfit reference", sha256 = "ec45f07415214ac0947491b8b1f23b1692bb8e49ff798b8296176df37d3baa6b" },
+]
+
+# ax_dung_b (above) failed the same way: the concept's figure still replaced hers (its wide head, its shoulders, its
+# four-digit hands). ax_dung_c sends her turnaround alone and the outfit in words only.
+[[items]]
+id = "ax_dung_c"
+kind = "edit"
+n = 3
+prompt = "Edit the first image. It is a character turnaround of one finished 3D character, an adult alien woman with an axolotl-like head: the front view, the left side profile and the back view. She is the character; keep her exactly as she is in the first image and keep each figure where it is, at the same size and the same outline: her height, her small round head with the three feathery gill fronds on each side, the small black bead eyes, the wide gentle smile, her long neck, her narrow shoulders, her long slim arms and legs, her fuller chest and her fuller seat and hips, her teal skin with the paler throat and chest, and the smooth soft-matte toy finish and soft studio light. Her chest is smooth, with no nipples. Each hand has exactly five digits: four rounded fingers and a thumb, relaxed open, as in the first image. Do not change her head, face, hands, body shape, proportions or legs; only add clothes. Dress her in this outfit, fitted to her own body: slim dark-indigo denim dungarees whose bib is one flat, stiff, upright panel reaching up to just below her collarbones, its top edge straight and level, with its stitched bib pocket in the middle, two straps over the shoulders, fastened to the top corners of the bib with small metal buckles at the front and running straight down the back, side by side, into the back waistband, side buttons at the waist, slim straight trouser legs rolled up once at the ankle showing the lighter inside of the denim; under them a fitted long-sleeve thin top with even navy and white horizontal stripes down to the wrists; and off-white low canvas sneakers with white laces and a thin dark line round the sole on her own feet. The clothes are well made and well fitted, following her body closely so they move with it, a cool grown-up look, not childish, nothing old or worn; no extra garments and nothing missing. Keep the three views side by side at the same scale, feet on one ground line, in the same pose as the first image. Plain flat light-grey background. No text, no labels, no logos, no brand marks, no props, no hat, no glasses, no bag, no jewellery."
+images = [
+  { file = "raw:2026-10-30-alien-clothes-s2/refs/b13_turnaround.png", provenance = "her bare body B13 with the axolotl head: refs 0_000_front, 2_090_left and 4_180_back side by side (cropped, scaled 4/3)", sha256 = "d3d2277c464deeec2d07b6547345143705b896206f8d249755a437f39becc760" },
+]
+
+# ax_dung_c kept her body, head, hands and pose in all three images (the figures where hers are). Checked at full size:
+# image-0 clean; image-1 a grey smear on the back between the straps; image-2 a smeared patch on the right sleeve at
+# the back. Picked image-0. Against the concept its stripes are about twice as wide and the back has no back bib (the
+# prompt sent the straps straight into the waistband). The high edit fixes both from words and her turnaround; the
+# concept is left out, since in ax_dung and ax_dung_b it replaced her figure with its own.
+[[items]]
+id = "ax_dung_hi"
+kind = "edit"
+quality = "high"
+prompt = "Edit the first image, a character turnaround of one finished 3D character in her clothes: the front view, the left side profile and the back view. The second image is the same character without clothes; it shows her exact body, head and hands. Keep everything in the first image exactly as it is (her height, her small round head with its gill fronds, her face, her long neck, narrow shoulders, long slim arms and legs, her fuller chest and seat, her teal skin, her hands with all their digits, her pose, each figure's place, size and outline, the soft studio light and the plain light-grey background), and change only these two things. First, the long-sleeve top's stripes: make them thin and even, narrow navy stripes on white about half as wide as now and closer together, still horizontal, round the body and the sleeves down to the wrists. Second, the dungarees' back: the two straps now run down her back into a tall denim back panel, a stitched V-shaped piece of the same dark-indigo denim that rises from the back waistband up to her shoulder blades, the straps joined to its top corners. The front bib stays one flat, stiff, upright panel with its pocket and metal buckles, as now. Keep the denim, the rolled hems, the side buttons, the back pockets and the off-white sneakers as they are. No text, no labels, no logos, no brand marks."
+images = [
+  { from = "ax_dung_c", pick = 0 },
+  { file = "raw:2026-10-30-alien-clothes-s2/refs/b13_turnaround.png", provenance = "her bare body B13 with the axolotl head: refs 0_000_front, 2_090_left and 4_180_back side by side (cropped, scaled 4/3)", sha256 = "d3d2277c464deeec2d07b6547345143705b896206f8d249755a437f39becc760" },
+]
+
+# Ran 2026-10-30: 4 of 4 items done, 10 images, $0.4040 of the $2.00 cap (`openai-images status`). ax_dung and
+# ax_dung_b: the concept's figure, not hers (failed). ax_dung_c: her body kept in all three; image-0 picked (image-1 and
+# image-2 have smeared patches on the back). ax_dung_hi (high, from the pick and her turnaround): thin stripes and a
+# V-shaped back bib; a faint smear in the stripes on the back view's right sleeve at the elbow remains. The hands copy
+# her render's (thumb and bunched fingers; her rig has five digit chains). Views cut by tools/blender/clothes_views.py
+# into <raw>/2026-10-30-alien-clothes-s2/views/; sheets in sheet/.
