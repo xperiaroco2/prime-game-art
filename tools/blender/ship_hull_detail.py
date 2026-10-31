@@ -447,6 +447,57 @@ def landing_lamp(args: dict, layout: dict) -> list:
             L.part("landing_lens", *L.disc(0.105, 12, -0.09, -0.08), "glow_landing")]
 
 
+# polish n2 (art #263): the underbody's light lines, so the belly's and the wings' undersides read at night (they were
+# dead black from below, out_lens_under_e, out_fair_lead_e_below): thin cyan strips in a dark channel under the
+# hull's bottom, along the belly either side of the keel, spanwise under each corridor and a ring under each lens.
+L.MATERIALS["glow_cyan__belly"] = {**L.MATERIALS["glow_cyan"], "strength": 3.0}
+BELLY_LINES = [  # plan polylines (x, y), east side (mirrored)
+    [(2.2, -2.6), (2.2, 4.4)],
+    [(4.6, 1.2), (9.0, 1.2)],
+]
+BELLY_RING = (10.5, 1.2, 1.35, 48)   # the lens's centre, radius, segments
+
+
+def _belly_strip(path, w, t, drop):
+    """Boxes along a plan polyline under the hull's bottom (S.heights), w wide, t deep, its top `drop` under the skin;
+    a step is left out where the bottom is missing or rises over 1.5 cm (no strip floats or cuts a chine)."""
+    out = []
+    for a, b in zip(path, path[1:]):
+        ln = math.dist(a, b)
+        n = max(1, int(ln / 0.2))
+        d = ((b[0] - a[0]) / ln, (b[1] - a[1]) / ln)
+        sx, sy = -d[1] * w / 2, d[0] * w / 2
+        for i in range(n):
+            p0 = (a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n)
+            p1 = (a[0] + (b[0] - a[0]) * (i + 1) / n, a[1] + (b[1] - a[1]) * (i + 1) / n)
+            h0, h1 = S.heights(*p0), S.heights(*p1)
+            if not h0 or not h1 or abs(h0[1] - h1[1]) > 0.015:
+                continue
+            z0, z1 = h0[1] - drop, h1[1] - drop
+            v = [(p0[0] + sx * k, p0[1] + sy * k, z0 - t * m) for m in (0, 1) for k in (-1, 1)]
+            v += [(p1[0] + sx * k, p1[1] + sy * k, z1 - t * m) for m in (0, 1) for k in (-1, 1)]
+            out.append((v, [(0, 1, 5, 4), (2, 6, 7, 3), (0, 2, 3, 1), (4, 5, 7, 6), (0, 4, 6, 2), (1, 3, 7, 5)]))
+    return out
+
+
+def belly_lights(args: dict, layout: dict) -> list:
+    """polish n2: the underbody's light lines (BELLY_LINES, BELLY_RING), both sides; origin the plan's (0, 0, 0). The
+    channel hangs from 4 mm inside the skin to 8 mm under it, the glow 2 mm proud of the channel."""
+    cx, cy, r, n = BELLY_RING
+    ring = [(cx + r * math.cos(2 * math.pi * k / n), cy + r * math.sin(2 * math.pi * k / n)) for k in range(n + 1)]
+    paths = BELLY_LINES + [ring]
+    paths += [[(-x, y) for x, y in p] for p in paths]
+    glow, chan = [], []
+    for p in paths:
+        chan += _belly_strip(p, 0.09, 0.012, -0.004)
+        glow += _belly_strip(p, 0.04, 0.004, 0.006)
+    g = L.part("belly_glow", *L.merge(*glow), "glow_cyan__belly")
+    g["nocol"] = True
+    c = L.part("belly_channel", *L.merge(*chan), "ext_frame")
+    c["nocol"] = True
+    return [c, g]
+
+
 for _name in ("canopy", "nozzle_pod", "pod_ring", "ground_lamp"):
     globals()[_name] = H._outward(globals()[_name])
 

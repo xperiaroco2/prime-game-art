@@ -40,6 +40,7 @@ place = [
   ["tail_vents", [0.00, 0.00, 0.00], 0.0],
   ["hump_sensors", [0.00, 0.00, 0.00], 0.0],
   ["service_hatches", [0.00, 0.00, 0.00], 0.0],
+  ["belly_lights", [0.00, 0.00, 0.00], 0.0],   # polish n2: the underbody's light lines
   # light layer: the navigation lamps (port red on the west lens rim's forward facet, starboard green on the east's,
   # under the edge light; white on the tail's top centre) and a warm landing light under the belly by each leg
   # NAV SIDE (fix 2: off, "not needed yet"; uncomment with the pieces below and ship.toml's two "nav" lamp rows)
@@ -990,6 +991,10 @@ builder = "edge_light"
 id = "nav_white"
 builder = "nav_lamp"
 args = { colour = "white", mount = "top" }
+
+[[pieces]]
+id = "belly_lights"                          # polish n2: cyan light lines under the belly, the corridors and the lenses
+builder = "belly_lights"
 
 [[pieces]]
 id = "landing_lamp"                          # light layer: the warm landing lights under the belly

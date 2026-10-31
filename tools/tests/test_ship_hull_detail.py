@@ -346,6 +346,23 @@ class ShipHullDetailTest(unittest.TestCase):
         for _faces, q in ell + two:
             self.assertTrue(convex(q), q)
 
+    def test_the_belly_lights_hang_just_under_the_bottom(self) -> None:
+        """polish n2: the underbody's light lines follow the hull's bottom (S.heights) a few mm under it, never in
+        the air or deep in the skin, on both sides, the glow under its dark channel."""
+        parts = {p["name"]: p for p in D.belly_lights({}, LAYOUT)}
+        self.assertEqual(set(parts), {"belly_channel", "belly_glow"})
+        for p in parts.values():
+            xs = [x for x, _y, _h in p["verts"]]
+            self.assertLess(min(xs), -10.0)
+            self.assertGreater(max(xs), 10.0)
+            for x, y, h in p["verts"]:
+                hb = S.heights(x, y)
+                self.assertIsNotNone(hb, (p["name"], x, y))
+                self.assertTrue(hb[1] - 0.05 < h < hb[1] + 0.005, (p["name"], x, y, h, hb[1]))
+        low = min(h for _x, _y, h in parts["belly_glow"]["verts"])
+        self.assertLess(low, min(h for _x, _y, h in parts["belly_channel"]["verts"]))
+
+
 
 if __name__ == "__main__":
     unittest.main()
