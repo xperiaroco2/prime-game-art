@@ -841,11 +841,28 @@ above it again from Blender's rest matrices.
 - **Her flat bib in motion** (E1i2): in Jog the bones pitch far (UpperChest about 38 degrees, Chest 27) and the body's
   front under the bib compresses (its front at 1.16 m drops 120 mm, at 0.96 m 28 mm). A panel weighted like that
   body, by the rows' means (d27) or bone by bone up to UpperChest (d28), squashes the same way and folds under the
-  bust. The rule: a stiff panel rides one bone. `--bib-chain Hips,Spine,Chest` weights it by height alone
+  bust. The E1i2 rule was "a stiff panel rides one bone" (replaced in M2m, below). `--bib-chain Hips,Spine,Chest` weights it by height alone
   (`clothes_shell.chain_row` over the bones' bind-pose mid heights, the same across its width, eased from the
   band's own weights over `blend`), so above Chest's mid (1.04 m) it is rigid with Chest. d29: flat in Jog, Crouch,
   Walk and Jump_Start. `--shell-hide 0.02` keeps the top under the stood-off bib (2 faces hidden, not 51): the teal
   patch and the chest pokes are gone (Idle 0/0). Her close-up cameras aim at the raised bib (`e1i2/frames.sh`).
+- **Her front bib moves with its straps** (M2m, replaces E1i2's "rigid with Chest"): the engineer saw the straps
+  move in Walk while the plate stood still (the straps took the body's weights under them, about 90% the clavicle;
+  the bib Chest only). The rule: the bib stays flat (no fold, no bend) but moves with its straps as one garment; the
+  straps' front ends share the bib's skinning where they lie on it, so nothing slides at the joint.
+  `clothes_top.front_join` (after the straps and `back_join`; `--front-join share,ease,blend[,across]`): the bib's
+  weights over its top `ease` m blend toward the straps' own rows (share at the top edge; `across` 0: one row per
+  height, the mean of both straps', so the plate moves rigidly across), the strap rows over the bib take the bib
+  face's weights eased back over `blend` m along the strap (`clothes_shell.front_rows`), the buckles their nearest
+  strap vertex's. `--strap-front-drop` keeps the straps' fronts that far under a raised top (the straps' search runs
+  in quarter degrees). The measure: `clothes_bibmove.py` (Blender, `clothes_bibmove_geom` its maths): per clip the
+  bib's bend (the largest distance from its rest shape moved rigidly onto it), the strap-bib slip (a strap vertex's
+  offset from its rest bib point in the bib's frame, less its rest offset) and the bib top's and straps' motion range
+  against the Hips. d79 (rigid): bend 0.4 to 1.6 mm, slip 16 to 72 mm. d80 (`share 1`, per side): slip gone but
+  bend 21 to 89 mm (the clavicles' swing), so the share is the trade-off between moving and staying flat.
+  The height: on the concept's front view the bib top sits at 0.70 of the waistband's top to the shoulders' top
+  (0.72 from the side buttons, well above the armpit); d79 at 0.38 (0.46); `--bib-raise 0.11,0.012,0.035` puts it
+  at 1.220 m, 0.70 on her body (the pocket moves up whole; the stretched band under it is plain denim).
 - **Holes over the waist** (E1i2, off by default): `--fill-holes-above` lets `fill_holes` work up to that height
   over the waist and reports the loops it filled there. On the chameleon (d30) it filled two at the back and side,
   none at the bib pocket: the pocket's white holes are not small closed loops, so they stay open.
