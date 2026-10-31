@@ -700,13 +700,50 @@ blobs: warm bright components (L > 0.45, R > 1.3 B), their area in px.
   0.44, 0.38) -> (0.48, 0.39, 0.34), R/B 1.42 -> 1.41; (x900-1700, y600-700) 0.396 -> 0.370, R/B 1.50 -> 1.42. K3's
   bounce 0.12 -> 0.06 (the cooler set stays below K1).
 
+## Step 5a5: the Earth from the hall's corner
+
+The engineer (2026-10-31): the ship's light stays K1; before the game package the Earth seen from the hall's corner
+must read as the Earth, not as a noisy photo. Raw `lobby/hall/v12` (the pieces copied from v11, unchanged). Nothing
+else in the hall changed.
+
+- **What corner_nw sees** (`earth_object.gdshader` `debug_mode` 1: the cap's weight red, `soft` green, latitude lines
+  white, longitude lines cyan; and the same trace in Python, `test_corner_nw_sees_the_cap`): its window crop (x1180-1500,
+  y360-590) shows Europe at lat 43-61, lon -6..24, mu 0.35-0.88, wholly inside the cap (lat -8..82, lon -48..72) and
+  head-on enough; spawn_eye sees the same region (lat 42-70). So step 5a4's guess (outside the cap, a slant) was wrong.
+- **The glow is not the cause**: L3 with `glow_intensity` 0 changed the crop's numbers by under 1% (blob mean 3.76 ->
+  3.74 px, sd 0.142 -> 0.142).
+- **The cause**: the white streaks were the day map under the moon, Blue Marble's December: snow over the north and
+  the Alps at value ~1, moonlit as brightly as the clouds (with `moon_energy` 0 they vanish); the orange dots were each
+  city's own halo in Black Marble, lifted over the glow's threshold by `lights_energy`.
+- **The fix** (`[earth.look]`, shader uniforms whose defaults draw step 5a4): `moon_knee` 6 compresses the moonlit day
+  map as day x (1 + 0.1 k) / (1 + k day): the snow x0.23, the sea (~0.1) kept, so the sea stays blue from the spawn;
+  `cloud_energy` 0.16 -> 0.05 (the night clouds dark) and `cloud_shade` 0.5 -> 0.6; `cloud_city` 0.3 (the clouds lit
+  faintly from the cities below); `city_gamma` 1.8 -> 2.6 (halos down, cores kept: points); `light_cap` 2 (a city
+  pixel's brightest channel); `halo_energy` 0.08 (a soft small halo of the cities' own, the night map `halo_bias` 2.5
+  mips softer); `haze_energy` 0.05, (1 - mu)^4 (a little atmosphere at grazing angles). Six trial sets in grids
+  (`<raw>/lobby/hall/v12/debug1..3/`); stronger haze (0.15) washed the spawn's coastlines, a bigger halo (0.35) grew
+  the blobs (8 px).
+
+Numbers v11 -> v12 (`lobby --shoot`, 1920 x 1080; L mean sRGB luminance and its sd; speckle the sd of L minus its 5 x 5
+mean; cloud px B >= R and L > 0.15; blobs warm bright components L > 0.45, R > 1.3 B):
+
+| crop | L | sd | speckle | cloud px share / L | blobs | blob mean / p90 / max px |
+|---|---|---|---|---|---|---|
+| corner_nw (x1180-1500, y360-590) | 0.100 -> 0.082 | 0.141 -> 0.108 | 0.078 -> 0.061 | 0.077 / 0.209 -> 0.008 / 0.183 | 575 -> 394 | 3.8 / 7 / 113 -> 3.1 / 6 / 39 |
+| a_entrance (x1250-1750, y340-400) | 0.165 -> 0.106 | 0.114 -> 0.069 | 0.038 -> 0.029 | 0.502 / 0.251 -> 0.133 / 0.174 | 62 -> 42 | 2.6 / 5 / 12 -> 2.1 / 4 / 7 |
+| spawn_eye (x620-1300, y330-700) | 0.141 -> 0.118 | 0.171 -> 0.152 | 0.063 -> 0.050 | 0.220 / 0.281 -> 0.118 / 0.314 | 1335 -> 985 | 4.0 / 7 / 833 -> 3.0 / 6 / 64 |
+
+From the spawn the limb, the dawn glow, the blue sea and the coastlines stay as approved; the cities are finer (Paris a
+point, not a blob). GPU in the same shots: spawn_eye 2.43 -> 2.85, corner_nw 3.66 -> 4.28 ms, but the machine was shared
+(the trial grids gave 2.45-2.76 ms for spawn_eye across sets); two more texture reads per pixel (the halo) are the
+real cost, to be measured on a quiet machine.
+
 ## Open problems
 
 - Step 5a3: the back light leaves a hot spot on the deck's middle in `c_back` (0.77; `back_energy` 0.5 is the
   knob), and the warm bounce reads copper-orange on the undersides in `a_entrance` (`bounce_energy` 0.22).
-- Step 5a3/5a4: the Earth seen from the hall's far side still reads as speckle (clouds) and blobs (cities) in
-  corner_nw; step 5a4's cap fixed head-on and a_entrance by numbers, not corner_nw (next: paint the cap's weight and
-  the latitude there to find the part seen, widen the box or a second cap).
+- Step 5a5: corner_nw's Earth fixed by the night look (snow under the moon, the cities' halos); the snow still
+  shows faintly; the GPU cost of the halo's two texture reads is to be measured on a quiet machine.
 - (Step 4b, before the jaw nose) The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
   narrower than the 1.36 m capsule, so the walk crosses its foot. The ship's closed state (ramp up) is art #263's to make.
 - The spawns are 2.04 m from the engine pods (the rule's 2 m): from a spawn the pods fill the view (`spawn_eye`).
