@@ -560,11 +560,48 @@ the package was built from (`[ship] pieces_dir` `ship/v5/nose/b4/pieces`, the ja
 shots and the walk show the closed nose; step 4b's per-piece `ship_emit` keeps working. The walk (`--godot`) passes
 with the jaws' colliders: 22/22, 178.1 m, 5 blocks hold.
 
+## Step 5a: the ship 2.5 m south, the package's ship in the hall
+
+The engineer (2026-10-30, art#356 comment 6536044954): the ship's plan origin 2.5 m toward the window, the spawns with
+it, the Earth at D2, and the package's closed ship in the hall.
+
+- `[ship] origin` (0, 0, -14.5), `[floor] spawns_z` 2.5 (still facing the window). `lobby --check`: the closed ship's
+  nose at z **-26.99**, aft (the engine pods) z **0.46**; north wall **3.01 m**, W and E 6.95, the window 9.54, D1 and
+  D2 13.22, D3 and D4 8.28 m (rule 3 m); the spawns **2.04 m** (rule 2 m). The rules are unchanged.
+- `[ship.package] use = true`: the check holds the closed footprint (the shut jaws' vertices joined) to the rules,
+  and the floor ring (r 15, built by `--build` into the floor piece) is centred on its middle, z **-13.26** (z -28.26
+  .. 1.74; the spawns at z 2.5 now stand 0.76 m outside the ring).
+- The instance: `lobby` copies the files the package's `package.json` lists from `<raw>/ship/v5/export/v4` into
+  `godot/import/ship_pkg/` (ignored by git; only changed files written), its text files' `res://assets/` and
+  `res://levels/` rewritten under `res://import/ship_pkg/`; the package is only read. `hall.gd` `_ship_package`
+  instances `levels/ship/ship.tscn` at the origin under the key `ship_pkg` (so `_emit` scales its glows by
+  `ship_emit`), frees `[ship.package] free`, plays `Nose/AnimationPlayer` "close" and seeks to its end (jaws at
+  0 deg). Freed: `Clearing` (with its ground collider), `Environment` (the night clearing's WorldEnvironment fights the
+  hall's AgX, exposure and glow) and the two `DirectionalLight3D` under `Lights` (the moon and the cool key: two more
+  shadowed suns lighting the hall's walls and casting two more ship shadows against the Earth's light). Kept: the 105
+  other lamps (scaled by the mood's new `ship_lights`) and the 7 interior reflection probes (inside the hull).
+- `--godot`: the hall's 7 pieces at Blender's sizes, the package's 704 colliders, the jaws `{jaw_lower 0, jaw_upper
+  0}`, the walk 22/22 (179.9 m), and 6 blocks hold; the new `nose_shut` block walks from z -29 into the shut nose and
+  stops at z -25.17, short of the mouth (the lower jaw's hinge, z -22.6), where an open ramp would carry it aboard.
+  A `SCRIPT ERROR` in hall.gd now fails `--godot` and `--shoot` (a missing piece once left the walk without a ship).
+- The light grid (`[light.trials]` T1-T4, `<raw>/lobby/hall/v8/lgrid/grid.png`): the package's lamps (x1, x0.35, off)
+  fill the nozzles cyan and cost about 0.45 ms; neither they nor a weaker window spill or pendant specular change the
+  hull's near-white sides and aft panel. L3 takes `ship_lights` 0 (the nozzles dark inside, as in 4c).
+
+GPU ms (L3, E2, D2, `lobby --shoot`): `corner_nw` 3.49, `spawn_eye` 2.42, `c_back` 3.56 against step 4c's 3.23 /
+2.42 / 3.26 (the package's whole ship, interior included: about 3200 draw calls in the ship's views); with the
+package's lamps on 3.98 / 2.89 / 4.23.
+
 ## Open problems
 
 - (Step 4b, before the jaw nose) The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
   narrower than the 1.36 m capsule, so the walk crosses its foot. The ship's closed state (ramp up) is art #263's to make.
 - The spawns are 2.04 m from the engine pods (the rule's 2 m): from a spawn the pods fill the view (`spawn_eye`).
+- Step 5a: the package's ship reads near white all over under the hall's light (its hull material is far lighter than
+  the pieces' GLBs of step 4c: `a_entrance`, `c_back`, `top`, `c_ring`); its lamps and the window spill are not the
+  cause (the grid). Next: the ship on its own render layer with the pendants and the Earth light culled from it, or
+  a per-instance albedo scale in hall.gd. The aft panel and the silver top's hot spots stay with it.
+- Step 5a: the spawns (z 2.5) stand 0.76 m outside the re-centred floor ring.
 - Concept C drew a two-pod ship; ours has three pods, so C's back view differs there.
 - Concept A's camera cannot be matched with the ship 7 m north (see above); A shows the ship's nose close up.
 - The pilaster width (0.8 m, not the drawing's 1.2 m glyph) and the vault's cross-section are our readings of the
