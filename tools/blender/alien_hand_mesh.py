@@ -328,6 +328,78 @@ def rings(blend: str, out: str, edges_in: str, edges_out: str, grid: str, dump_d
     return 0
 
 
+JOINTS = {"Thumb": ("Proximal", "Distal"), "Index": ("Proximal", "Intermediate", "Distal"),
+          "Middle": ("Proximal", "Intermediate", "Distal"), "Ring": ("Proximal", "Intermediate", "Distal")}
+
+
+def _joint_edges(arm, o, half: float, rmax: float) -> tuple:
+    """The skin faces' edges whose every vertex lies within `half` (m) of a finger or thumb joint along its bone and
+    within rmax of the bone's axis (the joint: the bone's head; its axis the bone's own), both hands."""
+    mw, me = o.matrix_world, o.data
+    inband, per = set(), {}
+    cos = [mw @ v.co for v in me.vertices]
+    for s in SIDES:
+        for f, segs in JOINTS.items():
+            for seg in segs:
+                b = arm.data.bones[f"{s}{f}{seg}"]
+                org = arm.matrix_world @ b.head_local
+                d = ((arm.matrix_world @ b.tail_local) - org).normalized()
+                n = 0
+                for i, c in enumerate(cos):
+                    r = c - org
+                    t = r.dot(d)
+                    if -half <= t <= half and (r - d * t).length <= rmax:
+                        inband.add(i)
+                        n += 1
+                per[f"{s}{f}{seg}"] = n
+    mats = _skin_faces(o)
+    edges = set()
+    for p in me.polygons:
+        if p.material_index in mats and all(i in inband for i in p.vertices):
+            for k in p.edge_keys:
+                edges.add(tuple(sorted(k)))
+    return sorted(edges), per
+
+
+def finger_rings(blend: str, out: str, half_mm: float, rmax_mm: float, smooth: float) -> int:
+    """H1g: new rows around every finger and thumb joint (the H1f critic: ~3 rings over a 90-100 degree bend showed
+    as polygons in Godot): each face across a joint cut once along both directions (two new rings across the joint
+    and twice the vertices around it), the new vertices rounded onto the surface (bmesh's `smooth`), their weights
+    interpolated by bmesh; every old vertex keeps its index, position and weights."""
+    import bmesh
+    if Path(out).exists():
+        raise SystemExit(f"{out} exists: never overwritten")
+    bpy.ops.wm.open_mainfile(filepath=blend)
+    arm = _arm()
+    o = _skin_object(arm)
+    me = o.data
+    pairs, per = _joint_edges(arm, o, half_mm / 1000.0, rmax_mm / 1000.0)
+    old_co = [v.co.copy() for v in me.vertices]
+    n0, f0 = len(me.vertices), len(me.polygons)
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    edges = [e for e in (bm.edges.get((bm.verts[a], bm.verts[b])) for a, b in pairs) if e is not None]
+    bmesh.ops.subdivide_edges(bm, edges=edges, cuts=1, use_grid_fill=True, smooth=smooth)
+    bm.verts.index_update()
+    dl = bm.verts.layers.deform.active
+    wsum = [sum(v[dl].values()) for v in bm.verts[n0:]] if dl else []
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    moved = max(((me.vertices[i].co - old_co[i]).length for i in range(n0)), default=0.0)
+    rep = {"object": o.name, "verts_before": n0, "verts_after": len(me.vertices), "new_verts": len(me.vertices) - n0,
+           "faces_before": f0, "faces_after": len(me.polygons), "cut_edges": len(edges), "half_mm": half_mm,
+           "rmax_mm": rmax_mm, "smooth": smooth, "band_verts_per_joint": per,
+           "old_verts_largest_move_mm": round(moved * 1000, 4),
+           "new_weight_sum": [round(min(wsum), 4), round(max(wsum), 4)] if wsum else None}
+    print("FINGER_RINGS", json.dumps(rep), flush=True)
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
+    bpy.ops.wm.save_as_mainfile(filepath=out, compress=True)
+    Path(out + ".json").write_text(json.dumps(rep, indent=1))
+    return 0
+
+
 def _snapshot() -> dict:
     arm = _arm()
     names = set(region_bones())
@@ -385,7 +457,7 @@ def diff(before: str, after: str, out: str) -> int:
 def main() -> int:
     argv = sys.argv[sys.argv.index("--") + 1:]
     ap = argparse.ArgumentParser(prog="alien_hand_mesh.py")
-    ap.add_argument("mode", choices=("dump", "apply", "rings", "diff"))
+    ap.add_argument("mode", choices=("dump", "apply", "rings", "finger-rings", "diff"))
     ap.add_argument("--blend", required=True)
     ap.add_argument("--out", default="")
     ap.add_argument("--moves", default="")
@@ -397,7 +469,12 @@ def main() -> int:
     ap.add_argument("--dump-dir", default="", help="rings: a dump per variant (with --bend)")
     ap.add_argument("--band", default="-0.75,0.62", help="rings: the band from,to in Hand lengths from the wrist")
     ap.add_argument("--spec", default="", help="rings: hand_dims.toml; its [rings] band, cuts and smooth win")
+    ap.add_argument("--joint-half-mm", type=float, default=9.0, help="finger-rings: the band each side of a joint")
+    ap.add_argument("--joint-rmax-mm", type=float, default=26.0, help="finger-rings: the band's reach from the bone")
+    ap.add_argument("--joint-smooth", type=float, default=1.0, help="finger-rings: bmesh's smooth of the new vertices")
     a = ap.parse_args(argv)
+    if a.mode == "finger-rings":
+        return finger_rings(a.blend, a.out, a.joint_half_mm, a.joint_rmax_mm, a.joint_smooth)
     if a.spec:
         import tomllib
         rg = tomllib.loads(Path(a.spec).read_text())["rings"]
