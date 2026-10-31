@@ -24,6 +24,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--compare", default="all",
                         help="clips Blender renders beside Godot's frames, joints compared (default all the rendered clips; '' for none)")
     parser.add_argument("--video", default="", help=f"clips to encode as looping MP4 (e.g. {','.join(_frames.VIDEO)}; default none)")
+    parser.add_argument("--video-camera", default="",
+                        help="the --video clips' camera, one close-up 'label@x,y,z[~Bone]/size/yaw[/pitch]' as --closeups "
+                        "(e.g. the torso from the front carried with the Chest: 'torso@0,1.1,0~Chest/0.6/0'); default "
+                        "the clip sheet's whole-body camera (art #196, Gate 2's close-up Walk and Jog)")
     parser.add_argument("--yaw", type=float, default=_frames.YAW_DEG,
                         help="the clip sheets' camera yaw in degrees: 0 the front, 90 the character's left side, -90 its "
                              "right, 180 its back (default the three-quarter, 35); the studio light turns with the camera")
@@ -84,6 +88,13 @@ def run(args: argparse.Namespace) -> int:
             spec["face"] = _frames.face_spec(glb.stem, by_label[args.face], beside, _frames.parse_rects(args.face_rects))
         except ValueError as e:
             raise common.Failure(f"--face: {e}") from e
+    if args.video_camera:
+        if not video:
+            raise common.Failure("--video-camera needs --video")
+        try:
+            spec["video_camera"] = _frames.parse_closeups(args.video_camera)[0]
+        except ValueError as e:
+            raise common.Failure(f"--video-camera: {e}") from e
     if args.closeups:
         if args.closeup_clip not in by_label:
             raise common.Failure(f"unknown clip {args.closeup_clip} for --closeups; {glb.name} has: "
