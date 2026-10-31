@@ -68,6 +68,15 @@ uniform float haze_pow = 3.0;
 // day * (1 + moon_knee * 0.1) / (1 + moon_knee * day), so the snow does not read as white streaks; the dark blue sea
 // (about 0.1) keeps its value
 uniform float moon_knee = 0.0;
+// step 5a6 (the engineer, 2026-10-31: less snow from the hall's corner): snow_cut takes the day map's white (its least
+// channel, linear, over snow_lo..snow_hi: snow and ice, not the dark land or the sea) toward snow_rgb, a dark winter
+// land, before the moon lights it; moon_land dims the moonlight on land (the sea told by its blue over red), so the sea
+// and the coastlines keep theirs. The defaults draw step 5a5's look
+uniform float snow_cut = 0.0;
+uniform float snow_lo = 0.12;
+uniform float snow_hi = 0.4;
+uniform vec3 snow_rgb = vec3(0.03, 0.035, 0.025);
+uniform float moon_land = 0.0;
 // step 5a5: a debug paint (1: the cap's weight red, soft green, latitude lines every 10 deg white (thick at 0, 30, 60),
 // longitude lines every 10 deg cyan (thick at 0); 0 draws the Earth)
 uniform float debug_mode = 0.0;
@@ -128,7 +137,10 @@ void fragment() {
 		float lum_b = dot(night_b, vec3(0.2126, 0.7152, 0.0722));
 		lights += lights_rgb * lum_b * halo_energy * (1.0 - cloud) * (1.0 - lit);
 		lights *= min(1.0, light_cap / max(max(lights.r, lights.g), max(lights.b, 1e-4)));
-		vec3 day_m = day * (1.0 + moon_knee * 0.1) / (1.0 + moon_knee * day);
+		float snow = smoothstep(snow_lo, snow_hi, min(day.r, min(day.g, day.b))) * snow_cut;
+		vec3 day_s = mix(day, snow_rgb, snow);
+		float sea = smoothstep(1.6, 3.0, day.b / max(day.r, 0.002));
+		vec3 day_m = day_s * (1.0 + moon_knee * 0.1) / (1.0 + moon_knee * day_s) * (1.0 - moon_land * (1.0 - sea));
 		col = night * (1.0 - city) * base_energy * 0.05 + day_m * moon_rgb * moon_energy + lights;
 		col = col * (1.0 - cloud_shade * cloud) + moon_rgb * cloud * cloud_energy * (1.0 - cloud_calm * soft);
 		col += lights_rgb * lum_b * cloud * cloud_city * (1.0 - lit);
@@ -139,6 +151,9 @@ void fragment() {
 			float big = (abs(latd) < 5.0 || abs(latd - 30.0) < 5.0 || abs(latd - 60.0) < 5.0) ? 0.6 : 0.25;
 			float lob = abs(lond) < 5.0 ? 0.6 : 0.25;
 			col = vec3(capw, soft, 0.0) * 0.5 + vec3(1.0) * (1.0 - smoothstep(0.0, big, la)) + vec3(0.0, 1.0, 1.0) * (1.0 - smoothstep(0.0, lob, lo));
+		}
+		if (debug_mode > 1.5) {   // step 5a6: 2 paints the snow mask red and the sea mask green
+			col = vec3(snow, sea, 0.0) * 0.5;
 		}
 	}
 	// the atmosphere as in the sky shader; its width scales with the planet's angular size (a shell of fixed metres)
