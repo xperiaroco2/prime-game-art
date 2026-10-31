@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v14"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v15"         # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -282,7 +282,7 @@ credit = "Earth imagery: NASA"
 # Step 5a7 (the engineer, 2026-10-31: at D2 the planet changed scale with the viewpoint): the far mode, the F
 # distances (`far = true`): the ray traced from `eye` whatever the camera's place, so the planet sits at infinity: the
 # same planet, angular size, horizon height and direction from every point of the hall; the window frames a part of it.
-distance = "F48"                    # the one switch (D1 near, D2 middle, D3 far; F48, F36 at infinity)
+distance = "F36"                    # the one switch (the engineer, 2026-10-31: F36) (D1 near, D2 middle, D3 far; F48, F36 at infinity)
 eye = [0.0, 1.65, 0.0]
 far_eye = [0.0, 1.65, 2.5]          # step 5a7: the far mode's fixed ray origin, the spawn's eye (spawn_eye): there F48 is D2
 shell = 1.35                        # the traced shell's radius over the planet's (room for the rim's halo and the dawn)
