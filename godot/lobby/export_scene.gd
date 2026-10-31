@@ -119,7 +119,8 @@ func _export() -> void:
 	if error != OK:
 		_fail("save lobby_hall.tscn: %s" % error_string(error))
 		return
-	_write("export.json", {"hall_pieces": hall.get_child_count(), "lights": groups["Lights"].get_child_count(),
+	var drift: Array = _roundtrip(level, EXPORT_DIR.path_join("lobby_hall.tscn"))
+	_write("export.json", {"roundtrip": drift, "hall_pieces": hall.get_child_count(), "lights": groups["Lights"].get_child_count(),
 		"probes": groups["Probes"].get_child_count(), "spawns": groups["Markers"].get_child_count(),
 		"editable_instances": editable, "ship": _pkg_info, "camera_far_m": _far,
 		"emissive_surfaces": _emissive.size()})
@@ -151,3 +152,44 @@ func _save_shared(groups: Dictionary) -> String:
 	for w: Node in (_placed["ship_pkg"][0] as Node).find_children("*", "WorldEnvironment", true, false):
 		(w as WorldEnvironment).environment = env
 	return ""
+
+
+## Step 5c: the saved scene loaded back beside the assembled one, every node's stored properties compared (resources
+## one level deep: a material's parameters, a mesh's class), so what the pack loses or changes shows by node and key.
+func _roundtrip(level: Node, path: String) -> Array:
+	var copy: Node = (ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as PackedScene).instantiate()
+	var out: Array = []
+	var n_nodes: int = 0
+	for n: Node in level.find_children("*", "", true, false):
+		var rel: NodePath = level.get_path_to(n)
+		var m: Node = copy.get_node_or_null(rel)
+		n_nodes += 1
+		if m == null:
+			out.append("%s: missing after load" % rel)
+			continue
+		for line: String in _props_differ(n, m, String(rel), 1):
+			out.append(line)
+	copy.free()
+	print("LOBBY roundtrip: %d nodes, %d differences" % [n_nodes, out.size()])
+	for line: String in out.slice(0, 60):
+		print("LOBBY roundtrip  ", line)
+	return out.slice(0, 400)
+
+
+func _props_differ(a: Object, b: Object, where: String, depth: int) -> Array:
+	var out: Array = []
+	for p: Dictionary in a.get_property_list():
+		if not (int(p["usage"]) & PROPERTY_USAGE_STORAGE) or p["name"] in ["script", "owner", "unique_name_in_owner"]:
+			continue
+		var va: Variant = a.get(p["name"])
+		var vb: Variant = b.get(p["name"])
+		if va is Object or vb is Object:
+			if (va == null) != (vb == null):
+				out.append("%s.%s: %s -> %s" % [where, p["name"], va, vb])
+			elif va != null and va is Resource and depth > 0 and va.get_class() == vb.get_class() and not (va is Texture or va is Mesh or va is PackedScene):
+				out += _props_differ(va, vb, "%s.%s" % [where, p["name"]], depth - 1)
+			elif va != null and va.get_class() != vb.get_class():
+				out.append("%s.%s: %s -> %s" % [where, p["name"], va.get_class(), vb.get_class()])
+		elif var_to_str(va) != var_to_str(vb):
+			out.append("%s.%s: %s -> %s" % [where, p["name"], var_to_str(va).left(80), var_to_str(vb).left(80)])
+	return out
