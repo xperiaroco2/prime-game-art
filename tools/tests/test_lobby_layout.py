@@ -182,12 +182,38 @@ class LobbyLayoutTest(unittest.TestCase):
             if not k.startswith(("glass_", "stars")):
                 self.assertIsNotNone(re.search(rf"uniform (float|vec3) {k} ", src), k)
         for k, v in {"light_cap": "1000.0", "halo_energy": "0.0", "cloud_city": "0.0", "cloud_shade": "0.5",
-                     "haze_energy": "0.0", "moon_knee": "0.0", "debug_mode": "0.0"}.items():
+                     "haze_energy": "0.0", "moon_knee": "0.0", "debug_mode": "0.0", "snow_cut": "0.0",
+                     "moon_land": "0.0"}.items():
             self.assertIn(f"uniform float {k} = {v};", src)
         self.assertLess(look["cloud_energy"], 0.1)
         self.assertGreater(look["city_gamma"], 1.8)
         self.assertTrue(1.0 < look["light_cap"] < 4.0)
         self.assertLess(look["haze_energy"], 0.1)
+
+    def test_the_snow_sets(self) -> None:
+        """Step 5a6: three snow strengths, each only snow keys over [earth.look] (uniforms of earth_object.gdshader), the
+        snow cut harder from N1 to N3, N3 with the land's moonlight almost off; N2 the default."""
+        from runner.commands import lobby as cmd
+        src = (Path(__file__).resolve().parents[2] / "godot" / "lobby" / "earth_object.gdshader").read_text(encoding="utf-8")
+        sn = self.layout["earth"]["snow"]
+        self.assertEqual(list(sn["sets"]), ["N1", "N2", "N3"])
+        self.assertEqual(sn["set"], "N2")
+        self.assertEqual(sn["grid"], ["corner_nw", "a_entrance", "spawn_eye"])
+        views = [v[0] for v in self.layout["review"]["views"]]
+        self.assertTrue(all(g in views for g in sn["grid"]))
+        cuts = []
+        for sid, s in sn["sets"].items():
+            self.assertLessEqual(set(s["look"]), {"snow_cut", "moon_land", "moon_knee"}, sid)
+            for k in s["look"]:
+                self.assertIsNotNone(re.search(rf"uniform float {k} ", src), k)
+            cuts.append(s["look"]["snow_cut"])
+            look = cmd.earth_look(self.layout, sid)
+            self.assertEqual({k: v for k, v in look.items() if k not in s["look"]},
+                             {k: v for k, v in self.layout["earth"]["look"].items() if k not in s["look"]})
+        self.assertEqual(cuts, sorted(cuts))
+        self.assertTrue(0.0 < cuts[0] and cuts[-1] <= 1.0)
+        self.assertGreater(sn["sets"]["N3"]["look"]["moon_land"], 0.5)
+        self.assertEqual(cmd.earth_look(self.layout), cmd.earth_look(self.layout, "N2"))
 
     def test_e2s_sun_is_just_behind_the_limb(self) -> None:
         from runner.commands import lobby as cmd
@@ -222,7 +248,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v12")   # step 5a5
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v13")   # step 5a6
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue

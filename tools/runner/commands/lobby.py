@@ -3,7 +3,8 @@
 (sizes, colliders), a capsule walk and the doors' and the corridor's end's proof; --shoot DIR the review views beside
 concepts A and C, a top view, a spawn's eye and the close-ups, in an off-screen window; --grid DIR the taste grid (the
 colour schemes, [look.schemes], in the layout's grid views); --earth-tex the window's Earth textures from NASA's
-sources (step 3b); --earth-grid DIR the Earth variants ([earth.variants]) in [earth] grid's views."""
+sources (step 3b); --earth-grid DIR the Earth variants ([earth.variants]) in [earth] grid's views; --snow-grid DIR the
+snow strengths ([earth.snow] sets, step 5a6) in its grid's views."""
 
 from __future__ import annotations
 
@@ -45,6 +46,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="step 4c: the Earth object's distances D1-D3 from [earth] distance_views into DIR")
     parser.add_argument("--earth-video", type=Path, metavar="DIR",
                         help="step 4c: one short MP4 per Earth distance ([earth] video_keys) into DIR")
+    parser.add_argument("--distance", metavar="ID", help="with --earth-video: only this Earth distance (e.g. D2)")
+    parser.add_argument("--snow-grid", type=Path, metavar="DIR",
+                        help="step 5a6: the snow strengths ([earth.snow] sets) in [earth.snow] grid's views into DIR")
     parser.add_argument("--out", type=Path, help="the pieces' folder (default <raw>/<layout raw_dir>/pieces)")
 
 
@@ -133,6 +137,10 @@ def run(args: argparse.Namespace) -> int:
         code = shoot(layout, out, place, args.distance_grid.resolve(), grid="distance")
         if code:
             return code
+    if args.snow_grid:
+        code = shoot(layout, out, place, args.snow_grid.resolve(), grid="snow")
+        if code:
+            return code
     if args.ship_grid:
         code = shoot(layout, out, place, args.ship_grid.resolve(), grid="ship")
         if code:
@@ -140,7 +148,7 @@ def run(args: argparse.Namespace) -> int:
     if args.earth_video:
         e = layout["earth"]
         vd = dict(layout["video"], keys=e["video_keys"], max_mb=e["video_max_mb"])
-        for did in e["distances"]:
+        for did in ([args.distance] if args.distance else e["distances"]):
             code = video(layout, out, place, args.earth_video.resolve(), vd=vd, distance=did, name=f"earth_{did}.mp4")
             if code:
                 return code
@@ -177,8 +185,17 @@ def _dir(azimuth: float, elevation: float) -> list[float]:
     return [math.sin(a) * math.cos(el), math.sin(el), math.cos(a) * math.cos(el)]
 
 
-def earth_request(layout: dict, vid: str, distance: str | None = None) -> dict:
-    """What hall.gd hands earth_sky.gdshader for one variant: the textures' paths, the look and the variant's numbers."""
+def earth_look(layout: dict, snow: str | None = None) -> dict:
+    """[earth.look] with a snow set's keys over it (step 5a6: the one switch [earth.snow] set, or `snow`)."""
+    e = layout["earth"]
+    sn = e.get("snow")
+    sid = snow or (sn["set"] if sn else None)
+    return dict(e["look"], **(sn["sets"][sid]["look"] if sid else {}))
+
+
+def earth_request(layout: dict, vid: str, distance: str | None = None, snow: str | None = None) -> dict:
+    """What hall.gd hands earth_sky.gdshader for one variant: the textures' paths, the look and the variant's numbers;
+    `snow` one of the [earth.snow] sets (the snow grid's variant)."""
     e = layout["earth"]
     tex = common.raw_dir() / e["tex_dir"]
     files = {k: (tex / f"earth_{k}.jpg").as_posix() for k in e["maps"]}
@@ -190,7 +207,7 @@ def earth_request(layout: dict, vid: str, distance: str | None = None) -> dict:
         raise common.Failure(f"the Earth's textures are missing (lobby --earth-tex): {', '.join(missing)}")
     v = e["variants"][vid]
     out = {"id": vid, "title": v["title"], "earth": {
-        "textures": files, "look": e["look"], "centre": _dir(*v["centre"]), "radius_deg": v["radius_deg"],
+        "textures": files, "look": earth_look(layout, snow), "centre": _dir(*v["centre"]), "radius_deg": v["radius_deg"],
         "subpoint": v["subpoint"], "roll_deg": v["roll_deg"], "sun": _dir(*v["sun"]), "sun_energy": v["sun_energy"],
         "stars": v["stars"]}}
     if cap:
@@ -199,6 +216,8 @@ def earth_request(layout: dict, vid: str, distance: str | None = None) -> dict:
     if did:   # step 4c: the Earth as an object at a finite distance (earth_object.gdshader)
         out["earth"]["object"] = lobby_layout.earth_object(layout, vid, did)
         out.update({"id": did, "title": e["distances"][did]["title"]} if distance else {})
+    if snow:
+        out.update({"id": snow, "title": e["snow"]["sets"][snow]["title"]})
     return out
 
 
@@ -490,6 +509,10 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
         e = layout["earth"]
         req.update({"mode": "grid", "views": e["distance_views"],
                     "variants": [earth_request(layout, e["variant"], d) for d in e["distances"]]})
+    elif grid == "snow":   # step 5a6: the snow strengths over the chosen variant and distance
+        sn = layout["earth"]["snow"]
+        req.update({"mode": "grid", "views": [v[:5] for g in sn["grid"] for v in rv["views"] if v[0] == g],
+                    "variants": [earth_request(layout, layout["earth"]["variant"], snow=k) for k in sn["sets"]]})
     elif grid == "earth":
         req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in layout["earth"]["grid"]],
                     "variants": [earth_request(layout, k) for k in layout["earth"]["variants"]]})

@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v12"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v13"         # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -337,6 +337,25 @@ dawn_rgb = [1.0, 0.55, 0.25]        # E2's sun behind the limb
 stars_energy = 0.9
 glass_rgb = [0.55, 0.7, 0.75]       # the window's tint
 glass_alpha = 0.05
+
+# Step 5a6 (the engineer, 2026-10-31, from corner_nw: tone the snow down further): three snow strengths, each a few
+# [earth.look] keys over it (earth_object.gdshader: snow_cut takes the day map's snow toward a dark winter land before the
+# moon lights it, moon_land dims the moonlight on land, the sea kept). `lobby --snow-grid DIR` shoots them in grid's views
+[earth.snow]
+set = "N2"                          # the one switch: N1, N2 or N3
+grid = ["corner_nw", "a_entrance", "spawn_eye"]
+
+[earth.snow.sets.N1]
+title = "a bit less snow than step 5a5"
+look = { snow_cut = 0.5 }
+
+[earth.snow.sets.N2]
+title = "clearly less snow, barely visible"
+look = { snow_cut = 0.85 }
+
+[earth.snow.sets.N3]
+title = "no visible snow, the land's moonlight almost off"
+look = { snow_cut = 1.0, moon_land = 0.85 }
 
 # [title, centre [azimuth, elevation], angular radius, subpoint [lat, lon] (the surface point nearest the eye), roll,
 #  sun [azimuth, elevation], sun energy, star density]
