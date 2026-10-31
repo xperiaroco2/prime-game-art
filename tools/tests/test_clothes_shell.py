@@ -561,6 +561,33 @@ class JoinRows(unittest.TestCase):
         self.assertEqual(H.join_rows([0.01, None], [0.0, 0.01], 0.03), [(0.0, None), (0.0, None)])
 
 
+class FrontRows(unittest.TestCase):  # M2m: the straps' front ends on the bib
+    def test_the_front_run_glued_and_eased_out_behind(self):
+        hits = [0.0, 0.0, None, None, None, 0.0]
+        along = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
+        out = H.front_rows(hits, along, 0.02)
+        self.assertEqual(out[0], (1.0, 0))
+        self.assertEqual(out[1], (1.0, 1))
+        self.assertEqual(out[2][1], 1)
+        self.assertAlmostEqual(out[2][0], 0.5)
+        self.assertLess(out[3][0], 1e-6)  # 2 cm behind: eased out
+        self.assertEqual(out[5], (0.0, None))  # a stray hit at the back end is not glued
+
+    def test_no_bib_under_the_front(self):
+        self.assertEqual(H.front_rows([None, 0.0], [0.0, 0.01], 0.03), [(0.0, None), (0.0, None)])
+
+
+class SideMix(unittest.TestCase):  # M2m: the bib's top between the straps' weights
+    def test_each_strap_own_side_and_half_between(self):
+        r, l = {"RightShoulder": 0.6, "UpperChest": 0.4}, {"LeftShoulder": 0.6, "UpperChest": 0.4}
+        self.assertEqual(H.side_mix(-0.2, -0.08, r, 0.08, l), r)
+        self.assertEqual(H.side_mix(0.2, -0.08, r, 0.08, l), l)
+        mid = H.side_mix(0.0, -0.08, r, 0.08, l)
+        self.assertAlmostEqual(mid["UpperChest"], 0.4)
+        self.assertAlmostEqual(mid["LeftShoulder"], 0.3)
+        self.assertAlmostEqual(sum(mid.values()), 1.0)
+
+
 class BackBib(unittest.TestCase):  # M2f: her back bib's grid
     def test_outline(self):
         g = H.back_bib_grid(0.92, 1.15, 1.10, 0.075, 0.10, 0.06, 0.012, cols=6, rows=4)

@@ -450,6 +450,12 @@ def main() -> int:
     ap.add_argument("--flat-back", default="",
                     help="M2d: the back panel's top as one stiff panel: blend,radius,band,clear (m; clothes_top.flat_back; "
                          "its weights along --bib-chain; empty: off)")
+    ap.add_argument("--strap-front-drop", type=float, default=0.0,
+                    help="M2m: with --bib-raise, the straps' front ends this much lower than raised by dz (m)")
+    ap.add_argument("--front-join", default="",
+                    help="M2m: the front bib moves with its straps as one piece: share,ease,blend[,across] (the bib's top weights "
+                         "toward the straps' over ease m, the straps over the bib on the bib's weights eased out over "
+                         "blend m; clothes_top.front_join; empty: off)")
     ap.add_argument("--back-join", default="",
                     help="M2e: the straps' back ends glued onto the back panel: blend,gap (m; clothes_top.back_join; "
                          "empty: off)")
@@ -695,6 +701,8 @@ def main() -> int:
         if args.back_join:  # M2e: the straps' back ends glued onto the back panel (one piece with it)
             rep["back_join"] = TOP.back_join(garment, args)
             say("back join", rep["back_join"])
+        if args.front_join:  # M2m: the front bib and its straps one piece in motion (the straps pull its top)
+            rep["front_join"] = TOP.front_join(garment, args)
         if args.band_follow is not None:  # M2e: the top's rows under the built waistband move with it
             rep["band_follow"] = TOP.follow_panels(top, garment, args, zmax=args.waist + args.band_follow)
             say("band follow", rep["band_follow"])

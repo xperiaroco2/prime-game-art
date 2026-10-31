@@ -1123,11 +1123,12 @@ def straps(gar, char, keep_objs, args) -> dict:
             return None if loc is None else loc.z
         z_f0 = front_z(ts[0])
         t_f = ts[0]
-        for k in range(1, 61):
-            z = front_z(ts[0] + math.radians(k))
+        dz_bib -= getattr(args, "strap_front_drop", 0.0)  # M2m: the front ends lie that much under the raised top
+        for k in range(1, 241):  # M2m: quarter degrees (a whole degree moved the end up to 1 cm)
+            z = front_z(ts[0] + math.radians(k / 4))
             if z_f0 is None or z is None:
                 break
-            t_f = ts[0] + math.radians(k)
+            t_f = ts[0] + math.radians(k / 4)
             if z >= z_f0 + dz_bib:
                 break
         ts = [t_f] + ts[1:]
@@ -2174,6 +2175,115 @@ def back_join(gar, args) -> dict:
         rep["glued_rows"].append(glued)
         rep["eased_rows"].append(eased)
     me.update()
+    return rep
+
+
+def front_join(gar, args) -> dict:
+    """M2m: her front bib moves with its straps as one piece (the engineer, 10-31: in Walk the straps moved and the
+    plate stayed, E1i having weighted it rigidly to the spine chain while the straps took the body's weights under
+    them, UpperChest and the clavicles). args.front_join "share,ease,blend":
+    - the bib (the garment's front faces over the waist within the bib, the straps and buckles left out) keeps its
+      spine chain low down; over its top ease m its weights blend (clothes_shell.follow_row, share rising to share at
+      the top edge, smoothstep) toward the straps' own weights where they cross the top edge, mixed across by x
+      (clothes_shell.side_mix: the right strap's at its x and out, the left's at its x and out, smoothstep between),
+      so its corners go where the straps pull and its lower part stays with the spine and waistband (no fold: the
+      blend is smooth in x and z);
+    - each strap vertex with the bib under it (a ray in along its row's normal, as back_join) takes the bib face's
+      weights (its corners by nearness), the rows behind that run eased back to their own over blend m along the
+      strap (clothes_shell.front_rows): strap and plate share one skinning where they touch, so no slip;
+    - each buckle vertex (the bronze material) takes its nearest strap vertex's weights.
+    An optional fourth value, across (default 1), scales x before the mix: 0 gives every bib vertex at one height
+    the same row (the mean of both straps'), so the plate moves rigidly across and bends only along its height,
+    where the share eases in (d80: across 1 and share 1 bent it 21 to 89 mm, the clavicles' swing).
+    Nothing moves at rest; only weights change."""
+    vals = floats(args.front_join)
+    share, ease, blend = vals[:3]
+    across = vals[3] if len(vals) > 3 else 1.0
+    grids = getattr(args, "strap_grids", None)
+    if not grids:
+        return {"skipped": "no straps"}
+    bib_hw, _bib_top = floats(args.bib)
+    me = gar.data
+    mw = gar.matrix_world
+    co = [mw @ v.co for v in me.vertices]
+    strap = {i for g in grids for i in g["ids"]}
+    bronze = {k for k, m in enumerate(gar.data.materials) if m is not None and m.name.startswith("buckle_bronze")}
+    metal = {i for p in me.polygons if p.material_index in bronze for i in p.vertices}
+    names = {g.index: g.name for g in gar.vertex_groups}
+    groups = {g.name: g for g in gar.vertex_groups}
+    rows_w = [{names[g.group]: g.weight for g in v.groups if g.group in names and g.weight > 0} for v in me.vertices]
+
+    def put(i: int, row: dict) -> None:
+        v = me.vertices[i]
+        for gg in list(v.groups):
+            gar.vertex_groups[gg.group].remove([i])
+        for b, x in row.items():
+            if b not in groups:
+                groups[b] = gar.vertex_groups.new(name=b)
+            groups[b].add([i], x, "REPLACE")
+        rows_w[i] = dict(row)
+
+    bib = [i for i, p in enumerate(co) if i not in strap and i not in metal and p.y < 0
+           and abs(p.x) <= bib_hw + 0.005 and p.z > args.waist]
+    if not bib:
+        return {"skipped": "no bib vertices"}
+    z_top = max(co[i].z for i in bib)
+    # each strap's own weights and x where it crosses the bib's top edge (its front part, the row nearest z_top)
+    sides = []
+    for g in grids:
+        nr, nc = g["rows"], g["cols"]
+        mids = [g["ids"][r * nc + nc // 2] for r in range(nr)]
+        r = min((r for r in range(nr) if co[mids[r]].y < 0), key=lambda r: abs(co[mids[r]].z - z_top))
+        ids = g["ids"][r * nc:(r + 1) * nc]
+        sides.append((sum(co[i].x for i in ids) / nc, F.blend_rows([rows_w[i] for i in ids], [1.0] * nc)))
+    sides.sort(key=lambda s: s[0])
+    (x_r, row_r), (x_l, row_l) = sides[0], sides[-1]
+    rep = {"bib_verts": len(bib), "bib_top": round(z_top, 4), "strap_x": [round(x_r, 4), round(x_l, 4)],
+           "strap_rows": [{b: round(w, 3) for b, w in row_r.items()}, {b: round(w, 3) for b, w in row_l.items()}],
+           "bib_reweighted": 0, "strap_glued": 0, "strap_eased": 0, "buckle_verts": 0}
+    for i in bib:
+        s = share * H.ease(co[i].z, z_top - ease, ease)
+        if s <= 0:
+            continue
+        put(i, H.follow_row(rows_w[i], H.side_mix(across * co[i].x, x_r, row_r, x_l, row_l), s))
+        rep["bib_reweighted"] += 1
+    bset = set(bib)
+    faces = [list(p.vertices) for p in me.polygons if all(i in bset for i in p.vertices)]
+    tree = BVHTree.FromPolygons(co, faces)
+    for g in grids:
+        nr, nc = g["rows"], g["cols"]
+        hits = []
+        for r in range(nr):
+            n = Vector(g["nt"][r])
+            row = []
+            for c in range(nc):
+                i = g["ids"][r * nc + c]
+                loc, _nor, fi, _d = tree.ray_cast(co[i] + n * 0.03, -n, 0.06)
+                if loc is None:
+                    row = None
+                    break
+                ids = faces[fi]
+                row.append(F.blend_rows([rows_w[k] for k in ids], [1.0 / max(1e-4, (co[k] - loc).length) for k in ids]))
+            hits.append(row)
+        plan = H.front_rows([None if h is None else 0.0 for h in hits], g["along"], blend)
+        for r, (sh, src) in enumerate(plan):
+            if src is None or sh <= 0:
+                continue
+            rep["strap_glued" if src == r else "strap_eased"] += 1
+            for c in range(nc):
+                i = g["ids"][r * nc + c]
+                put(i, H.follow_row(rows_w[i], hits[src][c], sh))
+    if metal:
+        sl = sorted(strap)
+        kd = KDTree(len(sl))
+        for k, i in enumerate(sl):
+            kd.insert(co[i], k)
+        kd.balance()
+        for i in metal:
+            put(i, dict(rows_w[sl[kd.find(co[i])[1]]]))
+        rep["buckle_verts"] = len(metal)
+    me.update()
+    say("front join", rep)
     return rep
 
 

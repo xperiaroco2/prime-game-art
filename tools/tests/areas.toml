@@ -191,6 +191,7 @@ sources = [
   "tools/blender/clothes_texture.py",  # the cloth maps' fill and the denim's shift (#196, C1d)
   "tools/blender/clothes_strap.py",  # the new straps' strip maths (#196, C1e)
   "tools/blender/clothes_shell.py",  # the shell top's, panels' and new straps' maths (#196, C1f)
+  "tools/blender/clothes_bibmove_geom.py",  # the front bib-in-motion measure's maths (#196, M2m)
   "tools/blender/sneaker_geom.py",  # the code-built sneakers' maths and the toes' cap (#196, S1)
 ]
-tests = ["test_clothes_texture_*", "test_clothes_strap*", "test_clothes_shell*", "test_sneaker_geom*"]
+tests = ["test_clothes_texture_*", "test_clothes_strap*", "test_clothes_shell*", "test_clothes_bibmove*", "test_sneaker_geom*"]

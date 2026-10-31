@@ -667,6 +667,28 @@ def join_rows(hits: list[float | None], along: list[float], blend: float) -> lis
     return out
 
 
+def front_rows(hits: list[float | None], along: list[float], blend: float) -> list[tuple[float, int | None]]:
+    """M2m: join_rows for the straps' front ends (the rows run front to back, the run over the bib is the first):
+    a row over the bib takes its own (share 1, itself), the rows behind the run the run's last row eased out over
+    blend m along the strap, the rest none."""
+    n = len(hits)
+    out = join_rows(hits[::-1], [along[-1] - a for a in along[::-1]], blend)[::-1]
+    return [(s, None if src is None else n - 1 - src) for s, src in out]
+
+
+def side_mix(x: float, x_r: float, row_r: dict[str, float], x_l: float, row_l: dict[str, float]) -> dict[str, float]:
+    """M2m: the bib's top across its width between the two straps' weights: the right strap's (row_r) at x_r and
+    out, the left's at x_l and out, smoothstep between (x_r < x_l), so the plate takes no crease across."""
+    t = ease(x, x_r, x_l - x_r)
+    row: dict[str, float] = {}
+    for r, w in ((row_r, 1.0 - t), (row_l, t)):
+        for b, v in r.items():
+            if w * v > 1e-6:
+                row[b] = row.get(b, 0.0) + w * v
+    tot = sum(row.values())
+    return {b: v / tot for b, v in row.items()} if tot > 0 else {}
+
+
 def back_bib_grid(z0: float, z_c: float, z_v: float, hw_b: float, hw_t: float, x_v: float, border: float,
                   cols: int = 14, rows: int = 14) -> dict:
     """M2f, her back bib (the turnaround's back view): the panel's grid in the back view (x, z), row-major from the
