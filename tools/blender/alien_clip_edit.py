@@ -59,7 +59,7 @@ SEGMENTS = ("Proximal", "Intermediate", "Distal")
 THUMB = ("ThumbProximal", "ThumbDistal")
 KEYS = ("finger_cap_deg", "thumb_cap_deg", "abduct_deg", "swing_deg", "head_up_deg", "lean_deg", "cut_straight_deg",
         "cut_gap", "hips_up_cm", "knees_in_deg", "floor", "floor_reach", "floor_feet", "chest_up_deg", "repeat",
-        "sway_cm", "sway_counter_deg", "leg_fit_bob")
+        "sway_cm", "sway_counter_deg", "leg_fit_bob", "cross_out_cm")
 FLOOR_FAIL_CM = -0.5  # A2: a clip still this far under the floor after its lift fails the build
 ANKLE_MISS_FAIL_CM = 0.5  # A3: a re-solved leg whose Foot lands this far from its kept place (re-evaluated) fails
 
@@ -390,6 +390,162 @@ def raise_knee(hip, knee, ankle, lift):
     return tuple(x + d for x, d in zip(k, lift))
 
 
+CROSS_CELL_M = 0.01  # B1f: the shoes are compared in cells this big across the forward and up axes
+
+
+def cross_cells(pts, cell: float = CROSS_CELL_M) -> dict:
+    """B1f (art #196, the crossing feet): one shoe's points (plain (u, y, z) tuples: u along the swinging foot's
+    outward side axis, y forward, z up, m) reduced to cells of the y-z plane: per cell the shoe's (smallest, largest)
+    u, its extent across."""
+    out = {}
+    for u, y, z in pts:
+        k = (math.floor(y / cell), math.floor(z / cell))
+        if k in out:
+            lo, hi = out[k]
+            out[k] = (min(lo, u), max(hi, u))
+        else:
+            out[k] = (u, u)
+    return out
+
+
+def cross_need(swing: dict, planted: dict, clear: float) -> float:
+    """B1f: how far (m) the swinging shoe must move outward to clear the planted one by clear: over the y-z cells both
+    shoes fill (cross_cells) whose extents across meet within clear, the planted shoe's outer side less the swinging
+    shoe's inner side, plus clear; 0 when no such cell. A cell where the swinging shoe lies wholly inward of the
+    planted one (a strafe's foot crossed over in front) has its shoes apart, not meeting. Walk's crossing frame and
+    the runs' tuck frame pass the swinging shoe through the planted one on both characters (the library clip's
+    paths)."""
+    need = 0.0
+    for k in swing.keys() & planted.keys():
+        (s0, s1), (p0, p1) = swing[k], planted[k]
+        if s0 < p1 + clear and p0 < s1 + clear:
+            need = max(need, p1 - s0 + clear)
+    return need
+
+
+def cross_bump(need: list[float], reach: int = 2, wrap: bool = False) -> list[float]:
+    """B1f: per frame the outward push (m): each frame's need spread over +-reach frames by a raised cosine (1 at the
+    frame, 0.75 and 0.25 one and two frames away at reach 2), the largest taken, so no frame gets less than its need
+    and the push eases in and out over reach frames on each side of the overlap. wrap: a loop whose last frame repeats
+    its first; the bump runs around the seam."""
+    n = len(need)
+    w = [0.5 * (1.0 + math.cos(math.pi * d / (reach + 1))) for d in range(reach + 1)]
+    if wrap and n > 2:
+        m = n - 1
+        cyc = need[:m]
+        cyc[0] = max(cyc[0], need[-1])
+        out = [max(cyc[(i + d) % m] * w[abs(d)] for d in range(-reach, reach + 1)) for i in range(m)]
+        return out + [out[0]]
+    return [max(need[j] * w[abs(j - i)] for j in range(max(0, i - reach), min(n, i + reach + 1))) for i in range(n)]
+
+
+def cross_pushes(lows: dict[str, list[float]], needs: dict[str, list[float]], reach: int = 2,
+                 wrap: bool = False) -> dict[str, list[float]]:
+    """B1f: per foot the outward push (m) per frame: a frame's need counts for the swinging foot only (the higher of
+    the two by its lowest point; the planted foot stays locked), then cross_bump per foot."""
+    out = {}
+    for s, o in (("Left", "Right"), ("Right", "Left")):
+        mine = [nd if lows[s][i] > lows[o][i] else 0.0 for i, nd in enumerate(needs[s])]
+        out[s] = cross_bump(mine, reach, wrap)
+    return out
+
+
+def cross_overlap_mm(lows: dict[str, list[float]], needs: dict[str, list[float]], clear: float) -> list[float]:
+    """B1f: per frame the swinging foot's overlap (mm) with the planted shoe: its need less clear (0: clear by clear
+    or more, or no shared cell)."""
+    out = []
+    for i in range(len(needs["Left"])):
+        s = "Left" if lows["Left"][i] > lows["Right"][i] else "Right"
+        nd = needs[s][i]
+        out.append(round(max(0.0, nd - clear) * 1000, 1) if nd > 0 else 0.0)
+    return out
+
+
+def _side_axes(arm):
+    """B1f: the world side axis (the right hip to the left, horizontal) and the forward axis (up x side)."""
+    from mathutils import Vector
+    b = arm.data.bones
+    side = arm.matrix_world.to_3x3() @ (b["LeftUpperLeg"].head_local - b["RightUpperLeg"].head_local)
+    side = Vector((side.x, side.y, 0.0)).normalized()
+    return side, Vector((0.0, 0.0, 1.0)).cross(side)
+
+
+def _shoe_split(arm, p):
+    """B1f: world points p (numpy n x 3) split by foot: each to the foot whose Foot-to-Toes segment is nearer."""
+    import numpy as np
+    pb, mw = arm.pose.bones, arm.matrix_world
+    dist = []
+    for s in ("Left", "Right"):
+        a = np.array(mw @ pb[f"{s}Foot"].head)
+        b = np.array(mw @ pb[f"{s}Toes"].tail)
+        ab = b - a
+        t = np.clip(((p - a) @ ab) / max(1e-12, float(ab @ ab)), 0.0, 1.0)
+        dist.append(np.linalg.norm(p - (a + t[:, None] * ab), axis=1))
+    left = dist[0] <= dist[1]
+    return {"Left": p[left], "Right": p[~left]}
+
+
+def cross_measure(arm, shoes, act, clear: float) -> dict:
+    """B1f: per frame each foot's lowest shoe point and its need as the swinging foot (cross_need against the other
+    shoe, m), from the shoes mesh's evaluated points."""
+    import bpy
+    import numpy as np
+
+    f0, f1 = _assign(arm, act)
+    side, fwd = _side_axes(arm)
+    ax = {"Left": np.array(side), "Right": -np.array(side)}
+    fw = np.array(fwd)
+    lows = {"Left": [], "Right": []}
+    needs = {"Left": [], "Right": []}
+    for f in range(f0, f1 + 1):
+        bpy.context.scene.frame_set(f)
+        dg = bpy.context.evaluated_depsgraph_get()
+        ev = shoes.evaluated_get(dg)
+        me = ev.to_mesh()
+        co = np.empty(len(me.vertices) * 3)
+        me.vertices.foreach_get("co", co)
+        co = co.reshape(-1, 3) @ np.array(ev.matrix_world.to_3x3()).T + np.array(ev.matrix_world.translation)
+        ev.to_mesh_clear()
+        feet = _shoe_split(arm, co)
+        for s, o in (("Left", "Right"), ("Right", "Left")):
+            lows[s].append(float(feet[s][:, 2].min()) if len(feet[s]) else 1.0)
+            if not (len(feet[s]) and len(feet[o])):
+                needs[s].append(0.0)
+                continue
+            sw, pl = (np.stack([q @ ax[s], q @ fw, q[:, 2]], axis=1).tolist() for q in (feet[s], feet[o]))
+            needs[s].append(cross_need(cross_cells(sw), cross_cells(pl), clear))
+    arm.animation_data.action = None
+    return {"lows": lows, "needs": needs, "side": tuple(side)}
+
+
+def feet_cross(arm, shoes, act, clear: float, wrap: bool) -> dict:
+    """B1f (art #196, the crossing feet): the swinging shoe moved outward along the body's side axis by its measured
+    overlap with the planted shoe plus clear (cross_measure, cross_pushes: a raised-cosine bump), the leg solved again
+    by _raise_ankles (the Foot's world rotation kept, the knee in its own plane), the planted foot and the Hips
+    untouched; twice at most. Returns the overlap per frame before and after (mm, cross_overlap_mm) and the push."""
+    m0 = m = cross_measure(arm, shoes, act, clear)
+    side = m["side"]
+    pushed = {s: [0.0] * len(m["needs"][s]) for s in m["needs"]}
+    sign = {"Left": 1.0, "Right": -1.0}
+    miss = 0.0
+    for _ in range(2):
+        push = cross_pushes(m["lows"], m["needs"], wrap=wrap)
+        if max(max(v) for v in push.values()) < 1e-4:
+            break
+        off = {s: [tuple(sign[s] * x * c for c in side) for x in v] for s, v in push.items()}
+        miss = max(miss, _raise_ankles(arm, act, off)["ankle_miss_max_cm"])
+        pushed = {s: [a + b for a, b in zip(pushed[s], push[s])] for s in pushed}
+        m = cross_measure(arm, shoes, act, clear)
+    ob = cross_overlap_mm(m0["lows"], m0["needs"], clear)
+    oa = cross_overlap_mm(m["lows"], m["needs"], clear)
+    return {"clear_cm": round(clear * 100, 2), "overlap_before_mm": ob, "overlap_after_mm": oa,
+            "overlap_max_before_mm": max(ob), "overlap_max_after_mm": max(oa),
+            "overlap_frames_before": sum(x > 0 for x in ob), "overlap_frames_after": sum(x > 0 for x in oa),
+            "push_max_cm": {s: round(max(v) * 100, 2) for s, v in pushed.items()},
+            "push_cm": {s: [round(x * 100, 2) for x in v] for s, v in pushed.items()},
+            "ankle_miss_max_cm": miss}
+
+
 def _foot_lows(arm, skins, f0: int, f1: int) -> dict[str, list[float]]:
     """B1b: per frame each foot's lowest point (m, world z): the skins' points within SOLE_BAND_M of the floor, each
     counted for the foot whose Foot-to-Toes segment is nearer (1.0 when none is that low)."""
@@ -426,8 +582,9 @@ def _foot_lows(arm, skins, f0: int, f1: int) -> dict[str, list[float]]:
     return out
 
 
-def _raise_ankles(arm, act, raises: dict[str, list[float]]) -> dict:
-    """B1b: each leg with a raise solved again per frame: its Foot moved up by raises[side][f - f0] metres (world)
+def _raise_ankles(arm, act, raises: dict[str, list]) -> dict:
+    """B1b: each leg with a raise solved again per frame: its Foot moved up by raises[side][f - f0] metres (world; B1f:
+    or by that world offset, a 3-tuple)
     with its world rotation kept (the Toes follow), the knee by raise_knee, the Hips untouched; the UpperLeg,
     LowerLeg and Foot rotations keyed linearly on every frame (as hips_up). Returns the feet's largest miss (cm) on
     the re-evaluated rig."""
@@ -437,8 +594,10 @@ def _raise_ankles(arm, act, raises: dict[str, list[float]]) -> dict:
     f0, f1 = _assign(arm, act)
     pb = arm.pose.bones
     bones = arm.data.bones
+    raises = {s: [tuple(x) if isinstance(x, (tuple, list)) else (0.0, 0.0, float(x)) for x in v]
+              for s, v in raises.items()}  # B1f: a world offset per frame, or a raise (z) as before
     legs = [(s, f"{s}UpperLeg", f"{s}LowerLeg", f"{s}Foot") for s in ("Left", "Right")
-            if max(abs(x) for x in raises.get(s, [0.0])) > 1e-5]
+            if max(abs(c) for x in raises.get(s, [(0.0,)]) for c in x) > 1e-5]
     if not legs:
         arm.animation_data.action = None
         return {"ankle_miss_max_cm": 0.0, "legs": []}
@@ -463,7 +622,7 @@ def _raise_ankles(arm, act, raises: dict[str, list[float]]) -> dict:
     for f in range(f0, f1 + 1):
         r = rec[f]
         for side, u, lo, ft in legs:
-            d = to_arm @ Vector((0.0, 0.0, raises[side][f - f0]))
+            d = to_arm @ Vector(raises[side][f - f0])
             mu, ml, mf = r[u], r[lo], r[ft]
             hip, knee, ank = mu.translation, ml.translation, mf.translation
             knee2 = Vector(raise_knee(tuple(hip), tuple(knee), tuple(ank), tuple(d)))
@@ -543,6 +702,16 @@ def feet_floor(arm, skins, act, rest, up_arm, wrap: bool, no_flight: bool = Fals
     return rep
 
 
+def cross_clear_cm(path: str, clip: str):
+    """B1f: the clip's `cross_out_cm` (the crossing shoes' clearance, cm; None: no cross pass): its settings', or for
+    a clip the settings do not list (the loco set's strafes and variants, which sole_floor covers too) [defaults]'."""
+    with open(path, "rb") as f:
+        data = tomllib.load(f)
+    if clip in data.get("clips", {}):
+        return settings(path, clip).get("cross_out_cm")
+    return data.get("defaults", {}).get("cross_out_cm")
+
+
 def sole_floor(arm, skins, path: str) -> dict:
     """B1 (art #196, the Walk hop), B1b (the heel strike): after the dress, every ground clip (ground_clips: the
     settings' floor-true clips and every clip they do not list) put on the floor with all of skins measured (the
@@ -564,9 +733,14 @@ def sole_floor(arm, skins, path: str) -> dict:
     keep_slot = arm.animation_data.action_slot if keep is not None else None
     acts = {a.name.split("|", 1)[1]: a for a in bpy.data.actions if a.name.startswith("CharacterArmature|")}
     out = {}
+    shoes = next((s for s in skins if s.name == "shoes"), None)
     for clip in ground_clips(sorted(acts), str(p)):
         act = acts[clip]
+        cross = cross_clear_cm(str(p), clip)
+        cr = feet_cross(arm, shoes, act, cross / 100.0, clip.endswith("_Loop")) if shoes and cross is not None else None
         rep = feet_floor(arm, skins, act, rest, up_arm, clip.endswith("_Loop"), no_flight=not can_fly(clip))
+        if cr is not None:
+            rep["cross"] = cr
         out[clip] = rep
         if rep["lowest_after_cm"] < FLOOR_FAIL_CM:
             raise ValueError(f"{act.name}: still {rep['lowest_after_cm']} cm under the floor with the soles")

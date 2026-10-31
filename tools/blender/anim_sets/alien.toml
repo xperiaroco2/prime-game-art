@@ -17,6 +17,11 @@ floor_reach = 0
 # (alien_clip_edit.feet_floor); the Hips lift at reach 0 jerked the chameleon's Walk at heel strike
 # (780, 795, 809, 804, 793 mm)
 floor_feet = true
+# B1f: the dress's crossing shoes (alien_clip_edit.feet_cross, in sole_floor before the floor): where the swinging shoe
+# meets the planted one, it moves outward by the overlap plus this clearance (cm), eased over 2 frames each side, its
+# leg solved again; for every ground clip, listed or not. Measured on B1e: Walk, Jog_Fwd and Sprint never meet (the
+# shoes 8 to 16 cm apart in front view); Jog_Bwd 22 mm (hers), Strafe_Left__s4b 27 mm (his), the crouch under 1 mm
+cross_out_cm = 0.5
 
 # A3: the idle's life: UAL's 2.5 s cycle played three times (7.5 s), the hips over one foot then the other (3 cm, the
 # legs solved per frame, the feet kept), the spine and head countering it; the chest breathes in the lively controller

@@ -255,5 +255,60 @@ class B1ePlant(unittest.TestCase):
         self.assertTrue(E.can_fly("Sprint_Fwd_Loop"))
 
 
+class B1fCross(unittest.TestCase):
+    """B1f (art #196): the swinging shoe moved outward by its overlap with the planted one plus a clearance."""
+
+    @staticmethod
+    def box(u0, u1, y0, y1, z0, z1, step=0.005):
+        n = lambda a, b: [a + step * i for i in range(int(round((b - a) / step)) + 1)]
+        return [(u, y, z) for u in (u0, u1) for y in n(y0, y1) for z in n(z0, z1)]
+
+    def test_overlap_plus_clear(self):
+        planted = E.cross_cells(self.box(-0.05, 0.04, 0.0, 0.25, 0.0, 0.08))  # outer side at u = 0.04
+        swing = E.cross_cells(self.box(0.02, 0.12, 0.10, 0.30, 0.03, 0.10))  # inner side at u = 0.02, 2 cm in
+        self.assertAlmostEqual(E.cross_need(swing, planted, 0.005), 0.025)
+
+    def test_apart_or_past(self):
+        planted = E.cross_cells(self.box(-0.05, 0.04, 0.0, 0.25, 0.0, 0.08))
+        far = E.cross_cells(self.box(0.06, 0.16, 0.10, 0.30, 0.03, 0.10))  # 2 cm out: clear
+        self.assertEqual(E.cross_need(far, planted, 0.005), 0.0)
+        near = E.cross_cells(self.box(0.042, 0.14, 0.10, 0.30, 0.03, 0.10))  # 2 mm out: within the clearance
+        self.assertAlmostEqual(E.cross_need(near, planted, 0.005), 0.003)
+        above = E.cross_cells(self.box(0.0, 0.10, 0.10, 0.30, 0.12, 0.20))  # over the planted shoe: no shared cell
+        self.assertEqual(E.cross_need(above, planted, 0.005), 0.0)
+        crossed = E.cross_cells(self.box(-0.25, -0.10, 0.10, 0.30, 0.03, 0.10))  # wholly inward (a strafe's cross)
+        self.assertEqual(E.cross_need(crossed, planted, 0.005), 0.0)
+
+    def test_bump_covers_the_need_and_eases(self):
+        need = [0.0] * 5 + [0.01, 0.02, 0.01] + [0.0] * 5
+        b = E.cross_bump(need)
+        self.assertTrue(all(x >= n - 1e-12 for x, n in zip(b, need)))
+        self.assertAlmostEqual(max(b), 0.02)
+        self.assertEqual(b[:3], [0.0] * 3)  # nothing beyond 2 frames of the overlap
+        self.assertEqual(b[-3:], [0.0] * 3)
+        self.assertAlmostEqual(b[4], 0.01 * 0.75)  # one frame before the overlap: its first frame eased
+        steps = [abs(a - c) for a, c in zip(b, b[1:])]
+        self.assertLessEqual(max(steps), 0.0101)
+
+    def test_bump_wraps_the_seam(self):
+        need = [0.01] + [0.0] * 9 + [0.01]  # a loop: the last frame is the first
+        b = E.cross_bump(need, wrap=True)
+        self.assertAlmostEqual(b[-1], b[0])
+        self.assertAlmostEqual(b[1], 0.0075)
+        self.assertAlmostEqual(b[9], 0.0075)  # the frame before the seam eases in too
+
+    def test_only_the_swinging_foot_moves(self):
+        lows = {"Left": [0.0, 0.0, 0.05], "Right": [0.06, 0.02, 0.0]}
+        needs = {"Left": [0.01, 0.01, 0.01], "Right": [0.02, 0.0, 0.0]}
+        p = E.cross_pushes(lows, needs, reach=0)
+        self.assertEqual(p["Left"], [0.0, 0.0, 0.01])  # the left foot planted on frames 0-1
+        self.assertEqual(p["Right"], [0.02, 0.0, 0.0])
+        self.assertEqual(E.cross_overlap_mm(lows, needs, 0.005), [15.0, 0.0, 5.0])
+
+    def test_settings_key(self):
+        self.assertEqual(E.cross_clear_cm(str(SETTINGS), "Walk_Loop"), 0.5)
+        self.assertEqual(E.cross_clear_cm(str(SETTINGS), "Strafe_Left__p2_Loop"), 0.5)  # unlisted: [defaults]
+
+
 if __name__ == "__main__":
     unittest.main()
