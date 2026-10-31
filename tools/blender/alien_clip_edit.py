@@ -439,14 +439,56 @@ def cross_bump(need: list[float], reach: int = 2, wrap: bool = False) -> list[fl
     return [max(need[j] * w[abs(j - i)] for j in range(max(0, i - reach), min(n, i + reach + 1))) for i in range(n)]
 
 
-def cross_pushes(lows: dict[str, list[float]], needs: dict[str, list[float]], reach: int = 2,
-                 wrap: bool = False) -> dict[str, list[float]]:
-    """B1f: per foot the outward push (m) per frame: a frame's need counts for the swinging foot only (the higher of
-    the two by its lowest point; the planted foot stays locked), then cross_bump per foot."""
+CROSS_MAX_M = 0.04  # B1f: no frame's need counts over this (a strafe's crossed-over foot is skipped, not pushed)
+
+
+def _runs(flags: list[bool], wrap: bool) -> list[list[int]]:
+    """B1f: the runs of True frames (index lists); wrap: a loop whose last frame is the first, a run joined over
+    the seam."""
+    n = len(flags)
+    m = n - 1 if wrap and n > 2 else n
+    runs, cur = [], []
+    for i in range(m):
+        if flags[i]:
+            cur.append(i)
+        elif cur:
+            runs.append(cur)
+            cur = []
+    if cur:
+        runs.append(cur)
+    if wrap and len(runs) > 1 and runs[0][0] == 0 and runs[-1][-1] == m - 1:
+        runs[0] = runs.pop() + runs[0]
+    return runs
+
+
+def cross_pushes(lows: dict[str, list[float]], needs: dict[str, list[float]], reach: int = 2, wrap: bool = False,
+                 crossed: list[bool] | None = None, plant: float = FLOAT_TOL_M) -> dict[str, list[float]]:
+    """B1f: per foot the outward push (m) per frame. A frame's need counts for the higher foot only, not on a frame
+    whose feet are crossed over (a strafe's step: its own intent), and at most CROSS_MAX_M; then cross_bump. A foot
+    on the floor (its lowest within plant) never slides: over each such stance run the push is held at the run's
+    largest, and the swing frames around it ease from it (the raised cosine), so a foot that lands into the other
+    shoe lands that much wider and stays there. B1e's route pushed the higher foot only, and a double-support frame
+    (Jog_Bwd: the landing foot 0.4 mm over the other) slid the planted foot 3 cm."""
+    crossed = crossed or [False] * len(lows["Left"])
+    n = len(lows["Left"])
+    w = [0.5 * (1.0 + math.cos(math.pi * d / (reach + 1))) for d in range(reach + 1)]
+    m = n - 1 if wrap and n > 2 else n
     out = {}
     for s, o in (("Left", "Right"), ("Right", "Left")):
-        mine = [nd if lows[s][i] > lows[o][i] else 0.0 for i, nd in enumerate(needs[s])]
-        out[s] = cross_bump(mine, reach, wrap)
+        mine = [min(nd, CROSS_MAX_M) if lows[s][i] > lows[o][i] and not crossed[i] else 0.0
+                for i, nd in enumerate(needs[s])]
+        p = cross_bump(mine, reach, wrap)
+        for run in _runs([z <= plant for z in lows[s]], wrap):
+            hold = max(p[i] for i in run)
+            for i in run:
+                p[i] = hold
+            for d in range(1, reach + 1):  # the ease out of the stance on both sides
+                for j in ((run[0] - d) % m if wrap else run[0] - d, (run[-1] + d) % m if wrap else run[-1] + d):
+                    if 0 <= j < n and lows[s][j] > plant:
+                        p[j] = max(p[j], hold * w[d])
+        if wrap and n > 2:
+            p[-1] = p[0]
+        out[s] = p
     return out
 
 
@@ -497,6 +539,7 @@ def cross_measure(arm, shoes, act, clear: float) -> dict:
     fw = np.array(fwd)
     lows = {"Left": [], "Right": []}
     needs = {"Left": [], "Right": []}
+    crossed = []
     for f in range(f0, f1 + 1):
         bpy.context.scene.frame_set(f)
         dg = bpy.context.evaluated_depsgraph_get()
@@ -507,6 +550,8 @@ def cross_measure(arm, shoes, act, clear: float) -> dict:
         co = co.reshape(-1, 3) @ np.array(ev.matrix_world.to_3x3()).T + np.array(ev.matrix_world.translation)
         ev.to_mesh_clear()
         feet = _shoe_split(arm, co)
+        crossed.append(bool(len(feet["Left"]) and len(feet["Right"])
+                            and float((feet["Left"] @ ax["Left"]).mean() + (feet["Right"] @ ax["Right"]).mean()) < 0.0))
         for s, o in (("Left", "Right"), ("Right", "Left")):
             lows[s].append(float(feet[s][:, 2].min()) if len(feet[s]) else 1.0)
             if not (len(feet[s]) and len(feet[o])):
@@ -515,21 +560,21 @@ def cross_measure(arm, shoes, act, clear: float) -> dict:
             sw, pl = (np.stack([q @ ax[s], q @ fw, q[:, 2]], axis=1).tolist() for q in (feet[s], feet[o]))
             needs[s].append(cross_need(cross_cells(sw), cross_cells(pl), clear))
     arm.animation_data.action = None
-    return {"lows": lows, "needs": needs, "side": tuple(side)}
+    return {"lows": lows, "needs": needs, "side": tuple(side), "crossed": crossed}
 
 
 def feet_cross(arm, shoes, act, clear: float, wrap: bool) -> dict:
     """B1f (art #196, the crossing feet): the swinging shoe moved outward along the body's side axis by its measured
     overlap with the planted shoe plus clear (cross_measure, cross_pushes: a raised-cosine bump), the leg solved again
     by _raise_ankles (the Foot's world rotation kept, the knee in its own plane), the planted foot and the Hips
-    untouched; twice at most. Returns the overlap per frame before and after (mm, cross_overlap_mm) and the push."""
+    untouched; three times at most. Returns the overlap per frame before and after (mm, cross_overlap_mm) and the push."""
     m0 = m = cross_measure(arm, shoes, act, clear)
     side = m["side"]
     pushed = {s: [0.0] * len(m["needs"][s]) for s in m["needs"]}
     sign = {"Left": 1.0, "Right": -1.0}
     miss = 0.0
-    for _ in range(2):
-        push = cross_pushes(m["lows"], m["needs"], wrap=wrap)
+    for _ in range(3):
+        push = cross_pushes(m["lows"], m["needs"], wrap=wrap, crossed=m["crossed"])
         if max(max(v) for v in push.values()) < 1e-4:
             break
         off = {s: [tuple(sign[s] * x * c for c in side) for x in v] for s, v in push.items()}
@@ -543,6 +588,7 @@ def feet_cross(arm, shoes, act, clear: float, wrap: bool) -> dict:
             "overlap_frames_before": sum(x > 0 for x in ob), "overlap_frames_after": sum(x > 0 for x in oa),
             "push_max_cm": {s: round(max(v) * 100, 2) for s, v in pushed.items()},
             "push_cm": {s: [round(x * 100, 2) for x in v] for s, v in pushed.items()},
+            "crossed_frames": sum(m0["crossed"]),
             "ankle_miss_max_cm": miss}
 
 

@@ -305,6 +305,26 @@ class B1fCross(unittest.TestCase):
         self.assertEqual(p["Right"], [0.02, 0.0, 0.0])
         self.assertEqual(E.cross_overlap_mm(lows, needs, 0.005), [15.0, 0.0, 5.0])
 
+    def test_a_planted_foot_never_slides(self):
+        # Jog_Bwd: the right foot lands into the left shoe on frame 3 and stands on 3-5; the left one lifts
+        lows = {"Right": [0.03, 0.02, 0.01, 0.0004, 0.0, 0.0, 0.02, 0.04],
+                "Left": [0.0, 0.0, 0.0, 0.0, 0.01, 0.03, 0.0, 0.0]}
+        needs = {"Right": [0.0, 0.0, 0.01, 0.02, 0.0, 0.0, 0.0, 0.0], "Left": [0.0] * 8}
+        p = E.cross_pushes(lows, needs)
+        self.assertEqual(p["Right"][3], p["Right"][4])  # held over the stance
+        self.assertEqual(p["Right"][4], p["Right"][5])
+        self.assertAlmostEqual(p["Right"][3], 0.02)
+        self.assertAlmostEqual(p["Right"][6], 0.02 * 0.75)  # eased out in the swing after it
+        self.assertAlmostEqual(p["Right"][2], 0.015)  # and in before it
+        self.assertAlmostEqual(p["Right"][1], 0.0075)
+        self.assertEqual(p["Left"], [0.0] * 8)
+
+    def test_crossed_and_capped(self):
+        lows = {"Left": [0.0, 0.0], "Right": [0.05, 0.05]}
+        needs = {"Left": [0.0, 0.0], "Right": [0.09, 0.09]}
+        self.assertEqual(E.cross_pushes(lows, needs, reach=0, crossed=[True, True])["Right"], [0.0, 0.0])
+        self.assertEqual(E.cross_pushes(lows, needs, reach=0)["Right"], [E.CROSS_MAX_M] * 2)
+
     def test_settings_key(self):
         self.assertEqual(E.cross_clear_cm(str(SETTINGS), "Walk_Loop"), 0.5)
         self.assertEqual(E.cross_clear_cm(str(SETTINGS), "Strafe_Left__p2_Loop"), 0.5)  # unlisted: [defaults]
