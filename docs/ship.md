@@ -2013,3 +2013,32 @@ ship into the package unchanged; their `[light.mats]` rows carry `l = 0.0` (they
 same with the ship's lights on or off) and `e` scales them in Godot.
 
 Cost: about 12k triangles a pod with its lights (was about 1.6k); the ship 313k.
+
+## Polish n2: the nose, the hall's bays, the underbody (2026-11-01)
+A fresh critic's findings on the b4 package (art #263); note `D:/prime-art-raw/ship/v5/notes/polish-n2.md`.
+- **The closed nose's glare** was no leak: `test_ship_jaw` casts its seal rays and the closed jaws are shut. `ship.gd`
+  `_dress` makes the glow cells' lights in the saved pose (open), so a closed view left the deck tip's cyan light
+  (lights.json `(0, 0.48, -12.07)`) 0.5 m over the path in front of the shut nose. `_jaw_bind` keeps a cell lit
+  only by one jaw piece in that jaw's frame and `_jaw_turn` moves it with the jaw. The package's `Lights` still stand
+  in the saved pose (the lobby zeroes them); `export_scene.gd` strips the binding's metas.
+- **The mouth ceiling's bars** are `glow_cyan__jaw_ceil` (half glow_cyan's strength, light `l` 0.3): the clamp's
+  2.4 clipped the throat's ceiling white.
+- **The hall's flats** (`flat_panel`) and the vault door wall's sides are relief bays (`ship_interior.relief`): a
+  silver frame 35 mm proud with corner bolts round three panels 20 mm proud over a dark back, seams 14 mm; the field
+  stays flat for a station. The kick plate and belt are kept.
+- **The vault door**: a lit frame edge all round the opening and a centred light line down the leaf between four
+  panels (`int_cyan__door`, e 0.35, a short light `l` 0.25 on the leaf), a reader with a bezel, a dark screen, a lit
+  bar and three keys.
+- **The lens rooms' centre disc** is `int_plate__tip` (matte, darker); the hall's disc keeps `int_plate`.
+- **The underbody**: `belly_lights`, cyan lines (`glow_cyan__belly`, glow only) in a dark channel 4-10 mm under the
+  hull's bottom, along the belly at x +-2.2, spanwise under each corridor and a ring under each lens; a step is left
+  out where the bottom rises over 1.5 cm. `metal.gdshader` keeps a third of the brushed grain on faces looking down
+  (its 1.3/m streak noise read as long streaks on the belly's big plates).
+- **The deck's hazard bands**: a dark band 12 cm wide, 13 cm in from each deck edge, yellow bars slanted every 0.2 m
+  (`deck_hazard`, `deck_hazard_dark`, no collision); the ribs stop 0.3 m from the edges.
+- **Measured, no change**: the deck's top meets the mouth floor at the hinge at 1.200 m (the floor_h; the deck plane
+  through the hinge, ship_hull_jaw.cuts), so the ramp lip does not float; the canopies stand over the roof by design
+  (the approved spine bumps) and already have a fairing ring and a rim lip over the glass's foot.
+- **Not done**: the oculus at 64 sides doubled the hull plating's capped seam corners (727 against the 600 bound of
+  `test_the_seam_corners_end_on_their_fold_and_keep_the_groove`): `sides` is also the hull's cut prism, so the visible
+  rings need their own count (a next step).
