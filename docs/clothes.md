@@ -616,7 +616,7 @@ above it again from Blender's rest matrices.
   from the nearest opening (none within lo, all from hi on, `clothes_fit_geom.follow_share`), first pulls it in
   along the nearest garment face's normal until it lies clear inside (`pull_in`; skin more than 15 mm outside is no
   poke and stays), before the cover test, then gives the kept ones the garment face's weights (`blend_rows`, the
-  corners by nearness). The traces (`tools/out/dress/m2d/probe_poke.py`): her right ankle front inside the turn-up lay
+  corners by nearness). Traced per vertex in M2d: her right ankle front inside the turn-up lay
   6 to 9 mm outside the cloth at rest, 44 mm from the hem, and no rule cut it (its tilted cover rays leave by the hem);
   the crotch's skin (Hips and both UpperLegs) lay 3 to 9 mm inside the seat, within under_cloth's 1 mm once the fit
   shifted a vertex, and its weights differ from the garment's (mostly one UpperLeg), so it left the cloth in motion.
@@ -707,6 +707,23 @@ above it again from Blender's rest matrices.
   `back_join` hands them from the panel's spine-chain weights to the body's shoulder weights over only `blend` 3 cm.
   `--back-join 0.14,0.002` eases that over 14 cm (14 rows a side instead of 4): at Jog 0.3 s the left strap runs
   straight and the right one bends softly (d75); 0.08 (d74) is between. d76 = d73's ring with the 14 cm ease.
+- **The back bib on the legs' own denim** (M2l): d76's back bib, on the straps' plain rectangle with a 1.35 gain,
+  rendered lighter and bluer than the legs (High look, back view: bib sRGB about 53/80/107 against the legs'
+  46/63/82) and smooth, a plastic patch at game distance. A `--plain` box's 10th value 1 now takes the diffuse and
+  roughness from `--plain-src`, the garment's own texels; `auto[,w,h]` (default 96 x 160) picks the plainest
+  rectangle wholly inside the UV islands (`clothes_texture.clean_rect`). A rectangle read off the GLB's map does not
+  do: that map is filled between the islands, and d77's hand-picked leg rectangle lay partly outside them (black
+  wedges on the bib). The normal map stays the plain rectangle's twill: the legs' normals carry their folds. With
+  gain 1 the bib measures as the legs (d77: 45/61/80).
+- **The cuff on its leg's own axis** (M2l): the cuff ring's plain texels were laid on a cylinder round the waist's
+  axis, so each cuff's front and back shared texels and its sides stretched: a smooth sky-blue tube. A `--plain`
+  box's 11th value 1 lays each region on its own vertical axis instead, the seam on the leg's inner side (a face
+  across it unwrapped by `clothes_shell.seam_unwrap`). The ring is now thinner and higher, over a strip of ankle as on
+  the concept: `--cuff-ring 0.172,0.046,0.004,0.003,24,0.008,0.004` (bottom 0.126, the collar's top 0.099 to
+  0.105), `--ankle-top 0.140`, the box's cut 0.172, `--light-denim 0.58,0.64,0.72` (greyer) and
+  `--cuff-fold 0.003,0.6` (the box's rows 3 mm under its cut darkened: the roll's fold line).
+- **The off-body report after the lip** (M2l): `off_body_mm_min_max` and `off_body_worst_x_z_mm` now measure the
+  panel as built, its edge folded `strap_lip` in (d78: 2.0 to 23.6 mm; the V's tip 18.9 mm).
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'
@@ -789,8 +806,8 @@ above it again from Blender's rest matrices.
   (`x0,x1,y0,y1,z0,z1` for |x|, bind pose; `;` between boxes) on each side is a region of denim faces (the straps'
   and band's patch and the bronze left out), re-laid in UV on a vertical cylinder round the waist's axis
   (`--band-axis-y`; `clothes_shell.cyl_coords`) at the garment's median texel density (about 1,100 texels per metre;
-  `--plain-density` scales it). All regions share one free window of the maps filled with the straps' plain denim
-  rectangle (`--strap-uv`) repeated mirrored (`clothes_shell.mirror_tile`; the normal map's x or y turned over in a
+  `--plain-density` scales it). The regions of one (tint, cut, gain, source) group share one free window of the maps
+  filled with the straps' plain denim rectangle (`--strap-uv`) repeated mirrored (`clothes_shell.mirror_tile`; the normal map's x or y turned over in a
   mirrored copy), in the diffuse, roughness and normal maps alike; with no window free the density steps down by
   15% up to three times. The boxes: the chameleon `0.11,0.25,-0.07,0.09,0.74,0.99` (the hip sides); the axolotl
   the hip sides `0.11,0.25,-0.04,0.05,0.72,0.975`, the seat `0,0.25,0.05,0.25,0.72,0.975` and the front pockets
