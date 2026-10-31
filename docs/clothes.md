@@ -870,3 +870,31 @@ above it again from Blender's rest matrices.
 - **The game's look** (E1b): `frames --look high` renders under `look_presets.json`'s High preset (AgX 0.9, the
   studio sky's ambient and reflections, SSAO, soft shadows, MSAA 4x, the approved lights); the default `studio` is
   the linear review light.
+
+## Specs: a garment's numbers before its build (Gate 1, art #196)
+Every garment is specified before it is built (the pipeline approved 2026-10-31: concept, spec and drawing, then the
+build). `specs/<garment>_dims.toml` holds every size in cm on the body it is made for and as a ratio to that body's
+landmarks (sole, ankle, knee, crotch, waist, bust, armpit, collarbone, shoulder_top; widths waist_w, hip_w, bust_w,
+chest_w, thigh_w, knee_w, ankle_w ...), a tolerance per size, which concept view wins, the concept's own landmark
+rows, and each part's behaviour (flat, bends, moves with which bones). `tools/blender/garment_spec.py` (plain Python)
+loads it and refuses a file whose cm and ratio disagree by more than 0.1 cm; it also measures the landmarks on a rest
+dump (`body_landmarks`: triangle-connected plane sections). `garment_spec_probe.py` (headless Blender, read only)
+dumps a character's rest meshes and bones; `garment_drawing.py` draws one sheet per view (the concept | the spec over
+the concept, placed by its landmark rows | the spec over a flat-shaded render of her body at 5 px/cm) and, with
+`--build`, measures a dressed build against the spec (`spec_vs_<tag>.md/.json/.png`):
+
+```
+blender.run_script("garment_spec_probe.py", ["--blend", <char.blend>, "--out", <probe.json>])
+cd tools/blender && $PYTHON_BIN garment_drawing.py --spec ../../specs/dungarees_dims.toml --body <char probe>
+    --out DIR [--build <dressed probe> --dress <dress.json> --tag d79]
+```
+
+- **The dungarees** (`specs/dungarees_dims.toml`, on B13): bib top 119.95 cm (0.78 of her waist->collarbone, the
+  concept's 336 px exactly), 22.0 wide at the top, 21.0 at the band; pocket 115.9-102.0, 14.5 wide; straps 3.8 wide,
+  vertical at 9.5 cm from her centre, buckles at 118.0; waistband 99.8-95.8 (her waist; d79's at 93.3), 24.5 wide;
+  side buttons 97.1; back panel top 118.7 (a shallow U between the straps, as on the concept), 24.1 / 21.7 wide;
+  legs 18.65 / 13.0 / 11.5 at thigh, knee and turn-up; turn-up 17.8-23.3; a 6.7 cm bare ankle over the sneaker rim.
+  The bib's lean is the taste point: (A) a rigid plane on the band and the bust peak leans 8.7 deg, its top 4.5 cm
+  off her upper chest (d80-d82's board); (B, the spec's choice) straight across with one smooth side-view bend over
+  the bust, the top edge 0.8 cm off the shirt. The d79 build is off in 15 of 21 measured sizes (bib top -8.9 cm,
+  band -6.5, hem -5.2). Her rest is a T-pose: her armpit landmark is a T-pose armpit, higher than an A-pose one.
