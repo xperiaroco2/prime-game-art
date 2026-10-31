@@ -340,6 +340,32 @@ def tube_depth(t: dict, P: dict, pts: list, first: int = 0) -> float:
     return max(tube_depths(t, P, pts, first), default=0.0)
 
 
+# ------------------------------------------------------------------------------------------------ the grips
+def grip_quats(g: dict, side: str) -> dict:
+    """A hand shape of the library (`[grips]`, p3) as each finger bone's basis rotation {bone: (w, x, y, z)}: per
+    finger the curl of its three bones about their own x (`all` for a finger the grip does not name); `spread` turns
+    the base bones about z (`mirror`: one sign means together on both hands); `ThumbTurn` [roll, swing] turns the
+    thumb's base about its length (y) and toward the palm (z) before its curl, the right hand's mirrored. Also the
+    loco clips' hand shapes (Hands H1, alien_hands_math)."""
+    out = {}
+    for f in FINGERS:
+        names = PHALANX.get(f, PHALANX["Index"])
+        curl = g.get(f, g.get("all", [0.0, 0.0, 0.0]))
+        for i, (ph, deg) in enumerate(zip(names, curl)):
+            q = M.q_axis_angle((1.0, 0.0, 0.0), deg)
+            if i == 0 and g.get("spread") and f != "Thumb":
+                k = {"Index": -1.0, "Middle": -0.3, "Ring": 0.4, "Little": 1.0}[f]
+                # q3 (`mirror` in the grip): mirrored like the thumb's turn (one sign drew the left hand's fingers
+                # apart, the right's together); a flag, so the check still composes older builds' data as built
+                k *= -1.0 if g.get("mirror") and side == "Right" else 1.0
+                q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), g["spread"] * k), q)
+            if i == 0 and f == "Thumb" and g.get("ThumbTurn"):
+                roll, swing = (v * (1.0 if side == "Left" else -1.0) for v in g["ThumbTurn"])  # mirrored
+                q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), swing), M.q_mul(M.q_axis_angle((0.0, 1.0, 0.0), roll), q))
+            out[f"{side}{f}{ph}"] = M.q_norm(q)
+    return out
+
+
 # ------------------------------------------------------------------------------------------------ the model
 class Model:
     """A character: its skeleton, skin, tubes and landmarks, and the pose data."""
@@ -551,22 +577,8 @@ class Model:
         `ThumbTurn` [roll, swing] (degrees) turns the thumb's base about its length (y) and toward the palm (z) before
         its curl (the left hand's; the right's mirrored), so a fist's thumb lies over the index and a flat hand's beside
         it (a curl alone turns it about one axis only, p1)."""
-        g = self.data["grips"][grip]
-        for f in FINGERS:
-            names = PHALANX.get(f, PHALANX["Index"])
-            curl = g.get(f, g.get("all", [0.0, 0.0, 0.0]))
-            for i, (ph, deg) in enumerate(zip(names, curl)):
-                q = M.q_axis_angle((1.0, 0.0, 0.0), deg)
-                if i == 0 and g.get("spread") and f != "Thumb":
-                    k = {"Index": -1.0, "Middle": -0.3, "Ring": 0.4, "Little": 1.0}[f]
-                    # q3 (`mirror` in the grip): mirrored like the thumb's turn (one sign drew the left hand's fingers
-                    # apart, the right's together); a flag, so the check still composes older builds' data as built
-                    k *= -1.0 if g.get("mirror") and side == "Right" else 1.0
-                    q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), g["spread"] * k), q)
-                if i == 0 and f == "Thumb" and g.get("ThumbTurn"):
-                    roll, swing = (v * (1.0 if side == "Left" else -1.0) for v in g["ThumbTurn"])  # mirrored
-                    q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), swing), M.q_mul(M.q_axis_angle((0.0, 1.0, 0.0), roll), q))
-                r.local(f"{side}{f}{ph}", q)
+        for bone, q in grip_quats(self.data["grips"][grip], side).items():
+            r.local(bone, q)
 
     def _arm_fk(self, r: Rig, side: str, arm: dict) -> None:
         F = self._chest(r)
