@@ -35,6 +35,7 @@ var _earth_obj: MeshInstance3D   # step 4c: the Earth as a sphere at a finite di
 var _far: float = 400.0          # the camera's far plane (step 4c: past the Earth object's shell)
 var _env: Environment
 var _rig: Node3D                 # step 4: the light rig of the current mood (rebuilt per mood)
+var _pkg_info: Dictionary = {}   # step 5a: the ship package's freed nodes, jaws, colliders and lights
 var _emissive: Array = []        # step 4: [mesh, surface, its material, is the ship] of the lens, strip, ring, lamp and the ship's glow surfaces
 
 
@@ -179,6 +180,62 @@ func _build() -> void:
 		if not _placed.has(p[0]):
 			_placed[p[0]] = []
 		_placed[p[0]].append(node)
+	if _req.has("ship_package"):
+		_ship_package(hall, _req["ship_package"])
+
+
+## Step 5a: art #263's packaged ship (levels/ship/ship.tscn, staged under res://import/ship_pkg/) at the ship's origin:
+## the request's "free" nodes freed ("path", or "path:Class" for that node's children of the class), the jaw nose shut
+## at once (the package's HANDOFF.md "The jaw nose"). Its key starts with ship_, so _emit scales its glows.
+func _ship_package(hall: Node3D, pk: Dictionary) -> void:
+	var scn: PackedScene = load(String(pk["scene"])) as PackedScene
+	if scn == null:
+		_fail("cannot load %s" % pk["scene"])
+		return
+	var ship: Node3D = scn.instantiate() as Node3D
+	ship.name = "ship_pkg"
+	ship.position = _v(pk["at"])
+	var freed: Array = []
+	for f: String in pk["free"]:
+		var parts: PackedStringArray = f.split(":")
+		var n: Node = ship.get_node_or_null(NodePath(parts[0]))
+		if n == null:
+			_fail("ship package: no node %s" % parts[0])
+			return
+		if parts.size() == 1:
+			n.get_parent().remove_child(n)
+			n.free()
+			freed.append(f)
+			continue
+		var k: int = 0
+		for c: Node in n.get_children():
+			if c.is_class(parts[1]):
+				n.remove_child(c)
+				c.free()
+				k += 1
+		freed.append("%s x%d" % [f, k])
+	hall.add_child(ship)   # in the tree first: an AnimationPlayer outside it does not apply a seek
+	var nose: AnimationPlayer = ship.get_node("Nose/AnimationPlayer") as AnimationPlayer
+	nose.play("close")
+	nose.seek(nose.current_animation_length, true)
+	var jaws: Dictionary = {}
+	for j: String in ["jaw_lower", "jaw_upper"]:
+		var jn: Node3D = ship.get_node("Nose").find_child(j, true, false) as Node3D
+		if jn != null:
+			jaws[j] = snappedf(jn.rotation_degrees.x, 0.001)
+	var colliders: int = 0
+	var lights: int = 0
+	var stack: Array = [ship]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		stack.append_array(n.get_children())
+		if n is CollisionShape3D and (n as CollisionShape3D).shape != null:
+			colliders += 1
+		if n is Light3D:
+			lights += 1
+	_pkg_info = {"freed": freed, "jaws": jaws, "colliders": colliders, "lights": lights}
+	_placed["ship_pkg"] = [ship]
+	print("LOBBY ship package: %s" % JSON.stringify(_pkg_info))
 
 
 ## A piece's bounds at its origin (its meshes' AABBs) and its colliders.
@@ -216,6 +273,8 @@ func _check() -> void:
 	for i: int in 3:
 		await physics_frame
 	var w: Dictionary = _req["walk"]
+	if not _pkg_info.is_empty():
+		result["ship_package"] = _pkg_info
 	result["walk"] = await _walk(float(w["r"]), float(w["h"]), w["points"].map(_v))
 	for b: Array in _req.get("blocks", []):
 		result["blocks"][b[0]] = await _walk(float(w["r"]), float(w["h"]), [_v(b[1]), _v(b[2])])

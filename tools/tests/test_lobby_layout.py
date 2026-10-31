@@ -35,10 +35,13 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertEqual(lobby_layout.check(self.layout, self.fp(self.layout)), [])
 
     def test_the_engineers_numbers(self) -> None:
+        # step 5a (the engineer, art#356 comment 6536044954): the origin 2.5 m toward the window, the spawns with it
+        self.assertEqual(self.layout["ship"]["origin"], [0.0, 0.0, -14.5])
+        self.assertEqual(self.layout["floor"]["spawns_z"], 2.5)
         n = lobby_layout.ship_numbers(self.layout, self.fp(self.layout))
-        self.assertAlmostEqual(n["nose_z"], -24.1, places=2)
-        self.assertAlmostEqual(n["aft_z"], -2.04, delta=0.01)
-        self.assertAlmostEqual(n["middle_z"], -13.07, delta=0.01)
+        self.assertAlmostEqual(n["nose_z"], -21.6, places=2)
+        self.assertAlmostEqual(n["aft_z"], 0.46, delta=0.01)
+        self.assertAlmostEqual(n["middle_z"], -10.57, delta=0.01)
         r, cz = lobby_layout.arc(self.layout)
         self.assertAlmostEqual(lobby_layout.arc_z(self.layout, 0.0), 16.0)
         self.assertAlmostEqual(lobby_layout.arc_z(self.layout, 20.0), 10.0)
@@ -46,13 +49,13 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_refuses_a_ship_on_the_spawns(self) -> None:
         layout = copy.deepcopy(self.layout)
-        layout["ship"]["origin"] = [0.0, 0.0, -12.0]   # 5 m south: the pods end at z +2.96, past the spawns
+        layout["ship"]["origin"] = [0.0, 0.0, -12.0]   # 2.5 m further south: the pods end at z +2.96, past the spawns
         problems = lobby_layout.check(layout, self.fp(layout))
         self.assertTrue(any(p.startswith("spawn x") and "from the ship" in p for p in problems), problems)
 
     def test_refuses_a_ship_near_a_wall(self) -> None:
         layout = copy.deepcopy(self.layout)
-        layout["ship"]["origin"] = [5.0, 0.0, -17.0]
+        layout["ship"]["origin"] = [5.0, 0.0, -14.5]
         problems = lobby_layout.check(layout, self.fp(layout))
         self.assertTrue(any(p.startswith("ship:") and "from E" in p for p in problems), problems)
 
@@ -150,7 +153,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v7")   # step 4c
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v8")   # step 5a
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -284,18 +287,30 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertTrue(any("D9" in q for q in lobby_layout.earth_problems(bad, {v[0] for v in self.layout["review"]["views"]})))
 
     def test_glb_points_and_the_closed_nose(self) -> None:
-        """Step 4c: the closed ship's footprint joins the shut jaws' vertices (read from the package's GLBs)."""
+        """Step 4c: the closed ship's footprint joins the shut jaws' vertices (read from the package's GLBs); step 5a:
+        it holds every rule at the engineer's new place, so the package instance is used."""
         pk = self.layout["ship"]["package"]
         folder = common.raw_dir() / pk["dir"] / "assets" / "environment" / "ship"
         if not (folder / "jaw_lower.glb").is_file() or not (common.raw_dir() / self.layout["ship"]["pieces_dir"]).is_dir():
             self.skipTest(f"no {folder}")
-        self.assertFalse(pk["use"])   # it fails the north wall's 3 m until the engineer decides
+        self.assertTrue(pk["use"])
+        self.assertEqual(pk["free"], ["Clearing", "Environment", "Lights:DirectionalLight3D"])
         from runner.commands import lobby
         place, _drop, report, _ship = lobby.ship_scene(self.layout)
         fp = lobby_layout.footprint(self.layout, self.outline, report, place)
         cf = lobby_layout.closed_footprint(self.layout, fp, place)
-        self.assertAlmostEqual(lobby_layout.ship_numbers(self.layout, cf)["nose_z"], -29.49, places=2)
-        self.assertLess(lobby_layout.wall_gaps(self.layout, cf)["N"], 3.0)
+        cn = lobby_layout.ship_numbers(self.layout, cf)
+        self.assertAlmostEqual(cn["nose_z"], -26.99, places=2)
+        self.assertAlmostEqual(cn["aft_z"], 0.46, delta=0.01)
+        self.assertAlmostEqual(cn["middle_z"], -13.26, delta=0.01)   # the ring's centre
+        self.assertAlmostEqual(lobby_layout.wall_gaps(self.layout, cf)["N"], 3.01, delta=0.01)
+        spawn = min(lobby_layout.poly_dist(cf, (x, self.layout["floor"]["spawns_z"])) for x in self.layout["floor"]["spawns_x"])
+        self.assertAlmostEqual(spawn, 2.04, delta=0.01)
+        self.assertEqual(lobby_layout.check(self.layout, cf), [])
+        moved = copy.deepcopy(self.layout)   # step 4c's place: the jaw 0.51 m from the north wall, refused
+        moved["ship"]["origin"] = [0.0, 0.0, -17.0]
+        cf = lobby_layout.closed_footprint(moved, lobby_layout.footprint(moved, self.outline, report, place), place)
+        self.assertTrue(any(q.startswith("ship:") and "from N" in q for q in lobby_layout.check(moved, cf)))
 
     def test_plan_draws_the_hall(self) -> None:
         plan = lobby_layout.ascii_plan(self.layout, self.fp(self.layout))

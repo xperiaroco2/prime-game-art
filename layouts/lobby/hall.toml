@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v7"          # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v8"          # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -60,31 +60,37 @@ doors = [["D1", "W", 2.0], ["D2", "E", 2.0], ["D3", "N", -11.0], ["D4", "N", 11.
 
 [floor]
 ring_r = 15.0                      # H.ring: the floor ring round the ship
-spawns_z = 0.0                     # H.spawns: ten markers at z 0, x -9..9 step 2 (the greybox's, unchanged)
+spawns_z = 2.5                     # H.spawns: ten markers, x -9..9 step 2; step 5a (the engineer, art#356 comment
+                                   # 6536044954): at z 2.5 (was the greybox's 0), 2 m from the engine pods, facing the window
 spawns_x = [-9.0, -7.0, -5.0, -3.0, -1.0, 1.0, 3.0, 5.0, 7.0, 9.0]
 spawn_ship_m = 2.0                 # the least gap between a spawn and the ship's footprint
 ship_wall_m = 3.0                  # the least gap between the ship's footprint and every wall and door
 
 [ship]
-# The engineer's decision (2026-10-30, art#356 comment 6522500716): the ship 7 m nearer the entrance than drawn, its
-# plan origin at lobby (0, 0, -17), nose north; plan x = lobby x, lobby z = plan y - 17, plan h = lobby y. The nose at
-# z -24.1, the engine pods' ends at z -2.04; the ring centred on the ship's middle (z -13.07, computed by the check).
-origin = [0.0, 0.0, -17.0]
+# The engineer's decisions (art#356): the ship nearer the entrance than drawn, nose north (comment 6522500716, origin
+# z -17), then 2.5 m back toward the window (step 5a, 2026-10-30, comment 6536044954) so the closed jaw nose stands 3 m
+# from the north wall: its plan origin at lobby (0, 0, -14.5); plan x = lobby x, lobby z = plan y - 14.5, plan h = lobby
+# y. The closed nose at z -26.99, the engine pods' ends at z 0.46; the ring centred on the closed ship's middle
+# (z -13.26, computed by the check; `lobby --check` prints the numbers).
+origin = [0.0, 0.0, -14.5]
 pieces_dir = "ship/v5/nose/b4/pieces"   # art #263's built pieces (under the raw folder), never rebuilt from here;
                                    # step 4c: the jaw nose b4 the package was built from (the jaws built closed)
 hull = "P"                         # ship_hull_shape.outline("P"): the hull's footprint
 pods = ["nozzle_pod_outer", "nozzle_pod_mid"]   # their placed bounds join the footprint (the build report)
 tail = "skin_top"                  # its bounds' aft end beyond the outline joins the footprint, as wide as the pods
 lanes = ["exterior"]               # the interior is only seen through the canopies' glass: left out in step 1
-# The ramp is down (the ship's closed state does not exist yet): it stays as a stand-in and is not in the footprint;
-# its foot at plan y -12.6 lands at z -29.6, 0.4 m from the north wall (docs/lobby.md, open problems).
 stand_in = []                      # step 4c: the ramp is gone (the jaw nose, shut)
 # Step 4c: art #263's closed ship, its package (prime-game-art#358/#359, assets/environment/ship/HANDOFF.md S7, S8):
 # levels/ship/ship.tscn with its Clearing freed and the jaw nose shut. `lobby --check` measures its footprint with the
 # nose's pieces (built closed, each at its hinge) against the same rules. The pointed jaw reaches plan y -12.49, lobby
-# z -29.49: 0.51 m from the north wall (the rule's 3 m) in the arch's mouth, so it is not used until the engineer
-# moves the ship or changes the rule (docs/lobby.md "Step 4c").
-package = { dir = "ship/v5/export/v4", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = false }
+# z -26.99: 3.01 m from the north wall (step 5a's place). use = true (step 5a): the shots, videos and walk instance the
+# package's ship.tscn (copied into godot/import/ship_pkg, its res:// paths rewritten; never edited or rebuilt) instead
+# of pieces_dir's pieces, and the check holds the closed footprint to the rules. `free`: the package's nodes freed in
+# the lobby ("path" a node, "path:Class" the node's children of that class): the clearing (its ground collider too),
+# the night clearing's WorldEnvironment (it fights the hall's AgX, glow and exposure) and the moon and cool key (two
+# shadowed suns that would light the hall's walls and cast two more ship shadows against the Earth's light). The
+# ship's 105 own lamps and its 7 interior probes stay.
+package = { dir = "ship/v5/export/v4", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"] }
 # The forest clearing (layouts/ship/exterior.toml), not in the lobby
 drop = ["ground", "pine_a", "pine_b", "pine_c", "pine_d", "pine_e", "pine_f", "pine_g", "pine_s", "rock_a", "rock_b",
         "rock_c", "rock_pile_a", "rock_pile_b", "ground_lamp", "dirt_patch", "dirt_path", "tuft_a", "tuft_b",
@@ -198,14 +204,14 @@ background = [0.02, 0.035, 0.11]   # the placeholder behind the window before st
 # [name, title, eye [x, y, z], look [x, y, z], vertical fov, the concept to compare with ("" for none)]. Cameras
 # estimated from the pictures (docs/lobby.md): A at eye height, about 80 deg across (52 deg high at 16:9); its doors
 # D1 and D2 at the frame's edges put A's camera at about z -23, where the moved ship's nose now stands, so A stands at
-# the north wall's foot west of the ramp, 6 m further back. C from the window's bulge at about 5 m, about 60 deg
-# across. The concepts drew the ship 7 m further south.
+# the north wall's foot west of the nose, 6 m further back. C from the window's bulge at about 5 m, about 60 deg
+# across. The concepts drew the ship 4.5 m further south (step 5a).
 views = [
   ["a_entrance", "A: from the entrance, as concept A", [-5.0, 1.7, -29.3], [0.0, 3.0, -12.0], 52.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/a_entrance.jpg"],
   ["c_back", "C: from the window, as concept C", [0.0, 5.0, 14.0], [0.0, 2.6, -24.0], 37.0, "D:/prime-game-design/ideas/lobby-station/hall/drawing/c_back.jpg"],
   ["corner_nw", "the whole hall from the north-west corner, eye height", [-18.5, 1.7, -28.5], [4.0, 3.5, 2.0], 75.0, ""],
-  ["spawn_eye", "a spawn's eye (x 0, z 0) toward the window, as the spawns face", [0.0, 1.65, 0.0], [0.0, 4.0, 16.0], 75.0, ""],
-  ["spawn_ship", "a spawn's eye (x -1, z 0) toward the ship", [-1.0, 1.65, 0.0], [0.0, 2.6, -13.0], 75.0, ""],
+  ["spawn_eye", "a spawn's eye (x 0, z 2.5) toward the window, as the spawns face", [0.0, 1.65, 2.5], [0.0, 4.0, 18.5], 75.0, ""],
+  ["spawn_ship", "a spawn's eye (x -1, z 2.5) toward the ship", [-1.0, 1.65, 2.5], [0.0, 2.6, -10.5], 75.0, ""],
   ["door_d3", "door D3 close up", [-11.0, 1.7, -24.5], [-11.0, 3.2, -30.0], 60.0, ""],
   ["door_d1", "door D1 and the pilaster stepped back beside it", [-13.5, 1.7, 7.0], [-20.0, 3.2, 0.5], 60.0, ""],
   ["arch", "the arch and the corridor from 6 m", [-4.0, 1.9, -24.4], [0.0, 3.2, -36.0], 60.0, ""],
@@ -234,10 +240,10 @@ top = { name = "top", title = "top: plan view, north up (the vault hidden)", siz
 [walk]
 r = 0.68                           # the 1.36 m wide capsule of the house walk (docs/house.md)
 h = 1.8
-# The capsule's waypoints [x, z] on the floor: the spawns, round the ship's east side, over the ramp's foot (the 1.35 m
-# between the ramp stand-in and the arch's jamb is narrower than the capsule) into the corridor's end, back out, up to D4 and D3, round the west side to D1, across the spawns to D2.
+# The capsule's waypoints [x, z] on the floor: the spawns, round the ship's east side, past the closed nose (step 5a: 3 m
+# from the north wall) into the corridor's end, back out, up to D4 and D3, round the west side to D1, across the spawns to D2.
 points = [
-  [-9.0, 0.0], [9.0, 0.0], [15.5, -6.0], [16.5, -13.0], [14.5, -22.0], [5.0, -28.6], [0.0, -31.0], [0.0, -37.0],
+  [-9.0, 2.5], [9.0, 2.5], [15.5, -6.0], [16.5, -13.0], [14.5, -22.0], [5.0, -28.6], [0.0, -31.0], [0.0, -37.0],
   [0.0, -31.0], [5.0, -28.6], [11.0, -28.4], [5.0, -28.6], [0.0, -31.0], [-5.0, -28.6], [-11.0, -28.4], [-15.5, -22.0], [-16.5, -13.0], [-17.0, 2.0], [-18.4, 2.0], [-15.0, 4.0],
   [15.0, 4.0], [18.4, 2.0],
 ]
@@ -249,6 +255,8 @@ blocks = [
   ["D3", [-11.0, -27.5], [-11.0, -33.0], "z", -30.0, 1],
   ["D4", [11.0, -27.5], [11.0, -33.0], "z", -30.0, 1],
   ["corridor_end", [0.0, -35.5], [0.0, -41.0], "z", -38.0, 1],
+  # step 5a: up into the shut jaw nose from 2 m before its tip (z -26.99); the open ramp would carry the capsule aboard
+  ["nose_shut", [0.0, -29.0], [0.0, -20.0], "z", -26.99, -1],
 ]
 
 [earth]

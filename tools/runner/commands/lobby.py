@@ -84,8 +84,12 @@ def run(args: argparse.Namespace) -> int:
         common.say(f"  the closed ship ({pk['dir']}, nose {', '.join(pk['nose'])} shut): nose z {cn['nose_z']:.2f}, aft z "
                    f"{cn['aft_z']:.2f}; spawns {cs:.2f} m; " + ", ".join(f"{k} {v:.2f}" for k, v in cg.items())
                    + (f"; FAILS: {'; '.join(closed)}" if closed else "; holds"))
-        if pk["use"]:
+        if pk["use"]:   # step 5a: the package's ship.tscn stands in the lobby; the ring and the plan follow its footprint
             problems += [f"the closed ship: {q}" for q in closed]
+            fp, n = cf, cn
+            rr = layout["floor"]["ring_r"]
+            common.say(f"  the package instance is used ([ship.package] use = true): the ring centred at z {n['middle_z']:.2f} "
+                       f"(r {rr}: z {n['middle_z'] - rr:.2f}..{n['middle_z'] + rr:.2f}); the spawns at z {layout['floor']['spawns_z']}")
         elif closed:
             common.say("  the package instance is not used ([ship.package] use = false); the pieces of pieces_dir stand in, their jaws shut")
     for p in problems:
@@ -296,7 +300,8 @@ def scene_request(layout: dict, out: Path, place: list, ship_report: dict) -> tu
     if missing:
         raise common.Failure(f"pieces not built (lobby --build): {', '.join(missing)}")
     ship_dir = common.raw_dir() / layout["ship"]["pieces_dir"]
-    ship_ids = sorted({p[0] for p in place})
+    pk = layout["ship"].get("package") or {}
+    ship_ids = [] if pk.get("use") else sorted({p[0] for p in place})
     staged = {f"lobby_{p['id']}": out / f"{p['id']}.glb" for p in layout["pieces"]}
     staged.update({f"ship_{pid}": ship_dir / f"{pid}.glb" for pid in ship_ids})
     pieces = {p["id"]: f"res://import/lobby_{p['id']}.glb" for p in layout["pieces"]}
@@ -304,11 +309,40 @@ def scene_request(layout: dict, out: Path, place: list, ship_report: dict) -> tu
     ox, oy, oz = layout["ship"]["origin"]
     places = [[pid, at, yaw] for pid, at, yaw in layout["place"]]
     places += [["door", *door_place(layout, d)] for d in layout["door"]["doors"]]
-    places += [[f"ship_{pid}", [at[0] + ox, at[2] + oy, at[1] + oz], yaw] for pid, at, yaw in place]
+    places += [[f"ship_{pid}", [at[0] + ox, at[2] + oy, at[1] + oz], yaw] for pid, at, yaw in place if pid in ship_ids]
     bounds = {p["id"]: hall[p["id"]]["bounds"] for p in layout["pieces"]}
     bounds.update({f"ship_{pid}": ship_report[pid]["bounds"] for pid in ship_ids})
     collide = [p["id"] for p in layout["pieces"] if p["collide"]]
-    return {"pieces": pieces, "place": places}, staged, {"bounds": bounds, "collide": collide}
+    req = {"pieces": pieces, "place": places}
+    if pk.get("use"):   # step 5a: the ship's package instead of its pieces (hall.gd _ship_package)
+        req["ship_package"] = {"scene": stage_package(pk), "at": [ox, oy, oz], "free": pk.get("free", [])}
+    return req, staged, {"bounds": bounds, "collide": collide}
+
+
+PKG_DIR = "ship_pkg"
+PKG_TEXT = {".tscn", ".tres", ".gdshader", ".gdshaderinc", ".import", ".gd"}
+
+
+def stage_package(pk: dict) -> str:
+    """Step 5a: copies the files art #263's package.json lists into godot/import/ship_pkg/ (ignored by git), its text
+    files' res://assets/ and res://levels/ rewritten under res://import/ship_pkg/; only changed files are written, so a
+    second run imports nothing new. The package itself is only read. Returns the level scene's res:// path."""
+    src = common.raw_dir() / pk["dir"]
+    dst = _godot.IMPORT_DIR / PKG_DIR
+    meta = json.loads((src / "package.json").read_text(encoding="utf-8"))
+    prefix = f"res://import/{PKG_DIR}/"
+    for rel in meta["files"]:
+        if rel == "package.json":
+            continue
+        data = (src / rel).read_bytes()
+        if Path(rel).suffix in PKG_TEXT:
+            data = data.replace(b"res://assets/", f"{prefix}assets/".encode()).replace(b"res://levels/", f"{prefix}levels/".encode())
+        target = dst / rel
+        if not target.is_file() or target.read_bytes() != data:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+    scene = str(meta.get("scene", "levels/ship/ship.tscn")).removeprefix("res://")
+    return prefix + scene
 
 
 def door_place(layout: dict, door: list) -> tuple[list, float]:
@@ -350,6 +384,8 @@ def godot_check(layout: dict, out: Path, place: list, ship_report: dict, folder:
         raise common.Failure(f"hall.gd check failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     result = json.loads((folder / "check.json").read_text(encoding="utf-8"))
     problems = list(errors)
+    # step 5a: a script error inside hall.gd (a missing piece, a null scene) does not stop its check; it fails here
+    problems += [f"hall.gd: {line.strip()}" for line in output.splitlines() if "SCRIPT ERROR" in line][:5]
     for pid, got in result["bounds"].items():
         exp = want["bounds"][pid]
         off = max(abs(a - b) for k in ("min", "max") for a, b in zip(got[k], exp[k]))
@@ -364,6 +400,13 @@ def godot_check(layout: dict, out: Path, place: list, ship_report: dict, folder:
                + ("" if wk["arrived"] else f"; stuck near {[round(v, 2) for v in wk['stuck']]}"))
     if not wk["arrived"]:
         problems.append("the capsule walk did not arrive")
+    sp = result.get("ship_package")
+    if sp is not None:   # step 5a: the package's ship, its jaws shut and their colliders with them
+        common.say(f"  ship package: {sp['colliders']} colliders, {sp['lights']} lights, jaws {sp['jaws']}, freed {sp['freed']}")
+        if sp["colliders"] < 1:
+            problems.append("the ship package: no collider")
+        if len(sp["jaws"]) != 2 or any(abs(a) > 0.5 for a in sp["jaws"].values()):
+            problems.append(f"the ship package: the jaws are not shut ({sp['jaws']})")
     for name, _a, _b, axis, face, side in w["blocks"]:
         b = result["blocks"][name]
         end = b["end"][0 if axis == "x" else 2]
@@ -378,7 +421,7 @@ def godot_check(layout: dict, out: Path, place: list, ship_report: dict, folder:
         common.bad(f"lobby --godot: {len(problems)} problems")
         return 1
     common.ok(f"lobby --godot: {len(result['bounds'])} pieces import at Blender's sizes, "
-              f"{sum(result['colliders'].values())} colliders, the walk arrives, {len(w['blocks'])} blocks hold "
+              f"{sum(result['colliders'].values()) + (sp or {}).get('colliders', 0)} colliders, the walk arrives, {len(w['blocks'])} blocks hold "
               f"({folder.as_posix()})")
     return 0
 
@@ -419,6 +462,9 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
     if code != 0 or not (folder / "shots.json").is_file():
         raise common.Failure(f"hall.gd shoot failed (exit code {code}):\n" + "\n".join(output.splitlines()[-20:]))
     result = json.loads((folder / "shots.json").read_text(encoding="utf-8"))
+    errors += [f"hall.gd: {line.strip()}" for line in output.splitlines() if "SCRIPT ERROR" in line][:5]
+    for line in errors[-5:]:
+        common.say(f"  {line}")
     for name, info in result["shots"].items():
         common.say(f"  {name}: {info['draw_calls']} draw calls, {info['primitives']} primitives"
                    + (f", GPU {info['gpu_ms']:.2f} ms" if "gpu_ms" in info else ""))
