@@ -1989,3 +1989,27 @@ east wall and, since step 6, its mirror on the west (`GILL_SIDES` in ship_interi
     rebuilt; `clad_before_after.png` (rows clad_throat, w_clad_throat, clad_hall, w_clad_hall; left step 6, right
     step 7), `gill_set/` (the three MP4s, the stills, `sheet.png`), `play_test/`); handoff
     `<raw>/ship/v5/notes/ship-step7.md`.
+
+## The stern polish n1 (2026-11-01)
+
+The lobby's players see the stern up close from the spawn (`<raw>/lobby/hall/v15/shots/spawn_ship.png`). n1
+rebuilds the three nozzle pods and the stern legs, keeping every radius, length and placement
+(`tools/blender/ship_hull_detail.py` `nozzle_pod`/`pod_ring`, `ship_hull.py` `_leg_heavy`):
+
+| Part | Now |
+|---|---|
+| Segments | `POD_SEGS` 64 (was 32), the bell, housing, collar, fairing and spinner shaded smooth under 40 deg |
+| Bell | a solid ring with bevelled lips; a continuous light ring 1.6 cm into its lip (the ten gapped lip segments are gone), its plane at length + `LIP` 0.45 (the ring at + 0.434: `hull.pod_tail_m`) |
+| Accents | the housing round the bell's base carries a light strip in a groove; the barrel's strip sits between two trim lips |
+| Throat | two stepped rings (the first with a light ring), a deep wall, a floor in four emissive bands (`glow_pod_dim/_mid/_warm/_hot`) round a pointed spinner with a hot tip and twelve twisted stator vanes |
+| Hull join | a fairing where each pod leaves the hull (args `mount`), six stringers, one collar; the middle pod carries two bolted beams (args `bridges`, `bridge_y`) over its contact with each outer pod, so no collar or fairing crosses another pod in the open |
+| Stern legs | `leg_stern` args `heavy = true`: same pad (r 0.6), a thicker 16-sided oleo, two side dampers, a torque link, a hydraulic line, eight ribs and bolt heads |
+
+**Why the bells were black in the lobby:** their throat was the dark `ext_nozzle_inner`; the teal seen in
+`ship --shoot` came from `ship.gd`'s run-time glow-cell omni lights (`_dress`: one omni per cell of emissive
+surface, `glow_pod` with `l` 0.15). The package keeps those lights under `Lights`, but the lobby zeroes the ship's
+lights (`ship_lights`), so the throat went black. The glow now lives in the pieces' own emissive materials, which
+ship into the package unchanged; their `[light.mats]` rows carry `l = 0.0` (they light nothing, so the look is the
+same with the ship's lights on or off) and `e` scales them in Godot.
+
+Cost: about 12k triangles a pod with its lights (was about 1.6k); the ship 313k.
