@@ -888,9 +888,34 @@ hidden in the package (`Clearing`, its `Environment` with a second `WorldEnviron
 at load rather than after `hall.gd`'s assembly. Next: free those nodes in `export_check.gd` before the views and
 compare again.
 
+## Step 5c2: the level script
+
+```
+tools/run.sh lobby --export <raw>/lobby/hall/v16/export2 --no-compare
+```
+
+The package's one script, `levels/lobby/lobby_hall.gd` on the root `LobbyHall` (source `godot/lobby/lobby_hall.gd`, no
+`res://` path in it): a saved scene still keeps the ship package's `Clearing`, its `Environment` (the second
+`WorldEnvironment`) and the suns under `Ship/Lights` switched off (step 5b), and on `_ready` the script frees them (its
+exported `ship_free`, the paths `export_scene.gd` takes from the nodes `hall.gd` `_drop` switched off), as the art's
+assembly and the ship package's HANDOFF S7 do; one frame later it takes every `ReflectionProbe` of the level (the
+hall's 3, `probe_ship` and the ship package's) out of the tree and puts it back in its place, so each `UPDATE_ONCE`
+probe captures again without them. The jaw nose, layer 11 and the glow scaling stay overrides in the scene; the
+switched-off state stays too, so the scene without the script draws nearly the same. It sets the root's metadata
+`ship_freed` and `probes_recaptured` (the check reads them). `export_scene.gd` attaches the script after the assembly
+(its `_ready` runs only in the game and the check); `lobby_export.leftovers` allows exactly that script once, in the
+scene, and refuses any other; `package.json` names it (`level_script`).
+
+The check (`export_check.gd check`) reads the tree after the script's `_ready` and three frames: `Ship/Clearing` and
+`Ship/Environment` gone, no `WorldEnvironment` and no `DirectionalLight3D` left in the ship, `ship_freed` equal to
+`ship_free`'s length, every probe recaptured, the root's script the level script and no other script. The views
+(`lobby --export DIR` without `--no-compare`) run the script too: whether it closes `c_back`'s 3.15 is for that window
+run to show (not run in step 5c2: no window while the engineer plays).
+
 ## Open problems
 
-- Step 5b/5c: `c_back` from the package is 3.15 of 255 off `--shoot`'s (step 5c: not the pack); the cause is to find before the package
+- Step 5b/5c: `c_back` from the package is 3.15 of 255 off `--shoot`'s (step 5c: not the pack; step 5c2: the level
+  script frees the ship's switched-off nodes, the window comparison still to run); the cause is to find before the package
   goes to the game. The hall's GLBs each embed the metal texture set (about 4 MB each): one shared set would save
   about 24 MB.
 
