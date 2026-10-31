@@ -701,6 +701,14 @@ func _apply_light(l: Dictionary) -> void:
 		probe.ambient_color_energy = float(l["ambient_energy"])
 		_rig.add_child(probe)
 		probe.position = _v(pr[1])
+	# step 5a: the ship package's own lamps (its ship.tscn's Light3D nodes left after the freed ones) times ship_lights
+	for top: Node in _placed.get("ship_pkg", []):
+		for n: Node in top.find_children("*", "Light3D", true, false):
+			var lt: Light3D = n as Light3D
+			if not lt.has_meta("lobby_e0"):
+				lt.set_meta("lobby_e0", lt.light_energy)
+			lt.light_energy = float(lt.get_meta("lobby_e0")) * float(l["ship_lights"])
+			lt.visible = lt.light_energy > 0.0
 	_emit(l)
 
 

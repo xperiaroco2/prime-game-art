@@ -505,7 +505,7 @@ def earth_object(layout: dict[str, Any], vid: str, did: str) -> dict[str, Any]:
             "shell": e["shell"], "far_m": dist + r * e["shell"] + 100.0}
 
 
-LIGHT_KEYS = ("exposure", "ambient_rgb", "ambient_energy", "probe_intensity", "pendant_rgb", "pendant_energy",
+LIGHT_KEYS = ("ship_lights", "exposure", "ambient_rgb", "ambient_energy", "probe_intensity", "pendant_rgb", "pendant_energy",
               "pendant_range", "pendant_angle", "bulb_emit", "strip_rgb", "strip_energy", "strip_range", "strip_emit",
               "door_rgb", "door_energy", "door_range", "door_emit", "corridor_rgb", "corridor_energy", "corridor_range",
               "earth_rgb", "earth_energy", "earth_dir", "dawn_rgb", "dawn_energy", "dawn_dir", "glow_intensity",

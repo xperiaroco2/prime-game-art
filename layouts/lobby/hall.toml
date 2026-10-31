@@ -255,8 +255,9 @@ blocks = [
   ["D3", [-11.0, -27.5], [-11.0, -33.0], "z", -30.0, 1],
   ["D4", [11.0, -27.5], [11.0, -33.0], "z", -30.0, 1],
   ["corridor_end", [0.0, -35.5], [0.0, -41.0], "z", -38.0, 1],
-  # step 5a: up into the shut jaw nose from 2 m before its tip (z -26.99); the open ramp would carry the capsule aboard
-  ["nose_shut", [0.0, -29.0], [0.0, -20.0], "z", -26.99, -1],
+  # step 5a: into the shut jaw nose from 2 m before its tip (z -26.99): the capsule must stop short of the mouth (the
+  # lower jaw's hinge on the deck, plan y -8.1, lobby z -22.6); open, the ramp would carry it aboard to z -20
+  ["nose_shut", [0.0, -29.0], [0.0, -20.0], "z", -22.6, -1],
 ]
 
 [earth]
@@ -433,6 +434,7 @@ earth_shadow = 1.0
 window_rgb = [0.55, 0.7, 1.0]
 window_energy = 0.0
 window_range = 12.0
+ship_lights = 1.0
 
 [light.moods.L2]
 title = "darker and moodier: pools of warm light, deep shadows, the Earth the brightest thing"
@@ -481,6 +483,7 @@ earth_shadow = 1.0
 window_rgb = [0.55, 0.7, 1.0]
 window_energy = 0.0
 window_range = 12.0
+ship_lights = 1.0
 
 [light.moods.L3]
 title = "brighter and warmer, closer to the concept's glow"
@@ -529,42 +532,25 @@ earth_shadow = 0.55
 window_rgb = [0.55, 0.7, 1.0]
 window_energy = 3.0
 window_range = 16.0
+ship_lights = 0.0                   # step 5a's grid (T3): the package's lamps off; the nozzles dark as in 4c, -0.45 ms
 
-# Step 4b's grid (`lobby --light-grid DIR` shoots these over the mood when present, else every mood): the glow against
-# the ship's engine rings and wing strip, the vault's fill, the window's cold spill
+# Step 5a's grid (`lobby --light-grid DIR` shoots these over the mood when present, else every mood): the package's
+# own lamps (ship_lights: every Light3D left in its ship.tscn times this; 105 after the freed suns) against the hull's
+# near-white sides and aft panel, the pendants' specular on the silver top, the window's cold spill on the aft panel
 [light.trials.T1]
-title = "glow only: threshold 1.5, ship as built, faint fill"
-glow_intensity = 0.6
-glow_bloom = 0.0
-glow_threshold = 1.5
-glow_hdr_scale = 2.0
-glow_cap = 12.0
-ship_emit = 1.0
-fill_energy = 0.8
-fill_range = 8.0
-window_energy = 1.0
+title = "the package's lamps as built (x1.0)"
+ship_lights = 1.0
 [light.trials.T2]
-title = "glow 1.2, ship's glow x0.5, fill 1.5"
-glow_intensity = 0.5
-glow_bloom = 0.0
-glow_threshold = 1.2
-glow_hdr_scale = 1.5
-glow_cap = 6.0
-ship_emit = 0.5
-fill_energy = 1.5
-fill_range = 10.0
-window_energy = 2.0
+title = "the package's lamps x0.35"
+ship_lights = 0.35
 [light.trials.T3]
-title = "glow 1.0, ship's glow x0.3, fill 2.5"
-glow_intensity = 0.4
-glow_bloom = 0.0
-glow_threshold = 1.0
-glow_hdr_scale = 1.2
-glow_cap = 4.0
-ship_emit = 0.3
-fill_energy = 2.5
-fill_range = 12.0
-window_energy = 3.0
+title = "the package's lamps off"
+ship_lights = 0.0
+[light.trials.T4]
+title = "lamps x0.35, pendant specular 0.1, window spill 1.5"
+ship_lights = 0.35
+pendant_specular = 0.1
+window_energy = 1.5
 
 [video]
 # Step 4's walk-through (`lobby --video DIR`, docs/lobby.md): eye height, the mood above; keys [eye, look, seconds
