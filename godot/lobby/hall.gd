@@ -145,9 +145,9 @@ func _grid() -> void:
 	for look: Dictionary in _req["variants"]:
 		if look.has("earth"):
 			_apply_earth(look["earth"])
-		elif look.has("light"):
+		if look.has("light"):   # step 5a5: a variant may set both
 			_apply_light(look["light"])
-		else:
+		if not look.has("earth") and not look.has("light"):
 			_apply_look(look)
 		var row: Array = []
 		for v: Array in _req["views"]:

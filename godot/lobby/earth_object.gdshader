@@ -52,6 +52,26 @@ uniform vec3 dawn_rgb = vec3(1.0, 0.55, 0.25);
 // head-on (spawn_eye) stays as it was
 uniform float soft_lod = 1.5;
 
+// step 5a5: a night Earth from low orbit up close (corner_nw): light_cap caps each city pixel's brightest channel so the
+// screen's glow (threshold 1) does not swell each city into a dot of ~5 px; halo_energy gives them a soft small halo
+// of their own instead (the night map read halo_bias mips softer); cloud_city lights the clouds faintly from the cities
+// below; cloud_shade is how much a cloud hides what is under it; haze_energy a little atmosphere over the surface at
+// grazing angles, (1 - mu)^haze_pow. The defaults draw step 5a4's look
+uniform float light_cap = 1000.0;
+uniform float halo_energy = 0.0;
+uniform float halo_bias = 2.5;
+uniform float cloud_city = 0.0;
+uniform float cloud_shade = 0.5;
+uniform float haze_energy = 0.0;
+uniform float haze_pow = 3.0;
+// step 5a5: the day map under the moon, its bright land (December's snow on the north, deserts) compressed as
+// day * (1 + moon_knee * 0.1) / (1 + moon_knee * day), so the snow does not read as white streaks; the dark blue sea
+// (about 0.1) keeps its value
+uniform float moon_knee = 0.0;
+// step 5a5: a debug paint (1: the cap's weight red, soft green, latitude lines every 10 deg white (thick at 0, 30, 60),
+// longitude lines every 10 deg cyan (thick at 0); 0 draws the Earth)
+uniform float debug_mode = 0.0;
+
 const float AA = 0.0009;
 
 void fragment() {
@@ -104,9 +124,22 @@ void fragment() {
 		float city = smoothstep(0.012, 0.12, lum) * (1.0 - slant_dim * soft);   // at a slant below the glow's bloom
 		float lit = sun_energy * smoothstep(-0.03, 0.1, dot(N, sun_dir));
 		vec3 lights = lights_rgb * pts * lights_energy * city * (1.0 - 0.6 * cloud) * (1.0 - lit);
-		col = night * (1.0 - city) * base_energy * 0.05 + day * moon_rgb * moon_energy + lights;
-		col = col * (1.0 - 0.5 * cloud) + moon_rgb * cloud * cloud_energy * (1.0 - cloud_calm * soft);
+		vec3 night_b = mix(texture(night_tex, uv, halo_bias).rgb, texture(night_cap_tex, cuv, halo_bias).rgb, capw);
+		float lum_b = dot(night_b, vec3(0.2126, 0.7152, 0.0722));
+		lights += lights_rgb * lum_b * halo_energy * (1.0 - cloud) * (1.0 - lit);
+		lights *= min(1.0, light_cap / max(max(lights.r, lights.g), max(lights.b, 1e-4)));
+		vec3 day_m = day * (1.0 + moon_knee * 0.1) / (1.0 + moon_knee * day);
+		col = night * (1.0 - city) * base_energy * 0.05 + day_m * moon_rgb * moon_energy + lights;
+		col = col * (1.0 - cloud_shade * cloud) + moon_rgb * cloud * cloud_energy * (1.0 - cloud_calm * soft);
+		col += lights_rgb * lum_b * cloud * cloud_city * (1.0 - lit);
+		col += rim_rgb * haze_energy * pow(1.0 - mu, haze_pow);
 		col = mix(col, (day * (1.0 - cloud) + vec3(cloud)) * 1.6, lit);
+		if (debug_mode > 0.5) {
+			float la = abs(fract(latd / 10.0 + 0.5) - 0.5) * 10.0, lo = abs(fract(lond / 10.0 + 0.5) - 0.5) * 10.0;
+			float big = (abs(latd) < 5.0 || abs(latd - 30.0) < 5.0 || abs(latd - 60.0) < 5.0) ? 0.6 : 0.25;
+			float lob = abs(lond) < 5.0 ? 0.6 : 0.25;
+			col = vec3(capw, soft, 0.0) * 0.5 + vec3(1.0) * (1.0 - smoothstep(0.0, big, la)) + vec3(0.0, 1.0, 1.0) * (1.0 - smoothstep(0.0, lob, lo));
+		}
 	}
 	// the atmosphere as in the sky shader; its width scales with the planet's angular size (a shell of fixed metres)
 	float w = radians(rim_width_deg) * alpha / radians(ref_radius_deg);
