@@ -26,14 +26,14 @@ ThumbTurn = [4, -6]
 
 [grips.loose]    # the run (H1b): a soft loose fist, the curl growing to the outer finger, the thumb laid over the
                  # index's middle segment (no "O" of thumb and index tips)
-Index = [48, 56, 26]
-Middle = [56, 64, 30]
-Ring = [64, 72, 36]
-Little = [64, 72, 36]
+Index = [72, 62, 14]    # H1c: the fold led by the knuckle, the tips tucked (48/56/26 closed an "O" with the thumb)
+Middle = [78, 68, 16]
+Ring = [84, 74, 18]
+Little = [84, 74, 18]
 mirror = true
-spread = 8
-Thumb = [14, 18, 10]
-ThumbTurn = [26, 42]
+spread = 6
+Thumb = [24, 30, 18]
+ThumbTurn = [42, 60]    # across the index's middle segment (past rest 0.64 cm: the thumb resting on the index)
 
 [clips."Jog_*"]
 grip = "loose"
