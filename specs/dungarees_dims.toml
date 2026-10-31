@@ -264,6 +264,9 @@ legs = "soft denim: bend at the hips and knees, the turn-up stays a rigid ring o
 # else the spec's cm, else her landmark; 'spec:NAME' always the spec's cm. Boxes in cm on her rest (T-pose).
 [gate2]
 clips = ["Idle", "Walk", "Jog_Fwd", "Sprint_Fwd", "Strafe_Left", "Crouch_Fwd", "Jump_Start", "Jump_Air", "Talk_Upper"]
+# the motion is measured from Idle's first frame, the stand (from her T-pose rest every panel moves as the arms come
+# down: on d79 the bib's flatness 13.6 mm and its stretch 18 % already in Idle)
+reference_clip = "Idle"
 overlap_min = { front = 0.8, side = 0.75, back = 0.8 }
 # the side view's overlap over the trunk only: the concept's side legs stride, hers stand straight
 overlap_z = { side = ["crotch", "shoulder_top+8"] }

@@ -197,7 +197,7 @@ def motion_config(spec, meas, blend: str) -> dict:
     for name, p in g2["parts"].items():
         parts[name] = {"classes": p["classes"], "x_abs": [r(v) for v in p["x_abs"]], "y": [r(v) for v in p["y"]],
                        "z": [r(v) for v in p["z"]]}
-    return {"blend": blend, "clips": g2["clips"], "parts": parts,
+    return {"blend": blend, "clips": g2["clips"], "parts": parts, "reference_clip": g2.get("reference_clip"),
             "classify": {"over_z": r(g2["classify"]["over_z"]), "hardware_max_verts": g2["classify"]["hardware_max_verts"]},
             "joins": [{**j, "reach_m": j["reach_mm"] / 1000} for j in g2["joins"]],
             "flat": g2["flat"], "stretch": g2["stretch"]}

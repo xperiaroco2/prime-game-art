@@ -5,6 +5,8 @@ the spec's [gate2] section, resolved on the build's measures) and reads the resu
 - The pieces: the garment's connected pieces, each a 'strap' (it goes over the shoulder: over classify.over_z with
   points in front and behind), 'hardware' (at most classify.hardware_max_verts vertices: buckles, buttons) or
   'panel'. A part is the vertices of the named classes inside its box (|x|, y and z ranges).
+- The reference: reference_clip's first frame (the spec's [gate2] reference_clip, the stand), else her rest; the
+  parts are chosen at rest.
 - Slip at a join: each vertex of the moving part within reach of the other part's faces is tied at rest to its
   nearest point (face, barycentric); per frame its offset from that point, turned back by the other part's best-fit
   rotation, less its rest offset (clothes_bibmove_geom.slip), mm.
@@ -93,6 +95,20 @@ def main() -> int:
         {"verts": n, "class": c, "z_max": round(s[0], 4), "y": [round(s[1], 4), round(s[2], 4)]}
         for n, c, s in zip(sizes, classes, spans)], "parts": {}, "clips": {}}
     parts = {name: select(co0, cls_of_vert, p) for name, p in cfg["parts"].items()}
+    # the reference the motion is measured from: her rest (the T-pose) or a clip's first frame (the stand the game
+    # shows: from the T-pose to arms down every panel and strap moves, which is no fault of the garment)
+    ref, sc = co0, bpy.context.scene
+    rc = cfg.get("reference_clip")
+    if rc:
+        act = action_for(rc)
+        if act is None:
+            raise SystemExit(f"no reference clip {rc}")
+        arm.animation_data.action = act
+        sc.frame_set(int(round(act.frame_range[0])))
+        ref = world(gar)
+        rep["reference"] = f"{rc} frame {int(round(act.frame_range[0]))}"
+    else:
+        rep["reference"] = "rest"
     tri_all = [t for p in polys for t in ([p] if len(p) == 3 else [[p[0], p[i], p[i + 1]] for i in range(1, len(p) - 1)])]
     edges = {}
     for name, ids in parts.items():
@@ -108,17 +124,16 @@ def main() -> int:
         tris = [t for t in tri_all if all(k in on for k in t)]
         pairs = []
         if tris:
-            tree = BVHTree.FromPolygons([tuple(c) for c in co0], tris)
+            tree = BVHTree.FromPolygons([tuple(c) for c in ref], tris)
             for i in parts[j["moving"]]:
-                loc, _n, fi, _d = tree.find_nearest(co0[i], j["reach_m"])
+                loc, _n, fi, _d = tree.find_nearest(ref[i], j["reach_m"])
                 if loc is not None:
                     ids = tris[fi]
-                    pairs.append((int(i), ids, list(poly_3d_calc([co0[k] for k in ids], loc))))
+                    pairs.append((int(i), ids, list(poly_3d_calc([ref[k] for k in ids], loc))))
         ties[j["name"]] = pairs
         rep["parts"]["join: " + j["name"]] = {"tied": len(pairs)}
     say("pieces", json.dumps(rep["pieces"]))
     say("parts", json.dumps(rep["parts"]))
-    sc = bpy.context.scene
     for clip in cfg["clips"]:
         act = action_for(clip)
         if act is None:
@@ -135,10 +150,10 @@ def main() -> int:
             for name in {j["on"] for j in cfg["joins"]} | {fl["part"] for fl in cfg["flat"]}:
                 ids = parts[name]
                 if len(ids) >= 3:
-                    fits[name] = B.rigid_fit(co0[ids], co[ids])
+                    fits[name] = B.rigid_fit(ref[ids], co[ids])
             for j in cfg["joins"]:
                 pairs, fit = ties[j["name"]], fits.get(j["on"])
-                v = 1000 * B.slip(co0, co, pairs, fit[0]) if pairs and fit else None
+                v = 1000 * B.slip(ref, co, pairs, fit[0]) if pairs and fit else None
                 old = res["slip_mm"].get(j["name"])
                 res["slip_mm"][j["name"]] = v if old is None else max(old, v)
             for fl in cfg["flat"]:
@@ -147,7 +162,7 @@ def main() -> int:
                 old = res["flat_mm"].get(fl["part"])
                 res["flat_mm"][fl["part"]] = v if old is None else max(old, v)
             for st in cfg["stretch"]:
-                mx, p95 = G.stretch(co0, co, edges[st["part"]])
+                mx, p95 = G.stretch(ref, co, edges[st["part"]])
                 res["stretch_pct"][st["part"]] = max(res["stretch_pct"].get(st["part"], 0.0), mx)
                 res["stretch_p95_pct"][st["part"]] = max(res["stretch_p95_pct"].get(st["part"], 0.0), p95)
         for k in ("slip_mm", "flat_mm", "stretch_pct", "stretch_p95_pct"):

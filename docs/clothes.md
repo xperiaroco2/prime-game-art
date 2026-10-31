@@ -928,7 +928,8 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   only, red the build only. The stations' table: per station the concept's, the spec's and the build's cm and the
   error in mm against the spec (against the concept where the spec has no size), only where both pictures show the
   garment plainly (the concept's side arm hides the back at the bust; its bib is narrower than the spec's).
-- **Motion** (`garment_motion.py`, headless Blender, every frame of each clip): the garment's pieces are classed as
+- **Motion** (`garment_motion.py`, headless Blender, every frame of each clip, measured from `reference_clip`'s first
+  frame, the stand; from the T-pose rest every panel moves as the arms come down): the garment's pieces are classed as
   `strap` (over the collarbone with points in front and behind), `hardware` (at most 60 vertices) or `panel`; a part
   is those classes inside a box. Slip at a join is clothes_bibmove's (each moving vertex tied at rest to its nearest
   point on the other part, turned back by that part's best fit), flatness the largest distance from the part's own
