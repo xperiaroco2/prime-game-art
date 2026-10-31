@@ -896,5 +896,5 @@ cd tools/blender && $PYTHON_BIN garment_drawing.py --spec ../../specs/dungarees_
   legs 18.65 / 13.0 / 11.5 at thigh, knee and turn-up; turn-up 17.8-23.3; a 6.7 cm bare ankle over the sneaker rim.
   The bib's lean is the taste point: (A) a rigid plane on the band and the bust peak leans 8.7 deg, its top 4.5 cm
   off her upper chest (d80-d82's board); (B, the spec's choice) straight across with one smooth side-view bend over
-  the bust, the top edge 0.8 cm off the shirt. The d79 build is off in 15 of 21 measured sizes (bib top -8.9 cm,
+  the bust, the top edge 0.8 cm off the shirt. The d79 build is off in 14 of 21 measured sizes (bib top -8.9 cm,
   band -6.5, hem -5.2). Her rest is a T-pose: her armpit landmark is a T-pose armpit, higher than an A-pose one.
