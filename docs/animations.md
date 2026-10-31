@@ -1578,6 +1578,21 @@ at 3 mm so the palm's rim stays. It writes the moves for the body and its dresse
 gives the bump measure (each vertex's distance to its neighbours' centroid) before and after; the wrist's fold table
 (bent 30 degrees each way) must stay at or below `fold_max_mm`, because the region reaches the band's end.
 
+**The fingers as defined tubes (H1i).** The engineer saw the fingers "bitten by bees" (wavy, lumpy, worst on the
+thumb, clearest from above). Measured (`alien_finger_run.py measure`: each vertex's radius about the finger's centre
+against a local least-squares trend over 8 mm, the taper, an off-centre axis and the section's ellipse taken out):
+the body's own finger mesh carried 1.2-3.0 mm bumps before any hand step (the d79 character); H1b's rebuild scaled
+each vertex's radius by a smoothed mean, so every bump stayed; H1g's finger rings (bmesh `smooth` 1.0 on the new
+vertices) added 0.3-1.2 mm at the joints (axolotl, right hand: thumb 1.8, index 1.2, middle 1.2, ring 2.2 mm).
+`alien_finger_run.py build` now defines each digit's surface instead (`alien_finger_geom.py`): the chain's joints with
+the corners rounded as its axis, a smooth centre offset (a quadratic fitted to 3 mm slices' circle centres), one
+ellipse per digit, the radius of the drawing (`[fingers]`/`[thumb]` of `hand_dims.toml`: the root held to `root_at`,
+the taper to a round dome at today's tip), every vertex placed on it at its own position along and around, the full
+vertices relaxed along it so the rings space evenly, the knuckle blended over `ramp`; past the ramp the chain weights
+step from bone to bone over +-`joint_blend` of the radius at each joint. The bumps fall to 0.01-0.15 mm (`wave_max_mm`
+0.3 fails the build); `alien_hand_mesh.py apply` takes the moves and the weights (no vertex added, nothing outside the
+hand moved). `<out>/profile_<side>.png` plots each digit's radius along it per angle sector, before | after.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
