@@ -99,9 +99,9 @@ class Keys(unittest.TestCase):
         k = H.keyed(cfg, [(0.0, "relaxed")], "Left", (0, 10))
         self.assertEqual(len(k), 15)  # five chains of three: no mocap left on any finger, the Little's too
         self.assertIn("LeftLittleDistal", k)
-        self.assertAlmostEqual(H.angle_deg(k["LeftLittleDistal"][0][1]), 18.0, places=4)  # H1b: the Little as the Ring
+        self.assertAlmostEqual(H.angle_deg(k["LeftLittleDistal"][0][1]), cfg["grips"]["relaxed"]["Ring"][2], places=4)  # the Little as the Ring
         rel = H.grip_pose(cfg, "relaxed", "Left")
-        self.assertAlmostEqual(H.angle_deg(rel["LeftMiddleIntermediate"]), 24.0, places=4)
+        self.assertAlmostEqual(H.angle_deg(rel["LeftMiddleIntermediate"]), cfg["grips"]["relaxed"]["Middle"][1], places=4)
 
 
 class SharedWithPoses(unittest.TestCase):
