@@ -886,18 +886,26 @@ the concept, placed by its landmark rows | the spec over a flat-shaded render of
 ```
 blender.run_script("garment_spec_probe.py", ["--blend", <char.blend>, "--out", <probe.json>])
 cd tools/blender && $PYTHON_BIN garment_drawing.py --spec ../../specs/dungarees_dims.toml --body <char probe>
-    --out DIR [--build <dressed probe> --dress <dress.json> --tag d79]
+    --out DIR [--build <dressed probe> --tag d79]
 ```
 
-- **The dungarees** (`specs/dungarees_dims.toml`, on B13): bib top 119.95 cm (0.78 of her waist->collarbone, the
-  concept's 336 px exactly), 22.0 wide at the top, 21.0 at the band; pocket 115.9-102.0, 14.5 wide; straps 3.8 wide,
-  vertical at 9.5 cm from her centre, buckles at 118.0; waistband 99.8-95.8 (her waist; d79's at 93.3), 24.5 wide;
+- **The dungarees** (`specs/dungarees_dims.toml`, on B13): bib top 119.81 cm (the concept's 336 px by its bust and
+  collarbone rows), 22.0 wide at the top, 21.0 at the band; pocket 115.9-102.0, 14.5 wide; straps 3.8 wide,
+  vertical at 9.5 cm from her centre, buckles at 117.9; waistband 99.8-95.8 (her waist; d79's at 93.3), 24.5 wide;
   side buttons 97.1; back panel top 118.7 (a shallow U between the straps, as on the concept), 24.1 / 21.7 wide;
   legs 18.65 / 13.0 / 11.5 at thigh, knee and turn-up; turn-up 17.8-23.3; a 6.7 cm bare ankle over the sneaker rim.
   The bib's lean is the taste point: (A) a rigid plane on the band and the bust peak leans 8.7 deg, its top 4.5 cm
   off her upper chest (d80-d82's board); (B, the spec's choice) straight across with one smooth side-view bend over
   the bust, the top edge 0.8 cm off the shirt. The d79 build is off in 14 of 21 measured sizes (bib top -8.9 cm,
   band -6.5, hem -5.2). Her rest is a T-pose: her armpit landmark is a T-pose armpit, higher than an A-pose one.
+- **Placing the spec on the concept** (`garment_spec.concept_pairs`, `garment_drawing.concept_map`): heights go
+  piecewise through the concept's landmark rows, except those in `[concept] unmapped`. The armpit is unmapped: her
+  T-pose armpit (118.05) against the concept's A-pose one (367 px) made the band 113-125 cm 1 px/cm under it and
+  8.25 px/cm over it, so the first sheets drew a spec-exact bib top at row 351 instead of the concept's 336 (G2t3).
+  A test keeps every mapped segment within 0.6-1.6 times the median px/cm and the bib and back tops on the
+  concept's rows within 1 px. Re-derived through the fixed mapping, the numbers read off the concept in that band
+  moved by at most 0.14 cm (bib top 119.95 -> 119.81, buckles 117.98 -> 117.92, pocket top 115.94 -> 115.86, back
+  top 118.73 -> 118.67), each well inside its tolerance.
 
 ## Gate 2: the build's automatic checks and its review page (art #196)
 The ADR `docs/decisions/2026-10-31-asset-pipeline-gates.md` lets no garment pass Gate 2 without these numbers. They are
@@ -909,8 +917,8 @@ parts, the joins, the flat and stiff parts, the stations and every tolerance; he
 tools/run.sh frames <build.glb> --clips Walk,Jog_Fwd --video Walk,Jog_Fwd --compare '' --look high
     --video-camera 'torso@0,1.06,0~Chest/0.55/0' --out <raw>/.../video
 tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json> --blend <build .blend>
-    --dress <dress.json> --poke <clothes_proof poke.json> --video <raw>/.../video --out <raw>/.../gate2 --tag dNN
-    [--probe <build probe.json>] [--motion <motion.json>]
+    --poke <clothes_proof poke.json> --video <raw>/.../video --out <raw>/.../gate2 --tag dNN
+    [--dress <dress.json> (recorded only)] [--probe <build probe.json>] [--motion <motion.json>]
 ```
 
 - **Spec numbers** (`garment_drawing.measure_build`): every spec size on the build against its `tol_cm`. The
@@ -920,8 +928,21 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   buttons over 6 cm off the centre near the band's top; the pocket is a `*pocket*` material's triangles, else a
   piece on the bib's front. A part looked for and not there (d79's pocket is texture only; its bib ends under her
   bust, so no bust stand-off) is **absent**, a failure; a size with no measure written counts as unmeasured, and
-  Gate 2 does not pass with either. `measure_build` still reads some sizes from `dress.json` (the cuff ring, the
-  band's height, the back panel's outline): a new build route must write them or they must be measured on the mesh.
+  Gate 2 does not pass with either. Every size is measured on the mesh, none read from `dress.json`: the lean is the
+  chord of the garment's centre front from the band's top + 0.5 cm to the bib top - 0.5 cm; the band's and the
+  turn-up's heights are those of the separate pieces holding the band's top and the leg's lowest vertex (absent when
+  that piece is fused with the rest, over 15 cm tall); the back top is the highest vertex within 1 cm of the centre
+  back, its widths sections 1.5 cm over it and 2.5 cm over the band; the back stand-off the most of five heights; the
+  turn-up's width its section's outer width at its mid-height; the bare ankle the hem less the `shoes` mesh's highest
+  point on her left (d79: 12.5, the collar's top, not dress.json's 11.1 rim). A garment with no front or no band
+  points gives every size absent, never an error.
+- **The build id**: `garment_spec_probe.py` and `garment_motion.py` record their .blend's SHA-256 (`blend_sha256`),
+  and `frames` records in its `spec.json` the GLB and .blend it drew with theirs (`source`); `gate2 --blend` refuses
+  a `--probe` or `--motion` of another build or one with no id, and counts the videos only when `spec.json` has the
+  `--video-camera` shot (one shot only; `frames` refuses several) and its GLB is unchanged and of this build (the
+  .blend's hash, or the GLB beside the .blend with its name). `check_gate2` refuses a `[gate2]` section whose names
+  or expressions do not resolve (a misspelt station `dim`, a join's part); a hand mask `mask_<view>` is a path from
+  the spec's folder and must be the view's box in size.
 - **Silhouettes** (`garment_gate2.py`, plain Python): per view the build's garment as seen (z-buffered against her
   body, the shirt and the shoes), drawn at the concept's scale by her landmark rows (`garment_drawing.concept_map`; in
   front and back the legs moved onto the concept's leg lines, as the drawing does), against the concept's garment
@@ -938,7 +959,9 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   is those classes inside a box. Slip at a join is clothes_bibmove's (each moving vertex tied at rest to its nearest
   point on the other part, turned back by that part's best fit), flatness the largest distance from the part's own
   rest shape moved rigidly onto it (change from rest: lean B's drawn bend is the rest shape, only a new bend counts),
-  stretch the edges' |length / rest - 1|, judged on the 95th percentile (the largest beside it: one torn edge). Pokes come from `clothes_proof.py`'s
+  stretch the edges' |length / rest - 1|, judged on the 95th percentile (the largest beside it: one torn edge;
+  plain Python, none for a part with no edges). Each part's vertex count is a check of its own: a part with none
+  fails (its numbers would pass empty). Pokes come from `clothes_proof.py`'s
   `poke.json` (`--poke`; run clothes_proof first).
 - **The page** (`index.html` in OUT, with `gate2.json`, `numbers.png`): per view concept | the spec drawn over the
   concept | the build with the spec's lines at 5 px/cm (`garment_drawing.view_sheet` on the build's probe), the
