@@ -13,7 +13,8 @@ alien_hands_math.py, the data in anim_sets/alien_hands.toml). Headless Blender:
   pose's floor, and per clip the worst of its grips: `<dir>/collisions.json`, `<dir>/collisions.md`.
 - `--sheet`: the left hand (`--side Right`: the right) at 0.8 m (lens 85) from outside, the palm side, the thumb side and the other side, one row
   per spec item (`grip:<name>`: the rest pose with the grip; `clip:<name>@<share>`: the clip at that share of its
-  frames; `rest`); flat colour with cavity; `--sketch` puts the sketch's hands beside the first row.
+  frames; `clip:<name>@<share>~<grip>`: that frame held, its fingers given the grip instead, for tune grids at a
+  clip's frame; `rest`); flat colour with cavity; `--sketch` puts the sketch's hands beside the first row.
 - `--video` (H1c): per clip one cycle with the camera following the hand from the front and from its side, each frame
   the `--before` character's two views beside the `--blend`'s; `<dir>/<clip>_<side>.mp4` (24 fps, three cycles).
 """
@@ -171,10 +172,20 @@ def sheet(cfg: dict, arm, spec: str, png: Path, sketch: str = "", res: int = 320
                     arm.pose.bones[b].rotation_mode = "QUATERNION"
                     arm.pose.bones[b].rotation_quaternion = q
         elif kind == "clip":
+            val, _, grip = val.partition("~")
             name, _, share = val.partition("@")
             act = C.action(name)
             f0, f1 = act.frame_range
             C.play(arm, act, int(round(f0 + float(share or 0) * (f1 - f0))))
+            if grip:  # the frame held without its action, the fingers given the grip
+                basis = {pb.name: pb.matrix_basis.copy() for pb in arm.pose.bones}
+                arm.animation_data.action = None
+                for pb in arm.pose.bones:
+                    pb.matrix_basis = basis[pb.name]
+                for b, q in H.grip_pose(cfg, grip, side).items():
+                    if b in arm.pose.bones:
+                        arm.pose.bones[b].rotation_mode = "QUATERNION"
+                        arm.pose.bones[b].rotation_quaternion = q
         bpy.context.view_layer.update()
         pb = arm.pose.bones[f"{side}Hand"]
         rot = (arm.matrix_world @ pb.matrix).to_3x3().normalized()
