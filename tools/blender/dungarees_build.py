@@ -455,11 +455,27 @@ def main() -> None:
         for x in xs:
             rr = []
             for dv in dirs:
+                # outward from inside her chest: every surface the ray crosses, then the outermost of the first
+                # layer (skin, shirt, plate within 3 cm of each other); a ray in from outside met her head (b02)
                 c = Vector((x, y0, z0))
-                o = c + dv * far
-                hits = [h for h in (plates.ray_cast(o, -dv, far)[0], tops.ray_cast(o, -dv, far)[0],
-                                    ref.bvh.ray_cast(o, -dv, far)[0]) if h is not None]
-                rr.append(max((h - c).length for h in hits) if hits else None)
+                ds = []
+                for tree in (plates, tops, ref.bvh):
+                    t0 = 0.0
+                    while t0 < far:
+                        h = tree.ray_cast(c + dv * t0, dv, far - t0)[0]
+                        if h is None:
+                            break
+                        t = (h - c).length
+                        ds.append(t)
+                        t0 = t + 1e-4
+                ds.sort()
+                r_ = None
+                for t in ds:
+                    if r_ is None or t - r_ < 0.03:
+                        r_ = t
+                    else:
+                        break
+                rr.append(r_)
             radii.append(rr)
         prof = [max(r[i] for r in radii if r[i] is not None) for i in range(len(phis))]
         # bridge the step at the bib's top edge: a running maximum then a mean, never under the surface
