@@ -136,6 +136,9 @@ def check_gate2(spec) -> list[str]:
     for v in g2.get("overlap_min", {}):
         if v not in VIEWS:
             bad.append(f"overlap_min: no view {v!r}")
+    for v in g2.get("concept_fill_rows", []):
+        if v not in VIEWS:
+            bad.append(f"concept_fill_rows: no view {v!r}")
     for st in g2.get("stations", []):
         where = f"stations '{st.get('name')}'"
         if st.get("view") not in VIEWS:
@@ -144,8 +147,13 @@ def check_gate2(spec) -> list[str]:
             bad.append(f"{where}: no kind {st.get('kind')!r}")
         if "dim" in st and st["dim"] not in dims:
             bad.append(f"{where}: dim {st['dim']!r} is no spec size")
-        if "dim" not in st and "concept_tol_cm" not in st:
-            bad.append(f"{where}: neither a dim nor a concept_tol_cm")
+        if "dim" not in st and "concept_tol_cm" not in st and "body_gap" not in st:
+            bad.append(f"{where}: neither a dim, a body_gap nor a concept_tol_cm")
+        if "body_gap" in st:
+            if st["body_gap"] not in dims:
+                bad.append(f"{where}: body_gap {st['body_gap']!r} is no spec size")
+            if st.get("view") != "side" or st.get("kind") not in ("front", "back"):
+                bad.append(f"{where}: a body_gap is a side view's front or back")
         for e in (st["z"] if isinstance(st["z"], list) else [st["z"]]):
             expr(where, e)
     for j in g2.get("joins", []):
@@ -192,8 +200,20 @@ def video_source(video: Path, blend: Path | None, sha: str | None) -> tuple[bool
     return False, f"from {glb.as_posix()}, another build than {blend.as_posix()}"
 
 
-def stations(spec, view, cm, bm, w, h, meas) -> list[dict]:
-    """The view's stations: the concept's and the build's value in cm, the spec's, the errors."""
+def body_gap_u(spec, sec, st, shirt: float = 0.5):
+    """A side station's spec position (u = her y, cm): her front (back) over |x| < 11 cm at the station's height, the
+    shirt and the spec gap st["body_gap"] ahead of it (behind it), as garment_drawing.measure_build reads the gap."""
+    z = G.resolve(st["z"], {}, spec["dims"], spec["body"]["landmarks_cm"])
+    p = GD.profile(sec, z)
+    if p is None:
+        return None
+    g = spec["dims"][st["body_gap"]]["cm"] + shirt
+    return p[0] - g if st["kind"] == "front" else p[1] + g
+
+
+def stations(spec, view, cm, bm, w, h, meas, sec=None) -> list[dict]:
+    """The view's stations: the concept's and the build's value in cm, the spec's (a spec size, or her body plus a
+    spec gap), the errors."""
     c, lm, dims = spec["concept"], spec["body"]["landmarks_cm"], spec["dims"]
     pairs = S.concept_pairs(spec)
     box, k = c["boxes"][view], c["px_per_cm"]
@@ -227,12 +247,16 @@ def stations(spec, view, cm, bm, w, h, meas) -> list[dict]:
         d = dims.get(st.get("dim", ""), None)
         spec_cm = d["cm"] if d else None
         tol = d["tol_cm"] if d else st.get("concept_tol_cm", 1.0)
-        ref = spec_cm if spec_cm is not None else vals[0]
+        if "body_gap" in st:
+            spec_cm = None if sec is None else body_gap_u(spec, sec, st)
+            spec_cm = None if spec_cm is None else round(spec_cm, 2)
+            tol = dims[st["body_gap"]]["tol_cm"]
+        ref = spec_cm if spec_cm is not None else (None if "body_gap" in st else vals[0])
         err = None if vals[1] is None or ref is None else (vals[1] - ref) * 10
         res.append({"view": view, "name": st["name"], "kind": st["kind"], "dim": st.get("dim"),
                     "concept_cm": None if vals[0] is None else round(vals[0], 2), "spec_cm": spec_cm,
                     "build_cm": None if vals[1] is None else round(vals[1], 2),
-                    "against": "spec" if spec_cm is not None else "concept",
+                    "against": (f"her body + {st['body_gap']}" if "body_gap" in st else "spec") if spec_cm is not None else "concept",
                     "err_mm": None if err is None else round(err, 1),
                     "build_vs_concept_mm": None if None in vals else round((vals[1] - vals[0]) * 10, 1),
                     "tol_mm": round(tol * 10, 1), "pass": None if err is None else abs(err) <= tol * 10})
@@ -417,6 +441,8 @@ def run(a) -> int:
     sil = {}
     for v in VIEWS:
         w, h, cm = concept_garment(spec, crow, v, out, Path(a.spec).parent)
+        if v in spec["gate2"].get("concept_fill_rows", []):
+            cm = G.fill_rows(cm, w, h)
         _, _, bm = build_mask(spec, build, sec, v)
         oz = spec["gate2"].get("overlap_z", {}).get(v)
         lim = None
@@ -427,7 +453,7 @@ def run(a) -> int:
             lim = (max(0, min(rr)), min(h - 1, max(rr)))
         o = G.overlap(cm, bm, lim, w)
         o["rows"] = list(lim) if lim else None
-        sts = stations(spec, v, cm, bm, w, h, meas)
+        sts = stations(spec, v, cm, bm, w, h, meas, sec)
         mn = spec["gate2"]["overlap_min"][v]
         sil[v] = {"overlap": o, "min": mn, "pass": o["iou"] >= mn, "stations": sts}
         print(f"overlay {v}: IoU {o['iou']:.3f} ->", overlay(spec, crow, v, cm, bm, w, h, sts, o, out / f"overlay_{v}.png"))

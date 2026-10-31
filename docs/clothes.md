@@ -952,11 +952,20 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   front and back the legs moved onto the concept's leg lines, as the drawing does), against the concept's garment
   mask (`garment_gate2_geom.concept_mask`: blue over red and green, an opening of 4 rows that drops the shirt's navy
   stripes, a closing, the large pieces, the holes filled; `concept_mask_<view>.png`; a hand mask `mask_<view>` in
-  `[gate2]` replaces it). The overlap is the intersection over union (`overlap_min` per view; the side view's over
-  the trunk only, `overlap_z`, as the concept's side legs stride). `overlay_<view>.png`: green both, blue the concept
-  only, red the build only. The stations' table: per station the concept's, the spec's and the build's cm and the
-  error in mm against the spec (against the concept where the spec has no size), only where both pictures show the
-  garment plainly (the concept's side arm hides the back at the bust; its bib is narrower than the spec's).
+  `[gate2]` replaces it). The overlap is the intersection over union (`overlap_min` per view). The side view (the
+  manager, G3c): from her crotch to her waist only (`overlap_z`), the concept's row spans filled
+  (`concept_fill_rows`, `garment_gate2_geom.fill_rows`), minimum 0.70. The concept's side legs stride while hers
+  stand straight; over the chest its figure is turned a little, so the bib's face shows (17-35 px a row), while the
+  build's bib is a plate seen edge-on (2 px); at the hips its hanging arm and hand cover the garment (b02: 0.435 over
+  the trunk, 0.744 waist..crotch filled). The chest is judged by the front view and the spec's gaps instead.
+  `overlay_<view>.png`: green both, blue the concept only, red the build only. The stations' table: per station the
+  concept's, the spec's and the build's cm and the error in mm against the spec (against the concept where the spec
+  has no size), only where both pictures show the garment plainly (the concept's side arm hides the back at the
+  bust; its bib is narrower than the spec's). A side station's `body_gap` names a spec gap: its spec position is
+  her front (back) over |x| < 11 cm + the 0.5 cm shirt + that gap, its tolerance the gap's (the bust station:
+  `bib_standoff_bust`, 0.3 +- 0.3 cm, since her bust stands ahead of the concept's chest and any bib outside her
+  shirt is at least 15.8 mm ahead of the concept's). The back top station reads the V's centre line (u within
+  0.5 cm), as the drawing reads `back_top_z`; the highest row within 4 cm read the V's sides (b02: +17 mm).
 - **Motion** (`garment_motion.py`, headless Blender, every frame of each clip, measured from `reference_clip`'s first
   frame, the stand; from the T-pose rest every panel moves as the arms come down): the garment's pieces are classed as
   `strap` (over the collarbone with points in front and behind), `hardware` (at most 60 vertices) or `panel`; a part
@@ -996,9 +1005,8 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   rest the panel bone's (no arm bones). The turn-ups ride the lower leg alone.
 - **Shapes:** the bib the forward convex envelope of her front over |x| < 11 cm + the shirt + 0.3 cm, its top edge
   0.8 cm off (lean B: straight across, one bend over the bust); the back the same behind, its top the centre at
-  118.67 and the corners 3 cm higher at the straps' inner edges, rising as (|x| / 7.6 cm) ** `--back-u-power` (3:
-  the spec's shallow U, lowest at the centre; 1 is the drawing's straight V, which Gate 2's back-top station reads
-  17 mm high, as the highest row within 4 cm of the centre); the straps laid by rays over the plates and the shirt, flush
+  118.67 and the corners 3 cm higher at the straps' inner edges, the approved drawing's shallow V (straight from
+  the centre to the corners; the manager, G3c: G3b's U option is gone); the straps laid by rays over the plates and the shirt, flush
   with the bib's corners on the bib and at 9.5 cm from her collarbone up; the bare ankle's skin (removed by d79
   under its trousers) rejoined from `body_removed` between 12.5 and 20 cm.
 - **b02** (`D:/prime-art-raw/2026-10-31-gate2/g3a/b02/`): 9,629 vertices, 18,910 triangles; every one of the

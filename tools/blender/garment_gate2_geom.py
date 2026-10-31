@@ -172,6 +172,18 @@ def concept_mask(rows, box, rule: dict) -> tuple[int, int, bytearray]:
     return w, h, fill_holes(m, w, h) if rule.get("fill_holes", True) else m
 
 
+def fill_rows(mask: bytearray, w: int, h: int) -> bytearray:
+    """Each row's span from its first to its last garment pixel filled: the concept's side arm and hand cover the
+    garment's side, so their holes inside the outline count as garment (art #196, G3c)."""
+    out = bytearray(mask)
+    for y in range(h):
+        row = mask[y * w:(y + 1) * w]
+        if 1 in row:
+            a, b = row.index(1), w - 1 - row[::-1].index(1)
+            out[y * w + a:y * w + b + 1] = b"\x01" * (b - a + 1)
+    return out
+
+
 def raster(tris, w: int, h: int, depth: list | None = None, owner: bytearray | None = None, tag: int = 1) -> bytearray:
     """Triangles in pixel coordinates filled into a w x h mask (pixel centres, either winding). With depth (a list of
     w x h floats, smaller nearer) and owner, each point is (x, y, d): a pixel goes to the nearest triangle, owner

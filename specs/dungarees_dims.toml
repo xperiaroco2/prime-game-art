@@ -188,7 +188,7 @@ tol_cm = 0.3
 
 # --- the back -------------------------------------------------------------------------------------------------
 [dims.back_top_z]
-what = "the back panel's top between the straps (a shallow U, its lowest point at the centre)"
+what = "the back panel's top between the straps, at the centre (the drawing's shallow V: the corners 3 cm higher)"
 between = ["bust", "collarbone"]
 ratio = 0.4538
 cm = 118.67
@@ -275,9 +275,14 @@ clips = ["Idle", "Walk", "Jog_Fwd", "Sprint_Fwd", "Strafe_Left", "Crouch_Fwd", "
 # the motion is measured from Idle's first frame, the stand (from her T-pose rest every panel moves as the arms come
 # down: on d79 the bib's flatness 13.6 mm and its stretch 18 % already in Idle)
 reference_clip = "Idle"
-overlap_min = { front = 0.8, side = 0.75, back = 0.8 }
-# the side view's overlap over the trunk only: the concept's side legs stride, hers stand straight
-overlap_z = { side = ["crotch", "shoulder_top+8"] }
+overlap_min = { front = 0.8, side = 0.70, back = 0.8 }
+# The side view's overlap from her crotch to her waist only, the concept's row spans filled (the manager, 2026-11-01,
+# G3c; art #196): the concept's side legs stride, hers stand straight; over the chest its figure is turned a little
+# (the bib's face shows, 17-35 px a row) while the build's bib is a plate seen edge-on (2 px); at the hips its hanging
+# arm and hand cover the garment, so the holes inside each row's outline count as garment (b02: 0.435 over the trunk,
+# 0.744 waist..crotch filled). The chest is judged by the front view and the spec's gaps (the bust station below).
+overlap_z = { side = ["crotch", "waist"] }
+concept_fill_rows = ["side"]
 # the concept's denim: blue over red and green, no bright grey; an opening of 4 rows drops the shirt's navy stripes;
 # the holes inside (stitching, the pocket's seams, highlights) filled. A hand mask instead: mask_<view> = "PNG path"
 concept_mask = { b_minus_r = 15, b_minus_g = 6, max = 215, open_ry = 4, close_r = 3, keep_share = 0.02 }
@@ -355,7 +360,8 @@ tol_pct = 5.0                # bend along their length only
 max_count = 0                # clothes_proof.py's poke-through, every clip
 
 # Stations on the silhouettes: kind top / bottom (a row inside the columns u), width / front / back (a row's edges
-# inside u at height z). dim: the spec size it checks (its cm and tol_cm); else concept_tol_cm against the concept.
+# inside u at height z). dim: the spec size it checks (its cm and tol_cm); body_gap (side front / back only): her
+# front (back) over |x| < 11 cm + the shirt + that spec gap (its tol_cm); else concept_tol_cm against the concept.
 # Only where both pictures show the garment plainly: the concept's side arm hides the back at the bust, its bib is
 # narrower than the spec's (no band top beside it), the straps rise over the bib top in side view.
 [[gate2.stations]]
@@ -406,7 +412,9 @@ name = "bib front at the bust"
 kind = "front"
 u = [-30, 30]
 z = "bust"
-concept_tol_cm = 1.5
+# against her front + the shirt + the spec's bust gap (0.3 +- 0.3 cm), not the concept: her bust stands ahead of the
+# concept's chest, so any bib outside her shirt is >= 15.8 mm ahead of the concept's (G3b; the manager, G3c)
+body_gap = "bib_standoff_bust"
 [[gate2.stations]]
 view = "side"
 name = "seat's back under the waist"
@@ -418,7 +426,9 @@ concept_tol_cm = 1.5
 view = "back"
 name = "back top, centre"
 kind = "top"
-u = [-4, 4]
+# the V's centre-line point, as the drawing reads back_top_z: the highest row within 4 cm read the V's sides (+1.6 cm
+# there; b02 +17 mm); the approved drawing's straight V is kept (the manager, G3c)
+u = [-0.5, 0.5]
 z = ["waist", "shoulder_top+8"]
 dim = "back_top_z"
 [[gate2.stations]]

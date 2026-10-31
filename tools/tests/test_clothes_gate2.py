@@ -364,5 +364,89 @@ class HardwareTest(unittest.TestCase):
         self.assertEqual([r[5] for r in rows], [False, None])
 
 
+class G3cDecisionsTest(unittest.TestCase):
+    """The manager's G3c decisions (art #196): the side view waist..crotch with the concept's row spans filled, the
+    bust against her body and the spec's gap, the back top at the V's centre line."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.spec = S.load_spec(SPEC)
+
+    def test_fill_rows(self):
+        m = bytearray(b"\x00\x01\x00\x00\x01\x00" + b"\x00" * 6 + b"\x01\x00\x00\x00\x00\x00")
+        self.assertEqual(list(G.fill_rows(m, 6, 3)), [0, 1, 1, 1, 1, 0] + [0] * 6 + [1, 0, 0, 0, 0, 0])
+
+    def test_side_rules_in_the_spec(self):
+        g2 = self.spec["gate2"]
+        self.assertEqual(g2["overlap_z"]["side"], ["crotch", "waist"])
+        self.assertEqual(g2["overlap_min"]["side"], 0.70)
+        self.assertIn("side", g2["concept_fill_rows"])
+        st = next(x for x in g2["stations"] if x["name"] == "bib front at the bust")
+        self.assertEqual(st["body_gap"], "bib_standoff_bust")
+        self.assertNotIn("concept_tol_cm", st)
+
+    def _side(self, st, u_front):
+        c, box = self.spec["concept"], self.spec["concept"]["boxes"]["side"]
+        w, h = box[2] - box[0], box[3] - box[1]
+        col = round((u_front - c["side_mid_y_cm"]) * c["px_per_cm"] + c["side_mid_x"] - box[0])
+        bm = bytearray(w * h)
+        for y in range(h):
+            for x in range(col, col + 60):
+                bm[y * w + x] = 1
+        return w, h, bm
+
+    def test_bust_against_her_body_and_the_gap(self):
+        class Sec:   # her front at y -13 cm over |x| < 11, an arm further forward outside it
+            def at(self, z):
+                return [(0.0, -0.13, z), (0.05, 0.10, z), (0.2, -0.20, z)]
+        spec = dict(self.spec, gate2=dict(self.spec["gate2"], stations=[
+            x for x in self.spec["gate2"]["stations"] if x["name"] == "bib front at the bust"]))
+        st = spec["gate2"]["stations"][0]
+        ref = GG.body_gap_u(spec, Sec(), st)
+        self.assertAlmostEqual(ref, -13.0 - 0.5 - 0.3)   # her front, the shirt, the spec's bust gap
+        for shift, ok in ((0.0, True), (-0.6, False)):
+            w, h, bm = self._side(st, ref + shift)
+            r = GG.stations(spec, "side", bytearray(w * h), bm, w, h, {}, Sec())[0]
+            self.assertEqual(r["spec_cm"], round(ref, 2))
+            self.assertEqual(r["tol_mm"], 3.0)
+            self.assertEqual(r["pass"], ok, r)
+        r = GG.stations(spec, "side", bytearray(w * h), bm, w, h, {}, None)[0]
+        self.assertIsNone(r["pass"])   # no body: unmeasured, never judged against the concept
+
+    def test_body_gap_checked(self):
+        spec = S.load_spec(SPEC)
+        st = next(x for x in spec["gate2"]["stations"] if x["name"] == "bib front at the bust")
+        st["body_gap"] = "bib_standoff"
+        spec["gate2"]["stations"].append(dict(st, name="x", view="front", body_gap="bib_standoff_bust"))
+        bad = " ".join(GG.check_gate2(spec))
+        self.assertIn("'bib_standoff'", bad)
+        self.assertIn("side view's front or back", bad)
+
+    def test_back_top_reads_the_v_centre(self):
+        """The drawing's V (the centre at back_top_z, +3 cm at 7.6 cm): the station reads its centre-line point;
+        the old window of +-4 cm read the V's sides 1.6 cm high (b02's +17 mm)."""
+        c, box = self.spec["concept"], self.spec["concept"]["boxes"]["back"]
+        w, h = box[2] - box[0], box[3] - box[1]
+        kt = self.spec["dims"]["back_top_z"]["cm"]
+        tf = GD.concept_map(self.spec, "back")
+        bottom = int(round(tf(0, 100.0)[1])) - box[1]
+        bm = bytearray(w * h)
+        for x in range(w):
+            u = (x + box[0] + 0.5 - c["back_cx"]) / c["px_per_cm"]
+            if abs(u) > 12:
+                continue
+            top = int(round(tf(0, kt + 3 * min(1.0, abs(u) / 7.6))[1])) - box[1]
+            for y in range(top, bottom):
+                bm[y * w + x] = 1
+        st = next(x for x in self.spec["gate2"]["stations"] if x["name"] == "back top, centre")
+        self.assertLessEqual(max(abs(v) for v in st["u"]), 0.5)
+        for u, ok in ((st["u"], True), ([-4, 4], False)):
+            spec = dict(self.spec, gate2=dict(self.spec["gate2"], stations=[dict(st, u=u)]))
+            r = GG.stations(spec, "back", bytearray(w * h), bm, w, h, {})[0]
+            self.assertEqual(r["pass"], ok, r)
+            if ok:
+                self.assertLessEqual(abs(r["err_mm"]), 3.0, r)
+
+
 if __name__ == "__main__":
     unittest.main()
