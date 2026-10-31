@@ -129,8 +129,9 @@ class Spec(unittest.TestCase):
         self.assertGreater(spec["wrist"]["s_palm"], 0)
         for g in ("fingers", "thumb"):
             self.assertEqual(set(spec[g]), {"root_at", "taper", "ramp"})
-        self.assertEqual(set(spec["thenar"]), {"radius", "inner", "finger_max", "rounds"})
-        self.assertLess(spec["thenar"]["inner"], 1.0)
+        self.assertEqual(set(spec["palm"]), {"radius", "inner", "thumb_radius", "finger_max", "rounds", "fit", "fit_radius"})
+        self.assertLess(spec["palm"]["inner"], 1.0)
+        self.assertTrue(0.0 <= spec["palm"]["fit"] <= 1.0)
 
     def test_monotone_check(self):
         rows = [[-30, 70, 60], [-15, 68, 58], [0, 66, 55], [15, 75, 58], [30, 90, 62]]
@@ -138,23 +139,48 @@ class Spec(unittest.TestCase):
         self.assertFalse(RUN.monotone_ok(rows[:2] + [[0, 72, 55]] + rows[3:], -30, 30))
 
 
-class Thenar(unittest.TestCase):
-    def test_the_region_keeps_the_fingers_the_thumb_and_the_forearm(self):
-        dump = {"bones": {"LeftThumbMetacarpal": {"head": [0.5, 0, 0], "tail": [0.54, 0, 0]},
-                          "LeftHand": {"head": [0.45, 0, 0], "tail": [0.52, 0, 0]}}}
-        pos = {0: [0.52, 0.01, 0], 1: [0.52, 0.01, 0.001], 2: [0.52, 0.01, 0.002], 3: [0.52, 0.01, 0.003],
-               4: [0.52, 0.03, 0], 5: [0.52, 0.2, 0], 6: [-0.52, 0.01, 0]}
+class Palm(unittest.TestCase):
+    def test_the_region_is_centred_on_the_palm_and_keeps_the_fingers_the_thumb_and_the_forearm(self):
+        dump = {"bones": {"LeftHand": {"head": [0.45, 0, 0], "tail": [0.52, 0, 0]}}}
+        pos = {0: [0.50, 0.0, 0], 1: [0.50, 0.0, 0.001], 2: [0.50, 0.0, 0.002], 3: [0.50, 0.0, 0.003],
+               4: [0.54, 0.0, 0], 5: [0.50, 0.2, 0], 6: [-0.50, 0.0, 0], 7: [0.48, 0.0, 0], 8: [0.52, 0.0, 0]}
         wts = {0: {"LeftHand": 1.0}, 1: {"LeftIndexProximal": 0.6, "LeftHand": 0.4}, 2: {"LeftThumbDistal": 1.0},
-               3: {"LeftLowerArm": 0.8}, 4: {"LeftHand": 1.0}, 5: {"LeftHand": 1.0}, 6: {"LeftHand": 1.0}}
-        spec = {"radius": 0.6, "inner": 0.5, "finger_max": 0.3}
-        k = RUN.thenar_region(dump, pos, wts, "Left", spec, 0.067)
+               3: {"LeftLowerArm": 0.8}, 4: {"LeftHand": 0.6, "LeftThumbMetacarpal": 0.4}, 5: {"LeftHand": 0.5},
+               6: {"LeftHand": 1.0}, 7: {"LeftHand": 1.0}, 8: {"LeftHand": 1.0}}
+        spec = {"radius": 0.9, "inner": 0.5, "finger_max": 0.3}
+        k, centre, fr = RUN.palm_region(dump, pos, wts, "Left", spec, 0.067)
+        self.assertAlmostEqual(centre[0], 0.50, places=6)  # the Hand-dominant block's centroid (0, 7, 8)
         self.assertEqual(k.get(0), 1.0)
-        self.assertNotIn(1, k)
-        self.assertNotIn(2, k)
-        self.assertNotIn(3, k)
+        for i in (1, 2, 3, 5, 6):
+            self.assertNotIn(i, k)
         self.assertTrue(0 < k[4] < 1)
-        self.assertNotIn(5, k)
-        self.assertNotIn(6, k)
+        dump["bones"]["LeftThumbMetacarpal"] = {"head": [0.54, 0.0, 0.0], "tail": [0.58, 0.0, 0.0]}
+        k, _, _ = RUN.palm_region(dump, pos, wts, "Left", dict(spec, thumb_radius=0.6), 0.067)
+        self.assertEqual(k[4], 1.0)  # on the thumb's metacarpal: full strength from the thumb's root
+
+    def test_pca_frame_finds_the_thin_axis(self):
+        pts = [(x * 0.01, y * 0.01, z * 0.001) for x in range(-3, 4) for y in range(-2, 3) for z in (-1, 1)]
+        e1, e2, n = G.pca_frame(pts, (0.0, 0.0, 0.0))
+        self.assertAlmostEqual(abs(n[2]), 1.0, places=6)
+        self.assertAlmostEqual(abs(e1[0]), 1.0, places=6)
+
+    def test_quad_fit_recovers_a_quadric(self):
+        c = [0.01, 0.2, -0.1, 3.0, 1.0, -2.0]
+        smp = [(x * 0.01, y * 0.01, G.quad_at(c, x * 0.01, y * 0.01)) for x in range(-3, 4) for y in range(-3, 4)]
+        for got, want in zip(G.quad_fit(smp), c):
+            self.assertAlmostEqual(got, want, places=6)
+
+    def test_palm_fit_flattens_a_bump_and_caps_the_gap(self):
+        pos = {i: [x * 0.01, y * 0.01, 0.01] for i, (x, y) in enumerate((x, y) for x in range(-3, 4) for y in range(-3, 4))}
+        bump = next(i for i, p in pos.items() if p[0] == 0 and p[1] == 0)
+        pos[bump] = [0.0, 0.0, 0.012]   # a 2 mm lump at the centre
+        far = next(i for i, p in pos.items() if p[0] == 0.03 and p[1] == 0.03)
+        k = {i: 1.0 for i in pos}
+        fr = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
+        new = G.palm_fit(pos, k, (0.0, 0.0, 0.0), fr, 0.04, 1.0, cap=0.001)
+        self.assertAlmostEqual(new[bump][2], 0.011, places=6)  # pulled down by the cap (1 mm), not the whole gap
+        self.assertNotIn(far, new)                             # beyond the fit's radius in the plane
+        self.assertEqual(G.palm_fit(pos, k, (0.0, 0.0, 0.0), fr, 0.04, 0.0), {})
 
 
 class Transfer(unittest.TestCase):

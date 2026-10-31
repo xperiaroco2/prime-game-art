@@ -115,6 +115,76 @@ def seg_closest(p, a, b) -> float:
     return math.dist(p, add(a, mul(ab, t)))
 
 
+def pca_frame(points, centre) -> tuple:
+    """(e1, e2, n): the points' two widest axes about centre and the thinnest (n = e1 x e2), by power iteration."""
+    c = [[sum((p[a] - centre[a]) * (p[b] - centre[b]) for p in points) for b in range(3)] for a in range(3)]
+
+    def top(m, start):
+        v = norm(start)
+        for _ in range(200):
+            v = norm([sum(m[a][b] * v[b] for b in range(3)) for a in range(3)])
+        return v
+    e1 = top(c, (1.0, 0.7, 0.3))
+    lam = dot(e1, [sum(c[a][b] * e1[b] for b in range(3)) for a in range(3)])
+    c2 = [[c[a][b] - lam * e1[a] * e1[b] for b in range(3)] for a in range(3)]
+    seed = cross(e1, (0.0, 0.0, 1.0)) if abs(e1[2]) < 0.9 else cross(e1, (1.0, 0.0, 0.0))
+    e2 = norm(sub(top(c2, seed), mul(e1, dot(top(c2, seed), e1))))
+    return e1, e2, cross(e1, e2)
+
+
+def solve(a: list, b: list) -> list:
+    """a x = b by Gaussian elimination with partial pivoting (small dense systems)."""
+    n = len(b)
+    m = [list(r) + [b[i]] for i, r in enumerate(a)]
+    for c in range(n):
+        piv = max(range(c, n), key=lambda r: abs(m[r][c]))
+        m[c], m[piv] = m[piv], m[c]
+        if abs(m[c][c]) < 1e-18:
+            return [0.0] * n
+        for r in range(n):
+            if r != c:
+                f = m[r][c] / m[c][c]
+                m[r] = [x - f * y for x, y in zip(m[r], m[c])]
+    return [m[i][n] / m[i][i] for i in range(n)]
+
+
+def quad_fit(samples) -> list:
+    """The least-squares h = c0 + c1 x + c2 y + c3 x^2 + c4 xy + c5 y^2 through [(x, y, h)]."""
+    rows = [(1.0, x, y, x * x, x * y, y * y) for x, y, _ in samples]
+    ata = [[sum(r[a] * r[b] for r in rows) for b in range(6)] for a in range(6)]
+    atb = [sum(r[a] * h for r, (_, _, h) in zip(rows, samples)) for a in range(6)]
+    return solve(ata, atb)
+
+
+def quad_at(c, x, y) -> float:
+    return c[0] + c[1] * x + c[2] * y + c[3] * x * x + c[4] * x * y + c[5] * y * y
+
+
+def palm_fit(pos: dict, strength: dict, centre, fr, radius: float, share: float, cap: float = 0.003) -> dict:
+    """The palm pulled toward a smooth surface: per side of the palm's plane (fr = e1, e2, n) a quadric of the height
+    along n over the plane, fitted through the region's vertices within radius of the centre (in the plane); each
+    vertex moved along n by share x its strength x (1 - smoothstep(radius / 2, radius)) of its gap to the fit, the gap
+    capped at cap (m; the palm's rim, off the fit, stays). Returns {index: new position}."""
+    e1, e2, n = fr
+    loc = {}
+    for i in strength:
+        r = sub(pos[i], centre)
+        loc[i] = (dot(r, e1), dot(r, e2), dot(r, n))
+    out = {}
+    for sgn in (1, -1):
+        ids = [i for i, (x, y, h) in loc.items() if h * sgn > 0 and math.hypot(x, y) < radius]
+        if len(ids) < 12:
+            continue
+        c = quad_fit([loc[i] for i in ids])
+        for i in ids:
+            x, y, h = loc[i]
+            gap = max(-cap, min(cap, quad_at(c, x, y) - h))
+            t = share * strength[i] * (1.0 - smoothstep(radius / 2, radius, math.hypot(x, y)))
+            if t > 0:
+                out[i] = add(pos[i], mul(n, gap * t))
+    return out
+
+
 def coords(p, origin, fr):
     d, u, v = fr
     r = sub(p, origin)

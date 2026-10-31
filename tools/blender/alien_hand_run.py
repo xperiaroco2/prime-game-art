@@ -5,7 +5,7 @@ alien_hand_mesh.py the Blender dump and apply, body_dims/hand_dims.toml the spec
         [--transfer <name>=<char dump.json> ...]
     python tools/blender/alien_hand_run.py table --dump <dump with --bend> --out <table.json>
     python tools/blender/alien_hand_run.py relax --dump <body dump.json> --spec <hand_dims.toml> --out <dir>
-        [--rounds N] [--transfer <name>=<char dump.json> ...]
+        [--rounds N] [--fit F] [--transfer <name>=<char dump.json> ...]
 
 - `build`: the moves for the body's skin (`<out>/moves_body.json`), one moves file per `--transfer` character (the
   body's moved vertices found in the character's skin objects by their rest position, within 0.1 mm), the report
@@ -14,9 +14,10 @@ alien_hand_mesh.py the Blender dump and apply, body_dims/hand_dims.toml the spec
 - `table`: per side and bend the wrist's sections (width, thickness, hull area, deepest fold) at rest and bent, the
   worst of PLANES (square to the forearm behind the joint, to the bisector through it, to the bent hand past it);
   exit 1 above the spec's `fold_max_mm` when `--spec`.
-- `relax` (H1d): the palm's bumps around the thumb's root: Taubin rounds on the spec's `[thenar]` region only (within
-  `radius` Hand lengths of the ThumbMetacarpal bone, eased from `inner`; fingers, the thumb past its metacarpal and the
-  forearm kept), so the topology and every vertex outside it stay; the moves for the body and per `--transfer`
+- `relax` (H1d, H1e): the palm's bumps (the ridge across it, the dent at the thumb's root): Taubin rounds on the
+  spec's `[palm]` region only (within `radius` Hand lengths of the palm's centre, eased from `inner`; fingers, the
+  thumb past its metacarpal and the forearm kept), then a share `fit` of a least-squares quadric per side of the palm
+  blended in, so the topology and every vertex outside it stay; the moves for the body and per `--transfer`
   character as in `build` (apply them with alien_hand_mesh.py apply), `<out>/relax.json` the bump measure (each
   vertex's distance to its neighbours' centroid) before and after.
 """
@@ -178,47 +179,61 @@ def build(dump_path: str, spec_path: str, out: str, transfers: list) -> int:
     return 0 if ok else 1
 
 
-def thenar_region(dump: dict, pos: dict, wts: dict, side: str, spec: dict, L: float) -> dict:
-    """The palm around the thumb's root: {index: strength}, 1 within inner x radius of the ThumbMetacarpal bone,
-    easing to 0 at radius (Hand lengths); the fingers, the thumb past its metacarpal and the forearm are left out."""
-    b = dump["bones"][f"{side}ThumbMetacarpal"]
+def palm_region(dump: dict, pos: dict, wts: dict, side: str, spec: dict, L: float) -> tuple:
+    """The palm (H1e): ({index: strength}, centre, fr): strength 1 within inner x radius of the palm's centre (the
+    centroid of the side's Hand-dominant vertices), easing to 0 at radius (Hand lengths), and likewise within
+    thumb_radius of the ThumbMetacarpal bone (the thumb's root; the larger of the two); the fingers, the thumb past
+    its metacarpal and the forearm are left out. fr = (e1, e2, n): the palm's plane and its normal (the thinnest axis)."""
+    mine = {i: p for i, p in pos.items() if side_of(dump, p, side)}
+    block = [mine[i] for i in mine if wts[i].get(f"{side}Hand", 0) >= 0.9]
+    if not block:
+        return {}, None, None
+    centre = [sum(p[k] for p in block) / len(block) for k in range(3)]
+    fr = G.pca_frame(block, centre)
     r1, r0 = spec["radius"] * L, spec["radius"] * spec["inner"] * L
+    t1 = spec.get("thumb_radius", 0.0) * L
+    tb = dump["bones"].get(f"{side}ThumbMetacarpal")
     out = {}
-    for i, p in pos.items():
-        if not side_of(dump, p, side):
-            continue
+    for i, p in mine.items():
         w = wts[i]
         fingers = sum(x for k, x in w.items() if any(f in k for f in ("Index", "Middle", "Ring", "Little")))
         thumb_out = w.get(f"{side}ThumbProximal", 0) + w.get(f"{side}ThumbDistal", 0)
         if fingers > spec["finger_max"] or thumb_out > 0.5 or w.get(f"{side}LowerArm", 0) > 0.5:
             continue
-        k = 1.0 - G.smoothstep(r0, r1, G.seg_closest(p, b["head"], b["tail"]))
+        k = 1.0 - G.smoothstep(r0, r1, math.dist(p, centre))
+        if t1 > 0 and tb:
+            k = max(k, 1.0 - G.smoothstep(t1 * spec["inner"], t1, G.seg_closest(p, tb["head"], tb["tail"])))
         if k > 0:
             out[i] = k
-    return out
+    return out, centre, fr
 
 
-def relax(dump_path: str, spec_path: str, out: str, transfers: list, rounds: int = 0) -> int:
-    """The thenar's bumps relaxed (H1d): Taubin rounds on the palm around the thumb's root only, eased to nothing at
-    the region's edge; the topology and every other vertex unchanged. moves_body.json, moves_<name>.json and
-    relax.json (per side the region, the bump measure before and after, the largest move)."""
+def relax(dump_path: str, spec_path: str, out: str, transfers: list, rounds: int = -1, fit: float = -1.0) -> int:
+    """The palm's bumps relaxed (H1d, H1e): Taubin rounds on the palm (the spec's [palm] region), eased to nothing at
+    the region's edge, then a share `fit` of a smooth surface blended in (per side of the palm's plane a least-squares
+    quadric of the height over the plane, within fit_radius); the topology and every other vertex unchanged.
+    moves_body.json, moves_<name>.json and relax.json (per side the region, the bump measure before and after, the
+    largest move)."""
     dump = json.loads(Path(dump_path).read_text())
-    spec = tomllib.loads(Path(spec_path).read_text())["thenar"]
-    rounds = rounds or spec["rounds"]
+    spec = tomllib.loads(Path(spec_path).read_text())["palm"]
+    rounds = spec["rounds"] if rounds < 0 else rounds
+    fit = spec["fit"] if fit < 0 else fit
     obj = skin_objects(dump)[0]
     pos = {i: p for i, p in zip(obj["index"], obj["co"])}
     wts = {i: w for i, w in zip(obj["index"], obj["w"])}
     adj = G.adjacency(None, obj["edges"])
-    moves, rep = {}, {"dump": dump_path, "object": obj["name"], "rounds": rounds, "sides": {}}
+    moves, rep = {}, {"dump": dump_path, "object": obj["name"], "rounds": rounds, "fit": fit, "sides": {}}
     for side in SIDES:
         _, _, L = side_frame(dump, side)
-        k = thenar_region(dump, pos, wts, side, spec, L)
-        new = G.taubin(pos, adj, set(k), rounds, strength=k)
+        k, centre, fr = palm_region(dump, pos, wts, side, spec, L)
+        new = G.taubin(pos, adj, set(k), rounds, strength=k) if rounds else {i: list(p) for i, p in pos.items()}
+        if fit > 0:
+            new.update(G.palm_fit(new, k, centre, fr, spec["fit_radius"] * L, fit))
         core = [i for i in k if k[i] >= 0.99]
         mm = lambda xs: [round(1000 * sum(xs) / max(len(xs), 1), 3), round(1000 * sorted(xs)[int(0.95 * (len(xs) - 1))], 3),
                          round(1000 * max(xs), 3)] if xs else None
         d = {i: math.dist(new[i], pos[i]) for i in k}
-        rep["sides"][side] = {"region": len(k), "core": len(core),
+        rep["sides"][side] = {"region": len(k), "core": len(core), "centre": [round(c, 4) for c in centre or ()],
                               "bump_mm_mean_p95_max_before": mm(G.umbrella(pos, adj, core)),
                               "bump_mm_mean_p95_max_after": mm(G.umbrella(new, adj, core)),
                               "largest_move_mm": round(1000 * max(d.values(), default=0), 2)}
@@ -288,10 +303,11 @@ def main() -> int:
     ap.add_argument("--spec", default="")
     ap.add_argument("--out", required=True)
     ap.add_argument("--transfer", action="append", default=[])
-    ap.add_argument("--rounds", type=int, default=0, help="relax: Taubin rounds (default: the spec's [thenar] rounds)")
+    ap.add_argument("--rounds", type=int, default=-1, help="relax: Taubin rounds (default: the spec's [palm] rounds)")
+    ap.add_argument("--fit", type=float, default=-1.0, help="relax: the quadric fit's share, 0..1 (default: the spec's [palm] fit)")
     a = ap.parse_args()
     if a.mode == "relax":
-        return relax(a.dump, a.spec, a.out, a.transfer, a.rounds)
+        return relax(a.dump, a.spec, a.out, a.transfer, a.rounds, a.fit)
     if a.mode == "build":
         return build(a.dump, a.spec, a.out, a.transfer)
     return table(a.dump, a.out, a.spec)

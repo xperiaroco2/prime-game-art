@@ -32,8 +32,11 @@ root_at = 0.90            # past the thenar (the metacarpal is 0.59 of the Hand 
 taper = 0.15
 ramp = [0.60, 0.85]       # the thumb's root in the palm stays (the band's held side)
 
-[thenar]                  # H1d: the palm's bumps at the thumb's root (H1b's moves) relaxed in place (alien_hand_run.py relax)
-radius = 0.6              # the region: within this many Hand lengths of the ThumbMetacarpal bone ...
-inner = 0.7               # ... at full strength within this share of the radius, easing to nothing at the radius
+[palm]                    # H1d, H1e: the palm's bumps (H1b's moves: the ridge across it, the dent at the thumb's root) relaxed in place (alien_hand_run.py relax)
+radius = 0.9              # the region: within this many Hand lengths of the palm's centre (the Hand-dominant vertices' centroid) ...
+inner = 0.6               # ... at full strength within this share of the radius, easing to nothing at the radius
+thumb_radius = 0.6        # and within this many Hand lengths of the ThumbMetacarpal bone (the dent at the thumb's root), eased alike
 finger_max = 0.3          # vertices more than this on the fingers, past the thumb's metacarpal or on the forearm stay
-rounds = 24               # Taubin rounds (the topology and every vertex outside the region unchanged)
+rounds = 96               # Taubin rounds (the topology and every vertex outside the region unchanged)
+fit = 0.0                 # the share of a least-squares quadric per side of the palm blended in after the rounds
+fit_radius = 0.6          # the fit's reach in the palm's plane (Hand lengths), full within half of it

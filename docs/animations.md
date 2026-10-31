@@ -1559,12 +1559,17 @@ the bisector through it (-7.5, 0, +7.5) and the bent hand past it (+15, +30). H1
 bisector, which cut the rigid palm at a slant through the thumb's cleft and read it as a 4 mm crease.
 `alien_hands.py --video` shows the hand in Walk and Jog from the front and from its side, before | after.
 
-**The thenar relaxed (H1d).** H1b's moves left bumps on the palm at the thumb's root. `alien_hand_run.py relax`
-runs Taubin rounds (`[thenar]` of `hand_dims.toml`: 24) on the palm around the ThumbMetacarpal bone only (within
-0.6 Hand lengths, full strength inside 0.7 of that, easing to nothing at its edge; the fingers, the thumb past its
-metacarpal and the forearm kept), writes the moves for the body and its dressed character by rest position, and
+**The palm relaxed (H1d, H1e).** H1b's moves left a ridge across the palm and a dent at the thumb's root. H1d's pass
+around the ThumbMetacarpal bone missed the ridge, which runs across the palm's centre. `alien_hand_run.py relax` now
+works on the palm (`[palm]` of `hand_dims.toml`): the vertices within `radius` Hand lengths of the palm's centre (the
+centroid of the side's Hand-dominant vertices) or within `thumb_radius` of the ThumbMetacarpal bone (the thumb's root),
+at full strength inside `inner` of that and easing to nothing at its edge, leaving out the fingers, the thumb past its metacarpal and the forearm. It runs `rounds` Taubin rounds on them,
+then blends in a share `fit` of a smooth surface: per side of the palm's plane (its two widest axes; the normal the
+thinnest), a least-squares quadric of the height over the plane within `fit_radius`, each vertex's gap to it capped
+at 3 mm so the palm's rim stays. It writes the moves for the body and its dressed character by rest position, and
 `alien_hand_mesh.py apply` applies them: no topology change, every vertex outside the region unchanged. Its report
-gives the bump measure (each vertex's distance to its neighbours' centroid) before and after.
+gives the bump measure (each vertex's distance to its neighbours' centroid) before and after; the wrist's fold table
+(bent 30 degrees each way) must stay at or below `fold_max_mm`, because the region reaches the band's end.
 
 ## The review
 
