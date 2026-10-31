@@ -1546,6 +1546,13 @@ about 5 mm (6.3 before); more rows need new vertices, which breaks the index-bas
 clothes' fits): a later choice. The relaxed grip curls more from the index to the outer finger with the thumb alongside
 the index; the loose fist curls more toward the outer finger with the thumb laid over the index.
 
+**The grips tuned at the clip's frame (H1f).** A sheet row `clip:<name>@<share>~<grip>` holds that frame of the clip
+and gives its fingers the grip instead, so a tune grid shows variants where a clip shows the fault (with `grip:<name>`
+rows at rest for the clear views). The relaxed curl is led by the knuckles with the tips nearly straight and the fingers
+closer (spread 6): bent tips with spread 12 read as a claw from the side. The loose fist folds the fingers onto the palm
+(72/90/30 to 84/98/32) and rolls the thumb only 20 degrees (swung 70), so it lies diagonally over the folded index and
+middle: H1c's 72/62/14 with the thumb rolled 42 brought the thumb's tip to the index's tip, an "O" in the Jog clip.
+
 **The wrist rings (H1c).** `alien_hand_mesh.py rings --spec hand_dims.toml` cuts every skin edge of the band
 (`[rings]`: -0.75 to +0.62 Hand lengths from the wrist, one cut) with bmesh: the new vertices sit on the old surface
 (the rest shape does not change), their weights, UVs and shape keys interpolated, appended after the old vertices, so
