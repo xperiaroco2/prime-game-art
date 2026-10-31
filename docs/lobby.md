@@ -20,6 +20,9 @@ window's Earth and the light on top.
 | `godot/lobby/earth_sky.gdshader` | Step 3b: the night Earth, its atmosphere rim and the stars as a sky shader (the game's file) |
 | `godot/lobby/earth_object.gdshader` | Step 4c: the Earth as an object, a sphere at a finite distance traced per pixel on a back-faced shell (the game's file) |
 | `godot/lobby/window_glass.gdshader` | Step 3b: the window's glass, a faint tint and a grazing reflection (the game's file) |
+| `tools/runner/lobby_export.py`, `tools/runner/commands/_lobby_export.py` | Step 5b: the package's writer (plain Python) and its Godot parts (`lobby --export`) |
+| `godot/lobby/export_scene.gd`, `godot/lobby/export_check.gd` | Step 5b: the scene saved for the game; the package's check, run in the export folder |
+| `assets/environment/lobby/` | Step 5b: the package's `manifest.toml`, `package.json`, `report.json` and `HANDOFF.md` (the binaries stay in the raw folder until approved) |
 | `sources/nasa_earth_lobby.toml` | Step 3b: the Earth's source record (`NASA-PD`, credit "Earth imagery: NASA") |
 
 The source: the engineer's approved drawing `D:/prime-game-design/ideas/lobby-station/hall/drawing/drawing.js` (its
@@ -806,9 +809,63 @@ From the spawn F48 draws D2's picture. F36 sits lower: from the spawn its limb a
 from corner_nw its horizon shows in the window's slit (F48 there shows only the surface and cities). From the arch's
 mouth at eye height the ship's nose, 1.3 m ahead, hides the window for every distance.
 
+## The export (step 5b)
+
+```
+tools/run.sh lobby --export <raw>/lobby/hall/v15/export/v2 [--no-compare]
+```
+
+The engineer's last pick first (2026-10-31): `[earth] distance = "F36"`; raw `lobby/hall/v15` (the pieces copied
+from v14, unchanged; `lobby --shoot <raw>/lobby/hall/v15/shots` the references). Then the game-ready package, made
+the way the ship's is (`docs/ship.md` "The export"), shaped like the game's tree:
+
+- `assets/environment/lobby/`: the hall's 7 GLBs, each once, with a minimal `.import`; the Earth's five JPEGs under
+  `earth/` (the maps 4096 x 2048, the caps 4096 x 3072 and 2730 x 2048: 8.3 MB, imported VRAM compressed with
+  mipmaps, about 57 MB of video memory); `earth_sky`, `earth_object` and `window_glass.gdshader`;
+  `materials/lobby_env.tres`, `earth_object.tres`, `window_glass.tres`.
+- `levels/lobby/lobby_hall.tscn`: `LobbyHall` > `Hall`, `Ship`, `Earth`, `Environment`, `Lights`, `Probes`,
+  `Markers` (`Spawn0..9`, yaw 180: forward at the window). `Ship` instances the ship package's
+  `res://levels/ship/ship.tscn`; the package is never copied into the lobby's files.
+- `package.json`: the files with SHA-256 and bytes, the spawns, the ship package (its raw folder and version), the
+  Earth (variant, distance, snow, credit, source) and the questions.
+
+How: `godot/lobby/export_scene.gd` extends `hall.gd` and runs its assembly (`_environment`, `_build` with the ship
+package, `_glass`, `_apply_light`) headless, the pieces and the ship instanced in edit state (`hall.gd` `_gen`), then
+packs the tree with every instance editable (1066, the ship's own pieces too), so what `hall.gd` sets by code is saved
+as overrides: the glass, the lamps' shadow flags, the glow surfaces (the ship's at `ship_emit`), the ship's render
+layer 11 on its 1677 drawn meshes, its hidden lamps. A packed scene keeps no removal, so the nodes `[ship.package]
+free` names are switched off instead (`hall.gd` `_hide_freed`, `_drop`): hidden and disabled (the clearing's ground
+collider leaves the world), and the ship's `WorldEnvironment` gets the hall's environment (null is no override, and
+the clearing's night environment beside the hall's took over the whole picture: `spawn_eye` 59.5 of 255 off in the
+first run). The Earth's textures are staged into `godot/import/lobby_earth/` with the package's import options and
+loaded by `hall.gd` from `res://` there. `lobby_export.relocate` moves the paths (the ship's to its own game paths),
+`leftovers` refuses an art path, a script, a sub-resource path or a path outside the two packages.
+
+The check (`_lobby_export.py`, `godot/lobby/export_check.gd`), on the export folder as its own Godot project with the
+ship package's 204 files copied beside the lobby's: the import; each hall GLB's bounds against Blender's (0.01 m) and
+its colliders; the tree (the root, its groups, no script, the spawns' places and facing, the ship's scene path and
+place, `Clearing` off, no foreign environment or sun, the jaws shut, every drawn ship mesh on layer 11, colliders on,
+the Earth in far mode with the package's textures); the 1.36 m capsule through `[walk]`'s points on the exported
+scene; then, unless `--no-compare`, `spawn_eye`, `corner_nw` and `c_back` from the package in an off-screen window
+beside `--shoot`'s (`<raw_dir>/shots`): the mean difference (at most 2.0 of 255) and the share of pixels off by more
+than 16. `DIR/_check/report.json`; `assets/environment/lobby/` commits its copy, the manifest, `package.json` and
+`HANDOFF.md`.
+
+Results (v15/export/v2): 19 files, 38.5 MB (the GLBs 29.8 MB, each embedding its copy of the metal set); the 7 GLBs
+within 0.0 mm of Blender's; 60 lights, 3 probes, 10 spawns; the ship 704 colliders on, 1677 meshes on layer 11, no lamp
+on, jaws 0/0; the walk 22/22 points in 60.8 s, lowest 0.00 m. The views (mean of 255, pixels off > 16, draw calls, GPU
+ms against `--shoot`'s): `spawn_eye` 0.07, 0.00%, 74, 2.65 (2.79); `corner_nw` 0.74, 0.95%, 3199, 3.54 (3.67);
+`c_back` **3.16**, 5.05%, 2684, 3.51 (3.50): over the rule, so the command still fails. In `c_back` the package is
+brighter in the upper half (walls near the window about +10 bluish, the hull +17/+10/+4 warm, the floor equal); not
+timing (a 60-frame warm-up changed nothing) and not the project settings (the same as the art project's).
+
 ## Open problems
 
-- Step 5a7: the engineer picks F48 or F36 (`[earth] distance`). From the arch's mouth the ship hides the window.
+- Step 5b: `c_back` from the package is 3.16 of 255 off `--shoot`'s (above); the cause is to find before the package
+  goes to the game. The hall's GLBs each embed the metal texture set (about 4 MB each): one shared set would save
+  about 24 MB.
+
+- Step 5a7: F36 picked (2026-10-31). From the arch's mouth the ship hides the window.
 - Step 5a3: the back light leaves a hot spot on the deck's middle in `c_back` (0.77; `back_energy` 0.5 is the
   knob), and the warm bounce reads copper-orange on the undersides in `a_entrance` (`bounce_energy` 0.22).
 - Step 5a5: corner_nw's Earth fixed by the night look (snow under the moon, the cities' halos); the GPU cost of the

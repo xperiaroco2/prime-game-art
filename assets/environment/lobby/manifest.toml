@@ -1,0 +1,129 @@
+# The lobby hall's game-ready package (art #356 step 5b), written by `lobby --export <raw>/lobby/hall/v15/export/v2` on 2026-10-31;
+# a rebuild changes the hashes below (`manifest-check --hashes` finds it). The binaries stay in the raw folder until approved.
+id = "lobby"
+kind = "environment"
+slot = ""
+title = "The lobby hall: the hall, the far Earth behind its window, the light rig, the ten spawns and the docked ship"
+notes = "The lobby hall of art #356 (layouts/lobby/hall.toml, built by tools/blender/lobby_build.py) as the game's package: 7 piece GLBs (the door placed four times), the Earth's five game textures (NASA-PD, credit \"Earth imagery: NASA\", sources/nasa_earth_lobby.toml), the Earth, sky and glass shaders with their .tres and the environment, levels/lobby/lobby_hall.tscn (the hall, Earth/EarthObject at infinity (F36, E2, snow N2), the L3 light rig with ship light K1, probes, Markers/Spawn0..9 facing the window) and package.json. The ship is not copied: Ship instances the ship package's res://levels/ship/ship.tscn (assets/environment/ship) with its Clearing switched off and its jaw nose shut. Built from code in headless Blender and Godot; the Earth from NASA imagery; nothing AI-generated. HANDOFF.md for the game track."
+tools = ["blender 5.2.2", "Godot 4.7.2", "glTF-Validator 2.0.0-dev.3.10", "prime-game-art lobby --export (godot/lobby/export_scene.gd)"]
+licence = "own-work"
+licence_url = "https://github.com/xperiaroco2/prime-game"
+credit = "Earth imagery: NASA"
+public_repo_ok = true
+ai_generated = false
+approved_by = []
+approved_at = ""
+approval_pr = ""
+
+[source]
+service = "own"
+plan = "own-work"
+model_version = ""
+task_ids = []
+generated_at = 2026-10-31
+url = "https://github.com/xperiaroco2/prime-game-art/issues/356"
+
+[[files]]
+name = "assets/environment/lobby/arch.glb"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/arch.glb"
+sha256 = "32ac62d2cd8efc5d8df5def9cffe348b2192ad95f252378e08e4031940197749"
+
+[[files]]
+name = "assets/environment/lobby/door.glb"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/door.glb"
+sha256 = "1f42b0e5eb4c482fd239089c9a4f02266db8c68daa885b569b7cd555ab238c50"
+
+[[files]]
+name = "assets/environment/lobby/floor.glb"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/floor.glb"
+sha256 = "0f094dba81ded1808458876679576be2e048988d7ac85abc49a7aa722ff87e18"
+
+[[files]]
+name = "assets/environment/lobby/vault.glb"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/vault.glb"
+sha256 = "5cba275ed7c1dd1d9437a95b270d4e4191a85906a1cc2cb39fb99328b2a22518"
+
+[[files]]
+name = "assets/environment/lobby/walls.glb"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/walls.glb"
+sha256 = "7cadd2b9bfc432c2368b2d1292a0b14d5029b0963fabba4a0c9e12113e973f35"
+
+[[files]]
+name = "assets/environment/lobby/window_frame.glb"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/window_frame.glb"
+sha256 = "2ee304267babc86f2c055e93b45f9fc37f1f1618fe97434d43e1a67cab6d59fc"
+
+[[files]]
+name = "assets/environment/lobby/window_glass.glb"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/window_glass.glb"
+sha256 = "c02adb50be159fb3ab4a1cc4482790ebde3313f9df690c230440fd17c7fdfcb1"
+
+[[files]]
+name = "assets/environment/lobby/earth/earth_clouds.jpg"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/earth/earth_clouds.jpg"
+sha256 = "4c01aacba7c5cf766855ed981fbd6e8641f7e089c5ef67d9ba766c482d9b7977"
+source = "nasa_earth_lobby"
+from = ["lobby/hall/earth-src/cloud_combined_8192.tif"]
+
+[[files]]
+name = "assets/environment/lobby/earth/earth_clouds_cap.jpg"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/earth/earth_clouds_cap.jpg"
+sha256 = "59e1bda8edd74143ab17382b3015f1305ada1ed137dec1b9cbca3807d73314a8"
+source = "nasa_earth_lobby"
+from = ["lobby/hall/earth-src/cloud_combined_8192.tif"]
+
+[[files]]
+name = "assets/environment/lobby/earth/earth_day.jpg"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/earth/earth_day.jpg"
+sha256 = "3d77f2fd6980792aa8b1c5c2e772425aae0d01ea762ce0a47349bb248f9a6191"
+source = "nasa_earth_lobby"
+from = ["lobby/hall/earth-src/world.topo.bathy.200412.3x5400x2700.jpg"]
+
+[[files]]
+name = "assets/environment/lobby/earth/earth_night.jpg"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/earth/earth_night.jpg"
+sha256 = "8cfe686e4a6b6c60e469b00105ac79513444ad0d2134422a1cc4158f126c0e2f"
+source = "nasa_earth_lobby"
+from = ["lobby/hall/earth-src/BlackMarble_2016_3km.jpg"]
+
+[[files]]
+name = "assets/environment/lobby/earth/earth_night_cap.jpg"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/earth/earth_night_cap.jpg"
+sha256 = "c5df3f320cbda1aa8c36cd6852a70d4e42d0b328d6b1b91c0c8126ffdf7b9894"
+source = "nasa_earth_lobby"
+from = ["lobby/hall/earth-src/BlackMarble_2016_3km.jpg"]
+
+[[files]]
+name = "assets/environment/lobby/earth_sky.gdshader"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/earth_sky.gdshader"
+sha256 = "d8136519928ec8029475c7a42be0d08fa8dc18c2406c588d791abde7d5118651"
+
+[[files]]
+name = "assets/environment/lobby/earth_object.gdshader"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/earth_object.gdshader"
+sha256 = "89eea2553da5cfd933dd92975779099c87affa674f250d8d200be4a3e4d6b6f7"
+
+[[files]]
+name = "assets/environment/lobby/window_glass.gdshader"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/window_glass.gdshader"
+sha256 = "e8a3c179e45551781d3f36b5de35fb43e1d2699a7c14361e46c77ae5967453fe"
+
+[[files]]
+name = "assets/environment/lobby/materials/earth_object.tres"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/materials/earth_object.tres"
+sha256 = "15752fa1a3695d495196b57c05c2c65574ef42f133c77bbe9aee4917e6bc9674"
+
+[[files]]
+name = "assets/environment/lobby/materials/lobby_env.tres"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/materials/lobby_env.tres"
+sha256 = "5226e799613c238d5daa11fa8f9408597ba1605f84e27167c8fe6d1bd12d4257"
+
+[[files]]
+name = "assets/environment/lobby/materials/window_glass.tres"
+file = "lobby/hall/v15/export/v2/assets/environment/lobby/materials/window_glass.tres"
+sha256 = "29176f2745ee62e20f2ca34d0f1b6d7ab74b9e00aa56e8ede74cc7d52bad90d6"
+
+[[files]]
+name = "levels/lobby/lobby_hall.tscn"
+file = "lobby/hall/v15/export/v2/levels/lobby/lobby_hall.tscn"
+sha256 = "b0d6d65ecf5a1eb82964e91835700ab791b0dedee588a77a53619adbe3ba2d6f"
