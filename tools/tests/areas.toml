@@ -35,6 +35,7 @@ light = [
   "tools/blender/metal_cost_run.py",  # the stations' bronze cost measurement (#263 fix2): no runner command or heavy test uses it
   "tools/blender/clothes_*",  # the clothes step's Blender scripts (#196): no runner command or heavy test runs them; the pure modules' tests are [area.clothes]
   "tools/blender/sneaker_build.py",  # the code-built sneakers inside Blender (#196, S1): clothes_dress.py runs it, no heavy test; the maths' tests are [area.clothes]
+  "tools/blender/dungarees_build.py",  # the dungarees' Gate 2 build to the spec inside Blender (#196, G3a): no runner command or heavy test runs it
   "tools/blender/garment_spec_probe.py", "tools/blender/garment_drawing.py",  # a garment spec's rest dump and drawing (#196, Gate 1): no runner command or heavy test runs them; the spec's tests are [area.clothes]
   "tools/blender/garment_gate2.py", "tools/blender/garment_motion.py", "tools/runner/commands/gate2.py",  # Gate 2's checks and page (#196): the `gate2` command; no heavy test runs them; their plain-Python parts are tested by the fast test_clothes_gate2 (every verify runs the fast files)
 ]
