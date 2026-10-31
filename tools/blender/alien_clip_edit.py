@@ -52,6 +52,8 @@ import math
 import tomllib
 from pathlib import Path
 
+from alien_contact import can_fly
+
 FINGERS = ("Index", "Middle", "Ring", "Little")
 SEGMENTS = ("Proximal", "Intermediate", "Distal")
 THUMB = ("ThumbProximal", "ThumbDistal")
@@ -319,7 +321,8 @@ def apply(arm, skin, path: str) -> dict:
                                      counter_deg=float(cfg.get("sway_counter_deg", 0.0)), fwd_arm=fwd_arm)
         mode = cfg.get("floor", False)
         if mode is True and cfg.get("floor_feet"):  # B1b: at the foot, the Hips untouched (feet_floor)
-            rep["floor"] = feet_floor(arm, skin, act, rest, up_arm, wrap=clip.endswith("_Loop"))
+            rep["floor"] = feet_floor(arm, skin, act, rest, up_arm, wrap=clip.endswith("_Loop"),
+                                      no_flight=not can_fly(clip))
         elif mode is True:
             rep["floor"] = floor(arm, skin, act, rest, up_arm, wrap=clip.endswith("_Loop"),
                                  reach=int(cfg.get("floor_reach", 2)))
@@ -356,6 +359,26 @@ def foot_raise(lowest: list[float]) -> list[float]:
     frame on or over the floor is not touched, so the other foot (the trailing toe at heel strike) stays down and
     the Hips do not move: B1's Hips lift by the sole's need jerked them 18.6 mm in a frame at heel strike."""
     return [max(0.0, -z) for z in lowest]
+
+
+PLANT_TOL_M = 0.0005  # B1e: a no-flight frame's lower foot this high or less is left as it is
+
+
+def foot_plant(left: list[float], right: list[float], no_flight: bool) -> dict[str, list[float]]:
+    """B1e (art #196, the crouch float): per frame each foot's raise (m, negative lowers it). A foot under the floor
+    is raised by its own need (foot_raise). In a clip with no flight (no_flight: alien_contact.can_fly false: the
+    walk, the crouches, the idles), a frame with both feet up has both lowered by the lower foot's height over
+    PLANT_TOL_M, so the lower foot lands and the other keeps its height over it. One amount for both feet keeps the
+    paths smooth where the lower foot changes sides (lowering only the lower foot would jump the other one there).
+    The crouch's trailing foot rose onto its toe before the front foot landed: both shoes 10-23 mm up for about 10
+    frames, on both characters. A foot without points near the floor (_foot_lows' 1.0) lowers nothing."""
+    out = {"Left": foot_raise(left), "Right": foot_raise(right)}
+    if no_flight:
+        for i, (a, b) in enumerate(zip(left, right)):
+            d = min(a, b) - PLANT_TOL_M
+            if 0.0 < d < SOLE_BAND_M:
+                out["Left"][i] = out["Right"][i] = -d
+    return out
 
 
 def raise_knee(hip, knee, ankle, lift):
@@ -415,7 +438,7 @@ def _raise_ankles(arm, act, raises: dict[str, list[float]]) -> dict:
     pb = arm.pose.bones
     bones = arm.data.bones
     legs = [(s, f"{s}UpperLeg", f"{s}LowerLeg", f"{s}Foot") for s in ("Left", "Right")
-            if max(raises.get(s, [0.0])) > 1e-5]
+            if max(abs(x) for x in raises.get(s, [0.0])) > 1e-5]
     if not legs:
         arm.animation_data.action = None
         return {"ankle_miss_max_cm": 0.0, "legs": []}
@@ -478,19 +501,21 @@ def _raise_ankles(arm, act, raises: dict[str, list[float]]) -> dict:
     return {"ankle_miss_max_cm": round(miss * 100.0, 3), "legs": [leg[0] for leg in legs]}
 
 
-def feet_floor(arm, skins, act, rest, up_arm, wrap: bool) -> dict:
+def feet_floor(arm, skins, act, rest, up_arm, wrap: bool, no_flight: bool = False) -> dict:
     """B1b: one clip on the floor at the foot (sole_floor's and the build's `floor_feet` pass): each foot's lowest
     point per frame (_foot_lows over skins), a foot under the floor raised by its own need (foot_raise) and its leg
     solved again (_raise_ankles), twice at most, the Hips untouched; what a leg cannot reach goes to the Hips by
-    floor() at reach 0 (`hips_fallback_cm`). Returns the report (sole_floor's keys)."""
+    floor() at reach 0 (`hips_fallback_cm`). no_flight (B1e): a frame with both feet up lowered by foot_plant, so the
+    lower foot stands on the floor (`max_lower_cm`; `floated_after` counts the frames still both up after).
+    Returns the report (sole_floor's keys)."""
     skins = skins if isinstance(skins, (list, tuple)) else [skins]
     f0, f1 = _assign(arm, act)
     lows = before = _foot_lows(arm, skins, f0, f1)
     raised = {s: [0.0] * (f1 - f0 + 1) for s in lows}
     miss = 0.0
     for _ in range(2):
-        r = {s: foot_raise(v) for s, v in lows.items()}
-        if max(max(v) for v in r.values()) < 1e-4:
+        r = foot_plant(lows["Left"], lows["Right"], no_flight)
+        if max(abs(x) for v in r.values() for x in v) < 1e-4:
             break
         miss = max(miss, _raise_ankles(arm, act, r)["ankle_miss_max_cm"])
         raised = {s: [a + b for a, b in zip(raised[s], r[s])] for s in raised}
@@ -500,6 +525,7 @@ def feet_floor(arm, skins, act, rest, up_arm, wrap: bool) -> dict:
     low_a = [min(a, b) for a, b in zip(lows["Left"], lows["Right"])]
     rep = {"feet": True, "lowest_before_cm": round(min(low_b) * 100, 2),
            "max_raise_cm": {s: round(max(v) * 100, 2) for s, v in raised.items()},
+           "no_flight": no_flight, "max_lower_cm": round(max(0.0, -min(min(v) for v in raised.values())) * 100, 2),
            "ankle_miss_max_cm": miss, "hips_fallback_cm": 0.0}
     if min(low_a) < -SOLE_UNDER_M:  # a leg out of reach: the rest at the Hips, each frame its own need
         fb = floor(arm, skins, act, rest, up_arm, wrap=wrap, reach=0)
@@ -511,6 +537,7 @@ def feet_floor(arm, skins, act, rest, up_arm, wrap: bool) -> dict:
     rep.update(lowest_after_cm=round(min(low_a) * 100, 2), highest_low_after_cm=round(max(low_a) * 100, 2),
                under_2mm_frames=sum(z < -SOLE_UNDER_M for z in low_a),
                floated_frames=len(floated_frames(low_b, low_a)),
+               floated_after=sum(z > FLOAT_TOL_M for z in low_a) if no_flight else 0,
                lowest_before_mm=[round(x * 1000, 1) for x in low_b],
                lowest_after_mm=[round(x * 1000, 1) for x in low_a])
     return rep
@@ -539,7 +566,7 @@ def sole_floor(arm, skins, path: str) -> dict:
     out = {}
     for clip in ground_clips(sorted(acts), str(p)):
         act = acts[clip]
-        rep = feet_floor(arm, skins, act, rest, up_arm, clip.endswith("_Loop"))
+        rep = feet_floor(arm, skins, act, rest, up_arm, clip.endswith("_Loop"), no_flight=not can_fly(clip))
         out[clip] = rep
         if rep["lowest_after_cm"] < FLOOR_FAIL_CM:
             raise ValueError(f"{act.name}: still {rep['lowest_after_cm']} cm under the floor with the soles")

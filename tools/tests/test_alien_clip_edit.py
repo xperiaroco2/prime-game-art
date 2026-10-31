@@ -220,5 +220,40 @@ class Settings(unittest.TestCase):
         self.assertEqual(E.settings(str(SETTINGS), "Sprint_Fwd_Loop")["finger_cap_deg"], 50.0)
 
 
+
+class B1ePlant(unittest.TestCase):
+    """B1e (art #196): in a clip with no flight the lower foot stands on the floor (foot_plant)."""
+
+    def test_both_up_lowers_both_by_the_lower(self):
+        # her Crouch_Fwd's float: the trailing toe 23 mm up, the front foot 40 mm up, then the front foot lands
+        r = E.foot_plant([0.023, 0.020, 0.0], [0.040, 0.010, 0.030], True)
+        tol = E.PLANT_TOL_M
+        self.assertAlmostEqual(r["Left"][0], -(0.023 - tol))
+        self.assertAlmostEqual(r["Right"][0], -(0.023 - tol))
+        self.assertAlmostEqual(r["Left"][1], -(0.010 - tol))
+        self.assertEqual(r["Left"][2], 0.0)  # a foot down: nothing moves
+        self.assertEqual(r["Right"][2], 0.0)
+
+    def test_smooth_where_the_lower_foot_changes_sides(self):
+        left = [0.010, 0.012, 0.014, 0.016]
+        right = [0.018, 0.014, 0.012, 0.010]
+        r = E.foot_plant(left, right, True)
+        steps = [abs(a - b) for v in r.values() for a, b in zip(v, v[1:])]
+        self.assertLess(max(steps), 0.0025)  # the lower foot's own change per frame, no jump of the other foot
+
+    def test_flight_and_sunk_feet(self):
+        self.assertEqual(E.foot_plant([0.05], [0.08], False), {"Left": [0.0], "Right": [0.0]})  # a run flies
+        r = E.foot_plant([-0.004, 0.0003], [0.02, 0.02], True)
+        self.assertAlmostEqual(r["Left"][0], 0.004)  # under the floor: raised by its own need
+        self.assertEqual(r["Right"][0], 0.0)
+        self.assertEqual(r["Left"][1], 0.0)  # within PLANT_TOL_M: left as it is
+        self.assertEqual(E.foot_plant([1.0], [1.0], True)["Left"], [0.0])  # no foot near the floor
+
+    def test_no_flight_clips(self):
+        self.assertFalse(E.can_fly("Crouch_Fwd_Loop"))
+        self.assertFalse(E.can_fly("Crouch_Run__p2"))
+        self.assertTrue(E.can_fly("Sprint_Fwd_Loop"))
+
+
 if __name__ == "__main__":
     unittest.main()

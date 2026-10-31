@@ -1196,7 +1196,8 @@ def main() -> int:
         import alien_clip_edit as CE
         rep["sole_floor"] = CE.sole_floor(arm, [char, shoes_now], args.sole_floor)
         say("sole floor", {k: (v["lowest_before_cm"], v["lowest_after_cm"], v["max_raise_cm"],
-                               v["hips_fallback_cm"], v["floated_frames"]) for k, v in rep["sole_floor"].items()})
+                               v["hips_fallback_cm"], v["floated_frames"], v.get("max_lower_cm", 0.0),
+                               v.get("floated_after", 0)) for k, v in rep["sole_floor"].items()})
     rep["maps"] = maps(cloth, not args.no_fill, tuple(float(v) for v in args.denim_gain.split(",")))
     blend = out / f"{args.name}_char.blend"
     bpy.ops.wm.save_as_mainfile(filepath=str(blend), compress=True)
