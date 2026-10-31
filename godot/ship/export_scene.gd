@@ -69,6 +69,8 @@ func _export() -> void:
 	var clearing: Node3D = _clearing(level, ship, groups["Lights"], ground)
 	for l: Node in groups["Lights"].get_children() + clearing.get_node("Lights").get_children():
 		l.remove_meta("pieces")  # ship.gd's glow cells' bookkeeping (the pieces each omni lights), not the game's
+		l.remove_meta("jaw_piece")  # polish n2: ship.gd's jaw binding (_jaw_bind)
+		l.remove_meta("jaw_local")
 	var nose: Node3D = _nose(level, ship)
 	_spots(level)
 	level.set_meta("size_m", Vector2(float(_req["size_m"][0]), float(_req["size_m"][1])))
