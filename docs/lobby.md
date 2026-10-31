@@ -97,7 +97,7 @@ tools/run.sh lobby --build                     # the GLBs into <raw>/<raw_dir>/p
 tools/run.sh lobby --godot                     # headless import, sizes, colliders, the walk and the blocks
 tools/run.sh lobby --shoot <raw>/lobby/hall/v4/shots    # also closeups.png (step 2c)
 tools/run.sh lobby --grid <raw>/lobby/hall/v4/grid    # the colour schemes' taste grid
-tools/run.sh lobby --earth-tex                 # step 3b: NASA's maps -> <raw>/<[earth] tex_dir>, 4096 x 2048 JPEGs
+tools/run.sh lobby --earth-tex                 # step 3b: NASA's maps -> <raw>/<[earth] tex_dir>, 4096 x 2048 JPEGs; 5a4: + the caps
 tools/run.sh lobby --earth-grid <raw>/lobby/hall/v5/grid    # step 3b: the Earth variants E1-E3
 tools/run.sh lobby --light-grid <raw>/lobby/hall/v6/grid    # step 4: the light moods L1-L3
 tools/run.sh lobby --video <raw>/lobby/hall/v6/walk         # step 4: the eye-height walk-through MP4
@@ -673,11 +673,40 @@ materials untouched. Numbers: mean sRGB luminance (sd) of fixed crops at 1920x10
 - K1 (`lobby --godot --shoot`): walk 22/22 (179.9 m), 6 blocks hold; GPU `corner_nw` 3.68, `spawn_eye` 2.42, `c_back`
   3.71 ms (5a2: 3.78 / 2.39 / 3.78).
 
+## Step 5a4: the Earth's cap, the ship's back light and bounce
+
+Raw `lobby/hall/v11`. Numbers: mean sRGB luminance (sd) of fixed crops at 1920x1080, v10 -> v11 (`lobby --shoot`);
+blobs: warm bright components (L > 0.45, R > 1.3 B), their area in px.
+
+- **The Earth's cap** (`[earth.cap]`): the 4096 x 2048 maps give 11.4 px a degree, about 0.28 m a texel on the 185.8 m
+  globe, magnified several times from the hall. `lobby --earth-tex` now also cuts the box lat -8..82, lon -48..72
+  (E2's subpoint [36, 12] and the 42 deg seen round it from D2, 56 deg of longitude, and a margin) from the NASA sources
+  at their full resolution: `earth_night_cap.jpg` 4096 x 3072 (34 px a degree; Black Marble's 37.5) and
+  `earth_clouds_cap.jpg` 2730 x 2048 (22.75, the cloud map's own); no new download. `earth_object.gdshader` reads them
+  inside the box, the global maps outside, faded over `fade_deg` 3. The cities as points: a light below `city_ref` 0.7 is
+  dimmed as lum^`city_gamma` 1.8 (the halos go, the cores stay); where `soft` (a slant) the cities dim by `slant_dim`
+  0.6 below the glow's bloom and the moonlit clouds by `cloud_calm` 0.45; `soft_lod` 2.5 -> 1.5, the cities never
+  blurred. The clouds load as L8.
+  - spawn_eye (x620-1300, y330-700): sd 0.186 -> 0.171, blob area mean 16.6 -> 6.2 px, p90 24 -> 11.
+  - a_entrance (x1250-1750, y340-400): sd 0.116 -> 0.114, blob area mean 5.6 -> 3.4 px, p90 11 -> 7.
+  - corner_nw (x1180-1500, y360-590): sd 0.174 -> 0.141, blob area mean 10.5 -> 5.8 px, p90 16 -> 11, max 468 -> 155;
+    but it looks the same at full size (the same cloud streaks and glowing dots): the part seen there is not soft
+    (no change from `slant_dim`) and seems to lie outside the box. Open.
+  - Memory (runtime ImageTextures with mipmaps, RGBA8 on the GPU): night and day 4096 x 2048 43 MB each, clouds L8 11 MB,
+    night cap 64 MB, clouds cap L8 7 MB: about 168 MiB. With the game's VRAM-compressed import (BC1, 0.5 B a pixel;
+    BC4 for the clouds) about 37 MiB. GPU: spawn_eye 2.42 -> 2.43 ms, corner_nw 3.68 -> 3.69 ms.
+- **The ship's light** (K1): `back_energy` 0.5 -> 0.25: the deck's middle in c_back (x840-1080, y420-470) 0.899 ->
+  0.799. `bounce_energy` 0.22 -> 0.1: the undersides in a_entrance (x1200-1700, y600-680) 0.458 -> 0.407, rgb (0.54,
+  0.44, 0.38) -> (0.48, 0.39, 0.34), R/B 1.42 -> 1.41; (x900-1700, y600-700) 0.396 -> 0.370, R/B 1.50 -> 1.42. K3's
+  bounce 0.12 -> 0.06 (the cooler set stays below K1).
+
 ## Open problems
 
 - Step 5a3: the back light leaves a hot spot on the deck's middle in `c_back` (0.77; `back_energy` 0.5 is the
   knob), and the warm bounce reads copper-orange on the undersides in `a_entrance` (`bounce_energy` 0.22).
-- Step 5a3: the Earth seen from the hall's far side still reads as speckle (clouds) and blobs (cities).
+- Step 5a3/5a4: the Earth seen from the hall's far side still reads as speckle (clouds) and blobs (cities) in
+  corner_nw; step 5a4's cap fixed head-on and a_entrance by numbers, not corner_nw (next: paint the cap's weight and
+  the latitude there to find the part seen, widen the box or a second cap).
 - (Step 4b, before the jaw nose) The ramp stand-in: down, its foot at z -29.6, 0.4 m from the north wall and in the arch's mouth; the 1.35 m beside it is
   narrower than the 1.36 m capsule, so the walk crosses its foot. The ship's closed state (ramp up) is art #263's to make.
 - The spawns are 2.04 m from the engine pods (the rule's 2 m): from a spawn the pods fill the view (`spawn_eye`).
