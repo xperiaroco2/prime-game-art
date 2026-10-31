@@ -1,0 +1,47 @@
+# art #196, clothes M2b: her dungarees as a Meshy multi-image-to-3D model from a turnaround drawn on her own body B13
+# (the axolotl head on body B13). The old dungarees (batch 2026-10-28-alien-clothes-m1) were made on the chameleon
+# body; refitting them onto B13 bent the bib, so Meshy now makes the garment on her body and it needs only a light fit
+# (the engineer, art #196 comment 6533284728: "Так, у Meshy"). Only the top and the dungarees are kept; the head,
+# hands, skin and shoes are cut off in Blender (tools/blender/clothes_clean.py); the sneakers stay E1's code-built ones.
+#
+# Input: the front, left profile and back cut out of the pick of batch 2026-10-30-alien-clothes-s2 (item ax_dung_hi,
+# gpt-image-2.5-sunburst), each padded to one square with one ground line (tools/blender/clothes_views.py).
+# meshy-7.1 at 2k geometry, textured (4k, PBR, lighting removed), Meshy's remesh to 30,000 triangles with the dense
+# original kept. Price: 20 mesh + 5 for 2k + 10 texture = 35. No game, film, studio, brand, character or person names
+# (the images are the prompt). Schema: docs/meshy.md.
+
+id = "2026-10-30-alien-clothes-m2"
+purpose = "art#196 clothes M2b: her dungarees (top and dungarees only) as a Meshy multi-image-to-3D model from the turnaround drawn on her body B13."
+plan = "Meshy paid plan (monthly; bought by the engineer on 2026-10-17)"
+terms_url = "https://www.meshy.ai/terms-of-use"
+licence = "owned by the customer on a paid plan (Meshy Terms of Use 3.2, updated 2026-09-19); no attribution required"
+credit_cap = 40
+approved_by = "xperiaroco2 (the engineer)"
+approved_at = "2026-10-30"
+approval_ref = "https://github.com/xperiaroco2/prime-game-art/issues/196#issuecomment-6533284728"
+
+[defaults.multi_image_to_3d.params]
+ai_model = "meshy-7.1"
+geometry_resolution = "2k"
+should_texture = true
+enable_pbr = true
+texture_resolution = "4k"
+remove_lighting = true
+should_remesh = true
+topology = "triangle"
+target_polycount = 30000
+save_pre_remeshed_model = true
+target_formats = ["glb"]
+
+[[items]]
+id = "ax_dungarees_b13"
+kind = "multi_image_to_3d"
+images = [
+  { file = "raw:2026-10-30-alien-clothes-s2/views/front.png", provenance = "front view cut from our own OpenAI generation, batch 2026-10-30-alien-clothes-s2 item ax_dung_hi (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "587a24c10cbf24227bbc80bf115abb150445eaa6f2da59314fd01a60b762a02a" },
+  { file = "raw:2026-10-30-alien-clothes-s2/views/left.png", provenance = "left profile (facing left) cut from our own OpenAI generation, batch 2026-10-30-alien-clothes-s2 item ax_dung_hi (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "b5bdd45792a5e6c772aca726000f266b360243e60d1595b5b530d49ca3c5a19b" },
+  { file = "raw:2026-10-30-alien-clothes-s2/views/back.png", provenance = "back view cut from our own OpenAI generation, batch 2026-10-30-alien-clothes-s2 item ax_dung_hi (gpt-image-2.5-sunburst), padded to a square, art#196", sha256 = "149087f59522758ae822fbb600c1cfbc36af97a7cf71fdb81e45a3f1a1dd8b54" },
+]
+
+# Run 2026-10-30 (builder M2b): balance 2325 before, 2290 after: 35 credits (as estimated), about 3 minutes. The item
+# has model.glb (remeshed to 30,946 triangles, textured 4k PBR) and pre_remeshed_model.glb (the dense original,
+# untextured), one fused figure as in m1; the cloth is cut out in Blender (docs/clothes.md).

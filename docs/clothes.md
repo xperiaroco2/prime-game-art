@@ -599,6 +599,131 @@ above it again from Blender's rest matrices.
   body's, `--seam-x` moved with the upper arm's root, `--arm-axis` through the upper arm's head, and the cuffs
   `--cuff-back` (35 mm) in from the hand bone's head. The old fixed planes (`--planes fixed`, the default) put B13's
   cuff past her wrist (her sleeve covered the hand, the proof's 64 mm pokes) and A11's on the thumb's root.
+- **A garment's own waist** (M2c): `--waist-z` puts the waist plane at that height instead of the bones' (the other
+  planes stay from the bones). The m2 dungarees' band edge on B13 sits at 0.896 to 0.932 m, under her bones' 0.954 m:
+  between the two the Meshy shirt texels stayed beside the bib (a grey crumpled shard by the hip button). With
+  `--waist-z 0.93` the built band covers 0.898 to 0.93 m; the top's hem goes down with it (`--shell-hem 0.92`), or the
+  body shows between the band and the hem. The m2 map's plain denim for the straps and the `--plain` boxes is
+  `--strap-uv 0.5957,0.6172,0.5425,0.5879` (a 44 x 93 texel window inside a leg island, sRGB std 0.002; the default
+  rectangle lies on an island's edge there: the straps' black hexagons). Its turn-ups' grey herringbone texels and
+  the hips' side openings, front and back, get plain denim from `--plain` boxes (`0,0.3,-0.3,0.3,0,0.19`,
+  `0.108,0.25,-0.25,0.05,0.82,0.95` and `0.12,0.25,0.05,0.25,0.82,0.95`); `--waistband 0.038,0.015` laps the band
+  further over the trousers' ragged top. Its denim is already a dark indigo (legs sRGB 0.066, 0.125, 0.198): E1's
+  `--denim-gain 2.15,2.15,2.1`, tuned for the old near-black bake, made it a light mid blue; `1.05,1.3,1.25` brings
+  the High look's legs to the turnaround's (measured on the comparison sheets: render/turnaround in linear light).
+- **The skin the garment hides follows it** (M2d): `--skin-follow lo,hi,clear,reach` (m; d47 on: `0.015,0.035,0.004,0.04`)
+  takes every body vertex under the waist whose nearest cloth is the garment (within reach) and, by its distance
+  from the nearest opening (none within lo, all from hi on, `clothes_fit_geom.follow_share`), first pulls it in
+  along the nearest garment face's normal until it lies clear inside (`pull_in`; skin more than 15 mm outside is no
+  poke and stays), before the cover test, then gives the kept ones the garment face's weights (`blend_rows`, the
+  corners by nearness). Traced per vertex in M2d: her right ankle front inside the turn-up lay
+  6 to 9 mm outside the cloth at rest, 44 mm from the hem, and no rule cut it (its tilted cover rays leave by the hem);
+  the crotch's skin (Hips and both UpperLegs) lay 3 to 9 mm inside the seat, within under_cloth's 1 mm once the fit
+  shifted a vertex, and its weights differ from the garment's (mostly one UpperLeg), so it left the cloth in motion.
+- **The flat back panel** (M2d): `--flat-back blend,radius,band,clear` (d47 on: `0.06,0.05,0.012,0.008`) gives every
+  back vertex over the waist the depth of `clothes_shell.panel_fit` (a quadratic across, from the vertices within
+  radius in x and band in z, less all layers' mean within 1 cm) eased in over blend above the waist, never nearer the
+  body's back than clear, and its weights along `--bib-chain`: Meshy's panel had a vertical fold at its apex.
+- **The straps' back ends on the panel** (M2e): the panel's "crumpled top" in Jog was not the panel. The built straps
+  reach `--strap-back-below` under its apex 12 to 15 mm off it, with the body's weights under them (UpperChest, the
+  shoulders), while the panel has the spine chain's; in motion their square ends stood off it as loose flaps over
+  its top. `--back-join blend,gap` (d50: `0.03,0.002`; `clothes_top.back_join`) lays each strap row with the panel
+  under it (a ray in along the row's normal) gap outside it, its lips and the left strap's 1.5 mm over the right
+  kept, gives it the panel face's weights and eases the rows in front out over blend along the strap
+  (`clothes_shell.join_rows`). The panel's apex tip between the straps still shows as a small dark triangle.
+- **The top's rows under the built band** (M2e): the top follows the garment's weights by its rays' share
+  (`follow_panels`) before `straps()` builds the waistband, and `cut_garment` had cut Meshy's band at the hip
+  sides, so the top's rows at z 0.90 to 0.92 there kept the body's Spine weights and came out through the band by
+  10 to 23 mm in Jog and Crouch (`--shell-hem` moves only the hem, 3 cm under). `--band-follow H` runs the follow
+  again after the band, for the top up to H over the waist (d50: 0.02): Jog's worst 15.1 to 7.8 mm (tracked 22.2 to
+  14.9, one vertex at the right hip, z 0.904).
+- **The built back bib** (M2f): Meshy's back panel ended at the shoulder blades' foot (z 1.067) and the straps met
+  in a lump at the waistband, so from behind she read as jeans with suspenders. `--back-bib
+  z_c,z_v,hw_b,hw_t,x_v,off,border` (d53: `1.15,1.10,0.08,0.103,0.062,0.010,0.012`, measured off the approved
+  turnaround's back view scaled by the waist and floor; `clothes_top.back_bib`, the grid
+  `clothes_shell.back_bib_grid`) deletes Meshy's panel over the waist and builds the turnaround's outline: sides
+  from half width hw_b at the waist to hw_t at the top corners (z_c), a V top down to z_v; each row one quadratic
+  across from rays at the body's back (the spine's groove bridged), at least off clear, the rows under the waist
+  tucked 2 mm under Meshy's back band, the outline folded `--strap-lip` toward the body; weights by
+  `clothes_shell.chain_row` along `--bib-chain`. It runs before the top, so `shell()` hides and follows the top
+  under it. Its border (width border) gets the straps' stitched patch after `straps()` (`back_bib_uv`); its inner
+  faces plain texels from a `--plain` box (`0,0.14,0.02,0.3,0.9305,1.2`). The straps' back ends are aimed at its top
+  corners (`strap_back_z` = z_c less `--strap-back-below`; their back |x| in `--shell-strap-x` kept inside hw_t, or
+  `--back-join` finds no panel under the outer lip and glues nothing, d52).
+- **The turn-ups' light cuff** (M2f): a `--plain` box takes a 7th value, its mix toward `--light-denim` (sRGB,
+  default `0.60,0.70,0.82`, the denim's reverse side): the box's faces go into their own window, its diffuse the
+  plain denim blended toward that colour with its grain kept. d53: the ankle box split at z 0.163 (the turn-up's
+  fold), `0,0.3,-0.3,0.3,0,0.163,0.75` under it.
+- **The turn-ups' cut by texel row, the back bib's gain** (M2g): split by face centres, the cuff's light/dark line
+  followed the faces (dark teeth over the light). A `--plain` box's 8th value is a height: the box's regions are laid
+  on one height scale in their window and the tint applies to the texel rows under it (a 2 mm blend,
+  `clothes_shell.cut_ramp`), so the line is straight on the cloth whatever the faces; d55:
+  `0,0.3,-0.3,0.3,0,0.19,0.75,0.163` (one box, -1: no cut). Its 9th value multiplies the window's diffuse: the back
+  bib's panel uses the straps' own texels (medians equal) but faces away from the light and read darker; d56: 1.35.
+- **The striped walls beside the buckle** (M2g): the shard under the buckle was Meshy's bib side wall (|x| 0.100 to
+  0.105, 3 to 5 cm behind the bib's face, z 1.03 to 1.11), its UVs on the shirt Meshy baked into the denim (stripes),
+  over the edge peel's zone (`--band-flaps`: up to 1.035). `--shirt-top` (m over the waist) raises the baked-shirt
+  test alone to the bib's top, and `--shirt-min` (share of up to 13 samples per face, `clothes_shell.face_samples`)
+  catches a striped face that the old five samples (nearly all white) missed; d55: `--shirt-top 0.19 --shirt-min 0.2`
+  peeled 38 faces (0 before), from the open edge inward only.
+- **The crumbs beside the buckle, the turn-ups' relax** (M2h): `--island-top` (m over the waist) removes the
+  garment's loose denim bits (`--edge-island` faces or fewer) up to that height, the bib side wall's crumbs; d58:
+  `0.19`, 8 pieces, 15 faces. `--turnup-relax z_top,rounds,alpha[,outward]` levels each leg's hem and relaxes the
+  turn-up's radius under z_top (`clothes_top.turnup_relax`); off by default. Tried in M2h (d59 to d61) and M2i (d64,
+  d67): the cuff's teeth hardly change in the close-ups, and the proof reports 13 to 26 mm at the back of the calf
+  (z 0.162) at rest and in motion. A probe of d67's blend found that skin 24 to 27 mm inside the cuff along its
+  normal, the nearest face being the fold's inner layer: probably the proof's single-face sign at the double layer,
+  not visible skin. Not used. `outward` (4th value 1) never moves a vertex in toward the leg's axis.
+- **The cloth's side from every tied face** (M2i, `--tie-side`, default 1): the under-cloth test and the skin pull
+  took the side of the cloth from the one face a BVH nearest query returned. At the seat's seam the nearest point lies
+  on an edge whose two faces point different ways, so any garment change elsewhere (M2h's crumbs removed early, the
+  cuff's relax early) moved the tree's face order, flipped the side and kept a 12-vertex crotch patch (9 to 14 mm
+  pokes in motion). Now the side comes from the tied faces' pseudo-normal (`clothes_fit_geom.tie_side`, angle-weighted
+  at a vertex) and the skin pull moves along it; `--cosmetic-early 1` runs the crumbs and the relax before the cover
+  test. d65 (d58's args) and d66 (the crumbs early) give the same body (42,688 tris) and pokes, better than d58.
+  `--collar-keep 0.09` (d68, with the relax) kept 212 more body tris and 11 points at rest: not used.
+- **The proof's side from every tied face** (M2j): `clothes_proof.py` measures a body point's side with the dress's
+  `clothes_side.ClothSide` (`--tie-side`, default 1). On d65 it moved Jog and Strafe to 0 and Sprint and Jump_Start
+  to 19 and 12 mm (one or two right-calf points at z 0.162); d67's 24 to 27 mm calf points stayed, so they were the
+  fold's inward faces, not a tie.
+- **The built cuff ring** (M2j, `--cuff-ring z_top,height,thick,clear,stations[,lap[,most]]`, `clothes_top.cuff_ring`):
+  each turn-up a closed rolled band (`clothes_shell.cuff_profile`, 10 points per station) in place of Meshy's folded
+  band. The Meshy leg is bisected on one plane lap under z_top; its outer wall lies thick out of the leg's cloth just
+  above (pushed out of the shoe by at most `most`), its opening narrows to `clear` off the ankle, its weights are the
+  cut leg's nearest four vertices', and `plain_denim` tints it (the box's cut height at z_top). `--ankle-top z` cuts the
+  kept ankle skin on one level plane inside it. d70 (`0.165,0.05,0.008,0.003,32,0.008`, `--ankle-top 0.128`): clean
+  rings, 0 pokes in every clip, but 60,558 triangles; d71 at 24 stations is the cap's build. The teal ankle between the
+  ring and the shoe still shows the collar's shards in Jog: the ring's bottom should reach the collar next.
+- **The ring down to the collar** (M2k): d71's ring bottom (z 0.115) floated 1 to 1.5 cm over the sneaker's collar
+  (rim top 0.099, heel rim 0.105). d73 lowers the whole ring, level: `--cuff-ring 0.158,0.062,...` (bottom 0.096),
+  the plain box's cut at 0.159, `--ankle-top 0.120`; 59,847 triangles, 0 pokes in every clip. At Jog 0.3 s the
+  planted foot's ring meets its collar with no teal; the lifted, pointed foot still shows a small teal sliver at
+  the back of its collar. A per-angle bottom (following the collar) is the next step if that sliver matters.
+- **The back bib's stand-off** (M2k probe, `back bib` report `off_body_worst_x_z_mm`): the 23.6 mm is the row under
+  the band at the spine (z 0.922, hidden by the band); the next are the V's tip over the spine groove (21 to 22 mm at
+  z 1.09 to 1.10, the row's quadratic bridging the groove between the shoulder blades) and a top corner (20 mm). The
+  panel's edges fold `strap_lip` in, so the visible gap at the V is about 1 cm. Not changed.
+- **The back straps' kink** (M2k): in Jog the straps bent in an S just over the back bib's top corners, where
+  `back_join` hands them from the panel's spine-chain weights to the body's shoulder weights over only `blend` 3 cm.
+  `--back-join 0.14,0.002` eases that over 14 cm (14 rows a side instead of 4): at Jog 0.3 s the left strap runs
+  straight and the right one bends softly (d75); 0.08 (d74) is between. d76 = d73's ring with the 14 cm ease.
+- **The back bib on the legs' own denim** (M2l): d76's back bib, on the straps' plain rectangle with a 1.35 gain,
+  rendered lighter and bluer than the legs (High look, back view: bib sRGB about 53/80/107 against the legs'
+  46/63/82) and smooth, a plastic patch at game distance. A `--plain` box's 10th value 1 now takes the diffuse and
+  roughness from `--plain-src`, the garment's own texels; `auto[,w,h]` (default 96 x 160) picks the plainest
+  rectangle wholly inside the UV islands (`clothes_texture.clean_rect`). A rectangle read off the GLB's map does not
+  do: that map is filled between the islands, and d77's hand-picked leg rectangle lay partly outside them (black
+  wedges on the bib). The normal map stays the plain rectangle's twill: the legs' normals carry their folds. With
+  gain 1 the bib measures as the legs (d77: 45/61/80).
+- **The cuff on its leg's own axis** (M2l): the cuff ring's plain texels were laid on a cylinder round the waist's
+  axis, so each cuff's front and back shared texels and its sides stretched: a smooth sky-blue tube. A `--plain`
+  box's 11th value 1 lays each region on its own vertical axis instead, the seam on the leg's inner side (a face
+  across it unwrapped by `clothes_shell.seam_unwrap`). The ring is now thinner and higher, over a strip of ankle as on
+  the concept: `--cuff-ring 0.172,0.046,0.004,0.003,24,0.008,0.004` (bottom 0.126, the collar's top 0.099 to
+  0.105), `--ankle-top 0.140`, the box's cut 0.172, `--light-denim 0.58,0.64,0.72` (greyer) and
+  `--cuff-fold 0.003,0.6` (the box's rows 3 mm under its cut darkened: the roll's fold line).
+- **The off-body report after the lip** (M2l): `off_body_mm_min_max` and `off_body_worst_x_z_mm` now measure the
+  panel as built, its edge folded `strap_lip` in (d78: 2.0 to 23.6 mm; the V's tip 18.9 mm).
 - **The shoe collar** (E1, E1b): the sneaker's rim and collar come from every vertex with any Foot, Toes or LowerLeg
   weight under 0.2 m (`sneaker_geom` `SECT_Z`); the dress keeps the ankle's skin from the opening's nearest rim point
   up to `--ankle-keep` (40 mm) over it (`clothes_fit_geom.ankle_kept`): the cover rays' tilted rays met the trousers'
@@ -681,8 +806,8 @@ above it again from Blender's rest matrices.
   (`x0,x1,y0,y1,z0,z1` for |x|, bind pose; `;` between boxes) on each side is a region of denim faces (the straps'
   and band's patch and the bronze left out), re-laid in UV on a vertical cylinder round the waist's axis
   (`--band-axis-y`; `clothes_shell.cyl_coords`) at the garment's median texel density (about 1,100 texels per metre;
-  `--plain-density` scales it). All regions share one free window of the maps filled with the straps' plain denim
-  rectangle (`--strap-uv`) repeated mirrored (`clothes_shell.mirror_tile`; the normal map's x or y turned over in a
+  `--plain-density` scales it). The regions of one (tint, cut, gain, source) group share one free window of the maps
+  filled with the straps' plain denim rectangle (`--strap-uv`) repeated mirrored (`clothes_shell.mirror_tile`; the normal map's x or y turned over in a
   mirrored copy), in the diffuse, roughness and normal maps alike; with no window free the density steps down by
   15% up to three times. The boxes: the chameleon `0.11,0.25,-0.07,0.09,0.74,0.99` (the hip sides); the axolotl
   the hip sides `0.11,0.25,-0.04,0.05,0.72,0.975`, the seat `0,0.25,0.05,0.25,0.72,0.975` and the front pockets

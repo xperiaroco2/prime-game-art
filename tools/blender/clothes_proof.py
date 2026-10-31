@@ -53,6 +53,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_fit_geom as F  # noqa: E402
 import clothes_open as O  # noqa: E402
 import clothes_shell as H  # noqa: E402
+from clothes_side import ClothSide  # noqa: E402
 
 CLIPS = "Idle,Walk,Jog_Fwd,Sprint_Fwd,Strafe_Left,Crouch_Fwd,Jump_Start,Jump_Air,Talk_Upper"
 PREFIX = "CharacterArmature|"
@@ -106,18 +107,27 @@ def uncovered(tree: BVHTree, co: np.ndarray, no: np.ndarray, reach: float, back:
                      for p, n in zip(co, no)], dtype=bool)
 
 
+def world_all(cloth) -> np.ndarray:
+    return np.concatenate([world(o) for o in cloth])
+
+
 def cloth_tree(cloth, polys, cos=None) -> BVHTree:
     co = np.concatenate([cos[o.name] if cos else world(o) for o in cloth])
     return BVHTree.FromPolygons([tuple(c) for c in co], polys)
 
 
-def side(tree: BVHTree, pts: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def side(tree, pts: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Per point its signed distance from the cloth along the nearest cloth face's normal (+: outside), the height
-    of that nearest cloth point and the z of that face's normal."""
+    of that nearest cloth point and the z of that face's normal. tree: a BVHTree, or (M2j, --tie-side) a ClothSide,
+    whose side at an edge or vertex comes from every tied face (the turn-up's folded lip, the seat's seam)."""
     s, z, nz = np.zeros(len(pts)), np.zeros(len(pts)), np.zeros(len(pts))
     for i, p in enumerate(pts):
-        loc, nor, _fi, _d = tree.find_nearest(Vector(p))
-        s[i] = (Vector(p) - loc).dot(nor) if loc is not None else -1.0
+        if isinstance(tree, ClothSide):
+            loc, nor, _fi, sd = tree.find(Vector(p), 1e9)
+            s[i] = sd if loc is not None else -1.0
+        else:
+            loc, nor, _fi, _d = tree.find_nearest(Vector(p))
+            s[i] = (Vector(p) - loc).dot(nor) if loc is not None else -1.0
         z[i] = loc.z if loc is not None else 0.0
         nz[i] = nor.z if loc is not None else 0.0
     return s, z, nz
@@ -175,6 +185,9 @@ def main() -> int:
                     help="nor cloth this near behind it (it passed out through the cloth: no gap) (m)")
     ap.add_argument("--exposed", type=float, default=0.02,
                     help="outside the cloth by more than this over an upward collar face: exposed skin (m)")
+    ap.add_argument("--tie-side", type=int, default=1,
+                    help="M2j: the body's side of the cloth from every face tied at the nearest point, as the dress's "
+                         "(clothes_side.ClothSide; 0: the one face the BVH query returns, as before M2j)")
     args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -197,14 +210,19 @@ def main() -> int:
     bpy.context.view_layer.update()
     rest = world(body)
     tree = cloth_tree(cloth, polys)
+    side0 = ClothSide(None, co=world_all(cloth), polys=polys, edge_check=True) if args.tie_side else None
     # the body vertices the cloth is meant to hide: within --near of the cloth, inside it, or outside it at rest
     # (already poking through) where the nearest cloth point is no opening
     near, s0, locs = [], [], []
     for i, p in enumerate(rest):
-        loc, nor, _fi, d = tree.find_nearest(Vector(p), args.near)
+        if side0 is not None:
+            loc, nor, _fi, sd = side0.find(Vector(p), args.near)
+        else:
+            loc, nor, _fi, d = tree.find_nearest(Vector(p), args.near)
+            sd = (Vector(p) - loc).dot(nor) if loc is not None else None
         if loc is not None:
             near.append(i)
-            s0.append((Vector(p) - loc).dot(nor))
+            s0.append(sd)
             locs.append(loc)
     # a body vertex whose nearest cloth point is near a real opening (collar, cuffs, hems, the shoes' tops) leaves
     # the opening when it moves (the wrist out of the cuff): that is no poke-through, so it is counted apart
@@ -347,7 +365,12 @@ def main() -> int:
                 gframes.append((int(miss.sum()), 0.0))
                 for j in np.nonzero(miss)[0]:
                     gworst[int(gap_ids[j])] = gworst.get(int(gap_ids[j]), 0) + 1
-            s, cz, cnz = side(ctree, world(body)[near]) if len(near) else (np.zeros(0),) * 3
+            if len(near):  # the cloth's tied-face side is built only for a frame with skin near it
+                cs = ClothSide(None, co=np.concatenate([cos[o.name] for o in cloth]), polys=polys,
+                               edge_check=True) if args.tie_side else ctree
+                s, cz, cnz = side(cs, world(body)[near])
+            else:
+                s, cz, cnz = (np.zeros(0),) * 3
             chest = (arm.matrix_world @ arm.pose.bones["UpperChest"].head).z
             exposed = np.array([F.exposed_skin(d, z, nz, chest, args.exposed) for d, z, nz in zip(s, cz, cnz)],
                                dtype=bool)
@@ -429,7 +452,7 @@ def main() -> int:
                                                "left_out_by_an_opening": int(at_open.sum()),
                                                "openings": open_rep, "top_under_panels_at_rest": int(len(under)),
                                                "gaps": gap_rep,
-                                               "tol_m": args.tol, "clips": poke}, indent=1),
+                                               "tol_m": args.tol, "tie_side": args.tie_side, "clips": poke}, indent=1),
                                    encoding="utf-8", newline="\n")
     say("wrote", out)
     return 0

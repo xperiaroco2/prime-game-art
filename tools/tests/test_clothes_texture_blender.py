@@ -58,6 +58,13 @@ if IN_BLENDER:
         img = T.stripe_image((0.0, 0.0, 0.5), (1.0, 1.0, 1.0), 0.1, 0.5, 1.0, {"torso": (0.25, 0.5)},
                              {"torso": 0.0}, (40, 20))
         r["stripes"] = [round(float(img[0, 20, 0]), 3), round(float(img[1, 20, 0]), 3), round(float(img[0, 2, 0]), 3)]
+        # M2l: the plainest rectangle inside the islands: a stitch line at x 20 and a hole at the top left are avoided
+        valid = np.ones((48, 48), bool)
+        valid[:16, :16] = False
+        lum = np.full((48, 48), 0.2)
+        lum[:, 20] = 0.8
+        r["clean_rect"] = T.clean_rect(valid, lum, 8, 8, step=2, margin=2)
+        r["clean_rect_none"] = T.clean_rect(np.zeros((20, 20), bool), np.zeros((20, 20)), 8, 8) is None
         pts = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [5, 5, 5]], np.float64)
         r["normals"] = T.vertex_normals(pts, [[0, 1, 2, 3]]).round(4).tolist()
         (out / "texture.json").write_text(json.dumps(r), encoding="utf-8")
@@ -95,7 +102,11 @@ else:
             self.assertEqual(self.r["free_rect"], [2, 12])
             self.assertTrue(self.r["free_rect_none"])
             self.assertEqual(self.r["blur"], [1.0, 9.0, 0.0])  # the peak spread over 3 x 3, the sum kept
-            self.assertEqual(self.r["stripes"], [1.0, 0.0, 1.0])  # white, then navy from the island's edge; white outside
+            self.assertEqual(self.r["stripes"], [1.0, 0.0, 1.0])
+            x, y = self.r["clean_rect"]
+            self.assertTrue(x > 20 or x + 8 <= 20)  # off the stitch column
+            self.assertTrue(x >= 16 or y >= 16)  # off the hole
+            self.assertTrue(self.r["clean_rect_none"])  # white, then navy from the island's edge; white outside
             self.assertEqual(self.r["normals"][:4], [[0.0, 0.0, 1.0]] * 4)
             self.assertEqual(self.r["normals"][4], [0.0, 0.0, 0.0])
 

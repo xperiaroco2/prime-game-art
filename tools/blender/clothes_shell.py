@@ -395,6 +395,41 @@ def flood(seeds: list[int], nbrs: list[list[int]], allowed: set[int]) -> set[int
     return got
 
 
+def outward_only(r_new: float, r_old: float) -> float:
+    """M2i: a relaxed radius that never comes in toward the axis: the relax may push a dip out to its neighbours, but
+    the cuff never closes over the skin it covered (the calf's pokes of d60 and d64)."""
+    return max(r_new, r_old)
+
+
+def cuff_profile(r_out: float, r_in_top: float, r_in_bot: float, z_top: float, z_bot: float,
+                 r_bot: float = 0.004) -> list[tuple[float, float]]:
+    """M2j: the built cuff's cross-section at one angle round the leg, a closed loop of (radius, height) points: a
+    rolled top (a half round from the inner wall over to the outer), the outer wall straight down, its lower edge
+    rounded by r_bot, a flat bottom in to the inner wall (narrowed to r_in_bot, the ankle's opening), its edge
+    rounded too, and the inner wall back up: 10 points (M2j's d69 had 13 at 32 stations, 60,672 triangles). The leg's cut edge sits between the walls under the roll. Refuses an
+    inner wall outside the outer or a cuff lower than its rounds."""
+    if not (0.0 < r_in_top < r_out and 0.0 < r_in_bot < r_out):
+        raise ValueError("the cuff's inner wall must lie inside its outer wall")
+    rt = (r_out - r_in_top) / 2
+    rb = min(r_bot, (r_out - r_in_bot) / 2)
+    if z_top - z_bot < rt + rb + 1e-4:
+        raise ValueError("the cuff is lower than its rounds")
+    c = math.cos(math.radians(45))
+    cr, cz = r_in_top + rt, z_top - rt
+    pts = [(cr - rt * math.cos(math.radians(a)), cz + rt * math.sin(math.radians(a))) for a in (0, 60, 120, 180)]
+    pts += [(r_out, z_bot + rb), (r_out - rb + rb * c, z_bot + rb - rb * c), (r_out - rb, z_bot)]
+    pts += [(r_in_bot + rb, z_bot), (r_in_bot + rb - rb * c, z_bot + rb - rb * c), (r_in_bot, z_bot + rb)]
+    return pts
+
+
+def circ_smooth(xs: list[float], rounds: int = 2) -> list[float]:
+    """M2j: a closed loop's values (per angle round the leg) smoothed by [1, 2, 1] rounds times."""
+    n = len(xs)
+    for _ in range(rounds):
+        xs = [(xs[i - 1] + 2 * xs[i] + xs[(i + 1) % n]) / 4 for i in range(n)]
+    return xs
+
+
 def opening_dist(d: float | None) -> float:
     """A KD-tree find's distance to the nearest opening point; infinite when it found none (C1k: a tree of no
     opening points finds (None, None, None))."""
@@ -418,6 +453,48 @@ def shirt_texel(r: float, g: float, b: float, lum: float = 0.55, sat: float = 0.
     return 0.2126 * r + 0.7152 * g + 0.0722 * b > lum and hi > 0 and (hi - lo) / hi < sat
 
 
+
+def face_samples(centre, corners) -> list[tuple[float, float]]:
+    """M2g: points over a face's UVs for the baked-shirt test: its centre, and per corner the points 0.35 and 0.7 of
+    the way to it and 0.7 of the way to the next edge's middle (10 for a triangle, 13 for a quad), so a striped face
+    (a white stripe among dark ones) is not missed by a sample falling on the dark."""
+    cx, cy = float(centre[0]), float(centre[1])
+    pts = [(cx, cy)]
+    n = len(corners)
+    for i, c in enumerate(corners):
+        d = corners[(i + 1) % n]
+        mx, my = (float(c[0]) + float(d[0])) / 2, (float(c[1]) + float(d[1])) / 2
+        for t, (tx, ty) in ((0.35, c), (0.7, c), (0.7, (mx, my))):
+            pts.append((cx + t * (float(tx) - cx), cy + t * (float(ty) - cy)))
+    return pts
+
+
+def cut_ramp(z: float, cut: float, soft: float) -> float:
+    """M2g: the turn-up's tint weight at a height: 1 under cut - soft/2, 0 over cut + soft/2, linear between (a 2 mm
+    blend keeps the light cuff's top from stair-stepping in texels)."""
+    return min(1.0, max(0.0, (cut - z) / max(soft, 1e-9) + 0.5))
+
+
+def relax_weight(z: float, z_top: float, fade: float) -> float:
+    """M2h: the turn-up relax's share at a height: 1 up to z_top - fade, easing (smoothstep) to 0 at z_top and over (the
+    trouser leg above the turn-up keeps its shape)."""
+    if z >= z_top:
+        return 0.0
+    t = min(1.0, (z_top - z) / max(fade, 1e-9))
+    return t * t * (3 - 2 * t)
+
+
+def loop_nbrs(edges: list[tuple[int, int]], ids: set[int]) -> dict[int, list[int]]:
+    """M2h: each vertex of ids with its neighbours along the given (open) edges that are also in ids: the hem loop's
+    own neighbours, so its relax runs along the loop and not up the leg."""
+    out: dict[int, list[int]] = {i: [] for i in ids}
+    for a, b in edges:
+        if a in ids and b in ids:
+            out[a].append(b)
+            out[b].append(a)
+    return out
+
+
 # E1b: the planes' defaults (clothes_dress's flags) were set on the old body A, whose bones these are (A11 keeps them)
 REF_CHEST_Z, REF_NECK_Z = 1.028, 1.339
 REF_UPPER_ARM = (0.152, 0.065, 1.277)
@@ -428,18 +505,21 @@ def body_planes(chest_z: float, neck_z: float, neck_y: float, upper_arm: tuple[f
                 cuff_back: float = 0.035, waist: float = 1.0, bib: tuple[float, float] = (0.105, 1.166),
                 back: tuple[float, float, float, float] = (0.03, 1.12, 0.12, 0.03),
                 neck: tuple[float, float, float, float] = (-0.06, 1.335, 0.09, 1.365), seam_x: float = 0.165,
-                arm_z: float = 1.18) -> dict:
+                arm_z: float = 1.18, waist_z: float | None = None) -> dict:
     """The top's and the garment's cut planes from a body's own bones (E1b, art #196): heights mapped linearly from
     the reference torso (Chest to Neck) to this body's, the sleeves' seam moved with the upper arm's root, the arms'
     axis through the upper arm's head, and the cuffs cuff_back m in from the hand bone's head (the wrist), so the
-    sleeve never reaches the hand or the thumb's root. The reference body gets the defaults back but the cuff."""
+    sleeve never reaches the hand or the thumb's root. The reference body gets the defaults back but the cuff.
+    waist_z (M2c): the waist plane at this height instead (a garment whose own band sits lower than the bones' waist,
+    the m2 dungarees on B13: their band's edge, so no shirt texels stay over it)."""
     if neck_z <= chest_z:
         raise ValueError(f"neck {neck_z} not above chest {chest_z}")
     k = (neck_z - chest_z) / (REF_NECK_Z - REF_CHEST_Z)
     zm = lambda z: chest_z + (z - REF_CHEST_Z) * k
     dy = neck_y - REF_NECK_Y
     return {"cuff_x": hand_x - cuff_back, "seam_x": seam_x + upper_arm[0] - REF_UPPER_ARM[0], "arm_z": zm(arm_z),
-            "arm_axis": (upper_arm[1], upper_arm[2]), "waist": zm(waist), "bib": (bib[0], zm(bib[1])),
+            "arm_axis": (upper_arm[1], upper_arm[2]), "waist": zm(waist) if waist_z is None else waist_z,
+            "bib": (bib[0], zm(bib[1])),
             "back": (back[0], zm(back[1]), back[2], back[3]),
             "neck": (neck[0] + dy, zm(neck[1]), neck[2] + dy, zm(neck[3])), "z_scale": k}
 
@@ -457,6 +537,16 @@ def cyl_coords(x: float, y: float, z: float, axis_y: float, a_ref: float, radius
     a = math.atan2(x, -(y - axis_y)) - a_ref
     a = (a + math.pi) % (2 * math.pi) - math.pi
     return radius * a, z
+
+
+
+def seam_unwrap(ss: list[float], radius: float) -> list[float]:
+    """M2l: one face's arc lengths on a cylinder (cyl_coords, within half a turn of a_ref): a face across the seam
+    (its arc lengths over half a turn apart) gets a full turn added to its negative ones, so it stays one narrow face
+    in UV instead of a band across the whole window."""
+    if max(ss) - min(ss) <= math.pi * radius:
+        return list(ss)
+    return [s + 2 * math.pi * radius if s < 0 else s for s in ss]
 
 
 def in_box(x: float, y: float, z: float, box: tuple[float, float, float, float, float, float]) -> bool:
@@ -520,3 +610,106 @@ def chain_row(z: float, knots: list[tuple[float, str]]) -> dict[str, float]:
                     row[b] = row.get(b, 0.0) + w
             return row
     return {ks[-1][1]: 1.0}
+
+
+def panel_fit(nbrs: list[tuple[float, float, float]]) -> float:
+    """M2d, the flat back panel: a panel point's smoothed depth from its neighbours (dx, dz, y), dx and dz their
+    offsets from it: the least-squares y = a + b dx + c dx^2 + d dz, so a's the depth with the panel's round across
+    and its slope up kept, and a fold narrower than the window gone. Too few or degenerate neighbours: their mean."""
+    if not nbrs:
+        raise ValueError("no neighbours")
+    mean = sum(y for _x, _z, y in nbrs) / len(nbrs)
+    if len(nbrs) < 6:
+        return mean
+    m = [[0.0] * 5 for _ in range(4)]
+    for dx, dz, y in nbrs:
+        r = (1.0, dx, dx * dx, dz)
+        for i in range(4):
+            for j in range(4):
+                m[i][j] += r[i] * r[j]
+            m[i][4] += r[i] * y
+    for c in range(4):  # Gaussian elimination with partial pivoting
+        piv = max(range(c, 4), key=lambda i: abs(m[i][c]))
+        if abs(m[piv][c]) < 1e-14:
+            return mean
+        m[c], m[piv] = m[piv], m[c]
+        for i in range(c + 1, 4):
+            f = m[i][c] / m[c][c]
+            for j in range(c, 5):
+                m[i][j] -= f * m[c][j]
+    sol = [0.0] * 4
+    for i in range(3, -1, -1):
+        sol[i] = (m[i][4] - sum(m[i][j] * sol[j] for j in range(i + 1, 4))) / m[i][i]
+    return sol[0]
+
+
+def join_rows(hits: list[float | None], along: list[float], blend: float) -> list[tuple[float, int | None]]:
+    """M2e: the straps' back ends glued onto the back panel. hits: per strap row (front to back) the move along its
+    normal that lays it on the panel (None: no panel under it); along: the rows' arc lengths. Returns per row
+    (share, source row): a row over the panel takes its own move fully (share 1, itself); a row in front of the
+    glued run takes the run's first row's move and weights eased out over blend m along the strap (smoothstep); the
+    rest none (0, None). Only the run joined to the back end counts (a stray hit up the strap does not)."""
+    n = len(hits)
+    first = n
+    while first > 0 and hits[first - 1] is not None:
+        first -= 1
+    out: list[tuple[float, int | None]] = [(0.0, None)] * n
+    if first == n:
+        return out
+    for i in range(first, n):
+        out[i] = (1.0, i)
+    for i in range(first - 1, -1, -1):
+        d = along[first] - along[i]
+        if blend <= 0 or d >= blend:
+            break
+        t = d / blend
+        out[i] = (1.0 - t * t * (3 - 2 * t), first)
+    return out
+
+
+def back_bib_grid(z0: float, z_c: float, z_v: float, hw_b: float, hw_t: float, x_v: float, border: float,
+                  cols: int = 14, rows: int = 14) -> dict:
+    """M2f, her back bib (the turnaround's back view): the panel's grid in the back view (x, z), row-major from the
+    bottom. Its outline: the sides straight from half width hw_b at z0 to hw_t at the top corners' height z_c, the
+    top flat at z_c out from |x| = x_v and a V down to z_v at x = 0 between. cols (even, so a column runs up the V's
+    tip) interior divisions across inside a border of width border along each side, rows divisions up to border
+    under the top edge, then the top edge itself. Per vertex: x, z, whether it is on the outline's sides or top (the
+    lip), and per face whether it is in the side or top border (the stitched edge) with each corner's (across,
+    along): across 0 at the outline growing inward to border, along in metres up a side or across the top."""
+    if cols % 2 or cols < 2 or rows < 1 or not (z0 < z_v <= z_c) or border <= 0 or not (0 < x_v <= hw_t):
+        raise ValueError("bad back bib")
+
+    def hw(z):
+        return hw_b + (hw_t - hw_b) * (z - z0) / (z_c - z0)
+
+    def top(x):
+        return z_v + (z_c - z_v) * min(1.0, abs(x) / x_v)
+
+    gs = [-1.0 - 1.0 / cols] + [-1.0 + 2.0 * k / cols for k in range(cols + 1)] + [1.0 + 1.0 / cols]
+    nc, nr = len(gs), rows + 2
+    pts, edge = [], []
+    for r in range(nr):
+        for g in gs:
+            side = abs(g) > 1.0
+            gi = max(-1.0, min(1.0, g))
+            x_top = math.copysign(hw(z_c), g) if side else (hw(z_c) - border) * gi
+            zt = top(x_top)
+            z = zt if r == nr - 1 else z0 + (zt - border - z0) * r / rows
+            x = math.copysign(hw(z), g) if side else (hw(z) - border) * gi
+            pts.append((x, z))
+            edge.append(side or r == nr - 1)
+    faces, kind, uvs = [], [], []
+    for r in range(nr - 1):
+        for c in range(nc - 1):
+            q = [r * nc + c, r * nc + c + 1, (r + 1) * nc + c + 1, (r + 1) * nc + c]
+            faces.append(q)
+            if c == 0 or c == nc - 2:
+                kind.append("side")
+                uvs.append([(border if abs(gs[k % nc]) <= 1.0 else 0.0, pts[k][1] - z0) for k in q])
+            elif r == nr - 2:
+                kind.append("top")
+                uvs.append([(0.0 if k // nc == nr - 1 else border, pts[k][0]) for k in q])
+            else:
+                kind.append("inner")
+                uvs.append(None)
+    return {"points": pts, "edge": edge, "rows": nr, "cols": nc, "faces": faces, "kind": kind, "border_uv": uvs}

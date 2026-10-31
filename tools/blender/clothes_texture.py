@@ -167,3 +167,32 @@ def vertex_normals(pts: np.ndarray, faces: list[list[int]]) -> np.ndarray:
     ln[ln == 0] = 1.0
     return acc / ln[:, None]
 
+
+def clean_rect(valid: np.ndarray, lum: np.ndarray, rw: int, rh: int, step: int = 8, margin: int = 4):
+    """M2l: the plainest rw x rh texel rectangle wholly inside the UV islands (valid, h x w bool, `margin` texels in
+    from their edges) whose mean luminance is within 15% of the islands' median (denim, not a stitch, a label or a
+    seam's shadow): the one with the least luminance variance, as (x0, y0) in the map's rows, or None."""
+    h, w = valid.shape
+    def sat(a):
+        out = np.zeros((h + 1, w + 1), dtype=np.float64)
+        out[1:, 1:] = a.astype(np.float64).cumsum(0).cumsum(1)
+        return out
+    def box(t, y, x, hh, ww):
+        return t[y + hh, x + ww] - t[y, x + ww] - t[y + hh, x] + t[y, x]
+    sv, sl, sq = sat(valid), sat(np.where(valid, lum, 0.0)), sat(np.where(valid, lum * lum, 0.0))
+    med = float(np.median(lum[valid])) if valid.any() else 0.0
+    best = None
+    n_full = (rw + 2 * margin) * (rh + 2 * margin)
+    for y in range(0, h - rh - 2 * margin, step):
+        for x in range(0, w - rw - 2 * margin, step):
+            if box(sv, y, x, rh + 2 * margin, rw + 2 * margin) < n_full:
+                continue
+            yy, xx = y + margin, x + margin
+            m = box(sl, yy, xx, rh, rw) / (rw * rh)
+            if abs(m - med) > 0.15 * med:
+                continue
+            var = box(sq, yy, xx, rh, rw) / (rw * rh) - m * m
+            if best is None or var < best[0]:
+                best = (var, xx, yy)
+    return None if best is None else (best[1], best[2])
+
