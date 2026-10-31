@@ -46,7 +46,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="step 4c: the Earth object's distances D1-D3 from [earth] distance_views into DIR")
     parser.add_argument("--earth-video", type=Path, metavar="DIR",
                         help="step 4c: one short MP4 per Earth distance ([earth] video_keys) into DIR")
-    parser.add_argument("--distance", metavar="ID", help="with --earth-video: only this Earth distance (e.g. D2)")
+    parser.add_argument("--distance", metavar="ID",
+                        help="with --earth-video or --earth-route: only this Earth distance (e.g. D2)")
+    parser.add_argument("--earth-route", type=Path, metavar="DIR",
+                        help="step 5a7: [earth.route]'s stills sheet and one walk MP4 per distance into DIR (off-screen)")
+    parser.add_argument("--no-video", action="store_true", help="with --earth-route: only the stills")
     parser.add_argument("--snow-grid", type=Path, metavar="DIR",
                         help="step 5a6: the snow strengths ([earth.snow] sets) in [earth.snow] grid's views into DIR")
     parser.add_argument("--out", type=Path, help="the pieces' folder (default <raw>/<layout raw_dir>/pieces)")
@@ -152,6 +156,10 @@ def run(args: argparse.Namespace) -> int:
             code = video(layout, out, place, args.earth_video.resolve(), vd=vd, distance=did, name=f"earth_{did}.mp4")
             if code:
                 return code
+    if args.earth_route:
+        code = earth_route(layout, out, place, args.earth_route.resolve(), args.distance, not args.no_video)
+        if code:
+            return code
     if args.video:
         return video(layout, out, place, args.video.resolve())
     return 0
@@ -323,6 +331,47 @@ def video(layout: dict, out: Path, place: list, folder: Path, vd: dict | None = 
     return 0
 
 
+def earth_route(layout: dict, out: Path, place: list, folder: Path, only: str | None, videos: bool) -> int:
+    """Step 5a7: [earth.route]'s stills per distance (sheet grid.png, rows the points, columns the distances) with the
+    parallax across the hall measured on the par_* pair (the sky alone, one direction from two places), then one walk
+    MP4 per distance (route_<id>.mp4)."""
+    e = layout["earth"]
+    rt = e["route"]
+    distances = [only] if only else rt["distances"]
+    code = shoot(layout, out, place, folder, grid="route", distances=distances)
+    if code:
+        return code
+    shots = json.loads((folder / "shots.json").read_text(encoding="utf-8"))["shots"]
+    pars = [p for p in rt["points"] if p[0].startswith("par_")]
+    result = {}
+    for did in distances:
+        if len(pars) == 2:
+            result[did] = parallax(shots[f"{did}_{pars[0][0]}"]["limb"], shots[f"{did}_{pars[1][0]}"]["limb"],
+                                   VIEW_SIZE, pars[0][4])
+            common.say(f"  {did}: the limb across the hall ({pars[0][0]} vs {pars[1][0]}): "
+                       f"{result[did]['columns']} columns, median {result[did]['median_deg']:.3f} deg, "
+                       f"max {result[did]['max_deg']:.3f} deg")
+    (folder / "parallax.json").write_text(json.dumps(result, indent=1), encoding="utf-8", newline="\n")
+    if videos:
+        vd = dict(layout["video"], keys=rt["keys"], max_mb=rt["video_max_mb"])
+        for did in distances:
+            code = video(layout, out, place, folder, vd=vd, distance=did, name=f"route_{did}.mp4")
+            if code:
+                return code
+    return 0
+
+
+def parallax(a: list, b: list, size: tuple, fov: float) -> dict:
+    """The limb's shift between two shots of one direction (hall.gd's _limb: [x, row] per column, -1 none), in degrees
+    of elevation through a pinhole of vertical `fov`; columns where both found the limb below the label row."""
+    f = size[1] / 2 / math.tan(math.radians(fov) / 2)
+    el = lambda y: math.degrees(math.atan((size[1] / 2 - y) / f))
+    d = sorted(abs(el(ya) - el(yb)) for (_, ya), (_, yb) in zip(a, b) if ya > 0 and yb > 0)
+    if not d:
+        return {"columns": 0, "median_deg": float("nan"), "max_deg": float("nan")}
+    return {"columns": len(d), "median_deg": d[len(d) // 2], "max_deg": d[-1]}
+
+
 # --- build ---------------------------------------------------------------------------------------------------------
 def build(layout: dict, out: Path, ring_z: float) -> int:
     out.mkdir(parents=True, exist_ok=True)
@@ -484,7 +533,8 @@ def godot_check(layout: dict, out: Path, place: list, ship_report: dict, folder:
     return 0
 
 
-def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str = False) -> int:
+def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str = False,
+          distances: list | None = None) -> int:
     req, staged, _want = scene_request(layout, out, place, lobby_layout.ship_report(layout))
     rv = layout["review"]
     req.update({"mode": "shoot", "background": rv["background"], "views": [v[:5] for v in rv["views"]],
@@ -513,6 +563,10 @@ def shoot(layout: dict, out: Path, place: list, folder: Path, grid: bool | str =
         sn = layout["earth"]["snow"]
         req.update({"mode": "grid", "views": [v[:5] for g in sn["grid"] for v in rv["views"] if v[0] == g],
                     "variants": [earth_request(layout, layout["earth"]["variant"], snow=k) for k in sn["sets"]]})
+    elif grid == "route":   # step 5a7: the route's stills, a row per point, a column per distance
+        rt = layout["earth"]["route"]
+        req.update({"mode": "grid", "views": rt["points"], "rows": "views",
+                    "variants": [earth_request(layout, layout["earth"]["variant"], d) for d in distances]})
     elif grid == "earth":
         req.update({"mode": "grid", "views": [v[:5] for v in rv["views"] if v[0] in layout["earth"]["grid"]],
                     "variants": [earth_request(layout, k) for k in layout["earth"]["variants"]]})

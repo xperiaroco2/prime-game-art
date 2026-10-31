@@ -248,7 +248,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v13")   # step 5a6
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v14")   # step 5a7
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -414,22 +414,64 @@ class LobbyLayoutTest(unittest.TestCase):
         self.assertGreater(spawn[3][2], spawn[2][2])   # the spawns face the window (+z)
 
     def test_the_earth_as_an_object(self) -> None:
-        """Step 4c: three distances, D2 by default; each fills E2's angle from the eye and stays outside the hall."""
+        """Step 4c: three distances; each fills E2's angle from the eye and stays outside the hall (step 5a7: F48 the
+        default, the far distances tested below)."""
         e = self.layout["earth"]
-        self.assertEqual(e["distance"], "D2")
-        self.assertEqual(list(e["distances"]), ["D1", "D2", "D3"])
-        dists = [e["distances"][d]["distance_m"] for d in e["distances"]]
+        self.assertEqual(e["distance"], "F48")
+        self.assertEqual(list(e["distances"]), ["D1", "D2", "D3", "F48", "F36"])
+        dists = [e["distances"][d]["distance_m"] for d in ("D1", "D2", "D3")]
         self.assertEqual(dists, sorted(dists))
         v = e["variants"][e["variant"]]
         for did in e["distances"]:
             o = lobby_layout.earth_object(self.layout, e["variant"], did)
             seen = math.degrees(math.asin(o["radius_m"] / math.dist(o["centre"], e["eye"])))
-            self.assertAlmostEqual(seen, v["radius_deg"], places=6)
+            self.assertAlmostEqual(seen, e["distances"][did].get("radius_deg", v["radius_deg"]), places=6)
             self.assertGreater(o["far_m"], o["distance_m"] + o["radius_m"] * e["shell"])
         self.assertEqual(lobby_layout.earth_problems(self.layout, {v[0] for v in self.layout["review"]["views"]}), [])
         for d in ("glass", "back", "side"):
             self.assertIn(d, [g[0] for g in e["distance_views"]])
         self.assertAlmostEqual(e["video_keys"][0][0][2], self.layout["hall"]["zS"] + self.layout["hall"]["bulge"] - 1.5)
+
+    def test_the_far_earth(self) -> None:
+        """Step 5a7: F48 is D2's sphere traced from the spawn's eye (far_eye, spawn_eye's place) whatever the camera's
+        place; F36 a smaller radius at the same centre, its sun kept E2's angle behind the limb; the shader moves the
+        shell with the camera and starts the ray at far_eye; the route's distances, keys and stills."""
+        from runner.commands import lobby as cmd
+        e = self.layout["earth"]
+        d2, f48, f36 = (lobby_layout.earth_object(self.layout, "E2", d) for d in ("D2", "F48", "F36"))
+        self.assertFalse(d2["far"])
+        self.assertTrue(f48["far"] and f36["far"])
+        self.assertEqual({k: f48[k] for k in ("centre", "radius_m", "frame_dir", "far_m")},
+                         {k: d2[k] for k in ("centre", "radius_m", "frame_dir", "far_m")})
+        spawn = next(v for v in self.layout["review"]["views"] if v[0] == "spawn_eye")
+        self.assertEqual(f48["far_eye"], spawn[2])
+        self.assertEqual(f36["centre"], d2["centre"])
+        self.assertAlmostEqual(f36["radius_deg"], 36.0)
+        self.assertNotIn("sun_dir", f48)
+        v = e["variants"]["E2"]
+        u, s = lobby_layout.direction(*v["centre"]), lobby_layout.direction(*v["sun"])
+        ang = lambda a, b: math.degrees(math.acos(max(-1.0, min(1.0, sum(x * y for x, y in zip(a, b))))))
+        self.assertAlmostEqual(v["radius_deg"] - ang(u, s), 36.0 - ang(u, f36["sun_dir"]), places=6)
+        src = (Path(__file__).resolve().parents[2] / "godot" / "lobby" / "earth_object.gdshader").read_text(encoding="utf-8")
+        self.assertIn("VERTEX += CAMERA_POSITION_WORLD - far_eye;", src)
+        self.assertIn("vec3 eye = far_mode > 0.5 ? far_eye : cam;", src)
+        self.assertIn("vec3 v = normalize(wpos - cam);", src)
+        rt = e["route"]
+        self.assertEqual(rt["distances"], ["D2", "F48", "F36"])
+        self.assertEqual([p[0] for p in rt["points"]], ["spawn", "corner_nw", "glass", "arch", "par_spawn", "par_glass"])
+        pa, pb = rt["points"][4], rt["points"][5]
+        unit = lambda a: [x / math.sqrt(sum(y * y for y in a)) for x in a]
+        self.assertEqual([round(x, 3) for x in unit([q - p for p, q in zip(pa[2], pa[3])])],
+                         [round(x, 3) for x in unit([q - p for p, q in zip(pb[2], pb[3])])])
+        self.assertTrue(all(k[0][1] == 1.6 for k in rt["keys"]))
+        self.assertTrue(28.0 <= sum(k[2] for k in rt["keys"]) <= 32.0)
+        self.assertEqual(cmd.parallax([[16, 300], [48, 300]], [[16, 300], [48, -1]], (1920, 1080), 70.0)["max_deg"], 0.0)
+        self.assertGreater(cmd.parallax([[16, 300]], [[16, 340]], (1920, 1080), 70.0)["max_deg"], 2.0)
+        bad = copy.deepcopy(self.layout)
+        bad["earth"]["route"]["distances"].append("F9")
+        bad["earth"]["route"]["keys"][1][0] = [30.0, 1.6, 0.0]
+        q = lobby_layout.earth_problems(bad, {v[0] for v in self.layout["review"]["views"]})
+        self.assertTrue(any("F9" in x for x in q) and any("outside the hall" in x for x in q))
 
     def test_refuses_an_earth_inside_the_hall(self) -> None:
         bad = copy.deepcopy(self.layout)

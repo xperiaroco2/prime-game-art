@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v13"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v14"         # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -279,8 +279,12 @@ credit = "Earth imagery: NASA"
 # as the player backs away; the stars stay at infinity in the sky. Each distance's radius gives the variant's angular
 # radius from `eye` (a spawn looking at the window: what E2 filled). The sky's cubemap pass keeps the Earth at
 # infinity for the probes and reflections.
-distance = "D2"                     # the one switch (D1 near, D2 middle, D3 far)
+# Step 5a7 (the engineer, 2026-10-31: at D2 the planet changed scale with the viewpoint): the far mode, the F
+# distances (`far = true`): the ray traced from `eye` whatever the camera's place, so the planet sits at infinity: the
+# same planet, angular size, horizon height and direction from every point of the hall; the window frames a part of it.
+distance = "F48"                    # the one switch (D1 near, D2 middle, D3 far; F48, F36 at infinity)
 eye = [0.0, 1.65, 0.0]
+far_eye = [0.0, 1.65, 2.5]          # step 5a7: the far mode's fixed ray origin, the spawn's eye (spawn_eye): there F48 is D2
 shell = 1.35                        # the traced shell's radius over the planet's (room for the rim's halo and the dawn)
 # `lobby --distance-grid DIR`: the distances from the same three positions [name, title, eye, look, fov]
 distance_views = [
@@ -401,6 +405,52 @@ distance_m = 250.0
 [earth.distances.D3]
 title = "far: subtle parallax"
 distance_m = 900.0
+
+# Step 5a7's far mode: the shell drawn round `eye` moved with the camera (distance_m only sizes the shell and the far
+# plane); radius_deg (default the variant's) is the angular radius from everywhere; the sun keeps its angle behind the limb
+[earth.distances.F48]
+title = "far: at infinity, E2's 48 deg (the spawn's view as approved)"
+distance_m = 250.0
+far = true
+
+[earth.distances.F36]
+title = "far: at infinity, smaller (36 deg), inside the window from most of the hall"
+distance_m = 250.0
+far = true
+radius_deg = 36.0
+
+# `lobby --earth-route DIR [--distance ID]`: one walk at eye height (1.6 m) looking at the window, per distance one MP4
+# (the [video] size, fps, fov), then the stills from `points` [name, title, eye, look, fov] in a sheet (rows the points,
+# columns the distances). Round the ship's west side to the north-west corner, back to the glass at x 6, along it to
+# x 16, round the ship's east side to the arch's mouth. keys: [eye, look, seconds from the previous key]
+[earth.route]
+distances = ["D2", "F48", "F36"]
+video_max_mb = 15
+keys = [
+  [[0.0, 1.6, 2.5], [0.0, 4.0, 18.5], 0.0],
+  [[-10.0, 1.6, 3.0], [-5.0, 4.0, 18.0], 2.0],
+  [[-16.5, 1.6, -8.0], [-7.0, 4.0, 14.0], 2.5],
+  [[-17.0, 1.6, -27.0], [-4.0, 4.0, 14.0], 4.0],
+  [[-17.0, 1.6, -27.0], [-4.0, 4.0, 14.0], 0.8],
+  [[-16.5, 1.6, -6.0], [-6.0, 4.0, 14.0], 4.0],
+  [[-8.0, 1.6, 8.0], [0.0, 4.0, 22.0], 2.5],
+  [[6.0, 1.6, 13.0], [6.0, 4.0, 30.0], 2.5],
+  [[16.0, 1.6, 10.0], [12.0, 4.0, 30.0], 2.0],
+  [[16.5, 1.6, -6.0], [6.0, 4.0, 14.0], 3.5],
+  [[14.0, 1.6, -26.0], [2.0, 4.0, 14.0], 3.5],
+  [[0.0, 1.6, -28.3], [0.0, 4.0, 14.0], 2.0],
+  [[0.0, 1.6, -28.3], [0.0, 4.0, 14.0], 0.8],
+]
+# the stills; par_*: one direction (due south, 15 deg up) from two places, so the sky's shift between them is the
+# parallax across the hall (`--earth-route` measures the limb's row in each)
+points = [
+  ["spawn", "the spawn (x 0, z 2.5)", [0.0, 1.6, 2.5], [0.0, 4.0, 18.5], 70.0],
+  ["corner_nw", "the north-west corner", [-17.0, 1.6, -27.0], [-4.0, 4.0, 14.0], 70.0],
+  ["glass", "near the glass (x 6, z 13)", [6.0, 1.6, 13.0], [6.0, 4.0, 30.0], 70.0],
+  ["arch", "the arch's mouth (x 0, z -28.3)", [0.0, 1.6, -28.3], [0.0, 4.0, 14.0], 70.0],
+  ["par_spawn", "due south from the spawn", [0.0, 1.6, 2.5], [0.0, 5.888, 18.5], 70.0],
+  ["par_glass", "due south from the glass's east end", [16.0, 1.6, 10.0], [16.0, 5.888, 26.0], 70.0],
+]
 
 [light]
 # Step 4 (art #356, docs/lobby.md "Step 4"): the hall's real light, the drawing's words: "warm hanging lamps under the
