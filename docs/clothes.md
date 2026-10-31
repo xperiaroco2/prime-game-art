@@ -934,7 +934,11 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   that piece is fused with the rest, over 15 cm tall); the back top is the highest vertex within 1 cm of the centre
   back, its widths sections 1.5 cm over it and 2.5 cm over the band; the back stand-off the most of five heights; the
   turn-up's width its section's outer width at its mid-height; the bare ankle the hem less the `shoes` mesh's highest
-  point on her left (d79: 12.5, the collar's top, not dress.json's 11.1 rim). A garment with no front or no band
+  point on her left (d79: 12.5, the collar's top, not dress.json's 11.1 rim; the spec's `ankle_strip_h` is that mesh
+  measure since G3a: 17.76 - 12.51 = 5.25). The band's top is the highest vertex 11-15 cm off the centre forward of
+  y = 3 cm (a band hugging her waist at the spec's width is widest behind the centre line, 12.2 cm off it: G3a found
+  the old "12-15 cm, in front" window reading the yoke under it); the bib's and back's gaps are to her front or back
+  over |x| < 11 cm, as the drawing's lean B (her bust's peaks, not the cleavage). A garment with no front or no band
   points gives every size absent, never an error.
 - **The build id**: `garment_spec_probe.py` and `garment_motion.py` record their .blend's SHA-256 (`blend_sha256`),
   and `frames` records in its `spec.json` the GLB and .blend it drew with theirs (`source`); `gate2 --blend` refuses
@@ -967,3 +971,31 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   concept | the build with the spec's lines at 5 px/cm (`garment_drawing.view_sheet` on the build's probe), the
   overlays, the tables, and the front close-up Walk and Jog videos (`frames --video-camera`, copied in as
   `closeup_<clip>.mp4`). The verdict is PASS only with every number measured and within tolerance and both videos.
+
+## The dungarees' Gate 2 build (G3a, art #196)
+`tools/blender/dungarees_build.py` (headless Blender) builds the dungarees to `specs/dungarees_dims.toml` on M2's d79
+character (B13, the shirt `top`, the sneakers `shoes`): every size from the spec's cm, the shapes from the approved
+drawing (`garment_drawing.lines`), measured against her undressed rest (the spec's probe):
+
+```
+blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml", "--dressed", <d79 .blend>,
+    "--ref", <spec probe char.json>, "--out", DIR])     # DIR/axolotl_char.blend, .glb, build.json
+```
+
+- **Kept from Meshy:** the trousers' largest piece between 21.5 cm (inside the turn-up) and 88 cm (the full ring
+  under the old band): thigh 18.87 / knee 13.24 against 18.65 / 13.0 (within 1.0), crotch 70.2 against her 70.8.
+  **Refit:** over 88 cm a yoke extruded from the cut's loop up 0.5 cm inside the band, her body + 0.45 cm at its
+  top, the trousers' own ease eased out over 9 rows, weights eased from the trousers' to the band's. **Replaced by
+  code:** d79's band at 93.3 (spec 99.82), its hem at 12.6 (17.76), turn-up 4.57 (5.5) and 9.71 wide (11.5), the
+  bib, back panel and straps. The trousers' arm weights are dropped (d79's band leak).
+- **Weights:** the band one constant blend (her Spine/Chest/Hips under it), the bib and pocket one constant blend
+  (Spine/Chest/UpperChest under the bib), the back panel the same at the back: each panel moves as one piece and
+  cannot stretch. The straps' rows on the bib carry the bib's weights exactly and those on the back panel the
+  back's; the middle eases to her clavicle's (no arm bones). The turn-ups ride the lower leg alone.
+- **Shapes:** the bib the forward convex envelope of her front over |x| < 11 cm + the shirt + 0.3 cm, its top edge
+  0.8 cm off (lean B: straight across, one bend over the bust); the back the same behind, its top the drawing's V
+  (the centre at 118.67, the corners 3 cm higher); the straps laid by rays over the plates and the shirt, flush
+  with the bib's corners on the bib and at 9.5 cm from her collarbone up; the bare ankle's skin (removed by d79
+  under its trousers) rejoined from `body_removed` between 12.5 and 20 cm.
+- **b02** (`D:/prime-art-raw/2026-10-31-gate2/g3a/b02/`): 9,629 vertices, 18,910 triangles; every one of the
+  spec's 28 sizes within its tolerance at rest (`spec/spec_vs_b02.md`).

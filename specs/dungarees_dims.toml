@@ -250,9 +250,13 @@ cm = 5.5
 tol_cm = 0.5
 
 [dims.ankle_strip_h]
-what = "the bare ankle between the hem and the sneaker's rim (11.1)"
-cm = 6.66
+what = "the bare ankle seen: the hem less the sneakers mesh's highest point on her left (its collar at the ankle's sides)"
+cm = 5.25
 tol_cm = 1.0
+note = """The manager's decision (art #196, G3a, 2026-10-31): the hem stays at the approved drawing's 17.76 and the check
+is the mesh measure Gate 2 makes (garment_drawing.measure_build: hem_z - the shoes mesh's top). Her sneakers (E1's,
+as on d79) top out at 12.51, the collar at the ankle's sides, so the target is 17.76 - 12.51 = 5.25. G1's 6.66 was
+counted from dress.json's rim (11.1), lower than the mesh's top, and no build could meet it with the drawing's hem."""
 
 # --- behaviour ------------------------------------------------------------------------------------------------
 [behaviour]
