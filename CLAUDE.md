@@ -54,6 +54,9 @@ model's amendment of 2026-10-08). Agents write everything else, verify it from t
   it looks dumb or ugly, and judged alone. No invented names, personas, backstories or per-character gags unless he
   asks. Variant grids stay for tuning a parameter, never for making many whole characters at once
   (`docs/decisions/2026-10-17-release-quality.md`).
+- **Asset gates** (the engineer, 2026-10-31, #196): every part, garment and hero prop passes Gates 0-5 (concept on the
+  frozen body, an `<asset>_dims.toml` spec, a rough build judged in motion, detail, defect hunt, his look); briefs cite
+  the spec (`docs/decisions/2026-10-31-asset-pipeline-gates.md`, `docs/pipeline.md`).
 - **AI rules:** never name How to Fish or any other game or character in a prompt and never upload their screenshots;
   no personal photos; `ai_generated` is recorded per asset.
 - **Git:**
