@@ -493,8 +493,19 @@ def earth_problems(layout: dict[str, Any], views: set[str]) -> list[str]:
             gap = math.dist(o["centre"], [min(max(c, a), b) for c, a, b in zip(o["centre"], lo, hi)]) - o["radius_m"]
             if gap < 1.0:
                 p.append(f"earth {did}: the planet comes {gap:.2f} m from the hall's box (at least 1 m outside)")
+            dd = e["distances"][did]
+            if not 5.0 <= dd.get("radius_deg", 48.0) <= 60.0:
+                p.append(f"earth {did}: radius_deg {dd['radius_deg']} is not within 5..60")
             if not 1.05 <= e["shell"] <= 2.0:
                 p.append(f"earth: shell {e['shell']} is not within 1.05..2")
+        rt = e.get("route")
+        if rt:   # step 5a7: the route's distances, keys and stills
+            p += [f"earth route: distance {d} is not in [earth.distances]" for d in rt["distances"] if d not in e["distances"]]
+            p += [f"earth route: key {i} is not [eye, look, seconds]" for i, k in enumerate(rt["keys"])
+                  if len(k) != 3 or len(k[0]) != 3 or len(k[1]) != 3 or k[2] < 0]
+            p += [f"earth route point {g[0]}: not [name, title, eye, look, fov]" for g in rt["points"] if len(g) != 5]
+            p += [f"earth route: key {i} at {k[0]} is outside the hall" for i, k in enumerate(rt["keys"])
+                  if not (h["x0"] < k[0][0] < h["x1"] and h["zN"] < k[0][2] < h["zS"] + h["bulge"])]
         for g in e.get("distance_views", []):
             if len(g) != 5:
                 p.append(f"earth distance view {g[0]}: not [name, title, eye, look, fov]")
@@ -509,14 +520,29 @@ def direction(azimuth: float, elevation: float) -> list[float]:
 
 def earth_object(layout: dict[str, Any], vid: str, did: str) -> dict[str, Any]:
     """Step 4c: the Earth as a sphere at [earth.distances] did's distance from [earth] eye along variant vid's centre,
-    its radius the one that gives it the variant's angular radius from there (what the sky's Earth filled)."""
+    its radius the one that gives it the variant's angular radius from there (what the sky's Earth filled).
+    Step 5a7's far distances (`far = true`): the shader traces every ray from `eye`, the shell moved with the camera, so
+    the planet sits at infinity; `radius_deg` (default the variant's) its angular radius, the sun turned toward the
+    centre so it keeps its angle behind the limb (E2's dawn glow); `sun_dir` then the object's own."""
     e = layout["earth"]
-    v, dist = e["variants"][vid], e["distances"][did]["distance_m"]
+    d = e["distances"][did]
+    v, dist = e["variants"][vid], d["distance_m"]
     u = direction(*v["centre"])
-    r = dist * math.sin(math.radians(v["radius_deg"]))
+    deg = d.get("radius_deg", v["radius_deg"])
+    r = dist * math.sin(math.radians(deg))
     centre = [a + dist * b for a, b in zip(e["eye"], u)]
-    return {"id": did, "distance_m": dist, "radius_m": r, "centre": centre, "frame_dir": [-c for c in u],
-            "shell": e["shell"], "far_m": dist + r * e["shell"] + 100.0}
+    out = {"id": did, "distance_m": dist, "radius_m": r, "radius_deg": deg, "centre": centre,
+           "frame_dir": [-c for c in u], "shell": e["shell"], "far_m": dist + r * e["shell"] + 100.0,
+           "far": bool(d.get("far", False)), "far_eye": list(e.get("far_eye", e["eye"]))}
+    if deg != v["radius_deg"]:
+        s = direction(*v["sun"])
+        cos = max(-1.0, min(1.0, sum(a * b for a, b in zip(s, u))))
+        ang = math.acos(cos)
+        perp = [a - cos * b for a, b in zip(s, u)]
+        n = math.sqrt(sum(a * a for a in perp))
+        new = ang - math.radians(v["radius_deg"] - deg)
+        out["sun_dir"] = [math.cos(new) * b + math.sin(new) * a / n for a, b in zip(perp, u)]
+    return out
 
 
 LIGHT_KEYS = ("ship_lights", "exposure", "ambient_rgb", "ambient_energy", "probe_intensity", "pendant_rgb", "pendant_energy",

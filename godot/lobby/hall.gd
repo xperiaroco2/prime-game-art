@@ -153,12 +153,43 @@ func _grid() -> void:
 		for v: Array in _req["views"]:
 			_camera.fov = float(v[4])
 			_camera.look_at_from_position(_v(v[2]), _v(v[3]), Vector3.UP)
-			row.append(await _shot("%s_%s" % [look["id"], v[0]], "%s %s: %s" % [look["id"], look["title"], v[0]], shots))
+			var par: bool = (v[0] as String).begins_with("par_")   # step 5a7: the sky alone, the hall hidden
+			var hall: Node3D = root.get_node_or_null("Lobby") as Node3D
+			if par and hall != null:
+				hall.visible = false
+			var nm: String = "%s_%s" % [look["id"], v[0]]
+			row.append(await _shot(nm, "%s %s: %s%s" % [look["id"], look["title"], v[0], " (hall hidden)" if par else ""], shots))
+			if par:
+				shots[nm]["limb"] = _limb(row[-1])
+				if hall != null:
+					hall.visible = true
 		rows.append(row)
+	if _req.get("rows", "") == "views":   # step 5a7: a row per view, a column per variant
+		var t: Array = []
+		for j: int in (rows[0] as Array).size():
+			t.append(rows.map(func(r: Array) -> Image: return r[j]))
+		rows = t
 	_save(_sheet(rows), _out.path_join("grid.png"))
 	_write("shots.json", {"shots": shots})
 	print("LOBBY grid saved %s" % _out)
 	quit(0)
+
+
+## Step 5a7: the planet's limb in a shot of the sky alone: per column (every 32 px) the first row below the label
+## where 6 rows in a row are brighter than 0.06 (a star is smaller), -1 where none.
+func _limb(image: Image) -> Array:
+	var out: Array = []
+	for x: int in range(16, image.get_width(), 32):
+		var found: int = -1
+		var run: int = 0
+		for y: int in range(80, image.get_height()):
+			var c: Color = image.get_pixel(x, y)
+			run = run + 1 if maxf(c.r, maxf(c.g, c.b)) > 0.06 else 0
+			if run == 6:
+				found = y - 5
+				break
+		out.append([x, found])
+	return out
 
 
 func _scene(pid: String) -> PackedScene:
@@ -460,6 +491,11 @@ func _earth_object(e: Dictionary) -> void:
 	mat.set_shader_parameter("radius", float(o["radius_m"]))
 	mat.set_shader_parameter("frame_dir", _v(o["frame_dir"]))
 	mat.set_shader_parameter("ref_radius_deg", float(e["radius_deg"]))
+	if o.get("far", false):   # step 5a7: at infinity, every ray from far_eye
+		mat.set_shader_parameter("far_mode", 1.0)
+		mat.set_shader_parameter("far_eye", _v(o["far_eye"]))
+	if o.has("sun_dir"):   # step 5a7: F36's sun kept just behind its smaller limb
+		mat.set_shader_parameter("sun_dir", _v(o["sun_dir"]).normalized())
 	if e.has("cap"):   # step 5a4: the regional caps at the sources' full resolution
 		var cap: Dictionary = e["cap"]
 		mat.set_shader_parameter("night_cap_tex", _textures[e["textures"]["night_cap"]])
@@ -483,7 +519,7 @@ func _earth_object(e: Dictionary) -> void:
 	_far = maxf(_far, float(o["far_m"]))
 	if _camera != null:
 		_camera.far = _far
-	print("LOBBY earth object %s: radius %.1f m at %.1f m from the spawn, far %.0f m" % [o["id"], float(o["radius_m"]), float(o["distance_m"]), _far])
+	print("LOBBY earth object %s: radius %.1f m at %.1f m from the spawn, far %.0f m%s" % [o["id"], float(o["radius_m"]), float(o["distance_m"]), _far, " (far mode)" if o.get("far", false) else ""])
 
 
 ## The window's glass (step 3b): window_glass.gdshader with the layout's tint over every lobby_glass surface.

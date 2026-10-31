@@ -80,13 +80,25 @@ uniform float moon_land = 0.0;
 // step 5a5: a debug paint (1: the cap's weight red, soft green, latitude lines every 10 deg white (thick at 0, 30, 60),
 // longitude lines every 10 deg cyan (thick at 0); 0 draws the Earth)
 uniform float debug_mode = 0.0;
+// step 5a7: the far mode (docs/lobby.md "Step 5a7"): every ray starts at far_eye whatever the camera's place, and the
+// shell moves with the camera by (camera - far_eye), so the planet sits at infinity: the same angular size, horizon
+// height and direction from every point of the hall, the window framing a different part of it. 0: from the camera
+uniform float far_mode = 0.0;
+uniform vec3 far_eye = vec3(0.0, 1.65, 2.5);
 
 const float AA = 0.0009;
 
+void vertex() {
+	if (far_mode > 0.5) {   // the node has no rotation or scale: a world offset is a model one
+		VERTEX += CAMERA_POSITION_WORLD - far_eye;
+	}
+}
+
 void fragment() {
-	vec3 eye = CAMERA_POSITION_WORLD;
+	vec3 cam = CAMERA_POSITION_WORLD;
+	vec3 eye = far_mode > 0.5 ? far_eye : cam;
 	vec3 wpos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
-	vec3 v = normalize(wpos - eye);
+	vec3 v = normalize(wpos - cam);
 	vec3 oc = centre - eye;
 	float dist = length(oc);
 	vec3 to_c = oc / dist;
