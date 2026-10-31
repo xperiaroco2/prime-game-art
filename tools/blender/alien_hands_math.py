@@ -48,8 +48,10 @@ def _check_grip(name: str, g: dict) -> None:
     if bad:
         raise HandsError(f"grip {name}: unknown keys {bad}")
     for k in ("all", "Thumb", "Index", "Middle", "Ring", "Little"):
-        if k in g and (len(g[k]) != 3 or not all(isinstance(x, (int, float)) for x in g[k])):
-            raise HandsError(f"grip {name}: {k} needs three angles")
+        n = 3 if k == "Thumb" else (3, 4)  # a finger's optional 4th: its base's side turn (H1g, the solved grips)
+        if k in g and (len(g[k]) not in ((n,) if isinstance(n, int) else n)
+                       or not all(isinstance(x, (int, float)) for x in g[k])):
+            raise HandsError(f"grip {name}: {k} needs three angles" + ("" if k == "Thumb" else " (or four)"))
     if "ThumbTurn" in g and len(g["ThumbTurn"]) != 2:
         raise HandsError(f"grip {name}: ThumbTurn needs [roll, swing]")
 

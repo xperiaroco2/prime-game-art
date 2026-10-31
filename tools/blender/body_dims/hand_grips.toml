@@ -1,0 +1,66 @@
+# The loco grips as a spec (art #196, Hands H1g; the H1f critic's route, section 4): what each grip must look like,
+# in mm in the left Hand bone's rest frame (x out of the palm, + the palm side; y from the wrist to the knuckles; z
+# toward the thumb; the right hand is its mirror). tools/blender/alien_grip_solve.py solves the finger angles to it
+# on both characters' hands at once and draws it (side and front view, from these numbers and the solved capsules);
+# the angles go into anim_sets/alien_hands.toml. The fingers are chains of capsules (each bone's rest skin tube, its
+# median radius), the palm the skin the Hand bone dominates. Four digits (the thumb and three fingers); the fingers'
+# length and thickness stay (the engineer accepted the hands' proportions with the bodies' drawing).
+
+[hand]
+radius_scale = 1.0        # the capsules' radius / the tube's median radius
+palm_bones = ["Hand", "ThumbMetacarpal"]  # the palm: the skin these bones dominate (the thenar at its rest)
+surface_step_mm = 3.0     # the palm's vertices are about 10 mm apart: a height field over its palm side every 3 mm
+surface_reach_mm = 9.0    # ... from the vertices within this
+palm_grid_mm = 4.0        # the solve thins the palm to one point per cell (the report and the drawing use all)
+palm_side_x_mm = 10.0     # palm-side points: x above this
+crease_band_mm = 10.0     # a finger's crease line: the farthest palm-side point within this of its knuckle's z
+
+[solve]
+w_pen = 1000.0            # per mm^2 into the palm, another digit or the finger's own base
+w_contact = 60.0          # per mm^2 outside a contact's clearance band
+w_target = 1.0            # per mm^2 from a target
+w_gap = 30.0              # per mm^2 outside the neighbours' gap band
+w_side = 0.02             # per degree^2 of a base's side turn (kept small)
+w_smooth = 0.5            # per degree^2 of a tip joint past its middle joint (no hooked tips)
+self_clear_mm = 0.5       # a finger's tip capsule stays this clear of its own base's
+w_thumb_rest = 0.01       # per degree^2 of the thumb from its first start (no extreme thumb turns for a millimetre)
+iters = 260               # Nelder-Mead iterations per start (twice: a coarse and a fine pass)
+
+[grips.loose]             # the run's fist (Jog, Sprint, Strafe)
+tip_clear_mm = [0.0, 1.0]           # every fingertip touches the palm: its capsule 0 to +1 mm off the palm's skin
+tip_before_crease_mm = { Index = 22.0, Middle = 22.0, Ring = 22.0 }  # the contact this far toward the wrist from
+tip_band_mm = 6.0                   # the finger's crease line, +- this. The critic asked 8 to 12 mm: with these 1:1
+                                    # segments and the knuckle 15-20 mm over the palm's skin it is out of reach without
+                                    # the middle segment going 3 mm into the palm (solve 1: 2-29 mm on A with -2.9 mm,
+                                    # 28-35 mm on B), so the band sits where the fold meets the palm
+gap_mm = [0.5, 1.5]                 # neighbouring fingers 0.5 to 1.5 mm apart (no gaps, no overlap)
+thumb_pad_on = ["IndexIntermediate", "MiddleIntermediate"]  # the thumb's pad lies on the outside of these
+thumb_clear_mm = [0.0, 1.0]
+thumb_tip_short_mm = 4.0            # the thumb's tip stays this far on the thumb's side of the middle finger's line
+[grips.loose.limits]                # degrees: [base, middle, tip, side] per finger; the thumb [metacarpal curl,
+finger = [[-10.0, 95.0], [0.0, 110.0], [0.0, 15.0], [-12.0, 12.0]]  # proximal, distal, roll, swing]; the tip <= 15
+Thumb = [[-20.0, 60.0], [0.0, 70.0], [0.0, 35.0], [-60.0, 90.0], [-30.0, 110.0]]  # (1:1 segments: a mitten fist)
+[grips.loose.starts]
+Index = [[72.0, 90.0, 10.0, 0.0], [55.0, 105.0, 10.0, 0.0], [88.0, 70.0, 10.0, 0.0]]
+Middle = [[78.0, 94.0, 10.0, 0.0], [60.0, 105.0, 10.0, 0.0], [90.0, 75.0, 10.0, 0.0]]
+Ring = [[84.0, 98.0, 10.0, 0.0], [65.0, 105.0, 10.0, 0.0], [92.0, 80.0, 10.0, 0.0]]
+Thumb = [[20.0, 45.0, 20.0, 20.0, 70.0], [10.0, 30.0, 15.0, 0.0, 50.0], [30.0, 50.0, 20.0, 40.0, 90.0]]
+
+[grips.relaxed]           # Idle, Walk, Talk, Crouch: a gentle knuckle-led curl, the thumb alongside the index
+# each fingertip's target from its knuckle (mm, x y z): H1f's r2 curl (the Walk the critic called better), the tips
+# held from hooking (a tip joint never past its middle joint)
+tips = { Index = [24.5, 65.0, -6.0], Middle = [41.0, 65.0, -3.0], Ring = [51.5, 52.5, 0.0] }
+gap_mm = [1.0, 2.5]                 # the fingers close, not touching
+shape = [0.8, 0.35]                 # knuckle-led: the middle joint 0.8 of the base's curl, the tip 0.35 of the middle's
+w_shape = 3.0
+thumb_beside = [6.0, 8.0, 1.5]      # the thumb's tip from the index's knuckle: x toward the palm, y along, and z
+                                    # past the two capsules' radii (alongside, never facing the fingers)
+thumb_clear_mm = [1.0, 3.0]         # the thumb's pad this clear of the index
+[grips.relaxed.limits]
+finger = [[-5.0, 45.0], [0.0, 40.0], [0.0, 12.0], [-10.0, 10.0]]
+Thumb = [[-20.0, 40.0], [-10.0, 30.0], [0.0, 12.0], [-60.0, 60.0], [-40.0, 60.0]]
+[grips.relaxed.starts]
+Index = [[12.0, 10.0, 2.0, 0.0]]
+Middle = [[20.0, 16.0, 4.0, 0.0]]
+Ring = [[28.0, 22.0, 6.0, 0.0]]
+Thumb = [[2.0, 8.0, 6.0, 4.0, -6.0], [10.0, 10.0, 5.0, 20.0, 10.0]]

@@ -115,8 +115,8 @@ sources = ["tools/blender/alien_poses.py", "tools/blender/alien_pose_math.py", "
 tests = ["test_alien_poses_*"]
 
 [area.alien_hands]
-sources = ["tools/blender/alien_hands.py", "tools/blender/alien_hands_math.py", "tools/blender/anim_sets/alien_hands.toml"]  # the loco clips' hand shapes (#196, Hands H1); before light's alien_*
-tests = ["test_alien_hands_*", "test_alien_poses_*"]  # the grips are the poses' (alien_pose_math.grip_quats)
+sources = ["tools/blender/alien_hands.py", "tools/blender/alien_hands_math.py", "tools/blender/anim_sets/alien_hands.toml", "tools/blender/alien_grip_solve.py", "tools/blender/body_dims/hand_grips.toml"]  # the loco clips' hand shapes (#196, Hands H1); before light's alien_*
+tests = ["test_alien_hands_*", "test_alien_poses_*", "test_alien_grip_solve"]  # the grips are the poses' (alien_pose_math.grip_quats)
 
 [area.alien_hand_mesh]
 sources = ["tools/blender/alien_hand_geom.py", "tools/blender/alien_hand_run.py", "tools/blender/alien_hand_mesh.py", "tools/blender/body_dims/hand_dims.toml"]  # the hand and wrist rebuilt in place (#196, Hands H1b); before light's alien_*

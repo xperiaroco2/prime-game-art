@@ -343,7 +343,8 @@ def tube_depth(t: dict, P: dict, pts: list, first: int = 0) -> float:
 # ------------------------------------------------------------------------------------------------ the grips
 def grip_quats(g: dict, side: str) -> dict:
     """A hand shape of the library (`[grips]`, p3) as each finger bone's basis rotation {bone: (w, x, y, z)}: per
-    finger the curl of its three bones about their own x (`all` for a finger the grip does not name); `spread` turns
+    finger the curl of its three bones about their own x (`all` for a finger the grip does not name), an optional
+    fourth value the base's side turn about z (+ toward the thumb on the left hand); `spread` turns
     the base bones about z (`mirror`: one sign means together on both hands); `ThumbTurn` [roll, swing] turns the
     thumb's base about its length (y) and toward the palm (z) before its curl, the right hand's mirrored. Also the
     loco clips' hand shapes (Hands H1, alien_hands_math)."""
@@ -351,8 +352,12 @@ def grip_quats(g: dict, side: str) -> dict:
     for f in FINGERS:
         names = PHALANX.get(f, PHALANX["Index"])
         curl = g.get(f, g.get("all", [0.0, 0.0, 0.0]))
-        for i, (ph, deg) in enumerate(zip(names, curl)):
+        for i, (ph, deg) in enumerate(zip(names, curl[:3])):
             q = M.q_axis_angle((1.0, 0.0, 0.0), deg)
+            if i == 0 and len(curl) > 3 and f != "Thumb":  # H1g: the base's own side turn (z; + toward the thumb on
+                # the left hand), mirrored like `spread` (the solved grips, alien_grip_solve.py)
+                k = -1.0 if g.get("mirror") and side == "Right" else 1.0
+                q = M.q_mul(M.q_axis_angle((0.0, 0.0, 1.0), curl[3] * k), q)
             if i == 0 and g.get("spread") and f != "Thumb":
                 k = {"Index": -1.0, "Middle": -0.3, "Ring": 0.4, "Little": 1.0}[f]
                 # q3 (`mirror` in the grip): mirrored like the thumb's turn (one sign drew the left hand's fingers
