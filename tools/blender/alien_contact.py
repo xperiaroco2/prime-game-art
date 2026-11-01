@@ -23,7 +23,8 @@ FLOAT_MM, UNDER_MM = 5.0, -2.0
 def can_fly(clip: str) -> bool:
     """Whether the clip has frames with both feet up (a run, a jump): not a NO_FLIGHT gait. B1i (art #196, the
     review's major 1): Crouch_Run (and its variants) can fly: as a NO_FLIGHT crouch, foot_plant lowered its trailing
-    toe onto the floor in the run's own flight while it still moved (a skid)."""
+    toe onto the floor in the run's own flight while it still moved (a skid). (foot_plant is gone since B1k:
+    alien_clip_edit.plant_offsets plants each foot on its own.)"""
     return clip.startswith(FLIGHT) or not clip.startswith(NO_FLIGHT)
 
 
