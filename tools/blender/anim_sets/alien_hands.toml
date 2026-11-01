@@ -24,25 +24,36 @@ spread = 6
 Thumb = [2, 8, 6]
 ThumbTurn = [4, -6]
 
-[grips.loose]  # the run (Jog, Sprint, Strafe): the fingers folded onto the palm, every tip touching it,
+[grips.loose]  # the solved loose grip: the fingers folded onto the palm, every tip touching it,
                  # the thumb's pad over the index's and middle's middle segments (H1d-H1f's grids never converged)
-Index = [83.3, 97, 32, -1.4]    # H1g: solved (tools/blender/alien_grip_solve.py) to body_dims/hand_grips.toml on
-Middle = [67.3, 98, 30, 12]     # both characters' hands at once; [base, middle, tip, side turn]. H1q: the middle and
-Ring = [67.5, 98, 30, 1.1]      # tip joints curled further (solved 87.5-90.9 / 12.6-15), the tips into the palm, so the
-Little = [67.5, 98, 30]         # bones alone make the fist (H1q's grid: fuller base curls and a thumb along the
-                                # index's side left a thumb nub and a wider index coil)
+Index = [83.3, 87.5, 12.6, -1.4]    # H1g: solved (tools/blender/alien_grip_solve.py) to body_dims/hand_grips.toml on
+Middle = [67.3, 90.4, 15, 12]  # both characters' hands at once; [base, middle, tip, side turn]
+Ring = [67.5, 90.9, 14.2, 1.1]
+Little = [67.5, 90.9, 14.2]
+mirror = true
+Thumb = [30.4, 66.4, 14.8]
+ThumbTurn = [62.1, 74.5]
+
+[grips.runfist]  # the run (Jog, Sprint, Strafe) and the fist morph's pose: the solved loose grip with the middle and
+                 # tip joints curled further (H1q; solved 87.5-90.9 / 12.6-15), the tips into the palm, so the bones
+                 # alone make the fist (H1q's grid: fuller base curls and a thumb along the index's side left a thumb
+                 # nub and a wider index coil). Its own grip so the solved `loose` stays the solve's (H1r)
+Index = [83.3, 97, 32, -1.4]
+Middle = [67.3, 98, 30, 12]
+Ring = [67.5, 98, 30, 1.1]
+Little = [67.5, 98, 30]
 mirror = true
 Thumb = [30.4, 66.4, 14.8]
 ThumbTurn = [62.1, 74.5]
 
 [clips."Jog_*"]
-grip = "loose"
+grip = "runfist"
 
 [clips."Sprint_*"]
-grip = "loose"
+grip = "runfist"
 
 [clips."Strafe_*"]
-grip = "loose"
+grip = "runfist"
 
 [clips."Jump_Start"]  # the crouch relaxed, the hands opening flat into the air
 keys = [[0.0, "relaxed"], [0.6, "relaxed"], [1.0, "flat"]]
@@ -56,7 +67,7 @@ keys = [[0.0, "flat"], [0.5, "relaxed"]]
 [fist]  # H1j: the run fist as a morph (the engineer's option C, art #196; tools/blender/alien_fist_math.py): the body's
         # shape key `morph`, made in the `grip` pose, its weight 1 wherever a clip's grip is `grip` (Jog, Sprint,
         # Strafe), 0 elsewhere, eased between keyed grips; the fingers smooth-unioned over k_mm, the thumb over k_thumb_mm
-grip = "loose"
+grip = "runfist"
 morph = "fist"
 k_mm = 14.0        # the fingers' webs: H1h's C prototype
 k_thumb_mm = 10.0  # the thumb's web onto the fingers: smaller, so the thumb still reads on its own

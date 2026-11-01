@@ -28,9 +28,9 @@ class File(unittest.TestCase):
         self.cfg = H.load()
 
     def test_grips_reuse_the_poses(self):
-        for g in ("fist", "point", "flat", "heart", "relaxed", "loose"):
+        for g in ("fist", "point", "flat", "heart", "relaxed", "loose", "runfist"):
             self.assertIn(g, self.cfg["grips"])
-        self.assertEqual(self.cfg["own"], ["loose", "relaxed"])
+        self.assertEqual(self.cfg["own"], ["loose", "relaxed", "runfist"])
         self.assertEqual(self.cfg["set"]["default"], "relaxed")
 
     def test_plans_per_clip(self):
@@ -41,8 +41,8 @@ class File(unittest.TestCase):
         self.assertEqual(grips("CharacterArmature|Walk_Loop"), (["relaxed"], ["relaxed"]))
         self.assertEqual(grips("CharacterArmature|Talk_Upper_Loop"), (["relaxed"], ["relaxed"]))
         self.assertEqual(grips("CharacterArmature|Crouch_Fwd_Loop"), (["relaxed"], ["relaxed"]))
-        self.assertEqual(grips("CharacterArmature|Jog_Fwd_Loop"), (["loose"], ["loose"]))
-        self.assertEqual(grips("CharacterArmature|Sprint_Fwd__s80_Loop"), (["loose"], ["loose"]))
+        self.assertEqual(grips("CharacterArmature|Jog_Fwd_Loop"), (["runfist"], ["runfist"]))
+        self.assertEqual(grips("CharacterArmature|Sprint_Fwd__s80_Loop"), (["runfist"], ["runfist"]))
         self.assertEqual(grips("CharacterArmature|Jump_Air_Loop")[0], ["flat"])
         self.assertEqual(grips("CharacterArmature|Jump_Start")[0], ["relaxed", "relaxed", "flat"])
         self.assertIsNone(H.clip_plan(self.cfg, "CharacterArmature|PoseArms_Heart_Loop"))
