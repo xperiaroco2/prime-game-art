@@ -333,6 +333,51 @@ before.
     (Jog_Bwd__s4b), Crouch_Idle 56.4, Crouch_Fwd 40.5, Jog_Fwd and the strafes 39.7; after the cap 32.0. The arms
     and every other bone are untouched; `dress.json`'s `toes_cap` lists each clip's largest bend before and after.
     The body's toes inside the shoe stay cut (step 8).
+    The soles count on the floor (B1, B1b, art #196): after the cap, `--sole-floor alien` (the default; `''`: none)
+    puts every ground clip on the floor with the body and the shoes measured (`alien_clip_edit.sole_floor`): the
+    clips `anim_sets/alien.toml` floor-lifts and every clip it does not list (the loco set's derived actions:
+    Jog_Fwd_Left, Jog_Bwd*, the strafes, the `__` variants; `ground_clips`), not Jump_Air (`false`) nor Jump_Start
+    (`"ground"`). It works at the foot, not the Hips: per frame each foot's lowest sole point (the skin within
+    25 cm of the floor, nearer its Foot-Toes segment and, B1i, within 15 cm of it, so a hand or a knee near the
+    floor counts for no foot), a foot under the floor raised by its own need with its world
+    rotation kept, the leg solved again (`raise_knee`: the thigh and shin lengths and the knee's plane kept), twice
+    at most; what a straight leg cannot reach goes to the Hips at reach 0 (`hips_fallback_cm`); a re-solved Foot
+    over 0.5 cm from its place (`ANKLE_MISS_FAIL_CM`; two_bone stops at 0.9995 of the leg) fails the clip, as does a
+    clip still under -0.5 cm (B1i). B1 lifted the Hips by
+    the sole's need instead: the heel dips up to 19 mm at heel strike, so the Hips jerked up to 18.6 mm in a frame.
+    `dress.json`'s `sole_floor` holds each clip's report (`max_raise_cm` per foot, `ankle_miss_max_cm`,
+    `under_2mm_frames`, `floated_frames`, `lowest_before_mm`, `lowest_after_mm`; in a no-flight clip `max_lower_cm`,
+    `floated_after`, and B1j's `plant_slide_mm` and `plant_moving_frames`: how far the lowered foot slides off the
+    ground's travel, measured on its contact patch's own points, `docs/animations.md`, the floor row).
+    The crossing shoes (B1f, B1g, art #196): after each clip's floor pass, `alien_clip_edit.feet_cross` measures the
+    shoes against each other per frame: each shoe's points (the shoes mesh's vertices by their Left*/Right* weights,
+    `_shoe_sides`; the nearer Foot-Toes segment gave 29 of the right heel's points to the left foot in a crouch) and
+    their convex hulls (`_hull_planes`, each plane through the points' support). Along the body's side axis (the
+    right hip to the left), the hulls overlap now when the left shoe would still meet the right one moved by some t in
+    [-inn, out] including 0 (`cross_depth`: out and inn are the largest planted-far-side less swinging-near-side over
+    the shared forward-up projection, searched on a 4 mm grid refined to 0.125 mm; `hull_slab`, `hull_gaps`, with a
+    numpy twin checked against them once a clip). A frame whose overlap is over 0.01 mm (`CROSS_TOUCH_M`) and whose
+    short way out is apart asks for exactly the overlap plus the clearance (`cross_need`); every other frame for 0,
+    so a clip without an overlap is not touched at all (asserted; B1f's 1 cm cells counted shoes within the clearance
+    and pushed the crouches 1 to 1.7 cm with no overlap). The need goes to the higher foot, or half to each when both
+    stand within 5 mm (`cross_pushes`), is spread by a raised cosine over two frames each side (`cross_bump`, around
+    a loop's seam), and a foot within 5 mm of the floor never slides: over each stance run its push is held at the
+    run's largest and eased in the swing around it (`cross_slide_mm`: the push's range over a stance). B1i: the slide
+    is measured for each pass's push over that pass's own stance runs and for the summed push over the final ones
+    (`slide_max_mm`), and over 1 mm (`CROSS_SLIDE_FAIL_MM`) it fails the clip; a Foot missing its place over 0.5 cm
+    fails it too. The foot moves with its world rotation kept and the leg solved again (`_raise_ankles` with a world
+    offset; the knee in its own plane), the Hips untouched, three times at most; only the first pass adds the
+    clearance, a later one asks for the overlap still left (B1i: B1g asked for the clearance again on every pass);
+    being across, the push leaves the soles where the floor pass put them. A crossed-over step (the short way out is across, the shoes' centres on the wrong sides, or a push
+    over 4 cm, `CROSS_MAX_M`) is not pushed apart: its higher foot, when in the air, is lifted by the vertical overlap
+    plus the clearance (`cross_lifts`), up to 4 cm; Strafe_Left__s4b's hop has the feet in an X at one height on one
+    frame (11 to 14 cm either way), the clip's own crossing, left as it is. Measured on B1e: Walk, Jog_Fwd, Sprint and
+    the crouches never overlap; his Jog_Bwd clips do, 8 to 14 mm on one frame each. The clearance is `cross_out_cm` in
+    `anim_sets/alien.toml` (0.5 cm in `[defaults]`, which also covers the clips it does not list; no key: no pass).
+    The report's `cross` per clip: `overlap_before_mm` / `overlap_after_mm` per frame, their maxima and frame
+    counts, `push_cm` per foot and frame, `push_max_cm`, `lift_max_cm`, `slide_mm` (the final stance runs per foot),
+    `slide_max_mm`, `zero_push`, `crossed_frames`,
+    `passes` (each pass's overlapping frames and largest need), `ankle_miss_max_cm`.
 19. **The report.** `dress.json`'s `sneakers`: the triangles, the foot's measures, the rim's heights, the slot and the
     foot's clearance (each foot vertex's signed distance to the shoe along its normal: those over the rim, the
     ankle, count as outside).

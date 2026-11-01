@@ -736,9 +736,14 @@ def main():
     log(f"tris {rep['tris']} bones {rep['bones']} springs {springs}")
     if a.leg_fit:  # T2: the clips fitted to this body's legs (alien_leg_fit.py), before the clip edits
         import alien_leg_fit
-        rep["leg_fit"] = alien_leg_fit.fit(arm, a.leg_fit, [x for x in bpy.data.actions
-                                                            if x.name.startswith("CharacterArmature|")],
-                                           mode=a.leg_fit_mode)
+        acts = [x for x in bpy.data.actions if x.name.startswith("CharacterArmature|")]
+        bob = {}
+        if a.clip_edits:  # B1c: a clip's leg_fit_bob (alien.toml) scales its Hips' bob before the IK
+            import alien_clip_edit
+            for x in acts:
+                n = x.name.split("|", 1)[-1]
+                bob[n] = float(alien_clip_edit.settings(a.clip_edits, n).get("leg_fit_bob", 1.0))
+        rep["leg_fit"] = alien_leg_fit.fit(arm, a.leg_fit, acts, mode=a.leg_fit_mode, bob=bob)
         log(f"leg fit {json.dumps(rep['leg_fit'])}")
     if a.clip_edits:  # A1: the clips edited for the bare alien body (alien_clip_edit.py) before the export
         import alien_clip_edit
