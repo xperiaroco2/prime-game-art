@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v17"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v18"         # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -698,7 +698,7 @@ probe = [[0.0, 4.0, -13.3], [32.0, 12.0, 36.0]]
 # its own night scene does: the ship scene's cool key (-140, 38) and its moon (35, 30, the Earth's side) as the rim.
 [light.ship.sets.K1]
 title = "neutral silver (step 5a3): a lower neutral key, a dim grey ambient, a warm bounce, a back light"
-pendant_k = 0.25
+pendant_k = 0.04   # #366: x0.16 (was 0.25): the copies hang under the pendants now, as in the export
 pendant_specular = 0.12
 earth_k = 0.35
 own_probe = true
@@ -720,7 +720,7 @@ bounce_dir = [0.0, -40.0]
 
 [light.ship.sets.K2]
 title = "warmer: more of the pendants, a warm grey ambient and key, a stronger bounce"
-pendant_k = 0.4
+pendant_k = 0.064   # #366: x0.16 (was 0.4): the copies hang under the pendants now, as in the export
 pendant_specular = 0.15
 earth_k = 0.35
 own_probe = true
@@ -742,7 +742,7 @@ bounce_dir = [0.0, -40.0]
 
 [light.ship.sets.K3]
 title = "cooler: fewer pendants, a cool key and ambient, a faint bounce"
-pendant_k = 0.15
+pendant_k = 0.024   # #366: x0.16 (was 0.15): the copies hang under the pendants now, as in the export
 pendant_specular = 0.1
 earth_k = 0.4
 own_probe = true
