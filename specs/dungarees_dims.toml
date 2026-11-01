@@ -269,6 +269,10 @@ body_half_w_cm = { front = 11.0, back = 12.0 }   # her front (back) over |x| und
 strap_ray_origin_cm = { z = 117.0, y = 1.0 }     # the straps' rays start inside her chest here (x = the strap's)
 turnup_wall_cm = 0.4         # the turn-up ring's wall, and its least ease off the leg
 buckle_ring_cm = { pad = 0.4, half_h = 0.6, bar = 0.3 }   # the ring round the strap: past its edges, half height, bar
+back_follows_across = true   # G3e: the back panel follows her back across each row (bridging her spine's hollow), not
+                             # a flat board standing off her back's sides (G3d's close-ups); still one bone
+strap_top_cm = 6.0           # G3e: the strap's top over her trapezius eases to her shoulder's weights over 6 cm of arc
+shirt_follow_fade_cm = 3.0   # G3e: the shirt under the dungarees takes their weights, eased back to its own over 3 cm
 
 # --- behaviour ------------------------------------------------------------------------------------------------
 [behaviour]
@@ -425,18 +429,29 @@ tol_pct = 2.0
 [[gate2.stretch]]
 part = "back_panel"
 tol_pct = 2.0
+# The seams and the straps against her skin (the manager's option (c), G3e, art #196): a plate sewn to the band (Spine)
+# eases into Chest over its seam blend and the straps' tops follow her shoulders, so they stretch where her own trunk
+# and shoulders fold and twist (d10: 37-80 % p95 in the run and jump clips, as her belly). Linear skinning cannot bow
+# them out like cloth; the rule is that they follow her: per edge the stretch beyond her skin's at the same place in
+# the same frame (her nearest skin points, the body and the skin under the cloth), p95 within 3 %.
 [[gate2.stretch]]
 part = "bib_seam"
-tol_pct = 2.0                # the seam blend bends, never stretches
+vs_skin = true
+tol_pct = 3.0
 [[gate2.stretch]]
 part = "back_seam"
-tol_pct = 2.0
+vs_skin = true
+tol_pct = 3.0
 [[gate2.stretch]]
 part = "straps"
-tol_pct = 5.0                # bend along their length only
+vs_skin = true
+tol_pct = 3.0                # bend along their length; over the shoulder they may stretch as her skin there
 
 [gate2.pokes]
 max_count = 0                # clothes_proof.py's poke-through, every clip
+
+[gate2.shirt]
+max_count = 0                # the shirt under the dungarees stays under them (poke.json's top_under_panels, G3e)
 
 # Stations on the silhouettes: kind top / bottom (a row inside the columns u), width / front / back (a row's edges
 # inside u at height z). dim: the spec size it checks (its cm and tol_cm); body_gap (side front / back only): her

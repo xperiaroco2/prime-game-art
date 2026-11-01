@@ -522,3 +522,62 @@ class G3dSeamsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class G3eSkinShirtTest(unittest.TestCase):
+    """G3e (the manager's decisions): the seams and straps judged against her skin's stretch, the shirt under the
+    garment as a layer it must cover."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.spec = S.load_spec(SPEC)
+
+    def test_skin_excess_follows_her_skin(self):
+        rest = [(0, 0, 0), (0.01, 0, 0), (0.02, 0, 0)]
+        edges = [(0, 1), (1, 2)]
+        stretched = [(0, 0, 0), (0.0125, 0, 0), (0.025, 0, 0)]          # the garment 25 % longer
+        self.assertAlmostEqual(G.skin_excess(rest, stretched, rest, stretched, edges)[1], 0.0)   # her skin as much
+        mx, p95 = G.skin_excess(rest, stretched, rest, rest, edges)     # her skin still: all 25 % beyond it
+        self.assertAlmostEqual(mx, 25.0)
+        self.assertAlmostEqual(p95, 25.0)
+        skin = [(0, 0, 0), (0.0123, 0, 0), (0.0246, 0, 0)]              # her skin 23 %: 2 % beyond, within 3 %
+        self.assertAlmostEqual(G.skin_excess(rest, stretched, rest, skin, edges)[1], 2.0, places=6)
+        # a rigid garment over a folding skin is never beyond it; skin points closer than 1.5 mm: its own stretch
+        self.assertEqual(G.skin_excess(rest, rest, rest, stretched, edges)[0], 0.0)
+        same = [(0, 0, 0)] * 3
+        self.assertAlmostEqual(G.skin_excess(rest, stretched, same, same, edges)[0], 25.0)
+        self.assertEqual(G.skin_excess(rest, stretched, rest, rest, []), (None, None))
+
+    def test_the_seams_and_straps_are_judged_against_her_skin(self):
+        g2 = self.spec["gate2"]
+        st = {s["part"]: s for s in g2["stretch"]}
+        for name in ("bib_seam", "back_seam", "straps"):
+            self.assertTrue(st[name].get("vs_skin"), name)
+            self.assertLessEqual(st[name]["tol_pct"], 3.0)
+        for name in ("waistband", "bib", "back_panel"):   # the rigid parts keep their own 2 %
+            self.assertFalse(st[name].get("vs_skin"), name)
+            self.assertLessEqual(st[name]["tol_pct"], 2.0)
+        self.assertEqual(g2["shirt"]["max_count"], 0)
+        b = self.spec["build"]
+        self.assertTrue(b["back_follows_across"])
+        self.assertGreater(b["strap_top_cm"], 0)
+        self.assertGreater(b["shirt_follow_fade_cm"], 0)
+
+    def test_motion_rows_judge_skin_excess_and_the_shirt(self):
+        g2 = self.spec["gate2"]
+        clip = {"slip_mm": {}, "flat_mm": {}, "stretch_pct": {"bib_seam": 60.0}, "stretch_p95_pct": {"bib_seam": 40.0},
+                "skin_excess_pct": {"bib_seam": 5.0}, "skin_excess_p95_pct": {"bib_seam": 2.5}}
+        motion = {"parts": {}, "clips": {g2["clips"][0]: clip}}
+        poke = {"clips": {g2["clips"][0]: {"max_count": 0, "max_depth_m": 0.0,
+                                           "top_under_panels": {"max_count": 3, "max_depth_m": 0.008}}}}
+        rows = [r for r in GG.motion_rows(self.spec, motion, poke) if r["clip"] == g2["clips"][0]]
+        seam = next(r for r in rows if "bib_seam" in r["check"])
+        self.assertIn("beyond her skin", seam["check"])
+        self.assertEqual((seam["value"], seam["pass"]), (2.5, True))     # 40 % own, 2.5 % beyond her skin's
+        shirt = next(r for r in rows if r["check"].startswith("shirt through"))
+        self.assertEqual((shirt["value"], shirt["pass"]), (3, False))
+        poke["clips"][g2["clips"][0]]["top_under_panels"]["max_count"] = 0
+        rows = GG.motion_rows(self.spec, motion, poke)
+        self.assertTrue(next(r for r in rows if r["check"].startswith("shirt through"))["pass"])
+        other = next(r for r in rows if r["clip"] == g2["clips"][1] and r["check"].startswith("shirt through"))
+        self.assertIsNone(other["pass"])                                 # no proof for the clip: unmeasured
