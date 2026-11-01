@@ -234,6 +234,19 @@ def _below(polys, plane, gap=0.003):
     return out
 
 
+def jaw_cells(poly, n) -> list:
+    """polish n3: a jaw face's plates on one global seam family for the whole prow, so the closed nose's grids meet
+    across its pieces (HJ.plates laid each facet's grid in its own frame: 3-4 grids that did not meet on the closed
+    front): faces looking up or down rows of constant y and ends of constant x (the hull's top family); the others
+    horizontal bands (planes of constant h) with ends of constant x, or of constant y where the face looks sideways.
+    The bands' seams run on round every fold of the prow, and onto the hull's own fore-looking faces."""
+    if abs(n[2]) > 0.7:
+        r, c = S.Y, S.X
+    else:
+        r, c = S.H, (S.X if abs(n[0]) < 0.7 else S.Y)
+    return [q for _key, q in HJ._rows(poly, r, c)]
+
+
 def _plated(polys, name, under_clip=None, nocol_down=False):
     """Outer faces as the hull's plates (ship_hull_j: inset, chamfered seams, v1's silvers) and the dark under-skin.
     nocol_down: the faces looking down (n_z < -0.3, built closed) and the whole under-skin stay visual (the ramp's
@@ -250,7 +263,7 @@ def _plated(polys, name, under_clip=None, nocol_down=False):
         return _flat(f"{name}_flat", polys, "hull_silver")
     groups, under = {}, []
     for poly, n in polys:
-        for q in HJ.plates(poly, n):
+        for q in jaw_cells(poly, n):
             c = tuple(round(sum(x[k] for x in q) / len(q), 1) for k in range(3))
             mat = HJ.MATS["top"][zlib.crc32(repr(c).encode()) % len(HJ.MATS["top"])]
             groups.setdefault(mat, []).append(HJ.lay(q))
