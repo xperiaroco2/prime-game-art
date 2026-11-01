@@ -70,6 +70,8 @@ class PathsTest(unittest.TestCase):
                      "await get_tree().process_frame", '"ReflectionProbe"', "remove_child(probe)", "add_child(probe)",
                      'set_meta("ship_freed"', 'set_meta("probes_recaptured"'):
             self.assertIn(want, code)
+        after = code.split("await get_tree().process_frame", 1)[1]   # #366: the level may leave the tree meanwhile
+        self.assertRegex(after, r"^\n\tif not is_inside_tree\(\):[^\n]*\n\t\treturn\n")
         self.assertNotIn("@tool", code)        # never runs in the game's editor
         self.assertNotIn("queue_free", code)   # freed at once, before the first frame draws
 
@@ -130,6 +132,27 @@ class LayoutTest(unittest.TestCase):
             self.assertEqual(meta["earth"]["credit"], "Earth imagery: NASA")
             self.assertEqual(meta["earth"]["distance"], LAYOUT["earth"]["distance"])
             self.assertEqual(len(meta["spawns"]), 10)
+
+    def test_ship_copy_by_hash(self):
+        """#366: ship_copy rewrites a file whose bytes changed at the same size, keeps an equal one untouched and copies
+        a missing `.import` but never one that Godot's import rewrote."""
+        with tempfile.TemporaryDirectory() as tmp:
+            src, dst = Path(tmp) / "ship", Path(tmp) / "lobby"
+            (src / "a").mkdir(parents=True)
+            (src / "package.json").write_text(json.dumps({"files": ["a/x.glb", "a/y.tres"]}), encoding="utf-8")
+            (src / "a" / "x.glb").write_bytes(b"AAAA")
+            (src / "a" / "y.tres").write_bytes(b"same")
+            (src / "a" / "x.glb.import").write_text("[remap]\n", encoding="utf-8")
+            self.assertEqual(_lobby_export.ship_copy(src, dst), 2)
+            self.assertEqual((dst / "a" / "x.glb").read_bytes(), b"AAAA")
+            self.assertTrue((dst / "a" / "x.glb.import").is_file())
+            (src / "a" / "x.glb").write_bytes(b"BBBB")   # same size, other bytes
+            (dst / "a" / "x.glb.import").write_text("[remap]\nrewritten\n", encoding="utf-8")
+            keep = (dst / "a" / "y.tres").stat().st_mtime_ns
+            _lobby_export.ship_copy(src, dst)
+            self.assertEqual((dst / "a" / "x.glb").read_bytes(), b"BBBB")
+            self.assertEqual((dst / "a" / "y.tres").stat().st_mtime_ns, keep)
+            self.assertIn("rewritten", (dst / "a" / "x.glb.import").read_text(encoding="utf-8"))
 
     def test_a_leftover_refuses(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -6,6 +6,7 @@ numbers), as the ship's export (_ship_export.py)."""
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -71,13 +72,22 @@ def scene(layout: dict, request: dict, staged: dict[str, Path], folder: Path, st
     return built
 
 
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
 def ship_copy(ship_src: Path, folder: Path) -> int:
     """The ship package's files (its package.json's list) beside the lobby's, for the check only (not the lobby's
-    files); only changed files are written. Returns their count."""
+    files); only changed files are written, a change found by SHA-256 (#366: a same-size edit is still a change), each
+    file's `.import` only when missing (Godot's import rewrites it in the copy). Returns their count."""
     meta = json.loads((ship_src / "package.json").read_text(encoding="utf-8"))
     for rel in meta["files"]:
         target = folder / rel
-        if not target.is_file() or target.stat().st_size != (ship_src / rel).stat().st_size:
+        if not target.is_file() or _sha256(target) != _sha256(ship_src / rel):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ship_src / rel, target)
         imp = ship_src / f"{rel}.import"
