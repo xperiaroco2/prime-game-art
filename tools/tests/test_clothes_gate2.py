@@ -647,7 +647,7 @@ class G3eSkinShirtTest(unittest.TestCase):
         g2 = self.spec["gate2"]
         st = {s["part"]: s for s in g2["stretch"]}
         self.assertTrue(st["straps"].get("vs_skin"))
-        self.assertLessEqual(st["straps"]["tol_pct"], 5.0)   # G3h: 3 %, or 5 % for the straps (the manager's rule)
+        self.assertLessEqual(st["straps"]["tol_pct"], 7.0)   # G3h: 3 %, or 5 % for the straps; G3o: 7 % (the manager, viewed)
         self.assertFalse({"bib_seam", "back_seam"} & set(st))         # G3f: the lap replaced the seam blend
         self.assertFalse(st["waistband"].get("vs_skin"))   # the rigid ring keeps its own 2 %
         self.assertLessEqual(st["waistband"]["tol_pct"], 2.0)
