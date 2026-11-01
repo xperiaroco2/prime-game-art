@@ -116,6 +116,14 @@ tests = ["test_alien_loco_*", "test_alien_stride_*", "test_alien_headlook_*", "t
 sources = ["tools/blender/alien_poses.py", "tools/blender/alien_pose_math.py", "tools/blender/anim_sets/alien_poses.toml", "tools/blender/alien_poses_run.py", "godot/alien/pose_layers.gd", "godot/alien/pose_layers_check.gd", "godot/alien/pose_shots.gd"]  # the photo poses on the alien (#196); before light's alien_*
 tests = ["test_alien_poses_*"]
 
+[area.alien_hands]
+sources = ["tools/blender/alien_hands.py", "tools/blender/alien_hands_math.py", "tools/blender/anim_sets/alien_hands.toml", "tools/blender/alien_grip_solve.py", "tools/blender/body_dims/hand_grips.toml", "tools/blender/alien_fist_math.py", "tools/blender/alien_fist_shape.py", "tools/blender/alien_fist_envelope.py", "tools/blender/alien_fist_envelope_check.py"]  # the loco clips' hand shapes (#196, Hands H1); before light's alien_*
+tests = ["test_alien_hands_*", "test_alien_poses_*", "test_alien_grip_solve*", "test_alien_fist_*"]  # the grips are the poses' (alien_pose_math.grip_quats)
+
+[area.alien_hand_mesh]
+sources = ["tools/blender/alien_hand_geom.py", "tools/blender/alien_hand_run.py", "tools/blender/alien_hand_mesh.py", "tools/blender/body_dims/hand_dims.toml", "tools/blender/alien_finger_geom.py", "tools/blender/alien_finger_run.py"]  # the hand and wrist rebuilt in place (#196, Hands H1b); before light's alien_*
+tests = ["test_alien_hand_geom*", "test_alien_finger_geom*"]
+
 [area.alien_ttm]
 sources = ["tools/blender/alien_ttm.py", "tools/blender/alien_ttm_math.py", "tools/blender/retarget_maps/smpl_contract.toml"]  # text-to-motion on the alien (#196, option A step 2); before light's alien_*
 tests = ["test_alien_ttm_*", "test_alien_stride_*"]

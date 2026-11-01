@@ -248,6 +248,15 @@ class AlienProfileTest(unittest.TestCase):
         for k in ("facing_plus_z", "eye_pupils", "pack_floor"):
             self.assertEqual(got[k]["status"], "fail", got[k])
 
+    def test_the_pack_floor_points_an_alien_rig_to_its_profile(self) -> None:
+        # H1f: a 59-bone alien (no gill springs) checked without --profile alien failed pack_floor with no hint
+        d = alien_dump()
+        d["skeletons"][0]["bones"] = d["skeletons"][0]["bones"][:59]
+        got = alien(d, profile="pack")["pack_floor"]
+        self.assertEqual(got["status"], "fail", got)
+        self.assertIn("--profile alien", got["detail"])
+        self.assertEqual(alien(d)["pack_floor"]["status"], "pass", alien(d)["pack_floor"])
+
     def test_an_alien_facing_backwards_fails(self) -> None:
         d = alien_dump()
         d["meshes"][0]["eye_tones"]["eye_mid"][2] = -0.1  # the eyes behind the Head joint: it faces -Z
@@ -398,6 +407,53 @@ class AlienProfileTest(unittest.TestCase):
     def test_an_unknown_profile_is_refused(self) -> None:
         with self.assertRaises(ValueError):
             alien(alien_dump(), profile="dragon")
+
+
+class AlienHandMorphTest(unittest.TestCase):
+    """The run fist (art #196 H1j): one morph "fist" on the body, its weight 1 in the run clips and 0 elsewhere."""
+
+    CON = {**A_CONTRACT, "kinds": {**A_CONTRACT["kinds"], "alien": {**A_CONTRACT["kinds"].get("alien", {}),
+                                                                    "hand_morph": "fist",
+                                                                    "hand_morph_on": ["Jog_*", "Sprint_*"]}}}
+
+    def dump(self, run=1.0, other=0.0, shapes=("fist",)) -> dict:
+        d = alien_dump()
+        d["meshes"][0]["blend_shapes"] = list(shapes)
+        anims = d["players"][0]["animations"]
+        for n in list(anims):
+            w = run if n.split("|")[-1].startswith(("Jog_", "Sprint_")) else other
+            anims[n] = {**anims[n], "blend_shapes": {"Skeleton3D/x_char:fist": {"keys": 2, "min": w, "max": w,
+                                                                                "played": [w, w]}}}
+        return d
+
+    def check(self, d: dict) -> dict[str, dict]:
+        e = {**expect(), "source": "x_char.glb", "parts": ["x_char"], "bones": list(A_BONES), "bone_parents": {},
+             "rest_heads_m": {}, "height_m": None, "animations": {}}
+        return {c["check"]: c for c in _godot.evaluate(d, e, self.CON, [], textured=True, profile="alien")}
+
+    def test_keyed_in_the_run_clips_passes(self) -> None:
+        got = self.check(self.dump())
+        self.assertEqual(got["hand_morph"]["status"], "pass", got["hand_morph"])
+        self.assertEqual(got["hand_morph_keyed"]["status"], "pass", got["hand_morph_keyed"])
+        self.assertIn("Jog_Fwd", got["hand_morph_keyed"]["detail"])
+        self.assertIn("Sprint_Fwd", got["hand_morph_keyed"]["detail"])
+
+    def test_a_walk_with_the_fist_or_a_run_without_it_fails(self) -> None:
+        self.assertEqual(self.check(self.dump(other=1.0))["hand_morph_keyed"]["status"], "fail")
+        self.assertEqual(self.check(self.dump(run=0.0))["hand_morph_keyed"]["status"], "fail")
+        d = self.dump()
+        d["players"][0]["animations"]["CharacterArmature|Jog_Fwd"]["blend_shapes"]["Skeleton3D/x_char:fist"][
+            "played"] = [0.0, 0.0]  # keyed but not played
+        self.assertEqual(self.check(d)["hand_morph_keyed"]["status"], "fail")
+        d = self.dump()
+        d["players"][0]["animations"]["CharacterArmature|Walk"]["blend_shapes"] = {}  # a clip without the track
+        self.assertEqual(self.check(d)["hand_morph_keyed"]["status"], "fail")
+
+    def test_another_morph_fails_and_none_warns(self) -> None:
+        self.assertEqual(self.check(self.dump(shapes=("fist", "smile")))["hand_morph"]["status"], "fail")
+        got = self.check(self.dump(shapes=()))
+        self.assertEqual(got["hand_morph"]["status"], "warn", got["hand_morph"])
+        self.assertNotIn("hand_morph_keyed", got)
 
 
 class LoopModesTest(unittest.TestCase):

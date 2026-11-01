@@ -1499,6 +1499,231 @@ legs pose goes with any arms pose (6 x 8 = 48 pairs).
   above, is gone since p3)
   (`influence = 0`): the outline the photographer matches is the pose's own.
 
+### The loco clips' hand shapes (art #196, Hands H1)
+The loco clips carry human mocap finger motion (UAL, text to motion): the fingers claw, splay and differ clip to clip,
+and `finger_cap_deg` / `hands_relax` only cap it. `tools/blender/alien_hands.py` (headless Blender; the maths in
+`alien_hands_math.py`, no bpy) replaces it: every action's finger channels (the five chains of both hands, the
+unweighted Little's too) are removed and keyed with ready hand shapes from `tools/blender/anim_sets/alien_hands.toml`;
+every other channel (the arms and wrists) stays the clip's.
+- **The grips** are the photo poses' library (`alien_poses.toml` `[grips]`: fist, point, flat, heart, behind), reused
+  through `alien_pose_math.grip_quats` (the poses' `_fingers` calls it, so the poses are unchanged), plus the file's
+  own: `relaxed` (the fingers softly curved together, the thumb alongside) and `loose` (a loose fist). Redefining a
+  poses grip is refused.
+- **Per clip** the first `[clips]` pattern matching its Godot name (fnmatch, file order), else `[set] default`
+  (`relaxed`: Idle, Walk, Talk, Crouch, the rest); `grip`, `Left` and `Right`, or `keys` ([share 0..1, grip] or
+  [share, left, right]: Jump_Start relaxed to flat over its last 40 %); `[set] skip` the photo poses. Every key is
+  checked (`HandsError`).
+- **The check** (`--check`): on the build's own skin dump, per grip and hand, how deep a digit's skin goes into
+  another digit's bone tubes, its tip and middle into the palm's, its distal into its own base, the gaps between
+  neighbours; the rest pose's numbers are the measure's floor (`past rest`), and per clip the worst of its grips
+  (`collisions.md`).
+- **The sheets** (`--sheet --rows`): the left hand at 0.8 m (lens 85) from outside, the palm side, the thumb side and
+  the other side, a row per `grip:<name>`, `clip:<name>@<share>` or `rest`, `--sketch` beside the first row.
+
+      blender -b --factory-startup --python-exit-code 1 --python tools/blender/alien_hands.py -- --blend <char>.blend           --apply <dir> --name <char> [--glb] --check <dir>/check --sheet <png> --rows clip:Idle@0.5,grip:relaxed
+
+H1 step 1 (`<raw>/research/2026-10-22-roster/design/pilot3d/hands/h1/`, on loco1's builds, the old hands): 37
+actions keyed per character; past the rest floor relaxed 1.61 cm (the thumb's tip into the palm), loose 1.83 (the
+thumb into the index), flat 1.65, fist 5.08 (the long finger tubes curl into rings). The grips are to be retuned on
+the new hand mesh.
+
+**The hand mesh (not done in step 1).** `alien_cage.py` at HEAD does not rebuild S4b's body: with S4b's sources
+(`--src` S1c, `--target` b3d1) it makes 13,369 vertices against S4b's 9,814, so a cage rebuild would reshape the whole
+body and break every index-based step after it (the female variants, the clothes' fit). The remade hands have to be
+moved onto S4b's own hand vertices (the same topology), not rebuilt.
+
+**The hand and wrist rebuilt in place (H1b).** The spec is `tools/blender/body_dims/hand_dims.toml` (every length a
+share of the side's Hand bone, so one table serves A and B). `alien_hand_mesh.py dump` (headless Blender) writes the
+hand region (the LowerArm, the Hand and the finger chains' vertices, weights, edges, the bones; `--bend 30` the region
+with each Hand bent 30 degrees each way); `alien_hand_run.py build` (plain Python, `alien_hand_geom.py`) computes the
+moves and transfers them to dressed characters by rest position; `alien_hand_mesh.py apply` moves the vertices and
+refuses a changed topology. The wrist band (from the forearm's last clean ring, -0.55, to the palm, +0.62) is relaxed
+by Taubin rounds with its ends held, then scaled across and through about a smooth centre line so its sections follow
+the forearm's own, 0.95 x 0.86 of it at the joint, the palm's own (monotone eases: no pinched neck, no lump); each
+finger's radius about its chain is mapped to its root's (the mean of both hands) tapering 12 % (the thumb 15 %) to a
+dome over the tip, so the knuckle bulges and the thin ends go. Sections are cut by slicing edges (`slice_points`);
+`alien_hand_run.py table` gives the joint's width, thickness, area and deepest fold (the crease, against the hull) at
+rest and bent. The wrist's vertex rows: moving keeps the vertex count, so the band's largest gap along the arm stays
+about 5 mm (6.3 before); more rows need new vertices, which breaks the index-based steps after the body (f1, f2, the
+clothes' fits): a later choice. The relaxed grip curls more from the index to the outer finger with the thumb alongside
+the index; the loose fist curls more toward the outer finger with the thumb laid over the index.
+
+**The grips tuned at the clip's frame (H1f).** A sheet row `clip:<name>@<share>~<grip>` holds that frame of the clip
+and gives its fingers the grip instead, so a tune grid shows variants where a clip shows the fault (with `grip:<name>`
+rows at rest for the clear views). The relaxed curl is led by the knuckles with the tips nearly straight and the fingers
+closer (spread 6): bent tips with spread 12 read as a claw from the side. The loose fist folds the fingers onto the palm
+(72/90/30 to 84/98/32) and rolls the thumb only 20 degrees (swung 70), so it lies diagonally over the folded index and
+middle: H1c's 72/62/14 with the thumb rolled 42 brought the thumb's tip to the index's tip, an "O" in the Jog clip.
+
+**The wrist rings (H1c).** `alien_hand_mesh.py rings --spec hand_dims.toml` cuts every skin edge of the band
+(`[rings]`: -0.75 to +0.62 Hand lengths from the wrist, one cut) with bmesh: the new vertices sit on the old surface
+(the rest shape does not change), their weights, UVs and shape keys interpolated, appended after the old vertices, so
+every old index and position stays and index-based steps that only read old vertices keep working; then the
+LowerArm/Hand split is smoothed across the band only (8 rounds; 24 raised the up-bend's fold, 2 cuts gave nothing
+more). A11 and B13 do not share a topology (10262 and 10198 vertices), so each body gets its own cut (about 800 new
+vertices) and a dressed character takes its body's cut by rest position (`--edges-in`). `alien_hand_mesh.py diff`
+checks the whole body: per object over the old indices, the largest move and weight change outside the hand region
+(0). The fold is measured on six sections, each square to its own segment: the forearm behind the joint (-15 mm),
+the bisector through it (-7.5, 0, +7.5) and the bent hand past it (+15, +30). H1b sliced the palm parallel to the
+bisector, which cut the rigid palm at a slant through the thumb's cleft and read it as a 4 mm crease.
+`alien_hands.py --video` shows the hand in Walk and Jog from the front and from its side, before | after.
+
+**The palm relaxed (H1d, H1e).** H1b's moves left a ridge across the palm and a dent at the thumb's root. H1d's pass
+around the ThumbMetacarpal bone missed the ridge, which runs across the palm's centre. `alien_hand_run.py relax` now
+works on the palm (`[palm]` of `hand_dims.toml`): the vertices within `radius` Hand lengths of the palm's centre (the
+centroid of the side's Hand-dominant vertices) or within `thumb_radius` of the ThumbMetacarpal bone (the thumb's root),
+at full strength inside `inner` of that and easing to nothing at its edge, leaving out the fingers, the thumb past its metacarpal and the forearm. It runs `rounds` Taubin rounds on them,
+then blends in a share `fit` of a smooth surface: per side of the palm's plane (its two widest axes; the normal the
+thinnest), a least-squares quadric of the height over the plane within `fit_radius`, each vertex's gap to it capped
+at 3 mm so the palm's rim stays. It writes the moves for the body and its dressed character by rest position, and
+`alien_hand_mesh.py apply` applies them: no topology change, every vertex outside the region unchanged. Its report
+gives the bump measure (each vertex's distance to its neighbours' centroid) before and after; the wrist's fold table
+(bent 30 degrees each way) must stay at or below `fold_max_mm`, because the region reaches the band's end.
+
+**The fingers as defined tubes (H1i).** The engineer saw the fingers "bitten by bees" (wavy, lumpy, worst on the
+thumb, clearest from above). Measured (`alien_finger_run.py measure`: each vertex's radius about the finger's centre
+against a local least-squares trend over 8 mm, the taper, an off-centre axis and the section's ellipse taken out):
+the body's own finger mesh carried 1.2-3.0 mm bumps before any hand step (the d79 character); H1b's rebuild scaled
+each vertex's radius by a smoothed mean, so every bump stayed; H1g's finger rings (bmesh `smooth` 1.0 on the new
+vertices) added 0.3-1.2 mm at the joints (axolotl, right hand: thumb 1.8, index 1.2, middle 1.2, ring 2.2 mm).
+`alien_finger_run.py build` now defines each digit's surface instead (`alien_finger_geom.py`): the chain's joints with
+the corners rounded as its axis, a smooth centre offset (a quadratic fitted to 3 mm slices' circle centres), one
+ellipse per digit, the radius of the drawing (`[fingers]`/`[thumb]` of `hand_dims.toml`: the root held to `root_at`,
+the taper to a round dome at today's tip), every vertex placed on it at its own position along and around, the full
+vertices relaxed along it so the rings space evenly, the knuckle blended over `ramp`; past the ramp the chain weights
+step from bone to bone over +-`joint_blend` of the radius at each joint. The bumps fall to 0.01-0.15 mm (`wave_max_mm`
+0.3 fails the build); `alien_hand_mesh.py apply` takes the moves and the weights (no vertex added, nothing outside the
+hand moved). `<out>/profile_<side>.png` plots each digit's radius along it per angle sector, before | after.
+
+**The run fist as a morph (H1j).** The engineer chose option C (2026-10-31): the run's loose grip pressed into one fist
+by a shape, not by bones alone. `alien_hands.py --apply` runs `alien_fist_shape.add` after the grips when the hands file
+has a `[fist]` table: in the `grip` pose (then `loose`; since H1r `runfist`) each digit gets a chain of round cones
+fitted to its own tube (stations at rest: the proximal's 15 %, each joint, the tip dome's centre on the distal's line
+and taper; the thumb from its proximal on, its metacarpal pad only pushed out), a plain union along a chain (no knuckle
+bulge) and a smooth union between digits (`k_mm`, the thumb `k_thumb_mm`). Every finger vertex goes onto that surface
+(pushed out, or pulled in from up to `pull_mm` outside), faded into the palm by its finger weight; buried deeper than
+`hide_mm`, it stays under it; `relax` rounds even it out along the surface (this field route, H1l's envelope and H1r's
+local zone were deleted in H1u: the contact route below is the only one). The posed moves go back to rest by the inverse
+skinning: the body's shape key `fist` (`alien_fist_math.py` the weights, `test_alien_fist_math.py`). The clips' weights
+come from the grip plan (`weight_plan`: 1 where the grip is `[fist] grip`, now `runfist`, eased like the grip keys),
+stored on the body as `fist_weights`; `alien_loco._export` exports the shape key as the GLB's one morph target
+(`export_morph` on, `export_morph_animation` off: the exporter's shape-key actions merge across clips) and
+`alien_fist_math.key_weights` writes a `weights` channel into every animation, sampled on its own frames: the 24 Jog,
+Sprint and Strafe clips at 1, the other 13 (Walk, Idle, Crouch, Jump, Talk) at 0. `godot-check --profile alien` checks
+it (`docs/contract.md`). H1j's first shape (k 14 / 10 mm) is exact on its surface (0.001 mm) but does not yet read as
+one mass in Godot's Jog close-ups: the fingers stay three rounded tubes with gaps, and the index's curl still shows a
+hook from the front (the webs bridge only gaps narrower than about k); H1h's prototype, which pushed and smoothed every
+inside vertex, closed more. Tuning `k_mm` (or a palm in the union) is the next step.
+
+**The run fist by an envelope (H1l).** Five rounds of tuning the field (H1j, H1k) failed for one reason: moving
+each finger vertex to the nearest point of one merged solid leaves the facing sides of two fingers nowhere to go. In
+every cross-section a closed loop (one finger's skin) cannot cover an arc of the merged outline once, so the facing
+sides fold (H1k: 300-570 hidden vertices per hand, creases and spikes). `[fist] route = "envelope"`
+(`alien_fist_envelope.py`, numpy inside Blender) builds the fist's surface first and wraps the skin onto it:
+- `env_mode = "merge"`, the smooth union of the fitted digits (`env_k_mm`), the chord cores and the palm box
+  (`env_k_core_mm`), the thumb (`env_k_thumb_mm`): still folds (axolotl, k 22: 169-183 folded triangles per hand
+  after the relax);
+- `env_mode = "press"` (the pick): each digit stays its own solid, inflated (`env_inflate`) with its own curl
+  filled by its chord cone (`env_core`), clipped against the other digits at their bisector less half the slit
+  (`env_gap_mm`) and off the palm box (`env_palm`), the clip's lip rounded over `env_lip_mm`: fingers pressed
+  together with a thin dark line between them, the thumb lying across them. Each vertex follows the digit carrying
+  most of its weight, so a finger's skin maps onto its own solid;
+- `wrap`: the shrink-wrap (Newton steps along the field's gradient), then `wrap_rounds` of edge springs towards
+  the posed edge lengths, taken in the tangent plane and re-projected, with a fold guard that undoes any step turning
+  a triangle over (a uniform umbrella instead slides a pinned tube's skin towards its rim and folds it);
+- `metrics`: folded triangles (normal against the envelope's), the shortest edge against the median, the vertices'
+  distance from the envelope (bumps), the facets' sag. `test_alien_fist_envelope_blender.py` checks them on
+  synthetic tubes: merged folds, pressed does not.
+H1l's grid on the axolotl (`D:/prime-art-raw/2026-10-31-hands/h1l/e2/`): press at inflate 1.4 reads as a clean
+cartoon fist in Blender (three pressed fingers, the thumb across the front), 33-36 folded triangles per hand left
+(from 84-86 bare; the posed mesh's own shortest edge is 0.09 of the median, so the brief's 30 % bound fails before any
+move); the index's curl still shows a small dark notch from the thumb's side.
+
+**The morph's lead (H1m).** Blending the grip relaxed -> loose with the morph in step showed a ring at 0.35-0.65: the
+half-curled index met the thumb with a hole between them. `[fist] lead` (0..1, default 1 = in step) makes the morph
+run ahead inside a clip: `weight_plan` keys it full at `lead` of each ramp into the fist grip and leaves 1 only at
+`1 - lead` of each ramp out (`lead = 0.5`). It acts on grip ramps keyed inside a clip (the review's ReviewBlend); a
+crossfade between two clips in the game lerps the morph and the bones by one weight. **It does not remove the ring:**
+H1m's Blender blend grid (`D:/prime-art-raw/2026-10-31-hands/h1m/blend/`; in step, morph lead 0.5, thumb lag 0.4,
+both) shows the ring at 0.5 and 0.65 in every schedule, because it is the index's own half curl closing on itself,
+not the thumb or the morph; the fix belongs to the grip's path (the index's joints curling in another order). H1m's fold grid (`D:/prime-art-raw/2026-10-31-hands/h1m/g1/`):
+`env_core` 1.0 / 1.1, `env_k_core_mm` 18 and a thumb shift of 2-3 mm all add folds (41-47 per hand against p2's
+33-36); the folds sit inside single fingers (index, middle, ring), not on the webs: a line across the inner
+crease of each finger's curl, under the surface (seen only in x-ray, `g2/folds_axolotl.png`); a local umbrella on
+them removed none. The dark notch by the index's curl, seen from the thumb's side, is not a fold. p2 stays.
+
+**The grip's path (H1n).** The ring goes when the fingers curl tips first. `[fist] curl` [tip_to, base_from] and
+`thumb` [from, to] (shares of a ramp; default [1, 0] and [0, 1] = every joint in step) make `keyed()` add extra keys
+to each ramp into or out of the fist grip (`stagger_keys`): into it, the Intermediate and Distal joints reach the
+fist grip at `tip_to`, the Proximal ones leave the old grip only at `base_from`, the thumb leaves at `from` and
+arrives at `to`; out of it, the same path backwards. Set to `curl = [0.6, 0.4]`, `thumb = [0.6, 1.0]`: at half way
+the hand is an open C with the fingers tucked, at 0.65 a closing C, at 0.8 nearly a fist. H1n's Blender grids
+(`D:/prime-art-raw/2026-10-31-hands/h1n/r1/`, `r2/`): knuckles first, or the thumb in step or early, still ring at
+0.5-0.65, and so does `lead` 1. **Not yet seen in Godot on the axolotl:** H1n's Godot ReviewBlend sheet
+(`h1n/sheets/blend.png`) was read as "no ring at 50 % on either character", but H1o found the axolotl's close-ups
+byte-identical across H1m, H1n and H1o although the GLBs differ (a stale `godot/import/axolotl_review.glb`, or two
+runs importing the same name at once); only the chameleon's render was live. A Godot check of the path needs a GLB
+under a new file name (H1p: `<c>_review_h1p.glb`). Like `lead`, the path acts on ramps keyed inside a clip only: the game's Walk/Jog switch is a 0.15 s
+crossfade (`XFADE_S` in prime-game's `character_rig.gd`) that blends every bone by one weight, so the ring can still
+flash for about 0.05 s there; removing that needs a transition clip or a per-bone crossfade in the game.
+
+**Denser hands (H1p), reverted (H1r).** H1p cut every hand-only skin face once along both directions (about 3.4k more vertices per hand) to smooth the wrap's facets; the wrap's slits and lumps stayed (205-276 folded triangles per hand), and H1q's bone curl with a small corrective builds on H1i's mesh without it (0-3 flips per hand). H1r removed the `dense` step and its check.
+
+**The fist by bones and a small corrective (H1q).** The denser mesh did not help. The defects came from the wrap
+itself: skin pressed onto an inflated outer shell (deltas up to 28 mm) gave a slit at the index's curl, lumpy
+knuckles, a nub top and 205-276 folded triangles per hand. So the bones now make the fist: `[grips.loose]`'s middle
+and tip joints are curled further (about 98 and 30 degrees), which puts the tips into the palm. `[fist] route =
+"contact"` (`alien_fist_envelope.contact`) only fixes where the tubes touch:
+- the skin goes onto the digits' smooth union (`c_k_mm`, the thumb's `c_k_thumb_mm`) wherever it lies inside it,
+  such as a gap between touching fingers or the valley between two knuckles;
+- skin inside a neighbouring digit, or more than `c_hide_mm` inside the union, keeps its posed place and sinks inside
+  the volume;
+- the moves are capped at `c_cap_mm`, then smoothed as a field (`c_smooth` Laplacian rounds on the moves, never on the
+  positions; the rim is held).
+
+On H1i's mesh (not H1p's dense one) the morph moves at most about 3.6 mm (`D:/prime-art-raw/2026-10-31-hands/h1q/`).
+The morph turns over 0-3 triangles per hand. The bones' own skin has 11-18 triangles per hand that face against the
+union. The grid rejected fuller base curls (88-92 degrees) and a thumb along the index's side: both left a thumb nub
+and a wider index coil. Still open: seen from the thumb side, the index's coil stays an open loop. Filling it would
+take more than the cap (the targets reach 10-14 mm).
+
+**The run fist's own grip and a local zone (H1r).** H1q had curled the solved `[grips.loose]` in place, which broke
+the solve's check (`test_alien_grip_solve.py`: the tip joint <= 15). The run now has its own grip, `[grips.runfist]`
+(H1q's curls), used by Jog, Sprint, Strafe and `[fist] grip`; `loose` is the solve's again. The contact route can
+give the index-thumb contact zone its own cap: `c_local_r_mm` > 0 makes a mask (1 on the index's middle and tip
+segments and the thumb's tip, falling to 0 by a smoothstep over that distance, so the palm under them is in it), and
+there the raw move comes from an envelope with `c_local_cap_mm` and `c_local_hide_mm`, optionally with the index's
+curl filled by its chord cone (`c_local_core`, over `c_local_k_core_mm`); the two moves blend by the mask before the
+smoothing. Off by default. H1r's grid (`D:/prime-art-raw/2026-10-31-hands/h1r/r1/`): a cap of 12 or 15 mm over 8 or
+14 mm changes nothing visible (the largest move 2.4 -> 2.6 mm on the axolotl): the cap does not bind, because the
+few raw targets over 10 mm are averaged away by the smoothing and the coil's hole has no target inside the union;
+the chord fill moves the zone up to 4.6-5.4 mm and narrows the hole without closing it, at 36-57 triangles against
+the surface per hand (19-21 without).
+
+**The thumb across the curl (H1t).** No index curl alone closed the coil (H1s): its open side is the curl's own
+mouth. `[grips.runfist]` now curls the index a little tighter (88/102/34) and lays the thumb across that mouth
+(`Thumb` 70/15/60, `ThumbTurn` [90, 45]): the thumb's pad covers the loop from the thumb side and its tip rests on
+the fingers' front, the cartoon fist's convention. Found by a rigid-thumb search (the thumb's skin moved by its
+bones against the posed fingers, targets on the loop's side) and judged on the real mesh with the `contact` morph
+unchanged: rays through the loop from the thumb side hit thumb skin 21/45 (axolotl) and 39/45 (chameleon), against
+0/45 before. A thumb laid under the fingers' middle segments (the real fist) does not cover it: this hand has no
+thenar mound and its thumb is too short to reach the middle finger. The thumb sinks 6-7 mm into the index's side at
+the grip (clay pressed together; no poke-through in the close-ups).
+
+**The thumb tucked in (H1u).** H1t's thumb stuck out past the first-person outline as a ball (the critic, 2026-11-01).
+The review driver now measures each thumb segment's skin projected outside the outline of H1q's whole hand together
+with the row's own fingers and palm (first person in Jog_Fwd, back and front views, orthographic). The pick bends the
+thumb's middle joint 15 -> 25 and its tip 60 -> 75 (`Thumb` 70/25/75, `ThumbTurn` [90, 45]): the tip sits 1.7
+(axolotl) and 2.0 mm (chameleon) past the first-person outline, J 6.1 and 6.3. The cost: rays through the index loop
+from the thumb side hit thumb skin 7/45 on the axolotl (5 deep; J 21/45, 2 deep) and 25/45 on the chameleon (none
+deep). No pose of this thumb meets both at once (grids g1, g2: 58 rows): covering the loop's side mouth puts the
+thumb beside the index, and wherever the axolotl's loop is covered (20/45 or more) its tip is 6-8 mm past the
+first-person outline. In the back view any thumb laid across the mouth stands 13-15 mm past H1q's outline (a
+thumb's thickness). The swing (45 -> 55-60) and the metacarpal (70 -> 60) alone made both worse; the two act on the
+same axis here (equal rows). The field, envelope-wrap and local routes were deleted; `contact` is the only route
+(`[fist] route`, the default). `[grips.runfist]` has its own spec entry (`body_dims/hand_grips.toml`: limits and the
+thumb's sink, 7.5 mm at most) and `test_alien_grip_solve.py` pins it and its use by Jog, Sprint and Strafe.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]

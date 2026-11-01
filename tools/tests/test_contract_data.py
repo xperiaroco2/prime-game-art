@@ -127,9 +127,18 @@ class ContractTest(unittest.TestCase):
         for kind in ("body", "clothing", "accessory", "prop"):
             self.assertNotIn("fingers_unweighted", kinds[kind], kind)
         self.assertEqual(kinds["alien"]["budget"], "character")
-        own = ("budget", "bones", "spring_parent", "spring_sets", "head_top_max_m", "fingers_unweighted")
+        own = ("budget", "bones", "spring_parent", "spring_sets", "head_top_max_m", "fingers_unweighted", "hand_morph",
+               "hand_morph_on")
         same = {k: v for k, v in kinds["alien"].items() if k not in own}
         self.assertEqual(same, {k: v for k, v in kinds["body"].items() if k not in ("bones", "budget")})
+
+    def test_the_alien_may_carry_the_run_fist_morph(self) -> None:
+        # the engineer's yes to option C (art #196, H1j): one hand morph, weight 1 in the run clips
+        kinds = self.contract["kinds"]
+        self.assertEqual(kinds["alien"]["hand_morph"], "fist")
+        self.assertEqual(kinds["alien"]["hand_morph_on"], ["Jog_*", "Sprint_*", "Strafe_*"])
+        for kind in ("body", "clothing", "accessory", "prop"):
+            self.assertNotIn("hand_morph", kinds[kind], kind)
 
     def test_the_alien_carries_whole_spring_sets_under_head_and_a_head_top_cap(self) -> None:
         # the engineer, art #196 comment 6374319309
