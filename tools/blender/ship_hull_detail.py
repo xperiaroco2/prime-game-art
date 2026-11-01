@@ -266,22 +266,70 @@ def _stringer(r, a, y0, y1, w=0.07, top=1.028):
                    (t[0] * w / 2, 0, t[2] * w / 2))
 
 
-def _vane(a, ri, ro, y0, yi, yo, th=0.03, twist=35.0):
-    """A stator vane at angle a (deg): a thin twisted plate from the hub (ri, y0..yi) to the wall (ro, y0..yo)."""
+# n3: the stator blades' aerofoil (chord c 0..1 from the leading edge, thickness s x th): a round bevelled leading edge
+# (its three faces the rim-lit edge, ext_blade_edge), a fat front third, a thin trailing edge
+FOIL = [(0.0, 0.0), (0.035, 0.36), (0.12, 0.5), (0.35, 0.47), (0.7, 0.28), (1.0, 0.07),
+        (1.0, -0.07), (0.7, -0.24), (0.35, -0.4), (0.12, -0.44), (0.035, -0.32)]
+FOIL_EDGE = (10, 0)   # faces starting at these loop indices: the leading edge's bevel (both sides of its nose)
+
+
+def _blade(a, ri, ro, y0, chord, pitch, th, n=6):
+    """n3: a stator blade at angle a (deg) from the hub (ri) to the wall (ro): an aerofoil section (FOIL) swept along
+    the radius in n sections, its chord (c0, c1), pitch from the axis (p0, p1 deg: the twist) and thickness (t0, t1)
+    blended root to tip; the leading edge deep (at y0, toward the glowing floor), the trailing edge out. Returns
+    {"body": mesh, "edge": mesh} (edge: the leading edge's bevel, the rim the throat's glow lights)."""
     u = (math.cos(math.radians(a)), 0.0, math.sin(math.radians(a)))
     t = (-u[2], 0.0, u[0])
-    tw = math.radians(twist)
-    p = (t[0] * math.sin(tw), math.cos(tw), t[2] * math.sin(tw))      # along the plate (mostly +y)
-    w = (t[0] * math.cos(tw), -math.sin(tw), t[2] * math.cos(tw))     # across it
-    out = []
-    for s_hi in (0, 1):
-        for rad in (0, 1):
-            for side in (-1, 1):
-                rho = (ri, ro)[rad]
-                s = (yi, yo)[rad] - y0 if s_hi else 0.0
-                base = (u[0] * rho, y0, u[2] * rho)
-                out.append(tuple(base[k] + p[k] * s + w[k] * side * th / 2 for k in range(3)))
-    return _box8(out)
+    m = len(FOIL)
+    v = []
+    for i in range(n):
+        k = i / (n - 1)
+        rho = ri + (ro - ri) * k
+        c = chord[0] + (chord[1] - chord[0]) * k
+        p = math.radians(pitch[0] + (pitch[1] - pitch[0]) * k)
+        w = th[0] + (th[1] - th[0]) * k
+        d = (t[0] * math.sin(p), math.cos(p), t[2] * math.sin(p))       # the chord: leading edge to trailing edge
+        nn = (t[0] * math.cos(p), -math.sin(p), t[2] * math.cos(p))     # the section's thickness direction
+        base = (u[0] * rho, y0, u[2] * rho)
+        for cc, ss in FOIL:
+            v.append(tuple(base[j] + d[j] * cc * c + nn[j] * ss * w for j in range(3)))
+
+    def nrm(q):
+        a0, a1, a2 = (v[q[0]], v[q[1]], v[q[2]])
+        e1 = [a1[j] - a0[j] for j in range(3)]
+        e2 = [a2[j] - a0[j] for j in range(3)]
+        return (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
+
+    def ctr(q):
+        return [sum(v[i][j] for i in q) / len(q) for j in range(3)]
+    body, edge = [], []
+    for i in range(n - 1):
+        mid = [sum(v[i * m + j][k] for j in range(m)) / m for k in range(3)]   # inside the section
+        for j in range(m):
+            q = (i * m + j, i * m + (j + 1) % m, (i + 1) * m + (j + 1) % m, (i + 1) * m + j)
+            c, nq = ctr(q), nrm(q)
+            if sum(nq[k] * (c[k] - mid[k]) for k in range(3)) < 0:   # turned away from the section's middle
+                q = q[::-1]
+            (edge if j in FOIL_EDGE else body).append(q)
+    for i, sign in ((0, -1.0), (n - 1, 1.0)):   # the caps: the root's toward the hub, the tip's toward the wall
+        q = tuple(i * m + j for j in range(m))
+        nq = nrm(q)
+        if sum(nq[k] * u[k] for k in range(3)) * sign < 0:
+            q = q[::-1]
+        body.append(q)
+    return {"body": (v, body), "edge": (v, edge)}
+
+
+def _spinner(r, fl):
+    """n3: the spinner in depth: a dark collar ring standing off the floor, a shadow groove, a chrome band, a long
+    cone in two tones ending in pod_ring's small hot tip (fl + 0.31)."""
+    collar = H._lathe_y([(0.0, fl - 0.12), (0.235 * r, fl - 0.12), (0.235 * r, fl - 0.04), (0.226 * r, fl - 0.02),
+                         (0.205 * r, fl - 0.02), (0.205 * r, fl + 0.0), (0.0, fl + 0.0)], POD_SEGS)
+    band = H._lathe_y([(0.0, fl + 0.0), (0.212 * r, fl + 0.0), (0.212 * r, fl + 0.045), (0.2 * r, fl + 0.06),
+                       (0.0, fl + 0.06)], POD_SEGS)
+    cone = H._lathe_y([(0.0, fl + 0.06), (0.192 * r, fl + 0.06), (0.17 * r, fl + 0.13), (0.125 * r, fl + 0.21),
+                       (0.075 * r, fl + 0.27), (0.04 * r, fl + 0.3), (0.0, fl + 0.312)], POD_SEGS)
+    return collar, band, cone
 
 
 def _bridge(r, mate, y0, y1, hd=0.22, hw=0.46, ch=0.06):
@@ -347,19 +395,24 @@ def nozzle_pod(args: dict, layout: dict) -> list:
                     _ring([(0.719 * r, y1 - 0.012), (0.712 * r, y1), (0.69 * r, y1)], _back),
                     _ring([(0.66 * r, y2), (0.64 * r, y2), (0.633 * r, y2 - 0.012)], _back),
                     _ring([(0.607 * r, y2 - 0.012), (0.6 * r, y2), (0.58 * r, y2)], _back))
-    # the hub a pointed spinner (n1 b: a round dome with a big lit tip read as an eye), its small hot tip: pod_ring
-    hub = H._lathe_y([(0.22 * r, fl - 0.12), (0.215 * r, fl + 0.0), (0.18 * r, fl + 0.13), (0.12 * r, fl + 0.24),
-                      (0.05 * r, fl + 0.31), (0.0, fl + 0.31)], POD_SEGS)
-    # the vanes wide blades widening to the wall (n1 b: thin ones read as a starburst's spikes)
-    vanes = [_vane(360.0 * k / 12 + 15.0, 0.2 * r, 0.565 * r, fl - 0.08, fl + 0.12, fl + 0.27) for k in range(12)]
+    # n3: the spinner in depth (collar, groove, chrome band, two-tone cone); the stator blades real aerofoils, twisted
+    # 46 deg at the hub to 30 at the wall, bevelled leading edge rim-lit by the glow (n2's flat plates read as a fan
+    # icon's cut-outs on the teal disc)
+    collar, sband, cone = _spinner(r, fl)
+    blades = [_blade(360.0 * k / 12 + 15.0, 0.19 * r, 0.57 * r, fl + 0.035, (0.2 * r, 0.31 * r), (46.0, 30.0),
+                     (0.055 * r, 0.03 * r)) for k in range(12)]
     smooth = {"pod_mount": 40.0, "pod_collar": 40.0, "pod_housing": 40.0, "pod_bell": 40.0,
-              "pod_throat": THROAT_SMOOTH_DEG, "pod_hub": 40.0}
+              "pod_throat": THROAT_SMOOTH_DEG, "pod_hub": 40.0, "pod_spinner_band": 40.0,
+              "pod_spinner": 40.0, "pod_vanes": 50.0, "pod_vane_edges": 50.0}
     parts = [_smooth(L.part("pod_shell", *shell, "hull_silver")), L.part("pod_mount", *mount, "hull_silver"),
              L.part("pod_collar", *collar, "hull_dark"), L.part("pod_ribs", *L.merge(*ribs), "ext_silver_c"),
              L.part("pod_housing", *housing, "ext_silver_c"), L.part("pod_bell", *bell, "ext_frame"),
              L.part("pod_throat", *throat, "ext_nozzle_inner", solid=False),
              L.part("pod_steps", *steps, "ext_frame", solid=False),
-             L.part("pod_hub", *hub, "ext_frame"), L.part("pod_vanes", *L.merge(*vanes), "ext_frame")]
+             L.part("pod_hub", *collar, "ext_frame"), L.part("pod_spinner_band", *sband, "ext_chrome"),
+             L.part("pod_spinner", *cone, "ext_blade"),
+             L.part("pod_vanes", *L.merge(*[b["body"] for b in blades]), "ext_blade"),
+             L.part("pod_vane_edges", *L.merge(*[b["edge"] for b in blades]), "ext_blade_edge", solid=False)]
     for p in parts:
         if p["name"] in smooth:
             p["smooth_deg"] = smooth[p["name"]]
