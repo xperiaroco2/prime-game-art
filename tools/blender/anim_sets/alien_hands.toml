@@ -37,14 +37,16 @@ ThumbTurn = [62.1, 74.5]
 [grips.runfist]  # the run (Jog, Sprint, Strafe) and the fist morph's pose: the solved loose grip with the middle and
                  # tip joints curled further (H1q; solved 87.5-90.9 / 12.6-15), the tips into the palm, so the bones
                  # alone make the fist (H1q's grid: fuller base curls and a thumb along the index's side left a thumb
-                 # nub and a wider index coil). Its own grip so the solved `loose` stays the solve's (H1r)
-Index = [83.3, 97, 32, -1.4]
+                 # nub and a wider index coil). Its own grip so the solved `loose` stays the solve's (H1r). H1t (the
+                 # cartoon fist): the index curled tighter and the thumb laid across the index curl's side mouth, its
+                 # tip onto the fingers' front, so it covers the open loop (H1t's grid g2, row J)
+Index = [88, 102, 34, -1.4]
 Middle = [67.3, 98, 30, 12]
 Ring = [67.5, 98, 30, 1.1]
 Little = [67.5, 98, 30]
 mirror = true
-Thumb = [30.4, 66.4, 14.8]
-ThumbTurn = [62.1, 74.5]
+Thumb = [70, 15, 60]
+ThumbTurn = [90, 45]
 
 [clips."Jog_*"]
 grip = "runfist"

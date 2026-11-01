@@ -1699,6 +1699,16 @@ few raw targets over 10 mm are averaged away by the smoothing and the coil's hol
 the chord fill moves the zone up to 4.6-5.4 mm and narrows the hole without closing it, at 36-57 triangles against
 the surface per hand (19-21 without).
 
+**The thumb across the curl (H1t).** No index curl alone closed the coil (H1s): its open side is the curl's own
+mouth. `[grips.runfist]` now curls the index a little tighter (88/102/34) and lays the thumb across that mouth
+(`Thumb` 70/15/60, `ThumbTurn` [90, 45]): the thumb's pad covers the loop from the thumb side and its tip rests on
+the fingers' front, the cartoon fist's convention. Found by a rigid-thumb search (the thumb's skin moved by its
+bones against the posed fingers, targets on the loop's side) and judged on the real mesh with the `contact` morph
+unchanged: rays through the loop from the thumb side hit thumb skin 21/45 (axolotl) and 39/45 (chameleon), against
+0/45 before. A thumb laid under the fingers' middle segments (the real fist) does not cover it: this hand has no
+thenar mound and its thumb is too short to reach the middle finger. The thumb sinks 6-7 mm into the index's side at
+the grip (clay pressed together; no poke-through in the close-ups).
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]
