@@ -248,7 +248,7 @@ class LobbyLayoutTest(unittest.TestCase):
 
     def test_less_copper_and_a_lighter_ceiling(self) -> None:
         """Step 3: the engineer's notes on 2c: a dark metal for the frames, the copper desaturated, the vault lighter."""
-        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v17")   # #366 (step 5c: v16)
+        self.assertEqual(self.layout["raw_dir"], "lobby/hall/v18")   # #366 c (#366: v17, step 5c: v16)
         mats = lobby_layout.look_materials(self.layout, "S4")
         metal, pil = mats["lobby_metal"]["rgb"], mats["lobby_pilaster"]["rgb"]
         self.assertLess(max(metal), max(pil))   # the frames' metal darker than the pilasters' shaft, same hue
@@ -651,6 +651,31 @@ class LobbyLayoutTest(unittest.TestCase):
         kept = {p[0] for p in place}
         self.assertFalse(kept & set(drop))
         self.assertIn("skin_top", kept)
+
+
+class ShipLightCopiesTest(unittest.TestCase):
+    """#366: hall.gd's _ship_light places the ship-only copies of the pendants and the Earth's light by their local
+    transform under the same parent (_rig) as their sources. A global_transform there is identity off the tree (the
+    shoot, the grids and the video set the scene up in SceneTree._initialize), which put the copies at the floor's
+    centre aiming north in the shots while the export, assembled inside the tree, hung them under the pendants. The
+    code path is pinned as source (a Godot run would need a window; docs/lobby.md "Follow-up #366")."""
+
+    def test_the_copies_keep_their_source_lights_place(self) -> None:
+        src = (common.ROOT / "godot" / "lobby" / "hall.gd").read_text(encoding="utf-8")
+        body = src[src.index("func _ship_light("):]
+        body = body[:body.index("\nfunc ", 1)]
+        code = "\n".join(line.split("#")[0] for line in body.splitlines())   # the code, not its comments
+        self.assertNotIn("global_transform", code, "a global transform read or set off the tree is identity")
+        copy_loop = body[body.index("lt.duplicate()"):body.index("own_probe")]
+        self.assertIn("_rig.add_child(copy)", copy_loop)
+        self.assertIn("copy.transform = lt.transform", copy_loop)
+        # the sources (the pendants' spots and the Earth's sun) are children of _rig too, placed locally
+        setup = src[src.index('var hall_lights: Dictionary'):src.index("func _ship_light(")]
+        for name, add in (("spot", "_rig.add_child(spot)"), ("sun", "_rig.add_child(sun)")):
+            self.assertIn(add, setup, name)
+        self.assertRegex(setup, r'hall_lights\["pendant"\]\.append\(spot\)')
+        self.assertRegex(setup, r'hall_lights\["earth"\]\.append\(sun\)')
+        self.assertEqual(len(re.findall(r'hall_lights\["(?:pendant|earth)"\]\.append', setup)), 2)
 
 
 if __name__ == "__main__":
