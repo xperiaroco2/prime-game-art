@@ -1999,9 +1999,9 @@ rebuilds the three nozzle pods and the stern legs, keeping every radius, length 
 | Part | Now |
 |---|---|
 | Segments | `POD_SEGS` 64 (was 32), the bell, housing, collar, fairing and spinner shaded smooth under 40 deg |
-| Bell | a solid ring with bevelled lips; a continuous light ring 1.6 cm into its lip (the ten gapped lip segments are gone), its plane at length + `LIP` 0.45 (the ring at + 0.434: `hull.pod_tail_m`) |
+| Bell | a solid ring with bevelled lips; a continuous light ring 1.6 cm into its lip (the ten gapped lip segments are gone; nb brought them back), its plane at length + `LIP` 0.45 (the ring at + 0.434: `hull.pod_tail_m`) |
 | Accents | the housing round the bell's base carries a light strip in a groove; the barrel's strip sits between two trim lips |
-| Throat | two stepped rings (the first with a light ring), a deep wall, a floor in four emissive bands (`glow_pod_dim/_mid/_warm/_hot`) round a pointed spinner with a hot tip and twelve twisted stator vanes |
+| Throat | two stepped rings (the first with a light ring), a deep wall, a floor in four emissive bands (`glow_pod_dim/_mid/_warm/_hot`) round a pointed spinner with a hot tip and twelve twisted stator vanes (nb: out, the old throat back) |
 | Hull join | a fairing where each pod leaves the hull (args `mount`), six stringers, one collar; the middle pod carries two bolted beams (args `bridges`, `bridge_y`) over its contact with each outer pod, so no collar or fairing crosses another pod in the open |
 | Stern legs | `leg_stern` args `heavy = true`: same pad (r 0.6), a thicker 16-sided oleo, two side dampers, a torque link, a hydraulic line, eight ribs and bolt heads |
 
@@ -2079,3 +2079,24 @@ The n2 critic's leftovers (art #263); note `D:/prime-art-raw/ship/v5/notes/polis
   warm cheek strip (`int_amber__lens`), the approved lens room C alcove, 0.3 m from the camera (a Blender ray probe).
   The jagged shard under the east lead fairing is `skin_belly`'s own plate seam (`ext_seam`, plan (9.0, -2.2, 1.24))
   ending on the fairing's fold: a `ship_hull_j` seam-end fix, not done in n3.
+
+## The old nozzle look back (nb, 2026-11-01)
+The engineer on n4's stern: "everything is great, but bring the turbine back as it was; the old one really looked
+like a spaceship. Is it a plane? Do aliens fly on propellers?" He preferred the pre-polish insides ("futuristic, a bit
+like Daft Punk"; the left column of `<raw>/ship/v5/polish/n1/compare.png`). nb puts them back inside n1's bells
+(`ship_hull_detail.nozzle_pod`/`pod_ring`); note `D:/prime-art-raw/ship/v5/notes/nozzle-back.md`.
+
+| Part | Now |
+|---|---|
+| Throat | lens step 2's dark cone again (`ext_nozzle_inner`): from the bell's inner wall (0.8 r at length + 0.3) to `NOZZLE[1]` 0.45 r at length - 0.6 and the floor on the axis at length - 0.75, open, shaded smooth (`THROAT_SMOOTH_DEG`) |
+| Its lights | one `glow_pod` ring 6 cm wide on the throat's wall at length - 0.3; a small dot (`pod_dot`, `ext_glow_cyan_dim`, 0.12 r) a few mm proud of the floor |
+| Lip | ten `glow_pod` segments with gaps (`SEG_N` 10, `SEG_GAP` 0.06 rad each side of a joint: lens step 2's rhythm) in a widened groove of the bevelled lip, each a smooth arc of 5 steps (the old ones were straight chords: a decagon); top at length + 0.434 (`hull.pod_tail_m`) |
+| Band and rim | the housing's light groove widened to 19 cm (n1's 8 cm), toward the old look's 22 cm band round the bell; `pod_rim`, a light annulus on the housing's flat rear face (0.934-0.988 r): the bright outer circle round the bell seen from behind (the old band's rear face made it, n1's metal bevel there read as a plain ring) |
+| Out | the stator blades, the spinner and its collar and band, the stepped throat and its rings, the floor's glow bands (`_blade`, `_spinner`, `FOIL`, `glow_pod_hot/_mid/_deep/_warm/_dim`, `ext_blade`, `ext_blade_edge`) |
+| Kept | n1-n4's 64-sided smooth shells and bevelled lips, the fairings, stringers and collar, the middle pod's beams, the barrel's strip and trim lips, the heavy stern legs |
+
+**Both lights:** the rings, segments, band, rim and dot are emissive in their own materials, so they glow in the lobby
+with the ship's run-time lights at zero (the throat stays dark there, as in his liked column); in the ship's own
+night `glow_pod`'s light (`l` 0.15) washes the throat teal as in `<raw>/ship/v5/polish/shots0/out_back.png`.
+`test_ship_hull_detail.test_the_nozzles_have_the_old_look_inside` keeps the insides free of blades and the lip's
+ten gapped segments.

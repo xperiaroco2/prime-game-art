@@ -341,10 +341,11 @@ def nozzle_pod(args: dict, layout: dict) -> list:
                     (1.04 * r, ln - 1.37), (1.03 * r, ln - 1.31), (1.0 * r, ln - 1.28), (0.97 * r, ln - 1.28)])
     ribs = [_stringer(r, a, ym + 0.1, ln - 0.42) for a in POD_RIBS]
     # the housing round the bell's base: bevelled, its light groove (pod_band's strip, 1 cm proud of its floor); nb:
-    # the groove near the old look's band round the bell (22 cm): 19 cm of light, n1's 8 cm read thin
+    # the groove near the old look's band round the bell (22 cm): 19 cm of light, n1's 8 cm read thin; its rear face
+    # flat for pod_ring's rim (the old look's bright outer circle seen from behind)
     housing = _loop([(0.93 * r, ln - 0.43), (0.975 * r, ln - 0.43), (0.993 * r, ln - 0.41), (0.995 * r, ln + 0.01),
                      (0.985 * r, ln + 0.03), (0.962 * r, ln + 0.03), (0.962 * r, ln + 0.22), (0.985 * r, ln + 0.22),
-                     (0.995 * r, ln + 0.24), (0.995 * r, ln + 0.25), (0.982 * r, ln + 0.27), (0.94 * r, ln + 0.285)])
+                     (0.995 * r, ln + 0.24), (0.995 * r, ln + 0.255), (0.99 * r, ln + 0.262), (0.932 * r, ln + 0.262)])
     lp = ln + LIP
     bell = _loop([(0.95 * r, ln - 0.4), (0.935 * r, ln + 0.1), (0.921 * r, ln + 0.33), (0.913 * r, lp - 0.055),
                   (0.902 * r, lp - 0.02), (0.89 * r, lp), (0.873 * r, lp), (0.866 * r, lp - 0.018),
@@ -377,9 +378,9 @@ def nozzle_pod(args: dict, layout: dict) -> list:
 
 def pod_ring(args: dict, layout: dict) -> list:
     """A pod's lights (local frame as nozzle_pod; glow_pod: a ring you see, not a lamp): the band in the bell
-    housing's groove, the strip between two trim lips on the barrel (n1), and nb's old nozzle look: ten light
-    segments with gaps in the bell's lip groove, one ring on the throat's wall 0.3 m below the shell's end, and the
-    small glowing dot on its floor (ext_glow_cyan_dim). All emissive in their materials, so they glow with the ship's
+    housing's groove, the strip between two trim lips on the barrel (n1), and nb's old nozzle look: the rim (a light
+    annulus on the housing's rear face), ten light segments with gaps in the bell's lip groove, one ring on the
+    throat's wall 0.3 m below the shell's end, and the small glowing dot on its floor (ext_glow_cyan_dim). All emissive in their materials, so they glow with the ship's
     run-time lights off (the lobby); glow_pod's light (l 0.15) washes the throat teal in the ship's own night."""
     r, ln = float(args.get("r", 1.05)), float(args.get("length", 3.6))
     lp = ln + LIP
@@ -392,6 +393,9 @@ def pod_ring(args: dict, layout: dict) -> list:
                           (0.99 * r, ln - 0.925)]),
                    _loop([(0.99 * r, ln - 0.825), (1.017 * r, ln - 0.82), (1.017 * r, ln - 0.795),
                           (0.99 * r, ln - 0.79)]))
+    # the rim: a light annulus on the housing's rear face, the bright outer circle round the bell seen from behind
+    # (the old band's rear face, 0.92-0.99 r past the bell, made it; n1's metal bevel there read as a plain ring)
+    rim = _ring([(0.934 * r, ln + 0.264), (0.988 * r, ln + 0.264)], _back)
     # the lip's segments: lens step 2's ten (0.805..0.835 r, 6 cm deep chords) as arcs in the groove (0.836..0.864 r)
     segs = L.merge(*[_arc(0.836 * r, 0.864 * r, 2 * math.pi * k / SEG_N + SEG_GAP,
                           2 * math.pi * (k + 1) / SEG_N - SEG_GAP, lp - 0.0185, lp - 0.016) for k in range(SEG_N)])
@@ -406,7 +410,7 @@ def pod_ring(args: dict, layout: dict) -> list:
     dot = _ring([(0.12 * r, floor(0.12) - 0.004), (0.112 * r, floor(0.112)), (0.06 * r, floor(0.06) + 0.002),
                  (0.0, floor(0.0) + 0.003)], _back)
     parts = [L.part("pod_band", *band, "glow_pod", solid=False), L.part("pod_trim", *trim, "ext_frame"),
-             L.part("pod_segments", *segs, "glow_pod"),
+             L.part("pod_rim", *rim, "glow_pod", solid=False), L.part("pod_segments", *segs, "glow_pod"),
              L.part("pod_inner_ring", *inner, "glow_pod", solid=False),
              L.part("pod_dot", *dot, "ext_glow_cyan_dim", solid=False)]
     for p in parts:
