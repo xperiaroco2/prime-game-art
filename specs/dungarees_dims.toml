@@ -262,7 +262,13 @@ the drawing's hem wins."""
 
 # --- the build's own numbers (tools/blender/dungarees_build.py; not sizes Gate 1 or 2 measure) --------------------
 [build]
-seam_blend_cm = 10.0         # the bib's and back panel's lowest 10 cm ease from the band's bone to Chest (G3d: d10)
+seam_blend_cm = 0.0          # G3d's d10 eased the plates' lowest 10 cm from the band's bone to Chest; G3f: 0, the lap
+plate_lap_cm = 5.0           # G3f, the manager's option (a): the bib and the back panel go down over the band's front
+                             # and back by 5 cm (the band is 4 cm), on Chest whole: they slide over it, hidden
+plate_lap_clear_cm = 0.3     # their inner face this far off the band and the yoke where they lie over them
+back_band_share = 0.5        # G3f: the back panel on one blend, Chest 0.5 / Spine 0.5 (on Chest alone its lap rose over
+                             # the band as she bent forward: h1 -39 mm in Jump_Start); the bib on Chest holds (60-77 mm)
+plate_lap_blend_cm = 3.0     # the push off the band eased out over the plates' lowest 3 cm above the band's top
 band_ease_cm = 0.3           # the waistband off her shirt
 body_half_w_cm = { front = 11.0, back = 12.0 }   # her front (back) over |x| under this: the bib's lean B, the
                                                  # back panel's envelope, and garment_drawing's gaps
@@ -271,8 +277,15 @@ turnup_wall_cm = 0.4         # the turn-up ring's wall, and its least ease off t
 buckle_ring_cm = { pad = 0.4, half_h = 0.6, bar = 0.3 }   # the ring round the strap: past its edges, half height, bar
 back_follows_across = true   # G3e: the back panel follows her back across each row (bridging her spine's hollow), not
                              # a flat board standing off her back's sides (G3d's close-ups); still one bone
-strap_top_cm = 6.0           # G3e: the strap's top over her trapezius eases to her shoulder's weights over 6 cm of arc
-shirt_follow_fade_cm = 3.0   # G3e: the shirt under the dungarees takes their weights, eased back to its own over 3 cm
+back_cols = 41               # G3f: the back panel's columns (25 striped it), its rows a smoothed quadratic across
+sharp_deg = 40.0             # G3f: the garment shaded smooth, edges sharper than this kept sharp (the plates' rims)
+strap_top_cm = 4.0           # G3e: the strap's top over her trapezius eases to her shoulder's weights over 4 cm of arc
+                             # (G3e's grid: 4 cm stretched at most 4.2 % beyond her skin, 6 cm 70 %, 8 cm 61 %)
+shirt_follow_fade_cm = 5.5   # G3e: the shirt under the dungarees takes their weights, eased back to its own over 5.5 cm
+                             # (G3f: over 3 cm it ridged over her shoulder blades and at the back panel's edges)
+shirt_follow_near_cm = 3.0   # and a shirt vertex within 3 cm of the garment whose normal misses it (the hem)
+shirt_hem_in_cm = 0.25       # G3f: the shirt's hem drawn in 2.5 mm, eased out over its lowest 1.5 cm, inside the yoke
+shirt_hem_h_cm = 1.5
 
 # --- behaviour ------------------------------------------------------------------------------------------------
 [behaviour]
@@ -310,27 +323,26 @@ concept_mask = { b_minus_r = 15, b_minus_g = 6, max = 215, open_ry = 4, close_r 
 over_z = "collarbone"        # a piece over this with points in front and behind goes over the shoulder: a strap
 hardware_max_verts = 60      # buckles, buttons (d79: 21 and 32; its back panel 272, band halves 165, cuffs 240)
 
-# The bib and the back panel ride Chest whole over their seam blend ([build] seam_blend_cm = 10: their lowest 10 cm ease
-# from the band's bone, Spine, to Chest, as a sewn seam bends): flatness from 10.5 cm over the band's top; the seam is
-# held by its stretch and the joins on the band. A part on one bone has flatness and stretch 0 by construction
-# (docs/clothes.md, "Gate 2"): only the joins between parts on different bones measure anything there.
+# The bib and the back panel ride Chest whole and go down over the band by [build] plate_lap_cm (G3f, the manager's
+# option (a)). G3d's seam blend (their lowest 10 cm eased from Spine to Chest) held their feet on the band but
+# squeezed the strip 37-80 % (p95) in the run and jump clips, and judged against her skin's stretch there (G3e,
+# option (c)) still 20-63 % beyond it: linear skinning folds a blended strip, it cannot bow out like cloth. Over the
+# band the plates slide, hidden: [[gate2.laps]] keeps the overlap and keeps them outside the band; the strip's stretch
+# rule goes with the blend. A part on one bone has flatness and stretch 0 by construction (docs/clothes.md, "Gate 2"):
+# the bib and back are judged over the plate above the band (the lap's push off the band eases out over 3 cm).
 [gate2.parts.bib]
 classes = ["panel"]
 x_abs = [0, 11.5]
 y = [-40, 0]
-z = ["waistband_top_z+10.5", "bib_top_z+1"]
-[gate2.parts.bib_seam]
+z = ["waistband_top_z+3.5", "bib_top_z+1"]
+# the plates' strips over the band: the bib's piece (17 x 54 x 2 = 1836 vertices), the back's (41 x 30 x 2 = 2460),
+# not the band's ring (384) nor the trousers' piece with the yoke (over 4000)
+[gate2.parts.bib_lap]
 classes = ["panel"]
 x_abs = [0, 12]
 y = [-40, 0]
-z = ["waistband_top_z-0.05", "waistband_top_z+10.5"]
-piece_verts = [1001, 1000000]   # the bib's piece (1666 on c01), not the band's ring (384) under its edge
-[gate2.parts.bib_foot]
-classes = ["panel"]
-x_abs = [0, 12]
-y = [-40, 0]
-z = ["waistband_top_z-0.05", "waistband_top_z+1"]
-piece_verts = [1001, 1000000]
+z = ["waistband_top_z-waistband_h-2", "waistband_top_z+0.3"]
+piece_verts = [1001, 3600]
 [gate2.parts.strap_fronts]
 classes = ["strap", "hardware"]
 x_abs = [0, 15]
@@ -340,19 +352,13 @@ z = ["waistband_top_z+1", "bib_top_z+0.5"]
 classes = ["panel"]
 x_abs = [0, 13]
 y = [0, 40]
-z = ["waistband_top_z+10.5", "back_top_z+1"]
-[gate2.parts.back_seam]
+z = ["waistband_top_z+3.5", "back_top_z+1"]
+[gate2.parts.back_lap]
 classes = ["panel"]
 x_abs = [0, 13]
 y = [0, 40]
-z = ["waistband_top_z-0.05", "waistband_top_z+10.5"]
-piece_verts = [1001, 1000000]
-[gate2.parts.back_foot]
-classes = ["panel"]
-x_abs = [0, 13]
-y = [0, 40]
-z = ["waistband_top_z-0.05", "waistband_top_z+1"]
-piece_verts = [1001, 1000000]
+z = ["waistband_top_z-waistband_h-2", "waistband_top_z+0.3"]
+piece_verts = [1001, 3600]
 [gate2.parts.strap_backs]
 classes = ["strap", "hardware"]
 x_abs = [0, 15]
@@ -370,13 +376,13 @@ x_abs = [0, 40]
 y = [-40, 40]
 z = ["waistband_top_z-waistband_h-0.05", "waistband_top_z+0.05"]
 piece_verts = [100, 1000]
-# the trousers' yoke where it rises inside the band (the trousers' piece, 4027 vertices on c01)
+# the trousers' yoke where it rises inside the band (the trousers' piece, 4027 vertices on c01), not the plates' laps
 [gate2.parts.yoke]
 classes = ["panel"]
 x_abs = [0, 40]
 y = [-40, 40]
 z = ["waistband_top_z-waistband_h-0.05", "waistband_top_z"]
-piece_verts = [1001, 1000000]
+piece_verts = [3601, 1000000]
 
 [[gate2.joins]]
 name = "strap fronts on the bib"
@@ -391,26 +397,29 @@ on = "back_panel"
 reach_mm = 25
 tol_mm = 3.0
 
-# The seams on the band (the fresh review's major, G3d): a Spine-against-Chest twist in Jog or Strafe must neither
-# open the bib's or the back's lower corners off the band nor slide them inside it, and the yoke rides inside the band
-[[gate2.joins]]
-name = "bib on the waistband"
-moving = "bib_foot"
-on = "waistband"
-reach_mm = 25
-tol_mm = 3.0
-[[gate2.joins]]
-name = "back panel on the waistband"
-moving = "back_foot"
-on = "waistband"
-reach_mm = 25
-tol_mm = 3.0
+# The yoke rides inside the band (the fresh review's major, G3d)
 [[gate2.joins]]
 name = "yoke inside the waistband"
 moving = "yoke"
 on = "waistband"
 reach_mm = 25
 tol_mm = 3.0
+
+# The plates over the band (G3f, the manager's option (a)): a Chest-against-Spine twist slides them over it, hidden;
+# in every clip the lowest row stays at least min_mm under the band's top (no band top shows under the edge) and no
+# strip vertex goes inside the band's outer face deeper than through_mm (garment_motion's laps, in the band's frame)
+[[gate2.laps]]
+name = "bib"
+plate = "bib_lap"
+on = "waistband"
+min_mm = 10.0
+through_mm = 0.0
+[[gate2.laps]]
+name = "back panel"
+plate = "back_lap"
+on = "waistband"
+min_mm = 10.0
+through_mm = 0.0
 
 [[gate2.flat]]
 part = "bib"
@@ -429,19 +438,10 @@ tol_pct = 2.0
 [[gate2.stretch]]
 part = "back_panel"
 tol_pct = 2.0
-# The seams and the straps against her skin (the manager's option (c), G3e, art #196): a plate sewn to the band (Spine)
-# eases into Chest over its seam blend and the straps' tops follow her shoulders, so they stretch where her own trunk
-# and shoulders fold and twist (d10: 37-80 % p95 in the run and jump clips, as her belly). Linear skinning cannot bow
-# them out like cloth; the rule is that they follow her: per edge the stretch beyond her skin's at the same place in
-# the same frame (her nearest skin points, the body and the skin under the cloth), p95 within 3 %.
-[[gate2.stretch]]
-part = "bib_seam"
-vs_skin = true
-tol_pct = 3.0
-[[gate2.stretch]]
-part = "back_seam"
-vs_skin = true
-tol_pct = 3.0
+# The straps against her skin (G3e): their tops follow her shoulders, so they stretch where her shoulders fold and
+# twist; linear skinning cannot bow them out like cloth, and the rule is that they follow her: per edge the stretch
+# beyond her skin's at the same place in the same frame (her nearest skin points, the body and the skin under the
+# cloth), p95 within 3 %. (G3e judged the plates' seam blend the same way; G3f's lap replaced the blend.)
 [[gate2.stretch]]
 part = "straps"
 vs_skin = true

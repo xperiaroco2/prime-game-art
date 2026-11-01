@@ -977,11 +977,16 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   fails (its numbers would pass empty). A part may keep only pieces of `piece_verts` [lo, hi] vertices (the band's
   ring apart from the yoke inside it, the bib's foot apart from the band under its edge). **A part on one bone has
   flatness and stretch 0 by construction**, and a join between two parts on the same bone slip 0: there only the
-  joins between parts on different bones measure anything. So the dungarees' spec joins the bib's and the back's
-  lowest centimetre (`bib_foot`, `back_foot`) and the yoke's top to the band (Chest against Spine; the fresh review
-  of G3c), and stretches the plates' seam blend (`bib_seam`, `back_seam`) beside the band and the straps. Pokes come from `clothes_proof.py`'s
-  `poke.json` (`--poke`; run clothes_proof first).
-- **Against her skin (G3e, the manager's option (c)):** a stretch entry with `vs_skin = true` judges the stretch
+  joins between parts on different bones measure anything. So the dungarees' spec joins the yoke's top to the band
+  (the fresh review of G3c) and laps the plates over it (below). Pokes come from `clothes_proof.py`'s `poke.json`
+  (`--poke`; run clothes_proof first).
+- **Laps (G3f, the manager's option (a)):** `[[gate2.laps]]` names a plate's strip over a band (`plate`, `on`). Per
+  frame `garment_motion.py` moves the strip back into the band's reference frame by the band's rigid fit
+  (`garment_gate2_geom.to_frame`) and measures the least overlap of its lowest row under the band's top
+  (`lap_overlap`: the nearest top-row point across, its height less the edge's), judged at least `min_mm`; the
+  deepest any strip vertex level with the band goes inside the band's outer face (a ray from outside toward the
+  band's axis), judged at most `through_mm`; and the edge's largest gap off the band, in the row's name.
+- **Against her skin (G3e, the manager's option (c); since G3f the straps only):** a stretch entry with `vs_skin = true` judges the stretch
   beyond her skin's at the same place in the same frame (`garment_gate2_geom.skin_excess`): each vertex of the part is
   tied at the reference to its nearest point of her skin (`skin_meshes`, default the body and its hidden
   `body_removed`, the skin under the cloth), and per edge the garment's |length / rest - 1| less her skin's between
@@ -989,7 +994,9 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   Why: a plate sewn to the band (Spine) eases into Chest over its seam blend and a strap's top follows her shoulder,
   so they stretch where her trunk and shoulders fold and twist, as her skin does (d10's seam 37-80 % p95 in the run
   and jump clips); linear blend skinning cannot bow them out like cloth, and the rule is that they follow her, within
-  3 %. A rigid part keeps its own stretch rule (the band, the plates over the blend: 2 %).
+  3 %. A rigid part keeps its own stretch rule (the band, the plates: 2 %). The plates' seam blend failed it (G3e's
+  grid: 20-63 % beyond her skin in Jog, Strafe and the jumps, where her own belly stretches far less than the eased
+  strip): G3f replaced the blend by the lap, and the strip's stretch rule went with it.
 - **The shirt (G3e):** `[gate2.shirt] max_count` judges `poke.json`'s `top_under_panels` per clip: the shirt is a
   layer the garment must cover, like her body (d10: up to 9 shirt vertices out through the band and the bib in
   Idle, 42 in Jump_Start, 35 mm deep: the band's pale stripes). The row's name carries the tracked count beside it.
@@ -1031,19 +1038,37 @@ blender.run_script("dungarees_build.py", ["--spec", "specs/dungarees_dims.toml",
   the feet still slid 3.2-6.2 mm in Jog, Strafe and Jump_Start; over 10 cm (d10) they hold (at most 1.7 mm), but the
   seam zone's edges change length by 7-9 % in Walk, 37 in Jog, 59 in Strafe and 69-80 in Jump_Start (p95; d05 the
   same or worse): linear blend skinning squeezes the zone as her trunk folds, where cloth would bow out. The manager
-  chose (G3e) to judge the seam against her own skin's stretch there (Gate 2's `vs_skin`, above); a tucked overlap
-  over the band (the plates 4-6 cm over its front) is the fallback if the seam then reads wrong in the videos.
-- **The straps' tops, the back, the shirt (G3e):** on Chest alone the straps arched off her shoulders with air under
-  them in Jog. `[build] strap_top_cm` (`--strap-top-cm`; grid 4 / 6 / 8) eases the strap's top, over that arc length
+  chose (G3e) to judge the seam against her own skin's stretch there (Gate 2's `vs_skin`, above); it failed
+  (20-63 % beyond her skin), so G3f took the fallback, the lap (next).
+- **The lap (G3f, the manager's option (a)):** `[build] seam_blend_cm` is 0 and the plates ride Chest whole; their
+  lower edges go `plate_lap_cm` down over the band's front and back (the band is 4 cm), so a Chest-against-Spine
+  twist slides them over the band, hidden, instead of squeezing a blended strip. Each plate vertex level with the
+  band stands `plate_lap_clear_cm` off the band and the yoke under it (a ray from in front or behind meets the
+  garment built so far), the push eased out over `plate_lap_blend_cm` above the band's top (`lap_y`). Gate 2's
+  laps (above) keep the overlap at least 1 cm and the strip outside the band in every clip. The bib on Chest
+  holds (h1: 60-77 mm of overlap in every clip); the back panel on Chest rose over the band as she bent forward
+  (h1: -4 mm in Jog, -8 in Strafe, -39 in Jump_Start, and 1-9 mm inside it), so it rides one blend,
+  `back_band_share` of the band's bone (Spine) and the rest Chest: every vertex the same matrix, so it stays flat,
+  and its lap moves about that much less. Under the band's top the shirt never takes a plate's weights
+  (`shirt_follow`'s `low_z`): there it reached the bib's lap past the yoke and came out through the yoke.
+- **The straps' tops, the back, the shirt (G3e, G3f):** on Chest alone the straps arched off her shoulders with air under
+  them in Jog. `[build] strap_top_cm` (`--strap-top-cm`; grid 4 / 6 / 8: 4 cm stretched at most 4.2 % beyond her
+  skin, 6 cm up to 70 %, 8 cm 61 %; G3f sets 4) eases the strap's top, over that arc length
   round its highest point, from the row's weights to her shirt's weights at the strap's top (Neck, UpperChest and her
   clavicle there; no arm bones), a smooth gradient; the rest of the strap stays on Chest, its ends on the plates. The
   back panel stood off her back's sides like a board (flat across at the deepest of her back over 12 cm):
   `back_follows_across` lays each vertex on her back under it (+ the shirt + the standoff), then keeps every column
-  convex down the back and every row convex across, so it bridges her spine's hollow and wraps her sides; still one
-  bone. The shirt (`top`) came out through the band and the plates on her body's weights while they ride Spine and
+  convex down the back, so it bridges her spine's hollow and wraps her sides; still one bone. G3e kept every row convex
+  across by its hull, which left vertical facets and a ridge at the spine; G3f fits each row a quadratic in x, its
+  coefficients averaged over the rows +-2, lifted so it is nowhere in front of her back (`smooth_rows`), over
+  `back_cols` 41 columns, and shades the garment smooth with the edges over `sharp_deg` 40 kept sharp (flat faces
+  striped the band and the panels). The shirt (`top`) came out through the band and the plates on her body's weights while they ride Spine and
   Chest: `dungarees_build.shirt_follow` gives each shirt vertex whose normal meets the garment within 4 cm, or within 1.5 cm of it (no strap,
   no hardware) the garment's weights there, eased back to its own over `shirt_follow_fade_cm` along the shirt's
-  edges (`--no-shirt-follow` keeps its own).
+  edges (`--no-shirt-follow` keeps its own). G3f: the fade 5.5 cm (over 3 cm it ridged the shirt over her shoulder
+  blades and at the back panel's edges), the near fallback `shirt_follow_near_cm` 3 cm, and the hem drawn in
+  `shirt_hem_in_cm` 2.5 mm toward its middle over its lowest 1.5 cm (`shirt_hem_in`; its hem came out through the
+  yoke in Sprint and Jump_Start).
 - **The build's own numbers** (`[build]` in the spec, not sizes a gate measures): the seam blend, the band's ease
   off the shirt, her front's and back's half widths the plates are laid on (11 and 12 cm; `garment_drawing`'s gaps
   read the same), the straps' ray origin, the turn-up's wall, the buckle ring's sizes. A vertex the build leaves

@@ -11,8 +11,9 @@ the approved drawing's shapes, garment_drawing.lines), measured against her undr
   (--band-bone, Spine): a stiff ring that cannot stretch;
 - the bib: a 2 mm plate, the spec's top, widths and lean B (the forward envelope of her front + the shirt + the
   bust gap, the top edge at its own gap): straight across, one bend over the bust; on one bone (--panel-bone, Chest),
-  so it moves as one piece, but for its seam on the band: its lowest [build] seam_blend_cm ease from the band's
-  weights to Chest's, so a Spine-against-Chest twist neither opens its lower corners nor slides it inside the band;
+  so it moves as one piece; its lower edge goes [build] plate_lap_cm down over the band (G3f, the manager's option
+  (a)), clear of it, so a Spine-against-Chest twist slides it over the band, hidden (G3d's seam blend, [build]
+  seam_blend_cm, eased its lowest cm from the band's weights to Chest's and squeezed them: 0 since G3f);
 - the back panel: the same at the back, its top the drawing's shallow V (the centre at back_top_z, the corners 3 cm
   higher at back_top_w);
 - the straps: 3.8 cm ribbons at x = +-strap_x laid by rays over the bib, her shirt and the back panel; their ends
@@ -144,6 +145,31 @@ def chain_y(hull, z: float) -> float:
     return hull[0][1] if z < hull[0][0] else hull[-1][1]
 
 
+def smooth_rows(rows, plate: float):
+    """The back panel's rows across (G3f): per row y = a + b x + c x^2 fitted (least squares) to the row's outer
+    points, the coefficients averaged over the rows +-2 (weights 1 2 3 2 1), then the row lifted (y up: behind her) by
+    the most any of its points stood behind the curve, so it never cuts into her back; the inner face plate in front."""
+    import numpy as np
+    coef = []
+    for row in rows:
+        x = np.array([p.x for p, _q in row])
+        y = np.array([p.y for p, _q in row])
+        coef.append(np.polyfit(x, y, 2))
+    coef = np.array(coef)
+    k = np.array([1.0, 2.0, 3.0, 2.0, 1.0])
+    out = []
+    for j, row in enumerate(rows):
+        lo, hi = max(0, j - 2), min(len(rows), j + 3)
+        w = k[lo - j + 2:hi - j + 2]
+        c = (coef[lo:hi] * w[:, None]).sum(0) / w.sum()
+        x = np.array([p.x for p, _q in row])
+        y = np.array([p.y for p, _q in row])
+        f = np.polyval(c, x)
+        f += max(0.0, float((y - f).max()))
+        out.append([(Vector((p.x, fy, p.z)), Vector((p.x, fy - plate, p.z))) for (p, _q), fy in zip(row, f.tolist())])
+    return out
+
+
 class Builder:
     """One bmesh for the whole garment; per vertex its weights and per face its material."""
 
@@ -196,7 +222,8 @@ class Builder:
             self.face([lo[i], lo[k], hi[k], hi[i]], mat)
 
 
-def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float = 0.015) -> dict:
+def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float = 0.015, low_z: float = -1.0,
+                 low_skip=frozenset()) -> dict:
     """The shirt under the dungarees takes their weights (G3e, art #196: on her body's weights it came through the band
     and the plates, 8 mm in Idle, 35 mm in Jump_Start, the band's pale stripes): each shirt vertex whose normal meets the
     garment within reach, or that lies within near of it (not a strap, which lies over her shoulder's skin) takes the garment's weights there (the
@@ -206,6 +233,11 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
     B.bm.faces.index_update()
     gfaces = list(B.bm.faces)
     tree = BVHTree.FromBMesh(B.bm)
+    # G3f: under low_z (the band's top) a shirt vertex never takes a plate's lap (low_skip: their vertices); there it
+    # reached the bib's lap on Chest past the yoke and came out through the yoke in Jog (h1: 3-7 vertices, 2-5 mm)
+    keep = [f for f in gfaces if not any(x in low_skip for x in f.verts)]
+    B.bm.verts.index_update()
+    low_tree = BVHTree.FromPolygons([v.co for v in B.bm.verts], [[x.index for x in f.verts] for f in keep])
     mw = top.matrix_world
     nm = mw.to_3x3().inverted().transposed()
     names = {g.index: g.name for g in top.vertex_groups}
@@ -214,12 +246,14 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
     got = {}
     for v in top.data.vertices:
         n = (nm @ v.normal).normalized()
-        hit, _hn, fi, _d = tree.ray_cast(co[v.index] + n * 1e-4, n, reach)
+        low = co[v.index].z < low_z
+        tr = low_tree if low else tree
+        hit, _hn, fi, _d = tr.ray_cast(co[v.index] + n * 1e-4, n, reach)
         if hit is None:   # the shirt's hem turned down (f06: 1-3 hem vertices 1-2.5 mm out in Sprint and Jump_Start)
-            hit, _hn, fi, _d = tree.find_nearest(co[v.index], near)
+            hit, _hn, fi, _d = tr.find_nearest(co[v.index], near)
         if hit is None:
             continue
-        f = gfaces[fi]
+        f = keep[fi] if low else gfaces[fi]
         if f.material_index == 2 or any(x in skip_vs for x in f.verts):
             continue
         w = poly_3d_calc([x.co for x in f.verts], hit)
@@ -263,6 +297,32 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
     return {"covered": len(got), "faded": changed - len(got), "shirt_verts": len(co), "fade_m": fade}
 
 
+def shirt_hem_in(top, inset: float, h: float) -> dict:
+    """The shirt's hem drawn in by inset (m) toward its middle, eased to nothing h over its lowest point (G3f: its
+    hem at 89.5 cm came out through the yoke in Sprint and Jump_Start, 1-2 vertices 1.3-2.5 mm)."""
+    if inset <= 0:
+        return {"inset_m": 0.0, "verts": 0}
+    me = top.data
+    zmin = min(v.co.z for v in me.vertices)
+    ring = [v.co for v in me.vertices if v.co.z < zmin + h]
+    cx, cy = sum(p.x for p in ring) / len(ring), sum(p.y for p in ring) / len(ring)
+    keys = me.shape_keys.key_blocks if me.shape_keys else []
+    moved = 0
+    for v in me.vertices:
+        t = 1 - smooth01((v.co.z - zmin) / h)
+        if t <= 0:
+            continue
+        off = Vector((cx - v.co.x, cy - v.co.y, 0.0))   # in toward its middle, not up: the hem keeps its height
+        if off.length < 1e-6:
+            continue
+        off = off.normalized() * inset * t
+        v.co += off
+        for kb in keys:
+            kb.data[v.index].co += off
+        moved += 1
+    return {"inset_m": inset, "h_m": h, "verts": moved, "hem_z_m": round(zmin, 4)}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--spec", required=True)
@@ -286,6 +346,10 @@ def main() -> None:
                          "its highest point a smooth gradient from the panel bone to her shoulder's weights (G3e; "
                          "default the spec's [build] strap_top_cm, 0: off)")
     ap.add_argument("--strap-top-share", type=float, default=1.0, help="her shoulder's share at the strap's top")
+    ap.add_argument("--back-band-share", type=float, default=None,
+                    help="the band bone's share in the back panel's one blend (default the spec's [build] "
+                         "back_band_share, 0: Chest alone)")
+    ap.add_argument("--lap-clear-cm", type=float, default=None, help="default the spec's [build] plate_lap_clear_cm")
     ap.add_argument("--no-shirt-follow", action="store_true",
                     help="keep the shirt's own weights under the dungarees (G3e: it takes theirs, so it stays under)")
     ap.add_argument("--strap-sh-share", type=float, default=0.0,
@@ -453,11 +517,40 @@ def main() -> None:
     if yoke_lost:
         raise SystemExit(f"the yoke: {yoke_lost} new vertices with no column under them (no weights, no place)")
 
+    # --- the lap (G3f, the manager's option (a)): the plates' lower edges go down over the band by plate_lap_cm, on
+    # Chest whole, so a Chest-against-Spine twist slides them over the band, hidden; each plate vertex level with the
+    # band (and over the plate's lowest plate_lap_blend_cm above it, eased off) stands plate_lap_clear_cm off the band
+    # and the yoke under it (a ray from in front or behind meets the garment built so far: the band, then the yoke)
+    lap = bk.get("plate_lap_cm", 0.0)
+    lap_clr, lap_up = bk.get("plate_lap_clear_cm", 0.002), bk.get("plate_lap_blend_cm", 0.03)
+    if a.lap_clear_cm is not None:
+        lap_clr = a.lap_clear_cm / 100
+    n_lap = max(1, int(round(lap / 0.01))) if lap > 0 else 0
+    lap_zs = [bbz - lap + k * lap / n_lap for k in range(n_lap)]
+    under = BVHTree.FromBMesh(B.bm)
+    lap_moved = [0.0]
+
+    def lap_y(x, y, z, front=True):
+        """The outer face's y at (x, z): pushed off the band (and the yoke) in front of it (behind it at the back)."""
+        if lap <= 0 or z > bbz + lap_up:
+            return y
+        zq = min(z, bbz - 0.001)
+        sg = 1 if front else -1
+        hit = under.ray_cast(Vector((x, -sg * 1.0, zq)), Vector((0, sg, 0)), 2.0)[0]
+        if hit is None:
+            return y
+        need = hit.y - sg * (a.plate + lap_clr)
+        push = max(0.0, sg * (y - need))
+        if z > bbz:
+            push *= 1 - smooth01((z - bbz) / lap_up)
+        lap_moved[0] = max(lap_moved[0], push)
+        return y - sg * push
+
     # --- the bib: lean B -----------------------------------------------------------------------------------------
-    zs = [bbz + i * (bt - bbz) / 48 for i in range(49)]
+    zs = lap_zs + [bbz + i * (bt - bbz) / 48 for i in range(49)]
     hwf = bk["body_half_w_cm"]["front"] / 100      # her front over |x| < this (garment_drawing measures the same)
     pts = []
-    for z in zs:
+    for z in zs[n_lap:]:
         # the drawing's lean B (garment_drawing.lines): her front over |x| < 11 cm + the shirt + the bust gap
         pts.append((z, ref.front(z, hwf) - SHIRT - d["bib_standoff_bust"]))
     pts[-1] = (bt, min(pts[-1][1], ref.front(bt, hwf) - SHIRT - d["bib_standoff_top"]))
@@ -467,15 +560,16 @@ def main() -> None:
     rows = []
     bib_samples = []
     for z in zs:
-        hw = d["bib_bottom_w"] / 2 + (d["bib_top_w"] - d["bib_bottom_w"]) / 2 * (z - bbz) / (bt - bbz)
-        y = bib_y(z)
+        hw = d["bib_bottom_w"] / 2 + (d["bib_top_w"] - d["bib_bottom_w"]) / 2 * max(0.0, z - bbz) / (bt - bbz)
         row = []
         for i in range(nb):
             x = -hw + 2 * hw * i / (nb - 1)
+            y = lap_y(x, bib_y(max(z, bbz)), z)
             row.append((Vector((x, y, z)), Vector((x, y + a.plate, z))))
             bib_samples.append(Vector((x, 0.0, z)))
         rows.append(row)
-    rows[0] = [(p + Vector((0, 0, 0.0002)), q + Vector((0, 0, 0.0002))) for p, q in rows[0]]
+    if not n_lap:     # its foot on the band's top (no lap): just over it
+        rows[0] = [(p + Vector((0, 0, 0.0002)), q + Vector((0, 0, 0.0002))) for p, q in rows[0]]
     bib_samples = [Vector((p.x, ref.front(p.z, 0.004) + 0.006, p.z)) for p in bib_samples[::5]]
     w_bib = shirt_w.mean(bib_samples, keep=TRUNK)
     if a.panel_bone:  # G3b: rigid, so flat in every clip (b02's blend bent 9-13 mm in Jog and Strafe)
@@ -486,7 +580,11 @@ def main() -> None:
         """The plate's weights: the band's at the band's top, eased to w_top over the seam blend (G3d: on one bone
         a Spine-against-Chest twist opened the plates' lower corners off the band)."""
         return lambda p: w_top if seam <= 0 or p.z >= bbz + seam else mix(w_band, w_top, smooth01((p.z - bbz) / seam))
-    B.slab(rows, seam_w(w_bib), 0)
+    plate_vs = set()
+    for r_ in B.slab(rows, seam_w(w_bib), 0):
+        plate_vs.update(v for row_ in r_ for v in row_)
+    rep["lap"] = {"cm": round(lap * 100, 2), "rows": n_lap, "clear_cm": round(lap_clr * 100, 2),
+                  "bib_pushed_mm": round(lap_moved[0] * 1000, 2)}
     rep["bib"] = {"weights": w_bib, "hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in hull],
                   "top_y_cm": round(bib_y(bt) * 100, 2), "band_y_cm": round(bib_y(bbz) * 100, 2)}
 
@@ -512,27 +610,29 @@ def main() -> None:
     pts = [(z, ref.front(z, bk["body_half_w_cm"]["back"] / 100, back=True) + SHIRT + d["back_standoff"]) for z in zb_]
     bhull = envelope(pts, front=False)
     back_y = lambda z: chain_y(bhull, z)
-    nk = 25
+    nk = int(spec["build"].get("back_cols", 25))
     rows = []
     back_samples = []
     across = bool(spec["build"].get("back_follows_across", False))
-    for j in range(25):
-        v = j / 24
+    foot = 0.0 if n_lap else 0.0002
+    lap_moved[0] = 0.0
+    for j in range(n_lap + 25):
+        v = (j - n_lap) / 24
         row = []
         for i in range(nk):
             u = -1 + 2 * i / (nk - 1)
             xt = u * d["back_top_w"] / 2
             ax = abs(xt)
             top_z = kt + 0.03 * min(1.0, ax / xs_in)   # the drawing's shallow V
-            z = bbz + 0.0002 + v * (top_z - bbz - 0.0002)
-            hw = d["back_bottom_w"] / 2 + (d["back_top_w"] - d["back_bottom_w"]) / 2 * (z - bbz) / (corner - bbz)
+            z = lap_zs[j] if j < n_lap else bbz + foot + v * (top_z - bbz - foot)
+            hw = d["back_bottom_w"] / 2 + (d["back_top_w"] - d["back_bottom_w"]) / 2 * max(0.0, z - bbz) / (corner - bbz)
             x = u * hw
-            y = back_y(z)
+            y = back_y(max(z, bbz))
             if across:   # G3e: her back under this column (+ the shirt + the standoff), never behind the flat plate
                 yb = ref.front(z, 0.01, back=True, x0=x)
                 y = min(y, yb + SHIRT + d["back_standoff"]) if yb is not None else y
             row.append((Vector((x, y, z)), Vector((x, y - a.plate, z))))
-            if j % 4 == 0 and i % 4 == 0:
+            if j >= n_lap and (j - n_lap) % 4 == 0 and i % 4 == 0:
                 back_samples.append(Vector((x, ref.front(z, 0.004, back=True) - 0.006, z)))
         rows.append(row)
     if across:   # one bend down each column and none inward across a row: the plate bridges her spine's hollow
@@ -542,17 +642,23 @@ def main() -> None:
                 p_ = rows[j][i][0]
                 y = max(p_.y, chain_y(col_, p_.z))
                 rows[j][i] = (Vector((p_.x, y, p_.z)), Vector((p_.x, y - a.plate, p_.z)))
-        for j in range(len(rows)):
-            hull_x = envelope([(rows[j][i][0].x, rows[j][i][0].y) for i in range(nk)], front=False)
-            for i in range(nk):
-                p_ = rows[j][i][0]
-                y = max(p_.y, chain_y(hull_x, p_.x))
-                rows[j][i] = (Vector((p_.x, y, p_.z)), Vector((p_.x, y - a.plate, p_.z)))
-        rep["back_across"] = True
+        # G3f: across each row a smooth curve, not the convex hull's facets and its ridge at the spine (G3e's
+        # close-ups): a quadratic in x fitted to the row, its coefficients smoothed over the neighbouring rows, then
+        # lifted so it is nowhere in front of her back (+ the shirt + the standoff) under it
+        rows = smooth_rows(rows, a.plate)
+        rep["back_across"] = {"cols": nk, "profile": "quadratic per row, lifted"}
+    rows = [[(Vector((p.x, lap_y(p.x, p.y, p.z, front=False), p.z)),
+              Vector((p.x, lap_y(p.x, p.y, p.z, front=False) - a.plate, p.z))) for p, _q in row] for row in rows]
+    rep["lap"]["back_pushed_mm"] = round(lap_moved[0] * 1000, 2)
     w_back = shirt_w.mean(back_samples, keep=TRUNK)
     if a.panel_bone:
         w_back = {a.panel_bone: 1.0}
-    B.slab(rows, seam_w(w_back), 0)
+    band_share = spec["build"].get("back_band_share", 0.0) if a.back_band_share is None else a.back_band_share
+    if band_share > 0:   # G3f: one blend for the whole panel (every vertex the same matrix: still flat), so its lap
+        w_back = mix(w_back, w_band, band_share)   # rises less over the band as she bends forward (h1 on Chest: -39 mm)
+    rep["back_band_share"] = band_share
+    for r_ in B.slab(rows, seam_w(w_back), 0):
+        plate_vs.update(v for row_ in r_ for v in row_)
     rep["back_panel"] = {"weights": w_back, "hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in bhull],
                          "corner_m": corner}
 
@@ -717,13 +823,16 @@ def main() -> None:
 
     bmesh.ops.recalc_face_normals(B.bm, faces=B.bm.faces[:])
     if not a.no_shirt_follow:
-        rep["shirt_follow"] = shirt_follow(top, B, strap_vs, bk.get("shirt_follow_fade_cm", 0.03))
-    for f in B.bm.faces:
-        f.smooth = f.material_index == 0 and any(v in trousers_verts or v in col for v in f.verts)
+        rep["shirt_follow"] = shirt_follow(top, B, strap_vs, bk.get("shirt_follow_fade_cm", 0.03),
+                                           near=bk.get("shirt_follow_near_cm", 0.015), low_z=bbz, low_skip=plate_vs)
+        rep["shirt_hem"] = shirt_hem_in(top, bk.get("shirt_hem_in_cm", 0.0), bk.get("shirt_hem_h_cm", 0.015))
+    for f in B.bm.faces:   # G3f: every cloth face smooth, the rims kept sharp by angle (flat faces striped the curves)
+        f.smooth = f.material_index != 2
     me = bpy.data.meshes.new("garment")
     B.bm.verts.index_update()
     vlist = list(B.bm.verts)
     B.bm.to_mesh(me)
+    me.set_sharp_from_angle(angle=math.radians(float(spec["build"].get("sharp_deg", 40))))
     mats = []
     for name, col_ in (("denim_plain", (0.20, 0.33, 0.55, 1)), ("pocket_denim", (0.18, 0.30, 0.50, 1)),
                        ("hardware_metal", (0.55, 0.45, 0.28, 1))):

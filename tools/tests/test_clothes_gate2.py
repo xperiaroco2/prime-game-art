@@ -458,21 +458,23 @@ class G3dSeamsTest(unittest.TestCase):
     def setUpClass(cls):
         cls.spec = S.load_spec(SPEC)
 
-    def test_the_seams_are_joined_on_the_band(self):
+    def test_the_seams_are_held_on_the_band(self):
         g2 = self.spec["gate2"]
         joins = {(j["moving"], j["on"]) for j in g2["joins"]}
-        for moving in ("bib_foot", "back_foot", "yoke"):
-            self.assertIn((moving, "waistband"), joins)
-        for name in ("waistband", "yoke", "bib_foot", "back_foot", "bib_seam", "back_seam"):
+        self.assertIn(("yoke", "waistband"), joins)
+        laps = {(lp["plate"], lp["on"]) for lp in g2["laps"]}       # G3f: the plates lap over the band
+        self.assertEqual(laps, {("bib_lap", "waistband"), ("back_lap", "waistband")})
+        for name in ("waistband", "yoke", "bib_lap", "back_lap"):
             self.assertIn("piece_verts", g2["parts"][name], name)
         lo_band, hi_band = g2["parts"]["waistband"]["piece_verts"]
-        self.assertLess(hi_band, g2["parts"]["yoke"]["piece_verts"][0])   # the ring apart from the trousers' piece
+        self.assertLess(hi_band, g2["parts"]["bib_lap"]["piece_verts"][0])   # the ring apart from the plates
+        self.assertLess(g2["parts"]["bib_lap"]["piece_verts"][1], g2["parts"]["yoke"]["piece_verts"][0])
         stretched = {s["part"] for s in g2["stretch"]}
-        self.assertTrue({"bib_seam", "back_seam", "waistband"} <= stretched)
-        self.assertGreater(self.spec["build"]["seam_blend_cm"], 0)
-        lo = f"waistband_top_z+{self.spec['build']['seam_blend_cm'] + 0.5:g}"   # flat over the blend only
-        self.assertEqual(g2["parts"]["bib"]["z"][0], lo)
-        self.assertEqual(g2["parts"]["back_panel"]["z"][0], lo)
+        self.assertIn("waistband", stretched)
+        self.assertEqual(self.spec["build"]["seam_blend_cm"], 0)
+        for name in ("bib", "back_panel"):   # flat over the plate above the lap's push (plate_lap_blend_cm + 0.5)
+            self.assertEqual(g2["parts"][name]["z"][0],
+                             f"waistband_top_z+{self.spec['build']['plate_lap_blend_cm'] + 0.5:g}")
 
     def test_piece_verts_and_plus_cm_are_checked(self):
         import copy
@@ -551,9 +553,9 @@ class G3eSkinShirtTest(unittest.TestCase):
     def test_the_seams_and_straps_are_judged_against_her_skin(self):
         g2 = self.spec["gate2"]
         st = {s["part"]: s for s in g2["stretch"]}
-        for name in ("bib_seam", "back_seam", "straps"):
-            self.assertTrue(st[name].get("vs_skin"), name)
-            self.assertLessEqual(st[name]["tol_pct"], 3.0)
+        self.assertTrue(st["straps"].get("vs_skin"))
+        self.assertLessEqual(st["straps"]["tol_pct"], 3.0)
+        self.assertFalse({"bib_seam", "back_seam"} & set(st))         # G3f: the lap replaced the seam blend
         for name in ("waistband", "bib", "back_panel"):   # the rigid parts keep their own 2 %
             self.assertFalse(st[name].get("vs_skin"), name)
             self.assertLessEqual(st[name]["tol_pct"], 2.0)
@@ -565,13 +567,13 @@ class G3eSkinShirtTest(unittest.TestCase):
 
     def test_motion_rows_judge_skin_excess_and_the_shirt(self):
         g2 = self.spec["gate2"]
-        clip = {"slip_mm": {}, "flat_mm": {}, "stretch_pct": {"bib_seam": 60.0}, "stretch_p95_pct": {"bib_seam": 40.0},
-                "skin_excess_pct": {"bib_seam": 5.0}, "skin_excess_p95_pct": {"bib_seam": 2.5}}
+        clip = {"slip_mm": {}, "flat_mm": {}, "stretch_pct": {"straps": 60.0}, "stretch_p95_pct": {"straps": 40.0},
+                "skin_excess_pct": {"straps": 5.0}, "skin_excess_p95_pct": {"straps": 2.5}}
         motion = {"parts": {}, "clips": {g2["clips"][0]: clip}}
         poke = {"clips": {g2["clips"][0]: {"max_count": 0, "max_depth_m": 0.0,
                                            "top_under_panels": {"max_count": 3, "max_depth_m": 0.008}}}}
         rows = [r for r in GG.motion_rows(self.spec, motion, poke) if r["clip"] == g2["clips"][0]]
-        seam = next(r for r in rows if "bib_seam" in r["check"])
+        seam = next(r for r in rows if "straps" in r["check"] and "beyond" in r["check"])
         self.assertIn("beyond her skin", seam["check"])
         self.assertEqual((seam["value"], seam["pass"]), (2.5, True))     # 40 % own, 2.5 % beyond her skin's
         shirt = next(r for r in rows if r["check"].startswith("shirt through"))
@@ -581,3 +583,55 @@ class G3eSkinShirtTest(unittest.TestCase):
         self.assertTrue(next(r for r in rows if r["check"].startswith("shirt through"))["pass"])
         other = next(r for r in rows if r["clip"] == g2["clips"][1] and r["check"].startswith("shirt through"))
         self.assertIsNone(other["pass"])                                 # no proof for the clip: unmeasured
+
+
+class G3fLapTest(unittest.TestCase):
+    """G3f (the manager's decisions): the plates lap over the band (option (a)), the strap tops 4 cm, the back smooth
+    across, the shirt's wider blend and its hem."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.spec = S.load_spec(SPEC)
+
+    def test_lap_overlap_in_the_bands_frame(self):
+        import math
+        top = [(0.15 * math.cos(2 * math.pi * k / 64), 0.15 * math.sin(2 * math.pi * k / 64), 1.0) for k in range(64)]
+        edge = [(0.0, -0.152, 0.95), (0.05, -0.145, 0.96)]
+        self.assertAlmostEqual(G.lap_overlap(top, edge), 0.04)          # the higher point: 4 cm under the top
+        # the band turned 30 degrees about z and moved: the edge brought back by its fit reads the same
+        c, s_ = math.cos(math.pi / 6), math.sin(math.pi / 6)
+        r = [[c, -s_, 0], [s_, c, 0], [0, 0, 1]]
+        t = [0.01, 0.02, -0.03]
+        now = [[sum(r[i][j] * e[j] for j in range(3)) + t[i] for i in range(3)] for e in edge]
+        self.assertAlmostEqual(G.lap_overlap(top, G.to_frame(r, t, now)), 0.04)
+        self.assertLess(G.lap_overlap(top, [(0, -0.152, 1.004)]), 0)    # over the band's top: it shows
+        self.assertIsNone(G.lap_overlap(top, []))
+
+    def test_laps_are_judged_per_clip(self):
+        g2 = self.spec["gate2"]
+        c0 = g2["clips"][0]
+        clip = {"slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
+                "lap_mm": {"bib": 32.0, "back panel": 8.0}, "lap_through_mm": {"bib": 0.0, "back panel": 1.5},
+                "lap_gap_mm": {"bib": 4.0, "back panel": 6.0}}
+        rows = [r for r in GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: clip}}, None) if r["clip"] == c0]
+        lap = {r["check"].split(": ")[1].split(" (")[0]: r for r in rows if r["check"].startswith("lap over")}
+        self.assertEqual((lap["bib"]["value"], lap["bib"]["pass"]), (32.0, True))    # a minimum: more is better
+        self.assertEqual((lap["back panel"]["value"], lap["back panel"]["pass"]), (8.0, False))
+        through = {r["check"]: r["pass"] for r in rows if r["check"].startswith("through the band")}
+        self.assertEqual(through, {"through the band: bib (deepest)": True, "through the band: back panel (deepest)": False})
+        import copy
+        spec = copy.deepcopy(self.spec)
+        spec["gate2"]["laps"][0]["plate"] = "bib_seam"
+        self.assertIn("laps 'bib': plate 'bib_seam' is no part", GG.check_gate2(spec))
+
+    def test_the_build_numbers(self):
+        b = self.spec["build"]
+        self.assertTrue(4.0 <= b["plate_lap_cm"] <= 6.0)
+        self.assertGreater(b["plate_lap_clear_cm"], 0)
+        self.assertEqual(b["strap_top_cm"], 4.0)
+        self.assertTrue(5.0 <= b["shirt_follow_fade_cm"] <= 6.0)
+        self.assertTrue(0.2 <= b["shirt_hem_in_cm"] <= 0.3)
+        self.assertGreater(b["back_cols"], 25)
+        for lp in self.spec["gate2"]["laps"]:
+            self.assertGreaterEqual(lp["min_mm"], 10.0)
+            self.assertEqual(lp["through_mm"], 0.0)
