@@ -18,9 +18,9 @@ the approved drawing's shapes, garment_drawing.lines), measured against her undr
 - the weights (G3m): every bib, pocket, back panel and strap vertex takes her skin's weights under it ([build]
   skin_k nearest points of her whole skin, without skin_drop), level with the band the band's (plate_band_blend_cm),
   smoothed along the cloth's edges and across to the cloth on it (skin_smooth, skin_bridge_cm; bib_smooth more on the
-  bib), so straps, bib and back panel move as one strip with her; the hardware rigid on the cloth under it; the shirt
-  over the band takes her skin's weights where the cloth covers it, and its faces under the plates and the straps'
-  cores go (shirt_hide_cm);
+  bib), so straps, bib and back panel move as one strip with her; the hardware rigid on the cloth's weights averaged
+  over its footprint (G3n, hardware_reach_cm); the shirt copies the cloth's weights where the cloth covers it (G3n),
+  and its faces under the plates and the straps' cores go (shirt_hide_cm);
 - the pocket (a `pocket` material plate on the bib), the buckle buttons and rings, the side buttons on the band,
   the turn-ups (rigid rings on the lower leg, the spec's hem, height and width).
 
@@ -568,7 +568,7 @@ def main() -> None:
     # or the shirt through wherever they differed from the skin under them
     shirt_w = Weights(top)
     body_w = Weights(body, bpy.data.objects.get("body_removed"))
-    drop = a.skin_drop.split(",") if a.skin_drop is not None else spec["build"].get("skin_drop", ["Neck", "Head", "Jaw", "Eye", "Gill"])
+    drop = a.skin_drop.split(",") if a.skin_drop is not None else spec["build"].get("skin_drop", ["Head", "Jaw", "Eye", "Gill"])
     drop = [w for w in drop if w]
     knn = int(spec["build"].get("skin_k", 6))
     skin = lambda q: skin_at(body_w, q, drop, knn)
@@ -1031,7 +1031,7 @@ def main() -> None:
     # bib_smooth passes more; then each hardware piece (buckles, rings) rigid on the smoothed cloth under its centre
     hw_vs = {v for v in B.bm.verts if not B.W.get(v)}
     cloth = (plate_vs | strap_vs) - hw_vs
-    n_sm = a.skin_smooth if a.skin_smooth is not None else int(spec["build"].get("skin_smooth", 4))
+    n_sm = a.skin_smooth if a.skin_smooth is not None else int(spec["build"].get("skin_smooth", 10))
     n_bib = a.bib_smooth if a.bib_smooth is not None else int(spec["build"].get("bib_smooth", 0))
     nb = weight_graph(B.bm, cloth, bk.get("skin_bridge_cm", 0.006))
     smooth_weights(B.W, nb, n_sm)
@@ -1053,8 +1053,18 @@ def main() -> None:
             seen.add(v)
             comp.append(v)
             stack += [e.other_vert(v) for e in v.link_edges]
+        # G3n: on the cloth's weights averaged over its footprint (the cloth within its radius + 5 mm of its centre,
+        # eased to its rim), not one vertex's: on one vertex the buckle stayed rigid while the bib bent under it and
+        # the strap fronts slipped 5.1 mm on the bib (G3m)
         c = sum((v.co for v in comp), Vector()) / len(comp)
-        w = dict(B.W[clist[ckd.find(c)[1]]])
+        rad = max((v.co - c).length for v in comp) + bk.get("hardware_reach_cm", 0.005)
+        acc, tot = {}, 0.0
+        for _co, i, dd in ckd.find_range(c, rad):
+            k = 1.0 - 0.5 * dd / rad
+            tot += k
+            for g, val in B.W[clist[i]].items():
+                acc[g] = acc.get(g, 0.0) + k * val
+        w = norm(acc) if tot > 0 else dict(B.W[clist[ckd.find(c)[1]]])
         for v in comp:
             B.W[v] = w
         n_hw += 1
@@ -1063,13 +1073,13 @@ def main() -> None:
     if not a.no_shirt_follow:
         # G3i: a strap gives its weights only to the shirt directly under it, eased back over a short fade, never to
         # the collar's band (G3h: the collar and the front between the straps took them whole, her neck came through);
-        # G3m: over the band the shirt there takes her skin's weights at its own vertex (the cloth's are hers too),
-        # under it the garment's (the band's and the yoke's)
+        # G3n: the shirt under the cloth copies the cloth's weights at the face over it (G3m took her skin's at its own
+        # vertex: unsmoothed, 0.13-0.19 off the cloth over it at p95, the shirt through its rest face in 5 clips)
         keep = collar_band(top, bk.get("collar_keep_cm", 0.0))
         rep["shirt_follow"] = shirt_follow(top, B, set(), bk.get("shirt_follow_fade_cm", 0.03),
                                            near=bk.get("shirt_follow_near_cm", 0.015), low_z=bbz, low_skip=plate_vs,
                                            strap_vs=strap_vs, strap_reach=bk.get("strap_follow_reach_cm", 0.0),
-                                           strap_fade=bk.get("strap_follow_fade_cm", 0.0), keep=keep, w_above=skin)
+                                           strap_fade=bk.get("strap_follow_fade_cm", 0.0), keep=keep)
     # G3m's probe: per cloth vertex its weights against the shirt vertex under it (the nearest within 2.5 cm) and her
     # skin's at it, as half the L1 distance (0 the same, 1 nothing shared)
     tmw = top.matrix_world

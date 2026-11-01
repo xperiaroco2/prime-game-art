@@ -301,12 +301,16 @@ shirt_hem_h_cm = 1.5
 # their knobs are gone: wherever such a bone differed from her skin under it, the difference became stretch, lift or
 # the shirt through (G3l: the back runs sank under the shirt, the panel lifted 52-68 mm off her upper back)
 skin_k = 6
-skin_drop = ["Neck", "Head", "Jaw", "Eye", "Gill"]   # her skin's weights there lose these bones' shares (G3j)
-skin_smooth = 4              # passes of the weights' smoothing (each: half its own, half its neighbours' mean)
+skin_drop = ["Head", "Jaw", "Eye", "Gill"]   # her skin's weights there lose these bones' shares (G3j; G3n: her Neck
+                             # kept, G3m m1: without it the straps' back runs lifted 13 mm off her upper back, with it 1.7)
+skin_smooth = 10             # passes of the weights' smoothing (each: half its own, half its neighbours' mean; G3n: 10,
+                             # G3m m2: Crouch and Talk's strap stretch under 5 % with 10, 6.1 and 5.3 % with 4)
 skin_bridge_cm = 0.6         # cloth within this of other cloth smooths with it (a strap on the bib, a slab's faces)
 bib_smooth = 0               # further passes on the bib alone (step 2's grid)
 plate_band_blend_cm = 3.0    # level with the band the plates take the band's weights (a rigid ring on Spine), eased
                              # to her skin's over this above its top: on her Hips/Spine there they would go through it
+hardware_reach_cm = 0.5      # G3n: a buckle or ring rides the cloth's weights averaged over its footprint (its radius +
+                             # this round its centre), not one vertex's (G3m: the strap fronts slipped 5.1 mm on the bib)
 strap_inner_mm = 1.5         # the strap's inner face off the shirt (G3h 0.5; G3m 1.5, the shirt under its core gone)
 shirt_hide_cm = 2.0          # G3m: the shirt's faces under the plates (one ring in, shirt_hide_rings) and under the
 shirt_hide_rings = 1         # straps' central 1.9 cm go: five rays all meet them within 2 cm (clothes_top's rule)
@@ -495,8 +499,15 @@ on = "waistband"
 min_mm = 10.0
 through_mm = 0.0
 
+# G3n (2026-11-01, the manager's decision; the engineer's "flat" means no folds, not rigid): on her skin's weights the
+# bib bends with her trunk, and the old row (the largest distance from one rigid fit of it) read that bend as a fold,
+# 61 mm in G3m. Folds are now measured as the bib's distance from a smooth fit of its own motion per frame (a cubic in
+# its rest coordinates, garment_gate2_geom.smooth_residual): a bend with her trunk leaves nothing, a crease or a bulge
+# narrower than the bib does; the rigid value is still reported beside it. The 3 mm stays for real folds
 [[gate2.flat]]
 part = "bib"
+fit = "smooth"
+deg = 3
 tol_mm = 3.0                 # change from rest: lean B's drawn bend is the rest shape, a new fold counts
 
 # judged on the 95th percentile of the edges' stretch over the clip (the largest is reported beside it)
