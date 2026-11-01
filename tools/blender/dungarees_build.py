@@ -76,14 +76,16 @@ def no_arms(w: dict) -> dict:
 class Weights:
     """Vertex weights by nearest vertex of a skinned mesh (its rest = mesh coordinates)."""
 
-    def __init__(self, obj) -> None:
-        names = {g.index: g.name for g in obj.vertex_groups}
-        mw = obj.matrix_world
+    def __init__(self, obj, *more) -> None:
+        objs = [obj, *(o for o in more if o is not None)]   # G3k: her kept skin and body_removed, the skin under the cloth
         self.w = []
-        self.kd = KDTree(len(obj.data.vertices))
-        for v in obj.data.vertices:
-            self.kd.insert(mw @ v.co, v.index)
-            self.w.append({names[g.group]: g.weight for g in v.groups if g.weight > 1e-4 and g.group in names})
+        self.kd = KDTree(sum(len(o.data.vertices) for o in objs))
+        for o in objs:
+            names = {g.index: g.name for g in o.vertex_groups}
+            mw = o.matrix_world
+            for v in o.data.vertices:
+                self.kd.insert(mw @ v.co, len(self.w))
+                self.w.append({names[g.group]: g.weight for g in v.groups if g.weight > 1e-4 and g.group in names})
         self.kd.balance()
 
     def at(self, p) -> dict:
@@ -303,12 +305,16 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
     dist_s, src_s = _spread(top, co, got_s, strap_fade) if got_s else ({}, {})
     groups = {g.name: g for g in top.vertex_groups}
     changed = 0
+    # G3k: the shirt directly under a strap takes the strap's weights whole, the shirt directly under a plate the
+    # plate's; between them the plates' fade first, the straps' over it. Before G3k the plates' 5.5 cm fade came last:
+    # it pulled the two shirt vertices under each strap's back run (+-10.2, 11.8, 123.0 cm) to the back panel's Spine
+    # (0.69) while the strap rode her shoulder (0.72), and in every clip they stood 29-73 mm through the strap
     for i in set(dist) | (set(dist_s) - set(keep)):
         w = own[i]
-        if i in dist_s and i not in keep:
-            w = mix(w, got_s[src_s[i]], 1.0 if i in got_s else 1 - smooth01(dist_s[i] / strap_fade))
-        if i in dist:
+        if i in dist and i not in got_s:
             w = mix(w, got[src[i]], 1.0 if i in got else 1 - smooth01(dist[i] / fade))
+        if i in dist_s and i not in keep and i not in got:
+            w = mix(w, got_s[src_s[i]], 1.0 if i in got_s else 1 - smooth01(dist_s[i] / strap_fade))
         w = norm(w)
         for g in groups.values():
             g.remove([i])
@@ -457,6 +463,9 @@ def main() -> None:
                          "strap_skin_z_cm, 0: off)")
     ap.add_argument("--strap-skin-blend-cm", type=float, default=None,
                     help="eased back to the row's own over this arc (default the spec's strap_skin_blend_cm)")
+    ap.add_argument("--strap-back-join-cm", type=float, default=None,
+                    help="the straps' back ends join the back panel: on its weights, eased from her skin's over this "
+                         "arc below the skin rows (default the spec's [build] strap_back_join_cm, 0: off, on Chest)")
     ap.add_argument("--strap-skin-drop", default=None,
                     help="bones (name parts, comma-separated) her skin's weights lose there (default the spec's "
                          "strap_skin_drop)")
@@ -478,7 +487,10 @@ def main() -> None:
     arm.data.pose_position = "REST"
     bpy.context.view_layer.update()
     body, top, gar = bpy.data.objects["axolotl_char"], bpy.data.objects["top"], bpy.data.objects["garment"]
-    shirt_w, body_w = Weights(top), Weights(body)
+    # G3k: her skin's weights under the straps from her whole skin, the part the dress removed under the cloth too: on
+    # the kept skin alone the strap's back run at 123 cm took her shoulder's (the nearest kept skin 51 mm off, over it)
+    # and stood 15-23 mm off her upper back in the runs
+    shirt_w, body_w = Weights(top), Weights(body, bpy.data.objects.get("body_removed"))
 
     # --- the bare ankle: her skin back under the raised hem ---------------------------------------------------
     lo_z, hi_z = (float(x) for x in a.ankle_restore.split(","))
@@ -889,7 +901,10 @@ def main() -> None:
         sboc = a.strap_back_on_chest
         if sboc is None:
             sboc = spec["build"].get("strap_back_on_chest", False)
-        w_sb = w_bib if sboc else w_back
+        # G3k: the back ends join the back panel they lie on (its weights, Spine), eased from her skin's over join_cm
+        # below the skin rows: on Chest over the panel's Spine they stood 17-23 mm off it in the runs (44 mm off her)
+        join = a.strap_back_join_cm if a.strap_back_join_cm is not None else spec["build"].get("strap_back_join_cm", 0.0)
+        w_sb = w_back if join > 0 else (w_bib if sboc else w_back)
 
         def w_of_row(i):
             if i <= i_front:
@@ -941,9 +956,10 @@ def main() -> None:
         core = [i for i in range(i_front + 1, i_back) if skin_z > 0 and pz[i].z >= skin_z / 100]
         if core:
             i0, i1 = min(core), max(core)
-            for i in range(i_front + 1, i_back):
+            for i in range(i_front + 1, len(rows) if join > 0 else i_back):
                 gap = arc[i0] - arc[i] if i < i0 else (arc[i] - arc[i1] if i > i1 else 0.0)
-                share[i] = smooth01(1 - gap / (skin_bl / 100)) if skin_bl > 0 else float(gap == 0.0)
+                bl = join if (join > 0 and i > i1) else skin_bl
+                share[i] = smooth01(1 - gap / (bl / 100)) if bl > 0 else float(gap == 0.0)
 
         def skin_at(q):
             acc = {}
@@ -972,6 +988,7 @@ def main() -> None:
             "bib_rows": i_front + 1, "back_rows": len(rows) - i_back, "back_on_chest": bool(sboc),
             "inner_mm": round(inner * 1000, 2),
             "top_back": {"cm": back_cm, "rows": n_back, "rows_to_back": i_back - i_top},
+            "back_join_cm": join, "back_weights": {k: round(v, 3) for k, v in w_sb.items()},
             "skin": {"z_cm": skin_z, "blend_cm": skin_bl, "drop": drop, "core_rows": len(core),
                      "blend_rows": sum(1 for x in share if 0 < x < 1),
                      "core_z_cm": [round(pz[min(core)].z * 100, 2), round(pz[max(core)].z * 100, 2)] if core else None,

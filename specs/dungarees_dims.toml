@@ -307,6 +307,9 @@ strap_skin_z_cm = 121.5      # G3j: the strap's rows at or over this (front top 
                              # p95 beyond her skin, 9 clips): 125.4/4 cm 5.3-59 %, 123.5/2 cm 1.3-34 %, 121.5/2 cm 0.6-6.9 %
 strap_skin_blend_cm = 2.0    # eased back to Chest over 2 cm of arc down the front run to the bib and down the back run
 strap_skin_drop = ["Neck", "Head", "Jaw", "Eye", "Gill"]   # her skin's weights there lose these bones' shares
+strap_back_join_cm = 0.0     # G3k: >0, the back ends join the back panel (its weights, Spine), eased from her skin's over this
+                             # arc below the skin rows. Off: on Chest over the panel's Spine they hover 16-22 mm off it in the
+                             # runs; 2 cm put them on it (0-13 mm) but the straps stretched 10-56 % beyond her skin (G3k g1)
 shirt_trim_z_cm = 93.5       # G3g: the shirt ends here, inside the yoke under the band (its hem came out at the hip crease)
 shirt_hem_in_cm = 0.25       # G3f: the shirt's hem drawn in 2.5 mm, eased out over its lowest 1.5 cm, inside the yoke
 shirt_hem_h_cm = 1.5
@@ -385,16 +388,20 @@ z = ["waistband_top_z-waistband_h-2", "waistband_top_z+0.3"]
 piece_verts = [1001, 3600]
 # G3j: the straps behind her shoulders' crest (their back runs, which end over the back panel's corners on Chest)
 # and in front of it over the bib (their front tops): each judged by its lift off her skin under it ([[gate2.lifts]])
+# G3k: both from 4 cm under her collarbone up, where the straps follow her skin; under it their ends ride the plates
+# (the back panel's corners, the bib's top), whose lift off her bending back is the plate's (joined to the panel the
+# back ends read 52-68 mm off her, 0-13 mm off the panel). Open: with strap_back_join_cm 0 the back ends hover 16-22 mm
+# off the panel and no row judges that yet (G3k's lift.py probe)
 [gate2.parts.strap_backs]
 classes = ["strap"]
 x_abs = [0, 40]
 y = [0, 40]
-z = [0, 200]
+z = ["collarbone-4", 200]
 [gate2.parts.strap_tops]
 classes = ["strap"]
 x_abs = [0, 40]
 y = [-40, 0]
-z = ["bib_top_z+0.5", 200]
+z = ["collarbone-4", 200]
 [gate2.parts.straps]
 classes = ["strap"]
 x_abs = [0, 40]
