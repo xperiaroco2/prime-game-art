@@ -88,6 +88,7 @@ var _bronzes: Dictionary = {}
 const TRACE_MAT := "lens_trace"
 const TRACE_SHADER := "res://charger/traces.gdshader"
 var _trace: ShaderMaterial = null
+var _jaw_lights: Array[Node3D] = []   # polish n2: the glow lights that turn with a jaw (_jaw_bind)
 const LIGHT_CELL_M: float = 1.6
 const INSIDE_LAYER: int = 1   # render layer bits: the inside's pieces (default) and the outside's (inside-2)
 const OUTSIDE_LAYER: int = 2
@@ -471,6 +472,7 @@ func _dress(ship: Node3D) -> int:
 			omni.set_meta("clearing", true)
 		omni.set_meta("pieces", (cell[7] as Dictionary).keys())
 		root.add_child(omni)
+		_jaw_bind(ship, omni)
 		dump.append([_r3(omni.position), snappedf(omni.light_energy, 0.001), snappedf(omni.omni_range, 0.001),
 			omni.light_color.to_html(false)])
 	_write("lights.json", {"cells": list.size(), "strip_lights": dump})  # where the emissive cells' lights stand (the hall disc's spot, inside-3)
@@ -512,6 +514,24 @@ func _jaw_turn(ship: Node3D, deg: Dictionary) -> void:
 		var pid: String = s.substr(0, s.rfind("_"))
 		if deg.has(pid):
 			(n as Node3D).rotation_degrees.x = float(deg[pid])
+	for l: Node3D in _jaw_lights:  # polish n2: a jaw's glow lights turn with it (the closed nose's glare, below)
+		var piece: Node3D = l.get_meta("jaw_piece")
+		l.position = piece.transform * (l.get_meta("jaw_local") as Vector3)
+
+
+## polish n2 (art #263): a glow cell lit only by one jaw piece keeps its place on that jaw. The cells are made in the
+## saved pose (open); a closed view left the deck tip's cyan light hanging 0.5 m over the path in front of the shut
+## nose, the "glare through the seam" in closed_front and closed_mouth. Its position in the jaw's frame is kept.
+func _jaw_bind(ship: Node3D, omni: OmniLight3D) -> void:
+	var ids: Array = omni.get_meta("pieces", [])
+	if ids.size() != 1 or not (_req.get("jaw", {}).get("open", {}) as Dictionary).has(ids[0]):
+		return
+	for n: Node in ship.get_children():
+		if String(n.name).begins_with(String(ids[0]) + "_"):
+			omni.set_meta("jaw_piece", n)
+			omni.set_meta("jaw_local", (n as Node3D).transform.affine_inverse() * omni.position)
+			_jaw_lights.append(omni)
+			return
 
 
 ## The jaw video's seam line: [material, its emission energy] for each mesh named seam_glow* under a jaw piece, each

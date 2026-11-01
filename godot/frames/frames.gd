@@ -14,7 +14,8 @@ extends SceneTree
 ## world position at each time, with each bone's two axis points (Character.axis_points). Prints FRAMES saved <path>, or FRAMES error <why> and exits 1.
 ## Optional: "face" (sheets/face.png, its own fixed light) and "closeups" (sheets/closeups.png: `frames --closeups
 ## 'label@x,y,z[~Bone]/size/yaw[/pitch];...'` (~Bone: the rest point carried with that bone into the pose) at --closeup-clip's --closeup-time (default its first frame), orthographic,
-## two per row, the light turned with each shot's yaw); light_turn_deg comes from `frames --yaw`.
+## two per row, the light turned with each shot's yaw); light_turn_deg comes from `frames --yaw`. "video_camera" (one
+## such shot, `frames --video-camera`): the video frames from that close-up camera instead of the clip sheet's.
 
 const Offscreen = preload("res://lib/offscreen.gd")
 const Character = preload("res://lib/character.gd")
@@ -106,10 +107,16 @@ func _run(scene_path: String, out_dir: String, spec: Dictionary) -> void:
 		_save(sheet, "%s/sheets/%s.png" % [out_dir, clip["label"]])
 		if clip.get("video", false):
 			var n: int = int(clip["video_frames"])  # a closed loop's last frame is its first; else up to the last
+			var vcam: Dictionary = spec.get("video_camera", {})
 			for f: int in n:
+				if not vcam.is_empty():  # a close-up video: the shot's camera each frame (a ~Bone target follows the pose)
+					Character.pose_at(_player, _skeleton, name, f / float(spec["fps"]))
+					entry["video_camera"] = _point_frame(vcam)
+					_rig.rotation.y = deg_to_rad(float(vcam["light_turn_deg"]))
 				var img: Image = await _shot(name, f / float(spec["fps"]), "%s   %s" % [spec["character"], clip["label"]])
 				_save(img, "%s/video/%s/%04d.png" % [out_dir, clip["label"], f])
 			entry["video_frames"] = n
+			_rig.rotation.y = deg_to_rad(float(spec.get("light_turn_deg", 0.0)))
 		record["clips"][clip["label"]] = entry
 		print("FRAMES sheet ", clip["label"], " ", times.size(), " frames")
 	if spec.has("face"):

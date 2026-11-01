@@ -1,0 +1,433 @@
+# The axolotl's dungarees: the spec (art #196, Gate 1; docs/clothes.md, "Specs"). Every size in cm on her body B13 and
+# as a ratio to her landmarks (tools/blender/garment_spec.py: a height is `between` two landmarks at `ratio`, a size
+# is `ratio` times the landmark `of`, a fixed size is `cm` alone). garment_spec.check_spec refuses the file when a
+# `cm` and its ratio disagree by more than 0.1 cm on [body.landmarks_cm]. tools/blender/garment_drawing.py draws it
+# over the concept and over her body and measures a build against it. `tol_cm`: the most a build may differ.
+# The front view of the concept wins where its views disagree. Her rest is a T-pose (the arms horizontal).
+
+[garment]
+id = "dungarees"
+concept = "D:/prime-art-raw/2026-10-28-alien-clothes-s1/ax_overall/image-0.png"
+concept_note = "front, side and back on one baseline, 1536 x 1024 px; the front view wins"
+engineer_words = """2026-10-31: the bib's top where her chest begins (under the collarbones, about level with the armpits,
+covering her bust); the back as on the concept (not the s2 turnaround's tall V); the bib flat (no folds) but moving
+with the straps as one piece."""
+
+[body]
+id = "B13"
+character = "D:/prime-art-raw/2026-10-30-alien-dress-e1/c40/loco/build/axolotl/axolotl_char.blend"
+mesh = "axolotl_char"
+note = "measured by garment_spec.body_landmarks on garment_spec_probe.py's rest dump; heights from the sole"
+
+[body.landmarks_cm]
+sole = 0.0
+ankle = 10.96        # LeftFoot bone head
+knee = 49.37         # LeftLowerLeg bone head
+crotch = 70.8        # the highest section where the legs are apart
+waist = 100.5        # the narrowest trunk section between the hips and the bust
+bust = 113.05        # the trunk's most forward point (y -12.79)
+armpit = 118.05      # T-pose: where the arm's piece leaves the trunk's (an A-pose armpit sits lower)
+collarbone = 125.44  # LeftShoulder bone head
+shoulder_top = 129.04  # where the trunk's half width falls under the neck's + 3 cm (the strap's line over it)
+waist_w = 22.84
+hip_w = 37.57        # at 71.8
+bust_w = 26.26
+chest_w = 28.16      # at armpit - 3 cm
+shoulder_w = 25.8    # between the upper arms' heads
+thigh_w = 16.95      # one leg, 3 cm under the crotch
+knee_w = 11.11
+ankle_w = 6.32       # 4 cm over the ankle bone
+bust_d = 23.24       # front to back at the bust
+torso_span = 28.54   # waist to shoulder_top
+hip_z_span = 29.7    # crotch to waist
+
+# The concept's landmarks in its own pixels (rows from the top; one baseline for the three views), read off the
+# picture on a 10 px grid (tools/out/spec/crop.py). `unmapped`: rows kept as a reading but left out of the piecewise
+# line that places the spec on the concept (garment_spec.concept_pairs): the concept's armpit is an A-pose armpit, hers
+# a T-pose one 5 cm higher, and pairing them skewed the band 113-125 cm (1 px/cm under it, 8.25 px/cm over it; art
+# #196, G2t3). Columns: each view's centre line, and for the side the mid-depth
+# at the bust. px_per_cm: across, from the hips (187 px <-> hip_w), the concept's horizontal scale.
+[concept]
+rows = { sole = 945, ankle = 893, knee = 718, crotch = 572, waist = 440, bust = 372, armpit = 367, collarbone = 306, shoulder_top = 290 }
+unmapped = ["armpit"]
+front_cx = 318
+back_cx = 1210
+side_mid_x = 765     # <-> her y = -1.1 cm: the mid-depth of the shirt front (718) and back (812) at the bust row
+side_mid_y_cm = -1.1
+px_per_cm = 4.98
+# each leg's centre from the view's centre line, px, at the thigh (3 cm under the crotch), the knee and the hem:
+# the concept stands wider than her rest, so the legs' lines follow its legs
+leg_cx_px = { front = [51, 79, 85], back = [67, 88, 98] }
+boxes = { front = [100, 40, 540, 965], side = [600, 40, 920, 965], back = [990, 40, 1430, 965] }
+notes = """The concept's figure has a short torso and a flat chest: its waistband-to-shoulder span is 153 px against
+129 px from the crotch to the band, hers 29.2 cm against 29.0 cm. Its armpit (367) is an A-pose armpit. Its ankle is
+read at the shoe's top (893), as hers sits at the sneaker's rim."""
+
+# --- the front ------------------------------------------------------------------------------------------------
+[dims.bib_top_z]
+what = "the bib's top edge (front, straight across)"
+between = ["bust", "collarbone"]
+ratio = 0.5455
+cm = 119.81
+tol_cm = 1.0
+note = "the concept's bib top (336 px) by its bust (372) and collarbone (306) rows; on her 5.6 cm under the collarbone, 1.8 cm over the T-pose armpit, 6.8 cm over the bust peak: 'where her chest begins'. G1's 119.95 (0.78 waist->collarbone) drew at row 351 through the armpit row (G2t3)"
+
+[dims.bib_top_w]
+what = "the bib's width at its top edge"
+of = "bust_w"
+ratio = 0.838
+cm = 22.0
+tol_cm = 0.8
+note = "wider than the concept's (115 px = 23 % narrower at the concept's scale) so that it covers her fuller bust; the straps' outer edges flush with its corners"
+
+[dims.bib_bottom_w]
+what = "the bib's width where it meets the waistband (nearly a rectangle, 1 cm narrower at the bottom)"
+of = "waist_w"
+ratio = 0.92
+cm = 21.01
+tol_cm = 0.8
+
+[dims.bib_lean_deg]
+what = "the bib's side-view chord (band to top edge), degrees from vertical; + = top forward"
+cm = 0.0
+tol_cm = 2.0
+choice = "B"
+note = """THE TASTE POINT. Her bust stands 3.5 cm ahead of her upper chest only 7 cm under the bib's top. (A) a rigid flat
+plane resting on the band and the bust peak leans 8.7 deg forward: its top edge stands 4.5 cm off her upper chest
+(d80-d82's board; the straps ran under it). (B, chosen) straight across, one smooth bend in side view over the bust
+(no folds, no wrinkles): the chord band->top vertical, the bust peak 2.1 cm ahead of the chord, the top edge 0.8 cm
+off the shirt. Either moves as one rigid piece with the straps. The drawing's side view shows A dashed, B solid."""
+
+[dims.bib_standoff_top]
+what = "the bib top edge's gap to the shirt (option B)"
+cm = 0.8
+tol_cm = 0.4
+
+[dims.bib_standoff_bust]
+what = "the bib's gap to the shirt at the bust peak"
+cm = 0.3
+tol_cm = 0.3
+
+[dims.pocket_top_z]
+what = "the bib pocket's top (hem line)"
+between = ["bust", "collarbone"]
+ratio = 0.2265
+cm = 115.86
+tol_cm = 1.0
+
+[dims.pocket_bottom_z]
+what = "the bib pocket's bottom (at its centre; the corners 1 cm higher, a shallow point)"
+between = ["waist", "collarbone"]
+ratio = 0.06
+cm = 101.99
+tol_cm = 1.0
+
+[dims.pocket_w]
+what = "the bib pocket's width, centred"
+of = "bust_w"
+ratio = 0.552
+cm = 14.5
+tol_cm = 0.6
+
+[dims.strap_w]
+what = "a strap's width (front and back)"
+cm = 3.8
+tol_cm = 0.3
+
+[dims.strap_x]
+what = "a strap's centre line from her centre, front, over the shoulder and at the back's top"
+of = "bust_w"
+ratio = 0.3618
+cm = 9.5
+tol_cm = 0.6
+note = "the straps run vertical in front view, as on the concept; 3 cm outside her neck"
+
+[dims.buckle_z]
+what = "the strap buckle's button on the bib (centre), its ring at the bib's top edge"
+between = ["bust", "collarbone"]
+ratio = 0.3929
+cm = 117.92
+tol_cm = 0.8
+
+[dims.buckle_d]
+what = "the buckle button's diameter"
+cm = 1.6
+tol_cm = 0.3
+
+[dims.waistband_top_z]
+what = "the waistband's top (front and back level)"
+between = ["crotch", "waist"]
+ratio = 0.977
+cm = 99.82
+tol_cm = 1.5
+note = "the concept's band sits at its waist; d79's at 93.2 is 6.6 cm lower (the Meshy trousers' low rise)"
+
+[dims.waistband_h]
+what = "the waistband's height"
+cm = 4.0
+tol_cm = 0.4
+
+[dims.waistband_w]
+what = "the waistband's width in front view at its top (her waist + the shirt and the band, 0.8 cm a side)"
+of = "waist_w"
+ratio = 1.073
+cm = 24.51
+tol_cm = 1.0
+
+[dims.side_button_z]
+what = "the side buttons' centres, on the band at its ends"
+between = ["crotch", "waist"]
+ratio = 0.886
+cm = 97.11
+tol_cm = 0.8
+
+[dims.side_button_d]
+what = "a side button's diameter"
+cm = 1.8
+tol_cm = 0.3
+
+# --- the back -------------------------------------------------------------------------------------------------
+[dims.back_top_z]
+what = "the back panel's top between the straps (a shallow U, its lowest point at the centre)"
+between = ["bust", "collarbone"]
+ratio = 0.4538
+cm = 118.67
+tol_cm = 1.0
+note = "as on the concept (342 px, by its bust and collarbone rows): the back's top about level with the bib's, the straps rising from its corners; not the tall V"
+
+[dims.back_top_w]
+what = "the back panel's width at its top corners (the straps' outer edges)"
+of = "chest_w"
+ratio = 0.856
+cm = 24.1
+tol_cm = 1.0
+
+[dims.back_bottom_w]
+what = "the back panel's width at the waistband"
+of = "waist_w"
+ratio = 0.95
+cm = 21.7
+tol_cm = 1.0
+
+[dims.back_standoff]
+what = "the back panel's gap to the shirt (flat across, one bend down the back like the bib)"
+cm = 0.5
+tol_cm = 0.5
+
+# --- the legs (front view, each leg) --------------------------------------------------------------------------
+[dims.leg_thigh_w]
+what = "a leg's width 3 cm under the crotch"
+of = "thigh_w"
+ratio = 1.1
+cm = 18.65
+tol_cm = 1.0
+
+[dims.leg_knee_w]
+what = "a leg's width at the knee"
+of = "knee_w"
+ratio = 1.1701
+cm = 13.0
+tol_cm = 1.0
+note = "the concept's slim leg (11.6 cm at its scale) is narrower than her knee: 1 cm of ease a side"
+
+[dims.leg_hem_w]
+what = "the turn-up's outer width"
+of = "ankle_w"
+ratio = 1.82
+cm = 11.5
+tol_cm = 0.8
+
+[dims.hem_z]
+what = "the turn-up's bottom (the leg's end)"
+between = ["ankle", "knee"]
+ratio = 0.177
+cm = 17.76
+tol_cm = 1.0
+
+[dims.turnup_h]
+what = "the turn-up's height"
+cm = 5.5
+tol_cm = 0.5
+
+[dims.ankle_strip_h]
+what = "the bare ankle between the hem and the sneaker's rim (11.1)"
+cm = 6.66
+tol_cm = 1.0
+
+# --- behaviour ------------------------------------------------------------------------------------------------
+[behaviour]
+bib = "rigid: one piece, straight across, the single side-view bend of option B; never folds or wrinkles; moves with the straps' front ends (the buckles ride on it, slip under 3 mm)"
+straps = "bend along their length only, stay 3.8 cm wide; front ends ride the bib, middles the clavicles (Left/RightShoulder), back ends the back panel"
+back_panel = "rigid like the bib, rides the UpperChest/Chest; the straps leave its top corners"
+waistband = "stiff ring: follows the Hips/Spine, no stretch over 2 %"
+buttons_buckles = "rigid hardware, each on the nearest panel's surface"
+legs = "soft denim: bend at the hips and knees, the turn-up stays a rigid ring over the ankle strip"
+
+# --- Gate 2: the build's automatic checks (tools/blender/garment_gate2.py; docs/clothes.md, "Gate 2") -------------
+# Heights and boxes may name a measure: the build's measured value of a spec size (garment_drawing.measure_build),
+# else the spec's cm, else her landmark; 'spec:NAME' always the spec's cm. Boxes in cm on her rest (T-pose).
+[gate2]
+clips = ["Idle", "Walk", "Jog_Fwd", "Sprint_Fwd", "Strafe_Left", "Crouch_Fwd", "Jump_Start", "Jump_Air", "Talk_Upper"]
+# the motion is measured from Idle's first frame, the stand (from her T-pose rest every panel moves as the arms come
+# down: on d79 the bib's flatness 13.6 mm and its stretch 18 % already in Idle)
+reference_clip = "Idle"
+overlap_min = { front = 0.8, side = 0.75, back = 0.8 }
+# the side view's overlap over the trunk only: the concept's side legs stride, hers stand straight
+overlap_z = { side = ["crotch", "shoulder_top+8"] }
+# the concept's denim: blue over red and green, no bright grey; an opening of 4 rows drops the shirt's navy stripes;
+# the holes inside (stitching, the pocket's seams, highlights) filled. A hand mask instead: mask_<view> = "PNG path"
+concept_mask = { b_minus_r = 15, b_minus_g = 6, max = 215, open_ry = 4, close_r = 3, keep_share = 0.02 }
+
+[gate2.classify]
+over_z = "collarbone"        # a piece over this with points in front and behind goes over the shoulder: a strap
+hardware_max_verts = 60      # buckles, buttons (d79: 21 and 32; its back panel 272, band halves 165, cuffs 240)
+
+[gate2.parts.bib]
+classes = ["panel"]
+x_abs = [0, 11.5]
+y = [-40, 0]
+z = ["waistband_top_z+1", "bib_top_z+1"]
+[gate2.parts.strap_fronts]
+classes = ["strap", "hardware"]
+x_abs = [0, 15]
+y = [-40, 0]
+z = ["waistband_top_z+1", "bib_top_z+0.5"]
+[gate2.parts.back_panel]
+classes = ["panel"]
+x_abs = [0, 13]
+y = [0, 40]
+z = ["waistband_top_z+1", "back_top_z+1"]
+[gate2.parts.strap_backs]
+classes = ["strap", "hardware"]
+x_abs = [0, 15]
+y = [0, 40]
+z = ["waistband_top_z+1", "back_top_z+0.5"]
+[gate2.parts.straps]
+classes = ["strap"]
+x_abs = [0, 40]
+y = [-40, 40]
+z = [0, 200]
+[gate2.parts.waistband]
+classes = ["panel"]
+x_abs = [0, 40]
+y = [-40, 40]
+z = ["waistband_top_z-waistband_h", "waistband_top_z"]
+
+[[gate2.joins]]
+name = "strap fronts on the bib"
+moving = "strap_fronts"
+on = "bib"
+reach_mm = 25
+tol_mm = 3.0                 # [behaviour] bib: the buckles ride on it, slip under 3 mm
+[[gate2.joins]]
+name = "strap backs on the back panel"
+moving = "strap_backs"
+on = "back_panel"
+reach_mm = 25
+tol_mm = 3.0
+
+[[gate2.flat]]
+part = "bib"
+tol_mm = 3.0                 # change from rest: lean B's drawn bend is the rest shape, a new fold counts
+[[gate2.flat]]
+part = "back_panel"
+tol_mm = 3.0
+
+# judged on the 95th percentile of the edges' stretch over the clip (the largest is reported beside it)
+[[gate2.stretch]]
+part = "waistband"
+tol_pct = 2.0                # [behaviour] waistband: no stretch over 2 %
+[[gate2.stretch]]
+part = "bib"
+tol_pct = 2.0
+[[gate2.stretch]]
+part = "back_panel"
+tol_pct = 2.0
+[[gate2.stretch]]
+part = "straps"
+tol_pct = 5.0                # bend along their length only
+
+[gate2.pokes]
+max_count = 0                # clothes_proof.py's poke-through, every clip
+
+# Stations on the silhouettes: kind top / bottom (a row inside the columns u), width / front / back (a row's edges
+# inside u at height z). dim: the spec size it checks (its cm and tol_cm); else concept_tol_cm against the concept.
+# Only where both pictures show the garment plainly: the concept's side arm hides the back at the bust, its bib is
+# narrower than the spec's (no band top beside it), the straps rise over the bib top in side view.
+[[gate2.stations]]
+view = "front"
+name = "bib top, centre"
+kind = "top"
+u = [-4, 4]
+z = ["waist", "shoulder_top+8"]
+dim = "bib_top_z"
+[[gate2.stations]]
+view = "front"
+name = "bib width under its top"
+kind = "width"
+u = [-16, 16]
+z = "spec:bib_top_z-1.5"
+dim = "bib_top_w"
+[[gate2.stations]]
+view = "front"
+name = "waistband width"
+kind = "width"
+u = [-25, 25]
+z = "spec:waistband_top_z-1"
+dim = "waistband_w"
+[[gate2.stations]]
+view = "front"
+name = "her left thigh"
+kind = "width"
+u = [0.5, 30]
+z = "crotch-3"
+dim = "leg_thigh_w"
+[[gate2.stations]]
+view = "front"
+name = "her left knee"
+kind = "width"
+u = [0.5, 30]
+z = "knee"
+dim = "leg_knee_w"
+[[gate2.stations]]
+view = "front"
+name = "her left hem"
+kind = "bottom"
+u = [3, 30]
+z = ["ankle", "knee"]
+dim = "hem_z"
+[[gate2.stations]]
+view = "side"
+name = "bib front at the bust"
+kind = "front"
+u = [-30, 30]
+z = "bust"
+concept_tol_cm = 1.5
+[[gate2.stations]]
+view = "side"
+name = "seat's back under the waist"
+kind = "back"
+u = [-30, 30]
+z = "waist-6"
+concept_tol_cm = 1.5
+[[gate2.stations]]
+view = "back"
+name = "back top, centre"
+kind = "top"
+u = [-4, 4]
+z = ["waist", "shoulder_top+8"]
+dim = "back_top_z"
+[[gate2.stations]]
+view = "back"
+name = "waistband width"
+kind = "width"
+u = [-25, 25]
+z = "spec:waistband_top_z-1"
+dim = "waistband_w"
+[[gate2.stations]]
+view = "back"
+name = "her left hem"
+kind = "bottom"
+u = [-30, -3]
+z = ["ankle", "knee"]
+dim = "hem_z"
