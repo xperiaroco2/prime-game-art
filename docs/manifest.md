@@ -56,9 +56,9 @@ TOML puts every key after a `[table]` header into that table, so the top-level k
 | `[[raw]]` | One or more: `file` (a path relative to the raw folder, `/` separators, no `..`) and `sha256` (64 lowercase hex digits); a set manifest may leave it out (its `[[files]]` are its raw files) |
 | `[[files]]` | Only in a set manifest (below): one table per shipped file |
 | `tools` | A non-empty list: the generator and every tool that changed the asset, with versions |
-| `licence` | `CC0-1.0`, `CC-BY-4.0`, `owned-paid-output`, `own-work` or `restricted` (private only: Mixamo, store packs, raw library motions, anything unclear) |
+| `licence` | `CC0-1.0`, `CC-BY-4.0`, `NASA-PD` (US government public domain imagery from nasa.gov sites; credit "Earth imagery: NASA" or the like, no NASA logos or insignia, no implied endorsement; `docs/decisions/2026-10-30-nasa-public-domain.md`), `owned-paid-output`, `own-work` or `restricted` (private only: Mixamo, store packs, raw library motions, anything unclear) |
 | `licence_url` | An http(s) URL to the licence or the terms that applied on `generated_at` |
-| `credit` | The attribution line; required for `CC-BY-4.0` |
+| `credit` | The attribution line; required for `CC-BY-4.0` and `NASA-PD` |
 | `public_repo_ok` | `true` only if the asset may enter the public game repo; never with `restricted` |
 | `ai_generated` | `true` for any AI generator's output |
 | `approved_by` | GitHub logins of the approvers: the engineer for the look (he acts as the designer; earlier manifests may also list `SwiftySinister`), and for what he decided (taste, money, licences); `[]` until approved. The tech approval is the approving PR's merge after the gate (the trust model, `docs/decisions/2026-10-03-trust-model.md`) |
@@ -205,7 +205,7 @@ sha256 = "<64 lowercase hex digits>"
 | `id` | Lowercase letters, digits and underscores; equal to the file name |
 | `title`, `author` | Non-empty strings: the pack's name and its maker |
 | `url` | The http(s) page it was downloaded from (the official page, not a mirror) |
-| `licence`, `licence_url`, `credit`, `public_repo_ok`, `ai_generated` | As for assets (above); `credit` is required for `CC-BY-4.0` |
+| `licence`, `licence_url`, `credit`, `public_repo_ok`, `ai_generated` | As for assets (above); `credit` is required for `CC-BY-4.0` and `NASA-PD` |
 | `downloaded_at` | A TOML date or date-time |
 | `notes` | Optional string |
 | `[[raw]]` | One or more, as for assets: the downloaded archive and every file unpacked from it that is used, each listed once |
