@@ -448,6 +448,8 @@ frame = "local"              # G3n (2026-11-01): the bib bends with her trunk, s
                              # by the bib face it rides, not one rigid fit of the whole bib (n1: 3.7-4.6 mm by the one
                              # fit, which turns a point riding a bent face by the wrong angle); the one-fit value is reported
 tol_mm = 3.0                 # [behaviour] bib: the buckles ride on it, slip under 3 mm
+face_dir = [0.0, -1.0, 0.0]  # G3o (2026-11-01): tied only to the bib's front faces (normal within 45 degrees of -y) and only
+face_min_dot = 0.7           # points standing over a face: G3n tied strap points over the bib's top to its 2 mm rim faces
 # G3j: no "strap backs on the back panel" join: since G3h the straps' back rows ride Chest whole and end over the
 # panel's corners without lying on it (G3h/G3i: 80 strap-back vertices at z 117.4-119.1 cm, none within 25 mm of the
 # panel's faces, the row unmeasured); what they ride is her back, so they are judged by their lift off it below

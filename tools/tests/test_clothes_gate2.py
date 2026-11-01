@@ -617,6 +617,12 @@ class G3eSkinShirtTest(unittest.TestCase):
         r = BG.rigid_fit(ref[:6], now[:6])[0]
         self.assertGreater(BG.slip(ref, now, pairs, r), 0.001)
         self.assertGreater(np.linalg.norm(ref[6] - p0), 0)
+        # G3o: where names the moving vertex with the worst slide
+        v, at = BG.slip(ref, now, pairs, r, where=True)
+        self.assertEqual(at, 6)
+        self.assertAlmostEqual(v, BG.slip(ref, now, pairs, r))
+        self.assertEqual(BG.slip_local(ref, now, pairs, where=True)[1], 6)
+        self.assertEqual(BG.slip_local(ref, now, [], where=True), (0.0, None))
 
     @unittest.skipUnless(HAVE_NUMPY, "numpy (Blender's Python has it)")
     def test_folds_are_off_a_smooth_fit_not_a_rigid_one(self):

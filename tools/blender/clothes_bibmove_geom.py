@@ -52,18 +52,19 @@ def rigid_fit(a: "np.ndarray", b: "np.ndarray") -> tuple["np.ndarray", "np.ndarr
     return r, t, res
 
 
-def slip(co0: "np.ndarray", co: "np.ndarray", pairs, r: "np.ndarray") -> float:
+def slip(co0: "np.ndarray", co: "np.ndarray", pairs, r: "np.ndarray", where: bool = False):
     """The largest slide of a strap vertex on the bib: pairs are (strap vertex, bib face's vertex ids, barycentric
     weights) tied at rest; its offset from the tied point now, turned back by the bib's best-fit rotation r, less its
-    rest offset (m)."""
+    rest offset (m). where (G3o): (the slide, the strap vertex with it), the vertex None with no pair."""
     import numpy as np
-    most = 0.0
+    most, at = 0.0, None
     for i, ids, w in pairs:
         p0 = sum(wk * co0[k] for k, wk in zip(ids, w))
         p1 = sum(wk * co[k] for k, wk in zip(ids, w))
-        d = r.T @ (co[i] - p1) - (co0[i] - p0)
-        most = max(most, float(np.linalg.norm(d)))
-    return most
+        d = float(np.linalg.norm(r.T @ (co[i] - p1) - (co0[i] - p0)))
+        if at is None or d > most:
+            most, at = d, i
+    return (most, at) if where else most
 
 
 def _tri_frame(p0, p1, p2):
@@ -76,13 +77,14 @@ def _tri_frame(p0, p1, p2):
     return np.stack([e1, np.cross(n, e1), n])
 
 
-def slip_local(co0: "np.ndarray", co: "np.ndarray", pairs) -> float:
+def slip_local(co0: "np.ndarray", co: "np.ndarray", pairs, where: bool = False):
     """G3n: the largest slide of a moving vertex on a part that bends: as slip(), but its offset from the tied point
     is turned back by the tied face's own rotation (its triangle's frame then and now), not the part's one best fit.
     On her skin's weights the bib bends with her trunk (a rigid fit leaves 15-61 mm), so one rotation for the whole bib
-    turned a strap point riding its face by a wrong angle and read millimetres of slip that are not there (m)."""
+    turned a strap point riding its face by a wrong angle and read millimetres of slip that are not there (m);
+    where (G3o): (the slide, its moving vertex), as slip()."""
     import numpy as np
-    most = 0.0
+    most, at = 0.0, None
     for i, ids, w in pairs:
         if len(ids) < 3:
             continue
@@ -90,9 +92,10 @@ def slip_local(co0: "np.ndarray", co: "np.ndarray", pairs) -> float:
         p1 = sum(wk * co[k] for k, wk in zip(ids, w))
         f0 = _tri_frame(*(co0[k] for k in ids[:3]))
         f1 = _tri_frame(*(co[k] for k in ids[:3]))
-        d = f1 @ (co[i] - p1) - f0 @ (co0[i] - p0)
-        most = max(most, float(np.linalg.norm(d)))
-    return most
+        d = float(np.linalg.norm(f1 @ (co[i] - p1) - f0 @ (co0[i] - p0)))
+        if at is None or d > most:
+            most, at = d, i
+    return (most, at) if where else most
 
 
 def concept_ratio(bib_top: float, shoulder: float, band: float) -> float:

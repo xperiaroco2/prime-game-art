@@ -18,7 +18,8 @@ the spec's [gate2] section, resolved on the build's measures) and reads the resu
   value is kept beside it (flat_rigid_mm).
 - A join with frame = "local" (G3n) turns each tied offset back by its face's own frame
   (clothes_bibmove_geom.slip_local), not the part's one best fit: a bib that bends with her trunk; the one-fit value
-  is kept beside it (slip_rigid_mm).
+  is kept beside it (slip_rigid_mm). Where (G3o): the worst moving vertex's reference point (cm) and frame, slip_at;
+  with face_dir a join ties only to faces turned toward it, and only points standing over a face (not beside it).
 - Where (G3n): per vs_skin stretch the largest edge beyond her skin in the frame of the clip's worst p95 (its rest
   midpoint, cm, the frame and its %), stretch_at.
 - Stretch: the part's edges' |length / rest - 1|, the largest and the 95th percentile, %. A stretch entry with
@@ -146,14 +147,29 @@ def main() -> int:
     for j in cfg["joins"]:
         on = set(parts[j["on"]].tolist())
         tris = [t for t in tri_all if all(k in on for k in t)]
+        if j.get("face_dir"):   # G3o: only the faces turned toward face_dir (the bib's front, not its 2 mm rim)
+            fd = np.array(j["face_dir"], dtype=float)
+            fd /= np.linalg.norm(fd)
+            def facing(t):
+                n = np.cross(ref[t[1]] - ref[t[0]], ref[t[2]] - ref[t[0]])
+                ln = np.linalg.norm(n)
+                return ln > 1e-12 and float(np.dot(n / ln, fd)) >= j.get("face_min_dot", 0.7)
+            tris = [t for t in tris if facing(t)]
         pairs = []
         if tris:
             tree = BVHTree.FromPolygons([tuple(c) for c in ref], tris)
             for i in parts[j["moving"]]:
-                loc, _n, fi, _d = tree.find_nearest(ref[i], j["reach_m"])
-                if loc is not None:
-                    ids = tris[fi]
-                    pairs.append((int(i), ids, list(poly_3d_calc([ref[k] for k in ids], loc))))
+                loc, nrm, fi, d_ = tree.find_nearest(ref[i], j["reach_m"])
+                if loc is None:
+                    continue
+                # G3o: with face_dir, a point beside the faces (its foot on a face's edge, not over it: the strap over
+                # the bib's top) is not tied; it rides nothing there
+                if j.get("face_dir") and d_ > 1e-5:
+                    off = (np.array(ref[i]) - np.array(loc)) / d_
+                    if abs(float(np.dot(off, np.array(nrm)))) < 0.97:
+                        continue
+                ids = tris[fi]
+                pairs.append((int(i), ids, list(poly_3d_calc([ref[k] for k in ids], loc))))
         ties[j["name"]] = pairs
         rep["parts"]["join: " + j["name"]] = {"tied": len(pairs)}
     # the laps (G3f): the band's top row and outer face at the reference, the strip's lowest row and its vertices
@@ -244,7 +260,7 @@ def main() -> int:
         f0, f1 = (int(round(x)) for x in act.frame_range)
         res = {"frames": 0, "slip_mm": {}, "flat_mm": {}, "stretch_pct": {}, "stretch_p95_pct": {},
                "skin_excess_pct": {}, "skin_excess_p95_pct": {}, "lap_mm": {}, "lap_through_mm": {}, "lap_gap_mm": {},
-               "lift_mm": {}, "lift_at": {}, "flat_rigid_mm": {}, "stretch_at": {}, "slip_rigid_mm": {}}
+               "lift_mm": {}, "lift_at": {}, "flat_rigid_mm": {}, "stretch_at": {}, "slip_rigid_mm": {}, "slip_at": {}}
         sc.frame_set(f0)
         sref0 = None
         for f in range(f0, max(f0 + 1, f1 + 1), max(1, cfg.get("every", 1))):
@@ -258,12 +274,16 @@ def main() -> int:
                     fits[name] = B.rigid_fit(ref[ids], co[ids])
             for j in cfg["joins"]:
                 pairs, fit = ties[j["name"]], fits.get(j["on"])
-                v = 1000 * B.slip(ref, co, pairs, fit[0]) if pairs and fit else None
+                v, at = B.slip(ref, co, pairs, fit[0], where=True) if pairs and fit else (None, None)
+                v = None if v is None else 1000 * v
                 if j.get("frame") == "local" and pairs:   # G3n: on the tied face's own frame (a part that bends)
                     old = res["slip_rigid_mm"].get(j["name"])
                     res["slip_rigid_mm"][j["name"]] = v if old is None else max(old, v)
-                    v = 1000 * B.slip_local(ref, co, pairs)
+                    v, at = B.slip_local(ref, co, pairs, where=True)
+                    v = 1000 * v
                 old = res["slip_mm"].get(j["name"])
+                if v is not None and at is not None and (old is None or v > old):   # G3o: where (reference cm, frame)
+                    res["slip_at"][j["name"]] = [round(100 * float(x), 1) for x in ref[at]] + [f]
                 res["slip_mm"][j["name"]] = v if old is None else max(old, v)
             for name, L in laps.items():
                 if L is None:
