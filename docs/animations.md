@@ -1649,6 +1649,18 @@ not the thumb or the morph; the fix belongs to the grip's path (the index's join
 crease of each finger's curl, under the surface (seen only in x-ray, `g2/folds_axolotl.png`); a local umbrella on
 them removed none. The dark notch by the index's curl, seen from the thumb's side, is not a fold. p2 stays.
 
+**The grip's path (H1n).** The ring goes when the fingers curl tips first. `[fist] curl` [tip_to, base_from] and
+`thumb` [from, to] (shares of a ramp; default [1, 0] and [0, 1] = every joint in step) make `keyed()` add extra keys
+to each ramp into or out of the fist grip (`stagger_keys`): into it, the Intermediate and Distal joints reach the
+fist grip at `tip_to`, the Proximal ones leave the old grip only at `base_from`, the thumb leaves at `from` and
+arrives at `to`; out of it, the same path backwards. Set to `curl = [0.6, 0.4]`, `thumb = [0.6, 1.0]`: at half way
+the hand is an open C with the fingers tucked, at 0.65 a closing C, at 0.8 nearly a fist. H1n's Blender grids
+(`D:/prime-art-raw/2026-10-31-hands/h1n/r1/`, `r2/`): knuckles first, or the thumb in step or early, still ring at
+0.5-0.65, and so does `lead` 1. Godot's ReviewBlend (`h1n/sheets/blend.png`) shows no ring at 50 % on either
+character. Like `lead`, the path acts on ramps keyed inside a clip only: the game's Walk/Jog switch is a 0.15 s
+crossfade (`XFADE_S` in prime-game's `character_rig.gd`) that blends every bone by one weight, so the ring can still
+flash for about 0.05 s there; removing that needs a transition clip or a per-bone crossfade in the game.
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]

@@ -173,3 +173,40 @@ class Collisions(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Stagger(unittest.TestCase):
+    """H1n: the grip's path into and out of the fist grip, tips first, the knuckles after, the thumb late."""
+
+    def setUp(self):
+        self.cfg = H.load()
+        self.cfg["fist"] = {**self.cfg["fist"], "curl": [0.6, 0.4], "thumb": [0.6, 1.0]}
+        self.fist = self.cfg["fist"]["grip"]
+
+    def test_into_and_out_of_the_fist(self):
+        into = H.stagger_keys(self.cfg, 0.15, "relaxed", 0.85, self.fist)
+        self.assertEqual([(round(s, 6), p, g) for s, p, g in into],
+                         [(0.57, "finger_tip", self.fist), (0.43, "finger_base", "relaxed"), (0.57, "thumb", "relaxed")])
+        out = H.stagger_keys(self.cfg, 0.0, self.fist, 0.5, "relaxed")
+        self.assertEqual([(round(s, 6), p, g) for s, p, g in out],
+                         [(0.2, "finger_tip", self.fist), (0.3, "finger_base", "relaxed"), (0.2, "thumb", "relaxed")])
+
+    def test_in_step_and_other_ramps_add_nothing(self):
+        step = dict(self.cfg, fist={**self.cfg["fist"], "curl": [1.0, 0.0], "thumb": [0.0, 1.0]})
+        self.assertEqual(H.stagger_keys(step, 0.0, "relaxed", 1.0, self.fist), [])
+        self.assertEqual(H.stagger_keys(self.cfg, 0.0, "relaxed", 1.0, "flat"), [])
+        self.assertEqual(H.stagger_keys(self.cfg, 0.0, self.fist, 1.0, self.fist), [])
+        self.assertEqual(H.stagger_keys(dict(self.cfg, fist=None), 0.0, "relaxed", 1.0, self.fist), [])
+
+    def test_keyed_follows_the_path(self):
+        rows = [(0.0, "relaxed"), (0.15, "relaxed"), (0.85, self.fist), (1.0, self.fist)]
+        k = H.keyed(self.cfg, rows, "Left", (0, 100))
+        rel, fist = H.grip_pose(self.cfg, "relaxed", "Left"), H.grip_pose(self.cfg, self.fist, "Left")
+        self.assertEqual([f for f, _ in k["LeftIndexProximal"]], [0, 15, 43, 85, 100])
+        self.assertEqual([f for f, _ in k["LeftIndexDistal"]], [0, 15, 57, 85, 100])
+        self.assertEqual([f for f, _ in k["LeftThumbProximal"]], [0, 15, 57, 85, 100])
+        self.assertEqual(dict(k["LeftIndexProximal"])[43], rel["LeftIndexProximal"])  # the knuckles still open
+        self.assertEqual(dict(k["LeftMiddleIntermediate"])[57], fist["LeftMiddleIntermediate"])  # the tips curled
+        self.assertEqual(dict(k["LeftThumbDistal"])[57], rel["LeftThumbDistal"])  # the thumb still open
+        for b, ks in k.items():  # every bone's keys in frame order, none twice
+            self.assertEqual([f for f, _ in ks], sorted({f for f, _ in ks}), b)

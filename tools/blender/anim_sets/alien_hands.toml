@@ -72,5 +72,11 @@ env_inflate = 1.4
 env_lip_mm = 4.0
 env_palm = 0.85
 wrap_rounds = 150
-# H1m (art #196): the morph leads the grip, full at half of each ramp into the fist (no mid-blend ring)
+# H1m (art #196): the morph leads the grip inside a clip, full at half of each ramp into the fist (it alone does not
+# remove the mid-blend ring: H1m's grid)
 lead = 0.5
+# H1n (art #196): the grip's path into the fist inside a clip: the fingers' tips curl first (at the fist by 0.6 of the
+# ramp), the knuckles follow from 0.4, the thumb folds across from 0.6, so the half-curled index and the thumb never
+# close into a ring (H1n's grids: knuckles first, or the thumb in step, still ring at 0.5-0.65); out of it backwards
+curl = [0.6, 0.4]
+thumb = [0.6, 1.0]

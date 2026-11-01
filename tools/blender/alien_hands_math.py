@@ -44,7 +44,11 @@ FIST_DEFAULTS = {"morph": "fist", "k_mm": 14.0, "k_thumb_mm": 10.0, "pull_mm": 2
                  # with a slit of env_gap_mm, its lip rounded over env_lip_mm)
                  "env_mode": "merge", "env_inflate": 1.0, "env_gap_mm": 0.4, "env_lip_mm": 3.0,
                  # H1m: the morph's lead over the grip (alien_fist_math.weight_plan), 1 = in step
-                 "lead": 1.0}
+                 "lead": 1.0,
+                 # H1n: the grip's path into and out of the fist grip (stagger_keys): the fingers' tips at the fist by
+                 # curl[0] of a ramp, their knuckles from curl[1]; the thumb from thumb[0] to thumb[1]; [1, 0] and
+                 # [0, 1] = every joint in step
+                 "curl": [1.0, 0.0], "thumb": [0.0, 1.0]}
 
 
 class HandsError(ValueError):
@@ -165,15 +169,62 @@ def grip_pose(cfg: dict, grip: str, side: str) -> dict:
     return q
 
 
+def _seg(bone: str) -> str:
+    return next(s for s in ("Metacarpal", "Proximal", "Intermediate", "Distal") if bone.endswith(s))
+
+
+def stagger_keys(cfg: dict, s0: float, g0: str, s1: float, g1: str) -> list:
+    """H1n: the extra keys [(share, part, grip)] of one ramp between two grips when one of them is the fist grip
+    (`[fist] curl`): into the fist the fingers' tips curl first (Intermediate and Distal reach the fist grip at
+    `curl[0]` of the ramp) and their knuckles follow (Proximal leaves the old grip at `curl[1]`), the thumb at
+    `thumb` [from, to]; out of it the same path backwards. part: "finger_tip", "finger_base" or "thumb". In step
+    (`curl` [1, 0], `thumb` [0, 1]): none. A plain crossfade between two clips in the game does not follow it."""
+    fist = cfg.get("fist")
+    if not fist or g0 == g1 or fist["grip"] not in (g0, g1):
+        return []
+    into = g1 == fist["grip"]
+    tip_to, base_from = fist["curl"]
+    t_from, t_to = fist["thumb"]
+    span = s1 - s0
+    out = []
+
+    def at(x):
+        return s0 + (x if into else 1.0 - x) * span
+
+    if tip_to < 1.0:  # the tips: at the fist grip by tip_to into it, at the open grip from 1 - tip_to out of it
+        out.append((at(tip_to), "finger_tip", g1 if into else g0))
+    if base_from > 0.0:  # the knuckles: still open at base_from into it, already open from 1 - base_from out of it
+        out.append((at(base_from), "finger_base", g0 if into else g1))
+    if t_from > 0.0:
+        out.append((at(t_from), "thumb", g0 if into else g1))
+    if t_to < 1.0:
+        out.append((at(t_to), "thumb", g1 if into else g0))
+    return out
+
+
 def keyed(cfg: dict, rows: list, side: str, frames: tuple[int, int]) -> dict:
     """{bone: [(frame, quat), ...]}: each key of a plan's rows at its frame (share of frames), plus the last frame
-    holding the last grip, so a looping clip's seam closes on the first key's grip when it is the same."""
+    holding the last grip, so a looping clip's seam closes on the first key's grip when it is the same. A ramp into or
+    out of the fist grip takes the staggered path's extra keys (stagger_keys, H1n)."""
     f0, f1 = frames
     out = {b: [] for b in finger_bones(side)}
-    for s, g in rows:
+    part = {b: "thumb" if "Thumb" in b else "finger_base" if b.endswith("Proximal") else "finger_tip" for b in out}
+    keys = []
+    for k, (s, g) in enumerate(rows):
+        if k:
+            keys += [(x, p, gx) for x, p, gx in stagger_keys(cfg, rows[k - 1][0], rows[k - 1][1], s, g)]
+        keys.append((s, None, g))
+    poses = {}
+    for s, p, g in keys:
         fr = round(f0 + s * (f1 - f0))
-        for b, q in grip_pose(cfg, g, side).items():
-            out[b].append((fr, q))
+        if g not in poses:
+            poses[g] = grip_pose(cfg, g, side)
+        for b, q in poses[g].items():
+            if p is None or part[b] == p:
+                if out[b] and out[b][-1][0] == fr:
+                    out[b][-1] = (fr, q)
+                else:
+                    out[b].append((fr, q))
     for b in out:
         if out[b][-1][0] < f1:
             out[b].append((f1, out[b][-1][1]))
