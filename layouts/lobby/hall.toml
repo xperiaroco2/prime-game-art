@@ -6,7 +6,7 @@
 # `lobby` command builds and shoots it.
 
 version = 3
-raw_dir = "lobby/hall/v18"         # under the raw folder: pieces/, plan/, logs/, shots/
+raw_dir = "lobby/hall/v19"         # under the raw folder: pieces/, plan/, logs/, shots/
 # The hall's pieces placed: [piece, [x, y, z], yaw degrees about y]; they sit at the origin (the doors are placed on
 # their walls by the `lobby` command from [door] doors)
 place = [
@@ -90,7 +90,7 @@ stand_in = []                      # step 4c: the ramp is gone (the jaw nose, sh
 # the night clearing's WorldEnvironment (it fights the hall's AgX, glow and exposure) and the moon and cool key (two
 # shadowed suns that would light the hall's walls and cast two more ship shadows against the Earth's light). The
 # ship's 105 own lamps and its 7 interior probes stay.
-package = { dir = "ship/v5/export/v4", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
+package = { dir = "ship/v5/export/v8", nose = ["jaw_lower", "jaw_upper", "jaw_root"], use = true, free = ["Clearing", "Environment", "Lights:DirectionalLight3D"], keep = ["Lights", "Probes", "Pieces", "Nose", "Stations", "Markers"] }
 # The forest clearing (layouts/ship/exterior.toml), not in the lobby
 drop = ["ground", "pine_a", "pine_b", "pine_c", "pine_d", "pine_e", "pine_f", "pine_g", "pine_s", "rock_a", "rock_b",
         "rock_c", "rock_pile_a", "rock_pile_b", "ground_lamp", "dirt_patch", "dirt_path", "tuft_a", "tuft_b",
