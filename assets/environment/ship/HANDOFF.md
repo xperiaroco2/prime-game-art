@@ -2,7 +2,7 @@
 
 The empty ship of art#263 (a wide metal manta at night: the hall, the throat and its ramp, two corridors, two lens tip
 rooms, the vault; the throat walls with the gill set) as the game's package, for prime-game#1225 (the engine) and #1285 (boot into it). Written by
-`tools/run.sh ship --out <raw>/ship/v5/polish/n2/pieces --export <raw>/ship/v5/export/v5` (2026-11-01, branch feat/ship-polish-263, polish n1/n2: the smooth nozzles glowing from their own materials, the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody lines) (art#335, `docs/ship.md` "The export"); the files and their
+`tools/run.sh ship --out <raw>/ship/v5/polish/n3/pieces --export <raw>/ship/v5/export/v6` (2026-11-01, branch feat/ship-polish-263, polish n1/n2/n3: the smooth nozzles glowing from their own materials with twisted aerofoil stator blades, the hall's relief bays, the vault door, the ramp's hazard stripes, the underbody and chine light lines, the smooth oculus trim, one plate seam family over the jaws) (art#335, `docs/ship.md` "The export"); the files and their
 hashes are in `manifest.toml` and the package's `package.json`. The GLBs are not committed here: the package lives in
 the raw folder until approved.
 
@@ -108,12 +108,12 @@ lamps hold their static glow (no blink).
 
 | View | Draw calls | Primitives | GPU ms |
 |---|---|---|---|
-| `in_hall` | 4365 | 2,108,751 | 4.63 |
-| `in_tip_e` | 1228 | 1,194,499 | 4.33 |
-| `out_hero` | 5046 | 2,404,360 | 3.50 |
+| `in_hall` | 4723 | 2,366,965 | 4.67 |
+| `in_tip_e` | 1251 | 1,264,475 | 4.39 |
+| `out_hero` | 5331 | 2,604,284 | 3.67 |
 
 `in_hall` is a player's eye in the hall (1.6 m over the deck), `in_tip_e` in a tip room, `out_hero` the outside from
-above. Every piece is its own instance (1056), so the hall draws about 4300 calls: merging or batching the static
+above. Every piece is its own instance (1056), so the hall draws about 4700 calls: merging or batching the static
 pieces, as the House does, is the first lever if the game's budget needs it.
 
 ## The check (art side)
