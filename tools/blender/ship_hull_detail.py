@@ -533,6 +533,87 @@ def _belly_strip(path, w, t, drop):
     return out
 
 
+# polish n3: n2's lines lie flat under a bottom 0.17 m over the ground, so from standing height they showed only as thin
+# lines at a grazing angle. The chine lines run along the lower chines instead: the bottom's contour CHINE[0] m over
+# the plan's zero (east side, mirrored), laid on the slanted face itself (glow facing out and down along its normal),
+# only where the face slants at least CHINE[1] (rise per metre: an eye at 1.6 m, 4-8 m out, sees it) and clear of
+# the nose's jaw (|x| < CHINE[2] for y < CHINE[3]). Glow only (glow_cyan__belly, l 0): no light pools on the ground.
+CHINE = (0.45, 0.12, 2.0, -3.6)
+CHINE_GRID = 0.12   # the marching squares' cell (m) over the bottom's heights
+
+
+def _bottom(x, y):
+    h = S.heights(x, y)
+    return None if h is None else h[1]
+
+
+def _chine_segments(level=CHINE[0], step=CHINE_GRID):
+    """The bottom's contour at `level` (marching squares over S.heights' bottom), east side: [(a, b)] plan segments."""
+    xs = [i * step for i in range(int(15.0 / step) + 1)]
+    ys = [-9.0 + j * step for j in range(int(19.0 / step) + 1)]
+    grid = [[_bottom(x, y) for y in ys] for x in xs]
+    segs = []
+    for i in range(len(xs) - 1):
+        for j in range(len(ys) - 1):
+            c = [(xs[i], ys[j], grid[i][j]), (xs[i + 1], ys[j], grid[i + 1][j]),
+                 (xs[i + 1], ys[j + 1], grid[i + 1][j + 1]), (xs[i], ys[j + 1], grid[i][j + 1])]
+            if any(q[2] is None for q in c):
+                continue
+            pts = []
+            for (x0, y0, h0), (x1, y1, h1) in zip(c, c[1:] + c[:1]):
+                if (h0 - level) * (h1 - level) < 0:
+                    f = (level - h0) / (h1 - h0)
+                    pts.append((x0 + (x1 - x0) * f, y0 + (y1 - y0) * f))
+            if len(pts) == 2:
+                segs.append(tuple(pts))
+    return segs
+
+
+def _chine_strip(a, b, w, o0, o1, level):
+    """A box on the slanted bottom along plan segment a-b at height `level`: across the line up the slope (w wide),
+    from o0 to o1 along the face's outward normal. None where the face slants under CHINE[1] or near the jaw."""
+    mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+    if mx < CHINE[2] and my < CHINE[3]:
+        return None
+    e = 0.04
+    hx0, hx1, hy0, hy1 = _bottom(mx - e, my), _bottom(mx + e, my), _bottom(mx, my - e), _bottom(mx, my + e)
+    if None in (hx0, hx1, hy0, hy1):
+        return None
+    gx, gy = (hx1 - hx0) / (2 * e), (hy1 - hy0) / (2 * e)
+    g = math.hypot(gx, gy)
+    if g < CHINE[1]:
+        return None
+    nl = math.sqrt(gx * gx + gy * gy + 1.0)
+    n = (gx / nl, gy / nl, -1.0 / nl)                       # out of the bottom: down and outward
+    sl = math.sqrt(1.0 + g * g)
+    up = (gx / g / sl, gy / g / sl, g / sl)                 # across the line, up the slope, in the face
+    v = []
+    for o in (o0, o1):
+        for q in (a, b):
+            for k in (-1, 1):
+                v.append(tuple((q[0], q[1], level)[j] + up[j] * k * w / 2 + n[j] * o for j in range(3)))
+    # corners: bit 0 the side (down/up the slope), bit 1 the end (a/b), bit 2 the layer (under/over the skin)
+    return v, [(0, 2, 3, 1), (4, 5, 7, 6), (0, 1, 5, 4), (2, 6, 7, 3), (0, 4, 6, 2), (1, 3, 7, 5)]
+
+
+def chine_lines() -> tuple:
+    """polish n3: the chine lines' channels and glows, both sides: ((verts, faces), (verts, faces))."""
+    chan, glow = [], []
+    for a, b in _chine_segments():
+        for sx in (1, -1):
+            pa, pb = (sx * a[0], a[1]), (sx * b[0], b[1])
+            c = _chine_strip(pa, pb, 0.10, -0.006, 0.010, CHINE[0])
+            gl = _chine_strip(pa, pb, 0.05, 0.008, 0.013, CHINE[0])
+            if c and gl:
+                chan.append(c)
+                glow.append(gl)
+    for lst in (chan, glow):   # each box wound outward from its own centre
+        for i, (v, f) in enumerate(lst):
+            mid = [sum(q[j] for q in v) / 8 for j in range(3)]
+            lst[i] = (v, L.orient(v, f, lambda q, m=mid: m))
+    return L.merge(*chan), L.merge(*glow)
+
+
 def belly_lights(args: dict, layout: dict) -> list:
     """polish n2: the underbody's light lines (BELLY_LINES, BELLY_RING), both sides; origin the plan's (0, 0, 0). The
     channel hangs from 4 mm inside the skin to 8 mm under it, the glow 2 mm proud of the channel."""
@@ -548,7 +629,12 @@ def belly_lights(args: dict, layout: dict) -> list:
     g["nocol"] = True
     c = L.part("belly_channel", *L.merge(*chan), "ext_frame")
     c["nocol"] = True
-    return [c, g]
+    cc, cg = chine_lines()
+    ch = L.part("chine_channel", *cc, "ext_frame")
+    ch["nocol"] = True
+    cgp = L.part("chine_glow", *cg, "glow_cyan__belly")
+    cgp["nocol"] = True
+    return [c, g, ch, cgp]
 
 
 for _name in ("canopy", "nozzle_pod", "pod_ring", "ground_lamp"):

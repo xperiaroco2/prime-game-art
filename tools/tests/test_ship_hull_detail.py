@@ -350,7 +350,9 @@ class ShipHullDetailTest(unittest.TestCase):
         """polish n2: the underbody's light lines follow the hull's bottom (S.heights) a few mm under it, never in
         the air or deep in the skin, on both sides, the glow under its dark channel."""
         parts = {p["name"]: p for p in D.belly_lights({}, LAYOUT)}
-        self.assertEqual(set(parts), {"belly_channel", "belly_glow"})
+        self.assertEqual(set(parts), {"belly_channel", "belly_glow", "chine_channel", "chine_glow"})
+        for k in ("chine_channel", "chine_glow"):   # n3: on the chines' slant (their own test)
+            parts.pop(k)
         for p in parts.values():
             xs = [x for x, _y, _h in p["verts"]]
             self.assertLess(min(xs), -10.0)
@@ -361,6 +363,67 @@ class ShipHullDetailTest(unittest.TestCase):
                 self.assertTrue(hb[1] - 0.05 < h < hb[1] + 0.005, (p["name"], x, y, h, hb[1]))
         low = min(h for _x, _y, h in parts["belly_glow"]["verts"])
         self.assertLess(low, min(h for _x, _y, h in parts["belly_channel"]["verts"]))
+
+
+    def test_the_chine_lines_lie_on_the_slanted_bottom(self) -> None:
+        """polish n3: the chine lines run round the lower chines at the bottom's contour D.CHINE[0], on the face
+        (the glow 8-13 mm out along its normal, the channel from 6 mm in), on both sides, clear of the jaw, and face
+        out and down so an eye at 1.6 m, 6 m out from a line, sees most of them."""
+        cc, cg = D.chine_lines()
+        self.assertGreater(len(cg[0]), 8 * 300)
+        for v, _f in (cc, cg):
+            xs = [x for x, _y, _h in v]
+            self.assertLess(min(xs), -12.0)
+            self.assertGreater(max(xs), 12.0)
+            for x, y, h in v:
+                self.assertLess(abs(h - D.CHINE[0]), 0.08, (x, y, h))
+                self.assertFalse(abs(x) < D.CHINE[2] - 0.2 and y < D.CHINE[3] - 0.2, (x, y))
+        seen = total = 0
+        v, f = cg
+        for face in f:
+            q = [v[i] for i in face]
+            c = [sum(p[k] for p in q) / len(q) for k in range(3)]
+            e1 = [q[1][k] - q[0][k] for k in range(3)]
+            e2 = [q[2][k] - q[0][k] for k in range(3)]
+            n = (e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0])
+            nl = math.sqrt(sum(a * a for a in n)) or 1.0
+            if n[2] / nl > -0.5:   # only the glow's outer face (its sides and inner face skipped)
+                continue
+            total += 1
+            out = (n[0], n[1])
+            ol = math.hypot(*out) or 1.0
+            eye = (c[0] + 6.0 * out[0] / ol, c[1] + 6.0 * out[1] / ol, 1.6)
+            if sum(n[k] * (eye[k] - c[k]) for k in range(3)) > 0:
+                seen += 1
+        self.assertGreater(total, 300)
+        self.assertGreater(seen / total, 0.8, (seen, total))
+
+    def test_the_stator_blades_are_twisted_aerofoils(self) -> None:
+        """polish n3: twelve blades with thickness and a twist (the pitch 46 deg at the hub, 30 at the wall), a
+        rim-lit leading edge in ext_blade_edge, the spinner in three parts; all inside the throat's wall."""
+        args = {"r": 1.05, "length": 3.6}
+        parts = {p["name"]: p for p in D.nozzle_pod(args, LAYOUT)}
+        for name, mat in (("pod_vanes", "ext_blade"), ("pod_vane_edges", "ext_blade_edge"),
+                          ("pod_spinner", "ext_blade"), ("pod_spinner_band", "ext_chrome"), ("pod_hub", "ext_frame")):
+            self.assertEqual(parts[name]["mat"], mat)
+        b = D._blade(15.0, 0.2, 0.6, 0.0, (0.2, 0.3), (46.0, 30.0), (0.05, 0.03))
+        v = b["body"][0]
+        m = len(D.FOIL)
+        root, tip = v[:m], v[-m:]
+
+        def pitch(sec):
+            le, te = sec[0], [(sec[5][k] + sec[6][k]) / 2 for k in range(3)]   # the trailing edge's middle
+            dy = te[1] - le[1]
+            dt = math.hypot(te[0] - le[0], te[2] - le[2])
+            return math.degrees(math.atan2(dt, dy))
+        self.assertAlmostEqual(pitch(root), 46.0, delta=0.5)
+        self.assertAlmostEqual(pitch(tip), 30.0, delta=0.5)
+        thick = max(math.dist(root[2], root[9]), math.dist(root[3], root[8]))
+        self.assertGreater(thick, 0.04)
+        self.assertEqual(len(b["edge"][1]), 2 * (6 - 1))
+        r = args["r"]
+        for x, _y, z in parts["pod_vanes"]["verts"]:
+            self.assertLess(math.hypot(x, z), 0.6 * r)
 
 
 
