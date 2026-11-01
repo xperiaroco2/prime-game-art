@@ -1640,11 +1640,14 @@ move); the index's curl still shows a small dark notch from the thumb's side.
 half-curled index met the thumb with a hole between them. `[fist] lead` (0..1, default 1 = in step) makes the morph
 run ahead inside a clip: `weight_plan` keys it full at `lead` of each ramp into the fist grip and leaves 1 only at
 `1 - lead` of each ramp out (`lead = 0.5`). It acts on grip ramps keyed inside a clip (the review's ReviewBlend); a
-crossfade between two clips in the game lerps the morph and the bones by one weight, so there the ring can only be
-avoided by the game driving the morph ahead of its blend weight. H1m's fold grid (`D:/prime-art-raw/2026-10-31-hands/h1m/g1/`):
+crossfade between two clips in the game lerps the morph and the bones by one weight. **It does not remove the ring:**
+H1m's Blender blend grid (`D:/prime-art-raw/2026-10-31-hands/h1m/blend/`; in step, morph lead 0.5, thumb lag 0.4,
+both) shows the ring at 0.5 and 0.65 in every schedule, because it is the index's own half curl closing on itself,
+not the thumb or the morph; the fix belongs to the grip's path (the index's joints curling in another order). H1m's fold grid (`D:/prime-art-raw/2026-10-31-hands/h1m/g1/`):
 `env_core` 1.0 / 1.1, `env_k_core_mm` 18 and a thumb shift of 2-3 mm all add folds (41-47 per hand against p2's
-33-36); the folds sit inside single fingers (index, middle, ring), not on the webs; a local umbrella on them removed
-none. p2 stays.
+33-36); the folds sit inside single fingers (index, middle, ring), not on the webs: a line across the inner
+crease of each finger's curl, under the surface (seen only in x-ray, `g2/folds_axolotl.png`); a local umbrella on
+them removed none. The dark notch by the index's curl, seen from the thumb's side, is not a fold. p2 stays.
 
 ## The review
 
