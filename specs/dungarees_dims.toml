@@ -294,6 +294,13 @@ strap_top_cm = 3.0           # G3e: the strap's top over her trapezius eases to 
 shirt_follow_fade_cm = 5.5   # G3e: the shirt under the dungarees takes their weights, eased back to its own over 5.5 cm
                              # (G3f: over 3 cm it ridged over her shoulder blades and at the back panel's edges)
 shirt_follow_near_cm = 3.0   # and a shirt vertex within 3 cm of the garment whose normal misses it (the hem)
+strap_follow_reach_cm = 1.0  # G3i: a strap gives its weights only to the shirt directly under it (its normal meets the
+                             # strap within 1 cm; the near rule never takes a strap): in G3h every shirt vertex within
+                             # 3 cm took a strap's whole, the collar sank 16-49 mm into her and her neck showed in a V
+strap_follow_fade_cm = 1.5   # eased back to the shirt's own over 1.5 cm round the strap's footprint
+collar_keep_cm = 1.0         # and the collar's band (1 cm from its edge) keeps its own, body-matched weights
+strap_top_back_cm = 6.0      # G3i: behind its top the strap follows her skin under each row, eased out over 6 cm of
+                             # arc (on Chest it stood 30-50 mm off her upper back by the neck in the runs: a flap)
 shirt_trim_z_cm = 93.5       # G3g: the shirt ends here, inside the yoke under the band (its hem came out at the hip crease)
 shirt_hem_in_cm = 0.25       # G3f: the shirt's hem drawn in 2.5 mm, eased out over its lowest 1.5 cm, inside the yoke
 shirt_hem_h_cm = 1.5
@@ -467,6 +474,9 @@ max_count = 0                # clothes_proof.py's poke-through, every clip
 max_count = 0                # the shirt under the dungarees stays under them (poke.json's top_under_panels, G3e)
 tracked_max_count = 0        # G3h: and against the face it lay under at rest (top_under_panels_tracked): the nearest-
                              # face count missed the straps' fronts, 30-38 vertices 14-49 mm through in g1's videos
+skin_max_count = 0           # G3i: her skin under the shirt over her chest, shoulders and upper back, each vertex
+                             # against its own shirt point (poke.json's skin_under_top_tracked): G3h's g2 collar sank
+                             # and 33-54 of them came 23-125 mm out (her neck and chest in a V); the pokes left them out
 
 # Stations on the silhouettes: kind top / bottom (a row inside the columns u), width / front / back (a row's edges
 # inside u at height z). dim: the spec size it checks (its cm and tol_cm); body_gap (side front / back only): her

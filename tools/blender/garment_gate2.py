@@ -380,6 +380,13 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
                 rows.append({"clip": clip, "check": f"shirt through its rest face (deepest {depth} mm)", "value": v,
                              "unit": "verts", "tol": g2["shirt"]["tracked_max_count"],
                              "pass": G.verdict(v, g2["shirt"]["tracked_max_count"])})
+            if "skin_max_count" in g2["shirt"]:   # G3i: her skin through the shirt (the collar sank, her neck showed)
+                st = None if pk is None else pk.get("skin_under_top_tracked")
+                v = None if st is None else st.get("max_count")
+                depth = None if st is None else round(1000 * st.get("max_depth_m", 0.0), 1)
+                rows.append({"clip": clip, "check": f"her skin through the shirt (deepest {depth} mm)", "value": v,
+                             "unit": "verts", "tol": g2["shirt"]["skin_max_count"],
+                             "pass": G.verdict(v, g2["shirt"]["skin_max_count"])})
     return rows
 
 

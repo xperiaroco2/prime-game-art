@@ -223,47 +223,8 @@ class Builder:
             self.face([lo[i], lo[k], hi[k], hi[i]], mat)
 
 
-def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float = 0.015, low_z: float = -1.0,
-                 low_skip=frozenset()) -> dict:
-    """The shirt under the dungarees takes their weights (G3e, art #196: on her body's weights it came through the band
-    and the plates, 8 mm in Idle, 35 mm in Jump_Start, the band's pale stripes): each shirt vertex whose normal meets the
-    garment within reach, or that lies within near of it (not a strap, which lies over her shoulder's skin) takes the garment's weights there (the
-    hit face's, by area); the shirt round them eases back to its own over fade (m, along the shirt's edges)."""
-    from mathutils.interpolate import poly_3d_calc
-    B.bm.faces.ensure_lookup_table()
-    B.bm.faces.index_update()
-    gfaces = list(B.bm.faces)
-    tree = BVHTree.FromBMesh(B.bm)
-    # G3f: under low_z (the band's top) a shirt vertex never takes a plate's lap (low_skip: their vertices); there it
-    # reached the bib's lap on Chest past the yoke and came out through the yoke in Jog (h1: 3-7 vertices, 2-5 mm)
-    keep = [f for f in gfaces if not any(x in low_skip for x in f.verts)]
-    B.bm.verts.index_update()
-    low_tree = BVHTree.FromPolygons([v.co for v in B.bm.verts], [[x.index for x in f.verts] for f in keep])
-    mw = top.matrix_world
-    nm = mw.to_3x3().inverted().transposed()
-    names = {g.index: g.name for g in top.vertex_groups}
-    own = [{names[g.group]: g.weight for g in v.groups if g.group in names and g.weight > 1e-4} for v in top.data.vertices]
-    co = [mw @ v.co for v in top.data.vertices]
-    got = {}
-    for v in top.data.vertices:
-        n = (nm @ v.normal).normalized()
-        low = co[v.index].z < low_z
-        tr = low_tree if low else tree
-        hit, _hn, fi, _d = tr.ray_cast(co[v.index] + n * 1e-4, n, reach)
-        if hit is None:   # the shirt's hem turned down (f06: 1-3 hem vertices 1-2.5 mm out in Sprint and Jump_Start)
-            hit, _hn, fi, _d = tr.find_nearest(co[v.index], near)
-        if hit is None:
-            continue
-        f = keep[fi] if low else gfaces[fi]
-        if f.material_index == 2 or any(x in skip_vs for x in f.verts):
-            continue
-        w = poly_3d_calc([x.co for x in f.verts], hit)
-        acc = {}
-        for x, k in zip(f.verts, w):
-            for g, val in B.W.get(x, {}).items():
-                acc[g] = acc.get(g, 0.0) + k * val
-        got[v.index] = norm(acc)
-    # the fade: the distance along the shirt's edges from the covered vertices (a Dijkstra), their weights carried
+def _spread(top, co, got: dict, fade: float):
+    """The distance along the shirt's edges from the covered vertices (a Dijkstra) within fade, and each one's source."""
     import heapq
     nbr = {}
     for e in top.data.edges:
@@ -283,11 +244,72 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
             if nd < dist.get(j, 1e9) and nd <= fade:
                 dist[j], src[j] = nd, src[i]
                 heapq.heappush(heap, (nd, j))
+    return dist, src
+
+
+def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float = 0.015, low_z: float = -1.0,
+                 low_skip=frozenset(), strap_vs=frozenset(), strap_reach: float = 0.0, strap_fade: float = 0.0,
+                 keep=frozenset()) -> dict:
+    """The shirt under the dungarees takes their weights (G3e, art #196: on her body's weights it came through the band
+    and the plates, 8 mm in Idle, 35 mm in Jump_Start, the band's pale stripes): each shirt vertex whose normal meets the
+    garment within reach, or that lies within near of it (not a strap, which lies over her shoulder's skin) takes the garment's weights there (the
+    hit face's, by area); the shirt round them eases back to its own over fade (m, along the shirt's edges).
+    G3i: with strap_reach > 0 a strap (strap_vs, its vertices) gives its weights only to the shirt directly under it
+    (its normal meets the strap within strap_reach; the near rule never takes a strap), eased back over strap_fade, and
+    never to the shirt's vertices in keep (the collar's band): in G3h every shirt vertex within 3 cm of a strap took it
+    whole, the collar and the front between the straps on Chest and her shoulder's bone, and her neck came through."""
+    from mathutils.interpolate import poly_3d_calc
+    B.bm.faces.ensure_lookup_table()
+    B.bm.faces.index_update()
+    gfaces = list(B.bm.faces)
+    tree = BVHTree.FromBMesh(B.bm)
+    # G3f: under low_z (the band's top) a shirt vertex never takes a plate's lap (low_skip: their vertices); there it
+    # reached the bib's lap on Chest past the yoke and came out through the yoke in Jog (h1: 3-7 vertices, 2-5 mm)
+    keep_f = [f for f in gfaces if not any(x in low_skip for x in f.verts)]
+    B.bm.verts.index_update()
+    low_tree = BVHTree.FromPolygons([v.co for v in B.bm.verts], [[x.index for x in f.verts] for f in keep_f])
+    mw = top.matrix_world
+    nm = mw.to_3x3().inverted().transposed()
+    names = {g.index: g.name for g in top.vertex_groups}
+    own = [{names[g.group]: g.weight for g in v.groups if g.group in names and g.weight > 1e-4} for v in top.data.vertices]
+    co = [mw @ v.co for v in top.data.vertices]
+    on_strap = (lambda f: any(x in strap_vs for x in f.verts)) if strap_reach > 0 else (lambda f: False)
+    got, got_s = {}, {}
+    for v in top.data.vertices:
+        n = (nm @ v.normal).normalized()
+        low = co[v.index].z < low_z
+        tr = low_tree if low else tree
+        hit, _hn, fi, d = tr.ray_cast(co[v.index] + n * 1e-4, n, reach)
+        f = None if hit is None else (keep_f[fi] if low else gfaces[fi])
+        strap = f is not None and on_strap(f)
+        if strap and (d > strap_reach or v.index in keep):
+            hit, f, strap = None, None, False
+        if hit is None:   # the shirt's hem turned down (f06: 1-3 hem vertices 1-2.5 mm out in Sprint and Jump_Start)
+            hit, _hn, fi, _d = tr.find_nearest(co[v.index], near)
+            f = None if hit is None else (keep_f[fi] if low else gfaces[fi])
+            if f is not None and on_strap(f):
+                continue
+        if hit is None:
+            continue
+        if f.material_index == 2 or any(x in skip_vs for x in f.verts):
+            continue
+        w = poly_3d_calc([x.co for x in f.verts], hit)
+        acc = {}
+        for x, k in zip(f.verts, w):
+            for g, val in B.W.get(x, {}).items():
+                acc[g] = acc.get(g, 0.0) + k * val
+        (got_s if strap else got)[v.index] = norm(acc)
+    dist, src = _spread(top, co, got, fade)
+    dist_s, src_s = _spread(top, co, got_s, strap_fade) if got_s else ({}, {})
     groups = {g.name: g for g in top.vertex_groups}
     changed = 0
-    for i, dd in dist.items():
-        t = 1.0 if i in got else 1 - smooth01(dd / fade)
-        w = norm(mix(own[i], got[src[i]], t))
+    for i in set(dist) | (set(dist_s) - set(keep)):
+        w = own[i]
+        if i in dist_s and i not in keep:
+            w = mix(w, got_s[src_s[i]], 1.0 if i in got_s else 1 - smooth01(dist_s[i] / strap_fade))
+        if i in dist:
+            w = mix(w, got[src[i]], 1.0 if i in got else 1 - smooth01(dist[i] / fade))
+        w = norm(w)
         for g in groups.values():
             g.remove([i])
         for g, val in w.items():
@@ -295,7 +317,58 @@ def shirt_follow(top, B, skip_vs, fade: float, reach: float = 0.04, near: float 
                 groups[g] = top.vertex_groups.new(name=g)
             groups[g].add([i], val, "REPLACE")
         changed += 1
-    return {"covered": len(got), "faded": changed - len(got), "shirt_verts": len(co), "fade_m": fade}
+    return {"covered": len(got), "covered_by_straps": len(got_s), "faded": changed - len(got) - len(got_s),
+            "shirt_verts": len(co), "fade_m": fade, "strap_reach_m": strap_reach, "strap_fade_m": strap_fade,
+            "kept": len(keep)}
+
+
+def collar_band(top, width: float) -> set:
+    """The shirt's vertices within width (m, along its edges) of its collar: its highest boundary loop (G3i)."""
+    if width <= 0:
+        return set()
+    import heapq
+    mw = top.matrix_world
+    co = [mw @ v.co for v in top.data.vertices]
+    count = {}
+    for p in top.data.polygons:
+        vs = list(p.vertices)
+        for i in range(len(vs)):
+            e = (min(vs[i], vs[i - 1]), max(vs[i], vs[i - 1]))
+            count[e] = count.get(e, 0) + 1
+    nb, edge_nb = {}, {}
+    for e in top.data.edges:
+        i, j = e.vertices
+        nb.setdefault(i, []).append(j)
+        nb.setdefault(j, []).append(i)
+    for (i, j), c in count.items():
+        if c == 1:
+            edge_nb.setdefault(i, []).append(j)
+            edge_nb.setdefault(j, []).append(i)
+    seen, loops = set(), []
+    for s0 in edge_nb:
+        if s0 in seen:
+            continue
+        loop, stack = [], [s0]
+        while stack:
+            v = stack.pop()
+            if v not in seen:
+                seen.add(v)
+                loop.append(v)
+                stack += edge_nb[v]
+        loops.append(loop)
+    ring = max(loops, key=lambda L: sum(co[i].z for i in L) / len(L))
+    dist = {i: 0.0 for i in ring}
+    heap = [(0.0, i) for i in ring]
+    while heap:
+        dd, i = heapq.heappop(heap)
+        if dd > dist.get(i, 1e9):
+            continue
+        for j in nb.get(i, []):
+            nd = dd + (co[i] - co[j]).length
+            if nd <= width and nd < dist.get(j, 1e9):
+                dist[j] = nd
+                heapq.heappush(heap, (nd, j))
+    return set(dist)
 
 
 def shirt_trim(top, z_cut: float) -> dict:
@@ -829,10 +902,21 @@ def main() -> None:
         top_pt = pz[i_top] + Vector((xc, 0, 0))   # pz runs at x = 0: the strap's own top is at x = xc
         w_top = no_arms(shirt_w.at(top_pt))
         n_top = 0
+        # G3i: behind its top the strap follows her skin under each row over back_cm of arc (on Chest it stood 30-50 mm
+        # off her upper back by the neck as she leaned in the runs, a flap over her shoulder seen from the front)
+        back_cm = spec["build"].get("strap_top_back_cm", 0.0)
+        n_back = 0
         if top_cm > 0 and w_top:
             half = top_cm / 200
             for i in range(i_front + 1, i_back):
                 t = 1 - abs(arc[i] - arc[i_top]) / half
+                if back_cm > 0 and i > i_top:
+                    tb = 1 - (arc[i] - arc[i_top]) / (back_cm / 100)
+                    w_row = no_arms(shirt_w.at(pz[i] + Vector((xc, 0, 0))))
+                    if tb > 0 and w_row:
+                        row_w[i] = norm(mix(row_w[i], w_row, a.strap_top_share * smooth01(tb)))
+                        n_back += 1
+                        continue
                 if t > 0:
                     row_w[i] = norm(mix(row_w[i], w_top, a.strap_top_share * smooth01(t)))
                     n_top += 1
@@ -848,6 +932,7 @@ def main() -> None:
             "front_end_z_m": round(pz[0].z, 4), "back_end_z_m": round(pz[-1].z, 4), "shoulder_weights": w_sh,
             "bib_rows": i_front + 1, "back_rows": len(rows) - i_back, "back_on_chest": bool(sboc),
             "inner_mm": round(inner * 1000, 2),
+            "top_back": {"cm": back_cm, "rows": n_back, "rows_to_back": i_back - i_top},
             "top": {"cm": top_cm, "share": a.strap_top_share, "rows": n_top, "weights": w_top,
                     "at_cm": [round(c * 100, 2) for c in top_pt]}}
         # the buckle: a ring round the strap at the bib's top edge and its button on the strap
@@ -911,8 +996,14 @@ def main() -> None:
         sfs = a.shirt_follow_straps
         if sfs is None:
             sfs = spec["build"].get("shirt_follow_straps", False)
+        # G3i: a strap gives its weights only to the shirt directly under it, eased back over a short fade, never to
+        # the collar's band (G3h: the collar and the front between the straps took them whole, her neck came through)
+        keep = collar_band(top, bk.get("collar_keep_cm", 0.0)) if sfs else set()
         rep["shirt_follow"] = shirt_follow(top, B, set() if sfs else strap_vs, bk.get("shirt_follow_fade_cm", 0.03),
-                                           near=bk.get("shirt_follow_near_cm", 0.015), low_z=bbz, low_skip=plate_vs)
+                                           near=bk.get("shirt_follow_near_cm", 0.015), low_z=bbz, low_skip=plate_vs,
+                                           strap_vs=strap_vs if sfs else frozenset(),
+                                           strap_reach=bk.get("strap_follow_reach_cm", 0.0),
+                                           strap_fade=bk.get("strap_follow_fade_cm", 0.0), keep=keep)
         rep["shirt_trim"] = shirt_trim(top, bk.get("shirt_trim_z_cm", 0.0))   # then its new hem drawn in
         rep["shirt_hem"] = shirt_hem_in(top, bk.get("shirt_hem_in_cm", 0.0), bk.get("shirt_hem_h_cm", 0.015))
     for f in B.bm.faces:   # G3f: every cloth face smooth, the rims kept sharp by angle (flat faces striped the curves)

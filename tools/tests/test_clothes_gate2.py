@@ -659,3 +659,22 @@ class G3fLapTest(unittest.TestCase):
         self.assertEqual(sh["tracked_max_count"], 0)
         src = (Path(__file__).resolve().parents[1] / "blender" / "dungarees_build.py").read_text(encoding="utf-8")
         self.assertIn("any((mw @ v.co).z < z_cut", src)   # a shirt face reaching under the cut goes
+
+    def test_the_shirt_follows_a_strap_only_under_it_and_her_skin_stays_in(self):
+        """G3i: a strap gives its weights only to the shirt directly under it, over a short fade, never to the collar's
+        band (G3h's collar sank 16-49 mm and her neck showed); her skin through the shirt is a Gate 2 row, 0 allowed."""
+        b, sh = self.spec["build"], self.spec["gate2"]["shirt"]
+        self.assertTrue(0.0 < b["strap_follow_reach_cm"] <= 1.5)
+        self.assertTrue(0.0 < b["strap_follow_fade_cm"] < b["shirt_follow_fade_cm"])
+        self.assertGreater(b["collar_keep_cm"], 0.0)
+        self.assertGreater(b["strap_top_back_cm"], 0.0)
+        self.assertEqual(sh["skin_max_count"], 0)
+        g2 = self.spec["gate2"]
+        c0 = g2["clips"][0]
+        poke = {"clips": {c0: {"max_count": 0, "max_depth_m": 0.0,
+                               "skin_under_top_tracked": {"max_count": 42, "max_depth_m": 0.033}}}}
+        rows = GG.motion_rows(self.spec, {"parts": {}, "clips": {}}, poke)
+        skin = next(r for r in rows if r["clip"] == c0 and r["check"].startswith("her skin through the shirt"))
+        self.assertEqual((skin["value"], skin["pass"]), (42, False))
+        other = next(r for r in rows if r["clip"] == g2["clips"][1] and r["check"].startswith("her skin through"))
+        self.assertIsNone(other["pass"])                                 # no proof for the clip: unmeasured

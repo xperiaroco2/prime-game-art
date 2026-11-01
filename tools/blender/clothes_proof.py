@@ -185,6 +185,8 @@ def main() -> int:
                     help="nor cloth this near behind it (it passed out through the cloth: no gap) (m)")
     ap.add_argument("--exposed", type=float, default=0.02,
                     help="outside the cloth by more than this over an upward collar face: exposed skin (m)")
+    ap.add_argument("--skin-reach", type=float, default=0.03,
+                    help="her skin whose normal meets the top this near at rest is under it, followed (G3i) (m)")
     ap.add_argument("--tie-side", type=int, default=1,
                     help="M2j: the body's side of the cloth from every face tied at the nearest point, as the dress's "
                          "(clothes_side.ClothSide; 0: the one face the BVH query returns, as before M2j)")
@@ -297,6 +299,33 @@ def main() -> int:
             "with the garment over them but outside its nearest face at rest, left out;", len(track), "tracked;",
             skipped, "sliver or folded faces passed")
 
+    # G3i: her skin under the top at rest, each vertex followed against its own top point (where its normal met the
+    # top, that face's barycentric point in each frame): over the Chest bone's head and inside her upper arms' heads
+    # (the chest, the shoulders' tops, the upper back), where the collar sank under the straps in G3h and her neck and
+    # chest showed in a V; the nearest-point pokes left that out as exposed skin by the collar's opening
+    skin_track = []
+    bones = arm.data.bones
+    if top is not None and "Chest" in bones and "LeftUpperArm" in bones:
+        t_polys = [list(q.vertices) for q in top.data.polygons]
+        tco0 = world(top)
+        ttree = BVHTree.FromPolygons([tuple(c) for c in tco0], t_polys)
+        z_chest = (arm.matrix_world @ bones["Chest"].head_local).z
+        x_arm = abs((arm.matrix_world @ bones["LeftUpperArm"].head_local).x)
+        bco0, bno0 = world_nor(body)
+        for k in range(len(bco0)):
+            p = Vector(bco0[k])
+            if p.z < z_chest or abs(p.x) > x_arm:
+                continue
+            n = Vector(bno0[k])
+            hit, _hn, hfi, _hd = ttree.ray_cast(p + n * 1e-4, n, args.skin_reach)
+            if hit is None:
+                continue
+            q = [Vector(tco0[i]) for i in t_polys[hfi]]
+            r0 = (p - hit).dot(poly_normal(q))
+            skin_track.append((k, t_polys[hfi], poly_3d_calc(q, hit), 1.0 if r0 < 0 else -1.0))
+        say("skin under the top tracked:", len(skin_track), "body vertices over z", round(z_chest, 3), "inside |x|",
+            round(x_arm, 3))
+
     # the gaps (C1k): the removed body part, followed through the clips
     rem = bpy.data.objects.get("body_removed")
     gap_ids, gap_rep = np.zeros(0, dtype=int), {"present": rem is not None}
@@ -342,6 +371,7 @@ def main() -> int:
         f0, f1 = (int(round(x)) for x in act.frame_range)
         frames, skin, worst, tframes, tworst, kframes, kworst = [], 0, {}, [], {}, [], {}
         gframes, gworst = [], {}
+        sframes, sworst = [], {}
         for f in range(f0, max(f0 + 1, f1 + 1)):
             sc.frame_set(f)
             cos = {o.name: world(o) for o in cloth}
@@ -359,6 +389,13 @@ def main() -> int:
                 kframes.append((int(kbad.sum()), float(ks[kbad].max()) if kbad.any() else 0.0))
                 for j in np.nonzero(kbad)[0]:
                     kworst[track[j][0]] = max(kworst.get(track[j][0], 0.0), float(ks[j]))
+            if skin_track:
+                tp, bp = cos["top"], world(body)
+                ss = np.array([tracked_side(bp[k], [tp[i] for i in vs], w, sg) for k, vs, w, sg in skin_track])
+                sbad = ss > args.tol
+                sframes.append((int(sbad.sum()), float(ss[sbad].max()) if sbad.any() else 0.0))
+                for j in np.nonzero(sbad)[0]:
+                    sworst[skin_track[j][0]] = max(sworst.get(skin_track[j][0], 0.0), float(ss[j]))
             if len(gap_ids):
                 gco, gno = world_nor(rem)
                 miss = uncovered(ctree, gco[gap_ids], gno[gap_ids], args.gap_reach, args.gap_back)
@@ -399,6 +436,12 @@ def main() -> int:
                 "where": [{"rest": [round(float(x), 3) for x in top.matrix_world @ tv[k].co], "bone": bone_of(top, k),
                            "depth_mm": round(1000 * d, 1)}
                           for k, d in sorted(kworst.items(), key=lambda kv: -kv[1])[:6]]}
+        if skin_track:
+            poke[clip]["skin_under_top_tracked"] = {
+                **F.frame_max(sframes), "vertices": len(skin_track),
+                "where": [{"rest": [round(float(x), 3) for x in rest[k]], "bone": bone_of(body, k),
+                           "depth_mm": round(1000 * d, 1)}
+                          for k, d in sorted(sworst.items(), key=lambda kv: -kv[1])[:6]]}
         if len(gap_ids):
             g = F.frame_max(gframes)
             poke[clip]["gaps"] = {"frames": g["frames"], "max_count": g["max_count"], "worst_frame": g["worst_frame"],
