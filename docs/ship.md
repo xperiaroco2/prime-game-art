@@ -2045,6 +2045,7 @@ A fresh critic's findings on the b4 package (art #263); note `D:/prime-art-raw/s
   rings need their own count (a next step).
 
 ## Polish n3: the stator blades, the chine lines, the oculus trim, the nose's seams (2026-11-01)
+The package v6 (`<raw>/ship/v5/export/v6`) is built from these pieces (`assets/environment/ship`).
 The n2 critic's leftovers (art #263); note `D:/prime-art-raw/ship/v5/notes/polish-n3.md`.
 - **The stator blades** (`ship_hull_detail._blade`) are aerofoils (`FOIL`: a round leading edge, a fat front third, a
   thin trailing edge) swept in six sections from the hub (0.19 r) to the wall (0.57 r), the pitch 46 deg at the hub
@@ -2060,12 +2061,15 @@ The n2 critic's leftovers (art #263); note `D:/prime-art-raw/ship/v5/notes/polis
   round the front chine, each lens tip and the stern. Glow only (`glow_cyan__belly`, `l` 0): no pools on the ground.
 - **The oculus**: its 32 sides stay (the hull's cut prism and the plating's seam corners). Outside, the frame ring is
   128 sides shaded smooth; inside, `oc_trim` lays a bullnose over the lip's inner edge, a dark sleeve just inside the
-  lining's faces and a bead at the glass's foot (`OC_TRIM`, 128 sides, smooth, inside the polygon's apothems).
+  lining's faces and a bead at the glass's foot (`OC_TRIM`, 128 sides, smooth, inside the polygon's apothems). The
+  sleeve stands inside the lip's apothem too (0.69, its corners at 0.6933): at 0.6915 the lip's corners poked through
+  it over the lip's top, a band of 32 light and dark teeth round the well in the first n3 shots.
 - **The closed nose's seams**: `ship_hull_jaw.jaw_cells` plates every jaw face on one global family (faces looking up
   or down rows of constant y; the others horizontal bands of constant h, ends of constant x or y), so the band seams
   run on round the prow's folds and across the pieces when closed (`HJ.plates` laid a grid per facet).
-- **The hall's floor ring** (`int_amber_ring`) glows and lights nothing (`l` 0): its cell lights, 0.12 m over the
-  floor about 0.6 m from the wall, painted orange blobs on the walls by the vault door with no fixture there.
+- **The hall's floor ring** (`int_amber_ring`) keeps its lights (`l` 0.8, `rr` 0.3): with them off (tried in n3)
+  the hall read near-black from the vault door and its walls were lost; their soft orange spots on the walls are the
+  approved look.
 - **The vault door's lines** (`int_cyan__door`) glow and light nothing (`l` 0): the short light on the leaf burnt a
   round white-cyan hot spot in its middle (n2's Godot `in_vault_door`).
 - **The middle pod's bridge beams** run to `bridge_y` 4.9 (was 4.05): the outer housings stand 2.5 cm from the middle
