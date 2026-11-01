@@ -973,9 +973,9 @@ are unchanged, so nothing on the hall's side moved.
 
 ## Open problems
 
-- Follow-up #366: `c_back` from the package now 1.912 of `--shoot`'s (1.907 before the ship package v8) (the cause: the shots' misplaced ship-only
-  copies, fixed). `spawn_ship`'s aft underside lost the copies' accidental warm glow (above); a look call if it is
-  missed. The hall's GLBs each embed the metal texture set (about 4 MB each): one shared set would save
+- Follow-up #366: `c_back` from the package now 1.912 of `--shoot`'s (1.907 before the ship package v8; the cause:
+  the shots' misplaced ship-only copies, fixed). `spawn_ship`'s aft underside lost the copies' accidental warm glow
+  (above); a look call if it is missed. The hall's GLBs each embed the metal texture set (about 4 MB each): one shared set would save
   about 24 MB.
 
 - Step 5a7: F36 picked (2026-10-31). From the arch's mouth the ship hides the window.
