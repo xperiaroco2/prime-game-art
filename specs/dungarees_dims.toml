@@ -255,8 +255,20 @@ cm = 5.25
 tol_cm = 1.0
 note = """The manager's decision (art #196, G3a, 2026-10-31): the hem stays at the approved drawing's 17.76 and the check
 is the mesh measure Gate 2 makes (garment_drawing.measure_build: hem_z - the shoes mesh's top). Her sneakers (E1's,
-as on d79) top out at 12.51, the collar at the ankle's sides, so the target is 17.76 - 12.51 = 5.25. G1's 6.66 was
-counted from dress.json's rim (11.1), lower than the mesh's top, and no build could meet it with the drawing's hem."""
+as on d79) top out at 12.51, the collar at the ankle's sides, so the target is 17.76 - 12.51 = 5.25 (hem_z less a
+fixed 12.51: it moves with the hem). G1's 6.66 was counted from dress.json's rim (11.1), lower than the mesh's top;
+meeting it on the mesh needs the hem at 19.17 +- 1, which the drawing's 17.76 +- 1 meets only between 18.17 and 18.76:
+the drawing's hem wins."""
+
+# --- the build's own numbers (tools/blender/dungarees_build.py; not sizes Gate 1 or 2 measure) --------------------
+[build]
+seam_blend_cm = 10.0         # the bib's and back panel's lowest 10 cm ease from the band's bone to Chest (G3d: d10)
+band_ease_cm = 0.3           # the waistband off her shirt
+body_half_w_cm = { front = 11.0, back = 12.0 }   # her front (back) over |x| under this: the bib's lean B, the
+                                                 # back panel's envelope, and garment_drawing's gaps
+strap_ray_origin_cm = { z = 117.0, y = 1.0 }     # the straps' rays start inside her chest here (x = the strap's)
+turnup_wall_cm = 0.4         # the turn-up ring's wall, and its least ease off the leg
+buckle_ring_cm = { pad = 0.4, half_h = 0.6, bar = 0.3 }   # the ring round the strap: past its edges, half height, bar
 
 # --- behaviour ------------------------------------------------------------------------------------------------
 [behaviour]
@@ -281,6 +293,9 @@ overlap_min = { front = 0.8, side = 0.70, back = 0.8 }
 # (the bib's face shows, 17-35 px a row) while the build's bib is a plate seen edge-on (2 px); at the hips its hanging
 # arm and hand cover the garment, so the holes inside each row's outline count as garment (b02: 0.435 over the trunk,
 # 0.744 waist..crotch filled). The chest is judged by the front view and the spec's gaps (the bust station below).
+# The side minimum 0.70, not the front's and back's 0.8 or 0.75: the concept's side figure is turned a little and its
+# legs stride, so even a build true to the spec reads 0.744 there (c01); 0.70 keeps a margin for the 2 mm rasters
+# and fails a bib or seat off by a few cm (the manager, G3d).
 overlap_z = { side = ["crotch", "waist"] }
 concept_fill_rows = ["side"]
 # the concept's denim: blue over red and green, no bright grey; an opening of 4 rows drops the shirt's navy stripes;
@@ -291,11 +306,27 @@ concept_mask = { b_minus_r = 15, b_minus_g = 6, max = 215, open_ry = 4, close_r 
 over_z = "collarbone"        # a piece over this with points in front and behind goes over the shoulder: a strap
 hardware_max_verts = 60      # buckles, buttons (d79: 21 and 32; its back panel 272, band halves 165, cuffs 240)
 
+# The bib and the back panel ride Chest whole over their seam blend ([build] seam_blend_cm = 10: their lowest 10 cm ease
+# from the band's bone, Spine, to Chest, as a sewn seam bends): flatness from 10.5 cm over the band's top; the seam is
+# held by its stretch and the joins on the band. A part on one bone has flatness and stretch 0 by construction
+# (docs/clothes.md, "Gate 2"): only the joins between parts on different bones measure anything there.
 [gate2.parts.bib]
 classes = ["panel"]
 x_abs = [0, 11.5]
 y = [-40, 0]
-z = ["waistband_top_z+1", "bib_top_z+1"]
+z = ["waistband_top_z+10.5", "bib_top_z+1"]
+[gate2.parts.bib_seam]
+classes = ["panel"]
+x_abs = [0, 12]
+y = [-40, 0]
+z = ["waistband_top_z-0.05", "waistband_top_z+10.5"]
+piece_verts = [1001, 1000000]   # the bib's piece (1666 on c01), not the band's ring (384) under its edge
+[gate2.parts.bib_foot]
+classes = ["panel"]
+x_abs = [0, 12]
+y = [-40, 0]
+z = ["waistband_top_z-0.05", "waistband_top_z+1"]
+piece_verts = [1001, 1000000]
 [gate2.parts.strap_fronts]
 classes = ["strap", "hardware"]
 x_abs = [0, 15]
@@ -305,7 +336,19 @@ z = ["waistband_top_z+1", "bib_top_z+0.5"]
 classes = ["panel"]
 x_abs = [0, 13]
 y = [0, 40]
-z = ["waistband_top_z+1", "back_top_z+1"]
+z = ["waistband_top_z+10.5", "back_top_z+1"]
+[gate2.parts.back_seam]
+classes = ["panel"]
+x_abs = [0, 13]
+y = [0, 40]
+z = ["waistband_top_z-0.05", "waistband_top_z+10.5"]
+piece_verts = [1001, 1000000]
+[gate2.parts.back_foot]
+classes = ["panel"]
+x_abs = [0, 13]
+y = [0, 40]
+z = ["waistband_top_z-0.05", "waistband_top_z+1"]
+piece_verts = [1001, 1000000]
 [gate2.parts.strap_backs]
 classes = ["strap", "hardware"]
 x_abs = [0, 15]
@@ -316,11 +359,20 @@ classes = ["strap"]
 x_abs = [0, 40]
 y = [-40, 40]
 z = [0, 200]
+# the band's ring alone (c01: 384 vertices; G3c's box missed its top row by a float and took the yoke's top in)
 [gate2.parts.waistband]
 classes = ["panel"]
 x_abs = [0, 40]
 y = [-40, 40]
-z = ["waistband_top_z-waistband_h", "waistband_top_z"]
+z = ["waistband_top_z-waistband_h-0.05", "waistband_top_z+0.05"]
+piece_verts = [100, 1000]
+# the trousers' yoke where it rises inside the band (the trousers' piece, 4027 vertices on c01)
+[gate2.parts.yoke]
+classes = ["panel"]
+x_abs = [0, 40]
+y = [-40, 40]
+z = ["waistband_top_z-waistband_h-0.05", "waistband_top_z"]
+piece_verts = [1001, 1000000]
 
 [[gate2.joins]]
 name = "strap fronts on the bib"
@@ -332,6 +384,27 @@ tol_mm = 3.0                 # [behaviour] bib: the buckles ride on it, slip und
 name = "strap backs on the back panel"
 moving = "strap_backs"
 on = "back_panel"
+reach_mm = 25
+tol_mm = 3.0
+
+# The seams on the band (the fresh review's major, G3d): a Spine-against-Chest twist in Jog or Strafe must neither
+# open the bib's or the back's lower corners off the band nor slide them inside it, and the yoke rides inside the band
+[[gate2.joins]]
+name = "bib on the waistband"
+moving = "bib_foot"
+on = "waistband"
+reach_mm = 25
+tol_mm = 3.0
+[[gate2.joins]]
+name = "back panel on the waistband"
+moving = "back_foot"
+on = "waistband"
+reach_mm = 25
+tol_mm = 3.0
+[[gate2.joins]]
+name = "yoke inside the waistband"
+moving = "yoke"
+on = "waistband"
 reach_mm = 25
 tol_mm = 3.0
 
@@ -351,6 +424,12 @@ part = "bib"
 tol_pct = 2.0
 [[gate2.stretch]]
 part = "back_panel"
+tol_pct = 2.0
+[[gate2.stretch]]
+part = "bib_seam"
+tol_pct = 2.0                # the seam blend bends, never stretches
+[[gate2.stretch]]
+part = "back_seam"
 tol_pct = 2.0
 [[gate2.stretch]]
 part = "straps"
@@ -415,6 +494,7 @@ z = "bust"
 # against her front + the shirt + the spec's bust gap (0.3 +- 0.3 cm), not the concept: her bust stands ahead of the
 # concept's chest, so any bib outside her shirt is >= 15.8 mm ahead of the concept's (G3b; the manager, G3c)
 body_gap = "bib_standoff_bust"
+plus_cm = 0.15               # the pocket's face stands 1.5 mm ahead of the bib's over the bust (the fresh review, G3d)
 [[gate2.stations]]
 view = "side"
 name = "seat's back under the waist"

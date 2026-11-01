@@ -129,6 +129,10 @@ def check_gate2(spec) -> list[str]:
         for key in ("x_abs", "y", "z"):
             for e in p[key]:
                 expr(f"parts.{name}.{key}", e)
+        pv = p.get("piece_verts")
+        if pv is not None and not (isinstance(pv, list) and len(pv) == 2 and all(isinstance(v, int) for v in pv)
+                                   and 0 <= pv[0] <= pv[1]):
+            bad.append(f"parts.{name}.piece_verts: {pv!r} is no [lo, hi] of vertex counts")
     expr("classify.over_z", g2["classify"]["over_z"])
     for v, zs in g2.get("overlap_z", {}).items():
         for e in zs:
@@ -154,6 +158,8 @@ def check_gate2(spec) -> list[str]:
                 bad.append(f"{where}: body_gap {st['body_gap']!r} is no spec size")
             if st.get("view") != "side" or st.get("kind") not in ("front", "back"):
                 bad.append(f"{where}: a body_gap is a side view's front or back")
+        if "plus_cm" in st and ("body_gap" not in st or not 0 <= st["plus_cm"] <= 1):
+            bad.append(f"{where}: plus_cm needs a body_gap and 0..1 cm")
         for e in (st["z"] if isinstance(st["z"], list) else [st["z"]]):
             expr(where, e)
     for j in g2.get("joins", []):
@@ -202,12 +208,13 @@ def video_source(video: Path, blend: Path | None, sha: str | None) -> tuple[bool
 
 def body_gap_u(spec, sec, st, shirt: float = 0.5):
     """A side station's spec position (u = her y, cm): her front (back) over |x| < 11 cm at the station's height, the
-    shirt and the spec gap st["body_gap"] ahead of it (behind it), as garment_drawing.measure_build reads the gap."""
+    shirt and the spec gap st["body_gap"] ahead of it (behind it), as garment_drawing.measure_build reads the gap,
+    and st["plus_cm"]: what rightly stands on the garment there (the bib's pocket, 1.5 mm ahead of its face)."""
     z = G.resolve(st["z"], {}, spec["dims"], spec["body"]["landmarks_cm"])
     p = GD.profile(sec, z)
     if p is None:
         return None
-    g = spec["dims"][st["body_gap"]]["cm"] + shirt
+    g = spec["dims"][st["body_gap"]]["cm"] + shirt + st.get("plus_cm", 0.0)
     return p[0] - g if st["kind"] == "front" else p[1] + g
 
 
@@ -303,7 +310,7 @@ def motion_config(spec, meas, blend: str) -> dict:
     parts = {}
     for name, p in g2["parts"].items():
         parts[name] = {"classes": p["classes"], "x_abs": [r(v) for v in p["x_abs"]], "y": [r(v) for v in p["y"]],
-                       "z": [r(v) for v in p["z"]]}
+                       "z": [r(v) for v in p["z"]], "piece_verts": p.get("piece_verts")}
     return {"blend": blend, "clips": g2["clips"], "parts": parts, "reference_clip": g2.get("reference_clip"),
             "classify": {"over_z": r(g2["classify"]["over_z"]), "hardware_max_verts": g2["classify"]["hardware_max_verts"]},
             "joins": [{**j, "reach_m": j["reach_mm"] / 1000} for j in g2["joins"]],
@@ -414,6 +421,23 @@ def numbers_sheet(tag, nums, sil, mrows, out: Path) -> Path:
     return cv.save(out)
 
 
+def view_overlap(spec, v, cm, bm, w, h) -> tuple[bytearray, dict]:
+    """A view's overlap: the concept's row spans filled in the views of concept_fill_rows, the rows limited to the
+    view's overlap_z heights (the side: crotch to waist); the concept mask it judged and the overlap (its rows)."""
+    if v in spec["gate2"].get("concept_fill_rows", []):
+        cm = G.fill_rows(cm, w, h)
+    oz = spec["gate2"].get("overlap_z", {}).get(v)
+    lim = None
+    if oz:
+        lm = spec["body"]["landmarks_cm"]
+        rr = [int(round(GD.concept_map(spec, v)(0, G.resolve(z, {}, spec["dims"], lm))[1])) - spec["concept"]["boxes"][v][1]
+              for z in oz]
+        lim = (max(0, min(rr)), min(h - 1, max(rr)))
+    o = G.overlap(cm, bm, lim, w)
+    o["rows"] = list(lim) if lim else None
+    return cm, o
+
+
 def run(a) -> int:
     spec = S.load_spec(a.spec)
     bad = S.check_spec(spec)
@@ -441,18 +465,8 @@ def run(a) -> int:
     sil = {}
     for v in VIEWS:
         w, h, cm = concept_garment(spec, crow, v, out, Path(a.spec).parent)
-        if v in spec["gate2"].get("concept_fill_rows", []):
-            cm = G.fill_rows(cm, w, h)
         _, _, bm = build_mask(spec, build, sec, v)
-        oz = spec["gate2"].get("overlap_z", {}).get(v)
-        lim = None
-        if oz:
-            lm = spec["body"]["landmarks_cm"]
-            rr = [int(round(GD.concept_map(spec, v)(0, G.resolve(z, {}, spec["dims"], lm))[1])) - spec["concept"]["boxes"][v][1]
-                  for z in oz]
-            lim = (max(0, min(rr)), min(h - 1, max(rr)))
-        o = G.overlap(cm, bm, lim, w)
-        o["rows"] = list(lim) if lim else None
+        cm, o = view_overlap(spec, v, cm, bm, w, h)
         sts = stations(spec, v, cm, bm, w, h, meas, sec)
         mn = spec["gate2"]["overlap_min"][v]
         sil[v] = {"overlap": o, "min": mn, "pass": o["iou"] >= mn, "stations": sts}

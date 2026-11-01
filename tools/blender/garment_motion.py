@@ -7,6 +7,7 @@ the spec's [gate2] section, resolved on the build's measures) and reads the resu
   'panel'. A part is the vertices of the named classes inside its box (|x|, y and z ranges).
 - The reference: reference_clip's first frame (the spec's [gate2] reference_clip, the stand), else her rest; the
   parts are chosen at rest.
+- A part may keep only pieces of a vertex count (piece_verts): the band's ring, not the yoke inside it.
 - Slip at a join: each vertex of the moving part within reach of the other part's faces is tied at rest to its
   nearest point (face, barycentric); per frame its offset from that point, turned back by the other part's best-fit
   rotation, less its rest offset (clothes_bibmove_geom.slip), mm.
@@ -56,8 +57,13 @@ def world(o) -> np.ndarray:
     return co.reshape(-1, 3) @ m[:3, :3].T + m[:3, 3]
 
 
-def select(co, cls_of_vert, part: dict) -> np.ndarray:
+def select(co, cls_of_vert, part: dict, piece_n=None) -> np.ndarray:
+    """The part's vertices: its classes inside its box; with piece_verts [lo, hi] only pieces of lo..hi vertices
+    (the band's ring apart from the yoke inside it and the bib's foot over it)."""
     ok = np.isin(cls_of_vert, part["classes"])
+    if part.get("piece_verts") is not None and piece_n is not None:
+        lo, hi = part["piece_verts"]
+        ok &= (piece_n >= lo) & (piece_n <= hi)
     ax = np.abs(co[:, 0])
     ok &= (ax >= part["x_abs"][0]) & (ax <= part["x_abs"][1])
     ok &= (co[:, 1] >= part["y"][0]) & (co[:, 1] <= part["y"][1])
@@ -94,7 +100,8 @@ def main() -> int:
     rep = {"blend": cfg["blend"], "blend_sha256": G.file_sha256(cfg["blend"]), "pieces": [
         {"verts": n, "class": c, "z_max": round(s[0], 4), "y": [round(s[1], 4), round(s[2], 4)]}
         for n, c, s in zip(sizes, classes, spans)], "parts": {}, "clips": {}}
-    parts = {name: select(co0, cls_of_vert, p) for name, p in cfg["parts"].items()}
+    piece_n = np.array(sizes)[comp]
+    parts = {name: select(co0, cls_of_vert, p, piece_n) for name, p in cfg["parts"].items()}
     # the reference the motion is measured from: her rest (the T-pose) or a clip's first frame (the stand the game
     # shows: from the T-pose to arms down every panel and strap moves, which is no fault of the garment)
     ref, sc = co0, bpy.context.scene

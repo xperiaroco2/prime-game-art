@@ -403,7 +403,7 @@ class G3cDecisionsTest(unittest.TestCase):
             x for x in self.spec["gate2"]["stations"] if x["name"] == "bib front at the bust"]))
         st = spec["gate2"]["stations"][0]
         ref = GG.body_gap_u(spec, Sec(), st)
-        self.assertAlmostEqual(ref, -13.0 - 0.5 - 0.3)   # her front, the shirt, the spec's bust gap
+        self.assertAlmostEqual(ref, -13.0 - 0.5 - 0.3 - 0.15)   # her front, the shirt, the bust gap, the pocket
         for shift, ok in ((0.0, True), (-0.6, False)):
             w, h, bm = self._side(st, ref + shift)
             r = GG.stations(spec, "side", bytearray(w * h), bm, w, h, {}, Sec())[0]
@@ -423,11 +423,13 @@ class G3cDecisionsTest(unittest.TestCase):
         self.assertIn("side view's front or back", bad)
 
     def test_back_top_reads_the_v_centre(self):
-        """The drawing's V (the centre at back_top_z, +3 cm at 7.6 cm): the station reads its centre-line point;
+        """The drawing's V (the centre at back_top_z, +3 cm at strap_x - strap_w / 2): the station reads its centre;
         the old window of +-4 cm read the V's sides 1.6 cm high (b02's +17 mm)."""
         c, box = self.spec["concept"], self.spec["concept"]["boxes"]["back"]
         w, h = box[2] - box[0], box[3] - box[1]
         kt = self.spec["dims"]["back_top_z"]["cm"]
+        dm = self.spec["dims"]
+        xs_in = dm["strap_x"]["cm"] - dm["strap_w"]["cm"] / 2    # the V's corners, as dungarees_build lays them
         tf = GD.concept_map(self.spec, "back")
         bottom = int(round(tf(0, 100.0)[1])) - box[1]
         bm = bytearray(w * h)
@@ -435,7 +437,7 @@ class G3cDecisionsTest(unittest.TestCase):
             u = (x + box[0] + 0.5 - c["back_cx"]) / c["px_per_cm"]
             if abs(u) > 12:
                 continue
-            top = int(round(tf(0, kt + 3 * min(1.0, abs(u) / 7.6))[1])) - box[1]
+            top = int(round(tf(0, kt + 3 * min(1.0, abs(u) / xs_in))[1])) - box[1]
             for y in range(top, bottom):
                 bm[y * w + x] = 1
         st = next(x for x in self.spec["gate2"]["stations"] if x["name"] == "back top, centre")
@@ -446,6 +448,76 @@ class G3cDecisionsTest(unittest.TestCase):
             self.assertEqual(r["pass"], ok, r)
             if ok:
                 self.assertLessEqual(abs(r["err_mm"]), 3.0, r)
+
+
+class G3dSeamsTest(unittest.TestCase):
+    """G3d (the fresh review's major and minors): the seams on the band, the parts by piece size, the pocket at the
+    bust, run()'s side overlap."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.spec = S.load_spec(SPEC)
+
+    def test_the_seams_are_joined_on_the_band(self):
+        g2 = self.spec["gate2"]
+        joins = {(j["moving"], j["on"]) for j in g2["joins"]}
+        for moving in ("bib_foot", "back_foot", "yoke"):
+            self.assertIn((moving, "waistband"), joins)
+        for name in ("waistband", "yoke", "bib_foot", "back_foot", "bib_seam", "back_seam"):
+            self.assertIn("piece_verts", g2["parts"][name], name)
+        lo_band, hi_band = g2["parts"]["waistband"]["piece_verts"]
+        self.assertLess(hi_band, g2["parts"]["yoke"]["piece_verts"][0])   # the ring apart from the trousers' piece
+        stretched = {s["part"] for s in g2["stretch"]}
+        self.assertTrue({"bib_seam", "back_seam", "waistband"} <= stretched)
+        self.assertGreater(self.spec["build"]["seam_blend_cm"], 0)
+        lo = f"waistband_top_z+{self.spec['build']['seam_blend_cm'] + 0.5:g}"   # flat over the blend only
+        self.assertEqual(g2["parts"]["bib"]["z"][0], lo)
+        self.assertEqual(g2["parts"]["back_panel"]["z"][0], lo)
+
+    def test_piece_verts_and_plus_cm_are_checked(self):
+        import copy
+        spec = copy.deepcopy(self.spec)
+        spec["gate2"]["parts"]["yoke"]["piece_verts"] = [10]
+        st = next(x for x in spec["gate2"]["stations"] if x.get("body_gap"))
+        spec["gate2"]["stations"].append({k: v for k, v in st.items() if k != "body_gap"} | {"concept_tol_cm": 1})
+        bad = " ".join(GG.check_gate2(spec))
+        self.assertIn("parts.yoke.piece_verts", bad)
+        self.assertIn("plus_cm needs a body_gap", bad)
+        self.assertEqual(GG.check_gate2(self.spec), [])
+
+    def test_the_bust_station_counts_the_pocket(self):
+        st = next(x for x in self.spec["gate2"]["stations"] if x.get("body_gap") == "bib_standoff_bust")
+        self.assertAlmostEqual(st["plus_cm"], 0.15)   # body_gap_u adds it (G3cDecisionsTest's bust test)
+
+    def test_run_fills_the_side_rows_only_and_limits_them(self):
+        """view_overlap (run()'s silhouettes): the side's concept rows filled and judged from crotch to waist only;
+        the front neither filled nor limited."""
+        for v, filled in (("side", True), ("front", False)):
+            box = self.spec["concept"]["boxes"][v]
+            w, h = box[2] - box[0], box[3] - box[1]
+            cm, bm = bytearray(w * h), bytearray(w * h)
+            x0, x1 = w // 4, 3 * w // 4
+            for y in range(h):
+                for x in range(x0, x1):
+                    bm[y * w + x] = 1
+                    if x < x0 + 5 or x >= x1 - 5:     # the concept's outline only: a hole inside every row
+                        cm[y * w + x] = 1
+            out, o = GG.view_overlap(self.spec, v, cm, bm, w, h)
+            if filled:
+                self.assertAlmostEqual(o["iou"], 1.0, places=6)
+                lm = self.spec["body"]["landmarks_cm"]
+                tf = GD.concept_map(self.spec, v)
+                rows = sorted(int(round(tf(0, lm[k])[1])) - box[1] for k in ("crotch", "waist"))
+                self.assertEqual(o["rows"], [max(0, rows[0]), min(h - 1, rows[1])])
+                # rows outside crotch..waist do not count: an empty build there leaves the IoU at 1
+                bm2 = bytearray(bm)
+                for y in list(range(0, o["rows"][0])) + list(range(o["rows"][1] + 1, h)):
+                    bm2[y * w:(y + 1) * w] = bytes(w)
+                self.assertAlmostEqual(GG.view_overlap(self.spec, v, cm, bm2, w, h)[1]["iou"], 1.0, places=6)
+            else:
+                self.assertIsNone(o["rows"])
+                self.assertLess(o["iou"], 0.5)
+                self.assertEqual(out, cm)
 
 
 if __name__ == "__main__":
