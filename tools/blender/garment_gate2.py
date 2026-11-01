@@ -170,6 +170,9 @@ def check_gate2(spec) -> list[str]:
         for key in ("plate", "on"):
             if lp[key] not in g2["parts"]:
                 bad.append(f"laps '{lp['name']}': {key} {lp[key]!r} is no part")
+    for lf in g2.get("lifts", []):
+        if lf.get("on") and lf["on"] not in g2["parts"]:
+            bad.append(f"lifts: on {lf['on']!r} is no part")
     for key in ("flat", "stretch", "lifts"):
         for f in g2.get(key, []):
             if f["part"] not in g2["parts"]:
@@ -362,9 +365,11 @@ def motion_rows(spec, motion: dict, poke: dict | None) -> list[dict]:
             rows.append({"clip": clip, "check": f"stretch p95: {s['part']} (max {mx})", "value": v, "unit": "%",
                          "tol": s["tol_pct"], "pass": G.verdict(v, s["tol_pct"])})
         for lf in g2.get("lifts", []):   # G3j: off her skin under it since the reference (the straps' flap)
-            v = None if m is None else (m.get("lift_mm") or {}).get(lf["part"])
-            at = None if m is None else (m.get("lift_at") or {}).get(lf["part"])
-            rows.append({"clip": clip, "check": f"lift off her skin: {lf['part']} (largest; at {at} cm, frame)",
+            key = G.lift_key(lf)   # G3l: off another part (on), else off her skin
+            v = None if m is None else (m.get("lift_mm") or {}).get(key)
+            at = None if m is None else (m.get("lift_at") or {}).get(key)
+            off = f"the {lf['on']}" if lf.get("on") else "her skin"
+            rows.append({"clip": clip, "check": f"lift off {off}: {lf['part']} (largest; at {at} cm, frame)",
                          "value": v, "unit": "mm",
                          "tol": lf["tol_mm"], "pass": G.verdict(v, lf["tol_mm"])})
         pk = None if poke is None else (poke.get("clips") or {}).get(clip)

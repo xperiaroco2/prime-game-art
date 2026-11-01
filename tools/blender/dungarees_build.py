@@ -466,6 +466,15 @@ def main() -> None:
     ap.add_argument("--strap-back-join-cm", type=float, default=None,
                     help="the straps' back ends join the back panel: on its weights, eased from her skin's over this "
                          "arc below the skin rows (default the spec's [build] strap_back_join_cm, 0: off, on Chest)")
+    ap.add_argument("--strap-skin-whole", type=int, default=None,
+                    help="1: her skin's weights under the straps from her whole skin, body_removed too (default the "
+                         "spec's [build] strap_skin_whole, else 1; 0: her kept skin alone, G3j)")
+    ap.add_argument("--back-corner-chest", type=float, default=None,
+                    help="the back panel's top takes this share of the bib's weights (Chest), the straps' back ends "
+                         "the panel's there (default the spec's [build] back_corner_chest, 0: off)")
+    ap.add_argument("--back-corner-fade-cm", type=float, default=None,
+                    help="that share eased in over the panel's top this many cm under its corners (0: the whole panel, "
+                         "rigid; default the spec's [build] back_corner_fade_cm)")
     ap.add_argument("--strap-skin-drop", default=None,
                     help="bones (name parts, comma-separated) her skin's weights lose there (default the spec's "
                          "strap_skin_drop)")
@@ -490,7 +499,10 @@ def main() -> None:
     # G3k: her skin's weights under the straps from her whole skin, the part the dress removed under the cloth too: on
     # the kept skin alone the strap's back run at 123 cm took her shoulder's (the nearest kept skin 51 mm off, over it)
     # and stood 15-23 mm off her upper back in the runs
-    shirt_w, body_w = Weights(top), Weights(body, bpy.data.objects.get("body_removed"))
+    whole = a.strap_skin_whole if a.strap_skin_whole is not None else spec["build"].get("strap_skin_whole", True)
+    shirt_w = Weights(top)
+    body_w = Weights(body, bpy.data.objects.get("body_removed")) if whole else Weights(body)
+    rep["strap_skin_whole"] = bool(whole)
 
     # --- the bare ankle: her skin back under the raised hem ---------------------------------------------------
     lo_z, hi_z = (float(x) for x in a.ankle_restore.split(","))
@@ -802,8 +814,28 @@ def main() -> None:
     if band_share > 0:   # G3f: one blend for the whole panel (every vertex the same matrix: still flat), so its lap
         w_back = mix(w_back, w_band, band_share)   # rises less over the band as she bends forward (h1 on Chest: -39 mm)
     rep["back_band_share"] = band_share
-    for r_ in B.slab(rows, seam_w(w_back), 0):
+    # G3l: the sliding join. The panel's top takes cc of the bib's weights (Chest), eased in over fade cm under its
+    # corners (0: the whole panel, one blend, still rigid), and the straps' back ends over it take the panel's weights
+    # at their height: on Chest over the panel's Spine they hovered 16-22 mm off it (G3k), joined on Spine they stretched
+    cc = a.back_corner_chest if a.back_corner_chest is not None else spec["build"].get("back_corner_chest", 0.0)
+    cf = (a.back_corner_fade_cm if a.back_corner_fade_cm is not None else spec["build"].get("back_corner_fade_cm", 0.0)) / 100
+
+    def w_panel(z):
+        if cc <= 0:
+            return w_back
+        t = 1.0 if cf <= 0 else smooth01((z - (corner - cf)) / cf)
+        return norm(mix(w_back, w_bib, cc * t)) if t > 0 else w_back
+    sw_back = seam_w(w_back)
+
+    def w_back_at(p):
+        if cc <= 0:
+            return sw_back(p)
+        t = 1.0 if cf <= 0 else smooth01((p.z - (corner - cf)) / cf)
+        return norm(mix(sw_back(p), w_bib, cc * t)) if t > 0 else sw_back(p)
+    for r_ in B.slab(rows, w_back_at, 0):
         plate_vs.update(v for row_ in r_ for v in row_)
+    rep["back_corner"] = {"chest_share": cc, "fade_cm": round(cf * 100, 2),
+                          "corner_weights": {k: round(v, 3) for k, v in w_panel(corner).items()}}
     rep["back_panel"] = {"weights": w_back, "hull": [[round(z * 100, 2), round(y * 100, 2)] for z, y in bhull],
                          "corner_m": corner}
 
@@ -905,12 +937,14 @@ def main() -> None:
         # below the skin rows: on Chest over the panel's Spine they stood 17-23 mm off it in the runs (44 mm off her)
         join = a.strap_back_join_cm if a.strap_back_join_cm is not None else spec["build"].get("strap_back_join_cm", 0.0)
         w_sb = w_back if join > 0 else (w_bib if sboc else w_back)
+        if cc > 0 and join <= 0:   # G3l: the back ends ride the panel under them (its weights at their height)
+            w_sb = w_panel(corner)
 
         def w_of_row(i):
             if i <= i_front:
                 return w_bib
             if i >= i_back:
-                return w_sb
+                return w_panel(pz[i].z) if (cc > 0 and join <= 0) else w_sb
             if i <= i_mid:
                 return mix(w_bib, w_sh, smooth01((i - i_front) / (i_mid - i_front)))
             return mix(w_sh, w_sb, smooth01((i - i_mid) / (i_back - i_mid)))

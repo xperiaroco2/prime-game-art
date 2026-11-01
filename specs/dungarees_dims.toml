@@ -310,6 +310,11 @@ strap_skin_drop = ["Neck", "Head", "Jaw", "Eye", "Gill"]   # her skin's weights 
 strap_back_join_cm = 0.0     # G3k: >0, the back ends join the back panel (its weights, Spine), eased from her skin's over this
                              # arc below the skin rows. Off: on Chest over the panel's Spine they hover 16-22 mm off it in the
                              # runs; 2 cm put them on it (0-13 mm) but the straps stretched 10-56 % beyond her skin (G3k g1)
+strap_skin_whole = true      # G3k: her skin's weights under the straps from her whole skin, body_removed too (the nearest
+                             # kept skin was 51 mm off her upper back); false: her kept skin alone (G3j)
+back_corner_chest = 0.0      # G3l: >0, the sliding join: the back panel's top takes this share of the bib's weights
+                             # (Chest) and the straps' back ends over it the panel's weights at their height
+back_corner_fade_cm = 0.0    # that share eased in over this many cm under the panel's corners (0: the whole panel, rigid)
 shirt_trim_z_cm = 93.5       # G3g: the shirt ends here, inside the yoke under the band (its hem came out at the hip crease)
 shirt_hem_in_cm = 0.25       # G3f: the shirt's hem drawn in 2.5 mm, eased out over its lowest 1.5 cm, inside the yoke
 shirt_hem_h_cm = 1.5
@@ -397,6 +402,17 @@ classes = ["strap"]
 x_abs = [0, 40]
 y = [0, 40]
 z = ["collarbone-4", 200]
+# G3l: the straps' back ends over the back panel's top, and that top (its V and corners) they lie on
+[gate2.parts.strap_ends]
+classes = ["strap"]
+x_abs = [0, 40]
+y = [0, 40]
+z = [0, "back_top_z+3"]
+[gate2.parts.back_top]
+classes = ["panel"]
+x_abs = [0, 15]
+y = [0, 40]
+z = ["back_top_z-4", "back_top_z+3.5"]
 [gate2.parts.strap_tops]
 classes = ["strap"]
 x_abs = [0, 40]
@@ -440,6 +456,14 @@ part = "strap_backs"
 tol_mm = 5.0
 [[gate2.lifts]]
 part = "strap_tops"
+tol_mm = 5.0
+# G3l: the back ends off the panel they lie on: per strap vertex its distance along the panel's face it was tied to at the
+# garment's rest (within reach_mm), less that at rest, where the build lays them on it, either way (off it or under it) (with Chest ends over a Spine
+# panel: 6-10 mm off it at rest, 29 mm already in Idle's first frame)
+[[gate2.lifts]]
+part = "strap_ends"
+on = "back_top"
+reach_mm = 25.0
 tol_mm = 5.0
 
 # The yoke rides inside the band (the fresh review's major, G3d)

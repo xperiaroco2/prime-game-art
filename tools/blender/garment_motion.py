@@ -40,6 +40,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import clothes_bibmove_geom as B  # noqa: E402
 import garment_gate2_geom as G  # noqa: E402
 
+lift_key = G.lift_key
+
 PREFIX = "CharacterArmature|"
 
 
@@ -167,7 +169,7 @@ def main() -> int:
         rep["parts"]["lap: " + lp["name"]] = {"band_top": len(top), "edge": len(edge), "level": len(level)}
     # her skin under the parts judged against it (vs_skin): each vertex's nearest skin point at the reference
     skin_parts = list(dict.fromkeys([st["part"] for st in cfg["stretch"] if st.get("vs_skin")] +
-                                    [lf["part"] for lf in cfg.get("lifts", [])]))   # G3j: and the lifts' parts
+                                    [lf["part"] for lf in cfg.get("lifts", []) if not lf.get("on")]))   # G3j: lifts
     skin_objs = [bpy.data.objects[n] for n in cfg.get("skin", []) if n in bpy.data.objects] if skin_parts else []
     for o in skin_objs:
         o.hide_viewport = False
@@ -192,6 +194,31 @@ def main() -> int:
             skin_tie[name] = tie
             rep["parts"]["skin under: " + name] = {"tied": len(tie)}
     rep["skin"] = [o.name for o in skin_objs]
+
+    # G3l: a lift off another part of the garment (on): each vertex tied to the nearest face of that part at the
+    # garment's rest, where the build lays it on that part, within reach_mm, and judged since that rest, not since the
+    # reference clip: the straps' back ends (Chest) over the back panel (Spine) lie 6-10 mm off it at rest and already
+    # 29 mm in Idle's first frame (G3l B), so a lift since Idle would hide the stand's own gap; judged either way (sunk
+    # under it or off it), as the size of the change
+    on_tie = {}
+    for lf in cfg.get("lifts", []):
+        if not lf.get("on"):
+            continue
+        on = set(parts[lf["on"]].tolist())
+        otris = [t for t in tri_all if all(k in on for k in t)]
+        tie, near = {}, None
+        if otris:
+            otree = BVHTree.FromPolygons([tuple(c) for c in co0], otris)
+            for i in parts[lf["part"]]:
+                loc, _n, fi, d_ = otree.find_nearest(tuple(co0[i]))
+                if loc is None:
+                    continue
+                near = d_ if near is None else min(near, d_)
+                if d_ <= lf.get("reach_mm", 25.0) / 1000:
+                    tie[int(i)] = (otris[fi], list(poly_3d_calc([co0[k] for k in otris[fi]], loc)))
+        on_tie[lift_key(lf)] = tie
+        rep["parts"]["lift: " + lift_key(lf)] = {"tied": len(tie), "of": len(parts[lf["part"]]), "faces": len(otris),
+                                                 "nearest_mm": None if near is None else round(1000 * near, 1)}
 
     def skin_points(sco, name):
         out = {}
@@ -260,13 +287,18 @@ def main() -> int:
                 if sref0 is None:   # her skin at the reference (the reference clip's first frame, else this frame)
                     sref0 = sref
             for lf in cfg.get("lifts", []):   # G3j: a part off her skin under it since the reference (the flap)
-                tie = skin_tie.get(lf["part"])
-                v, at = G.skin_lift(ref, co, sref0, sco, tie, where=True) if tie else (None, None)
+                key = lift_key(lf)
+                if lf.get("on"):   # G3l: off another part of the garment
+                    tie = on_tie.get(key)
+                    v, at = G.skin_lift(co0, co, co0, co, tie, where=True, both=True) if tie else (None, None)
+                else:
+                    tie = skin_tie.get(lf["part"])
+                    v, at = G.skin_lift(ref, co, sref0, sco, tie, where=True) if tie else (None, None)
                 v = None if v is None else 1000 * v
-                old = res["lift_mm"].get(lf["part"])
+                old = res["lift_mm"].get(key)
                 if v is not None and (old is None or v > old):   # where: its reference point (cm) and the frame
-                    res["lift_at"][lf["part"]] = [round(100 * float(x), 1) for x in ref[at]] + [f]
-                res["lift_mm"][lf["part"]] = v if old is None else (old if v is None else max(old, v))
+                    res["lift_at"][key] = [round(100 * float(x), 1) for x in ref[at]] + [f]
+                res["lift_mm"][key] = v if old is None else (old if v is None else max(old, v))
             for st in cfg["stretch"]:
                 if st.get("vs_skin") and skin_tie.get(st["part"]):
                     tie = skin_tie[st["part"]]

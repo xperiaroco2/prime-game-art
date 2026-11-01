@@ -340,11 +340,18 @@ def lap_overlap(top_ref, edge) -> float | None:
     return best
 
 
-def skin_lift(rest, now, skin_rest, skin_now, tie, where: bool = False):
+def lift_key(lf: dict) -> str:
+    """A [[gate2.lifts]] row's key in garment_motion's lift_mm: its part, or "<part> on <part>" for a lift off another
+    part of the garment (G3l: the straps' back ends over the back panel)."""
+    return f"{lf['part']} on {lf['on']}" if lf.get("on") else lf["part"]
+
+
+def skin_lift(rest, now, skin_rest, skin_now, tie, where: bool = False, both: bool = False):
     """The largest lift of a part's vertices off her skin since the reference (art #196, G3j: the straps' flap by her
     neck), in m: per vertex its distance along the normal of the skin triangle it is tied to (tie: vertex -> (three
     skin vertex ids, barycentric weights); skin_rest / skin_now her skin's points), less the same at the reference,
-    signed so that away from her skin is positive. None with no tied vertex or only degenerate triangles; with where,
+    signed so that away from her skin is positive (both: its size either way, G3l: a strap end sinking under the panel
+    it lies on is as wrong as one lifting off it). None with no tied vertex or only degenerate triangles; with where,
     (lift, the vertex) (None, None)."""
     cv = lambda a: a.tolist() if hasattr(a, "tolist") else a
     rest, now, skin_rest, skin_now = map(cv, (rest, now, skin_rest, skin_now))
@@ -366,6 +373,7 @@ def skin_lift(rest, now, skin_rest, skin_now, tie, where: bool = False):
         if d0 is None or d1 is None:
             continue
         v = (d1 - d0) if d0 >= 0 else (d0 - d1)
+        v = abs(v) if both else v
         if best is None or v > best:
             best, at = v, i
     return (best, at) if where else best

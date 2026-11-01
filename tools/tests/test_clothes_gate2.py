@@ -543,10 +543,11 @@ class G3eSkinShirtTest(unittest.TestCase):
         self.assertAlmostEqual(G.skin_lift(g0, moved(g0, 0.05), skin0, moved(skin0, 0.05), tie), 0.0)
         self.assertAlmostEqual(G.skin_lift(g0, moved(g0, 0.03), skin0, skin0, tie), 0.03)     # off her: + both ways
         self.assertAlmostEqual(G.skin_lift(g0, moved(g0, -0.002), skin0, skin0, tie), -0.002)  # pressed in: negative
+        self.assertAlmostEqual(G.skin_lift(g0, moved(g0, -0.002), skin0, skin0, tie, both=True), 0.002)  # G3l: either way
         flat = [(0, 0, 0), (0.1, 0, 0), (0.2, 0, 0)]
         self.assertIsNone(G.skin_lift(g0, g0, flat, flat, tie))
         g2 = self.spec["gate2"]
-        self.assertEqual({lf["part"] for lf in g2["lifts"]}, {"strap_backs", "strap_tops"})
+        self.assertEqual({lf["part"] for lf in g2["lifts"]}, {"strap_backs", "strap_tops", "strap_ends"})
         self.assertNotIn("strap backs on the back panel", [j["name"] for j in g2["joins"]])
         c0 = g2["clips"][0]
         rows = GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: {"slip_mm": {}, "flat_mm": {}, "stretch_pct": {},
@@ -554,6 +555,22 @@ class G3eSkinShirtTest(unittest.TestCase):
         lift = next(r for r in rows if r["clip"] == c0 and r["check"].startswith("lift off her skin: strap_backs"))
         self.assertEqual((lift["value"], lift["pass"]), (27.0, False))
         self.assertIn("lifts", GG.motion_config(self.spec, {}, "x.blend"))
+
+    def test_lift_off_a_part_has_its_own_key_and_row(self):
+        """G3l: the straps' back ends judged off the back panel's top (on), keyed apart from a lift off her skin."""
+        g2 = self.spec["gate2"]
+        ends = next(lf for lf in g2["lifts"] if lf.get("on"))
+        self.assertEqual((ends["part"], ends["on"], G.lift_key(ends)), ("strap_ends", "back_top", "strap_ends on back_top"))
+        self.assertEqual(G.lift_key({"part": "strap_tops"}), "strap_tops")
+        self.assertEqual(GG.check_gate2(self.spec), [])
+        self.assertIn("lifts: on 'nope' is no part",
+                      GG.check_gate2({**self.spec, "gate2": {**g2, "lifts": [{**ends, "on": "nope"}]}}))
+        c0 = g2["clips"][0]
+        rows = GG.motion_rows(self.spec, {"parts": {}, "clips": {c0: {"slip_mm": {}, "flat_mm": {}, "stretch_pct": {},
+                                          "stretch_p95_pct": {}, "lift_mm": {"strap_ends on back_top": 18.0,
+                                                                             "strap_ends": 1.0}}}}, None)
+        row = next(r for r in rows if r["clip"] == c0 and r["check"].startswith("lift off the back_top: strap_ends"))
+        self.assertEqual((row["value"], row["pass"]), (18.0, False))
 
     def test_skin_excess_follows_her_skin(self):
         rest = [(0, 0, 0), (0.01, 0, 0), (0.02, 0, 0)]

@@ -1006,6 +1006,17 @@ tools/run.sh gate2 --spec specs/dungarees_dims.toml --body <undressed probe.json
   Over her shoulder the straps take her skin's weights per vertex (`[build] strap_skin_z_cm`, without her Neck and
   Head, `strap_skin_drop`), eased back to Chest down both runs (`strap_skin_blend_cm`), so strap, the shirt under it
   and her skin move together there.
+- **Off another part (G3l):** a lift entry with `on = "<part>"` (and `reach_mm`, default 25) ties the part's vertices
+  to the nearest face of that garment part at the garment's rest (where the build lays it on that part) instead of
+  her skin, and judges the size of its change since that rest either way (off it or sunk under it), not since the
+  reference clip; its row reads "lift off the
+  <part>" and its key in `motion.json` is `"<part> on <part>"` (`garment_gate2_geom.lift_key`). The dungarees judge
+  the straps' back ends (`strap_ends`, over the back panel's corners) off the panel's top (`back_top`), 5 mm: with
+  the ends on Chest and the panel on Spine they hovered 16-22 mm off it in the runs (G3k). `[build]
+  strap_skin_whole` picks the skin the straps' shoulder weights come from (her whole skin with `body_removed`, or her
+  kept skin alone); `back_corner_chest` and `back_corner_fade_cm` are the sliding join: the panel's top takes that
+  share of the bib's weights (Chest), eased in over the fade under its corners (0: the whole panel, one blend), and
+  the straps' back ends over it take the panel's weights at their height.
 - **The shirt (G3e):** `[gate2.shirt] max_count` judges `poke.json`'s `top_under_panels` per clip: the shirt is a
   layer the garment must cover, like her body (d10: up to 9 shirt vertices out through the band and the bib in
   Idle, 42 in Jump_Start, 35 mm deep: the band's pale stripes). The row's name carries the tracked count beside it.
