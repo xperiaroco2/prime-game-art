@@ -72,6 +72,15 @@ class EnvelopeTest(unittest.TestCase):
         self.assertEqual(c["inside_on_shell"], 0)  # never projected onto the outer shell
         self.assertLess(c["inside_max_move_mm"], 4.0)
 
+    def test_the_contact_local_zone_has_its_own_cap(self):
+        c = self.d["contact_local"]
+        self.assertGreater(c["local_verts"], 0)
+        self.assertLessEqual(c["far_max_mm"], 1.5 + 1e-6)  # outside the zone: the global cap
+        self.assertGreater(c["zone_max_mm"], 1.5)  # inside it: past the global cap
+        self.assertLessEqual(c["zone_max_mm"], 4.0 + 1e-6)  # under its own
+        self.assertEqual(c["folded"], 0)
+        self.assertEqual(c["flipped"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

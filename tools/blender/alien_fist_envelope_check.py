@@ -4,7 +4,8 @@ tools/tests/test_alien_fist_envelope_blender.py; prints one line `ENVELOPE_CHECK
 On synthetic shapes: the round cone's field against brute force; the iso-mesh of a two-finger envelope (closed,
 facing out, on the field); the shrink-wrap of two separate tubes onto their merged envelope, first bare (the facing
 sides bunch and fold) and then relaxed (no fold, no short edge); a triangle turned over counts as folded; H1q's
-contact corrective on two tubes apart (the gap fills under the cap, no fold) and touching (their facing sides sink)."""
+contact corrective on two tubes apart (the gap fills under the cap, no fold) and touching (their facing sides sink);
+H1r's local zone (its own cap on a part of the tubes, the rest under the global cap)."""
 import json
 import sys
 from pathlib import Path
@@ -104,4 +105,12 @@ inside = np.array([blend2.digit("B" if k == 0 else "A", V2t[i:i + 1])[0] < -0.00
 out["contact_touch"] = {**sto, "inside": int(inside.sum()),
                         "inside_max_move_mm": float(np.linalg.norm(Xo[inside] - V2t[inside], axis=1).max() * 1000),
                         "inside_on_shell": int((np.abs(blend2.sd(Xo[inside])) < 0.0002).sum())}
+# H1r local zone: the same two tubes apart, the global cap 1.5 mm, a local cap of 4 mm on their upper half (the mask
+# ramps over z 20-30 mm); the zone moves past the global cap, the far end stays under it, no triangle folds
+zm = np.clip((Vc[:, 2] - 0.020) / 0.010, 0.0, 1.0)
+Xl, stl = E.contact(blend, Vc, np.ones(len(Vc)), oc, ec, Tc, cap=0.0015, smooth=12,
+                    local=(blend, zm * zm * (3 - 2 * zm), 0.004, 0.003))
+ml = np.linalg.norm(Xl - Vc, axis=1) * 1000
+out["contact_local"] = {**stl, "far_max_mm": float(ml[Vc[:, 2] < 0.010].max()),
+                        "zone_max_mm": float(ml[Vc[:, 2] > 0.035].max())}
 print("ENVELOPE_CHECK " + json.dumps(out), flush=True)

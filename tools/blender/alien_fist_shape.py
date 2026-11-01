@@ -196,8 +196,20 @@ def _contact_moves(arm, body, side, W8, rest, skin, digits, fist):
     bones = {d: {f"{side}{d}{s}" for s in (SEGS if d != "Thumb" else THUMB_FIT)} for d in env.names}
     owner = np.array([max(range(len(env.names)), key=lambda k: sum(x for b, x in W8[i].items() if b in bones[env.names[k]]))
                       for i in ids])
+    local = None
+    if fist["c_local_r_mm"] > 0:
+        # H1r: the index-thumb contact zone (the index's middle and tip segments, the thumb's tip and the palm under
+        # them, within c_local_r_mm by a smoothstep falloff) under its own cap; c_local_core > 0 fills the index's
+        # curl by its chord cone (smooth-unioned over c_local_k_core_mm) so its open loop has a surface to close onto
+        env_l = E.Envelope(digits, "Thumb", None, fist["c_k_mm"] * mm, fist["c_local_k_core_mm"] * mm,
+                           fist["c_k_thumb_mm"] * mm, fist["c_local_core"], "merge")
+        env_l.chords = {d: c for d, c in env_l.chords.items() if d == "Index"}
+        zone = env.chains["Index"][1:] + env.chains["Thumb"][1:]
+        d = np.maximum(np.minimum.reduce([E.round_cone(P, *c) for c in zone]), 0.0)
+        t = np.clip(1.0 - d / (fist["c_local_r_mm"] * mm), 0.0, 1.0)
+        local = (env_l, t * t * (3.0 - 2.0 * t), fist["c_local_cap_mm"] * mm, fist["c_local_hide_mm"] * mm)
     X, st = E.contact(env, P, wt, owner, edges, tris, fist["c_cap_mm"] * mm, fist["c_bury_mm"] * mm,
-                      fist["c_hide_mm"] * mm, fist["c_smooth"], fist["c_lambda"])
+                      fist["c_hide_mm"] * mm, fist["c_smooth"], fist["c_lambda"], local)
     LAST[side] = {"env": env, "ids": ids, "P": P, "X": X, "tris": tris, "weight": wt, "owner": owner}
     moves = {i: tuple(X[k] - P[k]) for k, i in enumerate(ids) if np.linalg.norm(X[k] - P[k]) > 1e-6}
     st.update({"surface_err_mm": 0.0})

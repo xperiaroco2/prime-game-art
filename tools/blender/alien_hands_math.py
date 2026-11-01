@@ -52,7 +52,12 @@ FIST_DEFAULTS = {"morph": "fist", "k_mm": 14.0, "k_thumb_mm": 10.0, "pull_mm": 2
                  # H1q: route "contact" (alien_fist_envelope.contact): the digits' blend and the thumb's, the moves'
                  # cap, a vertex this far inside a neighbour (or c_hide_mm inside the union) sinks, the moves' smoothing
                  "c_k_mm": 8.0, "c_k_thumb_mm": 6.0, "c_cap_mm": 9.0, "c_bury_mm": 0.5, "c_hide_mm": 3.0,
-                 "c_smooth": 12, "c_lambda": 0.5}
+                 "c_smooth": 12, "c_lambda": 0.5,
+                 # H1r: the index-thumb contact zone's own cap within c_local_r_mm of the index's middle and tip
+                 # segments and the thumb's tip (0: off), its hide depth, and its fill: the index's chord cone at
+                 # c_local_core of the stations' radii (0: none), smooth-unioned over c_local_k_core_mm
+                 "c_local_r_mm": 0.0, "c_local_cap_mm": 15.0, "c_local_hide_mm": 3.0, "c_local_core": 0.0,
+                 "c_local_k_core_mm": 8.0}
 
 
 class HandsError(ValueError):

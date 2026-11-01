@@ -1666,18 +1666,7 @@ under a new file name (H1p: `<c>_review_h1p.glb`). Like `lead`, the path acts on
 crossfade (`XFADE_S` in prime-game's `character_rig.gd`) that blends every bone by one weight, so the ring can still
 flash for about 0.05 s there; removing that needs a transition clip or a per-bone crossfade in the game.
 
-**Denser hands (H1p).** Six steps of shape and relax tuning left the Godot close-ups faceted and lumpy (H1f's critic:
-~10-12 vertices around a finger, ~3 rings per segment, a 90 degree fold over them). `alien_hand_mesh.py dense` cuts
-every skin face made only of Hand and finger weights once along both directions (bmesh `subdivide_edges`, grid fill,
-`smooth` 1.0; weights, UVs and shape keys interpolated; the region's rim edges stay whole, so no face outside it
-changes and every old vertex keeps its index and position), then the tube rebuild runs again on a dump of it
-(`alien_finger_run.py build`, `apply`) so the new finger vertices lie on the tubes. On H1i's tube characters
-(`D:/prime-art-raw/2026-10-31-hands/h1p/`): the axolotl 39 319 -> 46 092 vertices (+6 773, about 3.4k per hand; 4 153
-faces cut), every digit's wave 0.00-0.11 mm after the tubes (0.6-1.6 mm on the subdivided mesh before them), nothing
-outside the hand moved (`diff`: 0.0 mm, weights 0). The second tube pass blends the ramp's partial vertices once more
-(the thumb/index web moves up to 5.6 mm against H1i's); keeping them put instead left the ring finger at 0.8 mm
-(over `wave_max_mm`), so the second blend stays. `test_alien_hand_mesh_dense_blender.py` checks `dense` on a
-synthetic rigged tube.
+**Denser hands (H1p), reverted (H1r).** H1p cut every hand-only skin face once along both directions (about 3.4k more vertices per hand) to smooth the wrap's facets; the wrap's slits and lumps stayed (205-276 folded triangles per hand), and H1q's bone curl with a small corrective builds on H1i's mesh without it (0-3 flips per hand). H1r removed the `dense` step and its check.
 
 **The fist by bones and a small corrective (H1q).** The denser mesh did not help. The defects came from the wrap
 itself: skin pressed onto an inflated outer shell (deltas up to 28 mm) gave a slit at the index's curl, lumpy
@@ -1696,6 +1685,19 @@ The morph turns over 0-3 triangles per hand. The bones' own skin has 11-18 trian
 union. The grid rejected fuller base curls (88-92 degrees) and a thumb along the index's side: both left a thumb nub
 and a wider index coil. Still open: seen from the thumb side, the index's coil stays an open loop. Filling it would
 take more than the cap (the targets reach 10-14 mm).
+
+**The run fist's own grip and a local zone (H1r).** H1q had curled the solved `[grips.loose]` in place, which broke
+the solve's check (`test_alien_grip_solve.py`: the tip joint <= 15). The run now has its own grip, `[grips.runfist]`
+(H1q's curls), used by Jog, Sprint, Strafe and `[fist] grip`; `loose` is the solve's again. The contact route can
+give the index-thumb contact zone its own cap: `c_local_r_mm` > 0 makes a mask (1 on the index's middle and tip
+segments and the thumb's tip, falling to 0 by a smoothstep over that distance, so the palm under them is in it), and
+there the raw move comes from an envelope with `c_local_cap_mm` and `c_local_hide_mm`, optionally with the index's
+curl filled by its chord cone (`c_local_core`, over `c_local_k_core_mm`); the two moves blend by the mask before the
+smoothing. Off by default. H1r's grid (`D:/prime-art-raw/2026-10-31-hands/h1r/r1/`): a cap of 12 or 15 mm over 8 or
+14 mm changes nothing visible (the largest move 2.4 -> 2.6 mm on the axolotl): the cap does not bind, because the
+few raw targets over 10 mm are averaged away by the smoothing and the coil's hole has no target inside the union;
+the chord fill moves the zone up to 4.6-5.4 mm and narrows the hole without closing it, at 36-57 triangles against
+the surface per hand (19-21 without).
 
 ## The review
 

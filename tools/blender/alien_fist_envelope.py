@@ -339,7 +339,7 @@ def metrics(env: Envelope, X: np.ndarray, tris: np.ndarray, full: np.ndarray,
 
 def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray, edges: np.ndarray,
             tris: np.ndarray | None = None, cap: float = 0.009, bury: float = 0.0005, hide: float = 0.003,
-            smooth: int = 12, lam: float = 0.5) -> tuple[np.ndarray, dict]:
+            smooth: int = 12, lam: float = 0.5, local=None) -> tuple[np.ndarray, dict]:
     """H1q: the run fist's small corrective on a hand the bones already curled into a fist; its only job is
     tube-against-tube contact. P (N, 3) the bone-curled vertices (the region and its rim); weight (N,) 0..1 (0: the
     pinned rim); owner (N,) each vertex's digit, an index into env.names; env a "merge" envelope of the fitted digits
@@ -353,6 +353,10 @@ def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray,
     - The moves are capped (each move's length to cap * tanh(length / cap)) and smoothed as a field: `smooth`
       Laplacian rounds of step `lam` on the moves themselves, not on the positions, the rim held at zero, so no
       neighbour pair differs sharply; then faded by the weight.
+    - local (H1r): None, or (env_l, mask (N,) 0..1, cap_l, hide_l): a local zone (the index-thumb contact) whose
+      moves come from env_l (the same digits, optionally the index's curl filled by its chord) under its own cap and
+      hide depth; each vertex's raw move is (1 - mask) of the global one plus mask of the local one, before the
+      smoothing, so the zone's edge blends over the mask's falloff.
 
     Returns (X (N, 3), stats): folded counts the triangles of full weight outside the contact zones whose normal
     is against the union's (the bones alone: folded_bones), flipped those the corrective turned over against
@@ -366,14 +370,26 @@ def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray,
     Do = D.copy()
     Do[np.arange(n), owner] = np.inf
     near = Do.min(axis=1) if D.shape[1] > 1 else np.full(n, np.inf)
-    U = env.sd(P)
-    buried = (near < -bury) | (U < -hide)
-    go = free & ~buried & (U < 0)
-    M = np.zeros_like(P)
-    if go.any():
-        M[go] = env.project(P[go], 12) - P[go]
-    raw = np.linalg.norm(M, axis=1)
-    M *= (cap * np.tanh(raw / cap) / np.maximum(raw, 1e-12))[:, None]
+
+    def moves(e, c, hd):
+        U = e.sd(P)
+        bur = (near < -bury) | (U < -hd)
+        go = free & ~bur & (U < 0)
+        Mv = np.zeros_like(P)
+        if go.any():
+            Mv[go] = e.project(P[go], 12) - P[go]
+        r = np.linalg.norm(Mv, axis=1)
+        return Mv * (c * np.tanh(r / c) / np.maximum(r, 1e-12))[:, None], r, bur
+
+    M, raw, buried = moves(env, cap, hide)
+    mask = np.zeros(n)
+    if local is not None:
+        env_l, mask, cap_l, hide_l = local
+        mask = np.clip(np.asarray(mask, float), 0.0, 1.0)
+        Ml, raw_l, bur_l = moves(env_l, cap_l, hide_l)
+        M = M * (1.0 - mask)[:, None] + Ml * mask[:, None]
+        raw = np.where(mask > 0, np.maximum(raw * (mask < 1), raw_l), raw)
+        buried = np.where(mask >= 0.5, bur_l, buried)
     i, j = edges[:, 0], edges[:, 1]
     deg = np.maximum(np.bincount(edges.ravel(), minlength=n), 1).astype(float)
     for _ in range(smooth):
@@ -388,6 +404,12 @@ def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray,
           "max_move_mm": round(float(mv.max()) * 1000, 2) if n else 0.0,
           "step_max_mm": round(float(np.linalg.norm((X - P)[j] - (X - P)[i], axis=1).max()) * 1000, 3)
           if len(edges) else 0.0}
+    if local is not None:
+        z = free & (mask > 0)
+        st.update({"local_verts": int((mask >= 0.5).sum()),
+                   "local_max_move_mm": round(float(mv[z].max()) * 1000, 2) if z.any() else 0.0,
+                   "global_max_move_mm": round(float(mv[free & (mask == 0)].max()) * 1000, 2)
+                   if (free & (mask == 0)).any() else 0.0})
     if tris is not None:
         T = np.asarray(tris)
         T = T[(w[T] >= 0.999).all(axis=1) & ~buried[T].any(axis=1)]
@@ -395,10 +417,16 @@ def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray,
         def nrm(Y):
             return np.cross(Y[T[:, 1]] - Y[T[:, 0]], Y[T[:, 2]] - Y[T[:, 0]])
 
+        loc = mask[T].mean(axis=1) >= 0.5
+
         def against(Y):
             m = nrm(Y)
             big = np.linalg.norm(m, axis=1) > 2e-12
-            return big & (np.einsum("ij,ij->i", m, env.normal(Y[T].mean(axis=1))) < 0)
+            c = Y[T].mean(axis=1)
+            ref = env.normal(c)
+            if local is not None and loc.any():
+                ref[loc] = local[0].normal(c[loc])
+            return big & (np.einsum("ij,ij->i", m, ref) < 0)
         st.update({"tris": int(len(T)), "folded": int(against(X).sum()), "folded_bones": int(against(P).sum()),
                    "flipped": int((np.einsum("ij,ij->i", nrm(X), nrm(P)) < 0).sum())})
     return X, st
