@@ -1028,12 +1028,14 @@ def tip_ceiling_cells():
 
 # polish n3: the oculus's well, lip and glass are the hull cut's 32-gon (plating test); a smooth trim over them: a
 # bullnose ring over the lip's inner edge, a sleeve just inside the lining's faces, a bead at the glass's foot, OC_SEGS
-# sides shaded smooth (all inside the polygon's apothems, so no flat of the 32-gon shows past them)
+# sides shaded smooth (all inside the polygon's apothems, so no flat of the 32-gon shows past them). The sleeve stays
+# inside the LIP's apothem (OC_BEAM[0] 0.69, its corners at 0.6933): at 0.6915 the lip's 32 corners poked through it
+# over the lip's top, a band of light and dark teeth round the well (n3's first Godot shots)
 OC_SEGS = 128
 OC_TRIM = {   # name: closed (r, dh over the rim) profile
     "nose": [(0.706, -0.126), (0.688, -0.124), (0.678, -0.114), (0.674, -0.098), (0.677, -0.082), (0.688, -0.072),
              (0.706, -0.07)],
-    "sleeve": [(0.6955, -0.074), (0.6915, -0.074), (0.6915, 0.228), (0.6955, 0.228)],
+    "sleeve": [(0.6885, -0.074), (0.6845, -0.074), (0.6845, 0.228), (0.6885, 0.228)],
     "bead": [(0.6955, 0.212), (0.688, 0.216), (0.684, 0.226), (0.688, 0.236), (0.6955, 0.24)],
 }
 
