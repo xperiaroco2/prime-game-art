@@ -368,6 +368,7 @@ PLANT_SLIDE_M = 0.002  # B1i: a planted foot moving this far a frame off the gro
 PLANT_PATCH_M = 0.003  # B1i: a foot's contact patch: its points this close over its lowest
 PLANT_ON_M = 0.0015  # B1k: a sole this close over the floor stands on it (the planted frames' bar)
 PLANT_EASE = 2  # B1k: the frames a foot's plant eases in over before its landing and out over after its lift-off
+PLANT_HOLD_MAX_M = 0.15  # B1k: a stance run needing a longer hold is the clip's own slide, lowered but not held
 
 
 def patch_steps(frames_xy: list, patch: list, wrap: bool = False) -> list[tuple[float, float] | None]:
@@ -419,7 +420,7 @@ def foot_stances(lows: dict[str, list[float]], wrap: bool = False) -> dict[str, 
 
 
 def plant_offsets(lows: dict[str, list[float]], steps: dict[str, list], ground: tuple[float, float],
-                  no_flight: bool, wrap: bool = False, ease: int = PLANT_EASE
+                  no_flight: bool, wrap: bool = False, ease: int = PLANT_EASE, unheld: dict | None = None
                   ) -> tuple[dict[str, list[tuple[float, float, float]]], dict[str, list[int]]]:
     """B1k (art #196, the crouch's lift-off slide): per foot and frame its world offset (m: x, y, z) and per foot the
     frames it lowers. A foot under the floor is raised by its own need (foot_raise) on every frame. In a clip with no
@@ -430,13 +431,19 @@ def plant_offsets(lows: dict[str, list[float]], steps: dict[str, list], ground: 
     hold starts at the run's first frame, so the foot lands where the clip puts it (a run around a whole loop closes
     on itself). The offset
     eases in over `ease` frames before the run (the landing) and out over `ease` after it (the lift-off) by a raised
-    cosine, never under the floor. B1e lowered both feet by the lower foot's height instead: the lowered foot dragged
-    37-53 mm a frame along the floor at the crouch's lift-off. A frame in no lowered run keeps its height and place."""
+    cosine, never under the floor. A run whose hold would pass PLANT_HOLD_MAX_M is lowered without a hold and its
+    first frame added to unheld[foot] (a dict given): that is the clip's own slide, not a lift-off's drag (the
+    Crouch_Fwd__ual slides 13 cm a frame on his floor; holding it put her Foot 17 cm out of reach). B1e lowered both
+    feet by the lower foot's height instead: the lowered foot dragged 37-53 mm a frame along the floor at the crouch's
+    lift-off. A frame in no lowered run keeps its height and place."""
     n = len(lows["Left"])
     m = n - 1 if wrap and n > 2 else n
     w = [0.5 * (1.0 + math.cos(math.pi * d / (ease + 1))) for d in range(ease + 1)]
     runs = foot_stances(lows, wrap) if no_flight else {"Left": [], "Right": []}
     out, lowered = {}, {}
+    unheld = unheld if unheld is not None else {}
+    unheld.setdefault("Left", [])
+    unheld.setdefault("Right", [])
     for s in ("Left", "Right"):
         z = lows[s]
         off = [[0.0, 0.0, max(0.0, -h)] for h in z]
@@ -463,6 +470,9 @@ def plant_offsets(lows: dict[str, list[float]], steps: dict[str, list], ground: 
             if whole:  # around the loop: the drift left at the seam spread evenly
                 res = hold.pop()
                 hold = [(h[0] - res[0] * t / m, h[1] - res[1] * t / m) for t, h in enumerate(hold)]
+            if max(math.hypot(*h) for h in hold) > PLANT_HOLD_MAX_M:
+                hold = [(0.0, 0.0)] * len(run)
+                unheld[s].append(run[0])
             for i, h in zip(run, hold):
                 off[i] = [h[0], h[1], -z[i] if (i in low_r or z[i] < 0.0) else 0.0]
             if whole:
@@ -1083,13 +1093,14 @@ def feet_floor(arm, skins, act, rest, up_arm, wrap: bool, no_flight: bool = Fals
     n = f1 - f0 + 1
     total = {s: [(0.0, 0.0, 0.0)] * n for s in lows}
     lowered = {"Left": set(), "Right": set()}
+    unheld = {}
     miss = 0.0
 
     def steps_of(tr):
         return {s: patch_steps(tr["xy"], tr[s], wrap) for s in ("Left", "Right")}
     for _ in range(2):
         steps = steps_of(tracks)
-        r, low_s = plant_offsets(lows, steps, ground_step(lows, steps), no_flight, wrap)
+        r, low_s = plant_offsets(lows, steps, ground_step(lows, steps), no_flight, wrap, unheld=unheld)
         if max(abs(c) for v in r.values() for x in v for c in x) < 1e-4:
             break
         for s in lowered:
@@ -1110,6 +1121,7 @@ def feet_floor(arm, skins, act, rest, up_arm, wrap: bool, no_flight: bool = Fals
            "no_flight": no_flight, "max_lower_cm": round(max(0.0, -min(x[2] for v in total.values() for x in v)) * 100, 2),
            "plant_hold_mm": round(max(math.hypot(x[0], x[1]) for v in total.values() for x in v) * 1000, 1),
            "plant_frames": {s: len(v) for s, v in lowered.items()},
+           "plant_unheld_runs": {s: sorted(set(v)) for s, v in unheld.items()},
            "ankle_miss_max_cm": miss, "hips_fallback_cm": 0.0,
            "plant_slide_mm": round(max(slid.values(), default=0.0) * 1000, 2),
            "plant_moving_frames": sorted(j for j, v in slid.items() if v > PLANT_SLIDE_M),

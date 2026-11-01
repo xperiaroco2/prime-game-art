@@ -311,6 +311,14 @@ class B1kPlant(unittest.TestCase):
         b1e = {"Left": [0.0] * 9 + lows["Left"][9:], "Right": lows["Right"]}  # B1e's landing: the drag on the floor
         self.assertAlmostEqual(max(E.plant_slides(b1e, steps, (0.0, self.V)).values()), 0.03)
 
+    def test_a_hold_past_the_cap_is_not_made(self):
+        lows, steps = self.crouch(drag=0.06)  # three frames of 6 cm: an 18 cm hold, the clip's own slide
+        unheld = {}
+        off, low = E.plant_offsets(lows, steps, (0.0, self.V), True, unheld=unheld)
+        self.assertEqual(unheld, {"Left": [0], "Right": []})
+        self.assertTrue(all(o[:2] == (0.0, 0.0) for o in off["Left"][:9]))  # lowered, not held
+        self.assertAlmostEqual(lows["Left"][7] + off["Left"][7][2], 0.0)
+
     def test_a_foot_on_the_floor_and_a_flight(self):
         lows = {"Left": [0.0, 0.0, 0.0, 0.0003], "Right": [0.03, 0.0, 0.02, 0.04]}
         steps = {"Left": [None] + [(0.0, 0.013)] * 3, "Right": [None] + [(0.0, -0.05)] * 3}
