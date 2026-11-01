@@ -790,7 +790,7 @@ outside = true
 [[pieces]]
 id = "nozzle_pod_mid"
 builder = "nozzle_pod"
-args = { r = 1.62, length = 4.965, mount = 3.15, bridges = [[-3.0, -0.55, 1.42], [3.0, -0.55, 1.42]], bridge_y = [2.1, 4.05] }
+args = { r = 1.62, length = 4.965, mount = 3.15, bridges = [[-3.0, -0.55, 1.42], [3.0, -0.55, 1.42]], bridge_y = [2.1, 4.9] }   # n3: the beams run on over the housings' 2.5 cm gap to the outer bells' lips (it read as a cut in st_eye)
 # n1: the middle pod carries the shared housings (bridges) over its contact with each outer pod; 3.24 m across
 outside = true                               # the pods stick out of the stern (turnaround back, side, top)
 
