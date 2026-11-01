@@ -335,3 +335,70 @@ def metrics(env: Envelope, X: np.ndarray, tris: np.ndarray, full: np.ndarray,
             "edge_p1_ratio": round(float(np.percentile(el, 1) / np.median(el)), 3),
             "bump_mm": round(float(np.abs(env.sd(X[vs], None if owner is None else np.asarray(owner)[vs])).max()) * 1000, 4),
             "sag_mm": round(float(np.abs(env.sd(cen, ot)).max()) * 1000, 3)}
+
+
+def contact(env: Envelope, P: np.ndarray, weight: np.ndarray, owner: np.ndarray, edges: np.ndarray,
+            tris: np.ndarray | None = None, cap: float = 0.009, bury: float = 0.0005, hide: float = 0.003,
+            smooth: int = 12, lam: float = 0.5) -> tuple[np.ndarray, dict]:
+    """H1q: the run fist's small corrective on a hand the bones already curled into a fist; its only job is
+    tube-against-tube contact. P (N, 3) the bone-curled vertices (the region and its rim); weight (N,) 0..1 (0: the
+    pinned rim); owner (N,) each vertex's digit, an index into env.names; env a "merge" envelope of the fitted digits
+    (smooth-unioned over env.k, the thumb over env.k_thumb; no palm, no chords); edges (E, 2), tris (T, 3) among P.
+
+    - The contact zones sink: a vertex inside a neighbouring digit by more than `bury` (the finger sides that touch,
+      a curled finger on another) or deeper than `hide` inside the union (a bent joint's inner crease) keeps its
+      posed place inside the volume; it is never projected onto an outer shell.
+    - Every other vertex inside the union (a side gap between neighbouring fingers, the valley between two knuckles,
+      a knuckle top the skinning flattened) goes out onto it along the union's gradient.
+    - The moves are capped (each move's length to cap * tanh(length / cap)) and smoothed as a field: `smooth`
+      Laplacian rounds of step `lam` on the moves themselves, not on the positions, the rim held at zero, so no
+      neighbour pair differs sharply; then faded by the weight.
+
+    Returns (X (N, 3), stats): folded counts the triangles of full weight outside the contact zones whose normal
+    is against the union's (the bones alone: folded_bones), flipped those the corrective turned over against
+    their bone-curled normal."""
+    P = np.asarray(P, float)
+    w = np.asarray(weight, float)
+    owner = np.asarray(owner)
+    n = len(P)
+    free = w > 0
+    D = np.stack([env.digit(m, P) for m in env.names], axis=1)
+    Do = D.copy()
+    Do[np.arange(n), owner] = np.inf
+    near = Do.min(axis=1) if D.shape[1] > 1 else np.full(n, np.inf)
+    U = env.sd(P)
+    buried = (near < -bury) | (U < -hide)
+    go = free & ~buried & (U < 0)
+    M = np.zeros_like(P)
+    if go.any():
+        M[go] = env.project(P[go], 12) - P[go]
+    raw = np.linalg.norm(M, axis=1)
+    M *= (cap * np.tanh(raw / cap) / np.maximum(raw, 1e-12))[:, None]
+    i, j = edges[:, 0], edges[:, 1]
+    deg = np.maximum(np.bincount(edges.ravel(), minlength=n), 1).astype(float)
+    for _ in range(smooth):
+        acc = np.zeros_like(M)
+        np.add.at(acc, i, M[j])
+        np.add.at(acc, j, M[i])
+        M = np.where(free[:, None], M + lam * (acc / deg[:, None] - M), 0.0)
+    X = P + M * w[:, None]
+    mv = np.linalg.norm(X - P, axis=1)
+    st = {"verts": int(free.sum()), "moved": int((mv > 1e-6).sum()), "buried": int((free & buried).sum()),
+          "raw_max_mm": round(float(raw.max()) * 1000, 2) if n else 0.0,
+          "max_move_mm": round(float(mv.max()) * 1000, 2) if n else 0.0,
+          "step_max_mm": round(float(np.linalg.norm((X - P)[j] - (X - P)[i], axis=1).max()) * 1000, 3)
+          if len(edges) else 0.0}
+    if tris is not None:
+        T = np.asarray(tris)
+        T = T[(w[T] >= 0.999).all(axis=1) & ~buried[T].any(axis=1)]
+
+        def nrm(Y):
+            return np.cross(Y[T[:, 1]] - Y[T[:, 0]], Y[T[:, 2]] - Y[T[:, 0]])
+
+        def against(Y):
+            m = nrm(Y)
+            big = np.linalg.norm(m, axis=1) > 2e-12
+            return big & (np.einsum("ij,ij->i", m, env.normal(Y[T].mean(axis=1))) < 0)
+        st.update({"tris": int(len(T)), "folded": int(against(X).sum()), "folded_bones": int(against(P).sum()),
+                   "flipped": int((np.einsum("ij,ij->i", nrm(X), nrm(P)) < 0).sum())})
+    return X, st

@@ -57,6 +57,21 @@ class EnvelopeTest(unittest.TestCase):
     def test_a_pinned_rim_stays(self):
         self.assertEqual(self.d["pinned_moved_mm"], 0.0)
 
+    def test_the_contact_corrective_closes_a_gap_under_its_cap(self):
+        c = self.d["contact"]
+        self.assertGreater(c["valley_up_mm"], 0.3)  # the valley between the two tubes fills outward
+        self.assertLessEqual(c["move_max_mm"], 4.0 + 1e-6)  # the cap
+        self.assertLessEqual(c["raw_max_mm"], 8.0)
+        self.assertEqual(c["folded"], 0)
+        self.assertEqual(c["flipped"], 0)
+
+    def test_the_contact_corrective_lets_touching_sides_sink(self):
+        c = self.d["contact_touch"]
+        self.assertGreater(c["inside"], 0)
+        self.assertGreater(c["buried"], 0)
+        self.assertEqual(c["inside_on_shell"], 0)  # never projected onto the outer shell
+        self.assertLess(c["inside_max_move_mm"], 4.0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -48,7 +48,11 @@ FIST_DEFAULTS = {"morph": "fist", "k_mm": 14.0, "k_thumb_mm": 10.0, "pull_mm": 2
                  # H1n: the grip's path into and out of the fist grip (stagger_keys): the fingers' tips at the fist by
                  # curl[0] of a ramp, their knuckles from curl[1]; the thumb from thumb[0] to thumb[1]; [1, 0] and
                  # [0, 1] = every joint in step
-                 "curl": [1.0, 0.0], "thumb": [0.0, 1.0]}
+                 "curl": [1.0, 0.0], "thumb": [0.0, 1.0],
+                 # H1q: route "contact" (alien_fist_envelope.contact): the digits' blend and the thumb's, the moves'
+                 # cap, a vertex this far inside a neighbour (or c_hide_mm inside the union) sinks, the moves' smoothing
+                 "c_k_mm": 8.0, "c_k_thumb_mm": 6.0, "c_cap_mm": 9.0, "c_bury_mm": 0.5, "c_hide_mm": 3.0,
+                 "c_smooth": 12, "c_lambda": 0.5}
 
 
 class HandsError(ValueError):

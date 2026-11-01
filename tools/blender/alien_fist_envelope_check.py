@@ -3,7 +3,8 @@ tools/tests/test_alien_fist_envelope_blender.py; prints one line `ENVELOPE_CHECK
 
 On synthetic shapes: the round cone's field against brute force; the iso-mesh of a two-finger envelope (closed,
 facing out, on the field); the shrink-wrap of two separate tubes onto their merged envelope, first bare (the facing
-sides bunch and fold) and then relaxed (no fold, no short edge); a triangle turned over counts as folded."""
+sides bunch and fold) and then relaxed (no fold, no short edge); a triangle turned over counts as folded; H1q's
+contact corrective on two tubes apart (the gap fills under the cap, no fold) and touching (their facing sides sink)."""
 import json
 import sys
 from pathlib import Path
@@ -78,4 +79,29 @@ flip = T2.copy()
 k = int(np.flatnonzero(fp[T2].all(axis=1))[0])
 flip[k] = flip[k][::-1]
 out["press"]["flip_folded"] = E.metrics(press, Xp, flip, fp, owner)["folded"]
+# H1q contact: two tubes 4 mm apart, then 2 mm into each other; the
+# corrective closes the gap under its cap, the touching sides sink, no triangle folds
+cdig = {"A": tube(0, 0, 0, 0.05, 0.008), "B": tube(0.020, 0, 0, 0.05, 0.008)}
+plain = E.Envelope(cdig, "Thumb", None, k=0.0, k_core=0.0, k_thumb=0.0, core=0.0)
+Vc, Tc = E.iso_mesh(plain.sd, (-0.012, -0.012, -0.012), (0.032, 0.012, 0.062), 0.0015)
+ec = E.edges_of(Tc)
+oc = np.where(Vc[:, 0] < 0.010, 0, 1)
+blend = E.Envelope(cdig, "Thumb", None, k=0.008, k_core=0.0, k_thumb=0.0, core=0.0)
+Xc, stc = E.contact(blend, Vc, np.ones(len(Vc)), oc, ec, Tc, cap=0.004, smooth=12)
+top = (np.abs(Vc[:, 0] - 0.010) < 0.004) & (Vc[:, 1] > 0.004) & (Vc[:, 2] > 0.01) & (Vc[:, 2] < 0.04)
+out["contact"] = {**stc, "valley_up_mm": float((Xc[top, 1] - Vc[top, 1]).mean() * 1000),
+                  "move_max_mm": float(np.linalg.norm(Xc - Vc, axis=1).max() * 1000)}
+odig = {"A": tube(0, 0, 0, 0.05, 0.008), "B": tube(0.014, 0, 0, 0.05, 0.008)}
+# each tube's own closed skin, as two bent fingers' skins overlap where they touch
+Va, Ta = E.iso_mesh(E.Envelope({"A": odig["A"]}, "Thumb", None, k=0.0, k_core=0.0, k_thumb=0.0, core=0.0).sd,
+                    (-0.012, -0.012, -0.012), (0.012, 0.012, 0.062), 0.0015)
+V2t = np.concatenate([Va, Va + np.array([0.014, 0, 0])])
+T2t = np.concatenate([Ta, Ta + len(Va)])
+o2t = np.repeat([0, 1], len(Va))
+blend2 = E.Envelope(odig, "Thumb", None, k=0.008, k_core=0.0, k_thumb=0.0, core=0.0)
+Xo, sto = E.contact(blend2, V2t, np.ones(len(V2t)), o2t, E.edges_of(T2t), T2t, cap=0.004, smooth=12)
+inside = np.array([blend2.digit("B" if k == 0 else "A", V2t[i:i + 1])[0] < -0.001 for i, k in enumerate(o2t)])
+out["contact_touch"] = {**sto, "inside": int(inside.sum()),
+                        "inside_max_move_mm": float(np.linalg.norm(Xo[inside] - V2t[inside], axis=1).max() * 1000),
+                        "inside_on_shell": int((np.abs(blend2.sd(Xo[inside])) < 0.0002).sum())}
 print("ENVELOPE_CHECK " + json.dumps(out), flush=True)

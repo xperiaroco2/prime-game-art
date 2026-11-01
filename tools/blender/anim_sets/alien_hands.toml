@@ -26,10 +26,11 @@ ThumbTurn = [4, -6]
 
 [grips.loose]  # the run (Jog, Sprint, Strafe): the fingers folded onto the palm, every tip touching it,
                  # the thumb's pad over the index's and middle's middle segments (H1d-H1f's grids never converged)
-Index = [83.3, 87.5, 12.6, -1.4]    # H1g: solved (tools/blender/alien_grip_solve.py) to body_dims/hand_grips.toml on
-Middle = [67.3, 90.4, 15, 12]  # both characters' hands at once; [base, middle, tip, side turn]
-Ring = [67.5, 90.9, 14.2, 1.1]
-Little = [67.5, 90.9, 14.2]
+Index = [83.3, 97, 32, -1.4]    # H1g: solved (tools/blender/alien_grip_solve.py) to body_dims/hand_grips.toml on
+Middle = [67.3, 98, 30, 12]     # both characters' hands at once; [base, middle, tip, side turn]. H1q: the middle and
+Ring = [67.5, 98, 30, 1.1]      # tip joints curled further (solved 87.5-90.9 / 12.6-15), the tips into the palm, so the
+Little = [67.5, 98, 30]         # bones alone make the fist (H1q's grid: fuller base curls and a thumb along the
+                                # index's side left a thumb nub and a wider index coil)
 mirror = true
 Thumb = [30.4, 66.4, 14.8]
 ThumbTurn = [62.1, 74.5]
@@ -66,7 +67,6 @@ relax = 4          # rounds of relaxing along the surface where the projection m
 # digit inflated to 1.4 of its fitted radii, its own curl filled by its chord, pressed against the others with a 0.4 mm
 # slit (lip rounded over 4 mm) and kept 0.4 mm off the palm box (0.85 of the palm); the finger skin shrink-wrapped onto
 # its own digit and relaxed 150 rounds by edge springs in the tangent plane, with the fold guard. Grid: H1l p2_press_i140
-route = "envelope"
 env_mode = "press"
 env_inflate = 1.4
 env_lip_mm = 4.0
@@ -80,3 +80,12 @@ lead = 0.5
 # close into a ring (H1n's grids: knuckles first, or the thumb in step, still ring at 0.5-0.65); out of it backwards
 curl = [0.6, 0.4]
 thumb = [0.6, 1.0]
+# H1q (art #196): the contact route (alien_fist_envelope.contact) replaces the envelope above (env_*, wrap_rounds
+# unused): the bones curl the fist; the morph only lays the skin onto the digits' smooth union (12 mm, the thumb's
+# 10 mm) where it is inside it (the gaps between touching fingers, the knuckles' valleys), the moves capped at 10 mm and
+# smoothed 6 rounds as a field; skin inside a neighbouring digit or 3 mm inside the union sinks (H1q's grid c1-c4, t0)
+route = "contact"
+c_k_mm = 12.0
+c_k_thumb_mm = 10.0
+c_cap_mm = 10.0
+c_smooth = 6

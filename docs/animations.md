@@ -1679,6 +1679,24 @@ outside the hand moved (`diff`: 0.0 mm, weights 0). The second tube pass blends 
 (over `wave_max_mm`), so the second blend stays. `test_alien_hand_mesh_dense_blender.py` checks `dense` on a
 synthetic rigged tube.
 
+**The fist by bones and a small corrective (H1q).** The denser mesh did not help. The defects came from the wrap
+itself: skin pressed onto an inflated outer shell (deltas up to 28 mm) gave a slit at the index's curl, lumpy
+knuckles, a nub top and 205-276 folded triangles per hand. So the bones now make the fist: `[grips.loose]`'s middle
+and tip joints are curled further (about 98 and 30 degrees), which puts the tips into the palm. `[fist] route =
+"contact"` (`alien_fist_envelope.contact`) only fixes where the tubes touch:
+- the skin goes onto the digits' smooth union (`c_k_mm`, the thumb's `c_k_thumb_mm`) wherever it lies inside it,
+  such as a gap between touching fingers or the valley between two knuckles;
+- skin inside a neighbouring digit, or more than `c_hide_mm` inside the union, keeps its posed place and sinks inside
+  the volume;
+- the moves are capped at `c_cap_mm`, then smoothed as a field (`c_smooth` Laplacian rounds on the moves, never on the
+  positions; the rim is held).
+
+On H1i's mesh (not H1p's dense one) the morph moves at most about 3.6 mm (`D:/prime-art-raw/2026-10-31-hands/h1q/`).
+The morph turns over 0-3 triangles per hand. The bones' own skin has 11-18 triangles per hand that face against the
+union. The grid rejected fuller base curls (88-92 degrees) and a thumb along the index's side: both left a thumb nub
+and a wider index coil. Still open: seen from the thumb side, the index's coil stays an open loop. Filling it would
+take more than the cap (the targets reach 10-14 mm).
+
 ## The review
 
 `tools/run.py anim-review <step> [--body men|women|both] [--clips pack:Walk,ual:Walk_Loop|all] [--sources ual2]

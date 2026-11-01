@@ -167,6 +167,43 @@ def _envelope_moves(arm, body, side, W8, rest, skin, digits, fist):
     return moves, st
 
 
+def _contact_moves(arm, body, side, W8, rest, skin, digits, fist):
+    """The contact route (H1q, alien_fist_envelope.contact): the bones curl the fist (`[fist] grip`); the morph only
+    closes the side gaps between neighbouring digits and smooths the knuckle tops onto the digits' smooth union
+    (`c_k_mm`, the thumb `c_k_thumb_mm`), its moves capped at `c_cap_mm` and smoothed as a field; the contact zones
+    sink inside the volume."""
+    import numpy as np
+    mm = 0.001
+    env = E.Envelope(digits, "Thumb", None, fist["c_k_mm"] * mm, 0.0, fist["c_k_thumb_mm"] * mm, 0.0, "merge")
+    names = {f"{side}{d}{s}" for d in FINGERS for s in SEGS} | {f"{side}Thumb{s}" for s in THUMB_FIT}
+    fw = [sum(x for b, x in W8[i].items() if b in names) for i in range(len(W8))]
+    region = {i for i, x in enumerate(fw) if x > 0.05}
+    me = body.data
+    rim = {v for e in me.edges for v in e.vertices if (e.vertices[0] in region) != (e.vertices[1] in region)} - region
+    ids = sorted(region | rim)
+    at = {v: k for k, v in enumerate(ids)}
+    edges = np.array([(at[a], at[b]) for a, b in (e.vertices for e in me.edges) if a in at and b in at], dtype=np.int64)
+    me.calc_loop_triangles()
+    tris = np.array([[at[v] for v in t.vertices] for t in me.loop_triangles if all(v in at for v in t.vertices)],
+                    dtype=np.int64)
+    P = np.empty((len(ids), 3))
+    for k, i in enumerate(ids):
+        acc = Vector((0, 0, 0))
+        for b, x in W8[i].items():
+            acc += (skin[b] @ rest[i]) * x
+        P[k] = acc
+    wt = np.array([F.smoothstep((fw[i] - 0.05) / (fist["fade_to"] - 0.05)) if i in region else 0.0 for i in ids])
+    bones = {d: {f"{side}{d}{s}" for s in (SEGS if d != "Thumb" else THUMB_FIT)} for d in env.names}
+    owner = np.array([max(range(len(env.names)), key=lambda k: sum(x for b, x in W8[i].items() if b in bones[env.names[k]]))
+                      for i in ids])
+    X, st = E.contact(env, P, wt, owner, edges, tris, fist["c_cap_mm"] * mm, fist["c_bury_mm"] * mm,
+                      fist["c_hide_mm"] * mm, fist["c_smooth"], fist["c_lambda"])
+    LAST[side] = {"env": env, "ids": ids, "P": P, "X": X, "tris": tris, "weight": wt, "owner": owner}
+    moves = {i: tuple(X[k] - P[k]) for k, i in enumerate(ids) if np.linalg.norm(X[k] - P[k]) > 1e-6}
+    st.update({"surface_err_mm": 0.0})
+    return moves, st
+
+
 def add(cfg, arm) -> dict:
     fist = cfg["fist"]
     mm = 0.001
@@ -199,7 +236,9 @@ def add(cfg, arm) -> dict:
     LAST.clear()
     for side in ("Left", "Right"):
         digits = _digits(arm, side, rest, dom, skin, fist)
-        if fist["route"] == "envelope":
+        if fist["route"] == "contact":
+            moves, st = _contact_moves(arm, body, side, W8, rest, skin, digits, fist)
+        elif fist["route"] == "envelope":
             moves, st = _envelope_moves(arm, body, side, W8, rest, skin, digits, fist)
         else:
             shape = F.Fist(digits, "Thumb", fist["k_mm"] * mm, fist["k_thumb_mm"] * mm)
