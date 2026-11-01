@@ -296,9 +296,8 @@ class B1kPlant(unittest.TestCase):
             dy = steps["Left"][j][1] + off["Left"][j][1] - off["Left"][j - 1][1]
             self.assertAlmostEqual(dy, self.V, msg=j)
         self.assertAlmostEqual(off["Left"][8][1], -0.09)  # three frames of 3 cm drag held back
-        self.assertAlmostEqual(off["Left"][9][1], -0.09 * 0.75)  # eased out over the swing
-        self.assertAlmostEqual(off["Left"][10][1], -0.09 * 0.25)
-        self.assertEqual(off["Left"][11], (0.0, 0.0, 0.0))
+        for d in range(1, 5):  # B1l: 4 frames to the clip's end, too few for 10 mm a frame: a straight ramp
+            self.assertAlmostEqual(off["Left"][8 + d][1], -0.09 * (1 - d / 5), msg=d)
         self.assertTrue(all(z >= 0.0 for v in after.values() for z in v))
         self.assertTrue(all(min(a, b) <= E.PLANT_ON_M for a, b in zip(after["Left"], after["Right"])))  # no float
         self.assertAlmostEqual(after["Right"][8], 0.05 - 0.75 * 0.015)  # its landing eased in
@@ -333,13 +332,70 @@ class B1kPlant(unittest.TestCase):
         self.assertEqual(off["Left"], [(0.0, 0.0, 0.0)] * 2)  # no foot near the floor
 
     def test_a_whole_loop_closes(self):
-        lows = {"Left": [0.002] * 9, "Right": [0.002] * 9}  # an idle hovering 2 mm, the left drifting 1 mm a frame
-        steps = {"Left": [(0.0, 0.001)] * 9, "Right": [(0.0, 0.0)] * 9}
-        off, low = E.plant_offsets(lows, steps, (0.0, 0.0), True, wrap=True)
+        """An idle hovering 2 mm (8 frames and the seam), the ground travelling V a frame, the left foot drifting by
+        a different amount on each step: its hold takes each drift back, the drift left at the seam spread evenly."""
+        drift = [0.003, 0.001, 0.002, 0.0, 0.003, 0.001, 0.0, 0.002]  # steps 0 (the seam: 7 -> 0), 1..7
+        ls = [(0.001, self.V + d) for d in drift] + [(0.001, self.V + drift[0])]
+        lows = {"Left": [0.002] * 9, "Right": [0.002] * 9}
+        steps = {"Left": ls, "Right": [(0.0, self.V)] * 9}
+        off, low = E.plant_offsets(lows, steps, (0.0, self.V), True, wrap=True)
+        self.assertEqual(low["Left"], list(range(8)))
         self.assertEqual(off["Left"][-1], off["Left"][0])
+        total = sum(drift)
+        for t in range(8):  # the hold: each step's drift back, plus the seam's share
+            cum = sum(drift[1:t + 1])
+            self.assertAlmostEqual(off["Left"][t][1], -cum + total * t / 8, msg=t)
+            self.assertAlmostEqual(off["Left"][t][0], -0.001 * t + 0.008 * t / 8, msg=t)
+        self.assertAlmostEqual(off["Left"][4][1], -0.006 + 0.012 * 4 / 8)
         dy = [steps["Left"][j][1] + off["Left"][j][1] - off["Left"][j - 1][1] for j in range(1, 9)]
-        self.assertLess(max(abs(d - dy[0]) for d in dy), 1e-12)  # held evenly around the seam
+        for d in dy:  # every step off the ground by the same 1.5 mm, the seam's included
+            self.assertAlmostEqual(d - self.V, total / 8)
         self.assertTrue(all(abs(o[2] + 0.002) < 1e-12 for o in off["Right"]))
+        self.assertTrue(all(abs(o[0]) + abs(o[1]) < 1e-12 for o in off["Right"]))  # on the ground's travel: no hold
+
+    def test_a_large_hold_eases_out_within_the_step(self):
+        """B1l (the review's major 1): his crouch's 108 mm hold eased out over 2 frames caught up 27, 54, 27 mm a
+        frame just after the lift-off. With the swing's room it eases over as many frames as keep each step within
+        PLANT_EASE_STEP_M and is back on the clip's path by the next landing."""
+        w = E.ease_weights(0.0, 20)
+        self.assertEqual([round(x, 6) for x in w], [1.0, 0.75, 0.25])  # no hold: B1k's 2 frames
+        w = E.ease_weights(0.108, 30)  # room enough: a raised cosine, the fewest frames within 10 mm a step
+        k = len(w) - 1
+        steps = [0.108 * abs(a - b) for a, b in zip(w, w[1:] + [0.0])]
+        self.assertLessEqual(max(steps), E.PLANT_EASE_STEP_M)
+        self.assertEqual(k, 16)  # 15 frames of cosine: 10.5 mm a step at the middle
+        self.assertAlmostEqual(w[k // 2 + 1] + w[(k + 1) // 2], 1.0)  # symmetric
+        w = E.ease_weights(0.108, 10)  # the crouch's 10-frame swing: a ramp, 108 / 11 mm a frame
+        self.assertEqual(len(w), 11)
+        self.assertAlmostEqual(max(0.108 * abs(a - b) for a, b in zip(w, w[1:] + [0.0])), 0.108 / 11)
+        # in place: a 13-frame loop's lift-off held 90 mm, 10 frames of swing to the next landing
+        ll = [0.012] * 3 + [0.002] + [0.05] * 8 + [0.012]
+        rl = [0.05] * 4 + [0.012] * 8 + [0.05]
+        ls = [(0.0, self.V)] * 3 + [(0.0, self.V + 0.09)] + [(0.0, self.V)] * 9
+        off, low = E.plant_offsets({"Left": ll, "Right": rl}, {"Left": ls, "Right": [(0.0, self.V)] * 13},
+                                   (0.0, self.V), True, wrap=True)
+        self.assertAlmostEqual(off["Left"][3][1], -0.09)
+        runs = {s: E.merge_runs(r, 13, True) for s, r in E.foot_stances({"Left": ll, "Right": rl}, True).items()}
+        self.assertLessEqual(E.plant_ease_step(off, runs), E.PLANT_EASE_STEP_M + 1e-12)
+        self.assertGreater(E.plant_ease_step(off, runs), 0.005)
+        self.assertEqual(off["Left"][0][:2], (0.0, 0.0))  # back on the clip's path at its next landing
+        self.assertTrue(all(abs(off["Left"][j][1]) > 0.0 for j in range(3, 12)))
+
+    def test_a_one_frame_gap_carries_the_hold(self):
+        """B1l (the review's minor 2): two stance runs of one foot a frame apart are one: the hold carried across
+        the gap (B1k dropped it from -0.12 to 0 and back in a frame, a 90 mm pop), the gap frame at its own height."""
+        ll = [0.01] * 5 + [0.05] + [0.01] * 4
+        rl = [0.05] * 5 + [0.01] + [0.05] * 4
+        ls = [None] + [(0.0, self.V + 0.03)] * 4 + [(0.0, self.V)] * 5
+        off, low = E.plant_offsets({"Left": ll, "Right": rl}, {"Left": ls, "Right": [None] + [(0.0, self.V)] * 9},
+                                   (0.0, self.V), True)
+        self.assertEqual(E.merge_runs([[0, 1, 2, 3, 4], [6, 7, 8, 9]], 10), [list(range(10))])
+        self.assertEqual(E.merge_runs([[0, 1], [7, 8]], 10), [[0, 1], [7, 8]])  # a 5-frame swing stays a swing
+        self.assertEqual(E.merge_runs([[6, 7], [9, 10, 11, 0]], 13, wrap=True), [[6, 7, 8, 9, 10, 11, 0]])
+        for i, h in enumerate([0.0, -0.03, -0.06, -0.09] + [-0.12] * 6):
+            self.assertAlmostEqual(off["Left"][i][1], h, msg=i)
+        self.assertEqual(off["Left"][5][2], 0.0)  # the gap frame keeps its height
+        self.assertNotIn(5, low["Left"])
 
     def test_no_flight_clips(self):
         self.assertFalse(E.can_fly("Crouch_Fwd_Loop"))
